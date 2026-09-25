@@ -169,15 +169,13 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Pracuj wyłącznie na gałęzi przypisanej do sesji; nigdy nie zapisuj zmian bezpośrednio w `main`.
 - **Praca jest zapisywana WYŁĄCZNIE przyrostowo — nowymi commitami na końcu
   gałęzi. Force push jest zakazany na KAŻDEJ gałęzi** (ADR 0020 D, zlecenie
-  właściciela 2026-08-24). Zdarzało się, że agent nie sprawdził `HEAD` po
-  resecie workspace albo źle policzył diff i „na siłę” commitował całość,
-  nadpisując wcześniejszą pracę — to grozi jej nieodwracalną utratą.
+  właściciela 2026-08-24) — grozi nieodwracalnym nadpisaniem pracy sesji.
   Przed każdym pushem: `git log --oneline -3` + `git status`, potem
   `git fetch origin <gałąź>` i porównanie `HEAD..FETCH_HEAD` z
-  `FETCH_HEAD..HEAD`. Gdy zdalna gałąź jest przede mną: `git reset --hard
-  FETCH_HEAD` + `git cherry-pick` moich commitów (wcześniej `git branch
-  backup-…`). Odrzucony push (`non-fast-forward`) znaczy, że tego sprawdzenia
-  nie było — nie sięgaj po `--force`.
+  `FETCH_HEAD..HEAD`. Odrzucony push (`non-fast-forward`) znaczy, że tego
+  sprawdzenia nie było — nie sięgaj po `--force`. Pełna procedura (odzyskiwanie
+  po resecie sandboxa, przenoszenie commita z `main`, kolejność backupów):
+  `docs/setup/ENVIRONMENT.md` §2.
 - Nie wykonuj push do `main` — ochrona i tak go odrzuci.
 - Nie proś o dodanie kogokolwiek do bypass list i nie zmieniaj ustawień ochrony `main`
   bez wyraźnej decyzji właściciela.
@@ -188,6 +186,13 @@ Te reguły obowiązują każdego agenta bez wyjątku (szczegóły: `docs/WORKFLO
 - Zanim uznasz zadanie za skończone, sprawdź faktyczny stan `main` — nie zakładaj,
   że wcześniejsza sesja opublikowała swoje zmiany.
 - Nie commituj sekretów ani ciężkich zasobów; zasady opisuje `SECURITY.md`.
+- **Znalezione błędy naprawiasz od razu — nie pytasz, czy naprawić.** Drobiazg
+  (odmiana, etykieta, literówka, martwy plik) złapany w kodzie, w transkrypcie
+  testera albo we własnym commicie idzie w naprawę w tej samej
+  turze co odkrycie: osobny commit, testy + build, wpis w opisie PR. Właściciela
+  pyta się o decyzje (reguły, architektura, scalenie — L57), nie o zgodę na
+  poprawienie błędu. Artefakty reprodukcji sprząta się przed bramą —
+  `docs/setup/TESTER_STOLU.md`.
 - **„Samodzielnie zielony" znaczy: cały pakiet, nie wycinek.** Przed każdym
   commitem uruchom `npm test` (szybki rdzeń), a nie tylko testy dopisanego
   pliku. Nauczka z M109: karta dopisana do katalogu jako `supported`, ale

@@ -2568,6 +2568,16 @@ spoza tabeli) i wymaga, żeby świeciły, oraz liniami poprawnymi (702.20,
 okna i parę liniową — oba strażniki są niezależne, więc jeden nie maskuje
 drugiego.
 
+
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — punkty 3–4:** aliasy tabeli są
+konieczne, bo komentarze w tym repo są po polsku („chronionego" = protection,
+„przydziały" = trample, „dar" = gift), a wyjątki muszą mieć POWÓD zapisany w
+dokumencie — lista sekcji, odniesienia negatywne („nie dotyczy"), reguły ogólne
+typu 702.1; bez powodu wyjątek jest cichym wygaszaniem detektora (L5).
+Pliki-strażniki są wyłączone ze skanu innych strażników, bo opisują historię
+rozjazdów i zawierają dowody RED (syntetyczne linie z F-7 muszą świecić) —
+inaczej detektor świeci na własną dokumentację.
+
 ## L166 (2026-09-24) — przypadek
 
 Właściciel zapytał, czym jest „D4b” z planu, i postawił warunek: jeśli to
@@ -2630,7 +2640,16 @@ Skan Oracle↔definicja po KWOCIE (nie tylko po pipach, jak strażnik M268)
 wskazał trzy trafienia: dwa prawdziwe (join-the-dance, boulder-salvo — surge
 {1}{R} zamiast {2}{R}, karta z batcha 58, czyli klasa nie zna granic batcha)
 i jedno narzędziowe (`lunar-rejection`: cleave trzyma kwotę w `manaCost`).
-Trzy karty wypadły ze skanu z powodu, który trzeba było nazwać: dwie przygody
+Trzy karty wypadły ze skanu z powodu, który trzeba b
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — rozwinienie przyczyny:**
+rozjazd dotknął dwóch kart na dwie strony — Join the Dance („Flashback {3}{G}{W}"
+→ `cost: 4`) otwierał ofertę już przy czterech manach (rzut legalny tylko na
+papierze), a Boulder Salvo („Surge {1}{R}" → `cost: 3`) blokał płatność, którą
+gracz mógł wykonać. Trzeci ślad błędu siedział w teście: tytuł batchowy powtarzał
+fałszywą arytmetykę („{3}{G}{W} = 4 many"), więc każdy, kto czytał wyniki,
+dostawał potwierdzenie nieprawdy — stąd punkt 4 rejestru.
+
+yło nazwać: dwie przygody
 (Scryfall nie pisze kosztu przy słowie „Adventure" — druga część karty jest
 osobnym czarem) i `mindstab` z „Suspend 4—{B}" (między słowem a kosztem stoi
 licznik czasu — po naprawie regexu paruje się poprawnie). Wyjątki trafiły do
@@ -2699,3 +2718,141 @@ vs aggro i 97,6 % vs random (progi 62 % / 78 %), ewaluacja lustrzana 72:72,
 a Żywy Tester na 4 partiach: 0 zgłoszeń detektorów, 0 niewycenionych ruchów,
 Mutagen na najlepszym ciele, Memory's Journey trzymana w ręce, Vanguard
 aktywowany w walce (transkrypty `/tmp/po-audyt/po-*.txt`).
+
+### Dopisane po sesji 2026-09-25a (M431, rodzina decyzji kroku odkręcania)
+
+Ten sam brak wymiaru, co przy trzech kartach batcha 59, wrócił w nowym miejscu:
+wycena `resolve_untap_choice` na starcie miała **jeden** wymiar (suma
+unieruchomionych bytów) i koszt źródła liczony **w pętli po celach**. Dwa
+skutki, oba złapane przez piny przepływu pokręteł (`test/bot-params.test.js`),
+nie przez przegląd kodu:
+
+1. **podwójne odejmowanie** — przy jednym trzymanym celu `10 + 2·6 = 22`
+   i jednocześnie `−6`, czyli model nie był równy opisowi w komentarzu;
+   przy dwóch celach koszt rósł drugi raz, choć „nie odkręciłem źródła" jest
+   j
+**Wyniesione z rejestru (kondensacja 2026-09-25b) — punkty 6–7:** nowa rodzina
+stałych wchodzi pod własne nazwy + deskryptor tunera (T1), a pin dowodzi, że
+pokrętło NIE jest atrapą (wyzerowanie wagi wraca do remisu — bez tego następna
+sesja nie wie, czy liczba cokolwiek robi). Koszt ŹRÓDŁA (np. „nie odkręciłem
+permanentu z {T}") liczy się RAZ NA WARIANT, nie na każdy trzymany cel: wstawiony
+do pętli po celach rósł z liczbą ofiar i zasłaniał blokadę (pin w
+`test/bot-params.test.js`).
+
+ednym aktem gracza. Stąd reguła 7: koszt źródła to cecha **wariantu**;
+2. **ślepota na kształt widoku** — gałąź czytała `zrodlo.abilities`, a
+   `PlayerView` niesie tylko `activatableAbilities` (M243): permanent
+   **tapnięty** nie ma tam żadnej zdolności z `{T}`, bo akurat nie może jej
+   aktywować. Wycena kosztu znikała po cichu, a nie rzucała się w oczy —
+   jedyny ratunek to pin „Δ oceny == Δ parametru co do joty" (test 13–15),
+   który nie działa bez uzupełnienia listy o rejestr (l. 1754/3537 robią to
+   samo przy innych gałęziach).
+
+Druga warstwa tej samej klasy, tym razem po stronie **harnessu testów**:
+`test/real-cards-batch2.test.js` budował obiekt z `gameObjectDataOf(def)`
+rozpisany na pola (`kind`, `power`, `manaCost`, `spell`, `abilities`…), więc
+każde NOWE pole deskryptora (tu `untapChoice`) ginęło w teście, a karta
+bez mechaniki nie wystawiała decyzji — zielony test udowadniał nie to, że
+silnik działa, ale to, że test nic nie mierzy (L21). Naprawa: `addObject`
+dostaje `...data` całym spreadem, a pola bojowe (`tapped`,
+`untapLockedBy`) nadal osobno, bo `addObject` je normalizuje i ostrzega.
+
+
+## L170 (2026-09-25) — przypadek
+
+**Objaw C (uwaga właściciela, KRYTYCZNE):** „Nie działa »zaptaszkowanie« zdolności,
+która ma nie przerywać auto-passu. Po zmianie w UI w poprzednim PR przesunęły się
+obiekty i teraz klikanie w pole wyboru nie powoduje zaznaczenia go, tylko aktywuje
+czar/zdolność/ofertę."
+
+**Przyczyna C:** od M292 ptaszek wyciszenia buduje wspólny komponent
+(`renderPickerRow` w `src/table/picker.js`), który chroni przycisk-rodzica przez
+`stopPropagation` na `click`. Ale panel akcji od K (2026-09-23, poprawka „klik nie
+działa po przebudowie layoutu") aktywuje opcję pressem (`installPressActivation` w
+`src/table/gestures.js`, słucha `pointerdown`/`pointerup`). Zagnieżdżenie zmieniło
+się tak, że wskaźnik STARTUJE w węźle będącym dzieckiem przycisku, więc `pointerup`
+dobiega do przycisku i odpala `play(cmd)` — blokada `click` nie ma nic do rzeczy.
+Naprawa: wyspa interakcji dostaje markę `data-press-exempt` nadawaną centralnie
+przez `stopRowPropagation`, a gest pyta o nią w `pointerdown`, `pointerup` i `click`
+(klawiatura `detail === 0` też). Modal wyboru trzymał ptaszka na starych zasadach
+(natywny `click`, bez pressa) — dlatego tam usterki nie było i dlatego naprawa nie
+dotyka `choice-request.js`. Dowód RED na prawdziwym artefakcie (Żywy Tester z
+`--tick-rate 1` + `dispatchEvent` pointerów zamiast `.click()`): PRZED naprawą
+„`[ptaszek] wyciszam: Zagraj: Akrasan Squire`" było natychmiast obudowane
+„zamykam planszę ilustracji: Rzuca: Czarodziejka" (karta wyszła z ręki), PO naprawie
+ten sam gest kończy się na „▶ Wznów grę bota" (brak rzutu).
+
+**Objaw D:** „Gdy tę kartę [Geological Appraiser] wystawia bot, w Rozgrywce i w
+Logu powinny być widoczne karty odsłaniane zdolnością Discover. A nie są." Pomiar
+Żywym Testerem (`innistrad-brg` vs `ixalan`, seed 43, 2000 kroków): LOG miał całą
+serię („Nieprzyjaciel odsłania Swamp ⏎ … wykonuje discover (3) — trafiono
+Skymarch Bloodletter …"), a modal ruchu bota kończył się na linii „— trigger
+(wejście na pole bitwy)".
+
+**Przyczyna D:** NIE sama bramka treści (choć i ona miała dziurę: rodzina
+`card_revealed|discover_started|discover_resolved` wchodziła do `isMainLogEvent`
+jedynie przez `BOT_RESOLUTION_EVENTS` przy `stackSize > 0` albo przez
+`HUMAN_DIGEST_EVENTS` dla człowieka — samo `card_revealed` nie miało tam wpisu,
+więc odsłonięcie przy pustym `stackObjects` wypadało z bufora modala). Główna
+przyczyna to ŻYWIOTNOŚĆ wpisu: `showBotMoves()` renderował bufor i w tej samej
+chwoli wołał `clearBotMoves()`, a skutek odsuniętego triggera dociera dopiero po
+„Rozumiem" — wpisy szły do bufora, który najbliższe `apply()` wyrzucało bez
+pokazania. Pierwsza próba naprawy (sam licznik `painted`, zero czyszczenia)
+wpadła w nową usterkę złapaną przez `test/table-ui.test.js`: okno otwarte i nigdy
+nie czyszczone pozwala klikać „Rozumiem" w kółko bez postępu. Stąd kształt finalny:
+doklejenie tylko gdy `session.botPausePending`, a kasowanie PRZECZYTANEGO prefiksu
+(`consumeBotMoves(n)`) przy zamknięciu.
+
+**Wniosek o metodzie:** przy usterce UI różnicę „treść nie została WYPRODUKOWANA"
+vs „została, ale nie DOŻYŁA do ekranu" rozstrzyga porównanie dwóch konsumentów
+tego samego strumienia (log vs panel). Dowód bierze się z transkryptu Żywego
+Testera, nie z repro na `createSession` — tam log jest pełny i test byłby zielony
+przy psuciu produktu.
+
+## L171 (2026-09-25) — przypadek
+
+**Objaw.** W transkrypcie Żywego Testera (sonda uwagi D, talie
+`innistrad-brg` vs `ixalan`, seed 43) pojawił się opis discover:
+„Nieprzyjaciel nie znajduje karty dla discover (3) — biblioteka się wyczerpała
+(przejrzano 4 **kart**)". Ten sam błąd w logu startowym: „Ręka startowa
+Nieprzyjaciel: 7 **kart**" — oraz trzy miejsca w kreatorze talii: podsumowanie
+talii „100 **kart** · lądów …" (tu 100 jest poprawne), „Dodano 4 **kart** z
+filtrów." i „Zaimportowano talię „X" (60 **kart**)".
+
+**Przyczyna.** Geografia, nie brak reguły. Odmiana liczebnika istnieje w repo od
+dawna — `polishPluralCount(n, one, few, many)` — ale mieszkała w `render.js`.
+`session.js` NIE MOŻE importować z `render.js`, bo `render.js` importuje z
+`session.js` (`PLAYER_NAMES`, `describeGameEvent` dla modala itd.) — powstałby
+cykl modułów, a `test/module-graph.test.js` pilnuje, żeby importy szły „w dół".
+Więc `describeGameEvent` (w `session.js`) i `deck-builder.js` (osobny moduł
+kreatora) sklejały licznik na sztywno: `${n} kart`, „poprawne" dla 0 i 5+, złe
+dla 1 i 2–4. Detektor językowy testera miał rację, a nikt go nie pytał o zgodę.
+
+**Naprawa.** Nowy liść `src/table/polish-plural.js` — JEDNO źródło odmiany dla
+całego stołu, zero zależności, więc dostępny z każdego kierunku bez cyklu.
+`render.js` zostaje konsumentem i re-eksportem (dawni konsumenci
+`choice-request.js`, `main.js` nie zmieniają importów); `session.js` (2 miejsca)
+i `deck-builder.js` (3 miejsca) liczą przez helpera. Build: 60 → 61 modułów,
+4290,5 → 4292,1 kB.
+
+**Pułapka, która kosztowała 60 czerwonych testów.** Pierwsza wersja re-eksportu
+w `render.js` to było gołe `export { polishPluralCount } from './polish-plural.js';`
+— re-eksportuje nazwę dla innych modułów, ale NIE wiąże jej lokalnie, a
+`render.js` używa helpera u siebie w ~20 miejscach (`commandLabel`, opisy
+dobierania/millowania, etykiety wizarda). Objaw: `ReferenceError:
+polishPluralCount is not defined` na każdym renderze, w tym w testach, które w
+ogóle nie dotyczyły liczebników (`a-hover-track-cycle`). Kontrakt naprawiono na
+`import` + osobny `export {}`, a w J5 spinano go **wywołaniem** `commandLabel` —
+odczyt tekstu pliku (J3/J4) był zielony przy psuciu produktu, bo szukał tylko
+braku definicji i braku sztywnej formy.
+
+**Warstwa narzędzi (do odnotowania).** W tej samej turze sandbox again
+przeklonował repo: lokalna gałąź stała na `main` (`0b2f771`), a cała praca
+M431/M432 leżała jako „brudne drzewo" + pliki nieśledzone (testy C/D, audyty,
+plany). Procedura ratunku, która NISZCZY NIC: `git add -A` (nieśledzone stają się
+śledzone) → `git diff --cached FETCH_HEAD --name-status` po `git fetch origin
+<branch>` → jeśli jedyną różnicą jest bieżąca robocizna, `git reset <tip-zdalny>`
+bez flagi (rusza wskaźnik, zostawia drzewo i indeks). Wcześniejsza wersja tej
+procedury (ślepy `reset --hard`) skasowała kiedyś niecommitowane naprawy —
+różnica jest w kolejności: NAJPIERW porównanie co do ścieżki, dopiero potem
+przestawienie wskaźnika.

@@ -271,7 +271,13 @@ test('V/5b anty-over-fix (M212/Z6): jedno słowo „target” z liczbą 2 dalej 
     `„two target nonblack creatures” wymaga DWÓCH różnych — przy jednym kandydencie brak ofert: ${JSON.stringify(oferty1.map((c) => c.targets))}`);
   putFull('g2', 'razorfoot-griffin', 'p2');
   const oferty2 = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'spell');
-  assert.equal(oferty2.length, 2, `dwie uporządkowane pary różnych stworów: ${JSON.stringify(oferty2.map((c) => c.targets))}`);
+  // Jeden wybór, nie dwa: „two target nonblack creatures" to JEDNO wystąpienie
+  // słowa „target", więc {g1, g2} jest jednym wyborem gracza (CR 601.2c —
+  // ten sam obiekt nie może wypełnić dwóch pozycji tej samej instancji;
+  // analogicznie ich KOLEJNOŚĆ nie tworzy nowego wyboru). Enumeracja tnie
+  // permutacje kluczem kanonicznym (L151), zanim cap panelu zetnie realne
+  // opcje — stąd 1 oferta, nie 2 (korekta pinu: audyt PR #136, F-5).
+  assert.equal(oferty2.length, 1, `kanoniczna para różnych stworów (bez permutacji): ${JSON.stringify(oferty2.map((c) => c.targets))}`);
   assert.ok(oferty2.every((c) => c.targets[0] !== c.targets[1]),
     'zadna para nie powtarza obiektu wewnątrz jednego słowa „target”');
   assert.ok(oferty2.some((c) => c.targets.includes('g1') && c.targets.includes('g2')),

@@ -592,3 +592,17 @@ tryb interaktywny (agent steruje w pętli), screenshoty przez headless
 Chromium, więcej polityk gracza, wykrywanie podejrzanych etykiet (automatyczne
 flagi: `?`, dublowane koszty, puste modale), integracja z CI jako test
 opcjonalny.
+
+## Co dzieje się z tym, czego tester dotknął (sprzątanie po sondzie)
+
+Sonda zwykle zostawia trzy rzeczy: **kopię runnera** (np. `run-game.mjs` z
+pointerami zamiast `.click()`), **chwilową talię** w `decks/` i **transkrypt**.
+Kopia runnera i transkrypt mogą leżeć poza repo (`/tmp`), ale talia — NIE:
+każdy plik w `decks/` jest danymi testowymi i odpala 6 strażników
+(`repo-decks`, `m132-proporcje-landow`, `m203-talie-testera-i-dokumentacji`,
+`m338-pomoc-benchmarku`, 2 × `M178`). Po naprawie plik służący tylko do
+reprodukcji usuwa się PRZED bramą `npm test`, a nie „potem, przy okazji".
+
+Reguła nadrzędna (AGENTS.md §„Zasady pracy z repozytorium"): znalezione błędy
+naprawia się w tej samej turze co odkrycie — tester zgłasja też drobiazgi
+językowe i retusz, nie tylko usterki reguł.

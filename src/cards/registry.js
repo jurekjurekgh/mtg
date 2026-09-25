@@ -366,6 +366,14 @@ export function defineCard(data) {
     // „enter as a copy" (Jwari Shapeshifter): deskryptor kopiowania przy wejściu
     // — { subtype } określa typ, którego kopię można przyjąć (przed SBA).
     enterAsCopy: data.enterAsCopy ? Object.freeze({ ...data.enterAsCopy }) : null,
+    // M431 (uwaga z gry właściciela 2026-09-25): klauzula "You may choose not to
+    // untap this permanent during your untap step„ — to decyzja GRACZA
+    // (CR 502.3: "the active player determines which permanents they control
+    // will untap„), nie właściwość silnika. Deskryptor wchodzi na obiekt gry i
+    // uruchamia ofertę `resolve_untap_choice` w kroku odkręcania. Brak flagi =
+    // permanent odkręca się zawsze; dawna heurystyka "źródło blokady zostaje w
+    // tapie„ była niezgodna z CR (test/audyt-m431-untap-choice.test.js).
+    untapChoice: Boolean(data.untapChoice),
   });
 }
 

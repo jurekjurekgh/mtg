@@ -1,3 +1,4 @@
+import { polishPluralCount } from './polish-plural.js';
 import {
   addCardToDeck,
   addFilteredToDeck,
@@ -22,7 +23,6 @@ import {
 function clearBuilderElement(element) {
   if (element) element.textContent = '';
 }
-
 function node(parent, tag, className, text) {
   const element = document.createElement(tag);
   if (className) element.className = className;
@@ -53,7 +53,7 @@ function formatStatistics(stats) {
     .filter((bucket) => stats.curve.get(bucket))
     .map((bucket) => `${bucket}:${stats.curve.get(bucket)}`).join('  ');
   return [
-    `${stats.total} kart · lądów ${stats.lands} · nielandowych ${stats.nonlands} · śr. mana ${stats.avgCmc}`,
+    `${stats.total} ${polishPluralCount(stats.total, 'karta', 'karty', 'kart')} · lądów ${stats.lands} · nielandowych ${stats.nonlands} · śr. mana ${stats.avgCmc}`,
     `stwory ${t.creatures} · instants ${t.instants} · sorcery ${t.sorceries} · artefakty ${t.artifacts} · enchantments ${t.enchantments}${t.other ? ` · inne ${t.other}` : ''}`,
     `kolory: ${colorPart}${curvePart ? ` · krzywa: ${curvePart}` : ''}`,
   ].join('\n');
@@ -407,7 +407,7 @@ export function mountDeckBuilder({ registry, repoDecks = {}, onDeckImported = nu
     const result = addFilteredToDeck(state.cardIds, visible, registry);
     state.cardIds = result.cardIds;
     state.lastError = null;
-    setStatus(`Dodano ${result.added} kart z filtrów.`);
+    setStatus(`Dodano ${result.added} ${polishPluralCount(result.added, 'kartę', 'karty', 'kart')} z filtrów.`);
     render();
   });
   refs.clear.addEventListener('click', () => {
@@ -441,7 +441,7 @@ export function mountDeckBuilder({ registry, repoDecks = {}, onDeckImported = nu
     onDeckImported?.(state.name, String(text ?? ''));
     await refreshLibrary();
     render();
-    setStatus(`Zaimportowano talię „${state.name}" (${state.cardIds.length} kart).`);
+    setStatus(`Zaimportowano talię „${state.name}" (${state.cardIds.length} ${polishPluralCount(state.cardIds.length, 'karta', 'karty', 'kart')}).`);
   }
 
   /**

@@ -1725,20 +1725,43 @@ export function legalTargetCombos(state, playerId, targetSpec, sourceObject = nu
     while (groupEnd + 1 < targetSpec.length && tags[groupEnd + 1] === tag) groupEnd += 1;
     // Warianty grupy (jedno wystąpienie słowa „target"), bez luk: po wyborze
     // pustej pozycji kolejne pozycje grupy też są puste.
+    // F-5 (audyt PR #136, żywy Tester seed 78): grupa JEDNEGO wystąpienia
+    // słowa "target" to ZBIÓR — CR 601.2c (dosłownie, CR 2026-09-25): „The same
+    // target can't be chosen multiple times for any one instance of the word
+    // “target””. Kolejność slotów nie tworzy nowego wyboru gracza, więc gdy
+    // pozycje grupy mają IDENTYCZNY deskryptor, kandydaci wchodzą do wariantu w
+    // kolejności puli (klucz kanoniczny) i permutacje tego samego zbioru w ogóle
+    // nie powstają. Zmierzony objaw: przy dwóch kartach w grobie przeciwnika
+    // Memory's Journey miało 6 ofert zamiast 5 (para [a,b] i [b,a]), a cap 32
+    // zjadał realne wybory (L151: dedup kluczem kanonicznym PRZED cięciem).
+    // Grupy NIEJEDNORODNE (różne deskryptory pozycji — tam slot znaczy coś
+    // innego) zachowują pełny iloczyn.
+    const groupSpecs = targetSpec.slice(index, groupEnd + 1);
+    const zbiorowa = groupSpecs.length > 1
+      && groupSpecs.every((sp) => JSON.stringify(sp ?? null) === JSON.stringify(groupSpecs[0] ?? null));
+    const poolOfIndex = zbiorowa
+      ? new Map(optionsOf(index, prefix).map((id, i) => [id, i]))
+      : null;
     const variants = [];
-    const step = (position, current, closed) => {
+    const step = (position, current, closed, minIndex) => {
       if (position > groupEnd) { variants.push(current); return; }
       const spec = targetSpec[position];
       const open = position === index || !closed;
-      const options = open ? optionsOf(position, prefix) : (spec?.optional ? [null] : []);
+      const raw = open ? optionsOf(position, prefix) : (spec?.optional ? [null] : []);
+      const options = poolOfIndex
+        ? raw.filter((cand) => cand == null || (poolOfIndex.get(cand) ?? -1) >= minIndex)
+        : raw;
       for (const candidate of options) {
         if (candidate != null
           && (prefix.some((chosen, j) => chosen === candidate && tags[j] === tag)
             || current.some((chosen) => chosen === candidate))) continue;
-        step(position + 1, [...current, candidate], candidate == null);
+        step(position + 1, [...current, candidate], candidate == null,
+          candidate == null || !poolOfIndex
+            ? minIndex
+            : (poolOfIndex.get(candidate) ?? -1) + 1);
       }
     };
-    step(index, [], false);
+    step(index, [], false, 0);
     const groupSize = groupEnd - index + 1;
     // Przycinamy WYŁĄCZNIE grupy wieloslotowe („up to three target …"):
     // pojedyncza pozycja to zwykła pula kandydatów — cięcie jej i tak dałoby

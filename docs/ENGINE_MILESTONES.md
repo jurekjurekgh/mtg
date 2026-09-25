@@ -7743,3 +7743,296 @@ heuristic 78,0 % vs aggro / 97,6 % vs random (progi 62 % / 78 %),
 trzymana w ręce, Vanguard aktywowany w oknie walki.
 
 Lekcja: **L169**. Bramy: `npm test` 6534/6534, build 60 modułów / 4254,4 kB.
+
+## M430 — audyt scalonego PR #136 (5 znalezisk) i pętla jakości: wektor celów w dwóch warstwach (sesja 2026-09-24f, PR #137)
+
+Zlecenie właściciela bez nazwanego tematu („Kontynuujemy projekt") → obowiązuje
+pętla domyślna (ADR 0021) w trybie audytu ostatniego scalonego PR (ADR 0020 B).
+Bez nowego batcha kart (ADR 0029), bez pełnego B0 (ADR 0018).
+
+**Pięć znalezisk, cztery klasy.** F-2 (regułowe, średnie): predykat „karta w
+grobie przeciwnika" odsiewał tokeny heurystyką po nazwie, a poległa kopia
+„enter as copy" nosi `name` i nie ma `isToken` — karta przegrywała status celu
+wbrew CR 108.2b, który wyklucza wyłącznie tokeny; naprawa na jawną flagę
+`!object.isToken` w `zones.js` + bliźniak w `triggers.js` (Puppeteer Clique czyta
+ten sam predykat). F-1 (dokumentacyjne): nota `slithering-cryptid` cytowała dla
+„Activate only as a sorcery" CR 107.3a (wybór X) zamiast 602.5d; poprawione w
+karcie i w handoffzie 24e + nowa para w strażniku numerów. F-3: komentarz M429
+podawał liczby, których kod nie produkuje (Hill Giant „4/4" — katalog 3/3, „2/3
+→ +6"); sonda na botu dała 14/22/26, piny przepisane na pomiar. F-4: kreator
+celów liczył rozmiary z długości wektora z wypełnieniem `null` (4/4 zamiast
+1–3), zostawiał pusty kandydat w worku i budował klucz z nullami — „Zatwierdź"
+gaśnie i Memory's Journey jest nie do zagrania z UI. F-5: w grupie jednego słowa
+„target" enumeracja mnożyła permutacje tego samego zbioru (CR 601.2c — ten sam
+cel nie może być wybrany dwa razy w jednej pozycji); naprawa kanonizuje
+kolejność w grupach o identycznych deskryptorach, czyli przechodzi z permutacji
+na kombinacje.
+
+**Klasa znalezisk (do zapamiętania):** to samo pojęcie („pozycja opcjonalna to
+`null` w wektorze, nie cel") mieszkało w dwóch warstwach i zostało przepisane
+osobno — silnik oferował kartę, testy karty szły przez `execute` i świeciły
+zielenią, a UI nie pozwalał jej zagrać. Przy zmianie wektora celów przechodzi się
+cztery warstwy: enumeracja → walidacja → plan kreatora → etykieta. Dowody RED
+dla obu napraw + trzy mutacje czerwienią w
+`test/audyt-pr136-kreator-up-to-three.test.js`.
+
+**Incydent metody (warty powtórzenia jako ostrzeżenie):** restaurowanie mutacji
+przez `s.replace()` na całym pliku przywróciło wzorzec w trzech funkcjach, z
+których tylko jedna ma `realSizes` → `ReferenceError` poza ścieżką testowaną.
+`npm test` (fast core) był zielony; złapało to dopiero `npm run test:all` —
+rozszerzenie L159: restaurować wierszem/zakresem i czytać `git diff`.
+
+**Żywy Tester (Etap D1):** 4 partie na chwilowej talii batcha 59. Przed naprawą
+seed 78 przerwał „Kreator wielocelowy nie do zamknięcia po 5 próbach" (to było
+źródło F-4/F-5); po naprawie partia kończy się pełnym rozstrzygnięciem
+(„Rzucasz Memory's Journey → cel: Ty, Waveskimmer Aven, Savage Hunger,
+Sun-Collared Raptor" + „Tasujesz bibliotekę"), 0 zgłoszeń detektorów, 0 ruchów
+niewycenionych. Chwilowa talia `decks/audyt-batch59.txt` usunięta — jej obecność
+psuła pięć strażników talii (M178/ADR 0023, round-trip, HELP--seeds).
+
+**Werdykt audytu: APPROVE po naprawach** — `docs/audits/AUDYT_PR136_2026-09-24f.md`.
+
+Bramy: `npm test` **6545/6545** (start 6534 → +11), `npm run test:all`
+**6555/6555**, build 60 modułów / **4257,9 kB**, `bot-benchmark` 10/10 (progi
+bez zmian), szybka macierz 672 mecze: **78,3 %** vs aggro / **97,9 %** vs random
+(24e: 78,0 / 97,6 — bez regresji), `tools/b1-quick-2026-09-24f.{json,txt}`,
+golden-master `bot-scoring-snapshot` zielony BEZ regeneracji, katalog 562 wpisy
+/ 509 `supported` / 1 z niepustym `limitations`. Nowa lekcja: celowo żadna —
+budżet lektury ~99,9k/100k znaków, klasy żyją w L41/L43/L129/L135/L151/L163/L13 §6.
+
+## M431 — decyzja kontrolera w kroku odkręcania (CR 502.3) + wycena świeżości grantów aur (sesja 2026-09-25a, PR #137)
+
+Dwie uwagi z gry właściciela w jednej sesji; plan
+`docs/plans/PLAN_2026-09-25a-untap-choice-i-wycena-keywordow-aur.md`. Bez
+nowego batcha kart (ADR 0029), bez pełnego B0 (ADR 0018/0025), zero przypadków
+po nazwie karty w `src/engine`/`src/cards` (ADR 0002).
+
+**A — Entrancing Lyre.** Karta mówi „You may choose not to untap this artifact
+during your untap step", a silnik decydował ZA gracza: heurystyka
+`isActiveLockSource` zostawiała artefakt w tapie, „bo trzyma kogoś". To
+odwrotne trzymanie struktury reguły — w CR 502.3 to *aktywny gracz*
+ustala, które permanenty się odkręcają; blokada celu jest *skutkiem* wyboru,
+nie powodem decyzji silnika. Naprawa: deskryptor `untapChoice` na karcie
+(`card-data` → `registry` → `materialize` → obiekt → `deck`/`identity`) i
+rodzina decyzji `pendingUntapChoice` w kroku odkręcania — `beginTurnStart`
+liczy dzień/noc (CR 502.2) PRZED odkręceniem, wystawia ofertę i pauzuje (CR
+502.4: w tym kroku nie ma priorytetu, więc nie wolno mu dać okna na czary —
+bramka `abilities.js:553` zostaje nietknięta), a po wyborze wznawia z TEJ
+SAMEJ funkcji `beginTurnContinuation` (L41). Warianty: pusty `keepTappedIds`
+= „odtapuj wszystkie" (standard CR, pierwsza oferta, czyli i „Dalej (Pass)"
+znaczy to samo) + podzbiory do capa 32, porządek kanoniczny (L19/L151).
+Odrzucenia: `untap_choice_unresolved`, `untap_choice_not_your_decision`,
+`illegal_untap_choice`, `duplicate_untap_choice`; zdarzenia
+`untap_choice_required`/`untap_choice_resolved` (L24). Skutek uboczny,
+regułowy: permanent BEZ klauzuli, który jest źródłem blokady, odkręca się,
+a blokada jego celu gaśnie — tak samo ulega regule 611.2 rodzina „for as long
+as… remains tapped" (A1b/A2/A5). Widok: `pendingUntapChoice` +
+`entry.untapLockedBy` + `lockedByCandidate` (kompletność i FoW, ADR 0003/
+0017), odcisk stanu przez `PENDING_DECISION_FIELDS` (A7). Tabela: oferta
+w „Twoje działania" z etykietami nazywającymi SKUTEK (L154), log z opisem
+decyzji; boty: `heuristic-params` +3 pokrętła z pinami przepływu, aggro bierze
+JAWNIE „odtapuj wszystkie" zamiast pierwszego kandydata z enumeracji (L169).
+
+**B — Serra's Embrace (sprawdzenie kary).** Wycena doczepienia aury nadającej
+słowo-kluczowe, które cel już ma: liczy się ŚWIEŻOŚĆ grantu, nie samo ciało
+gospodarza (jałowy grant = kara `auraKeywordAllWastedPenalty`, część grantów
+= waga proporcjonalna). Wypchnięte osobno (`5d9b41c`), z fixture i 15 pinami.
+
+**Znaleziska uboczne (ta sama sesja, bez nowego batcha):**
+1. `lock_untap` miał opis „…podczas NASTĘPNEGO kroku odkręcania kontrolera" —
+   zakres mylący z `dont_untap_next_untap_step` (Wavecrash Triton, jednokroko-
+   wy); Oracle i ruling liry mówią „for as long as this artifact remains
+   tapped", więc opis (i pin B54) przepisane na trwały;
+2. `test/real-cards-batch2.test.js` budował obiekt z `gameObjectDataOf`
+   rozpisany na pola — KAŻDE nowe pole deskryptora ginęło w teście (L21);
+   harness dostaje teraz cały spread;
+3. `decks/audyt-lyra.txt` (chwilowa talia do żywego testera) trzymałam POZA
+   commitem i usunęłam PRZED bramką — jej obecność w repo psuje pięć
+   strażników talii (lekcja 24f).
+
+**Żywy Tester (C3):** partie na talii „theros + 2× Lyra" (seedy 77–82,
+`--bot mirrodin-brg`, kroków 600): oferta decyzji pojawiła się w panelu i
+przeszła przez kreatora celów („Wybierz: Odkręcanie — które permanenty
+zostają tapnięte?" z wariantem „Odkręć wszystko…" jako pierwszym), 0 zgłoszeń
+detektorów, 0 ruchów niewycenionych; E2-lite (dwie klauzule naraz, porządek kanoniczny kandydatów, „decyduje tylko kontroler źródła", odcisk na oba
+kierunki wyboru) wypięty w pinie A12. C2 bez zmian: tester skanuje oferty po
+`data-option-key`, więc nowy typ komendy łapie automatycznie, a rodzina
+`resolve_*` nie wchodzi do `OPTION_IGNORABLE_TYPES` (wyciszalna blokada
+auto-wykonywałaby pierwszą opcję). E2 (interakcje: phasing 502.1, licznik
+stunu 122.1d, zmiana kontrolera 400.3, odkręcenie efektem) zostaje w planie
+jawiernie — to następny krok, nie dług ukryty.
+
+**Budżet lektury startowej:** próg 100k tokenów jest osiągnięty (99,95k po
+wpisie), więc NOWA lekcja nie powstała — klasa „koszt wariantu vs koszt na cel"
+trafia do L169 jako punkt 7, a proza do archiwum narracji (identyczna decyzja
+jak w M430). Kondensacja `docs/LESSONS.md` pozostaje zadaniem OBOWIĄZKOWYM
+następnej sesji (AGENTS.md §0) — nie podnosić progu.
+
+Bramy: `npm test` **6566/6566** (start sesji 6545 → +21; `test/audyt-m431-untap-choice.test.js`
+A1–A11, `test/audyt-m431-wycena-keywordow-aur.test.js`, 3 piny w `bot-params`), golden-master
+`bot-scoring-snapshot` zielony BEZ regeneracji (`beaee531…` — ten sam hash,
+zero dryfu realnych talii), `bot-params` 16/16 → **19/19** (3 nowe piny
+przepływu, Δ oceny == Δ parametru co do joty), macierz 672 mecze **78,3 %**
+vs aggro / **97,6 %** vs random (24f: bez zmian), ewaluacja lustrzana przy
+podbitych pokrętłach 24:24 (realne talie nie noszą klauzuli → gałąź
+niedostępna poza deskryptorem, co jest właśnie celem ADR 0029), build
+60 modułów / **4281,5 kB** (po usunięciu chwilowej talii audytowej i przebudowie).
+
+
+## M432 — uwagi z gry C+D: ptaszek wyciszenia pod gestem pressa oraz discover bota w „Rozgrywce" (sesja 2026-09-25b, PR #137)
+
+Dwie uwagi właściciela z tej samej partii; bez nowego batcha kart (ADR 0029),
+bez pełnego B0 (ADR 0018/0025), zero przypadków po nazwie karty w
+`src/engine`/`src/cards` (ADR 0002).
+
+**C (KRYTYCZNE) — „klikanie w pole wyboru nie powoduje zaznaczenia go, tylko
+aktywuje czar/zdolność/ofertę".** Zmierzone, nie zgadywane: panel akcji od
+poprzedniej sesji (K, 2026-09-23 — „klik nie działa, gdy layout przebuduje się
+między press a release") aktywuje opcję **presem** (`installPressActivation`,
+`src/table/gestures.js`: `pointerdown` + `pointerup` + `setPointerCapture`), a
+wspólny wiersz ptaszka (M292, `renderPickerRow` w `src/table/picker.js`)
+chronił przycisk wyłącznie przez `stopPropagation` na `click`. Zagnieżdżenie
+ptaszka w przycisku zmieniło się tak, że wskaźnik startuje w dziecku przycisku,
+więc `pointerup` dobiega do rodzica i gra opcję. Naprawa w warstwie gestu, nie
+w CSS ani w nazwach klas: `PRESS_EXEMPT_ATTRIBUTE` (`data-press-exempt`) +
+`markPressExempt`/`isPressExemptTarget` w `gestures.js`, a znacznik nadaje
+**centralnie** `renderPickerRow` dla wszystkiego, co zgłosiło
+`stopRowPropagation` (wiersz-ptaszek, nazwa otwierająca kartę, przyciski −/+,
+dubler `<input>` w `host`) — czyli JEDNO miejsce decyduje „to jest wyspa
+interakcji", a `installPressActivation` pyta o markę w `pointerdown`,
+`pointerup` i `click` (także klawiatura, `detail === 0`). Modal wyboru
+(`choice-request.js`) trzymał ptaszka na natywnym `click` i nie używał pressa —
+dlatego tam usterki nie było i naprawa go nie dotyka. Reguła generyczna (ADR
+0002), nie łatanie rodziny `.action-ignore*`.
+
+**D — „gdy tę kartę [Geological Appraiser] wystawia bot, w Rozgrywce i w Logu
+powinny być widoczne karty odsłaniane Discover. A nie są".** Repro na
+prawdziwych taliach (`innistrad-brg` vs `ixalan`, seed 43, 2000 kroków): log
+miał całą serię („Nieprzyjaciel odsłania Swamp ⏎ … discover (3) — trafiono
+Skymarch Bloodletter ⏎ trigger się rozstrzyga"), modal ruchu bota kończył się
+na „— trigger (wejście na pole bitwy)". Winowajcą **nie była** bramka treści
+(jak sugerowało pierwsze czytanie `isMainLogEvent`), tylko **życie bufora**:
+`showBotMoves()` renderował `botMoves` i w tej samej chwili wołał
+`clearBotMoves()`, a skutek odraczonego triggera (ETB rozstrzygany po passa(ch)
+człowieka) wpada do bufora dopiero PO tym czyszczeniu i jest kasowany przez
+najbliższe `apply()`. Naprawa: bufor żyje, `clearBotMoves()` odpada z otwarcia
+modala, a klik „Rozumiem" konsumuje **tylko pokazany prefiks**
+(`consumeBotMoves(n)` w sesji); otwarte okno w pauzie dostaje re-render gdy
+DOSZŁO coś nowego (`botMovesPaintedUpdate`, czysta funkcja w `session.js` —
+ADR 0011). Druga, mniejsza dziura domknięta przy okazji: rodzina
+`card_revealed|discover_started|discover_resolved` wchodziła do
+`isMainLogEvent` wyłącznie przez `BOT_RESOLUTION_EVENTS` (tylko przy
+`stackSize > 0`) albo `HUMAN_DIGEST_EVENTS` (tylko dla człowieka, a
+`card_revealed` nie miało tam w ogóle wpisu) — stąd `PUBLIC_INFO_EVENTS`,
+puszczany bez okna `botActing` i bez stanu stosu (CR 701.20: odsłonięte karty
+są informacją publiczną — CR 701.20: „reveal = pokazać kartę WSZYSTKIM
+graczom"; opis warstwy UI nazywa wyłącznie to, co wolno (L41)).
+
+**Metoda (do powtórzenia):** przy usterce UI różnicę „treść nie została
+WYPRODUKOWANA" vs „została, ale NIE DOŻYŁA do ekranu" rozstrzyga porównanie
+dwóch konsumentów tego samego strumienia (log vs panel). Repro na poziomie
+`createSession` + `s.log` jest TU BEZUŻYTECZNE — log jest pełny, więc test
+byłby zielony przy zepsutym produkcie; dowód bierze się z transkryptu Żywego
+Testera. Dowód RED C na tym samym artefakcie: kopia testera z `--tick-rate 1`,
+w której `tick.click()` zastąpiono sekwencją `pointerdown/pointerup/click` —
+PRZED naprawą każda wyciszona akcja była natychmiast obudowana „zamykam planszę
+ilustracji: Rzuca: Czarodziejka" (karta wychodziła z ręki), PO naprawie ten sam
+gest kończy się na „▶ Wznów grę bota" bez rzutu.
+
+**Nowe testy:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7:
+sekwencje zdarzeń na stubie MiniEl — repo ma zero zależności, więc nie ma
+jsdomu; C1–C3 i C5–C6 świecą RED bez naprawy),
+`test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8: bramka dla obu
+graczy, brak wycieku szumu i ruchu po strefach zakrytych, `consumeBotMoves`,
+odporność licznika).
+
+**Budżet lektury:** LESSONS.md rósł prozą ostatnich wpisów milowych, więc przy
+okazji skondensowano L165/L168/L169 (reguła zostaje w rejestrze, narracja i
+wyniesione punkty jadą do `docs/LESSONS_PRZYPADKI.md` pod tymi samymi
+numerami), a nowa lekcja **L170** („gest warstwy UI zjada kontrolkę osadzoną w
+przycisku; bramę daję GESTOWI, nie CSS") mieści się w budżecie 100k — próg NIE
+jest podnoszony.
+
+
+**Bramy:** `npm test` **6582/6582** (start M431: 6567 → +15: 7 testów C, 8 testów D),
+w tym zielone `test/table-ui.test.js` (72/72 — pętla klikań przez całą partię,
+`choice-ignore`, `choice-group-ignore`, `m292`, `b5-bramka-logu-gracza`,
+`m255-petla-jakosci`, `table-touch-gestures`) oraz straże dokumentacji
+(`dokumentacja-budzet-lektury` ~99,8k, `docs-decisions` 25/25).
+Weryfikacja końcowa na artefakcie: build 60 modułów / **4290,4 kB**; Żywy Tester
+`innistrad-brg` vs `ixalan` (seed 43, 2000 kroków) — modal „Rozgrywka" pokazuje
+„Nieprzyjaciel odsłania Island / Swamp / Skymarch Bloodletter", „wykonuje
+discover (3) — trafiono Skymarch Bloodletter" i wynik „odsłonięte karty (2) na
+spód biblioteki w losowej kolejności" (PRZED naprawą: zero takich linii),
+DETEKTORY: brak zgłoszeń, NIEWYCENIONE: brak. Osobna sonda gestu C na tym samym
+artefakcie (kopia testera z `--tick-rate 1` i `pointerdown/pointerup/click`
+zamiast `.click()`): 3 wyciszenia, 0 zagrań, 0 zgłoszeń.
+
+**Warstwa narzędzi (do odnotowania):** reset sandboxa w tej sesji zostawił
+gałąź na `0b2f771` z pracą M431 jako „brudnym drzewem" — porównanie z tipem
+zdalnym (`git fetch` + `git diff --stat FETCH_HEAD`) rozstrzygnęło, że to ten sam
+kontent, więc `git reset --hard f83801f` był bezpieczny; PUŁAPKA: chwila, w której
+między `git stash` a `git stash pop`, w której istniał NIEŚLEDZONY
+`decks/geo-tester.txt` (talia z poprzedniej sondy), czerwieniła 6 testów
+skanujących `decks/` (`repo-decks`, `m132-proporcje-landow`,
+`m203-talie-testera-i-dokumentacji`, `m338-pomoc-benchmarku`, 2 × `M178`) —
+każdy plik w `decks/` jest DANYMI testowymi, więc talie próbne tworzymy poza
+repo albo usuwamy PRZED bramą.
+
+## M433 — uwaga J: odmiana liczebników w warstwie stołu + reguła „znalezione błędy naprawiam od razu" (sesja 2026-09-25b, PR #137)
+
+**Skąd.** Przy sondzie uwagi D Żywy Tester zwrócił formę „przejrzano 4 **kart**"
+w opisie discover (a w logu startowym „Ręka startowa Nieprzyjaciel: 7 **kart**").
+Zgłosiłem to właścicielowi jako „drobiazg do decyzji" — stąd druga, ważniejsza
+część tej uwagi: **„ZNALEZIONE BŁĘDY NAPRAWIASZ, a nie pytasz mnie o to, czy
+naprawić"**. Wdrożone jako reguła w `AGENTS.md` (§ „Zasady pracy z
+repozytorium") — nie jako notatka sesyjna. Razem z nią: artefakty reprodukcji
+(kopia runnera, chwilowa talia w `decks/`) sprząta się PRZED bramą `npm test`
+sekcja „Co dzieje się z tym, czego tester dotknął" w `docs/setup/TESTER_STOLU.md`;
+`decks/geo-tester.txt` z sondy D usunięty.
+
+**Przyczyna (geografia, nie reguła).** `polishPluralCount` istniał, ale w
+`render.js`, a `session.js` nie może importować z `render.js` (render importuje z
+session → cykl; pilnuje tego `test/module-graph.test.js`), więc `describeGameEvent`
+i `deck-builder.js` sklejały licznik na sztywno `${n} kart`.
+
+**Naprawa (commit `8b64e06`).** Nowy liść `src/table/polish-plural.js` (zero
+zależności) = JEDNO źródło odmiany; `render.js` = `import` + osobny `export {}`
+(dawni konsumenci `choice-request.js`, `main.js` bez zmian importów); 2 miejsca w
+`session.js` + 3 w `deck-builder.js` liczą przez helpera (1 → „kartę/karta",
+2–4 → „karty", 5+/0 i nastki 12–14 → „kart").
+
+**Cenna wpadka w trakcie (utrwalona w L171 pkt 2).** Pierwsza wersja re-eksportu
+to gołe `export { x } from './liść.js'` — re-eksportuje nazwę dla innych modułów,
+ale NIE wiąże jej lokalnie, a `render.js` używa helpera u siebie w ~20 miejscach ⇒
+`ReferenceError: polishPluralCount is not defined` na każdym renderze i **60
+czerwonych testów**, w tym zupełnie niezwiązanych z liczebnikami
+(`a-hover-track-cycle`). Naprawione `import` + `export {}` oraz **J5, który woła
+`commandLabel`** — odczyt tekstu pliku (J3/J4) był zielony przy psuciu produktu.
+Druga pułapka testowa: `\b` w regexpach JS nie działa po diakrytykach, więc
+granicę wyrazu trzeba pisać `(?![a-z])` (inaczej asercja „1 kartę\b" odpada).
+
+**Bramy po naprawie.** `npm test` **6587/6587, fail 0** (start M432: 6582 → +5:
+J1–J5), build **61 modułów / 4292,3 kB** (nowy liść dopiął się do grafu przez
+`collectModules` z `ENTRY='src/table/main.js'`), `docs-decisions` 25/25,
+budżet lektury startowej zmieszczony (100 000 — ani jednego tokena zapasu;
+patrz niżej).
+
+**Budżet lektury (kondensacja parowana).** Wpis L171 w `docs/LESSONS.md` (+ nowe
+zdanie w `AGENTS.md`) przekraczały próg 100k, więc w tej samej turze skondensowano
+to, co MA JUŻ drugie miejsce: przypadek L165 (narracja `LESSONS_PRZYPADKI.md`
+L165:92), punkt 2/3 L170, akapity przypadków L166/L167/L168/L169, a w `AGENTS.md`
+przepis procedury force-pushu/odyskiwania zastąpiono wskazaniem na
+`docs/setup/ENVIRONMENT.md` §2 (tam jest pełna, razem z wariantem „snapshot
+przywrócił pliki, a cofnął tylko ref") i przeniesiono porządek po sondzie do
+`TESTER_STOLU.md`. Numer L nie zniknął, żaden fakt nie zniknął z repo — zmienił
+nośnik.
+
+**Warstwa narzędzi (drugie spotkanie z tym samym).** Sandbox przeklonował repo w
+środku tury: lokalna gałąź stała na `0b2f771`, cała praca M431/M432 leżała jako
+„brudne drzewo" + 14 plików nieśledzonych. Zamiast `reset --hard` (który kiedyś
+skasował niecommitowane naprawy) procedura bezstratna: `cp` ruszanych plików →
+`git fetch origin <gałąź>` → `git add -A` (nieśledzone wchodzą do indeksu) →
+`git diff --cached FETCH_HEAD --name-status` (padło dokładnie 5 ścieżek bieżącej
+robocizny ⇒ reszta to ten sam kontent) → `git reset <tip-zdalny>` bez flagi
+(rusza ref i indeks, nie rusza plików).

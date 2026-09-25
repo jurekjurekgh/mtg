@@ -160,6 +160,10 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    // M431: klauzula "You may choose not to untap„ wymaga oferty decyzji dla
+    // kontrolera w kroku odkręcania (CR 502.3) — bez tego pola `oracleText`
+    // byłby ozdobnikiem, a silnik decydował ZA gracza.
+    untapChoice: true,
     artId: 195,
     plan: 'Theros',
     support: { status: 'supported', limitations: [] },
@@ -4104,7 +4108,7 @@ export const REAL_CARDS = Object.freeze([
     ],
     artId: 139, plan: 'Teenage Mutant Ninja Turtles',
     support: { status: 'supported', limitations: [] },
-    notes: ['pip hybrydowy `{G/U}` — opłacalny maną {G} ALBO {U} (parser mana-cost.js, CR 107.4e); zdolność Mutagenu tylko jak sorcery (CR 107.3a/ruling TMT 2026-01-27)'],
+    notes: ['pip hybrydowy `{G/U}` — opłacalny maną {G} ALBO {U} (parser mana-cost.js, CR 107.4e); zdolność Mutagenu tylko jak sorcery (CR 602.5d/ruling TMT 2026-01-27)'],
   }),
   // Waveskimmer Aven (ALA) {2}{G}{W}{U} 2/4 Bird Soldier — flying + exalted.
   // Exalted jak Akrasan Squire (trigger `attacks_alone` → `exalted_pump`).

@@ -93,18 +93,26 @@ export function isUntapStepLocked(state, object) {
 }
 
 /**
- * Czy obiekt jest źródłem aktywnej blokady untap (np. Entrancing Lyre).
- * „You may choose not to untap" — deterministycznie nie odkręcamy obiektu,
- * który blokuje innego, żeby blokada nie wygasła.
+ * M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): permanenty, których
+ * kontroler MOŻE zostawić w tapie w kroku odkręcania — „You may choose not to
+ * untap this permanent during your untap step".
+ *
+ * Przed naprawą decyzję podejmował silnik: `isActiveLockSource` zostawiał w
+ * tapie KAŻDY tapnięty permanent będący źródłem aktywnej blokady. To był błąd
+ * podwójny: (a) klauzula daje WYBÓR graczowi, a nie regułę; (b) permanent bez
+ * klauzuli (źródło blokady bez „you may") był karany utratą odkręcenia.
+ * Zamiast heurystyki jest `state.pendingUntapChoice` + komenda
+ * `resolve_untap_choice` (game-state.js), a wybór gracza trafia tu jako jawny
+ * zbiór `keepTappedIds`.
  */
-function isActiveLockSource(state, objectId) {
-  for (const object of state.objects.values()) {
-    if (object.zone !== 'battlefield') continue;
-    if ((object.untapLockedBy ?? []).includes(objectId)
-      && (object.untapLockVersions?.[objectId] == null
-        || object.untapLockVersions[objectId] === (state.objects.get(objectId)?.untapVersion ?? 0))) return true;
-  }
-  return false;
+export function untapChoiceCandidates(state, playerId) {
+  return [...state.objects.values()]
+    .filter((object) => object.zone === 'battlefield'
+      && object.controllerId === playerId
+      && object.tapped
+      && object.untapChoice === true)
+    .map((object) => object.id)
+    .sort();
 }
 
 /**
@@ -165,7 +173,11 @@ function clearSummoningSickness(state, object) {
   return replaceObject(state, object, { summoningSickness: false });
 }
 
-export function untapControlled(state, playerId) {
+export function untapControlled(state, playerId, keepTappedIds = []) {
+  // Zbiór decyzji gracza (CR 502.3 — „the active player determines which
+  // permanents they control will untap"). Set, nie lista: porządek nie może
+  // mieć znaczenia, a `includes` na liście to O(n) w pętli po permanentach.
+  const keepTapped = keepTappedIds instanceof Set ? keepTappedIds : new Set(keepTappedIds);
   const untapped = [];
   for (const object of state.objects.values()) {
     if (object.zone === 'battlefield' && object.controllerId === playerId && (object.tapped || object.summoningSickness || object.dontUntapNextUntapStep)) {
@@ -194,10 +206,10 @@ export function untapControlled(state, playerId) {
       }
       // Zablokowane stworzenie (np. przez Entrancing Lyre) nie odkręca się.
       if (cured.tapped && isUntapStepLocked(state, cured)) continue;
-      // „You may choose not to untap" (Entrancing Lyre): obiekt będący
-      // źródłem aktywnej blokady nie odkręca się — deterministycznie
-      // zawsze wybieramy „nie odkręcaj", żeby blokada nie wygasła.
-      if (cured.tapped && isActiveLockSource(state, cured.id)) continue;
+      // M431 (CR 502.3): „you may choose not to untap" — NIE odkręcamy tylko
+      // tego, co gracz WYRAŹNIE zostawił w tapie (albo co pomijamy w teście
+      // jednostkowym, gdy `beginTurn` pominięto). Brak decyzji = odkręcamy.
+      if (cured.tapped && keepTapped.has(cured.id)) continue;
       // M101/B3 (CR 122.1d — liczniki stun): „If a permanent with a stun
       // counter on it would become untapped, remove one from it instead."
       // Dotyczy KAŻDEGO odkręcenia, więc także turn-based action kroku

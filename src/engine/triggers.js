@@ -407,12 +407,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     // pierwszy (remis: kolejność grobu). Tokeny NIE są kartami (CR 108.2b) —
     // nie mogą być celem „creature card from a graveyard" (root cause:
     // poległy w walce token był kandydatem, a jego usunięcie w accepted
-    // osieracało zakolejkowaną decyzję celu).
+    // osieracało zakolejkowaną decyzję celu). Audyt PR #136/F-2: ta gałąź miała
+    // własną kopię heurystyki `name == null`, przez którą poległa kopia
+    // „enter as copy" (nazwa kopiowalna, CR 707.2, ale bez `isToken`) nie
+    // była kandydatem — L41: jedna reguła, jedno źródło.
     return state.zones.graveyard
       .filter((objectId) => {
         const object = state.objects.get(objectId);
-        return object && object.name == null && object.kind === 'creature'
-          && object.controllerId !== sourceObject.controllerId;
+        return isCardInOpponentGraveyard(object, sourceObject.controllerId)
+          && object.kind === 'creature';
       })
       .sort((a, b) => targetValue(state.objects.get(b)) - targetValue(state.objects.get(a)));
   }

@@ -598,7 +598,7 @@ export function resetTurnResources(state, playerId) {
   return player;
 }
 
-export function beginTurn(state, playerId) {
+export function beginTurn(state, playerId, { keepTappedIds = [] } = {}) {
   const player = resetTurnResources(state, playerId);
   const before = state.events.length;
   // M106/Z4 (CR 500.1/502.1): tura zaczyna się KROKIEM ODKRĘCANIA, więc
@@ -608,7 +608,7 @@ export function beginTurn(state, playerId) {
   // przeciwnika, a nie pod swoją (audyt stołu, wiedzmin vs mechanicy).
   const started = event('turn_started', { playerId, untapped: [] });
   state.events.push(started);
-  const untapped = untapControlled(state, playerId);
+  const untapped = untapControlled(state, playerId, keepTappedIds);
   // Lista odkręconych obiektów jest znana dopiero po odkręceniu — zdarzenie
   // jest zamrożone, więc podmieniamy je w miejscu na wersję z listą.
   state.events[state.events.indexOf(started)] = event('turn_started', {

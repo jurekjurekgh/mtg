@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked } from './permanents.js';
+import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -305,6 +305,13 @@ export function createGameState({ seed, players }) {
     // Oczekująca decyzja odłożenia N kart na spód po mulliganie (CR 103.4):
     // { playerId, count, handIds, restorePriorityTo } — resolve_mulligan_bottom_choice.
     pendingMulliganBottom: null,
+    // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
+    // { playerId, candidateIds }, rozstrzygany komendą `resolve_untap_choice`.
+    pendingUntapChoice: null,
+    // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
+    // { playerId, candidateIds } rozstrzygany przez `resolve_untap_choice`
+    // (komenda w protokole, oferta = walidacja, fingerprint, priorytet).
+    pendingUntapChoice: null,
     // Oczekująca decyzja „you may" triggera BEZ celu (Angel's Feather —
     // „you may gain 1 life"): tak/nie (resolve_optional_trigger_choice).
     // Wpis: { playerId, sourceId, ability, extra, restorePriorityTo }.
@@ -534,7 +541,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'manaCost', 'spell', 'abilities', 'morph', 'plot', 'plotted', 'entersWithCounters',
   'entersWithCountersIf', 'keywords', 'subtypes', 'transformTo', 'frontFaceId', 'types', 'entersTapped',
   'entersTappedCondition', 'bestow', 'aura', 'equipment', 'backup', 'colors',
-  'phyrexianManaCost', 'enchantPlayer', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'echoColors', 'chooseColor',
+  'phyrexianManaCost', 'enchantPlayer', 'untapChoice', 'saga', 'station', 'ownerId', 'devour', 'endure', 'toxic', 'echo', 'echoColors', 'chooseColor',
   'exploit', 'treasureAltCost', 'cardName', 'name', 'bloodthirst', 'renown', 'additionalCost',
   'kicker', 'offspring', 'gift', 'costReduction', 'adventure', 'buyback', 'protectionFromColors',
   'plottedAtTurn', 'enterAsCopy', 'suspend', 'suspended', 'timeCounters', 'suspendReady',
@@ -602,12 +609,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -705,6 +712,161 @@ function drawStepTurnBasedAction(state) {
 }
 
 /**
+ * M431 (uwaga z gry właściciela 2026-09-25): wybór kontrolera w kroku
+ * odkręcania — »You may choose not to untap this permanent during your untap
+ * step« (CR 502.3: »the active player DETERMINES WHICH PERMANENTS THEY CONTROL
+ * WILL UNTAP. Then they untap them all simultaneously. This turn-based action
+ * doesn't use the stack.«).
+ *
+ * Jedno źródło prawdy dla trzech warstw (L48 — oferta = walidacja):
+ *  * `untapChoiceCandidates` (permanents.js) — kto jest kandydatem;
+ *  * `untapChoiceOffers` — enumeracja wariantów (pusty zbiór = »odtapuj
+ *    wszystkie«, potem podzbiory keep-tapped z capem 32 i kanonicznym kluczem
+ *    zbioru — L19/L151, determinizm ADR 0005);
+ *  * `untapChoiceRejection` — walidacja zgłoszonego wyboru na TEJ SAMEJ liście
+ *    kandydatów.
+ * Przed naprawą decyzję podejmował silnik (`permanents.js:isActiveLockSource`:
+ * »zawsze wybieramy «nie odkręcaj»«), a kontroler nie miał oferty — patrz
+ * test/audyt-m431-untap-choice.test.js i ADR 0022 (»supported« = 100% Oracle).
+ */
+const UNTAP_CHOICE_CAP = 32;
+
+function untapChoiceOffers(state, playerId) {
+  const candidates = untapChoiceCandidates(state, playerId);
+  const out = [{ keepTappedIds: [] }];
+  if (candidates.length <= 5) {
+    // Pełna enumeracja podzbiorów (≤ 32 warianty) — przy pięciu kandydatach
+    // gracz zobaczy KAŻDĄ realnie różną kombinację.
+    const n = candidates.length;
+    for (let mask = 1; mask < (1 << n); mask += 1) {
+      const keepTappedIds = [];
+      for (let i = 0; i < n; i += 1) if (mask & (1 << i)) keepTappedIds.push(candidates[i]);
+      out.push({ keepTappedIds });
+    }
+    return out;
+  }
+  // Powyżej progu: enumeracja po rozmiarze (L19 — nigdy 2^n): najpierw
+  // pojedyncze pozostawienia, potem pary i trójki, aż do wyczerpania capu.
+  for (let k = 1; k <= 3 && out.length < UNTAP_CHOICE_CAP; k += 1) {
+    const walk = (pos, prefix) => {
+      if (out.length >= UNTAP_CHOICE_CAP) return;
+      if (prefix.length === k) { out.push({ keepTappedIds: [...prefix] }); return; }
+      for (let i = pos; i < candidates.length; i += 1) walk(i + 1, [...prefix, candidates[i]]);
+    };
+    walk(0, []);
+  }
+  return out;
+}
+
+/** Walidacja wyboru — ten sam zbiór kandydatów, co w ofercie (L48). */
+function untapChoiceRejection(state, pending, keepTappedIds) {
+  if (!Array.isArray(keepTappedIds)) return 'illegal_untap_choice';
+  if (new Set(keepTappedIds).size !== keepTappedIds.length) return 'duplicate_untap_choice';
+  if (keepTappedIds.some((id) => !pending.candidateIds.includes(id))) return 'illegal_untap_choice';
+  return null;
+}
+
+/**
+ * Akcje turowe startu tury PO ewentualnej decyzji o odkręcaniu (CR 502.3 →
+ * 502.4 → 503.1): resety liczników tury, `beginTurn` (odkręcenie wraz z
+ * wyborami SBA i licznikami stun), wygaśnięcie detain/goad i przewinięcie
+ * kroku do upkeepu. Wyodrębnione, bo decyzja gracza wpada MIĘDZY dzień/noc a
+ * resztę sekwencji — nie wolno jej przestawić (L165: kolejność akcji turowych
+ * jest częścią reguły, nie szczegółem implementacji).
+ */
+function beginTurnContinuation(state, events, { keepTappedIds = [] } = {}) {
+  state.spellsCastThisTurn = 0;
+  state.spellsCastThisTurnByPlayer = {};
+  // »Your FIRST instant or sorcery spell EACH TURN« (Baral and Kari
+  // Zev, ruling TDC 2023-04-14) — licznik jest zakresu tury, więc
+  // zeruje się z nową turą jak licznik rzutów i dobrań. Audyt PR #130
+  // (znalezisko C): bez tego resetu trigger odpalał RAZ NA PARTIĘ.
+  state.instantSorceryCastThisTurnByPlayer = {};
+  state.cardsDrawnThisTurn = {};
+  state.lifeGainedThisTurn = {};
+  // »Activate only once each turn« (Snarling Wolf) — limit aktywacji
+  // zeruje się z nową turą, jak licznik dobrań.
+  state.abilityActivatedThisTurn = {};
+  // »Triggers only once each turn« (Nanoform Sentinel) — zeruje się z turą.
+  state.triggerFiredThisTurn = {};
+  // »Descended this turn« (Canonized in Blood) — znacznik zeruje się
+  // z nową turą, jak licznik dobrań.
+  state.descendedThisTurn = {};
+  state.creatureDiedThisTurn = false;
+  state.landEnteredThisTurn = {};
+  state.damageTakenByPlayerThisTurn = {};
+  state.speedIncreasedThisTurn = {};
+  state.moonlitUsedThisTurn = {};
+  // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
+  // wyniku komendy — konsument protokołu dostaje pełny strumień.
+  events.push(...beginTurn(state, state.turn.activePlayerId, { keepTappedIds }).events);
+  // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który
+  // goadował (w 1v1 turn.number + 2) — wygasa na starcie tury, gdy
+  // goadedUntilTurn <= bieżący numer tury. Wcześniej goad wygasał
+  // w cleanup tej samej tury, więc zaczarowany stwór nie musiał
+  // atakować w turze przeciwnika (bug znaleziony w srebrnym audycie).
+  // Detain (CR 701.35, M177/E): wygasa na początku następnej tury
+  // gracza, który detainował — ten sam mechanizm co goad.
+  for (const detainedObject of state.objects.values()) {
+    if (detainedObject.zone !== 'battlefield' || !detainedObject.detained) continue;
+    if ((detainedObject.detainedUntilTurn ?? 0) <= state.turn.number) {
+      state.objects.set(detainedObject.id, Object.freeze({ ...detainedObject, detained: false, detainedUntilTurn: null }));
+    }
+  }
+  for (const goadedObject of state.objects.values()) {
+    if (goadedObject.zone !== 'battlefield' || !goadedObject.goaded) continue;
+    if ((goadedObject.goadedUntilTurn ?? 0) <= state.turn.number) {
+      state.objects.set(goadedObject.id, Object.freeze({ ...goadedObject, goaded: false, goadedUntilTurn: null }));
+    }
+  }
+  // CR 502.4: w untapie nikt nie dostaje priorytetu — po akcjach
+  // turowych (beginTurn) przewijamy od razu do upkeepu, gdzie
+  // priorytet bierze aktywny gracz (CR 503.1). Bez tego panel akcji
+  // oferował aktywacje zdolności w kroku odkręcania (M102/U1).
+  events.push(...untapStepTurnBasedAction(state, { pushToState: false }));
+}
+
+/**
+ * CAŁY blok startu tury (CR 502.1–503.1): dzień/noc PRZED odkręceniem
+ * (CR 502.2), potem — jeśli kontroler ma kandydata z klauzulą »may not
+ * untap« — DECYZJA `pendingUntapChoice` i pauza (krok nie kończy się, dopóki
+ * trwa jego akcja turowa, CR 502.4), a bez kandydata od razu akcje turowe.
+ */
+function beginTurnStart(state, events) {
+  // Przeliczenie licznika czarów poprzedniej tury (transform).
+  state.lastTurnSpellsCast = state.spellsCastThisTurn;
+  // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 731.2a/b).
+  state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
+  const previousActive = state.turn.activePlayerId === state.players[0].id
+    ? state.players[1].id
+    : state.players[0].id;
+  events.push(...applyDayNightAtTurnStart(state, previousActive));
+  // M431 (CR 502.3): wybór »may not untap« MUSI poprzedzać odkręcenie.
+  // Mulligany (CR 103.4) mają pierwszeństwo — są rozgrywane PRZED pierwszym
+  // odkręcaniem, a ich bramki siedzą wyżej w `execute`.
+  if (state.status === 'active' && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom
+    && !state.pendingUntapChoice) {
+    const candidates = untapChoiceCandidates(state, state.turn.activePlayerId);
+    if (candidates.length > 0) {
+      state.pendingUntapChoice = Object.freeze({
+        playerId: state.turn.activePlayerId,
+        candidateIds: Object.freeze(candidates),
+      });
+      // Priorytet do właściciela decyzji (wzorzec mulliganów) — inaczej
+      // czekałby u gracza bez żadnej legalnej komendy (martwy stolik).
+      state.turn.priorityPlayerId = state.turn.activePlayerId;
+      const required = event('untap_choice_required', {
+        playerId: state.turn.activePlayerId, candidateIds: [...candidates],
+      });
+      state.events.push(required);
+      events.push(required);
+      return;
+    }
+  }
+  beginTurnContinuation(state, events);
+}
+
+/**
  * Krok odkręcania nie ma okna priorytetu (CR 502.4: „No player receives
  * priority during the untap step, so no spells can be cast or resolve and no
  * abilities can be activated or resolve"). Akcje turowe untapu (CR 502.1–502.3:
@@ -724,6 +886,9 @@ function untapStepTurnBasedAction(state, { pushToState = true } = {}) {
   if (state.status !== 'active') return [];
   if (state.turn.step !== 'untap') return [];
   if (state.pendingMulligans.length > 0 || state.pendingMulliganBottom) return [];
+  // M431: krok nie może się skończyć, dopóki trwa jego akcja turowa —
+  // czekający wybór »may not untap« jest CZĘŚCIĄ odkręcania (CR 502.3).
+  if (state.pendingUntapChoice) return [];
   state.turn = nextTurnStep(state.turn, state.players);
   const advanced = event('step_advanced', {
     number: state.turn.number, phase: state.turn.phase, step: state.turn.step,
@@ -1490,6 +1655,10 @@ function outsideHandCastScope(card, {
 }
 
 function firstPendingDecision(state) {
+  // M431: decyzja kroku odkręcania jest PIERWSZA w kolejności — jej bramka w
+  // `execute` siedzi przed resztą, więc oferta, priorytet i walidacja muszą
+  // wskazywać ten sam wpis (klasa L48, zmierzona w Batch 47).
+  if (state.pendingUntapChoice) return { playerId: state.pendingUntapChoice.playerId, kind: 'untapChoice' };
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
   if (state.pendingScry) return { playerId: state.pendingScry.playerId, kind: 'scry' };
@@ -1891,6 +2060,31 @@ export function execute(state, input) {
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
   if (state.status !== 'active') return reject('game_over');
   if (state.pendingReplacementChoice?.frame && !['resolve_replacement_choice','concede'].includes(cmd.type)) return reject('replacement_choice_unresolved');
+  // M431 (CR 502.3): wybór kontrolera w kroku odkręcania — akcja turowa, więc
+  // NIE wolno jej ominąć żadną inną komendą (wzorzec bramek mulliganów).
+  // `concede` pozostaje legalny (jak przy każdej innej blokującej decyzji).
+  if (state.pendingUntapChoice && cmd.type !== 'concede') {
+    if (cmd.type !== 'resolve_untap_choice') return reject('untap_choice_unresolved');
+    const pending = state.pendingUntapChoice;
+    if (cmd.playerId !== pending.playerId) return reject('untap_choice_not_your_decision');
+    const keepTappedIds = Array.isArray(cmd.keepTappedIds) ? cmd.keepTappedIds : [];
+    const reason = untapChoiceRejection(state, pending, keepTappedIds);
+    if (reason) return reject(reason);
+    const before = state.events.length;
+    state.pendingUntapChoice = null;
+    state.events.push(event('untap_choice_resolved', {
+      playerId: pending.playerId,
+      keepTappedIds: [...keepTappedIds],
+      // JAWNA liczba kandydatów (wzorzec `mulligans:` w decyzji mulliganu,
+      // zgłoszenie właściciela 2026-09-14f): log i testy widzą, ile realnie
+      // było do wyboru, a nie tylko to, co wybrano.
+      candidates: pending.candidateIds.length,
+    }));
+    // Reszta akcji turowych startu tury (odkręcenie + upkeep) — TA SAMA
+    // funkcja, którą pominięto przy pauzie (L41: jedno źródło sekwencji).
+    beginTurnContinuation(state, state.events, { keepTappedIds });
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+  }
   if (cmd.type === 'concede') {
     const winner = state.players.find((p) => p.id !== cmd.playerId);
     state.status = 'finished';
@@ -5415,63 +5609,7 @@ export function execute(state, input) {
           }
         }
         if (state.turn.number !== previousTurnNumber) {
-          // Przeliczenie licznika czarów poprzedniej tury (transform).
-          state.lastTurnSpellsCast = state.spellsCastThisTurn;
-          // M68: per-gracz kopia poprzedniej tury (daybound upkeep — CR 731.2a/b).
-          state.lastTurnSpellsCastByPlayer = { ...state.spellsCastThisTurnByPlayer };
-          const previousActive = state.turn.activePlayerId === state.players[0].id
-            ? state.players[1].id
-            : state.players[0].id;
-          events.push(...applyDayNightAtTurnStart(state, previousActive));
-          state.spellsCastThisTurn = 0;
-          state.spellsCastThisTurnByPlayer = {};
-          // „Your FIRST instant or sorcery spell EACH TURN” (Baral and Kari
-          // Zev, ruling TDC 2023-04-14) — licznik jest zakresu tury, więc
-          // zeruje się z nową turą jak licznik rzutów i dobrań. Audyt PR #130
-          // (znalezisko C): bez tego resetu trigger odpalał RAZ NA PARTIĘ.
-          state.instantSorceryCastThisTurnByPlayer = {};
-          state.cardsDrawnThisTurn = {};
-          state.lifeGainedThisTurn = {};
-          // „Activate only once each turn" (Snarling Wolf) — limit aktywacji
-          // zeruje się z nową turą, jak licznik dobrań.
-          state.abilityActivatedThisTurn = {};
-          // „Triggers only once each turn" (Nanoform Sentinel) — zeruje się z turą.
-          state.triggerFiredThisTurn = {};
-          // „Descended this turn" (Canonized in Blood) — znacznik zeruje się
-          // z nową turą, jak licznik dobrań.
-          state.descendedThisTurn = {};
-          state.creatureDiedThisTurn = false;
-          state.landEnteredThisTurn = {};
-          state.damageTakenByPlayerThisTurn = {};
-          state.speedIncreasedThisTurn = {};
-          state.moonlitUsedThisTurn = {};
-          // Zdarzenia startu tury (turn_started, odkręcenia) doklejamy do
-          // wyniku komendy — konsument protokołu dostaje pełny strumień.
-          events.push(...beginTurn(state, state.turn.activePlayerId).events);
-          // CR 701.15a: goad trwa do początku NASTĘPNEJ tury gracza, który
-          // goadował (w 1v1 turn.number + 2) — wygasa na starcie tury, gdy
-          // goadedUntilTurn <= bieżący numer tury. Wcześniej goad wygasał
-          // w cleanup tej samej tury, więc zaczarowany stwór nie musiał
-          // atakować w turze przeciwnika (bug znaleziony w srebrnym audycie).
-          // Detain (CR 701.35, M177/E): wygasa na początku następnej tury
-          // gracza, który detainował — ten sam mechanizm co goad.
-          for (const detainedObject of state.objects.values()) {
-            if (detainedObject.zone !== 'battlefield' || !detainedObject.detained) continue;
-            if ((detainedObject.detainedUntilTurn ?? 0) <= state.turn.number) {
-              state.objects.set(detainedObject.id, Object.freeze({ ...detainedObject, detained: false, detainedUntilTurn: null }));
-            }
-          }
-          for (const goadedObject of state.objects.values()) {
-            if (goadedObject.zone !== 'battlefield' || !goadedObject.goaded) continue;
-            if ((goadedObject.goadedUntilTurn ?? 0) <= state.turn.number) {
-              state.objects.set(goadedObject.id, Object.freeze({ ...goadedObject, goaded: false, goadedUntilTurn: null }));
-            }
-          }
-          // CR 502.4: w untapie nikt nie dostaje priorytetu — po akcjach
-          // turowych (beginTurn) przewijamy od razu do upkeepu, gdzie
-          // priorytet bierze aktywny gracz (CR 503.1). Bez tego panel akcji
-          // oferował aktywacje zdolności w kroku odkręcania (M102/U1).
-          events.push(...untapStepTurnBasedAction(state, { pushToState: false }));
+          beginTurnStart(state, events);
         }
       }
     } else {
@@ -6397,6 +6535,12 @@ export function playerView(state, playerId) {
           cardId: animationSource.faceDown ? null : animationSource.cardId,
         };
         if (isUntapStepLocked(state, object)) entry.untapLocked = true;
+        // M431 (uwaga z gry 2026-09-25): KTO trzyma blokadę jest informacją
+        // publiczną (oni face down, CR 502.3 liczy wybór od źródeł) — bot
+        // oceniający ofertę `resolve_untap_choice` MUSI widzieć, ile bytów
+        // dane źródło unieruchamia (ADR 0017: bez pola w widoku nie ma tego
+        // w ocenie, a zgadywanie po nazwach karty jest zakazane, ADR 0002).
+        if ((object.untapLockedBy ?? []).length > 0) entry.untapLockedBy = [...object.untapLockedBy];
         if (object.dontUntapNextUntapStep) entry.dontUntapNextUntapStep = true;
         if (object.tempControlUntilTurn != null) entry.tempControlUntilEOT = true;
         if ((state.cantBeRegeneratedThisTurn ?? []).includes(object.id)) entry.cantBeRegeneratedThisTurn = true;
@@ -6789,7 +6933,15 @@ export function playerView(state, playerId) {
   // oferta — boty zatrzymują rękę) albo mulligan. Po mulliganie — wybór N
   // kart do odłożenia na spód (podzbiory ręki; limit enumeracji 4 kart na
   // decyzję — większe N i tak jest rzadkie).
-  if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
+  // M431 (CR 502.3): oferta wyboru w kroku odkręcania. PIERWSZA opcja =
+  // „odtapuj wszystkie" (pusty zbiór), potem podzbiory pozostawiane w tapie —
+  // prezentacja = enumeracja (M203/2), więc sugestia domyślna to standard CR.
+  if (state.status === 'active' && state.pendingUntapChoice
+    && state.pendingUntapChoice.playerId === playerId) {
+    for (const variant of untapChoiceOffers(state, playerId)) {
+      legalCommands.push(command('resolve_untap_choice', playerId, variant));
+    }
+  } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
     && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
     // M203/2: przy konwencji „prezentacja = enumeracja" keep idzie PIERWSZY
     // (boty i gracz biorą pierwszą ofertę — domyślna sugestia to zatrzymanie
@@ -8622,6 +8774,22 @@ export function playerView(state, playerId) {
     // Audyt PR #130 (D, CR 303.4f): decyzja „kogo zaczarować" — kandydaci są
     // publiczni (pole bitwy), więc widok niesie ich listę + kartę aury i źródło
     // (tytuł modala, ADR 0017).
+    // M431 (CR 502.3): decyzja kontrolera w kroku odkręcania — „you may
+    // choose not to untap". Widok niesie kandydatów (żeby panel wystawił
+    // wybór) ORAZ ilu bytów każde źródło pilnuje (żeby wycena była liczona
+    // z danych, nie z kolejności ofert — L169).
+    pendingUntapChoice: (state.pendingUntapChoice && state.pendingUntapChoice.playerId === playerId)
+      ? {
+          candidateIds: [...state.pendingUntapChoice.candidateIds],
+          lockedByCandidate: Object.fromEntries(state.pendingUntapChoice.candidateIds.map((sourceId) => [
+            sourceId,
+            [...state.objects.values()]
+              .filter((o) => o.zone === 'battlefield' && (o.untapLockedBy ?? []).includes(sourceId))
+              .map((o) => o.id)
+              .sort(),
+          ])),
+        }
+      : null,
     pendingAuraHost: activeAuraHost
       ? {
           cardId: state.pendingAuraHost.cardId ?? null,

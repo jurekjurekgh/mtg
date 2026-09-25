@@ -556,11 +556,17 @@ test('B59/G1.8: karty celują grób WSKAZANEGO gracza — pozycja zależna', () 
         `oferta nie może mieszać grobów: ${JSON.stringify(cmd.targets)}`);
     }
   }
-  // Kolejność celów w obrębie jednego wystąpienia słowa „target" nie tworzy
-  // duplikatów: {m1, m2} występuje raz (bez luk i bez permutacji).
+  // Kolejność celów w obrębie jednego wystąpienia słowa „target" NIE tworzy
+  // nowego wyboru: {m1, m2} występuje DOKŁADNIE RAZ (bez luk i bez permutacji).
+  // Korekta pinu w audycie PR #136 (znalezisko F-5, sesja 2026-09-24f): wcześniej
+  // oferta niosła tê parê dwukrotnie — [m1, m2] i [m2, m1] — a test utrwalal tê
+  // duplikację („dwie pary”). CR 601.2c (dosłownie, CR 2026-09-25): „The same
+  // target can't be chosen multiple times for any one instance of the word
+  // “target”” — zbiór jest wyborem, więc iloczyn pozycji zamiennej grupy trzeba
+  // zdeduplikować kluczem kanonicznym (L151), zanim cap 32 zetnie realne opcje.
   const withBothMine = offers.filter((c) => c.targets[0] === 'p1'
     && c.targets.slice(1).filter((t) => t != null).length === 2);
-  assert.equal(withBothMine.length, 2, 'dwie pary (kolejność slotów), nie 4 permutacje');
+  assert.equal(withBothMine.length, 1, 'jeden wariant pary {m1, m2}, nie permutacje');
   for (const cmd of withBothMine) {
     const cards = cmd.targets.slice(1).filter((t) => t != null);
     assert.deepEqual([...cards].sort(), ['m1', 'm2']);

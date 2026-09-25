@@ -6,7 +6,7 @@ import {
   normalizeHeuristicParams,
 } from '../src/controllers/heuristic-params.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { initializeResources, addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -255,4 +255,106 @@ test('params: auraHostileEnemyBase realnie przepływa do wyceny wrogiej aury', (
   const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { auraHostileEnemyBase: 150 }, registry }));
   assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant wrogiej aury');
   assert.ok(bumped > base, `podbita baza wrogiej aury ma zwiększyć wycenę (${bumped} > ${base})`);
+});
+
+/**
+ * M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): rodzina decyzji kroku
+ * odkręcania („You may choose not to untap…" — rodzina kart, nie jedna lira).
+ * Pokrętła MUSZĄ przepływać do wyceny, inaczej ocena wariantów jest atrapą i
+ * wybór zapada kolejnością enumeracji (L169; wzorzec testu 7-9).
+ */
+/** Pola bojowe NIE przechodzą przez kontrakt `addObject` (L21) — nadajemy je potem. */
+function setFlag(state, id, patch) {
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), ...patch }));
+}
+
+function stolUntapChoice({ wrag = true } = {}) {
+  const state = createGameState({ players: [{ id: 'p1' }, { id: 'p2' }], registry, seed: 41 });
+  initializeResources(state);
+  state.turn.number = 3;
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  state.turn = jumpToStep(state.turn, 'end', 'p2');
+  addObject(state, {
+    id: 'lyre', instanceId: 'lyre-i', cardId: 'entrancing-lyre', controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'artifact', manaCost: 3, types: ['Artifact'], keywords: [],
+    abilities: registry.get('entrancing-lyre').abilities, untapChoice: true,
+  });
+  setFlag(state, 'lyre', { tapped: true });
+  addObject(state, {
+    id: 'ofiara', instanceId: 'i-ofiara', cardId: 'F', controllerId: wrag ? 'p2' : 'p1', ownerId: wrag ? 'p2' : 'p1',
+    zone: 'battlefield', kind: 'creature', power: 3, toughness: 3,
+    untapChoice: false,
+  });
+  setFlag(state, 'ofiara', { tapped: true, summoningSickness: false, untapLockedBy: ['lyre'] });
+  for (let i = 0; i < 4; i += 1) {
+    addObject(state, {
+      id: `land${i}`, instanceId: `il${i}`, cardId: 'plains', controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'land', power: 0, toughness: 0, types: ['Land'], subtypes: ['Plains'],
+    });
+  }
+  for (const pid of ['p1', 'p2']) {
+    for (let i = 0; i < 12; i += 1) {
+      addObject(state, {
+        id: `lib-${pid}-${i}`, instanceId: `libl-${pid}-${i}`, cardId: 'plains', controllerId: pid, ownerId: pid,
+        zone: 'library', kind: 'land', power: 0, toughness: 0, types: ['Land'], subtypes: ['Plains'],
+      });
+    }
+  }
+  doStartuTury(state);
+  return playerView(state, 'p1');
+}
+
+function doStartuTury(state, aktywny = 'p2') {
+  const przed = state.turn.number;
+  for (let i = 0; i < 6 && state.turn.number === przed; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId ?? aktywny });
+  }
+}
+
+function wycenaOdkrecania(view, params) {
+  const bot = createHeuristicBot({ seed: 1, params, registry });
+  bot.chooseCommand(view);
+  const opcje = bot.trace().at(-1).options;
+  const ocen = (pred) => {
+    const o = opcje.find(pred);
+    return o ? o.score : null;
+  };
+  return {
+    zostaw: ocen((o) => o.cmd.startsWith('resolve_untap_choice') && !o.cmd.includes('untap-all')),
+    odtapuj: ocen((o) => o.cmd.startsWith('resolve_untap_choice') && o.cmd.includes('untap-all')),
+    opcje,
+  };
+}
+
+test('params: untapChoiceLockValue realnie przepływa do wyceny decyzji odkręcania (M431)', () => {
+  const widok = stolUntapChoice({ wrag: true });
+  const bazowo = wycenaOdkrecania(widok, undefined);
+  const podbite = wycenaOdkrecania(widok, { untapChoiceLockValue: 60 });
+  assert.ok(bazowo.zostaw != null && bazowo.odtapuj != null && podbite.zostaw != null && podbite.odtapuj != null,
+    `obie gałęzie muszą być wycenione: ${JSON.stringify(podbite.opcje?.map((o) => o.cmd))}`);
+  // Co do joty: podbicie bazy o 50 musi podnieść PRECYZYJNIE o 50 — brak
+  // reakcji = pokrętło atrapą, reakcja inna niż Δ = wycena czyta inny klucz.
+  assert.equal(podbite.zostaw - podbite.odtapuj, bazowo.zostaw - bazowo.odtapuj + 50,
+    `Δ(Δoceny) musi == Δparametru: bazowo ${bazowo.zostaw}/${bazowo.odtapuj}, podbite ${podbite.zostaw}/${podbite.odtapuj}`);
+  assert.ok(bazowo.zostaw > bazowo.odtapuj,
+    'przy defaultach trzymanie wroga w tapie (10 + 2·6 = 22) bije „odtapuj wszystko" (0)');
+});
+
+test('params: untapChoiceOwnLockPenalty realnie przepływa do wyceny (M431)', () => {
+  const widok = stolUntapChoice({ wrag: false });
+  const bazowo = wycenaOdkrecania(widok, undefined);
+  const podbite = wycenaOdkrecania(widok, { untapChoiceOwnLockPenalty: 60 });
+  assert.ok(bazowo.zostaw != null && podbite.zostaw != null, 'warianty muszą być wycenione');
+  assert.equal(bazowo.zostaw - podbite.zostaw, 52,
+    `kara za trzymanie WŁASNEGO permanentu musi obniżyć ocenę dokładnie o Δparametru (${bazowo.zostaw} → ${podbite.zostaw})`);
+});
+
+test('params: untapChoiceSourceTapCost realnie przepływa do wyceny (M431)', () => {
+  const widok = stolUntapChoice({ wrag: true });
+  const bazowo = wycenaOdkrecania(widok, undefined);
+  const podbite = wycenaOdkrecania(widok, { untapChoiceSourceTapCost: 60 });
+  assert.ok(bazowo.zostaw != null && podbite.zostaw != null, 'warianty muszą być wycenione');
+  assert.equal(bazowo.zostaw - podbite.zostaw, 54,
+    `koszt zostawienia w tapie źródła z {T} musi obniżyć ocenę dokładnie o Δparametru (${bazowo.zostaw} → ${podbite.zostaw})`);
 });

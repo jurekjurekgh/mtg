@@ -111,6 +111,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'auraHostileWorthWeight',      // waga worth unieruchamianego stwora w karze (własny + losesKeywords) (dawniej *1)
   'auraNoTargetPenalty',         // kara za aurę bez legalnego celu (hostile bez celu / buff bez gospodarza) (dawniej -50)
   'auraLosesKeywordsWastedPenalty', // kara za losesKeywords na stworze BEZ żadnego z odbieranych keywordów (dawniej -80)
+  'auraKeywordFreshValue',         // M431: wartosc SWIEZEGO grantu slowa-kluczowego aury (zwierzece `auraLosesKeywordsWastedPenalty`, lustrzana strona te samej klasy)
+  'auraKeywordRedundantPenalty',   // M431: kara za KAZDY grant, ktorego gospodarz juz ma (duplikat zdolnosci nic nie dodaje)
+  'auraKeywordAllWastedPenalty',   // M431: kara, gdy WSZYSTKIE granty sa jałowe (musi przebic baze aury — wzor: auraLosesKeywordsWastedPenalty)
+  'untapChoiceLockValue',          // M431: baza za to, że źródło zostaje w tapie i trzyma WROGI byt (CR 502.3)
+  'untapChoiceOwnLockPenalty',     // M431: kara za trzymanie w tapie źródła, które unieruchamia WŁASNY byt
+  'untapChoiceSourceTapCost',      // M431: koszt pozostawienia w tapie źródła ze zdolnością {T} / stworzenia do ataku
   'auraProtectionNoThreatPenalty',  // kara za czystą ochronę, gdy przeciwnik nie ma zagrożeń tej jakości (dawniej -40)
   'auraProtectionBase',          // baza czystej ochrony przy istniejących zagrożeniach (dawniej 20)
   'auraProtectionThreatWeight',  // waga LICZBY zagrożeń, przed którymi aura chroni (dawniej *12)
@@ -168,7 +174,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // rodzina „licznik na wskazanym celu". Dotąd licznik na WŁASNYM stworze był
   // wart płasko 8 + 4·amount w OBU bliźniaczych gałęziach (czar i aktywacja),
   // więc wszystkie gospodarze remisowały (pomiar: 14/14/14 dla tokena 1/1,
-  // Cryptida 2/3 i Hill Gianta 4/4) i bot brał pierwszą ofertę — najczęściej
+  // Cryptida 2/3 i Hill Gianta 3/3) i bot brał pierwszą ofertę — najczęściej
   // najsłabsze ciało (L50). Model z precedensu aury-buffa (M257 r4: „opłaca się
   // tym bardziej, im większy gospodarz" — tam waga 2 na mocy i 1 na
   // wytrzymałości): wartość licznika rośnie z WAGĄ CIAŁA gospodarza, a dwa
@@ -183,7 +189,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Domyślne wartości są PRZEMYŚLANE, nie wytunerowane (zlecenie): baza 2 + waga
   // gospodarza 2 × worth(1/1)=3 odtwarza dawną stałą 8 co do punktu, więc
   // NAJSŁABSZY gospodarz nie traci na wartości (kontrakt B6 T0 dla przypadku
-  // z obserwacji), a różnicę zyskują realne ciała: 2/3 → +6, 4/4 → +12.
+  // z obserwacji), a różnicę zyskują realne ciała. Pomiar PO na ścieżce bota
+  // (audyt PR #136, F-3): token 1/1 → 14, Cryptid 2/3 → 22 (+8), Hill Giant
+  // 3/3 → 26 (+12); worth = moc×2 + wytrwałość, więc 2/3 = 7, 3/3 = 9.
   'counterBase',                 // baza licznika przy gospodarzu-wzorcu 1/1 (dawna 8 = 2 + 2·3)
   'counterAmountWeight',         // wartość każdego punktu licznika (dawna *4)
   'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury
@@ -275,6 +283,25 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   auraHostileWorthWeight: 1,
   auraNoTargetPenalty: 50,
   auraLosesKeywordsWastedPenalty: 80,
+  // M431 (uwaga z gry wlasciciela 2026-09-25: aura +latanie na stworze, ktory
+  // juz je mial). Aura nadajaca slowa-kluczowe byla wyceniana WYLACZNIE po ciele gospodarza
+  // (`auraBase + auraBuffWorthWeight*(moc+pump) + (wytrzm+pump)`), a `descriptor.keywords`
+  // nie byl czytany nigdzie w wycenie — trzy warianty (3/3 bez keywordow / z flying /
+  // z flying+vigilance) mialy identyczne 72,9. Naprawa idzie w slady `equipValuation`
+  // (M243/D-G) i `auraLosesKeywordsWastedPenalty` (M200/H): ta sama reguła swiezosci,
+  // druga strona lustra. Swiezy grant = +8 (tyle co `ofensywne` w equipValuation),
+  // redundancja = -6 (roznica miedzy gospodarzem a jałowym celem na tym samym ciele),
+  // a calkowicie jałowa aura = kara, ktora PRZEBIJA baze (L3) — wzor: 80 dla losesKeywords.
+  auraKeywordFreshValue: 8,
+  auraKeywordRedundantPenalty: 6,
+  auraKeywordAllWastedPenalty: 80,
+  // M431 (uwaga z gry właściciela 2026-09-25) — rodzina decyzji kroku
+  // odkręcania. Rząd wielkości jest LUSTREM rodziny aura (66/80): wybór
+  // „zostaw w tapie" jest wart tyle, ile realnie unieruchomiony wróg, a
+  // płacimy za niego utratą odkręcenia źródła.
+  untapChoiceLockValue: 10,
+  untapChoiceOwnLockPenalty: 8,
+  untapChoiceSourceTapCost: 6,
   auraProtectionNoThreatPenalty: 40,
   auraProtectionBase: 20,
   auraProtectionThreatWeight: 12,

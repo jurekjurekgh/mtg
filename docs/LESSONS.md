@@ -2411,28 +2411,21 @@ kart dwustronnych.
 
 ## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
 
-**Przypadek (F-7):** para `fabricate` + zakazane `702.12[12]` istniała od
-audytu PR #116 i PRZECHODZIŁA, choć w trzech plikach fabricate był cytowany
-jako `702.122a` (= crew) — bo słowo „fabricate” stało linię WYŻEJ niż numer
-(`state.pendingFabricate = …` dwie linie niżej). To samo vigilance jako 702.21
-(= ward) i flashback jako 702.33a (= kicker): 9 miejsc, wszystkie niewidoczne
-dla par liniowych.
+**Przypadek (F-7):** `fabricate` jako `702.122a` (= crew), vigilance jako 702.21,
+flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa stała linię wyżej niż
+numer (narracja: `docs/LESSONS_PRZYPADKI.md`).
 
 **Reguła:**
-1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — w
-   komentarzach wieloliniowych (a takie są w tym repo) numer i nazwa rzadko
-   siedzą w jednej linii. Detektor klasy musi mieć OKNO (±8 linii wystarczyło:
-   0 fałszywych trafień po aliasach).
+1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — a numery
+   i nazwy siedzą tu w komentarzach wieloliniowych. Detektor klasy musi mieć
+   OKNO (±8 linii: 0 fałszywych trafień po aliasach).
 2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
    X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
    mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
    świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
-3. Tabela potrzebuje ALIASÓW (komentarze są po polsku: „chronionego” =
-   protection, „przydziały” = trample, „dar” = gift) i UDOKUMENTOWANYCH
-   wyjątków (lista sekcji, odniesienia negatywne „nie dotyczy”, reguły ogólne
-   typu 702.1) — każdy wyjątek z powodem, inaczej to wygaszanie detektora (L5).
-4. Pliki-strażniki muszą być wyłączone ze skanu innych strażników: opisują
-   historię rozjazdów i dowody RED, więc świecą na własną dokumentację.
+3. Tabela potrzebuje ALIASÓW (polskie komentarze: „przydziały” = trample) i
+   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki samych
+   strażników są ze skanu wyłączone (opisują dowody RED). Szczegóły: archiwum.
 
 **Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
 (CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
@@ -2443,13 +2436,9 @@ czerwieni i detektor okna, i parę liniową.
 
 ## L166 (2026-09-24) — Efekt ciągły zapisany jako mutacja pola ma znacznik czasu i nie przeżywa zmiany strefy
 
-**Przypadek (D4b, W-1…W-9):** silnik nie miał znaczników CR 613.7, więc każda
-para kolidujących efektów rozstrzygała się STAŁĄ kolejnością wpisaną w kod:
-utrata keywordu zawsze wygrywała z nadaniem (613.9 mówi: późniejszy), `set P/T`
-zawsze z animacją, zakrycie zawsze dawało 2/2, a CDA Tarmogoyfa była pumpem 7c.
-Przy okazji: efekty „do końca tury” trzymane w polach obiektu przeżywały
-zmianę strefy (odbity obsadzony pojazd był w ręce stworem), bo cleanup
-przywraca tylko pole bitwy.
+**Przypadek (D4b, W-1…W-9):** brak znaczników CR 613.7 → pary kolidujących
+efektów rozstrzygała STAŁA kolejność w kodzie (utrata keywordu ponad nadaniem,
+`set P/T` ponad animacją, zakrycie = 2/2).
 
 **Reguła:**
 1. Stała kolejność „X zawsze wygrywa z Y” w kodzie warstw to ukryta reguła —
@@ -2470,10 +2459,7 @@ przywraca tylko pole bitwy.
 
 **Przypadek (F/5, W-10/W-11):** animacje (Skilled Animator „dopóki źródło
 na polu bitwy”, crew „do końca tury”) zapisywały się w JEDNEJ warstwie pól
-obiektu. Koniec jednego efektu kasował całą warstwę albo żadnej: po crew
-i śmierci Animatora pojazd od razu przestawał być stworem, a cleanup
-zdejmował animację, która miała trwać. Przy naprawie druga łatka
-`replaceObject` na nieaktualnym obiekcie cofnęła pierwszą.
+obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
 
 **Reguła:**
 1. Efekt ciągły z własnym czasem trwania (CR 611.2) to osobny WPIS z tym
@@ -2491,14 +2477,9 @@ zdejmował animację, która miała trwać. Przy naprawie druga łatka
 
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
-**Przypadek (M428, znaleziska F1/F3 z audytu żywym testerem):** `cost` w
-deskryptorach alt-kosztów czytano jako część GENERYCZNĄ, a
-`costSymbols(amount, colors)` liczy `generic = amount − pipy`. Dwie karty miały
-kwotę o {1} rozjechaną z Oracle obok: Join the Dance „Flashback {3}{G}{W}" →
-`cost: 4` (silnik brał o {1} mniej, oferta szła już przy 4 manie), Boulder
-Salvo „Surge {1}{R}" → `cost: 3` (brał o {1} więcej). Strażnik M268 porównywał
-z Oracle tylko PIPY, więc kwota mogła się rozjechać niezauważona, a testy
-batchy powtarzały błąd w tytule („{3}{G}{W} = 4 many").
+**Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
+część GENERYCZNĄ — Join the Dance i Boulder Salvo miały kwotę o {1} rozjechaną z
+Oracle, a strażnik porównywał tylko PIPY.
 
 **Reguła:**
 1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
@@ -2507,11 +2488,10 @@ batchy powtarzały błąd w tytule („{3}{G}{W} = 4 many").
 2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
    trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
    wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
-3. Etykieta kosztu alternatywnego ma JEDNO źródło składanki (`costSymbols`);
-   gołe `{N}` z `cost` obiecuje cenę generyczną, której nie da się zapłacić
-   kolorowym pipem (M151 suspend, M267/C escape, M428 flashback).
-4. Test, którego TYTUŁ powtarza arytmetykę kosztu, bywa konserwatorem błędu:
-   popraw kwotę w danych, potem w tytule testu.
+3. Etykieta alt-kosztu ma JEDNO źródło składanki (`costSymbols`); gołe `{N}`
+   obiecuje cenę nie do zapłacenia pipem (M151, M267/C, M428).
+4. Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu: popraw
+   dane, potem tytuł.
 
 **Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (8 testów: skan
 symboli całej rodziny alt-kosztów, lista pominiętych kart, dowód RED na obu
@@ -2521,18 +2501,10 @@ znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
 
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
-**Przypadek (M429, zlecenie „optymalne taktycznie użycie, nie automatyczne
-strojenie wag"):** trzy karty batcha 59 miały efekt wyceniony PŁASKO, więc bot
-decydował o „najlepszym" wariancie przez kolejność ofert:
-
-- `add_counter` na wskazanym celu: **14/14/14** dla tokena 1/1, Cryptida 2/3
-  i Hill Gianta 4/4 → mutant Mutagen lądował na pierwszym legalnym celu
-  (najczęściej najsłabszym ciele);
-- `shuffle_graveyard_cards_into_library`: **58 pkt** niezależnie od stanu
-  biblioteki (30 vs 12 kart), a wariant „zero wracających kart" też 58 →
-  Memory's Journey rzucana bez presji deck-outu, czasem dosłownie na nic;
-- `buff_creatures_you_control` z AKTYWOWANEJ zdolności: **2 pkt** (sama baza)
-  w każdym kroku → {4}{W} Charismatic Vanguarda przepalane w Głównej 1.
+**Przypadek:** trzy karty batcha 59 miały efekt wyceniony PŁASKO (14/14/14 dla
+licznika na celu, 58 pkt dla tasowania grobu, 2 pkt dla pumpa z aktywacji) — bot
+decydował o „najlepszym" wariancie kolejnością ofert. Pomiary:
+`docs/LESSONS_PRZYPADKI.md` (L169).
 
 **Reguła:**
 1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
@@ -2542,26 +2514,61 @@ decydował o „najlepszym" wariancie przez kolejność ofert:
 2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły, nie z wyobraźni: licznik =
    aura-buff (`auraBuffWorthWeight`), wtasowanie = rodzina biblioteczna
    (`librarySafeMargin` + kara per karta), pump = `pumpImprovesOutcome` (M218/2)
-   + `permanentDoomedThisTurn` (M236/2). Zlecenie właściciela mówi to wprost:
-   „weź przykład z innych podobnych kart".
-3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart dokładnie tyle, co
-   przed zmianą (baza 2 + waga gospodarza 2·worth(1/1)=6 = dawna stała 8) —
-   inaczej „strojenie" zjada zachowania, które były dobre, i nie widać, co
-   dokładnie się poprawiło.
-4. Wariant bez sensu musi zejść PONIŻEJ passu (L3), a wartość zerowa ma być
-   ZEROWANA, nie zmniejszana: licznik na gospodarzu skazanym w tej turze jest
-   wart −20 niezależnie od wielkości ciała („wielki, ale martwy" to nadal zero);
-   zmniejszanie zostawiłoby dużego trupa nad passem.
+   + `permanentDoomedThisTurn` (M236/2).
+3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą
+   (baza 2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu musi zejść
+   PONIŻEJ passu (L3), a zero ma być ZEROWANE, nie zmniejszane (M243/4).
 5. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność,
    L41) — reguła dopisana tylko czarom zostawia aktywację na gołej bazie 2,
    czyli bot spamuje zdolność za 5 many tam, gdzie czar ma karę.
-6. Nowa rodzina stałych wchodzi pod nazwy + deskryptor tunera (T1), a dowód
-   „pokrętło nie jest atrapą" (wyzerowanie wagi wraca do remisu) jest częścią
-   pinu — inaczej następna sesja nie wie, czy liczba cokolwiek robi.
+6. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że
+   pokrętło NIE jest atrapą (wyzerowanie wraca do remisu); koszt ŹRÓDŁA liczy
+   się RAZ NA WARIANT, nie na każdy cel (patrz archiwum).
 
-**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js` (15 testów:
-piny wartości domyślnych, wybór gospodarza, okno walki, gospodarz skazany,
-presja deck-outu, efekt jałowy, deskryptory tunera, dowód RED na każdym
-przypadku) + pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
+**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
+rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny przepływu
+pokręteł w `test/bot-params.test.js`; pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L169)
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L169, M431)
+
+## L170 (2026-09-25) — gest warstwy UI zjada kontrolkę osadzoną w przycisku; bramę daję GESTOWI, nie CSS
+
+**Przypadek:** ptaszek „ta opcja nie przerywa auto-passu" (uwaga C) nie przełączał,
+tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka" pusty.
+
+**Reguła:**
+1. Aktywacja i zdarzenie kontrolki OSADZONEJ w przycisku muszą być PAROWANE:
+   przy aktywacji na `pointer*` `stopPropagation` na `click` jest iluzją. Wyspa
+   interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`), bramka
+   mieszka w gesturze — nie w klasach CSS.
+2. „Panel pusty, log pełny" to nie bramka treści, tylko ŻYWIOTNOŚĆ wpisu: modal
+   czyszczący bufor przy renderze gubi to, co doszło po renderze. Konsumpcja = po
+   potwierdzeniu gracza (`consumeBotMoves(n)`); re-render otwartego okna w pauzie
+   TYLKO gdy DOSZŁO nowa pozycja (inaczej mruga i klika się w kółko — łapie
+   `test/table-ui.test.js`).
+3. „Poprzedni PR przesunął obiekty" = czytam, KTÓRY element jest rodzicem słuchacza.
+
+**Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7, sekwencje
+zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
+`test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8),
+`test/b5-bramka-logu-gracza.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L170)
+
+## L171 (2026-09-25) — reguła bez ścieżki importu: wynoszę LIŚĆ; re-eksport bez wiązania = padnięty moduł
+
+
+**Reguła:**
+1. Regule bez ścieżki importu (tu: `polishPluralCount` w `render.js`, a
+   `session.js` nie może go stamtąd brać — cykl) idzie do **liścia o zerowych
+   zależnościach**, a dawny dom zostawia re-eksport, by konsumenci nie zmieniali
+   importów (L41: naprawiam GEOGRAFIĘ, nie przepisuję reguły).
+2. Gołe `export { x } from './liść.js'` NIE wiąże `x` lokalnie: jeśli plik używa
+   jej u siebie, dostaje `ReferenceError` (tu: 60 testów). Zatem
+   `import` + osobny `export {}`; kontrakt spinam **wywołaniem funkcji**
+   (`commandLabel`), bo odczyt tekstu pliku nie widzi niezwiązanej nazwy.
+3. Odmiana 1 / 2–4 / 5+ (nastki 12–14 za mod100) to KLASA, nie lista przypadków:
+   jedna funkcja + strażnik J1–J5. W
+   regexpach JS `\b` nie działa po diakrytykach — granicę: `(?![a-z])`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L171)

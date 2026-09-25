@@ -2018,7 +2018,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * i aktywowana zdolność, L41) dawały płaskie 8 + 4·amount, więc wybór celu był
    * remisem, a bot brał pierwszą ofertę z listy legalnych komend — pomiar
    * (6 seedów, talia `decks/audyt-batch59.txt`) pokazał 14/14/14 dla tokena 1/1,
-   * Cryptida 2/3 i Hill Gianta 4/4 (klasa L50: decyzja bez treści).
+   * Cryptida 2/3 i Hill Gianta 3/3 (klasa L50: decyzja bez treści). Pomiar PO
+   * (audyt PR #136, F-3): 14 / 22 (+8) / 26 (+12).
    *
    * Model jest PRZEMYŚLANY i zapożyczony z podobnych efektów (zlecenie: „weź
    * przykład z innych podobnych kart"):
@@ -3341,6 +3342,78 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * M431 (uwaga z gry wlasciciela 2026-09-25): aura NADAJACA slowa-kluczowe ma
+   * liczyc SWIEZOSC grantu, nie tylko cialo gospodarza.
+   *
+   * Zgloszenie wlasciciela (2026-09-25): aura nadajaca latanie poszla na
+   * stwora, ktory latanie JUZ mial — bo wycena nie pytala o slowa-kluczowe.
+   *
+   * Zmierzone PRZED (6 landow, aura +2/+2 z dwoma grantami w rece, gospodarze
+   * 3/3: bez kw. / flying / flying+vigilance): 72,9 / 72,9 / 72,9 — REMIS
+   * WARIANTOW (L169), wiec decydowala kolejnosc enumeracji, a nie „najwiekszy
+   * stwor". Sciezka `resolve_aura_host` (aura wchodzaca z grobu): 69/69/69.
+   *
+   * To TA SAMA klasa co dwie naprawy, ktore juz w tym pliku sa:
+   *  - M200/H — kara za ODBIOR slowa-kluczowego, ktorego gospodarz nie ma:
+   *    `auraLosesKeywordsWastedPenalty` (80);
+   *  - M243/D-G — brak premii za GRANT, ktory cel juz ma:
+   *    `equipValuation.freshGrants`.
+   * Aury dostaly tylko druga strone lustra (L72: rodzina w jednym miejscu):
+   * jeden predykat swiezosci czytany z DESKRYPTORA (`aura.keywords` /
+   * `bestow.keywords`), zero nazw kart (ADR 0002).
+   *
+   * Silnik jest zgodny od poczatku — `attachmentGrant` w `attachments.js` czyta
+   * `bestow ?? aura ?? equipment` JEDNA funkcja i naklada slowa-kluczowe jako
+   * warstwe zdolnosci (layer 6): duplikat nie znosi niczyjej zdolnosci i nic
+   * nie dodaje. Numeru podreguly NIE cytujemy — nie ma go w zweryfikowanym
+   * lustrze CR w repo (ADR 0030 + straznik `cr-numery-istnienie`).
+   * Luka byla wylacznie w wycenie, nie w mechanice.
+   *
+   * Okno: aura jest STALA (zostaje na polu bitwy do usuniecia), wiec nie
+   * podlega oknu walki jak granty-do-EOT (`keywordGrantWindowValue`, M179/A1 +
+   * M218/3 — tam „flying poza atakiem = -10"). Dlatego wartosc jest liczona
+   * jak dla sprzetu: @wiez z realnym rozkladzie blokerow, a nie z tego, co
+   * dzieje sie w tej jednej turze.
+   */
+  function auraKeywordValue(view, descriptor, host) {
+    if (!descriptor || !host) return 0;
+    const grants = [...(descriptor.keywords ?? []),
+      // Grant warunkowy (Hunter's Blowgun, Batch w `card-data.js`) — te same
+      // slowa-kluczowe moga wchodzic do warstwy 6 tylko przy spelnionym warunku;
+      // do oceny redundancji bierzemy je razem z caloscia (jedno źródło faktu).
+      ...(descriptor.conditionalKeywords ?? []).flatMap((c) => c?.keywords ?? [])];
+    if (grants.length === 0) return 0;
+    const obecne = new Set([...(host.keywords ?? []), ...(host.grantedKeywords ?? [])]);
+    const swieze = grants.filter((kw) => !obecne.has(kw));
+    const redundancja = grants.length - swieze.length;
+    let score = P.auraKeywordFreshValue * swieze.length - P.auraKeywordRedundantPenalty * redundancja;
+    if (swieze.length === 0) {
+      // CALY sens aury to slowa-kluczowe, ktorych gospodarz juz ma — aura
+      // nic nie robi (lustrzany odpowiednik `auraLosesKeywordsWastedPenalty`);
+      // kara musi przebic baze aury, inaczej jest dekoracja (L3).
+      if ((descriptor.pump?.power ?? 0) === 0 && (descriptor.pump?.toughness ?? 0) === 0) {
+        return -P.auraKeywordAllWastedPenalty;
+      }
+      return -P.auraKeywordRedundantPenalty * redundancja;
+    }
+    const blockers = untappedEnemyBlockers(view);
+    // Ewazja: flying wart jest tyle, ile `ofensywne` w equipValuation (8) —
+    // tylko gdy przeciwnik nie ma zadnego bloku z flying/reach (CR 509.1b:
+    // tworzenie z lataniem moga blokowac tylko stworzenia z lataniem lub
+    // zasiegiem — numer zweryfikowany w lustrze repo).
+    if (swieze.includes('flying')
+      && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) {
+      score += 8;
+    }
+    // Vigilance (CR 702.20 — atak nie tapuje; numer zweryfikowany w lustrze):
+    // platne, gdy gospodarz MOZE zaatakowac w tej turze albo bedzie mogl
+    // w kolejnych — aura zostaje, wiec nie karzemy poza oknem (inaczej niz
+    // przy grantach-do-EOT).
+    if (swieze.includes('vigilance') && canAttackNow(host) && myTurn(view)) score += 4;
+    return score;
+  }
+
+  /**
    * Kara za rzucenie czaru/zagranie permanentu, gdy kontroler ma na polu bitwy
    * stwora z triggerem „when you cast a spell" (Illusory Demon — poświęcenie
    * źródła). Wartość stracimy przy każdym czarze — generyczny deskryptor.
@@ -3549,7 +3622,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -4561,7 +4634,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const pump = pumpDesc;
           // M235: chooseColor-protection (Benevolent Blessing) trafia tu (nie do
           // isPureProtection) — kara okna dotyczy też jej, gdy jest flash i poza walką.
+          // M431 (uwaga wlasciciela): do ciala gospodarza
+          // dochodzi SWIEZOSC grantow — aura na stworze, ktory ma juz flying,
+          // jest realnie slabym celem, a nie tym samym celem (L169: wczesniej
+          // trzy warianty = identyczne 72,9, wiec decydowala kolejnosc enumeracji).
           return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
+            + auraKeywordValue(view, descriptor, target)
             - offWindowFlashProtectionPenalty);
         }
         const def = card ? cardDef(card.cardId) : undefined;
@@ -8140,6 +8218,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (zwykle lepsze), spód = świeża karta zamiast odzyskiwania.
         return finish(cmd.placement === 'top' ? 10 : 4);
       }
+      case 'resolve_untap_choice': {
+        // M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): oferta „które
+        // permanenty zostają tapnięte w kroku odkręcania". Zgłoszenie brzmiało
+        // „wybór = odtapowanie lir i zwolnienie stwora, Dalej (Pass) = lira
+        // zostaje tapnięta i stwór też" — czyli warianty MUSZA mieć różną
+        // cenę, inaczej wybór zapada kolejnością enumeracji (L169).
+        //
+        // Liczone WYŁĄCZNIE z widoku (ADR 0017): `view.pendingUntapChoice
+        // .lockedByCandidate` mówi, kogo dane źródło trzyma (pole dodane razem
+        // z tą wyceną — bez niego bot byłby ślepy, L1). Trzymanie w tapie jest
+        // warte tyle, ile unieruchomione wrogie byty; kosztuje utrata odkręcenia
+        // (źródło z zdolnością {T} albo zablokowany WŁASNY permanent).
+        const wartosci = view.pendingUntapChoice?.lockedByCandidate ?? {};
+        let score = 0;
+        let zrodloChceWstawac = false;
+        for (const sourceId of cmd.keepTappedIds ?? []) {
+          const zrodlo = objectOnBoard(view, sourceId);
+          for (const lockedId of wartosci[sourceId] ?? []) {
+            const byt = objectOnBoard(view, lockedId);
+            if (!byt) continue;
+            const worth = (byt.power ?? 0) + (byt.toughness ?? 0);
+            score += byt.controllerId === view.playerId ? -P.untapChoiceOwnLockPenalty - worth
+              : P.untapChoiceLockValue + 2 * worth;
+          }
+          // Źródło, które samo chce być odkręcone (ma zdolność {T} albo jest
+          // stworzeniem do ataku) — łapie flagę; koszt naliczamy RAZ NA
+          // WARIANT, bo „nie odkręciłem tego źródła" jest jednym aktem, a nie
+          // osobną opłatą za każdy trzymany cel (błąd znaleziony przez pin
+          // `params: untapChoiceSourceTapCost ...` w test/bot-params.test.js).
+          // Widok niesie TYLKO zdolności aktualnie aktywowalne (M243), a
+          // tapnięte źródło nie aktywuje własnego {T} — więc lista byłaby
+          // pusta dokładnie wtedy, gdy koszt nas interesuje. Uzupełniamy ją
+          // wydrukowanymi zdolnościami z rejestru (wzorzec l. 1754/3537).
+          const zrodloDef = zrodlo?.cardId ? cardDef(zrodlo.cardId) : undefined;
+          const zdolnosci = [...(zrodlo?.activatableAbilities ?? []), ...(zrodloDef?.abilities ?? [])];
+          if (zdolnosci.some((a) => a?.cost?.tap)
+            || (zrodlo?.kind === 'creature' && !(zrodlo?.keywords ?? []).includes('defender'))) {
+            zrodloChceWstawac = true;
+          }
+        }
+        if (zrodloChceWstawac) score -= P.untapChoiceSourceTapCost;
+        return finish(score);
+      }
       case 'resolve_aura_host': {
         // Audyt PR #130 (znalezisko D, CR 303.4f): aura wracająca z grobu
         // wybiera zaczarowany obiekt przy wejściu. Polaryzację aury czyta TA
@@ -8165,7 +8286,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const mine = host.controllerId === view.playerId;
         const worth = combatPower(host);
         if (hostile) return finish(mine ? -P.auraHostileOwnPenalty - worth : P.auraHostileEnemyBase + worth);
-        return finish(mine ? P.auraBase + worth : -P.auraHostileEnemyBase - worth);
+        // M431/L41: TA SAMA reguła co przy rzucie aury z reki — inaczej dwie
+        // sciezki zalozenia aury mieilyby dwa modele swiata (L28).
+        const kwValue = mine ? auraKeywordValue(view, auraCard?.aura ?? auraCard?.bestow, host) : 0;
+        return finish(mine ? P.auraBase + worth + kwValue : -P.auraHostileEnemyBase - worth);
       }
       case 'resolve_hand_free_cast': {
         // Batch 57/B6a (Baral and Kari Zev): darmowy rzut czaru z ręki to
@@ -8954,6 +9078,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (narzędzie nie mogło odróżnić uczciwego remisu od ślepoty wyceny), choć
     // dane są wprost w widoku (L28/L34/L40). Lustro wejść wyceny: te same
     // pola i te same generatory, co w `scoreCommand`/`scoreCommandValue`.
+    if (cmd?.type === 'resolve_untap_choice') {
+      // Projekcja = ilu bytów realnie dotyczy wariant (0 = „odtapuj
+      // wszystko"); bez niej remis wariantów wpadał do „bez danych".
+      const wartosci = view.pendingUntapChoice?.lockedByCandidate ?? {};
+      const trzymane = cmd.keepTappedIds ?? [];
+      const cel = new Set(trzymane.flatMap((id) => wartosci[id] ?? []));
+      return { kept: trzymane.length, locked: cel.size };
+    }
     if (cmd?.type === 'resolve_aura_host') {
       const host = objectOnBoard(view, cmd.auraHostId);
       if (host) return { mine: host.controllerId === view.playerId ? 1 : 0, value: combatPower(host) };
@@ -9047,6 +9179,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function summarize(cmd, view = null) {
+    // M431 (L34/L40, wzorzec M203/2): warianty jednej decyzji muszą być
+    // rozróżnialne w śladzie — inaczej audyt remisów paruje je po indeksie.
+    if (cmd.type === 'resolve_untap_choice') {
+      const ids = cmd.keepTappedIds ?? [];
+      return ids.length === 0
+        ? 'resolve_untap_choice(untap-all)'
+        : `resolve_untap_choice(keep:${ids.join('+')})`;
+    }
     // M203/2: warianty scry/surveil były w śladzie nieodróżnialne (oba
     // streszczały się do `resolve_scry`), więc diagnostyka i test wyceny
     // musiały parować opcje z `legalCommands` PO INDEKSIE — a opcje w śladzie

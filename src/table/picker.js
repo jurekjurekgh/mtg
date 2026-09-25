@@ -84,6 +84,8 @@
  * `test/harness/css-effective.js` (styl efektywny, nie tekst stylesheetu; L125).
  */
 
+import { markPressExempt } from './gestures.js';
+
 /** Tworzy element przez dokument gospodarza (testy core nie mają DOM-u). */
 function mkElement(tag, host) {
   const doc = host?.ownerDocument ?? globalThis.document;
@@ -252,6 +254,9 @@ function renderPickerName(host, { className, label, html, openable, onOpenCard, 
   if (openable && typeof onOpenCard === 'function' && targetId != null) {
     nameEl.className = joinClasses(nameEl.className, 'is-openable', 'log-card');
     if (nameEl.dataset) nameEl.dataset.cardId = String(dataCardId);
+    // UWAGA C (2026-09-25b): klik w nazwę = pełny ekran karty, NIE akcja
+    // przycisku-rodzica (panel akcji: nazwa w `.action` z pressem).
+    markPressExempt(nameEl);
     nameEl.addEventListener('click', (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
@@ -313,8 +318,18 @@ export function renderPickerRow(host, {
   const inline = variant === 'inline';
   /** Klasy `picker-*` tylko w wariancie wierszowym — patrz nagłówek pliku. */
   const own = (base, family) => (inline ? family : joinClasses(base, family));
+  // UWAGA C (zgłoszenie właściciela 2026-09-25b): `stopPropagation` na samym
+  // `click` NIE chroni przycisku, gdy ten jest zainstalowany przez
+  // `installPressActivation` (aktywacja na `pointerup` — ptaszek wyciszenia
+  // w panelu akcji grał opcję zamiast tylko zaznaczać). Wspólny znacznik
+  // `data-press-exempt` domyka lukę: którykolwiek przycisk-rodzic z pressem
+  // pomija gest zacznięty/zakończony w tej wyspie. Stąd JEDNO miejsce decyduje
+  // „to jest wyspa" (marker + blokada kliku), a `gestures.js` nie zna nazw
+  // klas `.action-ignore*`.
   const blockPropagation = (el) => {
-    if (stopRowPropagation) el.addEventListener('click', (e) => e?.stopPropagation?.());
+    if (!stopRowPropagation) return el;
+    el.addEventListener('click', (e) => e?.stopPropagation?.());
+    markPressExempt(el);
     return el;
   };
 
@@ -399,6 +414,10 @@ export function renderPickerRow(host, {
     // Wyłączony przycisk nie wolno obsłużyć EVEN jeśli zdarzenie dojdzie
     // (stub DOM w testach UI odpala listenery niezależnie od `disabled`, a
     // na starszym iPhanie klik w `disabled` potrafi przebić się do rodzica).
+    // UWAGA C: −/+ to wyspy własnej interakcji — press przycisku-rodzica nie
+    // może przez nie przeprowadzać akcji (świadczy o tym samo `stopRowPropagation`).
+    markPressExempt(dec);
+    markPressExempt(inc);
     dec.addEventListener('click', () => { if (!dec.disabled) onStep?.(-1, id); });
     inc.addEventListener('click', () => { if (!inc.disabled) onStep?.(1, id); });
     paint();
@@ -429,6 +448,9 @@ export function renderPickerRow(host, {
   if (group) input.name = String(group);
   input.checked = Boolean(checked);
   input.disabled = Boolean(disabled);
+  // UWAGA C: `input` wędruje TEŻ wprost do `host` (patrz wyżej `mkElement(tag,
+  // host)`) — klik w ten dubler nie ma prawa odpalić akcji przycisku-rodzica.
+  if (stopRowPropagation) markPressExempt(input);
   row.appendChild(input);
 
   let nameEl = null;

@@ -12977,3 +12977,57 @@ twierdzeń w testach batchy 58/59) i `aff9597` (etykiety przez `costSymbols`)
 **Bramy:** `npm test` **6519/6519** (0 fail; 6511 → +8 testów M428), build
 **60 modułów / 4241,6 kB**; plan `docs/plans/PLAN_2026-09-24d-zywy-tester-
 batch59.md`, handoff `docs/setup/HANDOFF_2026-09-24d.md`.
+
+## Sesja 2026-09-24f — audyt scalonego PR #136, pięć napraw i pętla jakości (M430, PR #137)
+
+Zlecenie brzmiało „Kontynuujemy projekt" — bez nazwanego tematu, więc obowiązywał
+ciąg domyślny: PR na starcie → audyt ostatniego scalonego PR → naprawy u root
+cause → pętla jakości → domknięcie z przekazaniem (ADR 0020 w parze z ADR 0021).
+Audyt ruszył od diffu `f9bc44b..0b2f771` (96 plików) i od CR w bieżącym wydaniu
+(mirror surowego tekstu, sha256 `8d860e45…70ca`, 120 fragmentów) — bez wyjątku
+cytowanych dosłownie, bo reguły rozstrzyga tekst, nie pamięć (ADR 0030).
+
+**Co wyszło z osi.** Najpoważniejsze było F-2, bo dotyczyło reguły, nie stylu:
+kopia „enter as copy", która umarła, przestawała być kartą w grobie — predykat
+odsiewał tokeny po braku nazwy, a kopia nazwę nosi (CR 707.2) i nie ma flagi
+`isToken`. CR 108.2b wyklucza z definicji karty wyłącznie tokeny, więc filtr
+czytał nie to, co powinien. Naprawa jest jednolinijkowa i idzie przez jawną
+flagę; ten sam predykat niesie Puppeteer Clique, więc zduplikowana kiedyś
+logika zniknęła razem z luką. F-1 i F-3 to ten sam grzech po stronie opisu:
+cytat 107.3a przy regule „Activate only as a sorcery" (właściwy numer to 602.5d)
+i komentarz M429 z liczbami, których kod nie produkuje — sonda na botu dała
+14/22/26 przy Hill Giancie 3/3 z katalogu, więc piny przepisano na pomiar. F-4
+i F-5 urodziły się dopiero w pętli: Żywy Tester na batchu 59 (seed 78) przerwał
+partię komunikatem „Kreator wielocelowy nie do zamknięcia po 5 próbach", a pod
+tym leżały dwie niezależne wady tego samego wektora celów.
+
+**Lekcja o warstwach (najbardziej przenośna z tej sesji).** Pozycja opcjonalna w
+celach wielokolorowych to `null` w wektorze — wiedzieli to i silnik, i kreator,
+ale każdy po swojemu. Warstwa UI wyliczała `min/max` z długości tablicy, czyli
+z paddingu, dokładała pusty kandydat do worka i budowała klucz akceptacji z
+nullami, przez co przycisk „Zatwierdź" gasił ofertę. Efekt: karta z batcha 59
+była nie do zagrania z planszy, mimo że silnik ją oferował, a testy karty —
+idące przez `execute`, z pominięciem kreatora — świeciły zielenią. F-5 dołożył
+drugą nogę: w grupie jednego słowa „target" kolejność przydziału nie ma
+znaczenia (CR 601.2c zakazuje tylko powtórzenia tego samego celu w tej samej
+pozycji), więc enumeracja permutacji wystawiała graczowi 6 ofert zamiast 5 dla
+dwóch celów i 17 zamiast 9 dla trzech. Obie naprawy mają testy RED i dowód
+mutacyjny; strażnik klasy pilnuje czterech warstw (enumeracja → walidacja → plan
+kreatora → etykieta).
+
+**Incydent, który warto zapisywać przy każdej sesji z mutacjami.** Restaurowanie
+zmiany mutanta przez `s.replace()` na całym pliku przywróciło wzorzec w trzech
+funkcjach, z których tylko jedna miała nowe pole — `ReferenceError` poza ścieżką
+testowaną. `npm test` był zielony, bo testy uwag i `m298-*` mieszkają w manifeście
+`slow`; pełne `npm run test:all` złapało to od razu. Restaurowanie idzie
+wierszem albo zakresem, a `git diff` czyta się po każdej mutacji.
+
+**Domknięcie.** Raport `docs/audits/AUDYT_PR136_2026-09-24f.md` z werdyktem
+APPROVE po naprawach, trzema odrzuconymi hipotezami zapisanymi z kontr-pomiarem
+(żeby nie wracały) i świadomymi granicami (ewazja poza wartością gospodarza aury,
+rzut czarem na skazanym gospodarzu, progi regresji i pełne B0 — to decyzje
+właściciela). Budżet lektury (~99,9k/100k) zablokował nową lekcję, więc klasy
+F-4/F-5 opisali w raportach i handoffzie, a nie w `LESSONS`. Chwilowa talia
+audytowa `decks/audyt-batch59.txt` została usunięta razem z przebudowaniem
+`dist/` — jej obecność psuła pięć strażników talii, co jest samo w sobie
+wartościową informacją o tym, że `decks/` nie jest miejscem na śmieci.

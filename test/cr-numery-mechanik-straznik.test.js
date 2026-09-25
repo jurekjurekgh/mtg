@@ -161,6 +161,18 @@ const PARY = [
   { mechanika: /cleave/i, zakazany: /702\.117(?![0-9])/, poprawny: '702.148',
     wyklucz: /702\.148/,
     zrodlo: '702.117 to Surge; Cleave = 702.148 (702.148b: tekst zmienia 612) (F-2)' },
+  // Para dodana w sesji 2026-09-24f (audyt PR #136, znalezisko F-1): numer
+  // spoza sekcji 702, więc strażnik tabeli 702.x go nie sięgał, a strażnik
+  // ISTNIENIA numeru nie świecił (107.3a istnieje — tylko znaczy co innego).
+  // Dowody dosłowne (CR 2026-09-25, docs/audits/AUDYT_PR136_2026-09-24f.md §5):
+  //   107.3a — wybór i ogłoszenie X przy rzucaniu czaru z kosztem zmiennym;
+  //   602.5d — „Activated abilities that read ‘Activate only as a sorcery’ mean
+  //            the player must follow the timing rules for casting a sorcery
+  //            spell, though the ability isn’t actually a sorcery.”
+  { mechanika: /activate only as a sorcery|tylko jak(o)? sorcery/i,
+    zakazany: /107\.3a/, poprawny: '602.5d',
+    wyklucz: /602\.5d/,
+    zrodlo: '107.3a to X w koszcie czaru; „Activate only as a sorcery” = 602.5d (F-1)' },
 ];
 
 /** Rekurencyjna lista plików `.js` w katalogu (bez node_modules). */

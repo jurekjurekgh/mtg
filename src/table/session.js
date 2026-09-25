@@ -11,6 +11,7 @@ import { costSymbols } from './mana-icons.js';
 import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { polishPluralCount } from './polish-plural.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -328,7 +329,16 @@ function defaultBotFactory(seed, ctx) {
     explore: 'explore (odsłonięcie wierzchu biblioteki)',
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
-    lock_untap: 'cel nie odkręca się podczas następnego kroku odkręcania kontrolera',
+    // M431 (uwaga właściciela, Entrancing Lyre): blokada z `lock_untap` NIE
+    // jest „na następny krok" — trwa, dopóki tapnięte źródło jest na polu
+    // bitwy (Oracle: „for as long as this artifact remains tapped"; ruling
+    // Scryfall: „That creature won't untap for as long as Entrancing Lyre
+    // remains tapped"). Myliło ją z `dont_untap_next_untap_step` (Wavecrash
+    // Triton), które jest JEDNOKROKOWE — para deskryptorów musi się różnić
+    // zakresem także w tekście, bo opis to jedyne, co widzi gracz (L154).
+    // Uwaga: nazwa karty w tym komentarzu jest dozwolona, bo plik leży w
+    // `src/table/` (strażnik M212 pilnuje `src/engine`/`src/cards`).
+    lock_untap: 'cel nie odkręca się w kroku odkręcania, dopóki źródło pozostaje tapnięte (odkręci się, gdy źródło wstanie albo je stracisz)',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
@@ -1126,8 +1136,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.foundCardId) {
           return `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}; ${naSpod}`;
         }
+        // Uwaga właściciela 2026-09-25b (Żywy Tester, detektor językowy): forma
+        // „przejrzano 4 kart" — liczebnik wymaga odmiany (`polishPluralCount`).
+        const przejrzane = e.revealedCardIds?.length ?? e.bottomCount ?? 0;
         const powod = e.libraryExhausted
-          ? `biblioteka się wyczerpała (przejrzano ${e.revealedCardIds?.length ?? e.bottomCount ?? 0} kart)`
+          ? `biblioteka się wyczerpała (przejrzano ${przejrzane} ${polishPluralCount(przejrzane, 'kartę', 'karty', 'kart')})`
           : `brak karty o mana value ≤ ${e.amount}`;
         return `${whoN(e.playerId)} nie znajduje karty dla discover (${e.amount}) — ${powod}; ${naSpod}`;
       }
@@ -1835,6 +1848,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Audyt PR #130 (znalezisko D, CR 303.4f): wybór gospodarza aury
       // wracającej z grobu — bez wpisu gracz nie wie, że silnik na niego czeka
       // (M106/Z2), a wynik i tak nazwie `object_moved` + `object_attached`.
+      // M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): gra czeka na
+      // wybór kontrolera w kroku odkręcania — bez wpisu gracz nie wie, że
+      // silnik na niego czeka (klasa M106/Z2).
+      case 'untap_choice_required':
+        // Forma czasu: 3. os. licz. — koniecznie z wpisem w DRUGA_OSOBA (Z1c).
+        return `${whoN(e.playerId)} wybiera, które permanenty zostają tapnięte w kroku odkręcania (kandydatów: ${(e.candidateIds ?? []).length})`;
+      case 'untap_choice_resolved':
+        return `${whoN(e.playerId)} zostawia w tapie ${(e.keepTappedIds ?? []).length} permanentów z ${(e.candidates ?? 0)} kandydatów${(e.keepTappedIds ?? []).length === 0 ? ' (wybór: odkręcić wszystko)' : ''}`;
       case 'aura_host_choice_required':
         // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami są też GRACZE
         // („Enchant player", CR 303.4f) — liczba w narracji musi pokrywać oba
@@ -2392,6 +2413,37 @@ export const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
 // — gracz widział skutek, nie widział transformacji.
 export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 
+// UWAGA D (zgłoszenie właściciela 2026-09-25b): „Gdy tę kartę [Geological
+// Appraiser] wystawia bot, w Rozgrywce i w Logu powinny być widoczne karty,
+// które w ten sposób są odsłaniane zdolnością Discover. A nie są." Odsłonięcie
+// jest JAWNE dla obu graczy z definicji słowa-klucza (CR 701.20: „reveal =
+// pokazać kartę WSZYSTKIM graczom"), więc nie podlega ani oknu `botActing`,
+// ani stanowi stosu.
+// Dotąd typy te wchodziły do bramki wyłącznie przez `BOT_RESOLUTION_EVENTS`
+// (czyli tylko przy `stackSize > 0`) albo przez `HUMAN_DIGEST_EVENTS` (czyli
+// tylko dla człowieka — samo `card_revealed` nie miało tam zresztą wpisu);
+// a rozstrzygnięcie ODRACZONEGO triggera (ETB granego w Głównej, rozstrzygane
+// dopiero po passu (albo dwóch) człowieka; delayed trigger w upkeep/cleanup) trafia w
+// okno bez pauzy i z pustym `stackObjects`: wpisy znikały z bufora modala,
+// a przy braku `botActing` także z logu. Rodzina zdarzeń, nie nazwa karty
+// (ADR 0002); opis nazywa tylko to, co wolno (L41).
+export const PUBLIC_INFO_EVENTS = new Set(['card_revealed', 'discover_started', 'discover_resolved']);
+
+/**
+ * UWAGA D (2026-09-25b): ile pozycji z bufora „Rozgrywka" WARSTWA UI już
+ * pokazała. Modal NIE czyści bufora przy otwarciu (czyścił — i tym samym
+ * gubił wpisy docierające po renderze, np. skutek odsuniętego triggera), więc
+ * odświeżenie = „pokaż WSZYSTKO, ale tylko gdy DOSZŁO coś nowego". Czytane
+ * pozycje schodzą z bufora przez `consumeBotMoves(n)` (klik „Rozumiem"), a nie
+ * przez kasowanie w chwili renderu. Czysta funkcja (ADR 0011): bez DOM-u i bez
+ * domknięcia sesji, więc regułę życia modala da się przypiąć testem.
+ */
+export function botMovesPaintedUpdate({ moves, painted = 0 } = {}) {
+  const total = Array.isArray(moves) ? moves.length : 0;
+  const seen = Number.isInteger(painted) && painted > 0 ? Math.min(painted, total) : 0;
+  return { visible: total > seen, painted: total };
+}
+
 /** M100/E5: nagłówkowe zagrania CZŁOWIEKA w panelu „Rozgrywka" — panel
  * jest wspólnym streszczeniem rozgrywki (uwaga właściciela: „inne istotne
  * zagrania obu graczy"), a samo kliknięcie nie zawsze odzwierciedla stan
@@ -2508,7 +2560,10 @@ export function isHumanControllerEvent(e, humanId = HUMAN_ID) {
  * - transformacja permanentu (E6/A2, zgłoszenie właściciela, Moonscarred
  *   Werewolf s20603): jest publiczna (CR 400.2 — twarz na polu bitwy widzi
  *   każdy: P/T, zdolności, daybound/nightbound) i zmienia ocenę pozycji, więc
- *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu.
+ *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu;
+ * - jawne odsłonięcia i bieg discover (UWAGA D, zgłoszenie właściciela
+ *   2026-09-25b): `PUBLIC_INFO_EVENTS` — ten sam tryb „niezależnie od okna",
+ *   bo CR 701.20 robi z odsłoniętych kart informację publiczną.
  */
 export function isMainLogEvent(e, ctx = {}) {
   const {
@@ -2524,6 +2579,9 @@ export function isMainLogEvent(e, ctx = {}) {
   if (e?.type === 'object_moved' && e?.additionalCost === true) return true;
   if (isBotDecisionPrompt(e, { humanId })) return true;
   if (stackSize > 0 && BOT_RESOLUTION_EVENTS.has(e?.type)) return true;
+  // UWAGA D (2026-09-25b): jawne odsłonięcia i wynik discover — zawsze, dla
+  // obu graczy, bez względu na `botActing` i grubość stosu.
+  if (PUBLIC_INFO_EVENTS.has(e?.type)) return true;
   if (HUMAN_DIGEST_EVENTS.has(e?.type) && isHumanControllerEvent(e, humanId)) return true;
   if (e?.type === 'card_drawn' && e?.playerId === humanId) return true;
   return TRANSFORM_DIGEST_EVENTS.has(e?.type);
@@ -3646,7 +3704,7 @@ export function createSession(config) {
     }
     const botHandCount = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === BOT_ID).length;
     if (botHandCount > 0) {
-      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[BOT_ID]}: ${botHandCount} kart`);
+      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[BOT_ID]}: ${botHandCount} ${polishPluralCount(botHandCount, 'karta', 'karty', 'kart')}`);
     }
   }
   advance();
@@ -3697,6 +3755,18 @@ export function createSession(config) {
     botMoves,
     /** Czyści bufor po pokazaniu go graczowi. */
     clearBotMoves() { botMoves.length = 0; lastBotPhaseKey = null; pendingBotPhase = null; lastBotMoveWasSearchResolved = false; },
+    /**
+     * UWAGA D (2026-09-25b): konsumpcja przeczytanego PREFIKSU bufora —
+     * `n` pierwszych pozycji znika, reszta (w tym niepokazane wpisy i ewentualny
+     * nagłówek tury, kontrakt M261) zostaje na własny blok modala. Bez tego
+     * „Rozumiem" kasowało CAŁY bufor i każdy skutek docierający po renderze
+     * przepadał (najbliższe `apply()` czyściło to, co zdążyło dojść).
+     */
+    consumeBotMoves(n = 0) {
+      const count = Number.isInteger(n) && n > 0 ? Math.min(n, botMoves.length) : 0;
+      if (count > 0) botMoves.splice(0, count);
+      return botMoves.length;
+    },
     /** Pełne tury w kolejności zakończenia (M25, sekcja „Przebieg tur"). */
     turnHistory,
     /** Tekst N ostatnich pełnych tur (1–2) dla AI — imiona Czarodziejka/Nieprzyjaciel. */

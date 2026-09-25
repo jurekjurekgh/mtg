@@ -43,7 +43,11 @@ test('F1: aura Membrane — „nie odkręca się podczas kroku odkręcania”, b
 
 test('F1: log zdolności lock_untap/untap — „odkręca/odkręcenie”, bez „untap”', () => {
   const lock = activatedLine(['lock_untap']);
-  assert.ok(lock.includes('nie odkręca się podczas następnego kroku odkręcania kontrolera'),
+  // M431: zakres blokady jest TRWAŁY (dopóki źródło tapnięte), nie „na następny
+  // krok" — dawne brzmienie opisu myliło `lock_untap` z
+  // `dont_untap_next_untap_step`; pin trzyma teraz nowy tekst, żeby nikt nie
+  // przywrócił starego (regresja uwagi właściciela).
+  assert.ok(lock.includes('dopóki źródło pozostaje tapnięte'),
     `lock_untap: ${lock}`);
   assert.ok(!lock.includes('untap'), `surowy untap: ${lock}`);
   const untap = activatedLine(['untap_permanent']);

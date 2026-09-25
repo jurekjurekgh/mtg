@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "c6fb33f10bbed2476b8bc74c2542938a2cf460617ebcc8340e19a08c9195ab9d",
+  "overallHash": "beaee5310bc8b96f1f97b43da0a308e9b964c3cd71d9c20c40ad5886cfcc9762",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -44,9 +44,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "5191aa8f6fc3ec67d1b23be9f9c551be7b0f4054fd7acea2df0af43872b8a92e",
+      "hash": "2a34b8b26c52c35b92f19d2a24946377912136ebfc3419deb8a01caf9fcdf98c",
       "decisions": 264,
-      "scoreSum": 3028.6189,
+      "scoreSum": 3043.0189,
       "chosenKinds": {
         "activate_ability": 3,
         "attack": 8,
@@ -86,9 +86,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "4f1ddf0f2243fb3dd71d34d62ed3ac4d0cf7f4e36cf8e30f86548b49d3c4e563",
+      "hash": "27f8c2c7a483972e3098ac71cc639e5872b2a1685d434ecba9f48170b74e5988",
       "decisions": 254,
-      "scoreSum": 3084.0171,
+      "scoreSum": 3091.2171,
       "chosenKinds": {
         "activate_ability": 8,
         "attack": 8,

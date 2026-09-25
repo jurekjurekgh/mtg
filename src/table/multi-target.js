@@ -21,9 +21,19 @@
  * UI nie wymyśla ruchów, tylko inaczej je pokazuje).
  */
 
-/** Kanoniczny klucz zbioru celów — kolejność zaznaczania jest nieistotna. */
+/**
+ * Kanoniczny klucz zbioru celów — kolejność zaznaczania jest nieistotna.
+ *
+ * F-4 (audyt PR #136, żywy Tester seed 78): klucz LICZY TYLKO REALNE CELE.
+ * Pozycje opcjonalne (Batch 45 i 59: „up to one/three target …") są w wektorze
+ * komendy zapisane jako `null`, więc dawniej wybór „gracz + 2 karty" dawał key
+ * "a|b|p2", a wariant silnika "a|b|null|p2" — `commandForSelection` nie szukał
+ * żadnego dopasowania, „Zatwierdź" gasł, a karta z oferty silnika była nie do
+ * zagrania z UI (Memory's Journey). Jedno miejsce (L41): wszystkie tryby
+ * (worki, poświęcenie, `targetIds`) przechodzą przez tę składankę.
+ */
 function targetKey(targets) {
-  return [...(targets ?? [])].sort().join('|');
+  return [...(targets ?? [])].filter((id) => id != null).sort().join('|');
 }
 
 /**
@@ -52,6 +62,11 @@ export function multiTargetPlanOf(commands) {
 
   const sizes = [...new Set(list.map((cmd) => cmd.targets.length))];
   const multiTarget = sizes.some((size) => size !== sizes[0]) || sizes[0] > 1;
+  // F-4 (audyt PR #136): ile celów GRACZ NAPRAWDĘ zaznacza — padding `null`
+  // pozycji opcjonalnych nie jest celem. Detekcja „czy to wielowymiarowe” i
+  // rozbicie na pozycje zostają na długości wektora (żadna inna karta nie
+  // zmienia kształtu panelu), a widełki etykiety/limitu — na liczbie realnej.
+  const realSizes = [...new Set(list.map((cmd) => cmd.targets.filter((id) => id != null).length))];
 
   // Bez żadnego z dwóch wymiarów to zwykła lista celów (Shock: jedna komenda
   // na cel) — panel pokazuje ją od dawna poprawnie, nie ma czego zastępować.
@@ -59,7 +74,9 @@ export function multiTargetPlanOf(commands) {
 
   const targets = [];
   for (const cmd of list) {
-    for (const id of cmd.targets) if (!targets.includes(id)) targets.push(id);
+    // F-4: pusta pozycja opcjonalna (`null`) NIE jest kandydatem — bez tego do
+    // worka trafiał pusty wiersz, którego żaden wybór nie dotyczył.
+    for (const id of cmd.targets) if (id != null && !targets.includes(id)) targets.push(id);
   }
 
   // M328 (audyt PR #102, F8): `targetSlotsOf` przechodzi po WSZYSTKICH
@@ -74,8 +91,8 @@ export function multiTargetPlanOf(commands) {
 
   return {
     targets,
-    minTargets: Math.min(...sizes),
-    maxTargets: Math.max(...sizes),
+    minTargets: Math.min(...realSizes),
+    maxTargets: Math.max(...realSizes),
     hasX,
     // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa, w której
     // JEDYNĄ decyzją jest X (brak celów) — kreator pokazuje sam stepper,
