@@ -50,7 +50,7 @@ const POLE = ZRODLA.map((s) => ({ id: s.id, cardId: s.cardId, kind: 'land', cont
 /** Stół po tapnnięciu bramy {U}{B}: zostają cztery nietapnięte podstawowe lądy. */
 const POLE_PO_BRAMIE = POLE.filter((o) => o.id !== 'l-ub');
 
-test('Gd/1: po tapnięciu źródła {U}{B} kreator pokazuje WYŁĄCZNIE źródła brakującego koloru', () => {
+test('Gd/1: po tapnięciu źródła {U}{B} kreator prowadzi do {G} KOLEJNOŚCIĄ (F: filtr dopiero na sam kolor)', () => {
   // Scenariusz ze zgłoszenia: brama {U}{B} tapnięta, na stole zostają cztery
   // nietapnięte podstawowe lądy („pusta, mimo 4 many").
   const progress = wizardProgress(widok(POLE_PO_BRAMIE, 1), 'p1', KOSZT, ZRODLA, [['U', 'B']]);
@@ -61,10 +61,17 @@ test('Gd/1: po tapnięciu źródła {U}{B} kreator pokazuje WYŁĄCZNIE źródł
     [{ colors: ['B'], covered: true }, { colors: ['G'], covered: false }],
     'pokrycie raportowane PER GRUPA, nie pozycyjnie',
   );
+  // F (2026-09-25g, nadrzędne nad sztywnością filtra z 23c): jednostka
+  // [U,B] pokrywa pip {B}, ale NIE zamyka części {1} (ta sama mana nie płaci
+  // dwa razy) — zostały {1}{G}, więc lista pokazuje WSZYSTKIE źródła, a Las
+  // (pokrywa brak) stoi PIERWSZY. Sedno 23c (missing per-grupa, lista NIE
+  // pusta przy dostępnym {G} — asercje wyżej) działa bez zmian.
+  // (Brama l-ub jest na liście, bo test podaje wszystkie źródła jak leci;
+  // main.js filtruje tapnięte przed kreatorem.)
   assert.deepEqual(
     progress.untappedSources.map((s) => s.id),
-    ['l-g'],
-    'pipy kolorowe zostały same — źródła bez {G} znikają z listy (uwaga właściciela)',
+    ['l-g', 'l-ub', 'l-u', 'l-r', 'l-b'],
+    'Las pierwszy (prowadzenie kolejnością), reszta dostępna za {1}',
   );
   assert.equal(progress.remainingTotal, 2, 'pozostało 2 many (pula 1 z 3)');
   assert.equal(progress.done, false, 'płatność nie jest domknięta');
@@ -105,7 +112,8 @@ test('Gd/3: płatność {1}{B}{G} domyka się prowadzona przez kreator (trzy tap
   // Scenariusz właściciela: tapujemy źródło {U}{B} — kreator wskazuje {G}.
   const poUb = tap('l-ub');
   assert.equal(poUb.requirements[0].covered, true, 'pip {B} pokryty');
-  assert.deepEqual(poUb.untappedSources.map((s) => s.id), ['l-g'], 'zostaje tylko Las');
+  assert.deepEqual(poUb.untappedSources.map((s) => s.id), ['l-g', 'l-u', 'l-r', 'l-b'],
+    'F: Las pierwszy, reszta dostępna za {1} (nie „tylko Las" jak w 23c)');
   const poG = tap('l-g');
   assert.equal(poG.requirements[1].covered, true, 'pip {G} pokryty');
   assert.equal(poG.remainingTotal, 1, 'brakuje jeszcze jednej many na część bezbarwną');
@@ -171,8 +179,8 @@ test('Gd/5: pełna ścieżka silnika — Trestle Troll {1}{B}{G} z bramy {U}{B} 
   const progress = wizardProgress(poBramie, 'p1',
     { totalNeeded: 3, requirements: [['B'], ['G']], costStr: '{1}{B}{G}' },
     sources, unitsPoBramie);
-  assert.deepEqual(progress.untappedSources.map((s) => s.cardId), ['basic-forest'],
-    'kreator prowadzi do Lasu — dokładnie to, czego brakuje po bramie {U}{B}');
+  assert.deepEqual(progress.untappedSources.map((s) => s.cardId), ['basic-forest', 'basic-island'],
+    'F: kreator prowadzi do Lasu KOLEJNOŚCIĄ (pierwszy wiersz); Wyspa dostępna za {1}');
 
   assert.ok(execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'forest' }).ok, 'Las tapnięty');
   assert.ok(execute(state, { type: 'tap_for_mana', playerId: 'p1', objectId: 'island' }).ok, 'Wyspa tapnięta');
