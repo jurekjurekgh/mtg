@@ -8896,6 +8896,10 @@ export function playerView(state, playerId) {
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
         allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+        // E (2026-09-25g): „you may [verb] target" — decline w modalu celu
+        // ma własne brzmienie („Nie tapuj nikogo (you may)"), inne niż
+        // odmowa „up to one"; render.js rozróżnia po tej fladze.
+        mayFire: head.ability?.trigger?.mayFire === true,
         // M172/B: rozdział Sagi ma effect: [] — typ efektu z extra; tytuł
         // rozdziału (Mesmerize/Cold Snap) dla modala wyboru celu.
         effectType: ((Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null)
