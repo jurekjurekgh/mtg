@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { installPressActivation, PRESS_EXEMPT_ATTRIBUTE } from '../src/table/gestures.js';
 import { renderPickerRow } from '../src/table/picker.js';
 
@@ -332,6 +333,14 @@ test('C2/8: wyspa bez `elementFromPoint` (środowiska bez pomiaru) nie traci och
     if (previous === undefined) delete globalThis.document;
     else globalThis.document = previous;
   }
+});
+
+test('C2/10: kontrakt źródłowy — opcje modala wyboru idą przez installPressActivation (bramka gestu)', () => {
+  const src = fs.readFileSync('src/table/choice-request.js', 'utf8');
+  assert.match(src, /installPressActivation\(button, \(\) => \{/,
+    'option button w renderChoiceRequest MUSI być aktywowany przez gest, nie goły click');
+  assert.doesNotMatch(src, /button\.addEventListener\('click', \(\) => \{\s*\n\s*const response = choiceResponse/,
+    'stary goły listener click opcji wykreślony — inaczej podwójna ścieżka rzutu');
 });
 
 test('C2/9: kontrakt — wiersz i input noszą markę wyspy (picker nadaje, gestures nie zna klas)', () => {

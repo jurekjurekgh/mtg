@@ -1,4 +1,5 @@
 import { choiceResponse } from '../protocol/types.js';
+import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
@@ -176,9 +177,16 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
         onToggle: () => onToggleIgnoredOption(key),
       });
     }
-    button.addEventListener('click', () => {
-      const response = choiceResponse(request, option);
-      onResponse?.(response);
+    // UWAGA C2 (właściciel 2026-09-25f): ta sama bramka gestu co w panelu
+    // akcji (L170 — moduł gesturów, nie CSS). Goły `click` wystarczał tylko
+    // przy szczęśliwym targetowaniu: press z etykiety zwolniony nad ptaszkiem
+    // daje click na wspólnym przodku (= ten przycisk), który omija
+    // `stopPropagation` wiersza i odsyłałby odpowiedź (rzut czaru).
+    // `installPressActivation` połyka taki click, przekazuje tap wyspie
+    // (ptaszek się zaznacza), a zwykły press i klawiatura (`detail === 0`)
+    // odpowiadają dokładnie raz — tak jak dotąd.
+    installPressActivation(button, () => {
+      onResponse?.(choiceResponse(request, option));
     });
     // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
     // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
