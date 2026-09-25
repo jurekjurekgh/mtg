@@ -861,7 +861,7 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
  * niesie klucz źródła zamiast liczby). Nieznane klucze traktujemy zachowawczo
  * jako 1 (jak dotąd), znane liczymy — 0 znaczy „czar nic nie zrobi".
  */
-function dynamicTokenCount(view, amountKey) {
+function dynamicTokenCount(view, amountKey, effect = null) {
   if (amountKey === 'attacking_creatures_count') {
     // M107: widok ma pełną sekcję walki (ADR 0017). Fallback na znacznik
     // `attacking` z kafli zostaje dla widoków sprzed tej zmiany (replaye).
@@ -873,6 +873,11 @@ function dynamicTokenCount(view, amountKey) {
       && (o.types ?? []).includes('Land')).length;
   }
   if (amountKey === 'commander_casts') return 0; // brak command zone w tym formacie
+  // PMSSB-2/A (F6): „za każdego imiennika w twoim grobie" (Undead Servant)
+  // — grób jest jawny (CR 400.2), liczymy wprost z widoku.
+  if (amountKey === 'cards_named_in_graveyard' && effect?.countCardId) {
+    return (view.zones.graveyard ?? []).filter((o) => o.cardId === effect.countCardId).length;
+  }
   return 1;
 }
 
@@ -900,7 +905,7 @@ function effectIsInertNow(view, effect, cmd) {
   const mineCount = creatures(true).length;
   switch (effect.type) {
     case 'create_token': {
-      const count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
+      const count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount, effect);
       return count === 0;
     }
     case 'buff_opponents_creatures': return enemyCount === 0;
@@ -1238,6 +1243,74 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // creature_opponent_controls, artifact_or_creature, nonland_permanent…)
     return foes.length > 0;
   };
+  // PMSSB-2/A (F4): efekty oferowane PRZEZ token (z jego zdolności —
+  // deskryptor efektu albo definicja tokena, wzorzec M243/C). Jedno źródło
+  // dla wyceny roli (mana-bank / liczniki) i kary M243/C (L41).
+  const tokenGrantedEffects = (effect) => {
+    const tokenDef = effect?.cardId ? cardDef(effect.cardId) : null;
+    const tokenAbilities = effect?.abilities ?? tokenDef?.abilities ?? [];
+    return tokenAbilities.flatMap((a) => {
+      const fx = a?.effect;
+      return Array.isArray(fx) ? fx : fx ? [fx] : [];
+    });
+  };
+  // PMSSB-2/A (F4): ile many daje token-bank (Treasure/Powerstone/Scion...)?
+  // 0 = token nie jest bankiem. Ciało + bank to ALTERNATYWA (poświęcasz
+  // jedno dla drugiego — Scion), więc wołający bierze max, nie sumę.
+  const tokenGrantedMana = (effect) => tokenGrantedEffects(effect)
+    .filter((fx) => fx?.type === 'add_mana')
+    .reduce((sum, fx) => sum + (Number.isInteger(fx.amount) ? fx.amount : 1), 0);
+  const tokenOnlyManaBank = (effect) => {
+    const granted = tokenGrantedEffects(effect);
+    const tokenDef = effect?.cardId ? cardDef(effect.cardId) : null;
+    return (effect?.power ?? tokenDef?.power ?? 0) <= 0 && granted.length > 0
+      && granted.every((fx) => fx?.type === 'add_mana');
+  };
+  // PMSSB-2/A (F3/F4/F6): WARTOŚĆ tokena — wspólna dla cast_spell,
+  // activate_ability, plot i tabeli ETB (L41; koniec 3 formuł).
+  // Rdzeń worth `10×count×(2P+T)/3` BEZ ZMIAN (kotwica anty-over-fix:
+  // Chatter 1×1/1 = 10). Rola (F4): max(ciało, bank-many, bank-liczników)
+  // — Mutagen (licznik +1/+1) liczy najlepszego gospodarza (własne stwory
+  // + wchodzący, jak buff_creatures_you_control). Ilość (F6): klucze Z6.
+  // Fala C: keywordy bojowe (flying/…) z kontekstem walki + wrogie tokeny
+  // (znak) + riderzy (ping Robbera). Koszt: fateful hour w środku (jak dotąd).
+  const tokenBodyValue = (view, effect, { source = null, entering = null } = {}) => {
+    if (!effect || effect.type !== 'create_token') return 0;
+    let count = Number.isInteger(effect.amount)
+      ? effect.amount
+      : dynamicTokenCount(view, effect.amount, effect);
+    if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
+      count = effect.amountIfCondition ?? count;
+    }
+    if (!(count > 0)) return 0;
+    const greatestPower = myCreatures(view).reduce((max, o) => Math.max(max, o.power ?? 0), 0);
+    const resolveStat = (v) => {
+      if (v === 'greatest_power_you_control') return greatestPower;
+      if (v === 'source_power') return source?.power ?? 0;
+      return v ?? 1;
+    };
+    // Ciało liczy się TYLKO stworom (Treasure/Powerstone/Mutagen nie mają
+    // P/T — stary `?? 1` dawał im ciało 1/1 gratis; cały katalog: każdy
+    // token-stwór niesie P/T, weryfikacja w sondzie PMSSB-2).
+    const isCreatureToken = effect.kind === 'creature' || (effect.types ?? []).includes('Creature');
+    const bodyWorth = isCreatureToken
+      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 : 0;
+    const manaWorth = tokenGrantedMana(effect) > 0
+      ? P.tokenManaBankWeight * tokenGrantedMana(effect) : 0;
+    let counterWorth = 0;
+    const granted = tokenGrantedEffects(effect);
+    const counterGrant = granted.length > 0 && granted.every((fx) => fx?.type === 'add_counter')
+      ? granted[0] : null;
+    if (counterGrant) {
+      const hosts = [...myCreatures(view)];
+      if (entering) hosts.push(entering);
+      for (const host of hosts) {
+        counterWorth = Math.max(counterWorth,
+          counterHostValue(view, host, counterGrant.counter ?? '+1/+1', counterGrant.amount ?? 1));
+      }
+    }
+    return count * Math.max(bodyWorth, manaWorth, counterWorth);
+  };
   const ETB_EFFECT_BONUS = Object.freeze({
     draw_cards: (e) => 9 * (e.amount ?? 1),
     draw_then_discard: () => 6,
@@ -1245,7 +1318,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     scry: () => 4,
     discover: () => 10,
     gain_life: (e) => Math.min(2 * (e.amount ?? 1), 8),
-    create_token: () => 12,
+    // PMSSB-2/A (F3): token z ETB liczy ilość i ciało/rolę jak czar
+    // (koniec flat 12 — Jyoti z 0 tokenami dostaje 0). Wchodzący stwór sam
+    // jest gospodarzem licznika (jak buff_creatures_you_control).
+    create_token: (e, view, req, def) => tokenBodyValue(view, e, {
+      entering: def ? {
+        id: 'pmssb2-entering', controllerId: view.playerId, kind: 'creature',
+        power: def.power ?? 0, toughness: def.toughness ?? 0,
+        keywords: def.keywords ?? [],
+      } : null,
+    }),
     create_offspring_token: () => 12,
     living_weapon: () => 12,
     destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
@@ -1310,7 +1392,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       for (const e of effs) {
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
-        total += fn(e, view, req);
+        total += fn(e, view, req, def);
       }
     }
     return total;
@@ -4451,6 +4533,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (effect.type === 'surveil' || effect.type === 'scry') {
           modeScore += 3;
         } else if (effect.type === 'create_token') {
+          // PMSSB-2/A (F3-OUT): tryb modalnego TRIGGERA z tokenem — 0 kart
+          // w katalogu (wszystkie tokeny to czary/zdolności/zwykłe triggery),
+          // a gałąź czyta rejestr (nie widok), więc jest nietestowalna
+          // synetycznie. Zostaje flat 8 + ten wskaźnik długu L41.
           modeScore += 8;
         }
       }
@@ -4801,7 +4887,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // zagranie, ale dodatnia, gdy karta ma efekt tokenowy/board-building.
         let score = 55;
         for (const effect of card.spell?.effects ?? []) {
-          if (effect.type === 'create_token') score += 12;
+          // PMSSB-2/A (F3): plot tokenowy liczy ciało jak cast (koniec flat 12).
+          if (effect.type === 'create_token') score += tokenBodyValue(view, effect);
           if (effect.type === 'mill_cards') score += 2;
         }
         return finish(score);
@@ -5748,23 +5835,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'create_token') {
-            // Tokeny to realny przyrost planszy (Gather the Townsfolk).
-            // Warunek „fateful hour" (ifLifeAtMost) podnosi liczbę tokenów,
-            // gdy naprawdę zachodzi — deskryptor generyczny, zero nazw kart.
-            // M106/Z6 (audyt stołu): liczba tokenów bywa DYNAMICZNA
-            // („X = liczba atakujących" — Flurry of Wings). Wcześniej każdy
-            // nieliczbowy `amount` liczył się jak 1, więc bot rzucał Flurry
-            // of Wings we WŁASNYM upkeepie (0 atakujących = 0 tokenów) i
-            // wyrzucał kartę. Rozwiązujemy znane źródła z widoku.
-            let count = Number.isInteger(effect.amount) ? effect.amount : dynamicTokenCount(view, effect.amount);
-            if (effect.ifLifeAtMost != null && myLife(view) <= effect.ifLifeAtMost) {
-              count = effect.amountIfCondition ?? count;
-            }
-            if (count === 0) score -= 25; // czar bez skutku = karta w błoto
-            const greatestPower = myCreatures(view).reduce((max, object) => Math.max(max, object.power ?? 0), 0);
-            const tokenPower = effect.power === 'greatest_power_you_control' ? greatestPower : (effect.power ?? 1);
-            const tokenToughness = effect.toughness === 'greatest_power_you_control' ? greatestPower : (effect.toughness ?? 1);
-            score += 10 * count * (2 * tokenPower + tokenToughness) / 3;
+            // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
+            // hour + ciało/rola w środku). Kara za pusty czar zostaje:
+            // tokenBodyValue zwraca 0, a −25 mówi „karta w błoto" (M106/Z6).
+            const tokenValue = tokenBodyValue(view, effect);
+            if (tokenValue === 0) score -= 25; // czar bez skutku = karta w błoto
+            score += tokenValue;
           }
           // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
           // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
@@ -7251,12 +7327,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (ability?.cost?.sacrificeSelf && !unlocksSomething) score -= 6;
           }
           if (effect.type === 'create_token') {
-            // Zdolność produkująca token (np. Dragonbroods' Relic) jest
-            // oceniana tym samym generycznym deskryptorem co czar-token.
-            const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
-            const tokenPower = effect.power === 'source_power' ? (source?.power ?? 0) : (effect.power ?? 1);
-            const tokenToughness = effect.toughness === 'source_power' ? (source?.power ?? 0) : (effect.toughness ?? 1);
-            score += 10 * amount * (2 * tokenPower + tokenToughness) / 3;
+            // PMSSB-2/A (F3): ten sam tokenBodyValue co czar (L41 — także
+            // ilości dynamiczne, dotąd fallback 1 tylko w tej gałęzi).
+            score += tokenBodyValue(view, effect, { source });
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
             // M243/C (zgłoszenie właściciela, Heap Gate #3): token będący
             // WYŁĄCZNIE bankiem many (Treasure/Powerstone — token-def albo
@@ -7268,16 +7341,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // jutro za tę samą manę. Bilans zerowy co do liczby, ujemny co
             // do tempa. Kara przebija premię „10 pkt za token" (L3: kara ma
             // przenosić wariant PONIŻEJ passa).
-            const tokenDef = effect.cardId ? cardDef(effect.cardId) : null;
-            const tokenAbilities = effect.abilities ?? tokenDef?.abilities ?? [];
-            const tokenEffects = tokenAbilities.flatMap((a) => {
-              const fx = a?.effect;
-              return Array.isArray(fx) ? fx : fx ? [fx] : [];
-            });
-            const tokenOnlyManaBank = (effect.power ?? tokenDef?.power ?? 0) <= 0
-              && tokenEffects.length > 0
-              && tokenEffects.every((fx) => fx?.type === 'add_mana');
-            if (tokenOnlyManaBank) {
+            // PMSSB-2/A: detekcja banku przez wspólny czytnik (wynik M243/C
+            // BEZ ZMIAN — kara 13/14 stoi, pin w teście keeps).
+            if (tokenOnlyManaBank(effect)) {
               const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
               score -= hasPlayable ? 13 : 14;
             }
