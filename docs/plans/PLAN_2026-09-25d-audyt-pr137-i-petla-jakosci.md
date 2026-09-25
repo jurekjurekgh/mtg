@@ -34,9 +34,8 @@ niedokończony plan → pętla jakości (Żywy Tester + łowy CR inną ścieżk�
 
 ## Etap A — PR na starcie (ADR 0020 A)
 
-- [ ] A1: ten plan jako osobny commit, wypchnięty na gałąź sesji.
-- [ ] A2: `gh pr create` (base `main`) — opis z szablonu: zakres audytu, bramy,
-      znaleziska; uzupełniany kumulatywnie. Agent nie scala.
+- [x] A1: ten plan jako osobny commit, wypchnięty na gałąź sesji (`256c179`).
+- [x] A2: PR #138 otwarty na `main`. Opis uzupełniany kumulatywnie. Agent nie scala.
 
 ## Etap B — audyt PR #137 (ADR 0020 B / ADR 0016), 53 pliki, 8 osi
 
@@ -47,10 +46,11 @@ znalezione — L164). Każde „przypięte testem" sprawdzone mutacją w kierunk
 PRZED naprawą (L13/L34/L159: mutacja, która się nie wykonała, nie jest zielona).
 Zero zgłoszeń detektorów = pomiar narzędzia, nie czystość (L27).
 
-- [ ] B0 — co PR #137 zostawił otwarte vs co jest świadomą granicą (E2 z planu
-      25a, brak handoffu 25a/b/c, `PROJECT_HISTORY` kończy się na M430 mimo
-      wpisów M431–M433 w `ENGINE_MILESTONES`).
-- [ ] B1 — **M431 / decyzja odkręcania (CR 502.3)**. Pliki: `permanents.js`
+- [x] B0 — otwarte vs granica: phasing nie istnieje w katalogu (skan, nie
+      „kiedyś"); historia M431–M433 zostaje w milestone'ach i #137, bez
+      rekonstrukcji trzech sesji. Handoff tej sesji: `HANDOFF_2026-09-25d.md`.
+- [x] B1 — **M431 / decyzja odkręcania (CR 502.3)**. Znalezisko F-1 (kolejność
+      Map łamała jednoczesność) naprawione w `a9b8297`. Szczegóły: raport. Pliki: `permanents.js`
       (`untapChoiceCandidates`, `untapControlled(keepTappedIds)`, usunięte
       `isActiveLockSource`), `resources.js` (`beginTurn`), `game-state.js`
       (oferta, walidacja, bramka `execute`, kontynuacja tury, widok),
@@ -63,36 +63,35 @@ Zero zgłoszeń detektorów = pomiar narzędzia, nie czystość (L27).
       czytają jeden predykat (L48), czy widok niesie to, czego bot potrzebuje
       (ADR 0017), czy nie ma przypadku po nazwie karty (ADR 0002), czy
       zdublowany klucz `pendingUntapChoice` w `createGameState` to tylko szum.
-- [ ] B2 — **M431 / wycena keywordów aur** (`heuristic-bot.js`,
+- [x] B2 — **M431 / wycena keywordów aur** (czytane, nie mutowane).
+      `auraKeywordValue` liczy świeżość z deskryptora i słów gospodarza w
+      widoku. Nazwa karty jest w komentarzu, nie w gałęzi. (`heuristic-bot.js`,
       `heuristic-params.js`, `test/audyt-m431-wycena-keywordow-aur.test.js`,
       fixture `bot-scoring-snapshot.json`). Czy wymiar jest ze świeżości grantu
       w widoku, nie z ciała gospodarza (L169), czy pokrętło nie jest atrapą
       (L5), czy zmiana fixture'a jest przypisana (L124), czy aggro-bot nie ma
       no-opowej gałęzi (L159).
-- [ ] B3 — **M430 w tym samym squashu**: predykat „karta w grobie przeciwnika"
+- [x] B3 — **M430 w tym samym squashu**: mutacja `!isToken` czerwieni pin
+      kopii w grobie. Kreatora celów i 601.2c nie ruszano w tej sesji poza
+      odczytem — nie twierdzę, że mutowałem F-4/F-5. predykat „karta w grobie przeciwnika"
       (`zones.js` + `triggers.js`, F-2), kreator celów (`multi-target.js`, F-4),
       kombinacje zamiast permutacji (`spells.js`, F-5, CR 601.2c), cytat
       602.5d. Czy późniejsze commity (M431–M433) ich nie ruszyły i czy testy
       naprawdę czerwienieją po cofnięciu (nie tylko istnieją).
-- [ ] B4 — **M432 / gest pressa** (`gestures.js`, `picker.js`, `main.js`).
+- [x] B4 — **M432 / gest pressa**. Mutacja wyspy czerwieni C1. Retarget
+      capture opisany w raporcie jako luka testu, nie jako naprawa. (`gestures.js`, `picker.js`, `main.js`).
       Czy wyspa `data-press-exempt` zamyka `pointerdown`, `pointerup` i `click`
       (także klawiatura `detail === 0`), czy nie wyłącza całej akcji przycisku,
       czy modal wyboru (bez pressa) został nietknięty, czy testy C1–C7 mierzą
       sekwencję zdarzeń a nie tekst CSS (L125/L170).
-- [ ] B5 — **M432 / życie bufora „Rozgrywka"** (`session.js`:
-      `consumeBotMoves`, `botMovesPaintedUpdate`, `PUBLIC_INFO_EVENTS`).
-      Czy discover bota dochodzi do modala (CR 701.20 — informacja publiczna),
-      czy nie wycieka strefa zakryta (ADR 0003), czy re-render nie zapętla się
-      (pin w `table-ui`), czy konsumpcja zjada tylko pokazany prefiks.
-- [ ] B6 — **M433 / odmiana** (`polish-plural.js`, re-eksport w `render.js`,
-      `session.js`, `deck-builder.js`). Czy re-eksport wiąże nazwę lokalnie
-      (L171), czy strażnik J skanuje sztywną formę `${…} kart` i czy zostały
-      miejsca poza skanem, czy cykl importów nie wrócił (`module-graph`).
-- [ ] B7 — **testy deklarują to, co mierzą** (RED→GREEN, L13). Próbka mutacji
-      na co najmniej jednej gałęzi z każdej osi B1–B6, nie na wszystkich
-      naraz. Mutacja przywracana zakresem, nie `replace()` na całym pliku
-      (incydent 24f). Po mutacji `git diff` pusty poza zamierzonym.
-- [ ] B8 — **E2 z planu 25a** jako oś audytu, nie jako „kiedyś": phasing
+- [x] B5 — życie bufora „Rozgrywka" (czytane, nie mutowane).
+      `PUBLIC_INFO_EVENTS` to odsłonięcia, nie scry.
+- [x] B6 — odmiana. Nowe zdania M431 miały sztywną formę poza skanem J3
+      — naprawione (`a029901`). Re-eksport liścia nietknięty.
+- [x] B7 — próbka mutacji, nie każda oś. F-1 czerwone przed naprawą;
+      mutacja `!isToken` i wyspy pressa czerwienią piny i zostały cofnięte.
+      B2 i B5 nie mutowane.
+- [x] B8 — **E2 z planu 25a** jako oś audytu, nie jako „kiedyś": phasing
       (502.1), stun (122.1d) wobec `keepTappedIds`, zmiana kontrolera (400.3),
       odkręcenie efektem (nie podlega blokadzie kroku). Jeśli kod już to
       robi — pin. Jeśli kłamie wobec CR — naprawa u root cause w etapie C,
@@ -101,13 +100,15 @@ Zero zgłoszeń detektorów = pomiar narzędzia, nie czystość (L27).
 
 ## Etap C — naprawy znalezisk (tylko to, co audyt pokaże)
 
-- [ ] C1: każde znalezisko = test RED → naprawa u root cause (ADR 0002, L57:
+- [x] C1: każde znalezisko = test RED → naprawa u root cause (ADR 0002, L57:
       zgłoszenie ≠ reguła; tu źródłem jest CR, nie pamięć) → mutacja → commit
       osobno, push od razu.
-- [ ] C2: drobiazgi złapane przy audycie (literówka cytatu, zdublowane pole,
+- [x] C2: drobiazgi złapane przy audycie (literówka cytatu, zdublowane pole,
       brak wpisu w dzienniku) idą w tej samej turze co odkrycie — nie pytam,
       czy naprawić (AGENTS.md, M433).
-- [ ] C3: nowa lekcja tylko po skróceniu innego wpisu. Budżet lektury był na
+- [x] C3: nowa lekcja tylko po skróceniu innego wpisu. Nie dopisuję L172 —
+      klasa siedzi w komentarzu `untapControlled` i w raporcie, a `LESSONS.md`
+      jest powyżej progu 100k. Progu nie ruszam. Budżet lektury był na
       progu 100k po M433; progu nie podnoszę. Klasa już opisana (L48, L95,
       L169, L170, L171) nie dostaje nowego numeru.
 
@@ -117,28 +118,29 @@ Poprzednie sesje mierzyły: batch 59 (seed 78, kreator celów), theros+Lyra
 (seedy 77–82, oferta odkręcania), innistrad-brg vs ixalan seed 43 (discover).
 Ta sesja nie powtarza tych seedów jako „dowodu czystości".
 
-- [ ] D1: Żywy Tester na parach talii, których 25a/b nie czytały ręcznie
+- [x] D1: Żywy Tester na parach talii, których 25a/b nie czytały ręcznie
       (oś: bezsensowne działania bota, kompletność logu i „Ruchu przeciwnika",
       ptaszki auto-pass — `TESTER_STOLU.md`). Braki testera naprawiam w
       testerze (L12). Rebuild `dist/` przed pomiarem (L76). Talia chwilowa
       poza repo albo usunięta przed bramą.
-- [ ] D2: łowy CR ścieżką „krok odkręcania i efekty ciągłe blokady", nie
+- [x] D2: łowy CR ścieżką „krok odkręcania i efekty ciągłe blokady", nie
       ścieżką numerów 702 (to robiła 24b/24f). Cytat dosłowny w pinie.
-- [ ] D3: zero zgłoszeń detektorów czytam jako dolną granicę i czytam
+- [x] D3: zero zgłoszeń detektorów czytam jako dolną granicę i czytam
       transkrypt ręcznie (L27). Klasa znaleziona ręcznie kończy się detektorem,
       jeśli da się ją skodyfikować bez fałszywych alarmów (L12).
 
 ## Etap E — domknięcie (ADR 0013)
 
-- [ ] E1: bramy na gotowym drzewie: `npm test`, `npm run build`, przy zmianie
+- [x] E1: bramy na gotowym drzewie: `npm test` 6596/6596, `test:all` 6606/6606,
+      build 61 modułów / 4294,9 kB. Pełnego B0 nie odpalano. `npm test`, `npm run build`, przy zmianie
       silnika/wyceny także `npm run test:all` i szybki `node tools/benchmark.mjs`
       (672 mecze). Pełnego B0 nie odpalam. Progu regresji nie ruszam bez pełnej
       macierzy (ADR 0018).
-- [ ] E2: raport `docs/audits/AUDYT_PR137_2026-09-25d.md`, wpis w
+- [x] E2: raport `docs/audits/AUDYT_PR137_2026-09-25d.md`, wpis w
       `PROJECT_HISTORY` + `ENGINE_MILESTONES` (dopiero gdy jest co zapisać),
       handoff `docs/setup/HANDOFF_2026-09-25d.md`, opis PR kumulatywnie.
       Liczby „bieżącego stanu" mierzone na końcu (L92).
-- [ ] E3: blok przekazania w czacie. Scalenie = decyzja właściciela.
+- [x] E3: blok przekazania w czacie. Scalenie = decyzja właściciela.
 
 ## Ryzyka i pułapki
 
