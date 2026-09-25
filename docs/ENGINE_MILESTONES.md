@@ -8036,3 +8036,23 @@ skasował niecommitowane naprawy) procedura bezstratna: `cp` ruszanych plików �
 `git diff --cached FETCH_HEAD --name-status` (padło dokładnie 5 ścieżek bieżącej
 robocizny ⇒ reszta to ten sam kontent) → `git reset <tip-zdalny>` bez flagi
 (rusza ref i indeks, nie rusza plików).
+
+
+## M434 — audyt PR #137: jednoczesne odkręcenie (sesja 2026-09-25d, PR #138)
+
+**Skąd.** Audyt scalonego #137 (ADR 0020). CR 502.3 każe najpierw ustalić, które
+permanenty się odkręcą, i odkręcić je jednocześnie. `untapControlled` czytało
+źródło blokady już po podbiciu `untapVersion`, więc własny cel wstawiony za
+lirą wstawał w tym samym kroku, a stun schodził mimo że zdarzenie nie powinno
+zajść (122.1d + 614.7). Testy M431 tego nie łapały: ich cel jest u przeciwnika.
+
+**Naprawa.** Migawka `{tapped, untapVersion, zone}` z chwili ustalenia, czytana
+tylko w kroku odkręcania. Oferta powyżej capu zawsze zawiera „zostaw wszystkie".
+Log i etykieta odmieniają liczebnik i nie nazywają karty. Piny:
+`test/audyt-pr137-jednoczesne-odkrecenie.test.js` (B1–B7), J6/J7.
+
+**Świadomie nie ruszane.** Phasing (502.1) — zero kart w katalogu. Kopia
+`untapChoice` nie dochodzi do untapu w dzisiejszym katalogu. Retarget
+`setPointerCapture` nie jest zmierzony w przeglądarce. Bez nowej lekcji:
+`LESSONS.md` powyżej progu 100k, klasa jest w komentarzu i w
+`docs/audits/AUDYT_PR137_2026-09-25d.md`.

@@ -19,6 +19,17 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-25d — audyt PR #137: jednoczesne odkręcenie
+
+Audyt scalonego #137 (squash `7ccc440`). Krok odkręcania ustalał blokadę na
+żywym stanie pętli, więc kolejność `Map` decydowała, czy własny cel wstaje w
+tym samym kroku co źródło (CR 502.3). Naprawa i piny są w PR #138. Raport:
+`docs/audits/AUDYT_PR137_2026-09-25d.md`. Handoff:
+`docs/setup/HANDOFF_2026-09-25d.md`.
+
+M431–M433 nie dostają tu pełnych wpisów wstecz — siedzą w `ENGINE_MILESTONES.md`
+i w opisie #137. Nie rekonstrukuję trzech sesji z pamięci.
+
 ## 2026-09-20e — „Log partii": lista tylko z rzeczywistymi turami
 
 Właściciel po obejrzeniu korekty: „Skoro przełączanie tury nie zmienia nic

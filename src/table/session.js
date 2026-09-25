@@ -1851,11 +1851,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): gra czeka na
       // wybór kontrolera w kroku odkręcania — bez wpisu gracz nie wie, że
       // silnik na niego czeka (klasa M106/Z2).
-      case 'untap_choice_required':
+      case 'untap_choice_required': {
         // Forma czasu: 3. os. licz. — koniecznie z wpisem w DRUGA_OSOBA (Z1c).
-        return `${whoN(e.playerId)} wybiera, które permanenty zostają tapnięte w kroku odkręcania (kandydatów: ${(e.candidateIds ?? []).length})`;
-      case 'untap_choice_resolved':
-        return `${whoN(e.playerId)} zostawia w tapie ${(e.keepTappedIds ?? []).length} permanentów z ${(e.candidates ?? 0)} kandydatów${(e.keepTappedIds ?? []).length === 0 ? ' (wybór: odkręcić wszystko)' : ''}`;
+        // Liczebnik z liścia (M433): „1 kandydat", nie sztywne „kandydatów: 1".
+        const n = (e.candidateIds ?? []).length;
+        return `${whoN(e.playerId)} wybiera, które permanenty zostają tapnięte w kroku odkręcania (${n} ${polishPluralCount(n, 'kandydat', 'kandydaci', 'kandydatów')})`;
+      }
+      case 'untap_choice_resolved': {
+        const zostaje = (e.keepTappedIds ?? []).length;
+        const kandydatow = e.candidates ?? 0;
+        const dopisek = zostaje === 0 ? ' (wybór: odkręcić wszystko)' : '';
+        return `${whoN(e.playerId)} zostawia w tapie ${zostaje} ${polishPluralCount(zostaje, 'permanent', 'permanenty', 'permanentów')} z ${kandydatow} ${polishPluralCount(kandydatow, 'kandydata', 'kandydatów', 'kandydatów')}${dopisek}`;
+      }
       case 'aura_host_choice_required':
         // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami są też GRACZE
         // („Enchant player", CR 303.4f) — liczba w narracji musi pokrywać oba

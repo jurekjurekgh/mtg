@@ -306,11 +306,9 @@ export function createGameState({ seed, players }) {
     // { playerId, count, handIds, restorePriorityTo } — resolve_mulligan_bottom_choice.
     pendingMulliganBottom: null,
     // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
-    // { playerId, candidateIds }, rozstrzygany komendą `resolve_untap_choice`.
-    pendingUntapChoice: null,
-    // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
-    // { playerId, candidateIds } rozstrzygany przez `resolve_untap_choice`
-    // (komenda w protokole, oferta = walidacja, fingerprint, priorytet).
+    // { playerId, candidateIds }, rozstrzygany komendą `resolve_untap_choice`
+    // (oferta = walidacja, fingerprint, priorytet). Jeden klucz — drugi
+    // wpis w tym samym obiekcie był martwy (wygrywa ostatni).
     pendingUntapChoice: null,
     // Oczekująca decyzja „you may" triggera BEZ celu (Angel's Feather —
     // „you may gain 1 life"): tak/nie (resolve_optional_trigger_choice).
@@ -736,7 +734,8 @@ function untapChoiceOffers(state, playerId) {
   const out = [{ keepTappedIds: [] }];
   if (candidates.length <= 5) {
     // Pełna enumeracja podzbiorów (≤ 32 warianty) — przy pięciu kandydatach
-    // gracz zobaczy KAŻDĄ realnie różną kombinację.
+    // gracz zobaczy KAŻDĄ realnie różną kombinację. Oba ekstrema (pusty zbiór
+    // i pełny) są w tej enumeracji.
     const n = candidates.length;
     for (let mask = 1; mask < (1 << n); mask += 1) {
       const keepTappedIds = [];
@@ -747,6 +746,11 @@ function untapChoiceOffers(state, playerId) {
   }
   // Powyżej progu: enumeracja po rozmiarze (L19 — nigdy 2^n): najpierw
   // pojedyncze pozostawienia, potem pary i trójki, aż do wyczerpania capu.
+  // Oba EKSTREMA są legalnym wyborem CR 502.3 i nie mogą wypaść przez cap
+  // (L48: walidacja przyjmuje dowolny podzbiór kandydatów, więc oferta bez
+  // „zostaw wszystkie" ucina ruch, którego komenda by nie odrzuciła).
+  // Pusty zbiór jest już pierwszy. Pełny dokładamy przed cięciem.
+  out.push({ keepTappedIds: [...candidates] });
   for (let k = 1; k <= 3 && out.length < UNTAP_CHOICE_CAP; k += 1) {
     const walk = (pos, prefix) => {
       if (out.length >= UNTAP_CHOICE_CAP) return;

@@ -3702,16 +3702,24 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_untap_choice': {
       // M431 (uwaga właściciela, CR 502.3): etykieta musi nazywać SKUTEK
       // wyboru, nie sam zbiór id (L154) — gracz klika i od razu widzi, kogo
-      // to unieruchamia.
+      // to unieruchamia. Nazwa bierze się z obiektu, nigdy z nazwy karty
+      // zaszytej w zdaniu (ADR 0002 — „lira wstaje" kłamałoby o każdej
+      // następnej karcie z tą klauzulą).
       const kept = cmd.keepTappedIds ?? [];
+      const trzymaniPrzez = (ids) => [...new Set(ids.flatMap((id) => view.pendingUntapChoice?.lockedByCandidate?.[id] ?? []))];
       if (kept.length === 0) {
-        return 'Odkręć wszystko (lira wstaje, blokada wygasa w kolejnym kroku)';
+        const trzymani = trzymaniPrzez(view.pendingUntapChoice?.candidateIds ?? []);
+        if (trzymani.length === 0) return 'Odkręć wszystko';
+        const nazwy = trzymani.map((id) => nameOfObjectId(id)).join(', ');
+        const czas = trzymani.length === 1 ? 'zostaje tapnięty' : 'zostają tapnięte';
+        return `Odkręć wszystko — ${nazwy} ${czas} do swojego następnego kroku odkręcania`;
       }
       const nazwy = kept.map((id) => nameOfObjectId(id)).join(', ');
-      const trzymani = [...new Set(kept.flatMap((id) => view.pendingUntapChoice?.lockedByCandidate?.[id] ?? []))];
-      const skutek = trzymani.length > 0
-        ? `zostaje unieruchomionych ${trzymani.length} permanentów: ${trzymani.map((id) => nameOfObjectId(id)).join(', ')}`
-        : 'nikt nie jest blokadą trzymany — płacisz tylko utratą odkręcenia';
+      const trzymani = trzymaniPrzez(kept);
+      const n = trzymani.length;
+      const skutek = n > 0
+        ? `${n} ${polishPluralCount(n, 'permanent zostaje unieruchomiony', 'permanenty zostają unieruchomione', 'permanentów zostaje unieruchomionych')}: ${trzymani.map((id) => nameOfObjectId(id)).join(', ')}`
+        : 'nikogo ta blokada nie trzyma — płacisz tylko utratą odkręcenia';
       return `Zostaw tapnięte: ${nazwy} — ${skutek}`;
     }
     case 'resolve_aura_host': {
