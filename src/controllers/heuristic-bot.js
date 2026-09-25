@@ -2158,6 +2158,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return bonus;
   };
 
+  // PMSSB-1 (fala A) — wspólna wycena CELU bounce (L41: cast_spell,
+  // activate_ability i decyzje celu triggerów liczą te same wymiary).
+  // Wymiary fali A: siła efektu (skala hand < top < bottom), token
+  // (trwałe zniknięcie, CR 704.5d), aury (jak trigger auraStripDelta:
+  // +30 cudza / −30 własna — bazowa jednostka „karta"), powtórka ETB
+  // wroga (kara = wartość ETB z etbEnterBonusValue — proxy perspektywy:
+  // większość ETB jest bezwarunkowa/symetryczna; precyzyjne lustro
+  // celowanych ETB to zadanie poza falą A). Fala B (kierunek własny:
+  // ratunek/reuse) i fala C (timing/stan) dopisują tu swoje wymiary.
+  const BOUNCE_STRENGTH = new Map([
+    ['bounce_permanent', 0],
+    ['bounce_to_library_top', P.bounceLibraryTopBonus],
+    // Vanish: WŁAŚCICIEL celu wybiera top/bottom (M177/D) — wróg weźmie
+    // top (odzyska kartę doborem), więc pesymistycznie liczymy top.
+    ['owner_library_top_or_bottom', P.bounceLibraryTopBonus],
+    ['bounce_to_library_bottom', P.bounceLibraryBottomBonus],
+  ]);
+  const bounceEffectStrengthBonus = (effectType) => BOUNCE_STRENGTH.get(effectType) ?? 0;
+  const bounceTargetAdjustments = (view, victim) => {
+    if (!victim) return 0;
+    let delta = 0;
+    const mine = victim.controllerId === view.playerId;
+    if (!mine && victim.isToken === true) delta += P.bounceTokenBonus;
+    delta += attachedAurasOf(view, victim)
+      .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
+    if (!mine && victim.cardId) {
+      delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
+    }
+    return delta;
+  };
+
   /**
    * M139 (uwaga właściciela) — WARTOŚĆ TAPNIĘCIA ZALEŻY OD MOMENTU.
    *
@@ -5101,6 +5132,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             'exile_permanent', 'exile_target_creature',
             'bounce_permanent', 'bounce_to_library_top',
             'bounce_to_library_bottom',
+            // PMSSB-1/A (F7): Vanish from Sight też jest removalem
+            // (top/bottom właściciela) — bez wpisu czar nie skalował
+            // wartością celu (remis 38/38 w sondzie S10).
+            'owner_library_top_or_bottom',
           ]);
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
             // P (uwaga właściciela 2026-09-23, Vandalize — „Choose one or both
@@ -5147,6 +5182,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
                 // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
                 score += enemyRemovalTargetBonus(view, victim);
+                // PMSSB-1/A: wymiary bounce (skala siły + cel) — tylko dla
+                // efektów odbijających, nie dla destroy/exile.
+                if (BOUNCE_STRENGTH.has(effect.type)) {
+                  score += bounceEffectStrengthBonus(effect.type);
+                  score += bounceTargetAdjustments(view, victim);
+                }
               }
             }
           }
@@ -5352,10 +5393,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          if (effect.type === 'return_to_hand' && target && target.controllerId !== view.playerId) {
-            score += P.bounceEnemyBase + (target.power ?? 0) * P.bounceEnemyPowerWeight;
-            score += enemyRemovalTargetBonus(view, target); // M234
-          }
+          // PMSSB-1/A (M239/2): gałąź return_to_hand USUNIĘTA — typ nie
+          // występuje w katalogu ani silniku (martwe; wycena bounce żyje w
+          // REMOVAL_EFFECTS powyżej, typy bounce_*).
           if (effect.type === 'damage') {
             // M237/4 (model właściciela) — JEDNO źródło prawdy wyceny obrażeń
             // (damageTargetValue): stwór wroga dobity wg POZOSTAŁEGO życia,
@@ -6551,6 +6591,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             else if (foeLib - n <= 0) score += 80; // przeciwnik dobiera z pustej = wygrana
             else if (myLib <= foeLib) score -= 40; // nie prowadzę — dzwonienie szkodzi bardziej mnie
             else score += 6 + Math.min(10, myLib - foeLib); // prowadzę: mały zysk rosnący z przewagą
+          }
+          // PMSSB-1/A (L41 z cast_spell REMOVAL_EFFECTS): bounce ze
+          // ZDOLNOŚCI — ta sama wycena co czar (skala siły + wymiary celu).
+          // Katalog nie ma dziś aktywowanych zdolności bounce (zero kart),
+          // ale gałąź musi być gotowa na wejście pierwszej (jak wyżej mill).
+          if (BOUNCE_STRENGTH.has(effect.type)) {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0];
+            const victim = slot ? objectOnBoard(view, slot) : null;
+            if (victim) {
+              if (victim.controllerId === view.playerId) score -= 90; // fala B: ratunek/reuse
+              else {
+                const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
+                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                score += enemyRemovalTargetBonus(view, victim); // M234
+                score += bounceEffectStrengthBonus(effect.type);
+                score += bounceTargetAdjustments(view, victim);
+              }
+            }
           }
           // M173/D (uwaga właściciela, Rustvine Cultivator): add_counter nie
           // miał wyceny w ścieżce zdolności (klasa L50) — bot tapował się CO
@@ -8093,8 +8151,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const kill = debuffKills(target);
         // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
         const aura = auraStripDelta(target);
+        // PMSSB-1/A (L41 z cast_spell): trigger-bounce (Jill/Academy/
+        // Invasive) liczy te same wymiary celu co czar — token-trwałość
+        // (CR 704.5d) i karę powtórki ETB wroga. Aury NIE (już w `aura`).
+        let bounceDelta = 0;
+        if (BOUNCE_STRENGTH.has(view.pendingTriggerTarget?.effectType)
+          && target.controllerId !== view.playerId) {
+          if (target.isToken === true) bounceDelta += P.bounceTokenBonus;
+          if (target.cardId) {
+            bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId));
+          }
+        }
         if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
-        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target));
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target) + bounceDelta);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy

@@ -32,8 +32,13 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   // Rodzina „removal, obrażenia i przewaga kartowa".
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalEnemyBase, 22);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalWorthWeight, 2);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyBase, 25);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyPowerWeight, 2);
+  // PMSSB-1/A (M239/2): bounceEnemyBase/Weight usunięte (typ
+  // return_to_hand nie istnieje); rodzina „bounce” (wartości przemyślane —
+  // test/audyt-pmssb1-bounce.test.js).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryTopBonus, 8);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryBottomBonus, 18);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTokenBonus, 12);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 1);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.drawCardValue, 6);
   // Rodzina „efektywność removalu" (M234) — WŁĄCZONA wprost (zlecenie właściciela).
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);

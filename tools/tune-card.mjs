@@ -52,10 +52,20 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'spellBase',
     // Removal / obrażenia / dobór — najczęstsze efekty czarów.
     'removalEnemyBase', 'removalWorthWeight',
-    'bounceEnemyBase', 'bounceEnemyPowerWeight',
+    // PMSSB-1/A (M239/2): bounceEnemyBase/Weight usunięte (typ
+    // return_to_hand nie istnieje w katalogu ani silniku); bounce ma
+    // własny deskryptor poniżej.
     // M239/2: rodzina damageCreature*/damageLethalBonus usunięta (martwa od
     // M237/4 — wycena damage jest modelem per-cel, nie pokrętłami).
     'drawCardValue',
+  ]),
+  // PMSSB-1/A (fala A): bounce — siła efektu (top/bottom biblioteki) +
+  // wymiary celu (token-trwałość CR 704.5d, powtórka ETB wroga).
+  // Karty z efektem bounce dostają `spell` + `bounce` (premierowy dowód:
+  // test T1 w test/audyt-pmssb1-bounce.test.js).
+  bounce: Object.freeze([
+    'bounceLibraryTopBonus', 'bounceLibraryBottomBonus',
+    'bounceTokenBonus', 'bounceFoeEtbWeight',
   ]),
   // M257 r4/B6 T1: rodzina „aura” wpięta — ekstrakcja stałych bloku aury
   // scoreCommand (buff/hostile/losesKeywords/protection) pod nazwy.
@@ -128,6 +138,13 @@ export function cardDescriptors(def) {
   if (cardHasEffect(def, 'shuffle_graveyard_cards_into_library')) descriptors.add('graveyardShuffle');
   if (cardHasEffect(def, 'buff_creatures_you_control') || cardHasEffect(def, 'buff_opponents_creatures')) {
     descriptors.add('teamPump');
+  }
+  // PMSSB-1/A: każdy typ odbicia (hand/top/bottom/Vanish) kwalifikuje.
+  if (cardHasEffect(def, 'bounce_permanent')
+    || cardHasEffect(def, 'bounce_to_library_top')
+    || cardHasEffect(def, 'bounce_to_library_bottom')
+    || cardHasEffect(def, 'owner_library_top_or_bottom')) {
+    descriptors.add('bounce');
   }
   return [...descriptors];
 }

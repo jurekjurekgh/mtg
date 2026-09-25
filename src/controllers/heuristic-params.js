@@ -53,8 +53,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // efektu (destroy/exile/bounce, damage, draw), zero nazw kart (ADR 0002).
   'removalEnemyBase',        // baza za usunięcie permanentu wroga (dawniej +22)
   'removalWorthWeight',      // waga (power+toughness) usuwanego permanentu (dawniej *2)
-  'bounceEnemyBase',         // baza za odbicie permanentu wroga do ręki (dawniej +25)
-  'bounceEnemyPowerWeight',  // waga mocy odbijanego permanentu (dawniej *2)
+  // PMSSB-1 (M239/2: bounceEnemyBase/Weight usunięte — martwe; typ
+  // return_to_hand nie występuje w kartach ani silniku). Rodzina „bounce":
+  // siła efektu (hand < top < bottom) + wymiary celu (token-trwałość
+  // CR 704.5d, powtórka ETB wroga).
+  'bounceLibraryTopBonus',   // dopłata: odbicie na WIERZCH biblioteki (tempo doboru)
+  'bounceLibraryBottomBonus', // dopłata: odbicie na SPÓD (prawie removal)
+  'bounceTokenBonus',        // dopłata: cel-token wroga znika na zawsze (CR 704.5d)
+  'bounceFoeEtbWeight',      // waga kary: cel z ETB da wrogowi powtórkę
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
   // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
   // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
@@ -242,8 +248,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   crackbackPenalty: 12,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
-  bounceEnemyBase: 25,
-  bounceEnemyPowerWeight: 2,
+  // PMSSB-1 (wartości przemyślane, pomiar PRZED: /tmp/pmssb1-bounce-przed.mjs):
+  // top 8 (~1 dobór wroga mniej), bottom 18 (jak destroy-ETB — prawie
+  // removal), token 12 (symetria z create_token 12), ETB waga 1 (pełna
+  // wartość powtórki z etbEnterBonusValue).
+  bounceLibraryTopBonus: 8,
+  bounceLibraryBottomBonus: 18,
+  bounceTokenBonus: 12,
+  bounceFoeEtbWeight: 1,
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
