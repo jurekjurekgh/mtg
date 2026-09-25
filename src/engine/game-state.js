@@ -4344,11 +4344,16 @@ export function execute(state, input) {
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
     //   Reclusive Artificer, Jill): cała zdolność odrzucona (nic nie odpala);
+    // - „you may [czasownik] target" (mayFire — E, zgłoszenie 2026-09-25g):
+    //   decline w modalu celu to SKRÓT wynikowo równoważny (CR 603.3d/603.5
+    //   — patrz ANEKS_2026-09-25g_ef; strażnik katalogu:
+    //   `you-may-decline-straznik.test.js`): cała zdolność odrzucona;
     // - „up to one" w obowiązkowym triggerze (Greatsword): trigger odpala
     //   z celami stałymi (licznik na nosicielu), a efekty z targetIndex
     //   wskazującym null są pomijane przez applyEffect.
     const specOptional = Boolean(pending.ability?.trigger?.requiresTarget?.optional);
-    if (sourceLegal && (chosen !== null || !specOptional)) {
+    const mayFire = pending.ability?.trigger?.mayFire === true;
+    if (sourceLegal && (chosen !== null || (!specOptional && !mayFire))) {
       // T6: wybrany cel wędruje z triggerem na STOS — rozstrzyga się po passach.
       const queuedTrigger = queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
       // M258/F3 — WARD (CR 702.21): zdolność triggerowana z celem w

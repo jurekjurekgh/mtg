@@ -2597,10 +2597,11 @@ export const REAL_CARDS = Object.freeze([
         // Temat 2: „you may have it deal damage to target creature" — cel
         // wybiera kontroler. Obrażenia = liczba artefaktów kontrolera źródła
         // (wartość dynamiczna 'artifacts_you_control').
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'enter_battlefield', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
@@ -4489,10 +4490,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           condition: { enteredUntapped: true },
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
         },
@@ -5032,10 +5034,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'beginning_of_combat', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'pump', power: 2, toughness: 0 },
       }),
@@ -5502,10 +5505,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // Druga zdolność: „you may tap target creature" przy samotnym ataku.
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'attacks_alone', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'tap_permanent' },
       }),
@@ -10723,10 +10727,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'creature' },
         },
@@ -10876,10 +10881,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller' },
         },

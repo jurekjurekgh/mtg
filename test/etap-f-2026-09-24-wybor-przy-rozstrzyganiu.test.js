@@ -148,7 +148,7 @@ test('CR 702.30a + 603.5: echo idzie na stos w upkeepie; zapłać/poświęć prz
 
 // --- „you may [czasownik] target" (CR 603.3d + 603.5) -----------------------
 
-test('CR 603.3d + 603.5 „you may … target": cel obowiązkowy przy kładzeniu na stos, „may" przy rozstrzyganiu', () => {
+test('CR 603.3d + 603.5 „you may … target": cel wybierany przy kładzeniu na stos, „may" przy rozstrzyganiu', () => {
   const state = game('p1');
   put(state, 'art', 'reclusive-artificer', 'p1', 'hand');
   put(state, 'foe', 'highland-game', 'p2');
@@ -157,7 +157,10 @@ test('CR 603.3d + 603.5 „you may … target": cel obowiązkowy przy kładzeniu
   pass(state); pass(state);
   const pend = state.pendingTriggerTargets[0];
   assert.ok(pend, 'wybór celu przy kładzeniu na stos (Artificer i foe)');
-  assert.equal(pend.allowNone, false, 'brak „bez celu" — cel obowiązkowy');
+  // E (2026-09-25g): modal celu zawiera decline (skrót wynikowo równoważny,
+  // CR 603.3d/603.5 — patrz ANEKS_2026-09-25g_ef); wybór celu = pełna
+  // procedura z oknem odpowiedzi.
+  assert.equal(pend.allowNone, true, 'decline you-may w modalu celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
   assert.equal(state.pendingOptionalTrigger, null, 'jeszcze bez pytania');
   assert.equal(triggersOnStack(state).length, 1);
@@ -165,19 +168,32 @@ test('CR 603.3d + 603.5 „you may … target": cel obowiązkowy przy kładzeniu
   assert.deepEqual(state.pendingOptionalTrigger?.targets, ['foe'], '„you may" przy rozstrzyganiu, z celem');
 });
 
-test('Bot: „you may … target", gdy jedynym celem był własny stwór — odmawia przy rozstrzyganiu', () => {
+test('E: „you may … target" — decline w modalu celu, trigger nie idzie na stos (drugi świadek klasy)', () => {
+  const state = game('p1');
+  put(state, 'art', 'reclusive-artificer', 'p1', 'hand');
+  put(state, 'foe', 'highland-game', 'p2');
+  addMana(state, 'p1', 4);
+  assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'art' }).ok);
+  pass(state); pass(state);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
+  assert.equal(triggersOnStack(state).length, 0, 'trigger nie poszedł na stos');
+  assert.equal(state.objects.get('foe').damage ?? 0, 0, 'brak obrażeń');
+});
+
+test('Bot: „you may … target", gdy jedynym celem był własny stwór — odmawia w modalu celu', () => {
   const state = game('p2');
   put(state, 'art', 'reclusive-artificer', 'p2', 'hand');
   put(state, 'relic', 'angels-feather', 'p2');
   addMana(state, 'p2', 4);
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'art' }).ok);
   pass(state); pass(state);
-  // Jedyny kandydat (sam Artificer) wybrany automatycznie (M242).
-  pass(state); pass(state);
-  assert.deepEqual(state.pendingOptionalTrigger?.targets?.length, 1);
+  // E: auto-cel M242 wyłączony dla mayFire („zgoda nigdy nie jest
+  // automatyczna") — modal celu z decline zamiast pytania przy rozstrzyganiu.
+  assert.ok(state.pendingTriggerTargets.length > 0, 'decyzja celu wisi');
   const bot = createHeuristicBot({ seed: 1 });
   const chosen = bot.chooseCommand(playerView(state, 'p2'));
-  assert.equal(chosen.type, 'pass_priority', 'bot nie strzela we własnego stwora');
+  assert.equal(chosen?.type, 'resolve_trigger_target', 'bot wybiera z modalu celu');
+  assert.equal(chosen.targetId, null, 'bot nie strzela we własnego stwora (decline)');
 });
 
 // --- „you may [koszt]. When you do, … target" (CR 603.5 + 603.12) ----------
