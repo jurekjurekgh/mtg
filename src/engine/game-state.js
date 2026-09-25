@@ -7960,9 +7960,10 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_optional_draw', playerId, { draw: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageAssignment) {
     // M66 (R): rozdzielanie obrażeń — DOKŁADNIE JEDEN wariant (deterministyczny
-    // default = lethal-first w kolejności deklaracji, obecne zachowanie botów).
-    // Kombinacji nie enumerujemy; gracz-człowiek dostaje wizard w UI, który
-    // buduje własną, walidowaną przez execute komendę (CR 510.1c/d).
+    // default = zabójstwa o maksymalnej wartości, H/2026-09-25 — obecne
+    // zachowanie botów). Kombinacji nie enumerujemy; gracz-człowiek dostaje
+    // wizard w UI (start z tego samego planu — jedno źródło), który buduje
+    // własną, walidowaną przez execute komendę (CR 510.1c/d).
     legalCommands.push(command('resolve_damage_assignment', playerId, {
       assignments: buildDefaultDamageAssignments(state),
     }));

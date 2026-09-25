@@ -2273,7 +2273,15 @@ function uncoverCostOf(session, view, objectId, field) {
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
  * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
  */
-function cardCostHtml(card) {
+function cardCostHtml(card, cmd = null) {
+  // G (zgłoszenie właściciela 2026-09-25, Containment Membrane): tytuł grupy
+  // „Aura: … (surge)" pokazywał koszt WYDRUKU (2U), choć rzut pobiera surge
+  // (U). Koszt alternatywny liczy ta sama jedna funkcja (H/2) — gałąź wołana
+  // z komendą (surgeCast + deskryptor surge z widoku; te same formatery co
+  // etykieta oferty M223). Bez komendy — koszt zwykły jak dotąd.
+  if (cmd?.surgeCast && card?.surge) {
+    return manaCostHtml(costSymbols(card.surge.cost, card.surge.colors));
+  }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
   return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
 }
@@ -2501,8 +2509,12 @@ function choiceSourceTitle(cmd, session, view) {
     // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     if (cmd.bestow) return `Bestow: ${name}`;
-    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
-    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    // G (jw.): grupa cast_permanent jest jednorodna co do surge (klucz grupy
+    // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
+    // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
+    // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj

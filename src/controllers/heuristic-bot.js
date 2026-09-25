@@ -8873,7 +8873,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // równoważne). Jawne case zamiast default: telemetria „niewycenione"
       // (E1) oznacza od teraz wyłącznie naprawdę NOWY typ komendy silnika.
       case 'resolve_damage_assignment':
-        return finish(0); // M66/R: dokładnie jeden wariant (lethal-first); człowiek ma wizard (CR 510.1c/d)
+        return finish(0); // M66/R: dokładnie jeden wariant (max-wartość zabójstw, H/2026-09-25); człowiek ma wizard (CR 510.1c/d)
       case 'resolve_replacement_choice':
         if (cmd.choice?.startsWith('umbra:')) {
           const aura=objectOnBoard(view,cmd.choice.slice(6));
