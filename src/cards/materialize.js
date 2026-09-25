@@ -116,6 +116,9 @@ export function gameObjectDataOf(card) {
     // obiekt niesie deskryptor buffa zaczarowanego stwora. Zwykły enchantment
     // (Canonized in Blood) to permanent zagrywany jak stwór/artefakt.
     const data = { kind: 'enchantment', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
+    // M431: "You may choose not to untap„ — pole musi przejść w KAŻDEJ gałęzi,
+    // bo gałęzie materializacji kopiują pola ręcznie (klasa Z5/L21).
+    if (card.untapChoice) data.untapChoice = true;
     if (card.aura) data.aura = card.aura;
     if (card.surge) data.surge = card.surge;
     // Aura „Enchant player" (Curse of the Pierced Heart): zaczarowuje GRACZA,
@@ -133,6 +136,7 @@ export function gameObjectDataOf(card) {
   }
   if (card.types.includes('Artifact')) {
     const data = { kind: 'artifact', manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
+    if (card.untapChoice) data.untapChoice = true; // M431 (patrz gałąź enchantment)
     // Equipment (Cloak of the Bat, CR 702.6): deskryptor equip + buff nosiciela.
     if (card.equipment) data.equipment = card.equipment;
     // Artefakt wchodzący z licznikami (Trigon of Corruption — charge counters).

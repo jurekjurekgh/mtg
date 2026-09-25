@@ -160,6 +160,10 @@ export const REAL_CARDS = Object.freeze([
         ],
       }),
     ],
+    // M431: klauzula "You may choose not to untap„ wymaga oferty decyzji dla
+    // kontrolera w kroku odkręcania (CR 502.3) — bez tego pola `oracleText`
+    // byłby ozdobnikiem, a silnik decydował ZA gracza.
+    untapChoice: true,
     artId: 195,
     plan: 'Theros',
     support: { status: 'supported', limitations: [] },

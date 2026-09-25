@@ -114,6 +114,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'auraKeywordFreshValue',         // M431: wartosc SWIEZEGO grantu slowa-kluczowego aury (zwierzece `auraLosesKeywordsWastedPenalty`, lustrzana strona te samej klasy)
   'auraKeywordRedundantPenalty',   // M431: kara za KAZDY grant, ktorego gospodarz juz ma (duplikat zdolnosci nic nie dodaje)
   'auraKeywordAllWastedPenalty',   // M431: kara, gdy WSZYSTKIE granty sa jałowe (musi przebic baze aury — wzor: auraLosesKeywordsWastedPenalty)
+  'untapChoiceLockValue',          // M431: baza za to, że źródło zostaje w tapie i trzyma WROGI byt (CR 502.3)
+  'untapChoiceOwnLockPenalty',     // M431: kara za trzymanie w tapie źródła, które unieruchamia WŁASNY byt
+  'untapChoiceSourceTapCost',      // M431: koszt pozostawienia w tapie źródła ze zdolnością {T} / stworzenia do ataku
   'auraProtectionNoThreatPenalty',  // kara za czystą ochronę, gdy przeciwnik nie ma zagrożeń tej jakości (dawniej -40)
   'auraProtectionBase',          // baza czystej ochrony przy istniejących zagrożeniach (dawniej 20)
   'auraProtectionThreatWeight',  // waga LICZBY zagrożeń, przed którymi aura chroni (dawniej *12)
@@ -292,6 +295,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   auraKeywordFreshValue: 8,
   auraKeywordRedundantPenalty: 6,
   auraKeywordAllWastedPenalty: 80,
+  // M431 (uwaga z gry właściciela 2026-09-25) — rodzina decyzji kroku
+  // odkręcania. Rząd wielkości jest LUSTREM rodziny aura (66/80): wybór
+  // „zostaw w tapie" jest wart tyle, ile realnie unieruchomiony wróg, a
+  // płacimy za niego utratą odkręcenia źródła.
+  untapChoiceLockValue: 10,
+  untapChoiceOwnLockPenalty: 8,
+  untapChoiceSourceTapCost: 6,
   auraProtectionNoThreatPenalty: 40,
   auraProtectionBase: 20,
   auraProtectionThreatWeight: 12,

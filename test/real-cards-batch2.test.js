@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
-import { addMana } from '../src/engine/resources.js';
+import { addMana, initializeResources } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { untapControlled } from '../src/engine/permanents.js';
 import { hasCounter } from '../src/engine/counters.js';
@@ -21,7 +21,13 @@ import fs from 'node:fs';
 const REGISTRY = createCardRegistry();
 
 function game() {
-  return createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  // M431: strefy i liczmany tury muszą istnieć (jak w `installDecks`, które
+  // woła `initializeResources`) — inaczej akcje turowe (dobieranie, start
+  // tury) pracują na stanie poza kanoniczną ścieżką i decyzje zapadają
+  // „przypadkiem" albo nie zapadają wcale.
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  initializeResources(state);
+  return state;
 }
 
 /** T1 (stos permanentów): rozstrzyga stos pełnymi rundami passów (LIFO). */
@@ -60,10 +66,15 @@ function addRealCard(state, id, cardId, controllerId, zone, { tapped = false } =
     const back = REGISTRY.get(def.transformTo);
     transformTo = { cardId: back.id, power: back.power, toughness: back.toughness, abilities: back.abilities ?? [], keywords: back.keywords ?? [], subtypes: back.subtypes ?? [] };
   }
+  // M431: harness rozkładał `data` na czynniki pierwsze i gubił nowe pola
+  // deskryptorów (tu: `untapChoice`) — karta w teście nie miała mechaniki, a
+  // test byłby zielony tylko dlatego, że jej NIE mierzy (klasa L21). Teraz
+  // idzie cały spread `gameObjectDataOf`, a nadpisanie pozostaje dla pól,
+  // które rejestr nosi poza materializacją.
   addObject(state, {
+    ...data,
     id, instanceId: `i-${id}`, cardId, controllerId, zone,
-    kind: data.kind, power: data.power, toughness: data.toughness,
-    manaCost: data.manaCost, spell: data.spell, abilities: data.abilities ?? [],
+    abilities: data.abilities ?? [],
     keywords: def.keywords ?? [], subtypes: def.subtypes ?? [], transformTo,
   });
   if (tapped) {
@@ -206,14 +217,67 @@ test('Entrancing Lyre: zablokowany stwór nie odkręca się, dopóki lira tapni�
   // Untap step p2 (kontroler stwora): blokada trzyma.
   untapControlled(state, 'p2');
   assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór odkręcił się mimo blokady');
-  // Untap step p1: „you may choose not to untap" — lira zostaje tapnięta
-  // (deterministycznie zawsze wybieramy „nie odkręcaj" przy aktywnej blokadzie).
-  untapControlled(state, 'p1');
-  assert.equal(state.objects.get('lyre').tapped, true, 'lira powinna zostać tapnięta (active lock)');
-  // Stwór nadal zablokowany.
+  // M431 (uwaga z gry właściciela 2026-09-25): klauzula »You may choose not
+  // to untap this artifact« (CR 502.3) to WYBÓR kontrolera, a nie decyzja
+  // silnika. Dawniej pin mierzył heurystykę „lira nie wstaje, bo kogoś trzyma"
+  // — była to niezgodna z CR obsługa karty (silnik decydował ZA gracza), więc
+  // tu testujemy pełną ścieżkę: oferta → wybór → konsekwencja.
+  const decyzja = lyryDecyzja(state);
+  assert.ok(decyzja, 'start tury p1 MUSI wystawić ofertę wyboru w kroku odkręcania');
+  const warianty = (playerView(state, 'p1').legalCommands ?? []).filter((c) => c.type === 'resolve_untap_choice');
+  assert.deepEqual(warianty.map((c) => c.keepTappedIds), [[], ['lyre']],
+    'warianty: „odtapuj wszystkie" + pozostawienie liry w tapie (enumeracja podzbiorów, nie flaga)');
+  // 1) Wybór „zostaw lirę w tapie" → lira i jej cel pozostają tapnięte.
+  assert.equal(execute(state, {
+    type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: ['lyre'],
+  }).ok, true, 'wybór kontrolera musi być legalny');
+  assert.equal(state.pendingUntapChoice, null, 'rozstrzygnięta decyzja znika ze stanu');
+  assert.equal(state.objects.get('lyre').tapped, true, 'lira zostaje tapnięta (wybrany wariant)');
   untapControlled(state, 'p2');
-  assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór nadal zablokowany');
+  assert.equal(state.objects.get('enemy-creature').tapped, true, 'stwór nadal zablokowany (Oracle: „for as long as this artifact remains tapped")');
+  // 2) Następny krok odkręcania: wybór „odtapuj wszystkie" ⇒ lira wstaje, a
+  //    blokada (która liczy się w momencie odkręcania, CR 611.2) gaśnie.
+  const decyzja2 = lyryDecyzja(state);
+  assert.ok(decyzja2, 'drugi start tury p1 znowu pyta o wybór (karta nie jest „obsłużona na stałe")');
+  assert.equal(execute(state, {
+    type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: [],
+  }).ok, true);
+  assert.equal(state.objects.get('lyre').tapped, false, 'wybór „odtapuj wszystkie" odkręca lirę');
+  untapControlled(state, 'p2');
+  assert.equal(state.objects.get('enemy-creature').tapped, false,
+    'źródło już nie jest tapnięte, więc blokada nie trzyma — stwór wstaje');
 });
+
+/**
+ * Oferta decyzji o odkręcaniu dla p1 (M431, CR 502.3) — pełna ścieżka przez
+ * `execute`. `lyreSetup` sadza p1 w mainie jej BIEŻĄCEJ tury, a marsz przez
+ * fazę walku zużyłby kilkanaście passów (każdy krok chce dwóch passów), więc
+ * wchodzimy w ending i jedziemy kilka kroków do startu tury p1.
+ */
+function lyryDecyzja(state) {
+  const przed = state.turn.number;
+  // Skok w END tury, KTÓREJ aktywnym jest P2 — `nextTurnStep` podnosi
+  // `turn.number` i odpala akcje turowe (`beginTurnStart`) dopiero na
+  // przejściu cleanup → untap, więc start tury p1 łapiemy dwoma passami.
+  // `jumpToStep` NIE zmienia aktywnego gracza i nie podnosi numeru — dawne
+  // `jumpToStep(…'main', 'p1')` + sama zmiana aktywnego dawało turę
+  // pozakanoniczną, w której wybór nigdy nie wisiał (klasa L5: harness
+  // udawał pomiar).
+  state.turn.activePlayerId = 'p2';
+  state.turn = jumpToStep(state.turn, 'end', 'p2');
+  for (let i = 0; i < 6 && !(state.pendingUntapChoice && state.pendingUntapChoice.playerId === 'p1'); i += 1) {
+    const pid = state.turn.priorityPlayerId ?? state.turn.activePlayerId;
+    const re = execute(state, { type: 'pass_priority', playerId: pid });
+    if (!re.ok) {
+      throw new Error(`harness: pass ${pid} odrzucony — ${JSON.stringify(re.events?.[0]?.reason ?? re)}`);
+    }
+  }
+  if (state.turn.number === przed) {
+    throw new Error('harness: tura nie ruszyła — pomiar mierzyłby pustkę (L5 pkt 2)');
+  }
+  if (!state.pendingUntapChoice) return undefined;
+  return (playerView(state, 'p1').legalCommands ?? []).find((c) => c.type === 'resolve_untap_choice');
+}
 
 test('Entrancing Lyre: brak many, tapnięta lira albo brak celu = brak oferty', () => {
   const noMana = lyreSetup({ mana: 0 });
@@ -232,7 +296,10 @@ function stateClearCreatures(state) {
 }
 
 test('Entrancing Lyre: materializacja daje kind artifact', () => {
-  assert.deepEqual(gameObjectDataOf(REGISTRY.get('entrancing-lyre')), { kind: 'artifact', manaCost: 3, abilities: REGISTRY.get('entrancing-lyre').abilities, colors: [], cardName: 'Entrancing Lyre' });
+  // M431: `untapChoice` musi przejść materializację — to NOŚNIK mechaniki
+  // (deskryptor pola bitwy), bez niego silnik nie wystawi wyboru w kroku
+  // odkręcania (klasa L21: karta w rejestrze ≠ karta na obiekcie).
+  assert.deepEqual(gameObjectDataOf(REGISTRY.get('entrancing-lyre')), { kind: 'artifact', manaCost: 3, abilities: REGISTRY.get('entrancing-lyre').abilities, colors: [], cardName: 'Entrancing Lyre', untapChoice: true });
 });
 
 test('artefakt można zagrać z ręki jak permanent (main phase, koszt many)', () => {

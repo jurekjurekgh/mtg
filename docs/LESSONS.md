@@ -2527,7 +2527,7 @@ decydował o „najlepszym" wariancie przez kolejność ofert:
 
 - `add_counter` na wskazanym celu: **14/14/14** dla tokena 1/1, Cryptida 2/3
   i Hill Gianta 4/4 → mutant Mutagen lądował na pierwszym legalnym celu
-  (najczęściej najsłabszym ciele);
+  (najczęściej najsłabszym);
 - `shuffle_graveyard_cards_into_library`: **58 pkt** niezależnie od stanu
   biblioteki (30 vs 12 kart), a wariant „zero wracających kart" też 58 →
   Memory's Journey rzucana bez presji deck-outu, czasem dosłownie na nic;
@@ -2542,8 +2542,7 @@ decydował o „najlepszym" wariancie przez kolejność ofert:
 2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły, nie z wyobraźni: licznik =
    aura-buff (`auraBuffWorthWeight`), wtasowanie = rodzina biblioteczna
    (`librarySafeMargin` + kara per karta), pump = `pumpImprovesOutcome` (M218/2)
-   + `permanentDoomedThisTurn` (M236/2). Zlecenie właściciela mówi to wprost:
-   „weź przykład z innych podobnych kart".
+   + `permanentDoomedThisTurn` (M236/2).
 3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart dokładnie tyle, co
    przed zmianą (baza 2 + waga gospodarza 2·worth(1/1)=6 = dawna stała 8) —
    inaczej „strojenie" zjada zachowania, które były dobre, i nie widać, co
@@ -2559,9 +2558,12 @@ decydował o „najlepszym" wariancie przez kolejność ofert:
    „pokrętło nie jest atrapą" (wyzerowanie wagi wraca do remisu) jest częścią
    pinu — inaczej następna sesja nie wie, czy liczba cokolwiek robi.
 
-**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js` (15 testów:
-piny wartości domyślnych, wybór gospodarza, okno walki, gospodarz skazany,
-presja deck-outu, efekt jałowy, deskryptory tunera, dowód RED na każdym
-przypadku) + pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
+7. Koszt ŹRÓDŁA (np. „nie odkręciłem permanentu z {T}") liczy się RAZ NA
+   WARIANT, nie na każdy trzymany cel — wstawiony do pętli po celach koszt
+   rósł z liczbą ofiar i zasłaniał blokadę (pin w `test/bot-params.test.js`).
 
-→ narracja: `docs/LESSONS_PRZYPADKI.md` (L169)
+**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
+rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny przepływu
+pokręteł w `test/bot-params.test.js`; pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L169, M431)

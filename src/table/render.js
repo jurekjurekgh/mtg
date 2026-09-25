@@ -62,6 +62,8 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_discover_choice: 'Discover (wybór)',
   resolve_explore_choice: 'Explore (wybór)',
   resolve_craft_exile: 'Craft (wybór wygnania)',
+  // M431 (uwaga z gry 2026-09-25, CR 502.3): „you may choose not to untap".
+  resolve_untap_choice: 'Krok odkręcania (co zostaje tapnięte?)',
   // Audyt PR #130 (D, CR 303.4f): aura wracająca z grobu wybiera gospodarza.
   resolve_aura_host: 'Aura z grobu (kogo zaczaruje?)',
   resolve_hand_creature: 'Położenie stwora z ręki',
@@ -362,7 +364,7 @@ export const OPTION_IGNORABLE_TYPES = Object.freeze([
 ]);
 
 const ACTION_RANK = Object.freeze({
-  resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5,
+  resolve_untap_choice: -4, resolve_mulligan_choice: -3, resolve_mulligan_bottom_choice: -3, resolve_backup: -2, resolve_scry: -1, resolve_surveil: -1, draw_card: 0, play_land: 1, tap_for_mana: 2, plot_card: 3, suspend_card: 3, warp_card: 3, cast_permanent: 4, cast_spell: 5, cast_cleave: 5,
   // M257 r3 (uwaga B właściciela): PRZYGODA (Gray Slaad) i inne rzuty, które
   // tu nie były, spadały na fallback `?? 99` = PO pass/poddaniu. Właściciel:
   // „Nie mogłaby się pokazywać tam gdzie inne czary?" — wszystkie czary
@@ -532,6 +534,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_discover_choice') return 'resolve_discover_choice';
   if (command.type === 'resolve_explore_choice') return 'resolve_explore_choice';
   if (command.type === 'resolve_craft_exile') return 'resolve_craft_exile';
+  if (command.type === 'resolve_untap_choice') return 'resolve_untap_choice';
   if (command.type === 'resolve_aura_host') return 'resolve_aura_host';
   if (command.type === 'resolve_hand_creature') return 'resolve_hand_creature';
   if (command.type === 'resolve_legend_choice') return 'resolve_legend_choice';
@@ -616,6 +619,9 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_craft_exile') return 'command';
   // Audyt PR #130 (D): warianty to konkretni gospodarze z pola bitwy — grupa
   // „cel" (podgląd karty), jak przy Dragon Arch i prawie legend.
+  // M431: warianty to konkretne permanenty z pola bitwy kontrolera — grupa
+  // „cel", żeby kafel pokazywał, O CO zostaje w tapie (podgląd karty).
+  if (first.type === 'resolve_untap_choice') return 'target';
   if (first.type === 'resolve_aura_host') return 'target';
   if (first.type === 'resolve_hand_creature') return 'target';
   if (first.type === 'resolve_legend_choice') return 'target';
@@ -2158,6 +2164,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_graveyard_top_choice: 'Karta z grobu na wierzch biblioteki',
   resolve_delve_exile: 'Delve — karty do wygnania z grobu',
   // Audyt PR #130 (D, CR 303.4f): aura wracająca z grobu wybiera gospodarza.
+  resolve_untap_choice: 'Odkręcanie — które permanenty zostają tapnięte?',
   resolve_aura_host: 'Aura z grobu — kogo zaczaruje?',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
@@ -3688,6 +3695,21 @@ export function commandLabel(cmd, session, view) {
     case 'resolve_craft_exile': {
       // Craft (Lodestone Needle): wybór artefaktu do wygnania.
       return `Craft: wygnaj ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_untap_choice': {
+      // M431 (uwaga właściciela, CR 502.3): etykieta musi nazywać SKUTEK
+      // wyboru, nie sam zbiór id (L154) — gracz klika i od razu widzi, kogo
+      // to unieruchamia.
+      const kept = cmd.keepTappedIds ?? [];
+      if (kept.length === 0) {
+        return 'Odkręć wszystko (lira wstaje, blokada wygasa w kolejnym kroku)';
+      }
+      const nazwy = kept.map((id) => nameOfObjectId(id)).join(', ');
+      const trzymani = [...new Set(kept.flatMap((id) => view.pendingUntapChoice?.lockedByCandidate?.[id] ?? []))];
+      const skutek = trzymani.length > 0
+        ? `zostaje unieruchomionych ${trzymani.length} permanentów: ${trzymani.map((id) => nameOfObjectId(id)).join(', ')}`
+        : 'nikt nie jest blokadą trzymany — płacisz tylko utratą odkręcenia';
+      return `Zostaw tapnięte: ${nazwy} — ${skutek}`;
     }
     case 'resolve_aura_host': {
       // Audyt PR #130 (znalezisko D, CR 303.4f): aura wracająca z grobu wybiera

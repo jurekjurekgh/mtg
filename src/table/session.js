@@ -328,7 +328,16 @@ function defaultBotFactory(seed, ctx) {
     explore: 'explore (odsłonięcie wierzchu biblioteki)',
     gain_life: 'zdobycie życia',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
-    lock_untap: 'cel nie odkręca się podczas następnego kroku odkręcania kontrolera',
+    // M431 (uwaga właściciela, Entrancing Lyre): blokada z `lock_untap` NIE
+    // jest „na następny krok" — trwa, dopóki tapnięte źródło jest na polu
+    // bitwy (Oracle: „for as long as this artifact remains tapped"; ruling
+    // Scryfall: „That creature won't untap for as long as Entrancing Lyre
+    // remains tapped"). Myliło ją z `dont_untap_next_untap_step` (Wavecrash
+    // Triton), które jest JEDNOKROKOWE — para deskryptorów musi się różnić
+    // zakresem także w tekście, bo opis to jedyne, co widzi gracz (L154).
+    // Uwaga: nazwa karty w tym komentarzu jest dozwolona, bo plik leży w
+    // `src/table/` (strażnik M212 pilnuje `src/engine`/`src/cards`).
+    lock_untap: 'cel nie odkręca się w kroku odkręcania, dopóki źródło pozostaje tapnięte (odkręci się, gdy źródło wstanie albo je stracisz)',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
@@ -1835,6 +1844,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Audyt PR #130 (znalezisko D, CR 303.4f): wybór gospodarza aury
       // wracającej z grobu — bez wpisu gracz nie wie, że silnik na niego czeka
       // (M106/Z2), a wynik i tak nazwie `object_moved` + `object_attached`.
+      // M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): gra czeka na
+      // wybór kontrolera w kroku odkręcania — bez wpisu gracz nie wie, że
+      // silnik na niego czeka (klasa M106/Z2).
+      case 'untap_choice_required':
+        // Forma czasu: 3. os. licz. — koniecznie z wpisem w DRUGA_OSOBA (Z1c).
+        return `${whoN(e.playerId)} wybiera, które permanenty zostają tapnięte w kroku odkręcania (kandydatów: ${(e.candidateIds ?? []).length})`;
+      case 'untap_choice_resolved':
+        return `${whoN(e.playerId)} zostawia w tapie ${(e.keepTappedIds ?? []).length} permanentów z ${(e.candidates ?? 0)} kandydatów${(e.keepTappedIds ?? []).length === 0 ? ' (wybór: odkręcić wszystko)' : ''}`;
       case 'aura_host_choice_required':
         // Sesja 2026-09-21 (gospodarz-GRACZ): kandydatami są też GRACZE
         // („Enchant player", CR 303.4f) — liczba w narracji musi pokrywać oba

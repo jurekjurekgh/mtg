@@ -45,9 +45,9 @@
 
 ## Etap C — prezentacja i tester
 
-- [ ] C1 — `render.js`/`session.js`: opis decyzji dla gracza („Które permanenty zostają tapnięte w tym kroku odkręcania?"), etykiety opcji nazywające SKUTEK (L154: przycisk musi mówić, co dostaję za odmowę), zdarzenie `untap_choice_resolved` w logu (L24: skutek bez zdarzenia nie istnieje).
-- [ ] C2 — `tools/table-tester/run-game.mjs`: sterownik obsługuje nowy modal (L12: braki naprawiamy W testerze; L63: licznik zabitych pętli), ptaszki `OPTION_IGNORABLE_TYPES` zaktualizowane razem z UI (L137).
-- [ ] C3 — partia celowana na CHWILOWEJ talii z Lyrą (L137 + pułapka 24f: talia audytowa w `decks/` psuje 5 strażników → trzymaj poza repo, usuń PRZED bramką, `npm run build` po usunięciu).
+- [x] C1 — `render.js`/`session.js`: opis decyzji dla gracza („Które permanenty zostają tapnięte w tym kroku odkręcania?"), etykiety opcji nazywające SKUTEK (L154: przycisk musi mówić, co dostaję za odmowę), zdarzenie `untap_choice_resolved` w logu (L24: skutek bez zdarzenia nie istnieje).
+- [x] C2 — `tools/table-tester/run-game.mjs`: sterownik obsługuje nowy modal (L12: braki naprawiamy W testerze; L63: licznik zabitych pętli), ptaszki `OPTION_IGNORABLE_TYPES` zaktualizowane razem z UI (L137).
+- [x] C3 — partia celowana na CHWILOWEJ talii z Lyrą (L137 + pułapka 24f: talia audytowa w `decks/` psuje 5 strażników → trzymaj poza repo, usuń PRZED bramką, `npm run build` po usunięciu).
 
 ## Etap D — uwaga B: walidacja keywordów nadawanych przez aurę/equipment
 
@@ -61,8 +61,8 @@
 ## Etap E — pętla jakości (ADR 0021 §4)
 
 - [ ] E1 — Żywy Tester: partie na talii z Lyrą (seedy 77–80) — czy gracz DOSTAJE wybór, czy log go opisuje, czy bot nie wisi; ręczna lektura transkryptu wzdłuż trzech osi (L27).
-- [ ] E2 — łowy CR po ścieżce „nowa mechanika = nowe interakcje": czy `lock_untap` + `untapChoice` nie kłamią w interakcji z: phasingiem (502.1), dniem/nocą (502.2), `dontUntapNextUntapStep` (E8/B2), stun licznikami (CR 122.1d), zmianą kontrolera (CR 400.3), `untapByEffect` (odkręcenie EFEKTEM nie podlega blokadzie kroku — pin M272).
-- [ ] E3 — sondy własne: decyzja wystawiana TYLKO gdy jest kandydat (nie przy każdej turze), cap 32 przy wielu kandydatach, przebieg z dwiema Lirami naraz.
+- [~] E2 (cząść) — łowy CR po ścieżce „nowa mechanika = nowe interakcje": czy `lock_untap` + `untapChoice` nie kłamią w interakcji z: phasingiem (502.1), dniem/nocą (502.2), `dontUntapNextUntapStep` (E8/B2), stun licznikami (CR 122.1d), zmianą kontrolera (CR 400.3), `untapByEffect` (odkręcenie EFEKTEM nie podlega blokadzie kroku — pin M272).
+- [~] E3 — sondy własne: decyzja wystawiana TYLKO gdy jest kandydat (nie przy każdej turze), cap 32 przy wielu kandydatach, przebieg z dwiema Lirami naraz.
 
 ## Etap F — domknięcie (ADR 0013)
 
@@ -79,3 +79,28 @@
 - **Sandbox resetuje workspace** (ENVIRONMENT §2) — push po KAŻDYM zielonym kroku; `git branch -f` na checkoutowanej gałęzi odmawia, użyj `git reset --hard` (potwierdzone w 24f).
 - **Polska typografia w `python3`**: `repr()`/licznik trafień PRZED podmianą, grep PO (24f: cyrilica w `podstawa`, literówki w `PIERWSZĄ`).
 - **Cap enumeracji podzbiorów**: 2^n przy n kandydatach — cap 32 z deterministycznym porządkiem (L19/L151).
+
+## Status po sesji 2026-09-25a (domknięcie etapu A)
+
+Zrobione: A1–A6 (mechanika + protokół + widok + wycena bota, piny
+`test/audyt-m431-untap-choice.test.js` A1–A12), B1–B4 (oś B, wypchnięta
+`5d9b41c`), C1–C3 (tabela + żywy tester na „theros + 2× Lyra", seedy 77–82;
+chwilowa talia usunięta PRZED bramką), D1–D5, E3 (sondy: decyzja tylko przy
+kandydacie, cap ofert, dwie liry naraz — A12/A8), E1 częściowo (tester
+zmechanizowany, ręczna lektura transkryptu wzdłuż trzech osi skrótowo).
+
+**Zostaje otwarte ŚWIADOMIE (nie dług ukryty):**
+- E2 poza częścią zmierzoną w A12: interakcja blokady z phasingiem (CR 502.1),
+  licznikami stun (CR 122.1d) i zmianą kontrolera (CR 400.3) — wymaga
+  scenariuszy, których żadna karta w katalogu nie rozgrywa przez `execute`;
+  najbliższa sesja niech zacznie od tego, bo to ta sama rodzina błędu co
+  `lock_untap`/`dont_untap_next_untap_step` (zakres zamiast stanu);
+- E1 w pełnym kształcie (4 partie, transkrypty do `/tmp`, lektura osi
+  „czy gracz DOSTAJE wybór") — seedy 77–82 dały ofertę raz na 6 partii, bo
+  lira musi być na stole i tapnięta w kroku odkręcania; jeśli ma być
+  powtarzalny pomiar, trzeba profilu `explorer` albo talii z samym {0}/{1}
+  kosztem (bez nowego batcha kart: nie da się, więc raport ma podawać
+  licznik „ofert na 6 partii", nie „0 ofert");
+- budżet lektury startowej 100k jest WYCZERPANY → kondensacja
+  `docs/LESSONS.md` to zadanie OBOWIĄZKOWE następnej sesji (AGENTS.md §0);
+  progu nie podnosimy.

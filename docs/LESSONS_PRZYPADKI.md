@@ -2699,3 +2699,32 @@ vs aggro i 97,6 % vs random (progi 62 % / 78 %), ewaluacja lustrzana 72:72,
 a Żywy Tester na 4 partiach: 0 zgłoszeń detektorów, 0 niewycenionych ruchów,
 Mutagen na najlepszym ciele, Memory's Journey trzymana w ręce, Vanguard
 aktywowany w walce (transkrypty `/tmp/po-audyt/po-*.txt`).
+
+### Dopisane po sesji 2026-09-25a (M431, rodzina decyzji kroku odkręcania)
+
+Ten sam brak wymiaru, co przy trzech kartach batcha 59, wrócił w nowym miejscu:
+wycena `resolve_untap_choice` na starcie miała **jeden** wymiar (suma
+unieruchomionych bytów) i koszt źródła liczony **w pętli po celach**. Dwa
+skutki, oba złapane przez piny przepływu pokręteł (`test/bot-params.test.js`),
+nie przez przegląd kodu:
+
+1. **podwójne odejmowanie** — przy jednym trzymanym celu `10 + 2·6 = 22`
+   i jednocześnie `−6`, czyli model nie był równy opisowi w komentarzu;
+   przy dwóch celach koszt rósł drugi raz, choć „nie odkręciłem źródła" jest
+   jednym aktem gracza. Stąd reguła 7: koszt źródła to cecha **wariantu**;
+2. **ślepota na kształt widoku** — gałąź czytała `zrodlo.abilities`, a
+   `PlayerView` niesie tylko `activatableAbilities` (M243): permanent
+   **tapnięty** nie ma tam żadnej zdolności z `{T}`, bo akurat nie może jej
+   aktywować. Wycena kosztu znikała po cichu, a nie rzucała się w oczy —
+   jedyny ratunek to pin „Δ oceny == Δ parametru co do joty" (test 13–15),
+   który nie działa bez uzupełnienia listy o rejestr (l. 1754/3537 robią to
+   samo przy innych gałęziach).
+
+Druga warstwa tej samej klasy, tym razem po stronie **harnessu testów**:
+`test/real-cards-batch2.test.js` budował obiekt z `gameObjectDataOf(def)`
+rozpisany na pola (`kind`, `power`, `manaCost`, `spell`, `abilities`…), więc
+każde NOWE pole deskryptora (tu `untapChoice`) ginęło w teście, a karta
+bez mechaniki nie wystawiała decyzji — zielony test udowadniał nie to, że
+silnik działa, ale to, że test nic nie mierzy (L21). Naprawa: `addObject`
+dostaje `...data` całym spreadem, a pola bojowe (`tapped`,
+`untapLockedBy`) nadal osobno, bo `addObject` je normalizuje i ostrzega.

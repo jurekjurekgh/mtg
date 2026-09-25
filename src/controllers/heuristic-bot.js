@@ -3622,7 +3622,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -8218,6 +8218,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (zwykle lepsze), spód = świeża karta zamiast odzyskiwania.
         return finish(cmd.placement === 'top' ? 10 : 4);
       }
+      case 'resolve_untap_choice': {
+        // M431 (uwaga z gry właściciela 2026-09-25, CR 502.3): oferta „które
+        // permanenty zostają tapnięte w kroku odkręcania". Zgłoszenie brzmiało
+        // „wybór = odtapowanie lir i zwolnienie stwora, Dalej (Pass) = lira
+        // zostaje tapnięta i stwór też" — czyli warianty MUSZA mieć różną
+        // cenę, inaczej wybór zapada kolejnością enumeracji (L169).
+        //
+        // Liczone WYŁĄCZNIE z widoku (ADR 0017): `view.pendingUntapChoice
+        // .lockedByCandidate` mówi, kogo dane źródło trzyma (pole dodane razem
+        // z tą wyceną — bez niego bot byłby ślepy, L1). Trzymanie w tapie jest
+        // warte tyle, ile unieruchomione wrogie byty; kosztuje utrata odkręcenia
+        // (źródło z zdolnością {T} albo zablokowany WŁASNY permanent).
+        const wartosci = view.pendingUntapChoice?.lockedByCandidate ?? {};
+        let score = 0;
+        let zrodloChceWstawac = false;
+        for (const sourceId of cmd.keepTappedIds ?? []) {
+          const zrodlo = objectOnBoard(view, sourceId);
+          for (const lockedId of wartosci[sourceId] ?? []) {
+            const byt = objectOnBoard(view, lockedId);
+            if (!byt) continue;
+            const worth = (byt.power ?? 0) + (byt.toughness ?? 0);
+            score += byt.controllerId === view.playerId ? -P.untapChoiceOwnLockPenalty - worth
+              : P.untapChoiceLockValue + 2 * worth;
+          }
+          // Źródło, które samo chce być odkręcone (ma zdolność {T} albo jest
+          // stworzeniem do ataku) — łapie flagę; koszt naliczamy RAZ NA
+          // WARIANT, bo „nie odkręciłem tego źródła" jest jednym aktem, a nie
+          // osobną opłatą za każdy trzymany cel (błąd znaleziony przez pin
+          // `params: untapChoiceSourceTapCost ...` w test/bot-params.test.js).
+          // Widok niesie TYLKO zdolności aktualnie aktywowalne (M243), a
+          // tapnięte źródło nie aktywuje własnego {T} — więc lista byłaby
+          // pusta dokładnie wtedy, gdy koszt nas interesuje. Uzupełniamy ją
+          // wydrukowanymi zdolnościami z rejestru (wzorzec l. 1754/3537).
+          const zrodloDef = zrodlo?.cardId ? cardDef(zrodlo.cardId) : undefined;
+          const zdolnosci = [...(zrodlo?.activatableAbilities ?? []), ...(zrodloDef?.abilities ?? [])];
+          if (zdolnosci.some((a) => a?.cost?.tap)
+            || (zrodlo?.kind === 'creature' && !(zrodlo?.keywords ?? []).includes('defender'))) {
+            zrodloChceWstawac = true;
+          }
+        }
+        if (zrodloChceWstawac) score -= P.untapChoiceSourceTapCost;
+        return finish(score);
+      }
       case 'resolve_aura_host': {
         // Audyt PR #130 (znalezisko D, CR 303.4f): aura wracająca z grobu
         // wybiera zaczarowany obiekt przy wejściu. Polaryzację aury czyta TA
@@ -9035,6 +9078,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (narzędzie nie mogło odróżnić uczciwego remisu od ślepoty wyceny), choć
     // dane są wprost w widoku (L28/L34/L40). Lustro wejść wyceny: te same
     // pola i te same generatory, co w `scoreCommand`/`scoreCommandValue`.
+    if (cmd?.type === 'resolve_untap_choice') {
+      // Projekcja = ilu bytów realnie dotyczy wariant (0 = „odtapuj
+      // wszystko"); bez niej remis wariantów wpadał do „bez danych".
+      const wartosci = view.pendingUntapChoice?.lockedByCandidate ?? {};
+      const trzymane = cmd.keepTappedIds ?? [];
+      const cel = new Set(trzymane.flatMap((id) => wartosci[id] ?? []));
+      return { kept: trzymane.length, locked: cel.size };
+    }
     if (cmd?.type === 'resolve_aura_host') {
       const host = objectOnBoard(view, cmd.auraHostId);
       if (host) return { mine: host.controllerId === view.playerId ? 1 : 0, value: combatPower(host) };
@@ -9128,6 +9179,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function summarize(cmd, view = null) {
+    // M431 (L34/L40, wzorzec M203/2): warianty jednej decyzji muszą być
+    // rozróżnialne w śladzie — inaczej audyt remisów paruje je po indeksie.
+    if (cmd.type === 'resolve_untap_choice') {
+      const ids = cmd.keepTappedIds ?? [];
+      return ids.length === 0
+        ? 'resolve_untap_choice(untap-all)'
+        : `resolve_untap_choice(keep:${ids.join('+')})`;
+    }
     // M203/2: warianty scry/surveil były w śladzie nieodróżnialne (oba
     // streszczały się do `resolve_scry`), więc diagnostyka i test wyceny
     // musiały parować opcje z `legalCommands` PO INDEKSIE — a opcje w śladzie

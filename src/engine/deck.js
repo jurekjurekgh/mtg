@@ -87,6 +87,10 @@ export function installDeck(state, deck, { seed }) {
       // deskryptor musi przejść z karty na obiekt biblioteki (lekcja L21).
       costReduction: card.costReduction,
       enchantPlayer: card.enchantPlayer ?? false,
+      // M431 (uwaga z gry właściciela 2026-09-25): klauzula »You may choose not
+      // to untap« musi dotrzeć do obiektu w PRAWDZIWYCH partiach (strażnik
+      // m379 porównuje każde pole `gameObjectDataOf` z tym łańcuchem).
+      untapChoice: card.untapChoice ?? false,
       // M146 (L21 — deskryptor ginie po cichu, gdy brak go w łańcuchu):
       // pola mechanik, które createCardDeck kładzie na wpisie talii, muszą
       // dotrzeć do obiektu gry. Pominięcie = mechanika martwa w PRAWDZIWYCH

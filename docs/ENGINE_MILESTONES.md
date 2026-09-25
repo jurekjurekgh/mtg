@@ -7799,3 +7799,82 @@ bez zmian), szybka macierz 672 mecze: **78,3 %** vs aggro / **97,9 %** vs random
 golden-master `bot-scoring-snapshot` zielony BEZ regeneracji, katalog 562 wpisy
 / 509 `supported` / 1 z niepustym `limitations`. Nowa lekcja: celowo żadna —
 budżet lektury ~99,9k/100k znaków, klasy żyją w L41/L43/L129/L135/L151/L163/L13 §6.
+
+## M431 — decyzja kontrolera w kroku odkręcania (CR 502.3) + wycena świeżości grantów aur (sesja 2026-09-25a, PR #137)
+
+Dwie uwagi z gry właściciela w jednej sesji; plan
+`docs/plans/PLAN_2026-09-25a-untap-choice-i-wycena-keywordow-aur.md`. Bez
+nowego batcha kart (ADR 0029), bez pełnego B0 (ADR 0018/0025), zero przypadków
+po nazwie karty w `src/engine`/`src/cards` (ADR 0002).
+
+**A — Entrancing Lyre.** Karta mówi „You may choose not to untap this artifact
+during your untap step", a silnik decydował ZA gracza: heurystyka
+`isActiveLockSource` zostawiała artefakt w tapie, „bo trzyma kogoś". To
+odwrotne trzymanie struktury reguły — w CR 502.3 to *aktywny gracz*
+ustala, które permanenty się odkręcają; blokada celu jest *skutkiem* wyboru,
+nie powodem decyzji silnika. Naprawa: deskryptor `untapChoice` na karcie
+(`card-data` → `registry` → `materialize` → obiekt → `deck`/`identity`) i
+rodzina decyzji `pendingUntapChoice` w kroku odkręcania — `beginTurnStart`
+liczy dzień/noc (CR 502.2) PRZED odkręceniem, wystawia ofertę i pauzuje (CR
+502.4: w tym kroku nie ma priorytetu, więc nie wolno mu dać okna na czary —
+bramka `abilities.js:553` zostaje nietknięta), a po wyborze wznawia z TEJ
+SAMEJ funkcji `beginTurnContinuation` (L41). Warianty: pusty `keepTappedIds`
+= „odtapuj wszystkie" (standard CR, pierwsza oferta, czyli i „Dalej (Pass)"
+znaczy to samo) + podzbiory do capa 32, porządek kanoniczny (L19/L151).
+Odrzucenia: `untap_choice_unresolved`, `untap_choice_not_your_decision`,
+`illegal_untap_choice`, `duplicate_untap_choice`; zdarzenia
+`untap_choice_required`/`untap_choice_resolved` (L24). Skutek uboczny,
+regułowy: permanent BEZ klauzuli, który jest źródłem blokady, odkręca się,
+a blokada jego celu gaśnie — tak samo ulega regule 611.2 rodzina „for as long
+as… remains tapped" (A1b/A2/A5). Widok: `pendingUntapChoice` +
+`entry.untapLockedBy` + `lockedByCandidate` (kompletność i FoW, ADR 0003/
+0017), odcisk stanu przez `PENDING_DECISION_FIELDS` (A7). Tabela: oferta
+w „Twoje działania" z etykietami nazywającymi SKUTEK (L154), log z opisem
+decyzji; boty: `heuristic-params` +3 pokrętła z pinami przepływu, aggro bierze
+JAWNIE „odtapuj wszystkie" zamiast pierwszego kandydata z enumeracji (L169).
+
+**B — Serra's Embrace (sprawdzenie kary).** Wycena doczepienia aury nadającej
+słowo-kluczowe, które cel już ma: liczy się ŚWIEŻOŚĆ grantu, nie samo ciało
+gospodarza (jałowy grant = kara `auraKeywordAllWastedPenalty`, część grantów
+= waga proporcjonalna). Wypchnięte osobno (`5d9b41c`), z fixture i 15 pinami.
+
+**Znaleziska uboczne (ta sama sesja, bez nowego batcha):**
+1. `lock_untap` miał opis „…podczas NASTĘPNEGO kroku odkręcania kontrolera" —
+   zakres mylący z `dont_untap_next_untap_step` (Wavecrash Triton, jednokroko-
+   wy); Oracle i ruling liry mówią „for as long as this artifact remains
+   tapped", więc opis (i pin B54) przepisane na trwały;
+2. `test/real-cards-batch2.test.js` budował obiekt z `gameObjectDataOf`
+   rozpisany na pola — KAŻDE nowe pole deskryptora ginęło w teście (L21);
+   harness dostaje teraz cały spread;
+3. `decks/audyt-lyra.txt` (chwilowa talia do żywego testera) trzymałam POZA
+   commitem i usunęłam PRZED bramką — jej obecność w repo psuje pięć
+   strażników talii (lekcja 24f).
+
+**Żywy Tester (C3):** partie na talii „theros + 2× Lyra" (seedy 77–82,
+`--bot mirrodin-brg`, kroków 600): oferta decyzji pojawiła się w panelu i
+przeszła przez kreatora celów („Wybierz: Odkręcanie — które permanenty
+zostają tapnięte?" z wariantem „Odkręć wszystko…" jako pierwszym), 0 zgłoszeń
+detektorów, 0 ruchów niewycenionych; E2-lite (dwie klauzule naraz, porządek
+kanoniczny kandydatów, „decyduje tylko kontroler źródła", odcisk na oba
+kierunki wyboru) wypięty w pinie A12. C2 bez zmian: tester skanuje oferty po
+`data-option-key`, więc nowy typ komendy łapie automatycznie, a rodzina
+`resolve_*` nie wchodzi do `OPTION_IGNORABLE_TYPES` (wyciszalna blokada
+auto-wykonywałaby pierwszą opcję). E2 (interakcje: phasing 502.1, licznik
+stunu 122.1d, zmiana kontrolera 400.3, odkręcenie efektem) zostaje w planie
+jawiernie — to następny krok, nie dług ukryty.
+
+**Budżet lektury startowej:** próg 100k tokenów jest osiągnięty (99,95k po
+wpisie), więc NOWA lekcja nie powstała — klasa „koszt wariantu vs koszt na cel"
+trafia do L169 jako punkt 7, a proza do archiwum narracji (identyczna decyzja
+jak w M430). Kondensacja `docs/LESSONS.md` pozostaje zadaniem OBOWIĄZKOWYM
+następnej sesji (AGENTS.md §0) — nie podnosić progu.
+
+Bramy: `npm test` **6566/6566** (start sesji 6545 → +21; `test/audyt-m431-untap-choice.test.js`
+A1–A11, `test/audyt-m431-wycena-keywordow-aur.test.js`, 3 piny w `bot-params`), golden-master
+`bot-scoring-snapshot` zielony BEZ regeneracji (`beaee531…` — ten sam hash,
+zero dryfu realnych talii), `bot-params` 16/16 → **19/19** (3 nowe piny
+przepływu, Δ oceny == Δ parametru co do joty), macierz 672 mecze **78,3 %**
+vs aggro / **97,6 %** vs random (24f: bez zmian), ewaluacja lustrzana przy
+podbitych pokrętłach 24:24 (realne talie nie noszą klauzuli → gałąź
+niedostępna poza deskryptorem, co jest właśnie celem ADR 0029), build
+60 modułów / **4281,5 kB** (po usunięciu chwilowej talii audytowej i przebudowie).
