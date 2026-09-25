@@ -83,3 +83,45 @@ Wycena dziś — 5 ścieżek, 3 formuły (rozjazd L41):
 | S10 | Heap Gate ACT (Treasure) | −30/−30 | **T5**: bramka Treasure NIGDY się nie aktywuje? (M243/C vs koszt) |
 
 Kontrola pozytywna: Flurry Z6, Abstruse-cast, worth-scale S5.
+
+## Aneks B: decyzje audytu (findingi F1–F8 + fale jak M429)
+
+Zasada anty-over-fix (M429): najsłabszy realny wariant (sorcery 1×1/1 za 1,
+Chatter = 60) = dawna wartość; nowe wymiary to DOPŁATY/KARY. Wszystkie dane
+w PlayerView (P/T/ilość/keywordy z deskryptora, stos, faza, ręka-licznik) —
+prognoza BEZ zmian engine (do potwierdzenia w fali B/C).
+
+- **F1 (timing instantów, H2 — S3: 70/70/70):** token wchodzi z chorobą
+  (atak następną turę, blok od razu). Okna: EOT-własny (przed turą wroga —
+  blok gotowy) > main-własna > EOT/main-wroga? Decyzja wartości w fali B
+  (sonda falowa, nie zgadywanie).
+- **F2 (timing sorcery, H3 — S4: 70/70):** premia precombat (main1 + presja
+  + blok w turze wroga), jak bounce-F1.
+- **F3 (L41 flat, H1):** ETB 12 + plot +12 (Tumbleweed live!) ignorują ilość
+  i P/T; cast/ability liczą `10×count×(2P+T)/3`. Modal-trigger +8 MARTWE dla
+  tokenów (0 kart) — ujednolicić prewencyjnie (precedens PMSSB-1/B:
+  gałąź gotowa na zero kart). Jyoti (0 tokenów → 12) znika przy okazji.
+- **F4 (rola tokena, H4):** Treasure/Powerstone/Scion (mana-bank: dziś 0
+  w cast, −13/−14 w ability, 12 w ETB — pełny rozjazd!), Mutagen (licznik),
+  keywordy (flying/infect/lifelink/vigilance/trample), fodder. M243/C
+  (Heap Gate −30) ŚWIADOME (raport właściciela #3) — nie ruszać wyniku,
+  tylko ujednolicić rolę między ścieżkami.
+- **F5 (wrogie tokeny, H5 — S6: 13=13):** Robber: trigger 0 w ataku, ciało
+  0/1 dla wroga bez kary, ping-rider (upkeep damage_to_controller)
+  niewyceniony. Znak + rider + (atak-trigger jak Disa/Relic w wycenie ataku).
+- **F6 (dynamiczne ilości, H6 — S7a: 76.50=76.50):** brak klucza
+  `cards_named_in_graveyard` w M106/Z6 (Undead Servant → fallback 1);
+  ETB nie czyta amount wcale (Jyoti). Kontrola: Flurry Z6 działa (−70/80).
+- **F7 (koszt czaru, H7/S11):** koszt nie występuje w wycenie (fakt z kodu).
+  Zakres MINIMALNY: tie-break (ten sam efekt → tańszy wygrywa); pełny
+  opportunity-cost (mana na follow-up z ręki) OUT (osobna pętla, wymaga
+  modelu castability — por. NOTE przy Unstable Frontier).
+- **F8 (dies-tokeny w bloku, H8 — S8: +1 to różnica ciał 1/1 vs 1/2, NIE
+  token):** `blockerValueLost` = czyste P+T (kod) — triggery śmierci
+  (Dissenter/Patron/Chorus/Elgaud) niewidzialne. Ubezpieczenie ciała.
+
+Fale: **A** (wartość tokena: F3+F4+F6 — wspólny `tokenBodyValue` + rola +
+klucze; anty-over-fix Chatter=60); **B** (timing: F1+F2 — okna + choroba);
+**C** (kontekst: F5-znak/rider/atak + F7-tie-break + F8-ubezpieczenie).
+OUT: `create_copy_token*` (osobna rodzina), M243/C-wynik, opportunity-cost,
+counter-decyzje Abstruse (rodzina kontr w backlogu hubu).
