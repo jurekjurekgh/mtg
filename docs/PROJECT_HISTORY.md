@@ -46,6 +46,21 @@ exileFromGraveyard) i Kumano end-to-end — zgodne z CR, bez znalezisk.
 **Luka procesowa po 25e/f:** brak `HANDOFF_2026-09-25e/f.md` i wpisu w tym
 dzienniku — nie rekonstruuję wstecz. Handoff: `HANDOFF_2026-09-25g.md`.
 
+**Kontynuacja 25g — zgłoszenia E+F** (aneks: `docs/plans/ANEKS_2026-09-25g_ef.md`):
+właściciel potwierdził ptaszka C2 i zgłosił dwa defekty (ten sam PR #140).
+**E** (`a921ebb`, `aa89664`): „you may [verb] target" (Angelic Benediction) —
+modal celu zawiera decline („Nie tapuj nikogo (you may)"); odmowa to SKRÓT
+wynikowo równoważny (CR 603.3d/603.5, trigger nie idzie na stos; strażnik L52:
+`you-may-decline-straznik.test.js`), wybór celu = pełna procedura Etapu F
+z oknem odpowiedzi. 10 pinów Etapu F zaktualizowanych do nowego przepływu;
+boty bez zmian (wycena null=0 istniała). **F** (`b469e21`, `6c3e063`):
+mana-wizard — filtr `(pool-covered)>=genericNeeded` zamiast `pool>=...`
+(podwójne liczenie many z pipu); {1}{W}{U} po {U} pokazuje wszystkie źródła.
+Piny Gd/1,3,5 z 23c pinowały podwójne liczenie — zaktualizowane do strategii F
+(prowadzenie kolejnością; sedno 23c, anty-slice Gd/2, bez zmian). Mutacje
+M-E1/M-E2/M-E3/M-E5/M-F potwierdzone. Bramy: `npm test` 6625/6625,
+`test:all` 6635/6635, build 61/4302.5 kB.
+
 **Bramy:** `npm test` **6613/6613**, `npm run test:all` **6623/6623**,
 `node --test test/bot-benchmark.test.js` **10/10**, `npm run build**
 61 modułów / **4299,4 kB**.
