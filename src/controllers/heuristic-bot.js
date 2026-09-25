@@ -1266,6 +1266,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (effect?.power ?? tokenDef?.power ?? 0) <= 0 && granted.length > 0
       && granted.every((fx) => fx?.type === 'add_mana');
   };
+  // PMSSB-2/B (F1): czy efekt robi token-STWORA (tylko stwory mają okna —
+  // Treasure/Mutagen nie blokują ani nie atakują, ich timing to przyszła
+  // pętla mana-castability, nie ta).
+  const isCreatureTokenEffect = (effect) => effect?.type === 'create_token'
+    && (effect.kind === 'creature' || (effect.types ?? []).includes('Creature'));
+  // PMSSB-2/B (F1) — OKNA instantu tokenowego (choroba_tag: atak następną
+  // turę, blok od razu): EOT-własny (blok gotowy na turę wroga + max info)
+  // i declare_attackers-wroga (reaktywny chump z pełną informacją — okno
+  // Flurry) +swing; po blokach wroga (token nie zablokuje — bezczynny cały
+  // cykl) −swing; mainy 0. Sorcery = 0 ZAWSZE (F2-flat: obie mainy przed
+  // walką wroga, ten sam użytek — S4 70/70 poprawne, nie luka).
+  const tokenCastTimingDelta = (view, timing) => {
+    if (timing !== 'instant') return 0;
+    const myTurnNow = myTurn(view);
+    if (myTurnNow) return view.turn.step === 'end' ? P.tokenTimingSwing : 0;
+    if (view.turn.step === 'declare_attackers') return P.tokenTimingSwing;
+    if (['declare_blockers', 'combat_damage', 'end_of_combat', 'main2', 'end', 'cleanup']
+      .includes(view.turn.step)) return -P.tokenTimingSwing;
+    return 0;
+  };
   // PMSSB-2/A (F3/F4/F6): WARTOŚĆ tokena — wspólna dla cast_spell,
   // activate_ability, plot i tabeli ETB (L41; koniec 3 formuł).
   // Rdzeń worth `10×count×(2P+T)/3` BEZ ZMIAN (kotwica anty-over-fix:
@@ -1292,8 +1312,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Ciało liczy się TYLKO stworom (Treasure/Powerstone/Mutagen nie mają
     // P/T — stary `?? 1` dawał im ciało 1/1 gratis; cały katalog: każdy
     // token-stwór niesie P/T, weryfikacja w sondzie PMSSB-2).
-    const isCreatureToken = effect.kind === 'creature' || (effect.types ?? []).includes('Creature');
-    const bodyWorth = isCreatureToken
+    const bodyWorth = isCreatureTokenEffect(effect)
       ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 : 0;
     const manaWorth = tokenGrantedMana(effect) > 0
       ? P.tokenManaBankWeight * tokenGrantedMana(effect) : 0;
@@ -5486,6 +5505,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // PMSSB-1/C (F1): timing liczy się RAZ na rzut (nie na cel) —
         // flaga mówi, czy ten czar odbił ≥1 cel wroga.
         let bounceCastHadFoeTarget = false;
+        let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
         for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
@@ -5841,6 +5861,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tokenValue = tokenBodyValue(view, effect);
             if (tokenValue === 0) score -= 25; // czar bez skutku = karta w błoto
             score += tokenValue;
+            if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
           }
           // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
           // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
@@ -6316,6 +6337,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
         // nie czeka na okno: fizzle musi nastąpić PRZED rozstrzygnięciem).
         if (bounceCastHadFoeTarget) score += bounceCastTimingDelta(view, card?.spell?.timing);
+        // PMSSB-2/B (F1): timing tokena (raz na rzut; sorcery = 0 w helperze).
+        if (tokenCastHadCreatureEffect) score += tokenCastTimingDelta(view, card?.spell?.timing);
         // CR 702.174 (Gift, M355): obietnica daru to KOSZT — obiecany
         // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
         // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
@@ -6517,6 +6540,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
         }
+        // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
+        let tokenAbilityTimingApplied = false;
         for (const effect of effects) {
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
@@ -7330,6 +7355,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // PMSSB-2/A (F3): ten sam tokenBodyValue co czar (L41 — także
             // ilości dynamiczne, dotąd fallback 1 tylko w tej gałęzi).
             score += tokenBodyValue(view, effect, { source });
+            // PMSSB-2/B (F1): to samo okno co czar (L41) — raz na zdolność.
+            if (isCreatureTokenEffect(effect) && !tokenAbilityTimingApplied) {
+              score += tokenCastTimingDelta(view, ability?.timing);
+              tokenAbilityTimingApplied = true;
+            }
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
             // M243/C (zgłoszenie właściciela, Heap Gate #3): token będący
             // WYŁĄCZNIE bankiem many (Treasure/Powerstone — token-def albo

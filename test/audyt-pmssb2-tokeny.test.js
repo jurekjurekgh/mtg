@@ -166,3 +166,103 @@ test('PMSSB-2/A pokrętło: tokenManaBankWeight ×0 zdejmuje wartość Treasure'
   assert.ok(Math.abs(full - 62.9973) < 1e-9, `bank ×3: ${full}`);
   assert.ok(Math.abs(zero - 60.2973) < 1e-9, `bank ×0: ${zero}`);
 });
+
+// =====================================================================
+// Fala B — timing (F1 okna instantów + choroba; F2-flat zweryfikowane)
+// =====================================================================
+// Token wchodzi z chorobą (atak następną turę, blok od razu): EOT-własny
+// (przed turą wroga — blok gotowy + max info) i declare_attackers-wroga
+// (reaktywny chump z pełną informacją — okno Flurry) +swing; po blokach
+// wroga (za późno na blok) −swing; mainy 0. Sorcery: main1 = main2
+// (obie przed walką wroga — ten sam użytek; S4 70/70 POPRAWNE, nie luka).
+
+/** Token-instant w danym oknie — wynik wariantu (do porównań okien). */
+function tokenScoreAt(step, activeId, priorityId, cardId, setup) {
+  const state = game(step, activeId, priorityId);
+  put(state, 'tk', cardId, 'p1', 'hand');
+  if (setup) setup(state);
+  addMana(state, 'p1', 12);
+  return decide(state).scores;
+}
+
+test('PMSSB-2/B params: tokenTimingSwing WŁĄCZONE (8, lustro bounce-F1)', () => {
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.tokenTimingSwing, 8);
+});
+
+test('PMSSB-2/B/F1: okna instantu — EOT-own (78) > main-own (70) > main2-foe (62)', () => {
+  const eot = tokenScoreAt('end', 'p1', 'p1', 'raise-the-alarm')['cast_spell(tk->)'];
+  const own = tokenScoreAt('main1', 'p1', 'p1', 'raise-the-alarm')['cast_spell(tk->)'];
+  const late = tokenScoreAt('main2', 'p2', 'p1', 'raise-the-alarm')['cast_spell(tk->)'];
+  assert.equal(eot, 78, `EOT-own = blok gotowy + max info: ${eot}`);
+  assert.equal(own, 70, `main-own = neutralna (kotwica fali A trzyma): ${own}`);
+  assert.equal(late, 62, `po walce wroga = token bezczynny cały cykl: ${late}`);
+});
+
+test('PMSSB-2/B/F1: reakcja na atak (78) vs po blokach (62) — okno chumpa', () => {
+  const mk = (step) => (state) => {
+    put(state, 'foe', 'goldmeadow-nomad', 'p2');
+    stat(state, 'foe', { power: 3, toughness: 3 });
+    state.combat = { attackers: ['foe'], attackingPlayerId: 'p2', blockers: new Map() };
+  };
+  const reactive = tokenScoreAt('declare_attackers', 'p2', 'p1', 'raise-the-alarm', mk())['cast_spell(tk->)'];
+  const tooLate = tokenScoreAt('declare_blockers', 'p2', 'p1', 'raise-the-alarm', mk())['cast_spell(tk->)'];
+  assert.equal(reactive, 78, `widzę atakujących → chump w punkt: ${reactive}`);
+  assert.equal(tooLate, 62, `bloki zadeklarowane → token nie zablokuje: ${tooLate}`);
+});
+
+test('PMSSB-2/B/F1-ability: Canonized (instant-ACT) — reakcja +8 / po blokach −8 (L41 jak czar)', () => {
+  // UWAGA ARCHITEKTONICZNA: EOT-własny NIE przechodzi przez pętlę efektów
+  // zdolności — wastefulStep (pre-existing, tylko własna tura) zwiera WSZYSTKIE
+  // activate_ability do −5/−30 (L6440). F1-ability dowodzimy więc w oknach WROGA
+  // (klon testu czaru: reakcja vs po blokach), gdzie zwarcie nie obowiązuje.
+  const scoreAt = (step, params) => {
+    const state = game(step, 'p2', 'p1');
+    put(state, 'cb', 'canonized-in-blood', 'p1');
+    put(state, 'foe', 'goldmeadow-nomad', 'p2');
+    stat(state, 'foe', { power: 3, toughness: 3 });
+    state.combat = { attackers: ['foe'], attackingPlayerId: 'p2', blockers: new Map() };
+    addMana(state, 'p1', 12);
+    return decide(state, { params }).scores['activate_ability(cb#1)'];  // #1 = ACT (token); #0 to trigger
+  };
+  const reactive = scoreAt('declare_attackers');
+  const tooLate = scoreAt('declare_blockers');
+  const neutralDA = scoreAt('declare_attackers', { tokenTimingSwing: 0 });
+  const neutralDB = scoreAt('declare_blockers', { tokenTimingSwing: 0 });
+  assert.ok(reactive != null && tooLate != null, `zdolność oferowana w obu oknach: ${reactive} / ${tooLate}`);
+  assert.equal(reactive - neutralDA, 8, `reaktywny chump z pełną informacją: ${reactive} vs ${neutralDA}`);
+  assert.equal(tooLate - neutralDB, -8, `po blokach token nie zablokuje: ${tooLate} vs ${neutralDB}`);
+  assert.equal(reactive - tooLate, 16, `rozpiętość okna jak u czaru: ${reactive} vs ${tooLate}`);
+  assert.equal(neutralDA, neutralDB, `pokrętło ×0 spłaszcza (kotwica fali A): ${neutralDA}`);
+});
+
+test('PMSSB-2/B/F2-flat: Gather main1 = main2 (70 = 70) — POPRAWNE (obie mainy przed walką wroga)', () => {
+  const pre = tokenScoreAt('main1', 'p1', 'p1', 'gather-the-townsfolk')['cast_spell(tk->)'];
+  const post = tokenScoreAt('main2', 'p1', 'p1', 'gather-the-townsfolk')['cast_spell(tk->)'];
+  assert.equal(pre, 70, `main1: ${pre}`);
+  assert.equal(post, 70, `main2 = main1 (ten sam użytek tokena): ${post}`);
+});
+
+test('PMSSB-2/B guard: Flurry bez atakujących −70 (Z6 stoi); we własnej walce 80 (bez okna)', () => {
+  const flat = tokenScoreAt('main1', 'p1', 'p1', 'flurry-of-wings')['cast_spell(tk->)'];
+  assert.equal(flat, -70, `0 atakujących = karta w błoto: ${flat}`);
+  const st = game('declare_attackers', 'p1');
+  put(st, 'fl', 'flurry-of-wings', 'p1', 'hand');
+  for (let i = 0; i < 3; i += 1) put(st, `a${i}`, 'goldmeadow-nomad', 'p1');
+  st.combat = { attackers: ['a0', 'a1', 'a2'], attackingPlayerId: 'p1', blockers: new Map() };
+  addMana(st, 'p1', 12);
+  const { scores } = decide(st);
+  assert.equal(scores['cast_spell(fl->)'], 80, `własna walka = bez premii okna: ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-2/B pokrętło: tokenTimingSwing ×0 spłaszcza okna (EOT = main)', () => {
+  const mk = (step, active) => {
+    const state = game(step, active, 'p1');
+    put(state, 'tk', 'raise-the-alarm', 'p1', 'hand');
+    addMana(state, 'p1', 12);
+    return state;
+  };
+  const eot = decide(mk('end', 'p1')).scores['cast_spell(tk->)'];
+  const eotFlat = decide(mk('end', 'p1'), { params: { tokenTimingSwing: 0 } }).scores['cast_spell(tk->)'];
+  const main = decide(mk('main1', 'p1')).scores['cast_spell(tk->)'];
+  assert.equal(eotFlat, main, `swing 0: EOT (${eot} → ${eotFlat}) = main (${main})`);
+});

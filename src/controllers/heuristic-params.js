@@ -73,6 +73,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   'tokenManaBankWeight',     // wartość 1 many z tokena-bank (Treasure ≈ 3)
+  'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
   // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
   // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
@@ -283,6 +284,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
   // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
   tokenManaBankWeight: 3,
+  // PMSSB-2/B (F1): 8 jak bounce-TimingSwing (lustro — ta sama skala
+  // „pół tempa": rozstrzyga okna, nie przebija różnicy celów).
+  tokenTimingSwing: 8,
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
