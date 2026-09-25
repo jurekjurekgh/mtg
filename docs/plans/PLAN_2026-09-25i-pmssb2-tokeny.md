@@ -65,3 +65,21 @@ Wycena dziś — 5 ścieżek, 3 formuły (rozjazd L41):
 - Tuning maszynowy wag; pełne B0 (ADR 0018). - Cuombajj (mikro-pętla).
 - `create_copy_token` / `create_token_copy_of_source` (kopie — osobna
   rodzina, inny model wartości: kopiuje CAŁĄ kartę, nie P/T z deskryptora).
+
+## Aneks A: pomiar PRZED (sonda /tmp/pmssb2-tokeny-przed.mjs, 10 scenariuszy)
+
+| # | scenariusz | wynik PRZED | finding |
+|---|---|---|---|
+| S1 | Selesnya Charm (modal 2/2 vigilance) | 70 (1 wariant cast) | **T7**: modal-wycena (+8) działa w `resolve_modal_choice`, nie w cast — wymaga sondy wyboru trybu |
+| S2 | Jyoti (4: 0 tokenów!) vs Gearcrafter (3: 2/1+1/1) | 75.6 > 74.7 | H1-ETB ilustracja (dowód twardy: tabela ignoruje amount/P/T — kod) |
+| S3 | Raise the Alarm: EOT-foe vs main-own vs main-foe | 70 = 70 = 70 | **H2 POTWIERDZONE**: timing instantu płaski (choroba niewidzialna) |
+| S4 | Gather: main1 vs main2 (gotowy atak + bloker) | 70 = 70 | **H3 POTWIERDZONE**: sorcery pre/post płasko |
+| S5 | Call (4: 3×1/1) 80 vs Chocobo (4: 2/2) 70 vs Chatter (1: 1×1/1) 60 | worth-scaled OK | H7: koszt w kode nie występuje (fakt z kodu); brak pary same-tokeny-różny-koszt do ilustracji |
+| S6 | atak: Robber solo vs vanilla 2/2 solo | 13 = 13 | **H5**: trigger (wrogie 0/1 + ping) NIEWYCENIONY (0), ciało wroga bez kary |
+| S7a | Undead Servant: grób 0 vs 3 imienniki | 76.50 = 76.50 | **H6 POTWIERDZONE**: dynamiczna ilość z grobu ignorowana (brak klucza Z6) |
+| S7b | Flurry: 0 vs 3 atakujących | −70 vs 80 | OK (kontrola: guard Z6 działa) |
+| S8 | blok 5/5: Dissenter (→2/2) vs vanilla 1/1 | 2 vs 1 | **H8**: dies-token wart +1 — jakim mechanizmem? czy adekwatnie? |
+| S9 | Abstruse (counter+token) na pump wroga | 60 > 0 (pass) | H9: rzuca; dekompozycja counter-vs-token do audytu |
+| S10 | Heap Gate ACT (Treasure) | −30/−30 | **T5**: bramka Treasure NIGDY się nie aktywuje? (M243/C vs koszt) |
+
+Kontrola pozytywna: Flurry Z6, Abstruse-cast, worth-scale S5.
