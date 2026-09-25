@@ -114,6 +114,62 @@ function minisession(registry, view) {
   };
 }
 
+test('J6: log wyboru odkręcania odmienia 1/2/5, nie sztywną formę „kandydatów/permanentów"', () => {
+  const req = (n) => opis({
+    type: 'untap_choice_required', playerId: 'p2',
+    candidateIds: Array.from({ length: n }, (_, i) => `c${i}`),
+  });
+  assert.match(req(1), /1 kandydat(?![a-ząćęłńóśźż])/);
+  assert.match(req(2), /2 kandydaci(?![a-ząćęłńóśźż])/);
+  assert.match(req(5), /5 kandydatów(?![a-ząćęłńóśźż])/);
+  assert.doesNotMatch(req(1), /kandydatów: 1/);
+  const res = (zostaje, kandydatow) => opis({
+    type: 'untap_choice_resolved', playerId: 'p2',
+    keepTappedIds: Array.from({ length: zostaje }, (_, i) => `k${i}`),
+    candidates: kandydatow,
+  });
+  assert.match(res(1, 1), /1 permanent(?![a-ząćęłńóśźż])/);
+  assert.match(res(1, 1), /1 kandydata(?![a-ząćęłńóśźż])/);
+  assert.match(res(2, 4), /2 permanenty(?![a-ząćęłńóśźż])/);
+  assert.match(res(2, 4), /4 kandydatów(?![a-ząćęłńóśźż])/);
+  assert.match(res(5, 5), /5 permanentów(?![a-ząćęłńóśźż])/);
+  assert.doesNotMatch(res(1, 1), /1 permanentów/);
+  assert.doesNotMatch(res(1, 1), /1 kandydatów/);
+});
+
+test('J7: etykieta odkręcania nie nazywa karty (ADR 0002) i odmienia skutek blokady', () => {
+  const registry = createCardRegistry();
+  const view = miniview([]);
+  view.zones.battlefield = [
+    { id: 'src', cardId: 'zrodlo-karta', controllerId: 'p1', zone: 'battlefield' },
+    { id: 'cel', cardId: 'cel-karta', controllerId: 'p2', zone: 'battlefield' },
+    { id: 'cel2', cardId: 'cel-drugi', controllerId: 'p2', zone: 'battlefield' },
+  ];
+  view.pendingUntapChoice = {
+    candidateIds: ['src'],
+    lockedByCandidate: { src: ['cel'] },
+  };
+  const session = minisession(registry, view);
+  const pusto = commandLabel({ type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: [] }, session, view);
+  assert.doesNotMatch(pusto, /lira/i, pusto);
+  assert.match(pusto, /cel-karta/, pusto);
+  const bezBlokady = {
+    ...view,
+    pendingUntapChoice: { candidateIds: ['src'], lockedByCandidate: {} },
+  };
+  const samo = commandLabel({ type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: [] }, session, bezBlokady);
+  assert.equal(samo, 'Odkręć wszystko');
+  const jeden = commandLabel({ type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: ['src'] }, session, view);
+  assert.match(jeden, /1 permanent zostaje unieruchomiony/);
+  assert.doesNotMatch(jeden, /1 permanentów/);
+  assert.doesNotMatch(jeden, /nie jest blokadą trzymany/);
+  const dwa = commandLabel({ type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: ['src'] }, session, {
+    ...view,
+    pendingUntapChoice: { candidateIds: ['src'], lockedByCandidate: { src: ['cel', 'cel2'] } },
+  });
+  assert.match(dwa, /2 permanenty zostają unieruchomione/);
+});
+
 test('J5: render.js używa liścia u siebie (commandLabel nie jest rozbitym re-eksportem)', () => {
   const registry = createCardRegistry();
   const hand = Array.from({ length: 6 }, (_, i) => ({ id: `h${i}`, controllerId: 'p1', cardId: 'basic-forest' }));

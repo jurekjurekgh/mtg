@@ -306,11 +306,9 @@ export function createGameState({ seed, players }) {
     // { playerId, count, handIds, restorePriorityTo } — resolve_mulligan_bottom_choice.
     pendingMulliganBottom: null,
     // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
-    // { playerId, candidateIds }, rozstrzygany komendą `resolve_untap_choice`.
-    pendingUntapChoice: null,
-    // M431 (CR 502.3): oczekujący wybór kontrolera w kroku odkręcania —
-    // { playerId, candidateIds } rozstrzygany przez `resolve_untap_choice`
-    // (komenda w protokole, oferta = walidacja, fingerprint, priorytet).
+    // { playerId, candidateIds }, rozstrzygany komendą `resolve_untap_choice`
+    // (oferta = walidacja, fingerprint, priorytet). Jeden klucz — drugi
+    // wpis w tym samym obiekcie był martwy (wygrywa ostatni).
     pendingUntapChoice: null,
     // Oczekująca decyzja „you may" triggera BEZ celu (Angel's Feather —
     // „you may gain 1 life"): tak/nie (resolve_optional_trigger_choice).
