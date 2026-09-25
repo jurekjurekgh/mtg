@@ -2419,7 +2419,7 @@ export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 // (czyli tylko przy `stackSize > 0`) albo przez `HUMAN_DIGEST_EVENTS` (czyli
 // tylko dla człowieka — samo `card_revealed` nie miało tam zresztą wpisu);
 // a rozstrzygnięcie ODRACZONEGO triggera (ETB granego w Głównej, rozstrzygane
-// dopiero po passa(ch) człowieka; delayed trigger w upkeep/cleanup) trafia w
+// dopiero po passu (albo dwóch) człowieka; delayed trigger w upkeep/cleanup) trafia w
 // okno bez pauzy i z pustym `stackObjects`: wpisy znikały z bufora modala,
 // a przy braku `botActing` także z logu. Rodzina zdarzeń, nie nazwa karty
 // (ADR 0002); opis nazywa tylko to, co wolno (L41).
