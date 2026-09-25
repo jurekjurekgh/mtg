@@ -66,6 +66,8 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
   bounce: Object.freeze([
     'bounceLibraryTopBonus', 'bounceLibraryBottomBonus',
     'bounceTokenBonus', 'bounceFoeEtbWeight',
+    // PMSSB-1/B: kierunek własny (ratunek F5 + reuse F4).
+    'bounceRecastManaWeight', 'bounceTempoPenalty',
   ]),
   // M257 r4/B6 T1: rodzina „aura” wpięta — ekstrakcja stałych bloku aury
   // scoreCommand (buff/hostile/losesKeywords/protection) pod nazwy.

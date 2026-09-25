@@ -80,7 +80,10 @@ test('PMSSB-1/A/T1: karta z efektem bounce dostaje deskryptor `bounce` (tuner)',
   assert.ok(cardDescriptors(REGISTRY.get('vanish-from-sight')).includes('bounce'), 'Vanish też (top/bottom)');
   const { keys } = paramsForDescriptors(['bounce']);
   assert.deepEqual(keys.sort(), [
-    'bounceFoeEtbWeight', 'bounceLibraryBottomBonus', 'bounceLibraryTopBonus', 'bounceTokenBonus',
+    'bounceFoeEtbWeight', 'bounceLibraryBottomBonus', 'bounceLibraryTopBonus',
+    // PMSSB-1/B: kierunek własny dopisuje recast + tempo (sort: Recast <
+    // Tempo < Token — 'e' < 'o').
+    'bounceRecastManaWeight', 'bounceTempoPenalty', 'bounceTokenBonus',
   ]);
 });
 
@@ -179,4 +182,136 @@ test('PMSSB-1/A pokrętła: bonusy realnie sterują wyceną (nie są atrapami)',
   const base = decide(mk()).scores['cast_spell(fa->tok)'];
   const zero = decide(mk(), { params: { bounceTokenBonus: 0 } }).scores['cast_spell(fa->tok)'];
   assert.ok(zero === base - 12, `wyzerowanie bonusu zdejmuje 12: ${base} → ${zero}`);
+});
+
+// =====================================================================
+// Fala B — kierunek własny (ratunek F5, reuse F4, token, aury)
+// =====================================================================
+
+/** Stawia wrogi czar ze stosu celujący w `victimId` (widok czyta chosenTargets). */
+function foeSpellOnStack(state, id, cardId, victimId) {
+  // addObject ODRZUCA chosenTargets (kontrakt L21, jak attachedTo) —
+  // cele doklejamy patchem PO dodaniu (widok czyta object.chosenTargets).
+  put(state, id, cardId, 'p2', 'stack');
+  const o = state.objects.get(id);
+  state.objects.set(id, Object.freeze({ ...o, chosenTargets: [victimId] }));
+  state.zones.stack.push(id);
+}
+
+test('PMSSB-1/B params: recast + tempo WŁĄCZONE (wartości przemyślane)', () => {
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceRecastManaWeight, 3);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTempoPenalty, 10);
+});
+
+test('PMSSB-1/B/F5: ratunek cennego — Expunge w mojego 5/5, Force Away WYGRYWA z passem', () => {
+  const state = game('main1', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'big', 'highland-game', 'p1');
+  stat(state, 'big', { power: 5, toughness: 5, manaCost: 5 });
+  foeSpellOnStack(state, 'ex', 'expunge', 'big');
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  assert.ok(scores['cast_spell(fa->big)'] > (scores.pass_priority ?? 0),
+    `ratunek 5/5 bije pass: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.targets?.[0], 'big');
+});
+
+test('PMSSB-1/B/F5-neg: śmiecia nie ratujemy — Expunge w mojego 1/1 (TMC1), pass WYGRYWA', () => {
+  const state = game('main1', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'small', 'goldmeadow-nomad', 'p1');
+  foeSpellOnStack(state, 'ex', 'expunge', 'small');
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  assert.ok((scores.pass_priority ?? 0) > scores['cast_spell(fa->small)'],
+    `pass bije ratunek 1/1: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.type, 'pass_priority');
+});
+
+test('PMSSB-1/B/token: własny token pod removalem — NIE ratuj (bounce = zniszczenie, CR 704.5d)', () => {
+  const state = game('main1', 'p2', 'p1');
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'tok', 'token_cat', 'p1');
+  stat(state, 'tok', { power: 5, toughness: 5, isToken: true, manaCost: 0 });
+  foeSpellOnStack(state, 'ex', 'expunge', 'tok');
+  addMana(state, 'p1', 4);
+  const { cmd, scores } = decide(state);
+  assert.ok((scores.pass_priority ?? 0) > scores['cast_spell(fa->tok)'],
+    `pass bije „ratunek\" tokena 5/5: ${JSON.stringify(scores)}`);
+  assert.equal(cmd.type, 'pass_priority');
+});
+
+test('PMSSB-1/B/F3-own: własny z WŁASNĄ aurą (bez zagrożenia) gorszy niż goły (kara −30/aura)', () => {
+  const state = game();
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'ench', 'goldmeadow-nomad', 'p1');
+  put(state, 'au', 'curiosity', 'p1', 'battlefield', { kind: 'aura' });
+  attachAuraToCreature(state, 'au', 'ench');
+  put(state, 'bare', 'goldmeadow-nomad', 'p1');
+  addMana(state, 'p1', 4);
+  const { scores } = decide(state);
+  assert.ok(scores['cast_spell(fa->bare)'] > scores['cast_spell(fa->ench)'],
+    `goły własny mniej zły niż z własną aurą: ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-1/B pokrętła: tempo i recast sterują ratunkiem (nie atrapy)', () => {
+  const mk = () => {
+    const state = game('main1', 'p2', 'p1');
+    put(state, 'fa', 'force-away', 'p1', 'hand');
+    put(state, 'big', 'highland-game', 'p1');
+    stat(state, 'big', { power: 5, toughness: 5, manaCost: 5 });
+    foeSpellOnStack(state, 'ex', 'expunge', 'big');
+    addMana(state, 'p1', 4);
+    return state;
+  };
+  const base = decide(mk()).scores['cast_spell(fa->big)'];
+  const noTempo = decide(mk(), { params: { bounceTempoPenalty: 0 } }).scores['cast_spell(fa->big)'];
+  assert.equal(noTempo, base + 10, `tempo 0 dodaje 10: ${base} → ${noTempo}`);
+  const freeRecast = decide(mk(), { params: { bounceRecastManaWeight: 0 } }).scores['cast_spell(fa->big)'];
+  assert.equal(freeRecast, base + 15, `recast 0 dodaje 5×3: ${base} → ${freeRecast}`);
+});
+
+// Wzorzec = dawna wartość: −114 = 50 (spellBase) − 90 (gałąź własna
+// REMOVAL) − 74 (klamra M179/E: bounce 70 + worth 4). Podwójna kara
+// jest zamierzona (dwie niezależne klamry); fala B jej NIE rusza bez
+// zagrożenia — ratunek dostaje WYJĄTEK w klamrze (CR 608.2b fizzle).
+test('PMSSB-1/B anty-over-fix: własny 2/2 bez kontekstu wart DOKŁADNIE −114 (jak PRZED)', () => {
+  const state = game();
+  put(state, 'fa', 'force-away', 'p1', 'hand');
+  put(state, 'g', 'goldmeadow-nomad', 'p1');
+  stat(state, 'g', { power: 2, toughness: 2 });
+  addMana(state, 'p1', 4);
+  const { scores } = decide(state);
+  assert.equal(scores['cast_spell(fa->g)'], -114, `wzorzec = dawna wartość: ${JSON.stringify(scores)}`);
+});
+
+test('PMSSB-1/B/F4: Invasive-trigger — reuse ETB-removalu bije taniego plaina (ekonomia recastu)', () => {
+  // Setup trigger-decyzji: Invasive Species wchodzi (ETB-bounce, cel:
+  // inny permanent kontrolera), moje: tani 1/1 (TMC1) + Faceless Butcher
+  // 2/3 (TMC4, ETB-exile 20); wróg ma stwora (cel powtórki ETB).
+  // PRZED: tani −23 vs butcher −27 → tani. PO: tani −36 vs butcher −29
+  // → BUTCHER (reuse 20 > recast 12 + tempo 10).
+  const state = game();
+  put(state, 'inv', 'invasive-species', 'p1');
+  put(state, 'cheap', 'goldmeadow-nomad', 'p1');
+  put(state, 'butcher', 'faceless-butcher', 'p1');
+  put(state, 'foe', 'goldmeadow-nomad', 'p2');
+  // Kolejka triggera dokładnie jak processTriggers (wzorzec:
+  // test/bot-pr65-audit-fixes.test.js) — pełna ability z rejestru
+  // (z requiresTarget), kandydatów liczy silnik.
+  state.pendingTriggerTargets.push({
+    playerId: 'p1', sourceId: 'inv', cardId: 'invasive-species',
+    ability: Object.freeze(JSON.parse(JSON.stringify(REGISTRY.get('invasive-species').abilities[0]))),
+    candidates: [], allowNone: false, fixedTargetIds: [], extra: {},
+  });
+  const view = playerView(state, 'p1');
+  const cmds = view.legalCommands.filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(cmds.length >= 2, `oferty triggera: ${cmds.length}`);
+  const { cmd, scores } = decide(state);
+  assert.equal(cmd.type, 'resolve_trigger_target');
+  assert.equal(cmd.targetId, 'butcher', `wybrany: ${cmd.targetId}`);
+  // Pin ekonomiki (MUT-D: bez kosztu recastu butcher = −7, nie −29):
+  // butcher −29 = −20 − value(7) + reuse(20) − recast(4×3) − tempo(10).
+  assert.equal(scores['resolve_trigger_target(butcher)'], -29,
+    `ekonomika reuse-recast: ${JSON.stringify(scores)}`);
 });

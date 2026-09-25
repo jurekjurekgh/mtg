@@ -39,6 +39,9 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryBottomBonus, 18);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTokenBonus, 12);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 1);
+  // PMSSB-1/B: kierunek własny (ratunek F5 + reuse F4).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceRecastManaWeight, 3);
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTempoPenalty, 10);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.drawCardValue, 6);
   // Rodzina „efektywność removalu" (M234) — WŁĄCZONA wprost (zlecenie właściciela).
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalTmcWeight, 2);

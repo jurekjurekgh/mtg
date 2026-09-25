@@ -2176,15 +2176,102 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['bounce_to_library_bottom', P.bounceLibraryBottomBonus],
   ]);
   const bounceEffectStrengthBonus = (effectType) => BOUNCE_STRENGTH.get(effectType) ?? 0;
+  // PMSSB-1/B: aura-delta wyjęta ze wspólnego mianownika (L41) — ten sam
+  // wymiar liczy cel wroga (fala A) i cel własny (fala B: własne aury na
+  // własnym celu spadają do grobu, CR 704.5m — strata).
+  const bounceAuraDelta = (view, victim) => {
+    if (!victim) return 0;
+    return attachedAurasOf(view, victim)
+      .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
+  };
   const bounceTargetAdjustments = (view, victim) => {
     if (!victim) return 0;
     let delta = 0;
     const mine = victim.controllerId === view.playerId;
     if (!mine && victim.isToken === true) delta += P.bounceTokenBonus;
-    delta += attachedAurasOf(view, victim)
-      .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
+    delta += bounceAuraDelta(view, victim);
     if (!mine && victim.cardId) {
       delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
+    }
+    return delta;
+  };
+  // PMSSB-1/B (F5): czy WROGI efekt na stosie celuje w mój obiekt i
+  // SFIZZLE, gdy obiekt zniknie (CR 608.2b — ratunek bounce'em)?
+  // Szersze niż M236 (tam: „czy i tak zginie" — bounce wroga NIE
+  // zabija, więc M236 go słusznie excluduje; tu: „czy sfizzle" — a
+  // wrogi bounce sfizzle jak destroy). Dwa różne pytania → dwa sety
+  // (nie L41-rozjazd, tylko świadoma różnica — patrz komentarz przy
+  // REMOVE_ON_STACK w permanentDoomedThisTurn).
+  const FIZZLEABLE_FOE_EFFECTS = new Set([
+    'destroy_permanent', 'destroy_if_least_power',
+    'destroy_artifact_gain_life_mana_value', 'destroy_pair_if_same_colors',
+    'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',
+    'exile_nonland_permanent_linked',
+    'bounce_permanent', 'bounce_to_library_top', 'bounce_to_library_bottom',
+    'owner_library_top_or_bottom',
+  ]);
+  const foeRemovalTargetingOnStack = (view, objId) => {
+    if (!objId) return false;
+    for (const entry of (view.zones.stack ?? [])) {
+      if (entry.controllerId === view.playerId) continue;
+      if (!(entry.targets ?? []).includes(objId)) continue;
+      const effs = [
+        ...((entry.spell?.effects) ?? []),
+        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+        ...((Array.isArray(entry.abilityEffects) ? entry.abilityEffects : (entry.abilityEffects ? [entry.abilityEffects] : []))),
+      ];
+      if (effs.some((e) => FIZZLEABLE_FOE_EFFECTS.has(e?.type))) return true;
+      // Obrażenia ŚMIERTELNE z czaru/zdolności wroga (jak M236: próg
+      // toughness − damage; nieletalny chip to NIE powód ratunku).
+      const obj = objectOnBoard(view, objId);
+      const dmg = effs.find((e) => e?.type === 'damage');
+      if (dmg && Number.isInteger(dmg.amount) && obj
+        && dmg.amount >= ((obj.toughness ?? 0) - (obj.damage ?? 0))) return true;
+    }
+    return false;
+  };
+  // PMSSB-1/B: delta bounce'u WŁASNEGO celu (ratunek F5 + reuse F4 +
+  // token + aury). L41: cast_spell, activate_ability i trigger-decyzje
+  // liczą tę samą formułę (baza −90/−20 zostaje w gałęziach).
+  // Ratunek: −90 koryguje fizzle-premia (karta wroga w plecy — ta sama
+  // jednostka co removalEnemyBase) + wartość utrzymanego stwora
+  // (jak przy removalu wroga: baza + worth + M234) − recast − tempo.
+  // Bez zagrożenia reuse-ETB liczy się TYLKO na plus ETB (z mojej
+  // perspektywy — tu zgodnej), ale recast+tempo zwykle je zjadają
+  // (słusznie: cast-reuse to strata karty i many).
+  const bounceOwnTargetValue = (view, victim, { fullEconomics = false } = {}) => {
+    if (!victim) return 0;
+    let delta = bounceAuraDelta(view, victim);
+    const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
+    // Własny token: bounce = ZNISZCZENIE (CR 704.5d w obie strony) —
+    // kara jak utrata stwora (symetria premii F2).
+    if (victim.isToken === true) {
+      delta -= P.removalEnemyBase + P.removalWorthWeight * worth;
+    }
+    const recast = (victim.manaCost ?? 0) * P.bounceRecastManaWeight + P.bounceTempoPenalty;
+    if (foeRemovalTargetingOnStack(view, victim.id)) {
+      delta += P.removalEnemyBase; // fizzle: karta wroga w plecy (CR 608.2b)
+      delta += P.removalEnemyBase + P.removalWorthWeight * worth; // stwór utrzymany
+      // M234-SYMETRYCZNE: TMC (sunk-cost + proxy zdolności) i deathtouch
+      // (wartość wewnętrzna karty) utrzymane przy życiu. enemyRemovalTargetBonus
+      // zwraca 0 dla własnych (guard) i niesie unbeatable/protection z
+      // perspektywy WROGA — lustro walki to znane uproszczenie fali B
+      // (jak lustro ETB w fali A), więc liczymy tylko część symetryczną.
+      delta += P.removalTmcWeight * (victim.manaCost ?? 0)
+        + ((victim.keywords ?? []).includes('deathtouch') ? P.removalDeathtouchBonus : 0);
+      delta -= recast;
+    } else if (!pureLandTarget(victim) && victim.cardId) {
+      // F4 reuse — DWA konteksty ekonomiczne (nie rozjazd L41, tylko
+      // różne bazy): cast/activate (−90: pełny koszt zwrotu+karty, flat)
+      // vs trigger-własny (−20: MUSISZ coś wybrać — pełna ekonomika
+      // marginalna kandydata). Bez fullEconomics bez-ETB-plain nie
+      // dopłaca (koszt w −90); z fullEconomics każdy kandydat płaci
+      // recast+tempo (Invasive: land −20 > butcher-reuse −29 > śmieć),
+      // a reuse rekompensuje. Land: recast 0 many (land-drop!) —
+      // flood-awareness to fala C, tu bez korekty.
+      const reuse = etbEnterBonusValue(view, cardDef(victim.cardId));
+      if (fullEconomics) delta += Math.max(0, reuse) - recast;
+      else if (reuse > recast) delta += reuse - recast; // oportunistyczny reuse
     }
     return delta;
   };
@@ -3017,6 +3104,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
         const victim = slot ? objectOnBoard(view, slot) : target;
         if (victim && victim.controllerId === meId) {
+          // PMSSB-1/B (F5): bounce WŁASNEGO zagrożonego to OBRONA
+          // (fizzle wrogiego removalu, CR 608.2b), nie sabotaż — klamra
+          // M179/E jej nie karze (jak prevent_damage). Twardy sygnał ze
+          // stosu (M106/Z8), nie spekulacja „removal w ręce" (B3).
+          if (BOUNCE_STRENGTH.has(effect.type) && foeRemovalTargetingOnStack(view, victim.id)) continue;
           // Im cenniejszy własny permanent, tym gorzej.
           penalty += permCost + (victim.power ?? 0) + (victim.toughness ?? 0);
         }
@@ -5172,6 +5264,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
                 // żeby „bo nie ma innego celu" nie wygrywało z passem.
                 score -= 90;
+                // PMSSB-1/B: bounce własnego liczy ratunek/reuse/token/aury
+                // (L41 z activate_ability i trigger-decyzjami).
+                if (BOUNCE_STRENGTH.has(effect.type)) {
+                  score += bounceOwnTargetValue(view, victim);
+                }
               } else if (pureLandTarget(victim) && !removalAtLandByDesign(idx)) {
                 // M247: bez premii removalu i z karą przebijającą bazę czaru —
                 // pass musi wygrać z „rzucam, bo jest dowolny cel".
@@ -6600,8 +6697,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
             const victim = slot ? objectOnBoard(view, slot) : null;
             if (victim) {
-              if (victim.controllerId === view.playerId) score -= 90; // fala B: ratunek/reuse
-              else {
+              if (victim.controllerId === view.playerId) {
+                score -= 90;
+                score += bounceOwnTargetValue(view, victim); // PMSSB-1/B (L41 z cast_spell)
+              } else {
                 const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
                 score += P.removalEnemyBase + P.removalWorthWeight * worth;
                 score += enemyRemovalTargetBonus(view, victim); // M234
@@ -8162,7 +8261,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             bounceDelta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(target.cardId));
           }
         }
-        if (target.controllerId === view.playerId) return finish(kill ? -60 - value + aura : -20 - value + aura);
+        // PMSSB-1/B (F4/F5, L41 z cast_spell): własny cel triggera-bounce
+        // (Invasive MUSI coś wrócić; Jill MOŻE) liczy pełną formułę własną
+        // (reuse − recast − tempo, token-kara, aury W ŚRODKU — dlatego bez
+        // osobnego `aura`, żeby nie dublować). Gałąź kill dla bounce
+        // nieosiągalna (debuffKills wymaga cmd.debuff).
+        if (target.controllerId === view.playerId) {
+          if (BOUNCE_STRENGTH.has(view.pendingTriggerTarget?.effectType)) {
+            return finish(-20 - value + bounceOwnTargetValue(view, target, { fullEconomics: true }));
+          }
+          return finish(kill ? -60 - value + aura : -20 - value + aura);
+        }
         return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target) + bounceDelta);
       }
       case 'resolve_optional_trigger_choice': {

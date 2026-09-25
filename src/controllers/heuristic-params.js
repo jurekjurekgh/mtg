@@ -61,6 +61,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceLibraryBottomBonus', // dopłata: odbicie na SPÓD (prawie removal)
   'bounceTokenBonus',        // dopłata: cel-token wroga znika na zawsze (CR 704.5d)
   'bounceFoeEtbWeight',      // waga kary: cel z ETB da wrogowi powtórkę
+  // PMSSB-1/B: kierunek własny — ratunek (F5) i reuse ETB (F4) płacą
+  // kosztem przerzucenia (many) i tempem (tura + choroba po powrocie).
+  'bounceRecastManaWeight',  // waga 1 many przerzucenia własnego stwora
+  'bounceTempoPenalty',      // kara tempa za zdjęcie własnego stwora ze stołu
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
   // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
   // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
@@ -256,6 +260,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceLibraryBottomBonus: 18,
   bounceTokenBonus: 12,
   bounceFoeEtbWeight: 1,
+  // PMSSB-1/B (wartości przemyślane): mana przerzucenia droższa od
+  // power (3 vs 2 — many nie wracają), tempo 10 (połowa „karty" —
+  // mniej niż strata permanenta, więcej niż nic).
+  bounceRecastManaWeight: 3,
+  bounceTempoPenalty: 10,
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
