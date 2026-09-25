@@ -159,6 +159,19 @@ test('B5 — następny krok odkręcania celu: blokada już wygasła, stun zastę
   assert.equal(state.objects.get('own').counters?.stun ?? 0, 0, 'jeden licznik stun schodzi, bo tym razem odkręcenie by zaszło');
 });
 
+test('B7 — wybór „zostaw źródło" nie zjada stunu i trzyma własny cel (CR 122.1d + 614.7)', () => {
+  const state = stol({ order: 'lyre-first' });
+  addCounter(state, 'lyre', 'stun', 1);
+  doStartuTury(state);
+  const r = execute(state, { type: 'resolve_untap_choice', playerId: 'p1', keepTappedIds: ['lyre'] });
+  assert.equal(r.ok, true, JSON.stringify(r.events?.[0]?.reason ?? r));
+  assert.equal(state.objects.get('lyre').tapped, true, 'gracz zostawił źródło tapnięte');
+  assert.equal(state.objects.get('lyre').counters?.stun, 1,
+    'wybór „nie odkręcaj" nie jest zdarzeniem odkręcenia — zastępstwo stunu nic nie robi');
+  assert.equal(state.objects.get('own').tapped, true,
+    'źródło tapnięte w chwili ustalenia trzyma cel tego samego kontrolera');
+});
+
 test('B6 — powyżej capu oferta nadal zawiera oba ekstrema: odkręć wszystko ORAZ zostaw wszystkie (L19/L48)', () => {
   const state = stol({ order: 'lyre-first' });
   for (let i = 0; i < 5; i += 1) {
