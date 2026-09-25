@@ -1,4 +1,53 @@
-# PMSSB-1 — pętla jakości scoringu bounce (2026-09-25)
+# PMSSB — Pętla Manualnego Strojenia Scoringu Bota (hub)
+
+Metoda M429: przemyślany audyt przyczynowo-skutkowy JEDNEJ rodziny efektów
++ wdrożenie falami + piny. Nie tuning maszynowy (ADR 0018: pełne B0 tylko
+na komendę). Ten plik to hub: procedura + rejestr rodzin. Raporty z pętli
+poniżej (PMSSB-1, PMSSB-2, …). Po zakończeniu pętli rodzina jest ZAMKNIĘTA:
+kolejny agent czyta raport i piny zamiast badać od nowa — ponowny audyt
+tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
+
+## Procedura pętli (checklist dla agenta)
+
+0. Plan `docs/plans/PLAN_<data>-pmssb<N>-<rodzina>.md` (wzór: PMSSB-1) — commit.
+1. POMIAR PRZED: sonda `/tmp/pmssb<N>-<rodzina>-przed.mjs` (scenariusze → tabela
+   wynik/FINDING) + inwentarz kart rodziny i ich okien (instant vs sorcery!).
+2. AUDYT: macierz kierunek × cel × timing × stan → findingi F1…Fn → fale.
+   OBOWIĄZKOWE kontrole każdej pętli: (a) L41 — cast_spell / activate_ability /
+   tryb modalny / trigger-decyzje / wrapper `apply_to_each_target` liczą TO SAMO
+   (rozjazdy to findingi); (b) wymiar KOSZTU czaru (S11: 5 vs 2 many nie mogą
+   remisować bez uzasadnienia); (c) anty-over-fix M429: najsłabszy realny
+   wariant = dawna wartość, nowe wymiary to DOPŁATY/KARY.
+3. IMPLEMENTACJA: rodzina `<rodzina>*` w `heuristic-params.js` (klucze na liście
+   + defaults z uzasadnieniem) + wspólne helpery w `heuristic-bot.js` (L41).
+4. TESTY: `test/audyt-pmssb<N>-<rodzina>.test.js` (wzorzec M429: decide/trace,
+   anty-over-fix, pokrętła-sterują ×0) RED→GREEN + mutacje/dowód.
+5. EWALUACJA: `bot-scoring-snapshot` (cel: bez regeneracji), tie-audit PO,
+   mirror-eval (reguły vs off), Żywy Tester PO. Brak sygnału w lustrze przy
+   wąskich stanach to wynik (B6), nie porażka — dowodem są piny.
+6. DOKUMENTACJA: raport w tym hubie + wpis w rejestrze (status DONE) + wpis
+   w PROJECT_HISTORY. Bez wpisu LESSONS, jeśli budżet lektury zablokowany
+   (precedens PR136) — wtedy opis tu i w dzienniku.
+7. Bramy (`npm test`, build, `test:all`), push po każdym kroku, PR.
+
+## Rejestr rodzin
+
+| Rodzina (typy efektów) | Kart | Status | Raport / testy / pokrętła |
+|---|---|---|---|
+| bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
+| tokeny (`create_token`) | 46 | BACKLOG | 3 rozbieżne formuły: 12 flat / 8 modal / worth-scaled; brak timingu i celu (chump/haste/fodder/Treasure); M243/C tylko w zdolnościach |
+| dobieranie (`draw_cards*`, `draw_then_discard`) | 40+ | BACKLOG | timing EOT vs main; overflow ręki (interakcja z PMSSB-1/C); cantrip vs draw; guard deck-outu jest |
+| zysk życia (`gain_life*`) | 23 | BACKLOG | main-path cast_spell BEZ wyceny (flat 50?) vs modal/zdolności z niuansami (L41); racing-math; pułapka przewartościowania |
+| kontry (`counter_spell`) | 5 | BACKLOG (mikro-pętla?) | co kontrować (HIGH_IMPACT jest), kiedy trzymać, blef many; mała rodzina, wysoka dźwignia |
+| pump/grant (trików bojowych) | 52 | POKRYTE (M96/M173/M179/M218) | okna walki z uczestnictwa, nie z fazy — nie ruszać bez nowego dowodu |
+| tap/untap | 29 | POKRYTE (M139) | okna tapowania — nie ruszać bez nowego dowodu |
+| removal destroy/exile | 29+ | POKRYTE (M91/M234) | baza+worth+TMC+deathtouch+protekcja; exile≈destroy to świadome uproszczenie |
+| obrażenia (`damage*`) | 32+ | POKRYTE (M237/4) | model per-cel; timing sorcery-burn do rewizji tylko z dowodem |
+| odrzut (`discard_cards`) | 5 | POKRYTE (M202/M408) | strojone — nie ruszać bez nowego dowodu |
+| fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
+| Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
+
+## PMSSB-1 — bounce (2026-09-25)
 
 **Problem (sonda S10, owned by 25h):** bot nie rozumiał odbicia — remisował
 38/38 na Vanish from Sight, odbijał własne stwory, nie widział tokenów ani
@@ -9,7 +58,7 @@ fale A/B/C → 29 pinów → suit 6668/6668.
 **Kod:** `bounce*` w `src/controllers/heuristic-bot.js`,
 pokrętła w `src/controllers/heuristic-params.js`.
 
-## Fala A — siła efektu + cel wroga (commit `8ec4acb`)
+### Fala A — siła efektu + cel wroga (commit `8ec4acb`)
 
 - **F8 skala siły** (`BOUNCE_STRENGTH`): hand 0 < top 8 < bottom 18
   (bottom ≈ destroy-ETB — prawie removal).
@@ -22,7 +71,7 @@ pokrętła w `src/controllers/heuristic-params.js`.
 - **F6 ETB wroga** −1×`etbEnterBonusValue` (powtórka dla wroga — lustro F4).
 - **Anty-over-fix:** goły 1/1 wroga bez kontekstu = DOKŁADNIE 80 (jak PRZED).
 
-## Fala B — kierunek własny (commit `fae2482`)
+### Fala B — kierunek własny (commit `fae2482`)
 
 - **F5 ratunek:** wrogi removal na stosie w mój cel → fizzle-premia 22
   (karta wroga w plecy, CR 608.2b) + utrzymane ciało (22 + 2×worth +
@@ -37,7 +86,7 @@ pokrętła w `src/controllers/heuristic-params.js`.
   many nie wracają), `bounceTempoPenalty: 10` (połowa „karty").
 - **Anty-over-fix:** własny 2/2 bez kontekstu = DOKŁADNIE −114.
 
-## Fala C — timing + stan (commit `26ab5b7`)
+### Fala C — timing + stan (commit `26ab5b7`)
 
 - **F1 okna instantu** (jak tapowanie M139): EOT-wroga +8 / main-własna 0 /
   main-wroga −8. Sorcery bez wyboru okna: tylko premia precombat +8
@@ -69,7 +118,7 @@ pokrętła w `src/controllers/heuristic-params.js`.
   (`neutralFoeMana` — 3 odtapowane wyspy), inaczej lockout zapala się
   w każdym teście i psuje piny fal A/B.
 
-## Znane granice (świadome, nie bugi)
+### Znane granice (świadome, nie bugi)
 
 1. Aktywowane zdolności bounce: katalog ma ZERO kart — gałąź gotowa
    (wymiary A/B/C przez wspólne helpery), timing tylko w cast_spell.
@@ -80,7 +129,7 @@ pokrętła w `src/controllers/heuristic-params.js`.
 4. Lockout liczy tylko lądy (nie dorki/pulę) — konserwatywnie.
 5. Timing sorcery wymaga fazy `precombat_main` (M179/C); EOT-własny = 0.
 
-## Pomiar końcowy
+### Pomiar końcowy
 
 - Suit 6668/6668 GREEN, w tym golden-master BEZ regeneracji
   (`overallHash 227e6cbe…` stoi — 0/6 meczów drgnęło).
