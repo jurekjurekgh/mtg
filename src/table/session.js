@@ -11,6 +11,7 @@ import { costSymbols } from './mana-icons.js';
 import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { polishPluralCount } from './polish-plural.js';
 
 /**
  * Sesja stołu: łączy UI z protokołem engine, zgodnie z granicą
@@ -1135,8 +1136,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.foundCardId) {
           return `${nameOf(e.foundCardId)} — discover${e.castFree ? ' (rzut za darmo)' : ''}; ${naSpod}`;
         }
+        // Uwaga właściciela 2026-09-25b (Żywy Tester, detektor językowy): forma
+        // „przejrzano 4 kart" — liczebnik wymaga odmiany (`polishPluralCount`).
+        const przejrzane = e.revealedCardIds?.length ?? e.bottomCount ?? 0;
         const powod = e.libraryExhausted
-          ? `biblioteka się wyczerpała (przejrzano ${e.revealedCardIds?.length ?? e.bottomCount ?? 0} kart)`
+          ? `biblioteka się wyczerpała (przejrzano ${przejrzane} ${polishPluralCount(przejrzane, 'kartę', 'karty', 'kart')})`
           : `brak karty o mana value ≤ ${e.amount}`;
         return `${whoN(e.playerId)} nie znajduje karty dla discover (${e.amount}) — ${powod}; ${naSpod}`;
       }
@@ -3700,7 +3704,7 @@ export function createSession(config) {
     }
     const botHandCount = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === BOT_ID).length;
     if (botHandCount > 0) {
-      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[BOT_ID]}: ${botHandCount} kart`);
+      sessionLog('system', `Ręka startowa ${PLAYER_NAMES[BOT_ID]}: ${botHandCount} ${polishPluralCount(botHandCount, 'karta', 'karty', 'kart')}`);
     }
   }
   advance();

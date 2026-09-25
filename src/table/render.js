@@ -1049,14 +1049,14 @@ function dynamicAmount(val) {
 /** Znak liczby do opisu pumpów: „+2/+0", „-2/+0". */
 function signed(n) { return (Number(n) >= 0 ? '+' : '') + n; }
 
-/** Odmiana polska rzeczownika wg liczby: (1 → one, 2-4 → few, 5+ → many). */
-export function polishPluralCount(n, one, few, many) {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (n === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}
+/**
+ * Odmiana przez liczebnik — implementacja mieszka w `polish-plural.js` (liść
+ * bez zależności), bo `session.js` NIE może importować z `render.js` (cykl), a
+ * bez tego lepiono liczniki ręcznie („przejrzano 4 kart" — uwaga właściciela
+ * 2026-09-25b). Re-eksport zostawia dotychczasowych konsumentów
+ * (`choice-request.js`, `main.js`) bez zmian w importach.
+ */
+export { polishPluralCount } from './polish-plural.js';
 
 /** Diament (2026-08-11): opis dynamicznej wartości P/T (np. „source_power"). */
 const DYNAMIC_PT_LABELS = Object.freeze({
