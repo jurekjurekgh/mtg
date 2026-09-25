@@ -59,10 +59,11 @@ Plik `src/table/gestures.js`, `installPressActivation` — trzy reguły:
    (`element.ownerDocument`), z fallbackiem do `event.target`.
    - Zwolnienie **nad wyspą** (`[data-press-exempt]`): nigdy nie aktywujemy
      opcji; `handled = true` (nadchodzący `click` z przechwycenia/idący na
-     wspólnego przodka połykamy); gdy gest był tapem (ruch ≤ `slopPx`)
-     **przekazujemy interakcję wyspie** (`hit.click()` — natywne przełączenie
-     checkboxa/etykiety/steppera). Przy ruchu > `slopPx` (przeciągnięcie/
-     scroll przez pole) tylko połykamy — bez przełączania.
+     wspólnego przodka połykamy) i **zawsze przekazujemy interakcję wyspie**
+     (`hit.click()` — natywne przełączenie checkboxa/etykiety/steppera):
+     użytkownik zwolnił NA ptaszku, więc ptaszek się zaznacza niezależnie od
+     dystansu start→koniec (scroll na dotyku kończy się `pointercancel` i nie
+     dociera do tej gałęzi).
 2. **Press zaczęty na wyspie nigdy nie aktywuje opcji:** `pointerdown` w wyspie
    zaznacza `islandDown` (i kasuje ewentualny `start` — nieistniejący/leżący
    press nie może się doliczyć do zwolnienia nad ptaszkiem). Przy `pointerup`:

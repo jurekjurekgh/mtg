@@ -223,6 +223,22 @@ export function installSwipeGesture(element, { onSwipeLeft = null, onSwipeRight 
  * `stopRowPropagation` w `picker.js`), więc reguła jest generyczna: każdy
  * węzeł wewnątrz przycisku, który ma przejąć gest, oznacza siebie, a przycisk
  * nic nie wie o rodzinie `.action-ignore`.
+ *
+ * UWAGA C2 (zgłoszenie właściciela 2026-09-25f — testy C1–C7 z samego dnia
+ * przechodziły, a błąd żył w przeglądarce; zmierzone na Chromium 153 na
+ * realnych modułach, testy `uwaga-z-gry-C2-*`): cel zdarzenia to NIE to samo
+ * co fizyczne miejsce gestu. Dwa zmierzone przypadki:
+ *  (1) retarget `setPointerCapture` — press zaczęty na etykiecie opcji
+ *      przechwytuje wskaźnik na przycisku, więc `pointerup`/`click` mają
+ *      `target = BUTTON` nawet gdy kursor jest nad ptaszkiem;
+ *  (2) click na WSPÓLNYM PRZODKU — press zaczęty na ptaszku, zwolnienie poza
+ *      wąskim wierszem (mierzony realny CSS: 40×28 px przy ~865 px tekstu)
+ *      daje `click` na `button`, który omija `stopPropagation` wiersza.
+ * Naprawa: (a) release oceniamy przez `elementFromPoint` (uczciwe trafienie,
+ * nie `event.target`) — zwolnienie nad wyspą ZAWSZE przekazujemy wyspie
+ * (`hit.click()`), nigdy opcji; (b) press zaczęty na wyspie NIGDY nie
+ * aktywuje opcji — nadchodzący click na wspólnym przodku połykamy
+ * (`handled`), a ślizg ≤ `slopPx` w stronę opcji wraca na wyspę.
  */
 export const PRESS_SLOP_PX = 12;
 
@@ -251,18 +267,59 @@ export function isPressExemptTarget(target) {
   }
 }
 
+/**
+ * Uczciwe trafienie gestu: przy aktywnym `setPointerCapture` `event.target`
+ * KŁAMIE (wskazuje element przechwytujący), a fizyczne miejsce zwolnienia to
+ * element POD kursorem — jedyne źródło prawdy w przeglądarce to
+ * `elementFromPoint`. Poza przeglądarką (stuby bez pomiaru) zostaje
+ * `event.target` — dotychczasowa semantyka (L24: brak oceny = nie tłumimy).
+ */
+function honestHitTarget(event, element) {
+  const doc = element?.ownerDocument
+    ?? (typeof globalThis !== 'undefined' ? globalThis.document : null);
+  if (event?.clientX != null && event?.clientY != null
+    && typeof doc?.elementFromPoint === 'function') {
+    try {
+      const hit = doc.elementFromPoint(event.clientX, event.clientY);
+      if (hit) return hit;
+    } catch { /* brak pomiaru — cofamy się do targetu */ }
+  }
+  return event?.target ?? element;
+}
+
+/**
+ * Przekazuje tap wyspie: programatyczny klik w WĘZEŁ WYSPY (najblipszy
+ * `data-press-exempt` od miejsca gestu), żeby natywne zachowanie —
+ * przełączenie checkboxa, aktywacja `label`, −/+ steppera — wykonało się tam,
+ * gdzie użytkownik fizycznie zwolnił. Stuby bez `click()` przechodzą ciszą
+ * (kontrakt C5: liczy się brak aktywacji przycisku).
+ */
+function forwardTapToIsland(node) {
+  let island = node;
+  if (typeof node?.closest === 'function') {
+    try { island = node.closest(`[${PRESS_EXEMPT_ATTRIBUTE}]`) ?? node; } catch { island = node; }
+  }
+  try { island?.click?.(); } catch { /* brak natywnego click() */ }
+}
+
 export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_PX } = {}) {
   if (!element || typeof activate !== 'function') return null;
   let start = null;
   let handled = false;
+  /** Press zaczęty NA wyspie: {x, y, node} albo null — nigdy nie gra opcji (UWAGA C2). */
+  let islandStart = null;
   element.addEventListener('pointerdown', (event) => {
     if ((event?.button ?? 0) > 0) return; // prawy/środkowy przycisk myszy
-    // UWAGA C: press startujący w wyspie `data-press-exempt` (ptaszek
-    // wyciszenia, krok 2026-09-25b) w ogóle nie wchodzi w gest — bez tego
-    // pointerup z checkboxa odpalał akcję przycisku mimo `stopPropagation`
-    // na `click`. Nie kasujemy `start`/`handled`: wiszący gest z INNEGO
-    // miejsca nie może przejąć zwolnienia znad ptaszka ani go zgasić.
-    if (isPressExemptTarget(event?.target)) return;
+    // UWAGA C/C2: press startujący w wyspie `data-press-exempt` (ptaszek
+    // wyciszenia) nie wchodzi w gest aktywacji — kasujemy też `start`:
+    // leżący press z innego miejsca nie może doliczyć się do zwolnienia nad
+    // wyspą (podwójne przełączenie: nasze przekazanie + natywne click).
+    if (isPressExemptTarget(event?.target)) {
+      islandStart = { x: event?.clientX ?? 0, y: event?.clientY ?? 0, node: event?.target ?? null };
+      start = null;
+      return;
+    }
+    islandStart = null;
     handled = false;
     start = { x: event?.clientX ?? 0, y: event?.clientY ?? 0 };
     // Bez tego release po przebudowie layoutu trafia w INNY węzeł i click nie
@@ -272,17 +329,45 @@ export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_
       try { element.setPointerCapture(event.pointerId); } catch { /* bez capture */ }
     }
   });
-  element.addEventListener('pointercancel', () => { start = null; });
+  element.addEventListener('pointercancel', () => { start = null; islandStart = null; });
   element.addEventListener('pointerup', (event) => {
+    const hit = honestHitTarget(event, element);
+    if (islandStart) {
+      // UWAGA C2 (2): press zaczął się NA ptaszku, a zwolnienie wypadło poza
+      // wąskim wierszem — przeglądarka generuje `click` na wspólnym przodku
+      // (= ten przycisk), co omija `stopPropagation` wiersza. Nigdy nie
+      // grajmy: połykamy ten click (`handled`), a tap w granicach slop
+      // przekazujemy wyspie, żeby wycelowane zaznaczenie doszło do skutku.
+      const ruch = Math.hypot((event?.clientX ?? 0) - islandStart.x, (event?.clientY ?? 0) - islandStart.y);
+      const node = islandStart.node;
+      islandStart = null;
+      if (isPressExemptTarget(hit)) {
+        // Zwolnienie wciąż na wyspie: natywny click trafi w input/label
+        // i przełączy — bez naszej ingerencji.
+        handled = false;
+        return;
+      }
+      const wPrzycisku = typeof element.contains === 'function' ? element.contains(hit) : true;
+      // Poza przyciskiem click powstanie nad nim — nie nasza ścieżka.
+      if (!wPrzycisku) { handled = false; return; }
+      handled = true;
+      if (ruch <= slopPx) forwardTapToIsland(node);
+      return;
+    }
     if (!start) return;
-    // UWAGA C: zwolnienie znad ptaszka NIE aktywuje opcji — z `setPointerCapture`
-    // release wraca do przycisku nawet gdy palec wylądował na wyspie
-    // `data-press-exempt`, a `target` bywa wtedy przerzucony na znacznik.
-    // Zostawiamy `handled = false`, żeby ścieżka `click` poniżej zachowała się
-    // identycznie (też pyta o wyspę) — bez cichego „raz zadziała, raz nie".
-    if (isPressExemptTarget(event?.target ?? element)) { start = null; return; }
     const { x, y } = start;
     start = null;
+    if (isPressExemptTarget(hit)) {
+      // UWAGA C2 (1): zwolnienie FIZYCZNIE nad wyspą, choć `event.target`
+      // przez `setPointerCapture` wskazuje przechwytujący przycisk. Nie
+      // grajmy; click z capture i tak trafi w przycisk — połykamy (`handled`).
+      // Zwolnienie nad polem = zawsze interakcja wyspy (bez progu slop):
+      // użytkownik zwolnił NA ptaszku, więc ptaszek się zaznacza. Scroll na
+      // dotyku kończy się `pointercancel` i tu nie dociera.
+      handled = true;
+      forwardTapToIsland(hit);
+      return;
+    }
     const ruch = Math.hypot((event?.clientX ?? 0) - x, (event?.clientY ?? 0) - y);
     if (ruch > slopPx) return; // przesunięcie = gest (scroll/swipe), nie klik
     handled = true;
@@ -294,8 +379,8 @@ export function installPressActivation(element, activate, { slopPx = PRESS_SLOP_
     // startował. Bez tego znacznika zaznaczenie opcji kosztowałoby jej zagranie.
     if (isPressExemptTarget(event?.target ?? element)) { handled = false; return; }
     if (event?.detail === 0) { handled = false; activate(); return; } // klawiatura
-    if (handled) { handled = false; return; } // pointerup już aktywował
+    if (handled) { handled = false; return; } // pointerup już aktywował albo zwolnienie nad wyspą
     activate();
   });
-  return { release() { start = null; } };
+  return { release() { start = null; islandStart = null; } };
 }
