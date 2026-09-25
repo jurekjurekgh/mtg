@@ -111,6 +111,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'auraHostileWorthWeight',      // waga worth unieruchamianego stwora w karze (własny + losesKeywords) (dawniej *1)
   'auraNoTargetPenalty',         // kara za aurę bez legalnego celu (hostile bez celu / buff bez gospodarza) (dawniej -50)
   'auraLosesKeywordsWastedPenalty', // kara za losesKeywords na stworze BEZ żadnego z odbieranych keywordów (dawniej -80)
+  'auraKeywordFreshValue',         // M431: wartosc SWIEZEGO grantu slowa-kluczowego aury (zwierzece `auraLosesKeywordsWastedPenalty`, lustrzana strona te samej klasy)
+  'auraKeywordRedundantPenalty',   // M431: kara za KAZDY grant, ktorego gospodarz juz ma (duplikat zdolnosci nic nie dodaje)
+  'auraKeywordAllWastedPenalty',   // M431: kara, gdy WSZYSTKIE granty sa jałowe (musi przebic baze aury — wzor: auraLosesKeywordsWastedPenalty)
   'auraProtectionNoThreatPenalty',  // kara za czystą ochronę, gdy przeciwnik nie ma zagrożeń tej jakości (dawniej -40)
   'auraProtectionBase',          // baza czystej ochrony przy istniejących zagrożeniach (dawniej 20)
   'auraProtectionThreatWeight',  // waga LICZBY zagrożeń, przed którymi aura chroni (dawniej *12)
@@ -277,6 +280,18 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   auraHostileWorthWeight: 1,
   auraNoTargetPenalty: 50,
   auraLosesKeywordsWastedPenalty: 80,
+  // M431 (uwaga z gry wlasciciela 2026-09-25: aura +latanie na stworze, ktory
+  // juz je mial). Aura nadajaca slowa-kluczowe byla wyceniana WYLACZNIE po ciele gospodarza
+  // (`auraBase + auraBuffWorthWeight*(moc+pump) + (wytrzm+pump)`), a `descriptor.keywords`
+  // nie byl czytany nigdzie w wycenie — trzy warianty (3/3 bez keywordow / z flying /
+  // z flying+vigilance) mialy identyczne 72,9. Naprawa idzie w slady `equipValuation`
+  // (M243/D-G) i `auraLosesKeywordsWastedPenalty` (M200/H): ta sama reguła swiezosci,
+  // druga strona lustra. Swiezy grant = +8 (tyle co `ofensywne` w equipValuation),
+  // redundancja = -6 (roznica miedzy gospodarzem a jałowym celem na tym samym ciele),
+  // a calkowicie jałowa aura = kara, ktora PRZEBIJA baze (L3) — wzor: 80 dla losesKeywords.
+  auraKeywordFreshValue: 8,
+  auraKeywordRedundantPenalty: 6,
+  auraKeywordAllWastedPenalty: 80,
   auraProtectionNoThreatPenalty: 40,
   auraProtectionBase: 20,
   auraProtectionThreatWeight: 12,

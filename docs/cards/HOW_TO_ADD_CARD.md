@@ -188,6 +188,21 @@ listę PRZED pierwszym uruchomieniem pełnego testu:
    `hasCreatureType` na ścieżce podtypu lądu wpuszcza changelinga jako
    „Plains card” do szukania w bibliotece (znalezisko M385 z 2026-09-18).
 
+6. **Deskryptor NADAJĄCY zdolność (`keywords`, w tym `conditionalKeywords`) w
+   aurze / equipmentie / bestow** — samo zastosowanie w silniku nie kończy
+   pracy. Bot musi liczyć **świeżość** grantu (M431, uwaga właściciela
+   2026-09-25): aura dająca latanie stworzeniu, które już lata, jest
+   prawnie legalna i wartą-zero — engine nakłada ją jako warstwę zdolności,
+   a wycena musi to widzieć, inaczej wybiera cel **kolejnością enumeracji**
+   (zmierzone: trzy gospodarze = identyczne 72,9). Reguła mieszka w jednym
+   predykacie dla obu ścieżek założenia aury (`auraKeywordValue` czyta
+   `cast_permanent` **i** `resolve_aura_host`) i ma lustrzanego brata po
+   stronie odbioru (`auraLosesKeywordsWastedPenalty`, M200/H) oraz po stronie
+   sprzętu (`equipValuation`, M243/D-G). Nie wolno wgalaźwiać tego w
+   `attachmentGrant` — tam jest mechanika; waga jest w `heuristic-params.js`
+   (`auraKeywordFreshValue` / `auraKeywordRedundantPenalty` /
+   `auraKeywordAllWastedPenalty`).
+
 Warunki triggera czytaj też WŁAŚCIWE dane: `eventData.manaCost` przy rzucie to
 mana WYDATKOWANA (po obniżkach), nie mana value karty (L85).
 
