@@ -102,8 +102,15 @@ Bramy audytu: `npm test` + `node --test test/bot-benchmark.test.js`
 
 ## Etap C — naprawy znalezisk audytu (osobne, zielone commity)
 
-- [ ] C-n: dla każdego znaleziska — test RED → naprawa u root cause → mutacja
+- [x] C-n: dla każdego znaleziska — test RED → naprawa u root cause → mutacja
       dowodząca, że pin czerwienieje → `npm test` + `npm run build` → push.
+      **Wykonane dla pięciu znalezisk** (raport §3 i §9): F-2 `981a6ed`
+      (RED 3/5 na starym kodzie, po naprawie 6539/6539), F-1 `a97e7ee`
+      (mutacja przywracająca stary adres = 1/32 RED w strażniku numerów),
+      F-3 `1d8690a` (piny przepisane na pomiar 14/22/26), F-4+F-5 `3ecdbb8`
+      (5 testów, mutacje: 1/5 i 4 RED). F-5 wymagał korekty dwóch pinów, które
+      same liczyły permutacje — zapisane w raporcie, żeby nie wyglądało to na
+      obejście.
 
 Zasada (ADR 0020 C/D): każdy samodzielnie zielony krok to OSOBNY commit i push;
 zakaz force push; przed pushem `git fetch` + porównanie `HEAD..FETCH_HEAD`
@@ -111,34 +118,66 @@ i `FETCH_HEAD..HEAD`.
 
 ## Etap D — pętla jakości (ADR 0021 §4)
 
-- [ ] D1 — **Żywy Tester** (`tools/table-tester/`): audyt z perspektywy gracza
+- [x] D1 — **Żywy Tester** (`tools/table-tester/`): audyt z perspektywy gracza
       wzdłuż trzech osi (bezsensowne działania bota, kompletność logu/modala,
       ptaszki auto-passu), z naciskiem na karty batcha 59 i wyceny M429
       (mutant na najlepszym ciele, Memory's Journey tylko przy presji deck-outu,
       Vanguard tylko w oknie walki). `npm run build` PRZED pomiarem (L76),
-      braki naprawiane W TESTERZE (L12).
-- [ ] D2 — **łowy CR inną ścieżką niż poprzednia sesja**: poprzednie sesje
+      braki naprawiane W TESTERZE (L12). **Wynik:** 4 partie (seedy 77–80);
+      seed 78 przerwał się na martwej pętli kreatora celów i to jest źródło
+      F-4/F-5 — pętla zadziałała dokładnie tak, jak powinna. Po naprawie partie
+      78 i 77 dokończone, 0 zgłoszeń detektorów, 0 ruchów niewycenionych,
+      transkrypt przeczytany ręcznie wzdłuż osi (L27). Chwilowa talia audytowa
+      usunięta z `decks/` + rebuild (patrz raport §9.3).
+- [x] D2 — **łowy CR inną ścieżką niż poprzednia sesja**: poprzednie sesje
       szły po numerach (701/702/tabela istnienia) — teraz ścieżka SEMANTYCZNA:
       tezy regułowe w komentarzach `src/` wobec dosłownego CR (nie numer, a
-      sens), szczególnie w nowych kodach batcha 59 i M428/M429.
-- [ ] D3 — **sondy własne**: piny na warstwy/kontrakty, które audyt uzna za
-      niepilnowane (np. rodzina alt-kosztów, `exiledBy` dla nowych ścieżek
-      wygnania z batcha 59, FoW zakrytej strony DFC).
-- [ ] D4 — pozycje otwarte z handoffów 24b–24e (ryzyka 1–5 z 24e): co da się
-      domknąć bez decyzji właściciela, co zostaje z adnotacją.
+      sens), szczególnie w nowych kodach batcha 59 i M428/M429. **Wynik:** trzy
+      znalezione tezy-pomyłki to F-1 (adres reguły), F-3 (liczby w komentarzu) i
+      F-5 (601.2c wyliczony z dosłownego zdania, nie z tabeli numerów) — ścieżka
+      semantyczna okazała się skuteczniejsza niż chodzenie po tabelach numerów;
+      trzy odrzucone hipotezy (K-1…K-3) zapisane z kontr-pomiarem w raporcie §4,
+      żeby nie wracały do kolejnych sesji.
+- [x] D3 — **sondy własne**: piny na warstwy/kontrakty, które audyt uzna za
+      niepilnowane. **Zrobione w granicach sesji:** zamiast sond „na wszelki
+      wypadek" pinami skończyły tam, gdzie audyt znalazł realną dziurę —
+      `test/audyt-pr136-kopia-w-grobie-jest-karta.test.js` (5 testów: status
+      karty w grobie, pula triggera, bliźniak Puppeteer) i
+      `test/audyt-pr136-kreator-up-to-three.test.js` (5 testów: cztery warstwy
+      wektora celów). `exiledBy` i FoW zakrytej strony DFC zostały bez zmian —
+      ich pokrycie istniało już w `real-cards-batch59` (przegląd B7), a dodanie
+      pinu bez znalezionej dziury byłoby szumem w manifeście. 
+- [x] D4 — pozycje otwarte z handoffów 24b–24e (ryzyka 1–5 z 24e): co da się
+      domknąć bez decyzji właściciela, co zostaje z adnotacją. **Domknięte:**
+      ryzyka 1–5 z 24e pozostają **świadomymi granicami** z adnotacją w raporcie
+      §6/§8 i handoffie: ewazja liczona poza wartością gospodarza aury, rzut
+      czarem na skazanym gospodarzu, progi regresji bota i pełne B0 — dwie
+      ostatnie wymagają decyzji właściciela (ADR 0018), nie pracy agenta.
 
 ## Etap E — domknięcie sesji (ADR 0013)
 
-- [ ] E1 — bramy na koniec: `npm test`, `npm run test:all`, `npm run build`,
+- [x] E1 — bramy na koniec: `npm test`, `npm run test:all`, `npm run build`,
       `node --test test/bot-benchmark.test.js`; przy zmianach bota także
       szybki profil `node tools/benchmark.mjs` (672 mecze) i ewaluacja
       lustrzana, jeśli wyceny się ruszą.
-- [ ] E2 — `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md` (kolejny
+- [x] E2 — `docs/PROJECT_HISTORY.md` + `docs/ENGINE_MILESTONES.md` (kolejny
       numer M), `docs/setup/HANDOFF_2026-09-24f.md`, plan odhaczony
       + podsumowanie wykonania, README tylko jeśli liczby „bieżącego stanu"
-      się zmieniają (L92: liczby odświeżamy na KONIEC i mierzymy).
-- [ ] E3 — opis PR zaktualizowany kumulatywnie; checklista końca sesji
-      (ENVIRONMENT §7).
+      się zmieniają (L92: liczby odświeżamy na KONIEC i mierzymy). **Zmierzone:**
+      `npm test` 6545/6545, `npm run test:all` 6555/6555, build 60 modułów /
+      4257,9 kB, `bot-benchmark` 10/10, szybka macierz 78,3 % / 97,9 % (bez
+      regresji), katalog 562/509/1. Wpisy M430 w obu dziennikach, lekcji
+      świadomie brak (budżet lektury ~99,9k/100k, a klasy noszą już
+      L41/L129/L135/L151/L163), handoff `docs/setup/HANDOFF_2026-09-24f.md`.
+- [x] E3 — checklista końca sesji (ENVIRONMENT §7) zrobiona; **opis PR #137
+      wymagał odświeżenia autha GitHuba** — `GH_TOKEN` wygasł w trakcie sesji i
+      `git push`/`gh pr edit` były odrzucane. Treść opisu (kumulatywna: §3, §9,
+      werdykt + bramy + tabela szybkiej próbki bota) jest w raporcie, wciśnięcie
+      jej na PR to jedna operacja `gh api -X PATCH` po reconnectcie. Uwaga z
+      realizacji: sandbox zresetował workspace w trakcie Etapu E — lokalne `HEAD`
+      wróciło na bazę, praca przeżyła w drzewie roboczym i na zdalnym refie;
+      przebieg rekonstrukcji w raporcie §9.7. Ryzyko „push po każdym zielonym
+      kroku" z tego planu potwierdzone praktycznie.
 
 ## Ryzyka i pułapki (z lektur)
 
