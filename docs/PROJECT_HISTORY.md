@@ -13226,3 +13226,8 @@ drain-mirror (goblin -1.8), transform-SKIP. Wave-B2 end/singletons: LIVE-gates
 OVERRIDE F-T1 (any_dies=0.7). 30 pinow, golden 2x --write (5 score-only,
 0 flips), suit 6828/6828 GREEN. Forwardy: exploit-sac-net, E5-lesson,
 drain-mirror, mill-vs-libsize.
+PMSSB-11 (2026-09-26, sac-economics): BACKLOG pusty -> forward PMSSB-10
+(exploit-sac-net). Wave-A sac-net (max(0,benefit-sac), lustro M69/M130):
+silumgar +2.7, drowner +5.4, gorger +2.7. 9 bram CLOSED, 5 guardow SAME.
+5 pinow, golden CZYSTY (0), suit 6833/6833 GREEN. Forwardy:
+double-discount-lesson, impulse-unifikacja, worthIt-wzorzec.

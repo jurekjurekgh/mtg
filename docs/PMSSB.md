@@ -48,6 +48,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | loot (`draw_then_discard` vs split) | 5 | DONE (2026-09-26) | §PMSSB-8 niżej; `test/pmssb8-loot-wave-a.test.js` (10); `LOOT_NET_VALUE` + M67-rider (0 pokręteł, −1 parametr) |
 | triggery non-ETB (dies/attacks) | ~20 | DONE (2026-09-26) | §PMSSB-9 niżej; `test/pmssb9-triggery-wave-{a,b}.test.js` (19); `anticipatedDies/AttacksValue` (0 pokręteł) |
 | triggery-ogon (tail/end/leaves) | ~40 | DONE (2026-09-26) | §PMSSB-10 niżej; `test/pmssb10-ogon-wave-{a,b1,b2}.test.js` (30); `anticipatedTailValue` + O-ring-sign + LIVE-gates (0 pokręteł) |
+| sac-economics (exploit/devour) | 3 | DONE (2026-09-26) | §PMSSB-11 niżej; `test/pmssb11-sac-wave-a.test.js` (5); `anticipatedSacValue` = max(0,benefit-sac) (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -232,6 +233,23 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-11 — sac-economics (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forward PMSSB-10 #1): ETB-may-sac
+(exploit ×2, devour ×1) z benefit-NIEWIDZIALNYM przy cast-cenie.
+Plan: `docs/plans/PLAN_2026-09-26-pmssb11-sac.md` (Aneks A/A2/B/C);
+sonda: `tools/pmssb11-sac-sonda.mjs` (S01–S06).
+
+- **F-S1+F-S2 (Wave-A):** `anticipatedSacValue` = max(0, benefit −
+  cheapest-sac) (OPT-IN! lustro resolve M69/M130): silumgar +2.7
+  (kill + worthIt-TMC!), drowner +5.4 (impulse!), gorger +2.7
+  (trash-gate!). 9 bram CLOSED, 5 guardów SAME. 5 pinów.
+- **Lekcja:** double-discount (helper RAW, cast dyskontuje!).
+
+### Pomiar końcowy
+- Suit 6833/6833 GREEN (5 pinów); golden CZYSTY (0!).
+- Sac-economics ZAMKNIĘTY (single-wave!).
 
 ## PMSSB-10 — triggery-ogon (2026-09-26)
 
