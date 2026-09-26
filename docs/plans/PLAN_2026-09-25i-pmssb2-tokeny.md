@@ -1,3 +1,5 @@
+Status: DONE 2026-09-26 (fale A/B/C: 3d88e94 / 65e16cc / 3a5bfa7; raport: §PMSSB-2 w docs/PMSSB.md)
+
 # PMSSB-2: tokeny (`create_token`) — plan
 
 Zlecenie właściciela (25i): druga sesja PMSSB z inną rodziną. Wybór agenta

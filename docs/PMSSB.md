@@ -35,7 +35,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | Rodzina (typy efektów) | Kart | Status | Raport / testy / pokrętła |
 |---|---|---|---|
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
-| tokeny (`create_token`) | 46 | BACKLOG | 3 rozbieżne formuły: 12 flat / 8 modal / worth-scaled; brak timingu i celu (chump/haste/fodder/Treasure); M243/C tylko w zdolnościach |
+| tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 40+ | BACKLOG | timing EOT vs main; overflow ręki (interakcja z PMSSB-1/C); cantrip vs draw; guard deck-outu jest |
 | zysk życia (`gain_life*`) | 23 | BACKLOG | main-path cast_spell BEZ wyceny (flat 50?) vs modal/zdolności z niuansami (L41); racing-math; pułapka przewartościowania |
 | kontry (`counter_spell`) | 5 | BACKLOG (mikro-pętla?) | co kontrować (HIGH_IMPACT jest), kiedy trzymać, blef many; mała rodzina, wysoka dźwignia |
@@ -139,3 +139,92 @@ pokrętła w `src/controllers/heuristic-params.js`.
   lethal-ataki z odpowiedzią w ręce — rzadkie w losowym self-playu).
 - Dowód wartości fali C = 29 pinów behawioralnych (12 nowych) + testy
   sterowania pokrętłami (×0 zmienia wynik) + zero regresji w suicie.
+
+## PMSSB-2 — tokeny (2026-09-26)
+
+**Wybór rodziny** (delegacja właściciela): tokeny — największa rodzina
+(46 kart) z 3 rozbieżnymi formułami (12 flat / 8 modal / worth-scaled),
+bez timingu i bez celu (chump/haste/fodder/Treasure); M243/C tylko
+w ścieżce zdolności. Odrzucone: zysk życia (23 — main-path cast_spell
+bez wyceny), dobieranie (40 — timing EOT + overflow), kontry (5 —
+mikro-pętla). Plan: `docs/plans/PLAN_2026-09-25i-pmssb2-tokeny.md`.
+
+**Plik testów:** `test/audyt-pmssb2-tokeny.test.js` (A: 9, B: 7, C: 12).
+**Kod:** `tokenBodyValue` + `token*` w `src/controllers/heuristic-bot.js`,
+`tokenManaBankWeight` / `tokenTimingSwing` / `tokenManaCostTieBreak`
+w `src/controllers/heuristic-params.js`.
+
+### Fala A — wartość tokena (`3d88e94`; F3+F4+F6)
+
+- **L41:** wspólny `tokenBodyValue` (koniec 3 formuł) — cast_spell,
+  activate_ability, plot i tabela ETB liczą to samo; rdzeń
+  `10×count×(2P+T)/3` bez zmian (kotwica: Chatter 1×1/1 = 60).
+- **Rola (F4):** max(ciało, bank-many, bank-liczników) — Treasure ≈ 3
+  (`tokenManaCostTieBreak`… nie: `tokenManaBankWeight: 3`, symetria
+  z recastem); Mutagen widzi najlepszego gospodarza; ciało tylko
+  stworom (koniec `?? 1` dla Skarbów). M243/C (Heap Gate) stoi.
+- **Ilość (F6):** klucz `cards_named_in_graveyard` (Servant skaluje
+  grobem ×3); ETB czyta amount (Jyoti z 0 tokenami = 0); Tumbleweed
+  skaluje greatest_power także z plotu.
+- **Golden:** 4/6 partii bit-identycznych; 2/6 po 1 wpisie
+  (Servant przy pustym grobie −10.8 = −12×0.9), WYBORY TE SAME.
+  Fixture zregenerowany `--write` (`overallHash 4245ddc8…`).
+
+### Fala B — timing (`65e16cc`; F1+F2)
+
+- **Okna instantu (F1):** EOT-własny +8, declare_attackers-wroga +8
+  (reaktywny chump), po blokach wroga −8; `tokenTimingSwing: 8`
+  (lustro bounce-F1). L41: cast_spell (raz na rzut) i activate_ability
+  (raz na zdolność; dowód: Canonized +8/−8 w oknach wroga).
+- **F2-flat ZWERYFIKOWANE:** Gather main1 = main2 (obie mainy przed
+  walką wroga — ten sam użytek; S4 poprawne, nie luka). Nie-stwory
+  bez okien (ich timing to przyszła pętla mana-castability).
+- **Odkrycie architektoniczne:** EOT-własny zdolności zwiera
+  pre-existing `wastefulStep` (L6440, −5/−30 przed pętlą efektów) —
+  odnotowane jako obserwacja cross-family (zmiana zwarcia = blast
+  radius na wszystkie zdolności, poza zakresem fali).
+- **Golden:** 0/6 drgnęło — bez regeneracji fixture.
+
+### Fala C — kontekst (`3a5bfa7`; F4-keywordy/F5/F7/F8)
+
+- **Keywordy (F4):** flying +(2+moc)/ciało bez nietapniętej odpowiedzi
+  w powietrzu (lustro keywordGrantWindowValue + grantsEvasion);
+  lifelink +4/ciało (lustro grantu). Flurry: Δ 9 na kontekst nieba.
+- **Wrogie (F5):** `tokenControllerId` (token wroga = ujemna rola);
+  riderzy bezwarunkowe (upkeep ping, ETB bolt) MODELEM OBRAŻEŃ
+  (lethal za darmo, pierwszy tick); atak: `tokenOnCombatDamage`
+  (lustro drainOnAttack) tylko przy połączeniu. Robber: 13 → 17.67.
+- **Koszt (F7):** `tokenManaCostTieBreak: 0.01`/CMC w cast_spell
+  (ten sam efekt → tańszy wygrywa; X czyta bazę; flashback i modale
+  dzielą ścieżkę). Fizzle (M106/Z2b) zwiera przed wyrazami końcowymi.
+- **Dies (F8):** `blockExchangeOf` zwraca `diedBlockerIds` (addytywne);
+  ginący bloker z dies→token = ubezpieczenie ciała (skala L41 jak
+  ETB). Dissenter-chump: −1 → +19; Patron: 3 → 6 (bank!).
+- **Golden:** 5/6 bit-identycznych; 1/6 (dom-brg|mir-wu@1001) 4 wpisy
+  × −0.01 (grosz F7, czary CMC1 1×1/1 — kotwica Chattera), WYBORY TE
+  SAME (scoreSum −0.02). Fixture zregenerowany (`5a2ad167…`).
+
+### Znane granice (świadome, nie bugi)
+
+1. Modal-trigger +8 dla tokenów MARTWY (0 kart w katalogu) —
+   gałąź prewencyjna (precedens PMSSB-1/B).
+2. Token 0/0 ze statykiem (Tarmogoyf Disy) = 0 — liczenie typów
+   w grobie to osobna pętla; atak Disy strukturalnie podpięty.
+3. Keywordy vigilance/infect/toxic/trample/hexproof i fodder
+   odroczone (brak lustra); riderzy warunkowe (Wizard, Chocobo)
+   czekają na modele zachowań.
+4. Pełny opportunity-cost many OUT (osobna pętla, model castability);
+   koszty zdolności tylko częściowo wyceniane (pełne L41 osobno).
+5. Atakowy dies-kredyt (ubezpieczenie ginącego ATAKUJĄCEGO) nie
+   istnieje — luka przyległa, poza planem fali C.
+6. Dragon ETB zakłada twarz (dowolny cel, twarz zawsze dostępna);
+   ciało wroga negowane symetrycznie (konserwatywnie).
+
+### Pomiar końcowy
+
+- Suit 6686/6686 GREEN po regeneracji (pełny przebieg 6684 + golden
+  4/4 po `--write`; drifty golden udowodnione co do grosza przed
+  każdym `--write` procedurą stash-baseline/worktree).
+- Dowód wartości = 28 pinów behawioralnych + testy sterowania
+  pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
+- Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
