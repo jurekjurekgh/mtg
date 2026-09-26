@@ -106,6 +106,32 @@ Scope-gate: forwardy (martwe przypadki inert bez nosicieli:
 buff_land/add_counter-0/mill-0; mechanizm-single-X0-−10;
 pomysł „no-base-for-pure-harm") — POZA Wave-A.
 
-## Aneks B — forwardy z tej pętli (WYPEŁNIĆ w closeout)
+## Aneks C — wyniki Wave-A (closeout)
 
-(none yet)
+- F-H1: mapa rip 45→53. S18: divest-self +3.0 → **−5.0 DOKŁADNIE**
+  (predykcja trafiona); mindstab-self −1 → **−9** (predykcja −7 —
+  pudło o 2: foeRipValue(self-random-2) = −2, nie 0; kierunek OK).
+  Bot w kształcie S18 wybiera shock→p2 (divest trzyma).
+- F-H2: martwy −25 usunięty; sonda S01–S17b BIT-IDENTYCZNA
+  (zero zmian behawioralnych — dowód martwoty).
+- Sweep H3: 9× −70, 2× brak oferty (silnik), 1× −114 — czysto.
+- Piny: `test/pmssb7-hold-wave-a.test.js` (12) + aktualizacja guarda
+  PMSSB-6 (divest −5, mindstab −9 — flip ZAMIERZONY).
+- Golden-master: ZIELONY bez zmian (bot nigdy +3 nie wybierał —
+  zdominowane; churn 0). Suite: 6769/6769.
+- Zero gałek (kalibracja mapy z uzasadnieniem 10×-rule).
+
+## Aneks B — forwardy z tej pętli
+
+1. Martwe przypadki `effectIsInertNow` bez nosicieli-spell:
+   `buff_land_creatures`, `add_counter` ≤0, `mill` amount-0,
+   `put_multicolored` (ability-only), `reanimate` (ability-only).
+   Kandydaci do sweepu martwego kodu (klasa F-H2).
+2. Mechanizm single-X0 = −10 (nie −70): trzyma, ale inną ścieżką
+   niż split-X0 (−70). Do wyjaśnienia przy okazji X-sweepu.
+3. Pomysł mechanizmowy „no-base-for-pure-harm": rzut czysto
+   samouzkodzeniowy bez premii 50 (odrzucony w krok-0 jako za
+   szeroki; alternatywa dla przyszłych dziur hold).
+4. `your-temple-is-under-attack` oferuje wariant `->p2` (−133):
+   buff-mine z celem wroga? Do sprawdzenia (oferta dziwna, wynik
+   trzyma — niski priorytet).

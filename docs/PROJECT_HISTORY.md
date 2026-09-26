@@ -13196,3 +13196,10 @@ LEKCJA-x0.9: cast_permanent mnozy wynik x0.9 (wagi-rodzin B4) — piny licza
 jawnie. Tie-audit: 208 realnych remisow, ZERO z ripem.
 NO-F: sklad-reki (przepisy), loot (forward unification), triage (martwy),
 mayFire-50, triggery, transform/mana, amass-9-vs-6 (pre-existing!).
+PMSSB-7 (2026-09-26, domkniecie hold, mikro-petla): BACKLOG pusty -> cel
+z forwardow PMSSB-6 (divest-self-+3 + martwy -25-token). F-H1: mapa rip
+45->53 (10x-regula) -> divest-self +3->-5 DOKLADNIE, mindstab -1->-9.
+F-H2: martwy -25 usuniety (sonda PO bit-identyczna). Sweep H3 czysty
+(9x -70, 2x brak-oferty, 1x -114). 12 pinow, golden BEZ churnu (0),
+suit 6769/6769 GREEN. Forwardy: martwe-przypadki-inert, X0--10,
+no-base-for-pure-harm, temple->p2.

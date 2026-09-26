@@ -44,6 +44,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | removal destroy/exile | 29+ | POKRYTE (M91/M234) | baza+worth+TMC+deathtouch+protekcja; exile≈destroy to świadome uproszczenie |
 | obrażenia (`damage*`) | 32+ | POKRYTE (M237/4) | model per-cel; timing sorcery-burn do rewizji tylko z dowodem |
 | odrzut (foe-side `discard*`) | 13 | DONE (2026-09-26) | §PMSSB-6 niżej; `test/pmssb6-discard-wave-a.test.js` (20); `foeRipValue` + guardy-fizzle (0 pokręteł) |
+| domknięcie hold (self-rip + martwy −25) | 2 | DONE (2026-09-26) | §PMSSB-7 niżej; `test/pmssb7-hold-wave-a.test.js` (12); mapa 45→53 + usunięcie martwego kodu (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -228,6 +229,40 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-7 — domknięcie hold (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty — zweryfikowano; forwardy PMSSB-6):
+divest-self +3 (dziura hold) + podejrzenie martwego −25-token.
+Mikro-pętla domykająca rodzinę PMSSB-6 (nie nowa rodzina).
+Plan: `docs/plans/PLAN_2026-09-26-pmssb7-hold.md` (Aneks A/A2/C);
+sonda: `tools/pmssb7-hold-sonda.mjs` (10 sond + 8 SKIP).
+
+- **F-H1:** mapa `HOSTILE_PLAYER_EFFECTS` rip 45→53 (10× foe-blind-rip-5
+  + margines ponad bazę-50): divest-self +3→**−5** (predykcja DOKŁADNA),
+  mindstab-self −1→−9 (predykcja −7, pudło o 2: foeRip(self) = −2).
+  5 wołań `selfHarmPenalty`, wszystkie w kierunku „trzymaj mocniej".
+- **F-H2:** usunięty martwy „−25 za pusty czar" (M106/Z6): count-0 łapie
+  wcześniej allEffectsInertNow → −70 (flurry/howl −70 ZMIERZONE), a
+  token-bezwartościowy-przy-count>0 nie ma nosicieli (skan 0/0 czysty).
+  Sonda PO: S01–S17b BIT-IDENTYCZNE (dowód martwoty).
+- **Sweep H3:** 9× −70, 2× brak oferty (silnik: volley, lunar-own),
+  1× −114 (force-away-own) — czysto, zero nowych dziur.
+- **Golden:** ZIELONY bez zmian (churn 0 — bot nigdy +3 nie wybierał).
+- **Piny:** `test/pmssb7-hold-wave-a.test.js` (12) + flip guarda PMSSB-6
+  (divest −5, mindstab −9 — ZAMIERZONY). 0 pokręteł.
+
+### Znane granice / forwardy
+1. Martwe przypadki inert bez nosicieli-spell (klasa F-H2):
+   buff_land, add_counter-≤0, mill-0, multicolored, reanimate.
+2. Single-X0 = −10 inną ścieżką niż split-X0 (−70) — trzyma, do
+   wyjaśnienia przy X-sweepie.
+3. Pomysł „no-base-for-pure-harm" (odrzucony jako za szeroki).
+4. Temple oferuje `->p2` (−133) — oferta dziwna, wynik trzyma.
+
+### Pomiar końcowy
+- Suit 6769/6769 GREEN (12 pinów); golden bez churnu.
+- Rodzina PMSSB-6 ZAMKNIĘTA (re-audyt tylko z nowym dowodem).
 
 ## PMSSB-6 — odrzut wroga (2026-09-26)
 
