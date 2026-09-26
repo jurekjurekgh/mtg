@@ -1524,6 +1524,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return total;
   };
+  // PMSSB-9/F-T1 (anticipacja-dies, Wave-A): trigger `dies` własnego stwora
+  // to ODROCZONA wartość = likelihood × wartość-efektu (reuse tabeli ETB,
+  // L41 — ten sam typ efektu, ta sama liczba!). Likelihood-0.5: połowa
+  // stworów ginie w typowej grze (walka/removal; konserwatywnie,
+  // asumpcja + pin na kształcie prowler-vs-piker!).
+  // SKIP `return_with_counter` (persist): pokrywa flat +5 z keywordów
+  // (~5374, legacy) — bez podwójnego liczenia (forward: unifikacja!).
+  // SKIP pay-gated-dies (spellbomby {1}{R}/{1}{G}: płatność warunkowa
+  // niemodelowana — konserwatywne 0 zamiast zawyżki +3 za nieopłacalny
+  // dobór; forward: pay-trigger-net-model!). `any_creature_dies` (selhoff)
+  // i reflexive-sacrifice (koszt!) EXCLUDE — to nie własny-dies-benefit.
+  const anticipatedDiesValue = (view, def) => {
+    if (!def) return 0;
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'dies') continue;
+      if (ability.trigger?.payMana != null || (ability.trigger?.payColors?.length ?? 0) > 0) continue;
+      const req = ability.trigger.requiresTarget ?? null;
+      const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+      for (const e of effs) {
+        if (!e?.type || e.type === 'return_with_counter') continue;
+        const fn = ETB_EFFECT_BONUS[e.type];
+        if (!fn) continue;
+        total += fn(e, view, req, def);
+      }
+    }
+    return 0.5 * total;
+  };
   const handCard = (view, objectId) => view.zones.hand.find((o) => o.id === objectId);
   // Karta w DOWOLNEJ strefie widoku (M103/D: Escape/Flashback grają z grobu —
   // handCard nie widział karty i czar spadał do wyceny 60 „na ślepo").
@@ -5407,6 +5435,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true });
         // PMSSB-4/F-C: imminent-trigger-gain nosiciela (0 bez enablerow).
         score += imminentTriggerGainValue(view, def);
+        // PMSSB-9/F-T1: anticipacja-dies nosiciela (0 bez triggerów-dies).
+        score += anticipatedDiesValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.

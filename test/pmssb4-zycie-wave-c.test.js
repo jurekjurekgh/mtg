@@ -4,7 +4,7 @@
 // przeszacowania). F-C1 landfall (gladehart): moja main + drop nie
 // polozony + lad w rece. F-C2 cast-koloru (feather W): zagrywalny teraz
 // czar koloru. F-C3 bat-attacks (zoraline +1): gotowy Nietoperz.
-// NO-F piny: dies-gain (highland) +0 bez bramki-imminent.
+// NO-F piny (PMSSB-9/F-T1: dies-gain highland +0.9 przez anticipację-dies).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
@@ -95,8 +95,8 @@ test('F-C3: zoraline +tiers(1) tylko z gotowym Nietoperzem', () => {
   approx(scoreOf(t, 'cast_permanent(k'), 70.2036, 'zoraline z gotowym batem: +1 x0.9');
 });
 
-test('NO-F: highland-game dies-gain +0 (brak bramki-imminent)', () => {
+test('F-T1: highland-game dies-gain +0.9 (PMSSB-9: anticipacja-dies 0.5×2×0.9)', () => {
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['G'], 5);
   handCard(s, 'k', 'highland-game');
-  approx(scoreOf(s, 'cast_permanent(k'), 64.8018, 'highland: smierc nieceniona przy rzucie');
+  approx(scoreOf(s, 'cast_permanent(k'), 65.7018, 'highland: anticipacja-dies przy rzucie');
 });
