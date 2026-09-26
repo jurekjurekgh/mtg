@@ -13145,3 +13145,22 @@ atomowy skrypt) potwierdzona po raz trzeci. Migawka platformy: fresh clone
 + częściowy overlay drzewa (ref na bazie 605a8dc mimo pushy do 8f65d4b) —
 odzyskanie `git fetch origin <branch>` + `git reset --hard <tip>` po
 weryfikacji bajtowej plików roboczych (zdalny push ocalał, zero strat).
+
+Domkniecie petli PMSSB-4 (rodzina gain_life, 28 kart po weryfikacji
+programowej 29 - crumb-and-get-it; kanaly 5/7/7/2/7; plan
+`docs/plans/PLAN_2026-09-26-pmssb4-zycie.md`, Aneks A/B/C).
+Fala A (`809a125`): F-A0 gainLifeValue (wspolna drabina M236, L41),
+F-A1 noga-gain w cast (douse/consume-X/severed-T/divine-MV), F-A1b feed
+tiers, F-A2 ETB-tiers, F-A2b ETB foe-lose +4x, F-A3 dedup M155 (talisman
+6->3), F-A4 dedup M157-foe (-55->-29), F-A5 M157-self tiers, F-A5b
+conditional-gain (scroll+Angel) + evaluator controlsCreatureSubtype.
+Fala B (`0ff9efa`): F-B1 hold tap-gain pre-combat (L22 +3->-6; ratunek
+i foe-EOT bez zmian). Fala C (`56412bd`): F-C1/C2/C3 imminent-trigger-gain
+(gladehart/feather/zoraline z bramkami; +0 bez enablerow).
+Zero nowych pokretel; 20 pinow (wave-a/b/c); sonda
+`tools/pmssb4-zycie-sonda.mjs` w repo; wszystkie prognozy co do punktu.
+Suit 6721/6721 GREEN po regeneracji fixture (slad +2.0 = noga-severed,
+316=316 decyzji).
+NO-F: modal-tiers, gain-landy, dies/cautious/staff, Bard-ETB-modal.
+Forwardy OUT: koszty-mana zdolnosci, damage-nogi, slad modalny.
+Bez wpisu LESSONS (precedens PR136).

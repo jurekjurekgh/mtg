@@ -37,7 +37,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
-| zysk życia (`gain_life*`) | 23 | BACKLOG | main-path cast_spell BEZ wyceny (flat 50?) vs modal/zdolności z niuansami (L41); racing-math; pułapka przewartościowania |
+| zysk życia (`gain_life*`) | 28 | DONE (2026-09-26) | §PMSSB-4 niżej; `test/pmssb4-zycie-wave-{a,b,c}.test.js` (20); `gainLifeValue` + `imminentTriggerGainValue` (0 pokręteł) |
 | kontry (`counter_spell`) | 5 | BACKLOG (mikro-pętla?) | co kontrować (HIGH_IMPACT jest), kiedy trzymać, blef many; mała rodzina, wysoka dźwignia |
 | pump/grant (trików bojowych) | 52 | POKRYTE (M96/M173/M179/M218) | okna walki z uczestnictwa, nie z fazy — nie ruszać bez nowego dowodu |
 | tap/untap | 29 | POKRYTE (M139) | okna tapowania — nie ruszać bez nowego dowodu |
@@ -227,6 +227,63 @@ w `src/controllers/heuristic-params.js`.
   każdym `--write` procedurą stash-baseline/worktree).
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
+- Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-4 — zysk życia (2026-09-26)
+
+**Wybór rodziny** (rejestr BACKLOG): zysk życia — 28 kart (rejestr mówił
+23; weryfikacja programowa 29 - crumb-and-get-it, którego jedyny hit to
+gift->Food; lose-only 8 OUT jako pokryte M169/K, M237/4). Kanały:
+5 spell / 7 ability / 7 ETB (3 gain-landy) / 2 modal / 7 trigger.
+Rozjazdy: noga-gain w cast = 0, ETB min(2x,8) ślepe na życie, M155-dublował
+M236, M157-flat, scroll-conditional = 0, brak hold-tap-gain pre-combat,
+triggery przy rzucie = 0. Plan:
+`docs/plans/PLAN_2026-09-26-pmssb4-zycie.md` (Aneks A/B/C: sonda L01-L26,
+macierz 23 komórki, specyfikacje fal, wyniki).
+
+**Pliki testów:** `test/pmssb4-zycie-wave-a.test.js` (12),
+`test/pmssb4-zycie-wave-b.test.js` (5), `test/pmssb4-zycie-wave-c.test.js`
+(4) — razem 20 pinów + guard gainLifeValue(0) (nazewnictwo falowe jak PMSSB-3).
+**Kod:** `gainLifeValue` (wspólna drabina M236, L41) +
+`imminentTriggerGainValue` (bramki-imminent) w `heuristic-bot.js`;
+`controlsCreatureSubtype` w `viewConditionalHolds` (lustro negacji);
+zero nowych pokręteł.
+**Sonda:** `tools/pmssb4-zycie-sonda.mjs` (L01-L26 + L14b/L15b/L16b/L19b,
+w repo na stałe).
+
+### Fala A — parzystość + dedup (`809a125`)
+- **F-A0:** `gainLifeValue` (ekstrakcja drabiny M236; M236 bez zmian liczb).
+- **F-A1:** noga-gain w cast (douse/consume-X/severed-T/divine-MV +
+  strażnik foe-scope; scoredEffects daje X/conditional gratis, L41).
+- **F-A1b:** feed gain_if_dies: min(x,3) -> tiers(min(x,3)) (cap-3 zostaje).
+- **F-A2:** ETB-gain: min(2x,8) -> tiers (healer 70.20 -> 66.60 @20).
+- **F-A2b:** ETB foe-lose +4x (lustro modala; skymarch 72.90 -> 75.60).
+- **F-A3:** dedup M155 (talisman 6 -> 3, parzystość z soulmenderem).
+- **F-A4:** dedup M157-foe (misaim pokrywa; -55 -> -29).
+- **F-A5:** M157-self tiers (zombie-self 5 -> 3/4/5).
+- **F-A5b:** conditional-gain w ability (scroll+Angel 7 -> 10/14; evaluator).
+- **Golden:** fixture `--write` (slad ravnica|innistrad-wu@1000: 316=316
+  decyzji, scoreSum +2.0 = noga-severed; jedyny gain-kandydat w taliach).
+
+### Fala B — timing (`0ff9efa`)
+- **F-B1:** hold tap-gain pre-combat (L22: +3 -> -6; ratunek@5 i foe-EOT
+  strzelają dalej; 6701/6701 bez churnu fixture).
+
+### Fala C — triggery imminent (`56412bd`)
+- **F-C1/C2/C3:** landfall-gate (gladehart +1.8 z ladem w ręce),
+  cast-color-gate (feather +0.9), bat-gate (zoraline +0.9); bez enablerów
+  +0 jak przedtem; 6701/6701 bez churnu fixture.
+
+### Znane granice (świadome, nie bugi)
+1. Modal-tiers 4x/1x (stromość ratunku chroni remis gain-vs-lose1@5).
+2. Gain-landy +0 (stały tap -8 dominuje — wymiar zdominowany).
+3. Dies-gain/cautious/staff-cast +0 (brak bramki-imminent).
+4. Bard-ETB-modal +0 (max-mode-machinery, future-work H6).
+5. Forwardy OUT: koszty-mana zdolności (= 0, rodzina kosztów),
+   damage-nogi drainów (M237/4), ślad modalny (M130-family).
+
+### Pomiar końcowy
+- Suit 6721/6721 GREEN (20 pinów); wszystkie prognozy fal trafione co do punktu.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
 
 ## PMSSB-3 — dobieranie (2026-09-26)
