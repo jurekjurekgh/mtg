@@ -22,6 +22,7 @@ import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
 import { createOpenRouterTransport } from './ai-client.js';
+import { buildAiDrivePayload, createAiDriveLogger } from './ai-drive.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -311,10 +312,26 @@ function bootstrapTable() {
       aiQueue.retry(slotId, { modelId: aiConfig.modelId });
     },
   });
+  // AI-OpenRouter (Etap-3): dopisywanie SUKCESÓW do Arkusza. Fire-and-forget
+  // (logger nigdy nie rzuca); pusty URL = zapis wyłączony. Błędy modelu
+  // NIGDY tu nie trafiają (kontrakt planu §6).
+  const aiDriveLog = createAiDriveLogger({ getUrl: () => loadAiConfig(storage).appScriptUrl });
   const aiQueue = createAiQueue({
     transport: aiTransport,
     onPending: (slot) => aiPanel.slotPending(slot),
-    onResolved: (slot) => aiPanel.slotResolved(slot),
+    onResolved: (slot) => {
+      aiPanel.slotResolved(slot);
+      if (slot.result?.ok) {
+        void aiDriveLog(buildAiDrivePayload({
+          mode: slot.meta?.mode ?? aiConfig.mode,
+          gameId: slot.meta?.gameId ?? '',
+          turn: slot.meta?.turn ?? 0,
+          model: slot.modelId,
+          response: slot.result.text,
+          tsClient: new Date().toISOString(),
+        }));
+      }
+    },
   });
   // Świat-lore talii bota = dominujący `plan` jej kart (działa też dla
   // talii własnych); null → prompt użyje tytułu talii.
@@ -343,7 +360,7 @@ function bootstrapTable() {
     aiQueue.enqueue({
       prompt,
       modelId: aiConfig.modelId,
-      meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId },
+      meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId, mode: aiConfig.mode },
     });
   };
   // --- Koniec bloku AI-Etap-1 ----------------------------------------------
