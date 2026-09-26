@@ -118,5 +118,57 @@ delusion-discard = 0). H7 POTWIERDZONA (sabotage: kontra 50 / bounce 80 —
 tryb bounca LICZBOWO ATRAKCYJNIEJSZY od kontry!). H8 POTWIERDZONA
 (M120 -90; wojna-kontr strzela; stoic-znizka niewidzialna; brak-celu =
 brak-oferty po stronie silnika; noncreature-only egzekwowane silnikiem).
-## Aneks B: audyt + fale (do wpisania po krok-2)
+## Aneks B: audyt + fale (krok-2)
+
+Macierz (cel x platnik x stan) — werdykty: wplywowy+tapped-out STRZEL
+(50) OK; wplywowy+platnik-moze TRZYMAJ (-40) OK (H4: dowod kasowania
+nizej); trywialny TRZYMAJ (-10) OK; wlasny ODMOW (-90) OK; platnik PLAC
+(85) OK (H5: dominacja); 6 luk STRZELAJA PO F-H3.
+
+F-H3 (JEDYNA fala A): HIGH_IMPACT += 6 typow (bramka binarna, zero
+pokretel, jak istniejace 16): reveal_hand_choose_discard (precedens:
+discard_cards; lustro HOSTILE_PLAYER 45), reveal_hand_choose_exile
+(samo), destroy_artifact_gain_life_mana_value (precedens:
+destroy_permanent; L41 REMOVAL 90, M156/F2), return_permanent_from_graveyard
+(precedens: reanimate_under_your_control), bounce_to_library_bottom
+(precedens: bounce_permanent; L41 REMOVAL 75, Batch 43),
+player_sacrifices_creature (precedens: destroy/exile; L41 REMOVAL 90).
+Promien: DOKLADNIE 6 kart MV<3 (divest/dreams/divine/unearth/forced/
+triumph; zero modali). Celowy brak unii map: REMOVAL zna tez tap-45,
+ktorego bramka SLUSZNIE nie kontruje (M237/2) — rozne decyzje, rozne
+zbiory (L41 dobrze rozumiane). Over-fire (edykt-przy-pustym-stole)
+dolacza do istniejacej akceptowanej klasy (pump-bez-walki).
+Falsyfikator: sonda-PO diff = DOKLADNIE 6 flipow -10->50, zero ruchu
+gdzie indziej; piny + golden (oczekiwane zero regeneracji).
+
+NO-F: H1 flat-50 = swiadomy projekt (bramka binarna; porzadkowanie
+zagrozen miedzy strzalami = forward); H2 dziala; H4 = DOWOD KASOWANIA:
+odrzut-bezwarunkowy jedzie TAK SAMO przy strzale-teraz (tax+discard)
+jak przy strzale-pozniej (deny+discard) — kasuje sie z decyzji, zostaje
+p*50 vs epsilon + mandat wlasciciela (E7/D2) — TRZYMAJ; H5 = dominacja
+placenia (delusion: odrzut i tak nastapi; abstruse-brzeg = forward
+H1); H6-fuel: karta >> proliferate wg WLASNYCH wag bota (loyalty +1,
++1/+1 +2 — rozstrzyganie proliferate 9386!) — hold-vs-trywialny zostaje,
+lethal-poison-9 = forward; H6-abstruse POPRAWNE (+10 cialo, max-rol
+sluszne (role wylaczne), -0.03 = tie-break F7 PMSSB-2 (0.01xMV3),
+nie kontr); H6-delusion: kasowanie (jak H4); H7 sabo AKCEPTOWANE
+(jeden modal = wybor XOR miedzy rownowaznymi odpowiedziami; urgencja
+okna = forward); H8: M120 tak, mixed martwy-nieszkodliwy (silnik daje
+warianty 1-celowe), counter_ability future-proof w tej samej bramce,
+stoic-znizka = efekt-rowny (oszczedzona mana = rodzina mana OUT),
+4 martwe wpisy zbioru (exile_target_creature, return_to_hand,
+reanimate_under_your_control, discard_each_opponent — zero nosicieli,
+nieszkodliwe), noncreature-only i brak-celu egzekwuje silnik.
+Hold-udokumentowane: manifest-dread (polityka-jak-stwor), spare-from-evil/
+memory-s-journey (kontekstowe), mill (kontekstowe), tap (M237/2 celowe).
+Falszywe alarmy: assert-perfection (niesie pump), release-the-ants
+(niesie damage), force-away (niesie bounce), curate (niesie draw),
+fake-your-own-death (niesie pump) — strzelaja przez rodzenstwo.
+Forwardy OUT: zysk-foe-side hand-rip NIEwyceniony w cascie (divest/
+mindstab = czysta baza 50.00; M202 = self-harm, M408 = koszt-odrzutu —
+luka rodziny discard!), self-divest +3 (wartosc bez wyboru), X-na-stosie
+niewidzialne (epic-experiment MV2 trzyma nawet przy X=7 — potrzebny
+xValue w widoku + prog bramki), porzadkowanie-zagrozen, lethal-proliferate,
+liczenie-zasobow E7/D2 (sciony/skarbce = rodzina mana), swiadomosc-okna
+odpowiedzi, bramka-czytajaca-cele.
 ## Aneks C: wyniki (do wpisania po falach)
