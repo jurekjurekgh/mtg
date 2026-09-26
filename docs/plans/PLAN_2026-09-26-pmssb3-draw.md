@@ -132,3 +132,77 @@ H5c (CMC nie występuje) i H1 (9 vs 6) udowodnione czytaniem kodu.
 Balamb to pojazd (ataki po animacji) — niewłaściwy pojazd H7;
 thief + curiosity wystarczą. Scroll-of-Avacyn (−118: koszt
 sac-self zdolności) to historia cross-family, nie H4.
+
+---
+
+## Aneks B — krok-2: recon + S-piny v3 (2026-09-26, dc3a6a5)
+
+Harness: `/tmp/pmssb3-draw-v3.mjs` (biblioteka 10/10, trace-based scoring, seed 9).
+Stan bazowy: main1, tura 5, priorytet p1 (chyba że scenariusz mówi inaczej).
+
+### B1. S-piny v3 (wszystkie rozłożone na czynniki pierwsze)
+
+| S | scenariusz | pin | dekompozycja (rozstrzygnięta) |
+|---|---|---|---|
+| S01 | rager-cast | 71.1018 | (76 + 9 − 6) × 0.9 + ε; ciało 2/2=76, ETB-draw-9 (tabela!), self-lose-1 = −6 (skala M169/K-permanent, OUT-life) |
+| S02 | inspiration self / foe | 11 / −13 | isDrawOnly-start −1 (A4-4!) + 12 / −12; brak bazy spellBase |
+| S03/S03b | reunion main1 / main2 | 17 = 17 | −1 + 18 + discard-0; F3-FLAT (wynik negatywny: flat POPRAWNY, sorcery nie czeka) |
+| S04a/b/c | rites 1/2-CMC2 / 1/1-CMC0 / 5/5-CMC5 | 5 / 8 / −9 | −1 + 12 − sac(6/3/20); sac = 2P+T+CMC (M149/A3, H5a-revised POTWIERDZONE) |
+| S05 | hand3 = hand8 | 11 = 11 | brak wrażliwości na rozmiar ręki (H-flat) |
+| S06a | thief-attack vs vanilia | 12 = 12 | dyferencjał 0 — trigger combat-damage→draw NIEWYCENIONY (H6-attack, OUT-trigger) |
+| S07 | curiosity na własnym 1/1 | −62.1 | aura-wroga-na-własnym (NIGDY nie rzuca); mechanizm −69-raw = internals-aura (OUT), trigger-0 |
+| S07b/c | curiosity na wrogim 3/3 i 1/1 | −169.2 = −169.2 | niezależne od rozmiaru; internals-aura (OUT); v3-wspomnienie +61.2 NIEDAŁO się odtworzyć (superseded) |
+| S08a/c | prowler-ginie vs vanilia-ginie | −10 = −10 | trigger dies→draw = DOKŁADNIE 0 (H8, OUT-trigger); v3-+4 superseded |
+| S08b | prowler-bez-blokera | +13 | 2 + through-3 + open-8 (bez doboru — przeżywa) |
+| S09 | force-away fero-ON / OFF | 88 / 100 | rider = 0 w OBU (F5!); inwersja = efekt-planszy (bounce-względny), nie rider |
+| S10 | murder-mayFire fire/decline @lib10 i @lib0 | 50/0 = 50/0 | SAMOBÓJSTWO przy pustej biblioteczce (F9b!); tax = 0 na lib0 (drabina nie ratuje) |
+| S10b | murder-cast | −54.0 | ciało + trigger-liability (generyczny-trigger, OUT); bot nigdy nie rzuca |
+| S11 | temple mode1 (pakt) / mode0 | 62 / −26 | mode1 = 50 + 12 + foe-0 (noga-foe IGNOROWANA! F-temple); mode0 = buff-rodzina (OUT) |
+| S12 | mysteries dropped-false/true | 50 = 50 | conditional = 0 (pętla-cast NIE rozwija wrapperów! R7-skorygowane); F-mysteries |
+| S13 | envoy ±counter | 68.4054 = 68.4054 | 81 − 5(CMC+pip!) + 0(ETB-miss!) → ×0.9; równe, bo OBA-0 (F-envoy!) |
+| S14 | scroll-ability ±Angel | 8 = 8 | 2 + 6 + 0 + 0 (sac-self-0! conditional-0!; v1-„−118" = konfuzja z bounce-own); F-scroll-sac |
+| S15 | feed-cast | 62 | 50 + 18 − 6(2×lose3, life>5) + 0(poison-rider, OUT-poison!) |
+| S16 | quicksilver-cast | 74.7036 | (81 + flying-2 − 6(CMC+pip) + 6(ETB-loot!)) × 0.9 + ε |
+| S17 | tellah-cast | −75.6 | trigger-liability (OUT!); Tellah-you_cast OUT-POTWIERDZONE (manaSpentAtLeast = generyk) |
+| S19 | game-ball-ability | −17 | sac-threat + counter-terms (generyk-sac, ODRZUCONY pojazd — zakłócony) |
+| S20 | deepwood-ability {6G} | 8 | 2 + 6 + koszt-0 (mana-opp-OUT!) |
+| S21 | floodhound-ability | 2 | sama baza — investigate = 0 (OUT-doc; investigate ∉ rodziny-45!) |
+| S22 | inspiration foe-EOT | 11 / −13 | IDENTYCZNE z main (H2! brak okna; F2) |
+
+Rodzina-45 ZWERYFIKOWANA programowo (`reg.all()` 562 → 45 trafień draw-kluczy, dokładnie lista z Aneksu A).
+
+### B2. Mechanizmy (rozstrzygnięcia strukturalne)
+
+- **0.9** = `scoreWeights.permanent` (B4-strategia!); reszta 1 (mana 1.1). Trostani/Tools/Servant-superseded (dowód z tabeli, nie z pinów).
+- **−1** = `isDrawOnly`-start (A4-4: Inspiration/Rites/Reunion — „startuje od zera jak M146", dokładnie `score = −1`). Ramka-50 (spellBase) vs ramka-−1: drawOnly-ścisłe (`type === 'draw_cards'`).
+- **Epsilon** = `0.001 × (epsBody − w×epsCost)` pre-weight (×0.9 → kroki .0009; .0018 = 2 kroki). Never-flip (L3).
+- **Null→then** (`unwrapConditionals`) istnieje, ale pętle wartości (cast/ETB/ability) jej NIE wołają (tylko `selfDamageOfEffects`) → conditional-draw = 0 w wycenie (mysteries-50, envoy-ETB-0, scroll-Angel-0).
+- **viewConditionalHolds** wspiera tylko 3 warunki; brak `landEnteredThisTurn` (widok go nie niesie — potwierdzone komentarzem L3377), brak `controlsCreatureSubtype`, brak ferocious/manaSpentAtLeast.
+- **Draw2/draw3 liniowe** (6×N w ramce); brak dyskonta drugiej-karty.
+- **Net-swing zbieżny**: loot jako decyzja (M67: +5 vs −2 = swing 7) ≈ loot jako czar (A1b: +6 vs 0 = swing 6) — ramki różne, ekonomia ta sama (NIE dryf!).
+- **M67 (+5) vs A1b (+6)**: ramki-decyzji różne, nie do unifikacji.
+- **R5**: discards-Reunion = decyzja bota `resolve_discard_choice` = `20 + discardCostPreference` (M408: unplayable-off-color-first!). Koszt-discard w wycenie rzutu = 0 (H5a).
+- **Rites-sac** = wolumen ofiary 2P+T+CMC (M149/A3-dup z free-cast; F6-nit: board-scale-clean (nie ruszać w PMSSB-3)).
+- **Floodhound**: investigate-abilities ∉ rodziny (token-pośredni, jak scry-riders-OUT).
+- **Poison-rider** (feed): 0, OUT (przyszła pętla-poison).
+- **Curiosity/murder/tellah-cast + thief/prowler-triggery**: cała zawartość-triggerów = 0 lub liability — JEDNA skonsolidowana przyszła pętla „generyczna-wycena-triggerów" (cast-time + fire-time, F9c w niej).
+
+### B3. F-itemy fal A/B (specyfikacje zamknięte)
+
+**Fala A (strażnicy, wąskie-śmiertelne):**
+- **F9b**: `resolve_optional_trigger_choice`-fallback: fire-z-draw + pusta-biblioteka → −100 (lustro E2/A1b!); czytanie `pendingOptionalEffects(view)` (bot-side, bez dotykania silnika; triggery-draw w katalogu = tylko bezpośrednie (murder/curiosity — conditional-draw-triggerów brak)).
+- **F10**: tabela-ETB draw/draw_then_discard BEZ `drawDeckingPenalty` (cast/ability go mają!) → dołożyć guard (lustro). Testy z pustą-lib maskujące draw — wypełnić lib (konwencja pr92).
+
+**Fala B (luki wyceny; wszystkie prognozy do weryfikacji post-fali):**
+- **F1**: tabela-ETB `draw_cards` 9 → `P.drawCardValue` (param! unifikacja L41); literal-6 modal-trigger → param (no-behavior); ETB-loot-6 → param (no-behavior). Rager 71.1018 → 68.4. (Dostarczane: 8.1 → 5.4 — spójne z globalnym dyskontem-permanent-0.9!)
+- **F2**: instant-draw na foe-EOT +10 (lustro M211-scry: ta sama racja fizzle-many!); reszta 0 (pozytywne-tylko, bez pałek — draw użyteczny od razu); sorcery = flat (F3-negatywny!). S22-post: 21. Luka need-now (threat/land-need-gating) = udokumentowana przyszłość (spójne z M211-bez-gatingu).
+- **F5**: `ferocious_draw_discard` w cast-spell: ferocious? +nowy-param(5, lustro-M67!) : 0. Force-ON 88 → 93.
+- **F-temple**: (1) noga-foe both-draw = lustro inspiration-foe (−13!); (2) `isDrawOnly`-extend o `draw_cards_both_players` (duch-A4-4: treść-foe + maskowanie-spellBase!). Post: 62 → −2 (flip rzut→trzymaj, uzasadniony: parytet + tempo-loss!).
+- **F-scroll-sac**: ability-draw + `sacrificeSelf` → lustro gałęzi-token (−= 4/1 creature/non!). Post: 8 → 7.
+- **F-envoy**: unwrap-conditionals w pętli-ETB (lustro selfDamage, L41!). Post: 68.4054 → 72.9/76.5 (dywergencja ±counter!).
+- **F-mysteries**: unwrap-conditionals w pętli-cast (lustro selfDamage!) + `landEnteredThisTurn` w widoku i w `viewConditionalHolds`. Post: 50 → 68/62.
+
+**Fala C:** regeneracja fixture (`tools/bot-scoring-snapshot.mjs --write`), benchmark, pełny-suit, domknięcie-dokumentów.
+
+### B4. OUT (potwierdzone, z odesłaniem)
+gain_life-scroll-Angel; scry/surveil-ridery; mana-opp-cost (istnieje zgrubny CMC+pip w cast_permanent!); Tellah-you_cast (+ manaSpentAtLeast-generyk); generyczna-wycena-triggerów (F9c, curiosity/murder/tellah/thief/prowler); investigate; poison-ridery; mode0-temple (buff); aura-hostile-internals (curiosity-−69/−188); game-ball-sac-threat; need-now-gating (F2-przyszłość).
