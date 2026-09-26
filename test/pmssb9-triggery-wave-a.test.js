@@ -47,9 +47,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'dd', 'doomed-dissenter');
     assert.equal(disp(decide(s), 'cast_permanent(dd'), 72.0);
   });
-  it('F-T1: clique = 71.1 BEZ ZMIAN (persist: flat-+5, skip w helperze)', () => {
+  it('F-T1: clique = 70.2 (PMSSB-13 OVERRIDE: persist-model 0.5xbody, nie flat-5!)', () => {
     const s = mk(); fillLib(s); put(s, 'pc', 'puppeteer-clique');
-    assert.equal(disp(decide(s), 'cast_permanent(pc'), 71.1);
+    assert.equal(disp(decide(s), 'cast_permanent(pc'), 70.2);
   });
   it('F-T1: spellbomb = 62.1 (pay-gated-dies SKIP, konserwatywnie 0)', () => {
     const s = mk(); fillLib(s); put(s, 'sb', 'panic-spellbomb');

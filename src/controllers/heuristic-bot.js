@@ -5705,7 +5705,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
         // przeciwnika, jest wart więcej niż same statystyki — deskryptory
         // generyczne (keyword/trigger), zero nazw kart.
-        if (hasKeyword(def, 'persist')) score += 5;
+        // PMSSB-13/F-R1 (persist-unification!): 0.5 × return-body
+        // (wraca z −1/−1!) zamiast flat-5 — body-scaled (clique: 0.5×8
+        // = +4!). Stance-0.5-validated (0.8-conditional × P-attackers!).
+        if (hasKeyword(def, 'persist')) {
+          const rb = Math.max(0, ((def.power ?? 0) - 1) * 2 + ((def.toughness ?? 0) - 1))
+            + (hasKeyword(def, 'flying') ? 3 : 0);
+          score += 0.5 * rb;
+        }
         const reanimates = (def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield'
           && (Array.isArray(a.effect) ? a.effect : [a.effect]).some((e) => e?.type === 'reanimate_under_your_control'));
         if (reanimates) {
