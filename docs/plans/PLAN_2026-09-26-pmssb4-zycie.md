@@ -190,5 +190,76 @@ Fala C: F-C1 landfall-gate (gladehart); F-C2 cast-color-gate
 NO-F: tryby-modalne (H6), gain-landy (H5-zdominowane), dies-gain
 (brak bramki-imminent), cautious (sick), staff-cast, damage-nogi
 (OUT), koszty-mana (OUT), X-face-flat (OUT).
-## Aneks B: audyt + fale (do wpisania po krok-2)
+## Aneks B: audyt krok-2 + fale (2026-09-26)
+
+### Macierz kanal x odbiorca x timing x stan (werdykty)
+
+| # | Komorka | Stan PRZED | Werdykt |
+|---|---------|-----------|---------|
+| 1 | cast x self x natychmiast x life | gain-leg = 0 (douse/consume/severed/divine); feed = +3 flat | F-A1 + F-A1b (tiers) |
+| 2 | cast x self x natychmiast x X/T/MV | X/T/MV-ilosci gainu ignorowane (TMC-proxy to nie zycie) | F-A1 (resolvery) |
+| 3 | cast x foe x natychmiast | brak kart foe-gain w cast (katalog); misaim ogolny istnieje | GUARD w F-A1 (future-proof) |
+| 4 | ability x self x natychmiast x life | M236 warstwy DOKLADNE (3/4/5) | PIN (bez zmian) |
+| 5 | ability x self x koszty-sac/tap | bramki cheap/doomed/critical DOKLADNE (ramen -12, kheru -16) | PIN (bez zmian) |
+| 6 | ability x self x koszty-mana | {2}{G} = 0 (brak skladnika generycznego) | OUT-koszty (forward) |
+| 7 | ability x self x bundle-mana+gain | M236 + M155-legacy: TO SAMO +1 liczone 2x (6 zamiast 3) | F-A3 (dedup) |
+| 8 | ability x foe-target | M157-foe (-25-x) + misaim (-30-x) = -55 (2x kara) | F-A4 (dedup) |
+| 9 | ability x self-target | M157-self FLAT +2+x (5 przy kazdym zyciu; brak warstw) | F-A5 (tiers) |
+| 10 | ability x self x conditional-gain | scroll-Angel-gain5 = 0 (M236 nie rozwija conditional) | F-A5b (unwrap) |
+| 11 | ETB-statyczne x self x life | min(2x,8) life-blind (bufor x3 vs M236) | F-A2 (tiers) |
+| 12 | ETB x foe-lose | tabela-miss = 0 (skymarch; damage_each ma +4!) | F-A2b (+4x, lustro modala) |
+| 13 | ETB x self-lose | M169/K kary (Rager) DOKLADNE | PIN (bez zmian) |
+| 14 | land-drop x self | brak skladnika (tap -8 STALY dominuje; gain nigdy pivotal) | NO-F (zdominowane) |
+| 15 | modal x self x life | 10+1x/4x, flip DOKLADNY (12->18, 13->22) | NO-F (stromosc chroni remis gain-vs-lose1) |
+| 16 | modal x foe-lose | +4x / +80-lethal DOKLADNE | PIN (bez zmian) |
+| 17 | trigger-auto x cast-time | +0 wszystkie 7 (dies/landfall/cast/bat/main2/equip) | F-C1/C2/C3 (imminent-gates); dies/cautious/staff NO-F |
+| 18 | trigger-may/modal x cast-time | +0 (Page/Bard; wycena na rezolucji) | PIN (bez zmian; anti-double-count) |
+| 19 | tap-gain x okno-declared | neededToBlock -6 DOKLADNIE | PIN (bez zmian) |
+| 20 | tap-gain x okno-undeclared | +3 STRZELA mimo zagrozenia (main1, presja 2) | F-B1 (hold pre-combat) |
+| 21 | tap-gain x okno-foe-EOT | +3 strzela (poprawnie: walka wroga minela) | PIN (bez zmian; F-B1 nie rusza) |
+| 22 | damage-nogi drainow | M237/4 (face-flat, chip--30) | OUT-damage (forward) |
+| 23 | slad modalny | `resolve_modal_choice` bez trybu (nierozroznialne) | OBS (M130-family; E2/A4 pinuja wybor nie slad) |
+
+### Spec F (kotwice w src/controllers/heuristic-bot.js)
+
+- F-A0: helper `gainLifeValue(view, amount)` = warstwy M236 (ratunek
+  2+x / 1+min(x,3) / min(1+fl(x/2),3)); M236 go uzywa (zero-zmian).
+- F-A1: petla cast_spell: `gain_life`-self -> +gainLifeValue z
+  resolverem (liczba / 'X'->cmd.xValue / amountFromSacrificedToughness
+  -> T-ofiary; divine-MV w galezi REMOVAL: +tiers(MV-ofiary), obie
+  sciezki own/foe; GUARD foe-scope (misaim nie moze byc offsetowany).
+- F-A1b: feed gain_if_dies: min(x,3) -> tiers(min(x,3)) (cap-3 zostaje
+  = dyskonto-niepewnosci).
+- F-A2: ETB gain_life: min(2x,8) -> tiers(x).
+- F-A2b: ETB lose_life foe-directed (req.opponent lub scope
+  target/opponent/enemy + NOT self-scope) -> +4x (lustro modala;
+  self-scope = 0, M169/K wlasciwy).
+- F-A3: usuniecie M155 `score += 2+lifeAmt` (wyjatki-kar M155 ZOSTAJA).
+  Talisman -> 3/4/5 (parzystosc z Soulmenderem).
+- F-A4: usuniecie galezi M157-foe (misaim -30-x pokrywa): -55 -> -29.
+- F-A5: M157-self: 2+x -> tiers(x): 5 -> 3/4/5.
+- F-A5b: M236-match na unwrapConditionals(effects) (scroll+Angel@5:
+  7 -> 14; bez Angiola: 7; bramka = viewConditionalHolds).
+- F-B1: M236 tap-branch: hold (ta sama kara lifeV+8) gdy
+  plausibleThreat = !declared && !lifeCritical(life<=5 || pressure>=
+  life) && !foeCombatDone(foe-turn postcombat/end) && pressure>0 &&
+  source-gotowy. L22: +3 -> -6; L05/L18/L22b bez zmian.
+- F-C1: cast_permanent: landfall-gain +tiers(x) gdy land-drop zostal
+  w tej turze (helper land-drop? do potwierdzenia w implementacji;
+  fallback: tura wlasna pre-drop po fazie).
+- F-C2: cast-gain (feather W / kraken U): +tiers(x) gdy
+  manaUnlockCandidates ma karte koloru C (timing-imminent, L41-reuse).
+- F-C3: bat-gain (zoraline +1/bat): +tiers(1) gdy moj Bat moze
+  atakowac teraz (canAttackNow; single-proc konserwatywnie).
+
+### Fale i kolejnosc
+- Fala A (A0/A1/A1b/A2/A2b/A3/A4/A5/A5b): parzystosc + dedup; PREDYKCJE
+  wartosci w sondzie PO; eval: full suite + sonda-przed/po diff.
+- Fala B (B1): timing-hold; eval: suite + L22-flip + L05/L18/L22b-stabilne.
+- Fala C (C1/C2/C3): imminent-triggery; eval: suite + nowe piny.
+
+### Eval-watch (testy mogace pinkowac stare wartosci)
+Batch49 (feed), Batch38/Z10 (talisman), Batch53/C-R1 (ETB-healer?),
+M236-piny (soulmender/food/ramen/kheru), M157 (zombie), E2/A4 (modal -
+  nietkniete), Batch31/40 (cast-compete), M155-testy.
 ## Aneks C: wyniki (do wpisania po falach)
