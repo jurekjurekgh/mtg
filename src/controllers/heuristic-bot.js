@@ -1530,6 +1530,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const slot = effect.targetIndex != null ? (cmd.targets ?? [])[effect.targetIndex] : null;
     return slot != null && slot === enemy(view)?.id;
   };
+  // PMSSB-4/F-C (H8 -> wycena z bramkami): imminent-trigger-gain przy rzucie
+  // nosiciela. Zasada: trigger-gain liczy sie wtedy i TYLKO wtedy, gdy jego
+  // warunek jest spelnialny W TYM OKNIE (imminent) — inaczej +0 jak dotad,
+  // wiec bez enablerow nic sie nie zmienia (brak przeszacowania).
+  // - landfall (Gladehart): moja main + drop jeszcze nie polozony + lad w
+  //   rece (bot sam decyduje o dropie — jak wybor modala);
+  // - cast-koloru (Feather W / Kraken U): zagrywalny TERAZ czar wymaganego
+  //   koloru (manaUnlockCandidates — ten sam timing co M128, L41);
+  // - bat-attacks (Zoraline +1): moj Nietoperz ZDATNY do ataku teraz
+  //   (single-proc, konserwatywnie).
+  // Swiadomie BEZ: dies (brak bramki-imminent), cautious (sick — main2
+  // dopiero w nastepnej turze), staff (niezalozony przy rzucie), modali
+  // upkeepowych (Page — przyszla tura) i modala-ETB (Bard — wybor trybu
+  // wymaga max-mode-machinery, future-work H6; gain-mode i tak dominuje
+  // na rezolucji 13/22 > 10, wiec wybor rezolucji jest poprawny).
+  // L50-czyste: +50 fire/skip na rezolucji to decyzja WZGLEDNA (ognia vs
+  // skip), a tu wartosc BEZWZGLEDNA nosiciela — rozne decyzje.
+  const imminentTriggerGainValue = (view, def) => {
+    if (!def) return 0;
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered') continue;
+      const ev = ability.trigger?.event;
+      if (ev !== 'land_entered_under_your_control'
+        && ev !== 'player_casts_spell' && ev !== 'bat_attacks') continue;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' ? (e.amount ?? 0) : 0), 0);
+      if (!(amt > 0)) continue;
+      if (ev === 'land_entered_under_your_control') {
+        const myMain = myTurn(view) && (view.turn.phase === 'precombat_main' || view.turn.phase === 'postcombat_main');
+        const landInHand = (view.zones.hand ?? [])
+          .some((o) => o.kind === 'land' || (o.types ?? []).includes('Land'));
+        if (myMain && view.landEnteredThisTurn !== true && landInHand) total += gainLifeValue(view, amt);
+      } else if (ev === 'player_casts_spell') {
+        const need = ability.trigger?.condition?.spellColorsInclude ?? [];
+        const pool = manaUnlockCandidates(view);
+        const ok = need.length === 0 ? pool.length > 0
+          : pool.some((o) => (o.colors ?? []).some((c) => need.includes(c)));
+        if (ok) total += gainLifeValue(view, amt);
+      } else if (ev === 'bat_attacks') {
+        const batReady = myCreatures(view).some((o) => ((o.subtypes ?? []).includes('Bat')
+          || (o.keywords ?? []).includes('changeling')) && canAttackNow(o));
+        if (batReady) total += gainLifeValue(view, amt);
+      }
+    }
+    return total;
+  };
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
@@ -5279,6 +5326,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // damage_to_controller/lose_life (kary M169/K). Typy poza tabelą → 0
         // (zachowanie bez zmian).
         score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true });
+        // PMSSB-4/F-C: imminent-trigger-gain nosiciela (0 bez enablerow).
+        score += imminentTriggerGainValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.

@@ -167,6 +167,24 @@ for (const [tag, id, colors, nmana] of [['L13-highland-dies', 'highland-game', [
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, colors, nmana); handCard(s, 'k', id);
   show(tag, 'cast_permanent(k', s, { limit: 3 });
 }
+// L14b: Gladehart z ladem w rece vs bez (F-C1: gate dropu?)
+for (const land of [false, true]) {
+  const st = newState(); fillLibrary(st); setLife(st, 20); addBasics(st, ['G'], 5); handCard(st, 'k', 'grazing-gladehart');
+  if (land) handCard(st, 'ld', 'basic-forest');
+  show(`L14b-gladehart-handland-${land}`, 'cast_permanent(k', st, { limit: 3 });
+}
+// L15b: Feather z bialym czarem w rece vs bez (F-C2: gate koloru?)
+for (const w of [false, true]) {
+  const st = newState(); fillLibrary(st); setLife(st, 20); addBasics(st, ['W'], 5); handCard(st, 'k', 'angels-feather');
+  if (w) handCard(st, 'ws', 'soulmender');
+  show(`L15b-feather-whitespell-${w}`, 'cast_permanent(k', st, { limit: 3 });
+}
+// L16b: Zoraline z gotowym Nietoperzem vs bez (F-C3: gate bata?)
+for (const bat of [false, true]) {
+  const st = newState(); fillLibrary(st); setLife(st, 20); addBasics(st, ['W', 'B'], 5); handCard(st, 'k', 'zoraline');
+  if (bat) fieldCreature(st, 'bt', 'p1', 2, 2, { subtypes: ['Bat'] });
+  show(`L16b-zoraline-readybat-${bat}`, 'cast_permanent(k', st, { limit: 3 });
+}
 // L17: Time to Feed, ten sam kill, zycie 20 vs 5 (H2: noga-gain2?)
 for (const life of [20, 5]) {
   const s = newState(); fillLibrary(s); setLife(s, life); addBasics(s, ['G'], 5); handCard(s, 'tf', 'time-to-feed');
