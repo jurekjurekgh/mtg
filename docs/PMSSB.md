@@ -45,6 +45,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | obrażenia (`damage*`) | 32+ | POKRYTE (M237/4) | model per-cel; timing sorcery-burn do rewizji tylko z dowodem |
 | odrzut (foe-side `discard*`) | 13 | DONE (2026-09-26) | §PMSSB-6 niżej; `test/pmssb6-discard-wave-a.test.js` (20); `foeRipValue` + guardy-fizzle (0 pokręteł) |
 | domknięcie hold (self-rip + martwy −25) | 2 | DONE (2026-09-26) | §PMSSB-7 niżej; `test/pmssb7-hold-wave-a.test.js` (12); mapa 45→53 + usunięcie martwego kodu (0 pokręteł) |
+| loot (`draw_then_discard` vs split) | 5 | DONE (2026-09-26) | §PMSSB-8 niżej; `test/pmssb8-loot-wave-a.test.js` (10); `LOOT_NET_VALUE` + M67-rider (0 pokręteł, −1 parametr) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -229,6 +230,42 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-8 — loot-net-unification (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forward PMSSB-6 „loot-net-unification"):
+to samo zdarzenie (loot-1) miało 3 liczby: combined-+6 (ETB-table +
+ability) vs split-+2 ([draw,discard]: 6−4) vs M67-5.
+Plan: `docs/plans/PLAN_2026-09-26-pmssb8-loot.md` (Aneks A/A2/C);
+sonda: `tools/pmssb8-loot-sonda.mjs` (8 sond L01–L08 + ablacje).
+
+- **F-L1:** `LOOT_NET_VALUE = 2` (parytet-cyclingu ~7932, L41):
+  loot-1 ≡ cycle-1 (karta wraca do grobu, zostaje selekcja).
+  Split-+2 JUŻ DOBRY (evangel bez zmian!); rusza się tylko combined:
+  scholar 8→4 (EOT 18→14), fisher 74.7→71.1. Wszystkie predykcje
+  DOKŁADNE; parzystość: cycle-4.0 = loot-4.0.
+- **F-L1b (H2-revised):** M67 to MAY-loot ≡ mandatory przy zdrowej
+  bibliotece → rider +5→+2 (force-away 87→84), BEZ drabiny deck-outu
+  (may-skip unika suicide! pierwsza wersja zabiła ratunek B/F5 −115,
+  pin wykrył, naprawiono). Decyzja modalna 5-vs-(−2) ZOSTAJE.
+  Martwy parametr `ferociousLootExpected` usunięty.
+- **Sonda:** thin-library-artefakt (lib10: crows/talions ujemne;
+  lib30: +70.2/+66.6); talions+faerie inwariantne (future-trigger
+  bez anticipacji → FORWARD, osobna rodzina); M67 ablacja +5 DOKŁADNIE.
+- **Golden:** ZIELONY bez zmian (churn 0).
+- **Piny:** `test/pmssb8-loot-wave-a.test.js` (10) + 3 flipy zamierzone
+  (F5 93→90, SCHOLAR ≥4, guard-6 4/71.1036). 0 pokręteł (−1 parametr).
+
+### Znane granice / forwardy
+1. Future-trigger-anticipation (non-ETB) — osobna rodzina.
+2. Wartość opcji-skip may-loota przy cienkiej bibliotece.
+3. Lekcja may-vs-must: anticipacja opcji NIGDY nie niesie kary-suicide
+   (may-skip ją zjada); drabiny deck-outu tylko w przymusach.
+4. Piny lootowe na lib30 (thin-artefakt jak PMSSB-6-fillLibrary).
+
+### Pomiar końcowy
+- Suit 6779/6779 GREEN (10 pinów); golden bez churnu.
+- Rodzina loot ZAMKNIĘTA (re-audyt tylko z nowym dowodem).
 
 ## PMSSB-7 — domknięcie hold (2026-09-26)
 

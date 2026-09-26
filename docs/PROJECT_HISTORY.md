@@ -13203,3 +13203,10 @@ F-H2: martwy -25 usuniety (sonda PO bit-identyczna). Sweep H3 czysty
 (9x -70, 2x brak-oferty, 1x -114). 12 pinow, golden BEZ churnu (0),
 suit 6769/6769 GREEN. Forwardy: martwe-przypadki-inert, X0--10,
 no-base-for-pure-harm, temple->p2.
+PMSSB-8 (2026-09-26, loot-net-unification): BACKLOG pusty -> forward PMSSB-6
+(3 liczby na loot-1: combined-+6 vs split-+2 vs M67-5). F-L1: LOOT_NET_VALUE=2
+(parytet-cyclingu): scholar 8->4, fisher 74.7->71.1, evangel BEZ ZMIAN (zbieg!).
+F-L1b: M67-rider 5->2 (may-loot = mandatory-loot); lekcja may-vs-must (drabina
+deck-outu zabila ratunek B/F5 -115, pin wykryl!). Martwy parametr OUT. 10 pinow,
+golden BEZ churnu (0), suit 6779/6779 GREEN. Forwardy: future-trigger-
+anticipation, opcja-skip-may-loota, thin-artefakt-lib30.

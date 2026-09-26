@@ -101,6 +101,35 @@ Audyt: H1 GO (lootNetValue=+2, parytet-cyclingu), H2 GO (M67 adnotacja
 Scope-gate: future-trigger-anticipation (crows/talions-cast) = FORWARD
 (osobna rodzina, nie wycena-loota); body-model-trivia (+1-crows) = SKIP.
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks C — wyniki Wave-A (closeout)
 
-(none yet)
+- F-L1: `LOOT_NET_VALUE = 2` (parytet-cyclingu, L41): ETB-combined
+  +6→+2, ability-loot +6→+2. Predykcje DOKŁADNE: scholar-main 8→4,
+  scholar-EOT 18→14, fisher 74.7→71.1, evangel 67.5 BEZ ZMIAN
+  (split-+2 już dobry — zbieg potwierdzony!).
+- Parzystość behawioralna: gloomfang-cycle = 4.0 = scholar-loot 4.0.
+- F-L1b (H2-revised, scope-expansion z dowodem): M67 to MAY-loot
+  (nie may-draw! korekta etykiety), a may-loot ≡ mandatory-loot
+  przy zdrowej bibliotece → rider +5→+2 (force-away-ferocious 87→84).
+  BEZ drabiny deck-outu (may-skip unika samobójstwa!) — pierwsza wersja
+  Z Drabiną zabiła ratunek PMSSB-1/B/F5 (−115 przy lib0!), wykryte
+  pinem, naprawione (ratunek znowu zielony 29/29). Lekcja: anticipacja
+  opcji ≠ anticipacja przymusu (may nigdy nie niesie kary-suicide!).
+- Martwy parametr `ferociousLootExpected` usunięty (klasa F-H2).
+- Piny: `test/pmssb8-loot-wave-a.test.js` (10) + 3 aktualizacje
+  zamierzone (PMSSB-3/F5 93→90, SCHOLAR-pr121 ≥8→≥4, guard PMSSB-6
+  8→4 / 74.7036→71.1036). Float-exacty (71.1036) pina `disp()` (toFixed-1).
+- Golden-master: ZIELONY bez zmian (churn 0 — ślady lootowe nie na
+  krawędzi). Suit: 6779/6779. Zero gałek (stała z parytetu, −1 parametr).
+
+## Aneks B — forwardy z tej pętli
+
+1. Future-trigger-anticipation (crows/talions-cast ignoruje treść
+   triggerów non-ETB; talions+faerie inwariantne) — osobna rodzina,
+   nie wycena-loota. Wyjątek-precedens: `imminentTriggerGainValue`.
+2. Opcja-skip-may-loota przy cienkiej bibliotece (wartość opcji
+   unikania deck-outu) — forward modelowy.
+3. Body-model-trivia (+1-crows: skąd? cap-8 zrównuje ciała, a diff-5
+   pre = ETB-6-vs-1?) — ciekawostka, niski priorytet.
+4. Thin-library-artefakt w pinach (lib10 → repeatable-drain-fear):
+   piny lootowe używają lib30 (lekcja jak PMSSB-6-fillLibrary).
