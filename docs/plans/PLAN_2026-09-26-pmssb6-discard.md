@@ -110,5 +110,47 @@ nawet w pustke!), skullcairn -58 (trzyma stabilnie). H6 POTWIERDZONA
 +8 (scholar) / ETB-loot w fisherze (dekompozycja w krok-2). H8: rider-
 delusion = 0 (guardowany pinami PMSSB-5; repricing = decyzja krok-2).
 H9: nightsnare bez skali (50); amass-tolla +9 (osobny efekt, poprawne).
-## Aneks B: audyt + fale (do wpisania po krok-2)
+## Aneks B: audyt + fale (krok-2)
+
+MODEL CENY (jedna funkcja `foeRipValue`, L41): kotwica przeplywu-kart
+(draw +6 = P.drawCardValue): blind-1 (wrog wybiera najgorsza) = +4
+(lustro kosztu-self -4 z tabeli ETB!); reveal-1 (JA wybieram + info) =
++6 + 2 (info = polowa scry-4) = +8; exile-reka = reveal (8, bez stalej
+premii — wyzszosc dreams NIESIE noga-grobowa +6 (wybor z jawnego grobu,
+bez info)); cap: min(n, jawny-licznik-reki) (D00: licznosc jawna!).
+Symetryczne-45 ODRZUCONE: 45 to strona ryzyka (awersja do straty wlasnych
+kart — inna decyzja, wzorzec tap-45-vs-M237/2 z PMSSB-5). Wyniki: divest
+58, dreams 58/64 (grob!), mindstab 62 (cap!), nightsnare 66, toll 67
+(8+9), hecteyes +4 (zamiast +3), bat 2+8-11 = -1 (flip!), skullcairn
+-58 -> -54 (stabilne), delusion-rider +4 (blind-cap!).
+
+FALA A (jedyna): F-A1 helper + cast-leg (zamiast 0) + ETB discard_each
+3->4; F-A2 strazniki-fizzle w effectIsInertNow (rip-w-cel + pusta-reka-
+celu -> inert; dreams: pusta-reka I grob-bez-celu; self-aim symetrycznie)
+-> cast -70 / ability -40 / modal -40 / suspend -40 (przeplywy ISTNIEJA,
+zero nowych kar!); F-A3 galaz-discard w ability (helper + sac-self
+SKALOWANY sacValue P*2+T+MV (L41-severed-5639!) — flat-4 zalamuje sie na
+nietoperzu; token/draw/mana-flatow NIE ruszamy (dzialaja, spiete pinami));
+F-A4 rider-delusion (helper-blind-cap; piny PMSSB-5 BEZPIECZNE: K06 ma
+pusta-reke -> +0!; E7/D2 cale (90>>4); dowod kasowania zyje (X>=0)).
+Toll-vs-pusta = 59 BEZ ZMIAN (amass ratuje przed inert!); dreams-vs-pusta-
+reka+pelny-grob = 56 (grob ratuje!); bat-vs-pusta = -40 (guard!).
+
+NO-F: H2b blind-by-rules (D00: tresc zakryta — sklad-reki niewidzialny
+Z PRZEPISOW); loot-self (+8/+6, ordering-only, bez misfire; rozjazd
+combined-+6 vs split-+2 = forward "loot-net-unification"); triage-+15
+(1 nosiciel (mindstab-suspend!): znak-dobry + magnituda-inertna + guard-
+automatyczny); mayFire-50 (konwencja-znaku, decking-guard -100 zyje);
+crows/talions (granica PMSSB-3: tresc-triggerow = 0); transform/tap/mana
+(OUT); evangel-split (forward z lootem); margines-bat -1 (cienki przez
+mana-OUT — forward!). Mechaniki silnika (dreams: reka+grob, creature/
+artifact; toll/nightsnare: nonland-domyslny; divest: artifact-or-creature)
+POTWIERDZONE w effects.js (6464/6376) — model je szanuje.
+
+Falsyfikator: sonda-PO diff = DOKLADNIE ruchy-modelu + holdy-guardow
+(wyliczone w Aneksie C); ~20 pinow; golden: churn PRZEWIDZIANY maly-
+lub-zero (para ravnica|innistrad-wu niesie TYLKO delusion (rider+4-cap!);
+reszta ripow poza para) — regeneracja TYLKO z wyjasnieniem co-do-flipa
+(precedens PMSSB-4A +2.0), inaczej ALARM. Benchmark bezpieczny
+(determinizm, nie jakosc).
 ## Aneks C: wyniki (do wpisania po falach)
