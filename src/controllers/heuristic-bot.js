@@ -1617,6 +1617,50 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const hasAlone = (def.abilities ?? []).some((a) => a?.type === 'triggered' && a.trigger?.event === 'attacks_alone');
     return 0.5 * gate * (hasAlone ? 0.5 : 1) * total;
   };
+  // PMSSB-11/F-S (sac-economics, Wave-A): exploit/devour-anticipacja =
+  // max(0, benefit − cheapest-sac) (OPT-IN! lustro resolve M69/M130!).
+  // Victim-gate: ofiara musi być NA STOLE w momencie-casta (bez = 0!).
+  // Silumgar: realKills + worthIt-TMC (mirror!) → killValue − cena.
+  // Drowner: impulse draw+3 (mirror-cast!) − cena, library-gate.
+  // Gorger-devour: trash≤3-gate (mirror!) → +3/counter (N=1!).
+  const anticipatedSacValue = (view, def) => {
+    if (!def || (!def.exploit && !def.devour)) return 0;
+    const victims = myCreatures(view);
+    if (victims.length === 0) return 0;
+    const cenaOf = (o) => (o.power ?? 0) * 2 + (o.toughness ?? 0)
+      + P.exploitVictimKeywordWeight * (o.keywords ?? []).length
+      + P.exploitVictimAbilityWeight * (((o.cardId ? cardDef(o.cardId) : undefined)?.abilities ?? []).length)
+      - (o.isToken ? P.exploitTokenDiscount : 0);
+    const cheapest = victims.reduce((a, b) => (cenaOf(a) <= cenaOf(b) ? a : b));
+    const cena = cenaOf(cheapest);
+    let total = 0;
+    if (def.exploit) {
+      const debuff = exploitDebuff(def);
+      if (debuff) {
+        const dT = Math.min(0, debuff.toughness ?? 0);
+        const killsNow = (o) => o.controllerId !== view.playerId && o.kind === 'creature' && o.toughness != null
+          && (o.toughness + dT <= 0 || (o.damage ?? 0) >= o.toughness + dT)
+          && !(o.toughness <= 0 || (o.damage ?? 0) >= o.toughness);
+        const realKills = (view.zones?.battlefield ?? []).filter(killsNow);
+        if (realKills.length > 0) {
+          const killValue = (o) => (o.power ?? 0) * 2 + (o.toughness ?? 0)
+            + P.exploitVictimKeywordWeight * (o.keywords ?? []).length;
+          const best = realKills.reduce((a, b) => (killValue(a) >= killValue(b) ? a : b));
+          const worthIt = (best.manaCost ?? 0) > (cheapest.manaCost ?? 0)
+            || P.exploitVictimKeywordWeight * (best.keywords ?? []).length >= P.exploitKillAssetMargin;
+          if (worthIt) total += Math.max(0, killValue(best) - cena);
+        }
+      } else {
+        const lib = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+        if (lib > 0) total += Math.max(0, P.drawCardValue + 3 - cena);
+      }
+    }
+    if (def.devour) {
+      const trash = victims.filter((o) => (o.power ?? 0) * 2 + (o.toughness ?? 0) + ((o.keywords ?? []).length) <= 3);
+      if (trash.length > 0) total += (def.devour.counters ?? 1) * 3;
+    }
+    return total; // BEZ ×0.9 — cast-branch dyskontuje (jak tail/dies!)!
+  };
   // PMSSB-10/F-O (anticipacja-ogona, Wave-A): triggery combat-gated /
   // you-cast / another-enters / land-foe = likelihood × tabela-ETB (L41!).
   // Likelihood: gated (bramka-F-T2 × 0.5!), cast-0.5 (second-spell-0.25!,
@@ -5647,6 +5691,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += anticipatedAttacksValue(view, def);
         // PMSSB-10/F-O: anticipacja-ogona nosiciela (0 bez triggerów-ogona).
         score += anticipatedTailValue(view, def, cmd);
+        // PMSSB-11/F-S: anticipacja-sac nosiciela (0 bez exploit/devour).
+        score += anticipatedSacValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
