@@ -88,6 +88,24 @@ ujemne PO — sonda regresyjna).
 - Flurry-pin istnieje (bug-hunt-2026-08-16-audyt-stolu.test.js:234);
   howl-pin behawioralnego BRAK (tylko art/audit-wzmianki).
 
+## Aneks A2 — wyniki sondy (krok-2/3, audyt WŁASNY)
+
+S01 flurry −70 ✓, S02 howl −70 ✓, S03 temple −70/−133 ✓, S04 spare −70 ✓,
+S05 volley brak oferty (silnik: brak celów) ✓, S08 wrap −70 ✓,
+S10 fireball-X0 trzyma (−10 single / −70 split; split dowodzi że
+przypadek X-0 w `effectIsInertNow` jest ŻYWY) ✓,
+S14 blindness −70 ✓, S17b force-away-own −114 ✓,
+S18 divest+2friends **+3.0 → p1** (DZIURA potwierdzona; samotny
+divest = −70 przez F-A2 — kształt dziury wymaga kart w ręce).
+SKIP-y zgodnie z planem (brak nosicieli / NET mieszany / ability-only).
+
+Audyt: H1 GO (mapa 45→53; predykcja divest-self −5, mindstab-self −7),
+H2 GO (usunięcie martwego −25; zero zmian behawioralnych),
+H3 GO (sweep czysty, brak nowych dziur).
+Scope-gate: forwardy (martwe przypadki inert bez nosicieli:
+buff_land/add_counter-0/mill-0; mechanizm-single-X0-−10;
+pomysł „no-base-for-pure-harm") — POZA Wave-A.
+
 ## Aneks B — forwardy z tej pętli (WYPEŁNIĆ w closeout)
 
 (none yet)
