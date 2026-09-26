@@ -55,9 +55,10 @@ probe(s, 'T08b oryx-twin', 'cast_permanent(ox');
 s = mk(); fillLib(s); put(s, 'st', 'scroll-thief', 'p1', 'hand');
 probe(s, 'T09 scrollthief-cast', 'cast_permanent(st');
 s = mk(); fillLib(s); put(s, 'af', 'angels-feather', 'p1', 'hand'); put(s, 'sp', 'shock', 'p1', 'hand');
-probe(s, 'T10 feather+spell (imminent-gain?)', 'cast_permanent(af');
+probe(s, 'T10 feather+czerwony (kolor-miss → 0, poprawnie!)', 'cast_permanent(af');
 s = mk(); fillLib(s); put(s, 'af', 'angels-feather', 'p1', 'hand');
 probe(s, 'T10b feather-bez-spella', 'cast_permanent(af');
+// (live-case imminent-gain (biały czar + W-mana) pokrywają piny PMSSB-4 — referencja.)
 s = mk(); fillLib(s); put(s, 'gp', 'skyclave-geopede', 'p1', 'hand'); put(s, 'ln', 'rupture-spire', 'p1', 'hand');
 probe(s, 'T10c geopede+land (kontrola-negatywna: licznik, nie gain)', 'cast_permanent(gp');
 console.log('T11 survival-model: BRAK w bocie (grep survival/survive/diesThisTurn/removalRisk pusty)');
