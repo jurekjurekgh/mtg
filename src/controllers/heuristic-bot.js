@@ -1525,6 +1525,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // cant_block = usunięcie blokera z przyszłej walki (+2: połowa untapu-4
     // (jednorazowe-vs-trwałe); konserwatywnie, pin na kształcie jestera!).
     cant_block: () => 2,
+    // PMSSB-12/F-P (descendant!): endure-X = lepsze-z (licznik/token):
+    // token-1/1 (≈4!) > licznik (+3); konserwatywnie +4/counter.
+    endure_x: (e) => 4 * (e.amount ?? 1),
     // PMSSB-10/F-O (flooding!): mill-WROGA (lustro cast-6294: 20+3n!).
     // Wpisy służą helperowi (flooding = foe-only); self-mill NIGDY tędy
     // (tylko tryby wrogie!).
@@ -1616,6 +1619,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // attacks_alone (mieszane ataki+alone nie istnieją w katalogu!).
     const hasAlone = (def.abilities ?? []).some((a) => a?.type === 'triggered' && a.trigger?.event === 'attacks_alone');
     return 0.5 * gate * (hasAlone ? 0.5 : 1) * total;
+  };
+  // PMSSB-12/F-P (pay-trigger-net, Wave-A): pay-triggery = max(0, like ×
+  // (benefit − payMana×1))! Bot płaci ZAWSZE (resolve 75-vs-15!), więc koszt
+  // pewny-iff-trigger. Color-gate: payColors ⊆ kolory-własnych-lądów!
+  // SKIP: grave-triggery (forebear — trigger żyje w grobie, cast-0!) +
+  // sacrificeIfUnpaid (spire — gałąź-lądowa F-P2!) + pay_mana-nogi.
+  const anticipatedPayValue = (view, def) => {
+    if (!def) return 0;
+    const landColors = new Set();
+    for (const o of view.zones?.battlefield ?? []) {
+      if (o.controllerId !== view.playerId) continue;
+      if (!(o.types ?? []).includes('Land') && o.kind !== 'land') continue;
+      for (const c of o.colors ?? []) landColors.add(c);
+    }
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered') continue;
+      const pay = ability.trigger?.payMana ?? 0;
+      if (pay <= 0) continue;
+      if (ability.trigger?.sacrificeIfUnpaid) continue;
+      const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      if (legs.some((e) => e?.type === 'return_source_from_graveyard_to_hand')) continue;
+      const need = ability.trigger?.payColors ?? [];
+      if (!need.every((c) => landColors.has(c))) continue;
+      let benefit = 0;
+      for (const e of legs) {
+        if (!e?.type || e.type === 'pay_mana' || e.type === 'pay_life') continue;
+        const fn = ETB_EFFECT_BONUS[e.type];
+        if (fn) benefit += fn(e, view, ability.trigger?.requiresTarget);
+      }
+      if (benefit <= 0) continue;
+      const ev = ability.trigger?.event;
+      let like = 0;
+      if (ev === 'dies' || ev === 'other_creature_you_control_dies') like = 0.5;
+      else if (ev === 'any_creature_dies') like = 0.7;
+      else if (ev === 'attacks') {
+        const foes = enemyCreatures(view);
+        const kws = def.keywords ?? [];
+        const blocked = foes.length > 0 && !kws.includes('unblockable')
+          && !(kws.includes('flying') && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
+        like = 0.5 * (blocked ? 0.5 : 1.0);
+      } else continue;
+      total += Math.max(0, like * (benefit - pay * P.creatureManaCostWeight));
+    }
+    return total;
   };
   // PMSSB-11/F-S (sac-economics, Wave-A): exploit/devour-anticipacja =
   // max(0, benefit − cheapest-sac) (OPT-IN! lustro resolve M69/M130!).
@@ -3654,6 +3702,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (a.nowyKolor) delta += 3;                                    // pierwszy takiego koloru
     if (a.ilosc >= 2) delta += 4;                                   // {T}: Add {C}{C} i podobne
     if (a.entersTapped) delta -= 8;                                 // mana dopiero w nastepnej turze
+    // PMSSB-12/F-P2 (spire!): ETB-pay-or-sac — stać (pool≥pay) → −koszt;
+    // nie-stać → −12 (ląd ginie — strata many-przyszłej!).
+    const landDef = objectId ? cardDef(((view.zones?.hand ?? []).find((o) => o.id === objectId) ?? {}).cardId) : undefined;
+    const payTrig = (landDef?.abilities ?? []).find((ab) => ab?.type === 'triggered' && (ab.trigger?.payMana ?? 0) > 0 && ab.trigger?.sacrificeIfUnpaid);
+    if (payTrig) {
+      const pool = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
+      delta -= pool >= payTrig.trigger.payMana ? payTrig.trigger.payMana * P.creatureManaCostWeight : 12;
+    }
     // Ląd z zdolnościa poza manową (cykl, token, tarcza) zyskuje, gdy manabaza
     // jest juz wystarczajaca — wtedy liczy sie uzytecznosc, nie kolor.
     if (a.pola.length >= 2 && a.dodatkowaZdolnosc) delta += 2;
@@ -5693,6 +5749,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += anticipatedTailValue(view, def, cmd);
         // PMSSB-11/F-S: anticipacja-sac nosiciela (0 bez exploit/devour).
         score += anticipatedSacValue(view, def);
+        // PMSSB-12/F-P: anticipacja-pay nosiciela (0 bez pay-triggerów).
+        score += anticipatedPayValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
