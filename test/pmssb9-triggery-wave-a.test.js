@@ -63,9 +63,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); put(s, 'pr', 'guildsworn-prowler');
     assert.equal(disp(decide(s), 'cast_permanent(pr'), 10.8);
   });
-  it('guard: bloodflies = 66.6 (attacks → Wave-B, BEZ ZMIAN)', () => {
+  it('guard: bloodflies = 68.4 (Wave-B/F-T2 wylądowała: +1.8)', () => {
     const s = mk(); fillLib(s); put(s, 'bf', 'delta-bloodflies');
-    assert.equal(disp(decide(s), 'cast_permanent(bf'), 66.6);
+    assert.equal(disp(decide(s), 'cast_permanent(bf'), 68.4);
   });
   it('guard: butcher/oryx = 63.9/64.8 (leaves → forward, BEZ ZMIAN)', () => {
     const a = mk(); fillLib(a); put(a, 'fb', 'faceless-butcher');

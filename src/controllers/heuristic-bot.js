@@ -1502,6 +1502,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     untap_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 6),
     springbloom_sacrifice_search: () => 10,
     fertile_thicket_reveal: () => 5,
+    // PMSSB-9/F-T2 (Wave-B): wpisy dla anticipacji-attacks (impuls/exalted).
+    // exile_top_playable = impuls-dobierz (+3: cantrip-6 z dyskontem za okno
+    // i przymus-zagrania — konserwatywnie, pin na kształcie coursera!).
+    exile_top_playable_until_next_turn: () => 3,
+    // exalted_pump = +1/+1 w samotnym ataku (+2: połowa pompy-Detain-4
+    // (bije-raz-vs-trwale); pin na kształcie waveskimmera!).
+    exalted_pump: () => 2,
   });
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
     if (!def) return 0;
@@ -1551,6 +1558,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
     return 0.5 * total;
+  };
+  // PMSSB-9/F-T2 (anticipacja-attacks, Wave-B): trigger `attacks` /
+  // `attacks_alone` = likelihood × wartość-efektu (reuse tabeli ETB, L41!).
+  // Likelihood = 0.5 (atakuje-co-drugą-turę, lustro dies!) × bramka-evasion
+  // (1.0: nieblokowalny/latajacy-bez-bloka-reach/menace-vs-1/stol-pusty;
+  // 0.5: zwykły-w-bloki) × solo-0.5 dla attacks_alone (samotny-atak-rzadki!).
+  // SKIP pay-gated (zoraline-pay — jak spellbomby!) i bat_attacks
+  // (pokrywa imminentTriggerGainValue!).
+  const anticipatedAttacksValue = (view, def) => {
+    if (!def) return 0;
+    const foes = enemyCreatures(view);
+    const kws = def.keywords ?? [];
+    const flies = kws.includes('flying');
+    const blocked = foes.length > 0 && !kws.includes('unblockable')
+      && !(flies && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+      && !(kws.includes('menace') && foes.length < 2);
+    const gate = blocked ? 0.5 : 1.0;
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered') continue;
+      const ev = ability.trigger?.event;
+      if (ev !== 'attacks' && ev !== 'attacks_alone') continue;
+      if (ability.trigger?.payMana != null || (ability.trigger?.payColors?.length ?? 0) > 0) continue;
+      const req = ability.trigger.requiresTarget ?? null;
+      const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+      for (const e of effs) {
+        if (!e?.type || e.type === 'pay_mana' || e.type === 'pay_life') continue;
+        const fn = ETB_EFFECT_BONUS[e.type];
+        if (!fn) continue;
+        total += fn(e, view, req, def);
+      }
+    }
+    // solo-discount per-trigger jest wyżej niemożliwy (suma wspólna) —
+    // liczymy konserwatywnie: cała suma × solo-0.5, gdy nosiciel MA
+    // attacks_alone (mieszane ataki+alone nie istnieją w katalogu!).
+    const hasAlone = (def.abilities ?? []).some((a) => a?.type === 'triggered' && a.trigger?.event === 'attacks_alone');
+    return 0.5 * gate * (hasAlone ? 0.5 : 1) * total;
   };
   const handCard = (view, objectId) => view.zones.hand.find((o) => o.id === objectId);
   // Karta w DOWOLNEJ strefie widoku (M103/D: Escape/Flashback grają z grobu —
@@ -5437,6 +5481,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += imminentTriggerGainValue(view, def);
         // PMSSB-9/F-T1: anticipacja-dies nosiciela (0 bez triggerów-dies).
         score += anticipatedDiesValue(view, def);
+        // PMSSB-9/F-T2: anticipacja-attacks nosiciela (0 bez triggerów-ataku).
+        score += anticipatedAttacksValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
