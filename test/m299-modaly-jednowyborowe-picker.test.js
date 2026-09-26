@@ -93,6 +93,19 @@ test('M299/2: discard {cardId} + {cardId:null} i springbloom {sacrificeLandId} +
   assert.equal(skip, spring[2], '{skip:true} = odmowa');
 });
 
+test('M299/2b: wiersz odmowy discard nazywa konsekwencje (M109 „If you don\'t”)', () => {
+  const discard = [
+    Object.freeze({ type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h1' }),
+    Object.freeze({ type: 'resolve_discard_choice', playerId: 'p1', cardId: 'h2' }),
+    Object.freeze({ type: 'resolve_discard_choice', playerId: 'p1', cardId: null }),
+  ];
+  const plan = singleTargetPlanOf(discard);
+  assert.ok(plan, 'discard z rezygnacja = wybór karty');
+  assert.equal(plan.allowNone, true);
+  assert.equal(plan.noneLabel, 'Zakończ bez wyboru (nieprzyjaciel wybiera i odrzuca dwie karty)',
+    'rezygnacja mówi, że wróg odrzuca dwie sam (Nightsnare)');
+});
+
 test('M299/3: rodzina bez odmowy (opponent_target) i armyId (amass)', () => {
   const opp = [
     Object.freeze({ type: 'resolve_opponent_target', playerId: 'p1', targetId: 'cA' }),
