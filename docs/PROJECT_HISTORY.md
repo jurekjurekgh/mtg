@@ -13164,3 +13164,18 @@ Suit 6721/6721 GREEN po regeneracji fixture (slad +2.0 = noga-severed,
 NO-F: modal-tiers, gain-landy, dies/cautious/staff, Bard-ETB-modal.
 Forwardy OUT: koszty-mana zdolnosci, damage-nogi, slad modalny.
 Bez wpisu LESSONS (precedens PR136).
+
+Domkniecie petli PMSSB-5 (rodzina counter_spell*, 7 kart po weryfikacji
+programowej 7 - nie 5 z rejestru; 4 kanaly + strona platnika; plan
+`docs/plans/PLAN_2026-09-26-pmssb5-kontry.md`, Aneks A/B/C).
+Jedyna fala A (`83d9acb`): F-H3 HIGH_IMPACT 16->22 typy (hand-rip x2,
+removal-artefaktow, reanimacja, tuck, edykt; +10 linii, zero pokretel).
+Sonda K01-K13 (25 sond, `tools/pmssb5-kontry-sonda.mjs`): wszystkie
+prognozy PRZED co do punktu; diff PO = dokladnie 6 flipow -10->50.
+15 pinow; suit 6737/6737 GREEN, zero churnu fixture.
+NO-F z dowodami: flat-50 (projekt), E7/D2 (kasowanie odrzutu),
+platnik-flat (dominacja), fuel-0 (karta>>proliferate), abstruse +10 OK,
+sabo-XOR (akceptacja). Forwardy OUT: foe-side hand-rip (+50.00-baza
+divest/mindstab = luka rodziny discard!), X-na-stosie (epic),
+lethal-proliferate, urgencja-okna, bramka-celowa, E7/D2-zasoby (mana).
+Rejestr BACKLOG pusty: wszystkie rodziny DONE albo OUT.

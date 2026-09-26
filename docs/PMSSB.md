@@ -38,7 +38,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
 | zysk życia (`gain_life*`) | 28 | DONE (2026-09-26) | §PMSSB-4 niżej; `test/pmssb4-zycie-wave-{a,b,c}.test.js` (20); `gainLifeValue` + `imminentTriggerGainValue` (0 pokręteł) |
-| kontry (`counter_spell`) | 5 | BACKLOG (mikro-pętla?) | co kontrować (HIGH_IMPACT jest), kiedy trzymać, blef many; mała rodzina, wysoka dźwignia |
+| kontry (`counter_spell*`) | 7 | DONE (2026-09-26) | §PMSSB-5 niżej; `test/pmssb5-kontry-wave-a.test.js` (15); HIGH_IMPACT 16→22 typy (0 pokręteł) |
 | pump/grant (trików bojowych) | 52 | POKRYTE (M96/M173/M179/M218) | okna walki z uczestnictwa, nie z fazy — nie ruszać bez nowego dowodu |
 | tap/untap | 29 | POKRYTE (M139) | okna tapowania — nie ruszać bez nowego dowodu |
 | removal destroy/exile | 29+ | POKRYTE (M91/M234) | baza+worth+TMC+deathtouch+protekcja; exile≈destroy to świadome uproszczenie |
@@ -227,6 +227,65 @@ w `src/controllers/heuristic-params.js`.
   każdym `--write` procedurą stash-baseline/worktree).
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
+- Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-5 — kontry (2026-09-26)
+
+**Wybór rodziny** (rejestr BACKLOG, ostatnia pozycja): kontry — 7 kart
+(rejestr mówił 5; weryfikacja programowa: negate, negate-m15,
+stoic-rebuttal, steel-sabotage, frightful-delusion, fuel-for-the-cause,
+abstruse-interference). „Mikro-pętla?" rozstrzygnięta na pełne PMSSB-5:
+4 kanały (twarde / modal / unless-pays / rider) + strona płatnika
+(`resolve_counter_pay_choice`) + audyt zbioru HIGH_IMPACT vs katalog.
+Plan: `docs/plans/PLAN_2026-09-26-pmssb5-kontry.md` (Aneks A/B/C: sonda
+K01-K13, macierz cel×płatnik×stan, dowody kasowania/dominacji, wyniki).
+
+**Pliki testów:** `test/pmssb5-kontry-wave-a.test.js` (15: 6 flipów +
+9 guardów; jedyna fala).
+**Kod:** HIGH_IMPACT 16→22 typy w `heuristic-bot.js` (+10 linii);
+zero nowych pokręteł.
+**Sonda:** `tools/pmssb5-kontry-sonda.mjs` (25 sond, w repo na stałe;
+wszystkie prognozy PRZED trafione co do punktu).
+
+### Fala A — luki bramki (`83d9acb`; F-H3)
+- **F-H3:** HIGH_IMPACT += reveal_hand_choose_discard, reveal_hand_choose_exile,
+  destroy_artifact_gain_life_mana_value, return_permanent_from_graveyard,
+  bounce_to_library_bottom, player_sacrifices_creature — podtypy, które bot
+  wycenia wysoko gdzie indziej (REMOVAL 75–90, HOSTILE_PLAYER 45), a bramka
+  je ignorowała (K10: Divest MV1 rozbierał rękę przy otwartej kontrze).
+  Binarne jak reszta zbioru; celowy brak unii map (bramka SŁUSZNIE nie zna
+  np. tap-45 — inna decyzja, inny zbiór). Promień: dokładnie 6 kart MV<3.
+- **Sonda PO:** diff = DOKŁADNIE 6 flipów -10→50, zero ruchu gdzie indziej
+  (falsyfikator z planu spełniony).
+
+### Znane granice (świadome, nie bugi)
+1. Flat-50 kontr w wpływowy cel = projekt (bramka binarna); porządkowanie
+   zagrożeń między strzałami i wybór trybu sabotage (kontra 50 vs bounce 80,
+   odpowiedzi równoważne w XOR) — forward.
+2. Dowód kasowania (H4/H6-delusion): odrzut bezwarunkowy jedzie tak samo
+   przy strzale-teraz jak przy strzale-później — kasuje się z decyzji;
+   E7/D2 (-40 przy otwartym {1}) poprawne + mandat właściciela.
+3. Strona płatnika flat 85/10 = dominacja płacenia (delusion: odrzut i tak
+   nastąpi; silnik bramkuje nieopłacalnych).
+4. Fuel-proliferate = 0 w cascie: karta >> proliferate wg własnych wag bota
+   (loyalty +1, +1/+1 +2); lethal-poison-9 = forward.
+5. Abstruse +10 (ciało Sciona; max-ról słuszne — role wyłączne; -0.03 to
+   tie-break F7 z PMSSB-2, nie kontra). Stoic-znizka niewidzialna =
+   efekt-równy (oszczędzona mana to rodzina mana, OUT).
+6. Holdy udokumentowane: manifest-dread (polityka-jak-stwór), mill/spare-from-evil/
+   memory-s-journey (kontekstowe), tap (M237/2 celowe). Fałszywe alarmy:
+   assert-perfection / release-the-ants / force-away / curate /
+   fake-your-own-death strzelają przez typy-rodzeństwo.
+7. Forwardy OUT: zysk foe-side hand-rip NIEWYCENIONY w caście (divest/
+   mindstab = czysta baza 50.00; M202 to self-harm, M408 to koszt-odrzutu —
+   luka rodziny discard!), X na stosie niewidzialne (epic-experiment),
+   liczenie zasobów E7/D2 (sciony/skarbce = rodzina many), świadomość okna
+   odpowiedzi, bramka czytająca cele. Martwe wpisy zbioru (4, zero nosicieli)
+   i gałąź counter_ability — nieszkodliwy future-proof.
+
+### Pomiar końcowy
+- Suit 6737/6737 GREEN (15 pinów); ZERO churnu fixture (żaden flip nie leży
+  na ścieżce golden-mastera).
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
 
 ## PMSSB-4 — zysk życia (2026-09-26)

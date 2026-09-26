@@ -171,4 +171,15 @@ niewidzialne (epic-experiment MV2 trzyma nawet przy X=7 — potrzebny
 xValue w widoku + prog bramki), porzadkowanie-zagrozen, lethal-proliferate,
 liczenie-zasobow E7/D2 (sciony/skarbce = rodzina mana), swiadomosc-okna
 odpowiedzi, bramka-czytajaca-cele.
-## Aneks C: wyniki (do wpisania po falach)
+## Aneks C: wyniki (krok-3/4/5)
+
+Fala A (`83d9acb`, JEDYNA): F-H3 = +6 typow HIGH_IMPACT (+10 linii,
+zero pokretel) + 15 pinow (`test/pmssb5-kontry-wave-a.test.js`: 6 flipow
++ 9 guardow). Sonda PO: diff = DOKLADNIE 6 flipow -10->50 (K10), zero
+ruchu w 19 pozostalych — falsyfikator spelniony. Suit 6737/6737 GREEN
+(6722 + 15); ZERO churnu fixture (golden/slad nietkniete — zaden ze
+6 flipow nie lezy na sciezce golden-mastera).
+NO-F (dowody w Aneksie B): H1 flat-50 (projekt), H2 OK, H4 kasowanie,
+H5 dominacja, H6-fuel (karta>>proliferate), H6-abstruse OK (+10),
+H6-delusion kasowanie, H7 akceptacja XOR, H8 brzegi OK.
+Rodzina ZAMKNIETA: ponowny audyt tylko z nowym dowodem.
