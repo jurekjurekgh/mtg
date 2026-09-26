@@ -1410,6 +1410,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return rider;
   };
+  // PMSSB-8/F-L1 (loot-net-unification, L41): loot-1 (dobierz-1-potem-
+  // odrzuć-1) to EKONOMICZNIE to samo co cycle-1 (non-land +2, ~7932):
+  // karta wraca do grobu, zostaje sama premia-selekcji. Split [draw,
+  // discard] dawał +2 już wcześniej (6−4) — poprawnie; combined
+  // `draw_then_discard` liczył pełne +6 (błąd: karta-w-do-grobu jak
+  // zatrzymana). Obie pisownie i gałąź ability schodzą do +2.
+  const LOOT_NET_VALUE = 2;
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -1417,7 +1424,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-3/F1: unifikacja L41 — ETB-draw liczy parametr P.drawCardValue jak
     // cast/ability (koniec magicznej 9; dostarczane 5.4 = 6 x 0.9 dyskont-permanent).
     draw_cards: (e, view) => P.drawCardValue * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
-    draw_then_discard: (e, view) => P.drawCardValue * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
+    // PMSSB-8/F-L1: combined-loot = wartość SIECIOWA (parytet-cyclingu),
+    // nie pełny draw (split [draw,discard] = +2 już wcześniej — zbieg!).
+    draw_then_discard: (e, view) => LOOT_NET_VALUE * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
@@ -6283,8 +6292,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // PMSSB-3/F5 (Force Away): rider ferocious-loot — oczekiwana wartosc
           // decyzji-loot (lustro M67) gdy ferocious spelnione (P>=4, lustro
           // silnika effects.js:6301 po effectivePower z widoku); inaczej 0.
+          // PMSSB-8/F-L1b (H2-revised): may-loot ≡ mandatory-loot przy zdrowej
+          // bibliotece (loot +2 > 0 → zawsze odpalaj!), więc rider schodzi
+          // z 5 (stale, era-vs-draw-6) do wartości SIECIOWEJ. BEZ drabiny
+          // deck-outu (may-skip unika samobójstwa — drabina zabiłaby ratunek
+          // PMSSB-1/B/F5 przy pustej bibliotece testowej!); cienka-biblioteka
+          // to decyzja modalna (skip-0), nie anticipacja. Decyzja modalna
+          // 5-vs-(−2) ZOSTAJE (relatywna: znaki poprawne).
           if (effect.type === 'ferocious_draw_discard'
-            && myCreatures(view).some((c) => (c.power ?? 0) >= 4)) score += P.ferociousLootExpected;
+            && myCreatures(view).some((c) => (c.power ?? 0) >= 4)) score += LOOT_NET_VALUE;
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
           // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
@@ -7719,7 +7735,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players'
             || effect.type === 'draw_then_discard') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
-            score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+            // PMSSB-8/F-L1: loot w zdolności = wartość SIECIOWA (jak ETB),
+            // nie pełny draw (scholar 8→4; bonus-EOT i koszt-sac BEZ ZMIAN —
+            // timing loota ≡ timing doboru).
+            const perCard = effect.type === 'draw_then_discard' ? LOOT_NET_VALUE : P.drawCardValue;
+            score += perCard * drawAmount + drawDeckingPenalty(view, drawAmount);
             // PMSSB-3/F2 (lustro M211/A1): ability-draw instant-speed na EOT wroga.
             if (ability?.timing === 'instant' && !myTurn(view) && view.turn.step === 'end') score += P.instantDrawFoeEndBonus;
             // PMSSB-3/F-scroll-sac (lustro galezi-token): poswiecenie zrodla

@@ -124,15 +124,16 @@ test('F-A1 guard: self-rip (PMSSB-7/F-H1: divest -5, mindstab -9); self-lone-div
   const s = newState(); handCard(s, 'rip', 'divest');
   assert.equal(scores(s, 'cast_spell(rip->p1').options[0].score, -70);
 });
-test('F-A1 guard: loot nietkniety (scholar +8, fisher 74.7036)', () => {
+test('F-A1 guard: loot (PMSSB-8/F-L1: scholar 4, fisher 71.1036)', () => {
   const a = newState(); fieldCard(a, 'sc', 'civilized-scholar');
   for (let i = 0; i < 10; i += 1) addObject(a, { id: `lib${i}`, instanceId: `i-lib${i}`, cardId: `x-lib${i}`, controllerId: 'p1', zone: 'library', kind: 'creature', power: 0, toughness: 0, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: `lib${i}` });
   handCard(a, 'c1', 'shock'); handCard(a, 'c2', 'twiddle');
-  assert.equal(scores(a, 'activate_ability(sc#0').options[0].score, 8);
+  // PMSSB-8 flip: loot 8→4 (wartość sieciowa, parytet-cyclingu).
+  assert.equal(scores(a, 'activate_ability(sc#0').options[0].score, 4);
   const b = newState(); handCard(b, 'fi', 'quicksilver-fisher');
   for (let i = 0; i < 10; i += 1) addObject(b, { id: `lib${i}`, instanceId: `i-lib${i}`, cardId: `x-lib${i}`, controllerId: 'p1', zone: 'library', kind: 'creature', power: 0, toughness: 0, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: `lib${i}` });
   handCard(b, 'c1', 'shock'); handCard(b, 'c2', 'twiddle');
-  assert.ok(Math.abs(scores(b, 'cast_permanent(fi').options[0].score - 74.7036) < 1e-9);
+  assert.ok(Math.abs(scores(b, 'cast_permanent(fi').options[0].score - 71.1036) < 1e-9);
 });
 test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 54)', () => {
   const s = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
