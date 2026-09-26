@@ -5554,6 +5554,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               'damage', 'fireball_resolve', 'draw_cards', 'create_token',
               'gain_control_until_end_of_turn', 'counter_spell', 'discard_cards',
               'pump', 'apply_to_each_target', 'reanimate_under_your_control',
+              // PMSSB-5 (F-H3): 6 podtypów, które bot wycenia wysoko gdzie
+              // indziej (REMOVAL 75–90, HOSTILE_PLAYER 45), a bramka je
+              // ignorowała — Divest MV1 rozbierał rękę przy otwartej kontrze
+              // (K10). Binarne jak reszta zbioru; celowy brak unii map:
+              // bramka SŁUSZNIE nie zna np. tap-45 (M237/2) — inna decyzja,
+              // inny zbiór (L41). Promień: dokładnie 6 kart MV<3, zero modali.
+              'reveal_hand_choose_discard', 'reveal_hand_choose_exile',
+              'destroy_artifact_gain_life_mana_value',
+              'return_permanent_from_graveyard', 'bounce_to_library_bottom',
+              'player_sacrifices_creature',
             ]);
             const targetImpactful = targets.some((id) => {
               const entry = stack.find((item) => item.id === id && item.controllerId !== view.playerId);
