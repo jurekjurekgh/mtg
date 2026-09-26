@@ -13117,3 +13117,31 @@ z 5 przeżyła 1, z 3 przeżyła 1) mimo raportów „success" — odtworzone
 i zweryfikowane grepem; reguła: jeden plik = jedna edycja na blok albo
 atomowy skrypt. Commit 26ab5b7 + push; weryfikacja każdej edycji diffem
 przed zaufaniem raportom (jak po poprzednim wyścigu).
+
+## PMSSB-3/C — dobieranie: guardy + luki wyceny (sesja 2026-09-26, branch arena/01a0d980-mtg)
+
+Domknięcie pętli PMSSB-3 (rodzina 45 kart, zweryfikowana programowo
+`reg.all()`; plan `docs/plans/PLAN_2026-09-26-pmssb3-draw.md`, Aneks A/B/C).
+Fala A (`6b4c00a`): F9b mayFire-guard -100 (lustro E2/A1b) + F10 ETB-deck-guard
+(L41); naprawy K2/CR1 (wypełnienie bibliotek, konwencja pr92) i E5/1
+(znaki spoza ASCII w planie).
+Fala B (`8e7371e`): F1 ETB-9->6-param, F2 EOT-okno +10 (instant cast+ability),
+F3-flat (sorcery, wynik negatywny poprawny), F5 ferocious +5, F-temple
+(noga-foe + isDrawOnly: 62->-1 flip), F-scroll-sac, F-envoy (unwrap ETB),
+F-mysteries (unwrap cast + landEnteredThisTurn w widoku).
+Dwa nowe pokrętła (`instantDrawFoeEndBonus: 10`, `ferociousLootExpected: 5`);
+15 pinów (wave-a 6, wave-b 9); sonda `tools/pmssb3-draw-sonda.mjs` w repo.
+Piny: rager 68.4018, force-ON 93, temple -1, mysteries 62/68, envoy
+72.9054/73.8054, scroll 7, EOT-self 21; 16/16 prognoz fal trafionych co do punktu.
+Suit 6701/6701 GREEN po regeneracji fixture (`overallHash 76b5915a…`).
+OUT (przyszłe pętle): generyczna-wycena-triggerów (F9c), aura-internals,
+gain-life, poison, investigate, mana-opp-cost, need-now-gating.
+Bez wpisu LESSONS (precedens PR136).
+
+**Incydent narzędziowy.** `edit_file` zwichnął ogon `heuristic-bot.js`
+(duplikat bloku E1 + artefakt `...o })) }));`, składnia padła) — naprawa
+asserted-pythonem przez bash + `node --check`; reguła PMSSB-1 (jeden plik =
+atomowy skrypt) potwierdzona po raz trzeci. Migawka platformy: fresh clone
++ częściowy overlay drzewa (ref na bazie 605a8dc mimo pushy do 8f65d4b) —
+odzyskanie `git fetch origin <branch>` + `git reset --hard <tip>` po
+weryfikacji bajtowej plików roboczych (zdalny push ocalał, zero strat).

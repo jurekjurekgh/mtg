@@ -36,7 +36,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 |---|---|---|---|
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
-| dobieranie (`draw_cards*`, `draw_then_discard`) | 40+ | BACKLOG | timing EOT vs main; overflow ręki (interakcja z PMSSB-1/C); cantrip vs draw; guard deck-outu jest |
+| dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
 | zysk życia (`gain_life*`) | 23 | BACKLOG | main-path cast_spell BEZ wyceny (flat 50?) vs modal/zdolności z niuansami (L41); racing-math; pułapka przewartościowania |
 | kontry (`counter_spell`) | 5 | BACKLOG (mikro-pętla?) | co kontrować (HIGH_IMPACT jest), kiedy trzymać, blef many; mała rodzina, wysoka dźwignia |
 | pump/grant (trików bojowych) | 52 | POKRYTE (M96/M173/M179/M218) | okna walki z uczestnictwa, nie z fazy — nie ruszać bez nowego dowodu |
@@ -227,4 +227,74 @@ w `src/controllers/heuristic-params.js`.
   każdym `--write` procedurą stash-baseline/worktree).
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
+- Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-3 — dobieranie (2026-09-26)
+
+**Wybór rodziny** (rejestr BACKLOG): dobieranie — 45 kart (weryfikacja
+programowa `reg.all()` 562 -> 45; szacunek rejestru 40+), guard deck-outu
+istniał (cast/ability), rozjazdy: ETB-9 vs cast-6, brak okien timingu,
+noga-foe ignorowana w both-draw, rider ferocious = 0, mayFire-samobójstwo
+przy lib0, conditionale = 0 (brak unwrap), koszt sac-self w ability-draw = 0.
+Odrzucone: zysk życia (23), kontry (5, mikro-pętla). Plan:
+`docs/plans/PLAN_2026-09-26-pmssb3-draw.md` (Aneks A/B/C: 45 kart, S-piny v3,
+specyfikacje fal, wyniki).
+
+**Pliki testów:** `test/pmssb3-draw-wave-a.test.js` (6),
+`test/pmssb3-draw-wave-b.test.js` (9) — razem 15 pinów (odchylenie od
+konwencji `audyt-pmssb<N>-*.test.js`, nazewnictwo falowe).
+**Kod:** guardy + unwrapy + okna w `heuristic-bot.js`,
+`instantDrawFoeEndBonus: 10` / `ferociousLootExpected: 5`
+w `heuristic-params.js`, `landEnteredThisTurn` w `playerView` (game-state.js).
+**Sonda:** `tools/pmssb3-draw-sonda.mjs` (22 scenariusze, w repo na stałe).
+
+### Fala A — strażnicy (`6b4c00a`; F9b+F10)
+
+- **F9b:** mayFire-draw (murder/curiosity) przy lib0 -> -100 (lustro E2/A1b;
+  E-tax na lib0 = 0, więc guard kazę, nie tax; bot-side, `pendingOptionalEffects`).
+- **F10:** ETB-draw/draw_then_discard dostaje `drawDeckingPenalty`
+  (lustro cast/ability, L41).
+- **Naprawy testów:** K2/CR1 (wypełnienie bibliotek, konwencja pr92),
+  E5/1 (znaki spoza ASCII w planie).
+
+### Fala B — luki wyceny (`8e7371e`; F1/F2/F5/temple/scroll/envoy/mysteries)
+
+- **F1:** ETB `draw_cards` 9 -> `P.drawCardValue` (L41; dostarczane
+  5.4 = 6 x 0.9, spójne z globalnym dyskontem permanent); literal-6
+  modala -> param (bez zmiany zachowania).
+- **F2:** instant-draw na EOT wroga +10 (lustro M211/A1-scry, ta sama racja
+  fizzle-many; dodatnie-tylko; cast_spell + activate_ability).
+- **F3-flat ZWERYFIKOWANE:** reunion main1 = main2 (sorcery-draw nie czeka;
+  wynik negatywny poprawny, nie luka).
+- **F5:** `ferocious_draw_discard` w cast: ferocious (P>=4, lustro silnika)
+  ? +5 (lustro M67) : 0.
+- **F-temple:** noga-foe both-draw -12 (lustro A4-4) + `isDrawOnly`
+  extended o both_players (duch A4-4): 62 -> -1 (flip rzut->trzymaj:
+  parytet + tempo-loss).
+- **F-scroll-sac:** ability-draw + sacrificeSelf -> lustro gałęzi-token (-4/-1).
+- **F-envoy:** unwrap-conditionals w pętli ETB (lustro selfDamageOfEffects):
+  dywergencja +-counter.
+- **F-mysteries:** unwrap-conditionals w pętli cast + `landEnteredThisTurn`
+  w widoku i `viewConditionalHolds`: dywergencja landfall.
+- **Piny:** rager 68.4018, force-ON 93, temple -1, mysteries 62/68,
+  envoy 72.9054/73.8054, scroll 7, EOT-self 21; 15 scenariuszy bez zmian
+  (chirurgiczność); 16/16 prognoz trafionych co do punktu.
+- **Golden:** fixture zregenerowany `--write` (`overallHash 76b5915a…`).
+
+### Znane granice (świadome, nie bugi)
+
+1. Zawartość triggerów (cast-time + fire-time, F9c) = 0 lub liability —
+   skonsolidowana przyszła pętla generyczna (curiosity/murder/tellah/
+   thief/prowler).
+2. Curiosity = aura-wroga obu stron (-62.1/-169.2) — internals-aura (pętla-aura).
+3. Gain-life (gałąź-Angel scrolla), poison-ridery, investigate, pełny
+   opportunity-cost many (poza CMC+pip), need-now-gating przy F2,
+   buff-mode0-temple, sac-threat game-balla — OUT z odesłaniem.
+4. Net-swing loot: decyzja (M67: 7) ~= czar (A1b: 6) — ramki różne,
+   ekonomia ta sama (nie dryf, nie unifikować).
+
+### Pomiar końcowy
+
+- Suit 6701/6701 GREEN po regeneracji; blast-radius unwrap-ALL (cast + ETB)
+  = zero faili poza golden-masterem.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
