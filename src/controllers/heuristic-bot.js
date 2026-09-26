@@ -323,7 +323,9 @@ export function blockExchangeOf(attacker, blockers) {
   }
   const wastedBlockers = uselessBlockerIds.length;
 
-  return { attackerDies, blockerValueLost, wastedBlockers, uselessBlockerIds };
+  return { attackerDies, blockerValueLost, wastedBlockers, uselessBlockerIds,
+    // PMSSB-2/C (F8): które blokery realnie giną (ubezpieczenie dies→token).
+    diedBlockerIds: [...realnieGinie] };
 }
 
 /** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
@@ -1292,9 +1294,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Chatter 1×1/1 = 10). Rola (F4): max(ciało, bank-many, bank-liczników)
   // — Mutagen (licznik +1/+1) liczy najlepszego gospodarza (własne stwory
   // + wchodzący, jak buff_creatures_you_control). Ilość (F6): klucze Z6.
-  // Fala C: keywordy bojowe (flying/…) z kontekstem walki + wrogie tokeny
-  // (znak) + riderzy (ping Robbera). Koszt: fateful hour w środku (jak dotąd).
-  const tokenBodyValue = (view, effect, { source = null, entering = null } = {}) => {
+  // PMSSB-2/C (F4): keywordy bojowe — DODATEK do roli ciała (flying
+  // +(2+moc)/ciało bez odpowiedzi w powietrzu, lifelink +4/ciało; lustra
+  // w keywordWorth niżej; reszta odroczona — komentarz w teście fali C).
+  // PMSSB-2/C (F5): ZNAK (token wroga = ujemna rola; tokenControllerId,
+  // dziś tylko Robber) + RIDERZY bezwarunkowe modelem obrażeń (rider niżej).
+  const tokenBodyValue = (view, effect, { source = null, entering = null, tokenControllerId = null } = {}) => {
     if (!effect || effect.type !== 'create_token') return 0;
     let count = Number.isInteger(effect.amount)
       ? effect.amount
@@ -1312,8 +1317,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Ciało liczy się TYLKO stworom (Treasure/Powerstone/Mutagen nie mają
     // P/T — stary `?? 1` dawał im ciało 1/1 gratis; cały katalog: każdy
     // token-stwór niesie P/T, weryfikacja w sondzie PMSSB-2).
+    // PMSSB-2/C (F4): keywordy bojowe — dodatek do ciała (nie max!):
+    // flying +(2+moc), gdy wróg NIE MA nietapniętego blokera z flying/reach
+    // (lustro gałęzi precombat z keywordGrantWindowValue + grantsEvasion
+    // z equipValuation); lifelink +4 (lustro grantu). Bramka „stwór":
+    // latanie na nie-stworze (hipotetyczny Skarb z lataniem) nic nie daje.
+    let keywordWorth = 0;
+    if (isCreatureTokenEffect(effect)) {
+      const kw = effect.keywords ?? (effect.cardId ? cardDef(effect.cardId)?.keywords : null) ?? [];
+      if (kw.includes('flying') && !enemyHasUntappedFlyingOrReachBlocker(view)) {
+        keywordWorth += 2 + resolveStat(effect.power);
+      }
+      if (kw.includes('lifelink')) keywordWorth += 4;
+    }
     const bodyWorth = isCreatureTokenEffect(effect)
-      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 : 0;
+      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth : 0;
     const manaWorth = tokenGrantedMana(effect) > 0
       ? P.tokenManaBankWeight * tokenGrantedMana(effect) : 0;
     let counterWorth = 0;
@@ -1328,7 +1346,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           counterHostValue(view, host, counterGrant.counter ?? '+1/+1', counterGrant.amount ?? 1));
       }
     }
-    return count * Math.max(bodyWorth, manaWorth, counterWorth);
+    // PMSSB-2/C (F5): ZNAK roli — token wroga (Robber: controllerFromEvent)
+    // to ujemna rola (symetryczna negacja — lustro konserwatywne); rider
+    // jest kierunkowy sam w sobie (obrażenia w kontrolera/twarz), więc
+    // znak go nie dotyczy.
+    const controller = tokenControllerId ?? view.playerId;
+    const sign = controller === view.playerId ? 1 : -1;
+    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth)
+      + tokenRiderDamage(view, effect, controller));
+  };
+  // PMSSB-2/C (F5): RIDERZY bezwarunkowe — token, który sam zadaje obrażenia
+  // (Robber: upkeep ping w kontrolera; Dragon: ETB bolt 3 w dowolny cel).
+  // Wycenia MODEL OBRAŻEŃ (damageTargetValue — skala lethal za darmo);
+  // zasada pierwszego ticka (jeden strzał liczony, reszta gratis).
+  // Riderzy WARUNKOWE (Wizard you_cast, Chocobo landfall) odroczone —
+  // wymagają modeli zachowań (częstość rzutów/lądów), których nie ma.
+  const tokenRiderDamage = (view, effect, tokenControllerId) => {
+    const tokenDef = effect?.cardId ? cardDef(effect.cardId) : null;
+    const tokenAbilities = effect?.abilities ?? tokenDef?.abilities ?? [];
+    let rider = 0;
+    for (const a of tokenAbilities) {
+      if (a?.type !== 'triggered') continue;
+      const fx = Array.isArray(a.effect) ? a.effect : (a.effect ? [a.effect] : []);
+      if (a.trigger?.event === 'upkeep') {
+        for (const e of fx) {
+          if (e?.type !== 'damage_to_controller') continue;
+          rider += damageTargetValue(view, tokenControllerId, Number.isInteger(e.amount) ? e.amount : 1);
+        }
+      } else if (a.trigger?.event === 'enter_battlefield') {
+        // Cel dowolny z preferencją wroga (Dragon) — twarz zawsze dostępna.
+        const foeId = enemy(view)?.id;
+        if (foeId == null) continue;
+        for (const e of fx) {
+          if (e?.type !== 'damage') continue;
+          const amt = Number.isInteger(e.amount) ? e.amount : 0;
+          rider += tokenControllerId === view.playerId
+            ? damageTargetValue(view, foeId, amt)
+            : damageTargetValue(view, view.playerId, amt);
+        }
+      }
+    }
+    return rider;
   };
   const ETB_EFFECT_BONUS = Object.freeze({
     draw_cards: (e) => 9 * (e.amount ?? 1),
@@ -5506,6 +5564,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // flaga mówi, czy ten czar odbił ≥1 cel wroga.
         let bounceCastHadFoeTarget = false;
         let tokenCastHadCreatureEffect = false; // PMSSB-2/B (F1): timing raz na rzut
+        let spellMakesTokens = false; // PMSSB-2/C (F7): tie-break kosztem (dowolny token)
         for (const effect of scoredEffects) {
           // M91 (uwaga C właściciela): efekty USUWAJĄCE permanent (destroy,
           // exile, bounce) nie miały ŻADNEJ wyceny — czar dostawał domyślne
@@ -5862,6 +5921,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (tokenValue === 0) score -= 25; // czar bez skutku = karta w błoto
             score += tokenValue;
             if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
+            spellMakesTokens = true;
           }
           // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
           // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
@@ -6339,6 +6399,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (bounceCastHadFoeTarget) score += bounceCastTimingDelta(view, card?.spell?.timing);
         // PMSSB-2/B (F1): timing tokena (raz na rzut; sorcery = 0 w helperze).
         if (tokenCastHadCreatureEffect) score += tokenCastTimingDelta(view, card?.spell?.timing);
+        // PMSSB-2/C (F7): TIE-BREAK kosztem (ten sam efekt → tańszy wygrywa;
+        // 1 grosz/CMC — pełny opportunity-cost OUT jak w planie; X czyta bazę).
+        if (spellMakesTokens) score -= P.tokenManaCostTieBreak * (card?.manaCost ?? cardDef(card?.cardId)?.manaCost ?? 0);
         // CR 702.174 (Gift, M355): obietnica daru to KOSZT — obiecany
         // przeciwnik dostaje realny zasób (tu: token Food). Warianty różnią
         // się wyceną efektów warunkowych (`condition.wasGifted` wyżej), więc
@@ -7627,6 +7690,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           return drain;
         };
+        // PMSSB-2/C (F5): trigger obrażeń bojowych robiący token (Robber/Disa)
+        // — lustro KSZTAŁTU drainOnAttack; w przeciwieństwie do drenażu wymaga
+        // POŁĄCZENIA (wołający bramkuje: otwarty stół albo ewazja, CR 510.2;
+        // trample-through pomijamy — atak nie modeluje nadwyżki w ogóle).
+        const tokenOnCombatDamage = (id) => {
+          const object = objectOnBoard(view, id);
+          const def = cardDef(object?.cardId);
+          let value = 0;
+          for (const ability of def?.abilities ?? []) {
+            if (!['combat_damage_to_player', 'any_combat_damage_to_player'].includes(ability?.trigger?.event)) continue;
+            const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+            for (const e of effects) {
+              if (e?.type !== 'create_token') continue;
+              // Robber: token dostaje ranny gracz = broniony wróg; inaczej własny.
+              const controller = e.controllerFromEvent === 'damagedPlayerId' ? enemy(view)?.id : view.playerId;
+              value += tokenBodyValue(view, e, { tokenControllerId: controller ?? view.playerId });
+            }
+          }
+          return value;
+        };
         // M91 (uwaga A1): przy aktywnej prewencji obrażeń bojowych (Inspire
         // Awe) atakujący, który NIE jest zaczarowany ani nie jest
         // enchantment-creature, zada 0 obrażeń — a i tak zostanie tapnięty
@@ -7822,6 +7905,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += P.attackEvasionBonus;
           // Drenaż z triggera ataku przechodzi niezależnie od bloków.
           score += 3 * drainOnAttack(id);
+          // PMSSB-2/C (F5): trigger combat-damage→token tylko przy połączeniu.
+          if (blockers.length === 0 || !canBeBlocked) score += tokenOnCombatDamage(id);
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
@@ -8048,6 +8133,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
+          // PMSSB-2/C (F8): UBEZPIECZENIE ciała — ginący bloker z dies→token
+          // (Dissenter/Patron/Chorus/Elgaud) zostawia token; skala L41 jak ETB
+          // (chump z Dissenterem JEST dobry — strata 1/1 za czas + Zombie 2/2).
+          for (const diedId of exchange.diedBlockerIds ?? []) {
+            const died = objectOnBoard(view, diedId);
+            if (!died || died.controllerId !== view.playerId) continue;
+            for (const ability of cardDef(died.cardId)?.abilities ?? []) {
+              if (ability?.trigger?.event !== 'dies') continue;
+              const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+              for (const e of effects) {
+                if (e?.type === 'create_token') score += tokenBodyValue(view, e, { source: died });
+              }
+            }
+          }
           // Koszt zaangażowania blokera (tapowany; nie pomoże innemu atakowi).
           score -= blockersUsed;
           // I (doprecyzowanie właściciela 2026-09-22): to NIE jest zakaz
