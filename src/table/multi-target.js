@@ -447,6 +447,18 @@ function isNonePickCommand(cmd, field) {
 function noneLabelOf(commands, field) {
   if (commands.some((cmd) => cmd?.done === true)) return 'Gotowe — bez wyboru';
   if (commands.some((cmd) => cmd?.skip === true)) return 'Pomiń';
+  // M109-kształt (Nightsnare „If you don't”): rezygnacja z wyboru karty
+  // z CUDZEJ ręki = cel odrzuca declineAmount sam. Oferta cardId:null
+  // istnieje wyłącznie przy pending.allowDecline (game-state, oferta
+  // jawnej rezygnacji) — a flagę stawia tylko nie-mandatory
+  // reveal_hand_choose_discard — więc gałąź po typie komendy jest
+  // precyzyjna (ADR 0002: po kształcie, nie po nazwie karty).
+  // Uproszczenie jak w render.js („przeciwnik odrzuci dwie wedle wyboru”):
+  // jedyna taka karta ma declineAmount 2; karta z inną liczbą będzie
+  // wymagała przepchnięcia declineAmount do widoku.
+  if (field === 'cardId' && commands.some((cmd) => cmd?.type === 'resolve_discard_choice')) {
+    return 'Zakończ bez wyboru (nieprzyjaciel wybiera i odrzuca dwie karty)';
+  }
   if (field === 'cardId') return 'Zakończ bez wyboru';
   if (field === 'found') return 'Nie znajduj karty (rezygnacja)';
   return 'Nie wskazuj celu';

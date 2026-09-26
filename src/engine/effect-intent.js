@@ -27,6 +27,10 @@ export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   // wybiera się spośród cudzych kart, więc bot bierze najwartościowszą.
   'exile_graveyard_card',
   'exile_nonland_permanent_linked', 'bounce_permanent', 'bounce_to_library_top',
+  // PMSSB-1 (fala A): bottom i Vanish to też wrogie odbicia (L41 z
+  // REMOVAL_EFFECTS w bocie; katalog nie ma dziś triggerów z tymi typami,
+  // ale klasyfikacja musi być kompletna na wejście pierwszej takiej karty).
+  'bounce_to_library_bottom', 'owner_library_top_or_bottom',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink',
   'pump_negative', 'cant_block', 'mill_cards', 'dont_untap_next_untap_step',
   // M177/E (Azorius Justiciar): detain odbiera celowi atak/blok/aktywacje.
@@ -75,6 +79,8 @@ const TARGET_REMOVING_TRIGGER_EFFECTS = new Set([
   'exile_permanent', 'exile_target_creature', 'exile_opponent_creature',
   'exile_nonland_permanent_linked',
   'bounce_permanent', 'bounce_to_library_top',
+  // PMSSB-1 (fala A): jak wyżej — bottom/Vanish zrywają aury (CR 704.5m).
+  'bounce_to_library_bottom', 'owner_library_top_or_bottom',
   'sacrifice_permanent',
 ]);
 export function triggerTargetRemovesTargetOf(ability) {

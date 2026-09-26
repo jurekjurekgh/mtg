@@ -326,9 +326,11 @@ test('Mystic Sanctuary: enters tapped bez 3+ Islands; untapped z 3+; ETB put ins
   assert.ok(r2.ok, 'land drop: ' + (r2.events?.[0]?.reason ?? ''));
   const sanc2 = byCard(state2, 'mystic-sanctuary', 'battlefield');
   assert.equal(sanc2.tapped, false, 'wchodzi untapped przy 3+ wyspach');
-  // Etap F (CR 603.3d + 603.5): cel obowiązkowy — jedyny kandydat
-  // (Curate w grobie) wybrany automatycznie (M242); „you may" przy
-  // rozstrzyganiu.
+  // E (2026-09-25g): jedyny kandydat (Curate w grobie) — modal celu
+  // z decline (auto-cel M242 wyłączony dla mayFire); wybieramy cel jawnie.
+  const pick = playerView(state2, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'curate-grave');
+  assert.ok(pick, 'Curate w modalu celu');
+  assert.ok(execute(state2, pick).ok);
   const onStack = state2.zones.stack.map((id) => state2.objects.get(id)).find((o) => o?.kind === 'trigger');
   assert.deepEqual(onStack?.triggerEntry?.targets, ['curate-grave'], 'ETB trigger na stosie z celem');
   assert.ok(resolveUntilDecision(state2, optionalTriggerOpen), '„you may" przy rozstrzyganiu');

@@ -610,8 +610,23 @@ function singleBlockerFullAssignment(blockers, amount) {
 }
 
 /**
- * Domyślny (deterministyczny) przydział: lethal-first w kolejności deklaracji
- * bloków — dokładnie zachowanie sprzed M66 (boty biorą ten wariant).
+ * Domyślny (deterministyczny) przydział: ZABÓJSTWA O MAKSYMALNEJ WARTOŚCI.
+ *
+ * H (zgłoszenie właściciela 2026-09-25): lethal-first w kolejności deklaracji
+ * marnował obrażenia — 5 mocy w 4/3, 1/3, 1/2, 3/2 szło 3 w 4/3 (lethal) i 2
+ * w 1/3 (NIE-lethal — zmarnowane), choć 2 w 3/2 albo 1/2 dawało drugie
+ * zabójstwo. Podział między blokerów jest swobodny (CR 510.1c — walidator
+ * sprawdza wyłącznie permutację, sufit mocy i pełną sumę), więc kolejność
+ * deklaracji nie wiąże: domyślny plan zabija podzbiór o maksymalnej
+ * WARTOŚCI (power + toughness — jednostka „worth" jak w wycenie bota),
+ * po remisie — liczniejszy, po remisie — wcześniejszy w deklaracji
+ * (determinizm). Reszta (nie wystarcza na żaden kolejny lethal — inaczej
+ * podzbiór nie byłby optymalny): miękczy pierwszy NIEZABITY cel w kolejności
+ * deklaracji (znaczone obrażenia zostają na drugą turę / double strike),
+ * a gdy zabite WSZYSTKIE — overkill do ostatniego (konwencja E8/B3, pin).
+ * Przy trample nadwyżka ponad lethal WSZYSTKICH legalnie idzie na gracza
+ * (CR 702.19b); gdy mocy nie starcza na wszystkie lethal — całość w blokerów
+ * (jak dotąd — wymóg walidatora M101/B6).
  *
  * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): dopłata do lethal
  * blokera, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
@@ -629,9 +644,7 @@ function singleBlockerFullAssignment(blockers, amount) {
  * Bez kontekstu (wołania jednostkowe, helper W5) zachowanie dotychczasowe.
  */
 function defaultDamageAssignment(state, attacker, blockers, amount, context = null) {
-  const out = [];
-  let remaining = amount;
-  const trample = hasKeyword(state, attacker, 'trample');
+  const live = [];
   for (const blockerId of blockers) {
     const blocker = state.objects.get(blockerId);
     if (!blocker || blocker.zone !== 'battlefield') continue;
@@ -641,23 +654,81 @@ function defaultDamageAssignment(state, attacker, blockers, amount, context = nu
         ? 0
         : Math.max(0, need - damageAssignedToBlockerThisPass(state, context.pass, blockerId, attacker.id, context.assignments, true));
     }
-    const assigned = Math.min(remaining, need);
-    out.push({ blockerId, amount: assigned });
-    remaining -= assigned;
+    // Wartość celu jako usuwanego stwora: power + toughness (efektywne —
+    // z licznikami i efektami stałymi), ta sama jednostka „worth", którą
+    // bot wycenia removal (removalWorthWeight).
+    const worth = Math.max(0, effectivePower(blocker, state) ?? 0)
+      + Math.max(0, effectiveToughness(blocker, state) ?? 0);
+    live.push({ blockerId, need, worth });
   }
+  const trample = hasKeyword(state, attacker, 'trample');
+  const kill = chooseKillSet(live.map((e) => e.need), live.map((e) => e.worth), amount);
+  const out = [];
+  let spent = 0;
+  for (let i = 0; i < live.length; i += 1) {
+    const assigned = kill.has(i) ? live[i].need : 0;
+    out.push({ blockerId: live[i].blockerId, amount: assigned });
+    spent += assigned;
+  }
+  const remaining = amount - spent;
   // E8/B3 (wyzwanie wyłapywacza błędów, CR 510.1a): bez trample stwór zadaje
-  // CAŁĄ moc — lethal-first przy wielu blokerach gubił resztę (6 mocy vs
-  // 2/2 i 3/3 → 2+3=4). Reszta idzie do OSTATNIEGO blokera w kolejności
-  // (zwykła konwencja M66, spójna z CR 510.1c). Przy trample nadwyżka
-  // LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać.
-  if (remaining > 0 && out.length > 0 && !trample) {
-    // Reszta do OSTATNIEGO celu (konwencja E8/B3). Pomiar: reszta > 0 zachodzi
-    // tylko wtedy, gdy każdy cel dostał co najmniej swój (pomniejszony o pokrycie)
-    // lethal, więc wszystkie są już zgładzone i wybór celu reszty jest neutralny
-    // dla wyniku — bez martwej gałęzi „pierwszy niezgładzony".
-    out[out.length - 1].amount += remaining;
+  // CAŁĄ moc. Reszta nie wystarcza na żaden kolejny lethal (dowód: gdyby
+  // wystarczała, podzbiór nie byłby optymalny) — więc nikogo nie zabija i
+  // miękczy pierwszy niezabity cel (znaczone obrażenia przydają się przy
+  // double strike / w drugiej turze). Gdy zabite wszystkie — overkill do
+  // OSTATNIEGO (konwencja E8/B3). Przy trample nadwyżka ponad lethal
+  // wszystkich LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać;
+  // ALE gdy mocy nie starcza na wszystkie lethal, reszta MUSI iść w blokerów
+  // (walidator M101/B6: suma < moc przy trample wymaga lethal wszędzie —
+  // inaczej `trample_blocker_below_lethal`).
+  if (remaining > 0 && out.length > 0 && (!trample || kill.size < live.length)) {
+    const firstSpared = out.findIndex((_, i) => !kill.has(i));
+    out[firstSpared >= 0 ? firstSpared : out.length - 1].amount += remaining;
   }
   return out;
+}
+
+/**
+ * H (zgłoszenie właściciela 2026-09-25): które cele zabić przydzialem mocy.
+ * Plecakowy wybór dokładny (2^n, n ≤ 16 — w walce blokerów jest garstka):
+ * maksymalna suma worth przy sumie potrzeb ≤ moc; remis → więcej zabitych;
+ * remis → mniejsza maska bitowa (wcześniejsze w deklaracji — determinizm).
+ * Powyżej 16 celów zachłannie (potrzeba rosnąco, wartość malejąco) — awaryjny
+ * spadek, w praktyce nieosiągalny (16 blokerów jednego atakującego).
+ * Zwraca zbiór indeksów do zabicia (każdy dostaje dokładnie swój lethal).
+ */
+function chooseKillSet(needs, worths, amount) {
+  const n = needs.length;
+  if (n > 16) {
+    const order = needs.map((need, i) => i).sort((a, b) =>
+      (needs[a] - needs[b]) || (worths[b] - worths[a]) || (a - b));
+    const kill = new Set();
+    let left = amount;
+    for (const i of order) {
+      if (needs[i] <= left) { kill.add(i); left -= needs[i]; }
+    }
+    return kill;
+  }
+  let best = { worth: 0, count: 0, mask: 0 };
+  for (let mask = 1; mask < (1 << n); mask += 1) {
+    let need = 0;
+    let worth = 0;
+    let count = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (mask & (1 << i)) { need += needs[i]; worth += worths[i]; count += 1; }
+    }
+    if (need > amount) continue;
+    // Ścisłe „lepiej" + rosnący przegląd masek = remisy wygrywa wcześniejszy
+    // w deklaracji (mniejsza maska) — determinizm bez tasowania.
+    if (worth > best.worth || (worth === best.worth && count > best.count)) {
+      best = { worth, count, mask };
+    }
+  }
+  const kill = new Set();
+  for (let i = 0; i < n; i += 1) {
+    if (best.mask & (1 << i)) kill.add(i);
+  }
+  return kill;
 }
 
 // ---- W3 (CR 510.1d): podział obrażeń BLOKERA między atakujących ------------------

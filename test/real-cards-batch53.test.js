@@ -191,9 +191,13 @@ test('B53: Ironclad Slayer — zwraca Equipment z grobu, gdy wybiorę cel', () =
   addCard(state, 'creature-in-gy', 'highland-game', 'p1', 'graveyard');
 
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'is' }).ok);
-  // Rozstrzygnij Slayera — jedyny kandydat (Equipment) wybrany sam (M242).
+  // E (2026-09-25g): jedyny kandydat (Equipment) — modal celu z decline
+  // (auto-cel M242 wyłączony dla mayFire); wybieramy cel jawnie.
   const triggerOnStack = (st) => st.zones.stack.map((id) => st.objects.get(id)).find((o) => o?.kind === 'trigger');
-  assert.ok(resolveUntilDecision(state, (st) => Boolean(triggerOnStack(st))));
+  resolveStack(state); // czar wchodzi, ETB czeka na cel
+  const pick = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'equip-in-gy');
+  assert.ok(pick, 'Equipment w modalu celu');
+  assert.ok(execute(state, pick).ok);
   const onStack = triggerOnStack(state);
   assert.deepEqual(onStack?.triggerEntry?.targets, ['equip-in-gy'], 'cel: Equipment z grobu (nie stwór)');
   assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
@@ -211,6 +215,8 @@ test('B53: Ironclad Slayer — odmowa przy rozstrzyganiu = trigger bez efektu (y
 
   assert.ok(execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'is' }).ok);
   resolveStack(state);
+  // E: modal celu z decline — pełna procedura wymaga jawnego wyboru celu.
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'equip-in-gy' }).ok);
   assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'odmowa = pass (F1)');
   assert.equal(state.pendingOptionalTrigger, null);

@@ -4344,11 +4344,16 @@ export function execute(state, input) {
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
     //   Reclusive Artificer, Jill): cała zdolność odrzucona (nic nie odpala);
+    // - „you may [czasownik] target" (mayFire — E, zgłoszenie 2026-09-25g):
+    //   decline w modalu celu to SKRÓT wynikowo równoważny (CR 603.3d/603.5
+    //   — patrz ANEKS_2026-09-25g_ef; strażnik katalogu:
+    //   `you-may-decline-straznik.test.js`): cała zdolność odrzucona;
     // - „up to one" w obowiązkowym triggerze (Greatsword): trigger odpala
     //   z celami stałymi (licznik na nosicielu), a efekty z targetIndex
     //   wskazującym null są pomijane przez applyEffect.
     const specOptional = Boolean(pending.ability?.trigger?.requiresTarget?.optional);
-    if (sourceLegal && (chosen !== null || !specOptional)) {
+    const mayFire = pending.ability?.trigger?.mayFire === true;
+    if (sourceLegal && (chosen !== null || (!specOptional && !mayFire))) {
       // T6: wybrany cel wędruje z triggerem na STOS — rozstrzyga się po passach.
       const queuedTrigger = queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
       // M258/F3 — WARD (CR 702.21): zdolność triggerowana z celem w
@@ -7955,9 +7960,10 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_optional_draw', playerId, { draw: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageAssignment) {
     // M66 (R): rozdzielanie obrażeń — DOKŁADNIE JEDEN wariant (deterministyczny
-    // default = lethal-first w kolejności deklaracji, obecne zachowanie botów).
-    // Kombinacji nie enumerujemy; gracz-człowiek dostaje wizard w UI, który
-    // buduje własną, walidowaną przez execute komendę (CR 510.1c/d).
+    // default = zabójstwa o maksymalnej wartości, H/2026-09-25 — obecne
+    // zachowanie botów). Kombinacji nie enumerujemy; gracz-człowiek dostaje
+    // wizard w UI (start z tego samego planu — jedno źródło), który buduje
+    // własną, walidowaną przez execute komendę (CR 510.1c/d).
     legalCommands.push(command('resolve_damage_assignment', playerId, {
       assignments: buildDefaultDamageAssignments(state),
     }));
@@ -8891,6 +8897,10 @@ export function playerView(state, playerId) {
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
         allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+        // E (2026-09-25g): „you may [verb] target" — decline w modalu celu
+        // ma własne brzmienie („Nie tapuj nikogo (you may)"), inne niż
+        // odmowa „up to one"; render.js rozróżnia po tej fladze.
+        mayFire: head.ability?.trigger?.mayFire === true,
         // M172/B: rozdział Sagi ma effect: [] — typ efektu z extra; tytuł
         // rozdziału (Mesmerize/Cold Snap) dla modala wyboru celu.
         effectType: ((Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null)
@@ -8932,6 +8942,9 @@ export function playerView(state, playerId) {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
+    // PMSSB-3/F-mysteries: czy kontroler zagral lad w tej turze (info jawne —
+    // lady widac na polu; do warunku landEnteredThisTurn w wycenie).
+    landEnteredThisTurn: (state.landEnteredThisTurn?.[playerId] ?? 0) > 0,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
     pendingDiscardChoice: activeDiscardChoice ? {
       count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count

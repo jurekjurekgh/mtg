@@ -2656,6 +2656,12 @@ export function createSession(config) {
   // o wyświetleniu (tylko PIERWSZE odwrócenie, ptaszek trybu, ilustracje)
   // trzyma UI — sesja tylko go woła, zero wpływu na przebieg gry.
   const onTransform = typeof config.onTransform === 'function' ? config.onTransform : null;
+  // AI-OpenRouter (Etap-1): obserwator DOMKNIĘCIA tury — sesja woła go, gdy
+  // rekord tury ląduje w turnHistory (granica na `turn_started` + domknięcie
+  // ostatniej po końcu partii). UI podpina tu kolejkę zapytań AI.
+  // Kontrakt ODWROTNY niż onCast: zwrotka ignorowana, wyjątek POŁYKANY
+  // (AI nigdy nie może zepsuć gry — fire-and-forget z gwarancją sesji).
+  const onTurnCompleted = typeof config.onTurnCompleted === 'function' ? config.onTurnCompleted : null;
   /**
    * M254/C (zgłoszenie właściciela): pauza PREZENTACYJNA. Osobna od
    * `awaitingBotAck`, bo „Ruch bota" i warstwa grafik to dwie różne warstwy
@@ -2781,10 +2787,24 @@ export function createSession(config) {
     lastLoggedPhase = result.lastLoggedPhase;
     return result.header;
   };
+  // AI-OpenRouter: powiadomienie o domkniętym rekordzie (try/catch = gwarancja
+  // „AI nie psuje gry"; pełny tekst UI bierze samo z turnHistoryTextAll()).
+  function emitTurnCompleted(record) {
+    if (!onTurnCompleted || !record) return;
+    try {
+      onTurnCompleted({ number: record.number, activePlayerId: record.activePlayerId });
+    } catch (error) {
+      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+        console.warn('[ai] onTurnCompleted rzucił:', error);
+      }
+    }
+  }
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
-      turnHistory.push(currentTurn);
+      const done = currentTurn;
+      turnHistory.push(done);
       currentTurn = { number: state.turn.number, activePlayerId: e.playerId, lines: [] };
+      emitTurnCompleted(done);
       return;
     }
     if (TURN_NOISE.has(e.type)) return;
@@ -2845,8 +2865,10 @@ export function createSession(config) {
   /** Po końcu partii ostatnia (przerwana) tura też jest pełna — domknij ją. */
   function flushFinishedTurn() {
     if (state.status === 'finished' && currentTurn.lines.length > 0) {
-      turnHistory.push(currentTurn);
+      const done = currentTurn;
+      turnHistory.push(done);
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
+      emitTurnCompleted(done);
     }
   }
 

@@ -19,6 +19,52 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-25g — audyt PR #139 + pętla jakości (pin modalu, Kumano×token)
+
+Prompt bez nazwanego tematu → po lekturze obowiązkowej pętla domyślna
+z ADR 0021 (PR #140 na starcie, audyt #139, brak niedokończonego planu
+na main → pętla jakości). Bez batcha kart, bez pełnego B0, bez nowej
+lekcji (rejestr powyżej progu 100k — instancje L160 i L39).
+
+**Audyt #139** (raport: `docs/audits/AUDYT_PR139_2026-09-25.md`): gest C2
+domknięty w 15 przypadkach brzegowych, modal pod tą samą bramką.
+Mutacje: M-A (gestures@3f1af5e → RED C2/1,1b,2,3,5), M-B
+(choice-request@3f1af5e → RED tylko C2/10 — regex jedynym pinem modalu,
+stąd zadanie Q1). Bez zastrzeżeń blokujących.
+
+**Q1** (`60d3707`): `test/audyt-pr139-modal-gest-integracja.test.js` — modal
+przez prawdziwy `renderChoiceRequest`, sekwencje C2 z Chromium; mutacja M-B
+czerwieni Q1/Q2 zachowaniem. **Q2** (`cfe1c3b`):
+`test/audyt-kumano-token-wygnanie.test.js` — token-ofiara Kumano → exile
+z odznaką → `token_ceased_to_exist` (CR 614 + 704.5d), z kontrolą bez aury.
+
+**Żywy Tester:** `innistrad-brg vs zendikar` s=203 (92 kroki) i
+`mirrodin-wu vs tarkir-bg` s=77 (79 kroków) — 0 zgłoszeń, odczytane ręcznie
+w całości, czysto. **Polowanie CR:** exiledBy (exploit/finality,
+exileFromGraveyard) i Kumano end-to-end — zgodne z CR, bez znalezisk.
+
+**Luka procesowa po 25e/f:** brak `HANDOFF_2026-09-25e/f.md` i wpisu w tym
+dzienniku — nie rekonstruuję wstecz. Handoff: `HANDOFF_2026-09-25g.md`.
+
+**Kontynuacja 25g — zgłoszenia E+F** (aneks: `docs/plans/ANEKS_2026-09-25g_ef.md`):
+właściciel potwierdził ptaszka C2 i zgłosił dwa defekty (ten sam PR #140).
+**E** (`a921ebb`, `aa89664`): „you may [verb] target" (Angelic Benediction) —
+modal celu zawiera decline („Nie tapuj nikogo (you may)"); odmowa to SKRÓT
+wynikowo równoważny (CR 603.3d/603.5, trigger nie idzie na stos; strażnik L52:
+`you-may-decline-straznik.test.js`), wybór celu = pełna procedura Etapu F
+z oknem odpowiedzi. 10 pinów Etapu F zaktualizowanych do nowego przepływu;
+boty bez zmian (wycena null=0 istniała). **F** (`b469e21`, `6c3e063`):
+mana-wizard — filtr `(pool-covered)>=genericNeeded` zamiast `pool>=...`
+(podwójne liczenie many z pipu); {1}{W}{U} po {U} pokazuje wszystkie źródła.
+Piny Gd/1,3,5 z 23c pinowały podwójne liczenie — zaktualizowane do strategii F
+(prowadzenie kolejnością; sedno 23c, anty-slice Gd/2, bez zmian). Mutacje
+M-E1/M-E2/M-E3/M-E5/M-F potwierdzone. Bramy: `npm test` 6625/6625,
+`test:all` 6635/6635, build 61/4302.5 kB.
+
+**Bramy:** `npm test` **6613/6613**, `npm run test:all` **6623/6623**,
+`node --test test/bot-benchmark.test.js` **10/10**, `npm run build**
+61 modułów / **4299,4 kB**.
+
 ## 2026-09-25d — audyt PR #137: jednoczesne odkręcenie
 
 Audyt scalonego #137 (squash `7ccc440`). Krok odkręcania ustalał blokadę na
@@ -13042,3 +13088,161 @@ F-4/F-5 opisali w raportach i handoffzie, a nie w `LESSONS`. Chwilowa talia
 audytowa `decks/audyt-batch59.txt` została usunięta razem z przebudowaniem
 `dist/` — jej obecność psuła pięć strażników talii, co jest samo w sobie
 wartościową informacją o tym, że `decks/` nie jest miejscem na śmieci.
+
+## PMSSB-1/C — bounce: timing F1 + stan (sesja 2026-09-25h, branch arena/01a0d980-mtg)
+
+Domknięcie pętli PMSSB-1 (audyt 25h: kierunek x cel x timing x stan, F1–F8).
+Fala C: 12 testów RED → implementacja → 29/29 w pliku → suit 6668/6668 GREEN.
+Trzy nowe pokrętła (`bounceTimingSwing: 8`, `bounceLethalDodgeBonus: 100`,
+`bounceOverflowBonus: 12`); reszta wymiarów na istniejących jednostkach
+(`removalEnemyBase`, `bounceTempoPenalty`, lustro 2xpower). F1: EOT-wroga +8 /
+main-własna 0 / main-wroga −8, sorcery tylko premia precombat; fizzle ofensywny
++22 (tylko cel pojedynczy, CR 608.2b); overflow CR 514.1 ±12; lethal-dodge +100;
+ratunek bojowy jak F5; lockout +10; screw −22 przy ≤2 landach; wrapper
+`apply_to_each_target` (Sea God's Scorn) podpięty pod wspólne helpery (L41).
+Piny: 88/80/72, 92, −126, 112, >150. Setupy „bez kontekstu" dostały
+`neutralFoeMana` (bez landów wroga lockout psuł piny fal A/B).
+Ewaluacja: lustro 48 gier 24–24 (brak sygnału — próbka, nie parametr, por. B6);
+golden-master 0/6 divergencji (hash 227e6cbe stoi, bez regeneracji).
+Manual: `docs/PMSSB.md`. Bez wpisu LESSONS (budżet lektury 99992/100000 —
+precedens PR136: opis w raporcie/dzienniku, nie w rejestrze).
+
+**Incydent narzędziowy (2× w sesji, oba z naprawą).** (a) Migawka platformy
+przywróciła drzewo bez historii git (fresh clone, HEAD 605a8dc) + korupcja
+bajtowa w `heuristic-params.js` (stray `}` na końcu, linia z bajtem 0x86);
+naprawa: `git fetch origin <branch>` + `git reset FETCH_HEAD` (zdalny push
+z poprzedniego sandboxu ocalał) + bajtowa rekonstrukcja linii z REMOTE.
+(b) Równoległe `edit_file` do TEGO SAMEGO pliku gubią edycje (last-write-wins:
+z 5 przeżyła 1, z 3 przeżyła 1) mimo raportów „success" — odtworzone
+i zweryfikowane grepem; reguła: jeden plik = jedna edycja na blok albo
+atomowy skrypt. Commit 26ab5b7 + push; weryfikacja każdej edycji diffem
+przed zaufaniem raportom (jak po poprzednim wyścigu).
+
+## PMSSB-3/C — dobieranie: guardy + luki wyceny (sesja 2026-09-26, branch arena/01a0d980-mtg)
+
+Domknięcie pętli PMSSB-3 (rodzina 45 kart, zweryfikowana programowo
+`reg.all()`; plan `docs/plans/PLAN_2026-09-26-pmssb3-draw.md`, Aneks A/B/C).
+Fala A (`6b4c00a`): F9b mayFire-guard -100 (lustro E2/A1b) + F10 ETB-deck-guard
+(L41); naprawy K2/CR1 (wypełnienie bibliotek, konwencja pr92) i E5/1
+(znaki spoza ASCII w planie).
+Fala B (`8e7371e`): F1 ETB-9->6-param, F2 EOT-okno +10 (instant cast+ability),
+F3-flat (sorcery, wynik negatywny poprawny), F5 ferocious +5, F-temple
+(noga-foe + isDrawOnly: 62->-1 flip), F-scroll-sac, F-envoy (unwrap ETB),
+F-mysteries (unwrap cast + landEnteredThisTurn w widoku).
+Dwa nowe pokrętła (`instantDrawFoeEndBonus: 10`, `ferociousLootExpected: 5`);
+15 pinów (wave-a 6, wave-b 9); sonda `tools/pmssb3-draw-sonda.mjs` w repo.
+Piny: rager 68.4018, force-ON 93, temple -1, mysteries 62/68, envoy
+72.9054/73.8054, scroll 7, EOT-self 21; 16/16 prognoz fal trafionych co do punktu.
+Suit 6701/6701 GREEN po regeneracji fixture (`overallHash 76b5915a…`).
+OUT (przyszłe pętle): generyczna-wycena-triggerów (F9c), aura-internals,
+gain-life, poison, investigate, mana-opp-cost, need-now-gating.
+Bez wpisu LESSONS (precedens PR136).
+
+**Incydent narzędziowy.** `edit_file` zwichnął ogon `heuristic-bot.js`
+(duplikat bloku E1 + artefakt `...o })) }));`, składnia padła) — naprawa
+asserted-pythonem przez bash + `node --check`; reguła PMSSB-1 (jeden plik =
+atomowy skrypt) potwierdzona po raz trzeci. Migawka platformy: fresh clone
++ częściowy overlay drzewa (ref na bazie 605a8dc mimo pushy do 8f65d4b) —
+odzyskanie `git fetch origin <branch>` + `git reset --hard <tip>` po
+weryfikacji bajtowej plików roboczych (zdalny push ocalał, zero strat).
+
+Domkniecie petli PMSSB-4 (rodzina gain_life, 28 kart po weryfikacji
+programowej 29 - crumb-and-get-it; kanaly 5/7/7/2/7; plan
+`docs/plans/PLAN_2026-09-26-pmssb4-zycie.md`, Aneks A/B/C).
+Fala A (`809a125`): F-A0 gainLifeValue (wspolna drabina M236, L41),
+F-A1 noga-gain w cast (douse/consume-X/severed-T/divine-MV), F-A1b feed
+tiers, F-A2 ETB-tiers, F-A2b ETB foe-lose +4x, F-A3 dedup M155 (talisman
+6->3), F-A4 dedup M157-foe (-55->-29), F-A5 M157-self tiers, F-A5b
+conditional-gain (scroll+Angel) + evaluator controlsCreatureSubtype.
+Fala B (`0ff9efa`): F-B1 hold tap-gain pre-combat (L22 +3->-6; ratunek
+i foe-EOT bez zmian). Fala C (`56412bd`): F-C1/C2/C3 imminent-trigger-gain
+(gladehart/feather/zoraline z bramkami; +0 bez enablerow).
+Zero nowych pokretel; 20 pinow (wave-a/b/c); sonda
+`tools/pmssb4-zycie-sonda.mjs` w repo; wszystkie prognozy co do punktu.
+Suit 6721/6721 GREEN po regeneracji fixture (slad +2.0 = noga-severed,
+316=316 decyzji).
+NO-F: modal-tiers, gain-landy, dies/cautious/staff, Bard-ETB-modal.
+Forwardy OUT: koszty-mana zdolnosci, damage-nogi, slad modalny.
+Bez wpisu LESSONS (precedens PR136).
+
+Domkniecie petli PMSSB-5 (rodzina counter_spell*, 7 kart po weryfikacji
+programowej 7 - nie 5 z rejestru; 4 kanaly + strona platnika; plan
+`docs/plans/PLAN_2026-09-26-pmssb5-kontry.md`, Aneks A/B/C).
+Jedyna fala A (`83d9acb`): F-H3 HIGH_IMPACT 16->22 typy (hand-rip x2,
+removal-artefaktow, reanimacja, tuck, edykt; +10 linii, zero pokretel).
+Sonda K01-K13 (25 sond, `tools/pmssb5-kontry-sonda.mjs`): wszystkie
+prognozy PRZED co do punktu; diff PO = dokladnie 6 flipow -10->50.
+15 pinow; suit 6737/6737 GREEN, zero churnu fixture.
+NO-F z dowodami: flat-50 (projekt), E7/D2 (kasowanie odrzutu),
+platnik-flat (dominacja), fuel-0 (karta>>proliferate), abstruse +10 OK,
+sabo-XOR (akceptacja). Forwardy OUT: foe-side hand-rip (+50.00-baza
+divest/mindstab = luka rodziny discard!), X-na-stosie (epic),
+lethal-proliferate, urgencja-okna, bramka-celowa, E7/D2-zasoby (mana).
+Rejestr BACKLOG pusty: wszystkie rodziny DONE albo OUT.
+
+Domkniecie petli PMSSB-6 (re-audyt "POKRYTEGO" odrzutu z nowym dowodem
+PMSSB-5: gain foe-side = 0 w cascie; 13 nosicieli + rider delusion;
+plan `docs/plans/PLAN_2026-09-26-pmssb6-discard.md`, Aneks A/B/C).
+Jedyna fala A (`a793b91`): F-A1 `foeRipValue` (blind-4/reveal-8/grob-6,
+cap-min; symetryczne-45 odrzucone), F-A2 guardy-fizzle w effectIsInertNow
+(cast -70 / ability -40; toll-amass i dreams-grob ratuja; mindstab ucieka
+w suspend), F-A3 galaz-ability + sac-SKALOWANY (bat +2->-1 FLIP),
+F-A4 rider-delusion (blind-cap; kasowanie PMSSB-5 zyje). Zero pokretel.
+Sonda D00-D16 (25 sond): prognozy co do punktu (po korektach cap/x0.9).
+20 pinow; suit 6757/6757 GREEN. Golden: 1 mecz +8.0 (mindstab-t2 vs
+2-karty, 264=264, kinds same) — fixture --write z wyjasnieniem co-do-flipa
+(blizej: przewidywano delusion/ravnica, trafiono mindstab/dominaria).
+LEKCJA-x0.9: cast_permanent mnozy wynik x0.9 (wagi-rodzin B4) — piny licza
+jawnie. Tie-audit: 208 realnych remisow, ZERO z ripem.
+NO-F: sklad-reki (przepisy), loot (forward unification), triage (martwy),
+mayFire-50, triggery, transform/mana, amass-9-vs-6 (pre-existing!).
+PMSSB-7 (2026-09-26, domkniecie hold, mikro-petla): BACKLOG pusty -> cel
+z forwardow PMSSB-6 (divest-self-+3 + martwy -25-token). F-H1: mapa rip
+45->53 (10x-regula) -> divest-self +3->-5 DOKLADNIE, mindstab -1->-9.
+F-H2: martwy -25 usuniety (sonda PO bit-identyczna). Sweep H3 czysty
+(9x -70, 2x brak-oferty, 1x -114). 12 pinow, golden BEZ churnu (0),
+suit 6769/6769 GREEN. Forwardy: martwe-przypadki-inert, X0--10,
+no-base-for-pure-harm, temple->p2.
+PMSSB-8 (2026-09-26, loot-net-unification): BACKLOG pusty -> forward PMSSB-6
+(3 liczby na loot-1: combined-+6 vs split-+2 vs M67-5). F-L1: LOOT_NET_VALUE=2
+(parytet-cyclingu): scholar 8->4, fisher 74.7->71.1, evangel BEZ ZMIAN (zbieg!).
+F-L1b: M67-rider 5->2 (may-loot = mandatory-loot); lekcja may-vs-must (drabina
+deck-outu zabila ratunek B/F5 -115, pin wykryl!). Martwy parametr OUT. 10 pinow,
+golden BEZ churnu (0), suit 6779/6779 GREEN. Forwardy: future-trigger-
+anticipation, opcja-skip-may-loota, thin-artefakt-lib30.
+PMSSB-9 (2026-09-26, anticipacja-triggerow): BACKLOG pusty -> forward PMSSB-8
+(~100 triggerow non-ETB niewidzialnych; trojka 64.8!). Wave-A dies (0.5xETB):
+prowler +2.7, dissenter +9, persist/pay/any_dies SKIP. Wave-B attacks (0.5xbramka):
+drain/impuls/untap/exalted, bramka 71.1/72.0. 19 pinow, golden 2x --write
+(highland +0.9x2, veteran +2.7x2, per-flip), rattle-allowlista cross-kind,
+suit 6798/6798 GREEN. Forwardy: ogon-triggerow, persist-unification,
+pay-net, land-90, survival-model.
+PMSSB-10 (2026-09-26, triggery-ogon): BACKLOG pusty -> forward PMSSB-9
+(ogon ~40 nosicieli; ETB/dies/attacks DONE). Wave-A tail (likelihoodxETB):
+scrollthief +2.7, robber +2.1, flooding +18.27-exact, tellah +4.5, demon -6.3,
+golden CZYSTY (0). Wave-B1 leaves/upkeep: O-ring-sign (newt +4.5, butcher -5.4),
+drain-mirror (goblin -1.8), transform-SKIP. Wave-B2 end/singletons: LIVE-gates
+(rager +2.25, reaver +13.5, triton +1.62), selhoff +14.5, ascension +4.5.
+OVERRIDE F-T1 (any_dies=0.7). 30 pinow, golden 2x --write (5 score-only,
+0 flips), suit 6828/6828 GREEN. Forwardy: exploit-sac-net, E5-lesson,
+drain-mirror, mill-vs-libsize.
+PMSSB-11 (2026-09-26, sac-economics): BACKLOG pusty -> forward PMSSB-10
+(exploit-sac-net). Wave-A sac-net (max(0,benefit-sac), lustro M69/M130):
+silumgar +2.7, drowner +5.4, gorger +2.7. 9 bram CLOSED, 5 guardow SAME.
+5 pinow, golden CZYSTY (0), suit 6833/6833 GREEN. Forwardy:
+double-discount-lesson, impulse-unifikacja, worthIt-wzorzec.
+PMSSB-12 (2026-09-26, pay-trigger-net): BACKLOG pusty -> forward PMSSB-9
+(pay-SKIP). Wave-A pay-net (bot placi ZAWSZE): spellbomby +2.25
+(color-gate!), descendant +0.45/+0.9, spire -1/-9-clamp, forebear SKIP.
+5 pinow, golden CZYSTY (0), suit 6838/6838 GREEN. Forwardy:
+ETB_EFFECT_BONUS-nazwa, spire-clamp, pay-or-sac-rodzina.
+PMSSB-13 (2026-09-26, persist+stance): BACKLOG pusty -> forwardy PMSSB-9
+(#2 persist, #6 stance). Unvalued-0! Wave-A persist-model (0.5xbody):
+clique -0.9. Stance 0.80-conditional -> 0.5-validated (doc!). 2 piny,
+golden CZYSTY (0), suit 6840/6840 GREEN. Forwardy: survival-model,
+land-90, dynamic-likelihood.
+PMSSB-14 (2026-09-26, impulse+saga): BACKLOG pusty -> forward PMSSB-11
++ znalezisko (saga-0-w-bocie!). Wave-A helper-bit-identical (drowner/
+dockhand/ability SAME) + saga-chapters (I-1.0/II-0.8/III-0.6):
+rediscover +16.20. 2 piny, golden CZYSTY (0), suit 6842/6842 GREEN.
+Forwardy: lib0-quirk, saga-likelihoods, restore-wzorzec.

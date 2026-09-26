@@ -210,10 +210,10 @@ test('Battle-Rattle Shaman: beginning_of_combat — target +2/+0 do końca tury 
   const view = playerView(state, 'p1');
   const tt = view.legalCommands.find((c) => c.type === 'resolve_trigger_target');
   assert.ok(tt, 'brak decyzji celu');
-  // Etap F (CR 603.3d + 603.5): cel obowiązkowy przy kładzeniu na stos,
-  // odmowa („you may") dopiero przy rozstrzyganiu.
+  // E (2026-09-25g): modal celu zawiera decline (skrót wynikowo
+  // równoważny); wybór celu = pełna procedura Etapu F (CR 603.5).
   const decline = view.legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId == null);
-  assert.equal(decline, undefined, 'brak „bez celu" — cel obowiązkowy');
+  assert.ok(decline, 'decline you-may w modalu celu');
   const r = execute(state, { ...tt, targetId: 'gob' });
   assert.ok(r.ok, r.events?.[0]?.reason);
   assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu');

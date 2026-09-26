@@ -2273,7 +2273,15 @@ function uncoverCostOf(session, view, objectId, field) {
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
  * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
  */
-function cardCostHtml(card) {
+function cardCostHtml(card, cmd = null) {
+  // G (zgłoszenie właściciela 2026-09-25, Containment Membrane): tytuł grupy
+  // „Aura: … (surge)" pokazywał koszt WYDRUKU (2U), choć rzut pobiera surge
+  // (U). Koszt alternatywny liczy ta sama jedna funkcja (H/2) — gałąź wołana
+  // z komendą (surgeCast + deskryptor surge z widoku; te same formatery co
+  // etykieta oferty M223). Bez komendy — koszt zwykły jak dotąd.
+  if (cmd?.surgeCast && card?.surge) {
+    return manaCostHtml(costSymbols(card.surge.cost, card.surge.colors));
+  }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
   return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
 }
@@ -2501,8 +2509,12 @@ function choiceSourceTitle(cmd, session, view) {
     // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     if (cmd.bestow) return `Bestow: ${name}`;
-    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
-    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    // G (jw.): grupa cast_permanent jest jednorodna co do surge (klucz grupy
+    // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
+    // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
+    // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
@@ -2953,6 +2965,34 @@ function declineLabelForHandFreeCast(view) {
   ];
   const name = `${alternative.name ?? 'token'} ${alternative.power ?? '?'}/${alternative.toughness ?? '?'}`;
   return `Zrezygnuj — utwórz token ${name}${keywords.length > 0 ? ` (${keywords.join(', ')})` : ''}`;
+}
+
+/**
+ * E (zgłoszenie 2026-09-25g): brzmienie decline „you may [verb] target"
+ * w modalu wyboru celu — per TYP EFEKTU (ADR 0002: bez nazw kart), z
+ * fallbackiem generycznym dla przyszłych efektów. Pokrywa dzisiejszy
+ * katalog (6 kart); pin: `you-may-decline-etykiety.test.js` (E5).
+ */
+const MAY_DECLINE_LABELS = Object.freeze({
+  tap_permanent: 'Nie tapuj nikogo (you may)',
+  damage: 'Nie zadawaj obrażeń (you may)',
+  pump: 'Nie pompuj nikogo (you may)',
+  // Jedyny dzisiejszy may+cel z tym typem to debuff (Prowler -1/-1); gdyby
+  // wszedł buff, rozbić po znaku bonusu (widok dziś nie niesie wartości).
+  buff_creature_until_end_of_turn: 'Nie osłabiaj nikogo (you may)',
+  put_graveyard_card_on_top: 'Nie kładź niczego na wierzch (you may)',
+  return_card_from_graveyard_to_hand: 'Niczego nie wracaj do ręki (you may)',
+});
+
+function declineLabelForTriggerTarget(view, sourcePrefix) {
+  const pending = view?.pendingTriggerTarget;
+  if (pending?.mayFire === true) {
+    const specific = MAY_DECLINE_LABELS[pending.effectType] ?? null;
+    if (specific) return `${sourcePrefix}${specific}`;
+    return `${sourcePrefix}bez celu (odmowa — „you may")`;
+  }
+  if (pending?.effectType === 'bounce_permanent') return `${sourcePrefix}nie zwracaj niczego (odmowa)`;
+  return `${sourcePrefix}bez celu (odmowa — „up to one"/„you may")`;
 }
 
 export function commandLabel(cmd, session, view) {
@@ -4034,10 +4074,9 @@ export function commandLabel(cmd, session, view) {
         if (cmd.targetIds.length === 0) return `${source}bez celów („up to")`;
         return `${source}cele triggera: ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(' i ')}`;
       }
-      if (cmd.targetId == null) {
-        if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
-        return `${source}bez celu (odmowa — „up to one"/„you may")`;
-      }
+      // E: decline may („Nie tapuj nikogo (you may)") vs odmowa „up to one"
+      // — rozróżnia declineLabelForTriggerTarget po fladze mayFire z widoku.
+      if (cmd.targetId == null) return declineLabelForTriggerTarget(view, source);
       const target = nameOfObjectId(cmd.targetId);
       if (effectType === 'bounce_permanent') return `${source}zwróć do ręki: ${target}`;
       if (effectType === 'cant_be_blocked') return `${source}nieblokowalność: ${target}`;

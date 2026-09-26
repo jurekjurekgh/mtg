@@ -100,6 +100,7 @@ test('K1: Phyrexian Rager przy 2 życia — bot NIE rzuca (samookaleczenie)', ()
 test('K2: Phyrexian Rager przy 20 życia — normalnie rzucany', () => {
   const state = game('p2');
   for (let i = 0; i < 8; i += 1) putCard(state, 'b' + i, 'highland-game', 'p2');
+  for (let i = 0; i < 10; i += 1) putCard(state, 'lib' + i, 'highland-game', 'p2', 'library'); // PMSSB-3/F10: zdrowa biblioteka (guard cienkiej)
   putCard(state, 'rager', 'phyrexian-rager', 'p2', 'hand');
   addMana(state, 'p2', 3, { colors: ['B'] });
   const view = playerView(state, 'p2');

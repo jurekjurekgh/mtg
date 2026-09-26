@@ -2011,8 +2011,13 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     // celu — wykonać się przy rozstrzyganiu (wzorzec: Greatsword of Tyr
     // w gałęzi `equipped_creature_attacks` — decyzja z allowNone i pustymi
     // kandydatami, licznik na nosicielu ląduje mimo braku celu).
-    // „You may [czasownik] target" NIE używa spec.optional (Etap F, CR 603.5):
-    // cel obowiązkowy + `mayFire` — wybór „may" przy rozstrzyganiu.
+    // „You may [czasownik] target" (E, zgłoszenie 2026-09-25g): cel NAPOZÓR
+    // obowiązkowy (CR 603.3d), ale modal celu zawiera decline — odmowa to
+    // SKRÓT wynikowo równoważny (trigger nie idzie na stos, przeciwnik nie
+    // widzi celu ani nie dostaje okna odpowiedzi; legalne, bo katalog nie ma
+    // kart odpowiadających na triggery — strażnik:
+    // `you-may-decline-straznik.test.js`). Wybór celu = pełna procedura
+    // Etapu F (CR 603.5): „may" przy rozstrzyganiu, okno odpowiedzi istnieje.
     if (candidates.length === 0) {
       // M106/Z2 (decyzja właściciela 2026-08-16): gracz MA się dowiedzieć,
       // że trigger nie zrobił nic i dlaczego. Wcześniej Puppeteer Clique
@@ -2030,7 +2035,11 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     // Temat 2: cel wybiera kontroler — resolve_trigger_target zamiast
     // deterministycznego findTriggerTarget (Forge Devil, Kor Sanctifiers,
     // Jill, Puppeteer Clique itd.).
-    return queueTargetDecision(state, ability, source, candidates, Boolean(spec.optional), [], events, extra);
+    // E: mayFire dokleja allowNone (decline w modalu celu). Przy jednym
+    // kandydacie wyłącza to też auto-cel M242 („zgoda nigdy nie jest
+    // automatyczna") — kontroler zawsze widzi modal z odmową.
+    const allowNone = Boolean(spec.optional || trigger.mayFire);
+    return queueTargetDecision(state, ability, source, candidates, allowNone, [], events, extra);
   }
   if (trigger.mayFire) {
     // „You may" bez celu (Angel's Feather — „you may gain 1 life"); wariant

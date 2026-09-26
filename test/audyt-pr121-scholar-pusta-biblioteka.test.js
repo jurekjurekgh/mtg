@@ -76,7 +76,7 @@ test('SCHOLAR: biblioteka 1 — strefa krytyczna (C), aktywacja poniżej passa',
   assert.notEqual(cmd.type, 'activate_ability', `bot oszczędza ostatnią kartę (wybrał: ${JSON.stringify(cmd)})`);
 });
 
-test('SCHOLAR: zdrowa biblioteka (5) — anty-over-fix, dobór ma wartość (8, nie goła baza 2)', () => {
+test('SCHOLAR: zdrowa biblioteka (5) — anty-over-fix, loot ma wartość (4 = baza 2 + LOOT_NET 2, PMSSB-8)', () => {
   const { score } = scholarOption(game(5));
-  assert.ok(score >= 8, `przy zdrowej bibliotece wycena = baza 2 + drawCardValue 6, jest ${score}`);
+  assert.ok(score >= 4, `przy zdrowej bibliotece wycena = baza 2 + LOOT_NET_VALUE 2, jest ${score}`);
 });

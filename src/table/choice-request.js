@@ -1575,16 +1575,23 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
     choiceNode(wrapper, 'div', 'damage-wizard-head',
       `${attackerName} (${entry.byToughness ? 'obrażenia wg wytrzymałości' : 'moc'} ${entry.power}${trample})`);
     const rows = choiceNode(wrapper, 'div', 'damage-wizard-blockers');
-    // M101/B6 (CR 702.19b): przy tramplu przydział 0 jest NIELEGALNY, dopóki
-    // nadmiar ma płynąć na gracza. Startujemy więc od domyślnego lethal-first
-    // (jak defaultDamageAssignment w silniku) — wizard od pierwszej chwili
-    // pokazuje legalny stan, a gracz może go tylko świadomie zmienić.
-    // E8/B3 (CR 510.1a): bez trample pełna moc MUSI trafić w blokerów —
-    // startujemy identycznie jak silnik: lethal-first, a resztę dolewamy do
-    // OSTATNIEGO blokera (start legalny zamiast „niedoboru", który silnik
-    // teraz odrzuca).
-    const amounts = entry.targets.map(() => 0);
-    {
+    // H (zgłoszenie właściciela 2026-09-25): start wizarda to plan domyślny
+    // SILNIKA (defaultCommand.assignments — dokładnie ten, który bierze bot),
+    // nie lokalnie liczony lethal-first. Jedno źródło prawdy: poprawka
+    // jakości planu w silniku od razu poprawia i start człowieka, i grę bota.
+    // Legalność startu: plan silnika jest legalny z konstrukcji (M101/B6 przy
+    // trample, E8/B3 pełna suma bez trample) — gracz może go tylko świadomie
+    // zmienić. Awaryjnie (brak planu w ofercie): lethal-first + reszta do
+    // ostatniego — legalny start jak dotąd.
+    const seedFromDefault = (() => {
+      const planned = defaultCommand?.assignments?.[entry.sourceId];
+      if (!Array.isArray(planned)) return null;
+      const byTarget = new Map(planned.map((e) => [e?.[entry.targetKey], e?.amount]));
+      if (!entry.targets.every((t) => Number.isInteger(byTarget.get(t.id)))) return null;
+      return entry.targets.map((t) => byTarget.get(t.id));
+    })();
+    const amounts = seedFromDefault ?? entry.targets.map(() => 0);
+    if (!seedFromDefault) {
       let left = entry.power;
       entry.targets.forEach((b, idx) => {
         const give = Math.min(left, b.lethal);
