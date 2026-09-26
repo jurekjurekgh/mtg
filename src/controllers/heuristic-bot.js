@@ -1389,8 +1389,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return rider;
   };
   const ETB_EFFECT_BONUS = Object.freeze({
-    draw_cards: (e) => 9 * (e.amount ?? 1),
-    draw_then_discard: () => 6,
+    // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
+    // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
+    // za samobójstwo). Ta sama drabina co cast_spell (klasy D/C).
+    draw_cards: (e, view) => 9 * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
+    draw_then_discard: (e, view) => 6 + drawDeckingPenalty(view, e.amount ?? 1),
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
@@ -8691,6 +8694,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.fire && Array.isArray(cmd.targetIds) && cmd.targetIds.length > 0) {
           const targetScore = scoreCommand(view, { ...cmd, type: 'resolve_trigger_target' });
           return finish(targetScore > 0 ? 50 : -10);
+        }
+        // PMSSB-3/F9b (murder-of-crows/curiosity mayFire-draw): dobrowolne
+        // dobranie przy PUSTEJ bibliotece to przegrana SBA (CR 104.4c/704.5b),
+        // a drabina libraryDrainTax na lib0 zwraca 0 (brak kosztu krańcowego)
+        // — więc twardy guard KAZE jak E2/A1b (−100), nie tax. Efekty z widoku
+        // (pendingOptionalEffects, L41 jak cloak-branch); triggery-draw
+        // w katalogu to tylko bezpośrednie, ale rozwijamy conditional na zaś.
+        if (cmd.fire && myLibraryCount(view) === 0
+          && unwrapConditionals(view, pendingOptionalEffects(view))
+            .some((e) => e?.type === 'draw_cards' || e?.type === 'draw_then_discard')) {
+          return finish(-100);
         }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
         return finish(cmd.fire ? 50 : 0);
