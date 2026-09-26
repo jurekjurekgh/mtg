@@ -21,6 +21,7 @@ import { buildLorePrompt } from './ai-modes.js';
 import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
+import { createOpenRouterTransport } from './ai-client.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -291,13 +292,14 @@ function bootstrapTable() {
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
   // --- AI-OpenRouter (Etap-1): stan, panel, kolejka -------------------------
-  // Transport na razie: mock (?ai-mock=1) albo zaślepka z jawnym błędem
-  // (prawdziwy klient OpenRouter przychodzi w Etapie-2).
+  // Transport: mock (?ai-mock=1) albo prawdziwy klient OpenRouter (Etap-2).
   let aiConfig = loadAiConfig(storage);
   const aiMockFlags = parseMockFlags(typeof location !== 'undefined' ? location.search : '');
+  // AI-OpenRouter (Etap-2): mock tylko z flagą; normalnie prawdziwy klient.
+  // Klucz czytany na KAŻDE zapytanie — wklejenie go naprawia „Ponów”.
   const aiTransport = aiMockFlags.enabled
     ? createMockTransport(aiMockFlags)
-    : async () => ({ ok: false, text: '', error: 'Klient OpenRouter od Etapu-2 (teraz działa tylko ?ai-mock=1).' });
+    : createOpenRouterTransport({ getApiKey: () => loadAiConfig(storage).apiKey });
   const aiPanel = createAiPanel({
     document,
     wrapEl: els.aiWrap,
