@@ -1,0 +1,92 @@
+# PMSSB-5: kontry (`counter_spell*`) — plan
+
+Petla Manualnego Strojenia Scoringu Bota (hub: `docs/PMSSB.md`, procedura
+krokow 0-7). Metoda M429: audyt przyczynowo-skutkowy JEDNEJ rodziny +
+wdrozenie falami + piny. Nie tuning maszynowy (ADR 0018).
+
+## Wybor celu (uzasadnienie)
+
+Rejestr BACKLOG po PMSSB-4: kontry jako OSTATNIA rodzina BACKLOG
+(`counter_spell`, hub: 5 kart, "mikro-petla?", "mala rodzina, wysoka
+dzwignia"). Pytanie "mikro-petla?" rozstrzygam w krok-0 na korzysc
+PELNEGO PMSSB-5:
+- weryfikacja programowa: **7 kart** (nie 5), w tym 2x Negate (reprint);
+- **4 kanaly**: twarde (negate/negate-m15/stoic) / modal (sabotage) /
+  unless-pays (delusion/abstruse) / rider (fuel-proliferate);
+- **dwie strony decyzji**: rzut kontujacego (5528) + platnika (8510);
+- audyt zbioru HIGH_IMPACT vs katalog (co realnie umyka kontrze);
+- dzwignia: kontra nietrafiona = karta w plecy + threat na stole.
+
+Odrzucone: wszystko inne jest DONE/POKRYTE/OUT w rejestrze.
+
+## Inwentarz (7 ID, weryfikacja `reg.all()`)
+
+Twarde: negate, negate-m15 (M20/M15, {1}{U}, TYLKO noncreature-spell),
+stoic-rebuttal (SOM, {2}{U}, dowolny czar, metalcraft-znizka {1} przy 3+
+artefaktach). Modal: steel-sabotage (2XM, {U}: kontra artifact-spell LUB
+bounce artefaktu). Unless-pays: frightful-delusion (ISD, {2}{U}: kontra
+unless {1} + ODRZUT-1 BEZWARUNKOWY), abstruse-interference (OGW, {2}{C}:
+kontra unless {1} + MOJ token Scion 1/1 z sac-mana; oracle "YOU create" —
+silnik (domyslny kontroler zrodla) poprawny). Rider: fuel-for-the-cause
+(MBS, {3}{U}: kontra + proliferate).
+
+Brak w katalogu/silniku: counter_ability (0 kart; galaz bota to
+future-proof), uncounterable (0 kart; brak mechaniki).
+
+## Rozpoznanie kodu (krok-0)
+
+Rzut (cast_spell ~5528, PRZED petla efektow): M120 kontra we wlasny
+czar -> finish(-90) (twarda odmowa); mieszany -60; M237/2 cel-wroga:
+HIGH_IMPACT (16 typow) LUB TMC-celu >= 3 -> wart; inaczej -60 (trzymaj);
+E7/D2 unless-pays: platnik moze doplacic (pula + nietapniete lady) ->
+-90 (czekaj az wyda mane). BRAK dodatniego skladnika kontry w petli
+efektow (prognoza sondy: kontra-wplywowa = flat 50 = spellBase).
+Platnik (`resolve_counter_pay_choice` 8510): pay 85 / decline 10, FLAT
+(bez wartosci ratowanego czaru). Modal-rzut: efekty wybranego trybu
+(5428) ida ta sama droga (sabotage-kontra trafia w galaz 5528).
+Silnik: `counterStackObject` (wspolny helper, M271); delusion-discard
+BEZWARUNKOWY (tez po zaplacie — zdania rozlaczne oracle); pendingCounterPay
+z discardCount. Bot NIE ZNA: proliferate (brak case; fuel-rider = 0),
+discardCount (brak; delusion-rider = 0), costReduction (stoic-znizka
+niewidzialna — engine placi mniej, wartosc ta sama).
+
+## Hipotezy H1-H8 (status po krok-1)
+
+- H1: kontra wplywowa = flat 50 (brak skali wartoscia celu: destroy-8-drop
+  == draw-2 == pump; TMC-celu tylko progiem >= 3, nie waga).
+- H2: hold trywialnego dziala (M237/2: -60 -> -10 przy TMC<3 + brak
+  HIGH_IMPACT).
+- H3: luki HIGH_IMPACT: ktore <3-MV czary ze stosu umykaja (tutor?
+  mill? discard-each? extra-turn? ... — audyt zbioru vs katalog).
+- H4: E7/D2 -90 ignoruje delusion-discard (bezwarunkowy rider = 0 w bocie):
+  hold przy otwartym {1} mimo discard-1 + podatku — nad-hold?
+- H5: strona platnika flat (85/10): brak skali wartoscia ratowanego czaru
+  (8-drop == 1-drop; pusta reka vs pelna — to samo).
+- H6: ridery: fuel-proliferate = 0; delusion-discard = 0; abstruse-scion
+  = +token (pin: body + mana-bank).
+- H7: sabotage modalny: wybor trybu kontra-vs-bounce = wartosci trybowe
+  (pin obu sciezek; kontra-artefaktu w galaz 5528).
+- H8: brzegi hold: wlasny-czar -90 twardo (M120); counter-war (counter w
+  HIGH_IMPACT); stoic-znizka niewidzialna (nieszkodliwa?); brak-celu =
+  brak-oferty (silnik); blef-many = OUT-mana.
+
+## Zakres swiadomie OUT
+
+- counter_ability (0 kart), uncounterable (0 kart/mechaniki).
+- Blef-many / opportunity-cost many (rodzina mana, nie kontry).
+- Ward-pay / optional-pay flaty (inne rodziny; counter_pay JEST w zakresie).
+- Nowe karty do katalogu (zakaz wlasciciela); talie bez zmian.
+
+## Kroki 0-7 (hub)
+
+0. Plan (ten plik) + commit + push. 1. Sonda PRZED
+(`tools/pmssb5-kontry-sonda.mjs`) + status H1-H8 (Aneks A). 2. Audyt:
+macierz cel x platnik x timing x stan + findingi F (Aneks B). 3. Fale
+A/B/C + piny `test/pmssb5-kontry-wave-*.test.js`. 4. Sonda PO (diff).
+5. Eval: full suite + golden (cel: zero regeneracji poza swiadoma) +
+tie-audit. 6. Docs: Aneks C + hub (§PMSSB-5 + rejestr) +
+PROJECT_HISTORY. 7. Bramy + push po kazdym kroku.
+
+## Aneks A: pomiar PRZED (do wpisania po krok-1)
+## Aneks B: audyt + fale (do wpisania po krok-2)
+## Aneks C: wyniki (do wpisania po falach)
