@@ -13236,3 +13236,8 @@ PMSSB-12 (2026-09-26, pay-trigger-net): BACKLOG pusty -> forward PMSSB-9
 (color-gate!), descendant +0.45/+0.9, spire -1/-9-clamp, forebear SKIP.
 5 pinow, golden CZYSTY (0), suit 6838/6838 GREEN. Forwardy:
 ETB_EFFECT_BONUS-nazwa, spire-clamp, pay-or-sac-rodzina.
+PMSSB-13 (2026-09-26, persist+stance): BACKLOG pusty -> forwardy PMSSB-9
+(#2 persist, #6 stance). Unvalued-0! Wave-A persist-model (0.5xbody):
+clique -0.9. Stance 0.80-conditional -> 0.5-validated (doc!). 2 piny,
+golden CZYSTY (0), suit 6840/6840 GREEN. Forwardy: survival-model,
+land-90, dynamic-likelihood.

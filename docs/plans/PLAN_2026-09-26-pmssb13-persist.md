@@ -44,6 +44,21 @@ PRE: clique-bare 71.10, clique+grave 76.50 (+5.4-reanimate!),
 cultist 67.50, forebear 66.60, cultist-ability no-offer (delirium!).
 H1/H2 GO!
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks B — forwardy (closeout 2026-09-26)
 
-(none yet)
+- Survival-model (upkeep-likelihood!) + land-90-drivers + evasion-stance
+  (precyzyjna-kalibracja!) — META-forwardy (telemetria z gier!).
+- Stance-decomposition: 0.5-unconditional = P(attackers) × 0.8 —
+  gdyby P(attackers) dało się mierzyć LIVE (board-tracking!), likelihood
+  mógłby być DYNAMICZNY (nie flat-0.5!).
+- Undying-brak (0 nosicieli w katalogu!) — gdyby doszedł, ten-sam-model
+  (0.5 × return-body z +1/+1!).
+
+## Aneks C — wyniki fal (closeout 2026-09-26)
+
+Wave-A (`8ae75d3`, F-R1): persist = 0.5 × return-body: clique
+71.10→70.20 (−0.9!), +grave 76.50→75.60. Cultist/forebear SAME.
+Stance 0.80-conditional (32/40!) → 0.5-validated (doc!). PMSSB-9
+clique-pin OVERRIDE. 2 piny, golden CZYSTY (0!), 6840/6840 GREEN.
+
+Hipotezy: H1 GO, H2 GO (doc-only!). PMSSB-13 ZAMKNIĘTY (micro!).

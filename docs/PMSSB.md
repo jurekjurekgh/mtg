@@ -50,6 +50,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | triggery-ogon (tail/end/leaves) | ~40 | DONE (2026-09-26) | §PMSSB-10 niżej; `test/pmssb10-ogon-wave-{a,b1,b2}.test.js` (30); `anticipatedTailValue` + O-ring-sign + LIVE-gates (0 pokręteł) |
 | sac-economics (exploit/devour) | 3 | DONE (2026-09-26) | §PMSSB-11 niżej; `test/pmssb11-sac-wave-a.test.js` (5); `anticipatedSacValue` = max(0,benefit-sac) (0 pokręteł) |
 | pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
+| persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -234,6 +235,20 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-13 — persist-unification + stance-validation (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forwardy PMSSB-9 #2 + #6): flat-5 vs
+model + stance-0.5. Unvalued-sweep = 0 (pokrycie pełne!).
+Plan: `docs/plans/PLAN_2026-09-26-pmssb13-persist.md` (A/A2/B/C);
+sonda: `tools/pmssb13-persist-sonda.mjs` (R01–R04).
+
+- **F-R1 (Wave-A):** persist = 0.5 × return-body (clique −0.9!).
+  Stance 0.80-conditional → 0.5-validated (doc-only!). 2 piny.
+
+### Pomiar końcowy
+- Suit 6840/6840 GREEN (2 piny); golden CZYSTY (0!).
+- Persist-unification ZAMKNIĘTA (micro!).
 
 ## PMSSB-12 — pay-trigger-net (2026-09-26)
 
