@@ -1620,6 +1620,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const hasAlone = (def.abilities ?? []).some((a) => a?.type === 'triggered' && a.trigger?.event === 'attacks_alone');
     return 0.5 * gate * (hasAlone ? 0.5 : 1) * total;
   };
+  // PMSSB-14/F-I (impulse-unification!): JEDEN-helper impulse =
+  // draw + min(x−1,3) (opcjonalność!) z bramką-biblioteki. Call-sites:
+  // ability-impulse + drowner-anticipacja + saga-chapters.
+  const impulseLookValue = (view, x) => {
+    const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+    if (!(x > 0)) return -40;
+    // Lib0: −20 + selekcja (lustro-DOKŁADNE ability-brancha: bonus-min
+    // dodawany NAWET przy pustej (preexisting-quirk, nie ruszamy!).
+    return ownLibrary > 0 ? P.drawCardValue + Math.min(x - 1, 3) : -20 + Math.min(x - 1, 3);
+  };
+  // PMSSB-14/F-I2 (saga-chapters!): I = 1.0 (wchodzi-razem!), II = 0.8
+  // (przeżyje-turę?), III = 0.6 (dwie-tury!) × gate (stwór-na-stole!).
+  // Doublestrike-grant = +6 (konserwatywnie: extra-hit ≈ removal-pół!).
+  const anticipatedSagaValue = (view, def) => {
+    const chapters = def?.saga?.chapters;
+    if (!chapters || chapters.length === 0) return 0;
+    const likes = [1.0, 0.8, 0.6];
+    let total = 0;
+    chapters.forEach((ch, i) => {
+      const like = likes[Math.min(i, 2)];
+      for (const e of ch ?? []) {
+        if (e?.type === 'look_top_put_one_hand_rest_bottom'
+          || e?.type === 'look_top_put_one_hand_rest_grave') {
+          const x = Number.isInteger(e.amount) ? e.amount : 0;
+          total += like * Math.max(0, impulseLookValue(view, x));
+        } else if (e?.type === 'grant_double_strike_on_noncreature_cast_this_turn') {
+          if (myCreatures(view).length > 0) total += like * 6;
+        }
+      }
+    });
+    return total;
+  };
   // PMSSB-12/F-P (pay-trigger-net, Wave-A): pay-triggery = max(0, like ×
   // (benefit − payMana×1))! Bot płaci ZAWSZE (resolve 75-vs-15!), więc koszt
   // pewny-iff-trigger. Color-gate: payColors ⊆ kolory-własnych-lądów!
@@ -1699,8 +1731,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (worthIt) total += Math.max(0, killValue(best) - cena);
         }
       } else {
-        const lib = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
-        if (lib > 0) total += Math.max(0, P.drawCardValue + 3 - cena);
+        // PMSSB-14/F-I1: helper (x=4: draw+3 — bit-identycznie!).
+        const imp = impulseLookValue(view, 4);
+        if (imp > 0) total += Math.max(0, imp - cena);
       }
     }
     if (def.devour) {
@@ -5758,6 +5791,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += anticipatedSacValue(view, def);
         // PMSSB-12/F-P: anticipacja-pay nosiciela (0 bez pay-triggerów).
         score += anticipatedPayValue(view, def);
+        // PMSSB-14/F-I2: anticipacja-saga nosiciela (0 bez rozdziałów).
+        score += anticipatedSagaValue(view, def);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
@@ -8137,14 +8172,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const x = Number.isInteger(cmd.xValue)
               ? cmd.xValue
               : (Number.isInteger(effect.amount) ? effect.amount : 0);
-            if (x <= 0) {
-              score -= 40; // zapłacony koszt, obejrzane 0 kart — jałowa aktywacja
-            } else {
-              const ownLibrary = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
-              score += ownLibrary > 0 ? P.drawCardValue : -20;
-              score += Math.min(x - 1, 3); // opcjonalność: najlepsza z X widzianych
-              score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
-            }
+            // PMSSB-14/F-I1: helper (bit-identyczny: x0→−40, lib0→−20+min!).
+            score += impulseLookValue(view, x);
+            if (x > 0) score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
           }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
