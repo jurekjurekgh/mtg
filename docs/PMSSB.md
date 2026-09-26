@@ -51,6 +51,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | sac-economics (exploit/devour) | 3 | DONE (2026-09-26) | §PMSSB-11 niżej; `test/pmssb11-sac-wave-a.test.js` (5); `anticipatedSacValue` = max(0,benefit-sac) (0 pokręteł) |
 | pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
+| impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -235,6 +236,21 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forward PMSSB-11 + znalezisko): saga = 0
+wzmianek w bocie (rozdziały NIEWIDZIALNE!).
+Plan: `docs/plans/PLAN_2026-09-26-pmssb14-impulse.md` (A/A2/B/C);
+sonda: `tools/pmssb14-impulse-sonda.mjs` (I01–I03).
+
+- **F-I1+F-I2 (Wave-A):** `impulseLookValue`-helper (bit-identical!) +
+  `anticipatedSagaValue` (I-1.0/II-0.8/III-0.6-gated): rediscover
+  +16.20 (73.79!), no-creature +12.96. 2 piny.
+
+### Pomiar końcowy
+- Suit 6842/6842 GREEN (2 piny); golden CZYSTY (0!).
+- Impulse/saga ZAMKNIĘTE.
 
 ## PMSSB-13 — persist-unification + stance-validation (2026-09-26)
 

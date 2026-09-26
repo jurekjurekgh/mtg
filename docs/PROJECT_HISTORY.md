@@ -13241,3 +13241,8 @@ PMSSB-13 (2026-09-26, persist+stance): BACKLOG pusty -> forwardy PMSSB-9
 clique -0.9. Stance 0.80-conditional -> 0.5-validated (doc!). 2 piny,
 golden CZYSTY (0), suit 6840/6840 GREEN. Forwardy: survival-model,
 land-90, dynamic-likelihood.
+PMSSB-14 (2026-09-26, impulse+saga): BACKLOG pusty -> forward PMSSB-11
++ znalezisko (saga-0-w-bocie!). Wave-A helper-bit-identical (drowner/
+dockhand/ability SAME) + saga-chapters (I-1.0/II-0.8/III-0.6):
+rediscover +16.20. 2 piny, golden CZYSTY (0), suit 6842/6842 GREEN.
+Forwardy: lib0-quirk, saga-likelihoods, restore-wzorzec.

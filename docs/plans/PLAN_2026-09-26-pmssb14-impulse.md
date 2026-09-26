@@ -41,6 +41,26 @@ I01 drowner (helper-same?), I02 dockhand-ability (same?), I03 saga
 PRE: saga-cast 57.59 (chapters-0!), dockhand-cast 65.70 (ability-later!).
 Ability-impulse + drowner do potwierdzenia-SONDA-POST (same!).
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks B — forwardy (closeout 2026-09-26)
 
-(none yet)
+- Lib0-quirk: ability-impulse dodaje bonus-min(x−1,3) NAWET przy pustej
+  bibliotece (preexisting!) — helper lustruje DOKŁADNIE (nie naprawia!).
+  Gdyby ktoś to ruszał: drowner/anticipacja używają max(0,...) (0-bezpieczne!).
+- Saga-likelihoods (1.0/0.8/0.6) to założenia-bez-telemetrii (jak 0.5!) —
+  survival-model (forward META) mógłby je skalibrować z gier.
+- Sandbox-restore #3 (ref na 605a8dc, push-rejected!): odzysk = fetch
+  eksplicytnego refa + reset --soft na remote (NIE rebase — commit
+  na starym-bazie zawiera całą sesję!). Wzorzec do LESSONS.
+- Doublestrike-grant-flat (+6) — konserwatywny; kalibracja gdyby 2. saga
+  z III-offensywnym się pojawiła.
+
+## Aneks C — wyniki fal (closeout 2026-09-26)
+
+Wave-A (`0d2c375`, F-I1+F-I2): impulseLookValue-helper (bit-identical:
+drowner 71.10, dockhand-cast 65.70, ability 6.5/6/6/−38 SAME!) +
+anticipatedSagaValue (I-1.0/II-0.8/III-0.6-gated): rediscover
+57.59→73.79 (+16.20-exact!), no-creature 70.55 (+12.96, III-gate!).
+2 piny, golden CZYSTY (0!), 6842/6842 GREEN.
+
+Hipotezy: H1 GO (refactor-proven!), H2 GO. PMSSB-14 ZAMKNIĘTY.
+Cena: sandbox-restore #3 (odzyskany wzorcem soft-reset!).
