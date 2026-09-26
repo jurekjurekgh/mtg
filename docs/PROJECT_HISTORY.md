@@ -13179,3 +13179,20 @@ sabo-XOR (akceptacja). Forwardy OUT: foe-side hand-rip (+50.00-baza
 divest/mindstab = luka rodziny discard!), X-na-stosie (epic),
 lethal-proliferate, urgencja-okna, bramka-celowa, E7/D2-zasoby (mana).
 Rejestr BACKLOG pusty: wszystkie rodziny DONE albo OUT.
+
+Domkniecie petli PMSSB-6 (re-audyt "POKRYTEGO" odrzutu z nowym dowodem
+PMSSB-5: gain foe-side = 0 w cascie; 13 nosicieli + rider delusion;
+plan `docs/plans/PLAN_2026-09-26-pmssb6-discard.md`, Aneks A/B/C).
+Jedyna fala A (`a793b91`): F-A1 `foeRipValue` (blind-4/reveal-8/grob-6,
+cap-min; symetryczne-45 odrzucone), F-A2 guardy-fizzle w effectIsInertNow
+(cast -70 / ability -40; toll-amass i dreams-grob ratuja; mindstab ucieka
+w suspend), F-A3 galaz-ability + sac-SKALOWANY (bat +2->-1 FLIP),
+F-A4 rider-delusion (blind-cap; kasowanie PMSSB-5 zyje). Zero pokretel.
+Sonda D00-D16 (25 sond): prognozy co do punktu (po korektach cap/x0.9).
+20 pinow; suit 6757/6757 GREEN. Golden: 1 mecz +8.0 (mindstab-t2 vs
+2-karty, 264=264, kinds same) — fixture --write z wyjasnieniem co-do-flipa
+(blizej: przewidywano delusion/ravnica, trafiono mindstab/dominaria).
+LEKCJA-x0.9: cast_permanent mnozy wynik x0.9 (wagi-rodzin B4) — piny licza
+jawnie. Tie-audit: 208 realnych remisow, ZERO z ripem.
+NO-F: sklad-reki (przepisy), loot (forward unification), triage (martwy),
+mayFire-50, triggery, transform/mana, amass-9-vs-6 (pre-existing!).

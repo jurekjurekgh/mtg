@@ -153,4 +153,30 @@ lub-zero (para ravnica|innistrad-wu niesie TYLKO delusion (rider+4-cap!);
 reszta ripow poza para) — regeneracja TYLKO z wyjasnieniem co-do-flipa
 (precedens PMSSB-4A +2.0), inaczej ALARM. Benchmark bezpieczny
 (determinizm, nie jakosc).
-## Aneks C: wyniki (do wpisania po falach)
+## Aneks C: wyniki (krok-3/4/5)
+
+Fala A (`a793b91`, JEDYNA): F-A1 helper `foeRipValue` (blind-4/reveal-8/
+grob-6, cap-min) + cast-leg + ETB 3->model; F-A2 guardy w
+effectIsInertNow (cast -70 / ability -40 / modal -40 / suspend -40 —
+przeplywy ISTNIALY); F-A3 galaz-ability (helper + sac-SKALOWANY sacValue);
+F-A4 rider-delusion (blind-cap). Zero pokretel. 20 pinow
+(`test/pmssb6-discard-wave-a.test.js`). Sonda PO: D01 58/58/62/66/67,
+D02 -70x4 + toll-59 + mindstab->suspend(emergent!), D04 63.0 (cap-0!),
+bat +2->-1 (FLIP!), skull -58->-54/-58, D07 bez zmian, D12 bez zmian,
+delusion-live 54 — falsyfikator spelniony (wszystkie ruchy = model+guardy;
+D06b/D04-korekty prognoz udokumentowane: cap i waga-x0.9!).
+LEKCJA-x0.9: cast_permanent mnozy WYNIK x0.9 (wagi-rodzin B4,
+heuristic-weights.js: permanent 0.9!) — hecteyes 63.0/66.6 (nie 70/74);
+piny licza jawnie. Golden: 1 mecz (dominaria-brg|mirrodin-wu@1000):
+decyzje 264=264, kinds IDENTYCZNE, scoreSum +8.0 = DOKLADNIE decyzja #14
+(mindstab-t2 vs 2-karty: 50->58); 5 meczow bit-identycznych; fixture
+--write z wyjasnieniem. (Przewidywano delusion/ravnica — trafiono
+mindstab/dominaria: klasa ta sama (rip-delta), para inna — blad prognozy
+pary odnotowany.) Tie-audit: 12709 decyzji, 660 tie_top (208 realnych,
+11.1%) — ZERO tie z ripem; klasy pre-existing (block/land).
+NO-F: H2b-rules, loot (forward "loot-net-unification": combined-+6 vs
+split-+2 vs M67-5), triage-+15 (martwy-procz-mindstab-suspend: znak-dobry
++ guard-automatyczny!), mayFire-50 (konwencja-znaku), triggery (granica
+PMSSB-3), transform/tap/mana (OUT), amass-cast9-vs-ETB6 (pre-existing,
+forward-amass!), margines-bat (mana-forward).
+Suit 6757/6757 GREEN. Rodzina ZAMKNIETA (re-: tylko z nowym dowodem).

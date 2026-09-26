@@ -43,7 +43,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | tap/untap | 29 | POKRYTE (M139) | okna tapowania — nie ruszać bez nowego dowodu |
 | removal destroy/exile | 29+ | POKRYTE (M91/M234) | baza+worth+TMC+deathtouch+protekcja; exile≈destroy to świadome uproszczenie |
 | obrażenia (`damage*`) | 32+ | POKRYTE (M237/4) | model per-cel; timing sorcery-burn do rewizji tylko z dowodem |
-| odrzut (`discard_cards`) | 5 | POKRYTE (M202/M408) | strojone — nie ruszać bez nowego dowodu |
+| odrzut (foe-side `discard*`) | 13 | DONE (2026-09-26) | §PMSSB-6 niżej; `test/pmssb6-discard-wave-a.test.js` (20); `foeRipValue` + guardy-fizzle (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -228,6 +228,62 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-6 — odrzut wroga (2026-09-26)
+
+**Wybór rodziny** (re-audyt „POKRYTEJ" z NOWYM dowodem — rejestr BACKLOG
+pusty, cel z forwardu PMSSB-5 §5 pkt 7): zysk foe-side hand-rip był
+NIEWYCENIONY w caście (divest/mindstab = czysta baza 50.00; M202 to
+self-harm, M408 to koszt-odrzutu). 13 nosicieli + rider delusion
+(5 spell-rip / 1 ETB-rip / 2 activated-rip / 4 self-loot / 1 rider).
+Plan: `docs/plans/PLAN_2026-09-26-pmssb6-discard.md` (Aneks A/B/C: sonda
+D00-D16, model ceny 4/8, wyniki).
+
+**Pliki testów:** `test/pmssb6-discard-wave-a.test.js` (20; jedyna fala).
+**Kod:** `foeRipValue` + guardy w `effectIsInertNow` + gałąź-discard
+w ability + rider-delusion w `heuristic-bot.js`; zero nowych pokręteł.
+**Sonda:** `tools/pmssb6-discard-sonda.mjs` (25 sond, w repo na stałe).
+
+### Fala A — model + guardy (`a793b91`; F-A1/A2/A3/A4)
+- **F-A1:** `foeRipValue` (L41, jedno źródło cast/ability/ETB/rider):
+  blind-1 = +4 (lustro kosztu-self -4), reveal-1 = +8 (karta 6 + info 2),
+  exile-ręki = reveal (nogi-grobowej +6 niesie wyższość dreams),
+  cap min(n, jawny licznik ręki). Wyniki: divest 58, dreams 58/64,
+  mindstab 62, nightsnare 66, toll 67, hecteyes +4 (zamiast +3).
+  Symetryczne-45 odrzucone (strona ryzyka ≠ strona zysku).
+- **F-A2:** rip w pustą rękę = inert (cast -70 / ability -40 / modal -40
+  / suspend -40 — przepływy istniały!). Toll ratuje amass (59),
+  dreams ratuje grób (56), mindstab ucieka w suspend (emergentne!).
+- **F-A3:** gałąź-discard w ability + sac-self SKALOWANY (sacValue jak
+  severed — flat-4 załamywał się na nietoperzu): bat +2→-1 (flip
+  ogień→trzymaj!), skullcairn -58→-54 (stabilnie).
+- **F-A4:** rider-delusion (blind-cap +4): porządek bez zmiany hold/fire
+  (dowód kasowania PMSSB-5 żyje); piny PMSSB-5 bezpieczne (K06: cap-0).
+- **Sonda PO:** diff = DOKŁADNIE ruchy-modelu + holdy-guardów
+  (falsyfikator spełniony).
+- **Golden:** 1 mecz (dominaria-brg|mirrodin-wu@1000): decyzje 264=264,
+  kinds identyczne, scoreSum +8.0 = decyzja #14 (mindstab-t2 vs 2 karty);
+  5 meczów bit-identycznych; fixture `--write` z wyjaśnieniem.
+
+### Znane granice (świadome, nie bugi)
+1. Skład ręki wroga NIEWIDZIALNY z przepisów (D00) — strażnik tylko na
+   pustkę (liczność jawna); fizzle-w-niecelowy-skład to ślepe ryzyko jak
+   w prawdziwym Magicu.
+2. Loot-self bez zmian (ordering-only): rozjazd combined-+6 vs split-+2
+   vs M67-5 = forward „loot-net-unification".
+3. Triage-+15 martwy (1 nosiciel: mindstab-suspend — znak-dobry,
+   magnituda-inertna, guard-automatyczny z F-A2).
+4. Lekcja ×0.9: `cast_permanent` mnoży wynik ×0.9 (wagi-rodzin B4,
+   `heuristic-weights.js`) — hecteyes 63.0/66.6, nie 70/74; piny liczą
+   jawnie (ten sam dyskont co PMSSB-3 „5.4 = 6×0.9").
+5. Forwardy OUT: amass-cast9-vs-ETB6 (pre-existing!), transform, koszty
+   many/tap (margines-bat -1 cienki przez mana-OUT), mayFire-50
+   (konwencja-znaku), treść-triggerów (granica PMSSB-3).
+
+### Pomiar końcowy
+- Suit 6757/6757 GREEN (20 pinów); tie-audit: 12709 decyzji, 208 realnych
+  remisów (11.1%), ZERO z ripem (klasy pre-existing: block/land).
+- Rodzina ZAMKNIĘTA (re-audyt tylko z nowym dowodem).
 
 ## PMSSB-5 — kontry (2026-09-26)
 
