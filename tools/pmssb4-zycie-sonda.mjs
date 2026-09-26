@@ -209,12 +209,12 @@ for (const pres of [false, true]) {
   s.combat = { attackingPlayerId: 'p2', attackers: [{ id: 'atk' }], blockers: [] };
   show('L22b-soulmender-declared-attack', 'activate_ability(sm', s, { limit: 3 });
 }
-// L22: Soulmender main1 przy wrogu 2/2 untapped (H10: strzela mimo bloku?)
-{
-  const s = newState(); fillLibrary(s); setLife(s, 20);
+// L22: Soulmender main1 przy wrogu 2/2 untapped, zycie 20 vs 5 (F-B1: hold? ratunek strzela?)
+for (const life of [20, 5]) {
+  const s = newState(); fillLibrary(s); setLife(s, life);
   fieldCard(s, 'sm', 'soulmender');
   fieldCreature(s, 'atk', 'p2', 2, 2);
-  show('L22-soulmender-threat-main1', 'activate_ability(sm', s, { limit: 3 });
+  show(`L22-soulmender-threat-main1-life${life}`, 'activate_ability(sm', s, { limit: 3 });
 }
 // L24: Healer/Paladin rzut przy zyciu 20 vs 5 (H5: ETB slepe na zycie?)
 for (const life of [20, 5]) {

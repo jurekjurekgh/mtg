@@ -6733,7 +6733,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
                 ? (view.combat.attackers ?? []) : [];
               const neededToBlock = attackers.length > 0 && !source.tapped && canAttackNow(source);
-              if (neededToBlock) score -= lifeValue + 8; // trzymaj bloker
+              // PMSSB-4/F-B1 (H11): hold takze przed NIEZADEKLAROWANYM atakiem —
+              // tapowanie Soulmendera w main1 przy wrogu 2/2 (L22: +3 strzelal)
+              // oddaje blok wart 2+ za +1 zycia. Wyjatki: ratunek (lifeCritical,
+              // lustro bramki-sac M236 — przezycie najpierw) i okno BEZ walki
+              // wroga przed moim untapem (jego postcombat/ending — L18 strzela
+              // dalej). Koszt holdu = 0 (instant odpali na EOT wroga tak samo).
+              const lifeCriticalB1 = life <= 5 || pressure >= life;
+              const foeNoCombatLeft = !myTurn(view)
+                && (view.turn.phase === 'postcombat_main' || view.turn.phase === 'ending');
+              const plausibleThreat = !neededToBlock && !lifeCriticalB1 && !foeNoCombatLeft
+                && pressure > 0 && !source.tapped && canAttackNow(source);
+              if (neededToBlock || plausibleThreat) score -= lifeValue + 8; // trzymaj bloker
             }
         }
         for (const effect of effects) {
