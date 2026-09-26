@@ -1392,8 +1392,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
     // za samobójstwo). Ta sama drabina co cast_spell (klasy D/C).
-    draw_cards: (e, view) => 9 * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
-    draw_then_discard: (e, view) => 6 + drawDeckingPenalty(view, e.amount ?? 1),
+    // PMSSB-3/F1: unifikacja L41 — ETB-draw liczy parametr P.drawCardValue jak
+    // cast/ability (koniec magicznej 9; dostarczane 5.4 = 6 x 0.9 dyskont-permanent).
+    draw_cards: (e, view) => P.drawCardValue * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
+    draw_then_discard: (e, view) => P.drawCardValue * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
@@ -1468,7 +1470,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (cond.wasOffspring && !offspring) continue;
       if (cond.delirium || cond.descendedThisTurn || cond.controlsCreatureWithCounter) continue; // zbyt sytuacyjne — bez zmian
       const req = ability.trigger.requiresTarget ?? null;
-      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      // PMSSB-3/F-envoy: rozwijanie conditional w ETB (lustro selfDamageOfEffects,
+      // L41; Envoy bral 0 w obu galeziach).
+      const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
       for (const e of effs) {
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
@@ -3397,6 +3401,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return mine.some((o) => (o.types ?? []).includes('Planeswalker')
         && (o.subtypes ?? []).includes(effect.subtype));
     }
+    // PMSSB-3/F-mysteries: warunek landfall (mysteries-of-the-deep).
+    if (effect.condition === 'landEnteredThisTurn') return view.landEnteredThisTurn === true;
     return null;
   }
   // Efekty po rozwinięciu wrapperów `conditional` (gałąź wg warunku).
@@ -4607,7 +4613,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (effect.type === 'gain_life') {
           modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
         } else if (effect.type === 'draw_cards') {
-          modeScore += 6 * amount;
+          modeScore += P.drawCardValue * amount; // PMSSB-3/F1: param zamiast literalu (bez zmiany zachowania)
         } else if (effect.type === 'damage') {
           modeScore += 5 + 2 * amount;
         } else if (effect.type === 'surveil' || effect.type === 'scry') {
@@ -5391,7 +5397,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ujemny dla bota (strefa deck-outu) albo idzie do PRZECIWNIKA
         // (wariant celowy). Wartość dobrań (niżej, odbiorca-zależna) sama
         // decyduje, czy rzut ma sens.
-        const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards');
+        // PMSSB-3/F-temple: both-draw to tez caly-draw (duch A4-4: tresc-foe
+        // + maskowanie-spellBase) — ramka -1 jak Inspiration.
+        const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards'
+          || e?.type === 'draw_cards_both_players');
         if (isDrawOnly) score = -1;
         score -= castSacrificePenalty(view);
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
@@ -5560,7 +5569,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ZANIM efekty trafią do wyceny (damage/gain_life same policzą lethal/
         // wartość). Generycznie po deskryptorze X (ADR 0002), nie po nazwie.
         const xResolved = cmd.xValue ?? 0;
-        const scoredEffects = (effects ?? []).map((e) => (
+        // PMSSB-3/F-mysteries: rozwijanie conditional w cast (lustro
+        // selfDamageOfEffects, L41; mysteries braly 0 zamiast then/else).
+        const scoredEffects = unwrapConditionals(view, effects ?? []).map((e) => (
           e && e.amount === 'X' ? { ...e, amount: xResolved } : e
         ));
         // PMSSB-1/C (F1): timing liczy się RAZ na rzut (nie na cel) —
@@ -6055,10 +6066,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               : view.playerId;
             if (drawerId === view.playerId) {
               score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+              // PMSSB-3/F-temple: both-draw daje tez karty PRZECIWNIKOWI
+              // (lustro nogi-foe A4-4; zegar-decku foe = marginalny, OUT).
+              if (effect.type === 'draw_cards_both_players') score -= P.drawCardValue * drawAmount;
+              // PMSSB-3/F2 (lustro M211/A1-scry): instant-draw na EOT wroga
+              // (free-mana + max-info + uzycie-zaraz-po-untapie); dodatnie-tylko
+              // (bez palek: dobrane karty uzyteczne od razu). Sorcery = flat (F3).
+              if ((effect.type === 'draw_cards' || effect.type === 'draw_cards_both_players')
+                && card?.spell?.timing === 'instant'
+                && !myTurn(view) && view.turn.step === 'end') score += P.instantDrawFoeEndBonus;
             } else {
               score -= P.drawCardValue * drawAmount;
             }
           }
+          // PMSSB-3/F5 (Force Away): rider ferocious-loot — oczekiwana wartosc
+          // decyzji-loot (lustro M67) gdy ferocious spelnione (P>=4, lustro
+          // silnika effects.js:6301 po effectivePower z widoku); inaczej 0.
+          if (effect.type === 'ferocious_draw_discard'
+            && myCreatures(view).some((c) => (c.power ?? 0) >= 4)) score += P.ferociousLootExpected;
           // M218/4 — scry/surveil jako CZAR: okno jak przy zdolności (M211/A1).
           // Dla czystego scry/surveil (np. Index) kara musi przebić bazę 50 (L3),
           // więc -60; dla mieszanych (Curate: surveil+draw) kara łagodna -12,
@@ -7477,6 +7502,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             || effect.type === 'draw_then_discard') {
             const drawAmount = Number.isInteger(effect.amount) ? effect.amount : 1;
             score += P.drawCardValue * drawAmount + drawDeckingPenalty(view, drawAmount);
+            // PMSSB-3/F2 (lustro M211/A1): ability-draw instant-speed na EOT wroga.
+            if (ability?.timing === 'instant' && !myTurn(view) && view.turn.step === 'end') score += P.instantDrawFoeEndBonus;
+            // PMSSB-3/F-scroll-sac (lustro galezi-token): poswiecenie zrodla
+            // jako koszt doboru (scroll, Clue) — nie za darmo.
+            if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
           }
           // M354 (Brightwood Tracker): „zobacz N z wierzchu, weź kartę z filtra
           // do ręki” z AKTYWOWANEJ zdolności — ta rodzina miała wycenę tylko

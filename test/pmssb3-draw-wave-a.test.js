@@ -117,7 +117,7 @@ test('F10: Rager przy PUSTEJ bibliotece — bot nie rzuca (ETB-guard, L41)', () 
   assert.ok(cast && cast.score < 0, `Rager@lib0 ujemny, jest: ${JSON.stringify(cast)}`);
 });
 
-test('F10: Rager przy lib10 — bez zmian (71.1018, regresja guardu)', () => {
+test('F10: Rager przy lib10 — guard milczy (F1: pin 71.1018 -> 68.4018)', () => {
   const state = newState();
   fillLibrary(state, 10);
   addBasics(state, 'basic-swamp', 5, 'b');
@@ -125,7 +125,7 @@ test('F10: Rager przy lib10 — bez zmian (71.1018, regresja guardu)', () => {
   const { chosen, trace } = botChoice(state);
   const cast = trace.options.find((o) => o.cmd.includes('cast_permanent(rager'));
   assert.equal(chosen.type, 'cast_permanent');
-  assert.ok(cast && Math.abs(cast.score - 71.1018) < 0.001, `Rager@lib10 = 71.1018, jest: ${JSON.stringify(cast)}`);
+  assert.ok(cast && Math.abs(cast.score - 68.4018) < 0.001, `Rager@lib10 = 68.4018 (F1), jest: ${JSON.stringify(cast)}`);
 });
 
 test('F10: Quicksilver (ETB-loot) przy PUSTEJ bibliotece — bot nie rzuca', () => {

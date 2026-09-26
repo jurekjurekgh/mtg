@@ -8942,6 +8942,9 @@ export function playerView(state, playerId) {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
+    // PMSSB-3/F-mysteries: czy kontroler zagral lad w tej turze (info jawne —
+    // lady widac na polu; do warunku landEnteredThisTurn w wycenie).
+    landEnteredThisTurn: (state.landEnteredThisTurn?.[playerId] ?? 0) > 0,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
     pendingDiscardChoice: activeDiscardChoice ? {
       count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count

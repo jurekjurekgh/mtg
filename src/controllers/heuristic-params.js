@@ -82,6 +82,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // MARTWYMI pokrętłami (tuner zmieniał je bez jakiegokolwiek wpływu). Gromadzenie
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
+  'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  'ferociousLootExpected',  // PMSSB-3/F5: oczekiwana wartosc loota ferocious (lustro M67, 5)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
   // z grobu do RĘKI jest warta nie tylko swoje ciało — bot musi ją jeszcze
   // RZUCIĆ, więc wartość rośnie z jej mana value, ale tylko do granicy
@@ -292,6 +294,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // pełna wycena kosztu OUT jak w planie; skala groszowa nie przewraca
   // realnych różnic, tylko rozstrzyga remisy tego samego efektu).
   tokenManaCostTieBreak: 0.01,
+  // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
+  // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
+  instantDrawFoeEndBonus: 10,
+  // PMSSB-3/F5: oczekiwana wartosc loota ferocious (lustro M67: +5 za decyzje-tak).
+  ferociousLootExpected: 5,
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność
