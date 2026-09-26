@@ -206,3 +206,37 @@ Rodzina-45 ZWERYFIKOWANA programowo (`reg.all()` 562 → 45 trafień draw-kluczy
 
 ### B4. OUT (potwierdzone, z odesłaniem)
 gain_life-scroll-Angel; scry/surveil-ridery; mana-opp-cost (istnieje zgrubny CMC+pip w cast_permanent!); Tellah-you_cast (+ manaSpentAtLeast-generyk); generyczna-wycena-triggerów (F9c, curiosity/murder/tellah/thief/prowler); investigate; poison-ridery; mode0-temple (buff); aura-hostile-internals (curiosity--69/-188); game-ball-sac-threat; need-now-gating (F2-przyszłość).
+
+---
+
+## Aneks C — fale A/B/C: wyniki (2026-09-26, 8e7371e)
+
+Sonda: `tools/pmssb3-draw-sonda.mjs` (przeniesiona z /tmp do repo — trwaly slad audytu).
+
+### C1. Piny post-fal (wszystkie 16 prognoz z Aneksu B trafionych co do punktu)
+
+| S | przed | po | F-item |
+|---|---|---|---|
+| S01 rager | 71.1018 | 68.4018 | F1 (ETB 9->6) |
+| S09 force-ON / OFF | 88 / 100 | 93 / 100 | F5 (+5-rider tylko ON) |
+| S11 temple mode1 / mode0 | 62 / -26 | -1 / -26 | F-temple (flip rzut->trzymaj!) |
+| S12 mysteries false / true | 50 / 50 | 62 / 68 | F-mysteries (dywergencja!) |
+| S13 envoy false / true | 68.4054 = | 72.9054 / 73.8054 | F-envoy (dywergencja!) |
+| S14 scroll | 8 | 7 | F-scroll-sac |
+| S22 EOT self / foe | 11 / -13 | 21 / -13 | F2 (+10 tylko self!) |
+| S02/S03/S04/S05/S06a/S07/S08/S10b/S15/S16/S17/S19/S20/S21/S03b | — | BEZ ZMIAN | (potwierdzona chirurgicznosc) |
+
+Nowe parametry: `instantDrawFoeEndBonus: 10`, `ferociousLootExpected: 5`.
+Nowy rzut widoku: `landEnteredThisTurn` (bool; info jawne).
+Nowe testy: `test/pmssb3-draw-wave-a.test.js` (6), `test/pmssb3-draw-wave-b.test.js` (9).
+Naprawy przy okazji: K2/CR1 (wypelnienie bibliotek, konwencja pr92), E5/1 (znaki ×/eps/U+2212 w planie).
+
+### C2. Weryfikacja
+- Suit: 6701/6701 zielonych (fala A: 3 faili przejsciowych K2/CR1/E5 — naprawione; fala B: 2 golden-master — fixture zregenerowane wg procedury, hash 76b5915a40a65b39...).
+- Blast-radius unwrap-ALL (cast + ETB): ZERO faili poza golden-masterem (conditional-casty w testach nieuzywane).
+- F9b uzupelnia E-tax (thin/deckout lib1+, F9b = dziura-lib0); F10 uzupelnia E2/K2/CR1 (testy wypelnione, gra-realna strazezona).
+
+### C3. OUT — przekazanie do przyszlych petli (wszytko udokumentowane w B4)
+1. Generyczna-wycena-triggerow (F9c + curiosity/murder/tellah/thief/prowler cast-time + fire-time).
+2. Aura-hostile-internals (curiosity -69/-188).
+3. Gain-life (scroll-Angel), poison-ridery, investigate, mana-opp-cost (poza CMC+pip), need-now-gating (F2), mode0-temple (buff), game-ball-sac-threat.
