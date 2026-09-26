@@ -14,7 +14,13 @@
  */
 
 import { shuffle } from '../engine/shuffle.js';
-import { populateDeckSelects, combineDeckSources } from './deck-selects.js';
+import { populateDeckSelects, combineDeckSources, deckTitle } from './deck-selects.js';
+// AI-OpenRouter (Etap-1): konfiguracja, kolejka, panel, mock-transport.
+import { AI_MODES, aiAllModels, aiKeyStatus, aiModelLabel, loadAiConfig, saveAiConfig } from './ai-config.js';
+import { buildLorePrompt } from './ai-modes.js';
+import { createAiQueue } from './ai-queue.js';
+import { createAiPanel } from './ai-panel.js';
+import { createMockTransport, parseMockFlags } from './ai-mock.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -166,6 +172,18 @@ function bootstrapTable() {
     manaWizard: el('mana-wizard'),
     manaWizardBody: el('mana-wizard-body'),
     botMoveBody: el('bot-move-body'),
+    // AI-OpenRouter (Etap-1): sub-panel w szufladzie + pola konfiguracji.
+    aiWrap: el('ai-wrap'),
+    aiLog: el('ai-log'),
+    aiKey: el('ai-key'),
+    aiKeyStatus: el('ai-key-status'),
+    aiModel: el('ai-model'),
+    aiModelAdd: el('ai-model-add'),
+    aiModelAddBtn: el('ai-model-add-btn'),
+    aiMode: el('ai-mode'),
+    aiAppScript: el('ai-appscript'),
+    aiPing: el('ai-ping'),
+    aiPingStatus: el('ai-ping-status'),
   };
   // M257 r5/A (uwaga właściciela): hover na miniaturkach w modalu
   // „Rozgrywka” — powiększona karta ze Scryfall, tor stały (bez trybów
@@ -272,6 +290,62 @@ function bootstrapTable() {
   const AUTOSAVE_KEY = 'mtg-table-autosave-v1';
   const storage = typeof localStorage !== 'undefined' ? localStorage : null;
 
+  // --- AI-OpenRouter (Etap-1): stan, panel, kolejka -------------------------
+  // Transport na razie: mock (?ai-mock=1) albo zaślepka z jawnym błędem
+  // (prawdziwy klient OpenRouter przychodzi w Etapie-2).
+  let aiConfig = loadAiConfig(storage);
+  const aiMockFlags = parseMockFlags(typeof location !== 'undefined' ? location.search : '');
+  const aiTransport = aiMockFlags.enabled
+    ? createMockTransport(aiMockFlags)
+    : async () => ({ ok: false, text: '', error: 'Klient OpenRouter od Etapu-2 (teraz działa tylko ?ai-mock=1).' });
+  const aiPanel = createAiPanel({
+    document,
+    wrapEl: els.aiWrap,
+    logEl: els.aiLog,
+    // Ponowienie bierze AKTUALNY model; prompt zostaje ORYGINALNY (ta sama
+    // tura — historia od zapytania urosła, więc przebudowa kłamałaby).
+    onRetry: (slotId) => {
+      aiConfig = loadAiConfig(storage);
+      aiQueue.retry(slotId, { modelId: aiConfig.modelId });
+    },
+  });
+  const aiQueue = createAiQueue({
+    transport: aiTransport,
+    onPending: (slot) => aiPanel.slotPending(slot),
+    onResolved: (slot) => aiPanel.slotResolved(slot),
+  });
+  // Świat-lore talii bota = dominujący `plan` jej kart (działa też dla
+  // talii własnych); null → prompt użyje tytułu talii.
+  const aiWorldOf = (cardIds) => {
+    const counts = new Map();
+    for (const id of cardIds ?? []) {
+      const plan = registry.get(id)?.plan;
+      if (plan) counts.set(plan, (counts.get(plan) ?? 0) + 1);
+    }
+    let best = null;
+    for (const [plan, n] of counts) {
+      if (!best || n > best[1]) best = [plan, n];
+    }
+    return best ? best[0] : null;
+  };
+  // Kontekst promptu bieżącej partii (uzupełniany w startGame).
+  let aiGameCtx = null;
+  // Koniec tury → zapytanie do kolejki. Fire-and-forget: sesja nie czeka,
+  // a wyjątek i tak połknęłaby sesja (gwarancja w emitTurnCompleted).
+  const onAiTurnCompleted = ({ number }) => {
+    if (!session || !topbarToggles.aiOn() || !aiGameCtx) return;
+    aiConfig = loadAiConfig(storage); // setup z chwili zapytania
+    const turnText = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
+    if (!turnText) return;
+    const prompt = buildLorePrompt({ ...aiGameCtx, turnNumber: number, turnText });
+    aiQueue.enqueue({
+      prompt,
+      modelId: aiConfig.modelId,
+      meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId },
+    });
+  };
+  // --- Koniec bloku AI-Etap-1 ----------------------------------------------
+
   // 15f (zlecenie właściciela): ikonki-toggle belki + dźwięki czarów.
   // Odtwarzacz PRZED przełącznikami (callback dźwięku go budzi — klik to
   // gest, więc AudioContext wstaje zgodnie z polityką autoplay).
@@ -292,8 +366,103 @@ function bootstrapTable() {
       castSoundPlayer.setEnabled(on);
       if (on) castSoundPlayer.resume();
     },
+    onAiChange: (on) => aiPanel.setVisible(on),
   });
   castSoundPlayer.setEnabled(topbarToggles.soundsOn());
+  aiPanel.setVisible(topbarToggles.aiOn());
+
+  // AI-OpenRouter (Etap-1): panel „Konfiguracja AI" — zapis przy zmianie.
+  const paintAiKeyStatus = () => {
+    if (!els.aiKeyStatus) return;
+    const status = aiKeyStatus(aiConfig.apiKey);
+    els.aiKeyStatus.textContent = status === 'ok' ? 'klucz wygląda OK'
+      : status === 'suspicious' ? 'uwaga: klucz nie zaczyna się od sk-or-'
+      : 'brak klucza';
+  };
+  const fillAiModelSelect = () => {
+    const select = els.aiModel;
+    if (!select) return;
+    if (typeof select.replaceChildren === 'function') select.replaceChildren();
+    else select.innerHTML = '';
+    for (const id of aiAllModels(aiConfig.customModels)) {
+      const option = document.createElement('option');
+      option.value = id;
+      option.textContent = aiModelLabel(id);
+      select.appendChild(option);
+    }
+    select.value = aiConfig.modelId;
+  };
+  const fillAiModeSelect = () => {
+    const select = els.aiMode;
+    if (!select) return;
+    if (typeof select.replaceChildren === 'function') select.replaceChildren();
+    else select.innerHTML = '';
+    for (const mode of AI_MODES) {
+      const option = document.createElement('option');
+      option.value = mode.id;
+      option.textContent = mode.label;
+      select.appendChild(option);
+    }
+    select.value = aiConfig.mode;
+  };
+  if (els.aiKey) {
+    els.aiKey.value = aiConfig.apiKey;
+    els.aiKey.addEventListener('change', () => {
+      aiConfig = { ...aiConfig, apiKey: String(els.aiKey.value ?? '').trim() };
+      saveAiConfig(storage, aiConfig);
+      paintAiKeyStatus();
+    });
+  }
+  if (els.aiModel) {
+    els.aiModel.addEventListener('change', () => {
+      aiConfig = { ...aiConfig, modelId: els.aiModel.value };
+      saveAiConfig(storage, aiConfig);
+    });
+  }
+  els.aiModelAddBtn?.addEventListener('click', () => {
+    const id = String(els.aiModelAdd?.value ?? '').trim();
+    if (!id) return;
+    const customModels = aiConfig.customModels.includes(id)
+      ? aiConfig.customModels
+      : [...aiConfig.customModels, id];
+    aiConfig = { ...aiConfig, customModels, modelId: id };
+    saveAiConfig(storage, aiConfig);
+    fillAiModelSelect();
+    if (els.aiModelAdd) els.aiModelAdd.value = '';
+  });
+  if (els.aiMode) {
+    els.aiMode.addEventListener('change', () => {
+      aiConfig = { ...aiConfig, mode: els.aiMode.value };
+      saveAiConfig(storage, aiConfig);
+    });
+  }
+  if (els.aiAppScript) {
+    els.aiAppScript.value = aiConfig.appScriptUrl;
+    els.aiAppScript.addEventListener('change', () => {
+      aiConfig = { ...aiConfig, appScriptUrl: String(els.aiAppScript.value ?? '').trim() };
+      saveAiConfig(storage, aiConfig);
+    });
+  }
+  els.aiPing?.addEventListener('click', async () => {
+    if (!els.aiPingStatus) return;
+    aiConfig = loadAiConfig(storage);
+    if (!aiMockFlags.enabled && aiKeyStatus(aiConfig.apiKey) === 'missing') {
+      els.aiPingStatus.textContent = 'wpisz najpierw klucz API';
+      return;
+    }
+    els.aiPingStatus.textContent = 'sprawdzam…';
+    try {
+      const res = await aiTransport({ prompt: 'ping', modelId: aiConfig.modelId, meta: { ping: true }, signal: null });
+      els.aiPingStatus.textContent = res?.ok
+        ? `OK (${aiModelLabel(aiConfig.modelId)}${aiMockFlags.enabled ? ', mock' : ''})`
+        : `błąd: ${res?.error ?? 'nieznany'}`;
+    } catch (error) {
+      els.aiPingStatus.textContent = `błąd: ${error instanceof Error ? error.message : String(error)}`;
+    }
+  });
+  fillAiModelSelect();
+  fillAiModeSelect();
+  paintAiKeyStatus();
 
   let session = null;
   // UWAGA D (zgłoszenie właściciela 2026-09-25b): ile pozycji bufora
@@ -2517,7 +2686,21 @@ function bootstrapTable() {
         // B (uwaga właściciela): obserwator transformacji DFC — pierwsze
         // odwrócenie otwiera warstwę wysoko-graficzną (jeśli tryb włączony).
         onTransform: (payload) => onTransformShowcase(payload),
+        // AI-OpenRouter (Etap-1): koniec tury → zapytanie do kolejki AI
+        // (fire-and-forget; sesja połyka wyjątki obserwatora).
+        onTurnCompleted: onAiTurnCompleted,
       });
+      // AI: kontekst promptu bieżącej partii (talia/świat bota) + czyste
+      // okno i kolejka (spóźnione odpowiedzi poprzedniej partii giną).
+      aiGameCtx = {
+        botLogName: TURN_NAMES[BOT_ID] ?? 'Nieprzyjaciel',
+        deckTitle: deckTitle(windowAllDecks[botKey] ?? repoDecks[botKey], botKey),
+        deckKey: botKey,
+        world: aiWorldOf(decks.get(BOT_ID)),
+        gameId: `${seed}-${new Date().toISOString()}`,
+      };
+      aiQueue.reset();
+      aiPanel.clear();
       // B: nowa partia czyści rejestr odwróceń pokazanych na warstwie.
       transformedShowcaseShown.clear();
       botMovesPainted = 0; // UWAGA D: nowa partia = nowy bufor modala

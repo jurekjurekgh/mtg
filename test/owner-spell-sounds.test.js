@@ -265,16 +265,18 @@ test('playCastSound: karta → klucz typ:kolor; brak karty = no-op', () => {
 const docWithButtons = () => {
   const sound = new MiniEl('button', 'sound-toggle');
   const hiGfx = new MiniEl('button', 'hi-gfx');
-  const byId = { 'sound-toggle': sound, 'hi-gfx': hiGfx };
-  return { document: { getElementById: (id) => byId[id] ?? null }, sound, hiGfx };
+  const ai = new MiniEl('button', 'ai-toggle');
+  const byId = { 'sound-toggle': sound, 'hi-gfx': hiGfx, 'ai-toggle': ai };
+  return { document: { getElementById: (id) => byId[id] ?? null }, sound, hiGfx, ai };
 };
 
-test('toggles: domyślnie dźwięki OFF, hi-gfx ON (wymóg właściciela)', () => {
-  assert.deepEqual(DEFAULT_PREFS, { sounds: false, hiGfx: true });
+test('toggles: domyślnie dźwięki OFF, hi-gfx ON, AI OFF (wymóg właściciela)', () => {
+  assert.deepEqual(DEFAULT_PREFS, { sounds: false, hiGfx: true, ai: false });
   const { document } = docWithButtons();
   const t = createTopbarToggles({ document, storage: memStorage() });
   assert.equal(t.soundsOn(), false);
   assert.equal(t.hiGfxOn(), true);
+  assert.equal(t.aiOn(), false);
 });
 
 test('toggles: klik odwraca stan, aria-pressed i ikonka jadą razem', () => {
@@ -286,6 +288,21 @@ test('toggles: klik odwraca stan, aria-pressed i ikonka jadą razem', () => {
   assert.equal(t.soundsOn(), true);
   assert.equal(sound.getAttribute('aria-pressed'), 'true');
   assert.equal(sound.innerHTML, TOGGLE_ICONS.sounds.on);
+});
+
+test('toggles AI-E1: toggle AI OFF→ON, ikonka + zapis + callback', () => {
+  const { document, ai } = docWithButtons();
+  const storage = memStorage();
+  const seen = [];
+  const t = createTopbarToggles({ document, storage, onAiChange: (v) => seen.push(v) });
+  assert.equal(ai.getAttribute('aria-pressed'), 'false');
+  assert.equal(ai.innerHTML, TOGGLE_ICONS.ai.off);
+  ai.click();
+  assert.equal(t.aiOn(), true);
+  assert.equal(ai.getAttribute('aria-pressed'), 'true');
+  assert.equal(ai.innerHTML, TOGGLE_ICONS.ai.on);
+  assert.deepEqual(seen, [true]);
+  assert.ok(storage.getItem(PREFS_KEY).includes('"ai":true'));
 });
 
 test('toggles: preferencje zapisane i odczytane (pusta/uszkodzona pamięć = domyślne)', () => {
