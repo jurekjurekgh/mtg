@@ -71,6 +71,36 @@ T12 modal-+5-ETB-presence (4977/5119: co to? kontekst!).
   when_you_cast_spell-presence (4065) — reszta ZERO.
 - crows/talions (PMSSB-8): body-only, faerie-inwariantne.
 
+## Aneks A2 — wyniki sondy (krok-2/3, audyt WŁASNY)
+
+- T01-TRÓJKA: prowler = piker = game = **64.8 IDENTYCZNE**
+  (dies-draw ≡ dies-gain ≡ vanilla — anticipacja-ZERO potwierdzona!).
+- T02 dissenter 63.0, T03 clique 71.1 (ETB-reanimate-miss + persist-0!),
+  T04 bloodflies 66.6, T05 courser 68.4, T06 zoraline 69.3,
+  T07 outcasts 68.4 (transform-0!), T09 scrollthief 63.9 — body-only.
+- T08 butcher 63.9 vs oryx-twin 64.8 (−0.9: ETB-bez-celu!);
+  T08c +cel = 85.5 (noga-ETB +21.6 ✓ ETB działa; leaves-risk = 0).
+- T10 feather 61.2 = 61.2 (kolor-miss → 0 poprawnie; live-case w PMSSB-4).
+- T11 survival-model: BRAK. T12 modal-+5 = picker-reanimacji.
+
+Scope-gate: Wave-A = DIES-only (F-T1, najciaśniejszy!); Wave-B = attacks
+(evasion-model do zaprojektowania); upkeep-transform/leaves-O-ring/ogon
+= forwardy po Wave-B (warunki dzienne, model-removalu — za wcześnie!).
+
+Wave-A-design (F-T1): `anticipatedDiesValue(view, def)` = 0.5 × wartość
+efektu (reuse tabeli ETB, L41!) dla triggerów `dies` własnych;
++ nowy wpis ETB `return_with_counter` (persist-clique: rekurencja-ciała
+≈ 0.5 × body? — kalibracja w fali!); integracja w cast_permanent
+(obok 5398-ETB!). Likelihood-0.5: „połowa stworów ginie" (konserwatywnie;
+asumpcja udokumentowana + pin na kształcie!). EXCLUDE: `any_creature_dies`
+(selhoff — nie własny-dies!), reflexive-sacrifice (koszt!).
+Predykcje: prowler 64.8→67.5 (+2.7 = 3×0.9!), game 64.8→66.x,
+dissenter 63.0→65.x, clique 71.1→7x, piker/oryx BEZ ZMIAN.
+Golden: ryzyko ŚREDNIE (9 nosicieli; wyjaśnienie per-flip!).
+
+Audyt: H1 GO (Wave-A), H2 GO (Wave-B), H3/H4 FORWARD, H5 AKCEPT
+(0.5 z asumpcją + pin).
+
 ## Aneks B — forwardy (WYPEŁNIĆ w closeout)
 
 (none yet)
