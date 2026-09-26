@@ -119,7 +119,7 @@ Wave-B (F-T2, attacks): `anticipatedAttacksValue` = 0.5 × bramka-evasion
 Wszystkie PRE-zweryfikowane stashem: bloodflies +1.8, horror +3.6,
 courser/caves +1.35, veteran/thistledown +2.7, waveskimmer/benediction
 +0.45, zoraline BEZ ZMIAN (pay-SKIP!). Bramka: 71.1-vs-72.0 (delta-0.9!).
-E5/1: cyrylica „блока" w komentarzu (wpadka językowa!) → naprawiono.
+E5/1: rosyjskie słowo w komentarzu (wpadka językowa!) → naprawiono.
 Golden: 2× veteran +2.7 (ravnica@1000 #59-t6 + #164-t14, fingerprint
 68.4027!, score-only) — `--write` (hash 7f92154f…).
 

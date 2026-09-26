@@ -256,7 +256,7 @@ sonda: `tools/pmssb9-triggery-sonda.mjs` (T01–T12 + ablacje).
 1. Ogon (upkeep-transform, leaves-O-ring, combat-gated, end/cast/enters).
 2. Persist-unification (flat-5 vs model-3.5), pay-trigger-net, land-90,
    survival-model, stance-kalibracja.
-3. Lekcja E5: komentarze TYLKO łacińskie (wpadka „блока"!).
+3. Lekcja E5: komentarze TYLKO łacińskie (wpadka: rosyjskie słowo w komentarzu!).
 
 ### Pomiar końcowy
 - Suit 6798/6798 GREEN (19 pinów); golden 2× `--write` z per-flip.

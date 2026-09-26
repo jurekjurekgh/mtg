@@ -1438,6 +1438,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (wlasciwe M169/K); nieznany kierunek = 0 (konserwatywnie).
     lose_life: (e, view, req) => {
       if (e.scope === 'controller' || e.applyTo === 'self' || e.scope === 'self') return 0;
+      // PMSSB-10/F-O (harvester!): applyTo-event_player w triggerze
+      // lądowym-wroga = TEN wróg (asumpcja udokumentowana + pin!).
+      if (e.applyTo === 'event_player') return 4 * (e.amount ?? 1);
       const foeReq = req && (req.type === 'opponent' || req.type === 'each_opponent');
       if (foeReq || ['target', 'opponent', 'enemy', 'each_opponent'].includes(e.scope)) return 4 * (e.amount ?? 1);
       return 0;
@@ -1445,7 +1448,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-2/A (F3): token z ETB liczy ilość i ciało/rolę jak czar
     // (koniec flat 12 — Jyoti z 0 tokenami dostaje 0). Wchodzący stwór sam
     // jest gospodarzem licznika (jak buff_creatures_you_control).
+    // PMSSB-10/F-O (robber!): token pod kontrolą WROGA (controllerFromEvent
+    // damagedPlayerId) niesie ZNAK-F5: ciało-ujemne + rider-damage DLA wroga
+    // (upkeep-1 boli jego, nie mnie!). Bez tego upkeep-liczył-się-jak-self.
     create_token: (e, view, req, def) => tokenBodyValue(view, e, {
+      tokenControllerId: e.controllerFromEvent === 'damagedPlayerId'
+        ? (view.players ?? []).find((p) => p.id !== view.playerId)?.id ?? null : null,
       entering: def ? {
         id: 'pmssb2-entering', controllerId: view.playerId, kind: 'creature',
         power: def.power ?? 0, toughness: def.toughness ?? 0,
@@ -1458,6 +1466,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_nonland_permanent_linked: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
+    // PMSSB-10/F-O (wrecker!): generyczny exile-permanent (lustro-18!).
+    exile_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
     bounce_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
     tap_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
     lock_untap: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
@@ -1509,6 +1519,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // exalted_pump = +1/+1 w samotnym ataku (+2: połowa pompy-Detain-4
     // (bije-raz-vs-trwale); pin na kształcie waveskimmera!).
     exalted_pump: () => 2,
+    // PMSSB-10/F-O (Wave-A): wpisy dla anticipacji-ogona.
+    // pump = ciało (lustro 5395/9867: P×2+T×1 — L41!).
+    pump: (e) => (e.power ?? 0) * 2 + (e.toughness ?? 0),
+    // cant_block = usunięcie blokera z przyszłej walki (+2: połowa untapu-4
+    // (jednorazowe-vs-trwałe); konserwatywnie, pin na kształcie jestera!).
+    cant_block: () => 2,
+    // PMSSB-10/F-O (flooding!): mill-WROGA (lustro cast-6294: 20+3n!).
+    // Wpisy służą helperowi (flooding = foe-only); self-mill NIGDY tędy
+    // (tylko tryby wrogie!).
+    mill_cards: (e) => 20 + 3 * (e.amount ?? 1),
+    mill_from_bottom: (e) => 20 + 3 * (e.amount ?? 1),
   });
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
     if (!def) return 0;
@@ -1595,6 +1616,71 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // attacks_alone (mieszane ataki+alone nie istnieją w katalogu!).
     const hasAlone = (def.abilities ?? []).some((a) => a?.type === 'triggered' && a.trigger?.event === 'attacks_alone');
     return 0.5 * gate * (hasAlone ? 0.5 : 1) * total;
+  };
+  // PMSSB-10/F-O (anticipacja-ogona, Wave-A): triggery combat-gated /
+  // you-cast / another-enters / land-foe = likelihood × tabela-ETB (L41!).
+  // Likelihood: gated (bramka-F-T2 × 0.5!), cast-0.5 (second-spell-0.25!,
+  // red-gate jak imminent!), enters-0.5, land-foe-0.7 (wróg kładzie ląd!).
+  // SKIP: pay-gated (jak F-T1!), nogi z polem `condition` (bramki
+  // niemodelowane: manaSpent-tellah!), hostless-enchanted (curiosity
+  // bez gospodarza — kształt-host w pinach!).
+  // NEGATYW (demon!): sacrifice-own = −0.5 × najtańszy-sac (sacValue
+  // P2+T+MV jak severed-5800; bez stwora = własne-ciało!).
+  // AURY-host (curiosity/flooding!): gospodarz z cmd.targets (bramka-evasion
+  // gospodarza!); hostless = 0. pain-for-all SKIP (amountFrom-damage
+  // nieczytelne!). flooding-mill = 0.7 × (20+3n) (tap-co-turę!).
+  const anticipatedTailValue = (view, def, cmd = null) => {
+    if (!def) return 0;
+    const foes = enemyCreatures(view);
+    const kws = def.keywords ?? [];
+    const flies = kws.includes('flying');
+    const blocked = foes.length > 0 && !kws.includes('unblockable')
+      && !(flies && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')))
+      && !(kws.includes('menace') && foes.length < 2);
+    const gate = blocked ? 0.5 : 1.0;
+    let total = 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered') continue;
+      const ev = ability.trigger?.event;
+      let like = 0;
+      if (ev === 'combat_damage_to_player' || ev === 'any_combat_damage_to_player') like = 0.5 * gate;
+      else if (ev === 'enchanted_creature_damage_to_opponent') {
+        // Gospodarz-aura z celu komendy (bramka JEGO-evasion!); bez celu = 0.
+        const host = cmd?.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
+        if (!host) continue;
+        const hk = host.keywords ?? [];
+        const hBlocked = foes.length > 0
+          && !(hk.includes('flying') && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
+        like = 0.5 * (hBlocked ? 0.5 : 1.0);
+      } else if (ev === 'enchanted_permanent_tapped') like = 0.7;
+      else if (ev === 'enchanted_creature_dealt_damage') continue; // pain-SKIP (amountFrom!)
+      else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell') like = 0.5;
+      else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
+      else if (ev === 'another_creature_enters') like = 0.5;
+      else if (ev === 'land_entered_under_opponent_control') like = 0.7;
+      else continue;
+      if (like <= 0) continue;
+      if (ability.trigger?.payMana != null || (ability.trigger?.payColors?.length ?? 0) > 0) continue;
+      // Bramka-kolorów (jester-red!): lustro imminentGain (pool-R?).
+      const need = ability.trigger?.condition?.spellColorsInclude ?? [];
+      if (need.length > 0 && !manaUnlockCandidates(view).some((o) => (o.colors ?? []).some((c) => need.includes(c)))) continue;
+      const req = ability.trigger.requiresTarget ?? null;
+      const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+      for (const e of effs) {
+        if (!e?.type || e.condition != null) continue;
+        // NEGATYW-demon: poświęcenie własnego (najtańszego!) stwora.
+        if (e.type === 'sacrifice_permanent' && (e.scope == null || e.scope === 'controller' || e.applyTo === 'self')) {
+          const kics = myCreatures(view).map((o) => (o.power ?? 0) * 2 + (o.toughness ?? 0) + (o.manaCost ?? 0));
+          const selfBody = (def.power ?? 0) * 2 + (def.toughness ?? 0) + (def.manaCost ?? 0);
+          total -= like * (kics.length > 0 ? Math.min(...kics) : selfBody);
+          continue;
+        }
+        const fn = ETB_EFFECT_BONUS[e.type];
+        if (!fn) continue;
+        total += like * fn(e, view, req, def);
+      }
+    }
+    return total;
   };
   const handCard = (view, objectId) => view.zones.hand.find((o) => o.id === objectId);
   // Karta w DOWOLNEJ strefie widoku (M103/D: Escape/Flashback grają z grobu —
@@ -5267,9 +5353,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && !lostKeywords.some((k) => (target.keywords ?? []).includes(k))) {
               return finish(-P.auraLosesKeywordsWastedPenalty - P.auraHostileWorthWeight * worth);
             }
+            // PMSSB-10/F-O (flooding!): aura-wroga niesie też anticipację-ogona.
             return finish(target.controllerId === view.playerId
               ? -P.auraHostileOwnPenalty - P.auraHostileWorthWeight * worth      // unieruchamiam własnego stwora
-              : P.auraHostileEnemyBase + P.auraHostileEnemyWorthWeight * worth); // unieruchamiam stwora wroga
+              : P.auraHostileEnemyBase + P.auraHostileEnemyWorthWeight * worth
+                + anticipatedTailValue(view, card ? cardDef(card.cardId) : undefined, cmd));
           }
           if (!target || target.controllerId !== view.playerId) return finish(-P.auraNoTargetPenalty);
           // M209 (audyt M207, Guildscorn Ward): aura, ktorej CALA wartoscia
@@ -5355,9 +5443,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // dochodzi SWIEZOSC grantow — aura na stworze, ktory ma juz flying,
           // jest realnie slabym celem, a nie tym samym celem (L169: wczesniej
           // trzy warianty = identyczne 72,9, wiec decydowala kolejnosc enumeracji).
+          // PMSSB-10/F-O (curiosity/flooding!): aura-beneficial niesie też
+          // anticipację-ogona (trigger-gospodarza!).
           return finish(P.auraBase + P.auraBuffWorthWeight * ((target.power ?? 0) + pump.power) + ((target.toughness ?? 0) + pump.toughness)
             + auraKeywordValue(view, descriptor, target)
-            - offWindowFlashProtectionPenalty);
+            - offWindowFlashProtectionPenalty
+            + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
@@ -5483,6 +5574,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score += anticipatedDiesValue(view, def);
         // PMSSB-9/F-T2: anticipacja-attacks nosiciela (0 bez triggerów-ataku).
         score += anticipatedAttacksValue(view, def);
+        // PMSSB-10/F-O: anticipacja-ogona nosiciela (0 bez triggerów-ogona).
+        score += anticipatedTailValue(view, def, cmd);
         // C-R7 (audyt Batch53): warianty kicker/offspring dopiero co zdobyły
         // WARTOŚĆ (warunkowe ETB liczone wyżej), więc teraz uczciwie liczymy
         // ich KOSZT — dopłata opłacalna, tylko gdy premia przewyższa manę.
