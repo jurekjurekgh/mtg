@@ -53,6 +53,22 @@ PRE (R/W-lands + foe): panic 65.70 (0!), horizon 65.70 (0!),
 descendant 69.30 (0?), spire 82.00 (land!), forebear 70.20 (body!).
 GAP = pay-net-anticipacja (H1/H2 GO, H3 do weryfikacji!).
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks B — forwardy (closeout 2026-09-26)
 
-(none yet)
+- Tabela to ETB_EFFECT_BONUS (nie ETB_TABLE!) — helper pay v1 użył
+  złej-nazwy (złapane czytaniem tail-legs przed testem!).
+- Resolve-pay = ZAWSZE-płać (75-vs-15, bez worth-check!) — anticipacja
+  liczy koszt-jako-pewny (like × (benefit−pay)), nie OPT-ucieczkę.
+- Spire-clamp: delta-lądowa [−14,25] — sac-afford-gate (−12) ląduje
+  w clampie (76 = 90−14, nie 73!) — dokumentować clamp-math w pinach.
+- Pay-or-sacrifice + counter-pay = OSOBNE rodziny (nie payMana-trigger!).
+
+## Aneks C — wyniki fal (closeout 2026-09-26)
+
+Wave-A (`22ed243`, F-P1+F-P2): anticipatedPayValue = max(0, like ×
+(benefit − pay)): panic/horizon +2.25 (color-gated!), descendant
++0.45-blocked/+0.9-open (evasion-gate!), endure_x-entry (+4!).
+Spire: −1-pay / 76-sac-clamp. Forebear grave-SKIP SAME. 5 pinów,
+golden CZYSTY (0!), 6838/6838 GREEN.
+
+Hipotezy: H1 GO, H2 GO, H3 GO. PMSSB-12 ZAMKNIĘTY (single-wave!).

@@ -13231,3 +13231,8 @@ PMSSB-11 (2026-09-26, sac-economics): BACKLOG pusty -> forward PMSSB-10
 silumgar +2.7, drowner +5.4, gorger +2.7. 9 bram CLOSED, 5 guardow SAME.
 5 pinow, golden CZYSTY (0), suit 6833/6833 GREEN. Forwardy:
 double-discount-lesson, impulse-unifikacja, worthIt-wzorzec.
+PMSSB-12 (2026-09-26, pay-trigger-net): BACKLOG pusty -> forward PMSSB-9
+(pay-SKIP). Wave-A pay-net (bot placi ZAWSZE): spellbomby +2.25
+(color-gate!), descendant +0.45/+0.9, spire -1/-9-clamp, forebear SKIP.
+5 pinow, golden CZYSTY (0), suit 6838/6838 GREEN. Forwardy:
+ETB_EFFECT_BONUS-nazwa, spire-clamp, pay-or-sac-rodzina.
