@@ -87,6 +87,36 @@ A/B/C + piny `test/pmssb5-kontry-wave-*.test.js`. 4. Sonda PO (diff).
 tie-audit. 6. Docs: Aneks C + hub (§PMSSB-5 + rejestr) +
 PROJECT_HISTORY. 7. Bramy + push po kazdym kroku.
 
-## Aneks A: pomiar PRZED (do wpisania po krok-1)
+## Aneks A: pomiar PRZED (`tools/pmssb5-kontry-sonda.mjs`, 25 sond)
+
+| Sonda | Wynik | Prognoza |
+|---|---|---|
+| K01 negate vs impactful (fireball) | 50.0, strzela | 50 TAK |
+| K02 negate vs trivial (twiddle MV1) | -10, trzyma | -10 TAK |
+| K02b negate vs shock MV1 (damage!) | 50, strzela | 50 TAK |
+| K03 negate we wlasny czar | -90, odmawia | -90 TAK |
+| K04 stoic mc0/mc3 | 50 == 50 | rowne TAK |
+| K05a sabotage-kontra w czar-artefakt | 50 | 50 TAK |
+| K05b sabotage-bounce w artefakt | 80 | pomiar |
+| K05c sabotage vs fireball | BRAK OFERT | brak TAK |
+| K06 delusion placi/tapped-out | -40 / 50 | -40/50 TAK |
+| K07 platnik 1-drop/7-drop | 85/10 == 85/10 | flat TAK |
+| K08 fuel vs impactful | 50 | 50 TAK |
+| K09 abstruse tapped-out/placi | 59.97 / -30.03 | pomiar |
+| K10 6 luk (divest/divine/unearth/forced/triumph/dreams) | WSZYSTKIE -10, trzyma | -10 TAK |
+| K11 wojna kontr + wlasny | 50 / -90 | 50/-90 TAK |
+| K12 negate vs creature-spell | BRAK OFERT | brak TAK |
+| K13 dwa cele | 50 vs -10, wybor OK | TAK |
+
+Status H1-H8: H1 POTWIERDZONA (flat-50, cel 1-drop-shock == fireball).
+H2 POTWIERDZONA (hold trywialnego -10). H3 POTWIERDZONA (6 luk: hand-rip
+MV1, edykt MV2, reanimacja MV1, tuck MV2, removal-artefaktow MV2 —
+bot patrzy jak reka znika). H4 POTWIERDZONA (-90 mimo discard-1; rider
+wartosciowany na 0). H5 POTWIERDZONA (platnik flat: 7-drop == 1-drop).
+H6 POTWIERDZONA (fuel-proliferate = 0; abstruse-scion = +9.97;
+delusion-discard = 0). H7 POTWIERDZONA (sabotage: kontra 50 / bounce 80 —
+tryb bounca LICZBOWO ATRAKCYJNIEJSZY od kontry!). H8 POTWIERDZONA
+(M120 -90; wojna-kontr strzela; stoic-znizka niewidzialna; brak-celu =
+brak-oferty po stronie silnika; noncreature-only egzekwowane silnikiem).
 ## Aneks B: audyt + fale (do wpisania po krok-2)
 ## Aneks C: wyniki (do wpisania po falach)
