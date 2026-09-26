@@ -112,8 +112,10 @@ test('F-A3 skullcairn: reka-2 = -54 (stabilne trzymaj), pusta = -58 (cap-0!)', (
     assert.equal(options[0].score, want);
   }
 });
-test('F-A1 guard: self-rip bez zmian (divest +3, mindstab -1); self-lone-divest = -70 (inert!)', () => {
-  for (const [id, want] of [['divest', 3], ['mindstab', -1]]) {
+test('F-A1 guard: self-rip (PMSSB-7/F-H1: divest -5, mindstab -9); self-lone-divest = -70 (inert!)', () => {
+  // PMSSB-7 flip: divest +3 → -5 (dziura hold załatana mapą 45→53);
+  // mindstab -1 → -9 (ten sam bump ×2 karty).
+  for (const [id, want] of [['divest', -5], ['mindstab', -9]]) {
     const s = newState(); handCard(s, 'rip', id); foeHand(s, ['shock', 'twiddle', 'fireball']);
     handCard(s, 'c1', 'shock'); handCard(s, 'c2', 'twiddle');
     const { options } = scores(s, 'cast_spell(rip->p1');

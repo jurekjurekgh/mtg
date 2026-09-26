@@ -3446,10 +3446,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const HOSTILE_PLAYER_EFFECTS = new Map([
     ['mill_cards', 25],
     ['mill_from_bottom', 25],
-    ['discard_cards', 45],
-    ['discard_each_opponent', 45],
-    ['reveal_hand_choose_discard', 45],
-    ['reveal_hand_choose_exile', 45],
+    // PMSSB-7/F-H1 (divest-self +3): rip WŁASNEJ ręki musi boleć mocniej
+    // niż baza akcji 50 — inaczej 45+2=47 < 50 i bot ODPALA samouszkodzenie.
+    // 53 = 10× foe-blind-rip-5 (PMSSB-6/An.B, awersja do straty) + margines
+    // ponad bazę; dotyczy wyłącznie wyników self-rip (5 wołań, wszystkie
+    // w kierunku „trzymaj mocniej"; kontrola klątw czyta obecność typu).
+    ['discard_cards', 53],
+    ['discard_each_opponent', 53],
+    ['reveal_hand_choose_discard', 53],
+    ['reveal_hand_choose_exile', 53],
     ['lose_life', 35],
     ['damage', 40],
     ['poison_counters_added', 45],
@@ -6113,10 +6118,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
-            // hour + ciało/rola w środku). Kara za pusty czar zostaje:
-            // tokenBodyValue zwraca 0, a −25 mówi „karta w błoto" (M106/Z6).
+            // hour + ciało/rola w środku).
+            // PMSSB-7/F-H2: dawny „−25 za pusty czar" (M106/Z6) usunięty jako
+            // martwy kod — count-0 łapie wcześniej allEffectsInertNow → −70
+            // (S01/S02: flurry/howl = −70), a token bezwartościowy przy
+            // count>0 nie ma nosicieli w katalogu (skan 0/0 czysty).
             const tokenValue = tokenBodyValue(view, effect);
-            if (tokenValue === 0) score -= 25; // czar bez skutku = karta w błoto
             score += tokenValue;
             if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
             spellMakesTokens = true;
