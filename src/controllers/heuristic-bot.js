@@ -956,6 +956,28 @@ function effectIsInertNow(view, effect, cmd) {
       return !(view.zones.graveyard ?? []).some((o) => o.controllerId !== view.playerId
         && (o.kind === 'creature' || (o.types ?? []).includes('Creature')));
     }
+    // PMSSB-6/F-A2: rip w pustą rękę = fizzle (silnik wraca bez efektu —
+    // effects.js:6380/6464; karta i mana w błoto). Cel: cmd.targets[0]
+    // (gracz) / applyTo-self (ja) / each (wszyscy wrogowie); licznik BEZ
+    // karty rzucanej (przy rozstrzygnięciu jest już na stosie). Dreams:
+    // ręka-pusta I grób-bez-celu (stwór/artefakt wroga — strefa jawna).
+    case 'reveal_hand_choose_discard':
+    case 'reveal_hand_choose_exile':
+    case 'discard_cards':
+    case 'discard_each_opponent': {
+      const handOf = (pid) => (view.zones.hand ?? [])
+        .filter((o) => o.controllerId === pid && o.id !== cmd?.objectId).length;
+      if (effect.type === 'discard_each_opponent') {
+        const foes = (view.players ?? []).map((p) => p.id).filter((id) => id !== view.playerId);
+        return foes.length > 0 && foes.every((foeId) => handOf(foeId) === 0);
+      }
+      const pid = effect.applyTo === 'self' ? view.playerId : (cmd?.targets ?? [])[0];
+      if (typeof pid !== 'string' || !(view.players ?? []).some((p) => p.id === pid)) return false;
+      if (handOf(pid) > 0) return false;
+      if (effect.type !== 'reveal_hand_choose_exile') return true;
+      return !(view.zones.graveyard ?? []).some((o) => o.controllerId === pid
+        && (o.kind === 'creature' || (o.types ?? []).includes('Artifact')));
+    }
     default:
       return false;
   }
@@ -1454,7 +1476,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wyceny" (L50).
     reveal_top_each_player_lose_life_mana_value: () => 0,
     opponent_hand_card_to_top: () => 3,
-    discard_each_opponent: () => 3,
+    // PMSSB-6/F-A1: ETB-rip wspólnym modelem (cap-na-liczniku zamiast flat-3).
+    discard_each_opponent: (e, view) => foeRipValue(view, e, null),
     take_initiative: () => 6,
     amass: () => 6,
     fabricate: () => 8,
@@ -3557,6 +3580,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * PMSSB-6/F-A1: ZYSK z odrzutu WROGA — lustro selfHarmPenalty (tamta liczy
+   * KOSZT utraty własnych kart (45+2x, strona ryzyka), ta ZYSK z odbierania
+   * kart wrogowi (strona przepływu-kart). Dwie różne decyzje, dwie skale
+   * (ten sam wzorzec co tap-45-vs-M237/2 z PMSSB-5): blind-1 (wróg wybiera
+   * najgorszą) = +4 (lustro kosztu-self -4 z tabeli ETB); reveal-1 (JA
+   * wybieram + info) = P.drawCardValue + 2 (info = połowa scry-4);
+   * exile-ręki = reveal (wyższość dreams niesie noga-grobowa +6 — wybór
+   * z jawnego grobu, bez info). Cap: min(n, jawny licznik ręki celu) —
+   * skład ręki jest ukryty (D00), liczność jawna (CR 400.2). Cel własny
+   * (self-rip) = 0 — tamta strona należy do selfHarmPenalty (bez podwójnego
+   * liczenia). Jedno źródło dla cast/ability/ETB/ridera (L41).
+   */
+  function foeRipValue(view, effect, targetId) {
+    if (!effect) return 0;
+    if (targetId == null) {
+      // Bez celu tylko discard_each_opponent (hecteyes-ETB): suma po wrogach.
+      if (effect.type !== 'discard_each_opponent') return 0;
+      const foes = (view.players ?? []).map((p) => p.id).filter((id) => id !== view.playerId);
+      return foes.reduce((sum, foeId) => sum
+        + foeRipValue(view, { ...effect, type: 'discard_cards', applyTo: 'target' }, foeId), 0);
+    }
+    if (targetId === view.playerId || effect.applyTo === 'self') return 0;
+    const handCount = (view.zones.hand ?? []).filter((o) => o.controllerId === targetId).length;
+    const n = Number.isInteger(effect.amount) ? effect.amount
+      : Number.isInteger(effect.declineAmount) ? effect.declineAmount : 1;
+    switch (effect.type) {
+      case 'discard_cards':
+        return 4 * Math.min(n, handCount);
+      case 'reveal_hand_choose_discard':
+        return (P.drawCardValue + 2) * Math.min(n, handCount);
+      case 'reveal_hand_choose_exile': {
+        const graveValid = (view.zones.graveyard ?? []).some((o) => o.controllerId === targetId
+          && (o.kind === 'creature' || (o.types ?? []).includes('Artifact')));
+        return (P.drawCardValue + 2) * Math.min(1, handCount) + (graveValid ? P.drawCardValue : 0);
+      }
+      default:
+        return 0;
+    }
+  }
+
+  /**
    * M179/E (zlecenie właściciela): efekty PRZYJAZNE celowi — pozytywny efekt
    * wymierzony we WROGA to symetryczny błąd do selfHarmPenalty (wzmacniamy/
    * ratujemy przeciwnika własną kartą i maną). Centralna klamra: działa
@@ -5605,6 +5669,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
               if ((payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1)) score -= 90;
             }
+            // PMSSB-6/F-A4: rider-odrzut delusion (bezwarunkowy — jedzie przy
+            // strzale-teraz i przy strzale-później, więc dowód kasowania
+            // PMSSB-5 żyje (hold/fire bez zmian); tu tylko porządek
+            // (delusion vs inne zagrania) wspólnym modelem (L41).
+            if ((unlessPays.discardCount ?? 0) > 0 && payerId && payerId !== view.playerId) {
+              score += foeRipValue(view, { type: 'discard_cards', amount: unlessPays.discardCount, applyTo: 'target' }, payerId);
+            }
           }
         }
         if (spell.fireball) {
@@ -6087,6 +6158,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += (graveSynergy ? 6 : -25) + deckOutRisk;
               }
             }
+          }
+          // PMSSB-6/F-A1: odrzut WROGA (cel to gracz) — dotąd 0-dodane
+          // (divest/mindstab = czysta baza 50). Model z foeRipValue (L41:
+          // cast/ability/ETB/rider liczą wspólnie). Cel własny = 0 tutaj
+          // (selfHarmPenalty liczy koszt-self — bez podwójnego liczenia).
+          if (effect.type === 'discard_cards' || effect.type === 'discard_each_opponent'
+            || effect.type === 'reveal_hand_choose_discard' || effect.type === 'reveal_hand_choose_exile') {
+            const playerTarget = (cmd.targets ?? []).find((id) => typeof id === 'string'
+              && (id === view.playerId || id === enemy(view)?.id)) ?? null;
+            score += foeRipValue(view, effect, playerTarget);
           }
           // Uwaga B właściciela z testów (2026-09-18, Epic Experiment):
           // „Ta karta ma jakikolwiek sens jeśli X>0, im większe X tym lepiej
@@ -7637,6 +7718,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // PMSSB-3/F-scroll-sac (lustro galezi-token): poswiecenie zrodla
             // jako koszt doboru (scroll, Clue) — nie za darmo.
             if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+          }
+          // PMSSB-6/F-A3: odrzut WROGA ze zdolności (nietoperz/skullcairn) —
+          // dotąd 0-dodane (nietoperz strzelał gołą bazą-2, także w pustkę!).
+          // Zysk wspólnym modelem (L41); sac-self SKALOWANY ciałem
+          // (sacValue jak severed-strands — flat-4 z gałęzi token/draw
+          // załamuje się na 5-dropie; tamtych NIE ruszamy (działają,
+          // spięte pinami — unifikacja to forward)).
+          if (effect.type === 'discard_cards' || effect.type === 'discard_each_opponent'
+            || effect.type === 'reveal_hand_choose_discard' || effect.type === 'reveal_hand_choose_exile') {
+            const playerTarget = (cmd.targets ?? []).find((id) => typeof id === 'string'
+              && (id === view.playerId || id === enemy(view)?.id)) ?? null;
+            score += foeRipValue(view, effect, playerTarget);
+            if (ability?.cost?.sacrificeSelf && source) {
+              score -= (source.power ?? 0) * 2 + (source.toughness ?? 0) + (source.manaCost ?? 0);
+            }
           }
           // M354 (Brightwood Tracker): „zobacz N z wierzchu, weź kartę z filtra
           // do ręki” z AKTYWOWANEJ zdolności — ta rodzina miała wycenę tylko
