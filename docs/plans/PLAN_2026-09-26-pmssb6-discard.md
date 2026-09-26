@@ -83,6 +83,32 @@ suite + golden (churn TOLEROWANY z wyjasnieniem co-do-flipa jak PMSSB-4A;
 alarm gdy niewyjasniony) + tie-audit. 6. Docs: Aneks C + hub (§PMSSB-6 +
 rejestr) + PROJECT_HISTORY. 7. Bramy + push po kazdym kroku.
 
-## Aneks A: pomiar PRZED (do wpisania po krok-1)
+## Aneks A: pomiar PRZED (`tools/pmssb6-discard-sonda.mjs`, 25 sond)
+
+| Sonda | Wynik | Prognoza |
+|---|---|---|
+| D00 widok reki wroga | [{},{},{}] — TRESC ZAKRYTA, licznosc jawna | blind TAK |
+| D01 5 czarow vs reka-3 | divest/dreams/mindstab/nightsnare 50; toll 59 (+9 amass) | 50 TAK |
+| D02 5 czarow vs PUSTA | WSZYSTKIE 50 (toll 59) — rzuca w pustke! | 50 TAK |
+| D03 divest vs same-landy | 50 (blind-by-rules, nieuniknione) | 50 TAK |
+| D04 hecteyes-rzut | 65.7 (cialo + ETB-rip +3 zyje!) | pomiar |
+| D05/D05b bat ({5}+sac: rip-2) | +2 vs reka-3 == +2 vs PUSTA (sac w pustke!) | pomiar |
+| D06/D06b skullcairn (dmg3+rip) | -58 vs reka == -58 vs pusta (stabilne trzymaj) | pomiar |
+| D07a scholar-loot (tap) | +8 (po fillLibrary; wczesniej -118 = artefakt deckout!) | pomiar |
+| D07b fisher-rzut (ETB-loot) | 74.70 (po fillLibrary; wczesniej -38.7 = artefakt) | pomiar |
+| D12 self-target | divest +3 (= 50-47), mindstab -1 (= 50-51), nightsnare brak oferty self (opponent-only) | +3/-1 TAK |
+| D15 divest vs 1 vs 7 kart | 50 == 50 (brak skali rozmiaru) | rowne TAK |
+| D16 toll vs pusta | 59 (sam amass, poprawne) | pomiar |
+
+Status H1-H9: H1 POTWIERDZONA (4x50 + toll 50+9). H2a POTWIERDZONA
+(pustka-niewidzialna: cast I ability; mindstab MV6 w pustke!).
+H2b = BLIND-BY-RULES (D00: tresc zakryta — NO-F z koniecznosci).
+H3 POTWIERDZONA (dreams == divest, brak premii exilu). H4 POTWIERDZONA
+(mindstab-3 == divest-1; D15: 1-karta == 7-kart). H5: bat +2 (STRZELA,
+nawet w pustke!), skullcairn -58 (trzyma stabilnie). H6 POTWIERDZONA
+(ETB +3 vs cast 0 vs free-cast +15 — 3 liczby + grozba-45). H7: loot
++8 (scholar) / ETB-loot w fisherze (dekompozycja w krok-2). H8: rider-
+delusion = 0 (guardowany pinami PMSSB-5; repricing = decyzja krok-2).
+H9: nightsnare bez skali (50); amass-tolla +9 (osobny efekt, poprawne).
 ## Aneks B: audyt + fale (do wpisania po krok-2)
 ## Aneks C: wyniki (do wpisania po falach)
