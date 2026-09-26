@@ -13210,3 +13210,10 @@ F-L1b: M67-rider 5->2 (may-loot = mandatory-loot); lekcja may-vs-must (drabina
 deck-outu zabila ratunek B/F5 -115, pin wykryl!). Martwy parametr OUT. 10 pinow,
 golden BEZ churnu (0), suit 6779/6779 GREEN. Forwardy: future-trigger-
 anticipation, opcja-skip-may-loota, thin-artefakt-lib30.
+PMSSB-9 (2026-09-26, anticipacja-triggerow): BACKLOG pusty -> forward PMSSB-8
+(~100 triggerow non-ETB niewidzialnych; trojka 64.8!). Wave-A dies (0.5xETB):
+prowler +2.7, dissenter +9, persist/pay/any_dies SKIP. Wave-B attacks (0.5xbramka):
+drain/impuls/untap/exalted, bramka 71.1/72.0. 19 pinow, golden 2x --write
+(highland +0.9x2, veteran +2.7x2, per-flip), rattle-allowlista cross-kind,
+suit 6798/6798 GREEN. Forwardy: ogon-triggerow, persist-unification,
+pay-net, land-90, survival-model.

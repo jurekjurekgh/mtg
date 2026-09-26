@@ -46,6 +46,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | odrzut (foe-side `discard*`) | 13 | DONE (2026-09-26) | §PMSSB-6 niżej; `test/pmssb6-discard-wave-a.test.js` (20); `foeRipValue` + guardy-fizzle (0 pokręteł) |
 | domknięcie hold (self-rip + martwy −25) | 2 | DONE (2026-09-26) | §PMSSB-7 niżej; `test/pmssb7-hold-wave-a.test.js` (12); mapa 45→53 + usunięcie martwego kodu (0 pokręteł) |
 | loot (`draw_then_discard` vs split) | 5 | DONE (2026-09-26) | §PMSSB-8 niżej; `test/pmssb8-loot-wave-a.test.js` (10); `LOOT_NET_VALUE` + M67-rider (0 pokręteł, −1 parametr) |
+| triggery non-ETB (dies/attacks) | ~20 | DONE (2026-09-26) | §PMSSB-9 niżej; `test/pmssb9-triggery-wave-{a,b}.test.js` (19); `anticipatedDies/AttacksValue` (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -230,6 +231,36 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-9 — anticipacja triggerów non-ETB (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forward PMSSB-8 #1): ~100 triggerów
+non-ETB w 45 typach eventów z treścią NIEWIDZIALNĄ przy cast-cenie
+(dowód: trójka prowler/piker/game = 64.8 IDENTYCZNE!).
+Plan: `docs/plans/PLAN_2026-09-26-pmssb9-triggery.md` (Aneks A/A2/C);
+sonda: `tools/pmssb9-triggery-sonda.mjs` (T01–T12 + ablacje).
+
+- **F-T1 (Wave-A, dies):** `anticipatedDiesValue` = 0.5 × tabela-ETB:
+  prowler +2.7, game +0.9, dissenter +9 (duch-20!), clique BEZ ZMIAN
+  (persist-flat SKIP), spellbomb SKIP (pay-gated!), selhoff EXCLUDE.
+  Golden: 2× highland +0.9 (score-only) — `--write`.
+  Rattle: cross-kind-tie land-vs-spell (ścisła allowlista!).
+- **F-T2 (Wave-B, attacks):** `anticipatedAttacksValue` = 0.5 × bramka
+  (evasion/stół) × tabela + impuls-+3 + exalted-+2: drain +1.8/+3.6,
+  impuls +1.35, untap +2.7, exalted-solo +0.45, zoraline SKIP.
+  Bramka działa (71.1-vs-72.0!). Golden: 2× veteran +2.7 (68.4027!).
+- **Piny:** wave-a (10) + wave-b (9) + flipy (NO-F-4, guard, rattle).
+  0 pokręteł (likelihood/asumpcje + piny-kształtowe).
+
+### Znane granice / forwardy
+1. Ogon (upkeep-transform, leaves-O-ring, combat-gated, end/cast/enters).
+2. Persist-unification (flat-5 vs model-3.5), pay-trigger-net, land-90,
+   survival-model, stance-kalibracja.
+3. Lekcja E5: komentarze TYLKO łacińskie (wpadka „блока"!).
+
+### Pomiar końcowy
+- Suit 6798/6798 GREEN (19 pinów); golden 2× `--write` z per-flip.
+- Clustry dies/attacks ZAMKNIĘTE; ogon = osobna pętla.
 
 ## PMSSB-8 — loot-net-unification (2026-09-26)
 

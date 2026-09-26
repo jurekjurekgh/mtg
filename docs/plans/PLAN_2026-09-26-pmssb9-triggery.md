@@ -101,6 +101,39 @@ Golden: ryzyko ŚREDNIE (9 nosicieli; wyjaśnienie per-flip!).
 Audyt: H1 GO (Wave-A), H2 GO (Wave-B), H3/H4 FORWARD, H5 AKCEPT
 (0.5 z asumpcją + pin).
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks C — wyniki Wave-A/B (closeout)
 
-(none yet)
+Wave-A (F-T1, dies): `anticipatedDiesValue` = 0.5 × tabela-ETB.
+Prowler 64.8→67.5 DOKŁADNIE (+2.7), game 64.8→65.7 (+0.9),
+dissenter 63.0→72.0 (+9: tokenBody-ducha-20, pudło-magnitudy (typowano
++1.5!), kierunek OK), clique 71.1 BEZ ZMIAN (persist-flat-+5 SKIP!),
+spellbomb 62.1 (pay-gated SKIP!), selhoff 65.7 (any_dies EXCLUDE!).
+Golden: 2× highland-game +0.9 (tarkir@1000 #89 + @1001 #71, score-only,
+kinds-identyczne) — fixture `--write` (hash eaa233a7…).
+Grzechotka: trajectory-shift s4007-t26-@90 (cross-kind land-vs-spell!) —
+ścisła allowlista (max-1 + play_land-w-tie) + forward.
+NO-F PMSSB-4 (highland +0) → F (+0.9, flip ZAMIERZONY).
+
+Wave-B (F-T2, attacks): `anticipatedAttacksValue` = 0.5 × bramka-evasion
+× tabela (+ impuls +3, exalted +2 — nowe wpisy z obroną!).
+Wszystkie PRE-zweryfikowane stashem: bloodflies +1.8, horror +3.6,
+courser/caves +1.35, veteran/thistledown +2.7, waveskimmer/benediction
++0.45, zoraline BEZ ZMIAN (pay-SKIP!). Bramka: 71.1-vs-72.0 (delta-0.9!).
+E5/1: cyrylica „блока" w komentarzu (wpadka językowa!) → naprawiono.
+Golden: 2× veteran +2.7 (ravnica@1000 #59-t6 + #164-t14, fingerprint
+68.4027!, score-only) — `--write` (hash 7f92154f…).
+
+Piny: wave-a (10) + wave-b (9) + flipy zamierzone (NO-F-4, guard-A,
+rattle-allowlista). Suit: 6798/6798. Zero gałek (0.5/impuls/exalted
+z asumpcji + piny-kształtowe).
+
+## Aneks B — forwardy z tej pętli
+
+1. Wave-C-ogon (upkeep-transform (wilkołaki!), leaves-O-ring (banish-risk
+   UJEMNY!), combat_damage-gated (curiosity!), end_step/cast/another-enters/
+   beginning_combat) — warunki i modele do osobnej pętli.
+2. Persist-unification (flat-+5 vs model-0.5×ciało-3.5 — rozjazd!).
+3. Pay-trigger-net-model (spellbomby/zoraline: efekt − koszt-płatności).
+4. Land-90-drivers + taksonomia cross-kind-ties (rattle-allowlista!).
+5. Survival-model (upkeep-likelihood) — nie istnieje w bocie.
+6. Evasion-stance-0.5 (atak-co-drugą-turę) — kalibracja z gier (telemetria?).
