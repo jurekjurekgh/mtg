@@ -64,9 +64,9 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     addObject(s, { id: 'foe', instanceId: 'i-foe', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
     assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 82);
   });
-  it('guard: crows-lib30 = 70.2 (future-trigger bez anticipacji)', () => {
+  it('guard: crows-lib30 = 71.5 (PMSSB-10-B2: any_dies-loot +1.3!)', () => {
     const s = mk(); fillLib(s); put(s, 'cr', 'murder-of-crows');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 70.2);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 71.5);
   });
   it('guard: talions-lib30 = 66.6 (future-trigger bez anticipacji)', () => {
     const s = mk(); fillLib(s); put(s, 'tm', 'talions-messenger');

@@ -1661,6 +1661,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // SKIP (silnik-no-op: transformTo-null/page-[] — udowodnione!).
       else if (ev === 'leaves_battlefield') like = 1.0; // znak+mnożnik w nodze!
       else if (ev === 'upkeep') like = 0.5;
+      // PMSSB-10/F-O3 (Wave-B2): end_step + singletons.
+      // end: canonized-descended-SKIP (main1-false!), rager-tapped-gate-LIVE,
+      // trostani-symmetric-SKIP (net-0!), reaver-wrath-BOARD-AWARE,
+      // brute-SKIP (transform-no-op + stance!).
+      // singletons: jyoti-buff-gated, imp/nefarious-leaves-scry-0.3,
+      // sword-equipped-gate, selhoff-any_dies-0.7, shaman-may-0.5,
+      // willbender/triton-reactive-0.3, disa-grave-gate, exploit-SKIP
+      // (sac-net!), delirium/mentor-empty-SKIP, ascension-cloak-0.5×10.
+      else if (ev === 'end_step') like = 0.5;
+      else if (ev === 'beginning_of_combat') like = 0.5;
+      else if (ev === 'another_creature_enters' || ev === 'creature_you_control_enters'
+        || ev === 'artifact_you_control_enters' || ev === 'enchantment_you_control_enters') like = 0.5;
+      else if (ev === 'any_creature_dies') like = 0.7;
+      else if (ev === 'other_permanent_you_control_dies' || ev === 'other_creature_you_control_dies'
+        || ev === 'permanents_you_control_leave_battlefield') like = 0.3;
+      else if (ev === 'equipped_creature_attacks' || ev === 'mentor_attacks') like = 0.5;
+      else if (ev === 'spell_targets_this_creature' || ev === 'turned_face_up'
+        || ev === 'aura_host_targeted_by_spell') like = 0.3;
+      else if (ev === 'beginning_of_second_main') like = 0.5;
       else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell') like = 0.5;
       else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
       else if (ev === 'another_creature_enters') like = 0.5;
@@ -1692,6 +1711,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           total -= like * 4 * (e.amount ?? 1);
           continue;
         }
+        // F-O3-gates (B2): warunki-bramki na triggerze (LIVE-read!).
+        if (ev === 'end_step' && ability.trigger?.condition?.descendedThisTurn) continue;
+        if (ev === 'end_step' && ability.trigger?.condition?.minTappedCreaturesControlled != null
+          && myCreatures(view).filter((o) => o.tapped).length < ability.trigger.condition.minTappedCreaturesControlled) continue;
+        if (ev === 'end_step' && ability.trigger?.condition?.didntAttackThisTurn) continue;
+        // trostani-symmetric = net-0 (kontrola wraca do właścicieli OBU stron!).
+        if (e.type === 'control_to_owners_all_creatures') continue;
+        // reaver-wrath: TYLKO gdy wróg prowadzi (asymetria planszy!).
+        if (e.type === 'sacrifice_each_other_creature') {
+          const edge = enemyCreatures(view).length - myCreatures(view).length;
+          if (edge > 0) total += like * edge * 10;
+          continue;
+        }
+        // ascension-cloak: 0.5 × ciało-2/2-ward-10 (konserwatywnie!).
+        if (e.type === 'cloak') { total += like * 10; continue; }
+        // redirect/hexproof-reaktywne: flat-0.3-już-w-like × ochrona-8.
+        if (e.type === 'redirect_spell_target') { total += like * 8; continue; }
+        if (e.type === 'gain_hexproof_until_end_of_turn') { total += like * 8; continue; }
+        // exploit = koszt-sac (OPT-out!) — SKIP (net-model forward!).
+        if (ev === 'exploits') continue;
+        // triton-heroic-tap: tempo-tap + freeze-redundantny (SKIP-freeze!);
+        // cel-istnieje-LIVE-gate (wróg-ma-stwora!), inaczej-SKIP.
+        if (ev === 'spell_targets_this_creature' && e.type === 'tap_permanent') {
+          if (!etbEnemyHasTarget(view, ability.trigger?.requiresTarget)) continue;
+          total += like * 6;
+          continue;
+        }
+        if (e.type === 'dont_untap_next_untap_step') continue;
         // NEGATYW-demon: poświęcenie własnego (najtańszego!) stwora.
         if (e.type === 'sacrifice_permanent' && (e.scope == null || e.scope === 'controller' || e.applyTo === 'self')) {
           const kics = myCreatures(view).map((o) => (o.power ?? 0) * 2 + (o.toughness ?? 0) + (o.manaCost ?? 0));

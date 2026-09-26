@@ -89,12 +89,12 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const s = mk(); fillLib(s); put(s, 'tw', 'token_wizard');
     assert.equal(disp(decide(s), 'cast_permanent(tw'), 65.7);
   });
-  it('guard: outcasts/shaman = 68.4/63.9 (Wave-B!); butcher = 58.5 (B1-risk!)', () => {
+  it('guard: outcasts/shaman = 68.4/65.7 (B2 may-pump!); butcher = 58.5 (B1-risk!)', () => {
     const a = mk(); fillLib(a); put(a, 'go', 'grizzled-outcasts');
     assert.equal(disp(decide(a), 'cast_permanent(go'), 68.4);
     const b = mk(); fillLib(b); put(b, 'fb', 'faceless-butcher');
     assert.equal(disp(decide(b), 'cast_permanent(fb'), 58.5);
     const c = mk(); fillLib(c); put(c, 'bs', 'battle-rattle-shaman');
-    assert.equal(disp(decide(c), 'cast_permanent(bs'), 63.9);
+    assert.equal(disp(decide(c), 'cast_permanent(bs'), 65.7);
   });
 });

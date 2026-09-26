@@ -55,9 +55,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'sb', 'panic-spellbomb');
     assert.equal(disp(decide(s), 'cast_permanent(sb'), 62.1);
   });
-  it('F-T1: selhoff = 65.7 (any_creature_dies EXCLUDE — nie własny-dies)', () => {
+  it('F-T1: selhoff = 80.2 (PMSSB-10-B2 OVERRIDE: any_dies-0.7 +14.5 — każdy-combat-death melli wroga!)', () => {
     const s = mk(); fillLib(s); put(s, 'so', 'selhoff-occultist');
-    assert.equal(disp(decide(s), 'cast_permanent(so'), 65.7);
+    assert.equal(disp(decide(s), 'cast_permanent(so'), 80.2);
   });
   it('F-T1: prowler-lib0 = 10.8 (drabina deck-outu żyje w anticipacji!)', () => {
     const s = mk(); put(s, 'pr', 'guildsworn-prowler');
