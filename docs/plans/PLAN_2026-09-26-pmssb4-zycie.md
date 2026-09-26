@@ -262,4 +262,43 @@ NO-F: tryby-modalne (H6), gain-landy (H5-zdominowane), dies-gain
 Batch49 (feed), Batch38/Z10 (talisman), Batch53/C-R1 (ETB-healer?),
 M236-piny (soulmender/food/ramen/kheru), M157 (zombie), E2/A4 (modal -
   nietkniete), Batch31/40 (cast-compete), M155-testy.
-## Aneks C: wyniki (do wpisania po falach)
+## Aneks C: wyniki (fale A/B/C, 2026-09-26)
+
+### Wartosci PRZED -> PO (sonda L01-L26 + pin-testy)
+- Douse: -30/-30 -> -28/-26 (20/5). Consume-twarz X=4..0: -10x4/-70 ->
+  -7/-8/-8/-9/-70. Severed T1/T4/T7: 86/85/82 -> 87/88/85.
+  Divine MV1/MV4: 74/80 -> 75/83. Feed kill/chip: 82/38 -> 81/37
+  (@20), 82/38 -> 84/40 (@5).
+- Healer: 70.2018 -> 66.6018 (@20), 69.3018 (@5). Paladin: 75.6072 ->
+  72.0072 (@20). Skymarch: 72.9018 -> 75.6018 (lose +4, gain tiers).
+- Talisman: 6/8 -> 3/5 (parzystosc z Soulmenderem). Zombie self/foe:
+  5/-55 -> 3/-29 (@20). Scroll: 7x4 -> 7/7/10/14 (bramka-Angel x zycie).
+- Soulmender-threat-main1 (L22): +3 -> -6 (hold; @5: +5 strzela;
+  EOT/declared/brak-zagrozenia bez zmian).
+- Gladehart: +0 -> +1.8 z ladem w rece. Feather: +0 -> +0.9 z bialym
+  czarem. Zoraline: +0 -> +0.9 z gotowym Nietoperzem.
+- Bez zmian (piny stabilnosci): M236-warstwy (3/4/5), ramen (-12/7),
+  kheru (-16/-16/5/8), modal Page/Bard (flip 12->18, 13->22), gain-landy
+  (85/93), triggery dies (highland 64.8018).
+
+### Fale i ewaluacja
+- Fala A (A0/A1/A1b/A2/A2b/A3/A4/A5/A5b + evaluator
+  controlsCreatureSubtype + guard gainLifeValue(0)=0): 6699/6701 ->
+  tylko golden-master (slad ravnica|innistrad-wu@1000: 316=316 decyzji,
+  scoreSum +2.0 = noga-severed; decks: jedyny gain-kandydat to 1x
+  Severed Strands) -> fixture zregenerowany swiadomie.
+- Fala B (F-B1): 6701/6701 (brak churnu fixture).
+- Fala C (F-C1/C2/C3): 6701/6701 (brak churnu fixture).
+- Piny: test/pmssb4-zycie-wave-{a,b,c}.test.js (20 testow, exact/eps).
+- FINAL: 6721/6721.
+
+### NO-F (utrwalone racje)
+Modal-tiers (stromosc 4x chroni remis gain-vs-lose1@5); gain-landy
+(staly tap -8 dominuje); dies-gain (brak bramki-imminent); cautious
+(sick); staff-cast (niezalozony); Bard-ETB-modal (max-mode-machinery
+future-work H6); self-lose (M169/K).
+
+### Forwardy OUT (nie PMSSB-4)
+Koszty-mana zdolnosci = 0 (Kheru {2}{G} ignorowane; rodzina kosztow);
+consume-twarz-flat-X i douse-chip--30 (M237/4 damage); slad
+resolve_modal_choice bez trybu (M130-family).

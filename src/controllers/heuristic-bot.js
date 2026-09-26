@@ -1516,9 +1516,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // 2+x-M155/M157 — kazdy inaczej). Warstwy = M236 (bufor / srodek +
   // cisnienie / ratunek); tu tylko ekstrakcja, liczby M236 bez zmian.
   const gainLifeValue = (view, amount) => {
+    const x = Math.max(0, amount ?? 0);
+    if (!(x > 0)) return 0; // zero zycia = zero wartosci (MV0-token, X=0)
     const life = myLife(view);
     const pressure = enemyAttackPower(view);
-    const x = Math.max(0, amount ?? 0);
     if (life <= 5) return 2 + x;
     if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
     return Math.min(1 + Math.floor(x / 2), 3);
