@@ -1399,7 +1399,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
-    gain_life: (e) => Math.min(2 * (e.amount ?? 1), 8),
+    // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
+    // slepe na zycie — bufor x3 vs M236, H5).
+    gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
+    // PMSSB-4/F-A2b: ETB-drain WROGA (Skymarch: wczesniej tabela-miss = 0,
+    // H11; lustro modala +4x i damage_each_opponent +4). Self-scope = 0
+    // (wlasciwe M169/K); nieznany kierunek = 0 (konserwatywnie).
+    lose_life: (e, view, req) => {
+      if (e.scope === 'controller' || e.applyTo === 'self' || e.scope === 'self') return 0;
+      const foeReq = req && (req.type === 'opponent' || req.type === 'each_opponent');
+      if (foeReq || ['target', 'opponent', 'enemy', 'each_opponent'].includes(e.scope)) return 4 * (e.amount ?? 1);
+      return 0;
+    },
     // PMSSB-2/A (F3): token z ETB liczy ilość i ciało/rolę jak czar
     // (koniec flat 12 — Jyoti z 0 tokenami dostaje 0). Wchodzący stwór sam
     // jest gospodarzem licznika (jak buff_creatures_you_control).
@@ -1500,6 +1511,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const myLife = (view) => view.players.find((p) => p.id === view.playerId)?.life ?? 0;
   const enemy = (view) => view.players.find((p) => p.id !== view.playerId);
+  // PMSSB-4/F-A0 (L41): JEDNA drabina wartosci zycia dla wszystkich kanalow
+  // (wczesniej: M236-zdolnosci, min(2x,8)-ETB, 4x/1x-modal, min(x,3)-feed,
+  // 2+x-M155/M157 — kazdy inaczej). Warstwy = M236 (bufor / srodek +
+  // cisnienie / ratunek); tu tylko ekstrakcja, liczby M236 bez zmian.
+  const gainLifeValue = (view, amount) => {
+    const life = myLife(view);
+    const pressure = enemyAttackPower(view);
+    const x = Math.max(0, amount ?? 0);
+    if (life <= 5) return 2 + x;
+    if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
+    return Math.min(1 + Math.floor(x / 2), 3);
+  };
+  // PMSSB-4/F-A1: straznik — gain celowany we WROGA w cast nie dostaje
+  // premii (karze go misaim M179; premia znioslaby kare, L3).
+  const castGainTargetsFoe = (view, effect, cmd) => {
+    if (['opponent', 'each_opponent', 'enemy'].includes(effect.scope)) return true;
+    const slot = effect.targetIndex != null ? (cmd.targets ?? [])[effect.targetIndex] : null;
+    return slot != null && slot === enemy(view)?.id;
+  };
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
@@ -3391,6 +3421,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const has = mine.some((o) => o.kind === 'creature'
         && ((o.subtypes ?? []).includes(effect.subtype) || (o.keywords ?? []).includes('changeling')));
       return !has;
+    }
+    // PMSSB-4/F-A5b: DODATNI warunek po podtypie (Scroll of Avacyn + Angel;
+    // lustro negacji wyzej — silnik go wspiera, bot go nie znal i bral
+    // optymistycznie then (unwrap), wiec gain5 liczyl sie tez bez Aniola).
+    if (effect.condition === 'controlsCreatureSubtype') {
+      if (effect.subtype == null) return null;
+      return mine.some((o) => o.kind === 'creature'
+        && ((o.subtypes ?? []).includes(effect.subtype) || (o.keywords ?? []).includes('changeling')));
     }
     if (effect.condition === 'controlsCreatureWithCounter') {
       return mine.some((o) => o.kind === 'creature'
@@ -5632,6 +5670,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // (karta + zasób ze stołu); kara musi przebić bazowe 50 pkt,
                 // żeby „bo nie ma innego celu" nie wygrywało z passem.
                 score -= 90;
+                // PMSSB-4/F-A1 (Divine Offering we wlasny artefakt): Oracle
+                // i tak daje zycie = MV (wciaz gleboko ponizej passu).
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') score += gainLifeValue(view, victim.manaCost ?? 0);
                 // PMSSB-1/B: bounce własnego liczy ratunek/reuse/token/aury
                 // (L41 z activate_ability i trigger-decyzjami).
                 if (BOUNCE_STRENGTH.has(effect.type)) {
@@ -5647,6 +5688,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
                 // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
                 score += enemyRemovalTargetBonus(view, victim);
+                // PMSSB-4/F-A1 (Divine Offering): MV-ofiary to tez zycie (wczesniej 0).
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') score += gainLifeValue(view, victim.manaCost ?? 0);
                 // PMSSB-1/A: wymiary bounce (skala siły + cel) — tylko dla
                 // efektów odbijających, nie dla destroy/exile.
                 if (BOUNCE_STRENGTH.has(effect.type)) {
@@ -5830,13 +5873,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
             }
           }
+          // PMSSB-4/F-A1: noga-gain w cast (douse/consume/severed: wczesniej 0 —
+          // H1/H2; scoredEffects juz rozwija X i conditional, L41).
+          // amountFromSacrificedToughness (Severed/Kheru-ksztalt) czytana z
+          // ofiary; gain we wroga pomijany (straznik castGainTargetsFoe).
+          if (effect.type === 'gain_life' && !castGainTargetsFoe(view, effect, cmd)) {
+            const gAmt = effect.amountFromSacrificedToughness
+              ? Math.max(0, objectOnBoard(view, cmd.sacrificeTargetId)?.toughness ?? 0)
+              : (effect.amount ?? 0);
+            score += gainLifeValue(view, gAmt);
+          }
           // Batch 49 (Time to Feed): znacznik „gdy ten stwór zginie w tej turze,
           // zyskujesz N życia" jest DODATKIEM do walki z tego samego czaru —
           // wart tyle, ile szansa, że cel faktycznie zginie. Nie karzemy braku
           // celu (robi to już wycena fightu), żeby nie liczyć kary dwa razy.
           if (effect.type === 'gain_life_if_target_dies_this_turn') {
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]);
-            if (victim) score += Math.min(effect.amount ?? 1, 3);
+            if (victim) score += gainLifeValue(view, Math.min(effect.amount ?? 1, 3)); // PMSSB-4/F-A1b: tiers, cap-3 zostaje
           }
           // Batch 49 (Dead Ringers): podwójne removal, ale TYLKO gdy oba cele
           // mają identyczne zbiory kolorów — inaczej czar nie robi NIC (kara
@@ -6633,6 +6686,56 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
         let tokenAbilityTimingApplied = false;
+        // PMSSB-4/F-A0+F-A5b (L41): cala petla M236-gain wyciagnieta PRZED
+        // wspolna petle efektow i liczona na unwrapConditionals (conditional-gain
+        // typu Scroll-of-Avacyn+Angel wczesniej = 0; efekty bezposrednie przechodza
+        // przez unwrap bez zmian, wiec ich liczby stoja). lifeValue = gainLifeValue.
+        for (const m236Effect of unwrapConditionals(view, effects)) {
+          if (m236Effect?.type !== 'gain_life') continue;
+            // M236/2+3 (audyt Żywym Testerem + KOREKTA właściciela): życie
+            // POWYŻEJ 20 NIE marnuje się — to bufor (21, 22…). Zysk życia jest
+            // więc ZAWSZE małą wartością dodatnią, większą gdy nisko/pod
+            // naciskiem. Różnica jest w KOSZCIE:
+            //  - „{T}: zyskaj życie" (tap, bez poświęcenia) jest praktycznie
+            //    DARMOWE → rób to w nieskończoność (bufor), CHYBA że stwór jest
+            //    potrzebny do bloku w tej turze (wtedy trzymaj go nietapniętego);
+            //  - „poświęć permanent: zyskaj życie" to realna STRATA karty →
+            //    opłaca się tylko gdy (a) życie krytyczne (ratunek), (b)
+            //    poświęcany permanent i tak zginie w tej turze (zadeklarowany
+            //    bloker ginący bez zabicia atakującego / cel removalu na stosie
+            //    — „darmowe" poświęcenie), albo (c) permanent jest bardzo tani
+            //    (TMC ≤ 1). Inaczej trzymaj.
+            const sacrificed = ability?.cost?.sacrificeCreature
+              ? objectOnBoard(view, cmd.sacrificeCreatureId) : source;
+            const amount = m236Effect.amountFromSacrificedToughness
+              ? Math.max(0, sacrificed?.toughness ?? 0) : (m236Effect.amount ?? 0);
+            const life = myLife(view);
+            const pressure = enemyAttackPower(view);
+            // Bufor życia: zawsze dodatni, skalowany sytuacją (krytyczne życie
+            // albo realny nacisk podnoszą wartość).
+            const lifeValue = gainLifeValue(view, amount); // PMSSB-4/F-A0: wspolna drabina (M236 bez zmian liczb)
+            score += lifeValue;
+            if (ability?.cost?.sacrificeSelf || ability?.cost?.sacrificeCreature) {
+              // Poświęcenie permanentu za życie: strata karty. Uzasadnione tylko
+              // gdy ratunek / permanent i tak ginie w tej turze / bardzo tani.
+              const lifeCritical = life <= 5 || pressure >= life;
+              const doomedAnyway = permanentDoomedThisTurn(view, sacrificed);
+              const cheapPermanent = (sacrificed?.manaCost ?? cardDef(sacrificed?.cardId)?.manaCost ?? 99) <= 1;
+              if (!(lifeCritical || doomedAnyway || cheapPermanent)) {
+                // Kara przebija bufor + bazę zdolności, żeby wariant zszedł
+                // poniżej passu (trzymaj permanent na później).
+                score -= lifeValue + (sacrificed?.kind === 'creature' ? 12 : 8) + 6;
+              }
+            } else if (ability?.cost?.tap && source?.kind === 'creature') {
+              // Tap-za-życie DARMOWY: zostaw stwora nietapniętego, jeśli jest
+              // realnie potrzebny do bloku w tej turze (przeciwnik atakuje
+              // i ten stwór mógłby zablokować). Inaczej bufor jest OK.
+              const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
+                ? (view.combat.attackers ?? []) : [];
+              const neededToBlock = attackers.length > 0 && !source.tapped && canAttackNow(source);
+              if (neededToBlock) score -= lifeValue + 8; // trzymaj bloker
+            }
+        }
         for (const effect of effects) {
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
@@ -6966,62 +7069,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          if (effect.type === 'gain_life') {
-            // M236/2+3 (audyt Żywym Testerem + KOREKTA właściciela): życie
-            // POWYŻEJ 20 NIE marnuje się — to bufor (21, 22…). Zysk życia jest
-            // więc ZAWSZE małą wartością dodatnią, większą gdy nisko/pod
-            // naciskiem. Różnica jest w KOSZCIE:
-            //  - „{T}: zyskaj życie" (tap, bez poświęcenia) jest praktycznie
-            //    DARMOWE → rób to w nieskończoność (bufor), CHYBA że stwór jest
-            //    potrzebny do bloku w tej turze (wtedy trzymaj go nietapniętego);
-            //  - „poświęć permanent: zyskaj życie" to realna STRATA karty →
-            //    opłaca się tylko gdy (a) życie krytyczne (ratunek), (b)
-            //    poświęcany permanent i tak zginie w tej turze (zadeklarowany
-            //    bloker ginący bez zabicia atakującego / cel removalu na stosie
-            //    — „darmowe" poświęcenie), albo (c) permanent jest bardzo tani
-            //    (TMC ≤ 1). Inaczej trzymaj.
-            const sacrificed = ability?.cost?.sacrificeCreature
-              ? objectOnBoard(view, cmd.sacrificeCreatureId) : source;
-            const amount = effect.amountFromSacrificedToughness
-              ? Math.max(0, sacrificed?.toughness ?? 0) : (effect.amount ?? 0);
-            const life = myLife(view);
-            const pressure = enemyAttackPower(view);
-            // Bufor życia: zawsze dodatni, skalowany sytuacją (krytyczne życie
-            // albo realny nacisk podnoszą wartość).
-            let lifeValue;
-            if (life <= 5) lifeValue = 2 + amount;                       // ratunek
-            else if (life <= 10 || pressure >= life - 5) lifeValue = 1 + Math.min(amount, 3);
-            else lifeValue = Math.min(1 + Math.floor(amount / 2), 3);    // bufor — mała, ale dodatnia
-            score += lifeValue;
-            if (ability?.cost?.sacrificeSelf || ability?.cost?.sacrificeCreature) {
-              // Poświęcenie permanentu za życie: strata karty. Uzasadnione tylko
-              // gdy ratunek / permanent i tak ginie w tej turze / bardzo tani.
-              const lifeCritical = life <= 5 || pressure >= life;
-              const doomedAnyway = permanentDoomedThisTurn(view, sacrificed);
-              const cheapPermanent = (sacrificed?.manaCost ?? cardDef(sacrificed?.cardId)?.manaCost ?? 99) <= 1;
-              if (!(lifeCritical || doomedAnyway || cheapPermanent)) {
-                // Kara przebija bufor + bazę zdolności, żeby wariant zszedł
-                // poniżej passu (trzymaj permanent na później).
-                score -= lifeValue + (sacrificed?.kind === 'creature' ? 12 : 8) + 6;
-              }
-            } else if (ability?.cost?.tap && source?.kind === 'creature') {
-              // Tap-za-życie DARMOWY: zostaw stwora nietapniętego, jeśli jest
-              // realnie potrzebny do bloku w tej turze (przeciwnik atakuje
-              // i ten stwór mógłby zablokować). Inaczej bufor jest OK.
-              const attackers = view.combat && view.combat.attackingPlayerId !== view.playerId
-                ? (view.combat.attackers ?? []) : [];
-              const neededToBlock = attackers.length > 0 && !source.tapped && canAttackNow(source);
-              if (neededToBlock) score -= lifeValue + 8; // trzymaj bloker
-            }
-          }
+          // PMSSB-4/F-A0+F-A5b: blok M236-gain przeniesiony PRZED petle
+          // (unwrapConditionals) — patrz wyzej; tu byl `if (effect.type === 'gain_life')`.
           // M157/L28 (Mournful Zombie „{W},{T}: Target player gains 1 life"):
           // cel-gracz bez wyceny = remis → bot mógł LECZYĆ PRZECIWNIKA.
           // Życie sobie = plus, przeciwnikowi = kara.
           if (effect.type === 'gain_life_target') {
             const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
             const amount2 = effect.amount ?? 1;
-            if (slot === view.playerId) score += 2 + amount2;
-            else if (slot != null && slot === enemy(view)?.id) score -= 25 + amount2;
+            // PMSSB-4/F-A5: self-gain celowany przez wspolna drabine
+            // (wczesniej FLAT 2+x — Zombie 5 przy kazdym zyciu, H4/H7).
+            if (slot === view.playerId) score += gainLifeValue(view, amount2);
+            // PMSSB-4/F-A4 (dedup, L41): galaz foe `-25-x` USUNIETA —
+            // generyczny friendlyMisaimPenalty (-30-x, M179) karze ten sam
+            // wariant (-55 -> -29, wciaz gleboko ponizej passu).
           }
           // M157/L28: zwrot karty z grobu w upkeep (Plague Reaver) — jak
           // w pętli czarów: premiujemy najcenniejszego stwora z grobu.
@@ -7429,13 +7490,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // i ostra, gdy ręka nie ma czego zagrać w ogóle.
             else if (!unlocksSomething) score -= manaWithLifeRider ? 0 : (hasPlayable ? 6 : 14);
             if (tapsCreature) score -= 3;
-            // M155 (audyt żywym testerem, Pristine Talisman): z riderem
-            // gain_life dodajemy wartość darmowego życia (2 + ilość) — przy
-            // braku odblokowania czaru tap za leczenie wciąż wygrywa z passem.
-            if (!unlocksSomething && manaWithLifeRider) {
-              const lifeAmt = effects.find((e) => e?.type === 'gain_life')?.amount ?? 1;
-              score += 2 + (lifeAmt ?? 0);
-            }
+            // PMSSB-4/F-A3 (dedup M155, L41): legacy `score += 2 + lifeAmt`
+            // USUNIETE — to samo zycie liczy juz M236 (gainLifeValue), wiec
+            // Talisman dostawal +1 podwojnie (6 zamiast 3 przy zyciu 20).
+            // Bez bloku tap-za-leczenie wciaz wygrywa z passem (2+1 > 0),
+            // a wyjatki od kar M155/M128 powyzej ZOSTAJA (rider chroni).
             // Poświęcenie źródła jako koszt (Treasure) jest jednorazowe —
             // trzymamy token, dopóki mana nie jest realnie potrzebna.
             // UWAGA: warunek był w kodzie DWA razy (podwójna kara -12 zamiast
