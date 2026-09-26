@@ -67,9 +67,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'bf', 'delta-bloodflies');
     assert.equal(disp(decide(s), 'cast_permanent(bf'), 68.4);
   });
-  it('guard: butcher/oryx = 63.9/64.8 (leaves → forward, BEZ ZMIAN)', () => {
+  it('guard: butcher/oryx = 58.5/64.8 (PMSSB-10/B1: leaves-risk −5.4!)', () => {
     const a = mk(); fillLib(a); put(a, 'fb', 'faceless-butcher');
-    assert.equal(disp(decide(a), 'cast_permanent(fb'), 63.9);
+    assert.equal(disp(decide(a), 'cast_permanent(fb'), 58.5);
     const b = mk(); fillLib(b); put(b, 'ox', 'emerald-oryx');
     assert.equal(disp(decide(b), 'cast_permanent(ox'), 64.8);
   });

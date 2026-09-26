@@ -1654,6 +1654,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         like = 0.5 * (hBlocked ? 0.5 : 1.0);
       } else if (ev === 'enchanted_permanent_tapped') like = 0.7;
       else if (ev === 'enchanted_creature_dealt_damage') continue; // pain-SKIP (amountFrom!)
+      // PMSSB-10/F-O2 (Wave-B1): leaves-O-ring + upkeep-self-damage.
+      // return_exiled: para-ETB wyznacza ZNAK (newt exile-OWN-ląd: +5-refund
+      // (0.5×ląd-10!); butcher/abduction exile-FOE: −6-risk (0.3×exile-20!)
+      // — likelihood-usunięcia-0.3 (asumpcja + piny!). transform/upkeep-pusty
+      // SKIP (silnik-no-op: transformTo-null/page-[] — udowodnione!).
+      else if (ev === 'leaves_battlefield') like = 1.0; // znak+mnożnik w nodze!
+      else if (ev === 'upkeep') like = 0.5;
       else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell') like = 0.5;
       else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
       else if (ev === 'another_creature_enters') like = 0.5;
@@ -1668,6 +1675,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
       for (const e of effs) {
         if (!e?.type || e.condition != null) continue;
+        if (e.type === 'transform') continue; // silnik-no-op (transformTo-null!)
+        // O-ring-ZNAK z pary-ETB nosiciela (własny-zwrot vs wrogi-refund!).
+        if (ev === 'leaves_battlefield'
+          && (e.type === 'return_exiled_to_battlefield' || e.type === 'return_banished_to_hand')) {
+          const etbFx = (def.abilities ?? []).filter((a) => a?.type === 'triggered' && a.trigger?.event === 'enter_battlefield')
+            .flatMap((a) => (Array.isArray(a.effect) ? a.effect : [a.effect]));
+          const exilesOwn = etbFx.some((x) => x?.type === 'exile_own_land' || x?.type === 'exile_own_permanent');
+          total += exilesOwn ? 5 : -6;
+          continue;
+        }
+        // Upkeep-self-ping (goblin-construct!): −0.5 × drabina-drain-4
+        // (lustro damage_each_opponent! damageTargetValue to skala one-shot
+        // — do powtarzalnego pinga NIE PASUJE (dawał −62 za 1!).
+        if (ev === 'upkeep' && e.type === 'damage_to_controller') {
+          total -= like * 4 * (e.amount ?? 1);
+          continue;
+        }
         // NEGATYW-demon: poświęcenie własnego (najtańszego!) stwora.
         if (e.type === 'sacrifice_permanent' && (e.scope == null || e.scope === 'controller' || e.applyTo === 'self')) {
           const kics = myCreatures(view).map((o) => (o.power ?? 0) * 2 + (o.toughness ?? 0) + (o.manaCost ?? 0));
