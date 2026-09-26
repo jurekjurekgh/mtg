@@ -13217,3 +13217,12 @@ drain/impuls/untap/exalted, bramka 71.1/72.0. 19 pinow, golden 2x --write
 (highland +0.9x2, veteran +2.7x2, per-flip), rattle-allowlista cross-kind,
 suit 6798/6798 GREEN. Forwardy: ogon-triggerow, persist-unification,
 pay-net, land-90, survival-model.
+PMSSB-10 (2026-09-26, triggery-ogon): BACKLOG pusty -> forward PMSSB-9
+(ogon ~40 nosicieli; ETB/dies/attacks DONE). Wave-A tail (likelihoodxETB):
+scrollthief +2.7, robber +2.1, flooding +18.27-exact, tellah +4.5, demon -6.3,
+golden CZYSTY (0). Wave-B1 leaves/upkeep: O-ring-sign (newt +4.5, butcher -5.4),
+drain-mirror (goblin -1.8), transform-SKIP. Wave-B2 end/singletons: LIVE-gates
+(rager +2.25, reaver +13.5, triton +1.62), selhoff +14.5, ascension +4.5.
+OVERRIDE F-T1 (any_dies=0.7). 30 pinow, golden 2x --write (5 score-only,
+0 flips), suit 6828/6828 GREEN. Forwardy: exploit-sac-net, E5-lesson,
+drain-mirror, mill-vs-libsize.

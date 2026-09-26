@@ -92,6 +92,51 @@ Nowe wpisy ETB w razie potrzeby (cant_block? pump? — sonda-model!).
 
 Audyt: H1/H2 GO (Wave-A), H3/H4/H5 GO (Wave-B).
 
-## Aneks B — forwardy (WYPEŁNIĆ w closeout)
+## Aneks B — forwardy (closeout 2026-09-26)
 
-(none yet)
+- exploit-sac-net (silumgar/drowner): koszt-sac vs benefit — model OPT-out
+  (unmodelled: sacValue + pump-net; forward do PMSSB z kosztami!).
+- E5-lesson (3. raz z rzędu!): non-Latin w komentarzach/testach CZERWIENI
+  suitę (blok w cyrylicy, uitsluitend po niderlandzku) — pisać TYLKO
+  po polsku/angielsku, BEZ cytowania obcych słów (opis, nie cytat!).
+- drain-mirror-lesson: skal one-shot (damageTargetValue) NIGDY do nóg
+  powtarzalnych (upkeep-ping dawał −62 za 1!) — drabina-drain-4 × like.
+- Abduction no-offer = gate silnikowy (card-specific, nie mana!) —
+  forward-engine (dryad tego samego typu oferowany!).
+- tap_permanent-entry w tabeli ETB bramkowane pustą planszą (0!) —
+  triton-heroic wymagał override'u z LIVE-gatem (foe-ma-stwora).
+- Mill-table (20+3n) skaluje od rozmiaru biblioteki — selhoff w golden
+  dał +4.5 (nie +14.5!) bo biblioteka mid-game; harness-lib30 = max.
+- Token-wizard-clamp (PMSSB-10): tokenBody foe-token + upkeep-rider —
+  sole-carrier relic-robber; uogólnić gdy 2. nosiciel się pojawi.
+- PMSSB-9 F-T1 OVERRIDE (świadomy!): any_creature_dies wyceniane 0.7
+  (nie exclude!) — każdy combat-death (także wroga) odpalą selhoff/crows.
+
+## Aneks C — wyniki fal (closeout 2026-09-26)
+
+Wave-A (`dc5287e`, F-O1+F-O2+F-O3-partial): anticipatedTailValue
+(per-event-likelihood × ETB!): scrollthief +2.7, robber +2.1 (net!),
+disa SAME, curiosity +2.7, flooding +18.27 (exact!), pain SAME,
+jester +0.9, demon −6.3, tellah +4.5, harvester +5.7, guard +3.6,
+windscout +1.35, devotee +0.68, token-wizard +1.8, wrecker +3.6
+(targeted!). 13 pinów, zero golden-churn, 6811/6811.
+
+Wave-B1 (`afa5666`, leaves+upkeep): O-ring ETB-pair-sign (newt +4.5
+own-refund, butcher −5.4 foe-risk!), upkeep-self-ping drain-mirror
+(goblin −1.8!), transform-no-op SKIP (outcasts SAME), page-upkeep-[]
+SAME, abduction forward-engine. 7 pinów, golden 2× butcher −5.4
+score-only, fixture 0b926bcd, 6818/6818.
+
+Wave-B2 (`50cf331`, end+singletons): rager-tapped-gate-LIVE (+2.25),
+reaver-wrath-foe-ahead (+13.5!), selhoff-any_dies-0.7 (+14.5),
+ascension-cloak (+4.5), willbender-redirect (+2.16), triton-heroic
+(+1.62 LIVE!), shaman-may (+1.8), imp +1.08, necrosquito +1.35;
+SAME: canonized (descended!), trostani (symmetric!), jyoti, sword,
+silumgar/drowner (exploit!), challenger, disa, brute, fear.
+10 pinów (+3 guard-override!), golden 3× ascension +4.5 score-only
+(0 flips!), fixture 28aa2f03, 6828/6828 GREEN.
+
+Hipotezy: H1 GO, H2 GO (demon-ujemny!), H3 PARTIAL (transform-no-op,
+damage-mirror!), H4 GO (O-ring-sign!), H5 GO (LIVE-gates!).
+PMSSB-10 ZAMKNIĘTY: 30 pinów, 3 goldeny (5 score-only, 0 flips!).
+Cena: 2× sandbox-restore (odzyskane), 3× E5-lesson.

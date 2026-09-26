@@ -47,6 +47,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | domknięcie hold (self-rip + martwy −25) | 2 | DONE (2026-09-26) | §PMSSB-7 niżej; `test/pmssb7-hold-wave-a.test.js` (12); mapa 45→53 + usunięcie martwego kodu (0 pokręteł) |
 | loot (`draw_then_discard` vs split) | 5 | DONE (2026-09-26) | §PMSSB-8 niżej; `test/pmssb8-loot-wave-a.test.js` (10); `LOOT_NET_VALUE` + M67-rider (0 pokręteł, −1 parametr) |
 | triggery non-ETB (dies/attacks) | ~20 | DONE (2026-09-26) | §PMSSB-9 niżej; `test/pmssb9-triggery-wave-{a,b}.test.js` (19); `anticipatedDies/AttacksValue` (0 pokręteł) |
+| triggery-ogon (tail/end/leaves) | ~40 | DONE (2026-09-26) | §PMSSB-10 niżej; `test/pmssb10-ogon-wave-{a,b1,b2}.test.js` (30); `anticipatedTailValue` + O-ring-sign + LIVE-gates (0 pokręteł) |
 | fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
@@ -231,6 +232,40 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-10 — triggery-ogon (2026-09-26)
+
+**Wybór celu** (BACKLOG pusty; forward PMSSB-9 #1): ogon ~40 nosicieli
+(upkeep/leaves/combat-gated/end/cast/singletons) — ETB/dies/attacks DONE.
+Plan: `docs/plans/PLAN_2026-09-26-pmssb10-ogon.md` (Aneks A/A2/B/C);
+sonda: `tools/pmssb10-ogon-sonda.mjs` (O01–O12 + ablacje).
+
+- **F-O1+F-O2 (Wave-A):** `anticipatedTailValue` = likelihood × ETB:
+  scrollthief +2.7, robber +2.1 (net foe-token!), curiosity +2.7,
+  flooding +18.27 (exact!), tellah +4.5, demon −6.3, harvester +5.7,
+  guard +3.6, wrecker +3.6 (targeted!). 13 pinów, golden CZYSTY (0!).
+- **F-O3a (Wave-B1, leaves+upkeep):** O-ring-sign (newt +4.5, butcher
+  −5.4!), drain-mirror (goblin −1.8), transform/page SKIP. 7 pinów.
+  Golden: 2× butcher −5.4 (score-only).
+- **F-O3b (Wave-B2, end+singletons):** LIVE-gates (rager +2.25, reaver
+  +13.5, triton +1.62!), selhoff +14.5, ascension +4.5, willbender
+  +2.16, shaman +1.8; exploit/descended/delirium SKIP. 10 pinów.
+  Golden: 3× ascension +4.5 (score-only, 0 flips!).
+- **OVERRIDE F-T1:** any_creature_dies = 0.7 (nie exclude!) — selhoff
+  65.7→80.2, crows 70.2→71.5 (świadome, udokumentowane).
+- **Piny:** 30 (A-13 + B1-7 + B2-10 + guardy); 0 pokręteł.
+
+### Znane granice / forwardy
+1. Exploit-sac-net (koszt vs benefit), abduction-gate silnikowy,
+   token-wizard-clamp (2. nosiciel = unifikacja!).
+2. Lekcja E5 ×3: TYLKO łacina (bez cytowania obcych słów!);
+   drain-mirror (one-shot-skale NIGDY do powtarzalnych!).
+3. Mill-table vs rozmiar-biblioteki (harness-lib30 = max!).
+
+### Pomiar końcowy
+- Suit 6828/6828 GREEN (30 pinów); golden 2× `--write` (5 score-only,
+  0 flips — butcher −5.4, ascension +4.5).
+- Ogon ZAMKNIĘTY; wszystkie klastry triggerów pokryte.
 
 ## PMSSB-9 — anticipacja triggerów non-ETB (2026-09-26)
 
