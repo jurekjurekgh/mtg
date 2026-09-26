@@ -66,6 +66,32 @@ O10 jyoti/selhoff/harvester/willbender (singletons-0?), O11 shaman-may
 - Bramka-evasion (F-T2) do reuse; viewConditionalHolds do warunków;
   imminentGain jako precedens may-gate.
 
+## Aneks A2 — wyniki sondy (krok-2/3, audyt WŁASNY)
+
+Wszystkie ogonowe = body-only (0-anticipacji) Z WYJĄTKIEM:
+- curse-36/-900 (klasa klątw POKRYTA — EXCLUDE curse/feedback!),
+- trostani-87.3 (statyk-anthem POKRYTY; end-trigger osobno!),
+- curiosity/feedback BRAK OFERTY (aura bez gospodarza — kształt-host
+  w Wave-A!), willbender ×2 (megamorf!).
+Kluczowe PRE: wrecker 64.8, scrollthief 63.9, robber 64.8, disa 70.2,
+jester 63.9, demon 71.1 (sac-0!), tellah 64.8, outcasts 68.4,
+butcher 63.9, canonized 60.3, reaver 74.7, jyoti 64.8, selhoff 65.7,
+harvester 63.9, shaman 63.9, token_wizard 63.9.
+
+Scope-gate: Wave-A = combat_gated (F-O1: wrecker/scrollthief/robber/
+disa/curiosity!) + you_cast-benefits (F-O2: jester/windscout/operative/
+devotee/tellah/token_wizard/guard!) + demon-NEGATYWNY (F-O2n!) +
+reaver/harvester-end (F-O3-partial: unconditional-benefits!).
+Wave-B = upkeep-transform + leaves-negatywne + end-warunkowe +
+singletons-warunkowe. EXCLUDE: curse-klasa, trostani-statyk.
+
+Wave-A-design: `anticipatedTailValue` (per-event-likelihood × ETB!):
+combat_gated (bramka-F-T2 × 0.5!), you_cast (0.5 × red-gate!),
+demon-sac (UJEMNE: −sacValue × 0.5!), end-benefits (0.5!).
+Nowe wpisy ETB w razie potrzeby (cant_block? pump? — sonda-model!).
+
+Audyt: H1/H2 GO (Wave-A), H3/H4/H5 GO (Wave-B).
+
 ## Aneks B — forwardy (WYPEŁNIĆ w closeout)
 
 (none yet)
