@@ -315,7 +315,8 @@ function bootstrapTable() {
       aiQueue.retry(slotId, { modelId: aiConfig.modelId });
     },
   });
-  // AI-OpenRouter (Etap-3): dopisywanie SUKCESÓW do Arkusza. Fire-and-forget
+  // AI-OpenRouter (Etap-3, AI-R5: Dokument Google, karta na tryb): dopisywanie
+  // SUKCESÓW do Dokumentu. Fire-and-forget
   // (logger nigdy nie rzuca); pusty URL = zapis wyłączony. Błędy modelu
   // NIGDY tu nie trafiają (kontrakt planu §6).
   const aiDriveLog = createAiDriveLogger({ getUrl: () => loadAiConfig(storage).appScriptUrl });

@@ -54,11 +54,11 @@ export const AI_PROVIDER_ONLY = Object.freeze({
 
 /** Tryby AI (rejestr — nowe tryby dopisują wpis, reszta jedzie sama). */
 export const AI_MODES = Object.freeze([
-  Object.freeze({ id: 'lore-bot', label: 'Lore komentarzy Bota', sheetName: 'lore-bot' }),
-  Object.freeze({ id: 'player-bot', label: 'Komentarze Bota-gracza', sheetName: 'player-bot' }),
-  Object.freeze({ id: 'observer', label: 'Zewnętrzny obserwator', sheetName: 'observer' }),
-  Object.freeze({ id: 'lore-observer', label: 'Komentarze lore obserwatora', sheetName: 'lore-observer' }),
-  Object.freeze({ id: 'skit', label: 'Skity', sheetName: 'skit' }),
+  Object.freeze({ id: 'lore-bot', label: 'Lore komentarzy Bota', tabName: 'lore-bot' }),
+  Object.freeze({ id: 'player-bot', label: 'Komentarze Bota-gracza', tabName: 'player-bot' }),
+  Object.freeze({ id: 'observer', label: 'Zewnętrzny obserwator', tabName: 'observer' }),
+  Object.freeze({ id: 'lore-observer', label: 'Komentarze lore obserwatora', tabName: 'lore-observer' }),
+  Object.freeze({ id: 'skit', label: 'Skity', tabName: 'skit' }),
 ]);
 
 export const AI_STORAGE_KEY = 'mtg-table-ai-v1';

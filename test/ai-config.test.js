@@ -51,14 +51,14 @@ test('AI-E1 config: all = predefiniowane + lokalne, dedupe', () => {
 
 test('AI-E1 config: tryb domyślny = lore-bot', () => {
   assert.equal(aiDefaultConfig().mode, 'lore-bot');
-  assert.equal(AI_MODES[0].sheetName, 'lore-bot');
+  assert.equal(AI_MODES[0].tabName, 'lore-bot');
 });
 
 test('AI-R2 config: tryb player-bot na liście, roundtrip, własna karta', () => {
   const player = AI_MODES.find((m) => m.id === 'player-bot');
   assert.ok(player);
   assert.equal(player.label, 'Komentarze Bota-gracza');
-  assert.equal(player.sheetName, 'player-bot');
+  assert.equal(player.tabName, 'player-bot');
   const storage = memStorage();
   saveAiConfig(storage, { ...aiDefaultConfig(), mode: 'player-bot' });
   assert.equal(loadAiConfig(storage).mode, 'player-bot');
@@ -69,7 +69,7 @@ test('AI-R4 config: 5 trybów, każdy z etykietą i własną kartą arkusza', ()
     ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit']);
   for (const m of AI_MODES) {
     assert.ok(m.label.length > 0);
-    assert.equal(m.sheetName, m.id);
+    assert.equal(m.tabName, m.id);
   }
   const storage = memStorage();
   saveAiConfig(storage, { ...aiDefaultConfig(), mode: 'skit' });

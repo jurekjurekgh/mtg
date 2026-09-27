@@ -1,54 +1,89 @@
 /**
- * MTG Table — AI log do Arkusza Google (OpenRouter, Etap-3).
+ * MTG Table — AI log do Dokumentu Google (OpenRouter, AI-R5).
  *
- * CO TO ROBI: odbiera POST-y z aplikacji (komentarze lore AI po turach)
- * i dopisuje je jako wiersze do karty o nazwie trybu (`lore-bot`, …).
- * Karta tworzy się sama z nagłówkiem, gdy jej nie ma.
+ * CO TO ROBI: odbiera POST-y z aplikacji (komentarze AI po turach)
+ * i dopisuje je NA KOŃCU karty o nazwie trybu (`lore-bot`, `player-bot`,
+ * `observer`, `lore-observer`, `skit`). Każdy wpis: linia metadanych
+ * (tura, model, długość, czas, partia) + treść komentarza + rozdzielnik.
  *
- * WDROŻENIE (raz, ~10 minut, pełna instrukcja: plan §6
- * `docs/plans/PLAN_2026-09-26-ai-openrouter.md`):
- * 1. Utwórz Arkusz Google (np. „MTG AI log"), skopiuj jego ID z adresu
- *    (fragment między `/d/` a `/edit`) i wklej niżej do SHEET_ID.
- * 2. W arkuszu: Rozszerzenia → Aplikacje Apps Script → wklej TEN plik.
- * 3. Wdróż → Nowe wdrożenie → „Aplikacja internetowa”, „Uruchom jako: Ja”,
+ * KARTY ZAKŁADASZ RĘCZNIE (raz, 2 minuty): ani Apps Script, ani Docs API
+ * nie potrafią tworzyć kart programowo — skrypt tylko je znajduje po
+ * tytule i dopisuje. Gdy karty dla trybu nie ma, wpis ląduje w pierwszej
+ * karcie z nagłówkiem ostrzeżenia (nic nie ginie) — załóż kartę, a kolejne
+ * wpisy pójdą już do niej.
+ *
+ * WDROŻENIE (pełna instrukcja: `docs/ai-appscript/INSTRUKCJA.md`):
+ * 1. Nowy Dokument Google (np. „MTG AI log”), skopiuj jego ID z adresu
+ *    (fragment między `/document/d/` a `/edit`) i wklej niżej do DOC_ID.
+ * 2. W dokumencie utwórz 5 kart o DOKŁADNIE takich tytułach:
+ *    `lore-bot`, `player-bot`, `observer`, `lore-observer`, `skit`.
+ * 3. Rozszerzenia → Aplikacje Apps Script → wklej TEN plik → zapisz.
+ * 4. Wdróż → Nowe wdrożenie → „Aplikacja internetowa”, „Uruchom jako: Ja”,
  *    „Dostęp: Każdy” → skopiuj URL (`…/exec`).
- * 4. URL wklej w aplikacji: „Konfiguracja AI” → „AppScript URL”.
- * 5. Test: włącz AI, dograj turę — wiersz ląduje w karcie `lore-bot`.
+ * 5. URL wklej w aplikacji: „Konfiguracja AI” → „AppScript URL”.
+ * 6. Test: włącz AI, dograj turę — wpis ląduje na końcu karty trybu.
  */
 
-// ⬇️⬇️⬇️ WSTAW TU ID SWOJEGO ARKUSZA (krok 1) ⬇️⬇️⬇️
-const SHEET_ID = 'WSTAW-ID-ARKUSZA';
+// ⬇️⬇️⬇️ WSTAW TU ID SWOJEGO DOKUMENTU (krok 1) ⬇️⬇️⬇️
+const DOC_ID = 'WSTAW-ID-DOKUMENTU';
 
-const HEADER = ['ts', 'game_id', 'turn', 'model', 'chars', 'response'];
-
-/** Nazwa karty = tryb; czyścimy znaki zabronione w kartach Arkuszy. */
-function sheetNameFor(mode) {
+/** Nazwa karty = tryb; czyścimy i przycinamy dla bezpieczeństwa. */
+function tabNameFor(mode) {
   const clean = String(mode || 'lore-bot').replace(/[\\/?*[\]:]/g, '-').trim().slice(0, 60);
   return clean || 'lore-bot';
 }
 
+/** Karta pierwszego poziomu o danym tytule albo null (API jest read-only). */
+function findTabByTitle(doc, title) {
+  const tabs = doc.getTabs();
+  for (let i = 0; i < tabs.length; i++) {
+    try {
+      if (tabs[i].getTitle() === title) return tabs[i];
+    } catch (e) { /* obca karta — mijamy */ }
+  }
+  return null;
+}
+
+/** Dopisuje wpis na końcu ciała karty: meta + akapity + rozdzielnik. */
+function appendEntry(body, p) {
+  const meta = '── Tura ' + Number(p.turn ?? 0)
+    + ' · ' + String(p.model ?? '')
+    + ' · ' + Number(p.chars ?? 0) + ' zn.'
+    + ' · ' + String(p.tsClient ?? '')
+    + ' · partia ' + String(p.gameId ?? '') + ' ──';
+  body.appendParagraph(meta);
+  const chunks = String(p.response ?? '').split(/\r?\n\r?\n/);
+  for (let i = 0; i < chunks.length; i++) {
+    const text = chunks[i].trim();
+    if (text) body.appendParagraph(text);
+  }
+  body.appendHorizontalRule();
+}
+
 function doPost(e) {
+  let doc = null;
   try {
     const p = JSON.parse(e.postData.contents);
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
-      const ss = SpreadsheetApp.openById(SHEET_ID);
-      const name = sheetNameFor(p.mode);
-      let sheet = ss.getSheetByName(name);
-      if (!sheet) {
-        sheet = ss.insertSheet(name);
-        sheet.appendRow(HEADER);
+      doc = DocumentApp.openById(DOC_ID);
+      const name = tabNameFor(p.mode);
+      const tab = findTabByTitle(doc, name);
+      let body;
+      if (tab) {
+        body = tab.asDocumentTab().getBody();
+      } else {
+        // Fallback: brak karty = pierwsza karta + nagłówek (nic nie ginie).
+        const tabs = doc.getTabs();
+        const first = tabs.length > 0 ? tabs[0].asDocumentTab().getBody() : doc.getBody();
+        body = first;
+        body.appendParagraph('⚠️ Brak karty „' + name + '” — wpis dopisany tutaj')
+          .setHeading(DocumentApp.ParagraphHeading.HEADING3);
       }
-      sheet.appendRow([
-        new Date(),
-        String(p.gameId ?? ''),
-        Number(p.turn ?? 0),
-        String(p.model ?? ''),
-        Number(p.chars ?? 0),
-        String(p.response ?? ''),
-      ]);
+      appendEntry(body, p);
     } finally {
+      try { if (doc) doc.saveAndClose(); } catch (e2) { /* zamknięcie best-effort */ }
       lock.releaseLock();
     }
   } catch (err) {

@@ -1,6 +1,7 @@
 /**
- * AI-OpenRouter (Etap-3): dopisywanie odpowiedzi AI do Arkusza Google
- * przez Web App AppScriptu (kontrakt z planu §6).
+ * AI-OpenRouter: dopisywanie odpowiedzi AI do Dokumentu Google przez
+ * Web App AppScriptu (kontrakt z planu §6 + Aneks R5: Dokument zamiast
+ * Arkusza — wygodniejszy w czytaniu; jedna karta dokumentu na tryb).
  *
  * Zasady twarde:
  * - TYLKO sukcesy (błędy modelu/sieci nigdy tu nie trafiają — pilnuje tego
@@ -15,8 +16,8 @@
  */
 
 /**
- * Buduje body POST-a (plan §6): `{ mode, gameId, turn, model, chars,
- * response, tsClient }`. Czysta, testowalna, toleruje braki pól.
+ * Buduje body POST-a (kontrakt z Code.gs): `{ mode, gameId, turn, model,
+ * chars, response, tsClient }`. Czysta, testowalna, toleruje braki pól.
  */
 export function buildAiDrivePayload({ mode, gameId, turn, model, response, tsClient } = {}) {
   const text = String(response ?? '');
@@ -48,7 +49,7 @@ export function createAiDriveLogger({ getUrl, fetchImpl } = {}) {
         ? (typeof fetch !== 'undefined' ? fetch : null)
         : (typeof fetchImpl === 'function' ? fetchImpl : null);
       if (!fetchFn) {
-        if (typeof console !== 'undefined') console.warn('[ai-drive] brak `fetch` — pomijam zapis do Arkusza.');
+        if (typeof console !== 'undefined') console.warn('[ai-drive] brak `fetch` — pomijam zapis do Dokumentu.');
         return { ok: false, skipped: true };
       }
       await fetchFn(url, {
@@ -59,7 +60,7 @@ export function createAiDriveLogger({ getUrl, fetchImpl } = {}) {
       });
       return { ok: true };
     } catch (error) {
-      if (typeof console !== 'undefined') console.warn('[ai-drive] zapis do Arkusza nieudany:', error);
+      if (typeof console !== 'undefined') console.warn('[ai-drive] zapis do Dokumentu nieudany:', error);
       return { ok: false };
     }
   };

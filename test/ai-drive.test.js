@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { buildAiDrivePayload, createAiDriveLogger } from '../src/table/ai-drive.js';
 
 test('AI-E3 drive: payload ma 7 pól kontraktu §6 + chars = długość', () => {
@@ -80,4 +81,19 @@ test('AI-E3 drive: wywrotka sieci/brak fetcha = cichy warn, NIGDY reject', async
   } finally {
     console.warn = orig;
   }
+});
+
+test('AI-R5 drive: Code.gs dopisuje do DOKUMENTU (karta na tryb), nie arkusza', () => {
+  // Strażnik wzorca K-testu: Apps Scriptu nie uruchomimy w node, ale możemy
+  // pilnować, żeby w skrypcie nie wrócił Arkusz ani nie zginęły karty.
+  const gs = fs.readFileSync('docs/ai-appscript/Code.gs', 'utf8');
+  assert.ok(gs.includes('DocumentApp.openById(DOC_ID)'), 'otwarcie dokumentu po ID');
+  assert.ok(gs.includes('getTabs()'), 'karty dokumentu');
+  assert.ok(gs.includes('asDocumentTab().getBody()'), 'dopisywanie do ciała karty');
+  assert.ok(gs.includes('appendParagraph'), 'wpis jako akapity');
+  assert.ok(gs.includes('appendHorizontalRule'), 'rozdzielnik wpisów');
+  assert.ok(gs.includes('LockService'), 'lock współbieżności');
+  assert.ok(gs.includes("const DOC_ID = 'WSTAW-ID-DOKUMENTU'"), 'miejsce na ID');
+  assert.ok(!gs.includes('SpreadsheetApp'), 'zero Arkusza (decyzja AI-R5)');
+  assert.ok(!gs.includes('SHEET_ID'), 'zero starej stałej');
 });

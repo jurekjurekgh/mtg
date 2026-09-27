@@ -13256,3 +13256,5 @@ AI-R4 (2026-09-26, tryby): player v2 (zakaz slangu, punkty) + observer
 + lore-observer + skit (brief wlasciciela verbatim). 5 trybow, Suit 6910/6910.
 AI-R4b (2026-09-26, skit-swiaty): UWAGA z prawdziwych swiatow obu talii
 (ctx: heroWorld/world + fallbacki). Suit 6911/6911 GREEN.
+AI-R5 (2026-09-26, docs): log z Arkusza do DOKUMENTU (karta na tryb,
+meta+komentarz+rozdzielnik; karty recznie, fallback do 1.). 6912/6912 GREEN.

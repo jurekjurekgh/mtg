@@ -250,3 +250,8 @@ wierszy przy współbieżnych dopisaniach.
 
 - R4b: skit bierze PRAWDZIWE światy obu talii (ctx: heroWorld + world);
   Dominaria/Zendikar były tylko przykładem w briefie.
+
+- R5: log przeniesiony z Arkusza do DOKUMENTU Google (wygodniejszy w czytaniu):
+  jedna karta dokumentu na tryb, wpis = meta + komentarz + rozdzielnik.
+  Karty zakłada właściciel ręcznie (API nie umie ich tworzyć); brak karty =
+  fallback do pierwszej z nagłówkiem. Payload aplikacji BEZ ZMIAN.
