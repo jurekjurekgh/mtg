@@ -522,4 +522,6 @@ export const MANA_COSTS = {
   "blossoming-sands": "",
   // Batch60: Demolish (WAR).
   "demolish": "{3}{R}",
+  // Batch60: Renegade Tactics (CMR).
+  "renegade-tactics": "{R}",
 };

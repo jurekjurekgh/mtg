@@ -12132,6 +12132,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/3. Renegade Tactics (CMR) — {R} sorcery: target can't block
+  // + cantrip. Gotowe `cant_block` (Panic Spellbomb) + `draw_cards`.
+  defineCard({
+    id: 'renegade-tactics', name: 'Renegade Tactics', set: 'CMR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 1,
+    oracleText: 'Target creature can\'t block this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dfa0e65-1ce0-4f8e-a78b-2ade2d25e748.jpg?1783928809',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'cant_block' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

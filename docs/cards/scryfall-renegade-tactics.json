@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Renegade%20Tactics&set=cmr",
+  "print": "Renegade Tactics (CMR)",
+  "name": "Renegade Tactics",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Target creature can't block this turn.\nDraw a card.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "cmr",
+  "collector_number": "195",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/d/7dfa0e65-1ce0-4f8e-a78b-2ade2d25e748.jpg?1783928809"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "If the target creature is an illegal target by the time Renegade Tactics tries to resolve, the spell doesn't resolve. You don't draw a card."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/cmr/195/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

@@ -165,3 +165,51 @@ test('B60/G1.2: Demolish — stwór nie jest legalnym celem', () => {
   assert.ok(casts.every((c) => (c.targets?.[0] ?? null) !== 'beast'),
     'żadna oferta rzutu nie celuje w stwora (tylko artifact or land)');
 });
+
+// ---- G1.3: Renegade Tactics (147 CMR, plan Kaladesh) ------------------------
+
+test('B60/G1.3: Renegade Tactics — dane Oracle, sorcery {R} i druk CMR', () => {
+  const def = registry.get('renegade-tactics');
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.manaCost, 1);
+  assert.equal(def.set, 'CMR');
+  assert.equal(def.plan, 'Kaladesh');
+  assert.equal(def.artId, null);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('7dfa0e65'), 'imageUri z druku CMR (cmr/195)');
+  assert.equal(MANA_COSTS['renegade-tactics'], '{R}');
+});
+
+test('B60/G1.3: Renegade Tactics — cel nie blokuje + dobór karty', () => {
+  const state = game();
+  put(state, 'tactics', 'renegade-tactics', 'p1');
+  put(state, 'wall', 'razorfoot-griffin', 'p2', 'battlefield');
+  addMana(state, 'p1', 1);
+  const handBefore = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'tactics' && c.targets?.[0] === 'wall');
+  assert.ok(cast, 'rzut z celem-stworem jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.equal(state.objects.get('wall').cantBlock, true, 'cel dostał cantBlock do końca tury');
+  const handAfter = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  assert.equal(handAfter, handBefore, 'cantrip: ręka wraca do rozmiaru sprzed rzutu (czar + dobór)');
+  assert.ok(find(state, 'renegade-tactics', 'graveyard'), 'czar w grobie po rozstrzygnięciu');
+});
+
+test('B60/G1.3: Renegade Tactics — bez celu-stwora rzut nie jest oferowany', () => {
+  const state = game();
+  put(state, 'tactics', 'renegade-tactics', 'p1');
+  addMana(state, 'p1', 1);
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'tactics'),
+    'przy pustym stole brak oferty (cel obowiązkowy)');
+});
+
+test('B60/G1.3: Renegade Tactics — bez many rzut nie jest oferowany', () => {
+  const state = game();
+  put(state, 'tactics', 'renegade-tactics', 'p1');
+  put(state, 'wall', 'razorfoot-griffin', 'p2', 'battlefield');
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'tactics'),
+    'przy zerowej manie brak oferty rzutu {R}');
+});
