@@ -12175,6 +12175,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/5. Stensia Innkeeper (EMN) — 3/3 Vampire za {3}{R}; ETB:
+  // tapnij land przeciwnika + skip jego następnego untapu (gotowe efekty
+  // `tap_permanent` + `dont_untap_next_untap_step`, nowy typ celu
+  // `land_opponent_controls` w triggers.js).
+  defineCard({
+    id: 'stensia-innkeeper', name: 'Stensia Innkeeper', set: 'EMN',
+    types: ['Creature'], subtypes: ['Vampire'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, tap target land an opponent controls. That land doesn\'t untap during its controller\'s next untap step.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee40c471-70c8-4171-a214-ce932c4c7e2e.jpg?1783937454',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'land_opponent_controls' },
+        },
+        effect: [{ type: 'tap_permanent' }, { type: 'dont_untap_next_untap_step' }],
+      }),
+    ],
+    plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

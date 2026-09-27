@@ -524,6 +524,18 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
+  if (spec.type === 'land_opponent_controls') {
+    // Batch60 (Stensia Innkeeper, EMN): „tap target land an opponent
+    // controls" — lądy PRZECIWNIKA kontrolera źródła (nie własne).
+    // Rodzeństwo creature_opponent_controls (wyżej).
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
+      return object && object.zone === 'battlefield' && isLand
+        && object.controllerId !== sourceObject.controllerId
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
   // M154 (Batch 38, Lotusguard Disciple): cel „creature or Vehicle" —
   // stwór LUB Vehicle (artefakt z podtypem Vehicle) na polu bitwy, bez hexproof.
   if (spec.type === 'creature_or_vehicle') {

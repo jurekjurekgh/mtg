@@ -273,3 +273,70 @@ test('B60/G1.4: Trigon of Thought — bez counterów dobór nie jest oferowany',
   assert.ok(!offers.some((c) => c.abilityIndex === 1),
     'zdolność z kosztem removeCounter nie istnieje przy 0 counterów');
 });
+
+// ---- G1.5: Stensia Innkeeper (144 EMN, plan Innistrad) ----------------------
+
+test('B60/G1.5: Stensia Innkeeper — dane Oracle, Vampire 3/3 i druk EMN', () => {
+  const def = registry.get('stensia-innkeeper');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Vampire']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 4);
+  assert.equal(def.set, 'EMN');
+  assert.equal(def.plan, 'Innistrad');
+  assert.equal(def.artId, null);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('ee40c471'), 'imageUri z druku EMN (emn/145)');
+  assert.equal(MANA_COSTS['stensia-innkeeper'], '{3}{R}');
+});
+
+test('B60/G1.5: Stensia Innkeeper — ETB tapuje land przeciwnika + skip untapu', () => {
+  const state = game();
+  put(state, 'inn', 'stensia-innkeeper', 'p1');
+  put(state, 'opp-land', 'basic-swamp', 'p2', 'battlefield');
+  put(state, 'my-land', 'basic-swamp', 'p1', 'battlefield');
+  addMana(state, 'p1', 4);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'inn'));
+  resolve(state);
+  // Jeden kandydat (land przeciwnika) → engine wybiera automatycznie (CR 115.1d).
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'własny land nie kandyduje — jeden cel, brak pytania');
+  const opp = state.objects.get('opp-land');
+  assert.equal(opp.tapped, true, 'land przeciwnika tapnięty');
+  assert.equal(opp.dontUntapNextUntapStep, 'p2', 'jednorazowa blokada następnego untapu');
+  assert.equal(state.objects.get('my-land').tapped, false, 'własny land nietknięty');
+});
+
+test('B60/G1.5: Stensia Innkeeper — dwa lądy wroga = wybór celu (własny nie kandyduje)', () => {
+  const state = game();
+  put(state, 'inn', 'stensia-innkeeper', 'p1');
+  put(state, 'opp-a', 'basic-swamp', 'p2', 'battlefield');
+  put(state, 'opp-b', 'basic-swamp', 'p2', 'battlefield');
+  put(state, 'my-land', 'basic-swamp', 'p1', 'battlefield');
+  addMana(state, 'p1', 4);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'inn'));
+  resolve(state);
+  const offers = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  assert.deepEqual(offers.map((c) => c.targetId).sort(), ['opp-a', 'opp-b'],
+    'kandydaci to WYŁĄCZNIE lądy przeciwnika');
+  run(state, offers.find((c) => c.targetId === 'opp-b'));
+  resolve(state);
+  assert.equal(state.objects.get('opp-b').tapped, true, 'wybrany land tapnięty');
+  assert.equal(state.objects.get('opp-a').tapped, false, 'niewybrany land nietknięty');
+});
+
+test('B60/G1.5: Stensia Innkeeper — brak landów wroga = trigger bez celu (fizzle)', () => {
+  const state = game();
+  put(state, 'inn', 'stensia-innkeeper', 'p1');
+  put(state, 'my-land', 'basic-swamp', 'p1', 'battlefield');
+  addMana(state, 'p1', 4);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'inn'));
+  resolve(state);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'),
+    'brak kandydatów = brak pytania o cel');
+  assert.equal(state.objects.get('my-land').tapped, false, 'własny land nie może być celem zastępczym');
+  assert.ok(find(state, 'stensia-innkeeper'), 'Innkeeper mimo to wchodzi na stół');
+});

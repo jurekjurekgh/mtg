@@ -526,4 +526,6 @@ export const MANA_COSTS = {
   "renegade-tactics": "{R}",
   // Batch60: Trigon of Thought (SOM).
   "trigon-of-thought": "{5}",
+  // Batch60: Stensia Innkeeper (EMN).
+  "stensia-innkeeper": "{3}{R}",
 };
