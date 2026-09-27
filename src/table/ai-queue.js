@@ -72,7 +72,7 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
      * chronologiczny zachowany). Setup brany z chwili kliku (argumenty).
      * Zwraca false, gdy slotu nie ma / nie jest błędem / jest nieaktualny.
      */
-    retry(slotId, { prompt, modelId } = {}) {
+    retry(slotId, { prompt, modelId, meta } = {}) {
       const slot = byId.get(slotId) ?? null;
       if (!slot || slot.generation !== generation || !slot.result || slot.result.ok) return false;
       if (slots.includes(slot)) return false; // już w locie — nie dublujemy
@@ -80,6 +80,9 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
       slot.attempt += 1;
       if (prompt !== undefined) slot.prompt = prompt;
       if (modelId !== undefined) slot.modelId = modelId;
+      // AI-R6 (A): meta też ze setupu chwili kliku (świeża etykieta modelu
+      // do nagłówka; wołający scala ze starą, żeby nie zgubić tury/trybu).
+      if (meta !== undefined) slot.meta = meta;
       // Wyrenderowany ⇒ wszystko wcześniejsze wyrenderowane — slot jest
       // najwcześniejszym nierozstrzygniętym, więc wraca NA GŁOWĘ.
       slots.unshift(slot);
@@ -95,6 +98,15 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
     },
     pendingCount() {
       return slots.filter((s) => !s.result).length;
+    },
+    /**
+     * AI-R6 (A): podgląd slotu (TYLKO do odczytu) — „Ponów” potrzebuje
+     * starej mety, żeby scalić ją ze świeżą etykietą modelu. Null, gdy
+     * slot nie istnieje albo jest ze starej partii.
+     */
+    getSlot(slotId) {
+      const slot = byId.get(slotId) ?? null;
+      return slot && slot.generation === generation ? slot : null;
     },
   };
 }

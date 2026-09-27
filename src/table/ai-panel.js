@@ -49,7 +49,7 @@ export function createAiPanel({ document, wrapEl, logEl, onRetry } = {}) {
     entry.appendChild(head);
     entry.appendChild(body);
     logEl.appendChild(entry);
-    node = { entry, body };
+    node = { entry, head, body };
     nodes.set(slot.id, node);
     return node;
   };
@@ -70,7 +70,11 @@ export function createAiPanel({ document, wrapEl, logEl, onRetry } = {}) {
     },
     /** Slot oczekujący: pulsujące „Czekam…" (też po retry). */
     slotPending(slot) {
-      const { body } = ensureNode(slot);
+      const { head, body } = ensureNode(slot);
+      // AI-R6 (A): nagłówek ODŚWIEŻANY przy każdym oczekiwaniu — „Ponów”
+      // po zmianie modelu w opcjach pokazywał stary model i starą godzinę
+      // (headText liczony tylko przy utworzeniu wpisu).
+      head.textContent = headText(slot);
       clearBody(body);
       const wait = document.createElement('div');
       wait.className = 'ai-pending';

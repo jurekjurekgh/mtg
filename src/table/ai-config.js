@@ -16,9 +16,8 @@ export const AI_MODELS = Object.freeze([
   'stealth/space-bunny-alpha',
   'nvidia/nemotron-3-ultra-550b-a55b:free',
   'inclusionai/ling-3.0-flash-fin:free',
-  'poolside/laguna-s-2.1:free',
-  'dots-studio/dots-3-note-preview:free',
-  'thinkingmachines/inkling:free',
+  // AI-R6 (2026-09-27, prośba właściciela): usunięte laguna-s-2.1,
+  // dots-3-note-preview i inkling (zawodne / nieużywane).
   'google/gemini-3.8-flash:floor',
   'google/gemini-3.7-flash:floor',
   'google/gemini-3.6-flash:floor',

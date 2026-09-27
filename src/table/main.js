@@ -310,9 +310,15 @@ function bootstrapTable() {
     logEl: els.aiLog,
     // Ponowienie bierze AKTUALNY model; prompt zostaje ORYGINALNY (ta sama
     // tura — historia od zapytania urosła, więc przebudowa kłamałaby).
+    // AI-R6 (A): meta scalana ze starą — świeża etykieta modelu w nagłówku,
+    // a tura/tryb/partia bez zmian (panel odświeża nagłówek w slotPending).
     onRetry: (slotId) => {
       aiConfig = loadAiConfig(storage);
-      aiQueue.retry(slotId, { modelId: aiConfig.modelId });
+      const prev = aiQueue.getSlot(slotId);
+      aiQueue.retry(slotId, {
+        modelId: aiConfig.modelId,
+        meta: { ...(prev?.meta ?? {}), modelLabel: aiModelLabel(aiConfig.modelId) },
+      });
     },
   });
   // AI-OpenRouter (Etap-3, AI-R5: Dokument Google, karta na tryb): dopisywanie

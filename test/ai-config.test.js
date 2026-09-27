@@ -13,10 +13,12 @@ const memStorage = (initial = {}) => {
   };
 };
 
-test('AI-E1 config: 20 predefiniowanych modeli, bez duplikatów', () => {
-  assert.equal(AI_MODELS.length, 20);
-  assert.equal(new Set(AI_MODELS).size, 20);
+test('AI-E1 config: 17 predefiniowanych modeli, bez duplikatów', () => {
+  // AI-R6 (2026-09-27): było 20 — usunięte laguna-s-2.1, dots-3-note-preview, inkling.
+  assert.equal(AI_MODELS.length, 17);
+  assert.equal(new Set(AI_MODELS).size, 17);
   assert.equal(AI_MODELS[0], 'stealth/space-bunny-alpha');
+  assert.ok(!AI_MODELS.some((m) => /laguna|dots-3-note|inkling/.test(m)), 'usunięte modele nie wracają');
 });
 
 test('AI-E1 config: etykieta = po slasha, bez sufiksu', () => {
@@ -44,7 +46,7 @@ test('AI-R3 config: 5 modeli z przypiętym providerem (only), reszta = null', ()
 
 test('AI-E1 config: all = predefiniowane + lokalne, dedupe', () => {
   const all = aiAllModels(['x/y:free', 'google/gemini-3.5-flash:floor', '  ', 'x/y:free']);
-  assert.equal(all.length, 21);
+  assert.equal(all.length, 18); // AI-R6: 17 predefiniowanych + 1 lokalny
   assert.ok(all.includes('x/y:free'));
   assert.equal(all.filter((m) => m === 'google/gemini-3.5-flash:floor').length, 1);
 });

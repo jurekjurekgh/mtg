@@ -4,7 +4,7 @@
  * Kontrakt transportu (jak w `ai-queue.js`):
  *   transport({ prompt, modelId, meta, signal }) -> { ok, text?, error? }
  *
- * Zasady (plan §1): `fetch` wstrzykiwany (testy bez sieci), timeout 60 s
+ * Zasady (plan §1): `fetch` wstrzykiwany (testy bez sieci), timeout 180 s
  * przez `AbortController`, głębokie parsowanie błędów (wzorzec z apki
  * referencyjnej: `error.metadata.raw`). Klucz NIE jest tu przechowywany —
  * `getApiKey()` wołane przy KAŻDYM zapytaniu, więc wklejenie klucza
@@ -14,18 +14,28 @@
 /** Endpoint czatu OpenRouter (ten sam, co w apce referencyjnej). */
 export const OPENROUTER_CHAT_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
-/** Domyślny timeout zapytania (plan §1: 60 s; darmowe modele wolno startują). */
-export const AI_CLIENT_TIMEOUT_MS = 60_000;
+/**
+ * Domyślny timeout zapytania. Plan §1 mówił 60 s, ale AI-R6 (2026-09-27,
+ * zgłoszenie właściciela): inference-net i Space Bunny Alpha odpowiadają
+ * POPRAWNIE w 60–90 s (panel OpenRoutera: sukces), więc 60 s ucinało
+ * dobre odpowiedzi. 180 s = pełna odpowiedź + zapas na wolny start.
+ */
+export const AI_CLIENT_TIMEOUT_MS = 180_000;
 
 /**
  * Splaszcza „głęboki” błąd OpenRouter do czytelnego tekstu.
  * Kształty na wolności: `{ error: { message, metadata: { raw } } }`,
  * `{ error: 'tekst' }`, `{ message }`, czasem sam string.
  */
-/** Obcięcie detalu błędu, żeby odpowiedź serwera nie zalała panelu. */
+/**
+ * Obcięcie detalu błędu, żeby odpowiedź serwera nie zalała panelu.
+ * AI-R6 (prośba właściciela): DOKŁADNA treść błędu — limit 2000 znaków
+ * (prawdziwe błędy API są krótsze i przechodzą verbatim; ucina tylko
+ * śmieci typu strony HTML od pośredników).
+ */
 function clipDetail(text) {
   const s = String(text ?? '').trim();
-  return s.length > 300 ? `${s.slice(0, 300)}…` : s;
+  return s.length > 2000 ? `${s.slice(0, 2000)}…` : s;
 }
 
 export function aiClientErrorText(status, data) {
@@ -113,23 +123,80 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
         body: JSON.stringify(body),
         ...(ctrl ? { signal: ctrl.signal } : {}),
       });
+      const timeoutError = () => ({
+        ok: false,
+        error: `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s, model ${modelId}) — model nie odpowiedział. Użyj „Ponów”.`,
+      });
+      // AI-R6 (C): abort w trakcie schodzenia ciała odpowiedzi (nagłówki
+      // zdążyły przyjść, treść nie) wpadał w parsowanie JSON i wychodził
+      // jako „pusta odpowiedź” zamiast timeoutu — stąd mylący błąd przy
+      // wolnych providerach (60–90 s). Sprawdzamy przerwanie PO odczycie.
+      if (timedOut || ctrl?.signal.aborted) return timeoutError();
+      // AI-R6 (B): ciało czytamy jako TEKST i parsujemy sami — żeby błąd
+      // JSON i nie-JSON-owe ciała błędów (HTML pośrednika) pokazać
+      // DOSŁOWNIE, a nie połykać (`res.json()` nie zostawia surowizny).
+      // Fallback na `res.json()` dla starszych stubów w testach.
+      let rawText = '';
       let data = null;
-      try {
-        data = await res.json();
-      } catch {
-        data = null;
+      let jsonError = '';
+      if (typeof res.text === 'function') {
+        try {
+          rawText = await res.text();
+        } catch (error) {
+          rawText = '';
+        }
+        if (timedOut || ctrl?.signal.aborted) return timeoutError();
+        if (rawText) {
+          try {
+            data = JSON.parse(rawText);
+          } catch (error) {
+            jsonError = error instanceof Error ? error.message : String(error);
+          }
+        }
+      } else if (typeof res.json === 'function') {
+        try {
+          data = await res.json();
+        } catch (error) {
+          jsonError = error instanceof Error ? error.message : String(error);
+        }
+        if (timedOut || ctrl?.signal.aborted) return timeoutError();
       }
       if (!res.ok) {
-        return { ok: false, error: aiClientErrorText(res.status, data) };
+        // Nie-JSON-owe ciało błędu (np. HTML pośrednika): dokładna treść
+        // zamiast generyka (B) + przyczyna parsowania.
+        let message = aiClientErrorText(res.status, data);
+        if (jsonError) message += ` (ciało nie jest JSON: ${jsonError})`;
+        if (data == null && rawText && jsonError) message += ` Surowo: ${clipDetail(rawText)}`;
+        return { ok: false, error: message };
+      }
+      if (jsonError) {
+        const suffix = rawText ? ` Surowo: ${clipDetail(rawText)}` : '';
+        return { ok: false, error: `Błąd JSON w odpowiedzi OpenRouter (HTTP 200): ${jsonError}.${suffix}` };
       }
       const text = data?.choices?.[0]?.message?.content;
       if (typeof text !== 'string' || !text.trim()) {
-        return { ok: false, error: 'Model zwrócił pustą odpowiedź — użyj „Ponów” albo zmień model.' };
+        // AI-R6 (B/C): „pusta odpowiedź” z DIAGNOZĄ — co faktycznie wróciło
+        // (finish_reason, kształt choices, surowe ciało), żeby dało się
+        // odróżnić kaprys modelu od ucięcia po drodze.
+        const choice = data?.choices?.[0] ?? null;
+        const diag = choice && typeof choice === 'object'
+          ? `finish_reason: ${choice.finish_reason ?? '(brak)'}`
+          : `choices: ${Array.isArray(data?.choices) ? data.choices.length : '(brak tablicy)'}`;
+        let rawDump = '';
+        try {
+          rawDump = data == null ? '(puste ciało)' : clipDetail(JSON.stringify(data));
+        } catch {
+          rawDump = '(ciała nie da się pokazać)';
+        }
+        return { ok: false, error: `Model zwrócił pustą odpowiedź (${diag}) — użyj „Ponów” albo zmień model. Surowo: ${rawDump}` };
       }
       return { ok: true, text };
     } catch (error) {
       if (timedOut) {
-        return { ok: false, error: `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s) — model nie odpowiedział. Użyj „Ponów”.` };
+        return {
+          ok: false,
+          error: `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s, model ${modelId}) — model nie odpowiedział. Użyj „Ponów”.`,
+        };
       }
       if (ctrl?.signal.aborted || signal?.aborted) {
         return { ok: false, error: 'Przerwano zapytanie do AI.' };

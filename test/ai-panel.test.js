@@ -92,3 +92,20 @@ test('AI-E1 panel: clear czyści wpisy (nowa partia)', () => {
   assert.equal(panel.entryCount(), 0);
   assert.equal(log.children.length, 0);
 });
+
+test('AI-R6 panel (A): „Ponów” odświeża nagłówek (nowy model + próba)', () => {
+  const wrap = new FakeEl('div');
+  const log = new FakeEl('div');
+  const panel = createAiPanel({ document: fakeDocument(), wrapEl: wrap, logEl: log });
+  panel.slotPending(slot({ id: 3 }));
+  const before = log.query('ai-head')[0].textContent;
+  assert.ok(before.includes('m'), 'stary model w nagłówku');
+  assert.ok(!before.includes('próba'), 'pierwsza próba bez oznaczenia');
+  // Retry po zmianie modelu w opcjach: ten sam wpis, świeży nagłówek.
+  panel.slotResolved(slot({ id: 3, result: { ok: false, error: 'boom' } }));
+  panel.slotPending(slot({ id: 3, attempt: 2, modelId: 'x/nowy:free', meta: { turn: 7, modelLabel: 'nowy' } }));
+  assert.equal(panel.entryCount(), 1, 'ten sam wpis');
+  const after = log.query('ai-head')[0].textContent;
+  assert.ok(after.includes('nowy'), 'nowy model w nagłówku');
+  assert.ok(after.includes('próba 2'), 'oznaczenie próby');
+});

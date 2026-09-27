@@ -105,3 +105,23 @@ test('AI-E1 queue: wyjątek transportu = błąd (normalizacja)', async () => {
   assert.equal(resolved[0].result.ok, false);
   assert.ok(resolved[0].result.error.includes('sieć padła'));
 });
+
+test('AI-R6 queue (A): retry scala metę + getSlot do odczytu', async () => {
+  const seen = [];
+  const transport = async (req) => {
+    seen.push(req);
+    return seen.length === 1 ? { ok: false, error: 'boom' } : { ok: true, text: 'ok' };
+  };
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: () => {} });
+  const id = queue.enqueue({ prompt: 'p', modelId: 'stary', meta: { turn: 4, modelLabel: 'stary', mode: 'lore-bot' } });
+  await new Promise((r) => setTimeout(r, 20));
+  const prev = queue.getSlot(id);
+  assert.ok(prev, 'slot widoczny po błędzie');
+  assert.equal(prev.meta.turn, 4);
+  assert.equal(queue.retry(id, { modelId: 'nowy', meta: { ...prev.meta, modelLabel: 'nowy' } }), true);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(seen[1].modelId, 'nowy', 'transport dostał nowy model');
+  assert.equal(seen[1].meta.modelLabel, 'nowy', 'transport dostał świeżą metę');
+  assert.equal(seen[1].meta.turn, 4, 'tura zachowana');
+  assert.equal(queue.getSlot(999), null, 'obcy slot = null');
+});

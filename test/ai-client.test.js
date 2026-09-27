@@ -8,9 +8,9 @@ const okRes = (data) => ({ ok: true, status: 200, json: async () => data });
 const errRes = (status, data) => ({ ok: false, status, json: async () => data });
 const lore = { choices: [{ message: { role: 'assistant', content: 'Mgła nad borem. Nieprzyjaciel czeka.' } }] };
 
-test('AI-E2 client: stałe kontraktu (endpoint + 60 s)', () => {
+test('AI-E2 client: stałe kontraktu (endpoint + 180 s)', () => {
   assert.equal(OPENROUTER_CHAT_URL, 'https://openrouter.ai/api/v1/chat/completions');
-  assert.equal(AI_CLIENT_TIMEOUT_MS, 60_000);
+  assert.equal(AI_CLIENT_TIMEOUT_MS, 180_000); // AI-R6: było 60 s — ucinało dobre odpowiedzi 60–90 s
 });
 
 test('AI-E2 client: sukces — kształt żądania jak w apce referencyjnej', async () => {
@@ -69,8 +69,10 @@ test('AI-E2 client: głęboki parse błędów (wzorzec error.metadata.raw)', () 
   assert.ok(aiClientErrorText(404, null).includes('HTTP 404'));
   assert.ok(aiClientErrorText(503, 'plain string').includes('plain string'));
   assert.ok(aiClientErrorText(0, null).length > 0);
-  const long = aiClientErrorText(418, { error: { message: 'x'.repeat(500) } });
-  assert.ok(long.length < 450, 'obcięcie zalewu');
+  // AI-R6 (B): dokładna treść — 500 znaków przechodzi verbatim, zalew tnie 2000.
+  assert.ok(aiClientErrorText(418, { error: { message: 'x'.repeat(500) } }).includes('x'.repeat(500)), '500 znaków verbatim');
+  const long = aiClientErrorText(418, { error: { message: 'x'.repeat(2500) } });
+  assert.ok(long.length < 2200, 'obcięcie zalewu');
 });
 
 test('AI-E2 client: transport mapuje HTTP na polskie komunikaty', async () => {
@@ -128,7 +130,7 @@ test('AI-E2 client: abort w locie = „Przerwano”', async () => {
   assert.ok(res.error.includes('Przerwano'));
 });
 
-test('AI-E2 client: timeout 60 s (tu: 15 ms) zwalnia slot z błędem', async () => {
+test('AI-E2 client: timeout 180 s (tu: 15 ms) zwalnia slot z błędem', async () => {
   let calls = 0;
   const fetchImpl = (url, opts) => new Promise((_, reject) => {
     calls += 1;
@@ -173,4 +175,52 @@ test('AI-R3 client: zwykły model = brak klucza provider (domyślny routing)', a
   });
   await empty({ prompt: 'a', modelId: 'x/pin' });
   assert.ok(!('provider' in bodies[2]), 'pusta allowlista = brak klucza');
+});
+
+test('AI-R6 client (C): abort w trakcie schodzenia ciała = timeout, nie „pusta odpowiedź”', async () => {
+  // Nagłówki przyszły od razu, ciało wisi — timer ucina w trakcie text()
+  // (prawdziwe text() odrzuca na aborcie — stub wiernie to odtwarza).
+  const hangingRes = (signal) => ({
+    ok: true, status: 200,
+    text: () => new Promise((_, reject) => {
+      signal?.addEventListener('abort', () => reject(new Error('aborted')));
+    }),
+  });
+  const fetchImpl = async (url, opts) => hangingRes(opts.signal);
+  const transport = createOpenRouterTransport({ getApiKey: () => 'k', fetchImpl, timeoutMs: 15 });
+  const res = await transport({ prompt: 'a', modelId: 'm/wolny' });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Przekroczono czas oczekiwania'), res.error);
+  assert.ok(res.error.includes('m/wolny'), 'timeout nazywa model');
+  assert.ok(!res.error.includes('pustą odpowiedź'), 'nie myli timeoutu z pustą odpowiedzią');
+});
+
+test('AI-R6 client (B): nie-JSON-owe ciało błędu HTTP wklejane dosłownie', async () => {
+  const html = '<html><body>upstream timeout</body></html>';
+  const resStub = { ok: false, status: 502, text: async () => html };
+  const transport = createOpenRouterTransport({ getApiKey: () => 'k', fetchImpl: async () => resStub });
+  const res = await transport({ prompt: 'a', modelId: 'm' });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('HTTP 502'), res.error);
+  assert.ok(res.error.includes('upstream timeout'), 'dokładna treść ciała');
+  assert.ok(res.error.includes('nie jest JSON'), 'przyczyna parsowania jawna');
+});
+
+test('AI-R6 client (B): popsuty JSON przy HTTP 200 = jawny błąd JSON', async () => {
+  const resStub = { ok: true, status: 200, text: async () => '{nie json' };
+  const transport = createOpenRouterTransport({ getApiKey: () => 'k', fetchImpl: async () => resStub });
+  const res = await transport({ prompt: 'a', modelId: 'm' });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('Błąd JSON'), res.error);
+  assert.ok(res.error.includes('{nie json'), 'surowizna do diagnozy');
+});
+
+test('AI-R6 client (B): pusta odpowiedź niesie diagnozę (finish_reason + surowo)', async () => {
+  const data = { choices: [{ message: { content: '  ' }, finish_reason: 'length' }], id: 'gen-1' };
+  const transport = createOpenRouterTransport({ getApiKey: () => 'k', fetchImpl: async () => okRes(data) });
+  const res = await transport({ prompt: 'a', modelId: 'm' });
+  assert.equal(res.ok, false);
+  assert.ok(res.error.includes('pustą odpowiedź'), res.error);
+  assert.ok(res.error.includes('finish_reason: length'), 'diagnoza przyczyny');
+  assert.ok(res.error.includes('gen-1'), 'surowe ciało do diagnozy');
 });
