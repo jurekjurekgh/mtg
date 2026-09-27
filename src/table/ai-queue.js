@@ -8,12 +8,14 @@
  * albo błędem — błąd też zwalnia kolejkę).
  *
  * Kontrakt transportu:
- *   transport({ prompt, modelId, meta, signal }) -> Promise<{ ok, text?, error? }>
+ *   transport({ prompt, messages, modelId, meta, signal }) -> Promise<{ ok, text?, error? }>
  * Wyjątek z transportu = { ok: false, error } (normalizacja tutaj).
  *
  * Hooki: onPending(slot) — nowy slot do narysowania jako „Czekam…";
  *         onResolved(slot) — slot ma .result, rysuj odpowiedź albo błąd.
- * Slot: { id, attempt, prompt, modelId, meta, result? }.
+ * Slot: { id, attempt, prompt, messages?, modelId, meta, result? }.
+ * AI-R7: `messages` (rozmowa user/assistant) jedzie do transportu obok
+ * `prompt` (prompt = skrót do podglądu; transport woli messages).
  * `reset()` (nowa partia): spóźnione odpowiedzi starej generacji giną.
  */
 export function createAiQueue({ transport, onPending, onResolved } = {}) {
@@ -60,17 +62,19 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
 
   return {
     /** Nowe zapytanie na końcu kolejki; zwraca id slotu. */
-    enqueue({ prompt, modelId, meta } = {}) {
+    enqueue({ prompt, messages, modelId, meta } = {}) {
       seq += 1;
       const slot = {
         id: seq, attempt: 1, generation,
         prompt: prompt ?? '', modelId: modelId ?? '', meta: meta ?? null,
+        // AI-R7: rozmowa (user/assistant) — transport woli ją od promptu.
+        messages: Array.isArray(messages) ? messages : null,
         result: null,
       };
       slots.push(slot);
       byId.set(slot.id, slot);
       pendingHook(slot);
-      fire(slot, { prompt: slot.prompt, modelId: slot.modelId, meta: slot.meta });
+      fire(slot, { prompt: slot.prompt, messages: slot.messages, modelId: slot.modelId, meta: slot.meta });
       return slot.id;
     },
     /**
@@ -78,13 +82,16 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
      * chronologiczny zachowany). Setup brany z chwili kliku (argumenty).
      * Zwraca false, gdy slotu nie ma / nie jest błędem / jest nieaktualny.
      */
-    retry(slotId, { prompt, modelId, meta } = {}) {
+    retry(slotId, { prompt, messages, modelId, meta } = {}) {
       const slot = byId.get(slotId) ?? null;
       if (!slot || slot.generation !== generation || !slot.result || slot.result.ok) return false;
       if (slots.includes(slot)) return false; // już w locie — nie dublujemy
       slot.result = null;
       slot.attempt += 1;
       if (prompt !== undefined) slot.prompt = prompt;
+      // AI-R7: retry odtwarza pełną rozmowę (historia + brak odpowiedzi
+      // bieżącej tury — model losuje na nowo).
+      if (messages !== undefined) slot.messages = Array.isArray(messages) ? messages : null;
       if (modelId !== undefined) slot.modelId = modelId;
       // AI-R6 (A): meta też ze setupu chwili kliku (świeża etykieta modelu
       // do nagłówka; wołający scala ze starą, żeby nie zgubić tury/trybu).
@@ -93,7 +100,7 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
       // najwcześniejszym nierozstrzygniętym, więc wraca NA GŁOWĘ.
       slots.unshift(slot);
       pendingHook(slot);
-      fire(slot, { prompt: slot.prompt, modelId: slot.modelId, meta: slot.meta });
+      fire(slot, { prompt: slot.prompt, messages: slot.messages, modelId: slot.modelId, meta: slot.meta });
       return true;
     },
     /**

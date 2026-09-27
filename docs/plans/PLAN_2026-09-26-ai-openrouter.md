@@ -255,3 +255,21 @@ wierszy przy współbieżnych dopisaniach.
   jedna karta dokumentu na tryb, wpis = meta + komentarz + rozdzielnik.
   Karty zakłada właściciel ręcznie (API nie umie ich tworzyć); brak karty =
   fallback do pierwszej z nagłówkiem. Payload aplikacji BEZ ZMIAN.
+
+- R6 (zgłoszenia właściciela 2026-09-27, po teście na żywo): (A) nagłówek
+  slotu odświeżany przy retry (meta ze setupu chwili kliku); (B) błędy
+  pokazują DOKŁADNY tekst OpenRoutera/timeoutu/JSON-a (żadnych „nieznanych
+  błędów”); (C) timeout 60 s → 180 s (dobre odpowiedzi 60–90 s były
+  flagowane jako puste) + kontrola abortu też PO odczycie body;
+  (D) z listy modeli wypadły `inkling`, `dots-3-note-preview`, `laguna-s2`;
+  (E) klik w pulsujące „Czekam…” PRZERYWA zapytanie (slot kończy błędem
+  z przyciskiem „Ponów”; `AbortController` w kolejce, reset zabija w locie).
+
+- R7 (ciągłość czatu, zlecenie właściciela 2026-09-27): zapytanie to
+  PRAWDZIWA rozmowa `messages[]` (user/assistant na zmianę), nie jeden
+  prompt — każda wiadomość usera niesie zapis JEDNEJ tury, a po niej stoi
+  odpowiedź modelu z tej tury. Brief i zasady trybu padają RAZ (pierwsza
+  wiadomość), kolejne to krótki materiał („Kolejna tura — skomentuj…”).
+  Rejestr `ai-chat.js` (wpis per tura, reset co partię); retry trzyma
+  ORYGINALNE messages (= kontekst tury N) i nadpisuje jej odpowiedź.
+  Bez O(n²): każda tura w rozmowie raz. Payload Drive BEZ ZMIAN.

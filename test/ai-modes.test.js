@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   buildLorePrompt, buildPlayerPrompt, buildObserverPrompt,
   buildLoreObserverPrompt, buildSkitPrompt, buildPromptForMode,
+  buildChatMessagesForMode,
   LORE_COMMENT_LIMIT, PLAYER_COMMENT_LIMIT,
   OBSERVER_COMMENT_LIMIT, LORE_OBSERVER_COMMENT_LIMIT,
 } from '../src/table/ai-modes.js';
@@ -163,4 +164,64 @@ test('AI-R4 modes: dyspozytor 5 trybów (nieznany = bezpieczny lore)', () => {
   assert.ok(buildPromptForMode('skit', CTX).includes('**SKIT: -tytuł-**'));
   assert.ok(buildPromptForMode('nie-ma-takiego', CTX).includes('NIE używaj wprost nazw kart'));
   assert.ok(buildPromptForMode(undefined, CTX).includes('TY jesteś Nieprzyjaciel'));
+});
+
+test('AI-R7 chat: jedna tura = jedna wiadomość usera z pełnym briefem', () => {
+  const messages = buildChatMessagesForMode('lore-bot', {
+    ...CTX, turns: [{ number: 1, text: 'Tura 1 — Czarodziejka: atak goblinem.' }], replies: {},
+  });
+  assert.deepEqual(messages.map((m) => m.role), ['user']);
+  assert.ok(messages[0].content.includes('TY jesteś Nieprzyjaciel'));
+  assert.ok(messages[0].content.includes('Skomentuj OSTATNIĄ turę (nr 1)'));
+  assert.ok(messages[0].content.includes('atak goblinem'));
+});
+
+test('AI-R7 chat: tury przeplatane odpowiedziami, brief i zasady RAZ', () => {
+  const messages = buildChatMessagesForMode('lore-bot', {
+    ...CTX,
+    turns: [
+      { number: 1, text: 'Tura 1 — Czarodziejka: dobrała kartę.' },
+      { number: 2, text: 'Tura 2 — Nieprzyjaciel: zagrał elfa.' },
+      { number: 3, text: 'Tura 3 — Czarodziejka: rzuciła błyskawicę.' },
+    ],
+    replies: { 1: 'ODP-1: mgła.', 2: 'ODP-2: elf.' },
+  });
+  assert.deepEqual(messages.map((m) => m.role), ['user', 'assistant', 'user', 'assistant', 'user']);
+  const joined = messages.map((m) => m.content).join('\n');
+  assert.equal(joined.split('Zasady:').length - 1, 1); // brief nie mnoży się co turę
+  for (const needle of ['dobrała kartę', 'zagrał elfa', 'rzuciła błyskawicę']) {
+    assert.equal(joined.split(needle).length - 1, 1, needle); // każda tura raz (bez O(n²))
+  }
+  assert.equal(messages[1].content, 'ODP-1: mgła.');
+  assert.equal(messages[3].content, 'ODP-2: elf.');
+  assert.ok(messages[2].content.includes('Kolejna tura'));
+  assert.ok(!messages[2].content.includes('TY jesteś')); // follow-up bez pełnego briefu
+  assert.ok(messages[4].content.includes('rzuciła błyskawicę')); // bieżąca czeka na komentarz
+});
+
+test('AI-R7 chat: puste tury wypadają, brak odpowiedzi = sami userzy', () => {
+  const messages = buildChatMessagesForMode('lore-bot', {
+    ...CTX,
+    turns: [{ number: 1, text: '  ' }, { number: 2, text: 'Tura 2 — Nieprzyjaciel: atak.' }],
+    replies: {},
+  });
+  assert.deepEqual(messages.map((m) => m.role), ['user']);
+  assert.ok(messages[0].content.includes('Skomentuj OSTATNIĄ turę (nr 2)')); // numeracja po number
+});
+
+test('AI-R7 chat: skit — follow-up woła o kolejny SKIT', () => {
+  const messages = buildChatMessagesForMode('skit', {
+    ...CTX,
+    turns: [{ number: 1, text: 'Tura 1.' }, { number: 2, text: 'Tura 2.' }],
+    replies: { 1: 'SKIT-1' },
+  });
+  assert.deepEqual(messages.map((m) => m.role), ['user', 'assistant', 'user']);
+  assert.ok(messages[0].content.includes('**SKIT: -tytuł-**'));
+  assert.ok(messages[2].content.includes('kolejny SKIT'));
+});
+
+test('AI-R7 chat: zero tur = legacy jedna wiadomość z (brak zapisu)', () => {
+  const messages = buildChatMessagesForMode('lore-bot', { ...CTX, turns: [], replies: {} });
+  assert.deepEqual(messages.map((m) => m.role), ['user']);
+  assert.ok(messages[0].content.includes('(brak zapisu)'));
 });

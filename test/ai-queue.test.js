@@ -159,3 +159,36 @@ test('AI-R6 queue (E): reset ucina zapytania w locie', async () => {
   queue.reset();
   assert.equal(aborted, true, 'kontroler w locie zabity przy resecie');
 });
+
+test('AI-R7 queue: enqueue niesie messages do transportu', async () => {
+  const seen = [];
+  const { queue, resolved } = harness(async (req) => {
+    seen.push(req);
+    return { ok: true, text: 'x' };
+  });
+  const messages = [{ role: 'user', content: 'tura 1' }, { role: 'assistant', content: 'ODP-1' }];
+  queue.enqueue({ prompt: 'tura 1', messages, modelId: 'm' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 1);
+  assert.deepEqual(seen[0].messages, messages);
+  assert.deepEqual(resolved[0].messages, messages);
+});
+
+test('AI-R7 queue: retry bez messages trzyma oryginał, z messages podmienia', async () => {
+  const seen = [];
+  const { queue, resolved } = harness(async (req) => {
+    seen.push(req.messages ?? null);
+    return seen.length <= 2 ? { ok: false, error: 'padło' } : { ok: true, text: 'działa' };
+  });
+  const orig = [{ role: 'user', content: 'ORYG' }];
+  const id = queue.enqueue({ prompt: 'o', messages: orig, modelId: 'm' });
+  await tick(); await tick();
+  assert.equal(queue.retry(id, { modelId: 'm' }), true);
+  await tick(); await tick();
+  assert.deepEqual(seen[1], orig); // retry nie ruszył rozmowy
+  const next = [{ role: 'user', content: 'NOWA' }];
+  assert.equal(queue.retry(id, { messages: next }), true);
+  await tick(); await tick();
+  assert.deepEqual(seen[2], next);
+  assert.equal(resolved.length, 3);
+});

@@ -2,7 +2,9 @@
  * AI-OpenRouter (Etap-2): prawdziwy transport do OpenRouter.
  *
  * Kontrakt transportu (jak w `ai-queue.js`):
- *   transport({ prompt, modelId, meta, signal }) -> { ok, text?, error? }
+ *   transport({ prompt, messages, modelId, meta, signal }) -> { ok, text?, error? }
+ * AI-R7: `messages` (niepusta tablica `{ role, content }`) jedzie verbatim
+ * (ciągłość czatu); pusty/brak = legacy: pojedyncza wiadomość z `prompt`.
  *
  * Zasady (plan §1): `fetch` wstrzykiwany (testy bez sieci), timeout 180 s
  * przez `AbortController`, głębokie parsowanie błędów (wzorzec z apki
@@ -88,7 +90,7 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
   const endpoint = typeof url === 'string' && url ? url : OPENROUTER_CHAT_URL;
   const limit = Number.isFinite(timeoutMs) ? timeoutMs : AI_CLIENT_TIMEOUT_MS;
 
-  return async function openRouterTransport({ prompt, modelId, signal } = {}) {
+  return async function openRouterTransport({ prompt, messages, modelId, signal } = {}) {
     const apiKey = typeof getApiKey === 'function' ? String(getApiKey() ?? '').trim() : '';
     if (!apiKey) {
       return { ok: false, error: 'Brak klucza API — wklej go w „Konfiguracji AI” (klucz nie zapisuje się nigdzie poza tą przeglądarką).' };
@@ -113,7 +115,13 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
       // AI-R3: przypięty model = TYLKO wskazany provider (order+only, zero fallbacku).
       const pinned = typeof providerOnlyFor === 'function' ? providerOnlyFor(modelId) : null;
       const allowlist = Array.isArray(pinned) ? pinned.filter((p) => typeof p === 'string' && p) : [];
-      const body = { model: modelId, messages: [{ role: 'user', content: String(prompt ?? '') }] };
+      // AI-R7: pełna rozmowa jedzie verbatim (role user/assistant na zmianę);
+      // brak = dotychczasowy pojedynczy prompt (mocki/stare wołania).
+      const chat = Array.isArray(messages) && messages.length > 0 ? messages : null;
+      const body = {
+        model: modelId,
+        messages: chat ?? [{ role: 'user', content: String(prompt ?? '') }],
+      };
       if (allowlist.length > 0) {
         body.provider = { order: [...allowlist], only: [...allowlist], allow_fallbacks: false };
       }

@@ -40,7 +40,7 @@ export function buildLorePrompt(ctx) {
     `Grasz talią „${deck}” ze świata: ${world}.`,
     `W zapisie partii każde zdanie o ${bot} opisuje CIEBIE (twoje zagrania, twoje stwory, twoje rany) — nie trzeciego gracza. Czarodziejka to twoja przeciwniczka.`,
     '',
-    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
     '',
     history,
     '',
@@ -65,7 +65,7 @@ export function buildPlayerPrompt(ctx) {
     `Grasz towarzysko w Magic: The Gathering. TY jesteś graczem-botem z talią „${deck}” — naprzeciwko siedzi Czarodziejka (człowiek).`,
     `W zapisie partii twoje zagrania to te podpisane „${bot}” — ${bot} przy stole to TY, nie trzeci gracz.`,
     '',
-    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
     '',
     history,
     '',
@@ -92,7 +92,7 @@ export function buildObserverPrompt(ctx) {
     `Jesteś niezależnym obserwatorem towarzyskiej partii Magic: The Gathering. Przy stole: Czarodziejka (człowiek) i gracz-bot z talią „${deck}”.`,
     `W zapisie partii zagrania bota podpisane są „${bot}”.`,
     '',
-    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
     '',
     history,
     '',
@@ -117,7 +117,7 @@ export function buildLoreObserverPrompt(ctx) {
     `Jesteś niezależnym obserwatorem pojedynku magów: Czarodziejka mierzy się z ${bot} (talia „${deck}” ze świata: ${world}).`,
     `W zapisie partii zdania o ${bot} opisują jednego z pojedynkujących — twojego obserwowanego, nie trzeciego gracza.`,
     '',
-    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
     '',
     history,
     '',
@@ -189,7 +189,7 @@ export function buildSkitPrompt(ctx) {
     '---',
     '',
     `Twoja rozgrywka: Czarodziejka (talia „${heroDeck}”) kontra ${bot} (talia „${deck}”). Komentowana tura: OSTATNIA (nr ${turnNo}).`,
-    'Log rozgrywki (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    'Log rozgrywki (format „Tura N — Imię” + zdarzenia):',
     '',
     history,
   ].join('\n');
@@ -205,4 +205,46 @@ export function buildPromptForMode(modeId, ctx) {
   if (modeId === 'lore-observer') return buildLoreObserverPrompt(ctx);
   if (modeId === 'skit') return buildSkitPrompt(ctx);
   return buildLorePrompt(ctx);
+}
+
+/**
+ * AI-R7 (ciągłość czatu, zlecenie właściciela 2026-09-27): zapytanie jako
+ * PRAWDZIWA rozmowa `messages[]` (user/assistant na zmianę), nie jeden
+ * prompt. Każda wiadomość usera niesie zapis JEDNEJ tury, a po niej —
+ * odpowiedź modelu z tej tury (gdy jest). Dzięki temu model „pamięta”,
+ * co wcześniej odpowiadał, i trzyma spójność interpretacyjną.
+ *
+ * Kształt: user(pełny brief trybu + tura 1), assistant(odp 1),
+ * user(krótko: tura 2), assistant(odp 2), …, user(tura N, bez odpowiedzi).
+ * Brief i zasady padają RAZ (pierwsza wiadomość) — kolejne user-maszyny
+ * to sam materiał z poleceniem w tym samym stylu (pełny brief co turę
+ * mnożyłby tokeny i mieszał role). Puste tury wypadają (numeracja po
+ * `number`, nie po pozycji). Bieżąca tura (ostatnia) nigdy nie ma
+ * odpowiedzi — to ona czeka na komentarz.
+ *
+ * @param {Array<{number:number,text:string}>} turns — wycinki tur 1..N.
+ * @param {Object<number,string>} replies — odpowiedź modelu per tura.
+ * @param {Object} ctx — reszta kontekstu trybu (talie/światy).
+ */
+export function buildChatMessagesForMode(modeId, { turns = [], replies = {}, ...ctx } = {}) {
+  const nonEmpty = (turns ?? []).filter((t) => t && String(t.text ?? '').trim());
+  if (nonEmpty.length === 0) {
+    return [{
+      role: 'user',
+      content: buildPromptForMode(modeId, { ...ctx, turnNumber: ctx.turnNumber ?? '?', turnText: '(brak zapisu)' }),
+    }];
+  }
+  const followUp = modeId === 'skit'
+    ? 'Kolejna tura — kolejny SKIT w tym samym stylu i z tymi samymi zasadami.'
+    : 'Kolejna tura — skomentuj ją w tym samym stylu i według tych samych zasad.';
+  const messages = [];
+  nonEmpty.forEach((t, i) => {
+    const content = i === 0
+      ? buildPromptForMode(modeId, { ...ctx, turnNumber: t.number, turnText: t.text })
+      : [followUp, '', `Tura ${t.number}:`, '', t.text].join('\n');
+    messages.push({ role: 'user', content });
+    const reply = replies?.[t.number];
+    if (typeof reply === 'string' && reply.trim()) messages.push({ role: 'assistant', content: reply });
+  });
+  return messages;
 }

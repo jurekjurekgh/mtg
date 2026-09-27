@@ -224,3 +224,27 @@ test('AI-R6 client (B): pusta odpowiedź niesie diagnozę (finish_reason + surow
   assert.ok(res.error.includes('finish_reason: length'), 'diagnoza przyczyny');
   assert.ok(res.error.includes('gen-1'), 'surowe ciało do diagnozy');
 });
+
+test('AI-R7 client: messages jadą do API verbatim (ciągłość czatu)', async () => {
+  const seen = [];
+  const fetchImpl = async (url, opts) => { seen.push(JSON.parse(opts.body)); return okRes(lore); };
+  const transport = createOpenRouterTransport({ getApiKey: () => 'sk-test', fetchImpl });
+  const messages = [
+    { role: 'user', content: 'brief + tura 1' },
+    { role: 'assistant', content: 'ODP-1' },
+    { role: 'user', content: 'tura 2' },
+  ];
+  const res = await transport({ prompt: 'tura 2', messages, modelId: 'x/y:free', signal: null });
+  assert.equal(res.ok, true);
+  assert.deepEqual(seen[0], { model: 'x/y:free', messages });
+});
+
+test('AI-R7 client: puste/brak messages = legacy pojedynczy prompt', async () => {
+  const seen = [];
+  const fetchImpl = async (url, opts) => { seen.push(JSON.parse(opts.body)); return okRes(lore); };
+  const transport = createOpenRouterTransport({ getApiKey: () => 'sk-test', fetchImpl });
+  await transport({ prompt: 'samo', messages: [], modelId: 'm', signal: null });
+  await transport({ prompt: 'samo2', modelId: 'm', signal: null });
+  assert.deepEqual(seen[0].messages, [{ role: 'user', content: 'samo' }]);
+  assert.deepEqual(seen[1].messages, [{ role: 'user', content: 'samo2' }]);
+});

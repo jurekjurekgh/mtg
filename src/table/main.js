@@ -17,7 +17,8 @@ import { shuffle } from '../engine/shuffle.js';
 import { populateDeckSelects, combineDeckSources, deckTitle } from './deck-selects.js';
 // AI-OpenRouter (Etap-1): konfiguracja, kolejka, panel, mock-transport.
 import { AI_MODES, aiAllModels, aiKeyStatus, aiModelLabel, aiProviderOnly, loadAiConfig, saveAiConfig } from './ai-config.js';
-import { buildPromptForMode } from './ai-modes.js';
+import { buildChatMessagesForMode } from './ai-modes.js';
+import { createAiChat } from './ai-chat.js';
 import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
@@ -308,8 +309,9 @@ function bootstrapTable() {
     document,
     wrapEl: els.aiWrap,
     logEl: els.aiLog,
-    // Ponowienie bierze AKTUALNY model; prompt zostaje ORYGINALNY (ta sama
-    // tura — historia od zapytania urosła, więc przebudowa kłamałaby).
+    // Ponowienie bierze AKTUALNY model; prompt i messages zostają ORYGINALNE
+    // (ta sama tura — historia od zapytania urosła, więc przebudowa
+    // kłamałaby; AI-R7: oryginalna rozmowa to DOKŁADNIE kontekst tury N).
     // AI-R6 (A): meta scalana ze starą — świeża etykieta modelu w nagłówku,
     // a tura/tryb/partia bez zmian (panel odświeża nagłówek w slotPending).
     onRetry: (slotId) => {
@@ -336,6 +338,9 @@ function bootstrapTable() {
     onResolved: (slot) => {
       aiPanel.slotResolved(slot);
       if (slot.result?.ok) {
+        // AI-R7: udana odpowiedź wchodzi do rejestru rozmowy (wstawka
+        // assistant przy następnych turach; retry nadpisuje tę samą turę).
+        aiChat.recordReply(slot.meta?.turn, slot.result.text);
         void aiDriveLog(buildAiDrivePayload({
           mode: slot.meta?.mode ?? aiConfig.mode,
           gameId: slot.meta?.gameId ?? '',
@@ -363,6 +368,9 @@ function bootstrapTable() {
   };
   // Kontekst promptu bieżącej partii (uzupełniany w startGame).
   let aiGameCtx = null;
+  // AI-R7: rejestr rozmowy bieżącej partii (wpis per tura: materiał usera +
+  // odpowiedź modelu) — reset w startGame, razem z kolejką i panelem.
+  const aiChat = createAiChat();
   // Koniec tury → zapytanie do kolejki. Fire-and-forget: sesja nie czeka,
   // a wyjątek i tak połknęłaby sesja (gwarancja w emitTurnCompleted).
   const onAiTurnCompleted = ({ number }) => {
@@ -370,9 +378,25 @@ function bootstrapTable() {
     aiConfig = loadAiConfig(storage); // setup z chwili zapytania
     const turnText = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
     if (!turnText) return;
-    const prompt = buildPromptForMode(aiConfig.mode, { ...aiGameCtx, turnNumber: number, turnText });
+    // AI-R7: zapytanie jako ROZMOWA — wycinek każdej tury 1..N (materiał
+    // usera) przeplatany odpowiedziami modelu z tur wcześniejszych
+    // (wstawki assistant z rejestru). Bez O(n²): każda tura raz.
+    const turns = [];
+    if (typeof session.turnHistoryTextFor === 'function') {
+      for (let n = 1; n <= number; n += 1) {
+        const text = session.turnHistoryTextFor(n);
+        if (text) turns.push({ number: n, text });
+      }
+    }
+    if (turns.length === 0) turns.push({ number, text: turnText });
+    const messages = buildChatMessagesForMode(aiConfig.mode, {
+      ...aiGameCtx, turns, replies: aiChat.repliesBefore(number),
+    });
+    aiChat.recordTurn(number, turns[turns.length - 1].text);
+    const lastUser = [...messages].reverse().find((m) => m?.role === 'user');
     aiQueue.enqueue({
-      prompt,
+      prompt: lastUser?.content ?? '',
+      messages,
       modelId: aiConfig.modelId,
       meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId, mode: aiConfig.mode },
     });
@@ -2737,6 +2761,7 @@ function bootstrapTable() {
         gameId: `${seed}-${new Date().toISOString()}`,
       };
       aiQueue.reset();
+      aiChat.reset(); // AI-R7: nowa partia zapomina rozmowę poprzedniej
       aiPanel.clear();
       // B: nowa partia czyści rejestr odwróceń pokazanych na warstwie.
       transformedShowcaseShown.clear();

@@ -27,3 +27,14 @@ test('AI-E1 mock: alwaysFail + abort dają błąd', async () => {
   const aborted = await ok({ prompt: 'x', modelId: 'm', signal: { aborted: true } });
   assert.equal(aborted.ok, false);
 });
+
+test('AI-R7 mock: rozmowa — rozmiar ze wszystkich wiadomości + ich liczba', async () => {
+  const transport = createMockTransport({ delayMs: 1 });
+  const res = await transport({
+    messages: [{ role: 'user', content: 'abc' }, { role: 'assistant', content: 'de' }],
+    modelId: 'm', signal: null,
+  });
+  assert.equal(res.ok, true);
+  assert.ok(res.text.includes('6 znaków')); // 'abc\nde' po złączeniu
+  assert.ok(res.text.includes('wiadomości: 2'));
+});

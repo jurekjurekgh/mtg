@@ -10,16 +10,22 @@
  */
 export function createMockTransport({ delayMs = 800, alwaysFail = false } = {}) {
   const delay = Math.max(0, Number(delayMs) || 0);
-  return async ({ prompt, modelId, signal } = {}) => {
+  return async ({ prompt, messages, modelId, signal } = {}) => {
     await new Promise((resolve) => {
       setTimeout(resolve, delay);
     });
     if (signal?.aborted) return { ok: false, text: '', error: 'przerwano' };
     if (alwaysFail) return { ok: false, text: '', error: 'mock: wymuszony błąd (?ai-mock=error)' };
-    const size = String(prompt ?? '').length;
+    // AI-R7: mock rozumie rozmowę — rozmiar z treści wiadomości, liczba
+    // wiadomości w tekście (weryfikacja ciągłości czatu bez sieci).
+    const chat = Array.isArray(messages) ? messages : null;
+    const size = chat
+      ? chat.map((m) => String(m?.content ?? '')).join('\n').length
+      : String(prompt ?? '').length;
+    const shape = chat ? `, wiadomości: ${chat.length}` : '';
     return {
       ok: true,
-      text: `[MOCK ${modelId || '?'}] Komentarz lore stand-in (prompt ${size} znaków). Prawdziwy model od Etapu-2.`,
+      text: `[MOCK ${modelId || '?'}] Komentarz lore stand-in (prompt ${size} znaków${shape}). Prawdziwy model od Etapu-2.`,
       error: '',
     };
   };
