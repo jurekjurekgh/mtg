@@ -1493,6 +1493,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     search_library_to_battlefield: () => 10,
     return_card_from_graveyard_to_hand: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 7 : 0),
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
+    // Batch60 (Clone Shell, dies): odkrycie wygnanej karty = darmowy stwór
+    // na pole bitwy, ale BEZ card advantage (to własna, wcześniej wygnana
+    // karta) i warunkowy (imprint mógł chybić stwora). Słabszy od reanimacji
+    // z grobu (+10 wyżej), mocniejszy od samego dobrania; likelihood ×0.5
+    // nakłada anticipatedDiesValue (jak każdy dies-benefit).
+    turn_up_imprinted_card: () => 6,
     put_graveyard_card_on_top: () => 4,
     reveal_top_pick_land_rest_grave: () => 5,
     reveal_top_pick_card_rest_bottom: () => 6, // karta-stwór do ręki (M354)
@@ -1805,8 +1811,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (sac-net!), delirium/mentor-empty-SKIP, ascension-cloak-0.5×10.
       else if (ev === 'end_step') like = 0.5;
       else if (ev === 'beginning_of_combat') like = 0.5;
-      else if (ev === 'another_creature_enters' || ev === 'creature_you_control_enters'
-        || ev === 'artifact_you_control_enters' || ev === 'enchantment_you_control_enters') like = 0.5;
+      else if (ev === 'another_creature_enters' || ev === 'creature_enters' || ev === 'enchantment_you_control_enters') like = 0.5;
       else if (ev === 'any_creature_dies') like = 0.7;
       else if (ev === 'other_permanent_you_control_dies' || ev === 'other_creature_you_control_dies'
         || ev === 'permanents_you_control_leave_battlefield') like = 0.3;
@@ -6403,6 +6408,70 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (lethal) score += 50; // D1: premia lethal
             }
           }
+          // Batch60 (Renegade Tactics): BLIŹNIAK gałęzi cant_block ze ścieżki
+          // zdolności AKTYWOWANYCH (L41) — w cast_spell jej nie było, więc
+          // Renegade szedł wyłącznie wartością cantripa, a cel „can't block”
+          // remisował (generyczny hostile rozstrzygał byle jak). Premia +8
+          // tylko za usunięcie PRAWDZIWEGO blokera: zadeklarowany atak (jak
+          // w bliźniaku) ALBO okno przed atakiem (sorcery w main1/BoC musi
+          // zadziałać PRZED deklaracją — gałąź aktywowana tego okna nie zna,
+          // bo zdolności-instanty czekają na combat). Kara −20 różnicuje cele
+          // (28 pkt między kluczowym blokerem a bezużytecznym celem); samego
+          // rzutu nie topi (cantrip za 1 manę i tak grywalny).
+          if (effect.type === 'cant_block') {
+            const victim = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
+            const combat = view.combat ?? null;
+            const victimIsEnemy = Boolean(victim) && victim.controllerId !== view.playerId;
+            const victimCouldBlock = victimIsEnemy && !victim.tapped && !victim.cantBlock;
+            const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
+              && (combat.attackers ?? []).length > 0;
+            const preAttackWindow = !declaredAttack && myTurn(view)
+              && ['main1', 'beginning_of_combat'].includes(view.turn.step)
+              && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
+            let removesRealBlocker = false;
+            if (victimCouldBlock && (declaredAttack || preAttackWindow)) {
+              const ids = declaredAttack
+                ? (combat.attackers ?? [])
+                : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
+              removesRealBlocker = ids.some((aid) => {
+                const attacker = objectOnBoard(view, aid);
+                return attacker && attackerCanBeBlocked(attacker, [victim]);
+              });
+            }
+            score += removesRealBlocker ? 8 : -20;
+          }
+          // Batch60 (Timely Interference, kicked): BLIŹNIAK gałęzi
+          // blocks_if_able ze ścieżki AKTYWOWANEJ (L41) — w cast_spell jej nie
+          // było (sonda batch60: kopnięty wariant remisował na samej wartości
+          // cantripa i bot nigdy nie kopał mimo czystego kill-blocku).
+          // SKALA kary jak w ścieżce: baza czaru to 50 (zdolności: 2), więc
+          // chybniony kicker topi −60 (L3: kara przebija bazę), nie −10 jak
+          // w bliźniaku — inaczej bot dopłacałby {1}{R} za bezużyteczny
+          // wymuszony blok. Premia +10 za kill-block (jak w bliźniaku).
+          // Rodzeństwo-debuff (−1/−0 na ten sam cel) obniża siłę ofiary PRZED
+          // matematyką bloku (lustro poprawki w bliźniaku).
+          if (effect.type === 'blocks_if_able_until_end_of_turn') {
+            const victimB = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
+            const combatB = view.combat ?? null;
+            const botAttacksB = Boolean(combatB) && combatB.attackingPlayerId === view.playerId
+              && (combatB.attackers ?? []).length > 0;
+            const victimIsEnemyB = Boolean(victimB) && victimB.controllerId !== view.playerId;
+            let killsInBlock = false;
+            if (botAttacksB && victimIsEnemyB && victimB) {
+              const mySlotB = effect.targetIndex ?? 0;
+              const weaken = effects.reduce((sum, sib) => sum
+                + (((sib?.targetIndex ?? 0) === mySlotB && isNegativePump(sib)
+                  && Number.isInteger(sib.power) && sib.power < 0) ? -sib.power : 0), 0);
+              const vP = Math.max(0, (victimB.power ?? 0) - weaken);
+              const vT = victimB.toughness ?? 0;
+              killsInBlock = (combatB.attackers ?? []).some((aid) => {
+                const attacker = objectOnBoard(view, aid);
+                if (!attacker || !attackerCanBeBlocked(attacker, [victimB])) return false;
+                return (attacker.power ?? 0) >= vT && vP < (attacker.toughness ?? 0);
+              });
+            }
+            score += killsInBlock ? 10 : -60;
+          }
           // M109 (Sagittars' Volley): fala obrażeń w stwory przeciwnika
           // z keywordem — wartość rośnie z liczbą trafionych i zabitych.
           if (effect.type === 'damage_creatures_with_keyword') {
@@ -6489,9 +6558,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // celuje WŁASNY slot (`targetIndex`, domyślnie 0) — nie wszystkie
             // cele czaru (spell może mieć osobne sloty per efekt damage).
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
-            const amount = effect.amount === 'basic_land_types_you_control'
+            let amount = effect.amount === 'basic_land_types_you_control'
               ? basicLandTypeCount(view.zones.battlefield ?? [], view.playerId)
               : Number.isInteger(effect.amount) ? effect.amount : 0;
+            // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
+            // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
+            // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
+            // wyceniał Summary Judgment zawsze na 3 i nie dobijał stworów
+            // z wytrzymałością 4–5 we własnej main (sonda batch60: PASS
+            // zamiast dobicia tapniętego 5/5). Generycznie po deskryptorze
+            // (ADR 0002), nie po nazwie karty.
+            if (Number.isInteger(effect.amountIfAddendum)
+              && view.turn.activePlayerId === view.playerId
+              && ['precombat_main', 'postcombat_main'].includes(view.turn.phase)) {
+              amount = effect.amountIfAddendum;
+            }
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
@@ -6912,17 +6993,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Bez tej gałęzi efekt nie dostawał ŻADNEJ wartości (dodatnie pumpy
           // wyceniała gałąź poniżej, a klamra M179/E tylko karała), więc bot
           // w ogóle nie rzucał czaru.
-          if (isPumpEffect && isNegativePump(effect) && target
-            && target.controllerId !== view.playerId) {
-            // M218/2 (kryterium właściciela): debuff „do końca tury" jest
-            // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
-            // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
-            // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
-            const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
-            if (changes) {
-              score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+          if (isPumpEffect && isNegativePump(effect) && target) {
+            // Batch60 (uzupełnienie FIX D3): debuff WŁASNEGO stwora to
+            // samookaleczenie (−1/−0 na własnego atakującego dla samego
+            // cantripa) — kara −60 jak stara klamra `else if (isPumpEffect)`
+            // (sonda batch60: bez tego bot rzucał Timely we WŁASNEGO
+            // atakującego 3/3, robiąc z niego 2/3 dla samego dobrania).
+            if (target.controllerId === view.playerId) {
+              score -= 60;
             } else {
-              score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
+            // Batch60 (Timely Interference, kicked): debuff jest RODZEŃSTWEM
+            // wymuszonego bloku na TEN SAM cel (ten sam slot) — nie trikiem
+            // bojowym do symulacji, tylko częścią combo „osłab + zmuś do
+            // bloku" (samo combo wycenia gałąź blocks_if_able poniżej).
+            // Bez strażnika kaskada M218/2 dawała −75 („debuff poza walką"),
+            // topiąc +10 z wymuszonego kill-blocku — bot nigdy nie kopał
+            // (sonda batch60: PASS mimo czystego dobicia 2/2 własną 3/3).
+            const mySlot = effect.targetIndex ?? 0;
+            const siblingForcesBlock = effects.some((sib) => sib?.type === 'blocks_if_able_until_end_of_turn'
+              && (sib.targetIndex ?? 0) === mySlot);
+            if (siblingForcesBlock) {
+              score += 2; // nominalne osłabienie (liczy się w macie bloku)
+            } else {
+              // M218/2 (kryterium właściciela): debuff „do końca tury" jest
+              // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
+              // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
+              // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
+              const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
+              if (changes) {
+                score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
+              } else {
+                score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
+              }
+              }
             }
           }
           // A (Savage Surge) — specjalne okna przed atakiem / przed blokami: obsługa w bloku poniżej.
@@ -7011,7 +7114,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // kara dotyczy tylko samego pumpu.
             if (inCombat && !pumpChangesOutcome(view, target, pumpDelta(view, effect))) trick = -75;
             score += trick + (target.power ?? 0);
-          } else if (isPumpEffect) {
+          } else if (isPumpEffect && !isNegativePump(effect)) {
+            // Batch60: ujemny pump NIE wpada w tę klamrę — w całości posiada
+            // go gałąź M202/G wyżej (to samo wykluczenie co friendlyMisaimPenalty:
+            // debuff wroga to nie „wzmacnianie przeciwnika”). Bez tego każdy
+            // debuff dostawał −75/−60 PODWÓJNIE (sonda batch60: sam −1/−0 na
+            // wroga = −85 mimo bazy 50).
             score -= 60; // wzmacnianie przeciwnika bez powodu jest błędem
           }
           // M179/A1 (zlecenie właściciela): grant keywordów z CZARU — ta sama
@@ -7375,7 +7483,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const victimIsEnemyB = Boolean(victimB) && victimB.controllerId !== view.playerId;
             let killsInBlock = false;
             if (botAttacksB && victimIsEnemyB && victimB) {
-              const vP = victimB.power ?? 0, vT = victimB.toughness ?? 0;
+              // Batch60 (Timely, kicked): rodzeństwo-debuff (−1/−0 na ten sam
+              // cel) OBNIŻA siłę ofiary PRZED matematyką bloku — bez tego
+              // wymuszony blok 3/2 własną 3/3 wyglądał na samobójstwo (−10),
+              // choć osłabiona ofiara (2/2) już nie dobija atakującego.
+              const mySlotB = effect.targetIndex ?? 0;
+              const weaken = effects.reduce((sum, sib) => sum
+                + (((sib?.targetIndex ?? 0) === mySlotB && isNegativePump(sib)
+                  && Number.isInteger(sib.power) && sib.power < 0) ? -sib.power : 0), 0);
+              const vP = Math.max(0, (victimB.power ?? 0) - weaken), vT = victimB.toughness ?? 0;
               killsInBlock = (combatB.attackers ?? []).some((aid) => {
                 const attacker = objectOnBoard(view, aid);
                 if (!attacker || !attackerCanBeBlocked(attacker, [victimB])) return false;
@@ -7740,6 +7856,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // (np. wielorazowy ping) używa prostszego modelu.
             const scaling = Boolean(ability?.cost?.sacrificeSelf || ability?.cost?.sacrifice);
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+          }
+          // Batch60 (Xu-Ifit, Osteoharmonist — {T}: reanimuj stwora z własnego
+          // grobu): BLIŹNIAK gałęzi cast_spell M157 (L41) — bez niego warianty
+          // celu remisowały na gołej bazie 2 i bot brał PIERWSZĄ kartę z grobu
+          // (L50), nie najcenniejszą (sonda batch60: reanimacja 2/2 zamiast
+          // 5/5). Ta sama skala 10+2P+T co czar; stripAbilities/addSubtypes
+          // z deskryptora nie zmieniają wyceny (cierniste P/T wraca na stół).
+          if (effect.type === 'return_permanent_from_graveyard') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
+            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
+            if (gyCard) {
+              const gyDef = cardDef(gyCard.cardId);
+              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
+                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
+              score += 10 + gyValue;
+            }
           }
           // M162/B (uwaga właściciela, Ghoulcaller's Bell): symetryczny mill
           // bez celu („each player mills") — ta sama wycena wyścigu bibliotek
