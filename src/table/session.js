@@ -931,6 +931,8 @@ const DRUGA_OSOBA = Object.freeze({
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
   // M355 (Crumb and Get It): „przy rzucie czaru obiecujesz dar przeciwnikowi".
   obiecuje: 'obiecujesz',
+  // Batch60 (Revealing Wind): pusty podgląd („X rozgląda się… — nie ma na co patrzeć").
+  rozgląda: 'rozglądasz',
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
   // Batch 59 (Memory's Journey): „ty tasuje bibliotekę" → „tasujesz".
@@ -1354,7 +1356,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
         let reason = '';
         if (e.protection) reason = ' (ochrona przed kolorem)';
-        else if (e.inspireAwe) reason = ' (prewencja obrażeń bojowych)';
+        else if (e.inspireAwe || e.combatFog) reason = ' (prewencja obrażeń bojowych)';
         else if (e.shield) reason = ' (tarcza prewencji)';
         else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
@@ -1393,7 +1395,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOf(e.cardId)}: tarcza chroni ${targetName} przed ${e.remaining} kolejnymi obrażeniami`;
       }
       case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
-      case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
+      case 'damage_prevention_started': {
+        // Batch60 (Revealing Wind): zwykła mgła nie ma „chronionych
+        // obiektów" — niweluje WSZYSTKIE obrażenia bojowe.
+        if (e.combatFog) return `${nameOf(e.cardId)}: mgła bojowa — obrażenia bojowe będą niwelowane do końca tury`;
+        return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
+      }
+      // Batch60 (Revealing Wind): „you may look at…" — log mówi TYLKO, że
+      // gracz obejrzał zakryte stwory (podgląd jest prywatny).
+      // Nazwy kart poznał wyłącznie rzucający (pamięć faceDownKnownBy).
+      case 'facedown_looked_at': {
+        const count = (e.objectIds ?? []).length;
+        if (count === 0) return `${whoN(e.playerId)} rozgląda się za zakrytymi stworami w walce — nie ma na co patrzeć`;
+        return `${whoN(e.playerId)} ogląda zakryte stwory w walce (${nameOf(e.cardId)})`;
+      }
       case 'creature_destroyed': {
         // A/D (2026-08-11): w momencie rozstrzygnięcia walki obiekt ma NOWE id
         // w grobie (moveObjectDirectly), więc nameOfObject(fromId) zwracał „?".

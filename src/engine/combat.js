@@ -80,7 +80,10 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // zapobiegniętym trafieniu trigger odpalał się mimo 0 zadanych obrażeń
   // (bug złotej odznaki — spójność ze ścieżką niecombat dealNonCombatDamage).
   const before = state.events.length;
-  const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : amount;
+  // Batch60 (Revealing Wind): zwykła mgła zeruje WSZYSTKIE obrażenia combat
+  // (gracz i stwory, atakujący i blokujący) — przed filtrem Inspire Awe.
+  const fogAmount = state.preventAllCombatDamage ? 0 : amount;
+  const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : fogAmount;
   // Batch 51 (Thunderstaff): prewencja STATYCZNA (obrońcy) przed tarczami
   // jednorazowymi (Withstand) — kolejność nie zmienia wyniku, ale zdarzenie
   // `damage_prevented` musi nieść ŹRÓDŁO prewencji, żeby log nie zrzucał
@@ -1326,9 +1329,10 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1a).
     const blockerDamage = assignedById.has(attackerId) ? assignedById.get(attackerId) : amount;
     const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
-    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
+    const fogBlocked = state.preventAllCombatDamage ? blockerDamage : 0;
+    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked + fogBlocked;
     if (attackerFilterPrevented > 0) {
-      const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0 });
+      const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0, combatFog: fogBlocked > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
     }
     const shieldBefore = state.events.length;
@@ -1405,9 +1409,10 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage) —
     // kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
     const inspireAssigned = isCombatDamagePreventedByInspire(state, attacker) ? assigned : 0;
-    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned;
+    const fogAssigned = state.preventAllCombatDamage ? assigned : 0;
+    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned + fogAssigned;
     if (filterPrevented > 0) {
-      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0 });
+      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0, combatFog: fogAssigned > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
     }
     // Tarcze prewencji (Withstand) kasują część obrażeń PRZED oznaczeniem —

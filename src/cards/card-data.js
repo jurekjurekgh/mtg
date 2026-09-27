@@ -12240,6 +12240,23 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 152, plan: 'Dominaria',
     support: { status: 'supported', limitations: [] },
   }),
+  // Batch60/8 (2026-09-27): Revealing Wind (151 DTK #197, Tarkir) — zwykła
+  // mgła + PRYWATNY podgląd zakrytych atakujących/blokujących.
+  defineCard({
+    id: 'revealing-wind', name: 'Revealing Wind', set: 'DTK',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Prevent all combat damage that would be dealt this turn. You may look at each face-down creature that\'s attacking or blocking.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/36bdd624-e412-4ec8-9929-e1f6b4720e82.jpg?1783938577',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [
+        { type: 'prevent_all_combat_damage_this_turn' },
+        { type: 'look_at_facedown_combatants' },
+      ],
+    },
+    artId: 151, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

@@ -129,7 +129,7 @@ liczone z plików `decks/*.txt`).
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 41 | 14 | 27 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 35 | 12 | 23 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 36 | 12 | 24 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |

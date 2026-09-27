@@ -67,6 +67,9 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
     // M109 (Nightsnare): odsłonięcie ręki celu i rezygnacja z wyboru karty
     // do odrzucenia („If you don't" → cel odrzuca dwie karty sam).
     'hand_revealed', 'discard_choice_declined',
+    // Batch60 (Revealing Wind): PRYWATNY podgląd zakrytych atakujących/
+    // blokujących — event bez nazw kart (tylko licznik obiektów).
+    'facedown_looked_at',
     // Vaan, Street Thief (FIN): wygnanie wierzchu biblioteki poszkodowanego
     // + jednorazowa decyzja „rzuć teraz albo Skarb" (resolve_exile_cast).
     'exile_cast_required', 'exile_cast_resolved',

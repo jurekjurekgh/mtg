@@ -6245,7 +6245,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // kasuje więc własny atak; wartość ma wyłącznie w turze przeciwnika,
           // kiedy to on atakuje. Zgłoszenie właściciela: bot rzucił Inspire
           // Awe w swojej turze, po czym zaatakował w tę prewencję.
-          if (effect.type === 'prevent_combat_damage_except_enchanted') {
+          // Batch60 (Revealing Wind): zwykła mgła ma ten sam timing co Inspire
+          // Awe (instant w turze atakującego wroga, po deklaracji).
+          if (effect.type === 'prevent_combat_damage_except_enchanted' || effect.type === 'prevent_all_combat_damage_this_turn') {
             const myTurn = view.turn.activePlayerId === view.playerId;
             // M167/F: kara musi przebić WSZYSTKO (baza + wycena scry przy
             // pełnej bibliotece dawały remis z passem, a remis wybierał
@@ -8415,6 +8417,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // w wyścigu), więc zerujemy jego ocenę do wartości gorszej niż pass.
         // Reguła generyczna: warunek identyczny jak w engine (combat.js),
         // czytany z PlayerView — bez nazw kart (ADR 0002).
+        // Batch60 (Revealing Wind): zwykła mgła niweluje WSZYSTKIE obrażenia
+        // combat — atak nie ma wartości nigdy (lustro M91/A1, bez wyjątków).
+        if (view.preventAllCombatDamage && attackers.length > 0) return finish(-100);
         if (view.preventCombatExceptEnchanted && attackers.length > 0) {
           const damageGetsThrough = attackers.some((id) => {
             const object = objectOnBoard(view, id);

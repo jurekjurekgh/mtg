@@ -88,8 +88,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 59 (G1.5–G1.6): +11 pozycji (126–142 — dokładnie luki w arkuszu
   // właściciela) → 513.
   // Batch 60 (2026-09-27): +6 pozycji (144 EMN, 147 CMR, 149 M20, 154 SOM,
-  // 155 WAR, 156 RNA) → 519; +152 DMU → 520.
-  assert.equal(data.length, 520, 'pełna lista kolekcji (520 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
+  // 155 WAR, 156 RNA) → 519; +152 DMU → 520; +151 DTK → 521.
+  assert.equal(data.length, 521, 'pełna lista kolekcji (521 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -144,8 +144,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // 130 THB, 131 ISD, 134 ALA, 135 BOK, 138 MID, 139 TMT, 141 RIX, 142 ALA)
   // wypełniło dokładnie luki 126–142 w arkuszu → 499 → 510 nazw.
   // Batch 60 (2026-09-27): +6 wierszy (144 EMN, 147 CMR, 149 M20, 154 SOM,
-  // 155 WAR, 156 RNA) → 510 → 516 nazw; +152 DMU → 517.
-  assert.equal(dict.size, 517, 'słownik zawiera pełną listę kolekcji (517 unikalnych nazw)');
+  // 155 WAR, 156 RNA) → 510 → 516 nazw; +152 DMU → 517; +151 DTK → 518.
+  assert.equal(dict.size, 518, 'słownik zawiera pełną listę kolekcji (518 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -174,8 +174,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 59 (G1.10): para 126 MID (przód) + 127 MID (tył) → 513 (każda twarz
   // karty dwustronnej ma w arkuszu własny numer ilustracji).
   // Batch 60 (2026-09-27): +6 kart z artId (144, 147, 149, 154, 155, 156) → 519;
-  // +152 DMU → 520.
-  assert.equal(withArt.length, 520, 'wszystkie realne karty mają artId (Batche 1–59 + Batch 60: 7 kart)');
+  // +152 DMU → 520; +151 DTK → 521.
+  assert.equal(withArt.length, 521, 'wszystkie realne karty mają artId (Batche 1–59 + Batch 60: 8 kart)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

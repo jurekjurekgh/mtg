@@ -1939,6 +1939,48 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  if (effect.type === 'prevent_all_combat_damage_this_turn') {
+    // Revealing Wind: „Prevent all combat damage that would be dealt this
+    // turn." Zwykła mgła (fog) — wariant pełny obok Inspire Awe; combat.js
+    // zeruje obrażenia we wszystkich trzech ścieżkach (gracz, blokerzy,
+    // atakujący). Flaga aktywna do cleanup.
+    state.preventAllCombatDamage = true;
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, combatFog: true,
+    }));
+    return;
+  }
+  if (effect.type === 'look_at_facedown_combatants') {
+    // Revealing Wind: „You may look at each face-down creature that's
+    // attacking or blocking." Podgląd jest PRYWATNY — zapis
+    // w pamięci widza `faceDownKnownBy`, NIE event z nazwami (wspólny log
+    // nazwałby karty obu graczom). „may" bez kosztu = zawsze patrzymy
+    // (informacja nigdy nie szkodzi). Własne zakryte pomijamy (kontroler
+    // i tak zna swoje karty).
+    const viewerId = sourceObject.controllerId;
+    // Poza walką `state.combat` jest nullem (ruling: rzut legalny, mgła działa).
+    const attackerIds = [...(state.combat?.attackers ?? [])];
+    const blockerIds = [...(state.combat?.blockers?.values?.() ?? [])].flat();
+    const seen = [];
+    for (const id of [...attackerIds, ...blockerIds]) {
+      const o = state.objects.get(id);
+      if (!o || o.zone !== 'battlefield' || o.kind !== 'creature') continue;
+      if (o.faceDown !== true || o.controllerId === viewerId) continue;
+      const known = (state.faceDownKnownBy ?? {})[id] ?? [];
+      if (!known.includes(viewerId)) {
+        state.faceDownKnownBy = {
+          ...(state.faceDownKnownBy ?? {}),
+          [id]: [...known, viewerId],
+        };
+        seen.push(id);
+      }
+    }
+    state.events.push(event('facedown_looked_at', {
+      playerId: viewerId, objectIds: seen,
+      sourceId: sourceObject.id, cardId: sourceObject.cardId,
+    }));
+    return;
+  }
   if (effect.type === 'job_select') {
     // Warrior's Sword (FIN): „Job select (When this Equipment enters, create a
     // 1/1 colorless Hero creature token, then attach this to it.)" — tworzymy

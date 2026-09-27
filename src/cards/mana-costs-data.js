@@ -532,4 +532,6 @@ export const MANA_COSTS = {
   "summary-judgment": "{1}{W}",
   // Batch60: Timely Interference (DMU) — baza {U}, kicker {1}{R} w deskryptorze.
   "timely-interference": "{U}",
+  // Batch60: Revealing Wind (DTK).
+  "revealing-wind": "{2}{G}",
 };

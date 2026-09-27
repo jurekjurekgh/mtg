@@ -82,6 +82,8 @@ const STATE_COUNTER_FIELDS = Object.freeze([
   'landEnteredThisTurn', 'damageTakenByPlayerThisTurn',
   'speedIncreasedThisTurn', 'moonlitUsedThisTurn',
   'preventCombatExceptEnchanted',
+  // Batch60 (Revealing Wind): zwykła mgła — zeruje obrażenia combat (lustro Inspire Awe).
+  'preventAllCombatDamage',
   // M359: stempel początku okna aktywności cleanup (CR 514.3a) — warunkuje
   // decyzję o kolejnym cleanupie (recleanup), więc należy do odcisku.
   'cleanupActivityFromEvent',
@@ -108,6 +110,11 @@ export const STATE_FINGERPRINT_EXCLUSIONS = Object.freeze({
   players: 'rzutowane jako parsed.players',
   turn: 'rzutowane jako parsed.turn',
   combat: 'rzutowane jako parsed.combat',
+  // Batch60 (Revealing Wind): PRYWATNA pamięć widza o zakrytych kartach
+  // (look) — nie fakt gry; nie zmienia żadnej legalnej komendy
+  // (oferty liczy silnik z pełnego stanu, nie z widoków). Pin: G1.8
+  // (test/real-cards-batch60.test.js — podgląd widzi rzucający, wróg nie).
+  faceDownKnownBy: 'pamięć widza o obejrzanych zakrytych kartach (nie fakt gry)',
 });
 
 // Projekcja dowolnej wartości stanu (Map/Set/tablica/obiekt/liczba) w formie

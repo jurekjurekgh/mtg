@@ -428,6 +428,15 @@ export function createGameState({ seed, players }) {
     delayedTriggers: [],
     // Inspire Awe: „Prevent all combat damage this turn except by enchanted/enchantment creatures" — flag do cleanup.
     preventCombatExceptEnchanted: false,
+    // Batch60 (Revealing Wind): zwykła mgła — „Prevent all combat damage
+    // that would be dealt this turn" (reset w cleanup, jak Inspire Awe).
+    preventAllCombatDamage: false,
+    // Batch60 (Revealing Wind): PRYWATNA wiedza o zakrytych kartach —
+    // objectId → [viewerId]. „You may look at…" nie odsłania
+    // kart przeciwnikowi, więc pamięć jest per-widz, nie eventem z nazwami.
+    // Trwa między turami (raz zobaczone = zapamiętane); wpis dla obiektu,
+    // który opuścił stół albo się obrócił, jest martwy i nieszkodliwy.
+    faceDownKnownBy: {},
     // Prewencja obrażeń „prevent all damage that would be dealt to ... this
     // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): lista
     // generycznych filtrów celu ({ typesInclude, isCreature }); markDamage
@@ -5586,6 +5595,8 @@ export function execute(state, input) {
           // w cleanup razem z grantami i modyfikatorami (CR 514.2).
           state.preventDamageThisTurn = [];
           state.preventCombatExceptEnchanted = false;
+          // Batch60 (Revealing Wind): mgła „this turn" wygasa w cleanup (CR 514.2).
+          state.preventAllCombatDamage = false;
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
           // Tarcze regeneracji (CR 701.19a — „this turn") wygasają w cleanup.
@@ -6277,11 +6288,15 @@ export function playerView(state, playerId) {
         };
       }
       if (zone === 'battlefield') {
+        // Batch60 (Revealing Wind): widz, który PRAWNIE obejrzał zakrytą kartę
+        // („you may look at…"), pamięta jej tożsamość — widok
+        // odsłania mu ją tak jak kontrolerowi. Dla pozostałych mgła wojny.
+        const knowsFaceDown = ((state.faceDownKnownBy ?? {})[object.id] ?? []).includes(playerId);
         const entry = {
           id: object.id,
           // Face-down permanent ukrywa tożsamość przed przeciwnikiem (FoW);
           // kontroler zna swoją kartę.
-          cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
+          cardId: object.faceDown && object.controllerId !== playerId && !knowsFaceDown ? null : object.cardId,
           // M155 (audyt żywym testerem): tokeny (Treasure, Squirrel, Wizard...)
           // niosą JAWNĄ nazwę w `object.name` (cardId to `token_*` spoza
           // rejestru, więc nameOf(cardId) zwraca surowy id „token_squirrel").
@@ -6312,7 +6327,7 @@ export function playerView(state, playerId) {
         // deskryptor morpha (z kolorami i kosztem obrócenia) — po nich kartę
         // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
         // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
-        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId && !knowsFaceDown;
         // M149 (uwaga właściciela): mana value (koszt many) permanentu na polu
         // bitwy to informacja publiczna wydrukowana na karcie — bot potrzebuje
         // jej do wyceny wymiany (np. Bone Splinters: porównanie TMC ofiary
@@ -6416,7 +6431,7 @@ export function playerView(state, playerId) {
         // prewencji typu „artifact creatures" ani odróżnić artefaktu od
         // enchantmentu. Face-down permanent ukrywa tożsamość (CR 708.2):
         // dla przeciwnika jest bezimiennym stworem 2/2 bez linii typów.
-        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId)) {
+        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId && !knowsFaceDown)) {
           entry.types = [...object.types];
         }
         if (object.faceDown) entry.faceDown = true;
@@ -9060,6 +9075,9 @@ export function playerView(state, playerId) {
     // możliwości zauważyć, że jego atak zada 0 obrażeń — i wysyłał stwory
     // do bezwartościowego ataku, tapując je (zgłoszenie właściciela).
     preventCombatExceptEnchanted: Boolean(state.preventCombatExceptEnchanted),
+    // Batch60 (Revealing Wind): zwykła mgła też jest faktem publicznym —
+    // bot musi widzieć, że jego atak zada 0 (lustro M91/A).
+    preventAllCombatDamage: Boolean(state.preventAllCombatDamage),
     // M92 (audyt wzorca M91/A1): pozostałe PUBLICZNE efekty prewencji
     // i regeneracji też muszą być w widoku — bez nich kontroler pali removal
     // w cel, który i tak przeżyje, i nie widzi, że jego stwór jest w tej

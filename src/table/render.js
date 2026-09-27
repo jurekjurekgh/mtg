@@ -1264,6 +1264,9 @@ function describeEffect(e, ctx = {}) {
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
     // Batch60 (Timely Interference, kicked): „blocks this turn if able".
     blocks_if_able_until_end_of_turn: () => 'musi blokować w tej turze (jeśli może)',
+    // Batch60 (Revealing Wind): zwykła mgła + prywatny podgląd zakrytych.
+    prevent_all_combat_damage_this_turn: () => 'obrażenia bojowe zapobiegnięte do końca tury',
+    look_at_facedown_combatants: () => 'podejrzyj zakryte stwory atakujące i blokujące',
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',

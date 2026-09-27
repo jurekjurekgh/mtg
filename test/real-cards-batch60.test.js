@@ -561,3 +561,108 @@ test('B60/G1.7: blocksIfAble znika w cleanup (CR 514.2)', () => {
   clearStatModifiers(state);
   assert.equal(state.objects.get('victim').blocksIfAble, false, 'cleanup zdejmuje wymóg bloku');
 });
+
+// ---- G1.8: Revealing Wind (151 DTK, plan Tarkir) ---------------------------
+function castWind(state, caster = 'p1') {
+  put(state, `wind-${caster}`, 'revealing-wind', caster);
+  addMana(state, caster, 3);
+  const cast = commands(state, caster).find((c) => c.type === 'cast_spell' && c.objectId === `wind-${caster}`);
+  assert.ok(cast, `${caster} rzuca Revealing Wind`);
+  run(state, cast);
+  resolve(state);
+}
+
+test('B60/G1.8: dane karty (DTK, {2}{G}, instant, Tarkir)', () => {
+  const def = registry.get('revealing-wind');
+  assert.ok(def, 'Revealing Wind w rejestrze');
+  assert.equal(def.set, 'DTK');
+  assert.equal(MANA_COSTS['revealing-wind'], '{2}{G}');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.artId, 151);
+  assert.equal(def.plan, 'Tarkir');
+  assert.deepEqual(def.spell.targets, [], 'bez celów (ruling: rzut także bez zakrytych)');
+  assert.deepEqual(def.spell.effects.map((e) => e.type),
+    ['prevent_all_combat_damage_this_turn', 'look_at_facedown_combatants']);
+});
+
+test('B60/G1.8: mgła niweluje WSZYSTKIE obrażenia combat (gracz + stwory)', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  // Bloker WANILIOWY (krotiq, nie griffin — griffin ma first strike i walka
+  // dzieliłaby się na dwa kroki M360/B3, wymagając drugiego resolve_combat).
+  put(state, 'blk', 'segmented-krotiq', 'p2', 'battlefield');
+  put(state, 'open', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  castWind(state, 'p1');
+  assert.equal(state.preventAllCombatDamage, true, 'flaga mgły aktywna');
+  assert.equal(playerView(state, 'p1').preventAllCombatDamage, true, 'mgła w widoku (M91/A)');
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  run(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att', 'open'] });
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  run(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['blk'] } });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const lifeBefore = state.players.find((p) => p.id === 'p2').life;
+  run(state, { type: 'resolve_combat', playerId: 'p1', defendingPlayerId: 'p2' });
+  resolve(state);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, lifeBefore, 'niezablokowany nie rani gracza');
+  assert.equal(state.objects.get('att').damage ?? 0, 0, 'bloker nie rani atakującego');
+  assert.equal(state.objects.get('blk').damage ?? 0, 0, 'atakujący nie rani blokera');
+  const fogged = state.events.filter((e) => e.type === 'damage_prevented' && e.combatFog);
+  // Dwie ścieżki stwór↔stwór niosą event z flagą; ścieżka w gracza zeruje
+  // kwotę po cichu (jak Inspire Awe) — dowodem jest niezmienione życie.
+  assert.equal(fogged.length, 2, `prewencja mgły w obie strony (${fogged.length})`);
+});
+
+test('B60/G1.8: ruling — rzut bez zakrytych stworów legalny, mgła działa', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  castWind(state, 'p1');
+  const look = state.events.filter((e) => e.type === 'facedown_looked_at').pop();
+  assert.ok(look, 'zdarzenie podglądu mimo pustki');
+  assert.deepEqual(look.objectIds, [], 'nie ma na co patrzeć');
+  assert.equal(state.preventAllCombatDamage, true, 'mgła mimo to aktywna (ruling 2015-02-25)');
+});
+
+test('B60/G1.8: podgląd zakrytego BLOKERA widzi tylko rzucający', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'morph', 'razorfoot-griffin', 'p2', 'battlefield', { faceDown: true });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  run(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['att'] });
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  run(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['morph'] } });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const hidden = playerView(state, 'p1').zones.battlefield.find((e) => e.id === 'morph');
+  assert.equal(hidden.cardId, null, 'przed Wind: zakryty bloker anonimowy dla atakującego');
+  addMana(state, 'p1', 3);
+  put(state, 'wind-p1', 'revealing-wind', 'p1');
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'wind-p1');
+  assert.ok(cast, 'Wind po blokach (okno po declare_blockers)');
+  run(state, cast);
+  resolve(state);
+  assert.deepEqual(state.faceDownKnownBy.morph, ['p1'], 'pamięć widza zapisana');
+  const known = playerView(state, 'p1').zones.battlefield.find((e) => e.id === 'morph');
+  assert.equal(known.cardId, 'razorfoot-griffin', 'rzucający zna tożsamość blokera');
+  const foe = playerView(state, 'p2').zones.battlefield.find((e) => e.id === 'morph');
+  assert.equal(foe.cardId, 'razorfoot-griffin', 'kontroler znał i zna');
+});
+
+test('B60/G1.8: podgląd zakrytego ATAKUJĄCEGO + log nie zdradza nazw', () => {
+  const state = game();
+  put(state, 'morph', 'segmented-krotiq', 'p1', 'battlefield', { faceDown: true, summoningSickness: false });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  run(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['morph'] });
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  const hidden = playerView(state, 'p2').zones.battlefield.find((e) => e.id === 'morph');
+  assert.equal(hidden.cardId, null, 'przed Wind: zakryty atakujący anonimowy dla obrońcy');
+  castWind(state, 'p2');
+  const known = playerView(state, 'p2').zones.battlefield.find((e) => e.id === 'morph');
+  assert.equal(known.cardId, 'segmented-krotiq', 'obrońca poznaje atakującego');
+  const look = state.events.filter((e) => e.type === 'facedown_looked_at').pop();
+  assert.ok(look, 'zdarzenie podglądu');
+  assert.ok(!('cardId' in look) || look.cardId === 'revealing-wind', 'event nie niesie tożsamości obejrzanych (tylko źródło)');
+  assert.ok(!(look.cardNames ?? look.cardIds), 'event nie niesie nazw/kart obejrzanych');
+});
