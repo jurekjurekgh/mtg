@@ -12116,6 +12116,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     plan: 'Amonkhet',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/2. Demolish (WAR) — {3}{R} sorcery: destroy target artifact
+  // or land. Gotowy cel `artifact_or_land` + `destroy_permanent`.
+  defineCard({
+    id: 'demolish', name: 'Demolish', set: 'WAR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Destroy target artifact or land.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/0/b00211dd-6dd7-40d9-80f3-f909f6d112db.jpg?1783933430',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'artifact_or_land' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

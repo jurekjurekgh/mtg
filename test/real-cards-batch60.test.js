@@ -111,3 +111,57 @@ test('B60/G1.1: Blossoming Sands — drugi land drop w turze nie istnieje', () =
   assert.ok(!commands(state).some((c) => c.type === 'play_land' && c.objectId === 'sands2'),
     'drugi land drop w tej samej turze nie jest oferowany');
 });
+
+// ---- G1.2: Demolish (155 WAR, plan Ravnica) --------------------------------
+
+test('B60/G1.2: Demolish — dane Oracle, sorcery {3}{R} i druk WAR', () => {
+  const def = registry.get('demolish');
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.manaCost, 4);
+  assert.equal(def.set, 'WAR');
+  assert.equal(def.plan, 'Ravnica');
+  assert.equal(def.artId, null);
+  assert.equal(def.spell.targets[0].type, 'artifact_or_land');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('b00211dd'), 'imageUri z druku WAR (war/123)');
+  assert.equal(MANA_COSTS.demolish, '{3}{R}');
+});
+
+test('B60/G1.2: Demolish — niszczy artefakt przeciwnika', () => {
+  const state = game();
+  put(state, 'demo', 'demolish', 'p1');
+  put(state, 'rock', 'trigon-of-corruption', 'p2', 'battlefield');
+  addMana(state, 'p1', 4);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'demo' && c.targets?.[0] === 'rock');
+  assert.ok(cast, 'rzut z celem-artefaktem jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.ok(![...state.objects.values()].some((o) => o.id === 'rock' && o.zone === 'battlefield'),
+    'artefakt zszedł ze stołu');
+  assert.ok(find(state, 'demolish', 'graveyard'), 'Demolish poszedł do grobu po rozstrzygnięciu');
+});
+
+test('B60/G1.2: Demolish — niszczy land', () => {
+  const state = game();
+  put(state, 'demo', 'demolish', 'p1');
+  put(state, 'land', 'basic-swamp', 'p2', 'battlefield');
+  addMana(state, 'p1', 4);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'demo' && c.targets?.[0] === 'land');
+  assert.ok(cast, 'rzut z celem-landem jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.ok(![...state.objects.values()].some((o) => o.id === 'land' && o.zone === 'battlefield'),
+    'land zszedł ze stołu');
+});
+
+test('B60/G1.2: Demolish — stwór nie jest legalnym celem', () => {
+  const state = game();
+  put(state, 'demo', 'demolish', 'p1');
+  put(state, 'beast', 'razorfoot-griffin', 'p2', 'battlefield');
+  addMana(state, 'p1', 4);
+  const casts = commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'demo');
+  assert.ok(casts.every((c) => (c.targets?.[0] ?? null) !== 'beast'),
+    'żadna oferta rzutu nie celuje w stwora (tylko artifact or land)');
+});

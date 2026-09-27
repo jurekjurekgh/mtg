@@ -520,4 +520,6 @@ export const MANA_COSTS = {
   "wing-shredder": "{2}{G}",
   // Batch60: Blossoming Sands (M20) — land bez kosztu.
   "blossoming-sands": "",
+  // Batch60: Demolish (WAR).
+  "demolish": "{3}{R}",
 };
