@@ -1263,6 +1263,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (raw === 'artifact_or_enchantment_or_land') {
       return (view.zones.battlefield ?? []).some((o) => o.controllerId !== view.playerId);
     }
+    // Batch60 (Stensia Innkeeper): cel-landowy wroga — wystarczy DOWOLNY
+    // permanent wroga na stole (ląd wirtualnie zawsze jest).
+    if (raw === 'land_opponent_controls' || raw === 'land') {
+      return (view.zones.battlefield ?? []).some((o) => o.controllerId !== view.playerId);
+    }
     // pozostałe cele wymagają stwora/permanentu przeciwnia (creature,
     // creature_opponent_controls, artifact_or_creature, nonland_permanent…)
     return foes.length > 0;
@@ -1471,6 +1476,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     bounce_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
     tap_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
     lock_untap: (e, view, req) => (etbEnemyHasTarget(view, req) ? 12 : 0),
+    // Batch60 (Frost Lynx + Stensia Innkeeper): jednorazowy skip untapu —
+    // słabszy od trwałego lock_untap (12), mocniejszy od samego tap (8).
+    // Zawsze w parze z tap_permanent, więc tempo liczy się sumą.
+    dont_untap_next_untap_step: (e, view, req) => (etbEnemyHasTarget(view, req) ? 10 : 0),
     detain: (e, view, req) => (etbEnemyHasTarget(view, req) ? 8 : 0),
     damage: (e, view, req) => (etbEnemyHasTarget(view, req) ? Math.min(3 * (e.amount ?? 1), 15) : 0),
     damage_divided: (e, view, req) => (etbEnemyHasTarget(view, req) ? 15 : 0),

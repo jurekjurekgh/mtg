@@ -181,6 +181,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   tapped_creature: 'tapnięty stwór',
   untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
+  // Batch60 (Stensia Innkeeper): „tap target land an opponent controls".
+  land_opponent_controls: 'ląd przeciwnika',
   enchantment: 'zaklęcie', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
   nonblack_creature: 'nieczarny stwór',

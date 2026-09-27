@@ -1270,6 +1270,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // kicker czyta wasKicked. Dla permanentów flagę nosi permanent (ETB).
   // (702.174c to co innego: efekty, które TRYGERUJĄ, gdy ktoś daje dar.)
   if (effect.condition?.wasGifted && !sourceObject?.wasGifted) return;
+  // Addendum (CR 207.2c — słowo zdolności, Batch60): „if you cast this spell during your main
+  // phase" — klauzula czyta migawkę z chwili rzutu (castDuringMainPhase
+  // ustawia castSpell), tak samo jak kicker czyta wasKicked.
+  if (effect.condition?.addendum && !sourceObject?.castDuringMainPhase) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
@@ -1296,6 +1300,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (bonus && targetId != null) {
       const target = state.objects.get(targetId);
       if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
+    }
+    // Batch60 (Summary Judgment): „Addendum — ... it deals 5 damage instead."
+    // Wariant „instead" na migawce rzutu (nie na bieżącej fazie — rozstrzygnięcie
+    // może nastąpić później; ruling RNA 2024-01-12).
+    if (effect.amountIfAddendum != null && sourceObject?.castDuringMainPhase) {
+      amount = effect.amountIfAddendum;
     }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;

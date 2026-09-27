@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Summary%20Judgment&set=rna",
+  "print": "Summary Judgment (RNA)",
+  "name": "Summary Judgment",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Summary Judgment deals 3 damage to target tapped creature.\nAddendum — If you cast this spell during your main phase, it deals 5 damage instead.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Addendum"
+  ],
+  "set": "rna",
+  "collector_number": "24",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/0/c0b20fec-8373-4c6c-b3c1-ee7cff64dd37.jpg?1783933716"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "Addendum abilities of instant spells apply while the spell is resolving, not immediately after casting it. If the spell is countered, you don't get the addendum bonus."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "If an effect copies a spell with an addendum ability while it's on the stack, the copy wasn't cast at all, so you won't get the addendum bonus."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/rna/24/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

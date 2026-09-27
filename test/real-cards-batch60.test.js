@@ -69,7 +69,7 @@ test('B60/G1.1: Blossoming Sands — dane Oracle, gainland G/W i druk M20', () =
   assert.equal(def.entersTapped, true);
   assert.equal(def.set, 'M20');
   assert.equal(def.plan, 'Amonkhet');
-  assert.equal(def.artId, null);
+  assert.equal(def.artId, 149);
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
   assert.ok(def.imageUri.includes('31514c67'), 'imageUri z druku M20 (m20/243)');
@@ -121,7 +121,7 @@ test('B60/G1.2: Demolish — dane Oracle, sorcery {3}{R} i druk WAR', () => {
   assert.equal(def.manaCost, 4);
   assert.equal(def.set, 'WAR');
   assert.equal(def.plan, 'Ravnica');
-  assert.equal(def.artId, null);
+  assert.equal(def.artId, 155);
   assert.equal(def.spell.targets[0].type, 'artifact_or_land');
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
@@ -175,7 +175,7 @@ test('B60/G1.3: Renegade Tactics — dane Oracle, sorcery {R} i druk CMR', () =>
   assert.equal(def.manaCost, 1);
   assert.equal(def.set, 'CMR');
   assert.equal(def.plan, 'Kaladesh');
-  assert.equal(def.artId, null);
+  assert.equal(def.artId, 147);
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
   assert.ok(def.imageUri.includes('7dfa0e65'), 'imageUri z druku CMR (cmr/195)');
@@ -224,7 +224,7 @@ test('B60/G1.4: Trigon of Thought — dane Oracle, artefakt {5} i druk SOM', () 
   assert.deepEqual(def.entersWithCounters, { charge: 3 });
   assert.equal(def.set, 'SOM');
   assert.equal(def.plan, 'Mirrodin');
-  assert.equal(def.artId, null);
+  assert.equal(def.artId, 154);
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
   assert.ok(def.imageUri.includes('f8da37ba'), 'imageUri z druku SOM (som/217)');
@@ -286,7 +286,7 @@ test('B60/G1.5: Stensia Innkeeper — dane Oracle, Vampire 3/3 i druk EMN', () =
   assert.equal(def.manaCost, 4);
   assert.equal(def.set, 'EMN');
   assert.equal(def.plan, 'Innistrad');
-  assert.equal(def.artId, null);
+  assert.equal(def.artId, 144);
   assert.equal(def.support.status, 'supported');
   assert.deepEqual(def.support.limitations, []);
   assert.ok(def.imageUri.includes('ee40c471'), 'imageUri z druku EMN (emn/145)');
@@ -339,4 +339,82 @@ test('B60/G1.5: Stensia Innkeeper — brak landów wroga = trigger bez celu (fiz
     'brak kandydatów = brak pytania o cel');
   assert.equal(state.objects.get('my-land').tapped, false, 'własny land nie może być celem zastępczym');
   assert.ok(find(state, 'stensia-innkeeper'), 'Innkeeper mimo to wchodzi na stół');
+});
+
+// ---- G1.6: Summary Judgment (156 RNA, plan Ravnica) -------------------------
+
+test('B60/G1.6: Summary Judgment — dane Oracle, instant {1}{W} i druk RNA', () => {
+  const def = registry.get('summary-judgment');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.set, 'RNA');
+  assert.equal(def.plan, 'Ravnica');
+  assert.equal(def.artId, 156);
+  assert.equal(def.spell.targets[0].type, 'tapped_creature');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('c0b20fec'), 'imageUri z druku RNA (rna/24)');
+  assert.equal(MANA_COSTS['summary-judgment'], '{1}{W}');
+});
+
+test('B60/G1.6: Summary Judgment — rzut we własnej main fazie to 5 obrażeń (Addendum)', () => {
+  const state = game();
+  put(state, 'judgment', 'summary-judgment', 'p1');
+  put(state, 'victim', 'segmented-krotiq', 'p2', 'battlefield', { tapped: true });
+  addMana(state, 'p1', 2);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'judgment' && c.targets?.[0] === 'victim');
+  assert.ok(cast, 'rzut w cel-tapnięty jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.ok(![...state.objects.values()].some((o) => o.id === 'victim' && o.zone === 'battlefield'),
+    '6/5 ginie od 5 obrażeń Addendum (3 by przeżył)');
+  assert.ok(find(state, 'summary-judgment', 'graveyard'), 'czar w grobie po rozstrzygnięciu');
+});
+
+test('B60/G1.6: Summary Judgment — rzut w turze przeciwnika to 3 obrażenia (bez Addendum)', () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p1';
+  put(state, 'judgment', 'summary-judgment', 'p1');
+  put(state, 'victim', 'segmented-krotiq', 'p2', 'battlefield', { tapped: true });
+  addMana(state, 'p1', 2);
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'judgment' && c.targets?.[0] === 'victim');
+  assert.ok(cast, 'instant w turze wroga jest oferowany');
+  run(state, cast);
+  resolve(state);
+  const victim = state.objects.get('victim');
+  assert.equal(victim.zone, 'battlefield', '6/5 przeżywa 3 obrażenia');
+  assert.equal(victim.damage, 3, 'dokładnie 3 obrażenia, bez bonusu Addendum');
+});
+
+test('B60/G1.6: Summary Judgment — odkręcony stwór nie jest celem', () => {
+  const state = game();
+  put(state, 'judgment', 'summary-judgment', 'p1');
+  put(state, 'ready', 'segmented-krotiq', 'p2', 'battlefield', { tapped: false });
+  addMana(state, 'p1', 2);
+  const casts = commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'judgment');
+  assert.ok(casts.every((c) => (c.targets?.[0] ?? null) !== 'ready'),
+    'żadna oferta nie celuje w odkręconego stwora (tylko tapped)');
+});
+
+test('B60/G1.6: Addendum — kopia storma NIE dziedziczy flagi rzutu (ruling RNA)', () => {
+  const state = game();
+  put(state, 'ins', 'spreading-insurrection', 'p1');
+  put(state, 'wrog', 'razorfoot-griffin', 'p2', 'battlefield');
+  state.spellsCastThisTurn = 2; // jeden wcześniejszy czar → jedna kopia
+  addMana(state, 'p1', 5);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'ins' && c.targets?.[0] === 'wrog');
+  assert.ok(cast, 'rzut Insurrection w main fazie');
+  run(state, cast);
+  const original = [...state.objects.values()].find((o) => o.zone === 'stack' && o.cardId === 'spreading-insurrection' && !o.isSpellCopy);
+  assert.equal(original.castDuringMainPhase, true, 'oryginał rzucony w main fazie niesie flagę');
+  // Sam trigger storma: obaj pasują → kopie lądują na stosie (jeszcze żywe).
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const copies = state.zones.stack.map((id) => state.objects.get(id)).filter((o) => o?.isSpellCopy);
+  assert.equal(copies.length, 2, 'storm stworzył dwie kopie (dwa wcześniejsze czary)');
+  assert.ok(copies.every((c) => c.castDuringMainPhase === false),
+    'kopia ma wygaszoną flagę (nigdy nie była rzucona — ruling Addendum)');
 });

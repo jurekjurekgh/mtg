@@ -528,4 +528,6 @@ export const MANA_COSTS = {
   "trigon-of-thought": "{5}",
   // Batch60: Stensia Innkeeper (EMN).
   "stensia-innkeeper": "{3}{R}",
+  // Batch60: Summary Judgment (RNA).
+  "summary-judgment": "{1}{W}",
 };

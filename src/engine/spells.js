@@ -863,8 +863,16 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // flashback/suspend/plot). Przechodzi z kartą do strefy po rozstrzygnięciu
   // (resolveTopOfStack), gdzie decyduje o exile zamiast grobu.
   const reboundCast = Boolean(object.spell?.rebound && object.zone === 'hand');
+  // Batch60 (Addendum, CR 207.2c — słowo zdolności): „If you cast this spell during your main
+  // phase" — migawka chwili RZUTU (własna main faza, aktywny gracz = rzucający;
+  // stan stosu BEZ znaczenia — odpowiedź we własnej main fazie też się liczy).
+  // Rozstrzygnięcie czyta flagę z obiektu stosu (ruling RNA: addendum
+  // sprawdzane przy rozstrzygnięciu, kopie nigdy — patrz stormCopy).
+  const castDuringMainPhase = state.turn.activePlayerId === playerId
+    && ['precombat_main', 'postcombat_main'].includes(state.turn.phase);
   const stacked = Object.freeze({
     ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast,
+    castDuringMainPhase,
     // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
     // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
     wasKicked: Boolean(kicker),
@@ -937,6 +945,8 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
     // `permanent_cast` w resources.js).
     kicked: Boolean(kicker),
+    // Addendum (jawny w logu — lustro flagi na obiekcie stosu).
+    castDuringMainPhase,
     // Surge (CR 702.117, Batch 58/B1) — jawny w logu i na obiekcie stosu
     // (lustrzane pole `permanent_cast` w resources.js).
     surgeCast: Boolean(surge),

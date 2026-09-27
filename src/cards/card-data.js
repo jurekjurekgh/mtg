@@ -12113,7 +12113,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'add_mana', amount: 1, colors: ['G', 'W'] },
       }),
     ],
-    plan: 'Amonkhet',
+    artId: 149, plan: 'Amonkhet',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -12129,7 +12129,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       targets: [{ type: 'artifact_or_land' }],
       effects: [{ type: 'destroy_permanent' }],
     },
-    plan: 'Ravnica',
+    artId: 155, plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -12148,7 +12148,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         { type: 'draw_cards', amount: 1 },
       ],
     },
-    plan: 'Kaladesh',
+    artId: 147, plan: 'Kaladesh',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -12172,7 +12172,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: { type: 'draw_cards', amount: 1 },
       }),
     ],
-    plan: 'Mirrodin',
+    artId: 154, plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
 
@@ -12196,7 +12196,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         effect: [{ type: 'tap_permanent' }, { type: 'dont_untap_next_untap_step' }],
       }),
     ],
-    plan: 'Innistrad',
+    artId: 144, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/6. Summary Judgment (RNA) — {1}{W} instant: 3 obrażenia
+  // w cel-tapnięty, Addendum (rzut we własnej main fazie) → 5 zamiast.
+  // Pierwsza karta mechaniki (flaga castDuringMainPhase w castSpell,
+  // bramka condition.addendum + amountIfAddendum w effects.js).
+  defineCard({
+    id: 'summary-judgment', name: 'Summary Judgment', set: 'RNA',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Summary Judgment deals 3 damage to target tapped creature.\nAddendum — If you cast this spell during your main phase, it deals 5 damage instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/0/c0b20fec-8373-4c6c-b3c1-ee7cff64dd37.jpg?1783933716',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'tapped_creature' }],
+      effects: [{ type: 'damage', amount: 3, amountIfAddendum: 5 }],
+    },
+    artId: 156, plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
   }),
 ]);

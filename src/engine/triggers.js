@@ -1301,6 +1301,10 @@ export function resolveTriggerEntry(state, entry) {
         instanceId: `${original.instanceId}-copy-${i + 1}`,
         isSpellCopy: true,
         chosenTargets: [...(original.chosenTargets ?? [])],
+        // Ruling Addendum (RNA 2024-01-12): kopia NIGDY nie była rzucona,
+        // więc nie dostaje bonusu — flaga z oryginału NIE dziedziczy
+        // (odwrotnie niż wasKicked, który kopia zachowuje — CR 707.10).
+        castDuringMainPhase: false,
       }));
       state.zones.stack.push(copyId);
       created.push(copyId);
