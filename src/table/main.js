@@ -17,7 +17,7 @@ import { shuffle } from '../engine/shuffle.js';
 import { populateDeckSelects, combineDeckSources, deckTitle } from './deck-selects.js';
 // AI-OpenRouter (Etap-1): konfiguracja, kolejka, panel, mock-transport.
 import { AI_MODES, aiAllModels, aiKeyStatus, aiModelLabel, loadAiConfig, saveAiConfig } from './ai-config.js';
-import { buildLorePrompt } from './ai-modes.js';
+import { buildPromptForMode } from './ai-modes.js';
 import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
@@ -356,7 +356,7 @@ function bootstrapTable() {
     aiConfig = loadAiConfig(storage); // setup z chwili zapytania
     const turnText = typeof session.turnHistoryTextAll === 'function' ? session.turnHistoryTextAll() : '';
     if (!turnText) return;
-    const prompt = buildLorePrompt({ ...aiGameCtx, turnNumber: number, turnText });
+    const prompt = buildPromptForMode(aiConfig.mode, { ...aiGameCtx, turnNumber: number, turnText });
     aiQueue.enqueue({
       prompt,
       modelId: aiConfig.modelId,

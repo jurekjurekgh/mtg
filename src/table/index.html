@@ -578,12 +578,17 @@
   /* --- AI-OpenRouter (Etap-1): okno AI w szufladzie + pulsowanie ------- */
   .ai-wrap { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
   .ai-wrap[hidden] { display: none; }
+  /* AI-R2: dolna DOKŁADNA połowa szuflady (flex 1:1 z akcjami); log wypełnia. */
+  .ai-wrap {
+    flex: 1 1 0; min-height: 0; display: flex; flex-direction: column;
+    overflow: hidden; border-top: 1px solid var(--border); padding-top: 10px;
+  }
   .ai-title {
     font-size: 12px; color: var(--gold); text-transform: uppercase;
     letter-spacing: .5px; margin-bottom: 6px; font-weight: 700;
   }
   .ai-log {
-    max-height: 220px; overflow-y: auto; scrollbar-gutter: stable;
+    flex: 1 1 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable;
     font-size: 12px; background: #fafafe;
     border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
     display: flex; flex-direction: column; gap: 8px;
@@ -745,10 +750,11 @@
     padding: 12px 14px; border-bottom: 1px solid var(--border);
   }
   .drawer-head h3 { margin: 0; font-size: 14px; color: var(--gold); text-transform: uppercase; letter-spacing: .5px; }
-  /* K: jak `.actions-wrap` — pasek przewijania nie może zwężać kolumny opisu
-     w trakcie interakcji (wiersze wyboru są tu celem tapnięcia). */
-  .drawer-body { overflow-y: auto; scrollbar-gutter: stable; padding: 12px 14px; flex: 1; }
-  .drawer .actions-wrap { max-height: none; }
+  /* AI-R2 (prośba właściciela): szuflada = DOKŁADNE połowy — górna to akcje,
+     dolna to komentarze AI; każda połowa przewija się niezależnie.
+     Gdy AI wyłączone (`.ai-wrap[hidden]`), akcje zajmują całość. */
+  .drawer-body { display: flex; flex-direction: column; gap: 10px; overflow: hidden; scrollbar-gutter: stable; padding: 12px 14px; flex: 1; }
+  .drawer .actions-wrap { max-height: none; flex: 1 1 0; min-height: 0; overflow-y: auto; }
   @media (max-width: 720px) {
     .drawer {
       left: 0; right: 0; top: auto; bottom: 0; width: auto; max-height: 62vh;

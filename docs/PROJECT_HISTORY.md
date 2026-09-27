@@ -13246,3 +13246,7 @@ PMSSB-14 (2026-09-26, impulse+saga): BACKLOG pusty -> forward PMSSB-11
 dockhand/ability SAME) + saga-chapters (I-1.0/II-0.8/III-0.6):
 rediscover +16.20. 2 piny, golden CZYSTY (0), suit 6842/6842 GREEN.
 Forwardy: lib0-quirk, saga-likelihoods, restore-wzorzec.
+AI-OpenRouter (2026-09-26, E0-E3+R2): plan + toggle/konfig/kolejka-FIFO/mock
++ klient OpenRouter (60s, deep-errors) + zapis do Arkusza (ai-drive, Code.gs)
++ R2: szuflada 50/50, lore v2 (tozsamosc+ton), tryb player-bot, INSTRUKCJA Drive.
+Suit 6902/6902 GREEN.
