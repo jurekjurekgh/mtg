@@ -13258,3 +13258,6 @@ AI-R4b (2026-09-26, skit-swiaty): UWAGA z prawdziwych swiatow obu talii
 (ctx: heroWorld/world + fallbacki). Suit 6911/6911 GREEN.
 AI-R5 (2026-09-26, docs): log z Arkusza do DOKUMENTU (karta na tryb,
 meta+komentarz+rozdzielnik; karty recznie, fallback do 1.). 6912/6912 GREEN.
+TESTY (2026-09-27, manifest): reprofilowanie solo 914 plikow; slow 1 -> 31
+plikow (>5 s, suma 948 s w tym benchmark 412 s). npm test: 883 pliki,
+6641/6641 w 106 s (konkurencja 4; 8 bez zysku na 2 vCPU).

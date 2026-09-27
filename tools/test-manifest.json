@@ -1,5 +1,35 @@
 {
   "slow": [
-    "bot-benchmark.test.js"
+    "audit-m83-tester.test.js",
+    "audyt-bot-walka-remisy.test.js",
+    "audyt-bot-wybior-landu.test.js",
+    "benchmark-progress-watchdog.test.js",
+    "bot-benchmark.test.js",
+    "bot-hidden-draw-scan.test.js",
+    "bot-lookahead.test.js",
+    "bot-mirror-eval.test.js",
+    "bot-proxy-benchmark.test.js",
+    "bot-scoring-snapshot.test.js",
+    "bot-spell-resolution-in-modal.test.js",
+    "bug-reports-2026-08-18.test.js",
+    "cr-numery-mechanik-straznik.test.js",
+    "heuristic-bot.test.js",
+    "human-draw-modal.test.js",
+    "human-draw-turn-header.test.js",
+    "library-manipulation-modal.test.js",
+    "m192-petla-jakosci.test.js",
+    "m199-przebieg-tur-fow.test.js",
+    "m212-brak-hardcodowanych-kart.test.js",
+    "m261-granica-tury-w-modalu.test.js",
+    "panel-odmiana-drugiej-osoby.test.js",
+    "panel-rozgrywka-tura-przeciwnika.test.js",
+    "session-bot-pausa.test.js",
+    "spell-resolution-symmetry-modal.test.js",
+    "synthetic-game.test.js",
+    "table-session.test.js",
+    "table-turn-history.test.js",
+    "table-ui.test.js",
+    "undercity-fabricate-pass-guard.test.js",
+    "zgloszenie-c-log-partii-tury.test.js"
   ]
 }
