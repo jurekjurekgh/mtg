@@ -472,6 +472,9 @@ function greatestManaAmongOtherArtifacts(state, object) {
 
 function staticBonuses(state, object) {
   const bonus = { power: 0, toughness: 0, keywords: [], mechanics: [] };
+  // Xu-Ifit: własne statyki to ZDOLNOŚCI — po stripie nie działają
+  // (cudze hymny na ten obiekt — anthemBonuses — działają, ruling 2 EOE).
+  if (object.abilitiesStripped) return bonus;
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static') continue;
@@ -770,6 +773,8 @@ function untilEndOfTurnBonuses(state, object) {
  */
 function characteristicDefiningStat(state, object, stat) {
   if (!state || object.zone !== 'battlefield') return null;
+  // Xu-Ifit: CDA to zdolność własna — po stripie nie definiuje statystyki.
+  if (object.abilitiesStripped) return null;
   for (const ability of object.abilities ?? []) {
     if (ability?.type !== 'static' || !ability.characteristicDefining) continue;
     const marker = ability.pump?.[stat];
@@ -941,6 +946,10 @@ export function entersTappedNow(state, characteristics, { enteringId = null } = 
  * Triggery i legalne aktywacje czytają zawsze tę listę, nie object.abilities.
  */
 export function effectiveAbilities(object) {
+  // Xu-Ifit (Batch60, „has no abilities", ruling 2 EOE 2025-07-25): strip
+  // tłumi ZDOLNOŚCI WYDRUKOWANE; granty nadane PO wejściu działają.
+  // Triggery, aktywacje i statyki własne czytają tę listę — jeden choke point.
+  if (object?.abilitiesStripped) return [...(object?.abilityGrants ?? [])];
   const grants = object?.abilityGrants ?? [];
   if (grants.length === 0) return object?.abilities ?? [];
   return [...(object.abilities ?? []), ...grants];
@@ -1167,7 +1176,11 @@ export function effectiveKeywords(object, state = null) {
     if (object.ward != null) entries.push({ keyword: 'ward', ts: 0, base: true });
     external();
   } else {
-    for (const keyword of object.keywords ?? []) entries.push({ keyword, ts: 0, base: true });
+    // Xu-Ifit: strip tłumi wydrukowane keywordy (bazę); granty, liczniki,
+    // anthemy i załączniki (external/poniżej) działają — ruling 2 EOE.
+    if (!object.abilitiesStripped) {
+      for (const keyword of object.keywords ?? []) entries.push({ keyword, ts: 0, base: true });
+    }
     external();
     // Statyki własne (CR 613.7a — znacznik obiektu).
     for (const keyword of staticBonuses(state, object).keywords) grant(keyword, objectTs);
@@ -1554,7 +1567,10 @@ export function clearStatModifiers(state) {
       // Granty z TERMINEM tury (`cantBeBlockedUntilTurn` — M407,
       // `hexproofUntilTurn`) celowo poza tą bramką: wygasają read-time
       // (`state.turn.number < termin`), więc obiekt nie jest „brudny”.
-      || (current.cantBlock === true && current.cantBlockPrinted !== true);
+      || (current.cantBlock === true && current.cantBlockPrinted !== true)
+      // Batch60 („blocks if able" — Timely Interference): wymóg bloku
+      // „this turn" wygasa w cleanup (CR 514.2).
+      || current.blocksIfAble === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
@@ -1565,6 +1581,8 @@ export function clearStatModifiers(state) {
         // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
         // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
         cantBlock: Boolean(current.cantBlockPrinted),
+        // Batch60: wymóg bloku „this turn" zdejmowany w cleanup (CR 514.2).
+        blocksIfAble: false,
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

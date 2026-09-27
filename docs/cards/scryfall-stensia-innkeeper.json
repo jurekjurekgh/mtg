@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Stensia%20Innkeeper&set=emn",
+  "print": "Stensia Innkeeper (EMN)",
+  "name": "Stensia Innkeeper",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Vampire",
+  "oracle_text": "When this creature enters, tap target land an opponent controls. That land doesn't untap during its controller's next untap step.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "emn",
+  "collector_number": "145",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/e/ee40c471-70c8-4171-a214-ce932c4c7e2e.jpg?1783937454"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/emn/145/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

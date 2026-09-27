@@ -1037,6 +1037,10 @@ export function destroyPermanentByEffect(state, objectId, options = {}) {
 export function applyEnterCounters(state, objectId) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.faceDown) return;
+  // Xu-Ifit (ruling 1 EOE): „enters with counters" i bloodthirst to ZDOLNOŚCI
+  // wracającego — po stripie nie stosują się (liczniki Z EFEKTU reanimacji,
+  // effect.counters/finalityCounter, dokłada outcome po tej funkcji).
+  if (object.abilitiesStripped) return;
   // Batch 53 (Sheriff of Safe Passage, CR 122.6/614.1c): „enters with a
   // +1/+1 counter on it plus an additional one for each other creature you
   // control" — kwota jest cechą WEJŚCIA i zależy od stanu stołu w chwili
@@ -1222,6 +1226,25 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
     ...(enterTapped ? { tapped: true } : {}),
   });
   state.objects.set(newId, permanent);
+  // Batch60/Xu-Ifit („has no abilities" + „Skeleton in addition", CR 613.1f,
+  // ruling EOE 2025-07-25): strip PRZED applyEnterCounters i zdarzeniem
+  // object_moved — ETB/„as enters" wracającego (triggery, enters-tapped,
+  // enters-with-counters, bloodthirst, echo, backup/devour/exploit/endure)
+  // giną, ZANIM zdążą się zastosować (czytelnicy żywego obiektu honorują
+  // flagę abilitiesStripped). Flaga + migawka podtypów giną przy zmianie
+  // strefy (CR 400.7 — objects.js), więc odbicie i ponowny rzut WRACA
+  // wydrukowane zdolności i gubi Skeleta. Tapnięcie: tylko własna klauzula
+  // efektu (entersTapped), nigdy wydrukowana.
+  if (effect?.stripAbilities) {
+    const strippedBase = state.objects.get(newId);
+    state.objects.set(newId, Object.freeze({ ...strippedBase,
+      abilitiesStripped: true,
+      subtypesBeforeStrip: [...(strippedBase.subtypes ?? [])],
+      subtypes: [...(strippedBase.subtypes ?? []), ...(effect.addSubtypes ?? [])],
+      echoUnpaid: false,
+      tapped: enterTapped,
+    }));
+  }
   // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
   // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
   // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
@@ -1270,6 +1293,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // kicker czyta wasKicked. Dla permanentów flagę nosi permanent (ETB).
   // (702.174c to co innego: efekty, które TRYGERUJĄ, gdy ktoś daje dar.)
   if (effect.condition?.wasGifted && !sourceObject?.wasGifted) return;
+  // Addendum (CR 207.2c — słowo zdolności, Batch60): „if you cast this spell during your main
+  // phase" — klauzula czyta migawkę z chwili rzutu (castDuringMainPhase
+  // ustawia castSpell), tak samo jak kicker czyta wasKicked.
+  if (effect.condition?.addendum && !sourceObject?.castDuringMainPhase) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
@@ -1296,6 +1323,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (bonus && targetId != null) {
       const target = state.objects.get(targetId);
       if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
+    }
+    // Batch60 (Summary Judgment): „Addendum — ... it deals 5 damage instead."
+    // Wariant „instead" na migawce rzutu (nie na bieżącej fazie — rozstrzygnięcie
+    // może nastąpić później; ruling RNA 2024-01-12).
+    if (effect.amountIfAddendum != null && sourceObject?.castDuringMainPhase) {
+      amount = effect.amountIfAddendum;
     }
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
@@ -1461,7 +1494,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // trwającym wiele tur i nie jest decyzją na stosie.)
     state.events.push(event('object_exiled', {
       fromId: topId, objectId: exileId, object: state.objects.get(exileId),
-      cardId: card?.cardId ?? null,
+      cardId: card?.cardId ?? null, playerId: controllerId,
     }));
     state.pendingExileCast = {
       playerId: controllerId,
@@ -1926,6 +1959,48 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.preventCombatExceptEnchanted = true;
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, inspireAwe: true,
+    }));
+    return;
+  }
+  if (effect.type === 'prevent_all_combat_damage_this_turn') {
+    // Revealing Wind: „Prevent all combat damage that would be dealt this
+    // turn." Zwykła mgła (fog) — wariant pełny obok Inspire Awe; combat.js
+    // zeruje obrażenia we wszystkich trzech ścieżkach (gracz, blokerzy,
+    // atakujący). Flaga aktywna do cleanup.
+    state.preventAllCombatDamage = true;
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, combatFog: true,
+    }));
+    return;
+  }
+  if (effect.type === 'look_at_facedown_combatants') {
+    // Revealing Wind: „You may look at each face-down creature that's
+    // attacking or blocking." Podgląd jest PRYWATNY — zapis
+    // w pamięci widza `faceDownKnownBy`, NIE event z nazwami (wspólny log
+    // nazwałby karty obu graczom). „may" bez kosztu = zawsze patrzymy
+    // (informacja nigdy nie szkodzi). Własne zakryte pomijamy (kontroler
+    // i tak zna swoje karty).
+    const viewerId = sourceObject.controllerId;
+    // Poza walką `state.combat` jest nullem (ruling: rzut legalny, mgła działa).
+    const attackerIds = [...(state.combat?.attackers ?? [])];
+    const blockerIds = [...(state.combat?.blockers?.values?.() ?? [])].flat();
+    const seen = [];
+    for (const id of [...attackerIds, ...blockerIds]) {
+      const o = state.objects.get(id);
+      if (!o || o.zone !== 'battlefield' || o.kind !== 'creature') continue;
+      if (o.faceDown !== true || o.controllerId === viewerId) continue;
+      const known = (state.faceDownKnownBy ?? {})[id] ?? [];
+      if (!known.includes(viewerId)) {
+        state.faceDownKnownBy = {
+          ...(state.faceDownKnownBy ?? {}),
+          [id]: [...known, viewerId],
+        };
+        seen.push(id);
+      }
+    }
+    state.events.push(event('facedown_looked_at', {
+      playerId: viewerId, objectIds: seen,
+      sourceId: sourceObject.id, cardId: sourceObject.cardId,
     }));
     return;
   }
@@ -4342,7 +4417,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exiled = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
-    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    // Batch60/9: playerId dla kontraktu zdarzeń (M273) — gracz, którego stwór wygnano.
+    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true, playerId: live.controllerId }));
     return;
   }
   if (effect.type === 'return_banished_to_hand') {
@@ -4391,6 +4467,22 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
+    return;
+  }
+  if (effect.type === 'blocks_if_able_until_end_of_turn') {
+    // Batch60 (Timely Interference, wariant kicked): „that creature blocks
+    // this turn if able." Tymczasowy znacznik na obiekcie — zdejmowany
+    // w cleanup (CR 514.2); egzekwowany w declareBlockers, ofertach
+    // i auto-deklaracji passów (combat.js — lustro znaleziska J).
+    const targetId = targets[0];
+    if (!targetId) return;
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    state.objects.set(targetId, Object.freeze({ ...object, blocksIfAble: true }));
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, blocksIfAble: true, sourceId: sourceObject.id,
+    }));
     return;
   }
   if (effect.type === 'attacker_gains_control_and_untaps') {
@@ -4862,6 +4954,40 @@ function markTemporaryExile(state, exileId, sourceObject) {
         cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,
       }));
     }
+    return;
+  }
+  if (effect.type === 'turn_up_imprinted_card') {
+    // Batch60/9 (Clone Shell, SOM): „When this creature dies, turn the exiled
+    // card face up. If it's a creature card, put it onto the battlefield under
+    // your control.” Źródło już nie żyje — listę wygnanych czytamy z LKI
+    // (wzorzec Pyxis: obiekt na polu bitwy → LKI po śmierci).
+    const linked = [...(state.objects.get(sourceObject.id)?.exiledCardIds ?? sourceObject.exiledCardIds ?? [])];
+    // CR 400.7: wiązanie żyje, dopóki karta jest w wygnaniu — pierwsza taka.
+    const exileId = linked.find((id) => state.objects.get(id)?.zone === 'exile');
+    if (!exileId) return;
+    const card = state.objects.get(exileId);
+    // Odkrycie ZAWSZE (ruling WotC 2020-08-07: nie-stwór zostaje w wygnaniu
+    // odkryty) — jawne, publiczne (card_revealed z cardId).
+    state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+    const controllerId = sourceObject.controllerId;
+    state.events.push(event('card_revealed', {
+      playerId: controllerId, objectId: exileId, cardId: card.cardId ?? null,
+    }));
+    const types = card.types ?? [];
+    if (!types.includes('Creature')) return; // nie-stwór zostaje w wygnaniu
+    // Stwór wchodzi pod kontrolę KONTROLERA triggera (= kontroler Shella
+    // w chwili śmierci z LKI, CR 603.10a — ruling WotC 2020-08-07 o przejęciu).
+    const battlefieldId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
+    state.objects.set(battlefieldId, Object.freeze({
+      ...moved, controllerId, faceDown: false, summoningSickness: true,
+    }));
+    // M274 (jak Pyxis): wejście z wygnania nadaje liczniki wejścia.
+    applyEnterCounters(state, battlefieldId);
+    state.events.push(event('permanent_entered_battlefield', {
+      objectId: battlefieldId, object: state.objects.get(battlefieldId),
+      cardId: moved.cardId ?? null, controllerId, fromExile: true,
+    }));
     return;
   }
   if (effect.type === 'epic_experiment') {
@@ -6065,6 +6191,31 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
   }
 
+  // Batch60/9 (Clone Shell, SOM): lustro takeSingleLookedCardToHand dla
+  // wariantu imprint (L144 — jedna karta = brak wyboru). Wygnanie ZAKRYTE
+  // + wiązanie ze źródłem (CR 400.7, wzorzec Pyxis); pickCardId: null, bo
+  // tożsamość wygnanej zakrytej nie jest publiczna.
+  function exileSingleLookedCardFaceDown(oneState, playerId, objectId, sourceObject) {
+    const exileId = `exile-${oneState.objectSequence++}`;
+    const movedExile = moveObjectDirectly(oneState, objectId, 'exile', exileId, { exiledBy: sourceObject?.cardId ?? null });
+    oneState.objects.set(exileId, Object.freeze({ ...movedExile, faceDown: true }));
+    // Źródło mogło opuścić pole bitwy w odpowiedzi na trigger — wtedy
+    // wygnana karta zostaje sierotą (poprawnie: dies NOWEGO obiektu jej
+    // nie widzi, CR 400.7).
+    const src = oneState.objects.get(sourceObject?.id ?? '');
+    if (src) {
+      oneState.objects.set(src.id, Object.freeze({ ...src, exiledCardIds: [...(src.exiledCardIds ?? []), exileId] }));
+    }
+    oneState.events.push(event('object_exiled', {
+      fromId: objectId, objectId: exileId, object: oneState.objects.get(exileId),
+      playerId, faceDown: true,
+    }));
+    oneState.events.push(event('look_top_resolved', {
+      playerId, count: 1, pickId: objectId, pickCardId: null, restTo: 'library_bottom',
+      pickTo: 'exile_face_down_linked',
+    }));
+  }
+
   if (effect.type === 'look_top_put_one_hand_rest_bottom') {
     // M177/E (Merchant's Dockhand): „Look at the top X cards… Put one of
     // them into your hand and the rest on the bottom of your library in any
@@ -6093,6 +6244,42 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // tytułu modala, jak pendingManifestDread (M251/B) i pendingSatyrLook
       // (M240/B) — bez nazw w warstwie opisu (ADR 0002).
       sourceCardId: sourceObject?.cardId ?? null,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('look_top_started', {
+      playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
+  if (effect.type === 'look_top_exile_one_face_down_rest_bottom') {
+    // Batch60/9 (Clone Shell, SOM): „look at the top four cards of your
+    // library, exile one face down, then put the rest on the bottom of your
+    // library in any order.” Wariant rodziny pendingLookTopN z pickTo
+    // (Gurmag Drowner/Dockhand biorą wybraną do ręki; tu idzie do wygnania
+    // ZAKRYTA i WIĄŻE SIĘ ze źródłem — CR 400.7, wzorzec Pyxis).
+    // Wybór jest OBOWIĄZKOWY (ruling WotC 2020-08-07: musisz wygnać 1 nawet
+    // nie-stwora) — bramka odrzuca pick spoza objectIds, w tym null, a oferta
+    // nie zawiera rezygnacji.
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount ?? 4;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    // L144 (jak Dockhand/C2): jedna karta = brak wyboru, silnik wygania sam.
+    if (topIds.length === 1) {
+      exileSingleLookedCardFaceDown(state, controllerId, topIds[0], sourceObject);
+      return;
+    }
+    state.pendingLookTopN = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restTo: 'library_bottom',
+      // pickTo: wybrana karta idzie do wygnania zakryta + wiąże się ze
+      // źródłem (sourceId) — bramka resolve_look_top_choice wykonuje wariant.
+      pickTo: 'exile_face_down_linked',
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject?.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {

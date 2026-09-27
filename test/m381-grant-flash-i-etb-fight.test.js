@@ -174,8 +174,8 @@ test('M381/D: „you may" — odmowa przy rozstrzyganiu nic nie robi (CR 603.5)'
   armGrant(state);
   const cast = ofType(state, 'cast_permanent').find((c) => c.objectId === 'dino');
   assert.ok(execute(state, cast).ok);
-  // Etap F: „another target creature" jest obowiązkowy przy kładzeniu na stos
-  // (brak wariantu `targetId: null`), a „you may" pada przy rozstrzyganiu.
+  // E (2026-09-25g): modal celu zawiera decline you-may (skrót); pełna
+  // procedura (wybór celu + „you may" przy rozstrzyganiu) bez zmian.
   let offeredNone = false;
   let sawOptional = false;
   for (let i = 0; i < 30; i += 1) {
@@ -188,7 +188,7 @@ test('M381/D: „you may" — odmowa przy rozstrzyganiu nic nie robi (CR 603.5)'
     if (!pass || state.zones.stack.length === 0) break;
     execute(state, pass);
   }
-  assert.equal(offeredNone, false, 'brak oferty „bez celu" — cel obowiązkowy (CR 603.3d)');
+  assert.equal(offeredNone, true, 'decline you-may w ofercie (E)');
   assert.ok(sawOptional, '„you may" przy rozstrzyganiu');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'odmowa = pass (F1)');
   resolveStack(state);

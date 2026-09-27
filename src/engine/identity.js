@@ -295,6 +295,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
     // „Can't block this turn\" (Panic Spellbomb): tymczasowy znacznik
     // zdejmowany w cleanup razem z innymi grantami „do końca tury\".
     cantBlock: false,
+    // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this
+    // turn"; zdejmowany w cleanup (CR 514.2), egzekwowany w combat.js.
+    blocksIfAble: false,
     // Hexproof „do twojej następnej tury" (loch Undercity — Throne of the
     // Dead Three): numer tury, po którym zdolność wygasa (null = brak).
     // Przetrwało cleanup, bo to nie grant „do końca tury".

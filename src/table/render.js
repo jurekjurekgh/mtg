@@ -77,6 +77,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
+  resolve_optional_spell_effect: 'Efekt „you may” czaru',
   // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo regeneracja.
   resolve_replacement_choice: 'Wybór efektu zastępczego',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
@@ -181,6 +182,8 @@ const TARGET_TYPE_LABELS = Object.freeze({
   tapped_creature: 'tapnięty stwór',
   untapped_creature: 'odkręcony stwór',
   artifact_you_control: 'twój artefakt', land: 'ląd', land_you_control: 'twój ląd',
+  // Batch60 (Stensia Innkeeper): „tap target land an opponent controls".
+  land_opponent_controls: 'ląd przeciwnika',
   enchantment: 'zaklęcie', nonland_permanent: 'permanent niebędący lądem',
   other_nonland_permanent: 'inny permanent niebędący lądem',
   nonblack_creature: 'nieczarny stwór',
@@ -545,6 +548,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
+  if (command.type === 'resolve_optional_spell_effect') return 'resolve_optional_spell_effect';
   if (command.type === 'resolve_replacement_choice') return 'resolve_replacement_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
@@ -632,6 +636,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_optional_trigger_choice') return 'command';
   if (first.type === 'resolve_enter_as_copy') return 'target';
   if (first.type === 'resolve_destroy_equipment_choice') return 'command';
+  if (first.type === 'resolve_optional_spell_effect') return 'command';
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
@@ -1260,6 +1265,11 @@ function describeEffect(e, ctx = {}) {
     // B7: „stwory-lądy" jak w logu mass buffa (było surowe „land creatures").
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów-lądów do końca tury`,
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
+    // Batch60 (Timely Interference, kicked): „blocks this turn if able".
+    blocks_if_able_until_end_of_turn: () => 'musi blokować w tej turze (jeśli może)',
+    // Batch60 (Revealing Wind): zwykła mgła + prywatny podgląd zakrytych.
+    prevent_all_combat_damage_this_turn: () => 'obrażenia bojowe zapobiegnięte do końca tury',
+    look_at_facedown_combatants: () => 'podejrzyj zakryte stwory atakujące i blokujące',
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',
@@ -1402,6 +1412,15 @@ function describeEffect(e, ctx = {}) {
       const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
       return e.counterIfNone ? `${base}; bez wzięcia lądu: licznik +1/+1` : base;
     },
+    // Batch60/9 (Clone Shell, imprint): „look at the top N, exile one face
+    // down, rest on the bottom in any order” — wybór obowiązkowy.
+    look_top_exile_one_face_down_rest_bottom: () => {
+      const n = e.amount ?? 4;
+      return `obejrzyj ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: wygnaj 1 zakrytą, resztę na spód w dowolnej kolejności`;
+    },
+    // Batch60/9 (Clone Shell, dies): „turn the exiled card face up. If it's
+    // a creature card, put it onto the battlefield under your control.”
+    turn_up_imprinted_card: () => 'odkryj wdrukowaną kartę; jeśli to stwór, wchodzi na pole bitwy pod twoją kontrolą',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -2196,6 +2215,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
+  resolve_optional_spell_effect: 'Zastosować efekt („you may")?',
   resolve_replacement_choice: 'Wybierz efekt zastępczy',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
@@ -2273,7 +2293,15 @@ function uncoverCostOf(session, view, objectId, field) {
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
  * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
  */
-function cardCostHtml(card) {
+function cardCostHtml(card, cmd = null) {
+  // G (zgłoszenie właściciela 2026-09-25, Containment Membrane): tytuł grupy
+  // „Aura: … (surge)" pokazywał koszt WYDRUKU (2U), choć rzut pobiera surge
+  // (U). Koszt alternatywny liczy ta sama jedna funkcja (H/2) — gałąź wołana
+  // z komendą (surgeCast + deskryptor surge z widoku; te same formatery co
+  // etykieta oferty M223). Bez komendy — koszt zwykły jak dotąd.
+  if (cmd?.surgeCast && card?.surge) {
+    return manaCostHtml(costSymbols(card.surge.cost, card.surge.colors));
+  }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
   return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
 }
@@ -2432,6 +2460,11 @@ function choiceSourceTitle(cmd, session, view) {
   // źródło (permanent na polu bitwy — publiczne) jedzie z pendingu jak
   // pendingManifestDread/pendingSatyrLook (ADR 0002).
   if (cmd?.type === 'resolve_look_top_choice' && view?.pendingLookTopN?.sourceCardId) {
+    // Batch60/9 (Clone Shell): wariant imprint — wybrana karta idzie do
+    // wygnania zakryta, nie do ręki (gałąź po polu pendingu, ADR 0002).
+    if (view.pendingLookTopN.pickTo === 'exile_face_down_linked') {
+      return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — wygnaj 1 zakrytą (imprint), resztę na spód`;
+    }
     return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — karta z odsłoniętych do ręki`;
   }
   // Pętla jakości (klasa L102/1): Dreams of Steel and Oil — decyzja „wygnij
@@ -2501,8 +2534,12 @@ function choiceSourceTitle(cmd, session, view) {
     // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     if (cmd.bestow) return `Bestow: ${name}`;
-    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
-    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    // G (jw.): grupa cast_permanent jest jednorodna co do surge (klucz grupy
+    // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
+    // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
+    // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
@@ -2953,6 +2990,34 @@ function declineLabelForHandFreeCast(view) {
   ];
   const name = `${alternative.name ?? 'token'} ${alternative.power ?? '?'}/${alternative.toughness ?? '?'}`;
   return `Zrezygnuj — utwórz token ${name}${keywords.length > 0 ? ` (${keywords.join(', ')})` : ''}`;
+}
+
+/**
+ * E (zgłoszenie 2026-09-25g): brzmienie decline „you may [verb] target"
+ * w modalu wyboru celu — per TYP EFEKTU (ADR 0002: bez nazw kart), z
+ * fallbackiem generycznym dla przyszłych efektów. Pokrywa dzisiejszy
+ * katalog (6 kart); pin: `you-may-decline-etykiety.test.js` (E5).
+ */
+const MAY_DECLINE_LABELS = Object.freeze({
+  tap_permanent: 'Nie tapuj nikogo (you may)',
+  damage: 'Nie zadawaj obrażeń (you may)',
+  pump: 'Nie pompuj nikogo (you may)',
+  // Jedyny dzisiejszy may+cel z tym typem to debuff (Prowler -1/-1); gdyby
+  // wszedł buff, rozbić po znaku bonusu (widok dziś nie niesie wartości).
+  buff_creature_until_end_of_turn: 'Nie osłabiaj nikogo (you may)',
+  put_graveyard_card_on_top: 'Nie kładź niczego na wierzch (you may)',
+  return_card_from_graveyard_to_hand: 'Niczego nie wracaj do ręki (you may)',
+});
+
+function declineLabelForTriggerTarget(view, sourcePrefix) {
+  const pending = view?.pendingTriggerTarget;
+  if (pending?.mayFire === true) {
+    const specific = MAY_DECLINE_LABELS[pending.effectType] ?? null;
+    if (specific) return `${sourcePrefix}${specific}`;
+    return `${sourcePrefix}bez celu (odmowa — „you may")`;
+  }
+  if (pending?.effectType === 'bounce_permanent') return `${sourcePrefix}nie zwracaj niczego (odmowa)`;
+  return `${sourcePrefix}bez celu (odmowa — „up to one"/„you may")`;
 }
 
 export function commandLabel(cmd, session, view) {
@@ -3809,6 +3874,10 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
+      // Batch60/9 (Clone Shell): wariant imprint — do wygnania zakryta.
+      if (view?.pendingLookTopN?.pickTo === 'exile_face_down_linked') {
+        return `Wygnaj zakrytą: ${nameOfObjectId(cmd.cardId)} (reszta na spód)`;
+      }
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_manifest_dread': {
@@ -4034,10 +4103,9 @@ export function commandLabel(cmd, session, view) {
         if (cmd.targetIds.length === 0) return `${source}bez celów („up to")`;
         return `${source}cele triggera: ${cmd.targetIds.map((id) => nameOfObjectId(id)).join(' i ')}`;
       }
-      if (cmd.targetId == null) {
-        if (effectType === 'bounce_permanent') return `${source}nie zwracaj niczego (odmowa)`;
-        return `${source}bez celu (odmowa — „up to one"/„you may")`;
-      }
+      // E: decline may („Nie tapuj nikogo (you may)") vs odmowa „up to one"
+      // — rozróżnia declineLabelForTriggerTarget po fladze mayFire z widoku.
+      if (cmd.targetId == null) return declineLabelForTriggerTarget(view, source);
       const target = nameOfObjectId(cmd.targetId);
       if (effectType === 'bounce_permanent') return `${source}zwróć do ręki: ${target}`;
       if (effectType === 'cant_be_blocked') return `${source}nieblokowalność: ${target}`;
@@ -4066,6 +4134,18 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_optional_spell_effect': {
+      // Fix A/Twiddle: generyczny „you may” efektu czaru — Tak nazywa
+      // czynność i cel („Twiddle — tapnij X”), Nie to czytelna odmowa.
+      const mayPending = view?.pendingOptionalSpellEffect;
+      const source = (cmd.sourceCardId ?? mayPending?.sourceCardId)
+        ? `${escapeHtml(session.nameOf(cmd.sourceCardId ?? mayPending.sourceCardId))} — ` : '';
+      if (!cmd.apply) return `${source}nie rób nic (odmowa — „you may")`;
+      const verb = describeEffect({ type: cmd.effectType ?? mayPending?.effectType }) || 'zastosuj efekt';
+      const targetId = cmd.targetId ?? mayPending?.targetIds?.[0] ?? null;
+      const target = targetId != null ? nameOfObjectId(targetId) : 'cel';
+      return `${source}${verb}: ${target} („you may")`;
+    }
     // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
     // kartę, żeby w modalu było widać, o który permanent chodzi.
     case 'resolve_replacement_choice':
@@ -4277,6 +4357,8 @@ export function cardInfo(session, object, combat = null) {
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
+    // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
+    blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
@@ -4669,6 +4751,7 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
+    if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
     // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:

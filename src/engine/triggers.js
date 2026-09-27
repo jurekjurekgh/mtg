@@ -524,6 +524,18 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && (!hexproofBlocked(object) && !protectedBlocked(object));
     });
   }
+  if (spec.type === 'land_opponent_controls') {
+    // Batch60 (Stensia Innkeeper, EMN): „tap target land an opponent
+    // controls" — lądy PRZECIWNIKA kontrolera źródła (nie własne).
+    // Rodzeństwo creature_opponent_controls (wyżej).
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      const isLand = object && (object.kind === 'land' || (object.types ?? []).includes('Land'));
+      return object && object.zone === 'battlefield' && isLand
+        && object.controllerId !== sourceObject.controllerId
+        && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
   // M154 (Batch 38, Lotusguard Disciple): cel „creature or Vehicle" —
   // stwór LUB Vehicle (artefakt z podtypem Vehicle) na polu bitwy, bez hexproof.
   if (spec.type === 'creature_or_vehicle') {
@@ -740,7 +752,8 @@ function abilitiesOnDeath(object) {
  * ostatniego progu była poświęcana bez rozstrzygnięcia rozdziału.
  */
 function queueSagaChaptersForLore(state, sagaObject, previousTotal, newTotal, events) {
-  if (!sagaObject?.saga) return 0;
+  // Xu-Ifit: rozdziały sagi to zdolności — po stripie nie kolejkują się.
+  if (!sagaObject?.saga || sagaObject.abilitiesStripped) return 0;
   const chapters = sagaObject.saga.chapters ?? [];
   let queued = 0;
   for (let n = 1; n <= chapters.length; n += 1) {
@@ -1289,6 +1302,10 @@ export function resolveTriggerEntry(state, entry) {
         instanceId: `${original.instanceId}-copy-${i + 1}`,
         isSpellCopy: true,
         chosenTargets: [...(original.chosenTargets ?? [])],
+        // Ruling Addendum (RNA 2024-01-12): kopia NIGDY nie była rzucona,
+        // więc nie dostaje bonusu — flaga z oryginału NIE dziedziczy
+        // (odwrotnie niż wasKicked, który kopia zachowuje — CR 707.10).
+        castDuringMainPhase: false,
       }));
       state.zones.stack.push(copyId);
       created.push(copyId);
@@ -2011,8 +2028,13 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     // celu — wykonać się przy rozstrzyganiu (wzorzec: Greatsword of Tyr
     // w gałęzi `equipped_creature_attacks` — decyzja z allowNone i pustymi
     // kandydatami, licznik na nosicielu ląduje mimo braku celu).
-    // „You may [czasownik] target" NIE używa spec.optional (Etap F, CR 603.5):
-    // cel obowiązkowy + `mayFire` — wybór „may" przy rozstrzyganiu.
+    // „You may [czasownik] target" (E, zgłoszenie 2026-09-25g): cel NAPOZÓR
+    // obowiązkowy (CR 603.3d), ale modal celu zawiera decline — odmowa to
+    // SKRÓT wynikowo równoważny (trigger nie idzie na stos, przeciwnik nie
+    // widzi celu ani nie dostaje okna odpowiedzi; legalne, bo katalog nie ma
+    // kart odpowiadających na triggery — strażnik:
+    // `you-may-decline-straznik.test.js`). Wybór celu = pełna procedura
+    // Etapu F (CR 603.5): „may" przy rozstrzyganiu, okno odpowiedzi istnieje.
     if (candidates.length === 0) {
       // M106/Z2 (decyzja właściciela 2026-08-16): gracz MA się dowiedzieć,
       // że trigger nie zrobił nic i dlaczego. Wcześniej Puppeteer Clique
@@ -2030,7 +2052,11 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
     // Temat 2: cel wybiera kontroler — resolve_trigger_target zamiast
     // deterministycznego findTriggerTarget (Forge Devil, Kor Sanctifiers,
     // Jill, Puppeteer Clique itd.).
-    return queueTargetDecision(state, ability, source, candidates, Boolean(spec.optional), [], events, extra);
+    // E: mayFire dokleja allowNone (decline w modalu celu). Przy jednym
+    // kandydacie wyłącza to też auto-cel M242 („zgoda nigdy nie jest
+    // automatyczna") — kontroler zawsze widzi modal z odmową.
+    const allowNone = Boolean(spec.optional || trigger.mayFire);
+    return queueTargetDecision(state, ability, source, candidates, allowNone, [], events, extra);
   }
   if (trigger.mayFire) {
     // „You may" bez celu (Angel's Feather — „you may gain 1 life"); wariant
@@ -3032,7 +3058,8 @@ function processTriggersScan(state, recentEvents) {
       // wieloprzebiegowym stwór z backup może wejść ze zdarzenia TRIGGERA
       // także w komendzie przeciwnika; bez przejęcia priorytetu gra by
       // stanęła (posiadacz priorytetu nie miałby legalnej komendy).
-      if (entered.backup && entered.kind === 'creature') {
+      // Xu-Ifit: backup to zdolność wracającego — po stripie nie odpala.
+      if (entered.backup && entered.kind === 'creature' && !entered.abilitiesStripped) {
         state.pendingBackups.push({
           playerId: entered.controllerId,
           sourceId: entered.id,
@@ -3055,7 +3082,8 @@ function processTriggersScan(state, recentEvents) {
       // zakończenie). Bez innych stworów do poświęcenia decyzji nie kolejkujemy
       // — wyboru nie ma (jak „up to" bez celów). Poświęcić nie można samego
       // źródła (reguła devour: liczniki lądują NA źródle).
-      if (entered.kind === 'creature' && entered.devour) {
+      // Xu-Ifit: devour (as-enters) po stripie nie odpala.
+      if (entered.kind === 'creature' && entered.devour && !entered.abilitiesStripped) {
         const devourCandidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
@@ -3108,7 +3136,8 @@ function processTriggersScan(state, recentEvents) {
       // „when this exploits" („This will cause its other ability to trigger").
       // Decyzję kolejkujemy zawsze (źródło stoi na stole w chwili wejścia);
       // odmowa = jawny skip („you don't have to").
-      if (entered.kind === 'creature' && entered.exploit) {
+      // Xu-Ifit: exploit po stripie nie odpala.
+      if (entered.kind === 'creature' && entered.exploit && !entered.abilitiesStripped) {
         const exploitCandidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
           return candidate?.zone === 'battlefield' && candidate.kind === 'creature'
@@ -3137,7 +3166,8 @@ function processTriggersScan(state, recentEvents) {
       // (niezależnie od planszy — obie opcje działają na pustym stole).
       // Etap F (CR 603.3): zdolność idzie na STOS, wybór pada przy
       // rozstrzyganiu (resolveTriggerEntry, extra.endureAmount).
-      if (entered.kind === 'creature' && entered.endure != null) {
+      // Xu-Ifit: endure po stripie nie odpala.
+      if (entered.kind === 'creature' && entered.endure != null && !entered.abilitiesStripped) {
         queueTriggerToStack(state, {
           type: 'triggered', keyword: 'endure',
           trigger: { event: 'enter_battlefield', endure: true },

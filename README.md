@@ -118,18 +118,18 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 27 | 9 | 18 |
-| `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 26 | 9 | 17 |
 | `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 29 | 10 | 19 |
-| `innistrad-wu` | Innistrad (WU) | WU | 29 | 10 | 19 |
+| `innistrad-wu` | Innistrad (WU) | WU | 30 | 10 | 20 |
 | `ixalan` | Ixalan | UBRG | 24 | 8 | 16 |
-| `kaladesh` | Kaladesh | WUBRG | 27 | 9 | 18 |
+| `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
-| `mirrodin-wu` | Mirrodin (WU) | WU | 26 | 9 | 17 |
-| `ravnica` | Ravnica | WUBRG | 38 | 13 | 25 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
+| `ravnica` | Ravnica | WUBRG | 41 | 14 | 27 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 35 | 12 | 23 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 36 | 12 | 24 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
 | `theros` | Theros | WUBRG | 26 | 9 | 17 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
@@ -144,7 +144,7 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 44 | 15 | 29 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 32 | 11 | 21 |
-| `worek-legend` | Worek: Legendy | WUBRG | 23 | 8 | 15 |
+| `worek-legend` | Worek: Legendy | WUBRG | 27 | 9 | 18 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

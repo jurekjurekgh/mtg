@@ -708,8 +708,14 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   // Część BEZBARWNA kosztu = suma − liczba grup pipów (każdy pip zużywa jedną
   // manę). Gdy pula ją pokrywa, zostają tylko kolorowe pipy → filtr zakresu
   // włącza się od razu (uwaga G z gry, 2026-09-23c).
+  // F (zgłoszenie 2026-09-25g): mana zużyta na pipy NIE liczy się do sumy
+  // generycznej (dawniej `pool >= genericNeeded` liczyło ją PODWÓJNIE —
+  // przy {1}{W}{U} po tapnięciu Wyspy pula {U} „zamykała" {1}, choć
+  // pokrywała pip {U}, i kreator zostawiał tylko W-landy). Świadkowie:
+  // `zgloszenie-f-mana-wizard-filtr-po-pipie.test.js` (F1–F5).
   const genericNeeded = Math.max(0, descriptor.totalNeeded - descriptor.requirements.length);
-  const offered = guideManaSources(offeredRaw, missingColors, pool >= genericNeeded)
+  const genericMet = (pool - covered) >= genericNeeded;
+  const offered = guideManaSources(offeredRaw, missingColors, genericMet)
     .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
   return {
     pool,

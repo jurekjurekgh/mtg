@@ -1693,7 +1693,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     const exileId = `exile-${state.objectSequence++}`;
     // M262: źródłem wygnania jest karta, dla której płacono kosztem.
     const exiled = moveObjectDirectly(state, exileTargetId, 'exile', exileId, { exiledBy: object.cardId });
-    state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true }));
+    // Batch60/9: playerId dla kontraktu zdarzeń (M273) — płacący kosztem.
+    state.events.push(event('object_exiled', { fromId: exileTargetId, objectId: exileId, object: exiled, cardId: exiled.cardId, additionalCost: true, playerId }));
   }
   if (exileGraveCost) {
     const exileId = `exile-${state.objectSequence++}`;

@@ -445,10 +445,12 @@ test('Reclusive Artificer: haste pozwala atakować w turze wejścia', () => {
   assert.ok(rCast3.ok);
   resolveStack(state);
   // BUG1 fix: Reclusive Artificer może celować w siebie („target creature").
-  // Etap F (CR 603.3d + 603.5): jedyny kandydat (on sam) jest celem
-  // obowiązkowym, a „you may" odrzucamy przy rozstrzyganiu (pass, F1).
-  assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
-  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  // E (2026-09-25g): jedyny kandydat (on sam) — modal celu z decline
+  // (auto-cel M242 wyłączony dla mayFire); odmawiamy od razu.
+  // (Dawniej: auto-cel + odmowa „you may" przy rozstrzyganiu, pass F1.)
+  const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === null);
+  assert.ok(decline, 'decline you-may w modalu celu');
+  assert.ok(execute(state, decline).ok);
   assert.equal(state.objects.get(findId(state, 'reclusive-artificer')).damage ?? 0, 0, 'odmowa — bez obrażeń');
   const ra = findId(state, 'reclusive-artificer');
   assert.ok(effectiveKeywords(state.objects.get(ra), state).includes('haste'));

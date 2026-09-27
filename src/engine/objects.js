@@ -198,6 +198,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     } : {}),
     ...(object.subtypesBeforeOverride ? { subtypes: object.subtypesBeforeOverride } : {}),
     originalBeforeAnimation: null, subtypesBeforeOverride: null,
+    // Xu-Ifit (CR 400.7): strip i Skeleton istnieją na TYM obiekcie pola
+    // bitwy — nowy obiekt wraca do druku (lustro subtypesBeforeOverride).
+    // WARUNKOWO (tylko gdy stary obiekt nosił pola): bezwarunkowe klucze
+    // zaśmiecały dyf stanu w sondzie no-op (noop-probe) każdym ruchem strefy.
+    ...(object.subtypesBeforeStrip ? { subtypes: object.subtypesBeforeStrip, subtypesBeforeStrip: null } : {}),
+    ...(object.abilitiesStripped ? { abilitiesStripped: false } : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
   const moved = Object.freeze({

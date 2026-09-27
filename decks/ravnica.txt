@@ -12,6 +12,7 @@
 1x Selesnya Charm
 1x Severed Strands
 1x Skinbrand Goblin
+1x Summary Judgment
 1x Courage in Crisis
 1x Ember Beast
 1x Expose to Daylight
@@ -21,11 +22,12 @@
 1x Trestle Troll
 1x Withstand
 1x Azorius Justiciar
+1x Demolish
 1x Duskmantle Seer
 1x Ivy Lane Denizen
 1x Veiled Ascension
 1x Trostani Discordant
-5x Plains
+6x Plains
 1x Island
 2x Swamp
 2x Mountain

@@ -1,0 +1,154 @@
+/**
+ * AI-OpenRouter (Etap-1): kolejka zapytań ze ŚCIŚLE chronologicznym renderem.
+ *
+ * Moduł CZYSTY (zero DOM-u): transport wstrzyknięty, render przez hooki.
+ * Problem (zlecenie właściciela): późniejsze zapytanie może wrócić SZYBCIEJ
+ * niż wcześniejsze — odpowiedzi pokazujemy w kolejności zapytań. Późniejsze
+ * wyniki są BUFOROWANE, aż wcześniejsze sloty się rozstrzygną (sukcesem
+ * albo błędem — błąd też zwalnia kolejkę).
+ *
+ * Kontrakt transportu:
+ *   transport({ prompt, messages, modelId, meta, signal }) -> Promise<{ ok, text?, error? }>
+ * Wyjątek z transportu = { ok: false, error } (normalizacja tutaj).
+ *
+ * Hooki: onPending(slot) — nowy slot do narysowania jako „Czekam…";
+ *         onResolved(slot) — slot ma .result, rysuj odpowiedź albo błąd.
+ * Slot: { id, attempt, prompt, messages?, modelId, meta, result? }.
+ * AI-R7: `messages` (rozmowa user/assistant) jedzie do transportu obok
+ * `prompt` (prompt = skrót do podglądu; transport woli messages).
+ * `reset()` (nowa partia): spóźnione odpowiedzi starej generacji giną.
+ */
+export function createAiQueue({ transport, onPending, onResolved } = {}) {
+  if (typeof transport !== 'function') throw new TypeError('ai-queue wymaga transportu');
+  const pendingHook = typeof onPending === 'function' ? onPending : () => {};
+  const resolvedHook = typeof onResolved === 'function' ? onResolved : () => {};
+  let seq = 0;
+  let generation = 0;
+  // Sloty w kolejności zapytań; render idzie od głowy, bufor za głową czeka.
+  const slots = [];
+  // Wszystkie sloty bieżącej generacji (też wyrenderowane — retry szuka
+  // slotu-błędu PO jego wyrenderowaniu; reset czyści mapę co partię).
+  const byId = new Map();
+  // AI-R6 (E): kontrolery zapytań w locie (slotId -> AbortController) —
+  // klik w „Czekam…” woła abort(slotId); wpis znika przy rozstrzygnięciu.
+  const inflight = new Map();
+
+  const fire = (slot, request) => {
+    const gen = slot.generation;
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    // AI-R6 (E): kontroler w locie — klik w „Czekam…” przerywa zapytanie.
+    if (controller) inflight.set(slot.id, controller);
+    Promise.resolve()
+      .then(() => transport({ ...request, signal: controller?.signal ?? null }))
+      .then(
+        (res) => ({ ok: res?.ok === true, text: res?.text ?? '', error: res?.error ?? '' }),
+        (err) => ({ ok: false, text: '', error: err instanceof Error ? err.message : String(err) }),
+      )
+      .then((result) => {
+        inflight.delete(slot.id);
+        // Spóźniony (stara partia) albo już obsłużony — nie renderujemy.
+        if (gen !== generation || slot.result) return;
+        slot.result = result;
+        drain();
+      });
+  };
+
+  const drain = () => {
+    while (slots.length > 0 && slots[0].result) {
+      const ready = slots.shift();
+      resolvedHook(ready);
+    }
+  };
+
+  return {
+    /** Nowe zapytanie na końcu kolejki; zwraca id slotu. */
+    enqueue({ prompt, messages, modelId, meta } = {}) {
+      seq += 1;
+      const slot = {
+        id: seq, attempt: 1, generation,
+        prompt: prompt ?? '', modelId: modelId ?? '', meta: meta ?? null,
+        // AI-R7: rozmowa (user/assistant) — transport woli ją od promptu.
+        messages: Array.isArray(messages) ? messages : null,
+        result: null,
+      };
+      slots.push(slot);
+      byId.set(slot.id, slot);
+      pendingHook(slot);
+      fire(slot, { prompt: slot.prompt, messages: slot.messages, modelId: slot.modelId, meta: slot.meta });
+      return slot.id;
+    },
+    /**
+     * Ponowienie slotu-błędu w TYM SAMYM miejscu kolejki (porządek
+     * chronologiczny zachowany). Setup brany z chwili kliku (argumenty).
+     * Zwraca false, gdy slotu nie ma / nie jest błędem / jest nieaktualny.
+     */
+    retry(slotId, { prompt, messages, modelId, meta } = {}) {
+      const slot = byId.get(slotId) ?? null;
+      if (!slot || slot.generation !== generation || !slot.result || slot.result.ok) return false;
+      if (slots.includes(slot)) return false; // już w locie — nie dublujemy
+      slot.result = null;
+      slot.attempt += 1;
+      if (prompt !== undefined) slot.prompt = prompt;
+      // AI-R7: retry odtwarza pełną rozmowę (historia + brak odpowiedzi
+      // bieżącej tury — model losuje na nowo).
+      if (messages !== undefined) slot.messages = Array.isArray(messages) ? messages : null;
+      if (modelId !== undefined) slot.modelId = modelId;
+      // AI-R6 (A): meta też ze setupu chwili kliku (świeża etykieta modelu
+      // do nagłówka; wołający scala ze starą, żeby nie zgubić tury/trybu).
+      if (meta !== undefined) slot.meta = meta;
+      // Wyrenderowany ⇒ wszystko wcześniejsze wyrenderowane — slot jest
+      // najwcześniejszym nierozstrzygniętym, więc wraca NA GŁOWĘ.
+      slots.unshift(slot);
+      pendingHook(slot);
+      fire(slot, { prompt: slot.prompt, messages: slot.messages, modelId: slot.modelId, meta: slot.meta });
+      return true;
+    },
+    /**
+     * AI-R6 (E): przerwanie zapytania w locie (klik w „Czekam…”).
+     * Transport dostaje abort i zwraca błąd „Przerwano…” — slot renderuje
+     * się jak zwykły błąd, z przyciskiem „Ponów”. Zwraca false, gdy slotu
+     * nie ma / jest nieaktualny / już rozstrzygnięty / nie w locie.
+     */
+    abort(slotId) {
+      const slot = byId.get(slotId) ?? null;
+      if (!slot || slot.generation !== generation || slot.result) return false;
+      if (!slots.includes(slot)) return false;
+      const controller = inflight.get(slotId);
+      if (!controller) return false;
+      try {
+        controller.abort();
+      } catch {
+        return false;
+      }
+      return true;
+    },
+    /** Nowa partia: czyści kolejkę, spóźnione odpowiedzi giną. */
+    reset() {
+      generation += 1;
+      slots.length = 0;
+      byId.clear();
+      // AI-R6 (E): nowa partia ucina też zapytania w locie (ich wyniki
+      // i tak by zginęły jako spóźnione — szkoda transferu i tokenów).
+      for (const controller of inflight.values()) {
+        try {
+          controller.abort();
+        } catch {
+          /* brak kontrolera — nic do roboty */
+        }
+      }
+      inflight.clear();
+    },
+    pendingCount() {
+      return slots.filter((s) => !s.result).length;
+    },
+    /**
+     * AI-R6 (A): podgląd slotu (TYLKO do odczytu) — „Ponów” potrzebuje
+     * starej mety, żeby scalić ją ze świeżą etykietą modelu. Null, gdy
+     * slot nie istnieje albo jest ze starej partii.
+     */
+    getSlot(slotId) {
+      const slot = byId.get(slotId) ?? null;
+      return slot && slot.generation === generation ? slot : null;
+    },
+  };
+}

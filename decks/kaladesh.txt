@@ -4,6 +4,7 @@
 1x Fourth Bridge Prowler
 1x Gearsmith Prodigy
 1x Merchant's Dockhand
+1x Renegade Tactics
 1x Cathartic Reunion
 1x Silken Strength
 1x Stall Out
@@ -21,5 +22,5 @@
 1x Plains
 3x Island
 2x Swamp
-2x Mountain
+3x Mountain
 1x Forest

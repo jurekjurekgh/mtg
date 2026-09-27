@@ -53,8 +53,28 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // efektu (destroy/exile/bounce, damage, draw), zero nazw kart (ADR 0002).
   'removalEnemyBase',        // baza za usunięcie permanentu wroga (dawniej +22)
   'removalWorthWeight',      // waga (power+toughness) usuwanego permanentu (dawniej *2)
-  'bounceEnemyBase',         // baza za odbicie permanentu wroga do ręki (dawniej +25)
-  'bounceEnemyPowerWeight',  // waga mocy odbijanego permanentu (dawniej *2)
+  // PMSSB-1 (M239/2: bounceEnemyBase/Weight usunięte — martwe; typ
+  // return_to_hand nie występuje w kartach ani silniku). Rodzina „bounce":
+  // siła efektu (hand < top < bottom) + wymiary celu (token-trwałość
+  // CR 704.5d, powtórka ETB wroga).
+  'bounceLibraryTopBonus',   // dopłata: odbicie na WIERZCH biblioteki (tempo doboru)
+  'bounceLibraryBottomBonus', // dopłata: odbicie na SPÓD (prawie removal)
+  'bounceTokenBonus',        // dopłata: cel-token wroga znika na zawsze (CR 704.5d)
+  'bounceFoeEtbWeight',      // waga kary: cel z ETB da wrogowi powtórkę
+  // PMSSB-1/B: kierunek własny — ratunek (F5) i reuse ETB (F4) płacą
+  // kosztem przerzucenia (many) i tempem (tura + choroba po powrocie).
+  'bounceRecastManaWeight',  // waga 1 many przerzucenia własnego stwora
+  'bounceTempoPenalty',      // kara tempa za zdjęcie własnego stwora ze stołu
+  // PMSSB-1/C: timing (F1: okna instantu + sorcery-precombat), unik-lethal
+  // i przepełnienie ręki (CR 514.1 — limit 7, odrzut w cleanupie).
+  'bounceTimingSwing',       // wahnięcie wartości między oknami rzutu
+  'bounceLethalDodgeBonus',  // premia: bounce zdejmuje lethal z atakujących
+  'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
+  // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
+  // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
+  'tokenManaBankWeight',     // wartość 1 many z tokena-bank (Treasure ≈ 3)
+  'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
+  'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
   // waga mocy celu, premia lethal) usunięta — po M237/4 damageTargetValue
   // wycenia obrażenia MODELIEM PER-CEL (bezpieczny blok → do wyceny wartości
@@ -62,6 +82,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // MARTWYMI pokrętłami (tuner zmieniał je bez jakiegokolwiek wpływu). Gromadzenie
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
+  'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
+  // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
   // z grobu do RĘKI jest warta nie tylko swoje ciało — bot musi ją jeszcze
   // RZUCIĆ, więc wartość rośnie z jej mana value, ale tylko do granicy
@@ -242,8 +265,40 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   crackbackPenalty: 12,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
-  bounceEnemyBase: 25,
-  bounceEnemyPowerWeight: 2,
+  // PMSSB-1 (wartości przemyślane, pomiar PRZED: /tmp/pmssb1-bounce-przed.mjs):
+  // top 8 (~1 dobór wroga mniej), bottom 18 (jak destroy-ETB — prawie
+  // removal), token 12 (symetria z create_token 12), ETB waga 1 (pełna
+  // wartość powtórki z etbEnterBonusValue).
+  bounceLibraryTopBonus: 8,
+  bounceLibraryBottomBonus: 18,
+  bounceTokenBonus: 12,
+  bounceFoeEtbWeight: 1,
+  // PMSSB-1/B (wartości przemyślane): mana przerzucenia droższa od
+  // power (3 vs 2 — many nie wracają), tempo 10 (połowa „karty" —
+  // mniej niż strata permanenta, więcej niż nic).
+  bounceRecastManaWeight: 3,
+  bounceTempoPenalty: 10,
+  // PMSSB-1/C (wartości przemyślane): swing 8 (jak top — „pół tempa”,
+  // za słaby by przebić różnicę celów, dość silny by rozstrzygać okna),
+  // lethal 100 (życie > karta, poniżej twardego bana), overflow 12
+  // (symetria z tokenem — wymuszony odrzut ≈ zniszczony zasób).
+  bounceTimingSwing: 8,
+  bounceLethalDodgeBonus: 100,
+  bounceOverflowBonus: 12,
+  // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
+  // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
+  tokenManaBankWeight: 3,
+  // PMSSB-2/B (F1): 8 jak bounce-TimingSwing (lustro — ta sama skala
+  // „pół tempa": rozstrzyga okna, nie przebija różnicy celów).
+  tokenTimingSwing: 8,
+  // PMSSB-2/C (F7): 1 grosz za CMC (tie-break, nie opportunity-cost —
+  // pełna wycena kosztu OUT jak w planie; skala groszowa nie przewraca
+  // realnych różnic, tylko rozstrzyga remisy tego samego efektu).
+  tokenManaCostTieBreak: 0.01,
+  // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
+  // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
+  instantDrawFoeEndBonus: 10,
+  // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,
   // M234 — WŁĄCZONE wprost jako część zlecenia właściciela (efektywność

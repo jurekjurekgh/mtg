@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Demolish&set=war",
+  "print": "Demolish (WAR)",
+  "name": "Demolish",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Destroy target artifact or land.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "war",
+  "collector_number": "123",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/0/b00211dd-6dd7-40d9-80f3-f909f6d112db.jpg?1783933430"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/war/123/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

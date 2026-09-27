@@ -415,7 +415,9 @@ test('B52: Fourth Bridge Prowler — ETB nakłada -1/-1 na wybranego stwora', ()
   resolveStack(state); // zatrzymuje się na decyzji celu triggera
   const pend = state.pendingTriggerTargets.find((p) => p.cardId === 'fourth-bridge-prowler');
   assert.ok(pend, 'trigger czeka na wybór celu (Prowler i foe — dwaj kandydaci)');
-  assert.equal(pend.allowNone, false, 'cel obowiązkowy (CR 603.3d)');
+  // E (2026-09-25g): modal celu zawiera decline you-may (skrót); wybór
+  // celu = pełna procedura Etapu F (CR 603.5).
+  assert.equal(pend.allowNone, true, 'decline you-may w modalu celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
   assert.ok(resolveUntilDecision(state, optionalTriggerOpen), '„you may" przy rozstrzyganiu (CR 603.5)');
   assert.deepEqual(state.pendingOptionalTrigger.targets, ['foe']);
@@ -434,8 +436,10 @@ test('B52: Fourth Bridge Prowler — „you may": odmowa przy rozstrzyganiu = br
   resolveStack(state);
   // Etap F (CR 603.5): cel wybrany przy kładzeniu na stos, odmowa („Dalej")
   // przy rozstrzyganiu zostawia stwora nietkniętego.
-  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok === false,
-    'brak opcji „bez celu" — cel obowiązkowy');
+  // E (2026-09-25g): decline w modalu celu jest LEGALNY (skrót) — ten test
+  // pinuje pełną procedurę: wybór celu, potem odmowa przy rozstrzyganiu.
+  const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_trigger_target' && c.targetId === null);
+  assert.ok(decline, 'decline you-may w modalu celu');
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'foe' }).ok);
   assert.ok(resolveUntilDecision(state, optionalTriggerOpen));
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
