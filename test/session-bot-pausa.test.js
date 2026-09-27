@@ -325,7 +325,12 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // (generator ADR 0023), więc i ta trójka się przelosowała — hunter 1..40
   // wskazał pełne pary zdarzeń na 2 (3 sledzone/3 opisane) i 6 (3/3), a 5
   // (1/1) dokłada trzecią partię; suma progów straży: 7/7.
-  for (const seed of [2, 5, 6]) {
+  // Batch60/8 (Revealing Wind w tarkir-bg + dryf śladów): seedy 2 i 6
+  // łapią odtąd WYGNANIA kosztów delve człowieka (Hooting Mandrills wygnaje
+  // własne grobowe karty w turze bota — modal RUCHU BOTA słusznie ich nie
+  // opisuje, to akcje samego człowieka). Hunter 1..40 na nowych taliach:
+  // 5 (1/1) zostaje, 31 (5/5) i 33 (3/3) dokładają pełne pary; suma 9/9.
+  for (const seed of [5, 31, 33]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);
