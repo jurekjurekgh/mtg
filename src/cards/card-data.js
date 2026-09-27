@@ -12151,6 +12151,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     plan: 'Kaladesh',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/4. Trigon of Thought (SOM) — klon Trigon of Corruption:
+  // ETB 3 charge, {U}{U},{T}: +counter, {2},{T},-counter: draw.
+  defineCard({
+    id: 'trigon-of-thought', name: 'Trigon of Thought', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 5,
+    oracleText: 'This artifact enters with three charge counters on it.\n{U}{U}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/8/f8da37ba-52e3-417e-8d7b-6c3e060552a4.jpg?1783941692',
+    entersWithCounters: { charge: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, colors: ['U', 'U'] },
+        effect: { type: 'add_counter', counter: 'charge', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, removeCounter: { name: 'charge', amount: 1 } },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

@@ -213,3 +213,63 @@ test('B60/G1.3: Renegade Tactics — bez many rzut nie jest oferowany', () => {
   assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'tactics'),
     'przy zerowej manie brak oferty rzutu {R}');
 });
+
+// ---- G1.4: Trigon of Thought (154 SOM, plan Mirrodin) -----------------------
+
+test('B60/G1.4: Trigon of Thought — dane Oracle, artefakt {5} i druk SOM', () => {
+  const def = registry.get('trigon-of-thought');
+  assert.deepEqual(def.types, ['Artifact']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.manaCost, 5);
+  assert.deepEqual(def.entersWithCounters, { charge: 3 });
+  assert.equal(def.set, 'SOM');
+  assert.equal(def.plan, 'Mirrodin');
+  assert.equal(def.artId, null);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('f8da37ba'), 'imageUri z druku SOM (som/217)');
+  assert.equal(MANA_COSTS['trigon-of-thought'], '{5}');
+});
+
+test('B60/G1.4: Trigon of Thought — wchodzi z 3 charge; {2},{T},-counter: dobór', () => {
+  const state = game();
+  put(state, 'trig', 'trigon-of-thought', 'p1');
+  addMana(state, 'p1', 7);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'trig'));
+  resolve(state);
+  const trig = find(state, 'trigon-of-thought');
+  assert.ok(trig, 'Trigon na stole po rzucie');
+  assert.equal(trig.counters?.charge, 3, 'ETB z trzema charge counters');
+  const handBefore = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  const draw = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === trig.id && c.abilityIndex === 1);
+  assert.ok(draw, 'zdolność doboru {2},{T},-counter jest oferowana');
+  run(state, draw);
+  resolve(state);
+  assert.equal(state.objects.get(trig.id).counters?.charge, 2, 'counter zużyty jako koszt');
+  assert.equal(state.objects.get(trig.id).tapped, true, 'Trigon tapnięty kosztem');
+  const handAfter = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  assert.equal(handAfter, handBefore + 1, 'dobrano dokładnie 1 kartę');
+});
+
+test('B60/G1.4: Trigon of Thought — {U}{U},{T}: doładowanie countera', () => {
+  const state = game();
+  put(state, 'trig', 'trigon-of-thought', 'p1');
+  addMana(state, 'p1', 7);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'trig'));
+  resolve(state);
+  const trig = find(state, 'trigon-of-thought');
+  const charge = commands(state, 'p1').find((c) => c.type === 'activate_ability' && c.objectId === trig.id && c.abilityIndex === 0);
+  assert.ok(charge, 'zdolność doładowania {U}{U},{T} jest oferowana');
+  run(state, charge);
+  resolve(state);
+  assert.equal(state.objects.get(trig.id).counters?.charge, 4, 'przybył czwarty charge counter');
+});
+
+test('B60/G1.4: Trigon of Thought — bez counterów dobór nie jest oferowany', () => {
+  const state = game();
+  put(state, 'trig', 'trigon-of-thought', 'p1', 'battlefield', { counters: {}, tapped: false });
+  addMana(state, 'p1', 2);
+  const offers = commands(state, 'p1').filter((c) => c.type === 'activate_ability' && c.objectId === 'trig');
+  assert.ok(!offers.some((c) => c.abilityIndex === 1),
+    'zdolność z kosztem removeCounter nie istnieje przy 0 counterów');
+});

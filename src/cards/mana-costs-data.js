@@ -524,4 +524,6 @@ export const MANA_COSTS = {
   "demolish": "{3}{R}",
   // Batch60: Renegade Tactics (CMR).
   "renegade-tactics": "{R}",
+  // Batch60: Trigon of Thought (SOM).
+  "trigon-of-thought": "{5}",
 };
