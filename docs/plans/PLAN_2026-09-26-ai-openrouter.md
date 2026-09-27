@@ -247,3 +247,6 @@ wierszy przy współbieżnych dopisaniach.
   odczucia) + 3 tryby: `observer` (jak gracz, okiem obserwatora),
   `lore-observer` (jak lore-bot, okiem obserwatora), `skit` (dokładny
   brief właściciela: Dominaria vs Zendikar, dialog in-character, 250 słów).
+
+- R4b: skit bierze PRAWDZIWE światy obu talii (ctx: heroWorld + world);
+  Dominaria/Zendikar były tylko przykładem w briefie.

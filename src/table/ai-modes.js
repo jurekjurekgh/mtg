@@ -6,7 +6,8 @@
  * - `player-bot`: komentarz bota-gracza (AI-R4: zakaz slangu, zwięźle w punktach).
  * - `observer` (AI-R4): to samo okiem niezależnego obserwatora.
  * - `lore-observer` (AI-R4): lore okiem niezależnego obserwatora.
- * - `skit` (AI-R4): scenka dialogowa — prompt DOKŁADNY od właściciela.
+ * - `skit` (AI-R4): scenka dialogowa — brief właściciela + PRAWDZIWE światy
+ *   obu talii (AI-R4b: Dominaria/Zendikar były tylko przykładem).
  */
 
 export const LORE_COMMENT_LIMIT = 600;
@@ -21,6 +22,8 @@ function baseCtx(ctx) {
     bot: c.botLogName || 'Nieprzyjaciel',
     deck: c.deckTitle || c.deckKey || '(nieznana talia)',
     world: c.world || c.deckTitle || c.deckKey || '(nieznany świat)',
+    heroDeck: c.heroDeckTitle || c.heroDeckKey || '(nieznana talia)',
+    heroWorld: c.heroWorld || c.heroDeckTitle || c.heroDeckKey || '(nieznany świat)',
     turnNo: c.turnNumber ?? '?',
     history: c.turnText || '(brak zapisu)',
   };
@@ -130,60 +133,62 @@ export function buildLoreObserverPrompt(ctx) {
 
 /**
  * Tryb V (AI-R4): SKIT — scenka dialogowa postaci z kart.
- * Tekst promptu DOKŁADNY od właściciela (nie redagować bez pytania);
- * dopisujemy tylko numer tury i log rozgrywki, na których pracuje model.
+ * Brief DOSŁOWNY od właściciela; AI-R4b: światy w sekcji UWAGA to
+ * PRAWDZIWE światy obu talii z partii (nie przykładowe Dominaria/Zendikar).
  */
-const SKIT_BRIEF = [
-  'Jesteś pisarzem literatury fantasy, który na podstawie rozgrywki prowadzonej kartami Magic: the Gathering ma tworzyć ciekawe, mądre, śmieszne, zajmujące fragmenty prozy typu SKIT (podobne do tych z serii gier Tales of…).',
-  'Na podstawie logu z rozgrywki W OSTATNIEJ TURZE tury masz wyodrębnić postaci biorące udział i tworzyć interakcje, dialogi między nimi.',
-  'Bohaterowie i wątki poruszane w SKITACH mogą powracać w kolejnych skitach jeśli log to uzasadnia.',
-  'Każdy fabularny SKIT powinien być poprzedzony nagłówkiem:',
-  '',
-  '**SKIT: -tytuł-**.',
-  '',
-  'Tytuł nadajesz sam na podstawie treści SKITA.',
-  'Fragment pod nagłówkiem musi być w 100% in-lore światów, z którego pochodzą zagrywane karty.',
-  'UWAGA:',
-  'Czarodziejka i wszystkie jej karty (czary, kreatury, postaci) pochodzą ze świata Dominaria.',
-  'Nieprzyjaciel i wszystkie jego karty (czary, kreatury, postaci) pochodzą ze świata Zendikar.',
-  '',
-  'Używaj w SKITach postaci z karty wystawionych na stole po obu stronach bitwy, ale NIE używaj nazw użytych kart MtG - postacie nazywaj/opisuj zgodnie z lore świata z którego pochodzą. Wyjątkiem są postaci graczy, których zawsze nazywaj Czarodziejką i Nieprzyjacielem.',
-  'SKIT: Czysty dialog postaci obecnych aktualnie w grze (najlepiej między postaciami powołanymi z kart, ale jeśli nie ma innej możliwości także między graczami). Nie używaj w nich meta-języka gry np. statystyk, nazw zdolności, counterów, tokenów itp. Skupiasz się na lore i relacjach!',
-  'Skity mają być naturalną rozmową. Mogą dotyczyć przeszłości, filozofii lub drobnych obserwacji, byle były zgodne z charakterem postaci.',
-  'Możliwe tematy to ich wzajemne relacje, filozofia, ich podejście do dowolnych tematów, obserwacje dotyczące okolicy, stan fizyczny, psychiczny, także przemyślenia, odniesienia do ich lore np. zwyczaje wyniesione z ich świata, jedzenie, spędzanie wolnego czasu, hobby, zainteresowania, pasje itp. itd.',
-  'Rozmowa może dotyczyć tematów codziennego życia, pracy, problemów świata postaci, ich najskrytszych pragnień, kompleksów, traum, ale także tego z czego bywają np. dumne czy co je bawi.',
-  'Rozmowa jest w 100% in-character w 100% oparta o lore ich świata, ich przekonaniach, pasjach.',
-  'W skicie oczywiście uwzględniaj stosunek postaci do siebie, historię ich znajomości - ale wszystko in-character i z AKCENTEM na postrzeganie rzeczywistości przez lore swojego świata.',
-  'WAŻNE! Bezwzględnie wymyślaj zróżnicowane tematy SKITów, bądź oryginalny. Każdy SKIT ma być inny i na inny temat.',
-  'Maksymalna długość sekcji SKIT to 250 słów.',
-  '',
-  'Przykład sekcji SKIT:',
-  '',
-  '**SKIT: RDZA I SĘPY**',
-  '',
-  '**Uczestnicy:** Garrek Żelaznoręki, Korveth-7, Corwin Wrończyk',
-  '',
-  '**Garrek:** [Opiera ciężki młot o ziemię, z trudem łapiąc oddech. Rdzawa krew miesza się ze smarem na jego brodzie. Łypie mrocznie na kruka siedzącego na ramieniu szeptacza] Zdejmij ze mnie te ptasie ślepia, poeto. Jeszcze nie jestem kupą złomu. Ta blacha przetrwała ostrzał artyleryjski u braciaków, więc przetrwa też to cholerne błoto.',
-  '',
-  '**Corwin:** [Siedzi w cieniu, spokojnie gładząc pióra Szepty. Jego bury płaszcz zlewa się z mrokiem bagien] Krew przyspiesza rdzewienie żelaza, rzeźniku. Wycieka z ciebie olej i życie w równych proporcjach. Moje wrony mają doskonały słuch. Słyszą, jak zębatki w twoim ciele powoli zgrzytają do zatrzymania.',
-  '',
-  '**Korveth-7:** [Przesuwa się ciężko, stając tak, by jego miedziane ramiona częściowo osłaniały Garreka. Soczewka na jego twarzy migocze słabym, gasnącym światłem] Diagnostyka wskazuje na krytyczne uszkodzenia strukturalne. Jednak funkcjonalność operacyjna zostaje zachowana. Maszyna nie zatrzymuje się, dopóki kryształ nie ulegnie całkowitej dezintegracji. Utrzymamy ten perymetr.',
-  '',
-  '**Garrek:** [Wybucha chrapliwym kaszlem, wypluwając ciemną ślinę w mech, po czym uśmiecha się krzywo do miedzianego konstrukta] Słyszysz to, ptasiarzu? Ja i ta puszka jedziemy na samych oparach i czystej złośliwości. Ty czekasz, aż ktoś ci rzuci darmowy ochłap prawdy do tego twojego notesiku, a my po prostu odmawiamy zdechnięcia.',
-  '',
-  '**Corwin:** Nikt z nas nie wybiera momentu, rzeźniku. Ja tylko dbam o to, by to, kim byliście, nie przepadło, gdy upadniecie twarzą w błoto.',
-  '',
-  '**Garrek:** [Uderza obuchem młota w dłoń, aż w zbroi zadudnią nity] Jeśli szukasz moich ostatnich słów, to możesz je sobie zapisać już teraz: "Nie zdejmiecie mi tych butów". A teraz trzymaj się z dala, zanim przerobię cię na mielonkę razem z twoim latającym inwentarzem.',
-].join('\n');
+function skitBrief({ heroWorld, enemyWorld }) {
+  return [
+    'Jesteś pisarzem literatury fantasy, który na podstawie rozgrywki prowadzonej kartami Magic: the Gathering ma tworzyć ciekawe, mądre, śmieszne, zajmujące fragmenty prozy typu SKIT (podobne do tych z serii gier Tales of…).',
+    'Na podstawie logu z rozgrywki W OSTATNIEJ TURZE tury masz wyodrębnić postaci biorące udział i tworzyć interakcje, dialogi między nimi.',
+    'Bohaterowie i wątki poruszane w SKITACH mogą powracać w kolejnych skitach jeśli log to uzasadnia.',
+    'Każdy fabularny SKIT powinien być poprzedzony nagłówkiem:',
+    '',
+    '**SKIT: -tytuł-**.',
+    '',
+    'Tytuł nadajesz sam na podstawie treści SKITA.',
+    'Fragment pod nagłówkiem musi być w 100% in-lore światów, z którego pochodzą zagrywane karty.',
+    'UWAGA:',
+    `Czarodziejka i wszystkie jej karty (czary, kreatury, postaci) pochodzą ze świata ${heroWorld}.`,
+    `Nieprzyjaciel i wszystkie jego karty (czary, kreatury, postaci) pochodzą ze świata ${enemyWorld}.`,
+    '',
+    'Używaj w SKITach postaci z karty wystawionych na stole po obu stronach bitwy, ale NIE używaj nazw użytych kart MtG - postacie nazywaj/opisuj zgodnie z lore świata z którego pochodzą. Wyjątkiem są postaci graczy, których zawsze nazywaj Czarodziejką i Nieprzyjacielem.',
+    'SKIT: Czysty dialog postaci obecnych aktualnie w grze (najlepiej między postaciami powołanymi z kart, ale jeśli nie ma innej możliwości także między graczami). Nie używaj w nich meta-języka gry np. statystyk, nazw zdolności, counterów, tokenów itp. Skupiasz się na lore i relacjach!',
+    'Skity mają być naturalną rozmową. Mogą dotyczyć przeszłości, filozofii lub drobnych obserwacji, byle były zgodne z charakterem postaci.',
+    'Możliwe tematy to ich wzajemne relacje, filozofia, ich podejście do dowolnych tematów, obserwacje dotyczące okolicy, stan fizyczny, psychiczny, także przemyślenia, odniesienia do ich lore np. zwyczaje wyniesione z ich świata, jedzenie, spędzanie wolnego czasu, hobby, zainteresowania, pasje itp. itd.',
+    'Rozmowa może dotyczyć tematów codziennego życia, pracy, problemów świata postaci, ich najskrytszych pragnień, kompleksów, traum, ale także tego z czego bywają np. dumne czy co je bawi.',
+    'Rozmowa jest w 100% in-character w 100% oparta o lore ich świata, ich przekonaniach, pasjach.',
+    'W skicie oczywiście uwzględniaj stosunek postaci do siebie, historię ich znajomości - ale wszystko in-character i z AKCENTEM na postrzeganie rzeczywistości przez lore swojego świata.',
+    'WAŻNE! Bezwzględnie wymyślaj zróżnicowane tematy SKITów, bądź oryginalny. Każdy SKIT ma być inny i na inny temat.',
+    'Maksymalna długość sekcji SKIT to 250 słów.',
+    '',
+    'Przykład sekcji SKIT:',
+    '',
+    '**SKIT: RDZA I SĘPY**',
+    '',
+    '**Uczestnicy:** Garrek Żelaznoręki, Korveth-7, Corwin Wrończyk',
+    '',
+    '**Garrek:** [Opiera ciężki młot o ziemię, z trudem łapiąc oddech. Rdzawa krew miesza się ze smarem na jego brodzie. Łypie mrocznie na kruka siedzącego na ramieniu szeptacza] Zdejmij ze mnie te ptasie ślepia, poeto. Jeszcze nie jestem kupą złomu. Ta blacha przetrwała ostrzał artyleryjski u braciaków, więc przetrwa też to cholerne błoto.',
+    '',
+    '**Corwin:** [Siedzi w cieniu, spokojnie gładząc pióra Szepty. Jego bury płaszcz zlewa się z mrokiem bagien] Krew przyspiesza rdzewienie żelaza, rzeźniku. Wycieka z ciebie olej i życie w równych proporcjach. Moje wrony mają doskonały słuch. Słyszą, jak zębatki w twoim ciele powoli zgrzytają do zatrzymania.',
+    '',
+    '**Korveth-7:** [Przesuwa się ciężko, stając tak, by jego miedziane ramiona częściowo osłaniały Garreka. Soczewka na jego twarzy migocze słabym, gasnącym światłem] Diagnostyka wskazuje na krytyczne uszkodzenia strukturalne. Jednak funkcjonalność operacyjna zostaje zachowana. Maszyna nie zatrzymuje się, dopóki kryształ nie ulegnie całkowitej dezintegracji. Utrzymamy ten perymetr.',
+    '',
+    '**Garrek:** [Wybucha chrapliwym kaszlem, wypluwając ciemną ślinę w mech, po czym uśmiecha się krzywo do miedzianego konstrukta] Słyszysz to, ptasiarzu? Ja i ta puszka jedziemy na samych oparach i czystej złośliwości. Ty czekasz, aż ktoś ci rzuci darmowy ochłap prawdy do tego twojego notesiku, a my po prostu odmawiamy zdechnięcia.',
+    '',
+    '**Corwin:** Nikt z nas nie wybiera momentu, rzeźniku. Ja tylko dbam o to, by to, kim byliście, nie przepadło, gdy upadniecie twarzą w błoto.',
+    '',
+    '**Garrek:** [Uderza obuchem młota w dłoń, aż w zbroi zadudnią nity] Jeśli szukasz moich ostatnich słów, to możesz je sobie zapisać już teraz: "Nie zdejmiecie mi tych butów". A teraz trzymaj się z dala, zanim przerobię cię na mielonkę razem z twoim latającym inwentarzem.',
+  ].join('\n');
+}
 
 export function buildSkitPrompt(ctx) {
-  const { bot, deck, turnNo, history } = baseCtx(ctx);
+  const { bot, deck, world, heroDeck, heroWorld, turnNo, history } = baseCtx(ctx);
   return [
-    SKIT_BRIEF,
+    skitBrief({ heroWorld, enemyWorld: world }),
     '',
     '---',
     '',
-    `Twoja rozgrywka: Czarodziejka kontra ${bot} (talia „${deck}”). Komentowana tura: OSTATNIA (nr ${turnNo}).`,
+    `Twoja rozgrywka: Czarodziejka (talia „${heroDeck}”) kontra ${bot} (talia „${deck}”). Komentowana tura: OSTATNIA (nr ${turnNo}).`,
     'Log rozgrywki (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
     '',
     history,

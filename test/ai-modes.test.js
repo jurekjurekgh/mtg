@@ -12,6 +12,9 @@ const CTX = {
   deckTitle: 'Wiedźmin (BG)',
   deckKey: 'wiedzmin-bg',
   world: 'Wiedźmin',
+  heroDeckTitle: 'Rycerze (WU)',
+  heroDeckKey: 'rycerze-wu',
+  heroWorld: 'Kaldheim',
   turnNumber: 7,
   turnText: '**Tura 7 — Nieprzyjaciel**\n• coś się stało',
 };
@@ -117,11 +120,9 @@ test('AI-R4 modes lore-observer: klimat lore-bota, narracja z boku', () => {
   assert.ok(buildLoreObserverPrompt(null).includes('obserwatorem'));
 });
 
-test('AI-R4 modes skit: dokładny brief właściciela (światy, nagłówek, limit)', () => {
+test('AI-R4 modes skit: dokładny brief właściciela (nagłówek, limit, przykład)', () => {
   const prompt = buildSkitPrompt(CTX);
   assert.ok(prompt.includes('Tales of…'));
-  assert.ok(prompt.includes('Dominaria'));
-  assert.ok(prompt.includes('Zendikar'));
   assert.ok(prompt.includes('**SKIT: -tytuł-**'));
   assert.ok(prompt.includes('NIE używaj nazw użytych kart MtG'));
   assert.ok(prompt.includes('in-character'));
@@ -130,14 +131,28 @@ test('AI-R4 modes skit: dokładny brief właściciela (światy, nagłówek, limi
   assert.ok(prompt.includes('Garrek'));
 });
 
+test('AI-R4b modes skit: UWAGA niesie PRAWDZIWE światy obu talii (zero hardcode)', () => {
+  const prompt = buildSkitPrompt(CTX);
+  assert.ok(prompt.includes('pochodzą ze świata Kaldheim'));
+  assert.ok(prompt.includes('pochodzą ze świata Wiedźmin'));
+  assert.ok(!prompt.includes('Dominaria'), 'przykład właściciela nie może zostać');
+  assert.ok(!prompt.includes('Zendikar'), 'przykład właściciela nie może zostać');
+  // Fallback: brak światów = tytuły talii, nigdy „undefined”.
+  const bare = buildSkitPrompt({ deckTitle: 'T1', heroDeckTitle: 'T2' });
+  assert.ok(bare.includes('pochodzą ze świata T2'));
+  assert.ok(bare.includes('pochodzą ze świata T1'));
+  assert.ok(!buildSkitPrompt(null).includes('undefined'));
+});
+
 test('AI-R4 modes skit: kontekst rozgrywki (talia, tura, log) dopisany', () => {
   const prompt = buildSkitPrompt(CTX);
   assert.ok(prompt.includes('Wiedźmin (BG)'));
+  assert.ok(prompt.includes('Rycerze (WU)'));
   assert.ok(prompt.includes('nr 7'));
   assert.ok(prompt.includes('**Tura 7 — Nieprzyjaciel**'));
   assert.ok(prompt.includes('coś się stało'));
   assert.ok(!prompt.includes('undefined'));
-  assert.ok(buildSkitPrompt(null).includes('Dominaria'));
+  assert.ok(buildSkitPrompt(null).includes('(nieznany świat)'));
 });
 
 test('AI-R4 modes: dyspozytor 5 trybów (nieznany = bezpieczny lore)', () => {

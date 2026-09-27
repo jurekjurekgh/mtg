@@ -2719,6 +2719,10 @@ function bootstrapTable() {
         deckTitle: deckTitle(windowAllDecks[botKey] ?? repoDecks[botKey], botKey),
         deckKey: botKey,
         world: aiWorldOf(decks.get(BOT_ID)),
+        // AI-R4b: skity potrzebują PRAWDZIWYCH światów obu talii.
+        heroDeckTitle: deckTitle(windowAllDecks[humanKey] ?? repoDecks[humanKey], humanKey),
+        heroDeckKey: humanKey,
+        heroWorld: aiWorldOf(decks.get(HUMAN_ID)),
         gameId: `${seed}-${new Date().toISOString()}`,
       };
       aiQueue.reset();
