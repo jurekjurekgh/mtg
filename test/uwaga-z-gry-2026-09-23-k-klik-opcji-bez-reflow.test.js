@@ -69,7 +69,8 @@ test('K/3: żadna reguła :active przycisków/wierszy nie rusza geometrii', () =
 });
 
 test('K/4: pasek przewijania nie zwęża kolumny opisu (scrollbar-gutter: stable)', () => {
-  for (const selector of ['.actions-wrap', '.modal-body', '.drawer-body']) {
+  // AI-R2: `.ai-log` też ma cel tapnięcia (przycisk „Ponów”) — ten sam kontrakt.
+  for (const selector of ['.actions-wrap', '.modal-body', '.drawer-body', '.ai-log']) {
     const body = ruleBody(selector);
     assert.ok(body != null, `brak reguły ${selector}`);
     assert.match(body, /scrollbar-gutter:\s*stable/,

@@ -80,7 +80,10 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // zapobiegniętym trafieniu trigger odpalał się mimo 0 zadanych obrażeń
   // (bug złotej odznaki — spójność ze ścieżką niecombat dealNonCombatDamage).
   const before = state.events.length;
-  const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : amount;
+  // Batch60 (Revealing Wind): zwykła mgła zeruje WSZYSTKIE obrażenia combat
+  // (gracz i stwory, atakujący i blokujący) — przed filtrem Inspire Awe.
+  const fogAmount = state.preventAllCombatDamage ? 0 : amount;
+  const inspireAmount = isCombatDamagePreventedByInspire(state, source) ? 0 : fogAmount;
   // Batch 51 (Thunderstaff): prewencja STATYCZNA (obrońcy) przed tarczami
   // jednorazowymi (Withstand) — kolejność nie zmienia wyniku, ale zdarzenie
   // `damage_prevented` musi nieść ŹRÓDŁO prewencji, żeby log nie zrzucał
@@ -126,7 +129,8 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // źródło zadało combat damage, dostaje DODATKOWO N poison counterów
   // (życie spada normalnie — w odróżnieniu od infect). Tylko przy realnie
   // zadanych obrażeniach (prewencja w całości = brak poisonu).
-  if (actual > 0 && (source?.toxic ?? 0) > 0) {
+  // Xu-Ifit: toxic to zdolność źródła — po stripie nie truje.
+  if (actual > 0 && (source?.toxic ?? 0) > 0 && !source.abilitiesStripped) {
     events.push(...addPoisonCounters(state, targetPlayerId, source.toxic));
   }
   // Renown N (CR 702.112a, Akroan Sergeant): po ZADANIU combat damage
@@ -135,7 +139,8 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // obrażeniach (więc nie wpływają na ich rozmiar), a warunek `actual > 0`
   // odzwierciedla CR 702.112a — w pełni zapobiegnięte obrażenia to brak
   // „dealt combat damage", czyli brak renown (jak przy toxic wyżej).
-  if (actual > 0 && (source?.renown ?? 0) > 0 && source.zone === 'battlefield' && !source.renowned) {
+  // Xu-Ifit: renown to zdolność źródła — po stripie nie licznikuje.
+  if (actual > 0 && (source?.renown ?? 0) > 0 && source.zone === 'battlefield' && !source.renowned && !source.abilitiesStripped) {
     // M296 (uwaga C właściciela, ta sama klasa): counter_added z addCounter
     // musi jechać w strumieniu komendy — inaczej stół milczy o licznikach.
     const renownBefore = state.events.length;
@@ -251,6 +256,48 @@ export function mandatoryAttackerIds(state, playerId) {
     .map((object) => object.id);
 }
 
+/**
+ * Batch60 (Timely Interference — „blocks this turn if able"): LUSTRO
+ * `mandatoryAttackerIds` po stronie obrońcy. JEDNO źródło prawdy
+ * o blokerach wymuszonych (L41) — używane przez:
+ *   • ofertę `legalBlockerOptions` (każda opcja zawiera wymuszonych),
+ *   • walidację `declareBlockers` (pominięcie wymuszonego = odrzucenie),
+ *   • auto-deklarację rundy passów w `pass_priority` (jak znalezisko J —
+ *     spasowanie nie może pominąć wymuszonego bloku).
+ *
+ * „If able" (CR 509.1): wymuszony jest stwór ze znacznikiem `blocksIfAble`,
+ * który przechodzi filtr bloku (jak oferta: odkręcony, bez zakazów) i ma
+ * parowo-legalnego atakującego (canBlock). Dwa analogi wyjątku M270
+ * (deadlock: wymóg bez legalnego wykonania):
+ *   • „can't block alone" (CR 509.1c) jako jedyny zdolny — nie może blokować;
+ *   • WSZYSTKIE parowe opcje to atakujący z menace (CR 702.111b) przy
+ *     mniej niż 2 zdolnych — bloku nie da się złożyć legalnie.
+ */
+export function mandatoryBlockerIds(state, playerId) {
+  const attackers = state.combat?.attackers ?? [];
+  if (attackers.length === 0) return [];
+  // Zdolni do bloku w kolejności pola bitwy (determinizm jak u atakujących).
+  const able = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId
+      || object.kind !== 'creature' || object.tapped || creatureCantBlock(object, state)
+      || attachmentRestrictions(state, object).cantBlock) continue;
+    const options = attackers.filter((attackerId) => canBlock(state, state.objects.get(attackerId), object));
+    if (options.length === 0) continue;
+    able.push({ id, options });
+  }
+  return able
+    .filter(({ id, options }) => {
+      const object = state.objects.get(id);
+      if (object.blocksIfAble !== true) return false;
+      if (hasAloneRestriction(object, 'cantBlockAlone') && able.length < 2) return false;
+      if (able.length < 2 && options.every((attackerId) => hasKeyword(state, state.objects.get(attackerId), 'menace'))) return false;
+      return true;
+    })
+    .map(({ id }) => id);
+}
+
 export function declareAttackers(state, playerId, attackerIds, { pushToState = true, events: collectedEvents = null } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
@@ -299,7 +346,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   return e;
 }
 
-export function declareBlockers(state, playerId, assignments) {
+export function declareBlockers(state, playerId, assignments, { pushToState = true } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
   if (state.combat.attackingPlayerId === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
@@ -327,6 +374,22 @@ export function declareBlockers(state, playerId, assignments) {
     }
     blockers.set(attackerId, blockerIds.slice());
   }
+  // Batch60 („blocks if able", Timely Interference): lustro wymuszonych
+  // atakujących (znalezisko J) — pominięcie wymuszonego blokera jest
+  // nielegalne, CHYBA że żadna oferowana deklaracja nie pokrywa wszystkich
+  // wymuszonych (egzotyczny split restrykcji, np. menace × ewazje —
+  // „if able" zwalnia; ta sama reguła co w legalBlockerOptions, więc oferta
+  // i walidacja są zawsze zgodne (L48), także w trybie nad-cap).
+  const usedIds = new Set([...blockers.values()].flat());
+  const mandatory = mandatoryBlockerIds(state, playerId);
+  const missing = mandatory.filter((id) => !usedIds.has(id));
+  if (missing.length > 0) {
+    const satisfiable = legalBlockerOptions(state, playerId).some((assignment) => mandatory.every((id) =>
+      Object.values(assignment).some((ids) => ids.includes(id))));
+    if (satisfiable) {
+      throw new Error('Stwór z wymogiem bloku („blocks if able”) musi blokować w tym combacie');
+    }
+  }
   // M67 (Guildsworn Prowler): „if it wasn't blocking" — zadeklarowani blokerzy
   // dostają flagę (LKI przy śmierci; czyszczona w cleanup).
   for (const blockerIds of blockers.values()) {
@@ -348,7 +411,9 @@ export function declareBlockers(state, playerId, assignments) {
     for (const blockerId of blockerIds) cards[blockerId] = state.objects.get(blockerId)?.cardId ?? null;
   }
   const e = event('blockers_declared', { playerId, assignments, cards });
-  state.events.push(e);
+  // M257 (lustro declareAttackers): auto-deklaracja z `pass_priority` zbiera
+  // eventy lokalnie — natychmiastowy push przestawiłby kolejność w logu.
+  if (pushToState) state.events.push(e);
   return e;
 }
 
@@ -610,8 +675,23 @@ function singleBlockerFullAssignment(blockers, amount) {
 }
 
 /**
- * Domyślny (deterministyczny) przydział: lethal-first w kolejności deklaracji
- * bloków — dokładnie zachowanie sprzed M66 (boty biorą ten wariant).
+ * Domyślny (deterministyczny) przydział: ZABÓJSTWA O MAKSYMALNEJ WARTOŚCI.
+ *
+ * H (zgłoszenie właściciela 2026-09-25): lethal-first w kolejności deklaracji
+ * marnował obrażenia — 5 mocy w 4/3, 1/3, 1/2, 3/2 szło 3 w 4/3 (lethal) i 2
+ * w 1/3 (NIE-lethal — zmarnowane), choć 2 w 3/2 albo 1/2 dawało drugie
+ * zabójstwo. Podział między blokerów jest swobodny (CR 510.1c — walidator
+ * sprawdza wyłącznie permutację, sufit mocy i pełną sumę), więc kolejność
+ * deklaracji nie wiąże: domyślny plan zabija podzbiór o maksymalnej
+ * WARTOŚCI (power + toughness — jednostka „worth" jak w wycenie bota),
+ * po remisie — liczniejszy, po remisie — wcześniejszy w deklaracji
+ * (determinizm). Reszta (nie wystarcza na żaden kolejny lethal — inaczej
+ * podzbiór nie byłby optymalny): miękczy pierwszy NIEZABITY cel w kolejności
+ * deklaracji (znaczone obrażenia zostają na drugą turę / double strike),
+ * a gdy zabite WSZYSTKIE — overkill do ostatniego (konwencja E8/B3, pin).
+ * Przy trample nadwyżka ponad lethal WSZYSTKICH legalnie idzie na gracza
+ * (CR 702.19b); gdy mocy nie starcza na wszystkie lethal — całość w blokerów
+ * (jak dotąd — wymóg walidatora M101/B6).
  *
  * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): dopłata do lethal
  * blokera, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
@@ -629,9 +709,7 @@ function singleBlockerFullAssignment(blockers, amount) {
  * Bez kontekstu (wołania jednostkowe, helper W5) zachowanie dotychczasowe.
  */
 function defaultDamageAssignment(state, attacker, blockers, amount, context = null) {
-  const out = [];
-  let remaining = amount;
-  const trample = hasKeyword(state, attacker, 'trample');
+  const live = [];
   for (const blockerId of blockers) {
     const blocker = state.objects.get(blockerId);
     if (!blocker || blocker.zone !== 'battlefield') continue;
@@ -641,23 +719,81 @@ function defaultDamageAssignment(state, attacker, blockers, amount, context = nu
         ? 0
         : Math.max(0, need - damageAssignedToBlockerThisPass(state, context.pass, blockerId, attacker.id, context.assignments, true));
     }
-    const assigned = Math.min(remaining, need);
-    out.push({ blockerId, amount: assigned });
-    remaining -= assigned;
+    // Wartość celu jako usuwanego stwora: power + toughness (efektywne —
+    // z licznikami i efektami stałymi), ta sama jednostka „worth", którą
+    // bot wycenia removal (removalWorthWeight).
+    const worth = Math.max(0, effectivePower(blocker, state) ?? 0)
+      + Math.max(0, effectiveToughness(blocker, state) ?? 0);
+    live.push({ blockerId, need, worth });
   }
+  const trample = hasKeyword(state, attacker, 'trample');
+  const kill = chooseKillSet(live.map((e) => e.need), live.map((e) => e.worth), amount);
+  const out = [];
+  let spent = 0;
+  for (let i = 0; i < live.length; i += 1) {
+    const assigned = kill.has(i) ? live[i].need : 0;
+    out.push({ blockerId: live[i].blockerId, amount: assigned });
+    spent += assigned;
+  }
+  const remaining = amount - spent;
   // E8/B3 (wyzwanie wyłapywacza błędów, CR 510.1a): bez trample stwór zadaje
-  // CAŁĄ moc — lethal-first przy wielu blokerach gubił resztę (6 mocy vs
-  // 2/2 i 3/3 → 2+3=4). Reszta idzie do OSTATNIEGO blokera w kolejności
-  // (zwykła konwencja M66, spójna z CR 510.1c). Przy trample nadwyżka
-  // LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać.
-  if (remaining > 0 && out.length > 0 && !trample) {
-    // Reszta do OSTATNIEGO celu (konwencja E8/B3). Pomiar: reszta > 0 zachodzi
-    // tylko wtedy, gdy każdy cel dostał co najmniej swój (pomniejszony o pokrycie)
-    // lethal, więc wszystkie są już zgładzone i wybór celu reszty jest neutralny
-    // dla wyniku — bez martwej gałęzi „pierwszy niezgładzony".
-    out[out.length - 1].amount += remaining;
+  // CAŁĄ moc. Reszta nie wystarcza na żaden kolejny lethal (dowód: gdyby
+  // wystarczała, podzbiór nie byłby optymalny) — więc nikogo nie zabija i
+  // miękczy pierwszy niezabity cel (znaczone obrażenia przydają się przy
+  // double strike / w drugiej turze). Gdy zabite wszystkie — overkill do
+  // OSTATNIEGO (konwencja E8/B3). Przy trample nadwyżka ponad lethal
+  // wszystkich LEGALNIE zostaje dla obrońcy-gracza (CR 702.19b) — nie ruszać;
+  // ALE gdy mocy nie starcza na wszystkie lethal, reszta MUSI iść w blokerów
+  // (walidator M101/B6: suma < moc przy trample wymaga lethal wszędzie —
+  // inaczej `trample_blocker_below_lethal`).
+  if (remaining > 0 && out.length > 0 && (!trample || kill.size < live.length)) {
+    const firstSpared = out.findIndex((_, i) => !kill.has(i));
+    out[firstSpared >= 0 ? firstSpared : out.length - 1].amount += remaining;
   }
   return out;
+}
+
+/**
+ * H (zgłoszenie właściciela 2026-09-25): które cele zabić przydzialem mocy.
+ * Plecakowy wybór dokładny (2^n, n ≤ 16 — w walce blokerów jest garstka):
+ * maksymalna suma worth przy sumie potrzeb ≤ moc; remis → więcej zabitych;
+ * remis → mniejsza maska bitowa (wcześniejsze w deklaracji — determinizm).
+ * Powyżej 16 celów zachłannie (potrzeba rosnąco, wartość malejąco) — awaryjny
+ * spadek, w praktyce nieosiągalny (16 blokerów jednego atakującego).
+ * Zwraca zbiór indeksów do zabicia (każdy dostaje dokładnie swój lethal).
+ */
+function chooseKillSet(needs, worths, amount) {
+  const n = needs.length;
+  if (n > 16) {
+    const order = needs.map((need, i) => i).sort((a, b) =>
+      (needs[a] - needs[b]) || (worths[b] - worths[a]) || (a - b));
+    const kill = new Set();
+    let left = amount;
+    for (const i of order) {
+      if (needs[i] <= left) { kill.add(i); left -= needs[i]; }
+    }
+    return kill;
+  }
+  let best = { worth: 0, count: 0, mask: 0 };
+  for (let mask = 1; mask < (1 << n); mask += 1) {
+    let need = 0;
+    let worth = 0;
+    let count = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (mask & (1 << i)) { need += needs[i]; worth += worths[i]; count += 1; }
+    }
+    if (need > amount) continue;
+    // Ścisłe „lepiej" + rosnący przegląd masek = remisy wygrywa wcześniejszy
+    // w deklaracji (mniejsza maska) — determinizm bez tasowania.
+    if (worth > best.worth || (worth === best.worth && count > best.count)) {
+      best = { worth, count, mask };
+    }
+  }
+  const kill = new Set();
+  for (let i = 0; i < n; i += 1) {
+    if (best.mask & (1 << i)) kill.add(i);
+  }
+  return kill;
 }
 
 // ---- W3 (CR 510.1d): podział obrażeń BLOKERA między atakujących ------------------
@@ -1195,9 +1331,10 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     // Bloker o ujemnej mocy też zadaje 0 obrażeń (CR 510.1a).
     const blockerDamage = assignedById.has(attackerId) ? assignedById.get(attackerId) : amount;
     const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
-    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked;
+    const fogBlocked = state.preventAllCombatDamage ? blockerDamage : 0;
+    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked + fogBlocked;
     if (attackerFilterPrevented > 0) {
-      const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0 });
+      const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0, combatFog: fogBlocked > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
     }
     const shieldBefore = state.events.length;
@@ -1274,9 +1411,10 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     // Filtr „prevent all damage to ... this turn" (Ethersworn Shieldmage) —
     // kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
     const inspireAssigned = isCombatDamagePreventedByInspire(state, attacker) ? assigned : 0;
-    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned;
+    const fogAssigned = state.preventAllCombatDamage ? assigned : 0;
+    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned + fogAssigned;
     if (filterPrevented > 0) {
-      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0 });
+      const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0, combatFog: fogAssigned > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
     }
     // Tarcze prewencji (Withstand) kasują część obrażeń PRZED oznaczeniem —
@@ -1688,7 +1826,15 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
         .map((attackerId) => `${attackerId}=${assignment[attackerId].join(',')}`).join('|');
       if (!unique.has(key)) unique.set(key, assignment);
     }
-    return [...unique.values()].slice(0, cap);
+    // Batch60 („blocks if able"): lustro wymuszonych atakujących — każda
+    // opcja zawiera wymuszonych blokerów (jedno źródło: mandatoryBlockerIds).
+    // Gdy pokrycia nie ma (egzotyczny split restrykcji), „if able" zwalnia
+    // i oferta wraca do pełnej (walidacja stosuje tę samą regułę — L48).
+    const allOptions = [...unique.values()];
+    const forced = mandatoryBlockerIds(state, playerId);
+    const covered = forced.length === 0 ? allOptions : allOptions.filter((assignment) => forced.every((id) =>
+      Object.values(assignment).some((ids) => ids.includes(id))));
+    return (forced.length > 0 && covered.length === 0 ? allOptions : covered).slice(0, cap);
   }
   const options = [{}];
   for (const attackerId of attackers) {
@@ -1705,7 +1851,20 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
   }
   const free = blockers.slice();
   const greedy = {};
-  for (const attackerId of attackers) {
+  // Fix B (zgłoszenie właściciela 2026-09-27: bot przy 8 życiach nie chumpował
+  // 3/3, choć przeżycie wymagało bloku 4/5 + chumpa 3/3): gałąź nad-cap
+  // oferowała dokładnie JEDNO przypisanie wieloatakujące (greedy) i `break`
+  // przy pierwszym nieblokowalnym atakującym (tu: latający 7/5 zadeklarowany
+  // jako pierwszy) UBIJAŁ je w całości — bot fizycznie nie mógł zestawić
+  // bloku ratującego życie. `continue`: nieblokowalny atakujący nie przerywa
+  // pokrywania pozostałych. Kolejność wg zagrożenia (moc malejąco, stabilnie):
+  // gdy ciał jest mniej niż atakujących, wariant „kto pierwszy zadeklarowany,
+  // ten zablokowany" mógł zostawić największe zagrożenie odblokowane mimo
+  // istniejącego przeżycia — bot i tak wybiera spośród ofert wg punktacji
+  // (M146/M257), greedy ma tylko DAĆ mu pokrywający wariant.
+  const greedyOrder = [...attackers].sort((x, y) =>
+    (effectivePower(state.objects.get(y), state) ?? 0) - (effectivePower(state.objects.get(x), state) ?? 0));
+  for (const attackerId of greedyOrder) {
     const attacker = state.objects.get(attackerId);
     const menace = hasKeyword(state, attacker, 'menace');
     const needed = menace ? 2 : 1;
@@ -1715,7 +1874,7 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       if (blockerId === undefined) break;
       chosen.push(blockerId);
     }
-    if (chosen.length < needed) break; // nie da się legalnie zablokować (menace)
+    if (chosen.length < needed) continue; // nie da się legalnie zablokować (menace / brak ciał) — pokryj resztę
     // „Can't block alone" (Ember Beast): samotny bloker tego typu nie może
     // być zaoferowany — próbujemy dobrać partnera, a bez niego rezygnujemy.
     if (chosen.length === 1 && hasAloneRestriction(state.objects.get(chosen[0]), 'cantBlockAlone')) {
@@ -1766,7 +1925,13 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       options.push({ [attackerId]: set });
     }
   }
-  return options.slice(0, cap);
+  // Batch60 („blocks if able", tryb nad-cap): ten sam filtr co w gałęzi
+  // pełnej — best-effort (fallback heurystyczny może nie znać pokrycia;
+  // siatką bezpieczeństwa jest auto-deklaracja w pass_priority).
+  const forcedFallback = mandatoryBlockerIds(state, playerId);
+  const coveredFallback = forcedFallback.length === 0 ? options : options.filter((assignment) => forcedFallback.every((id) =>
+    Object.values(assignment).some((ids) => ids.includes(id))));
+  return (forcedFallback.length > 0 && coveredFallback.length === 0 ? options : coveredFallback).slice(0, cap);
 }
 
 /**
@@ -1792,6 +1957,82 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
  * wchodzi do puli, gdy istnieje PARTNER dający legalny zbiór — wizard i tak
  * waliduje cały zadeklarowany zbiór przed wysłaniem.
  */
+/**
+ * Batch60 („blocks if able"): MINIMALNE przypisanie pokrywające wymuszonych
+ * blokerów — dla auto-deklaracji rundy passów (lustro znaleziska J: spasowanie
+ * deklaruje same stwory wymuszone, opcjonalne przepadają). Najpierw dokładne
+ * pokrycie z ofert (najtańsze liczbą blokerów), nad-cap — zachłanne.
+ * Zwraca null, gdy pokrycia nie da się złożyć („if able" zwalnia).
+ */
+export function minimalMandatoryBlocks(state, playerId, forced) {
+  const covering = legalBlockerOptions(state, playerId)
+    .filter((assignment) => forced.every((id) => Object.values(assignment).some((ids) => ids.includes(id))));
+  if (covering.length > 0) {
+    const size = (assignment) => Object.values(assignment).reduce((n, ids) => n + ids.length, 0);
+    covering.sort((a, b) => size(a) - size(b));
+    return covering[0];
+  }
+  return greedyMandatoryBlocks(state, playerId, forced);
+}
+
+/**
+ * Zachłanne pokrycie wymuszonych blokerów (fallback nad-cap): każdy wymuszony
+ * pod pierwszego atakującego, u którego przechodzi pełny predykat
+ * (blockAssignmentViolation — warstwa parowa i zbioru); przy menace /
+ * „can't block alone" dobierany jest partner z puli zdolnych. Slotowanie
+ * jak w walidacji (blockSlotsFor). Deterministyczne (kolejność pola bitwy).
+ */
+function greedyMandatoryBlocks(state, playerId, forced) {
+  const attackers = state.combat?.attackers ?? [];
+  const pool = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId
+      || object.kind !== 'creature' || object.tapped || creatureCantBlock(object, state)
+      || attachmentRestrictions(state, object).cantBlock) continue;
+    if (blockSlotsFor(state, object) < 1) continue;
+    pool.push(id);
+  }
+  const assignments = {};
+  const used = new Map();
+  const placed = new Set();
+  const useCount = (id) => used.get(id) ?? 0;
+  const take = (attackerId, id) => {
+    assignments[attackerId] = [...(assignments[attackerId] ?? []), id];
+    used.set(id, useCount(id) + 1);
+    placed.add(id);
+  };
+  const tryPlace = (id, attackerId) => {
+    const attacker = state.objects.get(attackerId);
+    const current = assignments[attackerId] ?? [];
+    if (current.includes(id)) return true;
+    if (useCount(id) >= blockSlotsFor(state, state.objects.get(id))) return false;
+    if (blockAssignmentViolation(state, attacker, [...current, id]) === null) {
+      take(attackerId, id);
+      return true;
+    }
+    for (const partner of pool) {
+      if (partner === id || current.includes(partner)) continue;
+      if (useCount(partner) >= blockSlotsFor(state, state.objects.get(partner))) continue;
+      if (blockAssignmentViolation(state, attacker, [...current, id, partner]) === null) {
+        take(attackerId, id);
+        take(attackerId, partner);
+        return true;
+      }
+    }
+    return false;
+  };
+  for (const id of forced) {
+    if (placed.has(id)) continue; // dobrany wcześniej jako partner
+    let done = false;
+    for (const attackerId of attackers) {
+      if (tryPlace(id, attackerId)) { done = true; break; }
+    }
+    if (!done) return null;
+  }
+  return assignments;
+}
+
 export function blockCandidatePool(state, playerId) {
   const attackers = state.combat?.attackers ?? [];
   const pool = {};

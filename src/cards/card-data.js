@@ -2597,10 +2597,11 @@ export const REAL_CARDS = Object.freeze([
         // Temat 2: „you may have it deal damage to target creature" — cel
         // wybiera kontroler. Obrażenia = liczba artefaktów kontrolera źródła
         // (wartość dynamiczna 'artifacts_you_control').
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'enter_battlefield', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'damage', amount: 'artifacts_you_control' },
       }),
@@ -4489,10 +4490,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         trigger: {
           event: 'enter_battlefield',
           condition: { enteredUntapped: true },
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
         },
@@ -5032,10 +5034,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'beginning_of_combat', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'pump', power: 2, toughness: 0 },
       }),
@@ -5502,10 +5505,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       // Druga zdolność: „you may tap target creature" przy samotnym ataku.
       createAbility({
         type: ABILITY_TYPE.triggered,
-        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-        // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-        // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-        // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+        // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+        // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+        // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+        // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+        // odpowiedzi przeciwnika.
         trigger: { event: 'attacks_alone', mayFire: true, requiresTarget: { type: 'creature' } },
         effect: { type: 'tap_permanent' },
       }),
@@ -6776,6 +6780,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Fix A (2026-09-27): „you may” to flaga `may` na efektach trybów —
+  // pytanie Tak/Nie pada przy ROZSTRZYGANIU (generyczny mechanizm
+  // queueOptionalSpellEffect/resolve_optional_spell_effect), nie przy
+  // rzuceniu. Świadomy skrót (jak E): tap-vs-untap wybiera się przy
+  // rzuceniu (tryb), choć regułowo „or” rozstrzyga się razem z „may”
+  // przy rozstrzygnięciu (CR 608.2) — przeciwnik widzi wybór przed
+  // odpowiedzią; cel jest obowiązkowy już przy rzuceniu (CR 601.2c).
   // 6. Twiddle (8ED) {U} Instant — „You may tap or untap target artifact,
   //    creature, or land" (modalny wybór tap/untap).
   defineCard({
@@ -6789,12 +6800,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         {
           name: 'Tapnięcie',
           targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'tap_permanent' }],
+          effects: [{ type: 'tap_permanent', may: true }],
         },
         {
           name: 'Odkręcenie',
           targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'untap_permanent' }],
+          effects: [{ type: 'untap_permanent', may: true }],
         },
       ],
     },
@@ -10723,10 +10734,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'creature' },
         },
@@ -10876,10 +10888,11 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.triggered,
         trigger: {
           event: 'enter_battlefield',
-          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — cel jest
-          // OBOWIĄZKOWY przy kładzeniu na stos (gdy istnieje), a „may" rozstrzyga
-          // się przy rozstrzyganiu (mayFire → resolveDeferredChoice). Dawniej
-          // „optional" (allowNone) przenosiło odmowę na chwilę wyboru celu.
+          // Etap F (CR 603.5 + 603.3d): „you may [czasownik] target" — „may"
+          // rozstrzyga się przy rozstrzyganiu (mayFire). E (2026-09-25g): modal
+          // celu zawiera decline („Nie ... (you may)") — odmowa to SKRÓT
+          // (trigger nie idzie na stos); wybór celu = pełna procedura z oknem
+          // odpowiedzi przeciwnika.
           mayFire: true,
           requiresTarget: { type: 'aura_or_equipment_card_in_graveyard', controlledBy: 'controller' },
         },
@@ -12086,6 +12099,223 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 318, plan: 'Forgotten Realms',
     support: { status: 'supported', limitations: [] },
     notes: ['„Gates you control enter untapped" = statyk kontrolera (także dla Bram, które same wchodzą tapnięte — Dimir Guildgate, Manor Gate); druga zdolność daje unię kolorów produkowalnych przez kontrolowane Bramy (Basilisk Gate sam daje tylko {C}, więc jest niedostępna)'],
+  }),
+
+  // Batch60/1. Blossoming Sands (M20) — gainland G/W: wchodzi tapnięty,
+  // ETB +1 życia, {T}: Add {G} or {W}. Szablon 1:1 Dismal Backwater (M20).
+  defineCard({
+    id: 'blossoming-sands', name: 'Blossoming Sands', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {W}.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/31514c67-4c55-4f28-9872-08e4d9bc6505.jpg?1783932938',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'W'] },
+      }),
+    ],
+    artId: 149, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/2. Demolish (WAR) — {3}{R} sorcery: destroy target artifact
+  // or land. Gotowy cel `artifact_or_land` + `destroy_permanent`.
+  defineCard({
+    id: 'demolish', name: 'Demolish', set: 'WAR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Destroy target artifact or land.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/0/b00211dd-6dd7-40d9-80f3-f909f6d112db.jpg?1783933430',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'artifact_or_land' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 155, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/3. Renegade Tactics (CMR) — {R} sorcery: target can't block
+  // + cantrip. Gotowe `cant_block` (Panic Spellbomb) + `draw_cards`.
+  defineCard({
+    id: 'renegade-tactics', name: 'Renegade Tactics', set: 'CMR',
+    types: ['Sorcery'], colors: ['R'], manaCost: 1,
+    oracleText: 'Target creature can\'t block this turn.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/d/7dfa0e65-1ce0-4f8e-a78b-2ade2d25e748.jpg?1783928809',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'cant_block' },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 147, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/4. Trigon of Thought (SOM) — klon Trigon of Corruption:
+  // ETB 3 charge, {U}{U},{T}: +counter, {2},{T},-counter: draw.
+  defineCard({
+    id: 'trigon-of-thought', name: 'Trigon of Thought', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 5,
+    oracleText: 'This artifact enters with three charge counters on it.\n{U}{U}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/f/8/f8da37ba-52e3-417e-8d7b-6c3e060552a4.jpg?1783941692',
+    entersWithCounters: { charge: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, colors: ['U', 'U'] },
+        effect: { type: 'add_counter', counter: 'charge', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, removeCounter: { name: 'charge', amount: 1 } },
+        effect: { type: 'draw_cards', amount: 1 },
+      }),
+    ],
+    artId: 154, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/5. Stensia Innkeeper (EMN) — 3/3 Vampire za {3}{R}; ETB:
+  // tapnij land przeciwnika + skip jego następnego untapu (gotowe efekty
+  // `tap_permanent` + `dont_untap_next_untap_step`, nowy typ celu
+  // `land_opponent_controls` w triggers.js).
+  defineCard({
+    id: 'stensia-innkeeper', name: 'Stensia Innkeeper', set: 'EMN',
+    types: ['Creature'], subtypes: ['Vampire'], colors: ['R'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, tap target land an opponent controls. That land doesn\'t untap during its controller\'s next untap step.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee40c471-70c8-4171-a214-ce932c4c7e2e.jpg?1783937454',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'land_opponent_controls' },
+        },
+        effect: [{ type: 'tap_permanent' }, { type: 'dont_untap_next_untap_step' }],
+      }),
+    ],
+    artId: 144, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/6. Summary Judgment (RNA) — {1}{W} instant: 3 obrażenia
+  // w cel-tapnięty, Addendum (rzut we własnej main fazie) → 5 zamiast.
+  // Pierwsza karta mechaniki (flaga castDuringMainPhase w castSpell,
+  // bramka condition.addendum + amountIfAddendum w effects.js).
+  defineCard({
+    id: 'summary-judgment', name: 'Summary Judgment', set: 'RNA',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Summary Judgment deals 3 damage to target tapped creature.\nAddendum — If you cast this spell during your main phase, it deals 5 damage instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/0/c0b20fec-8373-4c6c-b3c1-ee7cff64dd37.jpg?1783933716',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'tapped_creature' }],
+      effects: [{ type: 'damage', amount: 3, amountIfAddendum: 5 }],
+    },
+    artId: 156, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/7. Timely Interference (DMU) — {U} instant, Kicker {1}{R}:
+  // -1/-0 do końca tury, kicked → blocks if able, cantrip. Pierwsza karta
+  // wymogu bloku (flaga blocksIfAble + mandatoryBlockerIds + walidacja
+  // i auto-deklaracja w combat.js — lustro znaleziska J).
+  defineCard({
+    id: 'timely-interference', name: 'Timely Interference', set: 'DMU',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    kicker: { cost: 2, colors: ['R'] },
+    oracleText: 'Kicker {1}{R} (You may pay an additional {1}{R} as you cast this spell.)\nTarget creature gets -1/-0 until end of turn. If this spell was kicked, that creature blocks this turn if able.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/1/017a3c6b-9a1e-403a-9c20-2360090d39ee.jpg?1783921342',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: -1, toughness: 0 },
+        { type: 'blocks_if_able_until_end_of_turn', condition: { wasKicked: true } },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 152, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // Batch60/8 (2026-09-27): Revealing Wind (151 DTK #197, Tarkir) — zwykła
+  // mgła + PRYWATNY podgląd zakrytych atakujących/blokujących.
+  defineCard({
+    id: 'revealing-wind', name: 'Revealing Wind', set: 'DTK',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Prevent all combat damage that would be dealt this turn. You may look at each face-down creature that\'s attacking or blocking.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/36bdd624-e412-4ec8-9929-e1f6b4720e82.jpg?1783938577',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [
+        { type: 'prevent_all_combat_damage_this_turn' },
+        { type: 'look_at_facedown_combatants' },
+      ],
+    },
+    artId: 151, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/9. Clone Shell (SOM) — {5} 2/2 Artifact Creature Shapeshifter.
+  // Imprint ETB: obejrzyj 4 z wierzchu, wygnaj 1 zakrytą (wiąże się ze
+  // źródłem, CR 400.7), resztę na spód w dowolnej kolejności (wariant
+  // rodziny pendingLookTopN: pickTo 'exile_face_down_linked', wybór
+  // obowiązkowy — ruling WotC 2020-08-07). Dies: odkryj wygnaną; stwór
+  // wchodzi na pole bitwy pod kontrolą kontrolera triggera.
+  defineCard({
+    id: 'clone-shell', name: 'Clone Shell', set: 'SOM',
+    types: ['Artifact', 'Creature'], subtypes: ['Shapeshifter'], colors: [],
+    power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Imprint — When this creature enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom of your library in any order.\nWhen this creature dies, turn the exiled card face up. If it\'s a creature card, put it onto the battlefield under your control.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/c/cc386c6c-c27e-4673-96eb-1d004fd71993.jpg?1783941712',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'look_top_exile_one_face_down_rest_bottom', amount: 4 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'turn_up_imprinted_card' }],
+      }),
+    ],
+    artId: 145, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch60/10. Xu-Ifit, Osteoharmonist (EOE) — {1}{B}{B} 2/3 Legendary Human
+  // Wizard; {T} (sorcery): reanimuj stwora z własnego grobu — wchodzi jako
+  // Skeleton (dodatkowo) bez zdolności (deskryptory `stripAbilities` +
+  // `addSubtypes` efektu `return_permanent_from_graveyard`; rulingi EOE
+  // 2025-07-25: ETB/„as enters" giną PRZED zastosowaniem, zdolności zyskane
+  // PÓŹNIEJ zostają).
+  defineCard({
+    id: 'xu-ifit-osteoharmonist', name: 'Xu-Ifit, Osteoharmonist', set: 'EOE',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Wizard'], colors: ['B'],
+    power: 2, toughness: 3, manaCost: 3,
+    oracleText: '{T}: Return target creature card from your graveyard to the battlefield. It\'s a Skeleton in addition to its other types and has no abilities. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/0/c0838f25-2193-4305-b73a-bf0c0bb4981a.jpg?1783905958',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        timing: 'sorcery',
+        targets: [{ type: 'creature_card_in_graveyard' }],
+        effect: [{ type: 'return_permanent_from_graveyard', stripAbilities: true, addSubtypes: ['Skeleton'] }],
+      }),
+    ],
+    artId: 148, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
   }),
 ]);
 

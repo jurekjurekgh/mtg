@@ -108,6 +108,10 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   const WARUNKOWE_SPOZA_PROBKI = new Set([
     'attachedTo', 'aura', 'equipment', 'bestow', 'saga', 'spell', 'name',
     'copyNumber', 'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
+    // Batch60 (Timely Interference): widok dokłada `blocksIfAble` tylko po
+    // rozstrzygnięciu wymogu bloku (jak `goaded`) — konstrukcyjnie:
+    // test/real-cards-batch60 (G1.7: flaga, oferty, auto-deklaracja).
+    'blocksIfAble',
     'saddled', 'untapLocked', 'dontUntapNextUntapStep', 'tempControlUntilEOT',
     // A4 (Balamb Garden, 2026-09-12): rozstrzygnięte crew (CR 702.122e) —
     // widok dokłada `crewed` tylko obsadzonemu pojazdowi (jak `saddled`),

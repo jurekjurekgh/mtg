@@ -1,0 +1,194 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { createAiQueue } from '../src/table/ai-queue.js';
+
+const tick = () => new Promise((resolve) => setImmediate(resolve));
+const deferred = () => {
+  let resolve;
+  const promise = new Promise((r) => { resolve = r; });
+  return { promise, resolve };
+};
+const harness = (transport) => {
+  const pendings = [];
+  const resolved = [];
+  const queue = createAiQueue({
+    transport,
+    onPending: (slot) => pendings.push(slot.id),
+    onResolved: (slot) => resolved.push(slot),
+  });
+  return { queue, pendings, resolved };
+};
+
+test('AI-E1 queue: późniejsza odpowiedź CZEKA na wcześniejszą (FIFO)', async () => {
+  const gates = [];
+  const { queue, pendings, resolved } = harness(() => {
+    const d = deferred();
+    gates.push(d);
+    return d.promise;
+  });
+  const a = queue.enqueue({ prompt: 'A', modelId: 'm' });
+  const b = queue.enqueue({ prompt: 'B', modelId: 'm' });
+  assert.deepEqual(pendings, [a, b]);
+  await tick(); // transport startuje asynchronicznie (fire-and-forget)
+  gates[1].resolve({ ok: true, text: 'B!' }); // B wraca pierwsze…
+  await tick(); await tick();
+  assert.equal(resolved.length, 0); // …ale render czeka na A
+  gates[0].resolve({ ok: true, text: 'A!' });
+  await tick(); await tick();
+  assert.deepEqual(resolved.map((s) => s.result.text), ['A!', 'B!']);
+});
+
+test('AI-E1 queue: błąd też zwalnia kolejkę (ścieżka błędu w kolejności)', async () => {
+  const gates = [];
+  const { queue, resolved } = harness(() => {
+    const d = deferred();
+    gates.push(d);
+    return d.promise;
+  });
+  queue.enqueue({ prompt: 'A', modelId: 'm' });
+  queue.enqueue({ prompt: 'B', modelId: 'm' });
+  await tick();
+  gates[0].resolve({ ok: false, error: 'boom' });
+  gates[1].resolve({ ok: true, text: 'B!' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 2);
+  assert.equal(resolved[0].result.ok, false);
+  assert.equal(resolved[1].result.text, 'B!');
+});
+
+test('AI-E1 queue: retry w tym samym slocie, nowy model, stary prompt', async () => {
+  const seen = [];
+  const { queue, pendings, resolved } = harness(async (req) => {
+    seen.push(req.modelId);
+    return seen.length === 1 ? { ok: false, error: 'padło' } : { ok: true, text: 'działa' };
+  });
+  const id = queue.enqueue({ prompt: 'ORYGINAŁ', modelId: 'stary' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 1);
+  assert.equal(queue.retry(id, { modelId: 'nowy' }), true);
+  assert.deepEqual(pendings, [id, id]);
+  await tick(); await tick();
+  assert.equal(resolved.length, 2);
+  assert.equal(resolved[1].id, id);
+  assert.equal(resolved[1].attempt, 2);
+  assert.equal(resolved[1].modelId, 'nowy');
+  assert.equal(resolved[1].prompt, 'ORYGINAŁ');
+  assert.deepEqual(seen, ['stary', 'nowy']);
+});
+
+test('AI-E1 queue: retry odrzuca obce/gotowe/w-locie', async () => {
+  const { queue } = harness(async () => ({ ok: true, text: 'x' }));
+  assert.equal(queue.retry(999, {}), false);
+  const id = queue.enqueue({ prompt: 'A', modelId: 'm' });
+  assert.equal(queue.retry(id, {}), false); // w locie, bez wyniku
+  await tick(); await tick();
+  assert.equal(queue.retry(id, {}), false); // sukces — nie ma czego ponawiać
+});
+
+test('AI-E1 queue: reset gubi spóźnione (nowa partia)', async () => {
+  const d = deferred();
+  const { queue, resolved } = harness(() => d.promise);
+  queue.enqueue({ prompt: 'A', modelId: 'm' });
+  queue.reset();
+  assert.equal(queue.pendingCount(), 0);
+  d.resolve({ ok: true, text: 'spóźnione' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 0);
+  assert.equal(queue.retry(1, {}), false);
+});
+
+test('AI-E1 queue: wyjątek transportu = błąd (normalizacja)', async () => {
+  const { queue, resolved } = harness(async () => { throw new Error('sieć padła'); });
+  queue.enqueue({ prompt: 'A', modelId: 'm' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 1);
+  assert.equal(resolved[0].result.ok, false);
+  assert.ok(resolved[0].result.error.includes('sieć padła'));
+});
+
+test('AI-R6 queue (A): retry scala metę + getSlot do odczytu', async () => {
+  const seen = [];
+  const transport = async (req) => {
+    seen.push(req);
+    return seen.length === 1 ? { ok: false, error: 'boom' } : { ok: true, text: 'ok' };
+  };
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: () => {} });
+  const id = queue.enqueue({ prompt: 'p', modelId: 'stary', meta: { turn: 4, modelLabel: 'stary', mode: 'lore-bot' } });
+  await new Promise((r) => setTimeout(r, 20));
+  const prev = queue.getSlot(id);
+  assert.ok(prev, 'slot widoczny po błędzie');
+  assert.equal(prev.meta.turn, 4);
+  assert.equal(queue.retry(id, { modelId: 'nowy', meta: { ...prev.meta, modelLabel: 'nowy' } }), true);
+  await new Promise((r) => setTimeout(r, 20));
+  assert.equal(seen[1].modelId, 'nowy', 'transport dostał nowy model');
+  assert.equal(seen[1].meta.modelLabel, 'nowy', 'transport dostał świeżą metę');
+  assert.equal(seen[1].meta.turn, 4, 'tura zachowana');
+  assert.equal(queue.getSlot(999), null, 'obcy slot = null');
+});
+
+test('AI-R6 queue (E): abort w locie = błąd „Przerwano” + slot do ponowienia', async () => {
+  let aborted = false;
+  const transport = (req) => new Promise((resolve, reject) => {
+    req.signal?.addEventListener('abort', () => {
+      aborted = true;
+      reject(new Error('abort-test'));
+    });
+  });
+  const resolved = [];
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: (s) => resolved.push(s) });
+  const id = queue.enqueue({ prompt: 'p', modelId: 'm', meta: null });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(queue.abort(999), false, 'obcy slot');
+  assert.equal(queue.abort(id), true, 'przerwano w locie');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(aborted, true, 'transport dostał abort');
+  assert.equal(resolved.length, 1, 'slot rozstrzygnięty błędem');
+  assert.equal(resolved[0].result.ok, false);
+  assert.ok(resolved[0].result.error.includes('abort-test') || resolved[0].result.error.includes('Przerwano'), resolved[0].result.error);
+  assert.equal(queue.abort(id), false, 'po rozstrzygnięciu już nie');
+});
+
+test('AI-R6 queue (E): reset ucina zapytania w locie', async () => {
+  let aborted = false;
+  const transport = (req) => new Promise(() => {
+    req.signal?.addEventListener('abort', () => { aborted = true; });
+  });
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: () => {} });
+  queue.enqueue({ prompt: 'p', modelId: 'm', meta: null });
+  await new Promise((r) => setTimeout(r, 10));
+  queue.reset();
+  assert.equal(aborted, true, 'kontroler w locie zabity przy resecie');
+});
+
+test('AI-R7 queue: enqueue niesie messages do transportu', async () => {
+  const seen = [];
+  const { queue, resolved } = harness(async (req) => {
+    seen.push(req);
+    return { ok: true, text: 'x' };
+  });
+  const messages = [{ role: 'user', content: 'tura 1' }, { role: 'assistant', content: 'ODP-1' }];
+  queue.enqueue({ prompt: 'tura 1', messages, modelId: 'm' });
+  await tick(); await tick();
+  assert.equal(resolved.length, 1);
+  assert.deepEqual(seen[0].messages, messages);
+  assert.deepEqual(resolved[0].messages, messages);
+});
+
+test('AI-R7 queue: retry bez messages trzyma oryginał, z messages podmienia', async () => {
+  const seen = [];
+  const { queue, resolved } = harness(async (req) => {
+    seen.push(req.messages ?? null);
+    return seen.length <= 2 ? { ok: false, error: 'padło' } : { ok: true, text: 'działa' };
+  });
+  const orig = [{ role: 'user', content: 'ORYG' }];
+  const id = queue.enqueue({ prompt: 'o', messages: orig, modelId: 'm' });
+  await tick(); await tick();
+  assert.equal(queue.retry(id, { modelId: 'm' }), true);
+  await tick(); await tick();
+  assert.deepEqual(seen[1], orig); // retry nie ruszył rozmowy
+  const next = [{ role: 'user', content: 'NOWA' }];
+  assert.equal(queue.retry(id, { messages: next }), true);
+  await tick(); await tick();
+  assert.deepEqual(seen[2], next);
+  assert.equal(resolved.length, 3);
+});

@@ -1,0 +1,37 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Xu-Ifit%2C%20Osteoharmonist&set=eoe",
+  "print": "Xu-Ifit, Osteoharmonist (EOE)",
+  "name": "Xu-Ifit, Osteoharmonist",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Legendary Creature — Human Wizard",
+  "oracle_text": "{T}: Return target creature card from your graveyard to the battlefield. It's a Skeleton in addition to its other types and has no abilities. Activate only as a sorcery.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "eoe",
+  "collector_number": "127",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/0/c0838f25-2193-4305-b73a-bf0c0bb4981a.jpg?1783905958"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [
+    {
+      "date": "2025-07-25",
+      "source": "wotc",
+      "comment": "If a permanent returned to the battlefield by Xu-Ifit's ability has an ability that triggers \"when\" it enters, it will lose that ability before it can trigger. If it has an ability that causes it to enter tapped, it will lose that ability before it can apply. The same is also true of any other abilities that modify how it enters the battlefield, such as abilities that would cause it to enter with some number of counters, or apply \"as\" it enters, such as Famished Worldsire's devour land ability."
+    },
+    {
+      "date": "2025-07-25",
+      "source": "wotc",
+      "comment": "If a permanent returned to the battlefield with Xu-Ifit's ability gains an ability after being returned to the battlefield this way, it will keep that ability."
+    }
+  ]
+}

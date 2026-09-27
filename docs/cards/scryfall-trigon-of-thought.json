@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Trigon%20of%20Thought&set=som",
+  "print": "Trigon of Thought (SOM)",
+  "name": "Trigon of Thought",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Artifact",
+  "oracle_text": "This artifact enters with three charge counters on it.\n{U}{U}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Draw a card.",
+  "colors": [],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "som",
+  "collector_number": "217",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/8/f8da37ba-52e3-417e-8d7b-6c3e060552a4.jpg?1783941692"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/som/217/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

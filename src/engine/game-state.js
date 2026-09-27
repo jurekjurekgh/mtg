@@ -20,8 +20,8 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -428,6 +428,15 @@ export function createGameState({ seed, players }) {
     delayedTriggers: [],
     // Inspire Awe: „Prevent all combat damage this turn except by enchanted/enchantment creatures" — flag do cleanup.
     preventCombatExceptEnchanted: false,
+    // Batch60 (Revealing Wind): zwykła mgła — „Prevent all combat damage
+    // that would be dealt this turn" (reset w cleanup, jak Inspire Awe).
+    preventAllCombatDamage: false,
+    // Batch60 (Revealing Wind): PRYWATNA wiedza o zakrytych kartach —
+    // objectId → [viewerId]. „You may look at…" nie odsłania
+    // kart przeciwnikowi, więc pamięć jest per-widz, nie eventem z nazwami.
+    // Trwa między turami (raz zobaczone = zapamiętane); wpis dla obiektu,
+    // który opuścił stół albo się obrócił, jest martwy i nieszkodliwy.
+    faceDownKnownBy: {},
     // Prewencja obrażeń „prevent all damage that would be dealt to ... this
     // turn\" (Ethersworn Shieldmage, CR 614 w minimalnym wymiarze): lista
     // generycznych filtrów celu ({ typesInclude, isCreature }); markDamage
@@ -509,6 +518,9 @@ export function createGameState({ seed, players }) {
     pendingEnterAsCopy: null,
     // „you may destroy all Equipment attached" — decyzja gracza (Awaken).
     pendingDestroyEquipment: null,
+    // Fix A/Twiddle (2026-09-27): generyczny „you may” efektu czaru
+    // (`effect.may` — pytanie Tak/Nie przed zastosowaniem efektu).
+    pendingOptionalSpellEffect: null,
     // M110 (storm, CR 702.40a): wybór nowych celów dla kopii czaru.
     pendingCopyTargets: null,
   };
@@ -1729,6 +1741,7 @@ function firstPendingDecision(state) {
   if (state.pendingOptionalTrigger) return { playerId: state.pendingOptionalTrigger.playerId, kind: 'optionalTrigger' };
   if (state.pendingEnterAsCopy) return { playerId: state.pendingEnterAsCopy.playerId, kind: 'enterAsCopy' };
   if (state.pendingDestroyEquipment) return { playerId: state.pendingDestroyEquipment.playerId, kind: 'destroyEquipment' };
+  if (state.pendingOptionalSpellEffect) return { playerId: state.pendingOptionalSpellEffect.playerId, kind: 'optionalSpellEffect' };
   if (state.pendingCopyTargets) return { playerId: state.pendingCopyTargets.playerId, kind: 'copyTargets' };
   // Ślepe wpisy celu triggera (źródło zniknęło, intervening-if nie zachodzi)
   // nie blokują gry — pierwszy ŻYWY wpis przejmuje priorytet (jak delirium).
@@ -2689,6 +2702,47 @@ export function execute(state, input) {
     const pending = state.pendingLookTopN;
     const pickId = cmd.cardId;
     if (!pending.objectIds.includes(pickId)) return reject('illegal_look_top_choice');
+    // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta idzie do
+    // wygnania ZAKRYTA + wiąże się ze źródłem (CR 400.7, wzorzec Pyxis),
+    // NIE do ręki. Reszta na spód z bottomOrder (jak Dockhand, M177/E).
+    // Wybór obowiązkowy (ruling WotC 2020-08-07) — walidacja wyżej odrzuca
+    // null, oferta nie zawiera rezygnacji.
+    if (pending.pickTo === 'exile_face_down_linked') {
+      const exileId = `exile-${state.objectSequence++}`;
+      const movedExile = moveObjectDirectly(state, pickId, 'exile', exileId, { exiledBy: pending.sourceCardId ?? null });
+      state.objects.set(exileId, Object.freeze({ ...movedExile, faceDown: true }));
+      const linkSource = state.objects.get(pending.sourceId);
+      if (linkSource) {
+        state.objects.set(pending.sourceId, Object.freeze({ ...linkSource, exiledCardIds: [...(linkSource.exiledCardIds ?? []), exileId] }));
+      }
+      state.events.push(event('object_exiled', {
+        fromId: pickId, objectId: exileId, object: state.objects.get(exileId),
+        playerId: pending.playerId, faceDown: true,
+      }));
+      const restImprint = pending.objectIds.filter((id) => id !== pickId);
+      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : restImprint;
+      if (bottomOrder.length !== restImprint.length || new Set(bottomOrder).size !== bottomOrder.length
+        || bottomOrder.some((id) => !restImprint.includes(id))) {
+        return reject('illegal_look_top_bottom_order');
+      }
+      const bottomSet = new Set(bottomOrder);
+      state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
+      for (const id of bottomOrder) {
+        state.events.push(event('object_moved', { fromId: id, object: state.objects.get(id), fromZone: 'library', toZone: 'library', toBottom: true, looked: true }));
+      }
+      state.pendingLookTopN = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      state.events.push(event('look_top_resolved', {
+        playerId: pending.playerId, count: pending.objectIds.length, pickId,
+        // Wygnana zakryta — tożsamość NIE jest publiczna (null; opis mówi
+        // „kartę”, decydent zna ją z modala).
+        pickCardId: null, restTo: 'library_bottom', pickTo: 'exile_face_down_linked',
+      }));
+      const resolvedImprint = state.events.slice(state.events.length - (restImprint.length + 2));
+      return accepted(state, cmd, { ok: true, events: resolvedImprint });
+    }
     // Wybrana karta do ręki; reszta do grobu (kolejność wierzchu zachowana).
     const handId = `hand-${state.objectSequence++}`;
     const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
@@ -4249,6 +4303,41 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
+  // Fix A/Twiddle (2026-09-27): generyczny „you may” efektu czaru — Tak
+  // stosuje zapisany efekt do zapisanych celów, Nie go pomija; w obu
+  // wariantach czar jest wznawiany (resumeSuspendedSpell niesie też kontekst
+  // modalny, więc nazwa trybu ląduje w logu jak dotąd).
+  if (state.pendingOptionalSpellEffect) {
+    if (cmd.type !== 'resolve_optional_spell_effect') return reject('optional_spell_effect_unresolved');
+    if (cmd.playerId !== state.pendingOptionalSpellEffect.playerId) return reject('optional_spell_effect_not_your_decision');
+    const pending = state.pendingOptionalSpellEffect;
+    const before = state.events.length;
+    state.pendingOptionalSpellEffect = null;
+    if (cmd.apply) {
+      const source = state.objects.get(pending.sourceId) ?? null;
+      const list = pending.modeIndex != null
+        ? (source?.spell?.modes?.[pending.modeIndex]?.effects ?? [])
+        : (pending.cleaved
+          ? (source?.spell?.cleave?.effects ?? source?.spell?.effects ?? [])
+          : (source?.spell?.effects ?? []));
+      const effect = list[pending.effectIndex] ?? { type: pending.effectType };
+      if (source && source.zone === 'stack') applyEffect(state, { ...effect, may: false }, source, [...pending.targetIds]);
+    }
+    state.events.push(event('optional_spell_effect_resolved', {
+      playerId: pending.playerId, sourceCardId: pending.sourceCardId,
+      effectType: pending.effectType, targetId: pending.targetIds[0] ?? null, apply: Boolean(cmd.apply),
+    }));
+    const resolvedEvents = state.events.slice(before);
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
+    }
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   // Oczekująca decyzja CELU triggera (Temat 2): kontroler wskazuje cel —
   // kandydaci liczeni dynamicznie w chwili wyboru (jak delirium/mentor);
   // allowNone pozwala odmówić („up to one"/„you may").
@@ -4344,11 +4433,16 @@ export function execute(state, input) {
     // Trigger odpala się przy legalnym źródle. Odmowa celu (chosen === null):
     // - „you may ... When you do, ..." (requiresTarget.optional — Kappa,
     //   Reclusive Artificer, Jill): cała zdolność odrzucona (nic nie odpala);
+    // - „you may [czasownik] target" (mayFire — E, zgłoszenie 2026-09-25g):
+    //   decline w modalu celu to SKRÓT wynikowo równoważny (CR 603.3d/603.5
+    //   — patrz ANEKS_2026-09-25g_ef; strażnik katalogu:
+    //   `you-may-decline-straznik.test.js`): cała zdolność odrzucona;
     // - „up to one" w obowiązkowym triggerze (Greatsword): trigger odpala
     //   z celami stałymi (licznik na nosicielu), a efekty z targetIndex
     //   wskazującym null są pomijane przez applyEffect.
     const specOptional = Boolean(pending.ability?.trigger?.requiresTarget?.optional);
-    if (sourceLegal && (chosen !== null || !specOptional)) {
+    const mayFire = pending.ability?.trigger?.mayFire === true;
+    if (sourceLegal && (chosen !== null || (!specOptional && !mayFire))) {
       // T6: wybrany cel wędruje z triggerem na STOS — rozstrzyga się po passach.
       const queuedTrigger = queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
       // M258/F3 — WARD (CR 702.21): zdolność triggerowana z celem w
@@ -5425,7 +5519,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingOptionalSpellEffect && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else if (state.turn.step === 'combat_damage' && state.combat && state.combat.attackers.length > 0) {
@@ -5455,6 +5549,21 @@ export function execute(state, input) {
           const forced = mandatoryAttackerIds(state, state.turn.activePlayerId);
           if (forced.length > 0) {
             events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false, events }));
+          }
+        }
+        // Batch60 („blocks if able", Timely Interference): lustro znaleziska J
+        // po stronie obrońcy — runda passów nie pomija wymuszonych bloków.
+        // Deklaracja komendą ZAWSZE wychodzi z kroku (declare_blockers
+        // przechodzi do combat_damage), więc zastany declare_blockers z pustą
+        // mapą = brak deklaracji; składamy minimalne pokrycie wymuszonych.
+        if (state.turn.step === 'declare_blockers' && state.combat && (state.combat.blockers?.size ?? 0) === 0) {
+          const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
+          const forcedBlockers = mandatoryBlockerIds(state, defenderId);
+          if (forcedBlockers.length > 0) {
+            const assignments = minimalMandatoryBlocks(state, defenderId, forcedBlockers);
+            if (assignments) {
+              events.push(declareBlockers(state, defenderId, assignments, { pushToState: false }));
+            }
           }
         }
         // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
@@ -5566,6 +5675,8 @@ export function execute(state, input) {
           // w cleanup razem z grantami i modyfikatorami (CR 514.2).
           state.preventDamageThisTurn = [];
           state.preventCombatExceptEnchanted = false;
+          // Batch60 (Revealing Wind): mgła „this turn" wygasa w cleanup (CR 514.2).
+          state.preventAllCombatDamage = false;
           // Tarcze prewencji „this turn" (Withstand) wygasają w cleanup.
           state.damageShields = [];
           // Tarcze regeneracji (CR 701.19a — „this turn") wygasają w cleanup.
@@ -6257,11 +6368,15 @@ export function playerView(state, playerId) {
         };
       }
       if (zone === 'battlefield') {
+        // Batch60 (Revealing Wind): widz, który PRAWNIE obejrzał zakrytą kartę
+        // („you may look at…"), pamięta jej tożsamość — widok
+        // odsłania mu ją tak jak kontrolerowi. Dla pozostałych mgła wojny.
+        const knowsFaceDown = ((state.faceDownKnownBy ?? {})[object.id] ?? []).includes(playerId);
         const entry = {
           id: object.id,
           // Face-down permanent ukrywa tożsamość przed przeciwnikiem (FoW);
           // kontroler zna swoją kartę.
-          cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
+          cardId: object.faceDown && object.controllerId !== playerId && !knowsFaceDown ? null : object.cardId,
           // M155 (audyt żywym testerem): tokeny (Treasure, Squirrel, Wizard...)
           // niosą JAWNĄ nazwę w `object.name` (cardId to `token_*` spoza
           // rejestru, więc nameOf(cardId) zwraca surowy id „token_squirrel").
@@ -6292,7 +6407,7 @@ export function playerView(state, playerId) {
         // deskryptor morpha (z kolorami i kosztem obrócenia) — po nich kartę
         // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
         // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
-        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId && !knowsFaceDown;
         // M149 (uwaga właściciela): mana value (koszt many) permanentu na polu
         // bitwy to informacja publiczna wydrukowana na karcie — bot potrzebuje
         // jej do wyceny wymiany (np. Bone Splinters: porównanie TMC ofiary
@@ -6396,7 +6511,7 @@ export function playerView(state, playerId) {
         // prewencji typu „artifact creatures" ani odróżnić artefaktu od
         // enchantmentu. Face-down permanent ukrywa tożsamość (CR 708.2):
         // dla przeciwnika jest bezimiennym stworem 2/2 bez linii typów.
-        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId)) {
+        if (object.types?.length && !(object.faceDown && object.controllerId !== playerId && !knowsFaceDown)) {
           entry.types = [...object.types];
         }
         if (object.faceDown) entry.faceDown = true;
@@ -6408,6 +6523,9 @@ export function playerView(state, playerId) {
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;
+        // Batch60 („blocks if able" — Timely Interference): wymóg bloku to
+        // informacja publiczna (badge + boty; lustro goad).
+        if (object.blocksIfAble === true) entry.blocksIfAble = true;
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
         // a render liczy z nich badge'e („nie może blokować", „nie do
@@ -6881,6 +6999,7 @@ export function playerView(state, playerId) {
   const activeOptionalTrigger = state.pendingOptionalTrigger && state.pendingOptionalTrigger.playerId === playerId;
   const activeEnterAsCopy = state.pendingEnterAsCopy && state.pendingEnterAsCopy.playerId === playerId;
   const activeDestroyEquipment = state.pendingDestroyEquipment && state.pendingDestroyEquipment.playerId === playerId;
+  const activeOptionalSpellEffect = state.pendingOptionalSpellEffect && state.pendingOptionalSpellEffect.playerId === playerId;
   const activeCopyTargets = state.pendingCopyTargets && state.pendingCopyTargets.playerId === playerId;
   const activeOpponentTarget = state.pendingOpponentTarget && state.pendingOpponentTarget.playerId === playerId;
   const triggerTargetHead = state.pendingTriggerTargets[0] ?? null;
@@ -7396,6 +7515,16 @@ export function playerView(state, playerId) {
     // Awaken: destroy:true pierwsze (dotychczasowe auto-TAK / boty).
     legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: true }));
     legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: false }));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalSpellEffect) {
+    // Fix A/Twiddle: apply:true pierwsze (boty/auto-TAK jak przy destroy).
+    const mayPending = state.pendingOptionalSpellEffect;
+    const mayInfo = {
+      effectType: mayPending.effectType ?? null,
+      targetId: mayPending.targetIds?.[0] ?? null,
+      sourceCardId: mayPending.sourceCardId ?? null,
+    };
+    legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: true, ...mayInfo }));
+    legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: false, ...mayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeTriggerTarget) {
     // Temat 2 — cel triggera wybiera kontroler: kandydaci w kolejności dawnej
     // polityki (pierwszy = dawny wybór deterministyczny — boty biorą pierwszą
@@ -7955,9 +8084,10 @@ export function playerView(state, playerId) {
     legalCommands.push(command('resolve_optional_draw', playerId, { draw: true }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDamageAssignment) {
     // M66 (R): rozdzielanie obrażeń — DOKŁADNIE JEDEN wariant (deterministyczny
-    // default = lethal-first w kolejności deklaracji, obecne zachowanie botów).
-    // Kombinacji nie enumerujemy; gracz-człowiek dostaje wizard w UI, który
-    // buduje własną, walidowaną przez execute komendę (CR 510.1c/d).
+    // default = zabójstwa o maksymalnej wartości, H/2026-09-25 — obecne
+    // zachowanie botów). Kombinacji nie enumerujemy; gracz-człowiek dostaje
+    // wizard w UI (start z tego samego planu — jedno źródło), który buduje
+    // własną, walidowaną przez execute komendę (CR 510.1c/d).
     legalCommands.push(command('resolve_damage_assignment', playerId, {
       assignments: buildDefaultDamageAssignments(state),
     }));
@@ -8618,6 +8748,11 @@ export function playerView(state, playerId) {
     // na polu bitwy), ten sam wzorzec co pendingManifestDread/pendingSatyrLook.
     sourceCardId: state.pendingLookTopN.sourceCardId ?? null,
     count: state.pendingLookTopN.objectIds.length,
+    // Batch60/9 (Clone Shell): wariant decyzji — dokąd idzie wybrana karta
+    // ('hand' albo 'exile_face_down_linked'). Informacja publiczna (typ
+    // decyzji, nie tożsamość kart) — UI i bot rozgałęziają po niej etykiety
+    // i wycenę (ADR 0002 — bez nazw kart w warstwie opisu).
+    pickTo: state.pendingLookTopN.pickTo ?? 'hand',
     cards: state.pendingLookTopN.playerId === playerId
       ? state.pendingLookTopN.objectIds.map((id) => {
         const object = state.objects.get(id);
@@ -8891,6 +9026,10 @@ export function playerView(state, playerId) {
       return head ? Object.freeze({
         playerId: head.playerId, sourceId: head.sourceId, cardId: head.cardId ?? null,
         allowNone: Boolean(head.allowNone), candidateIds: [...(head.candidates ?? [])],
+        // E (2026-09-25g): „you may [verb] target" — decline w modalu celu
+        // ma własne brzmienie („Nie tapuj nikogo (you may)"), inne niż
+        // odmowa „up to one"; render.js rozróżnia po tej fladze.
+        mayFire: head.ability?.trigger?.mayFire === true,
         // M172/B: rozdział Sagi ma effect: [] — typ efektu z extra; tytuł
         // rozdziału (Mesmerize/Cold Snap) dla modala wyboru celu.
         effectType: ((Array.isArray(head.ability?.effect) ? head.ability.effect[0]?.type : head.ability?.effect?.type) ?? null)
@@ -8919,6 +9058,14 @@ export function playerView(state, playerId) {
       && state.pendingDestroyEquipment.playerId === playerId)
       ? { targetId: state.pendingDestroyEquipment.targetId }
       : null,
+    // Fix A/Twiddle: tryb i cel wybrano przy rzuceniu (strefa publiczna) —
+    // efekt z `may` jest więc jawny dla obu graczy (jak optionalDraw).
+    pendingOptionalSpellEffect: state.pendingOptionalSpellEffect ? {
+      playerId: state.pendingOptionalSpellEffect.playerId,
+      sourceCardId: state.pendingOptionalSpellEffect.sourceCardId,
+      effectType: state.pendingOptionalSpellEffect.effectType,
+      targetIds: [...(state.pendingOptionalSpellEffect.targetIds ?? [])],
+    } : null,
     pendingMoonlitChoice: (state.pendingMoonlitChoice
       && state.pendingMoonlitChoice.playerId === playerId)
       ? {
@@ -8932,6 +9079,9 @@ export function playerView(state, playerId) {
       playerId: state.pendingOptionalDraw.playerId,
       sourceCardId: state.pendingOptionalDraw.sourceCardId,
     } : null,
+    // PMSSB-3/F-mysteries: czy kontroler zagral lad w tej turze (info jawne —
+    // lady widac na polu; do warunku landEnteredThisTurn w wycenie).
+    landEnteredThisTurn: (state.landEnteredThisTurn?.[playerId] ?? 0) > 0,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
     pendingDiscardChoice: activeDiscardChoice ? {
       count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count
@@ -9029,6 +9179,9 @@ export function playerView(state, playerId) {
     // możliwości zauważyć, że jego atak zada 0 obrażeń — i wysyłał stwory
     // do bezwartościowego ataku, tapując je (zgłoszenie właściciela).
     preventCombatExceptEnchanted: Boolean(state.preventCombatExceptEnchanted),
+    // Batch60 (Revealing Wind): zwykła mgła też jest faktem publicznym —
+    // bot musi widzieć, że jego atak zada 0 (lustro M91/A).
+    preventAllCombatDamage: Boolean(state.preventAllCombatDamage),
     // M92 (audyt wzorca M91/A1): pozostałe PUBLICZNE efekty prewencji
     // i regeneracji też muszą być w widoku — bez nich kontroler pali removal
     // w cel, który i tak przeżyje, i nie widzi, że jego stwór jest w tej

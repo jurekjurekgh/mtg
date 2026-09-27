@@ -1,0 +1,66 @@
+{
+  "artist": "Phill Simmer",
+  "cmc": 3.0,
+  "collector_number": "197",
+  "colors": [
+    "G"
+  ],
+  "digital": false,
+  "edhrec_rank": 24513,
+  "finishes": [
+    "nonfoil",
+    "foil"
+  ],
+  "flavor_text": "\"The sands obscure the vision of others, but clarify ours.\"\n—Faiso, Dromoka commander",
+  "foil": true,
+  "frame": "2015",
+  "games": [
+    "paper",
+    "mtgo"
+  ],
+  "id": "36bdd624-e412-4ec8-9929-e1f6b4720e82",
+  "illustration_id": "90b88044-b3d8-46b6-b0dd-6a580fbf77b4",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/6/36bdd624-e412-4ec8-9929-e1f6b4720e82.jpg?1783938577"
+  },
+  "keywords": [],
+  "lang": "en",
+  "legalities": {
+    "commander": "legal",
+    "modern": "legal",
+    "pauper": "legal",
+    "pioneer": "legal"
+  },
+  "mana_cost": "{2}{G}",
+  "mtgo_id": 56286,
+  "multiverse_ids": [
+    394665
+  ],
+  "name": "Revealing Wind",
+  "nonfoil": true,
+  "object": "card",
+  "oracle_id": "905a6d6c-5ef8-4afa-89bb-9d85a854743f",
+  "oracle_text": "Prevent all combat damage that would be dealt this turn. You may look at each face-down creature that's attacking or blocking.",
+  "prices": {
+    "eur": "0.07",
+    "usd": "0.05"
+  },
+  "rarity": "common",
+  "released_at": "2015-03-27",
+  "reprint": false,
+  "rulings": [
+    {
+      "comment": "You can cast Revealing Wind even if there are no face-down creatures attacking or blocking. The damage-prevention effect will still apply.",
+      "oracle_id": "905a6d6c-5ef8-4afa-89bb-9d85a854743f",
+      "published_at": "2015-02-25",
+      "source": "wotc"
+    }
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "set_type": "expansion",
+  "tcgplayer_id": 96730,
+  "type_line": "Instant",
+  "source": "https://api.scryfall.com/cards/named?exact=revealing+wind&set=dtk&format=json",
+  "rulingsSource": "https://api.scryfall.com/cards/36bdd624-e412-4ec8-9929-e1f6b4720e82/rulings"
+}

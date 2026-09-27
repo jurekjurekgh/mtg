@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Blossoming%20Sands&set=m20",
+  "print": "Blossoming Sands (M20)",
+  "name": "Blossoming Sands",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {W}.",
+  "colors": [],
+  "color_identity": [
+    "G",
+    "W"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "collector_number": "243",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/1/31514c67-4c55-4f28-9872-08e4d9bc6505.jpg?1783932938"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/243/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

@@ -402,6 +402,9 @@ function defaultBotFactory(seed, ctx) {
     put_graveyard_card_on_bottom: 'karta z grobu na spód biblioteki',
     put_multicolored_creature_from_hand: 'wprowadzenie wielokolorowego stwora z ręki',
     regenerate: 'regeneracja',
+    // Batch60/Xu-Ifit: pierwsza ZDOLNOŚĆ AKTYWOWANA na tym efekcie (strażnik
+    // M255/C1) — opis generyczny, współdzielony z czarami/triggerami reanimacji.
+    return_permanent_from_graveyard: 'powrót karty stwora z grobu na pole bitwy',
     return_to_battlefield_tapped: 'powrót karty na pole bitwy (tapnięta)',
     return_to_battlefield_under_control_at_upkeep: 'powrót karty na pole bitwy pod twoją kontrolą (podtrzymanie)',
     search_library_to_battlefield_tapped: 'szukanie karty — na pole bitwy tapniętą',
@@ -923,6 +926,8 @@ const DRUGA_OSOBA = Object.freeze({
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
   dzieli: 'dzielisz', manifestuje: 'manifestujesz',
+  // Fix A/Twiddle: log decyzji may czaru.
+  decyduje: 'decydujesz', stosuje: 'stosujesz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -931,6 +936,8 @@ const DRUGA_OSOBA = Object.freeze({
   przygotowuje: 'przygotowujesz', płaci: 'płacisz', rezygnuje: 'rezygnujesz',
   // M355 (Crumb and Get It): „przy rzucie czaru obiecujesz dar przeciwnikowi".
   obiecuje: 'obiecujesz',
+  // Batch60 (Revealing Wind): pusty podgląd („X rozgląda się… — nie ma na co patrzeć").
+  rozgląda: 'rozglądasz',
   rozdziela: 'rozdzielasz', rozstrzyga: 'rozstrzygasz', rzuca: 'rzucasz',
   szuka: 'szukasz', tworzy: 'tworzysz', układa: 'układasz', używa: 'używasz',
   // Batch 59 (Memory's Journey): „ty tasuje bibliotekę" → „tasujesz".
@@ -1354,7 +1361,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // gracz wiedział, DLACZEGO obrażenia nie doszły (nie tylko „zniwelowane").
         let reason = '';
         if (e.protection) reason = ' (ochrona przed kolorem)';
-        else if (e.inspireAwe) reason = ' (prewencja obrażeń bojowych)';
+        else if (e.inspireAwe || e.combatFog) reason = ' (prewencja obrażeń bojowych)';
         else if (e.shield) reason = ' (tarcza prewencji)';
         else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
@@ -1393,7 +1400,20 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${nameOf(e.cardId)}: tarcza chroni ${targetName} przed ${e.remaining} kolejnymi obrażeniami`;
       }
       case 'permanent_animation_ended': return `${nameOfObject(e.objectId)} przestaje być stworzeniem (animacja źródła dobiegła końca)`;
-      case 'damage_prevention_started': return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
+      case 'damage_prevention_started': {
+        // Batch60 (Revealing Wind): zwykła mgła nie ma „chronionych
+        // obiektów" — niweluje WSZYSTKIE obrażenia bojowe.
+        if (e.combatFog) return `${nameOf(e.cardId)}: mgła bojowa — obrażenia bojowe będą niwelowane do końca tury`;
+        return `${nameOf(e.cardId)}: obrażenia zadawane ${e.filterDescription ?? 'chronionym obiektom'} będą niwelowane do końca tury`;
+      }
+      // Batch60 (Revealing Wind): „you may look at…" — log mówi TYLKO, że
+      // gracz obejrzał zakryte stwory (podgląd jest prywatny).
+      // Nazwy kart poznał wyłącznie rzucający (pamięć faceDownKnownBy).
+      case 'facedown_looked_at': {
+        const count = (e.objectIds ?? []).length;
+        if (count === 0) return `${whoN(e.playerId)} rozgląda się za zakrytymi stworami w walce — nie ma na co patrzeć`;
+        return `${whoN(e.playerId)} ogląda zakryte stwory w walce (${nameOf(e.cardId)})`;
+      }
       case 'creature_destroyed': {
         // A/D (2026-08-11): w momencie rozstrzygnięcia walki obiekt ma NOWE id
         // w grobie (moveObjectDirectly), więc nameOfObject(fromId) zwracał „?".
@@ -1779,6 +1799,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const restLabel = e.restTo === 'library_bottom'
           ? 'reszta na spód biblioteki'
           : 'reszta do grobu';
+        // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta poszła do
+        // wygnania zakryta (imprint), nie do ręki. pickCardId null = opis mówi
+        // „kartę” (przeciwnik nie zna tożsamości; decydent widział ją w modale).
+        if (e.pickTo === 'exile_face_down_linked') {
+          return `${whoN(e.playerId)} wygania ${pickName} zakrytą (${restLabel})`;
+        }
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {
@@ -2358,6 +2384,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'destroy_equipment_choice_resolved': return e.destroy
         ? `${whoN(e.playerId)} niszczy equipment na ${nameOfObject(e.targetId)}`
         : `${whoN(e.playerId)} zostawia equipment na ${nameOfObject(e.targetId)}`;
+      // Fix A/Twiddle: generyczny „you may” efektu czaru.
+      case 'optional_spell_effect_required': return `${srcName(e)}${whoN(e.playerId)} decyduje: zastosować efekt? („you may")`;
+      case 'optional_spell_effect_resolved': return e.apply
+        ? `${whoN(e.playerId)} stosuje efekt ${nameOf(e.sourceCardId)} („you may": tak)`
+        : `${whoN(e.playerId)} rezygnuje z efektu ${nameOf(e.sourceCardId)} („you may": nie)`;
       default: return e.type;
     }
   }
@@ -2656,6 +2687,12 @@ export function createSession(config) {
   // o wyświetleniu (tylko PIERWSZE odwrócenie, ptaszek trybu, ilustracje)
   // trzyma UI — sesja tylko go woła, zero wpływu na przebieg gry.
   const onTransform = typeof config.onTransform === 'function' ? config.onTransform : null;
+  // AI-OpenRouter (Etap-1): obserwator DOMKNIĘCIA tury — sesja woła go, gdy
+  // rekord tury ląduje w turnHistory (granica na `turn_started` + domknięcie
+  // ostatniej po końcu partii). UI podpina tu kolejkę zapytań AI.
+  // Kontrakt ODWROTNY niż onCast: zwrotka ignorowana, wyjątek POŁYKANY
+  // (AI nigdy nie może zepsuć gry — fire-and-forget z gwarancją sesji).
+  const onTurnCompleted = typeof config.onTurnCompleted === 'function' ? config.onTurnCompleted : null;
   /**
    * M254/C (zgłoszenie właściciela): pauza PREZENTACYJNA. Osobna od
    * `awaitingBotAck`, bo „Ruch bota" i warstwa grafik to dwie różne warstwy
@@ -2781,10 +2818,24 @@ export function createSession(config) {
     lastLoggedPhase = result.lastLoggedPhase;
     return result.header;
   };
+  // AI-OpenRouter: powiadomienie o domkniętym rekordzie (try/catch = gwarancja
+  // „AI nie psuje gry"; pełny tekst UI bierze samo z turnHistoryTextAll()).
+  function emitTurnCompleted(record) {
+    if (!onTurnCompleted || !record) return;
+    try {
+      onTurnCompleted({ number: record.number, activePlayerId: record.activePlayerId });
+    } catch (error) {
+      if (typeof console !== 'undefined' && typeof console.warn === 'function') {
+        console.warn('[ai] onTurnCompleted rzucił:', error);
+      }
+    }
+  }
   function recordTurnEvent(e) {
     if (e.type === 'turn_started') {
-      turnHistory.push(currentTurn);
+      const done = currentTurn;
+      turnHistory.push(done);
       currentTurn = { number: state.turn.number, activePlayerId: e.playerId, lines: [] };
+      emitTurnCompleted(done);
       return;
     }
     if (TURN_NOISE.has(e.type)) return;
@@ -2845,8 +2896,10 @@ export function createSession(config) {
   /** Po końcu partii ostatnia (przerwana) tura też jest pełna — domknij ją. */
   function flushFinishedTurn() {
     if (state.status === 'finished' && currentTurn.lines.length > 0) {
-      turnHistory.push(currentTurn);
+      const done = currentTurn;
+      turnHistory.push(done);
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };
+      emitTurnCompleted(done);
     }
   }
 

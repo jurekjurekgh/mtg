@@ -518,4 +518,24 @@ export const MANA_COSTS = {
   // druku, bo karta jest JEDNA (MANA_COSTS czyta kafel twarzy po cardId).
   "bird-admirer": "{2}{G}",
   "wing-shredder": "{2}{G}",
+  // Batch60: Blossoming Sands (M20) — land bez kosztu.
+  "blossoming-sands": "",
+  // Batch60: Demolish (WAR).
+  "demolish": "{3}{R}",
+  // Batch60: Renegade Tactics (CMR).
+  "renegade-tactics": "{R}",
+  // Batch60: Trigon of Thought (SOM).
+  "trigon-of-thought": "{5}",
+  // Batch60: Stensia Innkeeper (EMN).
+  "stensia-innkeeper": "{3}{R}",
+  // Batch60: Summary Judgment (RNA).
+  "summary-judgment": "{1}{W}",
+  // Batch60: Timely Interference (DMU) — baza {U}, kicker {1}{R} w deskryptorze.
+  "timely-interference": "{U}",
+  // Batch60: Revealing Wind (DTK).
+  "revealing-wind": "{2}{G}",
+  // Batch60: Clone Shell (SOM).
+  "clone-shell": "{5}",
+  // Batch60: Xu-Ifit, Osteoharmonist (EOE).
+  "xu-ifit-osteoharmonist": "{1}{B}{B}",
 };
