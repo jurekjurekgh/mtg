@@ -64,6 +64,18 @@ test('AI-R2 config: tryb player-bot na liście, roundtrip, własna karta', () =>
   assert.equal(loadAiConfig(storage).mode, 'player-bot');
 });
 
+test('AI-R4 config: 5 trybów, każdy z etykietą i własną kartą arkusza', () => {
+  assert.deepEqual(AI_MODES.map((m) => m.id),
+    ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit']);
+  for (const m of AI_MODES) {
+    assert.ok(m.label.length > 0);
+    assert.equal(m.sheetName, m.id);
+  }
+  const storage = memStorage();
+  saveAiConfig(storage, { ...aiDefaultConfig(), mode: 'skit' });
+  assert.equal(loadAiConfig(storage).mode, 'skit');
+});
+
 test('AI-E1 config: roundtrip load/save, default modelu = ostatni', () => {
   const storage = memStorage();
   assert.equal(loadAiConfig(storage).modelId, AI_MODELS[0]);

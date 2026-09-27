@@ -2,14 +2,19 @@
  * AI-OpenRouter: tryby AI — budowa promptów.
  *
  * Moduł CZYSTY: same funkcje tekstowe, zero DOM-u/sieci/pamięci.
- * Tryb I (`lore-bot`): komentarz do ostatniej tury w lore świata talii bota.
- * Tryb II (`player-bot`, AI-R2): komentarz bota-gracza żargonem MtG.
+ * - `lore-bot`: komentarz Nieprzyjaciela w lore jego świata.
+ * - `player-bot`: komentarz bota-gracza (AI-R4: zakaz slangu, zwięźle w punktach).
+ * - `observer` (AI-R4): to samo okiem niezależnego obserwatora.
+ * - `lore-observer` (AI-R4): lore okiem niezależnego obserwatora.
+ * - `skit` (AI-R4): scenka dialogowa — prompt DOKŁADNY od właściciela.
  */
 
 export const LORE_COMMENT_LIMIT = 600;
 export const PLAYER_COMMENT_LIMIT = 600;
+export const OBSERVER_COMMENT_LIMIT = 600;
+export const LORE_OBSERVER_COMMENT_LIMIT = 600;
 
-/** Wspólne wyciąganie pól ctx (oba tryby komentują ten sam zapis). */
+/** Wspólne wyciąganie pól ctx (wszystkie tryby komentują ten sam zapis). */
 function baseCtx(ctx) {
   const c = ctx ?? {};
   return {
@@ -23,8 +28,7 @@ function baseCtx(ctx) {
 
 /**
  * Tryb I: Nieprzyjaciel opowiada turę w realiach swojego świata.
- * AI-R2: (a) tożsamość wbita łopatą — „Nieprzyjaciel” w zapisie to ON,
- * (b) mniej poetyki i archaizmów, więcej twardych odniesień do lore świata.
+ * AI-R2: tożsamość (zapis o nim = o nim) + ton (konkrety, mało poetyki).
  */
 export function buildLorePrompt(ctx) {
   const { bot, deck, world, turnNo, history } = baseCtx(ctx);
@@ -48,9 +52,9 @@ export function buildLorePrompt(ctx) {
 }
 
 /**
- * Tryb II (AI-R2): bot-gracz — współczesny, towarzyski gracz MtG.
- * Zna zasady, ma swoją talię, próbuje wygrać; komentuje zagrania OBU stron
- * z humorem, czasem złośliwie. Żargon MtG tu MILE WIDZIANY (to gracz!).
+ * Tryb II: bot-gracz — współczesny, towarzyski gracz MtG.
+ * AI-R4: ZAKAZ slangu meta-graczowego + zwięźle, konkretnie, w punktach,
+ * bez powtórzeń, z własnymi odczuciami i wrażeniami.
  */
 export function buildPlayerPrompt(ctx) {
   const { bot, deck, turnNo, history } = baseCtx(ctx);
@@ -65,10 +69,124 @@ export function buildPlayerPrompt(ctx) {
     `Skomentuj OSTATNIĄ turę (nr ${turnNo}) jak współczesny gracz MtG przy stole: po swojemu, z humorem, czasem złośliwie.`,
     'Zasady:',
     '- mów w pierwszej osobie jako gracz („ja”, „moja talia”), o przeciwniczce mów „Czarodziejka” / „ona”,',
-    '- żargon MtG jak najbardziej (topdeck, mana, removal, board, dobór, atak…) — to rozmowa graczy, nie baśń,',
+    '- ZAKAZ slangu meta-graczowego, zwłaszcza angielskiego (żadnych: deckout, missplay, removal, topdeck, board… — mów po polsku, zwykłymi słowami),',
+    '- zwięźle, konkretnie, w punktach, bez powtórzeń,',
     '- odnieś się KONKRETNIE do zagrań z ostatniej tury: kto co zagrał, co poszło nie tak, co ci grozi,',
+    '- dodawaj swoje odczucia i wrażenia,',
     '- znasz zasady i próbujesz wygrać, ale jesteś kumplem przy stole, nie mentorem-pro,',
     `- krótko: do około ${PLAYER_COMMENT_LIMIT} znaków.`,
+  ].join('\n');
+}
+
+/**
+ * Tryb III (AI-R4): niezależny obserwator partii — to samo co bot-gracz,
+ * ale z boku stołu, w trzeciej osobie. Te same reguły: zakaz slangu,
+ * punkty, konkrety, odczucia.
+ */
+export function buildObserverPrompt(ctx) {
+  const { bot, deck, turnNo, history } = baseCtx(ctx);
+  return [
+    `Jesteś niezależnym obserwatorem towarzyskiej partii Magic: The Gathering. Przy stole: Czarodziejka (człowiek) i gracz-bot z talią „${deck}”.`,
+    `W zapisie partii zagrania bota podpisane są „${bot}”.`,
+    '',
+    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    '',
+    history,
+    '',
+    `Skomentuj OSTATNIĄ turę (nr ${turnNo}) jako obserwator: z boku, z humorem, czasem złośliwie.`,
+    'Zasady:',
+    `- mów w trzeciej osobie („Czarodziejka”, „bot” / „${bot}”),`,
+    '- ZAKAZ slangu meta-graczowego, zwłaszcza angielskiego (żadnych: deckout, missplay, removal, topdeck, board… — mów po polsku, zwykłymi słowami),',
+    '- zwięźle, konkretnie, w punktach, bez powtórzeń,',
+    '- odnieś się KONKRETNIE do zagrań z ostatniej tury: kto co zagrał, co poszło nie tak, komu grozi porażka,',
+    '- dodawaj swoje odczucia i wrażenia z przebiegu starcia,',
+    `- krótko: do około ${OBSERVER_COMMENT_LIMIT} znaków.`,
+  ].join('\n');
+}
+
+/**
+ * Tryb IV (AI-R4): lore okiem niezależnego obserwatora — te same reguły
+ * klimatyczne co lore-bot, ale narracja trzecioosobowa, z boku pojedynku.
+ */
+export function buildLoreObserverPrompt(ctx) {
+  const { bot, deck, world, turnNo, history } = baseCtx(ctx);
+  return [
+    `Jesteś niezależnym obserwatorem pojedynku magów: Czarodziejka mierzy się z ${bot} (talia „${deck}” ze świata: ${world}).`,
+    `W zapisie partii zdania o ${bot} opisują jednego z pojedynkujących — twojego obserwowanego, nie trzeciego gracza.`,
+    '',
+    'Poniżej pełny zapis partii (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    '',
+    history,
+    '',
+    `Skomentuj OSTATNIĄ turę (nr ${turnNo}) jako obserwator, w realiach świata ${world}.`,
+    'Zasady:',
+    '- mów w trzeciej osobie (opisujesz oboje pojedynkujących z boku),',
+    `- nawiązuj KONKRETNIE do lore świata ${world}: jego miejsc, frakcji, postaci, stworów i wydarzeń — mniej poetyki i archaizmów, więcej twardych odniesień do świata,`,
+    '- opowiedz starcie jako historię o pojedynku Czarodziejki z Nieprzyjacielem,',
+    `- NIE używaj wprost nazw kart Magic: The Gathering ani meta-nazw mechanik, zdolności i słów kluczowych (opisuj zdarzenia językiem świata: ${world}),`,
+    `- krótko: do około ${LORE_OBSERVER_COMMENT_LIMIT} znaków.`,
+  ].join('\n');
+}
+
+/**
+ * Tryb V (AI-R4): SKIT — scenka dialogowa postaci z kart.
+ * Tekst promptu DOKŁADNY od właściciela (nie redagować bez pytania);
+ * dopisujemy tylko numer tury i log rozgrywki, na których pracuje model.
+ */
+const SKIT_BRIEF = [
+  'Jesteś pisarzem literatury fantasy, który na podstawie rozgrywki prowadzonej kartami Magic: the Gathering ma tworzyć ciekawe, mądre, śmieszne, zajmujące fragmenty prozy typu SKIT (podobne do tych z serii gier Tales of…).',
+  'Na podstawie logu z rozgrywki W OSTATNIEJ TURZE tury masz wyodrębnić postaci biorące udział i tworzyć interakcje, dialogi między nimi.',
+  'Bohaterowie i wątki poruszane w SKITACH mogą powracać w kolejnych skitach jeśli log to uzasadnia.',
+  'Każdy fabularny SKIT powinien być poprzedzony nagłówkiem:',
+  '',
+  '**SKIT: -tytuł-**.',
+  '',
+  'Tytuł nadajesz sam na podstawie treści SKITA.',
+  'Fragment pod nagłówkiem musi być w 100% in-lore światów, z którego pochodzą zagrywane karty.',
+  'UWAGA:',
+  'Czarodziejka i wszystkie jej karty (czary, kreatury, postaci) pochodzą ze świata Dominaria.',
+  'Nieprzyjaciel i wszystkie jego karty (czary, kreatury, postaci) pochodzą ze świata Zendikar.',
+  '',
+  'Używaj w SKITach postaci z karty wystawionych na stole po obu stronach bitwy, ale NIE używaj nazw użytych kart MtG - postacie nazywaj/opisuj zgodnie z lore świata z którego pochodzą. Wyjątkiem są postaci graczy, których zawsze nazywaj Czarodziejką i Nieprzyjacielem.',
+  'SKIT: Czysty dialog postaci obecnych aktualnie w grze (najlepiej między postaciami powołanymi z kart, ale jeśli nie ma innej możliwości także między graczami). Nie używaj w nich meta-języka gry np. statystyk, nazw zdolności, counterów, tokenów itp. Skupiasz się na lore i relacjach!',
+  'Skity mają być naturalną rozmową. Mogą dotyczyć przeszłości, filozofii lub drobnych obserwacji, byle były zgodne z charakterem postaci.',
+  'Możliwe tematy to ich wzajemne relacje, filozofia, ich podejście do dowolnych tematów, obserwacje dotyczące okolicy, stan fizyczny, psychiczny, także przemyślenia, odniesienia do ich lore np. zwyczaje wyniesione z ich świata, jedzenie, spędzanie wolnego czasu, hobby, zainteresowania, pasje itp. itd.',
+  'Rozmowa może dotyczyć tematów codziennego życia, pracy, problemów świata postaci, ich najskrytszych pragnień, kompleksów, traum, ale także tego z czego bywają np. dumne czy co je bawi.',
+  'Rozmowa jest w 100% in-character w 100% oparta o lore ich świata, ich przekonaniach, pasjach.',
+  'W skicie oczywiście uwzględniaj stosunek postaci do siebie, historię ich znajomości - ale wszystko in-character i z AKCENTEM na postrzeganie rzeczywistości przez lore swojego świata.',
+  'WAŻNE! Bezwzględnie wymyślaj zróżnicowane tematy SKITów, bądź oryginalny. Każdy SKIT ma być inny i na inny temat.',
+  'Maksymalna długość sekcji SKIT to 250 słów.',
+  '',
+  'Przykład sekcji SKIT:',
+  '',
+  '**SKIT: RDZA I SĘPY**',
+  '',
+  '**Uczestnicy:** Garrek Żelaznoręki, Korveth-7, Corwin Wrończyk',
+  '',
+  '**Garrek:** [Opiera ciężki młot o ziemię, z trudem łapiąc oddech. Rdzawa krew miesza się ze smarem na jego brodzie. Łypie mrocznie na kruka siedzącego na ramieniu szeptacza] Zdejmij ze mnie te ptasie ślepia, poeto. Jeszcze nie jestem kupą złomu. Ta blacha przetrwała ostrzał artyleryjski u braciaków, więc przetrwa też to cholerne błoto.',
+  '',
+  '**Corwin:** [Siedzi w cieniu, spokojnie gładząc pióra Szepty. Jego bury płaszcz zlewa się z mrokiem bagien] Krew przyspiesza rdzewienie żelaza, rzeźniku. Wycieka z ciebie olej i życie w równych proporcjach. Moje wrony mają doskonały słuch. Słyszą, jak zębatki w twoim ciele powoli zgrzytają do zatrzymania.',
+  '',
+  '**Korveth-7:** [Przesuwa się ciężko, stając tak, by jego miedziane ramiona częściowo osłaniały Garreka. Soczewka na jego twarzy migocze słabym, gasnącym światłem] Diagnostyka wskazuje na krytyczne uszkodzenia strukturalne. Jednak funkcjonalność operacyjna zostaje zachowana. Maszyna nie zatrzymuje się, dopóki kryształ nie ulegnie całkowitej dezintegracji. Utrzymamy ten perymetr.',
+  '',
+  '**Garrek:** [Wybucha chrapliwym kaszlem, wypluwając ciemną ślinę w mech, po czym uśmiecha się krzywo do miedzianego konstrukta] Słyszysz to, ptasiarzu? Ja i ta puszka jedziemy na samych oparach i czystej złośliwości. Ty czekasz, aż ktoś ci rzuci darmowy ochłap prawdy do tego twojego notesiku, a my po prostu odmawiamy zdechnięcia.',
+  '',
+  '**Corwin:** Nikt z nas nie wybiera momentu, rzeźniku. Ja tylko dbam o to, by to, kim byliście, nie przepadło, gdy upadniecie twarzą w błoto.',
+  '',
+  '**Garrek:** [Uderza obuchem młota w dłoń, aż w zbroi zadudnią nity] Jeśli szukasz moich ostatnich słów, to możesz je sobie zapisać już teraz: "Nie zdejmiecie mi tych butów". A teraz trzymaj się z dala, zanim przerobię cię na mielonkę razem z twoim latającym inwentarzem.',
+].join('\n');
+
+export function buildSkitPrompt(ctx) {
+  const { bot, deck, turnNo, history } = baseCtx(ctx);
+  return [
+    SKIT_BRIEF,
+    '',
+    '---',
+    '',
+    `Twoja rozgrywka: Czarodziejka kontra ${bot} (talia „${deck}”). Komentowana tura: OSTATNIA (nr ${turnNo}).`,
+    'Log rozgrywki (format „Tura N — Imię” + zdarzenia), od początku do końca aktualnej tury:',
+    '',
+    history,
   ].join('\n');
 }
 
@@ -78,5 +196,8 @@ export function buildPlayerPrompt(ctx) {
  */
 export function buildPromptForMode(modeId, ctx) {
   if (modeId === 'player-bot') return buildPlayerPrompt(ctx);
+  if (modeId === 'observer') return buildObserverPrompt(ctx);
+  if (modeId === 'lore-observer') return buildLoreObserverPrompt(ctx);
+  if (modeId === 'skit') return buildSkitPrompt(ctx);
   return buildLorePrompt(ctx);
 }

@@ -13252,3 +13252,5 @@ AI-OpenRouter (2026-09-26, E0-E3+R2): plan + toggle/konfig/kolejka-FIFO/mock
 Suit 6902/6902 GREEN.
 AI-R3 (2026-09-26, prov-only): +5 modeli z przypietym providerem
 (order+only+allow_fallbacks:false), lista 15 -> 20. Suit 6905/6905 GREEN.
+AI-R4 (2026-09-26, tryby): player v2 (zakaz slangu, punkty) + observer
++ lore-observer + skit (brief wlasciciela verbatim). 5 trybow, Suit 6910/6910.

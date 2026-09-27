@@ -242,3 +242,8 @@ wierszy przy współbieżnych dopisaniach.
   `deepseek-v4-flash-0731`→`streamlake/fp8`, `glm-5.3-flash`→`inference-net`,
   `muse-spark-1.3-contributor`→`meta`. Klient wysyła
   `provider: { order, only, allow_fallbacks: false }` (lista: 15 → 20).
+
+- R4: player-bot v2 (ZAKAZ slangu meta-graczowego, zwięźle w punktach,
+  odczucia) + 3 tryby: `observer` (jak gracz, okiem obserwatora),
+  `lore-observer` (jak lore-bot, okiem obserwatora), `skit` (dokładny
+  brief właściciela: Dominaria vs Zendikar, dialog in-character, 250 słów).
