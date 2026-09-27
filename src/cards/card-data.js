@@ -12093,6 +12093,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['„Gates you control enter untapped" = statyk kontrolera (także dla Bram, które same wchodzą tapnięte — Dimir Guildgate, Manor Gate); druga zdolność daje unię kolorów produkowalnych przez kontrolowane Bramy (Basilisk Gate sam daje tylko {C}, więc jest niedostępna)'],
   }),
+
+  // Batch60/1. Blossoming Sands (M20) — gainland G/W: wchodzi tapnięty,
+  // ETB +1 życia, {T}: Add {G} or {W}. Szablon 1:1 Dismal Backwater (M20).
+  defineCard({
+    id: 'blossoming-sands', name: 'Blossoming Sands', set: 'M20',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {G} or {W}.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/1/31514c67-4c55-4f28-9872-08e4d9bc6505.jpg?1783932938',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'gain_life', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G', 'W'] },
+      }),
+    ],
+    plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

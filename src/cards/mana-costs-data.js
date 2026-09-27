@@ -518,4 +518,6 @@ export const MANA_COSTS = {
   // druku, bo karta jest JEDNA (MANA_COSTS czyta kafel twarzy po cardId).
   "bird-admirer": "{2}{G}",
   "wing-shredder": "{2}{G}",
+  // Batch60: Blossoming Sands (M20) — land bez kosztu.
+  "blossoming-sands": "",
 };
