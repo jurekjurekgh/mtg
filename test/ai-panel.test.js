@@ -109,3 +109,16 @@ test('AI-R6 panel (A): „Ponów” odświeża nagłówek (nowy model + próba)'
   assert.ok(after.includes('nowy'), 'nowy model w nagłówku');
   assert.ok(after.includes('próba 2'), 'oznaczenie próby');
 });
+
+test('AI-R6 panel (E): klik w „Czekam…” woła onAbort z id slotu', () => {
+  const wrap = new FakeEl('div');
+  const log = new FakeEl('div');
+  let aborted = null;
+  const panel = createAiPanel({ document: fakeDocument(), wrapEl: wrap, logEl: log, onAbort: (id) => { aborted = id; } });
+  panel.slotPending(slot({ id: 5 }));
+  const waits = log.query('ai-pending');
+  assert.equal(waits.length, 1);
+  assert.ok(waits[0].textContent.includes('kliknij, żeby przerwać'), 'podpowiedź w tekście');
+  waits[0].click();
+  assert.equal(aborted, 5);
+});

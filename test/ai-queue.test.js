@@ -125,3 +125,37 @@ test('AI-R6 queue (A): retry scala metę + getSlot do odczytu', async () => {
   assert.equal(seen[1].meta.turn, 4, 'tura zachowana');
   assert.equal(queue.getSlot(999), null, 'obcy slot = null');
 });
+
+test('AI-R6 queue (E): abort w locie = błąd „Przerwano” + slot do ponowienia', async () => {
+  let aborted = false;
+  const transport = (req) => new Promise((resolve, reject) => {
+    req.signal?.addEventListener('abort', () => {
+      aborted = true;
+      reject(new Error('abort-test'));
+    });
+  });
+  const resolved = [];
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: (s) => resolved.push(s) });
+  const id = queue.enqueue({ prompt: 'p', modelId: 'm', meta: null });
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(queue.abort(999), false, 'obcy slot');
+  assert.equal(queue.abort(id), true, 'przerwano w locie');
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(aborted, true, 'transport dostał abort');
+  assert.equal(resolved.length, 1, 'slot rozstrzygnięty błędem');
+  assert.equal(resolved[0].result.ok, false);
+  assert.ok(resolved[0].result.error.includes('abort-test') || resolved[0].result.error.includes('Przerwano'), resolved[0].result.error);
+  assert.equal(queue.abort(id), false, 'po rozstrzygnięciu już nie');
+});
+
+test('AI-R6 queue (E): reset ucina zapytania w locie', async () => {
+  let aborted = false;
+  const transport = (req) => new Promise(() => {
+    req.signal?.addEventListener('abort', () => { aborted = true; });
+  });
+  const queue = createAiQueue({ transport, onPending: () => {}, onResolved: () => {} });
+  queue.enqueue({ prompt: 'p', modelId: 'm', meta: null });
+  await new Promise((r) => setTimeout(r, 10));
+  queue.reset();
+  assert.equal(aborted, true, 'kontroler w locie zabity przy resecie');
+});

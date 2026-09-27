@@ -8,9 +8,11 @@
  * BEZPIECZEŃSTWO: treść od modelu trafia do DOM-u WYŁĄCZNIE przez
  * textContent — nigdy innerHTML (model mógłby zwrócić znaczniki).
  */
-export function createAiPanel({ document, wrapEl, logEl, onRetry } = {}) {
+export function createAiPanel({ document, wrapEl, logEl, onRetry, onAbort } = {}) {
   if (!document || !wrapEl || !logEl) throw new TypeError('ai-panel wymaga document + wrapEl + logEl');
   const retryHook = typeof onRetry === 'function' ? onRetry : () => {};
+  // AI-R6 (E): klik w „Czekam…” przerywa zapytanie (jak błąd z „Ponów”).
+  const abortHook = typeof onAbort === 'function' ? onAbort : () => {};
   // slotId -> { entry, body } (wpisy żyją do clear()).
   const nodes = new Map();
 
@@ -78,7 +80,9 @@ export function createAiPanel({ document, wrapEl, logEl, onRetry } = {}) {
       clearBody(body);
       const wait = document.createElement('div');
       wait.className = 'ai-pending';
-      wait.textContent = 'Czekam na odpowiedź modelu…';
+      wait.textContent = 'Czekam na odpowiedź modelu… (kliknij, żeby przerwać)';
+      wait.title = 'Przerwij zapytanie do AI';
+      wait.addEventListener('click', () => abortHook(slot.id));
       body.appendChild(wait);
       scrollDown();
     },

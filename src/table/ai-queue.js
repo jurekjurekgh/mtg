@@ -27,10 +27,15 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
   // Wszystkie sloty bieżącej generacji (też wyrenderowane — retry szuka
   // slotu-błędu PO jego wyrenderowaniu; reset czyści mapę co partię).
   const byId = new Map();
+  // AI-R6 (E): kontrolery zapytań w locie (slotId -> AbortController) —
+  // klik w „Czekam…” woła abort(slotId); wpis znika przy rozstrzygnięciu.
+  const inflight = new Map();
 
   const fire = (slot, request) => {
     const gen = slot.generation;
     const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    // AI-R6 (E): kontroler w locie — klik w „Czekam…” przerywa zapytanie.
+    if (controller) inflight.set(slot.id, controller);
     Promise.resolve()
       .then(() => transport({ ...request, signal: controller?.signal ?? null }))
       .then(
@@ -38,6 +43,7 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
         (err) => ({ ok: false, text: '', error: err instanceof Error ? err.message : String(err) }),
       )
       .then((result) => {
+        inflight.delete(slot.id);
         // Spóźniony (stara partia) albo już obsłużony — nie renderujemy.
         if (gen !== generation || slot.result) return;
         slot.result = result;
@@ -90,11 +96,40 @@ export function createAiQueue({ transport, onPending, onResolved } = {}) {
       fire(slot, { prompt: slot.prompt, modelId: slot.modelId, meta: slot.meta });
       return true;
     },
+    /**
+     * AI-R6 (E): przerwanie zapytania w locie (klik w „Czekam…”).
+     * Transport dostaje abort i zwraca błąd „Przerwano…” — slot renderuje
+     * się jak zwykły błąd, z przyciskiem „Ponów”. Zwraca false, gdy slotu
+     * nie ma / jest nieaktualny / już rozstrzygnięty / nie w locie.
+     */
+    abort(slotId) {
+      const slot = byId.get(slotId) ?? null;
+      if (!slot || slot.generation !== generation || slot.result) return false;
+      if (!slots.includes(slot)) return false;
+      const controller = inflight.get(slotId);
+      if (!controller) return false;
+      try {
+        controller.abort();
+      } catch {
+        return false;
+      }
+      return true;
+    },
     /** Nowa partia: czyści kolejkę, spóźnione odpowiedzi giną. */
     reset() {
       generation += 1;
       slots.length = 0;
       byId.clear();
+      // AI-R6 (E): nowa partia ucina też zapytania w locie (ich wyniki
+      // i tak by zginęły jako spóźnione — szkoda transferu i tokenów).
+      for (const controller of inflight.values()) {
+        try {
+          controller.abort();
+        } catch {
+          /* brak kontrolera — nic do roboty */
+        }
+      }
+      inflight.clear();
     },
     pendingCount() {
       return slots.filter((s) => !s.result).length;

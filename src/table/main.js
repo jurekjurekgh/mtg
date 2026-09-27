@@ -320,6 +320,10 @@ function bootstrapTable() {
         meta: { ...(prev?.meta ?? {}), modelLabel: aiModelLabel(aiConfig.modelId) },
       });
     },
+    // AI-R6 (E): klik w „Czekam…” przerywa zapytanie (błąd + „Ponów”).
+    onAbort: (slotId) => {
+      aiQueue.abort(slotId);
+    },
   });
   // AI-OpenRouter (Etap-3, AI-R5: Dokument Google, karta na tryb): dopisywanie
   // SUKCESÓW do Dokumentu. Fire-and-forget
