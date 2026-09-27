@@ -5,6 +5,8 @@
  * i dopisuje je NA KOŃCU karty o nazwie trybu (`lore-bot`, `player-bot`,
  * `observer`, `lore-observer`, `skit`). Każdy wpis: linia metadanych
  * (tura, model, długość, czas, partia) + treść komentarza + rozdzielnik.
+ * Pierwszy wpis partii (`newGame`, matchup `decks`) poprzedza nagłówek:
+ * podział strony + H1 „⚔️ Nowa partia: X vs Y” (łatwe szukanie początków).
  *
  * KARTY ZAKŁADASZ RĘCZNIE (raz, 2 minuty): ani Apps Script, ani Docs API
  * nie potrafią tworzyć kart programowo — skrypt tylko je znajduje po
@@ -44,6 +46,25 @@ function findTabByTitle(doc, title) {
   return null;
 }
 
+/**
+ * Nagłówek NOWEJ partii (zlecenie właściciela — łatwe szukanie początków
+ * partii): podział strony (nowa strona) + nagłówek H1 z matchupem.
+ * Wołane tylko dla pierwszego logu partii (`p.newGame === true` — śledzi
+ * to klient po gameId). Na pustej karcie podziału nie stawiamy (pusta
+ * pierwsza strona byłaby śmieciem).
+ */
+function appendGameHeader(body, p) {
+  var decks = String((p && p.decks) || '').trim() || 'talie nieznane';
+  try {
+    var empty = body.getText ? String(body.getText()).trim() === '' : false;
+    if (!empty) body.appendPageBreak();
+  } catch (e) {
+    body.appendPageBreak();
+  }
+  body.appendParagraph('⚔️ Nowa partia: ' + decks)
+    .setHeading(DocumentApp.ParagraphHeading.HEADING1);
+}
+
 /** Dopisuje wpis na końcu ciała karty: meta + akapity + rozdzielnik. */
 function appendEntry(body, p) {
   const meta = '── Tura ' + Number(p.turn ?? 0)
@@ -81,6 +102,7 @@ function doPost(e) {
         body.appendParagraph('⚠️ Brak karty „' + name + '” — wpis dopisany tutaj')
           .setHeading(DocumentApp.ParagraphHeading.HEADING3);
       }
+      if (p && p.newGame === true) appendGameHeader(body, p);
       appendEntry(body, p);
     } finally {
       try { if (doc) doc.saveAndClose(); } catch (e2) { /* zamknięcie best-effort */ }

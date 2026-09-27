@@ -20,6 +20,14 @@ Układ definicji opisuje [ADR 0014](../decisions/0014-card-definitions-single-mo
   (najnowszy batch jako wzorzec).
 - Ustal **listę kart od właściciela** (nazwa + set). Zwykle 5 kart na batch,
   odstępstwa możliwe na wyraźną listę właściciela.
+- **Pole `Plan` z listy właściciela jest ZAWSZE poprawne i wiążące.** Nie musi
+  pasować do karty, jej setu ani jej oryginalnego planu fabularnego — to
+  decyzja właściciela, do jakiego świata kartę TRANSPONOWAĆ i do jakiej talii
+  ją dopisać. Przepisuj `Plan` 1:1 do pola `plan` definicji (Krok 3) i do
+  wyboru talii (Krok 5). **Nie wolno Ci go kwestionować, „poprawiać” ani
+  obchodzić** — także wtedy, gdy wygląda na pomyłkę (np. karta z Innistradu
+  z Planem Ravnica). Właściciel transponuje świadomie; agent, który „naprawia”
+  Plan, psuje kolekcję i talie.
 
 ## Krok 1 — pobierz dane ze Scryfall (obowiązkowy, pierwszy krok)
 

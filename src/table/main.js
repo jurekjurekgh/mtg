@@ -348,6 +348,7 @@ function bootstrapTable() {
           model: slot.modelId,
           response: slot.result.text,
           tsClient: new Date().toISOString(),
+          decks: slot.meta?.decks ?? '',
         }));
       }
     },
@@ -398,7 +399,10 @@ function bootstrapTable() {
       prompt: lastUser?.content ?? '',
       messages,
       modelId: aiConfig.modelId,
-      meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId, mode: aiConfig.mode },
+      // Matchup do nagłówka partii w Dokumencie (zlecenie właściciela): mrożony
+      // w meta przy kolejkowaniu (aiGameCtx może się zmienić, zanim spóźniona
+      // odpowiedź poprzedniej partii dotrze do onResolved).
+      meta: { turn: number, modelLabel: aiModelLabel(aiConfig.modelId), gameId: aiGameCtx.gameId, mode: aiConfig.mode, decks: `${aiGameCtx.heroDeckTitle} vs ${aiGameCtx.deckTitle}` },
     });
   };
   // --- Koniec bloku AI-Etap-1 ----------------------------------------------

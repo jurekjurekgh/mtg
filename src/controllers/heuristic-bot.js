@@ -328,6 +328,7 @@ export function blockExchangeOf(attacker, blockers) {
     diedBlockerIds: [...realnieGinie] };
 }
 
+
 /** Atakujący zadaje obrażenia PRZED blokerem (first/double strike, CR 702.7). */
 function attackerStrikesFirst(attacker, blockers) {
   const kw = attacker?.keywords ?? [];
@@ -1218,6 +1219,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
+  /**
+   * Batch60-followup/2 (2026-09-27, ograniczenie 2: JAKOŚĆ bloku): wartość
+   * usunięcia blokera („can't block") = strata wroga na NAJLEPSZYM bloku, który
+   * ten stwór mógł postawić (bloker stawia jeden blok — wróg wybiera dla nas
+   * najboleśniejszy, więc bierzemy max, nie sumę):
+   *   przepchnięte obrażenia (2×moc atakującego — skala Ruthless Invasion)
+   *   + ocalone ciało atakującego (gdy bloker by go zabił; P×2+T)
+   *   − ciało blokera, które wróg ZACHOWUJE (gdy bloker ginąłby w wymianie —
+   *     chump i tak znikał ze stołu, więc jego „ocalenie" to zysk wroga).
+   * Np. zdjęcie 5/5 blokującej 3/3: 6 + 9 − 0 = 15; zdjęcie chumpa 1/1: 6 + 0
+   * − 3 = 3 (poprzednio oba remisowały na płaskim +8). null = ofiara nikogo
+   * z listy nie blokuje (cel bezużyteczny). Jedno źródło dla obu bliźniaków
+   * cant_block (cast_spell i activate_ability, L41).
+   */
+  const cantBlockRemovalValue = (view, victim, attackerIds) => {
+    let best = null;
+    for (const aid of attackerIds ?? []) {
+      const attacker = objectOnBoard(view, aid);
+      if (!attacker || !attackerCanBeBlocked(attacker, [victim])) continue;
+      const ex = blockExchangeOf(attacker, [victim]);
+      const pushed = 2 * combatPower(attacker);
+      const saved = ex.attackerDies
+        ? combatPower(attacker) * 2 + (attacker.toughness ?? 0) : 0;
+      const kept = (ex.diedBlockerIds ?? []).includes(victim.id)
+        ? (victim.power ?? 0) * 2 + (victim.toughness ?? 0) : 0;
+      const value = pushed + saved - kept;
+      if (best == null || value > best) best = value;
+    }
+    return best;
+  };
 
   /**
    * C-R1 (audyt Batch53): premia za TRIGGERY WEJŚCIA karty-permanentu —
@@ -3595,6 +3626,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
     // osobno); poza walką CZYSTA STRATA — zakaz.
     return combatTrickWindow(view, t) ? 0 : -80;
+  };
+
+  // Batch60-followup/1 (2026-09-27, ograniczenie 1): czy TRZYMANIE czaru do
+  // własnej main fazy jest bezpieczne? Nie, gdy (a) trwa NASZA faza końcowa
+  // (wróg odkręci tapnięte cele wcześniej niż nasza następna main — CR 502.1:
+  // odkręca gracz aktywny, więc tapnięty wróg stoi przez całą naszą turę),
+  // (b) wróg atakuje i nieblokowani atakujący nas dobijają (trzeba odpowiadać
+  // natychmiast, nie czekać). Poza tym tapnięty cel doczeka naszej main.
+  const holdForAddendumSafe = (view) => {
+    if (myTurn(view) && view.turn.phase === 'ending') return false;
+    const combat = view.combat ?? null;
+    if (combat && combat.attackingPlayerId !== view.playerId) {
+      const unblocked = combat.unblockedAttackers ?? combat.attackers ?? [];
+      const bf = view.zones.battlefield ?? [];
+      const incoming = unblocked.reduce((sum, aid) => {
+        const a = bf.find((o) => o.id === aid);
+        return sum + (a && a.controllerId !== view.playerId ? combatPower(a) : 0);
+      }, 0);
+      if (incoming >= myLife(view)) return false;
+    }
+    return true;
   };
 
   // Cel przeżyje „destroy", bo ma tarczę regeneracji, której nic nie blokuje.
@@ -6411,8 +6463,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Batch60 (Renegade Tactics): BLIŹNIAK gałęzi cant_block ze ścieżki
           // zdolności AKTYWOWANYCH (L41) — w cast_spell jej nie było, więc
           // Renegade szedł wyłącznie wartością cantripa, a cel „can't block”
-          // remisował (generyczny hostile rozstrzygał byle jak). Premia +8
-          // tylko za usunięcie PRAWDZIWEGO blokera: zadeklarowany atak (jak
+          // remisował (generyczny hostile rozstrzygał byle jak). Wartość
+          // za usunięcie PRAWDZIWEGO blokera liczy cantBlockRemovalValue
+          // (followup/2: jakość bloku, nie płaskie +8): zadeklarowany atak (jak
           // w bliźniaku) ALBO okno przed atakiem (sorcery w main1/BoC musi
           // zadziałać PRZED deklaracją — gałąź aktywowana tego okna nie zna,
           // bo zdolności-instanty czekają na combat). Kara −20 różnicuje cele
@@ -6428,17 +6481,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const preAttackWindow = !declaredAttack && myTurn(view)
               && ['main1', 'beginning_of_combat'].includes(view.turn.step)
               && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
-            let removesRealBlocker = false;
+            let removalValue = null;
             if (victimCouldBlock && (declaredAttack || preAttackWindow)) {
               const ids = declaredAttack
                 ? (combat.attackers ?? [])
                 : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
-              removesRealBlocker = ids.some((aid) => {
-                const attacker = objectOnBoard(view, aid);
-                return attacker && attackerCanBeBlocked(attacker, [victim]);
-              });
+              removalValue = cantBlockRemovalValue(view, victim, ids);
             }
-            score += removesRealBlocker ? 8 : -20;
+            score += removalValue ?? -20;
           }
           // Batch60 (Timely Interference, kicked): BLIŹNIAK gałęzi
           // blocks_if_able ze ścieżki AKTYWOWANEJ (L41) — w cast_spell jej nie
@@ -6568,14 +6618,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // z wytrzymałością 4–5 we własnej main (sonda batch60: PASS
             // zamiast dobicia tapniętego 5/5). Generycznie po deskryptorze
             // (ADR 0002), nie po nazwie karty.
-            if (Number.isInteger(effect.amountIfAddendum)
+            const addendumNow = Number.isInteger(effect.amountIfAddendum)
               && view.turn.activePlayerId === view.playerId
-              && ['precombat_main', 'postcombat_main'].includes(view.turn.phase)) {
+              && ['precombat_main', 'postcombat_main'].includes(view.turn.phase);
+            if (addendumNow) {
               amount = effect.amountIfAddendum;
             }
             const scaling = Boolean(spell?.xCost); // Consume Spirit itp. — X z maną
             if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
             else score -= 60; // efekt obrażeń bez celu — nic nie robi
+            // Batch60-followup/1 (ograniczenie 1: model TRZYMANIA removalu pod
+            // Addendum): poza własną main czar bije słabiej (3 zamiast 5).
+            // Gdy tapnięty stwór wroga, którego dobija dopiero Addendum
+            // (pozostałe życie w (amount, amountIfAddendum]), jest wyraźnie
+            // cenniejszym dobiciem niż cel bieżący — TRZYMAJ czar do własnej
+            // main zamiast marnować go teraz (porównanie wartościami
+            // damageTargetValue; margines +10 to ptak w garści; weto −120
+            // przebija bazę 50 + kill, L3). Bez predykcji przyszłych tapnięć
+            // (tylko cele tapnięte TERAZ) i bez trzymania, gdy grozi lethal.
+            if (slot != null && Number.isInteger(effect.amountIfAddendum)
+              && effect.amountIfAddendum > amount && !addendumNow
+              && holdForAddendumSafe(view)) {
+              const currentValue = damageTargetValue(view, slot, amount, scaling);
+              let bestHold = null;
+              for (const o of view.zones.battlefield ?? []) {
+                if (o.controllerId === view.playerId || o.kind !== 'creature' || !o.tapped) continue;
+                const rem = (o.toughness ?? 0) - (o.damage ?? 0);
+                if (!(rem > amount && rem <= effect.amountIfAddendum)) continue;
+                const v = damageTargetValue(view, o.id, effect.amountIfAddendum, scaling);
+                if (bestHold == null || v > bestHold) bestHold = v;
+              }
+              if (bestHold != null && bestHold > currentValue + 10) score -= 120;
+            }
           }
           // M139 (uwaga właściciela): CZAR tapujący nie miał wyceny pozytywnej
           // w ogóle — ścieżka zdolności ją miała, ścieżka czarów nie (kolejny
@@ -7463,12 +7537,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (combat.attackers ?? []).length > 0;
             const victimIsEnemy = Boolean(victim) && victim.controllerId !== view.playerId;
             const victimCouldBlock = victimIsEnemy && !victim.tapped && !victim.cantBlock;
-            const removesRealBlocker = botAttacks && victimCouldBlock
-              && (combat.attackers ?? []).some((aid) => {
-                const attacker = objectOnBoard(view, aid);
-                return attacker && attackerCanBeBlocked(attacker, [victim]);
-              });
-            score += removesRealBlocker ? 8 : -20;
+            const removalValue = (botAttacks && victimCouldBlock)
+              ? cantBlockRemovalValue(view, victim, combat.attackers ?? [])
+              : null;
+            score += removalValue ?? -20;
           }
           // Batch60 (Timely Interference, kicked — „blocks this turn if
           // able"): wymuszony blok WROGA opłaca się, gdy bot atakuje i któryś
@@ -9519,7 +9591,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           return finish(kill ? -60 - value + aura : -20 - value + aura);
         }
-        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target) + bounceDelta);
+        // Batch60-followup/3 (2026-09-27, ograniczenie 3: połówka TAPNIĘCIA):
+        // trigger TAPUJĄCY ląd wroga (Stensia Innkeeper: tap + skip następnego
+        // untapu) ma DWA składniki odmowy: bieżący (działa tylko na odkręconym
+        // — tapniętego nie okrada z many/zdolności TEJ tury) i przyszły (skip
+        // untapu — ten mierzy landDenialDelta w bazie). Bez premii lądy
+        // remisowały samym denialem i bot tapnął np. już tapnięty ląd.
+        // Premia za odkręcony cel: +6 (mana bieżącej tury) + lustro denial
+        // (odcięcie koloru boli też TERAZ). Tylko single-target (triggerów
+        // tapujących wiele celów katalog nie ma).
+        let tapLandDelta = 0;
+        if (view.pendingTriggerTarget?.effectType === 'tap_permanent'
+          && target.controllerId !== view.playerId
+          && (target.kind === 'land' || (target.types ?? []).includes('Land'))
+          && !target.tapped) {
+          tapLandDelta = 6 + Math.max(0, landDenialDelta(target));
+        }
+        return finish(kill ? 30 + value + 60 + aura : 30 + value + aura + landDenialDelta(target) + bounceDelta + tapLandDelta);
       }
       case 'resolve_optional_trigger_choice': {
         // M167/B (Circle of the Land Druid): opcjonalny SELF-MILL tylko przy

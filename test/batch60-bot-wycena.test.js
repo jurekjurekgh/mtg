@@ -288,3 +288,126 @@ test('B60-bot: Fleeting Distraction ratuje blokera debuffem (D3 nie zabił M202/
   assert.equal(chosen?.type, 'cast_spell', `debuff zmieniający wynik bloku: ${JSON.stringify(chosen)}`);
   assert.deepEqual(chosen.targets, ['foe']);
 });
+
+// =============================================================================
+// Batch60-followup (2026-09-27) — domknięcie ograniczeń 1–3 z audytu bota
+// =============================================================================
+
+function summaryHoldBoard() {
+  // Tapnięte 2/2 (dobija zwykłe 3) + tapnięte 5/5 (dobija dopiero Addendum 5).
+  const state = game('p1');
+  put(state, 'sum', 'summary-judgment', 'p1', 'hand');
+  addSimpleCreature(state, 'small', 'p2', { power: 2, toughness: 2 });
+  addSimpleCreature(state, 'big', 'p2', { power: 5, toughness: 5 });
+  state.objects.set('small', Object.freeze({ ...state.objects.get('small'), tapped: true }));
+  state.objects.set('big', Object.freeze({ ...state.objects.get('big'), tapped: true }));
+  addMana(state, 'p1', 2);
+  return state;
+}
+
+test('B60F-1a: Summary TRZYMA do main2 we własnym combacie (nie marnuje w 2/2)', () => {
+  const state = summaryHoldBoard();
+  addSimpleCreature(state, 'atk', 'p1', { power: 2, toughness: 2 });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['atk'] });
+  const { chosen } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'pass_priority', `tapnięte 5/5 doczeka main2 (Addendum 5): ${JSON.stringify(chosen)}`);
+});
+
+test('B60F-1b: Summary TRZYMA w turze wroga (tapnięte cele stoją do naszej main1)', () => {
+  const state = summaryHoldBoard();
+  state.turn.activePlayerId = 'p2';
+  state.turn = jumpToStep(state.turn, 'main1', 'p1');
+  const { chosen } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'pass_priority', `wróg odkręci się dopiero po naszej main1: ${JSON.stringify(chosen)}`);
+});
+
+test('B60F-1c: Summary NIE trzyma w naszym end stepie (wróg odkręci się pierwszy)', () => {
+  const state = summaryHoldBoard();
+  state.turn = jumpToStep(state.turn, 'end', 'p1');
+  const { chosen } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'cast_spell', `po main2 nie ma na co czekać: ${JSON.stringify(chosen)}`);
+  assert.deepEqual(chosen.targets, ['small']);
+});
+
+test('B60F-1d: Summary NIE trzyma, gdy nieblokowani dobijają (odpowiedź teraz)', () => {
+  const state = game('p2');
+  state.players.find((p) => p.id === 'p1').life = 3;
+  addMana(state, 'p1', 2);
+  put(state, 'sum', 'summary-judgment', 'p1', 'hand');
+  addSimpleCreature(state, 'lethal', 'p2', { power: 3, toughness: 3 });
+  addSimpleCreature(state, 'big', 'p2', { power: 5, toughness: 5 });
+  state.objects.set('big', Object.freeze({ ...state.objects.get('big'), tapped: true }));
+  state.turn.activePlayerId = 'p2';
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p2');
+  execute(state, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['lethal'] });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  const { chosen } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'cast_spell', `3 w 3 życia = lethal na stole: ${JSON.stringify(chosen)}`);
+  assert.deepEqual(chosen.targets, ['lethal']);
+});
+
+test('B60F-2: Renegade zdejmuje ZABÓJCZEGO blokera 5/5, nie chumpa 1/1', () => {
+  const state = game('p1');
+  addMana(state, 'p1', 1);
+  put(state, 'ren', 'renegade-tactics', 'p1', 'hand');
+  addSimpleCreature(state, 'me', 'p1', { power: 3, toughness: 3 });
+  addSimpleCreature(state, 'chump', 'p2', { power: 1, toughness: 1 }); // pierwszy w kolejności stołu
+  addSimpleCreature(state, 'killer', 'p2', { power: 5, toughness: 5 });
+  const { chosen, options } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'cast_spell');
+  assert.deepEqual(chosen.targets, ['killer'], `5/5 zabija atakującego, 1/1 tylko chumpuje: ${JSON.stringify(chosen)}`);
+  const chumpScore = scoreOf(options, 'cast_spell(ren->chump)');
+  const killerScore = scoreOf(options, 'cast_spell(ren->killer)');
+  assert.ok(killerScore > chumpScore, `zabójczy bloker (${killerScore}) ponad chumpa (${chumpScore})`);
+});
+
+test('B60F-2b: Panic Spellbomb (bliźniak activate) też celuje zabójczego blokera', () => {
+  const state = game('p1');
+  put(state, 'bomb', 'panic-spellbomb', 'p1', 'battlefield');
+  addSimpleCreature(state, 'me', 'p1', { power: 3, toughness: 3 });
+  addSimpleCreature(state, 'chump', 'p2', { power: 1, toughness: 1 }); // pierwszy w kolejności stołu
+  addSimpleCreature(state, 'killer', 'p2', { power: 5, toughness: 5 });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['me'] });
+  const { chosen } = decide(playerView(state, 'p1'));
+  assert.equal(chosen?.type, 'activate_ability', `zdjęcie blokera w oknie ataku: ${JSON.stringify(chosen)}`);
+  assert.deepEqual(chosen.targets, ['killer'], `wspólny helper liczy obie ścieżki: ${JSON.stringify(chosen)}`);
+});
+
+function stensiaTriggerChoice(setupLands) {
+  const state = game('p1');
+  addMana(state, 'p1', 4);
+  put(state, 'st', 'stensia-innkeeper', 'p1', 'hand');
+  setupLands(state);
+  const v0 = playerView(state, 'p1');
+  const cast = v0.legalCommands.find((c) => c.type === 'cast_permanent' && c.objectId === 'st');
+  assert.ok(cast, 'Stensia ma być rzucalna');
+  execute(state, cast);
+  execute(state, { type: 'pass_priority', playerId: 'p1' });
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  return decide(playerView(state, 'p1'));
+}
+
+test('B60F-3a: Stensia tapuje ODKRĘCONY singleton (połówka tapnięcia łamie remis denialu)', () => {
+  // Oba singletons (denial +28 każdy); tapnięta Góra pierwsza w kolejności —
+  // bez premii za odkręcony cel bot brałby pierwszą z brzegu.
+  const { chosen, options } = stensiaTriggerChoice((state) => {
+    put(state, 'mt', 'basic-mountain', 'p2', 'battlefield', { tapped: true });
+    put(state, 'iu', 'basic-island', 'p2', 'battlefield');
+  });
+  assert.equal(chosen?.type, 'resolve_trigger_target');
+  assert.equal(chosen.targetId, 'iu', `odkręcona Wyspa (denial + tap teraz): ${JSON.stringify(chosen)}`);
+  const tappedScore = scoreOf(options, 'resolve_trigger_target(mt)');
+  const untappedScore = scoreOf(options, 'resolve_trigger_target(iu)');
+  assert.ok(untappedScore > tappedScore, `odkręcony (${untappedScore}) ponad tapnięty (${tappedScore})`);
+});
+
+test('B60F-3b: Stensia tapuje ODKRĘCONY duplikat (nie doklepuje tapniętego)', () => {
+  const { chosen } = stensiaTriggerChoice((state) => {
+    put(state, 'mt', 'basic-mountain', 'p2', 'battlefield', { tapped: true });
+    put(state, 'mu', 'basic-mountain', 'p2', 'battlefield');
+  });
+  assert.equal(chosen?.type, 'resolve_trigger_target');
+  assert.equal(chosen.targetId, 'mu', `tapnięta Góra pierwsza — remis brałby ją: ${JSON.stringify(chosen)}`);
+});

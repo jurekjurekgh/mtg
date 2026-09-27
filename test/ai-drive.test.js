@@ -3,21 +3,23 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { buildAiDrivePayload, createAiDriveLogger } from '../src/table/ai-drive.js';
 
-test('AI-E3 drive: payload ma 7 pól kontraktu §6 + chars = długość', () => {
+test('AI-E3 drive: payload ma 9 pól kontraktu §6 + chars = długość', () => {
   const p = buildAiDrivePayload({
     mode: 'lore-bot', gameId: '7-2026-09-26T00:00:00.000Z', turn: 3,
     model: 'x/y:free', response: 'Mgła. Czeka.', tsClient: '2026-09-26T01:00:00.000Z',
+    decks: 'A vs B', newGame: true,
   });
   assert.deepEqual(p, {
     mode: 'lore-bot', gameId: '7-2026-09-26T00:00:00.000Z', turn: 3,
     model: 'x/y:free', chars: 12, response: 'Mgła. Czeka.',
-    tsClient: '2026-09-26T01:00:00.000Z',
+    tsClient: '2026-09-26T01:00:00.000Z', decks: 'A vs B', newGame: true,
   });
 });
 
 test('AI-E3 drive: payload toleruje braki (nigdy nie rzuca)', () => {
   assert.deepEqual(buildAiDrivePayload(), {
     mode: 'lore-bot', gameId: '', turn: 0, model: '', chars: 0, response: '', tsClient: '',
+    decks: '', newGame: false,
   });
   assert.equal(buildAiDrivePayload({ turn: 'zz', response: 42 }).turn, 0);
   assert.equal(buildAiDrivePayload({ turn: '5' }).turn, 5);
@@ -51,7 +53,7 @@ test('AI-E3 drive: sukces — POST no-cors, text/plain, body JSON', async () => 
   assert.ok(opts.headers['Content-Type'].startsWith('text/plain'));
   assert.deepEqual(JSON.parse(opts.body), {
     mode: 'lore-bot', gameId: 'g1', turn: 2, model: 'm/m:free',
-    chars: 5, response: 'tekst', tsClient: 'ts',
+    chars: 5, response: 'tekst', tsClient: 'ts', decks: '', newGame: true,
   });
 });
 
@@ -92,8 +94,32 @@ test('AI-R5 drive: Code.gs dopisuje do DOKUMENTU (karta na tryb), nie arkusza', 
   assert.ok(gs.includes('asDocumentTab().getBody()'), 'dopisywanie do ciała karty');
   assert.ok(gs.includes('appendParagraph'), 'wpis jako akapity');
   assert.ok(gs.includes('appendHorizontalRule'), 'rozdzielnik wpisów');
+  assert.ok(gs.includes('p.newGame === true'), 'nagłówek tylko dla nowej partii');
+  assert.ok(gs.includes('appendPageBreak()'), 'podział strony przed partią');
+  assert.ok(gs.includes('ParagraphHeading.HEADING1'), 'matchup jako H1');
   assert.ok(gs.includes('LockService'), 'lock współbieżności');
   assert.ok(gs.includes("const DOC_ID = 'WSTAW-ID-DOKUMENTU'"), 'miejsce na ID');
   assert.ok(!gs.includes('SpreadsheetApp'), 'zero Arkusza (decyzja AI-R5)');
   assert.ok(!gs.includes('SHEET_ID'), 'zero starej stałej');
+});
+
+test('AI drive: newGame tylko przy pierwszym logu partii (po gameId, nie turze)', async () => {
+  const bodies = [];
+  const fetchImpl = async (url, opts) => { bodies.push(JSON.parse(opts.body)); return {}; };
+  const log = createAiDriveLogger({ getUrl: () => 'https://u/exec', fetchImpl });
+  await log({ gameId: 'g1', turn: 5, response: 'a', decks: 'A vs B' });
+  await log({ gameId: 'g1', turn: 6, response: 'b', decks: 'A vs B' });
+  await log({ gameId: 'g2', turn: 1, response: 'c', decks: 'C vs D' });
+  assert.deepEqual(bodies.map((b) => b.newGame), [true, false, true]);
+  assert.deepEqual(bodies.map((b) => b.decks), ['A vs B', 'A vs B', 'C vs D']);
+});
+
+test('AI drive: pusty gameId nigdy nie stawia nagłówka; jawne newGame wygrywa', async () => {
+  const bodies = [];
+  const fetchImpl = async (url, opts) => { bodies.push(JSON.parse(opts.body)); return {}; };
+  const log = createAiDriveLogger({ getUrl: () => 'https://u/exec', fetchImpl });
+  await log({ response: 'a' });
+  await log({ gameId: 'g9', turn: 4, response: 'b', newGame: true });
+  await log({ gameId: 'g9', turn: 5, response: 'c' });
+  assert.deepEqual(bodies.map((b) => b.newGame), [false, true, false]);
 });
