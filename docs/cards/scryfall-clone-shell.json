@@ -1,0 +1,42 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Clone%20Shell&set=som",
+  "print": "Clone Shell (SOM)",
+  "name": "Clone Shell",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Artifact Creature — Shapeshifter",
+  "oracle_text": "Imprint — When this creature enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom of your library in any order.\nWhen this creature dies, turn the exiled card face up. If it's a creature card, put it onto the battlefield under your control.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Imprint"
+  ],
+  "set": "som",
+  "collector_number": "143",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/c/cc386c6c-c27e-4673-96eb-1d004fd71993.jpg?1783941712"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [
+    {
+      "date": "2020-08-07",
+      "source": "wotc",
+      "comment": "As Clone Shell's first ability resolves, you must exile one of the cards you look at, even if none of them is a creature card."
+    },
+    {
+      "date": "2020-08-07",
+      "source": "wotc",
+      "comment": "As Clone Shell's second ability resolves, if the exiled card is not a creature card, it simply remains in exile face up."
+    },
+    {
+      "date": "2020-08-07",
+      "source": "wotc",
+      "comment": "If you gain control of another player's Clone Shell, you can't look at the face-down exiled card. However, if Clone Shell dies, you turn that card face up and, if it's a creature card, you put it onto the battlefield under your control."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/som/143/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

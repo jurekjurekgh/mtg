@@ -5257,6 +5257,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // pierwszą z listy.
         const card = decisionCandidateCard(view, cmd.cardId);
         if (!card) return finish(0);
+        // Batch60/9 (Clone Shell): wariant imprint — wygnana karta wraca na
+        // pole bitwy TYLKO jako stwór (śmierć Shella), więc imprintuj
+        // najdroższego stwora; bez stwora wygnaj najmniej przydatną kartę
+        // (nie-stwór w wygnaniu = stracony).
+        if (view.pendingLookTopN?.pickTo === 'exile_face_down_linked') {
+          const isCreature = (card.kind ?? '') === 'creature' || (card.types ?? []).includes('Creature');
+          if (isCreature) return finish(30 + Math.min(card.manaCost ?? 0, 9));
+          return finish(-cardKeepValue(view, card));
+        }
         return finish(cardKeepValue(view, card));
       }
       case 'resolve_hand_top_choice': {

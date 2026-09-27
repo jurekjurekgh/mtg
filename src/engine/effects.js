@@ -1471,7 +1471,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // trwającym wiele tur i nie jest decyzją na stosie.)
     state.events.push(event('object_exiled', {
       fromId: topId, objectId: exileId, object: state.objects.get(exileId),
-      cardId: card?.cardId ?? null,
+      cardId: card?.cardId ?? null, playerId: controllerId,
     }));
     state.pendingExileCast = {
       playerId: controllerId,
@@ -4394,7 +4394,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exiled = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     const src = state.objects.get(sourceObject.id);
     if (src) state.objects.set(sourceObject.id, Object.freeze({ ...src, banishedIds: [...(src.banishedIds ?? []), exileId] }));
-    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true }));
+    // Batch60/9: playerId dla kontraktu zdarzeń (M273) — gracz, którego stwór wygnano.
+    state.events.push(event('object_exiled', { fromId: targetId, objectId: exileId, object: exiled, cardId: exiled.cardId, banished: true, playerId: live.controllerId }));
     return;
   }
   if (effect.type === 'return_banished_to_hand') {
@@ -4930,6 +4931,40 @@ function markTemporaryExile(state, exileId, sourceObject) {
         cardId: moved.cardId ?? null, controllerId: ownerId, fromExile: true,
       }));
     }
+    return;
+  }
+  if (effect.type === 'turn_up_imprinted_card') {
+    // Batch60/9 (Clone Shell, SOM): „When this creature dies, turn the exiled
+    // card face up. If it's a creature card, put it onto the battlefield under
+    // your control.” Źródło już nie żyje — listę wygnanych czytamy z LKI
+    // (wzorzec Pyxis: obiekt na polu bitwy → LKI po śmierci).
+    const linked = [...(state.objects.get(sourceObject.id)?.exiledCardIds ?? sourceObject.exiledCardIds ?? [])];
+    // CR 400.7: wiązanie żyje, dopóki karta jest w wygnaniu — pierwsza taka.
+    const exileId = linked.find((id) => state.objects.get(id)?.zone === 'exile');
+    if (!exileId) return;
+    const card = state.objects.get(exileId);
+    // Odkrycie ZAWSZE (ruling WotC 2020-08-07: nie-stwór zostaje w wygnaniu
+    // odkryty) — jawne, publiczne (card_revealed z cardId).
+    state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+    const controllerId = sourceObject.controllerId;
+    state.events.push(event('card_revealed', {
+      playerId: controllerId, objectId: exileId, cardId: card.cardId ?? null,
+    }));
+    const types = card.types ?? [];
+    if (!types.includes('Creature')) return; // nie-stwór zostaje w wygnaniu
+    // Stwór wchodzi pod kontrolę KONTROLERA triggera (= kontroler Shella
+    // w chwili śmierci z LKI, CR 603.10a — ruling WotC 2020-08-07 o przejęciu).
+    const battlefieldId = `permanent-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
+    state.objects.set(battlefieldId, Object.freeze({
+      ...moved, controllerId, faceDown: false, summoningSickness: true,
+    }));
+    // M274 (jak Pyxis): wejście z wygnania nadaje liczniki wejścia.
+    applyEnterCounters(state, battlefieldId);
+    state.events.push(event('permanent_entered_battlefield', {
+      objectId: battlefieldId, object: state.objects.get(battlefieldId),
+      cardId: moved.cardId ?? null, controllerId, fromExile: true,
+    }));
     return;
   }
   if (effect.type === 'epic_experiment') {
@@ -6133,6 +6168,31 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
   }
 
+  // Batch60/9 (Clone Shell, SOM): lustro takeSingleLookedCardToHand dla
+  // wariantu imprint (L144 — jedna karta = brak wyboru). Wygnanie ZAKRYTE
+  // + wiązanie ze źródłem (CR 400.7, wzorzec Pyxis); pickCardId: null, bo
+  // tożsamość wygnanej zakrytej nie jest publiczna.
+  function exileSingleLookedCardFaceDown(oneState, playerId, objectId, sourceObject) {
+    const exileId = `exile-${oneState.objectSequence++}`;
+    const movedExile = moveObjectDirectly(oneState, objectId, 'exile', exileId, { exiledBy: sourceObject?.cardId ?? null });
+    oneState.objects.set(exileId, Object.freeze({ ...movedExile, faceDown: true }));
+    // Źródło mogło opuścić pole bitwy w odpowiedzi na trigger — wtedy
+    // wygnana karta zostaje sierotą (poprawnie: dies NOWEGO obiektu jej
+    // nie widzi, CR 400.7).
+    const src = oneState.objects.get(sourceObject?.id ?? '');
+    if (src) {
+      oneState.objects.set(src.id, Object.freeze({ ...src, exiledCardIds: [...(src.exiledCardIds ?? []), exileId] }));
+    }
+    oneState.events.push(event('object_exiled', {
+      fromId: objectId, objectId: exileId, object: oneState.objects.get(exileId),
+      playerId, faceDown: true,
+    }));
+    oneState.events.push(event('look_top_resolved', {
+      playerId, count: 1, pickId: objectId, pickCardId: null, restTo: 'library_bottom',
+      pickTo: 'exile_face_down_linked',
+    }));
+  }
+
   if (effect.type === 'look_top_put_one_hand_rest_bottom') {
     // M177/E (Merchant's Dockhand): „Look at the top X cards… Put one of
     // them into your hand and the rest on the bottom of your library in any
@@ -6161,6 +6221,42 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // tytułu modala, jak pendingManifestDread (M251/B) i pendingSatyrLook
       // (M240/B) — bez nazw w warstwie opisu (ADR 0002).
       sourceCardId: sourceObject?.cardId ?? null,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('look_top_started', {
+      playerId: controllerId, count: topIds.length,
+      cardIds: topIds.map((id) => state.objects.get(id)?.cardId).filter(Boolean),
+    }));
+    return true;
+  }
+  if (effect.type === 'look_top_exile_one_face_down_rest_bottom') {
+    // Batch60/9 (Clone Shell, SOM): „look at the top four cards of your
+    // library, exile one face down, then put the rest on the bottom of your
+    // library in any order.” Wariant rodziny pendingLookTopN z pickTo
+    // (Gurmag Drowner/Dockhand biorą wybraną do ręki; tu idzie do wygnania
+    // ZAKRYTA i WIĄŻE SIĘ ze źródłem — CR 400.7, wzorzec Pyxis).
+    // Wybór jest OBOWIĄZKOWY (ruling WotC 2020-08-07: musisz wygnać 1 nawet
+    // nie-stwora) — bramka odrzuca pick spoza objectIds, w tym null, a oferta
+    // nie zawiera rezygnacji.
+    const controllerId = sourceObject.controllerId;
+    const n = effect.amount ?? 4;
+    const topIds = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === controllerId).slice(0, n);
+    if (topIds.length === 0) return;
+    // L144 (jak Dockhand/C2): jedna karta = brak wyboru, silnik wygania sam.
+    if (topIds.length === 1) {
+      exileSingleLookedCardFaceDown(state, controllerId, topIds[0], sourceObject);
+      return;
+    }
+    state.pendingLookTopN = {
+      playerId: controllerId,
+      objectIds: [...topIds],
+      restTo: 'library_bottom',
+      // pickTo: wybrana karta idzie do wygnania zakryta + wiąże się ze
+      // źródłem (sourceId) — bramka resolve_look_top_choice wykonuje wariant.
+      pickTo: 'exile_face_down_linked',
+      sourceId: sourceObject.id,
+      sourceCardId: sourceObject?.cardId ?? null,
+      restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('look_top_started', {

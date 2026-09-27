@@ -3,8 +3,8 @@
 //
 // Dane Oracle i rulingi: `docs/cards/scryfall-*.json` (pobrane 2026-09-27,
 // ADR 0010 §2a, ADR 0028 — rulingi „przy kartce", także puste listy).
-// Katalog: `src/cards/card-data.js`; ŻADNA z 10 nie występuje w
-// `tools/collection-art-ids.csv` → wszystkie BEZ artId (świadomy brak).
+// Katalog: `src/cards/card-data.js`; artId z dopisków `<nr><SET>` do
+// `tools/collection-art-ids.csv` (format zlecenia batcha, np. 145SOM).
 // Plan batcha: `docs/plans/PLAN_2026-09-27-batch60-kolekcja-144-156.md`.
 //
 // Podział na sekcje = etapy batcha (G1.1 … G1.10). Każda sekcja ma scenariusz
@@ -665,4 +665,261 @@ test('B60/G1.8: podgląd zakrytego ATAKUJĄCEGO + log nie zdradza nazw', () => {
   assert.ok(look, 'zdarzenie podglądu');
   assert.ok(!('cardId' in look) || look.cardId === 'revealing-wind', 'event nie niesie tożsamości obejrzanych (tylko źródło)');
   assert.ok(!(look.cardNames ?? look.cardIds), 'event nie niesie nazw/kart obejrzanych');
+});
+
+// ---- G1.9: Clone Shell (145 SOM, plan The Edge) -----------------------------
+function stackLibrary(state, playerId, cardIds) {
+  for (const id of [...state.zones.library]) {
+    if (state.objects.get(id)?.controllerId === playerId) state.objects.delete(id);
+  }
+  state.zones.library = state.zones.library.filter((id) => state.objects.has(id));
+  cardIds.forEach((cardId, i) => put(state, `top-${playerId}-${i}`, cardId, playerId, 'library'));
+}
+
+function castShell(state, caster = 'p1') {
+  put(state, `shell-${caster}`, 'clone-shell', caster);
+  addMana(state, caster, 5);
+  const cast = commands(state, caster).find((c) => c.type === 'cast_permanent' && c.objectId === `shell-${caster}`);
+  assert.ok(cast, `${caster} rzuca Clone Shell`);
+  run(state, cast);
+}
+
+// Przepycha priorytet aż ETB Shella zakolejkuje decyzję imprintu.
+function passToImprint(state) {
+  for (let i = 0; i < 20 && !state.pendingLookTopN; i++) {
+    const p = state.turn.priorityPlayerId;
+    const pass = commands(state, p).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, `${p} pasuje (krok ${i})`);
+    run(state, pass);
+  }
+  assert.ok(state.pendingLookTopN, 'decyzja imprintu zakolejkowana');
+  return state.pendingLookTopN;
+}
+
+function castShatter(state, caster, targetId) {
+  put(state, `shatter-${caster}`, 'shatter', caster);
+  addMana(state, caster, 2, { colors: ['R'] });
+  const cast = commands(state, caster).find((c) => c.type === 'cast_spell'
+    && c.objectId === `shatter-${caster}` && c.targets?.[0] === targetId);
+  assert.ok(cast, `${caster} rzuca Shatter w ${targetId}`);
+  run(state, cast);
+}
+
+test('B60/G1.9: dane karty (SOM, {5}, 2/2 Shapeshifter, The Edge)', () => {
+  const def = registry.get('clone-shell');
+  assert.ok(def, 'Clone Shell w rejestrze');
+  assert.equal(def.set, 'SOM');
+  assert.equal(MANA_COSTS['clone-shell'], '{5}');
+  assert.deepEqual(def.types, ['Artifact', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Shapeshifter']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 5);
+  assert.equal(def.artId, 145);
+  assert.equal(def.plan, 'The Edge');
+  assert.deepEqual(def.support, { status: 'supported', limitations: [] });
+  assert.equal(def.abilities.length, 2, 'ETB imprint + dies');
+  const [etb, dies] = def.abilities;
+  assert.equal(etb.trigger.event, 'enter_battlefield');
+  assert.deepEqual(etb.effect, [{ type: 'look_top_exile_one_face_down_rest_bottom', amount: 4 }]);
+  assert.equal(dies.trigger.event, 'dies');
+  assert.deepEqual(dies.effect, [{ type: 'turn_up_imprinted_card' }]);
+});
+
+test('B60/G1.9: ETB — 1 z 4 do wygnania zakrytego + reszta na spód w wybranej kolejności', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq', 'razorfoot-griffin', 'basic-swamp', 'highland-game']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  const pending = state.pendingLookTopN;
+  assert.equal(pending.pickTo, 'exile_face_down_linked', 'wariant imprintu w pendingu');
+  assert.deepEqual(pending.objectIds, ['top-p1-0', 'top-p1-1', 'top-p1-2', 'top-p1-3'], 'patrzymy na 4 z wierzchu');
+  const offers = commands(state, 'p1').filter((c) => c.type === 'resolve_look_top_choice');
+  assert.equal(offers.length, 4, 'oferta per karta, BEZ rezygnacji (wybór obowiązkowy, ruling 2020-08-07)');
+  // Wygnaj griffina (2. z wierzchu); resztę na spód w kolejności game, krotiq, swamp.
+  const r = execute(state, {
+    type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-1',
+    bottomOrder: ['top-p1-3', 'top-p1-0', 'top-p1-2'],
+  });
+  assert.ok(r.ok, JSON.stringify(r.events));
+  resolve(state);
+  const shell = find(state, 'clone-shell');
+  assert.ok(shell, 'Shell na polu bitwy');
+  assert.equal((shell.exiledCardIds ?? []).length, 1, 'źródło pamięta 1 wygnaną (CR 400.7)');
+  const exiled = state.objects.get(shell.exiledCardIds[0]);
+  assert.equal(exiled?.zone, 'exile');
+  assert.equal(exiled?.faceDown, true, 'wygnana ZAKRYTA');
+  assert.equal(exiled?.cardId, 'razorfoot-griffin', 'to wybrany griffin');
+  const p1lib = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === 'p1');
+  assert.deepEqual(p1lib.map((id) => state.objects.get(id).cardId),
+    ['highland-game', 'segmented-krotiq', 'basic-swamp'], 'reszta na spodzie w WYBRANEJ kolejności');
+  const resolved = state.events.filter((e) => e.type === 'look_top_resolved').pop();
+  assert.equal(resolved.pickCardId, null, 'tożsamość wygnanej nie jest publiczna');
+  assert.equal(resolved.pickTo, 'exile_face_down_linked');
+  const exileEv = state.events.filter((e) => e.type === 'object_exiled' && e.faceDown === true).pop();
+  assert.ok(exileEv && !('cardId' in exileEv), 'event wygnania bez cardId (mgła wojny, jak Pyxis)');
+});
+
+test('B60/G1.9: podgląd i wygnanie widzi tylko decydent (przeciwnik ślepy)', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq', 'razorfoot-griffin', 'basic-swamp', 'highland-game']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  const foePending = playerView(state, 'p2').pendingLookTopN;
+  assert.ok(foePending, 'przeciwnik widzi TRWANIE decyzji');
+  assert.equal(foePending.cards, null, 'przeciwnik nie widzi kart (prywatny look)');
+  const myPending = playerView(state, 'p1').pendingLookTopN;
+  assert.equal(myPending.pickTo, 'exile_face_down_linked', 'wariant decyzji w widoku (etykiety UI/bot)');
+  assert.equal(myPending.cards.length, 4, 'decydent widzi 4 karty');
+  run(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0' });
+  resolve(state);
+  const foeExile = playerView(state, 'p2').zones.exile;
+  assert.equal(foeExile.length, 1, 'przeciwnik widzi STOS wygnania');
+  assert.ok(foeExile[0].cardId == null, 'tożsamość zakrytej ukryta (M260/B1, CR 406.3)');
+  assert.equal(foeExile[0].faceDown, true);
+});
+
+test('B60/G1.9: NIELEGALNE — null, cudza karta, cudzy gracz i zła kolejność odrzucone', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq', 'razorfoot-griffin', 'basic-swamp', 'highland-game']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  let r = execute(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: null });
+  assert.equal(r.ok, false, 'null = rezygnacja, a wybór jest obowiązkowy');
+  assert.equal(r.events[0].reason, 'illegal_look_top_choice');
+  r = execute(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p2-0' });
+  assert.equal(r.ok, false, 'karta spoza czwórki odrzucona');
+  assert.equal(r.events[0].reason, 'illegal_look_top_choice');
+  r = execute(state, { type: 'resolve_look_top_choice', playerId: 'p2', cardId: 'top-p1-0' });
+  assert.equal(r.ok, false, 'cudzy gracz odrzucony');
+  assert.equal(r.events[0].reason, 'look_top_not_your_decision');
+  r = execute(state, {
+    type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0',
+    bottomOrder: ['top-p1-1', 'top-p1-2'], // za krótka — nie permutacja reszty
+  });
+  assert.equal(r.ok, false, 'zła kolejność spodniej reszty odrzucona');
+  assert.equal(r.events[0].reason, 'illegal_look_top_bottom_order');
+  assert.ok(state.pendingLookTopN, 'decyzja nadal czeka po odrzutach');
+});
+
+test('B60/G1.9: jedna karta w bibliotece = auto-wygnanie bez decyzji (L144)', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq']);
+  castShell(state, 'p1');
+  resolve(state);
+  assert.equal(state.pendingLookTopN, null, 'przy 1 karcie decyzji nie ma');
+  const shell = find(state, 'clone-shell');
+  assert.equal((shell.exiledCardIds ?? []).length, 1, 'jedyna karta wygnana automatycznie');
+  const exiled = state.objects.get(shell.exiledCardIds[0]);
+  assert.equal(exiled?.cardId, 'segmented-krotiq');
+  assert.equal(exiled?.faceDown, true);
+  const resolved = state.events.filter((e) => e.type === 'look_top_resolved').pop();
+  assert.equal(resolved?.count, 1);
+  assert.equal(resolved?.pickTo, 'exile_face_down_linked');
+});
+
+test('B60/G1.9: pusta biblioteka = ETB no-op (bez pendingu i wygnania)', () => {
+  const state = game();
+  stackLibrary(state, 'p1', []);
+  castShell(state, 'p1');
+  resolve(state);
+  assert.equal(state.pendingLookTopN, null);
+  assert.equal(state.zones.exile.length, 0, 'nic nie wygnane');
+  assert.ok(find(state, 'clone-shell'), 'Shell mimo to na stole');
+});
+
+test('B60/G1.9: dies ze stworem — stwór wchodzi na pole bitwy pod kontrolę', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq', 'basic-swamp', 'basic-swamp', 'basic-swamp']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  run(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0' });
+  resolve(state);
+  const shell = find(state, 'clone-shell');
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  castShatter(state, 'p2', shell.id);
+  resolve(state);
+  assert.ok(find(state, 'clone-shell', 'graveyard'), 'Shell zginął od Shattera');
+  const krotiq = find(state, 'segmented-krotiq');
+  assert.ok(krotiq, 'wdrukowany stwór wrócił na pole bitwy');
+  assert.equal(krotiq.controllerId, 'p1', 'pod kontrolą kontrolera Shella');
+  assert.equal(krotiq.summoningSickness, true, 'świeży stwór ma chorobę');
+  const revealed = state.events.filter((e) => e.type === 'card_revealed' && e.cardId === 'segmented-krotiq').pop();
+  assert.ok(revealed, 'odkrycie jawne (publiczne card_revealed z cardId)');
+  const entered = state.events.filter((e) => e.type === 'permanent_entered_battlefield' && e.fromExile === true).pop();
+  assert.ok(entered, 'wejście z wygnania (flaga fromExile, jak Pyxis)');
+});
+
+test('B60/G1.9: ruling — dies z nie-stworem: zostaje w wygnaniu ODKRYTY', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['basic-swamp', 'basic-swamp', 'basic-swamp', 'basic-swamp']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  run(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0' });
+  resolve(state);
+  const before = state.zones.battlefield.length;
+  const shell = find(state, 'clone-shell');
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  castShatter(state, 'p2', shell.id);
+  resolve(state);
+  const swamp = [...state.objects.values()].find((o) => o.zone === 'exile' && o.cardId === 'basic-swamp');
+  assert.ok(swamp, 'nie-stwór nadal w wygnaniu');
+  assert.equal(swamp.faceDown, false, 'odkryty (ruling WotC 2020-08-07)');
+  assert.equal(state.zones.battlefield.length, before - 1, 'nic nie weszło (tylko Shell zszedł)');
+});
+
+test('B60/G1.9: ruling — przejęty Shell: dies działa dla złodzieja', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['razorfoot-griffin', 'basic-swamp', 'basic-swamp', 'basic-swamp']);
+  castShell(state, 'p1');
+  passToImprint(state);
+  run(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0' });
+  resolve(state);
+  const shell = find(state, 'clone-shell');
+  // Tura p2: Act of Treason przejmuje Shella (sorcery — main p2).
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
+  put(state, 'act-p2', 'act-of-treason', 'p2');
+  addMana(state, 'p2', 3, { colors: ['R'] });
+  const act = commands(state, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'act-p2' && c.targets?.[0] === shell.id);
+  assert.ok(act, 'Act of Treason celuje w Shella');
+  run(state, act);
+  resolve(state);
+  assert.equal(state.objects.get(shell.id).controllerId, 'p2', 'Shell przejęty do końca tury');
+  castShatter(state, 'p2', shell.id);
+  resolve(state);
+  const griffin = find(state, 'razorfoot-griffin');
+  assert.ok(griffin, 'wdrukowany stwór wrócił mimo zmiany kontroli');
+  assert.equal(griffin.controllerId, 'p2', 'pod kontrolą ZŁODZIEJA (kontroler triggera, ruling 2020-08-07)');
+});
+
+test('B60/G1.9: Shell zdjęty w odpowiedzi na ETB — wygnanie-sierota, dies puste', () => {
+  const state = game();
+  stackLibrary(state, 'p1', ['segmented-krotiq', 'basic-swamp', 'basic-swamp', 'basic-swamp']);
+  castShell(state, 'p1');
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  run(state, { type: 'pass_priority', playerId: 'p2' }); // czar wchodzi; ETB na stosie
+  const shell = find(state, 'clone-shell');
+  assert.ok(shell, 'Shell wszedł przed odpowiedzią');
+  run(state, { type: 'pass_priority', playerId: 'p1' });
+  castShatter(state, 'p2', shell.id); // odpowiedź na trigger ETB
+  resolve(state);
+  assert.ok(find(state, 'clone-shell', 'graveyard'), 'Shell zdjęty w odpowiedzi');
+  // ETB rozstrzygnął się jako ostatni i zostawił decyzję (trigger schodzi ze
+  // stosu, pending blokuje grę — ten sam wzorzec co Dockhand) — odpowiadamy.
+  assert.ok(state.pendingLookTopN, 'decyzja imprintu czeka mimo śmierci źródła');
+  run(state, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: 'top-p1-0' });
+  const orphans = [...state.objects.values()].filter((o) => o.zone === 'exile');
+  assert.equal(orphans.length, 1, 'ETB mimo to wygnał 1 (trigger żyje bez źródła)');
+  assert.equal(orphans[0].faceDown, true, 'sierota też leży zakryta');
+  const fromExile = state.events.filter((e) => e.type === 'permanent_entered_battlefield' && e.fromExile === true);
+  assert.equal(fromExile.length, 0, 'dies przy pustym wiązaniu nic nie wprowadził (CR 400.7)');
+});
+
+test('B60/G1.9: bez many rzut nie jest oferowany', () => {
+  const state = game();
+  put(state, 'shell-p1', 'clone-shell', 'p1');
+  const casts = commands(state, 'p1').filter((c) => c.type === 'cast_permanent' && c.objectId === 'shell-p1');
+  assert.equal(casts.length, 0, '{5} bez many nie do rzucenia');
 });

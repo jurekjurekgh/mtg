@@ -2698,6 +2698,47 @@ export function execute(state, input) {
     const pending = state.pendingLookTopN;
     const pickId = cmd.cardId;
     if (!pending.objectIds.includes(pickId)) return reject('illegal_look_top_choice');
+    // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta idzie do
+    // wygnania ZAKRYTA + wiąże się ze źródłem (CR 400.7, wzorzec Pyxis),
+    // NIE do ręki. Reszta na spód z bottomOrder (jak Dockhand, M177/E).
+    // Wybór obowiązkowy (ruling WotC 2020-08-07) — walidacja wyżej odrzuca
+    // null, oferta nie zawiera rezygnacji.
+    if (pending.pickTo === 'exile_face_down_linked') {
+      const exileId = `exile-${state.objectSequence++}`;
+      const movedExile = moveObjectDirectly(state, pickId, 'exile', exileId, { exiledBy: pending.sourceCardId ?? null });
+      state.objects.set(exileId, Object.freeze({ ...movedExile, faceDown: true }));
+      const linkSource = state.objects.get(pending.sourceId);
+      if (linkSource) {
+        state.objects.set(pending.sourceId, Object.freeze({ ...linkSource, exiledCardIds: [...(linkSource.exiledCardIds ?? []), exileId] }));
+      }
+      state.events.push(event('object_exiled', {
+        fromId: pickId, objectId: exileId, object: state.objects.get(exileId),
+        playerId: pending.playerId, faceDown: true,
+      }));
+      const restImprint = pending.objectIds.filter((id) => id !== pickId);
+      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : restImprint;
+      if (bottomOrder.length !== restImprint.length || new Set(bottomOrder).size !== bottomOrder.length
+        || bottomOrder.some((id) => !restImprint.includes(id))) {
+        return reject('illegal_look_top_bottom_order');
+      }
+      const bottomSet = new Set(bottomOrder);
+      state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
+      for (const id of bottomOrder) {
+        state.events.push(event('object_moved', { fromId: id, object: state.objects.get(id), fromZone: 'library', toZone: 'library', toBottom: true, looked: true }));
+      }
+      state.pendingLookTopN = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      state.events.push(event('look_top_resolved', {
+        playerId: pending.playerId, count: pending.objectIds.length, pickId,
+        // Wygnana zakryta — tożsamość NIE jest publiczna (null; opis mówi
+        // „kartę”, decydent zna ją z modala).
+        pickCardId: null, restTo: 'library_bottom', pickTo: 'exile_face_down_linked',
+      }));
+      const resolvedImprint = state.events.slice(state.events.length - (restImprint.length + 2));
+      return accepted(state, cmd, { ok: true, events: resolvedImprint });
+    }
     // Wybrana karta do ręki; reszta do grobu (kolejność wierzchu zachowana).
     const handId = `hand-${state.objectSequence++}`;
     const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
@@ -8657,6 +8698,11 @@ export function playerView(state, playerId) {
     // na polu bitwy), ten sam wzorzec co pendingManifestDread/pendingSatyrLook.
     sourceCardId: state.pendingLookTopN.sourceCardId ?? null,
     count: state.pendingLookTopN.objectIds.length,
+    // Batch60/9 (Clone Shell): wariant decyzji — dokąd idzie wybrana karta
+    // ('hand' albo 'exile_face_down_linked'). Informacja publiczna (typ
+    // decyzji, nie tożsamość kart) — UI i bot rozgałęziają po niej etykiety
+    // i wycenę (ADR 0002 — bez nazw kart w warstwie opisu).
+    pickTo: state.pendingLookTopN.pickTo ?? 'hand',
     cards: state.pendingLookTopN.playerId === playerId
       ? state.pendingLookTopN.objectIds.map((id) => {
         const object = state.objects.get(id);

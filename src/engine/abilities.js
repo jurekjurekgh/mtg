@@ -1740,7 +1740,8 @@ export function performActivation(state, ctx) {
     const exiled = moveObjectDirectly(state, objectId, 'exile', exileId, {
       exiledBy: state.objects.get(objectId)?.cardId ?? 'effect',
     });
-    state.events.push(event('object_exiled', { fromId: objectId, objectId: exileId, object: exiled, cardId: exiled.cardId, fromGraveyard: true }));
+    // Batch60/9: playerId dla kontraktu zdarzeń (M273) — płacący kosztem.
+    state.events.push(event('object_exiled', { fromId: objectId, objectId: exileId, object: exiled, cardId: exiled.cardId, fromGraveyard: true, playerId }));
     effectSource = exiled;
   }
   // Koszt „Remove a counter" (Trigon of Corruption): zdjęcie licznika jest

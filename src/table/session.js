@@ -1794,6 +1794,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const restLabel = e.restTo === 'library_bottom'
           ? 'reszta na spód biblioteki'
           : 'reszta do grobu';
+        // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta poszła do
+        // wygnania zakryta (imprint), nie do ręki. pickCardId null = opis mówi
+        // „kartę” (przeciwnik nie zna tożsamości; decydent widział ją w modale).
+        if (e.pickTo === 'exile_face_down_linked') {
+          return `${whoN(e.playerId)} wygania ${pickName} zakrytą (${restLabel})`;
+        }
         return `${whoN(e.playerId)} bierze ${pickName} z wierzchu do ręki (${restLabel})`;
       }
       case 'satyr_look_started': {

@@ -534,4 +534,6 @@ export const MANA_COSTS = {
   "timely-interference": "{U}",
   // Batch60: Revealing Wind (DTK).
   "revealing-wind": "{2}{G}",
+  // Batch60: Clone Shell (SOM).
+  "clone-shell": "{5}",
 };

@@ -12257,6 +12257,34 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 151, plan: 'Tarkir',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/9. Clone Shell (SOM) — {5} 2/2 Artifact Creature Shapeshifter.
+  // Imprint ETB: obejrzyj 4 z wierzchu, wygnaj 1 zakrytą (wiąże się ze
+  // źródłem, CR 400.7), resztę na spód w dowolnej kolejności (wariant
+  // rodziny pendingLookTopN: pickTo 'exile_face_down_linked', wybór
+  // obowiązkowy — ruling WotC 2020-08-07). Dies: odkryj wygnaną; stwór
+  // wchodzi na pole bitwy pod kontrolą kontrolera triggera.
+  defineCard({
+    id: 'clone-shell', name: 'Clone Shell', set: 'SOM',
+    types: ['Artifact', 'Creature'], subtypes: ['Shapeshifter'], colors: [],
+    power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'Imprint — When this creature enters, look at the top four cards of your library, exile one face down, then put the rest on the bottom of your library in any order.\nWhen this creature dies, turn the exiled card face up. If it\'s a creature card, put it onto the battlefield under your control.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/c/cc386c6c-c27e-4673-96eb-1d004fd71993.jpg?1783941712',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'look_top_exile_one_face_down_rest_bottom', amount: 4 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: [{ type: 'turn_up_imprinted_card' }],
+      }),
+    ],
+    artId: 145, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

@@ -144,7 +144,7 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 44 | 15 | 29 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 32 | 11 | 21 |
-| `worek-legend` | Worek: Legendy | WUBRG | 24 | 8 | 16 |
+| `worek-legend` | Worek: Legendy | WUBRG | 26 | 9 | 17 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

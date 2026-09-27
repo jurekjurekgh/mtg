@@ -1409,6 +1409,15 @@ function describeEffect(e, ctx = {}) {
       const base = `odsłoń ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: możesz wziąć ląd do ręki, reszta do grobu`;
       return e.counterIfNone ? `${base}; bez wzięcia lądu: licznik +1/+1` : base;
     },
+    // Batch60/9 (Clone Shell, imprint): „look at the top N, exile one face
+    // down, rest on the bottom in any order” — wybór obowiązkowy.
+    look_top_exile_one_face_down_rest_bottom: () => {
+      const n = e.amount ?? 4;
+      return `obejrzyj ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')} z wierzchu: wygnaj 1 zakrytą, resztę na spód w dowolnej kolejności`;
+    },
+    // Batch60/9 (Clone Shell, dies): „turn the exiled card face up. If it's
+    // a creature card, put it onto the battlefield under your control.”
+    turn_up_imprinted_card: () => 'odkryj wdrukowaną kartę; jeśli to stwór, wchodzi na pole bitwy pod twoją kontrolą',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
     mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
@@ -2447,6 +2456,11 @@ function choiceSourceTitle(cmd, session, view) {
   // źródło (permanent na polu bitwy — publiczne) jedzie z pendingu jak
   // pendingManifestDread/pendingSatyrLook (ADR 0002).
   if (cmd?.type === 'resolve_look_top_choice' && view?.pendingLookTopN?.sourceCardId) {
+    // Batch60/9 (Clone Shell): wariant imprint — wybrana karta idzie do
+    // wygnania zakryta, nie do ręki (gałąź po polu pendingu, ADR 0002).
+    if (view.pendingLookTopN.pickTo === 'exile_face_down_linked') {
+      return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — wygnaj 1 zakrytą (imprint), resztę na spód`;
+    }
     return `${session.nameOf(view.pendingLookTopN.sourceCardId)} — karta z odsłoniętych do ręki`;
   }
   // Pętla jakości (klasa L102/1): Dreams of Steel and Oil — decyzja „wygnij
@@ -3856,6 +3870,10 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_look_top_choice': {
       // Gurmag Drowner — wybierz kartę z wierzchu do ręki.
+      // Batch60/9 (Clone Shell): wariant imprint — do wygnania zakryta.
+      if (view?.pendingLookTopN?.pickTo === 'exile_face_down_linked') {
+        return `Wygnaj zakrytą: ${nameOfObjectId(cmd.cardId)} (reszta na spód)`;
+      }
       return `Weź do ręki: ${nameOfObjectId(cmd.cardId)}`;
     }
     case 'resolve_manifest_dread': {
