@@ -4403,6 +4403,22 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
+  if (effect.type === 'blocks_if_able_until_end_of_turn') {
+    // Batch60 (Timely Interference, wariant kicked): „that creature blocks
+    // this turn if able." Tymczasowy znacznik na obiekcie — zdejmowany
+    // w cleanup (CR 514.2); egzekwowany w declareBlockers, ofertach
+    // i auto-deklaracji passów (combat.js — lustro znaleziska J).
+    const targetId = targets[0];
+    if (!targetId) return;
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
+    const object = state.objects.get(targetId);
+    if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
+    state.objects.set(targetId, Object.freeze({ ...object, blocksIfAble: true }));
+    state.events.push(event('stats_modified', {
+      objectId: targetId, cardId: object.cardId, blocksIfAble: true, sourceId: sourceObject.id,
+    }));
+    return;
+  }
   if (effect.type === 'attacker_gains_control_and_untaps') {
     // Batch 48 (Contested Game Ball, LCI): „Whenever you're dealt combat
     // damage, the ATTACKING PLAYER gains control of this artifact and untaps

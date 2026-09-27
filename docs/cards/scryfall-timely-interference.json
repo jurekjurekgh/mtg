@@ -1,0 +1,60 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Timely%20Interference&set=dmu",
+  "print": "Timely Interference (DMU)",
+  "name": "Timely Interference",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Kicker {1}{R} (You may pay an additional {1}{R} as you cast this spell.)\nTarget creature gets -1/-0 until end of turn. If this spell was kicked, that creature blocks this turn if able.\nDraw a card.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "keywords": [
+    "Kicker"
+  ],
+  "set": "dmu",
+  "collector_number": "70",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/1/017a3c6b-9a1e-403a-9c20-2360090d39ee.jpg?1783921342"
+  },
+  "pobrano": "2026-09-27",
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "The kicker ability doesn't let you pay a kicker cost more than once."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you put a permanent with a kicker ability onto the battlefield without casting it, you can't kick it."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you copy a kicked spell on the stack, the copy is also kicked. If the copied spell is a permanent spell, the token the copy of that spell becomes when it enters is also kicked."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a card or token enters as a copy of a permanent, the new permanent isn't kicked, even if the original was."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "To determine a spell's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases (such as kicker), then apply any cost reductions. The spell's mana value remains unchanged, no matter what the total cost to cast it was."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dmu/70/rulings",
+  "rulingsPobrano": "2026-09-27"
+}

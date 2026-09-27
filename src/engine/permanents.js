@@ -1554,7 +1554,10 @@ export function clearStatModifiers(state) {
       // Granty z TERMINEM tury (`cantBeBlockedUntilTurn` — M407,
       // `hexproofUntilTurn`) celowo poza tą bramką: wygasają read-time
       // (`state.turn.number < termin`), więc obiekt nie jest „brudny”.
-      || (current.cantBlock === true && current.cantBlockPrinted !== true);
+      || (current.cantBlock === true && current.cantBlockPrinted !== true)
+      // Batch60 („blocks if able" — Timely Interference): wymóg bloku
+      // „this turn" wygasa w cleanup (CR 514.2).
+      || current.blocksIfAble === true;
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
@@ -1565,6 +1568,8 @@ export function clearStatModifiers(state) {
         // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
         // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
         cantBlock: Boolean(current.cantBlockPrinted),
+        // Batch60: wymóg bloku „this turn" zdejmowany w cleanup (CR 514.2).
+        blocksIfAble: false,
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

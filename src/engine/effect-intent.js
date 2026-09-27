@@ -33,6 +33,9 @@ export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   'bounce_to_library_bottom', 'owner_library_top_or_bottom',
   'sacrifice_permanent', 'player_sacrifices_creature', 'tap_permanent', 'shrink',
   'pump_negative', 'cant_block', 'mill_cards', 'dont_untap_next_untap_step',
+  // Batch60 (Timely Interference, kicked): wymuszony blok — wrogi wobec celu
+  // (lustro cant_block: odbiera decyzję w combacie).
+  'blocks_if_able_until_end_of_turn',
   // M177/E (Azorius Justiciar): detain odbiera celowi atak/blok/aktywacje.
   'detain',
 ]);

@@ -12217,6 +12217,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 156, plan: 'Ravnica',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch60/7. Timely Interference (DMU) — {U} instant, Kicker {1}{R}:
+  // -1/-0 do końca tury, kicked → blocks if able, cantrip. Pierwsza karta
+  // wymogu bloku (flaga blocksIfAble + mandatoryBlockerIds + walidacja
+  // i auto-deklaracja w combat.js — lustro znaleziska J).
+  defineCard({
+    id: 'timely-interference', name: 'Timely Interference', set: 'DMU',
+    types: ['Instant'], colors: ['U'], manaCost: 1,
+    kicker: { cost: 2, colors: ['R'] },
+    oracleText: 'Kicker {1}{R} (You may pay an additional {1}{R} as you cast this spell.)\nTarget creature gets -1/-0 until end of turn. If this spell was kicked, that creature blocks this turn if able.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/1/017a3c6b-9a1e-403a-9c20-2360090d39ee.jpg?1783921342',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: -1, toughness: 0 },
+        { type: 'blocks_if_able_until_end_of_turn', condition: { wasKicked: true } },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 152, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

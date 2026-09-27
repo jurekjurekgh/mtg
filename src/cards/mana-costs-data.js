@@ -530,4 +530,6 @@ export const MANA_COSTS = {
   "stensia-innkeeper": "{3}{R}",
   // Batch60: Summary Judgment (RNA).
   "summary-judgment": "{1}{W}",
+  // Batch60: Timely Interference (DMU) — baza {U}, kicker {1}{R} w deskryptorze.
+  "timely-interference": "{U}",
 };

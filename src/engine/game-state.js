@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
 import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -5462,6 +5462,21 @@ export function execute(state, input) {
             events.push(declareAttackers(state, state.turn.activePlayerId, forced, { pushToState: false, events }));
           }
         }
+        // Batch60 („blocks if able", Timely Interference): lustro znaleziska J
+        // po stronie obrońcy — runda passów nie pomija wymuszonych bloków.
+        // Deklaracja komendą ZAWSZE wychodzi z kroku (declare_blockers
+        // przechodzi do combat_damage), więc zastany declare_blockers z pustą
+        // mapą = brak deklaracji; składamy minimalne pokrycie wymuszonych.
+        if (state.turn.step === 'declare_blockers' && state.combat && (state.combat.blockers?.size ?? 0) === 0) {
+          const defenderId = state.players.find((player) => player.id !== state.turn.activePlayerId).id;
+          const forcedBlockers = mandatoryBlockerIds(state, defenderId);
+          if (forcedBlockers.length > 0) {
+            const assignments = minimalMandatoryBlocks(state, defenderId, forcedBlockers);
+            if (assignments) {
+              events.push(declareBlockers(state, defenderId, assignments, { pushToState: false }));
+            }
+          }
+        }
         // D (CR 508.2): tędy przechodzi TYLKO combat_damage bez atakujących
         // (z atakującymi krok domyka resolve_combat — gałąź M255/F powyżej).
         // Taki pusty combat trzeba sprzątnąć, bo bramka oferty deklaracji
@@ -6413,6 +6428,9 @@ export function playerView(state, playerId) {
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;
+        // Batch60 („blocks if able" — Timely Interference): wymóg bloku to
+        // informacja publiczna (badge + boty; lustro goad).
+        if (object.blocksIfAble === true) entry.blocksIfAble = true;
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
         // a render liczy z nich badge'e („nie może blokować", „nie do

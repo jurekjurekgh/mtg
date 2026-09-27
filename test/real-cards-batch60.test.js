@@ -16,7 +16,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { effectivePower, effectiveToughness, clearStatModifiers } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 
 const registry = createCardRegistry();
@@ -417,4 +417,147 @@ test('B60/G1.6: Addendum — kopia storma NIE dziedziczy flagi rzutu (ruling RNA
   assert.equal(copies.length, 2, 'storm stworzył dwie kopie (dwa wcześniejsze czary)');
   assert.ok(copies.every((c) => c.castDuringMainPhase === false),
     'kopia ma wygaszoną flagę (nigdy nie była rzucona — ruling Addendum)');
+});
+
+// ---- G1.7: Timely Interference (152 DMU, plan Dominaria) --------------------
+
+test('B60/G1.7: Timely Interference — dane Oracle, instant {U} + kicker i druk DMU', () => {
+  const def = registry.get('timely-interference');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['U']);
+  assert.equal(def.manaCost, 1);
+  assert.deepEqual(def.kicker, { cost: 2, colors: ['R'] });
+  assert.equal(def.set, 'DMU');
+  assert.equal(def.plan, 'Dominaria');
+  assert.equal(def.artId, 152);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('017a3c6b'), 'imageUri z druku DMU (dmu/70)');
+  assert.equal(MANA_COSTS['timely-interference'], '{U}');
+});
+
+test('B60/G1.7: Timely Interference bez kickera — -1/-0 + dobór, bez wymogu bloku', () => {
+  const state = game();
+  put(state, 'timely', 'timely-interference', 'p1');
+  put(state, 'victim', 'segmented-krotiq', 'p2', 'battlefield');
+  addMana(state, 'p1', 1);
+  const handBefore = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'timely' && !c.kicked && c.targets?.[0] === 'victim');
+  assert.ok(cast, 'wariant bez kickera jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('victim'), state), 5, '6/5 dostał -1/-0 (moc 5)');
+  assert.equal(effectiveToughness(state.objects.get('victim'), state), 5, 'wytrzymałość bez zmian');
+  assert.equal(state.objects.get('victim').blocksIfAble ?? false, false, 'bez kickera brak wymogu bloku');
+  const handAfter = [...state.objects.values()].filter((o) => o.zone === 'hand' && o.controllerId === 'p1').length;
+  assert.equal(handAfter, handBefore, 'cantrip: ręka wraca do rozmiaru sprzed rzutu');
+});
+
+test('B60/G1.7: Timely Interference z kickerem — koszt 3, wasKicked i blocksIfAble', () => {
+  const state = game();
+  put(state, 'timely', 'timely-interference', 'p1');
+  put(state, 'victim', 'segmented-krotiq', 'p2', 'battlefield');
+  addMana(state, 'p1', 3);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'timely' && c.kicked === true && c.targets?.[0] === 'victim');
+  assert.ok(cast, 'wariant kicked jest oferowany przy 3 manie');
+  run(state, cast);
+  assert.equal(player(state, 'p1').mana, 0, 'zapłacono bazę {U} + kicker {1}{R} = 3');
+  const stacked = state.objects.get(state.zones.stack.at(-1));
+  assert.equal(stacked.wasKicked, true, 'fakt kickera na obiekcie stosu (CR 702.33a)');
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('victim'), state), 5, '-1/-0 także w wariancie kicked');
+  assert.equal(state.objects.get('victim').blocksIfAble, true, 'kicked stawia wymóg bloku');
+});
+
+// Pomocnicza walka: p1 atakuje, krok bloków z priorytetem obrońcy.
+function fight(state, attackerIds, defender = 'p2') {
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  run(state, { type: 'declare_attackers', playerId: 'p1', attackerIds });
+  state.turn = jumpToStep(state.turn, 'declare_blockers', defender);
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = defender;
+}
+
+function kickTimelyOn(state, targetId) {
+  put(state, 'timely', 'timely-interference', 'p1');
+  addMana(state, 'p1', 3);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'timely' && c.kicked === true && c.targets?.[0] === targetId);
+  assert.ok(cast, 'rzut kicked w cel');
+  run(state, cast);
+  resolve(state);
+}
+
+test('B60/G1.7: blocks if able — deklaracja bez wymuszonego odrzucona, z nim przyjęta', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'forced', 'razorfoot-griffin', 'p2', 'battlefield');
+  put(state, 'free', 'razorfoot-griffin', 'p2', 'battlefield');
+  kickTimelyOn(state, 'forced');
+  fight(state, ['att']);
+  const empty = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  assert.equal(empty.ok, false, 'pusta deklaracja (pomija wymuszonego) jest nielegalna');
+  const emptyReason = empty.reason ?? empty.events?.[0]?.reason ?? '';
+  assert.match(emptyReason, /blocks if able/, 'powód nazywa wymóg bloku');
+  const freeOnly = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['free'] } });
+  assert.equal(freeOnly.ok, false, 'blok samym opcjonalnym (pomija wymuszonego) jest nielegalny');
+  const covering = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: { att: ['forced'] } });
+  assert.equal(covering.ok, true, `blok wymuszonym przechodzi: ${covering.reason ?? ''}`);
+});
+
+test('B60/G1.7: blocks if able — każda oferta zawiera wymuszonego', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'forced', 'razorfoot-griffin', 'p2', 'battlefield');
+  put(state, 'free', 'razorfoot-griffin', 'p2', 'battlefield');
+  kickTimelyOn(state, 'forced');
+  fight(state, ['att']);
+  const offers = commands(state, 'p2').filter((c) => c.type === 'declare_blockers');
+  assert.ok(offers.length > 0, 'istnieją oferty bloków');
+  assert.ok(offers.every((c) => Object.values(c.assignments ?? {}).some((ids) => ids.includes('forced'))),
+    'każda oferta zawiera wymuszonego blokera (lustro mandatoryAttackerIds)');
+});
+
+test('B60/G1.7: blocks if able — runda passów auto-deklaruje minimalny blok (znalezisko J)', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'forced', 'razorfoot-griffin', 'p2', 'battlefield');
+  put(state, 'free', 'razorfoot-griffin', 'p2', 'battlefield');
+  kickTimelyOn(state, 'forced');
+  fight(state, ['att']);
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok, true, 'pass obrońcy');
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, true, 'pass atakującego (domyka rundę)');
+  const used = [...(state.combat?.blockers?.values?.() ?? [])].flat();
+  assert.deepEqual(used, ['forced'], 'auto-deklaracja: SAM wymuszony (opcjonalny przepada, jak u atakujących)');
+  assert.ok(state.events.some((e) => e.type === 'blockers_declared'), 'zdarzenie blockers_declared wyemitowane');
+});
+
+test('B60/G1.7: blocks if able — tapnięty wymuszony nie blokuje („if able" zwalnia)', () => {
+  const state = game();
+  put(state, 'att', 'segmented-krotiq', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'forced', 'razorfoot-griffin', 'p2', 'battlefield', { tapped: true });
+  kickTimelyOn(state, 'forced');
+  fight(state, ['att']);
+  const empty = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  assert.equal(empty.ok, true, `tapnięty „wymuszony" nie może blokować — pusta deklaracja legalna: ${empty.reason ?? ''}`);
+});
+
+test('B60/G1.7: blocks if able — lądowy wymuszony vs latacz („if able" zwalnia)', () => {
+  const state = game();
+  put(state, 'flyer', 'razorfoot-griffin', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'forced', 'segmented-krotiq', 'p2', 'battlefield');
+  kickTimelyOn(state, 'forced');
+  fight(state, ['flyer']);
+  const empty = execute(state, { type: 'declare_blockers', playerId: 'p2', assignments: {} });
+  assert.equal(empty.ok, true, `bezreachowy „wymuszony" nie sięga latacza — pusta deklaracja legalna: ${empty.reason ?? ''}`);
+});
+
+test('B60/G1.7: blocksIfAble znika w cleanup (CR 514.2)', () => {
+  const state = game();
+  put(state, 'victim', 'segmented-krotiq', 'p2', 'battlefield');
+  kickTimelyOn(state, 'victim');
+  assert.equal(state.objects.get('victim').blocksIfAble, true, 'flaga postawiona');
+  clearStatModifiers(state);
+  assert.equal(state.objects.get('victim').blocksIfAble, false, 'cleanup zdejmuje wymóg bloku');
 });

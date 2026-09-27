@@ -251,6 +251,48 @@ export function mandatoryAttackerIds(state, playerId) {
     .map((object) => object.id);
 }
 
+/**
+ * Batch60 (Timely Interference — „blocks this turn if able"): LUSTRO
+ * `mandatoryAttackerIds` po stronie obrońcy. JEDNO źródło prawdy
+ * o blokerach wymuszonych (L41) — używane przez:
+ *   • ofertę `legalBlockerOptions` (każda opcja zawiera wymuszonych),
+ *   • walidację `declareBlockers` (pominięcie wymuszonego = odrzucenie),
+ *   • auto-deklarację rundy passów w `pass_priority` (jak znalezisko J —
+ *     spasowanie nie może pominąć wymuszonego bloku).
+ *
+ * „If able" (CR 509.1): wymuszony jest stwór ze znacznikiem `blocksIfAble`,
+ * który przechodzi filtr bloku (jak oferta: odkręcony, bez zakazów) i ma
+ * parowo-legalnego atakującego (canBlock). Dwa analogi wyjątku M270
+ * (deadlock: wymóg bez legalnego wykonania):
+ *   • „can't block alone" (CR 509.1c) jako jedyny zdolny — nie może blokować;
+ *   • WSZYSTKIE parowe opcje to atakujący z menace (CR 702.111b) przy
+ *     mniej niż 2 zdolnych — bloku nie da się złożyć legalnie.
+ */
+export function mandatoryBlockerIds(state, playerId) {
+  const attackers = state.combat?.attackers ?? [];
+  if (attackers.length === 0) return [];
+  // Zdolni do bloku w kolejności pola bitwy (determinizm jak u atakujących).
+  const able = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId
+      || object.kind !== 'creature' || object.tapped || creatureCantBlock(object, state)
+      || attachmentRestrictions(state, object).cantBlock) continue;
+    const options = attackers.filter((attackerId) => canBlock(state, state.objects.get(attackerId), object));
+    if (options.length === 0) continue;
+    able.push({ id, options });
+  }
+  return able
+    .filter(({ id, options }) => {
+      const object = state.objects.get(id);
+      if (object.blocksIfAble !== true) return false;
+      if (hasAloneRestriction(object, 'cantBlockAlone') && able.length < 2) return false;
+      if (able.length < 2 && options.every((attackerId) => hasKeyword(state, state.objects.get(attackerId), 'menace'))) return false;
+      return true;
+    })
+    .map(({ id }) => id);
+}
+
 export function declareAttackers(state, playerId, attackerIds, { pushToState = true, events: collectedEvents = null } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
@@ -299,7 +341,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   return e;
 }
 
-export function declareBlockers(state, playerId, assignments) {
+export function declareBlockers(state, playerId, assignments, { pushToState = true } = {}) {
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
   if (state.combat.attackingPlayerId === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
@@ -327,6 +369,22 @@ export function declareBlockers(state, playerId, assignments) {
     }
     blockers.set(attackerId, blockerIds.slice());
   }
+  // Batch60 („blocks if able", Timely Interference): lustro wymuszonych
+  // atakujących (znalezisko J) — pominięcie wymuszonego blokera jest
+  // nielegalne, CHYBA że żadna oferowana deklaracja nie pokrywa wszystkich
+  // wymuszonych (egzotyczny split restrykcji, np. menace × ewazje —
+  // „if able" zwalnia; ta sama reguła co w legalBlockerOptions, więc oferta
+  // i walidacja są zawsze zgodne (L48), także w trybie nad-cap).
+  const usedIds = new Set([...blockers.values()].flat());
+  const mandatory = mandatoryBlockerIds(state, playerId);
+  const missing = mandatory.filter((id) => !usedIds.has(id));
+  if (missing.length > 0) {
+    const satisfiable = legalBlockerOptions(state, playerId).some((assignment) => mandatory.every((id) =>
+      Object.values(assignment).some((ids) => ids.includes(id))));
+    if (satisfiable) {
+      throw new Error('Stwór z wymogiem bloku („blocks if able”) musi blokować w tym combacie');
+    }
+  }
   // M67 (Guildsworn Prowler): „if it wasn't blocking" — zadeklarowani blokerzy
   // dostają flagę (LKI przy śmierci; czyszczona w cleanup).
   for (const blockerIds of blockers.values()) {
@@ -348,7 +406,9 @@ export function declareBlockers(state, playerId, assignments) {
     for (const blockerId of blockerIds) cards[blockerId] = state.objects.get(blockerId)?.cardId ?? null;
   }
   const e = event('blockers_declared', { playerId, assignments, cards });
-  state.events.push(e);
+  // M257 (lustro declareAttackers): auto-deklaracja z `pass_priority` zbiera
+  // eventy lokalnie — natychmiastowy push przestawiłby kolejność w logu.
+  if (pushToState) state.events.push(e);
   return e;
 }
 
@@ -1759,7 +1819,15 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
         .map((attackerId) => `${attackerId}=${assignment[attackerId].join(',')}`).join('|');
       if (!unique.has(key)) unique.set(key, assignment);
     }
-    return [...unique.values()].slice(0, cap);
+    // Batch60 („blocks if able"): lustro wymuszonych atakujących — każda
+    // opcja zawiera wymuszonych blokerów (jedno źródło: mandatoryBlockerIds).
+    // Gdy pokrycia nie ma (egzotyczny split restrykcji), „if able" zwalnia
+    // i oferta wraca do pełnej (walidacja stosuje tę samą regułę — L48).
+    const allOptions = [...unique.values()];
+    const forced = mandatoryBlockerIds(state, playerId);
+    const covered = forced.length === 0 ? allOptions : allOptions.filter((assignment) => forced.every((id) =>
+      Object.values(assignment).some((ids) => ids.includes(id))));
+    return (forced.length > 0 && covered.length === 0 ? allOptions : covered).slice(0, cap);
   }
   const options = [{}];
   for (const attackerId of attackers) {
@@ -1837,7 +1905,13 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
       options.push({ [attackerId]: set });
     }
   }
-  return options.slice(0, cap);
+  // Batch60 („blocks if able", tryb nad-cap): ten sam filtr co w gałęzi
+  // pełnej — best-effort (fallback heurystyczny może nie znać pokrycia;
+  // siatką bezpieczeństwa jest auto-deklaracja w pass_priority).
+  const forcedFallback = mandatoryBlockerIds(state, playerId);
+  const coveredFallback = forcedFallback.length === 0 ? options : options.filter((assignment) => forcedFallback.every((id) =>
+    Object.values(assignment).some((ids) => ids.includes(id))));
+  return (forcedFallback.length > 0 && coveredFallback.length === 0 ? options : coveredFallback).slice(0, cap);
 }
 
 /**
@@ -1863,6 +1937,82 @@ export function legalBlockerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
  * wchodzi do puli, gdy istnieje PARTNER dający legalny zbiór — wizard i tak
  * waliduje cały zadeklarowany zbiór przed wysłaniem.
  */
+/**
+ * Batch60 („blocks if able"): MINIMALNE przypisanie pokrywające wymuszonych
+ * blokerów — dla auto-deklaracji rundy passów (lustro znaleziska J: spasowanie
+ * deklaruje same stwory wymuszone, opcjonalne przepadają). Najpierw dokładne
+ * pokrycie z ofert (najtańsze liczbą blokerów), nad-cap — zachłanne.
+ * Zwraca null, gdy pokrycia nie da się złożyć („if able" zwalnia).
+ */
+export function minimalMandatoryBlocks(state, playerId, forced) {
+  const covering = legalBlockerOptions(state, playerId)
+    .filter((assignment) => forced.every((id) => Object.values(assignment).some((ids) => ids.includes(id))));
+  if (covering.length > 0) {
+    const size = (assignment) => Object.values(assignment).reduce((n, ids) => n + ids.length, 0);
+    covering.sort((a, b) => size(a) - size(b));
+    return covering[0];
+  }
+  return greedyMandatoryBlocks(state, playerId, forced);
+}
+
+/**
+ * Zachłanne pokrycie wymuszonych blokerów (fallback nad-cap): każdy wymuszony
+ * pod pierwszego atakującego, u którego przechodzi pełny predykat
+ * (blockAssignmentViolation — warstwa parowa i zbioru); przy menace /
+ * „can't block alone" dobierany jest partner z puli zdolnych. Slotowanie
+ * jak w walidacji (blockSlotsFor). Deterministyczne (kolejność pola bitwy).
+ */
+function greedyMandatoryBlocks(state, playerId, forced) {
+  const attackers = state.combat?.attackers ?? [];
+  const pool = [];
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId
+      || object.kind !== 'creature' || object.tapped || creatureCantBlock(object, state)
+      || attachmentRestrictions(state, object).cantBlock) continue;
+    if (blockSlotsFor(state, object) < 1) continue;
+    pool.push(id);
+  }
+  const assignments = {};
+  const used = new Map();
+  const placed = new Set();
+  const useCount = (id) => used.get(id) ?? 0;
+  const take = (attackerId, id) => {
+    assignments[attackerId] = [...(assignments[attackerId] ?? []), id];
+    used.set(id, useCount(id) + 1);
+    placed.add(id);
+  };
+  const tryPlace = (id, attackerId) => {
+    const attacker = state.objects.get(attackerId);
+    const current = assignments[attackerId] ?? [];
+    if (current.includes(id)) return true;
+    if (useCount(id) >= blockSlotsFor(state, state.objects.get(id))) return false;
+    if (blockAssignmentViolation(state, attacker, [...current, id]) === null) {
+      take(attackerId, id);
+      return true;
+    }
+    for (const partner of pool) {
+      if (partner === id || current.includes(partner)) continue;
+      if (useCount(partner) >= blockSlotsFor(state, state.objects.get(partner))) continue;
+      if (blockAssignmentViolation(state, attacker, [...current, id, partner]) === null) {
+        take(attackerId, id);
+        take(attackerId, partner);
+        return true;
+      }
+    }
+    return false;
+  };
+  for (const id of forced) {
+    if (placed.has(id)) continue; // dobrany wcześniej jako partner
+    let done = false;
+    for (const attackerId of attackers) {
+      if (tryPlace(id, attackerId)) { done = true; break; }
+    }
+    if (!done) return null;
+  }
+  return assignments;
+}
+
 export function blockCandidatePool(state, playerId) {
   const attackers = state.combat?.attackers ?? [];
   const pool = {};

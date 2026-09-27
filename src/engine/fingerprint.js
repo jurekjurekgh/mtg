@@ -130,7 +130,7 @@ function stableStringify(value) {
  */
 export function stateFingerprint(state) {
   const objects = [...state.objects.values()]
-    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, untapVersion, untapLockVersions, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlockedUntilTurn, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward, ...rest }) => ({
+    .map(({ id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, plot, plotted, tapped, summoningSickness, damage, powerModifier, toughnessModifier, chosenTargets, counters, faceDown, keywords, keywordGrants, abilityGrants, typeGrant, subtypes, transformTo, frontFaceId, untapLockedBy, untapVersion, untapLockVersions, types, entersTapped, attachedTo, baseKind, bestow, aura, equipment, backup, colors, phyrexianManaCost, goaded, goadedUntilTurn, detained, detainedUntilTurn, hexproofUntilTurn, enchantPlayer, enchantedPlayerId, cantBlock, cantBlockPrinted, cantBeBlockedUntilTurn, blocksIfAble, lostKeywordsUntilEOT, subtypesBeforeOverride, madnessReady, manifestReady, abilityResolvedThisTurn, cloakReady, ward, ...rest }) => ({
       // B2 (audyt PR #113, F1): reszta pól obiektu w całości. Lista jawna była
       // rejestrem ręcznym: 51 ze 100 pól fabryki nie było rzutowanych
       // (ownerId, isToken, name, dontUntapNextUntapStep, saga, station,
@@ -170,6 +170,9 @@ export function stateFingerprint(state) {
       // M187/N1: wydrukowane „can't block\" (token Mite) jest TRWAŁE i musi
       // być w odcisku niezależnie od efektu „until end of turn\".
       cantBlock: Boolean(cantBlock), cantBlockPrinted: Boolean(cantBlockPrinted), cantBeBlockedUntilTurn: cantBeBlockedUntilTurn ?? null,
+      // Batch60 („blocks if able" — Timely Interference): wymóg bloku zmienia
+      // legalność deklaracji (klasa M122/#1 — musi być w odcisku).
+      blocksIfAble: Boolean(blocksIfAble),
       // M265 (Żywy Tester, worek-mroczny vs alara seed 331): licznik
       // rozstrzygnięć zdolności z `onNthResolve` (Soulbright Flamekin —
       // „if this is the THIRD time this ability has resolved this turn").

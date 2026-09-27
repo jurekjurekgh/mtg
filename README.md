@@ -118,7 +118,7 @@ liczone z plików `decks/*.txt`).
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 27 | 9 | 18 |
-| `dominaria-wu` | Dominaria (WU) | WUB | 24 | 8 | 16 |
+| `dominaria-wu` | Dominaria (WU) | WUB | 26 | 9 | 17 |
 | `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 29 | 10 | 19 |

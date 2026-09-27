@@ -7336,6 +7336,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               });
             score += removesRealBlocker ? 8 : -20;
           }
+          // Batch60 (Timely Interference, kicked — „blocks this turn if
+          // able"): wymuszony blok WROGA opłaca się, gdy bot atakuje i któryś
+          // atakujący ZABIJA ofiarę w bloku, sam go przeżywając (P/T z widoku
+          // — heurystyka). Lustro cant_block (M221/A): efekt „do końca tury"
+          // wyceniamy z oknem walki (L42), poza nim kicker jest jałowy.
+          if (effect.type === 'blocks_if_able_until_end_of_turn') {
+            const victimB = target ?? (cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null);
+            const combatB = view.combat ?? null;
+            const botAttacksB = Boolean(combatB) && combatB.attackingPlayerId === view.playerId
+              && (combatB.attackers ?? []).length > 0;
+            const victimIsEnemyB = Boolean(victimB) && victimB.controllerId !== view.playerId;
+            let killsInBlock = false;
+            if (botAttacksB && victimIsEnemyB && victimB) {
+              const vP = victimB.power ?? 0, vT = victimB.toughness ?? 0;
+              killsInBlock = (combatB.attackers ?? []).some((aid) => {
+                const attacker = objectOnBoard(view, aid);
+                if (!attacker || !attackerCanBeBlocked(attacker, [victimB])) return false;
+                return (attacker.power ?? 0) >= vT && vP < (attacker.toughness ?? 0);
+              });
+            }
+            score += killsInBlock ? 10 : -10;
+          }
           // F1 (audyt Żywym Testerem, 49 partii, s29 Balamb): crew
           // (cost.crewPower + animate..._until_end_of_turn) nie miało ŻADNEJ
           // dodatniej wyceny — goła baza 2, więc bot NIGDY nie załogował (0×),

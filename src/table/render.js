@@ -1262,6 +1262,8 @@ function describeEffect(e, ctx = {}) {
     // B7: „stwory-lądy" jak w logu mass buffa (było surowe „land creatures").
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów-lądów do końca tury`,
     buff_opponents_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów przeciwnika do końca tury`,
+    // Batch60 (Timely Interference, kicked): „blocks this turn if able".
+    blocks_if_able_until_end_of_turn: () => 'musi blokować w tej turze (jeśli może)',
     cant_be_blocked: () => 'nie może być blokowany',
     cant_be_regenerated_this_turn: () => 'nie może być regenerowany',
     cant_block: () => 'nie może blokować',
@@ -4318,6 +4320,8 @@ export function cardInfo(session, object, combat = null) {
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
+    // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
+    blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
@@ -4710,6 +4714,7 @@ export function buildStateOverlay(visual, info) {
     }
     if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
     if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
+    if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
     // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:
