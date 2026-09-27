@@ -44,6 +44,8 @@ export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
   'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans', 'pendingReplacementChoice', 'pendingUntapChoice',
   'pendingOptionalDraw', 'pendingOptionalPay', 'pendingCounterPay', 'pendingOptionalTrigger',
+  // Fix A/Twiddle: generyczny may efektu czaru (blokuje jak inne pendingi).
+  'pendingOptionalSpellEffect',
   'pendingPayOrSacrifice', 'pendingProliferate', 'pendingRedirectChoice',
   'pendingRevealExile', 'pendingRevealOrder', 'pendingSearchChoice',
   'pendingSpellReturnToHand', 'pendingSpringbloom', 'pendingReboundCast',

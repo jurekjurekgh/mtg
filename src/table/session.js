@@ -923,6 +923,8 @@ const DRUGA_OSOBA = Object.freeze({
   kieruje: 'kierujesz', kopiuje: 'kopiujesz', korzysta: 'korzystasz',
   kładzie: 'kładziesz', kończy: 'kończysz', mieli: 'mielisz',
   dzieli: 'dzielisz', manifestuje: 'manifestujesz',
+  // Fix A/Twiddle: log decyzji may czaru.
+  decyduje: 'decydujesz', stosuje: 'stosujesz',
   mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
   obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
@@ -2379,6 +2381,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'destroy_equipment_choice_resolved': return e.destroy
         ? `${whoN(e.playerId)} niszczy equipment na ${nameOfObject(e.targetId)}`
         : `${whoN(e.playerId)} zostawia equipment na ${nameOfObject(e.targetId)}`;
+      // Fix A/Twiddle: generyczny „you may” efektu czaru.
+      case 'optional_spell_effect_required': return `${srcName(e)}${whoN(e.playerId)} decyduje: zastosować efekt? („you may")`;
+      case 'optional_spell_effect_resolved': return e.apply
+        ? `${whoN(e.playerId)} stosuje efekt ${nameOf(e.sourceCardId)} („you may": tak)`
+        : `${whoN(e.playerId)} rezygnuje z efektu ${nameOf(e.sourceCardId)} („you may": nie)`;
       default: return e.type;
     }
   }

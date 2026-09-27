@@ -2206,9 +2206,33 @@ export function resolveTopOfStack(state) {
       }));
       return state.events.slice(before);
     }
-    for (const effect of mode.effects ?? []) {
+    // Fix A/Twiddle (2026-09-27): tryby modalne też mogą wstrzymać
+    // rozstrzyganie — generyczny „you may" efektu czaru (`effect.may`, np.
+    // Twiddle „You may tap or untap target ..."). Wstrzymanie niesie kontekst
+    // modalny (cele trybu + nazwa do logu), bo finishPendingSpell liczy cele
+    // z deskryptora niemodalnego; wznowienie robi resumeSuspendedSpell.
+    const modeEffects = mode.effects ?? [];
+    for (let modeEffectIndex = 0; modeEffectIndex < modeEffects.length; modeEffectIndex += 1) {
+      const effect = modeEffects[modeEffectIndex];
       const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);
       if (effTargets === null) continue;
+      if (effect?.may === true) {
+        queueOptionalSpellEffect(state, object, effect, {
+          modeIndex: object.chosenMode, effectIndex: modeEffectIndex, targetIds: [...effTargets],
+        });
+        state.pendingSpell = {
+          stackId,
+          effects: modeEffects.slice(modeEffectIndex + 1),
+          modal: {
+            modeIndex: object.chosenMode, modeName: mode.name ?? null,
+            liveChosen: [...liveChosen], effectBase: modeEffectIndex + 1,
+          },
+        };
+        return state.events.slice(before);
+      }
+      // Inne blokady niż `may` zostają przy dotychczasowym zachowaniu gałęzi
+      // (ignorowanie wyniku — niszczenie obsługuje holdReplacementResolution
+      // za pętlą); wyłącznie generyczny „you may" wstrzymuje tryb w środku.
       applyEffect(state, effect, object, effTargets);
     }
     if (holdReplacementResolution(state,object,{modal:true,modeIndex:object.chosenMode,modeName:mode.name})) return state.events.slice(before);
@@ -2240,6 +2264,17 @@ export function resolveTopOfStack(state) {
   if (!fizzled) {
     const effects = object.cleaved && object.spell.cleave ? (object.spell.cleave.effects ?? object.spell.effects) : object.spell.effects;
     for (let i = 0; i < effects.length; i += 1) {
+      // Fix A/Twiddle (2026-09-27): generyczny „you may" efektu czaru
+      // (`effect.may`, dziś tylko Twiddle) — pytanie Tak/Nie PRZED
+      // zastosowaniem efektu; wznowienie: resolve_optional_spell_effect.
+      if (effects[i]?.may === true) {
+        queueOptionalSpellEffect(state, object, effects[i], {
+          modeIndex: null, effectIndex: i, targetIds: [...legalTargets],
+          cleaved: Boolean(object.cleaved && object.spell.cleave),
+        });
+        state.pendingSpell = { stackId, effects: effects.slice(i + 1) };
+        return state.events.slice(before);
+      }
       // Blokująca decyzja w środku listy efektów (surveil/scry — np. Curate:
       // „Surveil 2, then draw a card") wstrzymuje rozstrzyganie: pozostałe
       // efekty dokończy komenda resolve_* (patrz finishPendingSpell), a czar
@@ -2366,6 +2401,84 @@ function resolveFireball(state, stackId, object, before) {
   state.events.push(event('spell_resolved', {
     fromId: stackId, toId: graveId, cardId: object.cardId,
     controllerId: object.controllerId, fizzled,
+  }));
+  return state.events.slice(before);
+}
+
+/**
+ * Fix A/Twiddle (2026-09-27): generyczny „you may" efektu czaru.
+ * Kolejkuje blokującą decyzję Tak/Nie PRZED zastosowaniem efektu z flagą
+ * `may` (dziś tylko tryby Twiddle „You may tap or untap target ...").
+ * Wywołujący wstrzymuje czar w state.pendingSpell (jak inne blokady);
+ * wznowienie: resolve_optional_spell_effect → resumeSuspendedSpell.
+ */
+export function queueOptionalSpellEffect(state, object, effect, { modeIndex = null, effectIndex = 0, targetIds = [], cleaved = false } = {}) {
+  const controllerId = object.controllerId;
+  state.pendingOptionalSpellEffect = {
+    playerId: controllerId,
+    sourceId: object.id,
+    sourceCardId: object.cardId ?? null,
+    modeIndex,
+    effectIndex,
+    effectType: effect?.type ?? null,
+    targetIds: [...targetIds],
+    cleaved: Boolean(cleaved),
+    restorePriorityTo: state.turn.priorityPlayerId,
+  };
+  state.turn.priorityPlayerId = controllerId;
+  state.events.push(event('optional_spell_effect_required', {
+    playerId: controllerId, sourceId: object.id, cardId: object.cardId ?? null,
+    effectType: effect?.type ?? null, targetIds: [...targetIds], modeIndex,
+  }));
+  return true;
+}
+
+/**
+ * Wznowienie wstrzymanego czaru po decyzji — także MODALNEGO (pendingSpell
+ * z kontekstem `modal`: zapisane cele trybu + nazwa do logu). Niemodalny =
+ * wprost finishPendingSpell; modalny dokańcza resztę efektów trybu na
+ * zapisanych celach (decyzja blokująca — przeciwnik nie dostaje priorytetu
+ * między wstrzymaniem a wznowieniem, więc cele są nadal legalne) i schodzi
+ * ze stosu modalną ścieżką (nazwa trybu w logu, jak w resolveTopOfStack).
+ * `modal.effectBase` to absolutny indeks pierwszego wznawianego efektu
+ * w trybie (do odczytu deskryptora przy zagnieżdżonym `may`).
+ */
+export function resumeSuspendedSpell(state, spellPending) {
+  if (!spellPending?.modal) return finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+  const before = state.events.length;
+  const object = state.objects.get(spellPending.stackId);
+  if (!object || object.zone !== 'stack') throw new Error('Wstrzymany czar nie jest na stosie');
+  const modal = spellPending.modal;
+  const base = Number.isInteger(modal.effectBase) ? modal.effectBase : 0;
+  const remaining = spellPending.effects ?? [];
+  const liveChosen = [...(modal.liveChosen ?? [])];
+  for (let i = 0; i < remaining.length; i += 1) {
+    const effect = remaining[i];
+    const effTargets = resolveModalEffectTargets(state, effect, object, liveChosen);
+    if (effTargets === null) continue;
+    if (effect?.may === true) {
+      queueOptionalSpellEffect(state, object, effect, {
+        modeIndex: modal.modeIndex, effectIndex: base + i, targetIds: [...effTargets],
+      });
+      state.pendingSpell = {
+        stackId: spellPending.stackId,
+        effects: remaining.slice(i + 1),
+        modal: { ...modal, effectBase: base + i + 1 },
+      };
+      return state.events.slice(before);
+    }
+    applyEffect(state, effect, object, effTargets);
+  }
+  if (holdReplacementResolution(state, object, { modal: true, modeIndex: modal.modeIndex, modeName: modal.modeName })) {
+    return state.events.slice(before);
+  }
+  const zoneModal = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
+  const graveId = `${zoneModal}-${state.objectSequence++}`;
+  moveObjectDirectly(state, spellPending.stackId, zoneModal, graveId);
+  state.events.push(event('spell_resolved', {
+    fromId: spellPending.stackId, toId: graveId, cardId: object.cardId,
+    controllerId: object.controllerId, fizzled: false, modal: true,
+    modeIndex: modal.modeIndex, modeName: modal.modeName ?? null,
   }));
   return state.events.slice(before);
 }

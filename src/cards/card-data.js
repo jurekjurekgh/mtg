@@ -6780,6 +6780,13 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Fix A (2026-09-27): „you may” to flaga `may` na efektach trybów —
+  // pytanie Tak/Nie pada przy ROZSTRZYGANIU (generyczny mechanizm
+  // queueOptionalSpellEffect/resolve_optional_spell_effect), nie przy
+  // rzuceniu. Świadomy skrót (jak E): tap-vs-untap wybiera się przy
+  // rzuceniu (tryb), choć regułowo „or” rozstrzyga się razem z „may”
+  // przy rozstrzygnięciu (CR 608.2) — przeciwnik widzi wybór przed
+  // odpowiedzią; cel jest obowiązkowy już przy rzuceniu (CR 601.2c).
   // 6. Twiddle (8ED) {U} Instant — „You may tap or untap target artifact,
   //    creature, or land" (modalny wybór tap/untap).
   defineCard({
@@ -6793,12 +6800,12 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         {
           name: 'Tapnięcie',
           targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'tap_permanent' }],
+          effects: [{ type: 'tap_permanent', may: true }],
         },
         {
           name: 'Odkręcenie',
           targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'untap_permanent' }],
+          effects: [{ type: 'untap_permanent', may: true }],
         },
       ],
     },

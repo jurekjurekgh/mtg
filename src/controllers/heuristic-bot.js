@@ -4633,7 +4633,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_optional_spell_effect' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -5301,6 +5301,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && o.controllerId !== view.playerId);
         if (cmd.destroy) return finish(enemyGear ? 8 : -8);
         return finish(enemyGear ? -2 : 1);
+      }
+      case 'resolve_optional_spell_effect': {
+        // Fix A/Twiddle: generyczny „you may” efektu czaru (dziś tylko
+        // Twiddle: tapnij wrogi / odkręć własny; tapnięcie własnego albo
+        // odkręcenie wrogiego to strata — odmowa). Nieznany przyszły efekt
+        // z `may`: Tak (oferta pierwsza, jak auto-TAK przy destroy).
+        const targetId = cmd.targetId ?? view.pendingOptionalSpellEffect?.targetIds?.[0] ?? null;
+        const target = targetId != null ? objectOnBoard(view, targetId) : null;
+        if (!cmd.apply) return finish(0);
+        if (!target) return finish(-1);
+        const mine = target.controllerId === view.playerId;
+        const effectType = cmd.effectType ?? view.pendingOptionalSpellEffect?.effectType ?? null;
+        if (effectType === 'tap_permanent') return finish(mine ? -8 : 8);
+        if (effectType === 'untap_permanent') return finish(mine ? 8 : -8);
+        return finish(2);
       }
       case 'resolve_land_type_choice': {
         // E2/C (plan 2026-09-07, Unstable Frontier): podstawowy typ pod
@@ -10327,6 +10342,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
       return { mode: cmd.modeIndex };
     }
+    if (cmd?.type === 'resolve_optional_spell_effect') {
+      // Fix A/Twiddle: wariant Tak/Nie + typ efektu (tap/untap) i cel.
+      return { zastosuj: cmd.apply ? 1 : 0, typ: cmd.effectType ?? null, cel: cmd.targetId ?? null };
+    }
     if (cmd?.type === 'resolve_fabricate') {
       return { mode: cmd.mode ?? null };
     }
@@ -10538,6 +10557,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_color_choice') {
       return `resolve_color_choice(${cmd.color ?? '?'})`;
+    }
+    if (cmd.type === 'resolve_optional_spell_effect') {
+      return `resolve_optional_spell_effect(${cmd.apply ? 'apply' : 'skip'}:${cmd.effectType ?? '?'})`;
     }
     if (cmd.type === 'resolve_fabricate') {
       return `resolve_fabricate(${cmd.mode ?? '?'})`;

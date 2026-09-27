@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
+import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -518,6 +518,9 @@ export function createGameState({ seed, players }) {
     pendingEnterAsCopy: null,
     // „you may destroy all Equipment attached" — decyzja gracza (Awaken).
     pendingDestroyEquipment: null,
+    // Fix A/Twiddle (2026-09-27): generyczny „you may” efektu czaru
+    // (`effect.may` — pytanie Tak/Nie przed zastosowaniem efektu).
+    pendingOptionalSpellEffect: null,
     // M110 (storm, CR 702.40a): wybór nowych celów dla kopii czaru.
     pendingCopyTargets: null,
   };
@@ -1738,6 +1741,7 @@ function firstPendingDecision(state) {
   if (state.pendingOptionalTrigger) return { playerId: state.pendingOptionalTrigger.playerId, kind: 'optionalTrigger' };
   if (state.pendingEnterAsCopy) return { playerId: state.pendingEnterAsCopy.playerId, kind: 'enterAsCopy' };
   if (state.pendingDestroyEquipment) return { playerId: state.pendingDestroyEquipment.playerId, kind: 'destroyEquipment' };
+  if (state.pendingOptionalSpellEffect) return { playerId: state.pendingOptionalSpellEffect.playerId, kind: 'optionalSpellEffect' };
   if (state.pendingCopyTargets) return { playerId: state.pendingCopyTargets.playerId, kind: 'copyTargets' };
   // Ślepe wpisy celu triggera (źródło zniknęło, intervening-if nie zachodzi)
   // nie blokują gry — pierwszy ŻYWY wpis przejmuje priorytet (jak delirium).
@@ -4299,6 +4303,41 @@ export function execute(state, input) {
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
+  // Fix A/Twiddle (2026-09-27): generyczny „you may” efektu czaru — Tak
+  // stosuje zapisany efekt do zapisanych celów, Nie go pomija; w obu
+  // wariantach czar jest wznawiany (resumeSuspendedSpell niesie też kontekst
+  // modalny, więc nazwa trybu ląduje w logu jak dotąd).
+  if (state.pendingOptionalSpellEffect) {
+    if (cmd.type !== 'resolve_optional_spell_effect') return reject('optional_spell_effect_unresolved');
+    if (cmd.playerId !== state.pendingOptionalSpellEffect.playerId) return reject('optional_spell_effect_not_your_decision');
+    const pending = state.pendingOptionalSpellEffect;
+    const before = state.events.length;
+    state.pendingOptionalSpellEffect = null;
+    if (cmd.apply) {
+      const source = state.objects.get(pending.sourceId) ?? null;
+      const list = pending.modeIndex != null
+        ? (source?.spell?.modes?.[pending.modeIndex]?.effects ?? [])
+        : (pending.cleaved
+          ? (source?.spell?.cleave?.effects ?? source?.spell?.effects ?? [])
+          : (source?.spell?.effects ?? []));
+      const effect = list[pending.effectIndex] ?? { type: pending.effectType };
+      if (source && source.zone === 'stack') applyEffect(state, { ...effect, may: false }, source, [...pending.targetIds]);
+    }
+    state.events.push(event('optional_spell_effect_resolved', {
+      playerId: pending.playerId, sourceCardId: pending.sourceCardId,
+      effectType: pending.effectType, targetId: pending.targetIds[0] ?? null, apply: Boolean(cmd.apply),
+    }));
+    const resolvedEvents = state.events.slice(before);
+    if (state.pendingSpell) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
+    }
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+  }
   // Oczekująca decyzja CELU triggera (Temat 2): kontroler wskazuje cel —
   // kandydaci liczeni dynamicznie w chwili wyboru (jak delirium/mentor);
   // allowNone pozwala odmówić („up to one"/„you may").
@@ -5480,7 +5519,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingOptionalSpellEffect && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else if (state.turn.step === 'combat_damage' && state.combat && state.combat.attackers.length > 0) {
@@ -6960,6 +6999,7 @@ export function playerView(state, playerId) {
   const activeOptionalTrigger = state.pendingOptionalTrigger && state.pendingOptionalTrigger.playerId === playerId;
   const activeEnterAsCopy = state.pendingEnterAsCopy && state.pendingEnterAsCopy.playerId === playerId;
   const activeDestroyEquipment = state.pendingDestroyEquipment && state.pendingDestroyEquipment.playerId === playerId;
+  const activeOptionalSpellEffect = state.pendingOptionalSpellEffect && state.pendingOptionalSpellEffect.playerId === playerId;
   const activeCopyTargets = state.pendingCopyTargets && state.pendingCopyTargets.playerId === playerId;
   const activeOpponentTarget = state.pendingOpponentTarget && state.pendingOpponentTarget.playerId === playerId;
   const triggerTargetHead = state.pendingTriggerTargets[0] ?? null;
@@ -7475,6 +7515,16 @@ export function playerView(state, playerId) {
     // Awaken: destroy:true pierwsze (dotychczasowe auto-TAK / boty).
     legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: true }));
     legalCommands.push(command('resolve_destroy_equipment_choice', playerId, { destroy: false }));
+  } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalSpellEffect) {
+    // Fix A/Twiddle: apply:true pierwsze (boty/auto-TAK jak przy destroy).
+    const mayPending = state.pendingOptionalSpellEffect;
+    const mayInfo = {
+      effectType: mayPending.effectType ?? null,
+      targetId: mayPending.targetIds?.[0] ?? null,
+      sourceCardId: mayPending.sourceCardId ?? null,
+    };
+    legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: true, ...mayInfo }));
+    legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: false, ...mayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeTriggerTarget) {
     // Temat 2 — cel triggera wybiera kontroler: kandydaci w kolejności dawnej
     // polityki (pierwszy = dawny wybór deterministyczny — boty biorą pierwszą
@@ -9008,6 +9058,14 @@ export function playerView(state, playerId) {
       && state.pendingDestroyEquipment.playerId === playerId)
       ? { targetId: state.pendingDestroyEquipment.targetId }
       : null,
+    // Fix A/Twiddle: tryb i cel wybrano przy rzuceniu (strefa publiczna) —
+    // efekt z `may` jest więc jawny dla obu graczy (jak optionalDraw).
+    pendingOptionalSpellEffect: state.pendingOptionalSpellEffect ? {
+      playerId: state.pendingOptionalSpellEffect.playerId,
+      sourceCardId: state.pendingOptionalSpellEffect.sourceCardId,
+      effectType: state.pendingOptionalSpellEffect.effectType,
+      targetIds: [...(state.pendingOptionalSpellEffect.targetIds ?? [])],
+    } : null,
     pendingMoonlitChoice: (state.pendingMoonlitChoice
       && state.pendingMoonlitChoice.playerId === playerId)
       ? {

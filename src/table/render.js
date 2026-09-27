@@ -77,6 +77,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt „you may"',
   resolve_enter_as_copy: 'Wejście jako kopia',
   resolve_destroy_equipment_choice: 'Zniszczenie equipmentu',
+  resolve_optional_spell_effect: 'Efekt „you may” czaru',
   // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — tarcza albo regeneracja.
   resolve_replacement_choice: 'Wybór efektu zastępczego',
   resolve_mulligan_choice: 'Mulligan (ręka startowa)',
@@ -547,6 +548,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
+  if (command.type === 'resolve_optional_spell_effect') return 'resolve_optional_spell_effect';
   if (command.type === 'resolve_replacement_choice') return 'resolve_replacement_choice';
   if (command.type === 'resolve_discard_choice') return 'resolve_discard_choice';
   // M163/A (uwaga właściciela): decyzje wielowariantowe bez klucza renderują
@@ -634,6 +636,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_optional_trigger_choice') return 'command';
   if (first.type === 'resolve_enter_as_copy') return 'target';
   if (first.type === 'resolve_destroy_equipment_choice') return 'command';
+  if (first.type === 'resolve_optional_spell_effect') return 'command';
   if (first.type === 'resolve_discard_choice') return 'target';
   if (first.type === 'resolve_hand_top_choice') return 'target';
   if (first.type === 'resolve_land_type_choice') return 'command';
@@ -2212,6 +2215,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_optional_trigger_choice: 'Efekt dobrowolny („you may")',
   resolve_enter_as_copy: 'Wejście jako kopia — który Ally?',
   resolve_destroy_equipment_choice: 'Zniszczyć equipment?',
+  resolve_optional_spell_effect: 'Zastosować efekt („you may")?',
   resolve_replacement_choice: 'Wybierz efekt zastępczy',
   resolve_land_type_choice: 'Typ landa',
   resolve_library_placement: 'Wierzch czy spód biblioteki',
@@ -4130,6 +4134,18 @@ export function commandLabel(cmd, session, view) {
     }
     case 'resolve_destroy_equipment_choice':
       return cmd.destroy ? 'Zniszcz equipment' : 'Zostaw equipment';
+    case 'resolve_optional_spell_effect': {
+      // Fix A/Twiddle: generyczny „you may” efektu czaru — Tak nazywa
+      // czynność i cel („Twiddle — tapnij X”), Nie to czytelna odmowa.
+      const mayPending = view?.pendingOptionalSpellEffect;
+      const source = (cmd.sourceCardId ?? mayPending?.sourceCardId)
+        ? `${escapeHtml(session.nameOf(cmd.sourceCardId ?? mayPending.sourceCardId))} — ` : '';
+      if (!cmd.apply) return `${source}nie rób nic (odmowa — „you may")`;
+      const verb = describeEffect({ type: cmd.effectType ?? mayPending?.effectType }) || 'zastosuj efekt';
+      const targetId = cmd.targetId ?? mayPending?.targetIds?.[0] ?? null;
+      const target = targetId != null ? nameOfObjectId(targetId) : 'cel';
+      return `${source}${verb}: ${target} („you may")`;
+    }
     // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — etykieta nazywa
     // kartę, żeby w modalu było widać, o który permanent chodzi.
     case 'resolve_replacement_choice':
