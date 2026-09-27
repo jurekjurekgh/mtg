@@ -65,12 +65,16 @@ function resolveFetch(fetchImpl) {
 /**
  * Fabryka transportu.
  * @param {() => string} getApiKey — klucz API (wołany na każde zapytanie).
+ * @param {(modelId: string) => string[]|null} [providerOnlyFor] — przypięcie
+ *   modelu do providerów (AI-R3); zwraca allowlistę albo `null` = domyślny
+ *   routing. Przypięty model dostaje `provider: { order, only,
+ *   allow_fallbacks: false }` (żadnego cichego fallbacku).
  * @param {Function|null} [fetchImpl] — wstrzyknięty fetch; `undefined` =
  *   globalny (przeglądarka), `null` = brak (zgłaszany jako błąd).
  * @param {string} [url] — nadpisanie endpointu (testy).
  * @param {number} [timeoutMs] — timeout; `<= 0` = bez limitu.
  */
-export function createOpenRouterTransport({ getApiKey, fetchImpl, url, timeoutMs } = {}) {
+export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImpl, url, timeoutMs } = {}) {
   const endpoint = typeof url === 'string' && url ? url : OPENROUTER_CHAT_URL;
   const limit = Number.isFinite(timeoutMs) ? timeoutMs : AI_CLIENT_TIMEOUT_MS;
 
@@ -96,10 +100,17 @@ export function createOpenRouterTransport({ getApiKey, fetchImpl, url, timeoutMs
       ? setTimeout(() => { timedOut = true; ctrl.abort(); }, limit)
       : null;
     try {
+      // AI-R3: przypięty model = TYLKO wskazany provider (order+only, zero fallbacku).
+      const pinned = typeof providerOnlyFor === 'function' ? providerOnlyFor(modelId) : null;
+      const allowlist = Array.isArray(pinned) ? pinned.filter((p) => typeof p === 'string' && p) : [];
+      const body = { model: modelId, messages: [{ role: 'user', content: String(prompt ?? '') }] };
+      if (allowlist.length > 0) {
+        body.provider = { order: [...allowlist], only: [...allowlist], allow_fallbacks: false };
+      }
       const res = await fetchFn(endpoint, {
         method: 'POST',
         headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: modelId, messages: [{ role: 'user', content: String(prompt ?? '') }] }),
+        body: JSON.stringify(body),
         ...(ctrl ? { signal: ctrl.signal } : {}),
       });
       let data = null;

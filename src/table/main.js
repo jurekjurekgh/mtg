@@ -16,7 +16,7 @@
 import { shuffle } from '../engine/shuffle.js';
 import { populateDeckSelects, combineDeckSources, deckTitle } from './deck-selects.js';
 // AI-OpenRouter (Etap-1): konfiguracja, kolejka, panel, mock-transport.
-import { AI_MODES, aiAllModels, aiKeyStatus, aiModelLabel, loadAiConfig, saveAiConfig } from './ai-config.js';
+import { AI_MODES, aiAllModels, aiKeyStatus, aiModelLabel, aiProviderOnly, loadAiConfig, saveAiConfig } from './ai-config.js';
 import { buildPromptForMode } from './ai-modes.js';
 import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
@@ -300,7 +300,10 @@ function bootstrapTable() {
   // Klucz czytany na KAŻDE zapytanie — wklejenie go naprawia „Ponów”.
   const aiTransport = aiMockFlags.enabled
     ? createMockTransport(aiMockFlags)
-    : createOpenRouterTransport({ getApiKey: () => loadAiConfig(storage).apiKey });
+    : createOpenRouterTransport({
+      getApiKey: () => loadAiConfig(storage).apiKey,
+      providerOnlyFor: (id) => aiProviderOnly(id), // AI-R3: przypięte modele → tylko swój provider
+    });
   const aiPanel = createAiPanel({
     document,
     wrapEl: els.aiWrap,

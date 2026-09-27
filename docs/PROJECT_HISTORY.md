@@ -13250,3 +13250,5 @@ AI-OpenRouter (2026-09-26, E0-E3+R2): plan + toggle/konfig/kolejka-FIFO/mock
 + klient OpenRouter (60s, deep-errors) + zapis do Arkusza (ai-drive, Code.gs)
 + R2: szuflada 50/50, lore v2 (tozsamosc+ton), tryb player-bot, INSTRUKCJA Drive.
 Suit 6902/6902 GREEN.
+AI-R3 (2026-09-26, prov-only): +5 modeli z przypietym providerem
+(order+only+allow_fallbacks:false), lista 15 -> 20. Suit 6905/6905 GREEN.

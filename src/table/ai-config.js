@@ -28,7 +28,29 @@ export const AI_MODELS = Object.freeze([
   'google/gemini-3.5-flash-lite:floor',
   'google/gemini-3.1-flash-lite:floor',
   'google/gemini-2.5-flash-lite:floor',
+  // AI-R3 (prośba właściciela): modele z PRZYPIĘTYM providerem (patrz
+  // AI_PROVIDER_ONLY) — odpytują TYLKO wskazany endpoint.
+  'deepseek/deepseek-v4-pro-0813',
+  'deepseek/deepseek-v4.1-flash',
+  'deepseek/deepseek-v4-flash-0731',
+  'z-ai/glm-5.3-flash',
+  'meta/muse-spark-1.3-contributor',
 ]);
+
+/**
+ * Przypięcie modeli do konkretnych providerów OpenRouter (sluge jak na
+ * stronie modelu, z wariantem po `/` gdy podany). Klient wysyła wtedy
+ * `provider: { order, only, allow_fallbacks: false }` — zapytanie idzie
+ * TYLKO tam, bez cichego fallbacku na innych providerów. Modele spoza
+ * mapy (i dopisane ręcznie) jadą domyślnym routingiem OpenRoutera.
+ */
+export const AI_PROVIDER_ONLY = Object.freeze({
+  'deepseek/deepseek-v4-pro-0813': Object.freeze(['baidu/fp8']),
+  'deepseek/deepseek-v4.1-flash': Object.freeze(['inference-net']),
+  'deepseek/deepseek-v4-flash-0731': Object.freeze(['streamlake/fp8']),
+  'z-ai/glm-5.3-flash': Object.freeze(['inference-net']),
+  'meta/muse-spark-1.3-contributor': Object.freeze(['meta']),
+});
 
 /** Tryby AI (rejestr — nowe tryby dopisują wpis, reszta jedzie sama). */
 export const AI_MODES = Object.freeze([
@@ -45,6 +67,15 @@ export const AI_STORAGE_KEY = 'mtg-table-ai-v1';
 export function aiModelLabel(id) {
   const afterSlash = String(id ?? '').split('/').pop() ?? '';
   return afterSlash.split(':')[0] || String(id ?? '');
+}
+
+/**
+ * Przypięci providerzy modelu (`AI_PROVIDER_ONLY`) albo `null` = domyślny
+ * routing OpenRoutera. Zwraca KOPIĘ tablicy (mapa jest zamrożona).
+ */
+export function aiProviderOnly(modelId) {
+  const pinned = AI_PROVIDER_ONLY[String(modelId ?? '')];
+  return Array.isArray(pinned) ? [...pinned] : null;
 }
 
 /** Pełna lista wyboru = predefiniowane + lokalne (bez duplikatów). */

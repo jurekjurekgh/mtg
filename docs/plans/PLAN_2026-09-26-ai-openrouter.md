@@ -232,3 +232,13 @@ wierszy przy współbieżnych dopisaniach.
    odpowiedziach, czy wolisz inną długość na start?
 4. Etykiety modeli = samo id (bez `name`) — OK?
 5. Puste AppScript-URL = brak zapisu (apka działa) — OK?
+
+## Aneks B — zmiany po testach właściciela (AI-R2/R3)
+
+- R2: szuflada 50/50 (akcje/Komentarze AI), lore v2 (tożsamość + ton),
+  tryb II `player-bot` (bot-gracz, żargon MtG), `INSTRUKCJA.md` Drive.
+- R3: 5 modeli z przypiętym providerem (`AI_PROVIDER_ONLY` w `ai-config.js`):
+  `deepseek-v4-pro-0813`→`baidu/fp8`, `deepseek-v4.1-flash`→`inference-net`,
+  `deepseek-v4-flash-0731`→`streamlake/fp8`, `glm-5.3-flash`→`inference-net`,
+  `muse-spark-1.3-contributor`→`meta`. Klient wysyła
+  `provider: { order, only, allow_fallbacks: false }` (lista: 15 → 20).

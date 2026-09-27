@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  AI_MODELS, AI_MODES, AI_STORAGE_KEY, aiAllModels, aiDefaultConfig,
-  aiKeyStatus, aiModelLabel, loadAiConfig, saveAiConfig,
+  AI_MODELS, AI_MODES, AI_PROVIDER_ONLY, AI_STORAGE_KEY, aiAllModels, aiDefaultConfig,
+  aiKeyStatus, aiModelLabel, aiProviderOnly, loadAiConfig, saveAiConfig,
 } from '../src/table/ai-config.js';
 
 const memStorage = (initial = {}) => {
@@ -13,9 +13,9 @@ const memStorage = (initial = {}) => {
   };
 };
 
-test('AI-E1 config: 15 predefiniowanych modeli, bez duplikatów', () => {
-  assert.equal(AI_MODELS.length, 15);
-  assert.equal(new Set(AI_MODELS).size, 15);
+test('AI-E1 config: 20 predefiniowanych modeli, bez duplikatów', () => {
+  assert.equal(AI_MODELS.length, 20);
+  assert.equal(new Set(AI_MODELS).size, 20);
   assert.equal(AI_MODELS[0], 'stealth/space-bunny-alpha');
 });
 
@@ -25,9 +25,26 @@ test('AI-E1 config: etykieta = po slasha, bez sufiksu', () => {
   assert.equal(aiModelLabel('nvidia/nemotron-3-ultra-550b-a55b:free'), 'nemotron-3-ultra-550b-a55b');
 });
 
+test('AI-R3 config: 5 modeli z przypiętym providerem (only), reszta = null', () => {
+  assert.deepEqual(aiProviderOnly('deepseek/deepseek-v4-pro-0813'), ['baidu/fp8']);
+  assert.deepEqual(aiProviderOnly('deepseek/deepseek-v4.1-flash'), ['inference-net']);
+  assert.deepEqual(aiProviderOnly('deepseek/deepseek-v4-flash-0731'), ['streamlake/fp8']);
+  assert.deepEqual(aiProviderOnly('z-ai/glm-5.3-flash'), ['inference-net']);
+  assert.deepEqual(aiProviderOnly('meta/muse-spark-1.3-contributor'), ['meta']);
+  assert.equal(aiProviderOnly('stealth/space-bunny-alpha'), null);
+  assert.equal(aiProviderOnly('x/y:free'), null);
+  assert.equal(aiProviderOnly(undefined), null);
+  // Każdy przypięty model jest na liście wyboru; mapa zamrożona.
+  for (const id of Object.keys(AI_PROVIDER_ONLY)) assert.ok(AI_MODELS.includes(id));
+  assert.ok(Object.isFrozen(AI_PROVIDER_ONLY));
+  // Akcesor zwraca kopię (grzebanie nie psuje mapy).
+  aiProviderOnly('z-ai/glm-5.3-flash').push('obcy');
+  assert.deepEqual(aiProviderOnly('z-ai/glm-5.3-flash'), ['inference-net']);
+});
+
 test('AI-E1 config: all = predefiniowane + lokalne, dedupe', () => {
   const all = aiAllModels(['x/y:free', 'google/gemini-3.5-flash:floor', '  ', 'x/y:free']);
-  assert.equal(all.length, 16);
+  assert.equal(all.length, 21);
   assert.ok(all.includes('x/y:free'));
   assert.equal(all.filter((m) => m === 'google/gemini-3.5-flash:floor').length, 1);
 });

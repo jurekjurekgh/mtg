@@ -140,3 +140,37 @@ test('AI-E2 client: timeout 60 s (tu: 15 ms) zwalnia slot z błędem', async () 
   assert.equal(res.ok, false);
   assert.ok(res.error.includes('Przekroczono czas oczekiwania'));
 });
+
+test('AI-R3 client: przypięty model dostaje provider { order, only, bez fallbacku }', async () => {
+  const bodies = [];
+  const fetchImpl = async (url, opts) => { bodies.push(JSON.parse(opts.body)); return okRes(lore); };
+  const transport = createOpenRouterTransport({
+    getApiKey: () => 'k', fetchImpl,
+    providerOnlyFor: (id) => (id === 'deepseek/deepseek-v4.1-flash' ? ['inference-net'] : null),
+  });
+  const res = await transport({ prompt: 'a', modelId: 'deepseek/deepseek-v4.1-flash' });
+  assert.equal(res.ok, true);
+  assert.deepEqual(bodies[0].provider, {
+    order: ['inference-net'], only: ['inference-net'], allow_fallbacks: false,
+  });
+  assert.equal(bodies[0].model, 'deepseek/deepseek-v4.1-flash');
+});
+
+test('AI-R3 client: zwykły model = brak klucza provider (domyślny routing)', async () => {
+  const bodies = [];
+  const fetchImpl = async (url, opts) => { bodies.push(JSON.parse(opts.body)); return okRes(lore); };
+  const pinned = createOpenRouterTransport({
+    getApiKey: () => 'k', fetchImpl,
+    providerOnlyFor: (id) => (id === 'x/pin' ? ['p1'] : null),
+  });
+  await pinned({ prompt: 'a', modelId: 'stealth/space-bunny-alpha' });
+  assert.ok(!('provider' in bodies[0]));
+  const plain = createOpenRouterTransport({ getApiKey: () => 'k', fetchImpl });
+  await plain({ prompt: 'a', modelId: 'x/pin' });
+  assert.ok(!('provider' in bodies[1]), 'bez providerOnlyFor = brak klucza (wsteczna zgodność)');
+  const empty = createOpenRouterTransport({
+    getApiKey: () => 'k', fetchImpl, providerOnlyFor: () => [],
+  });
+  await empty({ prompt: 'a', modelId: 'x/pin' });
+  assert.ok(!('provider' in bodies[2]), 'pusta allowlista = brak klucza');
+});
