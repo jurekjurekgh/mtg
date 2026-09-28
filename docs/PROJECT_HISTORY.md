@@ -13489,3 +13489,19 @@ detektora Dream Twist do triage'u), `mirrodin-brg` vs `ravnica` seed 2033
 build 70 / 4537,3 kB, exit 0. Trwały handoff
 `docs/setup/HANDOFF_2026-09-28b.md`. Bez nowych kart, progów, płatnych API,
 zdalnych zapisów, B0-full i merge.
+
+
+## 2026-09-28c — naprawa dźwięków MP3 z dysku lokalnego (`./snd/`)
+
+Zgłoszenie właściciela: MP3 w `./snd/` nie grały na dysku lokalnym.
+`cardSoundUrls` z `baseUrl` zwracał WYŁĄCZNIE adresy absolutne
+(`file:///.../snd/<artId>.mp3`), które Chrome/Safari dla `file://` potrafią
+blokować; przy błędnym URL-u zwracał pustą listę. Teraz kolejność jest
+względna-najpierw (jak `img/` FOT/KON): w `dist/` → `snd/<id>.mp3`,
+`../snd/<id>.mp3` (korzeń repo z paczką) i dopiero potem oba absolutne;
+poza `dist/` → `snd/<id>.mp3` + absolutny; błędny URL → ścieżka względna.
+Dodatkowo: domyślny timeout odczytu **1500 → 4000 ms** i jawny `audio.load()`
+po ustawieniu `src` (Safari z plikiem z dysku nie zaczynał wczytywania).
+Testy `test/card-sound-mp3.test.js` zaktualizowane do nowych oczekiwań
+(7 RED na starym źródle → 24/24 GREEN; w tym kontrola braku pliku = synteza
+i nowy pin domyślnego timeoutu). Fast **6941/6941**, build **70 / 4538,3 kB**.
