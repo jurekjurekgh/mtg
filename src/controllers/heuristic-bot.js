@@ -4609,6 +4609,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   }
 
+  /**
+   * PMSSB-17: wartość czasowego przejęcia kreatury
+   * (`gain_control_until_end_of_turn` — Act of Treason / Awaken the Sleeper /
+   * Spreading Insurrection). JEDNO źródło dla obu gałęzi cast_spell (L41 —
+   * wcześniej dwa bloki z epok M257-r5b/C i M157/L28 SUMOWAŁY się:
+   * 3·power + 12 + 2p + t = 37 dla 4/5 wroga).
+   *
+   * Co kradzież realnie daje (audyt R2): JEDEN pewny atak z haste w twarz
+   * właściciela (CR 110.2 — właściciel ≠ kontroler; obrażenia idą w niego)
+   * + luki w bloku (skradziony wypada z ich blokujących, dołącza do moich
+   * atakujących; CR 506.4 — zmiana kontroli usuwa go z walki po naszej
+   * stronie nic już nie znaczy) + equipment (M257 — rider
+   * `destroy_equipment_attached` nie ma własnej wyceny, ten bonus jest jego
+   * wyceną). ZERO osi obronnej (R3): kreatura wraca w cleanup (CR 514.2)
+   * PRZED ich turą — sorcery-speed kradzież nie foguje ich ataku.
+   * ZERO premii trwałej (R4): zysk trwały tylko gdy ginie — nie zgadujemy
+   * bloków (L41, jak walka); combo z poświęceniem obsługuje PMSSB-11.
+   * Cel własny/brak = −70 (M231 — przebija bazę 50 → poniżej passu).
+   */
+  function gainControlValue(view, target) {
+    const foe = enemy(view);
+    if (!target || target.controllerId === view.playerId || !foe || target.controllerId !== foe.id) {
+      return -P.gainControlOwnPenalty;
+    }
+    const board = view.zones.battlefield ?? [];
+    // M257: preferencja celu wyposażonego (załączenia po `attachedTo`).
+    const eq = board.filter((o) => o.attachedTo === target.id && o.equipment).length;
+    // Luki w bloku PO kradzieży: skradziony dołącza do moich gotowych
+    // atakujących (untap + haste z efektu), wypada z ich blokujących
+    // (blokować może każda niezakręcona — samotność/choroba nie blokuje).
+    const myReady = board.filter((o) => o.controllerId === view.playerId
+      && o.kind === 'creature' && !o.tapped && !o.summoningSickness).length + 1;
+    const theirBlockers = board.filter((o) => o.controllerId !== view.playerId
+      && o.kind === 'creature' && o.id !== target.id && !o.tapped).length;
+    const openLanes = Math.max(0, myReady - theirBlockers);
+    return P.gainControlStealBase
+      + P.gainControlAttackWeight * Math.max(0, target.power ?? 0)
+      + P.gainControlOpenValue * Math.min(openLanes, 3)
+      + (eq > 0 ? P.gainControlEquipBonus + P.gainControlEquipPerItem * eq : 0);
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
@@ -6774,23 +6815,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // z equipmentem). Właściciel: „najlepiej przejąć kreaturę z
           // założonym equipmentem… i go zniszczył” — decyzja o zniszczeniu
           // (resolve_destroy_equipment_choice) idzie w ślad za wyborem celu.
+          // PMSSB-17: kradzież do końca tury — cała wycena w `gainControlValue`
+          // (raz na efekt; wcześniej dwa bloki sumowały się, L41 — audyt R1).
           if (effect.type === 'gain_control_until_end_of_turn') {
-            if (!target || target.controllerId === view.playerId) {
-              // Efekt musi uderzyć w kreaturę PRZECIWNIKA — własna kontrola
-              // nic nie daje (kara musi przebić bazę czaru).
-              score -= 40;
-            } else {
-              // Baza: 3 * power — atak, który stanie się w tej turze
-              // (obrażenia bojowe na właściciela).
-              const power = target.power ?? 0;
-              score += 3 * power;
-              // Equipment założone na celu: preferencja celu wyposażonego.
-              // M257-r5b/C: equipment = artefakt z deskryptorem `equipment`
-              // (widok: attachedTo + entry.equipment) — ADR 0002, bez nazw.
-              const equipmentCount = (view.zones.battlefield ?? []).filter(
-                (o) => o.attachedTo === target.id && o.equipment).length;
-              if (equipmentCount > 0) score += 25 + 5 * equipmentCount;
-            }
+            score += gainControlValue(view, target);
           }
           if (effect.type === 'creatures_cant_block_this_turn') {
             // M257-r5b/D (zgłoszenie właściciela, Ruthless Invasion): czar
@@ -7305,23 +7333,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // mają teraz okna rzutu spoza ręki (grób/madness/Vaan), które
           // dotąd BRAŁY pierwszy wariant z brzegu, w tym jałowy (0 celów).
           score += wrapTargetsValue(view, effect, cmd);
-          // M157/L28 (inwentaryzacja): kradzież stwora do końca tury (Spreading
-          // Insurrection, Awaken the Sleeper) — warianty różnią się celem;
-          // wartość = tymczasowy zysk najsilniejszego stwora wroga.
-          if (effect.type === 'gain_control_until_end_of_turn') {
-            const foe2 = enemy(view);
-            if (target && foe2 && target.controllerId === foe2.id) {
-              score += 12 + (target.power ?? 0) * 2 + (target.toughness ?? 0);
-            } else if (target && target.controllerId === view.playerId) {
-              // M231 (audyt Żywym Testerem, Awaken the Sleeper): przejęcie
-              // kontroli nad WŁASNYM stworem jest jałowe — już go kontrolujesz,
-              // „kradzież" nic nie daje (marginalny haste nie wart karty). Kara
-              // przebija bazę 50, żeby wariant zszedł poniżej passu; rzut w cel
-              // wroga (wyżej) pozostaje premiowany. Generycznie po kontrolerze
-              // celu (ADR 0002), nie po nazwie karty.
-              score -= 70;
-            }
-          }
+          // (PMSSB-17: druga wycena kradzieży skasowana — `gainControlValue`
+          // liczy raz; M231/M157/M257 w jednym helperze, L41.)
           // M157/L28: efekty celujące KARTĘ we WŁASNYM grobie (Unbreakable
           // Bond) — remis wariantów zwracał pierwszą kartę; premiujemy
           // najcenniejszego stwora w grobie (P/T z widoku grobu).

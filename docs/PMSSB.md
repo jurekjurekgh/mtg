@@ -54,6 +54,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
 | fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
 | walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
+| kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -237,6 +238,46 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-17 — kradzież do końca tury (gain_control_until_end_of_turn) (2026-09-28)
+
+**Wybór celu** (BACKLOG pusty; ciąg dalszy pętli — 3 karty: Act of Treason /
+Awaken the Sleeper / Spreading Insurrection). Plan:
+`docs/plans/PLAN_2026-09-28-pmssb17-kradziez.md`; POMIAR PRZED:
+`/tmp/pmssb17-kradziez-przed.mjs` (S01–S08).
+
+**Audyt przyczynowo-skutkowy (R1–R5) + wdrożone wnioski** — jeden helper
+`gainControlValue` (czasowa zmiana kontroli: CR 110.2 właściciel ≠ kontroler;
+CR 506.4 zmiana kontroli usuwa z walki; CR 514.2 „do końca tury" kończy się
+w cleanup):
+
+- **R1 (double-counting, L41)**: dwa bloki z epok M257-r5b/C (`3·power+eq`)
+  i M157/L28 (`12+2p+t`) SUMOWAŁY się w tej samej pętli efektów — 4/5 wroga
+  = 50+37 = **87**, własna = 50−110 = **−60** (wzór potwierdzony co do
+  punktu). Unifikacja: `gainControlValue`.
+- **R2 (drabina)**: wartość = JEDEN pewny atak z haste w twarz właściciela
+  (`+2·moc`) + luki w bloku (`+4·min(luki,3)` — skradziony wypada z ich
+  blokujących, dołącza do moich) + equipment (M257: `25+5·n` — bonus jest
+  WYCENĄ ridera `destroy_equipment_attached`, który własnej nie ma).
+  Kotwice PO: S01 87→**67**, S02 74→**63**, S04 117→**97**, S08 68→**69**,
+  S06 87/74→**63/59** (ich druga kreatura blokuje lukę — brak bonusu).
+- **R3 (ZERO osi obronnej — werdykt z ujemnym wynikiem!)**: kradzież
+  sorcery-speed wraca w cleanup PRZED ich turą (CR 514.2) — skradziony
+  napastnik znów u nich atakuje. S07 (życie 5, ich 5/5) = 92→**69** =
+  zwykły atak, BEZ dopłaty ratunku (fogWindowLethalSaveValue nie tu).
+- **R4 (trwałość)**: karta wraca — zysk trwały tylko gdy ginie; nie
+  zgadujemy bloków (L41); combo steal+sac = PMSSB-11.
+- **R5**: storm (Insurrection) — poza zakresem (rodzina storm).
+- **M231**: cel własny/brak = `−gainControlOwnPenalty (70)` → −20 (było −60)
+  — poniżej passu; progi behawioralne M231/M157/M257 nietknięte (28/28).
+
+**Pokrętła (6)**: `gainControlStealBase/AttackWeight/OpenValue/EquipBonus/
+EquipPerItem/OwnPenalty`. Testy: `test/audyt-pmssb17-kradziez.test.js`
+(13: kotwice ×8 + progi + pokrętła ×3; RED 12/13 na starym kodzie).
+
+**Świadomy dryf**: golden-master — patrz bramy poniżej (regeneracja z
+dowodem izolacji jak w PMSSB-16). Bramy: fast 6998/6998; all 7269;
+tie-audit; mirror; Żywy Tester 3×0.
 
 ## PMSSB-16 — walka bez fazy walki (fight / bite) (2026-09-28)
 

@@ -107,6 +107,17 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'fightTradeCardCost',       // fight (wymiana): koszt DODATKOWEJ karty (mojego stwora) w wymianie
   'fightWastedDeathExtra',    // fight: dodatkowa kara śmierci BEZ zabicia ofiary (musi przebić bazę)
   'fightLifelinkWeight',      // fight/bite: waga lifelinku obu stron (CR 701.14d — damage nie-bojowe)
+  // PMSSB-17 (kradzież do końca tury — Act of Treason / Awaken / Insurrection):
+  // czasowa zmiana kontroli (CR 110.2 właściciel ≠ kontroler; CR 514.2 — wraca
+  // w cleanup PRZED ich turą, więc ZERO osi obronnej; CR 506.4 — zmiana kontroli
+  // usuwa z walki). Wartość = JEDEN pewny atak z haste w właściciela + luki w
+  // bloku + equipment (M257). Helper `gainControlValue`.
+  'gainControlStealBase',     // kradzież: baza tempa (karta wraca — brak zysku trwałego)
+  'gainControlAttackWeight',  // kradzież: waga mocy skradzionego (pewny atak w właściciela)
+  'gainControlOpenValue',     // kradzież: wartość luki w bloku (skradziony wypada z ich blokujących)
+  'gainControlEquipBonus',    // kradzież (M257): bonus za cel z equipmentem (niszczony riderem)
+  'gainControlEquipPerItem',  // kradzież (M257): dopłata za każdy equipment na celu
+  'gainControlOwnPenalty',    // kradzież (M231): kara celu własnego/braku (przebija bazę 50)
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -364,6 +375,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // dodatkowa kara musi przebić bazę czaru 50 już dla ciał 2/2+ (M167/F).
   fightWastedDeathExtra: 12,
   fightLifelinkWeight: 1,
+  // PMSSB-17 kradzież do EOT: 5 + 2·moc + 4·min(luki,3) + eq(25+5·n);
+  // cel własny/brak = −70 (M231 — przebija bazę 50 → poniżej passu).
+  gainControlStealBase: 5,
+  gainControlAttackWeight: 2,
+  gainControlOpenValue: 4,
+  gainControlEquipBonus: 25,
+  gainControlEquipPerItem: 5,
+  gainControlOwnPenalty: 70,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,

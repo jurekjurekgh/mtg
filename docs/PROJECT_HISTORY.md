@@ -13660,3 +13660,39 @@ Lekcja: rodzin do strojenia jest coraz mniej (walka = 2 karty, bite 1) —
 wartość pętli przenosi się na „POKRYTE w rejestrze, ale z nowym dowodem”
 (re-audyty) oraz ujednolicanie współdzielonych skal (counterHostValue,
 fogWindow) między rodzinami.
+
+## 2026-09-28h — PMSSB-17: kradzież do końca tury (PR #144, cz. 5)
+
+Druga pętla ciągła: `gain_control_until_end_of_turn` (Act of Treason /
+Awaken the Sleeper / Spreading Insurrection). Plan:
+`docs/plans/PLAN_2026-09-28-pmssb17-kradziez.md`; POMIAR PRZED
+`/tmp/pmssb17-kradziez-przed.mjs` (S01–S08).
+
+**R1 (double-counting, L41)**: dwa bloki scoringu z epok M257-r5b/C
+(3·power+eq) i M157/L28 (12+2p+t) SUMOWAŁY się w tej samej pętli efektów —
+4/5 wroga = 87 (50+37!), własna = −60 (50−110). Unifikacja w
+`gainControlValue` (wzorzec `graveyardShuffleValue`).
+
+**R3 (werdykt z ujemnym wynikiem)**: ZERO wartości obronnej/fog — kradzież
+sorcery-speed wraca w cleanup (CR 514.2) PRZED ich turą; skradziony
+napastnik znów u nich atakuje. S07 (obrona @5 vs 5/5) = 92→69 = zwykły
+atak. Oś = wyłącznie ofensywa (R2): atak z haste w właściciela (2·moc,
+CR 110.2) + luki w bloku (4·min(luki,3)) + equipment (25+5·n — bonus jest
+wyceną ridera `destroy_equipment_attached`, M257). Kotwice PO: 67/63/−20/
+97/67/63+59/69/69. M231: cel własny −20 < pass.
+
+Test `test/audyt-pmssb17-kradziez.test.js` (13): RED 12/13 na starym
+kodzie (weryfikowany stash), progi behawioralne M231/M157/M257 nietknięte
+(28/28). Bramki: fast 6998/6998, all 7269/7269, build 72 / 4566,6 kB;
+golden-master BEZ regeneracji (talie bench bez kart kradzieży — 0 dryfu);
+tie-audit 28,3% (10,8% realnych, bez cast_spell w grozach); mirror-eval
+8:8 (0.5); Żywy Tester 3 partie 0 zgłoszeń.
+
+Incydent sesji: workspace zresetowany między turami (HEAD → abfa7cb);
+naprawa wg protokołu: fetch origin → diff FETCH_HEAD → `git reset --mixed
+FETCH_HEAD` (zdalny tip = źródło prawdy; index mylił obecne pliki jako
+„delecje" — artefakt cofniętego indexu, nie brak pracy).
+
+Lekcja: L41-owy patchwork potrafi sumować DWIE wyceny tego samego efektu
+przez lata (double-count 37 pkt) — unifikacja do wspólnego helpera to
+nie kosmetyka, tylko korekta taktyczna rzędu 20-30 pkt na czarze.
