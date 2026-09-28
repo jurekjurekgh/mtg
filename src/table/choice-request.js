@@ -1098,6 +1098,15 @@ function commandForMulliganKeepSelection(commands, pickedRowId) {
 /** Wartownik wiersza odmowy („bez celu") w wyborze pojedynczym z `allowNone`. */
 const NONE_PICK = '__none__';
 
+/**
+ * Czy etykieta z `commandLabel` jest HTML-em do kanału innerHTML: markup
+ * (ikony many) ALBO encja HTML (escapeHtml nazw kart — `&amp;`, `&#39;`…).
+ * Czysty tekst zostaje textContent (testowe mini-DOMy czytają tekst).
+ */
+function labelLooksLikeHtml(label) {
+  return label.includes('<') || /&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/.test(label);
+}
+
 export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
@@ -1297,10 +1306,17 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // testowe mini-DOMy bez parsera dalej czytają tekst. Kanał rozpoznaje
       // treść („<"), nie tryb wizarda, bo o HTML decyduje źródło etykiety
       // (commandLabel), nie kształt wyboru.
-      label: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+      // C (zgłoszenie właściciela 2026-09-28e, Ojutai's Breath — „hashe
+      // i krzaczki”): sam znak „<” nie wyczerpuje sygnału HTML — `commandLabel`
+      // escapuje nazwy kart, więc etykieta bez markupu, za to z ENCJĄ
+      // („Ojutai&#39;s Breath”), jechała textContent i przeglądarka pokazywała
+      // encje dosłownie (klasa M87 przeniesiona na wiersze opcji). Kanał
+      // rozpoznaje treść (markup ALBO encja HTML), nie tryb wizarda — o HTML
+      // decyduje źródło etykiety (commandLabel), nie kształt wyboru.
+      label: (typeof labelOverride === 'string' && labelLooksLikeHtml(labelOverride))
         ? null
         : (labelOverride ?? (objectOrPlayerName(view, session, id) + nameSuffix)),
-      html: (typeof labelOverride === 'string' && labelOverride.includes('<'))
+      html: (typeof labelOverride === 'string' && labelLooksLikeHtml(labelOverride))
         ? labelOverride
         : null,
       kind,
