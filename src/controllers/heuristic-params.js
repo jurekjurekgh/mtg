@@ -83,6 +83,17 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // PMSSB-15 (audyt taktyczny prewencji/fog, prevent_*): okna wartości
+  // fog —właściciel (zgłoszenie B): „preventować u stworów które by lethal
+  // dostały albo u siebie jeśli któryś z kreatur przeciwnika go zrani" +
+  // odpowiedź na dmg-czar z lethalem. Helper fogWindowValue (L41: cast_spell
+  // + rodzina darmowych rzutów).
+  'fogWindowOwnTurnValue',        // własna tura: fog kasuje własny atak (M91, kara > max zysk)
+  'fogWindowWastedValue',         // nic nie da się zapobiec: brak napastników / pełny wyciek (M236)
+  'fogWindowChipValue',           // chip bez zagrożeń — najsłabszy realny wariant (dawna płaska premia)
+  'fogWindowLethalSaveValue',     // dopłata: ratunek bota przed śmiercią w tym starciu (życie LUB poison)
+  'fogWindowSavedCreatureValue',  // dopłata: mój stwór, którego ta walka by zabiła (lustro animate_linked 10)
+  'preventEtbWindowBaseValue',    // PMSSB-15/F4: ETB-prewencji dla artifact-stworów — baza słabego okna
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -298,6 +309,21 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
   // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
   instantDrawFoeEndBonus: 10,
+  // PMSSB-15 (wartości przemyślane, pomiar PRZED: /tmp/pmssb15-prewencja-przed.mjs):
+  // bazy (ownTurn −300 / wasted −75 / chip 15) = wartości HISTORYCZNE rodzin
+  // M91/M236 — anty-over-fix: najsłabszy realny wariant zachowuje starą cenę;
+  // nowe wymiary to dopłaty: lethal-save 40 (zysk największy — „ratunek z
+  // śmierci"; pełny fog przy lethalu = 50+15+40 = 105 > cantrip i > tarcza
+  // 3-dmg Withstand ~80, ale < bounceLethalDodgeBonus 100 za removal-zbicie),
+  // saved-creature 12 (jak animate_linked 10 + 2 za ocalenie zamiast powtórki),
+  // cap 3 stwory (powyżej sytość). Wyciek (F3) skaluje bazę do zapobiegalnej
+  // mocy; pełny wyciek = wasted. F4: baza 3 = dawna płaska ETB (anty-over-fix).
+  fogWindowOwnTurnValue: -300,
+  fogWindowWastedValue: -75,
+  fogWindowChipValue: 15,
+  fogWindowLethalSaveValue: 40,
+  fogWindowSavedCreatureValue: 12,
+  preventEtbWindowBaseValue: 3,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,

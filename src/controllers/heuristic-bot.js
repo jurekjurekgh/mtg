@@ -1549,7 +1549,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     fabricate: () => 8,
     untap_all_creatures_you_control: () => 3,
     animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
-    prevent_damage_this_turn: () => 3,
+    // PMSSB-15/F4: ETB-prewencji (Shieldmage) — okno wartości liczone dla
+    // moich pasujących stworów, które realnie oberżą (walka/burn na stosie);
+    // dawniej płaskie 3 niezależnie od sytuacji (inverse: bezsensowny main-phase
+    // wypadał LEPIEJ niż flash-ratunek artefaktu).
+    prevent_damage_this_turn: (e, view) => preventDamageThisTurnValue(view, e),
     exile_own_land: () => -6,
     // C-R1 (domkniecie, sesja arena/01a071d1): typy ETB jawnie korzystne,
     // nieobsluzone w dedykowanych galezich `cast_permanent` (attach/reanimate/
@@ -4235,7 +4239,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const inertCmd = withoutManaCost ? { ...cmd, xValue: 0 } : cmd;
     if (effects.length > 0 && allEffectsInertNow(view, effects, inertCmd)) return -40;
     let score = base - freeCastTargetPenalty(view, effects, cmd);
-    for (const effect of effects) score += wrapTargetsValue(view, effect, cmd);
+    for (const effect of effects) score += wrapTargetsValue(view, effect, cmd) + fogWindowValue(view, effect);
     // Etap F/4b: koszt dodatkowy płaci się także przy rzucie bez kosztu many
     // (CR 601.2h), a oferta enumeruje JEGO warianty — bez wyceny bot brałby
     // pierwszą ofiarę / pierwszą parę kart z brzegu. Ofiara: wartość ciała
@@ -4339,6 +4343,139 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       total += preventShieldValue(view, targets[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
     }
     return total;
+  }
+
+  // =====================================================================
+  // PMSSB-15: taktyczna wartość okna prewencji/fog — wspólny helper (L41:
+  // cast_spell + rodzina darmowych rzutów + ETB-map). Matryca wartości
+  // właściciela (zgłoszenie B): „preventować u stworów które by lethal
+  // dostały albo u siebie jeśli któryś z kreatur przeciwnika go zrani";
+  // zysk maksimum = ratunek przed śmiercią w tym starciu; zysk średni =
+  // chip; zysk 0/ujemny = nic nie da się zapobiec (M236: przedwczesne
+  // spalenie instanta poza oknem deklaracji). DEBT: prewencja działa
+  // tylko PRZED rozdaniem — CR 615.4 (dosłownie): „Prevention effects must
+  // exist before the appropriate damage event occurs—they can't 'go back
+  // in time' and change something that's already happened."
+  //
+  // Dwa zegary śmierci (M91/CR 104.3d): CR 702.90b (dosłownie): „Damage
+  // dealt to a player by a source with infect doesn't cause that player to
+  // lose life. Rather, it causes that source's controller to give the player
+  // that many poison counters." + CR 615.6: „If damage that would be dealt
+  // is prevented, it never happens" — zapobiegane damage nie daje liczników,
+  // więc fog ratuje też przed zegarem poison (10 = śmierć).
+  //
+  // F3 (wyciek wyjątku „except by enchanted/enchantment creatures" —
+  // Oracle Inspire Awe): enchantment creature i obrandowany aurą (attachedTo
+  // z widoku) NADAL zadaje obrażenia — wartość liczy się tylko do mocy
+  // zapobiegalnej; pełny wyciek = nic nie zapobiega (jak brak napastników).
+  // =====================================================================
+
+  /** Czy napastnik wymyka się prewencji „except by enchanted/enchantment creatures". */
+  function escapesPreventionException(view, attacker) {
+    return (attacker.types ?? []).includes('Enchantment')
+      || (view.zones.battlefield ?? []).some((o) => o.aura && o.attachedTo === attacker.id);
+  }
+
+  /** Napastnicy WROGA z bieżącej deklaracji (fallback M112: stare widoki z markerem `attacking`). */
+  function enemyAttackerObjects(view) {
+    const combat = view.combat ?? null;
+    if (combat) {
+      if (combat.attackingPlayerId === view.playerId) return []; // moja walka — wróg nie atakuje
+      return (combat.attackers ?? [])
+        .map((id) => objectOnBoard(view, id))
+        .filter((o) => o && o.controllerId !== view.playerId);
+    }
+    return enemyCreatures(view).filter((o) => o.attacking);
+  }
+
+  /**
+   * Wartość okna fog/prewencji w bieżącej sytuacji (dopłata do bazy czaru;
+   * 0 dla efektów spoza rodziny). Skala (PMSSB-15, anty-over-fix M429):
+   * baza chip = dawna płaska premia, dopłaty za ratunek z śmierci
+   * (twarz: życie LUB poison) i ocalone stwory; wyciek wyjątku skaluje
+   * bazę do mocy zapobiegalnej.
+   */
+  function fogWindowValue(view, effect) {
+    const type = effect?.type;
+    if (type !== 'prevent_all_combat_damage_this_turn' && type !== 'prevent_combat_damage_except_enchanted') return 0;
+    if (view.turn?.activePlayerId === view.playerId) return P.fogWindowOwnTurnValue; // M91: kara > max zysk
+    const attackers = enemyAttackerObjects(view);
+    if (attackers.length === 0) return P.fogWindowWastedValue; // M236: przed deklaracją / brak atakujących
+    let totalPower = 0;
+    let preventablePower = 0;
+    let faceLife = 0;
+    let facePoison = 0;
+    let leakedFaceLife = 0;
+    let leakedFacePoison = 0;
+    const saved = new Set();
+    for (const attacker of attackers) {
+      const outcome = combatOutcome(view, attacker)
+        ?? { faceDamage: combatPower(attacker), deadBlockers: [] }; // fallback M112
+      const power = combatPower(attacker);
+      totalPower += power;
+      const leaked = type === 'prevent_combat_damage_except_enchanted' && escapesPreventionException(view, attacker);
+      const poisons = (attacker.keywords ?? []).includes('infect');
+      if (leaked) {
+        if (poisons) leakedFacePoison += outcome.faceDamage; else leakedFaceLife += outcome.faceDamage;
+        continue;
+      }
+      preventablePower += power;
+      if (poisons) facePoison += outcome.faceDamage; else faceLife += outcome.faceDamage;
+      for (const blockerId of outcome.deadBlockers ?? []) saved.add(blockerId);
+    }
+    if (preventablePower <= 0) return P.fogWindowWastedValue; // F3: pełny wyciek — nic nie zapobiega
+    const life = myLife(view);
+    const poison = myPoison(view);
+    let value = P.fogWindowChipValue * (totalPower > 0 ? preventablePower / totalPower : 1);
+    // F2: dopłata za uratowanie przed śmiercią w tym starciu — lethal PRZED,
+    // nie-lethal PO (wyciek, który nadal zabija, nie ratuje).
+    const lethalBefore = leakedFaceLife + faceLife >= life
+      || poison + leakedFacePoison + facePoison >= 10;
+    const lethalAfter = leakedFaceLife >= life || poison + leakedFacePoison >= 10;
+    if (lethalBefore && !lethalAfter) value += P.fogWindowLethalSaveValue;
+    // F2: dopłata za moje stwory, które ta walka by zabiła (właściciel:
+    // „stworów które by lethal dostały") — zapobiegiem żyje cały bloker.
+    value += P.fogWindowSavedCreatureValue * Math.min(saved.size, 3);
+    return value;
+  }
+
+  /**
+   * PMSSB-15/F4 (Ethersworn Shieldmage): wartość ETB „prevent all damage that
+   * would be dealt to artifact creatures this turn". Okno = MOJE pasujące
+   * stwory (effect.typesInclude + isCreature), które w tej turze realnie
+   * oberżą: zadeklarowana walka (moje blokery — deadBlockers — albo moje
+   * atakujące stwory, które w niej giną) albo damage na stosie w nie
+   * (odpowiedź na burn — CR 615.4). Bez pasujących stworów = 0 (lustro
+   * animate_linked); baza słabego okna = dawna płaska 3 (anty-over-fix).
+   */
+  function preventDamageThisTurnValue(view, effect) {
+    const needTypes = (effect?.typesInclude ?? []).map((t) => String(t).toLowerCase());
+    const isCreature = effect?.isCreature !== false;
+    const matches = (o) => Boolean(o) && o.controllerId === view.playerId
+      && (!isCreature || o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+      && needTypes.every((t) => (o.types ?? []).some((x) => String(x).toLowerCase() === t));
+    const mineIds = new Set((view.zones.battlefield ?? []).filter(matches).map((o) => o.id));
+    if (mineIds.size === 0) return 0;
+    let value = P.preventEtbWindowBaseValue;
+    const saved = new Set();
+    const combat = view.combat ?? null;
+    for (const aid of combat?.attackers ?? []) {
+      const attacker = objectOnBoard(view, aid);
+      if (!attacker) continue;
+      const outcome = combatOutcome(view, attacker);
+      // Moje blokery, które giną w lanach ataków wroga…
+      for (const bid of outcome?.deadBlockers ?? []) if (mineIds.has(bid)) saved.add(bid);
+      // …i moje atakujące stwory, które giną od blokerów (moja tura).
+      if (mineIds.has(aid) && outcome?.attackerDies) saved.add(aid);
+    }
+    // Burn na stosie w moje pasujące stwory (odpowiedź z leathalem).
+    let pendingHits = 0;
+    for (const entry of view.pendingEffects ?? []) {
+      if (entry?.effect?.type !== 'damage') continue;
+      if ((entry.targets ?? []).some((t) => mineIds.has(t))) pendingHits += 1;
+    }
+    value += P.fogWindowSavedCreatureValue * Math.min(saved.size + pendingHits, 3);
+    return value;
   }
 
   function freeCastTargetPenalty(view, effects, cmd) {
@@ -5408,6 +5545,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
+          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
+          score += fogWindowValue(view, effect);
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
@@ -5637,6 +5777,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
+          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
+          score += fogWindowValue(view, effect);
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
@@ -5657,6 +5800,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const effect of effects) {
           if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
           if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
+          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
+          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
+          score += fogWindowValue(view, effect);
         }
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
@@ -6440,20 +6586,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Batch60 (Revealing Wind): zwykła mgła ma ten sam timing co Inspire
           // Awe (instant w turze atakującego wroga, po deklaracji).
           if (effect.type === 'prevent_combat_damage_except_enchanted' || effect.type === 'prevent_all_combat_damage_this_turn') {
-            const myTurn = view.turn.activePlayerId === view.playerId;
-            // M167/F: kara musi przebić WSZYSTKO (baza + wycena scry przy
-            // pełnej bibliotece dawały remis z passem, a remis wybierał
-            // czar — bot rzucał fog we własnej turze).
-            if (myTurn) score -= 300;
-            // M236 (audyt Żywym Testerem, Inspire Awe): „fog" to instant —
-            // wartość ma DOPIERO gdy przeciwnik ZADEKLAROWAŁ atakujących
-            // (attackingEnemyPower liczy z view.combat). Rzucony w upkeepie/
-            // przed deklaracją (albo gdy wróg nie ma czym atakować) prewencja
-            // nic nie zapobiega — to przedwczesne spalenie instanta. Kara musi
-            // przebić bazę czaru + ewentualny scry, żeby bot POCZEKAŁ na okno
-            // deklaracji (wtedy attackingEnemyPower>0 → premia). Zgłoszenie:
-            // bot rzucił Inspire Awe w turze gracza, który nie miał stworów.
-            else score += attackingEnemyPower(view) > 0 ? 15 : -75;
+            // PMSSB-15: okno taktyczne fog liczy wspólny helper fogWindowValue
+            // (L41 — ten sam w rodzinie darmowych rzutów): M91 własnej tury
+            // (−300), M236 przedwczesnego okna (−75), skala chip/lethal-save
+            // i wyciek wyjątku (F3). Stary flat +15/−75/−300 zachowany jako
+            // wartości bazowe pokręteł (anty-over-fix M429).
+            score += fogWindowValue(view, effect);
           }
           // M109 (Spare from Evil): ochrona do końca tury to SZTUCZKA BOJOWA — po deklaracji blokujących.
           // B (zgłoszenie właściciela, Spare from Evil {1}{W} — protection from non-Human creatures):
