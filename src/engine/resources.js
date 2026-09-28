@@ -635,6 +635,10 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || !isLandSource) throw new Error('Nielegalne źródło many');
   if (object.tapped) throw new Error('Land jest już tapped');
+  // CR 613.1f + 605.1a: bez zdolności (ani grantu) nie ma zdolności many —
+  // tapnięcie nie może oddać jednostki MANY (F5b, #142). Bramka PRZED
+  // mutacją `tapped` (atomowość, L48).
+  if (!landCanProduceMana(state, object)) throw new Error('Obiekt nie ma zdolności many');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
   // M114 (CR 701.26): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
@@ -702,6 +706,21 @@ export function millsLibraryOnTap(state, object) {
   return false;
 }
 
+/**
+ * Czy land MOŻE w tej chwili wyprodukować manę: ma grant aury (Nature's
+ * Embrace) albo JAKIEKOLWIEK źródło z `getSourceForObject` (podtyp podstawowy
+ * CR 305.6, deskryptor zdolności z danych, zdolność skarbowa, mapa). Land bez
+ * zdolności (`abilitiesStripped` bez późniejszego grantu) nie ma czego
+ * aktywować (CR 613.1f + 605.1a) — wcześniej `untappedLandManaSources`
+ * zwracał go mimo to i cała ścieżka płatności (producibleMana, auto-tap,
+ * tapLandForMana) oddawała za niego 1 bezbarwną jednostkę (F5b, #142).
+ */
+export function landCanProduceMana(state, object) {
+  if (!object) return false;
+  if (grantManaOnLand(state, object.id) > 0) return true;
+  return getSourceForObject(object, state) != null;
+}
+
 export function untappedLandManaSources(state, playerId) {
   const lands = [];
   const landCreatures = [];
@@ -710,6 +729,7 @@ export function untappedLandManaSources(state, playerId) {
     if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (!isLandSource) continue;
+    if (!landCanProduceMana(state, object)) continue;
     (object.kind === 'land' ? lands : landCreatures).push(object);
   }
   return [...lands, ...landCreatures];

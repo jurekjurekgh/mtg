@@ -25,7 +25,9 @@ function setup(action = () => Promise.resolve(), options = {}) {
   const sounds = []; const media = [];
   const synth = { enabled: false, setEnabled(v) { this.enabled = !!v; }, resume: () => true,
     play(key) { if (!this.enabled) return 'disabled'; sounds.push(key); return 'played'; } };
-  const player = createCardSoundPlayer({ syntheticPlayer: synth, baseUrl: 'https://test.invalid/mtg/index.html',
+  // Domyślnie `baseUrl: ''` = jedna ścieżka względna (1 próba) — testy
+  // zachowań nie zależą od liczby lokalizacji. Testy ścieżek podają własny.
+  const player = createCardSoundPlayer({ syntheticPlayer: synth, baseUrl: '',
     createAudio: () => { const a = new Media(action); media.push(a); return a; }, timeoutMs: 50, ...options });
   player.setEnabled(true);
   return { player, sounds, media, synth };
@@ -33,19 +35,31 @@ function setup(action = () => Promise.resolve(), options = {}) {
 const missing = () => Promise.reject(new DOMException('Missing or unsupported media', 'NotSupportedError'));
 const settle = async () => { await Promise.resolve(); await Promise.resolve(); await Promise.resolve(); };
 
-test('B/ścieżki: numer kolekcji, nie slug ani numer Scryfall; właściwy podkatalog Pages', () => {
-  assert.deepEqual(cardSoundUrls(card.artId, 'https://test.invalid/mtg/index.html?seed=2'), ['https://test.invalid/mtg/snd/422.mp3']);
-  assert.deepEqual(cardSoundUrls('12', 'https://test.invalid/mtg/'), ['https://test.invalid/mtg/snd/12.mp3']);
+test('B/ścieżki: numer kolekcji, nie slug ani numer Scryfall; względny przed absolutnym', () => {
+  assert.deepEqual(cardSoundUrls(card.artId, 'https://test.invalid/mtg/index.html?seed=2'),
+    ['snd/422.mp3', 'https://test.invalid/mtg/snd/422.mp3']);
+  assert.deepEqual(cardSoundUrls('12', 'https://test.invalid/mtg/'),
+    ['snd/12.mp3', 'https://test.invalid/mtg/snd/12.mp3']);
 });
 
-test('B/ścieżki: dist szuka w katalogu repo, potem obok pliku; file: nie wymaga fetch', () => {
+test('B/ścieżki: dist — względny obok artefaktu, rodzic (repo) i oba absolutne', () => {
   assert.deepEqual(cardSoundUrls(12, 'https://test.invalid/mtg/dist/mtg-table.html'), [
+    '../snd/12.mp3', 'snd/12.mp3',
     'https://test.invalid/mtg/snd/12.mp3', 'https://test.invalid/mtg/dist/snd/12.mp3',
   ]);
   assert.deepEqual(cardSoundUrls(12, 'file:///kolekcja/dist/mtg-table.html'), [
+    '../snd/12.mp3', 'snd/12.mp3',
     'file:///kolekcja/snd/12.mp3', 'file:///kolekcja/dist/snd/12.mp3',
   ]);
-  assert.deepEqual(cardSoundUrls(12, 'file:///kolekcja/stol.html'), ['file:///kolekcja/snd/12.mp3']);
+});
+
+test('B/ścieżki: file: poza dist i błędny URL — zawsze ścieżka względna', () => {
+  assert.deepEqual(cardSoundUrls(12, 'file:///kolekcja/stol.html'),
+    ['snd/12.mp3', 'file:///kolekcja/snd/12.mp3']);
+  // Zgłoszenie właściciela 2026-09-28b: przy złym/nieznanym URL-u ścieżka
+  // względna zostaje — przeglądarka rozwiąże ją wobec dokumentu.
+  assert.deepEqual(cardSoundUrls(12, 'ftp://dysk/snd/'), ['snd/12.mp3']);
+  assert.deepEqual(cardSoundUrls(12, 'to-nie-jest-url'), ['snd/12.mp3']);
 });
 
 test('B/ścieżki: brak/niepoprawny artId nie staje się dowolnym URL-em', () => {
@@ -67,30 +81,43 @@ test('B/fasada: przekazuje pełną kartę adapterowi MP3, zachowuje starszego gr
 test('B/sukces: dostępny MP3 jest jedynym dźwiękiem', async () => {
   const { player, media, sounds } = setup();
   assert.equal(await player.playCard(card), 'played-file');
-  assert.equal(media.length, 1); assert.equal(media[0].src, 'https://test.invalid/mtg/snd/422.mp3');
+  assert.equal(media.length, 1); assert.ok(media[0].src.endsWith('snd/422.mp3'), media[0].src);
   assert.deepEqual(sounds, []);
   media[0].emit('ended'); assert.equal(media[0].listenerCount(), 0);
 });
 
 test('B/404: synteza dokładnie raz, zachowuje typ i kolor', async () => {
-  const { player, media, sounds } = setup(missing);
+  const attempts = [];
+  const { player, media, sounds } = setup((a) => { attempts.push(a.src); return missing(); },
+    { baseUrl: 'https://test.invalid/mtg/index.html' });
   assert.equal(await player.playCard(card), 'played');
-  assert.equal(media.length, 1); assert.deepEqual(sounds, ['sorcery:R']);
+  assert.equal(media.length, 2);
+  // `silence()` czyści `src` po nieudanej próbie — mierzymy adresy w play().
+  assert.deepEqual(attempts, ['snd/422.mp3', 'https://test.invalid/mtg/snd/422.mp3']);
+  assert.deepEqual(sounds, ['sorcery:R']);
   assert.ok(media[0].paused); assert.equal(media[0].listenerCount(), 0);
 });
 
-test('B/dist: brak w ../snd, trafienie w dist/snd bez syntezy', async () => {
+test('B/dist: względny obok artefaktu trafia bez syntezy', async () => {
   const attempts = [];
-  const { player, sounds } = setup((a) => { attempts.push(a.src); return a.src.includes('/dist/snd/') ? Promise.resolve() : missing(); },
+  const { player, media, sounds } = setup((a) => { attempts.push(a.src); return a.src.endsWith('/snd/12.mp3') && !a.src.endsWith('dist/snd/12.mp3') ? missing() : Promise.resolve(); },
     { baseUrl: 'file:///kolekcja/dist/mtg-table.html' });
   assert.equal(await player.playCard({ ...card, artId: 12 }), 'played-file');
-  assert.deepEqual(attempts, ['file:///kolekcja/snd/12.mp3', 'file:///kolekcja/dist/snd/12.mp3']);
-  assert.deepEqual(sounds, []);
+  // Pierwsza próba (`../snd`) pada, druga (`snd/12.mp3`) trafia — zanim
+  // dojdzie do adresów absolutnych (Chrome/Safari blokuje file:///).
+  assert.deepEqual(attempts, ['../snd/12.mp3', 'snd/12.mp3']);
+  assert.deepEqual(sounds, []); assert.equal(media.length, 2);
 });
 
-test('B/brak obu lokalizacji: nadal tylko jeden fallback', async () => {
-  const { player, media, sounds } = setup(missing, { baseUrl: 'https://test.invalid/mtg/dist/mtg-table.html' });
-  assert.equal(await player.playCard(card), 'played'); assert.equal(media.length, 2);
+test('B/brak wszystkich lokalizacji dist: 4 próby i jeden fallback', async () => {
+  const attempts = [];
+  const { player, media, sounds } = setup((a) => { attempts.push(a.src); return missing(); },
+    { baseUrl: 'https://test.invalid/mtg/dist/mtg-table.html' });
+  assert.equal(await player.playCard(card), 'played'); assert.equal(media.length, 4);
+  assert.deepEqual(attempts, [
+    '../snd/422.mp3', 'snd/422.mp3',
+    'https://test.invalid/mtg/snd/422.mp3', 'https://test.invalid/mtg/dist/snd/422.mp3',
+  ]);
   assert.deepEqual(sounds, ['sorcery:R']);
 });
 
@@ -164,6 +191,18 @@ test('B/błąd już grającego pliku: pojedynczy fallback i cleanup', async () =
   assert.equal(media.length, 1); media[0].emit('error'); media[0].emit('error'); await settle();
   assert.deepEqual(sounds, ['sorcery:R']); assert.ok(media[0].paused);
   assert.equal(media[0].listenerCount(), 0);
+});
+
+test('B/timeout: domyślnie 4 s — 1500 ms to już środek odczytu, nie koniec', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const d = deferred(); const { player } = setup(() => d.promise, { timeoutMs: undefined });
+  const pending = player.playCard(card); await settle();
+  t.mock.timers.tick(3999);
+  let settled = false; pending.then(() => { settled = true; });
+  await settle(); assert.equal(settled, false, 'przed 4 s gra jeszcze czeka na plik');
+  t.mock.timers.tick(2);
+  assert.equal(await pending, 'played');
+  d.resolve(); await settle();
 });
 
 test('B/brak API lub wyjątek konstruktora: fallback nie odrzuca Promise', async () => {

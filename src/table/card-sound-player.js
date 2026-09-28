@@ -2,9 +2,21 @@ import { soundKeyForCard } from './spell-sounds.js';
 
 /**
  * Numer kolekcji (artId) → opcjonalny plik. Nigdy slug/nazwa karty.
- * Pages: zachowujemy podkatalog projektu. Build w dist: paczka w korzeniu
- * repo, z drugim wariantem dla HTML-a i snd skopiowanych razem do dist.
- * HTMLAudioElement obsługuje też file: bez fetch(file:) blokowanego w Safari.
+ *
+ * Kolejność kandydatów (zgłoszenie właściciela 2026-09-28b: MP3 z `./snd/`
+ * nie grały na dysku lokalnym): NAJPIERW adresy WZGLĘDNE — rozwiązuje je sama
+ * przeglądarka wobec dokumentu i to jedyny wariant, któremu `file://` ufa
+ * w Chrome/Safari (absolutne `file:///...` bywają blokowane). Wzorzec ten sam
+ * co `img/` FOT/KON (`card-images.js`). Dopiero potem absolutne — dla stron
+ * hostowanych (Pages) i starych zachowań.
+ *
+ * - HTML spoza `dist/` (np. Pages w katalogu repo): `snd/<id>.mp3` + absolutny.
+ * - HTML w `dist/` (build ADR 0011): `snd/<id>.mp3` (obok artefaktu),
+ *   `../snd/<id>.mp3` (korzeń repo — tam leży paczka właściciela), potem oba
+ *   absolutne (korzeń repo przed katalogiem dokumentu — kolejność historyczna).
+ *
+ * Przy błędnym/nieobsługiwanym URL-u zwracamy ścieżkę względną — przeglądarka
+ * i tak rozwiąże ją wobec dokumentu, więc nie tracimy ostatniej szansy.
  */
 export function cardSoundUrls(artId, baseUrl = '') {
   if (typeof artId !== 'number' && typeof artId !== 'string') return [];
@@ -12,17 +24,21 @@ export function cardSoundUrls(artId, baseUrl = '') {
   const id = Number(artId);
   if (!Number.isSafeInteger(id) || id <= 0) return [];
   const path = `snd/${id}.mp3`;
-  if (!baseUrl) return [path];
+  const relParent = `../${path}`;
+  let base = null;
   try {
-    const base = new URL(baseUrl);
-    if (!['http:', 'https:', 'file:'].includes(base.protocol)) return [];
-    const urls = [];
-    if (/\/dist\/(?:[^/]*)$/.test(base.pathname)) urls.push(new URL(`../${path}`, base).href);
-    urls.push(new URL(path, base).href);
-    return [...new Set(urls)];
+    base = new URL(baseUrl);
   } catch {
-    return [];
+    base = null;
   }
+  if (!base || !['http:', 'https:', 'file:'].includes(base.protocol)) return [path];
+  const inDist = /\/dist\/(?:[^/]*)$/.test(base.pathname);
+  const urls = [];
+  if (inDist) urls.push(relParent);
+  urls.push(path);
+  if (inDist) urls.push(new URL(relParent, base).href);
+  urls.push(new URL(path, base).href);
+  return [...new Set(urls)];
 }
 
 /**
@@ -31,11 +47,11 @@ export function cardSoundUrls(artId, baseUrl = '') {
  * playCard nigdy nie odrzuca Promise. Wynik: played-file / wynik syntezy /
  * disabled / cancelled / no-card. Zakończone/nieaktualne odczyty nie grają.
  */
-export function createCardSoundPlayer({ syntheticPlayer, createAudio, baseUrl = '', timeoutMs = 1500 } = {}) {
+export function createCardSoundPlayer({ syntheticPlayer, createAudio, baseUrl = '', timeoutMs = 4000 } = {}) {
   if (!syntheticPlayer || typeof syntheticPlayer.play !== 'function') {
     throw new TypeError('Odtwarzacz kart wymaga odtwarzacza syntetycznego');
   }
-  const limit = Number.isFinite(timeoutMs) ? Math.max(1, timeoutMs) : 1500;
+  const limit = Number.isFinite(timeoutMs) ? Math.max(1, timeoutMs) : 4000;
   let generation = 0;
   let cancelCurrent = null;
   const current = (ticket) => ticket === generation && syntheticPlayer.enabled;
@@ -97,6 +113,10 @@ export function createCardSoundPlayer({ syntheticPlayer, createAudio, baseUrl = 
       try {
         audio.preload = 'auto';
         audio.src = url;
+        // Jawny load() po ustawieniu src: bez niego część przeglądarek (Safari
+        // z plikiem z dysku) nie rozpoczyna wczytywania, a play() wisi —
+        // wyglądało to jak brak MP3 (zgłoszenie właściciela 2026-09-28b).
+        if (typeof audio.load === 'function') audio.load();
         // Wywołanie od razu, nie po fetch/HEAD: nie tracimy gestu użytkownika.
         const playing = audio.play();
         if (playing && typeof playing.then === 'function') {

@@ -13459,3 +13459,49 @@ przekazuje kartę do adaptera, starszy gracz nadal działa. 19 RED→19 GREEN,
 web security ON) 4 warianty + artefakt, zero wyjątków; `snd/` ignorowany.
 Fast 6934/6934, build 70/4536,3 kB, final all **7205/7205** (367835 ms),
 build 70/4536,3 kB, +174 vs #140. Bez nowych kart/progów/B0/API. PR OPEN.
+
+
+## 2026-09-28b — audyt scalonego PR #142 (F1–F9 + A/B) i naprawa F5b
+
+Sesja „Kontynuujemy projekt.” wg ADR 0020/0021: PR [#143](https://github.com/jurekjurekgh/mtg/pull/143)
+na starcie (plan `26d112b`), audyt poprzedniego scalonego PR #142 (`1194476` →
+`332a7fd`, 58 plików, +4520/−585) i pętla jakości. Baseline fast 6934/6934,
+build 70 / 4536,3 kB. Przeczytano diff każdego pliku; CR 2026-09-25
+weryfikowany u źródła (`/tmp/cr-raw.txt`, SHA-256 `8d860e45…c070ca`);
+13 mutantów L13 (M1–M12 + warianty) — wszystkie bramki #142 czerwienieją,
+w tym nowa F5b.
+
+**Ustalenie F5b (P1, naprawione `88a4cc1`):** bramka stripa z #142 (F5)
+działała w `mana-sources.js`, ale enumeracja landów w `resources.js` nie
+pytała o zdolność — `producibleMana` liczyła stripowany land jako 1, auto-tap
+go tapnął, a `tapLandForMana` oddawał bezbarwną jednostkę (CR 305.6 + 613.1f +
+605.1a). Mutacja obu bramek przechodziła CAŁĄ szybką suitę. Naprawa:
+`landCanProduceMana` (grant aury albo `getSourceForObject`) filtruje
+`untappedLandManaSources`, `tapLandForMana` odrzuca przed mutacją; strażnik
+`test/audyt-pr142-land-strip-mana.test.js` (3/5 RED → 5/5 GREEN; mutacje
+M3/M3c/M4a/M4b → RED). Pin syntetyczny (L52): brak taliowalnego Land+stripa.
+
+**Raport:** `docs/audits/AUDYT_PR142_2026-09-28.md` (inwentarz, tabela 13
+mutantów, granice). **Żywy Tester:** 2 partie po 300 kroków — `wiedzmin-wur`
+vs `innistrad-wu` seed 2027 (naturalny koniec, 0 `[STOP]`, 1 zgłoszenie
+detektora Dream Twist do triage'u), `mirrodin-brg` vs `ravnica` seed 2033
+(czysto). **Bramka:** fast 6939/6939, all **7210/7210** (493 366 ms),
+build 70 / 4537,3 kB, exit 0. Trwały handoff
+`docs/setup/HANDOFF_2026-09-28b.md`. Bez nowych kart, progów, płatnych API,
+zdalnych zapisów, B0-full i merge.
+
+
+## 2026-09-28c — naprawa dźwięków MP3 z dysku lokalnego (`./snd/`)
+
+Zgłoszenie właściciela: MP3 w `./snd/` nie grały na dysku lokalnym.
+`cardSoundUrls` z `baseUrl` zwracał WYŁĄCZNIE adresy absolutne
+(`file:///.../snd/<artId>.mp3`), które Chrome/Safari dla `file://` potrafią
+blokować; przy błędnym URL-u zwracał pustą listę. Teraz kolejność jest
+względna-najpierw (jak `img/` FOT/KON): w `dist/` → `snd/<id>.mp3`,
+`../snd/<id>.mp3` (korzeń repo z paczką) i dopiero potem oba absolutne;
+poza `dist/` → `snd/<id>.mp3` + absolutny; błędny URL → ścieżka względna.
+Dodatkowo: domyślny timeout odczytu **1500 → 4000 ms** i jawny `audio.load()`
+po ustawieniu `src` (Safari z plikiem z dysku nie zaczynał wczytywania).
+Testy `test/card-sound-mp3.test.js` zaktualizowane do nowych oczekiwań
+(7 RED na starym źródle → 24/24 GREEN; w tym kontrola braku pliku = synteza
+i nowy pin domyślnego timeoutu). Fast **6941/6941**, build **70 / 4538,3 kB**.
