@@ -13443,3 +13443,19 @@ normalny styl treści i obsługa zagnieżdżonych kart. 10 nowych testów wykonu
 Code.gs w VM: 10 RED → 10 GREEN, 25/25 z regresjami, 10 mutacji wykrytych.
 Fast 6911/6911, build 69 / 4529,4 kB. Instrukcja nakazuje wdrożenie Nowej
 wersji Apps Script — agent nie ma dostępu do konta właściciela. B w toku.
+
+
+## 2026-09-28 — A/B: nagłówki AI i lokalne MP3
+
+Kontynuacja w PR #142. A: scope per URL/mode/gameId, writer per karta Docs,
+retry/reload nie dubluje H1; native Heading1 + page break bez pustej strony,
+NORMAL, zagnieżdżone karty. 10 RED→10 GREEN, 25/25, fast 6911/6911, build
+69/4529,4 kB, 10 mutacji. Instrukcja wymaga Nowej wersji `/exec` na koncie
+właściciela; brak zdalnych zapisów.
+B: `cardSoundUrls` z artId i poprawnymi ścieżkami Pages/dist/file:,
+`createCardSoundPlayer` z timeoutem i stop/cancel, fasada `playCastSound`
+przekazuje kartę do adaptera, starszy gracz nadal działa. 19 RED→19 GREEN,
+49/49 dźwięków, 62/62 celowanych; Chromium smoke (sparticuz + playwright,
+web security ON) 4 warianty + artefakt, zero wyjątków; `snd/` ignorowany.
+Fast 6934/6934, build 70/4536,3 kB, final all **7205/7205** (367835 ms),
+build 70/4536,3 kB, +174 vs #140. Bez nowych kart/progów/B0/API. PR OPEN.

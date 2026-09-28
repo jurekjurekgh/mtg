@@ -74,11 +74,11 @@
 
 ### C. Końcowa bramka i przekazanie
 
-- [ ] Pełny `npm run test:all`, build, aktualizacja historii/handoffu i PR.
-- [ ] Wynik A odróżnia poprawność lokalnego kontraktu od wdrożenia na koncie
+- [x] Pełny `npm run test:all`, build, aktualizacja historii/handoffu i PR.
+- [x] Wynik A odróżnia poprawność lokalnego kontraktu od wdrożenia na koncie
   Google właściciela; nie twierdzić, że zdalny dokument został przetestowany.
-- [ ] Wynik B odróżnia działanie loadera od odsłuchu nieobecnych tutaj plików.
-- [ ] Bez merge, force push, zmian reguł gry, progów testów i płatnych API.
+- [x] Wynik B odróżnia działanie loadera od odsłuchu nieobecnych tutaj plików.
+- [x] Bez merge, force push, zmian reguł gry, progów testów i płatnych API.
 
 ## Ryzyka
 
@@ -105,3 +105,19 @@ Bramka A: **6911/6911**, 7 suites, 0 fail/skip, **92718,4105 ms**;
 build **69 / 4529,4 kB**, exit 0. Nie było wywołania konta Google.
 Instrukcja wyjaśnia aktualizację `/exec`, Pages/Bez stron i brak retroaktywnej
 przebudowy starych wpisów. Następny krok B (MP3).
+
+
+## Wyniki B i bramka końcowa
+
+B: `snd/<artId>.mp3` najpierw, synteza fallback. 19 nowych testów
+**16 RED → 19 GREEN**; ze starszymi dźwiękowymi **49/49**.
+Przeglądarka Chromium z web security ON (sparticuz chromium + playwright):
+HTTP project/ missing→synth / dist parent / file sibling + artefakt dist
+z jednym rzutem MP3 bez syntezy i zatrzymaniem po Escape — **zero wyjątków**.
+Fast **6934/6934**, build **70 / 4536,3 kB**. `snd/` ignorowany jak `img/`.
+
+Końcowy `npm run test:all` A/B: **7205/7205**, 7 suites, 0 fail/cancelled/skipped/todo,
+**367835,299555 ms**, exit 0; build **70 / 4536,3 kB**. Względem bazy #140
+**+174 testy** (6760→6934 fast, 7031→7205 all). PR #142 OPEN, CI SUCCESS.
+Bez nowych kart, progów, B0-full i płatnych API. Granice przeglądarki/plików
+i wdrożenia Docs opisane w raporcie i instrukcji.
