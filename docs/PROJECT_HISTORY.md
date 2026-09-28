@@ -13429,3 +13429,17 @@ wyjątków/flag; ręczna lektura znalazła F8/F9 i potwierdziła ich reruny.
 Raport per plik i dowody w AUDYT_PR140_2026-09-28; trwały handoff
 `docs/setup/HANDOFF_2026-09-28.md`. Bez nowych kart, zmian progów/manifestu,
 płatnych API, zdalnych zapisów Drive, B0-full ani merge. PR #142 do review.
+
+
+## 2026-09-28 — dodatkowe zlecenie A/B w PR #142
+
+Po resecie workspace odzyskano historię do ea184ac (pliki bitowo identyczne,
+backup + reset mixed, bez utraty pracy). Nowy plan A/B wypchnięty jako f9c8caa.
+A: klient rozróżnia pierwszy wpis po URL/trybie/gameId i nie zapamiętuje
+błędu fetch. Code.gs pod lockiem wykrywa pierwszą partię z metadanych danej
+karty dokumentu, niezależnie od starego newGame:false; retry/reload nie
+dubluje H1. Native Heading1 + page break (bez pustej pierwszej strony),
+normalny styl treści i obsługa zagnieżdżonych kart. 10 nowych testów wykonuje
+Code.gs w VM: 10 RED → 10 GREEN, 25/25 z regresjami, 10 mutacji wykrytych.
+Fast 6911/6911, build 69 / 4529,4 kB. Instrukcja nakazuje wdrożenie Nowej
+wersji Apps Script — agent nie ma dostępu do konta właściciela. B w toku.

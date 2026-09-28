@@ -5,7 +5,7 @@
  * i dopisuje je NA KOŃCU karty o nazwie trybu (`lore-bot`, `player-bot`,
  * `observer`, `lore-observer`, `skit`). Każdy wpis: linia metadanych
  * (tura, model, długość, czas, partia) + treść komentarza + rozdzielnik.
- * Pierwszy wpis partii (`newGame`, matchup `decks`) poprzedza nagłówek:
+ * Pierwszy zapis gameId W DANEJ KARCIE dokumentu poprzedza nagłówek:
  * podział strony + H1 „⚔️ Nowa partia: X vs Y” (łatwe szukanie początków).
  *
  * KARTY ZAKŁADASZ RĘCZNIE (raz, 2 minuty): ani Apps Script, ani Docs API
@@ -35,22 +35,40 @@ function tabNameFor(mode) {
   return clean || 'lore-bot';
 }
 
-/** Karta pierwszego poziomu o danym tytule albo null (API jest read-only). */
+/** Karta o danym tytule, także zagnieżdżona, albo null. */
 function findTabByTitle(doc, title) {
-  const tabs = doc.getTabs();
-  for (let i = 0; i < tabs.length; i++) {
-    try {
-      if (tabs[i].getTitle() === title) return tabs[i];
-    } catch (e) { /* obca karta — mijamy */ }
+  function find(tabs) {
+    for (let i = 0; i < tabs.length; i++) {
+      const tab = tabs[i];
+      if (tab.getTitle() === title) return tab;
+      const nested = typeof tab.getChildTabs === 'function' ? find(tab.getChildTabs()) : null;
+      if (nested) return nested;
+    }
+    return null;
   }
-  return null;
+  return find(doc.getTabs());
+}
+
+/**
+ * Dokument jest źródłem prawdy, nie ulotny stan przeglądarki ani flaga tury.
+ * Meta istniejących wpisów zawiera gameId; porównujemy całe zakończenie linii,
+ * bez regexu z danych klienta. Działa przy retry, odświeżeniu i przeplataniu
+ * partii. Lock obejmuje sprawdzenie ORAZ zapis, osobno dla wybranej karty.
+ */
+function startsGameSection(body, p) {
+  const gameId = String(p.gameId ?? '');
+  if (!gameId) return p.newGame === true || Number(p.turn) === 1; // starsze klienty bez ID
+  const suffix = ' · partia ' + gameId + ' ──';
+  return !String(body.getText()).split(/\r?\n/).some(function (line) {
+    return line.indexOf('── Tura ') === 0 && line.endsWith(suffix);
+  });
 }
 
 /**
  * Nagłówek NOWEJ partii (zlecenie właściciela — łatwe szukanie początków
  * partii): podział strony (nowa strona) + nagłówek H1 z matchupem.
- * Wołane tylko dla pierwszego logu partii (`p.newGame === true` — śledzi
- * to klient po gameId). Na pustej karcie podziału nie stawiamy (pusta
+ * Wołane dla pierwszego zapisu gameId w tej karcie dokumentu. Nawet stary
+ * klient z newGame:false nie gubi nagłówka. Na pustej karcie podziału nie stawiamy (pusta
  * pierwsza strona byłaby śmieciem).
  */
 function appendGameHeader(body, p) {
@@ -72,11 +90,11 @@ function appendEntry(body, p) {
     + ' · ' + Number(p.chars ?? 0) + ' zn.'
     + ' · ' + String(p.tsClient ?? '')
     + ' · partia ' + String(p.gameId ?? '') + ' ──';
-  body.appendParagraph(meta);
+  body.appendParagraph(meta).setHeading(DocumentApp.ParagraphHeading.NORMAL);
   const chunks = String(p.response ?? '').split(/\r?\n\r?\n/);
   for (let i = 0; i < chunks.length; i++) {
     const text = chunks[i].trim();
-    if (text) body.appendParagraph(text);
+    if (text) body.appendParagraph(text).setHeading(DocumentApp.ParagraphHeading.NORMAL);
   }
   body.appendHorizontalRule();
 }
@@ -92,6 +110,7 @@ function doPost(e) {
       const name = tabNameFor(p.mode);
       const tab = findTabByTitle(doc, name);
       let body;
+      let warning = null;
       if (tab) {
         body = tab.asDocumentTab().getBody();
       } else {
@@ -99,10 +118,10 @@ function doPost(e) {
         const tabs = doc.getTabs();
         const first = tabs.length > 0 ? tabs[0].asDocumentTab().getBody() : doc.getBody();
         body = first;
-        body.appendParagraph('⚠️ Brak karty „' + name + '” — wpis dopisany tutaj')
-          .setHeading(DocumentApp.ParagraphHeading.HEADING3);
+        warning = '⚠️ Brak karty „' + name + '” — wpis dopisany tutaj';
       }
-      if (p && p.newGame === true) appendGameHeader(body, p);
+      if (startsGameSection(body, p)) appendGameHeader(body, p);
+      if (warning) body.appendParagraph(warning).setHeading(DocumentApp.ParagraphHeading.HEADING3);
       appendEntry(body, p);
     } finally {
       try { if (doc) doc.saveAndClose(); } catch (e2) { /* zamknięcie best-effort */ }

@@ -86,15 +86,15 @@ test('AI-E3 drive: wywrotka sieci/brak fetcha = cichy warn, NIGDY reject', async
 });
 
 test('AI-R5 drive: Code.gs dopisuje do DOKUMENTU (karta na tryb), nie arkusza', () => {
-  // Strażnik wzorca K-testu: Apps Scriptu nie uruchomimy w node, ale możemy
-  // pilnować, żeby w skrypcie nie wrócił Arkusz ani nie zginęły karty.
+  // Strażnik API. Zachowanie prawdziwego Code.gs na atrapie Dokumentu
+  // sprawdza ai-drive-game-headers.test.js (VM, bez połączenia z Google).
   const gs = fs.readFileSync('docs/ai-appscript/Code.gs', 'utf8');
   assert.ok(gs.includes('DocumentApp.openById(DOC_ID)'), 'otwarcie dokumentu po ID');
   assert.ok(gs.includes('getTabs()'), 'karty dokumentu');
   assert.ok(gs.includes('asDocumentTab().getBody()'), 'dopisywanie do ciała karty');
   assert.ok(gs.includes('appendParagraph'), 'wpis jako akapity');
   assert.ok(gs.includes('appendHorizontalRule'), 'rozdzielnik wpisów');
-  assert.ok(gs.includes('p.newGame === true'), 'nagłówek tylko dla nowej partii');
+  assert.ok(gs.includes('p.newGame === true'), 'zgodność wskazówki starszego klienta bez gameId');
   assert.ok(gs.includes('appendPageBreak()'), 'podział strony przed partią');
   assert.ok(gs.includes('ParagraphHeading.HEADING1'), 'matchup jako H1');
   assert.ok(gs.includes('LockService'), 'lock współbieżności');

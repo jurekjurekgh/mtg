@@ -48,23 +48,18 @@ export function buildAiDrivePayload({ mode, gameId, turn, model, response, tsCli
  * @returns {(entry) => Promise<{ok, skipped?}>} — nigdy nie odrzuca.
  */
 export function createAiDriveLogger({ getUrl, fetchImpl } = {}) {
-  // Zlecenie właściciela (łatwe szukanie początków partii): pierwszy log
-  // danego gameId niesie `newGame: true` (Code.gs: podział strony + H1
-  // z matchupem). Śledzenie po gameId, nie po turze — działa, choćby
-  // komentarz z tury 1 był wyłączony, a pierwszy log padł w turze 5.
-  // Jawne `newGame` wołającego ma pierwszeństwo (testy, re-emisje).
-  const seenGameIds = new Set();
+  // Każda karta trybu i każdy dokument mają własny początek partii.
+  // Flaga jest wskazówką dla starszych writerów; aktualny Code.gs sprawdza
+  // zapisane metadane pod lockiem, więc retry/reload nie dubluje H1.
+  const seenScopes = new Set();
   return async function logAiResponse(entry) {
     try {
       const url = typeof getUrl === 'function' ? String(getUrl() ?? '').trim() : '';
       if (!url) return { ok: false, skipped: true };
-      const gameId = String(entry?.gameId ?? '');
-      const firstSeen = gameId !== '' && !seenGameIds.has(gameId);
-      if (gameId !== '') seenGameIds.add(gameId);
-      const payload = buildAiDrivePayload({
-        ...entry,
-        newGame: entry?.newGame === true || (entry?.newGame == null && firstSeen),
-      });
+      const payload = buildAiDrivePayload(entry);
+      const scope = JSON.stringify([url, payload.mode, payload.gameId]);
+      const firstSeen = payload.gameId !== '' && !seenScopes.has(scope);
+      payload.newGame = payload.newGame === true || (payload.newGame == null && firstSeen);
       const fetchFn = fetchImpl === undefined
         ? (typeof fetch !== 'undefined' ? fetch : null)
         : (typeof fetchImpl === 'function' ? fetchImpl : null);
@@ -78,6 +73,7 @@ export function createAiDriveLogger({ getUrl, fetchImpl } = {}) {
         headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify(payload),
       });
+      if (payload.gameId !== '') seenScopes.add(scope);
       return { ok: true };
     } catch (error) {
       if (typeof console !== 'undefined') console.warn('[ai-drive] zapis do Dokumentu nieudany:', error);
