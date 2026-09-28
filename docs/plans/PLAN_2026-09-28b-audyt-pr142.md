@@ -38,46 +38,38 @@ weryfikowana **u źródła** (ADR 0030: CR 2026-09-25 + rulingi Scryfall);
 zero przypadków specjalnych po nazwie/ID karty (ADR 0002); testy potwierdzone
 mutacyjnie (L13), nie tylko „zielone”.
 
-- [ ] F1 (`game-state.js`, look-top): walidacja `bottomOrder` **przed** pierwszą
-  mutacją. Mutacja: przenieść bramkę za mutację → `test/audyt-pr140-look-top-atomic.test.js` RED.
-- [ ] F5 (`permanents.js` + czytniki many/statyk): `abilitiesStripped` tłumi
-  wydruk, nie granty; znaczniki czasu (`abilitiesStrippedAt`, `grantedAt`,
-  `abilityTimestampOf`) w warstwie 6 CR 613. Sprawdzić CR 613.7a i CR 611.2.
-  Mutacja: cofnąć bramkę w `mana-sources.js` → RED.
-- [ ] F6 (`combat.js`, `choice-request.js`): maksimum spełnionych wymogów
-  „blocks if able” (solver `maximalRequiredBlocks`, `completeBlockingAssignment`)
-  i „can’t block alone” w całej deklaracji. Weryfikacja cytatów **CR 509.1c /
-  506.5 / 509.1a** u źródła; sprawdzenie, że oferta i walidacja wołają ten sam
-  predykat (L48). Mutacja: `maximalRequiredBlocks` → fałszywe zero → RED.
-- [ ] F7 (`card-data.js`, `spells.js`, `effect-intent.js`, UI): Twiddle
-  niemodalny, decyzja tap/untap przy rozstrzyganiu (ruling 2004-10-04),
-  `optionalEffectVariants`, wspólny odczyt dla oferty i walidacji.
-  Sprawdzić: kryterium CR 608.2d, brak drugiej kopii listy wariantów (L41),
-  zgodność etykiet i logu. Mutacja: dopuścić wariant niemożliwy → RED.
-- [ ] F8 (`combat.js`, `game-state.js`): deklaracja walki wymaga pustego stosu
-  w ofercie **i** w obu walidatorach; sprawdzić u źródła CR 508.1 oraz to, czy
-  to naprawa u root cause (skąd stan z niepustym stosem w kroku deklaracji).
-- [ ] F9 (`render.js`, `session.js`): pełne opisy płatnych triggerów
-  (pipy, życie, warunek „jeśli tak”), brak dublowania kosztu, `cannot_pay`
-  w logu, etykieta `dies` bez „stwora”. Sprawdzić inwentarz całego katalogu
-  (7 triggerów) i brak specjalnych przypadków po nazwie karty.
-- [ ] F2/F3 (`ai-drive.js`, `ai-client.js`, `Code.gs`): brak `newGame` to nie
-  jawne „nie”; pierwszy wpis per (URL, tryb, gameId); rozróżnienie
-  anulowania użytkownika od timeoutu (pierwsza przyczyna) z zachowaniem
-  komunikatu błędu sieci.
-- [ ] F4 (`heuristic-bot.js`): kolory lądów z **produkowanej many**
-  (`manaSourceOfView`), nie z pola `colors` karty; sprawdzić rodzinę
-  pozostałych czytań kolorów lądu w bocie.
-- [ ] A/B (`card-sound-player.js`, `spell-sounds.js`, `main.js`,
-  `art-showcase.js`, `Code.gs`): brak Node-globali w kodzie artefaktu,
-  poprawne ścieżki `snd/<artId>.mp3` (Pages/dist/file), jedno źródło prawdy
-  ścieżek, brak sekretów i ciężkich plików w repo; `snd/` ignorowany.
-- [ ] Zapis raportu: `docs/audits/AUDYT_PR142_2026-09-28.md` (per plik,
-  dowody mutacyjne, wnioski APPROVE/APPROVE z zastrzeżeniami) + wpis w opisie PR.
-
+- [x] F1: bramka przed mutacją; **M1** (usunięty pre-check) → ≥8 RED
+  `test/audyt-pr140-look-top-atomic.test.js`.
+- [x] F5: model warstwy 6 potwierdzony (CR 613.7a/613.7n, ruling Xu-Ifit
+  2025-07-25); **M5** (`abilityRemovalTimestamp` ignoruje strip) → 2 RED.
+  **F5b (P1, znalezisko):** bramka stripa nie obejmowała ścieżki płatności —
+  M3 (oba gate'y `mana-sources.js`) przechodziło CAŁĄ szybką suitę; naprawa
+  `88a4cc1` + strażnik `test/audyt-pr142-land-strip-mana.test.js`
+  (M3/M3c/M4a/M4b → RED).
+- [x] F6: oferta/walidacja/solver na jednym predykacie; CR 509.1c/506.5/509.1a
+  potwierdzone u źródła; **M6** (menu bez filtru maksimum) → 5 RED
+  (`test/audyt-pr140-block-requirements.test.js`, 19 testów).
+- [x] F7: Twiddle niemodalny, wybór przy rozstrzyganiu (ruling 2004-10-04),
+  jedno źródło wariantów; **M7** (zawsze `tap_permanent`) → 11 RED.
+- [x] F8: oferta i walidatory na pustym stosie; sondy runtime potwierdziły
+  (instant w oknie deklaracji → deklaracja znika; pass → `declare_blockers`
+  bez `combat`); **M2** (guard `combat.js:290`) → 2 RED; CR 508.1 u źródła.
+- [x] F9: opisy płatnych triggerów z warunkiem „jeśli tak”, koszt raz;
+  **M12** (`render.js` cena jako rider) → 8 RED (`audyt-live-paid-trigger-text`).
+- [x] F2/F3: `newGame` null-safe, scope `[url, mode, gameId]`; **M9** (scope
+  bez `gameId`) → 1 RED, **M10** (brak rozróżnienia timeout/anulowanie) → 3 RED.
+- [x] F4: `manaSourceOfView` w wycenie płatnych triggerów; **M11**
+  (`koloryZrodlaWidoku` puste) → 6 RED (`audyt-pr140-pay-mana-source`).
+- [x] A/B: ścieżki `snd/<artId>.mp3` z jednego źródła (`cardSoundUrls`),
+  fallback syntezy, brak Node-globali w artefakcie; **M8** (brak preferencji
+  MP3) → 15 RED; `snd/` ignorowany.
+- [x] Raport `docs/audits/AUDYT_PR142_2026-09-28.md` (inwentarz, tabela 13
+  mutantów, F5b, granice) + opis PR aktualizowany kumulatywnie.
 ### 3. Naprawy znalezisk z audytu (jeśli wystąpią)
 
-- [ ] Każde znalezisko: RED→GREEN, naprawa u root cause (ADR 0002, L57),
+- [x] F5b `88a4cc1` — RED→GREEN (3/5→5/5), mutacje M3/M3c/M4a/M4b → RED,
+  fast 6939/6939 + build zielone (szczegóły w raporcie).
+- [ ] Każde KOLEJNE znalezisko: RED→GREEN, naprawa u root cause (ADR 0002, L57),
   anty-over-fix, niezależna mutacja, `npm test` + `npm run build`,
   osobny commit i push (ADR 0020 C).
 - [ ] Reguła trwała z wniosku (jeśli nowa) → ADR / `docs/LESSONS.md` /
