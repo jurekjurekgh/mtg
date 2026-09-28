@@ -13333,3 +13333,22 @@ Quick **672**: heuristic 258/336 vs aggro (76,8%; +1 wygrana w lustrze
 Final Fantasy), 331/336 vs random (98,5%), 0 stalls. Snapshot/progi bez
 zmian; pełny all dopiero po pozostałych naprawach. Dodano zweryfikowany
 506.5 do generowanej tabeli CR. Otwarte C4/F7, C5/F4, C6/F2, C7/F3.
+
+
+### C4 / F7 — Twiddle zgodny z Oracle i zachowane kontynuacje
+
+Scryfall 8ED111 oraz oba rulingi WotC ponownie pobrane 2026-09-28 i zapisane
+w snapshotcie. Cel przy rzucaniu, tap/untap/odmowa przy rozstrzyganiu; brak
+fikcyjnych trybów i automatycznego toggle. Jedna interpretacja wariantu dla
+oferty/walidacji/prognozy bota; log wskazuje czynność i cel, detektor rozumie
+nowy format. Naprawy klasy kontynuacji: późniejsze may, blokujący skutek may,
+modalne blokady/kopie, przekazanie całego pending u 25 konsumentów oraz
+priorytet (117.2e/117.3b) po may/scry/discard. Nośniki poza katalogiem tylko
+testowe; modalne piny UI nadal czerwienią mutację (3/5 RED).
+31 nowych testów: 23 RED na C3 → 31 GREEN; 26 wykrytych podmian/mutacji,
+336/336 w 20 plikach odnoszących się do Twiddle. Strażnik wycen początkowo
+wykrył brak jawnej klasyfikacji delegacji; dodano realną gałąź, nie wyjątek.
+Końcowy fast **6853/6853**, build **69 / 4528,0 kB**, quick **672** identyczny
+z C3 (76,8% vs aggro / 98,5% vs random, 0 stalls); snapshot/progi bez zmian.
+Cały TESTER_STOLU przeczytany, jsdom zainstalowany; żywe partie jeszcze nie.
+Następne C5/F4 (kolory źródeł many), C6/F2 (Drive) i C7/F3 (abort AI).

@@ -338,35 +338,33 @@ test('Trade Route Envoy: ETB bez stwora z licznikiem → +1/+1 na siebie', () =>
 
 // --- Twiddle {U} Instant: tap or untap artifact/creature/land --------------
 
-test('Twiddle: dane zgodne z Oracle ({U} Instant, tryby tap/untap)', () => {
+test('Twiddle: dane zgodne z Oracle ({U} Instant, wybór tap/untap przy resolution)', () => {
   const def = REGISTRY.get('twiddle');
   assert.ok(def, 'karta jest w katalogu');
   assert.equal(def.manaCost, 1);
   assert.equal(MANA_COSTS['twiddle'], '{U}');
   assert.equal(def.spell.timing, 'instant');
-  assert.equal(def.spell.modes.length, 2);
-  assert.equal(def.spell.modes[0].effects[0].type, 'tap_permanent');
-  assert.equal(def.spell.modes[1].effects[0].type, 'untap_permanent');
-  for (const mode of def.spell.modes) {
-    assert.equal(mode.targets[0].type, 'artifact_or_creature_or_land');
-  }
+  assert.equal(def.spell.modes?.length ?? 0, 0, 'ruling: This is not a modal spell');
+  assert.equal(def.spell.effects[0].type, 'tap_or_untap_permanent');
+  assert.equal(def.spell.effects[0].may, true);
+  assert.equal(def.spell.targets[0].type, 'artifact_or_creature_or_land');
 });
 
-test('Twiddle: tryb Tap tapuje stwora', () => {
+test('Twiddle: decyzja Tap tapuje stwora', () => {
   const state = newState();
   putBlank(state, 'cel', 'p1', { power: 2, toughness: 2 });
   putCard(state, 'tw', 'twiddle', 'p1', 'hand');
   addMana(state, 'p1', 1, { colors: ['U'] });
   const cast = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_spell' && c.objectId === 'tw'
-      && c.modeIndex === 0 && (c.targets ?? [])[0] === 'cel');
-  assert.ok(cast, 'oferta trybu Tap z celem');
+      && c.modeIndex == null && (c.targets ?? [])[0] === 'cel');
+  assert.ok(cast, 'oferta rzutu z celem');
   execute(state, cast);
   resolveStack(state);
   assert.equal(state.objects.get('cel').tapped, true);
 });
 
-test('Twiddle: tryb Odkręcenie odkręca stwora', () => {
+test('Twiddle: decyzja Odkręcenie odkręca stwora', () => {
   const state = newState();
   putBlank(state, 'cel', 'p1', { power: 2, toughness: 2 });
   state.objects.set('cel', Object.freeze({ ...state.objects.get('cel'), tapped: true }));
@@ -374,8 +372,8 @@ test('Twiddle: tryb Odkręcenie odkręca stwora', () => {
   addMana(state, 'p1', 1, { colors: ['U'] });
   const cast = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'cast_spell' && c.objectId === 'tw'
-      && c.modeIndex === 1 && (c.targets ?? [])[0] === 'cel');
-  assert.ok(cast, 'oferta trybu Odkręcenie');
+      && c.modeIndex == null && (c.targets ?? [])[0] === 'cel');
+  assert.ok(cast, 'oferta rzutu w tapniętego stwora');
   execute(state, cast);
   resolveStack(state);
   assert.equal(state.objects.get('cel').tapped, false);

@@ -1,3 +1,7 @@
+// Korekta F7/PR140: Twiddle nie jest modalny. Historyczne zgłoszenie i
+// pomiar poniżej zostają; CM/1–1b zachowują test kształtu na TESTOWYM
+// prawdziwie modalnym deskryptorze. Realny Twiddle ma nowe piny at-cast/resolve
+// w audyt-pr140-twiddle-resolution.test.js. Katalog nie dostaje nowej karty.
 // Uwaga z gry właściciela (2026-09-22) — WSZYSTKIE czary modalne: żadnych
 // opcji z wpiętym „pierwszym z brzegu” targetem.
 //
@@ -70,26 +74,36 @@ function put(state, cardId, zone, controllerId = 'p1') {
   return id;
 }
 
-/** Scenariusz właściciela: Twiddle + kilka celów obu kategorii. */
+const TEST_MODAL_SPELL = {
+  timing: 'instant',
+  modes: [
+    { name: 'Tapnięcie', targets: [{ type: 'artifact_or_creature_or_land' }], effects: [{ type: 'tap_permanent' }] },
+    { name: 'Odkręcenie', targets: [{ type: 'artifact_or_creature_or_land' }], effects: [{ type: 'untap_permanent' }] },
+  ],
+};
+
+/** Nośnik kształtu modalnego + kilka celów obu kategorii (nie Twiddle). */
 function board() {
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p1');
-  const spellId = put(state, 'twiddle', 'hand');
+  const spellId = 'test-modal';
+  addObject(state, { id: spellId, instanceId: 'i-test-modal', cardId: 'test-modal', controllerId: 'p1',
+    zone: 'hand', kind: 'spell', types: ['Instant'], colors: [], manaCost: 1, spell: TEST_MODAL_SPELL });
   const art1 = put(state, 'dragonbroods-relic', 'battlefield', 'p2');
   const cr1 = put(state, 'scorch-spitter', 'battlefield', 'p2');
   const lad1 = put(state, 'basic-forest', 'battlefield', 'p2');
   const lad2 = put(state, 'basic-island', 'battlefield');
-  addMana(state, 'p1', 2, { U: 1 });
+  addMana(state, 'p1', 2, { colors: ['U'] });
   const view = playerView(state, 'p1');
   const oferty = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === spellId);
   return { state, view, oferty, spellId, art1, cr1, lad1, lad2 };
 }
 
-test('CM/1 Twiddle: JEDEN modal z pickerami WSZYSTKICH celów obu trybów (scenariusz właściciela)', () => {
+test('CM/1 testowy czar: JEDEN modal z pickerami WSZYSTKICH celów obu trybów (kształt ze zgłoszenia)', () => {
   const { state, oferty, art1, cr1, lad1, lad2 } = board();
   assert.equal(oferty.length, 8, `2 tryby × 4 cele: ${oferty.length}`);
   const plan = chooseOneOrBothPlanOf(oferty);
-  assert.ok(plan, 'rodzina Twiddle daje plan gniazd (RED przed naprawą: null → 2 wiersze z celami)');
+  assert.ok(plan, 'rodzina modalna daje plan gniazd (RED przed naprawą: null → 2 wiersze z celami)');
   assert.ok(plan.oneOfModesShape, 'kształt B — „choose one” (dokładnie jedno gniazdo)');
   assert.deepEqual(plan.slotModes, [0, 1], 'gniazdo na każdy tryb: Tapnięcie / Odkręcenie');
   const wszyscy = [art1, cr1, lad1, lad2];
@@ -105,7 +119,7 @@ test('CM/1 Twiddle: JEDEN modal z pickerami WSZYSTKICH celów obu trybów (scena
   assert.equal(untap?.modeIndex, 1, 'wypełnione gniazdo „Odkręcenie” = tryb odkręcenia');
   assert.deepEqual(untap?.targets, [lad2]);
   assert.equal(commandForChooseOneOrBoth(plan, [art1, lad1]), null,
-    'oba gniazda = brak komendy (Twiddle to „tapnięcie ALBO odkręcenie”)');
+    'oba gniazda = brak komendy (nośnik ma prawdziwe „Choose one”)');
   assert.equal(commandForChooseOneOrBoth(plan, [null, null]), null, 'pusty wybór = brak komendy');
   // L48: komenda z pickera wykonalna
   assert.ok(execute(state, tap).ok, 'komenda tapnięcia przyjmowana przez silnik');
@@ -115,7 +129,7 @@ test('CM/1b DOM: sekcja na tryb, wiersz na KAŻDEGO kandydata, nic wstępnie zaz
   const { view, oferty, art1, cr1, lad1, lad2 } = board();
   const plan = chooseOneOrBothPlanOf(oferty);
   assert.ok(plan, 'plan gniazd istnieje');
-  const modeNames = REGISTRY.get('twiddle').spell.modes.map((m) => m.name);
+  const modeNames = TEST_MODAL_SPELL.modes.map((m) => m.name);
   const slotLabels = plan.slotModes.map((modeIndex) => modeNames[modeIndex]);
   assert.deepEqual(slotLabels, ['Tapnięcie', 'Odkręcenie'], 'etykiety gniazd = nazwy trybów (terminologia projektowa)');
 
@@ -124,7 +138,7 @@ test('CM/1b DOM: sekcja na tryb, wiersz na KAŻDEGO kandydata, nic wstępnie zaz
   let done = null;
   renderMultiTargetWizard(host, {
     view, session: SESSION, plan, commands: oferty, slotLabels,
-    intro: 'Rzuć: Twiddle (koszt {U}) — wskaż cel DOKŁADNIE jednej pozycji (0–1):',
+    intro: 'Rzuć: nośnik testowy (koszt {1}) — wskaż cel DOKŁADNIE jednej pozycji (0–1):',
     onComplete: (cmd) => { done = cmd; }, onCancel: () => {},
   });
   assert.match(host.textContent, /DOKŁADNIE jednej/, `intro mówi o wyborze jednego trybu: ${host.textContent.slice(0, 120)}`);
@@ -156,7 +170,7 @@ test('CM/2 inwentarz katalogu: każdy czar modalny = klasa A/B/C (strażnik „p
   //   B — same tryby 1-celowe (gniazdo na tryb, jeden modal) — piny CM/1;
   //   C — mieszane/0-celowe/varTV (krok 1 = nazwy trybów, krok 2 = picker).
   const KLASA_A = ['vandalize'];
-  const KLASA_B = ['agate-assault', 'keep-out', 'steel-sabotage', 'twiddle'];
+  const KLASA_B = ['agate-assault', 'keep-out', 'steel-sabotage'];
   const KLASA_C = ['aerith-rescue-mission', 'fortify', 'ruinous-rampage',
     'selesnya-charm', 'your-temple-is-under-attack', 'youre-confronted-by-robbers'];
   const foundA = [];

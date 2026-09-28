@@ -1193,6 +1193,7 @@ function describeEffect(e, ctx = {}) {
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
     tap_permanent: () => 'tapnij',
+    tap_or_untap_permanent: () => 'tapnij lub odkręć (wybór przy rozstrzyganiu)',
     // Batch 56 (Containment Protocol) — ETB aury tapujący gospodarza.
     tap_enchanted_permanent: () => 'tapnij zaczarowany permanent',
     // B5 (audyt stołu 2026-09-09, G2/Membrane): typ konstruowany w runtime

@@ -119,7 +119,7 @@ test('T/2 początek fazy walki + bloker wroga + mój atakujący: Tapnięcie WYBR
   const choice = createHeuristicBot({ seed: 3 }).chooseCommand(playerView(state, 'p2'), {});
   assert.ok(choice.type === 'cast_spell' && choice.objectId === 'tw',
     `combat trick na blokerze zostaje wybrany: ${JSON.stringify(choice)}`);
-  assert.equal(choice.modeIndex, 0, 'tryb Tapnięcie');
+  assert.equal(choice.modeIndex ?? null, null, 'tap/untap nie jest trybem przy rzucaniu');
   assert.equal(choice.targets?.[0], 'wrog', 'cel = potencjalny bloker wroga');
 });
 
@@ -137,7 +137,7 @@ test('T/4 klasa ADR 0002: każdy czar tap_permanent(ś) z celem na ląd/artefakt
     const spells = [card.spell, ...(card.spell?.modes ?? []).map((m) => m)]
       .filter(Boolean);
     const hasTap = spells.some((sp) => (Array.isArray(sp.effects) ? sp.effects : [sp.effects])
-      .some((e) => e?.type === 'tap_permanent' || e?.type === 'tap_permanents'));
+      .some((e) => ['tap_permanent', 'tap_permanents', 'tap_or_untap_permanent'].includes(e?.type)));
     if (!hasTap) return false;
     const targets = spells.flatMap((sp) => sp.targets ?? []);
     return targets.some((t) => /land|permanent/i.test(String(t?.type ?? '')) && !/^creature/.test(String(t?.type ?? '')));

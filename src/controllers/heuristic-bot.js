@@ -1,3 +1,4 @@
+import { optionalEffectVariants } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
@@ -5985,7 +5986,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const effects = (modalEffects
           ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []))
           .filter(e => (!e?.condition?.wasKicked || cmd.kicked === true)
-            && (!e?.condition?.wasGifted || cmd.gifted === true));
+            && (!e?.condition?.wasGifted || cmd.gifted === true))
+          // Prognoza aktualnie możliwej czynności (nie wybór przy rzucaniu).
+          // Rzeczywista decyzja ma własne oferty po odpowiedziach przeciwnika.
+          .flatMap(effect => effect?.type === 'tap_or_untap_permanent'
+            ? optionalEffectVariants(effect, objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target)
+            : (effect ? [effect] : []));
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu

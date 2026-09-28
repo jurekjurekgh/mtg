@@ -84,8 +84,8 @@ test('kontrola negatywna: tryb BEZ celów rozstrzyga się normalnie', () => {
 });
 
 test('kontrola negatywna: tryb z LEGALNYM celem rozstrzyga się i działa', () => {
-  const descriptor = registry.get('twiddle');
-  const state = naStosie('twiddle', 0, ['stwor']);
+  const descriptor = registry.get('agate-assault');
+  const state = naStosie('agate-assault', 0, ['stwor']);
   const bear = registry.get('highland-game');
   addObject(state, {
     id: 'stwor', instanceId: 'ic', cardId: 'highland-game', controllerId: 'p2', ownerId: 'p2',
@@ -93,14 +93,9 @@ test('kontrola negatywna: tryb z LEGALNYM celem rozstrzyga się i działa', () =
   });
   assert.ok(descriptor.spell.modes[0].targets.length > 0);
   resolveTopOfStack(state);
-  // Fix A (2026-09-27): tryb Twiddle niesie `may` — rozstrzygnięcie pyta
-  // o zgodę, zanim efekt zajdzie; kontrola potwierdza (Tak).
-  assert.ok(state.pendingOptionalSpellEffect, 'tryb may pyta przed efektem');
-  const zgoda = playerView(state, 'p1').legalCommands.find((c) =>
-    c.type === 'resolve_optional_spell_effect' && c.apply === true);
-  assert.ok(zgoda, 'oferta Tak');
-  execute(state, zgoda);
+  // F7: Twiddle nie jest modalny. Prawdziwy tryb Agate Assault zachowuje
+  // kontrolę legalnego celu; modalne may mają osobne, testowe nośniki.
   const resolved = state.events.find((e) => e.type === 'spell_resolved');
   assert.equal(resolved.fizzled, false, 'legalny cel => brak fizzla');
-  assert.equal(state.objects.get('stwor').tapped, true, 'efekt trybu zaszedł');
+  assert.equal(state.objects.get('stwor').damage, 4, 'tryb Agate Assault zadał obrażenia; SBA nie jest częścią tego jednostkowego wywołania');
 });

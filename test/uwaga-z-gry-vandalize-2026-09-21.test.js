@@ -1,3 +1,5 @@
+// F7/PR140: realny Twiddle jest niemodalny; rodzina singleTargetModalFamily
+// poniżej to wyłącznie testowy kształt prawdziwego Choose one.
 // Uwaga z gry właściciela (2026-09-21, M405/C) — Vandalize: „Choose one
 // or both” jako multi-target modal z gniazdami wyboru.
 //
@@ -169,9 +171,9 @@ test('V/2 modal DOM: WSZYSCY kandydaci w gniazdach 0–1, wybór gracza wiąże 
 });
 
 test('V/3 anty-over-fix: rodziny trybów celowanych i „up to N” NIE wpadają w gniazda', () => {
-  // Twiddle: 2 tryby, ten sam zbiór kandydatów, arność 1 — tryby przyciskowe
+  // Testowy modal: 2 tryby, ten sam zbiór kandydatów, arność 1 — tryby przyciskowe
   // (M2) zostają; gniazda wymagają trybu ZŁOŻONEGO (arność ≥ 2).
-  const twiddleFamily = [
+  const singleTargetModalFamily = [
     { type: 'cast_spell', objectId: 'tw', modeIndex: 0, targets: ['a'] },
     { type: 'cast_spell', objectId: 'tw', modeIndex: 0, targets: ['b'] },
     { type: 'cast_spell', objectId: 'tw', modeIndex: 1, targets: ['a'] },
@@ -181,13 +183,13 @@ test('V/3 anty-over-fix: rodziny trybów celowanych i „up to N” NIE wpadają
   // odkręcenie celu” dostaje gniazda per tryb (kształt B) w JEDNYM modalu —
   // kaskada castMode z wierszami „jeden do tapa, jeden do untapa” była
   // zgłoszonym błędem klasy.
-  const twiddlePlan = chooseOneOrBothPlanOf(twiddleFamily);
-  assert.ok(twiddlePlan, 'Twiddle-kształt (same tryby 1-celowe) ma plan gniazd per tryb');
-  assert.deepEqual(twiddlePlan.slotModes, [0, 1], 'gniazdo na każdy tryb');
-  assert.equal(commandForChooseOneOrBoth(twiddlePlan, ['a', null])?.modeIndex, 0, 'wypełnione gniazdo 0 = tryb 0');
-  assert.equal(commandForChooseOneOrBoth(twiddlePlan, [null, 'b'])?.modeIndex, 1, 'wypełnione gniazdo 1 = tryb 1');
-  assert.equal(commandForChooseOneOrBoth(twiddlePlan, ['a', 'b']), null, 'oba gniazda = brak komendy („choose one”)');
-  assert.ok(castModePlanOf(twiddleFamily), 'awaryjny plan trybów zostaje dla kształtów mieszanych');
+  const singleTargetModalPlan = chooseOneOrBothPlanOf(singleTargetModalFamily);
+  assert.ok(singleTargetModalPlan, 'Kształt B (same tryby 1-celowe) ma plan gniazd per tryb');
+  assert.deepEqual(singleTargetModalPlan.slotModes, [0, 1], 'gniazdo na każdy tryb');
+  assert.equal(commandForChooseOneOrBoth(singleTargetModalPlan, ['a', null])?.modeIndex, 0, 'wypełnione gniazdo 0 = tryb 0');
+  assert.equal(commandForChooseOneOrBoth(singleTargetModalPlan, [null, 'b'])?.modeIndex, 1, 'wypełnione gniazdo 1 = tryb 1');
+  assert.equal(commandForChooseOneOrBoth(singleTargetModalPlan, ['a', 'b']), null, 'oba gniazda = brak komendy („choose one”)');
+  assert.ok(castModePlanOf(singleTargetModalFamily), 'awaryjny plan trybów zostaje dla kształtów mieszanych');
   // Robbers („up to 3” — mieszane długości w trybie) — null (jak dotąd).
   const robbersLike = [
     { type: 'cast_spell', objectId: 'rb', modeIndex: 0, targets: ['c1'] },
@@ -197,7 +199,7 @@ test('V/3 anty-over-fix: rodziny trybów celowanych i „up to N” NIE wpadają
   ];
   assert.equal(chooseOneOrBothPlanOf(robbersLike), null, '„up to N” bez gniazd — multiTargetPlanOf bez zmian');
   // Rodzina bez trybu złożonego (same arności 1) — null.
-  assert.equal(chooseOneOrBothPlanOf(twiddleFamily.filter((c) => c.modeIndex === 0)), null,
+  assert.equal(chooseOneOrBothPlanOf(singleTargetModalFamily.filter((c) => c.modeIndex === 0)), null,
     'pojedynczy tryb = poza kształtem');
 });
 

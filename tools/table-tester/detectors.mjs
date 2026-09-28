@@ -984,12 +984,14 @@ export function detectBotHarmsOwnPermanent(lines, enemyPermanentNames = new Set(
 
 export function detectBotUntapsMyPermanent(lines, myPermanentNames = new Set(), enemyPermanentNames = new Set()) {
   const found = [];
-  const UNTAP = /tryb: Odkręcenie|odkręć/i;
+  // F7: nowe niemodalne decyzje są widoczne dopiero w logu rozstrzygnięcia.
+  // To sygnał z transkryptu, nie samodzielny dowód złej gry.
+  const UNTAP = /tryb: Odkręcenie|odkręć|odkręcenie celu/i;
   const seen = new Set();
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     if (!/\[ROZGRYWKA\]|LOG:/.test(line)) continue;
-    if (!/Nieprzyjaciel (aktywuje|rzuca)/.test(line)) continue;
+    if (!/Nieprzyjaciel (aktywuje|rzuca|stosuje efekt)/.test(line)) continue;
     if (!UNTAP.test(line)) continue;
     const match = /→ cel: ([^⏎|]+?)\s*$/.exec(line) ?? /→ cel: ([^⏎|]+?)(?:\s\||⏎)/.exec(line);
     if (!match) continue;
