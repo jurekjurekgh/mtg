@@ -47,30 +47,30 @@
 
 ### B. Dźwięki — opcjonalna paczka zasobów, synteza jako fallback
 
-- [ ] Numer pliku pochodzi z `card.artId` (numer kolekcji), nie ze sluga
+- [x] Numer pliku pochodzi z `card.artId` (numer kolekcji), nie ze sluga
   karty ani numeru druku Scryfall. Walidacja liczbowego ID, brak hardkodów kart.
-- [ ] Osobna warstwa odtwarzania lokalnego pliku nad istniejącą syntezą.
+- [x] Osobna warstwa odtwarzania lokalnego pliku nad istniejącą syntezą.
   HTMLAudioElement obsługuje HTTP(S) i lokalny `file:` bez wymagania fetch
   plików lokalnych. Zachować obecną fasadę i 49 syntetycznych brzmień.
-- [ ] Ścieżka z zachowaniem podkatalogu Pages: `snd/N.mp3` obok strony;
+- [x] Ścieżka z zachowaniem podkatalogu Pages: `snd/N.mp3` obok strony;
   dla `dist/mtg-table.html` najpierw `../snd/N.mp3` (katalog repo), potem
   `snd/N.mp3` obok artefaktu. Żadnych localhostów ani ścieżek z komputera agenta.
-- [ ] Plik dostępny → wyłącznie MP3. Brak/404, błąd dekodowania, zablokowane
+- [x] Plik dostępny → wyłącznie MP3. Brak/404, błąd dekodowania, zablokowane
   odtwarzanie lub brak API → jedna próba syntezy z tego samego typu/koloru.
   Odczyt ma limit czasu, nie zatrzymuje gry i nie odrzuca nieobsłużonej Promise.
-- [ ] OFF = brak żądań i odtwarzania. Wyłączenie, następny dźwięk, zamknięcie
+- [x] OFF = brak żądań i odtwarzania. Wyłączenie, następny dźwięk, zamknięcie
   warstwy lub nowa partia unieważniają spóźnione żądania. Dźwięk zostaje
   zsynchronizowany z otwieraną pozycją kolejki hi-gfx, także dla bota.
   Ukryty rzut przeciwnika nie może ujawniać karty przez plik audio/URL.
-- [ ] Testy fake media + prawdziwa fasada: sukces, oba warianty lokalizacji,
+- [x] Testy fake media + prawdziwa fasada: sukces, oba warianty lokalizacji,
   błędy i timeout, konkurencyjne rzuty, OFF, późny reject, fallback dokładnie
   raz, brak artId, zwykłe brzmienia i grant zgody autoplay. Wybrane RED/mutacje.
-- [ ] `snd/` ignorowany jak lokalne `img/`; README opisuje układ katalogów,
+- [x] `snd/` ignorowany jak lokalne `img/`; README opisuje układ katalogów,
   brak paczki na Pages i ograniczenia autoplay. Bez masowego uploadu/embedded MP3.
-- [ ] Sprawdzenie w prawdziwej przeglądarce, jeśli dostępna: realne MP3 testowe
+- [x] Sprawdzenie w prawdziwej przeglądarce, jeśli dostępna: realne MP3 testowe
   poza Git + 404, na zbudowanym artefakcie. Jawnie opisać granice, jeżeli API
   przeglądarki/plików właściciela nie da się tutaj zweryfikować.
-- [ ] Cały `npm test` + build, osobny commit i push.
+- [x] Cały `npm test` + build, osobny commit i push.
 
 ### C. Końcowa bramka i przekazanie
 

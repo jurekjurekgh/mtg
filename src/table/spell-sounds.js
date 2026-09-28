@@ -275,7 +275,10 @@ export function createSpellSoundPlayer({ createContext }) {
       if (!c) return false;
       if (c.state === 'suspended' && typeof c.resume === 'function') {
         try {
-          c.resume();
+          const resumed = c.resume();
+          // Resume może odrzucić Promise (polityka autoplay) — nie jest to
+          // błąd gry i nie może zostać nieobsłużonym rejection.
+          if (resumed && typeof resumed.catch === 'function') resumed.catch(() => {});
         } catch {
           return false;
         }
@@ -302,10 +305,12 @@ export function createSpellSoundPlayer({ createContext }) {
 }
 
 /**
- * Dźwięk rzutu: klucz z typów karty → odtwarzacz (bramka OFF siedzi
- * w `play`). Brak karty (token bez wpisu, null) = 'no-card', no-op.
+ * Dźwięk rzutu: pełna karta do adaptera MP3, starszy odtwarzacz dostaje
+ * klucz typu/koloru. Brak karty = no-op; OFF egzekwuje odtwarzacz.
  */
 export function playCastSound({ player, card }) {
   if (!card) return 'no-card';
-  return player.play(soundKeyForCard(card));
+  return typeof player.playCard === 'function'
+    ? player.playCard(card)
+    : player.play(soundKeyForCard(card));
 }
