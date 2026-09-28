@@ -13545,3 +13545,45 @@ bramka `cause === 'effect'` tarczy trafna wobec 122.1c). Bez zmian kodu.
 **Bramka końcowa:** fast 6946/6946, all **7218/7218** (371 566 ms), build
 70 / 4539,6 kB, exit 0. Trwały handoff `docs/setup/HANDOFF_2026-09-28d.md`.
 Bez nowych kart, progów, płatnych API, zdalnych zapisów, B0-full i merge.
+
+## 2026-09-28e — zgłoszenia właściciela A–E z gry (PR #144, cz. 2)
+
+**A (`e226cfa`) — numery źródeł many w kreatorze:** `wizardSourceName`
+= `session.nameOfObject(id) ?? name` — „Plains #1” przy nazwach permanentów
+(właściciel nie wiedział, który land tapuje). Strażnik 3 piny; M-A1 → 1 RED.
+
+**C (`7622ba9`) — encje HTML w wierszach wyboru:** „Ojutai&#39;s Breath”
+w modalu Rebound = encje widoczne dosłownie. `commandLabel` zwraca HTML,
+a dispatch `addRow` pchał etykiety bez `<` przez textContent. Fix:
+`labelLooksLikeHtml` (markup LUB encja `&…;`) → innerHTML. Klasa dotykała
+wszystkich pickerów z escapowanymi nazwami.
+
+**D (`9fc00d8`) — rozdział Sagi po zniszczeniu Sagi (CR 113.7a + 714.2,
+cytowane dosłownie, pin `8d860e45…`):** stub LKI nie niósł deskryptora
+`saga` (uwięziony w `lkiPrint`) → `fireSagaChapter` = cichy no-op mimo
+rozstrzygającego się triggera. Stub niesie `saga` z printLki.
+
+**B (`36eed2e` + golden-master `56b9fbb`) — Withstand „→ cel: Ty”:**
+darmowe rzuty Epic Experiment remisowały warianty celów (`prevent_next_damage`
+poza FRIENDLY_TARGET_EFFECTS + gracze poza `objectOnBoard`) → pierwszy cel
+z brzegu = przeciwnik. Taktyka właściciela: nigdy wroga; combat trick =
+ratunek stwora z lethalem / fog na twarz; odpowiedź na dmg-spell z lethalem.
+Wspólne `preventShieldValue` (L41) w lejku `freeCastTargetPenalty` i pętli
+`cast_spell`. Świadoma regeneracja golden-mastera (1 decyzja w 6 partiach —
+ranking Withstand: 61/60/−24/−65).
+
+**E (ZAMKNIĘTE przez właściciela — „uznajemy E za niebyłe”):** nagłówki
+partii w Dokumencie Google nie działały, bo właściciel grał na STARYM
+wdrożonym `/exec` (Code.gs wdraża ręcznie). Właściciel wdrożył nowy skrypt;
+logika (podział strony + H1 „⚔️ Nowa partia: X vs Y”) od dawna jest w repo
+(`docs/ai-appscript/Code.gs`, 10/10 testów VM). Lekcja: zmiana Code.gs
+wymaga WPROSTEGO komunikatu do właściciela (skąd wziąć plik, wkleić NOWY
+treść zachowując DOC_ID, Wdrożyć → Nowa wersja).
+
+**Tabela CR (`6a33a4e`):** `714.2` dopisany po weryfikacji u źródła
+(strażnik cytatów ADR 0030).
+
+**Bramka końcowa:** fast **6959/6959**, all **7230/7230** (7 suites,
+357 680 ms, 0 fail/skip), build **70 / 4546,5 kB**, exit 0. Handoff:
+`docs/setup/HANDOFF_2026-09-28e.md`. Bez nowych kart, progów, płatnych API,
+zdalnych zapisów i merge.
