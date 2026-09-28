@@ -639,6 +639,17 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   // tapnięcie nie może oddać jednostki MANY (F5b, #142). Bramka PRZED
   // mutacją `tapped` (atomowość, L48).
   if (!landCanProduceMana(state, object)) throw new Error('Obiekt nie ma zdolności many');
+  // F5b/rodz. (audyt PR #143; CR 605.1a + Oracle Nature's Embrace pobrane
+  // 2026-09-28): bez WŁASNEJ zdolności many (src = null) jedyną aktywowalną
+  // drogą jest grant aury — a ten produkuje „two mana of any one color", więc
+  // wymaga wyboru koloru (grantColor podaje auto-tap albo komenda
+  // `tap_for_mana`). Komenda bez wyboru nie ma czego rozstrzygać: jawny
+  // reject PRZED mutacją (L48/L52), nigdy fabrykowana 1 bezbarwna — zdolność,
+  // która nie istnieje, nie może produkować many.
+  const grant = grantManaOnLand(state, objectId);
+  const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
+  const src = getSourceForObject(object, state);
+  if (!useGrant && !src) throw new Error('Zdolność many z wyborem koloru wymaga grantColor');
   const updated = Object.freeze({ ...object, tapped: true });
   state.objects.set(objectId, updated);
   // M114 (CR 701.26): tapnięcie za manę to TAKŻE „becomes tapped" — zdarzenie
@@ -648,9 +659,6 @@ export function tapLandForMana(state, playerId, objectId, { grantColor = null } 
   // skutku dla reszty systemu).
   const tappedEvent = event('object_tapped', { objectId, playerId, forMana: true });
   state.events.push(tappedEvent);
-  const grant = grantManaOnLand(state, objectId);
-  const useGrant = grant > 0 && grantColor && ['W', 'U', 'B', 'R', 'G'].includes(grantColor);
-  const src = getSourceForObject(object, state);
   const amount = useGrant ? grant : 1;
   const colors = useGrant ? [grantColor] : (src?.colors ?? []);
   const mana = addMana(state, playerId, amount, { colors });
