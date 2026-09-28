@@ -13505,3 +13505,43 @@ po ustawieniu `src` (Safari z plikiem z dysku nie zaczynał wczytywania).
 Testy `test/card-sound-mp3.test.js` zaktualizowane do nowych oczekiwań
 (7 RED na starym źródle → 24/24 GREEN; w tym kontrola braku pliku = synteza
 i nowy pin domyślnego timeoutu). Fast **6941/6941**, build **70 / 4538,3 kB**.
+
+
+## 2026-09-28d — audyt scalonego PR #143 (rodzeństwo F5b), triage testera, CR-hunt
+
+Sesja „Kontynuujemy projekt.” wg ADR 0020/0021: PR
+[#144](https://github.com/jurekjurekgh/mtg/pull/144) na starcie (plan
+`f3e883b`), audyt scalonego #143 (`abfa7cb` — F5b + MP3 z dysku, 8 plików)
+i pętla jakości. Baseline fast 6941/6941, build 70 / 4538,3 kB.
+
+**Znaleziska rodzeństwa F5b (naprawione `ff6543c`):** przegląd rodziny (L72)
+dla landu po utracie zdolności many znalazł dwa rozjazdy oferty/walidacji.
+F1 (L1/L48): `playerView` nie niósł `abilitiesStripped` (fakt publiczny,
+ADR 0017) — kreator many oferował `tap_for_mana`, którego silnik odrzucał;
+widok niesie teraz flagę (warunkowo, bez pól „na zapas”). F2 (L52,
+fabrykacja): bare `tap_for_mana` na landzie z SAMYM grantem aury (Nature's
+Embrace po stripie) produkował 1 bezbarwną zamiast „two mana of any one
+color” (Oracle pobrane 2026-09-28) — `tapLandForMana` liczy src/grant PRZED
+mutacją, `!useGrant && !src` = jawny reject; komenda nosi opcjonalne
+`grantColor` (auto-tap podawał je zawsze). Strażnik
+`test/audyt-pr143-f5b-rodzenstwo.test.js` (5 pinów z anty-over-fixem;
+mutacje M-A/M-B/M-C → celne RED).
+
+**Triage Żywy Tester (seed 2027, Dream Twist):** fałszywy alarm — dwa realne
+rzuty z osobnymi rozstrzygnięciami. Refinement detektora M266/C2 (`0846ead`):
+rozstrzygnięcie karty pomiędzy powtórzeniami rozstrzyga parę; regresja
+z realnej partii w `test/m266-detektory-klas.test.js`; seed 2027 po zmianie:
+0 zgłoszeń. Niezależnie: M3 (bramy stripa OFF → 3 RED) i M8 (kolejność
+kandydatów MP3 → 6 RED) potwierdzają twierdzenia 28b.
+
+**CR-hunt (nowy obszar, ADR 0030):** CR 2026-09-25 u źródła
+(nwgarne/mtg-data) — 616.1/616.1a–g/616.2 (kolejność efektów zastępczych)
+i 122.1c (licznik tarczy) cytowane dosłownie w raporcie; weryfikacja kodu
+pozytywna (wybór do kontrolera + APNAP, must-choose, kolejność 616.1g,
+bramka `cause === 'effect'` tarczy trafna wobec 122.1c). Bez zmian kodu.
+
+**Raport:** `docs/audits/AUDYT_PR143_2026-09-28.md` (+ uwaga D1: liczby
+„bramka końcowa” w handoffzie 28b sprzed ostatniego commita #143).
+**Bramka końcowa:** fast 6946/6946, all **7218/7218** (371 566 ms), build
+70 / 4539,6 kB, exit 0. Trwały handoff `docs/setup/HANDOFF_2026-09-28d.md`.
+Bez nowych kart, progów, płatnych API, zdalnych zapisów, B0-full i merge.

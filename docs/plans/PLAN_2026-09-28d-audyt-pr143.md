@@ -41,49 +41,61 @@ regułowe potwierdzone u źródła tam, gdzie wnoszą CR (ADR 0030); zero przypa
 specjalnych po nazwie/ID karty (ADR 0002); testy potwierdzone mutacyjnie (L13),
 nie tylko „zielone”; chirurgiczność patchy (ADR 0016 B).
 
-- [ ] `src/engine/resources.js` (F5b): predykat `landCanProduceMana` —
-  kompletność filtracji (`untappedLandManaSources`, `producibleMana`,
-  auto-tap, `tapLandForMana`), zgodność z CR 305.6/613.1f/605.1a (cytaty
-  w strażniku), brak regresji grant-landów (L149).
-- [ ] `src/table/card-sound-player.js` (MP3): kolejność ścieżek względnych,
-  zachowanie trybu online/dist, timeout 4000 ms, `audio.load()` — brak
-  Node-globali w artefakcie (L58), brak regresji starszego odtwarzacza.
-- [ ] `test/audyt-pr142-land-strip-mana.test.js` + `test/card-sound-mp3.test.js`:
-  testy testują to, co deklarują (RED→GREEN); mutacje z raportu odtworzone
-  (L13/L34 — wersja bazowa z gita).
-- [ ] Dokumenty (plan 28b, AUDYT_PR142, handoff 28b, historia): spójność
-  liczb i faktów ze stanem repo (L56/L92).
-- [ ] Raport `docs/audits/AUDYT_PR143_2026-09-28.md` + opis PR kumulatywnie.
+- [x] `src/engine/resources.js` (F5b): predykat `landCanProduceMana` —
+  kompletność filtracji potwierdzona (`untappedLandManaSources`,
+  `producibleMana`, auto-tap, `tapLandForMana` — gate PRZED mutacją),
+  zgodność z CR 305.6/613.1f/605.1a; grant-landy nietknięte (L149).
+  **Znalezisko rodzeństwa F1 (widok/kreator, L1/L48) i F2 (fabrykacja
+  1 bezbarwnej z grantu, L52) — naprawione `ff6543c`, patrz etap 3.**
+- [x] `src/table/card-sound-player.js` (MP3): kolejność kandydatów
+  (względne najpierw), tryby online/dist, timeout, `audio.load()` — OK;
+  brak Node-globali (L58), `playCard` bez odrzuconych Promise. **Verba.**
+- [x] `test/audyt-pr142-land-strip-mana.test.js` + `test/card-sound-mp3.test.js`:
+  pinują to, co deklarują (M3 → 3 RED, M8 → 6 RED — niezależna
+  weryfikacja twierdzeń 28b).
+- [x] Dokumenty: spójne; jedna uwaga historyczna (D1 — liczby „bramka
+  końcowa” w handoffzie 28b sprzed ostatniego commita #143) — odnotowana
+  w raporcie §6, bez poprawek historycznych handoffów (L92).
+- [x] Raport `docs/audits/AUDYT_PR143_2026-09-28.md` + opis PR kumulatywnie.
 
 ### 3. Naprawy znalezisk z audytu (jeśli wystąpią)
 
-- [ ] Każde znalezisko: RED→GREEN, naprawa u root cause (ADR 0002, L57),
-  anty-over-fix, niezależna mutacja, `npm test` + `npm run build`,
-  osobny commit i push (ADR 0020 C).
-- [ ] Reguła trwała z wniosku (jeśli nowa) → ADR / `docs/LESSONS.md` /
-  `AGENTS.md`; nie do handoffu.
+- [x] Znaleziska F1+F2 (rodzeństwo F5b) — `ff6543c`: RED→GREEN
+  (4/5 → 5/5 strażnika `audyt-pr143-f5b-rodzenstwo.test.js`), root cause
+  (projekcja widoku / bramka produkcji + passthrough `grantColor`),
+  anty-over-fix (zwykły land = 1 G; zwykły+grant bare = 1 G własną
+  zdolnością), mutacje M-A/M-B/M-C → celne RED (L13/L136), fast 6946/6946
+  + build 70 / 4539,6 kB; osobny commit i push (ADR 0020 C).
+- [x] Reguła trwała z wniosku: brak nowej reguły — wnioski to zastosowanie
+  istniejących L48/L52/L72/ADR 0017; brak zmian w LESSONS/AGENTS.
 
 ### 4. Pętla jakości (ADR 0021) — kontynuacja etapu 4 planu 2026-09-28b
 
-- [ ] **Triage zgłoszenia Dream Twist** ( Żywy Tester 28b, seed 2027):
-  wpis „Nieprzyjaciel rzuca Dream Twist → cel: Ty” dwukrotnie w jednej
-  paczce modala przy dwóch realnych rzutach — rozstrzygnąć, czy to
-  duplikat narracji (L79/L170), czy dwa rzeczywiste zdarzenia opisane
-  zgodnie z prawdą; jeśli bug — naprawa u root cause + strażnik.
-- [ ] **Polowanie na niezgodności z CR w NOWYM obszarze** (nie w obszarach
-  potwierdzonych w audytach #140/#142: 305.x/613.x/605.1/509.1/506.5/508.1):
-  kandydaci z lektury lekcji — LKI vs fizzle (608.2h), „if able” (L108),
-  warstwy 613.7, cleanup 514, SBA 704.5, kolejność replacementów 616.1.
-  Znaleziska: repro headless PRZED naprawą (L11), cytaty CR u źródła
-  (ADR 0030), naprawy RED→GREEN.
-- [ ] Bez nowego batcha kart (ADR 0029); katalog, progi i manifest bez zmian.
+- [x] **Triage zgłoszenia Dream Twist** (Żywy Tester 28b, seed 2027):
+  **fałszywy alarm** — dwa REALNE rzuty z osobnymi rozstrzygnięciami
+  (cast → 3 mielenia → resolve ×2), brak błędu silnika. Refinement
+  detektora M266/C2 u root cause (`0846ead`: rozstrzygnięcie karty
+  pomiędzy powtórzeniami rozstrzyga parę) + regresja z realnej partii
+  w `test/m266-detektory-klas.test.js` (mutacja filtra → RED); seed 2027
+  po zmianie: 0 zgłoszeń.
+- [x] **Polowanie na niezgodności z CR w NOWYM obszarze** — rodzina
+  **616.x** (kolejność efektów zastępczych) + **122.1c** (licznik tarczy):
+  tekst dosłowny pobrany z CR 2026-09-25 (nwgarne/mtg-data, ADR 0030),
+  weryfikacja kodu: wybór do kontrolera (616.1, APNAP), must-choose
+  (616.1a), kolejność destroy→die (616.1g), bramka `cause === 'effect'`
+  licznika tarczy **trafna wobec 122.1c** — werdykt pozytywny, bez zmian
+  kodu (raport §5). Kandydaci 608.2h/„if able”/514/704.5 — już pinowani
+  w starszych audytach (batch54, pr123), potwierdzone pokrycie.
+- [x] Bez nowego batcha kart (ADR 0029); katalog, progi i manifest bez zmian.
 
 ### 5. Domknięcie sesji
 
-- [ ] `npm run test:all` + `npm run build` (liczby mierzone, L92).
-- [ ] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-28d.md`,
+- [x] `npm run test:all` **7218/7218** (7 suites, 371 566 ms, 0 fail/
+  cancelled/skipped/todo) + `npm run build` **70 / 4539,6 kB** — liczby
+  mierzone (L92); fast 6946/6946.
+- [x] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-28d.md`,
   opis PR kumulatywnie, blok przekazania w czacie (ADR 0013).
-- [ ] Bez merge i bez force push (ADR 0020 D, ADR 0007).
+- [x] Bez merge i bez force push (ADR 0020 D, ADR 0007).
 
 ## Ryzyka i pułapki (z lektury startowej)
 
