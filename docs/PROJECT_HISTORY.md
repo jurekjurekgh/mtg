@@ -13373,3 +13373,13 @@ explicit true/false zachowane. 6 pinów: 5 RED → 6 GREEN; razem 15/15,
 mutacje/podmiany 6/6/2 RED. Fast **6867/6867**, build **69 / 4528,3 kB**.
 Tylko lokalny stub transportu, bez zapisu do Dokumentów Google.
 Pozostały F3 i końcowe bramki/żywe partie.
+
+
+### C7 / F3 — prawidłowa przyczyna przerwania AI
+
+Anulowanie po nagłówkach i w text/json nie jest timeoutem. Wspólny wynik
+przerwania; zewnętrzny abort zatrzymuje timer (pierwsza przyczyna wygrywa).
+13 nowych pinów: 6 RED → 13 GREEN; razem 44/44, 7 selektywnych mutacji
+wykrytych, listener/timer sprzątane. Fast **6880/6880**, build **69 / 4528,3 kB**.
+Zero płatnych zapytań i kluczy. Wszystkie F1–F7 poprawione przyrostowo;
+końcowy all oraz żywe partie i handoff nadal przed nami.
