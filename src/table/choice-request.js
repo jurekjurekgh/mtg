@@ -1,3 +1,4 @@
+import { blockingRequirementCount } from '../engine/permanents.js';
 import { choiceResponse } from '../protocol/types.js';
 import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
@@ -761,6 +762,18 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
 
   const selected = new Set(mandatory);
   const blockedBy = new Map(); // atakujący → wybrani blokerzy (dla bloków)
+  const requirementCounts = new Map((view.zones.battlefield ?? []).map((o) => [o.id, blockingRequirementCount(o)]));
+  const requirementTotal = (assignments) => [...new Set(Object.values(assignments ?? {}).flat())]
+    .reduce((n, id) => n + (requirementCounts.get(id) ?? 0), 0);
+  // Każda legalna oferta silnika osiąga maksimum (nie rekonstruujemy solvera w UI).
+  const requiredCount = isAttackers ? 0 : Math.max(0, ...options.map((c) => requirementTotal(c.assignments)));
+  const meetsRequirements = (assignments) => {
+    if (requirementTotal(assignments) >= requiredCount) return true;
+    const hint = choiceNode(host, 'div', 'zone-empty',
+      `Ta deklaracja musi spełnić maksymalną możliwą liczbę wymogów blokowania (${requiredCount}).`);
+    hint.className = 'zone-empty combat-wizard-error';
+    return false;
+  };
   if (!isAttackers) {
     // Domyślnie zaznaczamy „bez bloków".
     for (const [attackerId] of Object.entries(options[0]?.assignments ?? {})) blockedBy.set(attackerId, []);
@@ -896,7 +909,13 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
           return;
         }
       }
-      // Walidacja w wizardzie: menace 0 albo >= 2; cantBlockAlone z partnerem.
+      // Alone liczy różne STWORY w całej deklaracji (CR 506.5), nie grupę.
+      if (uses.size === 1 && viewCreatureHasStatic(view, [...uses.keys()][0], 'cantBlockAlone')) {
+        const hint = choiceNode(host, 'div', 'zone-empty', 'Ten stwór nie może blokować sam (can’t block alone).');
+        hint.className = 'zone-empty combat-wizard-error';
+        return;
+      }
+      // Menace nadal dotyczy grupy pod jednym atakującym.
       const assignments = {};
       for (const [attackerId, blockerIds] of blockedBy) {
         const attacker = (view.zones.battlefield ?? []).find((o) => o.id === attackerId);
@@ -906,14 +925,9 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
           hint.className = 'zone-empty combat-wizard-error';
           return;
         }
-        const aloneBlock = blockerIds.length === 1 && viewCreatureHasStatic(view, blockerIds[0], 'cantBlockAlone');
-        if (aloneBlock) {
-          const hint = choiceNode(host, 'div', 'zone-empty', 'Ten stwór nie może blokować sam (can’t block alone).');
-          hint.className = 'zone-empty combat-wizard-error';
-          return;
-        }
         assignments[attackerId] = blockerIds;
       }
+      if (!meetsRequirements(assignments)) return;
       onComplete?.({ type: 'declare_blockers', playerId: view.playerId, assignments });
 
     }
@@ -948,6 +962,7 @@ export function renderCombatWizard(host, { kind, view, session, options, blockCa
       onComplete?.(attackOffer ?? { type: 'declare_attackers', playerId: view.playerId, attackerIds: wanted });
       return;
     }
+    if (!meetsRequirements({})) return;
     for (const key of blockedBy.keys()) blockedBy.set(key, []);
     // Engine oferuje „brak bloków" jako PUSTĄ mapę przypisań (`{}`), a nie
     // jako `{atakujący: []}` — wysłanie tej drugiej formy nie odpowiada żadnej

@@ -604,6 +604,11 @@ export function turnCantBlockRestricts(state, object) {
   return restrictions.some((r) => !(r.exceptTypes ?? []).some((t) => (object.types ?? []).includes(t)));
 }
 
+/** Liczba niezależnych wymogów „blocks if able” na tym obiekcie. */
+export function blockingRequirementCount(object) {
+  return object?.blocksIfAble === true ? Math.max(1, object.blockRequirementCount ?? 1) : 0;
+}
+
 export function creatureCantBlock(object, state = null) {
   return Boolean(object?.cantBlockPrinted || object?.cantBlock || turnCantBlockRestricts(state, object));
 }
@@ -1598,6 +1603,7 @@ export function clearStatModifiers(state) {
         cantBlock: Boolean(current.cantBlockPrinted),
         // Batch60: wymóg bloku „this turn" zdejmowany w cleanup (CR 514.2).
         blocksIfAble: false,
+        ...(current.blockRequirementCount != null ? { blockRequirementCount: 0 } : {}),
         saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0,
       });
     }

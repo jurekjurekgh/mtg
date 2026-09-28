@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
+import { blockingRequirementCount, combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -6523,7 +6523,10 @@ export function playerView(state, playerId) {
         if (object.detained === true) entry.detained = true;
         // Batch60 („blocks if able" — Timely Interference): wymóg bloku to
         // informacja publiczna (badge + boty; lustro goad).
-        if (object.blocksIfAble === true) entry.blocksIfAble = true;
+        if (object.blocksIfAble === true) {
+          entry.blocksIfAble = true;
+          entry.blockRequirementCount = blockingRequirementCount(object);
+        }
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
         // a render liczy z nich badge'e („nie może blokować", „nie do

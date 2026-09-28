@@ -205,6 +205,8 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     ...(object.subtypesBeforeStrip ? { subtypes: object.subtypesBeforeStrip, subtypesBeforeStrip: null } : {}),
     ...(object.abilitiesStripped ? { abilitiesStripped: false } : {}),
     ...(object.abilitiesStrippedAt != null ? { abilitiesStrippedAt: null } : {}),
+    ...(object.blocksIfAble ? { blocksIfAble: false } : {}),
+    ...(object.blockRequirementCount != null ? { blockRequirementCount: 0 } : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
   const moved = Object.freeze({

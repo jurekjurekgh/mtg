@@ -1,7 +1,7 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone } from './zones.js';
-import { hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -4480,9 +4480,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return;
-    state.objects.set(targetId, Object.freeze({ ...object, blocksIfAble: true }));
+    // CR 509.1c liczy wymogi, nie unikalnych blokerów — kolejne efekty
+    // na tym samym stworze też muszą być odróżnialne przy konflikcie.
+    const blockRequirementCount = blockingRequirementCount(object) + 1;
+    state.objects.set(targetId, Object.freeze({ ...object, blocksIfAble: true, blockRequirementCount }));
     state.events.push(event('stats_modified', {
-      objectId: targetId, cardId: object.cardId, blocksIfAble: true, sourceId: sourceObject.id,
+      objectId: targetId, cardId: object.cardId, blocksIfAble: true, blockRequirementCount, sourceId: sourceObject.id,
     }));
     return;
   }

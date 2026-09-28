@@ -13314,3 +13314,22 @@ bez B0-full i bez zmiany snapshotu/progów. Pełny CR pobrany przez GitHub API,
 dodany zweryfikowany 613.7n. Plan C3 uzupełniono przed kodowaniem o dalsze
 potwierdzone przypadki F6: kumulację wymogów, alone względem całej deklaracji
 i wygaśnięcie wymogu po zmianie strefy. Nadal otwarte C3–C7.
+
+
+### C3 / F6 — dokładne wymogi blokowania, sloty i kreator
+
+Maksimum niezależnych wymogów, nie „wszystko albo nic” i nie próbka menu.
+Dopasowanie partnerów z przepinaniem, przycinanie niemożliwych prefiksów;
+bez wyszukiwania opcjonalnych deklaracji zwykłej walki. CR 506.5: alone
+względem całej deklaracji; różni blokerzy pod menace; licznik nakładających
+się wymogów; reset po zmianie strefy/cleanup. Widok i wizard nie gubią liczby
+wymogów ani nie wysyłają nielegalnego „Bez bloków”.
+19 nowych testów: 14 RED na C2 → 19 GREEN, 36 układów porównanych niezależną
+enumeracją; 16 podmian/mutacji wykrytych. Istniejący batch40/E3 wykrył
+regresję pierwszej wersji (po poprawnym policzeniu przestrzeni 36 > cap32
+zniknął podwójny blok); zachowano test i dodano reprezentant multibloku.
+Celowane 169/169, końcowy fast **6822/6822**, build **69 / 4525,5 kB**.
+Quick **672**: heuristic 258/336 vs aggro (76,8%; +1 wygrana w lustrze
+Final Fantasy), 331/336 vs random (98,5%), 0 stalls. Snapshot/progi bez
+zmian; pełny all dopiero po pozostałych naprawach. Dodano zweryfikowany
+506.5 do generowanej tabeli CR. Otwarte C4/F7, C5/F4, C6/F2, C7/F3.
