@@ -13587,3 +13587,41 @@ treść zachowując DOC_ID, Wdrożyć → Nowa wersja).
 357 680 ms, 0 fail/skip), build **70 / 4546,5 kB**, exit 0. Handoff:
 `docs/setup/HANDOFF_2026-09-28e.md`. Bez nowych kart, progów, płatnych API,
 zdalnych zapisów i merge.
+
+## 2026-09-28f — PMSSB-15: prewencja/fog (PR #144, cz. 3)
+
+Re-audyt rodziny „POKRYTEJ (M91/M236)” z NOWYM dowodem (zgłoszenie B +
+spec taktyczny właściciela + potwierdzona luka L41 free-castów). 4 karty
+(`prevent_*`): Withstand / Revealing Wind / Inspire Awe / Ethersworn
+Shieldmage. Plan `docs/plans/PLAN_2026-09-28-pmssb15-prewencja.md`;
+POMIAR PRZED `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
+
+**F1 (fala A, L41, `4f6a583`):** okna fog (−300/−75/+15) żyły WYŁĄCZNIE
+w `cast_spell` — darmowe rzuty (epic/rebound/suspend/madness/exile) liczyły
+flat 70: darmowy fog we własnej turze zabijał własny atak (70 zamiast
+−230), przed deklaracją marnował się. `fogWindowValue` = wspólne źródło
+dla cast_spell i rodziny free-castów.
+
+**F2+F3 (fala B):** flat +15 nie rozróżniał chipa od lethal (oba 65) ani
+zegara poison (6 infect @8 = 65), i nie liczył wycieku wyjątku „except by
+enchanted/enchantment creatures” (leak 100% → bot rzucał martwy fog!).
+Skala: chip 15 (dawna — anty-over-fix) + lethal-save 40 (życie LUB poison;
+CR 702.90b + 615.6 cytowane) + 12/ocaleńca (cap 3); wyciek skaluje bazę,
+pełny = wasted (53 → −37).
+
+**F4 (fala C):** ETB Shieldmage flat 3 → `preventDamageThisTurnValue`
+(0 bez pasujących stworów — lustro `animate_linked`; +12 za realnie
+ratowanego z walki/burnu na stosie). Odwrócona kolejność okna naprawiona:
+66.6 ratunek < 70.2 pustka → 77.4 > 67.5.
+
+Test `test/audyt-pmssb15-prewencja.test.js` (16): RED 14/16 na starym
+kodzie (2 kotwice anty-over-fix z definicji), mutacja filtra wycieku =
+3 RED (dokładnie F3). Bramki: fast 6975/6975, all 7246/7246 (7 suites),
+build 70 / 4555,8 kB. Golden-master BEZ regeneracji; tie-audit 28,5%
+(11,0% realnych); mirror-eval 36:36 (pula bench bez rodziny);
+Żywy Tester 3 partie 0 zgłoszeń. CR-numery: 104.3d/615.4/615.6 dopisane
+po weryfikacji dosłownej (pin `8d860e45…`).
+
+Lekcja: „POKRYTE” w rejestrze rodzina może kryć realne luki (L41 —
+okna nigdy nie były wpięte poza cast_spell; płaska wycena nie znała
+lethala ani wycieku) — re-audyt z nowym dowodem właściciela był zasadny.

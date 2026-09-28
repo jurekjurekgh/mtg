@@ -52,7 +52,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
-| fog/prewencja | — | POKRYTE (M91/M236) | okna (tura wroga), kara własnej tury przebija wszystko |
+| fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -237,7 +237,66 @@ w `src/controllers/heuristic-params.js`.
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
 
+## PMSSB-15 — prewencja/fog (prevent_*) (2026-09-28)
+
+**Wybór celu** (BACKLOG pusty; RE-AUDYT rodziny „POKRYTEJ (M91/M236)" z
+NOWYM dowodem): zgłoszenie B + spec taktyczny właściciela („preventować u
+stworów które by lethal dostały albo u siebie jeśli któryś z kreatur
+przeciwnika go zrani" + odpowiedź na dmg-czar z lethalem) + luka L41
+free-castów (podejrzenie potwierdzone sondą). 4 karty: Withstand /
+Revealing Wind / Inspire Awe / Ethersworn Shieldmage.
+Plan: `docs/plans/PLAN_2026-09-28-pmssb15-prewencja.md`;
+POMIAR PRZED: `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
+
+- **F1 (L41, Fala A):** okna fog (M91 −300 / M236 −75 / +15) siedziały
+  WYŁĄCZNIE w `cast_spell` — rodzina darmowych rzutów (epic/rebound/
+  suspend/madness/exile) wyceniała flat 70: darmowy fog w własnej turze
+  zabijał własny atak (S07: 70 → −230 → done), przed deklaracją marnował
+  się (S08: 70 → −5 → done). `fogWindowValue` = wspólne źródło dla obu
+  lejków (L41, 4 wpięcia).
+- **F2+F3 (Fala B):** flat +15 nie rozróżniał chipa od lethal (oba 65 —
+  S03=S04) ani zegara poison (S11 = 65), i nie liczył wycieku wyjątku
+  „except by enchanted/enchantment creatures" (S05: leak 100% → cast 53!).
+  Skala: `fogWindowChipValue` 15 (dawna płaska — anty-over-fix M429) +
+  `fogWindowLethalSaveValue` 40 (ratunek śmierci: życie LUB poison —
+  CR 702.90b + 615.6, cyt. dosłowne w helperze; dwa zegary M91) +
+  `fogWindowSavedCreatureValue` 12/ocaleńca (cap 3, „stworów które by
+  lethal dostały"); wyciek skaluje bazę do mocy zapobiegalnej, pełny
+  wyciek = wasted (S05: 53 → −37, S06: 53 → 43.6).
+- **F4 (Fala C):** ETB Shieldmage flat 3 → `preventDamageThisTurnValue`
+  (0 bez moich pasujących stworów — lustro `animate_linked`; baza 3 =
+  dawna; +12 za realnie ratowanego z walki lub burnu na stosie —
+  CR 615.4). Odwrócona kolejność okna naprawiona: 66.6 ratunek <
+  70.2 pustka → **77.4 > 67.5**.
+
+### Znane granice / forwardy
+- DEBT (CR 615.4, cyt. dosłowne): prewencja nie odrabia zadanych
+  obrażeń — „po rozdaniu" to zawsze strata (wasted −75).
+- `prevent_next_damage` (Withstand) = strona CELÓW fixu B
+  (`preventShieldValue`/`preventShieldTargetValue`) — nietknięta (granica
+  rodzin); cantrip Withstandu (draw) = PMSSB-3, nietknięty.
+- Scry-rider Inspire Awe karany −12 (M218/4, rodzina scry) — świadome;
+  F5/S11: MV4 vs MV3 w tym samym oknie = 93 vs 105 (bez remisu).
+- Burn-na-stosie w oknie Shieldmage: lekki sygnał `pendingEffects`
+  (ilość trafień, nie ilość obrażeń) — wystarczy do rozstrzygnięć.
+
+### Pomiar końcowy
+- Test `test/audyt-pmssb15-prewencja.test.js` (16): RED **14/16** na starym
+  kodzie (2 kotwice anty-over-fix z definicji przechodzą), mutacja filtra
+  wycieku = **3 RED** (dokładnie F3). GREEN 16/16.
+- Bramki: fast **6975/6975**; test:all **7246/7246 (7 suites)**; build
+  **70 / 4555,8 kB**; CR-numery: 104.3d/615.4/615.6 dopisane po weryfikacji
+  dosłownej (ADR 0030).
+- Golden-master bota: **BEZ regeneracji** (fixture nietknięte — rodzina
+  4-kartowa poza pulą 6 partii). Tie-audit 28,5% og / **11,0%** realnych
+  wariantów. Mirror-eval kandydat vs „wymiary nowe = 0": **36:36 (0.5)**
+  — pula bench bez rodziny (walidacja scenariuszowa, zgodnie z metodą).
+  Żywy Tester PO: 3 partie (theros × mirrodin-wu — enchantmenty i
+  artefakty) — **0 zgłoszeń detektorów, 0 niewycenionych**.
+- Prewencja/fog PRZEJRZANA (M91/M236 → PMSSB-15); commit `4f6a583`.
+
 ## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
+
 
 **Wybór celu** (BACKLOG pusty; forward PMSSB-11 + znalezisko): saga = 0
 wzmianek w bocie (rozdziały NIEWIDZIALNE!).
