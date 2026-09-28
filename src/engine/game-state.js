@@ -2702,6 +2702,16 @@ export function execute(state, input) {
     const pending = state.pendingLookTopN;
     const pickId = cmd.cardId;
     if (!pending.objectIds.includes(pickId)) return reject('illegal_look_top_choice');
+    const rest = pending.objectIds.filter((id) => id !== pickId);
+    const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : rest;
+    // F1 audytu PR140: cała decyzja musi być legalna PRZED pierwszą mutacją.
+    // Wspólna bramka dla pick→ręka i pick→wygnanie/link: reject nie cofa
+    // przeniesionej karty, objectSequence, linków źródła ani zdarzeń.
+    if ((pending.restTo === 'library_bottom' || pending.pickTo === 'exile_face_down_linked')
+      && (bottomOrder.length !== rest.length || new Set(bottomOrder).size !== bottomOrder.length
+        || bottomOrder.some((id) => !rest.includes(id)))) {
+      return reject('illegal_look_top_bottom_order');
+    }
     // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta idzie do
     // wygnania ZAKRYTA + wiąże się ze źródłem (CR 400.7, wzorzec Pyxis),
     // NIE do ręki. Reszta na spód z bottomOrder (jak Dockhand, M177/E).
@@ -2719,12 +2729,6 @@ export function execute(state, input) {
         fromId: pickId, objectId: exileId, object: state.objects.get(exileId),
         playerId: pending.playerId, faceDown: true,
       }));
-      const restImprint = pending.objectIds.filter((id) => id !== pickId);
-      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : restImprint;
-      if (bottomOrder.length !== restImprint.length || new Set(bottomOrder).size !== bottomOrder.length
-        || bottomOrder.some((id) => !restImprint.includes(id))) {
-        return reject('illegal_look_top_bottom_order');
-      }
       const bottomSet = new Set(bottomOrder);
       state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
       for (const id of bottomOrder) {
@@ -2740,23 +2744,17 @@ export function execute(state, input) {
         // „kartę”, decydent zna ją z modala).
         pickCardId: null, restTo: 'library_bottom', pickTo: 'exile_face_down_linked',
       }));
-      const resolvedImprint = state.events.slice(state.events.length - (restImprint.length + 2));
+      const resolvedImprint = state.events.slice(state.events.length - (rest.length + 2));
       return accepted(state, cmd, { ok: true, events: resolvedImprint });
     }
     // Wybrana karta do ręki; reszta do grobu (kolejność wierzchu zachowana).
     const handId = `hand-${state.objectSequence++}`;
     const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', looked: true }));
-    const rest = pending.objectIds.filter((id) => id !== pickId);
     if (pending.restTo === 'library_bottom') {
       // M177/E (Merchant's Dockhand): reszta na SPÓD biblioteki „in any
       // order” — kolejność z cmd.bottomOrder (permutacja resty, jak
       // topOrder przy scry); domyślnie zachowana kolejność wierzchu.
-      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : rest;
-      if (bottomOrder.length !== rest.length || new Set(bottomOrder).size !== bottomOrder.length
-        || bottomOrder.some((id) => !rest.includes(id))) {
-        return reject('illegal_look_top_bottom_order');
-      }
       const bottomSet = new Set(bottomOrder);
       state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
       for (const id of bottomOrder) {

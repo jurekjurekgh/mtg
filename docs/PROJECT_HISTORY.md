@@ -13285,3 +13285,15 @@ F7 Twiddle przy rozstrzyganiu nadal związany trybem rzutu (starszy defekt
 utrwalony nowymi pinami). Dowody, granice i dosłowne źródła CR/rulingów
 w raporcie. Na tym etapie jeszcze bez produkcyjnych poprawek; kolejność
 napraw i anty-overfixy w planie sesji. Bez płatnych API, pełnego B0 ani merge.
+
+
+### C1 / F1 — wybór z biblioteki bez mutacji przy odrzuceniu
+
+Jedna walidacja bottomOrder przed ruchem/linkiem/ID/eventami. Nowe 21 testów
+obejmuje rzeczywiste ETB Clone Shell, aktywację Dockhanda i rozdział Rediscover
+the Way: 15 RED przed poprawką → 21 GREEN; 80/80 z regresjami batcha.
+Pełna niezmienność GameState po odmowie i udane ponowienie, nie tylko ok:false.
+Nowe cytaty 608.2d/733.1 najpierw zatrzymały strażnika; ponownie pobrany CR
+2026-09-25 ma ten sam SHA-256 co źródło tabeli, więc tabela została
+wygenerowana narzędziem (485 numerów). Końcowy fast 6781/6781 (110642 ms),
+build 69 modułów / 4522,5 kB. Osobny krok; pozostałe F2–F7 w toku.
