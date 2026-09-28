@@ -53,6 +53,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
 | fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
+| walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -236,6 +237,62 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-16 — walka bez fazy walki (fight / bite) (2026-09-28)
+
+**Wybór celu** (BACKLOG pusty; rodzin do strojenia coraz mniej → walka
+z listy rekomendacji, 2 karty: Territorial Hammerhead `fight`, Hunt the
+Weak `damage_from_target_power` (bite)). Plan:
+`docs/plans/PLAN_2026-09-28-pmssb16-walka.md`; POMIAR PRZED:
+`/tmp/pmssb16-walka-przed.mjs` (S01–S07).
+
+**Audyt przyczynowo-skutkowy (R1–R6) + wdrożone wnioski** — wspólny
+helper `fightExchangeValue` (fight CR 701.14a „równolegle", bite one-sided;
+L41: damage nie-bojowe → **deathtouch i lifelink DZIAŁAJĄ**, first strike/
+trample NIE; SBA 704.5h):
+
+- **R1 (bite)**: chip `8+2·dPow`, kill bonus 15 (M237-family, `fightBite*`).
+- **R2 (DRABINA WYMIANY — serce audytu)**: liczy się TO, CO TRACĘ i CO
+  ZYSKUJĘ, nie „sam fakt trafienia" (stare −20/ginę było płaskie):
+  `kills&&!dies` = `25+2·vPow` (czysty zysk); `dies` = `2·((kills?victimWorth:0)
+  − dealerWorth) − fightTradeCardCost(25)`; **`!kills&&dies`** = to samo
+  z zerowym benefitem + `fightWastedDeathExtra(12)` — musi przebić bazę
+  czaru 50 już dla ciał 2/2+ (M167/F); `!kills&&!dies` = 5 (ślad).
+  Kotwice: S01 kill-only 3/3v2/2 = **103**; S02 mój 1/1 DT vs 6/6 = **49**
+  (wymiana + DT); S03 mój 6/6 vs ich 1/1 DT = **−11 → PASS** (było 119!);
+  S04 Knockout counter-lethal = **97**; S07 Hunt the Weak wymiana+counter
+  = **25**.
+- **R3 (lifelink)**: ±`gainLifeValue` tylko gdy zabijam (bite z lifelinkiem
+  NIE jest samolifelinkiem z S07 — sprawdzone sondą): S05 = 97 / S05b = 94
+  (delta 3 = life-tiers).
+- **R4**: patrz R2 (wasted-death tier).
+- **R5 (reclaim liczników, L41)**: rider `add_counter` na gospodarzu
+  SKAZANYM (fight → ginie; bite → bite go nie rusza, zostaje) nie kupuje
+  nic → `−counterHostValue` (ta sama skala co w cast_spell: 42/18 zweryfikowane);
+  guard: walka WŁASNYM stworem z licznikami nigdy brana w SCORINGU (−60),
+  engine i tak kasuje komendę (okno walki nie istnieje).
+- **R6 (okno walki)**: ofiara=ich napastnik → `fogWindowLethalSaveValue`/
+  `fogWindowSavedCreatureValue` + `·min(deadBlockers,3)` (M263),
+  ofiara=ich bloker → `fogWindowSavedCreatureValue`. Kotwice: S06
+  instant-bite z lethalem na twarz = **42** (=2+40 fog-lethal).
+
+**Pokrętła (8)**: `fightBiteChipBase/PowerWeight/LethalBonus`,
+`fightKillBase/PowerWeight`, `fightMissBase`, `fightTradeWorthWeight`,
+`fightTradeCardCost`, `fightWastedDeathExtra`, `fightLifelinkWeight`
+(usuń `fightDeathBodyWeight` — scalone w drabinę). Test pokrętła: S03 reaguje
+TYLKO na `fightTradeCardCost` (14 przy 0).
+
+**Świadomy dryf (L41)**: golden-master — 5/6 partii bit-po-bit identyczne;
+1 partia (tarkir|warhammer@1001) — IDENTYCZNE wybory (267, KINDS-DIFF: BRAK),
+tylko wyceny opcji +2.0 → fixture zregenerowany `--write` z dowodem izolacji.
+Test PMSSB-4 `F-A1b` (kompozycja): pin 37 → −9 z komentarzem — tf->mocny to
+NIE „chip" (mój 3/3 GINIE, ich 5/5 żyje = wasted-death tier); piny kill
+(81/84) nietknięte.
+
+**Dowody**: `test/audyt-pmssb16-walka.test.js` (10: kotwice ×8 + pokrętło +
+drabina; RED 7/10 na starym kodzie — kotwice DOKŁADNE; mutacja progów DT = 4 RED).
+Bramy: fast 6985/6985; all 7256 (po regen fixture); tie-audit 28.3%/10.8%;
+mirror 8:8 (0.5); Żywy Tester 3×0 zgłoszeń.
 
 ## PMSSB-15 — prewencja/fog (prevent_*) (2026-09-28)
 

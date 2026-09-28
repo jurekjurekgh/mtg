@@ -13625,3 +13625,38 @@ po weryfikacji dosłownej (pin `8d860e45…`).
 Lekcja: „POKRYTE” w rejestrze rodzina może kryć realne luki (L41 —
 okna nigdy nie były wpięte poza cast_spell; płaska wycena nie znała
 lethala ani wycieku) — re-audyt z nowym dowodem właściciela był zasadny.
+
+## 2026-09-28g — PMSSB-16: walka bez fazy walki (PR #144, cz. 4)
+
+Pierwsza pętla „ciągła” po pustym BACKLOGU: walka (`fight` 1 karta /
+`damage_from_target_power` bite 1 karta) wg rozeznania. Plan:
+`docs/plans/PLAN_2026-09-28-pmssb16-walka.md`; POMIAR PRZED
+`/tmp/pmssb16-walka-przed.mjs` (S01–S07).
+
+**Drabina wymiany (`fightExchangeValue`, R2)** — serce audytu: stary
+model (−20/ginę, brak wagi ciał) prowadził do samobójstw (S03 = 119 →
+PASS; −15 „chip" przy śmierci własnego 3/3 = 37). Nowy:
+`kills&&!dies` 25+2·vPow (S01=103) / `dies` = 2·((kills?victimWorth:0)−
+dealerWorth)−25 (S02=49 z DT, S03=−11, S07=25+counter) / `!kills&&dies`
+= +`fightWastedDeathExtra(12)` — przebija bazę czaru 50 (tf->mocny 37→−9)
+/ `!kills&&!dies` = 5. L41 fight CR 701.14d: deathtouch/lifelink DZIAŁAJĄ
+(przy bite NIE liczy się druga strona — S05 97 vs S05b 94 = 3 = gain);
+reclaim riderów `add_counter` na skazanym gospodarzu (`−counterHostValue`,
+ta skala co cast_spell: 42/18); okno walki w duchu PMSSB-15 (S06 = 42 =
+2+40 fog-lethal). 8 pokręteł `fight*`.
+
+Test `test/audyt-pmssb16-walka.test.js` (10): RED 7/10 na starym kodzie
+(kotwice DOKŁADNE 103/94/49/−11/97/25/3/42); mutacja progów DT = 4 RED.
+Świadomy dryf L41: golden-master — 5/6 partii bit-po-bit BEZ zmian,
+1 partia identyczne WYBORY (267; KINDS-DIFF: BRAK), tylko wyceny +2.0 →
+fixture `--write`; pin PMSSB-4 `F-A1b` 37→−9 z komentarzem (to wasted-death,
+nie „chip"; piny kill 81/84 nietknięte). Bramki: fast 6985/6985,
+all 7256 (7+1 suites), build 71 / 4564,7 kB; tie-audit 28,3% (10,8%
+realnych — bez cast_spell w grozach); mirror-eval 8:8 (0.5 — symetria
+kodu); Żywy Tester 3 partie 0 zgłoszeń. CR 701.14d dopisane do tabeli
+po weryfikacji dosłownej (pin `8d860e45…`).
+
+Lekcja: rodzin do strojenia jest coraz mniej (walka = 2 karty, bite 1) —
+wartość pętli przenosi się na „POKRYTE w rejestrze, ale z nowym dowodem”
+(re-audyty) oraz ujednolicanie współdzielonych skal (counterHostValue,
+fogWindow) między rodzinami.

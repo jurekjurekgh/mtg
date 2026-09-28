@@ -94,6 +94,19 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'fogWindowLethalSaveValue',     // dopłata: ratunek bota przed śmiercią w tym starciu (życie LUB poison)
   'fogWindowSavedCreatureValue',  // dopłata: mój stwór, którego ta walka by zabiła (lustro animate_linked 10)
   'preventEtbWindowBaseValue',    // PMSSB-15/F4: ETB-prewencji dla artifact-stworów — baza słabego okna
+  // PMSSB-16 (walka bez fazy walki: fight + bite `damage_from_target_power`):
+  // CR 701.14a–d (damage nie-bojowe — deathtouch/lifelink działają, first
+  // strike nie). Helper `fightExchangeValue` (L41 dla fight+bite).
+  'fightBiteChipBase',        // bite: baza (stare 8) — chip bez killa
+  'fightBitePowerWeight',     // bite: waga mocy dealera (stare 2)
+  'fightBiteLethalBonus',     // bite: dopłata za zabicie ofiary (stare 15)
+  'fightKillBase',            // fight: baza zabicia ofiary PRZEŻYWAM (stare 25)
+  'fightKillPowerWeight',     // fight: waga mocy ofiary przy zabiciu (stare 2)
+  'fightMissBase',            // fight: brak zabicia (stare 5)
+  'fightTradeWorthWeight',    // fight (wymiana): waga różnicy ciał ofiary i walczącego (2p+t+mv)
+  'fightTradeCardCost',       // fight (wymiana): koszt DODATKOWEJ karty (mojego stwora) w wymianie
+  'fightWastedDeathExtra',    // fight: dodatkowa kara śmierci BEZ zabicia ofiary (musi przebić bazę)
+  'fightLifelinkWeight',      // fight/bite: waga lifelinku obu stron (CR 701.14d — damage nie-bojowe)
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -324,6 +337,33 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   fogWindowLethalSaveValue: 40,
   fogWindowSavedCreatureValue: 12,
   preventEtbWindowBaseValue: 3,
+  // PMSSB-16 (wartości przemyślane, pomiar PRZED: /tmp/pmssb16-walka-przed.mjs):
+  // bazy bite (8/2/15) i fight (25/2/5) = wartości HISTORYCZNE Batch 45
+  // (anty-over-fix — najsłabszy realny wariant zachowuje starą cenę);
+  // nowe wymiary: kara śmierci = wartość ciała 2p+t+mv waga 1 (skala
+  // M149/A3/sac-economics — L41; zastępuje płaskie −20: małe stwory giną
+  // taniej, duże drożej → wymiana w dół przestaje się opłacać),
+  // lifelink waga 1 (pełne lustro obu stron — CR 701.14d), okna walki
+  // REUSE fogWindowLethalSaveValue/fogWindowSavedCreatureValue (L41 —
+  // jedna skala ratunku w rodzinie).
+  fightBiteChipBase: 8,
+  fightBitePowerWeight: 2,
+  fightBiteLethalBonus: 15,
+  fightKillBase: 25,
+  fightKillPowerWeight: 2,
+  fightMissBase: 5,
+  // Wymiana (oba giną) — drabina PMSSB-16: różnica ciał ×2 (moc podwójnie —
+  // jak M157/aury) minus koszt dodatkowej karty 25 (połowa killBase — wymiana
+  // to NIE czysty removal: tracę też swojego stwora). Skala daje drabinę
+  // kill-only (25+2p) > wymiana w górę (+5 dla 1/1→6/6) > wymiana równa
+  // (−25) > wymiana w dół (−55 dla 6/6→1/1 — musi przebić bazę czaru 50,
+  // konwencja M167/F: kara szkodliwego efektu przebija bazę).
+  fightTradeWorthWeight: 2,
+  fightTradeCardCost: 25,
+  // Śmierć BEZ zabicia (mój stwór ginie, ich żyje) to najgorszy wariant —
+  // dodatkowa kara musi przebić bazę czaru 50 już dla ciał 2/2+ (M167/F).
+  fightWastedDeathExtra: 12,
+  fightLifelinkWeight: 1,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,

@@ -4478,6 +4478,137 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   }
 
+  // =====================================================================
+  // PMSSB-16: walka bez fazy walki — Fight (CR 701.14) + bite
+  // (`damage_from_target_power`) — wspólny helper wyniku wymiany (L41).
+  //
+  // CR 701.14a (dosłownie): „Each of those creatures deals damage equal to
+  // its power to the other creature." — jednocześnie; 701.14b: nielegalny
+  // cel = żaden nie zadaje (Fight); 701.14d: „The damage dealt when a
+  // creature fights isn't combat damage" → deathtouch (SBA 704.5h) i
+  // lifelink DZIAŁAJĄ, first strike/trample NIE (bojowe-only).
+  //
+  // Findingi audytu (pomiar PRZED: /tmp/pmssb16-walka-przed.mjs — ranking
+  // odwrócony: wymiana w dół 119 > kill-only 103 > wygrana DT 47!):
+  //   R1 — ridery czaru (pump/add_counter) doliczane do mocy PRZED damage
+  //     (bite liczył tylko pump; fight tylko counter warunkowy — Hunt the
+  //     Weak i Knockout Maneuver zaniżały lethal).
+  //   R2 — deathtouch w progach zabicia/śmierci w OBU kierunkach.
+  //   R3 — lifelink: zysk/koszt życia przez gainLifeValue (PMSSB-4, L41).
+  //   R4 — kara śmierci = wartość ciała 2p+t+mv (M149/A3), nie płaskie −20.
+  //   R5 — guard kierunku: bite/fight we WŁASNEGO stwora = samookaleczenie
+  //     (targety typowane w kartach blokują; guard = defence-in-depth M231).
+  //   R6 — okno walki: zabicie uczestnika zadeklarowanego combatu PRZED
+  //     obrażeniami = to samo ratowanie co fog (reuse fogWindow* L41).
+  // =====================================================================
+
+  /** R1: ridery czaru (pump/add_counter/grant_keywords) trafiające w MOJEGO
+   *  walczącego — doliczane PRZED damage (CR 701.14a, moc z chwili
+   *  rozstrzygania). Warunkowość ridera („jeśli wszedł w tej turze") jest
+   *  w silniku — tu aproksymacja jak w Batch 45 (flaga = weź pod uwagę).
+   *  Zwraca też listę riderów (do oddania ich wartości, gdy walczący ginie). */
+  function fightRiderBuffs(effects, mySlot) {
+    const buffs = { power: 0, toughness: 0, keywords: [], effects: [] };
+    for (const e of effects ?? []) {
+      const slot = e?.targetIndex ?? 0;
+      if (slot !== mySlot) continue;
+      if (e.type === 'pump') {
+        buffs.power += e.power ?? 0;
+        buffs.toughness += e.toughness ?? 0;
+        buffs.effects.push(e);
+      } else if (e.type === 'add_counter') {
+        buffs.power += e.amount ?? 1;
+        buffs.toughness += e.amount ?? 1;
+        buffs.effects.push(e);
+      } else if (e.type === 'grant_keywords_until_end_of_turn') {
+        buffs.keywords.push(...(e.keywords ?? []));
+        buffs.effects.push(e);
+      }
+    }
+    return buffs;
+  }
+
+  /** Wartość ciała stwora (skala M149/A3/sac-economics: 2p+t+mv) — R4. */
+  function bodyWorth(object) {
+    return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
+  }
+
+  /**
+   * Wynik wymiany fight/bite (dopłata do bazy czaru; anty-over-fix: bazy
+   * bite 8+2·p / fight kill 25+2·p / miss 5 = wartości historyczne).
+   * `oneSided` = bite (tylko ofiara dostaje damage); w fight giną obie
+   * strony wg progów DT (R2).
+   */
+  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null } = {}) {
+    if (!dealer || !victim) return -40;
+    // R5: ofiara po NASZEj stronie = samookaleczenie (kara > baza).
+    if (victim.controllerId === view.playerId) return -60;
+    const b = buffs ?? { power: 0, toughness: 0, keywords: [], effects: [] };
+    const dealerKw = [...(dealer.keywords ?? []), ...b.keywords];
+    const dPow = Math.max(0, (dealer.power ?? 0) + b.power);
+    const dToughLeft = Math.max(0, (dealer.toughness ?? 0) + b.toughness - (dealer.damage ?? 0));
+    const vPow = Math.max(0, victim.power ?? 0);
+    const vToughLeft = Math.max(0, (victim.toughness ?? 0) - (victim.damage ?? 0));
+    // R2: deathtouch (Fight CR 701.14d — damage nie-bojowe, SBA 704.5h).
+    const kills = dPow > 0 && (dPow >= vToughLeft || dealerKw.includes('deathtouch'));
+    const dies = !oneSided && vPow > 0 && (vPow >= dToughLeft || (victim.keywords ?? []).includes('deathtouch'));
+    const dealerWorth = bodyWorth({
+      power: (dealer.power ?? 0) + b.power,
+      toughness: (dealer.toughness ?? 0) + b.toughness,
+      manaCost: dealer.manaCost,
+    });
+    const victimWorth = bodyWorth(victim);
+    // Drabina wartości (PMSSB-16; anty-over-fix: kill-only i bite = dawne
+    // Batch 45): kill-only > wymiana w górę > wymiana równa > wymiana w dół.
+    let value;
+    if (oneSided) {
+      value = P.fightBiteChipBase + P.fightBitePowerWeight * dPow + (kills ? P.fightBiteLethalBonus : 0);
+    } else if (kills && !dies) {
+      value = P.fightKillBase + P.fightKillPowerWeight * vPow;
+    } else if (dies) {
+      // Wymiana (R4): różnica ciał ×waga − koszt dodatkowej karty; ginę BEZ
+      // zabijania = najgorszy wariant — dodatkowa kara musi przebić bazę
+      // czaru (konwencja M167/F dla efektów szkodliwych).
+      value = P.fightTradeWorthWeight * ((kills ? victimWorth : 0) - dealerWorth)
+        - P.fightTradeCardCost - (kills ? 0 : P.fightWastedDeathExtra);
+    } else {
+      value = P.fightMissBase; // chip bez zabicia (stare 5)
+    }
+    // Skład kompozycji: wartość ridera czaru (licznik na MOIM walczącym) jest
+    // liczona przez pętlę jako trwała — ginie jednak razem z nim. Zasada
+    // counterHostValue „licznik na gospodarzu skazanym nie kupuje nic"
+    // (L41): oddajemy dokładnie tę wartość.
+    if (dies) {
+      for (const e of b.effects ?? []) {
+        if (e.type === 'add_counter') value -= counterHostValue(view, dealer, e.counter ?? '+1/+1', e.amount ?? 1);
+      }
+    }
+    // R3: lifelink (CR 701.14d) — moja moc wraca jako życie; ich lifelink
+    // w fight to lustrzana strata (bite: ofiara nie oddaje).
+    if (dealerKw.includes('lifelink') && dPow > 0) value += P.fightLifelinkWeight * gainLifeValue(view, dPow);
+    if (!oneSided && (victim.keywords ?? []).includes('lifelink') && vPow > 0) {
+      value -= P.fightLifelinkWeight * gainLifeValue(view, vPow);
+    }
+    // R6: okno walki (reuse skali fog L41) — zabicie uczestnika
+    // zadeklarowanego combatu PRZED obrażeniami = ratunek twarzy/stwora.
+    const combat = view.combat ?? null;
+    if (kills && combat && (combat.attackers ?? []).includes(victim.id)) {
+      const lane = combatOutcome(view, victim);
+      const life = myLife(view);
+      if ((lane?.faceDamage ?? 0) > 0) {
+        if ((lane.faceDamage ?? 0) >= life) value += P.fogWindowLethalSaveValue;
+        else value += P.fogWindowSavedCreatureValue;
+      }
+      value += P.fogWindowSavedCreatureValue * Math.min((lane?.deadBlockers ?? []).length, 3);
+    } else if (kills && combat) {
+      // Ofiara = ich bloker w MOJEJ walce — ratuje moich atakujących,
+      // którzy by w niej zginęli (lane ofiary = ich blokera).
+      const lane = combatOutcome(view, victim);
+      if (lane?.attackerDies) value += P.fogWindowSavedCreatureValue;
+    }
+    return value;
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
@@ -6783,29 +6914,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M109 (Diplomatic Relations): stwór zadaje obrażenia równe swojej
           // mocy — liczy się moc NASZEGO stwora (slot 0) i to, czy zabija.
           if (effect.type === 'damage_from_target_power') {
+            // PMSSB-16: wynik bite = wspólny fightExchangeValue (L41 z fight):
+            // R1 ridery (pump+add_counter) w mocy dealera, R2 DT, R3 lifelink,
+            // R5 guard kierunku, R6 okno walki. Stare 8+2p+(lethal 15) jako
+            // bazy anty-over-fix.
             const dealer = objectOnBoard(view, cmd.targets?.[effect.sourceTargetIndex ?? 0]);
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
-            const power = (dealer?.power ?? 0) + (effects.some((e) => e.type === 'pump') ? (effects.find((e) => e.type === 'pump').power ?? 0) : 0);
-            if (!dealer || !victim) score -= 40;
-            else {
-              const lethal = power >= (victim.toughness ?? 0) - (victim.damage ?? 0);
-              score += 8 + 2 * power + (lethal ? 15 : 0);
-            }
+            score += fightExchangeValue(view, dealer, victim, {
+              oneSided: true,
+              buffs: fightRiderBuffs(scoredEffects, effect.sourceTargetIndex ?? 0),
+            });
           }
-          // Batch 45 (Malamet Battle Glyph, CR 701.12): fight to wymiana —
-          // premia, gdy nasz stwór (slot A) zabija wroga; kara, gdy sam ginie.
+          // Batch 45 → PMSSB-16 (CR 701.14 — dawniej mylnie 701.12): fight to
+          // wymiana; wynik = wspólny fightExchangeValue (R1–R6, cytaty CR
+          // w nagłówku helpera).
           if (effect.type === 'fight') {
             const mine = objectOnBoard(view, cmd.targets?.[effect.targetIndexA ?? 0]);
             const theirs = objectOnBoard(view, cmd.targets?.[effect.targetIndexB ?? 1]);
-            if (!mine || !theirs) score -= 40;
-            else {
-              const counterBonus = effects.some((e) => e.type === 'add_counter' && e.onlyIfTargetEnteredThisTurn) ? 1 : 0;
-              const myPower = (mine.power ?? 0) + counterBonus;
-              const myToughness = (mine.toughness ?? 0) + counterBonus;
-              const killsTheirs = myPower >= (theirs.toughness ?? 0) - (theirs.damage ?? 0);
-              const losesMine = (theirs.power ?? 0) >= myToughness - (mine.damage ?? 0);
-              score += (killsTheirs ? 25 + 2 * (theirs.power ?? 0) : 5) - (losesMine ? 20 : 0);
-            }
+            score += fightExchangeValue(view, mine, theirs, {
+              oneSided: false,
+              buffs: fightRiderBuffs(scoredEffects, effect.targetIndexA ?? 0),
+            });
           }
           // PMSSB-4/F-A1: noga-gain w cast (douse/consume/severed: wczesniej 0 —
           // H1/H2; scoredEffects juz rozwija X i conditional, L41).

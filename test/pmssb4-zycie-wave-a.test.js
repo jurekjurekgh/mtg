@@ -126,7 +126,11 @@ test('F-A1b: time-to-feed gain_if_dies przez tiers (cap-3 zostaje)', () => {
   handCard(s, 'tf', 'time-to-feed');
   fieldCreature(s, 'moj', 'p1', 3, 3); fieldCreature(s, 'slaby', 'p2', 2, 2); fieldCreature(s, 'mocny', 'p2', 5, 5);
   assert.equal(scoreOf(s, 'cast_spell(tf->slaby'), 81, 'feed kill (bylo 82: +3flat -> +2tiers)');
-  assert.equal(scoreOf(s, 'cast_spell(tf->mocny'), 37, 'feed chip (bylo 38)');
+  // PMSSB-16 (świadomy dryf składu, L41): tf->mocny to NIE „chip" — mój 3/3
+  // w fight z 5/5 GINIE, ich żyje (wasted-death tier fightExchangeValue).
+  // Wartość walki zmieniła się pod rodziną PMSSB-4 (ta sama kompozycja);
+  // piny kill (81/84) nietknięte — logika gain-if-dies bez zmian.
+  assert.equal(scoreOf(s, 'cast_spell(tf->mocny'), -9, 'feed wasted-death (bylo 37: plaskie -20 nie przebijalo bazy)');
   const t = newState(); fillLibrary(t); setLife(t, 5); addBasics(t, ['G'], 5);
   handCard(t, 'tf', 'time-to-feed');
   fieldCreature(t, 'moj', 'p1', 3, 3); fieldCreature(t, 'slaby', 'p2', 2, 2); fieldCreature(t, 'mocny', 'p2', 5, 5);
