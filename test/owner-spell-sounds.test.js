@@ -416,3 +416,11 @@ test('15g/A: playCastSound gra typem z kolorem karty', () => {
   playCastSound({ player: stub, card: { types: ['Creature'], colors: ['G'] } });
   assert.deepEqual(calls, ['creature:G']);
 });
+
+test('resume: odrzucona Promise autoplay nie wychodzi jako unhandled rejection', async () => {
+  const ctx = new FakeAudioContext(); ctx.state = 'suspended';
+  ctx.resume = () => Promise.reject(new Error('autoplay denied (stub)'));
+  const player = createSpellSoundPlayer({ createContext: () => ctx });
+  player.setEnabled(true); assert.equal(player.resume(), true);
+  await new Promise((resolve) => setImmediate(resolve));
+});

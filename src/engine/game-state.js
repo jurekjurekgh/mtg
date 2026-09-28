@@ -1,5 +1,5 @@
 import { chooseDestructionReplacement } from './destruction.js';
-import { combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
+import { blockingRequirementCount, combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { assertZone, ZONES } from './zones.js';
 import { command, event } from '../protocol/types.js';
@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
-import { castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
+import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -2278,7 +2278,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const pending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, pending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -2331,7 +2331,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const pending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, pending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -2381,7 +2381,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const pendingSpell = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, pendingSpell.stackId, pendingSpell.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, pendingSpell));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -2422,7 +2422,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const pendingSpell = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, pendingSpell.stackId, pendingSpell.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, pendingSpell));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -2690,7 +2690,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolved.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolved.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolved });
   }
@@ -2702,6 +2702,16 @@ export function execute(state, input) {
     const pending = state.pendingLookTopN;
     const pickId = cmd.cardId;
     if (!pending.objectIds.includes(pickId)) return reject('illegal_look_top_choice');
+    const rest = pending.objectIds.filter((id) => id !== pickId);
+    const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : rest;
+    // F1 audytu PR140: cała decyzja musi być legalna PRZED pierwszą mutacją.
+    // Wspólna bramka dla pick→ręka i pick→wygnanie/link: reject nie cofa
+    // przeniesionej karty, objectSequence, linków źródła ani zdarzeń.
+    if ((pending.restTo === 'library_bottom' || pending.pickTo === 'exile_face_down_linked')
+      && (bottomOrder.length !== rest.length || new Set(bottomOrder).size !== bottomOrder.length
+        || bottomOrder.some((id) => !rest.includes(id)))) {
+      return reject('illegal_look_top_bottom_order');
+    }
     // Batch60/9 (Clone Shell): wariant pickTo — wybrana karta idzie do
     // wygnania ZAKRYTA + wiąże się ze źródłem (CR 400.7, wzorzec Pyxis),
     // NIE do ręki. Reszta na spód z bottomOrder (jak Dockhand, M177/E).
@@ -2719,12 +2729,6 @@ export function execute(state, input) {
         fromId: pickId, objectId: exileId, object: state.objects.get(exileId),
         playerId: pending.playerId, faceDown: true,
       }));
-      const restImprint = pending.objectIds.filter((id) => id !== pickId);
-      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : restImprint;
-      if (bottomOrder.length !== restImprint.length || new Set(bottomOrder).size !== bottomOrder.length
-        || bottomOrder.some((id) => !restImprint.includes(id))) {
-        return reject('illegal_look_top_bottom_order');
-      }
       const bottomSet = new Set(bottomOrder);
       state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
       for (const id of bottomOrder) {
@@ -2740,23 +2744,17 @@ export function execute(state, input) {
         // „kartę”, decydent zna ją z modala).
         pickCardId: null, restTo: 'library_bottom', pickTo: 'exile_face_down_linked',
       }));
-      const resolvedImprint = state.events.slice(state.events.length - (restImprint.length + 2));
+      const resolvedImprint = state.events.slice(state.events.length - (rest.length + 2));
       return accepted(state, cmd, { ok: true, events: resolvedImprint });
     }
     // Wybrana karta do ręki; reszta do grobu (kolejność wierzchu zachowana).
     const handId = `hand-${state.objectSequence++}`;
     const movedHand = moveObjectDirectly(state, pickId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: pickId, object: movedHand, fromZone: 'library', toZone: 'hand', looked: true }));
-    const rest = pending.objectIds.filter((id) => id !== pickId);
     if (pending.restTo === 'library_bottom') {
       // M177/E (Merchant's Dockhand): reszta na SPÓD biblioteki „in any
       // order” — kolejność z cmd.bottomOrder (permutacja resty, jak
       // topOrder przy scry); domyślnie zachowana kolejność wierzchu.
-      const bottomOrder = Array.isArray(cmd.bottomOrder) ? cmd.bottomOrder : rest;
-      if (bottomOrder.length !== rest.length || new Set(bottomOrder).size !== bottomOrder.length
-        || bottomOrder.some((id) => !rest.includes(id))) {
-        return reject('illegal_look_top_bottom_order');
-      }
       const bottomSet = new Set(bottomOrder);
       state.zones.library = [...state.zones.library.filter((id) => !bottomSet.has(id)), ...bottomOrder];
       for (const id of bottomOrder) {
@@ -2817,7 +2815,7 @@ export function execute(state, input) {
       // finishPendingSpell dopisuje zdarzenia do state.events SAMO (kontrakt
       // Z1c) — zbieramy je przez state.events.slice(before), nie wpychamy z
       // powrotem, żeby uniknąć duplikatów.
-      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+      resumeSuspendedSpell(state, spellPending);
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -3343,7 +3341,7 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
-        resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
       }
       return accepted(state, cmd, { ok: true, events: resolvedEvents });
     }
@@ -3493,7 +3491,7 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const pending = state.pendingSpell;
         state.pendingSpell = null;
-        resolvedEvents.push(...finishPendingSpell(state, pending.stackId, pending.effects));
+        resolvedEvents.push(...resumeSuspendedSpell(state, pending));
       }
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
@@ -3731,7 +3729,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -3841,7 +3839,7 @@ export function execute(state, input) {
         // wycinek"). Dodatkowy push wstawiał je do stanu DRUGI raz, a że ta
         // gałąź kończy się `state.events.slice(before)`, log pokazywał
         // „… zostaje rozstrzygnięty" dwa razy. Wywołanie wystarczy.
-        finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+        resumeSuspendedSpell(state, spellPending);
       }
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4057,7 +4055,7 @@ export function execute(state, input) {
       state.pendingSpell = null;
       // M187/Z1 (jak wyżej): bez dodatkowego push — funkcja już dopisała
       // zdarzenia do stanu, a zwrot służy call-site'om z LOKALNĄ tablicą.
-      finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+      resumeSuspendedSpell(state, spellPending);
     }
     if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
@@ -4296,7 +4294,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4311,30 +4309,34 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_optional_spell_effect') return reject('optional_spell_effect_unresolved');
     if (cmd.playerId !== state.pendingOptionalSpellEffect.playerId) return reject('optional_spell_effect_not_your_decision');
     const pending = state.pendingOptionalSpellEffect;
+    if (typeof cmd.apply !== 'boolean') return reject('illegal_optional_spell_effect_choice');
+    const effect = cmd.apply ? optionalSpellEffectChoices(state, pending)
+      .find((choice) => choice.type === (cmd.effectType ?? pending.effectType)) : null;
+    // Wariant o więcej niż jednej możliwej czynności wymaga jawnego rodzaju
+    // działania z oferty (F7). Nie zamieniamy starego „tap” na „untap” samemu.
+    if (cmd.apply && !effect) return reject('illegal_optional_spell_effect_choice');
     const before = state.events.length;
     state.pendingOptionalSpellEffect = null;
+    // Odtwórz kontekst PRZED kolejną blokadą, żeby jej restorePriorityTo
+    // nie zapamiętało tymczasowego gracza wybierającego (CR 117.3b).
+    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    }
+    let effectBlocked = false;
     if (cmd.apply) {
-      const source = state.objects.get(pending.sourceId) ?? null;
-      const list = pending.modeIndex != null
-        ? (source?.spell?.modes?.[pending.modeIndex]?.effects ?? [])
-        : (pending.cleaved
-          ? (source?.spell?.cleave?.effects ?? source?.spell?.effects ?? [])
-          : (source?.spell?.effects ?? []));
-      const effect = list[pending.effectIndex] ?? { type: pending.effectType };
-      if (source && source.zone === 'stack') applyEffect(state, { ...effect, may: false }, source, [...pending.targetIds]);
+      const source = state.objects.get(pending.sourceId);
+      effectBlocked = Boolean(applyEffect(state, { ...effect, may: false }, source, [...pending.targetIds]));
     }
     state.events.push(event('optional_spell_effect_resolved', {
       playerId: pending.playerId, sourceCardId: pending.sourceCardId,
-      effectType: pending.effectType, targetId: pending.targetIds[0] ?? null, apply: Boolean(cmd.apply),
+      effectType: effect?.type ?? pending.effectType,
+      targetId: pending.targetIds[effect?.targetIndex ?? 0] ?? null, apply: cmd.apply,
     }));
     const resolvedEvents = state.events.slice(before);
-    if (state.pendingSpell) {
+    if (!effectBlocked && state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
       resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
-    }
-    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -4509,7 +4511,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4580,7 +4582,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -4640,7 +4642,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4674,7 +4676,7 @@ export function execute(state, input) {
         if (pending.purpose === 'effect' && state.pendingSpell) {
           const spellPending = state.pendingSpell;
           state.pendingSpell = null;
-          events.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+          events.push(...resumeSuspendedSpell(state, spellPending));
         }
         if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
           state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4705,7 +4707,7 @@ export function execute(state, input) {
         if (pending.purpose === 'effect' && state.pendingSpell) {
           const spellPending = state.pendingSpell;
           state.pendingSpell = null;
-          finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+          resumeSuspendedSpell(state, spellPending);
         }
         if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
           state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4804,7 +4806,7 @@ export function execute(state, input) {
     if (pending.purpose === 'effect' && state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -4914,7 +4916,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -4979,7 +4981,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -5072,7 +5074,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -5103,7 +5105,7 @@ export function execute(state, input) {
     if (state.pendingSpell) {
       const spellPending = state.pendingSpell;
       state.pendingSpell = null;
-      resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+      resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
     }
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
@@ -5411,7 +5413,7 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
-        resolvedEvents.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        resolvedEvents.push(...resumeSuspendedSpell(state, spellPending));
       }
       return accepted(state, cmd, { ok: true, events: resolvedEvents });
     }
@@ -5442,7 +5444,7 @@ export function execute(state, input) {
       if (state.pendingSpell) {
         const spellPending = state.pendingSpell;
         state.pendingSpell = null;
-        picked.push(...finishPendingSpell(state, spellPending.stackId, spellPending.effects));
+        picked.push(...resumeSuspendedSpell(state, spellPending));
       }
       return accepted(state, cmd, { ok: true, events: picked });
     }
@@ -6145,7 +6147,7 @@ export function execute(state, input) {
         } else applyEffect(state,item.effect,item.sourceObject,item.targets,item.context);
       }
       if (!state.pendingReplacementChoice && state.pendingSpell) {
-        const tail=state.pendingSpell;state.pendingSpell=null;finishPendingSpell(state,tail.stackId,tail.effects);
+        const tail=state.pendingSpell;state.pendingSpell=null;resumeSuspendedSpell(state, tail);
       }
       return accepted(state,cmd,{ok:true,events:state.events.slice(before)});
     }
@@ -6525,7 +6527,10 @@ export function playerView(state, playerId) {
         if (object.detained === true) entry.detained = true;
         // Batch60 („blocks if able" — Timely Interference): wymóg bloku to
         // informacja publiczna (badge + boty; lustro goad).
-        if (object.blocksIfAble === true) entry.blocksIfAble = true;
+        if (object.blocksIfAble === true) {
+          entry.blocksIfAble = true;
+          entry.blockRequirementCount = blockingRequirementCount(object);
+        }
         // M172/B2 (uwaga właściciela, klasa L1/ADR 0017): AKTYWNE zmiany
         // czasowe są informacją publiczną (skutki rozstrzygniętych efektów),
         // a render liczy z nich badge'e („nie może blokować", „nie do
@@ -7523,7 +7528,12 @@ export function playerView(state, playerId) {
       targetId: mayPending.targetIds?.[0] ?? null,
       sourceCardId: mayPending.sourceCardId ?? null,
     };
-    legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: true, ...mayInfo }));
+    for (const effect of optionalSpellEffectChoices(state, mayPending)) {
+      legalCommands.push(command('resolve_optional_spell_effect', playerId, {
+        apply: true, ...mayInfo, effectType: effect.type,
+        targetId: mayPending.targetIds?.[effect.targetIndex ?? 0] ?? null,
+      }));
+    }
     legalCommands.push(command('resolve_optional_spell_effect', playerId, { apply: false, ...mayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeTriggerTarget) {
     // Temat 2 — cel triggera wybiera kontroler: kandydaci w kolejności dawnej
@@ -8518,7 +8528,8 @@ export function playerView(state, playerId) {
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile) {
     // D (CR 508.2): deklaracja raz na combat — po deklaracji (state.combat)
     // krok trwa dalej jako okno odpowiedzi, bez oferty re-deklaracji.
-    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat) {
+    if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat
+      && state.zones.stack.length === 0) {
       const seen = new Set();
       for (const attackerIds of legalAttackerOptions(state, playerId, COMBAT_OPTION_CAP)) {
         const key = JSON.stringify(attackerIds);
@@ -9058,8 +9069,8 @@ export function playerView(state, playerId) {
       && state.pendingDestroyEquipment.playerId === playerId)
       ? { targetId: state.pendingDestroyEquipment.targetId }
       : null,
-    // Fix A/Twiddle: tryb i cel wybrano przy rzuceniu (strefa publiczna) —
-    // efekt z `may` jest więc jawny dla obu graczy (jak optionalDraw).
+    // Cel wybrano przy rzuceniu; rodzaj działania wybiera kontroler TERAZ.
+    // Tekst efektu z may jest jawny dla obu graczy (jak optionalDraw).
     pendingOptionalSpellEffect: state.pendingOptionalSpellEffect ? {
       playerId: state.pendingOptionalSpellEffect.playerId,
       sourceCardId: state.pendingOptionalSpellEffect.sourceCardId,

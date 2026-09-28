@@ -445,7 +445,7 @@ export function effectiveColors(object) {
  */
 export function effectiveProtectionFromColors(state, object) {
   if (!state || !object || object.zone !== 'battlefield') return [];
-  const colors = new Set(object.protectionFromColors ?? []);
+  const colors = new Set(object.abilitiesStripped ? [] : (object.protectionFromColors ?? []));
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
     const grant = attachmentGrant(attachment);
     for (const color of grant.protectionFromColors ?? []) colors.add(color);

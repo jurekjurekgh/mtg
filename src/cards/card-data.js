@@ -6780,15 +6780,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // Fix A (2026-09-27): „you may” to flaga `may` na efektach trybów —
-  // pytanie Tak/Nie pada przy ROZSTRZYGANIU (generyczny mechanizm
-  // queueOptionalSpellEffect/resolve_optional_spell_effect), nie przy
-  // rzuceniu. Świadomy skrót (jak E): tap-vs-untap wybiera się przy
-  // rzuceniu (tryb), choć regułowo „or” rozstrzyga się razem z „may”
-  // przy rozstrzygnięciu (CR 608.2) — przeciwnik widzi wybór przed
-  // odpowiedzią; cel jest obowiązkowy już przy rzuceniu (CR 601.2c).
-  // 6. Twiddle (8ED) {U} Instant — „You may tap or untap target artifact,
-  //    creature, or land" (modalny wybór tap/untap).
+  // Twiddle (8ED) {U}: cel przy rzucaniu, tap/untap/odmowa przy rozstrzyganiu.
+  // Ruling WotC 2004-10-04, potwierdzony w Scryfall 2026-09-28:
+  // „The decision whether or not to tap or untap is made on resolution.
+  // This is not a modal spell.” Żadnego automatycznego toggle (drugi ruling).
   defineCard({
     id: 'twiddle', name: 'Twiddle', set: '8ED',
     types: ['Instant'], colors: ['U'], manaCost: 1,
@@ -6796,18 +6791,8 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/1/b/1b25858a-ab2d-441a-a3fe-6d5ecd7f05be.jpg',
     spell: {
       timing: 'instant',
-      modes: [
-        {
-          name: 'Tapnięcie',
-          targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'tap_permanent', may: true }],
-        },
-        {
-          name: 'Odkręcenie',
-          targets: [{ type: 'artifact_or_creature_or_land' }],
-          effects: [{ type: 'untap_permanent', may: true }],
-        },
-      ],
+      targets: [{ type: 'artifact_or_creature_or_land' }],
+      effects: [{ type: 'tap_or_untap_permanent', may: true }],
     },
     artId: 19, plan: 'Wiedźmin',
     support: { status: 'supported', limitations: [] },

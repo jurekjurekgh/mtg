@@ -13261,3 +13261,201 @@ meta+komentarz+rozdzielnik; karty recznie, fallback do 1.). 6912/6912 GREEN.
 TESTY (2026-09-27, manifest): reprofilowanie solo 914 plikow; slow 1 -> 31
 plikow (>5 s, suma 948 s w tym benchmark 412 s). npm test: 883 pliki,
 6641/6641 w 106 s (konkurencja 4; 8 bez zysku na 2 vCPU).
+
+
+## 2026-09-28 — audyt PR #140 (PR #142, przed naprawami)
+
+Kontynuacja wg ADR 0020/0021, plan wypchnięty jako `7c799df`, PR otwarty
+przed kodowaniem. Zakres `605a8dc5` → `11944767`: 154 pliki, +16760/-391;
+[pełny raport per plik](audits/AUDYT_PR140_2026-09-28.md). Faktyczny zakres
+obejmuje PMSSB-1…14, AI do R7 i 10 kart batcha 60 — końcowy opis PR/handoff
+były niepełne, nie są kolejką nowej transzy.
+
+Baseline: fast 6760/6760 (105471 ms), all 7031/7031 (428711,52059 ms),
+0 fail/skip, build 69 modułów / 4522,6 kB. Wszystkie 12 sond PMSSB uruchomione
+na bazie. Rzeczywiste historyczne podmiany: mana-wizard 2/5 RED → 5/5 GREEN,
+bounce 21/29 RED → 29/29 GREEN, pliki bezpiecznie odtworzone.
+
+7 potwierdzonych ustaleń: F1 odmowa wyboru Clone Shell/Dockhanda mutuje
+stan; F2 main gubi nagłówek partii Drive przez normalizację newGame;
+F3 user-abort ciała AI nazywany timeoutem; F4 PMSSB-12 czyta land.colors
+zamiast manaSource; F5 Xu-Ifit pozostawia hymn i nadawanie outlast przez
+źródło bez zdolności; F6 wymóg bloku wszystko-albo-nic zamiast maksimum;
+F7 Twiddle przy rozstrzyganiu nadal związany trybem rzutu (starszy defekt
+utrwalony nowymi pinami). Dowody, granice i dosłowne źródła CR/rulingów
+w raporcie. Na tym etapie jeszcze bez produkcyjnych poprawek; kolejność
+napraw i anty-overfixy w planie sesji. Bez płatnych API, pełnego B0 ani merge.
+
+
+### C1 / F1 — wybór z biblioteki bez mutacji przy odrzuceniu
+
+Jedna walidacja bottomOrder przed ruchem/linkiem/ID/eventami. Nowe 21 testów
+obejmuje rzeczywiste ETB Clone Shell, aktywację Dockhanda i rozdział Rediscover
+the Way: 15 RED przed poprawką → 21 GREEN; 80/80 z regresjami batcha.
+Pełna niezmienność GameState po odmowie i udane ponowienie, nie tylko ok:false.
+Nowe cytaty 608.2d/733.1 najpierw zatrzymały strażnika; ponownie pobrany CR
+2026-09-25 ma ten sam SHA-256 co źródło tabeli, więc tabela została
+wygenerowana narzędziem (485 numerów). Końcowy fast 6781/6781 (110642 ms),
+build 69 modułów / 4522,5 kB. Osobny krok; pozostałe F2–F7 w toku.
+
+
+### C2 / F5 — utrata zdolności w czytnikach, nie tylko własnym ETB
+
+Poprawiono hymny/outlast, obniżki kosztów, mana-source/auto-płatność,
+protection i daybound; własny timestamp efektu utraty, timestamp nadania
+statyki i reset przy zmianie strefy. Późniejsze granty pozostają, P/T hymnu
+i typy changelinga nie są kasowane. 22 testy oparte na pełnym createCardDeck:
+16 RED na C1 → 22 GREEN; niezależne podmiany wszystkich 8 źródeł wykryte
+(6/4/1/2/1/2/1/3 czerwonych testów), przywrócone z kopii bieżących plików.
+Fast **6803/6803**, build **69 / 4523,9 kB**; 83/83 celowanych.
+Szybki benchmark 672 meczów przed i po, wyniki per talia identyczne:
+heuristic vs aggro 257/336 (76,5%), vs random 331/336 (98,5%), 0 stalls;
+bez B0-full i bez zmiany snapshotu/progów. Pełny CR pobrany przez GitHub API,
+dodany zweryfikowany 613.7n. Plan C3 uzupełniono przed kodowaniem o dalsze
+potwierdzone przypadki F6: kumulację wymogów, alone względem całej deklaracji
+i wygaśnięcie wymogu po zmianie strefy. Nadal otwarte C3–C7.
+
+
+### C3 / F6 — dokładne wymogi blokowania, sloty i kreator
+
+Maksimum niezależnych wymogów, nie „wszystko albo nic” i nie próbka menu.
+Dopasowanie partnerów z przepinaniem, przycinanie niemożliwych prefiksów;
+bez wyszukiwania opcjonalnych deklaracji zwykłej walki. CR 506.5: alone
+względem całej deklaracji; różni blokerzy pod menace; licznik nakładających
+się wymogów; reset po zmianie strefy/cleanup. Widok i wizard nie gubią liczby
+wymogów ani nie wysyłają nielegalnego „Bez bloków”.
+19 nowych testów: 14 RED na C2 → 19 GREEN, 36 układów porównanych niezależną
+enumeracją; 16 podmian/mutacji wykrytych. Istniejący batch40/E3 wykrył
+regresję pierwszej wersji (po poprawnym policzeniu przestrzeni 36 > cap32
+zniknął podwójny blok); zachowano test i dodano reprezentant multibloku.
+Celowane 169/169, końcowy fast **6822/6822**, build **69 / 4525,5 kB**.
+Quick **672**: heuristic 258/336 vs aggro (76,8%; +1 wygrana w lustrze
+Final Fantasy), 331/336 vs random (98,5%), 0 stalls. Snapshot/progi bez
+zmian; pełny all dopiero po pozostałych naprawach. Dodano zweryfikowany
+506.5 do generowanej tabeli CR. Otwarte C4/F7, C5/F4, C6/F2, C7/F3.
+
+
+### C4 / F7 — Twiddle zgodny z Oracle i zachowane kontynuacje
+
+Scryfall 8ED111 oraz oba rulingi WotC ponownie pobrane 2026-09-28 i zapisane
+w snapshotcie. Cel przy rzucaniu, tap/untap/odmowa przy rozstrzyganiu; brak
+fikcyjnych trybów i automatycznego toggle. Jedna interpretacja wariantu dla
+oferty/walidacji/prognozy bota; log wskazuje czynność i cel, detektor rozumie
+nowy format. Naprawy klasy kontynuacji: późniejsze may, blokujący skutek may,
+modalne blokady/kopie, przekazanie całego pending u 25 konsumentów oraz
+priorytet (117.2e/117.3b) po may/scry/discard. Nośniki poza katalogiem tylko
+testowe; modalne piny UI nadal czerwienią mutację (3/5 RED).
+31 nowych testów: 23 RED na C3 → 31 GREEN; 26 wykrytych podmian/mutacji,
+336/336 w 20 plikach odnoszących się do Twiddle. Strażnik wycen początkowo
+wykrył brak jawnej klasyfikacji delegacji; dodano realną gałąź, nie wyjątek.
+Końcowy fast **6853/6853**, build **69 / 4528,0 kB**, quick **672** identyczny
+z C3 (76,8% vs aggro / 98,5% vs random, 0 stalls); snapshot/progi bez zmian.
+Cały TESTER_STOLU przeczytany, jsdom zainstalowany; żywe partie jeszcze nie.
+Następne C5/F4 (kolory źródeł many), C6/F2 (Drive) i C7/F3 (abort AI).
+
+
+### C5 / F4 — PMSSB-12 widzi produkowane kolory
+
+Czytnik koloru karty zastąpiony istniejącym manaSourceOfView. Realne basic
+lands w starszych pinach i sondzie: 2/5 RED przed zmianą; nowe 8 pinów
+(Mountain/Forest/Plains, kontroler, tap, Manor/Gond/Heap) 7/8 RED → razem
+13 GREEN. Podmiana przed-C5 9 RED, trzy mutacje 2/1/2 RED, odtworzone.
+Golden slow 4/4, fast **6861/6861**, build **69 / 4528,1 kB**, quick 672
+identyczny z C4 (76,8%/98,5%, 0 stalls). Bez ruszania wag, fixture i progów.
+Pozostały nagłówek Drive (F2), klasyfikacja abortu (F3) i końcowe bramki.
+
+
+### C6 / F2 — pierwszy nagłówek partii AI
+
+Builder nie gubi braku newGame (nullish ≠ false); logger rozstrzyga automat,
+main przekazuje surowy wpis. Historyczna kompozycja również poprawna,
+explicit true/false zachowane. 6 pinów: 5 RED → 6 GREEN; razem 15/15,
+mutacje/podmiany 6/6/2 RED. Fast **6867/6867**, build **69 / 4528,3 kB**.
+Tylko lokalny stub transportu, bez zapisu do Dokumentów Google.
+Pozostały F3 i końcowe bramki/żywe partie.
+
+
+### C7 / F3 — prawidłowa przyczyna przerwania AI
+
+Anulowanie po nagłówkach i w text/json nie jest timeoutem. Wspólny wynik
+przerwania; zewnętrzny abort zatrzymuje timer (pierwsza przyczyna wygrywa).
+13 nowych pinów: 6 RED → 13 GREEN; razem 44/44, 7 selektywnych mutacji
+wykrytych, listener/timer sprzątane. Fast **6880/6880**, build **69 / 4528,3 kB**.
+Zero płatnych zapytań i kluczy. Wszystkie F1–F7 poprawione przyrostowo;
+końcowy all oraz żywe partie i handoff nadal przed nami.
+
+
+### Żywy Tester — aneks przed dodatkowymi naprawami
+
+4 przebiegi (3 rozdania + quiet/verbose pierwszego): wszystkie naturalnie
+ukończone, 0 flag/wyjątków, 70/29/59 sond noop. Ręczna lektura, mimo 0 flag,
+znalazła F8: deklaracja ataku przy Fleeting Distraction na stosie (potwierdzone
+execute ok:true przy stack=1) i F9: opisy płatnych triggerów bez ceny/koloru
+oraz artefakt z etykietą „śmierć stwora”. Szczegółowe dowody i mini-roadmapa
+D1/D2 w planie/raporcie, przed nowym kodem. Brama aneksu 6880/6880 + build
+69 / 4528,3 kB. Końcowy all po tych dwóch poprawkach.
+
+
+### D1 / F8 — deklaracje nie wchodzą w zajęty stos
+
+Bramki obu walidatorów + brakująca bramka oferty ataku. 4/7 RED → 7 GREEN,
+trzy mutacje po 2 RED. Fixture Ragavana poprawiony (najpierw resolve Raise
+the Alarm, potem atak; asercje haste zostają). Celowane 55/55, fast
+**6887/6887**, build **69 / 4528,7 kB**, golden 4/4, quick 672 bez zmiany
+wygranych (76,8%/98,5%, 0 stalls). Rerun live 20260928 potwierdził pusty stos
+przed deklaracją, naturalny koniec i 0 flag; właściwy fragment przeczytany.
+D2/F9 (opisy płatności) i końcowe all/handoff nadal otwarte.
+
+
+### D2 / F9 — tekst płatnych triggerów zgodny z danymi
+
+Pełne pipy many i życia, opcjonalność/warunek, bez dublowania nóg pay.
+Forebear 1W, Spire bez fałszywego automatu, Zoraline WB+2 życia; niezmienione
+zwykłe triggery. Neutralne dies dla artefaktów, czytelne cannot_pay, stały
+endure 1 w opisie. 14 pinów: 12 RED → 14 GREEN, 11 mutacji wykrytych,
+27/27 celowanych. Fast **6901/6901**, build **69 / 4529,5 kB**; rerun żywy
+20260930 potwierdził poprawny kafel i log (0 flag, naturalny koniec).
+F1–F9 naprawione; następny pełny all i finalny handoff.
+
+
+### Zamknięcie sesji 2026-09-28 — pełna bramka i handoff
+
+F1–F9 naprawione. Pełny `npm run test:all` po F9: **7172/7172**, 7 suites,
+0 fail/cancelled/skipped/todo, **529465,689831 ms**, exit 0; build **69 modułów /
+4529,5 kB**. +141 testów względem bazy #140. Ostatni fast 6901/6901,
+golden 4/4, quick 672 (76,8% vs aggro, 98,5% vs random, 0 stalls).
+6 naturalnie zakończonych przebiegów live (3 rozdania + powtórki), bez
+wyjątków/flag; ręczna lektura znalazła F8/F9 i potwierdziła ich reruny.
+Raport per plik i dowody w AUDYT_PR140_2026-09-28; trwały handoff
+`docs/setup/HANDOFF_2026-09-28.md`. Bez nowych kart, zmian progów/manifestu,
+płatnych API, zdalnych zapisów Drive, B0-full ani merge. PR #142 do review.
+
+
+## 2026-09-28 — dodatkowe zlecenie A/B w PR #142
+
+Po resecie workspace odzyskano historię do ea184ac (pliki bitowo identyczne,
+backup + reset mixed, bez utraty pracy). Nowy plan A/B wypchnięty jako f9c8caa.
+A: klient rozróżnia pierwszy wpis po URL/trybie/gameId i nie zapamiętuje
+błędu fetch. Code.gs pod lockiem wykrywa pierwszą partię z metadanych danej
+karty dokumentu, niezależnie od starego newGame:false; retry/reload nie
+dubluje H1. Native Heading1 + page break (bez pustej pierwszej strony),
+normalny styl treści i obsługa zagnieżdżonych kart. 10 nowych testów wykonuje
+Code.gs w VM: 10 RED → 10 GREEN, 25/25 z regresjami, 10 mutacji wykrytych.
+Fast 6911/6911, build 69 / 4529,4 kB. Instrukcja nakazuje wdrożenie Nowej
+wersji Apps Script — agent nie ma dostępu do konta właściciela. B w toku.
+
+
+## 2026-09-28 — A/B: nagłówki AI i lokalne MP3
+
+Kontynuacja w PR #142. A: scope per URL/mode/gameId, writer per karta Docs,
+retry/reload nie dubluje H1; native Heading1 + page break bez pustej strony,
+NORMAL, zagnieżdżone karty. 10 RED→10 GREEN, 25/25, fast 6911/6911, build
+69/4529,4 kB, 10 mutacji. Instrukcja wymaga Nowej wersji `/exec` na koncie
+właściciela; brak zdalnych zapisów.
+B: `cardSoundUrls` z artId i poprawnymi ścieżkami Pages/dist/file:,
+`createCardSoundPlayer` z timeoutem i stop/cancel, fasada `playCastSound`
+przekazuje kartę do adaptera, starszy gracz nadal działa. 19 RED→19 GREEN,
+49/49 dźwięków, 62/62 celowanych; Chromium smoke (sparticuz + playwright,
+web security ON) 4 warianty + artefakt, zero wyjątków; `snd/` ignorowany.
+Fast 6934/6934, build 70/4536,3 kB, final all **7205/7205** (367835 ms),
+build 70/4536,3 kB, +174 vs #140. Bez nowych kart/progów/B0/API. PR OPEN.

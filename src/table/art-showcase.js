@@ -62,6 +62,8 @@ export function createArtShowcaseQueue({ isOpen, open }) {
       }
       return false;
     },
+    /** Nowa partia/import unieważnia prezentacje poprzedniej sesji. */
+    clear() { queue.length = 0; },
     /** Ile rzutów jeszcze czeka (do logów i testów). */
     get pending() { return queue.length; },
   });

@@ -739,8 +739,9 @@ export function chooseOneOrBothPlanOf(commands) {
   }
   const maxArity = Math.max(...arityOf.values());
   if (maxArity < 2) {
-    // Kształt B (uwaga z gry 2026-09-22 — Twiddle): same tryby 1-CELOWE
-    // („tapnięcie albo odkręcenie celu”, „kontra albo zwrot”, …). Właściciel:
+    // Kształt B: same tryby 1-CELOWE („kontra albo zwrot”, np. Steel Sabotage).
+    // Historyczne zgłoszenie dotyczyło Twiddle; od F7/PR140 ta karta jest
+    // niemodalna i NIE używa tej gałęzi. Właściciel zgłaszał:
     // „zamiast modala wyboru wszystkich możliwych celów do tapnięcia
     // i odtapowania dostaję jakieś losowe (pewnie pierwsze możliwe) targety —
     // jeden do tapa, jeden do untapa”. Gniazdo = KAŻDY tryb (kandydaci tego

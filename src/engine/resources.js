@@ -1,6 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
-import { effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant } from './permanents.js';
 import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
@@ -693,11 +693,11 @@ export function millsLibraryOnTap(state, object) {
         ? [undefined, null, 'you', 'controller', 'source_controller'].includes(eff?.applyTo)
         : eff?.applyTo === applyTo));
   });
-  if ((object.abilities ?? []).some(miele)) return true;
+  if (effectiveAbilities(object).some(miele)) return true;
   for (const id of state.zones.battlefield) {
     const zal = state.objects.get(id);
     if (!zal || zal.zone !== 'battlefield' || zal.attachedTo !== object.id) continue;
-    if ((zal.abilities ?? []).some(miele)) return true;
+    if (effectiveAbilities(zal).some(miele)) return true;
   }
   return false;
 }
@@ -758,7 +758,7 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
     if (excludedFree != null && excludedFree.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue; // landy liczy untappedLandManaSources
-    for (const ability of object.abilities ?? []) {
+    for (const ability of effectiveAbilities(object)) {
       if (ability?.type !== 'activated') continue;
       const cost = ability.cost ?? {};
       const costKeys = Object.keys(cost).filter((key) => cost[key]);
@@ -818,7 +818,7 @@ export function untappedCostedManaSources(state, playerId, excludeSourceId = nul
     if (excluded != null && excluded.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue;
-    const ownAbilities = object.abilities ?? [];
+    const ownAbilities = effectiveAbilities(object);
     for (let abilityIndex = 0; abilityIndex < ownAbilities.length; abilityIndex += 1) {
       const ability = ownAbilities[abilityIndex];
       if (ability?.type !== 'activated') continue;

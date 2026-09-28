@@ -1,7 +1,7 @@
 import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardInOpponentGraveyard } from './zones.js';
-import { triggerTargetEffectFriendly } from './effect-intent.js';
+import { optionalEffectVariants, triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
@@ -2207,8 +2207,8 @@ export function resolveTopOfStack(state) {
       return state.events.slice(before);
     }
     // Fix A/Twiddle (2026-09-27): tryby modalne też mogą wstrzymać
-    // rozstrzyganie — generyczny „you may" efektu czaru (`effect.may`, np.
-    // Twiddle „You may tap or untap target ..."). Wstrzymanie niesie kontekst
+    // rozstrzyganie — generyczny „you may" efektu czaru (`effect.may`).
+    // Twiddle jest niemodalny (F7/PR140). Wstrzymanie niesie kontekst
     // modalny (cele trybu + nazwa do logu), bo finishPendingSpell liczy cele
     // z deskryptora niemodalnego; wznowienie robi resumeSuspendedSpell.
     const modeEffects = mode.effects ?? [];
@@ -2230,10 +2230,15 @@ export function resolveTopOfStack(state) {
         };
         return state.events.slice(before);
       }
-      // Inne blokady niż `may` zostają przy dotychczasowym zachowaniu gałęzi
-      // (ignorowanie wyniku — niszczenie obsługuje holdReplacementResolution
-      // za pętlą); wyłącznie generyczny „you may" wstrzymuje tryb w środku.
-      applyEffect(state, effect, object, effTargets);
+      // Każda blokująca decyzja zachowuje kontekst trybu, nie tylko may.
+      if (applyEffect(state, effect, object, effTargets)) {
+        state.pendingSpell = {
+          stackId, effects: modeEffects.slice(modeEffectIndex + 1),
+          modal: { modeIndex: object.chosenMode, modeName: mode.name ?? null,
+            liveChosen: [...liveChosen], effectBase: modeEffectIndex + 1 },
+        };
+        return state.events.slice(before);
+      }
     }
     if (holdReplacementResolution(state,object,{modal:true,modeIndex:object.chosenMode,modeName:mode.name})) return state.events.slice(before);
     // M271 (błąd #14): strefę zejścia liczy WSPÓLNY helper, nie sztywny grób.
@@ -2242,16 +2247,7 @@ export function resolveTopOfStack(state) {
     // przejąć obsługę z gałęzi niemodalnej niżej (powrót do ręki / wygnanie
     // z reboundReady / wygnanie „on an adventure", tylko przy faktycznym
     // rozstrzygnięciu). Flashback działa już tutaj (CR 702.34a).
-    const zoneModal = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
-    const graveId = `${zoneModal}-${state.objectSequence++}`;
-    moveObjectDirectly(state, stackId, zoneModal, graveId);
-    state.events.push(event('spell_resolved', {
-      fromId: stackId, toId: graveId, cardId: object.cardId, controllerId: object.controllerId,
-      fizzled: false, modal: true, modeIndex: object.chosenMode,
-      // M91 (uwaga D): rozstrzygnięcie też nazywa tryb — gracz widzi w logu,
-      // co się właściwie stało (3 obrażenia vs wygnanie artefaktów).
-      modeName: object.spell?.modes?.[object.chosenMode]?.name ?? null,
-    }));
+    finishModalSpell(state, object, { modeIndex: object.chosenMode, modeName: mode.name ?? null });
     return state.events.slice(before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
@@ -2405,10 +2401,22 @@ function resolveFireball(state, stackId, object, before) {
   return state.events.slice(before);
 }
 
+/** Jedna interpretacja zapisanej decyzji dla legalCommands i execute. */
+export function optionalSpellEffectChoices(state, pending) {
+  const source = state.objects.get(pending.sourceId);
+  if (!source || source.zone !== 'stack') return [];
+  const effects = pending.modeIndex != null
+    ? (source.spell?.modes?.[pending.modeIndex]?.effects ?? [])
+    : (pending.cleaved ? (source.spell?.cleave?.effects ?? source.spell?.effects ?? []) : (source.spell?.effects ?? []));
+  const effect = effects[pending.effectIndex];
+  const target = state.objects.get(pending.targetIds?.[effect?.targetIndex ?? 0]);
+  return optionalEffectVariants(effect, target);
+}
+
 /**
  * Fix A/Twiddle (2026-09-27): generyczny „you may" efektu czaru.
  * Kolejkuje blokującą decyzję Tak/Nie PRZED zastosowaniem efektu z flagą
- * `may` (dziś tylko tryby Twiddle „You may tap or untap target ...").
+ * `may` (Twiddle: wraz z wyborem tap/untap; nie jest czarem modalnym).
  * Wywołujący wstrzymuje czar w state.pendingSpell (jak inne blokady);
  * wznowienie: resolve_optional_spell_effect → resumeSuspendedSpell.
  */
@@ -2433,6 +2441,24 @@ export function queueOptionalSpellEffect(state, object, effect, { modeIndex = nu
   return true;
 }
 
+/** Wspólne zejście modalnego oryginału/kopii, także po blokującej decyzji. */
+function finishModalSpell(state, object, modal) {
+  let toId = null;
+  if (object.isSpellCopy) {
+    state.zones.stack = state.zones.stack.filter((id) => id !== object.id);
+    state.objects.delete(object.id);
+  } else {
+    const zone = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
+    toId = `${zone}-${state.objectSequence++}`;
+    moveObjectDirectly(state, object.id, zone, toId);
+  }
+  state.events.push(event('spell_resolved', {
+    fromId: object.id, toId, cardId: object.cardId, controllerId: object.controllerId,
+    fizzled: false, modal: true, modeIndex: modal.modeIndex, modeName: modal.modeName ?? null,
+    ...(object.isSpellCopy ? { copy: true } : {}),
+  }));
+}
+
 /**
  * Wznowienie wstrzymanego czaru po decyzji — także MODALNEGO (pendingSpell
  * z kontekstem `modal`: zapisane cele trybu + nazwa do logu). Niemodalny =
@@ -2444,10 +2470,14 @@ export function queueOptionalSpellEffect(state, object, effect, { modeIndex = nu
  * w trybie (do odczytu deskryptora przy zagnieżdżonym `may`).
  */
 export function resumeSuspendedSpell(state, spellPending) {
-  if (!spellPending?.modal) return finishPendingSpell(state, spellPending.stackId, spellPending.effects);
-  const before = state.events.length;
-  const object = state.objects.get(spellPending.stackId);
+  const object = state.objects.get(spellPending?.stackId);
   if (!object || object.zone !== 'stack') throw new Error('Wstrzymany czar nie jest na stosie');
+  // CR 117.2e/117.3b: priorytet wyboru jest tylko reprezentacją decyzji,
+  // nie prawdziwym oknem odpowiedzi. Kolejna decyzja ma zapamiętać aktywnego
+  // gracza, nawet gdy jej poprzednik (np. discard) odtwarza priorytet później.
+  if (state.turn?.activePlayerId) state.turn.priorityPlayerId = state.turn.activePlayerId;
+  if (!spellPending.modal) return finishPendingSpell(state, spellPending.stackId, spellPending.effects);
+  const before = state.events.length;
   const modal = spellPending.modal;
   const base = Number.isInteger(modal.effectBase) ? modal.effectBase : 0;
   const remaining = spellPending.effects ?? [];
@@ -2467,19 +2497,18 @@ export function resumeSuspendedSpell(state, spellPending) {
       };
       return state.events.slice(before);
     }
-    applyEffect(state, effect, object, effTargets);
+    if (applyEffect(state, effect, object, effTargets)) {
+      state.pendingSpell = {
+        stackId: spellPending.stackId, effects: remaining.slice(i + 1),
+        modal: { ...modal, effectBase: base + i + 1 },
+      };
+      return state.events.slice(before);
+    }
   }
   if (holdReplacementResolution(state, object, { modal: true, modeIndex: modal.modeIndex, modeName: modal.modeName })) {
     return state.events.slice(before);
   }
-  const zoneModal = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
-  const graveId = `${zoneModal}-${state.objectSequence++}`;
-  moveObjectDirectly(state, spellPending.stackId, zoneModal, graveId);
-  state.events.push(event('spell_resolved', {
-    fromId: spellPending.stackId, toId: graveId, cardId: object.cardId,
-    controllerId: object.controllerId, fizzled: false, modal: true,
-    modeIndex: modal.modeIndex, modeName: modal.modeName ?? null,
-  }));
+  finishModalSpell(state, object, modal);
   return state.events.slice(before);
 }
 
@@ -2494,11 +2523,25 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     ? (object.spell.cleave.targets ?? [])
     : (object.spell.targets ?? []);
   const legalTargets = collectLegalTargets(state, targetSpec, object.chosenTargets ?? [], object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
-  for (const effect of remainingEffects ?? []) {
+  const remaining = remainingEffects ?? [];
+  const fullEffects = object.cleaved && object.spell.cleave ? object.spell.cleave.effects : object.spell.effects;
+  // pendingSpell.effects jest SUFIKSEM rozstrzyganej listy. Liczymy indeks
+  // pozycyjnie, nie przez tożsamość obiektu (działa też po serializacji/kopii).
+  const effectBase = (fullEffects ?? []).length - remaining.length;
+  for (let index = 0; index < remaining.length; index++) {
+    const effect = remaining[index];
+    if (effect?.may === true) {
+      queueOptionalSpellEffect(state, object, effect, {
+        effectIndex: effectBase + index, targetIds: [...legalTargets],
+        cleaved: Boolean(object.cleaved && object.spell.cleave),
+      });
+      state.pendingSpell = { stackId, effects: remaining.slice(index + 1) };
+      return state.events.slice(before);
+    }
     const blocked = applyEffect(state, effect, object, legalTargets);
     if (blocked) {
       // Decyzja zagnieżdżona (np. surveil po surveil) — czekamy dalej.
-      state.pendingSpell = { stackId, effects: remainingEffects.slice(remainingEffects.indexOf(effect) + 1) };
+      state.pendingSpell = { stackId, effects: remaining.slice(index + 1) };
       return state.events.slice(before);
     }
   }

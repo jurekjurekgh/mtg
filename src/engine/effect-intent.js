@@ -178,3 +178,16 @@ export function triggerTargetEffectFriendly(ability) {
     || e?.type === 'return_card_from_graveyard_to_hand'
     || e?.type === 'put_graveyard_card_on_top');
 }
+
+/**
+ * Działania dostępne przy stosowaniu opcjonalnego efektu. CR 608.2d:
+ * nie można wybrać czynności niemożliwej (np. tapnięcia tapped permanenta).
+ * Wspólne dla oferty/walidacji engine oraz prognozy bota na PUBLICZNYM celu.
+ * To lista do WYBORU, nie automatyczny toggle; odmowa to osobna odpowiedź `apply:false`.
+ */
+export function optionalEffectVariants(effect, target) {
+  if (!effect) return [];
+  if (effect.type !== 'tap_or_untap_permanent') return [effect];
+  if (!target || (target.zone != null && target.zone !== 'battlefield')) return [];
+  return [{ ...effect, type: target.tapped ? 'untap_permanent' : 'tap_permanent' }];
+}

@@ -2213,7 +2213,7 @@ export function setDayNight(state, designation) {
   const transformKeyword = designation === 'night' ? 'daybound' : 'nightbound';
   for (const object of state.objects.values()) {
     if (object.zone !== 'battlefield') continue;
-    if (!(object.keywords ?? []).includes(transformKeyword)) continue;
+    if (!effectiveKeywords(object, state).includes(transformKeyword)) continue;
     if (!object.transformTo) continue;
     const before = state.events.length;
     // `dayNightDriven`: jedyna legalna droga obrotu permanentu daybound/
@@ -3028,7 +3028,7 @@ function processTriggersScan(state, recentEvents) {
       // także poza resolvePermanentSpell (reanimacja, search, bounce).
       // Cast w nocy już transformuje przed eventem, więc tu widzimy
       // nightbound i nie dublujemy.
-      const enterKw = entered.keywords ?? [];
+      const enterKw = effectiveKeywords(entered, state);
       if (state.dayNight === null && (enterKw.includes('daybound') || enterKw.includes('nightbound'))) {
         // CR 702.145d: kontrola permanentu z daybound przy „ani dzień, ani
         // noc" → dzień. CR 702.145g (dosłownie, CR 2026-08-07): „Any time a
@@ -3038,7 +3038,7 @@ function processTriggersScan(state, recentEvents) {
         // daybound jest gdzieś na polu (release notes: daybound i nightbound
         // wchodzą razem → dzień; wchodzący nightbound wtedy transformuje).
         const dayboundAnywhere = enterKw.includes('daybound')
-          || [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.id !== entered.id && (o.keywords ?? []).includes('daybound'));
+          || [...state.objects.values()].some((o) => o.zone === 'battlefield' && o.id !== entered.id && effectiveKeywords(o, state).includes('daybound'));
         setDayNight(state, dayboundAnywhere ? 'day' : 'night');
         entered = state.objects.get(entered.id) ?? entered;
       } else if (state.dayNight === 'night' && enterKw.includes('daybound') && entered.transformTo) {

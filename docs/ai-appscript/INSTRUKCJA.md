@@ -8,6 +8,44 @@ NIGDY nie są wysyłane.
 
 Całość robi się RAZ, ~10–15 minut, z Twojego konta Google.
 
+## Aktualizacja nagłówków partii — A, 2026-09-28
+
+**Jeżeli komentarze przychodzą, ale nie ma nagłówka w `observer` / `skit`:**
+
+1. Zaktualizuj stół do wersji z poprawką A.
+2. W Apps Script wklej aktualny **`docs/ai-appscript/Code.gs`**, zachowując
+   własne `DOC_ID`. Zapisanie pliku samo w sobie NIE zmienia `/exec`.
+3. **Wdróż → Zarządzaj wdrożeniami → Edytuj → Wersja: Nowa wersja → Wdróż**.
+   Przy edycji istniejącego wdrożenia jego URL `/exec` pozostaje ten sam.
+4. W Dokumencie wybierz układ **Strony**, nie **Bez stron** (Plik →
+   Ustawienia strony), żeby podziały stron były widoczne.
+5. Uruchom **nową rozgrywkę**, poczekaj na udany komentarz po turze 1
+   w „Zewnętrznym obserwatorze” (`observer`), potem sprawdź też „Skity” (`skit`).
+
+Każda karta trybu ma własną historię partii. Pierwszy zapis `gameId` dostaje
+**natywny Nagłówek 1 Google Docs** „⚔️ Nowa partia: Talia X vs Talia Y”
+(widoczny również w konspekcie), a nie zwykły tekst z `#`. Jeżeli karta ma
+już treść, nagłówek poprzedza **podział strony**. Na pustej karcie nagłówek
+zajmuje istniejącą pierwszą stronę — nie dokładamy pustej strony przed nim.
+
+Skrypt sprawdza metadane już zapisane w wybranej karcie, pod blokadą zapisu:
+- ponowienie tury 1 ani odświeżenie przeglądarki nie dubluje nagłówka;
+- zmiana `observer` → `skit` w tej samej partii tworzy nagłówek także w
+  drugiej karcie (również przy kartach zagnieżdżonych);
+- pierwszy komentarz dopiero po turze 1 też otrzymuje nagłówek;
+- stary klient wysyłający `newGame:false` nie może zgubić początku nowej partii;
+- sam komentarz i metadane mają styl **Zwykły tekst**, nie dziedziczą H1.
+
+Już zapisanej historii bez nagłówków skrypt nie przebudowuje wstecz.
+Nie usuwaj z istniejących wpisów linii `── Tura … · partia … ──`: to trwały
+identyfikator używany do rozpoznawania partii. Gdy przeniesiesz/usuniesz
+wpisy danej partii z karty, jej kolejny komentarz rozpocznie tam nową sekcję.
+
+Test końcowy: dwie różne rozgrywki w `observer` oraz dwie w `skit`; każda
+ma dokładnie jeden H1, a druga zaczyna się na nowej stronie. Testy repo
+wykonują kod skryptu z atrapą API, nie logują się do Twojego konta Google.
+
+
 > Zmiana z Arkusza (AI-R5): Arkusz był niewygodny w czytaniu, więc log
 > przeniósł się do Dokumentu. Jeśli wdrażałeś już wersję arkuszową,
 > po prostu wykonaj poniższe kroki od nowa (nowy dokument, nowy URL) —

@@ -1,10 +1,10 @@
-// PMSSB-12 krok-2: sonda pay-trigger-net (PRE) — spellbomby (dies-pay-draw),
+// PMSSB-12 krok-2: sonda pay-trigger-net (bieżący kod) — spellbomby (dies-pay-draw),
 // descendant (attacks-pay-endure), spire (land-pay-or-sac), forebear (grave!).
 import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { gameObjectDataOf, createCardDeck } from '../src/cards/materialize.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REG = createCardRegistry();
@@ -14,9 +14,11 @@ function setup() {
   s.turn.activePlayerId = 'p1'; s.turn.priorityPlayerId = 'p1';
   addMana(s, 'p1', 14);
   for (let i = 0; i < 30; i++) addObject(s, { id: 'lb' + i, instanceId: 'i-lb' + i, cardId: 'x', controllerId: 'p1', zone: 'library', kind: 'sorcery', power: 0, toughness: 0, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Sorcery'], colors: [], cardName: 'lb' });
-  // R/W-lands (kolory-płatności!) + foe (cel-cant_block!).
-  addObject(s, { id: 'm1', instanceId: 'i-m1', cardId: 'x', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'land', power: 0, toughness: 0, manaCost: 0, abilities: [], keywords: [], subtypes: ['Mountain'], types: ['Land'], colors: ['R'], cardName: 'mtn' });
-  addObject(s, { id: 'p1l', instanceId: 'i-p1l', cardId: 'x', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'land', power: 0, toughness: 0, manaCost: 0, abilities: [], keywords: [], subtypes: ['Plains'], types: ['Land'], colors: ['W'], cardName: 'pln' });
+  // R/W-źródła z rzeczywistego rejestru — landy są BEZBARWNE.
+  for (const [id, cardId] of [['m1', 'basic-mountain'], ['p1l', 'basic-plains']]) {
+    const [{ objectId, ...data }] = createCardDeck({ cardIds: [cardId], ownerId: 'p1', registry: REG });
+    addObject(s, { ...data, id, instanceId: 'i-' + id, controllerId: 'p1', zone: 'battlefield' });
+  }
   addObject(s, { id: 'f1', instanceId: 'i-f1', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
   return s;
 }
@@ -29,7 +31,7 @@ function probe(cardId, cmdPrefix) {
   const opts = b.trace().at(-1).options.filter((o) => o.cmd.startsWith(cmdPrefix + '(c1'));
   console.log(cardId, opts.length ? opts.map((o) => o.score.toFixed(2)).join('/') : 'no-offer');
 }
-console.log('--- PMSSB-12 sonda PRE (R/W-lands + foe) ---');
+console.log('--- PMSSB-12 pomiar bieżący (realne Mountain/Plains + foe) ---');
 probe('panic-spellbomb', 'cast_permanent');
 probe('horizon-spellbomb', 'cast_permanent');
 probe('descendant-of-storms', 'cast_permanent');

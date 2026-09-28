@@ -816,6 +816,9 @@ test('B57/88: rezygnacja tworzy token First Mate Ragavan 2/1 z haste do końca t
   assert.ok((token.types ?? []).includes('Legendary'), 'token jest legendarny (prawo legend)');
   assert.deepEqual(token.keywordGrants, ['haste'], 'haste nadany DO KOŃCA TURY (nie wydrukowany)');
   assert.equal(token.controllerId, 'p1', 'token kontroluje gracz decyzji');
+  // Trigger zakończony, ale Raise the Alarm nadal jest na stosie. Najpierw
+  // rozstrzygnij czar — skok do ataku z niepustym stosem maskował F8.
+  resolve(s);
   // Haste realnie działa: token może atakować w tej samej turze.
   s.turn = jumpToStep(s.turn, 'declare_attackers', 'p1');
   s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';

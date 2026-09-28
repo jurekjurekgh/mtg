@@ -99,16 +99,27 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
     if (!fetchFn) {
       return { ok: false, error: 'Brak `fetch` w tym środowisku — zapytanie do OpenRouter niemożliwe.' };
     }
-    if (signal?.aborted) {
-      return { ok: false, error: 'Przerwano zapytanie do AI.' };
-    }
+    let timedOut = false;
+    const interruptionResult = () => ({
+      ok: false,
+      error: timedOut
+        ? `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s, model ${modelId}) — model nie odpowiedział. Użyj „Ponów”.`
+        : 'Przerwano zapytanie do AI.',
+    });
+    if (signal?.aborted) return interruptionResult();
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const onAbort = () => ctrl?.abort();
+    let timer = null;
+    const onAbort = () => {
+      // Pierwsza przyczyna ma znaczenie: spóźnione ciało ignorujące abort
+      // nie może zmienić anulowania użytkownika w późniejszy timeout.
+      if (timer != null) clearTimeout(timer);
+      ctrl?.abort();
+    };
+    const interrupted = () => timedOut || ctrl?.signal.aborted || signal?.aborted;
     if (ctrl && typeof signal?.addEventListener === 'function') {
       signal.addEventListener('abort', onAbort, { once: true });
     }
-    let timedOut = false;
-    const timer = ctrl && limit > 0
+    timer = ctrl && limit > 0
       ? setTimeout(() => { timedOut = true; ctrl.abort(); }, limit)
       : null;
     try {
@@ -131,15 +142,11 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
         body: JSON.stringify(body),
         ...(ctrl ? { signal: ctrl.signal } : {}),
       });
-      const timeoutError = () => ({
-        ok: false,
-        error: `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s, model ${modelId}) — model nie odpowiedział. Użyj „Ponów”.`,
-      });
       // AI-R6 (C): abort w trakcie schodzenia ciała odpowiedzi (nagłówki
       // zdążyły przyjść, treść nie) wpadał w parsowanie JSON i wychodził
       // jako „pusta odpowiedź” zamiast timeoutu — stąd mylący błąd przy
       // wolnych providerach (60–90 s). Sprawdzamy przerwanie PO odczycie.
-      if (timedOut || ctrl?.signal.aborted) return timeoutError();
+      if (interrupted()) return interruptionResult();
       // AI-R6 (B): ciało czytamy jako TEKST i parsujemy sami — żeby błąd
       // JSON i nie-JSON-owe ciała błędów (HTML pośrednika) pokazać
       // DOSŁOWNIE, a nie połykać (`res.json()` nie zostawia surowizny).
@@ -153,7 +160,7 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
         } catch (error) {
           rawText = '';
         }
-        if (timedOut || ctrl?.signal.aborted) return timeoutError();
+        if (interrupted()) return interruptionResult();
         if (rawText) {
           try {
             data = JSON.parse(rawText);
@@ -167,7 +174,7 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
         } catch (error) {
           jsonError = error instanceof Error ? error.message : String(error);
         }
-        if (timedOut || ctrl?.signal.aborted) return timeoutError();
+        if (interrupted()) return interruptionResult();
       }
       if (!res.ok) {
         // Nie-JSON-owe ciało błędu (np. HTML pośrednika): dokładna treść
@@ -200,15 +207,7 @@ export function createOpenRouterTransport({ getApiKey, providerOnlyFor, fetchImp
       }
       return { ok: true, text };
     } catch (error) {
-      if (timedOut) {
-        return {
-          ok: false,
-          error: `Przekroczono czas oczekiwania (${Math.round(limit / 1000)} s, model ${modelId}) — model nie odpowiedział. Użyj „Ponów”.`,
-        };
-      }
-      if (ctrl?.signal.aborted || signal?.aborted) {
-        return { ok: false, error: 'Przerwano zapytanie do AI.' };
-      }
+      if (interrupted()) return interruptionResult();
       const msg = error instanceof Error ? error.message : String(error);
       return { ok: false, error: `Błąd sieci przy zapytaniu do OpenRouter: ${msg}` };
     } finally {

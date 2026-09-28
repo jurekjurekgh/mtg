@@ -7,6 +7,9 @@ node_modules/
 # Lokalne ilustracje właściciela (~10 GB) — nigdy w Git, zob. SECURITY.md
 img/
 
+# Opcjonalne nagrania właściciela: snd/<artId>.mp3 — jak ilustracje, poza Git.
+snd/
+
 # Śmieci systemowe
 .DS_Store
 Thumbs.db

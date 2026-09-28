@@ -414,6 +414,7 @@ function defaultBotFactory(seed, ctx) {
     set_base_pt_creatures_you_control: 'ustawienie bazowego P/T twoich stworów do końca tury',
     surveil: 'surveil (podgląd wierzchu biblioteki)',
     tap_permanent: 'tapnięcie celu',
+    tap_or_untap_permanent: 'wybór tapnięcia lub odkręcenia przy rozstrzyganiu',
     unearth_return: 'powrót karty z grobu na pole bitwy (unearth)',
     // Batch 58/B5 (Resurrected Cultist): powrót SOBIE z grobu z licznikiem
     // finality — inny kształt niż unearth (bez haste, wygnanie przy śmierci).
@@ -766,7 +767,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza pola bitwy',
   combat_damage_to_player: 'obrażenia bojowe graczowi',
-  dies: 'śmierć stwora',
+  dies: 'położenie do grobu z pola bitwy',
   enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
@@ -2117,6 +2118,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
             : e.reason === 'empty_library' ? 'pusta biblioteka'
+            : e.reason === 'cannot_pay' ? 'nie można opłacić kosztu'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger bez efektu (${why})`;
@@ -2387,7 +2389,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // Fix A/Twiddle: generyczny „you may” efektu czaru.
       case 'optional_spell_effect_required': return `${srcName(e)}${whoN(e.playerId)} decyduje: zastosować efekt? („you may")`;
       case 'optional_spell_effect_resolved': return e.apply
-        ? `${whoN(e.playerId)} stosuje efekt ${nameOf(e.sourceCardId)} („you may": tak)`
+        ? `${whoN(e.playerId)} stosuje efekt ${nameOf(e.sourceCardId)} — ${ABILITY_EFFECT_LABELS[e.effectType] ?? 'wybrana czynność'} („you may": tak)${e.targetId != null ? ` → cel: ${nameOfObject(e.targetId)}` : ''}`
         : `${whoN(e.playerId)} rezygnuje z efektu ${nameOf(e.sourceCardId)} („you may": nie)`;
       default: return e.type;
     }

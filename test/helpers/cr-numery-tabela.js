@@ -12,12 +12,12 @@
 // Wydanie CR: 2026-09-25
 // SHA-256 pliku CR: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca
 // Źródło (ADR 0030): mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0
-// Data pobrania: 2026-09-25
+// Data pobrania: 2026-09-28
 
 export const CR_WYDANIE = "2026-09-25";
 export const CR_SHA256 = "8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca";
 export const CR_ZRODLO = "mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0";
-export const CR_DATA_POBRANIA = "2026-09-25";
+export const CR_DATA_POBRANIA = "2026-09-28";
 
 export const NUMERY = [
   // 1xx
@@ -83,6 +83,8 @@ export const NUMERY = [
   '115.7d',
   '116.3',
   '117.1a',
+  '117.2c',
+  '117.2e',
   '117.3b',
   '117.3c',
   '117.4',
@@ -169,6 +171,7 @@ export const NUMERY = [
   '506.4',
   '506.4b',
   '506.4c',
+  '506.5',
   '508.1',
   '508.1a',
   '508.1b',
@@ -242,6 +245,7 @@ export const NUMERY = [
   '608.2a',
   '608.2b',
   '608.2c',
+  '608.2d',
   '608.2g',
   '608.2h',
   '610.3',
@@ -264,6 +268,7 @@ export const NUMERY = [
   '613.7e',
   '613.7f',
   '613.7g',
+  '613.7n',
   '613.9',
   '614.1c',
   '614.1d',
@@ -508,6 +513,7 @@ export const NUMERY = [
   '730.2b',
   '730.2c',
   '731.2a',
+  '733.1',
   // 8xx
   '800.4a',
   // 9xx

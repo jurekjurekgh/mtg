@@ -1,3 +1,4 @@
+import { optionalEffectVariants } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
@@ -1700,7 +1701,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   // PMSSB-12/F-P (pay-trigger-net, Wave-A): pay-triggery = max(0, like ×
   // (benefit − payMana×1))! Bot płaci ZAWSZE (resolve 75-vs-15!), więc koszt
-  // pewny-iff-trigger. Color-gate: payColors ⊆ kolory-własnych-lądów!
+  // pewny-iff-trigger. Color-gate: payColors ⊆ kolory PRODUKOWANE przez własne lądy.
+  // F4/PR140: manaSource z PlayerView, nie kolory karty (basic jest bezbarwny).
   // SKIP: grave-triggery (forebear — trigger żyje w grobie, cast-0!) +
   // sacrificeIfUnpaid (spire — gałąź-lądowa F-P2!) + pay_mana-nogi.
   const anticipatedPayValue = (view, def) => {
@@ -1709,7 +1711,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const o of view.zones?.battlefield ?? []) {
       if (o.controllerId !== view.playerId) continue;
       if (!(o.types ?? []).includes('Land') && o.kind !== 'land') continue;
-      for (const c of o.colors ?? []) landColors.add(c);
+      for (const c of koloryZrodlaWidoku(o)) landColors.add(c);
     }
     let total = 0;
     for (const ability of def.abilities ?? []) {
@@ -5985,7 +5987,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const effects = (modalEffects
           ?? ((cmd.type === 'cast_cleave' && spell.cleave ? spell.cleave.effects : spell.effects) ?? []))
           .filter(e => (!e?.condition?.wasKicked || cmd.kicked === true)
-            && (!e?.condition?.wasGifted || cmd.gifted === true));
+            && (!e?.condition?.wasGifted || cmd.gifted === true))
+          // Prognoza aktualnie możliwej czynności (nie wybór przy rzucaniu).
+          // Rzeczywista decyzja ma własne oferty po odpowiedziach przeciwnika.
+          .flatMap(effect => effect?.type === 'tap_or_untap_permanent'
+            ? optionalEffectVariants(effect, objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target)
+            : (effect ? [effect] : []));
         // M247 anti-overfix (Vandalize „Zniszcz ląd"): kara „czysty ląd jako
         // cel removalu" NIE obejmuje efektów ZAPROJEKTOWANYCH pod niszczenie
         // lądów — rozpoznajemy je po specu celu z deskryptora: slot typu

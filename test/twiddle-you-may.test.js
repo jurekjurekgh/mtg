@@ -1,3 +1,6 @@
+// F7/PR140 (2026-09-28): korekta Oracle — Twiddle NIE jest modalny.
+// Poniższa historia Fix A dotyczy wcześniejszej reprezentacji; piny
+// zachowują odmowę/wznowienie, ale tap/untap wybierają przy rozstrzyganiu.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -45,10 +48,10 @@ function putCard(state, id, cardId, controllerId = 'p1', zone = 'battlefield') {
   });
 }
 
-function castTwiddle(state, modeIndex, targetId = 'cel') {
+function castTwiddle(state, targetId = 'cel') {
   const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell'
-    && c.objectId === 'tw' && c.modeIndex === modeIndex && (c.targets ?? [])[0] === targetId);
-  assert.ok(cast, `oferta trybu ${modeIndex} z celem ${targetId}`);
+    && c.objectId === 'tw' && c.modeIndex == null && (c.targets ?? [])[0] === targetId);
+  assert.ok(cast, `niemodalna oferta z celem ${targetId}`);
   assert.ok(execute(state, cast).ok, 'rzut Twiddle');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, 'pass p1');
   assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok, 'pass p2');
@@ -89,22 +92,22 @@ test('FixA-T0: Szaman (beginning_of_combat) — decline przy celu działa (pin z
   assert.equal(state.zones.stack.length, 0, 'skrót E: trigger nie idzie na stos');
 });
 
-test('FixA-T1: Twiddle tap + Nie — cel nietknięty, czar w grobie, tryb w logu', () => {
+test('FixA-T1: Twiddle tap + Nie — cel nietknięty, czar w grobie, bez trybu w logu', () => {
   const state = twiddleTable();
-  castTwiddle(state, 0);
+  castTwiddle(state);
   answerMay(state, 'p1', false);
   assert.equal(state.objects.get('cel').tapped, false, 'odmowa = brak tapnięcia');
   assert.equal(state.zones.stack.length, 0, 'stos pusty po decyzji');
   const resolved = state.events.find((e) => e.type === 'spell_resolved');
-  assert.ok(resolved && resolved.modal === true, 'modalny spell_resolved po wznowieniu');
-  assert.equal(resolved.modeName, 'Tapnięcie', 'nazwa trybu w zdarzeniu');
+  assert.ok(resolved && resolved.modal !== true, 'niemodalny spell_resolved po wznowieniu');
+  assert.equal(resolved.modeName ?? null, null, 'brak fikcyjnego trybu');
   const grave = state.zones.graveyard.map((id) => state.objects.get(id)?.cardId);
   assert.ok(grave.includes('twiddle'), 'Twiddle w grobie');
 });
 
 test('FixA-T2: Twiddle tap + Tak — cel tapnięty', () => {
   const state = twiddleTable();
-  castTwiddle(state, 0);
+  castTwiddle(state);
   answerMay(state, 'p1', true);
   assert.equal(state.objects.get('cel').tapped, true);
   assert.equal(state.zones.stack.length, 0);
@@ -112,17 +115,18 @@ test('FixA-T2: Twiddle tap + Tak — cel tapnięty', () => {
 
 test('FixA-T3: Twiddle untap + Tak — cel odkręcony', () => {
   const state = twiddleTable(true);
-  castTwiddle(state, 1);
+  castTwiddle(state);
   answerMay(state, 'p1', true);
   assert.equal(state.objects.get('cel').tapped, false);
   const resolved = state.events.find((e) => e.type === 'spell_resolved');
-  assert.equal(resolved?.modeName, 'Odkręcenie');
+  assert.ok(resolved && resolved.modal !== true);
+  assert.equal(state.events.find((e) => e.type === 'optional_spell_effect_resolved').effectType, 'untap_permanent');
 });
 
 test('FixA-T4: Twiddle fizzle (cel nielegalny) — brak pytania „you may"', () => {
   const state = twiddleTable();
   const cast = playerView(state, 'p1').legalCommands.find((c) => c.type === 'cast_spell'
-    && c.objectId === 'tw' && c.modeIndex === 0 && (c.targets ?? [])[0] === 'cel');
+    && c.objectId === 'tw' && c.modeIndex == null && (c.targets ?? [])[0] === 'cel');
   assert.ok(cast, 'oferta rzutu');
   execute(state, cast);
   // Cel znika w odpowiedzi (strefa grobu) — przy rozstrzygnięciu nielegalny.
@@ -166,26 +170,26 @@ test('FixA-T5: etykiety decyzji may — Tak nazywa czynność i cel, Nie to odmo
 });
 
 test('FixA-T6: bot — tapnij wrogi / odkręć własny, reszta to odmowa', () => {
-  const decide = (modeIndex, celController, tapped) => {
+  const decide = (celController, tapped) => {
     const state = newState();
     putCard(state, 'cel', 'highland-game', celController, 'battlefield');
     if (tapped) state.objects.set('cel', Object.freeze({ ...state.objects.get('cel'), tapped: true }));
     putCard(state, 'tw', 'twiddle', 'p1', 'hand');
     addMana(state, 'p1', 1, { colors: ['U'] });
-    castTwiddle(state, modeIndex);
+    castTwiddle(state);
     return createHeuristicBot({ seed: 7 }).chooseCommand(playerView(state, 'p1'), {});
   };
-  assert.equal(decide(0, 'p2', false)?.apply, true, 'tap wrogiego: Tak');
-  assert.equal(decide(0, 'p1', false)?.apply, false, 'tap własnego: Nie');
-  assert.equal(decide(1, 'p1', true)?.apply, true, 'untap własnego tapniętego: Tak');
-  assert.equal(decide(1, 'p2', false)?.apply, false, 'untap wrogiego: Nie');
+  assert.equal(decide('p2', false)?.apply, true, 'tap wrogiego: Tak');
+  assert.equal(decide('p1', false)?.apply, false, 'tap własnego: Nie');
+  assert.equal(decide('p1', true)?.apply, true, 'untap własnego tapniętego: Tak');
+  assert.equal(decide('p2', true)?.apply, false, 'untap wrogiego: Nie');
 });
 
 test('FixA-T7: generyczny may działa też niemodalnie (syntetyczny czar na stosie)', () => {
   const state = newState();
   putCard(state, 'cel', 'highland-game', 'p2', 'battlefield');
   addObject(state, {
-    id: 'stack-spell', instanceId: 'i-stack-spell', cardId: 'twiddle',
+    id: 'stack-spell', instanceId: 'i-stack-spell', cardId: 'test-optional-tap',
     controllerId: 'p1', ownerId: 'p1', zone: 'stack', kind: 'spell', colors: ['U'],
     spell: {
       timing: 'instant',

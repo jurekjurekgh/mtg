@@ -23,7 +23,7 @@ import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
 import { createOpenRouterTransport } from './ai-client.js';
-import { buildAiDrivePayload, createAiDriveLogger } from './ai-drive.js';
+import { createAiDriveLogger } from './ai-drive.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -39,6 +39,7 @@ import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
+import { createCardSoundPlayer } from './card-sound-player.js';
 import { createTopbarToggles } from './topbar-toggles.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { detectImageMode } from './card-images.js';
@@ -341,7 +342,7 @@ function bootstrapTable() {
         // AI-R7: udana odpowiedź wchodzi do rejestru rozmowy (wstawka
         // assistant przy następnych turach; retry nadpisuje tę samą turę).
         aiChat.recordReply(slot.meta?.turn, slot.result.text);
-        void aiDriveLog(buildAiDrivePayload({
+        void aiDriveLog({
           mode: slot.meta?.mode ?? aiConfig.mode,
           gameId: slot.meta?.gameId ?? '',
           turn: slot.meta?.turn ?? 0,
@@ -349,7 +350,7 @@ function bootstrapTable() {
           response: slot.result.text,
           tsClient: new Date().toISOString(),
           decks: slot.meta?.decks ?? '',
-        }));
+        });
       }
     },
   });
@@ -410,15 +411,19 @@ function bootstrapTable() {
   // 15f (zlecenie właściciela): ikonki-toggle belki + dźwięki czarów.
   // Odtwarzacz PRZED przełącznikami (callback dźwięku go budzi — klik to
   // gest, więc AudioContext wstaje zgodnie z polityką autoplay).
-  const castSoundPlayer = createSpellSoundPlayer({
-    createContext: () => {
-      try {
-        const AC = window.AudioContext ?? window.webkitAudioContext;
-        return AC ? new AC() : null;
-      } catch {
-        return null;
-      }
-    },
+  const castSoundPlayer = createCardSoundPlayer({
+    baseUrl: document.baseURI,
+    createAudio: () => new window.Audio(),
+    syntheticPlayer: createSpellSoundPlayer({
+      createContext: () => {
+        try {
+          const AC = window.AudioContext ?? window.webkitAudioContext;
+          return AC ? new AC() : null;
+        } catch {
+          return null;
+        }
+      },
+    }),
   });
   const topbarToggles = createTopbarToggles({
     document,
@@ -1434,6 +1439,7 @@ function bootstrapTable() {
 
   /** Zamknięcie warstwy: następny rzut z kolejki albo wznowienie gry (M254/C). */
   function closeArtShowcase() {
+    castSoundPlayer.stop();
     if (!els.artShowcase) return;
     els.artShowcase.className = 'art-showcase';
     els.artShowcase.setAttribute('aria-hidden', 'true');
@@ -2720,6 +2726,14 @@ function bootstrapTable() {
   }
 
   function startGame() {
+    castSoundPlayer.stop();
+    artShowcaseQueue.clear();
+    if (els.artShowcase) {
+      els.artShowcase.className = 'art-showcase';
+      els.artShowcase.setAttribute('aria-hidden', 'true');
+      els.artShowcase.textContent = '';
+    }
+    artShowcaseOpenedAt = 0;
     // M198/B: nowa partia zamyka wiszący komunikat. Dawniej pas tekstu był
     // czyszczony przez `statusNote.textContent = ''`; przy warstwie modala
     // odpowiednikiem jest jej zamknięcie — inaczej komunikat z poprzedniej
@@ -2798,6 +2812,8 @@ function bootstrapTable() {
   }
 
   function importReplay() {
+    castSoundPlayer.stop();
+    artShowcaseQueue.clear();
     if (!session) { showNotice('Najpierw rozpocznij partię — import odtwarza zapis w składzie bieżących talii.'); return; }
     const text = el('replay-out').value.trim();
     try {
