@@ -1701,7 +1701,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   // PMSSB-12/F-P (pay-trigger-net, Wave-A): pay-triggery = max(0, like ×
   // (benefit − payMana×1))! Bot płaci ZAWSZE (resolve 75-vs-15!), więc koszt
-  // pewny-iff-trigger. Color-gate: payColors ⊆ kolory-własnych-lądów!
+  // pewny-iff-trigger. Color-gate: payColors ⊆ kolory PRODUKOWANE przez własne lądy.
+  // F4/PR140: manaSource z PlayerView, nie kolory karty (basic jest bezbarwny).
   // SKIP: grave-triggery (forebear — trigger żyje w grobie, cast-0!) +
   // sacrificeIfUnpaid (spire — gałąź-lądowa F-P2!) + pay_mana-nogi.
   const anticipatedPayValue = (view, def) => {
@@ -1710,7 +1711,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const o of view.zones?.battlefield ?? []) {
       if (o.controllerId !== view.playerId) continue;
       if (!(o.types ?? []).includes('Land') && o.kind !== 'land') continue;
-      for (const c of o.colors ?? []) landColors.add(c);
+      for (const c of koloryZrodlaWidoku(o)) landColors.add(c);
     }
     let total = 0;
     for (const ability of def.abilities ?? []) {

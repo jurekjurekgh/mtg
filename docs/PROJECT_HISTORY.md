@@ -13352,3 +13352,14 @@ Końcowy fast **6853/6853**, build **69 / 4528,0 kB**, quick **672** identyczny
 z C3 (76,8% vs aggro / 98,5% vs random, 0 stalls); snapshot/progi bez zmian.
 Cały TESTER_STOLU przeczytany, jsdom zainstalowany; żywe partie jeszcze nie.
 Następne C5/F4 (kolory źródeł many), C6/F2 (Drive) i C7/F3 (abort AI).
+
+
+### C5 / F4 — PMSSB-12 widzi produkowane kolory
+
+Czytnik koloru karty zastąpiony istniejącym manaSourceOfView. Realne basic
+lands w starszych pinach i sondzie: 2/5 RED przed zmianą; nowe 8 pinów
+(Mountain/Forest/Plains, kontroler, tap, Manor/Gond/Heap) 7/8 RED → razem
+13 GREEN. Podmiana przed-C5 9 RED, trzy mutacje 2/1/2 RED, odtworzone.
+Golden slow 4/4, fast **6861/6861**, build **69 / 4528,1 kB**, quick 672
+identyczny z C4 (76,8%/98,5%, 0 stalls). Bez ruszania wag, fixture i progów.
+Pozostały nagłówek Drive (F2), klasyfikacja abortu (F3) i końcowe bramki.
