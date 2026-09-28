@@ -13383,3 +13383,14 @@ przerwania; zewnętrzny abort zatrzymuje timer (pierwsza przyczyna wygrywa).
 wykrytych, listener/timer sprzątane. Fast **6880/6880**, build **69 / 4528,3 kB**.
 Zero płatnych zapytań i kluczy. Wszystkie F1–F7 poprawione przyrostowo;
 końcowy all oraz żywe partie i handoff nadal przed nami.
+
+
+### Żywy Tester — aneks przed dodatkowymi naprawami
+
+4 przebiegi (3 rozdania + quiet/verbose pierwszego): wszystkie naturalnie
+ukończone, 0 flag/wyjątków, 70/29/59 sond noop. Ręczna lektura, mimo 0 flag,
+znalazła F8: deklaracja ataku przy Fleeting Distraction na stosie (potwierdzone
+execute ok:true przy stack=1) i F9: opisy płatnych triggerów bez ceny/koloru
+oraz artefakt z etykietą „śmierć stwora”. Szczegółowe dowody i mini-roadmapa
+D1/D2 w planie/raporcie, przed nowym kodem. Brama aneksu 6880/6880 + build
+69 / 4528,3 kB. Końcowy all po tych dwóch poprawkach.
