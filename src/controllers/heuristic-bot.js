@@ -4079,6 +4079,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // potrzebował dopisku w trzech miejscach (zlecenie właściciela, L28).
     ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
+    // B (zgłoszenie właściciela 2026-09-28e, Withstand): bliźniak powyższego —
+    // tarcza „prevent the next N damage” to efekt PRZYJAZNY celowi; bez wpisu
+    // (i bez obsługi celu-gracza w friendlyMisaimPenalty) darmowe rzuty
+    // Epic Experiment remisowały warianty i bot brał pierwszy cel z brzegu
+    // — „Nieprzyjaciel rzuca Withstand → cel: Ty” (osłona PRZECIWNIKA).
+    ['prevent_next_damage', 40],
     ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
   ]);
   const BENEFICIAL_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
@@ -4102,8 +4108,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (friendCost != null) {
         const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
         const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
-        if (beneficiary && beneficiary.controllerId && beneficiary.controllerId !== view.playerId) {
-          penalty += friendCost + (beneficiary.power ?? 0);
+        // B (zgłoszenie właściciela 2026-09-28e): cel-GRACZ nie jest obiektem
+        // na polu bitwy — `objectOnBoard` go nie widzi i kara za przyjazny
+        // efekt we wroga nie naliczała się dla graczy (Withstand → „Ty”).
+        // Slot-gracza rozstrzygamy po id: wróg = beneficjent, my = pomijamy.
+        const beneficiaryId = beneficiary?.controllerId
+          ?? ((slot === enemyId || slot === view.playerId) ? slot : null);
+        if (beneficiaryId && beneficiaryId !== view.playerId) {
+          penalty += friendCost + (beneficiary?.power ?? 0);
         }
       }
       // Życie dla PRZECIWNIKA (gain_life_target w cel-gracza).
@@ -4243,10 +4255,102 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return score;
   }
 
+  /**
+   * B (zgłoszenie właściciela 2026-09-28e) — wartość tarczy prewencji
+   * „prevent the next N damage” na SLOCIE celu (Withstand). Taktyka właściciela
+   * (log: „Nieprzyjaciel rzuca Withstand → cel: Ty” z darmowych rzutów
+   * Epic Experiment — „czemu ma preventować dmg u swojego przeciwnika???
+   * On ma zadawać obrażenia przeciwnikowi, a nie preventować je”):
+   *  — NIGDY na przeciwnika (gracza ani stwora): osłanianie wroga własną
+   *    kartą to 100% błędna taktyka — twarda kara przebijająca bazę;
+   *  — combat trick PRZED obrażeniami: ratunek własnego stwora, który
+   *    dostałby lethal (i tarcza realnie go ratuje — M218/2: wynik walki
+   *    się zmienia), albo fog na własną twarz, gdy kreatury przeciwnika
+   *    w nią uderzą;
+   *  — odpowiedź na dmg-spell ze stosem z lethalem na kreaturę bota;
+   *  — reszta własnej strony = skromny cantrip-ok (Q1b).
+   */
+  function preventShieldValue(view, slot, amount) {
+    if (slot == null) return 0;
+    const n = Number.isInteger(amount) ? amount : 1;
+    const meId = view.playerId;
+    const victim = objectOnBoard(view, slot) ?? null;
+    if (slot === (enemy(view)?.id ?? null) || (victim && victim.controllerId !== meId)) {
+      return -80; // osłona PRZECIWNIKA — nigdy
+    }
+    if (victim) {
+      const stackDamage = incomingDamageOnStack(view, victim.id);
+      const threatened = isCreatureThreatened(view, victim) || stackDamage > 0;
+      if (!threatened) return 2 + n;
+      const covers = preventCovers(view, victim, n, stackDamage);
+      return covers ? 18 + (victim.power ?? 0) * 2 + (victim.toughness ?? 0) : 3 + n;
+    }
+    // Własny gracz — „albo u siebie jeśli któryś z kreatur przeciwnika go zrani”.
+    const incoming = faceDamageIncoming(view) + incomingDamageOnStack(view, meId);
+    return incoming > 0 ? 8 + Math.min(n, incoming) : 1 + n;
+  }
+
+  /** Czy tarcza N realnie ratuje stwora (pokrywa nadmiar obrażeń ponad P). */
+  function preventCovers(view, victim, n, stackDamage) {
+    const toughness = victim.toughness ?? 0;
+    const marked = victim.damage ?? 0;
+    // Burn na stosie: tarcza pokrywa nadmiar ponad wytrzymałość.
+    if (stackDamage > 0 && n > marked + stackDamage - toughness) return true;
+    // Zadeklarowana walka: +n wytrzymałości zmienia jej wynik (M218/2) —
+    // przybliżenie absorpcji N obrażeń.
+    if (pumpChangesOutcome(view, victim, { toughness: n })) return true;
+    // Bezpiecznik: tarcza ≥ wytrzymałości (także vs deathtouch).
+    return n >= toughness;
+  }
+
+  /** Suma obrażeń ze STOSU, które trafią w dany cel (burn celowany — B4). */
+  function incomingDamageOnStack(view, targetId) {
+    let total = 0;
+    for (const entry of view.zones.stack ?? []) {
+      if (!(entry.targets ?? []).includes(targetId)) continue;
+      const effs = [...(entry.spell?.effects ?? []),
+        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? []))];
+      for (const e of effs) {
+        if (e?.type === 'damage') total += e.amount ?? 0;
+      }
+    }
+    return total;
+  }
+
+  /** Obrażenia z ZADEKLAROWANEJ walki, które spadną na własnego gracza (B3). */
+  function faceDamageIncoming(view) {
+    const combat = view.combat ?? null;
+    if (!combat) return 0;
+    let total = 0;
+    for (const aid of combat.attackers ?? []) {
+      const attacker = objectOnBoard(view, aid);
+      if (!attacker || attacker.controllerId === view.playerId) continue;
+      total += combatOutcome(view, attacker)?.faceDamage ?? 0;
+    }
+    return total;
+  }
+
+  /** Suma wartości tarcz prewencji w wariancie (cel = slot per effect.targetIndex). */
+  function preventShieldTargetValue(view, effects, cmd) {
+    let total = 0;
+    const targets = cmd.targets ?? [];
+    for (const effect of effects ?? []) {
+      if (effect?.type !== 'prevent_next_damage') continue;
+      total += preventShieldValue(view, targets[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
+    }
+    return total;
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
+    // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
+    // z wartością (ratunek z lethala, fog) obniża karę poniżej zera = premia,
+    // cel na wrogu podnosi ją. Jeden lejek dla całej rodziny darmowych rzutów
+    // (epic/suspend/rebound/madness/exile — L41), więc remisy wariantów
+    // w Epic Experiment nie kończą się już pierwszym celem z brzegu.
     return selfHarmPenalty(view, effects, cmd, target)
-      + friendlyMisaimPenalty(view, effects, cmd, target);
+      + friendlyMisaimPenalty(view, effects, cmd, target)
+      - preventShieldTargetValue(view, effects, cmd);
   }
 
   /**
@@ -6996,22 +7100,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          // M156/Q1 (pętla jakości, Withstand — cantrip z prewencją „any
-          // target"): prewencja bez wyceny = remis wariantów → bot rzucał
-          // „prevent the next 3 damage" na STWORA PRZECIWNIKA (czysta strata
-          // karty + tarcza dla wroga). Generycznie (ADR 0002): prewencja po
-          // WŁASNEJ stronie = skromny plus (sytuacyjna), po stronie wroga =
-          // kara przebijająca bazę 50.
+          // M156/Q1 + B (zgłoszenie właściciela 2026-09-28e, taktyka
+          // właściciela): prewencja celowana ma JEDNO źródło prawdy
+          // `preventShieldValue` (L41) — nigdy cel we wroga; combat trick =
+          // ratunek stwora z lethalem / fog na twarz pod atakiem kreatur
+          // przeciwnika; odpowiedź na dmg-spell z lethalem. Stare ±(2+amount)/60
+          // było płaskie: remis własnych celów → bot brał gracza zamiast
+          // ratowanego stwora (zgłoszenie B2/B4).
           if (effect.type === 'prevent_next_damage') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const victim = slot ? objectOnBoard(view, slot) : null;
-            const amount = effect.amount ?? 1;
-            if (slot === view.playerId || (victim && victim.controllerId === view.playerId)) {
-              score += 2 + amount; // własny stwór/gracz — tarcza na przyszłość
-            } else if (slot != null && (slot === enemy(view)?.id
-              || (victim && victim.controllerId === enemy(view)?.id))) {
-              score -= 60; // osłanianie strony przeciwnika — bezsensowne zagranie
-            }
+            score += preventShieldValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
           }
           // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
           // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
