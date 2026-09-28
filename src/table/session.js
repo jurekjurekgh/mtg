@@ -767,7 +767,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   beginning_of_combat: 'początek walki',
   card_put_into_graveyard_from_nonbattlefield: 'karta do grobu spoza pola bitwy',
   combat_damage_to_player: 'obrażenia bojowe graczowi',
-  dies: 'śmierć stwora',
+  dies: 'położenie do grobu z pola bitwy',
   enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
@@ -2118,6 +2118,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // (Undead Servant przy pustym grobie) — nazywamy to wprost.
           const why = e.reason === 'no_targets' ? 'brak legalnych celów'
             : e.reason === 'empty_library' ? 'pusta biblioteka'
+            : e.reason === 'cannot_pay' ? 'nie można opłacić kosztu'
             : e.reason === 'no_result' ? 'nie było czego wykonać'
             : 'warunek/cele nieaktualne';
           return `${objectOrLki(e.sourceId ?? e.objectId, e.cardId)} — trigger bez efektu (${why})`;

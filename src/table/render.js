@@ -1507,7 +1507,7 @@ function describeEffect(e, ctx = {}) {
     damage_from_target_power: () => 'obrażenia równe mocy stwora',
     damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
     fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
-    endure_x: () => 'endure X (liczniki +1/+1 albo token Spirit)',
+    endure_x: () => `endure ${typeof e.amount === 'number' ? e.amount : 'X'} (liczniki +1/+1 albo token Spirit)`,
     grant_protection_until_end_of_turn: () => 'ochrona do końca tury',
     incubate: () => `inkubuj ${e.amount ?? 1}`,
     return_card_from_graveyard_to_hand: () => 'wróć kartę z grobu na rękę',
@@ -1768,8 +1768,18 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const names = modesList.map((m) => m.name ?? 'tryb').join(' / ');
     return `wybierz tryb: ${names}`;
   }
-  const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
-  const parts = effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', ');
+  // F9: płatność jest warunkiem skutku, nie jego darmowym riderem.
+  // Te same deskryptory bywają też w nogach efektu — nie drukujemy ceny dwa razy.
+  const costs = [];
+  if (trigger.payMana > 0) costs.push(costSymbols(trigger.payMana, trigger.payColors));
+  if (trigger.payLife > 0) costs.push(`${trigger.payLife} życia`);
+  const paidEffect = (description) => costs.length > 0 && !trigger.sacrificeIfUnpaid
+    ? `${mine ? 'możesz' : 'kontroler może'} zapłacić ${costs.join(' i ')}; jeśli tak, ${description}`
+    : description;
+  const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
+    .filter((e) => !(e?.type === 'pay_mana' && trigger.payMana > 0)
+      && !(e?.type === 'pay_life' && trigger.payLife > 0));
+  const parts = paidEffect(effects.filter((e) => e && typeof e.type === 'string' && e.type !== '').map(describeEffect).join(', '));
   // M159/Z2 (Żywy Tester g7, Exterminator Magmarch): trigger z warunkiem
   // multiplayer („if another opponent…”) jest w 1v1 martwy z definicji
   // formatu — kafel mówi to wprost zamiast renderować pusty szum.
@@ -1782,7 +1792,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     return `Gdy ta karta umrze${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
   }
   if (trigger.event === 'combat_damage_to_player') return `Gdy zada obrażenia graczowi: ${parts}.`;
-  if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać {${trigger.payMana ?? 0}} albo ją poświęć (płatność automatyczna).`;
+  if (trigger.event === 'enter_battlefield' && trigger.sacrificeIfUnpaid) return `Gdy wejdzie na pole bitwy: zapłać ${costSymbols(trigger.payMana ?? 0, trigger.payColors)} albo ją poświęć.`;
   if (trigger.event === 'enter_battlefield') {
     // Celowany ETB z obrażeniami (Forge Devil, Reclusive Artificer): damage
     // idzie na CEL — „zada N obrażeń celowi" zamiast gołego „N obrażeń".
@@ -1806,7 +1816,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
       // Gałąź damage celuje słowem „celowi" w środku zdania (bywa z drugim
       // skutkiem typu „obrażenia kontrolerowi") — sufiks typu na końcu zdania
       // myliłby przynależność, więc typ celu opisuje tylko gałąź poniżej.
-      return `Gdy wejdzie na pole bitwy${condSuffix}: ${rew}.`;
+      return `Gdy wejdzie na pole bitwy${condSuffix}: ${paidEffect(rew)}.`;
     }
     return `Gdy wejdzie na pole bitwy${condSuffix}: ${parts}${targetSuffix}.`;
   }
@@ -1844,7 +1854,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     return `Gdy ${what} trafi na ${mine ? 'twój cmentarz' : 'cmentarz kontrolera'} spoza pola bitwy: ${parts}.`;
   }
   if (trigger.event === 'other_creature_you_control_dies') {
-    return `Gdy kontrolowany stwór umiera, a ta karta jest w grobie: zapłać {${trigger.payMana ?? 0}} i wróć na rękę.`;
+    return `Gdy ${mine ? 'twój stwór' : 'stwór kontrolera'} umiera, a ta karta jest w grobie: ${parts}.`;
   }
   if (trigger.event === 'land_entered_under_opponent_control') return `Gdy land wchodzi pod kontrolą przeciwnika: ${parts}.`;
   if (trigger.event === 'end_step') {

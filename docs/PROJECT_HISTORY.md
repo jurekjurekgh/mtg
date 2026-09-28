@@ -13405,3 +13405,14 @@ the Alarm, potem atak; asercje haste zostają). Celowane 55/55, fast
 wygranych (76,8%/98,5%, 0 stalls). Rerun live 20260928 potwierdził pusty stos
 przed deklaracją, naturalny koniec i 0 flag; właściwy fragment przeczytany.
 D2/F9 (opisy płatności) i końcowe all/handoff nadal otwarte.
+
+
+### D2 / F9 — tekst płatnych triggerów zgodny z danymi
+
+Pełne pipy many i życia, opcjonalność/warunek, bez dublowania nóg pay.
+Forebear 1W, Spire bez fałszywego automatu, Zoraline WB+2 życia; niezmienione
+zwykłe triggery. Neutralne dies dla artefaktów, czytelne cannot_pay, stały
+endure 1 w opisie. 14 pinów: 12 RED → 14 GREEN, 11 mutacji wykrytych,
+27/27 celowanych. Fast **6901/6901**, build **69 / 4529,5 kB**; rerun żywy
+20260930 potwierdził poprawny kafel i log (0 flag, naturalny koniec).
+F1–F9 naprawione; następny pełny all i finalny handoff.
