@@ -20,6 +20,8 @@
  * chars, response, tsClient, decks, newGame }`. Czysta, testowalna, toleruje
  * braki pól. `decks` = matchup „X vs Y” do nagłówka partii; `newGame` =
  * pierwszy log tej partii (Code.gs stawia wtedy podział strony + H1).
+ * Brak/null newGame zachowuje brak dyspozycji: dopiero logger rozstrzyga
+ * automat. Jego body POST zawsze niesie boolean, także dla pustego gameId.
  */
 export function buildAiDrivePayload({ mode, gameId, turn, model, response, tsClient, decks, newGame } = {}) {
   const text = String(response ?? '');
@@ -32,7 +34,8 @@ export function buildAiDrivePayload({ mode, gameId, turn, model, response, tsCli
     response: text,
     tsClient: String(tsClient ?? ''),
     decks: String(decks ?? ''),
-    newGame: newGame === true,
+    // Brak nadpisania nie jest jawnym „nie” (F2/PR140, także po JSON round-trip).
+    ...(newGame == null ? {} : { newGame: newGame === true }),
   };
 }
 

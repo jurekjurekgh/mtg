@@ -23,7 +23,7 @@ import { createAiQueue } from './ai-queue.js';
 import { createAiPanel } from './ai-panel.js';
 import { createMockTransport, parseMockFlags } from './ai-mock.js';
 import { createOpenRouterTransport } from './ai-client.js';
-import { buildAiDrivePayload, createAiDriveLogger } from './ai-drive.js';
+import { createAiDriveLogger } from './ai-drive.js';
 import { createRng } from '../engine/rng.js';
 import { createGameState, execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
@@ -341,7 +341,7 @@ function bootstrapTable() {
         // AI-R7: udana odpowiedź wchodzi do rejestru rozmowy (wstawka
         // assistant przy następnych turach; retry nadpisuje tę samą turę).
         aiChat.recordReply(slot.meta?.turn, slot.result.text);
-        void aiDriveLog(buildAiDrivePayload({
+        void aiDriveLog({
           mode: slot.meta?.mode ?? aiConfig.mode,
           gameId: slot.meta?.gameId ?? '',
           turn: slot.meta?.turn ?? 0,
@@ -349,7 +349,7 @@ function bootstrapTable() {
           response: slot.result.text,
           tsClient: new Date().toISOString(),
           decks: slot.meta?.decks ?? '',
-        }));
+        });
       }
     },
   });

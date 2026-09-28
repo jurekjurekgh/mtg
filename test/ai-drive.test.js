@@ -19,7 +19,7 @@ test('AI-E3 drive: payload ma 9 pól kontraktu §6 + chars = długość', () => 
 test('AI-E3 drive: payload toleruje braki (nigdy nie rzuca)', () => {
   assert.deepEqual(buildAiDrivePayload(), {
     mode: 'lore-bot', gameId: '', turn: 0, model: '', chars: 0, response: '', tsClient: '',
-    decks: '', newGame: false,
+    decks: '',
   });
   assert.equal(buildAiDrivePayload({ turn: 'zz', response: 42 }).turn, 0);
   assert.equal(buildAiDrivePayload({ turn: '5' }).turn, 5);

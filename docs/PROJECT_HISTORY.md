@@ -13363,3 +13363,13 @@ lands w starszych pinach i sondzie: 2/5 RED przed zmianą; nowe 8 pinów
 Golden slow 4/4, fast **6861/6861**, build **69 / 4528,1 kB**, quick 672
 identyczny z C4 (76,8%/98,5%, 0 stalls). Bez ruszania wag, fixture i progów.
 Pozostały nagłówek Drive (F2), klasyfikacja abortu (F3) i końcowe bramki.
+
+
+### C6 / F2 — pierwszy nagłówek partii AI
+
+Builder nie gubi braku newGame (nullish ≠ false); logger rozstrzyga automat,
+main przekazuje surowy wpis. Historyczna kompozycja również poprawna,
+explicit true/false zachowane. 6 pinów: 5 RED → 6 GREEN; razem 15/15,
+mutacje/podmiany 6/6/2 RED. Fast **6867/6867**, build **69 / 4528,3 kB**.
+Tylko lokalny stub transportu, bez zapisu do Dokumentów Google.
+Pozostały F3 i końcowe bramki/żywe partie.
