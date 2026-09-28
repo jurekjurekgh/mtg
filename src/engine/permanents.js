@@ -471,12 +471,10 @@ function greatestManaAmongOtherArtifacts(state, object) {
 }
 
 function staticBonuses(state, object) {
-  const bonus = { power: 0, toughness: 0, keywords: [], mechanics: [] };
-  // Xu-Ifit: własne statyki to ZDOLNOŚCI — po stripie nie działają
-  // (cudze hymny na ten obiekt — anthemBonuses — działają, ruling 2 EOE).
-  if (object.abilitiesStripped) return bonus;
+  const bonus = { power: 0, toughness: 0, keywords: [], keywordEntries: [], mechanics: [] };
+  // Czytamy zdolności efektywne: strip usuwa druk, nie późniejsze nadania.
   if (!state || object.zone !== 'battlefield' || object.faceDown) return bonus;
-  for (const ability of object.abilities ?? []) {
+  for (const ability of effectiveAbilities(object)) {
     if (ability?.type !== 'static') continue;
     // Zdolności hymnowe ze scope (Trostani — „other creatures you control")
     // NIE buffują samego źródła — obsługuje je anthemBonuses na INNYCH obiektach.
@@ -513,6 +511,7 @@ function staticBonuses(state, object) {
     bonus.power += power;
     bonus.toughness += toughness;
     bonus.keywords.push(...(ability.keywords ?? []));
+    for (const keyword of ability.keywords ?? []) bonus.keywordEntries.push({ keyword, ts: abilityTimestampOf(object, ability) });
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): zdolność
     // WARUNKOWA to mechanika NAZWANA na karcie (Storied / enduring story) —
     // niosąc samą różnicę P/T, widok skazywał kafel na gołe „+1/0”, z którego
@@ -547,7 +546,7 @@ function anthemBonuses(state, object) {
   for (const source of state.objects.values()) {
     // CR 708.2a: zakryte ŹRÓDŁO nie ma zdolności — nie daje hymnu.
     if (source.zone !== 'battlefield' || source.faceDown) continue;
-    for (const ability of source.abilities ?? []) {
+    for (const ability of effectiveAbilities(source)) {
       if (ability?.type !== 'static' || !ability.scope) continue;
       // Altar of the Goyf: „Lhurgoyf creatures you control have trample." —
       // scope na PODTYP (affects 'creatures_with_subtype', scope.subtype).
@@ -563,8 +562,8 @@ function anthemBonuses(state, object) {
       bonus.power += ability.pump?.power ?? 0;
       bonus.toughness += ability.pump?.toughness ?? 0;
       bonus.keywords.push(...(ability.keywords ?? []));
-      // D4b (CR 613.7a): efekt statyczny ma znacznik obiektu-źródła.
-      for (const keyword of ability.keywords ?? []) bonus.keywordEntries.push({ keyword, ts: timestampOf(source) });
+      // CR 613.7a: późniejszy ze znaczników źródła i nadania zdolności.
+      for (const keyword of ability.keywords ?? []) bonus.keywordEntries.push({ keyword, ts: abilityTimestampOf(source, ability) });
     }
   }
   return bonus;
@@ -773,9 +772,7 @@ function untilEndOfTurnBonuses(state, object) {
  */
 function characteristicDefiningStat(state, object, stat) {
   if (!state || object.zone !== 'battlefield') return null;
-  // Xu-Ifit: CDA to zdolność własna — po stripie nie definiuje statystyki.
-  if (object.abilitiesStripped) return null;
-  for (const ability of object.abilities ?? []) {
+  for (const ability of effectiveAbilities(object)) {
     if (ability?.type !== 'static' || !ability.characteristicDefining) continue;
     const marker = ability.pump?.[stat];
     if (marker === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
@@ -940,6 +937,16 @@ export function entersTappedNow(state, characteristics, { enteringId = null } = 
   return !entersUntappedOverride(state, characteristics, { enteringId });
 }
 
+/** Timestamp statyki: późniejszy z wejścia źródła i nadania zdolności. */
+function abilityTimestampOf(object, ability) {
+  return Math.max(timestampOf(object), ability?.grantedAt ?? 0);
+}
+
+/** F5/PR140: jedna granica czasowa utraty zdolności w warstwie 6. */
+function abilityRemovalTimestamp(object) {
+  return object?.abilitiesStripped ? (object.abilitiesStrippedAt ?? timestampOf(object)) : null;
+}
+
 /**
  * Efektywne zdolności obiektu = własne + nadane „do końca tury"
  * (abilityGrants — np. Fake Your Own Death nadaje stworowi trigger dies).
@@ -973,7 +980,7 @@ export function grantedActivatedAbilities(state, object) {
   const out = [];
   for (const source of state.objects.values()) {
     if (source.zone !== 'battlefield' || source.controllerId !== object.controllerId) continue;
-    for (const ability of source.abilities ?? []) {
+    for (const ability of effectiveAbilities(source)) {
       if (ability?.type !== 'static' || !ability.scope?.grantsAbilities?.length) continue;
       const scope = ability.scope;
       if (scope.subtype && !hasCreatureType(object, scope.subtype, state)) continue;
@@ -981,6 +988,8 @@ export function grantedActivatedAbilities(state, object) {
       // (ma ją wydrukowaną, inaczej pokazalibyśmy ofertę dwa razy).
       if (scope.excludeSelf !== false && source.id === object.id) continue;
       if (!staticConditionHolds(state, source, ability.condition)) continue;
+      const removedAt = abilityRemovalTimestamp(object);
+      if (removedAt != null && abilityTimestampOf(source, ability) <= removedAt) continue;
       out.push(...scope.grantsAbilities);
     }
   }
@@ -1182,8 +1191,8 @@ export function effectiveKeywords(object, state = null) {
       for (const keyword of object.keywords ?? []) entries.push({ keyword, ts: 0, base: true });
     }
     external();
-    // Statyki własne (CR 613.7a — znacznik obiektu).
-    for (const keyword of staticBonuses(state, object).keywords) grant(keyword, objectTs);
+    // Statyki własne (CR 613.7a — źródło lub późniejsze nadanie).
+    for (const entry of staticBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
   }
   for (const entry of anthemBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
   for (const entry of untilEndOfTurnBonuses(state, object).keywordEntries) grant(entry.keyword, entry.ts);
@@ -1211,6 +1220,12 @@ export function effectiveKeywords(object, state = null) {
   // rozstrzygnięcia, CR 613.7b).
   const lastLoss = new Map();
   const lose = (keyword, ts) => lastLoss.set(keyword, Math.max(lastLoss.get(keyword) ?? -Infinity, ts));
+  const removedAt = abilityRemovalTimestamp(object);
+  if (removedAt != null) {
+    // Utrata WSZYSTKICH zdolności obejmuje także starsze hymny/granty.
+    // Późniejszy grant pozostaje (ten sam algorytm co utrata keywordu).
+    for (const { keyword } of entries) lose(keyword, removedAt);
+  }
   if (state && object.zone === 'battlefield') {
     for (const keyword of object.lostKeywordsUntilEOT ?? []) lose(keyword, object.lostKeywordTs?.[keyword] ?? 0);
     for (const attachment of attachmentsAttachedTo(state, object.id)) {
@@ -1623,7 +1638,8 @@ export function grantAbilitiesUntilEndOfTurn(state, objectId, abilities) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error('Zdolności do końca tury można nadawać tylko stworowi na polu bitwy');
   if (!Array.isArray(abilities) || abilities.length === 0) throw new TypeError('Lista nadawanych zdolności nie może być pusta');
-  const grants = [...(object.abilityGrants ?? []), ...abilities.map((ability) => Object.freeze({ ...ability }))];
+  const grantedAt = nextTimestamp(state);
+  const grants = [...(object.abilityGrants ?? []), ...abilities.map((ability) => Object.freeze({ ...ability, grantedAt }))];
   return replaceObject(state, object, { abilityGrants: Object.freeze(grants) });
 }
 

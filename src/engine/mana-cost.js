@@ -32,7 +32,7 @@
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 // CR 702.73a — rabat „następny czar [podtyp]" czyta typy stworów przez
 // wspólny predykat (changeling jest każdym typem stworów, także w ręce).
-import { hasCreatureType } from './permanents.js';
+import { hasCreatureType, effectiveAbilities } from './permanents.js';
 
 export function parseManaCost(manaCostStr) {
   if (!manaCostStr) return { generic: 0, colored: [], hybrid: [], phyrexian: [] };
@@ -122,7 +122,7 @@ export function costReductionForSpell(state, object) {
   }
   for (const candidate of state.objects.values()) {
     if (candidate?.zone !== 'battlefield' || candidate.controllerId !== object.controllerId) continue;
-    for (const ability of candidate.abilities ?? []) {
+    for (const ability of effectiveAbilities(candidate)) {
       const mod = ability?.costModifier;
       if (!mod) continue;
       const required = mod.spellTypes ?? [];

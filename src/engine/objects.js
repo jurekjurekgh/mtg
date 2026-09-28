@@ -204,6 +204,7 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // zaśmiecały dyf stanu w sondzie no-op (noop-probe) każdym ruchem strefy.
     ...(object.subtypesBeforeStrip ? { subtypes: object.subtypesBeforeStrip, subtypesBeforeStrip: null } : {}),
     ...(object.abilitiesStripped ? { abilitiesStripped: false } : {}),
+    ...(object.abilitiesStrippedAt != null ? { abilitiesStrippedAt: null } : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
   const moved = Object.freeze({

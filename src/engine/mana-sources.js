@@ -128,7 +128,7 @@ function manaColorsIgnoringCosts(gameObject, state = null) {
   }
   if (hasManaAbility && gameObject.chosenColor) push(gameObject.chosenColor);
   const isLand = gameObject.kind === 'land' || (gameObject.types ?? []).includes('Land');
-  if (isLand) {
+  if (isLand && !gameObject.abilitiesStripped) {
     for (const subtype of effectiveSubtypes(gameObject)) push(BASIC_SUBTYPE_COLORS[subtype]);
   }
   // Punkt 4 tylko dla obiektów BEZ deskryptora many — inaczej `getSourceForObject`
@@ -178,7 +178,7 @@ export function colorsProducibleBySubtype(state, playerId, subtype, { excludeId 
 export function manaAbilityColors(gameObject, state = null) {
   const colors = [];
   let found = false;
-  for (const ability of gameObject?.abilities ?? []) {
+  for (const ability of effectiveAbilities(gameObject)) {
     if (ability?.type !== 'activated') continue;
     const cost = ability.cost ?? {};
     // Koszt musi byc pusty albo skladac sie z samego {T} — kazdy dodatkowy
@@ -243,7 +243,7 @@ export function manaAbilityProductionOf(gameObject, ability, state = null) {
  */
 export function manaAbilityAmount(gameObject) {
   let total = null;
-  for (const ability of gameObject?.abilities ?? []) {
+  for (const ability of effectiveAbilities(gameObject)) {
     if (ability?.type !== 'activated') continue;
     const cost = ability.cost ?? {};
     const extraCostKeys = Object.keys(cost).filter((key) => key !== 'tap' && cost[key]);
@@ -298,7 +298,7 @@ export const ANY_COLOR_MANA = Object.freeze(['W', 'U', 'B', 'R', 'G']);
  * (decyzja właściciela, audyt PR #93; ADR 0002 — rdzeń jest name-agnostic).
  */
 export function treasureManaAbilityOf(gameObject) {
-  for (const ability of gameObject?.abilities ?? []) {
+  for (const ability of effectiveAbilities(gameObject)) {
     if (ability?.type !== 'activated') continue;
     const cost = ability.cost ?? {};
     const keys = Object.keys(cost).filter((key) => cost[key]);
@@ -327,7 +327,7 @@ export function getSourceForObject(gameObject, state = null) {
   // Kolory z PODTYPÓW podstawowych lądu (efektywne — honorują typeGrant):
   // Plains/Island/Swamp/Mountain/Forest → W/U/B/R/G. To reguła CR 305.6,
   // a nie mapa kart — land zmieniony na Forest (Unstable Frontier) produkuje {G}.
-  if (isLand) {
+  if (isLand && !gameObject.abilitiesStripped) {
     const subtypeColors = [];
     for (const subtype of effectiveSubtypes(gameObject)) {
       const color = BASIC_SUBTYPE_COLORS[subtype];
@@ -359,6 +359,9 @@ export function getSourceForObject(gameObject, state = null) {
   if (sacMana) {
     return { id: gameObject.id, cardId, colors: sacMana.colors, amount: sacMana.amount };
   }
+  // Późniejszy grant deskryptora obsłużyliśmy wyżej. Mapa/fallback opisuje
+  // druk lub zdolności z typu lądu, więc nie może odtworzyć usuniętej many.
+  if (gameObject.abilitiesStripped) return null;
   const info = getManaSourceInfo(cardId);
   if (info) {
     let amt = info.amount ?? 1;

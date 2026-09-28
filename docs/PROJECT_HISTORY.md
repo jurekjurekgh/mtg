@@ -13297,3 +13297,20 @@ Nowe cytaty 608.2d/733.1 najpierw zatrzymały strażnika; ponownie pobrany CR
 2026-09-25 ma ten sam SHA-256 co źródło tabeli, więc tabela została
 wygenerowana narzędziem (485 numerów). Końcowy fast 6781/6781 (110642 ms),
 build 69 modułów / 4522,5 kB. Osobny krok; pozostałe F2–F7 w toku.
+
+
+### C2 / F5 — utrata zdolności w czytnikach, nie tylko własnym ETB
+
+Poprawiono hymny/outlast, obniżki kosztów, mana-source/auto-płatność,
+protection i daybound; własny timestamp efektu utraty, timestamp nadania
+statyki i reset przy zmianie strefy. Późniejsze granty pozostają, P/T hymnu
+i typy changelinga nie są kasowane. 22 testy oparte na pełnym createCardDeck:
+16 RED na C1 → 22 GREEN; niezależne podmiany wszystkich 8 źródeł wykryte
+(6/4/1/2/1/2/1/3 czerwonych testów), przywrócone z kopii bieżących plików.
+Fast **6803/6803**, build **69 / 4523,9 kB**; 83/83 celowanych.
+Szybki benchmark 672 meczów przed i po, wyniki per talia identyczne:
+heuristic vs aggro 257/336 (76,5%), vs random 331/336 (98,5%), 0 stalls;
+bez B0-full i bez zmiany snapshotu/progów. Pełny CR pobrany przez GitHub API,
+dodany zweryfikowany 613.7n. Plan C3 uzupełniono przed kodowaniem o dalsze
+potwierdzone przypadki F6: kumulację wymogów, alone względem całej deklaracji
+i wygaśnięcie wymogu po zmianie strefy. Nadal otwarte C3–C7.

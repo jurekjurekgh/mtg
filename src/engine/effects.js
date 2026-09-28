@@ -868,7 +868,7 @@ export function queueSearchChoice(state, sourceObject, { qualifier, destination,
 export function maybeAddFaceDownFlyingCounter(state, controllerId, objectId) {
   const hasSource = [...state.objects.values()].some((source) => source.zone === 'battlefield'
     && source.controllerId === controllerId
-    && (source.abilities ?? []).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter));
+    && effectiveAbilities(source).some((a) => a?.type === 'static' && a.faceDownEnterFlyingCounter));
   if (hasSource) addCounter(state, objectId, 'flying', 1);
 }
 
@@ -1239,6 +1239,7 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
     const strippedBase = state.objects.get(newId);
     state.objects.set(newId, Object.freeze({ ...strippedBase,
       abilitiesStripped: true,
+      abilitiesStrippedAt: nextTimestamp(state),
       subtypesBeforeStrip: [...(strippedBase.subtypes ?? [])],
       subtypes: [...(strippedBase.subtypes ?? []), ...(effect.addSubtypes ?? [])],
       echoUnpaid: false,
