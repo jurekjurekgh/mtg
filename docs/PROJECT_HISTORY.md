@@ -13394,3 +13394,14 @@ execute ok:true przy stack=1) i F9: opisy płatnych triggerów bez ceny/koloru
 oraz artefakt z etykietą „śmierć stwora”. Szczegółowe dowody i mini-roadmapa
 D1/D2 w planie/raporcie, przed nowym kodem. Brama aneksu 6880/6880 + build
 69 / 4528,3 kB. Końcowy all po tych dwóch poprawkach.
+
+
+### D1 / F8 — deklaracje nie wchodzą w zajęty stos
+
+Bramki obu walidatorów + brakująca bramka oferty ataku. 4/7 RED → 7 GREEN,
+trzy mutacje po 2 RED. Fixture Ragavana poprawiony (najpierw resolve Raise
+the Alarm, potem atak; asercje haste zostają). Celowane 55/55, fast
+**6887/6887**, build **69 / 4528,7 kB**, golden 4/4, quick 672 bez zmiany
+wygranych (76,8%/98,5%, 0 stalls). Rerun live 20260928 potwierdził pusty stos
+przed deklaracją, naturalny koniec i 0 flag; właściwy fragment przeczytany.
+D2/F9 (opisy płatności) i końcowe all/handoff nadal otwarte.

@@ -286,6 +286,8 @@ export function mandatoryBlockerIds(state, playerId, problem = blockingProblem(s
 }
 
 export function declareAttackers(state, playerId, attackerIds, { pushToState = true, events: collectedEvents = null } = {}) {
+  // Akcja turowa nie może wejść pomiędzy obiekty rozstrzyganego stosu.
+  if (state.zones.stack.length > 0) throw new Error('Deklaracja walki wymaga pustego stosu');
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_attackers') throw new Error('Nieprawidłowy krok deklaracji atakujących');
   if (state.turn.activePlayerId !== playerId) throw new Error('Nieaktywny gracz nie deklaruje atakujących');
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
@@ -334,6 +336,8 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
 }
 
 export function declareBlockers(state, playerId, assignments, { pushToState = true } = {}) {
+  // Akcja turowa nie może wejść pomiędzy obiekty rozstrzyganego stosu.
+  if (state.zones.stack.length > 0) throw new Error('Deklaracja walki wymaga pustego stosu');
   if (state.turn.phase !== 'combat' || state.turn.step !== 'declare_blockers') throw new Error('Nieprawidłowy krok deklaracji blokujących');
   if (!state.combat) throw new Error('Brak deklaracji atakujących');
   if (state.combat.attackingPlayerId === playerId) throw new Error('Atakujący gracz nie deklaruje blokujących');
