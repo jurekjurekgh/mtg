@@ -13261,3 +13261,27 @@ meta+komentarz+rozdzielnik; karty recznie, fallback do 1.). 6912/6912 GREEN.
 TESTY (2026-09-27, manifest): reprofilowanie solo 914 plikow; slow 1 -> 31
 plikow (>5 s, suma 948 s w tym benchmark 412 s). npm test: 883 pliki,
 6641/6641 w 106 s (konkurencja 4; 8 bez zysku na 2 vCPU).
+
+
+## 2026-09-28 — audyt PR #140 (PR #142, przed naprawami)
+
+Kontynuacja wg ADR 0020/0021, plan wypchnięty jako `7c799df`, PR otwarty
+przed kodowaniem. Zakres `605a8dc5` → `11944767`: 154 pliki, +16760/-391;
+[pełny raport per plik](audits/AUDYT_PR140_2026-09-28.md). Faktyczny zakres
+obejmuje PMSSB-1…14, AI do R7 i 10 kart batcha 60 — końcowy opis PR/handoff
+były niepełne, nie są kolejką nowej transzy.
+
+Baseline: fast 6760/6760 (105471 ms), all 7031/7031 (428711,52059 ms),
+0 fail/skip, build 69 modułów / 4522,6 kB. Wszystkie 12 sond PMSSB uruchomione
+na bazie. Rzeczywiste historyczne podmiany: mana-wizard 2/5 RED → 5/5 GREEN,
+bounce 21/29 RED → 29/29 GREEN, pliki bezpiecznie odtworzone.
+
+7 potwierdzonych ustaleń: F1 odmowa wyboru Clone Shell/Dockhanda mutuje
+stan; F2 main gubi nagłówek partii Drive przez normalizację newGame;
+F3 user-abort ciała AI nazywany timeoutem; F4 PMSSB-12 czyta land.colors
+zamiast manaSource; F5 Xu-Ifit pozostawia hymn i nadawanie outlast przez
+źródło bez zdolności; F6 wymóg bloku wszystko-albo-nic zamiast maksimum;
+F7 Twiddle przy rozstrzyganiu nadal związany trybem rzutu (starszy defekt
+utrwalony nowymi pinami). Dowody, granice i dosłowne źródła CR/rulingów
+w raporcie. Na tym etapie jeszcze bez produkcyjnych poprawek; kolejność
+napraw i anty-overfixy w planie sesji. Bez płatnych API, pełnego B0 ani merge.
