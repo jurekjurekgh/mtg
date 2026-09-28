@@ -77,23 +77,25 @@ mutacyjnie (L13), nie tylko „zielone”.
 
 ### 4. Pętla jakości (ADR 0021) — po domknięciu audytu
 
-- [ ] Najnowszy `docs/plans/PLAN_*.md` z nieodhaczonymi kryteriami — podjąć
-  w miejscu urwania (przegląd listy planów pod kątem otwartych etapów).
-- [ ] Żywy Tester (ADR 0012/L12): partie na taliach z mechanikami z #142
-  (blok „if able”, Twiddle, płatne triggery, Xu-Ifit) + ręczna lektura
-  transkryptu wzdłuż trzech osi z `TESTER_STOLU.md`; każda klasa znaleziona
-  ręcznie kończy się detektorem (L27).
-- [ ] Polowanie na niezgodności z CR inną ścieżką niż poprzednia sesja
-  (kolejny obszar numerów/mechanik po 701/702 z L164/L165).
-- [ ] Bez nowego batcha kart (ADR 0029 — katalog rośnie tylko z kolekcji).
+- [x] Przegląd planów: wszystkie `PLAN_*.md` z 2026-09-19…2026-09-28
+  (poza bieżącym) mają 0 otwartych kryteriów; otwarte były tylko etapy 4/5
+  tego planu.
+- [x] Żywy Tester: 2 partie po 300 kroków (`wiedzmin-wur` vs `innistrad-wu`,
+  seed 2027 — naturalny koniec, 0 `[STOP]`, 1 zgłoszenie detektora Dream Twist
+  do triage'u; `mirrodin-brg` vs `ravnica`, seed 2033 — czysto, 0 zgłoszeń,
+  NIEWYCENIONE: brak). Talie z Twiddle i płatnymi triggerami.
+- [ ] Polowanie na niezgodności z CR w nowym obszarze — pozostaje dla
+  kolejnej sesji (w audycie potwierdzono u źródła 305.6/305.7/613.1f/605.1a
+  oraz 509.1c/506.5/508.1).
+- [x] Bez nowego batcha kart (ADR 0029); katalog i progi bez zmian.
 
 ### 5. Domknięcie sesji
 
-- [ ] `npm run test:all` (brama PR) + `npm run build`; wynik do opisu PR
-  i handoffu (liczby mierzone, nie przepisywane — L92).
-- [ ] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-28b.md`,
-  aktualizacja opisu PR (kumulatywnie), blok przekazania w czacie (ADR 0013).
-- [ ] Bez merge i bez force push (ADR 0020 D, ADR 0007).
+- [x] `npm run test:all` **7210/7210**, 7 suites, 0 fail/cancelled/skipped/todo,
+  **493 366 ms**, exit 0; build **70 / 4537,3 kB** (liczby mierzone).
+- [x] `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-28b.md`,
+  opis PR zaktualizowany kumulatywnie, blok przekazania (ADR 0013).
+- [x] Bez merge i bez force push (ADR 0020 D, ADR 0007).
 
 ## Ryzyka i pułapki (z lektury startowej)
 
