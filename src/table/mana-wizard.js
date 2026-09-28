@@ -732,11 +732,26 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
 }
 
 /**
+ * Nazwa wiersza źródła w kreatorze many — Z ordynałem kopii („Plains #1”).
+ * Zgłoszenie właściciela A (2026-09-28e): bez numerów dwóch Plainsów było
+ * nie wiadomo, który permanent jest tapowany (jeden z nich ma wrogą aurę).
+ * Reguła nazw pola bitwy (2026-09-16): ordynał z JEDNEGO źródła
+ * (`session.nameOfObject` — baza + „ #N” + tokeny/LKI, L41); stuby sesji
+ * bez nameOfObject zostają przy nazwie bazowej z modelu.
+ */
+export function wizardSourceName(source, session) {
+  if (session && typeof session.nameOfObject === 'function') {
+    return session.nameOfObject(source.id) ?? source.name ?? '';
+  }
+  return source.name ?? '';
+}
+
+/**
  * Rysuje kreator płatności (modal): koszt, postęp (ile zostało do sumy i
  * które kolory są jeszcze niepokryte), przyciski PO JEDNEMU źródle oraz
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
-export function renderManaWizard(host, model, { onTapSource, onCancel }) {
+export function renderManaWizard(host, model, { onTapSource, onCancel, session = null }) {
   host.textContent = '';
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';
@@ -774,7 +789,7 @@ export function renderManaWizard(host, model, { onTapSource, onCancel }) {
     renderPickerRow(list, {
       kind: 'button',
       id: source.id,
-      html: `Tapnij: ${escapeHtml(source.name)} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
+      html: `Tapnij: ${escapeHtml(wizardSourceName(source, session))} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
       onActivate: (sourceId) => onTapSource?.(sourceId),
     });
