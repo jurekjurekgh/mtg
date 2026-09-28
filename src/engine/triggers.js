@@ -1267,6 +1267,17 @@ export function resolveTriggerEntry(state, entry) {
       ...(printLki.transformTo ? { transformTo: printLki.transformTo } : {}),
       ...(printLki.frontFaceId ? { frontFaceId: printLki.frontFaceId } : {}),
     }) : null,
+    // D (zgłoszenie właściciela 2026-09-28e, CR 113.7a + 714.2): „Once
+    // activated or triggered, an ability exists on the stack independently of
+    // its source. Destruction or removal of the source after that time won't
+    // affect the ability. […] its last known information is used. The source
+    // can still perform the action even though it no longer exists.” Rozdział
+    // Sagi (zdolność triggerowana, CR 714.2) rozstrzyga się także po
+    // zniszczeniu Sagi w oknie odpowiedzi — `fireSagaChapter` czyta
+    // `source.saga`, więc deskryptor rozdziałów musi być NA WIERZCHU stuba
+    // LKI (wcześniej siedział tylko w zagnieżdżonym `lkiPrint` → cichy
+    // no-op: „trigger się rozstrzyga (rozdział 1)” bez efektu).
+    ...(printLki?.saga ? { saga: printLki.saga } : {}),
     counters: {}, formerCounters: {}, keywords: [], abilities: [], types: [],
   });
   // CR 109.5: zmiana kontrolera permanenta nie zmienia „you” na triggerze.
