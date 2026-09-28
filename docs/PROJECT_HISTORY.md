@@ -13416,3 +13416,16 @@ endure 1 w opisie. 14 pinów: 12 RED → 14 GREEN, 11 mutacji wykrytych,
 27/27 celowanych. Fast **6901/6901**, build **69 / 4529,5 kB**; rerun żywy
 20260930 potwierdził poprawny kafel i log (0 flag, naturalny koniec).
 F1–F9 naprawione; następny pełny all i finalny handoff.
+
+
+### Zamknięcie sesji 2026-09-28 — pełna bramka i handoff
+
+F1–F9 naprawione. Pełny `npm run test:all` po F9: **7172/7172**, 7 suites,
+0 fail/cancelled/skipped/todo, **529465,689831 ms**, exit 0; build **69 modułów /
+4529,5 kB**. +141 testów względem bazy #140. Ostatni fast 6901/6901,
+golden 4/4, quick 672 (76,8% vs aggro, 98,5% vs random, 0 stalls).
+6 naturalnie zakończonych przebiegów live (3 rozdania + powtórki), bez
+wyjątków/flag; ręczna lektura znalazła F8/F9 i potwierdziła ich reruny.
+Raport per plik i dowody w AUDYT_PR140_2026-09-28; trwały handoff
+`docs/setup/HANDOFF_2026-09-28.md`. Bez nowych kart, zmian progów/manifestu,
+płatnych API, zdalnych zapisów Drive, B0-full ani merge. PR #142 do review.
