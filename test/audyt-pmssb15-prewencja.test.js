@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { createCardDeck, gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
@@ -381,4 +381,100 @@ test('PMSSB-15/L41: kara własnej tury identyczna w cast_spell i epic (−300 w 
   assert.equal(epicScore + 300, 70);
   // Oba lejki aplikują TĘ SAMĄ karę okna (różnica = tylko baza rzutu).
   assert.equal((castScore + 300) - (epicScore + 300), 50 - 70);
+});
+
+// ---------------------------------------------------------------------------
+// Audyt PR #144 (2026-09-29) — czytniki stosu w rodzinie prewencji.
+// F1 (L1): `preventDamageThisTurnValue` czytał `view.pendingEffects` — pole,
+//   którego playerView NIGDY nie emituje (jedyne wystąpienie w repo) — więc
+//   „burn na stosie" w oknie Shieldmage'a liczył zawsze 0.
+// F2 (L41/L72): `incomingDamageOnStack` i `permanentDoomedThisTurn` sumowały
+//   wyłącznie `spell` — zdolność na stosie (activated/triggered, deskryptor
+//   w `abilityEffects`) była dla tarczy i dla „skazany w tej turze"
+//   niewidzialna. Wszystkie trzy miejsca czytają teraz wspólny
+//   `stackEntryEffects` (mutacje: F1-M przywraca martwy odczyt, F2-M wraca
+//   do czytnika `spell`-only).
+// ---------------------------------------------------------------------------
+
+/** Realna aktywacja: Ballista Watcher ({3}{R}, {T}: 1 obrażenie) w cel `targetId`. */
+function foePingOnStack(state, targetId) {
+  const [{ objectId, ...data }] = createCardDeck({
+    cardIds: ['ballista-watcher'], ownerId: 'p1', registry: REGISTRY,
+  });
+  addObject(state, { ...data, id: 'foe-ping', instanceId: 'i-foe-ping', controllerId: 'p1', zone: 'battlefield' });
+  state.objects.set('foe-ping', Object.freeze({ ...state.objects.get('foe-ping'), summoningSickness: false, tapped: false }));
+  addMana(state, 'p1', 4);
+  state.turn.priorityPlayerId = 'p1';
+  const result = execute(state, {
+    type: 'activate_ability', playerId: 'p1', objectId: 'foe-ping', abilityIndex: 0, targets: [targetId],
+  });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  state.turn.priorityPlayerId = 'p2';
+  return state;
+}
+
+test('Audyt #144/F2: ping AKTYWOWANEJ zdolności na stosie waży tyle, co czar (L41)', () => {
+  const clean = botTurn();
+  putSpell(clean, 'w', 'withstand', 'p2', 'hand');
+  putCreature(clean, 'mine', 'p2', 1, 1);
+  const base = optionScore(decide(clean).options, 'cast_spell(w->mine)');
+
+  const spell = botTurn();
+  putSpell(spell, 'w', 'withstand', 'p2', 'hand');
+  putCreature(spell, 'mine', 'p2', 1, 1);
+  const bolt = putSpell(spell, 'bolt', 'shock', 'p1', 'stack');
+  spell.objects.set('bolt', Object.freeze({ ...bolt, chosenTargets: ['mine'] }));
+  const spellScore = optionScore(decide(spell).options, 'cast_spell(w->mine)');
+
+  const ability = foePingOnStack((() => {
+    const s = botTurn();
+    putSpell(s, 'w', 'withstand', 'p2', 'hand');
+    putCreature(s, 'mine', 'p2', 1, 1);
+    return s;
+  })(), 'mine');
+  const abilityScore = optionScore(decide(ability).options, 'cast_spell(w->mine)');
+
+  // 61 = baza; +16 dopłaty ratunkowej, gdy damage realnie leci w 1/1.
+  assert.equal(base, 61, 'pusty stos');
+  assert.equal(spellScore, 77, 'czar z damage na stosie (bez dryfu)');
+  assert.equal(abilityScore, 77, 'zdolność z damage na stosie — ten sam czytnik (było 61)');
+});
+
+test("Audyt #144/F1: burn na stosie podnosi okno ETB Shieldmage'a (martwy pendingEffects)", () => {
+  const build = (ping) => {
+    const s = botTurn();
+    putSpell(s, 'sh', 'ethersworn-shieldmage', 'p2', 'hand');
+    putCreature(s, 'bot-art', 'p2', 2, 2, { types: ['Artifact', 'Creature'] });
+    if (ping) {
+      const bolt = putSpell(s, 'bolt', 'shock', 'p1', 'stack');
+      s.objects.set('bolt', Object.freeze({ ...bolt, chosenTargets: ['bot-art'] }));
+    }
+    return optionScore(decide(s).options, 'cast_permanent(sh)');
+  };
+  const without = build(false);
+  const withBurn = build(true);
+  assert.equal(without, 66.60090000000001, 'baza okna bez stosu (bez dryfu)');
+  assert.equal(withBurn, 77.40090000000001, 'burn na stosie dolicza ocalone ciało (było 66.6 — pole martwe)');
+  assert.ok(withBurn > without + 10, 'odpowiedź na burn musi realnie kupować ETB');
+});
+
+test('Audyt #144/F2b: permanentDoomedThisTurn widzi zdolność na stosie (L72)', () => {
+  // Kheru Dreadmaw ({1}{G}, poświęć inne stworzenie: zyskaj życie = wytrzymałość)
+  // na 1/1 z TMC 3. Skazany w tej turze = poświęcenie praktycznie darmowe
+  // (M236/2) — liczy się też śmierć od pinga ZDOLNOŚCI na stosie, nie tylko
+  // czaru (wspólny czytnik `stackEntryEffects`).
+  const build = (ping) => {
+    const s = botTurn();
+    putCreature(s, 'sac', 'p2', 1, 1, { manaCost: 3 });
+    const [{ objectId, ...dread }] = createCardDeck({ cardIds: ['kheru-dreadmaw'], ownerId: 'p2', registry: REGISTRY });
+    addObject(s, { ...dread, id: 'dread', instanceId: 'i-dread', controllerId: 'p2', zone: 'battlefield' });
+    s.objects.set('dread', Object.freeze({ ...s.objects.get('dread'), summoningSickness: false, tapped: false }));
+    if (ping) foePingOnStack(s, 'sac');
+    return optionScore(decide(s).options, 'activate_ability(dread#0)');
+  };
+  const clean = build(false);
+  const pinged = build(true);
+  assert.equal(clean, -16, 'bez zagrożenia: kara za marnotrawstwo ciała');
+  assert.equal(pinged, 3, 'ping zdolności na stosie = stwór skazany, poświęcenie darmowe (było −16)');
+  assert.ok(pinged > clean, 'ryzyko śmierci z pinga musi zmieniać decyzję');
 });
