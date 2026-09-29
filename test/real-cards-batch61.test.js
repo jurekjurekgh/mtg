@@ -654,7 +654,7 @@ test('B61/157: Infectious Bloodlust — deklaracja bez gospodarza jest nielegaln
   assert.ok(options.length > 0, 'silnik oferuje deklaracje');
   assert.ok(options.every((ids) => ids.includes('host')), `każda oferta zawiera wymuszonego: ${JSON.stringify(options)}`);
   assert.throws(() => declareAttackers(state, 'p1', []), /musi atakować/,
-    'pominięcie wymuszonego atakującego odrzucone (CR 508.1c)');
+    'pominięcie wymuszonego atakującego odrzucone (CR 508.1d)');
   assert.ok(declareAttackers(state, 'p1', ['host']), 'deklaracja z gospodarzem legalna');
 });
 

@@ -5541,7 +5541,7 @@ export function execute(state, input) {
         // Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature
         // attacks each combat if able"): deklaracja atakujących jest akcją
         // turową (CR 508.1a) — runda passów jej nie pomija. Stwór wymuszony
-        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1c
+        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1d
         // albo goad CR 701.15) MUSI atakować, więc przed wyjściem z kroku
         // deklarujemy MINIMALNY zestaw — same stwory wymuszone; te opcjonalne
         // zostają decyzją gracza, który właśnie spasował (świadomie z nich

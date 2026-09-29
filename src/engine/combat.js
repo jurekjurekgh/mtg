@@ -162,7 +162,7 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
 
 /**
  * „This creature attacks each combat if able\" (Ramroller, Juggernaut,
- * CR 508.1c): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
+ * CR 508.1d): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
  * czytany ze zdolności statycznych obiektu (deskryptor mustAttack).
  */
 function hasMustAttack(state, object) {
@@ -175,7 +175,7 @@ function hasMustAttack(state, object) {
 }
 
 /**
- * „This creature can't attack or block alone" (Ember Beast, CR 508.1d/509.1c
+ * „This creature can't attack or block alone" (Ember Beast, CR 508.1c/509.1b
  * w minimalnym wymiarze): statyczne ograniczenie — stwór może być zadeklarowany
  * jako atakujący tylko, gdy RAZEM z nim atakuje co najmniej jeden inny stwór,
  * a jako blokujący — tylko, gdy tego samego atakującego blokuje też ktoś inny.
@@ -239,13 +239,13 @@ function isLegalAttacker(state, object, playerId) {
 /**
  * Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature attacks each
  * combat if able"): JEDNO źródło prawdy o atakujących wymuszonych (L41) —
- * goad (CR 701.15) i deskryptor `mustAttack` (CR 508.1c) — używane przez:
+ * goad (CR 701.15) i deskryptor `mustAttack` (CR 508.1d) — używane przez:
  *   • ofertę `legalAttackerOptions` (każda opcja zawiera wymuszonych),
  *   • walidację `declareAttackers` (pominięcie wymuszonego = odrzucenie),
  *   • auto-deklarację rundy passów w `pass_priority` (deklaracja atakujących
  *     to akcja turowa, CR 508.1a — spasowanie nie może jej pominąć).
- * M270 (błąd #9, CR 508.1c): wymóg brzmi „attacks each combat IF ABLE" —
- * stwór z „can't attack alone" (CR 508.1d), który jest jedynym zdolnym do
+ * M270 (błąd #9, CR 508.1d): wymóg brzmi „attacks each combat IF ABLE" —
+ * stwór z „can't attack alone" (CR 508.1c), który jest jedynym zdolnym do
  * ataku, atakować NIE MOŻE, więc nie jest wymuszony (inaczej deadlock).
  */
 export function mandatoryAttackerIds(state, playerId) {
@@ -298,7 +298,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   if (!Array.isArray(attackerIds) || new Set(attackerIds).size !== attackerIds.length) throw new Error('Atakujący nie może wystąpić więcej niż raz');
   const attackers = attackerIds.map((id) => getCreature(state, id));
   if (attackers.some((object) => !isLegalAttacker(state, object, playerId))) throw new Error('Nielegalny atakujący');
-  // Wymuszeni atakujący (CR 701.15 goad + CR 508.1c „attacks each combat if
+  // Wymuszeni atakujący (CR 701.15 goad + CR 508.1d „attacks each combat if
   // able\" — Ramroller): zdolny do ataku stwór z wymogiem musi być zadeklarowany
   // — deklaracja go pomijająca jest nielegalna. Lista i wyjątek „if able"
   // (M270, CR 508.1c/508.1d) mieszkają w `mandatoryAttackerIds` — tym samym
@@ -309,7 +309,7 @@ export function declareAttackers(state, playerId, attackerIds, { pushToState = t
   if (missing.length > 0) {
     throw new Error('Stwór z wymogiem ataku (goad lub „attacks each combat if able\") musi atakować w tym combacie');
   }
-  // „Can't attack alone" (Ember Beast, CR 508.1d): stwór z tym ograniczeniem
+  // „Can't attack alone" (Ember Beast, CR 508.1c): stwór z tym ograniczeniem
   // może atakować wyłącznie w grupie — deklaracja bez innego atakującego jest
   // nielegalna (samotny atak tego stwora nie może obejść wymogu).
   if (attackers.length === 1 && attackers.some((object) => hasAloneRestriction(object, 'cantAttackAlone'))) {
@@ -1513,14 +1513,14 @@ export function legalAttackerOptions(state, playerId, cap = COMBAT_OPTION_CAP) {
     if (object && object.zone === 'battlefield' && isLegalAttacker(state, object, playerId)) legal.push(id);
   }
   // Wymuszeni atakujący (goad CR 701.15 oraz „attacks each combat if able"
-  // CR 508.1c — Ramroller) MUSZĄ być w każdej opcji; wybór dotyczy tylko
+  // CR 508.1d — Ramroller) MUSZĄ być w każdej opcji; wybór dotyczy tylko
   // pozostałych stworów. Lista i wyjątek „if able" (M270) — wspólny helper
   // (znalezisko J: oferta, walidacja i auto-deklaracja to jedno źródło).
   const mandatory = mandatoryAttackerIds(state, playerId);
   const optional = legal.filter((id) => !mandatory.includes(id));
   return boundedSubsets(optional, cap)
     .map((subset) => [...mandatory, ...subset])
-    // „Can't attack alone" (Ember Beast, CR 508.1d): opcja z JEDNYM
+    // „Can't attack alone" (Ember Beast, CR 508.1c): opcja z JEDNYM
     // atakującym, który ma to ograniczenie, nie może być zaoferowana —
     // execute odrzucałby oferowaną komendę (spójność oferty i walidacji).
     .filter((subset) => !(subset.length === 1

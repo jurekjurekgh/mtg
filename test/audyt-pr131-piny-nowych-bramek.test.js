@@ -239,7 +239,7 @@ test('F4: zwrot permanentu z grobu jest ZAWSZE ostatnim efektem listy (granica k
 // --- F5 ---------------------------------------------------------------------
 // E6 (pula kandydatów) pinuje gałąź PARTNERA wyłącznie przez menace; drugi
 // powód, dla którego samotny bloker jest nielegalny — „can't block alone"
-// (Ember Beast, CR 509.1c/508.1d, `cantBlockAlone`) — nie miał żadnego pinu.
+// (Ember Beast, CR 509.1b/508.1c, `cantBlockAlone`) — nie miał żadnego pinu.
 // Sonda audytu (`scratch/probe-pool.mjs`, 8 scen z cBA/menace/tapnięciami)
 // pokazała zgodność puli z prawdą z komendy, ale dopóki nie ma pinu, regresja
 // w tej gałęzi nie czerwieniłaby niczego (L5: strażnik klasy).
