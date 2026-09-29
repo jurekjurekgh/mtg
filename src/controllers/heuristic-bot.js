@@ -2789,6 +2789,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * PMSSB-23/F2: dopłata za zagrożenie celu wrogiego licznika — ta sama miara
+   * co w PMSSB-21 (`opponentTargetThreatWeight`): 0,5 × (moc·2 + wytrzymałość)
+   * z limitem. Limit trzyma dopłatę poniżej progu dobicia, żeby „zabij 1/1"
+   * nie przegrało z „osłab 8/8" (kotwica anty-over-fix M429).
+   */
+  const counterThreatBonus = (target) => (target
+    ? Math.min(P.counterThreatCap,
+      P.counterThreatWeight * (2 * (target.power ?? 0) + (target.toughness ?? 0)))
+    : 0);
+
+  /**
+   * PMSSB-23/F3: rider „połóż licznik na KAŻDYM moim stworze (z licznikiem /
+   * o podtypie)" — `add_counter_to_creatures_you_control` (Lifecrafter's Gift,
+   * Vaan Street Thief). Pomiar PRZED: 1, 2 i 4 odbiorców dawały tę samą ocenę
+   * (74/74/74), czyli rider był wart 0 — bot nie widział, że przy trzech
+   * nosicielach czar dokłada CZTERY trwałe +1/+1, a nie jeden. Wartość = sam
+   * przyrost licznika za odbiorcę; termin ciała i okna walki należą do efektu
+   * celowanego, który `counterHostValue` wycenił już z pełnym kontekstem.
+   * Cel główny liczy się jako odbiorca, gdy rider wymaga licznika: efekt
+   * celowany rozstrzyga się pierwszy (effects.js — kolejność z deskryptora).
+   */
+  const counterSpreadValue = (view, effect, primaryTarget = null) => {
+    const required = effect.requireCounter ?? null;
+    const wanted = effect.subtypes ?? [];
+    let count = 0;
+    for (const o of myCreatures(view)) {
+      if (wanted.length > 0 && !wanted.some((st) => (o.subtypes ?? []).includes(st))) continue;
+      if (required && ((o.counters ?? {})[required] ?? 0) <= 0 && o.id !== primaryTarget?.id) continue;
+      count += 1;
+    }
+    return P.counterSpreadPerRecipient * count * Math.max(1, effect.amount ?? 1);
+  };
+
+  /**
    * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
    * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
    * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
@@ -2808,7 +2842,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
       const toughLeft = (target.toughness ?? 0) - (target.damage ?? 0);
       const kills = reducesToughness && toughLeft <= amount;
-      return kills ? 30 + (target.power ?? 0) * 2 : 10 + 4 * amount;
+      // PMSSB-23/F2: dopłata za zagrożenie celu — bez niej 3× stun na 6/6
+      // trample było warte tyle, co 3× stun na 1/1 (pomiar PRZED: 62/62), więc
+      // o wyborze decydowała kolejność enumeracji. Tylko gałąź „cel przeżyje":
+      // dobijanie już skaluje się mocą celu (30 + 2·moc).
+      return kills ? 30 + (target.power ?? 0) * 2
+        : 10 + 4 * amount + counterThreatBonus(target);
     }
     // Przyjazny licznik statystyczny: własny stwór rośnie (wartość z ciała
     // gospodarza i okna walki), wrogi stwór dostaje prezent za naszą manę
@@ -7906,6 +7945,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += counterEffectValue(view, target, effect.counter ?? '+1/+1',
               Math.max(1, effect.amount ?? 1));
           }
+          // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
+          if (effect.type === 'add_counter_to_creatures_you_control') {
+            score += counterSpreadValue(view, effect, target);
+          }
           // PMSSB-18: proliferate jako rider — wartość najlepszego podzbioru
           // (razem z synergia kolejności: add_counter TEGO czaru rozstrzyga
           // się przed, więc świeży licznik też się proliferuje — Courage in
@@ -8689,6 +8732,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
             score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
               Math.max(1, effect.amount ?? 1), { source });
+          }
+          // PMSSB-23/F3 (L41): rider rozlania także w ścieżce zdolności.
+          if (effect.type === 'add_counter_to_creatures_you_control') {
+            score += counterSpreadValue(view, effect, tgt);
           }
           // M429 (P3 Charismatic Vanguard): masowy pump/debuff „do końca tury"
           // z AKTYWOWANEJ zdolności — dotąd ta rodzina nie miała tu wyceny

@@ -267,6 +267,21 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury
   'counterCombatBonus',          // premia, gdy licznik poprawia wynik WALKI, która trwa
   'counterDoomedHostPenalty',    // kara, gdy gospodarz ginie w tej turze mimo licznika
+  // PMSSB-23 (F2/F3) — dalszy ciąg rodziny liczników. Pomiar PRZED: wrogi
+  // licznik nie widział, w co trafia (3× stun na 6/6 trample = 3× stun na 1/1,
+  // oba 62 pkt; `-1/-1` na 3/3 = na 6/6, oba 16), więc cel wybierała kolejność
+  // enumeracji — a rider „połóż licznik na KAŻDYM moim stworze z licznikiem"
+  // (Lifecrafter's Gift, Vaan Street Thief) nie miał gałęzi wcale: 1, 2 i 4
+  // odbiorców dawało tę samą ocenę (74/74/74). Miara zagrożenia jest TA SAMA co
+  // w PMSSB-21 (`opponentTargetThreatWeight`: 0,5 × (moc·2 + wytrzymałość)
+  // z limitem): wybór między ocalałymi celami rozstrzyga wartość celu, a limit
+  // trzyma dopłatę poniżej progu dobicia (30 + 2·moc), żeby „zabij 1/1" nie
+  // przegrało z „osłab 8/8". Dopłata za odbiorcę ridera to sam przyrost
+  // licznika (równy `counterAmountWeight`) — termin ciała i okna walki należą
+  // do efektu celowanego, który `counterHostValue` już wycenił z kontekstem.
+  'counterThreatWeight',         // dopłata za zagrożenie celu wrogiego licznika (worth × waga)
+  'counterThreatCap',            // limit dopłaty — dobijanie zostaje wyżej
+  'counterSpreadPerRecipient',   // rider „na każdy mój stwór z licznikiem" — za odbiorcę
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -508,6 +523,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterHostWorthWeight: 2,
   counterCombatBonus: 12,
   counterDoomedHostPenalty: 20,
+  // PMSSB-23 (F2/F3) — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  counterThreatWeight: 0.5,
+  counterThreatCap: 15,
+  counterSpreadPerRecipient: 4,
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
