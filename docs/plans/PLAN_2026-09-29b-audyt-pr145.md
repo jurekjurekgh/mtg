@@ -41,12 +41,12 @@ regułowe potwierdzone dosłownym tekstem CR/rulingów ze źródła online
 w core (ADR 0002); piny potwierdzone mutacyjnie (L13); „stan po PR"
 skonfrontowany ze „stanem na starcie PR"; chirurgiczność patchy (ADR 0016 B).
 
-- [ ] **1a. Karty batcha vs Oracle** — porównanie mechaniczne 10 definicji
+- [x] **1a. Karty batcha vs Oracle** — porównanie mechaniczne 10 definicji
   z `src/cards/card-data.js` ze snapshotami `docs/cards/scryfall-*.json`
   (koszt many, typy, podtypy, kolory, P/T, `manaCost` = suma symboli — L168,
   pełny Oracle text, `support.limitations` puste wg ADR 0022) oraz wpisami
   `MANA_COSTS`; plan/`artId` wobec `tools/collection-art-ids.csv` (ADR 0029).
-- [ ] **1b. Nowe mechaniki silnika** — Training (`conditionHolds`
+- [x] **1b. Nowe mechaniki silnika** — Training (`conditionHolds`
   + zamrożony wynik w kontekście zdarzenia), Disguise (przyczyna zakrycia,
   2/2 z ward {2}, specjalna akcja bez stosu, `disguiseHybrid`), koszt
   hybrydowy (`colorRequirementsOf`, render w 3 warstwach), `{C}`
@@ -56,22 +56,22 @@ skonfrontowany ze „stanem na starcie PR"; chirurgiczność patchy (ADR 0016 B)
   `attachmentRestrictions` → `mandatoryAttackerIds`), `targetIndex`
   (counter/bounce), `draw_then_discard` z `discardCount`,
   `trigger.payAfterTarget` (cel przed płatnością).
-- [ ] **1c. Audyt #144 (F1–F3) i PMSSB-21** — czy wspólny `stackEntryEffects`
+- [x] **1c. Audyt #144 (F1–F3) i PMSSB-21** — czy wspólny `stackEntryEffects`
   objął WSZYSTKICH konsumentów kształtu (L72/L41: grep po
   `spell?.effects`), czy `pendingHits` po naprawie F1 liczy stwory (nie wpisy)
   i nie podwaja `saved`, czy parametry PMSSB-21 nie kolidują z progiem dobicia
   i czy `teamPumpSorceryOffWindowPenalty` wróciło do defaults bez dryfu.
-- [ ] **1d. Testy z #145** — czy pinują to, co deklarują (L13): `real-cards-
+- [x] **1d. Testy z #145** — czy pinują to, co deklarują (L13): `real-cards-
   batch61.test.js` (1137 linii), `audyt-pmssb21-opponent-target.test.js`,
   `etap-f-2026-09-24-granice-katalogu.test.js` (próg {C} w koszcie karty),
   `ability-cost-pips`, `repo-decks`, `statusy-wpisow-katalogu`,
   `transpozycja-ikoria-fiora`; golden-master (dryf 73/73 linii fixture) —
   przypisać dryf do zmian wyceny/talii, nie do regresji (L124).
-- [ ] **1e. Warstwa stołu** — `render.js` (etykiety `disguise`/`training`,
+- [x] **1e. Warstwa stołu** — `render.js` (etykiety `disguise`/`training`,
   `costSymbols(amount, colors, hybrid)` w 4 konsumentach, `equipPips`),
   `session.js` (`TRIGGER_EVENT_LABELS`), `mana-wizard.js` (wspólny predykat),
   brak Node-globali w grafie artefaktu (L58).
-- [ ] **1f. Raport** `docs/audits/AUDYT_PR145_2026-09-29.md` + wynik w opisie
+- [x] **1f. Raport** `docs/audits/AUDYT_PR145_2026-09-29.md` + wynik w opisie
   PR; znalezione błędy naprawiane od razu, osobnymi commitami (ADR 0020 C),
   u root cause, z pinem RED→GREEN i mutacją (L13).
 

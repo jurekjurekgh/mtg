@@ -13902,3 +13902,52 @@ Uwaga audytu #144 (U2/U3): `abilitiesStripped`/`manaSource` zweryfikowane
 pośrednio pinami rodzeństwa F5b; literały CR nowych numerów tabeli
 (615.4/615.6/701.14d/714.2) cytowane w kodzie i pilnowane tabelą, bez
 ponownego pobrania u źródła (do spot-checku ADR 0030 przy zmianie regułowej).
+
+## 2026-09-29c — audyt scalonego PR #145: sześć znalezisk (F1–F6) (PR #146)
+
+**Tryb:** ADR 0020 B (audyt poprzedniego scalonego PR) + ADR 0016 (naprawy
+chirurgiczne) + ADR 0021 (pętla domyślna). Przedmiot: PR #145 (`6a47c35`,
+78 plików, +3827/−276). Raport: `docs/audits/AUDYT_PR145_2026-09-29.md`;
+plan: `docs/plans/PLAN_2026-09-29b-audyt-pr145.md`.
+
+**Dane batcha 61 (skan definicja ↔ snapshot):** 6 rozjazdów, wszystkie
+klasyfikowane jako konwencja katalogu (brak `enchant`/`disguise` w `keywords` —
+silnik ich nie czyta; token: kolejność typów, `set: null`, brak `rulings` —
+jak u pozostałych 3 tokenów). Zero wad danych.
+
+**Znaleziska i naprawy (każda osobnym zielonym commitem):**
+
+- **F1** (`fcaed59`, L102/L105): Disguise — nowy członek rodziny alt-kosztów —
+  bez wpisu w `COST_DESCRIPTORS` (m268) i `FAMILY` (m428); koszt hybrydowy
+  `{4}{R/G}{R/G}` bez pinu (mutacja M20 przechodziła wszystko). Dodane:
+  Disguise w obu rodzinach (M428 z polem hybryd), skan pipów hybrydowych
+  z asercją niepustości, pin etykiety obrotu.
+- **F2** (`7051ffc`, L13/L65): `effect.targetIndex` w `counter_spell` bez pinu
+  rozróżniającego (M8 `targets[0]` przechodziła). Syntetyk z odwrotną
+  kolejnością celów; M8 → RED.
+- **F3** (`c103a52`, ADR 0024 §3): rotacja próbki benchmarku (Eldraine weszła,
+  `innistrad-brg` wypadła) bez pomiaru. Pomiar 97,9 % / 78,6 % → progi
+  **0,82 / 0,63**.
+- **F4** (`91613ba`, L92/L142): „9/9 przepisań" w M435 → pomiar 7 w
+  `resources.js`, 10 w `src/`.
+- **F5** (`9efbbca`, ADR 0030/L164): cytaty 508.1c ↔ 508.1d zamienione w ~20
+  miejscach (audyt #134 to „potwierdził", weryfikując komentarze wobec
+  komentarzy). Poprawione + strażnik pary „numer ↔ pojęcie"
+  (`test/cr-numery-508-restrykcje-wymogi-straznik.test.js`); L164 dostaje
+  regułę 4.
+- **F6** (`857f3fc`, L48/M174): **awaria narzędzia** `bot-tie-audit` —
+  `illegal_ability:Brak kolorowej many` na komendzie Z OFERTY (Kozilek's
+  Shrieker `{C}` + Holdout Settlement „{T}: Add {C}"). Pętla landów w
+  `spendMana` miała ręczny predykat `srcColors.some((c) => reqColors.has(c))`,
+  który dla źródła bezbarwnego nie zachodzi nigdy; #145 nauczył bramki pipa
+  {C}, ale nie tę pętlę. Wspólny predykat + pin; M24 → RED.
+
+**Bramy:** fast **7088/7088** · `test:all` **7359/7359** · build **70 /
+4616,4 kB** · golden 4/4 · benchmark szybki 672 mecze (97,9 % vs random,
+78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
+(`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
+
+**Dokumentacja:** budżet lektury 99 885/100 000 tokenów (reguła 3 L164
+skrócona, próg bez zmian); handoff `docs/setup/HANDOFF_2026-09-29b.md`.
+Token GitHub wygasł pod koniec sesji — ostatnie commity do wypchnięcia po
+ponownym podłączeniu (bez force push).
