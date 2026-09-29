@@ -33,7 +33,9 @@ import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
 import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
-import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf } from './mana-wizard.js';
+import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
+  wizardSourceName,
+} from './mana-wizard.js';
 import { effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
@@ -2698,7 +2700,7 @@ function bootstrapTable() {
       // filtrem — komunikat pustej listy odróżnia „nic nie daje brakującego
       // koloru" od „nie ma czym tapnąć".
       availableCount: progress.availableCount,
-      untappedSources: progress.untappedSources.map((src) => ({ ...src, name: session.nameOf(src.cardId) })),
+      untappedSources: progress.untappedSources.map((src) => ({ ...src, name: wizardSourceName(src, session) })),
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
       // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork

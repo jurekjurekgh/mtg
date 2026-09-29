@@ -1270,9 +1270,14 @@ export function detectEmptyCostDescriptor(lines, { windowRecords = null } = {}) 
  * triggery tej samej aury, dwie instancje obrażeń od tego samego stworzenia
  * w różnych walkach to LEGALNE powtórzenia. Detektor pyta więc tylko o wpisy
  * z natury jednorazowe dla danego obiektu: RZUT czaru i zagranie landa.
- * Rzucenie dwóch kopii tej samej karty w jednej paczce jest teoretycznie
- * możliwe, ale rzadkie na tyle, że warte spojrzenia (detektory zgłaszają
- * „przyjrzyj się", nie „to błąd" — TESTER_STOLU.md).
+ * Rozstrzygnięcie (triage Żywy Tester seed 2027, 2026-09-28d): para takich
+ * samych linii rzutu z ROZSTRZYGNIĘCIEM tej karty pomiędzy nimi to dwie realne
+ * kopie (cast → resolve → cast → resolve — tak padł fałszywy alarm „Dream
+ * Twist → cel: Ty"), nie duplikat zdarzenia z jednej komendy. M266/C2 to
+ * jedna komenda i jeden czar — para jest bez rozstrzygnięcia pomiędzy.
+ * Granica świadoma: dwie kopie zagrane PRZED rozstrzygnięciem pierwszej
+ * (hold priorytetu) nadal wyglądają jak duplikat — rzadkie, warte spojrzenia
+ * (detektory zgłaszają „przyjrzyj się", nie „to błąd" — TESTER_STOLU.md).
  */
 const DUPLICATE_LOG_IGNORED = /^(Faza:|Tura |Auto-pass|Krok |Rozgrywka$)/;
 /** Czynności jednorazowe dla obiektu — tylko tu duplikat w paczce jest podejrzany. */
@@ -1280,9 +1285,12 @@ const DUPLICATE_LOG_ONCE_ONLY = /^(Rzucasz |Nieprzyjaciel rzuca |Zagrywasz |Niep
 
 export function detectDuplicateLogEntry(lines) {
   const found = [];
+  /** entry -> indeks poprzedniego wystąpienia w `lines`; raportowane raz na paczkę. */
   let seen = new Map();
-  const flush = () => { seen = new Map(); };
-  for (const line of lines) {
+  let reported = new Set();
+  const flush = () => { seen = new Map(); reported = new Set(); };
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const marker = line.match(/^\s*\[ROZGRYWKA\]\s*(.*)$/);
     if (!marker) continue;
     const body = marker[1].trim();
@@ -1290,14 +1298,20 @@ export function detectDuplicateLogEntry(lines) {
     const entry = body.replace(/^•\s*/, '').trim();
     if (!entry || DUPLICATE_LOG_IGNORED.test(entry)) continue;
     if (!DUPLICATE_LOG_ONCE_ONLY.test(entry)) continue;
-    const count = (seen.get(entry) ?? 0) + 1;
-    seen.set(entry, count);
-    if (count === 2) {
-      push(found, 'info',
-        `Wpis „${entry.slice(0, 60)}" pojawia się dwukrotnie w JEDNEJ paczce `
-        + 'modala — duplikat zdarzenia w wyniku komendy (klasa M266/C2)',
-        line.trim());
-    }
+    const first = seen.get(entry);
+    if (first === undefined) { seen.set(entry, i); continue; }
+    // Rozstrzygnięcie tej karty pomiędzy wystąpieniami = dwie realne kopie.
+    const name = entry.replace(DUPLICATE_LOG_ONCE_ONLY, '').split(' → ')[0].trim();
+    const resolvedBetween = name.length > 0 && lines
+      .slice(first + 1, i)
+      .some((between) => between.includes(name) && /zostaje rozstrzygnięt[ya]/.test(between));
+    seen.set(entry, i);
+    if (resolvedBetween || reported.has(entry)) continue;
+    reported.add(entry);
+    push(found, 'info',
+      `Wpis „${entry.slice(0, 60)}" pojawia się dwukrotnie w JEDNEJ paczce `
+      + 'modala — duplikat zdarzenia w wyniku komendy (klasa M266/C2)',
+      line.trim());
   }
   return found;
 }

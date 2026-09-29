@@ -185,9 +185,20 @@ test('M336/F: próg trucizny z JEDNEGO źródła i wycena bez nazw kart', () => 
     'bot ma czytać próg z silnika, nie trzymać własnej dziesiątki');
   assert.match(sba, />= POISON_LOSS_LIMIT/, 'SBA używa eksportowanej stałej');
   // Gałąź decyzji nie może wymieniać kart (ADR 0002) — tylko fakty ze stanu.
+  // PMSSB-18 (świadoma zmiana lokatora, L41): per-cel wyprowadzony do
+  // `proliferateTargetValue` (TA SAMA skala dla ridera czaru i wyboru) —
+  // pin strukturalny szuka wzorców w CAŁEJ wycenie proliferate: helper +
+  // gałąź. Duch pinu bez zmian: NEVER na sztywno, dobiecie -1/-1,
+  // wytrzymałość z widoku.
   const from = bot.indexOf("case 'resolve_proliferate'");
   assert.notEqual(from, -1, 'wycena proliferate istnieje');
-  const doKonca = bot.slice(from, bot.indexOf("case 'resolve_manifest_dread'", from));
+  const helper = bot.indexOf('function proliferateTargetValue');
+  assert.notEqual(helper, -1, 'helper per-cel istnieje (PMSSB-18)');
+  // PMSSB-19: za helperami proliferate siedzą teraz helpery search_library —
+  // granica lokalizatora = początek `searchRiderValue` (tylko wycena
+  // proliferate, bez cudzych rodzin).
+  const helperEnd = bot.indexOf('function searchRiderValue', helper);
+  const doKonca = bot.slice(helper, helperEnd) + bot.slice(from, bot.indexOf("case 'resolve_manifest_dread'", from));
   assert.ok(doKonca.length > 200 && doKonca.length < 6000, `rozmiar gałęzi do przejrzenia: ${doKonca.length}`);
   for (const nazwa of ['courage', 'sickness', 'CRUEL', 'plague-reaver']) {
     assert.equal(doKonca.toLowerCase().includes(nazwa.toLowerCase()), false,

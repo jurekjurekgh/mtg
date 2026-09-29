@@ -5783,7 +5783,10 @@ export function execute(state, input) {
   }
   if (cmd.type === 'tap_for_mana') {
     try {
-      const events = tapLandForMana(state, cmd.playerId, cmd.objectId);
+      // F5b/rodz.: komenda nosi OPCJONALNY wybór koloru grantu aury
+      // (`grantColor`) — bez niego aktywacja „two mana of any one color"
+      // nie ma czego rozstrzygać (reject w tapLandForMana, L52).
+      const events = tapLandForMana(state, cmd.playerId, cmd.objectId, { grantColor: cmd.grantColor ?? null });
       return accepted(state, cmd, { ok: true, events });
     } catch (error) {
       return reject(`illegal_mana_source:${error.message}`);
@@ -6522,6 +6525,12 @@ export function playerView(state, playerId) {
         // do `cloakReady` (prawa do obrotu = zna tylko kontroler). Nazwa
         // mechaniki nic nie mówi o karcie pod spodem, więc FoW zostaje.
         if (object.faceDownCause) entry.faceDownCause = object.faceDownCause;
+        // F5b/rodz. (audyt PR #143): utrata zdolności (CR 613.1f — flaga
+        // `abilitiesStripped`) jest faktem PUBLICZNYM rozstrzygniętego efektu.
+        // Bez tej flagi `getSourceForObject` na obiekcie WIDOKU rozstrzygał po
+        // podtypie i kreator many oferował `tap_for_mana`, którego silnik
+        // odrzuca (L1/L48: kontroler nie jest głupi — jest ślepy).
+        if (object.abilitiesStripped === true) entry.abilitiesStripped = true;
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;

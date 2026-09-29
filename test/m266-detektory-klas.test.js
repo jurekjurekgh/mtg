@@ -93,6 +93,29 @@ test('C2: ta sama linia dwa razy w jednej paczce modala „Rozgrywka"', () => {
   assert.match(found[0].message, /dwukrotnie|duplikat/i);
 });
 
+test('C2/regresja (Żywy Tester seed 2027, 2026-09-28d): dwa rzuty tej samej karty z osobnymi rozstrzygnięciami NIE są duplikatem', () => {
+  // Fałszywy alarm z partii `wiedzmin-wur` vs `innistrad-wu`, seed 2027:
+  // bot rzucił Dream Twist dwukrotnie w jednej paczce modala, ale KAŻDY rzut
+  // miał osobne rozstrzygnięcie (cast → 3 mielenia → resolve → cast → 3
+  // mielenia → resolve) — dwie realne kopie, nie duplikat zdarzenia z jednej
+  // komendy (klasa M266/C2). Rozstrzygnięcie karty pomiędzy takimi samymi
+  // liniami rzutu rozstrzyga sprawę.
+  const ok = [
+    '  [ROZGRYWKA] Rozgrywka',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty',
+    '  [ROZGRYWKA]   • Mielisz Floodhound do grobu',
+    '  [ROZGRYWKA]   • Mielisz Keep Out do grobu',
+    '  [ROZGRYWKA]   • Mielisz Inspiration do grobu',
+    '  [ROZGRYWKA]   • Dream Twist zostaje rozstrzygnięty',
+    '  [ROZGRYWKA]   • Nieprzyjaciel rzuca Dream Twist → cel: Ty',
+    '  [ROZGRYWKA]   • Mielisz Containment Membrane do grobu',
+    '  [ROZGRYWKA]   • Mielisz Island do grobu',
+    '  [ROZGRYWKA]   • Mielisz Mountain do grobu',
+    '  [ROZGRYWKA]   • Dream Twist zostaje rozstrzygnięty',
+  ];
+  assert.deepEqual(detectDuplicateLogEntry(ok), [], 'dwa realne rzuty z osobnymi rozstrzygnięciami');
+});
+
 test('C2: ta sama czynność w OSOBNYCH paczkach to nie duplikat', () => {
   const ok = [
     '  [ROZGRYWKA] Rozgrywka',

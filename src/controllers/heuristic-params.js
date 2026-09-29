@@ -83,6 +83,53 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // martwych parametrów zatruwa tablicę tune-card.mjs — wycinane u korzenia.
   'drawCardValue',           // wartość jednej dobranej karty (dawniej *6)
   'instantDrawFoeEndBonus', // PMSSB-3/F2: premia za instant-draw na EOT wroga (lustro M211/A1, 10)
+  // PMSSB-15 (audyt taktyczny prewencji/fog, prevent_*): okna wartości
+  // fog —właściciel (zgłoszenie B): „preventować u stworów które by lethal
+  // dostały albo u siebie jeśli któryś z kreatur przeciwnika go zrani" +
+  // odpowiedź na dmg-czar z lethalem. Helper fogWindowValue (L41: cast_spell
+  // + rodzina darmowych rzutów).
+  'fogWindowOwnTurnValue',        // własna tura: fog kasuje własny atak (M91, kara > max zysk)
+  'fogWindowWastedValue',         // nic nie da się zapobiec: brak napastników / pełny wyciek (M236)
+  'fogWindowChipValue',           // chip bez zagrożeń — najsłabszy realny wariant (dawna płaska premia)
+  'fogWindowLethalSaveValue',     // dopłata: ratunek bota przed śmiercią w tym starciu (życie LUB poison)
+  'fogWindowSavedCreatureValue',  // dopłata: mój stwór, którego ta walka by zabiła (lustro animate_linked 10)
+  'preventEtbWindowBaseValue',    // PMSSB-15/F4: ETB-prewencji dla artifact-stworów — baza słabego okna
+  // PMSSB-16 (walka bez fazy walki: fight + bite `damage_from_target_power`):
+  // CR 701.14a–d (damage nie-bojowe — deathtouch/lifelink działają, first
+  // strike nie). Helper `fightExchangeValue` (L41 dla fight+bite).
+  'fightBiteChipBase',        // bite: baza (stare 8) — chip bez killa
+  'fightBitePowerWeight',     // bite: waga mocy dealera (stare 2)
+  'fightBiteLethalBonus',     // bite: dopłata za zabicie ofiary (stare 15)
+  'fightKillBase',            // fight: baza zabicia ofiary PRZEŻYWAM (stare 25)
+  'fightKillPowerWeight',     // fight: waga mocy ofiary przy zabiciu (stare 2)
+  'fightMissBase',            // fight: brak zabicia (stare 5)
+  'fightTradeWorthWeight',    // fight (wymiana): waga różnicy ciał ofiary i walczącego (2p+t+mv)
+  'fightTradeCardCost',       // fight (wymiana): koszt DODATKOWEJ karty (mojego stwora) w wymianie
+  'fightWastedDeathExtra',    // fight: dodatkowa kara śmierci BEZ zabicia ofiary (musi przebić bazę)
+  'fightLifelinkWeight',      // fight/bite: waga lifelinku obu stron (CR 701.14d — damage nie-bojowe)
+  // PMSSB-17 (kradzież do końca tury — Act of Treason / Awaken / Insurrection):
+  // czasowa zmiana kontroli (CR 110.2 właściciel ≠ kontroler; CR 514.2 — wraca
+  // w cleanup PRZED ich turą, więc ZERO osi obronnej; CR 506.4 — zmiana kontroli
+  // usuwa z walki). Wartość = JEDEN pewny atak z haste w właściciela + luki w
+  // bloku + equipment (M257). Helper `gainControlValue`.
+  'gainControlStealBase',     // kradzież: baza tempa (karta wraca — brak zysku trwałego)
+  'gainControlAttackWeight',  // kradzież: waga mocy skradzionego (pewny atak w właściciela)
+  'gainControlOpenValue',     // kradzież: wartość luki w bloku (skradziony wypada z ich blokujących)
+  'gainControlEquipBonus',    // kradzież (M257): bonus za cel z equipmentem (niszczony riderem)
+  'gainControlEquipPerItem',  // kradzież (M257): dopłata za każdy equipment na celu
+  'gainControlOwnPenalty',    // kradzież (M231): kara celu własnego/braku (przebija bazę 50)
+  // PMSSB-19 (search_library — CR 701.23b search/shuffle): rider szukania
+  // w trzech ścieżkach (tabela ETB, cast_spell, activate_ability — L41).
+  // Tutor = NAJLEPSZA karta kategorii (nie losowa — stąd baza > drawCardValue 6).
+  'searchToBattlefieldBase',  // ląd na planszę (trwały ramp; stara ETB-10)
+  'searchToHandBase',         // karta do ręki (selekcja > losowe dobranie 6)
+  'searchLandScrewBonus',     // dopłata za ląd do ręki przy manascrew (moje lądy < 3)
+  'searchTwoCardsValue',      // Final Parting (2 karty: ręka + grób = 9 + 7)
+  'millFoeDeckOutWinValue',   // PMSSB-20: mill do 0 = wygrana przy ich dobraniu (CR 121.4)
+  'millFoePressureWeight',    // PMSSB-20: waga presji deck-outu wroga (wyścig bibliotek)
+  'millFoePressureCap',       // PMSSB-20: próg presji (ich karty po millu poniżej = rośnie)
+  'millReanimateBonus',       // PMSSB-20: self-mill pod reanimację w ręce (combo)
+  'millSelfTargetGuard',      // PMSSB-20: guard celowanego self-millu (−80 historyczne)
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -298,6 +345,69 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-3/F2: instant-draw na EOT przeciwnika (lustro M211/A1-scry: ta sama
   // racja fizzle-many; wartosc jak okno-scry, wlasne pokretlo).
   instantDrawFoeEndBonus: 10,
+  // PMSSB-15 (wartości przemyślane, pomiar PRZED: /tmp/pmssb15-prewencja-przed.mjs):
+  // bazy (ownTurn −300 / wasted −75 / chip 15) = wartości HISTORYCZNE rodzin
+  // M91/M236 — anty-over-fix: najsłabszy realny wariant zachowuje starą cenę;
+  // nowe wymiary to dopłaty: lethal-save 40 (zysk największy — „ratunek z
+  // śmierci"; pełny fog przy lethalu = 50+15+40 = 105 > cantrip i > tarcza
+  // 3-dmg Withstand ~80, ale < bounceLethalDodgeBonus 100 za removal-zbicie),
+  // saved-creature 12 (jak animate_linked 10 + 2 za ocalenie zamiast powtórki),
+  // cap 3 stwory (powyżej sytość). Wyciek (F3) skaluje bazę do zapobiegalnej
+  // mocy; pełny wyciek = wasted. F4: baza 3 = dawna płaska ETB (anty-over-fix).
+  fogWindowOwnTurnValue: -300,
+  fogWindowWastedValue: -75,
+  fogWindowChipValue: 15,
+  fogWindowLethalSaveValue: 40,
+  fogWindowSavedCreatureValue: 12,
+  preventEtbWindowBaseValue: 3,
+  // PMSSB-16 (wartości przemyślane, pomiar PRZED: /tmp/pmssb16-walka-przed.mjs):
+  // bazy bite (8/2/15) i fight (25/2/5) = wartości HISTORYCZNE Batch 45
+  // (anty-over-fix — najsłabszy realny wariant zachowuje starą cenę);
+  // nowe wymiary: kara śmierci = wartość ciała 2p+t+mv waga 1 (skala
+  // M149/A3/sac-economics — L41; zastępuje płaskie −20: małe stwory giną
+  // taniej, duże drożej → wymiana w dół przestaje się opłacać),
+  // lifelink waga 1 (pełne lustro obu stron — CR 701.14d), okna walki
+  // REUSE fogWindowLethalSaveValue/fogWindowSavedCreatureValue (L41 —
+  // jedna skala ratunku w rodzinie).
+  fightBiteChipBase: 8,
+  fightBitePowerWeight: 2,
+  fightBiteLethalBonus: 15,
+  fightKillBase: 25,
+  fightKillPowerWeight: 2,
+  fightMissBase: 5,
+  // Wymiana (oba giną) — drabina PMSSB-16: różnica ciał ×2 (moc podwójnie —
+  // jak M157/aury) minus koszt dodatkowej karty 25 (połowa killBase — wymiana
+  // to NIE czysty removal: tracę też swojego stwora). Skala daje drabinę
+  // kill-only (25+2p) > wymiana w górę (+5 dla 1/1→6/6) > wymiana równa
+  // (−25) > wymiana w dół (−55 dla 6/6→1/1 — musi przebić bazę czaru 50,
+  // konwencja M167/F: kara szkodliwego efektu przebija bazę).
+  fightTradeWorthWeight: 2,
+  fightTradeCardCost: 25,
+  // Śmierć BEZ zabicia (mój stwór ginie, ich żyje) to najgorszy wariant —
+  // dodatkowa kara musi przebić bazę czaru 50 już dla ciał 2/2+ (M167/F).
+  fightWastedDeathExtra: 12,
+  fightLifelinkWeight: 1,
+  // PMSSB-17 kradzież do EOT: 5 + 2·moc + 4·min(luki,3) + eq(25+5·n);
+  // cel własny/brak = −70 (M231 — przebija bazę 50 → poniżej passu).
+  gainControlStealBase: 5,
+  gainControlAttackWeight: 2,
+  gainControlOpenValue: 4,
+  gainControlEquipBonus: 25,
+  gainControlEquipPerItem: 5,
+  gainControlOwnPenalty: 70,
+  // PMSSB-19 search_library: 10/9 jak stara tabela ETB (L41 — bazy bez
+  // dryfu); two_cards = 9 (najlepsza do ręki) + 7 (połowa grobowa).
+  searchToBattlefieldBase: 10,
+  searchToHandBase: 9,
+  searchLandScrewBonus: 5,
+  // PMSSB-20 (mill — re-audyt): presja deck-outu wroga (wyścig bibliotek)
+  // + combo self-mill z reanimacją. Bazy 20+3n / −80 historyczne (guard).
+  millFoeDeckOutWinValue: 400,
+  millFoePressureWeight: 4,
+  millFoePressureCap: 12,
+  millReanimateBonus: 15,
+  millSelfTargetGuard: 55,
+  searchTwoCardsValue: 16,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,

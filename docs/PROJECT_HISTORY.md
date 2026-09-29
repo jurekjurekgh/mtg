@@ -13505,3 +13505,298 @@ po ustawieniu `src` (Safari z plikiem z dysku nie zaczynał wczytywania).
 Testy `test/card-sound-mp3.test.js` zaktualizowane do nowych oczekiwań
 (7 RED na starym źródle → 24/24 GREEN; w tym kontrola braku pliku = synteza
 i nowy pin domyślnego timeoutu). Fast **6941/6941**, build **70 / 4538,3 kB**.
+
+
+## 2026-09-28d — audyt scalonego PR #143 (rodzeństwo F5b), triage testera, CR-hunt
+
+Sesja „Kontynuujemy projekt.” wg ADR 0020/0021: PR
+[#144](https://github.com/jurekjurekgh/mtg/pull/144) na starcie (plan
+`f3e883b`), audyt scalonego #143 (`abfa7cb` — F5b + MP3 z dysku, 8 plików)
+i pętla jakości. Baseline fast 6941/6941, build 70 / 4538,3 kB.
+
+**Znaleziska rodzeństwa F5b (naprawione `ff6543c`):** przegląd rodziny (L72)
+dla landu po utracie zdolności many znalazł dwa rozjazdy oferty/walidacji.
+F1 (L1/L48): `playerView` nie niósł `abilitiesStripped` (fakt publiczny,
+ADR 0017) — kreator many oferował `tap_for_mana`, którego silnik odrzucał;
+widok niesie teraz flagę (warunkowo, bez pól „na zapas”). F2 (L52,
+fabrykacja): bare `tap_for_mana` na landzie z SAMYM grantem aury (Nature's
+Embrace po stripie) produkował 1 bezbarwną zamiast „two mana of any one
+color” (Oracle pobrane 2026-09-28) — `tapLandForMana` liczy src/grant PRZED
+mutacją, `!useGrant && !src` = jawny reject; komenda nosi opcjonalne
+`grantColor` (auto-tap podawał je zawsze). Strażnik
+`test/audyt-pr143-f5b-rodzenstwo.test.js` (5 pinów z anty-over-fixem;
+mutacje M-A/M-B/M-C → celne RED).
+
+**Triage Żywy Tester (seed 2027, Dream Twist):** fałszywy alarm — dwa realne
+rzuty z osobnymi rozstrzygnięciami. Refinement detektora M266/C2 (`0846ead`):
+rozstrzygnięcie karty pomiędzy powtórzeniami rozstrzyga parę; regresja
+z realnej partii w `test/m266-detektory-klas.test.js`; seed 2027 po zmianie:
+0 zgłoszeń. Niezależnie: M3 (bramy stripa OFF → 3 RED) i M8 (kolejność
+kandydatów MP3 → 6 RED) potwierdzają twierdzenia 28b.
+
+**CR-hunt (nowy obszar, ADR 0030):** CR 2026-09-25 u źródła
+(nwgarne/mtg-data) — 616.1/616.1a–g/616.2 (kolejność efektów zastępczych)
+i 122.1c (licznik tarczy) cytowane dosłownie w raporcie; weryfikacja kodu
+pozytywna (wybór do kontrolera + APNAP, must-choose, kolejność 616.1g,
+bramka `cause === 'effect'` tarczy trafna wobec 122.1c). Bez zmian kodu.
+
+**Raport:** `docs/audits/AUDYT_PR143_2026-09-28.md` (+ uwaga D1: liczby
+„bramka końcowa” w handoffzie 28b sprzed ostatniego commita #143).
+**Bramka końcowa:** fast 6946/6946, all **7218/7218** (371 566 ms), build
+70 / 4539,6 kB, exit 0. Trwały handoff `docs/setup/HANDOFF_2026-09-28d.md`.
+Bez nowych kart, progów, płatnych API, zdalnych zapisów, B0-full i merge.
+
+## 2026-09-28e — zgłoszenia właściciela A–E z gry (PR #144, cz. 2)
+
+**A (`e226cfa`) — numery źródeł many w kreatorze:** `wizardSourceName`
+= `session.nameOfObject(id) ?? name` — „Plains #1” przy nazwach permanentów
+(właściciel nie wiedział, który land tapuje). Strażnik 3 piny; M-A1 → 1 RED.
+
+**C (`7622ba9`) — encje HTML w wierszach wyboru:** „Ojutai&#39;s Breath”
+w modalu Rebound = encje widoczne dosłownie. `commandLabel` zwraca HTML,
+a dispatch `addRow` pchał etykiety bez `<` przez textContent. Fix:
+`labelLooksLikeHtml` (markup LUB encja `&…;`) → innerHTML. Klasa dotykała
+wszystkich pickerów z escapowanymi nazwami.
+
+**D (`9fc00d8`) — rozdział Sagi po zniszczeniu Sagi (CR 113.7a + 714.2,
+cytowane dosłownie, pin `8d860e45…`):** stub LKI nie niósł deskryptora
+`saga` (uwięziony w `lkiPrint`) → `fireSagaChapter` = cichy no-op mimo
+rozstrzygającego się triggera. Stub niesie `saga` z printLki.
+
+**B (`36eed2e` + golden-master `56b9fbb`) — Withstand „→ cel: Ty”:**
+darmowe rzuty Epic Experiment remisowały warianty celów (`prevent_next_damage`
+poza FRIENDLY_TARGET_EFFECTS + gracze poza `objectOnBoard`) → pierwszy cel
+z brzegu = przeciwnik. Taktyka właściciela: nigdy wroga; combat trick =
+ratunek stwora z lethalem / fog na twarz; odpowiedź na dmg-spell z lethalem.
+Wspólne `preventShieldValue` (L41) w lejku `freeCastTargetPenalty` i pętli
+`cast_spell`. Świadoma regeneracja golden-mastera (1 decyzja w 6 partiach —
+ranking Withstand: 61/60/−24/−65).
+
+**E (ZAMKNIĘTE przez właściciela — „uznajemy E za niebyłe”):** nagłówki
+partii w Dokumencie Google nie działały, bo właściciel grał na STARYM
+wdrożonym `/exec` (Code.gs wdraża ręcznie). Właściciel wdrożył nowy skrypt;
+logika (podział strony + H1 „⚔️ Nowa partia: X vs Y”) od dawna jest w repo
+(`docs/ai-appscript/Code.gs`, 10/10 testów VM). Lekcja: zmiana Code.gs
+wymaga WPROSTEGO komunikatu do właściciela (skąd wziąć plik, wkleić NOWY
+treść zachowując DOC_ID, Wdrożyć → Nowa wersja).
+
+**Tabela CR (`6a33a4e`):** `714.2` dopisany po weryfikacji u źródła
+(strażnik cytatów ADR 0030).
+
+**Bramka końcowa:** fast **6959/6959**, all **7230/7230** (7 suites,
+357 680 ms, 0 fail/skip), build **70 / 4546,5 kB**, exit 0. Handoff:
+`docs/setup/HANDOFF_2026-09-28e.md`. Bez nowych kart, progów, płatnych API,
+zdalnych zapisów i merge.
+
+## 2026-09-28f — PMSSB-15: prewencja/fog (PR #144, cz. 3)
+
+Re-audyt rodziny „POKRYTEJ (M91/M236)” z NOWYM dowodem (zgłoszenie B +
+spec taktyczny właściciela + potwierdzona luka L41 free-castów). 4 karty
+(`prevent_*`): Withstand / Revealing Wind / Inspire Awe / Ethersworn
+Shieldmage. Plan `docs/plans/PLAN_2026-09-28-pmssb15-prewencja.md`;
+POMIAR PRZED `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
+
+**F1 (fala A, L41, `4f6a583`):** okna fog (−300/−75/+15) żyły WYŁĄCZNIE
+w `cast_spell` — darmowe rzuty (epic/rebound/suspend/madness/exile) liczyły
+flat 70: darmowy fog we własnej turze zabijał własny atak (70 zamiast
+−230), przed deklaracją marnował się. `fogWindowValue` = wspólne źródło
+dla cast_spell i rodziny free-castów.
+
+**F2+F3 (fala B):** flat +15 nie rozróżniał chipa od lethal (oba 65) ani
+zegara poison (6 infect @8 = 65), i nie liczył wycieku wyjątku „except by
+enchanted/enchantment creatures” (leak 100% → bot rzucał martwy fog!).
+Skala: chip 15 (dawna — anty-over-fix) + lethal-save 40 (życie LUB poison;
+CR 702.90b + 615.6 cytowane) + 12/ocaleńca (cap 3); wyciek skaluje bazę,
+pełny = wasted (53 → −37).
+
+**F4 (fala C):** ETB Shieldmage flat 3 → `preventDamageThisTurnValue`
+(0 bez pasujących stworów — lustro `animate_linked`; +12 za realnie
+ratowanego z walki/burnu na stosie). Odwrócona kolejność okna naprawiona:
+66.6 ratunek < 70.2 pustka → 77.4 > 67.5.
+
+Test `test/audyt-pmssb15-prewencja.test.js` (16): RED 14/16 na starym
+kodzie (2 kotwice anty-over-fix z definicji), mutacja filtra wycieku =
+3 RED (dokładnie F3). Bramki: fast 6975/6975, all 7246/7246 (7 suites),
+build 70 / 4555,8 kB. Golden-master BEZ regeneracji; tie-audit 28,5%
+(11,0% realnych); mirror-eval 36:36 (pula bench bez rodziny);
+Żywy Tester 3 partie 0 zgłoszeń. CR-numery: 104.3d/615.4/615.6 dopisane
+po weryfikacji dosłownej (pin `8d860e45…`).
+
+Lekcja: „POKRYTE” w rejestrze rodzina może kryć realne luki (L41 —
+okna nigdy nie były wpięte poza cast_spell; płaska wycena nie znała
+lethala ani wycieku) — re-audyt z nowym dowodem właściciela był zasadny.
+
+## 2026-09-28g — PMSSB-16: walka bez fazy walki (PR #144, cz. 4)
+
+Pierwsza pętla „ciągła” po pustym BACKLOGU: walka (`fight` 1 karta /
+`damage_from_target_power` bite 1 karta) wg rozeznania. Plan:
+`docs/plans/PLAN_2026-09-28-pmssb16-walka.md`; POMIAR PRZED
+`/tmp/pmssb16-walka-przed.mjs` (S01–S07).
+
+**Drabina wymiany (`fightExchangeValue`, R2)** — serce audytu: stary
+model (−20/ginę, brak wagi ciał) prowadził do samobójstw (S03 = 119 →
+PASS; −15 „chip" przy śmierci własnego 3/3 = 37). Nowy:
+`kills&&!dies` 25+2·vPow (S01=103) / `dies` = 2·((kills?victimWorth:0)−
+dealerWorth)−25 (S02=49 z DT, S03=−11, S07=25+counter) / `!kills&&dies`
+= +`fightWastedDeathExtra(12)` — przebija bazę czaru 50 (tf->mocny 37→−9)
+/ `!kills&&!dies` = 5. L41 fight CR 701.14d: deathtouch/lifelink DZIAŁAJĄ
+(przy bite NIE liczy się druga strona — S05 97 vs S05b 94 = 3 = gain);
+reclaim riderów `add_counter` na skazanym gospodarzu (`−counterHostValue`,
+ta skala co cast_spell: 42/18); okno walki w duchu PMSSB-15 (S06 = 42 =
+2+40 fog-lethal). 8 pokręteł `fight*`.
+
+Test `test/audyt-pmssb16-walka.test.js` (10): RED 7/10 na starym kodzie
+(kotwice DOKŁADNE 103/94/49/−11/97/25/3/42); mutacja progów DT = 4 RED.
+Świadomy dryf L41: golden-master — 5/6 partii bit-po-bit BEZ zmian,
+1 partia identyczne WYBORY (267; KINDS-DIFF: BRAK), tylko wyceny +2.0 →
+fixture `--write`; pin PMSSB-4 `F-A1b` 37→−9 z komentarzem (to wasted-death,
+nie „chip"; piny kill 81/84 nietknięte). Bramki: fast 6985/6985,
+all 7256 (7+1 suites), build 71 / 4564,7 kB; tie-audit 28,3% (10,8%
+realnych — bez cast_spell w grozach); mirror-eval 8:8 (0.5 — symetria
+kodu); Żywy Tester 3 partie 0 zgłoszeń. CR 701.14d dopisane do tabeli
+po weryfikacji dosłownej (pin `8d860e45…`).
+
+Lekcja: rodzin do strojenia jest coraz mniej (walka = 2 karty, bite 1) —
+wartość pętli przenosi się na „POKRYTE w rejestrze, ale z nowym dowodem”
+(re-audyty) oraz ujednolicanie współdzielonych skal (counterHostValue,
+fogWindow) między rodzinami.
+
+## 2026-09-28h — PMSSB-17: kradzież do końca tury (PR #144, cz. 5)
+
+Druga pętla ciągła: `gain_control_until_end_of_turn` (Act of Treason /
+Awaken the Sleeper / Spreading Insurrection). Plan:
+`docs/plans/PLAN_2026-09-28-pmssb17-kradziez.md`; POMIAR PRZED
+`/tmp/pmssb17-kradziez-przed.mjs` (S01–S08).
+
+**R1 (double-counting, L41)**: dwa bloki scoringu z epok M257-r5b/C
+(3·power+eq) i M157/L28 (12+2p+t) SUMOWAŁY się w tej samej pętli efektów —
+4/5 wroga = 87 (50+37!), własna = −60 (50−110). Unifikacja w
+`gainControlValue` (wzorzec `graveyardShuffleValue`).
+
+**R3 (werdykt z ujemnym wynikiem)**: ZERO wartości obronnej/fog — kradzież
+sorcery-speed wraca w cleanup (CR 514.2) PRZED ich turą; skradziony
+napastnik znów u nich atakuje. S07 (obrona @5 vs 5/5) = 92→69 = zwykły
+atak. Oś = wyłącznie ofensywa (R2): atak z haste w właściciela (2·moc,
+CR 110.2) + luki w bloku (4·min(luki,3)) + equipment (25+5·n — bonus jest
+wyceną ridera `destroy_equipment_attached`, M257). Kotwice PO: 67/63/−20/
+97/67/63+59/69/69. M231: cel własny −20 < pass.
+
+Test `test/audyt-pmssb17-kradziez.test.js` (13): RED 12/13 na starym
+kodzie (weryfikowany stash), progi behawioralne M231/M157/M257 nietknięte
+(28/28). Bramki: fast 6998/6998, all 7269/7269, build 72 / 4566,6 kB;
+golden-master BEZ regeneracji (talie bench bez kart kradzieży — 0 dryfu);
+tie-audit 28,3% (10,8% realnych, bez cast_spell w grozach); mirror-eval
+8:8 (0.5); Żywy Tester 3 partie 0 zgłoszeń.
+
+Incydent sesji: workspace zresetowany między turami (HEAD → abfa7cb);
+naprawa wg protokołu: fetch origin → diff FETCH_HEAD → `git reset --mixed
+FETCH_HEAD` (zdalny tip = źródło prawdy; index mylił obecne pliki jako
+„delecje" — artefakt cofniętego indexu, nie brak pracy).
+
+Lekcja: L41-owy patchwork potrafi sumować DWIE wyceny tego samego efektu
+przez lata (double-count 37 pkt) — unifikacja do wspólnego helpera to
+nie kosmetyka, tylko korekta taktyczna rzędu 20-30 pkt na czarze.
+
+## 2026-09-28i — PMSSB-18: proliferate jako rider czaru (PR #144, cz. 6)
+
+Trzecia pętla ciągła: `proliferate` rider w cast_spell (3 karty: Courage
+in Crisis / Spread the Sickness / Fuel for the Cause). Wycena wyboru
+`resolve_proliferate` była (M341) — rider = 0 pkt. Plan:
+`docs/plans/PLAN_2026-09-28-pmssb18-proliferate.md`; POMIAR PRZED
+`/tmp/pmssb18-proliferate-przed.mjs` (S01–S06).
+
+**R1 (luka)**: S03 — wróg 9 poison (tick WYGRYWA grę, CR 104.3d) warty 0.
+Unifikacja per-cel `proliferateTargetValue` (ta sama skala dla ridera i
+wyboru, L41) + `proliferateBestValue` (suma dodatnich = najlepszy podzbiór
+„any number", CR 701.34a).
+
+**R2 (synergia kolejności)**: add_counter rozstrzyga się PRZED proliferate
+— świeży licznik też się proliferuje (Courage = 2× +1/+1, kotwica 68→70);
+destroy usuwa cel z kandydatów (wariant a->dying 78≠82 — wykluczenie).
+
+**R3 (wyścig trucizn nieliniowy)**: tick wroga = 1+poison (flat 1 z M341
+niedowartościowywało presji 8→9); 9→10 = 1000 (wygrana); własna 9→10 =
+NEVER na sztywno w gałęzi (M336/F pas bezpieczeństwa; CR 104.4b remis).
+Kotwice PO: 70/87/1068/90/86/57.
+
+Test `test/audyt-pmssb18-proliferate.test.js` (9): RED 7/9 na starym.
+Świadomy dryf L41: golden-master — 5/6 partii bit-po-bit, 1 partia
+IDENTYCZNE wybory i scoreSum (tylko wyceny nie-wybranych opcji) → fixture
+`--write`; M341/C fixture 2→10 (własność suma+przemienność bez zmian);
+M336/F lokator → helper+gałąź (duch bez zmian). Bramki: fast 7007/7007,
+all 7278/7278, build 73 / 4570,8 kB; tie-audit 28,3% (10,8% realnych);
+mirror-eval 8:8 (0.5); Żywy Tester 3 partie 0 zgłoszeń.
+
+Lekcja: strukturalne piny kodu (M336/F — wzorce regex w źródle gałęzi)
+żyją w napięciu z L41 (unifikacja do helpera) — rozwiązanie: poszerzenie
+lokalizatora pinu na CAŁĄ wycenę rodziny + pas bezpieczeństwa (dosłowny
+NEVER) zostawiony w gałęzi; obie strony wygrywają.
+
+## 2026-09-29 — PMSSB-19: search_library/tutory (PR #144, cz. 7)
+
+Czwarta pętla ciągła: `search_library_*` (11 kart — ETB-tutory, aktywacje
+poświęcające, czary). Plan: `docs/plans/PLAN_2026-09-29-pmssb19-search.md`;
+POMIAR PRZED `/tmp/pmssb19-search-przed.mjs` (S01–S06b).
+
+**R1 (rider 0 w cast/aktywacji)**: płaskie 9/10 żyły tylko w tabeli ETB —
+czary i aktywacje nie widziały zysku z szukania (Final Parting = 50 =
+sama baza; aktywacja Elka = 2 — bot nie poświęcał stwora po ląd).
+Unifikacja `searchRiderValue` z trzech ścieżek (L41).
+
+**R2 (Final Parting = 0 wszędzie)**: `search_library_two_cards_hand_and_grave`
+bez wartości, bez tabeli ETB, BEZ `LIBRARY_SEARCH_EFFECTS` (deck-out —
+C zgłoszenie Elka; dwie karty opuszczają bibliotekę!). Wartość 16 = 9+7;
+guard: bibl. 10 → −66 (kara 132 przebija). **R3**: selekcja > losowe
+dobranie (baza 9 = 6+3); ląd do ręki przy manascrew (lądy < 3) = +5.
+
+Test `test/audyt-pmssb19-search.test.js` (7): RED 5/7 na starym (2 kotwice
+L41-bez-dryfu celowo zielone). Świadomy dryf: golden-master 6/6 identyczne
+wybory i scoreSum (1 partia hash-only) → fixture `--write`; M336/F
+lokalizator zwężony (moje helpery search w regionie proliferate).
+Bramki: fast 7014/7014, all 7285/7285, build 74 / 4574,4 kB; tie-audit
+28,3% (10,8% realnych); mirror-eval 8:8 (0.5); Żywy Tester 3×0 zgłoszeń.
+
+Lekcja: rodzin z realną luką ubywa — wartości pętli są też w „safety"
+(deck-out guard dla 2-kartowego tutora) i w ujednolicaniu rozproszonych
+skal (9/10 w ETB vs 0 w cast/aktywacji to ten sam efekt w trzech
+maskach); pomiar z CIEŃKĄ biblioteką potrafi zniekształcić całą sondaż
+(kary `libraryLossPenalty` dominują) — kotwice rodzin bibliotecznych
+mierzyć przy pełnej talii.
+
+## 2026-09-29 — PMSSB-20: mill (RE-AUDYT z nowym dowodem) (PR #144, cz. 8)
+
+Zlecenie właściciela: „kontynuuj z PMSSB-19, 20, 21 i dalszymi". Rodzina
+mill (13 kart) była POKRYTA, ale re-audyt w stylu PMSSB-15 z nowym
+dowodem: (1) brief PMSSB każe liczyć zagrożenie deck-out — po stronie
+OFENSYWNEJ to wyścig bibliotek; (2) combo self-mill + reanimacja.
+
+**Dowód**: `playerView` niesie obie biblioteki jako `hidden`, ale
+ZLICZALNE (liczebność jawna mimo CR 402.2). POMIAR PRZED
+(`/tmp/pmssb20-mill-przed.mjs`, tome-scour): mill wroga = **85
+niezależnie od jego biblioteki** — mill 5 przy ich 5 kartach (dobijają do
+0 = przegrają przy najbliższym dobraniu, CR 121.4/704.5b) warte tyle samo
+co mill w pełną bibliotekę! Self-mill = **−65 niezależnie** od reanimacji
+w ręce i od zapasu własnej biblioteki (flat −80).
+
+**Luki**: 4 skale efektu (L41: cast −80/+20+3n, M96 −25/+6+2n, guard 8356,
+flat +2); foe-mill ślepy na wyścig bibliotek; self-mill pod reanimację
+niewidoczny (celowany flat −80 vs niecelowany +6 synergii — patchwork);
+flat −80 bez drabiny deck-outu.
+
+**Model** (5 pokręteł `mill*`): `foeMillValue` = `20+3n` (baza historyczna
+— anty-over-fix) + presja `4·max(0, 12−po)` / `+400` gdy mill DOMYKA ich
+niepustą bibliotekę (wygrana przy ich dobraniu); `foeLib ≤ 0` → baza
+płaska (artefakt setupu — poprawka po failu testu D Escape).
+`selfMillValue` = drabina deck-outu (−120/−20/−10) + synergia grobu
+(+6/−25 — M200/R: MOŻLIWOŚĆ, nie pewność) + `15·min(reanimaty w ręce, 2)`
+− `55` gdy celowany (guard −80 historyczny bez dryfu). Guard „jedyny
+bloker" (M202/J) = `−60 + foeMillValue` — anulacja premii: fine musi
+PREBIĆ mill nawet z presją (właściciel: utrata jedynego blokera > nawet
+mill-domknięcie; klasa L3).
+
+**Kotwice PO**: S01 foe fat 85 (baza bez dryfu) · S02 ich 6 kart 129
+(presja) · S03 ich 5 kart **485** (wygrana!) · S04 self −65 (guard) ·
+S05 self + reanimate **−50** (combo +15) · S06 self bibl. 6 −85 (drabina).
+Test 6 (RED 4/6 — 2 kotwice L41-bez-dryfu celowo zielone). Brany: fast
+7020/7020, all 7291/7291 (golden BEZ dryfu), build 70 / 4578,4 kB;
+tie-audit 28.3% (10.7% realnych); mirror 48-48×3; Tester 3×0.
