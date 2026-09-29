@@ -34,10 +34,15 @@ function baseCtx(ctx) {
  * AI-R2: tożsamość (zapis o nim = o nim) + ton (konkrety, mało poetyki).
  */
 export function buildLorePrompt(ctx) {
-  const { bot, deck, world, turnNo, history } = baseCtx(ctx);
+  const { bot, deck, world, heroDeck, heroWorld, turnNo, history } = baseCtx(ctx);
   return [
     `TY jesteś ${bot} — przeciwnikiem Czarodziejki w pojedynku magów.`,
     `Grasz talią „${deck}” ze świata: ${world}.`,
+    // Zgłoszenie właściciela 2026-09-29 (AI-R8): prompt NIE niósł talii
+    // Czarodziejki w żadnym trybie poza skitem (pola `heroDeck`/`heroWorld`
+    // były liczone w baseCtx i przekazywane z main.js, ale nieużywane) —
+    // model znał więc tylko talię bota i milczał o talii gracza.
+    `Czarodziejka gra talią „${heroDeck}” — jej karty pochodzą ze świata: ${heroWorld}.`,
     `W zapisie partii każde zdanie o ${bot} opisuje CIEBIE (twoje zagrania, twoje stwory, twoje rany) — nie trzeciego gracza. Czarodziejka to twoja przeciwniczka.`,
     '',
     'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
@@ -49,6 +54,7 @@ export function buildLorePrompt(ctx) {
     '- mów w pierwszej osobie (to TY walczysz z Czarodziejką),',
     `- nawiązuj KONKRETNIE do lore świata ${world}: jego miejsc, frakcji, postaci, stworów i wydarzeń — mniej poetyki i archaizmów, więcej twardych odniesień do świata,`,
     '- opowiedz starcie jako historię o pojedynku z Czarodziejką,',
+    `- swoje karty opisuj językiem świata ${world}, a karty Czarodziejki — językiem świata ${heroWorld} (dwa różne światy przy jednym stole),`,
     `- NIE używaj wprost nazw kart Magic: The Gathering ani meta-nazw mechanik, zdolności i słów kluczowych (opisuj zdarzenia językiem świata: ${world}),`,
     `- krótko: do około ${LORE_COMMENT_LIMIT} znaków.`,
   ].join('\n');
@@ -60,9 +66,9 @@ export function buildLorePrompt(ctx) {
  * bez powtórzeń, z własnymi odczuciami i wrażeniami.
  */
 export function buildPlayerPrompt(ctx) {
-  const { bot, deck, turnNo, history } = baseCtx(ctx);
+  const { bot, deck, heroDeck, turnNo, history } = baseCtx(ctx);
   return [
-    `Grasz towarzysko w Magic: The Gathering. TY jesteś graczem-botem z talią „${deck}” — naprzeciwko siedzi Czarodziejka (człowiek).`,
+    `Grasz towarzysko w Magic: The Gathering. TY jesteś graczem-botem z talią „${deck}” — naprzeciwko siedzi Czarodziejka (człowiek) z talią „${heroDeck}”.`,
     `W zapisie partii twoje zagrania to te podpisane „${bot}” — ${bot} przy stole to TY, nie trzeci gracz.`,
     '',
     'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
@@ -87,9 +93,9 @@ export function buildPlayerPrompt(ctx) {
  * punkty, konkrety, odczucia.
  */
 export function buildObserverPrompt(ctx) {
-  const { bot, deck, turnNo, history } = baseCtx(ctx);
+  const { bot, deck, heroDeck, turnNo, history } = baseCtx(ctx);
   return [
-    `Jesteś niezależnym obserwatorem towarzyskiej partii Magic: The Gathering. Przy stole: Czarodziejka (człowiek) i gracz-bot z talią „${deck}”.`,
+    `Jesteś niezależnym obserwatorem towarzyskiej partii Magic: The Gathering. Przy stole: Czarodziejka (człowiek, talia „${heroDeck}”) i gracz-bot z talią „${deck}”.`,
     `W zapisie partii zagrania bota podpisane są „${bot}”.`,
     '',
     'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
@@ -112,9 +118,9 @@ export function buildObserverPrompt(ctx) {
  * klimatyczne co lore-bot, ale narracja trzecioosobowa, z boku pojedynku.
  */
 export function buildLoreObserverPrompt(ctx) {
-  const { bot, deck, world, turnNo, history } = baseCtx(ctx);
+  const { bot, deck, world, heroDeck, heroWorld, turnNo, history } = baseCtx(ctx);
   return [
-    `Jesteś niezależnym obserwatorem pojedynku magów: Czarodziejka mierzy się z ${bot} (talia „${deck}” ze świata: ${world}).`,
+    `Jesteś niezależnym obserwatorem pojedynku magów: Czarodziejka (talia „${heroDeck}” ze świata: ${heroWorld}) mierzy się z ${bot} (talia „${deck}” ze świata: ${world}).`,
     `W zapisie partii zdania o ${bot} opisują jednego z pojedynkujących — twojego obserwowanego, nie trzeciego gracza.`,
     '',
     'Poniżej zapis partii (format „Tura N — Imię” + zdarzenia):',
