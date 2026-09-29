@@ -7738,8 +7738,12 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFoodChoice) {
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // poświęć Food (+5/+3) lub nie (+3/+3).
-    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true }));
-    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false }));
+    // PMSSB-22/F3 (zgłoszenie właściciela): bot musi wiedzieć, KTÓREGO stwora
+    // dotyczy decyzja — bez celu w komendzie nie da się policzyć, czy +5/+5
+    // zmienia wynik walki względem +3/+3 (pendingFoodChoice nie jest w widoku).
+    const foodTargetId = state.pendingFoodChoice.creatureId ?? null;
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true, creatureId: foodTargetId }));
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false, creatureId: foodTargetId }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
     // albo weź do ręki (CR 701.57a). Historia: M280/F zamknął ofertę dla

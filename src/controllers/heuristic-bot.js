@@ -626,6 +626,14 @@ function pumpDelta(view, effect) {
       * (effect.perCreature ?? 1);
     return { power: n, toughness: n };
   }
+  // PMSSB-22: delta Insatiable Appetite zależy od Food na polu bitwy —
+  // silnik bez Food daje +3/+3 od ręki (effects.js:4699), z Food otwiera
+  // decyzję `resolve_food_choice` (+5/+5 za poświęcenie).
+  if (effect.type === 'sacrifice_food_choice') {
+    const hasFood = (view?.zones?.battlefield ?? []).some((o) => o.controllerId === view?.playerId
+      && (o.subtypes ?? []).includes('Food'));
+    return hasFood ? { power: 5, toughness: 5 } : { power: 3, toughness: 3 };
+  }
   if (effect.type === 'pump_by_gates') {
     const n = (view.zones.battlefield ?? [])
       .filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length;
@@ -1069,6 +1077,15 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
   // zdolność nie miała wyceny (gołe score = 2) i bot aktywowała ją w Głównej
   // 1, gdy nikt nie atakował (2 many + tap na efekt, który wygasa w cleanup).
   ['buff_attacking_creatures', 'descriptor'],
+  // PMSSB-22 (zgłoszenie właściciela 2026-09-29, Insatiable Appetite):
+  // „You may sacrifice a Food. If you do, +5/+5. Otherwise, +3/+3.” ma
+  // KSZTAŁT pumpa — bez wpisu `temporaryPumpOf` zwracał null, więc cała
+  // rodzina (okna M146/M96/M179, symulacja M218/2, klamra M179/E) nie
+  // widziała karty: zero wartości na własnym stworze i ZERO kary za
+  // wzmocnienie stwora przeciwnika („rzuca ją w mojej turze na moją
+  // kreaturę”). L41/L28: karta wchodzi do ISTNIEJĄCEJ rodziny, nie dostaje
+  // własnej gałęzi.
+  ['sacrifice_food_choice', 'foodChoice'],
 ]);
 
 /**
@@ -9886,9 +9903,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
       case 'resolve_food_choice': {
-        // Insatiable Appetite: poświęć Food (+5/+5) albo nie (+3/+3).
-        // Bot poświęca Food, jeśli ma (większy buff).
-        return finish(cmd.sacrifice ? 50 : 30);
+        // PMSSB-22/F2 (zgłoszenie właściciela, Insatiable Appetite): dawniej
+        // płaskie `sacrifice ? 50 : 30` — bot ZAWSZE poświęcał Food za +2/+2,
+        // bez sprawdzenia czy to cokolwiek zmienia i bez wartości samego Food
+        // („{T}, poświęć ten artefakt: zyskaj 3 życia”). Teraz poświęcenie
+        // opłaca się, gdy WIĘKSZY pump zmienia wynik walki (a mniejszy nie)
+        // albo gdy cel jest NIEZABLOKOWANYM napastnikiem (+2 obrażenia w
+        // twarz); inaczej Food zostaje jako 3 życia — tym cenniejsze, im mniej
+        // życia (zagrożenie). Anty-over-fix: foodKeepValue ×0 przywraca
+        // dawne „zawsze poświęcaj” (remis 30/30 bierze pierwszą ofertę).
+        const base = 30;
+        if (!cmd.sacrifice) {
+          const lifeOf = (view.players ?? []).find((pl) => pl.id === view.playerId)?.life ?? 20;
+          return finish(base + P.foodKeepValue * (lifeOf <= 10 ? 2 : 1));
+        }
+        const creature = cmd.creatureId ? objectOnBoard(view, cmd.creatureId) : null;
+        if (!creature) return finish(50); // bez celu w komendzie — dawna wartość
+        const decisive = pumpChangesOutcome(view, creature, { power: 5, toughness: 5 })
+          && !pumpChangesOutcome(view, creature, { power: 3, toughness: 3 });
+        // NIEZABLOKOWANY napastnik: +2 mocy = 2 obrażenia więcej w twarz
+        // (pojęcie widoku `unblockedAttackers`, a nie przeliczanie bloków).
+        const unblockedAttacker = (view.combat?.unblockedAttackers ?? []).includes(creature.id);
+        return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? 2 : 0));
       }
       // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
       // pay {N}" (ETB) i ECHO. Silnik prezentuje decyzję TYLKO gdy jest
@@ -11349,6 +11385,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (cmd.type === 'resolve_surveil') {
       return `resolve_surveil(${(cmd.millIds ?? []).length ? `mill:${cmd.millIds.join('+')}` : 'keep'})`;
+    }
+    // PMSSB-22 (wzorzec M431/M203-2, klasa L34/L40): warianty poświęcenia Food
+    // były w śladzie nieodróżnialne (oba streszczały się do
+    // `resolve_food_choice`), więc audyt remisów parował je PO INDEKSIE, a
+    // wyceny w teście trzeba było zgadywać.
+    if (cmd.type === 'resolve_food_choice') {
+      return `resolve_food_choice(${cmd.sacrifice ? 'sacrifice' : 'keep'})`;
     }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;

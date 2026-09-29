@@ -299,6 +299,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // w tej decyzji (gałąź „ocalały wrogi stwór" miała gołą stałą 30).
   'opponentTargetFoeBase',      // kotwica: dawna stała 30 dla ocalałego wroga
   'opponentTargetThreatWeight', // dopłata za zagrożenie celu (moc·2+wytrz) — ×0 = dawna wartość
+  'foodKeepValue',      // PMSSB-22: wartość ZACHOWANEGO Food (3 życia) — ×0 = dawne „zawsze poświęcaj”
+  'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy +5/+5 zmienia wynik walki, a +3/+3 nie
   'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
 ]);
 
@@ -529,6 +531,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Próg dobicia (100 + 2·moc) pozostaje nieosiągalny dla tej gałęzi.
   opponentTargetFoeBase: 30,
   opponentTargetThreatWeight: 0.5,
+  foodKeepValue: 12,
+  foodDecisiveBonus: 25,
   opponentTargetThreatCap: 15,
 });
 
