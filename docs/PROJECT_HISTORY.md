@@ -13903,7 +13903,7 @@ pośrednio pinami rodzeństwa F5b; literały CR nowych numerów tabeli
 (615.4/615.6/701.14d/714.2) cytowane w kodzie i pilnowane tabelą, bez
 ponownego pobrania u źródła (do spot-checku ADR 0030 przy zmianie regułowej).
 
-## 2026-09-29c — audyt scalonego PR #145: sześć znalezisk (F1–F6) (PR #146)
+## 2026-09-29c — audyt scalonego PR #145: siedem znalezisk (F1–F7) (PR #146)
 
 **Tryb:** ADR 0020 B (audyt poprzedniego scalonego PR) + ADR 0016 (naprawy
 chirurgiczne) + ADR 0021 (pętla domyślna). Przedmiot: PR #145 (`6a47c35`,
@@ -13941,9 +13941,20 @@ jak u pozostałych 3 tokenów). Zero wad danych.
   `spendMana` miała ręczny predykat `srcColors.some((c) => reqColors.has(c))`,
   który dla źródła bezbarwnego nie zachodzi nigdy; #145 nauczył bramki pipa
   {C}, ale nie tę pętlę. Wspólny predykat + pin; M24 → RED.
+- **F7** (`a0f7d1a`, L48/L13 — etap 2 pętli, domknięcie notatki U1 z #144):
+  kara za osłonę WROGA własną kartą nie naliczała się dla celu-gracza, bo
+  `slot` brał się z `effect.targetIndex != null`, a Withstand nie ma
+  `targetIndex` — gałąź celu-gracza nie odpalała dla karty ze zgłoszenia
+  właściciela, choć komentarz obok to obiecywał. Próba kontrolna (kara
+  40 → 4000) pokazała, że wpis w mapie działał tylko dla stworów: stwór wroga
+  −67 → −4027, gracz wroga −24 → −24. Konwencja `targets[effect.targetIndex
+  ?? 0]` (jak w sąsiedniej gałęzi `gain_life_target`); gracz wroga −24 → −64,
+  cele własne bez zmian. Pin B6 z kotwicami 60/−64/61/−67; mutacje B-M i B2-M
+  (dotąd ZIELONE — to była treść U1) → RED, B3-M (regresja) → RED. Wybory
+  bota i audyt remisów bez zmian (reguła nośna, taktyka ta sama).
 
-**Bramy:** fast **7088/7088** · `test:all` **7359/7359** · build **70 /
-4616,4 kB** · golden 4/4 · benchmark szybki 672 mecze (97,9 % vs random,
+**Bramy:** fast **7089/7089** · `test:all` **7359/7359** · build **70 /
+4617,0 kB** · golden 4/4 · benchmark szybki 672 mecze (97,9 % vs random,
 78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
 (`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
 

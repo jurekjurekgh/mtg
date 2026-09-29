@@ -77,22 +77,31 @@ skonfrontowany ze „stanem na starcie PR"; chirurgiczność patchy (ADR 0016 B)
 
 ### 2. Pętla jakości (ADR 0021 §4) — temat po audycie
 
-- [ ] Wybór z nowego dowodu (nie z inwencji): kandydaci z handoffu
-  (`resolve_discard_choice` 49 remisów rozróżnialnych, `activate_ability` 25,
-  `cast_spell` 20), otwarta uwaga **U1** z raportu audytu #144 (mutacje B-M/
-  B2-M zielone w rodzinie prewencji) albo znalezisko własne z audytu #145.
-- [ ] Plan `docs/plans/PLAN_2026-09-29b-<temat>.md`, sonda PRZED → finding →
-  fala → pomiar PO; piny + mutacje; wpis w rejestrze (`docs/PMSSB.md`, jeśli
-  to rodzina wyceny bota).
-- [ ] **Nie** wymyślam nowego batcha kart (ADR 0029/ADR 0021 §4c) — lista kart
+- [x] Wybór z nowego dowodu (nie z inwencji): **U1** z raportu audytu #144
+  (mutacje B-M/B2-M zielone w rodzinie prewencji). Sonda PRZED
+  (`dist/logs/u1-withstand-sonda.mjs`) + próba kontrolna (kara 40 → 4000)
+  pokazały, że zielone mutacje to nie redundancja, a MARTWA reguła: gałąź
+  celu-gracza nie odpalała dla karty bez `targetIndex`, czyli dla Withstand —
+  karty ze zgłoszenia właściciela. Kandydaci z remisów (`resolve_color_choice`
+  15/15 rozróżnialnych, `attack` 279, `block` 220) zostają na następną pętlę.
+- [x] Znalezisko **F7** + naprawa `a0f7d1a`: konwencja `targets[effect.targetIndex
+  ?? 0]` w `friendlyMisaimPenalty` (jak w sąsiedniej gałęzi `gain_life_target`);
+  gracz wroga −24 → −64, cele własne 60/61 bez zmian; pin B6
+  (`test/zgloszenie-b-withstand-cel-bota.test.js`) z kotwicami 60/−64/61/−67;
+  mutacje B-M, B2-M, B3-M → RED. Rejestr `docs/PMSSB.md` bez zmian — to nie
+  nowa rodzina wyceny, a naprawa nośności istniejącej (M179/E).
+- [x] **Nie** wymyślam nowego batcha kart (ADR 0029/ADR 0021 §4c) — lista kart
   przychodzi czatem od właściciela.
 
 ### 3. Domknięcie sesji
 
-- [ ] Bramy: `npm test` (fast), `npm run test:all`, `npm run build`,
-  golden-master 4/4; benchmark tylko profil szybki (ADR 0018).
-- [ ] Dokumentacja: `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-09-29b.md`,
-  opis PR kumulatywnie; liczby „stanu" mierzone na końcu (L92).
+- [x] Bramy: `npm test` fast **7089/7089** · `npm run test:all` **7359/7359**
+  (pomiar sprzed F7) · `npm run build` **70 modułów / 4617,0 kB** ·
+  golden-master 4/4 (w fast) · benchmark tylko profil szybki (ADR 0018) ·
+  `bot-tie-audit --gry=60` exit 0, liczby identyczne jak po F6.
+- [x] Dokumentacja: `docs/PROJECT_HISTORY.md` (wpis 2026-09-29c rozszerzony
+  o F7), `docs/setup/HANDOFF_2026-09-29b.md` (F1–F7, U1 domknięta), raport
+  audytu (§8c + tabela mutacji + brama), opis PR kumulatywnie.
 
 ## Ryzyka i pułapki
 
