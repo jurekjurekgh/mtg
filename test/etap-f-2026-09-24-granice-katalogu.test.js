@@ -12,6 +12,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { matchColorRequirements } from '../src/engine/mana-cost.js';
 
 const registry = createCardRegistry();
 
@@ -30,6 +31,41 @@ test('granice katalogu: koszty many zawierają wyłącznie symbole obsługiwane 
   }
   assert.deepEqual(offenders, [],
     'Nowy symbol many w katalogu — zaimplementuj go w parseManaCost i płatnościach (patrz nagłówek src/engine/mana-cost.js)');
+});
+
+test('granice katalogu: {C} w koszcie ZDOLNOŚCI obsługiwany, spoza WUBRG/{C} — nie', () => {
+  // Batch 61/158 (Kozilek's Shrieker) wprowadził pierwszy pip bezbarwny
+  // katalogu — w koszcie AKTYWOWANEJ zdolności (`cost` z kluczem `mana`,
+  // inaczej niż koszty alternatywne kart, patrz test niżej). Ta droga jest
+  // obsługiwana end-to-end: `matchColorRequirements` (CR 107.4c) dopuszcza
+  // dla `['C']` wyłącznie jednostkę bezbarwną `[]`, a wołają go walidacja,
+  // oferta i płatność (resources.js). Strażnik pilnuje więc DWÓCH rzeczy:
+  // (a) żaden inny symbol niż WUBRG/{C} nie wchodzi do kosztów zdolności,
+  // (b) znana karta z {C} nadal istnieje (inaczej asercja (a) jest pusta).
+  const zle = [];
+  const zC = [];
+  const visit = (cardId, node, path) => {
+    if (!node || typeof node !== 'object') return;
+    if (Array.isArray(node.colors) && Number.isInteger(node.mana)) {
+      const spoza = node.colors.filter((c) => !['W', 'U', 'B', 'R', 'G', 'C'].includes(c));
+      if (spoza.length) zle.push(`${cardId}:${path} {${spoza.join('')}}`);
+      if (node.colors.includes('C')) zC.push(`${cardId}:${path}`);
+    }
+    for (const [key, value] of Object.entries(node)) {
+      if (value && typeof value === 'object' && key !== 'imageUri') visit(cardId, value, `${path}.${key}`);
+    }
+  };
+  for (const def of registry.all()) visit(def.id, def, '');
+  assert.deepEqual(zle, [],
+    'Koszt zdolności z symbolem spoza WUBRG/{C} — zaimplementuj go w matchColorRequirements (patrz nagłówek src/engine/mana-cost.js)');
+  assert.ok(zC.length >= 1,
+    'Brak karty z {C} w koszcie zdolności — jeśli 158 wypadła z katalogu, usuń ten strażnik ŚWIADOMIE');
+
+  // (c) reguła płatności: {C} opłaca tylko jednostka bezbarwna [].
+  assert.equal(matchColorRequirements([[]], [['C']]), true, 'bezbarwna jednostka opłaca {C}');
+  assert.equal(matchColorRequirements([['R']], [['C']]), false, 'czerwona jednostka NIE opłaca {C}');
+  assert.equal(matchColorRequirements([['R']], [['R']]), true, 'kontrola: {R} opłaca czerwona');
+  assert.equal(matchColorRequirements([[]], [['R']]), false, 'kontrola: bezbarwna NIE opłaca {R}');
 });
 
 test('granice katalogu: koszty alternatywne w katalogu nie mają {C}', () => {

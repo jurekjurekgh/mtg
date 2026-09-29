@@ -12495,6 +12495,37 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 9. Kozilek's Shrieker (OGW) — 3/2 Eldrazi Drone, Devoid, „{C}: +1/+0
+  //    i menace do końca tury". Pierwsza karta katalogu z pipem BEZBARWNYM
+  //    w koszcie zdolności: `cost.colors: ['C']` niesie go przez walidację,
+  //    ofertę i płatność, a `matchColorRequirements` dopuszcza wyłącznie
+  //    jednostkę bezbarwną (CR 107.4c — kolorowe źródło nie zapłaci {C}).
+  //    Produkcja bezbarwna działa od PR #134 (F-1: brak `colors` w efekcie
+  //    aktywowanej zdolności = produkcja bezbarwna, nie unia kolorów obiektu);
+  //    pin tego zachowania dla Eldrazi Sciona jest w testach batcha.
+  //    Rulingi OGW (2016-01-22): menace po legalnym bloku nie cofa bloku;
+  //    wielokrotny menace jest redundantny — z tego drugiego korzysta
+  //    grantKeywordsUntilEndOfTurn (duplikat nic nie dodaje).
+  defineCard({
+    id: 'kozileks-shrieker', name: "Kozilek's Shrieker", set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['devoid'],
+    oracleText: "Devoid (This card has no color.)\n{C}: This creature gets +1/+0 and gains menace until end of turn. (It can't be blocked except by two or more creatures. {C} represents colorless mana.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a384cd5b-2c6c-4969-bb62-a017e2fc9794.jpg?1783937914',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['C'] },
+        effect: [
+          { type: 'pump', power: 1, toughness: 0 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['menace'] },
+        ],
+      }),
+    ],
+    artId: 158, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

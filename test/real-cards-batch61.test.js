@@ -671,3 +671,108 @@ test('B61/157: Infectious Bloodlust — śmierć gospodarza: „you may search" 
   assert.ok(inHand(state2, 'infectious-bloodlust', 'p1'), 'wybrana kopia trafia do ręki');
   assert.ok(!find(state2, 'infectious-bloodlust', 'library'), 'karta opuściła bibliotekę');
 });
+
+// ---- B61/158: Kozilek's Shrieker (OGW #73, plan Zendikar) ------------------
+
+test("B61/158: Kozilek's Shrieker — dane Oracle, {2}{B}, druk OGW i brak koloru", () => {
+  const def = registry.get('kozileks-shrieker');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Eldrazi', 'Drone']);
+  // Devoid (CR 702.114): karta NIE MA koloru — pusty profil, mimo {B} w koszcie.
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'OGW');
+  assert.equal(def.artId, 158);
+  assert.equal(def.plan, 'Zendikar');
+  assert.deepEqual(def.keywords, ['devoid']);
+  assert.ok(def.oracleText.includes('Devoid (This card has no color.)'), 'Oracle w definicji');
+  assert.ok(def.oracleText.includes('{C}: This creature gets +1/+0 and gains menace until end of turn.'));
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('a384cd5b'), 'imageUri z druku OGW (ogw/73)');
+  // Koszt manowy karty w tabeli (bez {C} — pip bezbarwny siedzi w ZDOLNOŚCI).
+  assert.equal(MANA_COSTS['kozileks-shrieker'], '{2}{B}');
+  // Zdolność: koszt {C} (CR 107.4c) + pump + menace do końca tury.
+  assert.equal(def.abilities.length, 1);
+  const ability = def.abilities[0];
+  assert.equal(ability.type, 'activated');
+  assert.deepEqual(ability.cost, { mana: 1, colors: ['C'] },
+    'pip bezbarwny jest wymaganiem koloru w koszcie zdolności (nie generic)');
+  assert.deepEqual(ability.effect, [
+    { type: 'pump', power: 1, toughness: 0 },
+    { type: 'grant_keywords_until_end_of_turn', keywords: ['menace'] },
+  ]);
+});
+
+test("B61/158: {C} opłaca wyłącznie mana bezbarwna — czerwona pula nie daje oferty", () => {
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'shrieker'),
+    'kolorowa mana nie może zapłacić {C} (CR 107.4c) — brak oferty');
+  const r = execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'shrieker', abilityIndex: 0 });
+  assert.equal(r.ok, false, 'ręcznie podana komenda odrzucona');
+  // Silnik odrzuca na walidacji kolorów: „Brak kolorowej many" / „Brak
+  // kolorowego źródła many" — oba komunikaty to ta sama bramka pipów.
+  assert.match(r.events[0].reason, /Brak kolorow/, 'maszynowy powód odrzucenia');
+  assert.equal(player(state, 'p1').mana, 1, 'odrzucona aktywacja nie zabiera many');
+});
+
+test('B61/158: mana bezbarwna opłaca {C} — +1/+0 i menace do końca tury', () => {
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  // Pula mieszana: czerwona jednostka NIE może przejąć pipa {C} — płatność
+  // musi wybrać jednostkę bezbarwną ('' w puli), a czerwoną zostawić.
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  addMana(state, 'p1', 1, { colors: [] });
+  const cmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'shrieker');
+  assert.ok(cmd, 'oferta {C} przy bezbarwnej manie w puli');
+  run(state, cmd);
+  resolve(state);
+  const shrieker = state.objects.get('shrieker');
+  assert.equal(effectivePower(shrieker, state), 4, '3/2 + 1/0 = 4/2');
+  assert.equal(effectiveToughness(shrieker, state), 2, 'pump nie rusza wytrzymałości');
+  assert.ok(effectiveKeywords(shrieker, state).includes('menace'), 'menace do końca tury');
+  assert.deepEqual(player(state, 'p1').manaPool, { R: 1 }, 'wydana jednostka bezbarwna, czerwona została');
+});
+
+test('B61/158: dwie aktywacje kumulują +1/+0, a menace jest redundantny (ruling 2016-01-22)', () => {
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 2, { colors: [] });
+  for (let i = 0; i < 2; i += 1) {
+    const cmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'shrieker');
+    assert.ok(cmd, `oferta aktywacji nr ${i + 1}`);
+    run(state, cmd);
+    resolve(state);
+  }
+  const shrieker = state.objects.get('shrieker');
+  assert.equal(effectivePower(shrieker, state), 5, 'dwa pumpy +1/+0 sumują się');
+  assert.equal(effectiveKeywords(shrieker, state).filter((k) => k === 'menace').length, 1,
+    'wielokrotny menace na tym samym stworze jest redundantny');
+  assert.deepEqual(player(state, 'p1').manaPool, {}, 'obie aktywacje zapłacone');
+});
+
+test("B61/158: mana bezbarwna ze Sciona (poświęcenie) domyka {C} — ścieżka talii Zendikar", () => {
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'scion', 'token_eldrazi_scion', 'p1', 'battlefield', { summoningSickness: false });
+  // Bez many w puli zdolność {C} nie jest oferowana (źródła z kosztem
+  // poświęcenia nie wchodzą do auto-tapu — aktywuje je gracz, CR 605.3)…
+  assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'shrieker'),
+    'brak bezbarwnej many = brak oferty');
+  // …a po ręcznej aktywacji Sciona ({T}-like: poświęcenie → {C}) oferta wraca.
+  const scionCmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'scion');
+  assert.ok(scionCmd, 'zdolność many Sciona jest oferowana');
+  run(state, scionCmd);
+  assert.deepEqual(player(state, 'p1').manaPool, { '': 1 }, 'Scion produkuje jednostkę BEZBARWNĄ (klucz pusty)');
+  const cmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'shrieker');
+  run(state, cmd);
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('shrieker'), state), 4, 'Scion zapłacił {C}');
+  assert.ok(effectiveKeywords(state.objects.get('shrieker'), state).includes('menace'));
+  assert.ok(!state.objects.has('scion') || state.objects.get('scion').zone !== 'battlefield',
+    'Scion został poświęcony jako koszt many');
+});

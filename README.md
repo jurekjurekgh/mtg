@@ -137,7 +137,7 @@ liczone z plików `decks/*.txt`).
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
-| `zendikar` | Zendikar | WURG | 35 | 12 | 23 |
+| `zendikar` | Zendikar | WURG | 36 | 12 | 24 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 

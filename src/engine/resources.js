@@ -5,7 +5,7 @@ import { effectiveProtectionFromColors, isProtectedFromSource } from './attachme
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
-import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
+import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana, unitCoversRequirement, unitCoversAnyRequirement } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
 import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
@@ -106,7 +106,10 @@ function matchPipAssignment(units, requirements) {
     if (pos >= requirements.length) return true;
     for (let i = 0; i < n; i += 1) {
       if (used[i]) continue;
-      if (requirements[pos].some((c) => units[i].includes(c))) {
+      // Predykat WSPÓLNY z matchColorRequirements — inaczej bramka mówi TAK,
+      // a płatność rzuca „Brak kolorowej many w puli" (m.in. pip bezbarwny
+      // {C}: jednostka bezbarwna [] opłaca go, kolorowa nie; CR 107.4c).
+      if (unitCoversRequirement(units[i], requirements[pos])) {
         used[i] = true;
         assign[pos] = i;
         if (walk(pos + 1)) return true;
@@ -153,6 +156,10 @@ function poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveSet) {
 function firstUncoveredPipColor(poolUnits, pipReqs) {
   for (const req of pipReqs) {
     for (const c of req) {
+      // Grant lądu produkuje manę KOLOROWĄ (backtracking po WUBRG w
+      // planGrantManaColors) — pip bezbarwny {C} (CR 107.4c) nie ma tu czego
+      // szukać, więc nie zwracamy go jako koloru grantu.
+      if (!['W', 'U', 'B', 'R', 'G'].includes(c)) continue;
       const need = pipReqs.filter((r) => r.includes(c)).length;
       const have = poolUnits.filter((u) => u.includes(c)).length;
       if (have < need) return c;
@@ -408,7 +415,8 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     if (!covered) {
       for (const entry of untappedFreeManaSources(state, playerId)) {
         if (covered) break;
-        if (!entry.colors.some((c) => reqColors.has(c))) continue;
+        // Wspólny predykat: bezbarwne źródło (colors []) też domyka pip {C}.
+        if (!unitCoversAnyRequirement(entry.colors, requirements)) continue;
         // A: rezerwa jak lądy wyżej (wolne tapnięcie też zjada świeżą bazę).
         const freshCovers = matchColorRequirements(
           [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId)], requirements);
@@ -436,7 +444,9 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
         // A: domknięcie łańcucha — tapane to, co produkuje kolor wymagań
         // LUB kolor potrzebny kosztom przechodzących źródeł (ogniwo B→A).
         const neededColors = new Set([...reqColors, ...passing.flatMap((row) => row.costPips)]);
-        if (!entry.colors.some((c) => neededColors.has(c))) continue;
+        // Predykat wspólny (jak wyżej): zbiór kolorów traktujemy jako osobne
+        // wymagania jednokolorowe — bezbarwna jednostka [] łapie wtedy {C}.
+        if (!unitCoversAnyRequirement(entry.colors, [...neededColors].map((c) => [c]))) continue;
         tapCostedManaSource(state, playerId, entry, { preserveColors: [...reqColors], requirements });
         covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
       }
@@ -965,7 +975,6 @@ export function fundableCostedPlan(state, playerId, reqsOrNull, excludeSourceId 
   // Jedna próba ufundowania (lustro tapCostedManaSource (1)/(2'')/(3)).
   const tryFund = (entry) => {
     const pipReqs = entry.costPips.map((c) => [c]);
-    const pipColors = new Set(entry.costPips);
     const costTotal = entry.costGeneric + entry.costPips.length;
     const prePool = poolColors();
     let newlyTapped = 0;
@@ -973,13 +982,13 @@ export function fundableCostedPlan(state, playerId, reqsOrNull, excludeSourceId 
     for (const land of lands) {
       if (tappedLand.has(land.id)) continue;
       if (matchColorRequirements(poolColors(), pipReqs)) break;
-      if (!land.colors.some((c) => pipColors.has(c)) && land.grant <= 0) continue;
+      if (!unitCoversAnyRequirement(land.colors, pipReqs) && land.grant <= 0) continue;
       newlyTapped += tapLandCopy(land, land.grant > 0 ? firstUncoveredPipColor(poolColors(), pipReqs) : null);
     }
     for (const entryFree of free) {
       if (tappedFree.has(entryFree.ref)) continue;
       if (matchColorRequirements(poolColors(), pipReqs)) break;
-      if (!entryFree.colors.some((c) => pipColors.has(c))) continue;
+      if (!unitCoversAnyRequirement(entryFree.colors, pipReqs)) continue;
       newlyTapped += tapFreeCopy(entryFree);
     }
     if (!matchColorRequirements(poolColors(), pipReqs)) return false;
@@ -1136,7 +1145,6 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
     const poolUnits = () => [...expandManaPool(player.manaPool), ...expandManaPool(player.restrictedPool ?? {})];
     const prePool = poolUnits();
     const pipReqs = entry.costPips.map((c) => [c]);
-    const pipColors = new Set(entry.costPips);
     // Nowo-tapnięta mana (świeża) — pula sprzed finansowania się NIE liczy:
     // generic kosztu pochodzi ze ŚWIEŻYCH (bramka (iv) przypisała pulę pipom).
     let newlyTapped = 0;
@@ -1147,14 +1155,14 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
       if (matchColorRequirements(poolUnits(), pipReqs)) break;
       const srcColors = getSourceForObject(land, state)?.colors ?? [];
       const grant = grantManaOnLand(state, land.id);
-      if (!srcColors.some((c) => pipColors.has(c)) && grant <= 0) continue;
+      if (!unitCoversAnyRequirement(srcColors, pipReqs) && grant <= 0) continue;
       const need = grant > 0 ? firstUncoveredPipColor(poolUnits(), pipReqs) : null;
       tapLandForMana(state, playerId, land.id, { grantColor: grant > 0 ? (need ?? srcColors[0] ?? 'G') : null });
       newlyTapped += grant > 0 ? grant : 1;
     }
     for (const free of untappedFreeManaSources(state, playerId)) {
       if (matchColorRequirements(poolUnits(), pipReqs)) break;
-      if (!free.colors.some((c) => pipColors.has(c))) continue;
+      if (!unitCoversAnyRequirement(free.colors, pipReqs)) continue;
       tapFreeManaSource(state, playerId, free);
       newlyTapped += free.amount;
     }

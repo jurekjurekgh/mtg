@@ -1,0 +1,39 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Kozilek%27s%20Shrieker&set=ogw",
+ "print": "Kozilek's Shrieker (OGW)",
+ "name": "Kozilek's Shrieker",
+ "mana_cost": "{2}{B}",
+ "cmc": 3.0,
+ "type_line": "Creature — Eldrazi Drone",
+ "oracle_text": "Devoid (This card has no color.)\n{C}: This creature gets +1/+0 and gains menace until end of turn. (It can't be blocked except by two or more creatures. {C} represents colorless mana.)",
+ "power": "3",
+ "toughness": "2",
+ "colors": [],
+ "color_identity": [
+  "B"
+ ],
+ "keywords": [
+  "Devoid"
+ ],
+ "set": "ogw",
+ "collector_number": "73",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/a/3/a384cd5b-2c6c-4969-bb62-a017e2fc9794.jpg?1783937914"
+ },
+ "pobrano": "2026-09-29",
+ "rulings": [
+  {
+   "source": "wotc",
+   "published_at": "2016-01-22",
+   "comment": "If Kozilek's Shrieker gains menace after it's been legally blocked by one creature, it will remain blocked."
+  },
+  {
+   "source": "wotc",
+   "published_at": "2016-01-22",
+   "comment": "Multiple instances of menace on the same creature are redundant."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/ogw/73/rulings",
+ "rulingsPobrano": "2026-09-29"
+}

@@ -552,4 +552,7 @@ export const MANA_COSTS = {
   "griffin-guide": "{2}{W}",
   // Batch61: Infectious Bloodlust (ORI) — aura {1}{R}.
   "infectious-bloodlust": "{1}{R}",
+  // Batch61: Kozilek's Shrieker (OGW) — devoid 3/2; {C} siedzi w koszcie
+  // ZDOLNOŚCI (cost.colors: ['C']), nie w koszcie many karty.
+  "kozileks-shrieker": "{2}{B}",
 };
