@@ -45,17 +45,9 @@ dokument opisuje kontekst, wybór i jego konsekwencje.
 | [0030](0030-fetch-cr-rulings-before-engine-changes.md) | Zmiany regułowe (fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem (po F3 i B4 w PR #105) | Zaakceptowana |
 ## Gdzie zapisać regułę (ADR vs LESSONS vs handoff)
 
-Uwaga właściciela (2026-08-14): reguły trwałe nie mogą mieszkać w handoffie, bo
-handoff opisuje JEDNĄ sesję i traci aktualność.
-
-| Rodzaj treści | Miejsce |
-|---|---|
-| Wiążąca decyzja o granicach, modelu stanu, protokole, deploymencie | **ADR** (`docs/decisions/`) |
-| Powtarzalny wniosek diagnostyczny, pułapka, heurystyka pracy | **[docs/LESSONS.md](../LESSONS.md)** |
-| Zasada obowiązująca każdego agenta przy pracy | **AGENTS.md** |
-| Stan i kolejka jednej sesji | `docs/setup/HANDOFF_*.md` (jednorazowy) |
-| Roadmapa jednego zadania | `docs/plans/PLAN_*.md` (jednorazowy) |
-
+Podział miejsc (decyzja właściciela 2026-08-14: reguły trwałe nie mieszkają
+w jednorazowym handoffie) opisuje `AGENTS.md` §„Gdzie zapisać regułę" — rejestr
+ADR jest tam jednym z wierszy tabeli, więc tutaj nie powtarzamy jej lustra.
 Spójności rejestru ADR i formatu lekcji pilnuje `test/docs-decisions.test.js`.
 
 ## Kiedy utworzyć ADR

@@ -54,23 +54,11 @@ gałęzi**, nie tylko na `main`. Powód: agent po resecie workspace nie sprawdzi
 `HEAD` lub źle policzył diff i nadpisał wcześniejszą pracę — grozi to
 nieodwracalną utratą.
 
-Obowiązkowa procedura przed każdym pushem:
-
-1. **Sprawdź `HEAD`**: `git log --oneline -3` i `git status`.
-2. **Porównaj z gałęzią zdalną**: `git fetch origin <gałąź>`, potem
-   `git log --oneline HEAD..FETCH_HEAD` (co mają, a ja nie) i
-   `git log --oneline FETCH_HEAD..HEAD` (co mam tylko ja).
-3. **Gdy zdalna gałąź jest przede mną** (typowo po resecie — `git reflog`
-   pokazuje `clone: from …`): `git reset --hard FETCH_HEAD`, swoją pracę
-   przenieś `git cherry-pick` (lub nałóż ponownie). Nigdy nie nadpisuj zdalnej
-   historii.
-4. **Gdy push zostanie odrzucony** (`non-fast-forward`): to sygnał, że punkt 2
-   nie został wykonany — wróć do niego, nie sięgaj po `--force`.
-5. **Zabezpiecz pracę** przed operacjami ryzykownymi: `git branch backup-<opis>
-   <sha>` przed `reset --hard`.
-
-Wyjątku nie ma: jeśli jedyną drogą wydaje się force push, historia nie została
-sprawdzona.
+Obowiązkowa procedura przed pushem (sprawdź `HEAD` i `git status`, porównaj
+z gałęzią zdalną przez `git fetch` + `git log HEAD..FETCH_HEAD`) oraz procedura
+odzyskania po resecie sandboxa — w całości w `docs/setup/ENVIRONMENT.md` §2,
+żeby nie trzymać dwóch kopii tego samego przepisu (L41). Wyjątku nie ma: jeśli
+jedyną drogą wydaje się force push, historia nie została sprawdzona.
 
 ### Nadrzędność
 

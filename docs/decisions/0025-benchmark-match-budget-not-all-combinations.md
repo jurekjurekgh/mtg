@@ -56,34 +56,23 @@ dynamicznie do liczby talii** i mieścił uśredniony pomiar w ~10 minutach.
    `BENCH_DECKS` (6 talii) zostaje próbką profilu SZYBKIEGO i testu regresji
    (672 mecze, bez zmian).
 
-## Aktualizacja liczb (2026-09-07, decyzja bez zmian)
+## Aktualizacje liczb (decyzja bez zmian)
 
-Pełna macierz dograna po raz pierwszy (`tools/b1-final-2026-09-07.txt`):
+**2026-09-07** — pierwsza dograna pełna macierz (`tools/b1-final-2026-09-07.txt`):
 19 talii → 190 par × 5 seedów × 2 strony × 3 pary botów = **5 700 meczów**
-(budżet mieści pełne pokrycie), 17,4 min, 0 zacinek; „niedokończone: 1" to
-remis (CR 104.3a). Liczby HELP-a przypięte do kodu testem `m338`. Kontekst:
-audyt PR #102 §8.
+(budżet mieścił pełne pokrycie), 17,4 min, 0 zacinek („niedokończone: 1" to
+remis, CR 104.3a). Liczby HELP-a przypięte do kodu testem `m338`.
 
-## Aktualizacja: budżet przestaje mieścić pełne pokrycie (2026-09-29)
-
-Batch 61 dobił plan Eldraine do progu 15 wspieranych kart (M181, ADR 0023 §4)
-i generator wystawił `decks/eldraine.txt` — katalog talii jednoplanowych ma
-**22 talie (253 pary)**. To pierwszy moment, w którym tabela z §Decyzja pkt 2
-przestaje być tylko ostrzeżeniem na przyszłość:
-
-| Talii | Wszystkich par | Granych par | Seedów | Meczów |
-|---|---|---|---|---|
-| 21 (stan do 2026-09-29) | 231 | 231 (pełne pokrycie) | 4 | 5 544 |
-| **22 (stan 2026-09-29)** | **253** | **250** (3 pary poza próbką) | **4** | **6 000** |
-
-Reguła działania się nie zmienia — zmienił się reżim, w którym pracuje:
-liczbę granych par wyznacza budżet (`pairsWanted = ⌊6 000 / (4 × 6)⌋ = 250`),
-a nie katalog. Strażnik `m338/3` został przepisany tak, żeby pilnował obu
-reżimów (pełne pokrycie obowiązuje DOPÓKI mieści się w budżecie), a nie tylko
-stanu sprzed progu; zdanie `--seeds` w HELP-ie (`dziś 22 talii → 4`) nadal
-jest liczone z kodu. Zalecenie na przyszłość: przy kolejnych progach
-(24, 28 tali) podnieść `--budget` wymaga DECYZJI właściciela — domyślnych
-6 000 i `min-seeds` 4 ten ADR nie zmienia.
+**2026-09-29** — Batch 61 dobił plan Eldraine do progu 15 kart (M181,
+ADR 0023 §4), generator wystawił `decks/eldraine.txt`: 22 talie jednoplanowe
+= **253 pary** i budżet przestaje mieścić pełne pokrycie (253 × 4 × 6 = 6 072
+> 6 000), więc macierz gra **250 par** — dokładnie reżim „dużego katalogu"
+z tabeli wyżej, tylko osiągnięty wcześniej. Reguła się nie zmienia: liczbę
+granych par wyznacza budżet (`pairsWanted = ⌊6 000 / (4 × 6)⌋`), nie katalog;
+`m338/3` pilnuje obu reżimów (pełne pokrycie DOPÓKI mieści się w budżecie),
+a `--seeds` w HELP-ie (`dziś 22 talii → 4`) liczy się z kodu. Podniesienie
+`--budget` przy kolejnych progach wymaga decyzji właściciela. Pełny zapis
+pomiarów: `docs/PROJECT_HISTORY.md` (2026-09-29c).
 
 ## Konsekwencje
 
