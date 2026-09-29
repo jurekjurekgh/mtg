@@ -33,6 +33,11 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
+// Fala C dokłada trzy dopłaty okien (ewazja / Główna 1 / zegar śmiertelny).
+// Piny fal A i B mierzą przy wyłączonych oknach, żeby każda fala miała własną
+// kotwicę anty-over-fix (M429): waga ×0 przywraca wartość z poprzedniej fali.
+const OKNA_OFF = { counterEvasionBonus: 0, counterLateWindowPenalty: 0, counterLethalClockBonus: 0 };
+
 function putCard(state, id, cardId, controllerId, zone = 'hand') {
   const def = REGISTRY.get(cardId);
   const data = gameObjectDataOf(def);
@@ -60,12 +65,13 @@ function putCreature(state, id, controllerId, power, toughness, extra = {}) {
   return state.objects.get(id);
 }
 
-function base({ step = 'main1', mana = 12 } = {}) {
+function base({ step = 'main1', mana = 12, foeLife = 20 } = {}) {
   const state = createGameState({ seed: 23, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, step, 'p2');
   state.turn.activePlayerId = 'p2';
   state.turn.priorityPlayerId = 'p2';
   addMana(state, 'p2', mana);
+  if (foeLife !== 20) state.players = state.players.map((p) => (p.id === 'p1' ? { ...p, life: foeLife } : p));
   for (let i = 0; i < 8; i++) putCard(state, `lib${i}`, 'highland-game', 'p2', 'library');
   return state;
 }
@@ -139,8 +145,8 @@ test('PMSSB-23/A5: liczniki przyjazne bez zmian — Courage 70/−92, Dragonscal
   putCard(courage, 'cic', 'courage-in-crisis', 'p2');
   putCreature(courage, 'mine', 'p2', 2, 2);
   putCreature(courage, 'foe', 'p1', 2, 2);
-  assert.equal(scoreOf(courage, 'cast_spell(cic->mine)'), 70, 'kotwica PMSSB-18/R1+R2');
-  assert.equal(scoreOf(courage, 'cast_spell(cic->foe)'), -92, 'kotwica M155');
+  assert.equal(scoreOf(courage, 'cast_spell(cic->mine)', OKNA_OFF), 70, 'kotwica PMSSB-18/R1+R2');
+  assert.equal(scoreOf(courage, 'cast_spell(cic->foe)', OKNA_OFF), -92, 'kotwica M155');
 
   const boon = base();
   putCard(boon, 'db', 'dragonscale-boon', 'p2');
@@ -148,9 +154,9 @@ test('PMSSB-23/A5: liczniki przyjazne bez zmian — Courage 70/−92, Dragonscal
   putCreature(boon, 'srednie', 'p2', 2, 2);
   putCreature(boon, 'male', 'p2', 1, 1);
   // counterHostValue: 2 + 4·2 + 2·(2P+T) — waga ciała gospodarza bez zmian.
-  assert.equal(scoreOf(boon, 'cast_spell(db->duze)'), 86);
-  assert.equal(scoreOf(boon, 'cast_spell(db->srednie)'), 68);
-  assert.equal(scoreOf(boon, 'cast_spell(db->male)'), 62);
+  assert.equal(scoreOf(boon, 'cast_spell(db->duze)', OKNA_OFF), 86);
+  assert.equal(scoreOf(boon, 'cast_spell(db->srednie)', OKNA_OFF), 68);
+  assert.equal(scoreOf(boon, 'cast_spell(db->male)', OKNA_OFF), 62);
 });
 
 test('PMSSB-23/A6: ścieżka zdolności bez zmian (Trigon 34/16, Rustvine −6)', () => {
@@ -246,14 +252,106 @@ test('PMSSB-23/B5: rider rozlania rośnie z liczbą odbiorców (72 / 78 / 82 / 9
   // celowanego, więc przy zeru nosicieli i tak jest jeden odbiorca — cel).
   for (const [n, want] of [[0, 72], [1, 78], [2, 82], [4, 90]]) {
     const { state, cmd } = lifecrafterZ(n);
-    assert.equal(scoreOf(state, cmd), want, `dla ${n} stworów z licznikiem`);
+    assert.equal(scoreOf(state, cmd, OKNA_OFF), want, `dla ${n} stworów z licznikiem`);
   }
 });
 
 test('PMSSB-23/B6: dopłata za odbiorcę ×0 przywraca dawne wartości (kotwica)', () => {
   for (const [n, want] of [[0, 68], [1, 74], [2, 74], [4, 74]]) {
     const { state, cmd } = lifecrafterZ(n);
-    assert.equal(scoreOf(state, cmd, { counterSpreadPerRecipient: 0 }), want,
+    assert.equal(scoreOf(state, cmd, { counterSpreadPerRecipient: 0, ...OKNA_OFF }), want,
       `dla ${n} stworów z licznikiem`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// F4 — gospodarz, którego ataku przeciwnik NIE DOSIĘGNIE (PRZED: 68/68/68).
+// ---------------------------------------------------------------------------
+
+function dragonscaleNaGospodarza(keywords, blokerzy) {
+  const state = base();
+  putCard(state, 'db', 'dragonscale-boon', 'p2');
+  putCreature(state, 'mine', 'p2', 2, 2, { keywords });
+  for (let i = 0; i < blokerzy; i++) putCreature(state, `blok${i}`, 'p1', 2, 2);
+  return state;
+}
+
+test('PMSSB-23/C1: licznik na gospodarzu poza zasięgiem blokujących jest droższy', () => {
+  // Dwóch blokujących 2/2: latacz nie do zatrzymania, a Menace można
+  // zablokować dopiero dwoma stworami (CR 702.111) — wanilię jednym, więc
+  // przy dwóch blokerach dopłatę dostaje tylko latacz.
+  const dwoch = (kw) => scoreOf(dragonscaleNaGospodarza(kw, 2), 'cast_spell(db->mine)');
+  assert.equal(dwoch(['flying']), 73);
+  assert.equal(dwoch(['menace']), 68);
+  assert.equal(dwoch([]), 68);
+  // Jeden blokujący: Menace też nie do zablokowania (wymaga dwóch).
+  const jeden = (kw) => scoreOf(dragonscaleNaGospodarza(kw, 1), 'cast_spell(db->mine)');
+  assert.equal(jeden(['flying']), 73);
+  assert.equal(jeden(['menace']), 73);
+  assert.equal(jeden([]), 68, 'wanilia 2/2: bez dopłaty — bloker ją zatrzyma');
+  assert.ok(jeden(['flying']) > jeden([]), 'ewazja musi rozstrzygać wybór celu');
+});
+
+test('PMSSB-23/C2: dopłata za ewazję ×0 przywraca remis 68/68/68 (kotwica)', () => {
+  for (const kw of [['flying'], ['menace'], []]) {
+    assert.equal(
+      scoreOf(dragonscaleNaGospodarza(kw, 2), 'cast_spell(db->mine)', { counterEvasionBonus: 0 }),
+      68, `dla ${kw.join('+') || 'wanilii'}`,
+    );
+  }
+  // Pusty stół przeciwnika: dopłata NIE gra (każdy stwór byłby nieblokowalny,
+  // więc nic by nie rozstrzygała) — wycena zostaje dawna (kotwice PMSSB-2/16/18).
+  assert.equal(scoreOf(dragonscaleNaGospodarza([], 0), 'cast_spell(db->mine)'), 68);
+});
+
+// ---------------------------------------------------------------------------
+// F5a — okno walki (PRZED: main1 = main2 = 70).
+// ---------------------------------------------------------------------------
+
+test('PMSSB-23/C3: w Głównej 2 licznik nie zdąży w tej walce — kara okna (70 > 66)', () => {
+  const stan = (step) => {
+    const state = base({ step });
+    putCard(state, 'cic', 'courage-in-crisis', 'p2');
+    putCreature(state, 'mine', 'p2', 2, 2);
+    putCreature(state, 'blok', 'p1', 2, 2); // bloker: dopłata za ewazję nie gra
+    return state;
+  };
+  assert.equal(scoreOf(stan('main1'), 'cast_spell(cic->mine)'), 70, 'Główna 1 = dawna wartość');
+  assert.equal(scoreOf(stan('main2'), 'cast_spell(cic->mine)'), 66);
+  assert.equal(
+    scoreOf(stan('main2'), 'cast_spell(cic->mine)', { counterLateWindowPenalty: 0 }), 70,
+    'kara ×0 = dawny remis main1 = main2',
+  );
+});
+
+// ---------------------------------------------------------------------------
+// F5b — zegar śmiertelny: licznik, który domyka grę.
+// ---------------------------------------------------------------------------
+
+function zegar({ life = 3, keywords = ['flying'], blokerzy = 0 } = {}) {
+  const state = base({ foeLife: life });
+  putCard(state, 'db', 'dragonscale-boon', 'p2');
+  putCard(state, 'cic', 'courage-in-crisis', 'p2');
+  putCreature(state, 'mine', 'p2', 2, 2, { keywords });
+  for (let i = 0; i < blokerzy; i++) putCreature(state, `blok${i}`, 'p1', 2, 2);
+  return state;
+}
+
+test('PMSSB-23/C4: licznik, po którym moc ≥ życie przeciwnika, domyka grę (+50)', () => {
+  const state = zegar();
+  // Przeciwnik 3 życia, mój 2/2 z lataniem, brak blokujących: po liczniku
+  // 4/4 (Dragonscale) albo 3/3 (Courage) — atak, którego nie da się zatrzymać.
+  assert.equal(scoreOf(state, 'cast_spell(db->mine)'), 118);
+  assert.equal(scoreOf(state, 'cast_spell(cic->mine)'), 120);
+  assert.equal(scoreOf(state, 'cast_spell(db->mine)', { counterLethalClockBonus: 0 }), 68,
+    'kotwica: bez zegara to zwykły licznik (dawne 68)');
+});
+
+test('PMSSB-23/C5: zegar nie zapala się, gdy atak da się zatrzymać albo gra nie jest domykana', () => {
+  // Wróg też 3 życia, ale gospodarz to wanilia i stoi blokujący 2/2 — licznik
+  // nie gwarantuje obrażeń w twarz, więc premia za domknięcie gry się nie należy.
+  assert.equal(scoreOf(zegar({ keywords: [], blokerzy: 1 }), 'cast_spell(db->mine)'), 68);
+  // Zdrowy przeciwnik (20 życia): ten sam latacz, bez blokujących — 4/4 to
+  // tylko większy stwór, nie wygrana.
+  assert.equal(scoreOf(zegar({ life: 20 }), 'cast_spell(db->mine)'), 68);
 });

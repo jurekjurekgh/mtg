@@ -282,6 +282,27 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterThreatWeight',         // dopłata za zagrożenie celu wrogiego licznika (worth × waga)
   'counterThreatCap',            // limit dopłaty — dobijanie zostaje wyżej
   'counterSpreadPerRecipient',   // rider „na każdy mój stwór z licznikiem" — za odbiorcę
+  // PMSSB-23 (F4/F5) — OKNA, w których trwały licznik kupuje coś konkretnego.
+  // Pomiar PRZED: wszystkie trzy były niewidoczne — licznik na 2/2 z Flying
+  // = na 2/2 z Menace = na wanilii 2/2 (68/68/68), a ten sam czar w Głównej 1
+  // (przed walką, którą licznik rozstrzyga) był warty tyle, co w Głównej 2
+  // (70/70), choć ten drugi musi jeszcze przetrwać turę przeciwnika, zanim
+  // cokolwiek zrobi (`counterCombatBonus` zapala się tylko dla walki, która
+  // TRWA — `pumpImprovesOutcome` zwraca null poza walką). Wartości:
+  //  - `counterEvasionBonus` 5 — około jednego punktu ciała (waga ciała to
+  //    2 × worth, więc krok 2/2→3/3 = 6): ewazja jest warta tyle, co odrobina
+  //    ciała, nie cały stwór; dopłata zapala się tylko, gdy przeciwnik MA
+  //    blokujących, ale nie dosięgnie gospodarza (inaczej nie rozstrzyga
+  //    wyboru celu — patrz `hostEvadesBlockers`);
+  //  - `counterPrecombatBonus` 4 — tyle, ile baza okna M179/C dla grantu
+  //    („zdąży pomóc w tej walce”), bez mnożnika za liczbę keywordów;
+  //  - `counterLethalClockBonus` 50 — istniejąca konwencja „moc ≥ życie
+  //    przeciwnika” (jak w gałęzi obrażeń od mocy), daleko poniżej 1000 za
+  //    dowiedzioną wygraną: licznik sam nie wygrywa, atak trzeba jeszcze
+  //    zadeklarować.
+  'counterEvasionBonus',         // gospodarz, którego ataku przeciwnik nie zatrzyma
+  'counterLateWindowPenalty',    // kara, gdy walka tej tury już za nami (Główna 2 / faza końcowa)
+  'counterLethalClockBonus',     // licznik domyka grę: moc ≥ życie przeciwnika, atak nie do zatrzymania
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -527,6 +548,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterThreatWeight: 0.5,
   counterThreatCap: 15,
   counterSpreadPerRecipient: 4,
+  // PMSSB-23 (F4/F5) — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  counterEvasionBonus: 5,
+  counterLateWindowPenalty: 4,
+  counterLethalClockBonus: 50,
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu

@@ -2779,13 +2779,72 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let value = P.counterBase + P.counterAmountWeight * amount + P.counterHostWorthWeight * worth;
     const delta = counterStatDelta(counterName, amount);
     if (delta && host && host.controllerId === view.playerId) {
+      // PMSSB-23/F5b: licznik, który DOMYKA grę — moc gospodarza po liczniku
+      // ≥ życie przeciwnika, atak jest możliwy i nie do zatrzymania. Liczone
+      // PRZED rozgałęzieniem okien, bo dotyczy też walki, która już trwa
+      // (niezablokowany atakujący): tam `pumpImprovesOutcome` daje tylko +12,
+      // a różnica między 12 a wygraną partią jest cała.
+      const foe = enemy(view);
+      const atakuje = (view.combat?.attackers ?? []).includes(host.id);
+      if (foe && (atakuje || canAttackNow(host))
+        && (host.power ?? 0) + (delta.power ?? 0) >= (foe.life ?? 20)
+        && attackHitsFace(view, host)) value += P.counterLethalClockBonus;
       if (pumpImprovesOutcome(view, host, {}, delta)) value += P.counterCombatBonus;
       // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
       // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
       // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
       else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+      else {
+        // PMSSB-23/F4: gospodarz, którego ataku przeciwnik NIE DOSIĘGNIE —
+        // licznik zamieni się w obrażenia, a nie w wymianę (różnicuje wybór
+        // celu; pusty stół wroga nic tu nie rozstrzyga — patrz predykat).
+        if (hostEvadesBlockers(view, host)) value += P.counterEvasionBonus;
+        // PMSSB-23/F5a: walka tej tury już za nami (moja Główna 2 / faza końcowa)
+        // — licznik nie zdąży w niej pomóc, a do następnej musi przetrwać
+        // odpowiedzi przeciwnika. KARA, nie premia za Główną 1: wycena okna
+        // głównego zostaje dawna (kotwica anty-over-fix M429 — piny PMSSB-2/16/18
+        // i M429 mierzą właśnie rzut w Głównej 1).
+        if (myTurn(view) && ['postcombat_main', 'ending'].includes(view.turn.phase)) {
+          value -= P.counterLateWindowPenalty;
+        }
+      }
     }
     return value;
+  };
+
+  /**
+   * PMSSB-23/F4: czy przeciwnik MA czym blokować, ale tego gospodarza nie
+   * dosięgnie — latacz bez odpowiedzi (flying/reach), menace przy jednym
+   * blokującym (CR 702.111: blokować muszą co najmniej dwa stwory) albo dar
+   * „can't be blocked" z widoku. Pusty stół wroga NIE zapala tej dopłaty:
+   * wtedy każdy mój stwór jest nieblokowalny, więc dopłata niczego by nie
+   * rozstrzygała (nie zmienia wyboru celu), tylko pompowała wycenę czaru
+   * względem innych zagrań (kotwica anty-over-fix M429 — 8 pinów innych pętli
+   * mierzy dokładnie tę wycenę).
+   */
+  const hostEvadesBlockers = (view, host) => {
+    if (!host || host.controllerId !== view.playerId) return false;
+    if (host.cantBeBlocked === true) return true;
+    const blockers = untappedEnemyBlockers(view);
+    if (blockers.length === 0) return false;
+    if (hasKeyword(host, 'flying')) return blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+    if (hasKeyword(host, 'menace')) return blockers.length <= 1;
+    return false;
+  };
+
+  /**
+   * PMSSB-23/F5b: czy atak gospodarza przejdzie w twarz — brak blokujących,
+   * gospodarz ich omija (`hostEvadesBlockers`) albo już atakuje niezablokowany.
+   * To warunek zegara: licznik mocy ≥ życie przeciwnika domyka grę TYLKO, gdy
+   * ataku nie da się zatrzymać (inaczej to nadal „większy stwór", nie wygrana).
+   */
+  const attackHitsFace = (view, host) => {
+    if (!host || host.controllerId !== view.playerId) return false;
+    const combat = view.combat ?? null;
+    if (combat && (combat.attackers ?? []).includes(host.id)) {
+      return ((combat.blockers ?? {})[host.id] ?? []).length === 0;
+    }
+    return untappedEnemyBlockers(view).length === 0 || hostEvadesBlockers(view, host);
   };
 
   /**
