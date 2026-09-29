@@ -816,6 +816,26 @@ test("B61/158: mana bezbarwna ze Sciona (poświęcenie) domyka {C} — ścieżka
     'Scion został poświęcony jako koszt many');
 });
 
+test('B61/158: {C} płaci bezbarwny LĄD ({T}: Add {C}) — oferta = walidacja', () => {
+  // Audyt PR #145 (zn. F6, klasa L48/M174): bramka oferty
+  // (`canPayColoredCost` → `planGrantManaColors`) liczy nietapnięte źródła,
+  // więc przy nietapniętym Holdout Settlement („{T}: Add {C}") zdolność {C}
+  // JEST oferowana — ale pętla landów w `spendMana` filtrowała źródła starym
+  // `srcColors.some((c) => reqColors.has(c))`, które dla źródła bezbarwnego
+  // (pusty zbiór kolorów) nigdy nie zachodzi. Efekt: `execute` odrzucał
+  // `illegal_ability:Brak kolorowej many` na komendzie Z OFERTY — awaria
+  // `tools/bot-tie-audit.mjs` (kaladesh|zendikar, seed 4463, komenda 685).
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'settlement', 'holdout-settlement', 'p1', 'battlefield');
+  const cmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'shrieker');
+  assert.ok(cmd, 'nietapnięte źródło bezbarwne wystarczy do oferty {C}');
+  run(state, cmd);
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('shrieker'), state), 4, '{C} zapłacone z lądu');
+  assert.equal(state.objects.get('settlement').tapped, true, 'źródło bezbarwne tapnięte jako płatność');
+});
+
 // ---- B61/164: Gryffwing Cavalry (VOW #16, plan Innistrad) ------------------
 
 /**
