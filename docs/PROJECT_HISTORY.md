@@ -13731,3 +13731,34 @@ Lekcja: strukturalne piny kodu (M336/F — wzorce regex w źródle gałęzi)
 żyją w napięciu z L41 (unifikacja do helpera) — rozwiązanie: poszerzenie
 lokalizatora pinu na CAŁĄ wycenę rodziny + pas bezpieczeństwa (dosłowny
 NEVER) zostawiony w gałęzi; obie strony wygrywają.
+
+## 2026-09-29 — PMSSB-19: search_library/tutory (PR #144, cz. 7)
+
+Czwarta pętla ciągła: `search_library_*` (11 kart — ETB-tutory, aktywacje
+poświęcające, czary). Plan: `docs/plans/PLAN_2026-09-29-pmssb19-search.md`;
+POMIAR PRZED `/tmp/pmssb19-search-przed.mjs` (S01–S06b).
+
+**R1 (rider 0 w cast/aktywacji)**: płaskie 9/10 żyły tylko w tabeli ETB —
+czary i aktywacje nie widziały zysku z szukania (Final Parting = 50 =
+sama baza; aktywacja Elka = 2 — bot nie poświęcał stwora po ląd).
+Unifikacja `searchRiderValue` z trzech ścieżek (L41).
+
+**R2 (Final Parting = 0 wszędzie)**: `search_library_two_cards_hand_and_grave`
+bez wartości, bez tabeli ETB, BEZ `LIBRARY_SEARCH_EFFECTS` (deck-out —
+C zgłoszenie Elka; dwie karty opuszczają bibliotekę!). Wartość 16 = 9+7;
+guard: bibl. 10 → −66 (kara 132 przebija). **R3**: selekcja > losowe
+dobranie (baza 9 = 6+3); ląd do ręki przy manascrew (lądy < 3) = +5.
+
+Test `test/audyt-pmssb19-search.test.js` (7): RED 5/7 na starym (2 kotwice
+L41-bez-dryfu celowo zielone). Świadomy dryf: golden-master 6/6 identyczne
+wybory i scoreSum (1 partia hash-only) → fixture `--write`; M336/F
+lokalizator zwężony (moje helpery search w regionie proliferate).
+Bramki: fast 7014/7014, all 7285/7285, build 74 / 4574,4 kB; tie-audit
+28,3% (10,8% realnych); mirror-eval 8:8 (0.5); Żywy Tester 3×0 zgłoszeń.
+
+Lekcja: rodzin z realną luką ubywa — wartości pętli są też w „safety"
+(deck-out guard dla 2-kartowego tutora) i w ujednolicaniu rozproszonych
+skal (9/10 w ETB vs 0 w cast/aktywacji to ten sam efekt w trzech
+maskach); pomiar z CIEŃKĄ biblioteką potrafi zniekształcić całą sondaż
+(kary `libraryLossPenalty` dominują) — kotwice rodzin bibliotecznych
+mierzyć przy pełnej talii.

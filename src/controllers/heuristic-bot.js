@@ -1521,8 +1521,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     grant_keywords_until_end_of_turn: () => 4,
     buff_creature_until_end_of_turn: (e, view, req) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && o.kind === 'creature') ? 5 : 0),
     add_counter: (e, view, req) => (req ? (etbEnemyHasTarget(view, req) ? 6 : 0) : 5),
-    search_library_to_hand: () => 9,
-    search_library_to_battlefield: () => 10,
+    // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
+    // — bazy 9/10 jak dawniej (bez dryfu ETB).
+    search_library_to_hand: (e, view) => searchRiderValue(view, e),
+    search_library_to_battlefield: (e, view) => searchRiderValue(view, e),
     return_card_from_graveyard_to_hand: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 7 : 0),
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
     // Batch60 (Clone Shell, dies): odkrycie wygnanej karty = darmowy stwór
@@ -2302,6 +2304,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['search_library_to_battlefield', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
     ['search_library_to_battlefield_tapped', (e) => Math.max(1, Number.isInteger(e?.amount) ? e.amount : 1)],
     ['search_basic_land_morbid', () => 1],
+    // PMSSB-19/R2: Final Parting zabiera AŻ 2 karty (ręczna + grobowa).
+    ['search_library_two_cards_hand_and_grave', () => 2],
   ]);
   // Zdarzenia JEDNORAZOWE: trigger odpali raz (wejście na pole bitwy, śmierć
   // źródła). To nie jest POWTARZALNE źródło, więc nie mnożymy go przez
@@ -4748,6 +4752,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return { extraCounters, exclude };
   }
+
+  /**
+   * PMSSB-19: wartość ridera szukania w bibliotece (CR 701.23b — search
+   * + shuffle; CR 121.? — karta opuszcza bibliotekę, patrz kara
+   * `LIBRARY_SEARCH_EFFECTS`). JEDNO źródło dla trzech ścieżek: tabela ETB,
+   * cast_spell, activate_ability (L41 — dawniej 9/10 tylko w ETB, a czary
+   * i aktywacje miały 0). Tutor daje NAJLEPSZĄ kartę kategorii, nie losową
+   * (drawCardValue 6) — stąd baza powyżej dobierania. Ląd do ręki przy
+   * manascrew = odbraniczanie gry (stan gry — R3).
+   */
+  function searchRiderValue(view, effect) {
+    const type = effect?.type;
+    if (type === 'search_library_two_cards_hand_and_grave') {
+      return P.searchTwoCardsValue; // 9 (ręka) + 7 (grób = setup reanimacji)
+    }
+    if (type === 'search_library_to_battlefield' || type === 'search_library_to_battlefield_tapped') {
+      return P.searchToBattlefieldBase; // trwały ramp (stara ETB-10)
+    }
+    if (type === 'search_library_to_hand') {
+      const lands = (view.zones.battlefield ?? []).filter(
+        (o) => o.controllerId === view.playerId && (o.kind === 'land' || (o.types ?? []).includes('Land'))).length;
+      return P.searchToHandBase
+        + (lands < 3 && searchFindsLand(effect) ? P.searchLandScrewBonus : 0);
+    }
+    return 0;
+  }
+  /** Czy kwalifikator szukania trafia ląd (types/subtypes — ADR 0002). */
+  function searchFindsLand(effect) {
+    const q = effect?.qualifier ?? {};
+    const types = q.types ?? [];
+    const subtypes = q.subtypes ?? [];
+    return types.includes('Land') || types.includes('Basic')
+      || subtypes.some((s) => ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Land', 'Basic'].includes(s));
+  }
+  const SEARCH_LIBRARY_EFFECT_TYPES = new Set([
+    'search_library_to_hand', 'search_library_to_battlefield',
+    'search_library_to_battlefield_tapped', 'search_library_two_cards_hand_and_grave',
+  ]);
 
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
@@ -7731,6 +7773,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'proliferate') {
             score += proliferateBestValue(view, proliferateRiderContext(scoredEffects, cmd));
           }
+          // PMSSB-19: rider szukania w bibliotece (CR 701.23b) — dawniej 0
+          // w tej ścieżce (9/10 żyły tylko w tabeli ETB; Final Parting —
+          // 2-kartowy tutor — warty 0 wszędzie). Wspólna skala
+          // `searchRiderValue` (L41).
+          if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
+            score += searchRiderValue(view, effect);
+          }
         }
         // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
@@ -8467,6 +8516,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score += bounceTargetAdjustments(view, victim);
               }
             }
+          }
+          // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntreader Elk —
+          // poświęcenie stwora po ląd) — dawniej 0, bot nigdy nie aktywował.
+          // Wspólna skala `searchRiderValue` (L41).
+          if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
+            score += searchRiderValue(view, effect);
           }
           // M173/D (uwaga właściciela, Rustvine Cultivator): add_counter nie
           // miał wyceny w ścieżce zdolności (klasa L50) — bot tapował się CO

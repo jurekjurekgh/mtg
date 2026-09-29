@@ -56,6 +56,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
 | kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
 | proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
+| search_library (tutory) | 11 | DONE (2026-09-29) | §PMSSB-19 niżej; `test/audyt-pmssb19-search.test.js` (7); `searchRiderValue` (L41: 3 ścieżki — tabela ETB/cast/aktywacja; R2 = Final Parting `two_cards` warty 0 wszędzie + guard deck-outu na 2 karty; 4 pokrętła `search*`) |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -239,6 +240,46 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-19 — search_library (tutory) (2026-09-29)
+
+**Wybór celu** (BACKLOG pusty; rozeznanie: `search_library_*` — 11 kart,
+rider w cast/aktywacji = 0; Final Parting `two_cards` = 0 wszędzie).
+Plan: `docs/plans/PLAN_2026-09-29-pmssb19-search.md`; POMIAR PRZED:
+`/tmp/pmssb19-search-przed.mjs` (S01–S06b).
+
+**Audyt przyczynowo-skutkowy (R1–R4) + wdrożone wnioski** — `searchRiderValue`
+(CR 701.23b — search + shuffle) wywoływany z TRZECH ścieżek (tabela ETB,
+cast_spell, activate_ability — L41):
+
+- **R1 (rider 0 w cast/aktywacji)**: 9/10 żyły tylko w tabeli ETB. S01
+  Final Parting = 50 (sama baza — 2-kartowy tutor warty 0!), aktywacja
+  Elka = 2 (payoff niewidoczny — bot nie poświęcał stwora po ląd).
+- **R2 (`two_cards` = 0 wszędzie + guard deck-outu)**: `search_library_
+  two_cards_hand_and_grave` nie miał wartości, wpisu w tabeli ETB ANI
+  wpisu w `LIBRARY_SEARCH_EFFECTS` (C zgłoszenie Elka — karta opuszcza
+  bibliotekę bezpowrotnie; Final Parting zabiera AŻ 2). Wartość 16 = 9
+  (najlepsza do ręki) + 7 (połowa grobowa = setup reanimacji); guard:
+  biblioteka 10 → kara 132 (60+12·6) przebija zysk (−66).
+- **R3 (selekcja > losowe dobranie)**: tutor daje NAJLEPSZĄ kartę kategorii
+  (drawCardValue 6) → baza 9 = 6 + selekcja; ląd do ręki przy manascrew
+  (moje lądy < 3) = +5 (odbraniczanie gry — stan gry).
+- **R4**: `resolve_search_choice` (found > fail, ląd +30, statystyki,
+  domain) zostaje jak jest (Temat 6 + zgłoszenie B).
+
+**Kotwice PO (biblioteka 24)**: S01 **66** (50+16), S01b bibl. 10 = **−66**
+(guard), S03 chocobo 0 lądów = **83,96** (delta 5 = screw), S06b elk
+activate = **12** (było 2), S04 kor **72,9009** / S05 empath **70,1991**
+(bazy ETB 10/9 BEZ dryfu — L41). 4 pokrętła `search*`.
+
+**Świadomy dryf**: golden-master — 6/6 identyczne wybory i scoreSum;
+1 partia (dominaria|mirrodin@1000) hash-only (wyceny nie-wybranych) →
+fixture `--write`; M336/F: lokalizator proliferate zwężony do
+`searchRiderValue` (moje helpery search wylądowały w regionie — granica
+rodzin). Dowody: `test/audyt-pmssb19-search.test.js` (7; RED 5/7 na
+starym — 2 kotwice L41 celowo przechodzą). Bramy: fast 7014/7014;
+all 7285/7285; build 74 / 4574,4 kB; tie-audit 28,3% (10,8% realnych);
+mirror 8:8 (0.5); Żywy Tester 3×0 zgłoszeń.
 
 ## PMSSB-18 — proliferate (rider czaru) (2026-09-28)
 

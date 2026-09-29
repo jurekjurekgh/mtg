@@ -118,6 +118,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'gainControlEquipBonus',    // kradzież (M257): bonus za cel z equipmentem (niszczony riderem)
   'gainControlEquipPerItem',  // kradzież (M257): dopłata za każdy equipment na celu
   'gainControlOwnPenalty',    // kradzież (M231): kara celu własnego/braku (przebija bazę 50)
+  // PMSSB-19 (search_library — CR 701.23b search/shuffle): rider szukania
+  // w trzech ścieżkach (tabela ETB, cast_spell, activate_ability — L41).
+  // Tutor = NAJLEPSZA karta kategorii (nie losowa — stąd baza > drawCardValue 6).
+  'searchToBattlefieldBase',  // ląd na planszę (trwały ramp; stara ETB-10)
+  'searchToHandBase',         // karta do ręki (selekcja > losowe dobranie 6)
+  'searchLandScrewBonus',     // dopłata za ląd do ręki przy manascrew (moje lądy < 3)
+  'searchTwoCardsValue',      // Final Parting (2 karty: ręka + grób = 9 + 7)
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -383,6 +390,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   gainControlEquipBonus: 25,
   gainControlEquipPerItem: 5,
   gainControlOwnPenalty: 70,
+  // PMSSB-19 search_library: 10/9 jak stara tabela ETB (L41 — bazy bez
+  // dryfu); two_cards = 9 (najlepsza do ręki) + 7 (połowa grobowa).
+  searchToBattlefieldBase: 10,
+  searchToHandBase: 9,
+  searchLandScrewBonus: 5,
+  searchTwoCardsValue: 16,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,
   graveReturnManaWeight: 4,

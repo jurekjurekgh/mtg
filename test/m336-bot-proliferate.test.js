@@ -194,7 +194,10 @@ test('M336/F: próg trucizny z JEDNEGO źródła i wycena bez nazw kart', () => 
   assert.notEqual(from, -1, 'wycena proliferate istnieje');
   const helper = bot.indexOf('function proliferateTargetValue');
   assert.notEqual(helper, -1, 'helper per-cel istnieje (PMSSB-18)');
-  const helperEnd = bot.indexOf('function freeCastTargetPenalty', helper);
+  // PMSSB-19: za helperami proliferate siedzą teraz helpery search_library —
+  // granica lokalizatora = początek `searchRiderValue` (tylko wycena
+  // proliferate, bez cudzych rodzin).
+  const helperEnd = bot.indexOf('function searchRiderValue', helper);
   const doKonca = bot.slice(helper, helperEnd) + bot.slice(from, bot.indexOf("case 'resolve_manifest_dread'", from));
   assert.ok(doKonca.length > 200 && doKonca.length < 6000, `rozmiar gałęzi do przejrzenia: ${doKonca.length}`);
   for (const nazwa of ['courage', 'sickness', 'CRUEL', 'plague-reaver']) {
