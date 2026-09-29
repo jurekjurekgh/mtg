@@ -13950,11 +13950,14 @@ jak u pozostałych 3 tokenów). Zero wad danych.
   −67 → −4027, gracz wroga −24 → −24. Konwencja `targets[effect.targetIndex
   ?? 0]` (jak w sąsiedniej gałęzi `gain_life_target`); gracz wroga −24 → −64,
   cele własne bez zmian. Pin B6 z kotwicami 60/−64/61/−67; mutacje B-M i B2-M
-  (dotąd ZIELONE — to była treść U1) → RED, B3-M (regresja) → RED. Wybory
-  bota i audyt remisów bez zmian (reguła nośna, taktyka ta sama).
+  (dotąd ZIELONE — to była treść U1) → RED, B3-M (regresja) → RED. Audyt
+  remisów bez zmian; golden-master drgnął w 2 z 245 decyzji jednej partii
+  (ta sama wycena −24 → −64 dla Withstand w przeciwnika, `scoreSum` bez
+  zmian, **0 zmienionych wyborów**) — przypisane porównaniem pełnych śladów
+  PRZED/PO (`--dump`), fixture zregenerowany (`15f3d2c`).
 
-**Bramy:** fast **7089/7089** · `test:all` **7359/7359** · build **70 /
-4617,0 kB** · golden 4/4 · benchmark szybki 672 mecze (97,9 % vs random,
+**Bramy:** fast **7089/7089** · `test:all` **7360/7360** · build **70 /
+4617,0 kB** · golden 4/4 (po regeneracji) · benchmark szybki 672 mecze (97,9 % vs random,
 78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
 (`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
 

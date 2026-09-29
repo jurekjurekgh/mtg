@@ -95,10 +95,12 @@ skonfrontowany ze „stanem na starcie PR"; chirurgiczność patchy (ADR 0016 B)
 
 ### 3. Domknięcie sesji
 
-- [x] Bramy: `npm test` fast **7089/7089** · `npm run test:all` **7359/7359**
-  (pomiar sprzed F7) · `npm run build` **70 modułów / 4617,0 kB** ·
-  golden-master 4/4 (w fast) · benchmark tylko profil szybki (ADR 0018) ·
-  `bot-tie-audit --gry=60` exit 0, liczby identyczne jak po F6.
+- [x] Bramy: `npm test` fast **7089/7089** · `npm run test:all` **7360/7360**
+  (pomiar końcowy) · `npm run build` **70 modułów / 4617,0 kB** ·
+  golden-master 4/4 (po regeneracji `15f3d2c` — dryf przypisany: 2 z 245
+  decyzji, jedna wycena opcji, 0 zmienionych wyborów) · benchmark tylko profil
+  szybki (ADR 0018) · `bot-tie-audit --gry=60` exit 0, liczby identyczne jak
+  po F6.
 - [x] Dokumentacja: `docs/PROJECT_HISTORY.md` (wpis 2026-09-29c rozszerzony
   o F7), `docs/setup/HANDOFF_2026-09-29b.md` (F1–F7, U1 domknięta), raport
   audytu (§8c + tabela mutacji + brama), opis PR kumulatywnie.
