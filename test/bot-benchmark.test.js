@@ -222,9 +222,20 @@ import {
  * ale zasada „tylko w górę” zostawia 0.78 (już poniżej zmierzonego).
  * Rotująca próbka odkryła też dwa pre-istniejące błędy silnika (M228/2 pass
  * podczas undercity/fabricate; M228/3 modal impuls z exile) — naprawione.
+ *
+ * Audyt PR #145 (2026-09-29) — rotacja próbki bez pomiaru: batch 61 awansował
+ * plan Eldraine do własnej talii (`decks/eldraine.txt`, ADR 0023), więc
+ * `selectBenchDecks()` wybrał: alara, dominaria-brg, dominaria-wu, eldraine,
+ * final-fantasy, forgotten-realms — `innistrad-brg` wypadł z próbki. Sesja,
+ * która to zrobiła, nie uruchomiła pomiaru (ADR 0024 §3), więc progi zostały
+ * sprzed rotacji. Pomiar na obecnej próbce (672 mecze, 8 seedów, ~2m45s,
+ * zapis `dist/logs/b1-quick-2026-09-29b.txt`): heuristic 97.9% (329/336) vs
+ * random, 78.6% (264/336) vs aggro, 0 niedokończonych. Reguła „zmierzone
+ * −15 p.p., tylko w górę”: vs random 97.9 → 0.829 → próg 0.82 (podniesiony
+ * z 0.78); vs aggro 78.6 → 0.636 → próg 0.63 (podniesiony z 0.62).
  */
-const MIN_WIN_RATE_VS_RANDOM = 0.78;
-const MIN_WIN_RATE_VS_AGGRO = 0.62;
+const MIN_WIN_RATE_VS_RANDOM = 0.82;
+const MIN_WIN_RATE_VS_AGGRO = 0.63;
 
 function gamesWon(board, bot) {
   return board.wins[bot] ?? 0;
