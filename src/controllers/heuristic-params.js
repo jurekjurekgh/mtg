@@ -521,6 +521,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   teamPumpPerCreature: 6,
   teamPumpEmptyPoolPenalty: 30,
   teamPumpNoChangePenalty: 25,
+  teamPumpSorceryOffWindowPenalty: 60,
   // PMSSB-21 (mikro) — cel wskazywany przez przeciwnika: PMSSB-21/R1.
   // Bazowa 30 = dawna stała (kotwica, „najsłabszy realny wariant" M429).
   // Dopłata za zagrożenie = 0,5 × (moc·2 + wytrzymałość) z limitem 15:
