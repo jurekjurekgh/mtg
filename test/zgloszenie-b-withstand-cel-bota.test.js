@@ -160,3 +160,47 @@ test('B5: bez zagrożenia Withstand na własną stronę jest OK (cantrip, Q1b) �
     assert.equal(choice.type, 'pass', `albo pass, albo własny cel: ${JSON.stringify(choice)}`);
   }
 });
+
+// --- B6: U1 z audytu PR #145 — kara za osłonę WROGA jest nośna na PŁATNEJ ścieżce ---
+// Mutacje B-M (wpis `prevent_next_damage` poza FRIENDLY_TARGET_EFFECTS) i B2-M
+// (gałąź celu-gracza w friendlyMisaimPenalty) były ZIELONE: B1–B5 patrzą na
+// WYBÓR, a ten poprawiało `- preventShieldTargetValue` z darmowych rzutów.
+// Sonda (dist/logs/u1-withstand-sonda.mjs) pokazała więcej: `slot` brał się
+// z `effect.targetIndex != null`, a Withstand nie ma `targetIndex` — więc dla
+// karty ZE ZGŁOSZENIA gałąź celu-gracza nie odpalała wcale, choć komentarz
+// obiecywał inaczej. Próba kontrolna: kara 40 → 4000 zmieniała wycenę celu-
+// stwora o 3960, a celu-gracza wroga w ogóle (−24 → −24). Po naprawie
+// (konwencja `targets[effect.targetIndex ?? 0]`, jak w reszcie pliku) cel-
+// gracz wroga dostaje dokładnie `friendCost` (40 + power gracza = 40).
+test('B6: PŁATNY Withstand — osłona PRZECIWNIKA kosztuje tyle co wpis w FRIENDLY_TARGET_EFFECTS', () => {
+  const state = botTurn();
+  putSpell(state, 'w', 'withstand', 'p2', 'hand');
+  putCreature(state, 'mine', 'p2', 2, 2);
+  putCreature(state, 'foe', 'p1', 3, 3);
+  const bot = createHeuristicBot({ seed: 156 });
+  const choice = bot.chooseCommand(playerView(state, 'p2'), {});
+  const options = (bot.trace().at(-1)?.options ?? []).filter((o) => o.cmd.startsWith('cast_spell(w->'));
+  const scoreOf = (id) => {
+    const found = options.find((o) => o.cmd === `cast_spell(w->${id})`);
+    assert.ok(found, `brak oferty dla ${id}: ${options.map((o) => o.cmd).join(' | ')}`);
+    return found.score;
+  };
+  // Kotwice pomiarowe (sonda PRZED/PO). Różnica własny gracz ↔ gracz wroga
+  // to DOKŁADNIE kara z mapy: `prevent_next_damage` 40 + power beneficjenta
+  // (gracz nie ma power → 40). Usunięcie wpisu albo gałęzi celu-gracza
+  // zjeżdża do remisu 60/−24 i ten assert pada (mutacje B-M, B2-M).
+  assert.equal(scoreOf('p2'), 60, 'osłona SIEBIE bez kary');
+  assert.equal(scoreOf('p1'), -64, 'osłona PRZECIWNIKA z karą 40 (U1)');
+  assert.equal(scoreOf('p2') - scoreOf('p1'), 124,
+    'przepaść między osłoną swoją a wroga = 60 (brak wartości prewencji u wroga) + 40 (wpis) + 24');
+  // Cel-stwór wroga: wpis + power (40 + 3) — dowód, że mapa jest nośna
+  // także dla obiektów na polu bitwy (próba 40 → 4000 dawała −4027).
+  assert.equal(scoreOf('foe'), -67);
+  // Anty-over-fix: naprawa NIE karze własnej strony (60 / 61 jak przed nią).
+  assert.equal(scoreOf('mine'), 61);
+  // Zachowanie: taktyka właściciela — nigdy cel we wroga.
+  assert.equal(choice.type, 'cast_spell');
+  assert.ok(['mine', 'p2'].includes(choice.targets?.[0]),
+    `tarcza idzie po własnej stronie: ${JSON.stringify(choice)}`);
+});
+

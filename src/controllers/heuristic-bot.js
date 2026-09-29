@@ -4119,7 +4119,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ?? (temporaryPumpOf(effect) ? 50 : null)
           ?? (effect.type === 'add_counter' && BENEFICIAL_COUNTERS.has(effect.counter ?? '+1/+1') ? 50 : null));
       if (friendCost != null) {
-        const slot = effect.targetIndex != null ? targets[effect.targetIndex] : null;
+        // Audyt PR #145 (U1, L48): `targetIndex != null` gasiło całą gałąź
+        // celu-gracza dla karty ZE ZGŁOSZENIA WŁAŚCICIELA — Withstand nie ma
+        // `targetIndex` (jeden cel, konwencja `?? 0` z reszty pliku), więc
+        // `slot` był null, `beneficiary` spadał na `target` (dla gracza null,
+        // bo `objectOnBoard` szuka tylko na polu bitwy) i kara się NIE
+        // naliczała. Pomiar: wpis `prevent_next_damage` był nośny dla celu-
+        // stwora (kara 40 → 4000 zmieniała wycenę o 3960), a dla celu-gracza
+        // wroga wycena stała w miejscu (−24). Komentarz poniżej obiecywał
+        // coś, czego kod nie robił — stąd mutacje B-M/B2-M były zielone.
+        const slot = targets[effect.targetIndex ?? 0] ?? null;
         const beneficiary = (slot ? objectOnBoard(view, slot) : null) ?? target;
         // B (zgłoszenie właściciela 2026-09-28e): cel-GRACZ nie jest obiektem
         // na polu bitwy — `objectOnBoard` go nie widzi i kara za przyjazny
