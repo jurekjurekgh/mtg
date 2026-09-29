@@ -28,7 +28,11 @@ test('transpozycja: każda z 3 kart w DOKŁADNIE jednej (nowej) talii', () => {
     .filter((f) => f.endsWith('.txt'))
     .filter((f) => deckOf(f).includes(cardId));
   for (const [cardId, oczekiwane] of [
-    ['vow-of-flight', 'worek-basni.txt'],
+    // Batch 61/162: plan Eldraine dobił do progu 15 wspieranych kart i
+    // generator awansował go do własnej talii „eldraine" (M181, ADR 0023 §4) —
+    // karty planu wychodzą z worka-baśni razem z nim (worek-baśni 45/15/30 →
+    // 24/8/16; Griffin Guide jest w tej talii inicjatorem progu).
+    ['vow-of-flight', 'eldraine.txt'],
     ['tiller-of-flesh', 'mirrodin-wu.txt'],
     // Batch 56 (B6): Ixalan dobił do progu 15 wspieranych kart i generator
     // awansował go do własnej talii „ixalan" (M181, ADR 0023 §4) — karty

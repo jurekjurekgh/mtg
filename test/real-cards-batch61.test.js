@@ -299,3 +299,263 @@ test('B61/167: Lost in the Mist — brak permanentu = brak oferty (drugi cel wym
   const casts = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'mist');
   assert.deepEqual(casts, [], 'oba cele obowiązkowe — bez permanentu rzutu nie ma');
 });
+
+// ---- B61/174: Izzet Charm (RTR #172, plan Ravnica) ------------------------
+
+test('B61/174: Izzet Charm — dane Oracle, modalny instant {U}{R} i druk RTR', () => {
+  const def = registry.get('izzet-charm');
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['U', 'R']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.set, 'RTR');
+  assert.equal(def.plan, 'Ravnica');
+  assert.equal(def.artId, 174);
+  // Trzy tryby z Oracle (kolejność jak na kartce): kontra warunkowa, obrażenia,
+  // dobranie+odrzucenie.
+  assert.deepEqual(def.spell.modes.map((m) => m.name), [
+    'Kontra czar nie-stwora, chyba że zapłaci {2}',
+    '2 obrażenia dla celu-stwora',
+    'Dobierz 2 karty, odrzuć 2 karty',
+  ]);
+  assert.deepEqual(def.spell.modes[0].targets.map((t) => t.type), ['noncreature_spell_on_stack']);
+  assert.deepEqual(def.spell.modes[0].effects.map((e) => [e.type, e.amount]), [['counter_spell_unless_pays', 2]]);
+  assert.deepEqual(def.spell.modes[1].targets.map((t) => t.type), ['creature']);
+  assert.deepEqual(def.spell.modes[1].effects.map((e) => [e.type, e.amount]), [['damage', 2]]);
+  assert.deepEqual(def.spell.modes[2].targets, [], 'tryb 3 nie ma celów');
+  assert.deepEqual(def.spell.modes[2].effects.map((e) => [e.type, e.amount, e.discardCount]),
+    [['draw_then_discard', 2, 2]]);
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('1e3a5af6'), 'imageUri z druku RTR (rtr/172)');
+  assert.equal(MANA_COSTS['izzet-charm'], '{U}{R}');
+});
+
+test('B61/174: Izzet Charm — tryb „Dobierz 2, odrzuć 2" to jedna decyzja o 2 kartach', () => {
+  const state = game();
+  put(state, 'charm', 'izzet-charm');
+  for (let i = 0; i < 3; i++) put(state, `fodder-${i}`, 'demolish');
+  addMana(state, 'p1', 2, { colors: ['U', 'R'] });
+  const libraryBefore = state.zones.library.filter((id) => state.objects.get(id)?.ownerId === 'p1').length;
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'charm' && c.modeIndex === 2);
+  assert.ok(cast, 'tryb 3 dostępny bez celów');
+  run(state, cast);
+  // Rozstrzygnięcie: dobranie 2 (ruling 2020-08-07 — dobranie i odrzucenie
+  // dzieją się w całości przy rozstrzyganiu, więc czar wisi na stosie do
+  // rozstrzygnięcia decyzji o odrzuceniu). Po rzucie zostaje samo
+  // pass_priority (bez skrótu resolve_*) — oddajemy priorytet.
+  for (let i = 0; i < 6 && !state.pendingDiscardChoice; i += 1) {
+    run(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.equal(libraryBefore - state.zones.library.filter((id) => state.objects.get(id)?.ownerId === 'p1').length, 2,
+    'biblioteka zmalała o 2 (dobranie 2)');
+  assert.ok(state.pendingDiscardChoice, 'blokująca decyzja o odrzuceniu');
+  assert.equal(state.pendingDiscardChoice.count, 2, 'odrzucenie DWÓCH kart (nie jednej — regresja zaszytego count: 1)');
+  assert.equal(state.pendingDiscardChoice.handIds.length, 5, 'ręka: 3 fodder + 2 dobrane');
+  assert.ok(state.events.some((e) => e.type === 'discard_choice_required' && e.count === 2),
+    'zdarzenie decyzji niesie count 2');
+  const handBefore = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length;
+  // Oferta enumeruje pojedyncze karty, a UI zatwierdza PEŁNY wybór przez
+  // `cardIds` (ta sama komenda, wariant wsadowy — M109/„Znalezisko A").
+  const offers = commands(state, 'p1').filter((c) => c.type === 'resolve_discard_choice');
+  assert.equal(offers.length, state.pendingDiscardChoice.handIds.length, 'każda karta ręki do wyboru');
+  const choose = { type: 'resolve_discard_choice', playerId: 'p1', cardIds: state.pendingDiscardChoice.handIds.slice(0, 2) };
+  run(state, choose);
+  assert.equal(state.pendingDiscardChoice, null, 'decyzja domknięta');
+  assert.equal(handBefore - state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === 'p1').length, 2,
+    'odrzucono dokładnie 2 karty');
+  assert.ok(find(state, 'izzet-charm', 'graveyard'), 'czar dokończył rozstrzyganie');
+});
+
+test('B61/174: Izzet Charm — tryb 2 zabija 2/1, a 2/3 przeżywa 2 obrażenia', () => {
+  const state = game();
+  put(state, 'charm', 'izzet-charm');
+  put(state, 'goblin', 'skinbrand-goblin', 'p2', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['U', 'R'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'charm'
+    && c.modeIndex === 1 && c.targets?.[0] === 'goblin');
+  assert.ok(cast, 'tryb 2 z celem-stworem jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.ok(find(state, 'skinbrand-goblin', 'graveyard'), '2/1 ginie od 2 obrażeń');
+
+  const s2 = game();
+  put(s2, 'charm2', 'izzet-charm');
+  put(s2, 'trooper', 'alaborn-trooper', 'p2', 'battlefield');
+  addMana(s2, 'p1', 2, { colors: ['U', 'R'] });
+  const cast2 = commands(s2, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'charm2'
+    && c.modeIndex === 1 && c.targets?.[0] === 'trooper');
+  run(s2, cast2);
+  resolve(s2);
+  assert.ok(find(s2, 'alaborn-trooper', 'battlefield'), '2/3 przeżywa 2 obrażenia');
+});
+
+test('B61/174: Izzet Charm — tryb 1 kontruje czar nie-stwora, chyba że zapłaci {2}', () => {
+  // Wariant A: kontroler celu NIE MA czym zapłacić — kontra bez decyzji.
+  const state = game();
+  put(state, 'charm', 'izzet-charm');
+  put(state, 'their', 'revealing-wind', 'p2', 'hand');
+  addMana(state, 'p1', 2, { colors: ['U', 'R'] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 3, { colors: ['G'] });
+  const enemyCast = commands(state, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'their');
+  assert.ok(enemyCast, 'czar nie-stwora przeciwnika jest oferowany');
+  run(state, enemyCast);
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const stackSpell = state.zones.stack[0];
+  const counter = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'charm'
+    && c.modeIndex === 0 && c.targets?.[0] === stackSpell);
+  assert.ok(counter, 'tryb 1 celuje w czar nie-stwora na stosie');
+  run(state, counter);
+  passStack(state);
+  assert.ok(state.events.some((e) => e.type === 'spell_countered'), 'czar skontrowany (brak możliwości zapłaty)');
+  assert.ok(find(state, 'revealing-wind', 'graveyard'), 'skontrowany czar w grobie właściciela');
+  assert.ok(find(state, 'izzet-charm', 'graveyard'), 'charm dokończył rozstrzyganie');
+
+  // Wariant B: kontroler celu PŁACI {2} — czar zostaje na stosie i rozstrzyga się.
+  const s2 = game();
+  put(s2, 'charm2', 'izzet-charm');
+  put(s2, 'their2', 'revealing-wind', 'p2', 'hand');
+  addMana(s2, 'p1', 2, { colors: ['U', 'R'] });
+  s2.turn = jumpToStep(s2.turn, 'main', 'p2');
+  s2.turn.activePlayerId = s2.turn.priorityPlayerId = 'p2';
+  addMana(s2, 'p2', 3, { colors: ['G'] });
+  const castB = commands(s2, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'their2');
+  run(s2, castB);
+  // Pula 2 many po rzucie = jest CZYM zapłacić {2} (bez tego silnik kontruje
+  // od razu, bez pytania — patrz bramka canPay w counter_spell_unless_pays).
+  addMana(s2, 'p2', 2, { colors: ['G'] });
+  run(s2, { type: 'pass_priority', playerId: 'p2' });
+  const stackB = s2.zones.stack[0];
+  run(s2, commands(s2, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'charm2'
+    && c.modeIndex === 0 && c.targets?.[0] === stackB));
+  for (let i = 0; i < 6 && !s2.pendingCounterPay; i += 1) {
+    run(s2, { type: 'pass_priority', playerId: s2.turn.priorityPlayerId });
+  }
+  assert.ok(s2.pendingCounterPay, 'decyzja kontrolera celowanego czaru');
+  const pay = commands(s2, 'p2').find((c) => c.type === 'resolve_counter_pay_choice' && c.pay === true && c.cost === 2);
+  assert.ok(pay, 'oferta zapłaty {2} (są źródła many)');
+  run(s2, pay);
+  assert.ok(!s2.events.some((e) => e.type === 'spell_countered'), 'czar NIE skontrowany po zapłacie');
+  passStack(s2);
+  assert.ok(find(s2, 'revealing-wind', 'graveyard'), 'czar rozstrzygnął się normalnie (nie: wygnany/wrócił)');
+});
+
+test('B61/174: Izzet Charm — tryby bez legalnych celów nie są oferowane', () => {
+  // Pusta plansza: tylko tryb 3 (bez celów).
+  const state = game();
+  put(state, 'charm', 'izzet-charm');
+  addMana(state, 'p1', 2, { colors: ['U', 'R'] });
+  assert.deepEqual(
+    commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'charm').map((c) => c.modeIndex),
+    [2], 'bez stworów i czarów tylko „Dobierz 2, odrzuć 2"');
+  // Stwór przeciwnika włącza tryb 2 (ale nie tryb 1 — brak czaru nie-stwora).
+  put(state, 'goblin', 'skinbrand-goblin', 'p2', 'battlefield');
+  assert.deepEqual(
+    commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'charm').map((c) => c.modeIndex).sort(),
+    [1, 2], 'stwór daje tryb obrażeń, bez czaru na stosie');
+  // Czar nie-stwora na stosie włącza tryb 1 (charm nie celuje już w stwora — cel
+  // trybu 2 jest wymagany tylko w trybie 2).
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
+  put(state, 'their', 'revealing-wind', 'p2', 'hand');
+  addMana(state, 'p2', 3, { colors: ['G'] });
+  run(state, commands(state, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'their'));
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const modes = commands(state, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'charm').map((c) => c.modeIndex).sort();
+  assert.deepEqual(modes, [0, 1, 2], 'cel-czar odblokowuje tryb 1, cel-stwór wciąż daje tryb 2');
+  // CZAR-STWÓR nie jest celem trybu 1 (Oracle: „noncreature spell").
+  const s2 = game();
+  put(s2, 'charm2', 'izzet-charm');
+  addMana(s2, 'p1', 2, { colors: ['U', 'R'] });
+  s2.turn = jumpToStep(s2.turn, 'main', 'p2');
+  s2.turn.activePlayerId = s2.turn.priorityPlayerId = 'p2';
+  put(s2, 'creature-spell', 'alaborn-trooper', 'p2', 'hand');
+  addMana(s2, 'p2', 3, { colors: ['W'] });
+  // Czar-stwór rzuca się komendą `cast_permanent` (nie `cast_spell`).
+  run(s2, commands(s2, 'p2').find((c) => c.type === 'cast_permanent' && c.objectId === 'creature-spell'));
+  run(s2, { type: 'pass_priority', playerId: 'p2' });
+  assert.deepEqual(
+    commands(s2, 'p1').filter((c) => c.type === 'cast_spell' && c.objectId === 'charm2').map((c) => c.modeIndex),
+    [2], 'czar-stwór na stosie nie jest celem trybu 1 („noncreature")');
+});
+
+// ---- B61/162: Griffin Guide (DMR #8, plan Eldraine) -----------------------
+
+test('B61/162: Griffin Guide — dane Oracle, aura {2}{W} i druk DMR', () => {
+  const def = registry.get('griffin-guide');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.set, 'DMR');
+  assert.equal(def.plan, 'Eldraine');
+  assert.equal(def.artId, 162);
+  assert.deepEqual(def.aura.pump, { power: 2, toughness: 2 });
+  assert.deepEqual(def.aura.keywords, ['flying']);
+  assert.equal(def.abilities.length, 1);
+  assert.equal(def.abilities[0].trigger.event, 'enchanted_creature_dies');
+  assert.equal(def.abilities[0].effect.type, 'create_token');
+  assert.equal(def.abilities[0].effect.cardId, 'token_griffin');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('39b8cf5e'), 'imageUri z druku DMR (dmr/8)');
+  assert.equal(MANA_COSTS['griffin-guide'], '{2}{W}', 'wpis MANA_COSTS dla aury (wzorzec innych aur)');
+  assert.equal(registry.get('token_griffin').name, 'Griffin');
+  assert.deepEqual(registry.get('token_griffin').keywords, ['flying']);
+});
+
+test('B61/162: Griffin Guide — +2/+2 i flying dla zaczarowanego stworu', () => {
+  const state = game();
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield');
+  put(state, 'guide', 'griffin-guide', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  const host = state.objects.get('host');
+  assert.equal(effectivePower(host, state), 4, '2/3 + 2/+2 = 4');
+  assert.equal(effectiveToughness(host, state), 5, '3 + 2 = 5');
+  assert.ok(effectiveKeywords(host, state).includes('flying'), 'gospodarz ma flying');
+});
+
+test('B61/162: Griffin Guide — śmierć gospodarza (razem z aurą) daje token 2/2 z flying', async () => {
+  // Ruling WotC 2022-12-08 (dmr/8): „If Griffin Guide and the enchanted
+  // creature go to the graveyard at the same time, Griffin Guide's last
+  // ability will trigger." — śmierć gospodarza zabiera aurę (CR 704.5m)
+  // w TEJ SAMEJ partii zdarzeń, więc scena mierzy ścieżkę LKI (CR 603.10a),
+  // nie stan po śmierci.
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const state = game();
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield');
+  put(state, 'other', 'alaborn-trooper', 'p2', 'battlefield');
+  put(state, 'guide', 'griffin-guide', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  const before = state.events.length;
+  destroyPermanents(state, ['host', 'other']); // dwaj współpolegli w JEDNEJ partii
+  processTriggers(state, state.events.slice(before));
+  assert.equal(state.zones.stack.length, 1, 'trigger wchodzi na stos (CR 603.3b)');
+  resolve(state); // rozstrzygnięcie triggera — dopiero teraz powstaje token
+  const tokens = [...state.objects.values()].filter((o) => o.cardId === 'token_griffin' && o.zone === 'battlefield');
+  assert.equal(tokens.length, 1, 'trigger odpala DOKŁADNIE raz (nie po jednym na zmarłego)');
+  assert.equal(tokens[0].power, 2);
+  assert.equal(tokens[0].toughness, 2);
+  assert.deepEqual(tokens[0].subtypes, ['Griffin']);
+  assert.deepEqual(tokens[0].colors, ['W'], 'token jest BIAŁY (Oracle)');
+  assert.ok(effectiveKeywords(tokens[0], state).includes('flying'), 'token ma flying');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'griffin-guide' && o.zone === 'graveyard'),
+    'aura trafiła do grobu razem z gospodarzem (CR 704.5m)');
+});
+
+test('B61/162: Griffin Guide — odbicie gospodarza NIE jest śmiercią (brak triggera)', () => {
+  const state = game();
+  put(state, 'host', 'alaborn-trooper', 'p2', 'battlefield');
+  put(state, 'guide', 'griffin-guide', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  put(state, 'bounce', 'force-away', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['U'] });
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'bounce'
+    && c.targets?.[0] === 'host');
+  assert.ok(cast, 'Force Away celujący w zaczarowanego stwora jest oferowany');
+  run(state, cast);
+  resolve(state);
+  assert.ok(inHand(state, 'alaborn-trooper', 'p2'), 'gospodarz wrócił do ręki właściciela');
+  assert.ok(find(state, 'griffin-guide', 'graveyard'), 'aura bez gospodarza idzie do grobu');
+  assert.equal([...state.objects.values()].filter((o) => o.cardId === 'token_griffin').length, 0,
+    'powrót do ręki to nie śmierć — token NIE powstaje');
+});

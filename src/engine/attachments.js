@@ -362,6 +362,11 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
     fromId: attachment.id, toId: newId, cardId: moved.cardId,
     controllerId: moved.controllerId, reason: 'aura_without_legal_host',
     toZone,
+    // Griffin Guide (DMR #8, Batch 61/162): trigger „When enchanted creature
+    // dies" musi widzieć aurę, która odeszła RAZEM z gospodarzem (ruling
+    // 2022-12-08 + CR 603.10a — LKI), a po ruchu obiekt nie niesie już
+    // `attachedTo`. Gospodarz z chwili odejścia jedzie więc w zdarzeniu.
+    attachedTo: hostId ?? attachment.attachedTo ?? null,
   });
   state.events.push(e); events.push(e);
 }

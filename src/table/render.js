@@ -1842,6 +1842,8 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
   if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
+  // Batch 61/162 (Griffin Guide): trigger aury na śmierć ZACZAROWANEGO stworu.
+  if (trigger.event === 'enchanted_creature_dies') return `Gdy zaczarowany stwór umrze: ${parts}.`;
   if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy ${own} enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;

@@ -12401,6 +12401,85 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 167, plan: 'Eldraine',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // Batch61/174. Izzet Charm (RTR #172, Ravnica) — {U}{R} Instant, modalny
+  // „Choose one —” z trzema trybami. Ruling WotC 2020-08-07 (tryb 3): dobranie
+  // i odrzucenie dzieją się w CAŁOŚCI w trakcie rozstrzygania czaru — między
+  // nimi nie ma okna na akcje, więc to jeden efekt `draw_then_discard`
+  // z jawnym `discardCount` (ten sam wzorzec, co u kart z doborem 2: patrz
+  // uogólnienie w effects.js, L41), nie dwie osobne instrukcje.
+  // Tryb 1 = generyczny kontr warunkowy (wzorzec Abstruse Interference,
+  // Frightful Delusion), tryb 2 = obrażenia celu-stwora (jak Shock).
+  // Wybór trybu i celów: `spell.modes` (dziesiątki kart, m.in. Keep Out).
+  defineCard({
+    id: 'izzet-charm', name: 'Izzet Charm', set: 'RTR',
+    types: ['Instant'], colors: ['U', 'R'], manaCost: 2,
+    oracleText: 'Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e3a5af6-5423-442b-a207-364e97a871d8.jpg?1783940338',
+    spell: {
+      timing: 'instant',
+      modes: [
+        {
+          name: 'Kontra czar nie-stwora, chyba że zapłaci {2}',
+          targets: [{ type: 'noncreature_spell_on_stack' }],
+          effects: [{ type: 'counter_spell_unless_pays', amount: 2 }],
+        },
+        {
+          name: '2 obrażenia dla celu-stwora',
+          targets: [{ type: 'creature' }],
+          effects: [{ type: 'damage', amount: 2 }],
+        },
+        {
+          name: 'Dobierz 2 karty, odrzuć 2 karty',
+          effects: [{ type: 'draw_then_discard', amount: 2, discardCount: 2 }],
+        },
+      ],
+    },
+    artId: 174, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/162. Griffin Guide (DMR #8, Eldraine) — {2}{W} Aura: +2/+2 i flying
+  // dla zaczarowanego stworu; gdy zaczarowany stwór umiera — token 2/2 biały
+  // Griffin z flying. Ruling WotC 2022-12-08 (DMR #8): „If Griffin Guide and
+  // the enchanted creature go to the graveyard at the same time, Griffin
+  // Guide's last ability will trigger." — trigger `enchanted_creature_dies`
+  // czyta LKI (także aury, która odeszła równocześnie z gospodarzem; CR
+  // 603.10a), patrz skan w triggers.js.
+  defineCard({
+    id: 'griffin-guide', name: 'Griffin Guide', set: 'DMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\nWhen enchanted creature dies, create a 2/2 white Griffin creature token with flying.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/9/39b8cf5e-10f6-49aa-82eb-2f56cc29d393.jpg?1783918517',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dies' },
+        effect: {
+          type: 'create_token', cardId: 'token_griffin', name: 'Griffin',
+          kind: 'creature', power: 2, toughness: 2, colors: ['W'],
+          types: ['Creature'], subtypes: ['Griffin'], keywords: ['flying'],
+        },
+      }),
+    ],
+    artId: 162, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
+  // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
+  // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby
+  // źródła (L26 — adres WYŁĄCZNIE z API Scryfalla; wyjątek ADR 0029: tokeny
+  // nie są kolekcją właściciela).
+  defineCard({
+    id: 'token_griffin', name: 'Griffin', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/caeea28b-c11b-4fa0-a64c-637bc58171cc.jpg?1783918316',
+    types: ['Creature', 'Token'], subtypes: ['Griffin'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 0, keywords: ['flying'],
+    oracleText: 'Flying',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Griffin Guide'] },
+  }),
 ]);
 
 /**

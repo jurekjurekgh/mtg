@@ -807,6 +807,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // card-data.js go nie widział, a w logu gracza świeciło „trigger (delayed)".
   delayed: 'opóźniony trigger',
   enchanted_permanent_tapped: 'tapnięcie zaczarowanego permanentu',
+  // Batch 61/162 (Griffin Guide): „When enchanted creature dies" — zdolność
+  // siedzi na aurze, a zdarzeniem jest śmierć gospodarza (także równoczesna
+  // z aurą — ruling DMR 2022-12-08).
+  enchanted_creature_dies: 'śmierć zaczarowanego stworu',
   self_becomes_tapped: 'tapnięcie tego permanentu',
   // M166/B (Batch 40, Cacophodon): Enrage.
   dealt_damage: 'otrzymanie obrażeń',

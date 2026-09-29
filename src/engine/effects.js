@@ -6457,11 +6457,18 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
   // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
   if (effect.type === 'draw_then_discard') {
+    // Liczba odrzuceń: jawny `discardCount`, a gdy go brak — tyle, ile dobrano
+    // (Oracle wiąże oba w jednej instrukcji: „Draw a card, then discard a
+    // card"). Jawny count istnieje dla par o INNEJ liczbie — Izzet Charm
+    // (Batch 61/174: dobierz 2, odrzuć 2; ruling WotC 2020-08-07: dobranie
+    // i odrzucenie dzieją się w całości w trakcie rozstrzygania, bez okien).
+    const discardCount = effect.discardCount ?? effect.amount ?? 1;
     drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1, 'effect');
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
     if (handIds.length === 0) return;
-    // Znalezisko A: dobór do 1 karty = discard bez decyzji (efekt kontynuuje).
-    if (shouldAutoDiscard({ count: 1, candidateIds: handIds })) {
+    // Znalezisko A: ręka nie większa niż liczba odrzuceń = bez decyzji
+    // (efekt kontynuuje); inaczej blokująca decyzja o pełnym wyborze.
+    if (shouldAutoDiscard({ count: discardCount, candidateIds: handIds })) {
       discardCardsForced(state, {
         playerId: sourceObject.controllerId, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
@@ -6473,7 +6480,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     state.pendingDiscardChoice = {
       playerId: sourceObject.controllerId,
-      count: 1,
+      count: discardCount,
       handIds,
       purpose: 'effect',
       sourceCardId: sourceObject.cardId ?? null,
@@ -6485,7 +6492,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('discard_choice_required', {
-      playerId: sourceObject.controllerId, count: 1, cardIds: [...handIds],
+      playerId: sourceObject.controllerId, count: discardCount, cardIds: [...handIds],
       purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
     }));
     return true;

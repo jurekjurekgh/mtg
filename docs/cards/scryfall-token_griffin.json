@@ -1,0 +1,19 @@
+{
+ "source": "https://api.scryfall.com/cards/caeea28b-c11b-4fa0-a64c-637bc58171cc",
+ "print": "Griffin (Tdmr — token)",
+ "name": "Griffin",
+ "type_line": "Token Creature — Griffin",
+ "oracle_text": "Flying",
+ "power": "2",
+ "toughness": "2",
+ "colors": [
+  "W"
+ ],
+ "set": "tdmr",
+ "collector_number": "2",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/c/a/caeea28b-c11b-4fa0-a64c-637bc58171cc.jpg?1783918316"
+ },
+ "pobrano": "2026-09-29"
+}

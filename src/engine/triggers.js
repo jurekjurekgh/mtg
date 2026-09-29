@@ -2597,8 +2597,48 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     };
+    // Griffin Guide (DMR #8, Batch 61/162) / Infectious Bloodlust (ORI #152):
+    // „When enchanted creature dies" — zdolność siedzi na AURZE, a zdarzeniem
+    // jest śmierć GOSPODARZA. Czytać trzeba z LKI (CR 603.10a), bo gdy
+    // gospodarz umiera, aura odchodzi razem z nim (CR 704.5m) — na polu bitwy
+    // nie ma już czego przeszukać. Ruling WotC 2022-12-08 (DMR #8): „If Griffin
+    // Guide and the enchanted creature go to the graveyard at the same time,
+    // Griffin Guide's last ability will trigger." Skanujemy więc zdarzenie
+    // odejścia AURY (`attachedTo` niesie gospodarza z chwili odejścia — mover
+    // zeruje pole na obiekcie) i pytamy, czy TEN gospodarz umarł w tej samej
+    // partii zdarzeń. Zdarzenie aury jest skanowane dokładnie raz, więc
+    // trigger odpala się raz także przy współzgonach (inaczej niż skan po
+    // zdarzeniu śmierci, który widziałby cudze zgony tej samej partii SBA).
+    // ODBICIE gospodarza nie jest śmiercią (zdarzenie nie istnieje) — aura
+    // idzie do grobu, a trigger NIE odpala, zgodnie z Oracle.
+    if (ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null) {
+      const hostDeath = queue.find((sibling) => {
+        // CR 122.1h: „exile instead\" to nie śmierć.
+        if (sibling.toZone === 'exile') return false;
+        if (sibling.type === 'creature_destroyed' || sibling.type === 'permanent_destroyed'
+          || sibling.type === 'permanent_sacrificed') {
+          return sibling.fromId === ev.attachedTo;
+        }
+        if (sibling.type === 'object_moved') {
+          return sibling.fromZone === 'battlefield' && sibling.toZone === 'graveyard'
+            && (sibling.object?.id ?? sibling.fromId) === ev.attachedTo;
+        }
+        return false;
+      });
+      const hostLki = hostDeath
+        ? (hostDeath.object ?? state.objects.get(hostDeath.objectId ?? hostDeath.toId))
+        : null;
+      if (hostDeath && diedAs(hostLki, 'creature', 'Creature')) {
+        const aura = ev.object ?? state.objects.get(ev.toId);
+        for (const ability of abilitiesOnDeath(aura)) {
+          if (ability?.trigger?.event === 'enchanted_creature_dies') {
+            tryFire(state, ability, aura, [], events);
+          }
+        }
+      }
+    }
     if (ev.type === 'creature_destroyed') {
-      // Finality (exile) NIE uruchamia triggera „dies" (CR 122.1h — obiekt
+      // Finality (exile) NIE uruchamia triggera „dies\" (CR 122.1h — obiekt
       // nie umiera, jest wygnany).
       if (ev.toZone === 'exile') return;
       // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI

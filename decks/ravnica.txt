@@ -7,6 +7,7 @@
 1x Epic Experiment
 1x Forced Landing
 1x Ghost Warden
+1x Izzet Charm
 1x Liliana's Triumph
 1x Piercing Rays
 1x Selesnya Charm
@@ -27,8 +28,8 @@
 1x Ivy Lane Denizen
 1x Veiled Ascension
 1x Trostani Discordant
-6x Plains
-1x Island
+5x Plains
+2x Island
 2x Swamp
 2x Mountain
 3x Forest

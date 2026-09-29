@@ -43,7 +43,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   const tyly = ALL.filter((c) => c.support.status === 'back').length;
   const karty = ALL.filter((c) => c.support.status === 'supported').length;
   // Batch 59 (Slithering Cryptid): +token_mutagen (predefined token TMT) → 44.
-  assert.equal(tokeny, 44, 'tyle tokenów zna katalog (stan po M419 + Batch 59)');
+  // Batch 61/162 (Griffin Guide): +token_griffin (2/2 biały Griffin z flying) → 45.
+  assert.equal(tokeny, 45, 'tyle tokenów zna katalog (stan po M419 + Batch 61)');
   // Batch 59 (Bird Admirer // Wing Shredder): +wing-shredder (127 MID) → 9.
   assert.equal(tyly, 9, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');
   assert.equal(karty + tokeny + tyly, ALL.length, 'każdy wpis policzony dokładnie raz');

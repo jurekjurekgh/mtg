@@ -119,6 +119,7 @@ liczone z plików `decks/*.txt`).
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 29 | 10 | 19 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 26 | 9 | 17 |
+| `eldraine` | Eldraine | WUBRG | 23 | 8 | 15 |
 | `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 29 | 10 | 19 |
@@ -127,7 +128,7 @@ liczone z plików `decks/*.txt`).
 | `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
-| `ravnica` | Ravnica | WUBRG | 41 | 14 | 27 |
+| `ravnica` | Ravnica | WUBRG | 42 | 14 | 28 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 38 | 13 | 25 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
@@ -142,7 +143,7 @@ liczone z plików `decks/*.txt`).
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśnie | WUBRG | 45 | 15 | 30 |
+| `worek-basni` | Worek: Baśnie | WUBRG | 24 | 8 | 16 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 32 | 11 | 21 |
 | `worek-legend` | Worek: Legendy | WUBRG | 29 | 10 | 19 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |

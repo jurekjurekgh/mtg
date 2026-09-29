@@ -1,0 +1,34 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Griffin%20Guide&set=dmr",
+ "print": "Griffin Guide (DMR)",
+ "name": "Griffin Guide",
+ "mana_cost": "{2}{W}",
+ "cmc": 3.0,
+ "type_line": "Enchantment — Aura",
+ "oracle_text": "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\nWhen enchanted creature dies, create a 2/2 white Griffin creature token with flying.",
+ "colors": [
+  "W"
+ ],
+ "color_identity": [
+  "W"
+ ],
+ "keywords": [
+  "Enchant"
+ ],
+ "set": "dmr",
+ "collector_number": "8",
+ "rarity": "uncommon",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/3/9/39b8cf5e-10f6-49aa-82eb-2f56cc29d393.jpg?1783918517"
+ },
+ "pobrano": "2026-09-29",
+ "rulings": [
+  {
+   "source": "wotc",
+   "published_at": "2022-12-08",
+   "comment": "If Griffin Guide and the enchanted creature go to the graveyard at the same time, Griffin Guide's last ability will trigger."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/dmr/8/rulings",
+ "rulingsPobrano": "2026-09-29"
+}

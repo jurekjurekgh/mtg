@@ -546,4 +546,8 @@ export const MANA_COSTS = {
   "captivating-gyre": "{4}{U}{U}",
   // Batch61: Lost in the Mist (ISD).
   "lost-in-the-mist": "{3}{U}{U}",
+  // Batch61: Izzet Charm (RTR) — modalny instant {U}{R}.
+  "izzet-charm": "{U}{R}",
+  // Batch61: Griffin Guide (DMR) — aura {2}{W}.
+  "griffin-guide": "{2}{W}",
 };
