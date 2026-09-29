@@ -44,8 +44,9 @@ function setup({ foes = [], mine = [] } = {}) {
   const d = REG.get('cuombajj-witches');
   addObject(s, {
     id: 'witch', instanceId: 'i-witch', cardId: 'cuombajj-witches', controllerId: 'p1', ownerId: 'p1',
-    zone: 'battlefield', summoningSickness: false, ...gameObjectDataOf(d),
+    zone: 'battlefield', ...gameObjectDataOf(d),
   });
+  s.objects.set('witch', Object.freeze({ ...s.objects.get('witch'), summoningSickness: false }));
   for (const f of foes) put(s, f.id, 'p1', f.power, f.toughness, f.extra ?? {});
   for (const m of mine) put(s, m.id, 'p2', m.power, m.toughness, m.extra ?? {});
   return s;

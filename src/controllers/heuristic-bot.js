@@ -10672,7 +10672,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Zranić wrogi stwór, ale nie zabić — małą korzyścią jest to, że
           // nie zadajemy obrażeń sobie.
-          if (!isMine) return finish(30);
+          //
+          // PMSSB-21 (R1, mikro-pętla; nowy dowód = audyt remisów): ta gałąź
+          // miała GOŁĄ stałą 30, więc wybór między ocalałymi celami był
+          // arbitralny (pierwsza oferta z enumeracji silnika) — pomiar PRZED:
+          // 190/190 remisów rozróżnialnych w `resolve_opponent_target`
+          // (moc·2+wytrzymałość różnych celów, punkty te same). 1 obrażenie
+          // trwa do końca tury (CR 514.2), więc wśród ocalałych celów wartość
+          // rośnie z ZAGROŻENIEM: miękczenie największego atakującego/blokera
+          // przybliża zabicie go w tej samej turze. Bonus to DOPŁATA
+          // ograniczona progiem — nigdy nie zbliża się do gałęzi dobicia
+          // (100 + 2·moc), a `opponentTargetThreatWeight` ×0 przywraca dawną
+          // wartość (kotwica anty-over-fix M429).
+          if (!isMine) {
+            const threat = (tgt.power ?? 0) * P.creaturePowerWeight
+              + (tgt.toughness ?? 0) * P.creatureToughnessWeight;
+            return finish(P.opponentTargetFoeBase
+              + Math.min(P.opponentTargetThreatCap, threat * P.opponentTargetThreatWeight));
+          }
           // Zranić WŁASNEGO stwora — kara; najlżej jest zranić stwora,
           // który i tak nie zginie z tego powodu (pozostała wytrzymałość > 1).
           if (remaining > 1) return finish(10 - ((tgt.power ?? 0) + (tgt.toughness ?? 0)));
