@@ -2398,8 +2398,10 @@ POPRAWNE w bieżącym wydaniu (712.9 = transform nie-DFC, 712.8e = MV tyłu).
    zastępcze) — przesunięcie NIE jest jednolite (+1 nie działa), więc każdy
    numer trzeba potwierdzić osobno, nie przesunąć arytmetycznie.
 3. Cytat, który „wygląda na stary”, może być poprawny: zanim go zmienisz,
-   sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie
-   zostaw wiersz „BEZ ZMIAN”, żeby następna sesja ich znowu nie „poprawiła”.
+   sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie zostaw wiersz „BEZ ZMIAN”.
+
+4. Zamiana litery obok (508.1c ↔ 508.1d) przechodzi przez strażnik ISTNIENIA
+   numeru — pilnuj pary „numer ↔ pojęcie” (audyt PR #145, F5).
 
 **Strażnik:** `test/audyt-pr134-2026-09-24-cytaty-cr.test.js` C2 trzyma oba
 cytaty „BEZ ZMIAN” (712.9 w `game-state.js` i `m264`, 712.8e w `identity.js`

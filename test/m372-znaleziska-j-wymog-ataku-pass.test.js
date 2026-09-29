@@ -8,7 +8,7 @@ import { declareAttackers, legalAttackerOptions } from '../src/engine/combat.js'
 
 /**
  * Znalezisko J właściciela (2026-09-17, gry testowe): Ramroller („This
- * creature attacks each combat if able", CR 508.1c) nie atakował mimo braku
+ * creature attacks each combat if able", CR 508.1d) nie atakował mimo braku
  * choroby przywołania — wystarczyło, że obaj gracze spasowali w kroku
  * deklaracji atakujących, a runda passów przechodziła do blokowania bez
  * deklaracji. Deklaracja atakujących jest akcją turową (CR 508.1a), więc

@@ -45,13 +45,33 @@ const COST_DESCRIPTORS = [
   // Morph/Megamorph: pip koloru dotyczy kosztu ODKRYCIA (morphCost).
   ['Morph', (c) => c.morph],
   ['Megamorph', (c) => c.morph],
+  // Disguise (batch 61/170): koszt ODKRYCIA może nieść pipy HYBRYDOWE —
+  // patrz skan hybryd niżej (pip {R/G} nie jest jednoznakowy, więc skan
+  // pipów WUBRG go nie widzi).
+  ['Disguise', (c) => c.morph],
 ];
+
+/** Pole definicji z pipami hybrydowymi dla słowa-kluczu (null = brak hybryd). */
+const HYBRID_FIELDS = new Map([['Disguise', 'disguiseHybrid']]);
 
 function oraclePips(text, keyword) {
   const re = new RegExp(`${keyword}\\s*(?:—|-|\\u2014)?\\s*((?:\\{[^}]+\\}\\s*)+)`, 'i');
   const match = re.exec(text ?? '');
   if (!match) return null;
   return [...match[1].matchAll(/\{([WUBRG])\}/g)].map((m) => m[1]);
+}
+
+/**
+ * Pipy HYBRYDOWE przy słowie-kluczu Oracle, np. ['R/G', 'R/G'] dla
+ * „Disguise {4}{R/G}{R/G}". Osobna funkcja, bo `{R/G}` to jeden symbol
+ * kosztu (CR 107.4e) opłacany jednym z kolorów — nie mieści się w klasie
+ * `[WUBRG]` skanu pipów wyżej.
+ */
+function oracleHybridPips(text, keyword) {
+  const re = new RegExp(`${keyword}\\s*(?:—|-|\\u2014)?\\s*((?:\\{[^}]+\\}\\s*)+)`, 'i');
+  const match = re.exec(text ?? '');
+  if (!match) return null;
+  return [...match[1].matchAll(/\{([WUBRG]\/[WUBRG])\}/g)].map((m) => m[1]);
 }
 
 test('M268 (klasa): każdy alt-koszt z pipem w Oracle ma `colors` w definicji', () => {
@@ -69,6 +89,47 @@ test('M268 (klasa): każdy alt-koszt z pipem w Oracle ma `colors` w definicji', 
     }
   }
   assert.deepEqual(offenders, [], 'alt-koszty bez pipów kolorów w definicji');
+});
+
+test('M268 (klasa): alt-koszt z pipem HYBRYDOWYM w Oracle ma grupy w definicji', () => {
+  // Audyt PR #145: Disguise (batch 61/170) jest pierwszym kosztem
+  // alternatywnym z pipem hybrydowym. Skan wyżej go NIE widzi — `{R/G}` nie
+  // pasuje do klasy `[WUBRG]` — więc bez tego testu hybryda w Oracle mogłaby
+  // się rozjechać z definicją całkiem bezkarnie (klasa L104/1: nowy członek
+  // rodziny bez strażnika dziedziczy stary błąd).
+  const offenders = [];
+  let zobaczone = 0;
+  for (const card of REGISTRY.all()) {
+    for (const [keyword, get] of COST_DESCRIPTORS) {
+      const hybridField = HYBRID_FIELDS.get(keyword);
+      if (!hybridField) continue;
+      const descriptor = get(card);
+      if (!descriptor) continue;
+      const oracle = oracleHybridPips(card.oracleText, keyword);
+      if (oracle == null || oracle.length === 0) continue;
+      zobaczone += 1;
+      const declared = (descriptor[hybridField] ?? []).map((g) => [...g].join('/'));
+      if (JSON.stringify(declared) !== JSON.stringify(oracle)) {
+        offenders.push(`${card.id} [${keyword}] oracle=${oracle.join('')} def=${declared.join('') || 'BRAK'}`);
+      }
+    }
+  }
+  // Asercja nie może być pusta (L29): bez tej linii skan „przechodzi" też
+  // wtedy, gdy z katalogu zniknie ostatnia karta z hybrydą.
+  assert.ok(zobaczone >= 1, 'skan hybryd nie zobaczył żadnej karty — jeśli 170 wypadła z katalogu, usuń go ŚWIADOMIE');
+  assert.deepEqual(offenders, [], 'alt-koszty bez pipów hybrydowych w definicji');
+
+  // Dowód RED: skan rozróżnia grupy, nie tylko ich liczbę.
+  const syntetyk = {
+    id: 'syntetyk-hybryda',
+    oracleText: 'Disguise {4}{R/G}{R/G} (Turn it face up any time for its disguise cost.)',
+    morph: { disguiseCost: 6, disguiseHybrid: [['R', 'W']] },
+  };
+  const zle = [];
+  const oracle = oracleHybridPips(syntetyk.oracleText, 'Disguise');
+  const declared = syntetyk.morph.disguiseHybrid.map((g) => [...g].join('/'));
+  if (JSON.stringify(declared) !== JSON.stringify(oracle)) zle.push('rozjazd');
+  assert.deepEqual(zle, ['rozjazd'], 'skan musi widzieć R/G ≠ R/W');
 });
 
 test('M268: bestow Leafcrown Dryad i plot Tumbleweed Rising niosą pip {G}', () => {
@@ -183,6 +244,37 @@ test('M268/label: koszt ODKRYCIA morph liczy pipy W RAMACH kwoty', () => {
   assert.doesNotMatch(label, />2</, `etykieta zawyża koszt odkrycia: ${label}`);
   assert.match(label, />1<|1/, 'część generyczna {1}');
   assert.match(label, /\bU\b|ms-u/i, 'pip {U}');
+});
+
+test('M268/label: koszt obrotu Disguise to {4}{R/G}{R/G} — nie gołe {6}, nie {4}{R}{G}', () => {
+  // Audyt PR #145: Disguise wszedł do rodziny jako trzeci rodzaj zakrycia,
+  // ale nie wszedł do strażników rodzinnych — jedynym pinem kosztu był napis
+  // Oracle w teście batcha, a CENA POKAZYWANA graczowi (etykieta obrotu) nie
+  // miała żadnego. Dowód mutacyjny: usunięcie hybryd z rachunku części
+  // generycznej w `costSymbols` przechodziło wtedy wszystkie testy, choć
+  // etykieta reklamowałaby {6}{R/G}{R/G} = 8 many zamiast 6.
+  const card = REGISTRY.get('riftburst-hellion');
+  assert.equal(card.morph.disguiseCost, 6, 'kwota = suma symboli (CR 702.168a)');
+  assert.deepEqual(card.morph.disguiseHybrid.map((g) => [...g]), [['R', 'G'], ['R', 'G']]);
+  assert.equal(costSymbols(card.morph.disguiseCost, [], card.morph.disguiseHybrid), '{4}{R/G}{R/G}');
+
+  const object = { id: 'o1', cardId: 'riftburst-hellion', morph: card.morph, faceDown: true };
+  const view = LABEL_VIEW([object]);
+  const session = {
+    ...LABEL_SESSION,
+    abilitiesOf: () => [{ keyword: 'disguise', cost: { mana: 6, hybrid: [['R', 'G'], ['R', 'G']] } }],
+    state: {
+      objects: new Map([['o1', {
+        ...object,
+        abilities: [{ keyword: 'disguise', cost: { mana: 6, hybrid: [['R', 'G'], ['R', 'G']] } }],
+      }]]),
+    },
+  };
+  const label = commandLabel({ type: 'activate_ability', objectId: 'o1', abilityIndex: 0 }, session, view);
+  assert.doesNotMatch(label, />6</, `etykieta zawyża koszt obrotu: ${label}`);
+  assert.match(label, />4</, `część generyczna {4}: ${label}`);
+  assert.equal((label.match(/ms-hybrid/g) ?? []).length, 2, `dwa pipy hybrydowe: ${label}`);
+  assert.doesNotMatch(label, /ms-r(?![^>]*ms-hybrid)/, `hybryda renderowana jako osobne pipy {R}{G}: ${label}`);
 });
 
 test('M268/label: koszt plot w etykiecie niesie pip koloru', () => {

@@ -8084,8 +8084,10 @@ projektu; tu skrót tego, co zmieniło SILNIK):
    107.4c): `['C']` jako wymaganie w `matchColorRequirements` (pasuje tylko
    jednostka bezbarwna), `add_mana` z jawnym `colors: []`, naprawa korekty
    Eldrazi Sciona; przy okazji strażnik `PIP_RE` w `test/ability-cost-pips.test.js`
-   zna bezbarwny pip (`WUBRGC`), a `resources.js` ma 9/9 przepisań na wspólne
-   predykaty `unitCoversRequirement`/`unitCoversAnyRequirement`.
+   zna bezbarwny pip (`WUBRGC`), a ręczne porównania kolorów przeszły na
+   wspólne predykaty `unitCoversRequirement`/`unitCoversAnyRequirement`
+   (7 wywołań w `resources.js`, 10 w całym `src/` — pomiar 2026-09-29,
+   `grep -rn unitCovers src/`).
 6. **Training** (164 Gryffwing Cavalry, CR 702.149): warunek triggera
    `attackedWithGreaterPower` + kontekst zdarzenia `attacks` z `attackerIds`
    i ZAMROŻONYM wynikiem porównania mocy (rulingi 2021-11-19: wzrost siły po

@@ -7,10 +7,10 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { declareAttackers, legalAttackerOptions } from '../src/engine/combat.js';
 
 /**
- * M270 błąd #9 (CR 508.1c) — wymóg „attacks each combat IF ABLE" (goad,
+ * M270 błąd #9 (CR 508.1d) — wymóg „attacks each combat IF ABLE" (goad,
  * mustAttack) obowiązuje wyłącznie wtedy, gdy stwór faktycznie MOŻE zostać
  * legalnie zadeklarowany. Stwór z „can't attack alone" (Ember Beast,
- * CR 508.1d), będący jedynym zdolnym do ataku stworem, atakować nie może —
+ * CR 508.1c), będący jedynym zdolnym do ataku stworem, atakować nie może —
  * więc wymóg go nie dotyczy. Bez tego powstawał DEADLOCK: pusta deklaracja
  * łamała wymóg ataku, a deklaracja z nim samym łamała „can't attack alone",
  * czyli gracz nie miał ANI JEDNEJ legalnej komendy.
@@ -56,7 +56,7 @@ test('goadowany „can\'t attack alone" bez partnera: pusta deklaracja jest lega
   assert.equal(deklaruj(stan({ zPartnerem: false }), []), 'ok');
 });
 
-test('samotny atak takiego stwora pozostaje nielegalny (CR 508.1d)', () => {
+test('samotny atak takiego stwora pozostaje nielegalny (CR 508.1c)', () => {
   const wynik = deklaruj(stan({ zPartnerem: false }), ['e']);
   assert.notEqual(wynik, 'ok');
   assert.match(wynik, /alone/);

@@ -55,6 +55,10 @@ export const WYKLUCZONE = new Set([
   'test/cr-numery-istnienie-straznik.test.js',
   'test/cr-numery-701-tabela-straznik.test.js',
   'test/cr-numery-702-tabela-straznik.test.js',
+  // Strażnik par 508/509 (audyt PR #145, zn. F5): fixture'y detektora cytują
+  // CELOWO błędne pary (508.1c przy „attacks if able", 508.1d przy „attack
+  // alone") — bez wyłączenia czerwieniłyby własny skan.
+  'test/cr-numery-508-restrykcje-wymogi-straznik.test.js',
 ]);
 
 /** Wzorzec cytatu w kodzie: `CR <3 cyfry>.<cyfry>[litera]` (bez „a/b", zakresów itp.). */

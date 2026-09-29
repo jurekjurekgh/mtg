@@ -5541,7 +5541,7 @@ export function execute(state, input) {
         // Znalezisko J (właściciel, 2026-09-17 — Ramroller „This creature
         // attacks each combat if able"): deklaracja atakujących jest akcją
         // turową (CR 508.1a) — runda passów jej nie pomija. Stwór wymuszony
-        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1c
+        // (`mandatoryAttackerIds`: „attacks each combat if able" CR 508.1d
         // albo goad CR 701.15) MUSI atakować, więc przed wyjściem z kroku
         // deklarujemy MINIMALNY zestaw — same stwory wymuszone; te opcjonalne
         // zostają decyzją gracza, który właśnie spasował (świadomie z nich
@@ -7738,8 +7738,12 @@ export function playerView(state, playerId) {
   } else if (state.status === 'active' && !blockedByOthersDecision && activeFoodChoice) {
     // Oczekująca decyzja poświęcenia Food (Insatiable Appetite):
     // poświęć Food (+5/+3) lub nie (+3/+3).
-    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true }));
-    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false }));
+    // PMSSB-22/F3 (zgłoszenie właściciela): bot musi wiedzieć, KTÓREGO stwora
+    // dotyczy decyzja — bez celu w komendzie nie da się policzyć, czy +5/+5
+    // zmienia wynik walki względem +3/+3 (pendingFoodChoice nie jest w widoku).
+    const foodTargetId = state.pendingFoodChoice.creatureId ?? null;
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true, creatureId: foodTargetId }));
+    legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false, creatureId: foodTargetId }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeDiscover) {
     // Oczekująca decyzja Discover (Geological Appraiser): rzuć bez kosztu
     // albo weź do ręki (CR 701.57a). Historia: M280/F zamknął ofertę dla

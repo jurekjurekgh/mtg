@@ -132,6 +132,32 @@ test('AI-R4 modes skit: dokładny brief właściciela (nagłówek, limit, przyk�
   assert.ok(prompt.includes('Garrek'));
 });
 
+test('AI-R8 modes: KAŻDY tryb niesie talię Czarodziejki (zgłoszenie właściciela 2026-09-29)', () => {
+  // Właściciel: „w prompcie startowym, niezależnie od trybu, nie idzie
+  // informacja, jaką talią gra Czarodziejka” — jeden model komentował
+  // „Czarodziejka gra talią Czarodziejka, dziwne”, drugi mówił tylko o talii
+  // bota. Pola heroDeck/heroWorld były liczone w baseCtx i przekazywane
+  // z main.js, ale używał ich wyłącznie skit.
+  const tryby = ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit'];
+  for (const mode of tryby) {
+    const prompt = buildPromptForMode(mode, CTX);
+    assert.ok(prompt.includes('Rycerze (WU)'), `${mode}: brak talii Czarodziejki`);
+    assert.ok(prompt.includes('Wiedźmin (BG)'), `${mode}: brak talii bota`);
+  }
+  // Tryby lore niosą dodatkowo JEJ świat (inaczej model wrzuci jej karty
+  // w świat bota); „przy stole” (player/observer) wystarczy nazwa talii.
+  for (const mode of ['lore-bot', 'lore-observer', 'skit']) {
+    assert.ok(buildPromptForMode(mode, CTX).includes('Kaldheim'),
+      `${mode}: brak świata talii Czarodziejki`);
+  }
+  // Fallback: brak pól = „(nieznana talia)”, nigdy „undefined”.
+  for (const mode of tryby) {
+    const bare = buildPromptForMode(mode, { ...CTX, heroDeckTitle: undefined, heroDeckKey: undefined, heroWorld: undefined });
+    assert.ok(bare.includes('(nieznana talia)'), `${mode}: brak fallbacku talii`);
+    assert.ok(!buildPromptForMode(mode, null).includes('undefined'), `${mode}: wyciek undefined`);
+  }
+});
+
 test('AI-R4b modes skit: UWAGA niesie PRAWDZIWE światy obu talii (zero hardcode)', () => {
   const prompt = buildSkitPrompt(CTX);
   assert.ok(prompt.includes('pochodzą ze świata Kaldheim'));

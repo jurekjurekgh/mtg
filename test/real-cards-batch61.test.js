@@ -300,6 +300,45 @@ test('B61/167: Lost in the Mist — brak permanentu = brak oferty (drugi cel wym
   assert.deepEqual(casts, [], 'oba cele obowiązkowe — bez permanentu rzutu nie ma');
 });
 
+test('B61/167 (klasa): counter_spell czyta WŁASNY slot celu, nie zawsze targets[0]', () => {
+  // Audyt PR #145 (zn. F2, klasa L13/L65): pin powyżej nie odróżnia
+  // `targets[effect.targetIndex ?? 0]` od `targets[0]`, bo w Lost in the Mist
+  // kontra siedzi na slocie 0 — mutacja na `targets[0]` przechodziła
+  // WSZYSTKIE testy, choć wsparcie `targetIndex` w kontrze zostało wtedy bez
+  // pokrycia. Syntetyk (ADR 0029 — karta testowa, nie katalog) odwraca
+  // kolejność: permanent na slocie 0, czar na slocie 1.
+  const state = game();
+  addObject(state, {
+    id: 'mist2', instanceId: 'i-mist2', cardId: 'x-mirror-mist', controllerId: 'p1', ownerId: 'p1', zone: 'hand',
+    kind: 'spell', manaCost: 5, keywords: [], subtypes: [], types: ['Instant'], colors: ['U'],
+    cardName: 'Syntetyczna mgła',
+    spell: Object.freeze({
+      timing: 'instant',
+      targets: Object.freeze([Object.freeze({ type: 'permanent' }), Object.freeze({ type: 'spell_on_stack' })]),
+      effects: Object.freeze([Object.freeze({ type: 'counter_spell', targetIndex: 1 })]),
+    }),
+  });
+  put(state, 'spell', 'demolish', 'p2', 'hand'); // Dowolny czar na stosie
+  put(state, 'rock', 'trigon-of-corruption', 'p2', 'battlefield');
+  addMana(state, 'p1', 5, { colors: ['U', 'U'] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 4, { colors: ['R'] });
+  const enemyCast = commands(state, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'spell' && c.targets?.[0] === 'rock');
+  assert.ok(enemyCast, 'czar przeciwnika jest oferowany');
+  run(state, enemyCast);
+  run(state, { type: 'pass_priority', playerId: 'p2' });
+  const stackSpell = state.zones.stack[0];
+  // Slot 0 = permanent, slot 1 = czar (odwrotnie niż w druku ISD).
+  const cast = commands(state, 'p1').find((c) => c.type === 'cast_spell' && c.objectId === 'mist2'
+    && c.targets?.[0] === 'rock' && c.targets?.[1] === stackSpell);
+  assert.ok(cast, 'rzut z celami w odwrotnej kolejności jest oferowany');
+  run(state, cast);
+  passStack(state);
+  assert.ok(find(state, 'demolish', 'graveyard'), 'kontra trafiła w CZAR ze slotu 1, nie w permanent ze slotu 0');
+  assert.ok(find(state, 'trigon-of-corruption', 'battlefield'), 'permanent ze slotu 0 nietknięty (brak bounce w syntetyku)');
+});
+
 // ---- B61/174: Izzet Charm (RTR #172, plan Ravnica) ------------------------
 
 test('B61/174: Izzet Charm — dane Oracle, modalny instant {U}{R} i druk RTR', () => {
@@ -615,7 +654,7 @@ test('B61/157: Infectious Bloodlust — deklaracja bez gospodarza jest nielegaln
   assert.ok(options.length > 0, 'silnik oferuje deklaracje');
   assert.ok(options.every((ids) => ids.includes('host')), `każda oferta zawiera wymuszonego: ${JSON.stringify(options)}`);
   assert.throws(() => declareAttackers(state, 'p1', []), /musi atakować/,
-    'pominięcie wymuszonego atakującego odrzucone (CR 508.1c)');
+    'pominięcie wymuszonego atakującego odrzucone (CR 508.1d)');
   assert.ok(declareAttackers(state, 'p1', ['host']), 'deklaracja z gospodarzem legalna');
 });
 
@@ -775,6 +814,26 @@ test("B61/158: mana bezbarwna ze Sciona (poświęcenie) domyka {C} — ścieżka
   assert.ok(effectiveKeywords(state.objects.get('shrieker'), state).includes('menace'));
   assert.ok(!state.objects.has('scion') || state.objects.get('scion').zone !== 'battlefield',
     'Scion został poświęcony jako koszt many');
+});
+
+test('B61/158: {C} płaci bezbarwny LĄD ({T}: Add {C}) — oferta = walidacja', () => {
+  // Audyt PR #145 (zn. F6, klasa L48/M174): bramka oferty
+  // (`canPayColoredCost` → `planGrantManaColors`) liczy nietapnięte źródła,
+  // więc przy nietapniętym Holdout Settlement („{T}: Add {C}") zdolność {C}
+  // JEST oferowana — ale pętla landów w `spendMana` filtrowała źródła starym
+  // `srcColors.some((c) => reqColors.has(c))`, które dla źródła bezbarwnego
+  // (pusty zbiór kolorów) nigdy nie zachodzi. Efekt: `execute` odrzucał
+  // `illegal_ability:Brak kolorowej many` na komendzie Z OFERTY — awaria
+  // `tools/bot-tie-audit.mjs` (kaladesh|zendikar, seed 4463, komenda 685).
+  const state = game();
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'settlement', 'holdout-settlement', 'p1', 'battlefield');
+  const cmd = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'shrieker');
+  assert.ok(cmd, 'nietapnięte źródło bezbarwne wystarczy do oferty {C}');
+  run(state, cmd);
+  resolve(state);
+  assert.equal(effectivePower(state.objects.get('shrieker'), state), 4, '{C} zapłacone z lądu');
+  assert.equal(state.objects.get('settlement').tapped, true, 'źródło bezbarwne tapnięte jako płatność');
 });
 
 // ---- B61/164: Gryffwing Cavalry (VOW #16, plan Innistrad) ------------------

@@ -72,7 +72,7 @@ function passToNextTurn(state, changes) {
   for (let i = 0; i < 240 && turns < changes; i += 1) {
     const before = state.turn.number;
     // Znalezisko J (2026-09-17): runda passów nie pomija wymuszonego ataku
-    // (goad CR 701.15 / „attacks each combat if able" CR 508.1c), więc
+    // (goad CR 701.15 / „attacks each combat if able" CR 508.1d), więc
     // goadowany stwór NAPRAWDĘ atakuje — walkę domyka `resolve_combat`
     // (passy go pomijają tylko przy braku atakujących, CR 510).
     const view = playerView(state, state.turn.priorityPlayerId);

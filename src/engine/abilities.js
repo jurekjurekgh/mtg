@@ -199,7 +199,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // zdolności do raz na turę na źródło (tracking w state.abilityActivatedThisTurn).
     oncePerTurn: Boolean(oncePerTurn),
     // „This creature attacks each combat if able\" (Ramroller, Juggernaut):
-    // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1c).
+    // statyczny wymóg ataku — combat traktuje go jak stały goad (CR 508.1d).
     mustAttack: Boolean(mustAttack),
     cantAttackUnlessDefenderHasFlying: Boolean(cantAttackUnlessDefenderHasFlying),
     cantAttackUnlessDefenderPoisoned: Boolean(cantAttackUnlessDefenderPoisoned),
@@ -228,7 +228,7 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // blocked as long as defending player controls a [podtyp]". { subtype } —
     // generyczny (inne landwalki w przyszłości). Sprawdzane w canBlock.
     landwalk: landwalk ? Object.freeze({ ...landwalk }) : null,
-    // „This creature can't attack/block alone" (Ember Beast, CR 508.1d/509.1c):
+    // „This creature can't attack/block alone" (Ember Beast, CR 508.1c/509.1b):
     // statyczne ograniczenia deklaracji — walidacja w declareAttackers/
     // declareBlockers (inny atakujący/blokujący tego samego celu wymagany).
     cantAttackAlone: Boolean(cantAttackAlone),

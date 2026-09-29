@@ -13902,3 +13902,68 @@ Uwaga audytu #144 (U2/U3): `abilitiesStripped`/`manaSource` zweryfikowane
 pośrednio pinami rodzeństwa F5b; literały CR nowych numerów tabeli
 (615.4/615.6/701.14d/714.2) cytowane w kodzie i pilnowane tabelą, bez
 ponownego pobrania u źródła (do spot-checku ADR 0030 przy zmianie regułowej).
+
+## 2026-09-29c — audyt scalonego PR #145: siedem znalezisk (F1–F7) (PR #146)
+
+**Tryb:** ADR 0020 B (audyt poprzedniego scalonego PR) + ADR 0016 (naprawy
+chirurgiczne) + ADR 0021 (pętla domyślna). Przedmiot: PR #145 (`6a47c35`,
+78 plików, +3827/−276). Raport: `docs/audits/AUDYT_PR145_2026-09-29.md`;
+plan: `docs/plans/PLAN_2026-09-29b-audyt-pr145.md`.
+
+**Dane batcha 61 (skan definicja ↔ snapshot):** 6 rozjazdów, wszystkie
+klasyfikowane jako konwencja katalogu (brak `enchant`/`disguise` w `keywords` —
+silnik ich nie czyta; token: kolejność typów, `set: null`, brak `rulings` —
+jak u pozostałych 3 tokenów). Zero wad danych.
+
+**Znaleziska i naprawy (każda osobnym zielonym commitem):**
+
+- **F1** (`fcaed59`, L102/L105): Disguise — nowy członek rodziny alt-kosztów —
+  bez wpisu w `COST_DESCRIPTORS` (m268) i `FAMILY` (m428); koszt hybrydowy
+  `{4}{R/G}{R/G}` bez pinu (mutacja M20 przechodziła wszystko). Dodane:
+  Disguise w obu rodzinach (M428 z polem hybryd), skan pipów hybrydowych
+  z asercją niepustości, pin etykiety obrotu.
+- **F2** (`7051ffc`, L13/L65): `effect.targetIndex` w `counter_spell` bez pinu
+  rozróżniającego (M8 `targets[0]` przechodziła). Syntetyk z odwrotną
+  kolejnością celów; M8 → RED.
+- **F3** (`c103a52`, ADR 0024 §3): rotacja próbki benchmarku (Eldraine weszła,
+  `innistrad-brg` wypadła) bez pomiaru. Pomiar 97,9 % / 78,6 % → progi
+  **0,82 / 0,63**.
+- **F4** (`91613ba`, L92/L142): „9/9 przepisań" w M435 → pomiar 7 w
+  `resources.js`, 10 w `src/`.
+- **F5** (`9efbbca`, ADR 0030/L164): cytaty 508.1c ↔ 508.1d zamienione w ~20
+  miejscach (audyt #134 to „potwierdził", weryfikując komentarze wobec
+  komentarzy). Poprawione + strażnik pary „numer ↔ pojęcie"
+  (`test/cr-numery-508-restrykcje-wymogi-straznik.test.js`); L164 dostaje
+  regułę 4.
+- **F6** (`a051eb9`, L48/M174): **awaria narzędzia** `bot-tie-audit` —
+  `illegal_ability:Brak kolorowej many` na komendzie Z OFERTY (Kozilek's
+  Shrieker `{C}` + Holdout Settlement „{T}: Add {C}"). Pętla landów w
+  `spendMana` miała ręczny predykat `srcColors.some((c) => reqColors.has(c))`,
+  który dla źródła bezbarwnego nie zachodzi nigdy; #145 nauczył bramki pipa
+  {C}, ale nie tę pętlę. Wspólny predykat + pin; M24 → RED.
+- **F7** (`a0f7d1a`, L48/L13 — etap 2 pętli, domknięcie notatki U1 z #144):
+  kara za osłonę WROGA własną kartą nie naliczała się dla celu-gracza, bo
+  `slot` brał się z `effect.targetIndex != null`, a Withstand nie ma
+  `targetIndex` — gałąź celu-gracza nie odpalała dla karty ze zgłoszenia
+  właściciela, choć komentarz obok to obiecywał. Próba kontrolna (kara
+  40 → 4000) pokazała, że wpis w mapie działał tylko dla stworów: stwór wroga
+  −67 → −4027, gracz wroga −24 → −24. Konwencja `targets[effect.targetIndex
+  ?? 0]` (jak w sąsiedniej gałęzi `gain_life_target`); gracz wroga −24 → −64,
+  cele własne bez zmian. Pin B6 z kotwicami 60/−64/61/−67; mutacje B-M i B2-M
+  (dotąd ZIELONE — to była treść U1) → RED, B3-M (regresja) → RED. Audyt
+  remisów bez zmian; golden-master drgnął w 2 z 245 decyzji jednej partii
+  (ta sama wycena −24 → −64 dla Withstand w przeciwnika, `scoreSum` bez
+  zmian, **0 zmienionych wyborów**) — przypisane porównaniem pełnych śladów
+  PRZED/PO (`--dump`), fixture zregenerowany (`15f3d2c`).
+
+**Bramy:** fast **7089/7089** · `test:all` **7360/7360** · build **70 /
+4617,0 kB** · golden 4/4 (po regeneracji) · benchmark szybki 672 mecze (97,9 % vs random,
+78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
+(`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
+
+**Dokumentacja:** budżet lektury 99 885/100 000 tokenów (reguła 3 L164
+skrócona, próg bez zmian); handoff `docs/setup/HANDOFF_2026-09-29b.md`.
+Incydent: token GitHub wygasł, a sandbox cofnął wskaźnik gałęzi do `6a47c35`
+zostawiając pliki — leczenie z ENVIRONMENT §2 (`git fetch` → `git reset
+--mixed FETCH_HEAD` → ponowny commit → push fast-forward) zadziałało; F6 i
+raport mają nowe SHA (`a051eb9`, `7c42656`).

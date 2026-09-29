@@ -2377,7 +2377,7 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'This creature attacks each combat if able.\nThis creature gets +2/+0 as long as you control another artifact.',
     imageUri: 'https://cards.scryfall.io/large/front/0/7/07f7ba4d-26bb-4631-a135-f27d94f376d1.jpg?1783938308',
     abilities: [
-      // „Attacks each combat if able\" (CR 508.1c): statyczny wymóg ataku —
+      // „Attacks each combat if able\" (CR 508.1d): statyczny wymóg ataku —
       // combat traktuje go jak stały goad (walidacja i opcje deklaracji).
       createAbility({ type: ABILITY_TYPE.static, mustAttack: true }),
       createAbility({
@@ -12473,7 +12473,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   //    (odczyt w combat.mandatoryAttackerIds przez attachmentRestrictions —
   //    jedno miejsce prawdy z zakazami, L41); ruling ORI 2015-06-22: jeśli
   //    z atakiem wiąże się KOSZT, kontroler nie musi go płacić (nasz silnik
-  //    nie ma kosztów ataku, więc wymóg działa wprost, CR 508.1c). Szukanie
+  //    nie ma kosztów ataku, więc wymóg działa wprost, CR 508.1d). Szukanie
   //    po nazwie tej karty idzie przez `qualifier.sameNameAsSource` — zero
   //    literałów nazw w silniku (ADR 0002); trigger to ten sam
   //    `enchanted_creature_dies` co w Griffin Guide (ruling DMR 2022-12-08

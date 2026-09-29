@@ -391,7 +391,15 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       const grantColor = plannedGrant ?? (sourceGrant > 0
         ? (firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) ?? srcColors[0] ?? 'G')
         : null);
-      if (!srcColors.some((c) => reqColors.has(c)) && grantColor == null) continue;
+      // Wspólny predykat zamiast `srcColors.some((c) => reqColors.has(c))`
+      // (audyt PR #145, zn. F6 — klasa L48/M174 oferta=walidacja): zbiór
+      // kolorów źródła BEZBARWNEGO jest pusty, więc stary warunek nigdy nie
+      // zachodził dla pipa {C} i płatność odrzucała aktywację, którą oferta
+      // dopuszczała (Kozilek's Shrieker {C} + Holdout Settlement „{T}: Add
+      // {C}"). Zbiór kolorów wymagań idzie jako wymagania JEDNOKOLOROWE —
+      // dokładnie jak w pętli źródeł wolnych niżej, więc hybryda {R/G}
+      // pozostaje opłacalna jednym ze swoich kolorów (CR 107.4e).
+      if (!unitCoversAnyRequirement(srcColors, [...reqColors].map((c) => [c])) && grantColor == null) continue;
       // A (rezerwa finansowania, benchmark seed 2033): lądy tapane w pipach
       // nie mogą zjeść świeżej bazy pod koszty źródeł kosztowych (bramka
       // oferty liczyła ją NIETKNIĘTĄ; tapnięcia konserwują jednostki w stronę
