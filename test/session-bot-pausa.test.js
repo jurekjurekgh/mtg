@@ -330,7 +330,11 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // własne grobowe karty w turze bota — modal RUCHU BOTA słusznie ich nie
   // opisuje, to akcje samego człowieka). Hunter 1..40 na nowych taliach:
   // 5 (1/1) zostaje, 31 (5/5) i 33 (3/3) dokładają pełne pary; suma 9/9.
-  for (const seed of [5, 31, 33]) {
+  // Batch 61/T1 (tarkir-bg +Dragonscale Boon): seed 5 zostawia na koniec
+  // partii niepokazanego „Ainok Artillerist", a 31 schodzi do 2/2. Hunter
+  // 1..40 na nowych taliach: 31 (2/2), 33 (3/3) i 40 (6/6) — suma 11/11,
+  // każda para pełna (sledzone == opisane). Konwencja L25.
+  for (const seed of [31, 33, 40]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);
