@@ -9923,7 +9923,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && !pumpChangesOutcome(view, creature, { power: 3, toughness: 3 });
         // NIEZABLOKOWANY napastnik: +2 mocy = 2 obrażenia więcej w twarz
         // (pojęcie widoku `unblockedAttackers`, a nie przeliczanie bloków).
-        const unblockedAttacker = (view.combat?.unblockedAttackers ?? []).includes(creature.id);
+        // KIERUNEK ma znaczenie (audyt PR #146, F5): `unblockedAttackers`
+        // wylicza napastników gracza ATAKUJĄCEGO, więc bez tego warunku ten
+        // sam wpis nagradzał poświęcenie Food pod NIEZABLOKOWANEGO NAPASTNIKA
+        // WROGA — czyli płaciliśmy własnym Jedzeniem za to, że przeciwnik
+        // bije mocniej (pomiar PRZED: sacrifice 32 zarówno przy własnym, jak
+        // i przy wrogim napastniku). Zysk istnieje tylko w naszej turze walki.
+        const unblockedAttacker = view.combat?.attackingPlayerId === view.playerId
+          && (view.combat?.unblockedAttackers ?? []).includes(creature.id);
         return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? 2 : 0));
       }
       // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you

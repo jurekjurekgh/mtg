@@ -249,3 +249,43 @@ test('PMSSB-22/F2d: anty-over-fix — foodKeepValue ×0 przywraca dawne „zawsz
   const { choice } = decide(state, { foodKeepValue: 0 });
   assert.equal(choice.sacrifice, true, 'kotwica M429: najsłabszy realny wariant = dawna wartość');
 });
+
+// --- F5 (audyt PR #146): premia za nieblokowanego napastnika ma KIERUNEK ---
+//
+// `view.combat.unblockedAttackers` wylicza napastników gracza ATAKUJĄCEGO
+// (`playerView`, game-state.js), więc bez sprawdzenia `attackingPlayerId`
+// premia „+2 mocy = 2 obrażenia więcej w twarz" nagradzała poświęcenie Food
+// pod NIEZABLOKOWANEGO NAPASTNIKA WROGA — bot płacił własnym Jedzeniem za to,
+// że przeciwnik bije mocniej. Pomiar PRZED naprawą: sacrifice 32 w obu rolach.
+// Klasa L54 (kara/premia musi być mierzona względem bazy) i M179/E (klamry
+// celowania są symetryczne). Mutacja: usunięcie warunku `attackingPlayerId`
+// → test F5/2 czerwony.
+function foodStateRola({ targetOwner, attackingPlayer }) {
+  const state = baseState();
+  putCard(state, 'ia', 'insatiable-appetite', 'p2', 'stack');
+  putCreature(state, 'cel', targetOwner, 2, 2);
+  putFood(state, 'food1', 'p2');
+  const walka = { attackers: ['cel'] };
+  if (attackingPlayer === 'p1') foeCombat(state, walka); else ownCombat(state, walka);
+  state.turn.priorityPlayerId = 'p2';
+  state.pendingFoodChoice = { playerId: 'p2', creatureId: 'cel', hasFood: true, foodIds: ['food1'], restorePriorityTo: 'p2' };
+  return state;
+}
+
+test('PMSSB-22/F5: premia +2 za nieblokowanego napastnika TYLKO w naszym ataku', () => {
+  const swoj = decide(foodStateRola({ targetOwner: 'p2', attackingPlayer: 'p2' }));
+  const wroga = decide(foodStateRola({ targetOwner: 'p1', attackingPlayer: 'p1' }));
+  // 1. Własny nieblokowany napastnik: premia zostaje (30 + 2 obrażenia w twarz).
+  assert.equal(scoreOf(swoj.options, 'resolve_food_choice(sacrifice)'), 32);
+  // 2. Nieblokowany napastnik WROGA: premia znika — poświęcenie Food powiększa
+  //    obrażenia, które MY dostaniemy (30 = goła baza, bez +2).
+  assert.equal(scoreOf(wroga.options, 'resolve_food_choice(sacrifice)'), 30,
+    'poświęcenie Food pod napastnika przeciwnika nie jest zyskiem');
+  // 3. Różnica jest dokładnie premią (2 pkt) — anty-over-fix: nic innego
+  //    w wycenie tej decyzji nie zależy od tego, czyja to walka.
+  assert.equal(scoreOf(swoj.options, 'resolve_food_choice(sacrifice)')
+    - scoreOf(wroga.options, 'resolve_food_choice(sacrifice)'), 2);
+  // 4. Food i tak zostaje w obu rolach (42 > 32) — premia nie jest tym, co
+  //    chroni przed błędem; jest nim wycena zachowanego Jedzenia.
+  assert.equal(scoreOf(wroga.options, 'resolve_food_choice(keep)'), 42);
+});
