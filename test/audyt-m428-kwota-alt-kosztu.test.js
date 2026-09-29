@@ -34,10 +34,19 @@ const REGISTRY = createCardRegistry();
 /**
  * Rodzina kosztów alternatywnych: słowo z Oracle → getter deskryptora.
  * `amount` wskazuje pole z KWOTĄ (sumą symboli); `cleave` trzyma ją
- * w `manaCost` (M267/C), morph jest poza rodziną — ma DWA koszty
- * (`cost` = rzut zakryty, `morphCost` = odkrycie, L104/1).
+ * w `manaCost` (M267/C). Czwarty element (opcjonalny) to pole z PIPAMI
+ * HYBRYDOWYMI — `{R/G}` jest jednym symbolem kosztu (CR 107.4e), więc
+ * wchodzi W RAMACH kwoty dokładnie tak jak pip jednokolorowy; bez niego
+ * skan zbudowałby `{6}{R/G}{R/G}` dla kosztu wydrukowanego jako
+ * `{4}{R/G}{R/G}` i przepuścił zawyżenie ceny (klasa F1/F3).
+ *
+ * Morph i megamorph są poza rodziną celowo — `cost` to rzut zakryty, a
+ * koszt ODKRYCIA pilnuje M268 (piny batchy + etykieta). Disguise wszedł
+ * do rodziny w audycie PR #145: to ten sam kształt co morph, ale z
+ * hybrydą w Oracle, więc kwota jest dokładnie tym, czego skan pilnuje.
  */
 const FAMILY = [
+  ['Disguise', (c) => c.morph, 'disguiseCost', 'disguiseHybrid'],
   ['Bestow', (c) => c.bestow, 'cost'],
   ['Plot', (c) => c.plot, 'cost'],
   ['Suspend', (c) => c.suspend, 'cost'],
@@ -79,15 +88,21 @@ function scanAmounts(cards) {
   const offenders = [];
   const unparsed = [];
   for (const card of cards) {
-    for (const [keyword, get, amountField] of FAMILY) {
+    for (const [keyword, get, amountField, hybridField] of FAMILY) {
       const descriptor = get(card);
       if (!descriptor) continue;
+      // Getter może wskazywać wspólny obiekt kilku kosztów (morph/megamorph/
+      // disguise siedzą w `morph`): bez pola z KWOTĄ ten wiersz rodziny nie
+      // dotyczy karty — inaczej skan szukałby w Oracle słowa, którego tam nie
+      // ma, i meldował „nieparowalne" (test listy wyjątków).
+      if (descriptor[amountField] == null) continue;
       if (ORACLE_SKIP.has(keyword)) continue;
       const oracle = oracleCostSymbols(card.oracleText, keyword);
       if (oracle == null) { unparsed.push(`${card.id}[${keyword}]`); continue; }
-      const built = costSymbols(descriptor[amountField], descriptor.colors ?? []);
+      const hybrid = hybridField ? (descriptor[hybridField] ?? []) : [];
+      const built = costSymbols(descriptor[amountField], descriptor.colors ?? [], hybrid);
       if (built !== oracle) {
-        offenders.push(`${card.id} [${keyword}] oracle=${oracle} def=${built} (cost=${descriptor[amountField]}, colors=${JSON.stringify(descriptor.colors ?? [])})`);
+        offenders.push(`${card.id} [${keyword}] oracle=${oracle} def=${built} (cost=${descriptor[amountField]}, colors=${JSON.stringify(descriptor.colors ?? [])}, hybrid=${JSON.stringify(hybrid)})`);
       }
     }
   }
@@ -150,6 +165,42 @@ test('M428: F3 Boulder Salvo — surge {1}{R} = 2 many', () => {
   assert.deepEqual(def.surge, { cost: 2, colors: ['R'] });
   assert.equal(costSymbols(def.surge.cost, def.surge.colors), '{1}{R}');
   assert.match(def.oracleText, /Surge \{1\}\{R\}/, 'deskryptor zgadza się z Oracle obok');
+});
+
+// --- Disguise: pierwszy koszt alternatywny z pipem HYBRYDOWYM (audyt PR #145) -
+
+test('M428: Disguise Riftburst Hellion — {4}{R/G}{R/G} = 6 many', () => {
+  // Audyt PR #145: Disguise wszedł do katalogu (batch 61/170) jako nowy
+  // członek rodziny, ale bez wpisu w ŻADNYM z dwóch strażników rodzinnych
+  // (M268 = pipy, M428 = kwota). Kwota była poprawna, jednak niepilnowana:
+  // dowód mutacyjny — usunięcie hybryd z rachunku części generycznej
+  // w `costSymbols` nie czerwieniło wtedy ani jednego testu.
+  const def = REGISTRY.get('riftburst-hellion');
+  assert.equal(def.morph.disguiseCost, 6, 'kwota = suma symboli (4 generyczne + 2 hybrydowe)');
+  assert.deepEqual(def.morph.disguiseHybrid.map((g) => [...g]), [['R', 'G'], ['R', 'G']]);
+  assert.equal(
+    costSymbols(def.morph.disguiseCost, [], def.morph.disguiseHybrid),
+    '{4}{R/G}{R/G}',
+    'pip hybrydowy wchodzi W RAMACH kwoty, nie obok niej',
+  );
+  assert.match(def.oracleText, /Disguise \{4\}\{R\/G\}\{R\/G\}/, 'napis zgadza się z Oracle obok');
+  const { offenders } = scanAmounts([def]);
+  assert.deepEqual(offenders, [], 'skan M428 obejmuje Disguise');
+});
+
+test('M428: dowód RED — skan łapie zawyżoną kwotę kosztu z hybrydą', () => {
+  const oracle = 'Disguise {4}{R/G}{R/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}.)';
+  const hybrid = [['R', 'G'], ['R', 'G']];
+  // Błąd klasy F1/F3 w wydaniu hybrydowym: kwota pomniejszona o hybrydy
+  // ({4} zamiast {6}) albo hybrydy pominięte w rachunku generyka.
+  const { offenders } = scanAmounts([
+    { id: 'syntetyk-3', oracleText: oracle, morph: { disguiseCost: 4, disguiseHybrid: hybrid } },
+  ]);
+  assert.equal(offenders.length, 1, `skan przepuścił rozjazd hybrydy: ${offenders.join(' | ')}`);
+  assert.match(offenders[0], /oracle=\{4\}\{R\/G\}\{R\/G\} def=\{2\}\{R\/G\}\{R\/G\}/);
+
+  const fixed = scanAmounts([{ id: 'syntetyk-3', oracleText: oracle, morph: { disguiseCost: 6, disguiseHybrid: hybrid } }]);
+  assert.deepEqual(fixed.offenders, []);
 });
 
 // --- F2: etykieta flashbacku (render.js) -------------------------------------
