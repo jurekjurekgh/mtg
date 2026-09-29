@@ -19,6 +19,60 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-29 — batch 61: kolekcja właściciela 157–174 (10 kart, PR #145)
+
+Zlecenie właściciela: „kolejny batch kart" → dokumentacja przeczytana
+(`HOW_TO_ADD_CARD.md`, ADR 0029/0020/0010/0014/0028/0030), lista 10 kart
+przekazana w czacie (arkusz niedostępny z sandboxa — kanał czatu potwierdzony).
+Kolumna „Plan" arkusza jest WIAŻĄCA i przepisana 1:1 do definicji i talii,
+także przy transpozycji światów (157→Kaldheim, 158→Zendikar, 160→Dominaria,
+161→Tarkir, 162→Eldraine, 164→Innistrad, 165→Amonkhet, 167→Eldraine,
+170→Ravnica, 174→Ravnica). Plan sesji:
+`docs/plans/PLAN_2026-09-29-batch61-kolekcja-157-174.md` (punkt 8 = disguise
+z hybrydą jako najdroższa pozycja, punkt 9 = kolejność „trening przed Grifem?",
+punkt 12 = bramy i dokumentacja).
+
+**Transze** (commit per karta/2 karty, ADR 0020; wszystkie wypchnięte na
+`arena/01a0ec8c-mtg`):
+
+- **Transza 1** (157 Infectious Bloodlust ORI/152): aura `mustAttack` +
+  qualifier `sameNameAsSource` + zdarzenie `enchanted_creature_dies`.
+- **Transza 2** (174 Izzet Charm RTR/172, 162 Griffin Guide DMR/8 +
+  `token_griffin`): generalizacja `draw_then_discard` (count > 1), token Griffin
+  (tokenów 45), regen 26 talii.
+- **Transza 3** (158 Kozilek's Shrieker OGW/73): `{C}` w koszcie zdolności,
+  bezbarwna mana, naprawa Eldrazi Sciona, wspólne predykaty pokrycia pipów
+  (`unitCoversRequirement`/`unitCoversAnyRequirement`), strażnik pipów
+  `WUBRGC` (CR 107.4c).
+- **Transza 4** (`2551be7`; 164 Gryffwing Cavalry VOW/16): Training
+  (CR 702.149) z zamrożonym porównaniem mocy przy deklaracji + flaga
+  `trigger.payAfterTarget` („cel PRZED płatnością", rulingi 2021-11-19) +
+  spec celu `attacking_creature`.
+- **Transza 5** (`981fe35`; domknięcie 164): strażnicy L84 (klauzula warunku na
+  kaflu, lista keywordów, nazwa mechaniki przy cytacie CR, inwentarz płatnych
+  triggerów 7 → 8, wpis 702.149 w tabeli numerów), regen talii Innistradu
+  (39 → 40 nielandów), pin art-ids, golden-master.
+- **Transza 6** (`752d344`; 170 Riftburst Hellion MKM/228): Disguise
+  (CR 702.168a) — trzeci rodzaj zakrycia z ward {2} i akcją specjalną obrotu —
+  oraz KOSZT HYBRYDOWY zdolności (`cost.hybrid`, pip `{R/G}` = jeden z kolorów,
+  CR 107.4e), render hybrydy w `costSymbols`/`costTextOf`.
+
+**Zdarzenie środowiska (drugie spotkanie z tym samym).** W środku sesji
+sandbox przywrócił pliki, ale cofnął wskaźnik gałęzi do `c5ec30b` (praca
+leżała jako brudne drzewo, a commit `2551be7` był tylko na `origin`), po
+czym skasował pliki spoza repozytorium (`/home/user/hunter`,
+`/home/user/batch61-hold`, `msg.txt`). Procedura bezstratna jak w M434:
+`git fetch origin <gałąź>` → `cp -a .git /tmp/git-backup-przed-reset` →
+`git reset --mixed FETCH_HEAD` (ref i indeks, bez ruszania plików) →
+`git status` pokazał dokładnie bieżącą robociznę. Snapshot Scryfalla dla 170
+pobrano ponownie (fetch_page) i zapisano w repo. Wniosek dla kolejnych sesji:
+logi i sondy trzymać w `dist/logs/` (gitignored), nie w `/tmp` ani poza repo.
+
+**Bramki.** Fast 7078/0 (EXIT=0), build 70 modułów / 4615.8 kB, slow przez CI
+(`test:all`); golden-master regenerowany świadomie dwa razy (L124), dryf
+wyłącznie w meczach par z dotkniętą talią. CI dla `2551be7`, `981fe35`
+i `752d344` — patrz `gh run list` (PR #145). Dokumentacja silnika: M435.
+
 ## 2026-09-25g — audyt PR #139 + pętla jakości (pin modalu, Kumano×token)
 
 Prompt bez nazwanego tematu → po lekturze obowiązkowej pętla domyślna
