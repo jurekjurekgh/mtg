@@ -55,6 +55,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
 | walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
 | kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
+| proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -238,6 +239,54 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-18 — proliferate (rider czaru) (2026-09-28)
+
+**Wybór celu** (BACKLOG pusty; rozeznanie: `resolve_proliferate` wyceniony
+M341, ale rider `proliferate` w cast_spell = **0 pkt** — brak gałęzi).
+3 karty: `courage-in-crisis` (+1/+1 counter → proliferate),
+`spread-the-sickness` (destroy → proliferate), `fuel-for-the-cause`
+(counter spell → proliferate). Plan:
+`docs/plans/PLAN_2026-09-28-pmssb18-proliferate.md`; POMIAR PRZED:
+`/tmp/pmssb18-proliferate-przed.mjs` (S01–S06).
+
+**Audyt przyczynowo-skutkowy (R1–R5) + wdrożone wnioski** — per-cel
+`proliferateTargetValue` (TA SAMA skala dla ridera i wyboru, L41) +
+`proliferateBestValue` (najlepszy podzbiór = suma dodatnich — CR 701.34a
+„another counter of each kind already there", dawniej 701.27a):
+
+- **R1 (rider 0 pkt)**: S03 (wróg 9 poison — tick WYGRYWA grę, CR 104.3d)
+  = 68 — tyle samo co plansza bez trucizny! Unifikacja: rider = wartość
+  najlepszego podzbioru.
+- **R2 (synergia kolejności)**: `add_counter` rozstrzyga się PRZED
+  proliferate — świeży licznik też się proliferuje (Courage = 2× +1/+1!);
+  `destroy_permanent` usuwa cel z kandydatów (liczniki giną z nosicielem).
+- **R3 (wyścig trucizn nieliniowy)**: tick wroga = `1 + poison` (flat 1
+  z M341 niedowartościowywało presji 8→9); 9→10 = **wygrana** (1000 jak
+  resolve); własna 9→10 = NEVER/cały podzbiór (CR 104.4b — remis nie jest
+  wygraną; M341/F3 + M336/F pas bezpieczeństwa na sztywno w gałęzi).
+- **R4 (dobicie)**: -1/-1 na wytrzymałości 1 = +4/−6 (SBA 704.5a);
+  +1/+1 = ±2 per-cel (płasko — wzrost +2/+2 niezależnie od zasobu).
+- **R5 (jałowość)**: bez ISTNIEJĄCYCH liczników/poison = 0 (CR 701.34a);
+  L119: charge/oil/shield/energia gracza bez wagi (brak reguły konsumenta).
+
+**Kotwice (PRZED→PO)**: S01 68→**70** (synergia), S02 80→**87** (+2 licznik
++5 poison), S03 68→**1068** (wygrana!), S04 86→**90** (dobicie) + wariant
+`a->dying` **78≠82** (wykluczenie zniszczonego), S05 **86** (jałowy),
+S06 50→**57**. 0 pokręteł (wspólne stałe — wzorzec PMSSB-14).
+
+**Świadomy dryf**: golden-master — 5/6 partii bit-po-bit; 1 partia
+(ravnica|innistrad-wu@1001): IDENTYCZNE wybory i scoreSum — różnią się
+tylko wyceny nie-wybranych opcji → fixture `--write`. M341/C: fixture
+2→10 (własność SUMA+PRZEMIENNOŚĆ bez zmian — R3 zmieniła wagę);
+M336/F: lokator strukturalny przeniesiony na helper+gałąź (duch pinu
+bez zmian: NEVER dosłownie, dobiecie -1/-1, toughness z widoku; nazwy
+kart usunięte z komentarzy helpera — ADR 0002).
+
+**Dowody**: `test/audyt-pmssb18-proliferate.test.js` (9; RED 7/9 na starym
+kodzie — weryfikowany stash). Bramy: fast 7007/7007; all 7278/7278;
+build 73 / 4570,8 kB; tie-audit 28,3% (10,8% realnych, bez cast_spell
+w grozach); mirror 8:8 (0.5); Żywy Tester 3×0 zgłoszeń.
 
 ## PMSSB-17 — kradzież do końca tury (gain_control_until_end_of_turn) (2026-09-28)
 

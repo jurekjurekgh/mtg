@@ -13696,3 +13696,38 @@ FETCH_HEAD` (zdalny tip = źródło prawdy; index mylił obecne pliki jako
 Lekcja: L41-owy patchwork potrafi sumować DWIE wyceny tego samego efektu
 przez lata (double-count 37 pkt) — unifikacja do wspólnego helpera to
 nie kosmetyka, tylko korekta taktyczna rzędu 20-30 pkt na czarze.
+
+## 2026-09-28i — PMSSB-18: proliferate jako rider czaru (PR #144, cz. 6)
+
+Trzecia pętla ciągła: `proliferate` rider w cast_spell (3 karty: Courage
+in Crisis / Spread the Sickness / Fuel for the Cause). Wycena wyboru
+`resolve_proliferate` była (M341) — rider = 0 pkt. Plan:
+`docs/plans/PLAN_2026-09-28-pmssb18-proliferate.md`; POMIAR PRZED
+`/tmp/pmssb18-proliferate-przed.mjs` (S01–S06).
+
+**R1 (luka)**: S03 — wróg 9 poison (tick WYGRYWA grę, CR 104.3d) warty 0.
+Unifikacja per-cel `proliferateTargetValue` (ta sama skala dla ridera i
+wyboru, L41) + `proliferateBestValue` (suma dodatnich = najlepszy podzbiór
+„any number", CR 701.34a).
+
+**R2 (synergia kolejności)**: add_counter rozstrzyga się PRZED proliferate
+— świeży licznik też się proliferuje (Courage = 2× +1/+1, kotwica 68→70);
+destroy usuwa cel z kandydatów (wariant a->dying 78≠82 — wykluczenie).
+
+**R3 (wyścig trucizn nieliniowy)**: tick wroga = 1+poison (flat 1 z M341
+niedowartościowywało presji 8→9); 9→10 = 1000 (wygrana); własna 9→10 =
+NEVER na sztywno w gałęzi (M336/F pas bezpieczeństwa; CR 104.4b remis).
+Kotwice PO: 70/87/1068/90/86/57.
+
+Test `test/audyt-pmssb18-proliferate.test.js` (9): RED 7/9 na starym.
+Świadomy dryf L41: golden-master — 5/6 partii bit-po-bit, 1 partia
+IDENTYCZNE wybory i scoreSum (tylko wyceny nie-wybranych opcji) → fixture
+`--write`; M341/C fixture 2→10 (własność suma+przemienność bez zmian);
+M336/F lokator → helper+gałąź (duch bez zmian). Bramki: fast 7007/7007,
+all 7278/7278, build 73 / 4570,8 kB; tie-audit 28,3% (10,8% realnych);
+mirror-eval 8:8 (0.5); Żywy Tester 3 partie 0 zgłoszeń.
+
+Lekcja: strukturalne piny kodu (M336/F — wzorce regex w źródle gałęzi)
+żyją w napięciu z L41 (unifikacja do helpera) — rozwiązanie: poszerzenie
+lokalizatora pinu na CAŁĄ wycenę rodziny + pas bezpieczeństwa (dosłowny
+NEVER) zostawiony w gałęzi; obie strony wygrywają.

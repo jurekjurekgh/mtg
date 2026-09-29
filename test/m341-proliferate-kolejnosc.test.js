@@ -70,7 +70,11 @@ test('M341/C: zwykła proliferacja poniżej progu zachowuje sumę i przemiennoś
   const view = playerView(state, 'p1');
   const values = [['p1', 'p2', 'own'], ['own', 'p2', 'p1']].map((targetIds) =>
     score(view, { type: 'resolve_proliferate', playerId: 'p1', targetIds }));
-  assert.deepEqual(values, [2, 2], '−1 trucizna własna +1 wroga +2 własny buff');
+  // PMSSB-18/R3 (świadomy dryf wagi): tick trucizny wroga = 1 + poison
+  // (wyścig nieliniowy — flat 1 niedowartościowywało presji 8→9); własna
+  // zostaje −1, buff +2. Własność testu (SUMA + PRZEMIENNOŚĆ obu podzbiorów)
+  // bez zmian — zmieniła się tylko wartość fixture: −1 + 9 + 2 = 10.
+  assert.deepEqual(values, [10, 10], '−1 trucizna własna +9 wroga (1+8) +2 własny buff');
 });
 
 test('M341/D: bez trucizny bot nadal bierze korzystny licznik zamiast pustki', () => {

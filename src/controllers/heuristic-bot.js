@@ -4650,6 +4650,105 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       + (eq > 0 ? P.gainControlEquipBonus + P.gainControlEquipPerItem * eq : 0);
   }
 
+  /**
+   * PMSSB-18: wartość pojedynczego celu proliferate (CR 701.34a — „another
+   * counter of each kind already there": tick TYLKO dla istniejących typów
+   * liczników; dawniej 701.27a). TA SAMA skala dla wyboru
+   * `resolve_proliferate` i ridera czaru (L41). Zwraca {v, win, ownLethal}:
+   *   win — wróg dobijany do 10 trucizn (CR 104.3d — przegrana);
+   *   ownLethal — własna 9→10: cały podzbiór odrzucamy (obaj po 10 to remis,
+   *   CR 104.4b — nie jest wygraną; konserwatywnie jak M341/F3);
+   *   v — wartość neutralna.
+   */
+  function proliferateTargetValue(view, id, { extraCounters = null, exclude = null } = {}) {
+    if (exclude?.has?.(id)) return { v: 0, win: false, ownLethal: false };
+    const player = (view.players ?? []).find((p) => p.id === id);
+    if (player) {
+      const poison = player.poison ?? 0;
+      if (poison <= 0) return { v: 0, win: false, ownLethal: false };
+      const own = id === view.playerId;
+      if (own) {
+        return { v: -1, win: false, ownLethal: poison + 1 >= POISON_LOSS_LIMIT };
+      }
+      if (poison + 1 >= POISON_LOSS_LIMIT) return { v: 0, win: true, ownLethal: false };
+      // R3: wyścig trucizn nieliniowy — tick wart więcej im bliżej 10
+      // (flat 1 z M341 niedowartościowywało presję 8→9).
+      return { v: 1 + poison, win: false, ownLethal: false };
+    }
+    const permanent = objectOnBoard(view, id);
+    if (!permanent) return { v: 0, win: false, ownLethal: false };
+    const own = permanent.controllerId === view.playerId;
+    const tough = permanent.toughness ?? 0;
+    const extra = extraCounters?.[id] ?? null;
+    const counters = { ...(permanent.counters ?? {}) };
+    for (const [kind, n] of Object.entries(extra ?? {})) {
+      counters[kind] = (counters[kind] ?? 0) + n;
+    }
+    let v = 0;
+    for (const [kind, count] of Object.entries(counters)) {
+      if (!(count > 0)) continue;
+      if (kind === '+1/+1') v += own ? 2 : -2;
+      else if (kind === '-1/-1') {
+        // R4: dokładka może dobijać — przy efektywnej wytrzymałości 1 drugi
+        // -1/-1 to 0/0, czyli śmierć przy najbliższych SBA (CR 704.5a).
+        v += own ? -(tough - 1 <= 0 ? 6 : 2) : (tough - 1 <= 0 ? 4 : 2);
+      } else if (kind === 'loyalty') v += own ? 1 : -1;
+      // L119: inne typy (charge/oil/shield…) bez wagi — brak reguły, która
+      // mówi, czy służą właścicielowi (nie dopisujemy „na wszelki wypadek").
+    }
+    return { v, win: false, ownLethal: false };
+  }
+
+  /**
+   * PMSSB-18: wartość najlepszego legalnego podzbioru = suma DODATNICH
+   * wartości per-cel („choose any number of permanents and/or players" —
+   * pusty podzbiór zawsze legalny). Wygrana (tick trucizny wroga na 9)
+   * dominuje płasko 1000 — jak w `resolve_proliferate` (L41).
+   */
+  function proliferateBestValue(view, { extraCounters = null, exclude = null } = {}) {
+    const ids = new Set();
+    for (const p of view.players ?? []) {
+      if ((p.poison ?? 0) > 0) ids.add(p.id);
+    }
+    for (const o of view.zones.battlefield ?? []) {
+      if (Object.values(o.counters ?? {}).some((n) => n > 0)) ids.add(o.id);
+    }
+    for (const id of Object.keys(extraCounters ?? {})) ids.add(id);
+    let suma = 0;
+    let win = false;
+    for (const id of ids) {
+      const t = proliferateTargetValue(view, id, { extraCounters, exclude });
+      if (t.ownLethal) continue; // własnej 10 nigdy nie wybieramy
+      if (t.win) { win = true; continue; }
+      if (t.v > 0) suma += t.v;
+    }
+    return win ? 1000 : suma;
+  }
+
+  /**
+   * PMSSB-18/R2: kontekst riderów TEGO samego czaru dla proliferate —
+   * `add_counter` rozstrzyga się PRZED (świeży licznik też jest
+   * proliferowany), `destroy_permanent` usuwa cel z kandydatów (liczniki
+   * zniszczonego giną razem z nim). Wzorzec `fightRiderBuffs` (L41).
+   */
+  function proliferateRiderContext(scoredEffects, cmd) {
+    const extraCounters = {};
+    const exclude = new Set();
+    for (const e of scoredEffects) {
+      if (e.type === 'proliferate') break; // liczą się ridery PRZED proliferate
+      const id = (cmd.targets ?? [])[e.targetIndex ?? 0] ?? null;
+      if (!id) continue;
+      if (e.type === 'add_counter') {
+        const kind = e.counter ?? '+1/+1';
+        extraCounters[id] = { ...(extraCounters[id] ?? {}) };
+        extraCounters[id][kind] = (extraCounters[id][kind] ?? 0) + Math.max(1, e.amount ?? 1);
+      } else if (e.type === 'destroy_permanent' || e.type === 'sacrifice_permanent') {
+        exclude.add(id);
+      }
+    }
+    return { extraCounters, exclude };
+  }
+
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
@@ -7624,6 +7723,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+          // PMSSB-18: proliferate jako rider — wartość najlepszego podzbioru
+          // (razem z synergia kolejności: add_counter TEGO czaru rozstrzyga
+          // się przed, więc świeży licznik też się proliferuje — Courage in
+          // Crisis daje 2× +1/+1). Kiedyś 0 pkt — bot nie znał wartości
+          // drugiego efektu (S03: wróg 9 poison = wygrana warta 0).
+          if (effect.type === 'proliferate') {
+            score += proliferateBestValue(view, proliferateRiderContext(scoredEffects, cmd));
+          }
         }
         // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
@@ -10530,44 +10637,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_proliferate': {
         const ids = cmd.targetIds ?? [];
         if (ids.length === 0) return finish(0);
+        // PMSSB-18: per-cel w `proliferateTargetValue` (ta sama skala co rider
+        // czaru, L41). Własna dziesiąta trucizna = przegrana (CR 120.7, SBA) —
+        // cała decyzja do odrzucenia; wygrana wroga płasko 1000 (M341/F3:
+        // wygrana dopiero po ocenie CAŁEGO wyboru — następny ID może oznaczać
+        // własną dziesiątą, remis CR 104.4b).
         let suma = 0;
-        let lethalPoison = false;
+        let win = false;
         for (const id of ids) {
+          // M336/F (pas bezpieczeństwa na sztywno — nawet gdyby helper
+          // zwracał ownLethal: nigdy nie „przetargujemy" własnej dziesiątki).
           const player = (view.players ?? []).find((p) => p.id === id);
-          if (player) {
+          if (player && id === view.playerId) {
             const poison = player.poison ?? 0;
-            if (id === view.playerId) {
-              // Własna dziesiąta trucizna to przegrana (CR 120.7, SBA) — cała
-              // decyzja jest do odrzucenia, nie do „przetargowania".
-              if (poison + 1 >= POISON_LOSS_LIMIT) return finish(NEVER);
-              suma -= 1;
-              continue;
-            }
-            // M341/F3: wygrana dopiero po ocenie CAŁEGO wyboru. Następny ID
-            // może oznaczać własną dziesiątą truciznę (remis, CR 104.4b).
-            if (poison + 1 >= POISON_LOSS_LIMIT) lethalPoison = true;
-            suma += 1;
-            continue;
+            // Własna dziesiąta trucizna to przegrana (CR 120.7, SBA) — cała
+            // decyzja jest do odrzucenia, nie do „przetargowania".
+            if (poison + 1 >= POISON_LOSS_LIMIT) return finish(NEVER);
           }
-          const permanent = objectOnBoard(view, id);
-          if (!permanent) continue;
-          const own = permanent.controllerId === view.playerId;
-          const tough = permanent.toughness ?? 0;   // WIDOKOWA = efektywna (CR 613)
-          for (const [kind, count] of Object.entries(permanent.counters ?? {})) {
-            if (!(count > 0)) continue;
-            if (kind === '+1/+1') suma += own ? 2 : -2;
-            else if (kind === '-1/-1') {
-              // dokładka może dobijać: przy efektywnej wytrzymałości 1 drugi
-              // -1/-1 to 0/0, czyli śmierć przy najbliższych SBA (CR 704.5a)
-              if (own) suma -= tough - 1 <= 0 ? 6 : 2;
-              else suma += tough - 1 <= 0 ? 4 : 2;
-            } else if (kind === 'loyalty') suma += own ? 1 : -1;
-            // inne liczniki zostają bez wagi: nie mamy reguły, która mówi, czy
-            // służą właścicielowi (L119 — nie dopisujemy wagi „na wszelki
-            // wypadek"; wariant i tak wygrywa przez to, że pusty ma zero)
-          }
+          const t = proliferateTargetValue(view, id);
+          if (t.win) { win = true; continue; }
+          suma += t.v;
         }
-        return finish(lethalPoison ? 1000 : suma);
+        return finish(win ? 1000 : suma);
       }
       case 'resolve_manifest_dread': {
         const card = decisionCandidateCard(view, cmd.cardId);
