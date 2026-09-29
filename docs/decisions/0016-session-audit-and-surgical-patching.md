@@ -22,20 +22,12 @@ brzegowe) i wprowadzając regresje.
 ### A. Audyt poprzedniego PR na starcie sesji
 
 Każda nowa sesja zaczyna się od szczegółowego audytu poprzedniego PR
-(ostatniego zmergowanego lub aktualnie otwartego):
-
-1. **poprawność zmian w engine** (reguły, stan, FoW, determinizm) — żadna zmiana
-   nie jest pominięta ani nie regresuje istniejących zachowań;
-2. **prawidłowe zakodowanie kart w batchu** — zgodność z Oracle text (Scryfall)
-   i mechanikami, poprawne pola i `limitations`, działanie na prawdziwych
-   scenariuszach;
-3. **audyt mechanik** używanych przez dodane karty — implementacja generyczna,
-   bez specjalnych przypadków po nazwie/ID karty (ADR 0002).
-
-Audyt prowadzony jest **bez pełnego BO** (pełna macierz benchmarku może
-przekroczyć limit czasu sesji); dopuszczalne potwierdzenie to `npm test` oraz
-`node --test test/bot-benchmark.test.js`. Wnioski trafiają do
-`docs/plans/PLAN_*.md` i `docs/PROJECT_HISTORY.md`.
+(ostatniego zmergowanego lub aktualnie otwartego). Zakres audytu (engine,
+kodowanie kart w batchu, generyczność mechanik — ADR 0002), tryb **bez pełnego
+BO** oraz miejsce wniosków (`docs/plans/PLAN_*.md`, `docs/PROJECT_HISTORY.md`)
+opisuje `AGENTS.md` § „Obowiązkowy audyt poprzedniego PR"; usztywnia go
+ADR 0020 §B. Ten ADR ustanawia sam obowiązek, nie powtarza listy kontrolnej
+(L41).
 
 ### B. Chirurgiczne patchowanie
 

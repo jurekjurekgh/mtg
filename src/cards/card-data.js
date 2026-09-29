@@ -12302,6 +12302,308 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 148, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // =========================================================================
+  // Batch 61 (2026-09-29) — lista właściciela: 157 ORI, 158 OGW, 160 M11,
+  // 161 KTK, 162 DMR, 164 VOW, 165 M20, 167 ISD, 170 MKM, 174 RTR.
+  // Plan (kolumna „Plan” z arkusza) jest WIĄŻĄCY 1:1 — także przy transpozycji
+  // światów (Lost in the Mist ISD → Eldraine, Riftburst Hellion MKM → Ravnica,
+  // Infectious Bloodlust ORI → Kaldheim). Dane Oracle i rulingi:
+  // `docs/cards/scryfall-*.json` (pobrane 2026-09-29, ADR 0010 §2a, ADR 0028,
+  // ADR 0030 — cytaty CR w komentarzach mechanik).
+  // Plan batcha: `docs/plans/PLAN_2026-09-29-batch61-kolekcja-157-174.md`.
+  // =========================================================================
+
+  // Batch61/160. Fiery Hellhound (M11 #136, Dominaria) — {1}{R}{R} 2/2
+  // Elemental Dog; aktywowany pump bez celu („This creature gets +1/+0") —
+  // wzorzec samopompy istnieje (Boros Challenger i in.).
+  defineCard({
+    id: 'fiery-hellhound', name: 'Fiery Hellhound', set: 'M11',
+    types: ['Creature'], subtypes: ['Elemental', 'Dog'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: '{R}: This creature gets +1/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00e2db9a-d62e-4300-a9e6-a7665fcf2ef7.jpg?1783941806',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump', power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 160, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/161. Dragonscale Boon (KTK #131, Tarkir) — {3}{G} Instant: dwa
+  // liczniki +1/+1 na celu i odkręcenie go. Ruling WotC 2014-09-20: celem może
+  // być stwór już odkręcony (untap to legalny no-op) — brak filtra „tapped"
+  // w deskryptorze celu.
+  defineCard({
+    id: 'dragonscale-boon', name: 'Dragonscale Boon', set: 'KTK',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Put two +1/+1 counters on target creature and untap it.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5aadb382-f912-4ccb-98bc-1abdef733126.jpg?1783939069',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 2 },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 161, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/165. Captivating Gyre (M20 #51, Amonkhet) — {4}{U}{U} Sorcery:
+  // „Return up to three target creatures to their owners' hands." Zmienna
+  // liczba celów w JEDNYM trybie (variableTargets min 0/max 3 + efekt
+  // `apply_to_each_target`) — ten sam wzorzec co Sea God's Scorn / Wrap in
+  // Flames (L41: jedna reguła dla „up to N target …", jedno miejsce).
+  defineCard({
+    id: 'captivating-gyre', name: 'Captivating Gyre', set: 'M20',
+    types: ['Sorcery'], colors: ['U'], manaCost: 6,
+    oracleText: "Return up to three target creatures to their owners' hands.",
+    imageUri: 'https://cards.scryfall.io/large/front/a/2/a2bd5c34-fa7e-4fa8-a5b1-c3aa928cc834.jpg?1783933014',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Zwróć do trzech stworów',
+        variableTargets: { max: 3, min: 0, type: 'creature' },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [{ type: 'bounce_permanent' }],
+        }],
+      }],
+    },
+    artId: 165, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/167. Lost in the Mist (ISD #63, Eldraine) — {3}{U}{U} Instant:
+  // kontra celu-czaru + odbicie celu-permanentu do ręki właściciela. Rulingi
+  // WotC 2011-09-22: oba cele obowiązkowe przy rzucie; przy rozstrzyganiu
+  // działa to, co zostało legalne (CR 608.2b) — stąd osobne efekty z
+  // `targetIndex` (0 = czar, 1 = permanent), a nie efekt złożony.
+  defineCard({
+    id: 'lost-in-the-mist', name: 'Lost in the Mist', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 5,
+    oracleText: "Counter target spell. Return target permanent to its owner's hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e5fc39d-590a-436b-ab90-a1741d2ae3da.jpg?1783940971',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }, { type: 'permanent' }],
+      effects: [
+        { type: 'counter_spell', targetIndex: 0 },
+        { type: 'bounce_permanent', targetIndex: 1 },
+      ],
+    },
+    artId: 167, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/174. Izzet Charm (RTR #172, Ravnica) — {U}{R} Instant, modalny
+  // „Choose one —” z trzema trybami. Ruling WotC 2020-08-07 (tryb 3): dobranie
+  // i odrzucenie dzieją się w CAŁOŚCI w trakcie rozstrzygania czaru — między
+  // nimi nie ma okna na akcje, więc to jeden efekt `draw_then_discard`
+  // z jawnym `discardCount` (ten sam wzorzec, co u kart z doborem 2: patrz
+  // uogólnienie w effects.js, L41), nie dwie osobne instrukcje.
+  // Tryb 1 = generyczny kontr warunkowy (wzorzec Abstruse Interference,
+  // Frightful Delusion), tryb 2 = obrażenia celu-stwora (jak Shock).
+  // Wybór trybu i celów: `spell.modes` (dziesiątki kart, m.in. Keep Out).
+  defineCard({
+    id: 'izzet-charm', name: 'Izzet Charm', set: 'RTR',
+    types: ['Instant'], colors: ['U', 'R'], manaCost: 2,
+    oracleText: 'Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e3a5af6-5423-442b-a207-364e97a871d8.jpg?1783940338',
+    spell: {
+      timing: 'instant',
+      modes: [
+        {
+          name: 'Kontra czar nie-stwora, chyba że zapłaci {2}',
+          targets: [{ type: 'noncreature_spell_on_stack' }],
+          effects: [{ type: 'counter_spell_unless_pays', amount: 2 }],
+        },
+        {
+          name: '2 obrażenia dla celu-stwora',
+          targets: [{ type: 'creature' }],
+          effects: [{ type: 'damage', amount: 2 }],
+        },
+        {
+          name: 'Dobierz 2 karty, odrzuć 2 karty',
+          effects: [{ type: 'draw_then_discard', amount: 2, discardCount: 2 }],
+        },
+      ],
+    },
+    artId: 174, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/162. Griffin Guide (DMR #8, Eldraine) — {2}{W} Aura: +2/+2 i flying
+  // dla zaczarowanego stworu; gdy zaczarowany stwór umiera — token 2/2 biały
+  // Griffin z flying. Ruling WotC 2022-12-08 (DMR #8): „If Griffin Guide and
+  // the enchanted creature go to the graveyard at the same time, Griffin
+  // Guide's last ability will trigger." — trigger `enchanted_creature_dies`
+  // czyta LKI (także aury, która odeszła równocześnie z gospodarzem; CR
+  // 603.10a), patrz skan w triggers.js.
+  defineCard({
+    id: 'griffin-guide', name: 'Griffin Guide', set: 'DMR',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 3,
+    oracleText: "Enchant creature\nEnchanted creature gets +2/+2 and has flying.\nWhen enchanted creature dies, create a 2/2 white Griffin creature token with flying.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/9/39b8cf5e-10f6-49aa-82eb-2f56cc29d393.jpg?1783918517',
+    aura: { pump: { power: 2, toughness: 2 }, keywords: ['flying'] },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dies' },
+        effect: {
+          type: 'create_token', cardId: 'token_griffin', name: 'Griffin',
+          kind: 'creature', power: 2, toughness: 2, colors: ['W'],
+          types: ['Creature'], subtypes: ['Griffin'], keywords: ['flying'],
+        },
+      }),
+    ],
+    artId: 162, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 8. Infectious Bloodlust (ORI) — aura „+2/+1, haste, attacks each combat if
+  //    able", a po śmierci gospodarza: „you may search your library for a card
+  //    named Infectious Bloodlust". Wymóg ataku to deskryptor `aura.mustAttack`
+  //    (odczyt w combat.mandatoryAttackerIds przez attachmentRestrictions —
+  //    jedno miejsce prawdy z zakazami, L41); ruling ORI 2015-06-22: jeśli
+  //    z atakiem wiąże się KOSZT, kontroler nie musi go płacić (nasz silnik
+  //    nie ma kosztów ataku, więc wymóg działa wprost, CR 508.1c). Szukanie
+  //    po nazwie tej karty idzie przez `qualifier.sameNameAsSource` — zero
+  //    literałów nazw w silniku (ADR 0002); trigger to ten sam
+  //    `enchanted_creature_dies` co w Griffin Guide (ruling DMR 2022-12-08
+  //    każe go odpalać też przy równoczesnej śmierci aury — LKI, CR 603.10a).
+  defineCard({
+    id: 'infectious-bloodlust', name: 'Infectious Bloodlust', set: 'ORI',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 2,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+1, has haste, and attacks each combat if able.\nWhen enchanted creature dies, you may search your library for a card named Infectious Bloodlust, reveal it, put it into your hand, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee44df88-45a4-46ef-a8bd-f7fb7b9542b8.jpg?1783938329',
+    aura: { pump: { power: 2, toughness: 1 }, keywords: ['haste'], mustAttack: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dies' },
+        effect: { type: 'search_library_to_hand', qualifier: { sameNameAsSource: true } },
+      }),
+    ],
+    artId: 157, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 9. Kozilek's Shrieker (OGW) — 3/2 Eldrazi Drone, Devoid, „{C}: +1/+0
+  //    i menace do końca tury". Pierwsza karta katalogu z pipem BEZBARWNYM
+  //    w koszcie zdolności: `cost.colors: ['C']` niesie go przez walidację,
+  //    ofertę i płatność, a `matchColorRequirements` dopuszcza wyłącznie
+  //    jednostkę bezbarwną (CR 107.4c — kolorowe źródło nie zapłaci {C}).
+  //    Produkcja bezbarwna działa od PR #134 (F-1: brak `colors` w efekcie
+  //    aktywowanej zdolności = produkcja bezbarwna, nie unia kolorów obiektu);
+  //    pin tego zachowania dla Eldrazi Sciona jest w testach batcha.
+  //    Rulingi OGW (2016-01-22): menace po legalnym bloku nie cofa bloku;
+  //    wielokrotny menace jest redundantny — z tego drugiego korzysta
+  //    grantKeywordsUntilEndOfTurn (duplikat nic nie dodaje).
+  defineCard({
+    id: 'kozileks-shrieker', name: "Kozilek's Shrieker", set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 3, toughness: 2, manaCost: 3, keywords: ['devoid'],
+    oracleText: "Devoid (This card has no color.)\n{C}: This creature gets +1/+0 and gains menace until end of turn. (It can't be blocked except by two or more creatures. {C} represents colorless mana.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a384cd5b-2c6c-4969-bb62-a017e2fc9794.jpg?1783937914',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['C'] },
+        effect: [
+          { type: 'pump', power: 1, toughness: 0 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['menace'] },
+        ],
+      }),
+    ],
+    artId: 158, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 10. Gryffwing Cavalry (VOW) — 2/2 Human Knight: latanie + Training
+  //     (Trening, CR 702.149) oraz trigger ataku z opcjonalną płatnością {1}{W}
+  //     („target attacking creature without flying gains flying until end of
+  //     turn"). Dwie mechaniki GENERYCZNE (ADR 0002):
+  //     - Trening: trigger `attacks` z warunkiem `attackedWithGreaterPower`
+  //       (warunek liczony RAZ, przy deklaracji atakujących — rulingi VOW
+  //       2021-11-19: wzrost siły po deklaracji nie triggeruje, a późniejsza
+  //       śmierć drugiego atakującego nie odbiera licznika);
+  //     - `payAfterTarget`: CEL wybiera się PRZED decyzją o płatności, a brak
+  //       legalnego celu = brak okazji do zapłaty (trzeci ruling tej karty;
+  //       wzorzec płatności przy rozstrzyganiu jak Zoraline, kolejność odwrotna
+  //       niż w `requiresTarget && hasPayCost` bez flagi).
+  defineCard({
+    id: 'gryffwing-cavalry', name: 'Gryffwing Cavalry', set: 'VOW',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4, keywords: ['flying', 'training'],
+    oracleText: 'Flying\nTraining (Whenever this creature attacks with another creature with greater power, put a +1/+1 counter on this creature.)\nWhenever this creature attacks, you may pay {1}{W}. If you do, target attacking creature without flying gains flying until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/792d5b41-27f3-455b-890e-a1771944fc7d.jpg?1783924920',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { attackedWithGreaterPower: true } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'attacks',
+          requiresTarget: { type: 'attacking_creature', withoutKeyword: 'flying' },
+          payMana: 2, payColors: ['W'], payAfterTarget: true,
+        },
+        effect: [
+          { type: 'pay_mana', amount: 2 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+        ],
+      }),
+    ],
+    artId: 164, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 11. Riftburst Hellion (MKM) — 6/7 Hellion z zasięgiem i Disguise
+  //     (CR 702.168a): zagranie twarzą w dół za {3} jako 2/2 z ward {2} (bez
+  //     nazwy, podtypów, kolorów i kosztu many — mana value 0), obrót twarzą
+  //     do góry za koszt disguise. Trzy rulingi 2024-02-02, na których stoi
+  //     implementacja: ① obrót to AKCJA SPECJALNA (bez stosu, w każdej chwili
+  //     gdy masz priorytet) ② zakryty czar/permament jest BEZBARWNY i ma MV 0
+  //     ③ obrót NIE wywołuje zdolności wejścia na pole bitwy. Koszt obrotu
+  //     {4}{R/G}{R/G} niesie dwa PIPY HYBRYDOWE — pole `disguiseHybrid`
+  //     (grupy kolorów, każda opłacana jednym z nich, CR 107.4e), czytane
+  //     przez `colorRequirementsOf` (wspólna ścieżka z kosztami czarów).
+  defineCard({
+    id: 'riftburst-hellion', name: 'Riftburst Hellion', set: 'MKM',
+    types: ['Creature'], subtypes: ['Hellion'], colors: ['G', 'R'],
+    power: 6, toughness: 7, manaCost: 7, keywords: ['reach'],
+    oracleText: 'Reach\nDisguise {4}{R/G}{R/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9fae9044-a859-434d-8dc6-4f9d455ca5e1.jpg?1783912840',
+    // Uwaga na konwencję: `cost.mana` w tym repo to SUMA many (pipy siedzą
+    // w środku — jak w MANA_COSTS, CR 202.1), więc obrót „{4}{R/G}{R/G}"
+    // (4 generyczne + 2 pipy hybrydowe) to `disguiseCost: 6`, a nie 4.
+    morph: { cost: 3, disguiseCost: 6, disguiseHybrid: [['R', 'G'], ['R', 'G']] },
+    artId: 170, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
+  // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
+  // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby
+  // źródła (L26 — adres WYŁĄCZNIE z API Scryfalla; wyjątek ADR 0029: tokeny
+  // nie są kolekcją właściciela).
+  defineCard({
+    id: 'token_griffin', name: 'Griffin', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/c/a/caeea28b-c11b-4fa0-a64c-637bc58171cc.jpg?1783918316',
+    types: ['Creature', 'Token'], subtypes: ['Griffin'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 0, keywords: ['flying'],
+    oracleText: 'Flying',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Griffin Guide'] },
+  }),
 ]);
 
 /**

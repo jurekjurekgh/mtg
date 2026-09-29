@@ -307,6 +307,10 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
   // each turn" — skan licznika per gracz w triggers.js.
   'first_instant_sorcery_cast',
+  // Batch 61/162 (Griffin Guide): trigger AURY na śmierć zaczarowanego stworu —
+  // skan zdarzenia odejścia aury z LKI gospodarza (triggers.js; ruling DMR
+  // 2022-12-08 — równoczesna śmierć aury i gospodarza też odpala).
+  'enchanted_creature_dies',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

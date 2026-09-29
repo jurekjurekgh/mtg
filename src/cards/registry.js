@@ -86,9 +86,18 @@ export function defineCard(data) {
     // `./img/<artId>FOT.png` i `<artId>KON.png`; uzupełnia go narzędzie
     // tools/fetch-art-ids.mjs, a brak wartości = tylko obraz ze Scryfall.
     artId: data.artId ?? null,
+    // Morph/megamorph (Batch 24–51) i disguise (Batch 61/170, CR 702.168):
+    // `cost` = alternatywny koszt zagrania twarzą w dół ({3} w obu mechanikach),
+    // `morphCost`/`megamorphCost`/`disguiseCost` = koszt obrotu twarzą do góry.
+    // Hybrydowe pipy obrotu ({R/G}) jadą jako grupy kolorów („opłać JEDNYM
+    // z nich", CR 107.4e) — zamrażane tak samo jak `colors` (L41: jedno
+    // miejsce budowy deskryptora morph).
     morph: data.morph ? Object.freeze({
       ...data.morph,
       colors: Object.freeze([...(data.morph.colors ?? [])]),
+      ...(data.morph.disguiseHybrid
+        ? { disguiseHybrid: Object.freeze(data.morph.disguiseHybrid.map((group) => Object.freeze([...group]))) }
+        : {}),
     }) : null,
     plot: data.plot ? Object.freeze({ ...data.plot }) : null,
     // Suspend (CR 702.62, Mindstab): { cost, colors, timeCounters } — deskryptor
@@ -206,6 +215,11 @@ export function defineCard(data) {
         : data.aura.cantAttack ? { cantAttack: Object.freeze({ ...data.aura.cantAttack }) }
         : {}),
       ...(data.aura.cantAttackYou ? { cantAttackYou: true } : {}),
+      // Batch 61/157 (Infectious Bloodlust): „attacks each combat if able" na
+      // GOSPODARZU — lustro zakazu ataku (Hobble), ale w drugą stronę. Pole
+      // musi przejść cały łańcuch registry → obiekt gry → attachmentRestrictions,
+      // inaczej ginie po cichu (L21).
+      ...(data.aura.mustAttack ? { mustAttack: true } : {}),
       // Odbiór keywordów gospodarzowi (Grounded: „loses flying").
       ...(data.aura.losesKeywords ? { losesKeywords: Object.freeze([...data.aura.losesKeywords]) } : {}),
       ...(data.aura.cantBlock !== undefined && data.aura.cantBlock !== false

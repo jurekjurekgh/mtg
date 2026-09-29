@@ -8056,3 +8056,68 @@ Log i etykieta odmieniają liczebnik i nie nazywają karty. Piny:
 `setPointerCapture` nie jest zmierzony w przeglądarce. Bez nowej lekcji:
 `LESSONS.md` powyżej progu 100k, klasa jest w komentarzu i w
 `docs/audits/AUDYT_PR137_2026-09-25d.md`.
+
+## M435 — batch 61: kolekcja właściciela 157–174, 10 kart (sesja 2026-09-29, PR #145)
+
+**Skąd.** Zlecenie właściciela: 10 kart z jego kolekcji (lista + kolumna „Plan"
+wiążąca — patrz `docs/plans/PLAN_2026-09-29-batch61-kolekcja-157-174.md`).
+Procedura: `docs/cards/HOW_TO_ADD_CARD.md` (Kroki 1–9), ADR 0010 §2a, ADR 0014
+(pełny Oracle — `support.limitations: []`), ADR 0022, ADR 0029 (katalog tylko
+z kolekcji), ADR 0030 (CR/rulingi dosłownie), ADR 0002 (zero nazw kart
+w silniku). Snapshoty per druk (`set=`) z rulingami, artId z arkusza kolekcji.
+
+**Mechaniki generyczne dowiezione po drodze** (opis w transzach w historii
+projektu; tu skrót tego, co zmieniło SILNIK):
+
+1. **Aura wymuszająca atak** (157 Infectious Bloodlust): `aura.mustAttack`
+   czytane w `combat.js` tam, gdzie `aura.cantAttack` — jedno miejsce prawdy
+   (CR 508.1c + ruling ORI: koszt ataku nie jest wymuszany).
+2. **Qualifier szukania „karta o nazwie źródła"** (157): `search_library_to_hand`
+   z `{ sameNameAsSource: true }` rozwiązywanym przy kolejkowaniu z nazwy
+   źródła, bez literału nazwy w silniku.
+3. **Trigger aury na śmierć gospodarza** (157, 162): zdarzenie
+   `enchanted_creature_dies` (EVENT_TYPES + opis PL + wycena), LKI — także gdy
+   aura umiera równocześnie (ruling DMR).
+4. **Token Griffin** (162): `token_griffin` w katalogu (wyjątek ADR 0029 dla
+   tokenów), tokenów 45.
+5. **{C} w koszcie zdolności + bezbarwna mana** (158 Kozilek's Shrieker, CR
+   107.4c): `['C']` jako wymaganie w `matchColorRequirements` (pasuje tylko
+   jednostka bezbarwna), `add_mana` z jawnym `colors: []`, naprawa korekty
+   Eldrazi Sciona; przy okazji strażnik `PIP_RE` w `test/ability-cost-pips.test.js`
+   zna bezbarwny pip (`WUBRGC`), a `resources.js` ma 9/9 przepisań na wspólne
+   predykaty `unitCoversRequirement`/`unitCoversAnyRequirement`.
+6. **Training** (164 Gryffwing Cavalry, CR 702.149): warunek triggera
+   `attackedWithGreaterPower` + kontekst zdarzenia `attacks` z `attackerIds`
+   i ZAMROŻONYM wynikiem porównania mocy (rulingi 2021-11-19: wzrost siły po
+   deklaracji nie triggeruje, śmierć drugiego atakującego nie odbiera licznika
+   — CR 603.4 sprawdza warunek ponownie przy rozstrzyganiu).
+7. **„Cel przed płatnością"** (164): flaga `trigger.payAfterTarget` — trigger
+   `requiresTarget` z kosztem najpierw wybiera cel (brak kandydatów = zdolność
+   nie wchodzi na stos, więc nie ma czego płacić), a pytanie „you may pay" pada
+   przy rozstrzyganiu (`deferredChoice` na wpisie stosu). `pendingOptionalPay`
+   niesie cele wpisu, więc opłacony efekt działa na wybranym celu. Stara
+   kolejność (Zoraline: płatność → refleksyjny cel) bez zmian.
+8. **Nowy spec celu `attacking_creature`** (164) z filtrami `notSelf`
+   i `withoutKeyword` (hexproof/protection jak reszta) — reguła ważności
+   „od deklaracji atakujących do końca fazy walki" (CR 508.1k).
+9. **Disguise** (170 Riftburst Hellion, CR 702.168a): trzeci rodzaj zakrycia —
+   `morph.disguiseCost` + `disguiseHybrid` (pipy hybrydowe kosztu OBROTU),
+   `faceDownAbilities` buduje zdolność `disguise`, zakrycie dostaje
+   `faceDownCause: 'disguise'` i ward {2} (CR 702.168a; ta sama droga co cloak),
+   obrót to akcja specjalna bez stosu (CR 702.37e dzielone z morph).
+10. **Koszt zdolności z pipami hybrydowymi** (170): `colorRequirementsOf` czyta
+    `cost.hybrid` (grupy kolorów) wspólną ścieżką z hybrydą CZARÓW — walidacja,
+    oferta i płatność idą przez `matchColorRequirements` (pip opłaca JEDEN
+    z kolorów, CR 107.4e). Render: `costSymbols`/`costTextOf`/
+    `abilityCostHtmlOf`/`equipPips` znają `{R/G}`.
+
+**Czego świadomie nie ruszano.** Kolejność „płatność → refleksyjny cel"
+w triggerach bez `payAfterTarget` (Zoraline) — zmiana dotknęłaby istniejących
+kart; hybryda mono `{2/W}` i phyrexian-hybryda nadal poza katalogiem (granice
+opisane w `src/engine/mana-cost.js` i pilnowane strażnikiem granic).
+
+**Bramy.** Fast 7078/0 (EXIT=0), build 70 modułów / 4615.8 kB, slow przez CI
+(`test:all`). Golden-master regenerowany dwa razy w batchu (158: zmiana
+`add_mana` Sciona; 164/170: skład talii „innistrad-wu"/„ravnica") — dryf
+świadomy i udokumentowany (L124), za każdym razem wyłącznie w meczach par
+z dotkniętą talią.

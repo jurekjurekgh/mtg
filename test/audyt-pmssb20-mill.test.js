@@ -28,7 +28,7 @@ function putSpell(state, id, cardId, c, zone) {
   return state.objects.get(id);
 }
 
-function tomeScourScores({ foeLib, myLib, reanimate = false }) {
+function tomeScourScores({ foeLib, myLib, reanimate = false, reanimateCard = null }) {
   const state = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p2');
   state.turn.activePlayerId = 'p2';
@@ -37,7 +37,7 @@ function tomeScourScores({ foeLib, myLib, reanimate = false }) {
   for (let i = 0; i < myLib; i += 1) putSpell(state, `lib${i}`, 'highland-game', 'p2', 'library');
   for (let i = 0; i < foeLib; i += 1) putSpell(state, `flib${i}`, 'highland-game', 'p1', 'library');
   putSpell(state, 'a', 'tome-scour', 'p2', 'hand');
-  if (reanimate) putSpell(state, 're', 'unbreakable-bond', 'p2', 'hand');
+  if (reanimate || reanimateCard) putSpell(state, 're', reanimateCard ?? 'unbreakable-bond', 'p2', 'hand');
   const view = playerView(state, 'p2');
   const bot = createHeuristicBot({ seed: 99 });
   bot.chooseCommand(view, {});
@@ -76,4 +76,11 @@ test('S06: self-mill przy cienkiej własnej bibliotece — drabina deck-outu dzi
   // 6 kart, mill 5 → 1 na zapasie = deckOutRisk −20 (dawniej flat −80 bez
   // stopniowania — celował siebie tuż nad przepaścią tak samo jak przy 30).
   assert.equal(tomeScourScores({ foeLib: 30, myLib: 6 }).self, -85);
+});
+
+test('Audyt #144/F3: Grave Exchange (return_creature_card_to_hand) to też reanimacja w ręce (−50)', () => {
+  // L72: ten sam KSZTAŁT efektu (karta z grobu → ręka), inna nazwa typu;
+  // enumeracja w bocie pomijała bliźniaka, więc combo z self-millem nie było
+  // widoczne dla tej karty (self-mill = −65 zamiast −50).
+  assert.equal(tomeScourScores({ foeLib: 30, myLib: 30, reanimateCard: 'grave-exchange' }).self, -50);
 });

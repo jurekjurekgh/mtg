@@ -58,7 +58,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
 | search_library (tutory) | 11 | DONE (2026-09-29) | §PMSSB-19 niżej; `test/audyt-pmssb19-search.test.js` (7); `searchRiderValue` (L41: 3 ścieżki — tabela ETB/cast/aktywacja; R2 = Final Parting `two_cards` warty 0 wszędzie + guard deck-outu na 2 karty; 4 pokrętła `search*`) |
 | mill (re-audyt) | 13 | DONE (2026-09-29) | §PMSSB-20 niżej; `test/audyt-pmssb20-mill.test.js` (6); `foeMillValue`/`selfMillValue` (L41: 4 skale → 1; R2 = presja deck-outu wroga + mill do 0 = wygrana przy ich dobraniu CR 121.4; R3 = self-mill pod reanimację w ręce; guard jedynego blokera anuluje premię); 5 pokręteł `mill*` |
-| Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
+| Cuombajj / opponent-target (1 karta) | 1 | DONE (mikro-pętla, 2026-09-29) | §PMSSB-21 niżej; nowy dowód = audyt remisów (190/190 rozróżnialnych w decyzji, wcześniej 41); `test/audyt-pmssb21-opponent-target.test.js` (5); sonda `tools/pmssb21-cuombajj-sonda.mjs`; 3 pokrętła `opponentTarget*` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -241,6 +241,58 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-21 — opponent-target / Cuombajj (mikro-pętla) (2026-09-29)
+
+**Wybór rodziny** (ADR 0021 krok 2): rejestr nie ma rodzin bez statusu
+DONE/POKRYTE, więc nowym dowodem jest **audyt remisów**
+(`node tools/bot-tie-audit.mjs --gry=60` = 720 partii, 12 par talii).
+Wiersz rejestru „Cuombajj (1 karta) — OUT (mikro-pętla)" miał 41 remisów;
+przy pełnym przebiegu `resolve_opponent_target` ma **305 decyzji i 190
+remisów na maksimum, z czego 190/190 ROZRÓŻNIALNYCH** (dane się różnią,
+punkty nie) — największy klaster poza rodzinami POKRYTYMI i poza szumem
+walki (blok/atak remisują najczęściej na RÓWNOWAŻNYCH tokenach). Zgodnie
+z rejestrem pętla jest **mikro** (bez fal): plan
+`docs/plans/PLAN_2026-09-29-pmssb21-opponent-target.md`, sonda
+`tools/pmssb21-cuombajj-sonda.mjs` (scenariusze A–D, PRZED/PO).
+
+**Zakres**: `resolve_opponent_target` — Cuombajj Witches (CMR): „{T}: This
+creature deals 1 damage to any target and 1 damage to any target of an
+opponent's choice". Drugi cel wskazuje przeciwnik (CR 601.2c; aktywacja
+czeka na jego decyzję przed zapłatą kosztów) — **bot jest WYBIERAJĄCYM**.
+Enumeracja silnika: stworzenia aktywującego, potem reszta, na końcu gracze.
+
+**Finding F1** (klasa L131): gałąź „wrogi stwór, który OCALA" miała gołą
+stałą 30 → wybór między ocalałymi celami był ARBITRALNY (pierwsza oferta
+enumeracji). POMIAR PRZED (sonda, scenariusz A: 4/4 i 1/3 aktywującego):
+oferty 30 / 30 / 30, wybór = czarownica (pierwsza w enumeracji). Dobicie
+(102 przy 1/1), własny stwór i gracze działały — nie ruszane (nie są
+remisami; wybory modelu M130).
+
+**Fala R1 (jedyna)**: baza `opponentTargetFoeBase` = 30 (kotwica M429:
+najsłabszy realny wariant = dawna wartość, nowy wymiar to DOPŁATA) +
+`min(opponentTargetThreatCap 15, (moc·2 + wytrzymałość) ·
+opponentTargetThreatWeight 0,5)`. Uzasadnienie: 1 obrażenie trwa do końca
+tury (CR 514.2), więc wśród ocalałych celów wartość rośnie z zagrożeniem —
+miękczenie największego atakującego/blokera przybliża zabicie go w tej
+samej turze. Limit nie zbliża się do progu dobicia (100 + 2·moc).
+
+**Piny PO** (`test/audyt-pmssb21-opponent-target.test.js`, 5): S01 4/4 = 36
+> 1/3 = 32,5 (wybór „big"; dawniej pierwsza oferta) · S02 12/12 = 45 (cap)
+· S03 dobicie = 102, własny 2/2 = 6, gracz-wróg = 15 — kotwice M130 bez
+zmian · S04 `opponentTargetThreatWeight` ×0 → remis 30/30 i powrót do
+pierwszej oferty (kotwica anty-over-fix) · S05 identyczne cele nadal
+remisują (remis uczciwy, L5). **Mutacje L13**: W-M (waga→0), CAP-M (cap→0),
+BASE-M (baza→20), KOT-M (brak dopłaty w kodzie) = **4× RED**.
+
+**Pomiar PO** (ten sam audyt remisów): rozróżnialne remisy tej decyzji
+**190 → 0**; zostało 16 remisów RÓWNOWAŻNYCH (te same statystyki celu, np.
+dwa bliźniacze tokeny — uczciwe) i 16 remisów „top" na 306 decyzji;
+globalnie akcyjnych remisów 5903 → 5720 (−183).
+
+**Bramy**: fast **7029/7029** · golden 4/4 bez dryfu (pary golden nie
+zawierają Cuombajj — karta jest tylko w `decks/wiedzmin-bg.txt`) · build
+70 / 4580,9 kB · `test:all` (w tym samym PR).
 
 ## PMSSB-20 — mill (re-audyt) (2026-09-29)
 

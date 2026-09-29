@@ -455,7 +455,16 @@ export const NUMERY = [
   '702.145d',
   '702.145g',
   '702.148',
+  // Batch 61 (Gryffwing Cavalry): Training — numer zweryfikowany wobec
+  // wydania CR 2026-09-25 (para „mechanika ↔ numer” w
+  // test/cr-numery-mechanik-straznik.test.js zna 702.149 = Training).
+  '702.149',
   '702.164',
+  // Batch 61 (Riftburst Hellion): Disguise — numer zweryfikowany wobec
+  // wydania CR 2026-09-25 (para „mechanika ↔ numer” w
+  // test/cr-numery-702-tabela-straznik.test.js zna 702.168 = Disguise).
+  '702.168',
+  '702.168a',
   '702.164a',
   '702.165',
   '702.165a',

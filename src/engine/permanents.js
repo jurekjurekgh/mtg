@@ -614,7 +614,7 @@ export function creatureCantBlock(object, state = null) {
 }
 
 export function attachmentRestrictions(state, object) {
-  const restrictions = { cantAttack: false, cantBlock: false };
+  const restrictions = { cantAttack: false, cantBlock: false, mustAttack: false };
   if (!state || object.zone !== 'battlefield' || object.kind !== 'creature') return restrictions;
   for (const attachment of attachmentsAttachedTo(state, object.id)) {
     const descriptor = attachment.aura ?? attachment.equipment ?? null;
@@ -631,6 +631,7 @@ export function attachmentRestrictions(state, object) {
       if (cond.hostHasColor && (object.colors ?? []).includes(cond.hostHasColor)) return true;
       return false;
     };
+    if (descriptor.mustAttack === true) restrictions.mustAttack = true;
     if (descriptor.cantAttack === true) restrictions.cantAttack = true;
     else if (descriptor.cantAttack && typeof descriptor.cantAttack === 'object'
       && subtypeConditionHolds(descriptor.cantAttack)) restrictions.cantAttack = true;

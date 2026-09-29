@@ -50,19 +50,29 @@ dynamicznie do liczby talii** i mieścił uśredniony pomiar w ~10 minutach.
 5. **Jawne `--seeds` przesuwa środek ciężkości** (więcej seedów = mniej par
    talii), ale nigdy nie powiększa macierzy ponad budżet.
 6. **Worki nie wchodzą do macierzy** (`benchmarkDecks()`, ADR 0023 §5): pełny
-   profil bierze 18 talii jednoplanowych, nie 22 pliki z `decks/`
-   (stan z dnia decyzji; dziś 19 z 23 — §Aktualizacja).
+   profil bierze tylko talie jednoplanowe, nie pliki `worek-*` z `decks/`
+   (stan z dnia decyzji: 18 z 22 plików; dziś 22 z 26 — §Aktualizacja).
 7. **Wyczerpująca macierz znika** — nie ma flagi, której nikt nie dogra.
    `BENCH_DECKS` (6 talii) zostaje próbką profilu SZYBKIEGO i testu regresji
    (672 mecze, bez zmian).
 
-## Aktualizacja liczb (2026-09-07, decyzja bez zmian)
+## Aktualizacje liczb (decyzja bez zmian)
 
-Pełna macierz dograna po raz pierwszy (`tools/b1-final-2026-09-07.txt`):
+**2026-09-07** — pierwsza dograna pełna macierz (`tools/b1-final-2026-09-07.txt`):
 19 talii → 190 par × 5 seedów × 2 strony × 3 pary botów = **5 700 meczów**
-(budżet mieści pełne pokrycie), 17,4 min, 0 zacinek; „niedokończone: 1" to
-remis (CR 104.3a). Liczby HELP-a przypięte do kodu testem `m338`. Kontekst:
-audyt PR #102 §8.
+(budżet mieścił pełne pokrycie), 17,4 min, 0 zacinek („niedokończone: 1" to
+remis, CR 104.3a). Liczby HELP-a przypięte do kodu testem `m338`.
+
+**2026-09-29** — Batch 61 dobił plan Eldraine do progu 15 kart (M181,
+ADR 0023 §4), generator wystawił `decks/eldraine.txt`: 22 talie jednoplanowe
+= **253 pary** i budżet przestaje mieścić pełne pokrycie (253 × 4 × 6 = 6 072
+> 6 000), więc macierz gra **250 par** — dokładnie reżim „dużego katalogu"
+z tabeli wyżej, tylko osiągnięty wcześniej. Reguła się nie zmienia: liczbę
+granych par wyznacza budżet (`pairsWanted = ⌊6 000 / (4 × 6)⌋`), nie katalog;
+`m338/3` pilnuje obu reżimów (pełne pokrycie DOPÓKI mieści się w budżecie),
+a `--seeds` w HELP-ie (`dziś 22 talii → 4`) liczy się z kodu. Podniesienie
+`--budget` przy kolejnych progach wymaga decyzji właściciela. Pełny zapis
+pomiarów: `docs/PROJECT_HISTORY.md` (2026-09-29c).
 
 ## Konsekwencje
 
@@ -98,4 +108,5 @@ audyt PR #102 §8.
   [ADR 0024](0024-deck-split-by-colors-and-rotating-benchmark.md) — skąd 22
   talie i rotująca próbka.
 - `docs/LESSONS.md` L89 · `test/benchmark-budget-probki.test.js` ·
-  `test/benchmark-progress-watchdog.test.js`.
+  `test/benchmark-progress-watchdog.test.js` · `test/m338-pomoc-benchmarku-liczby.test.js`
+  (liczby HELP-a liczone z kodu; oba reżimy pokrycia).

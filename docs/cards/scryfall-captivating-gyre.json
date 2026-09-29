@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Captivating%20Gyre&set=m20",
+  "print": "Captivating Gyre (M20)",
+  "name": "Captivating Gyre",
+  "mana_cost": "{4}{U}{U}",
+  "cmc": 6,
+  "type_line": "Sorcery",
+  "oracle_text": "Return up to three target creatures to their owners' hands.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "m20",
+  "collector_number": "51",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/2/a2bd5c34-fa7e-4fa8-a5b1-c3aa928cc834.jpg?1783933014"
+  },
+  "pobrano": "2026-09-29",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m20/51/rulings",
+  "rulingsPobrano": "2026-09-29"
+}

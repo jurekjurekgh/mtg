@@ -171,7 +171,10 @@ test('CM/2 inwentarz katalogu: każdy czar modalny = klasa A/B/C (strażnik „p
   //   C — mieszane/0-celowe/varTV (krok 1 = nazwy trybów, krok 2 = picker).
   const KLASA_A = ['vandalize'];
   const KLASA_B = ['agate-assault', 'keep-out', 'steel-sabotage'];
-  const KLASA_C = ['aerith-rescue-mission', 'fortify', 'ruinous-rampage',
+  // Batch 61/174: Izzet Charm = kontra warunkowa (1 cel) + obrażenia (1 cel)
+  // + „Dobierz 2, odrzuć 2" (0 celów) — mieszanka 1-celowych z 0-celowym,
+  // więc kaskada jak dla Selesnya Charm (krok 1 = nazwy trybów).
+  const KLASA_C = ['aerith-rescue-mission', 'fortify', 'izzet-charm', 'ruinous-rampage',
     'selesnya-charm', 'your-temple-is-under-attack', 'youre-confronted-by-robbers'];
   const foundA = [];
   const foundB = [];

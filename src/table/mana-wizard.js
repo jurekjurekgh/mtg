@@ -1,7 +1,7 @@
 import { getSourceForObject } from '../engine/mana-sources.js';
 import { castsWithoutPayingMana } from '../engine/impulse-window.js';
 import { escapeHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
-import { parseManaCost, totalManaNeeded } from '../engine/mana-cost.js';
+import { parseManaCost, totalManaNeeded, unitCoversRequirement } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
 
@@ -467,8 +467,12 @@ export function coveredRequirementIndexes(sources, requirements) {
   const order = requirements
     .map((colors, index) => ({ colors, index }))
     .sort((a, b) => a.colors.length - b.colors.length);
+  // Predykat dopasowania pipu WSPÓLNY z silnikiem (L48: kreator = płatność):
+  // dla kolorów to przecięcie zbiorów, a dla pipu bezbarwnego {C} (CR 107.4c)
+  // wyłącznie jednostka bezbarwna [] — bez tego kreator uważał {C} za
+  // nieopłacalny i nie otwierał się przy dwóch różnych źródłach bezbarwnych.
   const covers = order.map(({ colors }) =>
-    sources.map((src, i) => (colors.some((c) => src.colors.includes(c)) ? i : -1)).filter((i) => i >= 0));
+    sources.map((src, i) => (unitCoversRequirement(src.colors, colors) ? i : -1)).filter((i) => i >= 0));
   const used = new Array(sources.length).fill(false);
   let best = new Set();
   const chosen = new Set();

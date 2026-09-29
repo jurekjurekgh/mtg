@@ -1011,8 +1011,14 @@ export const KEYWORD_LABELS = Object.freeze({
   // akcji „Obróć twarzą do góry" pokazywała surowy slug małą literą — dokładnie
   // ten sam wyciek co L29 (`MAPA[key] ?? key` jest cichą dziurą, nie fallbackiem).
   megamorph: 'Megamorph',
+  // Batch 61 (Riftburst Hellion): Disguise (CR 702.168) — nowy rodzaj zakrycia;
+  // bez etykiety akcja obrotu pokazywałaby surowy slug „disguise" (M127/L29).
+  disguise: 'Disguise',
   // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.114).
   devoid: 'Devoid (bezbarwna)',
+  // Batch 61 (Gryffwing Cavalry): Trening (CR 702.149) — bez etykiety linia
+  // keywordów pokazywałaby surowy slug „training" (pułapka M127/L29).
+  training: 'Trening (atakuje z silniejszym → +1/+1)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
@@ -1569,10 +1575,14 @@ function costTextOf(ability) {
   // są częścią kosztu (CR 202.1), więc rozbijamy generic + kolory tak samo jak
   // `abilityCostHtml` (wcześniej dwa miejsca liczyły to samo inaczej).
   const colors = cost.colors ?? [];
+  // Batch 61/170: pipy hybrydowe ({R/G}) pokazujemy jako parę kolorów —
+  // „{4}{R/G}{R/G}" nie może wyglądać na „{4}{R}{G}" (inna cena, CR 107.4e).
+  const hybrid = (cost.hybrid ?? []).filter((group) => Array.isArray(group) && group.length > 0);
   if (cost.manaX) parts.push('{X}');
-  const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
-  if (generic > 0 || (!cost.manaX && colors.length === 0 && cost.mana != null)) parts.push(`{${generic}}`);
+  const generic = Math.max(0, (cost.mana ?? 0) - colors.length - hybrid.length);
+  if (generic > 0 || (!cost.manaX && colors.length === 0 && hybrid.length === 0 && cost.mana != null)) parts.push(`{${generic}}`);
   for (const color of colors) parts.push(`{${color}}`);
+  for (const group of hybrid) parts.push(`{${group.join('/')}}`);
   if (cost.tap) parts.push('{T}');
   // M138/Z2: koszty POZAMANOWE na kaflu karty. To ta sama lista co
   // w `abilityCostHtml` (etykieta przycisku akcji) — kafel liczył koszt
@@ -1745,6 +1755,9 @@ function triggerConditionClause(trigger) {
   if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
   if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
   if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
+  // Batch 61 (Gryffwing Cavalry): Training — „attacks with another creature
+  // with greater power" (CR 702.149; semantyka w conditionHolds).
+  if (cond.attackedWithGreaterPower) czlony.push('atakuje z innym stworzem o większej sile (training)');
   // PR #98 (handoff 2026-09-05b pkt 2, wilkołaki): warunki triggerów upkeep —
   // dawniej żyły tylko w gałęzi upkeep jako hardkody (2+ czary), klauzula
   // wspólna ich nie znała (klasa L28).
@@ -1842,6 +1855,8 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // Czytelne opisy powszechnych triggerów (audyt żywym testerem M80) — zamiast
   // surowego fallbacku „Trigger <event>".
   if (trigger.event === 'any_creature_dies') return `Gdy jakiekolwiek stworzenie umrze: ${parts}.`;
+  // Batch 61/162 (Griffin Guide): trigger aury na śmierć ZACZAROWANEGO stworu.
+  if (trigger.event === 'enchanted_creature_dies') return `Gdy zaczarowany stwór umrze: ${parts}.`;
   if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy ${own} enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
@@ -1990,6 +2005,9 @@ export function rulesText(info) {
       }
       if (a.keyword === 'megamorph') return `Megamorph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry i połóż +1/+1`;
       if (a.keyword === 'morph') return `Morph {${a.cost?.mana ?? '?'}}: obróć twarzą do góry`;
+      // Batch 61/170: koszt disguise może nieść pipy hybrydowe — liczy go
+      // `costTextOf` (jedno miejsce prawdy dla notacji kosztu zdolności).
+      if (a.keyword === 'disguise') return `Disguise ${costTextOf(a)}: obróć twarzą do góry`;
       // M100/E10 (P9 — Żywy Tester h09/h13): zdolność equip już opisuje
       // equipLine wyżej; bez tego describeAbility doklejało goły „{4}".
       if (a.keyword === 'equip' && info.equipment) return '';
@@ -2004,9 +2022,13 @@ export function rulesText(info) {
   // to samo rozbicie generic + kolory co costTextOf/abilityCostHtml (M138/Z10:
   // goła liczba kłamała, że koszt płaci się dowolną maną). Zwraca treść
   // wewnątrz klamerek („1”, „W”, „1, B”).
-  const equipPips = (n, colors = []) => {
-    const generic = Math.max(0, (n ?? 0) - colors.length);
-    return [generic > 0 ? String(generic) : '', ...colors].filter(Boolean).join(', ');
+  // Batch 61/170: trzeci argument to grupy HYBRYDOWE ({R/G} → „R/G") — jeden
+  // symbol kosztu opłacany jednym z kolorów (CR 107.4e), liczony do puli
+  // kolorowej; bez niego linia Disguise pokazywałaby samo „4".
+  const equipPips = (n, colors = [], hybrid = []) => {
+    const hyb = (hybrid ?? []).map((group) => group.join('/'));
+    const generic = Math.max(0, (n ?? 0) - colors.length - hyb.length);
+    return [generic > 0 ? String(generic) : '', ...colors, ...hyb].filter(Boolean).join(', ');
   };
   // Audyt Batch53/B1: koszt plotu z pipami kolorów (ten sam rozkład co equip;
   // goła liczba kłamała, że {1}{W} płaci się dowolną maną).
@@ -2022,11 +2044,13 @@ export function rulesText(info) {
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
-  const morphLine = info.morph && info.morph.megamorphCost != null
-    ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
-    : (info.morph && info.morph.morphCost != null
-      ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Morph`
-      : '');
+  const morphLine = info.morph && info.morph.disguiseCost != null
+    ? `Disguise ${costSymbols(info.morph.disguiseCost, [], info.morph.disguiseHybrid)}: możesz zagrać twarzą w dół jako 2/2 z ward {2} za {${info.morph.cost}}, potem obrócić za koszt Disguise`
+    : (info.morph && info.morph.megamorphCost != null
+      ? `Megamorph {${info.morph.megamorphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Megamorph (+1/+1)`
+      : (info.morph && info.morph.morphCost != null
+        ? `Morph {${info.morph.morphCost}}: możesz zagrać twarzą w dół jako 2/2 za {${info.morph.cost}}, potem obrócić za koszt Morph`
+        : ''));
   // M100/E10 (P8 — Żywy Tester h09/h13): aura bez własnych zdolności
   // renderowała się bez żadnego opisu (Nature's Embrace: puste pole!) —
   // deskryptor aura niesie pompowanie/keywordy/grant many i to one SĄ
@@ -2070,6 +2094,9 @@ export function rulesText(info) {
       aura.cantAttack ? (typeof aura.cantAttack === 'object'
         ? `zaczarowany nie może atakować (${hostConditionLabel(aura.cantAttack)})`
         : 'zaczarowany nie może atakować') : '',
+      // Batch 61/157 (Infectious Bloodlust): wymóg ataku jest treścią karty
+      // tak samo jak zakaz (M138/#11 — każde pole deskryptora aury ma opis).
+      aura.mustAttack ? 'zaczarowany atakuje w każdej fazie walki, jeśli może' : '',
       aura.cantBlock ? (typeof aura.cantBlock === 'object'
         ? `zaczarowany nie może blokować (${hostConditionLabel(aura.cantBlock)})`
         : 'zaczarowany nie może blokować') : '',
@@ -2328,9 +2355,11 @@ function abilityCostHtmlOf(ability) {
   const mana = [];
   if (cost.manaX) mana.push('{X}');
   const colors = cost.colors ?? [];
-  const generic = Math.max(0, (cost.mana ?? 0) - colors.length);
+  const hybrid = (cost.hybrid ?? []).filter((group) => Array.isArray(group) && group.length > 0);
+  const generic = Math.max(0, (cost.mana ?? 0) - colors.length - hybrid.length);
   if (generic > 0) mana.push(`{${generic}}`);
   for (const c of colors) mana.push(`{${c}}`);
+  for (const group of hybrid) mana.push(`{${group.join('/')}}`);
   const parts = [];
   if (mana.length) parts.push(manaCostHtml(mana.join('')));
   if (cost.tap) parts.push(manaCostHtml('{T}'));
@@ -3479,14 +3508,16 @@ export function commandLabel(cmd, session, view) {
         // registry) — rodzaj (Morph/Megamorph) czytamy z object.morph.
         // M127 (uwaga A): nazwa mechaniki wielką literą, jak reszta keywordów
         // w KEYWORD_LABELS (Flash, Persist, Level up) — tu przez tę samą mapę.
-        const flipKeyword = object?.morph?.megamorphCost != null ? 'megamorph' : 'morph';
+        const flipKeyword = object?.morph?.disguiseCost != null ? 'disguise'
+          : (object?.morph?.megamorphCost != null ? 'megamorph' : 'morph');
         const flipKind = KEYWORD_LABELS[flipKeyword] ?? flipKeyword;
-        const flipCost = object?.morph?.megamorphCost ?? object?.morph?.morphCost;
+        const flipCost = object?.morph?.disguiseCost ?? object?.morph?.megamorphCost ?? object?.morph?.morphCost;
         const flipColors = object?.morph?.colors ?? [];
+        const flipHybrid = object?.morph?.disguiseHybrid ?? [];
         // M268: pipy wchodzą W RAMACH kwoty, nie obok niej. Stary zapis
         // sklejał `{2}` + `{U}` dla Willbendera („Morph {1}{U}") i pokazywał
         // TRZY many — etykieta zawyżała cenę odkrycia.
-        const costHtml = manaCostHtml(costSymbols(flipCost, flipColors));
+        const costHtml = manaCostHtml(costSymbols(flipCost, flipColors, flipHybrid));
         // M268: nazwa ZAKRYTEJ karty niesie już znacznik „(Morph)", więc
         // doklejanie nazwy mechaniki przy koszcie dawało „Willbender (Morph)
         // (Morph {1}{U})". Gdy znacznik już jest, zostaje sam koszt.

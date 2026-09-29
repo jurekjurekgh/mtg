@@ -529,6 +529,25 @@ function pumpChangesOutcome(view, recipient, delta = {}) {
 }
 
 /**
+ * Audyt #144/F2 (L1+L41): JEDEN czytnik efektów wpisu stosu. Zdolność na
+ * stosie nie ma `spell` — jej deskryptor mieszka w `abilityEffects` (ADR 0017;
+ * pojedynczy obiekt albo tablica). Dwie ścieżki PMSSB-15 (tarcza prewencji i
+ * okno ETB „prevent all damage") czytały wyłącznie `spell`, więc obrażenia z
+ * AKTYWOWANEJ/TRIGGEROWANEJ zdolności były dla wyceny niewidzialne (sonda:
+ * realny ping Ballista Watcher w mój 1/1 → ocena Withstand bez zmian).
+ */
+function stackEntryEffects(entry) {
+  const ability = Array.isArray(entry?.abilityEffects)
+    ? entry.abilityEffects
+    : (entry?.abilityEffects ? [entry.abilityEffects] : []);
+  return [
+    ...((entry?.spell?.effects) ?? []),
+    ...((entry?.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
+    ...ability.filter(Boolean),
+  ];
+}
+
+/**
  * M376 (pętla jakości ADR 0021 §4a — Żywy Tester, worek-dziki vs ixalan, seed
  * 2031): suma delt P/T kopii aktywacji TEJ SAMEJ zdolności (źródło + indeks +
  * cele) czekających na stosie. Wpis zdolności na stosie jest informacją
@@ -544,10 +563,7 @@ function pendingPumpDelta(view, cmd, source) {
     if (entry.kind !== 'activated' || entry.controllerId !== view.playerId) continue;
     if (entry.sourceId !== cmd.objectId || entry.abilityIndex !== (cmd.abilityIndex ?? 0)) continue;
     if (!sameTargets(entry)) continue;
-    const effects = Array.isArray(entry.abilityEffects)
-      ? entry.abilityEffects
-      : (entry.abilityEffects ? [entry.abilityEffects] : []);
-    for (const pending of effects) {
+    for (const pending of stackEntryEffects(entry)) {
       const pump = temporaryPumpOf(pending, view);
       if (!pump) continue;
       total.power += pump.power ?? 0;
@@ -2603,10 +2619,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (entry.controllerId === view.playerId) continue;
       const targets = entry.targets ?? [];
       if (!targets.includes(obj.id)) continue;
-      const effs = [
-        ...((entry.spell?.effects) ?? []),
-        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
-      ];
+      const effs = stackEntryEffects(entry);
       if (effs.some((e) => REMOVE_ON_STACK.has(e?.type))) return true;
       // obrażenia śmiertelne z czaru na stosie
       const dmg = effs.find((e) => e?.type === 'damage');
@@ -2919,11 +2932,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const entry of (view.zones.stack ?? [])) {
       if (entry.controllerId === view.playerId) continue;
       if (!(entry.targets ?? []).includes(objId)) continue;
-      const effs = [
-        ...((entry.spell?.effects) ?? []),
-        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
-        ...((Array.isArray(entry.abilityEffects) ? entry.abilityEffects : (entry.abilityEffects ? [entry.abilityEffects] : []))),
-      ];
+      const effs = stackEntryEffects(entry);
       if (effs.some((e) => FIZZLEABLE_FOE_EFFECTS.has(e?.type))) return true;
       // Obrażenia ŚMIERTELNE z czaru/zdolności wroga (jak M236: próg
       // toughness − damage; nieletalny chip to NIE powód ratunku).
@@ -3048,11 +3057,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (entry.controllerId === view.playerId) continue;
       const targets = entry.targets ?? [];
       if (targets.length !== 1 || targets[0] !== objId) continue;
-      const effs = [
-        ...((entry.spell?.effects) ?? []),
-        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
-        ...((Array.isArray(entry.abilityEffects) ? entry.abilityEffects : (entry.abilityEffects ? [entry.abilityEffects] : []))),
-      ];
+      const effs = stackEntryEffects(entry);
       if (effs.some((e) => FOE_BUFF_EFFECTS.has(e?.type))) return true;
       const counter = effs.find((e) => e?.type === 'add_counter');
       if (counter && BENEFICIAL_COUNTERS.has(counter.counter ?? '+1/+1')) return true;
@@ -4316,8 +4321,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let total = 0;
     for (const entry of view.zones.stack ?? []) {
       if (!(entry.targets ?? []).includes(targetId)) continue;
-      const effs = [...(entry.spell?.effects ?? []),
-        ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? []))];
+      const effs = stackEntryEffects(entry);
       for (const e of effs) {
         if (e?.type === 'damage') total += e.amount ?? 0;
       }
@@ -4473,10 +4477,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (mineIds.has(aid) && outcome?.attackerDies) saved.add(aid);
     }
     // Burn na stosie w moje pasujące stwory (odpowiedź z leathalem).
+    // Audyt #144/F1 (L1): dawny odczyt `view.pendingEffects` był MARTWY —
+    // playerView nigdy nie emituje tego pola (jedyne wystąpienie w repo),
+    // więc okno z burnem na stosie liczyło zawsze 0. Sygnał jest na stosie:
+    // czytamy go TYM SAMYM helperem co tarcza (L41) i liczymy stwory, nie
+    // wpisy (spójnie z `saved`).
     let pendingHits = 0;
-    for (const entry of view.pendingEffects ?? []) {
-      if (entry?.effect?.type !== 'damage') continue;
-      if ((entry.targets ?? []).some((t) => mineIds.has(t))) pendingHits += 1;
+    for (const id of mineIds) {
+      if (incomingDamageOnStack(view, id) > 0) pendingHits += 1;
     }
     value += P.fogWindowSavedCreatureValue * Math.min(saved.size + pendingHits, 3);
     return value;
@@ -4800,8 +4808,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
       .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
   }
+  // Audyt #144/F3 (L72): enumeracja po NAZWACH typów musi objąć całą rodzinę
+  // „karta z grobu → ręka/biblioteka/pole" z katalogu. Bliźniak
+  // `return_creature_card_to_hand` (Grave Exchange) ma ten sam kształt co
+  // `return_card_from_graveyard_to_hand`, więc bez wpisu self-mill nie widział
+  // combo dla tej karty (−65 zamiast −50; pin w audyt-pmssb20-mill).
   const REANIMATE_EFFECT_TYPES = ['return_permanent_from_graveyard',
-    'reanimate_under_your_control', 'unearth_return', 'return_card_from_graveyard_to_hand'];
+    'reanimate_under_your_control', 'unearth_return', 'return_card_from_graveyard_to_hand',
+    'return_creature_card_to_hand'];
   /** PMSSB-20: karty reanimacji w ręce (cap 2) — sygnał combo z self-millem. */
   function holdsReanimation(view) {
     let n = 0;
@@ -6749,14 +6763,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (!entry) return false;
               // Duży czar (TMC ≥ 3) uznajemy za wart kontry niezależnie od efektu.
               if ((entry.manaCost ?? 0) >= 3) return true;
-              const effs = [
-                ...((entry.spell?.effects) ?? []),
-                ...((entry.spell?.modes ?? []).flatMap((m) => m.effects ?? [])),
-                // Zdolność na stosie nie ma `spell` — jej deskryptor mieszka w
-                // `abilityEffects` (playerView, audyt PR #93). [x].flat() bo
-                // efekt zdolności bywa pojedynczym obiektem, nie tablicą.
-                ...[entry.abilityEffects].flat().filter(Boolean),
-              ];
+              // Zdolność na stosie nie ma `spell` — jej deskryptor mieszka w
+              // `abilityEffects` (playerView, audyt PR #93); jeden czytnik
+              // wspólny (audyt #144/F2, L41).
+              const effs = stackEntryEffects(entry);
               // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
               return effs.some((e) => HIGH_IMPACT.has(e?.type));
             });
@@ -10662,7 +10672,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // Zranić wrogi stwór, ale nie zabić — małą korzyścią jest to, że
           // nie zadajemy obrażeń sobie.
-          if (!isMine) return finish(30);
+          //
+          // PMSSB-21 (R1, mikro-pętla; nowy dowód = audyt remisów): ta gałąź
+          // miała GOŁĄ stałą 30, więc wybór między ocalałymi celami był
+          // arbitralny (pierwsza oferta z enumeracji silnika) — pomiar PRZED:
+          // 190/190 remisów rozróżnialnych w `resolve_opponent_target`
+          // (moc·2+wytrzymałość różnych celów, punkty te same). 1 obrażenie
+          // trwa do końca tury (CR 514.2), więc wśród ocalałych celów wartość
+          // rośnie z ZAGROŻENIEM: miękczenie największego atakującego/blokera
+          // przybliża zabicie go w tej samej turze. Bonus to DOPŁATA
+          // ograniczona progiem — nigdy nie zbliża się do gałęzi dobicia
+          // (100 + 2·moc), a `opponentTargetThreatWeight` ×0 przywraca dawną
+          // wartość (kotwica anty-over-fix M429).
+          if (!isMine) {
+            const threat = (tgt.power ?? 0) * P.creaturePowerWeight
+              + (tgt.toughness ?? 0) * P.creatureToughnessWeight;
+            return finish(P.opponentTargetFoeBase
+              + Math.min(P.opponentTargetThreatCap, threat * P.opponentTargetThreatWeight));
+          }
           // Zranić WŁASNEGO stwora — kara; najlżej jest zranić stwora,
           // który i tak nie zginie z tego powodu (pozostała wytrzymałość > 1).
           if (remaining > 1) return finish(10 - ((tgt.power ?? 0) + (tgt.toughness ?? 0)));

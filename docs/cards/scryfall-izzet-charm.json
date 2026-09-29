@@ -1,0 +1,34 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Izzet%20Charm&set=rtr",
+  "print": "Izzet Charm (RTR)",
+  "name": "Izzet Charm",
+  "mana_cost": "{U}{R}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Choose one —\n• Counter target noncreature spell unless its controller pays {2}.\n• Izzet Charm deals 2 damage to target creature.\n• Draw two cards, then discard two cards.",
+  "colors": [
+    "R",
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "keywords": [],
+  "set": "rtr",
+  "collector_number": "172",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/e/1e3a5af6-5423-442b-a207-364e97a871d8.jpg?1783940338"
+  },
+  "pobrano": "2026-09-29",
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2020-08-07",
+      "comment": "If you choose the last mode, you draw two cards and discard two cards all while Izzet Charm is resolving. Nothing can happen between the two, and no player may choose to take actions."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/rtr/172/rulings",
+  "rulingsPobrano": "2026-09-29"
+}

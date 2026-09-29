@@ -7,6 +7,7 @@
 1x Goblin Picker
 1x Jolrael, Mwonvuli Recluse
 1x Expunge
+1x Fiery Hellhound
 1x Mournful Zombie
 1x Phyrexian Rager (DMU)
 1x Simian Simulacrum
@@ -18,6 +19,6 @@
 1x Disa the Restless
 1x Final Parting
 1x Mindstab
-4x Swamp
+5x Swamp
 2x Mountain
 3x Forest

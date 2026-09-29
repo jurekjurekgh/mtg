@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fiery%20Hellhound&set=m11",
+  "print": "Fiery Hellhound (M11)",
+  "name": "Fiery Hellhound",
+  "mana_cost": "{1}{R}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Elemental Dog",
+  "oracle_text": "{R}: This creature gets +1/+0 until end of turn.",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "power": "2",
+  "toughness": "2",
+  "set": "m11",
+  "collector_number": "136",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/0/00e2db9a-d62e-4300-a9e6-a7665fcf2ef7.jpg?1783941806"
+  },
+  "pobrano": "2026-09-29",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/m11/136/rulings",
+  "rulingsPobrano": "2026-09-29"
+}

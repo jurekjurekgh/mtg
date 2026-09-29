@@ -165,7 +165,11 @@ test('C/2: tekst logu — cała partia (chronologicznie) i pojedyncza tura', () 
 
 test('C/2: tekst „cała partia" rośnie na bieżąco (nowe wpisy na końcu)', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 34, registry, decks });
+  // Batch 61/T1 (tarkir-bg +Dragonscale Boon): stary seed 34 kończył partię
+  // przed 20. komendą („finished" zamiast „active"). Hunter 1–60 → 33 jest
+  // partią w toku po 10 i po 20 komendach; log rośnie i dopisuje na końcu
+  // (L25 — ten sam świadek).
+  const session = createSession({ seed: 33, registry, decks });
   playSome(session, 10);
   assert.equal(session.state.status, 'active', 'partia w toku — jest co dopisywać');
   const before = session.logTextAll();

@@ -57,8 +57,24 @@ test('M338/3: HELP--seeds cytuje realny kształt macierzy na bieżącym katalogu
   // A zdanie o budżecie musi mieścić przebieg: próbka nie wychodzi poza budżet.
   assert.ok(total <= DEFAULT_BUDGET_MATCHES,
     `próbkowanie przekracza budżet: ${total} > ${DEFAULT_BUDGET_MATCHES}`);
-  assert.ok(shape.deckPairs.length === shape.allPairsCount && total >= DEFAULT_BUDGET_MATCHES * 0.7,
-    `przy ${decks.length} taliach pełne pokrycie (${shape.deckPairs.length}/${shape.allPairsCount} par, ${total} meczów) powinno mieścić się w budżecie ze sporym zapasem — jeśli katalog urósł, zaktualizuj ZDJĘCIA w HELP-ie (--full) i ADR 0025, nie ten test`);
+  // 2026-09-29 (Batch 61/162): katalog PRZEKROCZYŁ pojemność budżetu na pełne
+  // pokrycie. Talia planu Eldraine dobiła progu 15 kart (M181, ADR 0023 §4) i
+  // generator wystawił `eldraine` jako 22. talię: 253 pary × 4 seedy × 2 strony
+  // × 3 pary botów = 6 072 > 6 000, więc do macierzy wchodzi 250 par (282 z
+  // próbki poza pomiarem). To dokładnie reżim „dużego katalogu" z tabeli
+  // ADR 0025 (45 talii → 250 par z 1 035), tylko osiągnięty wcześniej, niż
+  // zakładała tabela; liczby HELP-a (`dziś 22 talii → 4`) i ADR zostały
+  // zaktualizowane RAZEM z tym progiem. Kontrakt na oba reżimy:
+  //   (a) liczbę granych par wyznacza budżet (`pairsWanted`), nie katalog;
+  //   (b) pełne pokrycie obowiązuje DOPÓKI mieści się w budżecie.
+  const perPair = 2 * botPairs.length;
+  assert.equal(shape.deckPairs.length, Math.min(shape.allPairsCount, shape.pairsWanted),
+    `próbka par nie odpowiada kształtowi z budżetu: ${shape.deckPairs.length} par przy pairsWanted=${shape.pairsWanted}, wszystkich=${shape.allPairsCount}`);
+  const pelneMiesciSie = shape.allPairsCount * shape.seedsCount * perPair <= DEFAULT_BUDGET_MATCHES;
+  assert.equal(shape.deckPairs.length === shape.allPairsCount, pelneMiesciSie,
+    `pełne pokrycie tylko wtedy, gdy mieści się w budżecie (${shape.deckPairs.length}/${shape.allPairsCount} par, ${total} meczów, ${DEFAULT_BUDGET_MATCHES} budżetu) — jeśli katalog urósł, zaktualizuj ZDJĘCIA w HELP-ie (--full) i ADR 0025`);
+  assert.ok(total >= DEFAULT_BUDGET_MATCHES * 0.7,
+    `próbka zużywa zbyt mało budżetu (${total} z ${DEFAULT_BUDGET_MATCHES}) — kształt macierzy rozjechał się z budżetem`);
 });
 
 test('M338/4: zakaz powrotu starych liczb w HELP-ie', () => {

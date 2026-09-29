@@ -688,6 +688,21 @@ export function librarySearchMatches(object, qualifier, ownerId) {
 }
 
 /**
+ * Batch 61/157 (Infectious Bloodlust): Oracle mówi „search your library for a
+ * card named Infectious Bloodlust" — czyli o nazwie SAMEJ KARTY. Deskryptor
+ * `qualifier.sameNameAsSource` rozwiązuje się przy kolejkowaniu z nazwy obiektu
+ * źródła, więc w silniku nie ma literału żadnej nazwy (ADR 0002). Kryterium
+ * nazwy pozostaje kryterium jakości, więc „fail to find" jest legalne
+ * (CR 701.23b — tak samo jak przy wpisanej nazwie, Angel's Herald).
+ */
+function resolveSearchQualifier(qualifier, sourceObject) {
+  if (!qualifier?.sameNameAsSource) return qualifier ?? {};
+  const { sameNameAsSource, ...rest } = qualifier;
+  const name = sourceObject?.cardName ?? sourceObject?.name ?? null;
+  return name ? { ...rest, name } : rest;
+}
+
+/**
  * Temat 6 — „You may search your library for ..." (CR 701.23b): blokująca
  * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
  * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
@@ -2880,7 +2895,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
     // Entrance; Temat 6). Wybór karty należy do gracza.
     return queueSearchChoice(state, sourceObject, {
-      qualifier: effect.qualifier ?? {},
+      qualifier: resolveSearchQualifier(effect.qualifier, sourceObject),
       destination: 'hand',
       entersTapped: false,
     });
@@ -4713,7 +4728,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Negate: „Counter target noncreature spell." Cel — czar na stosie;
     // przeniesiony do grobu bez rozstrzygania. Nielegalny/zniknięty cel
     // (null albo już rozstrzygnięty) = brak efektu (CR 608.2b).
-    const targetId = targets[0];
+    // Batch 61 (Lost in the Mist): czar może mieć WIELE celów o różnych
+    // deskryptorach, więc slot celu wskazuje `targetIndex` (konwencja reszty
+    // efektów wielocelowych); domyślnie 0.
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return;
@@ -5233,7 +5251,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // (ownerId — śledzone od Trostani), nie dotychczasowego kontrolera;
     // karta w ręce właściciela jest przez niego kontrolowana. Poprzednio
     // stwór przejęty przez Puppeteer Clique wracał na rękę złodzieja.
-    const targetId = targets[0];
+    // Batch 61 (Lost in the Mist): slot celu z `targetIndex` (domyślnie 0) —
+    // odbicie może być drugim efektem czaru o dwóch różnych celach.
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)
@@ -6452,11 +6472,18 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // odrzucającego). Po odrzuceniu karty-stwora resolve_discard_choice wykonuje
   // untap + transform źródła (pole onCreatureDiscard w pendingDiscardChoice).
   if (effect.type === 'draw_then_discard') {
+    // Liczba odrzuceń: jawny `discardCount`, a gdy go brak — tyle, ile dobrano
+    // (Oracle wiąże oba w jednej instrukcji: „Draw a card, then discard a
+    // card"). Jawny count istnieje dla par o INNEJ liczbie — Izzet Charm
+    // (Batch 61/174: dobierz 2, odrzuć 2; ruling WotC 2020-08-07: dobranie
+    // i odrzucenie dzieją się w całości w trakcie rozstrzygania, bez okien).
+    const discardCount = effect.discardCount ?? effect.amount ?? 1;
     drawPlayerCards(state, sourceObject.controllerId, effect.amount ?? 1, 'effect');
     const handIds = state.zones.hand.filter((id) => state.objects.get(id)?.controllerId === sourceObject.controllerId);
     if (handIds.length === 0) return;
-    // Znalezisko A: dobór do 1 karty = discard bez decyzji (efekt kontynuuje).
-    if (shouldAutoDiscard({ count: 1, candidateIds: handIds })) {
+    // Znalezisko A: ręka nie większa niż liczba odrzuceń = bez decyzji
+    // (efekt kontynuuje); inaczej blokująca decyzja o pełnym wyborze.
+    if (shouldAutoDiscard({ count: discardCount, candidateIds: handIds })) {
       discardCardsForced(state, {
         playerId: sourceObject.controllerId, cardIds: [...handIds], purpose: 'effect',
         sourceCardId: sourceObject.cardId ?? null, restorePriorityTo: state.turn.priorityPlayerId,
@@ -6468,7 +6495,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     state.pendingDiscardChoice = {
       playerId: sourceObject.controllerId,
-      count: 1,
+      count: discardCount,
       handIds,
       purpose: 'effect',
       sourceCardId: sourceObject.cardId ?? null,
@@ -6480,7 +6507,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('discard_choice_required', {
-      playerId: sourceObject.controllerId, count: 1, cardIds: [...handIds],
+      playerId: sourceObject.controllerId, count: discardCount, cardIds: [...handIds],
       purpose: 'effect', sourceCardId: sourceObject.cardId ?? null,
     }));
     return true;

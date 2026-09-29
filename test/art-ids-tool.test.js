@@ -90,7 +90,9 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 60 (2026-09-27): +6 pozycji (144 EMN, 147 CMR, 149 M20, 154 SOM,
   // 155 WAR, 156 RNA) → 519; +152 DMU → 520; +151 DTK → 521; +145 SOM → 522;
   // +148 EOE (Xu-Ifit) → 523.
-  assert.equal(data.length, 523, 'pełna lista kolekcji (523 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
+  // Batch 61 (2026-09-29): +10 pozycji (157 ORI, 158 OGW, 160 M11, 161 KTK,
+  // 162 DMR, 164 VOW, 165 M20, 167 ISD, 170 MKM, 174 RTR) → 533.
+  assert.equal(data.length, 533, 'pełna lista kolekcji (533 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -147,7 +149,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 60 (2026-09-27): +6 wierszy (144 EMN, 147 CMR, 149 M20, 154 SOM,
   // 155 WAR, 156 RNA) → 510 → 516 nazw; +152 DMU → 517; +151 DTK → 518; +145 SOM → 519;
   // +148 EOE (Xu-Ifit) → 520.
-  assert.equal(dict.size, 520, 'słownik zawiera pełną listę kolekcji (520 unikalnych nazw)');
+  // Batch 61 (2026-09-29): +10 nazw (każda karta batcha ma w kolekcji jeden
+  // druk, więc nazwy nie dublują się) → 530.
+  assert.equal(dict.size, 530, 'słownik zawiera pełną listę kolekcji (530 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -177,7 +181,14 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // karty dwustronnej ma w arkuszu własny numer ilustracji).
   // Batch 60 (2026-09-27): +6 kart z artId (144, 147, 149, 154, 155, 156) → 519;
   // +152 DMU → 520; +151 DTK → 521; +145 SOM → 522; +148 EOE (Xu-Ifit) → 523.
-  assert.equal(withArt.length, 523, 'wszystkie realne karty mają artId (Batche 1–59 + Batch 60: 10 kart)');
+  // Batch 61 (2026-09-29, transza 1): +4 karty z artId (160 M11, 161 KTK,
+  // 165 M20, 167 ISD) → 527; transza 2: +174 RTR (Izzet Charm) → 528,
+  // +162 DMR (Griffin Guide) → 529, +157 ORI (Infectious Bloodlust) → 530;
+  // transza 3: +158 OGW (Kozilek's Shrieker) → 531; transza 4: +164 VOW
+  // (Gryffwing Cavalry) → 532; transza 5: +170 MKM (Riftburst Hellion) → 533
+  // (komplet 10 kart batcha 61). Tokeny nie liczą się do pinu — token_griffin
+  // nie ma artId (wyjątek ADR 0029).
+  assert.equal(withArt.length, 533, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

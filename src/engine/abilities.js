@@ -333,7 +333,15 @@ function manaForActivation(state, playerId, object, ability, selfAbilityKey = nu
  * Zwraca listę wymagań w formacie spendMana (każdy pip = [kolor]).
  */
 function colorRequirementsOf(cost) {
-  return (cost?.colors ?? []).map((color) => [color]);
+  // Batch 61/170 (Riftburst Hellion): koszt zdolności może nieść pipy
+  // HYBRYDOWE — `hybrid` to grupy kolorów, każda opłacana JEDNYM z nich
+  // (CR 107.4e). Kształt wymagania jest ten sam, co w kosztach CZARÓW
+  // (parseManaCost → hybrid: [{colors:[R,G]}]), więc płatność i walidacja
+  // idą wspólną ścieżką (unitCoversRequirement/matchColorRequirements).
+  return [
+    ...(cost?.colors ?? []).map((color) => [color]),
+    ...(cost?.hybrid ?? []).map((group) => [...group]),
+  ];
 }
 
 /**
@@ -643,7 +651,7 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.bloodrush) continue;
       // Megamorph (obrócenie twarzą do góry) działa tylko, póki permanent
       // leży twarzą w dół; po obrocie zdolność wygasa.
-      if ((ability.keyword === 'megamorph' || ability.keyword === 'morph') && !object.faceDown) continue;
+      if ((ability.keyword === 'megamorph' || ability.keyword === 'morph' || ability.keyword === 'disguise') && !object.faceDown) continue;
       // Craft (CR 702.167 — Lodestone Needle // Guidestone Compass): wymaga
       // drugiej strony (transformTo). Kopia bez drugiej strony (enterAsCopy
       // skopiował zdolność craft, ale transformTo jest warunkowe) nie ma czego
@@ -1320,7 +1328,7 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // póki permanent leży twarzą w dół — po obrocie zdolność wygasa. Walidacja
   // spójna z ofertą legalCommands (wcześniej lukę maskował throw w
   // turnFaceUp — „nielegalność" wychodziła dopiero z aplikacji efektu).
-  if ((ability.keyword === 'morph' || ability.keyword === 'megamorph') && !object.faceDown) {
+  if ((ability.keyword === 'morph' || ability.keyword === 'megamorph' || ability.keyword === 'disguise') && !object.faceDown) {
     throw new Error('Karta nie leży twarzą w dół');
   }
   const cost = ability.cost ?? {};
@@ -1777,7 +1785,10 @@ export function performActivation(state, ctx) {
   // morph/megamorph twarzą do góry (specjalna akcja, CR 702.37e — nie używa
   // stosu). Koszty (tap/mana/poświęcenie) już zapłacone — kolejkujemy wpis na
   // stos; efekty zastosuje resolveTopOfStack.
-  const isFaceUpAction = ability.keyword === 'morph' || ability.keyword === 'megamorph';
+  // Batch 61/170: disguise (CR 702.168a) to TA SAMA specjalna akcja co morph
+  // (702.37e) — obrót nie używa stosu.
+  const isFaceUpAction = ability.keyword === 'morph' || ability.keyword === 'megamorph'
+    || ability.keyword === 'disguise';
   if (!isActivatedManaAbility(ability) && !isFaceUpAction) {
     return queueActivatedAbilityToStack(state, {
       playerId, objectId, abilityIndex, ability,

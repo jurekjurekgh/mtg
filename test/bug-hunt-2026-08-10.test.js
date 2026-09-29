@@ -189,6 +189,9 @@ const KNOWN_KEYWORDS = new Set([
   'echo', 'fabricate',
   // Batch 47: outlast (CR 702.107) — {koszt},{T}: licznik +1/+1, tylko jak sorcery.
   'outlast',
+  // Batch 61: training (CR 702.149, Gryffwing Cavalry) — trigger ataku
+  // „z innym stworzem o większej sile" → licznik +1/+1 na sobie.
+  'training',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

@@ -538,4 +538,26 @@ export const MANA_COSTS = {
   "clone-shell": "{5}",
   // Batch60: Xu-Ifit, Osteoharmonist (EOE).
   "xu-ifit-osteoharmonist": "{1}{B}{B}",
+  // Batch61: Fiery Hellhound (M11).
+  "fiery-hellhound": "{1}{R}{R}",
+  // Batch61: Dragonscale Boon (KTK).
+  "dragonscale-boon": "{3}{G}",
+  // Batch61: Captivating Gyre (M20).
+  "captivating-gyre": "{4}{U}{U}",
+  // Batch61: Lost in the Mist (ISD).
+  "lost-in-the-mist": "{3}{U}{U}",
+  // Batch61: Izzet Charm (RTR) — modalny instant {U}{R}.
+  "izzet-charm": "{U}{R}",
+  // Batch61: Griffin Guide (DMR) — aura {2}{W}.
+  "griffin-guide": "{2}{W}",
+  // Batch61: Infectious Bloodlust (ORI) — aura {1}{R}.
+  "infectious-bloodlust": "{1}{R}",
+  // Batch61: Kozilek's Shrieker (OGW) — devoid 3/2; {C} siedzi w koszcie
+  // ZDOLNOŚCI (cost.colors: ['C']), nie w koszcie many karty.
+  "kozileks-shrieker": "{2}{B}",
+  // Batch61: Gryffwing Cavalry (VOW) — 2/2 Human Knight, latanie + trening.
+  "gryffwing-cavalry": "{3}{W}",
+  // Batch61: Riftburst Hellion (MKM) — 6/7 Hellion; koszt OBROTU (disguise
+  // {4}{R/G}{R/G}) siedzi w deskryptorze `morph` (koszt zdolności, nie karty).
+  "riftburst-hellion": "{5}{R}{G}",
 };

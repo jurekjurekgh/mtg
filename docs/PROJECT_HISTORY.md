@@ -19,6 +19,60 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-09-29 — batch 61: kolekcja właściciela 157–174 (10 kart, PR #145)
+
+Zlecenie właściciela: „kolejny batch kart" → dokumentacja przeczytana
+(`HOW_TO_ADD_CARD.md`, ADR 0029/0020/0010/0014/0028/0030), lista 10 kart
+przekazana w czacie (arkusz niedostępny z sandboxa — kanał czatu potwierdzony).
+Kolumna „Plan" arkusza jest WIAŻĄCA i przepisana 1:1 do definicji i talii,
+także przy transpozycji światów (157→Kaldheim, 158→Zendikar, 160→Dominaria,
+161→Tarkir, 162→Eldraine, 164→Innistrad, 165→Amonkhet, 167→Eldraine,
+170→Ravnica, 174→Ravnica). Plan sesji:
+`docs/plans/PLAN_2026-09-29-batch61-kolekcja-157-174.md` (punkt 8 = disguise
+z hybrydą jako najdroższa pozycja, punkt 9 = kolejność „trening przed Grifem?",
+punkt 12 = bramy i dokumentacja).
+
+**Transze** (commit per karta/2 karty, ADR 0020; wszystkie wypchnięte na
+`arena/01a0ec8c-mtg`):
+
+- **Transza 1** (157 Infectious Bloodlust ORI/152): aura `mustAttack` +
+  qualifier `sameNameAsSource` + zdarzenie `enchanted_creature_dies`.
+- **Transza 2** (174 Izzet Charm RTR/172, 162 Griffin Guide DMR/8 +
+  `token_griffin`): generalizacja `draw_then_discard` (count > 1), token Griffin
+  (tokenów 45), regen 26 talii.
+- **Transza 3** (158 Kozilek's Shrieker OGW/73): `{C}` w koszcie zdolności,
+  bezbarwna mana, naprawa Eldrazi Sciona, wspólne predykaty pokrycia pipów
+  (`unitCoversRequirement`/`unitCoversAnyRequirement`), strażnik pipów
+  `WUBRGC` (CR 107.4c).
+- **Transza 4** (`2551be7`; 164 Gryffwing Cavalry VOW/16): Training
+  (CR 702.149) z zamrożonym porównaniem mocy przy deklaracji + flaga
+  `trigger.payAfterTarget` („cel PRZED płatnością", rulingi 2021-11-19) +
+  spec celu `attacking_creature`.
+- **Transza 5** (`981fe35`; domknięcie 164): strażnicy L84 (klauzula warunku na
+  kaflu, lista keywordów, nazwa mechaniki przy cytacie CR, inwentarz płatnych
+  triggerów 7 → 8, wpis 702.149 w tabeli numerów), regen talii Innistradu
+  (39 → 40 nielandów), pin art-ids, golden-master.
+- **Transza 6** (`752d344`; 170 Riftburst Hellion MKM/228): Disguise
+  (CR 702.168a) — trzeci rodzaj zakrycia z ward {2} i akcją specjalną obrotu —
+  oraz KOSZT HYBRYDOWY zdolności (`cost.hybrid`, pip `{R/G}` = jeden z kolorów,
+  CR 107.4e), render hybrydy w `costSymbols`/`costTextOf`.
+
+**Zdarzenie środowiska (drugie spotkanie z tym samym).** W środku sesji
+sandbox przywrócił pliki, ale cofnął wskaźnik gałęzi do `c5ec30b` (praca
+leżała jako brudne drzewo, a commit `2551be7` był tylko na `origin`), po
+czym skasował pliki spoza repozytorium (`/home/user/hunter`,
+`/home/user/batch61-hold`, `msg.txt`). Procedura bezstratna jak w M434:
+`git fetch origin <gałąź>` → `cp -a .git /tmp/git-backup-przed-reset` →
+`git reset --mixed FETCH_HEAD` (ref i indeks, bez ruszania plików) →
+`git status` pokazał dokładnie bieżącą robociznę. Snapshot Scryfalla dla 170
+pobrano ponownie (fetch_page) i zapisano w repo. Wniosek dla kolejnych sesji:
+logi i sondy trzymać w `dist/logs/` (gitignored), nie w `/tmp` ani poza repo.
+
+**Bramki.** Fast 7078/0 (EXIT=0), build 70 modułów / 4615.8 kB, slow przez CI
+(`test:all`); golden-master regenerowany świadomie dwa razy (L124), dryf
+wyłącznie w meczach par z dotkniętą talią. CI dla `2551be7`, `981fe35`
+i `752d344` — patrz `gh run list` (PR #145). Dokumentacja silnika: M435.
+
 ## 2026-09-25g — audyt PR #139 + pętla jakości (pin modalu, Kumano×token)
 
 Prompt bez nazwanego tematu → po lekturze obowiązkowej pętla domyślna
@@ -13800,3 +13854,51 @@ S05 self + reanimate **−50** (combo +15) · S06 self bibl. 6 −85 (drabina).
 Test 6 (RED 4/6 — 2 kotwice L41-bez-dryfu celowo zielone). Brany: fast
 7020/7020, all 7291/7291 (golden BEZ dryfu), build 70 / 4578,4 kB;
 tie-audit 28.3% (10.7% realnych); mirror 48-48×3; Tester 3×0.
+
+## 2026-09-29b — audyt scalonego PR #144 (F1–F3) + PMSSB-21: opponent-target (mikro) (PR #145)
+
+**Audyt PR #144** (38 plików, +4291/−171; raport
+`docs/audits/AUDYT_PR144_2026-09-29.md`): przegląd każdego zmienionego
+pliku źródłowego + 15 mutacji (L13) + analiza dryfu golden. Trzy znaleziska
+naprawione u root cause (osobne commity):
+
+- **F1 (L1, `25d4974`)**: okno ETB prewencji czytało `view.pendingEffects` —
+  pole, którego `playerView` NIGDY nie emituje (jedyne wystąpienie w
+  `src/test/tools`). Pin: burn na stosie podnosi okno Shieldmage'a
+  66,6009 → 77,4009; mutacja F1-M → 1 RED.
+- **F2/F2b (L41/L72, `25d4974`)**: `incomingDamageOnStack` i
+  `permanentDoomedThisTurn` sumowały wyłącznie `spell.effects` (+`modes`),
+  pomijając `abilityEffects` zdolności na stosie (ADR 0017) — 4 z 6
+  czytników stosu rozjechane. Jeden wspólny `stackEntryEffects(entry)`
+  w 6 miejscach; pin realnej aktywacji Ballista Watcher 61 → 77,
+  Kheru Dreadmaw −16 → +3; mutacje F2-M → 2 RED, F2b-M → 1 RED.
+- **F3 (L72, `920abea`)**: `holdsReanimation` bez brata
+  `return_creature_card_to_hand` (Grave Exchange, PMSSB-20) — self-mill
+  −65 → −50; mutacja F3-M → 1 RED.
+
+Mutacje pozostałych pinów #144 (D-M saga-LKI, A-M ordynał kreatora, C-M
+encje HTML, C2-M detektor M266, 15/16/19/20-M, B3-M) — wszystkie RED.
+**NIEŁAPANE (uwaga U1 w raporcie)**: B-M (wpis `prevent_next_damage` poza
+mapą `FRIENDLY_TARGET_EFFECTS`) i B2-M (gałąź celu-gracza) → 0 fail; element
+nośny pakietu B to odejmowanie tarczy (B3-M łapie). Golden-master: dryf
+z #144 wyłącznie wycenowy (4/6 hashy + jedna scoreSum +2,0, liczby decyzji
+i histogramy bez zmian), po naprawach bez nowego dryfu (4/4).
+
+**PMSSB-21 (mikro-pętla, `81d7e99` + `e568885` + `e1840ca`)**: rozpoznanie
+przez audyt remisów (`bot-tie-audit --gry=60`, 720 partii) — wiersz rejestru
+„Cuombajj (OUT, 41 remisów)" urósł do **190/190 remisów rozróżnialnych**
+w `resolve_opponent_target` (305 decyzji; największy klaster poza rodzinami
+POKRYTYMI). Finding F1: gałąź „wrogi stwór, który ocala" = goła stała 30
+(wybór arbitralny, pierwsza oferta enumeracji). Fala R1: baza 30 (kotwica
+M429) + `min(15, 0,5 × (moc·2 + wytrz))` — dopłata za zagrożenie celu
+(1 obrażenie trwa do końca tury, CR 514.2). Próg dobicia, własny stwór
+i gracze bez zmian. Piny: `test/audyt-pmssb21-opponent-target.test.js` (5);
+mutacje W-M/CAP-M/BASE-M/KOT-M = 4× RED. **Pomiar PO**: rozróżnialne remisy
+decyzji 190 → 0 (zostało 16 równoważnych — bliźniacze cele; L5), globalnie
+akcyjnych 5903 → 5720. Bramy: fast 7029/7029, build 70/4580,9 kB, golden
+4/4 bez dryfu (pary golden bez Cuombajj — karta tylko w `decks/wiedzmin-bg.txt`).
+
+Uwaga audytu #144 (U2/U3): `abilitiesStripped`/`manaSource` zweryfikowane
+pośrednio pinami rodzeństwa F5b; literały CR nowych numerów tabeli
+(615.4/615.6/701.14d/714.2) cytowane w kodzie i pilnowane tabelą, bez
+ponownego pobrania u źródła (do spot-checku ADR 0030 przy zmianie regułowej).

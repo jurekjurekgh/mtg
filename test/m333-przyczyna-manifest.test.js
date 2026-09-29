@@ -181,7 +181,13 @@ test('M333/E: rodzina przyczyny — punkty tworzące, punkty czyszczące i jedna
   const sites = [
     ['src/engine/effects.js', 'export function manifestCardFaceDown', "faceDownCause: 'manifest'", 'manifest'],
     ['src/engine/effects.js', "if (effect.type === 'cloak') {", "faceDownCause: 'cloak'", 'cloak'],
-    ['src/engine/resources.js', 'export function castPermanent', "patch.faceDownCause = object.morph ? 'morph'", 'morph (rzut twarzą w dół)'],
+    // Batch 61/170: rzut twarzą w dół dzieli jedną gałąź między dwie przyczyny
+    // (morph/megamorph vs disguise, CR 702.37c oraz 702.168a) — needle to pełne
+    // wyrażenie z deskryptora, żeby nowy rodzaj zakrycia nie przeszedł bez
+    // własnej etykiety (L84).
+    ['src/engine/resources.js', 'export function castPermanent',
+      "patch.faceDownCause = object.morph ? (isDisguise ? 'disguise' : 'morph') : null",
+      'morph/megamorph/disguise (rzut twarzą w dół)'],
   ];
   for (const [file, anchor, needle, name] of sites) {
     assert.ok(body(file, anchor).includes(needle),

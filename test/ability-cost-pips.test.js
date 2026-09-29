@@ -26,7 +26,11 @@ import { createCardRegistry } from '../src/cards/card-data.js';
  * tekst Oracle nie niesie mapowania nagłówek→zdolność (patrz test
  * „przestawka pozostaje poza zasięgiem”).
  */
-const PIP_RE = /\{([WUBRG])\}/g;
+// Batch 61/158 (Kozilek's Shrieker): {C} to PIP (CR 107.4c — płaci go
+// wyłącznie mana bezbarwna), więc należy do zbioru symboli liczonych jako pip
+// kosztu, tak samo jak kolory (KNOWN_SYMBOLS zna go od początku — dla
+// generyku; tu wchodzi także do dopasowania multizbioru pipów).
+const PIP_RE = /\{([WUBRG C])\}/g;
 const pipsOf = (s) => [...s.matchAll(PIP_RE)].map((m) => m[1]).sort().join('');
 
 // Symbole, które NIE są generykiem: kolory, {C}, {S}, {T}/{Q} (tap/untap jako

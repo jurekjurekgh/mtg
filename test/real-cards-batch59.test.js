@@ -839,17 +839,23 @@ test('B59/G1.9: pary obrażeń wygasają w cleanupie (CR 514.2 — „this turn"
 // zakaz obrotu permanentu daybound/nightbound czymkolwiek innym niż para tych
 // zdolności — bramka `dayNightDriven` w `effects.transform`.
 //
-// Scenariusze mechaniczne idą na karcie Z TALII (`worek-baśni` = plan
-// Eldraine, Krok 5): tylko materializacja talii niesie `transformTo`, więc
-// ręcznie wstawiony obiekt (helper `put`) testowałby atrapę bez drugiej strony.
+// Scenariusze mechaniczne idą na karcie Z TALII (plan Eldraine — od Batcha
+// 61/162 własna talia `decks/eldraine.txt`, wcześniej worek-baśni; Krok 5):
+// tylko materializacja talii niesie `transformTo`, więc ręcznie wstawiony
+// obiekt (helper `put`) testowałby atrapę bez drugiej strony.
 
-/** Partia złożona z PRAWDZIWYCH talii (p1: worek-baśni z Bird Admirerem). */
+/**
+ * Partia złożona z PRAWDZIWYCH talii (p1: talia planu Eldraine z Bird
+ * Admirerem). Batch 61/162: plan Eldraine dobił próg 15 wspieranych kart
+ * (M181, ADR 0023 §4) i generator awansował go z worka-baśni do własnej talii
+ * `decks/eldraine.txt` — karty planu przeniosły się razem z awansem.
+ */
 function matchWithBird() {
   const deck = (path) => parseDeckText(readFileSync(path, 'utf8'), registry).cardIds;
   const state = setupCardMatch({
     seed: 59,
     players: [{ id: 'p1' }, { id: 'p2' }],
-    decks: new Map([['p1', deck('decks/worek-basni.txt')], ['p2', deck('decks/worek-dziki.txt')]]),
+    decks: new Map([['p1', deck('decks/eldraine.txt')], ['p2', deck('decks/worek-dziki.txt')]]),
     registry,
   });
   state.pendingMulligans = []; // testy mechaniczne: bez kolejki mulliganów
@@ -896,7 +902,7 @@ test('B59/G1.10: wejście na pole bitwy ustawia dzień — 1/4 z reach', async (
   const { processTriggers } = await import('../src/engine/triggers.js');
   const state = matchWithBird();
   const entry = birdEntry(state);
-  assert.ok(entry, 'Bird Admirer w talii worek-baśni (Krok 5: talie singleton)');
+  assert.ok(entry, 'Bird Admirer w talii planu Eldraine (Krok 5: talie singleton)');
   assert.equal(entry.transformTo?.cardId, 'wing-shredder',
     'transformTo obecne na obiekcie z materializacji talii (inaczej daybound martwy)');
   assert.equal(entry.frontFaceId, 'bird-admirer', 'karta z talii wchodzi ZAWSZE przodem (CR 712.8a)');

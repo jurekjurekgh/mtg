@@ -293,6 +293,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'teamPumpEmptyPoolPenalty',    // kara, gdy nie ma kogo objąć (dawna -30)
   'teamPumpNoChangePenalty',     // kara, gdy pump nie zmienia wyniku walki (dawna -25)
   'teamPumpSorceryOffWindowPenalty', // kara dla sorcery poza własną Główną 1 (dawna -60)
+  // PMSSB-21 (mikro, 2026-09-29): rodzina „cel wskazywany przez przeciwnika"
+  // (`resolve_opponent_target` — Cuombajj Witches, drugi cel obrażeń wskazuje
+  // przeciwnik; CR 601.2c). Nowy dowód: audyt remisów 190/190 rozróżnialnych
+  // w tej decyzji (gałąź „ocalały wrogi stwór" miała gołą stałą 30).
+  'opponentTargetFoeBase',      // kotwica: dawna stała 30 dla ocalałego wroga
+  'opponentTargetThreatWeight', // dopłata za zagrożenie celu (moc·2+wytrz) — ×0 = dawna wartość
+  'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -515,6 +522,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   teamPumpEmptyPoolPenalty: 30,
   teamPumpNoChangePenalty: 25,
   teamPumpSorceryOffWindowPenalty: 60,
+  // PMSSB-21 (mikro) — cel wskazywany przez przeciwnika: PMSSB-21/R1.
+  // Bazowa 30 = dawna stała (kotwica, „najsłabszy realny wariant" M429).
+  // Dopłata za zagrożenie = 0,5 × (moc·2 + wytrzymałość) z limitem 15:
+  // 4/4 → 36, 1/3 → 32,5 (dawny remis rozstrzygnięty), 12/12 → 45 (limit).
+  // Próg dobicia (100 + 2·moc) pozostaje nieosiągalny dla tej gałęzi.
+  opponentTargetFoeBase: 30,
+  opponentTargetThreatWeight: 0.5,
+  opponentTargetThreatCap: 15,
 });
 
 /**

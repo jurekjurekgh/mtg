@@ -168,6 +168,9 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
         : aura.cantAttack ? { cantAttack: Object.freeze({ ...aura.cantAttack }) }
         : {}),
       ...(aura.cantAttackYou ? { cantAttackYou: true } : {}),
+      // Batch 61/157 (Infectious Bloodlust): wymóg ataku z aury — jak wyżej,
+      // deskryptor musi dojść z karty na obiekt gry (L21).
+      ...(aura.mustAttack ? { mustAttack: true } : {}),
       ...(aura.cantBlock !== undefined && aura.cantBlock !== false
         ? { cantBlock: aura.cantBlock === true ? true : Object.freeze({ ...aura.cantBlock }) }
         : {}),

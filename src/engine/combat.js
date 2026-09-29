@@ -165,8 +165,13 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
  * CR 508.1c): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
  * czytany ze zdolności statycznych obiektu (deskryptor mustAttack).
  */
-function hasMustAttack(object) {
-  return effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.mustAttack);
+function hasMustAttack(state, object) {
+  if (effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.mustAttack)) return true;
+  // Batch 61/157 (Infectious Bloodlust, ruling ORI 2015-06-22): wymóg ataku
+  // może przyjść od ZAŁĄCZNIKA (aura „attacks each combat if able") — czytamy
+  // go z tego samego miejsca co zakazy (permanents.attachmentRestrictions),
+  // więc oferta, walidacja i auto-deklaracja widzą go bez wyjątków (L41).
+  return attachmentRestrictions(state, object).mustAttack === true;
 }
 
 /**
@@ -251,7 +256,7 @@ export function mandatoryAttackerIds(state, playerId) {
     .filter((object) => object && object.zone === 'battlefield'
       && object.controllerId === playerId && isLegalAttacker(state, object, playerId));
   return zdolniDoAtaku
-    .filter((object) => (object.goaded === true || hasMustAttack(object))
+    .filter((object) => (object.goaded === true || hasMustAttack(state, object))
       && !(hasAloneRestriction(object, 'cantAttackAlone') && zdolniDoAtaku.length < 2))
     .map((object) => object.id);
 }

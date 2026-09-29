@@ -17,11 +17,13 @@
  * nie kodujemy, ale opisujemy je jasno w kodzie; strażnik:
  * test/etap-f-2026-09-24-granice-katalogu.test.js):
  * - "{C}" (CR 107.4c: pip bezbarwny płaci się WYŁĄCZNIE maną bezbarwną) —
- *   żadna karta katalogu nie ma go w koszcie many. Parser liczy go dziś jak
- *   generic, co byłoby BŁĘDEM (kolorowe źródło nie może go opłacić). Gdy
- *   pojawi się pierwsza taka karta: dodać kategorię `colorless` w wyniku
- *   parseManaCost, wymaganie „jednostka bez koloru" w matchColorRequirements/
- *   canPayColoredCost/spendMana (resources.js) i w kreatorze many.
+ *   od Batcha 61/158 (Kozilek's Shrieker) obsługiwany jako WYMAGANIE
+ *   (`['C']` w matchColorRequirements → pasuje tylko jednostka bezbarwna `[]`),
+ *   co pokrywa koszty ZDOLNOŚCI aktywowanych (`cost: { mana: 1, colors: ['C'] }`)
+ *   w walidacji, ofercie i płatności (resources.js woła ten sam predykat).
+ *   W KOSZCIE MANY KARTY nadal nieobsługiwany: parseManaCost nie ma kategorii
+ *   `colorless`, więc pierwsza karta z {C} na kaflu musi ją dodać (i wtedy
+ *   ten wpis zmienić) — pilnuje test/etap-f-2026-09-24-granice-katalogu.test.js.
  * - hybryda mono „{2/W}" (CR 107.4e: {2} ALBO {W}) i phyrexian hybryda
  *   „{W/U/P}" — brak w katalogu; pierwszy nie jest dziś rozpoznawany (token
  *   nieznany = pomijany), drugi traktowany jak phyrexian z OR kolorów.
@@ -251,6 +253,30 @@ export function coloredPipsOf(cardId, phyrexianPayWithLife = 0) {
 }
 
 /**
+ * Czy JEDNOSTKA many `unit` (tablica kolorów, jakie może opłacić jako pip)
+ * pokrywa pip o wymaganych kolorach `colors`?
+ *
+ * `['C']` = pip bezbarwny (CR 107.4c): opłaca go WYŁĄCZNIE jednostka bezbarwna
+ * (`[]`, np. mana Eldrazi Sciona albo źródła produkującego {C}) — kolorowe
+ * źródło nie może zapłacić {C} ani odwrotnie. Dla pozostałych wymagań działa
+ * przecięcie zbiorów kolorów (jednostka dwubarwna ['U','R'] opłaca U lub R).
+ */
+export function unitCoversRequirement(unit, colors) {
+  if (colors.includes('C')) return unit.length === 0;
+  return colors.some((c) => unit.includes(c));
+}
+
+/**
+ * Czy jednostka `unit` pokrywa CHOCIAŻ JEDNO z wymagań `requirements`.
+ * Wołający używają tego jako filtra „czy warto w ogóle tapnąć to źródło pod
+ * te pipy" (auto-tap w resources.js) — dla wymagań czysto kolorowych jest to
+ * dokładnie stare `reqColors.has(kolor)`, a dla {C} włącza jednostki bezbarwne.
+ */
+export function unitCoversAnyRequirement(unit, requirements) {
+  return requirements.some((colors) => unitCoversRequirement(unit, colors));
+}
+
+/**
  * Czy lista jednostek many (każda = tablica kolorów, jakie może opłacić jako
  * pip; [] = tylko generic) pokryje WSZYSTKIE pip(y) kolorowe — każde wymaganie
  * dopasowane do innej jednostki o przecinającym się zbiorze kolorów
@@ -263,7 +289,7 @@ export function matchColorRequirements(units, requirements) {
     .map((colors, index) => ({ colors, index }))
     .sort((a, b) => a.colors.length - b.colors.length);
   const covers = order.map(({ colors }) =>
-    units.map((u, i) => (colors.some((c) => u.includes(c)) ? i : -1)).filter((i) => i >= 0));
+    units.map((u, i) => (unitCoversRequirement(u, colors) ? i : -1)).filter((i) => i >= 0));
   const used = new Array(units.length).fill(false);
   const walk = (pos) => {
     if (pos >= order.length) return true;

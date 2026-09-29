@@ -60,8 +60,14 @@ test('A/1: rozstrzygnięcie WŁASNEGO czaru w auto-passie nie jest pauzą (szum)
   const session = openingToTurn2Main();
   session.apply(session.view().legalCommands.find((c) => c.type === 'play_land'));
   session.clearBotMoves();
-  const torch = session.view().legalCommands.filter((c) => c.type === 'cast_permanent')[1];
-  assert.ok(torch, 'setup: drugi czar do rzucenia (Blazing Torch)');
+  // Batch 61: skład innistrad-brg zmienił się (Gryffwing Cavalry + przesunięcie
+  // Scroll of Avacyn przez generator, ADR 0024) — otwarcie z seeda 30001 ma
+  // teraz Blazing Torch jako JEDYNĄ ofertę rzutu, więc kartę wskazujemy po
+  // `cardId`, a nie po pozycji na liście (pin odporny na kolejność ofert).
+  const torch = session.view().legalCommands.find(
+    (c) => c.type === 'cast_permanent' && session.state.objects.get(c.objectId)?.cardId === 'blazing-torch',
+  );
+  assert.ok(torch, 'setup: czar do rzucenia (Blazing Torch)');
   session.apply(torch);
   // Po rzucie własnego torcha i jego rozstrzygnięciu (bot nie odpowiada) gra
   // ma DOJECHAĆ do granicy tury i pauzować RAZ — z nagłówkiem nowej tury,
@@ -135,7 +141,9 @@ test('A/3: odrzucona komenda w trakcie pauzy wciąż nie gubi pauzy (M90/B stoi)
   const session = openingToTurn2Main();
   session.apply(session.view().legalCommands.find((c) => c.type === 'play_land'));
   session.clearBotMoves();
-  const torch = session.view().legalCommands.filter((c) => c.type === 'cast_permanent')[1];
+  const torch = session.view().legalCommands.find(
+    (c) => c.type === 'cast_permanent' && session.state.objects.get(c.objectId)?.cardId === 'blazing-torch',
+  );
   session.apply(torch);
   // Po fixie A/1 rzut własnego czaru dojeżdża od razu do granicy tury —
   // pauza z nagłówkiem „Tura 3 — Nieprzyjaciel” (priorytet ma bot).
