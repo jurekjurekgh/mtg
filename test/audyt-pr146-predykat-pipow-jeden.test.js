@@ -29,6 +29,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 import { singleColorRequirements, unitCoversAnyRequirement } from '../src/engine/mana-cost.js';
+import { consumeManaPool } from '../src/engine/resources.js';
 
 const PLIK = 'src/engine/resources.js';
 const kod = () => fs.readFileSync(PLIK, 'utf8')
@@ -36,7 +37,7 @@ const kod = () => fs.readFileSync(PLIK, 'utf8')
   .replace(/^\s*\/\/.*$/gm, '');
 
 /** Ręczna kopia reguły: przecięcie zbioru kolorów źródła z wymaganymi pipami. */
-const RECZNY_PREDYKAT = /\.some\(\(c\) => (?:reqColors|neededColors|pipReqs)\.has\(c\)\)/g;
+const RECZNY_PREDYKAT = /\.some\(\(c\) => (?:reqColors|neededColors|pipReqs|preserved|preserveSet)\.has\(c\)\)/g;
 /** Ręczne budowanie wymagań jednokolorowych obok wspólnej funkcji. */
 const RECZNE_MAPOWANIE = /\.map\(\(c\) => \[c\]\)/g;
 
@@ -50,8 +51,8 @@ test('F1/2: reguła jest wołana przez wspólną funkcję (kotwica, nie pusty sk
   // L29/L39: skan „zero trafień" przechodzi też wtedy, gdy reguła zniknie —
   // kotwica mówi, ile wywołań wspólnej funkcji jest w pliku.
   const wywolania = [...kod().matchAll(/unitCoversAnyRequirement\(/g)].length;
-  assert.equal(wywolania, 14,
-    `oczekiwane 14 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146); `
+  assert.equal(wywolania, 17,
+    `oczekiwane 17 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146); `
     + 'nowe miejsce = świadoma aktualizacja kotwicy');
 });
 
@@ -66,8 +67,9 @@ test('F1/4: dowód RED — detektor widzi obie ręczne postacie', () => {
     'const am = ca.some((c) => reqColors.has(c)) ? 0 : 1;',
     'if (!entry.colors.some((c) => neededColors.has(c))) continue;',
     'const pipReqs = entry.costPips.map((c) => [c]);',
+    'const pa = units[a].some((c) => preserved.has(c)) ? 1 : 0;',
   ].join('\n');
-  assert.equal([...fixture.matchAll(RECZNY_PREDYKAT)].length, 2,
+  assert.equal([...fixture.matchAll(RECZNY_PREDYKAT)].length, 3,
     'detektor kopii predykatu łapie oba zbiory kolorów');
   assert.equal([...fixture.matchAll(RECZNE_MAPOWANIE)].length, 1,
     'detektor ręcznego mapowania łapie .map((c) => [c])');
@@ -91,4 +93,39 @@ test('F1/6: semantyka — hybryda {R/G} zostaje opłacalna jednym kolorem (CR 10
   assert.equal(unitCoversAnyRequirement(['G'], req), true);
   assert.equal(unitCoversAnyRequirement(['U'], req), false);
   assert.equal(unitCoversAnyRequirement([], req), true, '{C} w zbiorze wymagań');
+});
+
+// ---------------------------------------------------------------------------
+// U1 z `docs/audits/AUDYT_PR146_2026-09-29.md` §8 — ta sama klasa, druga reguła:
+// `preserveColors` chroni manę potrzebną pipom płatności („kolory wymagań
+// płatności schodzą z puli OSTATNIE" — komentarz przy `compareGenericConsume`),
+// ale jednostka BEZBARWNA (`[]`) nie zawiera żadnego koloru, więc
+// `unit.some((c) => preserved.has(c))` nie widzi jej nawet wtedy, gdy `'C'`
+// jest chronione. Efekt mierzony sondą: pula `{'': 1, G: 1}`
+// i `preserveColors: ['C']` → zjedzona została jednostka BEZBARWNA (ta, która
+// opłaca pip {C}), a zielona została.
+//
+// Zasięg: `consumeManaPool(..., preserveColors)` jest wołany z
+// `tapCostedManaSource` (finansowanie kosztu źródła), a `'C'` trafia do
+// `preserveColors` tylko przy płatności z pipem {C} — w katalogu to jedna karta
+// (`kozileks-shrieker`, koszt ZDOLNOŚCI {C}, suma 1), więc end-to-end wymagałoby
+// puli z bezbarwną rezerwą I konieczności finansowania źródła naraz. Pin jest
+// jednostkowy (poziom reguły), nie scenariuszowy — ale reguła ma być jedna.
+// ---------------------------------------------------------------------------
+test('F1/7: rezerwa pod pip {C} chroni jednostkę BEZBARWNĄ (preserveColors)', () => {
+  const player = { id: 'p1', manaPool: { '': 1, G: 1 }, restrictedPool: {} };
+  const wydane = consumeManaPool(player, 1, [], true, ['C']);
+  assert.deepEqual(wydane, ['G'],
+    'generic zjada jednostkę NIEchronioną (zieloną), bezbarwna zostaje na pip {C}');
+  assert.deepEqual(player.manaPool, { '': 1 },
+    'jednostka bezbarwna przetrwała — to ona opłaca pip {C} (CR 107.4c)');
+});
+
+test('F1/8: bez rezerwy kolejność konsumpcji pozostaje dotychczasowa', () => {
+  // Kotwica regresji: zmiana nie może przestawić konsumpcji tam, gdzie żadna
+  // rezerwa nie zachodzi (bezb. najpierw — „od najmniej kolorowych").
+  const player = { id: 'p1', manaPool: { '': 1, G: 1 }, restrictedPool: {} };
+  const wydane = consumeManaPool(player, 1, [], true, []);
+  assert.deepEqual(wydane, [], 'jednostka bezbarwna nie ma koloru do zaksięgowania');
+  assert.deepEqual(player.manaPool, { G: 1 }, 'bez preserveColors bezbarwna schodzi pierwsza');
 });

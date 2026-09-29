@@ -126,13 +126,20 @@ function matchPipAssignment(units, requirements) {
  * Współdzielony komparator generic (jw.): jednostki ograniczone NA PIERW
  * (nie zalegają), kolory chronione NA KOŃCU (nie zjadamy pipów płatności),
  * potem od najmniej kolorowych (bezb. najpierw). Verbatim dawnego sortu.
+ *
+ * `preserveReqs` to WYMAGANIA (`singleColorRequirements(zbiór kolorów)`), nie
+ * zbiór kolorów: „chronione" znaczy „opłaca któryś z chronionych pipów", a to
+ * pyta wspólny predykat. Ręczne `unit.some((c) => preserved.has(c))` nie
+ * widziało jednostki BEZBARWNEJ (`[]`), więc przy chronionym `{C}` rezerwa
+ * pod pip bezbarwny była zjadana jako pierwsza (audyt PR #146, U1/F1 — ta sama
+ * klasa co F6 z PR #145; CR 107.4c).
  */
-function compareGenericConsume(units, freeLen, preserved, a, b) {
+function compareGenericConsume(units, freeLen, preserveReqs, a, b) {
   const ra = a >= freeLen ? 0 : 1;
   const rb = b >= freeLen ? 0 : 1;
   if (ra !== rb) return ra - rb;
-  const pa = units[a].some((c) => preserved.has(c)) ? 1 : 0;
-  const pb = units[b].some((c) => preserved.has(c)) ? 1 : 0;
+  const pa = unitCoversAnyRequirement(units[a], preserveReqs) ? 1 : 0;
+  const pb = unitCoversAnyRequirement(units[b], preserveReqs) ? 1 : 0;
   if (pa !== pb) return pa - pb;
   return units[a].length - units[b].length;
 }
@@ -143,9 +150,9 @@ function compareGenericConsume(units, freeLen, preserved, a, b) {
  * WYŁĄCZNIE niechronione, świeże tapnięcia zbędne. Ten sam predykat w bramce
  * i w finansowaniu (ten sam wynik, deterministycznie).
  */
-function poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveSet) {
+function poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveReqs) {
   return matchColorRequirements(prePool, pipReqs)
-    && prePool.filter((unit) => !unit.some((c) => preserveSet.has(c))).length >= costTotal;
+    && prePool.filter((unit) => !unitCoversAnyRequirement(unit, preserveReqs)).length >= costTotal;
 }
 
 /**
@@ -241,7 +248,8 @@ export function consumeManaPool(player, amount, requirements, restricted = false
   // zdolności nie zjada many potrzebnej samej płatności — chyba że nic
   // innego nie ma (sort, nie filtr — fallback zjada chronione)).
   // Komparator współdzielony z bramką-symulacją (ten sam wynik).
-  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserved, a, b));
+  const preserveReqs = singleColorRequirements(preserved);
+  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b));
   for (const i of genericOrder) {
     if (toConsume <= 0) break;
     consume[i] = true;
@@ -1018,7 +1026,7 @@ export function fundableCostedPlan(state, playerId, reqsOrNull, excludeSourceId 
     if (!matchColorRequirements(poolColors(), pipReqs)) return false;
     // (2'') generic: poolPaysFreely → zero tapnięć, inaczej świeże
     // (mielące bibliotekę na końcu, jak reszta auto-tapu).
-    if (!poolPaysFreelyFor(prePool, pipReqs, costTotal, preserved)) {
+    if (!poolPaysFreelyFor(prePool, pipReqs, costTotal, singleColorRequirements(preserved))) {
       const anyLands = lands.filter((land) => !tappedLand.has(land.id))
         .sort((a, b) => (millsLibraryOnTap(state, state.objects.get(a.id)) ? 1 : 0)
           - (millsLibraryOnTap(state, state.objects.get(b.id)) ? 1 : 0));
@@ -1045,7 +1053,8 @@ export function fundableCostedPlan(state, playerId, reqsOrNull, excludeSourceId 
     const consumeIdx = new Set(assign);
     const candidates = [];
     for (let i = 0; i < ordered.length; i += 1) if (!consumeIdx.has(i)) candidates.push(i);
-    candidates.sort((a, b) => compareGenericConsume(orderedColors, freePart.length, preserved, a, b));
+    candidates.sort((a, b) => compareGenericConsume(orderedColors, freePart.length,
+      singleColorRequirements(preserved), a, b));
     for (let i = 0; i < entry.costGeneric && i < candidates.length; i += 1) consumeIdx.add(candidates[i]);
     const kept = ordered.filter((_, i) => !consumeIdx.has(i));
     copyPool.length = 0;
@@ -1201,7 +1210,8 @@ export function tapCostedManaSource(state, playerId, entry, { preserveColors = [
     // kolorystycznie z wymaganiami, więc nieprzypisane w (iv)) i świeże
     // tapnięcia są zbędne (ląd zostaje odkręcony do walki).
     const preserveSet = new Set(preserveColors);
-    const poolPaysFreely = poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveSet);
+    const poolPaysFreely = poolPaysFreelyFor(prePool, pipReqs, costTotal,
+      singleColorRequirements(preserveSet));
     // Mielące bibliotekę na końcu, jak reszta auto-tapu.
     const anyLands = untappedLandManaSources(state, playerId).slice().sort((a, b) =>
       (millsLibraryOnTap(state, a) ? 1 : 0) - (millsLibraryOnTap(state, b) ? 1 : 0));
