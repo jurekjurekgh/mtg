@@ -4808,8 +4808,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
       .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
   }
+  // Audyt #144/F3 (L72): enumeracja po NAZWACH typów musi objąć całą rodzinę
+  // „karta z grobu → ręka/biblioteka/pole" z katalogu. Bliźniak
+  // `return_creature_card_to_hand` (Grave Exchange) ma ten sam kształt co
+  // `return_card_from_graveyard_to_hand`, więc bez wpisu self-mill nie widział
+  // combo dla tej karty (−65 zamiast −50; pin w audyt-pmssb20-mill).
   const REANIMATE_EFFECT_TYPES = ['return_permanent_from_graveyard',
-    'reanimate_under_your_control', 'unearth_return', 'return_card_from_graveyard_to_hand'];
+    'reanimate_under_your_control', 'unearth_return', 'return_card_from_graveyard_to_hand',
+    'return_creature_card_to_hand'];
   /** PMSSB-20: karty reanimacji w ręce (cap 2) — sygnał combo z self-millem. */
   function holdsReanimation(view) {
     let n = 0;
