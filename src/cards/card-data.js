@@ -12567,6 +12567,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 11. Riftburst Hellion (MKM) — 6/7 Hellion z zasięgiem i Disguise
+  //     (CR 702.168a): zagranie twarzą w dół za {3} jako 2/2 z ward {2} (bez
+  //     nazwy, podtypów, kolorów i kosztu many — mana value 0), obrót twarzą
+  //     do góry za koszt disguise. Trzy rulingi 2024-02-02, na których stoi
+  //     implementacja: ① obrót to AKCJA SPECJALNA (bez stosu, w każdej chwili
+  //     gdy masz priorytet) ② zakryty czar/permament jest BEZBARWNY i ma MV 0
+  //     ③ obrót NIE wywołuje zdolności wejścia na pole bitwy. Koszt obrotu
+  //     {4}{R/G}{R/G} niesie dwa PIPY HYBRYDOWE — pole `disguiseHybrid`
+  //     (grupy kolorów, każda opłacana jednym z nich, CR 107.4e), czytane
+  //     przez `colorRequirementsOf` (wspólna ścieżka z kosztami czarów).
+  defineCard({
+    id: 'riftburst-hellion', name: 'Riftburst Hellion', set: 'MKM',
+    types: ['Creature'], subtypes: ['Hellion'], colors: ['G', 'R'],
+    power: 6, toughness: 7, manaCost: 7, keywords: ['reach'],
+    oracleText: 'Reach\nDisguise {4}{R/G}{R/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}. Turn it face up any time for its disguise cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9fae9044-a859-434d-8dc6-4f9d455ca5e1.jpg?1783912840',
+    // Uwaga na konwencję: `cost.mana` w tym repo to SUMA many (pipy siedzą
+    // w środku — jak w MANA_COSTS, CR 202.1), więc obrót „{4}{R/G}{R/G}"
+    // (4 generyczne + 2 pipy hybrydowe) to `disguiseCost: 6`, a nie 4.
+    morph: { cost: 3, disguiseCost: 6, disguiseHybrid: [['R', 'G'], ['R', 'G']] },
+    artId: 170, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

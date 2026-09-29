@@ -1764,7 +1764,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // kiedyś dojdzie nowe keyword ability pozwalające grać twarzą w dół, jego
     // własna ścieżka ustawi własną przyczynę (strażnik m333/D pilnuje, żeby
     // żaden punkt tworzący zakryty permanent nie został bez przyczyny).
-    patch.faceDownCause = object.morph ? 'morph' : null;
+    // Batch 61/170: disguise to ODRĘBNA przyczyna zakrycia (CR 702.168a) —
+    // zakryty stwór ma ward {2} (czego morph nie daje), a obrót idzie za koszt
+    // disguise. Przyczynę wyprowadzamy z DESKRYPTORA (ADR 0002).
+    const isDisguise = object.morph?.disguiseCost != null;
+    patch.faceDownCause = object.morph ? (isDisguise ? 'disguise' : 'morph') : null;
     patch.abilities = faceDownAbilities(object);
     // Root cause (Batch 24 — Willbender): face-down ZASTĘPUJE abilities
     // flip-ability; bez zachowania oryginału stwór po obrocie NIE MA swoich
@@ -1793,10 +1797,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     patch.colors = [];
     patch.subtypes = [];
     patch.types = ['Creature'];
-    patch.keywords = [];
+    // CR 702.168a: zakryty disguise to 2/2 z ward {2} (jak cloak, CR 701.58a —
+    // ten sam kształt zakrycia, więc ten sam zapis: keyword + kwota, czytane
+    // przez `wardAmountOf`). Morph/megamorph warda nie dają (702.37c).
+    patch.keywords = isDisguise ? ['ward'] : [];
     patch.manaCost = 0;
     patch.cardName = null;
-    patch.ward = null;
+    patch.ward = isDisguise ? 2 : null;
   }
   // Ile many ze Skarba wydano na TEN rzut (Marut, CR: „if mana from a
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
@@ -2215,6 +2222,26 @@ export function faceDownAbilities(object) {
   // 702.36 — tam jest Fear). Walidacja i oferta korzystają z kolorowej puli
   // tak jak koszty czarów.
   const morphColors = object.morph.colors ?? [];
+  // Disguise (CR 702.168a, Batch 61/170 Riftburst Hellion): obrót twarzą do
+  // góry za koszt disguise — ten sam kształt co morph/megamorph (linia niżej
+  // dzieli kod), ale koszt może nieść PIPY HYBRYDOWE („{4}{R/G}{R/G}"):
+  // pole `hybrid` to grupy kolorów, z których każda jest opłacana JEDNYM
+  // ze swoich kolorów (CR 107.4e) — czytane przez `colorRequirementsOf`
+  // (abilities.js) wspólnie z `colors`.
+  if (object.morph.disguiseCost != null) {
+    const hybrid = (object.morph.disguiseHybrid ?? []).map((group) => Object.freeze([...group]));
+    return [Object.freeze({
+      type: 'activated',
+      keyword: 'disguise',
+      cost: Object.freeze({
+        mana: object.morph.disguiseCost,
+        colors: Object.freeze([...morphColors]),
+        ...(hybrid.length ? { hybrid: Object.freeze(hybrid) } : {}),
+      }),
+      effect: Object.freeze({ type: 'turn_face_up' }),
+      trigger: null,
+    })];
+  }
   if (object.morph.megamorphCost != null) {
     return [Object.freeze({
       type: 'activated',

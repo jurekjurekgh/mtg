@@ -557,4 +557,7 @@ export const MANA_COSTS = {
   "kozileks-shrieker": "{2}{B}",
   // Batch61: Gryffwing Cavalry (VOW) — 2/2 Human Knight, latanie + trening.
   "gryffwing-cavalry": "{3}{W}",
+  // Batch61: Riftburst Hellion (MKM) — 6/7 Hellion; koszt OBROTU (disguise
+  // {4}{R/G}{R/G}) siedzi w deskryptorze `morph` (koszt zdolności, nie karty).
+  "riftburst-hellion": "{5}{R}{G}",
 };

@@ -128,7 +128,7 @@ liczone z plików `decks/*.txt`).
 | `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
-| `ravnica` | Ravnica | WUBRG | 42 | 14 | 28 |
+| `ravnica` | Ravnica | WUBRG | 44 | 15 | 29 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 38 | 13 | 25 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |

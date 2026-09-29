@@ -116,11 +116,15 @@ export function xCostSymbols(rawCost) {
   return `{X}${colors.join('')}`;
 }
 
-export function costSymbols(amount, colors) {
+export function costSymbols(amount, colors, hybrid = null) {
   const pips = Array.isArray(colors) ? colors : [];
+  // Batch 61/170 (Riftburst Hellion): pip HYBRYDOWY ({R/G}) to jeden symbol
+  // kosztu opłacany jednym z kolorów (CR 107.4e) — liczy się do puli kolorowej
+  // (nie generycznej) i renderuje jako parę rozdzieloną ukośnikiem.
+  const hybrydy = Array.isArray(hybrid) ? hybrid.filter((group) => Array.isArray(group) && group.length > 0) : [];
   const total = Number(amount) || 0;
-  if (total <= 0 && pips.length === 0) return '';
-  const generic = Math.max(0, total - pips.length);
-  const symbols = `${generic > 0 ? `{${generic}}` : ''}${pips.map((c) => `{${c}}`).join('')}`;
+  if (total <= 0 && pips.length === 0 && hybrydy.length === 0) return '';
+  const generic = Math.max(0, total - pips.length - hybrydy.length);
+  const symbols = `${generic > 0 ? `{${generic}}` : ''}${pips.map((c) => `{${c}}`).join('')}${hybrydy.map((g) => `{${g.join('/')}}`).join('')}`;
   return symbols || `{${total}}`;
 }

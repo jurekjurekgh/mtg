@@ -185,9 +185,10 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // 165 M20, 167 ISD) → 527; transza 2: +174 RTR (Izzet Charm) → 528,
   // +162 DMR (Griffin Guide) → 529, +157 ORI (Infectious Bloodlust) → 530;
   // transza 3: +158 OGW (Kozilek's Shrieker) → 531; transza 4: +164 VOW
-  // (Gryffwing Cavalry) → 532; dojdzie jeszcze 170. Tokeny nie liczą się do
-  // pinu — token_griffin nie ma artId (wyjątek ADR 0029).
-  assert.equal(withArt.length, 532, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: transze 1–4)');
+  // (Gryffwing Cavalry) → 532; transza 5: +170 MKM (Riftburst Hellion) → 533
+  // (komplet 10 kart batcha 61). Tokeny nie liczą się do pinu — token_griffin
+  // nie ma artId (wyjątek ADR 0029).
+  assert.equal(withArt.length, 533, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

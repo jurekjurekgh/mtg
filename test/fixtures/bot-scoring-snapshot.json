@@ -1,48 +1,45 @@
 {
   "version": 1,
-  "overallHash": "898836240f76b3ab0e52561a60be50297da28754b8f2109d38c08450c47c08a2",
+  "overallHash": "635b8418863193e223914d0cfdabc56251e04b8f34794cebd2ce9f2be16bf35c",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "f199154afe2efd81eecb8a54d01a96cbbebfd314a08a1a2f6c462d8133396194",
-      "decisions": 429,
-      "scoreSum": 4333.5027,
+      "hash": "4c9cfdc407bce60a1e77f07dd823e8ca80482953cae9f7e15b4787765e36361b",
+      "decisions": 267,
+      "scoreSum": 3056.7872,
       "chosenKinds": {
         "activate_ability": 1,
-        "attack": 13,
-        "block": 14,
-        "cast_permanent": 7,
+        "attack": 7,
+        "block": 10,
+        "cast_permanent": 4,
         "cast_spell": 5,
-        "pass_priority": 349,
-        "play_land": 10,
-        "resolve_combat": 16,
-        "resolve_counter_pay_choice": 1,
-        "resolve_discard_choice": 1,
+        "pass_priority": 217,
+        "play_land": 7,
+        "resolve_combat": 10,
         "resolve_mentor_target": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 8,
-        "resolve_scry": 1,
-        "resolve_trigger_target": 1
+        "resolve_trigger_target": 4
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "ada951a3dfdaa8be676bf0f2d1240265190f7b76949c504aa7b1afc157f1e182",
-      "decisions": 220,
-      "scoreSum": 1673.7727,
+      "hash": "f5b907b9397b8debf68f623528cd8b6f6fe6fa386653acc1d6822488c7cc920c",
+      "decisions": 245,
+      "scoreSum": 2702.6908,
       "chosenKinds": {
-        "attack": 5,
+        "attack": 7,
         "block": 7,
         "cast_permanent": 3,
-        "cast_spell": 3,
-        "pass_priority": 183,
-        "play_land": 7,
-        "resolve_combat": 9,
-        "resolve_discard_choice": 1,
+        "cast_spell": 5,
+        "pass_priority": 201,
+        "play_land": 6,
+        "resolve_combat": 10,
+        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1,
-        "resolve_trigger_target": 1
+        "resolve_scry": 1,
+        "resolve_trigger_target": 3
       }
     },
     {

@@ -984,3 +984,154 @@ test('B61/164: brak legalnego celu = brak okazji do zapłaty (ruling 2021-11-19)
     'brak okazji do zapłaty');
   assert.deepEqual(player(state, 'p1').manaPool, { W: 2 }, 'mana nietknięta');
 });
+
+// ---- B61/170: Riftburst Hellion (MKM #228, plan Ravnica) -------------------
+
+/** Permanent na polu bitwy po rzucie (rzut nadaje nowe id — patrz `put`). */
+const naPlanszy = (state, cardId) => state.zones.battlefield
+  .map((id) => state.objects.get(id)).find((o) => o?.cardId === cardId);
+
+test('B61/170: Riftburst Hellion — dane Oracle, {5}{R}{G}, druk MKM i disguise', async () => {
+  const { wardAmountOf } = await import('../src/engine/permanents.js');
+  const def = registry.get('riftburst-hellion');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Hellion']);
+  assert.deepEqual(def.colors, ['G', 'R']);
+  assert.equal(def.power, 6);
+  assert.equal(def.toughness, 7);
+  assert.equal(def.manaCost, 7);
+  assert.equal(def.set, 'MKM');
+  assert.equal(def.artId, 170);
+  assert.equal(def.plan, 'Ravnica');
+  assert.deepEqual(def.keywords, ['reach']);
+  assert.ok(def.oracleText.includes('Disguise {4}{R/G}{R/G} (You may cast this card face down for {3} as a 2/2 creature with ward {2}.'),
+    'Oracle w definicji (dosłownie ze snapshotu)');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('9fae9044'), 'imageUri z druku MKM (mkm/228)');
+  assert.equal(MANA_COSTS['riftburst-hellion'], '{5}{R}{G}');
+  // Deskryptor zakrycia (Disguise, CR 702.168a): {3} twarzą w dół + koszt obrotu.
+  // Uwaga na konwencję repo: `disguiseCost` to SUMA many (4 generyczne +
+  // 2 pipy hybrydowe = 6), a `disguiseHybrid` to grupy kolorów.
+  assert.deepEqual(def.morph, {
+    cost: 3,
+    disguiseCost: 6,
+    disguiseHybrid: [['R', 'G'], ['R', 'G']],
+    colors: [],
+  });
+  assert.equal(wardAmountOf({ keywords: [], ward: 2, faceDown: true }, null), 2,
+    'zakryty permanent z ward {2} raportuje kwotę warda');
+});
+
+test('B61/170: rzut twarzą w dół za {3} — 2/2, bezbarwny, MV 0, ward {2}', async () => {
+  const { wardAmountOf } = await import('../src/engine/permanents.js');
+  const state = game();
+  put(state, 'hell', 'riftburst-hellion', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  const offer = commands(state).find((c) => c.type === 'cast_permanent' && c.faceDown === true);
+  assert.ok(offer, 'oferta rzutu twarzą w dół za {3} (alternatywny koszt, CR 702.168a)');
+  run(state, offer);
+  resolve(state);
+  const perm = naPlanszy(state, 'riftburst-hellion');
+  assert.ok(perm, 'permanent jest na polu bitwy');
+  assert.equal(perm.faceDown, true);
+  assert.equal(perm.faceDownCause, 'disguise', 'przyczyna zakrycia: disguise (nie morph)');
+  // CR 708.2 / ruling 2024-02-02: 2/2 bez nazwy, bez podtypów, bez kolorów, MV 0.
+  assert.equal(effectivePower(perm, state), 2, 'moc zakrycia 2');
+  assert.equal(effectiveToughness(perm, state), 2, 'wytrzymałość zakrycia 2');
+  assert.deepEqual(perm.types, ['Creature']);
+  assert.deepEqual(perm.subtypes, []);
+  assert.deepEqual(perm.colors, []);
+  assert.equal(perm.cardName, null);
+  assert.equal(perm.manaCost, 0, 'mana value zakrytego czaru/permanentu = 0');
+  // CR 702.168a: ward {2} jest częścią definicji zakrycia disguise.
+  assert.equal(wardAmountOf(perm, state), 2);
+  assert.ok(effectiveKeywords(perm, state).includes('ward'), 'zakryty ma ward');
+  // Zdolność obrotu: dokładnie jedna, z kosztem hybrydowym.
+  assert.deepEqual(perm.abilities.map((a) => a.keyword), ['disguise']);
+  assert.equal(perm.abilities[0].cost.mana, 6);
+  assert.deepEqual(perm.abilities[0].cost.hybrid, [['R', 'G'], ['R', 'G']]);
+  assert.equal(perm.abilities[0].effect.type, 'turn_face_up');
+  // Po obrocie wraca karta: nazwa, kolory, koszt (migawka z rzutu).
+  assert.equal(perm.faceDownOriginal.cardName, 'Riftburst Hellion');
+  assert.equal(perm.faceDownOriginal.manaCost, 7);
+  assert.deepEqual(perm.faceDownOriginal.keywords, ['reach']);
+});
+
+test('B61/170: rzut twarzą w dół jest NIELEGALNY bez {3} (CR 601.2h)', async () => {
+  const state = game();
+  put(state, 'hell', 'riftburst-hellion', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  const offers = commands(state).filter((c) => c.type === 'cast_permanent');
+  assert.deepEqual(offers, [], 'brak oferty przy 2 manach (koszt twarzą w dół {3}, koszt karty 7)');
+});
+
+test('B61/170: obrót twarzą do góry za {4}{R/G}{R/G} — każdy wariant hybrydy', async () => {
+  // Pip {R/G} opłaca JEDEN z kolorów (CR 107.4e), więc legalne są wszystkie
+  // kombinacje: R,R / R,G / G,G — plus generyczne z dowolnej reszty.
+  for (const [manaR, manaG, label] of [[6, 0, 'R x6'], [4, 2, 'R x4 + G x2'], [2, 4, 'R x2 + G x4'], [0, 6, 'G x6']]) {
+    const state = game();
+    put(state, 'hell', 'riftburst-hellion', 'p1', 'hand');
+    addMana(state, 'p1', 3);
+    run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.faceDown === true));
+    resolve(state);
+    addMana(state, 'p1', manaR, { colors: ['R'] });
+    if (manaG) addMana(state, 'p1', manaG, { colors: ['G'] });
+    const up = commands(state).filter((c) => c.type === 'activate_ability');
+    assert.equal(up.length, 1, `oferta obrotu dla puli ${label}`);
+    run(state, up[0]);
+    const perm = naPlanszy(state, 'riftburst-hellion');
+    assert.equal(perm.faceDown, false, `odkryty po zapłacie (${label})`);
+    assert.equal(effectivePower(perm, state), 6);
+    assert.equal(effectiveToughness(perm, state), 7);
+    assert.deepEqual(player(state, 'p1').manaPool, {}, `cała pula zużyta (${label})`);
+    assert.deepEqual(player(state, 'p1').life, 20, 'koszt zapłacono maną, nie życiem');
+  }
+});
+
+test('B61/170: obrót NIELEGALNY bez many R/G (hybryda nie jest „dowolnym kolorem")', async () => {
+  const state = game();
+  put(state, 'hell', 'riftburst-hellion', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.faceDown === true));
+  resolve(state);
+  // 6 man w innych kolorach starcza na część generyczną, ale ŻADEN pip
+  // hybrydowy nie ma czym zapłacić — zdolność nie może być zaoferowana.
+  addMana(state, 'p1', 6, { colors: ['U'] });
+  assert.deepEqual(commands(state).filter((c) => c.type === 'activate_ability'), [],
+    'brak oferty obrotu przy puli bez R/G');
+  const perm = naPlanszy(state, 'riftburst-hellion');
+  assert.equal(perm.faceDown, true, 'permanent został zakryty');
+});
+
+test('B61/170: obrót to akcja specjalna — bez stosu i bez zdolności ETB (ruling)', async () => {
+  const state = game();
+  put(state, 'hell', 'riftburst-hellion', 'p1', 'hand');
+  addMana(state, 'p1', 3);
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.faceDown === true));
+  resolve(state);
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const before = state.events.length;
+  run(state, commands(state).filter((c) => c.type === 'activate_ability')[0]);
+  const types = state.events.slice(before).map((e) => e.type);
+  assert.equal(state.zones.stack.length, 0, 'obrót to akcja specjalna Disguise — nie używa stosu (CR 702.168a)');
+  assert.ok(types.includes('turned_face_up'), 'zdarzenie obrotu istnieje');
+  assert.ok(!types.includes('spell_resolved'), 'obrót nie jest rozstrzygnięciem czaru');
+  assert.ok(!types.some((t) => t === 'permanent_entered' || t === 'enters_the_battlefield'),
+    'obrót nie wywołuje zdolności wejścia na pole bitwy (ruling 2024-02-02)');
+  const perm = naPlanszy(state, 'riftburst-hellion');
+  assert.equal(perm.faceDown, false);
+  assert.equal(perm.ward, null, 'ward {2} znika razem z zakryciem');
+  assert.deepEqual(perm.subtypes, ['Hellion']);
+  assert.ok(effectiveKeywords(perm, state).includes('reach'), 'karta wraca z zasięgiem');
+});
+
+test('B61/170: twarzą do góry nie obrócisz (zdolność disguise wygasa po obrocie)', async () => {
+  const state = game();
+  put(state, 'hell', 'riftburst-hellion', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 6, { colors: ['R'] });
+  const perm = state.objects.get('hell');
+  assert.equal(perm.faceDown ?? false, false, 'karta leży twarzą do góry');
+  assert.deepEqual(commands(state).filter((c) => c.type === 'activate_ability'), [],
+    'brak oferty obrotu dla permanentu twarzą do góry');
+});
