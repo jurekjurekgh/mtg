@@ -13955,11 +13955,28 @@ jak u pozostałych 3 tokenów). Zero wad danych.
   (ta sama wycena −24 → −64 dla Withstand w przeciwnika, `scoreSum` bez
   zmian, **0 zmienionych wyborów**) — przypisane porównaniem pełnych śladów
   PRZED/PO (`--dump`), fixture zregenerowany (`15f3d2c`).
+- **F8 — dopisane w sesji 2026-09-29d (audyt PR #146, zn. F3):** w tym samym
+  PR weszły `src/table/ai-modes.js` (+13/−7) i `test/ai-modes.test.js` (+26) —
+  **zgłoszenie właściciela „AI-R8"**: prompty nie niosły talii Czarodziejki
+  w żadnym trybie poza skitem (`heroDeck`/`heroWorld` liczone w `baseCtx`
+  i przekazywane z `main.js`, ale nieużywane), więc model znał tylko talię bota
+  i milczał o talii gracza. Dodano linię z talią i światem gracza do czterech
+  budowniczych (`buildLorePrompt`, `buildPlayerPrompt`, `buildObserverPrompt`,
+  `buildLoreObserverPrompt`). Zmiana widoczna dla właściciela nie miała ani
+  słowa w opisie PR #146, ani w tej sekcji, ani w handoffie (pomiar audytu:
+  `grep -iE "ai-modes|AI-R8|heroDeck"` po `body` PR i po `docs/` = 0 trafień).
 
 **Bramy:** fast **7089/7089** · `test:all` **7360/7360** · build **70 /
 4617,0 kB** · golden 4/4 (po regeneracji) · benchmark szybki 672 mecze (97,9 % vs random,
 78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
 (`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
+
+> **KOREKTA (sesja 2026-09-29d, audyt PR #146, zn. F4):** liczby powyżej to
+> pomiar POŚREDNI, podpisany jako końcowy. Zmierzono ponownie: baza `6a47c35`
+> (głowa PR #145) = **7078/7078** i **70 / 4615,8 kB**; scalony `6789702`
+> (stan po tym PR) = **7101/7101** i **70 / 4621,1 kB**. Zapisane 7089/4617,0
+> nie jest ani jednym, ani drugim (klasa L92 — liczby mierzy się na końcu
+> sesji). Δ tego PR: **+23 testy / +5,3 kB**.
 
 **Dokumentacja:** budżet lektury 99 885/100 000 tokenów (reguła 3 L164
 skrócona, próg bez zmian); handoff `docs/setup/HANDOFF_2026-09-29b.md`.
@@ -13967,3 +13984,84 @@ Incydent: token GitHub wygasł, a sandbox cofnął wskaźnik gałęzi do `6a47c3
 zostawiając pliki — leczenie z ENVIRONMENT §2 (`git fetch` → `git reset
 --mixed FETCH_HEAD` → ponowny commit → push fast-forward) zadziałało; F6 i
 raport mają nowe SHA (`a051eb9`, `7c42656`).
+
+## 2026-09-29d — audyt scalonego PR #146: pięć znalezisk (F1–F6) (PR #147)
+
+**Tryb:** ADR 0020 B (audyt poprzedniego scalonego PR) + ADR 0021 (prompt
+„Kontynuujemy projekt." bez nazwanego tematu ⇒ pętla domyślna, bez pytania
+o kolejkę) + ADR 0016 (naprawy chirurgiczne) + ADR 0030 (CR dosłownie ze
+źródła). Przedmiot: PR #146 (`6789702`, 30 plików, +1680/−48). Raport:
+`docs/audits/AUDYT_PR146_2026-09-29.md`; plan:
+`docs/plans/PLAN_2026-09-29d-audyt-pr146.md`.
+
+**Znaleziska i naprawy (każda osobnym zielonym commitem):**
+
+- **F5** (`8f5cf4e`, L54/L13): `resolve_food_choice` przyznawał `+2` za
+  „nieblokowanego napastnika" bez sprawdzenia, KTO atakuje —
+  `view.combat.unblockedAttackers` opisuje napastników gracza ATAKUJĄCEGO, więc
+  bot wyceniał poświęcenie własnego Foodu pod **niezablokowanego napastnika
+  wroga** (sonda: `sacrifice` 32 zarówno przy własnym, jak i wrogim napastniku;
+  po naprawie 32 / 30, `keep` 42 bez zmian). Dodany warunek
+  `attackingPlayerId === view.playerId`; pin PMSSB-22/F5 (4 asercje); mutacja
+  F5-M1 → RED.
+- **F1** (`a7ae39d`, L48/L41/L107): **F6 z #145 był naprawą punktową, nie
+  klasową.** Wspólny `unitCoversAnyRequirement` trafił do JEDNEJ pętli
+  `spendMana`, a ręczna kopia `X.some((c) => reqColors.has(c))` została w 6
+  liniach tego samego pliku: komparatory sortu (372/373 faza pipów, 481/482
+  auto-tap sumy) i dwa **filtry** w bloku „obrona w głąch" (562/568, seed 2027)
+  o identycznym kształcie co naprawiony błąd — blok kończy się
+  `throw new Error('Brak kolorowej many')`, czyli tą samą awarią narzędzia.
+  Dodane `singleColorRequirements()` (mapowanie na wymagania jednokolorowe
+  żyło w 4 kopiach tekstowych) i wspólny predykat we wszystkich 7 miejscach
+  (PO: 14 wywołań, 0 kopii, 0 ręcznych mapowań). Zasięg zmierzony skanem
+  rejestru (583 karty), nie hipotezą: pip `{C}` w koszcie czaru **0**, w koszcie
+  zdolności **1** (`kozileks-shrieker`), źródeł bezbarwnych **8** ⇒ błąd
+  **utajony**, nie żywy; strażnikiem jest skan źródła z kotwicą
+  (`test/audyt-pr146-predykat-pipow-jeden.test.js`, 6 testów), mutacja F1-M1
+  → 2 RED.
+- **F2** (`4797270`, L5/L39): strażnik par CR z #145 deklarował w nagłówku parę
+  508.1c/509.1b (restrykcje) i 508.1d/509.1c (wymogi), ale skanował wyłącznie
+  `['508.1c','508.1d']` — w `src/` jest **16** cytatów sekcji 509 (13× 509.1b
+  + 3× 509.1c), więc zamiana literą obok przy blokowaniu przeszłaby zielono.
+  Wszystkie 16 jest POPRAWNE (kierunek potwierdzony u źródła: `509.1b` =
+  „can't block" + evasion abilities, `509.1c` = „must block"/maksimum liczby
+  spełnionych wymogów; cytat CR *Nov 14 2025 — TMNT*); wadliwy był wyłącznie
+  zasięg strażnika. +2 testy, kotwice treści (≥3 i ≥2 cytaty, by skan nie
+  przechodził pusto — L29), 2 fixture'y dowodu RED; fałszywe trafienia dziś 0
+  (przeliczone na 16 liniach); mutacja F2-M1 → RED.
+- **F3** (dokumentacja, ADR 0013 §4): **AI-R8** — zgłoszenie właściciela, że
+  prompty AI nie niosły talii Czarodziejki w żadnym trybie poza skitem
+  (`heroDeck`/`heroWorld` liczone w `baseCtx` i przekazywane z `main.js`, ale
+  nieużywane). Zmiana (`src/table/ai-modes.js` +13/−7, test +26) weszła w #146
+  bez słowa w opisie PR, w historii i w handoffie (pomiar: `grep -iE
+  "ai-modes|AI-R8|heroDeck"` po `body` PR i po `docs/` = 0 trafień). Dopisane
+  jako punkt F8 w sekcji 2026-09-29c.
+- **F4** (pomiar, L92): zapisane przez #146 **7089/7089**, **7360/7360**
+  i **4617,0 kB** to pomiar pośredni podpisany jako końcowy. Zmierzono oba
+  stany: baza `6a47c35` (głowa PR #145) = **7078/7078** i **70 / 4615,8 kB**;
+  scalony `6789702` = **7101/7101** i **70 / 4621,1 kB** ⇒ Δ PR #146 = **+23
+  testy / +5,3 kB**. Rozjazd w `test:all` wynosi dokładnie tyle samo (+12), co
+  wskazuje ten sam moment pomiaru (przed ostatnimi trzema commitami sesji #146).
+  Korekta dopisana w `HANDOFF_2026-09-29b.md` i w sekcji 2026-09-29c — bez
+  przepisywania historii.
+- **F6** (pomiar, L92/L142): plan tej sesji mówił „19 cytatów 509" — pomiar daje
+  **16**; korekta w raporcie audytu.
+
+**Sprawdzone i POPRAWNE (L11):** `pendingFoodChoice.creatureId`
+(`effects.js:4711`) jest brany przez `execute` z oczekującej decyzji, a
+`cmd.creatureId` z widoku jest ignorowany (`game-state.js:4940–4975`) ⇒ brak
+dziury zaufania/FoW (ADR 0017); `pumpChangesOutcome` zwraca `false` bez
+blokerów, więc premia „decisive" (+25) i „unblocked" (+2) nie zachodzą razem;
+F7 z #145/#146 (`friendlyMisaimPenalty`) czytany w całości — zgodny z pinem B6;
+kierunek CR 508.1c/508.1d naprawiony w #146 potwierdzony u źródła.
+
+**Bramy:** fast **7110 pass / 0 fail** · `test:all` **7381/7381** (423 s) · build
+**70 / 4623,5 kB** · benchmark szybki **672 mecze** (97,9 % vs random,
+78,6 % vs aggro, 0 niedokończonych) · tie-audit **720 partii**, 379 828 decyzji, exit 0 (remisy rozróżnialne: `attack` 279, `block` 220, `resolve_discard_choice` 37, `cast_spell` 23, `activate_ability` 21, `resolve_color_choice` 15, `resolve_opponent_target` 0 — identycznie jak po #146) ·
+`tools/cr-numery.mjs` 496 numerów/5179 cytatów OK.
+
+**Dokumentacja:** budżet lektury **99 885/100 000** — zapas **322 znaki**, więc
+ta sesja NIE dodała wpisu do `LESSONS.md` (wszystkie znaleziska mieszczą się
+w klasach L48/L41/L107, L5/L39, L92/L142, L54/L13, ADR 0013); kondensacja
+`LESSONS.md` jest pierwszym zadaniem sesji potrzebującej nowego numeru L.
+Handoff: `docs/setup/HANDOFF_2026-09-29d.md`.
