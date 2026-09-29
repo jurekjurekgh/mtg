@@ -13762,3 +13762,41 @@ skal (9/10 w ETB vs 0 w cast/aktywacji to ten sam efekt w trzech
 maskach); pomiar z CIEŃKĄ biblioteką potrafi zniekształcić całą sondaż
 (kary `libraryLossPenalty` dominują) — kotwice rodzin bibliotecznych
 mierzyć przy pełnej talii.
+
+## 2026-09-29 — PMSSB-20: mill (RE-AUDYT z nowym dowodem) (PR #144, cz. 8)
+
+Zlecenie właściciela: „kontynuuj z PMSSB-19, 20, 21 i dalszymi". Rodzina
+mill (13 kart) była POKRYTA, ale re-audyt w stylu PMSSB-15 z nowym
+dowodem: (1) brief PMSSB każe liczyć zagrożenie deck-out — po stronie
+OFENSYWNEJ to wyścig bibliotek; (2) combo self-mill + reanimacja.
+
+**Dowód**: `playerView` niesie obie biblioteki jako `hidden`, ale
+ZLICZALNE (liczebność jawna mimo CR 402.2). POMIAR PRZED
+(`/tmp/pmssb20-mill-przed.mjs`, tome-scour): mill wroga = **85
+niezależnie od jego biblioteki** — mill 5 przy ich 5 kartach (dobijają do
+0 = przegrają przy najbliższym dobraniu, CR 121.4/704.5b) warte tyle samo
+co mill w pełną bibliotekę! Self-mill = **−65 niezależnie** od reanimacji
+w ręce i od zapasu własnej biblioteki (flat −80).
+
+**Luki**: 4 skale efektu (L41: cast −80/+20+3n, M96 −25/+6+2n, guard 8356,
+flat +2); foe-mill ślepy na wyścig bibliotek; self-mill pod reanimację
+niewidoczny (celowany flat −80 vs niecelowany +6 synergii — patchwork);
+flat −80 bez drabiny deck-outu.
+
+**Model** (5 pokręteł `mill*`): `foeMillValue` = `20+3n` (baza historyczna
+— anty-over-fix) + presja `4·max(0, 12−po)` / `+400` gdy mill DOMYKA ich
+niepustą bibliotekę (wygrana przy ich dobraniu); `foeLib ≤ 0` → baza
+płaska (artefakt setupu — poprawka po failu testu D Escape).
+`selfMillValue` = drabina deck-outu (−120/−20/−10) + synergia grobu
+(+6/−25 — M200/R: MOŻLIWOŚĆ, nie pewność) + `15·min(reanimaty w ręce, 2)`
+− `55` gdy celowany (guard −80 historyczny bez dryfu). Guard „jedyny
+bloker" (M202/J) = `−60 + foeMillValue` — anulacja premii: fine musi
+PREBIĆ mill nawet z presją (właściciel: utrata jedynego blokera > nawet
+mill-domknięcie; klasa L3).
+
+**Kotwice PO**: S01 foe fat 85 (baza bez dryfu) · S02 ich 6 kart 129
+(presja) · S03 ich 5 kart **485** (wygrana!) · S04 self −65 (guard) ·
+S05 self + reanimate **−50** (combo +15) · S06 self bibl. 6 −85 (drabina).
+Test 6 (RED 4/6 — 2 kotwice L41-bez-dryfu celowo zielone). Brany: fast
+7020/7020, all 7291/7291 (golden BEZ dryfu), build 70 / 4578,4 kB;
+tie-audit 28.3% (10.7% realnych); mirror 48-48×3; Tester 3×0.

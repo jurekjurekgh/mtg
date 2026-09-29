@@ -125,6 +125,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'searchToHandBase',         // karta do ręki (selekcja > losowe dobranie 6)
   'searchLandScrewBonus',     // dopłata za ląd do ręki przy manascrew (moje lądy < 3)
   'searchTwoCardsValue',      // Final Parting (2 karty: ręka + grób = 9 + 7)
+  'millFoeDeckOutWinValue',   // PMSSB-20: mill do 0 = wygrana przy ich dobraniu (CR 121.4)
+  'millFoePressureWeight',    // PMSSB-20: waga presji deck-outu wroga (wyścig bibliotek)
+  'millFoePressureCap',       // PMSSB-20: próg presji (ich karty po millu poniżej = rośnie)
+  'millReanimateBonus',       // PMSSB-20: self-mill pod reanimację w ręce (combo)
+  'millSelfTargetGuard',      // PMSSB-20: guard celowanego self-millu (−80 historyczne)
   // (PMSSB-8/F-L1b: 'ferociousLootExpected' usunięte — may-loot-rider
   // schodzi do LOOT_NET_VALUE; decyzja modalna ma literalny 5-vs-(−2).)
   // D (uwaga właściciela 2026-09-23c, Cemetery Recruitment): karta wracająca
@@ -395,6 +400,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   searchToBattlefieldBase: 10,
   searchToHandBase: 9,
   searchLandScrewBonus: 5,
+  // PMSSB-20 (mill — re-audyt): presja deck-outu wroga (wyścig bibliotek)
+  // + combo self-mill z reanimacją. Bazy 20+3n / −80 historyczne (guard).
+  millFoeDeckOutWinValue: 400,
+  millFoePressureWeight: 4,
+  millFoePressureCap: 12,
+  millReanimateBonus: 15,
+  millSelfTargetGuard: 55,
   searchTwoCardsValue: 16,
   // (PMSSB-8/F-L1b: ferociousLootExpected usunięte — patrz klucze wyżej.)
   drawCardValue: 6,

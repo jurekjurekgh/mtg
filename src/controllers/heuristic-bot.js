@@ -4791,6 +4791,61 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'search_library_to_battlefield_tapped', 'search_library_two_cards_hand_and_grave',
   ]);
 
+  /** PMSSB-20: synergia grobu dla mill-siebie (M173/A — historyczna logika). */
+  function selfMillGraveSynergy(view) {
+    const ownCardIds = [
+      ...view.zones.battlefield.filter((o) => o.controllerId === view.playerId),
+      ...view.zones.hand.filter((o) => o.controllerId === view.playerId),
+    ].map((o) => o.cardId).filter(Boolean);
+    return ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
+      .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
+  }
+  const REANIMATE_EFFECT_TYPES = ['return_permanent_from_graveyard',
+    'reanimate_under_your_control', 'unearth_return', 'return_card_from_graveyard_to_hand'];
+  /** PMSSB-20: karty reanimacji w ręce (cap 2) — sygnał combo z self-millem. */
+  function holdsReanimation(view) {
+    let n = 0;
+    for (const card of view.zones.hand ?? []) {
+      const list = (x) => (Array.isArray(x) ? x : x ? [x] : []);
+      const effects = [...list(card.spell?.effect), ...list(card.spell?.effects),
+        ...(card.abilities ?? []).flatMap((ab) => [...list(ab.effect), ...list(ab.effects)])];
+      if (effects.some((e) => REANIMATE_EFFECT_TYPES.includes(e?.type))) n += 1;
+    }
+    return Math.min(2, n);
+  }
+  /**
+   * PMSSB-20: wartość mill WROGA (CR 121.4/704.5b — dobranie z pustej
+   * biblioteki = przegrana; CR 402.2 — treść biblioteki zakryta, ale jej
+   * LICZEBNOŚĆ jest jawna i niesiona przez widok). Presja rośnie
+   * nieliniowo, gdy ich biblioteka cienkieje; mill do 0 = wygrana przy ich
+   * najbliższym dobraniu. Baza 20+3n historyczna (skala cast — anty-over-
+   * fix; ścieżka aktywacji M96 (6+2n) zunifikowana w górę, L41).
+   */
+  function foeMillValue(view, amount) {
+    const foe = enemy(view);
+    const foeLib = foe ? (view.zones.library ?? []).filter((o) => o.controllerId === foe.id).length : 0;
+    if (foeLib <= 0) return 20 + 3 * amount; // nie ma CZEGO mielić — baza płaska
+    const after = foeLib - amount;
+    if (after <= 0) return 20 + 3 * amount + P.millFoeDeckOutWinValue;
+    return 20 + 3 * amount
+      + P.millFoePressureWeight * Math.max(0, P.millFoePressureCap - after);
+  }
+  /**
+   * PMSSB-20: wartość mill SIEBIE — wspólna dla ścieżek celowanych i
+   * niecelowanych (L41). Drabina deck-outu (−120/−20/−10) i synergia grobu
+   * (+6/−25 — M200/R: zakryta biblioteka = MOŻLIWOŚĆ, nie pewność) są
+   * historyczne; NOWE: `millReanimateBonus` za kartę reanimacji w ręce —
+   * self-mill pod reanimację to najlepszy moment zdolności. Targeted bez
+   * synergii = −80 dokładnie jak dawniej (guard −25−55).
+   */
+  function selfMillValue(view, amount, { targeted = false } = {}) {
+    const myLib = (view.zones.library ?? []).filter((o) => o.controllerId === view.playerId).length;
+    if (myLib - amount <= 0) return -120; // deck-out — nigdy
+    const deckOutRisk = myLib - amount <= 4 ? -20 : myLib - amount <= 8 ? -10 : 0;
+    const graveSynergy = selfMillGraveSynergy(view);
+    return (graveSynergy ? 6 : -25) + holdsReanimation(view) * P.millReanimateBonus
+      + deckOutRisk - (targeted ? P.millSelfTargetGuard : 0);
+  }
   function freeCastTargetPenalty(view, effects, cmd) {
     const target = objectOnBoard(view, (cmd.targets ?? [])[0]) ?? null;
     // B (2026-09-28e): wartość tarczy prewencji ODEJMUJE się od kary — cel
@@ -7263,12 +7318,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Mill (Sweet Oblivion / Cellar Door): cel to gracz. Mielenie
           // własnej biblioteki to deck-out — kara; mielenie przeciwnika to zysk.
           if (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom') {
+            // PMSSB-20 (re-audyt, L41): jedna skala mill — foeMillValue/
+            // selfMillValue (dawniej 4 skale: cast −80/+20+3n, M96 −25/+6+2n,
+            // guard 8356, flat +2). Presja deck-outu wroga (wyścig
+            // bibliotek) i combo z reanimacją — katalog helperów wyżej.
             const playerTargets = (cmd.targets ?? []).filter((id) => typeof id === 'string' && (id === view.playerId || id === enemy(view)?.id));
             const millsSelf = playerTargets.includes(view.playerId);
             const millsFoe = enemy(view)?.id != null && playerTargets.includes(enemy(view).id);
-            if (millsSelf && !millsFoe) score -= 80;
-            else if (millsSelf) score -= 50;
-            else if (millsFoe) score += 20 + 3 * (effect.amount ?? 1);
+            const millAmount = effect.amount ?? 1;
+            if (millsFoe) score += foeMillValue(view, millAmount);
+            if (millsSelf) score += selfMillValue(view, millAmount, { targeted: true });
             // M173/A (Gray Slaad — Entropic Decay „Mill four cards"): mill
             // BEZ celu mieli WŁASNĄ bibliotekę. Wartość zależy od synergii
             // grobu (deskryptory zależne od liczby kart w grobie — np.
@@ -7282,21 +7341,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // zamiast postawić blokera. Synergia to MOŻLIWOŚĆ, nie pewność:
             // premia konserwatywna (+6), a ryzyko deck-outu stopniowane
             // im bliżej dna biblioteki.
-            else if (playerTargets.length === 0) {
-              const n = effect.amount ?? 1;
-              const myLib = view.zones.library.filter((o) => o.controllerId === view.playerId).length;
-              if (myLib - n <= 0) score -= 120; // deck-out — nigdy
-              else {
-                const ownCardIds = [
-                  ...view.zones.battlefield.filter((o) => o.controllerId === view.playerId),
-                  ...view.zones.hand.filter((o) => o.controllerId === view.playerId),
-                ].map((o) => o.cardId).filter(Boolean);
-                const graveSynergy = ownCardIds.some((cid) => (cardDef(cid)?.abilities ?? [])
-                  .some((a) => a?.condition?.minCreatureCardsInGraveyard != null));
-                const deckOutRisk = myLib - n <= 4 ? -20 : myLib - n <= 8 ? -10 : 0;
-                score += (graveSynergy ? 6 : -25) + deckOutRisk;
-              }
-            }
+            // Niecelowany (M173/A): celuje autora (CR 115.1) — wspólna
+            // skala selfMillValue (M200/R: biblioteka wroga zakryta
+            // (CR 402.2) = stała +18 bez pokrycia — usunięta).
+            else if (playerTargets.length === 0) score += selfMillValue(view, millAmount);
           }
           // PMSSB-6/F-A1: odrzut WROGA (cel to gracz) — dotąd 0-dodane
           // (divest/mindstab = czysta baza 50). Model z foeRipValue (L41:
@@ -8358,7 +8406,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const source = objectOnBoard(view, cmd.objectId);
             const otherBlockers = myCreatures(view).filter((o) => o.id !== cmd.objectId
               && !o.tapped && (o.power ?? 0) > 0).length;
-            if (source && !source.tapped && otherBlockers === 0) score -= 60;
+            if (source && !source.tapped && otherBlockers === 0) {
+              // PMSSB-20: fine musi PREBIĆ premię mill (klasa L3) — przy
+              // presji deck-outu premia rośnie, więc guard ANULUJE premię
+              // i dolicza fine (właściciel: utrata jedynego blokera boli
+              // więcej niż nawet mill-domknięcie ich biblioteki).
+              score -= 60 + Math.max(0, foeMillValue(view, effect.amount ?? 1));
+            }
             const foeLibrary = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
             if (foeLibrary > myLibraryCount(view)) score -= 60;
           }
@@ -8451,7 +8505,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // siebie przybliża deck-out, wroga to zysk.
           const playerTarget = (cmd.targets ?? []).find((id) => id === view.playerId || id === enemy(view)?.id);
           if (playerTarget && (effect.type === 'mill_cards' || effect.type === 'mill_from_bottom')) {
-            score += playerTarget === view.playerId ? -25 : 6 + 2 * (effect.amount ?? 1);
+            // PMSSB-20 (L41): ta sama skala co czary (dawniej M96 6+2n).
+            score += playerTarget === view.playerId
+              ? selfMillValue(view, effect.amount ?? 1, { targeted: true })
+              : foeMillValue(view, effect.amount ?? 1);
           }
           // M237/3+4 (Blazing Torch + model właściciela): obrażenia/utrata życia
           // z AKTYWOWANEJ zdolności — ta sama wycena co czary (damageTargetValue):

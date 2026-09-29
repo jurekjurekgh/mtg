@@ -57,6 +57,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
 | proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
 | search_library (tutory) | 11 | DONE (2026-09-29) | §PMSSB-19 niżej; `test/audyt-pmssb19-search.test.js` (7); `searchRiderValue` (L41: 3 ścieżki — tabela ETB/cast/aktywacja; R2 = Final Parting `two_cards` warty 0 wszędzie + guard deck-outu na 2 karty; 4 pokrętła `search*`) |
+| mill (re-audyt) | 13 | DONE (2026-09-29) | §PMSSB-20 niżej; `test/audyt-pmssb20-mill.test.js` (6); `foeMillValue`/`selfMillValue` (L41: 4 skale → 1; R2 = presja deck-outu wroga + mill do 0 = wygrana przy ich dobraniu CR 121.4; R3 = self-mill pod reanimację w ręce; guard jedynego blokera anuluje premię); 5 pokręteł `mill*` |
 | Cuombajj (1 karta) | 1 | OUT (mikro-pętla, nie PMSSB) | 41 remisów w tie-audycie, ale to 1 karta |
 
 ## PMSSB-1 — bounce (2026-09-25)
@@ -240,6 +241,38 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-20 — mill (re-audyt) (2026-09-29)
+
+**Dowód**: widok niesie obie biblioteki jako `hidden` ale ZLICZALNE
+(liczebność jawna — CR 402.2 chroni treść i kolejność). POMIAR PRZED
+(tome-scour, `/tmp/pmssb20-mill-przed.mjs`): mill wroga = **85 niezależnie
+od jego biblioteki** — mill 5 przy ich 5 kartach (dobijają do 0 = przegrają
+przy najbliższym dobraniu, CR 121.4/704.5b) warte tyle samo co mill w pełną
+bibliotekę! Self-mill = **−65 niezależnie od reanimacji w ręce** i od
+zapasu własnej biblioteki (flat −80 bez drabiny deck-outu).
+
+**Luki**: (1) 4 skale tego samego efektu (L41: cast −80/+20+3n, M96
+−25/+6+2n, guard 8356, flat +2); (2) foe-mill ślepy na wyścig bibliotek;
+(3) self-mill pod reanimację niewidoczny (patchwork: celowany flat −80,
+niecelowany ma +6 synergii); (4) flat −80 nie stopniował ryzyka deck-outu.
+
+**Model**: `foeMillValue` = `20+3n` (baza historyczna) + presja
+`4·max(0, 12−po)` / `+400` gdy mill DOMYKA ich niepustą bibliotekę (wygrana
+przy ich dobraniu); `foeLib ≤ 0` → baza płaska (nie ma czego mielić).
+`selfMillValue` = drabina deck-outu (−120/−20/−10) + synergia grobu
+(+6/−25 — M200/R: zakryta biblioteka = MOŻLIWOŚĆ) + `15·min(reanimaty w
+ręce, 2)` − `55` gdy celowany (guard −80 historyczny). Guard „jedyny
+bloker" (M202/J) = `−60 + foeMillValue` (anulacja premii — właściciel:
+utrata jedynego blokera > nawet mill-domknięcie; klasa L3).
+
+**Kotwice PO** (test 6, RED 4/6 — 2 kotwice L41-bez-dryfu celowo zielone):
+S01 foe fat 85 (baza) · S02 ich 6 kart 129 (presja) · S03 ich 5 kart 485
+(wygrana) · S04 self bez synergii −65 (guard) · S05 self + reanimate −50
+(combo +15) · S06 self bibl. 6 −85 (drabina deck-outu).
+
+**Brany**: fast 7020/7020 · all 7291/7291 (golden BEZ dryfu) · build
+70/4578.4 kB · tie 28.3%/10.7% · mirror 48-48×3 · Tester 3×0.
 
 ## PMSSB-19 — search_library (tutory) (2026-09-29)
 
