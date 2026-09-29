@@ -56,20 +56,21 @@ Waga ×0 = powrót dawnego remisu (kotwica anty-over-fix).
 
 ## Kroki i kryteria ukończenia
 
-- [ ] Krok 1: sonda PRZED (`tools/pmssb21-cuombajj-sonda.mjs`) — tabela wyżej.
-- [ ] Krok 2: implementacja R1 + pokrętła w `heuristic-params.js` (klucze na
+- [x] Krok 1: sonda PRZED (`tools/pmssb21-cuombajj-sonda.mjs`) — tabela wyżej.
+- [x] Krok 2: implementacja R1 + pokrętła w `heuristic-params.js` (klucze na
   liście + defaults z uzasadnieniem).
-- [ ] Krok 3: `test/audyt-pmssb21-opponent-target.test.js` — piny: duże
+- [x] Krok 3: `test/audyt-pmssb21-opponent-target.test.js` — piny: duże
   zagrożenie bije małe (A), lethal bez zmian (B), własny/gracz bez zmian
   (C/D), waga ×0 = remis (kotwica M429).
-- [ ] Krok 4: mutacje (L13) + sonda PO + `bot-tie-audit` PO (cel: remisy
+- [x] Krok 4: mutacje (L13) + sonda PO + `bot-tie-audit` PO (cel: remisy
   rozróżnialne tej decyzji → 0; remisy równoważne (te same statystyki)
   zostają — to remisy uczciwe, L5).
-- [ ] Krok 5: golden-master bez dryfu (pary golden nie zawierają Cuombajj —
+- [x] Krok 5: golden-master bez dryfu (pary golden nie zawierają Cuombajj —
   `decks/wiedzmin-bg.txt` tylko w tie-audicie; potwierdzić pomiarem).
-- [ ] Krok 6: dokumentacja — sekcja w `docs/PMSSB.md` + wiersz rejestru
+- [x] Krok 6: dokumentacja — sekcja w `docs/PMSSB.md` + wiersz rejestru
   (OUT → DONE (mikro)), `docs/PROJECT_HISTORY.md`, handoff, opis PR.
-- [ ] Bramy: `npm test`, `npm run build`, `npm run test:all`.
+- [x] Bramy: `npm test` **7029/7029**, `npm run test:all` **7300/7300**,
+  `npm run build` 70 / 4580,9 kB; tie-audit PO: rozróżnialne 190 → 0.
 
 ## Ryzyka
 
