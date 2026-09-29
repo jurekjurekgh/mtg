@@ -815,6 +815,22 @@ function enemyHasFlyingAttackers(view) {
 
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
+// PMSSB-23/F1 (L41): JEDNA klasyfikacja liczników (CR 122) — wspólna dla
+// `cast_spell`, `activate_ability` i kary za chybiony cel. Dotąd reguła miała
+// TRZY kopie: `BENEFICIAL_COUNTERS` (friendlyMisaimPenalty), lista `beneficial`
+// w gałęzi czarów i `DEBUFF_COUNTERS` w gałęzi zdolności — a rozjazd był
+// mierzalny: `stun` w czarze (Stall Out) nie był wyceniany wcale, choć ta sama
+// instrukcja ze zdolności dostawała 10 + 4·amount. Klasyfikacja wyłącznie po
+// deskryptorze licznika, bez nazw kart (ADR 0002).
+const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+// Wrogie dla obdarowanego: obniżają statystyki albo blokują odkręcanie
+// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Silnik ma ten sam
+// podział w `effect-intent.js`
+// (`HOSTILE_COUNTERS`) — tu dodatkowo liczniki minusowe, których tamta lista
+// nie niesie (w katalogu nie ma dziś triggera z `-1/-1`, ale reguła musi być
+// kompletna na wejście takiej karty).
+const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
+
 const NEVER = Number.NEGATIVE_INFINITY;
 
 /**
@@ -2772,6 +2788,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   };
 
+  /**
+   * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
+   * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
+   * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
+   * Stall Out na tapniętym 6/6 = 38, czyli 3 liczniki stun wnosiły tyle co nic).
+   * `target` rozwiązuje wywołujący (zdolność bez celu = źródło).
+   * Wartości bez zmian względem gałęzi zdolności (kotwica anty-over-fix M429:
+   * najsłabszy realny wariant zostaje tam, gdzie był).
+   */
+  const counterEffectValue = (view, target, counterName, amount = 1, ctx = {}) => {
+    if (!target) return 0;
+    const mine = target.controllerId === view.playerId;
+    // Wrogi licznik na WROGU = zysk (osłabienie/zablokowanie), na własnym =
+    // samobój (L3). Dobijanie licznikiem obniżającym wytrzymałość (CR 704.5f)
+    // warte więcej; `stun`/`-1/0` nie zmniejszają toughness, więc nie zabijają.
+    if (DEBUFF_COUNTERS.has(counterName)) {
+      if (mine) return -90;
+      const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
+      const toughLeft = (target.toughness ?? 0) - (target.damage ?? 0);
+      const kills = reducesToughness && toughLeft <= amount;
+      return kills ? 30 + (target.power ?? 0) * 2 : 10 + 4 * amount;
+    }
+    // Przyjazny licznik statystyczny: własny stwór rośnie (wartość z ciała
+    // gospodarza i okna walki), wrogi stwór dostaje prezent za naszą manę
+    // (M155) — kara tylko za stwora, inny permanent nic z niego nie ma.
+    if (STAT_COUNTERS.has(counterName) || KEYWORD_COUNTERS.has(counterName)) {
+      if (mine) return counterHostValue(view, target, counterName, amount);
+      return (target.kind === 'creature' || (target.types ?? []).includes('Creature')) ? -90 : 0;
+    }
+    // Licznik zasobowy (oil/level/point…): wartość TYLKO, gdy inna zdolność
+    // źródła go konsumuje (`cost.removeCounter`) i zapas jest poniżej potrzeby
+    // (M173/D — Rustvine Cultivator tapowany co turę na licznik bez konsumenta).
+    // `charge` wycenia gałąź station_counters (M429).
+    if (counterName === 'charge') return 0;
+    const source = ctx.source ?? null;
+    const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
+      .filter((a) => a?.cost?.removeCounter?.name === counterName);
+    const need = consumers.length > 0
+      ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
+      : 0;
+    const current = (target.counters ?? {})[counterName] ?? 0;
+    if (need === 0 || current >= need) return -25; // nikt nie konsumuje / zapas pełny
+    const ownPostcombat = view.turn.activePlayerId === view.playerId
+      && view.turn.phase === 'postcombat_main';
+    return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
+  };
+
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
   // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
   // zdjęcia czarem nawet przy niskich statystykach). Czytamy wyłącznie widok
@@ -4117,7 +4180,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['prevent_next_damage', 40],
     ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
   ]);
-  const BENEFICIAL_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+  // PMSSB-23/F1: alias wspólnej klasyfikacji (jedna prawda o licznikach).
+  const BENEFICIAL_COUNTERS = STAT_COUNTERS;
 
   /** Kara za skierowanie efektu PRZYJAZNEGO we wrogie rzeczy (M179/E). */
   function friendlyMisaimPenalty(view, effects, cmd, target) {
@@ -7835,19 +7899,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Reguła generyczna (ADR 0002): pozytywny licznik na WŁASNYM stworze
           // = zysk, na stworze przeciwnika = strata (wzmacniamy wroga).
           if (effect.type === 'add_counter') {
-            const counterName = effect.counter ?? '+1/+1';
-            const beneficial = counterName === '+1/+1' || counterName === '+1/+0'
-              || counterName === '+0/+1' || counterName === 'shield';
-            const amount = Math.max(1, effect.amount ?? 1);
-            if (beneficial && target) {
-              if (target.controllerId === view.playerId) {
-                // M429: gospodarz różnicowany wartością ciała + kontekstem walki
-                // (ta sama funkcja co w gałęzi aktywowanej zdolności, L41).
-                score += counterHostValue(view, target, counterName, amount);
-              } else if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
-                score -= 90; // wzmacnianie stwora przeciwnika — mocna kara
-              }
-            }
+            // PMSSB-23/F1 (L41): wspólna wycena licznika — TA SAMA funkcja co
+            // w gałęzi aktywowanej zdolności, więc `stun`/`-1/-1` rzucone
+            // czarem (Stall Out, Lodestone Needle) są warte tyle, co z
+            // {T}-zdolności (pomiar PRZED: 0 pkt i cel wybierany z enumeracji).
+            score += counterEffectValue(view, target, effect.counter ?? '+1/+1',
+              Math.max(1, effect.amount ?? 1));
           }
           // PMSSB-18: proliferate jako rider — wartość najlepszego podzbioru
           // (razem z synergia kolejności: add_counter TEGO czaru rozstrzyga
@@ -8624,56 +8681,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // źródła je konsumuje (cost.removeCounter) i zapas < potrzeb;
           // uzupełnianie po walce (postcombat), nie kosztem ataku/bloku.
           if (effect.type === 'add_counter') {
-            const counterName = effect.counter ?? '+1/+1';
-            // M221/F (zgłoszenie właściciela, Trigon of Corruption): licznik
-            // DEBUFF (`-1/-1`, `-1/0`, `-0/-1`) na WROGIM stworze to czysty zysk
-            // (osłabienie/zabicie), a wycena traktowała go jak licznik zasobowy
-            // bez konsumenta → kara −25, więc bot NIGDY nie używał zdolności
-            // „{2},{T},usuń charge: -1/-1 na cel". Rozpoznanie po deskryptorze
-            // (minus w nazwie licznika, CR 122), bez nazw kart (ADR 0002).
-            const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
-            const statCounter = ['+1/+1', '+1/+0', '+0/+1', 'shield'].includes(counterName)
-              || KEYWORD_COUNTERS.has(counterName);
+            // PMSSB-23/F1 (L41): wspólna wycena licznika (ta sama funkcja co
+            // w gałęzi czarów) — reguły M221/F (wrogi debuff = zysk, własny =
+            // samobój), M429 (gospodarz różnicowany ciałem) i M173/D (licznik
+            // zasobowy tylko z konsumentem) żyją teraz w `counterEffectValue`.
+            // Cel bez jawnego wskazania = źródło (outlast na sobie).
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
-            const amount = Math.max(1, effect.amount ?? 1);
-            if (DEBUFF_COUNTERS.has(counterName)) {
-              // Debuff na wrogim stworze = wartość; kill (toughness ≤ amount)
-              // premiowany. Na WŁASNYM to samobój — twarda kara (L3).
-              if (tgt && tgt.controllerId !== view.playerId) {
-                // Tylko liczniki obniżające WYTRZYMAŁOŚĆ mogą zabić (CR 704.5f).
-                // `stun`/`-1/0` nie zmniejszają toughness — osłabiają/blokują,
-                // ale nie liczymy ich jako lethal.
-                const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
-                const toughLeft = (tgt.toughness ?? 0) - (tgt.damage ?? 0);
-                const kills = reducesToughness && toughLeft <= amount;
-                score += kills ? 30 + (tgt.power ?? 0) * 2 : 10 + 4 * amount;
-              } else {
-                score -= 90;
-              }
-            } else if (statCounter) {
-              // M429 (P1 Mutagen): dotąd płaskie 8 + 4·amount dla KAŻDEGO
-              // własnego celu (pomiar: remis 14/14/14 — bot brał pierwszy
-              // legalny wariant, często token 1/1). Ta sama funkcja co w
-              // bliźniaczej gałęzi czarów (L41): wartość rośnie z ciałem
-              // gospodarza (wzorzec aury), premia gdy licznik poprawia wynik
-              // TRWAJĄCEJ walki, kara gdy gospodarz i tak ginie w tej turze.
-              if (tgt?.controllerId === view.playerId) score += counterHostValue(view, tgt, counterName, amount);
-              else score -= 90;
-            } else if (counterName !== 'charge') { // charge wycenia station_counters
-              const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
-                .filter((a) => a?.cost?.removeCounter?.name === counterName);
-              const need = consumers.length > 0
-                ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
-                : 0;
-              const current = (tgt?.counters ?? {})[counterName] ?? 0;
-              if (need === 0 || current >= need) {
-                score -= 25; // nikt nie konsumuje / zapas pełny — tap za nic
-              } else {
-                const ownPostcombat = view.turn.activePlayerId === view.playerId
-                  && view.turn.phase === 'postcombat_main';
-                score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
-              }
-            }
+            score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
+              Math.max(1, effect.amount ?? 1), { source });
           }
           // M429 (P3 Charismatic Vanguard): masowy pump/debuff „do końca tury"
           // z AKTYWOWANEJ zdolności — dotąd ta rodzina nie miała tu wyceny
