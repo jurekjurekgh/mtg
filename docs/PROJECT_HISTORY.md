@@ -13800,3 +13800,51 @@ S05 self + reanimate **−50** (combo +15) · S06 self bibl. 6 −85 (drabina).
 Test 6 (RED 4/6 — 2 kotwice L41-bez-dryfu celowo zielone). Brany: fast
 7020/7020, all 7291/7291 (golden BEZ dryfu), build 70 / 4578,4 kB;
 tie-audit 28.3% (10.7% realnych); mirror 48-48×3; Tester 3×0.
+
+## 2026-09-29b — audyt scalonego PR #144 (F1–F3) + PMSSB-21: opponent-target (mikro) (PR #145)
+
+**Audyt PR #144** (38 plików, +4291/−171; raport
+`docs/audits/AUDYT_PR144_2026-09-29.md`): przegląd każdego zmienionego
+pliku źródłowego + 15 mutacji (L13) + analiza dryfu golden. Trzy znaleziska
+naprawione u root cause (osobne commity):
+
+- **F1 (L1, `25d4974`)**: okno ETB prewencji czytało `view.pendingEffects` —
+  pole, którego `playerView` NIGDY nie emituje (jedyne wystąpienie w
+  `src/test/tools`). Pin: burn na stosie podnosi okno Shieldmage'a
+  66,6009 → 77,4009; mutacja F1-M → 1 RED.
+- **F2/F2b (L41/L72, `25d4974`)**: `incomingDamageOnStack` i
+  `permanentDoomedThisTurn` sumowały wyłącznie `spell.effects` (+`modes`),
+  pomijając `abilityEffects` zdolności na stosie (ADR 0017) — 4 z 6
+  czytników stosu rozjechane. Jeden wspólny `stackEntryEffects(entry)`
+  w 6 miejscach; pin realnej aktywacji Ballista Watcher 61 → 77,
+  Kheru Dreadmaw −16 → +3; mutacje F2-M → 2 RED, F2b-M → 1 RED.
+- **F3 (L72, `920abea`)**: `holdsReanimation` bez brata
+  `return_creature_card_to_hand` (Grave Exchange, PMSSB-20) — self-mill
+  −65 → −50; mutacja F3-M → 1 RED.
+
+Mutacje pozostałych pinów #144 (D-M saga-LKI, A-M ordynał kreatora, C-M
+encje HTML, C2-M detektor M266, 15/16/19/20-M, B3-M) — wszystkie RED.
+**NIEŁAPANE (uwaga U1 w raporcie)**: B-M (wpis `prevent_next_damage` poza
+mapą `FRIENDLY_TARGET_EFFECTS`) i B2-M (gałąź celu-gracza) → 0 fail; element
+nośny pakietu B to odejmowanie tarczy (B3-M łapie). Golden-master: dryf
+z #144 wyłącznie wycenowy (4/6 hashy + jedna scoreSum +2,0, liczby decyzji
+i histogramy bez zmian), po naprawach bez nowego dryfu (4/4).
+
+**PMSSB-21 (mikro-pętla, `81d7e99` + `e568885` + `e1840ca`)**: rozpoznanie
+przez audyt remisów (`bot-tie-audit --gry=60`, 720 partii) — wiersz rejestru
+„Cuombajj (OUT, 41 remisów)" urósł do **190/190 remisów rozróżnialnych**
+w `resolve_opponent_target` (305 decyzji; największy klaster poza rodzinami
+POKRYTYMI). Finding F1: gałąź „wrogi stwór, który ocala" = goła stała 30
+(wybór arbitralny, pierwsza oferta enumeracji). Fala R1: baza 30 (kotwica
+M429) + `min(15, 0,5 × (moc·2 + wytrz))` — dopłata za zagrożenie celu
+(1 obrażenie trwa do końca tury, CR 514.2). Próg dobicia, własny stwór
+i gracze bez zmian. Piny: `test/audyt-pmssb21-opponent-target.test.js` (5);
+mutacje W-M/CAP-M/BASE-M/KOT-M = 4× RED. **Pomiar PO**: rozróżnialne remisy
+decyzji 190 → 0 (zostało 16 równoważnych — bliźniacze cele; L5), globalnie
+akcyjnych 5903 → 5720. Bramy: fast 7029/7029, build 70/4580,9 kB, golden
+4/4 bez dryfu (pary golden bez Cuombajj — karta tylko w `decks/wiedzmin-bg.txt`).
+
+Uwaga audytu #144 (U2/U3): `abilitiesStripped`/`manaSource` zweryfikowane
+pośrednio pinami rodzeństwa F5b; literały CR nowych numerów tabeli
+(615.4/615.6/701.14d/714.2) cytowane w kodzie i pilnowane tabelą, bez
+ponownego pobrania u źródła (do spot-checku ADR 0030 przy zmianie regułowej).
