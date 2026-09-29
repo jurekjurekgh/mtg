@@ -168,6 +168,25 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   if (condition.enteredUntapped) {
     return eventData.enteredTapped === false;
   }
+  // Training (Trening, CR 702.149, Gryffwing Cavalry): „attacks with ANOTHER creature
+  // with greater power" — porównanie mocy w chwili DEKLARACJI atakujących
+  // (ruling VOW 2021-11-19: wzrost siły PO deklaracji nie wywołuje triggera;
+  // warunek czyta listę współdeklarowanych atakujących z kontekstu zdarzenia),
+  // a nie na bieżącym stanie pola bitwy.
+  if (condition.attackedWithGreaterPower) {
+    // Wynik porównania ZAMROŻONY w kontekście zdarzenia (pętla `attacks`
+    // liczy go raz, przy deklaracji) — przy rozstrzyganiu warunek jest
+    // sprawdzany ponownie (CR 603.4), a wtedy drugi atakujący może już nie
+    // żyć albo mieć mniejszą siłę; ruling VOW 2021-11-19 mówi wprost, że
+    // licznik zostaje. Brak zamrożonej wartości = policz na żywo (droga
+    // wywołania bez kontekstu, np. testy syntetyczne).
+    if (eventData.attackedWithGreaterPower != null) return eventData.attackedWithGreaterPower === true;
+    const ids = eventData.attackerIds ?? [];
+    const sourcePower = effectivePower(sourceObject, state) ?? 0;
+    return ids.some((id) => id !== sourceObject?.id
+      && state.objects.get(id)?.zone === 'battlefield'
+      && effectivePower(state.objects.get(id), state) > sourcePower);
+  }
   // „At the beginning of ENCHANTED player's upkeep" (Curse of the Pierced
   // Heart): trigger odpala się tylko w upkeep gracza zaczarowanego przez
   // źródło — nie kontrolera (karta „Enchant player").
@@ -545,6 +564,23 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const isVehicle = (object.subtypes ?? []).includes('Vehicle');
       if (object.kind !== 'creature' && !isVehicle) return false;
       return (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
+  if (spec.type === 'attacking_creature') {
+    // „Target attacking creature" (CR 508.1k: atakujący istnieje wyłącznie od
+    // deklaracji atakujących do końca fazy walki) — ta sama reguła co w
+    // spells.js dla bloodrusha, tu dla zdolności TRIGGEROWANYCH (Gryffwing
+    // Cavalry: „target attacking creature without flying"). `withoutKeyword`
+    // zawęża kandydatów po słowie kluczowym (deskryptorowo, ADR 0002).
+    const attackerIds = state.combat?.attackers ?? [];
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (!attackerIds.includes(objectId)) return false;
+      if (spec.notSelf && object.id === sourceObject.id) return false;
+      if (spec.withoutKeyword && effectiveKeywords(object, state).includes(spec.withoutKeyword)) return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
+      return true;
     });
   }
   if (spec.type === 'creature') {
@@ -1157,6 +1193,10 @@ function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
       sourceId: payload.sourceId,
       ability: Object.freeze({ ...payload.ability }),
       targetId: null,
+      // Cele wybrane PRZY KŁADZENIU na stos (kolejność „target before pay")
+      // — efekt opłacony przy rozstrzyganiu działa na nie (applyDeferredTriggerEffects
+      // czyta pending.targets).
+      targets: Object.freeze([...(payload.targets ?? [])]),
       extra: Object.freeze({ ...plainExtra }),
       restorePriorityTo: state.turn.priorityPlayerId,
       requiresTargetDecision: Boolean(choice.requiresTargetDecision),
@@ -2021,6 +2061,29 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   // zawsze, płatność to wybór przy JEJ rozstrzyganiu, a dopiero opłacenie
   // tworzy refleksyjny trigger z celem. Kandydaci celu liczą się więc wtedy,
   // nie w chwili odpalenia (resolve_optional_pay_choice → decyzja celu).
+  if (trigger.requiresTarget && hasPayCost(trigger) && trigger.payAfterTarget) {
+    // Ruling VOW (2021-11-19): „You must choose a target ... BEFORE you choose
+    // whether or not to pay the cost. If there is no legal target, you won't
+    // have the opportunity to pay." Kolejność: NAJPIERW cel (jak w zwykłej
+    // gałęzi `requiresTarget` — brak kandydatów = zdolność nie wchodzi na
+    // stos, więc nie ma czego płacić), a pytanie o płatność pada przy
+    // ROZSTRZYGANIU (decyzja „you may pay" z kontekstem zdarzenia wędruje na
+    // stos w `extra.deferredChoice` — ten sam mechanizm co Etap F).
+    const spec = trigger.requiresTarget;
+    const candidates = triggerTargetCandidates(state, spec, source, extra);
+    if (candidates.length === 0) {
+      const skipped = event('trigger_resolved', {
+        objectId: source.id, cardId: source.cardId, playerId: source.controllerId,
+        noEffect: true, reason: 'no_targets',
+      });
+      state.events.push(skipped);
+      events?.push?.(skipped);
+      return false;
+    }
+    return queueTargetDecision(state, ability, source, candidates,
+      Boolean(spec.optional || trigger.mayFire), [], events,
+      { ...extra, deferredChoice: Object.freeze({ kind: 'optionalPay' }) });
+  }
   if (trigger.requiresTarget && hasPayCost(trigger)) {
     return queueDeferredChoiceTrigger(state, ability, source, events, extra, 'optionalPay', { requiresTargetDecision: true });
   }
@@ -3613,7 +3676,23 @@ function processTriggersScan(state, recentEvents) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
         for (const ability of effectiveAbilities(attacker)) {
-          if (ability?.trigger?.event === 'attacks') tryFire(state, ability, attacker, [], events);
+          // Kontekst zdarzenia dla triggerów ataku: lista współdeklarowanych
+          // atakujących ORAZ wynik testu „z innym atakującym o większej sile"
+          // (Training/trening, CR 702.149) — liczone RAZ, na mocy z chwili deklaracji
+          // (ruling VOW 2021-11-19: wzrost siły PO deklaracji nie wywołuje
+          // triggera, a późniejsza śmierć drugiego atakującego nie odbiera
+          // licznika — patrz conditionHolds).
+          if (ability?.trigger?.event === 'attacks') {
+            tryFire(state, ability, attacker, [], events, {
+              attackerIds: [...(ev.attackerIds ?? [])],
+              attackedWithGreaterPower: (ev.attackerIds ?? []).some((id) => {
+                if (id === attackerId) return false;
+                const other = state.objects.get(id);
+                return other?.zone === 'battlefield'
+                  && effectivePower(other, state) > (effectivePower(attacker, state) ?? 0);
+              }),
+            });
+          }
         }
         if ((attacker.subtypes ?? []).includes('Bat')) {
           for (const object of state.objects.values()) {

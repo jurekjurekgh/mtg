@@ -1,0 +1,47 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Gryffwing%20Cavalry&set=vow",
+ "print": "Gryffwing Cavalry (VOW)",
+ "name": "Gryffwing Cavalry",
+ "mana_cost": "{3}{W}",
+ "cmc": 4.0,
+ "type_line": "Creature — Human Knight",
+ "oracle_text": "Flying\nTraining (Whenever this creature attacks with another creature with greater power, put a +1/+1 counter on this creature.)\nWhenever this creature attacks, you may pay {1}{W}. If you do, target attacking creature without flying gains flying until end of turn.",
+ "power": "2",
+ "toughness": "2",
+ "colors": [
+  "W"
+ ],
+ "color_identity": [
+  "W"
+ ],
+ "keywords": [
+  "Flying",
+  "Training"
+ ],
+ "set": "vow",
+ "collector_number": "16",
+ "rarity": "uncommon",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/7/9/792d5b41-27f3-455b-890e-a1771944fc7d.jpg?1783924920"
+ },
+ "pobrano": "2026-09-29",
+ "rulings": [
+  {
+   "source": "wotc",
+   "published_at": "2021-11-19",
+   "comment": "You must choose a target for Gryffwing Cavalry's last ability before you choose whether or not to pay the cost. If there is no legal target, you won't have the opportunity to pay the cost."
+  },
+  {
+   "source": "wotc",
+   "published_at": "2021-11-19",
+   "comment": "A creature's training ability triggers only when both that creature and a creature with greater power are declared as attackers. Increasing a creature's power after attackers are declared won't cause a training ability to trigger."
+  },
+  {
+   "source": "wotc",
+   "published_at": "2021-11-19",
+   "comment": "Once a creature's training ability has triggered, destroying the other attacking creature or reducing its power won't stop the creature with training from getting a +1/+1 counter."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/vow/16/rulings",
+ "rulingsPobrano": "2026-09-29"
+}

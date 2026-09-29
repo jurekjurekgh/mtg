@@ -12526,6 +12526,47 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 10. Gryffwing Cavalry (VOW) — 2/2 Human Knight: latanie + Training
+  //     (Trening, CR 702.149) oraz trigger ataku z opcjonalną płatnością {1}{W}
+  //     („target attacking creature without flying gains flying until end of
+  //     turn"). Dwie mechaniki GENERYCZNE (ADR 0002):
+  //     - Trening: trigger `attacks` z warunkiem `attackedWithGreaterPower`
+  //       (warunek liczony RAZ, przy deklaracji atakujących — rulingi VOW
+  //       2021-11-19: wzrost siły po deklaracji nie triggeruje, a późniejsza
+  //       śmierć drugiego atakującego nie odbiera licznika);
+  //     - `payAfterTarget`: CEL wybiera się PRZED decyzją o płatności, a brak
+  //       legalnego celu = brak okazji do zapłaty (trzeci ruling tej karty;
+  //       wzorzec płatności przy rozstrzyganiu jak Zoraline, kolejność odwrotna
+  //       niż w `requiresTarget && hasPayCost` bez flagi).
+  defineCard({
+    id: 'gryffwing-cavalry', name: 'Gryffwing Cavalry', set: 'VOW',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 2, toughness: 2, manaCost: 4, keywords: ['flying', 'training'],
+    oracleText: 'Flying\nTraining (Whenever this creature attacks with another creature with greater power, put a +1/+1 counter on this creature.)\nWhenever this creature attacks, you may pay {1}{W}. If you do, target attacking creature without flying gains flying until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/9/792d5b41-27f3-455b-890e-a1771944fc7d.jpg?1783924920',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { attackedWithGreaterPower: true } },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'attacks',
+          requiresTarget: { type: 'attacking_creature', withoutKeyword: 'flying' },
+          payMana: 2, payColors: ['W'], payAfterTarget: true,
+        },
+        effect: [
+          { type: 'pay_mana', amount: 2 },
+          { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+        ],
+      }),
+    ],
+    artId: 164, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

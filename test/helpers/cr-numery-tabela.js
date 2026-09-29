@@ -455,6 +455,10 @@ export const NUMERY = [
   '702.145d',
   '702.145g',
   '702.148',
+  // Batch 61 (Gryffwing Cavalry): Training — numer zweryfikowany wobec
+  // wydania CR 2026-09-25 (para „mechanika ↔ numer” w
+  // test/cr-numery-mechanik-straznik.test.js zna 702.149 = Training).
+  '702.149',
   '702.164',
   '702.164a',
   '702.165',

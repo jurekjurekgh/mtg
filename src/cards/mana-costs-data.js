@@ -555,4 +555,6 @@ export const MANA_COSTS = {
   // Batch61: Kozilek's Shrieker (OGW) — devoid 3/2; {C} siedzi w koszcie
   // ZDOLNOŚCI (cost.colors: ['C']), nie w koszcie many karty.
   "kozileks-shrieker": "{2}{B}",
+  // Batch61: Gryffwing Cavalry (VOW) — 2/2 Human Knight, latanie + trening.
+  "gryffwing-cavalry": "{3}{W}",
 };

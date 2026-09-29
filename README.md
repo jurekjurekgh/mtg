@@ -122,7 +122,7 @@ liczone z plików `decks/*.txt`).
 | `eldraine` | Eldraine | WUBRG | 23 | 8 | 15 |
 | `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
-| `innistrad-brg` | Innistrad (BRG) | BRG | 29 | 10 | 19 |
+| `innistrad-brg` | Innistrad (BRG) | BRG | 30 | 10 | 20 |
 | `innistrad-wu` | Innistrad (WU) | WU | 30 | 10 | 20 |
 | `ixalan` | Ixalan | UBRG | 24 | 8 | 16 |
 | `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |

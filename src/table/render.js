@@ -1013,6 +1013,9 @@ export const KEYWORD_LABELS = Object.freeze({
   megamorph: 'Megamorph',
   // Batch 36 (Molten Nursery): Devoid — karta bezbarwna (CR 702.114).
   devoid: 'Devoid (bezbarwna)',
+  // Batch 61 (Gryffwing Cavalry): Trening (CR 702.149) — bez etykiety linia
+  // keywordów pokazywałaby surowy slug „training" (pułapka M127/L29).
+  training: 'Trening (atakuje z silniejszym → +1/+1)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
@@ -1745,6 +1748,9 @@ function triggerConditionClause(trigger) {
   if (cond.spellColorsInclude) czlony.push(`rzucany czar jest koloru ${cond.spellColorsInclude.join('/')}`);
   if (cond.noMinusCountersWhenDied) czlony.push('nie miał liczników -1/-1 (persist)');
   if (cond.enteredUntapped) czlony.push('wszedł nietapnięty');
+  // Batch 61 (Gryffwing Cavalry): Training — „attacks with another creature
+  // with greater power" (CR 702.149; semantyka w conditionHolds).
+  if (cond.attackedWithGreaterPower) czlony.push('atakuje z innym stworzem o większej sile (training)');
   // PR #98 (handoff 2026-09-05b pkt 2, wilkołaki): warunki triggerów upkeep —
   // dawniej żyły tylko w gałęzi upkeep jako hardkody (2+ czary), klauzula
   // wspólna ich nie znała (klasa L28).

@@ -776,3 +776,211 @@ test("B61/158: mana bezbarwna ze Sciona (poświęcenie) domyka {C} — ścieżka
   assert.ok(!state.objects.has('scion') || state.objects.get('scion').zone !== 'battlefield',
     'Scion został poświęcony jako koszt many');
 });
+
+// ---- B61/164: Gryffwing Cavalry (VOW #16, plan Innistrad) ------------------
+
+/**
+ * Deklaracja atakujących + przetworzenie triggerów (jak w komendzie stołu).
+ * `pay` wybiera odpowiedź na pytanie „you may pay" (domyślnie: nie płacimy).
+ * Pętla obsługuje też decyzje celów triggerów (wybiera pierwszego kandydata).
+ */
+async function deklarujAtak(state, attackerIds, { pay = false } = {}) {
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const before = state.events.length;
+  declareAttackers(state, 'p1', attackerIds);
+  processTriggers(state, state.events.slice(before));
+  // Wybór celu (jeśli decyzja nie została zautomatyzowana — M242).
+  for (let i = 0; state.pendingTriggerTargets.length > 0 && i < 10; i += 1) {
+    const cmd = commands(state).find((c) => c.type === 'resolve_trigger_target');
+    assert.ok(cmd, 'oferta celu triggera istnieje');
+    run(state, cmd);
+  }
+  // Rozstrzygnięcie stosu + decyzja płatności przy rozstrzyganiu (Etap F).
+  for (let i = 0; (state.zones.stack.length > 0 || state.pendingOptionalPay) && i < 30; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const choices = commands(state, p);
+    const payment = choices.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === pay);
+    const pass = choices.find((c) => c.type === 'pass_priority');
+    if (payment) { run(state, payment); continue; }
+    if (pass) { run(state, pass); continue; }
+    break;
+  }
+}
+
+test('B61/164: Gryffwing Cavalry — dane Oracle, {3}{W}, druk VOW i trening', async () => {
+  const { KEYWORD_LABELS } = await import('../src/table/render.js');
+  const def = registry.get('gryffwing-cavalry');
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Human', 'Knight']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 4);
+  assert.equal(def.set, 'VOW');
+  assert.equal(def.artId, 164);
+  assert.equal(def.plan, 'Innistrad');
+  assert.deepEqual(def.keywords, ['flying', 'training']);
+  assert.ok(def.oracleText.includes('Training (Whenever this creature attacks with another creature with greater power'),
+    'Oracle w definicji');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('792d5b41'), 'imageUri z druku VOW (vow/16)');
+  assert.equal(MANA_COSTS['gryffwing-cavalry'], '{3}{W}');
+  // Etykieta PL keywordu (L84: nowy keyword ⇒ etykieta, inaczej slug w linii keywordów).
+  assert.ok(KEYWORD_LABELS.training, 'Trening ma polską etykietę');
+  // Zdolność 1: Trening (CR 702.149) — warunek + licznik na sobie.
+  assert.deepEqual(def.abilities[0].trigger, { event: 'attacks', condition: { attackedWithGreaterPower: true } });
+  assert.deepEqual(def.abilities[0].effect, { type: 'add_counter', counter: '+1/+1', amount: 1 });
+  // Zdolność 2: cel PRZED płatnością (ruling VOW 2021-11-19), {1}{W}.
+  const drugi = def.abilities[1].trigger;
+  assert.equal(drugi.event, 'attacks');
+  assert.deepEqual(drugi.requiresTarget, { type: 'attacking_creature', withoutKeyword: 'flying' });
+  assert.equal(drugi.payMana, 2);
+  assert.deepEqual(drugi.payColors, ['W']);
+  assert.equal(drugi.payAfterTarget, true, 'cel wybiera się przed decyzją o płatności');
+  assert.deepEqual(def.abilities[1].effect, [
+    { type: 'pay_mana', amount: 2 },
+    { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+  ]);
+});
+
+test('B61/164: Trening — atak z silniejszym stworem daje +1/+1, słabszy nie', async () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'big', 'woolly-loxodon', 'p1', 'battlefield', { summoningSickness: false }); // 6/7
+  await deklarujAtak(state, ['cav', 'big']);
+  const cav = state.objects.get('cav');
+  assert.equal(effectivePower(cav, state), 3, '2/2 + licznik +1/+1 = 3/3');
+  assert.equal(effectiveToughness(cav, state), 3);
+  assert.deepEqual(cav.counters, { '+1/+1': 1 });
+  assert.ok(!effectiveKeywords(state.objects.get('big'), state).includes('flying'),
+    'płatność odrzucona — brak nadanego latania');
+
+  // Ten sam atak, ale towarzysz NIE jest silniejszy (2/3 vs 2/2) — brak licznika.
+  const state2 = game();
+  state2.turn = jumpToStep(state2.turn, 'declare_attackers', 'p1');
+  state2.turn.activePlayerId = state2.turn.priorityPlayerId = 'p1';
+  put(state2, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  put(state2, 'small', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false }); // 2/3
+  await deklarujAtak(state2, ['cav', 'small']);
+  const cav2 = state2.objects.get('cav');
+  assert.equal(effectivePower(cav2, state2), 2, 'brak treningu — moc bez zmian');
+  assert.deepEqual(cav2.counters ?? {}, {}, 'brak licznika');
+});
+
+test('B61/164: Trening — wzrost siły PO deklaracji nie wywołuje triggera (ruling 2021-11-19)', async () => {
+  const { modifyStats } = await import('../src/engine/permanents.js');
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'small', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false });
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const before = state.events.length;
+  declareAttackers(state, 'p1', ['cav', 'small']);
+  processTriggers(state, state.events.slice(before));
+  // Siła rośnie JUŻ PO deklaracji (4 > 2) — trigger treningu nie powstaje.
+  modifyStats(state, 'small', { power: 2, toughness: 0 });
+  assert.equal(effectivePower(state.objects.get('small'), state), 4, 'towarzysz urósł po deklaracji');
+  for (let i = 0; (state.zones.stack.length > 0 || state.pendingOptionalPay) && i < 30; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const choices = commands(state, p);
+    const payment = choices.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === false);
+    const pass = choices.find((c) => c.type === 'pass_priority');
+    if (payment) { run(state, payment); continue; }
+    if (pass) { run(state, pass); continue; }
+    break;
+  }
+  assert.deepEqual(state.objects.get('cav').counters ?? {}, {}, 'licznik nie powstał (moc liczona z chwili deklaracji)');
+});
+
+test('B61/164: Trening — śmierć drugiego atakującego nie odbiera licznika (ruling 2021-11-19)', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'big', 'woolly-loxodon', 'p1', 'battlefield', { summoningSickness: false });
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const before = state.events.length;
+  declareAttackers(state, 'p1', ['cav', 'big']);
+  processTriggers(state, state.events.slice(before));
+  assert.equal(state.zones.stack.length, 2, 'trening + zdolność latania na stosie');
+  // Towarzysz ginie PRZED rozstrzygnięciem triggera treningu.
+  const beforeKill = state.events.length;
+  destroyPermanents(state, ['big']);
+  processTriggers(state, state.events.slice(beforeKill));
+  for (let i = 0; (state.zones.stack.length > 0 || state.pendingOptionalPay) && i < 30; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const choices = commands(state, p);
+    const payment = choices.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === false);
+    const pass = choices.find((c) => c.type === 'pass_priority');
+    if (payment) { run(state, payment); continue; }
+    if (pass) { run(state, pass); continue; }
+    break;
+  }
+  assert.deepEqual(state.objects.get('cav').counters, { '+1/+1': 1 },
+    'licznik zostaje mimo śmierci drugiego atakującego');
+});
+
+test('B61/164: cel wybierany PRZED płatnością; płatność nadaje latanie tylko wybranemu', async () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 't1', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 't2', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const before = state.events.length;
+  declareAttackers(state, 'p1', ['cav', 't1', 't2']);
+  processTriggers(state, state.events.slice(before));
+  // Dwa legalne cele: decyzja NIE jest automatyczna, a oferty płatności NIE MA,
+  // dopóki cel nie jest wybrany (ruling: najpierw cel, potem decyzja o płatności).
+  assert.deepEqual(state.pendingTriggerTargets[0].candidates, ['t1', 't2']);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_optional_pay_choice'),
+    'brak oferty płatności przed wyborem celu');
+  run(state, commands(state).find((c) => c.type === 'resolve_trigger_target' && c.targetId === 't2'));
+  let paid = false;
+  for (let i = 0; (state.zones.stack.length > 0 || state.pendingOptionalPay) && i < 30; i += 1) {
+    const p = state.turn.priorityPlayerId;
+    const choices = commands(state, p);
+    const payment = choices.find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
+    const pass = choices.find((c) => c.type === 'pass_priority');
+    if (payment) { paid = true; assert.equal(payment.cost, 2); assert.deepEqual(payment.costColors, ['W']); run(state, payment); continue; }
+    if (pass) { run(state, pass); continue; }
+    break;
+  }
+  assert.ok(paid, 'pytanie o płatność pojawiło się PO wyborze celu');
+  assert.ok(effectiveKeywords(state.objects.get('t2'), state).includes('flying'), 'wybrany cel zyskał latanie');
+  assert.ok(!effectiveKeywords(state.objects.get('t1'), state).includes('flying'), 'drugi atakujący bez latania');
+  assert.deepEqual(player(state, 'p1').manaPool, {}, 'zapłacono {1}{W}');
+});
+
+test('B61/164: brak legalnego celu = brak okazji do zapłaty (ruling 2021-11-19)', async () => {
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'cav', 'gryffwing-cavalry', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const before = state.events.length;
+  declareAttackers(state, 'p1', ['cav']);
+  processTriggers(state, state.events.slice(before));
+  // Samotny atakujący ma latanie (sam nie jest legalnym celem), trening nie ma
+  // z kim porównać mocy — zdolność nie wchodzi na stos (CR 603.3d).
+  assert.equal(state.pendingTriggerTargets.length, 0, 'brak decyzji celu');
+  assert.equal(state.zones.stack.length, 0, 'brak wpisu na stosie');
+  assert.ok(state.events.slice(before).some((e) => e.type === 'trigger_resolved' && e.reason === 'no_targets'),
+    'jawny wpis „bez celów"');
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_optional_pay_choice'),
+    'brak okazji do zapłaty');
+  assert.deepEqual(player(state, 'p1').manaPool, { W: 2 }, 'mana nietknięta');
+});
