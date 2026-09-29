@@ -12302,6 +12302,105 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 148, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // =========================================================================
+  // Batch 61 (2026-09-29) — lista właściciela: 157 ORI, 158 OGW, 160 M11,
+  // 161 KTK, 162 DMR, 164 VOW, 165 M20, 167 ISD, 170 MKM, 174 RTR.
+  // Plan (kolumna „Plan” z arkusza) jest WIĄŻĄCY 1:1 — także przy transpozycji
+  // światów (Lost in the Mist ISD → Eldraine, Riftburst Hellion MKM → Ravnica,
+  // Infectious Bloodlust ORI → Kaldheim). Dane Oracle i rulingi:
+  // `docs/cards/scryfall-*.json` (pobrane 2026-09-29, ADR 0010 §2a, ADR 0028,
+  // ADR 0030 — cytaty CR w komentarzach mechanik).
+  // Plan batcha: `docs/plans/PLAN_2026-09-29-batch61-kolekcja-157-174.md`.
+  // =========================================================================
+
+  // Batch61/160. Fiery Hellhound (M11 #136, Dominaria) — {1}{R}{R} 2/2
+  // Elemental Dog; aktywowany pump bez celu („This creature gets +1/+0") —
+  // wzorzec samopompy istnieje (Boros Challenger i in.).
+  defineCard({
+    id: 'fiery-hellhound', name: 'Fiery Hellhound', set: 'M11',
+    types: ['Creature'], subtypes: ['Elemental', 'Dog'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: '{R}: This creature gets +1/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/0/00e2db9a-d62e-4300-a9e6-a7665fcf2ef7.jpg?1783941806',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['R'] },
+        effect: { type: 'pump', power: 1, toughness: 0 },
+      }),
+    ],
+    artId: 160, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/161. Dragonscale Boon (KTK #131, Tarkir) — {3}{G} Instant: dwa
+  // liczniki +1/+1 na celu i odkręcenie go. Ruling WotC 2014-09-20: celem może
+  // być stwór już odkręcony (untap to legalny no-op) — brak filtra „tapped"
+  // w deskryptorze celu.
+  defineCard({
+    id: 'dragonscale-boon', name: 'Dragonscale Boon', set: 'KTK',
+    types: ['Instant'], colors: ['G'], manaCost: 4,
+    oracleText: 'Put two +1/+1 counters on target creature and untap it.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5aadb382-f912-4ccb-98bc-1abdef733126.jpg?1783939069',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 2 },
+        { type: 'untap_permanent' },
+      ],
+    },
+    artId: 161, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/165. Captivating Gyre (M20 #51, Amonkhet) — {4}{U}{U} Sorcery:
+  // „Return up to three target creatures to their owners' hands." Zmienna
+  // liczba celów w JEDNYM trybie (variableTargets min 0/max 3 + efekt
+  // `apply_to_each_target`) — ten sam wzorzec co Sea God's Scorn / Wrap in
+  // Flames (L41: jedna reguła dla „up to N target …", jedno miejsce).
+  defineCard({
+    id: 'captivating-gyre', name: 'Captivating Gyre', set: 'M20',
+    types: ['Sorcery'], colors: ['U'], manaCost: 6,
+    oracleText: "Return up to three target creatures to their owners' hands.",
+    imageUri: 'https://cards.scryfall.io/large/front/a/2/a2bd5c34-fa7e-4fa8-a5b1-c3aa928cc834.jpg?1783933014',
+    spell: {
+      timing: 'sorcery',
+      modes: [{
+        name: 'Zwróć do trzech stworów',
+        variableTargets: { max: 3, min: 0, type: 'creature' },
+        effects: [{
+          type: 'apply_to_each_target',
+          effects: [{ type: 'bounce_permanent' }],
+        }],
+      }],
+    },
+    artId: 165, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch61/167. Lost in the Mist (ISD #63, Eldraine) — {3}{U}{U} Instant:
+  // kontra celu-czaru + odbicie celu-permanentu do ręki właściciela. Rulingi
+  // WotC 2011-09-22: oba cele obowiązkowe przy rzucie; przy rozstrzyganiu
+  // działa to, co zostało legalne (CR 608.2b) — stąd osobne efekty z
+  // `targetIndex` (0 = czar, 1 = permanent), a nie efekt złożony.
+  defineCard({
+    id: 'lost-in-the-mist', name: 'Lost in the Mist', set: 'ISD',
+    types: ['Instant'], colors: ['U'], manaCost: 5,
+    oracleText: "Counter target spell. Return target permanent to its owner's hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/1/e/1e5fc39d-590a-436b-ab90-a1741d2ae3da.jpg?1783940971',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }, { type: 'permanent' }],
+      effects: [
+        { type: 'counter_spell', targetIndex: 0 },
+        { type: 'bounce_permanent', targetIndex: 1 },
+      ],
+    },
+    artId: 167, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 /**

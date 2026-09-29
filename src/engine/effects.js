@@ -4713,7 +4713,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Negate: „Counter target noncreature spell." Cel — czar na stosie;
     // przeniesiony do grobu bez rozstrzygania. Nielegalny/zniknięty cel
     // (null albo już rozstrzygnięty) = brak efektu (CR 608.2b).
-    const targetId = targets[0];
+    // Batch 61 (Lost in the Mist): czar może mieć WIELE celów o różnych
+    // deskryptorach, więc slot celu wskazuje `targetIndex` (konwencja reszty
+    // efektów wielocelowych); domyślnie 0.
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'stack') return;
@@ -5233,7 +5236,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // (ownerId — śledzone od Trostani), nie dotychczasowego kontrolera;
     // karta w ręce właściciela jest przez niego kontrolowana. Poprzednio
     // stwór przejęty przez Puppeteer Clique wracał na rękę złodzieja.
-    const targetId = targets[0];
+    // Batch 61 (Lost in the Mist): slot celu z `targetIndex` (domyślnie 0) —
+    // odbicie może być drugim efektem czaru o dwóch różnych celach.
+    const targetId = targets[effect.targetIndex ?? 0];
     if (targetId == null) return; // „up to one" bez celu — brak efektu
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return; // cel zniknął (CR 608.2b)

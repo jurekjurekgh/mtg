@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dragonscale%20Boon&set=ktk",
+  "print": "Dragonscale Boon (KTK)",
+  "name": "Dragonscale Boon",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Put two +1/+1 counters on target creature and untap it.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "ktk",
+  "collector_number": "131",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/a/5aadb382-f912-4ccb-98bc-1abdef733126.jpg?1783939069"
+  },
+  "pobrano": "2026-09-29",
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2014-09-20",
+      "comment": "Dragonscale Boon can target any creature, including one that’s already untapped."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/131/rulings",
+  "rulingsPobrano": "2026-09-29"
+}

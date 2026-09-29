@@ -1,0 +1,37 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lost%20in%20the%20Mist&set=isd",
+  "print": "Lost in the Mist (ISD)",
+  "name": "Lost in the Mist",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell. Return target permanent to its owner's hand.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "isd",
+  "collector_number": "63",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/e/1e5fc39d-590a-436b-ab90-a1741d2ae3da.jpg?1783940971"
+  },
+  "pobrano": "2026-09-29",
+  "rulings": [
+    {
+      "source": "wotc",
+      "published_at": "2011-09-22",
+      "comment": "Lost in the Mist targets both the spell and the permanent. You can only cast it if you can choose legal targets for both parts."
+    },
+    {
+      "source": "wotc",
+      "published_at": "2011-09-22",
+      "comment": "If one of Lost in the Mist’s targets is illegal by the time it resolves, Lost in the Mist will still affect the remaining legal target. If both targets are illegal at this time, Lost in the Mist won’t resolve."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/isd/63/rulings",
+  "rulingsPobrano": "2026-09-29"
+}

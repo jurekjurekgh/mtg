@@ -538,4 +538,12 @@ export const MANA_COSTS = {
   "clone-shell": "{5}",
   // Batch60: Xu-Ifit, Osteoharmonist (EOE).
   "xu-ifit-osteoharmonist": "{1}{B}{B}",
+  // Batch61: Fiery Hellhound (M11).
+  "fiery-hellhound": "{1}{R}{R}",
+  // Batch61: Dragonscale Boon (KTK).
+  "dragonscale-boon": "{3}{G}",
+  // Batch61: Captivating Gyre (M20).
+  "captivating-gyre": "{4}{U}{U}",
+  // Batch61: Lost in the Mist (ISD).
+  "lost-in-the-mist": "{3}{U}{U}",
 };

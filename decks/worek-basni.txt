@@ -28,9 +28,10 @@
 1x Locthwain Paladin
 1x Rust-Shield Rampager
 1x Burning-Yard Trainer
+1x Lost in the Mist
 1x Greater Tanuki
 2x Plains
-2x Island
-4x Swamp
-2x Mountain
-5x Forest
+3x Island
+3x Swamp
+3x Mountain
+4x Forest
