@@ -13935,7 +13935,7 @@ jak u pozostałych 3 tokenów). Zero wad danych.
   komentarzy). Poprawione + strażnik pary „numer ↔ pojęcie"
   (`test/cr-numery-508-restrykcje-wymogi-straznik.test.js`); L164 dostaje
   regułę 4.
-- **F6** (`857f3fc`, L48/M174): **awaria narzędzia** `bot-tie-audit` —
+- **F6** (`a051eb9`, L48/M174): **awaria narzędzia** `bot-tie-audit` —
   `illegal_ability:Brak kolorowej many` na komendzie Z OFERTY (Kozilek's
   Shrieker `{C}` + Holdout Settlement „{T}: Add {C}"). Pętla landów w
   `spendMana` miała ręczny predykat `srcColors.some((c) => reqColors.has(c))`,
@@ -13949,5 +13949,7 @@ jak u pozostałych 3 tokenów). Zero wad danych.
 
 **Dokumentacja:** budżet lektury 99 885/100 000 tokenów (reguła 3 L164
 skrócona, próg bez zmian); handoff `docs/setup/HANDOFF_2026-09-29b.md`.
-Token GitHub wygasł pod koniec sesji — ostatnie commity do wypchnięcia po
-ponownym podłączeniu (bez force push).
+Incydent: token GitHub wygasł, a sandbox cofnął wskaźnik gałęzi do `6a47c35`
+zostawiając pliki — leczenie z ENVIRONMENT §2 (`git fetch` → `git reset
+--mixed FETCH_HEAD` → ponowny commit → push fast-forward) zadziałało; F6 i
+raport mają nowe SHA (`a051eb9`, `7c42656`).
