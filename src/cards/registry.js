@@ -206,6 +206,11 @@ export function defineCard(data) {
         : data.aura.cantAttack ? { cantAttack: Object.freeze({ ...data.aura.cantAttack }) }
         : {}),
       ...(data.aura.cantAttackYou ? { cantAttackYou: true } : {}),
+      // Batch 61/157 (Infectious Bloodlust): „attacks each combat if able" na
+      // GOSPODARZU — lustro zakazu ataku (Hobble), ale w drugą stronę. Pole
+      // musi przejść cały łańcuch registry → obiekt gry → attachmentRestrictions,
+      // inaczej ginie po cichu (L21).
+      ...(data.aura.mustAttack ? { mustAttack: true } : {}),
       // Odbiór keywordów gospodarzowi (Grounded: „loses flying").
       ...(data.aura.losesKeywords ? { losesKeywords: Object.freeze([...data.aura.losesKeywords]) } : {}),
       ...(data.aura.cantBlock !== undefined && data.aura.cantBlock !== false

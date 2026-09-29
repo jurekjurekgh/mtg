@@ -688,6 +688,21 @@ export function librarySearchMatches(object, qualifier, ownerId) {
 }
 
 /**
+ * Batch 61/157 (Infectious Bloodlust): Oracle mówi „search your library for a
+ * card named Infectious Bloodlust" — czyli o nazwie SAMEJ KARTY. Deskryptor
+ * `qualifier.sameNameAsSource` rozwiązuje się przy kolejkowaniu z nazwy obiektu
+ * źródła, więc w silniku nie ma literału żadnej nazwy (ADR 0002). Kryterium
+ * nazwy pozostaje kryterium jakości, więc „fail to find" jest legalne
+ * (CR 701.23b — tak samo jak przy wpisanej nazwie, Angel's Herald).
+ */
+function resolveSearchQualifier(qualifier, sourceObject) {
+  if (!qualifier?.sameNameAsSource) return qualifier ?? {};
+  const { sameNameAsSource, ...rest } = qualifier;
+  const name = sourceObject?.cardName ?? sourceObject?.name ?? null;
+  return name ? { ...rest, name } : rest;
+}
+
+/**
  * Temat 6 — „You may search your library for ..." (CR 701.23b): blokująca
  * decyzja gracza, KTÓRĄ kartę znaleźć (albo w ogóle nie szukać — fail to
  * find). Ruch karty + tasowanie wykonuje komenda resolve_search_choice.
@@ -2880,7 +2895,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
     // Entrance; Temat 6). Wybór karty należy do gracza.
     return queueSearchChoice(state, sourceObject, {
-      qualifier: effect.qualifier ?? {},
+      qualifier: resolveSearchQualifier(effect.qualifier, sourceObject),
       destination: 'hand',
       entersTapped: false,
     });

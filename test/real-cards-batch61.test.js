@@ -559,3 +559,115 @@ test('B61/162: Griffin Guide — odbicie gospodarza NIE jest śmiercią (brak tr
   assert.equal([...state.objects.values()].filter((o) => o.cardId === 'token_griffin').length, 0,
     'powrót do ręki to nie śmierć — token NIE powstaje');
 });
+
+// ---- B61/157: Infectious Bloodlust (ORI #152, plan Kaldheim) --------------
+
+test('B61/157: Infectious Bloodlust — dane Oracle, aura {1}{R} i druk ORI', () => {
+  const def = registry.get('infectious-bloodlust');
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.set, 'ORI');
+  assert.equal(def.artId, 157);
+  assert.equal(def.plan, 'Kaldheim');
+  assert.deepEqual(def.aura.pump, { power: 2, toughness: 1 });
+  assert.deepEqual(def.aura.keywords, ['haste']);
+  assert.equal(def.aura.mustAttack, true, '„attacks each combat if able" to deskryptor aury');
+  assert.ok(def.oracleText.includes('attacks each combat if able'), 'Oracle w definicji');
+  // Trigger śmierci gospodarza: ten sam deskryptor zdarzenia co Griffin Guide
+  // (Batch 61/162) — mechanika jest generyczna, nie per karta (ADR 0002).
+  assert.equal(def.abilities.length, 1);
+  assert.equal(def.abilities[0].type, 'triggered');
+  assert.equal(def.abilities[0].trigger.event, 'enchanted_creature_dies');
+  assert.equal(def.abilities[0].effect.type, 'search_library_to_hand');
+  assert.deepEqual(def.abilities[0].effect.qualifier, { sameNameAsSource: true },
+    'szukanie po nazwie ŹRÓDŁA (bez literału nazwy w silniku)');
+  assert.equal(def.support.status, 'supported');
+  assert.deepEqual(def.support.limitations, []);
+  assert.ok(def.imageUri.includes('ee44df88'), 'imageUri z druku ORI (ori/152)');
+  assert.equal(MANA_COSTS['infectious-bloodlust'], '{1}{R}');
+});
+
+test('B61/157: Infectious Bloodlust — +2/+1, haste i wymóg ataku na gospodarzu', async () => {
+  const { attachmentRestrictions } = await import('../src/engine/permanents.js');
+  const state = game();
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'aura', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  const host = state.objects.get('host');
+  assert.equal(effectivePower(host, state), 4, '2/3 + 2/+1 = 4');
+  assert.equal(effectiveToughness(host, state), 4, '3 + 1 = 4');
+  assert.ok(effectiveKeywords(host, state).includes('haste'), 'aura nadaje haste');
+  assert.equal(attachmentRestrictions(state, host).mustAttack, true,
+    'wymóg ataku czytany z załącznika (jedno miejsce prawdy z zakazami)');
+});
+
+test('B61/157: Infectious Bloodlust — deklaracja bez gospodarza jest nielegalna, z nim legalna', async () => {
+  const { declareAttackers, legalAttackerOptions } = await import('../src/engine/combat.js');
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'aura', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  // Oferta deklaracji ZAWSZE zawiera wymuszonego (inaczej gracz nie ma
+  // legalnego ruchu — klasa M270).
+  const options = legalAttackerOptions(state, 'p1');
+  assert.ok(options.length > 0, 'silnik oferuje deklaracje');
+  assert.ok(options.every((ids) => ids.includes('host')), `każda oferta zawiera wymuszonego: ${JSON.stringify(options)}`);
+  assert.throws(() => declareAttackers(state, 'p1', []), /musi atakować/,
+    'pominięcie wymuszonego atakującego odrzucone (CR 508.1c)');
+  assert.ok(declareAttackers(state, 'p1', ['host']), 'deklaracja z gospodarzem legalna');
+});
+
+test('B61/157: Infectious Bloodlust — „if able": zatapowany gospodarz nie tworzy deadlocku', async () => {
+  const { declareAttackers } = await import('../src/engine/combat.js');
+  const state = game();
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield', { summoningSickness: false, tapped: true });
+  put(state, 'aura', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  // Ruling ORI 2015-06-22: „attacks each combat if able" — stwór, który nie
+  // może zaatakować legalnie, nie jest wymuszony; pusta deklaracja zostaje legalna.
+  assert.ok(declareAttackers(state, 'p1', []), 'brak deadlocku przy niedostępnym ataku');
+});
+
+test('B61/157: Infectious Bloodlust — śmierć gospodarza: „you may search" po nazwie tej karty', async () => {
+  const { destroyPermanents } = await import('../src/engine/destruction.js');
+  const { processTriggers } = await import('../src/engine/triggers.js');
+  const state = game();
+  put(state, 'host', 'alaborn-trooper', 'p1', 'battlefield');
+  put(state, 'aura', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host' });
+  put(state, 'lib-copy', 'infectious-bloodlust', 'p1', 'library');
+  put(state, 'lib-obcy', 'griffin-guide', 'p1', 'library');
+  const before = state.events.length;
+  destroyPermanents(state, ['host']);
+  processTriggers(state, state.events.slice(before));
+  assert.equal(state.zones.stack.length, 1, 'trigger wchodzi na stos (CR 603.3b)');
+  for (let i = 0; !state.pendingSearchChoice && i < 10; i++) {
+    run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  }
+  assert.ok(state.pendingSearchChoice, 'decyzja „you may search" czeka na gracza');
+  assert.deepEqual(state.pendingSearchChoice.candidateIds, ['lib-copy'],
+    'kandydatem jest wyłącznie karta o nazwie źródła (druga kopia), nie inna karta');
+  // Kryterium nazwy = kryterium jakości: rezygnacja (fail to find) jest legalna…
+  assert.equal(execute(state, { type: 'resolve_search_choice', playerId: 'p1', found: null }).ok, true,
+    '„you may" — rezygnacja legalna (CR 701.23b)');
+  assert.ok(!inHand(state, 'infectious-bloodlust', 'p1'), 'bez wyboru karta zostaje w bibliotece');
+  // …a wybór karty spoza kryterium odrzucony (przy drugim odpaleniu triggera).
+  const state2 = game();
+  put(state2, 'host2', 'alaborn-trooper', 'p1', 'battlefield');
+  put(state2, 'aura2', 'infectious-bloodlust', 'p1', 'battlefield', { kind: 'aura', attachedTo: 'host2' });
+  put(state2, 'lib2-copy', 'infectious-bloodlust', 'p1', 'library');
+  put(state2, 'lib2-obcy', 'griffin-guide', 'p1', 'library');
+  const before2 = state2.events.length;
+  destroyPermanents(state2, ['host2']);
+  processTriggers(state2, state2.events.slice(before2));
+  for (let i = 0; !state2.pendingSearchChoice && i < 10; i++) {
+    run(state2, commands(state2).find((c) => c.type === 'pass_priority'));
+  }
+  assert.equal(execute(state2, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib2-obcy' }).ok, false,
+    'karta o innej nazwie nie jest legalnym wyborem');
+  run(state2, { type: 'resolve_search_choice', playerId: 'p1', found: 'lib2-copy' });
+  assert.ok(inHand(state2, 'infectious-bloodlust', 'p1'), 'wybrana kopia trafia do ręki');
+  assert.ok(!find(state2, 'infectious-bloodlust', 'library'), 'karta opuściła bibliotekę');
+});

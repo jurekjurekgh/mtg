@@ -12467,6 +12467,34 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 8. Infectious Bloodlust (ORI) — aura „+2/+1, haste, attacks each combat if
+  //    able", a po śmierci gospodarza: „you may search your library for a card
+  //    named Infectious Bloodlust". Wymóg ataku to deskryptor `aura.mustAttack`
+  //    (odczyt w combat.mandatoryAttackerIds przez attachmentRestrictions —
+  //    jedno miejsce prawdy z zakazami, L41); ruling ORI 2015-06-22: jeśli
+  //    z atakiem wiąże się KOSZT, kontroler nie musi go płacić (nasz silnik
+  //    nie ma kosztów ataku, więc wymóg działa wprost, CR 508.1c). Szukanie
+  //    po nazwie tej karty idzie przez `qualifier.sameNameAsSource` — zero
+  //    literałów nazw w silniku (ADR 0002); trigger to ten sam
+  //    `enchanted_creature_dies` co w Griffin Guide (ruling DMR 2022-12-08
+  //    każe go odpalać też przy równoczesnej śmierci aury — LKI, CR 603.10a).
+  defineCard({
+    id: 'infectious-bloodlust', name: 'Infectious Bloodlust', set: 'ORI',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 2,
+    oracleText: 'Enchant creature\nEnchanted creature gets +2/+1, has haste, and attacks each combat if able.\nWhen enchanted creature dies, you may search your library for a card named Infectious Bloodlust, reveal it, put it into your hand, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee44df88-45a4-46ef-a8bd-f7fb7b9542b8.jpg?1783938329',
+    aura: { pump: { power: 2, toughness: 1 }, keywords: ['haste'], mustAttack: true },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enchanted_creature_dies' },
+        effect: { type: 'search_library_to_hand', qualifier: { sameNameAsSource: true } },
+      }),
+    ],
+    artId: 157, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

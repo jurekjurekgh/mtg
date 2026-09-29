@@ -550,4 +550,6 @@ export const MANA_COSTS = {
   "izzet-charm": "{U}{R}",
   // Batch61: Griffin Guide (DMR) — aura {2}{W}.
   "griffin-guide": "{2}{W}",
+  // Batch61: Infectious Bloodlust (ORI) — aura {1}{R}.
+  "infectious-bloodlust": "{1}{R}",
 };

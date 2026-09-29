@@ -1,0 +1,34 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Infectious%20Bloodlust&set=ori",
+ "print": "Infectious Bloodlust (ORI)",
+ "name": "Infectious Bloodlust",
+ "mana_cost": "{1}{R}",
+ "cmc": 2.0,
+ "type_line": "Enchantment — Aura",
+ "oracle_text": "Enchant creature\nEnchanted creature gets +2/+1, has haste, and attacks each combat if able.\nWhen enchanted creature dies, you may search your library for a card named Infectious Bloodlust, reveal it, put it into your hand, then shuffle.",
+ "colors": [
+  "R"
+ ],
+ "color_identity": [
+  "R"
+ ],
+ "keywords": [
+  "Enchant"
+ ],
+ "set": "ori",
+ "collector_number": "152",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/e/e/ee44df88-45a4-46ef-a8bd-f7fb7b9542b8.jpg?1783938329"
+ },
+ "pobrano": "2026-09-29",
+ "rulings": [
+  {
+   "source": "wotc",
+   "published_at": "2015-06-22",
+   "comment": "If, during its controller’s declare attackers step, the enchanted creature is tapped or is affected by a spell or ability that says it can’t attack, then that creature doesn’t attack. If there’s a cost associated with having that creature attack, its controller isn’t forced to pay that cost. If they don’t, the creature doesn’t have to attack."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/ori/152/rulings",
+ "rulingsPobrano": "2026-09-29"
+}

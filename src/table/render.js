@@ -2072,6 +2072,9 @@ export function rulesText(info) {
       aura.cantAttack ? (typeof aura.cantAttack === 'object'
         ? `zaczarowany nie może atakować (${hostConditionLabel(aura.cantAttack)})`
         : 'zaczarowany nie może atakować') : '',
+      // Batch 61/157 (Infectious Bloodlust): wymóg ataku jest treścią karty
+      // tak samo jak zakaz (M138/#11 — każde pole deskryptora aury ma opis).
+      aura.mustAttack ? 'zaczarowany atakuje w każdej fazie walki, jeśli może' : '',
       aura.cantBlock ? (typeof aura.cantBlock === 'object'
         ? `zaczarowany nie może blokować (${hostConditionLabel(aura.cantBlock)})`
         : 'zaczarowany nie może blokować') : '',
