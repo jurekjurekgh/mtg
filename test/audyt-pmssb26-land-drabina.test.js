@@ -12,6 +12,12 @@
 //     0 → bardzo duża (nigdy nie odrzucaj) · 1 → spora · 2 → neutralna · 3+ → niska
 //   land BEZBARWNY/utylitarny — licznik = suma lądów na stole + w ręce
 //     0-2 → bardzo duża · 3-4 → spora · 5-6 → neutralna · 7+ → niska
+//
+// DOPRECYZOWANIE właściciela (2026-09-30): licznik NIE obejmuje karty właśnie
+// rozważanej. „Raczej odrzucaj" miało znaczyć 3 źródła na stole ALBO 2 na stole
+// i 1 dodatkowy w ręku — czyli 3 źródła POZA rozważanym landem. Dzięki temu
+// stopień „0" znaczy dokładnie to, co powinien: ten land jest moim JEDYNYM
+// źródłem koloru (przy liczniku z ręką był dla landu w ręce nieosiągalny).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -68,39 +74,36 @@ const wybrana = (state) => {
 // Oceniany las w ręce liczy sam siebie, więc licznik = board + 1.
 // ---------------------------------------------------------------------------
 
-test('PMSSB-26/A1: 1 źródło pipa (jedyny las w ręce) → spora, land zostaje', () => {
-  // 0 lasów na stole + oceniany las = 1 źródło {G} ⇒ landKeepHigh (18)
-  // ⇒ 20 − 18 = 2. Porównanie przez stwora BEZBARWNEGO (Welder Automaton {2}):
+test('PMSSB-26/A1: 0 źródeł poza rozważanym (jedyny las w ręce) → bardzo duża', () => {
+  // 0 lasów na stole, oceniany las w ręce ⇒ 0 źródeł {G} POZA nim ⇒
+  // landKeepCritical (30) ⇒ 20 − 30 = −10: to moje jedyne źródło koloru.
+  // Porównanie przez stwora BEZBARWNEGO (Welder Automaton {2}):
   // przy 0 lądów żadna KOLOROWA karta nie jest rzucalna, więc reguła koloru
   // właściciela (M408) dałaby jej 40 pkt i przysłoniła drabinę landów.
   const state = base({ hand: [FOREST, 'welder-automaton'] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 2);
-  assert.ok(scoreOf(state, 'resolve_discard_choice(h1)') > 2,
-    'land jedynego źródła koloru nie może iść przed grywalną kartą');
-  assert.equal(wybrana(state), 'h1', 'przy jednym źródle koloru land zostaje');
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), -10);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 12);
+  assert.equal(wybrana(state), 'h1', 'jedynego źródła koloru nigdy nie odrzucamy');
 });
 
-test('PMSSB-26/A2: 2 źródła pipa → neutralna, land i stwór praktycznie remisują', () => {
-  // 1 las na stole + oceniany = 2 źródła ⇒ landKeepNeutral (8) ⇒ 12 wobec 11.
-  // „Neutralna" znaczy dokładnie to: różnica jednego punktu, nie przechył.
+test('PMSSB-26/A2: 1 źródło poza rozważanym → spora, land zostaje', () => {
+  // 1 las na stole ⇒ 1 źródło {G} POZA rozważanym ⇒ landKeepHigh (18) ⇒ 2.
   const state = base({ hand: [FOREST, 'highland-game'], board: [FOREST] });
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 2);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 11);
+});
+
+test('PMSSB-26/A3: 2 źródła poza rozważanym → neutralna (remis ±1 ze stworem)', () => {
+  // 2 lasy na stole ⇒ 2 źródła {G} POZA rozważanym ⇒ landKeepNeutral (8) ⇒ 12
+  // wobec 11 za stwora: „neutralna" znaczy dokładnie remis ±1, nie przechył.
+  const state = base({ hand: [FOREST, 'highland-game'], board: [FOREST, FOREST] });
   assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 12);
   assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 11);
 });
 
-test('PMSSB-26/A3: 3 źródła pipa → niska, land idzie pierwszy', () => {
-  // 2 lasy na stole + oceniany = 3 źródła ⇒ landKeepSaturated (−6)
-  // ⇒ −(−6) + discardUnwantedBonus(5) = 11 ⇒ 31 wobec 11.
-  const state = base({ hand: [FOREST, 'highland-game'], board: [FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 31);
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 11);
-  assert.equal(wybrana(state), 'h0', 'przy trzech źródłach koloru land jest zbędny');
-});
-
 test('PMSSB-26/A4: 0 źródeł pipa → bardzo duża (land poza ręką, np. na wierzchu)', () => {
-  // Licznik obejmuje rękę, więc land W ręce zawsze liczy sam siebie i stopień
-  // „0" pojawia się dopiero, gdy land leży poza nią. Tu: las na wierzchu
-  // biblioteki przy pięciu wyspach i zerze lasów ⇒ 0 źródeł {G} ⇒
+  // Land poza ręką (na wierzchu biblioteki) przy pięciu wyspach i zerze lasów
+  // ⇒ 0 źródeł {G} ⇒
   // landKeepCritical (30) ⇒ scry `bottom` = 20 − 30 = −10 (nie chce go oddać).
   const state = createGameState({ seed: 26, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main1', 'p2');
@@ -125,30 +128,33 @@ test('PMSSB-26/A4: 0 źródeł pipa → bardzo duża (land poza ręką, np. na w
 // ---------------------------------------------------------------------------
 
 test('PMSSB-26/B1: suma 1 ląd → bardzo duża, land utylitarny zostaje', () => {
-  // 0 na stole + oceniany = suma 1 ⇒ landKeepCritical (30) ⇒ −10 wobec 11.
+  // 0 lądów poza rozważanym ⇒ landKeepCritical (30) ⇒ −10 wobec 12.
   const state = base({ hand: [UTIL, 'highland-game'] });
   assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), -10);
   assert.equal(wybrana(state), 'h1', 'przy braku manabazy land utylitarny zostaje');
 });
 
-test('PMSSB-26/B2: suma 3 lądów → spora', () => {
-  // 2 na stole + oceniany = suma 3 ⇒ landKeepHigh (18) ⇒ 2 wobec 11.
+test('PMSSB-26/B2: suma 2 lądów poza rozważanym → wciąż bardzo duża', () => {
+  // 2 lądy poza rozważanym ⇒ wciąż stopień 0-2 ⇒ landKeepCritical (30) ⇒ −10.
   const state = base({ hand: [UTIL, 'highland-game'], board: [FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 2);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), -10);
   assert.equal(wybrana(state), 'h1');
 });
 
-test('PMSSB-26/B3: suma 5 lądów → neutralna', () => {
-  // 4 na stole + oceniany = suma 5 ⇒ landKeepNeutral (8) ⇒ 12 wobec 11.
+test('PMSSB-26/B3: suma 4 lądów poza rozważanym → spora', () => {
+  // 4 lądy poza rozważanym ⇒ stopień 3-4 ⇒ landKeepHigh (18) ⇒ 2 wobec 11.
   const state = base({ hand: [UTIL, 'highland-game'], board: [FOREST, FOREST, FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 12);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 2);
 });
 
-test('PMSSB-26/B4: suma 7 lądów → niska, land utylitarny idzie pierwszy', () => {
-  // 6 na stole + oceniany = suma 7 ⇒ landKeepSaturated (−6) ⇒ 31 wobec 11.
-  const state = base({ hand: [UTIL, 'highland-game'], board: [FOREST, FOREST, FOREST, FOREST, FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 31);
-  assert.equal(wybrana(state), 'h0', 'przy siedmiu lądach kolejny jest zbędny');
+test('PMSSB-26/B4: suma 6 → neutralna, suma 7 poza rozważanym → niska', () => {
+  // 6 lądów poza rozważanym ⇒ stopień 5-6 ⇒ landKeepNeutral (8) ⇒ 12 wobec 11;
+  // 7 poza rozważanym ⇒ landKeepSaturated (−6) ⇒ 31.
+  const szesc = base({ hand: [UTIL, 'highland-game'], board: Array(6).fill(FOREST) });
+  assert.equal(scoreOf(szesc, 'resolve_discard_choice(h0)'), 12);
+  const siedem = base({ hand: [UTIL, 'highland-game'], board: Array(7).fill(FOREST) });
+  assert.equal(scoreOf(siedem, 'resolve_discard_choice(h0)'), 31);
+  assert.equal(wybrana(siedem), 'h0', 'przy siedmiu lądach kolejny jest zbędny');
 });
 
 // ---------------------------------------------------------------------------
@@ -164,41 +170,43 @@ test('PMSSB-26/C1 (kotwica M408): reguła braku KOLORU many zostaje nietknięta'
 });
 
 test('PMSSB-26/C2: drabina nie zależy od `cardDuplicateDiscount` (to nie duplikaty)', () => {
-  // Drugi land tego samego koloru zmienia wartość przez DRABINĘ (18 → 8), nie
-  // przez regułę duplikatów: podniesienie zniżki duplikatów nie rusza landu.
+  // Drugi land tego samego koloru zmienia wartość przez DRABINĘ (0 źródeł poza
+  // rozważanym → 30; 1 źródło poza nim → 18), nie przez regułę duplikatów:
+  // podniesienie zniżki duplikatów nie rusza landu ani o punkt.
   const jeden = base({ hand: [FOREST, 'highland-game'] });
   const dwa = base({ hand: [FOREST, FOREST, 'highland-game'] });
-  assert.equal(scoreOf(jeden, 'resolve_discard_choice(h0)'), 2);
-  assert.equal(scoreOf(dwa, 'resolve_discard_choice(h0)'), 12);
-  assert.equal(scoreOf(jeden, 'resolve_discard_choice(h0)', { cardDuplicateDiscount: 9 }), 2);
-  assert.equal(scoreOf(dwa, 'resolve_discard_choice(h0)', { cardDuplicateDiscount: 9 }), 12);
+  assert.equal(scoreOf(jeden, 'resolve_discard_choice(h0)'), -10);
+  assert.equal(scoreOf(dwa, 'resolve_discard_choice(h0)'), 2);
+  assert.equal(scoreOf(jeden, 'resolve_discard_choice(h0)', { cardDuplicateDiscount: 9 }), -10);
+  assert.equal(scoreOf(dwa, 'resolve_discard_choice(h0)', { cardDuplicateDiscount: 9 }), 2);
 });
 
 test('PMSSB-26/C3: land wielokolorowy liczy się po NAJMNIEJSZYM liczniku kolorów', () => {
-  // Prismari Campus produkuje {U}{R}. Cztery wyspy na stole dają 5 źródeł {U}
-  // (z nim samym) i tylko 1 źródło {R}. Bez `Math.min` land wszedłby na stopień
+  // Prismari Campus produkuje {U}{R}. Cztery wyspy na stole dają 4 źródła {U}
+  // i ZERO źródeł {R} poza rozważanym. Bez `Math.min` land wszedłby na stopień
   // „niska" po niebieskim (−6 ⇒ 31) i bot wyrzuciłby jedyne źródło czerwonego;
-  // z `Math.min` liczy się brakujący kolor ⇒ landKeepHigh (18) ⇒ 2.
-  const state = base({ hand: ['prismari-campus'], board: ['basic-island', 'basic-island', 'basic-island', 'basic-island'] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 2);
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)', { landColoredHighMax: 0 }), 12,
-    'gdyby liczył się NAJWIĘKSZY licznik (5), byłoby nasycenie, nie „spora"');
+  // z `Math.min` liczy się brakujący kolor ⇒ landKeepCritical (30) ⇒ −10.
+  const state = base({ hand: ['prismari-campus'], board: Array(4).fill('basic-island') });
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), -10);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)', { landColoredCriticalMax: -1 }), 2,
+    'gdyby liczył się NAJWIĘKSZY licznik (4 dla {U}), byłoby nasycenie, nie „bardzo duża"');
 });
 
 test('PMSSB-26/C4: progi drabiny są pokrętłami, nie stałymi w kodzie', () => {
-  // Przesunięcie `landColoredNeutralMax` z 2 na 3 sprawia, że 3 źródła {G}
-  // wciąż są „neutralne" (8) zamiast „niskie" (−6) — 12 zamiast 31.
+  // Przesunięcie `landColoredNeutralMax` z 2 na 1 sprawia, że 2 źródła {G} poza
+  // rozważanym stają się „niskie" (−6 ⇒ 31) zamiast „neutralne" (8 ⇒ 12).
   const state = base({ hand: [FOREST, 'highland-game'], board: [FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 31);
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)', { landColoredNeutralMax: 3 }), 12);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 12);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)', { landColoredNeutralMax: 1 }), 31);
 });
 
 test('PMSSB-26/C5: cztery stopnie są monotoniczne (im więcej źródeł, tym chętniej oddajemy)', () => {
-  const st = (n) => base({ hand: [FOREST, 'highland-game'], board: Array(Math.max(0, n - 1)).fill(FOREST) });
-  const a = scoreOf(st(1), 'resolve_discard_choice(h0)');
-  const b = scoreOf(st(2), 'resolve_discard_choice(h0)');
-  const c = scoreOf(st(3), 'resolve_discard_choice(h0)');
-  const d = scoreOf(st(5), 'resolve_discard_choice(h0)');
-  assert.ok(a < b && b < c && c <= d, `drabina niemonotoniczna: ${a}, ${b}, ${c}, ${d}`);
-  assert.deepEqual([a, b, c], [2, 12, 31]);
+  // n = liczba źródeł {G} POZA rozważanym landem (czyli lasów na stole).
+  const st = (n) => base({ hand: [FOREST, 'highland-game'], board: Array(n).fill(FOREST) });
+  const a = scoreOf(st(0), 'resolve_discard_choice(h0)');
+  const b = scoreOf(st(1), 'resolve_discard_choice(h0)');
+  const c = scoreOf(st(2), 'resolve_discard_choice(h0)');
+  const d = scoreOf(st(3), 'resolve_discard_choice(h0)');
+  assert.ok(a < b && b < c && c < d, `drabina niemonotoniczna: ${a}, ${b}, ${c}, ${d}`);
+  assert.deepEqual([a, b, c, d], [-10, 2, 12, 31]);
 });

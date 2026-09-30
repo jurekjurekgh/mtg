@@ -3713,19 +3713,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * (podtypy podstawowe wg CR 305.6 + deskryptory zdolności many) — jedno
    * źródło prawdy z `colorCastable`, zero map nazw kart (ADR 0002).
    *
-   * Dwie decyzje interpretacyjne, obie dosłowne wobec specyfikacji:
-   *  1. Licznik obejmuje rękę, więc land oceniany W RĘCE liczy sam siebie —
-   *     „0" pojawia się, gdy land nie jest w ręce (np. odkryty na wierzchu
-   *     biblioteki przy scry). Dlatego przy koszcie odrzucenia najlepszy stopień
-   *     dla jedynego źródła koloru to „spora", nie „bardzo duża".
-   *  2. Land wielokolorowy bierzemy po NAJMNIEJSZYM liczniku spośród jego
-   *     kolorów: wartość dyktuje najbardziej brakujący kolor.
+   * Licznik NIE obejmuje karty właśnie rozważanej (doprecyzowanie właściciela,
+   * 2026-09-30): „raczej odrzucaj" miało znaczyć 3 źródła na stole ALBO 2 na
+   * stole i 1 dodatkowy w ręku — czyli 3 źródła POZA rozważanym landem. Przy
+   * liczniku obejmującym rękę próg wypadał o jedno źródło za wcześnie (2 poza
+   * rozważanym), a stopień „0 → nigdy nie odrzucaj" był dla landu w ręce
+   * nieosiągalny. Teraz „0" znaczy dokładnie to, co powinien: ten land jest
+   * moim JEDYNYM źródłem koloru.
+   *
+   * Land wielokolorowy bierzemy po NAJMNIEJSZYM liczniku spośród jego kolorów:
+   * wartość dyktuje najbardziej brakujący kolor.
    */
   const landKeepValue = (view, card) => {
     const isLandObj = (o) => (o?.kind ?? '') === 'land' || (o?.types ?? []).includes('Land');
     const mine = (o) => o?.controllerId === view.playerId;
-    const boardLands = (view.zones.battlefield ?? []).filter((o) => isLandObj(o) && mine(o));
-    const handLands = (view.zones.hand ?? []).filter(isLandObj);
+    // Bez karty właśnie rozważanej — patrz doprecyzowanie właściciela wyżej.
+    const notThis = (o) => o?.id !== card?.id;
+    const boardLands = (view.zones.battlefield ?? []).filter((o) => isLandObj(o) && mine(o) && notThis(o));
+    const handLands = (view.zones.hand ?? []).filter((o) => isLandObj(o) && notThis(o));
     const kolory = koloryZrodlaWidoku(card);
     if (kolory.length > 0) {
       let najmniejszy = Infinity;

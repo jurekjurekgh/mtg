@@ -76,12 +76,12 @@ test('PMSSB-25/A1: karta poza zasięgiem many idzie na pierwszy ogień, nie gryw
 });
 
 test('PMSSB-25/A2: zbędny land jest odrzucany z POWODU przesycenia danego pipa', () => {
-  // PMSSB-26: przesycenie liczymy PER PIP (specyfikacja właściciela), nie po
-  // sumie lądów. 2 lasy na stole + oceniany las w ręce = 3 źródła {G} ⇒
-  // wspólna miara mówi −6 ⇒ 6 + discardUnwantedBonus(5) = 11 ⇒ 20 + 11 = 31.
-  // PRZED: 19 pkt wyłącznie dlatego, że land ma manaCost 0 (reguła ciała nic
-  // o nim nie wiedziała). Przewaga nad grywalnym stworem (11) jest wyraźna.
-  const state = base({ hand: ['basic-forest', 'highland-game'], lands: 2 });
+  // PMSSB-26: przesycenie liczymy PER PIP i BEZ karty rozważanej (specyfikacja
+  // właściciela), nie po sumie lądów. 3 lasy na stole = 3 źródła {G} poza
+  // ocenianym ⇒ wspólna miara mówi −6 ⇒ 6 + discardUnwantedBonus(5) = 11
+  // ⇒ 20 + 11 = 31. PRZED: 19 pkt wyłącznie dlatego, że land ma manaCost 0
+  // (reguła ciała nic o nim nie wiedziała).
+  const state = base({ hand: ['basic-forest', 'highland-game'], lands: 3 });
   assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 31);
   assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 11);
 });
