@@ -14065,3 +14065,61 @@ ta sesja NIE dodała wpisu do `LESSONS.md` (wszystkie znaleziska mieszczą się
 w klasach L48/L41/L107, L5/L39, L92/L142, L54/L13, ADR 0013); kondensacja
 `LESSONS.md` jest pierwszym zadaniem sesji potrzebującej nowego numeru L.
 Handoff: `docs/setup/HANDOFF_2026-09-29d.md`.
+
+## 2026-09-29e — badge Bonds of Faith + PMSSB-23 (rodzina liczników)
+
+**Zlecenie właściciela** (dwa zadania): (A) „Karta Bonds of Faith. Aura na
+non-human. Badge mówi: «nie może blokować», powinno być chyba «nie może
+atakować i blokować»"; (B) pętla PMSSB — wybrać jeden efekt/rodzinę i
+przeprowadzić **audyt przyczynowo-skutkowy** scoringu bota (kiedy efekt jest
+taktycznie najsilniejszy, w jakich fazach i turach, na jaki cel, przy jakim
+stanie gry), a potem ustawić wycenę tak, by premiowała momenty sensowne.
+Wprost: nie tuning maszynowy na dużej próbie walk (ADR 0018).
+
+**Zadanie A — badge zakazu ataku** (`7fae454`): aura nakłada `cantAttack`
+i `cantBlock` (`card-data.js:11398-11412`), silnik respektuje oba
+(`attachmentRestrictions`, `staticAttackPrevented`), widok niesie oba
+(`game-state.js:6554` / `:6562`), a `buildStateOverlay` miał ręczną gałąź
+tylko dla `cantBlock` — badge zakazu ataku nie istniał w renderze (klasa
+L1/ADR 0017). Naprawa: czysta `combatRestrictionBadges({cantAttack,
+cantBlock})` (obie = jeden badge „nie może atakować ani blokować"),
+`cardInfo` dostaje `cantAttackNow`. Piny 4 (`test/zgloszenie-bonds-of-faith-
+-badge-ataku.test.js`), mutacja B-M1 = dokładnie 1 RED. Kontrakt widoku
+(m277): `cantAttackStatic` ustawiane warunkowo → jawna lista wyjątków
+z powodem (L113), jak `cantBlock` z Batch 48.
+
+**Zadanie B — PMSSB-23, rodzina `add_counter`** (33 karty + rodzeństwo
+`add_counter_to_creatures_you_control`; plan
+`docs/plans/PLAN_2026-09-29e-pmssb23-liczniki.md`, raport §PMSSB-23 w
+`docs/PMSSB.md`):
+- **Fala A** (`b9fe2e4`, L41): `stun`/`-1/-1` rzucone CZAREM były warte 0,
+  choć ta sama instrukcja ze zdolności dostawała 10 + 4·amount (pomiar:
+  Stall Out na tapniętym 6/6 = 38); klasyfikacja liczników miała trzy kopie.
+  Jedna `counterEffectValue` w obu ścieżkach. PO: 62 / 60 / −89 na własnym.
+- **Fala B** (`33c871e`): cel wrogiego licznika bez wymiaru zagrożenia
+  (62/62/62/62 dla 1/1…8/8) → `counterThreatWeight`/`counterThreatCap`
+  (miara PMSSB-21); rider rozlania bez gałęzi (74/74/74) →
+  `counterSpreadPerRecipient`.
+- **Fala C** (`4f46522`): trzy okna — ewazja gospodarza (68/68/68 dla
+  Flying/Menace/wanilii), Główna 1 vs 2 (70/70), licznik domykający grę.
+  **Korekta własnego over-fixu**: pierwsza wersja (premia za Główną 1 +
+  dopłata za ewazję przy pustym stole) poruszyła 8 kotwic innych pętli
+  (M429, PMSSB-2/16/18); po przebudowie na karę za zamknięte okno i dopłatę
+  tylko wobec istniejących blokujących wszystkie wróciły, a każda mutacja
+  czerwieni dokładnie jeden pin. Wniosek: dopłata dotycząca wszystkich celów
+  jednakowo nie rozstrzyga wyboru, tylko pompuje wycenę czaru.
+
+**Bramy**: fast **7133/7133** · `test:all` **7404/7404** (exit 0, golden
+BEZ regeneracji) · build **70 / 4634,8 kB** · tie-audit `--gry=40` PRZED/PO:
+3821 → 3812 remisów realnych wariantów; **brak sygnału w lustrze, bo `decks/`
+nie zawiera ŻADNEJ karty tej rodziny** (B6: dowodem piny — 17 + 6 mutacji).
+
+**Korekta własnego błędu zapisu**: w opisie commitu `33c871e` wpisano build
+„4627,4 kB" przed pomiarem (rzeczywisty: 4629,9 kB); korekta w opisie
+`4f46522` i tutaj — bez przepisywania historii (L92).
+
+**Dokumentacja**: budżet lektury nadal zablokowany (99 885/100 000), więc bez
+wpisu do `LESSONS.md` — znaleziska mieszczą się w klasach L41 (trzy kopie
+klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
+M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
+`docs/setup/HANDOFF_2026-09-29e.md`.

@@ -59,6 +59,8 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | search_library (tutory) | 11 | DONE (2026-09-29) | §PMSSB-19 niżej; `test/audyt-pmssb19-search.test.js` (7); `searchRiderValue` (L41: 3 ścieżki — tabela ETB/cast/aktywacja; R2 = Final Parting `two_cards` warty 0 wszędzie + guard deck-outu na 2 karty; 4 pokrętła `search*`) |
 | mill (re-audyt) | 13 | DONE (2026-09-29) | §PMSSB-20 niżej; `test/audyt-pmssb20-mill.test.js` (6); `foeMillValue`/`selfMillValue` (L41: 4 skale → 1; R2 = presja deck-outu wroga + mill do 0 = wygrana przy ich dobraniu CR 121.4; R3 = self-mill pod reanimację w ręce; guard jedynego blokera anuluje premię); 5 pokręteł `mill*` |
 | Cuombajj / opponent-target (1 karta) | 1 | DONE (mikro-pętla, 2026-09-29) | §PMSSB-21 niżej; nowy dowód = audyt remisów (190/190 rozróżnialnych w decyzji, wcześniej 41); `test/audyt-pmssb21-opponent-target.test.js` (5); sonda `tools/pmssb21-cuombajj-sonda.mjs`; 3 pokrętła `opponentTarget*` |
+| Insatiable Appetite (`sacrifice_food_choice`, 1 karta) | 1 | DONE (mikro-pętla, 2026-09-29b) | plan `PLAN_2026-09-29b-pmssb22-insatiable-appetite.md` + wpis w PROJECT_HISTORY (sekcji w tym hubie brak — pętla mikro z zgłoszenia właściciela); `test/audyt-pmssb22-insatiable.test.js` (12); okna combat-tricka + delta zależna od Food w `pumpDelta`; 0 pokręteł |
+| liczniki (`add_counter` + `add_counter_to_creatures_you_control`) | 33+2 | DONE (2026-09-29) | §PMSSB-23 niżej; plan `PLAN_2026-09-29e-pmssb23-liczniki.md`; `test/audyt-pmssb23-liczniki.test.js` (17); `counterEffectValue` (L41: cast = activate = klasyfikacja) + 6 pokręteł `counterThreat*`/`counterSpread*`/`counterEvasion*`/`counterLateWindow*`/`counterLethalClock*` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -241,6 +243,130 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-23 — liczniki (`add_counter` i rodzeństwo) (2026-09-29)
+
+**Zlecenie właściciela**: wybrać jeden efekt/rodzinę i przeprowadzić
+**audyt przyczynowo-skutkowy** scoringu bota — kiedy efekt jest taktycznie
+najsilniejszy, w jakich fazach i turach, na jaki cel, przy jakim stanie gry
+i zagrożeniach — a następnie tak ustawić wycenę, by premiowała momenty
+sensowne i karała bezsensowne. Wprost: NIE tuning maszynowy na dużej próbie
+walk (ADR 0018), tylko przemyślany audyt i zmiany z niego wynikające.
+Właściciel zezwolił rozbudować silnik o brakujące dane (nie było potrzeby —
+widok niósł wszystko: P/T z licznikami, `counters`, `cantBeBlocked`,
+`view.combat`).
+
+**Wybór rodziny** (krok 2 procedury): inwentarz typów efektów katalogu
+(`createCardRegistry().all()`, 179 typów) × rejestr. Największa rodzina
+poza rejestrem: **`add_counter` — 33 karty / 34 wystąpienia**. Rodziny
+większe (`create_token` 41, `draw_cards` 40, `pump` 34) są DONE, a
+`pump/grant` z rejestru to pump **do końca tury** (M96/M173/M179/M218 —
+okna walki); licznik jest zasobem **trwałym**, więc to inna decyzja.
+Skład: 25× `+1/+1`, 2× `stun`, 2× `charge`, 2× `oil`, 1× `-1/-1`, 1×
+`level`, 1× `point`; okna: 7 czarów (5 sorcery, 2 instant), 7 zdolności
+aktywowanych, ~19 triggerów. Rodzeństwo:
+`add_counter_to_creatures_you_control` (2 karty) — **zero gałęzi wyceny**.
+
+**Pomiar PRZED** (sondy `/home/user/scratch/pmssb23-{liczniki-przed,r2,r3,r5}.mjs`;
+tabela w planie `docs/plans/PLAN_2026-09-29e-pmssb23-liczniki.md`):
+
+| Scenariusz | PRZED | Wniosek |
+|---|---|---|
+| Stall Out {2} (tap + 3 stun) na 1/1 / 3/3 / 6/6 trample / 8/8 | 62 / 62 / 62 / 62 | cel arbitralny |
+| ten sam czar na JUŻ TAPNIĘTYM 6/6 (tap = no-op) | 38 | 3 liczniki stun warte 0 |
+| Sleep of the Dead {1} (tap + lock 1 tura) na 1/1 … 8/8 | 13 → 27 | `dont_untap` wyceniony, stun nie |
+| Trigon `-1/-1` na 1/1 (kill) / 3/3 / 6/6 | 34 / 16 / 16 | kill tak, zagrożenie nie |
+| Dragonscale Boon: 2/2 Flying / 2/2 Menace / 2/2 wanilia | 68 / 68 / 68 | ewazja niewidoczna |
+| Courage in Crisis w Głównej 1 vs w Głównej 2 | 70 / 70 | timing = 0 |
+| Lifecrafter's Gift: 1 / 2 / 4 stwory z licznikiem (rider rozlania) | 74 / 74 / 74 | rider = 0 |
+| Cenn's Tactician: cel 5/5 / 1/1 Soldier | 38 / 14 | `counterHostValue` działa |
+| Rustvine oil (konsument bez roboty) | −6 → pass | M173/D stoi |
+
+Fakt z widoku (sprawdzony): wpis `playerView` niesie P/T **z licznikami**
+(2/2 z `+1/+1` → 3/3), więc „+6" przy celu z licznikiem to waga ciała
+gospodarza (2 × 3), nie wartość ridera — rider rozlania był wart dokładnie 0.
+
+**Findingi**: F1 (L41) — w `cast_spell` wyceniane były tylko liczniki
+przyjazne, a klasyfikacja miała trzy kopie (`BENEFICIAL_COUNTERS`, lista
+`beneficial`, `DEBUFF_COUNTERS`); F2 — cel wrogiego licznika bez wymiaru
+zagrożenia; F3 — rider rozlania bez gałęzi; F4 — ewazja gospodarza
+niewidoczna; F5 — timing: `counterCombatBonus` zapala się tylko dla walki,
+która TRWA (`pumpImprovesOutcome` → `combatOutcome` = null poza walką).
+Ścieżka triggerów (`resolve_trigger_target`) okazała się poprawna: Lodestone
+Needle na 6/6 trample = 48 > na 1/1 = 33 > `none` = 0 > własny = −26.
+
+**Fala A — L41** (`b9fe2e4`): jedna klasyfikacja (`STAT_COUNTERS` /
+`DEBUFF_COUNTERS`, CR 122) + jedna `counterEffectValue(view, cel, licznik,
+amount, {source})` w OBU ścieżkach; reguły M221/F, M429 i M173/D w jednym
+miejscu, wartości bez zmian. PO: Stall Out na 6/6 = 62 (PRZED 40), na
+tapniętym 60 (PRZED 38), na własnym −89 (PRZED +1); blokada na trzy tury
+(62) bije blokadę na jedną (23). Mutacja A-M1 (gałąź czarów wycenia tylko
+liczniki przyjazne = stan PRZED): 4 piny RED, kotwice GREEN.
+
+**Fala B — cel i odbiorcy** (`33c871e`): `counterThreatWeight` 0,5 /
+`counterThreatCap` 15 — ta sama miara co PMSSB-21 (`opponentTargetThreatWeight`),
+tylko w gałęzi „cel przeżyje" (dobijanie już skaluje się mocą, limit trzyma
+je wyżej); `counterSpreadPerRecipient` 4 (= `counterAmountWeight`) × odbiorcy
+× amount, cel główny liczony jako odbiorca (efekt celowany rozstrzyga się
+pierwszy). PO: Stall Out 63,5 / 66,5 / 71 / 74 (PRZED 62 wszędzie), Trigon
+kill 34 > 6/6 = 25 > 3/3 = 20,5 (PRZED 16/16), rider 72/78/82/90 dla
+0/1/2/4 nosicieli (PRZED 68/74/74/74). Mutacje: B-M1 → 7 RED, B-M2 → 1 RED.
+
+**Fala C — okna** (`4f46522`): `counterEvasionBonus` 5 (gospodarz, którego
+przeciwnik MA czym blokować, ale nie dosięgnie — flying bez odpowiedzi,
+Menace przy jednym blokującym CR 702.111, `cantBeBlocked` z widoku; pusty
+stół wroga NIE zapala dopłaty, bo niczego by nie rozstrzygała),
+`counterLateWindowPenalty` 4 (walka tej tury już za nami: Główna 2 / faza
+końcowa), `counterLethalClockBonus` 50 (moc po liczniku ≥ życie przeciwnika
++ atak nie do zatrzymania `attackHitsFace`). PO: 1 bloker — flying 73 =
+menace 73 > wanilia 68; 2 blokerów — flying 73 > menace 68; main1 70 >
+main2 66; wróg 3 życia i 2/2 flying — Dragonscale 118 / Courage 120 (×0: 68).
+Mutacje C-M1/C-M2/C-M3 → dokładnie po jednym pinie RED.
+
+**Korekta własnego over-fixu (M429)**: pierwsza wersja Fali C (premia +4 za
+Główną 1 i dopłata za ewazję także przy pustym stole wroga) podnosiła KAŻDY
+licznik w najczęstszym oknie i poruszyła **8 kotwic innych pętli** (M429
+Mutagen anty-over-fix, PMSSB-2/A/F4, PMSSB-16/R1 + anty-over-fix, PMSSB-18
+R1+R2, R2+R3, R3, R3-guard). Wniosek wdrożony: dopłata, która dotyczy
+WSZYSTKICH celów jednakowo, nie rozstrzyga żadnego wyboru — tylko pompuje
+wycenę czaru względem innych zagrań. Po przebudowie (kara za zamknięte okno
+zamiast premii za otwarte; ewazja tylko wobec istniejących blokujących)
+wszystkie 8 kotwic wróciły do dawnych wartości, a każda mutacja czerwieni
+dokładnie jeden pin.
+
+**Znane granice / forwardy**:
+1. Tabela riderów ETB (`add_counter: 6/5`) nie używa wspólnego helpera —
+   w chwili wyceny ETB nie ma jeszcze celu, więc kierunek rozstrzyga
+   `resolve_trigger_target` (pomiar: poprawnie). Zostaje świadomie.
+2. Silnikowy `HOSTILE_COUNTERS` (`effect-intent.js:44`) nie niesie liczników
+   minusowych (`-1/-1`, `-1/0`, `-0/-1`); w katalogu nie ma dziś triggera
+   z takim licznikiem, więc rozjazd jest nieaktywny — do wyrównania przy
+   pierwszej takiej karcie (w bocie klasyfikacja jest kompletna).
+3. `charge` wycenia gałąź `station_counters` (M429), `oil` — gałąź zasobowa
+   z konsumentem (M173/D): obie poza tą pętlą, bez zmian.
+4. Wymiar KOSZTU czaru (S11): czary licznikowe różnicuje `counterHostValue`
+   (liczba liczników × `counterAmountWeight`) + baza 50; pomiar: Courage {3}
+   = 70 > Dragonscale {4} = 68 (rider proliferate +2 vs untap −4) — kolejność
+   wynika z efektów, nie z kosztu; bez regulacji (brak dowodu, że remisuje
+   cokolwiek, co koszt rozstrzyga).
+
+**Pomiar końcowy i ewaluacja**: fast **7133/7133** · `test:all` **7404/7404**
+(exit 0; golden-master „każda partia zgadza się z fixture" — BEZ regeneracji,
+`git diff --name-only 7fae454..HEAD` = plan + `src/controllers/heuristic-bot.js`,
+`src/controllers/heuristic-params.js`, `test/audyt-pmssb23-liczniki.test.js`) · build
+**70 / 4634,8 kB** · audyt remisów `tools/bot-tie-audit.mjs --gry=40`
+(480 partii, ten sam przebieg PRZED i PO): PRZED (`7fae454`) 255 342 decyzji /
+13 148 remisów / 3821 remisów między realnymi wariantami, PO (`4f46522`)
+255 677 / 13 157 / 3812; klasy decyzyjne block 156→151, attack 198→195,
+`cast_spell` 13→14, `activate_ability` 12→12, `resolve_trigger_target` 2→2.
+**Brak sygnału w lustrze jest tu wynikiem, nie porażką (B6)**: `grep` po
+`decks/` nie znajduje ŻADNEJ karty tej rodziny (stall-out, lifecrafter's gift,
+dragonscale boon, courage in crisis, trigon of corruption, hunt the weak,
+knockout maneuver, cenn's tactician, enduring sliver, rustvine cultivator,
+lodestone needle, malamet battle glyph) — self-play obecną pulą talii w ogóle
+nie wchodzi w rodzinę. Dowodem są piny (17) i mutacje (6, każda RED).
+Forward: talia z licznikami w puli tie-audytu, jeśli rodzina ma być mierzona
+zwierciadłem.
 
 ## PMSSB-21 — opponent-target / Cuombajj (mikro-pętla) (2026-09-29)
 
