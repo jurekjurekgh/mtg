@@ -831,6 +831,17 @@ const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
 // kompletna na wejście takiej karty).
 const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
 
+// PMSSB-24/F3: efekty, które CZYTAJĄ Z GROBU — przy nich karta zmielona
+// surveilem (CR 701.25) nie jest stratą, tylko paliwem. Lista po typach
+// efektów z rejestru (ADR 0002), bez nazw kart; `delve` jest osobnym polem
+// karty (CR 702.66) i sprawdzane obok.
+const GRAVE_RECURSION_EFFECTS = new Set([
+  'return_permanent_from_graveyard',
+  'return_card_from_graveyard_to_hand',
+  'put_graveyard_card_onto_battlefield',
+  'graveyard_creatures_to_library_top_choice',
+]);
+
 const NEVER = Number.NEGATIVE_INFINITY;
 
 /**
@@ -3700,9 +3711,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cost > reach + 2) return -3;           // poza zasięgiem — chętnie oddamy
     const bodyValue = 2 * (card.power ?? 0) + (card.toughness ?? 0);
     // Tani stwór z ciałem jest najlepszym dobraniem; czar bez P/T ma wartość
-    // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
-    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
+    // bazową (nie znamy jej treści z widoku, ale to wciąż realna karta).
+    // PMSSB-24/F4 (duplikaty): druga i kolejna kopia TEJ SAMEJ karty w ręce
+    // jest warta mniej — dwóch naraz nie zagramy, a nadmiar kopii to martwe
+    // dobrania. Pomiar PRZED (P5 w planie): ręka z czterema kartami dawała
+    // tę samą wycenę co ręka pusta (12/12 = 12/12), bo `cardKeepValue` nie
+    // znała zawartości ręki. Lądy są poza regułą — ich nasycenie obsługuje
+    // próg `landsInHand`/`landsOnBoard` powyżej (druga ścieżka tej samej idei).
+    const copies = card.cardId
+      ? view.zones.hand.filter((o) => o.cardId === card.cardId).length
+      : 0;
+    const duplicateDiscount = copies > 1
+      ? -P.cardDuplicateDiscount * Math.min(copies - 1, P.cardDuplicateMaxCopies)
+      : 0;
+    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach) + duplicateDiscount;
   };
+  /**
+   * PMSSB-24/F3: czy grób jest ZASOBEM. Surveil kładzie kartę do GROBU
+   * (CR 701.25), a nie na spód biblioteki — jeśli w ręce mamy kartę, która
+   * z grobu czyta, zmielenie karty jest warte więcej niż jej zatrzymanie.
+   * Dwa generyczne deskryptory (ADR 0002, zero nazw kart):
+   *  - Delve — każda karta w grobie obniża koszt o {1} (CR 702.66);
+   *  - efekt przywracający kartę z grobu (reanimacja/odkupienie).
+   * Pomiar PRZED (P4 w planie): `mill` zbędnego landu = 25 pkt z delve w ręce
+   * = 25 pkt bez — jedyną różnicą scry/surveil był stały `MILL_CAUTION`.
+   */
+  const graveyardReadingCardsInHand = (view) => (view.zones.hand ?? []).filter((o) => {
+    const def = cardDef(o.cardId);
+    if (!def) return false;
+    if (def.delve === true) return true;
+    const effects = [
+      ...(def.spell?.effects ?? []),
+      ...(def.abilities ?? []).flatMap((a) => (a.effect ? [a.effect] : [])),
+    ];
+    return effects.some((e) => GRAVE_RECURSION_EFFECTS.has(e?.type));
+  }).length;
   /**
    * PMSSB-24/F1 (CR 701.22a „the rest on top of your library in any order",
    * CR 701.25 dla surveil): WARTOŚĆ KOLEJNOŚCI kart, które zostają na wierzchu.
@@ -10019,7 +10062,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const millDecking = milled.length > 0
           ? drawDeckingPenalty(view, milled.length) - drawDeckingPenalty(view, 0)
           : 0;
-        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder) + millDecking);
+        // PMSSB-24/F3: karta zmielona do grobu jest paliwem, jeśli mamy w ręce
+        // coś, co z grobu czyta (delve / reanimacja). Dopłata za źródło,
+        // z limitem — jedna karta z delve nie usprawiedliwia mielenia talii.
+        const graveSynergy = milled.length > 0
+          ? Math.min(P.surveilGraveSynergyPerSource * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap) * milled.length
+          : 0;
+        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder)
+          + millDecking + graveSynergy);
       }
       case 'resolve_clash_choice': {
         // Clash (CR 701.30): „na spód albo zostaw" — ta sama decyzja co scry,

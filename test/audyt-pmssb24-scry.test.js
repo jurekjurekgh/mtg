@@ -243,3 +243,57 @@ test('PMSSB-24/B6: ostatniej karty w bibliotece bot nie mieli za żadną cenę',
   const { choice } = decide(state);
   assert.deepEqual(choice.millIds ?? [], [], 'ostatnia karta zostaje w bibliotece');
 });
+
+// ---------------------------------------------------------------------------
+// F4 — kontekst ręki: duplikaty (F3 — grób jako zasób — poniżej).
+// ---------------------------------------------------------------------------
+
+test('PMSSB-24/C1: druga i trzecia kopia tej samej karty jest warta mniej', () => {
+  // Wierzch: Highland Game 2/1 za {2} przy 3 lądach ⇒ keep 9, czyli odłożenie
+  // na spód = 20 − 9 = 11. Z dwiema kopiami w ręce keep 6 ⇒ 14; z trzema
+  // keep 3 ⇒ 17 (zniżka 3 za kopię, limit 2 kopie). PRZED: 11 w każdym
+  // przypadku — `cardKeepValue` nie znała ręki (P5: 12/12 = 12/12).
+  const zero = base({ top: ['highland-game'], lands: 3 });
+  const jedna = base({ top: ['highland-game'], lands: 3, hand: ['highland-game'] });
+  const dwie = base({ top: ['highland-game'], lands: 3, hand: ['highland-game', 'highland-game'] });
+  const trzy = base({ top: ['highland-game'], lands: 3, hand: ['highland-game', 'highland-game', 'highland-game'] });
+  assert.equal(scoreOf(zero.state, 'resolve_scry(bottom:t0)'), 11);
+  assert.equal(scoreOf(jedna.state, 'resolve_scry(bottom:t0)'), 11);
+  assert.equal(scoreOf(dwie.state, 'resolve_scry(bottom:t0)'), 14);
+  assert.equal(scoreOf(trzy.state, 'resolve_scry(bottom:t0)'), 17);
+});
+
+test('PMSSB-24/C2 (anty-over-fix): cardDuplicateDiscount ×0 przywraca dawną wycenę', () => {
+  const trzy = base({ top: ['highland-game'], lands: 3, hand: ['highland-game', 'highland-game', 'highland-game'] });
+  assert.equal(scoreOf(trzy.state, 'resolve_scry(bottom:t0)', { cardDuplicateDiscount: 0 }), 11);
+});
+
+test('PMSSB-24/C3: lądy są poza regułą duplikatów (ich nasycenie ma własny próg)', () => {
+  // Drugi land w ręce nie dostaje zniżki — przy przesycie (3 w ręce albo
+  // 6 na stole) land i tak jest warty −6, a przy budowie manabazy każda
+  // kopia jest cenna. Zmiana progu przy okazji fali byłaby over-fixem.
+  const jeden = base({ top: ['secluded-steppe'], hand: ['secluded-steppe'] });
+  const dwa = base({ top: ['secluded-steppe'], hand: ['secluded-steppe', 'secluded-steppe'] });
+  assert.equal(scoreOf(jeden.state, 'resolve_scry(bottom:t0)'), 12);
+  assert.equal(scoreOf(dwa.state, 'resolve_scry(bottom:t0)'), 12);
+});
+
+// ---------------------------------------------------------------------------
+// F3 — surveil: grób bywa zasobem (Delve CR 702.66 / reanimacja).
+// ---------------------------------------------------------------------------
+
+test('PMSSB-24/C4: zmielenie karty jest warte więcej, gdy ręka czyta z grobu', () => {
+  // Surveil 2, wierzch [land, stwór], 6 lądów i 3 landy w ręce ⇒ land zbędny.
+  // Bez źródła w grobie: mill 24. Z Hooting Mandrills (Delve) w ręce: 26 —
+  // dopłata 2 za źródło znosi `MILL_CAUTION` dla karty na granicy. PRZED:
+  // 25 = 25 (P4) — jedyną różnicą scry/surveil był stały MILL_CAUTION.
+  const bezDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'] });
+  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
+  assert.equal(scoreOf(bezDelve.state, 'resolve_surveil(mill:t0)'), 24);
+  assert.equal(scoreOf(zDelve.state, 'resolve_surveil(mill:t0)'), 26);
+});
+
+test('PMSSB-24/C5 (anty-over-fix): surveilGraveSynergyPerSource ×0 przywraca 24', () => {
+  const zDelve = base({ top: ['secluded-steppe', 'highland-game'], kind: 'surveil', lands: 6, hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe', 'hooting-mandrills'] });
+  assert.equal(scoreOf(zDelve.state, 'resolve_surveil(mill:t0)', { surveilGraveSynergyPerSource: 0 }), 24);
+});

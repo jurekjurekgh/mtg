@@ -350,6 +350,20 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // więc ten sam zbiór kart jest wart więcej, gdy lepsza karta leży wyżej.
   'scryOrderWeight',             // waga różnicy względem układu pierwotnego (×0 = dawny remis)
   'scryOrderDiscount',           // ile warte jest każde przesunięcie karty w głąb wierzchu
+  // PMSSB-24 (F3/F4) — kontekst, którego wycena karty nie znała.
+  // F4: `cardKeepValue` nie czytała ręki, więc ręka z czterema kartami dawała
+  // tę samą wycenę co ręka pusta (pomiar P5: 12/12 = 12/12). Druga i kolejna
+  // kopia TEJ SAMEJ karty jest warta mniej (dwóch naraz nie zagramy); lądy są
+  // poza regułą, bo ich nasycenie obsługuje istniejący próg 3 w ręce / 6 na
+  // stole. ×0 = dawna wycena bez względu na duplikaty.
+  // F3: surveil kładzie kartę do GROBU (CR 701.25), a grób bywa zasobem —
+  // przy Delve (CR 702.66) albo reanimacji zmielenie karty jest paliwem, nie
+  // stratą (pomiar P4: 25 pkt z delve w ręce = 25 bez). Limit pilnuje, żeby
+  // jedna karta z delve nie usprawiedliwiała mielenia całej talii.
+  'cardDuplicateDiscount',       // zniżka za każdą kolejną kopię tej samej karty w ręce
+  'cardDuplicateMaxCopies',      // ile kopii najwyżej zliczamy (limit zniżki)
+  'surveilGraveSynergyPerSource',// dopłata za zmieloną kartę na każde źródło czytające z grobu
+  'surveilGraveSynergyCap',      // limit dopłaty na kartę
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -600,6 +614,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // jest pewne, a drugie wymaga przetrwania tury przeciwnika.
   scryOrderWeight: 1,
   scryOrderDiscount: 0.6,
+  // PMSSB-24/F4: 3 pkt za kopię, max 2 kopie (−6) — mniej niż wartość taniego
+  // stwora z ciałem (9 przy 3 lądach), więc duplikat nie zrównuje się ze
+  // śmieciem, tylko schodzi o „pół karty".
+  cardDuplicateDiscount: 3,
+  cardDuplicateMaxCopies: 2,
+  // PMSSB-24/F3: 2 pkt za źródło na kartę, limit 4 — dokładnie tyle, ile
+  // `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi ostrożność grobu dla
+  // karty na granicy opłacalności, a nie dla każdej.
+  surveilGraveSynergyPerSource: 2,
+  surveilGraveSynergyCap: 4,
 });
 
 /**
