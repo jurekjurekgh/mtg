@@ -96,7 +96,13 @@ Po przywróceniu 7172/7172.
 ## 5. Bramki
 
 - `npm test` **7172/7172** · `npm run build` 70 mod / **4654.1 kB**
-- `npm run test:all` — bramka końcowa pętli
+- `npm run test:all` **7443 / 7443, exit 0** — dopiero po **świadomej regeneracji**
+  golden-mastera (`node tools/bot-scoring-snapshot.mjs --write`,
+  overallHash `6f6ccbbd…` → `8c459fdc…`). Pierwsze przejście: 7441/7443, dwa faile
+  golden-mastera — nowa wycena landu zmienia ślad bota w pełnych partiach
+  (`ravnica|innistrad-wu@1001`: decyzje 241 → 245, scoreSum 2702.6908 → 2706.7108).
+  Komunikat testu wprost rozróżnia refaktor od świadomej zmiany parametrów i dla tej
+  drugiej każe regenerować; to specyfikacja właściciela, nie refaktor.
 
 ## 6. Konsekwencja do potwierdzenia przez właściciela
 

@@ -14155,7 +14155,13 @@ Prismari Campus {U}{R} przy 4 wyspach (C3), progi jako pokrętła (C4), monotoni
 lądów) + nowy B2, `bot-wyceny-pakiet-c` E2/C1 + nowy C2. **Mutacja M1** → RED: 14 pinów
 w 5 plikach. **10 pokręteł** `landKeep*`/`landColored*Max`/`landTotal*Max`.
 
-**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.1 kB.
+**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.1 kB · `npm run test:all`
+**7443 / 7443, exit 0** — po **świadomej regeneracji** golden-mastera
+(`node tools/bot-scoring-snapshot.mjs --write`, overallHash `6f6ccbbd…` → `8c459fdc…`).
+Pierwsze przejście bramy dało 7441/7443 z dwoma failami golden-mastera: nowa wycena landu
+zmienia ślad bota w pełnych partiach (różnica w `ravnica|innistrad-wu@1001`: decyzje
+241 → 245, scoreSum 2702.6908 → 2706.7108), a komunikat testu wprost każe regenerować
+fixture przy świadomej zmianie parametrów. To nie refaktor — to specyfikacja właściciela.
 
 **Konsekwencja do potwierdzenia:** przy 2 lasach na stole i trzecim w ręce (3 źródła {G})
 bot oddaje trzeci las zamiast 9-manowego czaru poza zasięgiem — dosłowna realizacja „3+

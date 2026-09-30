@@ -292,7 +292,9 @@ realizacja „3+ źródeł pipa → raczej odrzucaj", ale zmienia wcześniej uzg
 z `audyt-pr105-bot-hand-top`. Próg jest pokrętłem `landColoredNeutralMax`.
 
 **Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.1 kB ·
-`npm run test:all` — wynik w §2026-09-30c historii.
+`npm run test:all` **7443 / 7443, exit 0** — po **świadomej regeneracji golden-mastera**
+(overallHash `6f6ccbbd…` → `8c459fdc…`): nowa wycena landu zmienia ślad bota w pełnych
+partiach, a komunikat testu każe regenerować fixture przy świadomej zmianie parametrów.
 
 ---
 
