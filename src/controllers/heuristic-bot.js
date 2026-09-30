@@ -3692,18 +3692,67 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
    * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
    */
+  /**
+   * PMSSB-26: wartość landu przy decyzji „zostawić czy oddać" — DRABINA
+   * właściciela (2026-09-30), nie jeden próg przesycenia.
+   *
+   * Pomiar PRZED (sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w
+   * ogóle nie zależała od manabazy aż do starego progu — basic-forest dawał
+   * 20 pkt przy 1, 2, 3 i 5 źródłach {G}, a secluded-steppe 19 pkt aż do sumy
+   * 6 lądów. Czyli „mam jedyny las w ręce" i "mam pięć lasów" były warte tyle
+   * samo, a przy koszcie odrzucenia land przegrywał z KAŻDĄ kartą o koszcie
+   * (reguła ciała liczy land jako `2 * manaCost` = 0).
+   *
+   * Specyfikacja właściciela:
+   *  - land KOLOROWY — licznik = ile lądów DANEGO pipa na stole + w ręce:
+   *    0 → bardzo duża (nigdy nie odrzucaj) · 1 → spora · 2 → neutralna · 3+ → niska
+   *  - land BEZBARWNY/utylitarny — licznik = SUMA lądów na stole + w ręce:
+   *    0-2 → bardzo duża · 3-4 → spora · 5-6 → neutralna · 7+ → niska
+   *
+   * Kolory landu bierzemy z `koloryZrodlaWidoku` = `getSourceForObject`
+   * (podtypy podstawowe wg CR 305.6 + deskryptory zdolności many) — jedno
+   * źródło prawdy z `colorCastable`, zero map nazw kart (ADR 0002).
+   *
+   * Dwie decyzje interpretacyjne, obie dosłowne wobec specyfikacji:
+   *  1. Licznik obejmuje rękę, więc land oceniany W RĘCE liczy sam siebie —
+   *     „0" pojawia się, gdy land nie jest w ręce (np. odkryty na wierzchu
+   *     biblioteki przy scry). Dlatego przy koszcie odrzucenia najlepszy stopień
+   *     dla jedynego źródła koloru to „spora", nie „bardzo duża".
+   *  2. Land wielokolorowy bierzemy po NAJMNIEJSZYM liczniku spośród jego
+   *     kolorów: wartość dyktuje najbardziej brakujący kolor.
+   */
+  const landKeepValue = (view, card) => {
+    const isLandObj = (o) => (o?.kind ?? '') === 'land' || (o?.types ?? []).includes('Land');
+    const mine = (o) => o?.controllerId === view.playerId;
+    const boardLands = (view.zones.battlefield ?? []).filter((o) => isLandObj(o) && mine(o));
+    const handLands = (view.zones.hand ?? []).filter(isLandObj);
+    const kolory = koloryZrodlaWidoku(card);
+    if (kolory.length > 0) {
+      let najmniejszy = Infinity;
+      for (const kolor of kolory) {
+        let ile = 0;
+        for (const o of [...boardLands, ...handLands]) {
+          if (koloryZrodlaWidoku(o).includes(kolor)) ile += 1;
+        }
+        najmniejszy = Math.min(najmniejszy, ile);
+      }
+      if (najmniejszy <= P.landColoredCriticalMax) return P.landKeepCritical;
+      if (najmniejszy <= P.landColoredHighMax) return P.landKeepHigh;
+      if (najmniejszy <= P.landColoredNeutralMax) return P.landKeepNeutral;
+      return P.landKeepSaturated;
+    }
+    const suma = boardLands.length + handLands.length;
+    if (suma <= P.landTotalCriticalMax) return P.landKeepCritical;
+    if (suma <= P.landTotalHighMax) return P.landKeepHigh;
+    if (suma <= P.landTotalNeutralMax) return P.landKeepNeutral;
+    return P.landKeepSaturated;
+  };
   const cardKeepValue = (view, card) => {
     if (!card) return 0;
     const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
     const landsOnBoard = myLandCount(view);
     const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
-    if (isLand) {
-      // Land jest cenny, dopóki budujemy manabazę, i zbędny przy przesycie.
-      // Próg jak dotąd (>=3 w ręce albo >=6 na stole) — zmienia się WARTOŚĆ,
-      // nie próg, żeby nie ruszać sprawdzonej granicy przy okazji.
-      if (landsInHand >= 3 || landsOnBoard >= 6) return -6;
-      return landsOnBoard <= 3 ? 8 : 3;
-    }
+    if (isLand) return landKeepValue(view, card);
     // Karta niegruntowa: liczy się, czy DA SIĘ ją zagrać w rozsądnym czasie.
     // Koszt daleko poza zasięgiem to karta martwa na wiele tur.
     const cost = card.manaCost ?? 0;
@@ -6021,7 +6070,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (kotwica anty-over-fix: przy `cardKeepValue >= 0` wartość bez zmian).
     const wspolna = cardKeepValue(view, karta);
     if (wspolna < 0) return -wspolna + P.discardUnwantedBonus;
-    return -Math.min(30, wartosc);
+    // PMSSB-26: domknięcie tej samej luki L41 od drugiej strony. Gałąź powyżej
+    // czyta wspólną miarę tylko, gdy jest UJEMNA, więc cała dodatnia drabina
+    // landu (30/18/8) zapadała się do jednego wyniku — pomiar PO pokazał, że
+    // „mam jedyny las w ręce" i „mam dwa lasy" dawały w decyzji odrzucenia
+    // identyczne 20 pkt. Bierze lepszą z dwóch miar: reguła ciała pozostaje
+    // suwitem dla dużych ciał (6/6 = 18 > 12 ze wspólnej), a wspólna miara
+    // dochodzi do głosu tam, gdzie ciało milczy — land (manaCost 0 → 0 pkt)
+    // i tanie karty poza/pod zasięgiem.
+    return -Math.min(30, Math.max(wartosc, wspolna));
   }
 
   function attackIntendsCreature(view, objectId) {

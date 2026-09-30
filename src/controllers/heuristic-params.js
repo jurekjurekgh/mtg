@@ -373,6 +373,21 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // NIE chce, oddajemy chętnie; `discardUnwantedBonus` to płaska dopłata za
   // samo pozbycie się karty niechcianej (×0 = sama wartość wspólnej miary).
   'discardUnwantedBonus',        // dopłata za odrzucenie karty, której wspólna miara nie chce
+  // PMSSB-26 — drabina wartości landu (specyfikacja właściciela 2026-09-30).
+  // Land KOLOROWY: licznik = ile lądów danego pipa na stole + w ręce.
+  // Land BEZBARWNY/utylitarny: licznik = suma lądów na stole + w ręce.
+  // Cztery stopnie wartości wspólne dla obu drabin; progi osobne, bo skala
+  // „ile źródeł koloru potrzebuję" i „ile lądów do działania" jest inna.
+  'landKeepCritical',            // 0 źródeł / 0-2 lądów: bardzo duża (nigdy nie odrzucaj)
+  'landKeepHigh',                // 1 źródło / 3-4 lądy: spora (zwykle nie odrzucaj)
+  'landKeepNeutral',             // 2 źródła / 5-6 lądów: neutralna (raczej nie odrzucaj)
+  'landKeepSaturated',           // 3+ źródeł / 7+ lądów: niska (raczej odrzucaj)
+  'landColoredCriticalMax',      // próg: licznik pipa <= tej wartości → critical
+  'landColoredHighMax',          // próg: licznik pipa <= tej wartości → high
+  'landColoredNeutralMax',       // próg: licznik pipa <= tej wartości → neutral
+  'landTotalCriticalMax',        // próg: suma lądów <= tej wartości → critical
+  'landTotalHighMax',            // próg: suma lądów <= tej wartości → high
+  'landTotalNeutralMax',         // próg: suma lądów <= tej wartości → neutral
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -638,6 +653,21 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // o ciele do ~10 (2×moc+wytrz), ale nie z regułą koloru właściciela (M408),
   // która jest liczona osobną gałęzią i zostaje nietknięta.
   discardUnwantedBonus: 5,
+  // PMSSB-26: stopnie dobrane do istniejącej skali `cardKeepValue` — karta
+  // niegruntowa dostaje 4..12, więc „neutralna" (8) trzyma land nad zwykłym
+  // stworem, a „niska" (-6) oddaje go chętniej niż cokolwiek grywalnego.
+  // „Bardzo duża" (30) sięga sufitu klamry `-min(30, ...)` w regule ciała,
+  // więc land jedynego źródła koloru nie przegra z żadną zwykłą kartą.
+  landKeepCritical: 30,
+  landKeepHigh: 18,
+  landKeepNeutral: 8,
+  landKeepSaturated: -6,
+  landColoredCriticalMax: 0,
+  landColoredHighMax: 1,
+  landColoredNeutralMax: 2,
+  landTotalCriticalMax: 2,
+  landTotalHighMax: 4,
+  landTotalNeutralMax: 6,
 });
 
 /**

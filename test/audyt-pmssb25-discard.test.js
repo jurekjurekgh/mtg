@@ -75,13 +75,15 @@ test('PMSSB-25/A1: karta poza zasięgiem many idzie na pierwszy ogień, nie gryw
   assert.equal(wybrana(state), 'h0', 'bot ma odrzucić kartę poza zasięgiem');
 });
 
-test('PMSSB-25/A2: zbędny land przy przesycie jest odrzucany z POWODU przesycenia', () => {
-  // 6 lądów na stole + 2 w ręce ⇒ wspólna miara mówi o landzie −6. PRZED: 19
-  // pkt wyłącznie dlatego, że land ma manaCost 0 (reguła ciała nic o nim nie
-  // wiedziała). PO: 31 — i przewaga nad stworem (14) jest wyraźna.
-  const state = base({ hand: ['secluded-steppe', 'secluded-steppe', 'highland-game'], lands: 6 });
+test('PMSSB-25/A2: zbędny land jest odrzucany z POWODU przesycenia danego pipa', () => {
+  // PMSSB-26: przesycenie liczymy PER PIP (specyfikacja właściciela), nie po
+  // sumie lądów. 2 lasy na stole + oceniany las w ręce = 3 źródła {G} ⇒
+  // wspólna miara mówi −6 ⇒ 6 + discardUnwantedBonus(5) = 11 ⇒ 20 + 11 = 31.
+  // PRZED: 19 pkt wyłącznie dlatego, że land ma manaCost 0 (reguła ciała nic
+  // o nim nie wiedziała). Przewaga nad grywalnym stworem (11) jest wyraźna.
+  const state = base({ hand: ['basic-forest', 'highland-game'], lands: 2 });
   assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 31);
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h2)'), 14);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 11);
 });
 
 test('PMSSB-25/A3 (kotwica M408): reguła braku KOLORU many zostaje nietknięta', () => {
@@ -94,11 +96,15 @@ test('PMSSB-25/A3 (kotwica M408): reguła braku KOLORU many zostaje nietknięta'
   assert.equal(wybrana(state), 'h3', 'karta bez koloru idzie na pierwszy ogień');
 });
 
-test('PMSSB-25/A4 (anty-over-fix): karty grywalne mają tę samą wycenę co PRZED', () => {
-  // Nowa gałąź zapala się TYLKO dla kart, których wspólna miara nie chce
-  // (`cardKeepValue < 0`). Grywalny stwór przy 3 lasach: 14 pkt — bez zmian.
+test('PMSSB-25/A4: karta grywalna bierze LEPSZĄ z dwóch miar (PMSSB-26)', () => {
+  // Pierwotnie ten pin mówił „karty grywalne bez zmian", bo gałąź wspólnej
+  // miary zapalała się tylko dla wartości ujemnych. PMSSB-26 domknął lukę L41
+  // od drugiej strony: `-min(30, max(ciało, wspólna))`. Highland Game 2/1 ma
+  // ciało 5, a wspólna miara 9 (4 + min(5,8) − 0) ⇒ 20 − 9 = 11. Reguła ciała
+  // pozostaje suwitem dla dużych ciał (6/6 = 18 > 12), więc zmiana jest
+  // ograniczona do kart, o których ciało milczy — landów i tanich kart.
   const state = base({ hand: ['highland-game', 'zoraline'], lands: 3 });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 14);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 11);
 });
 
 test('PMSSB-25/A5: discardUnwantedBonus ×0 zostawia samą wartość wspólnej miary', () => {

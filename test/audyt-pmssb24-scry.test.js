@@ -269,12 +269,15 @@ test('PMSSB-24/C2 (anty-over-fix): cardDuplicateDiscount ×0 przywraca dawną wy
 });
 
 test('PMSSB-24/C3: lądy są poza regułą duplikatów (ich nasycenie ma własny próg)', () => {
-  // Drugi land w ręce nie dostaje zniżki — przy przesycie (3 w ręce albo
-  // 6 na stole) land i tak jest warty −6, a przy budowie manabazy każda
-  // kopia jest cenna. Zmiana progu przy okazji fali byłaby over-fixem.
+  // Zniżka za duplikaty (`cardDuplicateDiscount`) NIGDY nie dotyczy landów —
+  // ich wartość opisuje osobna drabina. PMSSB-26: ta drabina jest teraz
+  // specyfikacją właściciela per pip, więc druga kopia landu tego samego
+  // koloru zmienia WARTOŚĆ (1 źródło = 18 → 2 źródła = 8), ale nie przez
+  // regułę duplikatów. Gdyby duplikaty działały, różnica zależałaby od
+  // `cardDuplicateDiscount` — pin PMSSB-26/C5 sprawdza, że nie zależy.
   const jeden = base({ top: ['secluded-steppe'], hand: ['secluded-steppe'] });
   const dwa = base({ top: ['secluded-steppe'], hand: ['secluded-steppe', 'secluded-steppe'] });
-  assert.equal(scoreOf(jeden.state, 'resolve_scry(bottom:t0)'), 12);
+  assert.equal(scoreOf(jeden.state, 'resolve_scry(bottom:t0)'), 2);
   assert.equal(scoreOf(dwa.state, 'resolve_scry(bottom:t0)'), 12);
 });
 
