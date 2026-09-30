@@ -63,6 +63,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | liczniki (`add_counter` + `add_counter_to_creatures_you_control`) | 33+2 | DONE (2026-09-29) | §PMSSB-23 niżej; plan `PLAN_2026-09-29e-pmssb23-liczniki.md`; `test/audyt-pmssb23-liczniki.test.js` (17); `counterEffectValue` (L41: cast = activate = klasyfikacja) + 6 pokręteł `counterThreat*`/`counterSpread*`/`counterEvasion*`/`counterLateWindow*`/`counterLethalClock*` |
 | filtrowanie wierzchu (`scry` + `surveil`) | 12+5 | DONE (2026-09-30) | §PMSSB-24 niżej; plan `PLAN_2026-09-30a-pmssb24-scry.md`; `test/audyt-pmssb24-scry.test.js` (19); `libraryOrderValue` (CR 701.22a/701.25 — permutacje wreszcie wycenione) + reveal w widoku + drabina deck-outu przy millu + duplikaty/grób; 6 pokręteł `scryOrder*`/`cardDuplicate*`/`surveilGraveSynergy*` |
 | koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
+| wartość landu (drabina per pip) | 1 | DONE (2026-09-30c) | §PMSSB-26 niżej; plan `PLAN_2026-09-30c-pmssb26-land-drabina.md`; `test/audyt-pmssb26-land-drabina.test.js` (13); `landKeepValue` wg specyfikacji właściciela (CR 305.6 dla kolorów); 10 pokręteł `landKeep*`/`landColored*Max`/`landTotal*Max` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -245,6 +246,55 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-26 — wartość landu jako drabina (2026-09-30c)
+
+Pętla otwarta z forwardu PMSSB-25 i **zamknięta specyfikacją właściciela** (nie domysłem).
+
+**Pomiar PRZED** (sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w ogóle nie zależała
+od manabazy aż do starego progu przesycenia — basic-forest dawał **20 pkt przy 1, 2, 3 i 5
+źródłach {G}**, a land utylitarny 19 pkt aż do sumy 6 lądów. Przy koszcie odrzucenia land
+przegrywał z każdą kartą o niezerowym koszcie, bo reguła ciała liczy land jako
+`2 · manaCost` = 0; przy 0 lądów bot wyrzucał land i zostawiał artefakt za {2} (19 vs 15).
+
+**Specyfikacja właściciela:** land KOLOROWY — licznik = ile lądów danego pipa na stole
++ w ręce (0 → bardzo duża · 1 → spora · 2 → neutralna · 3+ → niska); land BEZBARWNY lub
+utylitarny — licznik = suma lądów na stole + w ręce (0-2 · 3-4 · 5-6 · 7+).
+
+**Fala A (`5f31e00`):** `landKeepValue(view, card)` w miejscu starej jednoprogowej gałęzi
+landu, więc działa wszędzie tam, gdzie wspólna miara (scry, surveil, look_top, clash, mill,
+discard). Kolory z `koloryZrodlaWidoku` = `getSourceForObject` (podtypy podstawowe CR 305.6
++ deskryptory many) — jedno źródło prawdy z `colorCastable`, zero map nazw kart (ADR 0002).
+Land wielokolorowy liczony po **najmniejszym** liczniku kolorów. Domknięta też druga strona
+luki L41: `discardCostPreference` czytał wspólną miarę tylko gdy ujemna, więc cała dodatnia
+drabina zapadała się do jednego wyniku — teraz `-min(30, max(ciało, wspólna))`.
+
+**POMIAR PO** (land vs stwór 2/1 = 11 pkt): bardzo duża **−10** · spora **2** ·
+neutralna **12** · niska **31**.
+
+**Kotwice:** C1 — reguła koloru właściciela (M408) nietknięta. C2 — drabina nie zależy od
+`cardDuplicateDiscount` (to nie reguła duplikatów). C4 — progi są pokrętłami. C5 — cztery
+stopnie monotoniczne.
+
+**Zaktualizowane piny starej płaskiej reguły:** PMSSB-24/C3 (12/12 → 2/12), PMSSB-25/A2
+(przesycenie per pip), PMSSB-25/A4 (14 → 11, „lepsza z dwóch miar"), `audyt-pr105` B
+(przypadek brzegowy z 2 na 0 lądów) + nowy B2, `bot-wyceny-pakiet-c` E2/C1 + nowy C2.
+
+**Mutacja M1** (stara płaska reguła) → RED: **14 pinów w 5 plikach**.
+
+**Pokrętła (10):** `landKeepCritical` 30 · `landKeepHigh` 18 · `landKeepNeutral` 8 ·
+`landKeepSaturated` −6 · `landColored{Critical,High,Neutral}Max` 0/1/2 ·
+`landTotal{Critical,High,Neutral}Max` 2/4/6.
+
+**Do potwierdzenia przez właściciela:** przy 2 lasach na stole i trzecim w ręce (3 źródła
+{G}) bot oddaje teraz trzeci las zamiast 9-manowego czaru poza zasięgiem — to dosłowna
+realizacja „3+ źródeł pipa → raczej odrzucaj", ale zmienia wcześniej uzgodnione zachowanie
+z `audyt-pr105-bot-hand-top`. Próg jest pokrętłem `landColoredNeutralMax`.
+
+**Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.1 kB ·
+`npm run test:all` — wynik w §2026-09-30c historii.
+
+---
 
 ## PMSSB-25 — koszt „odrzuć kartę” a wspólna miara (2026-09-30b, mikro-pętla)
 

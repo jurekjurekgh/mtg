@@ -14124,6 +14124,51 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30c — PMSSB-26: wartość landu jako drabina (specyfikacja właściciela)
+
+**Pętla z forwardu PMSSB-25, zamknięta regułą podaną przez właściciela.** Pomiar PRZED
+(sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w ogóle nie zależała od manabazy —
+basic-forest dawał **20 pkt przy 1, 2, 3 i 5 źródłach {G}**, land utylitarny 19 pkt aż do
+sumy 6 lądów. Przy koszcie odrzucenia land przegrywał z każdą kartą o niezerowym koszcie
+(reguła ciała liczy land jako `2 · manaCost` = 0), więc przy 0 lądów bot wyrzucał land
+i zostawiał artefakt za {2} bez many (19 vs 15).
+
+**Specyfikacja właściciela (2026-09-30):** land kolorowy — wartość od liczby lądów danego
+pipa na stole + w ręce (0 → bardzo duża · 1 → spora · 2 → neutralna · 3+ → niska); land
+bezbarwny/utylitarny — od sumy lądów (0-2 · 3-4 · 5-6 · 7+).
+
+**Wdrożenie:** `landKeepValue` w miejscu starej jednoprogowej gałęzi landu we wspólnej
+`cardKeepValue`, więc działa w scry/surveil/look_top/clash/mill/discard. Kolory landu z
+`getSourceForObject` (podtypy podstawowe CR 305.6 + deskryptory many) — jedno źródło prawdy
+z `colorCastable`, zero map nazw kart. Land wielokolorowy liczony po najmniejszym liczniku
+kolorów. Domknięta druga strona luki L41: `discardCostPreference` czytał wspólną miarę tylko
+gdy ujemna, więc dodatnia drabina zapadała się do jednego wyniku — teraz
+`-min(30, max(ciało, wspólna))`.
+
+**PO:** drabina widoczna w decyzji jako **−10 / 2 / 12 / 31** (land vs stwór 2/1 = 11).
+Piny `test/audyt-pmssb26-land-drabina.test.js` (13), w tym kotwice: reguła koloru M408
+nietknięta (C1), niezależność od `cardDuplicateDiscount` (C2), `Math.min` po kolorach na
+Prismari Campus {U}{R} przy 4 wyspach (C3), progi jako pokrętła (C4), monotoniczność (C5).
+
+**Zaktualizowane piny starej płaskiej reguły:** PMSSB-24/C3 (12/12 → 2/12), PMSSB-25/A2
+(przesycenie per pip), PMSSB-25/A4 (14 → 11), `audyt-pr105` B (przypadek brzegowy z 2 na 0
+lądów) + nowy B2, `bot-wyceny-pakiet-c` E2/C1 + nowy C2. **Mutacja M1** → RED: 14 pinów
+w 5 plikach. **10 pokręteł** `landKeep*`/`landColored*Max`/`landTotal*Max`.
+
+**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.1 kB.
+
+**Konsekwencja do potwierdzenia:** przy 2 lasach na stole i trzecim w ręce (3 źródła {G})
+bot oddaje trzeci las zamiast 9-manowego czaru poza zasięgiem — dosłowna realizacja „3+
+źródeł pipa → raczej odrzucaj", ale zmienia wcześniej uzgodnione zachowanie („nie wyrzucaj
+automatycznie lądu przy niedoborze many"). Próg: pokrętło `landColoredNeutralMax`.
+
+**Incydent:** sandbox odtworzył się po raz drugi w tej sesji — lokalna gałąź wróciła na bazę
+`6789702`, przez co pierwszy commit PMSSB-26 (`4c21432`) wchłonął całą deltę od bazy zamiast
+samej pętli. Odzyskano przez `git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg`
+i ponowny commit delty jako **`5f31e00`**.
+
+---
+
 ## 2026-09-30b — PMSSB-25: koszt „odrzuć” a wspólna miara karty
 
 **Mikro-pętla (M429).** Cel wybrany z audytu remisów PO: `resolve_discard_choice`
