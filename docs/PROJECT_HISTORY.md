@@ -14150,7 +14150,8 @@ leży poza ręką, więc licznik jest taki sam.
 
 **Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.4 kB · golden-master **bez
 regeneracji** (4/4 — zmiana progów nie przesunęła decyzji w pełnych partiach, w przeciwieństwie
-do PMSSB-26, gdzie regeneracja była konieczna).
+do PMSSB-26, gdzie regeneracja była konieczna) · `npm run test:all` **7443 / 7443, exit 0**,
+golden-master `ok 1710`.
 
 **Incydent:** sandbox odtworzył się po raz **trzeci** w tej sesji, a `git checkout -- <plik>`
 wykonany przy HEAD wskazującym bazę skasował zmiany PMSSB-26 w jednym pliku testowym.

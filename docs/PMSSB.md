@@ -285,7 +285,7 @@ E2/C2 — tam oceniana karta leży poza ręką, więc licznik jest taki sam.
 
 **Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.4 kB · golden-master
 **bez regeneracji** (zmiana progów nie przesunęła decyzji w pełnych partiach) ·
-`npm run test:all` — wynik w §2026-09-30d historii.
+`npm run test:all` **7443 / 7443, exit 0**, golden-master `ok 1710`.
 
 ---
 
