@@ -3703,6 +3703,50 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
     return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
   };
+  /**
+   * PMSSB-24/F1 (CR 701.22a „the rest on top of your library in any order",
+   * CR 701.25 dla surveil): WARTOŚĆ KOLEJNOŚCI kart, które zostają na wierzchu.
+   *
+   * Pomiar PRZED (sonda `pmssb24-scry-przed.mjs`, tabela w planie
+   * `docs/plans/PLAN_2026-09-30a-pmssb24-scry.md`): `resolve_scry` liczył
+   * wyłącznie `bottomIds`, więc 6 permutacji „zostaw wszystko" remisowało
+   * po 20 pkt i wybór padał na pierwszą ofertę z listy; przy surveil bonus
+   * `keepsOrder ? 1 : 0` premiował kolejność ORYGINALNĄ, czyli świadome
+   * ułożenie lepszej karty wyżej przegrywało 21:20. Silnik permutacje
+   * oferuje (`game-state.js:7149-7160`) — brakowało tylko wyceny.
+   *
+   * Model: kartę pierwszą na wierzchu dobieramy najbliższym drawem, każdą
+   * kolejną o turę później (i nie jest pewne, że w ogóle — przeciwnik zdąży
+   * nas zabić albo zmielić). Dlatego wartość układu to suma zdyskontowana
+   * `cardKeepValue` po pozycjach. Funkcja zwraca RÓŻNICĘ względem układu
+   * pierwotnego (kolejność przeglądania = od wierzchu, CR 701.22), więc:
+   *  - dla układu pierwotnego daje 0 — wartości sprzed fali bez zmian
+   *    (kotwica anty-over-fix M429, `scryOrderWeight: 0` = dawny remis);
+   *  - lepszy układ dostaje plus, gorszy minus — decyzja przestaje zależeć
+   *    od kolejności enumeracji (klasa L50/L169).
+   */
+  const libraryOrderValue = (view, keptIds, originalKeptIds) => {
+    const weight = P.scryOrderWeight;
+    if (weight === 0 || keptIds.length < 2) return 0;
+    const discount = P.scryOrderDiscount;
+    const pending = view.pendingScry ?? view.pendingSurveil;
+    const cards = pending?.cards ?? [];
+    const keepOf = (id) => {
+      const card = cards.find((c) => c.id === id);
+      return card ? cardKeepValue(view, card) : 0;
+    };
+    // Liczą się TYLKO karty, które chcemy dobrać (`keep > 0`): kolejność
+    // rozstrzyga, którą z nich dostaniemy pierwszą. Karta zbędna (`keep < 0`)
+    // nie jest nagradzana za przesunięcie w głąb — od tego jest spód
+    // biblioteki/grobu, bo trzymany śmieć i tak zajmie jedno dobranie.
+    // Zmierzone: bez tego progu przestawienie zbędnego landu na drugą
+    // pozycję dostawało (1−d)·(keep_dobrej − keep_śmiecia) = 6 pkt, czyli
+    // dokładnie tyle, co jego odłożenie (26 vs 26) — remis rozstrzygała
+    // kolejność enumeracji i kotwica M135 („zbędny land idzie na spód")
+    // przegrywała.
+    const discounted = (ids) => ids.reduce((sum, id, i) => sum + Math.max(0, keepOf(id)) * (discount ** i), 0);
+    return weight * (discounted(keptIds) - discounted(originalKeptIds));
+  };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
    * E (zgłoszenie właściciela 2026-09-20): moc, którą wróg może zadać nam
@@ -9916,7 +9960,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const delta = cards
           .filter((card) => bottoms.includes(card.id))
           .reduce((sum, card) => sum - cardKeepValue(view, card), 0);
-        return finish(20 + delta);
+        // PMSSB-24/F1 (Scry, CR 701.22a): resztę układamy sami — ten sam zbiór
+        // kart jest warta więcej, gdy lepsza karta leży wyżej. Różnica
+        // względem układu pierwotnego, więc wariant bez przestawienia ma
+        // wartość sprzed fali (kotwica anty-over-fix M429).
+        const originalKept = cards.filter((card) => !bottoms.includes(card.id)).map((card) => card.id);
+        const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalKept;
+        return finish(20 + delta + libraryOrderValue(view, keptOrder, originalKept));
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
@@ -9937,8 +9987,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const originalOrder = (view.pendingSurveil?.cards ?? [])
           .filter((card) => !milled.includes(card.id))
           .map((card) => card.id);
-        const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
-        return finish(20 + millDelta + (keepsOrder ? 1 : 0));
+        // PMSSB-24/F1: dawny `keepsOrder ? 1 : 0` premiował kolejność
+        // ORYGINALNĄ, czyli karał świadome ułożenie (pomiar: 21 vs 20).
+        // Zastąpiony tą samą wyceną co przy scry — porównaniem permutacji,
+        // nie preferencją (Surveil, CR 701.25 też mówi „in any order").
+        const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalOrder;
+        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder));
       }
       case 'resolve_clash_choice': {
         // Clash (CR 701.30): „na spód albo zostaw" — ta sama decyzja co scry,
@@ -11493,6 +11547,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  // PMSSB-24/F1 (klasa L34/L40 — ta sama lekcja co M203/2): permutacje tego
+  // samego podzbioru kart były w śladzie NIEODRÓŻNIALNE (16 wariantów scry
+  // dawało 8 etykiet), więc audyt remisów raportował remisy tam, gdzie są
+  // różne decyzje, a testy wyceny nie mogły wskazać konkretnej kolejności.
+  // Sufiks tylko gdy kolejność naprawdę różni się od pierwotnej, żeby
+  // dotychczasowe etykiety (`…(keep)`, `…(bottom:…)`) zostały bez zmian.
+  const orderSuffix = (view, cmd, movedIds, pendingKey) => {
+    const order = Array.isArray(cmd.topOrder) ? cmd.topOrder : null;
+    if (!order || order.length < 2) return '';
+    const cards = view?.[pendingKey]?.cards ?? [];
+    const original = cards.filter((c) => !movedIds.includes(c.id)).map((c) => c.id);
+    if (JSON.stringify(order) === JSON.stringify(original)) return '';
+    return `;order:${order.join('+')}`;
+  };
+
   function summarize(cmd, view = null) {
     // M431 (L34/L40, wzorzec M203/2): warianty jednej decyzji muszą być
     // rozróżnialne w śladzie — inaczej audyt remisów paruje je po indeksie.
@@ -11509,10 +11578,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (klasa L34/L40). Ta sama lekcja co M195/B: opis w śladzie ma nazywać
     // wariant, nie tylko typ decyzji.
     if (cmd.type === 'resolve_scry') {
-      return `resolve_scry(${(cmd.bottomIds ?? []).length ? `bottom:${cmd.bottomIds.join('+')}` : 'keep'})`;
+      const moved = cmd.bottomIds ?? [];
+      const base = moved.length ? `bottom:${moved.join('+')}` : 'keep';
+      return `resolve_scry(${base}${orderSuffix(view, cmd, moved, 'pendingScry')})`;
     }
     if (cmd.type === 'resolve_surveil') {
-      return `resolve_surveil(${(cmd.millIds ?? []).length ? `mill:${cmd.millIds.join('+')}` : 'keep'})`;
+      const moved = cmd.millIds ?? [];
+      const base = moved.length ? `mill:${moved.join('+')}` : 'keep';
+      return `resolve_surveil(${base}${orderSuffix(view, cmd, moved, 'pendingSurveil')})`;
     }
     // PMSSB-22 (wzorzec M431/M203-2, klasa L34/L40): warianty poświęcenia Food
     // były w śladzie nieodróżnialne (oba streszczały się do

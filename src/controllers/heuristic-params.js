@@ -338,6 +338,18 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'foodKeepValue',      // PMSSB-22: wartość ZACHOWANEGO Food (3 życia) — ×0 = dawne „zawsze poświęcaj”
   'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy +5/+5 zmienia wynik walki, a +3/+3 nie
   'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
+  // PMSSB-24 (F1) — KOLEJNOŚĆ kart, które zostają na wierzchu po scry/surveil.
+  // CR 701.22a („the rest on top of your library in any order") i 701.25 dają
+  // graczowi wybór kolejności, a silnik oferuje permutacje
+  // (`game-state.js:7149-7160`). Pomiar PRZED (sonda pmssb24-scry-przed.mjs):
+  // `resolve_scry` liczył tylko `bottomIds`, więc 6 permutacji keep-all
+  // remisowało po 20 i wybór padał na pierwszą z listy; przy surveil było
+  // gorzej — `keepsOrder ? 1 : 0` premiowało kolejność ORYGINALNĄ, więc
+  // świadome ułożenie przegrywało 21:20. Karta pierwsza na wierzchu jest
+  // dobierana najbliższym drawem, kolejne później (możemy ich nie dożyć),
+  // więc ten sam zbiór kart jest wart więcej, gdy lepsza karta leży wyżej.
+  'scryOrderWeight',             // waga różnicy względem układu pierwotnego (×0 = dawny remis)
+  'scryOrderDiscount',           // ile warte jest każde przesunięcie karty w głąb wierzchu
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -578,6 +590,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   foodKeepValue: 12,
   foodDecisiveBonus: 25,
   opponentTargetThreatCap: 15,
+  // PMSSB-24/F1 (Fala A) — kolejność wierzchu. Waga 1 = różnica liczona
+  // w tych samych jednostkach co `cardKeepValue` (skala „czy chcemy tę kartę
+  // dobrać"), więc nie wprowadza nowej skali i nie przesuwa decyzji o
+  // podzbiorze odłożonym (kotwica anty-over-fix: przy `scryOrderWeight: 0`
+  // wartości wracają do stanu sprzed fali, w tym do preferencji kolejności
+  // oryginalnej przy surveil). Dyskonto 0,6 = karta o jedną pozycję głębiej
+  // jest warta 60% — bardziej strome niż „pół na pół", bo najbliższe dobranie
+  // jest pewne, a drugie wymaga przetrwania tury przeciwnika.
+  scryOrderWeight: 1,
+  scryOrderDiscount: 0.6,
 });
 
 /**
