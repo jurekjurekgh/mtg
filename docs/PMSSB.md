@@ -67,6 +67,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | licznik źródeł landu bez karty rozważanej | 1 | DONE (2026-09-30d) | §PMSSB-27 niżej; doprecyzowanie właściciela do PMSSB-26 — „3 na stole albo 2 na stole i 1 dodatkowy w ręku (poza tym rozważanym)"; przywraca pierwotny pin `audyt-pr105` B; 0 nowych pokręteł |
 | wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` |
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
+| podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -251,6 +252,16 @@ w `src/controllers/heuristic-params.js`.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
 
 ## PMSSB-29 — `resolve_search_choice` na wspólnej mierze (2026-09-30f)
+
+> **SPROSTOWANIE (2026-09-30g, PMSSB-30).** Ta sekcja twierdziła, że manabaza
+> zmienia wybór przez **próg zasięgu** bomby (22 przy 0 lądów → 37 przy 8).
+> To było przesadzone i zostało obalone pinem `real-cards-batch55` B55/B4
+> (Brightwood Tracker): przy 0 lądów próg zasięgu odwracał wybór z 4/5 na 1/1.
+> Karta szukana idzie **na stałe do ręki**, więc obowiązuje podłoga z ciała
+> `max(handCardKeepValue, cardKeepValue)`. Manabaza **nadal** zmienia wybór —
+> ale przez drabinę lądów (land 55 → 25), nie przez zasięg. Obalona została też
+> „granica uczciwości" z B4: czary remisowały tylko dlatego, że `cardKeepValue`
+> ignorował koszt. Szczegóły w §PMSSB-30.
 
 Cel wybrany z **odświeżonego** audytu remisów (`node tools/bot-tie-audit.mjs --gry=40` —
 480 partii, 258 317 decyzji): `resolve_search_choice` ma **245 remisów i wszystkie są
@@ -1499,3 +1510,27 @@ w `heuristic-params.js`, `landEnteredThisTurn` w `playerView` (game-state.js).
 - Suit 6701/6701 GREEN po regeneracji; blast-radius unwrap-ALL (cast + ETB)
   = zero faili poza golden-masterem.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-30 — `resolve_satyr_look_choice` na wspólnej mierze (2026-09-30g)
+
+**Czwarta** równoległa miara wartości karty. Kod: `30 + (land ? 30 : 0) + 2P + T`,
+przy czym komentarz obiecywał „Ląd premiami za manabazę", a premia była stała.
+
+**Pomiar PRZED** (sonda `scratch/pmssb30-satyr-przed.mjs`, identycznie przy
+0/3/8/12 lądach): `land 60 · bomba 49 · stwór 34 · czar 30 · rezygnacja −5`.
+
+**PO:** `P.satyrLookBase + max(handCardKeepValue, cardKeepValue)`, pokrętło
+`satyrLookBase: 30`. Land 60 → 30 po nasyceniu; wynik bomby stały (51), bo ciało
+dominuje. O wyborze decyduje land — jedyna karta, której ciało milczy.
+
+**Podłoga z ciała** to skutek pęknięcia pinu `real-cards-batch55` B55/B4: sama
+wspólna miara odwracała wybór z 4/5 na 1/1 przy 0 lądów (próg zasięgu −3 vs +7).
+Karta podglądnięta i szukana idzie na stałe do ręki, więc kara za chwilowy brak
+many jest za ostra. Wzorzec `max(ciało, wspólna)` — ten sam, który
+`discardCostPreference` dostał w PMSSB-26 — zastosowany w obu miejscach.
+
+**Golden-master wymagał regeneracji** (`scoreSum` 2896.5881 → 2918.5881);
+PMSSB-28 i PMSSB-29 nie wymagały.
+
+**Bramy:** 73/73 (search+satyr+batch55) · szybki **7195/7195** · build 70 mod /
+**4659,5 kB** · `test:all` **7466/7466 EXIT=0** po regeneracji.

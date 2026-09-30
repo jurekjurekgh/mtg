@@ -14124,6 +14124,49 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30g — PMSSB-30: podgląd satyra na wspólnej mierze + podłoga z ciała
+
+`resolve_satyr_look_choice` (`heuristic-bot.js:10907`) był **czwartą** równoległą
+miarą wartości karty: `30 + (land ? 30 : 0) + 2P + T`, a komentarz obiecywał
+„Ląd premiami za manabazę", choć premia była stała. Sonda dała **identyczne**
+wyniki przy 0, 3, 8 i 12 lądach: `land 60 · bomba 49 · stwór 34 · czar 30`
+(rezygnacja −5). Bot brał land tak samo chętnie przy pustym stole jak przy
+ośmiu źródłach many.
+
+Podpięcie samej wspólnej miary **obaliło własną tezę PMSSB-29**. Pękł pin
+`test/real-cards-batch55.test.js:706` (B55/B4, Brightwood Tracker, komentarz
+*„wycena P\*2+T wybiera 4/5 nad 1/1"*): przy 0 lądów próg zasięgu
+(`cost > reach + 2` → −3) wyceniał `rotting-legion` 4/5 za 5 na −3, a
+`typhoid-rats` 1/1 za 1 na +7 — bot odwracał wybór na gorszą kartę.
+
+Karta podglądnięta *i* szukana idzie **na stałe do ręki**, więc kara za chwilowy
+brak many jest za ostra. Wprowadzono **podłogę z ciała**
+`max(handCardKeepValue, cardKeepValue)` — wzorzec, który `discardCostPreference`
+dostał w PMSSB-26 — w **obu** miejscach (`resolve_search_choice` i
+`resolve_satyr_look_choice`).
+
+Konsekwencje zmierzone, nie wywnioskowane:
+
+- **Manabaza nadal zmienia wybór**, ale przez drabinę lądów, nie przez zasięg:
+  land 55 → 25 (search) i 60 → 30 (satyr). Wynik bomby jest stały (46 / 51),
+  bo ciało `2·6+7+2` za morph = 21 dominuje przy każdej manabazie.
+- **Obalona „granica uczciwości" z PMSSB-29 B4**: czary bez P/T remisowały tylko
+  dlatego, że `cardKeepValue` ignorował koszt. Podłoga `2·manaCost` rozróżnia je
+  uczciwie (`courage-in-crisis` {3} → 31, `serras-embrace` {4} → 33, różnica
+  dokładnie 2). Zawężona granica zostaje: czary o tym samym koszcie wciąż
+  remisują — widok nie mówi, co robią (strefa ukryta, CR 400.2).
+
+**Bramy:** search+satyr+batch55 **73/73** · szybki zestaw **7195/7195** · build
+70 mod / **4659,5 kB** · `test:all` **7466/7466, EXIT=0** po regeneracji
+golden-master (`scoreSum` partii `dominaria-brg|mirrodin-wu@1000`
+2896.5881 → 2918.5881). PMSSB-28 i PMSSB-29 regeneracji nie wymagały — tamte
+fale zmieniały ścieżki, których fixture nie pokrywa.
+
+Artefakty: `docs/plans/PLAN_2026-09-30g-pmssb30-satyr.md`,
+`test/audyt-pmssb30-satyr.test.js` (8), skorygowane 8 pinów w
+`test/audyt-pmssb29-search.test.js`, `test/fixtures/bot-scoring-snapshot.json`,
+pokrętło `satyrLookBase: 30`.
+
 ## 2026-09-30f — PMSSB-29: `resolve_search_choice` na wspólnej mierze karty
 
 Cel wybrany z **odświeżonego** audytu remisów (`node tools/bot-tie-audit.mjs --gry=40` —
