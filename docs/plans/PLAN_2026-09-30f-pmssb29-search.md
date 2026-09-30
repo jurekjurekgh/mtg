@@ -84,7 +84,8 @@ z biblioteki (strefa ukryta, CR 400.2). Bot nie ma danych, żeby je rozróżnić
 ## 5. Bramki
 
 - `npm test` **7187/7187** · `npm run build` 70 mod / **4657.6 kB**
-- `npm run test:all` — bramka końcowa pętli
+- `npm run test:all` **7458 / 7458, exit 0**, golden-master `ok 1725` **bez regeneracji**
+  (+8 względem 7450 z PMSSB-28 to dokładnie nowe piny)
 
 ## 6. Stan klasy L41 (równoległe miary jakości karty)
 

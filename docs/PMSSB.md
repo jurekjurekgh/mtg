@@ -293,7 +293,7 @@ clash, mill, discard i **search**. `handCardKeepValue` zostaje jako suwit dla du
 w rejestrze nie ma kart grywalnych z grobu.
 
 **Bramki:** `npm test` 7187/7187 · `npm run build` 70 mod / 4657.6 kB ·
-`npm run test:all` — wynik w §2026-09-30f historii.
+`npm run test:all` **7458 / 7458, exit 0**, golden-master `ok 1725` bez regeneracji.
 
 ---
 
