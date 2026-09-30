@@ -10905,13 +10905,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(10 + 3 * value);
       }
       case 'resolve_satyr_look_choice': {
-        // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
-        // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.
+        // Satyr Wayfinder: wzięcie karty do ręki jest zawsze lepsze niż
+        // rezygnacja, bo reszta i tak idzie do grobu.
+        // PMSSB-30: to była CZWARTA kopia tej samej miary — `30 + (land ? 30 : 0)
+        // + 2P + T`, identyczny kształt co `resolve_search_choice` przed
+        // PMSSB-29. Komentarz twierdził „Ląd premiami za manabazę", ale premia
+        // była stała: pomiar PRZED (sonda `scratch/pmssb30-satyr-przed.mjs`)
+        // dawał IDENTYCZNE wyniki przy 0, 3, 8 i 12 lądach na stole
+        // (land=60, bomba {5}{G}{G}=49, stwór {1}{B}=34, czar=30) — przy
+        // dwunastu lądach bot brał kolejny ląd zamiast czegokolwiek innego,
+        // a przy zerze bombę za 7 zamiast grywalnego stwora za 1.
         if (cmd.pickId == null) return finish(-5);
         const card = decisionCandidateCard(view, cmd.pickId);
-        let score = 30;
-        if (card) score += (card.kind === 'land' ? 30 : 0) + (card.power ?? 0) * 2 + (card.toughness ?? 0);
-        return finish(score);
+        if (!card) return finish(P.satyrLookBase);
+        // Ciało jako PODŁOGA (ten sam wzorzec co `discardCostPreference`
+        // od PMSSB-26): karta idzie NA STAŁE do ręki, więc kara za brak
+        // zasięgu (`cost > reach + 2` → −3) jest tu za ostra — na dojście
+        // do many jest wiele tur. Pomiar: pin `real-cards-batch55` B55/B4
+        // (Brightwood Tracker) odwracał wybór z 4/5 na 1/1 przy 0 lądów.
+        // `max` zostawia drabinę lądów i zasięg tam, gdzie ciało milczy
+        // (land = manaCost 0 → 0), a ciału nie pozwala spaść poniżej prawdy.
+        return finish(P.satyrLookBase + Math.max(handCardKeepValue(view, card), cardKeepValue(view, card)));
       }
       case 'resolve_search_choice': {
         // Szukanie w bibliotece (Temat 6; Secret Entrance/cyclying/channel/
@@ -10934,7 +10948,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         //    „równoważnych" `resolve_search_choice` w audycie (480 partii).
         // Wspólna miara daje drabinę lądów (PMSSB-26), próg zasięgu
         // (`cost > reach + 2` → −3) i zniżkę za duplikaty w jednym miejscu.
-        let score = P.searchFoundBase + cardKeepValue(view, card);
+        // Ciało jako podłoga — patrz `resolve_satyr_look_choice` (PMSSB-30):
+        // szukana karta idzie na stałe do ręki, więc kara za brak zasięgu nie
+        // może przelicytować ciała (4/5 za 5 zostaje nad 1/1 za 1).
+        let score = P.searchFoundBase + Math.max(handCardKeepValue(view, card), cardKeepValue(view, card));
         // Domain po search: przy równych podstawowych lądach wybierz NOWY
         // typ. Czytamy wyłącznie jawny deskryptor źródła oraz kandydatów
         // udostępnionych decydentowi, nigdy ukrytą bibliotekę.

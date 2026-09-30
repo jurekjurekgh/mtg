@@ -399,6 +399,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
   // było zawsze lepsze od rezygnacji (zgłoszenie właściciela B, Temat 6).
   'searchFoundBase',             // baza za znalezienie karty (wspólna miara dochodzi)
+  // PMSSB-30 — Satyr Wayfinder: ta sama wspólna miara (`cardKeepValue`) co
+  // w `resolve_search_choice`; wcześniej `30 + (land ? 30 : 0) + 2P + T`, czyli
+  // czwarta kopia tej samej reguły (L41). Baza musi zostać wyraźnie nad −5
+  // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
+  'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -688,6 +693,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
   // daleko od progu rezygnacji.
   searchFoundBase: 25,
+  // PMSSB-30: 30 — dawna baza; przy wspólnej mierze (−6..30) rozstrzał to
+  // 24..60, wciąż daleko nad −5 za rezygnację.
+  satyrLookBase: 30,
 });
 
 /**
