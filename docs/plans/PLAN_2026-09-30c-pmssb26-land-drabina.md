@@ -104,10 +104,14 @@ Po przywróceniu 7172/7172.
   Komunikat testu wprost rozróżnia refaktor od świadomej zmiany parametrów i dla tej
   drugiej każe regenerować; to specyfikacja właściciela, nie refaktor.
 
-## 6. Konsekwencja do potwierdzenia przez właściciela
+## 6. Konsekwencja do potwierdzenia — ROZWIĄZANA przez PMSSB-27
 
-Drabina per pip **zmienia wcześniej uzgodnione zachowanie** z `audyt-pr105-bot-hand-top`
+Drabina per pip **zmieniała wcześniej uzgodnione zachowanie** z `audyt-pr105-bot-hand-top`
 („nie wyrzucaj automatycznie lądu — przy niedoborze many zachowaj go"): przy 2 lasach na
-stole i trzecim w ręce (3 źródła {G}) bot oddaje teraz trzeci las zamiast 9-manowego czaru
-poza zasięgiem. To dosłowna realizacja „3+ źródeł pipa → raczej odrzucaj", ale jeśli
-intencją było „3+ przy pełnej manabazie", próg jest pokrętłem `landColoredNeutralMax`.
+stole i trzecim w ręce bot oddawał trzeci las zamiast 9-manowego czaru poza zasięgiem.
+
+Wątpliwość wynikała z licznika obejmującego kartę rozważaną. Właściciel doprecyzował
+(2026-09-30): „raczej odrzucaj" miało znaczyć **3 na stole albo 2 na stole i 1 dodatkowy
+w ręku — poza tym rozważanym**. Licznik źródeł nie obejmuje więc karty ocenianej, próg
+`landColoredNeutralMax` zostaje 2, a pierwotny pin `audyt-pr105` B wrócił do postaci sprzed
+PMSSB-26. Szczegóły i pomiar PO: `docs/PROJECT_HISTORY.md` §2026-09-30d.
