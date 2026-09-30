@@ -14124,6 +14124,53 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30f — PMSSB-29: `resolve_search_choice` na wspólnej mierze karty
+
+Cel wybrany z **odświeżonego** audytu remisów (`node tools/bot-tie-audit.mjs --gry=40` —
+480 partii, 258 317 decyzji): `resolve_search_choice` ma **245 remisów i wszystkie są
+„równoważne"** (0 rozróżnialnych), czyli wycena daje wariantom identyczną liczbę i bot bierze
+pierwszy z listy.
+
+**Znajdowanie (L41 — trzecia równoległa miara):** wycena szukała własną regułą
+`25 + (land ? 30 : 0) + 2P + T` obok `handCardKeepValue` (PMSSB-25/F1) i wspólnej
+`cardKeepValue`. Pomiar PRZED (sonda `scratch/pmssb29-search-przed.mjs`), kandydaci: land,
+Delta Bloodflies {1}{B} 1/2, Woolly Loxodon {5}{G}{G} 6/7, dwa czary — wyniki **identyczne
+przy 0, 3, 8 i 12 lądach**: land=55 · bomba=44 · stwór=29 · czary po 25. Reguła nie znała
+drabiny lądów, zasięgu many ani koloru: przy 12 lądach bot szukał kolejnego landu zamiast
+6/7, przy 0 lądów bomba za 7 biła grywalnego stwora za 1, a wszystkie czary dostawały 25.
+
+**Fala A (`c11ff41`):** `P.searchFoundBase + cardKeepValue(view, card)` — wspólna miara daje
+drabinę lądów (PMSSB-26), próg zasięgu (`cost > reach + 2` → −3) i zniżkę za duplikaty
+w jednym miejscu. Baza 25 zostaje, więc relacja do −40 za „nie znajdź karty" nietknięta.
+
+**POMIAR PO:**
+
+| Lądy | PO | Wygrywa |
+|---|---|---|
+| 0 | land **55** · stwór 32 · czar 27 · bomba 22 | land — brak manabazy bije wszystko |
+| 3 | stwór **33** · czar 29 · bomba 22 · land 19 | grywalny stwór, nie kolejny land |
+| 8 / 12 | bomba **37** · stwór 33 · czar 29 · land 19 | bomba wreszcie w zasięgu |
+
+**Granica uczciwości (pin B4):** czary bez P/T wciąż remisują, bo widok nie wystawia TREŚCI
+czaru z biblioteki (strefa ukryta, CR 400.2). Bot nie ma danych, żeby je rozróżnić — pin
+kotwiczy, że nie wymyślamy fałszywego rozróżnienia. Część z 245 remisów zostanie i tak ma być.
+
+**Piny** `test/audyt-pmssb29-search.test.js` (8): A1–A4 manabaza zmienia wybór, B1 szukanie
+bije rezygnację −40 (kotwica zgłoszenia właściciela B; rezygnacja tylko przy szukaniu
+nieobowiązkowym, CR 701.23d), B2 baza jako pokrętło, B3 drabina dochodzi przez pokrętła
+PMSSB-26 (jedno źródło prawdy), B4 granica uczciwości. **Mutacja M1** → RED
+`{A1, A2, A3, A4, B2, B3}`, B1/B4 zielone. **Pokrętło:** `searchFoundBase` 25.
+
+**Stan klasy L41:** `cardKeepValue` jest teraz źródłem prawdy dla scry, surveil, look_top,
+clash, mill, discard i **search**. `handCardKeepValue` zostaje jako suwit dla dużych ciał
+(`max(ciało, wspólna)`), a `escapeExileCostOf` (dwugałęziowy kikut) pozostaje forwardem —
+w rejestrze nie ma kart grywalnych z grobu.
+
+**Bramki:** `npm test` 7187/7187 · `npm run build` 70 mod / 4657.6 kB ·
+`npm run test:all` — wynik w §2026-09-30f historii.
+
+---
+
 ## 2026-09-30e — PMSSB-28: `resolve_color_choice` czyta cel wyboru z pending
 
 Silnik **niesie cel wyboru w pending**: `game-state.js:5762` ustawia `purpose: 'mana'` dla
