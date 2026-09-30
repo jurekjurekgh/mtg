@@ -33,7 +33,7 @@ const REGISTRY = createCardRegistry();
 let counter = 0;
 
 /** Stół bota z oczekującą decyzją scry albo surveil. */
-function lookBoard({ look, hand = [], lands = 3, kind = 'scry' }) {
+function lookBoard({ look, hand = [], lands = 3, kind = 'scry', libraryExtra = 0 }) {
   const state = createGameState({ seed: 9, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, 'main', 'p2');
   state.turn.activePlayerId = 'p2';
@@ -56,6 +56,13 @@ function lookBoard({ look, hand = [], lands = 3, kind = 'scry' }) {
   for (let i = 0; i < lands; i += 1) put('basic-forest', 'battlefield');
   hand.forEach((c) => put(c, 'hand'));
   const lookIds = look.map((c) => put(c, 'library'));
+  // PMSSB-24/F2: głębokość biblioteki POD przeglądanymi kartami. Bez tego
+  // testy miały bibliotekę równą liczbie oglądanych kart (1–2), a przy
+  // surveil mielenie ostatniej karty zostawia bibliotekę PUSTĄ — deck-out
+  // przy najbliższym dobraniu (CR 121.4/704.5b). Wycena deck-outu (fala B)
+  // słusznie każe wtedy kartę zostawić, więc test intencji „zbędny land
+  // idzie do grobu" potrzebuje realnej talii za oglądanymi kartami.
+  for (let i = 0; i < libraryExtra; i += 1) put('highland-game', 'library');
   if (kind === 'scry') state.pendingScry = { playerId: 'p2', objectIds: lookIds };
   else state.pendingSurveil = { playerId: 'p2', objectIds: lookIds };
   return { state, lookIds, view: playerView(state, 'p2') };
@@ -127,11 +134,16 @@ test('M135: scry 2 — bot rozdziela decyzję per karta (land w dół, stwór zo
 // --- Surveil: grób to nie spód biblioteki ----------------------------------
 
 test('M135: surveil mieli zbędny land (jak scry)', () => {
+  // PMSSB-24/F2: `libraryExtra: 8` — patrz komentarz w `lookBoard`. Przy
+  // bibliotece 1 karty (dawny stan tego testu) mielenie zostawia pustą
+  // bibliotekę i bot słusznie woli kartę zatrzymać (−42 vs 20); intencją
+  // testu jest wybór „zbędny land do grobu", więc talia musi mieć zapas.
   const { view, lookIds } = lookBoard({
     look: ['basic-forest'],
     hand: ['basic-forest', 'basic-forest', 'basic-forest', 'basic-forest'],
     lands: 6,
     kind: 'surveil',
+    libraryExtra: 8,
   });
   const chosen = decide(view);
   assert.equal(chosen.type, 'resolve_surveil');

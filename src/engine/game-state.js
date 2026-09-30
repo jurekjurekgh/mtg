@@ -8595,6 +8595,16 @@ export function playerView(state, playerId) {
   const pendingScry = state.pendingScry ? {
     playerId: state.pendingScry.playerId,
     count: state.pendingScry.objectIds.length,
+    // PMSSB-24/F5 (klasa L1 — brak danych, nie błąd wyceny): Sifter Wurm
+    // „scry 3, then reveal the top card of your library. You gain life equal
+    // to that card's mana value" — reveal następuje PO decyzji gracza
+    // (`game-state.js:2263`, CR 608.2), więc KOLEJNOŚĆ wierzchu steruje
+    // zyskiem życia, a widok tego nie niósł (pola: playerId/count/cards).
+    // Fakt jest publiczny: źródło i treść zdolności leżą na stole (ADR 0017).
+    // Pole warunkowe (jak `crewed`/`goaded`): klucz istnieje tylko, gdy
+    // zdolność faktycznie odsłania wierzch — kontrakt widoku sprawdza
+    // nieobecność, nie `undefined`.
+    ...(state.pendingScry.revealTopGainLife ? { revealTopGainLife: true } : {}),
     cards: state.pendingScry.playerId === playerId
       ? state.pendingScry.objectIds.map((id) => {
         const object = state.objects.get(id);

@@ -55,7 +55,7 @@ function putCard(state, id, cardId, controllerId, zone = 'hand') {
  * Stół z otwartą decyzją przeglądu wierzchu.
  * `top` — karty od wierzchu (kolejność przeglądania, CR 701.22).
  */
-function base({ top, kind = 'scry', hand = [], step = 'main1', lands = 0, extra = 8 } = {}) {
+function base({ top, kind = 'scry', hand = [], step = 'main1', lands = 0, extra = 8, life = 20, reveal = false } = {}) {
   const state = createGameState({ seed: 24, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, step, 'p2');
   state.turn.activePlayerId = 'p2';
@@ -65,8 +65,13 @@ function base({ top, kind = 'scry', hand = [], step = 'main1', lands = 0, extra 
   for (let i = 0; i < lands; i += 1) putCard(state, `land${i}`, 'basic-forest', 'p2', 'battlefield');
   const topIds = top.map((cardId, i) => { putCard(state, `t${i}`, cardId, 'p2', 'library'); return `t${i}`; });
   for (let i = 0; i < extra; i += 1) putCard(state, `lib${i}`, 'highland-game', 'p2', 'library');
-  if (kind === 'scry') state.pendingScry = { playerId: 'p2', objectIds: topIds, restorePriorityTo: 'p2' };
-  else state.pendingSurveil = { playerId: 'p2', objectIds: topIds };
+  if (life !== 20) state.players = state.players.map((p) => (p.id === 'p2' ? { ...p, life } : p));
+  if (kind === 'scry') {
+    state.pendingScry = { playerId: 'p2', objectIds: topIds, restorePriorityTo: 'p2' };
+    // Sifter Wurm: po decyzji silnik odsłania wierzch i daje życie równe
+    // mana value (CR 608.2). PMSSB-24/F5: widok musi ten fakt nieść.
+    if (reveal) state.pendingScry.revealTopGainLife = { sourceCardId: 'sifter-wurm' };
+  } else state.pendingSurveil = { playerId: 'p2', objectIds: topIds };
   return { state, topIds };
 }
 
@@ -171,4 +176,70 @@ test('PMSSB-24/A7: przy jednej karcie na wierzchu kolejność nic nie zmienia', 
   assert.deepEqual(choice.bottomIds ?? [], [], 'dobry tani stwór zostaje na wierzchu');
   assert.equal(scoreOf(state, 'resolve_scry(keep)'), 20);
   assert.equal(scoreOf(state, 'resolve_scry(bottom:t0)'), 12);
+});
+
+// ---------------------------------------------------------------------------
+// F5 — reveal wierzchu po scry (Sifter Wurm): życie = mana value karty.
+// ---------------------------------------------------------------------------
+
+test('PMSSB-24/B1: reveal wierzchu jest wyceniany (życie = mana value pierwszej karty)', () => {
+  // Wierzch: [{5} czar, {2} stwór 2/1, land]. Przy trzech zbędnych landach
+  // w ręce land idzie na spód, a układ z stworem wyżej dokłada 3,2 (fala A).
+  // Reveal dokłada życie za kartę, która zostanie odsłonięta — przy 20 życia
+  // `gainLifeValue(2)` = 2, więc 29,2 + 2 = 31,2.
+  const zReveal = base({ top: ['rage-of-purphoros', 'highland-game', 'secluded-steppe'], hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'], reveal: true });
+  const bezReveal = base({ top: ['rage-of-purphoros', 'highland-game', 'secluded-steppe'], hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'] });
+  assert.equal(scoreOf(zReveal.state, 'resolve_scry(bottom:t2;order:t1+t0)'), 31.2);
+  assert.equal(scoreOf(bezReveal.state, 'resolve_scry(bottom:t2;order:t1+t0)'), 29.2);
+});
+
+test('PMSSB-24/B2: przy niskim życiu reveal jest warty więcej (wspólna skala gainLifeValue)', () => {
+  // Te same karty, życie 4: `gainLifeValue(2)` = 2 + 2 = 4 ⇒ 29,2 + 4 = 33,2.
+  // Wartość revealu idzie z istniejącej drabiny życia (L41), nie z nowej skali.
+  const { state } = base({
+    top: ['rage-of-purphoros', 'highland-game', 'secluded-steppe'],
+    hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'],
+    life: 4, reveal: true,
+  });
+  assert.equal(scoreOf(state, 'resolve_scry(bottom:t2;order:t1+t0)'), 33.2);
+});
+
+test('PMSSB-24/B3: widok niesie revealTopGainLife tylko gdy zdolność go ma', () => {
+  // F5 to był brak DANYCH (klasa L1): pola widoku to playerId/count/cards.
+  const zReveal = base({ top: ['highland-game', 'secluded-steppe'], reveal: true });
+  const bezReveal = base({ top: ['highland-game', 'secluded-steppe'] });
+  assert.equal(playerView(zReveal.state, 'p2').pendingScry.revealTopGainLife, true);
+  assert.equal('revealTopGainLife' in playerView(bezReveal.state, 'p2').pendingScry, false,
+    'pole ma być warunkowe, nie zawsze obecne (kontrakt widoku)');
+});
+
+// ---------------------------------------------------------------------------
+// F2 (po korekcie) — surveil ZDEJMUJE kartę z biblioteki: drabina deck-outu.
+// ---------------------------------------------------------------------------
+
+test('PMSSB-24/B4: surveil przy cienkiej bibliotece NIE mieli (deck-out, CR 121.4)', () => {
+  // Biblioteka 3 karty: zmielenie jednej zostawia 2, czyli partię o jedno
+  // dobranie krótszą. PRZED: `mill` = 24 niezależnie od głębokości (tylko
+  // stały MILL_CAUTION). PO: trzymanie kart wygrywa 23,2 vs 21,2.
+  const cienka = base({ top: ['rage-of-purphoros', 'highland-game', 'secluded-steppe'], kind: 'surveil', hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'], extra: 0 });
+  assert.equal(scoreOf(cienka.state, 'resolve_surveil(keep;order:t1+t0+t2)'), 23.2);
+  assert.equal(scoreOf(cienka.state, 'resolve_surveil(mill:t2;order:t1+t0)'), 21.2);
+});
+
+test('PMSSB-24/B5 (kotwica): przy zdrowej bibliotece surveil mieli jak dotąd', () => {
+  // Biblioteka 12 kart — drabina deck-outu jest zerem, więc wartości są
+  // identyczne jak w fali A (27,2 / 23,2). Człon presji nie przesuwa gry.
+  const zdrowa = base({ top: ['rage-of-purphoros', 'highland-game', 'secluded-steppe'], kind: 'surveil', hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'], extra: 9 });
+  assert.equal(scoreOf(zdrowa.state, 'resolve_surveil(mill:t2;order:t1+t0)'), 27.2);
+  assert.equal(scoreOf(zdrowa.state, 'resolve_surveil(keep;order:t1+t0+t2)'), 23.2);
+});
+
+test('PMSSB-24/B6: ostatniej karty w bibliotece bot nie mieli za żadną cenę', () => {
+  // Biblioteka 1 karta (zbędny land): zmielenie = pusta biblioteka = przegrana
+  // przy najbliższym dobraniu. Różnica drabiny −65,4 przebija zysk 4.
+  const { state } = base({ top: ['secluded-steppe'], kind: 'surveil', hand: ['secluded-steppe', 'secluded-steppe', 'secluded-steppe'], extra: 0 });
+  assert.equal(scoreOf(state, 'resolve_surveil(keep)'), 20);
+  assert.equal(scoreOf(state, 'resolve_surveil(mill:t0)'), -42);
+  const { choice } = decide(state);
+  assert.deepEqual(choice.millIds ?? [], [], 'ostatnia karta zostaje w bibliotece');
 });

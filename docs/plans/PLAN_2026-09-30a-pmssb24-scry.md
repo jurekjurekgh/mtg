@@ -38,7 +38,7 @@ w czarze okno M218/4 (czysty −60/+6…+10, mieszany −12).
 |---|---|---|---|
 | P1 | scry 2, wierzch [{5} czar, {2} stwór 2/1], obie karty zostają | obie permutacje = **20 / 20** | kolejność nie rozstrzyga → **F1** |
 | P2 | surveil 2, kolejność oryginalna vs odwrócona | **21 vs 20** | bonus `keepsOrder` premiuje oryginalną — lepsza kolejność NIGDY nie wygra → **F1** |
-| P3 | odłożenie zbędnego landu, biblioteka 2 karty vs 12 | **26 = 26** | deck-out (CR 104.3c) niewidoczny → **F2** |
+| P3 | odłożenie zbędnego landu, biblioteka 2 karty vs 12 | **26 = 26** | SCRY nie zmienia liczby kart — wynik POPRAWNY (korekta F2) |
 | P4 | surveil: zmielenie zbędnego landu, delve w ręce vs bez | **25 = 25** | grób jako zasób niewidoczny (CR 701.25) → **F3** |
 | P5 | ręka pusta vs 4 karty, te same karty na wierzchu | **12/12 = 12/12** | kontekst ręki (topdeck/duplikaty) niewidoczny → **F4** |
 | P8 | `sifter-wurm` scry 3 + `revealTopGainLife`; wierzch [{5}, {2}, land] | najlepszy wariant bota = **`bottom:t0` (23)**, czyli odkłada kartę {5}; 6 permutacji keep-all = 20 (remis); `pendingScry` w widoku = `playerId`/`count`/`cards` | reveal nie istnieje dla bota → **F5**; bot odkłada DOKŁADNIE tę kartę, którą reveal chciał na wierzchu (5 życia → 2) |
@@ -55,10 +55,17 @@ w czarze okno M218/4 (czysty −60/+6…+10, mieszany −12).
   więc świadome ułożenie jest karane. Skutek uboczny: etykieta diagnostyczna
   (`describeCommand`) nie koduje `topOrder` — 16 wariantów scry ma 8 etykiet,
   więc tie-audit raportuje remisy tam, gdzie są różne decyzje.
-- **F2: odkładanie karty na spód odsuwa deck-out.** CR 104.3c — gracz, który
-  nie może dobrać karty, przegrywa. Przy bibliotece 2 kart odłożenie jednej to
-  realna tura życia; `cardKeepValue` nie czyta `zones.library.length`
-  (pomiar P3: 26 = 26).
+- **F2 — KOREKTA własnego findingu (L92): deck-out dotyczy SURVEIL, nie scry.**
+  Plan twierdził, że odłożenie karty na spód odsuwa deck-out. To nieprawda:
+  scry przekłada kartę w obrębie TEJ SAMEJ biblioteki (CR 701.22a — „karta na
+  spodzie biblioteki to ten sam obiekt w tej samej strefie", jak mówi komentarz
+  silnika), więc liczba kart się nie zmienia i pomiar P3 (26 = 26) jest
+  POPRAWNYM zachowaniem, nie usterką. Deck-out (CR 121.4/704.5b) wchodzi
+  dopiero przy surveil, bo tam karta idzie do GROBU (CR 701.25) i biblioteka
+  realnie chudnie. Pomiar (`/tmp/f2.mjs`): biblioteka 2 karty —
+  `resolve_surveil(mill:t0)` = **24**, dokładnie tyle, co przy 12 kartach;
+  `resolve_surveil` nie ma ŻADNEJ drabiny presji (tylko stały `MILL_CAUTION`),
+  a mieląc ostatnie karty bot przegrywa partię o jedno dobranie wcześniej.
 - **F3: surveil ≠ scry semantycznie.** Karta idzie do GROBU (CR 701.25), a grób
   jest zasobem: `delve` (`hooting-mandrills` w katalogu), delirium, reanimacja,
   `resolve_grave_free_cast`. Dziś jedyna różnica to stały `MILL_CAUTION = 2`
@@ -80,10 +87,11 @@ w czarze okno M218/4 (czysty −60/+6…+10, mieszany −12).
   kolejność oryginalną w surveil (porównanie permutacji, nie preferencja);
   etykieta diagnostyczna kodująca `topOrder`. Kotwica: wartości przy
   podzbiorze odłożonym BEZ zmian (P3/P7).
-- **Fala B — dane i presja (F5 + F2).** `pendingScry.revealTopGainLife` w
-  `playerView` (warunkowe pole → wpis na liście wyjątków kontraktu m277,
-  L113) + dopłata za kartę o wysokiej mana value na wierzchu; dopłata za
-  odkładanie karty przy cienkiej bibliotece (deck-out).
+- **Fala B — dane i presja (F5 + F2 po korekcie).** `pendingScry
+  .revealTopGainLife` w `playerView` (warunkowe pole → wpis na liście wyjątków
+  kontraktu m277, L113) + dopłata za kartę o wysokiej mana value na wierzchu
+  (życie = mana value, pomiar: bot odkładał {5} na spód, czyli 5 życia → 2);
+  wspólna drabina deck-outu (`drawDeckingPenalty`, L41) przy mieleniu surveil.
 - **Fala C — kontekst (F4 + F3).** Mnożnik pilności przy pustej/niskiej ręce,
   dyskonto duplikatów w `cardKeepValue`; premia za mielenie przy surveil, gdy
   grób jest zasobem (delve w ręce), przy zachowaniu `MILL_CAUTION` jako bazy.

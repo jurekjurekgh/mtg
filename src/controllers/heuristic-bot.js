@@ -9966,7 +9966,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wartość sprzed fali (kotwica anty-over-fix M429).
         const originalKept = cards.filter((card) => !bottoms.includes(card.id)).map((card) => card.id);
         const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalKept;
-        return finish(20 + delta + libraryOrderValue(view, keptOrder, originalKept));
+        // PMSSB-24/F5 (Sifter Wurm): po tej decyzji silnik odsłania wierzch
+        // i daje życie równe mana value odsłoniętej karty (CR 608.2 — reveal
+        // następuje PO rozstrzygnięciu scry). Widok niesie teraz ten fakt
+        // (`revealTopGainLife`), więc pierwsza karta na wierzchu jest warta
+        // dodatkowo tyle, ile warte jest to życie — w TEJ SAMEJ skali co
+        // każdy inny zysk życia (`gainLifeValue`, L41: jedna prawda o życiu).
+        // Przy odkładaniu wszystkiego odsłonięta będzie karta spoza
+        // przeglądanych (nieznana — widok jej nie niesie), więc 0.
+        const revealed = view.pendingScry?.revealTopGainLife
+          ? cards.find((card) => card.id === keptOrder[0])
+          : null;
+        const revealBonus = revealed ? gainLifeValue(view, revealed.manaCost ?? 0) : 0;
+        return finish(20 + delta + libraryOrderValue(view, keptOrder, originalKept) + revealBonus);
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
@@ -9992,7 +10004,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Zastąpiony tą samą wyceną co przy scry — porównaniem permutacji,
         // nie preferencją (Surveil, CR 701.25 też mówi „in any order").
         const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalOrder;
-        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder));
+        // PMSSB-24/F2 (po korekcie): surveil ZDEJMUJE kartę z biblioteki
+        // (CR 701.25 — karta idzie do grobu), więc mielenie własnych
+        // ostatnich kart przyspiesza deck-out (CR 121.4/704.5b). Pomiar PRZED
+        // (`/tmp/f2.mjs`): `mill:t0` = 24 przy bibliotece 2 kart = 24 przy 12
+        // — żadnej drabiny presji, tylko stały `MILL_CAUTION`. Użyta WSPÓLNA
+        // drabina deck-outu z doboru (`drawDeckingPenalty`, L41: mielona karta
+        // to dobranie, którego już nie będzie), ale jako RÓŻNICA — drabina
+        // karze samą strefę krytyczną (−60 przy ≤3 kartach), więc wprost
+        // obciążałaby też wariant „zostaw wszystko" (zmierzone: −36,8 za
+        // trzymanie kart przy bibliotece 3). Kosztem decyzji jest dopiero
+        // różnica między zmieleniem a niezmieleniem, więc przy zdrowej
+        // bibliotece człon jest zerem (kotwica anty-over-fix M429).
+        const millDecking = milled.length > 0
+          ? drawDeckingPenalty(view, milled.length) - drawDeckingPenalty(view, 0)
+          : 0;
+        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder) + millDecking);
       }
       case 'resolve_clash_choice': {
         // Clash (CR 701.30): „na spód albo zostaw" — ta sama decyzja co scry,
