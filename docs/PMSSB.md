@@ -68,6 +68,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` |
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
+| chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1534,3 +1535,43 @@ PMSSB-28 i PMSSB-29 nie wymagały.
 
 **Bramy:** 73/73 (search+satyr+batch55) · szybki **7195/7195** · build 70 mod /
 **4659,5 kB** · `test:all` **7466/7466 EXIT=0** po regeneracji.
+
+## PMSSB-31 — chump-block tokenami: premia za korzystną wymianę (2026-09-30h)
+
+Fala z **obserwacji z rozgrywki** (zgłoszenie właściciela), nie z audytu remisów.
+
+**Zgłoszenie:** „Bot ma 4 tokeny 1/1. Atakuję go kilkoma kreaturami w tym 4/4,
+3/3 bez trample. Mimo to bot nie blokuje tymi disposable tokens i dostaje 7 dmg.
+Po to ma te małe token kreatury żeby go broniły przed atakiem większych kreatur."
+
+**Pomiar PRZED** (4 tokeny 1/1 vs 4/4 + 3/3): `block[a44<4 tokeny]` = 4 ← wybór
+bota; `block[a44<tok0 a33<tok1]` = 1 ← poprawne zagranie; `block[a33<tok0]` = 0
+= `pass_priority`. Bot topił wszystkie cztery tokeny w jednym 4/4 i wciąż
+dostawał 3 obrażenia.
+
+**Przyczyna:** `+attackerPower` i `−(P+T)` były w jednej skali, więc chump 3/3
+tokenem 1/1 dawał `3 − 2 − 1` = **0** — dokładnie tyle samo co pass.
+
+**Odrzucone rozwiązanie:** płaska waga obrażeń (×3) naprawiała ten przypadek,
+ale łamała **9 testów**, w tym piny jawnie anty-over-fix („30 życia — blok 2/2
+vs 3/3 NIE wygrywa z passem", „bot NIE marnuje WARTOŚCIOWEGO blokera").
+Rozróżnikiem nie jest waga obrażeń, tylko **opłacalność wymiany**.
+
+**Rozwiązanie:** premia tylko od **nadwyżki** i tylko gdy bloker realnie ginie:
+`if (blockerValueLost > 0 && attackerPower > blockerValueLost) score +=
+(attackerPower − blockerValueLost) * P.blockGoodTradePerPoint;` (pokrętło = 2).
+Token 1/1 za 3 obrażenia → premia; 2/2 za 3 obrażenia → brak nadwyżki, piny
+anty-over-fix zostają zielone.
+
+**PO:** 4 tokeny vs 4/4+3/3 → `a44<tok0 a33<tok1` (7), **0 obrażeń**; trzech
+atakujących (10 dmg) → blokuje wszystkich trzema tokenami (21); 2 tokeny →
+split (7); tokeny tapnięte → nadal `block[]` (CR 509.1a).
+
+**Forward (zmierzony, nie naprawiony):** przy lethal drabinka `lifeAfter` jest
+niemonotoniczna, więc przy 7 życiu „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4)
+remisuje z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba **39**. Epsilon
+`stoppedDamage * 0.01` rozstrzygał to poprawnie, ale ułamkowy wynik łamał piny
+wartości dokładnych (PMSSB-2/C/F8), więc został wycofany.
+
+**Bramy:** piny 8/8 · szybki **7203/7203** · build 70 mod / **4661,6 kB** ·
+`test:all` **7474/7474, EXIT=0** po regeneracji golden-master.

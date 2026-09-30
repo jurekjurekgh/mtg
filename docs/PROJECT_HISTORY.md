@@ -14124,6 +14124,68 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30h — PMSSB-31: chump-block tokenami (zgłoszenie właściciela z gry)
+
+Fala zaczęła się od **obserwacji z rozgrywki**, nie od audytu remisów:
+
+> „Bot ma 4 tokeny 1/1. Atakuję go kilkoma kreaturami w tym 4/4, 3/3 bez
+> trample. Mimo to bot nie blokuje tymi disposable tokens i dostaje 7 dmg.
+> Trochę słabo. Po to ma te małe token kreatury żeby go broniły przed atakiem
+> większych kreatur."
+
+**Pomiar PRZED** (sonda `scratch/pmssb31-warianty.mjs`, 4 tokeny 1/1 vs 4/4 +
+3/3 = 7 obrażeń): `block[a44<tok0+tok1+tok2+tok3]` = **4** ← wybór bota;
+`block[a44<tok0 a33<tok1]` = **1** ← poprawne zagranie; `block[a33<tok0]` =
+**0** = `pass_priority`. Bot topił wszystkie cztery tokeny w jednym 4/4 i wciąż
+dostawał 3 obrażenia; przy dwóch tokenach split remisował z blokiem jednego
+ataku i przegrywał kolejnością ofert.
+
+**Przyczyna:** w `case 'declare_blockers'` zablokowane obrażenia i utracone ciała
+blokerów były w jednej skali 1:1 (`+attackerPower` vs `−(P+T)`), więc chump 3/3
+tokenem 1/1 dawał `3 − 2 − 1` = **0** — dokładnie tyle samo co pass. Model był
+obojętny na przyjęcie 3 obrażeń, a premia za zabicie (`2P+T` = 12) przeważała
+3 punkty zablokowanych obrażeń i 2 zatrzymane tokeny.
+
+**Odrzucone rozwiązanie i dlaczego:** płaska waga obrażeń (×3) naprawiała ten
+przypadek, ale łamała **9 testów**, w tym trzy piny jawnie anty-over-fix
+(„30 życia — blok 2/2 vs 3/3 NIE wygrywa z passem", „bot NIE marnuje
+WARTOŚCIOWEGO blokera (3/3)", „3× 3/3, 5 życia — nie marnuje blokera").
+Rozróżnikiem nie jest waga obrażeń, tylko **opłacalność wymiany**.
+
+**Rozwiązanie:** premia tylko od nadwyżki i tylko gdy bloker realnie ginie —
+`if (blockerValueLost > 0 && attackerPower > blockerValueLost) score +=
+(attackerPower − blockerValueLost) * P.blockGoodTradePerPoint;`, pokrętło
+`blockGoodTradePerPoint: 2`. Token 1/1 za 3 obrażenia dostaje premię; 2/2 za
+3 obrażenia nie ma nadwyżki, więc piny anty-over-fix zostają zielone.
+
+**Pomiar PO:** 4 tokeny vs 4/4+3/3 → `block[a44<tok0 a33<tok1]` (7), **0
+obrażeń** zamiast 3; trzech atakujących (10 dmg) → blokuje wszystkich trzema
+tokenami (21); 2 tokeny → split (7); tokeny tapnięte → nadal `block[]`, bo
+tapnięty stwór nie może blokować (CR 509.1a).
+
+**Forward zmierzony, nie naprawiony:** przy lethal drabinka `lifeAfter` jest
+niemonotoniczna względem zablokowanych obrażeń (mniej życia po = większa
+premia), więc przy 7 życiu „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4)
+remisuje z „blok obu, dostaję 0" (lifeAfter 7 → +2) — **oba dokładnie 39** —
+i o wyborze decyduje kolejność ofert. Epsilon `stoppedDamage * 0.01`
+rozstrzygał remis poprawnie, ale ułamkowy wynik łamał piny wartości dokładnych
+(PMSSB-2/C/F8: Dissenter +19, Patron 6), więc został wycofany. Właściwa naprawa
+to drabinka monotoniczna względem `stoppedDamage` — dotyka pinów M146 i M257-r5.
+
+**Uczciwa granica odtworzenia:** w minimalnej replice bot jednak blokował
+(dostałby 3, nie 7). Pełnych 7 obrażeń bez żadnego bloku nie udało się odtworzyć
+przy nietapniętych tokenach bez evasion; jedyny wariant dający dokładnie ten
+obraz to tokeny tapnięte (zachowanie poprawne). Jeśli w partii właściciela
+atakujący mieli flying/menace albo tokeny były tapnięte, przyczyna jest inna.
+
+**Bramy:** piny fali 8/8 · szybki zestaw **7203/7203** · build 70 mod /
+**4661,6 kB** · `test:all` **7474/7474, EXIT=0** po regeneracji golden-master
+(przed: 7472/7474, 2 faile — oba `bot-scoring-snapshot`).
+
+Artefakty: `docs/plans/PLAN_2026-09-30h-pmssb31-chump-block.md`,
+`test/audyt-pmssb31-blok-chump.test.js` (8), `test/fixtures/bot-scoring-snapshot.json`,
+pokrętło `blockGoodTradePerPoint: 2`.
+
 ## 2026-09-30g — PMSSB-30: podgląd satyra na wspólnej mierze + podłoga z ciała
 
 `resolve_satyr_look_choice` (`heuristic-bot.js:10907`) był **czwartą** równoległą
