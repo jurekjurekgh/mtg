@@ -14124,6 +14124,46 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30e — PMSSB-28: `resolve_color_choice` czyta cel wyboru z pending
+
+Silnik **niesie cel wyboru w pending**: `game-state.js:5762` ustawia `purpose: 'mana'` dla
+lądu z `chooseColor` (Manor Gate), `spells.js:2655` — `purpose: 'protection'` dla aury.
+Wycena tego pola **nie czytała** i liczyła jedną płaską sumę `5 + needScore*6 + enemyInColor`
+dla obu celów.
+
+**Pomiar PRZED** (sonda `scratch/pmssb28-color-przed.mjs`), stan z przeciwstawnymi motywami
+(p2: 3 lasy + Delta Bloodflies {1}{B} w ręce; p1: trzy czerwone stwory):
+
+| Cel | PRZED | Czytanie |
+|---|---|---|
+| `protection` | U=11, B=11, R=8, W=5, G=5 → **{U}** | **błąd** — wróg nie ma ani jednego stwora {U}, aura nie chroni przed niczym |
+| `mana` | U=11, B=11, R=8, W=5, G=5 → **{U}** | identyczny wynik — `purpose` był martwym polem |
+
+**Fala A (`5c28560`):** rozdział po `purpose` — ochrona liczy tylko kolor wrogich stworów,
+mana tylko kolor potrzebny w ręce, a **nieznany cel zostaje przy dawnej sumie** (kotwica
+anty-over-fix: nic, czego nie zmierzyliśmy, nie zmienia zachowania).
+
+**PO:** ochrona wybiera **{R} = 23**, mana wybiera **{B} = 11** — ten sam stan, różne wybory.
+Przy pustym stole wroga ochrona remisuje po 5 i nie wymyśla koloru z potrzeby many
+(PRZED wygrywało {B} = 11).
+
+**Piny** `test/audyt-pmssb28-color-choice.test.js` (7): A1–A4 rozdział celów, B1 anty-over-fix
+(nieznany cel = dawna suma: B=11, R=8, U=5), B2 wagi jako pokrętła, B3 uczciwy remis przy
+pustym stole. **Mutacja M1** → RED `{A1, A2, A3, A4, B2, B3}`, B1 zielony.
+
+**Pokrętła (2):** `colorProtectionPerCreature` 6 · `colorManaNeedPerCard` 6.
+
+**Trop porzucony po pomiarze:** rodzina „wygnaj karty z grobu" (`resolve_delve_exile` /
+`resolve_escape_exile` / `resolve_reveal_exile_grave`) ma wspólną miarę `escapeExileCostOf`
+w postaci dwugałęziowego kikuta (stwór = `10 + 2P + T`, każda inna karta = stałe 6), ale
+**w rejestrze nie ma ani jednej karty grywalnej z grobu ani reanimacji**, więc „grób jako
+zasób" byłby niezmierzalny na prawdziwych kartach. Forward na moment, gdy takie karty wejdą.
+
+**Bramki:** `npm test` 7179/7179 · `npm run build` 70 mod / 4656.3 kB ·
+`npm run test:all` — wynik w §2026-09-30e historii.
+
+---
+
 ## 2026-09-30d — PMSSB-27: licznik źródeł landu bez karty rozważanej
 
 **Doprecyzowanie właściciela do PMSSB-26:** „Jako sytuacje — raczej odrzucaj myślałem o 3 na
