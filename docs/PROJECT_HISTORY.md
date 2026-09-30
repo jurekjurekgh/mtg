@@ -14160,7 +14160,8 @@ w postaci dwugałęziowego kikuta (stwór = `10 + 2P + T`, każda inna karta = s
 zasób" byłby niezmierzalny na prawdziwych kartach. Forward na moment, gdy takie karty wejdą.
 
 **Bramki:** `npm test` 7179/7179 · `npm run build` 70 mod / 4656.3 kB ·
-`npm run test:all` — wynik w §2026-09-30e historii.
+`npm run test:all` **7450 / 7450, exit 0**, golden-master `ok 1717` **bez regeneracji**
+(+7 testów względem 7443 z PMSSB-27 to dokładnie nowe piny).
 
 ---
 

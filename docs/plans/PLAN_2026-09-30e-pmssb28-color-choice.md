@@ -71,7 +71,8 @@ B1 zielony — dokładnie zgodnie z projektem.
 ## 5. Bramki
 
 - `npm test` **7179/7179** · `npm run build` 70 mod / **4656.3 kB**
-- `npm run test:all` — bramka końcowa pętli
+- `npm run test:all` **7450 / 7450, exit 0**, golden-master `ok 1717` **bez regeneracji**
+  (+7 względem 7443 z PMSSB-27 to dokładnie nowe piny)
 
 ## 6. Forward
 
