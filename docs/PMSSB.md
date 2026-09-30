@@ -62,6 +62,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | Insatiable Appetite (`sacrifice_food_choice`, 1 karta) | 1 | DONE (mikro-pętla, 2026-09-29b) | plan `PLAN_2026-09-29b-pmssb22-insatiable-appetite.md` + wpis w PROJECT_HISTORY (sekcji w tym hubie brak — pętla mikro z zgłoszenia właściciela); `test/audyt-pmssb22-insatiable.test.js` (12); okna combat-tricka + delta zależna od Food w `pumpDelta`; 0 pokręteł |
 | liczniki (`add_counter` + `add_counter_to_creatures_you_control`) | 33+2 | DONE (2026-09-29) | §PMSSB-23 niżej; plan `PLAN_2026-09-29e-pmssb23-liczniki.md`; `test/audyt-pmssb23-liczniki.test.js` (17); `counterEffectValue` (L41: cast = activate = klasyfikacja) + 6 pokręteł `counterThreat*`/`counterSpread*`/`counterEvasion*`/`counterLateWindow*`/`counterLethalClock*` |
 | filtrowanie wierzchu (`scry` + `surveil`) | 12+5 | DONE (2026-09-30) | §PMSSB-24 niżej; plan `PLAN_2026-09-30a-pmssb24-scry.md`; `test/audyt-pmssb24-scry.test.js` (19); `libraryOrderValue` (CR 701.22a/701.25 — permutacje wreszcie wycenione) + reveal w widoku + drabina deck-outu przy millu + duplikaty/grób; 6 pokręteł `scryOrder*`/`cardDuplicate*`/`surveilGraveSynergy*` |
+| koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -244,6 +245,47 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-25 — koszt „odrzuć kartę” a wspólna miara (2026-09-30b, mikro-pętla)
+
+Nowy dowód: audyt remisów PO posortowany po klasach, które mają zarówno remisy, jak i
+decyzje o różnej punktacji: attack 19 614/191, block 17 253/150,
+**`resolve_discard_choice` 1 176/24**, cast_spell 60 881/14, activate_ability 85 827/12.
+
+**Znajdowanie (F1, L41 — druga miara jakości karty):** przy koszcie odrzucenia działała
+równoległa miara oparta na ciele (`handCardKeepValue`: `2·moc + wytrzymałość` bez limitu,
+keywordy, zdolności), która **nie zna zasięgu many, nasycenia lądów ani duplikatów** —
+czyli tego, co wspólna `cardKeepValue` liczy dla scry/surveil/mill/look_top/clash.
+Pomiar PRZED (sonda `scratch/pmssb25-discard-przed.mjs`):
+
+| # | Stan | PRZED | Czytanie |
+|---|---|---|---|
+| D3/D6 | 2 lądy, Woolly Loxodon {5}{G}{G} + Highland Game 2/1 | bomba **−1**, stwór 14 | **BŁĄD** — trzyma kartę niedostępną ~5 tur (wspólna miara: −3) |
+| D1 | 6 lądów na stole + 2 landy w ręce | land **19** | odrzucany, ale z powodu „land ma `manaCost` 0”, nie przesycenia |
+| D2/D5 | 3 kopie + karta bez koloru many | bez koloru **40** | **POPRAWNE** — reguła właściciela M408 |
+
+Podejrzenie o duplikaty zostało **obalone pomiarem**: D2/D5 to poprawna reguła koloru.
+
+**Fala A (`1b483a6`):** nowa gałąź przed regułą ciała — kartę, której wspólna miara NIE chce
+(`cardKeepValue < 0`: poza zasięgiem many, zbędny land przy przesycie), oddajemy chętnie
+(`-cardKeepValue + P.discardUnwantedBonus`, domyślnie 5). PO: bomba **28 > 14**,
+land **31 > 14**. Pokrętło: `discardUnwantedBonus` (×0 = sama wartość wspólnej miary,
+kierunek decyzji bez zmian — pin A5).
+
+**Kotwice:** A3 — reguła koloru właściciela (M408) nietknięta: karta bez koloru 40 pkt i to
+ona idzie pierwsza. A4 (anty-over-fix) — karty grywalne mają tę samą wycenę co PRZED (14);
+nowa gałąź zapala się tylko dla `cardKeepValue < 0`.
+
+**Mutacja A-M1** (gałąź usunięta) → RED: **{A1, A2, A5}**; A3/A4 zielone.
+
+**Nie otwieramy (forward):** przy 0 lądów reguła koloru każe odrzucić stwora zamiast landu
+(pomiar D4: 42 vs 19). To konsekwencja M408, nie nowa luka — wymaga decyzji właściciela,
+czy reguła koloru ma ustępować przed budową manabazy.
+
+**Bramki:** `npm test` 7157/7157 · `npm run build` 70 mod / 4649.2 kB · `npm run test:all`
+— wynik w §2026-09-30b historii.
+
+---
 
 ## PMSSB-24 — filtrowanie wierzchu biblioteki (`scry` + `surveil`) (2026-09-30)
 

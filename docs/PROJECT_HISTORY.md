@@ -14124,6 +14124,41 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30b — PMSSB-25: koszt „odrzuć” a wspólna miara karty
+
+**Mikro-pętla (M429).** Cel wybrany z audytu remisów PO: `resolve_discard_choice`
+(1 176 decyzji / 24 rozróżnialne remisy). Znajdowanie F1 (L41): przy koszcie odrzucenia
+działała **druga, równoległa miara jakości karty** (`handCardKeepValue` — ciało bez limitu,
+keywordy, zdolności), która nie zna zasięgu many, nasycenia lądów ani duplikatów, choć
+wspólna `cardKeepValue` (M135 + PMSSB-24/F4) o bombie za 7 przy 2 lasach mówi −3, a o
+zbędnym landzie przy 6 lądach −6.
+
+**Pomiar PRZED** (sonda `scratch/pmssb25-discard-przed.mjs`): przy 2 lasach bot trzymał
+Woolly Loxodona {5}{G}{G} (−1 pkt) i odrzucał grywalnego Highland Game 2/1 (14 pkt);
+zbędny land dostawał 19 pkt wyłącznie dlatego, że land ma `manaCost` 0. **Pomiar obalił
+dwa podejrzenia**: duplikaty (D2/D5) okazały się poprawną regułą koloru właściciela, a
+forward clash z PMSSB-24 — fałszywym tropem (`clash.won` liczony z odkrytych kart w
+`game-state.js:3460-3475`, więc ich ułożenie nie może zmienić zwycięzcy — CR 701.30;
+forward wycofany w `PMSSB.md` i w handoffie).
+
+**Fix:** karta, której wspólna miara nie chce (`cardKeepValue < 0`), idzie na pierwszy
+ogień — `-cardKeepValue + discardUnwantedBonus` (5). PO: bomba **28 > 14**, land
+**31 > 14**. Reguła koloru M408 nietknięta (pin A3), karty grywalne bez zmian (pin A4,
+anty-over-fix). Pokrętło `discardUnwantedBonus` w rejestrze.
+
+**Bramki:** `npm test` 7157/7157 · build 70 mod / 4649.2 kB · mutacja A-M1 → {A1, A2, A5}.
+
+**Forward:** przy 0 lądów reguła koloru każe odrzucić stwora zamiast landu (42 vs 19) —
+konsekwencja M408, wymaga decyzji właściciela.
+
+**Incydent:** sandbox został odtworzony o 07:45 UTC (świeży `clone` z `main`), co skasowało
+commit `eac6b51` i `/home/user/scratch`. Odzyskano przez `git fetch` + `git reset --mixed
+origin/arena/01a0eec8-mtg` i ponowny commit delty jako **`1b483a6`** (bez `--amend`); kod
+PMSSB-25 przetrwał w drzewie roboczym. **Nauczka:** przy wygaśnięciu tokena GitHub sandbox
+może zostać odtworzony — commituj i wypychaj zaraz po każdej fali.
+
+---
+
 ## 2026-09-30a — PMSSB-24: filtrowanie wierzchu biblioteki (`scry` + `surveil`)
 
 **Zlecenie.** Właściciel po odświeżeniu tokena GitHub: „możesz wypychać, a potem
