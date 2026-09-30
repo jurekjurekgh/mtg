@@ -340,11 +340,16 @@ dokładnie A1/A1b/A3/A4 RED · B-M1 (bez `revealBonus`) → B1+B2 · B-M2
 (`graveSynergy = 0`) → C4. Każda mutacja daje dokładnie oczekiwany zbiór RED.
 
 **Znane granice i forwardy.**
-1. **Clash nie objęty pętlą** (1 karta w katalogu): `resolve_clash_choice`
-   wycenia tylko własną kartę (`20 ± cardKeepValue`), a ignoruje WARUNEK
-   WYGRANEJ — porównanie mana value z odsłoniętą kartą przeciwnika
-   (informacja publiczna, CR 701.30). Do zrobienia przy pierwszej karcie,
-   która z clashu realnie korzysta.
+1. **Clash — forward SKASOWANY po weryfikacji (L92).** Raport i handoff
+   zapowiadały, że `resolve_clash_choice` ignoruje warunek wygranej
+   (porównanie mana value z kartą przeciwnika). To nieprawda: silnik liczy
+   `clash.won` z odsłoniętych kart i wystawia je w widoku
+   (`pendingClash.won`, `cards`), a decyzja `putOnBottom` rozstrzyga wyłącznie
+   los własnej karty (`game-state.js:3460-3475`, CR 701.30 — wygraną daje
+   większa mana value karty ODŚLONIĘTEJ, nie jej położenie). Wycena
+   `20 ± cardKeepValue` jest więc właściwa: to czysta decyzja o jakości karty.
+   Nauczka ta sama co przy F2: zanim forward trafi do raportu, sprawdza się
+   mechanikę w silniku, nie w intuicji.
 2. **`reveal_top_pick_land_rest_grave`** (`blanchwood-prowler`,
    `satyr-wayfinder`) i `opponent_hand_card_to_top` (`chittering-rats`) to
    rodzeństwo rodziny — poza tą pętlą.

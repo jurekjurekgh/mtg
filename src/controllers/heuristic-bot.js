@@ -6009,6 +6009,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const bezKoloru = !colorCastable(view, karta);
     const wartosc = handCardKeepValue(view, karta);
     if (bezKoloru) return 25 - Math.min(10, wartosc) / 2;
+    // PMSSB-25/F1 (L41 — druga miara jakości karty): reguła ciała powyżej nie
+    // zna ZASIĘGU many, nasycenia lądów ani duplikatów, bo to druga, równoległa
+    // miara (`handCardKeepValue`) obok wspólnej `cardKeepValue` używanej przez
+    // scry/surveil/mill/look_top/clash. Pomiar PRZED
+    // (`scratch/pmssb25-discard-przed.mjs`): przy 2 lasach bot trzymał
+    // Woolly Loxodona {5}{G}{G} (−1 pkt) i odrzucał grywalnego Highland Game
+    // 2/1 (14 pkt), choć wspólna miara mówi o bombie −3 (koszt 7 > zasięg+2).
+    // Dlatego karty, których wspólna miara NIE chce (ujemna: poza zasięgiem,
+    // zbędny land przy przesycie), oddajemy chętnie; reszta zostaje po staremu
+    // (kotwica anty-over-fix: przy `cardKeepValue >= 0` wartość bez zmian).
+    const wspolna = cardKeepValue(view, karta);
+    if (wspolna < 0) return -wspolna + P.discardUnwantedBonus;
     return -Math.min(30, wartosc);
   }
 

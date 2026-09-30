@@ -364,6 +364,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'cardDuplicateMaxCopies',      // ile kopii najwyżej zliczamy (limit zniżki)
   'surveilGraveSynergyPerSource',// dopłata za zmieloną kartę na każde źródło czytające z grobu
   'surveilGraveSynergyCap',      // limit dopłaty na kartę
+  // PMSSB-25 (mikro-pętla, F1) — druga miara jakości karty przy koszcie
+  // „odrzuć". Reguła ciała (`handCardKeepValue`, M408/D) nie zna zasięgu many,
+  // nasycenia lądów ani duplikatów, bo jest równoległą kopią wspólnej
+  // `cardKeepValue`. Pomiar PRZED: przy 2 lasach bot trzymał Woolly Loxodona
+  // {5}{G}{G} i odrzucał grywalnego stwora 2/1 (−1 vs 14 pkt), choć wspólna
+  // miara mówi o bombie −3 (koszt 7 > zasięg+2). Karty, których wspólna miara
+  // NIE chce, oddajemy chętnie; `discardUnwantedBonus` to płaska dopłata za
+  // samo pozbycie się karty niechcianej (×0 = sama wartość wspólnej miary).
+  'discardUnwantedBonus',        // dopłata za odrzucenie karty, której wspólna miara nie chce
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -624,6 +633,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // karty na granicy opłacalności, a nie dla każdej.
   surveilGraveSynergyPerSource: 2,
   surveilGraveSynergyCap: 4,
+  // PMSSB-25/F1: 5 pkt — tyle, ile warta jest różnica między dwiema grywalnymi
+  // kartami w regule ciała, więc „niechciana" wygrywa z każdą kartą grywalną
+  // o ciele do ~10 (2×moc+wytrz), ale nie z regułą koloru właściciela (M408),
+  // która jest liczona osobną gałęzią i zostaje nietknięta.
+  discardUnwantedBonus: 5,
 });
 
 /**
