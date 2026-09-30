@@ -9985,6 +9985,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
+          // PMSSB-31 (zgłoszenie właściciela z gry): KORZYSTNA WYMIANA.
+          // Dotąd `+attackerPower` i `−(P+T)` były w jednej skali, więc chump
+          // 3/3 tokenem 1/1 dawał dokładnie 3 − 2 − 1 = 0 — tyle samo co pass.
+          // Model był OBOJĘTNY na przyjęcie 3 obrażeń, a przy czterech 1/1
+          // wolał utopić wszystkie w jednym 4/4 (4 + 12 − 8 − 4 = 4) niż
+          // zatrzymać całe 7 obrażeń dwoma tokenami (1). Właściciel: „po to ma
+          // te małe token kreatury, żeby go broniły przed atakiem większych".
+          //
+          // Rozróżnikiem NIE jest waga obrażeń: płaska waga 3 wymuszała też
+          // blok cennym 2/2 bez presji życia i łamała piny anty-over-fix
+          // (M257-r5/B „30 życia — blok 2/2 vs 3/3 NIE wygrywa z passem").
+          // Rozróżnikiem jest NADWYŻKA: obrażenia wchłonięte przez ciało warte
+          // mniej niż one. Token 1/1 za 3 obrażenia to dobry interes; 2/2 za
+          // 3 obrażenia nie. Bonus tylko gdy bloker REALNIE ginie i tylko od
+          // nadwyżki, więc bez presji cenne blokery zostają niezaangażowane.
+          if (blockerValueLost > 0 && attackerPower > blockerValueLost) {
+            score += (attackerPower - blockerValueLost) * P.blockGoodTradePerPoint;
+          }
           // PMSSB-2/C (F8): UBEZPIECZENIE ciała — ginący bloker z dies→token
           // (Dissenter/Patron/Chorus/Elgaud) zostawia token; skala L41 jak ETB
           // (chump z Dissenterem JEST dobry — strata 1/1 za czas + Zombie 2/2).
@@ -10047,6 +10065,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
           else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
           else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
+          // ZNANY FORWARD (PMSSB-31, zmierzone, NIE naprawione w tej fali):
+          // drabinka wyżej jest NIEMONOTONICZNA względem zablokowanych obrażeń
+          // (mniej życia po = większa premia), więc przy 7 życiu i ataku 4/4+3/3
+          // wariant „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4) remisuje
+          // z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba dokładnie 39 —
+          // a o wyborze decyduje kolejność ofert. Próba domknięcia epsilonem
+          // `stoppedDamage * 0.01` rozstrzygała ten remis poprawnie, ale
+          // ułamkowy wynik łamał piny wartości dokładnych (PMSSB-2/C/F8
+          // Dissenter +19 i Patron 6), więc została wycofana. Właściwa naprawa
+          // to drabinka monotoniczna względem `stoppedDamage` — osobna fala,
+          // bo dotyka pinów M146 i M257-r5.
         }
         return finish(score);
       }

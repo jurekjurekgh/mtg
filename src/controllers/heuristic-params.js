@@ -404,6 +404,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // czwarta kopia tej samej reguły (L41). Baza musi zostać wyraźnie nad −5
   // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
   'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
+  'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -696,6 +697,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-30: 30 — dawna baza; przy wspólnej mierze (−6..30) rozstrzał to
   // 24..60, wciąż daleko nad −5 za rezygnację.
   satyrLookBase: 30,
+  blockGoodTradePerPoint: 2,
 });
 
 /**
