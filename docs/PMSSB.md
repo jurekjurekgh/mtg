@@ -61,6 +61,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | Cuombajj / opponent-target (1 karta) | 1 | DONE (mikro-pętla, 2026-09-29) | §PMSSB-21 niżej; nowy dowód = audyt remisów (190/190 rozróżnialnych w decyzji, wcześniej 41); `test/audyt-pmssb21-opponent-target.test.js` (5); sonda `tools/pmssb21-cuombajj-sonda.mjs`; 3 pokrętła `opponentTarget*` |
 | Insatiable Appetite (`sacrifice_food_choice`, 1 karta) | 1 | DONE (mikro-pętla, 2026-09-29b) | plan `PLAN_2026-09-29b-pmssb22-insatiable-appetite.md` + wpis w PROJECT_HISTORY (sekcji w tym hubie brak — pętla mikro z zgłoszenia właściciela); `test/audyt-pmssb22-insatiable.test.js` (12); okna combat-tricka + delta zależna od Food w `pumpDelta`; 0 pokręteł |
 | liczniki (`add_counter` + `add_counter_to_creatures_you_control`) | 33+2 | DONE (2026-09-29) | §PMSSB-23 niżej; plan `PLAN_2026-09-29e-pmssb23-liczniki.md`; `test/audyt-pmssb23-liczniki.test.js` (17); `counterEffectValue` (L41: cast = activate = klasyfikacja) + 6 pokręteł `counterThreat*`/`counterSpread*`/`counterEvasion*`/`counterLateWindow*`/`counterLethalClock*` |
+| filtrowanie wierzchu (`scry` + `surveil`) | 12+5 | DONE (2026-09-30) | §PMSSB-24 niżej; plan `PLAN_2026-09-30a-pmssb24-scry.md`; `test/audyt-pmssb24-scry.test.js` (19); `libraryOrderValue` (CR 701.22a/701.25 — permutacje wreszcie wycenione) + reveal w widoku + drabina deck-outu przy millu + duplikaty/grób; 6 pokręteł `scryOrder*`/`cardDuplicate*`/`surveilGraveSynergy*` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -243,6 +244,138 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-24 — filtrowanie wierzchu biblioteki (`scry` + `surveil`) (2026-09-30)
+
+**Zlecenie.** Właściciel: „bierz się za kolejne fale PMSSB aż do wyczerpania
+budżetu sesji". Rodzina wybrana z pomiaru katalogu (583 karty, 184 typy
+efektów, 673 wystąpienia): `scry` = 12 kart, `surveil` = 5, zero wierszy
+w rejestrze. Wcześniejsze dotknięcia to łatki punktowe (M135 wspólna miara
+karty, M148 permutacje w silniku, M211/A1 i M218/4 okno czaru, K 2026-09-22
+Titan's Strength), więc to pierwsza pętla PMSSB dla rodziny, z nowym dowodem.
+Plan: `docs/plans/PLAN_2026-09-30a-pmssb24-scry.md`.
+
+**Inwentarz (20 kart z instrukcją układania własnej biblioteki, 17 z
+`scry`/`surveil`):** czary z riderem (`titans-strength` pump+scry 1,
+`expose-to-daylight`, `inspire-awe`, `rage-of-purphoros`, `curate`/`curate-stx`
+surveil 2+draw 1, `vanish-from-sight` bounce+surveil 1); zdolności aktywowane
+(`prismari-campus`, `seers-lantern`, `survivor-of-korlis`, `kishla-village`);
+triggery ETB (`trained-arynx`, `nefarious-imp`, `omenspeaker`,
+`merfolk-falconer`, `sifter-wurm` scry 3 + reveal wierzchu, `etherwrought-page`).
+
+**POMIAR PRZED** (sondy `pmssb24-scry-przed.mjs`, `p8.mjs`, `f2.mjs`,
+`falaB.mjs`, `falaC.mjs`):
+
+| # | Scenariusz | Wynik | Wniosek |
+|---|---|---|---|
+| P1 | scry 2, wierzch [{5} czar, {2} stwór 2/1], obie zostają | obie permutacje = **20 / 20** | kolejność nie rozstrzyga → F1 |
+| P2 | surveil 2, kolejność oryginalna vs odwrócona | **21 vs 20** | bonus `keepsOrder` kara lepsze ułożenie → F1 |
+| P8 | `sifter-wurm` scry 3 + reveal; wierzch [{5}, {2}, land] | najlepszy wariant = **`bottom:t0`** (odkłada kartę {5}); 16 wariantów, **8** etykiet | reveal nie istnieje dla bota → F5; etykiety zlewają permutacje |
+| P4 | surveil: mielenie zbędnego landu, delve w ręce vs bez | **25 = 25** | grób jako zasób niewidoczny → F3 |
+| P5 | ręka pusta vs 4 karty, te same karty na wierzchu | **12/12 = 12/12** | kontekst ręki niewidoczny → F4 |
+| P3 | odłożenie zbędnego landu, biblioteka 2 vs 12 kart | **26 = 26** | SCRY nie zmienia liczby kart — wynik POPRAWNY (korekta F2) |
+| F2′ | surveil, biblioteka 2 karty vs 12 | **24 = 24** | mill bez drabiny deck-outu → F2 po korekcie |
+| P6 | `titans-strength` main1 / main2 / end / declare_blockers | **−35 / −35 / −20 / −35** | kotwica M218/4 + K — nie ruszana |
+| P7 | scry 1/2/3, trzy zbędne landy | **26 / 32 / 38** vs keep 20 | decyzja skaluje się poprawnie — kotwica |
+
+**Findingi.**
+- **F1 (L50/L41): kolejność kart na wierzchu nie była wyceniana.** Silnik
+  oferuje permutacje (`game-state.js:7149-7160`; CR 701.22a „the rest on top
+  of your library in any order", CR 701.25), a `resolve_scry` liczył tylko
+  `bottomIds`. Przy surveil `keepsOrder ? 1 : 0` premiowało kolejność
+  ORYGINALNĄ, więc świadome ułożenie przegrywało. Etykieta śladu nie kodowała
+  `topOrder` (16 wariantów → 8 etykiet), więc audyt remisów widział remisy tam,
+  gdzie są różne decyzje (klasa L34/L40 — ta sama co M203/2).
+- **F2 — KOREKTA własnego findingu (L92).** Plan twierdził, że odłożenie karty
+  na spód odsuwa deck-out. To nieprawda: scry przekłada kartę w obrębie TEJ
+  SAMEJ biblioteki, więc liczba kart się nie zmienia i P3 (26 = 26) jest
+  poprawnym zachowaniem. Deck-out (CR 121.4/704.5b) wchodzi przy surveil, bo
+  tam karta idzie do grobu i biblioteka realnie chudnie — a `resolve_surveil`
+  nie miał żadnej drabiny presji.
+- **F3: grób bywa zasobem.** Surveil ≠ scry semantycznie (CR 701.25); przy
+  Delve (CR 702.66) albo reanimacji zmielenie karty jest paliwem.
+- **F4: wartość karty nie znała ręki.** Druga i kolejna kopia tej samej karty
+  jest warta mniej; pomiar: ręka z czterema kartami = ręka pusta (12/12).
+- **F5 (klasa L1 — brak danych): `revealTopGainLife` nie docierało do widoku.**
+  Sifter Wurm: „scry 3, then reveal the top card of your library. You gain
+  life equal to that card's mana value" — reveal następuje PO decyzji gracza
+  (`game-state.js:2263`, CR 608.2), więc kolejność wierzchu steruje zyskiem
+  życia. Zmierzony skutek: bot odkładał na spód dokładnie tę kartę {5}, której
+  reveal chciał na wierzchu (5 życia → 2).
+
+**Fale.**
+
+| Fala | Commit | Co | PRZED → PO |
+|---|---|---|---|
+| **A** | `83c06b4` | wspólny `libraryOrderValue` (suma zdyskontowana `cardKeepValue` po pozycjach, liczona jako RÓŻNICA względem układu pierwotnego) w `resolve_scry` i `resolve_surveil`; usunięte `keepsOrder ? 1 : 0`; etykieta kodująca `topOrder` | permutacje **20/20** → ułożenie **23,2** > 20; surveil **21 vs 20** → **23,2 vs 20**; 16 wariantów = **16** etykiet |
+| **B** | `184615d` | `revealTopGainLife` w `playerView` (pole warunkowe) + dopłata `gainLifeValue(mana value)`; wspólna `drawDeckingPenalty` przy mieleniu surveil — jako RÓŻNICA, nie wprost | reveal: **29,2 → 31,2** (20 życia) i **→ 33,2** (4 życia); biblioteka 3: keep **23,2** > mill **21,2**; biblioteka 1: keep **20** > mill **−42**; biblioteka 12 bez zmian (**27,2**) |
+| **C** | `4e8c201` | duplikaty w `cardKeepValue` (3 pkt za kopię, limit 2) + grób jako zasób w surveil (2 pkt za źródło, limit 4) | odłożenie duplikatu **11 → 14 → 17** (0/2/3 kopie); mill **24 → 26** z Delve w ręce |
+
+**Pułapka zmierzona, nie wymyślona (Fala A).** Pierwsza wersja członu
+kolejności liczyła wszystkie karty, także zbędne: przestawienie śmiecia w głąb
+dostawało `(1−d)·(keep_dobrej − keep_śmiecia)` = 6 pkt, czyli dokładnie tyle,
+co jego odłożenie na spód (**26 vs 26**) — remis rozstrzygała kolejność
+enumeracji i kotwica M135 („zbędny land idzie na spód") przegrywała. Poprawka:
+w członie kolejności liczą się tylko karty, które chcemy dobrać (`keep > 0`),
+bo pozbywanie się śmieci to robota spodu biblioteki, nie układu wierzchu.
+
+**Druga pułapka (Fala B).** Drabina deck-outu karze samą strefę krytyczną
+(−60 przy ≤3 kartach), więc użyta wprost obciążała też wariant „zostaw
+wszystko" — zmierzone: **−36,8** za trzymanie kart przy bibliotece 3. Kosztem
+decyzji jest dopiero różnica między zmieleniem a niezmieleniem.
+
+**Kotwica obcej pętli.** Test M135 „surveil mieli zbędny land" miał bibliotekę
+równą liczbie oglądanych kart (1), więc mielenie zostawiało bibliotekę PUSTĄ
+— wycena deck-outu słusznie każe kartę zatrzymać. Test dostał `libraryExtra: 8`
+z komentarzem; intencja bez zmian, 8/8 zielone.
+
+**Pokrętła (6):** `scryOrderWeight` 1 · `scryOrderDiscount` 0,6 ·
+`cardDuplicateDiscount` 3 · `cardDuplicateMaxCopies` 2 ·
+`surveilGraveSynergyPerSource` 2 · `surveilGraveSynergyCap` 4. Każde ×0
+przywraca wartość z poprzedniej fali (piny A2/C2/C5).
+
+**Mutacje (L13, przez `/tmp` + `cp`):** A-M1 (powrót do `20 + delta`) →
+dokładnie A1/A1b/A3/A4 RED · B-M1 (bez `revealBonus`) → B1+B2 · B-M2
+(`millDecking = 0`) → B4+B6 · C-M1 (`duplicateDiscount = 0`) → C1 · C-M2
+(`graveSynergy = 0`) → C4. Każda mutacja daje dokładnie oczekiwany zbiór RED.
+
+**Znane granice i forwardy.**
+1. **Clash nie objęty pętlą** (1 karta w katalogu): `resolve_clash_choice`
+   wycenia tylko własną kartę (`20 ± cardKeepValue`), a ignoruje WARUNEK
+   WYGRANEJ — porównanie mana value z odsłoniętą kartą przeciwnika
+   (informacja publiczna, CR 701.30). Do zrobienia przy pierwszej karcie,
+   która z clashu realnie korzysta.
+2. **`reveal_top_pick_land_rest_grave`** (`blanchwood-prowler`,
+   `satyr-wayfinder`) i `opponent_hand_card_to_top` (`chittering-rats`) to
+   rodzeństwo rodziny — poza tą pętlą.
+3. **Topdeck (ręka pusta) został forwardem, nie regułą.** P5 mierzył dwie
+   rzeczy naraz (brak kontekstu ręki i duplikaty); fala C wdrożyła duplikaty,
+   bo są jednoznaczne. Mnożnik pilności przy pustej ręce dotyka
+   `cardKeepValue`, czyli też milla (PMSSB-20), clashu i `look_top` — wymaga
+   osobnego pomiaru zasięgu, nie przy okazji.
+4. **Wartość revealu jest mała przy pełnym życiu** (`gainLifeValue` daje 2-3):
+   przy 20 życia różnica między odsłonięciem {5} a {2} to 1 pkt, mniej niż
+   zysk z ułożenia chcenej karty wyżej (3,2). To świadome — o wymianie
+   „tempo vs życie" decyduje istniejąca drabina życia (L41), nie nowa skala.
+
+**Pomiar końcowy i ewaluacja.**
+
+- `node tools/bot-tie-audit.mjs --gry=40` (480 partii, ten sam przebieg
+  PRZED/PO; PRZED mierzony w worktree na `aa27111`): decyzje 255 677 →
+  256 335; remisy między realnymi wariantami **3812 → 3792**;
+  `resolve_scry` 116 decyzji / **39 remisów** → 144 decyzje / **10 remisów**
+  (−74 %), przy czym PRZED wszystkie 39 miało w kolumnie „równoważne" —
+  audyt nie odróżniał permutacji, bo etykieta nie niosła `topOrder` (F1).
+  `resolve_surveil` w PRZED nie wystąpił wcale (0 wierszy), w PO ma 63 decyzje
+  / 13 remisów (2 rozróżnialne) — to nowy wiersz, nie poprawka: partie po
+  pierwszej zmienionej decyzji rozchodzą się, więc obecność klasy nie jest
+  porównywalna 1:1. Klasy obce bez regresji: block 151 → 150, attack 195 → 191,
+  `cast_spell` 14 → 14, `activate_ability` 12 → 12.
+- `npm test` fast **7152 / 0 fail** (baza gałęzi `aa27111`: 7133; +19 pinów).
+- `npm run build` **70 modułów / 4647,4 kB**.
+- `git diff --name-only aa27111..HEAD` (kod): `src/controllers/heuristic-bot.js`,
+  `src/controllers/heuristic-params.js`, `src/engine/game-state.js`,
+  `test/audyt-pmssb24-scry.test.js`, `test/m135-wycena-scry-surveil.test.js`.
 
 ## PMSSB-23 — liczniki (`add_counter` i rodzeństwo) (2026-09-29)
 

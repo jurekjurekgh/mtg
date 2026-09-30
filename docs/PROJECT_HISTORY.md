@@ -14123,3 +14123,80 @@ wpisu do `LESSONS.md` — znaleziska mieszczą się w klasach L41 (trzy kopie
 klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
+
+## 2026-09-30a — PMSSB-24: filtrowanie wierzchu biblioteki (`scry` + `surveil`)
+
+**Zlecenie.** Właściciel po odświeżeniu tokena GitHub: „możesz wypychać, a potem
+bierz się za kolejne fale PMSSB aż do wyczerpania budżetu sesji". Najpierw
+odzyskanie stanu (poniżej), potem pętla PMSSB-24.
+
+**Reprovisioning sandboxa (stan odzyskany, nic nie zginęło).** Przy odświeżaniu
+tokena sandbox został przeprovisionowany: pliki robocze przetrwały, ale git
+cofnął się do bazy `6789702`, a `/home/user/pr-body.md` zniknął. Po
+`git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg` różnica drzewa
+roboczego wobec `4f46522` wyniosła dokładnie te trzy dokumenty z utraconego
+commitu, więc dokumentacja sesji 2026-09-29e weszła ponownie jako `aa27111`
+(z adnotacją o odtworzeniu). Opis PR #147 przepisany i wysłany; przy okazji
+poprawiony **własny błąd** w jego szkicu: dopisany „F7 = `friendlyMisaimPenalty`"
+nie istniał — audyt PR #146 miał **sześć** znalezisk (F1–F6), a `f93781a` to
+pętla jakości U1 (`preserveColors` i jednostka bezbarwna). Poprawione też
+przestarzałe `render.js:1524` (badge dziś: `render.js:3011`/`:4820`) i punkt
+ograniczeń o U1.
+
+**Wybór rodziny z pomiaru** (583 karty, 184 typy efektów): `scry` 12 kart +
+`surveil` 5, zero wierszy w rejestrze PMSSB; wcześniejsze dotknięcia to łatki
+punktowe (M135/M148/M211/M218/K). Plan:
+`docs/plans/PLAN_2026-09-30a-pmssb24-scry.md` (`dddb96e`).
+
+**Zadanie A — Fala A (`83c06b4`): kolejność kart na wierzchu.** Silnik oferuje
+permutacje (`game-state.js:7149-7160`; CR 701.22a „the rest on top in any
+order", CR 701.25), a `resolve_scry` liczył tylko `bottomIds` — 6 permutacji
+keep-all remisowało po 20, a przy surveil `keepsOrder ? 1 : 0` premiowało
+kolejność oryginalną (21 vs 20), więc świadome ułożenie przegrywało. Wspólny
+`libraryOrderValue` liczy sumę zdyskontowaną `cardKeepValue` jako RÓŻNICĘ
+względem układu pierwotnego. PO: ułożenie 23,2 > 20; 16 wariantów = 16 etykiet.
+
+**Zadanie B — Fala B (`184615d`): reveal i deck-out.** `revealTopGainLife`
+(Sifter Wurm: reveal wierzchu + życie równe mana value, CR 608.2) nie docierało
+do widoku — bot odkładał na spód dokładnie kartę {5}, której reveal chciał na
+wierzchu (5 życia → 2). Pole warunkowe w `playerView` + dopłata
+`gainLifeValue(mana value)` (ta sama skala życia, L41). Oraz surveil: wspólna
+`drawDeckingPenalty` jako RÓŻNICA — biblioteka 3: keep 23,2 > mill 21,2;
+biblioteka 1: keep 20 > mill −42.
+
+**Zadanie C — Fala C (`4e8c201`): kontekst ręki i grób.** Duplikaty w
+`cardKeepValue` (3 pkt za kopię, limit 2): odłożenie duplikatu 11 → 14 → 17.
+Grób jako zasób przy surveil (Delve CR 702.66 / reanimacja): mill 24 → 26
+z `hooting-mandrills` w ręce.
+
+**Korekta własnego findingu (L92).** Plan twierdził, że odłożenie karty na spód
+odsuwa deck-out. To nieprawda: scry przekłada kartę w obrębie TEJ SAMEJ
+biblioteki, więc liczba kart się nie zmienia i pomiar 26 = 26 (biblioteka 2 vs
+12) jest zachowaniem POPRAWNYM. Deck-out wchodzi dopiero przy surveil, bo tam
+karta idzie do grobu (CR 701.25). Plan, raport i opis commitu poprawione przed
+scaleniem — bez przepisywania historii.
+
+**Dwie pułapki zmierzone w trakcie (nie wymyślone).** (1) Człon kolejności
+liczony także dla kart zbędnych dawał `(1−d)·(keep_dobrej − keep_śmiecia)` = 6,
+czyli dokładnie tyle, co odłożenie śmiecia (26 vs 26) — remis rozstrzygała
+enumeracja i kotwica M135 przegrywała; pomogło liczenie tylko kart chcenych.
+(2) Drabina deck-outu użyta wprost obciążała też wariant „zostaw wszystko"
+(−36,8 przy bibliotece 3), bo karze strefę, nie ruch — kosztem decyzji jest
+dopiero różnica. Dodatkowo strażnik CR złapał wpisany z pamięci `702.16`
+(= Protection); Delve to **702.66**.
+
+**Bramy**: fast **7152/7152** (baza 7133, +19 pinów) · build **70 / 4647,4 kB** ·
+golden-master bez regeneracji · tie-audit `--gry=40` PRZED (`aa27111`,
+worktree) / PO: remisy realnych wariantów 3812 → 3792, a **`resolve_scry`
+39 → 10 remisów (−74 %)** — pierwszy raz rodzina PMSSB dała sygnał w lustrze,
+bo talie ją zawierają. Klasy obce bez regresji (block 151 → 150, attack
+195 → 191, `cast_spell` 14 → 14, `activate_ability` 12 → 12). Kotwica obcej
+pętli: test M135 „surveil mieli zbędny land" miał bibliotekę 1 karty (mill =
+pusta biblioteka), więc dostał `libraryExtra: 8` z komentarzem — intencja bez
+zmian.
+
+**Dokumentacja**: raport §PMSSB-24 + wiersz rejestru w `docs/PMSSB.md`,
+handoff `docs/setup/HANDOFF_2026-09-30a.md`. Bez wpisu do `LESSONS.md` —
+budżet lektury nadal 99 885/100 000; znaleziska mieszczą się w klasach L50/L41
+(kolejność i jedna skala), L1 (brak danych w widoku), L92 (korekta własnego
+pomiaru), L34/L40 (etykieta wariantu), M429 (kotwice anty-over-fix).
