@@ -11115,6 +11115,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const enemyInColor = (view.zones.battlefield ?? []).filter((o) =>
           o.controllerId !== view.playerId && o.kind === 'creature'
           && (o.colors ?? []).includes(color)).length;
+        // PMSSB-28: cel wyboru NIESIE pending (`game-state.js:5762` — 'mana'
+        // dla lądu z chooseColor; `spells.js:2655` — 'protection' dla aury),
+        // ale wycena go nie czytała i liczyła jedną płaską sumę dla obu.
+        // Pomiar PRZED (sonda `scratch/pmssb28-color-przed.mjs`): przy ręce
+        // wymagającej {B} i TRZECH czerwonych stworach wroga oba cele dawały
+        // IDENTYCZNE wyniki (U=11, B=11, R=8, W=5, G=5) i bot wybierał {U} —
+        // kolor, w którym przeciwnik nie ma ani jednego stwora. Aura ochrony
+        // przed {U} nie chroni przed niczym.
+        // Motywy są przeciwstawne, więc dzielimy po `purpose`:
+        //  - 'protection' — liczy się TYLKO kolor wrogich stworów;
+        //  - 'mana'       — liczy się TYLKO kolor potrzebny w ręce.
+        // Nieznany cel zostaje przy dawnej sumie (kotwica anty-over-fix: nic,
+        // czego nie zmierzyliśmy, nie zmienia zachowania).
+        const purpose = view.pendingColorChoice?.purpose;
+        if (purpose === 'protection') return finish(5 + enemyInColor * P.colorProtectionPerCreature);
+        if (purpose === 'mana') return finish(5 + needScore * P.colorManaNeedPerCard);
         return finish(5 + needScore * 6 + enemyInColor);
       }
       // M131 (pętla jakości 2026-09-05): kolejne typy decyzji, które dotąd

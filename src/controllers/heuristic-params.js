@@ -388,6 +388,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'landTotalCriticalMax',        // próg: suma lądów <= tej wartości → critical
   'landTotalHighMax',            // próg: suma lądów <= tej wartości → high
   'landTotalNeutralMax',         // próg: suma lądów <= tej wartości → neutral
+  // PMSSB-28 — wybór koloru rozdzielony po `purpose` z pending (silnik niesie
+  // cel: 'mana' dla lądu z chooseColor, 'protection' dla aury). Motywy są
+  // przeciwstawne, więc każdy cel ma własną wagę; nieznany cel zostaje przy
+  // dawnej sumie `5 + needScore*6 + enemyInColor`.
+  'colorProtectionPerCreature',  // waga wrogiego stwora w kolorze ochrony
+  'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -668,6 +674,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   landTotalCriticalMax: 2,
   landTotalHighMax: 4,
   landTotalNeutralMax: 6,
+  // PMSSB-28: 6 — tyle, ile dawna waga potrzeby many, więc skala się nie
+  // zmienia; wystarcza, żeby JEDEN wróg w kolorze (5+6=11) wygrał z kolorem
+  // pustym (5) i żeby trzy (5+18=23) nie zostawiły wątpliwości.
+  colorProtectionPerCreature: 6,
+  colorManaNeedPerCard: 6,
 });
 
 /**
