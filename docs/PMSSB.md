@@ -64,6 +64,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | filtrowanie wierzchu (`scry` + `surveil`) | 12+5 | DONE (2026-09-30) | §PMSSB-24 niżej; plan `PLAN_2026-09-30a-pmssb24-scry.md`; `test/audyt-pmssb24-scry.test.js` (19); `libraryOrderValue` (CR 701.22a/701.25 — permutacje wreszcie wycenione) + reveal w widoku + drabina deck-outu przy millu + duplikaty/grób; 6 pokręteł `scryOrder*`/`cardDuplicate*`/`surveilGraveSynergy*` |
 | koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
 | wartość landu (drabina per pip) | 1 | DONE (2026-09-30c) | §PMSSB-26 niżej; plan `PLAN_2026-09-30c-pmssb26-land-drabina.md`; `test/audyt-pmssb26-land-drabina.test.js` (13); `landKeepValue` wg specyfikacji właściciela (CR 305.6 dla kolorów); 10 pokręteł `landKeep*`/`landColored*Max`/`landTotal*Max` |
+| licznik źródeł landu bez karty rozważanej | 1 | DONE (2026-09-30d) | §PMSSB-27 niżej; doprecyzowanie właściciela do PMSSB-26 — „3 na stole albo 2 na stole i 1 dodatkowy w ręku (poza tym rozważanym)"; przywraca pierwotny pin `audyt-pr105` B; 0 nowych pokręteł |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -247,6 +248,47 @@ w `src/controllers/heuristic-params.js`.
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
 
+## PMSSB-27 — licznik źródeł landu BEZ karty rozważanej (2026-09-30d)
+
+**Doprecyzowanie właściciela do PMSSB-26:**
+
+> „Jako sytuacje — raczej odrzucaj myślałem o 3 na stole albo 2 na stole i 1 dodatkowy
+> w ręku (**poza tym rozważanym**)."
+
+To nie jest przesunięcie progu, tylko **zmiana semantyki licznika**: `landKeepValue` liczy
+źródła koloru (albo sumę lądów) **poza kartą właśnie ocenianą**. Przy liczniku obejmującym
+rękę próg wypadał o jedno źródło za wcześnie (2 poza rozważanym zamiast 3), a stopień
+„0 → nigdy nie odrzucaj" był dla landu w ręce nieosiągalny — trzeba go było kotwiczyć przez
+scry. Teraz „0" znaczy dokładnie to, co powinien: **ten land jest moim jedynym źródłem koloru**.
+
+**Pomiar PO** (sonda `scratch/pmssb27-land-po.mjs`), land wobec bezbarwnego stwora (12 pkt):
+
+| Źródła poza rozważanym | Land | Stopień |
+|---|---|---|
+| 0 | **−10** | bardzo duża — nigdy nie odrzucaj |
+| 1 | **2** | spora |
+| 2 | **12** | neutralna (remis ±1) |
+| 3 | **31** | niska — raczej odrzucaj |
+
+Oba przykłady właściciela dają ten sam wynik: **3 na stole → 31** oraz **2 na stole
++ 1 dodatkowy w ręce → 31**. Drabina bezbarwna: 0 i 2 → −10 · 4 → 2 · 6 → 12 · 7 → 31.
+
+**Doprecyzowanie PRZYWRACA pierwotny pin** `audyt-pr105-bot-hand-top` B: przy 2 lasach na
+stole i trzecim w ręce (2 źródła {G} poza nim) bot znów zostawia trzeci las i oddaje
+9-manowy czar poza zasięgiem. **Znika „konsekwencja do potwierdzenia" z PMSSB-26** —
+nie ma już rozjazdu między drabiną a wcześniejszym uzgodnieniem. Nowy B2 kotwiczy prawdziwe
+przesycenie (3 lasy na stole).
+
+**Zaktualizowane piny:** PMSSB-26 A1/A2/A3/B2/B3/B4/C2/C3/C4/C5, PMSSB-25/A2 (3 źródła poza
+rozważanym), pr105 B/B2. **Bez zmian:** PMSSB-26/A4 (scry), PMSSB-24/C3, pakiet-c E2/C1 i
+E2/C2 — tam oceniana karta leży poza ręką, więc licznik jest taki sam.
+
+**Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.4 kB · golden-master
+**bez regeneracji** (zmiana progów nie przesunęła decyzji w pełnych partiach) ·
+`npm run test:all` — wynik w §2026-09-30d historii.
+
+---
+
 ## PMSSB-26 — wartość landu jako drabina (2026-09-30c)
 
 Pętla otwarta z forwardu PMSSB-25 i **zamknięta specyfikacją właściciela** (nie domysłem).
@@ -286,10 +328,10 @@ stopnie monotoniczne.
 `landKeepSaturated` −6 · `landColored{Critical,High,Neutral}Max` 0/1/2 ·
 `landTotal{Critical,High,Neutral}Max` 2/4/6.
 
-**Do potwierdzenia przez właściciela:** przy 2 lasach na stole i trzecim w ręce (3 źródła
-{G}) bot oddaje teraz trzeci las zamiast 9-manowego czaru poza zasięgiem — to dosłowna
-realizacja „3+ źródeł pipa → raczej odrzucaj", ale zmienia wcześniej uzgodnione zachowanie
-z `audyt-pr105-bot-hand-top`. Próg jest pokrętłem `landColoredNeutralMax`.
+**ROZWIĄZANE przez PMSSB-27:** wątpliwość „przy 2 lasach na stole i trzecim w ręce bot
+oddaje trzeci las" wynikała z licznika obejmującego kartę rozważaną. Właściciel
+doprecyzował, że licznik ma jej NIE obejmować — patrz §PMSSB-27. Pierwotny pin
+`audyt-pr105-bot-hand-top` B wrócił do postaci sprzed PMSSB-26.
 
 **Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.1 kB ·
 `npm run test:all` **7443 / 7443, exit 0** — po **świadomej regeneracji golden-mastera**

@@ -14124,6 +14124,42 @@ klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
 M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
 `docs/setup/HANDOFF_2026-09-29e.md`.
 
+## 2026-09-30d — PMSSB-27: licznik źródeł landu bez karty rozważanej
+
+**Doprecyzowanie właściciela do PMSSB-26:** „Jako sytuacje — raczej odrzucaj myślałem o 3 na
+stole albo 2 na stole i 1 dodatkowy w ręku (**poza tym rozważanym**)."
+
+To nie przesunięcie progu, tylko **zmiana semantyki licznika**: `landKeepValue` liczy źródła
+koloru (albo sumę lądów) poza kartą właśnie ocenianą. Przy liczniku obejmującym rękę próg
+wypadał o jedno źródło za wcześnie (2 poza rozważanym zamiast 3), a stopień „0 → nigdy nie
+odrzucaj" był dla landu w ręce nieosiągalny — trzeba go było kotwiczyć przez scry. Teraz „0"
+znaczy: ten land jest moim jedynym źródłem koloru.
+
+**Pomiar PO** (sonda `scratch/pmssb27-land-po.mjs`), land wobec bezbarwnego stwora (12 pkt):
+0 poza rozważanym → **−10** · 1 → **2** · 2 → **12** · 3 → **31**. Oba przykłady właściciela
+zgadzają się co do punktu: 3 na stole → 31 oraz 2 na stole + 1 dodatkowy w ręce → 31.
+Drabina bezbarwna: 0 i 2 → −10 · 4 → 2 · 6 → 12 · 7 → 31.
+
+**Doprecyzowanie PRZYWRACA pierwotny pin** `audyt-pr105-bot-hand-top` B (przy 2 lasach na
+stole trzeci zostaje, 9-mana czar idzie) — **znika „konsekwencja do potwierdzenia"
+z PMSSB-26**. Nowy B2 kotwiczy prawdziwe przesycenie (3 lasy na stole).
+
+**Zaktualizowane piny:** PMSSB-26 A1/A2/A3/B2/B3/B4/C2/C3/C4/C5, PMSSB-25/A2, pr105 B/B2.
+**Bez zmian:** PMSSB-26/A4 (scry), PMSSB-24/C3, pakiet-c E2/C1 i E2/C2 — tam oceniana karta
+leży poza ręką, więc licznik jest taki sam.
+
+**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.4 kB · golden-master **bez
+regeneracji** (4/4 — zmiana progów nie przesunęła decyzji w pełnych partiach, w przeciwieństwie
+do PMSSB-26, gdzie regeneracja była konieczna).
+
+**Incydent:** sandbox odtworzył się po raz **trzeci** w tej sesji, a `git checkout -- <plik>`
+wykonany przy HEAD wskazującym bazę skasował zmiany PMSSB-26 w jednym pliku testowym.
+Odzyskano przez `git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg` i ponowną edycję.
+**Nauczka:** przed `git checkout -- <plik>` sprawdzić, gdzie stoi HEAD — po re-provisioningu
+wskazuje bazę, nie zdalny tip.
+
+---
+
 ## 2026-09-30c — PMSSB-26: wartość landu jako drabina (specyfikacja właściciela)
 
 **Pętla z forwardu PMSSB-25, zamknięta regułą podaną przez właściciela.** Pomiar PRZED
