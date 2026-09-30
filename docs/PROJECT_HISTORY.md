@@ -14146,7 +14146,10 @@ ogień — `-cardKeepValue + discardUnwantedBonus` (5). PO: bomba **28 > 14**, l
 **31 > 14**. Reguła koloru M408 nietknięta (pin A3), karty grywalne bez zmian (pin A4,
 anty-over-fix). Pokrętło `discardUnwantedBonus` w rejestrze.
 
-**Bramki:** `npm test` 7157/7157 · build 70 mod / 4649.2 kB · mutacja A-M1 → {A1, A2, A5}.
+**Bramki:** `npm test` 7157/7157 · build 70 mod / 4649.2 kB · mutacja A-M1 → {A1, A2, A5} ·
+`npm run test:all` **7428 / 7428, exit 0** — golden-master `ok 1696` bez regeneracji
+(`git diff --name-only a9b7d57..HEAD` nie zawiera fixture); +5 testów względem PMSSB-24
+(7423) to dokładnie nowe piny `audyt-pmssb25-discard.test.js`.
 
 **Forward:** przy 0 lądów reguła koloru każe odrzucić stwora zamiast landu (42 vs 19) —
 konsekwencja M408, wymaga decyzji właściciela.

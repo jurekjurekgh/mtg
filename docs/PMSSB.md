@@ -282,8 +282,9 @@ nowa gałąź zapala się tylko dla `cardKeepValue < 0`.
 (pomiar D4: 42 vs 19). To konsekwencja M408, nie nowa luka — wymaga decyzji właściciela,
 czy reguła koloru ma ustępować przed budową manabazy.
 
-**Bramki:** `npm test` 7157/7157 · `npm run build` 70 mod / 4649.2 kB · `npm run test:all`
-— wynik w §2026-09-30b historii.
+**Bramki:** `npm test` 7157/7157 · `npm run build` 70 mod / 4649.2 kB ·
+`npm run test:all` **7428 / 7428, exit 0** (golden-master `ok 1696` bez regeneracji;
++5 względem 7423 z PMSSB-24 = nowe piny).
 
 ---
 
