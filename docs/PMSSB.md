@@ -373,6 +373,9 @@ dokładnie A1/A1b/A3/A4 RED · B-M1 (bez `revealBonus`) → B1+B2 · B-M2
   `cast_spell` 14 → 14, `activate_ability` 12 → 12.
 - `npm test` fast **7152 / 0 fail** (baza gałęzi `aa27111`: 7133; +19 pinów).
 - `npm run build` **70 modułów / 4647,4 kB**.
+- `npm run test:all` **7423 / 7423**, exit 0 (416 s) — golden-master „ślad bota
+  == zamrożony fixture" zielony **BEZ regeneracji** (lista plików poniżej nie
+  zawiera fixture'a).
 - `git diff --name-only aa27111..HEAD` (kod): `src/controllers/heuristic-bot.js`,
   `src/controllers/heuristic-params.js`, `src/engine/game-state.js`,
   `test/audyt-pmssb24-scry.test.js`, `test/m135-wycena-scry-surveil.test.js`.

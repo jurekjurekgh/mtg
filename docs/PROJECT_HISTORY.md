@@ -14185,8 +14185,9 @@ enumeracja i kotwica M135 przegrywała; pomogło liczenie tylko kart chcenych.
 dopiero różnica. Dodatkowo strażnik CR złapał wpisany z pamięci `702.16`
 (= Protection); Delve to **702.66**.
 
-**Bramy**: fast **7152/7152** (baza 7133, +19 pinów) · build **70 / 4647,4 kB** ·
-golden-master bez regeneracji · tie-audit `--gry=40` PRZED (`aa27111`,
+**Bramy**: fast **7152/7152** (baza 7133, +19 pinów) · `test:all`
+**7423/7423** (exit 0, 416 s, golden-master „ślad bota == zamrożony fixture"
+zielony BEZ regeneracji) · build **70 / 4647,4 kB** · tie-audit `--gry=40` PRZED (`aa27111`,
 worktree) / PO: remisy realnych wariantów 3812 → 3792, a **`resolve_scry`
 39 → 10 remisów (−74 %)** — pierwszy raz rodzina PMSSB dała sygnał w lustrze,
 bo talie ją zawierają. Klasy obce bez regresji (block 151 → 150, attack
