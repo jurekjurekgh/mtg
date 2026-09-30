@@ -10921,10 +10921,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.found == null) return finish(-40);
         const card = decisionCandidateCard(view, cmd.found);
         if (!card) return finish(0);
-        let score = 25;
-        // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
-        if (card.kind === 'land') score += 30;
-        score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        // PMSSB-29: to była TRZECIA równoległa miara jakości karty obok
+        // `handCardKeepValue` (PMSSB-25/F1) i wspólnej `cardKeepValue`
+        // (M135 + PMSSB-24/F4 + PMSSB-26). Pomiar PRZED
+        // (sonda `scratch/pmssb29-search-przed.mjs`): wyniki były IDENTYCZNE
+        // przy 0, 3, 8 i 12 lądach na stole (land=55, bomba {5}{G}{G}=44,
+        // stwór {1}{B}=29, czary po 25), bo reguła `25 + (land ? 30 : 0) + 2P+T`
+        // nie zna ani drabiny lądów, ani zasięgu many, ani koloru:
+        //  - przy 12 lądach bot szukał KOLEJNEGO landu zamiast 6/7,
+        //  - przy 0 lądów bomba za 7 biła grywalnego stwora za 1,
+        //  - wszystkie czary dostawały dokładnie 25 — stąd 245 remisów
+        //    „równoważnych" `resolve_search_choice` w audycie (480 partii).
+        // Wspólna miara daje drabinę lądów (PMSSB-26), próg zasięgu
+        // (`cost > reach + 2` → −3) i zniżkę za duplikaty w jednym miejscu.
+        let score = P.searchFoundBase + cardKeepValue(view, card);
         // Domain po search: przy równych podstawowych lądach wybierz NOWY
         // typ. Czytamy wyłącznie jawny deskryptor źródła oraz kandydatów
         // udostępnionych decydentowi, nigdy ukrytą bibliotekę.

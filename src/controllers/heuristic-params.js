@@ -394,6 +394,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // dawnej sumie `5 + needScore*6 + enemyInColor`.
   'colorProtectionPerCreature',  // waga wrogiego stwora w kolorze ochrony
   'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
+  // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
+  // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
+  // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
+  // było zawsze lepsze od rezygnacji (zgłoszenie właściciela B, Temat 6).
+  'searchFoundBase',             // baza za znalezienie karty (wspólna miara dochodzi)
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -679,6 +684,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // pustym (5) i żeby trzy (5+18=23) nie zostawiły wątpliwości.
   colorProtectionPerCreature: 6,
   colorManaNeedPerCard: 6,
+  // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
+  // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
+  // daleko od progu rezygnacji.
+  searchFoundBase: 25,
 });
 
 /**
