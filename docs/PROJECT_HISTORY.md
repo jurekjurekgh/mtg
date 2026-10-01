@@ -14938,3 +14938,8 @@ domknięte pinem). Żywy Tester: 4 partie, 0 zgłoszeń. Bot bez zmian.
 
 **Bramka końcowa:** `npm test` **7310/7310 EXIT 0** (7304 + 6), `test:all` **7581/7581**,
 build **70 modułów / 4709,9 kB**.
+
+**Dopisek (uwaga właściciela z testów):** Throne of the Dead Three — klik w nazwę odsłoniętego
+stwora w modalu wyboru celu pokoju nic nie robił (kandydaci w bibliotece; `hiddenObjectCardId`
+znał tylko szukanie). Naprawa klasowa: lookup po `view.pending*.cards` (obejmuje też Manifest
+dread), piny E/1–E/4. `npm test` **7314/7314**, build **4710,6 kB**.

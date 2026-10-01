@@ -1281,7 +1281,19 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // ścieżka objectId nie znajduje karty poza widocznymi strefami, a tu nie
     // było cardId. Pole `cards` widzi WYŁĄCZNIE decydent (playerView), więc
     // FoW nie pęka; reszta biblioteki zostaje zakryta (piny B/3 i D/2).
-    const kandydat = (view?.pendingSearchChoice?.cards ?? []).find((c) => c?.id === id);
+    // E (zgłoszenie właściciela z gry, 2026-10-01, Throne of the Dead Three):
+    // TA SAMA klasa dla KAŻDEJ decyzji, której kandydaci leżą w bibliotece, ale
+    // są jawni decydentowi — odsłonięte stwory pokoju lochu
+    // (`pendingRoomTarget.cards`), wierzch Manifest dread (`pendingManifestDread`),
+    // oglądane karty itd. Zamiast listy per-decyzja (kolejna recydywa po
+    // Prishe) czytamy WSZYSTKIE `pending*.cards` widoku: pole jest scopowane
+    // przez playerView (dla nie-decydenta `null`; Throne odsłania karty
+    // publicznie), więc FoW nie pęka. Reszta biblioteki zostaje zakryta
+    // (piny D/2 i E/2).
+    const kandydat = Object.entries(view ?? {})
+      .filter(([klucz, wartosc]) => klucz.startsWith('pending') && Array.isArray(wartosc?.cards))
+      .flatMap(([, wartosc]) => wartosc.cards)
+      .find((c) => c?.id === id && c.cardId);
     if (kandydat?.cardId) return kandydat.cardId;
     const object = session?.state?.objects?.get?.(id) ?? null;
     if (!object || object.zone === 'library') return null;
