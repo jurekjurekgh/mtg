@@ -1714,7 +1714,17 @@ export const REAL_CARDS = Object.freeze([
     spell: {
       timing: 'instant',
       targets: [{ type: 'creature' }],
-      effects: [{ type: 'sacrifice_food_choice' }],
+      effects: [{
+        // O3/U5 (audyt #146, fala 2026-10-01): liczby wariantu to DANE KARTY
+        // (Oracle: „+5/+5 … Otherwise … +3/+3”), nie wiedza silnika — dlatego
+        // deskryptor niesie oba warianty, a `effects.js` tylko je stosuje.
+        // Płaskie pola (konwencja pliku, L1: jawna lista pól + freezeSpell
+        // kopiuje płytko). Kompletność obu wariantów pilnuje strażnik katalogu
+        // (`test/audyt-u5-o3-food-deskryptor.test.js`).
+        type: 'sacrifice_food_choice',
+        powerIfSacrificed: 5, toughnessIfSacrificed: 5,
+        powerIfKept: 3, toughnessIfKept: 3,
+      }],
     },
     artId: 386,
     plan: 'Eldraine',

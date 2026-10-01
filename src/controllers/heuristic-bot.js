@@ -658,12 +658,19 @@ function pumpDelta(view, effect) {
     return { power: n, toughness: n };
   }
   // PMSSB-22: delta Insatiable Appetite zależy od Food na polu bitwy —
-  // silnik bez Food daje +3/+3 od ręki (effects.js:4699), z Food otwiera
-  // decyzję `resolve_food_choice` (+5/+5 za poświęcenie).
+  // silnik bez Food stosuje wariant „Otherwise” od ręki, z Food otwiera
+  // decyzję `resolve_food_choice` (poświęcenie = większy pump).
+  // O3/U5 (audyt #146, fala 2026-10-01): LICZBY OBU WARIANTÓW przychodzą
+  // z deskryptora karty (`powerIfSacrificed`/`powerIfKept`), nie z pamięci
+  // bota — inaczej zmiana Oracle albo druga karta tej rodziny rozjeżdżałaby
+  // wycenę (ADR 0002: zero wiedzy o konkretnej karcie w bocie).
   if (effect.type === 'sacrifice_food_choice') {
     const hasFood = (view?.zones?.battlefield ?? []).some((o) => o.controllerId === view?.playerId
       && (o.subtypes ?? []).includes('Food'));
-    return hasFood ? { power: 5, toughness: 5 } : { power: 3, toughness: 3 };
+    const sacrificed = hasFood;
+    return sacrificed
+      ? { power: effect.powerIfSacrificed ?? 0, toughness: effect.toughnessIfSacrificed ?? 0 }
+      : { power: effect.powerIfKept ?? 0, toughness: effect.toughnessIfKept ?? 0 };
   }
   if (effect.type === 'pump_by_gates') {
     const n = (view.zones.battlefield ?? [])
@@ -1136,7 +1143,7 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
   // 1, gdy nikt nie atakował (2 many + tap na efekt, który wygasa w cleanup).
   ['buff_attacking_creatures', 'descriptor'],
   // PMSSB-22 (zgłoszenie właściciela 2026-09-29, Insatiable Appetite):
-  // „You may sacrifice a Food. If you do, +5/+5. Otherwise, +3/+3.” ma
+  // warianty „You may sacrifice a Food. If you do, +X/+X. Otherwise, +Y/+Y.” ma
   // KSZTAŁT pumpa — bez wpisu `temporaryPumpOf` zwracał null, więc cała
   // rodzina (okna M146/M96/M179, symulacja M218/2, klamra M179/E) nie
   // widziała karty: zero wartości na własnym stworze i ZERO kary za
@@ -10316,14 +10323,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // życia (zagrożenie). Anty-over-fix: foodKeepValue ×0 przywraca
         // dawne „zawsze poświęcaj” (remis 30/30 bierze pierwszą ofertę).
         const base = 30;
+        // O3/U5 (audyt #146): oba warianty pumpu czyta WIDOK
+        // (`view.pendingFoodChoice`, ADR 0017) — bot nie zna ani liczb karty,
+        // ani progu „mało życia” z twardej stałej (progi są pokrętłami
+        // `foodKeepLowLifeThreshold`/`foodKeepLowLifeMultiplier`).
+        const choice = view.pendingFoodChoice ?? null;
         if (!cmd.sacrifice) {
           const lifeOf = (view.players ?? []).find((pl) => pl.id === view.playerId)?.life ?? 20;
-          return finish(base + P.foodKeepValue * (lifeOf <= 10 ? 2 : 1));
+          const lowLife = lifeOf <= P.foodKeepLowLifeThreshold ? P.foodKeepLowLifeMultiplier : 1;
+          return finish(base + P.foodKeepValue * lowLife);
         }
         const creature = cmd.creatureId ? objectOnBoard(view, cmd.creatureId) : null;
-        if (!creature) return finish(50); // bez celu w komendzie — dawna wartość
-        const decisive = pumpChangesOutcome(view, creature, { power: 5, toughness: 5 })
-          && !pumpChangesOutcome(view, creature, { power: 3, toughness: 3 });
+        if (!creature || !choice) return finish(50); // brak celu/danych — dawna wartość
+        const sacrificePump = choice.sacrifice ?? { power: 0, toughness: 0 };
+        const keepPump = choice.keep ?? { power: 0, toughness: 0 };
+        const decisive = pumpChangesOutcome(view, creature, sacrificePump)
+          && !pumpChangesOutcome(view, creature, keepPump);
         // NIEZABLOKOWANY napastnik: +2 mocy = 2 obrażenia więcej w twarz
         // (pojęcie widoku `unblockedAttackers`, a nie przeliczanie bloków).
         // KIERUNEK ma znaczenie (audyt PR #146, F5): `unblockedAttackers`
@@ -10334,7 +10349,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // i przy wrogim napastniku). Zysk istnieje tylko w naszej turze walki.
         const unblockedAttacker = view.combat?.attackingPlayerId === view.playerId
           && (view.combat?.unblockedAttackers ?? []).includes(creature.id);
-        return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? 2 : 0));
+        // Nadmiar obrażeń w twarz = RÓŻNICA mocy obu wariantów (dla karty
+        // z +5/+5 vs +3/+3 to dawne 2 — wartość bez zmian, ale bez literału).
+        const faceGain = Math.max(0, (sacrificePump.power ?? 0) - (keepPump.power ?? 0));
+        return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? faceGain : 0));
       }
       // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
       // pay {N}" (ETB) i ECHO. Silnik prezentuje decyzję TYLKO gdy jest

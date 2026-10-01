@@ -4690,6 +4690,18 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Insatiable Appetite: „You may sacrifice a Food. If you do, +5/+5.
     // Otherwise, +3/+3.” Blokująca decyzja — jak scry/surveil: czar
     // wstrzymuje rozstrzyganie do resolve_food_choice.
+    //
+    // O3/U5 (audyt #146, fala 2026-10-01): OBA warianty przychodzą
+    // z deskryptora karty (ADR 0010 — dane reguł karty w repozytorium; ADR
+    // 0002 — silnik bez liczb konkretnej karty). Silnik nie zna „5/3”:
+    // stosuje `powerIfKept`/`toughnessIfKept` w gałęzi automatycznej
+    // i przenosi oba warianty do stanu oczekującej decyzji, skąd bierze je
+    // rozstrzygnięcie ORAZ widok gracza (`view.foodChoice`, ADR 0017).
+    // Kompletność liczb pilnuje strażnik katalogu
+    // (`test/audyt-u5-o3-food-deskryptor.test.js`); `?? 0` to tylko bezpieczeństwo
+    // typu (pole nieobecne = brak wzmocnienia), nie cicha domyślna „trójka”.
+    const keptPump = { power: effect.powerIfKept ?? 0, toughness: effect.toughnessIfKept ?? 0 };
+    const sacrificedPump = { power: effect.powerIfSacrificed ?? 0, toughness: effect.toughnessIfSacrificed ?? 0 };
     const controllerId = sourceObject.controllerId;
     const foodCandidates = state.zones.battlefield.filter((id) => {
       const object = state.objects.get(id);
@@ -4697,31 +4709,43 @@ function markTemporaryExile(state, exileId, sourceObject) {
         && (object.subtypes ?? []).includes('Food');
     });
     if (foodCandidates.length === 0) {
-      // Brak Food — automatycznie „Otherwise”: +3/+3 na celu.
+      // Brak Food — automatycznie „Otherwise”.
       const creatureId = targets[0];
       if (creatureId) {
         const creatureObj = state.objects.get(creatureId);
         if (creatureObj && creatureObj.zone === 'battlefield' && creatureObj.kind === 'creature') {
-          modifyStats(state, creatureId, { power: 3, toughness: 3 });
+          modifyStats(state, creatureId, keptPump);
         }
       }
       state.events.push(event('food_choice_resolved', { playerId: controllerId, sacrificed: false, auto: true }));
       return; // Nie blokuje — brak decyzji.
     }
-    state.pendingFoodChoice = { playerId: controllerId, creatureId: targets[0], hasFood: true, foodIds: foodCandidates, restorePriorityTo: state.turn.priorityPlayerId };
+    state.pendingFoodChoice = {
+      playerId: controllerId, creatureId: targets[0], hasFood: true, foodIds: foodCandidates,
+      restorePriorityTo: state.turn.priorityPlayerId,
+      // Oba warianty jadą dalej: rozstrzygnięcie (`resolve_food_choice`) i widok
+      // decydenta czytają TĘ SAMĄ liczbę (L41 — jedna miara, jedno źródło).
+      pumpIfSacrificed: sacrificedPump, pumpIfKept: keptPump,
+    };
     state.turn.priorityPlayerId = controllerId;
     state.events.push(event('food_choice_required', { playerId: controllerId, creatureId: targets[0] }));
     return true;
   }
   if (effect.type === 'pump_food_result') {
-    // Efekt po resolve_food_choice: +5/+5 jeśli poświęcono Food, +3/+3 wpp.
+    // Krok po resolve_food_choice (dziś żadna karta katalogu go nie tworzy —
+    // rozstrzygnięcie stosuje pump inline w `game-state.js`; typ zostaje, bo
+    // ma etykietę w `render.js` i przypadek w strażniku znikniętego celu,
+    // `test/trigger-vanished-target.test.js`).
+    // O3/U5: liczby nadal z deskryptora — silnik nie zna „5/3” (ADR 0002).
     const targetId = targets[0];
     if (!targetId) return;
     // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
     const foodTarget = state.objects.get(targetId);
     if (!foodTarget || foodTarget.zone !== 'battlefield' || foodTarget.kind !== 'creature') return;
-    const amount = effect.sacrificed ? 5 : 3;
-    modifyStats(state, targetId, { power: amount, toughness: amount });
+    const pump = effect.sacrificed
+      ? { power: effect.powerIfSacrificed ?? 0, toughness: effect.toughnessIfSacrificed ?? 0 }
+      : { power: effect.powerIfKept ?? 0, toughness: effect.toughnessIfKept ?? 0 };
+    modifyStats(state, targetId, pump);
     return;
   }
   if (effect.type === 'counter_spell') {

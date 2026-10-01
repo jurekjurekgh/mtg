@@ -339,7 +339,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'opponentTargetFoeBase',      // kotwica: dawna stała 30 dla ocalałego wroga
   'opponentTargetThreatWeight', // dopłata za zagrożenie celu (moc·2+wytrz) — ×0 = dawna wartość
   'foodKeepValue',      // PMSSB-22: wartość ZACHOWANEGO Food (3 życia) — ×0 = dawne „zawsze poświęcaj”
-  'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy +5/+5 zmienia wynik walki, a +3/+3 nie
+  'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy większy wariant zmienia wynik walki, a mniejszy nie
+  // O3/U5 (audyt #146, fala 2026-10-01): próg „mało życia” i mnożnik ceny
+  // zatrzymania Food siedziały w kodzie bota jako twarde `10` i `2`.
+  // Kotwica anty-over-fix: próg 0 wyłącza podwojenie (mnożnik przestaje
+  // działać), mnożnik 1 = brak dopłaty under pressure.
+  'foodKeepLowLifeThreshold',   // próg życia, od którego Food jest cenniejszy (dawniej stała 10)
+  'foodKeepLowLifeMultiplier',  // mnożnik wartości Food pod presją życia (dawniej stała 2)
   'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
   // PMSSB-24 (F1) — KOLEJNOŚĆ kart, które zostają na wierzchu po scry/surveil.
   // CR 701.22a („the rest on top of your library in any order") i 701.25 dają
@@ -647,6 +653,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   opponentTargetThreatWeight: 0.5,
   foodKeepValue: 12,
   foodDecisiveBonus: 25,
+  // O3/U5 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS (dawne twarde 10 i 2).
+  foodKeepLowLifeThreshold: 10,
+  foodKeepLowLifeMultiplier: 2,
   opponentTargetThreatCap: 15,
   // PMSSB-24/F1 (Fala A) — kolejność wierzchu. Waga 1 = różnica liczona
   // w tych samych jednostkach co `cardKeepValue` (skala „czy chcemy tę kartę
