@@ -14675,7 +14675,24 @@ bibliotekę (FoW wierzchu), a kandydaci szukania są decydentowi ujawnieni w
 `view.pendingSearchChoice.cards` (z tego samego pola `objectName` czyta ich nazwy) —
 kandydat bieżącej decyzji dostaje cardId do podglądu, reszta biblioteki zostaje zakryta
 (piny D/1 i D/2). Żywy Tester runda 6 (s701–s703) — 0 zgłoszeń detektorów, 0
-niewycenionych ruchów.
+niewycenionych ruchów. **Decyzja właściciela (2026-10-01):** obserwacje O-b
+(`staticAbility` bez bramki `faceDown`, CR 708.2a), O-c (uproszczenie badge'a przy
+Obrońcy) i O-d („total toxic value", CR 702.164b) zdjęte z kolejki — brak karty-nosiciela
+w kolekcji, więc kod byłby niesprawdzalny (ADR 0029); zostaje ślad w komentarzach
+`src/engine/combat.js` i w raporcie audytu.
+
+**Etap 12 — kolejka i zgodność z CR (`ca34be8`):** decyzją właściciela (2026-10-01)
+obserwacje **O-b** (`staticAbility` bez bramki `faceDown`, CR 708.2a), **O-c** (uproszczenie
+badge'a przy Obrońcy zdjętym czasem innym niż `lostKeywordsUntilEOT`) i **O-d**
+(„total toxic value", CR 702.164b) zostały **zdjęte z kolejki** — w kolekcji nie ma
+karty-nosiciela, więc kod byłby niesprawdzalny (ADR 0029). Zamiast kodu został ślad
+w dokumentacji mechanik (`src/engine/combat.js`) z warunkiem wejścia implementacji.
+**O-a** potwierdzone jako domknięte w `4fcbff7`: świeża mutacja bez odejmowania `b.damage`
+czerwieni dokładnie `O-a/1`, po przywróceniu 4/4. Runda zgodności z CR u źródła (wydanie
+2026-09-25): **702.83a–b** (Exalted) i **702.149a–c** (Training) zgodne z silnikiem
+(snapshot deklaracji, trigger per wystąpienie), przejrzane 702.122a/702.171a (crew/saddle)
+i 702.164c (toxic) — brak znalezisk; dodany brakujący pin mnożenia egzaltacji
+(`Akrasan Squire x2` = +2/+2) i wpisy `702.164b`/`702.83a` w tabeli numerów CR.
 
 **Bramka końcowa (drzewo `2a41ec3`):** `npm test` 7246/7246 (7219 baza + 3 piny U4 + 4 piny O-a
 + 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512

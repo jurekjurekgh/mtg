@@ -30,7 +30,10 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   domknięte i sprawdzone mutacyjnie; O1 zweryfikowane (sonda `faceDown`);
   sweep 702.2b→702.2c sparowany poprawnie.
 - [x] **Etap 3 — naprawy znalezisk**: brak znalezisk do naprawy (audyt czysty);
-  obserwacje O-a/O-b/O-c zapisane w raporcie jako otwarte (O-b nieosiągalne).
+  obserwacje O-a/O-b/O-c zapisane w raporcie jako otwarte (O-b nieosiągalne);
+  O-a domknięte w Etapie 6, a O-b/O-c/O-d zdjęte z kolejki decyzją właściciela
+  (2026-10-01) — bez karty-nosiciela w kolekcji nie ma czego sprawdzić, więc
+  zostaje tylko ślad w komentarzach `src/engine/combat.js`.
 - [x] **Etap 4 — pętla jakości** (ADR 0021 §4):
   - Żywy Tester 3 partie: s201 `zendikar`/`tarkir-bg`, s202 `kaladesh`/`theros`,
     s203 `eldraine`/`ravnica` — 0 zgłoszeń detektorów, 0 niewycenionych ruchów,
@@ -131,6 +134,28 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
     21/16, s703 `impatient` ravnica/theros 17/15) — 0 zgłoszeń detektorów,
     0 niewycenionych ruchów, brak `[STOP]` (build 4681,7 kB po B/C).
 
+- [x] **Etap 12 — porządki kolejki + runda zgodności z CR (zlecenie właściciela,
+  2026-10-01)**:
+  - **O-b/O-c/O-d zdjęte z kolejki** decyzją właściciela: brak karty-nosiciela
+    w kolekcji ⇒ zero kodu na zapas (ADR 0029). Zostaje ślad w dokumentacji
+    mechanik (`src/engine/combat.js`: O-b przy `staticAbility` — CR 708.2a,
+    O-c przy „natywnym" Obrońcy — CR 702.3, O-d przy toxic — CR 702.164b)
+    i status „zamknięte" w raporcie audytu.
+  - **O-a**: potwierdzone domknięcie z `4fcbff7` — świeża mutacja (bez
+    odejmowania `b.damage`) czerwieni DOKŁADNIE `O-a/1`, po przywróceniu 4/4;
+    notka w raporcie audytu poprawiona z „do wyrównania" na stan faktyczny.
+  - **Runda CR u źródła** (wydanie 2026-09-25): zweryfikowane dosłownie
+    i zgodne z silnikiem **702.83a–b** (Exalted — snapshot deklaracji „attacks
+    alone", trigger per wystąpienie, brama „you control") oraz **702.149a–c**
+    (Training — wynik porównania zamrożony w kontekście zdarzenia, rulingi VOW
+    2021-11-19); przejrzane także 702.122a/702.171a (crew/saddle: oferta
+    i walidacja wykluczają źródło oraz tapnięte, saddle tylko w oknie sorcery)
+    i 702.164c (toxic: tylko obrażenia graczowi, po prewencji). Brak znalezisk
+    (klasa „APPROVE"); jedyny brakujący pin dodany: `Akrasan Squire x2` =
+    +2/+2 za dwa wystąpienia egzaltacji (CR 702.83a).
+  - Tabela numerów CR: `702.164b` i `702.83a` dopisane PO weryfikacji
+    dosłownej (strażnik istnienia zielony). Commit `ca34be8`.
+
 ## Ryzyka
 
 - Budżet lektury: reguła 5 w **L164** (podpunkt CR, Etap 9) opłacona
@@ -151,6 +176,9 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 12 (kolejka + CR):** `npm test` **7250/7250** (7249 + pin egzaltacji ×2),
+  `npm run build` **70 / 4683,0 kB** (komentarze-ślady w `combat.js` wchodzą do
+  bundle'a — stąd +1,3 kB).
 - **Etap 11 (uwagi A/B/C):** `npm test` **7249/7249** (7246 + M221/E + D/1 + D/2),
   `npm run build` **70 / 4681,7 kB**.
 - **Etap 10 (O4):** `npm test` **7246/7246** (7241 + 5), build 70 / **4680,8 kB**
