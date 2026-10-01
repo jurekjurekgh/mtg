@@ -233,6 +233,29 @@ function blockKillsAttacker(attacker, blockers) {
   return effectivePower >= attackerToughness;
 }
 
+/**
+ * Audyt PR #147, F1 (klasa L41/L48): ile obrażeń atakującego ZATRZYMUJE blok.
+ *
+ * Bez trample zablokowany atakujący nie rani gracza w ogóle (CR 509.1h), więc
+ * blok zatrzymuje całą jego moc. Z trample (CR 702.19b) atakujący przypisuje
+ * blokerom tylko obrażenia śmiertelne (CR 510.1c: wytrzymałość pomniejszona o
+ * już zadane obrażenia; z deathtouch wystarcza 1 — CR 702.2b), a resztę kieruje
+ * w gracza — 4/4 trample zablokowany tokenem 1/1 zatrzymuje 1 obrażenie, nie 4.
+ * Jedno źródło prawdy dla `stoppedDamage`, premii „korzystnej wymiany" i
+ * progu ratunku życia w `declare_blockers`.
+ */
+export function blockAbsorbedDamageOf(attacker, blockers) {
+  const attackerPower = combatPower(attacker);
+  const attackerKw = attacker?.keywords ?? [];
+  if (!attackerKw.includes('trample')) return attackerPower;
+  const attackerDeathtouch = attackerKw.includes('deathtouch');
+  const lethal = (blockers ?? []).filter(Boolean).reduce((sum, b) => {
+    const toughnessLeft = Math.max(0, (b.toughness ?? 0) - (b.damage ?? 0));
+    return sum + (attackerDeathtouch ? Math.min(1, toughnessLeft) : toughnessLeft);
+  }, 0);
+  return Math.min(attackerPower, lethal);
+}
+
 export function blockExchangeOf(attacker, blockers) {
   const attackerKw = attacker?.keywords ?? [];
   const attackerPower = combatPower(attacker);
@@ -9979,9 +10002,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const exchange = blockExchangeOf(attackerObj, blockerObjs);
           const attackerDies = exchange.attackerDies;
           const blockerValueLost = exchange.blockerValueLost;
-          // Zablokowane obrażenia = uratowane życie.
-          score += attackerPower;
-          stoppedDamage += attackerPower;
+          // Zablokowane obrażenia = uratowane życie. Audyt PR #147, F1: z trample
+          // blok zatrzymuje tylko śmiertelne obrażenia blokerów (CR 702.19b),
+          // nie całą moc — patrz `blockAbsorbedDamageOf`.
+          const absorbedDamage = blockAbsorbedDamageOf(attackerObj, blockerObjs);
+          score += absorbedDamage;
+          stoppedDamage += absorbedDamage;
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
@@ -10000,8 +10026,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // mniej niż one. Token 1/1 za 3 obrażenia to dobry interes; 2/2 za
           // 3 obrażenia nie. Bonus tylko gdy bloker REALNIE ginie i tylko od
           // nadwyżki, więc bez presji cenne blokery zostają niezaangażowane.
-          if (blockerValueLost > 0 && attackerPower > blockerValueLost) {
-            score += (attackerPower - blockerValueLost) * P.blockGoodTradePerPoint;
+          if (blockerValueLost > 0 && absorbedDamage > blockerValueLost) {
+            score += (absorbedDamage - blockerValueLost) * P.blockGoodTradePerPoint;
           }
           // PMSSB-2/C (F8): UBEZPIECZENIE ciała — ginący bloker z dies→token
           // (Dissenter/Patron/Chorus/Elgaud) zostawia token; skala L41 jak ETB
