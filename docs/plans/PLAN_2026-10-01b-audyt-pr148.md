@@ -90,6 +90,23 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   page/Devoid + Keyword_ability, 2026-10-01). Tabela `cr-numery-tabela.js`
   dostała wiersz `702.114a` z powodem; wnioski w **L164 reguła 5**.
 
+- [x] **Etap 10 — O4 z audytu #147: JEDNO źródło klasyfikacji liczników (L41)**:
+  silnikowy `HOSTILE_COUNTERS` niósł tylko `stun`/`finality`, a bot trzymał
+  własną listę (`DEBUFF_COUNTERS`) — dwie prawdy o tym samym, czyli dokładnie
+  ta klasa rozjazdu, która przy PMSSB-23/F1 dała `stun` w czarze wart 0.
+  `effect-intent.js` eksportuje **`counterIsHostile(counter)`**: lista
+  (`stun` — CR 122.1d/614.6, `finality`) + WZORZEC nazwy licznika minusowego
+  (`-1/-1`, `-0/-1`, w przyszłości `-2/-2`; CR 122.1), więc reguła jest pełna
+  dla kart spoza katalogu (ADR 0002); bot pyta to samo źródło w
+  `counterEffectValue`. Strażnik `test/audyt-o4-liczniki-wrogie-silnik.test.js`
+  (5): minusy wrogie (także `-2/-2`), przyjazne/zasobowe NIE (kotwica
+  anty-over-fix), `stun`/`finality` bez regresji, skan katalogu wymaga decyzji
+  dla każdego licznika `add_counter` (7 dziś), bot bez drugiej listy (L5/3:
+  test czyta źródło). Mutacje: M1 helper bez minusów → O4/1+O4/4 **i piny
+  PMSSB-23/A6+B4** (dowód jednego źródła), M2 helper wrogi dla wszystkiego →
+  O4/2 (+11 pinów PMSSB-23), M3 bez `stun` → O4/3 (+8), M4 powrót listy do
+  bota → O4/5.
+
 ## Ryzyka
 
 - Budżet lektury: reguła 5 w **L164** (podpunkt CR, Etap 9) opłacona
@@ -110,6 +127,8 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 10 (O4):** `npm test` **7246/7246** (7241 + 5), build 70 / **4680,8 kB**
+  (helper w `src/`), klasa liczników scalona w silniku (L41).
 - **Etap 9 (U2):** `npm test` **7241/7241**, `npm run test:all` **7512/7512**,
   build bez zmian 70 / 4680,0 kB.
 - **Etap 8 (U5/O3):** `npm test` **7235/7235**, `npm run build` **70 / 4680,0 kB**;

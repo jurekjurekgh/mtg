@@ -14634,5 +14634,31 @@ PMSSB-22 12/12, golden-master bota zielony). Piny:
 Żywy Tester runda 4 (s501–s505, świeży build): 0 zgłoszeń detektorów, 0 niewycenionych
 ruchów; w s504 bot zagrał Insatiable Appetite (deskryptor w żywej partii).
 
-**Bramka końcowa:** `npm test` 7235/7235 (7226 + 9 pinów O3/U5), `npm run test:all` 7506/7506,
-`npm run build` 70 / 4680,0 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).
+**U2 z audytu #146 (strażnik konwencji `keywords`, Etap 9 — `15cbe85`):** nowy
+`test/keywords-katalog-straznik.test.js` (6 testów) wymaga, żeby każdy keyword katalogu był
+w jednej z dwóch klas — `CZYTA_SILNIK` (wskazany plik silnika musi zawierać literal keywordu
+= dowód czytania) albo `ETYKIETA` (mechanika żyje w deskryptorze zdolności, w polu obiektu
+albo w kolorach karty; strażnik sprawdza to na kartach: devoid ⇒ `colors: []`, toxic ⇒ pole
+`toxic`). Klasa domyka literówkę keywordu i mechanikę, której nic nie realizuje. Mutacje
+M1–M6 czerwienią dokładnie właściwy test. Strażnik ISTNIENIA cytatów CR zatrzymał pierwszą
+wersję testu („CR 702.114b” z pamięci — CR 2026-09-25 ma tylko 702.114a, potwierdzone
+u źródła: mtg.wiki/page/Devoid); tabela `cr-numery-tabela.js` dostała wiersz 702.114a
+z powodem, a wniosek trafił do **L164 reguła 5**, opłacony kondensacją L163/L164/L165/
+L168/L169/L172 (`LESSONS.md` 138 307 B, budżet **99 901/100 000**, zapas 99 tokenów).
+
+**O4 z audytu #147 (Etap 10 — `2a41ec3`):** silnikowy `HOSTILE_COUNTERS` niósł tylko
+`stun`/`finality`, a bot miał własną listę (`DEBUFF_COUNTERS`) — dwie prawdy o tym samym,
+czyli klasa rozjazdu, która przy PMSSB-23/F1 dała `stun` w czarze wart 0. Teraz JEDNO
+źródło: `counterIsHostile(counter)` w `effect-intent.js` (lista + WZORZEC nazwy licznika
+minusowego, więc reguła obejmuje `-2/-2` i karty spoza katalogu — ADR 0002), z którego
+korzysta i `triggerEffectIsHostile`, i bot. Strażnik
+`test/audyt-o4-liczniki-wrogie-silnik.test.js` (5): zakotwiczenie anty-over-fix (przyjazne
+i zasobowe liczniki NIE są wrogie), regresja `stun`/`finality`, skan katalogu wymagający
+decyzji dla każdego licznika z `add_counter` (7 dziś) i źródłowy pin „bot nie ma drugiej
+listy" (L5/3). Mutacje M1–M4 czerwienią O4/1+O4/4 (+piny PMSSB-23 — dowód jednego źródła),
+O4/2 (+11 pinów), O4/3 (+8) i O4/5.
+
+**Bramka końcowa (drzewo `2a41ec3`):** `npm test` 7246/7246 (7219 baza + 3 piny U4 + 4 piny O-a
++ 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512
+(na drzewie Etapu 9), `npm run build` 70 / 4680,8 kB (7222/7493/4673,6 kB było
+bramką tej sesji przed Etapem 6).
