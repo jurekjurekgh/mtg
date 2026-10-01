@@ -2355,10 +2355,9 @@ widoczności) czerwienią.
 
 ## L163 (2026-09-21) — Rozszerzenie kontraktu decyzji o NOWĄ KLASĘ kandydata uczy wszystkie warstwy naraz (oferta, widok, etykieta, wycena, projekcja, narracja)
 
-**Przypadek (zlecenie właściciela, gospodarz-GRACZ aury):** CR 303.4f mówi
-„a legal object OR PLAYER", a `pendingAuraHost` niósł wyłącznie id permanentów
-— `curse-of-the-pierced-heart` (Enchant player) wracająca z grobu nie miała
-żadnego wariantu, więc oferta była pusta.
+**Przypadek (gospodarz-GRACZ aury):** CR 303.4f mówi „a legal object OR PLAYER",
+a `pendingAuraHost` niósł tylko id permanentów — `curse-of-the-pierced-heart`
+(Enchant player) wracająca z grobu nie miała wariantu (oferta pusta).
 
 **Reguła:**
 1. Nowa klasa kandydata to NIE łatka w jednym pliku: kontrakt decyzji
@@ -2381,13 +2380,11 @@ bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
 
 ## L164 (2026-09-24) — Lustro CR bywa o wydanie do tyłu: masowe przenumerowanie potwierdzaj w BIEŻĄCYM wydaniu, nie w pierwszym znalezionym źródle
 
-**Przypadek (audyt PR #134 → PR #135, F-3/fala 2):** numery DFC przepisano
-z `711.x` na `712.x` wg lustra `ancestral.vision` (712.4a = cechy twarzy,
-712.7 = rzut przodem, 712.9 = wejście przodem). W CR 2026-09-25 (Reality
-Fracture) meld został WCHŁONIĘTY przez sekcję 712 (712.4 = meld cards, 712.5 =
-siedem par), więc cechy twarzy siedzą w 712.8/712.8a–g, rzut w 712.11, wejście
-w 712.13. Przy okazji pierwsza fala „poprawiła” dwa cytaty, które były
-POPRAWNE w bieżącym wydaniu (712.9 = transform nie-DFC, 712.8e = MV tyłu).
+**Przypadek (audyt PR #134 → #135, F-3/fala 2):** przenumerowanie DFC `711.x` →
+`712.x` wg lustra `ancestral.vision` trafiło w CR 2026-09-25, gdzie meld został
+WCHŁONIĘTY przez 712 (cechy twarzy 712.8a–g, rzut 712.11, wejście 712.13), a
+dwie zmiany „poprawiały” cytaty POPRAWNE w tym wydaniu (712.9, 712.8e).
+7–10: pełna narracja w `docs/LESSONS_PRZYPADKI.md` (L164).
 
 **Reguła:**
 1. Przed przenumerowaniem CZEGOKOLWIEK masowo: sprawdź DATĘ WYDANIA w nagłówku
@@ -2413,9 +2410,9 @@ kart dwustronnych.
 
 ## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
 
-**Przypadek (F-7):** `fabricate` jako `702.122a` (= crew), vigilance jako 702.21,
-flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa stała linię wyżej niż
-numer (narracja: `docs/LESSONS_PRZYPADKI.md`).
+**Przypadek (F-7):** `fabricate` jako 702.122a (= crew), vigilance jako 702.21,
+flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa była linię wyżej niż
+numer.
 
 **Reguła:**
 1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — a numery
@@ -2480,8 +2477,8 @@ obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
 **Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
-część GENERYCZNĄ — Join the Dance i Boulder Salvo miały kwotę o {1} rozjechaną z
-Oracle, a strażnik porównywał tylko PIPY.
+część GENERYCZNĄ — Join the Dance i Boulder Salvo rozjechane z Oracle o {1},
+a strażnik porównywał tylko PIPY.
 
 **Reguła:**
 1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
@@ -2503,29 +2500,22 @@ znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
 
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
-**Przypadek:** trzy karty batcha 59 miały efekt wyceniony PŁASKO (14/14/14 dla
-licznika na celu, 58 pkt dla tasowania grobu, 2 pkt dla pumpa z aktywacji) — bot
-decydował o „najlepszym" wariancie kolejnością ofert. Pomiary:
-`docs/LESSONS_PRZYPADKI.md` (L169).
+**Przypadek:** trzy karty batcha 59 wycenione PŁASKO (14/14/14, 58, 2) —
+o „najlepszym" wariancie decydowała kolejność ofert (`LESSONS_PRZYPADKI` L169).
 
 **Reguła:**
-1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
-   w `PlayerView` (ADR 0017): wartość ciała gospodarza, liczba kart
-   w bibliotece, uczestnictwo w toczącej się walce, liczba stworów w puli.
-   Waga bez wymiaru tylko przesuwa próg i zostawia decyzję losowi oferty (L50).
-2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły, nie z wyobraźni: licznik =
-   aura-buff (`auraBuffWorthWeight`), wtasowanie = rodzina biblioteczna
-   (`librarySafeMargin` + kara per karta), pump = `pumpImprovesOutcome` (M218/2)
-   + `permanentDoomedThisTurn` (M236/2).
-3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą
-   (baza 2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu musi zejść
-   PONIŻEJ passu (L3), a zero ma być ZEROWANE, nie zmniejszane (M243/4).
-5. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność,
-   L41) — reguła dopisana tylko czarom zostawia aktywację na gołej bazie 2,
-   czyli bot spamuje zdolność za 5 many tam, gdzie czar ma karę.
-6. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że
-   pokrętło NIE jest atrapą (wyzerowanie wraca do remisu); koszt ŹRÓDŁA liczy
-   się RAZ NA WARIANT, nie na każdy cel (patrz archiwum).
+1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz w `PlayerView`
+   (ADR 0017): wartość ciała gospodarza, liczba kart w bibliotece, udział w walce,
+   liczba stworów w puli. Waga bez wymiaru tylko przesuwa próg (L50).
+2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły: licznik = aura-buff, wtasowanie
+   = rodzina biblioteczna, pump = `pumpImprovesOutcome` (M218/2) + `permanentDoomedThisTurn` (M236/2).
+3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą (baza
+   2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu schodzi PONIŻEJ passu (L3),
+   a zero jest ZEROWANE (M243/4).
+4. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność, L41) —
+   dopisana tylko czarom zostawia aktywację na gołej bazie 2 (spam za 5 many).
+5. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że pokrętło
+   NIE jest atrapą; koszt ŹRÓDŁA liczy się RAZ NA WARIANT, nie na każdy cel.
 
 **Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
 rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny przepływu
@@ -2574,3 +2564,15 @@ zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
    regexpach JS `\b` nie działa po diakrytykach — granicę: `(?![a-z])`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L171)
+
+## L172 (2026-10-01) — składnik zależny od WYNIKU wariantu działa jak kara: premia liczona ze STANU
+
+**Przypadek (O2, audyt PR #148):** premia „presji życia" w bloku czytała życie PO
+zablokowaniu, więc malała, gdy blok ratował więcej — przy 7 życia „blok obu" (+2)
+remisował z „blok jednego" (+4), a wybór rozstrzygała kolejność ofert (39 = 39).
+
+**Reguła:** składnik faworyzujący jedną stronę osi wyboru musi być względem niej
+NIEMALEJĄCY — wysokość licz ze STANU (moje życie), nie z wariantu; wariant może co
+najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146).
+**Strażnik:** B4 (`audyt-pmssb31-blok-chump`; mutacje tier←lifeAfter i zdjęta bramka),
+`bot-suspend-twiddle-quality` (M146), `audyt-pr148b-ochrona-lethal-blokera` (O-a/1–4).

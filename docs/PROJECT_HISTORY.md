@@ -14587,6 +14587,32 @@ s203 eldraine/ravnica) — 0 zgłoszeń detektorów, 0 niewycenionych ruchów, b
 615.4/615.6 (prewencja), 701.14a/d (fight), 714.2b (Saga) zweryfikowane dosłownie u źródła
 (CR 2026-09-25) — zgodne, dopisane znaczniki weryfikacji w komentarzach.
 
-**Bramka końcowa:** `npm test` 7222/7222 (7219 + 3 piny U4), `npm run test:all` 7493/7493,
-`npm run build` 70 / 4673,6 kB (7219/4673,2 kB było bramką #148).
-Bez wpisu do `LESSONS.md` — budżet lektury ~99 885/100 000 (klasy: L41/L48, L164/L165, L105).
+**Druga fala pętli jakości („kontynuuj", po U3/U4):** Żywy Tester z nowymi profilami
+(s301 `impatient`, s302 `hoarder`, s303 `explorer`) — 3 partie, 0 zgłoszeń detektorów,
+0 niewycenionych ruchów, brak `[STOP]`. Domknięte dwa znaleziska audytu #148:
+
+- **O2** (`4fcbff7`) — drabinka „presji życia" w `declare_blockers` czytała `lifeAfter`
+  (życie PO wariancie), więc malała, gdy blok zatrzymywał więcej obrażeń: przy 7 życia
+  i ataku 4/4+3/3 „blok obu" (+2) remisował z „blok jednego" (+4) i wybór rozstrzygała
+  kolejność ofert (39 = 39, forward PMSSB-31/B4). Premia liczona jest teraz z MOJEGO
+  ŻYCIA (progi 2/5/8 → 6/4/2 bez zmian; zamierzenie M257-r5), czyli niemalejąco względem
+  zatrzymanych obrażeń; bramka `lifeAfter >= 1` zostaje jako pierwszeństwo (M146 —
+  bez niej bot marnuje blokera, gdy blok i tak nie ratuje). Po naprawie B4: 39 > 37.
+- **O-a** (`4fcbff7`) — `attackerNeutralizedByProtection` liczyła „lethal" blokera z gołej
+  wytrzymałości, więc bloker z oznaczonymi obrażeniami wyglądał na pełnego i atak
+  tramplerem uchodził za jałowy, choć nadmiar wchodzi w gracza (CR 702.19b + 510.1c).
+  Miara jest teraz ta sama co w `blockAbsorbedDamageOf` (L41): `max(0, toughness − damage)`,
+  z deathtouch `min(1, …)`; funkcja wyeksportowana, pin O-a/1–4.
+
+Piny: B4 przepisany z „znanego forwardu" na wymóg porządku, nowy
+`test/audyt-pr148b-ochrona-lethal-blokera.test.js` (4). Mutacje: tier←lifeAfter → B4;
+zdjęta bramka `lifeAfter >= 1` → M146; `toughness` bez `damage` → O-a/1. Golden-master
+bota bez zmian fixture'a (chirurgiczność). Żywy Tester po naprawie: 4 partie (s401–s404,
+profile defensive/greedy/random/hoarder) — czysto.
+
+**Lekcja L172** wpisana („składnik zależny od WYNIKU wariantu działa jak kara — premia
+liczona ze STANU"), zapłacona kondensacją L163/L164/L165/L168/L169: `LESSONS.md`
+138 422 B, budżet lektury **99 942/100 000** (próg nie podnoszony).
+
+**Bramka końcowa:** `npm test` 7226/7226 (7222 + 4 piny O-a), `npm run test:all` 7497/7497,
+`npm run build` 70 / 4674,6 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).

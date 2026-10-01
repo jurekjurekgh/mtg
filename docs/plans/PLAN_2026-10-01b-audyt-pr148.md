@@ -45,11 +45,22 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
     powtarzane — zgodnie z ADR 0021 §4b.
 - [x] **Etap 5 — zamknięcie**: `docs/setup/HANDOFF_2026-10-01b.md`,
   `docs/PROJECT_HISTORY.md`, opis PR #149, blok przekazania dla następnej sesji.
+- [x] **Etap 6 — domknięcie O2 i O-a z audytu** (kolejna fala pętli jakości,
+  „kontynuuj"): O2 — drabinka „presji życia" w `declare_blockers` czytana
+  z `lifeAfter` (wynik wariantu) remisowała PMSSB-31/B4 (39 = 39); premia liczy
+  się teraz ze STANU (moje życie), więc jest niemalejąca względem zatrzymanych
+  obrażeń, a bramka `lifeAfter >= 1` zostaje jako pierwszeństwo (M146).
+  O-a — `attackerNeutralizedByProtection` liczy „lethal" blokera z wytrzymałości
+  EFEKTYWNEJ (CR 510.1c + 702.19b), tą samą miarą co `blockAbsorbedDamageOf`
+  (L41). Piny: B4 przepisany + `test/audyt-pr148b-ochrona-lethal-blokera.test.js`
+  (O-a/1–4); mutacje czerwienią odpowiednio B4, M146 i O-a/1. Golden-master bota
+  bez zmian fixture'a; Żywy Tester 4× czysto (s401–s404).
 
 ## Ryzyka
 
-- Budżet lektury ~99 885/100 000 tokenów — nowy wpis `LESSONS.md` wymaga
-  kondensacji (albo zgody właściciela na podniesienie progu).
+- Budżet lektury: po wpisaniu **L172** (O2/O-a) i kondensacji L163/L164/L165/
+  L168/L169 `LESSONS.md` = 138 422 B, budżet **99 942/100 000** (zapas 58
+  tokenów) — próg NIE podniesiony, kolejny wpis znowu płaci się skróceniem.
 - Re-provisioning sandboxa: na starcie każdej tury `git rev-parse HEAD` vs
   `git ls-remote`; push jest jedynym trwałym zapisem pracy (ENVIRONMENT §2).
 - Golden-master bota: każda zmiana wyceny wymaga świadomej regeneracji fixture'a
@@ -64,3 +75,8 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 6 (O2 + O-a):** `4fcbff7`; `npm test` **7226/7226** (baza 7222 + 4 piny
+  O-a), `npm run build` **70 / 4674,6 kB**; Żywy Tester 4 partie (s401 defensive
+  zendikar/innistrad-wu 30 akcji/1 modal, s402 greedy theros/warhammer-ubr 18/2,
+  s403 random kaladesh/tarkir-bg 14/0, s404 hoarder eldraine/dominaria-brg 16/0)
+  — 0 zgłoszeń detektorów, 0 niewycenionych ruchów, brak `[STOP]`.
