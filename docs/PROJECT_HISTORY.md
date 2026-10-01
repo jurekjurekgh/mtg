@@ -14521,3 +14521,28 @@ handoff `docs/setup/HANDOFF_2026-09-30a.md`. Bez wpisu do `LESSONS.md` —
 budżet lektury nadal 99 885/100 000; znaleziska mieszczą się w klasach L50/L41
 (kolejność i jedna skala), L1 (brak danych w widoku), L92 (korekta własnego
 pomiaru), L34/L40 (etykieta wariantu), M429 (kotwice anty-over-fix).
+
+## 2026-10-01 — audyt PR #147 + pętla jakości (PR #148)
+
+**Prompt:** „Kontynuujemy projekt." — bez tematu ⇒ ADR 0021 (PR → audyt #147 → pętla jakości).
+Baza `902e3d4`; baseline fast 7203/7203, build 70 / 4661,6 kB.
+
+**Audyt #147** (`docs/audits/AUDYT_PR147_2026-10-01.md`): APPROVE z zastrzeżeniami.
+- **F1 (błąd modelu bota, `07402e1`)** — `declare_blockers` liczył zablokowany atak jako w pełni
+  zatrzymany także dla trample; PMSSB-31 dołożyło premię wymiany od pełnej mocy. Sonda: 4/4 trample
+  i 4/4 zwykły dawały identyczne 5 pkt za chump tokenem 1/1 (pass 0). Naprawa u root cause:
+  `blockAbsorbedDamageOf` (CR 702.19b, 510.1c, 702.2b) zasila score, `stoppedDamage` (próg
+  „ratunek życia”, drabinka `lifeAfter`) i premię wymiany. Atakujący bez trample — wynik bit w bit
+  jak dotąd (golden-master bez regeneracji). Piny: `test/audyt-pr147-blok-trample.test.js` (5).
+- **F2/F3 (`e62ca6d`)** — komentarz o nieistniejącym pokrętle `counterPrecombatBonus`; docblock
+  `landKeepValue` rozdzielający `cardKeepValue` od jego docblocka M135.
+- Zweryfikowane u źródła: CR 122.1d (stun counter = pojedynczy efekt zastępczy, 614.6).
+- Własny cytat 702.2c odrzucony przez strażnik `cr-numery-istnienie` → 702.2b (jak reszta repo).
+
+**Pętla jakości:** Żywy Tester 3 partie (s101–s103) — 0 zgłoszeń detektorów, 0 niewycenionych ruchów.
+U6 (testy `heroDeck`/`heroWorld`) było nieaktualne — testy istnieją; dopisany łańcuch fallbacku
+`heroWorld`. U5 (Food `pumpDelta`) świadomie odłożone (liczby żyją też w silniku — wymaga zmiany
+widoku, ADR 0017).
+
+**Bramka końcowa:** patrz `docs/setup/HANDOFF_2026-10-01.md`. Bez wpisu do `LESSONS.md` — budżet
+lektury ~99 885/100 000; F1 mieści się w klasach L41 (jedna miara) i L48 (jedno źródło prawdy).

@@ -251,3 +251,17 @@ test('AI-R7 chat: zero tur = legacy jedna wiadomość z (brak zapisu)', () => {
   assert.deepEqual(messages.map((m) => m.role), ['user']);
   assert.ok(messages[0].content.includes('(brak zapisu)'));
 });
+
+test('AI-R8 modes: łańcuch fallbacku heroWorld → tytuł talii → klucz → „(nieznany świat)”', () => {
+  // Audyt PR #147 (U6): istniejący test sprawdzał tylko fallback talii.
+  const lore = (extra) => buildPromptForMode('lore-bot', { ...CTX, ...extra });
+  // brak świata, jest tytuł talii Czarodziejki → świat = tytuł
+  assert.ok(lore({ heroWorld: undefined }).includes('jej karty pochodzą ze świata: Rycerze (WU)'));
+  // brak świata i tytułu, jest klucz → świat = klucz, talia = klucz
+  const poKluczu = lore({ heroWorld: undefined, heroDeckTitle: undefined });
+  assert.ok(poKluczu.includes('talią „rycerze-wu” — jej karty pochodzą ze świata: rycerze-wu'));
+  // nic → oba fallbacki, bez „undefined”
+  const nic = lore({ heroWorld: undefined, heroDeckTitle: undefined, heroDeckKey: undefined });
+  assert.ok(nic.includes('talią „(nieznana talia)” — jej karty pochodzą ze świata: (nieznany świat)'));
+  assert.ok(!nic.includes('undefined'));
+});
