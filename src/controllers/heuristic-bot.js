@@ -110,7 +110,7 @@ export function attackerCanBeBlocked(attacker, blockers) {
  * ochrony blokera z effectiveProtectionQualities), bez nazw kart (ADR 0002).
  * `blockers` to nietapnięci wrodzy stwory z widoku.
  */
-function attackerNeutralizedByProtection(attacker, blockers) {
+export function attackerNeutralizedByProtection(attacker, blockers) {
   if (!attacker) return false;
   const attackerColors = attacker.colors ?? [];
   if (attackerColors.length === 0) return false; // bezbarwny — protekcja koloru nie działa
@@ -132,7 +132,15 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     // Bloker nadal przeżywa — neutralizuje tylko samą wymianę obiektów.
     const attackerKeywords = attacker.keywords ?? [];
     if (attackerKeywords.includes('trample')) {
-      const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
+      // Audyt PR #148 (observacja O-a): lethal liczymy z wytrzymałości
+      // EFEKTYWNEJ (CR 510.1c: `toughness − oznaczone obrażenia`), tą samą
+      // miarą co `blockAbsorbedDamageOf` — inaczej bloker z już zadanymi
+      // obrażeniami wyglądał na pełnego i trample „nie przebijał" ochrony,
+      // choć w rzeczywistości nadmiar mocy wchodzi w gracza (CR 702.19b).
+      const toughnessLeft = Math.max(0, (b.toughness ?? 0) - (b.damage ?? 0));
+      const lethalNeeded = attackerKeywords.includes('deathtouch')
+        ? Math.min(1, toughnessLeft)
+        : toughnessLeft;
       if (combatPower(attacker) > lethalNeeded) return false;
     }
     return true;
@@ -10086,26 +10094,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M257-r5 (uwaga z testów): wycena nie znała PRESJI ŻYCIA — przy 5
         // życiach przepuszczenie ataku 3/3 zostawiało 2 życia, a wymiana 2/2
         // za 3 obrażenia wyceniana była na -2, czyli gorzej niż pass (0).
-        // Ratunek życia pod presją jest warty więcej niż koszt bloku — płaska
-        // premia zależna od życia PO zablokowaniu REALNIE PRZEŻYTEGO wariantu.
-        // Warunek lifeAfter >= 1: premii nie daje blok, po którym i tak
-        // giniemy (3× 3/3 przy 5 życiu — M146 „nie marnuj blokera”).
+        // Ratunek życia pod presją jest warty więcej niż koszt bloku — premia
+        // zależy od MOJEGO ŻYCIA (progi 2/5/8 → 6/4/2), a warunek
+        // `lifeAfter >= 1` odsiewa blok, po którym i tak giniemy (3× 3/3 przy
+        // 5 życiu — M146 „nie marnuj blokera”).
         if (blockingSomething) {
+          // O2 (audyt PR #148, domknięcie forwardu PMSSB-31/B4): premia od
+          // PRESJI ŻYCIA musi być własnością SYTUACJI, nie wyniku wariantu.
+          // Poprzednia drabinka czytała `lifeAfter` (życie po TYM wariancie),
+          // więc malała wraz z liczbą zatrzymanych obrażeń: przy 7 życia i
+          // ataku 4/4+3/3 „blok obu, dostaję 0" (lifeAfter 7 → +2) remisował
+          // z „blok jednego, dostaję 3" (lifeAfter 4 → +4), a o wyborze
+          // decydowała kolejność ofert. Presję liczymy odtąd z MOJEGO ŻYCIA
+          // (stan przed walką, stały w ramach jednej decyzji — L41: jedna
+          // miara), dzięki czemu drabinka jest niemalejąca względem
+          // `stoppedDamage`, a o wyborze rozstrzygają zatrzymane obrażenia
+          // (`absorbedDamage`, `stoppedDamage`) i cena ciał ginących blokerów.
+          // Wartość w każdym wariancie jest teraz taka, jaką M257-r5 dawało
+          // blokowi zatrzymującemu WSZYSTKO — czyli zamierzeniu tej premii.
+          //
+          // Bramka `lifeAfter >= 1` zostaje: blok, po którym i tak giniemy,
+          // nie kupuje premii — M146 „3× 3/3 przy 5 życiach" (bot ma NIE
+          // marnować blokera, skoro żaden wariant nie ratuje życia).
+          // Progi 2/5/8 i wagi 6/4/2 to skala M257-r5, bez przeliczania.
           const lifeAfter = myLife(view) - (attackThreat - stoppedDamage);
-          if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
-          else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
-          else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
-          // ZNANY FORWARD (PMSSB-31, zmierzone, NIE naprawione w tej fali):
-          // drabinka wyżej jest NIEMONOTONICZNA względem zablokowanych obrażeń
-          // (mniej życia po = większa premia), więc przy 7 życiu i ataku 4/4+3/3
-          // wariant „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4) remisuje
-          // z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba dokładnie 39 —
-          // a o wyborze decyduje kolejność ofert. Próba domknięcia epsilonem
-          // `stoppedDamage * 0.01` rozstrzygała ten remis poprawnie, ale
-          // ułamkowy wynik łamał piny wartości dokładnych (PMSSB-2/C/F8
-          // Dissenter +19 i Patron 6), więc została wycofana. Właściwa naprawa
-          // to drabinka monotoniczna względem `stoppedDamage` — osobna fala,
-          // bo dotyka pinów M146 i M257-r5.
+          if (lifeAfter >= 1) {
+            const lifeNow = myLife(view);
+            if (lifeNow <= 2) score += 6;
+            else if (lifeNow <= 5) score += 4;
+            else if (lifeNow <= 8) score += 2;
+          }
         }
         return finish(score);
       }
