@@ -294,8 +294,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   //    ciała, nie cały stwór; dopłata zapala się tylko, gdy przeciwnik MA
   //    blokujących, ale nie dosięgnie gospodarza (inaczej nie rozstrzyga
   //    wyboru celu — patrz `hostEvadesBlockers`);
-  //  - `counterPrecombatBonus` 4 — tyle, ile baza okna M179/C dla grantu
-  //    („zdąży pomóc w tej walce”), bez mnożnika za liczbę keywordów;
+  //  - `counterLateWindowPenalty` 4 — tyle, ile baza okna M179/C dla grantu
+  //    („zdąży pomóc w tej walce”), bez mnożnika za liczbę keywordów; to KARA
+  //    za Główną 2/fazę końcową, nie premia za Główną 1 (kotwica anty-over-fix
+  //    M429 — wycena okna głównego zostaje dawna). Szkic planu miał premię
+  //    `counterPrecombatBonus`; pokrętło nigdy nie weszło do kodu (audyt #147, F2);
   //  - `counterLethalClockBonus` 50 — istniejąca konwencja „moc ≥ życie
   //    przeciwnika” (jak w gałęzi obrażeń od mocy), daleko poniżej 1000 za
   //    dowiedzioną wygraną: licznik sam nie wygrywa, atak trzeba jeszcze

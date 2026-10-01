@@ -3703,19 +3703,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const myBoardPower = (view) => myCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
-   * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
-   * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
-   *
-   * Powód istnienia (backlog właściciela, „wycena decyzji bota"): dotąd każda
-   * z tych gałęzi liczyła osobno jeden warunek — „land przy przesycie lądów".
-   * Wszystko inne dostawało tę samą liczbę (20), więc warianty remisowały
-   * i bot brał PIERWSZĄ ofertę z listy. Zmierzone: przy scry 1 z Highland Game
-   * (2/1 za {2}) bot odkładał dobrego, taniego stwora na spód biblioteki.
-   *
-   * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
-   * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
-   */
-  /**
    * PMSSB-26: wartość landu przy decyzji „zostawić czy oddać" — DRABINA
    * właściciela (2026-09-30), nie jeden próg przesycenia.
    *
@@ -3775,6 +3762,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (suma <= P.landTotalNeutralMax) return P.landKeepNeutral;
     return P.landKeepSaturated;
   };
+  /**
+   * M135 — CZY TĘ KARTĘ CHCEMY DOBRAĆ? Wspólna wycena dla wszystkich decyzji
+   * „zostaw na wierzchu albo odłóż/zmiel" (scry, surveil, clash).
+   *
+   * Powód istnienia (backlog właściciela, „wycena decyzji bota"): dotąd każda
+   * z tych gałęzi liczyła osobno jeden warunek — „land przy przesycie lądów".
+   * Wszystko inne dostawało tę samą liczbę (20), więc warianty remisowały
+   * i bot brał PIERWSZĄ ofertę z listy. Zmierzone: przy scry 1 z Highland Game
+   * (2/1 za {2}) bot odkładał dobrego, taniego stwora na spód biblioteki.
+   *
+   * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
+   * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
+   */
   const cardKeepValue = (view, card) => {
     if (!card) return 0;
     const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
