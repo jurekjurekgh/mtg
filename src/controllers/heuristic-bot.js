@@ -4716,6 +4716,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // tylko PRZED rozdaniem — CR 615.4 (dosłownie): „Prevention effects must
   // exist before the appropriate damage event occurs—they can't 'go back
   // in time' and change something that's already happened."
+  // Cytaty 615.4/615.6 zweryfikowane u źródła 2026-10-01b (CR 2026-09-25,
+  // mtg.wiki/page/Prevention_effect — zamyka U3 z audytu PR #146; ADR 0030).
   //
   // Dwa zegary śmierci (M91/CR 104.3d): CR 702.90b (dosłownie): „Damage
   // dealt to a player by a source with infect doesn't cause that player to
@@ -4851,6 +4853,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // cel = żaden nie zadaje (Fight); 701.14d: „The damage dealt when a
   // creature fights isn't combat damage" → deathtouch (SBA 704.5h) i
   // lifelink DZIAŁAJĄ, first strike/trample NIE (bojowe-only).
+  // Cytaty 701.14a/d zweryfikowane u źródła 2026-10-01b (CR 2026-09-25,
+  // mtg.wiki/page/Fight — zamyka U3 z audytu PR #146; ADR 0030).
   //
   // Findingi audytu (pomiar PRZED: /tmp/pmssb16-walka-przed.mjs — ranking
   // odwrócony: wymiana w dół 119 > kill-only 103 > wygrana DT 47!):
