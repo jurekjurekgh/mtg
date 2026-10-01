@@ -128,7 +128,11 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
 - **Etap 10 (O4):** `npm test` **7246/7246** (7241 + 5), build 70 / **4680,8 kB**
-  (helper w `src/`), klasa liczników scalona w silniku (L41).
+  (helper w `src/`), klasa liczników scalona w silniku (L41). Żywy Tester
+  runda 5 na tym drzewie (s601 `defensive` mirrodin-brg/ixalan 22 akcje/17
+  kliknięć, s602 `greedy` srodziemie/wiedzmin-wur 27/24, s603 `random`
+  worek-mroczny/dominaria-wu 18/15) — 0 zgłoszeń detektorów, 0 niewycenionych
+  ruchów, brak `[STOP]`; transkrypty `/home/user/scratch/tester-*-s60*.txt`.
 - **Etap 9 (U2):** `npm test` **7241/7241**, `npm run test:all` **7512/7512**,
   build bez zmian 70 / 4680,0 kB.
 - **Etap 8 (U5/O3):** `npm test` **7235/7235**, `npm run build` **70 / 4680,0 kB**;

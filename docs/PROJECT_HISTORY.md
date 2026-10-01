@@ -14658,6 +14658,12 @@ decyzji dla każdego licznika z `add_counter` (7 dziś) i źródłowy pin „bot
 listy" (L5/3). Mutacje M1–M4 czerwienią O4/1+O4/4 (+piny PMSSB-23 — dowód jednego źródła),
 O4/2 (+11 pinów), O4/3 (+8) i O4/5.
 
+**Żywy Tester runda 5** (na drzewie po Etapie 10, świeży build): s601 `defensive`
+mirrodin-brg vs ixalan (22 akcje widziane / 17 klikniętych), s602 `greedy` srodziemie vs
+wiedzmin-wur (27/24), s603 `random` worek-mroczny vs dominaria-wu (18/15) — 0 zgłoszeń
+detektorów, 0 niewycenionych ruchów, brak `[STOP]`; transkrypty
+`/home/user/scratch/tester-{defensive-s601,greedy-s602,random-s603}.txt`.
+
 **Bramka końcowa (drzewo `2a41ec3`):** `npm test` 7246/7246 (7219 baza + 3 piny U4 + 4 piny O-a
 + 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512
 (na drzewie Etapu 9), `npm run build` 70 / 4680,8 kB (7222/7493/4673,6 kB było
