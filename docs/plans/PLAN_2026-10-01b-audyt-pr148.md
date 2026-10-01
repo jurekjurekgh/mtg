@@ -71,7 +71,9 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   to pokrętła (`foodKeepLowLifeThreshold`, `foodKeepLowLifeMultiplier`).
   Piny: `test/audyt-u5-o3-food-deskryptor.test.js` (9; mutacje: twarde 5/3
   w bocie → D1+D2, `sacrificed ? 5 : 3` w silniku → B3, twarde +3 auto →
-  B4, deskryptor bez liczb → strażnik katalogu A).
+  B4, deskryptor bez liczb → strażnik katalogu A). Żywy Tester runda 4
+  (s501–s505 na świeżym buildzie) — 0 zgłoszeń; w s504 bot rzuca Insatiable
+  Appetite, więc nowa ścieżka przeszła żywą partię.
 
 ## Ryzyka
 

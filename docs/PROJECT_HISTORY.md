@@ -14631,6 +14631,8 @@ i mnożnik to pokrętła. Strażnik katalogu wymaga obu wariantów w każdym efe
 `sacrifice_food_choice`. Wartości domyślne == dawne stałe (zero zmian zachowania:
 PMSSB-22 12/12, golden-master bota zielony). Piny:
 `test/audyt-u5-o3-food-deskryptor.test.js` (9; cztery mutacje czerwienią A/B3/B4/D1+D2).
+Żywy Tester runda 4 (s501–s505, świeży build): 0 zgłoszeń detektorów, 0 niewycenionych
+ruchów; w s504 bot zagrał Insatiable Appetite (deskryptor w żywej partii).
 
 **Bramka końcowa:** `npm test` 7235/7235 (7226 + 9 pinów O3/U5), `npm run test:all` 7506/7506,
 `npm run build` 70 / 4680,0 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).
