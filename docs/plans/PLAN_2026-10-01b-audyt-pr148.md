@@ -9,7 +9,7 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
 | Pomiar | Wartość |
 |---|---|
 | `main` (baza sesji) | `30de664` = squash PR #148 („Audyt PR #147 + pętla jakości — sesja 2026-10-01") |
-| Poprzedni scalony PR | #148, 28 plików (8 × `src/`, 6 × dokumentacja, 12 × testy, 1 × narzędzie, 1 × snapshot części golden-mastera) |
+| Poprzedni scalony PR | #148, 27 plików (8 × `src/`, 6 × dokumentacja, 12 × testy, 1 × narzędzie) |
 | Pliki `src/` w #148 | `heuristic-bot.js` (+44/−18), `heuristic-params.js` (+5/−2), `combat.js` (+58/−17), `game-state.js` (+10/−3), `ai-config.js` (+4), `ai-modes.js` (+99/−3), `choice-request.js` (+1/−1), `render.js` (+4/−1) |
 | Baseline `npm test` / `build` | **7219/7219**, build **70 / 4673,2 kB** (zmierzone na starcie sesji) |
 | Niedokończone plany na `main` | brak nieodhaczonych kryteriów (`PLAN_2026-10-01-audyt-pr147.md` kompletny) |
