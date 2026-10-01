@@ -1984,7 +1984,7 @@ był właśnie skutkiem wycieku pieczęci — po naprawie liczba wypłat równa 
 liczbie odroczeń).
 
 **Bramy:** `npm test` **7304/7304** (7286 po PMSSB-34 + 18 pinów) · build
-**70 modułów / 4708,3 kB** · `npm run test:all` zielone · benchmark 10/10 ·
+**70 modułów / 4708,3 kB** · `npm run test:all` **7575/7575** · benchmark 10/10 ·
 golden-master po świadomej regeneracji (hash `ab8d57d2…` → `4024bcd1…`; 1 z 6
 meczów, `scoreSum` −6,0 = suspend 8→2, decyzje 240 → 240, `chosenKinds`
 identyczne ⇒ 0 flipów; **dowód czystości wymiaru**: po zerowaniu trzech pokręteł
