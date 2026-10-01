@@ -58,6 +58,10 @@ export const AI_MODES = Object.freeze([
   Object.freeze({ id: 'observer', label: 'Zewnętrzny obserwator', tabName: 'observer' }),
   Object.freeze({ id: 'lore-observer', label: 'Komentarze lore obserwatora', tabName: 'lore-observer' }),
   Object.freeze({ id: 'skit', label: 'Skity', tabName: 'skit' }),
+  // AI-R9 (zlecenie właściciela 2026-10-01): studio radiowe. Karta w Dokumencie
+  // musi mieć DOKŁADNIE ten tytuł (Code.gs szuka karty po `tabName`).
+  Object.freeze({ id: 'talkshow', label: 'Radio: Talkshow (trzech dyskutantów)', tabName: 'talkshow' }),
+  Object.freeze({ id: 'zly-i-dobry', label: 'Radio: Zły i Dobry (dwóch dyskutantów)', tabName: 'zly-i-dobry' }),
 ]);
 
 export const AI_STORAGE_KEY = 'mtg-table-ai-v1';
