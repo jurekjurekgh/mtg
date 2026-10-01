@@ -285,10 +285,14 @@ test('AI-R9 talkshow: persony tworzone w pierwszej wiadomości, trzy zróżnicow
   assert.ok(p.includes(`do około ${TALKSHOW_COMMENT_LIMIT} znaków`));
   assert.ok(p.includes('Kaldheim') && p.includes('Wiedźmin')); // światy dla łowcy lore
   assert.ok(!buildTalkshowPrompt(null).includes('undefined'));
-  assert.ok(TALKSHOW_COMMENT_LIMIT > 600); // dialog kilku osób > pojedynczy komentarz
   // AI-R10 (decyzja właściciela 2026-10-01): talkshow obniżony 1200 → 900
-  // („1200 to za dużo”); pin pilnuje wartości, żeby nie wróciła po cichu.
-  assert.equal(TALKSHOW_COMMENT_LIMIT, 900);
+  // („1200 to za dużo”), a AI-R11 (uwagi z gry, ta sama sesja) obniża OBA
+  // tryby radiowe o 1/3 — 900 → 600, czyli do poziomu zwykłego komentarza
+  // („tak przynajmniej o 1/3”). Pin pilnuje obu wartości, żeby nie wróciły
+  // po cichu.
+  assert.equal(TALKSHOW_COMMENT_LIMIT, 600);
+  assert.equal(GOOD_EVIL_COMMENT_LIMIT, 600);
+  assert.ok(TALKSHOW_COMMENT_LIMIT <= (900 * 2) / 3, 'tryby radiowe: redukcja min. 1/3');
 });
 
 test('AI-R9 zły i dobry: dwie persony z odwróconymi rolami (fan A + krytyk B oraz odwrotnie)', () => {

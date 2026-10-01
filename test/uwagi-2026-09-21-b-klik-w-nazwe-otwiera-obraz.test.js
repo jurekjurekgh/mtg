@@ -196,3 +196,93 @@ test('B/3 (FoW): karta z zakrytej BIBLIOTEKI nie dostaje definicji do podglądu'
   assert.deepEqual(otwarcia, [{ droga: 'objectId', objectId: 'lib-1' }],
     `droga cardId nie może dostać zakrytej karty biblioteki: ${JSON.stringify(otwarcia)}`);
 });
+
+// D (zgłoszenie właściciela z gry, 2026-10-01, Prishe's Wanderings): „modal
+// wyboru lądu — nie działa klikanie w nazwy kart, które powinno otwierać karty
+// w pełnym ekranie". Ta sama klasa co B, inna strefa: kandydaci SZUKANIA
+// w bibliotece. Widok decydenta niesie ich w `pendingSearchChoice.cards`
+// (biblioteka zostaje zakryta), `objectName` czyta z tego nazwy — ale podgląd
+// po objectId nie ma czego szukać (strefa poza widokiem), a `hiddenObjectCardId`
+// odrzucał CAŁĄ bibliotekę (ochrona FoW wierzchu). Klik milczał.
+//
+// Naprawa: kandydat BIEŻĄCEJ decyzji `resolve_search_choice` dostaje cardId
+// z pendingu (to ta sama karta, której nazwę wiersz już pokazuje) — FoW nie
+// pęka, bo pole `cards` widzi wyłącznie decydent. Reszta biblioteki bez zmian.
+function widokSzukania() {
+  const view = widok();
+  view.zones.library = [{ id: 'lib-1', controllerId: 'p1', hidden: true }];
+  view.pendingSearchChoice = {
+    sourceCardId: 'prishes-wanderings',
+    destination: 'battlefield',
+    mandatory: true,
+    cards: [
+      { id: 'kand-1', cardId: 'island' },
+      { id: 'kand-2', cardId: 'swamp' },
+    ],
+  };
+  return view;
+}
+
+function sesjaSzukania() {
+  const s = sesja();
+  s.nameOf = (cardId) => ({ island: 'Island', swamp: 'Swamp', 'prishes-wanderings': "Prishe's Wanderings" }[cardId] ?? cardId);
+  s.state.objects.set('kand-1', { id: 'kand-1', cardId: 'island', zone: 'library', controllerId: 'p1' });
+  s.state.objects.set('kand-2', { id: 'kand-2', cardId: 'swamp', zone: 'library', controllerId: 'p1' });
+  return s;
+}
+
+const planSzukania = () => singleTargetPlanOf([
+  { type: 'resolve_search_choice', playerId: 'p1', found: 'kand-1', destination: 'battlefield' },
+  { type: 'resolve_search_choice', playerId: 'p1', found: 'kand-2', destination: 'battlefield' },
+  { type: 'resolve_search_choice', playerId: 'p1', found: null, destination: 'battlefield' },
+]);
+
+test("D/1: klik w nazwę KANDYDATA SZUKANIA otwiera pełny ekran (Prishe's Wanderings)", () => {
+  const plan = planSzukania();
+  assert.ok(plan, 'decyzja szukania ma dać plan jednowyborowy (L48)');
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view: widokSzukania(), session: sesjaSzukania(), plan,
+      commands: [
+        { type: 'resolve_search_choice', playerId: 'p1', found: 'kand-1', destination: 'battlefield' },
+        { type: 'resolve_search_choice', playerId: 'p1', found: 'kand-2', destination: 'battlefield' },
+        { type: 'resolve_search_choice', playerId: 'p1', found: null, destination: 'battlefield' },
+      ],
+      intro: "Prishe's Wanderings — wybierz kartę na pole bitwy:",
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const wiersz = wierszZNazwa(host, 'Island');
+    assert.ok(wiersz, 'wiersz nazywa kandydata szukania (etykieta z pendingu)');
+    assert.equal(wiersz.dataset.cardId, 'island',
+      'kandydat szukania musi nieść DEFINICJĘ karty, nie objectId z biblioteki');
+    wiersz.click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'cardId', cardId: 'island' }],
+    `klik w nazwę ma otworzyć obraz karty (było: ${JSON.stringify(otwarcia)})`);
+});
+
+test('D/2 (FoW): karta biblioteki SPOZA kandydatów szukania nie dostaje definicji', () => {
+  // Wiersz spoza `pendingSearchChoice.cards` (np. przyszła decyzja sięgająca
+  // biblioteki bez ujawnienia) nie może stać się klikalny po cardId — zakryty
+  // wierzch biblioteki zostaje zakryty (ten sam niezmiennik co B/3).
+  const plan = planDla(['lib-1', 'moja-1']);
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view: widokSzukania(), session: sesjaSzukania(), plan,
+      commands: [{ type: 'resolve_discard_choice', playerId: 'p1', cardId: 'lib-1' },
+        { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'moja-1' }],
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const wiersz = wierszZNazwa(host, 'Ukryta karta');
+    assert.ok(wiersz, 'wiersz istnieje w planie');
+    wiersz.click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'objectId', objectId: 'lib-1' }],
+    `droga cardId nie może dostać karty spoza kandydatów: ${JSON.stringify(otwarcia)}`);
+});

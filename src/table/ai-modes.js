@@ -21,11 +21,13 @@ export const OBSERVER_COMMENT_LIMIT = 600;
 export const LORE_OBSERVER_COMMENT_LIMIT = 600;
 // AI-R9: rozmowa kilku osób potrzebuje więcej miejsca niż jeden komentarz
 // (pierwsza odpowiedź niesie jeszcze przedstawienie person) — ale nie
-// dowolnie więcej: decyzja właściciela 2026-10-01 (AI-R10) obniża limit
-// z 1200 na 900 znaków („1200 to za dużo”), czyli tyle, ile mają Zły i Dobry;
-// person jest więcej, więc kwestie są po prostu krótsze.
-export const TALKSHOW_COMMENT_LIMIT = 900;
-export const GOOD_EVIL_COMMENT_LIMIT = 900;
+// dowolnie więcej. Decyzja właściciela 2026-10-01 (AI-R10) obniżyła talkshow
+// z 1200 na 900 znaków („1200 to za dużo”); kolejna decyzja tej samej sesji
+// (AI-R11, uwagi z gry) obniża OBA tryby radiowe o 1/3: 900 → 600, czyli do
+// poziomu zwykłego komentarza („tak przynajmniej o 1/3”). Person jest więcej,
+// więc kwestie są po prostu krótsze.
+export const TALKSHOW_COMMENT_LIMIT = 600;
+export const GOOD_EVIL_COMMENT_LIMIT = 600;
 
 /** Wspólne wyciąganie pól ctx (wszystkie tryby komentują ten sam zapis). */
 function baseCtx(ctx) {

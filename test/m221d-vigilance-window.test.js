@@ -22,7 +22,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
-function setup({ step, active, tapped, priority = 'p1' }) {
+function setup({ step, active, tapped, priority = 'p1', blocker = null }) {
   const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
   state.turn = jumpToStep(state.turn, step, active);
   state.turn.activePlayerId = active;
@@ -36,6 +36,14 @@ function setup({ step, active, tapped, priority = 'p1' }) {
     types: bs.types ?? ['Artifact', 'Creature'],
   });
   state.objects.set('bs', Object.freeze({ ...state.objects.get('bs'), summoningSickness: false, tapped }));
+  if (blocker) {
+    addObject(state, {
+      id: 'blk', instanceId: 'i-blk', cardId: `x-blk-${blocker.power}`, controllerId: 'p2', ownerId: 'p2',
+      zone: 'battlefield', kind: 'creature', power: blocker.power, toughness: blocker.toughness,
+      abilities: [], keywords: blocker.keywords ?? [], subtypes: [], types: ['Creature'],
+    });
+    state.objects.set('blk', Object.freeze({ ...state.objects.get('blk'), tapped: false }));
+  }
   return state;
 }
 
@@ -85,4 +93,19 @@ test('M221/D: NIE kupuje vigilance na TAPNIĘTEJ kreaturze (nawet w declare_atta
   const { pass, vig } = vigScores(setup({ step: 'declare_attackers', active: 'p1', tapped: true }));
   assert.ok(vig.length > 0, 'zdolność musi być w ofercie');
   for (const s of vig) assert.ok(s < pass, `tapniętej vigilance nic nie daje: < pass (${pass}), było ${s}`);
+});
+
+// E (uwaga właściciela z gry, 2026-10-01 — Bladed Sentinel nadal kupował
+// vigilance i NIE atakował): `canAttackNow` mówi tylko, że stwór MOŻE
+// zaatakować; o zakupie musi decydować TA SAMA polityka ataku, którą bot
+// stosuje w deklaracji (`attackIntendsCreature`, L41/L48). Inaczej bot płaci
+// {W} i pasuje. Tu: bloker 6/6 zabija 2/4 bez zadania obrażeń graczowi, więc
+// ocena ataku jest ujemna — zakup vigilance to wyrzucona mana.
+test('M221/E: NIE kupuje vigilance, gdy polityka ataku nie złoży ataku tym stworem', () => {
+  const { pass, vig } = vigScores(setup({
+    step: 'declare_attackers', active: 'p1', tapped: false,
+    blocker: { power: 6, toughness: 6 },
+  }));
+  assert.ok(vig.length > 0, 'zdolność musi być w ofercie');
+  for (const s of vig) assert.ok(s < pass, `atak nieopłacalny: vigilance < pass (${pass}), było ${s}`);
 });

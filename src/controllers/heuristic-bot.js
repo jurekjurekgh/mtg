@@ -5832,14 +5832,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (blocking) {
           // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
           value -= 5;
-        } else if (przedDeklaracjaAtaku && canAttackNow(recipient)) {
-          // Jesteśmy w kroku deklaracji i stwór MOŻE zaatakować (odkręcony,
-          // bez choroby przyzwania) — kupno trzyma go odkręconym po ataku.
-          // Premia jest IDENTYCZNA jak w wariancie `attacking`: komentarz
-          // PR #100 obiecywał „ujemną w stosunku do niego", a kod od początku
-          // dodawał tyle samo. Zostaje wartość równa, bo przy `canAttackNow`
-          // zakup nie jest loterią — sztuczne skalanie premii karałoby ruch,
-          // który w tym silniku po prostu działa.
+        } else if (przedDeklaracjaAtaku && attackIntendsCreature(view, recipient.id)) {
+          // Jesteśmy w kroku deklaracji i stwór MA ZAATAKOWAĆ — kupno trzyma go
+          // odkręconym po ataku. Pytamy TĘ SAMĄ politykę ataku, którą bot
+          // stosuje w deklaracji (`attackIntendsCreature`, L41/L48), a nie samą
+          // legalność: `canAttackNow` mówi tylko, że stwór MOŻE zaatakować.
+          // Luka była mierzalna (uwaga właściciela z gry, 2026-10-01, Bladed
+          // Sentinel): bot płacił {W} za vigilance, po czym ataku nie składał
+          // (jego własna ocena ataku była ujemna) — mana przepadała. Premia
+          // jest identyczna jak w wariancie `attacking`.
           value += 2 + (recipient.toughness ?? 0);
         } else {
           // Każda inna sytuacja (main1, tura przeciwnika, stwór tapnięty)
