@@ -94,8 +94,11 @@ test('F-A1 hecteyes: pusta = 63.0, reka-3 = 66.6 (waga-rodziny permanent x0.9!)'
     assert.ok(Math.abs(options[0].score - want) < 1e-9, `${k}: ${options[0].score}`);
   }
 });
-test('F-A3 bat: reka-3 = -1 (flip ogon->trzymaj!), pusta = -40 (guard)', () => {
-  for (const [k, want] of [[3, -1], [0, -40]]) {
+test('F-A3 bat: reka-3 = -6 (flip ogon->trzymaj! + koszt {5}), pusta = -40 (guard)', () => {
+  // PMSSB-34/B: Dementia Bat {5},poświęć → −5 (kara za sam koszt bez zmiany
+  // wymiarów). Pusta ręka wroga = guard „efekt teraz jałowy" (−40, wcześniejszy
+  // return) — koszt many nie ma tam czego pomniejszać.
+  for (const [k, want] of [[3, -6], [0, -40]]) {
     const s = newState(); fieldCard(s, 'bat', 'dementia-bat');
     foeHand(s, Array.from({ length: k }, () => 'shock'));
     const { chosen, options } = scores(s, 'activate_ability(bat#0->p2');
@@ -103,8 +106,9 @@ test('F-A3 bat: reka-3 = -1 (flip ogon->trzymaj!), pusta = -40 (guard)', () => {
     assert.equal(chosen.type, 'pass_priority');
   }
 });
-test('F-A3 skullcairn: reka-2 = -54 (stabilne trzymaj), pusta = -58 (cap-0!)', () => {
-  for (const [k, want] of [[2, -54], [0, -58]]) {
+test('F-A3 skullcairn: reka-2 = -58 (stabilne trzymaj), pusta = -62 (cap-0!)', () => {
+  // PMSSB-34/B: {4},B,BR,tap,poświęć → −4 (cap/floor karty bez zmian).
+  for (const [k, want] of [[2, -58], [0, -62]]) {
     const s = newState(); fieldCard(s, 'sk', 'immersturm-skullcairn');
     foeHand(s, Array.from({ length: k }, () => 'shock'));
     addObject(s, { id: 'wrog', instanceId: 'i-wrog', cardId: 'x-wrog', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'wrog' });

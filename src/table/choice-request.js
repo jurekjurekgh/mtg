@@ -1273,6 +1273,16 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     const visible = Object.values(view?.zones ?? {})
       .some((lista) => (lista ?? []).some((o) => o?.id === id && !o.hidden));
     if (visible) return null;
+    // D (zgłoszenie właściciela z gry, 2026-10-01, Prishe's Wanderings):
+    // kandydat SZUKANIA w bibliotece jest UJAWNIONY decydentowi — modal
+    // pokazuje jego nazwę (objectName czyta `pendingSearchChoice.cards`),
+    // więc klik w nazwę MA otwierać pełny ekran. Wcześniej gałąź niżej
+    // odrzucała CAŁĄ bibliotekę (ochrona FoW wierzchu), więc klik milczał:
+    // ścieżka objectId nie znajduje karty poza widocznymi strefami, a tu nie
+    // było cardId. Pole `cards` widzi WYŁĄCZNIE decydent (playerView), więc
+    // FoW nie pęka; reszta biblioteki zostaje zakryta (piny B/3 i D/2).
+    const kandydat = (view?.pendingSearchChoice?.cards ?? []).find((c) => c?.id === id);
+    if (kandydat?.cardId) return kandydat.cardId;
     const object = session?.state?.objects?.get?.(id) ?? null;
     if (!object || object.zone === 'library') return null;
     return object.cardId ?? null;

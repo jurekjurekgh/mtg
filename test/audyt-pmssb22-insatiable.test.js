@@ -211,7 +211,15 @@ function foodState({ target, blocker = null, life = 20, attackers = [], blocked 
   const blockers = new Map(blocker ? [[attackers[0], [blocker.id]]] : []);
   ownCombat(state, { attackers, blockers, blockedAttackers: new Set(blocked) });
   state.turn.priorityPlayerId = 'p2';
-  state.pendingFoodChoice = { playerId: 'p2', creatureId: target.id, hasFood: true, foodIds: ['food1'], restorePriorityTo: 'p2' };
+  // O3/U5 (fala 2026-10-01): stan syntetyczny musi mieć kształt stanu SILNIKA —
+  // `effects.js` zapisuje tu oba warianty pumpu z deskryptora karty
+  // (Insatiable Appetite: +5/+5 za poświęcenie, +3/+3 inaczej), bo z nich
+  // czytają rozstrzygnięcie i widok (`view.pendingFoodChoice`). Bez tych pól
+  // bot widziałby warianty 0/0 (L21: jawna lista pól gubi dane po cichu).
+  state.pendingFoodChoice = {
+    playerId: 'p2', creatureId: target.id, hasFood: true, foodIds: ['food1'], restorePriorityTo: 'p2',
+    pumpIfSacrificed: { power: 5, toughness: 5 }, pumpIfKept: { power: 3, toughness: 3 },
+  };
   return state;
 }
 
@@ -268,7 +276,10 @@ function foodStateRola({ targetOwner, attackingPlayer }) {
   const walka = { attackers: ['cel'] };
   if (attackingPlayer === 'p1') foeCombat(state, walka); else ownCombat(state, walka);
   state.turn.priorityPlayerId = 'p2';
-  state.pendingFoodChoice = { playerId: 'p2', creatureId: 'cel', hasFood: true, foodIds: ['food1'], restorePriorityTo: 'p2' };
+  state.pendingFoodChoice = {
+    playerId: 'p2', creatureId: 'cel', hasFood: true, foodIds: ['food1'], restorePriorityTo: 'p2',
+    pumpIfSacrificed: { power: 5, toughness: 5 }, pumpIfKept: { power: 3, toughness: 3 },
+  };
   return state;
 }
 

@@ -14556,3 +14556,364 @@ lektury ~99 885/100 000; F1 mieści się w klasach L41 (jedna miara) i L48 (jedn
 - **Sprostowanie CR (`abbf3b3`)** — mój pierwotny cytat 702.2c był POPRAWNY; zamiana na 702.2b „bo strażnik
   odrzucił” była błędem. CR 2026-09-25: 702.2b = SBA destroy, 702.2c = niezerowe obrażenia z deathtouch =
   lethal dla nadmiaru. 18 linii poprawionych, 702.2c dopisane do tabeli istnienia.
+
+## 2026-10-01b — audyt PR #148 + pętla jakości (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — bez tematu ⇒ ADR 0021 (PR → audyt #148 → pętla jakości).
+Baza `30de664`; baseline fast 7219/7219, build 70 / 4673,2 kB.
+
+**Audyt #148** (`docs/audits/AUDYT_PR148_2026-10-01.md`): **APPROVE — brak nowych znalezisk**.
+- **F1 (`blockAbsorbedDamageOf`, z #147)** — zweryfikowane u źródła (CR 2026-09-25: 702.19b, 510.1c,
+  702.2c) i mutacyjnie: deathtouch→F1/2, brak capu→F1/1, powrót do `attackerPower`→F1/3+F1/5.
+  Modele trample bota (`simulateCombat`, `attackerNeutralizedByProtection`) zgodne co do definicji
+  śmiertelnych obrażeń (L41).
+- **O1 (`cantAttackExternal`)** — jedna lista przyczyn (`staticAttackPreventionOf`) zasila walidację
+  i widok; `prevented` bez zmian (bot i m244 zielone); nowe pole czytane wyłącznie przez badge
+  (render :4427 → :4824), nie przez legalność. Mutacje: defender „zawsze natywny"→O1/2,
+  badge ze starego pola→O1/1+O1/5. Sonda: zakryty stwór z wydrukowanym Obrońcą MOŻE atakować
+  (CR 708.2a, `effectiveKeywords` = []) i nie niesie flag — wątek FoW domknięty.
+- **Sweep 702.2b→702.2c (18 linii)** — parowanie numer↔pojęcie poprawne (SBA przy 702.2b,
+  „lethal dla nadmiaru" przy 702.2c); dosłowny cytat w `test/wyzwanie-5-…` zgadza się ze źródłem.
+  Uwaga: strażnik pilnuje istnienia numeru, nie pary (L164/L165) ⇒ ADR 0030 obowiązkowy.
+- **Obserwacje:** O-a („wchłonięte" = przydział, nie zadane — konwencja silnika; do wyrównania
+  `b.damage` w `attackerNeutralizedByProtection`), O-b (`staticAbility` bez bramki `faceDown`,
+  nieosiągalne — silnik podmienia `abilities` na deskryptor obrotu), O-c (znane uproszczenie O1).
+
+**Pętla jakości:** Żywy Tester 3 partie (s201 zendikar/tarkir-bg, s202 kaladesh/theros,
+s203 eldraine/ravnica) — 0 zgłoszeń detektorów, 0 niewycenionych ruchów, brak `[STOP]`.
+**U4** z #146 zamknięte: 5 wariantów sondy NIE odtwarza „{C} tapie las" (CR 107.4c działa,
+źródło {C} jest wybierane, Las nietknięty) ⇒ 3 piny strażnicze w `test/audyt-pr148b-pip-c-zrodlo.test.js`
+(mutacja „każda jednostka opłaca {C}" czerwieni U4/1+U4/2). **U3** z #146 zamknięte: cytaty
+615.4/615.6 (prewencja), 701.14a/d (fight), 714.2b (Saga) zweryfikowane dosłownie u źródła
+(CR 2026-09-25) — zgodne, dopisane znaczniki weryfikacji w komentarzach.
+
+**Druga fala pętli jakości („kontynuuj", po U3/U4):** Żywy Tester z nowymi profilami
+(s301 `impatient`, s302 `hoarder`, s303 `explorer`) — 3 partie, 0 zgłoszeń detektorów,
+0 niewycenionych ruchów, brak `[STOP]`. Domknięte dwa znaleziska audytu #148:
+
+- **O2** (`4fcbff7`) — drabinka „presji życia" w `declare_blockers` czytała `lifeAfter`
+  (życie PO wariancie), więc malała, gdy blok zatrzymywał więcej obrażeń: przy 7 życia
+  i ataku 4/4+3/3 „blok obu" (+2) remisował z „blok jednego" (+4) i wybór rozstrzygała
+  kolejność ofert (39 = 39, forward PMSSB-31/B4). Premia liczona jest teraz z MOJEGO
+  ŻYCIA (progi 2/5/8 → 6/4/2 bez zmian; zamierzenie M257-r5), czyli niemalejąco względem
+  zatrzymanych obrażeń; bramka `lifeAfter >= 1` zostaje jako pierwszeństwo (M146 —
+  bez niej bot marnuje blokera, gdy blok i tak nie ratuje). Po naprawie B4: 39 > 37.
+- **O-a** (`4fcbff7`) — `attackerNeutralizedByProtection` liczyła „lethal" blokera z gołej
+  wytrzymałości, więc bloker z oznaczonymi obrażeniami wyglądał na pełnego i atak
+  tramplerem uchodził za jałowy, choć nadmiar wchodzi w gracza (CR 702.19b + 510.1c).
+  Miara jest teraz ta sama co w `blockAbsorbedDamageOf` (L41): `max(0, toughness − damage)`,
+  z deathtouch `min(1, …)`; funkcja wyeksportowana, pin O-a/1–4.
+
+Piny: B4 przepisany z „znanego forwardu" na wymóg porządku, nowy
+`test/audyt-pr148b-ochrona-lethal-blokera.test.js` (4). Mutacje: tier←lifeAfter → B4;
+zdjęta bramka `lifeAfter >= 1` → M146; `toughness` bez `damage` → O-a/1. Golden-master
+bota bez zmian fixture'a (chirurgiczność). Żywy Tester po naprawie: 4 partie (s401–s404,
+profile defensive/greedy/random/hoarder) — czysto.
+
+**Lekcja L172** wpisana („składnik zależny od WYNIKU wariantu działa jak kara — premia
+liczona ze STANU"), zapłacona kondensacją L163/L164/L165/L168/L169: `LESSONS.md`
+138 422 B, budżet lektury **99 942/100 000** (próg nie podnoszony).
+
+**AI-R10 (zlecenie właściciela w trakcie sesji):** limit odpowiedzi trybu `talkshow`
+obniżony 1200 → 900 znaków („1200 to za dużo”) — `TALKSHOW_COMMENT_LIMIT` w
+`src/table/ai-modes.js`, pin wartości + mutacja w `test/ai-modes.test.js`. Prompt-only,
+bez zmian w `Code.gs` (tryb działa bez redeployu Apps Script).
+
+**U5/O3 z audytu #146 (klasa ADR 0002/0010 + ADR 0017):** liczby wariantu Food
+(„+5/+5 za poświęcenie, +3/+3 inaczej”) były zaszyte w TRZECH miejscach: `effects.js`
+(gałąź bez Food), `game-state.js` (`sacrificed ? 5 : 3`) i w bocie (`pumpDelta`,
+decyzja `resolve_food_choice`) — razem z progiem „mało życia” 10 i mnożnikiem ×2 poza
+`heuristic-params.js`. Teraz liczby żyją w DESKRYPTORZE karty
+(`powerIfSacrificed`/`toughnessIfSacrificed`/`powerIfKept`/`toughnessIfKept`), silnik je
+stosuje i przenosi do oczekującej decyzji, a widok wystawia decydentowi
+(`view.pendingFoodChoice` — kontrakt widoku ADR 0017), z którego liczy bot; próg
+i mnożnik to pokrętła. Strażnik katalogu wymaga obu wariantów w każdym efekcie
+`sacrifice_food_choice`. Wartości domyślne == dawne stałe (zero zmian zachowania:
+PMSSB-22 12/12, golden-master bota zielony). Piny:
+`test/audyt-u5-o3-food-deskryptor.test.js` (9; cztery mutacje czerwienią A/B3/B4/D1+D2).
+Żywy Tester runda 4 (s501–s505, świeży build): 0 zgłoszeń detektorów, 0 niewycenionych
+ruchów; w s504 bot zagrał Insatiable Appetite (deskryptor w żywej partii).
+
+**U2 z audytu #146 (strażnik konwencji `keywords`, Etap 9 — `15cbe85`):** nowy
+`test/keywords-katalog-straznik.test.js` (6 testów) wymaga, żeby każdy keyword katalogu był
+w jednej z dwóch klas — `CZYTA_SILNIK` (wskazany plik silnika musi zawierać literal keywordu
+= dowód czytania) albo `ETYKIETA` (mechanika żyje w deskryptorze zdolności, w polu obiektu
+albo w kolorach karty; strażnik sprawdza to na kartach: devoid ⇒ `colors: []`, toxic ⇒ pole
+`toxic`). Klasa domyka literówkę keywordu i mechanikę, której nic nie realizuje. Mutacje
+M1–M6 czerwienią dokładnie właściwy test. Strażnik ISTNIENIA cytatów CR zatrzymał pierwszą
+wersję testu („CR 702.114b” z pamięci — CR 2026-09-25 ma tylko 702.114a, potwierdzone
+u źródła: mtg.wiki/page/Devoid); tabela `cr-numery-tabela.js` dostała wiersz 702.114a
+z powodem, a wniosek trafił do **L164 reguła 5**, opłacony kondensacją L163/L164/L165/
+L168/L169/L172 (`LESSONS.md` 138 307 B, budżet **99 901/100 000**, zapas 99 tokenów).
+
+**O4 z audytu #147 (Etap 10 — `2a41ec3`):** silnikowy `HOSTILE_COUNTERS` niósł tylko
+`stun`/`finality`, a bot miał własną listę (`DEBUFF_COUNTERS`) — dwie prawdy o tym samym,
+czyli klasa rozjazdu, która przy PMSSB-23/F1 dała `stun` w czarze wart 0. Teraz JEDNO
+źródło: `counterIsHostile(counter)` w `effect-intent.js` (lista + WZORZEC nazwy licznika
+minusowego, więc reguła obejmuje `-2/-2` i karty spoza katalogu — ADR 0002), z którego
+korzysta i `triggerEffectIsHostile`, i bot. Strażnik
+`test/audyt-o4-liczniki-wrogie-silnik.test.js` (5): zakotwiczenie anty-over-fix (przyjazne
+i zasobowe liczniki NIE są wrogie), regresja `stun`/`finality`, skan katalogu wymagający
+decyzji dla każdego licznika z `add_counter` (7 dziś) i źródłowy pin „bot nie ma drugiej
+listy" (L5/3). Mutacje M1–M4 czerwienią O4/1+O4/4 (+piny PMSSB-23 — dowód jednego źródła),
+O4/2 (+11 pinów), O4/3 (+8) i O4/5.
+
+**Żywy Tester runda 5** (na drzewie po Etapie 10, świeży build): s601 `defensive`
+mirrodin-brg vs ixalan (22 akcje widziane / 17 klikniętych), s602 `greedy` srodziemie vs
+wiedzmin-wur (27/24), s603 `random` worek-mroczny vs dominaria-wu (18/15) — 0 zgłoszeń
+detektorów, 0 niewycenionych ruchów, brak `[STOP]`; transkrypty
+`/home/user/scratch/tester-{defensive-s601,greedy-s602,random-s603}.txt`.
+
+**Uwagi właściciela z gry (2026-10-01, A/B/C — Etap 11):** limit odpowiedzi trybów
+radiowych obniżony o 1/3 (900 → 600 znaków; `TALKSHOW_COMMENT_LIMIT` i
+`GOOD_EVIL_COMMENT_LIMIT`, pin + asercja redukcji). Bladed Sentinel: bot kupował `{W}` za
+vigilance, gdy stwór tylko MÓGŁ atakować (`canAttackNow`), po czym ataku nie składał —
+teraz zakup wymaga zamiaru ataku z tej samej polityki, którą bot stosuje w deklaracji
+(`attackIntendsCreature`; instancja L172), pin M221/E. Prishe's Wanderings: klik w nazwę
+kandydata szukania nie otwierał pełnego ekranu, bo `hiddenObjectCardId` odrzucał całą
+bibliotekę (FoW wierzchu), a kandydaci szukania są decydentowi ujawnieni w
+`view.pendingSearchChoice.cards` (z tego samego pola `objectName` czyta ich nazwy) —
+kandydat bieżącej decyzji dostaje cardId do podglądu, reszta biblioteki zostaje zakryta
+(piny D/1 i D/2). Żywy Tester runda 6 (s701–s703) — 0 zgłoszeń detektorów, 0
+niewycenionych ruchów. **Decyzja właściciela (2026-10-01):** obserwacje O-b
+(`staticAbility` bez bramki `faceDown`, CR 708.2a), O-c (uproszczenie badge'a przy
+Obrońcy) i O-d („total toxic value", CR 702.164b) zdjęte z kolejki — brak karty-nosiciela
+w kolekcji, więc kod byłby niesprawdzalny (ADR 0029); zostaje ślad w komentarzach
+`src/engine/combat.js` i w raporcie audytu.
+
+**Etap 12 — kolejka i zgodność z CR (`ca34be8`):** decyzją właściciela (2026-10-01)
+obserwacje **O-b** (`staticAbility` bez bramki `faceDown`, CR 708.2a), **O-c** (uproszczenie
+badge'a przy Obrońcy zdjętym czasem innym niż `lostKeywordsUntilEOT`) i **O-d**
+(„total toxic value", CR 702.164b) zostały **zdjęte z kolejki** — w kolekcji nie ma
+karty-nosiciela, więc kod byłby niesprawdzalny (ADR 0029). Zamiast kodu został ślad
+w dokumentacji mechanik (`src/engine/combat.js`) z warunkiem wejścia implementacji.
+**O-a** potwierdzone jako domknięte w `4fcbff7`: świeża mutacja bez odejmowania `b.damage`
+czerwieni dokładnie `O-a/1`, po przywróceniu 4/4. Runda zgodności z CR u źródła (wydanie
+2026-09-25): **702.83a–b** (Exalted) i **702.149a–c** (Training) zgodne z silnikiem
+(snapshot deklaracji, trigger per wystąpienie), przejrzane 702.122a/702.171a (crew/saddle)
+i 702.164c (toxic) — brak znalezisk; dodany brakujący pin mnożenia egzaltacji
+(`Akrasan Squire x2` = +2/+2) i wpisy `702.164b`/`702.83a` w tabeli numerów CR.
+
+**Bramka końcowa (drzewo `2a41ec3`):** `npm test` 7246/7246 (7219 baza + 3 piny U4 + 4 piny O-a
++ 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512
+(na drzewie Etapu 9), `npm run build` 70 / 4680,8 kB (7222/7493/4673,6 kB było
+bramką tej sesji przed Etapem 6).
+
+## 2026-10-01c — PMSSB-32: produkcja many (`add_mana`) (PR #149)
+
+**Prompt:** zlecenie właściciela — PMSSB: wybrać JEDNĄ rodzinę i przeprowadzić audyt
+przyczynowo-skutkowy scoringu bota (kiedy efekt jest taktycznie najsilniejszy, w jakich
+fazach i czyich turach, kiedy zysk zerowy), a potem tak ustawić wycenę, by premiowała
+momenty sensowne; bez strojenia maszynowego (ADR 0018). Wejście `fe1eb08` (plan pętli,
+baseline fast 7250/7250, build 70 / 4683,0 kB). Plan
+`docs/plans/PLAN_2026-10-01c-pmssb32-mana.md`, raport `docs/PMSSB.md` §PMSSB-32, rejestr
+rodzin +wiersz 32.
+
+**Rodzina:** `add_mana` — 25 kart / 28 wystąpień (największa spoza rejestru). Wycena
+narosła z ośmiu łatek z gier (M128, M155, M119/Z5 + M150/C1, B54/s4008, F 2026-09-19b,
+M243/C, E6/A1, M167/D) bez wspólnej miary; pomiar PRZED (sonda
+`scratch/pmssb32-mana-przed.mjs`, 25 scenariuszy) dał findingi F1–F6: próg LICZBOWY
+przepuszczał „odblokowanie” bez koloru (Wizard +10 = WYBÓR, choć nigdy nie opłaci `{W}`)
+i bez restrykcji druku (Powerstone „odblokowywał” stwora), filtr koloru nie odblokowywał
+niczego, tap CIAŁA nie miał ceny bojowej (main1 == main2, 0/1 == 4/4), reguła instant
+E6/A1 była w produkcji MARTWA (wpis ręki w widoku bez `types`), a bramka „chcę to rzucić”
+pytała komendę bez celu (Shock bez celu = −10).
+
+**Fale:** (A) model JEDNOSTEK many — `manaUnitsOfView`/`unitsAfterManaAbility`/
+`canCastWithUnits` liczą kolory, pipy, `{C}`, `spendOnly: artifact` i pulę ograniczoną
+dokładnie tak jak silnik (`expandManaPool`, `matchColorRequirements`; L41/L48), ląd nie
+dubluje własnej jednostki (B54/s4008), `playerView` oddaje `types` ręki (klasa L1),
+a wycena celu czaru z ręki idzie najlepszym celem z widoku; (B) cena tapnięcia CIAŁA
+(`tapBodyCost`, pokrętła `manaTapBodyPerStat: 2` / `manaTapBodyMax: 8`) — main1 = moc
+(CR 508.1a), cudza tura = wytrzymałość (CR 509.1a), main2/po blokach/choroba/czujność
+(CR 702.20b)/obrońca (CR 702.3b) = 0, dawna cena `tapCreature` −3 zostaje jako podstawa;
+(C) bramka „oferta = płatność” (`castOfferedNow`) — gdy silnik oferuje rzut, auto-płatność
+go pokryje, więc ręczna aktywacja niczego nie odblokowuje, a przy Skarbie kosztuje
+jednorazowy token. Fixture `m243` (Skarb bez `colors` w deskryptorze) kłamał wobec druku
+i został naprawiony razem z zaostrzeniem pinu M243/C (zdolność `{1},{T}` bramy REALNIE
+odblokowuje czar pod brakujący kolor — to promowany moment).
+
+**Dowody:** piny `test/audyt-pmssb32-mana.test.js` **19/19** (m.in. A1 −4, A5b +6 = WYBÓR,
+B1 ściana 3 vs 4/4 −5, B3 main1 −6 < main2 −4, B6 −4 bez zmian, B7 czujność −4/−8,
+B10 Skarb −10) + **mutacje M1–M7** (M3 bez L48 czerwieni 9 pinów, M2 bez ceny ciała 6);
+tie-audit PO 27,0% remisów / **9,7% realnych** (było 28,3% / 10,8%); mirror-eval wymiaru
+ciała ON vs OFF 24:24 (0,5000) na 48 meczach — brak sygnału w lustrze przy wąskim stanie
+(B6), dlatego dowodem są piny; hashe determinizmu „bez zmian” na puli bench; Żywy Tester PO
+6 partii (`innistrad-brg` ×3, `srodziemie`, `wiedzmin-wur`, `tarkir-wur`) — 6× brak
+zgłoszeń detektorów i 6× brak niewycenionych, w transkryptach rodzina realnie zagrana
+(Moonscarred Werewolf 3× mana, Seer's Lantern 1× mana vs 5× scry). Golden-master
+zregenerowany — świadomy dryf WYCEN przy tych samych decyzjach.
+
+**Runda CR u źródła** (wydanie 2026-09-25) wykryła przekręcone NUMERY w komentarzach kodu:
+`702.20a` (definicja statyczna) i `702.3a` zamiast **702.20b** („Attacking doesn't cause
+creatures with vigilance to tap”) i **702.3b** („A creature with defender can't attack”) —
+poprawione w `heuristic-bot.js`/`heuristic-params.js` i dopisane do generowanej tabeli
+numerów wraz z aliasem „obroń” dla wpisu 702.3 (strażnicy CR znowu zieloni: 39/39).
+
+**Bramka końcowa:** `npm test` **7270/7270 EXIT 0**, `npm run test:all` **7541/7541
+EXIT 0**, build **70 modułów / 4697,0 kB**. Kolejka następnej sesji: remisy wyboru
+celu/ataku z tie-audytu (PMSSB-33), `tap_for_mana` (poza decyzjami silnika), koszt
+okazji drugiego trybu źródła. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01d — PMSSB-33: triage remisów wyboru (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `860c8b5` (koniec sesji 01c). Plan
+`docs/plans/PLAN_2026-10-01d-pmssb33-triage.md`, raport `docs/PMSSB.md` §PMSSB-33, rejestr
++wiersz „remisy wyboru".
+
+**Obiekt pętli:** nie rodzina efektów, a **16 „GROZY" z tie-audytu** po PMSSB-32 (24 partie /
+12 785 decyzji: 634 remisy = 27,0%, w tym 450 par „brak akcji" silnika i **184 realnych =
+9,7%**, poprawa wobec 28,3% / 10,8%): `attack` 9, `block` 2, `activate_ability` 2,
+`cast_spell` 1, `resolve_color_choice` 1, `resolve_discard_choice` 1 — czyli remisy przy
+RÓŻNYCH danych wejściowych decyzji. Pytanie: ślepota wyceny czy świadoma równość wartości?
+
+**Metoda:** `--json` audytu drukuje PROJEKCJĘ danych, które faza wyceny realnie czyta
+(dla ataku `{atakuje, trafienie, ginie, zabici, smiertelny}`), a sondy
+(`/tmp/pmssb33-probe.mjs`, `-blok.mjs`) na harnessie pinów PMSSB-31/32 mierzą wyniki
+wariantów — dzięki temu różnica projekcji + różnica wyniku = wymiar CZYTANY, różnica
+projekcji + równy wynik = wymiar POMINIĘTY (kandydat na falę), równa projekcja = no-op.
+
+**Rozstrzygnięcie:** **0 zmian kodu — wszystkie 16 to znane równości, nie ślepoty.**
+(1) Atak: gałąź wymiany (`power ≥ wytrz.` blokera, stwór ginie) to `power − 1`, więc przy
+power 1 daje DOKŁADNIE 0 — tyle co brak ataku (remisy 0/0 = atak bez zysku); formuła
+rozróżnia tam, gdzie ma czym (power 2 → +1, 3/3 w 1/1 → +6, pusty stół → 12, remis 1030 =
+przecięcie progu przy już wygrywającej decyzji). (2) Blok: permutacje przypisań blokerów
+o identycznym wyniku (te same zgony, te same obrażenia) — przy różnych ciałach wycena
+rozróżnia (zmierzone 4 > 2). (3) Reszta: wybór celu/źródła o równej wartości; brak dowodu
+złej decyzji z partii. Świadomie NIE dodano tie-breakerów — byłby to over-fix łamiący
+zasadę procedury (najsłabszy realny wariant zostaje najstarszą wartością).
+
+**Dowody:** piny `test/audyt-pmssb33-remisy-wyboru.test.js` **7/7** (A1 1/1 za 1/1 = 0,
+A2 ta sama reguła przy power 2 = 1, A3 3/3 w 1/1 = 6, A4 dwa 1/1 = suma zer, A5 otwarty
+stół = 12, B1 permutacja bloków 2 = 2, B2 różne ciała 4 > 2) + mutacje: `power − 1 → power`
+czerwieni A1/A2/A4, `attackOpenBoardBonus: 0` czerwieni A5, po przywróceniu 7/7.
+Wniosek proceduralny: per-kind `tools/bot-tie-audit.mjs --gate=attack|block` jest
+narzędziem POLOWANIA, nie bramką CI — na zamrożonym drzewie jest czerwony z definicji
+tych równości.
+
+**Bramka końcowa:** `npm test` **7277/7277 EXIT 0**, `npm run test:all` **7548/7548
+EXIT 0**, build **70 modułów / 4697,0 kB** (0 zmian kodu). Kolejka następnej sesji:
+pozostałe remisy CELU (5 — brak dowodu złej decyzji), `manaAvailableNow` poza rodziną many
+(`suspend_card`), koszt okazji drugiego trybu źródła, bankowanie many. Triage ZAMKNIĘTY.
+
+## 2026-10-01e — PMSSB-34: koszt many aktywacji + treść sprzętu (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `8ee8eec` (koniec sesji 01d). Po drodze sandbox wycofał drzewo
+lokalne w trakcie sesji — odzyskane przez `git reset --hard origin/arena/01a0f68c-mtg`
+(nietrackowany plan do `/tmp/pmssb33-backup/`, per-sesyjny). Plan
+`docs/plans/PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`, raport `docs/PMSSB.md`
+§PMSSB-34, rejestr +wiersz „koszt many aktywacji + treść sprzętu", handoff
+`HANDOFF_2026-10-01e.md`.
+
+**Obiekt pętli:** rodzina `activate_ability`, wymiar **KOSZTU MANY** + **treść sprzętu**.
+Legitymacja to tabela samej PMSSB-33: wiersz `activate_ability` rozstrzygnięto hasłem
+„dwa równie dobre źródła" bez obowiązkowej kontroli procedury (b) — a projekcja remisów
+pokazywała koszty `mana` **3, 4 i 1** przy tym samym wyniku 16 (seed 4012 t16) i 3 vs 4
+przy 22 (t20). Inwentarz: 148 kart z aktywowanymi zdolnościami (111 z kosztem many > 0),
+12 sprzętów.
+
+**Pierwiastki (kod):** (1) L41 — gałąź PIERWSZEGO założenia sprzętu liczyła
+`10 + 2×moc nosiciela` i nie czytała własnej pompy sprzętu (gałąź przeniesienia liczyła ją
+przez `equipValuation`), więc `+1/+0` za `{1}` = `+2/+2` trample za `{4}`; (2) koszt many
+aktywacji nie był wyceniany w żadnej gałęzi poza `add_mana` (tam w `net`).
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb34-koszt-przed.mjs`; PRZED = oba nowe
+pokrętła 0, bo całą zmianę wnosi ten wymiar): trzy sprzęty na 3/3 — **18/18/18 (remis,
+wybór po kolejności ofert)** → **20 Plate > 19 Stake > 17 Lightblade** (Plate wybrany);
+para o identycznym pumpie `{3}` vs `{1}` — 18 = 18 → **19 > 17**; kontrola płatności
+(2 lądy → tylko Stake) i kontrola `add_mana` (Apprentice Wizard −4) bez zmian.
+
+**Fale:** A — `equipValuation` zwraca też `printedBody` (2×P+T), pierwsze założenie dodaje
+`equipPumpBonusPerPoint × printedBody`; B — `score -= abilityManaCostPenalty ×
+(cost.mana + cost.generic)` z wyjątkiem `add_mana`. Kara stoi za wczesnymi guardami
+(inert −40, idempotencja, „wasteful step"), więc guardy zachowują płaskie kary.
+
+**Dowody:** piny `test/audyt-pmssb34-koszt-aktywacji.test.js` **9/9** (A1 treść, A2 kontrola
+(b), A3 kotwica PRZED 18/18/18, B1/B2 mutacje pokręteł, C bramka płatności, D `add_mana`
+bez podwójnej kary, E skala poza sprzętem Δ = `{1}`, F koszt 0/sam `{T}`) + mutacje na
+źródle (`abilityManaCostPenalty → 0` czerwieni A1/A2/C/E; `equipPumpBonusPerPoint → 0`
+czerwieni A1/A2/C). **17 pinów starszych audytów (12 plików) przesuniętych DOKŁADNIE
+o koszt many** — każdy zweryfikowany po deskryptorze kosztu karty: Relic Dragon `{8}`
+63 → 55, Vanguard `{4}{W}` 20 → 15, Mutagen `{1}` 14 → 13, Kheru Dreadmaw `{2}` −16 → −18
+/ 3 → 1, Elk `{1}` 12 → 11, Trigon `{2}` 34 → 32, Leonin `{3}` próg 6 → 5 (dalej wybiera
+dobranie), Dockhand `{4}` 6.50 → 2.50, Scroll of Avacyn `{1}` 7 → 6 (warianty do 13),
+Mournful Zombie `{1}` 3 → 2, Dementia Bat `{5}` −1 → −6, Skullcairn `{4}` −54 → −58,
+Gloomfang cycle `{2}` 4 → 2 („loot ≡ cycle" rozstrzygnięte kosztem), T11/1 7 → 6,
+T11/6 8 → 7, F2b −16 → −18; guard „pusta ręka" −40 i guardy idempotencji zostały płaskie.
+
+**Ewaluacja:** golden-master **po świadomej regeneracji** (hash `8fa96e93…` → `ab8d57d2…`;
+scoreSum −4/−6/0/−2/−2/−9, jedna decyzja mniej 241 → 240) — z dowodem czystości wymiaru:
+oba pokrętła = 0 odtwarzają STARY fixture bit w bit. Tie-audit PO (`--gry=2`, 24 partie /
+12 448 decyzji): 623 remisy (27,2%) = 438 par „brak akcji" + 185 realnych (10,0%);
+**GROZY 15 — `activate_ability` 0** (było 2: dokładnie kosztowe okna 3/4/1 i 3/4, oba
+zniknęły w sondzie). Mirror-eval kandydat vs oba pokrętła 0: **45:51 na 96 partii (0,469)** —
+szum. Żywy Tester PO **3/3 czyste** (dominaria-brg|ravnica s42; worek-legend|theros s5
+`explorer`; warhammer-ubr|tarkir-bg s11 `impatient`): 0 `[STOP]`, 0 `LIMIT`, 0 zgłoszeń
+detektorów, 0 decyzji niewycenionych.
+
+**Bramka końcowa:** `npm test` **7286/7286 EXIT 0**, `npm run test:all` **7557/7557 EXIT 0**,
+build **70 modułów / 4700,9 kB**. Kolejka następnej sesji: aktywacje o wyniku netto 0
+remisujące z passem (kandydat na mikro-pętlę z tie-breakerem „przy równej wartości zachowaj
+manę" — potrzebny dowód złej decyzji), `manaAvailableNow` poza rodziną many (`suspend_card`),
+koszt drugiego trybu źródła, warianty `cast_spell`. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01f — PMSSB-35: odroczenie zagrania (plot/suspend/warp) + pieczęć wygnania (PR #149)
+
+**Prompt:** „Kontynuujemy projekt.” — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `c01c293` (koniec sesji 01e / PMSSB-34). Obiekt pętli z kolejki
+handoffu 01e: „stary model dostępności many (`manaAvailableNow` w `suspend_card`)” —
+rekonesans rozszerzył go na CAŁĄ rodzinę odroczeń: trzy akcje specjalne + wypłata
+odroczenia (rzut karty czekającej w wygnaniu). Nośniki: 5 kart katalogu, wszystkie w taliach
+wzorcowych (`mindstab`, `tumbleweed-rising`, `spinewoods-paladin`, `sheriff-of-safe-passage`,
+`weftblade-enhancer`). Plan `docs/plans/PLAN_2026-10-01f-pmssb35-odroczenie.md`, raport
+`docs/PMSSB.md` §PMSSB-35, piny `test/audyt-pmssb35-odroczenie.test.js` (18).
+
+**Pierwiastki (sondy `/home/user/scratch/pmssb35-*`):** (1) `case 'cast_permanent'` czytał
+kartę WYŁĄCZNIE z ręki (`handCard`) — zaplotowana/z poczekalni warp karta w wygnaniu
+dostawała puste 0/0 i **63,000 niezależnie od ciała i kosztu** (Sheriff 0/0, Hill Giant 3/3
+i 20/20, Paladin 5/4, Weftblade 3/4 = 63,000; ten sam Sheriff z ręki = 59,396), a koszt many
+odejmował się nawet przy rzucie DARMOWYM; (2) akcje odroczenia były płaskie: `plot_card` 55
++ token/mill bez ceny plotu (S6: Tumbleweed plot {3}{G} **55,000 > rzut {1}{G} 49,980**),
+`warp_card` = ciało − 15 + 5 ETB (70,000 przy 4 i przy 6 polach), `suspend_card` 30/8 wg
+legacy `manaAvailableNow` (S3: 5 lądów + Seer’s Lantern → oferta rzutu JEST, bot dawał 30).
+
+**Fale:** A — `handCard ?? zoneCard` (wzorzec `cast_spell`) + koszt many tylko, gdy rzut go
+płaci (reguła silnika `castsWithoutPayingMana`: plot CR 702.170d, darmowy impuls CR 701.18),
+ten sam warunek w `reservedManaOf`; B — cena odroczenia w jednostce kosztu karty (koszt +
+pipy) dla wszystkich trzech akcji, `plotRedundantPenalty` (rzut już w ofertach, plot nie
+oszczędza many), `plotDelayPenalty` (zwłoka), `suspendWaitPenalty × liczniki czasu`
+(CR 702.62c), dostępność zawieszenia z OFERTY silnika (`castOfferedNow`). Treść zawieszonego
+czaru świadomie NIE wchodzi do inwestycji — jest wyceniana w wypłacie
+(`resolve_suspend_cast`), premia byłaby over-fixem (plan §6).
+
+**Znalezisko silnika (naprawione u źródła):** sonda wypłaty pokazała w partii
+`worek-legend|dominaria-brg` s1000 DWA rzuty tej samej karty z wygnania (t12 i t14) po
+ponownym wygnaniu przez Faceless Butchera — pieczęć wygnania (`plotted`, `warpReady`, para
+okna impulsu) przeżywała zmianę strefy i wracała do ofert rzutu z wygnania. CR 400.7 +
+CR 702.185b („warped card in exile” = wygnana triggerem warp) + glosariusz „Plotted”.
+Naprawa w choke poincie `moveObjectDirectly` (zdjęcie pieczęci przy wyjściu z wygnania),
+para okna impulsu przez helper-właściciela `clearImpulseWindowStamp` (guard
+`test/family-audit.test.js` 8/8, nowy numer `702.185b` dopisany do tabeli CR z dosłownym
+uzasadnieniem — brak egressu w sandboxie). Dowód: sonda `pmssb35-wyciek-stempli.mjs`
+(PRZED: oferty po ponownym wygnaniu `[cast_permanent]`; PO: `[]`), piny F1–F3; golden-master
+bez zmian (żaden z 6 meczów snapshotu nie trafia w wyciek).
+
+**Ewaluacja:** golden-master po świadomej regeneracji (hash `ab8d57d2…` → `4024bcd1…`:
+1 z 6 meczów, `scoreSum` −6,0 = suspend 8 → 2, decyzje 240 → 240, `chosenKinds` identyczne
+⇒ **0 flipów wyboru**); w partiach sonda `pmssb35-gry.mjs` (4 pary × 6 seedów): PRZED
+6 plotów → PO **1 plot** (cztery zamiany „plot 95,00 → rzut 89,98” to wzorzec S6), sonda
+wypłaty: PRZED 10 odroczeń / 9 wypłat / 2 karty czekające → PO **5 / 5 / 0** (nadmiarowy
+rzut PRZED był skutkiem wycieku pieczęci). Tie-audit PO: 24 partie / 12 448 decyzji /
+623 remisy (438 + 185 realnych = 10,0%), rodzina bez „GROZY”. Mirror-eval (A = nowe
+domyślne, B = trzy pokrętła odroczenia 0): **96 partii 48:48 (0,500)**. Żywy Tester:
+6 sesji na finalnym buildzie (3 na tymczasowej talii rodziny — plot/warp/zawieszenie klikane
+przez UI, oferta darmowego rzutu z wygnania renderowana; talia usunięta po biegu),
+0 `[STOP]`, 0 zgłoszeń detektorów, 0 decyzji niewycenionych.
+
+**Bramka końcowa:** `npm test` **7304/7304 EXIT 0** (7286 + 18 pinów), build **70 modułów /
+4708,3 kB** (+7,4 kB wobec `c01c293` — komentarze i helper wchodzą do bundla). Kolejka
+następnej sesji: koszt okazji drugiego trybu źródła (`Seer’s Lantern`, Immersturm Skullcairn,
+Balamb Garden), bankowanie many, warianty `cast_spell` (tryb/kicker), model treści
+czekającej na późniejszą planszę. Rodzina ZAMKNIĘTA.

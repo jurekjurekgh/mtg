@@ -1,0 +1,199 @@
+# Plan sesji 2026-10-01b — audyt scalonego PR #148 + pętla jakości
+
+**Tryb:** ADR 0020 (A: PR na starcie, B: audyt poprzedniego PR, C: commity
+inkrementalne, D: bez force push) + ADR 0021 (prompt „Kontynuujemy projekt."
+nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
+
+## Rozpoznanie
+
+| Pomiar | Wartość |
+|---|---|
+| `main` (baza sesji) | `30de664` = squash PR #148 („Audyt PR #147 + pętla jakości — sesja 2026-10-01") |
+| Poprzedni scalony PR | #148, 27 plików (8 × `src/`, 6 × dokumentacja, 12 × testy, 1 × narzędzie) |
+| Pliki `src/` w #148 | `heuristic-bot.js` (+44/−18), `heuristic-params.js` (+5/−2), `combat.js` (+58/−17), `game-state.js` (+10/−3), `ai-config.js` (+4), `ai-modes.js` (+99/−3), `choice-request.js` (+1/−1), `render.js` (+4/−1) |
+| Baseline `npm test` / `build` | **7219/7219**, build **70 / 4673,2 kB** (zmierzone na starcie sesji) |
+| Niedokończone plany na `main` | brak nieodhaczonych kryteriów (`PLAN_2026-10-01-audyt-pr147.md` kompletny) |
+
+## Etapy
+
+- [x] **Etap 0 — lektura startowa**: `AGENTS.md`, ADR 0001–0030 (w całości),
+  `LESSONS.md` L1–L171, `ENVIRONMENT.md`, handoff `2026-10-01`, opis i diff PR #148
+  (`gh pr diff 148`, 1394 linie, czytany plik po pliku).
+- [x] **Etap 1 — PR na starcie** (ADR 0020 A): PR #149 istnieje przed pierwszym
+  commitem kodu; plan sesji w `aaeb4fd`.
+- [x] **Etap 2 — audyt PR #148**: przegląd każdego zmienionego pliku `src/` pod
+  kątem CR, ADR 0002 (zero przypadków po nazwie/ID karty) i generyczności;
+  weryfikacja pinów mutacjami (5 mutacji, każda cofnięta); sondy na żywym
+  silniku; źródła CR (wydanie 2026-09-25) pobrane online przed wnioskami
+  (ADR 0030). Raport: `docs/audits/AUDYT_PR148_2026-10-01.md` (`f6cea15`).
+  Wynik: **APPROVE — brak nowych znalezisk**; F1/F2/F3 z poprzedniej sesji
+  domknięte i sprawdzone mutacyjnie; O1 zweryfikowane (sonda `faceDown`);
+  sweep 702.2b→702.2c sparowany poprawnie.
+- [x] **Etap 3 — naprawy znalezisk**: brak znalezisk do naprawy (audyt czysty);
+  obserwacje O-a/O-b/O-c zapisane w raporcie jako otwarte (O-b nieosiągalne);
+  O-a domknięte w Etapie 6, a O-b/O-c/O-d zdjęte z kolejki decyzją właściciela
+  (2026-10-01) — bez karty-nosiciela w kolekcji nie ma czego sprawdzić, więc
+  zostaje tylko ślad w komentarzach `src/engine/combat.js`.
+- [x] **Etap 4 — pętla jakości** (ADR 0021 §4):
+  - Żywy Tester 3 partie: s201 `zendikar`/`tarkir-bg`, s202 `kaladesh`/`theros`,
+    s203 `eldraine`/`ravnica` — 0 zgłoszeń detektorów, 0 niewycenionych ruchów,
+    brak `[STOP]`/`LIMIT`; transkrypty w `/home/user/scratch/tester-s20*.txt`.
+  - **U4** z #146 („{C} tapie ląd dający zielony") — 5 wariantów sondy NIE
+    odtwarza; domknięcie pinami `test/audyt-pr148b-pip-c-zrodlo.test.js` (3;
+    mutacja „każda jednostka opłaca {C}" czerwieni U4/1+U4/2) — `bfbcbe6`.
+  - **U3** z #146 — cytaty 615.4/615.6 (prewencja), 701.14a/d (fight),
+    714.2b (Saga) potwierdzone dosłownie u źródła (CR 2026-09-25) i znaczone
+    w komentarzach; brak rozjazdów do naprawy.
+  - Ścieżki tej sesji (badge zakazu ataku, trample w wycenie bloku) nie były
+    powtarzane — zgodnie z ADR 0021 §4b.
+- [x] **Etap 5 — zamknięcie**: `docs/setup/HANDOFF_2026-10-01b.md`,
+  `docs/PROJECT_HISTORY.md`, opis PR #149, blok przekazania dla następnej sesji.
+- [x] **Etap 6 — domknięcie O2 i O-a z audytu** (kolejna fala pętli jakości,
+  „kontynuuj"): O2 — drabinka „presji życia" w `declare_blockers` czytana
+  z `lifeAfter` (wynik wariantu) remisowała PMSSB-31/B4 (39 = 39); premia liczy
+  się teraz ze STANU (moje życie), więc jest niemalejąca względem zatrzymanych
+  obrażeń, a bramka `lifeAfter >= 1` zostaje jako pierwszeństwo (M146).
+  O-a — `attackerNeutralizedByProtection` liczy „lethal" blokera z wytrzymałości
+  EFEKTYWNEJ (CR 510.1c + 702.19b), tą samą miarą co `blockAbsorbedDamageOf`
+  (L41). Piny: B4 przepisany + `test/audyt-pr148b-ochrona-lethal-blokera.test.js`
+  (O-a/1–4); mutacje czerwienią odpowiednio B4, M146 i O-a/1. Golden-master bota
+  bez zmian fixture'a; Żywy Tester 4× czysto (s401–s404).
+
+- [x] **Etap 7 — AI-R10 (zlecenie właściciela w trakcie sesji)**: limit
+  odpowiedzi trybu `talkshow` obniżony 1200 → 900 znaków
+  (`TALKSHOW_COMMENT_LIMIT` w `src/table/ai-modes.js`; decyzja: „1200 to za
+  dużo”). Pin wartości w `test/ai-modes.test.js` (mutacja „powrót 1200”
+  czerwieni test talkshow). Prompt-only — bez zmian w `Code.gs`.
+
+- [x] **Etap 8 — U5/O3 z audytu #146 (fala z planem)**: liczby wariantu Food
+  (+5/+5 za poświęcenie, +3/+3 inaczej) przeniesione z silnika i bota do
+  DESKRYPTORA karty (`powerIfSacrificed`/`toughnessIfSacrificed`,
+  `powerIfKept`/`toughnessIfKept`); silnik tylko stosuje, oczekująca decyzja
+  niesie oba warianty, a widok wystawia je decydentowi
+  (`view.pendingFoodChoice`, ADR 0017). Próg „mało życia” (10) i mnożnik ×2
+  to pokrętła (`foodKeepLowLifeThreshold`, `foodKeepLowLifeMultiplier`).
+  Piny: `test/audyt-u5-o3-food-deskryptor.test.js` (9; mutacje: twarde 5/3
+  w bocie → D1+D2, `sacrificed ? 5 : 3` w silniku → B3, twarde +3 auto →
+  B4, deskryptor bez liczb → strażnik katalogu A). Żywy Tester runda 4
+  (s501–s505 na świeżym buildzie) — 0 zgłoszeń; w s504 bot rzuca Insatiable
+  Appetite, więc nowa ścieżka przeszła żywą partię.
+
+- [x] **Etap 9 — U2 z audytu #146: strażnik konwencji `keywords`**:
+  `test/keywords-katalog-straznik.test.js` (6) wymaga, żeby KAŻDY keyword
+  katalogu był w jednej z dwóch klas — `CZYTA_SILNIK` (wskazany plik musi
+  zawierać literal keywordu = dowód czytania) albo `ETYKIETA` (mechanika żyje
+  w deskryptorach zdolności, w polu obiektu albo w kolorach karty; strażnik
+  weryfikuje to na kartach). Zamknięte dwie dziury klasy: literówka keywordu
+  („flyng”) i mechanika, której nic nie realizuje. Mutacje: nowy keyword bez
+  klasy → U2/1, stęchły wpis → U2/2, zły wskaźnik → U2/3, etykieta bez
+  zdolności → U2/4, etykieta bez pola → U2/5, devoid na kolorowej karcie → U2/6.
+  Strażnik ISTNIENIA cytatów CR zatrzymał przy tym pierwszą wersję testu:
+  „CR 702.114b” (devoid) dopisane z pamięci, gdy 702.114 był już w tabeli —
+  w CR 2026-09-25 devoid ma tylko **702.114a** (weryfikacja u źródła: mtg.wiki/
+  page/Devoid + Keyword_ability, 2026-10-01). Tabela `cr-numery-tabela.js`
+  dostała wiersz `702.114a` z powodem; wnioski w **L164 reguła 5**.
+
+- [x] **Etap 10 — O4 z audytu #147: JEDNO źródło klasyfikacji liczników (L41)**:
+  silnikowy `HOSTILE_COUNTERS` niósł tylko `stun`/`finality`, a bot trzymał
+  własną listę (`DEBUFF_COUNTERS`) — dwie prawdy o tym samym, czyli dokładnie
+  ta klasa rozjazdu, która przy PMSSB-23/F1 dała `stun` w czarze wart 0.
+  `effect-intent.js` eksportuje **`counterIsHostile(counter)`**: lista
+  (`stun` — CR 122.1d/614.6, `finality`) + WZORZEC nazwy licznika minusowego
+  (`-1/-1`, `-0/-1`, w przyszłości `-2/-2`; CR 122.1), więc reguła jest pełna
+  dla kart spoza katalogu (ADR 0002); bot pyta to samo źródło w
+  `counterEffectValue`. Strażnik `test/audyt-o4-liczniki-wrogie-silnik.test.js`
+  (5): minusy wrogie (także `-2/-2`), przyjazne/zasobowe NIE (kotwica
+  anty-over-fix), `stun`/`finality` bez regresji, skan katalogu wymaga decyzji
+  dla każdego licznika `add_counter` (7 dziś), bot bez drugiej listy (L5/3:
+  test czyta źródło). Mutacje: M1 helper bez minusów → O4/1+O4/4 **i piny
+  PMSSB-23/A6+B4** (dowód jednego źródła), M2 helper wrogi dla wszystkiego →
+  O4/2 (+11 pinów PMSSB-23), M3 bez `stun` → O4/3 (+8), M4 powrót listy do
+  bota → O4/5.
+
+- [x] **Etap 11 — uwagi właściciela z gry (2026-10-01, A/B/C)**:
+  - **A (AI-R11)**: odpowiedzi trybów radiowych krótsze o 1/3 — limit
+    `TALKSHOW_COMMENT_LIMIT`/`GOOD_EVIL_COMMENT_LIMIT` 900 → **600** znaków
+    (pin + asercja „redukcja min. 1/3 względem 900” w `test/ai-modes.test.js`).
+  - **B (Bladed Sentinel, vigilance)**: bot kupował `{W}` w kroku deklaracji,
+    gdy stwór tylko MÓGŁ atakować (`canAttackNow`), po czym ataku nie składał —
+    jego własna ocena ataku była ujemna, więc mana przepadała. Teraz zakup
+    wymaga **zamiaru ataku** z TEJ SAMEJ polityki, którą bot stosuje
+    w deklaracji (`attackIntendsCreature`, L41/L48 — instancja reguły L172:
+    premia liczona z realnie podejmowanej akcji, nie z samej możliwości).
+    Pin `M221/E` w `test/m221d-vigilance-window.test.js` (mutacja: powrót do
+    `canAttackNow` czerwieni dokładnie ten test).
+  - **C (Prishe's Wanderings, podgląd kandydatów szukania)**: klik w nazwę
+    kandydata nie otwierał pełnego ekranu — `hiddenObjectCardId` odrzucał CAŁĄ
+    bibliotekę (ochrona FoW wierzchu), a kandydaci szukania są decydentowi
+    ujawnieni (`view.pendingSearchChoice.cards`, z tego samego pola czyta nazwy
+    `objectName`). Teraz kandydat BIEŻĄCEJ decyzji dostaje cardId do podglądu;
+    resztę biblioteki nadal zakrywa FoW. Piny `D/1` (RED→GREEN) i `D/2`
+    (niezmiennik FoW) w `test/uwagi-2026-09-21-b-klik-w-nazwe-otwiera-obraz.test.js`.
+  - Dowód z żywego stołu: Żywy Tester runda 6 (s701 `defensive`
+    dominaria-wu/forgotten-realms 18/14, s702 `hoarder` worek-basni/mirrodin-brg
+    21/16, s703 `impatient` ravnica/theros 17/15) — 0 zgłoszeń detektorów,
+    0 niewycenionych ruchów, brak `[STOP]` (build 4681,7 kB po B/C).
+
+- [x] **Etap 12 — porządki kolejki + runda zgodności z CR (zlecenie właściciela,
+  2026-10-01)**:
+  - **O-b/O-c/O-d zdjęte z kolejki** decyzją właściciela: brak karty-nosiciela
+    w kolekcji ⇒ zero kodu na zapas (ADR 0029). Zostaje ślad w dokumentacji
+    mechanik (`src/engine/combat.js`: O-b przy `staticAbility` — CR 708.2a,
+    O-c przy „natywnym" Obrońcy — CR 702.3, O-d przy toxic — CR 702.164b)
+    i status „zamknięte" w raporcie audytu.
+  - **O-a**: potwierdzone domknięcie z `4fcbff7` — świeża mutacja (bez
+    odejmowania `b.damage`) czerwieni DOKŁADNIE `O-a/1`, po przywróceniu 4/4;
+    notka w raporcie audytu poprawiona z „do wyrównania" na stan faktyczny.
+  - **Runda CR u źródła** (wydanie 2026-09-25): zweryfikowane dosłownie
+    i zgodne z silnikiem **702.83a–b** (Exalted — snapshot deklaracji „attacks
+    alone", trigger per wystąpienie, brama „you control") oraz **702.149a–c**
+    (Training — wynik porównania zamrożony w kontekście zdarzenia, rulingi VOW
+    2021-11-19); przejrzane także 702.122a/702.171a (crew/saddle: oferta
+    i walidacja wykluczają źródło oraz tapnięte, saddle tylko w oknie sorcery)
+    i 702.164c (toxic: tylko obrażenia graczowi, po prewencji). Brak znalezisk
+    (klasa „APPROVE"); jedyny brakujący pin dodany: `Akrasan Squire x2` =
+    +2/+2 za dwa wystąpienia egzaltacji (CR 702.83a).
+  - Tabela numerów CR: `702.164b` i `702.83a` dopisane PO weryfikacji
+    dosłownej (strażnik istnienia zielony). Commit `ca34be8`.
+
+## Ryzyka
+
+- Budżet lektury: reguła 5 w **L164** (podpunkt CR, Etap 9) opłacona
+  kondensacją L163/L164/L165/L168/L169/L172 — `LESSONS.md` = 138 307 B, budżet
+  **99 901/100 000** (zapas 99 tokenów, o 41 więcej niż przed Etapem 9) — próg
+  NIE podniesiony.
+- Re-provisioning sandboxa: na starcie każdej tury `git rev-parse HEAD` vs
+  `git ls-remote`; push jest jedynym trwałym zapisem pracy (ENVIRONMENT §2).
+- Golden-master bota: każda zmiana wyceny wymaga świadomej regeneracji fixture'a
+  (próg regresji bez zmian).
+
+## Podsumowanie wykonania
+
+- **Audyt #148:** APPROVE, brak nowych znalezisk. Najmocniejszy dowód: macierz
+  mutacji (A→F1/2, B→F1/1, C→F1/3+F1/5, D→O1/2, E→O1/1+O1/5) — każdy pin
+  testów z #147/#148 rozróżnia swoją regułę.
+- **Pętla jakości:** Żywy Tester 3× czysto; U4 zamknięte pinami (nie odtwarza
+  się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
+- **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
+  `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 12 (kolejka + CR):** `npm test` **7250/7250** (7249 + pin egzaltacji ×2),
+  `npm run build` **70 / 4683,0 kB** (komentarze-ślady w `combat.js` wchodzą do
+  bundle'a — stąd +1,3 kB).
+- **Etap 11 (uwagi A/B/C):** `npm test` **7249/7249** (7246 + M221/E + D/1 + D/2),
+  `npm run build` **70 / 4681,7 kB**.
+- **Etap 10 (O4):** `npm test` **7246/7246** (7241 + 5), build 70 / **4680,8 kB**
+  (helper w `src/`), klasa liczników scalona w silniku (L41). Żywy Tester
+  runda 5 na tym drzewie (s601 `defensive` mirrodin-brg/ixalan 22 akcje/17
+  kliknięć, s602 `greedy` srodziemie/wiedzmin-wur 27/24, s603 `random`
+  worek-mroczny/dominaria-wu 18/15) — 0 zgłoszeń detektorów, 0 niewycenionych
+  ruchów, brak `[STOP]`; transkrypty `/home/user/scratch/tester-*-s60*.txt`.
+- **Etap 9 (U2):** `npm test` **7241/7241**, `npm run test:all` **7512/7512**,
+  build bez zmian 70 / 4680,0 kB.
+- **Etap 8 (U5/O3):** `npm test` **7235/7235**, `npm run build` **70 / 4680,0 kB**;
+  brak zmian zachowania (wartości domyślne == dawne stałe, golden-master zielony).
+- **Etap 7 (AI-R10):** limit talkshow 900 (pin + mutacja), build 70 / 4674,8 kB.
+- **Etap 6 (O2 + O-a):** `4fcbff7`; `npm test` **7226/7226** (baza 7222 + 4 piny
+  O-a), `npm run build` **70 / 4674,6 kB**; Żywy Tester 4 partie (s401 defensive
+  zendikar/innistrad-wu 30 akcji/1 modal, s402 greedy theros/warhammer-ubr 18/2,
+  s403 random kaladesh/tarkir-bg 14/0, s404 hoarder eldraine/dominaria-brg 16/0)
+  — 0 zgłoszeń detektorów, 0 niewycenionych ruchów, brak `[STOP]`.

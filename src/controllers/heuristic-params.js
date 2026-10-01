@@ -339,7 +339,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'opponentTargetFoeBase',      // kotwica: dawna stała 30 dla ocalałego wroga
   'opponentTargetThreatWeight', // dopłata za zagrożenie celu (moc·2+wytrz) — ×0 = dawna wartość
   'foodKeepValue',      // PMSSB-22: wartość ZACHOWANEGO Food (3 życia) — ×0 = dawne „zawsze poświęcaj”
-  'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy +5/+5 zmienia wynik walki, a +3/+3 nie
+  'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy większy wariant zmienia wynik walki, a mniejszy nie
+  // O3/U5 (audyt #146, fala 2026-10-01): próg „mało życia” i mnożnik ceny
+  // zatrzymania Food siedziały w kodzie bota jako twarde `10` i `2`.
+  // Kotwica anty-over-fix: próg 0 wyłącza podwojenie (mnożnik przestaje
+  // działać), mnożnik 1 = brak dopłaty under pressure.
+  'foodKeepLowLifeThreshold',   // próg życia, od którego Food jest cenniejszy (dawniej stała 10)
+  'foodKeepLowLifeMultiplier',  // mnożnik wartości Food pod presją życia (dawniej stała 2)
   'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
   // PMSSB-24 (F1) — KOLEJNOŚĆ kart, które zostają na wierzchu po scry/surveil.
   // CR 701.22a („the rest on top of your library in any order") i 701.25 dają
@@ -408,6 +414,26 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
   'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
   'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
+  // PMSSB-32 — produkcja many (`add_mana`). Audyt okien zdolności many:
+  // kiedy mana realnie przesuwa próg opłacalności, a kiedy jest „na zapas”
+  // (M128). Dwa nowe wymiary po pomiarze PRZED:
+  // Koszt tapnięcia CIAŁA na manę — tap stwora to nie tap artefaktu: przed
+  // deklaracją atakujących traci się atakującego, w cudzej turze blokera,
+  // a po deklaracji (main2) ciało zrobiło swoje i tap jest tani (czujność
+  // i obrońca nie tracą nic — CR 702.20b/702.3b).
+  'manaTapBodyPerStat',          // kara za tapnięcie ciała bojowego, za każdy punkt (moc/wyt.)
+  'manaTapBodyMax',              // sufit kary za tapnięcie ciała
+  // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
+  // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
+  'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
+  'equipPumpBonusPerPoint',      // waga ciała dokładanego przez sprzęt przy pierwszym założeniu
+  // PMSSB-35 — odroczenie zagrania (`plot_card`/`suspend_card`/`warp_card` +
+  // rzut karty czekającej z wygnania). Dwa wymiary po pomiarze PRZED
+  // (sonda `/home/user/scratch/pmssb35-odroczenie-przed.mjs`): koszt akcji i
+  // zwłoka. Nazwy mówią, ZA CO jest kara — nie „premia za czekanie”.
+  'plotRedundantPenalty',        // surcharge, gdy plot nie oszczędza many wobec rzutu dostępnego TERAZ
+  'plotDelayPenalty',            // surcharge za turę zwłoki, gdy rzut jest dostępny teraz
+  'suspendWaitPenalty',          // surcharge za każdy licznik czasu zawieszenia
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -647,6 +673,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   opponentTargetThreatWeight: 0.5,
   foodKeepValue: 12,
   foodDecisiveBonus: 25,
+  // O3/U5 — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS (dawne twarde 10 i 2).
+  foodKeepLowLifeThreshold: 10,
+  foodKeepLowLifeMultiplier: 2,
   opponentTargetThreatCap: 15,
   // PMSSB-24/F1 (Fala A) — kolejność wierzchu. Waga 1 = różnica liczona
   // w tych samych jednostkach co `cardKeepValue` (skala „czy chcemy tę kartę
@@ -701,6 +730,48 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 24..60, wciąż daleko nad −5 za rezygnację.
   satyrLookBase: 30,
   blockGoodTradePerPoint: 2,
+  // PMSSB-32 (wartości przemyślane, pomiar PRZED:
+  // /home/user/scratch/pmssb32-mana-przed.mjs): nowe wymiary to DOPŁATY/KARY
+  // nad starą arytmetyką (anty-over-fix — realne odblokowanie liczbowe z
+  // net > 0 nadal płaci dokładnie 4·net, jak przed pętlą).
+  // Ciało: 2 za punkt, sufit 8 (≈ jedna karta z ręki; nigdy nie przebija
+  // premii za duże odblokowanie liczbowe), żeby „mana z 4/4 przed atakiem”
+  // była rozstrzygająco droższa od „many z 0/1 ściany”, a nie blokowała
+  // rzutu (auto-płatność silnika i tak do-tapuje źródło przy cast ofercie).
+  manaTapBodyPerStat: 2,
+  manaTapBodyMax: 8,
+  // PMSSB-34 (pomiar PRZED: /home/user/scratch/pmssb34-koszt-przed.mjs, scenariusze A/B):
+  // 1 punkt za manę — DOKŁADNIE ta sama skala co `creatureManaCostWeight` przy
+  // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
+  // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
+  abilityManaCostPenalty: 1,
+  // Ciało sprzętu liczone tą samą funkcją co przy przeniesieniu
+  // (`equipValuation.bodyValue`), wagą 1 — dopłata, nie zamiana bazy
+  // „10 + 2 × moc nosiciela" (anty-over-fix M429).
+  equipPumpBonusPerPoint: 1,
+  // PMSSB-35 (sonda PRZED: /home/user/scratch/pmssb35-odroczenie-przed.mjs,
+  // scenariusze S1–S15). Trzy wymiary odroczenia — wszystkie DOPŁATY nad
+  // dotychczasowymi bazami (anty-over-fix: baza 55 plotu i −15/+5 warpu
+  // zostają; przy braku oferty rzutu odroczenie nie traci nic ponad cenę
+  // własnego kosztu):
+  // - redundant: plot droższy (lub równy) od rzutu, który JUŻ jest w ofertach,
+  //   jest grą dominowaną — płacisz co najmniej tyle samo i czekasz turę
+  //   (zmierzone S6: Tumbleweed Rising {1}{G}, plot {3}{G} → 55 vs rzut 49,98).
+  //   Surcharge musi przebić bazę 55, żeby rzut wygrywał (L3: kara przebija
+  //   premię), ale zostaje pod progiem „nigdy nie plotuj" — karta bez oferty
+  //   rzutu zachowuje dawną bazę.
+  plotRedundantPenalty: 30,
+  // - delay: jedna tura zwłoki to jedna tura bez efektu (ten sam rząd co
+  //   koszt many: 1 pkt/pt, więc {4} płacone teraz przewyższa 5 pkt zwłoki).
+  plotDelayPenalty: 5,
+  // - wait: każde odroczenie suspendu to liczniki czasu, po jednym zdejmowanym
+  //   na turę (CR 702.62c) — 1 pkt to ta sama jednostka co 1 mana w wymiarze
+  //   kosztu. 4 liczniki Mindstaba = 4 pkt: gdy rzut jest nieosiągalny,
+  //   inwestycja zostaje wyraźnie opłacalna (S1: 30 − 2 − 4 = 24 > 0), a gdy
+  //   rzut JEST w ofertach, suspend schodzi pod niego (S2: 8 − 2 − 4 = 2),
+  //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
+  //   nieopłacalny” nadal zostaje nad passem).
+  suspendWaitPenalty: 1,
 });
 
 /**

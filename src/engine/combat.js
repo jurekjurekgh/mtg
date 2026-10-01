@@ -130,6 +130,11 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // (życie spada normalnie — w odróżnieniu od infect). Tylko przy realnie
   // zadanych obrażeniach (prewencja w całości = brak poisonu).
   // Xu-Ifit: toxic to zdolność źródła — po stripie nie truje.
+  // O-d (decyzja właściciela 2026-10-01, bez kodu na zapas): CR 702.164b liczy
+  // „total toxic value" jako SUMĘ N wszystkich zdolności toxic źródła; czytamy
+  // jedno pole `toxic`, bo żadna karta kolekcji niczego toxic nie nadaje (granty
+  // niosą nazwy keywordów bez liczb). Gdy pojawi się karta typu „other Rats you
+  // control have toxic 1" (np. Karumonix, the Rat King) — sumować z listy zdolności.
   if (actual > 0 && (source?.toxic ?? 0) > 0 && !source.abilitiesStripped) {
     events.push(...addPoisonCounters(state, targetPlayerId, source.toxic));
   }
@@ -224,6 +229,13 @@ export function staticAttackPreventionOf(state, object, playerId) {
   // Zdolność statyczna stwora: wydrukowana (`abilities`, tłumiona przez
   // abilitiesStripped) albo nadana z zewnątrz (`abilityGrants`).
   const staticAbility = (field) => {
+    // O-b (decyzja właściciela 2026-10-01, bez kodu na zapas): CR 708.2a —
+    // zakryty permanent nie ma wydrukowanych zdolności. Bramka `faceDown` nie
+    // jest tu dziś potrzebna, bo zakrycie PODMIENIA `abilities` na deskryptor
+    // obrotu (`faceDownAbilities`, resources.js) i wydrukowana statyka znika;
+    // kartę łączącą morph/cloak z wydrukowanym `cantAttackUnless*` ma w całym
+    // MTG tylko Slipstream Serpent. Gdy taka karta wejdzie do katalogu (albo
+    // zmieni się sposób zakrywania) — dołożyć bramkę.
     const matches = (ability) => ability?.type === 'static' && ability[field];
     const hasAny = effectiveAbilities(object).some(matches);
     if (!hasAny) return { has: false, native: false };
@@ -239,6 +251,10 @@ export function staticAttackPreventionOf(state, object, playerId) {
     const native = !object.faceDown && !object.abilitiesStripped
       && (object.keywords ?? []).includes('defender')
       && !(object.lostKeywordsUntilEOT ?? []).includes('defender');
+    // O-c (decyzja właściciela 2026-10-01, bez kodu na zapas): znane uproszczenie
+    // — Obrońca zdjęty efektem o czasie trwania innym niż `lostKeywordsUntilEOT`
+    // i nadany ponownie aurą zostaje „natywny" (badge = brak). Dołożyć, gdy
+    // kolekcja dostanie statyczne uchylenie Obrońcy + aurę nadającą Obrońcę.
     mark(!native);
   }
   if (object.detained) mark(true);

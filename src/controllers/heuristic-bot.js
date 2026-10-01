@@ -1,8 +1,9 @@
-import { optionalEffectVariants } from '../engine/effect-intent.js';
+import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
+import { castsWithoutPayingMana } from '../engine/impulse-window.js';
 
 /**
  * O-3 (audyt PR #134): źródło many obiektu Z WIDOKU. Widok niesie
@@ -22,7 +23,7 @@ export function manaSourceOfView(object) {
 function koloryZrodlaWidoku(object) {
   return manaSourceOfView(object)?.colors ?? [];
 }
-import { coloredPipsOf } from '../engine/mana-cost.js';
+import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '../engine/mana-cost.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
@@ -110,7 +111,7 @@ export function attackerCanBeBlocked(attacker, blockers) {
  * ochrony blokera z effectiveProtectionQualities), bez nazw kart (ADR 0002).
  * `blockers` to nietapnięci wrodzy stwory z widoku.
  */
-function attackerNeutralizedByProtection(attacker, blockers) {
+export function attackerNeutralizedByProtection(attacker, blockers) {
   if (!attacker) return false;
   const attackerColors = attacker.colors ?? [];
   if (attackerColors.length === 0) return false; // bezbarwny — protekcja koloru nie działa
@@ -132,7 +133,15 @@ function attackerNeutralizedByProtection(attacker, blockers) {
     // Bloker nadal przeżywa — neutralizuje tylko samą wymianę obiektów.
     const attackerKeywords = attacker.keywords ?? [];
     if (attackerKeywords.includes('trample')) {
-      const lethalNeeded = attackerKeywords.includes('deathtouch') ? 1 : (b.toughness ?? Number.POSITIVE_INFINITY);
+      // Audyt PR #148 (observacja O-a): lethal liczymy z wytrzymałości
+      // EFEKTYWNEJ (CR 510.1c: `toughness − oznaczone obrażenia`), tą samą
+      // miarą co `blockAbsorbedDamageOf` — inaczej bloker z już zadanymi
+      // obrażeniami wyglądał na pełnego i trample „nie przebijał" ochrony,
+      // choć w rzeczywistości nadmiar mocy wchodzi w gracza (CR 702.19b).
+      const toughnessLeft = Math.max(0, (b.toughness ?? 0) - (b.damage ?? 0));
+      const lethalNeeded = attackerKeywords.includes('deathtouch')
+        ? Math.min(1, toughnessLeft)
+        : toughnessLeft;
       if (combatPower(attacker) > lethalNeeded) return false;
     }
     return true;
@@ -650,12 +659,19 @@ function pumpDelta(view, effect) {
     return { power: n, toughness: n };
   }
   // PMSSB-22: delta Insatiable Appetite zależy od Food na polu bitwy —
-  // silnik bez Food daje +3/+3 od ręki (effects.js:4699), z Food otwiera
-  // decyzję `resolve_food_choice` (+5/+5 za poświęcenie).
+  // silnik bez Food stosuje wariant „Otherwise” od ręki, z Food otwiera
+  // decyzję `resolve_food_choice` (poświęcenie = większy pump).
+  // O3/U5 (audyt #146, fala 2026-10-01): LICZBY OBU WARIANTÓW przychodzą
+  // z deskryptora karty (`powerIfSacrificed`/`powerIfKept`), nie z pamięci
+  // bota — inaczej zmiana Oracle albo druga karta tej rodziny rozjeżdżałaby
+  // wycenę (ADR 0002: zero wiedzy o konkretnej karcie w bocie).
   if (effect.type === 'sacrifice_food_choice') {
     const hasFood = (view?.zones?.battlefield ?? []).some((o) => o.controllerId === view?.playerId
       && (o.subtypes ?? []).includes('Food'));
-    return hasFood ? { power: 5, toughness: 5 } : { power: 3, toughness: 3 };
+    const sacrificed = hasFood;
+    return sacrificed
+      ? { power: effect.powerIfSacrificed ?? 0, toughness: effect.toughnessIfSacrificed ?? 0 }
+      : { power: effect.powerIfKept ?? 0, toughness: effect.toughnessIfKept ?? 0 };
   }
   if (effect.type === 'pump_by_gates') {
     const n = (view.zones.battlefield ?? [])
@@ -847,12 +863,10 @@ const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'doubl
 // deskryptorze licznika, bez nazw kart (ADR 0002).
 const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
 // Wrogie dla obdarowanego: obniżają statystyki albo blokują odkręcanie
-// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Silnik ma ten sam
-// podział w `effect-intent.js`
-// (`HOSTILE_COUNTERS`) — tu dodatkowo liczniki minusowe, których tamta lista
-// nie niesie (w katalogu nie ma dziś triggera z `-1/-1`, ale reguła musi być
-// kompletna na wejście takiej karty).
-const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
+// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Klasyfikacja NIE ma
+// tu własnej kopii (O4 z audytu #147, klasa L41): pyta silnikowe
+// `counterIsHostile` (efekt-intent.js) — silnik i bot nie mogą się rozjechać
+// tak, jak rozjechały się przy PMSSB-23/F1 (stun w czarze wart 0).
 
 // PMSSB-24/F3: efekty, które CZYTAJĄ Z GROBU — przy nich karta zmielona
 // surveilem (CR 701.25) nie jest stratą, tylko paliwem. Lista po typach
@@ -1128,7 +1142,7 @@ export const TEMPORARY_PUMP_EFFECTS = new Map([
   // 1, gdy nikt nie atakował (2 many + tap na efekt, który wygasa w cleanup).
   ['buff_attacking_creatures', 'descriptor'],
   // PMSSB-22 (zgłoszenie właściciela 2026-09-29, Insatiable Appetite):
-  // „You may sacrifice a Food. If you do, +5/+5. Otherwise, +3/+3.” ma
+  // warianty „You may sacrifice a Food. If you do, +X/+X. Otherwise, +Y/+Y.” ma
   // KSZTAŁT pumpa — bez wpisu `temporaryPumpOf` zwracał null, więc cała
   // rodzina (okna M146/M96/M179, symulacja M218/2, klamra M179/E) nie
   // widziała karty: zero wartości na własnym stworze i ZERO kary za
@@ -2930,7 +2944,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Wrogi licznik na WROGU = zysk (osłabienie/zablokowanie), na własnym =
     // samobój (L3). Dobijanie licznikiem obniżającym wytrzymałość (CR 704.5f)
     // warte więcej; `stun`/`-1/0` nie zmniejszają toughness, więc nie zabijają.
-    if (DEBUFF_COUNTERS.has(counterName)) {
+    if (counterIsHostile(counterName)) {
       if (mine) return -90;
       const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
       const toughLeft = (target.toughness ?? 0) - (target.damage ?? 0);
@@ -3578,6 +3592,133 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return pool + fromLands;
   };
   /**
+   * PMSSB-32/A (F1/F2/F3): JEDNOSTKI many dostępne w tym kroku BEZ nowych
+   * aktywacji — kolorowa pula + pula ograniczona drukiem (tylko gdy cel na nią
+   * pozwala) + nietapnięte LĄDY z kolorami z `manaSource` widoku.
+   *
+   * Powód: stary próg M128 porównywał WYŁĄCZNIE LICZBY („koszt karty w przedziale
+   * availableNow…availableAfter”), więc:
+   *  - mana bezbarwna „odblokowywała” czar z pipem {W} (F1, Apprentice Wizard:
+   *    +10 za aktywację, po której rzut nadal jest nielegalny — zmierzone),
+   *  - `{C}` i kolor nie były rozróżniane (F1/F2),
+   *  - mana z Powerstone’a (`spendOnly:artifact`) „odblokowywała” stwora (F2),
+   *  - a filtr koloru (net <= 0) nie odblokowywał NICZEGO, choć po aktywacji
+   *    karta staje się płatna (F3, Jeskai Devotee).
+   * Jednostka = tablica kolorów, jakie może opłacić jako pip ([] = tylko
+   * generic) — DOKŁADNIE ten kształt, co `expandManaPool` i `matchColorRequirements`
+   * w silniku (L41/L48: jedno rozwiązanie, nie druga arytmetyka).
+   */
+  const manaUnitsOfView = (view, { artifactSpell = false } = {}) => {
+    const me = view.players?.find((p) => p.id === view.playerId) ?? {};
+    const units = [
+      ...expandManaPool(me.manaPool ?? {}),
+      // M201/M214: pula ograniczona drukiem jest dla celu nie-artefaktowego
+      // niewidoczna — ta sama bramka co `restrictedManaBlocked` w resources.js.
+      ...(artifactSpell ? expandManaPool(me.restrictedPool ?? {}) : []),
+    ];
+    for (const o of view.zones?.battlefield ?? []) {
+      if (!o || o.controllerId !== view.playerId || o.tapped) continue;
+      if (o.kind !== 'land' && !(o.types ?? []).includes('Land')) continue;
+      const zrodlo = manaSourceOfView(o);
+      const amount = zrodlo?.amount ?? 1;
+      const colors = zrodlo?.colors ?? [];
+      for (let i = 0; i < amount; i += 1) units.push([...colors]);
+    }
+    return units;
+  };
+
+  /**
+   * PMSSB-32/B (F4): ile realnie kosztuje tapnięcie CIAŁA na manę.
+   *
+   * Pomiar PRZED: tapnięcie 0/1 ściany i 4/4 atakującego wyceniano IDENTYCZNIE
+   * (obie oferty `tapCreatureId` = ta sama kara −3), a tap własnego stwora nie
+   * miał żadnej ceny poza tą płaską — main1 i main2 dawały tę samą liczbę
+   * (Villager 6,0 = 6,0). Tymczasem:
+   *  - przed deklaracją atakujących tapnięty stwór NIE MOŻE zaatakować
+   *    (CR 508.1a: musi być odtapowany), więc jego moc wypada z planu tej tury,
+   *  - w cudzej turze tapnięty stwór nie może BLOKOWAĆ (CR 509.1a) — a bot
+   *    tapował obrońców w cudzej turze,
+   *  - po deklaracji atakujących (main2) i po deklaracji blokujących ciało
+   *    zrobiło już swoje: dalszy tap niczego nie odbiera. Czujność (702.20a)
+   *    zostawia atakującego ODTAPOWANEGO, więc „mana z weterana po walce” to
+   *    najtańsze okno tej rodziny — reguła fazowa obejmuje je bez wyjątku
+   *    na karty.
+   * Kara jest DOPŁATĄ do starej ceny −3 (anty-over-fix M429).
+   */
+  const tapBodyCost = (view, objectId) => {
+    const o = objectId ? objectOnBoard(view, objectId) : null;
+    if (!o || o.tapped) return 0;
+    const step = view.turn.step;
+    if (myTurn(view)) {
+      // Własna tura: tap odbiera wyłącznie ATAK (blokować i tak nie można).
+      const przedAtakiem = ['untap', 'upkeep', 'draw', 'main1', 'beginning_of_combat', 'declare_attackers'].includes(step);
+      if (!przedAtakiem || o.summoningSickness) return 0;
+      if (hasKeyword(o, 'vigilance') || hasKeyword(o, 'defender')) return 0;
+      return Math.min(P.manaTapBodyMax, (o.power ?? 0) * P.manaTapBodyPerStat);
+    }
+    // Cudza tura: tap odbiera BLOK; po deklaracji blokujących jest już spóźniony.
+    if (['combat_damage', 'end_of_combat', 'main2', 'end', 'cleanup'].includes(step)) return 0;
+    return Math.min(P.manaTapBodyMax, (o.toughness ?? 0) * P.manaTapBodyPerStat);
+  };
+
+  /** Czy kartę da się opłacić CAŁĄ z tych jednostek (liczba + pipy, także {C})? */
+  const canCastWithUnits = (units, card) => {
+    if (!card) return false;
+    const needed = card.manaCost ?? 0;
+    if (needed <= 0) return false;
+    if (units.length < needed) return false;
+    return matchColorRequirements(units, coloredPipsOf(card.cardId));
+  };
+
+  /**
+   * PMSSB-32/A: jednostki po aktywacji zdolności many — koszt aktywacji
+   * (`cost.mana`/`cost.colors`, ta sama arytmetyka co `untappedCostedManaSources`:
+   * `colors` to PIPY, `mana` cała cena) schodzi z puli, produkcja dochodzi.
+   * Produkcja ograniczona drukiem (`spendOnly`) trafia do jednostek tylko dla
+   * celu, na który wolno ją wydać. `null` = kosztu nie da się opłacić.
+   */
+  const unitsAfterManaAbility = (view, effect, cost, artifactSpell, source = null) => {
+    const left = manaUnitsOfView(view, { artifactSpell });
+    // B54/s4008 (lustro `countedLand`): mana NIETAPNIĘTEGO LĄDU jest już
+    // policzona w jednostkach (auto-płatność silnika tapuje lądy sama), więc
+    // produkcja tej samej zdolności REPLACUJE jego jednostkę, a nie dokłada
+    // drugą. Bez tego aktywacja lądu „odblokowywała” czar, którego i tak nie
+    // było stać (regresja pinu: tap policzonego już lądu nie odblokowuje nic).
+    if (source && !source.tapped
+      && (source.kind === 'land' || (source.types ?? []).includes('Land'))) {
+      const zrodlo = manaSourceOfView(source);
+      const amount = zrodlo?.amount ?? 1;
+      const colors = [...(zrodlo?.colors ?? [])].sort();
+      for (let i = 0; i < amount; i += 1) {
+        const idx = left.findIndex((unit) => [...unit].sort().join('') === colors.join(''));
+        if (idx < 0) break;
+        left.splice(idx, 1);
+      }
+    }
+    const pips = [...(cost?.colors ?? [])];
+    for (const pip of pips) {
+      const idx = left.findIndex((unit) => unitCoversRequirement(unit, [pip]));
+      if (idx < 0) return null;
+      left.splice(idx, 1);
+    }
+    // Generic: najpierw jednostki NAJMNIEJ elastyczne (bezbarwne, potem
+    // jednokolorowe) — kolorowe zostają na pipy kolejnych rzutów.
+    let generic = Math.max(0, (cost?.mana ?? 0) - pips.length);
+    while (generic > 0 && left.length > 0) {
+      let best = 0;
+      for (let i = 1; i < left.length; i += 1) {
+        if ((left[i].length || 0) < (left[best].length || 0)) best = i;
+      }
+      left.splice(best, 1);
+      generic -= 1;
+    }
+    if (generic > 0) return null;
+    const restricted = effect?.spendOnly === 'artifact' && !artifactSpell;
+    const amount = restricted ? 0 : (effect?.amount ?? 0);
+    for (let i = 0; i < amount; i += 1) left.push([...(effect?.colors ?? [])]);
+    return left;
+  };
+  /**
    * E6/A1 (zgłoszenie właściciela, Moonscarred Werewolf): kandydat na
    * ODBLOKOWANIE many liczy się tylko, gdy jest RZUTOWALNY W TYM KROKU —
    * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.4), więc tap w
@@ -3598,6 +3739,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   ]);
 
   /**
+   * PMSSB-32/A (klasa L1 — dane nie docierały do osądu): czy karta w ręce jest
+   * rzucalna w KAŻDYM kroku (instant, CR 307.5)? Reguła E6/A1 czytała wyłącznie
+   * `kind`/`types`, a wpis ręki w `playerView` niesie `kind: 'spell'` dla obu
+   * typów czarów i (do tej pętli) nie niósł `types` — w PRODUKCJI predykat był
+   * więc zawsze fałszem i instant w cudzej turze nie odblokowywał many.
+   * Jedno miejsce dla obu użytkowników (L41): lista kandydatów M128 i syntetyczna
+   * komenda wyceny kastru. Widoki syntetyczne (fixtury) nadal działają po `kind`.
+   */
+  const isInstantSpeedCard = (card) => card?.kind === 'instant'
+    || (card?.types ?? []).includes('Instant')
+    || card?.spell?.timing === 'instant';
+
+  /**
    * F: ile warta jest dla bota karta z ręki, gdyby była do zagrania. Bierzemy
    * NAJPIERW ofertę silnika (jeśli istnieje — wtedy wycena jest dokładnie tą,
    * którą bot policzy w następnej decyzji, z celami i trybami), a gdy oferty
@@ -3609,17 +3763,55 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * `lastUnvaluedType` jest przywracany: wycena sondowa nie może oznaczyć
    * prawdziwej decyzji jako „bez wyceny" (E1 telemetria).
    */
+  /**
+   * PMSSB-32/A2 (L48): czy silnik ma JUŻ ofertę rzutu tej karty? Wspólna lista
+   * typów komend z `castScoreForUnlock` (jedno źródło prawdy, L41) — używane
+   * przy odblokowaniu: oferta = auto-płatność = aktywacja nic nie wnosi.
+   */
+  const castOfferedNow = (view, card) => (view.legalCommands ?? [])
+    .some((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
+
+  /**
+   * PMSSB-32/A3 (F6, klasa L1): czy DESKRYPTOR karty wymaga wybrania celu?
+   * Wycena rzutu bierze cel z komendy (`cmd.targets[0]`), więc komenda
+   * syntetyczna bez celu jest dla czarów z celem bezwartościowa — Shock bez
+   * celu = −10, z celem w 2/2 wroga = 86 (zmierzone).
+   */
+  const spellNeedsTarget = (card) => {
+    const def = card?.cardId ? cardDef(card.cardId) : null;
+    const spell = card?.spell ?? def?.spell;
+    return (spell?.targets ?? []).length > 0;
+  };
+
+  /** Kandydaci na cel z widoku (pole bitwy + gracze) — jak enumeracja ofert. */
+  const targetCandidatesOf = (view) => [
+    ...(view.zones?.battlefield ?? []).map((o) => o.id),
+    ...(view.players ?? []).map((p) => p.id),
+  ];
+
   const castScoreForUnlock = (view, card) => {
     const offered = (view.legalCommands ?? [])
       .filter((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
-    const synthetic = ((card.kind === 'instant' || card.kind === 'sorcery'
-      || (card.types ?? []).includes('Instant') || (card.types ?? []).includes('Sorcery'))
+    const synthetic = ((isInstantSpeedCard(card) || card.kind === 'sorcery'
+      || (card.types ?? []).includes('Sorcery'))
       ? { type: 'cast_spell', playerId: view.playerId, objectId: card.id }
       : { type: 'cast_permanent', playerId: view.playerId, objectId: card.id });
     const saved = lastUnvaluedType;
     let best = null;
     try {
-      for (const cmd of (offered.length > 0 ? offered : [synthetic])) {
+      const commands = offered.length > 0 ? [...offered] : [synthetic];
+      // PMSSB-32/A3 (F6): bramka „chcę to rzucić" dla Skarbów/filtrów pytała
+      // komendę BEZ CELÓW, więc KAŻDY czar z celem wypadał ujemnie (Shock bez
+      // celu −10) i Skarb nigdy nie finansował removal/burna. Gdy brak oferty
+      // silnika (koszt nieopłacalny — i tylko wtedy), bierzemy NAJLEPSZY cel
+      // z widoku, dokładnie tak, jak zrobiłaby to oferta z celem (L41: ta sama
+      // funkcja wyceny, ten sam kształt komendy).
+      if (offered.length === 0 && spellNeedsTarget(card)) {
+        for (const targetId of targetCandidatesOf(view)) {
+          commands.push({ ...synthetic, targets: [targetId] });
+        }
+      }
+      for (const cmd of commands) {
         const value = scoreCommand(view, cmd);
         if (!Number.isFinite(value)) continue;
         best = best == null ? value : Math.max(best, value);
@@ -3632,7 +3824,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
     if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
-    if (o.kind === 'instant' || (o.types ?? []).includes('Instant')) return true;
+    if (isInstantSpeedCard(o)) return true;
     // Kroki główne silnika nazywają się main1/main2 (turn.js; „main" to
     // alias skoku) — akceptujemy oba plus alias dla widoków syntetycznych.
     const step = view.turn.step;
@@ -4716,6 +4908,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // tylko PRZED rozdaniem — CR 615.4 (dosłownie): „Prevention effects must
   // exist before the appropriate damage event occurs—they can't 'go back
   // in time' and change something that's already happened."
+  // Cytaty 615.4/615.6 zweryfikowane u źródła 2026-10-01b (CR 2026-09-25,
+  // mtg.wiki/page/Prevention_effect — zamyka U3 z audytu PR #146; ADR 0030).
   //
   // Dwa zegary śmierci (M91/CR 104.3d): CR 702.90b (dosłownie): „Damage
   // dealt to a player by a source with infect doesn't cause that player to
@@ -4851,6 +5045,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // cel = żaden nie zadaje (Fight); 701.14d: „The damage dealt when a
   // creature fights isn't combat damage" → deathtouch (SBA 704.5h) i
   // lifelink DZIAŁAJĄ, first strike/trample NIE (bojowe-only).
+  // Cytaty 701.14a/d zweryfikowane u źródła 2026-10-01b (CR 2026-09-25,
+  // mtg.wiki/page/Fight — zamyka U3 z audytu PR #146; ADR 0030).
   //
   // Findingi audytu (pomiar PRZED: /tmp/pmssb16-walka-przed.mjs — ranking
   // odwrócony: wymiana w dół 119 > kill-only 103 > wygrana DT 47!):
@@ -5383,7 +5579,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const value = wagaSily * pumpPower + pumpToughness + ofensywne;
     const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
       && freshGrants.every((kw) => kw === 'haste');
-    return { value, nothingAdded };
+    // PMSSB-34/A (L41): CIAŁO sprzętu wydzielone — pierwsze założenie (gałąź
+    // `activate_ability`) liczyło wyłącznie `10 + 2 × moc nosiciela`, więc
+    // +1/+0 za {1} (Wooden Stake) i +2/+2 trample za {4} (Brawler's Plate)
+    // dawały ten sam wynik (pomiar PRZED: 18,000 = 18,000). Gałąź
+    // PRZENIESIENIA znała tę wartość od M288/C — teraz obie używają jednego
+    // źródła, zamiast dwóch modeli tej samej decyzji.
+    //  • `bodyValue` = waga JAKOŚCI nosiciela (M289/M290: ewazja, jałowy atak)
+    //    — dla gałęzi przeniesienia, gdzie jakość nosiciela JEST decyzją;
+    //  • `printedBody` = ciało DRUKU (2×P + T — ten sam kształt, którego gałąź
+    //    „nosiciel nie może atakować" już używa). Świadomy zakres właściciela
+    //    (T11/7, `test/uwagi-tura11-...`): pierwsze założenie NIE waży jakości
+    //    nosiciela — wolno mu doliczyć tylko treść sprzętu. Dzięki temu pin
+    //    T11/7 (vanilla 3/2 == latacz 3/3 przy pierwszym założeniu) stoi.
+    const bodyValue = wagaSily * pumpPower + pumpToughness;
+    const printedBody = 2 * pumpPower + pumpToughness;
+    return { value, bodyValue, printedBody, nothingAdded };
   }
 
   /**
@@ -5584,6 +5795,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
+    // PMSSB-35/A (L41): karta czekająca w wygnaniu, którą silnik rzuca BEZ
+    // płacenia (CR 702.170d plot; CR 701.18 Play — darmowy impuls ze stemplem
+    // `playableWithoutPaying`), nie rezerwuje many — podatek ward liczy się
+    // od tego, co realnie schodzi z puli.
+    if (castsWithoutPayingMana(card)) return 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
   }
@@ -5815,14 +6031,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         } else if (blocking) {
           // Blokowanie: vigilance nie pomaga (stwór i tak nie atakuje).
           value -= 5;
-        } else if (przedDeklaracjaAtaku && canAttackNow(recipient)) {
-          // Jesteśmy w kroku deklaracji i stwór MOŻE zaatakować (odkręcony,
-          // bez choroby przyzwania) — kupno trzyma go odkręconym po ataku.
-          // Premia jest IDENTYCZNA jak w wariancie `attacking`: komentarz
-          // PR #100 obiecywał „ujemną w stosunku do niego", a kod od początku
-          // dodawał tyle samo. Zostaje wartość równa, bo przy `canAttackNow`
-          // zakup nie jest loterią — sztuczne skalanie premii karałoby ruch,
-          // który w tym silniku po prostu działa.
+        } else if (przedDeklaracjaAtaku && attackIntendsCreature(view, recipient.id)) {
+          // Jesteśmy w kroku deklaracji i stwór MA ZAATAKOWAĆ — kupno trzyma go
+          // odkręconym po ataku. Pytamy TĘ SAMĄ politykę ataku, którą bot
+          // stosuje w deklaracji (`attackIntendsCreature`, L41/L48), a nie samą
+          // legalność: `canAttackNow` mówi tylko, że stwór MOŻE zaatakować.
+          // Luka była mierzalna (uwaga właściciela z gry, 2026-10-01, Bladed
+          // Sentinel): bot płacił {W} za vigilance, po czym ataku nie składał
+          // (jego własna ocena ataku była ujemna) — mana przepadała. Premia
+          // jest identyczna jak w wariancie `attacking`.
           value += 2 + (recipient.toughness ?? 0);
         } else {
           // Każda inna sytuacja (main1, tura przeciwnika, stwór tapnięty)
@@ -6575,6 +6792,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= 15;
         // ETB licznik (jeśli definicja ma taki trigger) — mały bonus.
         if ((def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield')) score += 5;
+        // PMSSB-35/B2 (wymiar KOSZTU): koszt warp to realna cena wariantu —
+        // bez niej wynik był identyczny przy 3 i 6 manach (pomiar PRZED:
+        // 70,000 w obu scenariuszach). Skala jak przy rzucie stwora (L41).
+        score -= P.creatureManaCostWeight * ((card.warp.cost ?? 0) + (card.warp.colors ?? []).length);
         if (wastefulStep(view)) return finish(-30);
         return finish(score);
       }
@@ -6585,8 +6806,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // da się rzucić od razu (za mało many) — wtedy koszt {B} za 4 tury
         // czekania to inwestycja. Przy wystarczającej manie zwykły rzut jest
         // lepszy — suspen dostaje wyraźnie niższy score niż cast_spell.
-        const manaNeeded = card.manaCost ?? 0;
-        return finish(manaNeeded > manaAvailableNow(view) ? 30 : 8);
+        //
+        // PMSSB-35/B3 (pozycja kolejki handoffu 01e): „da się rzucić od razu”
+        // czytamy z OFERTY silnika (`castOfferedNow`: oferta = legalność —
+        // kolory, pipy i źródła nielandowe; L48), a nie z legacy
+        // `manaAvailableNow` (pula + nietapnięte LĄDY). Pomiar PRZED (S3):
+        // 5 lądów + Seer's Lantern → rzut był oferowany, a bot dawał 30
+        // („nie stać mnie”) i wybierał suspend.
+        let score = castOfferedNow(view, card) ? 8 : 30;
+        // PMSSB-35/B3b: cena odroczenia — mana wyłożona TERAZ (skala rodziny)
+        // plus czas: liczniki zdejmowane po jednym na turę (CR 702.62c).
+        score -= P.creatureManaCostWeight * ((card.suspend.cost ?? 0) + (card.suspend.colors ?? []).length);
+        score -= P.suspendWaitPenalty * Math.max(0, card.suspend.timeCounters ?? 0);
+        return finish(score);
       }
       case 'plot_card': {
         const card = handCard(view, cmd.objectId);
@@ -6599,10 +6831,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'create_token') score += tokenBodyValue(view, effect);
           if (effect.type === 'mill_cards') score += 2;
         }
+        // PMSSB-35/B1 (kontrola (b) procedury — wymiar KOSZTU): zaplotowanie
+        // kosztuje manę TERAZ, a rzuca kartę dopiero później; bez ceny warianty
+        // {1}{W} i {4}{G} remisowały na bazie 55. Skala jak przy rzucie stwora
+        // (`creatureManaCostWeight`, koszt + pipy — L41/L48).
+        const plotTotal = (card.plot.cost ?? 0) + (card.plot.colors ?? []).length;
+        score -= P.creatureManaCostWeight * plotTotal;
+        // PMSSB-35/B1b (dowód decyzyjny S6): gdy rzut tej karty JEST już
+        // w ofertach, plot ma sens wyłącznie jako realna oszczędność many —
+        // inaczej jest grą dominowaną (płacisz co najmniej tyle samo i czekasz
+        // turę). Zmierzone PRZED: Tumbleweed Rising {1}{G} z plotem {3}{G}
+        // wybierał plot 55 nad rzutem 49,98.
+        if (castOfferedNow(view, card)) {
+          const mvTotal = (card.manaCost ?? 0) + coloredPipsOf(card.cardId).length;
+          if (plotTotal >= mvTotal) score -= P.plotRedundantPenalty;
+          score -= P.plotDelayPenalty;
+        }
         return finish(score);
       }
       case 'cast_permanent': {
-        const card = handCard(view, cmd.objectId);
+        // PMSSB-35/A (L41): ta sama komenda rzuca kartę z RĘKI i kartę
+        // CZEKAJĄCĄ w wygnaniu (plot, późniejszy rzut po warp, okno impulsu).
+        // `handCard` sam zostawiał rzut z wygnania bez karty → gałąź liczyła
+        // puste 0/0 (`P.creatureBase` × waga) niezależnie od ciała i kosztu;
+        // pomiar PRZED: 4 różne karty = 63,000, ciało 20/20 = dalej 63,000.
+        // Wzorzec jak w `cast_spell` (M103/D) — jedna arytmetyka dla obu stref.
+        const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         if (cmd.bestow || cmd.targets?.length) {
           // Czar aury (bestow albo czysta aura): +N/+N i keywordy na stworze.
           // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
@@ -6760,8 +7014,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // na kontrę, a „tempo" jest podstawową miarą wartości w Magic.
         // Waga 1/pt many jest celowo mniejsza niż waga siły (2/pt): płacenie za
         // większy korpus pozostaje opłacalne, dopóki korpus jest większy.
-        score -= P.creatureManaCostWeight
-          * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+        // PMSSB-35/A (L41 + L48): koszt many odejmujemy TYLKO wtedy, gdy rzut
+        // naprawdę go płaci. Reguła jest własnością silnika
+        // (`castsWithoutPayingMana`: plot CR 702.170d, darmowy impuls
+        // CR 701.18 Play + stempel `playableWithoutPaying`), nie bota — inaczej
+        // darmowy rzut zaplotowanej karty byłby karany za manę, której nikt
+        // nie wydaje. Warp z wygnania (CR 702.185a) płaci pełny koszt, więc
+        // zostaje na ścieżce ogólnej.
+        if (!castsWithoutPayingMana(card)) {
+          score -= P.creatureManaCostWeight
+            * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+        }
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
         // ETB „attach za darmo" fizzluje (CR 608.2b), a karta czeka na stole
@@ -8352,6 +8615,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przebijać bazowe +2). Wycena po KOSZCIE z deskryptora, nie po nazwie
         // karty (ADR 0002).
         if (ability?.cost?.energy) score -= 3 * ability.cost.energy;
+        // PMSSB-34/B — obowiązkowa kontrola procedury: wymiar KOSZTU (b).
+        //
+        // „5 vs 2 many nie mogą remisować bez uzasadnienia" — tymczasem koszt
+        // many aktywacji nie był wyceniany NIGDZIE poza gałęzią add_mana (tam
+        // jako `net = produkcja − koszt`). Pomiar PRZED (sonda
+        // /home/user/scratch/pmssb34-koszt-przed.mjs): Squire's Lightblade {3} +1/+0,
+        // Brawler's Plate {4} +2/+2 trample i Wooden Stake {1} +1/+0 dawały
+        // identyczne 18,000, a para o IDENTYCZNYM efekcie (+1/+0) remisowała
+        // {3} = {1} — bot przepalał 3× manę na ten sam skutek, rozstrzygała
+        // kolejność ofert. Skala jak przy rzucie (`creatureManaCostWeight: 1`)
+        // — punkt za manę, zero nowej arytmetyki (L41/L48).
+        //
+        // Wyjątek (jedno źródło prawdy o koszcie): zdolności produkujące manę
+        // liczą koszt w swoim `net` (PMSSB-32/A, M128) — druga kara byłaby
+        // podwójnym liczeniem tego samego wymiaru. Kontrola D pinu: Apprentice
+        // Wizard zostaje na −4.
+        const abilityManaCost = (ability?.cost?.mana ?? 0) + (ability?.cost?.generic ?? 0);
+        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
+          score -= P.abilityManaCostPenalty * abilityManaCost;
+        }
         // M121: ta sama bramka co dla czarów — zdolność aktywowana potrafi
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).
@@ -9206,21 +9489,48 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // a stać po tej aktywacji. To ta sama myśl co L28: jedna reguła
             // dla wszystkich źródeł many zamiast kolejnego `if` per karta.
             // =================================================================
-            const availableNow = manaAvailableNow(view);
-            // B54/s4008: manaAvailableNow już policzyło nietapnięty ląd.
-            // Przelanie jego many do puli nie jest drugim egzemplarzem tej
-            // samej many. Koszt i produkcja nadal liczone jak dotychczas.
-            const countedLand = source && !source.tapped
-              && (source.kind === 'land' || (source.types ?? []).includes('Land')) ? 1 : 0;
-            const availableAfter = availableNow + net - countedLand;
-            // Koszt karty czytamy z widoku (manaCost); pomijamy lądy (nie są
-            // czarami) i karty, których i tak nie stać nas po aktywacji.
+            // PMSSB-32/A (F1/F2/F3): próg LICZBOWY M128 zastąpiony testem
+            // PŁATNOŚCI na jednostkach many (kolory, {C}, pula ograniczona
+            // drukiem) — dokładnie ta sama arytmetyka co `matchColorRequirements`
+            // w silniku (L41). Mana bezbarwna nie odblokowuje czaru z pipem
+            // {W} (F1), mana Powerstone'a nie odblokowuje stwora (F2), a filtr
+            // koloru odblokowuje kartę, której brakuje wyłącznie pipa (F3).
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
-            // rachunek progu (M128) bez zmian, ale sorcery/stwór w cudzym
-            // kroku już go nie „odblokowuje" (mana wyparuje, CR 500.4).
+            // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.4).
+            const unlockUnitsCache = new Map();
+            const unitsBefore = (artifactSpell) => {
+              const key = artifactSpell ? 'art' : 'std';
+              if (!unlockUnitsCache.has(key)) unlockUnitsCache.set(key, manaUnitsOfView(view, { artifactSpell }));
+              return unlockUnitsCache.get(key);
+            };
+            const unitsAfter = (artifactSpell) => {
+              const key = artifactSpell ? 'art:after' : 'std:after';
+              if (!unlockUnitsCache.has(key)) {
+                unlockUnitsCache.set(key, unitsAfterManaAbility(view, effect, ability?.cost, artifactSpell, source));
+              }
+              return unlockUnitsCache.get(key);
+            };
             const unlockedCards = manaUnlockCandidates(view).filter((o) => {
-              const cost = o.manaCost ?? 0;
-              return cost > availableNow && cost <= availableAfter;
+              // Cel wydania ograniczonej many (M201): to samo kryterium co
+              // `spellManaPurpose` w silniku — typ Artifact.
+              const artifactSpell = (o.types ?? []).includes('Artifact');
+              const after = unitsAfter(artifactSpell);
+              if (!after) return false;
+              // PMSSB-32/A2 (L48 — „oferta = płatność", klasa L41): jeśli
+              // silnik JUŻ oferuje rzut tej karty, to auto-płatność przy
+              // płatności pokryje koszt BEZ tej aktywacji — automat tapuje
+              // lądy, źródła wolne ({T}: Seer's Lantern, Scorned Villager)
+              // i źródła kosztowe ({1},{T}: Mana Cylix, Apprentice Wizard),
+              // a źródła z poświęceniem/tapnięciem ciała wchodzą do oferty
+              // przez plan finansowania. Aktywacja ręczna nic wtedy nie
+              // odblokowuje (a przy Skarbie kosztuje jednorazowy token), więc
+              // premia za odblokowanie jej NIE należy się — inaczej bot
+              // tapował „na zapas" dokładnie tak, jak w zgłoszeniu M128.
+              // Dowód PRZED: sonda C2 (Latarnia + Las + karta {1}{G}) dawała
+              // aktywacji +6, choć `cast_permanent` był już w ofertach (63,9).
+              if (castOfferedNow(view, o)) return false;
+              if (canCastWithUnits(unitsBefore(artifactSpell), o)) return false;
+              return canCastWithUnits(after, o);
             });
             let unlocksSomething = unlockedCards.length > 0;
             // F (zgłoszenie właściciela 2026-09-19b, „Skarb zużyty, nic się nie
@@ -9231,10 +9541,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // t. 12 — Cloak of the Bat odblokowany progiem, wyceniony -2,7).
             // Dlatego dla takich źródeł odblokowanie musi mieć pokrycie w
             // WYCENIE KASTRU — tej samej, którą bot stosuje do ofert (L41).
-            if (unlocksSomething && ability?.cost?.sacrificeSelf) {
+            if (unlocksSomething && (ability?.cost?.sacrificeSelf || net <= 0)) {
+              // PMSSB-32/A (F3): próg „karta stała się płatna” nie wystarcza,
+              // gdy aktywacja NIE daje jednostek (net <= 0) — wtedy jedynym
+              // zyskiem jest kolor, więc karta musi być tego warta w oczach
+              // bota (ta sama wycena kastru co oferty, L41).
               unlocksSomething = unlockedCards.some((card) => castScoreForUnlock(view, card) > 0);
             }
-            // Wartość wyłącznie za realne odblokowanie zagrania.
+            // Wartość wyłącznie za realne odblokowanie zagrania. Zdolność
+            // o bilansie net <= 0 (filtr koloru) płaci samą bazę 2 — realne
+            // odblokowanie jest jedynym warunkiem, więc kara M150/C1 za
+            // „nic nie robi” niżej już nie dotyczy (pomiar: F3 rozwiązane
+            // przez L48 — silnik auto-płaci filtr, więc ręczna aktywacja nie
+            // jest w ogóle potrzebna; osobne pokrętło okazało się martwe
+            // w produkcji i NIE zostało dodane).
             score += unlocksSomething ? 4 * Math.max(0, net) : 0;
             // M119/Z5 + M150/C1 (audyt żywym testerem + uwaga właściciela):
             // zdolność o bilansie <= 0 (filtr koloru — Jeskai Devotee
@@ -9247,7 +9567,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // hasPlayable: „coś w ręce istnieje” nie znaczy, że filtrowanie
             // many cokolwiek odblokowuje (bot nie modeluje kolorów liczbowej
             // puli). Zostawiamy jawnie ujemną, żeby nie remisowała z passem.
-            if (net <= 0) score -= manaWithLifeRider ? 0 : (hasPlayable ? 10 : 16);
+            if (net <= 0) {
+              if (!unlocksSomething) score -= manaWithLifeRider ? 0 : (hasPlayable ? 10 : 16);
+            }
             // M128: „tapowanie na zapas" — produkcja, która niczego nie
             // odblokowuje, musi zejść PONIŻEJ passu (0), inaczej bazowe
             // `score = 2` za legalne zagranie i tak wygra z czekaniem.
@@ -9255,7 +9577,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // krokiem do zagrania w tej samej turze przez kolejne aktywacje),
             // i ostra, gdy ręka nie ma czego zagrać w ogóle.
             else if (!unlocksSomething) score -= manaWithLifeRider ? 0 : (hasPlayable ? 6 : 14);
+            // PMSSB-32/B (F4): stara cena `tapCreature` (−3) ZOSTAJE jako
+            // podstawa (anty-over-fix), a wymiar CIAŁA dochodzi jako dopłata:
+            // kto realnie traci atak (main1) albo blok (cudza tura). Ta sama
+            // dopłata obowiązuje, gdy zdolność tapuje SAMO ŹRÓDŁO będące
+            // stworzeniem ({T} Villagera/Wilkołaka/Wizarda) — dotąd taki tap
+            // nie miał żadnej ceny bojowej.
             if (tapsCreature) score -= 3;
+            if (tapsCreature && cmd.tapCreatureId) score -= tapBodyCost(view, cmd.tapCreatureId);
+            if (taps && (source?.kind === 'creature' || (source?.types ?? []).includes('Creature'))) {
+              score -= tapBodyCost(view, source.id);
+            }
             // PMSSB-4/F-A3 (dedup M155, L41): legacy `score += 2 + lifeAmt`
             // USUNIETE — to samo zycie liczy juz M236 (gainLifeValue), wiec
             // Talisman dostawal +1 podwojnie (6 zamiast 3 przy zyciu 20).
@@ -9493,7 +9825,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // M288/C: definicja „nic nie dodaje" mieszka w `equipValuation`
               // (ta sama, którą bada gałąź przeniesienia) — inaczej dwie gałęzie
               // equipu miałyby dwa modele świata (L28).
-              const nothingAdded = equipValuation(view, source, target).nothingAdded;
+              const equipPayoff = equipValuation(view, source, target);
+              const nothingAdded = equipPayoff.nothingAdded;
               if (target.cantAttackStatic === true) {
                 // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
                 // latającego / defender / detain / aura Hobble) — premia
@@ -9510,6 +9843,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= 8; // pompowanie bezradnego atakującego — nic nie zmienia
               } else {
                 score += 10 + 2 * (target.power ?? 0);
+                // PMSSB-34/A (L41): TREŚĆ sprzętu też jest wartością — pompa,
+                // którą dokłada nosicielowi, była czytana w gałęzi przeniesienia
+                // i w bramce `nothingAdded`, ale nie w pierwszym założeniu.
+                // Skala DRUKU (`printedBody` = 2×P + T, ten sam kształt co
+                // w gałęzi defendera wyżej) — jakość nosiciela zostaje poza
+                // zakresem tej gałęzi zgodnie z decyzją właściciela (T11/7).
+                score += P.equipPumpBonusPerPoint * equipPayoff.printedBody;
                 if (grantsEvasion) score += 8;
                 if (grants.includes('haste') && target.summoningSickness) score += 6;
               }
@@ -10082,26 +10422,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M257-r5 (uwaga z testów): wycena nie znała PRESJI ŻYCIA — przy 5
         // życiach przepuszczenie ataku 3/3 zostawiało 2 życia, a wymiana 2/2
         // za 3 obrażenia wyceniana była na -2, czyli gorzej niż pass (0).
-        // Ratunek życia pod presją jest warty więcej niż koszt bloku — płaska
-        // premia zależna od życia PO zablokowaniu REALNIE PRZEŻYTEGO wariantu.
-        // Warunek lifeAfter >= 1: premii nie daje blok, po którym i tak
-        // giniemy (3× 3/3 przy 5 życiu — M146 „nie marnuj blokera”).
+        // Ratunek życia pod presją jest warty więcej niż koszt bloku — premia
+        // zależy od MOJEGO ŻYCIA (progi 2/5/8 → 6/4/2), a warunek
+        // `lifeAfter >= 1` odsiewa blok, po którym i tak giniemy (3× 3/3 przy
+        // 5 życiu — M146 „nie marnuj blokera”).
         if (blockingSomething) {
+          // O2 (audyt PR #148, domknięcie forwardu PMSSB-31/B4): premia od
+          // PRESJI ŻYCIA musi być własnością SYTUACJI, nie wyniku wariantu.
+          // Poprzednia drabinka czytała `lifeAfter` (życie po TYM wariancie),
+          // więc malała wraz z liczbą zatrzymanych obrażeń: przy 7 życia i
+          // ataku 4/4+3/3 „blok obu, dostaję 0" (lifeAfter 7 → +2) remisował
+          // z „blok jednego, dostaję 3" (lifeAfter 4 → +4), a o wyborze
+          // decydowała kolejność ofert. Presję liczymy odtąd z MOJEGO ŻYCIA
+          // (stan przed walką, stały w ramach jednej decyzji — L41: jedna
+          // miara), dzięki czemu drabinka jest niemalejąca względem
+          // `stoppedDamage`, a o wyborze rozstrzygają zatrzymane obrażenia
+          // (`absorbedDamage`, `stoppedDamage`) i cena ciał ginących blokerów.
+          // Wartość w każdym wariancie jest teraz taka, jaką M257-r5 dawało
+          // blokowi zatrzymującemu WSZYSTKO — czyli zamierzeniu tej premii.
+          //
+          // Bramka `lifeAfter >= 1` zostaje: blok, po którym i tak giniemy,
+          // nie kupuje premii — M146 „3× 3/3 przy 5 życiach" (bot ma NIE
+          // marnować blokera, skoro żaden wariant nie ratuje życia).
+          // Progi 2/5/8 i wagi 6/4/2 to skala M257-r5, bez przeliczania.
           const lifeAfter = myLife(view) - (attackThreat - stoppedDamage);
-          if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
-          else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
-          else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
-          // ZNANY FORWARD (PMSSB-31, zmierzone, NIE naprawione w tej fali):
-          // drabinka wyżej jest NIEMONOTONICZNA względem zablokowanych obrażeń
-          // (mniej życia po = większa premia), więc przy 7 życiu i ataku 4/4+3/3
-          // wariant „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4) remisuje
-          // z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba dokładnie 39 —
-          // a o wyborze decyduje kolejność ofert. Próba domknięcia epsilonem
-          // `stoppedDamage * 0.01` rozstrzygała ten remis poprawnie, ale
-          // ułamkowy wynik łamał piny wartości dokładnych (PMSSB-2/C/F8
-          // Dissenter +19 i Patron 6), więc została wycofana. Właściwa naprawa
-          // to drabinka monotoniczna względem `stoppedDamage` — osobna fala,
-          // bo dotyka pinów M146 i M257-r5.
+          if (lifeAfter >= 1) {
+            const lifeNow = myLife(view);
+            if (lifeNow <= 2) score += 6;
+            else if (lifeNow <= 5) score += 4;
+            else if (lifeNow <= 8) score += 2;
+          }
         }
         return finish(score);
       }
@@ -10294,14 +10644,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // życia (zagrożenie). Anty-over-fix: foodKeepValue ×0 przywraca
         // dawne „zawsze poświęcaj” (remis 30/30 bierze pierwszą ofertę).
         const base = 30;
+        // O3/U5 (audyt #146): oba warianty pumpu czyta WIDOK
+        // (`view.pendingFoodChoice`, ADR 0017) — bot nie zna ani liczb karty,
+        // ani progu „mało życia” z twardej stałej (progi są pokrętłami
+        // `foodKeepLowLifeThreshold`/`foodKeepLowLifeMultiplier`).
+        const choice = view.pendingFoodChoice ?? null;
         if (!cmd.sacrifice) {
           const lifeOf = (view.players ?? []).find((pl) => pl.id === view.playerId)?.life ?? 20;
-          return finish(base + P.foodKeepValue * (lifeOf <= 10 ? 2 : 1));
+          const lowLife = lifeOf <= P.foodKeepLowLifeThreshold ? P.foodKeepLowLifeMultiplier : 1;
+          return finish(base + P.foodKeepValue * lowLife);
         }
         const creature = cmd.creatureId ? objectOnBoard(view, cmd.creatureId) : null;
-        if (!creature) return finish(50); // bez celu w komendzie — dawna wartość
-        const decisive = pumpChangesOutcome(view, creature, { power: 5, toughness: 5 })
-          && !pumpChangesOutcome(view, creature, { power: 3, toughness: 3 });
+        if (!creature || !choice) return finish(50); // brak celu/danych — dawna wartość
+        const sacrificePump = choice.sacrifice ?? { power: 0, toughness: 0 };
+        const keepPump = choice.keep ?? { power: 0, toughness: 0 };
+        const decisive = pumpChangesOutcome(view, creature, sacrificePump)
+          && !pumpChangesOutcome(view, creature, keepPump);
         // NIEZABLOKOWANY napastnik: +2 mocy = 2 obrażenia więcej w twarz
         // (pojęcie widoku `unblockedAttackers`, a nie przeliczanie bloków).
         // KIERUNEK ma znaczenie (audyt PR #146, F5): `unblockedAttackers`
@@ -10312,7 +10670,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // i przy wrogim napastniku). Zysk istnieje tylko w naszej turze walki.
         const unblockedAttacker = view.combat?.attackingPlayerId === view.playerId
           && (view.combat?.unblockedAttackers ?? []).includes(creature.id);
-        return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? 2 : 0));
+        // Nadmiar obrażeń w twarz = RÓŻNICA mocy obu wariantów (dla karty
+        // z +5/+5 vs +3/+3 to dawne 2 — wartość bez zmian, ale bez literału).
+        const faceGain = Math.max(0, (sacrificePump.power ?? 0) - (keepPump.power ?? 0));
+        return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? faceGain : 0));
       }
       // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
       // pay {N}" (ETB) i ECHO. Silnik prezentuje decyzję TYLKO gdy jest
@@ -11855,7 +12216,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
     // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.
     if (cmd.type === 'activate_ability') {
-      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+      // PMSSB-32/B: wybór CIAŁA do tapnięcia (`tapCreatureId` — Holdout
+      // Settlement, Dragonbroods' Relic) to OSOBNY wariant decyzji; bez niego
+      // ślad pokazywał „activate_ability(rel#0)” × N i ani test wyceny, ani
+      // audyt remisów nie miały czego parować (ta sama lekcja M195/B co niżej).
+      const celTapniecia = cmd.tapCreatureId ? `+tap:${cmd.tapCreatureId}` : '';
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
     if (cmd.type === 'play_land') {
       // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy

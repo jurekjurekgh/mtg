@@ -778,7 +778,8 @@ function abilitiesOnDeath(object) {
 /**
  * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
  * onto this Saga, if the number of lore counters on it was less than N and
- * became at least N, [effect]."
+ * became at least N, [effect]." Cytat zweryfikowany u źródła 2026-10-01b
+ * (CR 2026-09-25, mtg.wiki/page/Saga — zamyka U3 z audytu PR #146; ADR 0030).
  *
  * Jedno miejsce wyliczające przekroczone progi (L41: kopie się rozjeżdżają).
  * Zgłoszenie właściciela B2 (2026-09-10): poświęcenie Sagi jest AKCJĄ

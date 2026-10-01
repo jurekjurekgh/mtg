@@ -4967,11 +4967,14 @@ export function execute(state, input) {
     }
     state.pendingFoodChoice = null;
     // Zastosuj wynik pump na docelowym stworze.
+    // O3/U5 (audyt #146): liczba pochodzi z DESKRYPTORA karty (przeniesiona do
+    // `pendingFoodChoice` przez `sacrifice_food_choice`), nie ze stałej „5/3”
+    // silnika — ta sama wartość, którą widzi bot (ADR 0017/0002, L41).
     const creatureId = food.creatureId;
-    const amount = sacrificed ? 5 : 3;
+    const pump = (sacrificed ? food.pumpIfSacrificed : food.pumpIfKept) ?? { power: 0, toughness: 0 };
     const creatureObj = state.objects.get(creatureId);
     if (creatureObj && creatureObj.zone === 'battlefield' && creatureObj.kind === 'creature') {
-      modifyStats(state, creatureId, { power: amount, toughness: amount });
+      modifyStats(state, creatureId, { power: pump.power ?? 0, toughness: pump.toughness ?? 0 });
     }
     state.events.push(event('food_choice_resolved', { playerId: food.playerId, sacrificed, creatureId }));
     if (food.restorePriorityTo && state.players.some((p) => p.id === food.restorePriorityTo)) {
@@ -6341,6 +6344,14 @@ export function playerView(state, playerId) {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+          // PMSSB-32/A (klasa L1/M265): LINIA TYPÓW jest publicznym Oracle
+          // (karta w ręce ma typy jawne dla właściciela) i planowanie z ręki jej
+          // potrzebuje: bot odróżnia instant (rzucalny w każdym kroku, CR 307.5)
+          // od sorcery/stwora (wyłącznie własna główna) po `types`, a `kind`
+          // czaru to zawsze 'spell' — bez tego wpisu reguła E6/A1 („mana na
+          // instant w cudzej turze") była w produkcji MARTWA, a restrykcje celu
+          // (mana `spendOnly:artifact` pod artefakt z ręki) nie działały.
+          types: [...(object.types ?? [])],
           // Deskryptory z Oracle karty nie są informacją ukrytą — UI/bot
           // planujące ruch ich potrzebują (jak morph przez object.morph).
           bestow: object.bestow ?? null, morph: object.morph ?? null,
@@ -7747,7 +7758,9 @@ export function playerView(state, playerId) {
     // poświęć Food (+5/+3) lub nie (+3/+3).
     // PMSSB-22/F3 (zgłoszenie właściciela): bot musi wiedzieć, KTÓREGO stwora
     // dotyczy decyzja — bez celu w komendzie nie da się policzyć, czy +5/+5
-    // zmienia wynik walki względem +3/+3 (pendingFoodChoice nie jest w widoku).
+    // zmienia wynik walki względem wariantu zachowania Food — liczby obu
+    // wariantów niesie DESKRYPTOR karty, a decydent dostaje je w widoku
+    // (`view.foodChoice`, O3/U5); komenda niesie tylko cel.
     const foodTargetId = state.pendingFoodChoice.creatureId ?? null;
     legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: true, creatureId: foodTargetId }));
     legalCommands.push(command('resolve_food_choice', playerId, { sacrifice: false, creatureId: foodTargetId }));
@@ -8877,6 +8890,26 @@ export function playerView(state, playerId) {
   // („If you don't, create …") — bez tego bot wyceniałby odmowę jako ruch
   // jałowy i zawsze brałby pierwszą ofertę rzutu, także wtedy, gdy odmowa
   // daje token. Informacja publiczna: to treść zdolności permanentu na polu.
+  // O3/U5 (audyt #146): decyzja Food (`resolve_food_choice`) niosła dotąd
+  // w widoku WYŁĄCZNIE `creatureId` komendy — bot musiał znać liczby obu
+  // wariantów z pamięci (twarde +5/+5 i +3/+3 w `heuristic-bot.js`). Widok
+  // wystawia je teraz temu, kto decyduje jako `pendingFoodChoice` (ADR 0017:
+  // kompletność kontraktu widoku — decydent nie zgaduje), a źródłem liczb
+  // jest deskryptor karty.
+  const pendingFoodChoiceView = state.pendingFoodChoice
+    && state.pendingFoodChoice.playerId === playerId
+    ? {
+      creatureId: state.pendingFoodChoice.creatureId ?? null,
+      sacrifice: {
+        power: state.pendingFoodChoice.pumpIfSacrificed?.power ?? 0,
+        toughness: state.pendingFoodChoice.pumpIfSacrificed?.toughness ?? 0,
+      },
+      keep: {
+        power: state.pendingFoodChoice.pumpIfKept?.power ?? 0,
+        toughness: state.pendingFoodChoice.pumpIfKept?.toughness ?? 0,
+      },
+    }
+    : null;
   const pendingHandFreeCastView = state.pendingHandFreeCast
     && state.pendingHandFreeCast.playerId === playerId
     ? {
@@ -8891,6 +8924,7 @@ export function playerView(state, playerId) {
     playerId, status: state.status, winnerId: state.winnerId, isDraw: Boolean(state.isDraw), players, turn: { ...state.turn },
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingHandFreeCast: pendingHandFreeCastView,
+    pendingFoodChoice: pendingFoodChoiceView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,

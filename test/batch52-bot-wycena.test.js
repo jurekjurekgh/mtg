@@ -165,7 +165,8 @@ test('B52-bot: Leonin Surveyor — dobranie z grobu wycenione jak karta (nie go�
   const { chosen, options } = decide(view);
   const draw = scoreOf(options, 'activate_ability(leonin#2)');
   assert.ok(draw != null, 'zdolność z grobu oferowana przy max speed');
-  assert.ok(draw >= 6, `dobranie karty ma być warte co najmniej wartość karty: ${draw}`);
+  // PMSSB-34/B: {3} zdolności z grobu jest wyceniane (−3; karta 8 → netto 5).
+  assert.ok(draw >= 5, `dobranie karty ma być warte co najmniej wartość karty netto kosztu: ${draw}`);
   assert.equal(chosen.type, 'activate_ability', `bot ma dobrać kartę: ${JSON.stringify(chosen)}`);
   assert.equal(chosen.objectId, 'leonin');
 });

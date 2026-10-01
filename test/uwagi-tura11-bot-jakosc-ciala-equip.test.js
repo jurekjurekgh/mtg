@@ -76,9 +76,9 @@ const CIALA = ['zoraline', 'undead-servant', 'highland-game', 'leafcrown-dryad',
 
 test('T11/1: pompa z vanilla 3/2 na latacz 3/3 to poprawka planszy, nie ruch boczny', () => {
   // Zoraline 3/3 z lataniem, Undead Servant 3/2 bez ewazji; Wooden Stake daje
-  // +1/+0. Mierzone: +7,00 (przed M290 było −4,00).
+  // +1/+0. Mierzone: +6,00 (przed M290 było −4,00; PMSSB-34/B odjął {1} kosztu).
   const r = oceny(stow({ worn: 'undead-servant', creatury: ['undead-servant', 'zoraline'] }));
-  assert.equal(cel(r, 'zoraline'), 7, `latacz jako nowy nosiciel: ${cel(r, 'zoraline')}`);
+  assert.equal(cel(r, 'zoraline'), 6, `latacz jako nowy nosiciel: ${cel(r, 'zoraline')}`);
   assert.ok(placaZaEquip(r), `bot płaci {1} za przeniesienie na lepsze ciało (wybrał: ${JSON.stringify(r.pick)})`);
 });
 
@@ -132,7 +132,8 @@ test('T11/6: regres M289 — defender i jałowy atak liczone po staremu', () => 
   // Wishful Merfolk (3/2 defender, nosi) → Zoraline: premii za ciało NIE ma, bo
   // nosiciel nie atakuje w ogole; wartosc plynie tylko z roznicy wag 1 vs 3.
   const r = oceny(stow({ worn: 'wishful-merfolk', creatury: ['wishful-merfolk', 'zoraline'] }));
-  assert.equal(cel(r, 'zoraline'), 8, `defender → latacz: ${cel(r, 'zoraline')}`);
+  // Różnica wag 1 vs 3 = 8 → po karze {1} kosztu many: 7 (PMSSB-34/B).
+  assert.equal(cel(r, 'zoraline'), 7, `defender → latacz: ${cel(r, 'zoraline')}`);
   const naDefendera = oceny(stow({ worn: 'zoraline', creatury: ['zoraline', 'wishful-merfolk'] }));
   assert.ok(cel(naDefendera, 'wishful-merfolk') < 0, `latacz → defender: ${cel(naDefendera, 'wishful-merfolk')}`);
 });

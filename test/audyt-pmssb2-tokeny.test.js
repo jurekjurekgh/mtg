@@ -317,14 +317,15 @@ test('PMSSB-2/C/F4: Flurry — latanie +3/ciało tylko bez odpowiedzi w powietrz
   assert.ok(Math.abs(tappedAir - 88.97) < 1e-9, `tapnięty sokół nie odpowiada (untapped!): ${tappedAir}`);
 });
 
-test('PMSSB-2/C/F4+F5-kompozycja: Relic Dragon 41 → 63 (lot 6 + więź 4 + bolt 12)', () => {
+test('PMSSB-2/C/F4+F5-kompozycja: Relic Dragon 41 → 63 → 55 (koszt {8}, PMSSB-34/B)', () => {
   const st = game('main1', 'p1', 'p1');
   put(st, 'rx', 'dragonbroods-relic', 'p1');
   addMana(st, 'p1', 12);
   const v = decide(st).scores['activate_ability(rx#1)'];
   // 41 (kotwica: 2 + ciało 40 − 1) + flying (2+4, puste niebo) + lifelink 4
-  // + rider ETB bolt-3-w-twarz @20 życia = round(6+40×3/20) = 12.
-  assert.equal(v, 63, `smok 4/4 latanie+więź+bolt: ${v}`);
+  // + rider ETB bolt-3-w-twarz @20 życia = round(6+40×3/20) = 12 → 63.
+  // PMSSB-34/B: aktywacja kosztuje {8} (sacrifice + WUBRG) → −8 → 55.
+  assert.equal(v, 55, `smok 4/4 latanie+więź+bolt z kosztem {8}: ${v}`);
 });
 
 test('PMSSB-2/C/F4: Trostani (ETB 2×1/1 lifelink) — Δ +8 w ścieżce ETB (L41)', () => {

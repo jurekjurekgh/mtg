@@ -110,6 +110,21 @@ export function hasFreeCastStamp(object) {
 }
 
 /**
+ * PMSSB-35/E (CR 400.7 + „for as long as it remains exiled"): zdjęcie pary
+ * pól okna impulsu przy zmianie strefy. Uprawnienie „zagrywalna do końca
+ * tury N" (razem ze zwolnieniem z kosztu) istnieje WYŁĄCZNIE, dopóki karta
+ * leży w wygnaniu — nowy obiekt nie pamięta poprzedniego istnienia. Choke
+ * point stref (`objects.js`) woła ten helper, zamiast pisać parę pól sam:
+ * jedno miejsce prawdy o parze (L28/L48, guard `tools/family-audit.mjs` —
+ * zapis poza tym plikiem czerwieni `test/family-audit.test.js`).
+ * Zwraca `null`, gdy nie ma czego zdejmować (żadnej mutacji dy stanu).
+ */
+export function clearImpulseWindowStamp(object) {
+  if (object?.playableUntilTurn == null && object?.playableWithoutPaying !== true) return null;
+  return { playableUntilTurn: null, playableWithoutPaying: false };
+}
+
+/**
  * H2 (zgłoszenie właściciela 2026-09-19b, Sheriff of Safe Passage): rzut
  * karty CZEKAJĄCEJ w wygnaniu, który NIE płaci kosztu many:
  *  - plot (CR 702.170d: „cast it … without paying its mana cost"),

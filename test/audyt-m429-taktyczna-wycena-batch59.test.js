@@ -132,7 +132,11 @@ test('M429/Mutagen (P1) anty-over-fix: gospodarz-wzorzec (1/1) wart DOKŁADNIE d
   const { cmd, entry } = decide(state);
   assert.equal(cmd.type, 'activate_ability');
   assert.deepEqual(cmd.targets, ['small']);
-  assert.equal(entry.score, 14, 'baza zdolności 2 + licznik 12 = dawna wycena');
+  // PMSSB-34/B: wymiar KOSZTU many aktywacji ({1} Mutagenu → −1). Wymiar
+  // licznika (M429) bez zmian — dowód: z karą ×0 wraca dawna kotwica 14.
+  assert.equal(entry.score, 13, 'baza 2 + licznik 12 − koszt {1} = 13 (dawna wycena 14 obejmowała darmową aktywację)');
+  assert.equal(decide(state, { params: { abilityManaCostPenalty: 0 } }).entry.score, 14,
+    'mutacja: abilityManaCostPenalty=0 przywraca kotwicę 14 — karę wnosi wyłącznie wymiar kosztu');
 });
 
 test('M429/Mutagen (P1): pokrętła realnie sterują wyceną (nie są atrapami)', () => {
@@ -327,5 +331,5 @@ test('M429/Vanguard (P3): okno walki → aktywacja z premią za liczbę stworów
   const { cmd, entry } = decide(state);
   assert.equal(cmd.type, 'activate_ability', `oczekiwano aktywacji, wybrano ${label(cmd)}`);
   assert.equal(cmd.objectId, 'van');
-  assert.equal(entry.score, 2 + 6 * 3, 'baza 2 + 6 pkt × 3 stwory (w tym źródło)');
+  assert.equal(entry.score, 2 + 6 * 3 - 5, 'baza 2 + 6 pkt × 3 stwory (w tym źródło) − koszt {4}{W} ({5}, PMSSB-34/B)');
 });

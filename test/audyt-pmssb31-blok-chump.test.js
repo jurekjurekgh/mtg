@@ -137,20 +137,21 @@ test('PMSSB-31/B3: pokrętło jest pokrętłem — przy 0 wraca zachowanie sprze
   assert.equal(zero.wybrany, 'block[a44<tok0+tok1+tok2+tok3]', 'PRZED: bot topił cztery tokeny w 4/4');
 });
 
-test('PMSSB-31/B4 (forward, zmierzony): przy lethal drabinka lifeAfter remisuje oba bloki', () => {
-  // Przy 7 życia i ataku 4/4 + 3/3 oba warianty dostają DOKŁADNIE 39: premia
-  // +30 za blok ratujący życie jest płaska, a drabinka `lifeAfter` jest
-  // niemonotoniczna (mniej życia po = większa premia), więc „blok tylko 4/4,
-  // dostaję 3" (lifeAfter 4 → +4) kasuje 2 punkty przewagi „blok obu, dostaję 0"
-  // (lifeAfter 7 → +2). O wyborze decyduje kolejność ofert.
+test('PMSSB-31/B4 (naprawione O2 z audytu PR #148): przy 7 życia blok OBU ataków wygrywa z blokiem jednego', () => {
+  // Pomiar PRZED naprawą: oba warianty miały DOKŁADNIE 39. Drabinka „presji
+  // życia" czytała `lifeAfter` (życie po TYM wariancie), więc malała, gdy blok
+  // zatrzymywał więcej obrażeń: „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4)
+  // kasowało przewagę „blok obu, dostaję 0" (lifeAfter 7 → +2).
   //
-  // Pin kotwiczy ten REMIS jako znany forward — nie udaje, że bot wybiera
-  // lepiej. Próba domknięcia epsilonem `stoppedDamage * 0.01` rozstrzygała go
-  // poprawnie, ale ułamkowy wynik łamał piny wartości dokładnych
-  // (PMSSB-2/C/F8: Dissenter +19, Patron 6), więc została wycofana.
-  // Właściwa naprawa: drabinka monotoniczna względem `stoppedDamage`.
+  // Po naprawie presja jest własnością STANU — czytane jest MOJE ŻYCIE
+  // (stałe w ramach jednej decyzji), więc drabinka jest niemalejąca względem
+  // zatrzymanych obrażeń, a o wyborze rozstrzygają `absorbedDamage` i cena
+  // ciał. Bramka `lifeAfter >= 1` zostaje — kotwicą jest M146 „3× 3/3 przy
+  // 5 życiach" (`test/bot-suspend-twiddle-quality.test.js`: blok, który i tak
+  // nie ratuje, nadal przegrywa z passem).
   const o = opcje(walka({ atakujacy: DWIE, zycie: 7 }));
-  assert.equal(o.wynik('block[a44<tok0]'), o.wynik('block[a44<tok0 a33<tok1]'),
-    'dokładny remis — to jest forward, nie pożądane zachowanie');
+  assert.ok(o.wynik('block[a44<tok0 a33<tok1]') > o.wynik('block[a44<tok0]'),
+    'zatrzymane 7 > 4 — blok obu musi być ŚCIŚLE lepszy');
+  assert.equal(o.wybrany, 'block[a44<tok0 a33<tok1]', 'bot blokuje OBA ataki');
   assert.ok(o.wynik('block[a44<tok0 a33<tok1]') > 30, 'premia za uratowanie życia działa');
 });

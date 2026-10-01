@@ -69,6 +69,10 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
+| produkcja many (`add_mana`: `{T}` / `{mana}+{T}` / `tapCreature` / `sacrificeSelf` / raz-na-turę) | 25 | DONE (2026-10-01c) | §PMSSB-32 niżej; plan `PLAN_2026-10-01c-pmssb32-mana.md`; `test/audyt-pmssb32-mana.test.js` (19 pinów); **pierwsza rodzina z jedną wspólną miarą zamiast ośmiu łatek** — model JEDNOSTEK many (`manaUnitsOfView`/`unitsAfterManaAbility`/`canCastWithUnits`; L41/L48: LICZBY → KOLORY+pipy+`spendOnly`+pula ograniczona), bramka „oferta = płatność" (`castOfferedNow`), wycena celu czaru z ręki (`spellNeedsTarget` + best-of-targets), cena tapnięcia CIAŁA (`tapBodyCost`: main1 = moc, cudza tura = wytrzymałość, main2/po blokach/czujność CR 702.20b/obrońca CR 702.3b = 0); 2 pokrętła `manaTapBody*`; klasa L1 naprawiona u źródła (wpis ręki w widoku bez `types` → martwa reguła instant E6/A1) |
+| remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
+| koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
+| odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1575,3 +1579,437 @@ wartości dokładnych (PMSSB-2/C/F8), więc został wycofany.
 
 **Bramy:** piny 8/8 · szybki **7203/7203** · build 70 mod / **4661,6 kB** ·
 `test:all` **7474/7474, EXIT=0** po regeneracji golden-master.
+
+## PMSSB-32 — produkcja many (`add_mana`): kiedy tap realnie odblokowuje grę (2026-10-01c)
+
+**Rodzina:** 25 kart / 28 wystąpień — największa spoza rejestru. Klasy kosztu:
+`{T}` ×20 (w tym 16 lądów — silnik auto-tapuje lądy przy płatności, więc ręczna
+aktywacja liczy się tylko w stanach nietypowych), `{mana}+{T}` ×3 (Mana Cylix,
+Heap Gate, Apprentice Wizard), `{T}+tapCreature` ×2 (Holdout Settlement,
+Dragonbroods' Relic), `sacrificeSelf` ×2 (Skarb, Eldrazi Scion), raz-na-turę bez
+tapu ×1 (Jeskai Devotee). Wycena narosła z OŚMIU łatek z gier (M128, M155,
+M119/Z5 + M150/C1, B54/s4008, F 2026-09-19b, M243/C, E6/A1, M167/D) — brakowało
+jednej wspólnej miary i to była teza pętli.
+
+**Pomiar PRZED:** sonda `scratch/pmssb32-mana-przed.mjs` (25 scenariuszy, realne
+karty katalogu, `pass` jako kotwica 0, wypisany wybór bota), logi
+`/tmp/pmssb32-przed-out2.txt` (PRZED) i `/tmp/pmssb32-po-final.txt` (PO).
+
+| # | Finding (PRZED) | Wymiar | Fala |
+|---|---|---|---|
+| F1 | Apprentice Wizard + 3 lądy + karta z pipem `{W}`: aktywacja **+10 = WYBÓR**, choć trzema bezbarwnymi jednostkami nigdy nie opłaci `{W}` | próg LICZBOWY vs KOLORY | A |
+| F2 | Powerstone (`spendOnly: artifact`) „odblokowywał" STWORA (**+6 = WYBÓR**); to samo z pulą ograniczoną drukiem wziętą za „już stać" | RESTRYKCJA wydania | A |
+| F3 | filtr koloru nie odblokowywał NICZEGO, choć po aktywacji czar staje się płatny (Skarb + Las + Shock = **−10, pass**) — po drugiej stronie kolor, którego źródło NIE produkuje, bywał „odblokowaniem" | KOLOR (pipy) | A + C |
+| F4 | tap ciała bez ceny bojowej: main1 == main2 (Villager 6,0 = 6,0), a `tapCreature` 0/1 == 4/4 (3 = 3, nierozróżnialne) | TIMING × CIAŁO | B |
+| F5 | reguła E6/A1 (instant rzucalny w cudzym kroku) była **martwa**: wpis ręki w widoku niósł `kind: 'spell'` dla obu typów czarów i nie niósł `types` | L1 — dane nie docierały do osądu | A |
+| F6 | Skarb finansował czar z celem, ale bramka „chcę to rzucić" pytała komendę BEZ celu (Shock bez celu = −10) → removal/burn nigdy nie uzasadniał jednorazowego źródła | L41/L48 — dwie wyceny | A3 |
+
+### Fale
+
+- **A — model JEDNOSTEK many (L41).** Jedna arytmetyka „ile i jakich pipów":
+  `manaUnitsOfView` (pula kolorowa + pula ograniczona drukiem tylko dla celu,
+  na który wolno ją wydać, + nietapnięte LĄDY z `manaSource` widoku),
+  `unitsAfterManaAbility` (koszt aktywacji schodzi — `cost.mana`/`cost.colors`;
+  własna jednostka LĄDU nie dubluje się: B54/s4008), `canCastWithUnits`
+  (liczba + `coloredPipsOf` + `matchColorRequirements` — te same funkcje co
+  silnik). Zastępuje próg liczbowy M128 („koszt karty w przedziale
+  availableNow…availableAfter"), który nie widział ani kolorów, ani `{C}`,
+  ani restrykcji. Naprawa klasy L1: `playerView` oddaje `types` wpisu ręki
+  (i `spell.timing`), więc `isInstantSpeedCard` działa w PRODUKCJI, nie tylko
+  w fixturach. Wycena celu: `spellNeedsTarget` + `targetCandidatesOf`
+  (najlepszy cel z widoku, gdy silnik nie ma oferty — L41: ta sama funkcja
+  wyceny, ten sam kształt komendy).
+- **B — cena tapnięcia CIAŁA (`tapBodyCost`, 2 pokrętła `manaTapBodyPerStat: 2`,
+  `manaTapBodyMax: 8`).** Tap stwora płaci za to, co realnie odbiera:
+  własna tura przed deklaracją atakujących = MOC (CR 508.1a — tapnięty nie
+  zaatakuje), cudza tura przed blokującymi = WYTRZYMAŁOŚĆ (CR 509.1a), a
+  main2, po blokach, przy chorobie przywołania, **czujności (CR 702.20b)**
+  i **obrońcy (CR 702.3b)** = 0. Dawna płaska cena `tapCreature` −3 ZOSTAJE,
+  dopłata jest tylko różnicująca (anty-over-fix M429).
+- **C — bramka „oferta = płatność" (`castOfferedNow`).** Skoro silnik oferuje
+  rzut, to auto-płatność go pokryje (auto-tap lądów, źródeł wolnych
+  i kosztowych) — ręczna aktywacja niczego nie odblokowuje, a przy Skarbie
+  kosztuje jednorazowy token. Zamiar dawnej fali: aktywacja jest wyceniana
+  jako REALNA alternatywa (gdy silnik nie potrafi zapłacić), a nie jako
+  „przygotowanie many", której nikt nie zużyje (CR 500.4).
+
+### Piny (19, `test/audyt-pmssb32-mana.test.js`, 19/19 GREEN)
+
+`A1` −4 (bezbarwna nie opłaca `{W}`) · `A2` −4 (mana artefaktowa nie opłaca
+stwora) · `A3` oferta `cast_permanent(mana-cylix)` = **62,0991** vs aktywacja < 0
+(oferta = płatność) · `A4` −4 (pula ograniczona nie udaje dostępnej) · `A5` −8 +
+oferta `cast_spell(shock->p2)` = **60** (filtr koloru finansuje silnik) ·
+`A5b` **+6 = WYBÓR** (Skarb + kolor + czar Z CELEM — aktywacja to jedyna droga) ·
+`A6` −8 (kolor, którego źródło nie produkuje) · `B1` `+tap:wall` **3** vs
+`+tap:big` **−5** (ściana wybrana) · `B2` `+tap:huge` **−5** (sufit kary działa) ·
+`B3` main1 **−6** < main2 **−4** · `B4` cudza tura **−6**, po blokach **−4** ·
+`B5` instant w ręce: `types ⊇ ['Instant']` + `spell.timing` · `B6` −4 (artefakt
+płatny automatem — wartość sprzed pętli) · `B7` czujność **−4** / bliźniak **−8**
+w main1, oba **−4** w main2 (CR 702.20b) · `B8` cudza tura oba **−8** (czujność
+nie daje darmowego blokera) · `B9` obrońca **−4** (CR 702.3b) · `B10` trik
+bez okna walki: Skarb **−10 = pass** (anty-over-fix) · `C1` `manaTapBodyPerStat: 0`
+→ **−4** (cena sprzed fali) · `C2` `manaTapBodyMax: 0` → ściana == 4/4 == **3**.
+
+### Mutacje (dowód, że piny trzymają reguły; `/tmp/pmssb32-mutacje-final.txt`)
+
+| Mutacja | Wynik | Czerwone piny |
+|---|---|---|
+| M1 próg liczbowy bez kolorów | 17/19 | A1, A5b |
+| M2 brak dopłaty za ciało | 13/19 | B1, B2, B3, B4, B7, B8 |
+| M3 brak wykluczenia L48 (oferta = płatność) | 10/19 | A3, A5, B3, B4, B6, B7, B8, B9, C1 |
+| M4 wpis ręki bez `types` | 18/19 | B5 |
+| M5 `spendOnly` zignorowane | 17/19 | A2, A4 |
+| M6 brak zwolnienia czujności/obrońcy | 17/19 | B7, B9 |
+| M7 bramka „chcę to rzucić" bez celów | 18/19 | A5b |
+
+### Kontrole obowiązkowe procedury
+
+- **(a) L41** — cast_spell/cast_permanent/aktywacja liczą płatność TĄ SAMĄ
+  funkcją (`canCastWithUnits`) co silnik (`matchColorRequirements`,
+  `expandManaPool`, `spendOnly`), a nie drugą arytmetyką; scalone zostały też
+  dwie wyceny kastru (oferta vs komenda syntetyczna) w `castScoreForUnlock`.
+- **(b) wymiar KOSZTU** — 1 mana (Skarb, `net` 1) → +6, vs 2 many (Villager,
+  `net` 2) → premia `4·net`; ciało 0/1 vs 4/4 → 3 vs −5 (nie remisują);
+  `C1`/`C2` pokazują, że po wyzerowaniu pokręteł wraca cena sprzed fali.
+- **(c) anty-over-fix M429** — najsłabszy realny wariant zachowuje DAWNĄ
+  wartość: `B6` −4 (M128 bez zmian), `B10` −10 (kara za jednorazówkę
+  + brak odblokowania), `A5`/`A6` −8 (kara M150/C1), płaska cena `tapCreature`
+  −3 zostaje jako podstawa, nowy wymiar to wyłącznie dopłata.
+
+### CR u źródła (wydanie 2026-09-25)
+
+Sekcja F dotyka faz: **508.1a** (atakujący deklarowani tylko, gdy odtapowani),
+**509.1a** (blokujący j.w.), **702.20b** (czujność — „Attacking doesn't cause
+creatures with vigilance to tap"), **702.3b** (obrońca — „can't attack"),
+**500.4** (mana znika na końcu kroku/fazy), **307.5** (timing instantów).
+Runda wykryła przekręcone NUMERY w komentarzach kodu: cytowaliśmy `702.20a`
+i `702.3a` (definicje statyczne) tam, gdzie chodzi o SKUTEK dla tapowania —
+poprawione na `702.20b`/`702.3b` (`heuristic-bot.js`, `heuristic-params.js`)
+i dopisane do tabeli numerów CR wraz z aliasem „obroń" dla wpisu 702.3
+(`test/helpers/cr-numery-tabela.js`, strażnik 702). Aliasy to mechanizm
+sankcjonowany — nie wyjątek od reguły nazw.
+
+### Bramy
+
+- **Piny** 19/19 GREEN; mutacje 7/7 czerwienią właściwe piny (tabela wyżej),
+  po przywróceniu 19/19.
+- **Rodzina many** (9 plików `*mana*`/m128/m243/jeskai-devotee) **128/128**;
+  `real-cards-batch54` 71/71 (regresje Abstruse/Zendikar); `m243-bot-mana-marnotrawstwo`
+  rozszerzony o fixture z rodziny.
+- **Szybki `npm test` 7270/7270 EXIT=0**; **`npm run test:all` 7541/7541 EXIT=0**;
+  **build 70 modułów / 4697,0 kB**.
+- **Golden-master** (`bot-scoring-snapshot`): `scoreSum` wymagał regeneracji —
+  ŚWIADOMY dryf (aktywacje z rodziny zmieniają sumy wycen, decyzje te same);
+  zapisane jako wyjątek procedury z uzasadnieniem, nie „przypadkowa” zmiana.
+- **Hashe determinizmu** (`/tmp/pmssb32-hashe.mjs`): każda para talii i suma
+  ogólna „bez zmian" na puli bench — decyzje w realnych partiach te same.
+- **tie-audit** (`--gry=2`, 24 partie / 12 785 decyzji): decyzje z alternatywami
+  2352, remisy 634 (**27,0%**), z tego 450 to pary „brak akcji" silnika, a 184
+  (**9,7%** decyzji akcyjnych) to remisy realne — POPRAWA wobec poprzedniej pętli
+  (28,3% / 10,8%). „GROZY" (remisy przy różnych danych): 16 — `attack` 9,
+  `block` 2, `activate_ability` 2, `cast_spell` 1, `resolve_color_choice` 1,
+  `resolve_discard_choice` 1; to wybór CELU/ofiary (dwa równie dobre cele),
+  nie produkcja many — kolejka PMSSB-33.
+- **mirror-eval** (wymiar ciała włączony vs wyłączony `×0`, 6 talii × 4 seedy × 2
+  strony = 48 meczów): **24:24 (0,5000)**, 0 niedokończonych — brak sygnału
+  w lustrze przy wąskim stanie (B6): pokrętło różnicuje decyzje tylko tam, gdzie
+  bot tapuje CIAŁO na manę, a to rzadkie w puli bench. Pozostałe elementy pętli
+  (model jednostek, bramka oferty, wycena celu) nie mają pokrętła — dowodem są
+  piny i mutacje, nie lustro.
+- **Żywy Tester PO** (`tools/table-tester/run-game.mjs`, artefakt z tej pętli, 6 partii:
+  bot `innistrad-brg` ×3 seedy 701–703, `srodziemie`, `wiedzmin-wur`, `tarkir-wur`):
+  6× „DETEKTORY: brak zgłoszeń" + 6× „NIEWYCENIONE: brak". Rodzina realnie zagrana:
+  bot aktywował `Moonscarred Werewolf` 3× („dodanie 2 many zielonych" — przypadek
+  czujności CR 702.20b) i `Seer's Lantern` 1× („dodanie many do puli"; zdolność scry
+  tej samej karty 5× — świadomy wybór, nie remis).
+
+### Znane granice (świadome, nie bugi)
+
+1. **`tap_for_mana`** (ręczne tapnięcie landu) ma w gałęzi bota starą,
+   liczbocentryczną wycenę (`hasPlayable ? 80 : 1`) — silnik NIE enumeruje tej
+   komendy jako decyzji (game-state: „tap_for_mana NIE jest już osobno
+   enumerowany"; zostaje dla replayów i kreatora stołu), więc zmiana byłaby
+   niezmierzalna (zakaz kodu „na sucho"). Zostaje jak jest.
+2. **Koszt okazji drugiego trybu** źródła (Seer's Lantern `{2},{T}: Scry 1`,
+   Balamb Garden, Immersturm Skullcairn): tap zamyka drugie okno tej samej
+   karty. Nie modelujemy — brak dowodu z partii, że bot wybiera źle
+   (w pomiarze C3 wybrał zdolność z riderem życia, nie scry).
+3. **`F2` na skali CZARU, nie many:** „Skarb odblokowuje kartę, której bot
+   nie chce" rozstrzyga wspólna `castScoreForUnlock` (L41) — jeśli wycena
+   czaru uznaje 1/2 za wartą rzutu, to decyzja o rzucie należy do tamtej skali
+   (rodzina `create_token`/ciała). Pętla many nie wprowadza drugiego, własnego
+   kryterium „chcenia".
+4. **Wartość many „na przyszłą turę"** (bankowanie Skarba) — bot nie planuje
+   portfela na następną turę; kara M243/C zostaje jako świadome uproszczenie.
+5. **tie-audit „bez danych"** (`cast_spell` 1, `activate_ability` 2): remisy,
+   w których brakuje danych porównawczych (np. dwie identyczne oferty) —
+   audyt nie rozstrzyga, czy to duplikat oferty, czy nierozróżnialność wyceny.
+
+### Pomiar końcowy (PRZED → PO, sonda `scratch/pmssb32-mana-przed.mjs`)
+
+| Scenariusz | PRZED | PO |
+|---|---|---|
+| A3 Wizard, mana redundantna | **+10 = WYBÓR** | −4, pass |
+| A4 cudza tura + instant w ręce | −30 (rzut 11 i tak wybrany) | −6 (rzut 11, reguła E6/A1 żyje) |
+| C2 Latarnia, rzut oferowany | **+6** | −4 (oferta = płatność) |
+| D2 Powerstone + stwór | **+6 = WYBÓR** | −4, pass |
+| D3 Powerstone + pula ograniczona | **+6 = WYBÓR** | −4, pass |
+| E3 Skarb + Las + Shock (potrzeba `{R}`) | **−10, pass** | **+6 = WYBÓR** (aktywacja to jedyna droga) |
+| F1/F2 Villager main1 vs main2 | 6,0 = 6,0 | **−6** vs **−4** |
+| F4 Relikt: ściana vs 4/4 | 3 = 3 | **3** vs **−5** |
+| Reszta (A1, A2, A5, B1–B4, C1, C3, C4, D1, E1, E2, E4, F3, F5) | — | bez zmian |
+
+**Status:** rodzina ZAMKNIĘTA (ponowny audyt tylko z nowym dowodem). Kolejka
+następnej pętli: remisy wyboru celu/ataku z tie-audytu (PMSSB-33), koszt okazji
+drugiego trybu źródła, bankowanie many oraz **`manaAvailableNow`** — jego
+komentarz mówi „auto-produkcja tylko lądy", tymczasem silnik od M179/D i M201
+auto-tapuje przy płatności także źródła WOLNE (`{T}`: Latarnia, Wilkołak)
+i KOSZTOWE (`{1},{T}`: Cylix, Wizard), więc „przed" w tym pomocniku jest
+zaniżone wobec oferty; w rodzinie many łagodzi to bramka „oferta = płatność"
+(oferta istnieje ⇒ premia nie należy się), ale poza nią pomocnik żyje jeszcze
+w `suspend_card` — kandydat na osobną pętlę, bez zmian „na sucho".
+
+## PMSSB-33 — triage remisów wyboru: znane równości, nie ślepoty (2026-10-01d, mikro-pętla)
+
+Wejście: tie-audit PO pętli PMSSB-32 (`--gry=2`, 24 partie / 12 785 decyzji):
+634 remisy (27,0%), w tym 450 par „brak akcji" silnika, 184 realnych (9,7%),
+oraz **16 „GROZY"** — remisy przy RÓŻNYCH danych wejściowych decyzji
+(attack 9, block 2, activate_ability 2, cast_spell 1, resolve_color_choice 1,
+resolve_discard_choice 1). Pytanie mikro-pętli: czy którakolwiek z nich to
+ślepota wyceny (defekt), czy zamienna wartość wariantów.
+
+**Metoda:** tie-audit `--json` drukuje PROJEKCJĘ danych, które wycena czyta
+(dla ataku `{atakuje, trafienie, ginie, zabici, smiertelny}`); dla każdej klasy
+sprawdziliśmy, czy różnica wejść jest CZYTANA i WYCENIONA (równość wartości),
+czy pominięta (ślepota).
+
+| Klasa | Wzorzec z audytu | Rozstrzygnięcie |
+|---|---|---|
+| attack (9) | „+1 trafienie i +1 ginie" oraz remisy 0/0 i 1030 (lethal) | wycena atakującego to suma per-stwór, a wymiana (`power ≥ wytrz.` blokera, stwór ginie) = **`power − 1`**; przy power 1 daje to dokładnie 0 ⇒ remis z pasem. Granica świadomej formuły („bez tego bot nigdy nie atakuje w równą planszę"), nie pominięte wejście: przy power 2 → +1, 3/3 w 1/1 → +6. Remisy 0/0 = atak bez zysku, 1030 = przebicie już wygrywającej decyzji |
+| block (2) | permutacje przypisania blokerów | identyczny wynik (oba ataki zablokowane, te same zgony) — przypisania są ZAMIENNE; przy różnych ciałach wycena rozróżnia (4 > 2) |
+| cast_spell / activate_ability / color / discard (5) | wybór celu o równej wartości (dwa identyczne tokeny, dwa równie dobre źródła) | równość uczciwa; brak dowodu złej decyzji ⇒ bez zmiany kodu |
+
+**Werdykt: 0 zmian kodu.** Piny `test/audyt-pmssb33-remisy-wyboru.test.js` (7)
+zamrażają triage, żeby następna pętla nie odkrywała go od nowa: A1 (1/1 za 1/1
+= 0 = brak ataku), A2 (2/2 → 1, anty-remis), A3 (3/3 w 1/1 → 6), A4 (dwa 1/1 =
+suma zer), A5 (otwarty stół → 12, anty-over-fix: remis ≠ bierność), B1 (permutacja
+bloków = 2 = 2), B2 (przy różnych ciałach 4 > 2). Mutacje: `power − 1 → power`
+czerwieni A1/A2/A4, `attackOpenBoardBonus: 0` czerwieni A5.
+
+**Wniosek proceduralny:** per-kind bramka `tools/bot-tie-audit.mjs --gate=<kind>`
+(exit 1 przy każdym remisie „przy różnych danych") jest narzędziem POLOWANIA,
+nie bramką CI — na zamrożonym drzewie `--gate=attack` i `--gate=block` są
+czerwone z definicji tych równości. Do CI służą liczby globalne (27,0% / 9,7%)
+i piny.
+
+## PMSSB-34 — koszt many aktywacji + treść sprzętu (`activate_ability`) (2026-10-01e)
+
+Wejście: **nowy dowód z tabeli własnej PMSSB-33**. Wiersz `activate_ability`
+(2 remisy „GROZY") został tam rozstrzygnięty hasłem „dwa równie dobre źródła",
+ale bez obowiązkowej kontroli procedury (b) — a projekcja tych remisów pokazuje
+RÓŻNE KOSZTY przy identycznym wyniku: `mana` **3, 4 i 1** przy 16 (seed 4012
+t16) oraz **3 vs 4** przy 22 (t20). To nie „dwa równie dobre źródła" — to ten
+sam efekt za 3× i 1× manę. Rodzina: zdolności aktywowane, wymiar KOSZTU MANY
++ treść sprzętu; inwentarz: 148 kart z aktywowanymi (111 z kosztem many > 0,
+z tego 108 poza czystym `add_mana`), 12 sprzętów w katalogu.
+
+**Pierwiastki (kod):** (1) gałąź PIERWSZEGO założenia sprzętu liczyła
+`10 + 2×moc nosiciela` i nie czytała własnej pompy sprzętu (L41: gałąź
+przeniesienia liczyła ją przez `equipValuation`, pierwsze założenie nie) —
+`+1/+0` za `{1}` = `+2/+2` trample za `{4}`; (2) koszt many aktywacji nie był
+wyceniany w żadnej gałęzi poza `add_mana` (tam policzony w `net`) — `{1}` = `{3}`
+= `{4}`.
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb34-koszt-przed.mjs`,
+PRZED = oba nowe pokrętła 0, bo całą zmianę wnosi ten jeden wymiar):
+
+| Scenariusz | PRZED (8ee8eec) | PO |
+|---|---|---|
+| A. Lightblade `{3}` +1/+0 / Plate `{4}` +2/+2 trample / Stake `{1}` +1/+0 na 3/3 | **18 / 18 / 18 — REMIS**, wybór po kolejności ofert | **20 Plate > 19 Stake > 17 Lightblade**, Plate WYBRANY |
+| B. ten sam pump +1/+0: `{3}` vs `{1}` | 18 = 18 | **19 > 17** |
+| C. 2 lądy — bramka płatności silnika | tylko Stake `{1}`, 18 | tylko Stake `{1}`, 19 |
+| D. Apprentice Wizard (`add_mana`, koszt w `net`) | −4 | **−4** (bez podwójnej kary) |
+
+**Fale:** A — `equipValuation` zwraca też `printedBody` (2×P+T), a pierwsze
+założenie dodaje `equipPumpBonusPerPoint × printedBody` (jedno źródło ciała dla
+obu gałęzi; gałąź „nosiciel nie może atakować" bez zmian — wartościuje obronnie);
+B — `score -= abilityManaCostPenalty × (cost.mana + cost.generic)`, wyjątek
+`add_mana` (koszt w `net`). Kara stoi ZA wczesnymi guardami (idempotencja,
+`wastefulStep`, „efekt jałowy" −40, duplikat na stosie) — guardy zachowują swoje
+płaskie kary, nowy wymiar nie dubluje ich wymowy. Gałąź ninjutsu (z ręki, zwraca
+nieblokowanego atakującego) ma własny model — poza zakresem.
+
+**Dowód — 17 pinów audytów przesuniętych DOKŁADNIE o koszt many** (bez innych
+ruchów; zweryfikowane po deskryptorach kosztu karty, nie po wartościach):
+Relic Dragon `{8}`: 63 → 55; Vanguard `{4}{W}`: 20 → 15; Mutagen `{1}`:
+14 → 13; Kheru Dreadmaw `{2}`: −16 → −18 / 3 → 1; Dawntreader Elk `{1}`:
+12 → 11; Trigon `{2}`: 34 → 32, 20.5 → 18.5 (kotwice B4: 16 → 14, 34 → 32);
+Leonin Surveyor `{3}`: próg 6 → 5 (wybór dalej `activate_ability`); Dockhand
+`{4}`: 6.50/6.00/6.00/−38 → 2.50/2.00/2.00/−42; Scroll of Avacyn `{1}`:
+7/7/10/14 → 6/6/9/13; Mournful Zombie `{1}`: 3 → 2, −29 → −30, 5 → 4;
+Dementia Bat `{5}`: −1 → −6 (guard „pusta ręka" −40 zostaje — wcześniejszy
+return); Immersturm Skullcairn `{4}`: −54 → −58, −58 → −62; Gloomfang cycle
+`{2}`: 4 → 2 (równość „loot ≡ cycle" rozstrzygnięta kosztem: scholar tap-only
+4 > cycle 2); T11/1: 7 → 6, T11/6: 8 → 7 (equip `{1}`); F2b: −16 → −18, 3 → 1.
+
+**Piny:** `test/audyt-pmssb34-koszt-aktywacji.test.js` (9): A1 treść sprzętu
+(20 > 19 > 17, wybór Plate), A2 kontrola (b) (`{1}` 19 > `{3}` 17, wybór Stake),
+A3 kotwica PRZED (oba pokrętła 0 → 18/18/18 i wybór po kolejności ofert),
+B1 mutacja kosztu (`abilityManaCostPenalty: 0` → 20 = 20 — pin A2 czerwienieje),
+B2 mutacja treści (`equipPumpBonusPerPoint: 0` → 14 < 17 — pin A1 czerwienieje),
+C bramka płatności (2 many → tylko Stake), D `add_mana` −4 z karą i bez,
+E skala poza sprzętem (Mutagen: 26 → 25, Δ = `{1}`), F koszt 0/sam `{T}`
+(scholar 4 z karą i bez). Mutacje potwierdzone na źródle: `abilityManaCostPenalty
+→ 0` czerwieni A1/A2/C/E, `equipPumpBonusPerPoint → 0` czerwieni A1/A2/C, po
+przywróceniu 9/9 GREEN.
+
+**Bramki:** `npm test` **7286/7286** (7277 + 9 pinów) · build **70 mod / 4700,9 kB**
+· `npm run test:all` **7557/7557** · golden-master **po świadomej regeneracji**
+(hash `8fa96e93…` → `ab8d57d2…`; przesunięcia scoreSum −4/−6/0/−2/−2/−9 i jedna
+decyzja mniej 241 → 240; **dowód czystości wymiaru**: z oboma pokrętłami = 0
+snapshot odtwarza STARY fixture bit w bit, hash identyczny). Tie-audit PO
+(`--gry=2`, 24 partie / 12 448 decyzji): 623 remisy (27,2%) = 438 par „brak
+akcji" + 185 realnych (10,0%); **GROZY 15 — `activate_ability` 0** (było 2:
+właśnie te kosztowe 3/4/1 @16 i 3/4 @22, w sondzie oba okna zniknęły);
+block 2 → 3 (nowe pozycje partii), attack 9, cast_spell 1, discard 1, color 1.
+Mirror-eval (kandydat vs oba pokrętła 0): **45:51 na 96 partii (0,469)** —
+w granicach szumu. Żywy Tester PO: **3/3 sesje czyste** (dominaria-brg|ravnica
+seed 42; worek-legend|theros seed 5 `explorer`; warhammer-ubr|tarkir-bg seed 11
+`impatient`): 0 `[STOP]`, 0 `LIMIT`, 3 naturalne końce, **0 zgłoszeń detektorów**,
+0 decyzji niewycenionych.
+
+**Znane granice (świadome, nie bugi):** (1) aktywacje o wyniku netto 0 remisują
+z passem (np. `{1}`-owa zdolność o wartości 1) — remis rozstrzyga kolejność
+ofert, czyli bot aktywuje tak jak PRZED zmianą (gdy wynik był dodatni); dowodu
+złej decyzji brak, więc bez tie-breakera; (2) model liniowy — brak progu „od
+kiedy +1 siły zmienia zegar"; (3) `cast_spell` warianty (tryb/kicker) nadal bez
+osobnej kary za koszt wariantu; (4) gałąź ninjutsu poza wymiarem.
+
+**Status:** rodzina ZAMKNIĘTA. Kolejna pętla wg kolejki PMSSB-32/33:
+`manaAvailableNow` poza rodziną many („koszt okazji” w `suspend_card`), koszt
+drugiego trybu źródła, bankowanie many — każda z nowym dowodem.
+
+## PMSSB-35 — odroczenie zagrania: `plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania (2026-10-01f)
+
+Wejście: **kolejka handoffu 01e** (pozycja „stary model dostępności many —
+`manaAvailableNow` w `suspend_card`”). Rekonesans pokazał, że to nie jeden
+przestarzały warunek, a **cała rodzina odroczeń**: trzy akcje specjalne
+(zaplotowanie, zawieszenie, rzut za koszt warp) plus **wypłata odroczenia** —
+rzut karty czekającej w wygnaniu, czyli osobna ścieżka `cast_permanent` /
+`cast_spell` z exile. Nośniki: **5 kart katalogu, wszystkie w taliach
+wzorcowych** (ADR 0029 — audyt na istniejących kartach): `mindstab`
+(suspend {1}, 4 liczniki; dominaria-brg) · `tumbleweed-rising` i
+`spinewoods-paladin` (plot; worek-dziki) · `sheriff-of-safe-passage` (plot;
+srodziemie) · `weftblade-enhancer` (warp {2}{W}; worek-legend).
+
+**Pierwiastki (kod):** (1) `case 'cast_permanent'` czytał kartę **wyłącznie
+z ręki** (`handCard`) → rzut zaplotowanej / czekającej po warp / z okna impulsu
+karty dostawał puste 0/0 i wynik `P.creatureBase × waga permanentu` = **63,000
+niezależnie od ciała i kosztu**: pomiar `/home/user/scratch/pmssb35-exile-rzut-arytmetyka.mjs`
+— Sheriff 0/0, Hill Giant 3/3, Paladin 5/4, Weftblade 3/4 = 63,000; Hill Giant
+z P/T 20/20 = dalej 63,000; a ten sam Sheriff rzucany z RĘKI = 59,396. Dodatkowo
+koszt many odejmował się także wtedy, gdy rzut był BEZ kosztu (CR 702.170d plot /
+CR 701.18 + stempel `playableWithoutPaying`). (2) Trzy akcje odroczenia były
+płaskie i bez ceny: `plot_card` = 55 + token/mill, `warp_card` = ciało − 15 + 5
+ETB (identyczne **70,000 przy 4 i przy 6 polach**), `suspend_card` = 30/8 wg
+legacy `manaAvailableNow` (pula + nietapnięte LĄDY) — S3: 5 lądów + Seer’s
+Lantern, silnik MA ofertę rzutu, a bot dawał 30 „nie stać mnie”.
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb35-odroczenie-przed.mjs`,
+S1–S15; PRZED = HEAD `c01c293`, PO = ten sam plik na drzewie po zmianach):
+
+| Scenariusz | PRZED | PO |
+|---|---|---|
+| S1 Mindstab t4, 5 lądów — rzut nieosiągalny | suspend 30,000 | **24,000** (30 − koszt 2 − 4 liczniki) |
+| S2 ten sam czar, 6 lądów — rzut osiągalny | 8,000 | **2,000** |
+| S3 + Seer’s Lantern (`manaAvailableNow` = 5, oferta rzutu JEST) | 30,000 „nie stać mnie” | **2,000** (dostępność z oferty silnika) |
+| S4 t2, 2 lądy (najwcześniejsze okno) | 30,000 | 24,000 |
+| S5 t14, 14 lądów | 8,000 | **2,000** |
+| S6 Tumbleweed Rising: rzut {1}{G} **dostępny**, plot {3}{G} | plot **55,000 > rzut 49,980** (bot płacił 4 many i czekał turę) | rzut 49,980 > plot **16,000** → **wybiera rzut** |
+| S8 Sheriff: plot {1}{W} tańszy od rzutu {2}{W} | rzut 59,396 > plot 55,000 | rzut 59,396 > plot **47,000** |
+| S11/S12 Weftblade: warp {2}{W} vs rzut {5}{W} | 70,000 vs 65,703 | **66,000** vs 65,703 |
+
+**Fale:** A — `cast_permanent` czyta kartę z ręki **albo z dowolnej strefy**
+(`handCard ?? zoneCard`, wzorzec `cast_spell`), a koszt many odejmuje tylko, gdy
+rzut naprawdę go płaci — decyduje **reguła silnika** `castsWithoutPayingMana`
+(plot CR 702.170d; darmowy impuls CR 701.18 + stempel `playableWithoutPaying`);
+ten sam warunek w `reservedManaOf` (podatek ward nie rezerwuje many, której rzut
+nie płaci). B — cena odroczenia w jednostce kosztu karty
+(`creatureManaCostWeight × (koszt + pipy)`): `plot_card` (+ surcharge
+`plotRedundantPenalty`, gdy rzut jest już w ofertach, a plot nie oszczędza many;
++ `plotDelayPenalty` zwłoki), `warp_card`, `suspend_card` (dostępność z OFERTY
+silnika + `suspendWaitPenalty × liczniki czasu`, CR 702.62c). Treść zawieszonego
+czaru **nie** wchodzi do inwestycji — jest wyceniana w momencie wypłaty
+(`resolve_suspend_cast`, ta sama tabela +15/+5), a premia w inwestycji byłaby
+over-fixem (kontrola (c)); decyzja opisana w planie §6.
+
+**Znalezisko silnika (naprawione u źródła, znalezione sondą wypłaty):**
+`/home/user/scratch/pmssb35-wyplata.mjs` pokazała w partii
+`worek-legend|dominaria-brg` s1000 **dwa rzuty tej samej karty z wygnania**
+(t12 i t14) — po tym, jak Faceless Butcher wygnał ją ponownie. Pieczęć rzutu
+z wygnania (`plotted`/`plottedAtTurn`, `warpReady`/`warpedAtTurn`, para okna
+impulsu) **przeżywała zmianę strefy**, więc ponowne wygnanie innym efektem
+wracało do ofert rzutu z wygnania. CR 400.7 („new object with no memory”) +
+CR 702.185b („warped card in exile” = karta wygnana triggerem warp) + glosariusz
+„Plotted”. Naprawa: choke point stref (`moveObjectDirectly`) zdejmuje pieczęcie
+wygnania przy wyjściu z tej strefy, a para pól okna impulsu przez helper
+właściciela (`clearImpulseWindowStamp` w `impulse-window.js`; guard
+`test/family-audit.test.js` 8/8). Dowód: `pmssb35-wyciek-stempli.mjs`
+(PRZED: po ponownym wygnaniu oferty `[cast_permanent]` dla plot i warp; PO: `[]`),
+piny F1–F3, golden-master **bez zmian** (żaden z 6 meczów snapshotu nie trafia
+w wyciek).
+
+**Piny:** `test/audyt-pmssb35-odroczenie.test.js` (**18**): A1 ciało z wygnania
+(63,000 → 62,996/71,104/77,407), A2 darmowy = płatny + koszt karty (Δ 3,6), A3
+reguła KLASOWA (stempel CR 701.18 ≡ plot), A4 płatny rzut z wygnania ≡ z ręki
+(65,703); B1 suspend z rzutem nieosiągalnym 24, B2 z latarnią 2 i **rzut bije
+odroczenie**, B3 wymiar zwłoki osobno (0/2 pkty za licznik), B4 wymiar kosztu
+osobno, B5 faza gry (t14: 2, nie 24); C1 **dowód S6: rzut tańszy wygrywa
+z plotem**, C2 anty-over-fix (bez oferty rzutu plot 50 = baza − koszt), C3 koszt
+plotu ({1}{W} 52 vs {3}{G} 51 — kontrola (b)), C4 zwłoka i surcharge osobno;
+D1 koszt warpu (66 przy 4 i 6 polach, rzut stały w zasięgu); E1 zwolnienie
+z kosztu to BRAK kary, nie premia; F1–F3 pieczęć wygnania nie przeżywa wyjścia
+z tej strefy (warp / plot / okno impulsu). **Mutacje na źródle:** `plotRedundantPenalty → 0`
+⇒ {C1}; `plotDelayPenalty → 0` ⇒ {C1, C4}; `suspendWaitPenalty → 0` ⇒ {B1, B2, B4};
+„zawsze odejmuj koszt” ⇒ {A1, A2}; „tylko ręka” (PRZED) ⇒ {A1, A2, A4, E1}; po
+przywróceniu 18/18 GREEN.
+
+**Dowód w partiach** (sonda `pmssb35-gry.mjs`: 4 pary talii z nośnikami × 6
+seedów, bot heurystyczny vs RandomBot): PRZED 24 decyzje z ofertą rodziny /
+**6 plotów** → PO 28 decyzji / **1 plot**; cztery zamiany to dokładnie wzorzec
+z S6 (plot 95,00 przy rzucie 89,98 → rzut tą samą kartą). Sonda wypłaty
+(24 partie): PRZED 10 odroczeń / 9 rzutów z wygnania / **2 karty czekające**
+w wygnaniu na koniec partii → PO **5 / 5 / 0** (drugi „nadmiarowy” rzut PRZED
+był właśnie skutkiem wycieku pieczęci — po naprawie liczba wypłat równa się
+liczbie odroczeń).
+
+**Bramy:** `npm test` **7304/7304** (7286 po PMSSB-34 + 18 pinów) · build
+**70 modułów / 4708,3 kB** · `npm run test:all` **7575/7575** · benchmark 10/10 ·
+golden-master po świadomej regeneracji (hash `ab8d57d2…` → `4024bcd1…`; 1 z 6
+meczów, `scoreSum` −6,0 = suspend 8→2, decyzje 240 → 240, `chosenKinds`
+identyczne ⇒ 0 flipów; **dowód czystości wymiaru**: po zerowaniu trzech pokręteł
+odroczenia snapshot wraca do wartości bazy) · strażnicy CR: istnienie numerów
+(dopisany `702.185b` z dosłownym tekstem w uzasadnieniu — brak egressu w
+sandboxie), 701 3/3 · tie-audit PO: 24 partie / 12 448 decyzji / 623 remisy
+(438 + 185 realnych = 10,0%), rodzina bez „GROZY” · mirror-eval (A = nowe
+domyślne, B = trzy pokrętła 0): **96 partii 48:48 (0,500)** · Żywy Tester:
+6 sesji na finalnym buildzie (3 z nich na tymczasowej talii rodziny — plot,
+warp i zawieszenie klikane przez UI, oferta „Zagraj z wygnania (Plot) — bez
+kosztu many” renderowana w panelu; talia usunięta po biegu), 0 `[STOP]`,
+0 zgłoszeń detektorów, 0 decyzji niewycenionych.
+
+**Znane granice (świadome, nie bugi):** (1) model nie zna zegara gry — zwłoka
+jest liczona z liczników czasu (suspend) i stałej dopłaty (plot), nie
+z przewidywanej długości partii; (2) podwójny ETB z warpu (rzut za koszt warp
++ późniejszy rzut z wygnania) nadal bez osobnego wymiaru — cena kosztu warp jest
+pierwszym krokiem; (3) `plot_card` dla kart BEZ oferty rzutu zostaje płaską bazą
+55 + bonusy (pełny model „co czeka na późniejszą planszę” to kandydat na kolejną
+pętlę); (4) gałąź `warp_card` jest w rodzinie `spell` (×1), a rzut z ręki
+w `permanent` (×0,9) — różnica WAGI rodziny (pre-existing), nie arytmetyki;
+(5) treść zawieszonego czaru jest wyceniana dopiero w wypłacie (świadome,
+uzasadnione w planie §6).
+
+**Status:** rodzina ZAMKNIĘTA. Kolejka następnej pętli: koszt okazji drugiego
+trybu źródła (`Seer’s Lantern {2},{T}: Scry 1`, Immersturm Skullcairn, Balamb
+Garden), bankowanie many, `cast_spell` warianty (tryb/kicker), model treści
+czekającej na późniejszą planszę — każda z nowym dowodem.

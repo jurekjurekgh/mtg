@@ -2355,17 +2355,16 @@ widoczności) czerwienią.
 
 ## L163 (2026-09-21) — Rozszerzenie kontraktu decyzji o NOWĄ KLASĘ kandydata uczy wszystkie warstwy naraz (oferta, widok, etykieta, wycena, projekcja, narracja)
 
-**Przypadek (zlecenie właściciela, gospodarz-GRACZ aury):** CR 303.4f mówi
-„a legal object OR PLAYER", a `pendingAuraHost` niósł wyłącznie id permanentów
-— `curse-of-the-pierced-heart` (Enchant player) wracająca z grobu nie miała
-żadnego wariantu, więc oferta była pusta.
+**Przypadek (gospodarz-GRACZ aury):** CR 303.4f mówi „a legal object OR PLAYER",
+a `pendingAuraHost` niósł tylko id permanentów — `curse-of-the-pierced-heart`
+(Enchant player) wracająca z grobu nie miała wariantu (oferta pusta).
 
 **Reguła:**
 1. Nowa klasa kandydata to NIE łatka w jednym pliku: kontrakt decyzji
    (`candidateIds` OBOK `candidatePlayerIds`), oferta `legalCommands`, widok
    decydenta, etykieta (`PLAYER_NAMES`: „Ty"/„Nieprzyjaciel"), wycena bota
    z projekcją pokrycia i narracja zdarzenia muszą poznać ją tego samego dnia —
-   inaczej wariant jest cicho „niewyceniony" (L40) albo wypada z oferty (L48).
+   inaczej wariant jest cicho „niewyceniony” (L40) lub poza ofertą (L48).
 2. Kształt obiektu po wejściu bez czarowania jest IDENTYCZNY z kształtem po
    rzucie (`kind: 'enchantment'` + `enchantedPlayerId`, bez `attachedTo`) —
    inaczej ta sama karta zachowuje się inaczej zależnie od drogi wejścia.
@@ -2373,66 +2372,65 @@ widoczności) czerwienią.
    (`isLegalAuraHost` milczy dla 'player', `isLegalAuraPlayerHost` rozstrzyga),
    a wspólny zbiór kandydatów ma JEDNO źródło (`legalAuraHosts`).
 
-**Strażnik:** `test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty,
-pełna droga zwrotu z grobu, etykieta, walidacja CR 608.2b, oba boty); mutacja
+**Strażnik:** `test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty, droga
+zwrotu z grobu, etykieta, walidacja 608.2b, oba boty); mutacja
 bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L163)
 
 ## L164 (2026-09-24) — Lustro CR bywa o wydanie do tyłu: masowe przenumerowanie potwierdzaj w BIEŻĄCYM wydaniu, nie w pierwszym znalezionym źródle
 
-**Przypadek (audyt PR #134 → PR #135, F-3/fala 2):** numery DFC przepisano
-z `711.x` na `712.x` wg lustra `ancestral.vision` (712.4a = cechy twarzy,
-712.7 = rzut przodem, 712.9 = wejście przodem). W CR 2026-09-25 (Reality
-Fracture) meld został WCHŁONIĘTY przez sekcję 712 (712.4 = meld cards, 712.5 =
-siedem par), więc cechy twarzy siedzą w 712.8/712.8a–g, rzut w 712.11, wejście
-w 712.13. Przy okazji pierwsza fala „poprawiła” dwa cytaty, które były
-POPRAWNE w bieżącym wydaniu (712.9 = transform nie-DFC, 712.8e = MV tyłu).
+**Przypadek (audyt PR #134 → #135, F-3/fala 2):** przenumerowanie DFC `711.x` →
+`712.x` wg lustra `ancestral.vision` trafiło w CR 2026-09-25, gdzie meld został
+WCHŁONIĘTY przez 712 (cechy twarzy 712.8a–g, rzut 712.11, wejście 712.13), a
+dwie zmiany „poprawiały” cytaty POPRAWNE w tym wydaniu (712.9, 712.8e).
 
 **Reguła:**
 1. Przed przenumerowaniem CZEGOKOLWIEK masowo: sprawdź DATĘ WYDANIA w nagłówku
-   źródła („Comprehensive Rules (September 25, 2026—Reality Fracture)”) i
-   porównaj z wydaniem, które repo już cytuje. ADR 0030 wymaga dosłownego
-   tekstu z BIEŻĄCEGO źródła, nie jakiegokolwiek.
-2. Sekcje CR rosną przez WCHŁANIANIE (712 zjadło meld, 713 to karty
-   zastępcze) — przesunięcie NIE jest jednolite (+1 nie działa), więc każdy
-   numer trzeba potwierdzić osobno, nie przesunąć arytmetycznie.
+   źródła i porównaj z wydaniem, które repo już cytuje. ADR 0030 wymaga
+   dosłownego tekstu z BIEŻĄCEGO źródła, nie jakiegokolwiek.
+2. Sekcje CR rosną przez WCHŁANIANIE (712 zjadło meld) — przesunięcie NIE jest
+   jednolite (+1 nie działa): każdy numer potwierdzaj osobno.
 3. Cytat, który „wygląda na stary”, może być poprawny: zanim go zmienisz,
    sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie zostaw wiersz „BEZ ZMIAN”.
-
 4. Zamiana litery obok (508.1c ↔ 508.1d) przechodzi przez strażnik ISTNIENIA
    numeru — pilnuj pary „numer ↔ pojęcie” (audyt PR #145, F5).
+5. PODPUNKT to nie wzorzec nazewniczy: literę weryfikuj u źródła TAK SAMO jak
+   numer główny. „702.114b” (devoid) dopisane z przyzwyczajenia, gdy 702.114 był
+   już w tabeli, wywróciło bramkę o 1 test — CR 2026-09-25 ma tylko 702.114a
+   (Etap 9, U2). Strażnik istnienia to nie stempel: wiersz w tabeli dopisuj
+   z powodem u źródła (strona + data), a czerwony test istnienia po świeżym
+   cytacie czytaj jako „sprawdziłeś podpunkt?”.
 
 **Strażnik:** `test/audyt-pr134-2026-09-24-cytaty-cr.test.js` C2 trzyma oba
-cytaty „BEZ ZMIAN” (712.9 w `game-state.js` i `m264`, 712.8e w `identity.js`
-i `m258`), C1 zakazuje martwych numerów (711.x, 712.4a/4d/5); para DFC w
-`cr-numery-mechanik-straznik.test.js` świeci na `711.\d` i `712.4` w kontekście
-kart dwustronnych.
+cytaty „BEZ ZMIAN” (712.9, 712.8e), C1 zakazuje martwych numerów (711.x,
+712.4a/4d/5); para DFC w `cr-numery-mechanik-straznik.test.js` świeci na
+`711.\d` i `712.4` w kontekście kart dwustronnych.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L164)
 
 ## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
 
-**Przypadek (F-7):** `fabricate` jako `702.122a` (= crew), vigilance jako 702.21,
-flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa stała linię wyżej niż
-numer (narracja: `docs/LESSONS_PRZYPADKI.md`).
+**Przypadek (F-7):** `fabricate` jako 702.122a (= crew), vigilance jako 702.21,
+flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa była linię wyżej niż
+numer.
 
 **Reguła:**
-1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy z definicji — a numery
-   i nazwy siedzą tu w komentarzach wieloliniowych. Detektor klasy musi mieć
-   OKNO (±8 linii: 0 fałszywych trafień po aliasach).
+1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy, a numery i nazwy
+   siedzą w komentarzach wieloliniowych: detektor klasy musi mieć OKNO (±8
+   linii: 0 fałszywych trafień po aliasach).
 2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
    X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
    mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
    świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
 3. Tabela potrzebuje ALIASÓW (polskie komentarze: „przydziały” = trample) i
-   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki samych
-   strażników są ze skanu wyłączone (opisują dowody RED). Szczegóły: archiwum.
+   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki
+   strażników są ze skanu wyłączone (opisują dowody RED).
 
 **Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
 (CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
 z F-7 muszą świecić, poprawne nie). Mutacja M9 (vigilance 702.20 → 702.21)
-czerwieni i detektor okna, i parę liniową.
+czerwieni oba detektory.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L165)
 
@@ -2480,13 +2478,13 @@ obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
 **Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
-część GENERYCZNĄ — Join the Dance i Boulder Salvo miały kwotę o {1} rozjechaną z
-Oracle, a strażnik porównywał tylko PIPY.
+część GENERYCZNĄ — Join the Dance i Boulder Salvo rozjechane z Oracle o {1},
+a strażnik porównywał tylko PIPY.
 
 **Reguła:**
 1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
    escape {3}{U} = 4, flashback {1}{U} = 2); napis buduje `costSymbols(amount,
-   colors)` — komentarz „cost = {generic}" w `render.js` był źródłem pomyłki.
+   colors)`.
 2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
    trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
    wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
@@ -2495,41 +2493,34 @@ Oracle, a strażnik porównywał tylko PIPY.
 4. Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu: popraw
    dane, potem tytuł.
 
-**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (8 testów: skan
-symboli całej rodziny alt-kosztów, lista pominiętych kart, dowód RED na obu
-znaleziskach, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
+**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (skan rodziny
+alt-kosztów, lista pominiętych, dowód RED, piny etykiet) + piny w
+`test/real-cards-batch{58,59}.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L168)
 
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
-**Przypadek:** trzy karty batcha 59 miały efekt wyceniony PŁASKO (14/14/14 dla
-licznika na celu, 58 pkt dla tasowania grobu, 2 pkt dla pumpa z aktywacji) — bot
-decydował o „najlepszym" wariancie kolejnością ofert. Pomiary:
-`docs/LESSONS_PRZYPADKI.md` (L169).
+**Przypadek:** trzy karty batcha 59 wycenione PŁASKO — o „najlepszym”
+wariancie decydowała kolejność ofert (szczegóły: archiwum).
 
 **Reguła:**
-1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
-   w `PlayerView` (ADR 0017): wartość ciała gospodarza, liczba kart
-   w bibliotece, uczestnictwo w toczącej się walce, liczba stworów w puli.
-   Waga bez wymiaru tylko przesuwa próg i zostawia decyzję losowi oferty (L50).
-2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły, nie z wyobraźni: licznik =
-   aura-buff (`auraBuffWorthWeight`), wtasowanie = rodzina biblioteczna
-   (`librarySafeMargin` + kara per karta), pump = `pumpImprovesOutcome` (M218/2)
-   + `permanentDoomedThisTurn` (M236/2).
-3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą
-   (baza 2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu musi zejść
-   PONIŻEJ passu (L3), a zero ma być ZEROWANE, nie zmniejszane (M243/4).
-5. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność,
-   L41) — reguła dopisana tylko czarom zostawia aktywację na gołej bazie 2,
-   czyli bot spamuje zdolność za 5 many tam, gdzie czar ma karę.
-6. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że
-   pokrętło NIE jest atrapą (wyzerowanie wraca do remisu); koszt ŹRÓDŁA liczy
-   się RAZ NA WARIANT, nie na każdy cel (patrz archiwum).
+1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz w `PlayerView`
+   (ADR 0017): wartość ciała gospodarza, karty w bibliotece, udział w walce,
+   stwory w puli. Waga bez wymiaru tylko przesuwa próg (L50).
+2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły: licznik = aura-buff, wtasowanie
+   = rodzina biblioteczna, pump = `pumpImprovesOutcome` (M218/2) + `permanentDoomedThisTurn` (M236/2).
+3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą (baza
+   2 + 2·worth(1/1)=6 = dawna stała 8); wariant bez sensu schodzi PONIŻEJ passu (L3),
+   a zero jest ZEROWANE (M243/4).
+4. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność, L41) —
+   dopisana tylko czarom zostawia aktywację na gołej bazie 2 (spam za 5 many).
+5. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że pokrętło
+   NIE jest atrapą; koszt ŹRÓDŁA liczy się RAZ NA WARIANT, nie na każdy cel.
 
 **Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
-rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny przepływu
-pokręteł w `test/bot-params.test.js`; pomiar `tools/b1-quick-2026-09-24e.{json,txt}`.
+rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny
+`test/bot-params.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L169, M431)
 
@@ -2574,3 +2565,15 @@ zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
    regexpach JS `\b` nie działa po diakrytykach — granicę: `(?![a-z])`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L171)
+
+## L172 (2026-10-01) — składnik zależny od WYNIKU wariantu działa jak kara: premia liczona ze STANU
+
+**Przypadek (O2, audyt PR #148):** premia „presji życia" w bloku czytała życie PO
+zablokowaniu, więc malała, gdy blok ratował więcej — przy 7 życia „blok obu" (+2)
+remisował z „blok jednego" (+4), a wybór rozstrzygała kolejność ofert.
+
+**Reguła:** składnik faworyzujący jedną stronę osi wyboru musi być względem niej
+NIEMALEJĄCY — wysokość licz ze STANU (moje życie), nie z wariantu; wariant może co
+najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146).
+**Strażnik:** B4 (`audyt-pmssb31-blok-chump`; mutacje tier←lifeAfter i zdjęta bramka),
+`bot-suspend-twiddle-quality` (M146), `audyt-pr148b-ochrona-lethal-blokera` (O-a/1–4).
