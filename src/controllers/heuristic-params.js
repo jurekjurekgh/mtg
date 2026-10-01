@@ -423,6 +423,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // i obrońca nie tracą nic — CR 702.20b/702.3b).
   'manaTapBodyPerStat',          // kara za tapnięcie ciała bojowego, za każdy punkt (moc/wyt.)
   'manaTapBodyMax',              // sufit kary za tapnięcie ciała
+  // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
+  // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
+  'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
+  'equipPumpBonusPerPoint',      // waga ciała dokładanego przez sprzęt przy pierwszym założeniu
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -729,6 +733,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzutu (auto-płatność silnika i tak do-tapuje źródło przy cast ofercie).
   manaTapBodyPerStat: 2,
   manaTapBodyMax: 8,
+  // PMSSB-34 (pomiar PRZED: scratch/pmssb34-koszt-przed.mjs, scenariusze A/B):
+  // 1 punkt za manę — DOKŁADNIE ta sama skala co `creatureManaCostWeight` przy
+  // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
+  // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
+  abilityManaCostPenalty: 1,
+  // Ciało sprzętu liczone tą samą funkcją co przy przeniesieniu
+  // (`equipValuation.bodyValue`), wagą 1 — dopłata, nie zamiana bazy
+  // „10 + 2 × moc nosiciela" (anty-over-fix M429).
+  equipPumpBonusPerPoint: 1,
 });
 
 /**

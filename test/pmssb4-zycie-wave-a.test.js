@@ -163,18 +163,19 @@ test('F-A3: talisman = soulmender (dedup M155: 6->3, 8->5)', () => {
   }
 });
 
-test('F-A4+F-A5: zombie: self-tiers (5->3), foe-dedup (-55->-29)', () => {
+test('F-A4+F-A5: zombie: self-tiers (5->3), foe-dedup (-55->-29), koszt {1} (PMSSB-34/B)', () => {
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['W'], 3);
   fieldCard(s, 'zom', 'mournful-zombie');
-  assert.equal(scoreOf(s, 'activate_ability(zom#0->p1'), 3, 'zombie w siebie@20 (bylo 5 flat)');
-  assert.equal(scoreOf(s, 'activate_ability(zom#0->p2'), -29, 'zombie we wroga (bylo -55: M157+misaim)');
+  assert.equal(scoreOf(s, 'activate_ability(zom#0->p1'), 2, 'zombie w siebie@20 (bylo 5 flat; −1 koszt many)');
+  assert.equal(scoreOf(s, 'activate_ability(zom#0->p2'), -30, 'zombie we wroga (bylo -55: M157+misaim; −1 koszt)');
   const t = newState(); fillLibrary(t); setLife(t, 5); addBasics(t, ['W'], 3);
   fieldCard(t, 'zom', 'mournful-zombie');
-  assert.equal(scoreOf(t, 'activate_ability(zom#0->p1'), 5, 'zombie w siebie@5 (ratunek)');
+  assert.equal(scoreOf(t, 'activate_ability(zom#0->p1'), 4, 'zombie w siebie@5 (ratunek; −1 koszt)');
 });
 
 test('F-A5b: scroll-of-avacyn: gain5 tylko z Aniolem (bramka stanu)', () => {
-  for (const [angel, life, want] of [[false, 20, 7], [false, 5, 7], [true, 20, 10], [true, 5, 14]]) {
+  // PMSSB-34/B: Scroll {1} → −1 na każdym wariancie (bramka Anioła bez zmian).
+  for (const [angel, life, want] of [[false, 20, 6], [false, 5, 6], [true, 20, 9], [true, 5, 13]]) {
     const s = newState(); fillLibrary(s); setLife(s, life); addBasics(s, ['W'], 4);
     fieldCard(s, 'scr', 'scroll-of-avacyn');
     if (angel) fieldCreature(s, 'ang', 'p1', 4, 4, { subtypes: ['Angel'] });

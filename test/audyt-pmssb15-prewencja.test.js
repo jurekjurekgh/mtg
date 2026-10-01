@@ -474,7 +474,8 @@ test('Audyt #144/F2b: permanentDoomedThisTurn widzi zdolność na stosie (L72)',
   };
   const clean = build(false);
   const pinged = build(true);
-  assert.equal(clean, -16, 'bez zagrożenia: kara za marnotrawstwo ciała');
-  assert.equal(pinged, 3, 'ping zdolności na stosie = stwór skazany, poświęcenie darmowe (było −16)');
+  // PMSSB-34/B: koszt many zdolności Kheru Dreadmaw ({1}{G} → mana 2) to −2.
+  assert.equal(clean, -18, 'bez zagrożenia: kara za marnotrawstwo ciała + koszt {2}');
+  assert.equal(pinged, 1, 'ping zdolności na stosie = stwór skazany, poświęcenie darmowe (było −16, potem −18)');
   assert.ok(pinged > clean, 'ryzyko śmierci z pinga musi zmieniać decyzję');
 });

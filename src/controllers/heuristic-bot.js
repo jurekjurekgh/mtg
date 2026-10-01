@@ -5578,7 +5578,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const value = wagaSily * pumpPower + pumpToughness + ofensywne;
     const nothingAdded = pumpPower === 0 && pumpToughness === 0 && !grantsEvasion && !hasteAdds
       && freshGrants.every((kw) => kw === 'haste');
-    return { value, nothingAdded };
+    // PMSSB-34/A (L41): CIAŁO sprzętu wydzielone — pierwsze założenie (gałąź
+    // `activate_ability`) liczyło wyłącznie `10 + 2 × moc nosiciela`, więc
+    // +1/+0 za {1} (Wooden Stake) i +2/+2 trample za {4} (Brawler's Plate)
+    // dawały ten sam wynik (pomiar PRZED: 18,000 = 18,000). Gałąź
+    // PRZENIESIENIA znała tę wartość od M288/C — teraz obie używają jednego
+    // źródła, zamiast dwóch modeli tej samej decyzji.
+    //  • `bodyValue` = waga JAKOŚCI nosiciela (M289/M290: ewazja, jałowy atak)
+    //    — dla gałęzi przeniesienia, gdzie jakość nosiciela JEST decyzją;
+    //  • `printedBody` = ciało DRUKU (2×P + T — ten sam kształt, którego gałąź
+    //    „nosiciel nie może atakować" już używa). Świadomy zakres właściciela
+    //    (T11/7, `test/uwagi-tura11-...`): pierwsze założenie NIE waży jakości
+    //    nosiciela — wolno mu doliczyć tylko treść sprzętu. Dzięki temu pin
+    //    T11/7 (vanilla 3/2 == latacz 3/3 przy pierwszym założeniu) stoi.
+    const bodyValue = wagaSily * pumpPower + pumpToughness;
+    const printedBody = 2 * pumpPower + pumpToughness;
+    return { value, bodyValue, printedBody, nothingAdded };
   }
 
   /**
@@ -8548,6 +8563,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // przebijać bazowe +2). Wycena po KOSZCIE z deskryptora, nie po nazwie
         // karty (ADR 0002).
         if (ability?.cost?.energy) score -= 3 * ability.cost.energy;
+        // PMSSB-34/B — obowiązkowa kontrola procedury: wymiar KOSZTU (b).
+        //
+        // „5 vs 2 many nie mogą remisować bez uzasadnienia" — tymczasem koszt
+        // many aktywacji nie był wyceniany NIGDZIE poza gałęzią add_mana (tam
+        // jako `net = produkcja − koszt`). Pomiar PRZED (sonda
+        // scratch/pmssb34-koszt-przed.mjs): Squire's Lightblade {3} +1/+0,
+        // Brawler's Plate {4} +2/+2 trample i Wooden Stake {1} +1/+0 dawały
+        // identyczne 18,000, a para o IDENTYCZNYM efekcie (+1/+0) remisowała
+        // {3} = {1} — bot przepalał 3× manę na ten sam skutek, rozstrzygała
+        // kolejność ofert. Skala jak przy rzucie (`creatureManaCostWeight: 1`)
+        // — punkt za manę, zero nowej arytmetyki (L41/L48).
+        //
+        // Wyjątek (jedno źródło prawdy o koszcie): zdolności produkujące manę
+        // liczą koszt w swoim `net` (PMSSB-32/A, M128) — druga kara byłaby
+        // podwójnym liczeniem tego samego wymiaru. Kontrola D pinu: Apprentice
+        // Wizard zostaje na −4.
+        const abilityManaCost = (ability?.cost?.mana ?? 0) + (ability?.cost?.generic ?? 0);
+        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
+          score -= P.abilityManaCostPenalty * abilityManaCost;
+        }
         // M121: ta sama bramka co dla czarów — zdolność aktywowana potrafi
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).
@@ -9738,7 +9773,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // M288/C: definicja „nic nie dodaje" mieszka w `equipValuation`
               // (ta sama, którą bada gałąź przeniesienia) — inaczej dwie gałęzie
               // equipu miałyby dwa modele świata (L28).
-              const nothingAdded = equipValuation(view, source, target).nothingAdded;
+              const equipPayoff = equipValuation(view, source, target);
+              const nothingAdded = equipPayoff.nothingAdded;
               if (target.cantAttackStatic === true) {
                 // F: sprzęt na stworze, który NIE MOŻE atakować (obrońca bez
                 // latającego / defender / detain / aura Hobble) — premia
@@ -9755,6 +9791,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= 8; // pompowanie bezradnego atakującego — nic nie zmienia
               } else {
                 score += 10 + 2 * (target.power ?? 0);
+                // PMSSB-34/A (L41): TREŚĆ sprzętu też jest wartością — pompa,
+                // którą dokłada nosicielowi, była czytana w gałęzi przeniesienia
+                // i w bramce `nothingAdded`, ale nie w pierwszym założeniu.
+                // Skala DRUKU (`printedBody` = 2×P + T, ten sam kształt co
+                // w gałęzi defendera wyżej) — jakość nosiciela zostaje poza
+                // zakresem tej gałęzi zgodnie z decyzją właściciela (T11/7).
+                score += P.equipPumpBonusPerPoint * equipPayoff.printedBody;
                 if (grantsEvasion) score += 8;
                 if (grants.includes('haste') && target.summoningSickness) score += 6;
               }

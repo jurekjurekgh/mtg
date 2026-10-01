@@ -40,7 +40,9 @@ test('PMSSB14-A: refactor-bit-identical (drowner/dockhand/ability SAME)', () => 
   addObject(s, { id: 'md', instanceId: 'i-md', cardId: 'merchants-dockhand', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', ...gameObjectDataOf(d) });
   const b = createHeuristicBot({ seed: 9 });
   b.chooseCommand(playerView(s, 'p1'));
-  assert.deepEqual(b.trace().at(-1).options.filter((o) => o.cmd.includes('activate_ability(md')).map((o) => o.score.toFixed(2)), ['6.50', '6.00', '6.00', '-38.00']);
+  // PMSSB-34/B: {4},{U} Dockhanda → −4 na każdym wariancie X (refaktor
+  // bit-identyczny co do kształtu: 2.50/2.00/2.00/−42.00).
+  assert.deepEqual(b.trace().at(-1).options.filter((o) => o.cmd.includes('activate_ability(md')).map((o) => o.score.toFixed(2)), ['2.50', '2.00', '2.00', '-42.00']);
 });
 test('PMSSB14-A: saga FIRES +16.20 (73.79) / no-creature +12.96 (70.55)', () => {
   assert.deepEqual(castScore('rediscover-the-way', board), ['73.79']);

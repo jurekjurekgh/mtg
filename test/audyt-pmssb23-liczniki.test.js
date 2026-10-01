@@ -159,15 +159,16 @@ test('PMSSB-23/A5: liczniki przyjazne bez zmian — Courage 70/−92, Dragonscal
   assert.equal(scoreOf(boon, 'cast_spell(db->male)', OKNA_OFF), 62);
 });
 
-test('PMSSB-23/A6: ścieżka zdolności bez zmian (Trigon 34/16, Rustvine −6)', () => {
+test('PMSSB-23/A6: ścieżka zdolności — wymiary bez zmian, koszt {2} wyceniony (Trigon 32/18.5, Rustvine −6)', () => {
   const trigon = base();
   putCard(trigon, 'trig', 'trigon-of-corruption', 'p2', 'battlefield');
   addCounter(trigon, 'trig', 'charge', 3);
   putCreature(trigon, 'kruchy', 'p1', 1, 1);
   putCreature(trigon, 'sredni', 'p1', 3, 3);
   // M221/F: dobiecie licznikiem -1/-1 (CR 704.5f) = 30 + 2·moc; inaczej 10 + 4.
-  assert.equal(scoreOf(trigon, 'activate_ability(trig#1->kruchy)'), 34);
-  assert.equal(scoreOf(trigon, 'activate_ability(trig#1->sredni)'), 20.5); // 16 + 4,5 (Fala B)
+  // PMSSB-34/B: {2},{T} Trigona → −2; relacja dobicie > duże > małe bez zmian.
+  assert.equal(scoreOf(trigon, 'activate_ability(trig#1->kruchy)'), 32);
+  assert.equal(scoreOf(trigon, 'activate_ability(trig#1->sredni)'), 18.5); // 16 + 4,5 (Fala B) − 2 (koszt)
 
   const rustvine = base();
   putCard(rustvine, 'rc', 'rustvine-cultivator', 'p2', 'battlefield');
@@ -224,13 +225,13 @@ test('PMSSB-23/B4: dopłata nie przebija dobicia — „zabij 1/1" zostaje najwy
   const kill = scoreOf(state, 'activate_ability(trig#1->kruchy)');
   const duzy = scoreOf(state, 'activate_ability(trig#1->grozny)');
   const maly = scoreOf(state, 'activate_ability(trig#1->sredni)');
-  assert.equal(kill, 34, 'dobijanie bez zmian (30 + 2·moc) — limit dopłaty pilnuje kolejności');
-  assert.equal(duzy, 25, 'PRZED 16: -1/-1 na 6/6 warte tyle, co na 3/3');
-  assert.equal(maly, 20.5);
+  assert.equal(kill, 32, 'dobijanie (30 + 2·moc) − koszt {2}; limit dopłaty pilnuje kolejności');
+  assert.equal(duzy, 23, 'PRZED 16: -1/-1 na 6/6 warte tyle, co na 3/3');
+  assert.equal(maly, 18.5);
   assert.ok(kill > duzy && duzy > maly, 'dobicie > duże zagrożenie > małe');
   // Kotwica: przy wadze ×0 obie gałęzie „cel przeżyje" wracają do 16.
-  assert.equal(scoreOf(state, 'activate_ability(trig#1->grozny)', { counterThreatWeight: 0 }), 16);
-  assert.equal(scoreOf(state, 'activate_ability(trig#1->kruchy)', { counterThreatWeight: 0 }), 34);
+  assert.equal(scoreOf(state, 'activate_ability(trig#1->grozny)', { counterThreatWeight: 0 }), 14);
+  assert.equal(scoreOf(state, 'activate_ability(trig#1->kruchy)', { counterThreatWeight: 0 }), 32);
 });
 
 // ---------------------------------------------------------------------------

@@ -118,7 +118,7 @@ test('PMSSB-19/R1+R3: chocobo 0 lądów = 83.96 (screw +5); bez screw = 78.96', 
 // R1 — rider w activate_ability (Dawntreader Elk: poświęć po ląd).
 // ---------------------------------------------------------------------------
 
-test('PMSSB-19/R1: aktywacja Elka = 12 (było 2 — payoff szukania niewidoczny)', () => {
+test('PMSSB-19/R1: aktywacja Elka = 11 (12 − koszt {1}, PMSSB-34/B; było 2 — payoff szukania niewidoczny)', () => {
   const state = base(24);
   putSpell(state, 'elk', 'dawntreader-elk', 'p2', 'hand');
   // Wystaw i odczekaj sickness — prosty obiekt z abilities karty.
@@ -133,7 +133,8 @@ test('PMSSB-19/R1: aktywacja Elka = 12 (było 2 — payoff szukania niewidoczny)
   putSpell(state2, 'elk', 'dawntreader-elk', 'p2', 'battlefield');
   state2.objects.set('elk', Object.freeze({ ...state2.objects.get('elk'), summoningSickness: false }));
   const { options } = decide(state2);
-  assert.equal(optionScore(options, 'activate_ability(elk#0)'), 12);
+  // PMSSB-34/B: koszt {1} zdolności jest teraz wyceniany (−1); payoff szukania bez zmian.
+  assert.equal(optionScore(options, 'activate_ability(elk#0)'), 11);
 });
 
 // ---------------------------------------------------------------------------

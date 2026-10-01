@@ -40,9 +40,11 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     const s = mk('end', 'p2'); fillLib(s); put(s, 'sc', 'civilized-scholar', 'p1', 'battlefield');
     assert.equal(scoreOf(decide(s).opts, 'activate_ability(sc'), 14);
   });
-  it('F-L1: loot ≡ cycle (gloomfang-cycle = 4 = scholar)', () => {
+  it('F-L1: cycle {2} = 2 (efekt ≡ scholar, ale płatny — PMSSB-34/B)', () => {
+    // PRZED PMSSB-34 oba remisowały na 4, choć cycling kosztuje {2}, a scholar
+    // tylko tapnięcie — koszt many nie był wtedy wyceniany w żadnej gałęzi.
     const s = mk(); fillLib(s, 10); put(s, 'gm', 'gloomfang-mauler');
-    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 4);
+    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 2);
   });
   it('F-L1: fisher-cast = 71.1 (noga −4 ×0.9, było 74.7)', () => {
     const s = mk(); fillLib(s); put(s, 'fi', 'quicksilver-fisher');

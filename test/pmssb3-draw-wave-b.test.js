@@ -115,10 +115,10 @@ test('F-temple: pakt = -1 (flip 62 -> trzymaj; noga-foe -12 + ramka -1)', () => 
   assert.equal(scoreOf(s, 'cast_spell(yt->)'), -26);
 });
 
-test('F-scroll-sac: scroll-ability = 7 (8 - 1-sac-noncreature)', () => {
+test('F-scroll-sac: scroll-ability = 6 (8 − 1-sac-noncreature − 1 koszt many, PMSSB-34/B)', () => {
   const s = newState(); fillLibrary(s, 10); addBasics(s, ['W', 'U', 'B', 'R', 'G'], 3);
   fieldCard(s, 'scr', 'scroll-of-avacyn');
-  assert.equal(scoreOf(s, 'activate_ability(scr'), 7);
+  assert.equal(scoreOf(s, 'activate_ability(scr'), 6);
 });
 
 test('F-envoy: unwrap ETB (bez-counter 72.9054, z-counter 73.8054)', () => {
