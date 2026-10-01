@@ -27,6 +27,7 @@ import { isOnAdventure } from '../src/engine/zones.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { exileSourceLabel } from '../src/table/render.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -126,4 +127,45 @@ test('F2: przygoda rozstrzygnięta → „on an adventure" → rzut stwora; opus
 test('F2: etykieta źródła wygnania „adventure" jest nazwana w stole', () => {
   const session = { nameOf: (id) => id };
   assert.equal(exileSourceLabel(session, 'adventure'), 'Przygoda');
+});
+
+// ---------------------------------------------------------------------------
+// Domknięcie pinu (mutacja przeżyła w audycie PR #149): drabinka premii za
+// ratunek życia w `declare_blockers` (PMSSB-31/B4, O2 z audytu #148) miała
+// piny dla pasma 7 życia i M146 (5 życia), ale pasmo „≤ 2” (+6) było
+// niepilnowane — zamiana `+6` na `+0` nie czerwieniła żadnego testu.
+// ---------------------------------------------------------------------------
+function wynikBloku(zycie) {
+  const state = createGameState({ seed: 4242, players: [{ id: 'p1' }, { id: 'p2' }] });
+  const cialo = (id, p, t, ctrl) => {
+    addObject(state, {
+      id, instanceId: `i-${id}`, cardId: `x-${id}`, controllerId: ctrl, zone: 'battlefield',
+      kind: 'creature', power: p, toughness: t, manaCost: 3, abilities: [], keywords: [],
+      subtypes: [], types: ['Creature'], colors: [], cardName: id,
+    });
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  };
+  cialo('a', 2, 2, 'p1');
+  cialo('b', 3, 3, 'p2');
+  state.players.find((p) => p.id === 'p2').life = zycie;
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a'] });
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p2');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p2';
+  const bot = createHeuristicBot({ seed: 7 });
+  bot.chooseCommand(playerView(state, 'p2'), {});
+  return bot.trace().at(-1).options.find((o) => o.cmd === 'block[a<b]').score;
+}
+
+test('Drabinka presji życia przy bloku: pasma ≤2 / ≤5 / ≤8 / wyżej = 43 (z lethalem) / 11 / 9 / 7', () => {
+  assert.equal(wynikBloku(2), 43, 'pasmo ≤2: +6 (43 = 37 + 6; przy życiu 2 atak 2 jest lethalem)');
+  assert.equal(wynikBloku(3), 11);
+  assert.equal(wynikBloku(5), 11, 'granica pasma ≤5 (+4)');
+  assert.equal(wynikBloku(6), 9, 'pasmo ≤8 (+2)');
+  assert.equal(wynikBloku(8), 9);
+  assert.equal(wynikBloku(9), 7, 'powyżej 8 brak premii');
+  assert.equal(wynikBloku(20), 7);
 });
