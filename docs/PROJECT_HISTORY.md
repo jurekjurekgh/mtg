@@ -14614,5 +14614,10 @@ profile defensive/greedy/random/hoarder) — czysto.
 liczona ze STANU"), zapłacona kondensacją L163/L164/L165/L168/L169: `LESSONS.md`
 138 422 B, budżet lektury **99 942/100 000** (próg nie podnoszony).
 
+**AI-R10 (zlecenie właściciela w trakcie sesji):** limit odpowiedzi trybu `talkshow`
+obniżony 1200 → 900 znaków („1200 to za dużo”) — `TALKSHOW_COMMENT_LIMIT` w
+`src/table/ai-modes.js`, pin wartości + mutacja w `test/ai-modes.test.js`. Prompt-only,
+bez zmian w `Code.gs` (tryb działa bez redeployu Apps Script).
+
 **Bramka końcowa:** `npm test` 7226/7226 (7222 + 4 piny O-a), `npm run test:all` 7497/7497,
 `npm run build` 70 / 4674,6 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).

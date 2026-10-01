@@ -56,6 +56,12 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   (O-a/1–4); mutacje czerwienią odpowiednio B4, M146 i O-a/1. Golden-master bota
   bez zmian fixture'a; Żywy Tester 4× czysto (s401–s404).
 
+- [x] **Etap 7 — AI-R10 (zlecenie właściciela w trakcie sesji)**: limit
+  odpowiedzi trybu `talkshow` obniżony 1200 → 900 znaków
+  (`TALKSHOW_COMMENT_LIMIT` w `src/table/ai-modes.js`; decyzja: „1200 to za
+  dużo”). Pin wartości w `test/ai-modes.test.js` (mutacja „powrót 1200”
+  czerwieni test talkshow). Prompt-only — bez zmian w `Code.gs`.
+
 ## Ryzyka
 
 - Budżet lektury: po wpisaniu **L172** (O2/O-a) i kondensacji L163/L164/L165/
@@ -75,6 +81,7 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 7 (AI-R10):** limit talkshow 900 (pin + mutacja), build 70 / 4674,8 kB.
 - **Etap 6 (O2 + O-a):** `4fcbff7`; `npm test` **7226/7226** (baza 7222 + 4 piny
   O-a), `npm run build` **70 / 4674,6 kB**; Żywy Tester 4 partie (s401 defensive
   zendikar/innistrad-wu 30 akcji/1 modal, s402 greedy theros/warhammer-ubr 18/2,

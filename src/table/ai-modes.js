@@ -20,8 +20,11 @@ export const PLAYER_COMMENT_LIMIT = 600;
 export const OBSERVER_COMMENT_LIMIT = 600;
 export const LORE_OBSERVER_COMMENT_LIMIT = 600;
 // AI-R9: rozmowa kilku osób potrzebuje więcej miejsca niż jeden komentarz
-// (pierwsza odpowiedź niesie jeszcze przedstawienie person).
-export const TALKSHOW_COMMENT_LIMIT = 1200;
+// (pierwsza odpowiedź niesie jeszcze przedstawienie person) — ale nie
+// dowolnie więcej: decyzja właściciela 2026-10-01 (AI-R10) obniża limit
+// z 1200 na 900 znaków („1200 to za dużo”), czyli tyle, ile mają Zły i Dobry;
+// person jest więcej, więc kwestie są po prostu krótsze.
+export const TALKSHOW_COMMENT_LIMIT = 900;
 export const GOOD_EVIL_COMMENT_LIMIT = 900;
 
 /** Wspólne wyciąganie pól ctx (wszystkie tryby komentują ten sam zapis). */
