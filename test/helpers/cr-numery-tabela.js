@@ -415,6 +415,12 @@ export const NUMERY = [
   '702.82',
   '702.82a',
   '702.83',
+  // Etap 12: „z każde WYSTĄPIENIE egzaltacji" — 702.83a zweryfikowane
+  // dosłownie w CR 2026-09-25 (mtg.wiki/page/Exalted: „'Exalted' means
+  // 'Whenever a creature you control attacks alone, that creature gets +1/+1
+  // until end of turn.'"; 702.83b definiuje „attacks alone"). Cytat w pinie
+  // test/real-cards-batch34.test.js (mnożenie dwóch egzaltacji).
+  '702.83a',
   '702.83b',
   '702.84a',
   '702.87',
@@ -472,6 +478,11 @@ export const NUMERY = [
   '702.168',
   '702.168a',
   '702.164a',
+  // Etap 12: „total toxic value" — 702.164b zweryfikowane dosłownie w CR
+  // 2026-09-25 (mtg.wiki/page/Toxic: „the sum of all N values of toxic
+  // abilities that creature has", przykład toxic 2 + toxic 1 = 3). Cytat użyty
+  // w komentarzu-śladzie O-d w src/engine/combat.js (bez kodu na zapas).
+  '702.164b',
   '702.165',
   '702.165a',
   '702.167',

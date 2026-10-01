@@ -7,7 +7,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { addMana } from '../src/engine/resources.js';
-import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
 const REGISTRY = createCardRegistry();
@@ -94,6 +94,26 @@ test('Akrasan Squire: atak DWÓCH stworów nie odpala exalted', () => {
   execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['a', 'b'] });
   resolveStack(state);
   assert.equal(effectivePower(state.objects.get('a'), state), 2, 'exalted działa tylko przy samotnym ataku');
+});
+
+// CR 702.83a (zweryfikowane dosłownie w wydaniu 2026-09-25, mtg.wiki/Exalted):
+// „that creature gets +1/+1 until end of turn”, a reminder mówi „for each
+// instance of exalted among permanents you control” — każde WYSTĄPIENIE
+// egzaltacji to osobny trigger, więc dwa źródła pod moją kontrolą dają +2/+2.
+// Kotwica mnożenia: pojedyncze źródło = +1/+1 (test wyżej), atak DWÓCH
+// stworów = brak pumpa (test wyżej).
+test('Akrasan Squire x2: dwa wystąpienia egzaltacji dają +2/+2 (CR 702.83a)', () => {
+  const state = newState();
+  putCard(state, 'squire1', 'akrasan-squire', 'p1');
+  putCard(state, 'squire2', 'akrasan-squire', 'p1');
+  putBlank(state, 'wojownik', 'p1', { power: 2, toughness: 2 });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['wojownik'] });
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('wojownik'), state), 4,
+    '2/2 + dwa wystąpienia egzaltacji = 4/4 (każde pompuje osobno)');
+  assert.equal(effectiveToughness(state.objects.get('wojownik'), state), 4);
 });
 
 // --- Elgaud Inquisitor {3}{W} 2/2 (lifelink, dies → Spirit 1/1 latający) ---
