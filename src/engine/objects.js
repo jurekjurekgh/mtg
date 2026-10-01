@@ -226,6 +226,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     warpReady: false, warpedAtTurn: null,
     suspended: false, suspendReady: false, timeCounters: 0,
     madnessReady: false,
+    // Rebound (CR 702.88a): „exile it as it resolves" — gotowość do rzutu w
+    // upkeepie żyje tylko w tym jednym pobycie w wygnaniu; wyciągnięta karta
+    // (CR 400.7 — nowy obiekt) i ponownie wygnana innym efektem nie wraca do
+    // darmowego rzutu. `reboundCast` to flaga rzutu, przeliczana przy każdym
+    // rzucie (spells.js), więc nie wymaga resetu.
+    reboundReady: false,
     // Para pól okna impulsu ma właściciela (impulse-window.js) — zapis idzie
     // przez helper, nie przez literał w tym pliku (guard family-audit).
     ...clearImpulseWindowStamp(object),

@@ -262,6 +262,8 @@ test('cast_adventure_creature (Gray Slaad) idzie na stos i wchodzi po rozstrzygn
   const state = game();
   giveMana(state, 'p1', 3, ['B']);
   addRealCard(state, 'slaad', 'gray-slaad', 'p1', 'exile', { adventureDone: true });
+  // CR 715.3d: „on an adventure" = stempel wygnania z rozstrzygnięcia czaru przygody.
+  state.objects.set('slaad', Object.freeze({ ...state.objects.get('slaad'), meta: Object.freeze({ exiledBy: 'adventure' }) }));
   const cast = execute(state, { type: 'cast_adventure_creature', playerId: 'p1', objectId: 'slaad' });
   assert.ok(cast.ok, cast.events[0]?.reason);
   assert.equal(state.zones.stack.length, 1);

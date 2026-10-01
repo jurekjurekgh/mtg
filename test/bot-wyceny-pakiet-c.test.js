@@ -217,6 +217,8 @@ test('E2/C7: cast_adventure_creature — duże ciało przegrywa ląd, małe wygr
     kind: 'land', manaCost: 0, abilities: [], keywords: [], subtypes: [], types: ['Land'],
     colors: ['G'], cardName: 'Forest',
   });
+  // CR 715.3d: „on an adventure" = stempel wygnania z rozstrzygnięcia czaru przygody.
+  state.objects.set('adv', Object.freeze({ ...state.objects.get('adv'), meta: Object.freeze({ exiledBy: 'adventure' }) }));
   state.zones.exile = ['adv'];
   const view = playerView(state, 'p1');
   const bot = createHeuristicBot({ seed: 9 });

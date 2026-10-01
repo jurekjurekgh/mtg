@@ -6241,7 +6241,7 @@ export function waitingExileStatus(object) {
 const EXILE_KEYWORD_LABELS = {
   plot: 'Plot', suspend: 'Suspend', warp: 'Warp', madness: 'Madness',
   escape: 'Escape', flashback: 'Flashback', unearth: 'Unearth', craft: 'Craft',
-  finality: 'Finality',
+  finality: 'Finality', adventure: 'Przygoda',
 };
 
 export function exileSourceLabel(session, exiledBy) {

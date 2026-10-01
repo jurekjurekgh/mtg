@@ -1,6 +1,6 @@
 import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
-import { spellExitZone, isCardInOpponentGraveyard } from './zones.js';
+import { spellExitZone, isCardInOpponentGraveyard, isOnAdventure } from './zones.js';
 import { optionalEffectVariants, triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
@@ -2331,7 +2331,7 @@ export function resolveTopOfStack(state) {
   // be put into a graveyard, exile it instead" (dotyczy też fizzle niżej).
   const zoneAfterResolve = spellExitZone(object, { adventure, flashedBack, reboundCast });
   const afterId = `${zoneAfterResolve}-${state.objectSequence++}`;
-  const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId);
+  const moved = moveObjectDirectly(state, stackId, zoneAfterResolve, afterId, adventure ? { exiledBy: 'adventure' } : {});
   // Rebound: zaznacz wygnaną kartę jako gotową do rzutu bez kosztu w przyszłym
   // upkeepu (reboundReady — czytane przez trigger upkeepu, jak suspendReady).
   if (reboundCast) {
@@ -2576,7 +2576,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
   const reboundCast = Boolean(object.reboundCast && !object.isSpellCopy);
   const zoneAfter = spellExitZone(object, { adventure, flashedBack, reboundCast });
   const afterId = `${zoneAfter}-${state.objectSequence++}`;
-  const movedAfter = moveObjectDirectly(state, stackId, zoneAfter, afterId);
+  const movedAfter = moveObjectDirectly(state, stackId, zoneAfter, afterId, adventure ? { exiledBy: 'adventure' } : {});
   if (reboundCast) {
     state.objects.set(afterId, Object.freeze({ ...state.objects.get(afterId), reboundReady: true }));
   }
@@ -4092,7 +4092,7 @@ export function legalAdventureCreatureCasts(state, playerId) {
   if (!(state.turn.activePlayerId === playerId && mainPhase && state.zones.stack.length === 0)) return casts;
   for (const id of state.zones.exile) {
     const object = state.objects.get(id);
-    if (!object || object.controllerId !== playerId || !object.adventure || object.plotted) continue;
+    if (!object || object.controllerId !== playerId || !object.adventure || object.plotted || !isOnAdventure(object)) continue;
     if ((object.manaCost ?? 0) > manaAvailable(object, coloredPipsOf(object.cardId, 0))) continue;
     if (!hasColorForObject(state, playerId, object)) continue;
     casts.push({ objectId: id });
@@ -4107,7 +4107,7 @@ export function legalAdventureCreatureCasts(state, playerId) {
  */
 export function castAdventureCreature(state, playerId, objectId) {
   const object = state.objects.get(objectId);
-  if (!object || object.controllerId !== playerId || object.zone !== 'exile' || !object.adventure) {
+  if (!object || object.controllerId !== playerId || !object.adventure || !isOnAdventure(object)) {
     throw new Error('To nie jest karta z przygodą w twoim exile');
   }
   if (object.plotted) throw new Error('Karta zaplotowana rzuca się komendą cast_spell');

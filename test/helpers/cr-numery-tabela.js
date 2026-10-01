@@ -557,6 +557,13 @@ export const NUMERY = [
   '714.3a',
   '714.3b',
   '714.4',
+  // 715.2a dopisany RĘCZNIE (sesja 2026-10-01g, sandbox bez egressu): dosłowny tekst
+  // z CR 2026-09-25 przez mtg.wiki/page/Adventure: „If an effect refers to a card,
+  // spell, or permanent that "has an Adventure," it refers to an object that has
+  // the alternative characteristics of an Adventure spell, even if the object
+  // currently doesn't use them." Przy najbliższej regeneracji --zapisz zostanie
+  // potwierdzony wobec pliku CR.
+  '715.2a',
   '715.3',
   '715.3a',
   '715.3d',
