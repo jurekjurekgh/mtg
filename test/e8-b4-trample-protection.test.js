@@ -12,7 +12,7 @@
 // blokera 2/2 trampler musi przydzielić 2 (zostaną preventowane), dopiero
 // nadwyżka idzie na obrońcę. Zbieżne źródła: MTG Tutorials (7/7 trampler vs
 // 3/3 protection — legalne przydziały 3–7), r/mtgrules 2024-11-27, Draftsim
-// (7/7 vs 2/2 prot → 5 na gracza). Deathtouch (CR 702.2b) NADAL obniża
+// (7/7 vs 2/2 prot → 5 na gracza). Deathtouch (CR 702.2c) NADAL obniża
 // lethal do 1 — to zdolność ZMIENIAJĄCA definicję lethal, nie prewencja.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -73,7 +73,7 @@ test('E8/B4 guardia: bloker BEZ protection — bez zmian (0 odrzucone, 2 legalne
   assert.equal(validateDamageAssignment(state, 'att', [{ blockerId: 'blk', amount: 2 }]), null);
 });
 
-test('E8/B4 guardia: deathtouch nadal obniża lethal do 1 (CR 702.2b — definicja, nie prewencja)', () => {
+test('E8/B4 guardia: deathtouch nadal obniża lethal do 1 (CR 702.2c — definicja, nie prewencja)', () => {
   const state = combat({ attackerColors: ['Black'], protection: ['Black'], deathtouch: true });
   assert.equal(validateDamageAssignment(state, 'att', [{ blockerId: 'blk', amount: 1 }]), null,
     'deathtouch: 1 obrażenie = lethal także wobec protection');

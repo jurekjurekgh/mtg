@@ -88,7 +88,7 @@ test('trample: WSZYSCy blokerzy muszą mieć lethal, zanim nadmiar pójdzie na g
   );
 });
 
-test('trample: deathtouch obniża lethal do 1 (CR 702.2b + 702.19b)', () => {
+test('trample: deathtouch obniża lethal do 1 (CR 702.2c + 702.19b)', () => {
   const state = combatState();
   state.objects.set('att', Object.freeze({
     ...state.objects.get('att'), keywords: ['trample', 'deathtouch'],

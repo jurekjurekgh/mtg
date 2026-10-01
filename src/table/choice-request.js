@@ -1689,7 +1689,7 @@ export function renderDamageWizard(host, { view, session, pending, defaultComman
         // który nie przyjmował `onOpenCard` (uwaga właściciela: „elastyczne
         // komponenty z parametrami, nie równoległe funkcje" — konwencja była
         // złamana dokładnie w jednym miejscu i nikt jej nie pilnował).
-        // W5 (CR 702.19b/702.2b): gracz musi WIDZIEĆ, dlaczego bramka pozwala
+        // W5 (CR 702.19b/702.2c): gracz musi WIDZIEĆ, dlaczego bramka pozwala
         // przydzielić mniej niż „śmiertelne" — lethal tego blokera pokrywają
         // obrażenia przydzielane mu w tym samym kroku przez inne stwory (albo
         // niezerowy przydział od źródła z deathtouch). Bez tej informacji

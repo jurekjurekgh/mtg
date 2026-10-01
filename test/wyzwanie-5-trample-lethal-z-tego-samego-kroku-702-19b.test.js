@@ -11,9 +11,11 @@
 //     creatures that's being assigned during the same combat damage step**, but not
 //     any abilities or effects that might change the amount of damage that's
 //     actually dealt."
-//   702.2b  „Any nonzero amount of combat damage assigned to a creature by a source
-//     with deathtouch is considered to be lethal damage, regardless of that
-//     creature's toughness." (z tym samym zdaniem o obrażeniach z tego samego kroku)
+//   702.2c  „Any nonzero amount of combat damage assigned to a creature by a source
+//     with deathtouch is considered to be lethal damage for the purposes of
+//     determining if excess damage is being dealt." (CR 2026-09-25, dosłownie,
+//     mtg.wiki/page/Deathtouch; wcześniejszy numer 702.2b i końcówka „regardless
+//     of that creature's toughness" były z pamięci — sprostowane 2026-10-01)
 //   510.1e  „Once a player has assigned combat damage from each attacking or
 //     blocking creature they control, the **total** damage assignment ... is checked
 //     to see if it complies with the above rules."
@@ -124,12 +126,12 @@ test('W5/2: bez drugiego atakującego ten sam przydział jest NADAL nielegalny (
   assert.equal(life(state, 'p1'), 18);
 });
 
-test('W5/3: lethal pokrywa też niezerowy przydział od źródła z deathtouch (CR 702.2b)', () => {
+test('W5/3: lethal pokrywa też niezerowy przydział od źródła z deathtouch (CR 702.2c)', () => {
   const state = combat({ yKeywords: ['deathtouch'], yPower: 1, yToughness: 1 });
   const res = execute(state, {
     type: 'resolve_damage_assignment', playerId: 'p2', assignments: { x: [{ blockerId: 'w', amount: 0 }] },
   });
-  assert.ok(res.ok, `1 obrażenie z deathtouch = lethal (CR 702.2b): ${JSON.stringify(res)}`);
+  assert.ok(res.ok, `1 obrażenie z deathtouch = lethal (CR 702.2c): ${JSON.stringify(res)}`);
   assert.ok(execute(state, { type: 'resolve_damage_assignment', playerId: 'p1', assignments: {} }).ok,
     'druga decyzja przebiegu (bloker) domknięta');
   assert.equal(life(state, 'p1'), 15, 'całe 5 x na obrońcę');
@@ -173,7 +175,7 @@ test('W5/5: widok niesie assignedByOthers/lethalByOthers dla bramki trample w wi
   const deathtouch = combat({ yKeywords: ['deathtouch'], yPower: 1, yToughness: 1 });
   const dtEntry = playerView(deathtouch, 'p2').pendingDamageAssignment.entries[0];
   assert.equal(dtEntry.blockers[0].assignedByOthers, 1);
-  assert.equal(dtEntry.blockers[0].lethalByOthers, true, 'CR 702.2b: niezerowe obrażenia z deathtouch = lethal');
+  assert.equal(dtEntry.blockers[0].lethalByOthers, true, 'CR 702.2c: niezerowe obrażenia z deathtouch = lethal');
 });
 
 test('W5/6: walidator z kontekstem całego przydziału (CR 510.1e) i bez kontekstu (wstecznie)', () => {

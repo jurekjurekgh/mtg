@@ -71,7 +71,7 @@ test('F1/1: blockAbsorbedDamageOf — bez trample cała moc, z trample tylko śm
     'bloker z już zadanymi obrażeniami nie wchłania nic: wytrzymałość efektywna 0');
 });
 
-test('F1/2: deathtouch + trample — wystarcza 1 obrażenie na blokera (CR 702.19b + 702.2b)', () => {
+test('F1/2: deathtouch + trample — wystarcza 1 obrażenie na blokera (CR 702.19b + 702.2c)', () => {
   const dt = view('d', 'hooting-mandrills', { keywords: ['trample', 'deathtouch'] });
   assert.equal(blockAbsorbedDamageOf(dt, [view('g', 'hill-giant')]), 1);
   assert.equal(blockAbsorbedDamageOf(dt, [view('g', 'hill-giant'), view('g2', 'hill-giant')]), 2);

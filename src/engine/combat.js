@@ -646,7 +646,7 @@ export function damageAssignedToBlockerThisPass(state, pass, blockerId, excludeA
 }
 
 /**
- * W5 (CR 702.2b): czy bloker ma JUŻ przydzielone lethal w tym przebiegu przez
+ * W5 (CR 702.2c): czy bloker ma JUŻ przydzielone lethal w tym przebiegu przez
  * inne stwory — albo dlatego, że suma ich przydziałów sięga lethal, albo dlatego,
  * że którekolwiek z nich jest niezerowe i pochodzi od źródła z deathtouch
  * („Any nonzero amount of combat damage assigned to a creature by a source with
@@ -699,7 +699,7 @@ function singleBlockerFullAssignment(blockers, amount) {
  * (CR 702.19b); gdy mocy nie starcza na wszystkie lethal — całość w blokerów
  * (jak dotąd — wymóg walidatora M101/B6).
  *
- * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): dopłata do lethal
+ * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2c): dopłata do lethal
  * blokera, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
  * kroku przez inne stwory, jest stratą obrażeń — przy trample legalnie mogą iść
  * na gracza, więc `context = { assignments, pass }` (ta sama mapa, którą widzi
@@ -847,7 +847,7 @@ function needsBlockerDamageAssignmentDecision(state, blocker, targets) {
  * przebiegu skierowane w danego atakującego — symetria
  * `assignedToBlockerThisPass`, z tymi samymi konwencjami: jawne przydziały z mapy
  * (CR 510.1e), dla blokerów bez decyzji — pełna moc (jeden cel) albo podział
- * domyślny, deathtouch → każde niezerowe obrażenie jest lethal (CR 702.2b),
+ * domyślny, deathtouch → każde niezerowe obrażenie jest lethal (CR 702.2c),
  * `onlyAssigned` pomija blokery z decyzją, której jeszcze nie ogłoszono (polityka
  * sekwencyjna B1 — inaczej każdy zakładałby, że lethal pokryje ktoś inny),
  * prewencja/protection POMIJANE (reguła mówi o PRZYDZIALE, nie o zadanych).
@@ -888,7 +888,7 @@ export function damageAssignedToAttackerThisPass(state, pass, attackerId, exclud
 /**
  * Czy atakujący ma JUŻ przydzielone lethal w tym przebiegu przez INNE blokery
  * (suma sięga lethal albo któreś niezerowe obrażenie pochodzi ze źródła
- * z deathtouch — CR 702.2b). Symetria `lethalAssignedByOthersThisPass`.
+ * z deathtouch — CR 702.2c). Symetria `lethalAssignedByOthersThisPass`.
  */
 export function lethalAssignedByOtherBlockersThisPass(state, pass, attackerId, excludeBlockerId, assignments = null, onlyAssigned = false) {
   const attacker = state.objects.get(attackerId);
@@ -1140,7 +1140,7 @@ export function validateDamageAssignment(state, attackerId, assignment, context 
       const byOthers = context
         ? damageAssignedToBlockerThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments)
         : 0;
-      // CR 702.2b: lethal może być już pokryty przez źródło z deathtouch.
+      // CR 702.2c: lethal może być już pokryty przez źródło z deathtouch.
       const coveredByOthers = Boolean(context
         && lethalAssignedByOthersThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments));
       if (!coveredByOthers && entry.amount + byOthers < lethalOf(state, attacker, blocker)) return 'trample_blocker_below_lethal';

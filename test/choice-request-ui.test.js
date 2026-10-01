@@ -834,7 +834,7 @@ test('renderDamageWizard (W3): podział blokera → assignments z kluczami attac
   assert.ok(!/do gracza: [1-9]/.test(host.textContent), 'bloker nie przenosi nadwyżki na gracza');
 });
 
-test('renderDamageWizard (W5, CR 702.19b/702.2b): lethal pokryty przez innego atakującego odblokowuje 0', () => {
+test('renderDamageWizard (W5, CR 702.19b/702.2c): lethal pokryty przez innego atakującego odblokowuje 0', () => {
   const host = new ChoiceMiniEl('div');
   const calls = [];
   const pending = {

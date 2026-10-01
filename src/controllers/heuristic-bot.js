@@ -239,7 +239,7 @@ function blockKillsAttacker(attacker, blockers) {
  * Bez trample zablokowany atakujący nie rani gracza w ogóle (CR 509.1h), więc
  * blok zatrzymuje całą jego moc. Z trample (CR 702.19b) atakujący przypisuje
  * blokerom tylko obrażenia śmiertelne (CR 510.1c: wytrzymałość pomniejszona o
- * już zadane obrażenia; z deathtouch wystarcza 1 — CR 702.2b), a resztę kieruje
+ * już zadane obrażenia; z deathtouch wystarcza 1 — CR 702.2c), a resztę kieruje
  * w gracza — 4/4 trample zablokowany tokenem 1/1 zatrzymuje 1 obrażenie, nie 4.
  * Jedno źródło prawdy dla `stoppedDamage`, premii „korzystnej wymiany" i
  * progu ratunku życia w `declare_blockers`.
