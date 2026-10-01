@@ -14546,3 +14546,13 @@ widoku, ADR 0017).
 
 **Bramka końcowa:** patrz `docs/setup/HANDOFF_2026-10-01.md`. Bez wpisu do `LESSONS.md` — budżet
 lektury ~99 885/100 000; F1 mieści się w klasach L41 (jedna miara) i L48 (jedno źródło prawdy).
+
+**Uzupełnienie 2026-10-01 (po zamknięciu sesji, na uwagi właściciela):**
+- Lektura obowiązkowa nadrobiona W CAŁOŚCI (README ADR, ADR 0001–0030, `LESSONS.md` L1–L171, AGENTS.md,
+  ENVIRONMENT.md) — wcześniej była punktowa (sprzeczne z L78).
+- **O1 wdrożone (`4d19191`)** — badge „nie może atakować” tylko dla zakazu z innego permanentu/czaru;
+  natywny Obrońca bez badge'a. `staticAttackPreventionOf` (combat.js) → `cantAttackExternal` (PlayerView,
+  ADR 0017: fakt publiczny, bot bez zmian) → render. `test/o1-badge-zakazu-ataku-zrodlo.test.js` (7).
+- **Sprostowanie CR (`abbf3b3`)** — mój pierwotny cytat 702.2c był POPRAWNY; zamiana na 702.2b „bo strażnik
+  odrzucił” była błędem. CR 2026-09-25: 702.2b = SBA destroy, 702.2c = niezerowe obrażenia z deathtouch =
+  lethal dla nadmiaru. 18 linii poprawionych, 702.2c dopisane do tabeli istnienia.
