@@ -14917,3 +14917,24 @@ przez UI, oferta darmowego rzutu z wygnania renderowana; talia usunięta po bieg
 następnej sesji: koszt okazji drugiego trybu źródła (`Seer’s Lantern`, Immersturm Skullcairn,
 Balamb Garden), bankowanie many, warianty `cast_spell` (tryb/kicker), model treści
 czekającej na późniejszą planszę. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01g — audyt PR #149 + naprawa stempli „tylko w wygnaniu" (PR #150)
+
+Prompt „Kontynuujemy projekt." ⇒ ADR 0020 + 0021. Plan `docs/plans/PLAN_2026-10-01g-audyt-pr149.md`,
+raport `docs/audits/AUDYT_PR149_2026-10-01.md`, handoff `docs/setup/HANDOFF_2026-10-01g.md`.
+
+Audyt scalonego PR #149 (49 plików) metodą sond na żywym silniku, nie samym odczytem testów:
+handoff 01f uznawał rodzinę „uprawnienie tylko w wygnaniu" za zamkniętą, a sondy pokazały dwa
+wycieki tej samej klasy. **F1:** `reboundReady` przeżywał wyjście z wygnania (reset w
+`moveObjectDirectly` go pomijał) — ponownie wygnana karta wracała do darmowego rzutu w upkeepie
+(CR 400.7/702.88a). **F2 (średni):** `cast_adventure_creature` czytał tylko `zone==='exile' &&
+object.adventure`, a to stały druk (CR 715.2a), więc removal na stworze z przygodą (Gray Slaad,
+Ettercap) dawał kontrolerowi darmowy rzut z wygnania wbrew CR 715.3d i rulingowi FIN („exile for
+any other reason … won't give you permission"). Naprawa: stempel `meta.exiledBy === 'adventure'`
+nadawany wyłącznie przy rozstrzygnięciu czaru przygody; `isOnAdventure` (`zones.js`) jest jedynym
+predykatem dla oferty i walidacji; `meta` znika przy opuszczeniu exile (CR 400.7). 9 mutacji pinów
+PMSSB-32…35: 7 czerwonych, 2 przeżyły (O1 — obserwacja bez karty w katalogu, O2 — pasmo życia ≤2
+domknięte pinem). Żywy Tester: 4 partie, 0 zgłoszeń. Bot bez zmian.
+
+**Bramka końcowa:** `npm test` **7310/7310 EXIT 0** (7304 + 6), `test:all` **7581/7581**,
+build **70 modułów / 4709,9 kB**.

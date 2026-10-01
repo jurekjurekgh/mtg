@@ -18,20 +18,20 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016/0030.
 
 - [x] **Etap 0 — lektura startowa**: `AGENTS.md`, ADR 0001–0030, `LESSONS.md`
   (L1–L172, w kawałkach do końca pliku), `ENVIRONMENT.md`, handoff 2026-10-01f.
-- [ ] **Etap 1 — PR na starcie** (ADR 0020 A): ten plan jako pierwszy commit.
-- [ ] **Etap 2 — audyt PR #149**: `gh pr diff 149` czytany plik po pliku
+- [x] **Etap 1 — PR na starcie** (ADR 0020 A): ten plan jako pierwszy commit.
+- [x] **Etap 2 — audyt PR #149**: `gh pr diff 149` czytany plik po pliku
   (priorytet: `src/engine/*` — zwłaszcza `objects.js` / `impulse-window.js`
   (pieczęć wygnania w `moveObjectDirectly`, CR 400.7 / 702.185b), `effects.js`,
   `effect-intent.js`, `triggers.js`, `combat.js`; potem `heuristic-bot.js`
   i nowe pokrętła `heuristic-params.js`), zgodność z CR (źródła online, ADR 0030),
   ADR 0002 (zero przypadków po nazwie/ID karty), generyczność, RED→GREEN pinów
   weryfikowane mutacjami (L13/L159). Raport: `docs/audits/AUDYT_PR149_2026-10-01.md`.
-- [ ] **Etap 3 — naprawy znalezisk audytu** (każde: repro → fix u root cause → pin
+- [x] **Etap 3 — naprawy znalezisk audytu** (każde: repro → fix u root cause → pin
   → osobny zielony commit + push).
-- [ ] **Etap 4 — pętla jakości** (ADR 0021 §4): Żywy Tester z perspektywy gracza
+- [x] **Etap 4 — pętla jakości** (ADR 0021 §4): Żywy Tester z perspektywy gracza
   na ścieżkach NIEpowtarzanych z 01f (rodzina odroczeń zamknięta — nie wracać),
   detektory, polowanie na rozjazdy CR innymi ścieżkami niż poprzednia sesja.
-- [ ] **Etap 5 — zamknięcie**: handoff `HANDOFF_2026-10-01g.md`,
+- [x] **Etap 5 — zamknięcie**: handoff `HANDOFF_2026-10-01g.md`,
   `PROJECT_HISTORY.md`, liczby bramki zmierzone na końcu (L92), opis PR, blok
   przekazania.
 
