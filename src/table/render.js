@@ -4421,7 +4421,10 @@ export function cardInfo(session, object, combat = null) {
     // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
     // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
     // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.
-    cantAttackNow: Boolean(object.cantAttackStatic),
+    // O1 (decyzja właściciela 2026-10-01): badge tylko dla zakazu nałożonego
+    // przez INNY permanent/czar (`cantAttackExternal`); natywny Obrońca ma już
+    // słowo kluczowe na kaflu, więc `cantAttackStatic` sam badge'a nie daje.
+    cantAttackNow: Boolean(object.cantAttackExternal),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),

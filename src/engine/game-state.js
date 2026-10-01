@@ -20,7 +20,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
-import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPrevented } from './combat.js';
+import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
@@ -6558,8 +6558,15 @@ export function playerView(state, playerId) {
         // czytał ją wyłącznie z rejestru kart i nie znał deskryptorów stanu
         // (detain/aura Hobble). Bez flagi ekwipował stwora, który legalnie
         // NIE MOŻE zaatakować, marnując manę Equip.
-        if (object.kind === 'creature' && staticAttackPrevented(state, object, object.controllerId)) {
-          entry.cantAttackStatic = true;
+        // O1 (decyzja właściciela 2026-10-01): `cantAttackExternal` mówi, że
+        // zakaz nałożył INNY permanent/czar (aura, detain, Obrońca nadany,
+        // zdolność nadana) — wyłącznie to dostaje badge. Natywny Obrońca
+        // zostaje przy `cantAttackStatic` (bot go czyta), bez badge'a, bo
+        // słowo kluczowe już to mówi. To fakt publiczny (ADR 0017).
+        if (object.kind === 'creature') {
+          const prevention = staticAttackPreventionOf(state, object, object.controllerId);
+          if (prevention.prevented) entry.cantAttackStatic = true;
+          if (prevention.external) entry.cantAttackExternal = true;
         }
         // M407: dar „this turn" (cantBeBlockedUntilTurn, CR 514.2) — badge
         // widoku liczony read-time z numerem tury; kontrakt widoku bez zmian.
