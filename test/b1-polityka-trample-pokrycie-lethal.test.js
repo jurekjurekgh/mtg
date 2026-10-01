@@ -5,7 +5,7 @@
 // Reguły się NIE zmieniają — legalność takiego przydziału zapewnia W5
 // (CR 702.19b: „take into account damage already marked on the creature and
 // damage from other creatures that's being assigned during the same combat
-// damage step"; CR 702.2b dla deathtouch). Zmienia się WYBÓR domyślny, czyli
+// damage step"; CR 702.2c dla deathtouch). Zmienia się WYBÓR domyślny, czyli
 // ruch bota (bot nie ma wariantów: `legalCommands` oferuje jedną komendę
 // `resolve_damage_assignment` z domyślną mapą) i punkt startowy wizarda.
 //
@@ -128,7 +128,7 @@ test('B1/3: bez pokrycia oferta się NIE zmienia (lethal-first, regresja M66/E8-
   assert.equal(life(state, 'p1'), 18);
 });
 
-test('B1/4: pokrycie przez źródło z deathtouch (CR 702.2b) → oferta 0 na blokera', () => {
+test('B1/4: pokrycie przez źródło z deathtouch (CR 702.2c) → oferta 0 na blokera', () => {
   const state = combat({ yPower: 1, yToughness: 1, yKeywords: ['deathtouch'] });
   assert.deepEqual(offered(state), { x: [{ blockerId: 'w', amount: 0 }] },
     '1 obrażenie z deathtouch = lethal, więc dopłata byłaby stratą');

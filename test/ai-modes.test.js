@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   buildLorePrompt, buildPlayerPrompt, buildObserverPrompt,
   buildLoreObserverPrompt, buildSkitPrompt, buildPromptForMode,
+  buildTalkshowPrompt, buildGoodEvilPrompt,
+  TALKSHOW_COMMENT_LIMIT, GOOD_EVIL_COMMENT_LIMIT,
   buildChatMessagesForMode,
   LORE_COMMENT_LIMIT, PLAYER_COMMENT_LIMIT,
   OBSERVER_COMMENT_LIMIT, LORE_OBSERVER_COMMENT_LIMIT,
@@ -138,7 +140,7 @@ test('AI-R8 modes: KAŻDY tryb niesie talię Czarodziejki (zgłoszenie właścic
   // „Czarodziejka gra talią Czarodziejka, dziwne”, drugi mówił tylko o talii
   // bota. Pola heroDeck/heroWorld były liczone w baseCtx i przekazywane
   // z main.js, ale używał ich wyłącznie skit.
-  const tryby = ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit'];
+  const tryby = ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit', 'talkshow', 'zly-i-dobry'];
   for (const mode of tryby) {
     const prompt = buildPromptForMode(mode, CTX);
     assert.ok(prompt.includes('Rycerze (WU)'), `${mode}: brak talii Czarodziejki`);
@@ -146,7 +148,7 @@ test('AI-R8 modes: KAŻDY tryb niesie talię Czarodziejki (zgłoszenie właścic
   }
   // Tryby lore niosą dodatkowo JEJ świat (inaczej model wrzuci jej karty
   // w świat bota); „przy stole” (player/observer) wystarczy nazwa talii.
-  for (const mode of ['lore-bot', 'lore-observer', 'skit']) {
+  for (const mode of ['lore-bot', 'lore-observer', 'skit', 'talkshow', 'zly-i-dobry']) {
     assert.ok(buildPromptForMode(mode, CTX).includes('Kaldheim'),
       `${mode}: brak świata talii Czarodziejki`);
   }
@@ -182,12 +184,14 @@ test('AI-R4 modes skit: kontekst rozgrywki (talia, tura, log) dopisany', () => {
   assert.ok(buildSkitPrompt(null).includes('(nieznany świat)'));
 });
 
-test('AI-R4 modes: dyspozytor 5 trybów (nieznany = bezpieczny lore)', () => {
+test('AI-R4/R9 modes: dyspozytor 7 trybów (nieznany = bezpieczny lore)', () => {
   assert.ok(buildPromptForMode('lore-bot', CTX).includes('TY jesteś Nieprzyjaciel'));
   assert.ok(buildPromptForMode('player-bot', CTX).includes('graczem-botem'));
   assert.ok(buildPromptForMode('observer', CTX).includes('niezależnym obserwatorem'));
   assert.ok(buildPromptForMode('lore-observer', CTX).includes('obserwatorem pojedynku magów'));
   assert.ok(buildPromptForMode('skit', CTX).includes('**SKIT: -tytuł-**'));
+  assert.ok(buildPromptForMode('talkshow', CTX).includes('TRZECH dyskutantów'));
+  assert.ok(buildPromptForMode('zly-i-dobry', CTX).includes('DWÓCH dyskutantów'));
   assert.ok(buildPromptForMode('nie-ma-takiego', CTX).includes('NIE używaj wprost nazw kart'));
   assert.ok(buildPromptForMode(undefined, CTX).includes('TY jesteś Nieprzyjaciel'));
 });
@@ -250,4 +254,68 @@ test('AI-R7 chat: zero tur = legacy jedna wiadomość z (brak zapisu)', () => {
   const messages = buildChatMessagesForMode('lore-bot', { ...CTX, turns: [], replies: {} });
   assert.deepEqual(messages.map((m) => m.role), ['user']);
   assert.ok(messages[0].content.includes('(brak zapisu)'));
+});
+
+test('AI-R8 modes: łańcuch fallbacku heroWorld → tytuł talii → klucz → „(nieznany świat)”', () => {
+  // Audyt PR #147 (U6): istniejący test sprawdzał tylko fallback talii.
+  const lore = (extra) => buildPromptForMode('lore-bot', { ...CTX, ...extra });
+  // brak świata, jest tytuł talii Czarodziejki → świat = tytuł
+  assert.ok(lore({ heroWorld: undefined }).includes('jej karty pochodzą ze świata: Rycerze (WU)'));
+  // brak świata i tytułu, jest klucz → świat = klucz, talia = klucz
+  const poKluczu = lore({ heroWorld: undefined, heroDeckTitle: undefined });
+  assert.ok(poKluczu.includes('talią „rycerze-wu” — jej karty pochodzą ze świata: rycerze-wu'));
+  // nic → oba fallbacki, bez „undefined”
+  const nic = lore({ heroWorld: undefined, heroDeckTitle: undefined, heroDeckKey: undefined });
+  assert.ok(nic.includes('talią „(nieznana talia)” — jej karty pochodzą ze świata: (nieznany świat)'));
+  assert.ok(!nic.includes('undefined'));
+});
+
+test('AI-R9 talkshow: persony tworzone w pierwszej wiadomości, trzy zróżnicowane, spójność', () => {
+  const p = buildTalkshowPrompt(CTX);
+  assert.ok(p.includes('STWÓRZ trzy persony'));
+  assert.ok(p.includes('**W STUDIU:**'));
+  for (const rola of ['krytykant', 'łowca smaczków lore', 'mtg freak']) {
+    assert.ok(p.includes(rola), rola);
+  }
+  assert.ok(p.includes('NIE zmieniaj ich do końca partii'));
+  assert.ok(p.includes('spójność'));
+  assert.ok(p.includes('potyczka słowna'));
+  assert.ok(p.includes('turze nr 7'));
+  assert.ok(p.includes('coś się stało')); // przebieg tur dla AI jak w innych trybach
+  assert.ok(p.includes(`do około ${TALKSHOW_COMMENT_LIMIT} znaków`));
+  assert.ok(p.includes('Kaldheim') && p.includes('Wiedźmin')); // światy dla łowcy lore
+  assert.ok(!buildTalkshowPrompt(null).includes('undefined'));
+  assert.ok(TALKSHOW_COMMENT_LIMIT > 600); // dialog kilku osób > pojedynczy komentarz
+});
+
+test('AI-R9 zły i dobry: dwie persony z odwróconymi rolami (fan A + krytyk B oraz odwrotnie)', () => {
+  const p = buildGoodEvilPrompt(CTX);
+  assert.ok(p.includes('STWÓRZ dwie persony'));
+  assert.ok(p.includes('FAN Czarodziejki i OSTRY KRYTYK gry bota „Nieprzyjaciel”'));
+  assert.ok(p.includes('FAN bota „Nieprzyjaciel” i OSTRY KRYTYK gry Czarodziejki'));
+  assert.ok(p.includes('NIE zmieniaj ich do końca partii'));
+  assert.ok(p.includes('nie dochodzą do zgody'));
+  assert.ok(p.includes('potyczka słowna'));
+  assert.ok(p.includes(`do około ${GOOD_EVIL_COMMENT_LIMIT} znaków`));
+  assert.ok(p.includes('coś się stało'));
+  assert.ok(!buildGoodEvilPrompt(null).includes('undefined'));
+});
+
+test('AI-R9 chat radio: brief z personami RAZ, odpowiedź z person wraca jako assistant, follow-up bez briefu', () => {
+  for (const mode of ['talkshow', 'zly-i-dobry']) {
+    const messages = buildChatMessagesForMode(mode, {
+      ...CTX,
+      turns: [{ number: 1, text: 'Tura 1 — A.' }, { number: 2, text: 'Tura 2 — B.' }, { number: 3, text: 'Tura 3 — C.' }],
+      replies: { 1: '**W STUDIU:** PERSONY-1', 2: '**Zdzisia:** ODP-2' },
+    });
+    assert.deepEqual(messages.map((m) => m.role), ['user', 'assistant', 'user', 'assistant', 'user'], mode);
+    const joined = messages.map((m) => m.content).join('\n');
+    assert.equal(joined.split('Zasady:').length - 1, 1, mode); // brief raz
+    assert.ok(messages[0].content.includes('STWÓRZ'), mode);
+    assert.equal(messages[1].content, '**W STUDIU:** PERSONY-1', mode);
+    assert.ok(messages[2].content.includes('te same persony'), mode);
+    assert.ok(!messages[2].content.includes('STWÓRZ'), mode);
+    // Awaryjnie: gdy odpowiedź z personami nie wróciła do rozmowy.
+    assert.ok(messages[4].content.includes('przedstaw je teraz'), mode);
+  }
 });

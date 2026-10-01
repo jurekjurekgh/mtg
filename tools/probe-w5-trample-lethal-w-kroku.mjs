@@ -11,7 +11,7 @@
 // and damage from other creatures that's being assigned during the same combat
 // damage step**, but not any abilities or effects that might change the amount of
 // damage that's actually dealt."
-// Tak samo 702.2b (deathtouch): każde niezerowe obrażenia ze źródła z deathtouch
+// Tak samo 702.2c (deathtouch): każde niezerowe obrażenia ze źródła z deathtouch
 // liczą się jako lethal.
 //
 // Scenariusz: p2 atakuje x (trample 5/5) i y (3/3); p1 blokuje OBA jednym w

@@ -196,29 +196,70 @@ function hasAloneRestriction(object, field) {
  * woła odtąd ten helper zamiast duplikować listę ograniczeń.
  */
 export function staticAttackPrevented(state, object, playerId) {
-  if (!object || object.kind !== 'creature') return false;
+  return staticAttackPreventionOf(state, object, playerId).prevented;
+}
+
+/**
+ * Decyzja właściciela (2026-10-01, O1 z audytu PR #147): badge „nie może
+ * atakować” NIE dubluje tego, co kafel już mówi — natywny Obrońca (słowo
+ * kluczowe wydrukowane na stworze) i własne statyczne „can't attack unless…”
+ * są w tekście karty. Badge służy zakazowi nałożonemu przez INNY permanent
+ * lub czar: aura/sprzęt „can't attack”, detain, Obrońca nadany (aura, efekt,
+ * statyka lorda), zdolność „can't attack unless…” nadana z zewnątrz.
+ *
+ * Jedno źródło prawdy dla walidacji (`staticAttackPrevented`, L48/L41) i dla
+ * widoku (`external` → entry.cantAttackExternal): ta sama lista przyczyn,
+ * z adnotacją, skąd każda pochodzi. `prevented` = którakolwiek przyczyna;
+ * `external` = którakolwiek przyczyna spoza samego stwora (przy natywnym
+ * Obrońcy + aurze „can't attack” badge jest, bo aura niesie własną informację).
+ */
+export function staticAttackPreventionOf(state, object, playerId) {
+  const result = { prevented: false, external: false };
+  if (!object || object.kind !== 'creature') return result;
   const controllerId = playerId ?? object.controllerId;
-  // Defender (CR 702.3), detain (CR 701.35), aura/attachment „can't attack"
+  const mark = (external) => {
+    result.prevented = true;
+    if (external) result.external = true;
+  };
+  // Zdolność statyczna stwora: wydrukowana (`abilities`, tłumiona przez
+  // abilitiesStripped) albo nadana z zewnątrz (`abilityGrants`).
+  const staticAbility = (field) => {
+    const matches = (ability) => ability?.type === 'static' && ability[field];
+    const hasAny = effectiveAbilities(object).some(matches);
+    if (!hasAny) return { has: false, native: false };
+    const native = !object.abilitiesStripped && (object.abilities ?? []).some(matches);
+    return { has: true, native };
+  };
+  // Defender (CR 702.3), detain (CR 701.35), aura/attachment „can't attack”
   // W-8: „can attack as though it didn't have defender” uchyla TYLKO to
   // ograniczenie (defender zostaje cechą stwora).
-  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) return true;
-  if (object.detained) return true;
-  if (attachmentRestrictions(state, object).cantAttack) return true;
-  // „Can't attack unless defending player controls a creature with flying".
-  if (effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderHasFlying)) {
+  if (hasKeyword(state, object, 'defender') && !object.attacksAsThoughNoDefenderUntilEOT) {
+    // Natywny = wydrukowany, niezdjęty i niezakryty (zakryty stwór nie ma
+    // własnych keywordów, CR 708.2a; utrata do końca tury = nadanie zewnętrzne).
+    const native = !object.faceDown && !object.abilitiesStripped
+      && (object.keywords ?? []).includes('defender')
+      && !(object.lostKeywordsUntilEOT ?? []).includes('defender');
+    mark(!native);
+  }
+  if (object.detained) mark(true);
+  if (attachmentRestrictions(state, object).cantAttack) mark(true);
+  // „Can't attack unless defending player controls a creature with flying”.
+  const flyingRule = staticAbility('cantAttackUnlessDefenderHasFlying');
+  if (flyingRule.has) {
     const defendingPlayerId = state.players.find((p) => p.id !== controllerId)?.id;
     const hasFlyer = Boolean(defendingPlayerId) && [...state.objects.values()].some((candidate) => candidate.zone === 'battlefield'
       && candidate.controllerId === defendingPlayerId
       && candidate.kind === 'creature'
       && hasKeyword(state, candidate, 'flying'));
-    if (!hasFlyer) return true;
+    if (!hasFlyer) mark(!flyingRule.native);
   }
-  // „Can't attack unless defending player is poisoned" (Chained Throatseeker).
-  if (effectiveAbilities(object).some((ability) => ability?.type === 'static' && ability.cantAttackUnlessDefenderPoisoned)) {
+  // „Can't attack unless defending player is poisoned” (Chained Throatseeker).
+  const poisonRule = staticAbility('cantAttackUnlessDefenderPoisoned');
+  if (poisonRule.has) {
     const defender = state.players.find((p) => p.id !== controllerId);
-    if (!defender || (defender.poison ?? 0) <= 0) return true;
+    if (!defender || (defender.poison ?? 0) <= 0) mark(!poisonRule.native);
   }
-  return false;
+  return result;
 }
 
 function isLegalAttacker(state, object, playerId) {
@@ -605,7 +646,7 @@ export function damageAssignedToBlockerThisPass(state, pass, blockerId, excludeA
 }
 
 /**
- * W5 (CR 702.2b): czy bloker ma JUŻ przydzielone lethal w tym przebiegu przez
+ * W5 (CR 702.2c): czy bloker ma JUŻ przydzielone lethal w tym przebiegu przez
  * inne stwory — albo dlatego, że suma ich przydziałów sięga lethal, albo dlatego,
  * że którekolwiek z nich jest niezerowe i pochodzi od źródła z deathtouch
  * („Any nonzero amount of combat damage assigned to a creature by a source with
@@ -658,7 +699,7 @@ function singleBlockerFullAssignment(blockers, amount) {
  * (CR 702.19b); gdy mocy nie starcza na wszystkie lethal — całość w blokerów
  * (jak dotąd — wymóg walidatora M101/B6).
  *
- * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2b): dopłata do lethal
+ * B1 (zlecenie właściciela 2026-09-12, CR 702.19b/702.2c): dopłata do lethal
  * blokera, którego lethal POKRYWAJĄ już obrażenia przydzielane mu w tym samym
  * kroku przez inne stwory, jest stratą obrażeń — przy trample legalnie mogą iść
  * na gracza, więc `context = { assignments, pass }` (ta sama mapa, którą widzi
@@ -806,7 +847,7 @@ function needsBlockerDamageAssignmentDecision(state, blocker, targets) {
  * przebiegu skierowane w danego atakującego — symetria
  * `assignedToBlockerThisPass`, z tymi samymi konwencjami: jawne przydziały z mapy
  * (CR 510.1e), dla blokerów bez decyzji — pełna moc (jeden cel) albo podział
- * domyślny, deathtouch → każde niezerowe obrażenie jest lethal (CR 702.2b),
+ * domyślny, deathtouch → każde niezerowe obrażenie jest lethal (CR 702.2c),
  * `onlyAssigned` pomija blokery z decyzją, której jeszcze nie ogłoszono (polityka
  * sekwencyjna B1 — inaczej każdy zakładałby, że lethal pokryje ktoś inny),
  * prewencja/protection POMIJANE (reguła mówi o PRZYDZIALE, nie o zadanych).
@@ -847,7 +888,7 @@ export function damageAssignedToAttackerThisPass(state, pass, attackerId, exclud
 /**
  * Czy atakujący ma JUŻ przydzielone lethal w tym przebiegu przez INNE blokery
  * (suma sięga lethal albo któreś niezerowe obrażenie pochodzi ze źródła
- * z deathtouch — CR 702.2b). Symetria `lethalAssignedByOthersThisPass`.
+ * z deathtouch — CR 702.2c). Symetria `lethalAssignedByOthersThisPass`.
  */
 export function lethalAssignedByOtherBlockersThisPass(state, pass, attackerId, excludeBlockerId, assignments = null, onlyAssigned = false) {
   const attacker = state.objects.get(attackerId);
@@ -1099,7 +1140,7 @@ export function validateDamageAssignment(state, attackerId, assignment, context 
       const byOthers = context
         ? damageAssignedToBlockerThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments)
         : 0;
-      // CR 702.2b: lethal może być już pokryty przez źródło z deathtouch.
+      // CR 702.2c: lethal może być już pokryty przez źródło z deathtouch.
       const coveredByOthers = Boolean(context
         && lethalAssignedByOthersThisPass(state, context.pass, entry.blockerId, attackerId, context.assignments));
       if (!coveredByOthers && entry.amount + byOthers < lethalOf(state, attacker, blocker)) return 'trample_blocker_below_lethal';

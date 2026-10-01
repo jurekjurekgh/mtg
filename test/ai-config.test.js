@@ -66,13 +66,16 @@ test('AI-R2 config: tryb player-bot na liście, roundtrip, własna karta', () =>
   assert.equal(loadAiConfig(storage).mode, 'player-bot');
 });
 
-test('AI-R4 config: 5 trybów, każdy z etykietą i własną kartą arkusza', () => {
+test('AI-R4/R9 config: 7 trybów, każdy z etykietą i własną kartą arkusza', () => {
   assert.deepEqual(AI_MODES.map((m) => m.id),
-    ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit']);
+    ['lore-bot', 'player-bot', 'observer', 'lore-observer', 'skit', 'talkshow', 'zly-i-dobry']);
   for (const m of AI_MODES) {
     assert.ok(m.label.length > 0);
     assert.equal(m.tabName, m.id);
   }
+  // AI-R9: nazwa karty w Dokumencie = id (małe litery, myślniki) — Code.gs
+  // szuka karty po tytule, więc spacja/wielka litera = wpis „Brak karty”.
+  for (const m of AI_MODES) assert.match(m.tabName, /^[a-z]+(-[a-z]+)*$/);
   const storage = memStorage();
   saveAiConfig(storage, { ...aiDefaultConfig(), mode: 'skit' });
   assert.equal(loadAiConfig(storage).mode, 'skit');

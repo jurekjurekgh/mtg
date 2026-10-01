@@ -3,7 +3,7 @@
  *
  * CO TO ROBI: odbiera POST-y z aplikacji (komentarze AI po turach)
  * i dopisuje je NA KOŃCU karty o nazwie trybu (`lore-bot`, `player-bot`,
- * `observer`, `lore-observer`, `skit`). Każdy wpis: linia metadanych
+ * `observer`, `lore-observer`, `skit`, `talkshow`, `zly-i-dobry`). Każdy wpis: linia metadanych
  * (tura, model, długość, czas, partia) + treść komentarza + rozdzielnik.
  * Pierwszy zapis gameId W DANEJ KARCIE dokumentu poprzedza nagłówek:
  * podział strony + H1 „⚔️ Nowa partia: X vs Y” (łatwe szukanie początków).
@@ -17,8 +17,9 @@
  * WDROŻENIE (pełna instrukcja: `docs/ai-appscript/INSTRUKCJA.md`):
  * 1. Nowy Dokument Google (np. „MTG AI log”), skopiuj jego ID z adresu
  *    (fragment między `/document/d/` a `/edit`) i wklej niżej do DOC_ID.
- * 2. W dokumencie utwórz 5 kart o DOKŁADNIE takich tytułach:
- *    `lore-bot`, `player-bot`, `observer`, `lore-observer`, `skit`.
+ * 2. W dokumencie utwórz 7 kart o DOKŁADNIE takich tytułach:
+ *    `lore-bot`, `player-bot`, `observer`, `lore-observer`, `skit`,
+ *    `talkshow`, `zly-i-dobry`.
  * 3. Rozszerzenia → Aplikacje Apps Script → wklej TEN plik → zapisz.
  * 4. Wdróż → Nowe wdrożenie → „Aplikacja internetowa”, „Uruchom jako: Ja”,
  *    „Dostęp: Każdy” → skopiuj URL (`…/exec`).

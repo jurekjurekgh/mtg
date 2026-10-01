@@ -2,7 +2,7 @@
 
 Aplikacja sama dopisuje każdy udany komentarz AI na końcu karty
 o nazwie trybu (`lore-bot`, `player-bot`, `observer`, `lore-observer`,
-`skit`). Każdy wpis to linia metadanych (tura, model, długość, czas,
+`skit`, `talkshow`, `zly-i-dobry`). Każdy wpis to linia metadanych (tura, model, długość, czas,
 partia) + treść komentarza + rozdzielnik. Błędy (sieci, modelu, klucza)
 NIGDY nie są wysyłane.
 
@@ -63,7 +63,7 @@ wykonują kod skryptu z atrapą API, nie logują się do Twojego konta Google.
    `https://docs.google.com/document/d/`**`1AbC…xYz`**`/edit`
    → ID to `1AbC…xYz`. Zapisz je w notatniku na chwilę.
 
-## Krok 2 — 5 kart (ręcznie, 2 minuty)
+## Krok 2 — 7 kart (ręcznie, 2–3 minuty)
 
 Skrypt **nie potrafi zakładać kart sam** (ani Apps Script, ani Docs API
 nie mają takiej metody) — robisz to raz ręcznie:
@@ -77,7 +77,17 @@ nie mają takiej metody) — robisz to raz ręcznie:
    - `observer`
    - `lore-observer`
    - `skit`
+   - `talkshow` (tryb „Radio: Talkshow”, trzech dyskutantów)
+   - `zly-i-dobry` (tryb „Radio: Zły i Dobry”, dwóch dyskutantów)
 3. Gdy w przyszłości dojdzie nowy tryb, dopisz mu kartę tak samo.
+
+**Dokument już działa i dochodzą tylko nowe tryby?** Wystarczy założyć
+brakujące karty (`talkshow`, `zly-i-dobry`) w istniejącym dokumencie —
+**nie trzeba** edytować `Code.gs` ani wdrażać skryptu od nowa (skrypt
+bierze nazwę karty z trybu przysłanego przez aplikację; zmiana `Code.gs`
+w tej wersji to wyłącznie komentarz). Wpisy, które trafiły wcześniej do
+karty z „⚠️ Brak karty …”, nie przenoszą się same — tylko kolejne
+komentarze pójdą do nowej karty.
 
 > Gdy karty dla trybu zabraknie, wpis i tak nie ginie — ląduje
 > w pierwszej karcie z nagłówkiem „⚠️ Brak karty …”. Załóż kartę,

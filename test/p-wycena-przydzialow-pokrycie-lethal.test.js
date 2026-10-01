@@ -197,7 +197,7 @@ test('P/4: bloker BEZ pokrycia — plan się NIE zmienia (regresja W3/M66)', () 
   assert.equal(damage(state, 'a2'), 2, 'a2 przeżywa z 2 obrażeniami');
 });
 
-test('P/5: pokrycie przez źródło z deathtouch po stronie blokera (CR 702.2b)', () => {
+test('P/5: pokrycie przez źródło z deathtouch po stronie blokera (CR 702.2c)', () => {
   const state = walka({
     stwory: stworyBlokera({ v: [1, 1, { keywords: ['deathtouch'] }] }),
     atak: ['a1', 'a2'],
@@ -312,7 +312,7 @@ test('P/10: helpery pokrycia po stronie blokera — suma, deathtouch, onlyAssign
   assert.equal(lethalAssignedByOtherBlockersThisPass(state, pass, 'a1', 'w', mapa), true, 'lethal a1 (2) pokryty przez v');
   assert.equal(lethalAssignedByOtherBlockersThisPass(state, pass, 'a2', 'w', mapa), false, 'a2 nie ma innych blokerów');
 
-  // Deathtouch: każde niezerowe obrażenie jest lethal (CR 702.2b).
+  // Deathtouch: każde niezerowe obrażenie jest lethal (CR 702.2c).
   const deathtouch = walka({
     stwory: stworyBlokera({ v: [1, 1, { keywords: ['deathtouch'] }] }),
     atak: ['a1', 'a2'], bloki: { a1: ['w', 'v'], a2: ['w'] },
