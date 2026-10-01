@@ -14619,5 +14619,18 @@ obniżony 1200 → 900 znaków („1200 to za dużo”) — `TALKSHOW_COMMENT_LI
 `src/table/ai-modes.js`, pin wartości + mutacja w `test/ai-modes.test.js`. Prompt-only,
 bez zmian w `Code.gs` (tryb działa bez redeployu Apps Script).
 
-**Bramka końcowa:** `npm test` 7226/7226 (7222 + 4 piny O-a), `npm run test:all` 7497/7497,
-`npm run build` 70 / 4674,6 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).
+**U5/O3 z audytu #146 (klasa ADR 0002/0010 + ADR 0017):** liczby wariantu Food
+(„+5/+5 za poświęcenie, +3/+3 inaczej”) były zaszyte w TRZECH miejscach: `effects.js`
+(gałąź bez Food), `game-state.js` (`sacrificed ? 5 : 3`) i w bocie (`pumpDelta`,
+decyzja `resolve_food_choice`) — razem z progiem „mało życia” 10 i mnożnikiem ×2 poza
+`heuristic-params.js`. Teraz liczby żyją w DESKRYPTORZE karty
+(`powerIfSacrificed`/`toughnessIfSacrificed`/`powerIfKept`/`toughnessIfKept`), silnik je
+stosuje i przenosi do oczekującej decyzji, a widok wystawia decydentowi
+(`view.pendingFoodChoice` — kontrakt widoku ADR 0017), z którego liczy bot; próg
+i mnożnik to pokrętła. Strażnik katalogu wymaga obu wariantów w każdym efekcie
+`sacrifice_food_choice`. Wartości domyślne == dawne stałe (zero zmian zachowania:
+PMSSB-22 12/12, golden-master bota zielony). Piny:
+`test/audyt-u5-o3-food-deskryptor.test.js` (9; cztery mutacje czerwienią A/B3/B4/D1+D2).
+
+**Bramka końcowa:** `npm test` 7235/7235 (7226 + 9 pinów O3/U5), `npm run test:all` 7506/7506,
+`npm run build` 70 / 4680,0 kB (7222/7493/4673,6 kB było bramką tej sesji przed Etapem 6).

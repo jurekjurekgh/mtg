@@ -62,6 +62,17 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   dużo”). Pin wartości w `test/ai-modes.test.js` (mutacja „powrót 1200”
   czerwieni test talkshow). Prompt-only — bez zmian w `Code.gs`.
 
+- [x] **Etap 8 — U5/O3 z audytu #146 (fala z planem)**: liczby wariantu Food
+  (+5/+5 za poświęcenie, +3/+3 inaczej) przeniesione z silnika i bota do
+  DESKRYPTORA karty (`powerIfSacrificed`/`toughnessIfSacrificed`,
+  `powerIfKept`/`toughnessIfKept`); silnik tylko stosuje, oczekująca decyzja
+  niesie oba warianty, a widok wystawia je decydentowi
+  (`view.pendingFoodChoice`, ADR 0017). Próg „mało życia” (10) i mnożnik ×2
+  to pokrętła (`foodKeepLowLifeThreshold`, `foodKeepLowLifeMultiplier`).
+  Piny: `test/audyt-u5-o3-food-deskryptor.test.js` (9; mutacje: twarde 5/3
+  w bocie → D1+D2, `sacrificed ? 5 : 3` w silniku → B3, twarde +3 auto →
+  B4, deskryptor bez liczb → strażnik katalogu A).
+
 ## Ryzyka
 
 - Budżet lektury: po wpisaniu **L172** (O2/O-a) i kondensacji L163/L164/L165/
@@ -81,6 +92,8 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 8 (U5/O3):** `npm test` **7235/7235**, `npm run build` **70 / 4680,0 kB**;
+  brak zmian zachowania (wartości domyślne == dawne stałe, golden-master zielony).
 - **Etap 7 (AI-R10):** limit talkshow 900 (pin + mutacja), build 70 / 4674,8 kB.
 - **Etap 6 (O2 + O-a):** `4fcbff7`; `npm test` **7226/7226** (baza 7222 + 4 piny
   O-a), `npm run build` **70 / 4674,6 kB**; Żywy Tester 4 partie (s401 defensive
