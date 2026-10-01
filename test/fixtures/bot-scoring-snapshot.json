@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "ab8d57d21232891c89b15b5d4794a4c19b98af35f747cb101df93aa9795ac822",
+  "overallHash": "4024bcd1c7c5aa93541c63c0b84f57e4d8f68a58f9b073b8eee33915925d1906",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -45,9 +45,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "5210333bfa4f97f36dd1d5ecc60fec7e827ce0581556c44a4962e946abdb8eb6",
+      "hash": "9165948f8910797b09b54078f2cc679839953869db7ba76fd4441fcde4ec696a",
       "decisions": 240,
-      "scoreSum": 2898.5881,
+      "scoreSum": 2892.5881,
       "chosenKinds": {
         "attack": 8,
         "block": 8,

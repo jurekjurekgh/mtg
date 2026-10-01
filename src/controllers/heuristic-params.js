@@ -427,6 +427,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
   'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
   'equipPumpBonusPerPoint',      // waga ciała dokładanego przez sprzęt przy pierwszym założeniu
+  // PMSSB-35 — odroczenie zagrania (`plot_card`/`suspend_card`/`warp_card` +
+  // rzut karty czekającej z wygnania). Dwa wymiary po pomiarze PRZED
+  // (sonda `/home/user/scratch/pmssb35-odroczenie-przed.mjs`): koszt akcji i
+  // zwłoka. Nazwy mówią, ZA CO jest kara — nie „premia za czekanie”.
+  'plotRedundantPenalty',        // surcharge, gdy plot nie oszczędza many wobec rzutu dostępnego TERAZ
+  'plotDelayPenalty',            // surcharge za turę zwłoki, gdy rzut jest dostępny teraz
+  'suspendWaitPenalty',          // surcharge za każdy licznik czasu zawieszenia
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -742,6 +749,29 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // (`equipValuation.bodyValue`), wagą 1 — dopłata, nie zamiana bazy
   // „10 + 2 × moc nosiciela" (anty-over-fix M429).
   equipPumpBonusPerPoint: 1,
+  // PMSSB-35 (sonda PRZED: /home/user/scratch/pmssb35-odroczenie-przed.mjs,
+  // scenariusze S1–S15). Trzy wymiary odroczenia — wszystkie DOPŁATY nad
+  // dotychczasowymi bazami (anty-over-fix: baza 55 plotu i −15/+5 warpu
+  // zostają; przy braku oferty rzutu odroczenie nie traci nic ponad cenę
+  // własnego kosztu):
+  // - redundant: plot droższy (lub równy) od rzutu, który JUŻ jest w ofertach,
+  //   jest grą dominowaną — płacisz co najmniej tyle samo i czekasz turę
+  //   (zmierzone S6: Tumbleweed Rising {1}{G}, plot {3}{G} → 55 vs rzut 49,98).
+  //   Surcharge musi przebić bazę 55, żeby rzut wygrywał (L3: kara przebija
+  //   premię), ale zostaje pod progiem „nigdy nie plotuj" — karta bez oferty
+  //   rzutu zachowuje dawną bazę.
+  plotRedundantPenalty: 30,
+  // - delay: jedna tura zwłoki to jedna tura bez efektu (ten sam rząd co
+  //   koszt many: 1 pkt/pt, więc {4} płacone teraz przewyższa 5 pkt zwłoki).
+  plotDelayPenalty: 5,
+  // - wait: każde odroczenie suspendu to liczniki czasu, po jednym zdejmowanym
+  //   na turę (CR 702.62c) — 1 pkt to ta sama jednostka co 1 mana w wymiarze
+  //   kosztu. 4 liczniki Mindstaba = 4 pkt: gdy rzut jest nieosiągalny,
+  //   inwestycja zostaje wyraźnie opłacalna (S1: 30 − 2 − 4 = 24 > 0), a gdy
+  //   rzut JEST w ofertach, suspend schodzi pod niego (S2: 8 − 2 − 4 = 2),
+  //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
+  //   nieopłacalny” nadal zostaje nad passem).
+  suspendWaitPenalty: 1,
 });
 
 /**

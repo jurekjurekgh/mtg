@@ -3,6 +3,7 @@ import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
+import { castsWithoutPayingMana } from '../engine/impulse-window.js';
 
 /**
  * O-3 (audyt PR #134): źródło many obiektu Z WIDOKU. Widok niesie
@@ -5794,6 +5795,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
     if (cmd.surgeCast) return card?.surge?.cost ?? cardDef(card?.cardId)?.surge?.cost ?? 0;
+    // PMSSB-35/A (L41): karta czekająca w wygnaniu, którą silnik rzuca BEZ
+    // płacenia (CR 702.170d plot; CR 701.18 Play — darmowy impuls ze stemplem
+    // `playableWithoutPaying`), nie rezerwuje many — podatek ward liczy się
+    // od tego, co realnie schodzi z puli.
+    if (castsWithoutPayingMana(card)) return 0;
     const base = card?.manaCost ?? (card?.cardId ? (cardDef(card.cardId)?.manaCost ?? 0) : 0);
     return base + (cmd.xValue ?? 0);
   }
@@ -6786,6 +6792,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= 15;
         // ETB licznik (jeśli definicja ma taki trigger) — mały bonus.
         if ((def?.abilities ?? []).some((a) => a?.trigger?.event === 'enter_battlefield')) score += 5;
+        // PMSSB-35/B2 (wymiar KOSZTU): koszt warp to realna cena wariantu —
+        // bez niej wynik był identyczny przy 3 i 6 manach (pomiar PRZED:
+        // 70,000 w obu scenariuszach). Skala jak przy rzucie stwora (L41).
+        score -= P.creatureManaCostWeight * ((card.warp.cost ?? 0) + (card.warp.colors ?? []).length);
         if (wastefulStep(view)) return finish(-30);
         return finish(score);
       }
@@ -6796,8 +6806,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // da się rzucić od razu (za mało many) — wtedy koszt {B} za 4 tury
         // czekania to inwestycja. Przy wystarczającej manie zwykły rzut jest
         // lepszy — suspen dostaje wyraźnie niższy score niż cast_spell.
-        const manaNeeded = card.manaCost ?? 0;
-        return finish(manaNeeded > manaAvailableNow(view) ? 30 : 8);
+        //
+        // PMSSB-35/B3 (pozycja kolejki handoffu 01e): „da się rzucić od razu”
+        // czytamy z OFERTY silnika (`castOfferedNow`: oferta = legalność —
+        // kolory, pipy i źródła nielandowe; L48), a nie z legacy
+        // `manaAvailableNow` (pula + nietapnięte LĄDY). Pomiar PRZED (S3):
+        // 5 lądów + Seer's Lantern → rzut był oferowany, a bot dawał 30
+        // („nie stać mnie”) i wybierał suspend.
+        let score = castOfferedNow(view, card) ? 8 : 30;
+        // PMSSB-35/B3b: cena odroczenia — mana wyłożona TERAZ (skala rodziny)
+        // plus czas: liczniki zdejmowane po jednym na turę (CR 702.62c).
+        score -= P.creatureManaCostWeight * ((card.suspend.cost ?? 0) + (card.suspend.colors ?? []).length);
+        score -= P.suspendWaitPenalty * Math.max(0, card.suspend.timeCounters ?? 0);
+        return finish(score);
       }
       case 'plot_card': {
         const card = handCard(view, cmd.objectId);
@@ -6810,10 +6831,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'create_token') score += tokenBodyValue(view, effect);
           if (effect.type === 'mill_cards') score += 2;
         }
+        // PMSSB-35/B1 (kontrola (b) procedury — wymiar KOSZTU): zaplotowanie
+        // kosztuje manę TERAZ, a rzuca kartę dopiero później; bez ceny warianty
+        // {1}{W} i {4}{G} remisowały na bazie 55. Skala jak przy rzucie stwora
+        // (`creatureManaCostWeight`, koszt + pipy — L41/L48).
+        const plotTotal = (card.plot.cost ?? 0) + (card.plot.colors ?? []).length;
+        score -= P.creatureManaCostWeight * plotTotal;
+        // PMSSB-35/B1b (dowód decyzyjny S6): gdy rzut tej karty JEST już
+        // w ofertach, plot ma sens wyłącznie jako realna oszczędność many —
+        // inaczej jest grą dominowaną (płacisz co najmniej tyle samo i czekasz
+        // turę). Zmierzone PRZED: Tumbleweed Rising {1}{G} z plotem {3}{G}
+        // wybierał plot 55 nad rzutem 49,98.
+        if (castOfferedNow(view, card)) {
+          const mvTotal = (card.manaCost ?? 0) + coloredPipsOf(card.cardId).length;
+          if (plotTotal >= mvTotal) score -= P.plotRedundantPenalty;
+          score -= P.plotDelayPenalty;
+        }
         return finish(score);
       }
       case 'cast_permanent': {
-        const card = handCard(view, cmd.objectId);
+        // PMSSB-35/A (L41): ta sama komenda rzuca kartę z RĘKI i kartę
+        // CZEKAJĄCĄ w wygnaniu (plot, późniejszy rzut po warp, okno impulsu).
+        // `handCard` sam zostawiał rzut z wygnania bez karty → gałąź liczyła
+        // puste 0/0 (`P.creatureBase` × waga) niezależnie od ciała i kosztu;
+        // pomiar PRZED: 4 różne karty = 63,000, ciało 20/20 = dalej 63,000.
+        // Wzorzec jak w `cast_spell` (M103/D) — jedna arytmetyka dla obu stref.
+        const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         if (cmd.bestow || cmd.targets?.length) {
           // Czar aury (bestow albo czysta aura): +N/+N i keywordy na stworze.
           // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
@@ -6971,8 +7014,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // na kontrę, a „tempo" jest podstawową miarą wartości w Magic.
         // Waga 1/pt many jest celowo mniejsza niż waga siły (2/pt): płacenie za
         // większy korpus pozostaje opłacalne, dopóki korpus jest większy.
-        score -= P.creatureManaCostWeight
-          * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+        // PMSSB-35/A (L41 + L48): koszt many odejmujemy TYLKO wtedy, gdy rzut
+        // naprawdę go płaci. Reguła jest własnością silnika
+        // (`castsWithoutPayingMana`: plot CR 702.170d, darmowy impuls
+        // CR 701.18 Play + stempel `playableWithoutPaying`), nie bota — inaczej
+        // darmowy rzut zaplotowanej karty byłby karany za manę, której nikt
+        // nie wydaje. Warp z wygnania (CR 702.185a) płaci pełny koszt, więc
+        // zostaje na ścieżce ogólnej.
+        if (!castsWithoutPayingMana(card)) {
+          score -= P.creatureManaCostWeight
+            * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+        }
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
         // ETB „attach za darmo" fizzluje (CR 608.2b), a karta czeka na stole

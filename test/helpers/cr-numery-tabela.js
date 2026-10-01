@@ -510,6 +510,13 @@ export const NUMERY = [
   '702.174j',
   '702.175a',
   '702.185a',
+  // PMSSB-35/E: dopisane RĘCZNIE (brak pliku CR w sandboxie — brak egressu),
+  // po weryfikacji wobec dosłownego tekstu CR 2026-09-25 (mtg.wiki, strona
+  // „Warp» §Rules: „702.185b Some effects refer to “warped” cards in exile.
+  // A warped card in exile is one that was exiled by the delayed triggered
+  // ability created by a warp ability.”). Powód cytatu: rozstrzygnięcie, że
+  // pieczęć rzutu z wygnania nie przeżywa ponownego wygnania innym efektem.
+  '702.185b',
   '704.3',
   '704.4',
   '704.5a',

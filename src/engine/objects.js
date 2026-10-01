@@ -6,6 +6,7 @@ import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
 import { entersTappedNow, animationEffectsOf, animationFieldsAfter } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
+import { clearImpulseWindowStamp } from './impulse-window.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -209,8 +210,28 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     ...(object.blockRequirementCount != null ? { blockRequirementCount: 0 } : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
+  // PMSSB-35/E (CR 400.7 + 702.170d/702.185a/b + glosariusz „Plotted"):
+  // uprawnienie do rzutu Z WYGNANIA (zaplotowanie, poczekalnia warp, okno
+  // impulsu, zawieszenie) istnieje wyłącznie w tej strefie —„for as long as
+  // it remains exiled". Nowy obiekt nie pamięta poprzedniego istnienia; bez
+  // tego permanent rzucany z wygnania nosił pieczęć dalej, a PONOWNIE wygnany
+  // (efektem innego źródła) wracał do ofert rzutu z wygnania — nielegalnie:
+  // 702.185b definiuje „warped card" jako kartę wygnaną triggerem warp,
+  // a glosariusz „Plotted" jako kartę wygnaną akcją plot (lub efektem, który
+  // tak stanowi). Realny przebieg: `worek-legend|dominaria-brg` seed 1000 —
+  // ta sama karta rzucana z wygnania na t12 i znowu na t14 (Faceless Butcher
+  // wygnał ją ponownie, a stempel przeżył zmianę strefy).
+  const exilePermissionReset = object.zone === 'exile' ? {
+    plotted: false, plottedAtTurn: null,
+    warpReady: false, warpedAtTurn: null,
+    suspended: false, suspendReady: false, timeCounters: 0,
+    madnessReady: false,
+    // Para pól okna impulsu ma właściciela (impulse-window.js) — zapis idzie
+    // przez helper, nie przez literał w tym pliku (guard family-audit).
+    ...clearImpulseWindowStamp(object),
+  } : null;
   const moved = Object.freeze({
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,
