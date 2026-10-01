@@ -1,4 +1,4 @@
-import { optionalEffectVariants } from '../engine/effect-intent.js';
+import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
@@ -862,12 +862,10 @@ const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'doubl
 // deskryptorze licznika, bez nazw kart (ADR 0002).
 const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
 // Wrogie dla obdarowanego: obniżają statystyki albo blokują odkręcanie
-// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Silnik ma ten sam
-// podział w `effect-intent.js`
-// (`HOSTILE_COUNTERS`) — tu dodatkowo liczniki minusowe, których tamta lista
-// nie niesie (w katalogu nie ma dziś triggera z `-1/-1`, ale reguła musi być
-// kompletna na wejście takiej karty).
-const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
+// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Klasyfikacja NIE ma
+// tu własnej kopii (O4 z audytu #147, klasa L41): pyta silnikowe
+// `counterIsHostile` (efekt-intent.js) — silnik i bot nie mogą się rozjechać
+// tak, jak rozjechały się przy PMSSB-23/F1 (stun w czarze wart 0).
 
 // PMSSB-24/F3: efekty, które CZYTAJĄ Z GROBU — przy nich karta zmielona
 // surveilem (CR 701.25) nie jest stratą, tylko paliwem. Lista po typach
@@ -2945,7 +2943,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Wrogi licznik na WROGU = zysk (osłabienie/zablokowanie), na własnym =
     // samobój (L3). Dobijanie licznikiem obniżającym wytrzymałość (CR 704.5f)
     // warte więcej; `stun`/`-1/0` nie zmniejszają toughness, więc nie zabijają.
-    if (DEBUFF_COUNTERS.has(counterName)) {
+    if (counterIsHostile(counterName)) {
       if (mine) return -90;
       const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
       const toughLeft = (target.toughness ?? 0) - (target.damage ?? 0);

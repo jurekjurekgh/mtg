@@ -39,9 +39,26 @@ export const HOSTILE_TRIGGER_TARGET_EFFECTS = new Set([
   // M177/E (Azorius Justiciar): detain odbiera celowi atak/blok/aktywacje.
   'detain',
 ]);
-// Liczniki wrogie dla obdarowanego (stun — nie odkręca; finality — śmierć
-// zamieniona na wygnanie). Pozostałe liczniki '+' są przyjazne (gałąź poniżej).
+// Liczniki wrogie dla obdarowanego: `stun` (zamiast odkręcenia, CR 122.1d/614.6)
+// i `finality` (śmierć zamieniona na wygnanie). Liczniki MINUSOWE obniżają
+// statystyki (CR 122.1), więc są wrogie niezależnie od tego, czy katalog ma
+// dziś kartę, która je rozdaje triggerem — reguła po NAZWIE licznika, nie po
+// nazwie karty (ADR 0002). O4 z audytu #147 (tamta lista niosła tylko
+// stun/finality, a bot miał własną — rozjazd klasy L41 jak przy PMSSB-23/F1).
 const HOSTILE_COUNTERS = new Set(['stun', 'finality']);
+const MINUS_STAT_COUNTER_RE = /^-[0-9]+\/[+-]?[0-9]+$/;
+
+/**
+ * JEDNO źródło klasyfikacji licznika (CR 122.1) dla silnika i bota:
+ * wrogi = z zamkniętej listy (`stun`/`finality`) albo minusowy statystycznie
+ * (`-1/-1`, `-0/-1`, w przyszłości `-2/-2` — wzorzec, nie wyliczanka).
+ * Bot woła tę funkcję w `counterEffectValue` (L41: klasyfikacja liczników
+ * miała trzy kopie, zanim PMSSB-23/F1 je scalił).
+ */
+export function counterIsHostile(counter) {
+  if (typeof counter !== 'string') return false;
+  return HOSTILE_COUNTERS.has(counter) || MINUS_STAT_COUNTER_RE.test(counter);
+}
 
 /**
  * Pojedynczy efekt wrogi wobec swojego celu (M156 — wydzielone dla
@@ -57,7 +74,7 @@ export function triggerEffectIsHostile(effect) {
   // Batch 52 (Fourth Bridge Prowler): ujemny buff „-1/-1 do końca tury" wobec
   // dowolnego stwora to efekt wrogi — ta sama reguła co ujemny pump (ADR 0002).
   if (effect.type === 'buff_creature_until_end_of_turn' && ((effect.power ?? 0) < 0 || (effect.toughness ?? 0) < 0)) return true;
-  if (effect.type === 'add_counter' && HOSTILE_COUNTERS.has(effect.counter)) return true;
+  if (effect.type === 'add_counter' && counterIsHostile(effect.counter)) return true;
   return false;
 }
 /**
