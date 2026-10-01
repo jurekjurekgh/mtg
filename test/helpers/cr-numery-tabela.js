@@ -346,6 +346,12 @@ export const NUMERY = [
   '702.2b',
   '702.2c',
   '702.3',
+  // PMSSB-32: obrońca („A creature with defender can't attack") — kara za
+  // tapnięcie ciała nie dotyczy stworu, który i tak nie atakuje. Zweryfikowane
+  // dosłownie w CR 2026-09-25 (mtg.wiki/page/Defender, sekcja Rules; ruling
+  // CHK FAQ: zmiana typu nie zmienia zdolności). Cytat w `tapBodyCost`
+  // i pinie test/audyt-pmssb32-mana.test.js B9.
+  '702.3b',
   '702.4b',
   '702.6',
   '702.6a',
@@ -376,6 +382,13 @@ export const NUMERY = [
   '702.19a',
   '702.19b',
   '702.20',
+  // PMSSB-32: czujność w pętli scoringu many — „Attacking doesn't cause
+  // creatures with vigilance to tap" to 702.20b (702.20a definiuje tylko, że
+  // czujność modyfikuje krok deklaracji atakujących). Zweryfikowane dosłownie
+  // w CR 2026-09-25 (mtg.wiki/page/Vigilance, sekcja Rules). Cytat w
+  // `tapBodyCost` (src/controllers/heuristic-bot.js) i pinie
+  // test/audyt-pmssb32-mana.test.js B7.
+  '702.20b',
   '702.21',
   '702.21a',
   '702.27',

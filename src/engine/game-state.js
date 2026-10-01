@@ -6344,6 +6344,14 @@ export function playerView(state, playerId) {
         return {
           id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, power: object.power, toughness: object.toughness, manaCost: object.manaCost, spell: object.spell,
+          // PMSSB-32/A (klasa L1/M265): LINIA TYPÓW jest publicznym Oracle
+          // (karta w ręce ma typy jawne dla właściciela) i planowanie z ręki jej
+          // potrzebuje: bot odróżnia instant (rzucalny w każdym kroku, CR 307.5)
+          // od sorcery/stwora (wyłącznie własna główna) po `types`, a `kind`
+          // czaru to zawsze 'spell' — bez tego wpisu reguła E6/A1 („mana na
+          // instant w cudzej turze") była w produkcji MARTWA, a restrykcje celu
+          // (mana `spendOnly:artifact` pod artefakt z ręki) nie działały.
+          types: [...(object.types ?? [])],
           // Deskryptory z Oracle karty nie są informacją ukrytą — UI/bot
           // planujące ruch ich potrzebują (jak morph przez object.morph).
           bestow: object.bestow ?? null, morph: object.morph ?? null,

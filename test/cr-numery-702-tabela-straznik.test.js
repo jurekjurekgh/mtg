@@ -104,7 +104,7 @@ const TABELA_702 = {
  */
 const ALIASY_702 = {
   2: ['deathtouch', 'śmiertel', 'lethal'],
-  3: ['defender'],
+  3: ['defender', 'obroń'],
   4: ['double[ \\-]?strike', 'podwójn'],
   5: ['enchant', 'zaczarow', 'aura'],
   6: ['equip', 'wyposa', 'ekwip', 'nosici', 'attach', 'sprzęt', 'pojazd'],

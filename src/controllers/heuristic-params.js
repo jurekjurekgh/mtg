@@ -414,6 +414,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
   'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
   'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
+  // PMSSB-32 — produkcja many (`add_mana`). Audyt okien zdolności many:
+  // kiedy mana realnie przesuwa próg opłacalności, a kiedy jest „na zapas”
+  // (M128). Dwa nowe wymiary po pomiarze PRZED:
+  // Koszt tapnięcia CIAŁA na manę — tap stwora to nie tap artefaktu: przed
+  // deklaracją atakujących traci się atakującego, w cudzej turze blokera,
+  // a po deklaracji (main2) ciało zrobiło swoje i tap jest tani (czujność
+  // i obrońca nie tracą nic — CR 702.20b/702.3b).
+  'manaTapBodyPerStat',          // kara za tapnięcie ciała bojowego, za każdy punkt (moc/wyt.)
+  'manaTapBodyMax',              // sufit kary za tapnięcie ciała
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -710,6 +719,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 24..60, wciąż daleko nad −5 za rezygnację.
   satyrLookBase: 30,
   blockGoodTradePerPoint: 2,
+  // PMSSB-32 (wartości przemyślane, pomiar PRZED:
+  // /home/user/scratch/pmssb32-mana-przed.mjs): nowe wymiary to DOPŁATY/KARY
+  // nad starą arytmetyką (anty-over-fix — realne odblokowanie liczbowe z
+  // net > 0 nadal płaci dokładnie 4·net, jak przed pętlą).
+  // Ciało: 2 za punkt, sufit 8 (≈ jedna karta z ręki; nigdy nie przebija
+  // premii za duże odblokowanie liczbowe), żeby „mana z 4/4 przed atakiem”
+  // była rozstrzygająco droższa od „many z 0/1 ściany”, a nie blokowała
+  // rzutu (auto-płatność silnika i tak do-tapuje źródło przy cast ofercie).
+  manaTapBodyPerStat: 2,
+  manaTapBodyMax: 8,
 });
 
 /**
