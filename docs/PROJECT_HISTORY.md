@@ -14858,3 +14858,62 @@ build **70 modułów / 4700,9 kB**. Kolejka następnej sesji: aktywacje o wyniku
 remisujące z passem (kandydat na mikro-pętlę z tie-breakerem „przy równej wartości zachowaj
 manę" — potrzebny dowód złej decyzji), `manaAvailableNow` poza rodziną many (`suspend_card`),
 koszt drugiego trybu źródła, warianty `cast_spell`. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01f — PMSSB-35: odroczenie zagrania (plot/suspend/warp) + pieczęć wygnania (PR #149)
+
+**Prompt:** „Kontynuujemy projekt.” — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `c01c293` (koniec sesji 01e / PMSSB-34). Obiekt pętli z kolejki
+handoffu 01e: „stary model dostępności many (`manaAvailableNow` w `suspend_card`)” —
+rekonesans rozszerzył go na CAŁĄ rodzinę odroczeń: trzy akcje specjalne + wypłata
+odroczenia (rzut karty czekającej w wygnaniu). Nośniki: 5 kart katalogu, wszystkie w taliach
+wzorcowych (`mindstab`, `tumbleweed-rising`, `spinewoods-paladin`, `sheriff-of-safe-passage`,
+`weftblade-enhancer`). Plan `docs/plans/PLAN_2026-10-01f-pmssb35-odroczenie.md`, raport
+`docs/PMSSB.md` §PMSSB-35, piny `test/audyt-pmssb35-odroczenie.test.js` (18).
+
+**Pierwiastki (sondy `/home/user/scratch/pmssb35-*`):** (1) `case 'cast_permanent'` czytał
+kartę WYŁĄCZNIE z ręki (`handCard`) — zaplotowana/z poczekalni warp karta w wygnaniu
+dostawała puste 0/0 i **63,000 niezależnie od ciała i kosztu** (Sheriff 0/0, Hill Giant 3/3
+i 20/20, Paladin 5/4, Weftblade 3/4 = 63,000; ten sam Sheriff z ręki = 59,396), a koszt many
+odejmował się nawet przy rzucie DARMOWYM; (2) akcje odroczenia były płaskie: `plot_card` 55
++ token/mill bez ceny plotu (S6: Tumbleweed plot {3}{G} **55,000 > rzut {1}{G} 49,980**),
+`warp_card` = ciało − 15 + 5 ETB (70,000 przy 4 i przy 6 polach), `suspend_card` 30/8 wg
+legacy `manaAvailableNow` (S3: 5 lądów + Seer’s Lantern → oferta rzutu JEST, bot dawał 30).
+
+**Fale:** A — `handCard ?? zoneCard` (wzorzec `cast_spell`) + koszt many tylko, gdy rzut go
+płaci (reguła silnika `castsWithoutPayingMana`: plot CR 702.170d, darmowy impuls CR 701.18),
+ten sam warunek w `reservedManaOf`; B — cena odroczenia w jednostce kosztu karty (koszt +
+pipy) dla wszystkich trzech akcji, `plotRedundantPenalty` (rzut już w ofertach, plot nie
+oszczędza many), `plotDelayPenalty` (zwłoka), `suspendWaitPenalty × liczniki czasu`
+(CR 702.62c), dostępność zawieszenia z OFERTY silnika (`castOfferedNow`). Treść zawieszonego
+czaru świadomie NIE wchodzi do inwestycji — jest wyceniana w wypłacie
+(`resolve_suspend_cast`), premia byłaby over-fixem (plan §6).
+
+**Znalezisko silnika (naprawione u źródła):** sonda wypłaty pokazała w partii
+`worek-legend|dominaria-brg` s1000 DWA rzuty tej samej karty z wygnania (t12 i t14) po
+ponownym wygnaniu przez Faceless Butchera — pieczęć wygnania (`plotted`, `warpReady`, para
+okna impulsu) przeżywała zmianę strefy i wracała do ofert rzutu z wygnania. CR 400.7 +
+CR 702.185b („warped card in exile” = wygnana triggerem warp) + glosariusz „Plotted”.
+Naprawa w choke poincie `moveObjectDirectly` (zdjęcie pieczęci przy wyjściu z wygnania),
+para okna impulsu przez helper-właściciela `clearImpulseWindowStamp` (guard
+`test/family-audit.test.js` 8/8, nowy numer `702.185b` dopisany do tabeli CR z dosłownym
+uzasadnieniem — brak egressu w sandboxie). Dowód: sonda `pmssb35-wyciek-stempli.mjs`
+(PRZED: oferty po ponownym wygnaniu `[cast_permanent]`; PO: `[]`), piny F1–F3; golden-master
+bez zmian (żaden z 6 meczów snapshotu nie trafia w wyciek).
+
+**Ewaluacja:** golden-master po świadomej regeneracji (hash `ab8d57d2…` → `4024bcd1…`:
+1 z 6 meczów, `scoreSum` −6,0 = suspend 8 → 2, decyzje 240 → 240, `chosenKinds` identyczne
+⇒ **0 flipów wyboru**); w partiach sonda `pmssb35-gry.mjs` (4 pary × 6 seedów): PRZED
+6 plotów → PO **1 plot** (cztery zamiany „plot 95,00 → rzut 89,98” to wzorzec S6), sonda
+wypłaty: PRZED 10 odroczeń / 9 wypłat / 2 karty czekające → PO **5 / 5 / 0** (nadmiarowy
+rzut PRZED był skutkiem wycieku pieczęci). Tie-audit PO: 24 partie / 12 448 decyzji /
+623 remisy (438 + 185 realnych = 10,0%), rodzina bez „GROZY”. Mirror-eval (A = nowe
+domyślne, B = trzy pokrętła odroczenia 0): **96 partii 48:48 (0,500)**. Żywy Tester:
+6 sesji na finalnym buildzie (3 na tymczasowej talii rodziny — plot/warp/zawieszenie klikane
+przez UI, oferta darmowego rzutu z wygnania renderowana; talia usunięta po biegu),
+0 `[STOP]`, 0 zgłoszeń detektorów, 0 decyzji niewycenionych.
+
+**Bramka końcowa:** `npm test` **7304/7304 EXIT 0** (7286 + 18 pinów), build **70 modułów /
+4708,3 kB** (+7,4 kB wobec `c01c293` — komentarze i helper wchodzą do bundla). Kolejka
+następnej sesji: koszt okazji drugiego trybu źródła (`Seer’s Lantern`, Immersturm Skullcairn,
+Balamb Garden), bankowanie many, warianty `cast_spell` (tryb/kicker), model treści
+czekającej na późniejszą planszę. Rodzina ZAMKNIĘTA.

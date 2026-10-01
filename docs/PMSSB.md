@@ -72,6 +72,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | produkcja many (`add_mana`: `{T}` / `{mana}+{T}` / `tapCreature` / `sacrificeSelf` / raz-na-turę) | 25 | DONE (2026-10-01c) | §PMSSB-32 niżej; plan `PLAN_2026-10-01c-pmssb32-mana.md`; `test/audyt-pmssb32-mana.test.js` (19 pinów); **pierwsza rodzina z jedną wspólną miarą zamiast ośmiu łatek** — model JEDNOSTEK many (`manaUnitsOfView`/`unitsAfterManaAbility`/`canCastWithUnits`; L41/L48: LICZBY → KOLORY+pipy+`spendOnly`+pula ograniczona), bramka „oferta = płatność" (`castOfferedNow`), wycena celu czaru z ręki (`spellNeedsTarget` + best-of-targets), cena tapnięcia CIAŁA (`tapBodyCost`: main1 = moc, cudza tura = wytrzymałość, main2/po blokach/czujność CR 702.20b/obrońca CR 702.3b = 0); 2 pokrętła `manaTapBody*`; klasa L1 naprawiona u źródła (wpis ręki w widoku bez `types` → martwa reguła instant E6/A1) |
 | remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
 | koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
+| odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1887,3 +1888,128 @@ osobnej kary za koszt wariantu; (4) gałąź ninjutsu poza wymiarem.
 **Status:** rodzina ZAMKNIĘTA. Kolejna pętla wg kolejki PMSSB-32/33:
 `manaAvailableNow` poza rodziną many („koszt okazji” w `suspend_card`), koszt
 drugiego trybu źródła, bankowanie many — każda z nowym dowodem.
+
+## PMSSB-35 — odroczenie zagrania: `plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania (2026-10-01f)
+
+Wejście: **kolejka handoffu 01e** (pozycja „stary model dostępności many —
+`manaAvailableNow` w `suspend_card`”). Rekonesans pokazał, że to nie jeden
+przestarzały warunek, a **cała rodzina odroczeń**: trzy akcje specjalne
+(zaplotowanie, zawieszenie, rzut za koszt warp) plus **wypłata odroczenia** —
+rzut karty czekającej w wygnaniu, czyli osobna ścieżka `cast_permanent` /
+`cast_spell` z exile. Nośniki: **5 kart katalogu, wszystkie w taliach
+wzorcowych** (ADR 0029 — audyt na istniejących kartach): `mindstab`
+(suspend {1}, 4 liczniki; dominaria-brg) · `tumbleweed-rising` i
+`spinewoods-paladin` (plot; worek-dziki) · `sheriff-of-safe-passage` (plot;
+srodziemie) · `weftblade-enhancer` (warp {2}{W}; worek-legend).
+
+**Pierwiastki (kod):** (1) `case 'cast_permanent'` czytał kartę **wyłącznie
+z ręki** (`handCard`) → rzut zaplotowanej / czekającej po warp / z okna impulsu
+karty dostawał puste 0/0 i wynik `P.creatureBase × waga permanentu` = **63,000
+niezależnie od ciała i kosztu**: pomiar `/home/user/scratch/pmssb35-exile-rzut-arytmetyka.mjs`
+— Sheriff 0/0, Hill Giant 3/3, Paladin 5/4, Weftblade 3/4 = 63,000; Hill Giant
+z P/T 20/20 = dalej 63,000; a ten sam Sheriff rzucany z RĘKI = 59,396. Dodatkowo
+koszt many odejmował się także wtedy, gdy rzut był BEZ kosztu (CR 702.170d plot /
+CR 701.18 + stempel `playableWithoutPaying`). (2) Trzy akcje odroczenia były
+płaskie i bez ceny: `plot_card` = 55 + token/mill, `warp_card` = ciało − 15 + 5
+ETB (identyczne **70,000 przy 4 i przy 6 polach**), `suspend_card` = 30/8 wg
+legacy `manaAvailableNow` (pula + nietapnięte LĄDY) — S3: 5 lądów + Seer’s
+Lantern, silnik MA ofertę rzutu, a bot dawał 30 „nie stać mnie”.
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb35-odroczenie-przed.mjs`,
+S1–S15; PRZED = HEAD `c01c293`, PO = ten sam plik na drzewie po zmianach):
+
+| Scenariusz | PRZED | PO |
+|---|---|---|
+| S1 Mindstab t4, 5 lądów — rzut nieosiągalny | suspend 30,000 | **24,000** (30 − koszt 2 − 4 liczniki) |
+| S2 ten sam czar, 6 lądów — rzut osiągalny | 8,000 | **2,000** |
+| S3 + Seer’s Lantern (`manaAvailableNow` = 5, oferta rzutu JEST) | 30,000 „nie stać mnie” | **2,000** (dostępność z oferty silnika) |
+| S4 t2, 2 lądy (najwcześniejsze okno) | 30,000 | 24,000 |
+| S5 t14, 14 lądów | 8,000 | **2,000** |
+| S6 Tumbleweed Rising: rzut {1}{G} **dostępny**, plot {3}{G} | plot **55,000 > rzut 49,980** (bot płacił 4 many i czekał turę) | rzut 49,980 > plot **16,000** → **wybiera rzut** |
+| S8 Sheriff: plot {1}{W} tańszy od rzutu {2}{W} | rzut 59,396 > plot 55,000 | rzut 59,396 > plot **47,000** |
+| S11/S12 Weftblade: warp {2}{W} vs rzut {5}{W} | 70,000 vs 65,703 | **66,000** vs 65,703 |
+
+**Fale:** A — `cast_permanent` czyta kartę z ręki **albo z dowolnej strefy**
+(`handCard ?? zoneCard`, wzorzec `cast_spell`), a koszt many odejmuje tylko, gdy
+rzut naprawdę go płaci — decyduje **reguła silnika** `castsWithoutPayingMana`
+(plot CR 702.170d; darmowy impuls CR 701.18 + stempel `playableWithoutPaying`);
+ten sam warunek w `reservedManaOf` (podatek ward nie rezerwuje many, której rzut
+nie płaci). B — cena odroczenia w jednostce kosztu karty
+(`creatureManaCostWeight × (koszt + pipy)`): `plot_card` (+ surcharge
+`plotRedundantPenalty`, gdy rzut jest już w ofertach, a plot nie oszczędza many;
++ `plotDelayPenalty` zwłoki), `warp_card`, `suspend_card` (dostępność z OFERTY
+silnika + `suspendWaitPenalty × liczniki czasu`, CR 702.62c). Treść zawieszonego
+czaru **nie** wchodzi do inwestycji — jest wyceniana w momencie wypłaty
+(`resolve_suspend_cast`, ta sama tabela +15/+5), a premia w inwestycji byłaby
+over-fixem (kontrola (c)); decyzja opisana w planie §6.
+
+**Znalezisko silnika (naprawione u źródła, znalezione sondą wypłaty):**
+`/home/user/scratch/pmssb35-wyplata.mjs` pokazała w partii
+`worek-legend|dominaria-brg` s1000 **dwa rzuty tej samej karty z wygnania**
+(t12 i t14) — po tym, jak Faceless Butcher wygnał ją ponownie. Pieczęć rzutu
+z wygnania (`plotted`/`plottedAtTurn`, `warpReady`/`warpedAtTurn`, para okna
+impulsu) **przeżywała zmianę strefy**, więc ponowne wygnanie innym efektem
+wracało do ofert rzutu z wygnania. CR 400.7 („new object with no memory”) +
+CR 702.185b („warped card in exile” = karta wygnana triggerem warp) + glosariusz
+„Plotted”. Naprawa: choke point stref (`moveObjectDirectly`) zdejmuje pieczęcie
+wygnania przy wyjściu z tej strefy, a para pól okna impulsu przez helper
+właściciela (`clearImpulseWindowStamp` w `impulse-window.js`; guard
+`test/family-audit.test.js` 8/8). Dowód: `pmssb35-wyciek-stempli.mjs`
+(PRZED: po ponownym wygnaniu oferty `[cast_permanent]` dla plot i warp; PO: `[]`),
+piny F1–F3, golden-master **bez zmian** (żaden z 6 meczów snapshotu nie trafia
+w wyciek).
+
+**Piny:** `test/audyt-pmssb35-odroczenie.test.js` (**18**): A1 ciało z wygnania
+(63,000 → 62,996/71,104/77,407), A2 darmowy = płatny + koszt karty (Δ 3,6), A3
+reguła KLASOWA (stempel CR 701.18 ≡ plot), A4 płatny rzut z wygnania ≡ z ręki
+(65,703); B1 suspend z rzutem nieosiągalnym 24, B2 z latarnią 2 i **rzut bije
+odroczenie**, B3 wymiar zwłoki osobno (0/2 pkty za licznik), B4 wymiar kosztu
+osobno, B5 faza gry (t14: 2, nie 24); C1 **dowód S6: rzut tańszy wygrywa
+z plotem**, C2 anty-over-fix (bez oferty rzutu plot 50 = baza − koszt), C3 koszt
+plotu ({1}{W} 52 vs {3}{G} 51 — kontrola (b)), C4 zwłoka i surcharge osobno;
+D1 koszt warpu (66 przy 4 i 6 polach, rzut stały w zasięgu); E1 zwolnienie
+z kosztu to BRAK kary, nie premia; F1–F3 pieczęć wygnania nie przeżywa wyjścia
+z tej strefy (warp / plot / okno impulsu). **Mutacje na źródle:** `plotRedundantPenalty → 0`
+⇒ {C1}; `plotDelayPenalty → 0` ⇒ {C1, C4}; `suspendWaitPenalty → 0` ⇒ {B1, B2, B4};
+„zawsze odejmuj koszt” ⇒ {A1, A2}; „tylko ręka” (PRZED) ⇒ {A1, A2, A4, E1}; po
+przywróceniu 18/18 GREEN.
+
+**Dowód w partiach** (sonda `pmssb35-gry.mjs`: 4 pary talii z nośnikami × 6
+seedów, bot heurystyczny vs RandomBot): PRZED 24 decyzje z ofertą rodziny /
+**6 plotów** → PO 28 decyzji / **1 plot**; cztery zamiany to dokładnie wzorzec
+z S6 (plot 95,00 przy rzucie 89,98 → rzut tą samą kartą). Sonda wypłaty
+(24 partie): PRZED 10 odroczeń / 9 rzutów z wygnania / **2 karty czekające**
+w wygnaniu na koniec partii → PO **5 / 5 / 0** (drugi „nadmiarowy” rzut PRZED
+był właśnie skutkiem wycieku pieczęci — po naprawie liczba wypłat równa się
+liczbie odroczeń).
+
+**Bramy:** `npm test` **7304/7304** (7286 po PMSSB-34 + 18 pinów) · build
+**70 modułów / 4708,3 kB** · `npm run test:all` zielone · benchmark 10/10 ·
+golden-master po świadomej regeneracji (hash `ab8d57d2…` → `4024bcd1…`; 1 z 6
+meczów, `scoreSum` −6,0 = suspend 8→2, decyzje 240 → 240, `chosenKinds`
+identyczne ⇒ 0 flipów; **dowód czystości wymiaru**: po zerowaniu trzech pokręteł
+odroczenia snapshot wraca do wartości bazy) · strażnicy CR: istnienie numerów
+(dopisany `702.185b` z dosłownym tekstem w uzasadnieniu — brak egressu w
+sandboxie), 701 3/3 · tie-audit PO: 24 partie / 12 448 decyzji / 623 remisy
+(438 + 185 realnych = 10,0%), rodzina bez „GROZY” · mirror-eval (A = nowe
+domyślne, B = trzy pokrętła 0): **96 partii 48:48 (0,500)** · Żywy Tester:
+6 sesji na finalnym buildzie (3 z nich na tymczasowej talii rodziny — plot,
+warp i zawieszenie klikane przez UI, oferta „Zagraj z wygnania (Plot) — bez
+kosztu many” renderowana w panelu; talia usunięta po biegu), 0 `[STOP]`,
+0 zgłoszeń detektorów, 0 decyzji niewycenionych.
+
+**Znane granice (świadome, nie bugi):** (1) model nie zna zegara gry — zwłoka
+jest liczona z liczników czasu (suspend) i stałej dopłaty (plot), nie
+z przewidywanej długości partii; (2) podwójny ETB z warpu (rzut za koszt warp
++ późniejszy rzut z wygnania) nadal bez osobnego wymiaru — cena kosztu warp jest
+pierwszym krokiem; (3) `plot_card` dla kart BEZ oferty rzutu zostaje płaską bazą
+55 + bonusy (pełny model „co czeka na późniejszą planszę” to kandydat na kolejną
+pętlę); (4) gałąź `warp_card` jest w rodzinie `spell` (×1), a rzut z ręki
+w `permanent` (×0,9) — różnica WAGI rodziny (pre-existing), nie arytmetyki;
+(5) treść zawieszonego czaru jest wyceniana dopiero w wypłacie (świadome,
+uzasadnione w planie §6).
+
+**Status:** rodzina ZAMKNIĘTA. Kolejka następnej pętli: koszt okazji drugiego
+trybu źródła (`Seer’s Lantern {2},{T}: Scry 1`, Immersturm Skullcairn, Balamb
+Garden), bankowanie many, `cast_spell` warianty (tryb/kicker), model treści
+czekającej na późniejszą planszę — każda z nowym dowodem.
