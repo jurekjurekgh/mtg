@@ -1862,7 +1862,7 @@ E skala poza sprzętem (Mutagen: 26 → 25, Δ = `{1}`), F koszt 0/sam `{T}`
 → 0` czerwieni A1/A2/C/E, `equipPumpBonusPerPoint → 0` czerwieni A1/A2/C, po
 przywróceniu 9/9 GREEN.
 
-**Bramki:** `npm test` **7286/7286** (7277 + 9 pinów) · build **70 mod / 4700,8 kB**
+**Bramki:** `npm test` **7286/7286** (7277 + 9 pinów) · build **70 mod / 4700,9 kB**
 · `npm run test:all` **7557/7557** · golden-master **po świadomej regeneracji**
 (hash `8fa96e93…` → `ab8d57d2…`; przesunięcia scoreSum −4/−6/0/−2/−2/−9 i jedna
 decyzja mniej 241 → 240; **dowód czystości wymiaru**: z oboma pokrętłami = 0

@@ -14854,7 +14854,7 @@ szum. Żywy Tester PO **3/3 czyste** (dominaria-brg|ravnica s42; worek-legend|th
 detektorów, 0 decyzji niewycenionych.
 
 **Bramka końcowa:** `npm test` **7286/7286 EXIT 0**, `npm run test:all` **7557/7557 EXIT 0**,
-build **70 modułów / 4700,8 kB**. Kolejka następnej sesji: aktywacje o wyniku netto 0
+build **70 modułów / 4700,9 kB**. Kolejka następnej sesji: aktywacje o wyniku netto 0
 remisujące z passem (kandydat na mikro-pętlę z tie-breakerem „przy równej wartości zachowaj
 manę" — potrzebny dowód złej decyzji), `manaAvailableNow` poza rodziną many (`suspend_card`),
 koszt drugiego trybu źródła, warianty `cast_spell`. Rodzina ZAMKNIĘTA.

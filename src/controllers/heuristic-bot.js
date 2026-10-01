@@ -8568,7 +8568,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // „5 vs 2 many nie mogą remisować bez uzasadnienia" — tymczasem koszt
         // many aktywacji nie był wyceniany NIGDZIE poza gałęzią add_mana (tam
         // jako `net = produkcja − koszt`). Pomiar PRZED (sonda
-        // scratch/pmssb34-koszt-przed.mjs): Squire's Lightblade {3} +1/+0,
+        // /home/user/scratch/pmssb34-koszt-przed.mjs): Squire's Lightblade {3} +1/+0,
         // Brawler's Plate {4} +2/+2 trample i Wooden Stake {1} +1/+0 dawały
         // identyczne 18,000, a para o IDENTYCZNYM efekcie (+1/+0) remisowała
         // {3} = {1} — bot przepalał 3× manę na ten sam skutek, rozstrzygała

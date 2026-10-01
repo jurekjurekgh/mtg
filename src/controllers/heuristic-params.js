@@ -733,7 +733,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzutu (auto-płatność silnika i tak do-tapuje źródło przy cast ofercie).
   manaTapBodyPerStat: 2,
   manaTapBodyMax: 8,
-  // PMSSB-34 (pomiar PRZED: scratch/pmssb34-koszt-przed.mjs, scenariusze A/B):
+  // PMSSB-34 (pomiar PRZED: /home/user/scratch/pmssb34-koszt-przed.mjs, scenariusze A/B):
   // 1 punkt za manę — DOKŁADNIE ta sama skala co `creatureManaCostWeight` przy
   // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
   // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
