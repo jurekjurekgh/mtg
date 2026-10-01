@@ -69,6 +69,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
+| produkcja many (`add_mana`: `{T}` / `{mana}+{T}` / `tapCreature` / `sacrificeSelf` / raz-na-turę) | 25 | DONE (2026-10-01c) | §PMSSB-32 niżej; plan `PLAN_2026-10-01c-pmssb32-mana.md`; `test/audyt-pmssb32-mana.test.js` (19 pinów); **pierwsza rodzina z jedną wspólną miarą zamiast ośmiu łatek** — model JEDNOSTEK many (`manaUnitsOfView`/`unitsAfterManaAbility`/`canCastWithUnits`; L41/L48: LICZBY → KOLORY+pipy+`spendOnly`+pula ograniczona), bramka „oferta = płatność" (`castOfferedNow`), wycena celu czaru z ręki (`spellNeedsTarget` + best-of-targets), cena tapnięcia CIAŁA (`tapBodyCost`: main1 = moc, cudza tura = wytrzymałość, main2/po blokach/czujność CR 702.20b/obrońca CR 702.3b = 0); 2 pokrętła `manaTapBody*`; klasa L1 naprawiona u źródła (wpis ręki w widoku bez `types` → martwa reguła instant E6/A1) |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1575,3 +1576,192 @@ wartości dokładnych (PMSSB-2/C/F8), więc został wycofany.
 
 **Bramy:** piny 8/8 · szybki **7203/7203** · build 70 mod / **4661,6 kB** ·
 `test:all` **7474/7474, EXIT=0** po regeneracji golden-master.
+
+## PMSSB-32 — produkcja many (`add_mana`): kiedy tap realnie odblokowuje grę (2026-10-01c)
+
+**Rodzina:** 25 kart / 28 wystąpień — największa spoza rejestru. Klasy kosztu:
+`{T}` ×20 (w tym 16 lądów — silnik auto-tapuje lądy przy płatności, więc ręczna
+aktywacja liczy się tylko w stanach nietypowych), `{mana}+{T}` ×3 (Mana Cylix,
+Heap Gate, Apprentice Wizard), `{T}+tapCreature` ×2 (Holdout Settlement,
+Dragonbroods' Relic), `sacrificeSelf` ×2 (Skarb, Eldrazi Scion), raz-na-turę bez
+tapu ×1 (Jeskai Devotee). Wycena narosła z OŚMIU łatek z gier (M128, M155,
+M119/Z5 + M150/C1, B54/s4008, F 2026-09-19b, M243/C, E6/A1, M167/D) — brakowało
+jednej wspólnej miary i to była teza pętli.
+
+**Pomiar PRZED:** sonda `scratch/pmssb32-mana-przed.mjs` (25 scenariuszy, realne
+karty katalogu, `pass` jako kotwica 0, wypisany wybór bota), logi
+`/tmp/pmssb32-przed-out2.txt` (PRZED) i `/tmp/pmssb32-po-final.txt` (PO).
+
+| # | Finding (PRZED) | Wymiar | Fala |
+|---|---|---|---|
+| F1 | Apprentice Wizard + 3 lądy + karta z pipem `{W}`: aktywacja **+10 = WYBÓR**, choć trzema bezbarwnymi jednostkami nigdy nie opłaci `{W}` | próg LICZBOWY vs KOLORY | A |
+| F2 | Powerstone (`spendOnly: artifact`) „odblokowywał" STWORA (**+6 = WYBÓR**); to samo z pulą ograniczoną drukiem wziętą za „już stać" | RESTRYKCJA wydania | A |
+| F3 | filtr koloru nie odblokowywał NICZEGO, choć po aktywacji czar staje się płatny (Skarb + Las + Shock = **−10, pass**) — po drugiej stronie kolor, którego źródło NIE produkuje, bywał „odblokowaniem" | KOLOR (pipy) | A + C |
+| F4 | tap ciała bez ceny bojowej: main1 == main2 (Villager 6,0 = 6,0), a `tapCreature` 0/1 == 4/4 (3 = 3, nierozróżnialne) | TIMING × CIAŁO | B |
+| F5 | reguła E6/A1 (instant rzucalny w cudzym kroku) była **martwa**: wpis ręki w widoku niósł `kind: 'spell'` dla obu typów czarów i nie niósł `types` | L1 — dane nie docierały do osądu | A |
+| F6 | Skarb finansował czar z celem, ale bramka „chcę to rzucić" pytała komendę BEZ celu (Shock bez celu = −10) → removal/burn nigdy nie uzasadniał jednorazowego źródła | L41/L48 — dwie wyceny | A3 |
+
+### Fale
+
+- **A — model JEDNOSTEK many (L41).** Jedna arytmetyka „ile i jakich pipów":
+  `manaUnitsOfView` (pula kolorowa + pula ograniczona drukiem tylko dla celu,
+  na który wolno ją wydać, + nietapnięte LĄDY z `manaSource` widoku),
+  `unitsAfterManaAbility` (koszt aktywacji schodzi — `cost.mana`/`cost.colors`;
+  własna jednostka LĄDU nie dubluje się: B54/s4008), `canCastWithUnits`
+  (liczba + `coloredPipsOf` + `matchColorRequirements` — te same funkcje co
+  silnik). Zastępuje próg liczbowy M128 („koszt karty w przedziale
+  availableNow…availableAfter"), który nie widział ani kolorów, ani `{C}`,
+  ani restrykcji. Naprawa klasy L1: `playerView` oddaje `types` wpisu ręki
+  (i `spell.timing`), więc `isInstantSpeedCard` działa w PRODUKCJI, nie tylko
+  w fixturach. Wycena celu: `spellNeedsTarget` + `targetCandidatesOf`
+  (najlepszy cel z widoku, gdy silnik nie ma oferty — L41: ta sama funkcja
+  wyceny, ten sam kształt komendy).
+- **B — cena tapnięcia CIAŁA (`tapBodyCost`, 2 pokrętła `manaTapBodyPerStat: 2`,
+  `manaTapBodyMax: 8`).** Tap stwora płaci za to, co realnie odbiera:
+  własna tura przed deklaracją atakujących = MOC (CR 508.1a — tapnięty nie
+  zaatakuje), cudza tura przed blokującymi = WYTRZYMAŁOŚĆ (CR 509.1a), a
+  main2, po blokach, przy chorobie przywołania, **czujności (CR 702.20b)**
+  i **obrońcy (CR 702.3b)** = 0. Dawna płaska cena `tapCreature` −3 ZOSTAJE,
+  dopłata jest tylko różnicująca (anty-over-fix M429).
+- **C — bramka „oferta = płatność" (`castOfferedNow`).** Skoro silnik oferuje
+  rzut, to auto-płatność go pokryje (auto-tap lądów, źródeł wolnych
+  i kosztowych) — ręczna aktywacja niczego nie odblokowuje, a przy Skarbie
+  kosztuje jednorazowy token. Zamiar dawnej fali: aktywacja jest wyceniana
+  jako REALNA alternatywa (gdy silnik nie potrafi zapłacić), a nie jako
+  „przygotowanie many", której nikt nie zużyje (CR 500.4).
+
+### Piny (19, `test/audyt-pmssb32-mana.test.js`, 19/19 GREEN)
+
+`A1` −4 (bezbarwna nie opłaca `{W}`) · `A2` −4 (mana artefaktowa nie opłaca
+stwora) · `A3` oferta `cast_permanent(mana-cylix)` = **62,0991** vs aktywacja < 0
+(oferta = płatność) · `A4` −4 (pula ograniczona nie udaje dostępnej) · `A5` −8 +
+oferta `cast_spell(shock->p2)` = **60** (filtr koloru finansuje silnik) ·
+`A5b` **+6 = WYBÓR** (Skarb + kolor + czar Z CELEM — aktywacja to jedyna droga) ·
+`A6` −8 (kolor, którego źródło nie produkuje) · `B1` `+tap:wall` **3** vs
+`+tap:big` **−5** (ściana wybrana) · `B2` `+tap:huge` **−5** (sufit kary działa) ·
+`B3` main1 **−6** < main2 **−4** · `B4` cudza tura **−6**, po blokach **−4** ·
+`B5` instant w ręce: `types ⊇ ['Instant']` + `spell.timing` · `B6` −4 (artefakt
+płatny automatem — wartość sprzed pętli) · `B7` czujność **−4** / bliźniak **−8**
+w main1, oba **−4** w main2 (CR 702.20b) · `B8` cudza tura oba **−8** (czujność
+nie daje darmowego blokera) · `B9` obrońca **−4** (CR 702.3b) · `B10` trik
+bez okna walki: Skarb **−10 = pass** (anty-over-fix) · `C1` `manaTapBodyPerStat: 0`
+→ **−4** (cena sprzed fali) · `C2` `manaTapBodyMax: 0` → ściana == 4/4 == **3**.
+
+### Mutacje (dowód, że piny trzymają reguły; `/tmp/pmssb32-mutacje-final.txt`)
+
+| Mutacja | Wynik | Czerwone piny |
+|---|---|---|
+| M1 próg liczbowy bez kolorów | 17/19 | A1, A5b |
+| M2 brak dopłaty za ciało | 13/19 | B1, B2, B3, B4, B7, B8 |
+| M3 brak wykluczenia L48 (oferta = płatność) | 10/19 | A3, A5, B3, B4, B6, B7, B8, B9, C1 |
+| M4 wpis ręki bez `types` | 18/19 | B5 |
+| M5 `spendOnly` zignorowane | 17/19 | A2, A4 |
+| M6 brak zwolnienia czujności/obrońcy | 17/19 | B7, B9 |
+| M7 bramka „chcę to rzucić" bez celów | 18/19 | A5b |
+
+### Kontrole obowiązkowe procedury
+
+- **(a) L41** — cast_spell/cast_permanent/aktywacja liczą płatność TĄ SAMĄ
+  funkcją (`canCastWithUnits`) co silnik (`matchColorRequirements`,
+  `expandManaPool`, `spendOnly`), a nie drugą arytmetyką; scalone zostały też
+  dwie wyceny kastru (oferta vs komenda syntetyczna) w `castScoreForUnlock`.
+- **(b) wymiar KOSZTU** — 1 mana (Skarb, `net` 1) → +6, vs 2 many (Villager,
+  `net` 2) → premia `4·net`; ciało 0/1 vs 4/4 → 3 vs −5 (nie remisują);
+  `C1`/`C2` pokazują, że po wyzerowaniu pokręteł wraca cena sprzed fali.
+- **(c) anty-over-fix M429** — najsłabszy realny wariant zachowuje DAWNĄ
+  wartość: `B6` −4 (M128 bez zmian), `B10` −10 (kara za jednorazówkę
+  + brak odblokowania), `A5`/`A6` −8 (kara M150/C1), płaska cena `tapCreature`
+  −3 zostaje jako podstawa, nowy wymiar to wyłącznie dopłata.
+
+### CR u źródła (wydanie 2026-09-25)
+
+Sekcja F dotyka faz: **508.1a** (atakujący deklarowani tylko, gdy odtapowani),
+**509.1a** (blokujący j.w.), **702.20b** (czujność — „Attacking doesn't cause
+creatures with vigilance to tap"), **702.3b** (obrońca — „can't attack"),
+**500.4** (mana znika na końcu kroku/fazy), **307.5** (timing instantów).
+Runda wykryła przekręcone NUMERY w komentarzach kodu: cytowaliśmy `702.20a`
+i `702.3a` (definicje statyczne) tam, gdzie chodzi o SKUTEK dla tapowania —
+poprawione na `702.20b`/`702.3b` (`heuristic-bot.js`, `heuristic-params.js`)
+i dopisane do tabeli numerów CR wraz z aliasem „obroń" dla wpisu 702.3
+(`test/helpers/cr-numery-tabela.js`, strażnik 702). Aliasy to mechanizm
+sankcjonowany — nie wyjątek od reguły nazw.
+
+### Bramy
+
+- **Piny** 19/19 GREEN; mutacje 7/7 czerwienią właściwe piny (tabela wyżej),
+  po przywróceniu 19/19.
+- **Rodzina many** (9 plików `*mana*`/m128/m243/jeskai-devotee) **128/128**;
+  `real-cards-batch54` 71/71 (regresje Abstruse/Zendikar); `m243-bot-mana-marnotrawstwo`
+  rozszerzony o fixture z rodziny.
+- **Szybki `npm test` 7270/7270 EXIT=0**; **`npm run test:all` 7541/7541 EXIT=0**;
+  **build 70 modułów / 4697,0 kB**.
+- **Golden-master** (`bot-scoring-snapshot`): `scoreSum` wymagał regeneracji —
+  ŚWIADOMY dryf (aktywacje z rodziny zmieniają sumy wycen, decyzje te same);
+  zapisane jako wyjątek procedury z uzasadnieniem, nie „przypadkowa” zmiana.
+- **Hashe determinizmu** (`/tmp/pmssb32-hashe.mjs`): każda para talii i suma
+  ogólna „bez zmian" na puli bench — decyzje w realnych partiach te same.
+- **tie-audit** (`--gry=2`, 24 partie / 12 785 decyzji): decyzje z alternatywami
+  2352, remisy 634 (**27,0%**), z tego 450 to pary „brak akcji" silnika, a 184
+  (**9,7%** decyzji akcyjnych) to remisy realne — POPRAWA wobec poprzedniej pętli
+  (28,3% / 10,8%). „GROZY" (remisy przy różnych danych): 16 — `attack` 9,
+  `block` 2, `activate_ability` 2, `cast_spell` 1, `resolve_color_choice` 1,
+  `resolve_discard_choice` 1; to wybór CELU/ofiary (dwa równie dobre cele),
+  nie produkcja many — kolejka PMSSB-33.
+- **mirror-eval** (wymiar ciała włączony vs wyłączony `×0`, 6 talii × 4 seedy × 2
+  strony = 48 meczów): **24:24 (0,5000)**, 0 niedokończonych — brak sygnału
+  w lustrze przy wąskim stanie (B6): pokrętło różnicuje decyzje tylko tam, gdzie
+  bot tapuje CIAŁO na manę, a to rzadkie w puli bench. Pozostałe elementy pętli
+  (model jednostek, bramka oferty, wycena celu) nie mają pokrętła — dowodem są
+  piny i mutacje, nie lustro.
+- **Żywy Tester PO** (`tools/table-tester/run-game.mjs`, artefakt z tej pętli, 6 partii:
+  bot `innistrad-brg` ×3 seedy 701–703, `srodziemie`, `wiedzmin-wur`, `tarkir-wur`):
+  6× „DETEKTORY: brak zgłoszeń" + 6× „NIEWYCENIONE: brak". Rodzina realnie zagrana:
+  bot aktywował `Moonscarred Werewolf` 3× („dodanie 2 many zielonych" — przypadek
+  czujności CR 702.20b) i `Seer's Lantern` 1× („dodanie many do puli"; zdolność scry
+  tej samej karty 5× — świadomy wybór, nie remis).
+
+### Znane granice (świadome, nie bugi)
+
+1. **`tap_for_mana`** (ręczne tapnięcie landu) ma w gałęzi bota starą,
+   liczbocentryczną wycenę (`hasPlayable ? 80 : 1`) — silnik NIE enumeruje tej
+   komendy jako decyzji (game-state: „tap_for_mana NIE jest już osobno
+   enumerowany"; zostaje dla replayów i kreatora stołu), więc zmiana byłaby
+   niezmierzalna (zakaz kodu „na sucho"). Zostaje jak jest.
+2. **Koszt okazji drugiego trybu** źródła (Seer's Lantern `{2},{T}: Scry 1`,
+   Balamb Garden, Immersturm Skullcairn): tap zamyka drugie okno tej samej
+   karty. Nie modelujemy — brak dowodu z partii, że bot wybiera źle
+   (w pomiarze C3 wybrał zdolność z riderem życia, nie scry).
+3. **`F2` na skali CZARU, nie many:** „Skarb odblokowuje kartę, której bot
+   nie chce" rozstrzyga wspólna `castScoreForUnlock` (L41) — jeśli wycena
+   czaru uznaje 1/2 za wartą rzutu, to decyzja o rzucie należy do tamtej skali
+   (rodzina `create_token`/ciała). Pętla many nie wprowadza drugiego, własnego
+   kryterium „chcenia".
+4. **Wartość many „na przyszłą turę"** (bankowanie Skarba) — bot nie planuje
+   portfela na następną turę; kara M243/C zostaje jako świadome uproszczenie.
+5. **tie-audit „bez danych"** (`cast_spell` 1, `activate_ability` 2): remisy,
+   w których brakuje danych porównawczych (np. dwie identyczne oferty) —
+   audyt nie rozstrzyga, czy to duplikat oferty, czy nierozróżnialność wyceny.
+
+### Pomiar końcowy (PRZED → PO, sonda `scratch/pmssb32-mana-przed.mjs`)
+
+| Scenariusz | PRZED | PO |
+|---|---|---|
+| A3 Wizard, mana redundantna | **+10 = WYBÓR** | −4, pass |
+| A4 cudza tura + instant w ręce | −30 (rzut 11 i tak wybrany) | −6 (rzut 11, reguła E6/A1 żyje) |
+| C2 Latarnia, rzut oferowany | **+6** | −4 (oferta = płatność) |
+| D2 Powerstone + stwór | **+6 = WYBÓR** | −4, pass |
+| D3 Powerstone + pula ograniczona | **+6 = WYBÓR** | −4, pass |
+| E3 Skarb + Las + Shock (potrzeba `{R}`) | **−10, pass** | **+6 = WYBÓR** (aktywacja to jedyna droga) |
+| F1/F2 Villager main1 vs main2 | 6,0 = 6,0 | **−6** vs **−4** |
+| F4 Relikt: ściana vs 4/4 | 3 = 3 | **3** vs **−5** |
+| Reszta (A1, A2, A5, B1–B4, C1, C3, C4, D1, E1, E2, E4, F3, F5) | — | bez zmian |
+
+**Status:** rodzina ZAMKNIĘTA (ponowny audyt tylko z nowym dowodem). Kolejka
+następnej pętli: remisy wyboru celu/ataku z tie-audytu (PMSSB-33), koszt okazji
+drugiego trybu źródła, bankowanie many oraz **`manaAvailableNow`** — jego
+komentarz mówi „auto-produkcja tylko lądy", tymczasem silnik od M179/D i M201
+auto-tapuje przy płatności także źródła WOLNE (`{T}`: Latarnia, Wilkołak)
+i KOSZTOWE (`{1},{T}`: Cylix, Wizard), więc „przed" w tym pomocniku jest
+zaniżone wobec oferty; w rodzinie many łagodzi to bramka „oferta = płatność"
+(oferta istnieje ⇒ premia nie należy się), ale poza nią pomocnik żyje jeszcze
+w `suspend_card` — kandydat na osobną pętlę, bez zmian „na sucho".

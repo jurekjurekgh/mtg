@@ -71,7 +71,23 @@ jako kotwicę „0" i wybór bota.
 
 ## 4. Findingi i fale
 
-Wypełniane po pomiarze (§5-6 raportu w `docs/PMSSB.md`).
+Pomiar PRZED (25 scenariuszy) dał findingi F1–F6 → trzy fale. Pełny opis
+w `docs/PMSSB.md` §PMSSB-32; skrót:
+
+| # | Finding (PRZED) | Fala |
+|---|---|---|
+| F1 | Apprentice Wizard + 3 lądy + karta z `{W}`: aktywacja **+10 = WYBÓR** (próg liczbowy nie zna kolorów) | A |
+| F2 | Powerstone (`spendOnly: artifact`) „odblokowywał" stwora; pula ograniczona drukiem liczona jako „już stać" | A |
+| F3 | filtr koloru nie odblokowywał niczego, choć po aktywacji czar staje się płatny (−10 → powinno być dodatnie) | A + C |
+| F4 | tap ciała bez ceny bojowej: main1 == main2 (6,0 = 6,0), `tapCreature` 0/1 == 4/4 (3 = 3) | B |
+| F5 | reguła E6/A1 (instant) MARTWA w produkcji — wpis ręki bez `types` | A |
+| F6 | bramka „chcę to rzucić" pytała komendę BEZ celu (Shock bez celu = −10) | A3 |
+
+Fale: **A** — model jednostek many (kolory, `{C}`, `spendOnly`, pula ograniczona,
+podwójne liczenie lądu) + `types` w widoku ręki + wycena celu; **B** — cena
+tapnięcia CIAŁA (`manaTapBodyPerStat: 2`, `manaTapBodyMax: 8`: main1 = moc,
+cudza tura = wytrzymałość, main2/po blokach/choroba/czujność/obrońca = 0);
+**C** — bramka „silnik już oferuje rzut ⇒ aktywacja zbędna" (`castOfferedNow`).
 
 ## 5. Bramy i higiena
 
@@ -79,3 +95,20 @@ Wypełniane po pomiarze (§5-6 raportu w `docs/PMSSB.md`).
 - `npm test`, `npm run build`, `npm run test:all`; `bot-scoring-snapshot`
   (cel: bez regeneracji), tie-audit, mirror-eval, Żywy Tester PO.
 - Sondy poza repo (`/home/user/scratch`, `/tmp`) — repo zostaje czyste.
+
+## 6. Wynik (pomiar PO)
+
+- Piny `test/audyt-pmssb32-mana.test.js`: **19/19 GREEN**; 7 mutacji czerwieni
+  właściwe piny (M3 — 9 pinów, M2 — 6).
+- Bramy: `npm test` **7270/7270**, `npm run test:all` **7541/7541**, build
+  **70 / 4697,0 kB**; golden-master zregenerowany (świadomy dryf wycen, te same
+  decyzje: hashe „bez zmian").
+- tie-audit PO: 27,0% remisów / 9,7% realnych (było 28,3% / 10,8%).
+- mirror-eval (wymiar ciała ON vs OFF): 24:24 (0,5000) na 48 meczach — brak
+  sygnału w lustrze; dowodem piny + mutacje.
+- Żywy Tester PO: 6 partii (bot `innistrad-brg` ×3, `srodziemie`, `wiedzmin-wur`,
+  `tarkir-wur`) — 6× „DETEKTORY: brak zgłoszeń", 6× „NIEWYCENIONE: brak";
+  w transkryptach widać rodzinę w akcji (Werewolf: 3× mana, Lantern: 1× mana
+  vs 5× scry).
+- Kolejka: remisy wyboru celu/ataku z tie-audytu (PMSSB-33), `tap_for_mana`
+  poza decyzjami silnika, koszt okazji drugiego trybu źródła.

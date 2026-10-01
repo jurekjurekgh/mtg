@@ -14698,3 +14698,59 @@ i 702.164c (toxic) — brak znalezisk; dodany brakujący pin mnożenia egzaltacj
 + 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512
 (na drzewie Etapu 9), `npm run build` 70 / 4680,8 kB (7222/7493/4673,6 kB było
 bramką tej sesji przed Etapem 6).
+
+## 2026-10-01c — PMSSB-32: produkcja many (`add_mana`) (PR #149)
+
+**Prompt:** zlecenie właściciela — PMSSB: wybrać JEDNĄ rodzinę i przeprowadzić audyt
+przyczynowo-skutkowy scoringu bota (kiedy efekt jest taktycznie najsilniejszy, w jakich
+fazach i czyich turach, kiedy zysk zerowy), a potem tak ustawić wycenę, by premiowała
+momenty sensowne; bez strojenia maszynowego (ADR 0018). Wejście `fe1eb08` (plan pętli,
+baseline fast 7250/7250, build 70 / 4683,0 kB). Plan
+`docs/plans/PLAN_2026-10-01c-pmssb32-mana.md`, raport `docs/PMSSB.md` §PMSSB-32, rejestr
+rodzin +wiersz 32.
+
+**Rodzina:** `add_mana` — 25 kart / 28 wystąpień (największa spoza rejestru). Wycena
+narosła z ośmiu łatek z gier (M128, M155, M119/Z5 + M150/C1, B54/s4008, F 2026-09-19b,
+M243/C, E6/A1, M167/D) bez wspólnej miary; pomiar PRZED (sonda
+`scratch/pmssb32-mana-przed.mjs`, 25 scenariuszy) dał findingi F1–F6: próg LICZBOWY
+przepuszczał „odblokowanie” bez koloru (Wizard +10 = WYBÓR, choć nigdy nie opłaci `{W}`)
+i bez restrykcji druku (Powerstone „odblokowywał” stwora), filtr koloru nie odblokowywał
+niczego, tap CIAŁA nie miał ceny bojowej (main1 == main2, 0/1 == 4/4), reguła instant
+E6/A1 była w produkcji MARTWA (wpis ręki w widoku bez `types`), a bramka „chcę to rzucić”
+pytała komendę bez celu (Shock bez celu = −10).
+
+**Fale:** (A) model JEDNOSTEK many — `manaUnitsOfView`/`unitsAfterManaAbility`/
+`canCastWithUnits` liczą kolory, pipy, `{C}`, `spendOnly: artifact` i pulę ograniczoną
+dokładnie tak jak silnik (`expandManaPool`, `matchColorRequirements`; L41/L48), ląd nie
+dubluje własnej jednostki (B54/s4008), `playerView` oddaje `types` ręki (klasa L1),
+a wycena celu czaru z ręki idzie najlepszym celem z widoku; (B) cena tapnięcia CIAŁA
+(`tapBodyCost`, pokrętła `manaTapBodyPerStat: 2` / `manaTapBodyMax: 8`) — main1 = moc
+(CR 508.1a), cudza tura = wytrzymałość (CR 509.1a), main2/po blokach/choroba/czujność
+(CR 702.20b)/obrońca (CR 702.3b) = 0, dawna cena `tapCreature` −3 zostaje jako podstawa;
+(C) bramka „oferta = płatność” (`castOfferedNow`) — gdy silnik oferuje rzut, auto-płatność
+go pokryje, więc ręczna aktywacja niczego nie odblokowuje, a przy Skarbie kosztuje
+jednorazowy token. Fixture `m243` (Skarb bez `colors` w deskryptorze) kłamał wobec druku
+i został naprawiony razem z zaostrzeniem pinu M243/C (zdolność `{1},{T}` bramy REALNIE
+odblokowuje czar pod brakujący kolor — to promowany moment).
+
+**Dowody:** piny `test/audyt-pmssb32-mana.test.js` **19/19** (m.in. A1 −4, A5b +6 = WYBÓR,
+B1 ściana 3 vs 4/4 −5, B3 main1 −6 < main2 −4, B6 −4 bez zmian, B7 czujność −4/−8,
+B10 Skarb −10) + **mutacje M1–M7** (M3 bez L48 czerwieni 9 pinów, M2 bez ceny ciała 6);
+tie-audit PO 27,0% remisów / **9,7% realnych** (było 28,3% / 10,8%); mirror-eval wymiaru
+ciała ON vs OFF 24:24 (0,5000) na 48 meczach — brak sygnału w lustrze przy wąskim stanie
+(B6), dlatego dowodem są piny; hashe determinizmu „bez zmian” na puli bench; Żywy Tester PO
+6 partii (`innistrad-brg` ×3, `srodziemie`, `wiedzmin-wur`, `tarkir-wur`) — 6× brak
+zgłoszeń detektorów i 6× brak niewycenionych, w transkryptach rodzina realnie zagrana
+(Moonscarred Werewolf 3× mana, Seer's Lantern 1× mana vs 5× scry). Golden-master
+zregenerowany — świadomy dryf WYCEN przy tych samych decyzjach.
+
+**Runda CR u źródła** (wydanie 2026-09-25) wykryła przekręcone NUMERY w komentarzach kodu:
+`702.20a` (definicja statyczna) i `702.3a` zamiast **702.20b** („Attacking doesn't cause
+creatures with vigilance to tap”) i **702.3b** („A creature with defender can't attack”) —
+poprawione w `heuristic-bot.js`/`heuristic-params.js` i dopisane do generowanej tabeli
+numerów wraz z aliasem „obroń” dla wpisu 702.3 (strażnicy CR znowu zieloni: 39/39).
+
+**Bramka końcowa:** `npm test` **7270/7270 EXIT 0**, `npm run test:all` **7541/7541
+EXIT 0**, build **70 modułów / 4697,0 kB**. Kolejka następnej sesji: remisy wyboru
+celu/ataku z tie-audytu (PMSSB-33), `tap_for_mana` (poza decyzjami silnika), koszt
+okazji drugiego trybu źródła. Rodzina ZAMKNIĘTA.
