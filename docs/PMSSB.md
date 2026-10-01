@@ -70,6 +70,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
 | produkcja many (`add_mana`: `{T}` / `{mana}+{T}` / `tapCreature` / `sacrificeSelf` / raz-na-turę) | 25 | DONE (2026-10-01c) | §PMSSB-32 niżej; plan `PLAN_2026-10-01c-pmssb32-mana.md`; `test/audyt-pmssb32-mana.test.js` (19 pinów); **pierwsza rodzina z jedną wspólną miarą zamiast ośmiu łatek** — model JEDNOSTEK many (`manaUnitsOfView`/`unitsAfterManaAbility`/`canCastWithUnits`; L41/L48: LICZBY → KOLORY+pipy+`spendOnly`+pula ograniczona), bramka „oferta = płatność" (`castOfferedNow`), wycena celu czaru z ręki (`spellNeedsTarget` + best-of-targets), cena tapnięcia CIAŁA (`tapBodyCost`: main1 = moc, cudza tura = wytrzymałość, main2/po blokach/czujność CR 702.20b/obrońca CR 702.3b = 0); 2 pokrętła `manaTapBody*`; klasa L1 naprawiona u źródła (wpis ręki w widoku bez `types` → martwa reguła instant E6/A1) |
+| remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1765,3 +1766,36 @@ i KOSZTOWE (`{1},{T}`: Cylix, Wizard), więc „przed" w tym pomocniku jest
 zaniżone wobec oferty; w rodzinie many łagodzi to bramka „oferta = płatność"
 (oferta istnieje ⇒ premia nie należy się), ale poza nią pomocnik żyje jeszcze
 w `suspend_card` — kandydat na osobną pętlę, bez zmian „na sucho".
+
+## PMSSB-33 — triage remisów wyboru: znane równości, nie ślepoty (2026-10-01d, mikro-pętla)
+
+Wejście: tie-audit PO pętli PMSSB-32 (`--gry=2`, 24 partie / 12 785 decyzji):
+634 remisy (27,0%), w tym 450 par „brak akcji" silnika, 184 realnych (9,7%),
+oraz **16 „GROZY"** — remisy przy RÓŻNYCH danych wejściowych decyzji
+(attack 9, block 2, activate_ability 2, cast_spell 1, resolve_color_choice 1,
+resolve_discard_choice 1). Pytanie mikro-pętli: czy którakolwiek z nich to
+ślepota wyceny (defekt), czy zamienna wartość wariantów.
+
+**Metoda:** tie-audit `--json` drukuje PROJEKCJĘ danych, które wycena czyta
+(dla ataku `{atakuje, trafienie, ginie, zabici, smiertelny}`); dla każdej klasy
+sprawdziliśmy, czy różnica wejść jest CZYTANA i WYCENIONA (równość wartości),
+czy pominięta (ślepota).
+
+| Klasa | Wzorzec z audytu | Rozstrzygnięcie |
+|---|---|---|
+| attack (9) | „+1 trafienie i +1 ginie" oraz remisy 0/0 i 1030 (lethal) | wycena atakującego to suma per-stwór, a wymiana (`power ≥ wytrz.` blokera, stwór ginie) = **`power − 1`**; przy power 1 daje to dokładnie 0 ⇒ remis z pasem. Granica świadomej formuły („bez tego bot nigdy nie atakuje w równą planszę"), nie pominięte wejście: przy power 2 → +1, 3/3 w 1/1 → +6. Remisy 0/0 = atak bez zysku, 1030 = przebicie już wygrywającej decyzji |
+| block (2) | permutacje przypisania blokerów | identyczny wynik (oba ataki zablokowane, te same zgony) — przypisania są ZAMIENNE; przy różnych ciałach wycena rozróżnia (4 > 2) |
+| cast_spell / activate_ability / color / discard (5) | wybór celu o równej wartości (dwa identyczne tokeny, dwa równie dobre źródła) | równość uczciwa; brak dowodu złej decyzji ⇒ bez zmiany kodu |
+
+**Werdykt: 0 zmian kodu.** Piny `test/audyt-pmssb33-remisy-wyboru.test.js` (7)
+zamrażają triage, żeby następna pętla nie odkrywała go od nowa: A1 (1/1 za 1/1
+= 0 = brak ataku), A2 (2/2 → 1, anty-remis), A3 (3/3 w 1/1 → 6), A4 (dwa 1/1 =
+suma zer), A5 (otwarty stół → 12, anty-over-fix: remis ≠ bierność), B1 (permutacja
+bloków = 2 = 2), B2 (przy różnych ciałach 4 > 2). Mutacje: `power − 1 → power`
+czerwieni A1/A2/A4, `attackOpenBoardBonus: 0` czerwieni A5.
+
+**Wniosek proceduralny:** per-kind bramka `tools/bot-tie-audit.mjs --gate=<kind>`
+(exit 1 przy każdym remisie „przy różnych danych") jest narzędziem POLOWANIA,
+nie bramką CI — na zamrożonym drzewie `--gate=attack` i `--gate=block` są
+czerwone z definicji tych równości. Do CI służą liczby globalne (27,0% / 9,7%)
+i piny.

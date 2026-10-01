@@ -14754,3 +14754,45 @@ numerów wraz z aliasem „obroń” dla wpisu 702.3 (strażnicy CR znowu zielon
 EXIT 0**, build **70 modułów / 4697,0 kB**. Kolejka następnej sesji: remisy wyboru
 celu/ataku z tie-audytu (PMSSB-33), `tap_for_mana` (poza decyzjami silnika), koszt
 okazji drugiego trybu źródła. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01d — PMSSB-33: triage remisów wyboru (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `860c8b5` (koniec sesji 01c). Plan
+`docs/plans/PLAN_2026-10-01d-pmssb33-triage.md`, raport `docs/PMSSB.md` §PMSSB-33, rejestr
++wiersz „remisy wyboru".
+
+**Obiekt pętli:** nie rodzina efektów, a **16 „GROZY" z tie-audytu** po PMSSB-32 (24 partie /
+12 785 decyzji: 634 remisy = 27,0%, w tym 450 par „brak akcji" silnika i **184 realnych =
+9,7%**, poprawa wobec 28,3% / 10,8%): `attack` 9, `block` 2, `activate_ability` 2,
+`cast_spell` 1, `resolve_color_choice` 1, `resolve_discard_choice` 1 — czyli remisy przy
+RÓŻNYCH danych wejściowych decyzji. Pytanie: ślepota wyceny czy świadoma równość wartości?
+
+**Metoda:** `--json` audytu drukuje PROJEKCJĘ danych, które faza wyceny realnie czyta
+(dla ataku `{atakuje, trafienie, ginie, zabici, smiertelny}`), a sondy
+(`/tmp/pmssb33-probe.mjs`, `-blok.mjs`) na harnessie pinów PMSSB-31/32 mierzą wyniki
+wariantów — dzięki temu różnica projekcji + różnica wyniku = wymiar CZYTANY, różnica
+projekcji + równy wynik = wymiar POMINIĘTY (kandydat na falę), równa projekcja = no-op.
+
+**Rozstrzygnięcie:** **0 zmian kodu — wszystkie 16 to znane równości, nie ślepoty.**
+(1) Atak: gałąź wymiany (`power ≥ wytrz.` blokera, stwór ginie) to `power − 1`, więc przy
+power 1 daje DOKŁADNIE 0 — tyle co brak ataku (remisy 0/0 = atak bez zysku); formuła
+rozróżnia tam, gdzie ma czym (power 2 → +1, 3/3 w 1/1 → +6, pusty stół → 12, remis 1030 =
+przecięcie progu przy już wygrywającej decyzji). (2) Blok: permutacje przypisań blokerów
+o identycznym wyniku (te same zgony, te same obrażenia) — przy różnych ciałach wycena
+rozróżnia (zmierzone 4 > 2). (3) Reszta: wybór celu/źródła o równej wartości; brak dowodu
+złej decyzji z partii. Świadomie NIE dodano tie-breakerów — byłby to over-fix łamiący
+zasadę procedury (najsłabszy realny wariant zostaje najstarszą wartością).
+
+**Dowody:** piny `test/audyt-pmssb33-remisy-wyboru.test.js` **7/7** (A1 1/1 za 1/1 = 0,
+A2 ta sama reguła przy power 2 = 1, A3 3/3 w 1/1 = 6, A4 dwa 1/1 = suma zer, A5 otwarty
+stół = 12, B1 permutacja bloków 2 = 2, B2 różne ciała 4 > 2) + mutacje: `power − 1 → power`
+czerwieni A1/A2/A4, `attackOpenBoardBonus: 0` czerwieni A5, po przywróceniu 7/7.
+Wniosek proceduralny: per-kind `tools/bot-tie-audit.mjs --gate=attack|block` jest
+narzędziem POLOWANIA, nie bramką CI — na zamrożonym drzewie jest czerwony z definicji
+tych równości.
+
+**Bramka końcowa:** `npm test` **7277/7277 EXIT 0**, `npm run test:all` **7548/7548
+EXIT 0**, build **70 modułów / 4697,0 kB** (0 zmian kodu). Kolejka następnej sesji:
+pozostałe remisy CELU (5 — brak dowodu złej decyzji), `manaAvailableNow` poza rodziną many
+(`suspend_card`), koszt okazji drugiego trybu źródła, bankowanie many. Triage ZAMKNIĘTY.
