@@ -59,6 +59,16 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | search_library (tutory) | 11 | DONE (2026-09-29) | §PMSSB-19 niżej; `test/audyt-pmssb19-search.test.js` (7); `searchRiderValue` (L41: 3 ścieżki — tabela ETB/cast/aktywacja; R2 = Final Parting `two_cards` warty 0 wszędzie + guard deck-outu na 2 karty; 4 pokrętła `search*`) |
 | mill (re-audyt) | 13 | DONE (2026-09-29) | §PMSSB-20 niżej; `test/audyt-pmssb20-mill.test.js` (6); `foeMillValue`/`selfMillValue` (L41: 4 skale → 1; R2 = presja deck-outu wroga + mill do 0 = wygrana przy ich dobraniu CR 121.4; R3 = self-mill pod reanimację w ręce; guard jedynego blokera anuluje premię); 5 pokręteł `mill*` |
 | Cuombajj / opponent-target (1 karta) | 1 | DONE (mikro-pętla, 2026-09-29) | §PMSSB-21 niżej; nowy dowód = audyt remisów (190/190 rozróżnialnych w decyzji, wcześniej 41); `test/audyt-pmssb21-opponent-target.test.js` (5); sonda `tools/pmssb21-cuombajj-sonda.mjs`; 3 pokrętła `opponentTarget*` |
+| Insatiable Appetite (`sacrifice_food_choice`, 1 karta) | 1 | DONE (mikro-pętla, 2026-09-29b) | plan `PLAN_2026-09-29b-pmssb22-insatiable-appetite.md` + wpis w PROJECT_HISTORY (sekcji w tym hubie brak — pętla mikro z zgłoszenia właściciela); `test/audyt-pmssb22-insatiable.test.js` (12); okna combat-tricka + delta zależna od Food w `pumpDelta`; 0 pokręteł |
+| liczniki (`add_counter` + `add_counter_to_creatures_you_control`) | 33+2 | DONE (2026-09-29) | §PMSSB-23 niżej; plan `PLAN_2026-09-29e-pmssb23-liczniki.md`; `test/audyt-pmssb23-liczniki.test.js` (17); `counterEffectValue` (L41: cast = activate = klasyfikacja) + 6 pokręteł `counterThreat*`/`counterSpread*`/`counterEvasion*`/`counterLateWindow*`/`counterLethalClock*` |
+| filtrowanie wierzchu (`scry` + `surveil`) | 12+5 | DONE (2026-09-30) | §PMSSB-24 niżej; plan `PLAN_2026-09-30a-pmssb24-scry.md`; `test/audyt-pmssb24-scry.test.js` (19); `libraryOrderValue` (CR 701.22a/701.25 — permutacje wreszcie wycenione) + reveal w widoku + drabina deck-outu przy millu + duplikaty/grób; 6 pokręteł `scryOrder*`/`cardDuplicate*`/`surveilGraveSynergy*` |
+| koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
+| wartość landu (drabina per pip) | 1 | DONE (2026-09-30c) | §PMSSB-26 niżej; plan `PLAN_2026-09-30c-pmssb26-land-drabina.md`; `test/audyt-pmssb26-land-drabina.test.js` (13); `landKeepValue` wg specyfikacji właściciela (CR 305.6 dla kolorów); 10 pokręteł `landKeep*`/`landColored*Max`/`landTotal*Max` |
+| licznik źródeł landu bez karty rozważanej | 1 | DONE (2026-09-30d) | §PMSSB-27 niżej; doprecyzowanie właściciela do PMSSB-26 — „3 na stole albo 2 na stole i 1 dodatkowy w ręku (poza tym rozważanym)"; przywraca pierwotny pin `audyt-pr105` B; 0 nowych pokręteł |
+| wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` |
+| szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
+| podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
+| chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -241,6 +251,501 @@ w `src/controllers/heuristic-params.js`.
 - Dowód wartości = 28 pinów behawioralnych + testy sterowania
   pokrętłami (×0 zmienia wynik) + zero zmian wyborów w golden.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-29 — `resolve_search_choice` na wspólnej mierze (2026-09-30f)
+
+> **SPROSTOWANIE (2026-09-30g, PMSSB-30).** Ta sekcja twierdziła, że manabaza
+> zmienia wybór przez **próg zasięgu** bomby (22 przy 0 lądów → 37 przy 8).
+> To było przesadzone i zostało obalone pinem `real-cards-batch55` B55/B4
+> (Brightwood Tracker): przy 0 lądów próg zasięgu odwracał wybór z 4/5 na 1/1.
+> Karta szukana idzie **na stałe do ręki**, więc obowiązuje podłoga z ciała
+> `max(handCardKeepValue, cardKeepValue)`. Manabaza **nadal** zmienia wybór —
+> ale przez drabinę lądów (land 55 → 25), nie przez zasięg. Obalona została też
+> „granica uczciwości" z B4: czary remisowały tylko dlatego, że `cardKeepValue`
+> ignorował koszt. Szczegóły w §PMSSB-30.
+
+Cel wybrany z **odświeżonego** audytu remisów (`node tools/bot-tie-audit.mjs --gry=40` —
+480 partii, 258 317 decyzji): `resolve_search_choice` ma **245 remisów i wszystkie są
+„równoważne"** (0 rozróżnialnych), czyli wycena daje wariantom identyczną liczbę i bot bierze
+pierwszy z listy.
+
+**Znajdowanie (L41 — trzecia równoległa miara):** wycena szukała własną regułą
+`25 + (land ? 30 : 0) + 2P + T` obok `handCardKeepValue` (PMSSB-25/F1) i wspólnej
+`cardKeepValue`. Pomiar PRZED (sonda `scratch/pmssb29-search-przed.mjs`), kandydaci: land,
+Delta Bloodflies {1}{B} 1/2, Woolly Loxodon {5}{G}{G} 6/7, dwa czary — wyniki **identyczne
+przy 0, 3, 8 i 12 lądach**: land=55 · bomba=44 · stwór=29 · czary po 25. Reguła nie znała
+drabiny lądów, zasięgu many ani koloru: przy 12 lądach bot szukał kolejnego landu zamiast
+6/7, przy 0 lądów bomba za 7 biła grywalnego stwora za 1, a wszystkie czary dostawały 25.
+
+**Fala A (`c11ff41`):** `P.searchFoundBase + cardKeepValue(view, card)` — wspólna miara daje
+drabinę lądów (PMSSB-26), próg zasięgu (`cost > reach + 2` → −3) i zniżkę za duplikaty
+w jednym miejscu. Baza 25 zostaje, więc relacja do −40 za „nie znajdź karty" nietknięta.
+
+**POMIAR PO:**
+
+| Lądy | PO | Wygrywa |
+|---|---|---|
+| 0 | land **55** · stwór 32 · czar 27 · bomba 22 | land — brak manabazy bije wszystko |
+| 3 | stwór **33** · czar 29 · bomba 22 · land 19 | grywalny stwór, nie kolejny land |
+| 8 / 12 | bomba **37** · stwór 33 · czar 29 · land 19 | bomba wreszcie w zasięgu |
+
+**Granica uczciwości (pin B4):** czary bez P/T wciąż remisują, bo widok nie wystawia TREŚCI
+czaru z biblioteki (strefa ukryta, CR 400.2). Bot nie ma danych, żeby je rozróżnić — pin
+kotwiczy, że nie wymyślamy fałszywego rozróżnienia. Część z 245 remisów zostanie i tak ma być.
+
+**Piny** `test/audyt-pmssb29-search.test.js` (8): A1–A4 manabaza zmienia wybór, B1 szukanie
+bije rezygnację −40 (kotwica zgłoszenia właściciela B; rezygnacja tylko przy szukaniu
+nieobowiązkowym, CR 701.23d), B2 baza jako pokrętło, B3 drabina dochodzi przez pokrętła
+PMSSB-26 (jedno źródło prawdy), B4 granica uczciwości. **Mutacja M1** → RED
+`{A1, A2, A3, A4, B2, B3}`, B1/B4 zielone. **Pokrętło:** `searchFoundBase` 25.
+
+**Stan klasy L41:** `cardKeepValue` jest teraz źródłem prawdy dla scry, surveil, look_top,
+clash, mill, discard i **search**. `handCardKeepValue` zostaje jako suwit dla dużych ciał
+(`max(ciało, wspólna)`), a `escapeExileCostOf` (dwugałęziowy kikut) pozostaje forwardem —
+w rejestrze nie ma kart grywalnych z grobu.
+
+**Bramki:** `npm test` 7187/7187 · `npm run build` 70 mod / 4657.6 kB ·
+`npm run test:all` **7458 / 7458, exit 0**, golden-master `ok 1725` bez regeneracji.
+
+---
+
+## PMSSB-28 — `resolve_color_choice` czyta cel wyboru (2026-09-30e)
+
+Silnik **niesie cel wyboru w pending**: `game-state.js:5762` ustawia `purpose: 'mana'` dla
+lądu z `chooseColor` (Manor Gate), `spells.js:2655` — `purpose: 'protection'` dla aury.
+Wycena tego pola **nie czytała** i liczyła jedną płaską sumę `5 + needScore*6 + enemyInColor`
+dla obu celów.
+
+**Pomiar PRZED** (sonda `scratch/pmssb28-color-przed.mjs`), stan z przeciwstawnymi motywami
+(p2: 3 lasy + Delta Bloodflies {1}{B} w ręce; p1: trzy czerwone stwory):
+
+| Cel | PRZED | Czytanie |
+|---|---|---|
+| `protection` | U=11, B=11, R=8, W=5, G=5 → **{U}** | **błąd** — wróg nie ma ani jednego stwora {U}, aura nie chroni przed niczym |
+| `mana` | U=11, B=11, R=8, W=5, G=5 → **{U}** | identyczny wynik — `purpose` był martwym polem |
+
+**Fala A (`5c28560`):** rozdział po `purpose` — ochrona liczy tylko kolor wrogich stworów,
+mana tylko kolor potrzebny w ręce, a **nieznany cel zostaje przy dawnej sumie** (kotwica
+anty-over-fix: nic, czego nie zmierzyliśmy, nie zmienia zachowania).
+
+**PO:** ochrona wybiera **{R} = 23**, mana wybiera **{B} = 11** — ten sam stan, różne wybory.
+Przy pustym stole wroga ochrona remisuje po 5 i nie wymyśla koloru z potrzeby many
+(PRZED wygrywało {B} = 11).
+
+**Piny** `test/audyt-pmssb28-color-choice.test.js` (7): A1–A4 rozdział celów, B1 anty-over-fix
+(nieznany cel = dawna suma: B=11, R=8, U=5), B2 wagi jako pokrętła, B3 uczciwy remis przy
+pustym stole. **Mutacja M1** → RED `{A1, A2, A3, A4, B2, B3}`, B1 zielony.
+
+**Pokrętła (2):** `colorProtectionPerCreature` 6 · `colorManaNeedPerCard` 6.
+
+**Trop porzucony po pomiarze:** rodzina „wygnaj karty z grobu" (`resolve_delve_exile` /
+`resolve_escape_exile` / `resolve_reveal_exile_grave`) ma wspólną miarę `escapeExileCostOf`
+w postaci dwugałęziowego kikuta (stwór = `10 + 2P + T`, każda inna karta = stałe 6), ale
+**w rejestrze nie ma ani jednej karty grywalnej z grobu ani reanimacji**, więc „grób jako
+zasób" byłby niezmierzalny na prawdziwych kartach. Forward na moment, gdy takie karty wejdą.
+
+**Bramki:** `npm test` 7179/7179 · `npm run build` 70 mod / 4656.3 kB ·
+`npm run test:all` **7450 / 7450, exit 0**, golden-master `ok 1717` bez regeneracji.
+
+---
+
+## PMSSB-27 — licznik źródeł landu BEZ karty rozważanej (2026-09-30d)
+
+**Doprecyzowanie właściciela do PMSSB-26:**
+
+> „Jako sytuacje — raczej odrzucaj myślałem o 3 na stole albo 2 na stole i 1 dodatkowy
+> w ręku (**poza tym rozważanym**)."
+
+To nie jest przesunięcie progu, tylko **zmiana semantyki licznika**: `landKeepValue` liczy
+źródła koloru (albo sumę lądów) **poza kartą właśnie ocenianą**. Przy liczniku obejmującym
+rękę próg wypadał o jedno źródło za wcześnie (2 poza rozważanym zamiast 3), a stopień
+„0 → nigdy nie odrzucaj" był dla landu w ręce nieosiągalny — trzeba go było kotwiczyć przez
+scry. Teraz „0" znaczy dokładnie to, co powinien: **ten land jest moim jedynym źródłem koloru**.
+
+**Pomiar PO** (sonda `scratch/pmssb27-land-po.mjs`), land wobec bezbarwnego stwora (12 pkt):
+
+| Źródła poza rozważanym | Land | Stopień |
+|---|---|---|
+| 0 | **−10** | bardzo duża — nigdy nie odrzucaj |
+| 1 | **2** | spora |
+| 2 | **12** | neutralna (remis ±1) |
+| 3 | **31** | niska — raczej odrzucaj |
+
+Oba przykłady właściciela dają ten sam wynik: **3 na stole → 31** oraz **2 na stole
++ 1 dodatkowy w ręce → 31**. Drabina bezbarwna: 0 i 2 → −10 · 4 → 2 · 6 → 12 · 7 → 31.
+
+**Doprecyzowanie PRZYWRACA pierwotny pin** `audyt-pr105-bot-hand-top` B: przy 2 lasach na
+stole i trzecim w ręce (2 źródła {G} poza nim) bot znów zostawia trzeci las i oddaje
+9-manowy czar poza zasięgiem. **Znika „konsekwencja do potwierdzenia" z PMSSB-26** —
+nie ma już rozjazdu między drabiną a wcześniejszym uzgodnieniem. Nowy B2 kotwiczy prawdziwe
+przesycenie (3 lasy na stole).
+
+**Zaktualizowane piny:** PMSSB-26 A1/A2/A3/B2/B3/B4/C2/C3/C4/C5, PMSSB-25/A2 (3 źródła poza
+rozważanym), pr105 B/B2. **Bez zmian:** PMSSB-26/A4 (scry), PMSSB-24/C3, pakiet-c E2/C1 i
+E2/C2 — tam oceniana karta leży poza ręką, więc licznik jest taki sam.
+
+**Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.4 kB · golden-master
+**bez regeneracji** (zmiana progów nie przesunęła decyzji w pełnych partiach) ·
+`npm run test:all` **7443 / 7443, exit 0**, golden-master `ok 1710`.
+
+---
+
+## PMSSB-26 — wartość landu jako drabina (2026-09-30c)
+
+Pętla otwarta z forwardu PMSSB-25 i **zamknięta specyfikacją właściciela** (nie domysłem).
+
+**Pomiar PRZED** (sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w ogóle nie zależała
+od manabazy aż do starego progu przesycenia — basic-forest dawał **20 pkt przy 1, 2, 3 i 5
+źródłach {G}**, a land utylitarny 19 pkt aż do sumy 6 lądów. Przy koszcie odrzucenia land
+przegrywał z każdą kartą o niezerowym koszcie, bo reguła ciała liczy land jako
+`2 · manaCost` = 0; przy 0 lądów bot wyrzucał land i zostawiał artefakt za {2} (19 vs 15).
+
+**Specyfikacja właściciela:** land KOLOROWY — licznik = ile lądów danego pipa na stole
++ w ręce (0 → bardzo duża · 1 → spora · 2 → neutralna · 3+ → niska); land BEZBARWNY lub
+utylitarny — licznik = suma lądów na stole + w ręce (0-2 · 3-4 · 5-6 · 7+).
+
+**Fala A (`5f31e00`):** `landKeepValue(view, card)` w miejscu starej jednoprogowej gałęzi
+landu, więc działa wszędzie tam, gdzie wspólna miara (scry, surveil, look_top, clash, mill,
+discard). Kolory z `koloryZrodlaWidoku` = `getSourceForObject` (podtypy podstawowe CR 305.6
++ deskryptory many) — jedno źródło prawdy z `colorCastable`, zero map nazw kart (ADR 0002).
+Land wielokolorowy liczony po **najmniejszym** liczniku kolorów. Domknięta też druga strona
+luki L41: `discardCostPreference` czytał wspólną miarę tylko gdy ujemna, więc cała dodatnia
+drabina zapadała się do jednego wyniku — teraz `-min(30, max(ciało, wspólna))`.
+
+**POMIAR PO** (land vs stwór 2/1 = 11 pkt): bardzo duża **−10** · spora **2** ·
+neutralna **12** · niska **31**.
+
+**Kotwice:** C1 — reguła koloru właściciela (M408) nietknięta. C2 — drabina nie zależy od
+`cardDuplicateDiscount` (to nie reguła duplikatów). C4 — progi są pokrętłami. C5 — cztery
+stopnie monotoniczne.
+
+**Zaktualizowane piny starej płaskiej reguły:** PMSSB-24/C3 (12/12 → 2/12), PMSSB-25/A2
+(przesycenie per pip), PMSSB-25/A4 (14 → 11, „lepsza z dwóch miar"), `audyt-pr105` B
+(przypadek brzegowy z 2 na 0 lądów) + nowy B2, `bot-wyceny-pakiet-c` E2/C1 + nowy C2.
+
+**Mutacja M1** (stara płaska reguła) → RED: **14 pinów w 5 plikach**.
+
+**Pokrętła (10):** `landKeepCritical` 30 · `landKeepHigh` 18 · `landKeepNeutral` 8 ·
+`landKeepSaturated` −6 · `landColored{Critical,High,Neutral}Max` 0/1/2 ·
+`landTotal{Critical,High,Neutral}Max` 2/4/6.
+
+**ROZWIĄZANE przez PMSSB-27:** wątpliwość „przy 2 lasach na stole i trzecim w ręce bot
+oddaje trzeci las" wynikała z licznika obejmującego kartę rozważaną. Właściciel
+doprecyzował, że licznik ma jej NIE obejmować — patrz §PMSSB-27. Pierwotny pin
+`audyt-pr105-bot-hand-top` B wrócił do postaci sprzed PMSSB-26.
+
+**Bramki:** `npm test` 7172/7172 · `npm run build` 70 mod / 4654.1 kB ·
+`npm run test:all` **7443 / 7443, exit 0** — po **świadomej regeneracji golden-mastera**
+(overallHash `6f6ccbbd…` → `8c459fdc…`): nowa wycena landu zmienia ślad bota w pełnych
+partiach, a komunikat testu każe regenerować fixture przy świadomej zmianie parametrów.
+
+---
+
+## PMSSB-25 — koszt „odrzuć kartę” a wspólna miara (2026-09-30b, mikro-pętla)
+
+Nowy dowód: audyt remisów PO posortowany po klasach, które mają zarówno remisy, jak i
+decyzje o różnej punktacji: attack 19 614/191, block 17 253/150,
+**`resolve_discard_choice` 1 176/24**, cast_spell 60 881/14, activate_ability 85 827/12.
+
+**Znajdowanie (F1, L41 — druga miara jakości karty):** przy koszcie odrzucenia działała
+równoległa miara oparta na ciele (`handCardKeepValue`: `2·moc + wytrzymałość` bez limitu,
+keywordy, zdolności), która **nie zna zasięgu many, nasycenia lądów ani duplikatów** —
+czyli tego, co wspólna `cardKeepValue` liczy dla scry/surveil/mill/look_top/clash.
+Pomiar PRZED (sonda `scratch/pmssb25-discard-przed.mjs`):
+
+| # | Stan | PRZED | Czytanie |
+|---|---|---|---|
+| D3/D6 | 2 lądy, Woolly Loxodon {5}{G}{G} + Highland Game 2/1 | bomba **−1**, stwór 14 | **BŁĄD** — trzyma kartę niedostępną ~5 tur (wspólna miara: −3) |
+| D1 | 6 lądów na stole + 2 landy w ręce | land **19** | odrzucany, ale z powodu „land ma `manaCost` 0”, nie przesycenia |
+| D2/D5 | 3 kopie + karta bez koloru many | bez koloru **40** | **POPRAWNE** — reguła właściciela M408 |
+
+Podejrzenie o duplikaty zostało **obalone pomiarem**: D2/D5 to poprawna reguła koloru.
+
+**Fala A (`1b483a6`):** nowa gałąź przed regułą ciała — kartę, której wspólna miara NIE chce
+(`cardKeepValue < 0`: poza zasięgiem many, zbędny land przy przesycie), oddajemy chętnie
+(`-cardKeepValue + P.discardUnwantedBonus`, domyślnie 5). PO: bomba **28 > 14**,
+land **31 > 14**. Pokrętło: `discardUnwantedBonus` (×0 = sama wartość wspólnej miary,
+kierunek decyzji bez zmian — pin A5).
+
+**Kotwice:** A3 — reguła koloru właściciela (M408) nietknięta: karta bez koloru 40 pkt i to
+ona idzie pierwsza. A4 (anty-over-fix) — karty grywalne mają tę samą wycenę co PRZED (14);
+nowa gałąź zapala się tylko dla `cardKeepValue < 0`.
+
+**Mutacja A-M1** (gałąź usunięta) → RED: **{A1, A2, A5}**; A3/A4 zielone.
+
+**Nie otwieramy (forward):** przy 0 lądów reguła koloru każe odrzucić stwora zamiast landu
+(pomiar D4: 42 vs 19). To konsekwencja M408, nie nowa luka — wymaga decyzji właściciela,
+czy reguła koloru ma ustępować przed budową manabazy.
+
+**Bramki:** `npm test` 7157/7157 · `npm run build` 70 mod / 4649.2 kB ·
+`npm run test:all` **7428 / 7428, exit 0** (golden-master `ok 1696` bez regeneracji;
++5 względem 7423 z PMSSB-24 = nowe piny).
+
+---
+
+## PMSSB-24 — filtrowanie wierzchu biblioteki (`scry` + `surveil`) (2026-09-30)
+
+**Zlecenie.** Właściciel: „bierz się za kolejne fale PMSSB aż do wyczerpania
+budżetu sesji". Rodzina wybrana z pomiaru katalogu (583 karty, 184 typy
+efektów, 673 wystąpienia): `scry` = 12 kart, `surveil` = 5, zero wierszy
+w rejestrze. Wcześniejsze dotknięcia to łatki punktowe (M135 wspólna miara
+karty, M148 permutacje w silniku, M211/A1 i M218/4 okno czaru, K 2026-09-22
+Titan's Strength), więc to pierwsza pętla PMSSB dla rodziny, z nowym dowodem.
+Plan: `docs/plans/PLAN_2026-09-30a-pmssb24-scry.md`.
+
+**Inwentarz (20 kart z instrukcją układania własnej biblioteki, 17 z
+`scry`/`surveil`):** czary z riderem (`titans-strength` pump+scry 1,
+`expose-to-daylight`, `inspire-awe`, `rage-of-purphoros`, `curate`/`curate-stx`
+surveil 2+draw 1, `vanish-from-sight` bounce+surveil 1); zdolności aktywowane
+(`prismari-campus`, `seers-lantern`, `survivor-of-korlis`, `kishla-village`);
+triggery ETB (`trained-arynx`, `nefarious-imp`, `omenspeaker`,
+`merfolk-falconer`, `sifter-wurm` scry 3 + reveal wierzchu, `etherwrought-page`).
+
+**POMIAR PRZED** (sondy `pmssb24-scry-przed.mjs`, `p8.mjs`, `f2.mjs`,
+`falaB.mjs`, `falaC.mjs`):
+
+| # | Scenariusz | Wynik | Wniosek |
+|---|---|---|---|
+| P1 | scry 2, wierzch [{5} czar, {2} stwór 2/1], obie zostają | obie permutacje = **20 / 20** | kolejność nie rozstrzyga → F1 |
+| P2 | surveil 2, kolejność oryginalna vs odwrócona | **21 vs 20** | bonus `keepsOrder` kara lepsze ułożenie → F1 |
+| P8 | `sifter-wurm` scry 3 + reveal; wierzch [{5}, {2}, land] | najlepszy wariant = **`bottom:t0`** (odkłada kartę {5}); 16 wariantów, **8** etykiet | reveal nie istnieje dla bota → F5; etykiety zlewają permutacje |
+| P4 | surveil: mielenie zbędnego landu, delve w ręce vs bez | **25 = 25** | grób jako zasób niewidoczny → F3 |
+| P5 | ręka pusta vs 4 karty, te same karty na wierzchu | **12/12 = 12/12** | kontekst ręki niewidoczny → F4 |
+| P3 | odłożenie zbędnego landu, biblioteka 2 vs 12 kart | **26 = 26** | SCRY nie zmienia liczby kart — wynik POPRAWNY (korekta F2) |
+| F2′ | surveil, biblioteka 2 karty vs 12 | **24 = 24** | mill bez drabiny deck-outu → F2 po korekcie |
+| P6 | `titans-strength` main1 / main2 / end / declare_blockers | **−35 / −35 / −20 / −35** | kotwica M218/4 + K — nie ruszana |
+| P7 | scry 1/2/3, trzy zbędne landy | **26 / 32 / 38** vs keep 20 | decyzja skaluje się poprawnie — kotwica |
+
+**Findingi.**
+- **F1 (L50/L41): kolejność kart na wierzchu nie była wyceniana.** Silnik
+  oferuje permutacje (`game-state.js:7149-7160`; CR 701.22a „the rest on top
+  of your library in any order", CR 701.25), a `resolve_scry` liczył tylko
+  `bottomIds`. Przy surveil `keepsOrder ? 1 : 0` premiowało kolejność
+  ORYGINALNĄ, więc świadome ułożenie przegrywało. Etykieta śladu nie kodowała
+  `topOrder` (16 wariantów → 8 etykiet), więc audyt remisów widział remisy tam,
+  gdzie są różne decyzje (klasa L34/L40 — ta sama co M203/2).
+- **F2 — KOREKTA własnego findingu (L92).** Plan twierdził, że odłożenie karty
+  na spód odsuwa deck-out. To nieprawda: scry przekłada kartę w obrębie TEJ
+  SAMEJ biblioteki, więc liczba kart się nie zmienia i P3 (26 = 26) jest
+  poprawnym zachowaniem. Deck-out (CR 121.4/704.5b) wchodzi przy surveil, bo
+  tam karta idzie do grobu i biblioteka realnie chudnie — a `resolve_surveil`
+  nie miał żadnej drabiny presji.
+- **F3: grób bywa zasobem.** Surveil ≠ scry semantycznie (CR 701.25); przy
+  Delve (CR 702.66) albo reanimacji zmielenie karty jest paliwem.
+- **F4: wartość karty nie znała ręki.** Druga i kolejna kopia tej samej karty
+  jest warta mniej; pomiar: ręka z czterema kartami = ręka pusta (12/12).
+- **F5 (klasa L1 — brak danych): `revealTopGainLife` nie docierało do widoku.**
+  Sifter Wurm: „scry 3, then reveal the top card of your library. You gain
+  life equal to that card's mana value" — reveal następuje PO decyzji gracza
+  (`game-state.js:2263`, CR 608.2), więc kolejność wierzchu steruje zyskiem
+  życia. Zmierzony skutek: bot odkładał na spód dokładnie tę kartę {5}, której
+  reveal chciał na wierzchu (5 życia → 2).
+
+**Fale.**
+
+| Fala | Commit | Co | PRZED → PO |
+|---|---|---|---|
+| **A** | `83c06b4` | wspólny `libraryOrderValue` (suma zdyskontowana `cardKeepValue` po pozycjach, liczona jako RÓŻNICA względem układu pierwotnego) w `resolve_scry` i `resolve_surveil`; usunięte `keepsOrder ? 1 : 0`; etykieta kodująca `topOrder` | permutacje **20/20** → ułożenie **23,2** > 20; surveil **21 vs 20** → **23,2 vs 20**; 16 wariantów = **16** etykiet |
+| **B** | `184615d` | `revealTopGainLife` w `playerView` (pole warunkowe) + dopłata `gainLifeValue(mana value)`; wspólna `drawDeckingPenalty` przy mieleniu surveil — jako RÓŻNICA, nie wprost | reveal: **29,2 → 31,2** (20 życia) i **→ 33,2** (4 życia); biblioteka 3: keep **23,2** > mill **21,2**; biblioteka 1: keep **20** > mill **−42**; biblioteka 12 bez zmian (**27,2**) |
+| **C** | `4e8c201` | duplikaty w `cardKeepValue` (3 pkt za kopię, limit 2) + grób jako zasób w surveil (2 pkt za źródło, limit 4) | odłożenie duplikatu **11 → 14 → 17** (0/2/3 kopie); mill **24 → 26** z Delve w ręce |
+
+**Pułapka zmierzona, nie wymyślona (Fala A).** Pierwsza wersja członu
+kolejności liczyła wszystkie karty, także zbędne: przestawienie śmiecia w głąb
+dostawało `(1−d)·(keep_dobrej − keep_śmiecia)` = 6 pkt, czyli dokładnie tyle,
+co jego odłożenie na spód (**26 vs 26**) — remis rozstrzygała kolejność
+enumeracji i kotwica M135 („zbędny land idzie na spód") przegrywała. Poprawka:
+w członie kolejności liczą się tylko karty, które chcemy dobrać (`keep > 0`),
+bo pozbywanie się śmieci to robota spodu biblioteki, nie układu wierzchu.
+
+**Druga pułapka (Fala B).** Drabina deck-outu karze samą strefę krytyczną
+(−60 przy ≤3 kartach), więc użyta wprost obciążała też wariant „zostaw
+wszystko" — zmierzone: **−36,8** za trzymanie kart przy bibliotece 3. Kosztem
+decyzji jest dopiero różnica między zmieleniem a niezmieleniem.
+
+**Kotwica obcej pętli.** Test M135 „surveil mieli zbędny land" miał bibliotekę
+równą liczbie oglądanych kart (1), więc mielenie zostawiało bibliotekę PUSTĄ
+— wycena deck-outu słusznie każe kartę zatrzymać. Test dostał `libraryExtra: 8`
+z komentarzem; intencja bez zmian, 8/8 zielone.
+
+**Pokrętła (6):** `scryOrderWeight` 1 · `scryOrderDiscount` 0,6 ·
+`cardDuplicateDiscount` 3 · `cardDuplicateMaxCopies` 2 ·
+`surveilGraveSynergyPerSource` 2 · `surveilGraveSynergyCap` 4. Każde ×0
+przywraca wartość z poprzedniej fali (piny A2/C2/C5).
+
+**Mutacje (L13, przez `/tmp` + `cp`):** A-M1 (powrót do `20 + delta`) →
+dokładnie A1/A1b/A3/A4 RED · B-M1 (bez `revealBonus`) → B1+B2 · B-M2
+(`millDecking = 0`) → B4+B6 · C-M1 (`duplicateDiscount = 0`) → C1 · C-M2
+(`graveSynergy = 0`) → C4. Każda mutacja daje dokładnie oczekiwany zbiór RED.
+
+**Znane granice i forwardy.**
+1. **Clash — forward SKASOWANY po weryfikacji (L92).** Raport i handoff
+   zapowiadały, że `resolve_clash_choice` ignoruje warunek wygranej
+   (porównanie mana value z kartą przeciwnika). To nieprawda: silnik liczy
+   `clash.won` z odsłoniętych kart i wystawia je w widoku
+   (`pendingClash.won`, `cards`), a decyzja `putOnBottom` rozstrzyga wyłącznie
+   los własnej karty (`game-state.js:3460-3475`, CR 701.30 — wygraną daje
+   większa mana value karty ODŚLONIĘTEJ, nie jej położenie). Wycena
+   `20 ± cardKeepValue` jest więc właściwa: to czysta decyzja o jakości karty.
+   Nauczka ta sama co przy F2: zanim forward trafi do raportu, sprawdza się
+   mechanikę w silniku, nie w intuicji.
+2. **`reveal_top_pick_land_rest_grave`** (`blanchwood-prowler`,
+   `satyr-wayfinder`) i `opponent_hand_card_to_top` (`chittering-rats`) to
+   rodzeństwo rodziny — poza tą pętlą.
+3. **Topdeck (ręka pusta) został forwardem, nie regułą.** P5 mierzył dwie
+   rzeczy naraz (brak kontekstu ręki i duplikaty); fala C wdrożyła duplikaty,
+   bo są jednoznaczne. Mnożnik pilności przy pustej ręce dotyka
+   `cardKeepValue`, czyli też milla (PMSSB-20), clashu i `look_top` — wymaga
+   osobnego pomiaru zasięgu, nie przy okazji.
+4. **Wartość revealu jest mała przy pełnym życiu** (`gainLifeValue` daje 2-3):
+   przy 20 życia różnica między odsłonięciem {5} a {2} to 1 pkt, mniej niż
+   zysk z ułożenia chcenej karty wyżej (3,2). To świadome — o wymianie
+   „tempo vs życie" decyduje istniejąca drabina życia (L41), nie nowa skala.
+
+**Pomiar końcowy i ewaluacja.**
+
+- `node tools/bot-tie-audit.mjs --gry=40` (480 partii, ten sam przebieg
+  PRZED/PO; PRZED mierzony w worktree na `aa27111`): decyzje 255 677 →
+  256 335; remisy między realnymi wariantami **3812 → 3792**;
+  `resolve_scry` 116 decyzji / **39 remisów** → 144 decyzje / **10 remisów**
+  (−74 %), przy czym PRZED wszystkie 39 miało w kolumnie „równoważne" —
+  audyt nie odróżniał permutacji, bo etykieta nie niosła `topOrder` (F1).
+  `resolve_surveil` w PRZED nie wystąpił wcale (0 wierszy), w PO ma 63 decyzje
+  / 13 remisów (2 rozróżnialne) — to nowy wiersz, nie poprawka: partie po
+  pierwszej zmienionej decyzji rozchodzą się, więc obecność klasy nie jest
+  porównywalna 1:1. Klasy obce bez regresji: block 151 → 150, attack 195 → 191,
+  `cast_spell` 14 → 14, `activate_ability` 12 → 12.
+- `npm test` fast **7152 / 0 fail** (baza gałęzi `aa27111`: 7133; +19 pinów).
+- `npm run build` **70 modułów / 4647,4 kB**.
+- `npm run test:all` **7423 / 7423**, exit 0 (416 s) — golden-master „ślad bota
+  == zamrożony fixture" zielony **BEZ regeneracji** (lista plików poniżej nie
+  zawiera fixture'a).
+- `git diff --name-only aa27111..HEAD` (kod): `src/controllers/heuristic-bot.js`,
+  `src/controllers/heuristic-params.js`, `src/engine/game-state.js`,
+  `test/audyt-pmssb24-scry.test.js`, `test/m135-wycena-scry-surveil.test.js`.
+
+## PMSSB-23 — liczniki (`add_counter` i rodzeństwo) (2026-09-29)
+
+**Zlecenie właściciela**: wybrać jeden efekt/rodzinę i przeprowadzić
+**audyt przyczynowo-skutkowy** scoringu bota — kiedy efekt jest taktycznie
+najsilniejszy, w jakich fazach i turach, na jaki cel, przy jakim stanie gry
+i zagrożeniach — a następnie tak ustawić wycenę, by premiowała momenty
+sensowne i karała bezsensowne. Wprost: NIE tuning maszynowy na dużej próbie
+walk (ADR 0018), tylko przemyślany audyt i zmiany z niego wynikające.
+Właściciel zezwolił rozbudować silnik o brakujące dane (nie było potrzeby —
+widok niósł wszystko: P/T z licznikami, `counters`, `cantBeBlocked`,
+`view.combat`).
+
+**Wybór rodziny** (krok 2 procedury): inwentarz typów efektów katalogu
+(`createCardRegistry().all()`, 179 typów) × rejestr. Największa rodzina
+poza rejestrem: **`add_counter` — 33 karty / 34 wystąpienia**. Rodziny
+większe (`create_token` 41, `draw_cards` 40, `pump` 34) są DONE, a
+`pump/grant` z rejestru to pump **do końca tury** (M96/M173/M179/M218 —
+okna walki); licznik jest zasobem **trwałym**, więc to inna decyzja.
+Skład: 25× `+1/+1`, 2× `stun`, 2× `charge`, 2× `oil`, 1× `-1/-1`, 1×
+`level`, 1× `point`; okna: 7 czarów (5 sorcery, 2 instant), 7 zdolności
+aktywowanych, ~19 triggerów. Rodzeństwo:
+`add_counter_to_creatures_you_control` (2 karty) — **zero gałęzi wyceny**.
+
+**Pomiar PRZED** (sondy `/home/user/scratch/pmssb23-{liczniki-przed,r2,r3,r5}.mjs`;
+tabela w planie `docs/plans/PLAN_2026-09-29e-pmssb23-liczniki.md`):
+
+| Scenariusz | PRZED | Wniosek |
+|---|---|---|
+| Stall Out {2} (tap + 3 stun) na 1/1 / 3/3 / 6/6 trample / 8/8 | 62 / 62 / 62 / 62 | cel arbitralny |
+| ten sam czar na JUŻ TAPNIĘTYM 6/6 (tap = no-op) | 38 | 3 liczniki stun warte 0 |
+| Sleep of the Dead {1} (tap + lock 1 tura) na 1/1 … 8/8 | 13 → 27 | `dont_untap` wyceniony, stun nie |
+| Trigon `-1/-1` na 1/1 (kill) / 3/3 / 6/6 | 34 / 16 / 16 | kill tak, zagrożenie nie |
+| Dragonscale Boon: 2/2 Flying / 2/2 Menace / 2/2 wanilia | 68 / 68 / 68 | ewazja niewidoczna |
+| Courage in Crisis w Głównej 1 vs w Głównej 2 | 70 / 70 | timing = 0 |
+| Lifecrafter's Gift: 1 / 2 / 4 stwory z licznikiem (rider rozlania) | 74 / 74 / 74 | rider = 0 |
+| Cenn's Tactician: cel 5/5 / 1/1 Soldier | 38 / 14 | `counterHostValue` działa |
+| Rustvine oil (konsument bez roboty) | −6 → pass | M173/D stoi |
+
+Fakt z widoku (sprawdzony): wpis `playerView` niesie P/T **z licznikami**
+(2/2 z `+1/+1` → 3/3), więc „+6" przy celu z licznikiem to waga ciała
+gospodarza (2 × 3), nie wartość ridera — rider rozlania był wart dokładnie 0.
+
+**Findingi**: F1 (L41) — w `cast_spell` wyceniane były tylko liczniki
+przyjazne, a klasyfikacja miała trzy kopie (`BENEFICIAL_COUNTERS`, lista
+`beneficial`, `DEBUFF_COUNTERS`); F2 — cel wrogiego licznika bez wymiaru
+zagrożenia; F3 — rider rozlania bez gałęzi; F4 — ewazja gospodarza
+niewidoczna; F5 — timing: `counterCombatBonus` zapala się tylko dla walki,
+która TRWA (`pumpImprovesOutcome` → `combatOutcome` = null poza walką).
+Ścieżka triggerów (`resolve_trigger_target`) okazała się poprawna: Lodestone
+Needle na 6/6 trample = 48 > na 1/1 = 33 > `none` = 0 > własny = −26.
+
+**Fala A — L41** (`b9fe2e4`): jedna klasyfikacja (`STAT_COUNTERS` /
+`DEBUFF_COUNTERS`, CR 122) + jedna `counterEffectValue(view, cel, licznik,
+amount, {source})` w OBU ścieżkach; reguły M221/F, M429 i M173/D w jednym
+miejscu, wartości bez zmian. PO: Stall Out na 6/6 = 62 (PRZED 40), na
+tapniętym 60 (PRZED 38), na własnym −89 (PRZED +1); blokada na trzy tury
+(62) bije blokadę na jedną (23). Mutacja A-M1 (gałąź czarów wycenia tylko
+liczniki przyjazne = stan PRZED): 4 piny RED, kotwice GREEN.
+
+**Fala B — cel i odbiorcy** (`33c871e`): `counterThreatWeight` 0,5 /
+`counterThreatCap` 15 — ta sama miara co PMSSB-21 (`opponentTargetThreatWeight`),
+tylko w gałęzi „cel przeżyje" (dobijanie już skaluje się mocą, limit trzyma
+je wyżej); `counterSpreadPerRecipient` 4 (= `counterAmountWeight`) × odbiorcy
+× amount, cel główny liczony jako odbiorca (efekt celowany rozstrzyga się
+pierwszy). PO: Stall Out 63,5 / 66,5 / 71 / 74 (PRZED 62 wszędzie), Trigon
+kill 34 > 6/6 = 25 > 3/3 = 20,5 (PRZED 16/16), rider 72/78/82/90 dla
+0/1/2/4 nosicieli (PRZED 68/74/74/74). Mutacje: B-M1 → 7 RED, B-M2 → 1 RED.
+
+**Fala C — okna** (`4f46522`): `counterEvasionBonus` 5 (gospodarz, którego
+przeciwnik MA czym blokować, ale nie dosięgnie — flying bez odpowiedzi,
+Menace przy jednym blokującym CR 702.111, `cantBeBlocked` z widoku; pusty
+stół wroga NIE zapala dopłaty, bo niczego by nie rozstrzygała),
+`counterLateWindowPenalty` 4 (walka tej tury już za nami: Główna 2 / faza
+końcowa), `counterLethalClockBonus` 50 (moc po liczniku ≥ życie przeciwnika
++ atak nie do zatrzymania `attackHitsFace`). PO: 1 bloker — flying 73 =
+menace 73 > wanilia 68; 2 blokerów — flying 73 > menace 68; main1 70 >
+main2 66; wróg 3 życia i 2/2 flying — Dragonscale 118 / Courage 120 (×0: 68).
+Mutacje C-M1/C-M2/C-M3 → dokładnie po jednym pinie RED.
+
+**Korekta własnego over-fixu (M429)**: pierwsza wersja Fali C (premia +4 za
+Główną 1 i dopłata za ewazję także przy pustym stole wroga) podnosiła KAŻDY
+licznik w najczęstszym oknie i poruszyła **8 kotwic innych pętli** (M429
+Mutagen anty-over-fix, PMSSB-2/A/F4, PMSSB-16/R1 + anty-over-fix, PMSSB-18
+R1+R2, R2+R3, R3, R3-guard). Wniosek wdrożony: dopłata, która dotyczy
+WSZYSTKICH celów jednakowo, nie rozstrzyga żadnego wyboru — tylko pompuje
+wycenę czaru względem innych zagrań. Po przebudowie (kara za zamknięte okno
+zamiast premii za otwarte; ewazja tylko wobec istniejących blokujących)
+wszystkie 8 kotwic wróciły do dawnych wartości, a każda mutacja czerwieni
+dokładnie jeden pin.
+
+**Znane granice / forwardy**:
+1. Tabela riderów ETB (`add_counter: 6/5`) nie używa wspólnego helpera —
+   w chwili wyceny ETB nie ma jeszcze celu, więc kierunek rozstrzyga
+   `resolve_trigger_target` (pomiar: poprawnie). Zostaje świadomie.
+2. Silnikowy `HOSTILE_COUNTERS` (`effect-intent.js:44`) nie niesie liczników
+   minusowych (`-1/-1`, `-1/0`, `-0/-1`); w katalogu nie ma dziś triggera
+   z takim licznikiem, więc rozjazd jest nieaktywny — do wyrównania przy
+   pierwszej takiej karcie (w bocie klasyfikacja jest kompletna).
+3. `charge` wycenia gałąź `station_counters` (M429), `oil` — gałąź zasobowa
+   z konsumentem (M173/D): obie poza tą pętlą, bez zmian.
+4. Wymiar KOSZTU czaru (S11): czary licznikowe różnicuje `counterHostValue`
+   (liczba liczników × `counterAmountWeight`) + baza 50; pomiar: Courage {3}
+   = 70 > Dragonscale {4} = 68 (rider proliferate +2 vs untap −4) — kolejność
+   wynika z efektów, nie z kosztu; bez regulacji (brak dowodu, że remisuje
+   cokolwiek, co koszt rozstrzyga).
+
+**Pomiar końcowy i ewaluacja**: fast **7133/7133** · `test:all` **7404/7404**
+(exit 0; golden-master „każda partia zgadza się z fixture" — BEZ regeneracji,
+`git diff --name-only 7fae454..HEAD` = plan + `src/controllers/heuristic-bot.js`,
+`src/controllers/heuristic-params.js`, `test/audyt-pmssb23-liczniki.test.js`) · build
+**70 / 4634,8 kB** · audyt remisów `tools/bot-tie-audit.mjs --gry=40`
+(480 partii, ten sam przebieg PRZED i PO): PRZED (`7fae454`) 255 342 decyzji /
+13 148 remisów / 3821 remisów między realnymi wariantami, PO (`4f46522`)
+255 677 / 13 157 / 3812; klasy decyzyjne block 156→151, attack 198→195,
+`cast_spell` 13→14, `activate_ability` 12→12, `resolve_trigger_target` 2→2.
+**Brak sygnału w lustrze jest tu wynikiem, nie porażką (B6)**: `grep` po
+`decks/` nie znajduje ŻADNEJ karty tej rodziny (stall-out, lifecrafter's gift,
+dragonscale boon, courage in crisis, trigon of corruption, hunt the weak,
+knockout maneuver, cenn's tactician, enduring sliver, rustvine cultivator,
+lodestone needle, malamet battle glyph) — self-play obecną pulą talii w ogóle
+nie wchodzi w rodzinę. Dowodem są piny (17) i mutacje (6, każda RED).
+Forward: talia z licznikami w puli tie-audytu, jeśli rodzina ma być mierzona
+zwierciadłem.
 
 ## PMSSB-21 — opponent-target / Cuombajj (mikro-pętla) (2026-09-29)
 
@@ -1006,3 +1511,67 @@ w `heuristic-params.js`, `landEnteredThisTurn` w `playerView` (game-state.js).
 - Suit 6701/6701 GREEN po regeneracji; blast-radius unwrap-ALL (cast + ETB)
   = zero faili poza golden-masterem.
 - Rodzina ZAMKNIĘTA: ponowny audyt tylko z nowym dowodem.
+
+## PMSSB-30 — `resolve_satyr_look_choice` na wspólnej mierze (2026-09-30g)
+
+**Czwarta** równoległa miara wartości karty. Kod: `30 + (land ? 30 : 0) + 2P + T`,
+przy czym komentarz obiecywał „Ląd premiami za manabazę", a premia była stała.
+
+**Pomiar PRZED** (sonda `scratch/pmssb30-satyr-przed.mjs`, identycznie przy
+0/3/8/12 lądach): `land 60 · bomba 49 · stwór 34 · czar 30 · rezygnacja −5`.
+
+**PO:** `P.satyrLookBase + max(handCardKeepValue, cardKeepValue)`, pokrętło
+`satyrLookBase: 30`. Land 60 → 30 po nasyceniu; wynik bomby stały (51), bo ciało
+dominuje. O wyborze decyduje land — jedyna karta, której ciało milczy.
+
+**Podłoga z ciała** to skutek pęknięcia pinu `real-cards-batch55` B55/B4: sama
+wspólna miara odwracała wybór z 4/5 na 1/1 przy 0 lądów (próg zasięgu −3 vs +7).
+Karta podglądnięta i szukana idzie na stałe do ręki, więc kara za chwilowy brak
+many jest za ostra. Wzorzec `max(ciało, wspólna)` — ten sam, który
+`discardCostPreference` dostał w PMSSB-26 — zastosowany w obu miejscach.
+
+**Golden-master wymagał regeneracji** (`scoreSum` 2896.5881 → 2918.5881);
+PMSSB-28 i PMSSB-29 nie wymagały.
+
+**Bramy:** 73/73 (search+satyr+batch55) · szybki **7195/7195** · build 70 mod /
+**4659,5 kB** · `test:all` **7466/7466 EXIT=0** po regeneracji.
+
+## PMSSB-31 — chump-block tokenami: premia za korzystną wymianę (2026-09-30h)
+
+Fala z **obserwacji z rozgrywki** (zgłoszenie właściciela), nie z audytu remisów.
+
+**Zgłoszenie:** „Bot ma 4 tokeny 1/1. Atakuję go kilkoma kreaturami w tym 4/4,
+3/3 bez trample. Mimo to bot nie blokuje tymi disposable tokens i dostaje 7 dmg.
+Po to ma te małe token kreatury żeby go broniły przed atakiem większych kreatur."
+
+**Pomiar PRZED** (4 tokeny 1/1 vs 4/4 + 3/3): `block[a44<4 tokeny]` = 4 ← wybór
+bota; `block[a44<tok0 a33<tok1]` = 1 ← poprawne zagranie; `block[a33<tok0]` = 0
+= `pass_priority`. Bot topił wszystkie cztery tokeny w jednym 4/4 i wciąż
+dostawał 3 obrażenia.
+
+**Przyczyna:** `+attackerPower` i `−(P+T)` były w jednej skali, więc chump 3/3
+tokenem 1/1 dawał `3 − 2 − 1` = **0** — dokładnie tyle samo co pass.
+
+**Odrzucone rozwiązanie:** płaska waga obrażeń (×3) naprawiała ten przypadek,
+ale łamała **9 testów**, w tym piny jawnie anty-over-fix („30 życia — blok 2/2
+vs 3/3 NIE wygrywa z passem", „bot NIE marnuje WARTOŚCIOWEGO blokera").
+Rozróżnikiem nie jest waga obrażeń, tylko **opłacalność wymiany**.
+
+**Rozwiązanie:** premia tylko od **nadwyżki** i tylko gdy bloker realnie ginie:
+`if (blockerValueLost > 0 && attackerPower > blockerValueLost) score +=
+(attackerPower − blockerValueLost) * P.blockGoodTradePerPoint;` (pokrętło = 2).
+Token 1/1 za 3 obrażenia → premia; 2/2 za 3 obrażenia → brak nadwyżki, piny
+anty-over-fix zostają zielone.
+
+**PO:** 4 tokeny vs 4/4+3/3 → `a44<tok0 a33<tok1` (7), **0 obrażeń**; trzech
+atakujących (10 dmg) → blokuje wszystkich trzema tokenami (21); 2 tokeny →
+split (7); tokeny tapnięte → nadal `block[]` (CR 509.1a).
+
+**Forward (zmierzony, nie naprawiony):** przy lethal drabinka `lifeAfter` jest
+niemonotoniczna, więc przy 7 życiu „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4)
+remisuje z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba **39**. Epsilon
+`stoppedDamage * 0.01` rozstrzygał to poprawnie, ale ułamkowy wynik łamał piny
+wartości dokładnych (PMSSB-2/C/F8), więc został wycofany.
+
+**Bramy:** piny 8/8 · szybki **7203/7203** · build 70 mod / **4661,6 kB** ·
+`test:all` **7474/7474, EXIT=0** po regeneracji golden-master.

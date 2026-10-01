@@ -13955,11 +13955,28 @@ jak u pozostałych 3 tokenów). Zero wad danych.
   (ta sama wycena −24 → −64 dla Withstand w przeciwnika, `scoreSum` bez
   zmian, **0 zmienionych wyborów**) — przypisane porównaniem pełnych śladów
   PRZED/PO (`--dump`), fixture zregenerowany (`15f3d2c`).
+- **F8 — dopisane w sesji 2026-09-29d (audyt PR #146, zn. F3):** w tym samym
+  PR weszły `src/table/ai-modes.js` (+13/−7) i `test/ai-modes.test.js` (+26) —
+  **zgłoszenie właściciela „AI-R8"**: prompty nie niosły talii Czarodziejki
+  w żadnym trybie poza skitem (`heroDeck`/`heroWorld` liczone w `baseCtx`
+  i przekazywane z `main.js`, ale nieużywane), więc model znał tylko talię bota
+  i milczał o talii gracza. Dodano linię z talią i światem gracza do czterech
+  budowniczych (`buildLorePrompt`, `buildPlayerPrompt`, `buildObserverPrompt`,
+  `buildLoreObserverPrompt`). Zmiana widoczna dla właściciela nie miała ani
+  słowa w opisie PR #146, ani w tej sekcji, ani w handoffie (pomiar audytu:
+  `grep -iE "ai-modes|AI-R8|heroDeck"` po `body` PR i po `docs/` = 0 trafień).
 
 **Bramy:** fast **7089/7089** · `test:all` **7360/7360** · build **70 /
 4617,0 kB** · golden 4/4 (po regeneracji) · benchmark szybki 672 mecze (97,9 % vs random,
 78,6 % vs aggro, 0 niedokończonych) · tie-audit 720 partii bez awarii
 (`resolve_opponent_target`: 0 rozróżnialnych — PMSSB-21 domknięta).
+
+> **KOREKTA (sesja 2026-09-29d, audyt PR #146, zn. F4):** liczby powyżej to
+> pomiar POŚREDNI, podpisany jako końcowy. Zmierzono ponownie: baza `6a47c35`
+> (głowa PR #145) = **7078/7078** i **70 / 4615,8 kB**; scalony `6789702`
+> (stan po tym PR) = **7101/7101** i **70 / 4621,1 kB**. Zapisane 7089/4617,0
+> nie jest ani jednym, ani drugim (klasa L92 — liczby mierzy się na końcu
+> sesji). Δ tego PR: **+23 testy / +5,3 kB**.
 
 **Dokumentacja:** budżet lektury 99 885/100 000 tokenów (reguła 3 L164
 skrócona, próg bez zmian); handoff `docs/setup/HANDOFF_2026-09-29b.md`.
@@ -13967,3 +13984,540 @@ Incydent: token GitHub wygasł, a sandbox cofnął wskaźnik gałęzi do `6a47c3
 zostawiając pliki — leczenie z ENVIRONMENT §2 (`git fetch` → `git reset
 --mixed FETCH_HEAD` → ponowny commit → push fast-forward) zadziałało; F6 i
 raport mają nowe SHA (`a051eb9`, `7c42656`).
+
+## 2026-09-29d — audyt scalonego PR #146: pięć znalezisk (F1–F6) (PR #147)
+
+**Tryb:** ADR 0020 B (audyt poprzedniego scalonego PR) + ADR 0021 (prompt
+„Kontynuujemy projekt." bez nazwanego tematu ⇒ pętla domyślna, bez pytania
+o kolejkę) + ADR 0016 (naprawy chirurgiczne) + ADR 0030 (CR dosłownie ze
+źródła). Przedmiot: PR #146 (`6789702`, 30 plików, +1680/−48). Raport:
+`docs/audits/AUDYT_PR146_2026-09-29.md`; plan:
+`docs/plans/PLAN_2026-09-29d-audyt-pr146.md`.
+
+**Znaleziska i naprawy (każda osobnym zielonym commitem):**
+
+- **F5** (`8f5cf4e`, L54/L13): `resolve_food_choice` przyznawał `+2` za
+  „nieblokowanego napastnika" bez sprawdzenia, KTO atakuje —
+  `view.combat.unblockedAttackers` opisuje napastników gracza ATAKUJĄCEGO, więc
+  bot wyceniał poświęcenie własnego Foodu pod **niezablokowanego napastnika
+  wroga** (sonda: `sacrifice` 32 zarówno przy własnym, jak i wrogim napastniku;
+  po naprawie 32 / 30, `keep` 42 bez zmian). Dodany warunek
+  `attackingPlayerId === view.playerId`; pin PMSSB-22/F5 (4 asercje); mutacja
+  F5-M1 → RED.
+- **F1** (`a7ae39d`, L48/L41/L107): **F6 z #145 był naprawą punktową, nie
+  klasową.** Wspólny `unitCoversAnyRequirement` trafił do JEDNEJ pętli
+  `spendMana`, a ręczna kopia `X.some((c) => reqColors.has(c))` została w 6
+  liniach tego samego pliku: komparatory sortu (372/373 faza pipów, 481/482
+  auto-tap sumy) i dwa **filtry** w bloku „obrona w głąch" (562/568, seed 2027)
+  o identycznym kształcie co naprawiony błąd — blok kończy się
+  `throw new Error('Brak kolorowej many')`, czyli tą samą awarią narzędzia.
+  Dodane `singleColorRequirements()` (mapowanie na wymagania jednokolorowe
+  żyło w 4 kopiach tekstowych) i wspólny predykat we wszystkich 7 miejscach
+  (PO: 14 wywołań, 0 kopii, 0 ręcznych mapowań). Zasięg zmierzony skanem
+  rejestru (583 karty), nie hipotezą: pip `{C}` w koszcie czaru **0**, w koszcie
+  zdolności **1** (`kozileks-shrieker`), źródeł bezbarwnych **8** ⇒ błąd
+  **utajony**, nie żywy; strażnikiem jest skan źródła z kotwicą
+  (`test/audyt-pr146-predykat-pipow-jeden.test.js`, 6 testów), mutacja F1-M1
+  → 2 RED.
+- **F2** (`4797270`, L5/L39): strażnik par CR z #145 deklarował w nagłówku parę
+  508.1c/509.1b (restrykcje) i 508.1d/509.1c (wymogi), ale skanował wyłącznie
+  `['508.1c','508.1d']` — w `src/` jest **16** cytatów sekcji 509 (13× 509.1b
+  + 3× 509.1c), więc zamiana literą obok przy blokowaniu przeszłaby zielono.
+  Wszystkie 16 jest POPRAWNE (kierunek potwierdzony u źródła: `509.1b` =
+  „can't block" + evasion abilities, `509.1c` = „must block"/maksimum liczby
+  spełnionych wymogów; cytat CR *Nov 14 2025 — TMNT*); wadliwy był wyłącznie
+  zasięg strażnika. +2 testy, kotwice treści (≥3 i ≥2 cytaty, by skan nie
+  przechodził pusto — L29), 2 fixture'y dowodu RED; fałszywe trafienia dziś 0
+  (przeliczone na 16 liniach); mutacja F2-M1 → RED.
+- **F3** (dokumentacja, ADR 0013 §4): **AI-R8** — zgłoszenie właściciela, że
+  prompty AI nie niosły talii Czarodziejki w żadnym trybie poza skitem
+  (`heroDeck`/`heroWorld` liczone w `baseCtx` i przekazywane z `main.js`, ale
+  nieużywane). Zmiana (`src/table/ai-modes.js` +13/−7, test +26) weszła w #146
+  bez słowa w opisie PR, w historii i w handoffie (pomiar: `grep -iE
+  "ai-modes|AI-R8|heroDeck"` po `body` PR i po `docs/` = 0 trafień). Dopisane
+  jako punkt F8 w sekcji 2026-09-29c.
+- **F4** (pomiar, L92): zapisane przez #146 **7089/7089**, **7360/7360**
+  i **4617,0 kB** to pomiar pośredni podpisany jako końcowy. Zmierzono oba
+  stany: baza `6a47c35` (głowa PR #145) = **7078/7078** i **70 / 4615,8 kB**;
+  scalony `6789702` = **7101/7101** i **70 / 4621,1 kB** ⇒ Δ PR #146 = **+23
+  testy / +5,3 kB**. Rozjazd w `test:all` wynosi dokładnie tyle samo (+12), co
+  wskazuje ten sam moment pomiaru (przed ostatnimi trzema commitami sesji #146).
+  Korekta dopisana w `HANDOFF_2026-09-29b.md` i w sekcji 2026-09-29c — bez
+  przepisywania historii.
+- **F6** (pomiar, L92/L142): plan tej sesji mówił „19 cytatów 509" — pomiar daje
+  **16**; korekta w raporcie audytu.
+
+**Sprawdzone i POPRAWNE (L11):** `pendingFoodChoice.creatureId`
+(`effects.js:4711`) jest brany przez `execute` z oczekującej decyzji, a
+`cmd.creatureId` z widoku jest ignorowany (`game-state.js:4940–4975`) ⇒ brak
+dziury zaufania/FoW (ADR 0017); `pumpChangesOutcome` zwraca `false` bez
+blokerów, więc premia „decisive" (+25) i „unblocked" (+2) nie zachodzą razem;
+F7 z #145/#146 (`friendlyMisaimPenalty`) czytany w całości — zgodny z pinem B6;
+kierunek CR 508.1c/508.1d naprawiony w #146 potwierdzony u źródła.
+
+**Bramy:** fast **7110 pass / 0 fail** · `test:all` **7381/7381** (423 s) · build
+**70 / 4623,5 kB** · benchmark szybki **672 mecze** (97,9 % vs random,
+78,6 % vs aggro, 0 niedokończonych) · tie-audit **720 partii**, 379 828 decyzji, exit 0 (remisy rozróżnialne: `attack` 279, `block` 220, `resolve_discard_choice` 37, `cast_spell` 23, `activate_ability` 21, `resolve_color_choice` 15, `resolve_opponent_target` 0 — identycznie jak po #146) ·
+`tools/cr-numery.mjs` 496 numerów/5179 cytatów OK.
+
+**Dokumentacja:** budżet lektury **99 885/100 000** — zapas **322 znaki**, więc
+ta sesja NIE dodała wpisu do `LESSONS.md` (wszystkie znaleziska mieszczą się
+w klasach L48/L41/L107, L5/L39, L92/L142, L54/L13, ADR 0013); kondensacja
+`LESSONS.md` jest pierwszym zadaniem sesji potrzebującej nowego numeru L.
+Handoff: `docs/setup/HANDOFF_2026-09-29d.md`.
+
+## 2026-09-29e — badge Bonds of Faith + PMSSB-23 (rodzina liczników)
+
+**Zlecenie właściciela** (dwa zadania): (A) „Karta Bonds of Faith. Aura na
+non-human. Badge mówi: «nie może blokować», powinno być chyba «nie może
+atakować i blokować»"; (B) pętla PMSSB — wybrać jeden efekt/rodzinę i
+przeprowadzić **audyt przyczynowo-skutkowy** scoringu bota (kiedy efekt jest
+taktycznie najsilniejszy, w jakich fazach i turach, na jaki cel, przy jakim
+stanie gry), a potem ustawić wycenę tak, by premiowała momenty sensowne.
+Wprost: nie tuning maszynowy na dużej próbie walk (ADR 0018).
+
+**Zadanie A — badge zakazu ataku** (`7fae454`): aura nakłada `cantAttack`
+i `cantBlock` (`card-data.js:11398-11412`), silnik respektuje oba
+(`attachmentRestrictions`, `staticAttackPrevented`), widok niesie oba
+(`game-state.js:6554` / `:6562`), a `buildStateOverlay` miał ręczną gałąź
+tylko dla `cantBlock` — badge zakazu ataku nie istniał w renderze (klasa
+L1/ADR 0017). Naprawa: czysta `combatRestrictionBadges({cantAttack,
+cantBlock})` (obie = jeden badge „nie może atakować ani blokować"),
+`cardInfo` dostaje `cantAttackNow`. Piny 4 (`test/zgloszenie-bonds-of-faith-
+-badge-ataku.test.js`), mutacja B-M1 = dokładnie 1 RED. Kontrakt widoku
+(m277): `cantAttackStatic` ustawiane warunkowo → jawna lista wyjątków
+z powodem (L113), jak `cantBlock` z Batch 48.
+
+**Zadanie B — PMSSB-23, rodzina `add_counter`** (33 karty + rodzeństwo
+`add_counter_to_creatures_you_control`; plan
+`docs/plans/PLAN_2026-09-29e-pmssb23-liczniki.md`, raport §PMSSB-23 w
+`docs/PMSSB.md`):
+- **Fala A** (`b9fe2e4`, L41): `stun`/`-1/-1` rzucone CZAREM były warte 0,
+  choć ta sama instrukcja ze zdolności dostawała 10 + 4·amount (pomiar:
+  Stall Out na tapniętym 6/6 = 38); klasyfikacja liczników miała trzy kopie.
+  Jedna `counterEffectValue` w obu ścieżkach. PO: 62 / 60 / −89 na własnym.
+- **Fala B** (`33c871e`): cel wrogiego licznika bez wymiaru zagrożenia
+  (62/62/62/62 dla 1/1…8/8) → `counterThreatWeight`/`counterThreatCap`
+  (miara PMSSB-21); rider rozlania bez gałęzi (74/74/74) →
+  `counterSpreadPerRecipient`.
+- **Fala C** (`4f46522`): trzy okna — ewazja gospodarza (68/68/68 dla
+  Flying/Menace/wanilii), Główna 1 vs 2 (70/70), licznik domykający grę.
+  **Korekta własnego over-fixu**: pierwsza wersja (premia za Główną 1 +
+  dopłata za ewazję przy pustym stole) poruszyła 8 kotwic innych pętli
+  (M429, PMSSB-2/16/18); po przebudowie na karę za zamknięte okno i dopłatę
+  tylko wobec istniejących blokujących wszystkie wróciły, a każda mutacja
+  czerwieni dokładnie jeden pin. Wniosek: dopłata dotycząca wszystkich celów
+  jednakowo nie rozstrzyga wyboru, tylko pompuje wycenę czaru.
+
+**Bramy**: fast **7133/7133** · `test:all` **7404/7404** (exit 0, golden
+BEZ regeneracji) · build **70 / 4634,8 kB** · tie-audit `--gry=40` PRZED/PO:
+3821 → 3812 remisów realnych wariantów; **brak sygnału w lustrze, bo `decks/`
+nie zawiera ŻADNEJ karty tej rodziny** (B6: dowodem piny — 17 + 6 mutacji).
+
+**Korekta własnego błędu zapisu**: w opisie commitu `33c871e` wpisano build
+„4627,4 kB" przed pomiarem (rzeczywisty: 4629,9 kB); korekta w opisie
+`4f46522` i tutaj — bez przepisywania historii (L92).
+
+**Dokumentacja**: budżet lektury nadal zablokowany (99 885/100 000), więc bez
+wpisu do `LESSONS.md` — znaleziska mieszczą się w klasach L41 (trzy kopie
+klasyfikacji), L1 (skutek widoczny w grze), L113 (wyjątek z powodem),
+M429/B6 (kotwice i brak sygnału w lustrze). Handoff:
+`docs/setup/HANDOFF_2026-09-29e.md`.
+
+## 2026-09-30h — PMSSB-31: chump-block tokenami (zgłoszenie właściciela z gry)
+
+Fala zaczęła się od **obserwacji z rozgrywki**, nie od audytu remisów:
+
+> „Bot ma 4 tokeny 1/1. Atakuję go kilkoma kreaturami w tym 4/4, 3/3 bez
+> trample. Mimo to bot nie blokuje tymi disposable tokens i dostaje 7 dmg.
+> Trochę słabo. Po to ma te małe token kreatury żeby go broniły przed atakiem
+> większych kreatur."
+
+**Pomiar PRZED** (sonda `scratch/pmssb31-warianty.mjs`, 4 tokeny 1/1 vs 4/4 +
+3/3 = 7 obrażeń): `block[a44<tok0+tok1+tok2+tok3]` = **4** ← wybór bota;
+`block[a44<tok0 a33<tok1]` = **1** ← poprawne zagranie; `block[a33<tok0]` =
+**0** = `pass_priority`. Bot topił wszystkie cztery tokeny w jednym 4/4 i wciąż
+dostawał 3 obrażenia; przy dwóch tokenach split remisował z blokiem jednego
+ataku i przegrywał kolejnością ofert.
+
+**Przyczyna:** w `case 'declare_blockers'` zablokowane obrażenia i utracone ciała
+blokerów były w jednej skali 1:1 (`+attackerPower` vs `−(P+T)`), więc chump 3/3
+tokenem 1/1 dawał `3 − 2 − 1` = **0** — dokładnie tyle samo co pass. Model był
+obojętny na przyjęcie 3 obrażeń, a premia za zabicie (`2P+T` = 12) przeważała
+3 punkty zablokowanych obrażeń i 2 zatrzymane tokeny.
+
+**Odrzucone rozwiązanie i dlaczego:** płaska waga obrażeń (×3) naprawiała ten
+przypadek, ale łamała **9 testów**, w tym trzy piny jawnie anty-over-fix
+(„30 życia — blok 2/2 vs 3/3 NIE wygrywa z passem", „bot NIE marnuje
+WARTOŚCIOWEGO blokera (3/3)", „3× 3/3, 5 życia — nie marnuje blokera").
+Rozróżnikiem nie jest waga obrażeń, tylko **opłacalność wymiany**.
+
+**Rozwiązanie:** premia tylko od nadwyżki i tylko gdy bloker realnie ginie —
+`if (blockerValueLost > 0 && attackerPower > blockerValueLost) score +=
+(attackerPower − blockerValueLost) * P.blockGoodTradePerPoint;`, pokrętło
+`blockGoodTradePerPoint: 2`. Token 1/1 za 3 obrażenia dostaje premię; 2/2 za
+3 obrażenia nie ma nadwyżki, więc piny anty-over-fix zostają zielone.
+
+**Pomiar PO:** 4 tokeny vs 4/4+3/3 → `block[a44<tok0 a33<tok1]` (7), **0
+obrażeń** zamiast 3; trzech atakujących (10 dmg) → blokuje wszystkich trzema
+tokenami (21); 2 tokeny → split (7); tokeny tapnięte → nadal `block[]`, bo
+tapnięty stwór nie może blokować (CR 509.1a).
+
+**Forward zmierzony, nie naprawiony:** przy lethal drabinka `lifeAfter` jest
+niemonotoniczna względem zablokowanych obrażeń (mniej życia po = większa
+premia), więc przy 7 życiu „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4)
+remisuje z „blok obu, dostaję 0" (lifeAfter 7 → +2) — **oba dokładnie 39** —
+i o wyborze decyduje kolejność ofert. Epsilon `stoppedDamage * 0.01`
+rozstrzygał remis poprawnie, ale ułamkowy wynik łamał piny wartości dokładnych
+(PMSSB-2/C/F8: Dissenter +19, Patron 6), więc został wycofany. Właściwa naprawa
+to drabinka monotoniczna względem `stoppedDamage` — dotyka pinów M146 i M257-r5.
+
+**Uczciwa granica odtworzenia:** w minimalnej replice bot jednak blokował
+(dostałby 3, nie 7). Pełnych 7 obrażeń bez żadnego bloku nie udało się odtworzyć
+przy nietapniętych tokenach bez evasion; jedyny wariant dający dokładnie ten
+obraz to tokeny tapnięte (zachowanie poprawne). Jeśli w partii właściciela
+atakujący mieli flying/menace albo tokeny były tapnięte, przyczyna jest inna.
+
+**Bramy:** piny fali 8/8 · szybki zestaw **7203/7203** · build 70 mod /
+**4661,6 kB** · `test:all` **7474/7474, EXIT=0** po regeneracji golden-master
+(przed: 7472/7474, 2 faile — oba `bot-scoring-snapshot`).
+
+Artefakty: `docs/plans/PLAN_2026-09-30h-pmssb31-chump-block.md`,
+`test/audyt-pmssb31-blok-chump.test.js` (8), `test/fixtures/bot-scoring-snapshot.json`,
+pokrętło `blockGoodTradePerPoint: 2`.
+
+## 2026-09-30g — PMSSB-30: podgląd satyra na wspólnej mierze + podłoga z ciała
+
+`resolve_satyr_look_choice` (`heuristic-bot.js:10907`) był **czwartą** równoległą
+miarą wartości karty: `30 + (land ? 30 : 0) + 2P + T`, a komentarz obiecywał
+„Ląd premiami za manabazę", choć premia była stała. Sonda dała **identyczne**
+wyniki przy 0, 3, 8 i 12 lądach: `land 60 · bomba 49 · stwór 34 · czar 30`
+(rezygnacja −5). Bot brał land tak samo chętnie przy pustym stole jak przy
+ośmiu źródłach many.
+
+Podpięcie samej wspólnej miary **obaliło własną tezę PMSSB-29**. Pękł pin
+`test/real-cards-batch55.test.js:706` (B55/B4, Brightwood Tracker, komentarz
+*„wycena P\*2+T wybiera 4/5 nad 1/1"*): przy 0 lądów próg zasięgu
+(`cost > reach + 2` → −3) wyceniał `rotting-legion` 4/5 za 5 na −3, a
+`typhoid-rats` 1/1 za 1 na +7 — bot odwracał wybór na gorszą kartę.
+
+Karta podglądnięta *i* szukana idzie **na stałe do ręki**, więc kara za chwilowy
+brak many jest za ostra. Wprowadzono **podłogę z ciała**
+`max(handCardKeepValue, cardKeepValue)` — wzorzec, który `discardCostPreference`
+dostał w PMSSB-26 — w **obu** miejscach (`resolve_search_choice` i
+`resolve_satyr_look_choice`).
+
+Konsekwencje zmierzone, nie wywnioskowane:
+
+- **Manabaza nadal zmienia wybór**, ale przez drabinę lądów, nie przez zasięg:
+  land 55 → 25 (search) i 60 → 30 (satyr). Wynik bomby jest stały (46 / 51),
+  bo ciało `2·6+7+2` za morph = 21 dominuje przy każdej manabazie.
+- **Obalona „granica uczciwości" z PMSSB-29 B4**: czary bez P/T remisowały tylko
+  dlatego, że `cardKeepValue` ignorował koszt. Podłoga `2·manaCost` rozróżnia je
+  uczciwie (`courage-in-crisis` {3} → 31, `serras-embrace` {4} → 33, różnica
+  dokładnie 2). Zawężona granica zostaje: czary o tym samym koszcie wciąż
+  remisują — widok nie mówi, co robią (strefa ukryta, CR 400.2).
+
+**Bramy:** search+satyr+batch55 **73/73** · szybki zestaw **7195/7195** · build
+70 mod / **4659,5 kB** · `test:all` **7466/7466, EXIT=0** po regeneracji
+golden-master (`scoreSum` partii `dominaria-brg|mirrodin-wu@1000`
+2896.5881 → 2918.5881). PMSSB-28 i PMSSB-29 regeneracji nie wymagały — tamte
+fale zmieniały ścieżki, których fixture nie pokrywa.
+
+Artefakty: `docs/plans/PLAN_2026-09-30g-pmssb30-satyr.md`,
+`test/audyt-pmssb30-satyr.test.js` (8), skorygowane 8 pinów w
+`test/audyt-pmssb29-search.test.js`, `test/fixtures/bot-scoring-snapshot.json`,
+pokrętło `satyrLookBase: 30`.
+
+## 2026-09-30f — PMSSB-29: `resolve_search_choice` na wspólnej mierze karty
+
+Cel wybrany z **odświeżonego** audytu remisów (`node tools/bot-tie-audit.mjs --gry=40` —
+480 partii, 258 317 decyzji): `resolve_search_choice` ma **245 remisów i wszystkie są
+„równoważne"** (0 rozróżnialnych), czyli wycena daje wariantom identyczną liczbę i bot bierze
+pierwszy z listy.
+
+**Znajdowanie (L41 — trzecia równoległa miara):** wycena szukała własną regułą
+`25 + (land ? 30 : 0) + 2P + T` obok `handCardKeepValue` (PMSSB-25/F1) i wspólnej
+`cardKeepValue`. Pomiar PRZED (sonda `scratch/pmssb29-search-przed.mjs`), kandydaci: land,
+Delta Bloodflies {1}{B} 1/2, Woolly Loxodon {5}{G}{G} 6/7, dwa czary — wyniki **identyczne
+przy 0, 3, 8 i 12 lądach**: land=55 · bomba=44 · stwór=29 · czary po 25. Reguła nie znała
+drabiny lądów, zasięgu many ani koloru: przy 12 lądach bot szukał kolejnego landu zamiast
+6/7, przy 0 lądów bomba za 7 biła grywalnego stwora za 1, a wszystkie czary dostawały 25.
+
+**Fala A (`c11ff41`):** `P.searchFoundBase + cardKeepValue(view, card)` — wspólna miara daje
+drabinę lądów (PMSSB-26), próg zasięgu (`cost > reach + 2` → −3) i zniżkę za duplikaty
+w jednym miejscu. Baza 25 zostaje, więc relacja do −40 za „nie znajdź karty" nietknięta.
+
+**POMIAR PO:**
+
+| Lądy | PO | Wygrywa |
+|---|---|---|
+| 0 | land **55** · stwór 32 · czar 27 · bomba 22 | land — brak manabazy bije wszystko |
+| 3 | stwór **33** · czar 29 · bomba 22 · land 19 | grywalny stwór, nie kolejny land |
+| 8 / 12 | bomba **37** · stwór 33 · czar 29 · land 19 | bomba wreszcie w zasięgu |
+
+**Granica uczciwości (pin B4):** czary bez P/T wciąż remisują, bo widok nie wystawia TREŚCI
+czaru z biblioteki (strefa ukryta, CR 400.2). Bot nie ma danych, żeby je rozróżnić — pin
+kotwiczy, że nie wymyślamy fałszywego rozróżnienia. Część z 245 remisów zostanie i tak ma być.
+
+**Piny** `test/audyt-pmssb29-search.test.js` (8): A1–A4 manabaza zmienia wybór, B1 szukanie
+bije rezygnację −40 (kotwica zgłoszenia właściciela B; rezygnacja tylko przy szukaniu
+nieobowiązkowym, CR 701.23d), B2 baza jako pokrętło, B3 drabina dochodzi przez pokrętła
+PMSSB-26 (jedno źródło prawdy), B4 granica uczciwości. **Mutacja M1** → RED
+`{A1, A2, A3, A4, B2, B3}`, B1/B4 zielone. **Pokrętło:** `searchFoundBase` 25.
+
+**Stan klasy L41:** `cardKeepValue` jest teraz źródłem prawdy dla scry, surveil, look_top,
+clash, mill, discard i **search**. `handCardKeepValue` zostaje jako suwit dla dużych ciał
+(`max(ciało, wspólna)`), a `escapeExileCostOf` (dwugałęziowy kikut) pozostaje forwardem —
+w rejestrze nie ma kart grywalnych z grobu.
+
+**Bramki:** `npm test` 7187/7187 · `npm run build` 70 mod / 4657.6 kB ·
+`npm run test:all` **7458 / 7458, exit 0**, golden-master `ok 1725` **bez regeneracji**
+(+8 testów względem 7450 z PMSSB-28 to dokładnie nowe piny).
+
+---
+
+## 2026-09-30e — PMSSB-28: `resolve_color_choice` czyta cel wyboru z pending
+
+Silnik **niesie cel wyboru w pending**: `game-state.js:5762` ustawia `purpose: 'mana'` dla
+lądu z `chooseColor` (Manor Gate), `spells.js:2655` — `purpose: 'protection'` dla aury.
+Wycena tego pola **nie czytała** i liczyła jedną płaską sumę `5 + needScore*6 + enemyInColor`
+dla obu celów.
+
+**Pomiar PRZED** (sonda `scratch/pmssb28-color-przed.mjs`), stan z przeciwstawnymi motywami
+(p2: 3 lasy + Delta Bloodflies {1}{B} w ręce; p1: trzy czerwone stwory):
+
+| Cel | PRZED | Czytanie |
+|---|---|---|
+| `protection` | U=11, B=11, R=8, W=5, G=5 → **{U}** | **błąd** — wróg nie ma ani jednego stwora {U}, aura nie chroni przed niczym |
+| `mana` | U=11, B=11, R=8, W=5, G=5 → **{U}** | identyczny wynik — `purpose` był martwym polem |
+
+**Fala A (`5c28560`):** rozdział po `purpose` — ochrona liczy tylko kolor wrogich stworów,
+mana tylko kolor potrzebny w ręce, a **nieznany cel zostaje przy dawnej sumie** (kotwica
+anty-over-fix: nic, czego nie zmierzyliśmy, nie zmienia zachowania).
+
+**PO:** ochrona wybiera **{R} = 23**, mana wybiera **{B} = 11** — ten sam stan, różne wybory.
+Przy pustym stole wroga ochrona remisuje po 5 i nie wymyśla koloru z potrzeby many
+(PRZED wygrywało {B} = 11).
+
+**Piny** `test/audyt-pmssb28-color-choice.test.js` (7): A1–A4 rozdział celów, B1 anty-over-fix
+(nieznany cel = dawna suma: B=11, R=8, U=5), B2 wagi jako pokrętła, B3 uczciwy remis przy
+pustym stole. **Mutacja M1** → RED `{A1, A2, A3, A4, B2, B3}`, B1 zielony.
+
+**Pokrętła (2):** `colorProtectionPerCreature` 6 · `colorManaNeedPerCard` 6.
+
+**Trop porzucony po pomiarze:** rodzina „wygnaj karty z grobu" (`resolve_delve_exile` /
+`resolve_escape_exile` / `resolve_reveal_exile_grave`) ma wspólną miarę `escapeExileCostOf`
+w postaci dwugałęziowego kikuta (stwór = `10 + 2P + T`, każda inna karta = stałe 6), ale
+**w rejestrze nie ma ani jednej karty grywalnej z grobu ani reanimacji**, więc „grób jako
+zasób" byłby niezmierzalny na prawdziwych kartach. Forward na moment, gdy takie karty wejdą.
+
+**Bramki:** `npm test` 7179/7179 · `npm run build` 70 mod / 4656.3 kB ·
+`npm run test:all` **7450 / 7450, exit 0**, golden-master `ok 1717` **bez regeneracji**
+(+7 testów względem 7443 z PMSSB-27 to dokładnie nowe piny).
+
+---
+
+## 2026-09-30d — PMSSB-27: licznik źródeł landu bez karty rozważanej
+
+**Doprecyzowanie właściciela do PMSSB-26:** „Jako sytuacje — raczej odrzucaj myślałem o 3 na
+stole albo 2 na stole i 1 dodatkowy w ręku (**poza tym rozważanym**)."
+
+To nie przesunięcie progu, tylko **zmiana semantyki licznika**: `landKeepValue` liczy źródła
+koloru (albo sumę lądów) poza kartą właśnie ocenianą. Przy liczniku obejmującym rękę próg
+wypadał o jedno źródło za wcześnie (2 poza rozważanym zamiast 3), a stopień „0 → nigdy nie
+odrzucaj" był dla landu w ręce nieosiągalny — trzeba go było kotwiczyć przez scry. Teraz „0"
+znaczy: ten land jest moim jedynym źródłem koloru.
+
+**Pomiar PO** (sonda `scratch/pmssb27-land-po.mjs`), land wobec bezbarwnego stwora (12 pkt):
+0 poza rozważanym → **−10** · 1 → **2** · 2 → **12** · 3 → **31**. Oba przykłady właściciela
+zgadzają się co do punktu: 3 na stole → 31 oraz 2 na stole + 1 dodatkowy w ręce → 31.
+Drabina bezbarwna: 0 i 2 → −10 · 4 → 2 · 6 → 12 · 7 → 31.
+
+**Doprecyzowanie PRZYWRACA pierwotny pin** `audyt-pr105-bot-hand-top` B (przy 2 lasach na
+stole trzeci zostaje, 9-mana czar idzie) — **znika „konsekwencja do potwierdzenia"
+z PMSSB-26**. Nowy B2 kotwiczy prawdziwe przesycenie (3 lasy na stole).
+
+**Zaktualizowane piny:** PMSSB-26 A1/A2/A3/B2/B3/B4/C2/C3/C4/C5, PMSSB-25/A2, pr105 B/B2.
+**Bez zmian:** PMSSB-26/A4 (scry), PMSSB-24/C3, pakiet-c E2/C1 i E2/C2 — tam oceniana karta
+leży poza ręką, więc licznik jest taki sam.
+
+**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.4 kB · golden-master **bez
+regeneracji** (4/4 — zmiana progów nie przesunęła decyzji w pełnych partiach, w przeciwieństwie
+do PMSSB-26, gdzie regeneracja była konieczna) · `npm run test:all` **7443 / 7443, exit 0**,
+golden-master `ok 1710`.
+
+**Incydent:** sandbox odtworzył się po raz **trzeci** w tej sesji, a `git checkout -- <plik>`
+wykonany przy HEAD wskazującym bazę skasował zmiany PMSSB-26 w jednym pliku testowym.
+Odzyskano przez `git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg` i ponowną edycję.
+**Nauczka:** przed `git checkout -- <plik>` sprawdzić, gdzie stoi HEAD — po re-provisioningu
+wskazuje bazę, nie zdalny tip.
+
+---
+
+## 2026-09-30c — PMSSB-26: wartość landu jako drabina (specyfikacja właściciela)
+
+**Pętla z forwardu PMSSB-25, zamknięta regułą podaną przez właściciela.** Pomiar PRZED
+(sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w ogóle nie zależała od manabazy —
+basic-forest dawał **20 pkt przy 1, 2, 3 i 5 źródłach {G}**, land utylitarny 19 pkt aż do
+sumy 6 lądów. Przy koszcie odrzucenia land przegrywał z każdą kartą o niezerowym koszcie
+(reguła ciała liczy land jako `2 · manaCost` = 0), więc przy 0 lądów bot wyrzucał land
+i zostawiał artefakt za {2} bez many (19 vs 15).
+
+**Specyfikacja właściciela (2026-09-30):** land kolorowy — wartość od liczby lądów danego
+pipa na stole + w ręce (0 → bardzo duża · 1 → spora · 2 → neutralna · 3+ → niska); land
+bezbarwny/utylitarny — od sumy lądów (0-2 · 3-4 · 5-6 · 7+).
+
+**Wdrożenie:** `landKeepValue` w miejscu starej jednoprogowej gałęzi landu we wspólnej
+`cardKeepValue`, więc działa w scry/surveil/look_top/clash/mill/discard. Kolory landu z
+`getSourceForObject` (podtypy podstawowe CR 305.6 + deskryptory many) — jedno źródło prawdy
+z `colorCastable`, zero map nazw kart. Land wielokolorowy liczony po najmniejszym liczniku
+kolorów. Domknięta druga strona luki L41: `discardCostPreference` czytał wspólną miarę tylko
+gdy ujemna, więc dodatnia drabina zapadała się do jednego wyniku — teraz
+`-min(30, max(ciało, wspólna))`.
+
+**PO:** drabina widoczna w decyzji jako **−10 / 2 / 12 / 31** (land vs stwór 2/1 = 11).
+Piny `test/audyt-pmssb26-land-drabina.test.js` (13), w tym kotwice: reguła koloru M408
+nietknięta (C1), niezależność od `cardDuplicateDiscount` (C2), `Math.min` po kolorach na
+Prismari Campus {U}{R} przy 4 wyspach (C3), progi jako pokrętła (C4), monotoniczność (C5).
+
+**Zaktualizowane piny starej płaskiej reguły:** PMSSB-24/C3 (12/12 → 2/12), PMSSB-25/A2
+(przesycenie per pip), PMSSB-25/A4 (14 → 11), `audyt-pr105` B (przypadek brzegowy z 2 na 0
+lądów) + nowy B2, `bot-wyceny-pakiet-c` E2/C1 + nowy C2. **Mutacja M1** → RED: 14 pinów
+w 5 plikach. **10 pokręteł** `landKeep*`/`landColored*Max`/`landTotal*Max`.
+
+**Bramki:** `npm test` 7172/7172 · build 70 mod / 4654.1 kB · `npm run test:all`
+**7443 / 7443, exit 0** — po **świadomej regeneracji** golden-mastera
+(`node tools/bot-scoring-snapshot.mjs --write`, overallHash `6f6ccbbd…` → `8c459fdc…`).
+Pierwsze przejście bramy dało 7441/7443 z dwoma failami golden-mastera: nowa wycena landu
+zmienia ślad bota w pełnych partiach (różnica w `ravnica|innistrad-wu@1001`: decyzje
+241 → 245, scoreSum 2702.6908 → 2706.7108), a komunikat testu wprost każe regenerować
+fixture przy świadomej zmianie parametrów. To nie refaktor — to specyfikacja właściciela.
+
+**Konsekwencja do potwierdzenia:** przy 2 lasach na stole i trzecim w ręce (3 źródła {G})
+bot oddaje trzeci las zamiast 9-manowego czaru poza zasięgiem — dosłowna realizacja „3+
+źródeł pipa → raczej odrzucaj", ale zmienia wcześniej uzgodnione zachowanie („nie wyrzucaj
+automatycznie lądu przy niedoborze many"). Próg: pokrętło `landColoredNeutralMax`.
+
+**Incydent:** sandbox odtworzył się po raz drugi w tej sesji — lokalna gałąź wróciła na bazę
+`6789702`, przez co pierwszy commit PMSSB-26 (`4c21432`) wchłonął całą deltę od bazy zamiast
+samej pętli. Odzyskano przez `git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg`
+i ponowny commit delty jako **`5f31e00`**.
+
+---
+
+## 2026-09-30b — PMSSB-25: koszt „odrzuć” a wspólna miara karty
+
+**Mikro-pętla (M429).** Cel wybrany z audytu remisów PO: `resolve_discard_choice`
+(1 176 decyzji / 24 rozróżnialne remisy). Znajdowanie F1 (L41): przy koszcie odrzucenia
+działała **druga, równoległa miara jakości karty** (`handCardKeepValue` — ciało bez limitu,
+keywordy, zdolności), która nie zna zasięgu many, nasycenia lądów ani duplikatów, choć
+wspólna `cardKeepValue` (M135 + PMSSB-24/F4) o bombie za 7 przy 2 lasach mówi −3, a o
+zbędnym landzie przy 6 lądach −6.
+
+**Pomiar PRZED** (sonda `scratch/pmssb25-discard-przed.mjs`): przy 2 lasach bot trzymał
+Woolly Loxodona {5}{G}{G} (−1 pkt) i odrzucał grywalnego Highland Game 2/1 (14 pkt);
+zbędny land dostawał 19 pkt wyłącznie dlatego, że land ma `manaCost` 0. **Pomiar obalił
+dwa podejrzenia**: duplikaty (D2/D5) okazały się poprawną regułą koloru właściciela, a
+forward clash z PMSSB-24 — fałszywym tropem (`clash.won` liczony z odkrytych kart w
+`game-state.js:3460-3475`, więc ich ułożenie nie może zmienić zwycięzcy — CR 701.30;
+forward wycofany w `PMSSB.md` i w handoffie).
+
+**Fix:** karta, której wspólna miara nie chce (`cardKeepValue < 0`), idzie na pierwszy
+ogień — `-cardKeepValue + discardUnwantedBonus` (5). PO: bomba **28 > 14**, land
+**31 > 14**. Reguła koloru M408 nietknięta (pin A3), karty grywalne bez zmian (pin A4,
+anty-over-fix). Pokrętło `discardUnwantedBonus` w rejestrze.
+
+**Bramki:** `npm test` 7157/7157 · build 70 mod / 4649.2 kB · mutacja A-M1 → {A1, A2, A5} ·
+`npm run test:all` **7428 / 7428, exit 0** — golden-master `ok 1696` bez regeneracji
+(`git diff --name-only a9b7d57..HEAD` nie zawiera fixture); +5 testów względem PMSSB-24
+(7423) to dokładnie nowe piny `audyt-pmssb25-discard.test.js`.
+
+**Forward:** przy 0 lądów reguła koloru każe odrzucić stwora zamiast landu (42 vs 19) —
+konsekwencja M408, wymaga decyzji właściciela.
+
+**Incydent:** sandbox został odtworzony o 07:45 UTC (świeży `clone` z `main`), co skasowało
+commit `eac6b51` i `/home/user/scratch`. Odzyskano przez `git fetch` + `git reset --mixed
+origin/arena/01a0eec8-mtg` i ponowny commit delty jako **`1b483a6`** (bez `--amend`); kod
+PMSSB-25 przetrwał w drzewie roboczym. **Nauczka:** przy wygaśnięciu tokena GitHub sandbox
+może zostać odtworzony — commituj i wypychaj zaraz po każdej fali.
+
+---
+
+## 2026-09-30a — PMSSB-24: filtrowanie wierzchu biblioteki (`scry` + `surveil`)
+
+**Zlecenie.** Właściciel po odświeżeniu tokena GitHub: „możesz wypychać, a potem
+bierz się za kolejne fale PMSSB aż do wyczerpania budżetu sesji". Najpierw
+odzyskanie stanu (poniżej), potem pętla PMSSB-24.
+
+**Reprovisioning sandboxa (stan odzyskany, nic nie zginęło).** Przy odświeżaniu
+tokena sandbox został przeprovisionowany: pliki robocze przetrwały, ale git
+cofnął się do bazy `6789702`, a `/home/user/pr-body.md` zniknął. Po
+`git fetch` + `git reset --mixed origin/arena/01a0eec8-mtg` różnica drzewa
+roboczego wobec `4f46522` wyniosła dokładnie te trzy dokumenty z utraconego
+commitu, więc dokumentacja sesji 2026-09-29e weszła ponownie jako `aa27111`
+(z adnotacją o odtworzeniu). Opis PR #147 przepisany i wysłany; przy okazji
+poprawiony **własny błąd** w jego szkicu: dopisany „F7 = `friendlyMisaimPenalty`"
+nie istniał — audyt PR #146 miał **sześć** znalezisk (F1–F6), a `f93781a` to
+pętla jakości U1 (`preserveColors` i jednostka bezbarwna). Poprawione też
+przestarzałe `render.js:1524` (badge dziś: `render.js:3011`/`:4820`) i punkt
+ograniczeń o U1.
+
+**Wybór rodziny z pomiaru** (583 karty, 184 typy efektów): `scry` 12 kart +
+`surveil` 5, zero wierszy w rejestrze PMSSB; wcześniejsze dotknięcia to łatki
+punktowe (M135/M148/M211/M218/K). Plan:
+`docs/plans/PLAN_2026-09-30a-pmssb24-scry.md` (`dddb96e`).
+
+**Zadanie A — Fala A (`83c06b4`): kolejność kart na wierzchu.** Silnik oferuje
+permutacje (`game-state.js:7149-7160`; CR 701.22a „the rest on top in any
+order", CR 701.25), a `resolve_scry` liczył tylko `bottomIds` — 6 permutacji
+keep-all remisowało po 20, a przy surveil `keepsOrder ? 1 : 0` premiowało
+kolejność oryginalną (21 vs 20), więc świadome ułożenie przegrywało. Wspólny
+`libraryOrderValue` liczy sumę zdyskontowaną `cardKeepValue` jako RÓŻNICĘ
+względem układu pierwotnego. PO: ułożenie 23,2 > 20; 16 wariantów = 16 etykiet.
+
+**Zadanie B — Fala B (`184615d`): reveal i deck-out.** `revealTopGainLife`
+(Sifter Wurm: reveal wierzchu + życie równe mana value, CR 608.2) nie docierało
+do widoku — bot odkładał na spód dokładnie kartę {5}, której reveal chciał na
+wierzchu (5 życia → 2). Pole warunkowe w `playerView` + dopłata
+`gainLifeValue(mana value)` (ta sama skala życia, L41). Oraz surveil: wspólna
+`drawDeckingPenalty` jako RÓŻNICA — biblioteka 3: keep 23,2 > mill 21,2;
+biblioteka 1: keep 20 > mill −42.
+
+**Zadanie C — Fala C (`4e8c201`): kontekst ręki i grób.** Duplikaty w
+`cardKeepValue` (3 pkt za kopię, limit 2): odłożenie duplikatu 11 → 14 → 17.
+Grób jako zasób przy surveil (Delve CR 702.66 / reanimacja): mill 24 → 26
+z `hooting-mandrills` w ręce.
+
+**Korekta własnego findingu (L92).** Plan twierdził, że odłożenie karty na spód
+odsuwa deck-out. To nieprawda: scry przekłada kartę w obrębie TEJ SAMEJ
+biblioteki, więc liczba kart się nie zmienia i pomiar 26 = 26 (biblioteka 2 vs
+12) jest zachowaniem POPRAWNYM. Deck-out wchodzi dopiero przy surveil, bo tam
+karta idzie do grobu (CR 701.25). Plan, raport i opis commitu poprawione przed
+scaleniem — bez przepisywania historii.
+
+**Dwie pułapki zmierzone w trakcie (nie wymyślone).** (1) Człon kolejności
+liczony także dla kart zbędnych dawał `(1−d)·(keep_dobrej − keep_śmiecia)` = 6,
+czyli dokładnie tyle, co odłożenie śmiecia (26 vs 26) — remis rozstrzygała
+enumeracja i kotwica M135 przegrywała; pomogło liczenie tylko kart chcenych.
+(2) Drabina deck-outu użyta wprost obciążała też wariant „zostaw wszystko"
+(−36,8 przy bibliotece 3), bo karze strefę, nie ruch — kosztem decyzji jest
+dopiero różnica. Dodatkowo strażnik CR złapał wpisany z pamięci `702.16`
+(= Protection); Delve to **702.66**.
+
+**Bramy**: fast **7152/7152** (baza 7133, +19 pinów) · `test:all`
+**7423/7423** (exit 0, 416 s, golden-master „ślad bota == zamrożony fixture"
+zielony BEZ regeneracji) · build **70 / 4647,4 kB** · tie-audit `--gry=40` PRZED (`aa27111`,
+worktree) / PO: remisy realnych wariantów 3812 → 3792, a **`resolve_scry`
+39 → 10 remisów (−74 %)** — pierwszy raz rodzina PMSSB dała sygnał w lustrze,
+bo talie ją zawierają. Klasy obce bez regresji (block 151 → 150, attack
+195 → 191, `cast_spell` 14 → 14, `activate_ability` 12 → 12). Kotwica obcej
+pętli: test M135 „surveil mieli zbędny land" miał bibliotekę 1 karty (mill =
+pusta biblioteka), więc dostał `libraryExtra: 8` z komentarzem — intencja bez
+zmian.
+
+**Dokumentacja**: raport §PMSSB-24 + wiersz rejestru w `docs/PMSSB.md`,
+handoff `docs/setup/HANDOFF_2026-09-30a.md`. Bez wpisu do `LESSONS.md` —
+budżet lektury nadal 99 885/100 000; znaleziska mieszczą się w klasach L50/L41
+(kolejność i jedna skala), L1 (brak danych w widoku), L92 (korekta własnego
+pomiaru), L34/L40 (etykieta wariantu), M429 (kotwice anty-over-fix).

@@ -815,6 +815,33 @@ function enemyHasFlyingAttackers(view) {
 
 const KEYWORD_COUNTERS = new Set(['deathtouch', 'flying', 'first_strike', 'double_strike', 'lifelink', 'trample', 'vigilance', 'menace', 'reach', 'haste', 'hexproof', 'indestructible']);
 
+// PMSSB-23/F1 (L41): JEDNA klasyfikacja liczników (CR 122) — wspólna dla
+// `cast_spell`, `activate_ability` i kary za chybiony cel. Dotąd reguła miała
+// TRZY kopie: `BENEFICIAL_COUNTERS` (friendlyMisaimPenalty), lista `beneficial`
+// w gałęzi czarów i `DEBUFF_COUNTERS` w gałęzi zdolności — a rozjazd był
+// mierzalny: `stun` w czarze (Stall Out) nie był wyceniany wcale, choć ta sama
+// instrukcja ze zdolności dostawała 10 + 4·amount. Klasyfikacja wyłącznie po
+// deskryptorze licznika, bez nazw kart (ADR 0002).
+const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+// Wrogie dla obdarowanego: obniżają statystyki albo blokują odkręcanie
+// (stun — licznik ZASTĘPUJE odkręcenie, CR 122.1d/614.6). Silnik ma ten sam
+// podział w `effect-intent.js`
+// (`HOSTILE_COUNTERS`) — tu dodatkowo liczniki minusowe, których tamta lista
+// nie niesie (w katalogu nie ma dziś triggera z `-1/-1`, ale reguła musi być
+// kompletna na wejście takiej karty).
+const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
+
+// PMSSB-24/F3: efekty, które CZYTAJĄ Z GROBU — przy nich karta zmielona
+// surveilem (CR 701.25) nie jest stratą, tylko paliwem. Lista po typach
+// efektów z rejestru (ADR 0002), bez nazw kart; `delve` jest osobnym polem
+// karty (CR 702.66) i sprawdzane obok.
+const GRAVE_RECURSION_EFFECTS = new Set([
+  'return_permanent_from_graveyard',
+  'return_card_from_graveyard_to_hand',
+  'put_graveyard_card_onto_battlefield',
+  'graveyard_creatures_to_library_top_choice',
+]);
+
 const NEVER = Number.NEGATIVE_INFINITY;
 
 /**
@@ -2763,13 +2790,158 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let value = P.counterBase + P.counterAmountWeight * amount + P.counterHostWorthWeight * worth;
     const delta = counterStatDelta(counterName, amount);
     if (delta && host && host.controllerId === view.playerId) {
+      // PMSSB-23/F5b: licznik, który DOMYKA grę — moc gospodarza po liczniku
+      // ≥ życie przeciwnika, atak jest możliwy i nie do zatrzymania. Liczone
+      // PRZED rozgałęzieniem okien, bo dotyczy też walki, która już trwa
+      // (niezablokowany atakujący): tam `pumpImprovesOutcome` daje tylko +12,
+      // a różnica między 12 a wygraną partią jest cała.
+      const foe = enemy(view);
+      const atakuje = (view.combat?.attackers ?? []).includes(host.id);
+      if (foe && (atakuje || canAttackNow(host))
+        && (host.power ?? 0) + (delta.power ?? 0) >= (foe.life ?? 20)
+        && attackHitsFace(view, host)) value += P.counterLethalClockBonus;
       if (pumpImprovesOutcome(view, host, {}, delta)) value += P.counterCombatBonus;
       // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
       // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
       // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
       else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+      else {
+        // PMSSB-23/F4: gospodarz, którego ataku przeciwnik NIE DOSIĘGNIE —
+        // licznik zamieni się w obrażenia, a nie w wymianę (różnicuje wybór
+        // celu; pusty stół wroga nic tu nie rozstrzyga — patrz predykat).
+        if (hostEvadesBlockers(view, host)) value += P.counterEvasionBonus;
+        // PMSSB-23/F5a: walka tej tury już za nami (moja Główna 2 / faza końcowa)
+        // — licznik nie zdąży w niej pomóc, a do następnej musi przetrwać
+        // odpowiedzi przeciwnika. KARA, nie premia za Główną 1: wycena okna
+        // głównego zostaje dawna (kotwica anty-over-fix M429 — piny PMSSB-2/16/18
+        // i M429 mierzą właśnie rzut w Głównej 1).
+        if (myTurn(view) && ['postcombat_main', 'ending'].includes(view.turn.phase)) {
+          value -= P.counterLateWindowPenalty;
+        }
+      }
     }
     return value;
+  };
+
+  /**
+   * PMSSB-23/F4: czy przeciwnik MA czym blokować, ale tego gospodarza nie
+   * dosięgnie — latacz bez odpowiedzi (flying/reach), menace przy jednym
+   * blokującym (CR 702.111: blokować muszą co najmniej dwa stwory) albo dar
+   * „can't be blocked" z widoku. Pusty stół wroga NIE zapala tej dopłaty:
+   * wtedy każdy mój stwór jest nieblokowalny, więc dopłata niczego by nie
+   * rozstrzygała (nie zmienia wyboru celu), tylko pompowała wycenę czaru
+   * względem innych zagrań (kotwica anty-over-fix M429 — 8 pinów innych pętli
+   * mierzy dokładnie tę wycenę).
+   */
+  const hostEvadesBlockers = (view, host) => {
+    if (!host || host.controllerId !== view.playerId) return false;
+    if (host.cantBeBlocked === true) return true;
+    const blockers = untappedEnemyBlockers(view);
+    if (blockers.length === 0) return false;
+    if (hasKeyword(host, 'flying')) return blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+    if (hasKeyword(host, 'menace')) return blockers.length <= 1;
+    return false;
+  };
+
+  /**
+   * PMSSB-23/F5b: czy atak gospodarza przejdzie w twarz — brak blokujących,
+   * gospodarz ich omija (`hostEvadesBlockers`) albo już atakuje niezablokowany.
+   * To warunek zegara: licznik mocy ≥ życie przeciwnika domyka grę TYLKO, gdy
+   * ataku nie da się zatrzymać (inaczej to nadal „większy stwór", nie wygrana).
+   */
+  const attackHitsFace = (view, host) => {
+    if (!host || host.controllerId !== view.playerId) return false;
+    const combat = view.combat ?? null;
+    if (combat && (combat.attackers ?? []).includes(host.id)) {
+      return ((combat.blockers ?? {})[host.id] ?? []).length === 0;
+    }
+    return untappedEnemyBlockers(view).length === 0 || hostEvadesBlockers(view, host);
+  };
+
+  /**
+   * PMSSB-23/F2: dopłata za zagrożenie celu wrogiego licznika — ta sama miara
+   * co w PMSSB-21 (`opponentTargetThreatWeight`): 0,5 × (moc·2 + wytrzymałość)
+   * z limitem. Limit trzyma dopłatę poniżej progu dobicia, żeby „zabij 1/1"
+   * nie przegrało z „osłab 8/8" (kotwica anty-over-fix M429).
+   */
+  const counterThreatBonus = (target) => (target
+    ? Math.min(P.counterThreatCap,
+      P.counterThreatWeight * (2 * (target.power ?? 0) + (target.toughness ?? 0)))
+    : 0);
+
+  /**
+   * PMSSB-23/F3: rider „połóż licznik na KAŻDYM moim stworze (z licznikiem /
+   * o podtypie)" — `add_counter_to_creatures_you_control` (Lifecrafter's Gift,
+   * Vaan Street Thief). Pomiar PRZED: 1, 2 i 4 odbiorców dawały tę samą ocenę
+   * (74/74/74), czyli rider był wart 0 — bot nie widział, że przy trzech
+   * nosicielach czar dokłada CZTERY trwałe +1/+1, a nie jeden. Wartość = sam
+   * przyrost licznika za odbiorcę; termin ciała i okna walki należą do efektu
+   * celowanego, który `counterHostValue` wycenił już z pełnym kontekstem.
+   * Cel główny liczy się jako odbiorca, gdy rider wymaga licznika: efekt
+   * celowany rozstrzyga się pierwszy (effects.js — kolejność z deskryptora).
+   */
+  const counterSpreadValue = (view, effect, primaryTarget = null) => {
+    const required = effect.requireCounter ?? null;
+    const wanted = effect.subtypes ?? [];
+    let count = 0;
+    for (const o of myCreatures(view)) {
+      if (wanted.length > 0 && !wanted.some((st) => (o.subtypes ?? []).includes(st))) continue;
+      if (required && ((o.counters ?? {})[required] ?? 0) <= 0 && o.id !== primaryTarget?.id) continue;
+      count += 1;
+    }
+    return P.counterSpreadPerRecipient * count * Math.max(1, effect.amount ?? 1);
+  };
+
+  /**
+   * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
+   * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
+   * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
+   * Stall Out na tapniętym 6/6 = 38, czyli 3 liczniki stun wnosiły tyle co nic).
+   * `target` rozwiązuje wywołujący (zdolność bez celu = źródło).
+   * Wartości bez zmian względem gałęzi zdolności (kotwica anty-over-fix M429:
+   * najsłabszy realny wariant zostaje tam, gdzie był).
+   */
+  const counterEffectValue = (view, target, counterName, amount = 1, ctx = {}) => {
+    if (!target) return 0;
+    const mine = target.controllerId === view.playerId;
+    // Wrogi licznik na WROGU = zysk (osłabienie/zablokowanie), na własnym =
+    // samobój (L3). Dobijanie licznikiem obniżającym wytrzymałość (CR 704.5f)
+    // warte więcej; `stun`/`-1/0` nie zmniejszają toughness, więc nie zabijają.
+    if (DEBUFF_COUNTERS.has(counterName)) {
+      if (mine) return -90;
+      const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
+      const toughLeft = (target.toughness ?? 0) - (target.damage ?? 0);
+      const kills = reducesToughness && toughLeft <= amount;
+      // PMSSB-23/F2: dopłata za zagrożenie celu — bez niej 3× stun na 6/6
+      // trample było warte tyle, co 3× stun na 1/1 (pomiar PRZED: 62/62), więc
+      // o wyborze decydowała kolejność enumeracji. Tylko gałąź „cel przeżyje":
+      // dobijanie już skaluje się mocą celu (30 + 2·moc).
+      return kills ? 30 + (target.power ?? 0) * 2
+        : 10 + 4 * amount + counterThreatBonus(target);
+    }
+    // Przyjazny licznik statystyczny: własny stwór rośnie (wartość z ciała
+    // gospodarza i okna walki), wrogi stwór dostaje prezent za naszą manę
+    // (M155) — kara tylko za stwora, inny permanent nic z niego nie ma.
+    if (STAT_COUNTERS.has(counterName) || KEYWORD_COUNTERS.has(counterName)) {
+      if (mine) return counterHostValue(view, target, counterName, amount);
+      return (target.kind === 'creature' || (target.types ?? []).includes('Creature')) ? -90 : 0;
+    }
+    // Licznik zasobowy (oil/level/point…): wartość TYLKO, gdy inna zdolność
+    // źródła go konsumuje (`cost.removeCounter`) i zapas jest poniżej potrzeby
+    // (M173/D — Rustvine Cultivator tapowany co turę na licznik bez konsumenta).
+    // `charge` wycenia gałąź station_counters (M429).
+    if (counterName === 'charge') return 0;
+    const source = ctx.source ?? null;
+    const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
+      .filter((a) => a?.cost?.removeCounter?.name === counterName);
+    const need = consumers.length > 0
+      ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
+      : 0;
+    const current = (target.counters ?? {})[counterName] ?? 0;
+    if (need === 0 || current >= need) return -25; // nikt nie konsumuje / zapas pełny
+    const ownPostcombat = view.turn.activePlayerId === view.playerId
+      && view.turn.phase === 'postcombat_main';
+    return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
   };
 
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
@@ -3520,18 +3692,72 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Skala: dodatnia = chcemy dobrać, ujemna = wolimy się pozbyć. Reguły są
    * generyczne (deskryptory kind/manaCost/power — ADR 0002), zero nazw kart.
    */
+  /**
+   * PMSSB-26: wartość landu przy decyzji „zostawić czy oddać" — DRABINA
+   * właściciela (2026-09-30), nie jeden próg przesycenia.
+   *
+   * Pomiar PRZED (sonda `scratch/pmssb26-land-przed.mjs`): wartość landu w
+   * ogóle nie zależała od manabazy aż do starego progu — basic-forest dawał
+   * 20 pkt przy 1, 2, 3 i 5 źródłach {G}, a secluded-steppe 19 pkt aż do sumy
+   * 6 lądów. Czyli „mam jedyny las w ręce" i "mam pięć lasów" były warte tyle
+   * samo, a przy koszcie odrzucenia land przegrywał z KAŻDĄ kartą o koszcie
+   * (reguła ciała liczy land jako `2 * manaCost` = 0).
+   *
+   * Specyfikacja właściciela:
+   *  - land KOLOROWY — licznik = ile lądów DANEGO pipa na stole + w ręce:
+   *    0 → bardzo duża (nigdy nie odrzucaj) · 1 → spora · 2 → neutralna · 3+ → niska
+   *  - land BEZBARWNY/utylitarny — licznik = SUMA lądów na stole + w ręce:
+   *    0-2 → bardzo duża · 3-4 → spora · 5-6 → neutralna · 7+ → niska
+   *
+   * Kolory landu bierzemy z `koloryZrodlaWidoku` = `getSourceForObject`
+   * (podtypy podstawowe wg CR 305.6 + deskryptory zdolności many) — jedno
+   * źródło prawdy z `colorCastable`, zero map nazw kart (ADR 0002).
+   *
+   * Licznik NIE obejmuje karty właśnie rozważanej (doprecyzowanie właściciela,
+   * 2026-09-30): „raczej odrzucaj" miało znaczyć 3 źródła na stole ALBO 2 na
+   * stole i 1 dodatkowy w ręku — czyli 3 źródła POZA rozważanym landem. Przy
+   * liczniku obejmującym rękę próg wypadał o jedno źródło za wcześnie (2 poza
+   * rozważanym), a stopień „0 → nigdy nie odrzucaj" był dla landu w ręce
+   * nieosiągalny. Teraz „0" znaczy dokładnie to, co powinien: ten land jest
+   * moim JEDYNYM źródłem koloru.
+   *
+   * Land wielokolorowy bierzemy po NAJMNIEJSZYM liczniku spośród jego kolorów:
+   * wartość dyktuje najbardziej brakujący kolor.
+   */
+  const landKeepValue = (view, card) => {
+    const isLandObj = (o) => (o?.kind ?? '') === 'land' || (o?.types ?? []).includes('Land');
+    const mine = (o) => o?.controllerId === view.playerId;
+    // Bez karty właśnie rozważanej — patrz doprecyzowanie właściciela wyżej.
+    const notThis = (o) => o?.id !== card?.id;
+    const boardLands = (view.zones.battlefield ?? []).filter((o) => isLandObj(o) && mine(o) && notThis(o));
+    const handLands = (view.zones.hand ?? []).filter((o) => isLandObj(o) && notThis(o));
+    const kolory = koloryZrodlaWidoku(card);
+    if (kolory.length > 0) {
+      let najmniejszy = Infinity;
+      for (const kolor of kolory) {
+        let ile = 0;
+        for (const o of [...boardLands, ...handLands]) {
+          if (koloryZrodlaWidoku(o).includes(kolor)) ile += 1;
+        }
+        najmniejszy = Math.min(najmniejszy, ile);
+      }
+      if (najmniejszy <= P.landColoredCriticalMax) return P.landKeepCritical;
+      if (najmniejszy <= P.landColoredHighMax) return P.landKeepHigh;
+      if (najmniejszy <= P.landColoredNeutralMax) return P.landKeepNeutral;
+      return P.landKeepSaturated;
+    }
+    const suma = boardLands.length + handLands.length;
+    if (suma <= P.landTotalCriticalMax) return P.landKeepCritical;
+    if (suma <= P.landTotalHighMax) return P.landKeepHigh;
+    if (suma <= P.landTotalNeutralMax) return P.landKeepNeutral;
+    return P.landKeepSaturated;
+  };
   const cardKeepValue = (view, card) => {
     if (!card) return 0;
     const landsInHand = view.zones.hand.filter((o) => o.kind === 'land').length;
     const landsOnBoard = myLandCount(view);
     const isLand = (card.kind ?? '') === 'land' || (card.types ?? []).includes('Land');
-    if (isLand) {
-      // Land jest cenny, dopóki budujemy manabazę, i zbędny przy przesycie.
-      // Próg jak dotąd (>=3 w ręce albo >=6 na stole) — zmienia się WARTOŚĆ,
-      // nie próg, żeby nie ruszać sprawdzonej granicy przy okazji.
-      if (landsInHand >= 3 || landsOnBoard >= 6) return -6;
-      return landsOnBoard <= 3 ? 8 : 3;
-    }
+    if (isLand) return landKeepValue(view, card);
     // Karta niegruntowa: liczy się, czy DA SIĘ ją zagrać w rozsądnym czasie.
     // Koszt daleko poza zasięgiem to karta martwa na wiele tur.
     const cost = card.manaCost ?? 0;
@@ -3539,8 +3765,84 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cost > reach + 2) return -3;           // poza zasięgiem — chętnie oddamy
     const bodyValue = 2 * (card.power ?? 0) + (card.toughness ?? 0);
     // Tani stwór z ciałem jest najlepszym dobraniem; czar bez P/T ma wartość
-    // bazową (nie znamy jego treści z widoku, ale to wciąż realna karta).
-    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach);
+    // bazową (nie znamy jej treści z widoku, ale to wciąż realna karta).
+    // PMSSB-24/F4 (duplikaty): druga i kolejna kopia TEJ SAMEJ karty w ręce
+    // jest warta mniej — dwóch naraz nie zagramy, a nadmiar kopii to martwe
+    // dobrania. Pomiar PRZED (P5 w planie): ręka z czterema kartami dawała
+    // tę samą wycenę co ręka pusta (12/12 = 12/12), bo `cardKeepValue` nie
+    // znała zawartości ręki. Lądy są poza regułą — ich nasycenie obsługuje
+    // próg `landsInHand`/`landsOnBoard` powyżej (druga ścieżka tej samej idei).
+    const copies = card.cardId
+      ? view.zones.hand.filter((o) => o.cardId === card.cardId).length
+      : 0;
+    const duplicateDiscount = copies > 1
+      ? -P.cardDuplicateDiscount * Math.min(copies - 1, P.cardDuplicateMaxCopies)
+      : 0;
+    return 4 + Math.min(bodyValue, 8) - Math.max(0, cost - reach) + duplicateDiscount;
+  };
+  /**
+   * PMSSB-24/F3: czy grób jest ZASOBEM. Surveil kładzie kartę do GROBU
+   * (CR 701.25), a nie na spód biblioteki — jeśli w ręce mamy kartę, która
+   * z grobu czyta, zmielenie karty jest warte więcej niż jej zatrzymanie.
+   * Dwa generyczne deskryptory (ADR 0002, zero nazw kart):
+   *  - Delve — każda karta w grobie obniża koszt o {1} (CR 702.66);
+   *  - efekt przywracający kartę z grobu (reanimacja/odkupienie).
+   * Pomiar PRZED (P4 w planie): `mill` zbędnego landu = 25 pkt z delve w ręce
+   * = 25 pkt bez — jedyną różnicą scry/surveil był stały `MILL_CAUTION`.
+   */
+  const graveyardReadingCardsInHand = (view) => (view.zones.hand ?? []).filter((o) => {
+    const def = cardDef(o.cardId);
+    if (!def) return false;
+    if (def.delve === true) return true;
+    const effects = [
+      ...(def.spell?.effects ?? []),
+      ...(def.abilities ?? []).flatMap((a) => (a.effect ? [a.effect] : [])),
+    ];
+    return effects.some((e) => GRAVE_RECURSION_EFFECTS.has(e?.type));
+  }).length;
+  /**
+   * PMSSB-24/F1 (CR 701.22a „the rest on top of your library in any order",
+   * CR 701.25 dla surveil): WARTOŚĆ KOLEJNOŚCI kart, które zostają na wierzchu.
+   *
+   * Pomiar PRZED (sonda `pmssb24-scry-przed.mjs`, tabela w planie
+   * `docs/plans/PLAN_2026-09-30a-pmssb24-scry.md`): `resolve_scry` liczył
+   * wyłącznie `bottomIds`, więc 6 permutacji „zostaw wszystko" remisowało
+   * po 20 pkt i wybór padał na pierwszą ofertę z listy; przy surveil bonus
+   * `keepsOrder ? 1 : 0` premiował kolejność ORYGINALNĄ, czyli świadome
+   * ułożenie lepszej karty wyżej przegrywało 21:20. Silnik permutacje
+   * oferuje (`game-state.js:7149-7160`) — brakowało tylko wyceny.
+   *
+   * Model: kartę pierwszą na wierzchu dobieramy najbliższym drawem, każdą
+   * kolejną o turę później (i nie jest pewne, że w ogóle — przeciwnik zdąży
+   * nas zabić albo zmielić). Dlatego wartość układu to suma zdyskontowana
+   * `cardKeepValue` po pozycjach. Funkcja zwraca RÓŻNICĘ względem układu
+   * pierwotnego (kolejność przeglądania = od wierzchu, CR 701.22), więc:
+   *  - dla układu pierwotnego daje 0 — wartości sprzed fali bez zmian
+   *    (kotwica anty-over-fix M429, `scryOrderWeight: 0` = dawny remis);
+   *  - lepszy układ dostaje plus, gorszy minus — decyzja przestaje zależeć
+   *    od kolejności enumeracji (klasa L50/L169).
+   */
+  const libraryOrderValue = (view, keptIds, originalKeptIds) => {
+    const weight = P.scryOrderWeight;
+    if (weight === 0 || keptIds.length < 2) return 0;
+    const discount = P.scryOrderDiscount;
+    const pending = view.pendingScry ?? view.pendingSurveil;
+    const cards = pending?.cards ?? [];
+    const keepOf = (id) => {
+      const card = cards.find((c) => c.id === id);
+      return card ? cardKeepValue(view, card) : 0;
+    };
+    // Liczą się TYLKO karty, które chcemy dobrać (`keep > 0`): kolejność
+    // rozstrzyga, którą z nich dostaniemy pierwszą. Karta zbędna (`keep < 0`)
+    // nie jest nagradzana za przesunięcie w głąb — od tego jest spód
+    // biblioteki/grobu, bo trzymany śmieć i tak zajmie jedno dobranie.
+    // Zmierzone: bez tego progu przestawienie zbędnego landu na drugą
+    // pozycję dostawało (1−d)·(keep_dobrej − keep_śmiecia) = 6 pkt, czyli
+    // dokładnie tyle, co jego odłożenie (26 vs 26) — remis rozstrzygała
+    // kolejność enumeracji i kotwica M135 („zbędny land idzie na spód")
+    // przegrywała.
+    const discounted = (ids) => ids.reduce((sum, id, i) => sum + Math.max(0, keepOf(id)) * (discount ** i), 0);
+    return weight * (discounted(keptIds) - discounted(originalKeptIds));
   };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
@@ -4117,7 +4419,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['prevent_next_damage', 40],
     ['set_base_pt_until_end_of_turn', 40], ['untap_permanent', 25],
   ]);
-  const BENEFICIAL_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
+  // PMSSB-23/F1: alias wspólnej klasyfikacji (jedna prawda o licznikach).
+  const BENEFICIAL_COUNTERS = STAT_COUNTERS;
 
   /** Kara za skierowanie efektu PRZYJAZNEGO we wrogie rzeczy (M179/E). */
   function friendlyMisaimPenalty(view, effects, cmd, target) {
@@ -5760,7 +6063,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const bezKoloru = !colorCastable(view, karta);
     const wartosc = handCardKeepValue(view, karta);
     if (bezKoloru) return 25 - Math.min(10, wartosc) / 2;
-    return -Math.min(30, wartosc);
+    // PMSSB-25/F1 (L41 — druga miara jakości karty): reguła ciała powyżej nie
+    // zna ZASIĘGU many, nasycenia lądów ani duplikatów, bo to druga, równoległa
+    // miara (`handCardKeepValue`) obok wspólnej `cardKeepValue` używanej przez
+    // scry/surveil/mill/look_top/clash. Pomiar PRZED
+    // (`scratch/pmssb25-discard-przed.mjs`): przy 2 lasach bot trzymał
+    // Woolly Loxodona {5}{G}{G} (−1 pkt) i odrzucał grywalnego Highland Game
+    // 2/1 (14 pkt), choć wspólna miara mówi o bombie −3 (koszt 7 > zasięg+2).
+    // Dlatego karty, których wspólna miara NIE chce (ujemna: poza zasięgiem,
+    // zbędny land przy przesycie), oddajemy chętnie; reszta zostaje po staremu
+    // (kotwica anty-over-fix: przy `cardKeepValue >= 0` wartość bez zmian).
+    const wspolna = cardKeepValue(view, karta);
+    if (wspolna < 0) return -wspolna + P.discardUnwantedBonus;
+    // PMSSB-26: domknięcie tej samej luki L41 od drugiej strony. Gałąź powyżej
+    // czyta wspólną miarę tylko, gdy jest UJEMNA, więc cała dodatnia drabina
+    // landu (30/18/8) zapadała się do jednego wyniku — pomiar PO pokazał, że
+    // „mam jedyny las w ręce" i „mam dwa lasy" dawały w decyzji odrzucenia
+    // identyczne 20 pkt. Bierze lepszą z dwóch miar: reguła ciała pozostaje
+    // suwitem dla dużych ciał (6/6 = 18 > 12 ze wspólnej), a wspólna miara
+    // dochodzi do głosu tam, gdzie ciało milczy — land (manaCost 0 → 0 pkt)
+    // i tanie karty poza/pod zasięgiem.
+    return -Math.min(30, Math.max(wartosc, wspolna));
   }
 
   function attackIntendsCreature(view, objectId) {
@@ -7835,19 +8158,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Reguła generyczna (ADR 0002): pozytywny licznik na WŁASNYM stworze
           // = zysk, na stworze przeciwnika = strata (wzmacniamy wroga).
           if (effect.type === 'add_counter') {
-            const counterName = effect.counter ?? '+1/+1';
-            const beneficial = counterName === '+1/+1' || counterName === '+1/+0'
-              || counterName === '+0/+1' || counterName === 'shield';
-            const amount = Math.max(1, effect.amount ?? 1);
-            if (beneficial && target) {
-              if (target.controllerId === view.playerId) {
-                // M429: gospodarz różnicowany wartością ciała + kontekstem walki
-                // (ta sama funkcja co w gałęzi aktywowanej zdolności, L41).
-                score += counterHostValue(view, target, counterName, amount);
-              } else if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
-                score -= 90; // wzmacnianie stwora przeciwnika — mocna kara
-              }
-            }
+            // PMSSB-23/F1 (L41): wspólna wycena licznika — TA SAMA funkcja co
+            // w gałęzi aktywowanej zdolności, więc `stun`/`-1/-1` rzucone
+            // czarem (Stall Out, Lodestone Needle) są warte tyle, co z
+            // {T}-zdolności (pomiar PRZED: 0 pkt i cel wybierany z enumeracji).
+            score += counterEffectValue(view, target, effect.counter ?? '+1/+1',
+              Math.max(1, effect.amount ?? 1));
+          }
+          // PMSSB-23/F3: rider rozlania liczników (wcześniej 0 pkt).
+          if (effect.type === 'add_counter_to_creatures_you_control') {
+            score += counterSpreadValue(view, effect, target);
           }
           // PMSSB-18: proliferate jako rider — wartość najlepszego podzbioru
           // (razem z synergia kolejności: add_counter TEGO czaru rozstrzyga
@@ -8624,56 +8944,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // źródła je konsumuje (cost.removeCounter) i zapas < potrzeb;
           // uzupełnianie po walce (postcombat), nie kosztem ataku/bloku.
           if (effect.type === 'add_counter') {
-            const counterName = effect.counter ?? '+1/+1';
-            // M221/F (zgłoszenie właściciela, Trigon of Corruption): licznik
-            // DEBUFF (`-1/-1`, `-1/0`, `-0/-1`) na WROGIM stworze to czysty zysk
-            // (osłabienie/zabicie), a wycena traktowała go jak licznik zasobowy
-            // bez konsumenta → kara −25, więc bot NIGDY nie używał zdolności
-            // „{2},{T},usuń charge: -1/-1 na cel". Rozpoznanie po deskryptorze
-            // (minus w nazwie licznika, CR 122), bez nazw kart (ADR 0002).
-            const DEBUFF_COUNTERS = new Set(['-1/-1', '-1/0', '-0/-1', 'stun']);
-            const statCounter = ['+1/+1', '+1/+0', '+0/+1', 'shield'].includes(counterName)
-              || KEYWORD_COUNTERS.has(counterName);
+            // PMSSB-23/F1 (L41): wspólna wycena licznika (ta sama funkcja co
+            // w gałęzi czarów) — reguły M221/F (wrogi debuff = zysk, własny =
+            // samobój), M429 (gospodarz różnicowany ciałem) i M173/D (licznik
+            // zasobowy tylko z konsumentem) żyją teraz w `counterEffectValue`.
+            // Cel bez jawnego wskazania = źródło (outlast na sobie).
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
-            const amount = Math.max(1, effect.amount ?? 1);
-            if (DEBUFF_COUNTERS.has(counterName)) {
-              // Debuff na wrogim stworze = wartość; kill (toughness ≤ amount)
-              // premiowany. Na WŁASNYM to samobój — twarda kara (L3).
-              if (tgt && tgt.controllerId !== view.playerId) {
-                // Tylko liczniki obniżające WYTRZYMAŁOŚĆ mogą zabić (CR 704.5f).
-                // `stun`/`-1/0` nie zmniejszają toughness — osłabiają/blokują,
-                // ale nie liczymy ich jako lethal.
-                const reducesToughness = counterName === '-1/-1' || counterName === '-0/-1';
-                const toughLeft = (tgt.toughness ?? 0) - (tgt.damage ?? 0);
-                const kills = reducesToughness && toughLeft <= amount;
-                score += kills ? 30 + (tgt.power ?? 0) * 2 : 10 + 4 * amount;
-              } else {
-                score -= 90;
-              }
-            } else if (statCounter) {
-              // M429 (P1 Mutagen): dotąd płaskie 8 + 4·amount dla KAŻDEGO
-              // własnego celu (pomiar: remis 14/14/14 — bot brał pierwszy
-              // legalny wariant, często token 1/1). Ta sama funkcja co w
-              // bliźniaczej gałęzi czarów (L41): wartość rośnie z ciałem
-              // gospodarza (wzorzec aury), premia gdy licznik poprawia wynik
-              // TRWAJĄCEJ walki, kara gdy gospodarz i tak ginie w tej turze.
-              if (tgt?.controllerId === view.playerId) score += counterHostValue(view, tgt, counterName, amount);
-              else score -= 90;
-            } else if (counterName !== 'charge') { // charge wycenia station_counters
-              const consumers = (source?.cardId ? (cardDef(source.cardId)?.abilities ?? []) : [])
-                .filter((a) => a?.cost?.removeCounter?.name === counterName);
-              const need = consumers.length > 0
-                ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
-                : 0;
-              const current = (tgt?.counters ?? {})[counterName] ?? 0;
-              if (need === 0 || current >= need) {
-                score -= 25; // nikt nie konsumuje / zapas pełny — tap za nic
-              } else {
-                const ownPostcombat = view.turn.activePlayerId === view.playerId
-                  && view.turn.phase === 'postcombat_main';
-                score += ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
-              }
-            }
+            score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
+              Math.max(1, effect.amount ?? 1), { source });
+          }
+          // PMSSB-23/F3 (L41): rider rozlania także w ścieżce zdolności.
+          if (effect.type === 'add_counter_to_creatures_you_control') {
+            score += counterSpreadValue(view, effect, tgt);
           }
           // M429 (P3 Charismatic Vanguard): masowy pump/debuff „do końca tury"
           // z AKTYWOWANEJ zdolności — dotąd ta rodzina nie miała tu wyceny
@@ -9703,6 +9985,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
+          // PMSSB-31 (zgłoszenie właściciela z gry): KORZYSTNA WYMIANA.
+          // Dotąd `+attackerPower` i `−(P+T)` były w jednej skali, więc chump
+          // 3/3 tokenem 1/1 dawał dokładnie 3 − 2 − 1 = 0 — tyle samo co pass.
+          // Model był OBOJĘTNY na przyjęcie 3 obrażeń, a przy czterech 1/1
+          // wolał utopić wszystkie w jednym 4/4 (4 + 12 − 8 − 4 = 4) niż
+          // zatrzymać całe 7 obrażeń dwoma tokenami (1). Właściciel: „po to ma
+          // te małe token kreatury, żeby go broniły przed atakiem większych".
+          //
+          // Rozróżnikiem NIE jest waga obrażeń: płaska waga 3 wymuszała też
+          // blok cennym 2/2 bez presji życia i łamała piny anty-over-fix
+          // (M257-r5/B „30 życia — blok 2/2 vs 3/3 NIE wygrywa z passem").
+          // Rozróżnikiem jest NADWYŻKA: obrażenia wchłonięte przez ciało warte
+          // mniej niż one. Token 1/1 za 3 obrażenia to dobry interes; 2/2 za
+          // 3 obrażenia nie. Bonus tylko gdy bloker REALNIE ginie i tylko od
+          // nadwyżki, więc bez presji cenne blokery zostają niezaangażowane.
+          if (blockerValueLost > 0 && attackerPower > blockerValueLost) {
+            score += (attackerPower - blockerValueLost) * P.blockGoodTradePerPoint;
+          }
           // PMSSB-2/C (F8): UBEZPIECZENIE ciała — ginący bloker z dies→token
           // (Dissenter/Patron/Chorus/Elgaud) zostawia token; skala L41 jak ETB
           // (chump z Dissenterem JEST dobry — strata 1/1 za czas + Zombie 2/2).
@@ -9765,6 +10065,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (lifeAfter >= 1 && lifeAfter <= 2) score += 6;
           else if (lifeAfter >= 1 && lifeAfter <= 5) score += 4;
           else if (lifeAfter >= 1 && lifeAfter <= 8) score += 2;
+          // ZNANY FORWARD (PMSSB-31, zmierzone, NIE naprawione w tej fali):
+          // drabinka wyżej jest NIEMONOTONICZNA względem zablokowanych obrażeń
+          // (mniej życia po = większa premia), więc przy 7 życiu i ataku 4/4+3/3
+          // wariant „blok tylko 4/4, dostaję 3" (lifeAfter 4 → +4) remisuje
+          // z „blok obu, dostaję 0" (lifeAfter 7 → +2) — oba dokładnie 39 —
+          // a o wyborze decyduje kolejność ofert. Próba domknięcia epsilonem
+          // `stoppedDamage * 0.01` rozstrzygała ten remis poprawnie, ale
+          // ułamkowy wynik łamał piny wartości dokładnych (PMSSB-2/C/F8
+          // Dissenter +19 i Patron 6), więc została wycofana. Właściwa naprawa
+          // to drabinka monotoniczna względem `stoppedDamage` — osobna fala,
+          // bo dotyka pinów M146 i M257-r5.
         }
         return finish(score);
       }
@@ -9795,7 +10106,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const delta = cards
           .filter((card) => bottoms.includes(card.id))
           .reduce((sum, card) => sum - cardKeepValue(view, card), 0);
-        return finish(20 + delta);
+        // PMSSB-24/F1 (Scry, CR 701.22a): resztę układamy sami — ten sam zbiór
+        // kart jest warta więcej, gdy lepsza karta leży wyżej. Różnica
+        // względem układu pierwotnego, więc wariant bez przestawienia ma
+        // wartość sprzed fali (kotwica anty-over-fix M429).
+        const originalKept = cards.filter((card) => !bottoms.includes(card.id)).map((card) => card.id);
+        const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalKept;
+        // PMSSB-24/F5 (Sifter Wurm): po tej decyzji silnik odsłania wierzch
+        // i daje życie równe mana value odsłoniętej karty (CR 608.2 — reveal
+        // następuje PO rozstrzygnięciu scry). Widok niesie teraz ten fakt
+        // (`revealTopGainLife`), więc pierwsza karta na wierzchu jest warta
+        // dodatkowo tyle, ile warte jest to życie — w TEJ SAMEJ skali co
+        // każdy inny zysk życia (`gainLifeValue`, L41: jedna prawda o życiu).
+        // Przy odkładaniu wszystkiego odsłonięta będzie karta spoza
+        // przeglądanych (nieznana — widok jej nie niesie), więc 0.
+        const revealed = view.pendingScry?.revealTopGainLife
+          ? cards.find((card) => card.id === keptOrder[0])
+          : null;
+        const revealBonus = revealed ? gainLifeValue(view, revealed.manaCost ?? 0) : 0;
+        return finish(20 + delta + libraryOrderValue(view, keptOrder, originalKept) + revealBonus);
       }
       case 'resolve_surveil': {
         // Surveil (Curate): jak scry — mielimy tylko zbędne lądy przy
@@ -9816,8 +10145,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const originalOrder = (view.pendingSurveil?.cards ?? [])
           .filter((card) => !milled.includes(card.id))
           .map((card) => card.id);
-        const keepsOrder = JSON.stringify(cmd.topOrder ?? originalOrder) === JSON.stringify(originalOrder);
-        return finish(20 + millDelta + (keepsOrder ? 1 : 0));
+        // PMSSB-24/F1: dawny `keepsOrder ? 1 : 0` premiował kolejność
+        // ORYGINALNĄ, czyli karał świadome ułożenie (pomiar: 21 vs 20).
+        // Zastąpiony tą samą wyceną co przy scry — porównaniem permutacji,
+        // nie preferencją (Surveil, CR 701.25 też mówi „in any order").
+        const keptOrder = Array.isArray(cmd.topOrder) ? cmd.topOrder : originalOrder;
+        // PMSSB-24/F2 (po korekcie): surveil ZDEJMUJE kartę z biblioteki
+        // (CR 701.25 — karta idzie do grobu), więc mielenie własnych
+        // ostatnich kart przyspiesza deck-out (CR 121.4/704.5b). Pomiar PRZED
+        // (`/tmp/f2.mjs`): `mill:t0` = 24 przy bibliotece 2 kart = 24 przy 12
+        // — żadnej drabiny presji, tylko stały `MILL_CAUTION`. Użyta WSPÓLNA
+        // drabina deck-outu z doboru (`drawDeckingPenalty`, L41: mielona karta
+        // to dobranie, którego już nie będzie), ale jako RÓŻNICA — drabina
+        // karze samą strefę krytyczną (−60 przy ≤3 kartach), więc wprost
+        // obciążałaby też wariant „zostaw wszystko" (zmierzone: −36,8 za
+        // trzymanie kart przy bibliotece 3). Kosztem decyzji jest dopiero
+        // różnica między zmieleniem a niezmieleniem, więc przy zdrowej
+        // bibliotece człon jest zerem (kotwica anty-over-fix M429).
+        const millDecking = milled.length > 0
+          ? drawDeckingPenalty(view, milled.length) - drawDeckingPenalty(view, 0)
+          : 0;
+        // PMSSB-24/F3: karta zmielona do grobu jest paliwem, jeśli mamy w ręce
+        // coś, co z grobu czyta (delve / reanimacja). Dopłata za źródło,
+        // z limitem — jedna karta z delve nie usprawiedliwia mielenia talii.
+        const graveSynergy = milled.length > 0
+          ? Math.min(P.surveilGraveSynergyPerSource * graveyardReadingCardsInHand(view), P.surveilGraveSynergyCap) * milled.length
+          : 0;
+        return finish(20 + millDelta + libraryOrderValue(view, keptOrder, originalOrder)
+          + millDecking + graveSynergy);
       }
       case 'resolve_clash_choice': {
         // Clash (CR 701.30): „na spód albo zostaw" — ta sama decyzja co scry,
@@ -9923,7 +10278,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           && !pumpChangesOutcome(view, creature, { power: 3, toughness: 3 });
         // NIEZABLOKOWANY napastnik: +2 mocy = 2 obrażenia więcej w twarz
         // (pojęcie widoku `unblockedAttackers`, a nie przeliczanie bloków).
-        const unblockedAttacker = (view.combat?.unblockedAttackers ?? []).includes(creature.id);
+        // KIERUNEK ma znaczenie (audyt PR #146, F5): `unblockedAttackers`
+        // wylicza napastników gracza ATAKUJĄCEGO, więc bez tego warunku ten
+        // sam wpis nagradzał poświęcenie Food pod NIEZABLOKOWANEGO NAPASTNIKA
+        // WROGA — czyli płaciliśmy własnym Jedzeniem za to, że przeciwnik
+        // bije mocniej (pomiar PRZED: sacrifice 32 zarówno przy własnym, jak
+        // i przy wrogim napastniku). Zysk istnieje tylko w naszej turze walki.
+        const unblockedAttacker = view.combat?.attackingPlayerId === view.playerId
+          && (view.combat?.unblockedAttackers ?? []).includes(creature.id);
         return finish(base + (decisive ? P.foodDecisiveBonus : 0) + (unblockedAttacker ? 2 : 0));
       }
       // M258/B (uwaga właściciela, Rupture Spire): „sacrifice it unless you
@@ -10572,13 +10934,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(10 + 3 * value);
       }
       case 'resolve_satyr_look_choice': {
-        // Satyr Wayfinder: wzięcie lądu do ręki = pewna mana (zawsze lepsze niż
-        // rezygnacja, bo reszta i tak idzie do grobu). Ląd premiami za manabazę.
+        // Satyr Wayfinder: wzięcie karty do ręki jest zawsze lepsze niż
+        // rezygnacja, bo reszta i tak idzie do grobu.
+        // PMSSB-30: to była CZWARTA kopia tej samej miary — `30 + (land ? 30 : 0)
+        // + 2P + T`, identyczny kształt co `resolve_search_choice` przed
+        // PMSSB-29. Komentarz twierdził „Ląd premiami za manabazę", ale premia
+        // była stała: pomiar PRZED (sonda `scratch/pmssb30-satyr-przed.mjs`)
+        // dawał IDENTYCZNE wyniki przy 0, 3, 8 i 12 lądach na stole
+        // (land=60, bomba {5}{G}{G}=49, stwór {1}{B}=34, czar=30) — przy
+        // dwunastu lądach bot brał kolejny ląd zamiast czegokolwiek innego,
+        // a przy zerze bombę za 7 zamiast grywalnego stwora za 1.
         if (cmd.pickId == null) return finish(-5);
         const card = decisionCandidateCard(view, cmd.pickId);
-        let score = 30;
-        if (card) score += (card.kind === 'land' ? 30 : 0) + (card.power ?? 0) * 2 + (card.toughness ?? 0);
-        return finish(score);
+        if (!card) return finish(P.satyrLookBase);
+        // Ciało jako PODŁOGA (ten sam wzorzec co `discardCostPreference`
+        // od PMSSB-26): karta idzie NA STAŁE do ręki, więc kara za brak
+        // zasięgu (`cost > reach + 2` → −3) jest tu za ostra — na dojście
+        // do many jest wiele tur. Pomiar: pin `real-cards-batch55` B55/B4
+        // (Brightwood Tracker) odwracał wybór z 4/5 na 1/1 przy 0 lądów.
+        // `max` zostawia drabinę lądów i zasięg tam, gdzie ciało milczy
+        // (land = manaCost 0 → 0), a ciału nie pozwala spaść poniżej prawdy.
+        return finish(P.satyrLookBase + Math.max(handCardKeepValue(view, card), cardKeepValue(view, card)));
       }
       case 'resolve_search_choice': {
         // Szukanie w bibliotece (Temat 6; Secret Entrance/cyclying/channel/
@@ -10588,10 +10964,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.found == null) return finish(-40);
         const card = decisionCandidateCard(view, cmd.found);
         if (!card) return finish(0);
-        let score = 25;
-        // Land do ręki/na pole bitwy = pewna mana; stwory wg statystyk.
-        if (card.kind === 'land') score += 30;
-        score += (card.power ?? 0) * 2 + (card.toughness ?? 0);
+        // PMSSB-29: to była TRZECIA równoległa miara jakości karty obok
+        // `handCardKeepValue` (PMSSB-25/F1) i wspólnej `cardKeepValue`
+        // (M135 + PMSSB-24/F4 + PMSSB-26). Pomiar PRZED
+        // (sonda `scratch/pmssb29-search-przed.mjs`): wyniki były IDENTYCZNE
+        // przy 0, 3, 8 i 12 lądach na stole (land=55, bomba {5}{G}{G}=44,
+        // stwór {1}{B}=29, czary po 25), bo reguła `25 + (land ? 30 : 0) + 2P+T`
+        // nie zna ani drabiny lądów, ani zasięgu many, ani koloru:
+        //  - przy 12 lądach bot szukał KOLEJNEGO landu zamiast 6/7,
+        //  - przy 0 lądów bomba za 7 biła grywalnego stwora za 1,
+        //  - wszystkie czary dostawały dokładnie 25 — stąd 245 remisów
+        //    „równoważnych" `resolve_search_choice` w audycie (480 partii).
+        // Wspólna miara daje drabinę lądów (PMSSB-26), próg zasięgu
+        // (`cost > reach + 2` → −3) i zniżkę za duplikaty w jednym miejscu.
+        // Ciało jako podłoga — patrz `resolve_satyr_look_choice` (PMSSB-30):
+        // szukana karta idzie na stałe do ręki, więc kara za brak zasięgu nie
+        // może przelicytować ciała (4/5 za 5 zostaje nad 1/1 za 1).
+        let score = P.searchFoundBase + Math.max(handCardKeepValue(view, card), cardKeepValue(view, card));
         // Domain po search: przy równych podstawowych lądach wybierz NOWY
         // typ. Czytamy wyłącznie jawny deskryptor źródła oraz kandydatów
         // udostępnionych decydentowi, nigdy ukrytą bibliotekę.
@@ -10782,6 +11171,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const enemyInColor = (view.zones.battlefield ?? []).filter((o) =>
           o.controllerId !== view.playerId && o.kind === 'creature'
           && (o.colors ?? []).includes(color)).length;
+        // PMSSB-28: cel wyboru NIESIE pending (`game-state.js:5762` — 'mana'
+        // dla lądu z chooseColor; `spells.js:2655` — 'protection' dla aury),
+        // ale wycena go nie czytała i liczyła jedną płaską sumę dla obu.
+        // Pomiar PRZED (sonda `scratch/pmssb28-color-przed.mjs`): przy ręce
+        // wymagającej {B} i TRZECH czerwonych stworach wroga oba cele dawały
+        // IDENTYCZNE wyniki (U=11, B=11, R=8, W=5, G=5) i bot wybierał {U} —
+        // kolor, w którym przeciwnik nie ma ani jednego stwora. Aura ochrony
+        // przed {U} nie chroni przed niczym.
+        // Motywy są przeciwstawne, więc dzielimy po `purpose`:
+        //  - 'protection' — liczy się TYLKO kolor wrogich stworów;
+        //  - 'mana'       — liczy się TYLKO kolor potrzebny w ręce.
+        // Nieznany cel zostaje przy dawnej sumie (kotwica anty-over-fix: nic,
+        // czego nie zmierzyliśmy, nie zmienia zachowania).
+        const purpose = view.pendingColorChoice?.purpose;
+        if (purpose === 'protection') return finish(5 + enemyInColor * P.colorProtectionPerCreature);
+        if (purpose === 'mana') return finish(5 + needScore * P.colorManaNeedPerCard);
         return finish(5 + needScore * 6 + enemyInColor);
       }
       // M131 (pętla jakości 2026-09-05): kolejne typy decyzji, które dotąd
@@ -11365,6 +11770,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  // PMSSB-24/F1 (klasa L34/L40 — ta sama lekcja co M203/2): permutacje tego
+  // samego podzbioru kart były w śladzie NIEODRÓŻNIALNE (16 wariantów scry
+  // dawało 8 etykiet), więc audyt remisów raportował remisy tam, gdzie są
+  // różne decyzje, a testy wyceny nie mogły wskazać konkretnej kolejności.
+  // Sufiks tylko gdy kolejność naprawdę różni się od pierwotnej, żeby
+  // dotychczasowe etykiety (`…(keep)`, `…(bottom:…)`) zostały bez zmian.
+  const orderSuffix = (view, cmd, movedIds, pendingKey) => {
+    const order = Array.isArray(cmd.topOrder) ? cmd.topOrder : null;
+    if (!order || order.length < 2) return '';
+    const cards = view?.[pendingKey]?.cards ?? [];
+    const original = cards.filter((c) => !movedIds.includes(c.id)).map((c) => c.id);
+    if (JSON.stringify(order) === JSON.stringify(original)) return '';
+    return `;order:${order.join('+')}`;
+  };
+
   function summarize(cmd, view = null) {
     // M431 (L34/L40, wzorzec M203/2): warianty jednej decyzji muszą być
     // rozróżnialne w śladzie — inaczej audyt remisów paruje je po indeksie.
@@ -11381,10 +11801,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (klasa L34/L40). Ta sama lekcja co M195/B: opis w śladzie ma nazywać
     // wariant, nie tylko typ decyzji.
     if (cmd.type === 'resolve_scry') {
-      return `resolve_scry(${(cmd.bottomIds ?? []).length ? `bottom:${cmd.bottomIds.join('+')}` : 'keep'})`;
+      const moved = cmd.bottomIds ?? [];
+      const base = moved.length ? `bottom:${moved.join('+')}` : 'keep';
+      return `resolve_scry(${base}${orderSuffix(view, cmd, moved, 'pendingScry')})`;
     }
     if (cmd.type === 'resolve_surveil') {
-      return `resolve_surveil(${(cmd.millIds ?? []).length ? `mill:${cmd.millIds.join('+')}` : 'keep'})`;
+      const moved = cmd.millIds ?? [];
+      const base = moved.length ? `mill:${moved.join('+')}` : 'keep';
+      return `resolve_surveil(${base}${orderSuffix(view, cmd, moved, 'pendingSurveil')})`;
     }
     // PMSSB-22 (wzorzec M431/M203-2, klasa L34/L40): warianty poświęcenia Food
     // były w śladzie nieodróżnialne (oba streszczały się do

@@ -267,6 +267,25 @@ export function unitCoversRequirement(unit, colors) {
 }
 
 /**
+ * Zbiór kolorów jako lista wymagań JEDNOKOLOROWYCH — kształt, którego
+ * oczekuje `unitCoversAnyRequirement` w filtrach „czy to źródło w ogóle
+ * pasuje do któregokolwiek pipa" (auto-tap w resources.js).
+ *
+ * Po co osobna funkcja (audyt PR #146, zn. F1, klasa L41/L48): mapowanie
+ * `[...zbiór].map((c) => [c])` było wpisane ręcznie przy każdym wywołaniu,
+ * a obok żyły cztery ręczne kopie starego predykatu
+ * `srcColors.some((c) => reqColors.has(c))`, który dla źródła BEZBARWNEGO
+ * (pusty zbiór kolorów) nie zachodzi nigdy — to dokładnie błąd F6 z PR #145
+ * (`{C}` nie dało się zapłacić z „{T}: Add {C}"). Jedna funkcja = jedno
+ * miejsce, w którym wiadomo, że bezbarwne źródło łapie pip {C}
+ * (CR 107.4c), a hybryda {R/G} pozostaje opłacalna jednym ze swoich
+ * kolorów (CR 107.4e).
+ */
+export function singleColorRequirements(colors) {
+  return [...colors].map((c) => [c]);
+}
+
+/**
  * Czy jednostka `unit` pokrywa CHOCIAŻ JEDNO z wymagań `requirements`.
  * Wołający używają tego jako filtra „czy warto w ogóle tapnąć to źródło pod
  * te pipy" (auto-tap w resources.js) — dla wymagań czysto kolorowych jest to

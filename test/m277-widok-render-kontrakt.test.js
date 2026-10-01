@@ -122,6 +122,16 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // defendera do końca tury” tylko po aktywacji — poza próbką. Konstrukcyjnie:
     // test/m172-uwagi-wlasciciela (B2b) i test/audyt-d4b-…-warstwa-4-i-nowy-obiekt.
     'attacksAsThoughNoDefenderUntilEOT',
+    // Zgłoszenie właściciela (Bonds of Faith, 2026-09-29d): widok dokłada
+    // `cantAttackStatic` TYLKO gdy `staticAttackPrevented` jest prawdziwe
+    // (defender/detain/aura „can't attack”, CR 508.1c) — żadna z trzech kart
+    // próbki nie ma takiej restrykcji, więc pole nie wchodzi w `wysylane`
+    // (dokładnie jak `cantBlock` linijkę niżej, dodane w Batch 48). Że widok
+    // REALNIE je niesie i że kafel nazywa skutek („nie może atakować ani
+    // blokować”), mierzą konstrukcyjnie test/m244-equip-heurystyka (M244/F3:
+    // `PlayerView niesie cantAttackStatic` — Lurking Green Dragon) i
+    // test/zgloszenie-bonds-of-faith-badge-ataku (1–4, odczyt z `playerView`).
+    'cantAttackStatic',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): widok dokłada

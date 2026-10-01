@@ -267,6 +267,42 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterHostWorthWeight',      // waga ciała gospodarza (moc×2 + wytrzymałość), wzorzec aury
   'counterCombatBonus',          // premia, gdy licznik poprawia wynik WALKI, która trwa
   'counterDoomedHostPenalty',    // kara, gdy gospodarz ginie w tej turze mimo licznika
+  // PMSSB-23 (F2/F3) — dalszy ciąg rodziny liczników. Pomiar PRZED: wrogi
+  // licznik nie widział, w co trafia (3× stun na 6/6 trample = 3× stun na 1/1,
+  // oba 62 pkt; `-1/-1` na 3/3 = na 6/6, oba 16), więc cel wybierała kolejność
+  // enumeracji — a rider „połóż licznik na KAŻDYM moim stworze z licznikiem"
+  // (Lifecrafter's Gift, Vaan Street Thief) nie miał gałęzi wcale: 1, 2 i 4
+  // odbiorców dawało tę samą ocenę (74/74/74). Miara zagrożenia jest TA SAMA co
+  // w PMSSB-21 (`opponentTargetThreatWeight`: 0,5 × (moc·2 + wytrzymałość)
+  // z limitem): wybór między ocalałymi celami rozstrzyga wartość celu, a limit
+  // trzyma dopłatę poniżej progu dobicia (30 + 2·moc), żeby „zabij 1/1" nie
+  // przegrało z „osłab 8/8". Dopłata za odbiorcę ridera to sam przyrost
+  // licznika (równy `counterAmountWeight`) — termin ciała i okna walki należą
+  // do efektu celowanego, który `counterHostValue` już wycenił z kontekstem.
+  'counterThreatWeight',         // dopłata za zagrożenie celu wrogiego licznika (worth × waga)
+  'counterThreatCap',            // limit dopłaty — dobijanie zostaje wyżej
+  'counterSpreadPerRecipient',   // rider „na każdy mój stwór z licznikiem" — za odbiorcę
+  // PMSSB-23 (F4/F5) — OKNA, w których trwały licznik kupuje coś konkretnego.
+  // Pomiar PRZED: wszystkie trzy były niewidoczne — licznik na 2/2 z Flying
+  // = na 2/2 z Menace = na wanilii 2/2 (68/68/68), a ten sam czar w Głównej 1
+  // (przed walką, którą licznik rozstrzyga) był warty tyle, co w Głównej 2
+  // (70/70), choć ten drugi musi jeszcze przetrwać turę przeciwnika, zanim
+  // cokolwiek zrobi (`counterCombatBonus` zapala się tylko dla walki, która
+  // TRWA — `pumpImprovesOutcome` zwraca null poza walką). Wartości:
+  //  - `counterEvasionBonus` 5 — około jednego punktu ciała (waga ciała to
+  //    2 × worth, więc krok 2/2→3/3 = 6): ewazja jest warta tyle, co odrobina
+  //    ciała, nie cały stwór; dopłata zapala się tylko, gdy przeciwnik MA
+  //    blokujących, ale nie dosięgnie gospodarza (inaczej nie rozstrzyga
+  //    wyboru celu — patrz `hostEvadesBlockers`);
+  //  - `counterPrecombatBonus` 4 — tyle, ile baza okna M179/C dla grantu
+  //    („zdąży pomóc w tej walce”), bez mnożnika za liczbę keywordów;
+  //  - `counterLethalClockBonus` 50 — istniejąca konwencja „moc ≥ życie
+  //    przeciwnika” (jak w gałęzi obrażeń od mocy), daleko poniżej 1000 za
+  //    dowiedzioną wygraną: licznik sam nie wygrywa, atak trzeba jeszcze
+  //    zadeklarować.
+  'counterEvasionBonus',         // gospodarz, którego ataku przeciwnik nie zatrzyma
+  'counterLateWindowPenalty',    // kara, gdy walka tej tury już za nami (Główna 2 / faza końcowa)
+  'counterLethalClockBonus',     // licznik domyka grę: moc ≥ życie przeciwnika, atak nie do zatrzymania
   // M429 („P2 Memory's Journey"): rodzina „wtasowanie kart z grobu do
   // biblioteki". Dotąd efekt był wart płasko 4 + 2·karty (NIEZALEŻNIE od stanu
   // biblioteki — pomiar: 58 pkt przy 30 i przy 12 kartach, a wariant z ZERO
@@ -302,6 +338,73 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'foodKeepValue',      // PMSSB-22: wartość ZACHOWANEGO Food (3 życia) — ×0 = dawne „zawsze poświęcaj”
   'foodDecisiveBonus',  // PMSSB-22: dopłata, gdy +5/+5 zmienia wynik walki, a +3/+3 nie
   'opponentTargetThreatCap',    // limit dopłaty, by nie zbliżyć się do progu dobicia (100+2·moc)
+  // PMSSB-24 (F1) — KOLEJNOŚĆ kart, które zostają na wierzchu po scry/surveil.
+  // CR 701.22a („the rest on top of your library in any order") i 701.25 dają
+  // graczowi wybór kolejności, a silnik oferuje permutacje
+  // (`game-state.js:7149-7160`). Pomiar PRZED (sonda pmssb24-scry-przed.mjs):
+  // `resolve_scry` liczył tylko `bottomIds`, więc 6 permutacji keep-all
+  // remisowało po 20 i wybór padał na pierwszą z listy; przy surveil było
+  // gorzej — `keepsOrder ? 1 : 0` premiowało kolejność ORYGINALNĄ, więc
+  // świadome ułożenie przegrywało 21:20. Karta pierwsza na wierzchu jest
+  // dobierana najbliższym drawem, kolejne później (możemy ich nie dożyć),
+  // więc ten sam zbiór kart jest wart więcej, gdy lepsza karta leży wyżej.
+  'scryOrderWeight',             // waga różnicy względem układu pierwotnego (×0 = dawny remis)
+  'scryOrderDiscount',           // ile warte jest każde przesunięcie karty w głąb wierzchu
+  // PMSSB-24 (F3/F4) — kontekst, którego wycena karty nie znała.
+  // F4: `cardKeepValue` nie czytała ręki, więc ręka z czterema kartami dawała
+  // tę samą wycenę co ręka pusta (pomiar P5: 12/12 = 12/12). Druga i kolejna
+  // kopia TEJ SAMEJ karty jest warta mniej (dwóch naraz nie zagramy); lądy są
+  // poza regułą, bo ich nasycenie obsługuje istniejący próg 3 w ręce / 6 na
+  // stole. ×0 = dawna wycena bez względu na duplikaty.
+  // F3: surveil kładzie kartę do GROBU (CR 701.25), a grób bywa zasobem —
+  // przy Delve (CR 702.66) albo reanimacji zmielenie karty jest paliwem, nie
+  // stratą (pomiar P4: 25 pkt z delve w ręce = 25 bez). Limit pilnuje, żeby
+  // jedna karta z delve nie usprawiedliwiała mielenia całej talii.
+  'cardDuplicateDiscount',       // zniżka za każdą kolejną kopię tej samej karty w ręce
+  'cardDuplicateMaxCopies',      // ile kopii najwyżej zliczamy (limit zniżki)
+  'surveilGraveSynergyPerSource',// dopłata za zmieloną kartę na każde źródło czytające z grobu
+  'surveilGraveSynergyCap',      // limit dopłaty na kartę
+  // PMSSB-25 (mikro-pętla, F1) — druga miara jakości karty przy koszcie
+  // „odrzuć". Reguła ciała (`handCardKeepValue`, M408/D) nie zna zasięgu many,
+  // nasycenia lądów ani duplikatów, bo jest równoległą kopią wspólnej
+  // `cardKeepValue`. Pomiar PRZED: przy 2 lasach bot trzymał Woolly Loxodona
+  // {5}{G}{G} i odrzucał grywalnego stwora 2/1 (−1 vs 14 pkt), choć wspólna
+  // miara mówi o bombie −3 (koszt 7 > zasięg+2). Karty, których wspólna miara
+  // NIE chce, oddajemy chętnie; `discardUnwantedBonus` to płaska dopłata za
+  // samo pozbycie się karty niechcianej (×0 = sama wartość wspólnej miary).
+  'discardUnwantedBonus',        // dopłata za odrzucenie karty, której wspólna miara nie chce
+  // PMSSB-26 — drabina wartości landu (specyfikacja właściciela 2026-09-30).
+  // Land KOLOROWY: licznik = ile lądów danego pipa na stole + w ręce.
+  // Land BEZBARWNY/utylitarny: licznik = suma lądów na stole + w ręce.
+  // Cztery stopnie wartości wspólne dla obu drabin; progi osobne, bo skala
+  // „ile źródeł koloru potrzebuję" i „ile lądów do działania" jest inna.
+  'landKeepCritical',            // 0 źródeł / 0-2 lądów: bardzo duża (nigdy nie odrzucaj)
+  'landKeepHigh',                // 1 źródło / 3-4 lądy: spora (zwykle nie odrzucaj)
+  'landKeepNeutral',             // 2 źródła / 5-6 lądów: neutralna (raczej nie odrzucaj)
+  'landKeepSaturated',           // 3+ źródeł / 7+ lądów: niska (raczej odrzucaj)
+  'landColoredCriticalMax',      // próg: licznik pipa <= tej wartości → critical
+  'landColoredHighMax',          // próg: licznik pipa <= tej wartości → high
+  'landColoredNeutralMax',       // próg: licznik pipa <= tej wartości → neutral
+  'landTotalCriticalMax',        // próg: suma lądów <= tej wartości → critical
+  'landTotalHighMax',            // próg: suma lądów <= tej wartości → high
+  'landTotalNeutralMax',         // próg: suma lądów <= tej wartości → neutral
+  // PMSSB-28 — wybór koloru rozdzielony po `purpose` z pending (silnik niesie
+  // cel: 'mana' dla lądu z chooseColor, 'protection' dla aury). Motywy są
+  // przeciwstawne, więc każdy cel ma własną wagę; nieznany cel zostaje przy
+  // dawnej sumie `5 + needScore*6 + enemyInColor`.
+  'colorProtectionPerCreature',  // waga wrogiego stwora w kolorze ochrony
+  'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
+  // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
+  // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
+  // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
+  // było zawsze lepsze od rezygnacji (zgłoszenie właściciela B, Temat 6).
+  'searchFoundBase',             // baza za znalezienie karty (wspólna miara dochodzi)
+  // PMSSB-30 — Satyr Wayfinder: ta sama wspólna miara (`cardKeepValue`) co
+  // w `resolve_search_choice`; wcześniej `30 + (land ? 30 : 0) + 2P + T`, czyli
+  // czwarta kopia tej samej reguły (L41). Baza musi zostać wyraźnie nad −5
+  // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
+  'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
+  'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -508,6 +611,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   counterHostWorthWeight: 2,
   counterCombatBonus: 12,
   counterDoomedHostPenalty: 20,
+  // PMSSB-23 (F2/F3) — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  counterThreatWeight: 0.5,
+  counterThreatCap: 15,
+  counterSpreadPerRecipient: 4,
+  // PMSSB-23 (F4/F5) — patrz uzasadnienie przy HEURISTIC_PARAM_KEYS.
+  counterEvasionBonus: 5,
+  counterLateWindowPenalty: 4,
+  counterLethalClockBonus: 50,
   // M429 „wtasowanie kart z grobu do biblioteki" (P2 Memory's Journey).
   // Próg presji = `librarySafeMargin` (20, istniejąca rodzina biblioteczna).
   // Dopłata ratunkowa 8/kartę: 3 karty przy cienkiej bibliotece = 34 pkt efektu
@@ -534,6 +645,59 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   foodKeepValue: 12,
   foodDecisiveBonus: 25,
   opponentTargetThreatCap: 15,
+  // PMSSB-24/F1 (Fala A) — kolejność wierzchu. Waga 1 = różnica liczona
+  // w tych samych jednostkach co `cardKeepValue` (skala „czy chcemy tę kartę
+  // dobrać"), więc nie wprowadza nowej skali i nie przesuwa decyzji o
+  // podzbiorze odłożonym (kotwica anty-over-fix: przy `scryOrderWeight: 0`
+  // wartości wracają do stanu sprzed fali, w tym do preferencji kolejności
+  // oryginalnej przy surveil). Dyskonto 0,6 = karta o jedną pozycję głębiej
+  // jest warta 60% — bardziej strome niż „pół na pół", bo najbliższe dobranie
+  // jest pewne, a drugie wymaga przetrwania tury przeciwnika.
+  scryOrderWeight: 1,
+  scryOrderDiscount: 0.6,
+  // PMSSB-24/F4: 3 pkt za kopię, max 2 kopie (−6) — mniej niż wartość taniego
+  // stwora z ciałem (9 przy 3 lądach), więc duplikat nie zrównuje się ze
+  // śmieciem, tylko schodzi o „pół karty".
+  cardDuplicateDiscount: 3,
+  cardDuplicateMaxCopies: 2,
+  // PMSSB-24/F3: 2 pkt za źródło na kartę, limit 4 — dokładnie tyle, ile
+  // `MILL_CAUTION` (2), więc JEDNO źródło w ręce znosi ostrożność grobu dla
+  // karty na granicy opłacalności, a nie dla każdej.
+  surveilGraveSynergyPerSource: 2,
+  surveilGraveSynergyCap: 4,
+  // PMSSB-25/F1: 5 pkt — tyle, ile warta jest różnica między dwiema grywalnymi
+  // kartami w regule ciała, więc „niechciana" wygrywa z każdą kartą grywalną
+  // o ciele do ~10 (2×moc+wytrz), ale nie z regułą koloru właściciela (M408),
+  // która jest liczona osobną gałęzią i zostaje nietknięta.
+  discardUnwantedBonus: 5,
+  // PMSSB-26: stopnie dobrane do istniejącej skali `cardKeepValue` — karta
+  // niegruntowa dostaje 4..12, więc „neutralna" (8) trzyma land nad zwykłym
+  // stworem, a „niska" (-6) oddaje go chętniej niż cokolwiek grywalnego.
+  // „Bardzo duża" (30) sięga sufitu klamry `-min(30, ...)` w regule ciała,
+  // więc land jedynego źródła koloru nie przegra z żadną zwykłą kartą.
+  landKeepCritical: 30,
+  landKeepHigh: 18,
+  landKeepNeutral: 8,
+  landKeepSaturated: -6,
+  landColoredCriticalMax: 0,
+  landColoredHighMax: 1,
+  landColoredNeutralMax: 2,
+  landTotalCriticalMax: 2,
+  landTotalHighMax: 4,
+  landTotalNeutralMax: 6,
+  // PMSSB-28: 6 — tyle, ile dawna waga potrzeby many, więc skala się nie
+  // zmienia; wystarcza, żeby JEDEN wróg w kolorze (5+6=11) wygrał z kolorem
+  // pustym (5) i żeby trzy (5+18=23) nie zostawiły wątpliwości.
+  colorProtectionPerCreature: 6,
+  colorManaNeedPerCard: 6,
+  // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
+  // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
+  // daleko od progu rezygnacji.
+  searchFoundBase: 25,
+  // PMSSB-30: 30 — dawna baza; przy wspólnej mierze (−6..30) rozstrzał to
+  // 24..60, wciąż daleko nad −5 za rezygnację.
+  satyrLookBase: 30,
+  blockGoodTradePerPoint: 2,
 });
 
 /**

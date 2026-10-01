@@ -2996,6 +2996,25 @@ export function chosenColorBadge(chosenColor) {
   return `Wybrany kolor: ${PROTECTION_COLOR_NAMES[chosenColor] ?? chosenColor}`;
 }
 
+/**
+ * Badge restrykcji walki (zgłoszenie właściciela 2026-09-29, Bonds of Faith).
+ *
+ * Problem: karta „Enchanted creature gets +2/+2 as long as it's a Human.
+ * Otherwise, it can't attack **or block**" nakłada DWA zakazy naraz, a kafel
+ * pokazywał wyłącznie „nie może blokować" — widok niósł `cantAttackStatic`
+ * (M243/F, czyta go bot), ale nikt nie zamieniał go na badge. Gracz widział
+ * pół prawdy o własnym stworze.
+ *
+ * Zasada: jeden badge na stan, a gdy zachodzą OBA zakazy — jedno wspólne
+ * zdanie (jak w druku karty), zamiast dwóch znaczków o tej samej przyczynie.
+ */
+export function combatRestrictionBadges({ cantAttack = false, cantBlock = false } = {}) {
+  if (cantAttack && cantBlock) return ['nie może atakować ani blokować'];
+  if (cantAttack) return ['nie może atakować'];
+  if (cantBlock) return ['nie może blokować'];
+  return [];
+}
+
 /** Opis JAKOŚCI ochrony (CR 702.16b–f) po deskryptorze — bez nazw kart. */
 export function protectionQualityLabel(quality) {
   if (!quality) return 'wybranym źródłem';
@@ -4399,6 +4418,10 @@ export function cardInfo(session, object, combat = null) {
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
+    // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
+    // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
+    // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.
+    cantAttackNow: Boolean(object.cantAttackStatic),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
@@ -4792,7 +4815,11 @@ export function buildStateOverlay(visual, info) {
       flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
     }
     if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
-    if (info.cantBlockNow) flags.push(['kw', 'nie może blokować']);
+    // Zakaz ataku i/lub bloku — wspólna etykieta (Bonds of Faith na
+    // nie-Humanie nakłada oba naraz; druk karty mówi „can't attack or block").
+    for (const badge of combatRestrictionBadges({
+      cantAttack: info.cantAttackNow, cantBlock: info.cantBlockNow,
+    })) flags.push(['kw', badge]);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako

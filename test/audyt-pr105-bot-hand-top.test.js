@@ -45,9 +45,23 @@ for (const reverse of [false, true]) {
 }
 
 test('B: nie wyrzucaj automatycznie lądu — przy niedoborze many zachowaj go', () => {
+  // PMSSB-27 (doprecyzowanie właściciela): licznik źródeł NIE obejmuje karty
+  // rozważanej, więc 2 lasy na stole + trzeci w ręce = 2 źródła {G} poza nim
+  // ⇒ „neutralna" (8), a nie przesycenie. Pin wraca do pierwotnej postaci:
+  // 9-mana czar poza zasięgiem idzie, trzeci las zostaje.
   const state = setup(2, true);
   const chosen = createHeuristicBot({ seed: 9 }).chooseCommand(playerView(state, 'p1'));
   assert.equal(chosen.cardId, 'spell', '9-mana czar jest poza zasięgiem, trzeci ląd potrzebny');
   assert.ok(execute(state, chosen).ok);
   assert.ok(state.zones.hand.includes('spare'));
+});
+
+test('B2 (PMSSB-27): 3 źródła tego samego pipa POZA rozważanym to przesycenie', () => {
+  // Właściciel: „raczej odrzucaj" = 3 na stole ALBO 2 na stole i 1 dodatkowy
+  // w ręku — czyli 3 źródła POZA rozważanym landem. Tu 3 lasy na stole +
+  // czwarty w ręce ⇒ landKeepSaturated (−6) ⇒ land idzie przed 9-mana czarem.
+  const state = setup(3, true);
+  const chosen = createHeuristicBot({ seed: 9 }).chooseCommand(playerView(state, 'p1'));
+  assert.equal(chosen.cardId, 'spare', 'czwarty las przy trzech źródłach {G} jest zbędny');
+  assert.ok(execute(state, chosen).ok);
 });

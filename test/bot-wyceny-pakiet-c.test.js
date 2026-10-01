@@ -51,6 +51,15 @@ function botChoice(state) {
 
 test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pierwsza)', () => {
   const state = newState();
+  // PMSSB-26: przy 0 lądów land wygrywa SŁUSZNIE (nie ma z czego rzucić 5/5),
+  // więc mechanizm „bierze najcenniejszą, nie pierwszą" kotwiczymy przy
+  // manabazie, która już stoi — 3 lasy na stole ⇒ {G} nasycone (−6), a 5/5
+  // za {2} warte 4 + min(15,8) − 0 = 12.
+  for (let i = 0; i < 3; i++) {
+    addObject(state, { id: `l${i}`, instanceId: `i-l${i}`, cardId: 'basic-forest',
+      controllerId: 'p1', zone: 'battlefield', kind: 'land', manaCost: 0,
+      abilities: [], keywords: [], subtypes: ['Forest'], types: ['Land'], colors: ['G'] });
+  }
   // Rzeczywisty ląd (putCreature celowo buduje wyłącznie stwory).
   addObject(state, { id: 'land', instanceId: 'i-land', cardId: 'basic-forest',
     controllerId: 'p1', zone: 'library', kind: 'land', manaCost: 0,
@@ -62,6 +71,21 @@ test('E2/C1: look_top — do ręki idzie najcenniejsza karta z wierzchu (nie pie
   const chosen = botChoice(state);
   assert.equal(chosen.type, 'resolve_look_top_choice');
   assert.equal(chosen.cardId, 'skarb', `bierzemy 5/5 za 2, wybrał: ${JSON.stringify(chosen)}`);
+});
+
+test('E2/C2 (PMSSB-26): przy 0 lądów look_top bierze land, nie bombę bez many', () => {
+  // Ta sama decyzja bez manabazy: 0 źródeł {G} ⇒ „bardzo duża wartość, nigdy
+  // nie odrzucaj" (30) wobec 12 za 5/5, którego nie ma z czego rzucić.
+  // PRZED: bot brał 5/5, bo land miał stałe 8 niezależnie od manabazy.
+  const state = newState();
+  addObject(state, { id: 'land', instanceId: 'i-land', cardId: 'basic-forest',
+    controllerId: 'p1', zone: 'library', kind: 'land', manaCost: 0,
+    types: ['Land'], subtypes: ['Forest'], colors: ['G'], abilities: [], keywords: [] });
+  putCreature(state, 'skarb', 'p1', 5, 5, 'library', { manaCost: 2 });
+  state.pendingLookTopN = { playerId: 'p1', objectIds: ['land', 'skarb'], restTo: 'graveyard', sourceCardId: null, restorePriorityTo: null };
+  state.turn.priorityPlayerId = 'p1';
+  const chosen = botChoice(state);
+  assert.equal(chosen.cardId, 'land', `bez many bierzemy land, wybrał: ${JSON.stringify(chosen)}`);
 });
 
 test('E2/C2: hand_top — na wierzch własnej biblioteki idzie mniej cenna karta (zachowaj lepszą w ręce)', () => {
