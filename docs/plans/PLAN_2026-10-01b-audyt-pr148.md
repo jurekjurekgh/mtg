@@ -107,6 +107,30 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   O4/2 (+11 pinów PMSSB-23), M3 bez `stun` → O4/3 (+8), M4 powrót listy do
   bota → O4/5.
 
+- [x] **Etap 11 — uwagi właściciela z gry (2026-10-01, A/B/C)**:
+  - **A (AI-R11)**: odpowiedzi trybów radiowych krótsze o 1/3 — limit
+    `TALKSHOW_COMMENT_LIMIT`/`GOOD_EVIL_COMMENT_LIMIT` 900 → **600** znaków
+    (pin + asercja „redukcja min. 1/3 względem 900” w `test/ai-modes.test.js`).
+  - **B (Bladed Sentinel, vigilance)**: bot kupował `{W}` w kroku deklaracji,
+    gdy stwór tylko MÓGŁ atakować (`canAttackNow`), po czym ataku nie składał —
+    jego własna ocena ataku była ujemna, więc mana przepadała. Teraz zakup
+    wymaga **zamiaru ataku** z TEJ SAMEJ polityki, którą bot stosuje
+    w deklaracji (`attackIntendsCreature`, L41/L48 — instancja reguły L172:
+    premia liczona z realnie podejmowanej akcji, nie z samej możliwości).
+    Pin `M221/E` w `test/m221d-vigilance-window.test.js` (mutacja: powrót do
+    `canAttackNow` czerwieni dokładnie ten test).
+  - **C (Prishe's Wanderings, podgląd kandydatów szukania)**: klik w nazwę
+    kandydata nie otwierał pełnego ekranu — `hiddenObjectCardId` odrzucał CAŁĄ
+    bibliotekę (ochrona FoW wierzchu), a kandydaci szukania są decydentowi
+    ujawnieni (`view.pendingSearchChoice.cards`, z tego samego pola czyta nazwy
+    `objectName`). Teraz kandydat BIEŻĄCEJ decyzji dostaje cardId do podglądu;
+    resztę biblioteki nadal zakrywa FoW. Piny `D/1` (RED→GREEN) i `D/2`
+    (niezmiennik FoW) w `test/uwagi-2026-09-21-b-klik-w-nazwe-otwiera-obraz.test.js`.
+  - Dowód z żywego stołu: Żywy Tester runda 6 (s701 `defensive`
+    dominaria-wu/forgotten-realms 18/14, s702 `hoarder` worek-basni/mirrodin-brg
+    21/16, s703 `impatient` ravnica/theros 17/15) — 0 zgłoszeń detektorów,
+    0 niewycenionych ruchów, brak `[STOP]` (build 4681,7 kB po B/C).
+
 ## Ryzyka
 
 - Budżet lektury: reguła 5 w **L164** (podpunkt CR, Etap 9) opłacona
@@ -127,6 +151,8 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 11 (uwagi A/B/C):** `npm test` **7249/7249** (7246 + M221/E + D/1 + D/2),
+  `npm run build` **70 / 4681,7 kB**.
 - **Etap 10 (O4):** `npm test` **7246/7246** (7241 + 5), build 70 / **4680,8 kB**
   (helper w `src/`), klasa liczników scalona w silniku (L41). Żywy Tester
   runda 5 na tym drzewie (s601 `defensive` mirrodin-brg/ixalan 22 akcje/17

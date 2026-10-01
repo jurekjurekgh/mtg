@@ -14664,6 +14664,19 @@ wiedzmin-wur (27/24), s603 `random` worek-mroczny vs dominaria-wu (18/15) — 0 
 detektorów, 0 niewycenionych ruchów, brak `[STOP]`; transkrypty
 `/home/user/scratch/tester-{defensive-s601,greedy-s602,random-s603}.txt`.
 
+**Uwagi właściciela z gry (2026-10-01, A/B/C — Etap 11):** limit odpowiedzi trybów
+radiowych obniżony o 1/3 (900 → 600 znaków; `TALKSHOW_COMMENT_LIMIT` i
+`GOOD_EVIL_COMMENT_LIMIT`, pin + asercja redukcji). Bladed Sentinel: bot kupował `{W}` za
+vigilance, gdy stwór tylko MÓGŁ atakować (`canAttackNow`), po czym ataku nie składał —
+teraz zakup wymaga zamiaru ataku z tej samej polityki, którą bot stosuje w deklaracji
+(`attackIntendsCreature`; instancja L172), pin M221/E. Prishe's Wanderings: klik w nazwę
+kandydata szukania nie otwierał pełnego ekranu, bo `hiddenObjectCardId` odrzucał całą
+bibliotekę (FoW wierzchu), a kandydaci szukania są decydentowi ujawnieni w
+`view.pendingSearchChoice.cards` (z tego samego pola `objectName` czyta ich nazwy) —
+kandydat bieżącej decyzji dostaje cardId do podglądu, reszta biblioteki zostaje zakryta
+(piny D/1 i D/2). Żywy Tester runda 6 (s701–s703) — 0 zgłoszeń detektorów, 0
+niewycenionych ruchów.
+
 **Bramka końcowa (drzewo `2a41ec3`):** `npm test` 7246/7246 (7219 baza + 3 piny U4 + 4 piny O-a
 + 9 pinów U5/O3 + 6 testów U2 + 5 testów O4), `npm run test:all` 7512/7512
 (na drzewie Etapu 9), `npm run build` 70 / 4680,8 kB (7222/7493/4673,6 kB było
