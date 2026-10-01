@@ -25,7 +25,7 @@ równie dobre źródła" — to dwa źródła o RÓŻNYM koszcie i tym samym efe
 Rodzina pętli: **zdolności aktywowane (`activate_ability`), wymiar KOSZTU
 MANY + TREŚĆ SPRZĘTU.** Nośnik dowodu: `warhammer-wg|innistrad-brg` seed 4012.
 
-## 2. Pomiar PRZED (sonda `scratch/pmssb34-koszt-przed.mjs`)
+## 2. Pomiar PRZED (sonda `/home/user/scratch/pmssb34-koszt-przed.mjs`)
 
 Scenariusze na realnych kartach katalogu (host Hill Giant 3/3, 5 lądów):
 
@@ -89,3 +89,12 @@ badania co pierwsze założenie"), (2) to kontrola obowiązkowa procedury (b).
   (dryf = świadomy → regeneracja z uzasadnieniem), tie-audit PO, mirror-eval,
   Żywy Tester PO.
 - Sonda i dumpy poza repo (`/home/user/scratch`, `/tmp`) — repo zostaje czyste.
+
+## 7. Zamknięcie (PO) — 2026-10-01e
+
+Wszystkie fale wdrożone; raport w `docs/PMSSB.md` §PMSSB-34, handoff
+`docs/setup/HANDOFF_2026-10-01e.md`. Bramki PO: `npm test` 7286/7286 · build
+70 mod / 4700,8 kB · `npm run test:all` 7557/7557 · golden-master po świadomej
+regeneracji (dowód: oba pokrętła = 0 → stary fixture bit w bit) · tie-audit PO:
+`activate_ability` 0 GROZY · mirror 45:51 (96) · Żywy Tester 3/3 czyste.
+17 pinów audytów przesuniętych dokładnie o koszt many (lista w raporcie).

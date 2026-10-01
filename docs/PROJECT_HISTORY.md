@@ -14796,3 +14796,65 @@ tych równości.
 EXIT 0**, build **70 modułów / 4697,0 kB** (0 zmian kodu). Kolejka następnej sesji:
 pozostałe remisy CELU (5 — brak dowodu złej decyzji), `manaAvailableNow` poza rodziną many
 (`suspend_card`), koszt okazji drugiego trybu źródła, bankowanie many. Triage ZAMKNIĘTY.
+
+## 2026-10-01e — PMSSB-34: koszt many aktywacji + treść sprzętu (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — tryb ADR 0020 (inkrementalne zielone commity, pętla
+jakości ADR 0021). Wejście `8ee8eec` (koniec sesji 01d). Po drodze sandbox wycofał drzewo
+lokalne w trakcie sesji — odzyskane przez `git reset --hard origin/arena/01a0f68c-mtg`
+(nietrackowany plan do `/tmp/pmssb33-backup/`, per-sesyjny). Plan
+`docs/plans/PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`, raport `docs/PMSSB.md`
+§PMSSB-34, rejestr +wiersz „koszt many aktywacji + treść sprzętu", handoff
+`HANDOFF_2026-10-01e.md`.
+
+**Obiekt pętli:** rodzina `activate_ability`, wymiar **KOSZTU MANY** + **treść sprzętu**.
+Legitymacja to tabela samej PMSSB-33: wiersz `activate_ability` rozstrzygnięto hasłem
+„dwa równie dobre źródła" bez obowiązkowej kontroli procedury (b) — a projekcja remisów
+pokazywała koszty `mana` **3, 4 i 1** przy tym samym wyniku 16 (seed 4012 t16) i 3 vs 4
+przy 22 (t20). Inwentarz: 148 kart z aktywowanymi zdolnościami (111 z kosztem many > 0),
+12 sprzętów.
+
+**Pierwiastki (kod):** (1) L41 — gałąź PIERWSZEGO założenia sprzętu liczyła
+`10 + 2×moc nosiciela` i nie czytała własnej pompy sprzętu (gałąź przeniesienia liczyła ją
+przez `equipValuation`), więc `+1/+0` za `{1}` = `+2/+2` trample za `{4}`; (2) koszt many
+aktywacji nie był wyceniany w żadnej gałęzi poza `add_mana` (tam w `net`).
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb34-koszt-przed.mjs`; PRZED = oba nowe
+pokrętła 0, bo całą zmianę wnosi ten wymiar): trzy sprzęty na 3/3 — **18/18/18 (remis,
+wybór po kolejności ofert)** → **20 Plate > 19 Stake > 17 Lightblade** (Plate wybrany);
+para o identycznym pumpie `{3}` vs `{1}` — 18 = 18 → **19 > 17**; kontrola płatności
+(2 lądy → tylko Stake) i kontrola `add_mana` (Apprentice Wizard −4) bez zmian.
+
+**Fale:** A — `equipValuation` zwraca też `printedBody` (2×P+T), pierwsze założenie dodaje
+`equipPumpBonusPerPoint × printedBody`; B — `score -= abilityManaCostPenalty ×
+(cost.mana + cost.generic)` z wyjątkiem `add_mana`. Kara stoi za wczesnymi guardami
+(inert −40, idempotencja, „wasteful step"), więc guardy zachowują płaskie kary.
+
+**Dowody:** piny `test/audyt-pmssb34-koszt-aktywacji.test.js` **9/9** (A1 treść, A2 kontrola
+(b), A3 kotwica PRZED 18/18/18, B1/B2 mutacje pokręteł, C bramka płatności, D `add_mana`
+bez podwójnej kary, E skala poza sprzętem Δ = `{1}`, F koszt 0/sam `{T}`) + mutacje na
+źródle (`abilityManaCostPenalty → 0` czerwieni A1/A2/C/E; `equipPumpBonusPerPoint → 0`
+czerwieni A1/A2/C). **17 pinów starszych audytów (12 plików) przesuniętych DOKŁADNIE
+o koszt many** — każdy zweryfikowany po deskryptorze kosztu karty: Relic Dragon `{8}`
+63 → 55, Vanguard `{4}{W}` 20 → 15, Mutagen `{1}` 14 → 13, Kheru Dreadmaw `{2}` −16 → −18
+/ 3 → 1, Elk `{1}` 12 → 11, Trigon `{2}` 34 → 32, Leonin `{3}` próg 6 → 5 (dalej wybiera
+dobranie), Dockhand `{4}` 6.50 → 2.50, Scroll of Avacyn `{1}` 7 → 6 (warianty do 13),
+Mournful Zombie `{1}` 3 → 2, Dementia Bat `{5}` −1 → −6, Skullcairn `{4}` −54 → −58,
+Gloomfang cycle `{2}` 4 → 2 („loot ≡ cycle" rozstrzygnięte kosztem), T11/1 7 → 6,
+T11/6 8 → 7, F2b −16 → −18; guard „pusta ręka" −40 i guardy idempotencji zostały płaskie.
+
+**Ewaluacja:** golden-master **po świadomej regeneracji** (hash `8fa96e93…` → `ab8d57d2…`;
+scoreSum −4/−6/0/−2/−2/−9, jedna decyzja mniej 241 → 240) — z dowodem czystości wymiaru:
+oba pokrętła = 0 odtwarzają STARY fixture bit w bit. Tie-audit PO (`--gry=2`, 24 partie /
+12 448 decyzji): 623 remisy (27,2%) = 438 par „brak akcji" + 185 realnych (10,0%);
+**GROZY 15 — `activate_ability` 0** (było 2: dokładnie kosztowe okna 3/4/1 i 3/4, oba
+zniknęły w sondzie). Mirror-eval kandydat vs oba pokrętła 0: **45:51 na 96 partii (0,469)** —
+szum. Żywy Tester PO **3/3 czyste** (dominaria-brg|ravnica s42; worek-legend|theros s5
+`explorer`; warhammer-ubr|tarkir-bg s11 `impatient`): 0 `[STOP]`, 0 `LIMIT`, 0 zgłoszeń
+detektorów, 0 decyzji niewycenionych.
+
+**Bramka końcowa:** `npm test` **7286/7286 EXIT 0**, `npm run test:all` **7557/7557 EXIT 0**,
+build **70 modułów / 4700,8 kB**. Kolejka następnej sesji: aktywacje o wyniku netto 0
+remisujące z passem (kandydat na mikro-pętlę z tie-breakerem „przy równej wartości zachowaj
+manę" — potrzebny dowód złej decyzji), `manaAvailableNow` poza rodziną many (`suspend_card`),
+koszt drugiego trybu źródła, warianty `cast_spell`. Rodzina ZAMKNIĘTA.

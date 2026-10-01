@@ -71,6 +71,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
 | produkcja many (`add_mana`: `{T}` / `{mana}+{T}` / `tapCreature` / `sacrificeSelf` / raz-na-turę) | 25 | DONE (2026-10-01c) | §PMSSB-32 niżej; plan `PLAN_2026-10-01c-pmssb32-mana.md`; `test/audyt-pmssb32-mana.test.js` (19 pinów); **pierwsza rodzina z jedną wspólną miarą zamiast ośmiu łatek** — model JEDNOSTEK many (`manaUnitsOfView`/`unitsAfterManaAbility`/`canCastWithUnits`; L41/L48: LICZBY → KOLORY+pipy+`spendOnly`+pula ograniczona), bramka „oferta = płatność" (`castOfferedNow`), wycena celu czaru z ręki (`spellNeedsTarget` + best-of-targets), cena tapnięcia CIAŁA (`tapBodyCost`: main1 = moc, cudza tura = wytrzymałość, main2/po blokach/czujność CR 702.20b/obrońca CR 702.3b = 0); 2 pokrętła `manaTapBody*`; klasa L1 naprawiona u źródła (wpis ręki w widoku bez `types` → martwa reguła instant E6/A1) |
 | remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
+| koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -1799,3 +1800,90 @@ czerwieni A1/A2/A4, `attackOpenBoardBonus: 0` czerwieni A5.
 nie bramką CI — na zamrożonym drzewie `--gate=attack` i `--gate=block` są
 czerwone z definicji tych równości. Do CI służą liczby globalne (27,0% / 9,7%)
 i piny.
+
+## PMSSB-34 — koszt many aktywacji + treść sprzętu (`activate_ability`) (2026-10-01e)
+
+Wejście: **nowy dowód z tabeli własnej PMSSB-33**. Wiersz `activate_ability`
+(2 remisy „GROZY") został tam rozstrzygnięty hasłem „dwa równie dobre źródła",
+ale bez obowiązkowej kontroli procedury (b) — a projekcja tych remisów pokazuje
+RÓŻNE KOSZTY przy identycznym wyniku: `mana` **3, 4 i 1** przy 16 (seed 4012
+t16) oraz **3 vs 4** przy 22 (t20). To nie „dwa równie dobre źródła" — to ten
+sam efekt za 3× i 1× manę. Rodzina: zdolności aktywowane, wymiar KOSZTU MANY
++ treść sprzętu; inwentarz: 148 kart z aktywowanymi (111 z kosztem many > 0,
+z tego 108 poza czystym `add_mana`), 12 sprzętów w katalogu.
+
+**Pierwiastki (kod):** (1) gałąź PIERWSZEGO założenia sprzętu liczyła
+`10 + 2×moc nosiciela` i nie czytała własnej pompy sprzętu (L41: gałąź
+przeniesienia liczyła ją przez `equipValuation`, pierwsze założenie nie) —
+`+1/+0` za `{1}` = `+2/+2` trample za `{4}`; (2) koszt many aktywacji nie był
+wyceniany w żadnej gałęzi poza `add_mana` (tam policzony w `net`) — `{1}` = `{3}`
+= `{4}`.
+
+**Pomiar PRZED → PO** (sonda `/home/user/scratch/pmssb34-koszt-przed.mjs`,
+PRZED = oba nowe pokrętła 0, bo całą zmianę wnosi ten jeden wymiar):
+
+| Scenariusz | PRZED (8ee8eec) | PO |
+|---|---|---|
+| A. Lightblade `{3}` +1/+0 / Plate `{4}` +2/+2 trample / Stake `{1}` +1/+0 na 3/3 | **18 / 18 / 18 — REMIS**, wybór po kolejności ofert | **20 Plate > 19 Stake > 17 Lightblade**, Plate WYBRANY |
+| B. ten sam pump +1/+0: `{3}` vs `{1}` | 18 = 18 | **19 > 17** |
+| C. 2 lądy — bramka płatności silnika | tylko Stake `{1}`, 18 | tylko Stake `{1}`, 19 |
+| D. Apprentice Wizard (`add_mana`, koszt w `net`) | −4 | **−4** (bez podwójnej kary) |
+
+**Fale:** A — `equipValuation` zwraca też `printedBody` (2×P+T), a pierwsze
+założenie dodaje `equipPumpBonusPerPoint × printedBody` (jedno źródło ciała dla
+obu gałęzi; gałąź „nosiciel nie może atakować" bez zmian — wartościuje obronnie);
+B — `score -= abilityManaCostPenalty × (cost.mana + cost.generic)`, wyjątek
+`add_mana` (koszt w `net`). Kara stoi ZA wczesnymi guardami (idempotencja,
+`wastefulStep`, „efekt jałowy" −40, duplikat na stosie) — guardy zachowują swoje
+płaskie kary, nowy wymiar nie dubluje ich wymowy. Gałąź ninjutsu (z ręki, zwraca
+nieblokowanego atakującego) ma własny model — poza zakresem.
+
+**Dowód — 17 pinów audytów przesuniętych DOKŁADNIE o koszt many** (bez innych
+ruchów; zweryfikowane po deskryptorach kosztu karty, nie po wartościach):
+Relic Dragon `{8}`: 63 → 55; Vanguard `{4}{W}`: 20 → 15; Mutagen `{1}`:
+14 → 13; Kheru Dreadmaw `{2}`: −16 → −18 / 3 → 1; Dawntreader Elk `{1}`:
+12 → 11; Trigon `{2}`: 34 → 32, 20.5 → 18.5 (kotwice B4: 16 → 14, 34 → 32);
+Leonin Surveyor `{3}`: próg 6 → 5 (wybór dalej `activate_ability`); Dockhand
+`{4}`: 6.50/6.00/6.00/−38 → 2.50/2.00/2.00/−42; Scroll of Avacyn `{1}`:
+7/7/10/14 → 6/6/9/13; Mournful Zombie `{1}`: 3 → 2, −29 → −30, 5 → 4;
+Dementia Bat `{5}`: −1 → −6 (guard „pusta ręka" −40 zostaje — wcześniejszy
+return); Immersturm Skullcairn `{4}`: −54 → −58, −58 → −62; Gloomfang cycle
+`{2}`: 4 → 2 (równość „loot ≡ cycle" rozstrzygnięta kosztem: scholar tap-only
+4 > cycle 2); T11/1: 7 → 6, T11/6: 8 → 7 (equip `{1}`); F2b: −16 → −18, 3 → 1.
+
+**Piny:** `test/audyt-pmssb34-koszt-aktywacji.test.js` (9): A1 treść sprzętu
+(20 > 19 > 17, wybór Plate), A2 kontrola (b) (`{1}` 19 > `{3}` 17, wybór Stake),
+A3 kotwica PRZED (oba pokrętła 0 → 18/18/18 i wybór po kolejności ofert),
+B1 mutacja kosztu (`abilityManaCostPenalty: 0` → 20 = 20 — pin A2 czerwienieje),
+B2 mutacja treści (`equipPumpBonusPerPoint: 0` → 14 < 17 — pin A1 czerwienieje),
+C bramka płatności (2 many → tylko Stake), D `add_mana` −4 z karą i bez,
+E skala poza sprzętem (Mutagen: 26 → 25, Δ = `{1}`), F koszt 0/sam `{T}`
+(scholar 4 z karą i bez). Mutacje potwierdzone na źródle: `abilityManaCostPenalty
+→ 0` czerwieni A1/A2/C/E, `equipPumpBonusPerPoint → 0` czerwieni A1/A2/C, po
+przywróceniu 9/9 GREEN.
+
+**Bramki:** `npm test` **7286/7286** (7277 + 9 pinów) · build **70 mod / 4700,8 kB**
+· `npm run test:all` **7557/7557** · golden-master **po świadomej regeneracji**
+(hash `8fa96e93…` → `ab8d57d2…`; przesunięcia scoreSum −4/−6/0/−2/−2/−9 i jedna
+decyzja mniej 241 → 240; **dowód czystości wymiaru**: z oboma pokrętłami = 0
+snapshot odtwarza STARY fixture bit w bit, hash identyczny). Tie-audit PO
+(`--gry=2`, 24 partie / 12 448 decyzji): 623 remisy (27,2%) = 438 par „brak
+akcji" + 185 realnych (10,0%); **GROZY 15 — `activate_ability` 0** (było 2:
+właśnie te kosztowe 3/4/1 @16 i 3/4 @22, w sondzie oba okna zniknęły);
+block 2 → 3 (nowe pozycje partii), attack 9, cast_spell 1, discard 1, color 1.
+Mirror-eval (kandydat vs oba pokrętła 0): **45:51 na 96 partii (0,469)** —
+w granicach szumu. Żywy Tester PO: **3/3 sesje czyste** (dominaria-brg|ravnica
+seed 42; worek-legend|theros seed 5 `explorer`; warhammer-ubr|tarkir-bg seed 11
+`impatient`): 0 `[STOP]`, 0 `LIMIT`, 3 naturalne końce, **0 zgłoszeń detektorów**,
+0 decyzji niewycenionych.
+
+**Znane granice (świadome, nie bugi):** (1) aktywacje o wyniku netto 0 remisują
+z passem (np. `{1}`-owa zdolność o wartości 1) — remis rozstrzyga kolejność
+ofert, czyli bot aktywuje tak jak PRZED zmianą (gdy wynik był dodatni); dowodu
+złej decyzji brak, więc bez tie-breakera; (2) model liniowy — brak progu „od
+kiedy +1 siły zmienia zegar"; (3) `cast_spell` warianty (tryb/kicker) nadal bez
+osobnej kary za koszt wariantu; (4) gałąź ninjutsu poza wymiarem.
+
+**Status:** rodzina ZAMKNIĘTA. Kolejna pętla wg kolejki PMSSB-32/33:
+`manaAvailableNow` poza rodziną many („koszt okazji” w `suspend_card`), koszt
+drugiego trybu źródła, bankowanie many — każda z nowym dowodem.
