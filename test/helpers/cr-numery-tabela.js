@@ -440,6 +440,11 @@ export const NUMERY = [
   '702.112a',
   '702.112b',
   '702.114',
+  // Weryfikacja u źródła 2026-10-01 (mtg.wiki/page/Devoid, CR 2026-09-25 —
+  // Reality Fracture): 702.114a = „Devoid is a characteristic-defining
+  // ability. «Devoid» means «This object is colorless.»”; sekcja 702.114 nie
+  // ma podpunktu b. Cytat użyty w strażniku konwencji `keywords` (U2).
+  '702.114a',
   '702.117',
   '702.117a',
   '702.122',

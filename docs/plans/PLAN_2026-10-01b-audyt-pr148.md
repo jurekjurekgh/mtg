@@ -75,11 +75,27 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   (s501–s505 na świeżym buildzie) — 0 zgłoszeń; w s504 bot rzuca Insatiable
   Appetite, więc nowa ścieżka przeszła żywą partię.
 
+- [x] **Etap 9 — U2 z audytu #146: strażnik konwencji `keywords`**:
+  `test/keywords-katalog-straznik.test.js` (6) wymaga, żeby KAŻDY keyword
+  katalogu był w jednej z dwóch klas — `CZYTA_SILNIK` (wskazany plik musi
+  zawierać literal keywordu = dowód czytania) albo `ETYKIETA` (mechanika żyje
+  w deskryptorach zdolności, w polu obiektu albo w kolorach karty; strażnik
+  weryfikuje to na kartach). Zamknięte dwie dziury klasy: literówka keywordu
+  („flyng”) i mechanika, której nic nie realizuje. Mutacje: nowy keyword bez
+  klasy → U2/1, stęchły wpis → U2/2, zły wskaźnik → U2/3, etykieta bez
+  zdolności → U2/4, etykieta bez pola → U2/5, devoid na kolorowej karcie → U2/6.
+  Strażnik ISTNIENIA cytatów CR zatrzymał przy tym pierwszą wersję testu:
+  „CR 702.114b” (devoid) dopisane z pamięci, gdy 702.114 był już w tabeli —
+  w CR 2026-09-25 devoid ma tylko **702.114a** (weryfikacja u źródła: mtg.wiki/
+  page/Devoid + Keyword_ability, 2026-10-01). Tabela `cr-numery-tabela.js`
+  dostała wiersz `702.114a` z powodem; wnioski w **L164 reguła 5**.
+
 ## Ryzyka
 
-- Budżet lektury: po wpisaniu **L172** (O2/O-a) i kondensacji L163/L164/L165/
-  L168/L169 `LESSONS.md` = 138 422 B, budżet **99 942/100 000** (zapas 58
-  tokenów) — próg NIE podniesiony, kolejny wpis znowu płaci się skróceniem.
+- Budżet lektury: reguła 5 w **L164** (podpunkt CR, Etap 9) opłacona
+  kondensacją L163/L164/L165/L168/L169/L172 — `LESSONS.md` = 138 307 B, budżet
+  **99 901/100 000** (zapas 99 tokenów, o 41 więcej niż przed Etapem 9) — próg
+  NIE podniesiony.
 - Re-provisioning sandboxa: na starcie każdej tury `git rev-parse HEAD` vs
   `git ls-remote`; push jest jedynym trwałym zapisem pracy (ENVIRONMENT §2).
 - Golden-master bota: każda zmiana wyceny wymaga świadomej regeneracji fixture'a
@@ -94,6 +110,8 @@ nie nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016.
   się), U3 zamknięte weryfikacją u źródła (wszystkie cztery cytaty zgodne).
 - **Bramka końcowa:** `npm test` **7222/7222** (7219 + 3 piny U4),
   `npm run build` **70 / 4673,6 kB**; `npm run test:all` **7493/7493** (handoff).
+- **Etap 9 (U2):** `npm test` **7241/7241**, `npm run test:all` **7512/7512**,
+  build bez zmian 70 / 4680,0 kB.
 - **Etap 8 (U5/O3):** `npm test` **7235/7235**, `npm run build` **70 / 4680,0 kB**;
   brak zmian zachowania (wartości domyślne == dawne stałe, golden-master zielony).
 - **Etap 7 (AI-R10):** limit talkshow 900 (pin + mutacja), build 70 / 4674,8 kB.
