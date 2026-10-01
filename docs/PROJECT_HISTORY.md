@@ -14556,3 +14556,37 @@ lektury ~99 885/100 000; F1 mieści się w klasach L41 (jedna miara) i L48 (jedn
 - **Sprostowanie CR (`abbf3b3`)** — mój pierwotny cytat 702.2c był POPRAWNY; zamiana na 702.2b „bo strażnik
   odrzucił” była błędem. CR 2026-09-25: 702.2b = SBA destroy, 702.2c = niezerowe obrażenia z deathtouch =
   lethal dla nadmiaru. 18 linii poprawionych, 702.2c dopisane do tabeli istnienia.
+
+## 2026-10-01b — audyt PR #148 + pętla jakości (PR #149)
+
+**Prompt:** „Kontynuujemy projekt." — bez tematu ⇒ ADR 0021 (PR → audyt #148 → pętla jakości).
+Baza `30de664`; baseline fast 7219/7219, build 70 / 4673,2 kB.
+
+**Audyt #148** (`docs/audits/AUDYT_PR148_2026-10-01.md`): **APPROVE — brak nowych znalezisk**.
+- **F1 (`blockAbsorbedDamageOf`, z #147)** — zweryfikowane u źródła (CR 2026-09-25: 702.19b, 510.1c,
+  702.2c) i mutacyjnie: deathtouch→F1/2, brak capu→F1/1, powrót do `attackerPower`→F1/3+F1/5.
+  Modele trample bota (`simulateCombat`, `attackerNeutralizedByProtection`) zgodne co do definicji
+  śmiertelnych obrażeń (L41).
+- **O1 (`cantAttackExternal`)** — jedna lista przyczyn (`staticAttackPreventionOf`) zasila walidację
+  i widok; `prevented` bez zmian (bot i m244 zielone); nowe pole czytane wyłącznie przez badge
+  (render :4427 → :4824), nie przez legalność. Mutacje: defender „zawsze natywny"→O1/2,
+  badge ze starego pola→O1/1+O1/5. Sonda: zakryty stwór z wydrukowanym Obrońcą MOŻE atakować
+  (CR 708.2a, `effectiveKeywords` = []) i nie niesie flag — wątek FoW domknięty.
+- **Sweep 702.2b→702.2c (18 linii)** — parowanie numer↔pojęcie poprawne (SBA przy 702.2b,
+  „lethal dla nadmiaru" przy 702.2c); dosłowny cytat w `test/wyzwanie-5-…` zgadza się ze źródłem.
+  Uwaga: strażnik pilnuje istnienia numeru, nie pary (L164/L165) ⇒ ADR 0030 obowiązkowy.
+- **Obserwacje:** O-a („wchłonięte" = przydział, nie zadane — konwencja silnika; do wyrównania
+  `b.damage` w `attackerNeutralizedByProtection`), O-b (`staticAbility` bez bramki `faceDown`,
+  nieosiągalne — silnik podmienia `abilities` na deskryptor obrotu), O-c (znane uproszczenie O1).
+
+**Pętla jakości:** Żywy Tester 3 partie (s201 zendikar/tarkir-bg, s202 kaladesh/theros,
+s203 eldraine/ravnica) — 0 zgłoszeń detektorów, 0 niewycenionych ruchów, brak `[STOP]`.
+**U4** z #146 zamknięte: 5 wariantów sondy NIE odtwarza „{C} tapie las" (CR 107.4c działa,
+źródło {C} jest wybierane, Las nietknięty) ⇒ 3 piny strażnicze w `test/audyt-pr148b-pip-c-zrodlo.test.js`
+(mutacja „każda jednostka opłaca {C}" czerwieni U4/1+U4/2). **U3** z #146 zamknięte: cytaty
+615.4/615.6 (prewencja), 701.14a/d (fight), 714.2b (Saga) zweryfikowane dosłownie u źródła
+(CR 2026-09-25) — zgodne, dopisane znaczniki weryfikacji w komentarzach.
+
+**Bramka końcowa:** `npm test` 7222/7222 (7219 + 3 piny U4), `npm run test:all` 7493/7493,
+`npm run build` 70 / 4673,6 kB (7219/4673,2 kB było bramką #148).
+Bez wpisu do `LESSONS.md` — budżet lektury ~99 885/100 000 (klasy: L41/L48, L164/L165, L105).
