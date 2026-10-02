@@ -12601,6 +12601,104 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 62 (10 kart, lista właściciela 2026-10-02) — mini-roadmapa w
+  // docs/plans/PLAN_2026-10-02-batch62-kolekcja-176-210.md
+  // Dane Scryfall + rulingi: docs/cards/scryfall-*.json (ADR 0010 §2a, 0028).
+  // =========================================================================
+
+  // Batch62/194. Lionheart Maverick (GPT #11, Warhammer Fantasy) — {W} 1/1
+  // Human Knight; Vigilance; {4}{W}: +1/+2 do końca tury (samopompa bez celu,
+  // wzorzec Fiery Hellhound; koszt = 5 many, z czego jeden pip biały).
+  defineCard({
+    id: 'lionheart-maverick', name: 'Lionheart Maverick', set: 'GPT',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['vigilance'],
+    oracleText: 'Vigilance\n{4}{W}: This creature gets +1/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/704ba6ce-5d28-417b-8574-d3c097e6e39f.jpg?1783943529',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, colors: ['W'] },
+        effect: { type: 'pump', power: 1, toughness: 2 },
+      }),
+    ],
+    artId: 194, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/196. Mnemonic Wall (THS #55, Theros) — {4}{U} 0/4 Wall; Defender;
+  // „you may return target instant or sorcery card from your graveyard to
+  // your hand\" — `mayFire` (decyzja „may\" przy rozstrzyganiu; wzorzec
+  // Mystic Sanctuary), w odróżnieniu od Revolutionist (cel obowiązkowy).
+  defineCard({
+    id: 'mnemonic-wall', name: 'Mnemonic Wall', set: 'THS',
+    types: ['Creature'], subtypes: ['Wall'], colors: ['U'],
+    power: 0, toughness: 4, manaCost: 5, keywords: ['defender'],
+    oracleText: 'Defender\nWhen this creature enters, you may return target instant or sorcery card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/1/415a5946-6f9a-433f-9f1c-b99144daa170.jpg?1783939794',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          mayFire: true,
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 196, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/205. Vulturous Aven (DTK #126, Tarkir) — {3}{B} 2/3 Bird Shaman;
+  // Flying; Exploit (CR 702.110) — druga zdolność odpala się „exploits\" po
+  // poświęceniu stwora (także samego Avena): dobierz dwie i traćcie 2 życia.
+  defineCard({
+    id: 'vulturous-aven', name: 'Vulturous Aven', set: 'DTK',
+    types: ['Creature'], subtypes: ['Bird', 'Shaman'], colors: ['B'],
+    power: 2, toughness: 3, manaCost: 4, keywords: ['flying'],
+    oracleText: 'Flying\nExploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, you draw two cards and you lose 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2fb0cc9-aebd-4bbf-8735-add3b753c118.jpg?1783938593',
+    exploit: {},
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'exploits' },
+        effect: [
+          { type: 'draw_cards', amount: 2 },
+          { type: 'lose_life', amount: 2, scope: 'controller' },
+        ],
+      }),
+    ],
+    artId: 205, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/208. Jade Bearer (RIX #134, Ixalan) — {G} 1/1 Merfolk Shaman;
+  // „put a +1/+1 counter on ANOTHER target Merfolk you control\" — spec celu
+  // `creature_you_control` + `notSelf` + `subtype` (wzorzec Burning-Yard Trainer).
+  defineCard({
+    id: 'jade-bearer', name: 'Jade Bearer', set: 'RIX',
+    types: ['Creature'], subtypes: ['Merfolk', 'Shaman'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'When this creature enters, put a +1/+1 counter on another target Merfolk you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/696bb954-353e-488b-a1e8-0df75da6339b.jpg?1783935285',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'creature_you_control', notSelf: true, subtype: 'Merfolk' },
+        },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 208, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

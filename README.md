@@ -124,17 +124,17 @@ liczone z plików `decks/*.txt`).
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 30 | 10 | 20 |
 | `innistrad-wu` | Innistrad (WU) | WU | 30 | 10 | 20 |
-| `ixalan` | Ixalan | UBRG | 24 | 8 | 16 |
+| `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
 | `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
 | `ravnica` | Ravnica | WUBRG | 44 | 15 | 29 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
-| `tarkir-bg` | Tarkir (BG) | UBG | 38 | 13 | 25 |
+| `tarkir-bg` | Tarkir (BG) | UBG | 39 | 13 | 26 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
-| `theros` | Theros | WUBRG | 26 | 9 | 17 |
+| `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
-| `warhammer-wg` | Warhammer Fantasy (WG) | WG | 26 | 9 | 17 |
+| `warhammer-wg` | Warhammer Fantasy (WG) | WG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WURG | 36 | 12 | 24 |

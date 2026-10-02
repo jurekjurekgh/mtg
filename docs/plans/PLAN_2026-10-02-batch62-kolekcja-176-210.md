@@ -127,12 +127,12 @@ i testy w `test/real-cards-batch62.test.js` (legalny + nielegalny + sanity
 danych + interakcje), zgodnie z ADR 0023 (każda wspierana karta w dokładnie
 jednej talii) i strażnikami katalogu.
 
-- [ ] **T0** — ten plan (sam dokument). Snapshoty i wiersze arkusza NIE idą osobno: strażnicy
+- [x] **T0** (957b93c) — ten plan (sam dokument). Snapshoty i wiersze arkusza NIE idą osobno: strażnicy
   „brak sierot w docs/cards” (D/14, OW/6) i piny liczebności słownika
   (`art-ids-tool.test.js`: 533 → +1 za każdą kartę) wymagają, by snapshot, wiersz
   CSV i definicja karty weszły w TYM SAMYM commicie (zmierzone: osobny commit
   danych = 4 czerwone testy).
-- [ ] **T1** — Lionheart Maverick, Mnemonic Wall, Vulturous Aven, Jade Bearer (czyste dane + testy).
+- [x] **T1** (npm test 7329/7329, build 70 mod. / 4715,5 kB) — Lionheart Maverick, Mnemonic Wall, Vulturous Aven, Jade Bearer (czyste dane + testy).
 - [ ] **T2** — Oreplate Pangolin (`another`) + Crumbling Vestige (mana z triggera).
 - [ ] **T3** — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
 - [ ] **T4** — Golem-Skin Gauntlets (dynamiczny pump Equipmentu, cały łańcuch deskryptora).

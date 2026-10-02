@@ -1,0 +1,53 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vulturous+Aven&set=dtk&format=json",
+  "print": "dtk",
+  "name": "Vulturous Aven",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Creature — Bird Shaman",
+  "oracle_text": "Flying\nExploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, you draw two cards and you lose 2 life.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "126",
+  "rarity": "common",
+  "artist": "Kev Walker",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/2/b2fb0cc9-aebd-4bbf-8735-add3b753c118.jpg?1783938593",
+    "normal": "https://cards.scryfall.io/normal/front/b/2/b2fb0cc9-aebd-4bbf-8735-add3b753c118.jpg?1783938593"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "A creature with exploit “exploits a creature” when the controller of the exploit ability sacrifices a creature as that ability resolves."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "You choose whether to sacrifice a creature and which creature to sacrifice as the exploit ability resolves."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "You can sacrifice the creature with exploit if it’s still on the battlefield. This will cause its other ability to trigger."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If the creature with exploit isn’t on the battlefield as the exploit ability resolves, you won’t get any bonus from the creature with exploit, even if you sacrifice a creature. Because the creature with exploit isn’t on the battlefield, its other triggered ability won’t trigger."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "You can’t sacrifice more than one creature to any one exploit ability."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dtk/126/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

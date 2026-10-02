@@ -560,4 +560,10 @@ export const MANA_COSTS = {
   // Batch61: Riftburst Hellion (MKM) — 6/7 Hellion; koszt OBROTU (disguise
   // {4}{R/G}{R/G}) siedzi w deskryptorze `morph` (koszt zdolności, nie karty).
   "riftburst-hellion": "{5}{R}{G}",
+  // Batch62: Lionheart Maverick (GPT), Mnemonic Wall (THS), Vulturous Aven
+  // (DTK), Jade Bearer (RIX).
+  "lionheart-maverick": "{W}",
+  "mnemonic-wall": "{4}{U}",
+  "vulturous-aven": "{3}{B}",
+  "jade-bearer": "{G}",
 };

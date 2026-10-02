@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jade+Bearer&set=rix&format=json",
+  "print": "rix",
+  "name": "Jade Bearer",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Creature — Merfolk Shaman",
+  "oracle_text": "When this creature enters, put a +1/+1 counter on another target Merfolk you control.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "G"
+  ],
+  "set": "rix",
+  "set_name": "Rivals of Ixalan",
+  "collector_number": "134",
+  "rarity": "common",
+  "artist": "Alex Konstad",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/9/696bb954-353e-488b-a1e8-0df75da6339b.jpg?1783935285",
+    "normal": "https://cards.scryfall.io/normal/front/6/9/696bb954-353e-488b-a1e8-0df75da6339b.jpg?1783935285"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/rix/134/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

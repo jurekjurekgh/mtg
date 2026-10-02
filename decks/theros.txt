@@ -15,10 +15,11 @@
 1x Breaching Hippocamp
 1x Inspire Awe
 1x Returned Centaur
+1x Mnemonic Wall
 1x Rage of Purphoros
 1x Sea God's Scorn
 1x Plains
-3x Island
+4x Island
 1x Swamp
 1x Mountain
-3x Forest
+2x Forest
