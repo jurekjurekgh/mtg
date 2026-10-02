@@ -73,6 +73,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
 | koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
 | odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
+| mechaniki kart batcha 62 (exploit z zasobami, cel własny ETB, wypłata liczników na polu) | 10 kart (Aven, Jade Bearer, Tackle Artist, Pangolin + 6 przeglądniętych) | DONE (2026-10-02b) | §PMSSB-36 niżej; plan `PLAN_2026-10-02b-pmssb36-nowe-karty.md`; `test/audyt-pmssb36-nowe-karty.test.js` (9 pinów, 8 czerwonych PRZED); exploit z `draw_cards`/`lose_life` liczony NETTO (`exploitSelfResourceGain`, wspólna drabina `selfLifeLossPenalty` L48), bramka celu własnego ETB, `boardCastPayoffValue` (Opus/Pangolin); 3 pokrętła `exploitThinBoardPenalty`/`exploitNetMargin`/`boardPayoffWeight` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2013,3 +2014,47 @@ uzasadnione w planie §6).
 trybu źródła (`Seer’s Lantern {2},{T}: Scry 1`, Immersturm Skullcairn, Balamb
 Garden), bankowanie many, `cast_spell` warianty (tryb/kicker), model treści
 czekającej na późniejszą planszę — każda z nowym dowodem.
+
+## PMSSB-36 — mechaniki kart batcha 62: exploit z zasobami, cel własny ETB, wypłata liczników (2026-10-02b)
+
+Wejście: **zgłoszenie właściciela** — „czy exploit Vulturous Aven jest robiony z
+głową (poświęcać tylko gdy dość stworów, najmniejszego bez zdolności)? czy
+przeszedł PMSSB? sprawdź WSZYSTKIE mechaniki nowych kart”. Plan:
+`docs/plans/PLAN_2026-10-02b-pmssb36-nowe-karty.md` (tabela przeglądu 10 kart).
+Odpowiedź: PMSSB-11 (exploit, 2026-09-26) powstał dla 3 kart BEZ triggera
+zasobowego; Aven (draw 2 + lose 2) go nie przeszedł.
+
+**Pomiar PRZED** (sonda na realnym bocie, `resolve_exploit_choice`; wynik = oferta
+poświęcenia vs skip 20): życie 20 → 35 (sac); **życie 2 → sac (samobójstwo)**; życie 3–5 → sac;
+**biblioteka 2–5 kart → sac (deck-out)**; jedyny silny stwór (Silumgar 23 > 20) → sac;
+jedyny obrońca vs 3 wrogów → sac; rzut karty liczył „impuls x=4” (trigger Drownera) dla
+KAŻDEGO exploitu bez debuffu. Przyczyna: decyzja = stała `exploitBase` 40 − cena ofiary
+(ślepa na zysk/koszt triggera) + bramki tylko dla millu i debuffu.
+
+**Naprawy (generyczne, ADR 0002):**
+- **A — exploit netto:** `exploitSelfResourceGain` (dobranie = `drawCardValue × n` + drabina
+  `drawDeckingPenalty`; utrata życia = wspólna `selfLifeLossPenalty`, te same progi co `cast_spell`
+  i ETB — L48, 1000 = samobójstwo). Poświęcenie gdy `zysk − cena − cienka plansza − margines > 0`;
+  ofiara = najniższa `cena` (P/T + keywordy + zdolności − token). Rzut = ta sama miara (L41a).
+  Debuff/mill bez zmian (anty-over-fix). PO: życie ≤5 i biblioteka ≤5 → skip; 3/3 bez zdolności → skip;
+  token < karta; lone 1/3 vs 3 wrogów → skip.
+- **B — cel własny ETB:** bramka `etbEnemyHasTarget` pytała o wrogów także dla „put a counter on target
+  creature (you control)” — Jade Bearer 63,901 z Merfolkiem i bez; z wrogiem +5,4 bez celu. Teraz
+  `etbFriendlyCounterTargetAvailable` (`notSelf`/`subtype` z deskryptora); Moogle/Weftblade (cel dowolny,
+  także własny) liczą 6 niezależnie od wroga (pin PMSSB-35/A4: 65,703 → 71,103).
+- **C — wypłata liczników na polu:** `boardCastPayoffValue` — „you cast instant/sorcery” (Opus, gałęzie
+  `manaSpentBelow/AtLeast` od many rzutu) i „another artifact enters” (`payMana`, tylko gdy po koszcie
+  zostaje mana) × `boardPayoffWeight` 0,5, miara `counterHostValue` (L41). PRZED Shock przy Artyście
+  84 → 72 (kara dominacji planszy, zero za licznik); PO 86.
+
+**Przegląd reszty (OK, bez zmian):** Chocobo Kick (bez kicka gdy 1× zabija, z kickiem gdy tylko 2×),
+Mnemonic Wall (regrowth wartościowany, cel zagrywalny kolorem), Gauntlets (wybór celu z przypiętymi),
+Fiery Justice (`damageDivision`), Maverick (pump POKRYTE), Vestige (`8653c9d`).
+
+**Granice / forward:** (1) bite bez zabicia ma dodatnią „chip” (kotwica PMSSB-16: Kick na 9-toughness
+dostaje 64 > pass) — kandydat na osobną decyzję; (2) wypłata payoffów innych niż licznik (dobranie,
+token) przy rzucie z payoffem na polu; (3) Pangolin: bot płaci {1} ZAWSZE (PMSSB-12), nie waży mana
+potrzebnej na inny rzut tej tury.
+
+**Pomiar końcowy:** `run-tests all` 7668/7668; golden-master: jedna zmiana, score-only (oferta
+exploit −5 vs 14, wybór ten sam — 0 flipów), fixture przegenerowany.

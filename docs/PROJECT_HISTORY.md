@@ -70,10 +70,22 @@ dwie pary, reszta bit w bit). Fixture zregenerowany świadomie (L124). Przy okaz
 wyceny bota dla nowych kart sondami na prawdziwym bocie: **Crumbling Vestige był
 niedoceniany** (kara −8 za tapnięcie, choć mana z triggera jest do wydania w tej samej
 turze) — `landPlayDelta` zna teraz `etbMana` i daje premię, gdy ta mana odblokowuje rzut
-(piny B62/192 bot). Pangolin, Mnemonic Wall, Aven (exploit), Jade Bearer, Tackle Artist,
-Gauntlets, Chocobo Kick, Fiery Justice — sondy bez defektu (Aven przy bibliotece ≤8 kart
-odmawia przez karę za deck-out — zachowanie istniejące, nie ruszane).
+(piny B62/192 bot). Pierwsza ocena „Aven i reszta bez defektu” była za płytka — poprawiona
+w PMSSB-36 niżej (sondy z jednym scenariuszem nie wystarczają: macierz życie×biblioteka×ofiara).
 **Bramka od teraz: `node tools/run-tests.mjs all` = 7659/7659.**
+
+**PMSSB-36 (2026-10-02b) — mechaniki kart batcha 62 pod pętlą PMSSB.** Na pytanie właściciela
+(„czy exploit Avena jest z głową? czy przeszedł PMSSB?”): exploit PMSSB-11 powstał dla trzech kart
+bez triggera zasobowego; Aven (dobierz 2, strać 2) go nie przeszedł — bot poświęcał stwora przy
+2 życiach (samobójstwo), przy 2–5 kartach w bibliotece i najsilniejszego stwora (stała
+`exploitBase`). Naprawione: wartość netto z deskryptora (`exploitSelfResourceGain`), wspólna drabina
+samouszkodzenia (`selfLifeLossPenalty` dla czaru/ETB/exploitu), cienka plansza (`exploitThinBoardPenalty`).
+Reszta przeglądu dała jeszcze dwie luki: bramka celu ETB pytała o WROGÓW także dla licznika na własnym
+stworze (Jade Bearer) oraz brak wypłaty triggerów-liczników na polu przy rzucie (Tackle Artist — Opus,
+Oreplate Pangolin; `boardCastPayoffValue`). Raport: `docs/PMSSB.md` §PMSSB-36, plan
+`docs/plans/PLAN_2026-10-02b-pmssb36-nowe-karty.md`, `test/audyt-pmssb36-nowe-karty.test.js`
+(9 pinów, 8 czerwonych przed zmianą). Bramka `all` **7668/7668**; golden-master: jedna zmiana
+score-only, 0 flipów. Kolejka: bite bez zabicia (chip>pass), payoffy inne niż licznik.
 
 **Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
 Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);

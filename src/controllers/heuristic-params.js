@@ -219,6 +219,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'exploitKillAssetMargin',      // próg „istotnych walorów" zabijanego (keywordy/zdolności/aury)
   'exploitKillAuraValue',        // wartość aury przyklejonej do zabijanego (ginie z nim, CR 704.5m)
   'exploitFaceDownEntryCost',    // TMC permanentu twarzą w dół (CR 708.2a: mana value 0; zapłacono {3})
+  // PMSSB-36 (Vulturous Aven, zgłoszenie właściciela 2026-10-02): exploit
+  // z zyskiem/kosztem własnych zasobów liczony NETTO (zysk − cena ofiary).
+  'exploitThinBoardPenalty',     // kara, gdy po wymianie mam < 2 stworów, a wróg ma stwory
+  'exploitNetMargin',            // minimalna NADWYŻKA netto, żeby poświęcić (remis = skip)
+  // PMSSB-36/C: wypłata triggerów-licznika nosiciela na polu (Opus, Pangolin).
+  'boardPayoffWeight',           // waga wartości licznika przy rzucie czaru/artefaktu
   // Zgłoszenie właściciela B (2026-09-11, Chronic Flooding + Curiosity): bot
   // z ~9 kartami w bibliotece tapował ląd, który miele mu 3 karty na każde
   // tapnięcie, i dokładał własnemu stworowi aurę z powtarzalnym „draw a card".
@@ -627,6 +633,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   exploitKillAssetMargin: 12,
   exploitKillAuraValue: 30,
   exploitFaceDownEntryCost: 3,
+  exploitThinBoardPenalty: 6,
+  exploitNetMargin: 1,
+  boardPayoffWeight: 0.5,
   libraryDeckOutPenalty: 120,
   libraryThinPenalty: 60,
   libraryThinPerCardPenalty: 6,
