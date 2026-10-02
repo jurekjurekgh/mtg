@@ -97,6 +97,11 @@ function scanAmounts(cards) {
       // ma, i meldował „nieparowalne" (test listy wyjątków).
       if (descriptor[amountField] == null) continue;
       if (ORACLE_SKIP.has(keyword)) continue;
+      // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM („Kicker—Return a
+      // land you control to its owner's hand") — Oracle nie ma symboli many do
+      // sparowania. Nie wygaszamy detektora: osobny test niżej pilnuje, że
+      // takie deskryptory mają `cost: 0`, brak pipów i Oracle bez symboli.
+      if (descriptor.returnLand) continue;
       const oracle = oracleCostSymbols(card.oracleText, keyword);
       if (oracle == null) { unparsed.push(`${card.id}[${keyword}]`); continue; }
       const hybrid = hybridField ? (descriptor[hybridField] ?? []) : [];
@@ -127,6 +132,17 @@ test('M428 (klasa): karty pominięte przez skan są WYMIENIONE wprost', () => {
   const { unparsed } = scanAmounts(REGISTRY.all());
   assert.deepEqual(unparsed, [],
     'deskryptor bez parowania z Oracle — dopisz powód do ORACLE_SKIP albo popraw dane');
+});
+
+test('M428 (klasa): kicker niemanowy (returnLand) ma cost 0, brak pipów i Oracle „Kicker—<koszt słowny>"', () => {
+  const nonMana = REGISTRY.all().filter((card) => card.kicker?.returnLand);
+  assert.deepEqual(nonMana.map((card) => card.id), ['chocobo-kick'], 'lista kart z kosztem kickera zwrotu lądu');
+  for (const card of nonMana) {
+    assert.equal(card.kicker.cost, 0, `${card.id}: koszt many kickera`);
+    assert.deepEqual(card.kicker.colors, [], `${card.id}: pipy kickera`);
+    assert.match(card.oracleText, /Kicker—Return a land you control to its owner's hand/, `${card.id}: Oracle`);
+    assert.doesNotMatch(card.oracleText.split('\n')[0].split('(')[0], /\{/, `${card.id}: brak symboli many przy słowie Kicker`);
+  }
 });
 
 test('M428: dowód RED — skan łapie oba znalezione rozjazdy', () => {

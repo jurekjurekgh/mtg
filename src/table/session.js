@@ -137,6 +137,8 @@ export function faceDownLabel(object, nameOf) {
 export function commandOptionKey(cmd) {
   const fields = [
     'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
+    // Batch 62: wariant kicked i ląd zwracany jako koszt kickera (Chocobo Kick).
+    'kicked', 'kickerLandId',
     'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',

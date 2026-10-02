@@ -97,6 +97,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-16 (walka bez fazy walki: fight + bite `damage_from_target_power`):
   // CR 701.14a–d (damage nie-bojowe — deathtouch/lifelink działają, first
   // strike nie). Helper `fightExchangeValue` (L41 dla fight+bite).
+  'kickerReturnLandPenalty',  // kicker ze zwrotem lądu na rękę (Chocobo Kick): koszt tempa
   'fightBiteChipBase',        // bite: baza (stare 8) — chip bez killa
   'fightBitePowerWeight',     // bite: waga mocy dealera (stare 2)
   'fightBiteLethalBonus',     // bite: dopłata za zabicie ofiary (stare 15)
@@ -510,6 +511,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // lifelink waga 1 (pełne lustro obu stron — CR 701.14d), okna walki
   // REUSE fogWindowLethalSaveValue/fogWindowSavedCreatureValue (L41 —
   // jedna skala ratunku w rodzinie).
+  kickerReturnLandPenalty: 12,
   fightBiteChipBase: 8,
   fightBitePowerWeight: 2,
   fightBiteLethalBonus: 15,

@@ -12741,6 +12741,27 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Batch 62 / T5 — Chocobo Kick (FIN #178, plan Final Fantasy).
+  defineCard({
+    id: 'chocobo-kick', name: 'Chocobo Kick', set: 'FIN',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: "Kicker—Return a land you control to its owner's hand. (You may return a land you control to its owner's hand in addition to any other costs as you cast this spell.)\nTarget creature you control deals damage equal to its power to target creature an opponent controls. If this spell was kicked, the creature you control deals twice that much damage instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/f/ff8c8be0-8223-499c-8704-cb68e0a42ce2.jpg?1783906590',
+    // Kicker NIEMANOWY (CR 702.33a): koszt dodatkowy to zwrot lądu — `cost: 0`,
+    // bez pipów, `returnLand` + id lądu w komendzie (`kickerLandId`).
+    kicker: { cost: 0, colors: [], returnLand: true },
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [
+        // „Bite\": jednostronne obrażenia = moc; ×2, gdy czar był kicked.
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1, kickedMultiplier: 2 },
+      ],
+    },
+    artId: 176, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

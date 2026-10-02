@@ -142,7 +142,7 @@ jednej talii) i strażnikami katalogu.
   wykonalne. Gotowy kod T2 (patche) czeka poza repo; każdy commit ma zostać zielony.
 - [x] **T3** (npm test 7335/7335) — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
 - [x] **T4** — Golem-Skin Gauntlets (`pumpPerAttachedEquipment`: registry → identity → attachments → permanents, etykieta kafla, wycena bota `equipPumpOf`).
-- [ ] **T5** — Chocobo Kick (kicker niemanowy + bite z kickerem; kreator wyboru lądu; bot).
+- [x] **T5** — Chocobo Kick (kicker niemanowy `returnLand` + `kickerLandId`, bite ×2 przy kickerze; kreator: wymiar kosztu `costKey` w `multiTargetPlanOf`; bot: `kickerReturnLandPenalty`).
 - [ ] **T6** — Fiery Justice (czar z podziałem obrażeń; kreator; bot).
 - [ ] **T7** — dokumentacja: `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, lekcja (jeśli
   wypadnie), opis PR #150, handoff; rekalibracja progów benchmarku i

@@ -5100,13 +5100,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * `oneSided` = bite (tylko ofiara dostaje damage); w fight giną obie
    * strony wg progów DT (R2).
    */
-  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null } = {}) {
+  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null, damageMultiplier = 1 } = {}) {
     if (!dealer || !victim) return -40;
     // R5: ofiara po NASZEj stronie = samookaleczenie (kara > baza).
     if (victim.controllerId === view.playerId) return -60;
     const b = buffs ?? { power: 0, toughness: 0, keywords: [], effects: [] };
     const dealerKw = [...(dealer.keywords ?? []), ...b.keywords];
-    const dPow = Math.max(0, (dealer.power ?? 0) + b.power);
+    // Batch 62 (Chocobo Kick): „twice that much damage" — mnożnik dotyczy
+    // obrażeń (nie mocy), a wytrzymałość dealera zostaje bez zmian.
+    const dPow = Math.max(0, (dealer.power ?? 0) + b.power) * damageMultiplier;
     const dToughLeft = Math.max(0, (dealer.toughness ?? 0) + b.toughness - (dealer.damage ?? 0));
     const vPow = Math.max(0, victim.power ?? 0);
     const vToughLeft = Math.max(0, (victim.toughness ?? 0) - (victim.damage ?? 0));
@@ -7291,6 +7293,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
+        // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
+        // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
+        // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
+        // zabójstwo, którego zwykły rzut by nie dał. Drobny tie-break: ląd
+        // już tapnięty oddajemy chętniej niż świeży (−0.2).
+        if (cmd.kickerLandId) {
+          score -= P.kickerReturnLandPenalty;
+          if (objectOnBoard(view, cmd.kickerLandId)?.tapped !== true) score -= 0.2;
+        }
         // C (Sarkhan's Rage): samouszkodzenie czaru (także warunkowe —
         // selfDamageOfEffects rozwija `conditional`) — te same twarde progi
         // co ETB (M169/K, L48: jedna reguła samobójstwa dla wchodzenia i rzutu).
@@ -7811,6 +7822,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
             score += fightExchangeValue(view, dealer, victim, {
               oneSided: true,
+              damageMultiplier: (cmd.kicked === true && effect.kickedMultiplier) ? effect.kickedMultiplier : 1,
               buffs: fightRiderBuffs(scoredEffects, effect.sourceTargetIndex ?? 0),
             });
           }
@@ -11924,6 +11936,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         waluta: cialo - P.creatureManaCostWeight * koszt,
         cele: (cmd.targets ?? []).length,
         kicker: cmd.kicked ? 1 : 0,
+        kickerLandId: cmd.kickerLandId ?? null,
         // Audyt Batch53/C: wariant offspring (Rust-Shield Rampager) remisował
         // z rzutem naturalnym (ten sam score), a projekcja nie niosła różnicy
         // — remis wyglądał na „uczciwy", choć warianty się różnią (jak kicker).

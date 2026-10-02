@@ -1170,6 +1170,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const chosen = new Set();
   let xValue = plan.hasX ? plan.xMin : null;
   let sacrificeChoice = null;
+  // Batch 62: osobna sekcja KOSZTU niemanowego (zwrot lądu — Chocobo Kick);
+  // plan niesie `costKey` (pole komendy), `costs` (kandydaci) i `costLabel`.
+  const costKey = plan.costKey ?? null;
+  let costChoice = null;
+  const costMatches = (cmd) => !costKey || cmd[costKey] === costChoice;
   // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | numer pozycji | null).
   // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
   // i celem czaru, i kosztem), więc nie mogą współdzielić zbioru `chosen`.
@@ -1194,8 +1199,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // silnika (multiTargetPlanOf), więc legalność rozstrzyga dalej silnik (L48).
     const niekompletne = (id, i) => id == null && !(plan.slotOptional?.[i]);
     if (slotChoice.some(niekompletne)) return null;
+    if (costKey && costChoice == null) return null;
     return (commands ?? []).find((cmd) => Array.isArray(cmd.targets)
       && cmd.targets.length === slotChoice.length
+      && costMatches(cmd)
       && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
   };
   // M298/A: wybór pojedynczy trzyma dokładnie JEDNO id w `chosen` (radio),
@@ -1242,13 +1249,17 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
               ? (chosen.size > 0
                 ? commandForSingleTargetSelection(commands, { targetId: singlePick(), field: plan.singleField ?? null })
                 : null)
-              : commandForSelection(commands, { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
+              : (costKey && costChoice == null)
+                ? null
+                : commandForSelection((commands ?? []).filter(costMatches), { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
     : slot === 'sac'
       ? id === sacrificeChoice
-      : slotChoice[slot] === id);
+      : slot === 'cost'
+        ? id === costChoice
+        : slotChoice[slot] === id);
 
   /**
    * B (zgłoszenie właściciela z żywej gry, 2026-09-21, Toll of the Invasion):
@@ -1309,9 +1320,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // JEDNOWYBOROWE — radio w grupie, a model (`chosen`) czyści się przy
     // każdym nowym zaznaczeniu.
     const exclusive = singleMode || keepMode || castWindowMode || buttonsMode;
-    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || exclusive) ? 'radio' : 'checkbox');
+    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || slot === 'cost' || exclusive) ? 'radio' : 'checkbox');
     const group = groupOverride !== undefined ? groupOverride
-      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : (exclusive ? 'multi-target-single' : null)));
+      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : slot === 'cost' ? 'multi-target-cost' : (exclusive ? 'multi-target-single' : null)));
     // B (2026-09-21): wiersz z jawnym cardId (okna rzutu, tryb przyciskowy) ma
     // go od wywołującego; wiersz-obiekt z zakrytej strefy dostaje kartę
     // z `hiddenObjectCardId` — inaczej klik w nazwę milczał (szczegóły przy
@@ -1356,6 +1367,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         } else if (slot === 'sac') {
           if (on) sacrificeChoice = id;
           else if (sacrificeChoice === id) sacrificeChoice = null;
+        } else if (slot === 'cost') {
+          if (on) costChoice = id;
+          else if (costChoice === id) costChoice = null;
         } else {
           if (on) slotChoice[slot] = id;
           else if (slotChoice[slot] === id) slotChoice[slot] = null;
@@ -1397,6 +1411,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       const missing = slotChoice
         .map((id, i) => (id == null && !plan.slotOptional?.[i] ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
         .filter(Boolean);
+      if (costKey && costChoice == null) missing.push(plan.costLabel ?? 'koszt');
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);
     } else if (sacMode) {
@@ -1443,6 +1458,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       // otworzy się kreator many.
       const costPart = Number.isInteger(cmd?.cost) ? ` · koszt: ${cmd.cost} many` : '';
       setStatus(`X = ${xValue}${costPart}`, !cmd);
+    } else if (costKey && costChoice == null) {
+      setStatus(`Brakuje: ${plan.costLabel ?? 'koszt'}`, true);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
@@ -1510,6 +1527,13 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   if (sacMode) {
     renderPickerSection(list, `${slotLabels[1] ?? 'Poświęcenie (koszt)'}:`, { className: 'multi-target-slot-label' });
     for (const id of plan.sacrifices) addRow(id, 'sac');
+  }
+
+  // Batch 62: sekcja kosztu niemanowego (np. ląd do zwrotu przy kickerze) —
+  // na końcu listy, po celach; wybór jednokrotny (radio w grupie).
+  if (costKey) {
+    renderPickerSection(list, `${plan.costLabel ?? 'Koszt'}:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.costs) addRow(id, 'cost');
   }
 
   // A2-rewizja (decyzja właściciela 2026-09-12): kreator załogi startuje

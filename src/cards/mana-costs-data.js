@@ -570,4 +570,6 @@ export const MANA_COSTS = {
   "tackle-artist": "{3}{R}",
   // Batch62/T4: Golem-Skin Gauntlets (2XM).
   "golem-skin-gauntlets": "{1}",
+  // Batch62/T5: Chocobo Kick (FIN).
+  "chocobo-kick": "{1}{G}",
 };

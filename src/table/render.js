@@ -1510,7 +1510,7 @@ function describeEffect(e, ctx = {}) {
     // trafił tylko pierwszy z nich; strażnik w testach pilnuje reszty.
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
-    damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    damage_from_target_power: () => (e.kickedMultiplier ? `obrażenia równe mocy stwora (×${e.kickedMultiplier}, gdy kicker)` : 'obrażenia równe mocy stwora'),
     damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
     fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
     endure_x: () => `endure ${typeof e.amount === 'number' ? e.amount : 'X'} (liczniki +1/+1 albo token Spirit)`,
@@ -3289,7 +3289,11 @@ export function commandLabel(cmd, session, view) {
         // M268: pipy W RAMACH kwoty. Stary zapis sklejał `{1}` + `{W}` dla
         // Kor Sanctifiers („Kicker {W}" = 1 jednostka, biała) i pokazywał DWIE
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
-        const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
+        // Batch 62: kicker NIEMANOWY (Chocobo Kick) — dopłatą jest zwrot lądu,
+        // więc etykieta mówi KTÓRY ląd wraca na rękę (zamiast „kicker {0}").
+        const kickerHtml = kicker.returnLand
+          ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
+          : manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
       }
       // Audyt Batch53/B6: wariant Offspring bez własnej etykiety wyglądał
@@ -3386,7 +3390,9 @@ export function commandLabel(cmd, session, view) {
       // podlega obniżkom (CR 601.2f) — Format jak przy `cast_permanent`.
       const kickerDef = cmd.kicked ? obj(cmd.objectId)?.kicker : null;
       const kickerPart = kickerDef
-        ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
+        ? ` + kicker ${kickerDef.returnLand
+          ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
+          : manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
       // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
       // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,

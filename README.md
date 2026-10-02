@@ -120,7 +120,7 @@ liczone z plików `decks/*.txt`).
 | `dominaria-brg` | Dominaria (BRG) | BRG | 29 | 10 | 19 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 26 | 9 | 17 |
 | `eldraine` | Eldraine | WUBRG | 23 | 8 | 15 |
-| `final-fantasy` | Final Fantasy | WUBRG | 27 | 9 | 18 |
+| `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 30 | 10 | 20 |
 | `innistrad-wu` | Innistrad (WU) | WU | 30 | 10 | 20 |

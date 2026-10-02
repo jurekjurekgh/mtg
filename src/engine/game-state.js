@@ -5954,6 +5954,7 @@ export function execute(state, input) {
             buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
             phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
             gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
+            kickerLandId: cmd.kickerLandId ?? null,
           },
         });
         const events = [e, ...state.events.slice(beforeSkill).filter((entry) => entry !== e)];
@@ -5978,6 +5979,8 @@ export function execute(state, input) {
         // wskazuje się razem z kosztem (wariant komendy niesie jego id).
         gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
         delveExileIds: cmd.delveExileIds ?? null,
+        // CR 702.33a: ląd zwracany jako koszt kickera niemanowego.
+        kickerLandId: cmd.kickerLandId ?? null,
       });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
@@ -8518,7 +8521,8 @@ export function playerView(state, playerId) {
       // — wariant kicked: true ZA zwykłym rzutem (unshift przed pętlą
       // wariantów many, więc naturalny rzut zostaje pierwszy — proste boty
       // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
-      if (object.kicker) {
+      // (kicker ze zwrotem lądu żyje tylko na czarach — `legalSpellCasts`.)
+      if (object.kicker && !object.kicker.returnLand) {
         const kickerCost = object.kicker.cost ?? 0;
         const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
         if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {

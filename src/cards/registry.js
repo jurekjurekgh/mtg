@@ -152,6 +152,9 @@ export function defineCard(data) {
     kicker: data.kicker ? Object.freeze({
       cost: data.kicker.cost,
       colors: Object.freeze([...(data.kicker.colors ?? [])]),
+      // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — „Return a land
+      // you control to its owner's hand". Tylko na czarach (spells.js).
+      ...(data.kicker.returnLand ? { returnLand: true } : {}),
     }) : null,
     // Offspring (BLB, Rust-Shield Rampager): { cost, colors } — opcjonalny
     // dodatkowy koszt przy rzucie; przy opłaceniu permanent dostaje flagę

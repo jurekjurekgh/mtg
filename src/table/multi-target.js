@@ -68,9 +68,15 @@ export function multiTargetPlanOf(commands) {
   // zmienia kształtu panelu), a widełki etykiety/limitu — na liczbie realnej.
   const realSizes = [...new Set(list.map((cmd) => cmd.targets.filter((id) => id != null).length))];
 
+  // Batch 62 (Chocobo Kick): trzeci wymiar — NIEMANOWY koszt kickera „zwróć
+  // ląd" (`kickerLandId`). Silnik enumeruje iloczyn (cele × ląd), a kreator
+  // dostaje osobną sekcję z lądami; bez niej zatwierdzenie brałoby pierwszy
+  // pasujący wariant, czyli ląd wybrany „za gracza".
+  const cost = costDimensionOf(list);
+
   // Bez żadnego z dwóch wymiarów to zwykła lista celów (Shock: jedna komenda
   // na cel) — panel pokazuje ją od dawna poprawnie, nie ma czego zastępować.
-  if (!hasX && !multiTarget) return null;
+  if (!hasX && !multiTarget && !cost) return null;
 
   const targets = [];
   for (const cmd of list) {
@@ -103,6 +109,8 @@ export function multiTargetPlanOf(commands) {
     // M207: rozbicie na POZYCJE CELU (patrz `targetSlotsOf`) albo null, gdy
     // czar bierze jednorodną listę („dowolna liczba celów").
     slots,
+    // Wymiar kosztu (`costKey`/`costs`/`costLabel`) albo brak pól.
+    ...(cost ?? {}),
     // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
     // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
     // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
@@ -158,6 +166,22 @@ function targetSlotsOf(list, sizes) {
     }
   }
   return slots;
+}
+
+/**
+ * Batch 62: wymiar KOSZTU niemanowego w grupie wariantów jednego rzutu —
+ * rozpoznawany po KSZTAŁCIE komend (ADR 0002), nie po karcie. Dziś:
+ * `kickerLandId` (kicker „Return a land you control to its owner's hand",
+ * CR 702.33a — dodatkowy koszt wybierany przy rzucie, CR 601.2b). Zwraca
+ * `{ costKey, costs, costLabel }` albo null, gdy wszystkie warianty niosą to
+ * samo id (nie ma czego wybierać) albo któryś go nie niesie.
+ */
+function costDimensionOf(list) {
+  if (!list.length || !list.every((cmd) => cmd.kickerLandId != null)) return null;
+  const costs = [];
+  for (const cmd of list) if (!costs.includes(cmd.kickerLandId)) costs.push(cmd.kickerLandId);
+  if (costs.length < 2) return null;
+  return { costKey: 'kickerLandId', costs, costLabel: 'Zwrot lądu do ręki (koszt)' };
 }
 
 /**

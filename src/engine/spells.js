@@ -577,6 +577,11 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // odrzucane jako koszt dodatkowy (CR 601.2h) wskazane Z GÓRY w komendzie
   // okna; bez tej opcji wybór otwiera zwykła decyzja `pendingDiscardChoice`.
   'discardCardIds',
+  // CR 702.33a (Kicker z kosztem NIEMANOWYM, Batch 62 — Chocobo Kick: „Kicker—
+  // Return a land you control to its owner's hand"): id lądu zwracanego jako
+  // koszt dodatkowy. Wybór lądu to osobna decyzja gracza (jak ofiara kosztu
+  // `sacrificeTargetId`), więc idzie własnym polem komendy.
+  'kickerLandId',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -590,6 +595,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
     delveExileIds = null, handFreeCast = false, surgeCast = false, discardCardIds = null,
+    kickerLandId = null,
   } = options;
   const preObject = state.objects.get(objectId);
   // Surge (CR 702.117, Batch 58/B1): koszt alternatywny rozlicza tylko TA
@@ -759,6 +765,17 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // ścieżka rozliczenia kosztu.
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  // CR 702.33a + 601.2h: koszt kickera „Return a land you control to its
+  // owner's hand" to KOSZT RZUTU — ląd wskazuje gracz, a walidacja następuje
+  // PRZED jakąkolwiek mutacją (nieudany rzut nie może utracić many ani lądu).
+  if (kicker?.returnLand) {
+    const land = state.objects.get(kickerLandId);
+    if (!land || land.zone !== 'battlefield' || land.kind !== 'land' || land.controllerId !== playerId) {
+      throw new Error('Nielegalny ląd do zwrotu (kicker: return a land you control)');
+    }
+  } else if (kickerLandId != null) {
+    throw new Error('Ta karta nie ma kickera ze zwrotem lądu');
+  }
   const kickerPips = (kicker?.colors ?? []).map((color) => [color]);
   if (kickerPips.length > 0
     && !canPayColoredCost(state, playerId, [...basePips, ...kickerPips])) {
@@ -830,6 +847,21 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     }));
   }
   spendMana(state, playerId, manaSpent, [...basePips, ...kickerPips], spellManaPurpose(object));
+  // Zwrot lądu PO opłaceniu many: gracz może najpierw zagrać manę z tego lądu,
+  // a dopiero potem go oddać (CR 601.2h: koszty płaci się „w dowolnej
+  // kolejności"); suma many jest już zwalidowana, więc ląd wciąż się liczył.
+  // Obiekt wraca na rękę WŁAŚCICIELA (CR 400.7), jak w `bounce_permanent`.
+  if (kicker?.returnLand) {
+    const land = state.objects.get(kickerLandId);
+    const handId = `hand-${state.objectSequence++}`;
+    const returned = moveObjectDirectly(state, kickerLandId, 'hand', handId);
+    const inOwnersHand = Object.freeze({ ...returned, controllerId: land.ownerId ?? land.controllerId });
+    state.objects.set(handId, inOwnersHand);
+    state.events.push(event('object_moved', {
+      fromId: kickerLandId, object: inOwnersHand, fromZone: 'battlefield', toZone: 'hand',
+      bounced: true, toOwner: true, additionalCost: true,
+    }));
+  }
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   consumePendingSpellDiscount(state, object);
   state.spellsCastThisTurn += 1;
@@ -945,6 +977,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     // kicked spell" — triggers.js czyta `ev.kicked`; lustrzane pole
     // `permanent_cast` w resources.js).
     kicked: Boolean(kicker),
+    // Id lądu zwróconego jako koszt kickera (null dla kickera manowego) —
+    // jawne w logu (publiczna informacja: ląd wrócił na rękę).
+    kickerLandId: kicker?.returnLand ? kickerLandId : null,
     // Addendum (jawny w logu — lustro flagi na obiekcie stosu).
     castDuringMainPhase,
     // Surge (CR 702.117, Batch 58/B1) — jawny w logu i na obiekcie stosu
@@ -3087,15 +3122,35 @@ export function legalSpellCasts(state, playerId) {
       const kickerPips = (object.kicker.colors ?? []).map((color) => [color]);
       const freeCast = freeCastForKicker();
       const base = freeCast ? 0 : effectiveSpellManaCost(state, object);
+      // Kicker ze zwrotem lądu (CR 702.33a): wariant na KAŻDY rozróżnialny ląd
+      // kontrolera. Dwa lądy tej samej karty i tego samego stanu (tapped/
+      // untapped) są tym samym wyborem — oferujemy jednego, żeby panel nie
+      // puchł (L48: oferta = walidacja; walidacja przyjmuje dowolny ląd).
+      let landChoices = [null];
+      if (object.kicker.returnLand) {
+        const seen = new Set();
+        landChoices = [];
+        for (const land of state.objects.values()) {
+          if (land.zone !== 'battlefield' || land.kind !== 'land' || land.controllerId !== playerId) continue;
+          const key = `${land.cardId}|${land.tapped ? 1 : 0}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          landChoices.push(land.id);
+        }
+        if (landChoices.length === 0) return; // bez lądu koszt jest niemożliwy
+      }
       for (const k of spellPhyrexianVariants) {
         // M259/B3: wariant phyrexianu płacony życiem obniża sumę o k.
         const pips = freeCast ? [] : coloredPipsOf(object.cardId, k ?? 0);
         if (base + kickerCost - (k ?? 0) > manaAvailable(object, [...pips, ...kickerPips])) continue;
         if (pips.length + kickerPips.length > 0
           && !canPayColoredCost(state, playerId, [...pips, ...kickerPips])) continue;
-        const kickedCast = { ...cast, kicked: true };
-        if (k != null) kickedCast.phyrexianPayWithLife = k;
-        casts.push(kickedCast);
+        for (const landId of landChoices) {
+          const kickedCast = { ...cast, kicked: true };
+          if (landId != null) kickedCast.kickerLandId = landId;
+          if (k != null) kickedCast.phyrexianPayWithLife = k;
+          casts.push(kickedCast);
+        }
       }
     };
     // Gift (CR 702.174, Crumb and Get It): wariant z obietnicą daru NIE zmienia

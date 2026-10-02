@@ -1583,6 +1583,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // dodatkowy, CR 601.2f — jak koszty alternatywne).
   if (kicked && !object.kicker) throw new Error('Ta karta nie ma mechaniki kicker');
   const kicker = kicked ? (object.kicker ?? null) : null;
+  if (kicker?.returnLand) throw new Error('Kicker ze zwrotem lądu obsługują wyłącznie czary (instant/sorcery)');
   // Offspring (BLB, Rust-Shield Rampager): „You may pay an additional {2} as
   // you cast this spell" — dodatkowy koszt, jak kicker; przy opłaceniu
   // permanent dostaje wasOffspring, a ETB-trigger karty tworzy 1/1 token-kopię.

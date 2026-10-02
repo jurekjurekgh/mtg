@@ -20,6 +20,7 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
@@ -512,4 +513,157 @@ test('B62/203: Golem-Skin Gauntlets — bot wycenia sprzęt jako realną premię
   // Kara „nic nie dodaje\" to −12; realna premia +1 siły to wynik dodatni i
   // wyższy niż kara (przed poprawką pump czytany tylko z `def.pump` = 0).
   assert.ok(best > 0, `wynik equip dla Gauntlets dodatni, jest ${best}`);
+});
+
+// ---- B62/176: Chocobo Kick (FIN #178, plan Final Fantasy) -------------------
+
+const kickVariants = (s) => commands(s).filter((c) => c.type === 'cast_spell' && c.objectId === 'kick');
+const kickScene = ({ lands = ['basic-forest', 'basic-forest', 'basic-forest'], mine = 'goblin-piker', theirs = 'goblin-piker' } = {}) => {
+  const state = game();
+  put(state, 'mine', mine, 'p1', 'battlefield');
+  put(state, 'foe', theirs, 'p2', 'battlefield');
+  lands.forEach((cardId, i) => put(state, `land${i}`, cardId, 'p1', 'battlefield'));
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  return state;
+};
+
+test('B62/176: Chocobo Kick — dane Oracle, Sorcery {1}{G} z kickerem „zwróć ląd\" i druk FIN', () => {
+  const def = sanity('chocobo-kick', { set: 'FIN', plan: 'Final Fantasy', artId: 176 });
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.kicker.cost, 0, 'koszt kickera jest NIEMANOWY');
+  assert.deepEqual(def.kicker.colors, []);
+  assert.equal(def.kicker.returnLand, true);
+  assert.equal(def.spell.timing, 'sorcery');
+});
+
+test('B62/176: Chocobo Kick — oferta: zwykły rzut oraz wariant kicked na każdy rozróżnialny ląd', () => {
+  const state = kickScene({ lands: ['basic-forest', 'basic-forest', 'basic-island'] });
+  const all = kickVariants(state);
+  const plain = all.filter((c) => !c.kicked);
+  const kicked = all.filter((c) => c.kicked);
+  assert.ok(plain.length >= 1, 'zwykły rzut jest w ofercie');
+  assert.equal(plain[0].kickerLandId, undefined, 'zwykły rzut nie niesie lądu');
+  assert.ok(kicked.length >= 2, 'wariant kicked istnieje');
+  const landIds = new Set(kicked.map((c) => c.kickerLandId));
+  assert.equal(landIds.size, 2, 'dwa Forest to jeden wybór + Island = 2 warianty lądu (dedup po karcie i stanie)');
+  assert.ok(kicked.every((c) => c.targets.length === 2), 'dwa cele: własny stwór i stwór przeciwnika');
+});
+
+test('B62/176: Chocobo Kick — bez kickera: obrażenia = moc (jednostronnie), ląd zostaje', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' }); // 2/1 vs 1/3
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  run(state, kickVariants(state).find((c) => !c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe'));
+  settle(state);
+  assert.equal(state.objects.get('foe').damage ?? 0, 2, 'moc 2 → 2 obrażenia');
+  assert.equal(state.objects.get('mine').damage ?? 0, 0, 'jednostronnie — własny stwór nie dostaje obrażeń (bite, nie fight)');
+  assert.ok(['land0', 'land1', 'land2'].every((id) => state.objects.get(id)?.zone === 'battlefield'), 'lądy na polu');
+});
+
+test('B62/176: Chocobo Kick — kicked: ×2 obrażeń, ląd wraca na rękę właściciela, mana wydana = {1}{G}', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  state.objects.set('foe', Object.freeze({ ...state.objects.get('foe'), toughness: 6 })); // przeżyje, więc widać licznik obrażeń
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  const cmd = kickVariants(state).find((c) => c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe');
+  const handBefore = state.zones.hand.length;
+  const r = run(state, cmd);
+  const cast = r.events.find((e) => e.type === 'spell_cast');
+  assert.equal(cast.kicked, true);
+  assert.equal(cast.manaSpent, 2, 'kicker niemanowy nie zwiększa wydanej many');
+  assert.equal(cast.kickerLandId, cmd.kickerLandId, 'log niesie id zwróconego lądu');
+  settle(state);
+  assert.equal(state.objects.get('foe').damage ?? 0, 4, 'moc 2 ×2 = 4 obrażenia');
+  const returned = [...state.objects.values()].find((o) => o.cardId === 'basic-forest' && o.zone === 'hand');
+  assert.ok(returned, 'Forest wrócił na rękę');
+  assert.equal(returned.controllerId, 'p1');
+  assert.equal(state.zones.hand.length, handBefore, 'czar zszedł z ręki, ląd na nią wrócił');
+  assert.equal([...state.objects.values()].filter((o) => o.kind === 'land' && o.zone === 'battlefield' && o.controllerId === 'p1').length, 2);
+});
+
+test('B62/176: Chocobo Kick — kicked zabija stwora, którego zwykły rzut by nie zabił (3 wytrzymałości)', () => {
+  const plain = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  addMana(plain, 'p1', 2, { colors: ['G'] });
+  run(plain, kickVariants(plain).find((c) => !c.kicked && c.targets[1] === 'foe' && c.targets[0] === 'mine'));
+  settle(plain);
+  assert.equal(plain.objects.get('foe').zone, 'battlefield', 'zwykły: 2 obrażenia nie zabijają 1/3');
+  const kicked = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  addMana(kicked, 'p1', 2, { colors: ['G'] });
+  run(kicked, kickVariants(kicked).find((c) => c.kicked && c.targets[1] === 'foe' && c.targets[0] === 'mine'));
+  settle(kicked);
+  assert.notEqual(find(kicked, 'maritime-guard', 'battlefield')?.id, 'foe', 'kicked: 4 obrażenia zabijają 1/3');
+  assert.ok(find(kicked, 'maritime-guard', 'graveyard'), 'Merfolk w grobie');
+});
+
+test('B62/176: Chocobo Kick — nielegalny ląd kosztu (cudzy, nie-ląd, brak id) odrzucony BEZ utraty many i czaru', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  put(state, 'theirLand', 'basic-island', 'p2', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  const base = kickVariants(state).find((c) => c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe');
+  for (const bad of ['theirLand', 'mine', 'nieistnieje', undefined]) {
+    const r = execute(state, { ...base, kickerLandId: bad });
+    assert.equal(r.ok, false, `ląd „${bad}\" odrzucony`);
+  }
+  assert.equal(state.objects.get('kick').zone, 'hand', 'czar nadal w ręce');
+  assert.equal(state.objects.get('land0').zone, 'battlefield', 'własne lądy nietknięte');
+  // Zwykły rzut z podanym lądem to też błąd (karta bez kosztu zwrotu w tym wariancie).
+  const plain = kickVariants(state).find((c) => !c.kicked);
+  assert.equal(execute(state, { ...plain, kickerLandId: 'land0' }).ok, false);
+});
+
+test('B62/176: Chocobo Kick — bez lądu na polu nie ma wariantu kicked (koszt niemożliwy), zwykły rzut zostaje', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield');
+  put(state, 'foe', 'maritime-guard', 'p2', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  const all = kickVariants(state);
+  assert.ok(all.length >= 1 && all.every((c) => !c.kicked), 'tylko zwykłe rzuty');
+});
+
+test('B62/176: Chocobo Kick — ruling 2025-06-06: nielegalny JEDEN cel ⇒ brak obrażeń; ląd mimo to zwrócony (koszt)', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  run(state, kickVariants(state).find((c) => c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe'));
+  // W odpowiedzi własny stwór znika z pola (cel nr 1 nielegalny).
+  moveObjectDirectly(state, 'mine', 'graveyard', 'mine-dead');
+  settle(state);
+  assert.equal(state.objects.get('foe').damage ?? 0, 0, 'jeden cel nielegalny — żadnych obrażeń');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand'), 'ląd wrócił na rękę (koszt zapłacony)');
+});
+
+test('B62/176: Chocobo Kick — kicker nie wchodzi w kolejną zdolność „Whenever you cast a kicked spell\" jako błąd: event niesie kicked', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  const r = run(state, kickVariants(state).find((c) => c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe'));
+  assert.equal(r.events.find((e) => e.type === 'spell_cast').kicked, true);
+  const moved = r.events.find((e) => e.type === 'object_moved' && e.additionalCost);
+  assert.equal(moved.fromZone, 'battlefield');
+  assert.equal(moved.toZone, 'hand');
+});
+
+test('B62/176: Chocobo Kick — ruling: OBA cele nielegalne ⇒ czar się nie rozstrzyga, ale koszt (ląd) zapłacony', () => {
+  const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  run(state, kickVariants(state).find((c) => c.kicked && c.targets[0] === 'mine' && c.targets[1] === 'foe'));
+  moveObjectDirectly(state, 'mine', 'graveyard', 'mine-dead');
+  moveObjectDirectly(state, 'foe', 'graveyard', 'foe-dead');
+  settle(state);
+  assert.ok(find(state, 'chocobo-kick', 'graveyard'), 'czar w grobie (fizzle)');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand'), 'ląd wrócił na rękę');
+});
+
+test('B62/176: Chocobo Kick — bot kopie (zwraca ląd) tylko gdy podwojenie daje zabójstwo', () => {
+  const pick = ({ toughness }) => {
+    const state = kickScene({ mine: 'goblin-piker', theirs: 'maritime-guard' });
+    state.objects.set('foe', Object.freeze({ ...state.objects.get('foe'), toughness }));
+    state.objects.set('mine', Object.freeze({ ...state.objects.get('mine'), summoningSickness: false }));
+    addMana(state, 'p1', 2, { colors: ['G'] });
+    const bot = createHeuristicBot({ seed: 2026 });
+    const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+    return { cmd, options: bot.trace()[0].options };
+  };
+  assert.equal(pick({ toughness: 3 }).cmd.kicked, true, 'moc 2 nie zabija 1/3, ×2 zabija — kopie');
+  assert.equal(pick({ toughness: 2 }).cmd.kicked, undefined, 'moc 2 już zabija 1/2 — bez zwrotu lądu');
+  assert.equal(pick({ toughness: 6 }).cmd.kicked, undefined, 'nawet ×2 nie zabija 1/6 — bez zwrotu lądu');
 });

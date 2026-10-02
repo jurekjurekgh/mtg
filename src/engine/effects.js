@@ -1582,7 +1582,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!dealer || dealer.zone !== 'battlefield' || dealer.kind !== 'creature') return;
     const victim = state.objects.get(victimId);
     if (!victim || victim.zone !== 'battlefield' || victim.kind !== 'creature') return;
-    const amount = Math.max(0, effectivePower(dealer, state) ?? 0);
+    // Chocobo Kick: „If this spell was kicked, the creature you control deals
+    // TWICE that much damage instead" — mnożnik czyta fakt `wasKicked` z czaru
+    // na stosie (CR 702.33d), moc dealera z chwili rozstrzygnięcia (CR 608.2).
+    const multiplier = effect.kickedMultiplier && sourceObject?.wasKicked ? effect.kickedMultiplier : 1;
+    const amount = Math.max(0, effectivePower(dealer, state) ?? 0) * multiplier;
     dealNonCombatDamage(state, dealer, victimId, amount);
     return;
   }
