@@ -39,14 +39,20 @@ nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016/0030.
   spoza ręki) + **F3** (`{X}` zdolności nie jest maną wydaną na czar) — commit
   `06fc9a9`, pin `test/audyt-pr150-podzial-w-oknach-rzutu.test.js` (3 mutacje
   czerwone). Raport: `docs/audits/AUDYT_PR150_2026-10-02.md`.
-- [ ] **Etap 5 — pętla jakości** (ADR 0021 §4) w miarę budżetu: pozycje otwarte
-  z handoffu 2026-10-02 (kreator podziału obrażeń Fiery Justice: pula celów 8 ⇒
-  podział „ręczny" z dowolnego celu na polu; przegląd czytników
-  `zone === 'exile'`) oraz polowanie na rozjazdy CR ścieżkami niepowtarzanymi
-  z poprzednich sesji (Żywy Tester — osie z `docs/setup/TESTER_STOLU.md`).
-- [ ] **Etap 6 — zamknięcie**: handoff `HANDOFF_2026-10-02f.md`,
-  `PROJECT_HISTORY.md`, liczby bramki zmierzone na końcu (L92), opis PR
-  zaktualizowany kumulatywnie, blok przekazania w czacie.
+- [x] **Etap 5 — pętla jakości (w zakresie budżetu)**: **re-weryfikacja mutacji
+  F–H po commicie naprawy** — F czerwone (3), **G czerwone (1, nie 5)**, **H
+  czerwone (2, nie 5)**; pierwszy przebieg G/H był unieważniony przez
+  `git checkout -- src/` na brudnym drzewie (tabela i wniosek 4 w raporcie
+  skorygowane). **O1 (`DIVIDED_POOL_CAP`)**: przegląd ścieżki ofert i kreatora
+  panelu — pula nadal capowana w silniku, a oferta = komenda, więc „ręczny"
+  kreator z dowolnego celu wymaga zmiany powierzchni ofert (koszt
+  kombinatoryczny u botów) → **osobny plan**, pozycja w handoffie razem
+  z czytnikami `zone === 'exile'`, pinem `castsWithoutPayingMana` i projekcjami
+  remisów.
+- [x] **Etap 6 — zamknięcie**: handoff `docs/setup/HANDOFF_2026-10-02f.md`,
+  wpis w `docs/PROJECT_HISTORY.md`, liczby bramki zmierzone na końcu (L92):
+  `npm test` **7430/7430**, `test:all` **7701/7701**, build **4775,1 kB**;
+  opis PR #151 zaktualizowany kumulatywnie, blok przekazania w czacie.
 
 ## Ryzyka i pułapki
 

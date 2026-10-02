@@ -15032,3 +15032,39 @@ build **70 modułów / 4709,9 kB**.
 stwora w modalu wyboru celu pokoju nic nie robił (kandydaci w bibliotece; `hiddenObjectCardId`
 znał tylko szukanie). Naprawa klasowa: lookup po `view.pending*.cards` (obejmuje też Manifest
 dread), piny E/1–E/4. `npm test` **7314/7314**, build **4710,6 kB**.
+## 2026-10-02f — audyt PR #150 + podział obrażeń w oknach rzutu (PR #151)
+
+Prompt „kontynuuj projekt" ⇒ ADR 0020/0021. Plan `docs/plans/PLAN_2026-10-02f-audyt-pr150.md`,
+raport `docs/audits/AUDYT_PR150_2026-10-02.md`, handoff `docs/setup/HANDOFF_2026-10-02f.md`.
+
+Audyt scalonego PR #150 (76 plików, +4628/−157: batch 62 = kolekcja 176–210 +
+PMSSB-36…39): diff czytany plik po pliku, twierdzenia komentarzy sprawdzane
+sondami na żywym silniku (ADR 0020 B), dane Oracle/rulingi 1:1 z żywym
+Scryfallem (ADR 0030), piny — mutacjami. Dwa znaleziska naprawione u root cause:
+**F1 (średni):** Fiery Justice (`spell.divided`) nie miała ŻADNEJ oferty
+w oknach rzutu spoza ręki (grób/Halo Forager, Epic Experiment, ręka Barala,
+Vaan) — `epicCastOffers` milczał dla `spell.divided`, a `castSpellWithoutManaCost`
+nie znał `damageDivision`; karta deklarowana jako `supported` bez ograniczeń,
+a gracz nie mógł jej rzucić w tych oknach. **F3 (niski):** próg „if five or more
+mana was spent to cast" (Opus) liczył `{X}` zapłacone zdolności zlecającej rzut
+(Halo Forager) → 2 liczniki zamiast 1 (CR 601.2f).
+Naprawa (`06fc9a9`): jeden generator podziału (`dividedDamageDivisions`) dla ręki
+i wszystkich okien, walidacja i stempel `damageDivision` przed mutacją, komendy
+okien niosą podział (madness celowo milczy — executor go nie rozlicza), zdarzenie
+`spell_cast` niesie manę wydaną na CZAR (dopłaty + alternatywny dodatek zapłacony
+maną; `{X}` decyzji w `eventStamp.xPaid`). Pin
+`test/audyt-pr150-podzial-w-oknach-rzutu.test.js` (5 testów). Obserwacje bez
+zmian: O1 `DIVIDED_POOL_CAP = 8` (gracz-przeciwnik wypada z puli przy 10 wrogich
+stworach — kolejka handoffu), O2 nadmiarowa bramka `instantSorcery` (mutacja
+przeżywa — każde `spell_cast` w silniku to `kind === 'spell'`), O3 brak oferty
+podziału zerowego, O4 indeksowanie `targetIndex` w `resolveDividedSpell`
+(ryzyko na przyszłość).
+
+Mutacje: A–F zgodne z raportem, **G/H skorygowane po ponownym przebiegu na
+czystym drzewie** (G czerwone 1, H czerwone 2; pierwszy przebieg unieważnił
+`git checkout` na brudnym drzewie — wniosek 4 raportu: mutacje dopiero po
+commicie i z kontrolą `git diff`).
+
+**Bramka końcowa:** `npm test` **7430/7430** EXIT 0, `npm run test:all`
+**7701/7701** EXIT 0 (429,9 s, warstwa slow + golden-master bota), build
+**70 modułów / 4775,1 kB**.
