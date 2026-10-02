@@ -37,20 +37,23 @@ test('M181/a: plan workowy dobity do 15 kart AUTOMATYCZNIE dostaje własną tali
   // Theros jest w WOREK_DECKS (worek-legend); przy 15 kartach generator ma
   // go awansować bez edycji map — wpis w worku staje się martwy.
   assert.equal(WOREK_DECKS.Theros, 'worek-legend', 'założenie: Theros mieszka w worku');
+  // Batch 62/T2: wypełniacz „Rabiah" zamiast Amonkheta — Amonkhet przeszedł
+  // do worka-mrocznego (przetasowanie WOREK_DECKS), a test potrzebuje planów
+  // mieszkających w worku-legend.
   const registry = syntheticRegistry({
-    Theros: 15, 'Śródziemie': 11, Amonkhet: 3, Shandalar: 3, Rath: 2,
+    Theros: 15, 'Śródziemie': 11, Rabiah: 3, Shandalar: 3, Rath: 2,
   });
   const files = buildDecks(registry);
   assert.ok(files.has('theros'), 'nowa talia theros (auto-awans, slug z nazwy planu)');
   const theros = files.get('theros');
   assert.equal((theros.match(/^1x Syn Theros /gm) ?? []).length, 15, '15 kart planu w nowej talii');
   const worek = files.get('worek-legend');
-  assert.ok(worek, 'worek-legend istnieje dalej (19 pozostałych kart)');
+  assert.ok(worek, 'worek-legend istnieje dalej (19 pozostałych kart: Śródziemie 11, Rabiah 3, Shandalar 3, Rath 2)');
   assert.ok(!/Syn Theros /.test(worek), 'karty Theros WYJĘTE z worka');
 });
 
 test('M181/b: worek poniżej minimum po awansie = CZYTELNY błąd (świadome przetasowanie)', () => {
-  const registry = syntheticRegistry({ Theros: 15, Amonkhet: 3, Rath: 2 });
+  const registry = syntheticRegistry({ Theros: 15, Rabiah: 3, Rath: 2 });
   assert.throws(() => buildDecks(registry), /worek-legend.*przetasuj plany w WOREK_DECKS/s);
 });
 

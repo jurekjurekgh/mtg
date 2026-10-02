@@ -1,0 +1,43 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Fiery+Justice&set=2x2&format=json",
+  "print": "2x2",
+  "name": "Fiery Justice",
+  "mana_cost": "{R}{G}{W}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Fiery Justice deals 5 damage divided as you choose among any number of targets. Target opponent gains 5 life.",
+  "colors": [
+    "G",
+    "R",
+    "W"
+  ],
+  "set": "2x2",
+  "set_name": "Double Masters 2022",
+  "collector_number": "212",
+  "rarity": "rare",
+  "artist": "Mathias Kollros",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/4/144668d6-cab6-45e6-8498-ab7cd927f9df.jpg?1783921834",
+    "normal": "https://cards.scryfall.io/normal/front/1/4/144668d6-cab6-45e6-8498-ab7cd927f9df.jpg?1783921834"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [
+    {
+      "date": "2017-03-14",
+      "source": "wotc",
+      "comment": "You choose how many targets Fiery Justice has and how the damage is divided as you cast it. Each target for its damage-dealing effect must receive at least 1 damage."
+    },
+    {
+      "date": "2017-03-14",
+      "source": "wotc",
+      "comment": "If some (but not all) of the targets become illegal, the original division of damage still applies, but no damage is dealt to illegal targets. If all targets become illegal, including the target opponent for the life-gaining effect, Fiery Justice doesn't resolve. If each target for the damage-dealing effect becomes illegal while the target for the life-gaining effect remains legal, that player gains 5 life even though no damage is dealt."
+    },
+    {
+      "date": "2017-03-14",
+      "source": "wotc",
+      "comment": "The target opponent for the life-gaining effect may also be a target for the damage-dealing effect. If this happens and the damage brings that player's life total to 0 or less, the life-gaining effect will raise their life total above 0 again before the player would lose the game."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/2x2/212/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

@@ -311,6 +311,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // skan zdarzenia odejścia aury z LKI gospodarza (triggers.js; ruling DMR
   // 2022-12-08 — równoczesna śmierć aury i gospodarza też odpala).
   'enchanted_creature_dies',
+  // Batch 62/198 (Tackle Artist): Opus — „whenever you cast an instant or
+  // sorcery spell" (skan zdarzenia spell_cast w triggers.js).
+  'you_cast_instant_or_sorcery_spell',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

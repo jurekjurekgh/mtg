@@ -46,7 +46,7 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * - świadomość kroków: w własnym untap/upkeep/draw/end/cleanup nie tapuje się
  *   many ani nie aktywuje zdolności kosztem tapu (mana wyparuje na końcu
  *   kroku, stwór zostaje tapowany całą turę) — likwiduje patologię
- *   „wypalania własnej biblioteki\" przez stanie w miejscu;
+ *   „wypalania własnej biblioteki” przez stanie w miejscu;
  * - zegar (tury do zabicia / do śmierci): bonusy za bliskość lethal,
  *   groźbę śmierci w następnej turze (wyścig) i pustą bibliotekę (deck-out);
  * - ocenę planszy: evasion (flying), parytet liczby stworów;
@@ -1401,6 +1401,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // creature_opponent_controls, artifact_or_creature, nonland_permanent…)
     return foes.length > 0;
   };
+  /**
+   * PMSSB-36/B: czy ETB „put a +1/+1 counter on target …” ma LEGALNY cel po
+   * mojej stronie przy rzucie nosiciela. Wchodzący permanent nie stoi jeszcze
+   * na polu, ale bez `notSelf` sam jest celem (trigger rozstrzyga się, gdy
+   * już jest); z `notSelf` potrzeba innego mojego stwora (z `subtype`, jeśli
+   * spec go wymaga). Spec to deskryptor `requiresTarget` (ADR 0002).
+   */
+  // Spec celu ETB-licznika po stronie WŁASNEJ: „target creature” (dowolny —
+  // własny też) albo „target creature you control”. Pozostałe specy
+  // (cel wroga, obrońca, artefakt…) zostają na dawnej bramce wrogiej.
+  const isFriendlyCounterSpec = (spec) => {
+    const raw = typeof spec === 'string' ? spec : spec?.type;
+    return raw === 'creature' || raw === 'creature_you_control';
+  };
+  const etbFriendlyCounterTargetAvailable = (view, spec) => {
+    if (!spec || typeof spec === 'string') return true;
+    if (!spec.notSelf) return true;
+    return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      && o.kind === 'creature' && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
+  };
   // PMSSB-2/A (F4): efekty oferowane PRZEZ token (z jego zdolności —
   // deskryptor efektu albo definicja tokena, wzorzec M243/C). Jedno źródło
   // dla wyceny roli (mana-bank / liczniki) i kary M243/C (L41).
@@ -1551,6 +1571,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // `draw_then_discard` liczył pełne +6 (błąd: karta-w-do-grobu jak
   // zatrzymana). Obie pisownie i gałąź ability schodzą do +2.
   const LOOT_NET_VALUE = 2;
+  // PMSSB-38 (L41): jedna miara incubate — ciało N/N (10·(2N+N)/3 jak
+  // tokenBodyValue) pomniejszone o koszt przemiany {2} (jak koszt many
+  // stwora). Token jest artefaktem, dopóki się nie przemieni (nie blokuje).
+  const incubateValue = (e) => {
+    const n = Number.isInteger(e?.amount) ? e.amount : 2;
+    return Math.max(0, 10 * n - 2 * P.creatureManaCostWeight);
+  };
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -1564,6 +1591,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
+    // PMSSB-38: incubate N (CR 701.53) = token Incubator z N licznikami;
+    // po {2} staje się N/N — ta sama skala ciała co tokenBodyValue.
+    incubate: (e) => incubateValue(e),
     // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
     // slepe na zycie — bufor x3 vs M236, H5).
     gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
@@ -1617,7 +1647,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     buff_creatures_you_control: () => 8, // wchodzący stwór też jest odbiorcą
     grant_keywords_until_end_of_turn: () => 4,
     buff_creature_until_end_of_turn: (e, view, req) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && o.kind === 'creature') ? 5 : 0),
-    add_counter: (e, view, req) => (req ? (etbEnemyHasTarget(view, req) ? 6 : 0) : 5),
+    // PMSSB-36/B: licznik z ETB na SWOIM stworze (Jade Bearer, Moogle) — bramka
+    // dostępności celu po stronie WŁASNEJ (dawniej `etbEnemyHasTarget` pytał o
+    // wrogie permanenty, więc wartość zależała od wroga, nie od celu).
+    add_counter: (e, view, req) => (req
+      ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req) : etbEnemyHasTarget(view, req)) ? 6 : 0)
+      : 5),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
     search_library_to_hand: (e, view) => searchRiderValue(view, e),
@@ -1882,9 +1917,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (worthIt) total += Math.max(0, killValue(best) - cena);
         }
       } else {
-        // PMSSB-14/F-I1: helper (x=4: draw+3 — bit-identycznie!).
-        const imp = impulseLookValue(view, 4);
-        if (imp > 0) total += Math.max(0, imp - cena);
+        // PMSSB-36: wartość NETTO triggera z deskryptora — dawny „impuls x=4"
+        // był liczony KAŻDEMU exploitowi bez debuffu, także takiemu, który
+        // nie przegląda biblioteki (Vulturous Aven: draw 2 + lose 2 życia).
+        const selfModel = exploitSelfResourceGain(view, def);
+        if (selfModel.hasModel) {
+          // Po poświęceniu: moje stwory − ofiara + źródło (wchodzi na pole).
+          const thin = exploitThinBoardPenalty(view, victims.length);
+          total += Math.max(0, selfModel.gain - cena - thin - P.exploitNetMargin);
+        } else {
+          // PMSSB-14/F-I1: helper (x=4: draw+3 — bit-identycznie!).
+          const imp = impulseLookValue(view, 4);
+          if (imp > 0) total += Math.max(0, imp - cena);
+        }
       }
     }
     if (def.devour) {
@@ -1955,7 +2000,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (ev === 'spell_targets_this_creature' || ev === 'turned_face_up'
         || ev === 'aura_host_targeted_by_spell') like = 0.3;
       else if (ev === 'beginning_of_second_main') like = 0.5;
-      else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell') like = 0.5;
+      else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell'
+        || ev === 'you_cast_instant_or_sorcery_spell') like = 0.5;
       else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
@@ -2059,6 +2105,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (life <= 5) return 2 + x;
     if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
     return Math.min(1 + Math.floor(x / 2), 3);
+  };
+  // PMSSB-36 (L41/L48): JEDNA drabina kosztu SAMOUSZKODZENIA (utrata życia
+  // kontrolera) dla wszystkich kanałów — rzut czaru, wejście permanentu
+  // i trigger exploita. Zwraca koszt DODATNI (do odjęcia): 1000 = samobójstwo
+  // (życie − strata ≤ 0), 80 = zejście do ≤ 2 życia z progu ≤ 5, potem
+  // 15×strata przy życiu ≤ 5, a przy zdrowym życiu symboliczne 2×strata.
+  // Liczby identyczne z dawnymi trzema kopiami (cast_spell, ETB, exploit).
+  const SELF_HARM_SUICIDE = 1000;
+  const selfLifeLossPenalty = (view, dmg) => {
+    if (!(dmg > 0)) return 0;
+    const life = myLife(view);
+    if (life - dmg <= 0) return SELF_HARM_SUICIDE;
+    if (life <= 5 && life - dmg <= 2) return 80;
+    if (life <= 5) return 15 * dmg;
+    return 2 * dmg;
   };
   // PMSSB-4/F-A1: straznik — gain celowany we WROGA w cast nie dostaje
   // premii (karze go misaim M179; premia znioslaby kare, L3).
@@ -2274,6 +2335,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!target) return [];
     return (view.zones?.battlefield ?? [])
       .filter((o) => o?.attachedTo === target.id && (o.kind === 'aura' || o.aura) && !o.bestow);
+  }
+  /**
+   * PMSSB-36 (exploit z zyskiem we WŁASNYCH zasobach, Vulturous Aven: „you
+   * draw two cards and you lose 2 life"): wartość NETTO triggera exploita
+   * z deskryptorów efektów (ADR 0002) — dobranie = `drawCardValue × n` plus
+   * drabina deck-outu (`drawDeckingPenalty`, ta sama co rzut/ETB), utrata
+   * życia = koszt wspólnej drabiny `selfLifeLossPenalty` (1000 = samobójstwo).
+   * `hasModel` mówi, czy trigger w ogóle ma taki efekt: bez niego decyzje
+   * zostają na dawnych ścieżkach (debuff/mill — kotwica anty-over-fix).
+   * Jedno źródło dla rzutu (`anticipatedSacValue`) i rozstrzygnięcia
+   * (`resolve_exploit_choice`) — L41(a): cast = resolve liczą to samo.
+   */
+  function exploitSelfResourceGain(view, def) {
+    let hasModel = false;
+    let gain = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.trigger?.event !== 'exploits') continue;
+      for (const eff of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+        if (eff?.type === 'draw_cards' && drainsMyLibrary(eff)) {
+          const n = drainAmount(eff);
+          hasModel = true;
+          gain += P.drawCardValue * n + drawDeckingPenalty(view, n);
+        } else if (eff?.type === 'lose_life' && (eff.scope === 'controller' || eff.applyTo === 'self')) {
+          hasModel = true;
+          gain -= selfLifeLossPenalty(view, Number.isInteger(eff.amount) ? eff.amount : 1);
+        }
+      }
+    }
+    return { hasModel, gain };
+  }
+  /**
+   * PMSSB-36 (zgłoszenie właściciela 2026-10-02: „poświęcać tylko gdy dość
+   * stworów"): po poświęceniu (źródło exploita zostaje na polu) mam < 2
+   * stworów, a wróg ma stwory — cienka plansza kosztuje
+   * `exploitThinBoardPenalty`. `remainingCreatures` = moje stwory PO wymianie
+   * (razem ze źródłem). Pokrętło ×0 przywraca dawną ścieżkę.
+   */
+  function exploitThinBoardPenalty(view, remainingCreatures) {
+    return remainingCreatures < 2 && enemyCreatures(view).length > 0 ? P.exploitThinBoardPenalty : 0;
   }
   function exploitMillAmount(def) {
     let razem = 0;
@@ -4290,7 +4390,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
         && !manaOnlyAbility(a)),
       entersTapped: Boolean(def?.entersTapped),
+      // Batch 62 (Crumbling Vestige): ETB-trigger lądu dodający manę do puli —
+      // ląd wchodzi tapnięty, ale ta mana jest do wydania W TEJ SAMEJ turze
+      // (CR 605.1a: zdolność wyzwalana, nie many, więc przechodzi przez stos).
+      etbMana: etbManaOfLand(def),
     };
+  }
+
+  /** Mana, którą ląd dodaje do puli przy wejściu: `{ amount, anyColor }` albo null. */
+  function etbManaOfLand(def) {
+    let amount = 0;
+    let anyColor = false;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      for (const e of Array.isArray(ability.effect) ? ability.effect : [ability.effect]) {
+        if (e?.type !== 'add_mana' || e.condition != null) continue;
+        amount += e.amount ?? 1;
+        if ((e.colors ?? []).length >= 2) anyColor = true;
+      }
+    }
+    return amount > 0 ? { amount, anyColor } : null;
+  }
+
+  /**
+   * Czy po zagraniu tego lądu da się W TEJ TURZE rzucić kartę z ręki, której
+   * NIE da się rzucić bez many z triggera wejścia (koszt ogólny i kolor).
+   * Liczymy: pula + nietapnięte własne lądy + mana z triggera; brakujący pip
+   * koloru pokrywa tylko mana „dowolnego koloru" (po jednym pipie na jednostkę).
+   */
+  function etbManaUnlocksCast(view, objectId, etb) {
+    const me = view.players.find((p) => p.id === view.playerId);
+    const untapped = (view.zones.battlefield ?? [])
+      .filter((o) => o?.controllerId === view.playerId && o.kind === 'land' && !o.tapped).length;
+    const have = (me?.mana ?? 0) + untapped;
+    const colorsNow = new Set();
+    for (const o of view.zones.battlefield ?? []) {
+      if (o?.controllerId !== view.playerId || o.kind !== 'land' || o.tapped) continue;
+      for (const c of koloryZrodlaWidoku(o)) colorsNow.add(c);
+    }
+    for (const o of view.zones.hand ?? []) {
+      if (!o || o.kind === 'land' || o.id === objectId) continue;
+      const cost = cardDef(o.cardId)?.manaCost ?? 0;
+      if (cost <= 0) continue;
+      const missing = coloredPipsOf(o.cardId).filter((unit) => !unit.some((c) => colorsNow.has(c))).length;
+      const fitsWithout = cost <= have && missing === 0;
+      const fitsWith = cost <= have + etb.amount && missing <= (etb.anyColor ? etb.amount : 0);
+      if (fitsWith && !fitsWithout) return true;
+    }
+    return false;
   }
 
   /**
@@ -4349,7 +4496,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (a.potrzeby.size > 0 && a.kolory.length === 0) delta -= 3;  // bezbarwny przy brakach koloru
     if (a.nowyKolor) delta += 3;                                    // pierwszy takiego koloru
     if (a.ilosc >= 2) delta += 4;                                   // {T}: Add {C}{C} i podobne
-    if (a.entersTapped) delta -= 8;                                 // mana dopiero w nastepnej turze
+    // Batch 62 (Crumbling Vestige): ląd tapnięty Z manaą z triggera wejścia nie
+    // traci tempa tej tury (mana trafia do puli) — bez kary −8, a gdy ta mana
+    // pozwala rzucić kartę, której inaczej nie da się rzucić teraz, premia
+    // jak za pokrycie brakującego koloru. Reszta tapniętych: bez zmian.
+    if (a.entersTapped) {
+      if (a.etbMana) {
+        if (etbManaUnlocksCast(view, objectId, a.etbMana)) delta += 14;
+      } else delta -= 8;                                            // mana dopiero w nastepnej turze
+    }
     // PMSSB-12/F-P2 (spire!): ETB-pay-or-sac — stać (pool≥pay) → −koszt;
     // nie-stać → −12 (ląd ginie — strata many-przyszłej!).
     const landDef = objectId ? cardDef(((view.zones?.hand ?? []).find((o) => o.id === objectId) ?? {}).cardId) : undefined;
@@ -5099,13 +5254,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * `oneSided` = bite (tylko ofiara dostaje damage); w fight giną obie
    * strony wg progów DT (R2).
    */
-  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null } = {}) {
+  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null, damageMultiplier = 1 } = {}) {
     if (!dealer || !victim) return -40;
     // R5: ofiara po NASZEj stronie = samookaleczenie (kara > baza).
     if (victim.controllerId === view.playerId) return -60;
     const b = buffs ?? { power: 0, toughness: 0, keywords: [], effects: [] };
     const dealerKw = [...(dealer.keywords ?? []), ...b.keywords];
-    const dPow = Math.max(0, (dealer.power ?? 0) + b.power);
+    // Batch 62 (Chocobo Kick): „twice that much damage" — mnożnik dotyczy
+    // obrażeń (nie mocy), a wytrzymałość dealera zostaje bez zmian.
+    const dPow = Math.max(0, (dealer.power ?? 0) + b.power) * damageMultiplier;
     const dToughLeft = Math.max(0, (dealer.toughness ?? 0) + b.toughness - (dealer.damage ?? 0));
     const vPow = Math.max(0, victim.power ?? 0);
     const vToughLeft = Math.max(0, (victim.toughness ?? 0) - (victim.damage ?? 0));
@@ -5123,6 +5280,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let value;
     if (oneSided) {
       value = P.fightBiteChipBase + P.fightBitePowerWeight * dPow + (kills ? P.fightBiteLethalBonus : 0);
+      // PMSSB-37/A (L41a: bite = damage): nieletalny cios w stwora POZA oknem
+      // walki to czysta strata — `damageTargetValue` daje tu −80 (Shock na
+      // 9 wytrzymałości −30/−80), a bite dostawał dodatni „chip" i Chocobo
+      // Kick szedł w cel, którego nie zabije (64 > pass). Ta sama reguła,
+      // to samo okno (`combatTrickWindow`); pokrętło ×0 przywraca stary chip.
+      if (!kills && !combatTrickWindow(view, victim)) value -= P.fightBiteMissPenalty;
     } else if (kills && !dies) {
       value = P.fightKillBase + P.fightKillPowerWeight * vPow;
     } else if (dies) {
@@ -5530,14 +5693,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * które trafiają do scoringu, są w wywołaniach — jedno źródło faktów, nie
    * jedno źródło wagi (patrz L119 o metryce gorszej od modelu).
    */
+  /**
+   * Pump, który sprzęt DOKŁADA nosicielowi: stały (`pump`) plus pump „za każdy
+   * Equipment przyczepiony do niego" (`pumpPerAttachedEquipment`, Golem-Skin
+   * Gauntlets). Liczba Equipmentów = inne sprzęty już na nosicielu + sam
+   * wyceniany (liczy siebie, ruling 2020-08-07). Jedno źródło faktu dla obu
+   * gałęzi equipu — wycena czytająca wyłącznie `pump` widziałaby Gauntlets
+   * jako sprzęt „niczego nie dodaje" (kara −12) i bot nigdy by go nie założył.
+   */
+  function equipPumpOf(view, def, source, creature) {
+    const flat = { power: def?.pump?.power ?? 0, toughness: def?.pump?.toughness ?? 0 };
+    const per = def?.pumpPerAttachedEquipment;
+    if (!per || !creature) return flat;
+    const others = (view?.zones?.battlefield ?? [])
+      .filter((o) => o?.equipment && o.attachedTo === creature.id && o.id !== source?.id).length;
+    return {
+      power: flat.power + (per.power ?? 0) * (others + 1),
+      toughness: flat.toughness + (per.toughness ?? 0) * (others + 1),
+    };
+  }
+
   function equipValuation(view, source, creature) {
     const def = source?.equipment;
     if (!def || !creature) return { value: 0, nothingAdded: true };
     const grants = def.keywords ?? [];
     const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
     const freshGrants = grants.filter((kw) => !keywords.has(kw));
-    const pumpPower = def.pump?.power ?? 0;
-    const pumpToughness = def.pump?.toughness ?? 0;
+    const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, def, source, creature);
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
     // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
@@ -5682,6 +5864,186 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (hasTrigger) penalty += 4 + 2 * (object.power ?? 0) + (object.toughness ?? 0);
     }
     return penalty;
+  }
+
+  /**
+   * PMSSB-36/C + PMSSB-37/B (zgłoszenia właściciela 2026-10-02): STRONA
+   * WYPŁATY triggerów „whenever you cast …” / „whenever … you control
+   * enters” leżących już na polu — wartość rzutu czaru/permanentu, który je
+   * odpala. Dotąd bot wyceniał tylko rzut NOSICIELA (`anticipatedTailValue`),
+   * a rzut przy nosicielu na polu nie dostawał nic (Shock przy Tackle Artist
+   * wypadał gorzej niż bez niego).
+   * Zdarzenia: instant/sorcery (Opus), noncreature (czar ORAZ nie-stworzenie
+   * jako permanent — tak odpala silnik: Tellah), artifact/enchantment enters
+   * (Pangolin; `another` wyklucza samego nosiciela). Nogi efektów: licznik na
+   * nosicielu (`counterHostValue`, L41) oraz — z tabeli ETB (jedna miara,
+   * L41) — dobranie, token, dreny, scry i zysk życia; poświęcenie nosiciela
+   * (próg many Tellaha) liczy ciało nosiciela jako koszt. Warunki nóg
+   * `manaSpentBelow/AtLeast` liczone od many rzutu (`reservedManaOf`);
+   * trigger z własnym `condition`, z celem albo z efektem poza listą = 0
+   * (jak dotąd). `payMana`: koszt many + brak lepszego rzutu zablokowanego
+   * zapłatą (`payBlocksBetterCast` — ta sama reguła co decyzja o zapłacie,
+   * L41a). Wynik × `boardPayoffWeight`. `kind`: 'spell' | 'permanent'.
+   */
+  /**
+   * PMSSB-39 (zgłoszenie właściciela 2026-10-02: „tak, chcę”, Jeskai
+   * Windscout/Devotee/Kulrath Mystic): trigger rzutu z efektem TYMCZASOWYM na
+   * nosicielu (+P/+T do końca tury) ma wartość tylko w oknie, w którym pump
+   * zdąży zmienić walkę. Ta sama polityka okien co pump z czaru (M146/M179:
+   * walka 18, własna główna 1 przed atakiem, reszta 0) i ta sama polityka ataku
+   * co deklaracja (`attackIntendsCreature`, L41/L48):
+   *  - walka zadeklarowana, nosiciel w niej walczy: `pumpChangesOutcome`
+   *    (symulacja CR 510) → `tempPumpTrickValue` + moc nosiciela, inaczej 0;
+   *  - moja główna 1, nosiciel może atakować i bot realnie nim zaatakuje:
+   *    z mojej strony nie wiadomo, czy wróg zablokuje — `tempPumpBlockOdds`
+   *    dzieli wartość między „blok, który pump przełamuje” (trik jak wyżej,
+   *    symulacja przeciw KAŻDEMU możliwemu blokerowi — wystarczy jeden, bo
+   *    wróg wybiera) a „nie blokuje” (`tempPumpFaceDamageValue` za punkt mocy,
+   *    skala drainu 4/pkt jak w tabeli ETB). Bez możliwego blokera: pełne
+   *    obrażenia w twarz;
+   *  - inne okna (druga główna, tura wroga bez walki, koniec tury): 0.
+   * Dynamiczne X (np. „source_power”) i efekty skierowane (`targetIndex`) są
+   * poza modelem (0), tak jak dotąd.
+   */
+  function temporaryPumpPayoff(view, host, leg) {
+    if (leg.targetIndex != null || leg.type === 'buff_attacking_creatures') return 0;
+    if (!Number.isFinite(leg.power ?? 0) || !Number.isFinite(leg.toughness ?? 0)) return 0;
+    const delta = { power: leg.power ?? 0, toughness: leg.toughness ?? 0 };
+    if (!(delta.power > 0 || delta.toughness > 0)) return 0;
+    if (combatTrickWindow(view, host)) {
+      return pumpChangesOutcome(view, host, delta) ? P.tempPumpTrickValue + (host.power ?? 0) : 0;
+    }
+    if (!(myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(host))) return 0;
+    // Pump może też ODBLOKOWAĆ atak: gdy bez niego bot nie zaatakuje, a z nim
+    // tak (ta sama polityka ataku na widoku z podbitym nosicielem), pump
+    // przełamuje blok z definicji (`flips`).
+    const intendsNow = attackIntendsCreature(view, host.id);
+    const enablesAttack = !intendsNow && attackIntendsCreature({
+      ...view,
+      zones: {
+        ...view.zones,
+        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === host.id
+          ? { ...o, power: (o.power ?? 0) + delta.power, toughness: (o.toughness ?? 0) + delta.toughness } : o)),
+      },
+    }, host.id);
+    if (!intendsNow && !enablesAttack) return 0;
+    const flies = (host.keywords ?? []).includes('flying');
+    const blockers = enemyCreatures(view).filter((b) => !b.tapped && !b.cantBlock
+      && (!flies || (b.keywords ?? []).some((k) => k === 'flying' || k === 'reach')));
+    const face = P.tempPumpFaceDamageValue * Math.max(0, delta.power);
+    if (blockers.length === 0) return face;
+    const before = duelStats(host, {});
+    const after = duelStats(host, delta);
+    const flips = enablesAttack || blockers.some((b) => {
+      const bs = duelStats(b, {});
+      return JSON.stringify(simulateCombat(before, [bs])) !== JSON.stringify(simulateCombat(after, [bs]));
+    });
+    const odds = P.tempPumpBlockOdds;
+    return odds * (flips ? P.tempPumpTrickValue + (host.power ?? 0) : 0) + (1 - odds) * face;
+  }
+  const PAYOFF_TEMP_PUMP_EFFECTS = new Set(['pump', 'buff_creature_until_end_of_turn']);
+  /** Warunki triggera rzutu, które bot umie ocenić z karty rzucanej (PMSSB-39). */
+  function castTriggerConditionHolds(cond, castDef) {
+    if (!cond) return true;
+    const keys = Object.keys(cond);
+    if (keys.length !== 1) return null;
+    if (cond.spellManaValueAtLeast != null) return (castDef.manaCost ?? 0) >= cond.spellManaValueAtLeast;
+    if (Array.isArray(cond.spellColorsInclude)) return (castDef.colors ?? []).some((c) => cond.spellColorsInclude.includes(c));
+    if (cond.spellIsColorless) return (castDef.colors ?? []).length === 0;
+    return null;
+  }
+  const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
+  let payoffProbeDepth = 0;
+  function boardCastPayoffValue(view, cmd, castDef, kind) {
+    if (!castDef || !(P.boardPayoffWeight > 0) || payoffProbeDepth > 0) return 0;
+    const types = castDef.types ?? [];
+    const spent = reservedManaOf(view, cmd);
+    let total = 0;
+    for (const host of myCreatures(view)) {
+      const hostDef = host.cardId ? cardDef(host.cardId) : undefined;
+      for (const ability of hostDef?.abilities ?? []) {
+        if (ability?.type !== 'triggered' || ability.trigger?.requiresTarget) continue;
+        // PMSSB-39: warunek triggera rzutu (MV ≥ N, kolor, bezbarwny) — z karty
+        // rzucanej; nieznany warunek = poza modelem (jak dotąd każdy).
+        if (castTriggerConditionHolds(ability.trigger?.condition, castDef) !== true) continue;
+        const ev = ability.trigger?.event;
+        const matches = (ev === 'you_cast_instant_or_sorcery_spell' && kind === 'spell'
+            && (types.includes('Instant') || types.includes('Sorcery')))
+          || ev === 'when_you_cast_spell' // PMSSB-39: każdy rzut (Kulrath Mystic, warunek MV wyżej)
+          || (ev === 'you_cast_noncreature_spell' && (kind === 'spell' || !types.includes('Creature')))
+          || (ev === 'artifact_you_control_enters' && kind === 'permanent' && types.includes('Artifact')
+            && !(ability.trigger.another && host.cardId === castDef.id))
+          || (ev === 'enchantment_you_control_enters' && kind === 'permanent' && types.includes('Enchantment'))
+          // PMSSB-38: „your second spell each turn" — licznik z widoku
+          // (`spellsCastThisTurn`, ten sam co w silniku); ten rzut jest
+          // drugim, gdy wcześniej padł dokładnie jeden. Każdy rodzaj rzutu.
+          || (ev === 'you_cast_second_spell_each_turn' && (view.spellsCastThisTurn ?? 0) === 1)
+          // PMSSB-38: Tiller of Flesh — czar mający za cel PERMANENT na polu
+          // (gracz i karta w grobie nie liczą się; własny rzut nosiciela też nie).
+          || (ev === 'you_cast_spell_targeting_permanent' && host.id !== cmd.objectId
+            && [...(cmd.targets ?? []), ...(cmd.targetId ? [cmd.targetId] : [])]
+              .some((id) => view.zones.battlefield.some((o) => o.id === id)));
+        if (!matches) continue;
+        let benefit = 0;
+        let modeled = true;
+        for (const leg of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+          if (!leg?.type) continue;
+          const cond = leg.condition ?? null;
+          if (cond) {
+            const keys = Object.keys(cond);
+            if (keys.some((k) => k !== 'manaSpentBelow' && k !== 'manaSpentAtLeast')) { modeled = false; break; }
+            if (cond.manaSpentBelow != null && !(spent < cond.manaSpentBelow)) continue;
+            if (cond.manaSpentAtLeast != null && !(spent >= cond.manaSpentAtLeast)) continue;
+          }
+          if (leg.type === 'add_counter') {
+            benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
+          } else if (leg.type === 'sacrifice_permanent' && !leg.targetIndex) {
+            benefit -= bodyWorth(host);
+          } else if (PAYOFF_TEMP_PUMP_EFFECTS.has(leg.type)) {
+            benefit += temporaryPumpPayoff(view, host, leg);
+          } else if (PAYOFF_TABLE_EFFECTS.has(leg.type)) {
+            benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
+          } else { modeled = false; break; }
+        }
+        if (!modeled || benefit <= 0) continue;
+        const pay = ability.trigger.payMana ?? 0;
+        if (pay > 0) {
+          if (ownOpenMana(view) - spent < pay) continue;
+          if (payBlocksBetterCast(view, pay, ownOpenMana(view) - spent, benefit, cmd.objectId)) continue;
+          benefit -= pay * P.creatureManaCostWeight;
+        }
+        if (benefit > 0) total += P.boardPayoffWeight * benefit;
+      }
+    }
+    return total;
+  }
+  /**
+   * PMSSB-37/C (zgłoszenie właściciela 2026-10-02, Oreplate Pangolin): zapłata
+   * {N} za trigger „you may pay” odbiera manę, która może być potrzebna na
+   * INNY rzut tej tury. Zablokowany rzut = karta z ręki zagrywalna teraz
+   * (`manaUnlockCandidates`: instanty zawsze, reszta w mojej głównej), której
+   * koszt mieści się w `open`, ale NIE w `open − pay`, a bot realnie chce ją
+   * rzucić (wynik `castScoreForUnlock` ≥ `optionalPayBlockedCastMin`).
+   * Płacić mimo to warto tylko, gdy zysk triggera (`benefit`, skala wyceny)
+   * przebija `optionalPayCastScoreWeight` × wynik zablokowanego rzutu.
+   * Przybliżenie: kolory nie są sprawdzane (jak `manaUnlockCandidates`);
+   * `excludeId` = karta rzucana właśnie (nie blokuje samej siebie).
+   */
+  function payBlocksBetterCast(view, pay, open, benefit, excludeId = null) {
+    if (!(pay > 0) || payoffProbeDepth > 0) return false;
+    let best = 0;
+    payoffProbeDepth += 1;
+    try {
+      for (const card of manaUnlockCandidates(view)) {
+        if (card.id === excludeId) continue;
+        const cost = card.manaCost ?? 0;
+        if (!(cost <= open && cost > open - pay)) continue;
+        best = Math.max(best, castScoreForUnlock(view, card));
+      }
+    } finally {
+      payoffProbeDepth -= 1;
+    }
+    return best >= P.optionalPayBlockedCastMin && benefit < P.optionalPayCastScoreWeight * best;
   }
 
   function enemyAttackPower(view) {
@@ -7085,14 +7447,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
         }
         if (etbSelfDmg > 0) {
-          const life = myLife(view);
           // Twarde progi: zejście do <= 2 życia lub poniżej zera = odmowa
           // (bazowe 70 za stwora nie może wygrać z ryzykiem); przy zdrowym
           // życiu koszt symboliczny (karta pozostaje grywalna).
-          if (life - etbSelfDmg <= 0) return finish(-1000); // samobójstwo
-          if (life <= 5 && life - etbSelfDmg <= 2) return finish(-80);
-          else if (life <= 5) score -= 15 * etbSelfDmg;
-          else score -= 2 * etbSelfDmg;
+          const pen = selfLifeLossPenalty(view, etbSelfDmg);
+          if (pen >= SELF_HARM_SUICIDE) return finish(-1000); // samobójstwo
+          if (pen >= 80) return finish(-80);
+          score -= pen;
         }
         // Stwór, który wraca po śmierci (persist) albo reanimuje z grobu
         // przeciwnika, jest wart więcej niż same statystyki — deskryptory
@@ -7121,6 +7482,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
         // Demon: „when you cast a spell" obejmuje też stwory) — kara.
         score -= castSacrificePenalty(view);
+        // PMSSB-36/C: wypłata triggerów-licznika na polu (artefakt wchodzi).
+        score += boardCastPayoffValue(view, cmd, def, 'permanent');
         // Phyrexian mana (CR 118.9): każdy symbol opłacony życiem kosztuje
         // 2 życia — bot woli manę (wariant k=0 jest najtańszy), a warianty
         // życiowe w ogóle nie są oferowane, gdy życie ich nie wytrzymuje.
@@ -7271,17 +7634,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
+        // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
+        // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
+        // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
+        // zabójstwo, którego zwykły rzut by nie dał. Drobny tie-break: ląd
+        // już tapnięty oddajemy chętniej niż świeży (−0.2).
+        if (cmd.kickerLandId) {
+          score -= P.kickerReturnLandPenalty;
+          if (objectOnBoard(view, cmd.kickerLandId)?.tapped !== true) score -= 0.2;
+        }
         // C (Sarkhan's Rage): samouszkodzenie czaru (także warunkowe —
         // selfDamageOfEffects rozwija `conditional`) — te same twarde progi
         // co ETB (M169/K, L48: jedna reguła samobójstwa dla wchodzenia i rzutu).
         {
           const selfDmg = selfDamageOfEffects(view, effects);
           if (selfDmg > 0) {
-            const life = myLife(view);
-            if (life - selfDmg <= 0) return finish(-1000); // samobójstwo
-            if (life <= 5 && life - selfDmg <= 2) score -= 80;
-            else if (life <= 5) score -= 15 * selfDmg;
-            else score -= 2 * selfDmg;
+            const pen = selfLifeLossPenalty(view, selfDmg);
+            if (pen >= SELF_HARM_SUICIDE) return finish(-1000); // samobójstwo
+            score -= pen;
           }
         }
         // Phyrexian mana (CR 118.9): jak gałąź cast_permanent — bot woli manę
@@ -7319,6 +7689,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           || e?.type === 'draw_cards_both_players');
         if (isDrawOnly) score = -1;
         score -= castSacrificePenalty(view);
+        // PMSSB-36/C: wypłata triggerów-licznika na polu (Opus: instant/sorcery).
+        score += boardCastPayoffValue(view, cmd, cmd.type === 'cast_adventure'
+          ? { types: ['Instant'] } : (card?.cardId ? cardDef(card.cardId) : undefined), 'spell');
         // M103/D: koszt Escape — wygnanie własnych kart z grobu to realna
         // strata (stworami więcej niż landami/innymi). Bez tego bot uciekał
         // wariantem niszczącym własny cmentarz, bo wszystkie warianty miały
@@ -7791,6 +8164,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
             score += fightExchangeValue(view, dealer, victim, {
               oneSided: true,
+              damageMultiplier: (cmd.kicked === true && effect.kickedMultiplier) ? effect.kickedMultiplier : 1,
               buffs: fightRiderBuffs(scoredEffects, effect.sourceTargetIndex ?? 0),
             });
           }
@@ -7847,6 +8221,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // PMSSB-1/A (M239/2): gałąź return_to_hand USUNIĘTA — typ nie
           // występuje w katalogu ani silniku (martwe; wycena bounce żyje w
           // REMOVAL_EFFECTS powyżej, typy bounce_*).
+          // Batch 62 (Fiery Justice): podział obrażeń wybrany przy rzucie —
+          // wartość = suma wycen porcji (to samo `damageTargetValue` co dla
+          // pojedynczych obrażeń: dobicie wroga wg pozostałego życia, chip
+          // poza walką = zakaz, własny cel = zakaz). Czar bez celów obrażeń
+          // nic nie rozdziela. Życie dla przeciwnika wycenia kara
+          // `gain_life_target` powyżej (jedno źródło, bez podwójnego liczenia).
+          if (effect.type === 'damage_divided_among_targets') {
+            const division = cmd.damageDivision ?? [];
+            for (const entry of division) score += damageTargetValue(view, entry.id, entry.amount, false);
+            if (division.length === 0) score -= 60;
+          }
           if (effect.type === 'damage') {
             // M237/4 (model właściciela) — JEDNO źródło prawdy wyceny obrażeń
             // (damageTargetValue): stwór wroga dobity wg POZOSTAŁEGO życia,
@@ -7948,6 +8333,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             }
           }
+          if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
             // hour + ciało/rola w środku).
@@ -8225,9 +8611,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += preventShieldValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
           }
           // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
-          // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
+          // each opponent” (i lose_life każdego przeciwnika) nie miało wyceny
           // w pętli czarów (było tylko w modalnym triggerze, linia 582). Bot
-          // porównywał więc ten tryb z „wygnaj artefakty\" na równi i wybierał
+          // porównywał więc ten tryb z „wygnaj artefakty” na równi i wybierał
           // tryb bezsensowny (wygnanie własnego Angel's Feather zamiast 3
           // obrażeń przeciwnikowi). Reguła generyczna: wartość = 4×N (jak
           // modalny trigger), dobicie = bonus.
@@ -9811,8 +10197,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const targetKeywords = new Set([...(target.keywords ?? []), ...(target.grantedKeywords ?? [])]);
               const freshGrants = grants.filter((kw) => !targetKeywords.has(kw));
               const hasteAdds = freshGrants.includes('haste') && target.summoningSickness === true;
-              const pumpPower = equipmentDef.pump?.power ?? 0;
-              const pumpToughness = equipmentDef.pump?.toughness ?? 0;
+              const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, equipmentDef, source, target);
               const effectiveTargetPower = target.power ?? 0; // Z-1: moc z widoku jest efektywna
               const conditionalEvasion = equipmentDef.cantBeBlockedMaxPower != null
                 && effectiveTargetPower <= equipmentDef.cantBeBlockedMaxPower;
@@ -10703,9 +11088,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // jest sensem karty, zapłata niemal zawsze na plusie.
       // Etap F (CR 603.5 + 603.12): wyjątek — refleksyjna zdolność z celem
       // (Zoraline, Kappa), gdy celu brak: zapłata to czysta strata.
-      case 'resolve_optional_pay_choice':
+      case 'resolve_optional_pay_choice': {
         if (cmd.pay && cmd.reflexiveTargetCount === 0) return finish(-10);
+        // PMSSB-37/C: zapłata {N} nie może zabrać many lepszemu rzutowi tej
+        // tury. Zysk triggera z tej samej tabeli co rzut nosiciela/payoffu
+        // (`anticipatedPayValue`: ETB_EFFECT_BONUS + licznik na źródle).
+        if (cmd.pay && (cmd.cost ?? 0) > 0 && cmd.sourceId) {
+          const host = objectOnBoard(view, cmd.sourceId);
+          const hostDef = host?.cardId ? cardDef(host.cardId) : undefined;
+          let benefit = 0;
+          for (const ability of hostDef?.abilities ?? []) {
+            if ((ability?.trigger?.payMana ?? 0) !== cmd.cost) continue;
+            for (const leg of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+              if (leg?.type === 'add_counter') benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
+              else if (leg?.type && PAYOFF_TABLE_EFFECTS.has(leg.type)) benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
+            }
+          }
+          if (benefit > 0 && payBlocksBetterCast(view, cmd.cost, ownOpenMana(view), benefit)) return finish(10);
+        }
         return finish(cmd.pay ? 75 : 15);
+      }
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
         // Bot rzuca bez kosztu (darmowa karta na stole). Etap F/4: oferta
@@ -11470,6 +11872,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const worthIt = killTmc > sacrificeTmc || killAssets >= P.exploitKillAssetMargin;
           if (!worthIt) return finish(P.exploitSkipBase - P.exploitNoKillPenalty);
         }
+        // PMSSB-36: trigger z zyskiem/kosztem WŁASNYCH zasobów (dobranie,
+        // utrata życia — Vulturous Aven) liczy NETTO z deskryptora: zysk −
+        // cena ofiary − cienka plansza, wobec skip (bez stałej `exploitBase`,
+        // która była ślepa na życie i bibliotekę). Poświęcenie opłaca się
+        // tylko, gdy netto > margines: tani token/1-1 tak, 3/3 czy stwór
+        // z keywordem/zdolnością nie, a przy niskim życiu albo cienkiej
+        // bibliotece (samobójstwo/deck-out) nigdy.
+        const srcDef = source ? cardDef(source.cardId) : undefined;
+        const selfModel = exploitSelfResourceGain(view, srcDef);
+        if (selfModel.hasModel) {
+          const remaining = myCreatures(view).length - 1;
+          const thin = exploitThinBoardPenalty(view, remaining);
+          return finish(P.exploitSkipBase + selfModel.gain - cena - thin - P.exploitNetMargin);
+        }
         // Poświęcenie jest warte mniej, im cenniejsza ofiara; bazowy zysk
         // z exploita musi przewyższyć stratę (inaczej wygrywa skip).
         return finish(P.exploitBase - cena);
@@ -11905,6 +12321,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         waluta: cialo - P.creatureManaCostWeight * koszt,
         cele: (cmd.targets ?? []).length,
         kicker: cmd.kicked ? 1 : 0,
+        kickerLandId: cmd.kickerLandId ?? null,
         // Audyt Batch53/C: wariant offspring (Rust-Shield Rampager) remisował
         // z rzutem naturalnym (ten sam score), a projekcja nie niosła różnicy
         // — remis wyglądał na „uczciwy", choć warianty się różnią (jak kicker).

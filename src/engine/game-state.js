@@ -1205,6 +1205,10 @@ function freeSpellCastOffers(state, playerId, obj) {
  */
 function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false, free = false } = {}) {
   const spell = obj.spell ?? {};
+  // Czar z podziałem obrażeń przy rzucie (Fiery Justice) ma ofertę tylko na
+  // ścieżce `legalSpellCasts` (L48: okna darmowych rzutów/madness podziału nie
+  // wyliczają, więc milczą zamiast obiecywać komendę bez `damageDivision`).
+  if (spell.divided) return [];
   if (spell.fireball && !xCost && !free) return [];
   // Aura (CR 303.4a): czar z celem wybieranym przy rzucie — ten sam generator
   // co dla ręki (`legalAuraCastsForObject`). Tylko dla ścieżek, które wyliczają
@@ -5954,6 +5958,8 @@ export function execute(state, input) {
             buyback: cmd.buyback, payAltCost: cmd.payAltCost, xValue: cmd.xValue,
             phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
             gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
+            kickerLandId: cmd.kickerLandId ?? null,
+            damageDivision: cmd.damageDivision ?? null,
           },
         });
         const events = [e, ...state.events.slice(beforeSkill).filter((entry) => entry !== e)];
@@ -5978,6 +5984,10 @@ export function execute(state, input) {
         // wskazuje się razem z kosztem (wariant komendy niesie jego id).
         gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
         delveExileIds: cmd.delveExileIds ?? null,
+        // CR 702.33a: ląd zwracany jako koszt kickera niemanowego.
+        kickerLandId: cmd.kickerLandId ?? null,
+        // CR 601.2d: podział obrażeń wybrany przy rzucie (Fiery Justice).
+        damageDivision: cmd.damageDivision ?? null,
       });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });
@@ -8518,7 +8528,8 @@ export function playerView(state, playerId) {
       // — wariant kicked: true ZA zwykłym rzutem (unshift przed pętlą
       // wariantów many, więc naturalny rzut zostaje pierwszy — proste boty
       // biorą najtańszy). Pipy kolorów kickera wchodzą do wymagań.
-      if (object.kicker) {
+      // (kicker ze zwrotem lądu żyje tylko na czarach — `legalSpellCasts`.)
+      if (object.kicker && !object.kicker.returnLand) {
         const kickerCost = object.kicker.cost ?? 0;
         const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
         if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
@@ -9157,6 +9168,11 @@ export function playerView(state, playerId) {
     // PMSSB-3/F-mysteries: czy kontroler zagral lad w tej turze (info jawne —
     // lady widac na polu; do warunku landEnteredThisTurn w wycenie).
     landEnteredThisTurn: (state.landEnteredThisTurn?.[playerId] ?? 0) > 0,
+    // PMSSB-38: liczba czarów, które widz rzucił w tej turze (info jawna —
+    // czary przechodzą przez stos i log). Ten sam licznik czyta trigger
+    // „whenever you cast your second spell each turn" (triggers.js), więc
+    // bot wycenia go tą samą liczbą, której używa silnik (L48).
+    spellsCastThisTurn: state.spellsCastThisTurnByPlayer?.[playerId] ?? 0,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
     pendingDiscardChoice: activeDiscardChoice ? {
       count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count

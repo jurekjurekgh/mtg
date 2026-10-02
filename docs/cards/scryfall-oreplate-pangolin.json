@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Oreplate+Pangolin&set=eoe&format=json",
+  "print": "eoe",
+  "name": "Oreplate Pangolin",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Artifact Creature — Robot Pangolin",
+  "oracle_text": "Whenever another artifact you control enters, you may pay {1}. If you do, put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "R"
+  ],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "150",
+  "rarity": "common",
+  "artist": "Dmitry Burmak",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/0/90209957-95db-4b59-979a-316d14ef876c.jpg?1783905949",
+    "normal": "https://cards.scryfall.io/normal/front/9/0/90209957-95db-4b59-979a-316d14ef876c.jpg?1783905949"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/eoe/150/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

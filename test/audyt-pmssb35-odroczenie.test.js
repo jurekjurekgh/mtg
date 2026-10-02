@@ -137,7 +137,10 @@ test('A4: rzut płatny z wygnania = rzut z ręki (L41: jedna arytmetyka dla stre
   const zReki = (() => { const s = game(); pole(s, 6); reka(s, 'we', 'weftblade-enhancer'); return s; })();
   const zWygnania = (() => { const s = game(); pole(s, 6); wExile(s, 'we', 'weftblade-enhancer', { warpReady: true, warpedAtTurn: 3 }); return s; })();
   assert.equal(wynik(zWygnania, 'cast_permanent(we)'), wynik(zReki, 'cast_permanent(we)'));
-  blisko(wynik(zReki, 'cast_permanent(we)'), 65.703, 'kotwica PO (płatny rzut {5}{W})');
+  // PMSSB-36/B: ETB-licznik na „target creature" (cel dowolny — także własny)
+  // dostaje wartość 6×0,9 niezależnie od wroga na stole (dawniej 0 bez wroga):
+  // 65.703 → 71.103 w obu strefach.
+  blisko(wynik(zReki, 'cast_permanent(we)'), 71.103, 'kotwica PO (płatny rzut {5}{W})');
 });
 
 // --- B. suspend_card: dostępność z oferty silnika + cena + zwłoka ----------
@@ -227,7 +230,8 @@ test('D1: koszt warp jest w wycenie (PRZED: 70,000 przy 4 i przy 6 polach)', () 
   assert.equal(wynik(cztery, 'warp_card'), 66,
     '70 bazy (ciało 3/4: 70 + 2×3 + 4 = 80, − 15 tymczasowości, + 5 ETB) − 4 (warp {2}{W} = 3 many + 1 pip); gałąź w rodzinie `spell` (×1)');
   assert.equal(wynik(szesc, 'warp_card'), 66, 'ten sam wariant = ten sam wynik (rzut stały to osobna oferta)');
-  assert.ok(wynik(szesc, 'cast_permanent(we)') < wynik(szesc, 'warp_card') + 5,
+  // (próg 6: ETB-licznik rzutu stałego wyceniony wg PMSSB-36/B, warp ma stałe +5)
+  assert.ok(wynik(szesc, 'cast_permanent(we)') < wynik(szesc, 'warp_card') + 6,
     'rzut stały pozostaje w zasięgu warpu — wycena nie „wybiera za gracza”');
 });
 

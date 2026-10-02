@@ -2395,8 +2395,11 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
         // Steelfin Whale: „Whenever an artifact you control enters, untap
         // this creature" — dowolny artefakt wchodzący pod kontrolą źródła
         // (także artifact creature i samo źródło, gdy jest artefaktem).
+        // Oreplate Pangolin: „ANOTHER artifact you control" — `another` wyklucza
+        // samo źródło (CR 603.2d: zdolność nie reaguje na własne wejście).
         const isArt = entered.kind === 'artifact' || (entered.types ?? []).includes('Artifact');
-        if (isArt && entered.controllerId === source.controllerId) {
+        const notSelfOk = !ability.trigger?.another || entered.id !== source.id;
+        if (isArt && notSelfOk && entered.controllerId === source.controllerId) {
           tryFire(state, ability, source, [], events);
         }
       } else if (triggerEvent === 'land_entered_under_opponent_control') {
@@ -3412,6 +3415,21 @@ function processTriggersScan(state, recentEvents) {
             // queueTriggerToStack sam celów nie wybiera — wtedy idziemy przez
             // tryFire, który otwiera decyzję wyboru celu (L48: jedna ścieżka
             // dla triggerów z celem, niezależnie od zdarzenia).
+            if (ability.trigger?.requiresTarget) {
+              tryFire(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            } else {
+              queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            }
+          } else if (triggerEvent === 'you_cast_instant_or_sorcery_spell') {
+            // Opus (Tackle Artist, SOS; CR 207.2c — słowo zdolności bez własnych
+            // reguł): „Whenever you cast an instant or sorcery spell". Tylko
+            // zdarzenie `spell_cast` z kartą Instant/Sorcery (`instantSorcery`
+            // wyżej); czar kontrolera źródła. Kontekst niesie `manaSpent` —
+            // całą manę wydaną na czar (także na koszty dodatkowe, jak kicker
+            // czy X), z którą efekty porównują próg „five or more" (CR 603.2).
+            // Zdolność trafia na stos NAD czarem (CR 603.3b), więc rozstrzyga
+            // się przed nim — także gdy czar zostanie skontrowany.
+            if (source.controllerId !== ev.playerId || !instantSorcery || ev.type !== 'spell_cast') continue;
             if (ability.trigger?.requiresTarget) {
               tryFire(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
             } else {

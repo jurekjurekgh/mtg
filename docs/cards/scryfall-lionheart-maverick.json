@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lionheart+Maverick&set=gpt&format=json",
+  "print": "gpt",
+  "name": "Lionheart Maverick",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature — Human Knight",
+  "oracle_text": "Vigilance\n{4}{W}: This creature gets +1/+2 until end of turn.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "W"
+  ],
+  "set": "gpt",
+  "set_name": "Guildpact",
+  "collector_number": "11",
+  "rarity": "common",
+  "artist": "Hideaki Takamura",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/0/704ba6ce-5d28-417b-8574-d3c097e6e39f.jpg?1783943529",
+    "normal": "https://cards.scryfall.io/normal/front/7/0/704ba6ce-5d28-417b-8574-d3c097e6e39f.jpg?1783943529"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/gpt/11/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

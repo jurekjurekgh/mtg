@@ -73,6 +73,10 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | remisy wyboru (triage tie-audytu: attack/block/cel) | 0 (mikro) | DONE (2026-10-01d) | §PMSSB-33 niżej; `test/audyt-pmssb33-remisy-wyboru.test.js` (7); **werdykt: 16 „GROZY" to znane równości, nie ślepoty wyceny** — 0 zmian kodu; per-kind `--gate` zostaje narzędziem polowania, nie bramką CI |
 | koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
 | odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
+| mechaniki kart batcha 62 (exploit z zasobami, cel własny ETB, wypłata liczników na polu) | 10 kart (Aven, Jade Bearer, Tackle Artist, Pangolin + 6 przeglądniętych) | DONE (2026-10-02b) | §PMSSB-36 niżej; plan `PLAN_2026-10-02b-pmssb36-nowe-karty.md`; `test/audyt-pmssb36-nowe-karty.test.js` (9 pinów, 8 czerwonych PRZED); exploit z `draw_cards`/`lose_life` liczony NETTO (`exploitSelfResourceGain`, wspólna drabina `selfLifeLossPenalty` L48), bramka celu własnego ETB, `boardCastPayoffValue` (Opus/Pangolin); 3 pokrętła `exploitThinBoardPenalty`/`exploitNetMargin`/`boardPayoffWeight` |
+| trzy granice po PMSSB-36 (bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna Pangolina) | Chocobo Kick, Tellah, Oreplate Pangolin | DONE (2026-10-02c) | §PMSSB-37 niżej; plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`; `test/audyt-pmssb37-trzy-granice.test.js` (12 pinów, 7 czerwonych PRZED + 2 kontrole pokręteł); `fightBiteMissPenalty` 80, rozszerzone `boardCastPayoffValue`, `payBlocksBetterCast`; pokrętła `fightBiteMissPenalty`/`optionalPayBlockedCastMin`/`optionalPayCastScoreWeight` |
+| licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
+| payoffy z efektem tymczasowym przy rzucie (prowess, Jeskai Devotee, Kulrath Mystic) | Jeskai Windscout, Jeskai Devotee, Kulrath Mystic | DONE (2026-10-02e) | §PMSSB-39 niżej; plan `PLAN_2026-10-02e-pmssb39-pump-triggery.md`; `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów, 6 czerwonych PRZED + 4 kontrole); `temporaryPumpPayoff` (okna walki/głównej 1 + polityka ataku), warunki triggera rzutu; 3 pokrętła `tempPumpTrickValue`/`tempPumpFaceDamageValue`/`tempPumpBlockOdds` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2013,3 +2017,121 @@ uzasadnione w planie §6).
 trybu źródła (`Seer’s Lantern {2},{T}: Scry 1`, Immersturm Skullcairn, Balamb
 Garden), bankowanie many, `cast_spell` warianty (tryb/kicker), model treści
 czekającej na późniejszą planszę — każda z nowym dowodem.
+
+## PMSSB-36 — mechaniki kart batcha 62: exploit z zasobami, cel własny ETB, wypłata liczników (2026-10-02b)
+
+Wejście: **zgłoszenie właściciela** — „czy exploit Vulturous Aven jest robiony z
+głową (poświęcać tylko gdy dość stworów, najmniejszego bez zdolności)? czy
+przeszedł PMSSB? sprawdź WSZYSTKIE mechaniki nowych kart”. Plan:
+`docs/plans/PLAN_2026-10-02b-pmssb36-nowe-karty.md` (tabela przeglądu 10 kart).
+Odpowiedź: PMSSB-11 (exploit, 2026-09-26) powstał dla 3 kart BEZ triggera
+zasobowego; Aven (draw 2 + lose 2) go nie przeszedł.
+
+**Pomiar PRZED** (sonda na realnym bocie, `resolve_exploit_choice`; wynik = oferta
+poświęcenia vs skip 20): życie 20 → 35 (sac); **życie 2 → sac (samobójstwo)**; życie 3–5 → sac;
+**biblioteka 2–5 kart → sac (deck-out)**; jedyny silny stwór (Silumgar 23 > 20) → sac;
+jedyny obrońca vs 3 wrogów → sac; rzut karty liczył „impuls x=4” (trigger Drownera) dla
+KAŻDEGO exploitu bez debuffu. Przyczyna: decyzja = stała `exploitBase` 40 − cena ofiary
+(ślepa na zysk/koszt triggera) + bramki tylko dla millu i debuffu.
+
+**Naprawy (generyczne, ADR 0002):**
+- **A — exploit netto:** `exploitSelfResourceGain` (dobranie = `drawCardValue × n` + drabina
+  `drawDeckingPenalty`; utrata życia = wspólna `selfLifeLossPenalty`, te same progi co `cast_spell`
+  i ETB — L48, 1000 = samobójstwo). Poświęcenie gdy `zysk − cena − cienka plansza − margines > 0`;
+  ofiara = najniższa `cena` (P/T + keywordy + zdolności − token). Rzut = ta sama miara (L41a).
+  Debuff/mill bez zmian (anty-over-fix). PO: życie ≤5 i biblioteka ≤5 → skip; 3/3 bez zdolności → skip;
+  token < karta; lone 1/3 vs 3 wrogów → skip.
+- **B — cel własny ETB:** bramka `etbEnemyHasTarget` pytała o wrogów także dla „put a counter on target
+  creature (you control)” — Jade Bearer 63,901 z Merfolkiem i bez; z wrogiem +5,4 bez celu. Teraz
+  `etbFriendlyCounterTargetAvailable` (`notSelf`/`subtype` z deskryptora); Moogle/Weftblade (cel dowolny,
+  także własny) liczą 6 niezależnie od wroga (pin PMSSB-35/A4: 65,703 → 71,103).
+- **C — wypłata liczników na polu:** `boardCastPayoffValue` — „you cast instant/sorcery” (Opus, gałęzie
+  `manaSpentBelow/AtLeast` od many rzutu) i „another artifact enters” (`payMana`, tylko gdy po koszcie
+  zostaje mana) × `boardPayoffWeight` 0,5, miara `counterHostValue` (L41). PRZED Shock przy Artyście
+  84 → 72 (kara dominacji planszy, zero za licznik); PO 86.
+
+**Przegląd reszty (OK, bez zmian):** Chocobo Kick (bez kicka gdy 1× zabija, z kickiem gdy tylko 2×),
+Mnemonic Wall (regrowth wartościowany, cel zagrywalny kolorem), Gauntlets (wybór celu z przypiętymi),
+Fiery Justice (`damageDivision`), Maverick (pump POKRYTE), Vestige (`8653c9d`).
+
+**Granice / forward:** (1) bite bez zabicia ma dodatnią „chip” (kotwica PMSSB-16: Kick na 9-toughness
+dostaje 64 > pass) — kandydat na osobną decyzję; (2) wypłata payoffów innych niż licznik (dobranie,
+token) przy rzucie z payoffem na polu; (3) Pangolin: bot płaci {1} ZAWSZE (PMSSB-12), nie waży mana
+potrzebnej na inny rzut tej tury.
+
+**Pomiar końcowy:** `run-tests all` 7668/7668; golden-master: jedna zmiana, score-only (oferta
+exploit −5 vs 14, wybór ten sam — 0 flipów), fixture przegenerowany.
+
+## PMSSB-37 — trzy granice po PMSSB-36: bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna (2026-10-02c)
+
+Wejście: polecenie właściciela „zajmij się tymi trzema wykrytymi sytuacjami”. Plan:
+`docs/plans/PLAN_2026-10-02c-pmssb37-trzy-granice.md`.
+
+**Pomiar PRZED:** Chocobo Kick na cel o wytrzymałości 9 = 64 (> pass 0) mimo braku zabicia;
+Shock/artefakt przy Tellah Great Sage na polu = ten sam wynik co bez payoffu (waga 0);
+Pangolin płacił {1} zawsze (75 vs 15), także gdy ręka miała karty za 2 przy 2 otwartych many.
+
+**Naprawy (generyczne, ADR 0002; ta sama miara co reszta, L41/L41a):**
+- **A — bite bez zabicia:** `fightExchangeValue` (gałąź jednostronna) odejmuje `fightBiteMissPenalty`
+  80, gdy cios nie zabija i nie ma okna walki (`combatTrickWindow`) — lustro `damageTargetValue`
+  (−80). PO: Kick na 9 → −16 (pass); Assert Perfection na 9 → pass; Knockout Maneuver na 9 → nadal
+  zagrany (licznik na własnym stworze liczony osobno). Pokrętło 0 przywraca dawną „chip”.
+- **B — payoffy inne niż licznik:** `boardCastPayoffValue` liczy nogi z `ETB_EFFECT_BONUS`
+  (dobranie, token, drain, scry, zysk życia), warunki many, poświęcenie nosiciela jako koszt (Tellah
+  ≥ 8 many) i zdarzenia `you_cast_noncreature_spell` (czar oraz nie-stworzenie jako permanent) i
+  „enchantment enters”. PO: Tellah + Shock +5, + artefakt +4,5 (waga 0,5), stwór bez zmian.
+- **C — zapłata opcjonalna (Pangolin):** `payBlocksBetterCast` — nie płać {N}, gdy karta z ręki
+  mieści się w otwartej manie, ale nie po zapłacie, a jej wynik ≥ `optionalPayBlockedCastMin` (40)
+  i zysk triggera < `optionalPayCastScoreWeight` (0,5) × wynik. Ta sama bramka w antycypacji
+  (`boardCastPayoffValue`), z reentrancy guard `payoffProbeDepth` (wycena zablokowanego rzutu woła
+  `scoreCommand`). PO: pusta ręka → płaci, karta za 2 → nie płaci, karta za 1 → płaci.
+
+**Granice (świadomie):** kolory kandydata zablokowanego nie są sprawdzane (jak `manaUnlockCandidates`),
+tylko pojedyncza karta bez kombinacji; payoffy „drugi czar w turze” (brak licznika w widoku bota) i
+incubate Tillera bez wyceny; Knockout Maneuver bez zabicia zostaje dodatni dzięki licznikowi.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian (0 różnic); `run-tests all` **7680/7680**; build bez zmian w liczbie modułów.
+
+## PMSSB-38 — licznik czarów w widoku bota i wycena incubate (2026-10-02d)
+
+Wejście: pytanie właściciela po PMSSB-37 — „czemu bot nie widzi licznika czarów? może powinien;
+czemu nie wyceniasz incubate?”. Plan: `docs/plans/PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`.
+Odpowiedź: obie rzeczy to były luki, nie decyzje projektowe.
+
+- **Licznik czarów:** silnik ma `spellsCastThisTurnByPlayer` i czyta go w triggerze „your second spell
+  each turn”, ale `playerView` go nie wystawiał (luka kontraktu widoku, ADR 0017). Dodane
+  `playerView.spellsCastThisTurn` (własny licznik; informacja jawna). `boardCastPayoffValue` liczy
+  `you_cast_second_spell_each_turn`, gdy `spellsCastThisTurn === 1` (rzut jest drugim). PO: Illvoi
+  Operative + Shock 84 → 92 jako drugi czar; pierwszy i trzeci bez zmian.
+- **Incubate:** brak wyceny w `ETB_EFFECT_BONUS`, w pętli efektów czaru i w payoffach. Teraz
+  `incubateValue` = `10·N − 2·creatureManaCostWeight` (ciało N/N jak token, minus koszt przemiany {2}).
+  PO: Merciless Repurposing 92 → 120; Tiller of Flesh — czar z celem-permanentem +9 (gracz jako cel: 0;
+  własny rzut Tillera: 0).
+- **Granica (domknięta w PMSSB-39):** trigger z efektem TYMCZASOWYM (Jeskai Devotee: pump do końca tury; prowess) nie miał
+  wyceny — wymaga prognozy walki, nie miary wartości trwałej. Jolrael („drugie dobranie”) ma inny licznik.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian; `run-tests all` **7686/7686**.
+
+## PMSSB-39 — payoffy z efektem tymczasowym przy rzucie (2026-10-02e)
+
+Wejście: „tak, chcę” po zapowiedzi z PMSSB-38 (granica: triggery z efektem do końca tury).
+Plan: `docs/plans/PLAN_2026-10-02e-pmssb39-pump-triggery.md`.
+
+**Model (reuse istniejących miar, L41/L48):** `temporaryPumpPayoff` w `boardCastPayoffValue`.
+- Walka zadeklarowana, nosiciel w niej walczy: `pumpChangesOutcome` (symulacja CR 510 jak przy pumpie
+  z czaru) → `tempPumpTrickValue` 18 + moc, inaczej 0 (Windscout 2/1 vs blokujący 1/1: +10; vs 2/2
+  — obie strony giną tak samo → 0).
+- Własna główna 1, nosiciel zdolny do ataku i polityka ataku bota (`attackIntendsCreature`) go wybiera
+  — albo wybierze dopiero po pumpie („pump odblokowuje atak”): bez możliwego blokera = twarz
+  (`tempPumpFaceDamageValue` 4/pkt mocy; prowess +1 → +2 po wadze 0,5), z blokerem
+  `tempPumpBlockOdds` 0,5 dzieli wartość między trik a twarz. Latający nosiciel ignoruje blokerów bez
+  latania/zasięgu.
+- Reszta okien (druga główna, nosiciel z chorobą przyzwania): 0.
+- Warunki triggera rzutu z karty: `spellManaValueAtLeast` (Kulrath Mystic: hill-giant MV4 przy bloku 3/3
+  → +6, Shock MV1 → 0), kolor, bezbarwność; `when_you_cast_spell` obsłużone. Devotee: drugi czar +2,
+  pierwszy/trzeci 0.
+
+**Granice:** dynamiczne X, efekty skierowane, `buff_attacking_creatures` i vigilance Kulratha bez
+wyceny; blokada wroga to jedno pokrętło szansy, nie prognoza.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian; `run-tests all` **7696/7696** (po aktualizacji pinu B2 z PMSSB-38).

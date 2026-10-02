@@ -1510,7 +1510,8 @@ function describeEffect(e, ctx = {}) {
     // trafił tylko pierwszy z nich; strażnik w testach pilnuje reszty.
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
-    damage_from_target_power: () => 'obrażenia równe mocy stwora',
+    damage_divided_among_targets: () => 'podzielone obrażenia (podział wybrany przy rzucie)',
+    damage_from_target_power: () => (e.kickedMultiplier ? `obrażenia równe mocy stwora (×${e.kickedMultiplier}, gdy kicker)` : 'obrażenia równe mocy stwora'),
     damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
     fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
     endure_x: () => `endure ${typeof e.amount === 'number' ? e.amount : 'X'} (liczniki +1/+1 albo token Spirit)`,
@@ -1860,7 +1861,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy ${own} enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
-  if (trigger.event === 'artifact_you_control_enters') return `Gdy artefakt wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'artifact_you_control_enters') {
+    // `another` (Oreplate Pangolin): źródło nie reaguje na własne wejście.
+    return `Gdy ${trigger.another ? 'inny artefakt' : 'artefakt'} wchodzi pod twoją kontrolą: ${parts}.`;
+  }
   // B5 (audyt stołu 2026-09-09, G3/Disa): filtr podtypu z triggera (silnik go
   // egzekwuje — triggers.js) + „twój cmentarz" (matcher wymaga grobu
   // kontrolera). Wcześniej generyk gubił oba: „Gdy karta trafi...".
@@ -1899,6 +1903,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
+  if (trigger.event === 'you_cast_instant_or_sorcery_spell') return `Opus — gdy rzucisz instant lub sorcery: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
   if (trigger.event === 'beginning_of_second_main') {
@@ -2042,7 +2047,7 @@ export function rulesText(info) {
     : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
-    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
+    ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.pumpPerAttachedEquipment ? ` — nosiciel: ${signed(equip.pumpPerAttachedEquipment.power ?? 0)}/${signed(equip.pumpPerAttachedEquipment.toughness ?? 0)} za każdy Equipment przyczepiony do niego` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
     : '';
   const morphLine = info.morph && info.morph.disguiseCost != null
     ? `Disguise ${costSymbols(info.morph.disguiseCost, [], info.morph.disguiseHybrid)}: możesz zagrać twarzą w dół jako 2/2 z ward {2} za {${info.morph.cost}}, potem obrócić za koszt Disguise`
@@ -3288,7 +3293,11 @@ export function commandLabel(cmd, session, view) {
         // M268: pipy W RAMACH kwoty. Stary zapis sklejał `{1}` + `{W}` dla
         // Kor Sanctifiers („Kicker {W}" = 1 jednostka, biała) i pokazywał DWIE
         // many — dopłata wyglądała na dwa razy droższą, niż jest.
-        const kickerHtml = manaCostHtml(costSymbols(kicker.cost, kicker.colors));
+        // Batch 62: kicker NIEMANOWY (Chocobo Kick) — dopłatą jest zwrot lądu,
+        // więc etykieta mówi KTÓRY ląd wraca na rękę (zamiast „kicker {0}").
+        const kickerHtml = kicker.returnLand
+          ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
+          : manaCostHtml(costSymbols(kicker.cost, kicker.colors));
         return `Zagraj: ${nameOfObjectId(cmd.objectId)} (koszt ${costOfCard(card)} + kicker ${kickerHtml})`;
       }
       // Audyt Batch53/B6: wariant Offspring bez własnej etykiety wyglądał
@@ -3385,7 +3394,9 @@ export function commandLabel(cmd, session, view) {
       // podlega obniżkom (CR 601.2f) — Format jak przy `cast_permanent`.
       const kickerDef = cmd.kicked ? obj(cmd.objectId)?.kicker : null;
       const kickerPart = kickerDef
-        ? ` + kicker ${manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
+        ? ` + kicker ${kickerDef.returnLand
+          ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
+          : manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
       // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
       // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,
@@ -3412,7 +3423,13 @@ export function commandLabel(cmd, session, view) {
       }
       const waitingCast = waitingCastLabel(cmd, 'Rzuć');
       if (waitingCast) return waitingCast;
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // CR 601.2d (Fiery Justice): podział obrażeń wybrany przy rzucie — etykieta
+      // wymienia porcje („3 → Goblin, 2 → Przeciwnik"), inaczej warianty o tym
+      // samym celu wyglądałyby identycznie (klasa M101/B).
+      const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
+        ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
+        : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -6241,7 +6258,7 @@ export function waitingExileStatus(object) {
 const EXILE_KEYWORD_LABELS = {
   plot: 'Plot', suspend: 'Suspend', warp: 'Warp', madness: 'Madness',
   escape: 'Escape', flashback: 'Flashback', unearth: 'Unearth', craft: 'Craft',
-  finality: 'Finality',
+  finality: 'Finality', adventure: 'Przygoda',
 };
 
 export function exileSourceLabel(session, exiledBy) {

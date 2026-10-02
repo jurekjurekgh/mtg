@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Crumbling+Vestige&set=ogw&format=json",
+  "print": "ogw",
+  "name": "Crumbling Vestige",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)",
+  "colors": [],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "170",
+  "rarity": "common",
+  "artist": "Zack Stella",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/4/d491c13c-43e3-4ca3-b888-4edd34dfe14a.jpg?1783937893",
+    "normal": "https://cards.scryfall.io/normal/front/d/4/d491c13c-43e3-4ca3-b888-4edd34dfe14a.jpg?1783937893"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/d491c13c-43e3-4ca3-b888-4edd34dfe14a/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

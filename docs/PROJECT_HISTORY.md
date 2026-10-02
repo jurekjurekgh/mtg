@@ -19,6 +19,95 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-02 — batch 62: kolekcja właściciela 176–210 (10 kart, PR #150)
+
+Zlecenie właściciela: 10 kart z kolekcji (lista przekazana w czacie). Kolumna „Plan"
+WIĄŻĄCA i przepisana 1:1 do definicji i talii: 176→Final Fantasy, 178→The Edge,
+192→The Edge, 194→Warhammer Fantasy, 196→Theros, 198→Arcavios, 203→Kaldheim,
+205→Tarkir, 208→Ixalan, 210→Kaldheim. Plan sesji:
+`docs/plans/PLAN_2026-10-02-batch62-kolekcja-176-210.md` (T0 plan jako osobny commit,
+T1–T6 karty, T2 świadomie na końcu, T7 dokumentacja). Snapshoty Scryfall z rulingami
+(także puste listy, ADR 0028) dla wszystkich 10 kart.
+
+**Transze** (commit per karta lub zestaw kart; zasada: snapshot + wiersz CSV + definicja +
+piny + talie w JEDNYM commicie, bo osobny commit danych = czerwone testy):
+
+- **T1** (`6bbaf50`; 194 Lionheart Maverick, 196 Mnemonic Wall, 205 Vulturous Aven,
+  208 Jade Bearer): czyste dane + testy (exploit z wyborem przy rozstrzyganiu, `another` Merfolk).
+- **T3** (`284f7d8`; 198 Tackle Artist): Opus — nowe zdarzenie rzutu instant/sorcery +
+  warunek `manaSpentBelow`, rozstrzygany PRZED czarem (ruling 2026-03-20).
+- **T4** (`56fa5bd`; 203 Golem-Skin Gauntlets): `pumpPerAttachedEquipment` przez cały
+  łańcuch deskryptora registry → identity → attachments → permanents (L21), wycena bota.
+- **T5** (`f1b9d8c`; 176 Chocobo Kick): kicker o koszcie NIEMANOWYM („zwróć ląd do ręki",
+  CR 702.33) — `kickerLandId`, `returnLand`, „bite" ×2 przy kickerze; kreator stołu
+  z wymiarem kosztu (`costKey` w `multiTargetPlanOf`), kara bota `kickerReturnLandPenalty`.
+- **T6** (`924a16a`; 210 Fiery Justice): czar z PODZIAŁEM obrażeń ogłaszanym przy rzucie
+  (CR 601.2d) — `spell.divided {total, targetType}`, `damageDivision` w komendzie
+  `cast_spell`, oferty podziałów w `legalSpellCasts` (każdy cel ≥1, suma 5, bez powtórzeń),
+  rozstrzyganie wg 608.2b (nielegalne cele bez obrażeń, wszystkie nielegalne = czar się
+  nie rozstrzyga, ale „target opponent" i tak zyskuje 5 życia), bot, etykieta i kreator
+  podziału w UI. **Pula celów obrażeń ograniczona do 8** (`DIVIDED_POOL_CAP`, ≤ ~792 oferty;
+  własne stwory odpadają ostatnie) — człowiek nie wybierze odciętych celów.
+- **T2** (`42894c2`; 178 Oreplate Pangolin, 192 Crumbling Vestige): filtr `another` w
+  triggerze `artifact_you_control_enters` + opcjonalna płatność {1}; ETB-trigger dodający
+  manę dowolnego koloru (to zdolność wyzwalana, nie many — idzie przez stos).
+  „The Edge" dobił do 15 kart ⇒ AUTO-AWANS (M181) do talii `the-edge`, worek-legend
+  spadł do 5 kart nielandowych ⇒ PRZETASOWANIE WOREK_DECKS (ADR 0023 §4): 61 kart
+  nielandowych w planach workowych, cztery worki po ≥15 = jedyny podział z zapasem 1:
+  baśnie 15 (Kamigawa, Bloomburrow), legendy 16 (Lorwyn, Arcavios), mroczny 15
+  (New Capenna, Duskmourn, Amonkhet), dzikie 15 (Thunder Junction, Kaldheim, TMNT).
+  27 talii; benchmark: 23 talie (HELP `dziś 23 talii → 4`, ADR 0025).
+
+**Zdarzenie środowiska (znowu).** Między turami zniknął `/home/user/scratch` z patchami
+T2 (zapisanymi tam „na później"), a lokalny HEAD wrócił do `main`. T2 odtworzono od
+zera z Oracle (snapshoty z Scryfalla ponownie). Wniosek: kod odłożony poza repo ginie —
+patrz L173.
+
+**Poprawka po czerwonym CI (2026-10-02).** CI uruchamia `node tools/run-tests.mjs all`
+(fast + slow), a ja bramkowałem samym `npm test` (fast) — golden-master bota (slow) był
+czerwony od T1 (talie tarkir-bg i warhammer-ubr zmieniły skład; różniły się wyłącznie te
+dwie pary, reszta bit w bit). Fixture zregenerowany świadomie (L124). Przy okazji audyt
+wyceny bota dla nowych kart sondami na prawdziwym bocie: **Crumbling Vestige był
+niedoceniany** (kara −8 za tapnięcie, choć mana z triggera jest do wydania w tej samej
+turze) — `landPlayDelta` zna teraz `etbMana` i daje premię, gdy ta mana odblokowuje rzut
+(piny B62/192 bot). Pierwsza ocena „Aven i reszta bez defektu” była za płytka — poprawiona
+w PMSSB-36 niżej (sondy z jednym scenariuszem nie wystarczają: macierz życie×biblioteka×ofiara).
+**Bramka od teraz: `node tools/run-tests.mjs all` = 7659/7659.**
+
+**PMSSB-36 (2026-10-02b) — mechaniki kart batcha 62 pod pętlą PMSSB.** Na pytanie właściciela
+(„czy exploit Avena jest z głową? czy przeszedł PMSSB?”): exploit PMSSB-11 powstał dla trzech kart
+bez triggera zasobowego; Aven (dobierz 2, strać 2) go nie przeszedł — bot poświęcał stwora przy
+2 życiach (samobójstwo), przy 2–5 kartach w bibliotece i najsilniejszego stwora (stała
+`exploitBase`). Naprawione: wartość netto z deskryptora (`exploitSelfResourceGain`), wspólna drabina
+samouszkodzenia (`selfLifeLossPenalty` dla czaru/ETB/exploitu), cienka plansza (`exploitThinBoardPenalty`).
+Reszta przeglądu dała jeszcze dwie luki: bramka celu ETB pytała o WROGÓW także dla licznika na własnym
+stworze (Jade Bearer) oraz brak wypłaty triggerów-liczników na polu przy rzucie (Tackle Artist — Opus,
+Oreplate Pangolin; `boardCastPayoffValue`). Raport: `docs/PMSSB.md` §PMSSB-36, plan
+`docs/plans/PLAN_2026-10-02b-pmssb36-nowe-karty.md`, `test/audyt-pmssb36-nowe-karty.test.js`
+(9 pinów, 8 czerwonych przed zmianą). Bramka `all` **7668/7668**; golden-master: jedna zmiana
+score-only, 0 flipów. Kolejka: bite bez zabicia (chip>pass), payoffy inne niż licznik.
+
+**PMSSB-37 (2026-10-02c) — trzy granice po PMSSB-36.** (A) bite bez zabicia poza oknem walki dostaje
+`fightBiteMissPenalty` 80 (Chocobo Kick na 9 wytrzymałości → pass); (B) `boardCastPayoffValue` liczy też
+dobranie/token/drain/scry/zysk życia (Tellah, noncreature jako czar i permanent); (C) zapłata
+opcjonalna (Pangolin) rezygnuje, gdy blokuje lepszy rzut tej tury (`payBlocksBetterCast`, reentrancy
+guard). Raport `docs/PMSSB.md` §PMSSB-37, plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`,
+`test/audyt-pmssb37-trzy-granice.test.js` (12 pinów); golden-master bez zmian.
+
+**PMSSB-38 (2026-10-02d) — licznik czarów w widoku i incubate.** Na pytanie właściciela: oba braki były
+luką, nie decyzją. `playerView.spellsCastThisTurn` (ten sam licznik co trigger „second spell”; Illvoi
+Operative dostaje wartość przy drugim rzucie) i `incubateValue` (Tiller of Flesh, Merciless Repurposing).
+Raport `docs/PMSSB.md` §PMSSB-38, `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów).
+
+**PMSSB-39 (2026-10-02e) — payoffy z efektem tymczasowym.** Na polecenie właściciela („tak, chcę”):
+prowess (Windscout), Jeskai Devotee i Kulrath Mystic wyceniane modelem okien — walka (symulacja CR 510),
+własna główna 1 z polityką ataku bota, brak wartości poza tym; warunki triggera rzutu (MV ≥ N, kolor).
+Raport `docs/PMSSB.md` §PMSSB-39, `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów).
+
+**Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
+Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
+golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).
+
 ## 2026-09-29 — batch 61: kolekcja właściciela 157–174 (10 kart, PR #145)
 
 Zlecenie właściciela: „kolejny batch kart" → dokumentacja przeczytana
@@ -14917,3 +15006,29 @@ przez UI, oferta darmowego rzutu z wygnania renderowana; talia usunięta po bieg
 następnej sesji: koszt okazji drugiego trybu źródła (`Seer’s Lantern`, Immersturm Skullcairn,
 Balamb Garden), bankowanie many, warianty `cast_spell` (tryb/kicker), model treści
 czekającej na późniejszą planszę. Rodzina ZAMKNIĘTA.
+
+## 2026-10-01g — audyt PR #149 + naprawa stempli „tylko w wygnaniu" (PR #150)
+
+Prompt „Kontynuujemy projekt." ⇒ ADR 0020 + 0021. Plan `docs/plans/PLAN_2026-10-01g-audyt-pr149.md`,
+raport `docs/audits/AUDYT_PR149_2026-10-01.md`, handoff `docs/setup/HANDOFF_2026-10-01g.md`.
+
+Audyt scalonego PR #149 (49 plików) metodą sond na żywym silniku, nie samym odczytem testów:
+handoff 01f uznawał rodzinę „uprawnienie tylko w wygnaniu" za zamkniętą, a sondy pokazały dwa
+wycieki tej samej klasy. **F1:** `reboundReady` przeżywał wyjście z wygnania (reset w
+`moveObjectDirectly` go pomijał) — ponownie wygnana karta wracała do darmowego rzutu w upkeepie
+(CR 400.7/702.88a). **F2 (średni):** `cast_adventure_creature` czytał tylko `zone==='exile' &&
+object.adventure`, a to stały druk (CR 715.2a), więc removal na stworze z przygodą (Gray Slaad,
+Ettercap) dawał kontrolerowi darmowy rzut z wygnania wbrew CR 715.3d i rulingowi FIN („exile for
+any other reason … won't give you permission"). Naprawa: stempel `meta.exiledBy === 'adventure'`
+nadawany wyłącznie przy rozstrzygnięciu czaru przygody; `isOnAdventure` (`zones.js`) jest jedynym
+predykatem dla oferty i walidacji; `meta` znika przy opuszczeniu exile (CR 400.7). 9 mutacji pinów
+PMSSB-32…35: 7 czerwonych, 2 przeżyły (O1 — obserwacja bez karty w katalogu, O2 — pasmo życia ≤2
+domknięte pinem). Żywy Tester: 4 partie, 0 zgłoszeń. Bot bez zmian.
+
+**Bramka końcowa:** `npm test` **7310/7310 EXIT 0** (7304 + 6), `test:all` **7581/7581**,
+build **70 modułów / 4709,9 kB**.
+
+**Dopisek (uwaga właściciela z testów):** Throne of the Dead Three — klik w nazwę odsłoniętego
+stwora w modalu wyboru celu pokoju nic nie robił (kandydaci w bibliotece; `hiddenObjectCardId`
+znał tylko szukanie). Naprawa klasowa: lookup po `view.pending*.cards` (obejmuje też Manifest
+dread), piny E/1–E/4. `npm test` **7314/7314**, build **4710,6 kB**.

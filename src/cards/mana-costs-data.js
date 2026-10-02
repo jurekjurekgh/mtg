@@ -560,4 +560,21 @@ export const MANA_COSTS = {
   // Batch61: Riftburst Hellion (MKM) — 6/7 Hellion; koszt OBROTU (disguise
   // {4}{R/G}{R/G}) siedzi w deskryptorze `morph` (koszt zdolności, nie karty).
   "riftburst-hellion": "{5}{R}{G}",
+  // Batch62: Lionheart Maverick (GPT), Mnemonic Wall (THS), Vulturous Aven
+  // (DTK), Jade Bearer (RIX).
+  "lionheart-maverick": "{W}",
+  "mnemonic-wall": "{4}{U}",
+  "vulturous-aven": "{3}{B}",
+  "jade-bearer": "{G}",
+  // Batch62/T3: Tackle Artist (SOS).
+  "tackle-artist": "{3}{R}",
+  // Batch62/T4: Golem-Skin Gauntlets (2XM).
+  "golem-skin-gauntlets": "{1}",
+  // Batch62/T5: Chocobo Kick (FIN).
+  "chocobo-kick": "{1}{G}",
+  // Batch62/T6: Fiery Justice (2X2).
+  "fiery-justice": "{R}{G}{W}",
+  // Batch62/T2: Oreplate Pangolin (EOE), Crumbling Vestige (OGW).
+  "oreplate-pangolin": "{1}{R}",
+  "crumbling-vestige": "",
 };

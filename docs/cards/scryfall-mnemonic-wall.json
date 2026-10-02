@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Mnemonic+Wall&set=ths&format=json",
+  "print": "ths",
+  "name": "Mnemonic Wall",
+  "mana_cost": "{4}{U}",
+  "cmc": 5,
+  "type_line": "Creature — Wall",
+  "oracle_text": "Defender\nWhen this creature enters, you may return target instant or sorcery card from your graveyard to your hand.",
+  "power": "0",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "55",
+  "rarity": "common",
+  "artist": "Trevor Claxton",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/1/415a5946-6f9a-433f-9f1c-b99144daa170.jpg?1783939794",
+    "normal": "https://cards.scryfall.io/normal/front/4/1/415a5946-6f9a-433f-9f1c-b99144daa170.jpg?1783939794"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/ths/55/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

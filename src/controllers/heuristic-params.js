@@ -97,11 +97,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-16 (walka bez fazy walki: fight + bite `damage_from_target_power`):
   // CR 701.14a–d (damage nie-bojowe — deathtouch/lifelink działają, first
   // strike nie). Helper `fightExchangeValue` (L41 dla fight+bite).
+  'kickerReturnLandPenalty',  // kicker ze zwrotem lądu na rękę (Chocobo Kick): koszt tempa
   'fightBiteChipBase',        // bite: baza (stare 8) — chip bez killa
   'fightBitePowerWeight',     // bite: waga mocy dealera (stare 2)
   'fightBiteLethalBonus',     // bite: dopłata za zabicie ofiary (stare 15)
   'fightKillBase',            // fight: baza zabicia ofiary PRZEŻYWAM (stare 25)
   'fightKillPowerWeight',     // fight: waga mocy ofiary przy zabiciu (stare 2)
+  'fightBiteMissPenalty',     // PMSSB-37/A: bite bez zabicia poza oknem walki (lustro damageTargetValue −80)
   'fightMissBase',            // fight: brak zabicia (stare 5)
   'fightTradeWorthWeight',    // fight (wymiana): waga różnicy ciał ofiary i walczącego (2p+t+mv)
   'fightTradeCardCost',       // fight (wymiana): koszt DODATKOWEJ karty (mojego stwora) w wymianie
@@ -218,6 +220,19 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'exploitKillAssetMargin',      // próg „istotnych walorów" zabijanego (keywordy/zdolności/aury)
   'exploitKillAuraValue',        // wartość aury przyklejonej do zabijanego (ginie z nim, CR 704.5m)
   'exploitFaceDownEntryCost',    // TMC permanentu twarzą w dół (CR 708.2a: mana value 0; zapłacono {3})
+  // PMSSB-36 (Vulturous Aven, zgłoszenie właściciela 2026-10-02): exploit
+  // z zyskiem/kosztem własnych zasobów liczony NETTO (zysk − cena ofiary).
+  'exploitThinBoardPenalty',     // kara, gdy po wymianie mam < 2 stworów, a wróg ma stwory
+  'exploitNetMargin',            // minimalna NADWYŻKA netto, żeby poświęcić (remis = skip)
+  // PMSSB-36/C: wypłata triggerów-licznika nosiciela na polu (Opus, Pangolin).
+  'boardPayoffWeight',           // waga wartości licznika/dobrania/tokenu przy rzucie czaru/permanentu
+  // PMSSB-39: payoffy z efektem tymczasowym (prowess, Jeskai Devotee, Kulrath Mystic).
+  'tempPumpTrickValue',          // wartość pumpu, który zmienia wynik walki (skala tricku z czaru)
+  'tempPumpFaceDamageValue',     // za punkt mocy pumpu przy niezablokowanym ataku (skala drainu ETB)
+  'tempPumpBlockOdds',           // szansa, że wróg zablokuje atakującego, gdy ma do tego blokera
+  // PMSSB-37/C: zapłata {N} triggera vs inny rzut tej tury (Oreplate Pangolin).
+  'optionalPayBlockedCastMin',   // próg wyniku rzutu, który bot realnie chce wykonać (zablokowany zapłatą)
+  'optionalPayCastScoreWeight',  // zysk triggera musi przebić tę wagę × wynik zablokowanego rzutu
   // Zgłoszenie właściciela B (2026-09-11, Chronic Flooding + Curiosity): bot
   // z ~9 kartami w bibliotece tapował ląd, który miele mu 3 karty na każde
   // tapnięcie, i dokładał własnemu stworowi aurę z powtarzalnym „draw a card".
@@ -510,11 +525,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // lifelink waga 1 (pełne lustro obu stron — CR 701.14d), okna walki
   // REUSE fogWindowLethalSaveValue/fogWindowSavedCreatureValue (L41 —
   // jedna skala ratunku w rodzinie).
+  kickerReturnLandPenalty: 12,
   fightBiteChipBase: 8,
   fightBitePowerWeight: 2,
   fightBiteLethalBonus: 15,
   fightKillBase: 25,
   fightKillPowerWeight: 2,
+  fightBiteMissPenalty: 80,
   fightMissBase: 5,
   // Wymiana (oba giną) — drabina PMSSB-16: różnica ciał ×2 (moc podwójnie —
   // jak M157/aury) minus koszt dodatkowej karty 25 (połowa killBase — wymiana
@@ -625,6 +642,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   exploitKillAssetMargin: 12,
   exploitKillAuraValue: 30,
   exploitFaceDownEntryCost: 3,
+  exploitThinBoardPenalty: 6,
+  exploitNetMargin: 1,
+  boardPayoffWeight: 0.5,
+  tempPumpTrickValue: 18,
+  tempPumpFaceDamageValue: 4,
+  tempPumpBlockOdds: 0.5,
+  optionalPayBlockedCastMin: 40,
+  optionalPayCastScoreWeight: 0.5,
   libraryDeckOutPenalty: 120,
   libraryThinPenalty: 60,
   libraryThinPerCardPenalty: 6,

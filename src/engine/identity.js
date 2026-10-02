@@ -232,6 +232,12 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, k
       // Batch 44 (Thieves' Tools, L48): próg „can't be blocked" musi przejść
       // cały łańcuch registry → gameObject, inaczej ginie po zmianie strefy.
       if (equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = equipment.cantBeBlockedMaxPower;
+      // Batch 62 (Golem-Skin Gauntlets, L21): trzecia warstwa łańcucha
+      // registry → gameObject; bez niej pump „za każdy Equipment" ginie po
+      // cichu i sprzęt daje +0/+0.
+      if (equipment.pumpPerAttachedEquipment) {
+        base.pumpPerAttachedEquipment = Object.freeze({ ...equipment.pumpPerAttachedEquipment });
+      }
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane dla
       // przyszłych equipmentów; obecnie żaden ich nie używa.
       if (equipment.cantAttack) base.cantAttack = true;

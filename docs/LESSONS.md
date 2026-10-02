@@ -2577,3 +2577,7 @@ NIEMALEJĄCY — wysokość licz ze STANU (moje życie), nie z wariantu; wariant
 najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146).
 **Strażnik:** B4 (`audyt-pmssb31-blok-chump`; mutacje tier←lifeAfter i zdjęta bramka),
 `bot-suspend-twiddle-quality` (M146), `audyt-pr148b-ochrona-lethal-blokera` (O-a/1–4).
+
+## L173 (2026-10-02) — kod „na później" poza repo ginie
+
+**Reguła:** nie trzymaj pracy poza drzewem repo (patche T2 w `/home/user/scratch/` zniknęły).

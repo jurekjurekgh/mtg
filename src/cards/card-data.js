@@ -12601,6 +12601,232 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // =========================================================================
+  // Batch 62 (10 kart, lista właściciela 2026-10-02) — mini-roadmapa w
+  // docs/plans/PLAN_2026-10-02-batch62-kolekcja-176-210.md
+  // Dane Scryfall + rulingi: docs/cards/scryfall-*.json (ADR 0010 §2a, 0028).
+  // =========================================================================
+
+  // Batch62/194. Lionheart Maverick (GPT #11, Warhammer Fantasy) — {W} 1/1
+  // Human Knight; Vigilance; {4}{W}: +1/+2 do końca tury (samopompa bez celu,
+  // wzorzec Fiery Hellhound; koszt = 5 many, z czego jeden pip biały).
+  defineCard({
+    id: 'lionheart-maverick', name: 'Lionheart Maverick', set: 'GPT',
+    types: ['Creature'], subtypes: ['Human', 'Knight'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1, keywords: ['vigilance'],
+    oracleText: 'Vigilance\n{4}{W}: This creature gets +1/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/704ba6ce-5d28-417b-8574-d3c097e6e39f.jpg?1783943529',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, colors: ['W'] },
+        effect: { type: 'pump', power: 1, toughness: 2 },
+      }),
+    ],
+    artId: 194, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/196. Mnemonic Wall (THS #55, Theros) — {4}{U} 0/4 Wall; Defender;
+  // „you may return target instant or sorcery card from your graveyard to
+  // your hand\" — `mayFire` (decyzja „may\" przy rozstrzyganiu; wzorzec
+  // Mystic Sanctuary), w odróżnieniu od Revolutionist (cel obowiązkowy).
+  defineCard({
+    id: 'mnemonic-wall', name: 'Mnemonic Wall', set: 'THS',
+    types: ['Creature'], subtypes: ['Wall'], colors: ['U'],
+    power: 0, toughness: 4, manaCost: 5, keywords: ['defender'],
+    oracleText: 'Defender\nWhen this creature enters, you may return target instant or sorcery card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/1/415a5946-6f9a-433f-9f1c-b99144daa170.jpg?1783939794',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          mayFire: true,
+          requiresTarget: { type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' },
+        },
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 196, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/205. Vulturous Aven (DTK #126, Tarkir) — {3}{B} 2/3 Bird Shaman;
+  // Flying; Exploit (CR 702.110) — druga zdolność odpala się „exploits\" po
+  // poświęceniu stwora (także samego Avena): dobierz dwie i traćcie 2 życia.
+  defineCard({
+    id: 'vulturous-aven', name: 'Vulturous Aven', set: 'DTK',
+    types: ['Creature'], subtypes: ['Bird', 'Shaman'], colors: ['B'],
+    power: 2, toughness: 3, manaCost: 4, keywords: ['flying'],
+    oracleText: 'Flying\nExploit (When this creature enters, you may sacrifice a creature.)\nWhen this creature exploits a creature, you draw two cards and you lose 2 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/2/b2fb0cc9-aebd-4bbf-8735-add3b753c118.jpg?1783938593',
+    exploit: {},
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'exploits' },
+        effect: [
+          { type: 'draw_cards', amount: 2 },
+          { type: 'lose_life', amount: 2, scope: 'controller' },
+        ],
+      }),
+    ],
+    artId: 205, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch62/208. Jade Bearer (RIX #134, Ixalan) — {G} 1/1 Merfolk Shaman;
+  // „put a +1/+1 counter on ANOTHER target Merfolk you control\" — spec celu
+  // `creature_you_control` + `notSelf` + `subtype` (wzorzec Burning-Yard Trainer).
+  defineCard({
+    id: 'jade-bearer', name: 'Jade Bearer', set: 'RIX',
+    types: ['Creature'], subtypes: ['Merfolk', 'Shaman'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'When this creature enters, put a +1/+1 counter on another target Merfolk you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/9/696bb954-353e-488b-a1e8-0df75da6339b.jpg?1783935285',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          requiresTarget: { type: 'creature_you_control', notSelf: true, subtype: 'Merfolk' },
+        },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 208, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T3 — Tackle Artist (SOS #133, plan Arcavios).
+  defineCard({
+    id: 'tackle-artist', name: 'Tackle Artist', set: 'SOS',
+    types: ['Creature'], subtypes: ['Orc', 'Sorcerer'], colors: ['R'],
+    power: 4, toughness: 3, manaCost: 4, keywords: ['trample'],
+    oracleText: 'Trample\nOpus — Whenever you cast an instant or sorcery spell, put a +1/+1 counter on this creature. If five or more mana was spent to cast that spell, put two +1/+1 counters on this creature instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/8/b87e2474-98c1-4c1a-91ed-340b72d31653.jpg?1783903663',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Opus: „instead\" = para efektów rozłącznych po wydanej manie —
+        // poniżej progu 1 licznik, od progu (five or more) 2 liczniki.
+        trigger: { event: 'you_cast_instant_or_sorcery_spell' },
+        effect: [
+          { type: 'add_counter', counter: '+1/+1', amount: 1, condition: { manaSpentBelow: 5 } },
+          { type: 'add_counter', counter: '+1/+1', amount: 2, condition: { manaSpentAtLeast: 5 } },
+        ],
+      }),
+    ],
+    artId: 198, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T4 — Golem-Skin Gauntlets (2XM #259, plan Kaldheim).
+  defineCard({
+    id: 'golem-skin-gauntlets', name: 'Golem-Skin Gauntlets', set: '2XM',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 1,
+    oracleText: 'Equipped creature gets +1/+0 for each Equipment attached to it.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee198804-a247-46b9-be6e-71bbb5840401.jpg?1783930108',
+    // +1/+0 za KAŻDY Equipment na nosicielu (liczy także samo siebie).
+    equipment: { equip: 2, pumpPerAttachedEquipment: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+      }),
+    ],
+    artId: 203, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T5 — Chocobo Kick (FIN #178, plan Final Fantasy).
+  defineCard({
+    id: 'chocobo-kick', name: 'Chocobo Kick', set: 'FIN',
+    types: ['Sorcery'], colors: ['G'], manaCost: 2,
+    oracleText: "Kicker—Return a land you control to its owner's hand. (You may return a land you control to its owner's hand in addition to any other costs as you cast this spell.)\nTarget creature you control deals damage equal to its power to target creature an opponent controls. If this spell was kicked, the creature you control deals twice that much damage instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/f/ff8c8be0-8223-499c-8704-cb68e0a42ce2.jpg?1783906590',
+    // Kicker NIEMANOWY (CR 702.33a): koszt dodatkowy to zwrot lądu — `cost: 0`,
+    // bez pipów, `returnLand` + id lądu w komendzie (`kickerLandId`).
+    kicker: { cost: 0, colors: [], returnLand: true },
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [
+        // „Bite\": jednostronne obrażenia = moc; ×2, gdy czar był kicked.
+        { type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1, kickedMultiplier: 2 },
+      ],
+    },
+    artId: 176, plan: 'Final Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T6 — Fiery Justice (2X2 #212, plan Kaldheim).
+  defineCard({
+    id: 'fiery-justice', name: 'Fiery Justice', set: '2X2',
+    types: ['Sorcery'], colors: ['R', 'G', 'W'], manaCost: 3,
+    oracleText: 'Fiery Justice deals 5 damage divided as you choose among any number of targets. Target opponent gains 5 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/4/144668d6-cab6-45e6-8498-ab7cd927f9df.jpg?1783921834',
+    spell: {
+      timing: 'sorcery',
+      // „Target opponent" to osobne wystąpienie słowa „target"; cele obrażeń
+      // i ich porcje wybiera gracz przy rzucie (CR 601.2d) — `divided`.
+      targets: [{ type: 'opponent' }],
+      divided: { total: 5, targetType: 'any_target' },
+      effects: [
+        { type: 'damage_divided_among_targets' },
+        { type: 'gain_life_target', amount: 5 },
+      ],
+    },
+    artId: 210, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T2 — Oreplate Pangolin (EOE #150, plan The Edge).
+  defineCard({
+    id: 'oreplate-pangolin', name: 'Oreplate Pangolin', set: 'EOE',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Pangolin'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Whenever another artifact you control enters, you may pay {1}. If you do, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/0/90209957-95db-4b59-979a-316d14ef876c.jpg?1783905949',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // `another` — źródło nie liczy samego siebie (Pangolin jest artefaktem);
+        // koszt {1} to opcjonalna płatność przy rozstrzyganiu (`payMana`).
+        trigger: { event: 'artifact_you_control_enters', another: true, payMana: 1 },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 178, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T2 — Crumbling Vestige (OGW #170, plan The Edge).
+  defineCard({
+    id: 'crumbling-vestige', name: 'Crumbling Vestige', set: 'OGW',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d491c13c-43e3-4ca3-b888-4edd34dfe14a.jpg?1783937893',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // To zdolność WYZWALANA (przechodzi przez stos), nie zdolność many
+        // (CR 605.1a) — mana trafia do puli przy jej rozstrzygnięciu.
+        effect: [{ type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: [] },
+      }),
+    ],
+    artId: 192, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

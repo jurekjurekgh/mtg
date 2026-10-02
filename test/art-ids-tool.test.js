@@ -92,7 +92,13 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // +148 EOE (Xu-Ifit) → 523.
   // Batch 61 (2026-09-29): +10 pozycji (157 ORI, 158 OGW, 160 M11, 161 KTK,
   // 162 DMR, 164 VOW, 165 M20, 167 ISD, 170 MKM, 174 RTR) → 533.
-  assert.equal(data.length, 533, 'pełna lista kolekcji (533 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
+  // Batch 62 (transza T1: 194 GPT, 196 THS, 205 DTK, 208 RIX): +4 → 537.
+  // Batch 62 (transza T3: 198 SOS): +1 → 538.
+  // Batch 62 (transza T4: 203 2XM): +1 → 539.
+  // Batch 62 (transza T5: 176 FIN): +1 → 540.
+  // Batch 62 (transza T6: 210 2X2): +1 → 541.
+  // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
+  assert.equal(data.length, 543, 'pełna lista kolekcji (543 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -151,7 +157,13 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // +148 EOE (Xu-Ifit) → 520.
   // Batch 61 (2026-09-29): +10 nazw (każda karta batcha ma w kolekcji jeden
   // druk, więc nazwy nie dublują się) → 530.
-  assert.equal(dict.size, 530, 'słownik zawiera pełną listę kolekcji (530 unikalnych nazw)');
+  // Batch 62 (transza T1: 194 GPT, 196 THS, 205 DTK, 208 RIX): +4 nazw → 534.
+  // Batch 62 (transza T3: 198 SOS): +1 nazw → 535.
+  // Batch 62 (transza T4: 203 2XM): +1 nazw → 536.
+  // Batch 62 (transza T5: 176 FIN): +1 nazw → 537.
+  // Batch 62 (transza T6: 210 2X2): +1 nazw → 538.
+  // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 nazw → 540.
+  assert.equal(dict.size, 540, 'słownik zawiera pełną listę kolekcji (540 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -188,7 +200,13 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // (Gryffwing Cavalry) → 532; transza 5: +170 MKM (Riftburst Hellion) → 533
   // (komplet 10 kart batcha 61). Tokeny nie liczą się do pinu — token_griffin
   // nie ma artId (wyjątek ADR 0029).
-  assert.equal(withArt.length, 533, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
+  // Batch 62 (transza T1: 194 GPT, 196 THS, 205 DTK, 208 RIX): +4 → 537.
+  // Batch 62 (transza T3: 198 SOS): +1 → 538.
+  // Batch 62 (transza T4: 203 2XM): +1 → 539.
+  // Batch 62 (transza T5: 176 FIN): +1 → 540.
+  // Batch 62 (transza T6: 210 2X2): +1 → 541.
+  // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
+  assert.equal(withArt.length, 543, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

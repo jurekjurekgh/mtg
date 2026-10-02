@@ -286,3 +286,126 @@ test('D/2 (FoW): karta biblioteki SPOZA kandydatów szukania nie dostaje definic
   assert.deepEqual(otwarcia, [{ droga: 'objectId', objectId: 'lib-1' }],
     `droga cardId nie może dostać karty spoza kandydatów: ${JSON.stringify(otwarcia)}`);
 });
+
+// E (zgłoszenie właściciela z gry, 2026-10-01) — Undercity, pokój Throne of the
+// Dead Three: „klikanie w nazwy kart [w modalu wyboru stwora] nic nie powoduje.
+// Powinno otwierać na pełny ekran daną kartę".
+//
+// Przyczyna (ta sama klasa co D/Prishe): wiersze to odsłonięte karty, które
+// WCIĄŻ leżą w bibliotece, a `hiddenObjectCardId` odrzucał całą bibliotekę
+// poza kandydatami szukania — klik milczał. Odsłonięte stwory niesie
+// `view.pendingRoomTarget.cards` (id + cardId, jawne z definicji efektu).
+function widokThrone() {
+  const view = widok();
+  view.zones.library = [
+    { id: 'lib-1', controllerId: 'p1', hidden: true },
+    { id: 'lib-2', controllerId: 'p1', hidden: true },
+    { id: 'lib-9', controllerId: 'p1', hidden: true },
+  ];
+  view.pendingRoomTarget = {
+    playerId: 'p1', room: 11, roomName: 'Throne of the Dead Three', kind: 'revealed_creature',
+    effectType: 'throne',
+    cards: [
+      { id: 'lib-1', cardId: 'highland-game', kind: 'creature', power: 2, toughness: 1, controllerId: 'p1' },
+      { id: 'lib-2', cardId: 'swamp-creature-x', kind: 'creature', power: 3, toughness: 3, controllerId: 'p1' },
+    ],
+  };
+  return view;
+}
+
+function sesjaThrone() {
+  const s = sesja();
+  s.nameOf = (cardId) => ({ 'highland-game': 'Highland Game', 'swamp-creature-x': 'Patron of the Arts' }[cardId] ?? cardId);
+  s.nameOfObject = (objectId) => ({ 'lib-1': 'Highland Game', 'lib-2': 'Patron of the Arts', 'lib-9': 'Ukryta karta' }[objectId] ?? objectId);
+  s.state.objects.set('lib-1', { id: 'lib-1', cardId: 'highland-game', zone: 'library', controllerId: 'p1' });
+  s.state.objects.set('lib-2', { id: 'lib-2', cardId: 'swamp-creature-x', zone: 'library', controllerId: 'p1' });
+  s.state.objects.set('lib-9', { id: 'lib-9', cardId: 'highland-game', zone: 'library', controllerId: 'p1' });
+  return s;
+}
+
+const komendyThrone = ['lib-1', 'lib-2'].map((targetId) => ({ type: 'resolve_room_target', playerId: 'p1', targetId }));
+
+test('E/1: klik w nazwę ODSŁONIĘTEGO stwora (Throne of the Dead Three) otwiera pełny ekran', () => {
+  const plan = singleTargetPlanOf(komendyThrone);
+  assert.ok(plan, 'decyzja celu pokoju ma dać plan jednowyborowy ("wskaż cel")');
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view: widokThrone(), session: sesjaThrone(), plan, commands: komendyThrone,
+      intro: 'Cel pokoju lochu — wskaż cel:',
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    const wiersz = wierszZNazwa(host, 'Patron of the Arts');
+    assert.ok(wiersz, 'wiersz nazywa odsłoniętego stwora');
+    assert.equal(wiersz.dataset.cardId, 'swamp-creature-x');
+    wiersz.click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'cardId', cardId: 'swamp-creature-x' }],
+    `klik w nazwę ma otworzyć obraz karty (było: ${JSON.stringify(otwarcia)})`);
+});
+
+test('E/2 (FoW): karta biblioteki spoza odsłoniętych kandydatów Throne nie dostaje definicji', () => {
+  const plan = planDla(['lib-9', 'moja-1']);
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view: widokThrone(), session: sesjaThrone(), plan,
+      commands: [{ type: 'resolve_discard_choice', playerId: 'p1', cardId: 'lib-9' },
+        { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'moja-1' }],
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    wierszZNazwa(host, 'Ukryta karta').click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'objectId', objectId: 'lib-9' }],
+    `zakryta biblioteka zostaje zakryta: ${JSON.stringify(otwarcia)}`);
+});
+
+test('E/3: wariant pokoju innego niż Throne (cel „creature” z pola bitwy) nie zmienia drogi podglądu', () => {
+  const view = widokThrone();
+  view.pendingRoomTarget = { ...view.pendingRoomTarget, kind: 'creature', cards: null };
+  const komendy = ['p2-c1', 'moja-1'].map((targetId) => ({ type: 'resolve_room_target', playerId: 'p1', targetId }));
+  const plan = singleTargetPlanOf(komendy);
+  assert.ok(plan);
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view, session: sesjaThrone(), plan,
+      commands: komendy,
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    wierszZNazwa(host, 'Highland Game').click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'objectId', objectId: 'p2-c1' }]);
+});
+
+test('E/4 (klasa): Manifest dread — oglądane karty z biblioteki decydenta też otwierają obraz po cardId', () => {
+  const view = widokThrone();
+  view.pendingRoomTarget = null;
+  view.pendingManifestDread = {
+    playerId: 'p1', count: 2, sourceCardId: null,
+    cards: [
+      { id: 'lib-1', cardId: 'highland-game', controllerId: 'p1', zone: 'library' },
+      { id: 'lib-2', cardId: 'swamp-creature-x', controllerId: 'p1', zone: 'library' },
+    ],
+  };
+  const komendy = ['lib-1', 'lib-2'].map((cardId) => ({ type: 'resolve_manifest_dread', playerId: 'p1', cardId }));
+  const plan = singleTargetPlanOf(komendy);
+  assert.ok(plan, 'wybór Manifest dread to wybór jednowyborowy');
+  const otwarcia = [];
+  zDocumentem((host) => {
+    renderMultiTargetWizard(host, {
+      view, session: sesjaThrone(), plan, commands: komendy,
+      onOpenCard: (objectId) => otwarcia.push({ droga: 'objectId', objectId }),
+      onOpenCardByCardId: (cardId) => otwarcia.push({ droga: 'cardId', cardId }),
+      onComplete: () => {}, onCancel: () => {},
+    });
+    wierszZNazwa(host, 'Patron of the Arts').click();
+  });
+  assert.deepEqual(otwarcia, [{ droga: 'cardId', cardId: 'swamp-creature-x' }]);
+});

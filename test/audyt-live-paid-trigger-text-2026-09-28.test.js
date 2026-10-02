@@ -62,7 +62,9 @@ test('LIVE/F9: inwentarz wszystkich rzeczywistych płatnych triggerów zachowuje
   // Batch 61 (164 Gryffwing Cavalry): +1 trigger „you may pay {1}{W}" z celem
   // wybieranym PRZED płatnością (`payAfterTarget`) — karta/trigger liczone jak
   // reszta (koszt i „jeśli tak" muszą być w tekście).
-  assert.equal(checked, 8, '7 kart / 8 triggerów w bieżącym katalogu');
+  // Batch 62 (178 Oreplate Pangolin): +1 trigger „you may pay {1}" na wejście
+  // innego artefaktu — ta sama zasada (koszt i „jeśli tak" w tekście).
+  assert.equal(checked, 9, '8 kart / 9 triggerów w bieżącym katalogu');
 });
 
 test('LIVE/F9: zwykły trigger bez kosztu nie dostaje sztucznej płatności', () => {

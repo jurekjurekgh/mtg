@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Tackle+Artist&set=sos&format=json",
+  "print": "sos",
+  "name": "Tackle Artist",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Orc Sorcerer",
+  "oracle_text": "Trample\nOpus — Whenever you cast an instant or sorcery spell, put a +1/+1 counter on this creature. If five or more mana was spent to cast that spell, put two +1/+1 counters on this creature instead.",
+  "power": "4",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "set": "sos",
+  "set_name": "Secrets of Strixhaven",
+  "collector_number": "133",
+  "rarity": "common",
+  "artist": "Ioannis Fiore",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/8/b87e2474-98c1-4c1a-91ed-340b72d31653.jpg?1783903663",
+    "normal": "https://cards.scryfall.io/normal/front/b/8/b87e2474-98c1-4c1a-91ed-340b72d31653.jpg?1783903663"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "An opus ability resolves before the spell that caused it to trigger. It resolves even if that spell is countered or otherwise leaves the stack."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/sos/133/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

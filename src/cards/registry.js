@@ -152,6 +152,9 @@ export function defineCard(data) {
     kicker: data.kicker ? Object.freeze({
       cost: data.kicker.cost,
       colors: Object.freeze([...(data.kicker.colors ?? [])]),
+      // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — „Return a land
+      // you control to its owner's hand". Tylko na czarach (spells.js).
+      ...(data.kicker.returnLand ? { returnLand: true } : {}),
     }) : null,
     // Offspring (BLB, Rust-Shield Rampager): { cost, colors } — opcjonalny
     // dodatkowy koszt przy rzucie; przy opłaceniu permanent dostaje flagę
@@ -308,6 +311,12 @@ export function defineCard(data) {
       // long as its power is 3 or less" — próg mocy oceniany przy deklaracji
       // blokerów (combat.js), nie statycznie.
       if (data.equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = data.equipment.cantBeBlockedMaxPower;
+      // Batch 62 (Golem-Skin Gauntlets): „Equipped creature gets +1/+0 for each
+      // Equipment attached to it" — pump liczony przy odczycie statystyk
+      // (permanents.js), mnożony przez liczbę Equipmentów na nosicielu.
+      if (data.equipment.pumpPerAttachedEquipment) {
+        base.pumpPerAttachedEquipment = Object.freeze({ ...data.equipment.pumpPerAttachedEquipment });
+      }
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane pod przyszłe
       // equipmenty; obecnie żaden ich nie używa.
       if (data.equipment.cantAttack) base.cantAttack = true;
@@ -461,6 +470,13 @@ function freezeSpell(spell) {
     // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
     // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
     ...(spell.fireball ? { fireball: true } : {}),
+    // Podział obrażeń wybierany przy rzucie (CR 601.2d, Fiery Justice): deskryptor
+    // { total, targetType } — cele obrażeń i ich porcje niesie komenda
+    // (`damageDivision`), rozstrzygnięcie liczy `resolveDividedSpell`.
+    ...(spell.divided ? { divided: Object.freeze({
+      total: spell.divided.total,
+      targetType: spell.divided.targetType ?? 'any_target',
+    }) } : {}),
     // Storm (CR 702.40, Spreading Insurrection): przy rzucie czar kopiuje się
     // za każdy czar rzucony wcześniej w tej turze. Flaga; liczbę kopii liczy
     // core (state.spellsCastThisTurn).

@@ -1,0 +1,61 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Chocobo+Kick&set=fin&format=json",
+  "print": "fin",
+  "name": "Chocobo Kick",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Sorcery",
+  "oracle_text": "Kicker—Return a land you control to its owner's hand. (You may return a land you control to its owner's hand in addition to any other costs as you cast this spell.)\nTarget creature you control deals damage equal to its power to target creature an opponent controls. If this spell was kicked, the creature you control deals twice that much damage instead.",
+  "colors": [
+    "G"
+  ],
+  "set": "fin",
+  "set_name": "Final Fantasy",
+  "collector_number": "178",
+  "rarity": "common",
+  "artist": "Ben Wootten",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/f/ff8c8be0-8223-499c-8704-cb68e0a42ce2.jpg?1783906590",
+    "normal": "https://cards.scryfall.io/normal/front/f/f/ff8c8be0-8223-499c-8704-cb68e0a42ce2.jpg?1783906590"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "If you put a permanent with a kicker ability onto the battlefield without casting it, you can't kick it."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "If a card or token enters as a copy of a permanent, the new permanent isn't kicked, even if the original was."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "If you copy a kicked spell on the stack, the copy is also kicked. If the copied spell is a permanent spell, the token the copy of that spell becomes when it enters is also kicked."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "If either target is illegal as Chocobo Kick resolves, no damage will be dealt. If both targets are illegal, the spell won't resolve at all."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "To determine a spell's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases (such as kicker), then apply any cost reductions. The spell's mana value remains unchanged, no matter what the total cost to cast it was."
+    },
+    {
+      "date": "2025-06-06",
+      "source": "wotc",
+      "comment": "The kicker ability doesn't let you pay a kicker cost more than once."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/fin/178/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

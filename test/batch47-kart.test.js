@@ -55,7 +55,9 @@ test('B47/A3: każdy egzemplarz trafia do talii SWOJEGO planu', () => {
     ['curate', 'forgotten-realms.txt'],
     // Batch 56 (B6): Arcavios przeszedł z worka-legend do worka-dziki przy
     // przetasowaniu po awansie Ixalanu (ADR 0023 §4, generator WOREK_DECKS).
-    ['curate-stx', 'worek-dziki.txt'],
+    // Batch 62 (T2): Arcavios przeszedł z worka-dziki do worka-legend przy
+    // przetasowaniu po awansie „The Edge" (ADR 0023 §4).
+    ['curate-stx', 'worek-legend.txt'],
     ['negate', 'wiedzmin-wur.txt'],
     ['negate-m15', 'warhammer-ubr.txt'],
   ]) {
