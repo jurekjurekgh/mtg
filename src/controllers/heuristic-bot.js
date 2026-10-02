@@ -5270,6 +5270,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let value;
     if (oneSided) {
       value = P.fightBiteChipBase + P.fightBitePowerWeight * dPow + (kills ? P.fightBiteLethalBonus : 0);
+      // PMSSB-37/A (L41a: bite = damage): nieletalny cios w stwora POZA oknem
+      // walki to czysta strata — `damageTargetValue` daje tu −80 (Shock na
+      // 9 wytrzymałości −30/−80), a bite dostawał dodatni „chip" i Chocobo
+      // Kick szedł w cel, którego nie zabije (64 > pass). Ta sama reguła,
+      // to samo okno (`combatTrickWindow`); pokrętło ×0 przywraca stary chip.
+      if (!kills && !combatTrickWindow(view, victim)) value -= P.fightBiteMissPenalty;
     } else if (kills && !dies) {
       value = P.fightKillBase + P.fightKillPowerWeight * vPow;
     } else if (dies) {
@@ -5851,22 +5857,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
-   * PMSSB-36/C (zgłoszenie właściciela 2026-10-02: „wszystkie mechaniki nowych
-   * kart pod kątem PMSSB\"): STRONA WYPŁATY triggerów „whenever you cast an
-   * instant or sorcery spell\" / „whenever another artifact you control
-   * enters\", które kładą licznik na SAMYM nosicielu (Tackle Artist — Opus,
-   * Oreplate Pangolin). Dotąd bot wyceniał tylko rzut nosiciela
-   * (`anticipatedTailValue`), a rzut czaru/artefaktu przy nosicielu na polu
-   * nie dostawał NIC — Shock przy Artyście wypadał gorzej niż bez niego.
-   * Wartość = `boardPayoffWeight` × (licznik wg `counterHostValue`, ta sama
-   * miara co dla aktywacji — L41) i dla `payMana` pomniejszona o koszt many
-   * (bot płaci ZAWSZE, PMSSB-12) — o ile po koszcie rzutu zostaje mana na
-   * dopłatę. Gałąź Opus: nogi z `manaSpentBelow/AtLeast` liczone od many
-   * wydanej na rzut (`reservedManaOf`). Inne efekty/warunki nie są modelowane
-   * (0, jak dotąd). `kind` = 'spell' (czar) albo 'permanent' (permanent).
+   * PMSSB-36/C + PMSSB-37/B (zgłoszenia właściciela 2026-10-02): STRONA
+   * WYPŁATY triggerów „whenever you cast …\" / „whenever … you control
+   * enters\" leżących już na polu — wartość rzutu czaru/permanentu, który je
+   * odpala. Dotąd bot wyceniał tylko rzut NOSICIELA (`anticipatedTailValue`),
+   * a rzut przy nosicielu na polu nie dostawał nic (Shock przy Tackle Artist
+   * wypadał gorzej niż bez niego).
+   * Zdarzenia: instant/sorcery (Opus), noncreature (czar ORAZ nie-stworzenie
+   * jako permanent — tak odpala silnik: Tellah), artifact/enchantment enters
+   * (Pangolin; `another` wyklucza samego nosiciela). Nogi efektów: licznik na
+   * nosicielu (`counterHostValue`, L41) oraz — z tabeli ETB (jedna miara,
+   * L41) — dobranie, token, dreny, scry i zysk życia; poświęcenie nosiciela
+   * (próg many Tellaha) liczy ciało nosiciela jako koszt. Warunki nóg
+   * `manaSpentBelow/AtLeast` liczone od many rzutu (`reservedManaOf`);
+   * trigger z własnym `condition`, z celem albo z efektem poza listą = 0
+   * (jak dotąd). `payMana`: koszt many + brak lepszego rzutu zablokowanego
+   * zapłatą (`payBlocksBetterCast` — ta sama reguła co decyzja o zapłacie,
+   * L41a). Wynik × `boardPayoffWeight`. `kind`: 'spell' | 'permanent'.
    */
+  const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
+  let payoffProbeDepth = 0;
   function boardCastPayoffValue(view, cmd, castDef, kind) {
-    if (!castDef || !(P.boardPayoffWeight > 0)) return 0;
+    if (!castDef || !(P.boardPayoffWeight > 0) || payoffProbeDepth > 0) return 0;
     const types = castDef.types ?? [];
     const spent = reservedManaOf(view, cmd);
     let total = 0;
@@ -5877,31 +5889,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const ev = ability.trigger?.event;
         const matches = (ev === 'you_cast_instant_or_sorcery_spell' && kind === 'spell'
             && (types.includes('Instant') || types.includes('Sorcery')))
+          || (ev === 'you_cast_noncreature_spell' && (kind === 'spell' || !types.includes('Creature')))
           || (ev === 'artifact_you_control_enters' && kind === 'permanent' && types.includes('Artifact')
-            && !(ability.trigger.another && host.cardId === castDef.id));
+            && !(ability.trigger.another && host.cardId === castDef.id))
+          || (ev === 'enchantment_you_control_enters' && kind === 'permanent' && types.includes('Enchantment'));
         if (!matches) continue;
         let benefit = 0;
+        let modeled = true;
         for (const leg of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
-          if (leg?.type !== 'add_counter') continue;
+          if (!leg?.type) continue;
           const cond = leg.condition ?? null;
           if (cond) {
             const keys = Object.keys(cond);
-            if (keys.some((k) => k !== 'manaSpentBelow' && k !== 'manaSpentAtLeast')) continue;
+            if (keys.some((k) => k !== 'manaSpentBelow' && k !== 'manaSpentAtLeast')) { modeled = false; break; }
             if (cond.manaSpentBelow != null && !(spent < cond.manaSpentBelow)) continue;
             if (cond.manaSpentAtLeast != null && !(spent >= cond.manaSpentAtLeast)) continue;
           }
-          benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
+          if (leg.type === 'add_counter') {
+            benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
+          } else if (leg.type === 'sacrifice_permanent' && !leg.targetIndex) {
+            benefit -= bodyWorth(host);
+          } else if (PAYOFF_TABLE_EFFECTS.has(leg.type)) {
+            benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
+          } else { modeled = false; break; }
         }
-        if (benefit <= 0) continue;
+        if (!modeled || benefit <= 0) continue;
         const pay = ability.trigger.payMana ?? 0;
         if (pay > 0) {
           if (ownOpenMana(view) - spent < pay) continue;
+          if (payBlocksBetterCast(view, pay, ownOpenMana(view) - spent, benefit, cmd.objectId)) continue;
           benefit -= pay * P.creatureManaCostWeight;
         }
         if (benefit > 0) total += P.boardPayoffWeight * benefit;
       }
     }
     return total;
+  }
+  /**
+   * PMSSB-37/C (zgłoszenie właściciela 2026-10-02, Oreplate Pangolin): zapłata
+   * {N} za trigger „you may pay\" odbiera manę, która może być potrzebna na
+   * INNY rzut tej tury. Zablokowany rzut = karta z ręki zagrywalna teraz
+   * (`manaUnlockCandidates`: instanty zawsze, reszta w mojej głównej), której
+   * koszt mieści się w `open`, ale NIE w `open − pay`, a bot realnie chce ją
+   * rzucić (wynik `castScoreForUnlock` ≥ `optionalPayBlockedCastMin`).
+   * Płacić mimo to warto tylko, gdy zysk triggera (`benefit`, skala wyceny)
+   * przebija `optionalPayCastScoreWeight` × wynik zablokowanego rzutu.
+   * Przybliżenie: kolory nie są sprawdzane (jak `manaUnlockCandidates`);
+   * `excludeId` = karta rzucana właśnie (nie blokuje samej siebie).
+   */
+  function payBlocksBetterCast(view, pay, open, benefit, excludeId = null) {
+    if (!(pay > 0) || payoffProbeDepth > 0) return false;
+    let best = 0;
+    payoffProbeDepth += 1;
+    try {
+      for (const card of manaUnlockCandidates(view)) {
+        if (card.id === excludeId) continue;
+        const cost = card.manaCost ?? 0;
+        if (!(cost <= open && cost > open - pay)) continue;
+        best = Math.max(best, castScoreForUnlock(view, card));
+      }
+    } finally {
+      payoffProbeDepth -= 1;
+    }
+    return best >= P.optionalPayBlockedCastMin && benefit < P.optionalPayCastScoreWeight * best;
   }
 
   function enemyAttackPower(view) {
@@ -10945,9 +10995,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // jest sensem karty, zapłata niemal zawsze na plusie.
       // Etap F (CR 603.5 + 603.12): wyjątek — refleksyjna zdolność z celem
       // (Zoraline, Kappa), gdy celu brak: zapłata to czysta strata.
-      case 'resolve_optional_pay_choice':
+      case 'resolve_optional_pay_choice': {
         if (cmd.pay && cmd.reflexiveTargetCount === 0) return finish(-10);
+        // PMSSB-37/C: zapłata {N} nie może zabrać many lepszemu rzutowi tej
+        // tury. Zysk triggera z tej samej tabeli co rzut nosiciela/payoffu
+        // (`anticipatedPayValue`: ETB_EFFECT_BONUS + licznik na źródle).
+        if (cmd.pay && (cmd.cost ?? 0) > 0 && cmd.sourceId) {
+          const host = objectOnBoard(view, cmd.sourceId);
+          const hostDef = host?.cardId ? cardDef(host.cardId) : undefined;
+          let benefit = 0;
+          for (const ability of hostDef?.abilities ?? []) {
+            if ((ability?.trigger?.payMana ?? 0) !== cmd.cost) continue;
+            for (const leg of (Array.isArray(ability.effect) ? ability.effect : [ability.effect])) {
+              if (leg?.type === 'add_counter') benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
+              else if (leg?.type && PAYOFF_TABLE_EFFECTS.has(leg.type)) benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
+            }
+          }
+          if (benefit > 0 && payBlocksBetterCast(view, cmd.cost, ownOpenMana(view), benefit)) return finish(10);
+        }
         return finish(cmd.pay ? 75 : 15);
+      }
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.
         // Bot rzuca bez kosztu (darmowa karta na stole). Etap F/4: oferta

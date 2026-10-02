@@ -87,6 +87,13 @@ Oreplate Pangolin; `boardCastPayoffValue`). Raport: `docs/PMSSB.md` §PMSSB-36, 
 (9 pinów, 8 czerwonych przed zmianą). Bramka `all` **7668/7668**; golden-master: jedna zmiana
 score-only, 0 flipów. Kolejka: bite bez zabicia (chip>pass), payoffy inne niż licznik.
 
+**PMSSB-37 (2026-10-02c) — trzy granice po PMSSB-36.** (A) bite bez zabicia poza oknem walki dostaje
+`fightBiteMissPenalty` 80 (Chocobo Kick na 9 wytrzymałości → pass); (B) `boardCastPayoffValue` liczy też
+dobranie/token/drain/scry/zysk życia (Tellah, noncreature jako czar i permanent); (C) zapłata
+opcjonalna (Pangolin) rezygnuje, gdy blokuje lepszy rzut tej tury (`payBlocksBetterCast`, reentrancy
+guard). Raport `docs/PMSSB.md` §PMSSB-37, plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`,
+`test/audyt-pmssb37-trzy-granice.test.js` (12 pinów); golden-master bez zmian.
+
 **Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
 Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
 golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).

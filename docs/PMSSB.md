@@ -74,6 +74,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | koszt many aktywacji + treść sprzętu (`activate_ability`) | 148 z aktywowanymi (111 z kosztem many), 12 sprzętów | DONE (2026-10-01e) | §PMSSB-34 niżej; plan `PLAN_2026-10-01e-pmssb34-koszt-aktywacji.md`; `test/audyt-pmssb34-koszt-aktywacji.test.js` (9); **kontrola procedury (b) domknięta po PMSSB-33**: kara 1 pkt/mana (skala `creatureManaCostWeight`) + treść sprzętu w pierwszym założeniu (L41: `equipValuation.printedBody`); 17 pinów audytów przesuniętych DOKŁADNIE o koszt many; 2 pokrętła `abilityManaCostPenalty`/`equipPumpBonusPerPoint` |
 | odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
 | mechaniki kart batcha 62 (exploit z zasobami, cel własny ETB, wypłata liczników na polu) | 10 kart (Aven, Jade Bearer, Tackle Artist, Pangolin + 6 przeglądniętych) | DONE (2026-10-02b) | §PMSSB-36 niżej; plan `PLAN_2026-10-02b-pmssb36-nowe-karty.md`; `test/audyt-pmssb36-nowe-karty.test.js` (9 pinów, 8 czerwonych PRZED); exploit z `draw_cards`/`lose_life` liczony NETTO (`exploitSelfResourceGain`, wspólna drabina `selfLifeLossPenalty` L48), bramka celu własnego ETB, `boardCastPayoffValue` (Opus/Pangolin); 3 pokrętła `exploitThinBoardPenalty`/`exploitNetMargin`/`boardPayoffWeight` |
+| trzy granice po PMSSB-36 (bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna Pangolina) | Chocobo Kick, Tellah, Oreplate Pangolin | DONE (2026-10-02c) | §PMSSB-37 niżej; plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`; `test/audyt-pmssb37-trzy-granice.test.js` (12 pinów, 7 czerwonych PRZED + 2 kontrole pokręteł); `fightBiteMissPenalty` 80, rozszerzone `boardCastPayoffValue`, `payBlocksBetterCast`; pokrętła `fightBiteMissPenalty`/`optionalPayBlockedCastMin`/`optionalPayCastScoreWeight` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2058,3 +2059,33 @@ potrzebnej na inny rzut tej tury.
 
 **Pomiar końcowy:** `run-tests all` 7668/7668; golden-master: jedna zmiana, score-only (oferta
 exploit −5 vs 14, wybór ten sam — 0 flipów), fixture przegenerowany.
+
+## PMSSB-37 — trzy granice po PMSSB-36: bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna (2026-10-02c)
+
+Wejście: polecenie właściciela „zajmij się tymi trzema wykrytymi sytuacjami”. Plan:
+`docs/plans/PLAN_2026-10-02c-pmssb37-trzy-granice.md`.
+
+**Pomiar PRZED:** Chocobo Kick na cel o wytrzymałości 9 = 64 (> pass 0) mimo braku zabicia;
+Shock/artefakt przy Tellah Great Sage na polu = ten sam wynik co bez payoffu (waga 0);
+Pangolin płacił {1} zawsze (75 vs 15), także gdy ręka miała karty za 2 przy 2 otwartych many.
+
+**Naprawy (generyczne, ADR 0002; ta sama miara co reszta, L41/L41a):**
+- **A — bite bez zabicia:** `fightExchangeValue` (gałąź jednostronna) odejmuje `fightBiteMissPenalty`
+  80, gdy cios nie zabija i nie ma okna walki (`combatTrickWindow`) — lustro `damageTargetValue`
+  (−80). PO: Kick na 9 → −16 (pass); Assert Perfection na 9 → pass; Knockout Maneuver na 9 → nadal
+  zagrany (licznik na własnym stworze liczony osobno). Pokrętło 0 przywraca dawną „chip”.
+- **B — payoffy inne niż licznik:** `boardCastPayoffValue` liczy nogi z `ETB_EFFECT_BONUS`
+  (dobranie, token, drain, scry, zysk życia), warunki many, poświęcenie nosiciela jako koszt (Tellah
+  ≥ 8 many) i zdarzenia `you_cast_noncreature_spell` (czar oraz nie-stworzenie jako permanent) i
+  „enchantment enters”. PO: Tellah + Shock +5, + artefakt +4,5 (waga 0,5), stwór bez zmian.
+- **C — zapłata opcjonalna (Pangolin):** `payBlocksBetterCast` — nie płać {N}, gdy karta z ręki
+  mieści się w otwartej manie, ale nie po zapłacie, a jej wynik ≥ `optionalPayBlockedCastMin` (40)
+  i zysk triggera < `optionalPayCastScoreWeight` (0,5) × wynik. Ta sama bramka w antycypacji
+  (`boardCastPayoffValue`), z reentrancy guard `payoffProbeDepth` (wycena zablokowanego rzutu woła
+  `scoreCommand`). PO: pusta ręka → płaci, karta za 2 → nie płaci, karta za 1 → płaci.
+
+**Granice (świadomie):** kolory kandydata zablokowanego nie są sprawdzane (jak `manaUnlockCandidates`),
+tylko pojedyncza karta bez kombinacji; payoffy „drugi czar w turze” (brak licznika w widoku bota) i
+incubate Tillera bez wyceny; Knockout Maneuver bez zabicia zostaje dodatni dzięki licznikowi.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian (0 różnic); `run-tests all` **7680/7680**; build bez zmian w liczbie modułów.
