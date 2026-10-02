@@ -574,4 +574,7 @@ export const MANA_COSTS = {
   "chocobo-kick": "{1}{G}",
   // Batch62/T6: Fiery Justice (2X2).
   "fiery-justice": "{R}{G}{W}",
+  // Batch62/T2: Oreplate Pangolin (EOE), Crumbling Vestige (OGW).
+  "oreplate-pangolin": "{1}{R}",
+  "crumbling-vestige": "",
 };

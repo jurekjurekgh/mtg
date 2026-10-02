@@ -155,7 +155,8 @@ export const WOREK_DECKS = Object.freeze({
   // jako MARTWE, bo test m181-auto-awans.test.js dokumentuje na nich mechanizm
   // auto-awansu, a generator i tak sprawdza próg przed mapą worków.
   Theros: 'worek-legend', 'Śródziemie': 'worek-legend',
-  Amonkhet: 'worek-legend', Shandalar: 'worek-legend', Rabiah: 'worek-legend',
+  // Amonkhet przeszedł do worka-mrocznego (Batch 62/T2, patrz niżej).
+  Shandalar: 'worek-legend', Rabiah: 'worek-legend',
   Rath: 'worek-legend',
   'The Edge': 'worek-legend',
   // Transpozycja 2026-09-13 (zlecenie właściciela): Fiora i Ikoria USUNIĘTE
@@ -177,15 +178,28 @@ export const WOREK_DECKS = Object.freeze({
   // Duskmourn (5 — pełzający dom grozy, przetrwanie w dziczy) i Arcavios (2
   // — dzika magia Snarls poza murami Strixhaven). Bilans po B6: baśnie 21,
   // legendy 15, dzikie 15, mroczny 27.
-  Kaldheim: 'worek-dziki', Duskmourn: 'worek-dziki', Arcavios: 'worek-dziki',
+  Kaldheim: 'worek-dziki',
   'Final Fantasy': 'worek-mroczny',
-  Lorwyn: 'worek-mroczny',
   'New Capenna': 'worek-mroczny',
   // Batch 56 (2026-09-17): nowy plan właściciela „Teenage Mutant Ninja Turtles”
   // (karta 30 Containment Protocol) — motyw miejsko-mroczny, spójny z New
   // Capenna i Duskmourn, więc worek-mroczny (nie ma jeszcze progu 15 kart).
-  'Teenage Mutant Ninja Turtles': 'worek-mroczny',
   Phyrexia: 'worek-mroczny',
+  // Batch 62 / T2 (karty 178 Oreplate Pangolin i 192 Crumbling Vestige, plan
+  // „The Edge”): „The Edge” dobił do 15 kart i AWANSUJE do własnej talii
+  // (M181), więc worek-legend spadł do 5 kart nielandowych. Przy 61 kartach
+  // nielandowych w planach workowych cztery worki po ≥15 dają tylko jeden
+  // podział z zapasem 1 karty (Lorwyn 12 + Arcavios 4 = 16; reszta po
+  // dokładnie 15). Przetasowanie (ADR 0023 §4), nielandowych po komplecie
+  // kart: baśnie 15 (Kamigawa 8, Bloomburrow 7 — bez zmian), legendy 16
+  // (Lorwyn 12 + Arcavios 4: kroniki światów z „Eclipsed” i uczelni magii),
+  // mroczny 15 (New Capenna 5, Duskmourn 5, Amonkhet 5: noir, dom grozy,
+  // kraina umarłych), dzikie 15 (Thunder Junction 7, Kaldheim 6, TMNT 2:
+  // pogranicze, Północ i ulice poza prawem). Wpisy Eldraine/Kaladesh/Ixalan/
+  // Theros/Śródziemie/Final Fantasy/The Edge są martwe po awansach.
+  Lorwyn: 'worek-legend', Arcavios: 'worek-legend',
+  Duskmourn: 'worek-mroczny', Amonkhet: 'worek-mroczny',
+  'Teenage Mutant Ninja Turtles': 'worek-dziki',
 });
 
 export const WOREK_NAMES = Object.freeze({

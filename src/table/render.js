@@ -1861,7 +1861,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'enchantment_you_control_enters') return `Konstelacja — gdy ${own} enchantment wchodzi: ${parts}.`;
   if (trigger.event === 'land_entered_under_your_control') return `Landfall — gdy land wchodzi pod ${mine ? 'twoją kontrolą' : 'kontrolą kontrolera'}: ${parts}.`;
   if (trigger.event === 'creature_you_control_enters') return `Gdy stwór wchodzi pod twoją kontrolą: ${parts}.`;
-  if (trigger.event === 'artifact_you_control_enters') return `Gdy artefakt wchodzi pod twoją kontrolą: ${parts}.`;
+  if (trigger.event === 'artifact_you_control_enters') {
+    // `another` (Oreplate Pangolin): źródło nie reaguje na własne wejście.
+    return `Gdy ${trigger.another ? 'inny artefakt' : 'artefakt'} wchodzi pod twoją kontrolą: ${parts}.`;
+  }
   // B5 (audyt stołu 2026-09-09, G3/Disa): filtr podtypu z triggera (silnik go
   // egzekwuje — triggers.js) + „twój cmentarz" (matcher wymaga grobu
   // kontrolera). Wcześniej generyk gubił oba: „Gdy karta trafi...".

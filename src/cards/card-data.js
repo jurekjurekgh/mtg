@@ -12783,6 +12783,50 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Batch 62 / T2 — Oreplate Pangolin (EOE #150, plan The Edge).
+  defineCard({
+    id: 'oreplate-pangolin', name: 'Oreplate Pangolin', set: 'EOE',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot', 'Pangolin'], colors: ['R'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: 'Whenever another artifact you control enters, you may pay {1}. If you do, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/0/90209957-95db-4b59-979a-316d14ef876c.jpg?1783905949',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // `another` — źródło nie liczy samego siebie (Pangolin jest artefaktem);
+        // koszt {1} to opcjonalna płatność przy rozstrzyganiu (`payMana`).
+        trigger: { event: 'artifact_you_control_enters', another: true, payMana: 1 },
+        effect: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }],
+      }),
+    ],
+    artId: 178, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Batch 62 / T2 — Crumbling Vestige (OGW #170, plan The Edge).
+  defineCard({
+    id: 'crumbling-vestige', name: 'Crumbling Vestige', set: 'OGW',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, add one mana of any color.\n{T}: Add {C}. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/d/4/d491c13c-43e3-4ca3-b888-4edd34dfe14a.jpg?1783937893',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // To zdolność WYZWALANA (przechodzi przez stos), nie zdolność many
+        // (CR 605.1a) — mana trafia do puli przy jej rozstrzygnięciu.
+        effect: [{ type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: [] },
+      }),
+    ],
+    artId: 192, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

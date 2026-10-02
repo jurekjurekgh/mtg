@@ -808,3 +808,175 @@ test('B62/210: Fiery Justice — oferta silnika składa się w jeden kreator pod
   const label = commandLabel(picked, { nameOf: (id) => id, nameOfObject: (id) => id, cardDetails: () => null }, playerView(state, 'p1'));
   assert.match(label, /3 → .*g1|3 → /);
 });
+
+// ---- B62/178: Oreplate Pangolin (EOE #150, plan The Edge) -------------------
+
+/**
+ * Rzuca artefakt bez zdolności many (Golem-Skin Gauntlets {1}) — Lantern sam
+ * produkowałby manę na zapłatę {1} Pangolina (nowy artefakt można tapnąć).
+ */
+function castLantern(state, id = 'lantern', playerId = 'p1') {
+  put(state, id, 'golem-skin-gauntlets', playerId);
+  run(state, commands(state, playerId).find((c) => c.type === 'cast_permanent' && c.objectId === id));
+  // czeka stos: trigger Pangolina (jeśli jest) trafia na stos po wejściu artefaktu
+  for (let i = 0; i < 6 && !state.pendingOptionalPay; i++) {
+    const pass = commands(state).find((c) => c.type === 'pass_priority');
+    if (!pass || state.zones.stack.length === 0) break;
+    run(state, pass);
+  }
+}
+
+test('B62/178: Oreplate Pangolin — dane Oracle: Artifact Creature 2/2 Robot Pangolin {1}{R} i druk EOE', () => {
+  const def = sanity('oreplate-pangolin', { set: 'EOE', plan: 'The Edge', artId: 178 });
+  assert.deepEqual(def.types, ['Artifact', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Robot', 'Pangolin']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.manaCost, 2);
+});
+
+test('B62/178: Oreplate Pangolin — inny artefakt pod twoją kontrolą: zapłać {1} ⇒ licznik +1/+1', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin', 'p1', 'battlefield');
+  addMana(state, 'p1', 2, { colors: [] });
+  castLantern(state);
+  assert.ok(state.pendingOptionalPay, 'pytanie „you may pay {1}\"');
+  assert.equal(state.pendingOptionalPay.playerId, 'p1');
+  run(state, commands(state).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true));
+  settle(state);
+  assert.equal(countersOf(state, 'pang'), 1, 'licznik +1/+1 na Pangolinie');
+  assert.equal(powerOf(state, 'pang'), 3);
+  assert.equal(player(state, 'p1').mana, 0, '1 na Gauntlets + 1 na Pangolina');
+});
+
+test('B62/178: Oreplate Pangolin — rezygnacja z płatności: brak licznika, mana zostaje', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin', 'p1', 'battlefield');
+  addMana(state, 'p1', 2, { colors: [] });
+  castLantern(state);
+  run(state, commands(state).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === false));
+  settle(state);
+  assert.equal(countersOf(state, 'pang'), 0);
+  assert.equal(player(state, 'p1').mana, 1);
+});
+
+test('B62/178: Oreplate Pangolin — bez wolnej {1} nie ma pytania o płatność (nic do wyboru)', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin', 'p1', 'battlefield');
+  addMana(state, 'p1', 1, { colors: [] });
+  castLantern(state);
+  settle(state);
+  assert.ok(!state.pendingOptionalPay, 'brak pytania');
+  assert.equal(countersOf(state, 'pang'), 0);
+});
+
+test('B62/178: Oreplate Pangolin — „another\": sam Pangolin (artefakt) nie uruchamia własnej zdolności', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin');
+  addMana(state, 'p1', 5, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'pang'));
+  settle(state);
+  assert.ok(!state.pendingOptionalPay, 'brak triggera na własne wejście');
+  assert.equal(countersOf(state, find(state, 'oreplate-pangolin').id), 0);
+});
+
+test('B62/178: Oreplate Pangolin — drugi Pangolin (artefakt-stwór) uruchamia pierwszego, nie siebie', () => {
+  const state = game();
+  put(state, 'first', 'oreplate-pangolin', 'p1', 'battlefield');
+  put(state, 'second', 'oreplate-pangolin');
+  addMana(state, 'p1', 3, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'second'));
+  for (let i = 0; i < 6 && !state.pendingOptionalPay; i++) {
+    const pass = commands(state).find((c) => c.type === 'pass_priority');
+    if (!pass || !state.zones.stack.length) break;
+    run(state, pass);
+  }
+  assert.ok(state.pendingOptionalPay, 'pierwszy Pangolin pyta o płatność');
+  assert.equal(state.pendingOptionalPay.sourceId, 'first');
+  run(state, commands(state).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true));
+  settle(state);
+  assert.equal(countersOf(state, 'first'), 1);
+  const other = [...state.objects.values()].find((o) => o.cardId === 'oreplate-pangolin' && o.zone === 'battlefield' && o.id !== 'first');
+  assert.ok(other, 'drugi Pangolin na polu (nowe id po rzucie)');
+  assert.equal(countersOf(state, other.id), 0, 'drugi Pangolin bez licznika');
+});
+
+test('B62/178: Oreplate Pangolin — nie reaguje na artefakt przeciwnika ani na nie-artefakt', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin', 'p1', 'battlefield');
+  // artefakt przeciwnika (rzucony w jego turze, prawdziwe wejście na pole bitwy)
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 1, { colors: [] });
+  addMana(state, 'p1', 1, { colors: [] });
+  castLantern(state, 'theirs', 'p2');
+  settle(state);
+  assert.ok(find(state, 'golem-skin-gauntlets'), 'artefakt przeciwnika wszedł na pole bitwy');
+  assert.ok(!state.pendingOptionalPay, 'artefakt przeciwnika nie uruchamia');
+  assert.equal(countersOf(state, 'pang'), 0);
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  // stwór niebędący artefaktem pod własną kontrolą
+  put(state, 'bear', 'maritime-guard');
+  addMana(state, 'p1', 3, { colors: ['W', 'U', 'B', 'R', 'G'] });
+  const cast = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bear');
+  if (cast) run(state, cast);
+  settle(state);
+  assert.ok(!state.pendingOptionalPay, 'zwykły stwór nie uruchamia');
+  assert.equal(countersOf(state, 'pang'), 0);
+});
+
+test('B62/178: Oreplate Pangolin — opis zdolności na kaflu mówi „inny artefakt\" i o płatności {1}', async () => {
+  const { rulesText } = await import('../src/table/render.js');
+  const def = registry.get('oreplate-pangolin');
+  const text = rulesText({ keywords: [], abilities: def.abilities, controllerId: 'human' });
+  assert.match(text, /inny artefakt/, 'opis nie obiecuje triggera na własne wejście');
+  assert.match(text, /zapłacić/, 'opis mówi o opcjonalnej płatności');
+});
+
+// ---- B62/192: Crumbling Vestige (OGW #170, plan The Edge) -------------------
+
+test('B62/192: Crumbling Vestige — dane Oracle: Land, wchodzi tapped, trigger many + {T}: {C}, druk OGW', () => {
+  const def = sanity('crumbling-vestige', { set: 'OGW', plan: 'The Edge', artId: 192 });
+  assert.deepEqual(def.types, ['Land']);
+  assert.equal(def.entersTapped, true);
+  assert.equal(def.manaCost ?? 0, 0);
+});
+
+test('B62/192: Crumbling Vestige — wejście: tapped, a trigger daje JEDNĄ manę dowolnego koloru do puli', () => {
+  const state = game();
+  put(state, 'vest', 'crumbling-vestige');
+  run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'vest'));
+  assert.equal(find(state, 'crumbling-vestige').tapped, true, 'enters tapped');
+  assert.equal(player(state, 'p1').mana, 0, 'trigger idzie przez stos — jeszcze bez many');
+  settle(state);
+  assert.equal(player(state, 'p1').mana, 1, 'po rozstrzygnięciu triggera: 1 mana');
+  // dowolny kolor: opłaca biały {W} (Lionheart Maverick) i czerwony pip
+  put(state, 'mav', 'lionheart-maverick');
+  assert.ok(commands(state).some((c) => c.type === 'cast_permanent' && c.objectId === 'mav'),
+    'mana z triggera opłaca kolorowy czar');
+});
+
+test('B62/192: Crumbling Vestige — mana z triggera NIE pochodzi z {T}: ląd zostaje tapnięty i nie daje drugiej many', () => {
+  const state = game();
+  put(state, 'vest', 'crumbling-vestige');
+  run(state, commands(state).find((c) => c.type === 'play_land' && c.objectId === 'vest'));
+  settle(state);
+  assert.ok(!commands(state).some((c) => c.type === 'tap_for_mana' && c.objectId === 'vest'), 'tapnięty ląd nie daje many');
+  assert.equal(player(state, 'p1').mana, 1);
+});
+
+test('B62/192: Crumbling Vestige — {T}: Add {C} daje manę BEZBARWNĄ (nie opłaci pipa koloru)', () => {
+  const state = game();
+  put(state, 'vest', 'crumbling-vestige', 'p1', 'battlefield', { tapped: false });
+  put(state, 'mav', 'lionheart-maverick');
+  assert.ok(!commands(state).some((c) => c.type === 'cast_permanent' && c.objectId === 'mav'),
+    'bezbarwna {C} nie opłaca {W}');
+  const tap = commands(state).find((c) => (c.type === 'tap_for_mana' || c.type === 'activate_ability') && c.objectId === 'vest');
+  assert.ok(tap, 'ląd nietapnięty oferuje zdolność many');
+  run(state, tap);
+  assert.equal(player(state, 'p1').mana, 1);
+  assert.ok(!commands(state).some((c) => c.type === 'cast_permanent' && c.objectId === 'mav'),
+    'po tapnięciu nadal tylko bezbarwna');
+});

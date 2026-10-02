@@ -2395,8 +2395,11 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
         // Steelfin Whale: „Whenever an artifact you control enters, untap
         // this creature" — dowolny artefakt wchodzący pod kontrolą źródła
         // (także artifact creature i samo źródło, gdy jest artefaktem).
+        // Oreplate Pangolin: „ANOTHER artifact you control" — `another` wyklucza
+        // samo źródło (CR 603.2d: zdolność nie reaguje na własne wejście).
         const isArt = entered.kind === 'artifact' || (entered.types ?? []).includes('Artifact');
-        if (isArt && entered.controllerId === source.controllerId) {
+        const notSelfOk = !ability.trigger?.another || entered.id !== source.id;
+        if (isArt && notSelfOk && entered.controllerId === source.controllerId) {
           tryFire(state, ability, source, [], events);
         }
       } else if (triggerEvent === 'land_entered_under_opponent_control') {

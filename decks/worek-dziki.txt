@@ -1,32 +1,23 @@
 # Worek: Dzikie Światy
 
 1x Immersturm Skullcairn
-1x Prismari Campus
-1x Raucous Carnival
-1x Enter the Enigma
 1x Golem-Skin Gauntlets
-1x Curate (STX)
 1x Fake Your Own Death
 1x Infectious Bloodlust
 1x Invasion of the Giants
-1x Manifest Dread
 1x Sterling Keykeeper
 1x Trained Arynx
 1x Tumbleweed Rising
+1x Containment Protocol
 1x Fiery Justice
 1x Gila Courser
 1x Savage Hunger
-1x Ulna Alley Shopkeep
-1x Capture Sphere
-1x Tackle Artist
-1x Vanish from Sight
+1x Slithering Cryptid
 1x Spinewoods Paladin
 1x Volcanic Submersion
 1x Annie Flash, the Veteran
-1x Fear of Abduction
-1x Fear of Burning Alive
-3x Plains
-2x Island
-2x Swamp
-4x Mountain
+2x Plains
+1x Island
+1x Swamp
+2x Mountain
 2x Forest

@@ -133,7 +133,7 @@ jednej talii) i strażnikami katalogu.
   CSV i definicja karty weszły w TYM SAMYM commicie (zmierzone: osobny commit
   danych = 4 czerwone testy).
 - [x] **T1** (npm test 7329/7329, build 70 mod. / 4715,5 kB) — Lionheart Maverick, Mnemonic Wall, Vulturous Aven, Jade Bearer (czyste dane + testy).
-- [ ] **T2** — Oreplate Pangolin (`another`) + Crumbling Vestige (mana z triggera). **PRZESUNIĘTA NA KONIEC
+- [x] **T2** (wykonana po T6, z przetasowaniem worków; 27 talii, nowa talia `the-edge`) — Oreplate Pangolin (`another`) + Crumbling Vestige (mana z triggera). **PRZESUNIĘTA NA KONIEC
   (po T6)**: pomiar generatora — z tymi dwiema kartami plan „The Edge” osiąga 15 kart i auto-awansuje z
   worka-legend (ADR 0023 §4); worek-legend spada do 5 kart nielandowych, a przetasowanie mapy WOREK_DECKS
   do 4 worków wymaga razem ≥60 kart nielandowych w planach workowych — dziś jest ich 58 (Lorwyn 12,

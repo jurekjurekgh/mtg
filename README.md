@@ -132,6 +132,7 @@ liczone z plików `decks/*.txt`).
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 39 | 13 | 26 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 32 | 11 | 21 |
+| `the-edge` | The Edge | WUBRG | 23 | 8 | 15 |
 | `theros` | Theros | WUBRG | 27 | 9 | 18 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 27 | 9 | 18 |
@@ -144,9 +145,9 @@ liczone z plików `decks/*.txt`).
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 24 | 8 | 16 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 38 | 13 | 25 |
-| `worek-legend` | Worek: Legendy | WUBRG | 29 | 10 | 19 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 24 | 8 | 16 |
+| `worek-legend` | Worek: Legendy | WUBRG | 26 | 9 | 17 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 26 | 9 | 17 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 
