@@ -320,3 +320,94 @@ test('B62/208: Jade Bearer — cel nielegalny: sam Bearer, nie-Merfolk i Merfolk
     }
   }
 });
+
+// ---- B62/198: Tackle Artist (SOS #133, plan Arcavios) -----------------------
+
+const countersOf = (s, id) => s.objects.get(id).counters?.['+1/+1'] ?? 0;
+const castSpell = (s, objectId, targets) => run(s, commands(s).find((c) => c.type === 'cast_spell'
+  && c.objectId === objectId && (targets === undefined || JSON.stringify(c.targets) === JSON.stringify(targets))));
+
+test('B62/198: Tackle Artist — dane Oracle, 4/3 Orc Sorcerer z trample i druk SOS', () => {
+  const def = sanity('tackle-artist', { set: 'SOS', plan: 'Arcavios', artId: 198 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Orc', 'Sorcerer']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 4);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 4);
+  assert.deepEqual(def.keywords, ['trample']);
+});
+
+test('B62/198: Tackle Artist — Opus: czar za mniej niż pięć many daje JEDEN licznik', () => {
+  const state = game();
+  put(state, 'artist', 'tackle-artist', 'p1', 'battlefield');
+  put(state, 'ts', 'titans-strength', 'p1', 'hand'); // {R}
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  castSpell(state, 'ts', ['artist']);
+  settle(state);
+  assert.equal(countersOf(state, 'artist'), 1);
+  // +3/+1 z samego czaru do końca tury + 1 licznik: 4+1+3 = 8
+  assert.equal(effectivePower(state.objects.get('artist'), state), 8);
+});
+
+test('B62/198: Tackle Artist — granica progu: cztery many → 1 licznik, pięć many → 2 liczniki', () => {
+  const four = game();
+  put(four, 'artist', 'tackle-artist', 'p1', 'battlefield');
+  put(four, 'feed', 'feed-the-infection', 'p1', 'hand'); // {2}{B}{B}
+  addMana(four, 'p1', 4, { colors: ['B'] });
+  castSpell(four, 'feed');
+  settle(four);
+  assert.equal(countersOf(four, 'artist'), 1, 'cztery wydane = poniżej progu');
+
+  const five = game();
+  put(five, 'artist', 'tackle-artist', 'p1', 'battlefield');
+  put(five, 'myst', 'mysteries-of-the-deep', 'p1', 'hand'); // {3}{U}{U}
+  addMana(five, 'p1', 5, { colors: ['U'] });
+  castSpell(five, 'myst');
+  settle(five);
+  assert.equal(countersOf(five, 'artist'), 2, 'pięć wydanych = dwa liczniki zamiast jednego (nie 3)');
+});
+
+test('B62/198: Tackle Artist — Opus rozstrzyga się PRZED czarem, który go wywołał (ruling 2026-03-20)', () => {
+  const state = game();
+  put(state, 'artist', 'tackle-artist', 'p1', 'battlefield');
+  put(state, 'myst', 'mysteries-of-the-deep', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['U'] });
+  castSpell(state, 'myst');
+  assert.equal(state.zones.stack.length, 2, 'czar + zdolność Opus na stosie');
+  assert.equal(countersOf(state, 'artist'), 0, 'przed rozstrzygnięciem stosu licznika jeszcze nie ma');
+  run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  if (state.zones.stack.length === 2) run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  assert.equal(state.zones.stack.length, 1, 'zdolność zeszła ze stosu pierwsza');
+  assert.equal(countersOf(state, 'artist'), 2, 'licznik już leży, czar wciąż czeka na stosie');
+});
+
+test('B62/198: Tackle Artist — NIE reaguje na stwora, artefakt ani czar przeciwnika', () => {
+  const state = game();
+  put(state, 'artist', 'tackle-artist', 'p1', 'battlefield');
+  put(state, 'piker', 'goblin-piker', 'p1', 'hand'); // {1}{R} — stwór
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'piker'));
+  settle(state);
+  assert.equal(countersOf(state, 'artist'), 0, 'czar stwora to nie instant/sorcery');
+
+  put(state, 'theirs', 'titans-strength', 'p2', 'hand');
+  addMana(state, 'p2', 1, { colors: ['R'] });
+  state.turn = { ...state.turn, priorityPlayerId: 'p2' };
+  const enemyCast = commands(state, 'p2').find((c) => c.type === 'cast_spell' && c.objectId === 'theirs');
+  if (enemyCast) run(state, enemyCast);
+  settle(state);
+  assert.equal(countersOf(state, 'artist'), 0, 'czar przeciwnika nie odpala Opus kontrolera Artysty');
+});
+
+test('B62/198: Tackle Artist — dwóch Artystów: każdy dostaje własny licznik za jeden czar', () => {
+  const state = game();
+  put(state, 'a1', 'tackle-artist', 'p1', 'battlefield');
+  put(state, 'a2', 'tackle-artist', 'p1', 'battlefield');
+  put(state, 'ts', 'titans-strength', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  castSpell(state, 'ts', ['a1']);
+  settle(state);
+  assert.equal(countersOf(state, 'a1'), 1);
+  assert.equal(countersOf(state, 'a2'), 1);
+});

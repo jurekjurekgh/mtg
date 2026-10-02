@@ -1955,7 +1955,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (ev === 'spell_targets_this_creature' || ev === 'turned_face_up'
         || ev === 'aura_host_targeted_by_spell') like = 0.3;
       else if (ev === 'beginning_of_second_main') like = 0.5;
-      else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell') like = 0.5;
+      else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell'
+        || ev === 'you_cast_instant_or_sorcery_spell') like = 0.5;
       else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;

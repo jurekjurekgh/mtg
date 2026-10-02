@@ -1314,6 +1314,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // ustawia castSpell), tak samo jak kicker czyta wasKicked.
   if (effect.condition?.addendum && !sourceObject?.castDuringMainPhase) return;
   if (effect.condition?.manaSpentAtLeast != null && (context?.manaSpent ?? 0) < effect.condition.manaSpentAtLeast) return;
+  // Opus (SOS): „If five or more mana was spent … put two counters INSTEAD" —
+  // wariant podstawowy działa tylko poniżej progu (para z manaSpentAtLeast).
+  if (effect.condition?.manaSpentBelow != null && (context?.manaSpent ?? 0) >= effect.condition.manaSpentBelow) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
     // czar o kilku celach zadaje obrażenia właściwemu z nich, zamiast lać

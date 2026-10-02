@@ -12699,6 +12699,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Batch 62 / T3 — Tackle Artist (SOS #133, plan Arcavios).
+  defineCard({
+    id: 'tackle-artist', name: 'Tackle Artist', set: 'SOS',
+    types: ['Creature'], subtypes: ['Orc', 'Sorcerer'], colors: ['R'],
+    power: 4, toughness: 3, manaCost: 4, keywords: ['trample'],
+    oracleText: 'Trample\nOpus — Whenever you cast an instant or sorcery spell, put a +1/+1 counter on this creature. If five or more mana was spent to cast that spell, put two +1/+1 counters on this creature instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/8/b87e2474-98c1-4c1a-91ed-340b72d31653.jpg?1783903663',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Opus: „instead\" = para efektów rozłącznych po wydanej manie —
+        // poniżej progu 1 licznik, od progu (five or more) 2 liczniki.
+        trigger: { event: 'you_cast_instant_or_sorcery_spell' },
+        effect: [
+          { type: 'add_counter', counter: '+1/+1', amount: 1, condition: { manaSpentBelow: 5 } },
+          { type: 'add_counter', counter: '+1/+1', amount: 2, condition: { manaSpentAtLeast: 5 } },
+        ],
+      }),
+    ],
+    artId: 198, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

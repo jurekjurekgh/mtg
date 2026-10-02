@@ -16,6 +16,7 @@
 1x Savage Hunger
 1x Ulna Alley Shopkeep
 1x Capture Sphere
+1x Tackle Artist
 1x Vanish from Sight
 1x Spinewoods Paladin
 1x Volcanic Submersion
@@ -25,5 +26,5 @@
 2x Plains
 2x Island
 2x Swamp
-3x Mountain
+4x Mountain
 2x Forest

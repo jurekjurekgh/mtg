@@ -1899,6 +1899,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
   if (trigger.event === 'you_cast_second_spell_each_turn') return `Gdy rzucisz drugi czar w turze: ${parts}.`;
+  if (trigger.event === 'you_cast_instant_or_sorcery_spell') return `Opus — gdy rzucisz instant lub sorcery: ${parts}.`;
   if (trigger.event === 'you_cast_noncreature_spell') return `Gdy rzucisz czar niebędący stworem: ${parts}.`;
   if (trigger.event === 'when_you_cast_spell') return `Gdy rzucisz czar: ${parts}.`;
   if (trigger.event === 'beginning_of_second_main') {

@@ -3417,6 +3417,21 @@ function processTriggersScan(state, recentEvents) {
             } else {
               queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
             }
+          } else if (triggerEvent === 'you_cast_instant_or_sorcery_spell') {
+            // Opus (Tackle Artist, SOS; CR 207.2c — słowo zdolności bez własnych
+            // reguł): „Whenever you cast an instant or sorcery spell". Tylko
+            // zdarzenie `spell_cast` z kartą Instant/Sorcery (`instantSorcery`
+            // wyżej); czar kontrolera źródła. Kontekst niesie `manaSpent` —
+            // całą manę wydaną na czar (także na koszty dodatkowe, jak kicker
+            // czy X), z którą efekty porównują próg „five or more" (CR 603.2).
+            // Zdolność trafia na stos NAD czarem (CR 603.3b), więc rozstrzyga
+            // się przed nim — także gdy czar zostanie skontrowany.
+            if (source.controllerId !== ev.playerId || !instantSorcery || ev.type !== 'spell_cast') continue;
+            if (ability.trigger?.requiresTarget) {
+              tryFire(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            } else {
+              queueTriggerToStack(state, ability, source, [], events, { manaSpent: ev.manaSpent ?? 0 });
+            }
           } else if (triggerEvent === 'you_cast_spell_targeting_permanent') {
             // Tiller of Flesh: „Whenever you cast a spell that targets one or
             // more permanents". Permanent = obiekt na BITWISKU (CR 110.1);

@@ -796,6 +796,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   when_you_cast_spell: 'rzucenie czaru',
   you_cast_noncreature_spell: 'rzucenie czaru niebędącego stworem',
   you_cast_second_spell_each_turn: 'drugi czar w turze',
+  you_cast_instant_or_sorcery_spell: 'rzucenie instantu lub sorcery',
   saga_chapter: 'rozdział sagi',
   // M122/#3 (Żywy Tester, mechanicy vs graveyard seed 2002): w logu gracza
   // świecił surowy slug „Chronic Flooding — trigger (enchanted_permanent_tapped)".

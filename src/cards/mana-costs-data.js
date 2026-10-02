@@ -566,4 +566,6 @@ export const MANA_COSTS = {
   "mnemonic-wall": "{4}{U}",
   "vulturous-aven": "{3}{B}",
   "jade-bearer": "{G}",
+  // Batch62/T3: Tackle Artist (SOS).
+  "tackle-artist": "{3}{R}",
 };

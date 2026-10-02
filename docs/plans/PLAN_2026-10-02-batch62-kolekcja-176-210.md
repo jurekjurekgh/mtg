@@ -133,8 +133,14 @@ jednej talii) i strażnikami katalogu.
   CSV i definicja karty weszły w TYM SAMYM commicie (zmierzone: osobny commit
   danych = 4 czerwone testy).
 - [x] **T1** (npm test 7329/7329, build 70 mod. / 4715,5 kB) — Lionheart Maverick, Mnemonic Wall, Vulturous Aven, Jade Bearer (czyste dane + testy).
-- [ ] **T2** — Oreplate Pangolin (`another`) + Crumbling Vestige (mana z triggera).
-- [ ] **T3** — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
+- [ ] **T2** — Oreplate Pangolin (`another`) + Crumbling Vestige (mana z triggera). **PRZESUNIĘTA NA KONIEC
+  (po T6)**: pomiar generatora — z tymi dwiema kartami plan „The Edge” osiąga 15 kart i auto-awansuje z
+  worka-legend (ADR 0023 §4); worek-legend spada do 5 kart nielandowych, a przetasowanie mapy WOREK_DECKS
+  do 4 worków wymaga razem ≥60 kart nielandowych w planach workowych — dziś jest ich 58 (Lorwyn 12,
+  Kamigawa 8, Bloomburrow 7, Thunder Junction 7, Amonkhet 5, Duskmourn 5, New Capenna 5, Kaldheim 4,
+  Arcavios 3, TMNT 2), po T3/T4/T6 (Arcavios +1, Kaldheim +2) będzie 61 — dopiero wtedy przetasowanie jest
+  wykonalne. Gotowy kod T2 (patche) czeka poza repo; każdy commit ma zostać zielony.
+- [x] **T3** (npm test 7335/7335) — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
 - [ ] **T4** — Golem-Skin Gauntlets (dynamiczny pump Equipmentu, cały łańcuch deskryptora).
 - [ ] **T5** — Chocobo Kick (kicker niemanowy + bite z kickerem; kreator wyboru lądu; bot).
 - [ ] **T6** — Fiery Justice (czar z podziałem obrażeń; kreator; bot).
