@@ -78,8 +78,11 @@ test('B1 Illvoi Operative: rzut będący DRUGIM czarem dostaje wartość licznik
   assert.equal(drugi - illvoi(1, 'illvoi-operative', { boardPayoffWeight: 0 }), drugi - pierwszy);
 });
 
-test('B2 Jeskai Devotee (pump do końca tury): bez zmian — poza miarą wartości trwałej', () => {
-  assert.equal(illvoi(1, 'jeskai-devotee'), illvoi(0, 'jeskai-devotee'));
+test('B2 Jeskai Devotee (pump do końca tury): w PMSSB-38 poza modelem, od PMSSB-39 wyceniany oknem ataku', () => {
+  // PMSSB-38 przypinał tu brak wyceny (granica); PMSSB-39 ją zamyka —
+  // szczegółowe piny w test/audyt-pmssb39-pump-triggery.test.js.
+  assert.equal(illvoi(0, 'jeskai-devotee'), illvoi(2, 'jeskai-devotee'), 'trzeci czar bez triggera');
+  assert.ok(illvoi(1, 'jeskai-devotee') > illvoi(0, 'jeskai-devotee'), 'drugi czar ma wartość pumpu');
 });
 
 function tiller(cel, params) {

@@ -76,6 +76,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | mechaniki kart batcha 62 (exploit z zasobami, cel własny ETB, wypłata liczników na polu) | 10 kart (Aven, Jade Bearer, Tackle Artist, Pangolin + 6 przeglądniętych) | DONE (2026-10-02b) | §PMSSB-36 niżej; plan `PLAN_2026-10-02b-pmssb36-nowe-karty.md`; `test/audyt-pmssb36-nowe-karty.test.js` (9 pinów, 8 czerwonych PRZED); exploit z `draw_cards`/`lose_life` liczony NETTO (`exploitSelfResourceGain`, wspólna drabina `selfLifeLossPenalty` L48), bramka celu własnego ETB, `boardCastPayoffValue` (Opus/Pangolin); 3 pokrętła `exploitThinBoardPenalty`/`exploitNetMargin`/`boardPayoffWeight` |
 | trzy granice po PMSSB-36 (bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna Pangolina) | Chocobo Kick, Tellah, Oreplate Pangolin | DONE (2026-10-02c) | §PMSSB-37 niżej; plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`; `test/audyt-pmssb37-trzy-granice.test.js` (12 pinów, 7 czerwonych PRZED + 2 kontrole pokręteł); `fightBiteMissPenalty` 80, rozszerzone `boardCastPayoffValue`, `payBlocksBetterCast`; pokrętła `fightBiteMissPenalty`/`optionalPayBlockedCastMin`/`optionalPayCastScoreWeight` |
 | licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
+| payoffy z efektem tymczasowym przy rzucie (prowess, Jeskai Devotee, Kulrath Mystic) | Jeskai Windscout, Jeskai Devotee, Kulrath Mystic | DONE (2026-10-02e) | §PMSSB-39 niżej; plan `PLAN_2026-10-02e-pmssb39-pump-triggery.md`; `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów, 6 czerwonych PRZED + 4 kontrole); `temporaryPumpPayoff` (okna walki/głównej 1 + polityka ataku), warunki triggera rzutu; 3 pokrętła `tempPumpTrickValue`/`tempPumpFaceDamageValue`/`tempPumpBlockOdds` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2106,7 +2107,31 @@ Odpowiedź: obie rzeczy to były luki, nie decyzje projektowe.
   `incubateValue` = `10·N − 2·creatureManaCostWeight` (ciało N/N jak token, minus koszt przemiany {2}).
   PO: Merciless Repurposing 92 → 120; Tiller of Flesh — czar z celem-permanentem +9 (gracz jako cel: 0;
   własny rzut Tillera: 0).
-- **Granica:** trigger z efektem TYMCZASOWYM (Jeskai Devotee: pump do końca tury; prowess) nie ma
+- **Granica (domknięta w PMSSB-39):** trigger z efektem TYMCZASOWYM (Jeskai Devotee: pump do końca tury; prowess) nie miał
   wyceny — wymaga prognozy walki, nie miary wartości trwałej. Jolrael („drugie dobranie”) ma inny licznik.
 
 **Pomiar końcowy:** golden-master 6 partii — hash bez zmian; `run-tests all` **7686/7686**.
+
+## PMSSB-39 — payoffy z efektem tymczasowym przy rzucie (2026-10-02e)
+
+Wejście: „tak, chcę” po zapowiedzi z PMSSB-38 (granica: triggery z efektem do końca tury).
+Plan: `docs/plans/PLAN_2026-10-02e-pmssb39-pump-triggery.md`.
+
+**Model (reuse istniejących miar, L41/L48):** `temporaryPumpPayoff` w `boardCastPayoffValue`.
+- Walka zadeklarowana, nosiciel w niej walczy: `pumpChangesOutcome` (symulacja CR 510 jak przy pumpie
+  z czaru) → `tempPumpTrickValue` 18 + moc, inaczej 0 (Windscout 2/1 vs blokujący 1/1: +10; vs 2/2
+  — obie strony giną tak samo → 0).
+- Własna główna 1, nosiciel zdolny do ataku i polityka ataku bota (`attackIntendsCreature`) go wybiera
+  — albo wybierze dopiero po pumpie („pump odblokowuje atak”): bez możliwego blokera = twarz
+  (`tempPumpFaceDamageValue` 4/pkt mocy; prowess +1 → +2 po wadze 0,5), z blokerem
+  `tempPumpBlockOdds` 0,5 dzieli wartość między trik a twarz. Latający nosiciel ignoruje blokerów bez
+  latania/zasięgu.
+- Reszta okien (druga główna, nosiciel z chorobą przyzwania): 0.
+- Warunki triggera rzutu z karty: `spellManaValueAtLeast` (Kulrath Mystic: hill-giant MV4 przy bloku 3/3
+  → +6, Shock MV1 → 0), kolor, bezbarwność; `when_you_cast_spell` obsłużone. Devotee: drugi czar +2,
+  pierwszy/trzeci 0.
+
+**Granice:** dynamiczne X, efekty skierowane, `buff_attacking_creatures` i vigilance Kulratha bez
+wyceny; blokada wroga to jedno pokrętło szansy, nie prognoza.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian; `run-tests all` **7696/7696** (po aktualizacji pinu B2 z PMSSB-38).

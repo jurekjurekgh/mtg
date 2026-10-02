@@ -226,6 +226,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'exploitNetMargin',            // minimalna NADWYŻKA netto, żeby poświęcić (remis = skip)
   // PMSSB-36/C: wypłata triggerów-licznika nosiciela na polu (Opus, Pangolin).
   'boardPayoffWeight',           // waga wartości licznika/dobrania/tokenu przy rzucie czaru/permanentu
+  // PMSSB-39: payoffy z efektem tymczasowym (prowess, Jeskai Devotee, Kulrath Mystic).
+  'tempPumpTrickValue',          // wartość pumpu, który zmienia wynik walki (skala tricku z czaru)
+  'tempPumpFaceDamageValue',     // za punkt mocy pumpu przy niezablokowanym ataku (skala drainu ETB)
+  'tempPumpBlockOdds',           // szansa, że wróg zablokuje atakującego, gdy ma do tego blokera
   // PMSSB-37/C: zapłata {N} triggera vs inny rzut tej tury (Oreplate Pangolin).
   'optionalPayBlockedCastMin',   // próg wyniku rzutu, który bot realnie chce wykonać (zablokowany zapłatą)
   'optionalPayCastScoreWeight',  // zysk triggera musi przebić tę wagę × wynik zablokowanego rzutu
@@ -641,6 +645,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   exploitThinBoardPenalty: 6,
   exploitNetMargin: 1,
   boardPayoffWeight: 0.5,
+  tempPumpTrickValue: 18,
+  tempPumpFaceDamageValue: 4,
+  tempPumpBlockOdds: 0.5,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,
   libraryDeckOutPenalty: 120,

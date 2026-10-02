@@ -5885,6 +5885,73 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * zapłatą (`payBlocksBetterCast` — ta sama reguła co decyzja o zapłacie,
    * L41a). Wynik × `boardPayoffWeight`. `kind`: 'spell' | 'permanent'.
    */
+  /**
+   * PMSSB-39 (zgłoszenie właściciela 2026-10-02: „tak, chcę”, Jeskai
+   * Windscout/Devotee/Kulrath Mystic): trigger rzutu z efektem TYMCZASOWYM na
+   * nosicielu (+P/+T do końca tury) ma wartość tylko w oknie, w którym pump
+   * zdąży zmienić walkę. Ta sama polityka okien co pump z czaru (M146/M179:
+   * walka 18, własna główna 1 przed atakiem, reszta 0) i ta sama polityka ataku
+   * co deklaracja (`attackIntendsCreature`, L41/L48):
+   *  - walka zadeklarowana, nosiciel w niej walczy: `pumpChangesOutcome`
+   *    (symulacja CR 510) → `tempPumpTrickValue` + moc nosiciela, inaczej 0;
+   *  - moja główna 1, nosiciel może atakować i bot realnie nim zaatakuje:
+   *    z mojej strony nie wiadomo, czy wróg zablokuje — `tempPumpBlockOdds`
+   *    dzieli wartość między „blok, który pump przełamuje” (trik jak wyżej,
+   *    symulacja przeciw KAŻDEMU możliwemu blokerowi — wystarczy jeden, bo
+   *    wróg wybiera) a „nie blokuje” (`tempPumpFaceDamageValue` za punkt mocy,
+   *    skala drainu 4/pkt jak w tabeli ETB). Bez możliwego blokera: pełne
+   *    obrażenia w twarz;
+   *  - inne okna (druga główna, tura wroga bez walki, koniec tury): 0.
+   * Dynamiczne X (np. „source_power”) i efekty skierowane (`targetIndex`) są
+   * poza modelem (0), tak jak dotąd.
+   */
+  function temporaryPumpPayoff(view, host, leg) {
+    if (leg.targetIndex != null || leg.type === 'buff_attacking_creatures') return 0;
+    if (!Number.isFinite(leg.power ?? 0) || !Number.isFinite(leg.toughness ?? 0)) return 0;
+    const delta = { power: leg.power ?? 0, toughness: leg.toughness ?? 0 };
+    if (!(delta.power > 0 || delta.toughness > 0)) return 0;
+    if (combatTrickWindow(view, host)) {
+      return pumpChangesOutcome(view, host, delta) ? P.tempPumpTrickValue + (host.power ?? 0) : 0;
+    }
+    if (!(myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(host))) return 0;
+    // Pump może też ODBLOKOWAĆ atak: gdy bez niego bot nie zaatakuje, a z nim
+    // tak (ta sama polityka ataku na widoku z podbitym nosicielem), pump
+    // przełamuje blok z definicji (`flips`).
+    const intendsNow = attackIntendsCreature(view, host.id);
+    const enablesAttack = !intendsNow && attackIntendsCreature({
+      ...view,
+      zones: {
+        ...view.zones,
+        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === host.id
+          ? { ...o, power: (o.power ?? 0) + delta.power, toughness: (o.toughness ?? 0) + delta.toughness } : o)),
+      },
+    }, host.id);
+    if (!intendsNow && !enablesAttack) return 0;
+    const flies = (host.keywords ?? []).includes('flying');
+    const blockers = enemyCreatures(view).filter((b) => !b.tapped && !b.cantBlock
+      && (!flies || (b.keywords ?? []).some((k) => k === 'flying' || k === 'reach')));
+    const face = P.tempPumpFaceDamageValue * Math.max(0, delta.power);
+    if (blockers.length === 0) return face;
+    const before = duelStats(host, {});
+    const after = duelStats(host, delta);
+    const flips = enablesAttack || blockers.some((b) => {
+      const bs = duelStats(b, {});
+      return JSON.stringify(simulateCombat(before, [bs])) !== JSON.stringify(simulateCombat(after, [bs]));
+    });
+    const odds = P.tempPumpBlockOdds;
+    return odds * (flips ? P.tempPumpTrickValue + (host.power ?? 0) : 0) + (1 - odds) * face;
+  }
+  const PAYOFF_TEMP_PUMP_EFFECTS = new Set(['pump', 'buff_creature_until_end_of_turn']);
+  /** Warunki triggera rzutu, które bot umie ocenić z karty rzucanej (PMSSB-39). */
+  function castTriggerConditionHolds(cond, castDef) {
+    if (!cond) return true;
+    const keys = Object.keys(cond);
+    if (keys.length !== 1) return null;
+    if (cond.spellManaValueAtLeast != null) return (castDef.manaCost ?? 0) >= cond.spellManaValueAtLeast;
+    if (Array.isArray(cond.spellColorsInclude)) return (castDef.colors ?? []).some((c) => cond.spellColorsInclude.includes(c));
+    if (cond.spellIsColorless) return (castDef.colors ?? []).length === 0;
+    return null;
+  }
   const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
   let payoffProbeDepth = 0;
   function boardCastPayoffValue(view, cmd, castDef, kind) {
@@ -5895,10 +5962,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const host of myCreatures(view)) {
       const hostDef = host.cardId ? cardDef(host.cardId) : undefined;
       for (const ability of hostDef?.abilities ?? []) {
-        if (ability?.type !== 'triggered' || ability.trigger?.requiresTarget || ability.trigger?.condition) continue;
+        if (ability?.type !== 'triggered' || ability.trigger?.requiresTarget) continue;
+        // PMSSB-39: warunek triggera rzutu (MV ≥ N, kolor, bezbarwny) — z karty
+        // rzucanej; nieznany warunek = poza modelem (jak dotąd każdy).
+        if (castTriggerConditionHolds(ability.trigger?.condition, castDef) !== true) continue;
         const ev = ability.trigger?.event;
         const matches = (ev === 'you_cast_instant_or_sorcery_spell' && kind === 'spell'
             && (types.includes('Instant') || types.includes('Sorcery')))
+          || ev === 'when_you_cast_spell' // PMSSB-39: każdy rzut (Kulrath Mystic, warunek MV wyżej)
           || (ev === 'you_cast_noncreature_spell' && (kind === 'spell' || !types.includes('Creature')))
           || (ev === 'artifact_you_control_enters' && kind === 'permanent' && types.includes('Artifact')
             && !(ability.trigger.another && host.cardId === castDef.id))
@@ -5928,6 +5999,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
           } else if (leg.type === 'sacrifice_permanent' && !leg.targetIndex) {
             benefit -= bodyWorth(host);
+          } else if (PAYOFF_TEMP_PUMP_EFFECTS.has(leg.type)) {
+            benefit += temporaryPumpPayoff(view, host, leg);
           } else if (PAYOFF_TABLE_EFFECTS.has(leg.type)) {
             benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
           } else { modeled = false; break; }

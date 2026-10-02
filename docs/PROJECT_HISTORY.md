@@ -99,6 +99,11 @@ luką, nie decyzją. `playerView.spellsCastThisTurn` (ten sam licznik co trigger
 Operative dostaje wartość przy drugim rzucie) i `incubateValue` (Tiller of Flesh, Merciless Repurposing).
 Raport `docs/PMSSB.md` §PMSSB-38, `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów).
 
+**PMSSB-39 (2026-10-02e) — payoffy z efektem tymczasowym.** Na polecenie właściciela („tak, chcę”):
+prowess (Windscout), Jeskai Devotee i Kulrath Mystic wyceniane modelem okien — walka (symulacja CR 510),
+własna główna 1 z polityką ataku bota, brak wartości poza tym; warunki triggera rzutu (MV ≥ N, kolor).
+Raport `docs/PMSSB.md` §PMSSB-39, `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów).
+
 **Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
 Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
 golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).
