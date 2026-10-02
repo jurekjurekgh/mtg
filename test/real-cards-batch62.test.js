@@ -980,3 +980,57 @@ test('B62/192: Crumbling Vestige — {T}: Add {C} daje manę BEZBARWNĄ (nie op�
   assert.ok(!commands(state).some((c) => c.type === 'cast_permanent' && c.objectId === 'mav'),
     'po tapnięciu nadal tylko bezbarwna');
 });
+
+// ---- Wycena bota dla kart batcha 62 (L48: oferta = walidacja = wycena) -----------
+
+function botTurn(state, max = 14) {
+  const bot = createHeuristicBot({ seed: 2026 });
+  const log = [];
+  for (let i = 0; i < max; i++) {
+    const who = state.turn.priorityPlayerId;
+    const cmd = bot.chooseCommand(playerView(state, who), {});
+    if (!cmd || cmd.type === 'declare_attackers') break;
+    const r = execute(state, cmd);
+    assert.ok(r.ok, JSON.stringify(cmd));
+    log.push(`${cmd.type}:${cmd.objectId ?? ''}`);
+  }
+  return log;
+}
+
+test('B62/192: bot — Crumbling Vestige wygrywa z lądem, gdy jego mana z triggera pozwala rzucić kartę W TEJ TURZE', () => {
+  const state = game();
+  put(state, 'vest', 'crumbling-vestige');
+  put(state, 'mtn', 'basic-mountain');
+  put(state, 'mav', 'lionheart-maverick'); // {W}: sam Mountain jej nie opłaci
+  const log = botTurn(state);
+  assert.ok(log.includes('play_land:vest'), `bot zagrał Vestige: ${log}`);
+  assert.ok(log.includes('cast_permanent:mav'), `i rzucił Maverick manaą z triggera: ${log}`);
+});
+
+test('B62/192: bot — bez karty, którą ta mana odblokowuje, Vestige nie dostaje premii (zwykły ląd wygrywa)', () => {
+  const state = game();
+  put(state, 'vest', 'crumbling-vestige');
+  put(state, 'mtn', 'basic-mountain');
+  put(state, 'bear', 'maritime-guard'); // {1}{U}: dwie many, a trigger Vestige daje jedną — nic nie odblokowuje
+  const log = botTurn(state);
+  assert.ok(log.includes('play_land:mtn'), `bot zagrał Mountain: ${log}`);
+});
+
+test('B62/178: bot — Oreplate Pangolin: rzuca artefakt, płaci {1} i dostaje licznik', () => {
+  const state = game();
+  put(state, 'pang', 'oreplate-pangolin', 'p1', 'battlefield');
+  put(state, 'art', 'golem-skin-gauntlets');
+  for (let i = 0; i < 4; i++) put(state, `m${i}`, 'basic-mountain', 'p1', 'battlefield');
+  const log = botTurn(state);
+  assert.ok(log.includes('cast_permanent:art'), String(log));
+  assert.ok(log.includes('resolve_optional_pay_choice:'), String(log));
+  assert.equal(countersOf(state, 'pang'), 1);
+});
+
+test('B62/196: bot — Mnemonic Wall jest rzucany (0/4 defender z ETB nie ląduje poniżej passu)', () => {
+  const state = game();
+  put(state, 'wall', 'mnemonic-wall');
+  put(state, 'gy', 'chocobo-kick', 'p1', 'graveyard');
+  for (let i = 0; i < 5; i++) put(state, `i${i}`, 'basic-island', 'p1', 'battlefield');
+  assert.ok(botTurn(state).includes('cast_permanent:wall'));
+});

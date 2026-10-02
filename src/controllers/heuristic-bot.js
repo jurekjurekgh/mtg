@@ -4291,7 +4291,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
         && !manaOnlyAbility(a)),
       entersTapped: Boolean(def?.entersTapped),
+      // Batch 62 (Crumbling Vestige): ETB-trigger lądu dodający manę do puli —
+      // ląd wchodzi tapnięty, ale ta mana jest do wydania W TEJ SAMEJ turze
+      // (CR 605.1a: zdolność wyzwalana, nie many, więc przechodzi przez stos).
+      etbMana: etbManaOfLand(def),
     };
+  }
+
+  /** Mana, którą ląd dodaje do puli przy wejściu: `{ amount, anyColor }` albo null. */
+  function etbManaOfLand(def) {
+    let amount = 0;
+    let anyColor = false;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      for (const e of Array.isArray(ability.effect) ? ability.effect : [ability.effect]) {
+        if (e?.type !== 'add_mana' || e.condition != null) continue;
+        amount += e.amount ?? 1;
+        if ((e.colors ?? []).length >= 2) anyColor = true;
+      }
+    }
+    return amount > 0 ? { amount, anyColor } : null;
+  }
+
+  /**
+   * Czy po zagraniu tego lądu da się W TEJ TURZE rzucić kartę z ręki, której
+   * NIE da się rzucić bez many z triggera wejścia (koszt ogólny i kolor).
+   * Liczymy: pula + nietapnięte własne lądy + mana z triggera; brakujący pip
+   * koloru pokrywa tylko mana „dowolnego koloru" (po jednym pipie na jednostkę).
+   */
+  function etbManaUnlocksCast(view, objectId, etb) {
+    const me = view.players.find((p) => p.id === view.playerId);
+    const untapped = (view.zones.battlefield ?? [])
+      .filter((o) => o?.controllerId === view.playerId && o.kind === 'land' && !o.tapped).length;
+    const have = (me?.mana ?? 0) + untapped;
+    const colorsNow = new Set();
+    for (const o of view.zones.battlefield ?? []) {
+      if (o?.controllerId !== view.playerId || o.kind !== 'land' || o.tapped) continue;
+      for (const c of koloryZrodlaWidoku(o)) colorsNow.add(c);
+    }
+    for (const o of view.zones.hand ?? []) {
+      if (!o || o.kind === 'land' || o.id === objectId) continue;
+      const cost = cardDef(o.cardId)?.manaCost ?? 0;
+      if (cost <= 0) continue;
+      const missing = coloredPipsOf(o.cardId).filter((unit) => !unit.some((c) => colorsNow.has(c))).length;
+      const fitsWithout = cost <= have && missing === 0;
+      const fitsWith = cost <= have + etb.amount && missing <= (etb.anyColor ? etb.amount : 0);
+      if (fitsWith && !fitsWithout) return true;
+    }
+    return false;
   }
 
   /**
@@ -4350,7 +4397,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (a.potrzeby.size > 0 && a.kolory.length === 0) delta -= 3;  // bezbarwny przy brakach koloru
     if (a.nowyKolor) delta += 3;                                    // pierwszy takiego koloru
     if (a.ilosc >= 2) delta += 4;                                   // {T}: Add {C}{C} i podobne
-    if (a.entersTapped) delta -= 8;                                 // mana dopiero w nastepnej turze
+    // Batch 62 (Crumbling Vestige): ląd tapnięty Z manaą z triggera wejścia nie
+    // traci tempa tej tury (mana trafia do puli) — bez kary −8, a gdy ta mana
+    // pozwala rzucić kartę, której inaczej nie da się rzucić teraz, premia
+    // jak za pokrycie brakującego koloru. Reszta tapniętych: bez zmian.
+    if (a.entersTapped) {
+      if (a.etbMana) {
+        if (etbManaUnlocksCast(view, objectId, a.etbMana)) delta += 14;
+      } else delta -= 8;                                            // mana dopiero w nastepnej turze
+    }
     // PMSSB-12/F-P2 (spire!): ETB-pay-or-sac — stać (pool≥pay) → −koszt;
     // nie-stać → −12 (ląd ginie — strata many-przyszłej!).
     const landDef = objectId ? cardDef(((view.zones?.hand ?? []).find((o) => o.id === objectId) ?? {}).cardId) : undefined;

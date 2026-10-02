@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "4024bcd1c7c5aa93541c63c0b84f57e4d8f68a58f9b073b8eee33915925d1906",
+  "overallHash": "9865bb30add94eb20bd90cb48df17dddd18035e3e819ebdfcbbabb3bde56781b",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
@@ -90,37 +90,40 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "d680f35ce15e92282cd98cc790da2791206d08f8de0eabfbcb11e032bf0d0e8d",
-      "decisions": 224,
-      "scoreSum": 3775.3243,
+      "hash": "05caf41b8a081722fff955d1d41b0a9653da8bcbe400023370732ece661ac883",
+      "decisions": 227,
+      "scoreSum": 3085.0171,
       "chosenKinds": {
         "activate_ability": 1,
-        "attack": 5,
-        "block": 8,
-        "cast_permanent": 8,
-        "pass_priority": 184,
-        "play_land": 6,
+        "attack": 4,
+        "block": 7,
+        "cast_permanent": 7,
+        "cast_spell": 1,
+        "pass_priority": 185,
+        "play_land": 7,
         "resolve_combat": 9,
-        "resolve_delve_exile": 1,
+        "resolve_endure_choice": 1,
+        "resolve_exploit_choice": 2,
         "resolve_mulligan_choice": 1,
-        "resolve_trigger_target": 1
+        "resolve_trigger_target": 2
       }
     },
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "bc16d52c402fc01a9cdf4589c59e12a8d9e7ff67abc0fce5b1fa09955763336b",
-      "decisions": 182,
-      "scoreSum": 2577.4135,
+      "hash": "b0b0c5eec54403bfe943f009c0daa45e10169a925310f33506c7c6bbc58ae868",
+      "decisions": 218,
+      "scoreSum": 2758.6261,
       "chosenKinds": {
-        "activate_ability": 3,
+        "activate_ability": 4,
         "attack": 6,
-        "block": 7,
-        "cast_permanent": 3,
-        "cast_spell": 1,
-        "pass_priority": 146,
-        "play_land": 7,
-        "resolve_combat": 8,
+        "block": 3,
+        "cast_permanent": 6,
+        "cast_spell": 2,
+        "pass_priority": 180,
+        "play_land": 6,
+        "resolve_combat": 9,
+        "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1
       }
     }
