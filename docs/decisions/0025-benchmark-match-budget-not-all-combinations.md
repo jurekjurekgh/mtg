@@ -70,7 +70,7 @@ ADR 0023 §4), generator wystawił `decks/eldraine.txt`: 22 talie jednoplanowe
 z tabeli wyżej, tylko osiągnięty wcześniej. Reguła się nie zmienia: liczbę
 granych par wyznacza budżet (`pairsWanted = ⌊6 000 / (4 × 6)⌋`), nie katalog;
 `m338/3` pilnuje obu reżimów (pełne pokrycie DOPÓKI mieści się w budżecie),
-a `--seeds` w HELP-ie (`dziś 23 talii → 4`; 23. talia „The Edge" — Batch 62/T2, auto-awans M181) liczy się z kodu. Podniesienie
+a `--seeds` w HELP-ie (`dziś 23 talii → 4`) liczy się z kodu. Podniesienie
 `--budget` przy kolejnych progach wymaga decyzji właściciela. Pełny zapis
 pomiarów: `docs/PROJECT_HISTORY.md` (2026-09-29c).
 

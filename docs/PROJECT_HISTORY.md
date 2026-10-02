@@ -19,6 +19,54 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-02 — batch 62: kolekcja właściciela 176–210 (10 kart, PR #150)
+
+Zlecenie właściciela: 10 kart z kolekcji (lista przekazana w czacie). Kolumna „Plan"
+WIĄŻĄCA i przepisana 1:1 do definicji i talii: 176→Final Fantasy, 178→The Edge,
+192→The Edge, 194→Warhammer Fantasy, 196→Theros, 198→Arcavios, 203→Kaldheim,
+205→Tarkir, 208→Ixalan, 210→Kaldheim. Plan sesji:
+`docs/plans/PLAN_2026-10-02-batch62-kolekcja-176-210.md` (T0 plan jako osobny commit,
+T1–T6 karty, T2 świadomie na końcu, T7 dokumentacja). Snapshoty Scryfall z rulingami
+(także puste listy, ADR 0028) dla wszystkich 10 kart.
+
+**Transze** (commit per karta lub zestaw kart; zasada: snapshot + wiersz CSV + definicja +
+piny + talie w JEDNYM commicie, bo osobny commit danych = czerwone testy):
+
+- **T1** (`6bbaf50`; 194 Lionheart Maverick, 196 Mnemonic Wall, 205 Vulturous Aven,
+  208 Jade Bearer): czyste dane + testy (exploit z wyborem przy rozstrzyganiu, `another` Merfolk).
+- **T3** (`284f7d8`; 198 Tackle Artist): Opus — nowe zdarzenie rzutu instant/sorcery +
+  warunek `manaSpentBelow`, rozstrzygany PRZED czarem (ruling 2026-03-20).
+- **T4** (`56fa5bd`; 203 Golem-Skin Gauntlets): `pumpPerAttachedEquipment` przez cały
+  łańcuch deskryptora registry → identity → attachments → permanents (L21), wycena bota.
+- **T5** (`f1b9d8c`; 176 Chocobo Kick): kicker o koszcie NIEMANOWYM („zwróć ląd do ręki",
+  CR 702.33) — `kickerLandId`, `returnLand`, „bite" ×2 przy kickerze; kreator stołu
+  z wymiarem kosztu (`costKey` w `multiTargetPlanOf`), kara bota `kickerReturnLandPenalty`.
+- **T6** (`924a16a`; 210 Fiery Justice): czar z PODZIAŁEM obrażeń ogłaszanym przy rzucie
+  (CR 601.2d) — `spell.divided {total, targetType}`, `damageDivision` w komendzie
+  `cast_spell`, oferty podziałów w `legalSpellCasts` (każdy cel ≥1, suma 5, bez powtórzeń),
+  rozstrzyganie wg 608.2b (nielegalne cele bez obrażeń, wszystkie nielegalne = czar się
+  nie rozstrzyga, ale „target opponent" i tak zyskuje 5 życia), bot, etykieta i kreator
+  podziału w UI. **Pula celów obrażeń ograniczona do 8** (`DIVIDED_POOL_CAP`, ≤ ~792 oferty;
+  własne stwory odpadają ostatnie) — człowiek nie wybierze odciętych celów.
+- **T2** (`42894c2`; 178 Oreplate Pangolin, 192 Crumbling Vestige): filtr `another` w
+  triggerze `artifact_you_control_enters` + opcjonalna płatność {1}; ETB-trigger dodający
+  manę dowolnego koloru (to zdolność wyzwalana, nie many — idzie przez stos).
+  „The Edge" dobił do 15 kart ⇒ AUTO-AWANS (M181) do talii `the-edge`, worek-legend
+  spadł do 5 kart nielandowych ⇒ PRZETASOWANIE WOREK_DECKS (ADR 0023 §4): 61 kart
+  nielandowych w planach workowych, cztery worki po ≥15 = jedyny podział z zapasem 1:
+  baśnie 15 (Kamigawa, Bloomburrow), legendy 16 (Lorwyn, Arcavios), mroczny 15
+  (New Capenna, Duskmourn, Amonkhet), dzikie 15 (Thunder Junction, Kaldheim, TMNT).
+  27 talii; benchmark: 23 talie (HELP `dziś 23 talii → 4`, ADR 0025).
+
+**Zdarzenie środowiska (znowu).** Między turami zniknął `/home/user/scratch` z patchami
+T2 (zapisanymi tam „na później"), a lokalny HEAD wrócił do `main`. T2 odtworzono od
+zera z Oracle (snapshoty z Scryfalla ponownie). Wniosek: kod odłożony poza repo ginie —
+patrz L173.
+
+**Bramki.** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
+Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
+golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).
+
 ## 2026-09-29 — batch 61: kolekcja właściciela 157–174 (10 kart, PR #145)
 
 Zlecenie właściciela: „kolejny batch kart" → dokumentacja przeczytana

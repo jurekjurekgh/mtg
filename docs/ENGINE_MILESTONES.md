@@ -8123,3 +8123,42 @@ opisane w `src/engine/mana-cost.js` i pilnowane strażnikiem granic).
 `add_mana` Sciona; 164/170: skład talii „innistrad-wu"/„ravnica") — dryf
 świadomy i udokumentowany (L124), za każdym razem wyłącznie w meczach par
 z dotkniętą talią.
+
+## M436 — batch 62: kolekcja właściciela 176–210, 10 kart (sesja 2026-10-02, PR #150)
+
+**Skąd.** Zlecenie właściciela: 10 kart z kolekcji (lista + „Plan" wiążący — patrz
+`docs/plans/PLAN_2026-10-02-batch62-kolekcja-176-210.md`). Procedura jak w M435
+(`HOW_TO_ADD_CARD.md`, ADR 0010 §2a, 0014, 0022, 0028, 0029, 0030, 0002).
+
+**Mechaniki generyczne dowiezione po drodze:**
+
+1. **Opus** (198 Tackle Artist): zdarzenie `instant_or_sorcery_cast` z warunkiem
+   `manaSpentBelow`; trigger rozstrzyga się przed czarem, także gdy czar skontrowany
+   (ruling 2026-03-20). Nowe zdarzenie w `HANDLED_TRIGGER_EVENTS`.
+2. **Premia za przypięte Equipment** (203 Golem-Skin Gauntlets): `pumpPerAttachedEquipment`
+   w łańcuchu registry → identity → attachments → permanents; liczy także własne Equipment
+   przeciwnika i samo siebie.
+3. **Kicker niemanowy** (176 Chocobo Kick, CR 702.33): koszt dodatkowy „zwróć ląd do ręki"
+   — `kickerLandId` w komendzie, oferta wariantu na każdy rozróżnialny ląd, walidacja bez
+   utraty many, mnożnik ×2 obrażeń; kreator stołu rozróżnia wymiar kosztu.
+4. **Czar z podziałem obrażeń** (210 Fiery Justice, CR 601.2d / 608.2b): `spell.divided`,
+   `damageDivision`, `validateDamageDivision`, `dividedDamageDivisions` (pula celów
+   `DIVIDED_POOL_CAP = 8`), `resolveDividedSpell`; „target opponent" jako osobne wystąpienie
+   słowa „target" (może być też celem obrażeń; życie przed SBA). Kreator podziału
+   w UI (`dividedCastPlanOf`, `commandForDivisionSelection`), gałąź bota
+   `damage_divided_among_targets`.
+5. **Filtr `another` w `artifact_you_control_enters`** (178 Oreplate Pangolin): źródło nie
+   reaguje na własne wejście (CR 603.2d); opcjonalna płatność {1} przez istniejące `payMana`
+   — nowy artefakt można tapnąć na zapłatę (mana-rock), więc pytanie pada także przy pustej puli.
+6. **ETB-trigger z manaą dowolnego koloru** (192 Crumbling Vestige): zdolność wyzwalana
+   (CR 605.1a — nie zdolność many) dodaje do puli jednostkę 5-kolorową; `{T}: Add {C}`
+   jest bezbarwna (`colors: []`).
+7. **Przetasowanie worków** (ADR 0023 §4): auto-awans „The Edge" ⇒ talia `the-edge`;
+   mapa WOREK_DECKS zmieniona (Lorwyn+Arcavios → legendy, Duskmourn+Amonkhet → mroczny,
+   TMNT → dzikie); fixtury testów M181 używają Rabiah zamiast Amonkheta.
+
+**Czego świadomie nie ruszano.** Podziału obrażeń przy rozstrzyganiu dla celów nie-
+celowanych (CR 608.2d — Fireball dalej dzieli równo, własny tor); pula celów obrażeń
+powyżej 8 (człowiek nie wybierze odciętych); bank many z triggera ponad krok.
+
+**Bramy.** `npm test` 7384/7384, build 70 modułów / 4748,8 kB; golden-master bez zmian.
