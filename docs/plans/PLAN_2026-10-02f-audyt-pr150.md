@@ -16,14 +16,14 @@ nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016/0030.
 
 ## Etapy
 
-- [ ] **Etap 0 — lektura startowa**: `AGENTS.md`, ADR 0001–0030,
+- [x] **Etap 0 — lektura startowa**: `AGENTS.md`, ADR 0001–0030,
   `LESSONS.md` (L1–L173, w kawałkach do końca pliku), `ENVIRONMENT.md`,
   handoff 2026-10-02, `gh pr view 150`.
-- [ ] **Etap 1 — PR na starcie** (ADR 0020 A): ten plan jako pierwszy commit
+- [x] **Etap 1 — PR na starcie** (ADR 0020 A): ten plan jako pierwszy commit
   na `arena/01a0fe59-mtg` + push + otwarcie PR.
-- [ ] **Etap 2 — baseline**: `npm test`, `npm run build` na `main`; porównanie
-  z handoffem.
-- [ ] **Etap 3 — audyt PR #150**: `gh pr diff 150` czytany plik po pliku
+- [x] **Etap 2 — baseline**: `npm test`, `npm run build` na `main`; porównanie
+  z handoffem. **Wynik: `npm test` 7425/7425 (exit 0, 192,6 s), `npm run build` 70 modułów / 4771,6 kB.**
+- [x] **Etap 3 — audyt PR #150**: `gh pr diff 150` czytany plik po pliku
   (priorytet: `src/engine/spells.js` — podział obrażeń przy rzucie CR 601.2d /
   608.2b, kicker niemanowy CR 702.33; `src/engine/triggers.js` — nowe zdarzenie
   `you_cast_instant_or_sorcery_spell`; `src/engine/zones.js` — `another` +
@@ -34,8 +34,11 @@ nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016/0030.
   silniku (nie sam odczyt raportu testów); piny weryfikowane mutacjami
   (L13/L159); zgodność z CR ze źródeł online (ADR 0030); ADR 0002 (zero
   przypadków po nazwie/ID karty). Raport: `docs/audits/AUDYT_PR150_2026-10-02.md`.
-- [ ] **Etap 4 — naprawy znalezisk audytu** (każde: repro → fix u root cause →
-  pin → osobny zielony commit + push).
+- [x] **Etap 4 — naprawy znalezisk audytu** (każde: repro → fix u root cause →
+  pin → osobny zielony commit + push). **F1** (podział obrażeń w oknach rzutu
+  spoza ręki) + **F3** (`{X}` zdolności nie jest maną wydaną na czar) — commit
+  `06fc9a9`, pin `test/audyt-pr150-podzial-w-oknach-rzutu.test.js` (3 mutacje
+  czerwone). Raport: `docs/audits/AUDYT_PR150_2026-10-02.md`.
 - [ ] **Etap 5 — pętla jakości** (ADR 0021 §4) w miarę budżetu: pozycje otwarte
   z handoffu 2026-10-02 (kreator podziału obrażeń Fiery Justice: pula celów 8 ⇒
   podział „ręczny" z dowolnego celu na polu; przegląd czytników
