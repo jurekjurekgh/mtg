@@ -582,6 +582,11 @@ export const CAST_SPELL_OPTIONS = Object.freeze([
   // koszt dodatkowy. Wybór lądu to osobna decyzja gracza (jak ofiara kosztu
   // `sacrificeTargetId`), więc idzie własnym polem komendy.
   'kickerLandId',
+  // CR 601.2d (Batch 62 — Fiery Justice: „5 damage divided as you choose among
+  // any number of targets"): podział obrażeń wybierany PRZY RZUCIE jako lista
+  // `{ id, amount }`; osobny od `targets` (cel „target opponent" to inne
+  // wystąpienie słowa „target"), więc ma własne pole komendy.
+  'damageDivision',
 ]);
 
 /** Rzuca czar: płaci koszt, kładzie obiekt na stos z wybranymi celami. */
@@ -595,7 +600,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     buyback = false, payAltCost = false, xValue, phyrexianPayWithLife = 0,
     abilityWindowCast = false, kicked = false, gifted = false, giftRecipientId = null,
     delveExileIds = null, handFreeCast = false, surgeCast = false, discardCardIds = null,
-    kickerLandId = null,
+    kickerLandId = null, damageDivision = null,
   } = options;
   const preObject = state.objects.get(objectId);
   // Surge (CR 702.117, Batch 58/B1): koszt alternatywny rozlicza tylko TA
@@ -656,6 +661,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
+  // CR 601.2d: podział obrażeń i cele obrażeń (Fiery Justice) wybiera się przy
+  // rzucie — walidacja PRZED jakąkolwiek mutacją (nieudany rzut nie traci many).
+  const division = validateDamageDivision(state, playerId, object, damageDivision);
   // Batch 57/B6a: „bez płacenia kosztu many" to JEDEN predykat używany przez
   // wszystkie bramki kosztu poniżej (kolor, phyrexian, budżet kosztu
   // dodatkowego) — inaczej walidacje rozjeżdżają się z płatnością (L41/L48).
@@ -905,6 +913,9 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const stacked = Object.freeze({
     ...moved, tapped: false, chosenTargets: chosen.slice(), wasBuyback, reboundCast,
     castDuringMainPhase,
+    // CR 601.2d: podział zapisany na czarze — rozstrzygnięcie stosuje go do
+    // celów wciąż legalnych (ruling 2017-03-14: pierwotny podział zostaje).
+    ...(division ? { damageDivision: division } : {}),
     // CR 702.33a: „was kicked" to własność CZARU na stosie — trigger wchodzący
     // po rozstrzygnięciu czyta ją z obiektu, nie ze zdarzenia rzutu.
     wasKicked: Boolean(kicker),
@@ -961,8 +972,13 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   const e = event('spell_cast', {
     playerId, fromId: objectId, object: stacked, cardId: object.cardId,
     // Batch 45 (Assert Perfection): pozycja optional może być null.
-    targets: targetObjects.map((entry) => entry?.id ?? null),
-    targetCardIds: targetObjects.map((entry) => entry?.cardId ?? null), plotted: Boolean(object.plotted),
+    // Cele obrażeń z podziału (Fiery Justice) to też cele czaru (CR 601.2c) —
+    // log i triggery „becomes the target" widzą je razem z celami z deskryptora.
+    targets: [...targetObjects.map((entry) => entry?.id ?? null), ...(division ?? []).map((entry) => entry.id)],
+    targetCardIds: [...targetObjects.map((entry) => entry?.cardId ?? null),
+      ...(division ?? []).map((entry) => state.objects.get(entry.id)?.cardId ?? null)],
+    ...(division ? { damageDivision: division.map((entry) => ({ ...entry })) } : {}),
+    plotted: Boolean(object.plotted),
     // Mana wydana na ten rzut (publiczna) — progi triggerów „if four or more
     // mana was spent to cast that spell" (Tellah, Great Sage) czytają ją
     // z kontekstu zdarzenia.
@@ -2172,6 +2188,11 @@ export function resolveTopOfStack(state) {
   if (object.spell?.fireball) {
     return resolveFireball(state, stackId, object, before);
   }
+  // CR 601.2d / 608.2b (Batch 62 — Fiery Justice): podział obrażeń wybrany przy
+  // rzucie, rozstrzygany tylko dla celów wciąż legalnych.
+  if (object.spell?.divided) {
+    return resolveDividedSpell(state, stackId, object, before);
+  }
   // Cleave (CR 702.148): rzucony z kosztem cleave czar rozstrzyga się z celami
   // i efektami z deskryptora cleave (wykreślony fragment tekstu zmienia legalne
   // cele — np. Lunar Rejection zamiast stwora Wolf/Werewolf celuje dowolnego).
@@ -2386,6 +2407,146 @@ export function resolveTopOfStack(state) {
  * wykonuje pozostałe efekty i opuszcza stos (grób albo — po wygranym clash —
  * ręka właściciela). Wywoływane z execute po resolve_scry/resolve_surveil.
  */
+/**
+ * Walidacja podziału obrażeń czaru z `spell.divided` (Fiery Justice). Zwraca
+ * znormalizowaną listę `{ id, amount }` albo null dla czaru bez podziału.
+ *
+ * CR 601.2d (CR 2026-09-25 z fetch_page, ADR 0030; parafraza): przy rzucie czaru, który
+ * dzieli obrażenia, gracz ogłasza podział; ruling WotC 2017-03-14: liczbę
+ * celów i podział wybiera się przy rzucie, a KAŻDY cel obrażeń musi dostać
+ * co najmniej 1. Cel nie może się powtarzać w obrębie jednego „target" (CR
+ * 601.2c), ale cel „target opponent" jest innym wystąpieniem słowa, więc
+ * może być też celem obrażeń. „Any number" dopuszcza 0 celów (nic do
+ * podziału), tak jak ścieżka Fireballa.
+ */
+export function validateDamageDivision(state, playerId, object, damageDivision) {
+  const divided = object.spell?.divided ?? null;
+  if (!divided) {
+    if (damageDivision != null) throw new Error('Ten czar nie dzieli obrażeń (damageDivision)');
+    return null;
+  }
+  if (!Array.isArray(damageDivision)) throw new Error('Czar z podzielonymi obrażeniami wymaga damageDivision (CR 601.2d)');
+  const spec = Object.freeze({ type: divided.targetType ?? 'any_target' });
+  const seen = new Set();
+  let sum = 0;
+  const entries = damageDivision.map((entry) => {
+    const id = entry?.id;
+    const amount = entry?.amount;
+    if (typeof id !== 'string' || !Number.isInteger(amount) || amount < 1) {
+      throw new Error('Każdy cel obrażeń musi dostać co najmniej 1 (CR 601.2d, ruling 2017-03-14)');
+    }
+    if (seen.has(id)) throw new Error('Cel obrażeń nie może się powtarzać (CR 601.2c)');
+    seen.add(id);
+    validateTargets(state, [spec], [id], playerId, object.colors ?? [], object);
+    sum += amount;
+    return Object.freeze({ id, amount });
+  });
+  if (entries.length > 0 && sum !== divided.total) {
+    throw new Error(`Podział obrażeń musi sumować się do ${divided.total} (jest ${sum})`);
+  }
+  return entries;
+}
+
+/**
+ * Oferty podziału obrażeń (Fiery Justice) dla botów i panelu: każdy niepusty
+ * zbiór celów (1..total) × każda kompozycja `total` na tyle części ≥1.
+ * Pula kandydatów jest PRZYCIĘTA do `DIVIDED_POOL_CAP`, a kolejność niesie
+ * treść (L-M203/2): najpierw stwory przeciwników, potem gracze i
+ * planeswalkerzy, na końcu własne stwory — to one wypadają przy dużej planszy.
+ * Walidacja przyjmuje KAŻDY legalny podział (oferta ⊆ walidacja, L48).
+ */
+export const DIVIDED_POOL_CAP = 8;
+export function dividedDamageDivisions(state, playerId, object) {
+  const divided = object.spell?.divided;
+  if (!divided) return [];
+  const spec = { type: divided.targetType ?? 'any_target' };
+  const candidates = legalTargetCandidates(state, playerId, spec, object);
+  const isPlayer = (id) => state.players.some((p) => p.id === id);
+  const rank = (id) => {
+    if (isPlayer(id)) return id === playerId ? 3 : 1;
+    const target = state.objects.get(id);
+    if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
+    return 2; // planeswalker
+  };
+  const pool = [...candidates].sort((a, b) => rank(a) - rank(b)).slice(0, DIVIDED_POOL_CAP);
+  const total = divided.total;
+  const out = [];
+  const compositions = (parts, left) => {
+    if (parts === 1) return [[left]];
+    const result = [];
+    for (let first = 1; first <= left - (parts - 1); first += 1) {
+      for (const rest of compositions(parts - 1, left - first)) result.push([first, ...rest]);
+    }
+    return result;
+  };
+  const subsets = (start, k) => {
+    if (k === 0) return [[]];
+    const result = [];
+    for (let i = start; i <= pool.length - k; i += 1) {
+      for (const rest of subsets(i + 1, k - 1)) result.push([pool[i], ...rest]);
+    }
+    return result;
+  };
+  for (let k = 1; k <= Math.min(total, pool.length); k += 1) {
+    const parts = compositions(k, total);
+    for (const set of subsets(0, k)) {
+      for (const amounts of parts) out.push(set.map((id, i) => ({ id, amount: amounts[i] })));
+    }
+  }
+  return out;
+}
+
+/**
+ * Rozstrzyga czar z `spell.divided` (Fiery Justice). Podział z rzutu stosuje się
+ * do celów wciąż legalnych (CR 608.2b, ruling 2017-03-14: „the original
+ * division of damage still applies, but no damage is dealt to illegal
+ * targets"). Czar nie rozstrzyga się, tylko gdy WSZYSTKIE cele (także cel
+ * „target opponent") są nielegalne; gdy nielegalne są tylko cele obrażeń,
+ * efekt z celu z deskryptora (zysk życia) i tak działa. Rewalidacja idzie tym
+ * samym predykatem co rzut (hexproof, protection, strefa — L48).
+ */
+function resolveDividedSpell(state, stackId, object, before) {
+  const divided = object.spell.divided;
+  const damageSpec = Object.freeze({ type: divided.targetType ?? 'any_target' });
+  const stillLegal = (spec, id) => {
+    try {
+      validateTargets(state, [spec], [id], object.controllerId, object.colors ?? [], object);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  const specTargets = object.spell.targets ?? [];
+  const chosen = object.chosenTargets ?? [];
+  const liveSpecTargets = chosen.map((id, i) => (id != null && stillLegal(specTargets[i], id) ? id : null));
+  const division = object.damageDivision ?? [];
+  const liveDivision = division.filter((entry) => stillLegal(damageSpec, entry.id));
+  const anyTarget = chosen.some((id) => id != null) || division.length > 0;
+  const anyLive = liveSpecTargets.some((id) => id != null) || liveDivision.length > 0;
+  const fizzled = anyTarget && !anyLive;
+  if (!fizzled) {
+    for (const effect of object.spell.effects ?? []) {
+      if (effect?.type === 'damage_divided_among_targets') {
+        for (const entry of liveDivision) dealNonCombatDamage(state, object, entry.id, entry.amount);
+        continue;
+      }
+      // Pozostałe efekty czytają cele z deskryptora; efekt z nielegalnym celem
+      // jest pomijany (CR 608.2b), a bez celów w deskryptorze działa zawsze.
+      const index = effect?.targetIndex ?? 0;
+      if (specTargets.length > 0 && liveSpecTargets[index] == null) continue;
+      applyEffect(state, effect, object, liveSpecTargets.filter((id) => id != null));
+    }
+  }
+  const zoneAfter = spellExitZone(object, { flashedBack: Boolean(object.flashedBack) });
+  const graveId = `${zoneAfter}-${state.objectSequence++}`;
+  moveObjectDirectly(state, stackId, zoneAfter, graveId);
+  state.events.push(event('spell_resolved', {
+    fromId: stackId, toId: graveId, cardId: object.cardId,
+    controllerId: object.controllerId, fizzled,
+  }));
+  return state.events.slice(before);
+}
+
 /**
  * Rozstrzyga Fireball. Oracle (M10): „Fireball deals X damage divided evenly,
  * rounded down, among any number of targets." Podział jest DETERMINISTYCZNY —
@@ -3292,13 +3453,19 @@ export function legalSpellCasts(state, playerId) {
     // podajemy adapter) — bez drugiego, rozjeżdżającego się klasyfikatora.
     const effectFriendly = triggerTargetEffectFriendly({ effect: object.spell.effects ?? [] });
     const targetOrderPreference = effectFriendly ? 'ownFirst' : 'opponentFirst';
+    // Fiery Justice: każda para (cel z deskryptora × podział obrażeń) to osobna
+    // oferta; bez podziałów (pusta pula) czar nie ma czego dzielić — milczy.
+    const divisions = object.spell.divided ? dividedDamageDivisions(state, playerId, object) : [null];
     for (const combo of legalTargetCombos(state, playerId, targetSpec, object, targetOrderPreference)) {
-      for (const sacId of sacrificePool) {
-        const cast = { objectId: id, targets: combo };
-        if (sacId !== null) cast.sacrificeTargetId = sacId;
-        pushSpellCast(cast);
+      for (const damageDivision of divisions) {
+        for (const sacId of sacrificePool) {
+          const cast = { objectId: id, targets: combo };
+          if (damageDivision) cast.damageDivision = damageDivision;
+          if (sacId !== null) cast.sacrificeTargetId = sacId;
+          pushSpellCast(cast);
+        }
+        if (payAltAvailable) pushSpellCast({ objectId: id, targets: combo, payAltCost: true, ...(damageDivision ? { damageDivision } : {}) });
       }
-      if (payAltAvailable) pushSpellCast({ objectId: id, targets: combo, payAltCost: true });
     }
   }
   // M102/U8 (Żywy Tester, graveyard vs innistrad): czar z dodatkowym kosztem

@@ -269,6 +269,51 @@ export function commandForSacrificeSelection(commands, { targets = [], sacrifice
 }
 
 // ===========================================================================
+// Batch 62 (Fiery Justice): czar dzieli obrażenia WYBRANYM przy rzucie
+// podziałem (CR 601.2d). Silnik enumeruje każdy podział jako osobną komendę
+// `cast_spell` z `damageDivision: [{ id, amount }]` (dla botów), a człowiek
+// dostaje JEDEN kreator ze stepperami +/− przy kandydatach (ten sam komponent
+// co rozdzielanie obrażeń Inferno Titana) — nie ścianę setek wariantów.
+// Zatwierdzenie wraca do komendy z legalCommands (L48).
+// ===========================================================================
+
+/**
+ * Plan „podziel obrażenia przy rzucie" albo null, gdy grupa nie pasuje: CAŁA
+ * grupa to `cast_spell` z `damageDivision`, jednej karty i JEDNEGO zestawu
+ * celów z deskryptora (wielu przeciwników = zwykła lista przycisków, bo
+ * kreator ukryłby wybór przeciwnika).
+ */
+export function dividedCastPlanOf(commands) {
+  const list = (commands ?? []).filter((cmd) => cmd?.type === 'cast_spell' && Array.isArray(cmd.damageDivision));
+  if (list.length < 2 || list.length !== (commands ?? []).length) return null;
+  if (!list.every((cmd) => cmd.objectId === list[0].objectId
+    && targetKey(cmd.targets ?? []) === targetKey(list[0].targets ?? []))) return null;
+  const candidateIds = [];
+  for (const cmd of list) {
+    for (const entry of cmd.damageDivision) if (!candidateIds.includes(entry.id)) candidateIds.push(entry.id);
+  }
+  const sums = list.map((cmd) => cmd.damageDivision.reduce((sum, entry) => sum + entry.amount, 0));
+  if (new Set(sums).size !== 1) return null;
+  return {
+    type: 'cast_spell',
+    objectId: list[0].objectId,
+    targets: [...(list[0].targets ?? [])],
+    candidateIds,
+    total: sums[0],
+    maxTargets: Math.max(...list.map((cmd) => cmd.damageDivision.length)),
+    dividedMode: true,
+  };
+}
+
+/** Komenda o dokładnie tym podziale (zbiór par id→porcja) albo null. */
+export function commandForDivisionSelection(commands, { targetIds = [], amounts = [] } = {}) {
+  const wanted = new Map(targetIds.map((id, i) => [id, amounts[i]]));
+  return (commands ?? []).find((cmd) => cmd?.type === 'cast_spell' && Array.isArray(cmd.damageDivision)
+    && cmd.damageDivision.length === wanted.size
+    && cmd.damageDivision.every((entry) => wanted.get(entry.id) === entry.amount)) ?? null;
+}
+
+// ===========================================================================
 // M200/C (uwaga właściciela 2026-08-23): mulligan — odłożenie N kart na spód.
 //
 // Zgłoszenie: „zamiast dać wszystkie opcje kart z ptaszkiem do zaznaczania

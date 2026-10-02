@@ -12762,6 +12762,27 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Batch 62 / T6 — Fiery Justice (2X2 #212, plan Kaldheim).
+  defineCard({
+    id: 'fiery-justice', name: 'Fiery Justice', set: '2X2',
+    types: ['Sorcery'], colors: ['R', 'G', 'W'], manaCost: 3,
+    oracleText: 'Fiery Justice deals 5 damage divided as you choose among any number of targets. Target opponent gains 5 life.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/4/144668d6-cab6-45e6-8498-ab7cd927f9df.jpg?1783921834',
+    spell: {
+      timing: 'sorcery',
+      // „Target opponent" to osobne wystąpienie słowa „target"; cele obrażeń
+      // i ich porcje wybiera gracz przy rzucie (CR 601.2d) — `divided`.
+      targets: [{ type: 'opponent' }],
+      divided: { total: 5, targetType: 'any_target' },
+      effects: [
+        { type: 'damage_divided_among_targets' },
+        { type: 'gain_life_target', amount: 5 },
+      ],
+    },
+    artId: 210, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby

@@ -572,4 +572,6 @@ export const MANA_COSTS = {
   "golem-skin-gauntlets": "{1}",
   // Batch62/T5: Chocobo Kick (FIN).
   "chocobo-kick": "{1}{G}",
+  // Batch62/T6: Fiery Justice (2X2).
+  "fiery-justice": "{R}{G}{W}",
 };

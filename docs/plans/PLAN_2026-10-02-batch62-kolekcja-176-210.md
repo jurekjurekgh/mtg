@@ -143,7 +143,7 @@ jednej talii) i strażnikami katalogu.
 - [x] **T3** (npm test 7335/7335) — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
 - [x] **T4** — Golem-Skin Gauntlets (`pumpPerAttachedEquipment`: registry → identity → attachments → permanents, etykieta kafla, wycena bota `equipPumpOf`).
 - [x] **T5** — Chocobo Kick (kicker niemanowy `returnLand` + `kickerLandId`, bite ×2 przy kickerze; kreator: wymiar kosztu `costKey` w `multiTargetPlanOf`; bot: `kickerReturnLandPenalty`).
-- [ ] **T6** — Fiery Justice (czar z podziałem obrażeń; kreator; bot).
+- [x] **T6** — Fiery Justice (czar z podziałem obrażeń; kreator; bot). Podział ogłaszany przy rzucie (CR 601.2d), pula celów obrażeń ograniczona do 8 (`DIVIDED_POOL_CAP`) — człowiek nie wybierze odciętych celów.
 - [ ] **T7** — dokumentacja: `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, lekcja (jeśli
   wypadnie), opis PR #150, handoff; rekalibracja progów benchmarku i
   golden-master tylko jeśli zmienią się talie z próbki benchmarku.

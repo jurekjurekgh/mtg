@@ -3,8 +3,8 @@
 // (ADR 0002), zatwierdzenie zwraca komendę z legalCommands (L48).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderMultiTargetWizard } from '../src/table/choice-request.js';
-import { multiTargetPlanOf } from '../src/table/multi-target.js';
+import { renderMultiTargetWizard, renderDamageDivisionWizard } from '../src/table/choice-request.js';
+import { multiTargetPlanOf, dividedCastPlanOf, commandForDivisionSelection } from '../src/table/multi-target.js';
 import { commandOptionKey } from '../src/table/session.js';
 
 function withMiniDom(run) {
@@ -96,4 +96,39 @@ test('B62/176 UI: kreator wymaga wyboru lądu i oddaje komendę z DOKŁADNIE tym
 test('B62/176 UI: klucz opcji komendy rozróżnia wariant kicked i ląd (ptaszek wyciszenia, sonda)', () => {
   const keys = new Set([...CMDS, { ...CMDS[0], kicked: undefined, kickerLandId: undefined }].map(commandOptionKey));
   assert.equal(keys.size, 9, 'osiem wariantów kicked + zwykły rzut mają osobne klucze');
+});
+
+// ---- Fiery Justice: kreator podziału obrażeń przy rzucie (CR 601.2d) --------
+const split = (...pairs) => ({ type: 'cast_spell', playerId: 'p1', objectId: 'fj', targets: ['p2'],
+  damageDivision: pairs.map(([id, amount]) => ({ id, amount })) });
+const DIV = [split(['a', 5]), split(['b', 5]), split(['a', 2], ['b', 3]), split(['a', 3], ['b', 2]), split(['a', 4], ['b', 1]), split(['a', 1], ['b', 4])];
+
+test('B62/210 UI: plan podziału — kandydaci, suma i maks. celów z komend silnika', () => {
+  const plan = dividedCastPlanOf(DIV);
+  assert.deepEqual([plan.candidateIds, plan.total, plan.maxTargets, plan.targets], [['a', 'b'], 5, 2, ['p2']]);
+  assert.equal(dividedCastPlanOf(DIV.slice(0, 1)), null, 'jedna komenda — bez kreatora');
+  assert.equal(dividedCastPlanOf([...DIV, { ...DIV[0], targets: ['p3'] }]), null, 'dwóch przeciwników — zwykła lista');
+  assert.equal(dividedCastPlanOf([...DIV, { type: 'pass_priority' }]), null, 'mieszana grupa');
+});
+
+test('B62/210 UI: kreator oddaje komendę z legalCommands dla wybranego podziału; niedozwolony podział = brak komendy', () => {
+  assert.equal(commandForDivisionSelection(DIV, { targetIds: ['a', 'b'], amounts: [2, 3] }), DIV[2]);
+  assert.equal(commandForDivisionSelection(DIV, { targetIds: ['b', 'a'], amounts: [3, 2] }), DIV[2], 'kolejność nieistotna');
+  assert.equal(commandForDivisionSelection(DIV, { targetIds: ['a'], amounts: [3] }), null);
+  withMiniDom((host) => {
+    let done = null;
+    const plan = dividedCastPlanOf(DIV);
+    renderDamageDivisionWizard(host, {
+      view: { players: [{ id: 'p1' }, { id: 'p2' }], zones: { battlefield: [] } }, session: SESSION,
+      candidateIds: plan.candidateIds, total: plan.total, maxTargets: plan.maxTargets,
+      onComplete: (r) => { done = commandForDivisionSelection(DIV, r); },
+    });
+    const plus = host.findAll((n) => String(n.className).includes('damage-wizard-plus'));
+    const confirm = host.find((n) => String(n.className).includes('damage-division-confirm'));
+    for (let i = 0; i < 3; i += 1) plus[0].click();
+    for (let i = 0; i < 2; i += 1) plus[1].click();
+    assert.ok(!confirm.disabled, '3 + 2 = 5 odblokowuje zatwierdzenie');
+    confirm.click();
+    assert.equal(done, DIV[3]);
+  });
 });

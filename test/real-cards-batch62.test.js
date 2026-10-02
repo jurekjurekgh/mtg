@@ -667,3 +667,144 @@ test('B62/176: Chocobo Kick — bot kopie (zwraca ląd) tylko gdy podwojenie daj
   assert.equal(pick({ toughness: 2 }).cmd.kicked, undefined, 'moc 2 już zabija 1/2 — bez zwrotu lądu');
   assert.equal(pick({ toughness: 6 }).cmd.kicked, undefined, 'nawet ×2 nie zabija 1/6 — bez zwrotu lądu');
 });
+
+// ---- B62/210: Fiery Justice (2X2 #212, plan Kaldheim) -----------------------
+
+const fjVariants = (s) => commands(s).filter((c) => c.type === 'cast_spell' && c.objectId === 'fj');
+const fjScene = () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield');          // 2/1 mój
+  put(state, 'g1', 'maritime-guard', 'p2', 'battlefield');          // 1/3
+  put(state, 'g2', 'goblin-piker', 'p2', 'battlefield');            // 2/1
+  put(state, 'fj', 'fiery-justice', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['R', 'G', 'W'] });
+  return state;
+};
+const cmdOf = (state, division) => fjVariants(state).find((c) => c.targets[0] === 'p2'
+  && c.damageDivision.length === division.length
+  && division.every(([id, amount]) => c.damageDivision.some((d) => d.id === id && d.amount === amount)));
+const lifeOf = (s, id) => player(s, id).life;
+const inGrave = (s, cardId, ownerId) => [...s.objects.values()].some((o) => o.cardId === cardId && o.ownerId === ownerId && o.zone === 'graveyard');
+
+test('B62/210: Fiery Justice — dane Oracle: Sorcery {R}{G}{W} z podziałem 5 i celem „target opponent\"', () => {
+  const def = sanity('fiery-justice', { set: '2X2', plan: 'Kaldheim', artId: 210 });
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual([...def.colors].sort(), ['G', 'R', 'W']);
+  assert.equal(def.manaCost, 3);
+  assert.deepEqual(def.spell.divided, { total: 5, targetType: 'any_target' });
+  assert.deepEqual(def.spell.targets, [{ type: 'opponent' }]);
+});
+
+test('B62/210: Fiery Justice — podział 3 + 2: cele dostają swoje porcje, przeciwnik zyskuje 5 życia', () => {
+  const state = fjScene();
+  run(state, cmdOf(state, [['g1', 3], ['g2', 2]]));
+  settle(state);
+  assert.equal(find(state, 'maritime-guard', 'graveyard') != null, true, '3 obrażenia zabijają 1/3');
+  assert.equal(inGrave(state, 'goblin-piker', 'p2'), true, '2 obrażenia zabijają 2/1');
+  assert.equal(lifeOf(state, 'p2'), 25, 'przeciwnik zyskuje 5 życia (20 → 25)');
+  assert.equal(lifeOf(state, 'p1'), 20);
+});
+
+test('B62/210: Fiery Justice — w jednym rzucie obrażenia idą do gracza i do stwora naraz', () => {
+  const state = fjScene();
+  run(state, cmdOf(state, [['g1', 3], ['p2', 2]]));
+  settle(state);
+  assert.equal(lifeOf(state, 'p2'), 20 - 2 + 5, 'przeciwnik: −2 obrażenia, +5 życia');
+  assert.ok(find(state, 'maritime-guard', 'graveyard'));
+});
+
+test('B62/210: Fiery Justice — oferta: każdy cel ≥1, suma 5, bez powtórzeń, zawiera podział na 5 celów', () => {
+  const state = fjScene();
+  const all = fjVariants(state);
+  assert.ok(all.length > 20, 'wiele podziałów');
+  for (const c of all) {
+    assert.equal(c.damageDivision.reduce((s, d) => s + d.amount, 0), 5);
+    assert.ok(c.damageDivision.every((d) => d.amount >= 1));
+    assert.equal(new Set(c.damageDivision.map((d) => d.id)).size, c.damageDivision.length);
+    assert.deepEqual(c.targets, ['p2'], 'cel z deskryptora = przeciwnik');
+  }
+  assert.ok(all.some((c) => c.damageDivision.length === 5), 'pięć celów po 1 (bear, g1, g2, p1, p2)');
+});
+
+test('B62/210: Fiery Justice — walidacja: porcja 0, zła suma, powtórzony cel, brak podziału — odrzucone bez utraty many', () => {
+  const state = fjScene();
+  const base = cmdOf(state, [['g1', 3], ['g2', 2]]);
+  const bad = [
+    [{ id: 'g1', amount: 5 }, { id: 'g2', amount: 0 }],
+    [{ id: 'g1', amount: 3 }, { id: 'g2', amount: 1 }],
+    [{ id: 'g1', amount: 3 }, { id: 'g1', amount: 2 }],
+    [{ id: 'nieistnieje', amount: 5 }],
+  ];
+  for (const damageDivision of bad) assert.equal(execute(state, { ...base, damageDivision }).ok, false);
+  const { damageDivision, ...bez } = base;
+  assert.equal(execute(state, bez).ok, false, 'brak damageDivision');
+  assert.equal(state.objects.get('fj').zone, 'hand');
+  assert.equal(execute(state, { ...base, damageDivision: [{ id: 'g1', amount: 5 }], targets: ['p1'] }).ok, false, 'cel „opponent\" = ja sam');
+});
+
+test('B62/210: Fiery Justice — ruling: część celów nielegalna ⇒ pierwotny podział, nielegalne bez obrażeń; życie i tak rośnie', () => {
+  const state = fjScene();
+  run(state, cmdOf(state, [['g1', 3], ['g2', 2]]));
+  moveObjectDirectly(state, 'g1', 'graveyard', 'g1-dead');
+  settle(state);
+  assert.ok(inGrave(state, 'goblin-piker', 'p2'), 'g2 dostał swoje 2');
+  assert.equal(lifeOf(state, 'p2'), 25);
+});
+
+test('B62/210: Fiery Justice — ruling: wszystkie cele obrażeń nielegalne, przeciwnik legalny ⇒ i tak +5 życia', () => {
+  const state = fjScene();
+  run(state, cmdOf(state, [['g1', 3], ['g2', 2]]));
+  moveObjectDirectly(state, 'g1', 'graveyard', 'g1-dead');
+  moveObjectDirectly(state, 'g2', 'graveyard', 'g2-dead');
+  settle(state);
+  assert.equal(lifeOf(state, 'p2'), 25);
+  assert.ok(find(state, 'fiery-justice', 'graveyard'));
+});
+
+test('B62/210: Fiery Justice — ruling: przeciwnik także celem obrażeń: życie rośnie PRZED sprawdzeniem stanu (SBA)', () => {
+  const state = fjScene();
+  state.players.find((p) => p.id === 'p2').life = 5;
+  run(state, cmdOf(state, [['p2', 5]]));
+  settle(state);
+  assert.equal(lifeOf(state, 'p2'), 5, '5 − 5 + 5 = 5');
+  assert.notEqual(state.status, 'finished', 'gra trwa — przeciwnik nie przegrał na życiu 0');
+});
+
+test('B62/210: Fiery Justice — hexproof/protection: cel obrażeń z hexproof nie jest legalny przy rzucie', () => {
+  const state = fjScene();
+  state.objects.set('g1', Object.freeze({ ...state.objects.get('g1'), keywords: ['hexproof'] }));
+  const withG1 = fjVariants(state).filter((c) => c.damageDivision.some((d) => d.id === 'g1'));
+  assert.equal(withG1.length, 0, 'oferta nie zawiera celu z hexproof');
+  const base = cmdOf(state, [['g2', 5]]);
+  assert.equal(execute(state, { ...base, damageDivision: [{ id: 'g1', amount: 5 }] }).ok, false);
+});
+
+test('B62/210: Fiery Justice — bot dzieli obrażenia tak, by zabić oba stwory przeciwnika, i nie bije siebie ani własnych', () => {
+  const state = fjScene();
+  state.turn.activePlayerId = 'p1';
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.type, 'cast_spell', 'bot rzuca czar zamiast pasować');
+  const byId = Object.fromEntries(cmd.damageDivision.map((d) => [d.id, d.amount]));
+  assert.ok((byId.g1 ?? 0) >= 3, `1/3 dostaje ≥3 (zabija): ${JSON.stringify(byId)}`);
+  assert.ok((byId.g2 ?? 0) >= 1, '2/1 dostaje ≥1 (zabija)');
+  assert.equal(byId.bear, undefined, 'własny stwór bez obrażeń');
+  assert.equal(byId.p1, undefined, 'bot nie bije siebie');
+});
+
+test('B62/210: Fiery Justice — oferta silnika składa się w jeden kreator podziału (UI), etykieta wymienia porcje', async () => {
+  const { dividedCastPlanOf, commandForDivisionSelection } = await import('../src/table/multi-target.js');
+  const state = fjScene();
+  const offers = fjVariants(state);
+  const plan = dividedCastPlanOf(offers);
+  assert.ok(plan, 'plan z komend silnika');
+  assert.equal(plan.total, 5);
+  assert.equal(plan.maxTargets, 5);
+  assert.ok(['bear', 'g1', 'g2', 'p1', 'p2'].every((id) => plan.candidateIds.includes(id)));
+  const picked = commandForDivisionSelection(offers, { targetIds: ['g1', 'g2'], amounts: [3, 2] });
+  assert.ok(picked, 'wybór 3 + 2 daje komendę z oferty');
+  assert.equal(commandForDivisionSelection(offers, { targetIds: ['g1'], amounts: [4] }), null, 'suma ≠ 5 — brak komendy');
+  const { commandLabel } = await import('../src/table/render.js');
+  const label = commandLabel(picked, { nameOf: (id) => id, nameOfObject: (id) => id, cardDetails: () => null }, playerView(state, 'p1'));
+  assert.match(label, /3 → .*g1|3 → /);
+});

@@ -139,6 +139,8 @@ export function commandOptionKey(cmd) {
     'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
     // Batch 62: wariant kicked i ląd zwracany jako koszt kickera (Chocobo Kick).
     'kicked', 'kickerLandId',
+    // Batch 62: podział obrażeń wybrany przy rzucie (Fiery Justice) różnicuje warianty.
+    'damageDivision',
     'buyback', 'payAltCost', 'bestow', 'surgeCast', 'faceDown', 'sacrificeTargetId',
     'stunTargetId', 'attackerId', 'crewCreatureIds', 'tapCreatureId',
     'tapOtherCreatureId', 'escapeExileIds',

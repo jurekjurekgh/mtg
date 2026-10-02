@@ -51,7 +51,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -873,6 +873,33 @@ function bootstrapTable() {
         intro: `${tapXName ? `${tapXName} — ` : ''}wybierz X (0–${tapXPlan.xMax}), potem zaznacz dokładnie X artefaktów do tapnięcia:`,
         onOpenCard: openCardFullscreen,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // Batch 62 (Fiery Justice): podział obrażeń wybierany przy rzucie — jeden
+    // kreator ze stepperami, nie ściana wariantów. MUSI biec PRZED
+    // multiTargetPlanOf (warianty mają ten sam zestaw celów z deskryptora).
+    const dividedPlan = dividedCastPlanOf(request.options ?? []);
+    if (dividedPlan) {
+      const dividedSource = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
+        ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
+        .find((o) => o.id === dividedPlan.objectId);
+      renderDamageDivisionWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        candidateIds: dividedPlan.candidateIds,
+        total: dividedPlan.total,
+        maxTargets: dividedPlan.maxTargets,
+        sourceName: dividedSource?.cardId ? session.nameOf(dividedSource.cardId) : null,
+        onOpenCard: openCardFullscreen,
+        onComplete: ({ targetIds, amounts }) => {
+          const cmd = commandForDivisionSelection(request.options, { targetIds, amounts });
+          if (!cmd) return;
+          hideModal('choice-request');
+          play(cmd);
+        },
         onCancel: () => hideModal('choice-request'),
       });
       showModal('choice-request');

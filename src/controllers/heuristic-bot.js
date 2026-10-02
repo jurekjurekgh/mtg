@@ -7879,6 +7879,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // PMSSB-1/A (M239/2): gałąź return_to_hand USUNIĘTA — typ nie
           // występuje w katalogu ani silniku (martwe; wycena bounce żyje w
           // REMOVAL_EFFECTS powyżej, typy bounce_*).
+          // Batch 62 (Fiery Justice): podział obrażeń wybrany przy rzucie —
+          // wartość = suma wycen porcji (to samo `damageTargetValue` co dla
+          // pojedynczych obrażeń: dobicie wroga wg pozostałego życia, chip
+          // poza walką = zakaz, własny cel = zakaz). Czar bez celów obrażeń
+          // nic nie rozdziela. Życie dla przeciwnika wycenia kara
+          // `gain_life_target` powyżej (jedno źródło, bez podwójnego liczenia).
+          if (effect.type === 'damage_divided_among_targets') {
+            const division = cmd.damageDivision ?? [];
+            for (const entry of division) score += damageTargetValue(view, entry.id, entry.amount, false);
+            if (division.length === 0) score -= 60;
+          }
           if (effect.type === 'damage') {
             // M237/4 (model właściciela) — JEDNO źródło prawdy wyceny obrażeń
             // (damageTargetValue): stwór wroga dobity wg POZOSTAŁEGO życia,

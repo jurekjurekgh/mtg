@@ -1510,6 +1510,7 @@ function describeEffect(e, ctx = {}) {
     // trafił tylko pierwszy z nich; strażnik w testach pilnuje reszty.
     attach_equipment_to_source: () => 'przyczep ekwipunek do tego stwora',
     damage_creatures_with_keyword: () => `${damageCount(e.amount ?? 1)} stworom z „${e.keyword ?? '?'}”`,
+    damage_divided_among_targets: () => 'podzielone obrażenia (podział wybrany przy rzucie)',
     damage_from_target_power: () => (e.kickedMultiplier ? `obrażenia równe mocy stwora (×${e.kickedMultiplier}, gdy kicker)` : 'obrażenia równe mocy stwora'),
     damage_from_enchanted_power: () => 'zaczarowany stwór zadaje obrażenia równe swojej mocy',
     fight: () => 'walka: stwory zadają sobie nawzajem obrażenia równe mocy',
@@ -3419,7 +3420,13 @@ export function commandLabel(cmd, session, view) {
       }
       const waitingCast = waitingCastLabel(cmd, 'Rzuć');
       if (waitingCast) return waitingCast;
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // CR 601.2d (Fiery Justice): podział obrażeń wybrany przy rzucie — etykieta
+      // wymienia porcje („3 → Goblin, 2 → Przeciwnik"), inaczej warianty o tym
+      // samym celu wyglądałyby identycznie (klasa M101/B).
+      const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
+        ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
+        : '';
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

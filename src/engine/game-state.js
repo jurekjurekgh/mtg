@@ -1205,6 +1205,10 @@ function freeSpellCastOffers(state, playerId, obj) {
  */
 function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false, free = false } = {}) {
   const spell = obj.spell ?? {};
+  // Czar z podziałem obrażeń przy rzucie (Fiery Justice) ma ofertę tylko na
+  // ścieżce `legalSpellCasts` (L48: okna darmowych rzutów/madness podziału nie
+  // wyliczają, więc milczą zamiast obiecywać komendę bez `damageDivision`).
+  if (spell.divided) return [];
   if (spell.fireball && !xCost && !free) return [];
   // Aura (CR 303.4a): czar z celem wybieranym przy rzucie — ten sam generator
   // co dla ręki (`legalAuraCastsForObject`). Tylko dla ścieżek, które wyliczają
@@ -5955,6 +5959,7 @@ export function execute(state, input) {
             phyrexianPayWithLife: cmd.phyrexianPayWithLife, kicked: Boolean(cmd.kicked),
             gifted: Boolean(cmd.gifted), giftRecipientId: cmd.giftRecipientId ?? null,
             kickerLandId: cmd.kickerLandId ?? null,
+            damageDivision: cmd.damageDivision ?? null,
           },
         });
         const events = [e, ...state.events.slice(beforeSkill).filter((entry) => entry !== e)];
@@ -5981,6 +5986,8 @@ export function execute(state, input) {
         delveExileIds: cmd.delveExileIds ?? null,
         // CR 702.33a: ląd zwracany jako koszt kickera niemanowego.
         kickerLandId: cmd.kickerLandId ?? null,
+        // CR 601.2d: podział obrażeń wybrany przy rzucie (Fiery Justice).
+        damageDivision: cmd.damageDivision ?? null,
       });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
       return accepted(state, cmd, { ok: true, events });

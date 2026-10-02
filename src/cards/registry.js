@@ -470,6 +470,13 @@ function freezeSpell(spell) {
     // specjalnego rozstrzygania — registry wymaga niepustej listy efektów,
     // więc deskryptor niesie też minimalny efekt-zaslepkę (fireball_resolve).
     ...(spell.fireball ? { fireball: true } : {}),
+    // Podział obrażeń wybierany przy rzucie (CR 601.2d, Fiery Justice): deskryptor
+    // { total, targetType } — cele obrażeń i ich porcje niesie komenda
+    // (`damageDivision`), rozstrzygnięcie liczy `resolveDividedSpell`.
+    ...(spell.divided ? { divided: Object.freeze({
+      total: spell.divided.total,
+      targetType: spell.divided.targetType ?? 'any_target',
+    }) } : {}),
     // Storm (CR 702.40, Spreading Insurrection): przy rzucie czar kopiuje się
     // za każdy czar rzucony wcześniej w tej turze. Flaga; liczbę kopii liczy
     // core (state.spellsCastThisTurn).
