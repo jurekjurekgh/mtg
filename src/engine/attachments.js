@@ -55,6 +55,10 @@ export function attachmentGrant(object) {
     subtypes: [...(descriptor.subtypes ?? [])],
   };
   if (descriptor.combatDamageByToughness) result.combatDamageByToughness = true;
+  // Golem-Skin Gauntlets: pump za KAŻDY Equipment przyczepiony do nosiciela.
+  if (descriptor.pumpPerAttachedEquipment) {
+    result.pumpPerAttachedEquipment = { ...descriptor.pumpPerAttachedEquipment };
+  }
   if (descriptor.umbraArmor) result.umbraArmor = true;
   if (descriptor.doesntUntap) result.doesntUntap = true;
   // Conditional keywords (Hunter's Blowgun): different keywords based on

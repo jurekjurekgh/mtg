@@ -20,6 +20,7 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { effectivePower, effectiveToughness, effectiveKeywords } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const registry = createCardRegistry();
 
@@ -410,4 +411,105 @@ test('B62/198: Tackle Artist — dwóch Artystów: każdy dostaje własny liczni
   settle(state);
   assert.equal(countersOf(state, 'a1'), 1);
   assert.equal(countersOf(state, 'a2'), 1);
+});
+
+// ---- B62/203: Golem-Skin Gauntlets (2XM #259, plan Kaldheim) ----------------
+
+const powerOf = (s, id) => effectivePower(s.objects.get(id), s);
+const attach = (s, equipId, hostId) => {
+  s.objects.set(equipId, Object.freeze({ ...s.objects.get(equipId), attachedTo: hostId }));
+};
+
+test('B62/203: Golem-Skin Gauntlets — dane Oracle, Equipment {1} z equip {2} i druk 2XM', () => {
+  const def = sanity('golem-skin-gauntlets', { set: '2XM', plan: 'Kaldheim', artId: 203 });
+  assert.deepEqual(def.types, ['Artifact']);
+  assert.deepEqual(def.subtypes, ['Equipment']);
+  assert.equal(def.manaCost, 1);
+  assert.equal(def.equipment.equip, 2);
+  assert.deepEqual(def.equipment.pumpPerAttachedEquipment, { power: 1, toughness: 0 });
+});
+
+test('B62/203: Golem-Skin Gauntlets — pump przechodzi cały łańcuch deskryptora aż do obiektu gry (L21)', () => {
+  const state = game();
+  const gauntlets = put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  assert.deepEqual(gauntlets.equipment.pumpPerAttachedEquipment, { power: 1, toughness: 0 });
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield');
+  attach(state, 'g', 'bear');
+  const view = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'g');
+  assert.deepEqual(view.equipment.pumpPerAttachedEquipment, { power: 1, toughness: 0 }, 'widok gracza/bota też go niesie');
+});
+
+test('B62/203: Golem-Skin Gauntlets — sam liczy się do własnej zdolności (+1/+0), nieprzyczepiony nic nie daje', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield'); // 2/1
+  put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  assert.equal(powerOf(state, 'bear'), 2, 'nieprzyczepiony — brak premii');
+  attach(state, 'g', 'bear');
+  assert.equal(powerOf(state, 'bear'), 3, 'przyczepiony — +1/+0 (ruling 2020-08-07: liczy siebie)');
+  assert.equal(effectiveToughness(state.objects.get('bear'), state), 1, 'wytrzymałość bez zmian');
+  attach(state, 'g', null);
+  assert.equal(powerOf(state, 'bear'), 2, 'po odpięciu premia znika natychmiast');
+});
+
+test('B62/203: Golem-Skin Gauntlets — premia jest DODATKOWA do innego Equipmentu (Brawler\'s Plate +2/+2 i +2/+0 za dwa sprzęty)', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield'); // 2/1
+  put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  put(state, 'plate', 'brawlers-plate', 'p1', 'battlefield');
+  attach(state, 'g', 'bear');
+  attach(state, 'plate', 'bear');
+  assert.equal(powerOf(state, 'bear'), 2 + 2 + 2, 'baza 2 + Plate +2 + Gauntlets 2 sprzęty × 1');
+  assert.equal(effectiveToughness(state.objects.get('bear'), state), 1 + 2, 'wytrzymałość tylko z Plate');
+});
+
+test('B62/203: Golem-Skin Gauntlets — dwa egzemplarze: każdy liczy oba sprzęty (+4 razem)', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield');
+  put(state, 'g1', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  put(state, 'g2', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  attach(state, 'g1', 'bear');
+  attach(state, 'g2', 'bear');
+  assert.equal(powerOf(state, 'bear'), 2 + 2 + 2);
+});
+
+test('B62/203: Golem-Skin Gauntlets — Equipment przeciwnika na tym samym stworze też jest liczony', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield');
+  put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  put(state, 'theirs', 'brawlers-plate', 'p2', 'battlefield');
+  attach(state, 'g', 'bear');
+  attach(state, 'theirs', 'bear');
+  assert.equal(powerOf(state, 'bear'), 2 + 2 + 2, 'Plate przeciwnika +2 i Gauntlets za dwa sprzęty +2');
+});
+
+test('B62/203: Golem-Skin Gauntlets — equip {2} przypina do własnego stworza, a nie do cudzego', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield');
+  put(state, 'foe', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  addMana(state, 'p1', 2);
+  const offers = commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'g');
+  assert.ok(offers.length >= 1, 'oferta equip istnieje');
+  const targets = offers.map((c) => c.targets?.[0] ?? c.targetId).filter(Boolean);
+  assert.ok(targets.includes('bear'), 'własny stwór jest celem');
+  assert.ok(!targets.includes('foe'), 'cudzy stwór nie jest celem (Equip: target creature you control)');
+  run(state, offers.find((c) => (c.targets?.[0] ?? c.targetId) === 'bear'));
+  settle(state);
+  assert.equal(state.objects.get('g').attachedTo, 'bear');
+  assert.equal(powerOf(state, 'bear'), 3);
+});
+
+test('B62/203: Golem-Skin Gauntlets — bot wycenia sprzęt jako realną premię, nie „niczego nie dodaje\"', () => {
+  const state = game();
+  put(state, 'bear', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'g', 'golem-skin-gauntlets', 'p1', 'battlefield');
+  addMana(state, 'p1', 2);
+  const bot = createHeuristicBot({ seed: 2026 });
+  bot.chooseCommand(playerView(state, 'p1'), {});
+  const equip = bot.trace()[0].options.filter((o) => o.cmd.startsWith('activate_ability(g'));
+  assert.ok(equip.length >= 1, 'bot widzi ofertę equip');
+  const best = Math.max(...equip.map((o) => o.score));
+  // Kara „nic nie dodaje\" to −12; realna premia +1 siły to wynik dodatni i
+  // wyższy niż kara (przed poprawką pump czytany tylko z `def.pump` = 0).
+  assert.ok(best > 0, `wynik equip dla Gauntlets dodatni, jest ${best}`);
 });

@@ -308,6 +308,12 @@ export function defineCard(data) {
       // long as its power is 3 or less" — próg mocy oceniany przy deklaracji
       // blokerów (combat.js), nie statycznie.
       if (data.equipment.cantBeBlockedMaxPower != null) base.cantBeBlockedMaxPower = data.equipment.cantBeBlockedMaxPower;
+      // Batch 62 (Golem-Skin Gauntlets): „Equipped creature gets +1/+0 for each
+      // Equipment attached to it" — pump liczony przy odczycie statystyk
+      // (permanents.js), mnożony przez liczbę Equipmentów na nosicielu.
+      if (data.equipment.pumpPerAttachedEquipment) {
+        base.pumpPerAttachedEquipment = Object.freeze({ ...data.equipment.pumpPerAttachedEquipment });
+      }
       // Ograniczenia nosiciela (jak przy aurze) — zarezerwowane pod przyszłe
       // equipmenty; obecnie żaden ich nie używa.
       if (data.equipment.cantAttack) base.cantAttack = true;

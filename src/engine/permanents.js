@@ -668,6 +668,16 @@ function attachmentBonuses(state, object) {
     const ts = attachmentTimestampOf(attachment);
     bonus.power += grant.power;
     bonus.toughness += grant.toughness;
+    // Golem-Skin Gauntlets (CR 301.5): „+1/+0 for each Equipment attached to
+    // it" — liczba LICZY SAM załącznik oraz każdy inny Equipment na nosicielu
+    // (ruling 2020-08-07), a każdy egzemplarz zdolności liczy osobno. Zmiana
+    // załączników zmienia wynik natychmiast (odczyt, nie migawka).
+    if (grant.pumpPerAttachedEquipment) {
+      const equipmentCount = attachmentsAttachedTo(state, object.id)
+        .filter((other) => (other.subtypes ?? []).includes('Equipment')).length;
+      bonus.power += equipmentCount * (grant.pumpPerAttachedEquipment.power ?? 0);
+      bonus.toughness += equipmentCount * (grant.pumpPerAttachedEquipment.toughness ?? 0);
+    }
     bonus.keywords.push(...grant.keywords);
     for (const keyword of grant.keywords) bonus.keywordEntries.push({ keyword, ts });
 

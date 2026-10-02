@@ -1,0 +1,34 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Golem-Skin+Gauntlets&set=2xm&format=json",
+  "print": "2xm",
+  "name": "Golem-Skin Gauntlets",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact — Equipment",
+  "oracle_text": "Equipped creature gets +1/+0 for each Equipment attached to it.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)",
+  "colors": [],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "259",
+  "rarity": "common",
+  "artist": "Alan Pollack",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/e/ee198804-a247-46b9-be6e-71bbb5840401.jpg?1783930108",
+    "normal": "https://cards.scryfall.io/normal/front/e/e/ee198804-a247-46b9-be6e-71bbb5840401.jpg?1783930108"
+  },
+  "pobrano": "2026-10-02",
+  "rulings": [
+    {
+      "date": "2020-08-07",
+      "source": "wotc",
+      "comment": "The bonus from Golem-Skin Gauntlets is in addition to whatever bonus the other Equipment gives it."
+    },
+    {
+      "date": "2020-08-07",
+      "source": "wotc",
+      "comment": "Golem-Skin Gauntlets is counted by its own ability, so it gives at least +1/+0."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/2xm/259/rulings",
+  "rulingsPobrano": "2026-10-02"
+}

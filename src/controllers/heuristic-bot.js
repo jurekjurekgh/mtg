@@ -5531,14 +5531,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * które trafiają do scoringu, są w wywołaniach — jedno źródło faktów, nie
    * jedno źródło wagi (patrz L119 o metryce gorszej od modelu).
    */
+  /**
+   * Pump, który sprzęt DOKŁADA nosicielowi: stały (`pump`) plus pump „za każdy
+   * Equipment przyczepiony do niego" (`pumpPerAttachedEquipment`, Golem-Skin
+   * Gauntlets). Liczba Equipmentów = inne sprzęty już na nosicielu + sam
+   * wyceniany (liczy siebie, ruling 2020-08-07). Jedno źródło faktu dla obu
+   * gałęzi equipu — wycena czytająca wyłącznie `pump` widziałaby Gauntlets
+   * jako sprzęt „niczego nie dodaje" (kara −12) i bot nigdy by go nie założył.
+   */
+  function equipPumpOf(view, def, source, creature) {
+    const flat = { power: def?.pump?.power ?? 0, toughness: def?.pump?.toughness ?? 0 };
+    const per = def?.pumpPerAttachedEquipment;
+    if (!per || !creature) return flat;
+    const others = (view?.zones?.battlefield ?? [])
+      .filter((o) => o?.equipment && o.attachedTo === creature.id && o.id !== source?.id).length;
+    return {
+      power: flat.power + (per.power ?? 0) * (others + 1),
+      toughness: flat.toughness + (per.toughness ?? 0) * (others + 1),
+    };
+  }
+
   function equipValuation(view, source, creature) {
     const def = source?.equipment;
     if (!def || !creature) return { value: 0, nothingAdded: true };
     const grants = def.keywords ?? [];
     const keywords = new Set([...(creature.keywords ?? []), ...(creature.grantedKeywords ?? [])]);
     const freshGrants = grants.filter((kw) => !keywords.has(kw));
-    const pumpPower = def.pump?.power ?? 0;
-    const pumpToughness = def.pump?.toughness ?? 0;
+    const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, def, source, creature);
     const hasteAdds = freshGrants.includes('haste') && creature.summoningSickness === true;
     const blockers = untappedEnemyBlockers(view);
     // Z-1 (audyt PR #135): `creature.power` z widoku to już moc EFEKTYWNA
@@ -9812,8 +9831,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const targetKeywords = new Set([...(target.keywords ?? []), ...(target.grantedKeywords ?? [])]);
               const freshGrants = grants.filter((kw) => !targetKeywords.has(kw));
               const hasteAdds = freshGrants.includes('haste') && target.summoningSickness === true;
-              const pumpPower = equipmentDef.pump?.power ?? 0;
-              const pumpToughness = equipmentDef.pump?.toughness ?? 0;
+              const { power: pumpPower, toughness: pumpToughness } = equipPumpOf(view, equipmentDef, source, target);
               const effectiveTargetPower = target.power ?? 0; // Z-1: moc z widoku jest efektywna
               const conditionalEvasion = equipmentDef.cantBeBlockedMaxPower != null
                 && effectiveTargetPower <= equipmentDef.cantBeBlockedMaxPower;

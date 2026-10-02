@@ -141,7 +141,7 @@ jednej talii) i strażnikami katalogu.
   Arcavios 3, TMNT 2), po T3/T4/T6 (Arcavios +1, Kaldheim +2) będzie 61 — dopiero wtedy przetasowanie jest
   wykonalne. Gotowy kod T2 (patche) czeka poza repo; każdy commit ma zostać zielony.
 - [x] **T3** (npm test 7335/7335) — Tackle Artist (opus: nowe zdarzenie + `manaSpentBelow`).
-- [ ] **T4** — Golem-Skin Gauntlets (dynamiczny pump Equipmentu, cały łańcuch deskryptora).
+- [x] **T4** — Golem-Skin Gauntlets (`pumpPerAttachedEquipment`: registry → identity → attachments → permanents, etykieta kafla, wycena bota `equipPumpOf`).
 - [ ] **T5** — Chocobo Kick (kicker niemanowy + bite z kickerem; kreator wyboru lądu; bot).
 - [ ] **T6** — Fiery Justice (czar z podziałem obrażeń; kreator; bot).
 - [ ] **T7** — dokumentacja: `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, lekcja (jeśli

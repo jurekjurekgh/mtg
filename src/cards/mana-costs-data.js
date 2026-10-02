@@ -568,4 +568,6 @@ export const MANA_COSTS = {
   "jade-bearer": "{G}",
   // Batch62/T3: Tackle Artist (SOS).
   "tackle-artist": "{3}{R}",
+  // Batch62/T4: Golem-Skin Gauntlets (2XM).
+  "golem-skin-gauntlets": "{1}",
 };

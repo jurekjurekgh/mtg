@@ -12722,6 +12722,25 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // Batch 62 / T4 — Golem-Skin Gauntlets (2XM #259, plan Kaldheim).
+  defineCard({
+    id: 'golem-skin-gauntlets', name: 'Golem-Skin Gauntlets', set: '2XM',
+    types: ['Artifact'], subtypes: ['Equipment'], colors: [], manaCost: 1,
+    oracleText: 'Equipped creature gets +1/+0 for each Equipment attached to it.\nEquip {2} ({2}: Attach to target creature you control. Equip only as a sorcery.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/e/ee198804-a247-46b9-be6e-71bbb5840401.jpg?1783930108',
+    // +1/+0 za KAŻDY Equipment na nosicielu (liczy także samo siebie).
+    equipment: { equip: 2, pumpPerAttachedEquipment: { power: 1, toughness: 0 } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'equip',
+        cost: { mana: 2 },
+      }),
+    ],
+    artId: 203, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // Token Griffin (Tdmr #2) — tworzony przez Griffin Guide (Batch 61/162).
   // Zarejestrowany jak token Eldrazi Scion: bez rejestracji etykiety i kafle
   // pokazywałyby surowy identyfikator `token_griffin`, a obrazek nie miałby
