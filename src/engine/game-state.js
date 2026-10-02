@@ -21,7 +21,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
-import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos } from './spells.js';
+import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
@@ -1140,20 +1140,37 @@ function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 
   } catch {
     return { reason: 'illegal_free_cast_targets' };
   }
+  // CR 601.2d: podział obrażeń (Fiery Justice) wybrany przy rzucie — ten sam
+  // walidator co ścieżka z ręki (`castSpell`), wywołany PRZED mutacją; brak
+  // albo błędny podział to jawny reason (L48: oferta = walidacja).
+  let division = null;
+  try {
+    division = validateDamageDivision(state, playerId, card, cmd.damageDivision);
+  } catch {
+    return { reason: 'illegal_free_cast_division' };
+  }
   const purpose = spellManaPurpose(card);
   const altNeed = cmd.payAltCost === true ? (spell.additionalCost?.orPayMana ?? 0) : 0;
-  const manaSpent = extraMana + costIncrease;
-  if (producibleMana(state, playerId, null, purpose, []) < manaSpent + altNeed) return { reason: 'free_cast_mana_unpaid' };
+  // `payment` — ile many schodzi z puli TERAZ (budżet decyzji + dopłaty czaru);
+  // `manaSpentToCast` — ile many wydano NA SAM CZAR (CR 601.2f): {X} zapłacone
+  // zdolności, która zleca rzut (Halo Forager, `extraMana`), NIE jest kosztem
+  // czaru, więc nie wchodzi do progów „if N or more mana was spent to cast it"
+  // (Opus, Tellah); wchodzą dopłaty czaru (Fireball: {1}/cel) i alternatywny
+  // dodatek zapłacony maną (Lash of the Balrog: „or pay {4}", CR 601.2h).
+  const payment = extraMana + costIncrease;
+  const manaSpentToCast = costIncrease + altNeed;
+  if (producibleMana(state, playerId, null, purpose, []) < payment + altNeed) return { reason: 'free_cast_mana_unpaid' };
   const paid = {};
   const costReason = payFreeCastAdditionalCost(state, playerId, card, cmd, paid);
   if (costReason) return { reason: costReason };
-  if (manaSpent > 0) spendMana(state, playerId, manaSpent, [], purpose);
+  if (payment > 0) spendMana(state, playerId, payment, [], purpose);
   const stackId = `spell-${state.objectSequence++}`;
   moveObjectDirectly(state, objectId, 'stack', stackId);
   const stacked = Object.freeze({
     ...state.objects.get(stackId),
     tapped: false,
     chosenTargets,
+    ...(division ? { damageDivision: division.map((entry) => ({ ...entry })) } : {}),
     ...(chosenMode != null ? { chosenMode } : {}),
     ...(modeExtra != null ? { modeExtra } : {}),
     ...(spell.xCost ? { spellX: 0 } : {}),
@@ -1172,7 +1189,10 @@ function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 
     // M273 (błąd #23): `colors` to część kontraktu zdarzenia rzutu (triggery
     // „whenever a player casts a WHITE spell" / „a COLORLESS spell").
     colors: [...(card.colors ?? [])],
-    manaSpent,
+    // Progi „mana wydana na rzucenie" czytają WYŁĄCZNIE koszt czaru —
+    // `xPaid`/`extraMana` (budżet decyzji Halo Foragera) jedzie w eventStamp,
+    // nie tutaj (patrz `manaSpentToCast`).
+    manaSpent: manaSpentToCast,
     ...(spell.xCost || spell.fireball ? { xValue: 0 } : {}),
     // M91 (uwaga D): log nazywa wybrany tryb (i cel pod stun counter).
     ...(chosenMode != null ? {
@@ -1182,7 +1202,7 @@ function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 
     } : {}),
     ...eventStamp,
   }));
-  return { stackId, stacked, chosenTargets, chosenMode, modeExtra, manaSpent };
+  return { stackId, stacked, chosenTargets, chosenMode, modeExtra, manaSpent: manaSpentToCast };
 }
 
 /**
@@ -1192,7 +1212,7 @@ function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 
  * (`castSpellWithoutManaCost`, L48).
  */
 function freeSpellCastOffers(state, playerId, obj) {
-  return epicCastOffers(state, playerId, obj, { variableTargets: true, free: true });
+  return epicCastOffers(state, playerId, obj, { variableTargets: true, free: true, divided: true });
 }
 
 /**
@@ -1203,12 +1223,15 @@ function freeSpellCastOffers(state, playerId, obj) {
  * odrzucają je JAWNIE, więc tam oferta musi milczeć (L48: oferta nie może
  * obiecywać czegoś, co wykonanie odrzuci).
  */
-function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false, free = false } = {}) {
+function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost = false, aura = false, free = false, divided = false } = {}) {
   const spell = obj.spell ?? {};
-  // Czar z podziałem obrażeń przy rzucie (Fiery Justice) ma ofertę tylko na
-  // ścieżce `legalSpellCasts` (L48: okna darmowych rzutów/madness podziału nie
-  // wyliczają, więc milczą zamiast obiecywać komendę bez `damageDivision`).
-  if (spell.divided) return [];
+  // Czar z podziałem obrażeń przy rzucie (Fiery Justice) w oknach, których
+  // bramka wykonania rozlicza `damageDivision` (`divided: true`): oferta per
+  // zestaw celów `spell.targets` × podział z TEGO SAMEGO generatora co rzut
+  // z ręki (`dividedDamageDivisions`; L41/L48). Okna bez obsługi podziału
+  // (madness — `castMadnessSpell`) zostają z `divided: false` i milczą:
+  // oferta nie może obiecywać komendy, której walidacja nie przyjmie.
+  if (spell.divided && !divided) return [];
   if (spell.fireball && !xCost && !free) return [];
   // Aura (CR 303.4a): czar z celem wybieranym przy rzucie — ten sam generator
   // co dla ręki (`legalAuraCastsForObject`). Tylko dla ścieżek, które wyliczają
@@ -1225,6 +1248,21 @@ function epicCastOffers(state, playerId, obj, { variableTargets = false, xCost =
   const costVariants = freeCastAdditionalCostVariants(state, playerId, obj);
   if (costVariants.length === 0) return [];
   const withCosts = (offers) => offers.flatMap((offer) => costVariants.map((cost) => ({ ...offer, ...cost })));
+  // Podział obrażeń przy rzucie (CR 601.2d): pełna przestrzeń ofert — ten sam
+  // generator co ścieżka z ręki (`dividedDamageDivisions`: pula przycięta do
+  // DIVIDED_POOL_CAP, podzbiory celów × kompozycje sumy), a `targets` niosą
+  // wymagane wystąpienia słowa „target" (Fiery Justice: „target opponent").
+  if (spell.divided) {
+    const spec = spell.targets ?? [];
+    const combos = spec.length === 0 ? [[]] : legalTargetCombos(state, playerId, spec, obj);
+    const offers = [];
+    for (const combo of combos) {
+      for (const damageDivision of dividedDamageDivisions(state, playerId, obj)) {
+        offers.push({ cardId: obj.id, targets: combo, damageDivision });
+      }
+    }
+    return withCosts(offers);
+  }
   // Koszt X / Fireball (CR 107.3a): X wybiera gracz, więc oferta niesie
   // `xValue`. Tylko dla ścieżek, które płacą koszt many (okno zdolności) —
   // madness i darmowy rzut z grobu X nie rozliczają.
@@ -1315,7 +1353,7 @@ function handFreeCastOffers(state, playerId, pending) {
     // i karta idzie na cmentarz).
     const offersFor = (spell.xCost || spell.fireball)
       ? freeSpellCastOffers(state, playerId, card)
-      : epicCastOffers(state, playerId, card, { variableTargets: true });
+      : epicCastOffers(state, playerId, card, { variableTargets: true, divided: true });
     for (const offer of offersFor) {
       // Uwaga na kolejność: `epicCastOffers` zwraca `cardId` = id OBIEKTU
       // (w tamtych ścieżkach obiekt jest kartą w strefie publicznej), a tu
@@ -1335,6 +1373,13 @@ function handFreeCastOfferMatches(offer, cmd) {
   if ((offer.sacrificeTargetId ?? null) !== (cmd.sacrificeTargetId ?? null)) return false;
   if (Boolean(offer.payAltCost) !== Boolean(cmd.payAltCost)) return false;
   if ((offer.xValue ?? null) !== (cmd.xValue ?? null)) return false;
+  // CR 601.2d: podział obrażeń jest częścią wariantu rzutu (Fiery Justice) —
+  // komenda bez podziału (albo z innym) nie odpowiada ofercie.
+  const oa = offer.damageDivision ?? null;
+  const ca = cmd.damageDivision ?? null;
+  if ((oa === null) !== (ca === null)) return false;
+  if (oa !== null && (oa.length !== ca.length
+    || oa.some((entry, index) => entry.id !== ca[index]?.id || entry.amount !== ca[index]?.amount))) return false;
   // Etap F/4b: komplet kart odrzucanych jako koszt dodatkowy (kolejność bez znaczenia).
   const da = [...(offer.discardCardIds ?? [])].sort();
   const db = [...(cmd.discardCardIds ?? [])].sort();
@@ -3077,6 +3122,7 @@ export function execute(state, input) {
         offer.sacrificeTargetId ?? null, offer.modeIndex ?? null, offer.stunTargetId ?? null, {
           abilityWindowCast: true,
           handFreeCast: true,
+          ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
           ...(offer.payAltCost === true ? { payAltCost: true } : {}),
           ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
         });
@@ -3149,6 +3195,9 @@ export function execute(state, input) {
             ...(cmd.payAltCost === true ? { payAltCost: true } : {}),
             // Etap F/4b: odrzucenie jako koszt dodatkowy — wybór z oferty.
             ...(Array.isArray(cmd.discardCardIds) ? { discardCardIds: cmd.discardCardIds } : {}),
+            // CR 601.2d: podział obrażeń przy rzucie (Fiery Justice) — wariant
+            // komendy niesie wybór z oferty, waliduje `castSpell`.
+            ...(cmd.damageDivision ? { damageDivision: cmd.damageDivision } : {}),
           });
       } else if (card.aura || card.bestow) {
         // Aura (CR 303.4a): cel (gospodarz albo gracz dla Curse) wybrał gracz
@@ -7981,6 +8030,7 @@ export function playerView(state, playerId) {
         legalCommands.push(command('resolve_grave_free_cast', playerId, {
           objectId: graveId, cardId: card.cardId, xValue,
           targets: offer.targets,
+          ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
           ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
           ...(offer.payAltCost === true ? { payAltCost: true } : {}),
           ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
@@ -8011,6 +8061,9 @@ export function playerView(state, playerId) {
         // koszt dodatkowy (F/4b) — pola oferty jadą do komendy (L48).
         ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
         ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
+        // CR 601.2d: podział obrażeń (Fiery Justice) — część wariantu rzutu;
+        // bez niego `handFreeCastOfferMatches` nie dopasuje oferty.
+        ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
       }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
@@ -8049,6 +8102,9 @@ export function playerView(state, playerId) {
           ...(offer.xValue != null ? { xValue: offer.xValue } : {}),
           ...(offer.bestow === true ? { bestow: true } : {}),
           ...(offer.surgeCast === true ? { surgeCast: true } : {}),
+          // CR 601.2d: podział obrażeń przy rzucie (Fiery Justice) — część
+          // wariantu komendy, walidowana w `castSpell` (`damageDivision`).
+          ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
         }));
       };
       if (exileCard.aura || exileCard.bestow) {
@@ -8065,7 +8121,7 @@ export function playerView(state, playerId) {
             // rozliczyć tryb z celami zmiennymi (CR 601.2c) i wybranego X
             // (CR 107.3a) — oferta enumeruje jedno i drugie.
             for (const offer of epicCastOffers(state, playerId, exileCard, {
-              variableTargets: true, xCost: true,
+              variableTargets: true, xCost: true, divided: true,
             })) pushExileCast(offer);
           } else {
             pushExileCast({ targets: [] });
