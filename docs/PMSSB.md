@@ -75,6 +75,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | odroczenie zagrania (`plot_card` / `suspend_card` / `warp_card` + rzut karty czekającej z wygnania) | 5 kart (mindstab, tumbleweed-rising, spinewoods-paladin, sheriff-of-safe-passage, weftblade-enhancer) — wszystkie w taliach wzorcowych | DONE (2026-10-01f) | §PMSSB-35 niżej; plan `PLAN_2026-10-01f-pmssb35-odroczenie.md`; `test/audyt-pmssb35-odroczenie.test.js` (18 pinów); **wypłata odroczenia liczy kartę z każdej strefy** (`handCard ?? zoneCard`, L41 — PRZED cztery różne karty = 63,000) i nie odejmuje kosztu, gdy rzut jest darmowy (`castsWithoutPayingMana`: plot CR 702.170d, impuls CR 701.18); cena odroczenia = koszt akcji (skala `creatureManaCostWeight`) + zwłoka; dostępność z OFERTY silnika (`castOfferedNow`) zamiast legacy `manaAvailableNow`; **znalezisko silnika naprawione u źródła**: pieczęć wygnania (plot/warp/impuls/zawieszenie) nie przeżywa zmiany strefy (CR 400.7 + 702.185b + glosariusz „Plotted", choke point `moveObjectDirectly`); 3 pokrętła `plotRedundantPenalty`/`plotDelayPenalty`/`suspendWaitPenalty` |
 | mechaniki kart batcha 62 (exploit z zasobami, cel własny ETB, wypłata liczników na polu) | 10 kart (Aven, Jade Bearer, Tackle Artist, Pangolin + 6 przeglądniętych) | DONE (2026-10-02b) | §PMSSB-36 niżej; plan `PLAN_2026-10-02b-pmssb36-nowe-karty.md`; `test/audyt-pmssb36-nowe-karty.test.js` (9 pinów, 8 czerwonych PRZED); exploit z `draw_cards`/`lose_life` liczony NETTO (`exploitSelfResourceGain`, wspólna drabina `selfLifeLossPenalty` L48), bramka celu własnego ETB, `boardCastPayoffValue` (Opus/Pangolin); 3 pokrętła `exploitThinBoardPenalty`/`exploitNetMargin`/`boardPayoffWeight` |
 | trzy granice po PMSSB-36 (bite bez zabicia, payoffy ≠ licznik, zapłata opcjonalna Pangolina) | Chocobo Kick, Tellah, Oreplate Pangolin | DONE (2026-10-02c) | §PMSSB-37 niżej; plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`; `test/audyt-pmssb37-trzy-granice.test.js` (12 pinów, 7 czerwonych PRZED + 2 kontrole pokręteł); `fightBiteMissPenalty` 80, rozszerzone `boardCastPayoffValue`, `payBlocksBetterCast`; pokrętła `fightBiteMissPenalty`/`optionalPayBlockedCastMin`/`optionalPayCastScoreWeight` |
+| licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2089,3 +2090,23 @@ tylko pojedyncza karta bez kombinacji; payoffy „drugi czar w turze” (brak li
 incubate Tillera bez wyceny; Knockout Maneuver bez zabicia zostaje dodatni dzięki licznikowi.
 
 **Pomiar końcowy:** golden-master 6 partii — hash bez zmian (0 różnic); `run-tests all` **7680/7680**; build bez zmian w liczbie modułów.
+
+## PMSSB-38 — licznik czarów w widoku bota i wycena incubate (2026-10-02d)
+
+Wejście: pytanie właściciela po PMSSB-37 — „czemu bot nie widzi licznika czarów? może powinien;
+czemu nie wyceniasz incubate?”. Plan: `docs/plans/PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`.
+Odpowiedź: obie rzeczy to były luki, nie decyzje projektowe.
+
+- **Licznik czarów:** silnik ma `spellsCastThisTurnByPlayer` i czyta go w triggerze „your second spell
+  each turn”, ale `playerView` go nie wystawiał (luka kontraktu widoku, ADR 0017). Dodane
+  `playerView.spellsCastThisTurn` (własny licznik; informacja jawna). `boardCastPayoffValue` liczy
+  `you_cast_second_spell_each_turn`, gdy `spellsCastThisTurn === 1` (rzut jest drugim). PO: Illvoi
+  Operative + Shock 84 → 92 jako drugi czar; pierwszy i trzeci bez zmian.
+- **Incubate:** brak wyceny w `ETB_EFFECT_BONUS`, w pętli efektów czaru i w payoffach. Teraz
+  `incubateValue` = `10·N − 2·creatureManaCostWeight` (ciało N/N jak token, minus koszt przemiany {2}).
+  PO: Merciless Repurposing 92 → 120; Tiller of Flesh — czar z celem-permanentem +9 (gracz jako cel: 0;
+  własny rzut Tillera: 0).
+- **Granica:** trigger z efektem TYMCZASOWYM (Jeskai Devotee: pump do końca tury; prowess) nie ma
+  wyceny — wymaga prognozy walki, nie miary wartości trwałej. Jolrael („drugie dobranie”) ma inny licznik.
+
+**Pomiar końcowy:** golden-master 6 partii — hash bez zmian; `run-tests all` **7686/7686**.

@@ -9168,6 +9168,11 @@ export function playerView(state, playerId) {
     // PMSSB-3/F-mysteries: czy kontroler zagral lad w tej turze (info jawne —
     // lady widac na polu; do warunku landEnteredThisTurn w wycenie).
     landEnteredThisTurn: (state.landEnteredThisTurn?.[playerId] ?? 0) > 0,
+    // PMSSB-38: liczba czarów, które widz rzucił w tej turze (info jawna —
+    // czary przechodzą przez stos i log). Ten sam licznik czyta trigger
+    // „whenever you cast your second spell each turn" (triggers.js), więc
+    // bot wycenia go tą samą liczbą, której używa silnik (L48).
+    spellsCastThisTurn: state.spellsCastThisTurnByPlayer?.[playerId] ?? 0,
     // M100 (BUG A): viewerId — zakryte karty przeciwnika bez cardId (FoW).
     pendingDiscardChoice: activeDiscardChoice ? {
       count: state.pendingDiscardChoice.purpose === 'cost' ? state.pendingDiscardChoice.count

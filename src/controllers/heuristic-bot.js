@@ -46,7 +46,7 @@ import { normalizeHeuristicParams } from './heuristic-params.js';
  * - świadomość kroków: w własnym untap/upkeep/draw/end/cleanup nie tapuje się
  *   many ani nie aktywuje zdolności kosztem tapu (mana wyparuje na końcu
  *   kroku, stwór zostaje tapowany całą turę) — likwiduje patologię
- *   „wypalania własnej biblioteki\" przez stanie w miejscu;
+ *   „wypalania własnej biblioteki” przez stanie w miejscu;
  * - zegar (tury do zabicia / do śmierci): bonusy za bliskość lethal,
  *   groźbę śmierci w następnej turze (wyścig) i pustą bibliotekę (deck-out);
  * - ocenę planszy: evasion (flying), parytet liczby stworów;
@@ -1402,14 +1402,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return foes.length > 0;
   };
   /**
-   * PMSSB-36/B: czy ETB „put a +1/+1 counter on target …\" ma LEGALNY cel po
+   * PMSSB-36/B: czy ETB „put a +1/+1 counter on target …” ma LEGALNY cel po
    * mojej stronie przy rzucie nosiciela. Wchodzący permanent nie stoi jeszcze
    * na polu, ale bez `notSelf` sam jest celem (trigger rozstrzyga się, gdy
    * już jest); z `notSelf` potrzeba innego mojego stwora (z `subtype`, jeśli
    * spec go wymaga). Spec to deskryptor `requiresTarget` (ADR 0002).
    */
-  // Spec celu ETB-licznika po stronie WŁASNEJ: „target creature\" (dowolny —
-  // własny też) albo „target creature you control\". Pozostałe specy
+  // Spec celu ETB-licznika po stronie WŁASNEJ: „target creature” (dowolny —
+  // własny też) albo „target creature you control”. Pozostałe specy
   // (cel wroga, obrońca, artefakt…) zostają na dawnej bramce wrogiej.
   const isFriendlyCounterSpec = (spec) => {
     const raw = typeof spec === 'string' ? spec : spec?.type;
@@ -1571,6 +1571,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // `draw_then_discard` liczył pełne +6 (błąd: karta-w-do-grobu jak
   // zatrzymana). Obie pisownie i gałąź ability schodzą do +2.
   const LOOT_NET_VALUE = 2;
+  // PMSSB-38 (L41): jedna miara incubate — ciało N/N (10·(2N+N)/3 jak
+  // tokenBodyValue) pomniejszone o koszt przemiany {2} (jak koszt many
+  // stwora). Token jest artefaktem, dopóki się nie przemieni (nie blokuje).
+  const incubateValue = (e) => {
+    const n = Number.isInteger(e?.amount) ? e.amount : 2;
+    return Math.max(0, 10 * n - 2 * P.creatureManaCostWeight);
+  };
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -1584,6 +1591,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
+    // PMSSB-38: incubate N (CR 701.53) = token Incubator z N licznikami;
+    // po {2} staje się N/N — ta sama skala ciała co tokenBodyValue.
+    incubate: (e) => incubateValue(e),
     // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
     // slepe na zycie — bufor x3 vs M236, H5).
     gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
@@ -5858,8 +5868,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /**
    * PMSSB-36/C + PMSSB-37/B (zgłoszenia właściciela 2026-10-02): STRONA
-   * WYPŁATY triggerów „whenever you cast …\" / „whenever … you control
-   * enters\" leżących już na polu — wartość rzutu czaru/permanentu, który je
+   * WYPŁATY triggerów „whenever you cast …” / „whenever … you control
+   * enters” leżących już na polu — wartość rzutu czaru/permanentu, który je
    * odpala. Dotąd bot wyceniał tylko rzut NOSICIELA (`anticipatedTailValue`),
    * a rzut przy nosicielu na polu nie dostawał nic (Shock przy Tackle Artist
    * wypadał gorzej niż bez niego).
@@ -5875,7 +5885,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * zapłatą (`payBlocksBetterCast` — ta sama reguła co decyzja o zapłacie,
    * L41a). Wynik × `boardPayoffWeight`. `kind`: 'spell' | 'permanent'.
    */
-  const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
+  const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
   let payoffProbeDepth = 0;
   function boardCastPayoffValue(view, cmd, castDef, kind) {
     if (!castDef || !(P.boardPayoffWeight > 0) || payoffProbeDepth > 0) return 0;
@@ -5892,7 +5902,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           || (ev === 'you_cast_noncreature_spell' && (kind === 'spell' || !types.includes('Creature')))
           || (ev === 'artifact_you_control_enters' && kind === 'permanent' && types.includes('Artifact')
             && !(ability.trigger.another && host.cardId === castDef.id))
-          || (ev === 'enchantment_you_control_enters' && kind === 'permanent' && types.includes('Enchantment'));
+          || (ev === 'enchantment_you_control_enters' && kind === 'permanent' && types.includes('Enchantment'))
+          // PMSSB-38: „your second spell each turn" — licznik z widoku
+          // (`spellsCastThisTurn`, ten sam co w silniku); ten rzut jest
+          // drugim, gdy wcześniej padł dokładnie jeden. Każdy rodzaj rzutu.
+          || (ev === 'you_cast_second_spell_each_turn' && (view.spellsCastThisTurn ?? 0) === 1)
+          // PMSSB-38: Tiller of Flesh — czar mający za cel PERMANENT na polu
+          // (gracz i karta w grobie nie liczą się; własny rzut nosiciela też nie).
+          || (ev === 'you_cast_spell_targeting_permanent' && host.id !== cmd.objectId
+            && [...(cmd.targets ?? []), ...(cmd.targetId ? [cmd.targetId] : [])]
+              .some((id) => view.zones.battlefield.some((o) => o.id === id)));
         if (!matches) continue;
         let benefit = 0;
         let modeled = true;
@@ -5927,7 +5946,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   /**
    * PMSSB-37/C (zgłoszenie właściciela 2026-10-02, Oreplate Pangolin): zapłata
-   * {N} za trigger „you may pay\" odbiera manę, która może być potrzebna na
+   * {N} za trigger „you may pay” odbiera manę, która może być potrzebna na
    * INNY rzut tej tury. Zablokowany rzut = karta z ręki zagrywalna teraz
    * (`manaUnlockCandidates`: instanty zawsze, reszta w mojej głównej), której
    * koszt mieści się w `open`, ale NIE w `open − pay`, a bot realnie chce ją
@@ -8241,6 +8260,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
             }
           }
+          if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
             // hour + ciało/rola w środku).
@@ -8518,9 +8538,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += preventShieldValue(view, cmd.targets?.[effect.targetIndex ?? 0] ?? null, effect.amount ?? 1);
           }
           // M155 (audyt żywym testerem, Ruinous Rampage): „deals N damage to
-          // each opponent\" (i lose_life każdego przeciwnika) nie miało wyceny
+          // each opponent” (i lose_life każdego przeciwnika) nie miało wyceny
           // w pętli czarów (było tylko w modalnym triggerze, linia 582). Bot
-          // porównywał więc ten tryb z „wygnaj artefakty\" na równi i wybierał
+          // porównywał więc ten tryb z „wygnaj artefakty” na równi i wybierał
           // tryb bezsensowny (wygnanie własnego Angel's Feather zamiast 3
           // obrażeń przeciwnikowi). Reguła generyczna: wartość = 4×N (jak
           // modalny trigger), dobicie = bonus.

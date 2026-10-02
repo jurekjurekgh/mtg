@@ -94,6 +94,11 @@ opcjonalna (Pangolin) rezygnuje, gdy blokuje lepszy rzut tej tury (`payBlocksBet
 guard). Raport `docs/PMSSB.md` §PMSSB-37, plan `PLAN_2026-10-02c-pmssb37-trzy-granice.md`,
 `test/audyt-pmssb37-trzy-granice.test.js` (12 pinów); golden-master bez zmian.
 
+**PMSSB-38 (2026-10-02d) — licznik czarów w widoku i incubate.** Na pytanie właściciela: oba braki były
+luką, nie decyzją. `playerView.spellsCastThisTurn` (ten sam licznik co trigger „second spell”; Illvoi
+Operative dostaje wartość przy drugim rzucie) i `incubateValue` (Tiller of Flesh, Merciless Repurposing).
+Raport `docs/PMSSB.md` §PMSSB-38, `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów).
+
 **Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
 Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
 golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).
