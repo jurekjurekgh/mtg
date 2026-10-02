@@ -63,7 +63,19 @@ T2 (zapisanymi tam „na później"), a lokalny HEAD wrócił do `main`. T2 odtw
 zera z Oracle (snapshoty z Scryfalla ponownie). Wniosek: kod odłożony poza repo ginie —
 patrz L173.
 
-**Bramki.** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
+**Poprawka po czerwonym CI (2026-10-02).** CI uruchamia `node tools/run-tests.mjs all`
+(fast + slow), a ja bramkowałem samym `npm test` (fast) — golden-master bota (slow) był
+czerwony od T1 (talie tarkir-bg i warhammer-ubr zmieniły skład; różniły się wyłącznie te
+dwie pary, reszta bit w bit). Fixture zregenerowany świadomie (L124). Przy okazji audyt
+wyceny bota dla nowych kart sondami na prawdziwym bocie: **Crumbling Vestige był
+niedoceniany** (kara −8 za tapnięcie, choć mana z triggera jest do wydania w tej samej
+turze) — `landPlayDelta` zna teraz `etbMana` i daje premię, gdy ta mana odblokowuje rzut
+(piny B62/192 bot). Pangolin, Mnemonic Wall, Aven (exploit), Jade Bearer, Tackle Artist,
+Gauntlets, Chocobo Kick, Fiery Justice — sondy bez defektu (Aven przy bibliotece ≤8 kart
+odmawia przez karę za deck-out — zachowanie istniejące, nie ruszane).
+**Bramka od teraz: `node tools/run-tests.mjs all` = 7659/7659.**
+
+**Bramki (przed poprawką).** `npm test` **7384/7384** (EXIT 0), build **70 modułów / 4748,8 kB**.
 Bot zmieniony tylko w gałęziach nowych mechanik (kicker-zwrot lądu, podział obrażeń);
 golden-master i benchmark bez zmian. Pełny B0 nie uruchamiany (ADR 0018).
 
