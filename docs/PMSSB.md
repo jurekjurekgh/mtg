@@ -2677,3 +2677,55 @@ z DS nadal nie modeluje drugiej odsłony (obsługuje ją blokowa ścieżka
 `blockExchangeOf`).
 
 **Status:** zamknięty.
+## PMSSB-51 — ETB lądu z celem bez legalnego celu osłabia land drop; warunek „enters untapped” jak w silniku (2026-10-03n)
+
+**Wejście:** kolejka 4 (etap 2 planu `PLAN_2026-10-03h`, świadomie odroczony
+w ADR 0022 §4) — granica (1) §PMSSB-41. Karta demonstrująca ZNALEZIONA w tej
+sesji: **Idyllic Grange** (ELD, Land — Plains; ETB „+1/+1 counter on target
+creature you control”, wchodzi odkręcony przy 3+ innych Plains).
+
+**Problem (sonda G1–G5, PRZED):** `case 'play_land'` nie wołał żadnej wyceny
+ETB, więc przy pustym stole ląd wygrywał kolejność z rzutem gospodarza
+(G4: `play_land` 82 vs `cast_permanent` 63,9027), a trigger przepadał bez
+celu. Druga wada tej samej ścieżki: `landAnaliza` czytała GOŁĄ flagę
+`entersTapped`, ignorując `entersTappedCondition` — ląd wchodzący odkręcony
+płacił fałszywe −8 (G2: 82 = 90 − 8 mimo 4 Plainsów).
+
+**Naprawa:** `entersTappedOfLand` (jedno miejsce rozstrzygania warunków
+wejścia w wycenie — lustro z odwołaniem `resources.playLand`, CR 614.1c:
+`player_life_at_most`, `islands_you_control_at_least`,
+`controls_land_subtype_any`, `minOtherPlains`); `futileFriendlyCounterEtbPenalty`
+— kara `castFutileEtbPenalty` (40) gdy trigger ETB z celem „moje stworzenie”
+i efektem `add_counter` nie ma legalnego celu (dla stworów nie zachodzi:
+wchodzący jest celem własnego triggera, CR 603.6d — korekta F1; bramka
+`condition.enteredUntapped` przy wejściu tapniętym pomija trigger); kara
+wołana w `play_land` PO klamrze `landPlayDelta` (±14/25), bo w klamrze
+zostałaby zjedzona. Bez nazw kart (ADR 0002); `×0` pokrętła = stan sprzed.
+
+**Pomiar PO:** G1 ląd 82 → **50**, G2 82 → **90** (odkręcony, cel jest),
+G4 ląd 82 → **50** i bot wybiera **rzut** (63,9 > 50), G5 (2 Plainsy, warunek
+niespełniony) 82 bez zmian (trigger nie odpala — kary nie ma).
+
+**Weryfikacja:** `test/pmssb51-etb-ladu-futile.test.js` E1–E6 (6/6); mutacje
+m1→E1,E2; m2→E1,E2,E3,E5; m3→E4; m4→E1,E2; m5 (kara W klamrze)→E1,E2;
+regresja skoncentrowana 269/269.
+
+**Golden-master (świadomy dryf DOKŁADNIE 1 decyzji z 6 partii):**
+`tarkir-bg|warhammer-ubr@1001` #179: `play_land(kishla-village)` 84 → 92
+(+8 — warunek `controls_land_subtype_any` spełniony, więc ląd wchodzi
+ODKRĘCONY i fałszywe −8 znika); scoreSum partii 2755,6261 → 2763,6261,
+liczba decyzji 217 → 217; pozostałe 5 partii bez zmian. Kara ETB nie odpaliła
+w benchmarku ani raz. Fixture zregenerowany świadomie (precedens PMSSB-32/50):
+`fff9c22c…` → `16a139c2efd5229d…`.
+
+**Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s) · build **70 modułów /
+4814,2 kB** · `bot-scoring-snapshot` 4/4 po regeneracji · `event-contract-audit`
+0 naruszeń.
+
+**Granice świadome:** dostępność celu czytana z widoku (bot nie zna
+przyszłości) — cel dochodzący po rzucie w tej samej turze dostanie karę mimo
+realnej wypłaty (bezpieczny kierunek: najpierw gospodarz); kara jest stała,
+nie skaluje się jakością gospodarza (dokładniejsza wycena należy do
+`etbEnterBonusValue`, gdy land-ETB będzie miał więcej kart w katalogu).
+
+**Status:** zamknięty (kod `bd96e07`).

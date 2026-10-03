@@ -15419,4 +15419,36 @@ build **70 modułów / 4792,5 kB**.
 - **Bramki:** `npm test` **7531/7531** EXIT 0 (117,5 s), build 70 modułów /
   4809,8 kB, `bot-scoring-snapshot` 4/4 po regeneracji, `event-contract-audit`
   0 naruszeń, regresja skoncentrowana 252/252.
+## 2026-10-03n — PMSSB-51: ETB lądu (z celem) bez legalnego celu osłabia land drop; warunek „enters untapped” jak w silniku (PR #154)
 
+- **Kolejka 4 = etap 2 planu 03h** (odroczony w ADR 0022 §4): wycena kolejności,
+  gdy ETB ma wymóg celu. Karta demonstrująca znaleziona w tej sesji:
+  **Idyllic Grange** (Land/Plains: wchodzi odkręcony przy 3+ innych Plains, ETB
+  „+1/+1 counter on target creature you control”).
+- **Luka (sonda G1–G5, PRZED):** `case 'play_land'` nie wołał żadnej wyceny ETB
+  → przy pustym stole ląd wygrywał kolejność z rzutem gospodarza (82 vs 63,9027)
+  i licznik przepadał; dodatkowo `landAnaliza` czytała GOŁĄ flagę `entersTapped`,
+  ignorując `entersTappedCondition` → ląd wchodzący odkręcony płacił fałszywe −8.
+- **Naprawa:** `entersTappedOfLand` (lustro rozstrzygnięć `resources.playLand`,
+  CR 614.1c — jedno miejsce reguły, L41) + `futileFriendlyCounterEtbPenalty`
+  (kara `castFutileEtbPenalty` = 40, gdy trigger ETB z celem „moje stworzenie”
+  nie ma legalnego celu; dla stworów nie zachodzi — wchodzący jest celem
+  własnego triggera, CR 603.6d); kara liczona w `play_land` PO klamrze
+  `landPlayDelta`, bo w klamrze ±14/25 zostałaby zjedzona (mutacja m5).
+  Zero nazw kart (ADR 0002); `×0` pokrętła = stan sprzed (M429).
+- **Pomiar PO:** G1/G4 ląd 82 → **50**, G4 bot wybiera **rzut** (63,9 > 50),
+  G2 82 → **90** (odkręcony + cel na stole), G5 (warunek niespełniony) 82 bez
+  zmian (trigger nie odpala → kary nie ma).
+- **Piny:** `test/pmssb51-etb-ladu-futile.test.js` E1–E6 (6/6); mutacje
+  m1→E1,E2; m2→E1,E2,E3,E5; m3→E4; m4→E1,E2; m5 (over-fix lokalizacji kary,
+  klamra ±14/25)→E1,E2.
+- **Golden-master — świadomy dryf DOKŁADNIE 1 decyzji z 6 partii**
+  (`tarkir-bg|warhammer-ubr@1001` #179): `play_land(kishla-village)` 84 → 92
+  (+8: warunek `controls_land_subtype_any` spełniony ⇒ ląd wchodzi ODKRĘCONY,
+  więc znika fałszywe −8 za tapnięcie); scoreSum 2755,6261 → 2763,6261,
+  decyzje 217 → 217, pozostałe partie bez zmian. Kara ETB w benchmarku nie
+  odpaliła ani razu. Fixture zregenerowany świadomie (precedens PMSSB-32/50):
+  `fff9c22c…` → `16a139c2efd5229d…`.
+- **Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s), build 70 modułów /
+  4814,2 kB, `bot-scoring-snapshot` 4/4 po regeneracji, `event-contract-audit`
+  0 naruszeń, regresja skoncentrowana 269/269.
