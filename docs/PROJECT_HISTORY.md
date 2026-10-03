@@ -15189,3 +15189,35 @@ kopia `5cc7058`: **30:18 (0,6250)** na 48 meczach — wyraźny sygnał dodatni.
 
 **Bramka końcowa:** fast **7474/7474** EXIT 0, `node tools/run-tests.mjs all` **7745/7745** EXIT 0,
 build **70 modułów / 4790,6 kB**.
+
+## 2026-10-03c — PMSSB-41 runda 2: weryfikacja po merge + luka LANDWALK
+
+**Wejście:** właściciel zgłosił ponownie te same cztery uwagi (Weftblade / Nanoform / Wedgelight /
+Xu-Ifit) po tym, jak PR #151 został scalony (`45fcaf6`, 09:28:44Z).
+
+**Diagnoza:** fixy A–D są w `main` (pliki identyczne z gałęzią), ale **publikacja na GitHub Pages
+dla `main` była jeszcze `in_progress`** — workflow publikacji uruchamia pełny pakiet testów przed
+buildem (~8 min), więc strona serwowała build sprzed fixów i zgłoszenie opisuje tamten stan.
+Scenariusze odtworzone na kodzie z `main`: C e2e (charge 6 → tap 4/4 → **10**, artefakt-stwór,
+2/2 nietknięty), B (`myCre` 14 vs wrogie −25), D (badge'y komplet), A (bez gospodarza pass,
+przy 6 lądach rzut > warp) — wszystkie nieroztwarzalne.
+
+**Realna luka tej rundy (kryterium właściciela wymienia landwalk obok flying/menace):**
+`PlayerView` nie niósł `landwalk`, więc `emerald-oryx` (forestwalk) i `farbog-explorer`
+(swampwalk) były dla bota gołym 2/3 — premia ewazyjna nigdy się nie zapalała, a warp schodził pod
+pass także wtedy, gdy ataku nie dało się zablokować. Naprawa: widok niesie `landwalk` (deskryptor
+podtypu lądu), a `hostEvadesBlockers` liczy ewazję tą samą regułą co silnik
+(`combat.js` → `controlsLandWithSubtype`) i rozstrzyga zdolności ewazji **niezależnie** (dotąd
+`return` przy flying pomijał menace na tym samym stworze). Pomiar: PRZED `widok.landwalk`
+undefined i warp −29 w obu wariantach; PO z Lasem obrońcy warp 84 (wybrany), bez Lasu −29 (pass).
+
+**Testy:** 25 → **30 pinów** (`test/audyt-pmssb41-uwagi-testow.test.js`; nowe A9–A12 + C9 e2e),
+mutacje m10–m13 RED (1/2/1/1). Golden-master **bez dryfu**; tie-audit 12 612 decyzji / 26,9%
+(9,9% akcyjnych) / GROZY 13 — bez zmian. Mirror pominięty świadomie: żadna talia benchmarku nie
+ma karty z landwalkiem (pomiar byłby konstrukcyjnie pusty, B6).
+
+**Bramka końcowa:** fast **7479/7479** EXIT 0, `node tools/run-tests.mjs all` **7750/7750** EXIT 0 (435,5 s),
+build **70 modułów / 4792,5 kB**.
+
+**Dodatkowo:** właściciel dostał świeży `dist/index.html` z fixami na żywym podglądzie sesji
+(serwer statyczny), żeby mógł przetestować poprawki bez czekania na publikację Pages.
