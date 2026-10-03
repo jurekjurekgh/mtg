@@ -426,6 +426,32 @@ function combatTrickWindow(view, recipient) {
 function combatPower(object) {
   return object?.combatDamageByToughness ? (object.toughness ?? 0) : (object?.power ?? 0);
 }
+/**
+ * PMSSB-50 (kolejka 3: „premia ewazyjna deathtouch/double strike w wycenie
+ * walki"): ile obrażeń REALNIE wystarcza, by zadać blokerowi śmiertelne —
+ * czyta wyłącznie keywordy atakującego (ADR 0002/0017):
+ *  • deathtouch (CR 702.2b): każde ≥1 obrażenie jest śmiertelne, więc próg
+ *    „zabija blokera" spada do 1 niezależnie od wytrzymałości (moc 1 czyni
+ *    atakującego praktycznie nieblokowalnym — blok = śmierć blokera);
+ *  • double strike (CR 702.7b): moc zadawana w OBU odsłonach, więc próg
+ *    zabicia to 2 × moc (2/2 DS zabija 4/4, czego model sum mocy nie widział).
+ * Bez tych keywordów wynik = moc (zero zmian dla reszty kart).
+ */
+function lethalDamageOf(object) {
+  const power = combatPower(object);
+  const kw = object?.keywords ?? [];
+  if (kw.includes('deathtouch') && power > 0) return Number.POSITIVE_INFINITY;
+  return power * (kw.includes('double_strike') ? 2 : 1);
+}
+/**
+ * PMSSB-50: ile obrażeń atakującego dochodzi do GRACZA, gdy nikt go nie
+ * zablokuje — double strike (CR 702.7b) uderza w twarz w obu odsłonach,
+ * więc 2/2 DS to 4 obrażenia, nie 2. Pozostałe słowa bez zmian.
+ */
+function faceDamageOf(object) {
+  const kw = object?.keywords ?? [];
+  return combatPower(object) * (kw.includes('double_strike') ? 2 : 1);
+}
 function duelStats(object, { power = 0, toughness = 0 } = {}) {
   const kw = object?.keywords ?? [];
   return {
@@ -10695,6 +10721,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Atak co turę w tego blokera to marnotrawstwo (dokładnie objaw E).
           // Jałowy niezależnie od wyścigu (jak M188/C), więc premia go nie ratuje.
           const neutralizedByProtection = attackerNeutralizedByProtection(object, blockers);
+          // PMSSB-50: próg „zabija, ZANIM bloker odpowie" to JEDNA odsłona —
+          // first strike (CR 702.7) albo pierwsza odsłona double strike
+          // (CR 702.7b); z deathtouch wystarcza 1 obrażenie (CR 702.2b).
+          // Dwie odsłony (`lethalDamageOf` = 2 × moc) to próg WYMIANY: bloker
+          // zdąży oddać w drugiej odsłonie, więc 2/2 DS vs 4/4 to trade, nie
+          // „przeżyje i zabije".
+          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, blockers)
+            && ((hasKeyword(combatObject, 'deathtouch') && combatPower(combatObject) > 0)
+              || blockedStats.power >= effBlockerToughness);
+          // PMSSB-50: „praktycznie nieblokowalny" z deathtouch — blok oznacza
+          // śmierć blokera (CR 702.2b), więc obrońca poświęci blokera tylko
+          // wtedy, gdy ten jest TAŃSZY od atakującego; gdy każdy nietapnięty
+          // bloker jest cenniejszy, blok nie przyjdzie i atak przechodzi jak
+          // ewazyjny (ta sama skala wartości co `blockerValueLost`).
+          const deathtouchUnblockable = hasKeyword(combatObject, 'deathtouch')
+            && combatPower(combatObject) > 0
+            && blockers.length > 0
+            && blockers.every((b) => (b.power ?? 0) + (b.toughness ?? 0) > power + toughness);
           if (neutralizedByProtection) {
             perAttacker = -2;
             futileAttackers += 1;
@@ -10702,9 +10746,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
-            perAttacker = power + P.attackThroughBonus;
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (attackerImmuneThisTurn) {
-            perAttacker = power + P.attackThroughBonus;
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
@@ -10736,10 +10780,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 perAttacker = P.attackThroughBonus;
               }
             } else {
-              perAttacker = power + P.attackThroughBonus; // otwarty / nie do zablokowania
+              perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty / nie do zablokowania
             }
           } else if (blockers.length === 0) {
-            perAttacker = power + P.attackThroughBonus; // otwarty — czysta presja
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty — czysta presja
           } else if (object.cantBlock && attackers.length > blockers.length) {
             // M221/G (zgłoszenie właściciela, token Phyrexian Mite „can't
             // block"): stwór, który NIE MOŻE blokować, nie ma wartości
@@ -10748,22 +10792,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // zagrożenia, więc mały cantBlock (zwykle token 1/1) przechodzi
             // i dokłada obrażenia (tu jeszcze toxic). Brak kosztu alternatywy:
             // i tak nigdy nie zablokuje. Reguła po deskryptorze cantBlock
-            // z PlayerView (ADR 0002/0017), nie po nazwie karty.
-            perAttacker = power + P.attackThroughBonus;
+            // z PlayerView (ADR 0002/0017), nie po nazwie karty. PMSSB-50:
+            // przechodzi obok blokerów, więc liczy obrażenia w twarz.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
+          } else if (deathtouchUnblockable) {
+            // PMSSB-50: blok nie przyjdzie (każdy bloker droższy niż mój
+            // stwór), więc deathtouch zadaje obrażenia w twarz jak ewazyjny
+            // (M202/H), a nie jak chump.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (diesBeforeDealingDamage(combatObject, blockers)) {
             // M202/N: bloker z first strike zabija atakującego, zanim ten zada
             // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
             // stwora. Jałowy, więc premia wyścigu go nie uratuje.
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
-          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= effBlockerToughness) {
+          } else if (killsBeforeBlockerStrikes) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
-          } else if (blockedStats.toughness > effBlockerPower && blockedStats.power >= effBlockerToughness) {
+          } else if (blockedStats.toughness > effBlockerPower && lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
-          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && blockedStats.power < effWeakestBlockerToughness) {
+          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
@@ -10785,7 +10835,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
             // więc nie przejdą obrażenia ani nie zginie żaden bloker.
             futileAttackers += 1;
-          } else if (blockedStats.power >= effBlockerToughness) {
+          } else if (lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
@@ -10812,7 +10862,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
-        const totalPower = attackers.reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
+        const totalPower = attackers.reduce((sum, id) => sum + faceDamageOf(objectOnBoard(view, id)), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
         // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
