@@ -6089,6 +6089,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * wroga (best-of — jak best-of-targets przy rzucie z ręki).
    */
   /**
+   * PMSSB-49 (kolejka: „warp_card vs rzut w następnej turze — opóźdzony zysk
+   * vs stracona tura", granica (2) §PMSSB-41): czy rzut z wygnania po
+   * warp-caście (CR 702.185a — „then you may cast it from exile on a later
+   * turn", ZA KOSZT MANY) będzie osiągalny już w NASTĘPNEJ turze, choć nie
+   * jest oferowany teraz. Proxy liczone z widoku (bot nie zna przyszłości):
+   * wszystkie własne LĄDY odkręcą się w untapie (`manaSource` widoku), plus
+   * jeden ląd z ręki (land drop), plus pokrycie kolorów kosztu co najmniej
+   * jednym źródłem na kolor. Źródła nielandowe (artefakty, stwory) wymagają
+   * aktywacji — świadomie poza proxy, jak w `manaAvailableNow`.
+   * Gdy rzut normalny JEST oferowany teraz, to inna gałąź (redundancja) —
+   * ta miara dotyczy wyłącznie porównania z przyszłą turą.
+   */
+  /**
    * PMSSB-41/A (zgłoszenie właściciela, Weftblade Enhancer): ile REALNIE kupuje
    * trigger wejścia, gdy rzucamy kartę za WARP (sama karta i tak zniknie
    * w kroku końcowym). Liczy SUMĘ `counterHostValue` najlepszych (do `count`
@@ -6099,6 +6112,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * jakość gospodarza (flying/menace/landwalk albo duże ciało), a nie sam fakt
    * istnienia triggera. Brak godnego celu = 0 (i kara `warpFutileEtbPenalty`).
    */
+  const warpRecastReachableNextTurn = (view, card) => {
+    if (!card || castOfferedNow(view, card)) return false;
+    const sources = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && (o.kind === 'land' || (o.types ?? []).includes('Land')))
+      .map((o) => o.manaSource ?? { colors: o.colors ?? [], amount: 1 });
+    const landDrop = (view.zones.hand ?? []).some((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')));
+    const mana = sources.reduce((sum, s) => sum + (s.amount ?? 1), 0) + (landDrop ? 1 : 0);
+    if (mana < (card.manaCost ?? 0)) return false;
+    // Kolory: co najmniej jedno źródło na każdy kolor karty (pip innego koloru
+    // nie da się opłacić lądem, który go nie produkuje).
+    return (card.colors ?? []).every((color) => sources.some((s) => (s.colors ?? []).includes(color)));
+  };
+
   const warpEtbHostPayoff = (view, def, excludeId) => {
     if (!def) return 0;
     let total = 0;
@@ -7404,6 +7431,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (etbPayoff <= 0) score -= P.warpFutileEtbPenalty;
         } else if (etbTriggers.length > 0) {
           score += 5;
+        }
+        // PMSSB-49 („warp_card vs rzut w następnej turze"): warp nie kończy
+        // się w kroku końcowym — karta wraca z wygnania ZA KOSZT MANY
+        // (CR 702.185a) i tam ETB odpala DRUGI raz (sonda: rzut z exile =
+        // `cast_permanent`, drugi licznik ląduje na tym samym gospodarzu).
+        // Gdy ten recast jest osiągalny już w następnej turze, druga wypłata
+        // jest realna, a nie hipotetyczna — dotychczasowy model porównywał
+        // się wyłącznie z ofertą rzutu TERAZ (L48, granica (2) §PMSSB-41).
+        // Waga < 1 to dyskont czasu (trigger turę później, po zapłaceniu
+        // kosztu many); M429: pokrętło ×0 = zachowanie sprzed zmiany.
+        const secondEtbPayoff = etbNeedsHost ? etbPayoff : (etbTriggers.length > 0 ? 5 : 0);
+        if (secondEtbPayoff > 0 && warpRecastReachableNextTurn(view, card)) {
+          score += P.warpRecastEtbWeight * secondEtbPayoff;
         }
         // PMSSB-35/B2 (wymiar KOSZTU): koszt warp to realna cena wariantu —
         // bez niej wynik był identyczny przy 3 i 6 manach (pomiar PRZED:

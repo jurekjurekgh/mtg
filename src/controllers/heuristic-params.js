@@ -241,6 +241,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'warpEtbHostMin',              // próg „stwór wart wzmocnienia" (tokeny/gołe 2/2 poniżej)
   'warpFutileEtbPenalty',        // kara, gdy trigger wejścia z celem nie ma godnego gospodarza
   'warpRedundantPenalty',        // kara, gdy rzut normalny TEJ karty jest oferowany (warp = strata karty)
+  'warpRecastEtbWeight',         // waga DRUGIEGO ETB z recastu po warp (rzut z exile za koszt many)
   // PMSSB-41/C (zgłoszenie właściciela, Wedgelight Rammer): Station dokłada
   // charge równe MOCY tapowanego stwora, więc wycena liczy realny postęp
   // (nadmiar ponad próg = 0) i premię za DOMKNIĘCIE progu (artefakt → stwór).
@@ -667,6 +668,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   warpEtbHostMin: 20,
   warpFutileEtbPenalty: 90,
   warpRedundantPenalty: 60,
+  // PMSSB-49: karta po warp-caście wraca z wygnania ZA KOSZT MANY i odpala ETB
+  // drugi raz (CR 702.185a; sonda: rzut z exile = `cast_permanent`, licznik
+  // ląduje na gospodarzu ponownie). Gdy ten recast jest osiągalny w następnej
+  // turze, druga wypłata jest realna — liczymy ją z wagą < 1 (dyskont czasu:
+  // trigger przyjdzie turę później i po zapłaceniu kosztu many). ×0 = stan
+  // sprzed PMSSB-49 (M429 anty-over-fix).
+  warpRecastEtbWeight: 0.5,
   stationCloseBonus: 6,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,
