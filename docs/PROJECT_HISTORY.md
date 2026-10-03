@@ -15065,6 +15065,22 @@ czystym drzewie** (G czerwone 1, H czerwone 2; pierwszy przebieg unieważnił
 `git checkout` na brudnym drzewie — wniosek 4 raportu: mutacje dopiero po
 commicie i z kontrolą `git diff`).
 
-**Bramka końcowa:** `npm test` **7430/7430** EXIT 0, `npm run test:all`
-**7701/7701** EXIT 0 (429,9 s, warstwa slow + golden-master bota), build
-**70 modułów / 4775,1 kB**.
+**Pętla jakości po audycie (ADR 0021 §4).** Domknięty **pin O1 z audytu PR #149**
+(`e0cd23c`): warunek `castsWithoutPayingMana` w `reservedManaOf` jest czytany
+także przez wycenę wypłaty triggerów `manaSpentBelow/AtLeast` (Opus — Tackle
+Artist), więc pin nie potrzebuje celu ani warda: rzut Rage of Purphoros
+z wygnania ze stemplem darmowego impulsu (CR 701.18) daje w silniku `manaSpent`
+0 i 1 licznik, płatny 5 i 2 liczniki, a wycena bota liczy dokładnie to samo
+(test D1, mutacja → czerwone). **F2 (nowe znalezisko):** decyzja
+`resolve_suspend_cast` przy odmowie gasiła tylko `suspended`, a ścieżki rzutu
+czytają `suspendReady` — po odmowie karta zostawała w wygnaniu rzucalna BEZ
+KOSZTU MANY, w dowolnej fazie i bez terminu (sonda: 2 oferty `cast_spell`,
+rzut przyjęty). Naprawione u źródła (`0540c73`): odmowa gasi obie flagi, jak
+bliźniaczy rebound (CR 702.88a, L41); pin G1 + mutacja. **Zdarzenie
+środowiska:** sandbox odtworzył workspace ze świeżego klona w trakcie sesji
+(lokalny HEAD wrócił do bazy `dcbc99f`), pliki z snapshotu przetrwały, historię
+odzyskano przez `git fetch` + `git reset --mixed origin/…` (ENVIRONMENT §2);
+bez strat, bo każdy zielony commit był wypchnięty.
+
+**Bramka końcowa:** `npm test` **7432/7432** EXIT 0, `npm run test:all`
+**7703/7703** EXIT 0, build **70 modułów / 4776,0 kB**.

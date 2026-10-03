@@ -43,16 +43,23 @@ nazywa tematu ⇒ pętla domyślna, bez pytania o kolejkę) + ADR 0016/0030.
   F–H po commicie naprawy** — F czerwone (3), **G czerwone (1, nie 5)**, **H
   czerwone (2, nie 5)**; pierwszy przebieg G/H był unieważniony przez
   `git checkout -- src/` na brudnym drzewie (tabela i wniosek 4 w raporcie
-  skorygowane). **O1 (`DIVIDED_POOL_CAP`)**: przegląd ścieżki ofert i kreatora
-  panelu — pula nadal capowana w silniku, a oferta = komenda, więc „ręczny"
-  kreator z dowolnego celu wymaga zmiany powierzchni ofert (koszt
-  kombinatoryczny u botów) → **osobny plan**, pozycja w handoffie razem
-  z czytnikami `zone === 'exile'`, pinem `castsWithoutPayingMana` i projekcjami
-  remisów.
+  skorygowane). **Pin O1 z audytu PR #149 domknięty** (`e0cd23c`, test D1:
+  darmowy impuls nie rezerwuje kosztu karty — wycena Opusa = licznik silnika;
+  mutacja → czerwone). **F2 znalezione i naprawione** (`0540c73`, pin G1:
+  odmowa rzutu z zawieszenia gasiła tylko `suspended`, a ścieżki rzutu czytają
+  `suspendReady` → karta zostawała rzucalna bez kosztu na zawsze).
+  **O1 (`DIVIDED_POOL_CAP`)**: przegląd ścieżki ofert i kreatora panelu — pula
+  nadal capowana w silniku, a oferta = komenda, więc „ręczny" kreator
+  z dowolnego celu wymaga zmiany powierzchni ofert (koszt kombinatoryczny
+  u botów) → **osobny plan**; w kolejce zostają też ścieżka WARD w
+  `reservedManaOf` (czeka na kartę z ward) i przegląd czytników
+  `zone === 'exile'`.
 - [x] **Etap 6 — zamknięcie**: handoff `docs/setup/HANDOFF_2026-10-02f.md`,
   wpis w `docs/PROJECT_HISTORY.md`, liczby bramki zmierzone na końcu (L92):
-  `npm test` **7430/7430**, `test:all` **7701/7701**, build **4775,1 kB**;
+  `npm test` **7432/7432**, `test:all` **7703/7703**, build **4776,0** kB;
   opis PR #151 zaktualizowany kumulatywnie, blok przekazania w czacie.
+  W trakcie sesji sandbox odtworzył workspace ze świeżego klona — odzysk
+  procedurą z `ENVIRONMENT.md` §2 (bez strat, commity były wypchnięte).
 
 ## Ryzyka i pułapki
 
