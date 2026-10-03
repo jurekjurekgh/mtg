@@ -227,12 +227,33 @@ test('C4: przy rzucie dostępnym tylko zwłoka i surcharge — czysty plot droż
 test('D1: koszt warp jest w wycenie (PRZED: 70,000 przy 4 i przy 6 polach)', () => {
   const cztery = (() => { const s = game({ turn: 5 }); pole(s, 4); reka(s, 'we', 'weftblade-enhancer'); return s; })();
   const szesc = (() => { const s = game({ turn: 5 }); pole(s, 6); reka(s, 'we', 'weftblade-enhancer'); return s; })();
-  assert.equal(wynik(cztery, 'warp_card'), 66,
-    '70 bazy (ciało 3/4: 70 + 2×3 + 4 = 80, − 15 tymczasowości, + 5 ETB) − 4 (warp {2}{W} = 3 many + 1 pip); gałąź w rodzinie `spell` (×1)');
-  assert.equal(wynik(szesc, 'warp_card'), 66, 'ten sam wariant = ten sam wynik (rzut stały to osobna oferta)');
-  // (próg 6: ETB-licznik rzutu stałego wyceniony wg PMSSB-36/B, warp ma stałe +5)
-  assert.ok(wynik(szesc, 'cast_permanent(we)') < wynik(szesc, 'warp_card') + 6,
+  // PMSSB-41/A (zgłoszenie właściciela): warp bez GODNEGO gospodarza licznika
+  // schodzi pod pass (kara `warpFutileEtbPenalty`), a przy ofercie rzutu
+  // normalnego dochodzi `warpRedundantPenalty`. Ten pin mierzy WYMIAR KOSZTU,
+  // więc nowe wymiary zerujemy (M429: ×0 = stan sprzed zmiany) — inaczej kara
+  // za bezcelowy warp zjada to, co pin ma pokazać. Zachowanie nowych pokręteł
+  // pinuje test/audyt-pmssb41-uwagi-testow (A2/A4/A7/A8).
+  const WOLNY_WARP = { warpFutileEtbPenalty: 0, warpRedundantPenalty: 0 };
+  assert.equal(wynik(cztery, 'warp_card', WOLNY_WARP), 61,
+    '65 bazy (ciało 3/4: 70 + 2×3 + 4 = 80, − 15 tymczasowości) + 0 payoffu ETB '
+    + '(płaskie „+5 za ETB" zastąpiła miara gospodarza licznika — bez gospodarza 0, PMSSB-41/A) '
+    + '− 4 (warp {2}{W} = 3 many + 1 pip); gałąź w rodzinie `spell` (×1)');
+  assert.equal(wynik(szesc, 'warp_card', WOLNY_WARP), 61, 'ten sam wariant = ten sam wynik (rzut stały to osobna oferta)');
+  // (próg 6: ETB-licznik rzutu stałego wyceniony wg PMSSB-36/B; porównanie
+  // z warpen robimy na stole z GODNYM gospodarzem — bez gospodarza warp nie ma
+  // po co być „w zasięgu”, bo oddaje kartę na wygnanie bez zysku, PMSSB-41/A)
+  const zHostem = (() => {
+    const s = game({ turn: 5 }); pole(s, 6); reka(s, 'we', 'weftblade-enhancer');
+    dodaj(s, 'host', 'hill-giant', 'battlefield', 'creature', { summoningSick: false, summoningSickness: false });
+    return s;
+  })();
+  assert.ok(wynik(zHostem, 'cast_permanent(we)', WOLNY_WARP) < wynik(zHostem, 'warp_card', WOLNY_WARP) + 6,
     'rzut stały pozostaje w zasięgu warpu — wycena nie „wybiera za gracza”');
+  // Nowy wymiar (bez zerowania): pusty stół = warp NIE jest wart wygnania karty,
+  // a przy 6 polach przegrywa z rzutem normalnym, który zostawia ciało na stole.
+  assert.equal(wynik(cztery, 'warp_card'), -29, 'bez gospodarza: 66 − 90 kary = −29 (pod passem)');
+  assert.equal(oferta(cztery).cmd.type, 'pass_priority', 'pusty stół: bot nie wyrzuca karty za warp');
+  assert.equal(oferta(szesc).cmd.type, 'cast_permanent', 'stać mnie na rzut normalny → rzucam kartę, nie warpię');
 });
 
 // --- E. Kontrola anty-over-fix: darmowy rzut bez premii --------------------
@@ -313,4 +334,104 @@ test('F3 (CR 400.7, okno impulsu): stempel „zagrywalna do końca tury" nie prz
   assert.equal(impulseWindowOf(ex), null, 'para pól gaśnie razem z wyjściem z wygnania');
   assert.equal(hasFreeCastStamp(ex), false);
   assert.deepEqual(s.objects.get('grave-f3').playableUntilTurn ?? null, null, 'i nie wraca na nowym obiekcie');
+});
+
+// --- D. Pin O1 z audytu PR #149: rezerwacja many dla rzutu, który NIE płaci
+//        kosztu karty (kolejka handoffu 2026-10-01g/02 → domknięta 2026-10-02f)
+//
+// Audyt PR #149 odłożył ten pin z uzasadnieniem „żadna wspierana karta z plotem
+// nie ma celów (ward nieosiągalny), a darmowy impuls ze stemplem + cel nie ma
+// sondy". Pin jest dziś wykonalny BEZ warda i bez celu: ten sam warunek
+// (`castsWithoutPayingMana` w `reservedManaOf`) jest czytany przez wycenę
+// WYPŁATY triggerów „manaSpentBelow/AtLeast" (Opus — Tackle Artist), a ta nie
+// patrzy na cele. Silnik dla darmowego rzutu z wygnania emituje
+// `spell_cast.manaSpent = 0` → 1 licznik; dla płatnego 5 → 2 liczniki
+// (CR 601.2f: mana wydana NA CZAR). Wycena bota musi liczyć to samo (L41).
+//
+// Ścieżka WARD nadal czeka na kartę: zakryty permanent (disguise) nie niesie
+// w widoku `keywords`/`ward` (CR 708), a w katalogu nie ma odkrytego stworu
+// z ward — pin wardowy zostaje w kolejce razem z taką kartą.
+
+function liczniki(s, id) {
+  return (s.objects.get(id)?.counters ?? {})['+1/+1'] ?? 0;
+}
+
+/**
+ * Plansza do porównania: Tackle Artist (Opus) + ofiara rzutu. Zwraca stan
+ * i wynik wariantu rzutu z wygnania — `free` dodaje stempel darmowego impulsu
+ * (CR 701.18), bez niego karta płaci pełny koszt {4}{R}.
+ */
+function opusRzutZWygnania(free) {
+  const s = game({ turn: 6 });
+  lądy(s, 'basic-mountain', 5, 'mo');
+  dodaj(s, 'art', 'tackle-artist', 'battlefield', 'creature', { summoningSickness: false });
+  dodaj(s, 'b', 'hill-giant', 'battlefield', 'creature', { summoningSickness: false });
+  wExile(s, 'ex', 'rage-of-purphoros', free
+    ? { playableUntilTurn: 12, playableWithoutPaying: true }
+    : { playableUntilTurn: 12 });
+  return s;
+}
+
+test('D1 (pin O1, PR #149): darmowy impuls nie rezerwuje kosztu karty — wycena = silnik', () => {
+  // Silnik: darmowy rzut nie wydaje many na czar (1 licznik), płatny wydaje 5 (2).
+  const darmowy = opusRzutZWygnania(true);
+  const offer = playerView(darmowy, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ex' && c.targets?.[0] === 'b');
+  assert.ok(offer, 'karta z exile ma ofertę rzutu (stempel okna impulsu)');
+  assert.ok(execute(darmowy, { type: 'cast_spell', playerId: 'p1', objectId: 'ex', targets: ['b'] }).ok);
+  assert.ok(rozstrzygnij(darmowy), 'stos pusty');
+  assert.equal(darmowy.events.filter((e) => e.type === 'spell_cast').at(-1)?.manaSpent, 0,
+    'darmowy rzut: manaSpent = 0 (CR 118.9)');
+  assert.equal(liczniki(darmowy, 'art'), 1, 'Opus: poniżej progu = 1 licznik');
+
+  const platny = opusRzutZWygnania(false);
+  assert.ok(execute(platny, { type: 'cast_spell', playerId: 'p1', objectId: 'ex', targets: ['b'] }).ok);
+  assert.ok(rozstrzygnij(platny), 'stos pusty');
+  assert.equal(platny.events.filter((e) => e.type === 'spell_cast').at(-1)?.manaSpent, 5,
+    'płatny rzut: manaSpent = koszt karty');
+  assert.equal(liczniki(platny, 'art'), 2, 'Opus: od progu = 2 liczniki');
+
+  // Bot: ta sama arytmetyka (L41). Δ = udział wypłaty Opusa w wyniku wariantu.
+  const delta = (s) => wynik(s, 'cast_spell(ex->b)') - wynik(s, 'cast_spell(ex->b)', { boardPayoffWeight: 0 });
+  const deltaDarmowy = delta(opusRzutZWygnania(true));
+  const deltaPlatny = delta(opusRzutZWygnania(false));
+  blisko(deltaDarmowy, 14, 'darmowy rzut: wycena liczy gałąź „poniżej pięciu many"');
+  blisko(deltaPlatny, 16, 'płatny rzut: wycena liczy gałąź „pięć lub więcej"');
+  blisko(deltaPlatny - deltaDarmowy, 4 * 0.5,
+    'różnica = jeden licznik (counterAmountWeight 4 × boardPayoffWeight 0,5)');
+  assert.ok(deltaDarmowy < deltaPlatny,
+    'mutacja: usunięcie gałęzi darmowego rzutu w `reservedManaOf` zrównuje obie wartości (16 = 16)');
+});
+
+// --- G. Odmowa rzutu z ZAWIESZENIA gasi uprawnienie (CR 702.62c) -----------
+//
+// Znalezisko 2026-10-02f (ta sama rodzina co F1/F2 z audytu PR #149 —
+// „uprawnienie do rzutu istnieje tylko wtedy, gdy daje je mechanika"):
+// decyzja `resolve_suspend_cast` przy odmowie zmieniała wyłącznie
+// `suspended`, a flagą czytaną przez ścieżki rzutu jest `suspendReady`
+// (`requireSpell`, `manaCostWaived` w `castSpell`, oferta `legalSpellCasts`,
+// `castModalSpell`) — karta zostawała więc w wygnaniu rzucalna BEZ KOSZTU
+// MANY, w dowolnej fazie i bez terminu (sonda: po odmowie 2 oferty
+// `cast_spell` i rzut PRZYJĘTY). Bliźniaczy rebound (CR 702.88a) gasi swoją
+// flagę `reboundReady` przy odmowie od dawna (L41: bliźniacze ścieżki nie
+// mogą się rozjeżdżać).
+
+test('G1 (CR 702.62c): po odmowie rzutu z zawieszenia karta NIE jest rzucalna', () => {
+  const s = game({ turn: 6 });
+  wExile(s, 'ms', 'mindstab', { suspended: true, timeCounters: 0, suspendReady: true });
+  s.pendingSuspendCast = { playerId: 'p1', objectId: 'ms', cardId: 'mindstab', restorePriorityTo: 'p1' };
+  s.turn.priorityPlayerId = 'p1';
+  assert.deepEqual(oferty(s, 'ms').filter((type) => type === 'cast_spell'), [],
+    'póki decyzja jest otwarta, rzut idzie wyłącznie przez nią');
+  assert.ok(execute(s, { type: 'resolve_suspend_cast', playerId: 'p1', objectId: 'ms', cast: false }).ok,
+    'odmowa przyjęta');
+  const obj = s.objects.get('ms');
+  assert.equal(obj.zone, 'exile', 'karta zostaje w wygnaniu');
+  assert.equal(obj.suspended, false, 'bez statusu „zawieszonej"');
+  assert.equal(obj.suspendReady, false, 'uprawnienie jest JEDNORAZOWE (CR 702.62c)');
+  assert.deepEqual(oferty(s, 'ms'), [], 'brak ofert dla karty (PRZED: 2 × cast_spell)');
+  const recznie = execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'ms', targets: ['p2'] });
+  assert.equal(recznie.ok, false, 'ręcznie zbudowana komenda też odrzucona (L48: oferta = walidacja)');
+  const reason = recznie.events.find((e) => e.type === 'command_rejected')?.reason ?? '';
+  assert.ok(reason.startsWith('illegal_spell'), `reason jawny (${reason})`);
 });

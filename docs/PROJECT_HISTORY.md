@@ -15032,3 +15032,139 @@ build **70 modułów / 4709,9 kB**.
 stwora w modalu wyboru celu pokoju nic nie robił (kandydaci w bibliotece; `hiddenObjectCardId`
 znał tylko szukanie). Naprawa klasowa: lookup po `view.pending*.cards` (obejmuje też Manifest
 dread), piny E/1–E/4. `npm test` **7314/7314**, build **4710,6 kB**.
+## 2026-10-02f — audyt PR #150 + podział obrażeń w oknach rzutu (PR #151)
+
+Prompt „kontynuuj projekt" ⇒ ADR 0020/0021. Plan `docs/plans/PLAN_2026-10-02f-audyt-pr150.md`,
+raport `docs/audits/AUDYT_PR150_2026-10-02.md`, handoff `docs/setup/HANDOFF_2026-10-02f.md`.
+
+Audyt scalonego PR #150 (76 plików, +4628/−157: batch 62 = kolekcja 176–210 +
+PMSSB-36…39): diff czytany plik po pliku, twierdzenia komentarzy sprawdzane
+sondami na żywym silniku (ADR 0020 B), dane Oracle/rulingi 1:1 z żywym
+Scryfallem (ADR 0030), piny — mutacjami. Dwa znaleziska naprawione u root cause:
+**F1 (średni):** Fiery Justice (`spell.divided`) nie miała ŻADNEJ oferty
+w oknach rzutu spoza ręki (grób/Halo Forager, Epic Experiment, ręka Barala,
+Vaan) — `epicCastOffers` milczał dla `spell.divided`, a `castSpellWithoutManaCost`
+nie znał `damageDivision`; karta deklarowana jako `supported` bez ograniczeń,
+a gracz nie mógł jej rzucić w tych oknach. **F3 (niski):** próg „if five or more
+mana was spent to cast" (Opus) liczył `{X}` zapłacone zdolności zlecającej rzut
+(Halo Forager) → 2 liczniki zamiast 1 (CR 601.2f).
+Naprawa (`06fc9a9`): jeden generator podziału (`dividedDamageDivisions`) dla ręki
+i wszystkich okien, walidacja i stempel `damageDivision` przed mutacją, komendy
+okien niosą podział (madness celowo milczy — executor go nie rozlicza), zdarzenie
+`spell_cast` niesie manę wydaną na CZAR (dopłaty + alternatywny dodatek zapłacony
+maną; `{X}` decyzji w `eventStamp.xPaid`). Pin
+`test/audyt-pr150-podzial-w-oknach-rzutu.test.js` (5 testów). Obserwacje bez
+zmian: O1 `DIVIDED_POOL_CAP = 8` (gracz-przeciwnik wypada z puli przy 10 wrogich
+stworach — kolejka handoffu), O2 nadmiarowa bramka `instantSorcery` (mutacja
+przeżywa — każde `spell_cast` w silniku to `kind === 'spell'`), O3 brak oferty
+podziału zerowego, O4 indeksowanie `targetIndex` w `resolveDividedSpell`
+(ryzyko na przyszłość).
+
+Mutacje: A–F zgodne z raportem, **G/H skorygowane po ponownym przebiegu na
+czystym drzewie** (G czerwone 1, H czerwone 2; pierwszy przebieg unieważnił
+`git checkout` na brudnym drzewie — wniosek 4 raportu: mutacje dopiero po
+commicie i z kontrolą `git diff`).
+
+**Pętla jakości po audycie (ADR 0021 §4).** Domknięty **pin O1 z audytu PR #149**
+(`e0cd23c`): warunek `castsWithoutPayingMana` w `reservedManaOf` jest czytany
+także przez wycenę wypłaty triggerów `manaSpentBelow/AtLeast` (Opus — Tackle
+Artist), więc pin nie potrzebuje celu ani warda: rzut Rage of Purphoros
+z wygnania ze stemplem darmowego impulsu (CR 701.18) daje w silniku `manaSpent`
+0 i 1 licznik, płatny 5 i 2 liczniki, a wycena bota liczy dokładnie to samo
+(test D1, mutacja → czerwone). **F2 (nowe znalezisko):** decyzja
+`resolve_suspend_cast` przy odmowie gasiła tylko `suspended`, a ścieżki rzutu
+czytają `suspendReady` — po odmowie karta zostawała w wygnaniu rzucalna BEZ
+KOSZTU MANY, w dowolnej fazie i bez terminu (sonda: 2 oferty `cast_spell`,
+rzut przyjęty). Naprawione u źródła (`0540c73`): odmowa gasi obie flagi, jak
+bliźniaczy rebound (CR 702.88a, L41); pin G1 + mutacja. **Zdarzenie
+środowiska:** sandbox odtworzył workspace ze świeżego klona w trakcie sesji
+(lokalny HEAD wrócił do bazy `dcbc99f`), pliki z snapshotu przetrwały, historię
+odzyskano przez `git fetch` + `git reset --mixed origin/…` (ENVIRONMENT §2);
+bez strat, bo każdy zielony commit był wypchnięty.
+
+**Bramka końcowa:** `npm test` **7432/7432** EXIT 0, `npm run test:all`
+**7703/7703** EXIT 0, build **70 modułów / 4776,0 kB**.
+
+## 2026-10-03a — PMSSB-40: payoffy rzutu II — efekty skierowane i wymiar nietapnięcia (PR #151)
+
+Polecenie właściciela „kontynuuj z PMSSB" (bez wskazania rodziny — wybór wg granic
+poprzedniej pętli i inwentarza katalogu). Plan: `docs/plans/PLAN_2026-10-03a-pmssb40-skierowane-nietapniecie.md`.
+
+Wejście z granic PMSSB-39 (efekty skierowane + vigilance Kulratha bez wyceny). Inwentarz
+triggerów rzutu (sonda `/tmp/pr/inwentarz-pmssb40.mjs`): 18 nóg / 14 kart, poza modelem trzy —
+`cant_block`, `damage`, `untap_permanent`. Kontrola zasięgu: tylko 2 karty mają trigger rzutu
+z `requiresTarget` (molten-nursery, goblin-battle-jester).
+
+**Pomiar PRZED** (`/tmp/pr/probe-pmssb40-przed.mjs`): Molten Nursery → Δ 0 (bramka `requiresTarget`
+pomijała cały trigger ORAZ pętla szła po samych stworach — to enchantment), Goblin Battle Jester → 0,
+Kulrath Mystic → 7 (sam pump), Steelfin Whale → 0 (noga spoza zbioru payoffów).
+
+**Zmiany (generyczne, ADR 0002):** bramka `requiresTarget` przekazuje wymóg celu do miary zamiast
+pomijać trigger; nowe nogi `damage` (min(3N,15) — ta sama liczba co ETB-obrażenia), `cant_block`
+(miara ścieżki rzutu `cantBlockRemovalValue` w oknie ataku; płaska 2 z tabeli ETB była martwa),
+`untap_permanent` nosiciela (tylko gdy tapnięty); rider `vigilance` w `temporaryPumpPayoff` przez
+świeżość słów (M431) + symulowany widok dla polityki ataku; wspólna miara `untappedBodyDefense`
+(reuse drabiny tapnięcia CIAŁA z PMSSB-32) i pokrętło `payoffUntappedBodyWeight` (×0 = stan sprzed
+zmiany, M429). PO: S1 1,35; S2 2; S3 11 (7 + 4); S4 3,6.
+
+Test `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (17 pinów, 11 czerwonych PRZED kodem;
+mutacje 6/6 RED). Pin PMSSB-39 A5 przesunięty o nowy wymiar (świadomie, z uzasadnieniem).
+Raport: `docs/PMSSB.md` §PMSSB-40. Golden-master bez zmian; tie-audit 26,9% / 9,9% realnych,
+GROZY 13; mirror-eval 24:24 (0,5000; brak sygnału — wynik B6).
+
+**Zdarzenie środowiska (trzecie w tym tygodniu):** sandbox ponownie odtworzył workspace ze świeżego
+klona — lokalny HEAD wrócił do bazy `dcbc99f`, a commity poprzedniej sesji (`2ce8b6e`…`23395af`)
+zniknęły lokalnie, choć pliki (i origin + PR #151) były nienaruszone. Odzysk bez `--hard`:
+`git ls-remote` → `git fetch origin arena/01a0fe59-mtg` → `git reset --mixed FETCH_HEAD`
+(ENVIRONMENT §2) — praca PMSSB-40 z drzewa roboczego ocalała, commity poprzedniej sesji wróciły
+z origin. Wniosek bez zmian: każdy zielony commit wypychać od razu.
+
+**Bramka końcowa:** `npm test` **7449/7449** EXIT 0, `node tools/run-tests.mjs all` ****7720/7720****
+EXIT 0, build **70 modułów / 4781,7 kB**.
+
+## 2026-10-03b — PMSSB-41: cztery zgłoszenia właściciela z testów (warp, untap, Station, badge'y)
+
+Wejście: **cztery uwagi właściciela z gry** (po sesji PMSSB-40) — Weftblade Enhancer (warp bez
+sensu), Nanoform Sentinel (untap celu triggera w permanent przeciwnika), Wedgelight Rammer
+(kolejność tapowania do Station), Xu-Ifit Osteoharmonist (brak badge'ów po reanimacji). Tryb:
+pętla PMSSB (`docs/PMSSB.md`, procedura 0–7); zgłoszenie = dowód wejściowy. Plan:
+`docs/plans/PLAN_2026-10-03b-pmssb41-uwagi-testow.md`.
+
+**Pomiar PRZED** (`/tmp/pr/probe-uwagi.mjs`, `probe-uwagi2.mjs`): A — rzut 74,703 > warp 66 przy
+6 lądach, ale przy 3 lądach warp **66 → wybrany bez żadnego stworu na stole**, a z flierem
+**66 — identycznie jak bez niego** (brak wymiaru celu; warp dawał płaskie +5 za fakt triggera
+i nie porównywał się z rzutem normalnym); B — oferta triggera `untap_permanent` miała
+`friendly=false` dla WSZYSTKICH celów, więc wycena szła gałęzią wrogą: `foeLand 58` >
+`foeCre 35` > `myLand −20` > `myCre −29` → bot odkręcał LĄD PRZECIWNIKA;
+C — obie oferty Station (`tapOtherCreatureId` 2/2 i 4/4) miały **identyczną notę 9** → wygrywała
+pierwsza z enumeracji (2/2), potem 4/4: 12 charge zamiast 10 i zbędnie tapnięty słabszy stwór;
+D — silnik liczył wszystko dobrze (`subtypes ['Giant','Skeleton']`, `abilitiesStripped: true`,
+migawka podtypów), ale kafel nie czytał ani utraty zdolności, ani dodanych podtypów →
+**badge'y = []**.
+
+**Zmiany (generyczne, ADR 0002; L41/L48):** `warpEtbHostPayoff` (suma `counterHostValue` top-`count`
+moich nie-tokenowych stworów + premie ewazyjne; brak gospodarza → `warpFutileEtbPenalty`, oferta
+rzutu normalnego → `warpRedundantPenalty`; próg `warpEtbHostMin 20` kalibrowany pomiarem:
+token 18 / vanilla 16 vs 3/3 24, trample 28, flier+zablokowany 20); `untap_permanent` wchodzi do
+PRZYJAZNYCH efektów triggera (`effect-intent.js`) i dostaje wspólną miarę `untapTargetValue`
+w trzech ścieżkach (czar / aktywacja / trigger — dotąd dwie kopie i luka); Station liczy
+`progress = min(moc, progu − charge)`, premię za domknięcie progu i karę za nadmiar (+ etykieta
+śladu `+station:<id>`, M195/B); PlayerView niesie `subtypesBeforeStrip`, a kafel badge'y
+`bez zdolności` i `typ: +Skeleton`.
+
+**Wartości PO:** A bez gospodarza warp = −29 (pass), z 3/3 = 85, dwa gospodary = 109, przy 6
+lądach rzut 71,1 bije warp; B wszystkie oferty `friendly=true`, wybór własnego tapniętego stwora
+(14 > −4 > −25); C charge 6 → tap 4/4, charge 8 → tap 2/2 (minimalny nadmiar), charge 9 → pass,
+charge 5 → tap 6/6 (domyka próg); D badge `["bez zdolności","typ: +Skeleton","choroba"]`
+w pełnym torze silnika.
+
+Test `test/audyt-pmssb41-uwagi-testow.test.js` (25 pinów; mutacje m1–m9 RED 5/2/1/1/1/1/3/1/1).
+Świadome przesunięcia pinów sąsiadów: PMSSB-35 D1 (koszt warp mierzony przy pokrętłach ×0 +
+osobny pin nowego zachowania) oraz M277 (dwa nowe pola na jawnej liście kontraktu widoku).
+Raport: `docs/PMSSB.md` §PMSSB-41. Golden-master: dryf 2/6 partii (te z `untap_permanent`:
+tenth-district-veteran, midnight-guard; +107/+80 `scoreSum`) — regeneracja świadoma.
+Tie-audit PO: 12 612 decyzji, 26,9% remisów (9,9% akcyjnych), GROZY 13. Mirror-eval nowy kod vs
+kopia `5cc7058`: **30:18 (0,6250)** na 48 meczach — wyraźny sygnał dodatni.
+
+**Bramka końcowa:** fast **7474/7474** EXIT 0, `node tools/run-tests.mjs all` **7745/7745** EXIT 0,
+build **70 modułów / 4790,6 kB**.

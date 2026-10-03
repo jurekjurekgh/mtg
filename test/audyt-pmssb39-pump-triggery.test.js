@@ -82,7 +82,11 @@ test('A4 wróg bez latania/zasięgu nie zablokuje latającego: pełne obrażenia
 
 test('A5 Kulrath Mystic: czar o MV ≥ 4 + blok 3/3, który pump +2/+0 przełamuje → trik (≈ +6)', () => {
   const s = scena({ host: 'kulrath-mystic', foe: { patch: { power: 3, toughness: 3 } }, hand: 'hill-giant' });
-  const z = zysk(s, 'cast_permanent(h0)');
+  // PMSSB-40: rider `vigilance` (nietapnięte ciało po ataku) to OSOBNA pętla
+  // (nowy wymiar `payoffUntappedBodyWeight`), więc ten pin zeruje tamto pokrętło
+  // i mierzy dalej sam trik; wartość z riderem pinuje
+  // `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (C1: 7 + 4 = 11).
+  const z = zysk(s, 'cast_permanent(h0)', { payoffUntappedBodyWeight: 0 });
   assert.ok(z > 4 && z < 9, `zysk ${z}`);
 });
 

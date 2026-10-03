@@ -135,6 +135,13 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // O1 (2026-10-01): to samo pole co wyżej, ale tylko dla zakazu z INNEGO
     // permanentu/czaru (badge) — dowód: test/o1-badge-zakazu-ataku-zrodlo.test.js.
     'cantAttackExternal',
+    // PMSSB-41/D (2026-10-03b, zgłoszenie właściciela: Xu-Ifit): widok dokłada
+    // `abilitiesStripped` (utrata zdolności, CR 613.1f) i — obok niego —
+    // migawkę `subtypesBeforeStrip` TYLKO permanentowi po rozstrzygnięciu
+    // „has no abilities / is a Skeleton in addition". Konstrukcyjnie:
+    // test/audyt-pmssb41-uwagi-testow (D1: `playerView` niesie oba pola,
+    // D2–D3: kafel nazywa skutek badge'ami „bez zdolności" i „typ: +Skeleton").
+    'abilitiesStripped', 'subtypesBeforeStrip',
     'cantBeBlocked', 'cantBlock', 'cantBlockPrinted', 'cantBeRegeneratedThisTurn',
     'grantedKeywords', 'grantedPower', 'grantedToughness', 'lostKeywordsUntilEOT',
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): widok dokłada
