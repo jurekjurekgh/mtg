@@ -15084,3 +15084,40 @@ bez strat, bo każdy zielony commit był wypchnięty.
 
 **Bramka końcowa:** `npm test` **7432/7432** EXIT 0, `npm run test:all`
 **7703/7703** EXIT 0, build **70 modułów / 4776,0 kB**.
+
+## 2026-10-03a — PMSSB-40: payoffy rzutu II — efekty skierowane i wymiar nietapnięcia (PR #151)
+
+Polecenie właściciela „kontynuuj z PMSSB" (bez wskazania rodziny — wybór wg granic
+poprzedniej pętli i inwentarza katalogu). Plan: `docs/plans/PLAN_2026-10-03a-pmssb40-skierowane-nietapniecie.md`.
+
+Wejście z granic PMSSB-39 (efekty skierowane + vigilance Kulratha bez wyceny). Inwentarz
+triggerów rzutu (sonda `/tmp/pr/inwentarz-pmssb40.mjs`): 18 nóg / 14 kart, poza modelem trzy —
+`cant_block`, `damage`, `untap_permanent`. Kontrola zasięgu: tylko 2 karty mają trigger rzutu
+z `requiresTarget` (molten-nursery, goblin-battle-jester).
+
+**Pomiar PRZED** (`/tmp/pr/probe-pmssb40-przed.mjs`): Molten Nursery → Δ 0 (bramka `requiresTarget`
+pomijała cały trigger ORAZ pętla szła po samych stworach — to enchantment), Goblin Battle Jester → 0,
+Kulrath Mystic → 7 (sam pump), Steelfin Whale → 0 (noga spoza zbioru payoffów).
+
+**Zmiany (generyczne, ADR 0002):** bramka `requiresTarget` przekazuje wymóg celu do miary zamiast
+pomijać trigger; nowe nogi `damage` (min(3N,15) — ta sama liczba co ETB-obrażenia), `cant_block`
+(miara ścieżki rzutu `cantBlockRemovalValue` w oknie ataku; płaska 2 z tabeli ETB była martwa),
+`untap_permanent` nosiciela (tylko gdy tapnięty); rider `vigilance` w `temporaryPumpPayoff` przez
+świeżość słów (M431) + symulowany widok dla polityki ataku; wspólna miara `untappedBodyDefense`
+(reuse drabiny tapnięcia CIAŁA z PMSSB-32) i pokrętło `payoffUntappedBodyWeight` (×0 = stan sprzed
+zmiany, M429). PO: S1 1,35; S2 2; S3 11 (7 + 4); S4 3,6.
+
+Test `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (17 pinów, 11 czerwonych PRZED kodem;
+mutacje 6/6 RED). Pin PMSSB-39 A5 przesunięty o nowy wymiar (świadomie, z uzasadnieniem).
+Raport: `docs/PMSSB.md` §PMSSB-40. Golden-master bez zmian; tie-audit 26,9% / 9,9% realnych,
+GROZY 13; mirror-eval 24:24 (0,5000; brak sygnału — wynik B6).
+
+**Zdarzenie środowiska (trzecie w tym tygodniu):** sandbox ponownie odtworzył workspace ze świeżego
+klona — lokalny HEAD wrócił do bazy `dcbc99f`, a commity poprzedniej sesji (`2ce8b6e`…`23395af`)
+zniknęły lokalnie, choć pliki (i origin + PR #151) były nienaruszone. Odzysk bez `--hard`:
+`git ls-remote` → `git fetch origin arena/01a0fe59-mtg` → `git reset --mixed FETCH_HEAD`
+(ENVIRONMENT §2) — praca PMSSB-40 z drzewa roboczego ocalała, commity poprzedniej sesji wróciły
+z origin. Wniosek bez zmian: każdy zielony commit wypychać od razu.
+
+**Bramka końcowa:** `npm test` **7449/7449** EXIT 0, `node tools/run-tests.mjs all` **((ALL))**
+EXIT 0, build **70 modułów / 4781,7 kB**.
