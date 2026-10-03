@@ -70,7 +70,7 @@ tie-audit PO, `npm test`, `run-tests all`, build. Raport w `docs/PMSSB.md` + rej
   (B6: karty rodziny nie leżą w taliach wzorcowych); Żywy Tester = właściciel.
 - [x] **6. Raport + rejestr** — `docs/PMSSB.md` §PMSSB-40 + wiersz rejestru (DONE 2026-10-03a);
   wpis w `docs/PROJECT_HISTORY.md`.
-- [x] **7. Bramy + push** — `npm test` **7449/7449**, `node tools/run-tests.mjs all` ((ALL)),
+- [x] **7. Bramy + push** — `npm test` **7449/7449**, `node tools/run-tests.mjs all` **7720/7720**,
   build 70 modułów / 4781,7 kB; commity wypchnięte po każdym zielonym kroku.
 
 ## Findingi z audytu macierzy (etap 2)

@@ -2204,7 +2204,7 @@ przewiduje rzutu czaru PRZED deklaracją, żeby „odblokować" atakującego z v
 i `buff_attacking_creatures` nadal bez wyceny; (5) `untap` cudzego permanentu (midnight-guard,
 thistledown-players, nanoform-sentinel) poza listą zdarzeń payoffu — wymaga wymiaru „odkręć cudze".
 
-**Bramy:** `npm test` **7449/7449** EXIT 0 · `node tools/run-tests.mjs all` **((ALL))** EXIT 0 · build **70 modułów / 4781,7 kB**.
+**Bramy:** `npm test` **7449/7449** EXIT 0 · `node tools/run-tests.mjs all` ****7720/7720**** EXIT 0 · build **70 modułów / 4781,7 kB**.
 
 **Status:** rodzina ZAMKNIĘTA. Kolejka następnej pętli: koszt okazji drugiego trybu źródła
 (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden), dynamiczne X, `buff_attacking_creatures`,

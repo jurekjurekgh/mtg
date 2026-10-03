@@ -15119,5 +15119,5 @@ zniknęły lokalnie, choć pliki (i origin + PR #151) były nienaruszone. Odzysk
 (ENVIRONMENT §2) — praca PMSSB-40 z drzewa roboczego ocalała, commity poprzedniej sesji wróciły
 z origin. Wniosek bez zmian: każdy zielony commit wypychać od razu.
 
-**Bramka końcowa:** `npm test` **7449/7449** EXIT 0, `node tools/run-tests.mjs all` **((ALL))**
+**Bramka końcowa:** `npm test` **7449/7449** EXIT 0, `node tools/run-tests.mjs all` ****7720/7720****
 EXIT 0, build **70 modułów / 4781,7 kB**.
