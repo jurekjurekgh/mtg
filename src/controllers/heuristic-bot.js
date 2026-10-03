@@ -5910,7 +5910,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!Number.isFinite(leg.power ?? 0) || !Number.isFinite(leg.toughness ?? 0)) return 0;
     const delta = { power: leg.power ?? 0, toughness: leg.toughness ?? 0 };
     if (!(delta.power > 0 || delta.toughness > 0)) return 0;
+    // PMSSB-40 (F3, L41): rider NOWYCH słów-kluczowych (świeżość M431 —
+    // Kulrath: vigilance) wchodzi do symulowanego nosiciela, żeby TA SAMA
+    // polityka ataku (`attackIntendsCreature`) widziała obniżony koszt
+    // tapnięcia (CR 702.20b), a wartość obronna ciała, które po ataku zostaje
+    // nietapnięte, jest doliczana do wyniku okna ataku.
+    const freshKeywords = (leg.keywords ?? []).filter((kw) => !hasKeyword(host, kw));
+    const buffed = (base) => ({
+      ...base,
+      power: (base.power ?? 0) + delta.power,
+      toughness: (base.toughness ?? 0) + delta.toughness,
+      keywords: [...(base.keywords ?? []), ...freshKeywords],
+    });
+    const buffedView = {
+      ...view,
+      zones: {
+        ...view.zones,
+        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === host.id ? buffed(o) : o)),
+      },
+    };
+    const vigilanceRider = freshKeywords.includes('vigilance') ? untappedBodyDefense(view, host) : 0;
     if (combatTrickWindow(view, host)) {
+      // W oknie walki grant vigilance jest jałowy (atakujący już tapnięty —
+      // CR 702.20 nie odkręca), więc rider NIE wchodzi do tej gałęzi.
       return pumpChangesOutcome(view, host, delta) ? P.tempPumpTrickValue + (host.power ?? 0) : 0;
     }
     if (!(myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(host))) return 0;
@@ -5918,20 +5940,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // tak (ta sama polityka ataku na widoku z podbitym nosicielem), pump
     // przełamuje blok z definicji (`flips`).
     const intendsNow = attackIntendsCreature(view, host.id);
-    const enablesAttack = !intendsNow && attackIntendsCreature({
-      ...view,
-      zones: {
-        ...view.zones,
-        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === host.id
-          ? { ...o, power: (o.power ?? 0) + delta.power, toughness: (o.toughness ?? 0) + delta.toughness } : o)),
-      },
-    }, host.id);
+    const enablesAttack = !intendsNow && attackIntendsCreature(buffedView, host.id);
     if (!intendsNow && !enablesAttack) return 0;
     const flies = (host.keywords ?? []).includes('flying');
     const blockers = enemyCreatures(view).filter((b) => !b.tapped && !b.cantBlock
       && (!flies || (b.keywords ?? []).some((k) => k === 'flying' || k === 'reach')));
     const face = P.tempPumpFaceDamageValue * Math.max(0, delta.power);
-    if (blockers.length === 0) return face;
+    if (blockers.length === 0) return face + vigilanceRider;
     const before = duelStats(host, {});
     const after = duelStats(host, delta);
     const flips = enablesAttack || blockers.some((b) => {
@@ -5939,7 +5954,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return JSON.stringify(simulateCombat(before, [bs])) !== JSON.stringify(simulateCombat(after, [bs]));
     });
     const odds = P.tempPumpBlockOdds;
-    return odds * (flips ? P.tempPumpTrickValue + (host.power ?? 0) : 0) + (1 - odds) * face;
+    return odds * (flips ? P.tempPumpTrickValue + (host.power ?? 0) : 0) + (1 - odds) * face + vigilanceRider;
   }
   const PAYOFF_TEMP_PUMP_EFFECTS = new Set(['pump', 'buff_creature_until_end_of_turn']);
   /** Warunki triggera rzutu, które bot umie ocenić z karty rzucanej (PMSSB-39). */
@@ -5953,16 +5968,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return null;
   }
   const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
+  /**
+   * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
+   * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
+   * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
+   * ataku; poza oknem walki (druga główna, tura wroga) = 0, bo nic nie kupuje.
+   * Cel wybierze dopiero decyzja triggera, więc bierzemy NAJLEPSZEGO blokera
+   * wroga (best-of — jak best-of-targets przy rzucie z ręki).
+   */
+  function cantBlockPayoffValue(view) {
+    const combat = view.combat ?? null;
+    const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
+      && (combat.attackers ?? []).length > 0;
+    const preAttackWindow = !declaredAttack && myTurn(view)
+      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
+      && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
+    if (!declaredAttack && !preAttackWindow) return 0;
+    const ids = declaredAttack
+      ? (combat.attackers ?? [])
+      : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
+    let best = 0;
+    for (const blocker of enemyCreatures(view)) {
+      if (blocker.tapped || blocker.cantBlock) continue;
+      const value = cantBlockRemovalValue(view, blocker, ids);
+      if (value != null && value > best) best = value;
+    }
+    return best;
+  }
+  /**
+   * PMSSB-40 (F3/F4): wartość NIETAPNIĘTEGO ciała w obronie — jedna miara dla
+   * ridera `vigilance` (Kulrath Mystic) i untapu nosiciela (Steelfin Whale).
+   * Reuse drabiny tapnięcia CIAŁA z PMSSB-32 (`manaTapBody*`): w obronie liczy
+   * się wytrzymałość (moc = wartość ataku, patrz `tapBodyCost` w cudzej turze).
+   * Nowy wymiar jest DOPŁATĄ sterowaną pokrętłem (`payoffUntappedBodyWeight`),
+   * więc ×0 odtwarza stan sprzed zmiany (anty-over-fix M429).
+   */
+  function untappedBodyDefense(view, host) {
+    void view;
+    const perStat = P.payoffUntappedBodyWeight * P.manaTapBodyPerStat;
+    return Math.min(P.manaTapBodyMax, Math.max(0, host?.toughness ?? 0) * perStat);
+  }
   let payoffProbeDepth = 0;
   function boardCastPayoffValue(view, cmd, castDef, kind) {
     if (!castDef || !(P.boardPayoffWeight > 0) || payoffProbeDepth > 0) return 0;
     const types = castDef.types ?? [];
     const spent = reservedManaOf(view, cmd);
     let total = 0;
-    for (const host of myCreatures(view)) {
+    // PMSSB-40 (F1): nosicielem payoffu jest KAŻDY mój permanent — Molten
+    // Nursery (trigger rzutu bezbarwnego czaru) jest ENCHANTMENTEM, więc pętla
+    // po samych stworach nigdy go nie widziała (sonda S1: Δ=0; druga przyczyna
+    // obok bramki `requiresTarget`). Nogi creature-only niżej są bramkowane
+    // `hostIsCreature` (L41: ciało/atak liczy się wyłącznie dla stworów).
+    for (const host of (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId)) {
       const hostDef = host.cardId ? cardDef(host.cardId) : undefined;
+      const hostIsCreature = host.kind === 'creature';
       for (const ability of hostDef?.abilities ?? []) {
-        if (ability?.type !== 'triggered' || ability.trigger?.requiresTarget) continue;
+        // PMSSB-40: trigger z WYMOGIEM CELU (`requiresTarget`) nie jest już
+        // pomijany w całości — to była ŚLEPA PLAKA: Molten Nursery (obrażenia
+        // na dowolny cel) i Goblin Battle Jester („cel: stwór nie może
+        // blokować") mają DOKŁADNIE ten kształt, a payoff wynosił 0 (sonda
+        // S1/S2). Wymóg celu jedzie teraz do miary (`req` niżej), jak
+        // w `etbEnterBonusValue`; brak legalnego celu = 0, nie kara.
+        if (ability?.type !== 'triggered') continue;
+        const req = ability.trigger?.requiresTarget ?? null;
         // PMSSB-39: warunek triggera rzutu (MV ≥ N, kolor, bezbarwny) — z karty
         // rzucanej; nieznany warunek = poza modelem (jak dotąd każdy).
         if (castTriggerConditionHolds(ability.trigger?.condition, castDef) !== true) continue;
@@ -5995,14 +6063,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (cond.manaSpentBelow != null && !(spent < cond.manaSpentBelow)) continue;
             if (cond.manaSpentAtLeast != null && !(spent >= cond.manaSpentAtLeast)) continue;
           }
-          if (leg.type === 'add_counter') {
+          if (leg.type === 'add_counter' && hostIsCreature) {
             benefit += counterHostValue(view, host, leg.counter ?? '+1/+1', leg.amount ?? 1);
-          } else if (leg.type === 'sacrifice_permanent' && !leg.targetIndex) {
+          } else if (leg.type === 'sacrifice_permanent' && !leg.targetIndex && hostIsCreature) {
             benefit -= bodyWorth(host);
-          } else if (PAYOFF_TEMP_PUMP_EFFECTS.has(leg.type)) {
+          } else if (PAYOFF_TEMP_PUMP_EFFECTS.has(leg.type) && hostIsCreature) {
             benefit += temporaryPumpPayoff(view, host, leg);
+          } else if (leg.type === 'cant_block' && req) {
+            // PMSSB-40 (F2): skierowane „nie może blokować" — MIARA ŚCIEŻKI
+            // RZUTU (`cantBlockRemovalValue`, okno „zadeklarowany atak ALBO
+            // przed atakiem", M221/A + Batch60), a nie płaska 2 z tabeli ETB:
+            // tamten wpis nie ma w katalogu ŻADNEGO konsumenta (L5 — żadna
+            // karta z tym typem nie ma triggera ETB/attacks/dies), więc
+            // jedynym realnym nośnikiem tej wartości jest ten payoff.
+            benefit += cantBlockPayoffValue(view);
+          } else if (leg.type === 'untap_permanent' && !req && leg.targetIndex == null) {
+            // PMSSB-40 (F4, Steelfin Whale): untap NOSICIELA (deskryptor bez
+            // celu) przywraca ciało do obrony/ataku — wartość istnieje tylko,
+            // gdy nosiciel jest tapnięty (inaczej no-op = 0) i tylko dla
+            // stworu (untap nie-stwora nic nie „przywraca do walki").
+            if (hostIsCreature && host.tapped) benefit += untappedBodyDefense(view, host);
           } else if (PAYOFF_TABLE_EFFECTS.has(leg.type)) {
-            benefit += ETB_EFFECT_BONUS[leg.type](leg, view, null, null);
+            benefit += ETB_EFFECT_BONUS[leg.type](leg, view, req, null);
+          } else if (ETB_EFFECT_BONUS[leg.type] && req) {
+            // PMSSB-40 (F1, Molten Nursery): efekt SKIEROWANY poza zbiorem
+            // PAYOFF_TABLE_EFFECTS — wartość z tej samej tabeli, z realnym
+            // wymogiem celu (bez wymogu ten wariant nie istnieje).
+            benefit += ETB_EFFECT_BONUS[leg.type](leg, view, req, null);
           } else { modeled = false; break; }
         }
         if (!modeled || benefit <= 0) continue;

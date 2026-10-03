@@ -230,6 +230,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'tempPumpTrickValue',          // wartość pumpu, który zmienia wynik walki (skala tricku z czaru)
   'tempPumpFaceDamageValue',     // za punkt mocy pumpu przy niezablokowanym ataku (skala drainu ETB)
   'tempPumpBlockOdds',           // szansa, że wróg zablokuje atakującego, gdy ma do tego blokera
+  // PMSSB-40: wymiar NIETAPNIĘCIA przy payoffach rzutu — rider `vigilance`
+  // (Kulrath Mystic) i untap nosiciela (Steelfin Whale). Jedna miara
+  // `untappedBodyDefense` = waga × drabina tapnięcia CIAŁA (PMSSB-32:
+  // wytrzymałość = wartość obronna), więc ×0 odtwarza stan sprzed zmiany.
+  'payoffUntappedBodyWeight',    // waga wartości nietapniętego ciała w obronie przy payoffie rzutu
   // PMSSB-37/C: zapłata {N} triggera vs inny rzut tej tury (Oreplate Pangolin).
   'optionalPayBlockedCastMin',   // próg wyniku rzutu, który bot realnie chce wykonać (zablokowany zapłatą)
   'optionalPayCastScoreWeight',  // zysk triggera musi przebić tę wagę × wynik zablokowanego rzutu
@@ -648,6 +653,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   tempPumpTrickValue: 18,
   tempPumpFaceDamageValue: 4,
   tempPumpBlockOdds: 0.5,
+  payoffUntappedBodyWeight: 1,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,
   libraryDeckOutPenalty: 120,
