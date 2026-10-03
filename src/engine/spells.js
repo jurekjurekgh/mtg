@@ -2468,36 +2468,36 @@ export function dividedDamageDivisions(state, playerId, object) {
     if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
     return 2; // planeswalker
   };
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
-  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
-  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
-  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
-  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
-  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
-  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
-  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
-  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
-  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
-  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
-  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
-  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
-  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
-  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
+  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150; korekta w audycie PR #153,
+  // F2): `sort + slice(0, CAP)` odcinało gracza-wroga (rank=1) przy 8+
+  // wrogich stworach (rank=0), więc Fiery Justice nie mogła dobić przeciwnika
+  // przy szerokim stole. Rezerwacja reprezentanta każdej nie-pustej klasy
+  // celów (poza najniższą — stwory wroga) obowiązuje jednak TYLKO wtedy, gdy
+  // pula jest faktycznie przycinana: bez cięcia zmiana kolejności psuła
+  // kontrakt docblocka („najpierw stwory przeciwników, potem gracze…”), a
+  // pierwsza oferta przestawiała się z celu-stwora na gracza. Przy cięciu
+  // odpada najniżej uprzywilejowany kandydat od KOŃCA listy ranków, z
+  // pominięciem reprezentantów — gracz-wróg wchodzi na swoją pozycję ranku,
+  // a stwory wroga zachowują przód puli. Kształt generyczny (bez nazw kart,
+  // ADR 0002); self (rank=3) bez rezerwacji — samouszkodzenie marginalne
+  // (ADR 0022 §4).
   const byRank = [...candidates].sort((a, b) => rank(a) - rank(b));
-  const pool = [];
-  const included = new Set();
-  const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
-  for (const cls of reservedClasses) {
-    const rep = byRank.find((id) => rank(id) === cls && !included.has(id));
-    if (rep) { pool.push(rep); included.add(rep); }
-  }
-  for (const id of byRank) {
-    if (pool.length >= DIVIDED_POOL_CAP) break;
-    if (included.has(id)) continue;
-    pool.push(id); included.add(id);
+  let pool = byRank;
+  if (byRank.length > DIVIDED_POOL_CAP) {
+    const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
+    const reserved = new Set();
+    for (const cls of reservedClasses) {
+      const rep = byRank.find((id) => rank(id) === cls);
+      if (rep) reserved.add(rep);
+    }
+    let toDrop = byRank.length - DIVIDED_POOL_CAP;
+    const kept = [];
+    for (let i = byRank.length - 1; i >= 0; i -= 1) {
+      const id = byRank[i];
+      if (toDrop > 0 && !reserved.has(id)) { toDrop -= 1; continue; }
+      kept.push(id);
+    }
+    pool = kept.reverse();
   }
   const total = divided.total;
   const out = [];
