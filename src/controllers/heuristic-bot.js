@@ -1,5 +1,5 @@
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
-import { basicLandTypeCount, isPlaneswalker } from '../engine/permanents.js';
+import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
@@ -650,8 +650,24 @@ function pumpImprovesOutcome(view, recipient, pending, delta) {
   return better && !worse;
 }
 
+/**
+ * PMSSB-43/A (pętla jakości 2026-10-03d): liczba RÓŻNYCH typów kart we WSZYSTKICH
+ * grobach, liczona z WIDOKU (ADR 0017). Ta sama reguła co silnik
+ * (`permanents.js.allGraveyardsCardTypeCount`, CR 205.3m — Tarmogoyf/Altar):
+ * karty (nie-tokeny — name=undefined oznacza kartę), po typach ∩ CARD_TYPES
+ * importowanym z permanents.js (O-2: jedno źródło prawdy dla listy typów kart).
+ */
+function cardTypesInAllGraveyardsFromView(view) {
+  const present = new Set();
+  for (const o of (view?.zones?.graveyard ?? [])) {
+    if (!o || o.name != null) continue; // token (name ustawione) nie jest kartą
+    for (const t of (o.types ?? [])) if (CARD_TYPES.includes(t)) present.add(t);
+  }
+  return present.size;
+}
+
 /** Rozmiar pumpu wg deskryptora (dynamiczne X z widoku — ADR 0017). */
-function pumpDelta(view, effect) {
+function pumpDelta(view, effect, source = null) {
   if (effect.type === 'pump_by_creature_count') {
     const n = (view.zones.battlefield ?? [])
       .filter((o) => o.controllerId === view.playerId && o.kind === 'creature').length
@@ -678,7 +694,21 @@ function pumpDelta(view, effect) {
       .filter((o) => o.controllerId === view.playerId && (o.subtypes ?? []).includes('Gate')).length;
     return { power: n, toughness: n };
   }
-  return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
+  // PMSSB-43/A: dynamiczne deskryptory P/T pomp do końca tury rozwiązujemy z
+  // widoku albo z nosiciela (host/source). Zero wiedzy o konkretnej karcie
+  // (ADR 0002): rozpoznawanie po WARTOŚCI deskryptora, nie po nazwie karty.
+  // Nieobsłużony deskryptor (liczba albo nieznany łańcuch) → 0 (nie gubi,
+  // nie psuje, tak jak dotąd).
+  const resolveDynamic = (v) => {
+    if (typeof v === 'number') return v;
+    if (v === 'card_types_in_all_graveyards') return cardTypesInAllGraveyardsFromView(view);
+    if (v === 'source_power') return source?.power ?? 0;
+    if (v === 'oil_counters') return source?.counters?.oil ?? 0;
+    // card_types_in_all_graveyards_plus_1 (Tarmogoyf CDA) w pumpach do końca
+    // tury nie występuje w katalogu; gdyby wystąpił — łatwo dodać w tym miejscu.
+    return 0;
+  };
+  return { power: resolveDynamic(effect.power), toughness: resolveDynamic(effect.toughness) };
 }
 
 /**
@@ -1174,12 +1204,12 @@ export function effectiveTypesOf(viewObject, printedDef) {
  * efekt, tylko ze znakiem minus (M202/G: debuff to efekt WROGI, nie mniejszy
  * przyjazny).
  */
-export function temporaryPumpOf(effect, view = null) {
+export function temporaryPumpOf(effect, view = null, source = null) {
   if (!TEMPORARY_PUMP_EFFECTS.has(effect?.type)) return null;
   // Liczby bierze `pumpDelta` — JEDNO źródło prawdy dla P/T efektów pump
-  // (X = liczba stworów/bram liczy się z widoku, nie z deskryptora).
-  if (view?.zones) return pumpDelta(view, effect);
-  return { power: effect.power ?? 0, toughness: effect.toughness ?? 0 };
+  // (X = liczba stworów/bram/dynamicznych deskryptorów liczy się z widoku).
+  if (view?.zones) return pumpDelta(view, effect, source);
+  return { power: typeof effect.power === 'number' ? effect.power : 0, toughness: typeof effect.toughness === 'number' ? effect.toughness : 0 };
 }
 
 /**
@@ -5938,20 +5968,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    skala drainu 4/pkt jak w tabeli ETB). Bez możliwego blokera: pełne
    *    obrażenia w twarz;
    *  - inne okna (druga główna, tura wroga bez walki, koniec tury): 0.
-   * Dynamiczne X (np. „source_power”) i efekty skierowane (`targetIndex`) są
-   * poza modelem (0), tak jak dotąd.
+   * Dynamiczne X rozwiązywane są z widoku (PMSSB-43/A) — karta może użyć
+   * deskryptora `card_types_in_all_graveyards`, `source_power` lub `oil_counters`,
+   * a bot liczy te wartości tak samo jak silnik (ADR 0002/0017). Efekty
+   * skierowane (`targetIndex` inny niż host) pozostają poza modelem (0) —
+   * nie ma wspieranej karty tego kształtu.
    */
   function temporaryPumpPayoff(view, host, leg) {
-    if (leg.targetIndex != null || leg.type === 'buff_attacking_creatures') return 0;
-    if (!Number.isFinite(leg.power ?? 0) || !Number.isFinite(leg.toughness ?? 0)) return 0;
-    const delta = { power: leg.power ?? 0, toughness: leg.toughness ?? 0 };
+    // PMSSB-43/A: pompy SKIEROWANE (targetIndex inny niż host) wciąż poza
+    // modelem — nie ma wspieranej karty tego kształtu, bez kodu na zapas.
+    if (leg.targetIndex != null) return 0;
+    // PMSSB-43/A: `buff_attacking_creatures` (np. Thunderstaff) działa na
+    // ATAKUJĄCYCH (zbiór), a nie na pojedynczego hosta. Odbiorcą symulacji
+    // jest nasz atakujący (jeśli jakikolwiek istnieje w tej chwili oceny) —
+    // bez atakującego efekt jest jałowy w tej chwili (0).
+    let recipient = host;
+    if (leg.type === 'buff_attacking_creatures') {
+      const attackerId = (view.combat?.attackers ?? []).find((id) => objectOnBoard(view, id)?.controllerId === view.playerId);
+      if (!attackerId) return 0;
+      recipient = objectOnBoard(view, attackerId);
+      if (!recipient) return 0;
+    }
+    // Dynamiczne deskryptory rozwiązuje pumpDelta z hostem jako source.
+    const delta = pumpDelta(view, leg, host);
+    if (!(Number.isFinite(delta.power) && Number.isFinite(delta.toughness))) return 0;
     if (!(delta.power > 0 || delta.toughness > 0)) return 0;
     // PMSSB-40 (F3, L41): rider NOWYCH słów-kluczowych (świeżość M431 —
     // Kulrath: vigilance) wchodzi do symulowanego nosiciela, żeby TA SAMA
     // polityka ataku (`attackIntendsCreature`) widziała obniżony koszt
     // tapnięcia (CR 702.20b), a wartość obronna ciała, które po ataku zostaje
     // nietapnięte, jest doliczana do wyniku okna ataku.
-    const freshKeywords = (leg.keywords ?? []).filter((kw) => !hasKeyword(host, kw));
+    const freshKeywords = (leg.keywords ?? []).filter((kw) => !hasKeyword(recipient, kw));
     const buffed = (base) => ({
       ...base,
       power: (base.power ?? 0) + delta.power,
@@ -5962,29 +6009,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ...view,
       zones: {
         ...view.zones,
-        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === host.id ? buffed(o) : o)),
+        battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === recipient.id ? buffed(o) : o)),
       },
     };
-    const vigilanceRider = freshKeywords.includes('vigilance') ? untappedBodyDefense(view, host) : 0;
-    if (combatTrickWindow(view, host)) {
+    const vigilanceRider = freshKeywords.includes('vigilance') ? untappedBodyDefense(view, recipient) : 0;
+    if (combatTrickWindow(view, recipient)) {
       // W oknie walki grant vigilance jest jałowy (atakujący już tapnięty —
       // CR 702.20 nie odkręca), więc rider NIE wchodzi do tej gałęzi.
-      return pumpChangesOutcome(view, host, delta) ? P.tempPumpTrickValue + (host.power ?? 0) : 0;
+      return pumpChangesOutcome(view, recipient, delta) ? P.tempPumpTrickValue + (recipient.power ?? 0) : 0;
     }
-    if (!(myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(host))) return 0;
+    if (!(myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(recipient))) return 0;
     // Pump może też ODBLOKOWAĆ atak: gdy bez niego bot nie zaatakuje, a z nim
     // tak (ta sama polityka ataku na widoku z podbitym nosicielem), pump
     // przełamuje blok z definicji (`flips`).
-    const intendsNow = attackIntendsCreature(view, host.id);
-    const enablesAttack = !intendsNow && attackIntendsCreature(buffedView, host.id);
+    const intendsNow = attackIntendsCreature(view, recipient.id);
+    const enablesAttack = !intendsNow && attackIntendsCreature(buffedView, recipient.id);
     if (!intendsNow && !enablesAttack) return 0;
-    const flies = (host.keywords ?? []).includes('flying');
+    const flies = (recipient.keywords ?? []).includes('flying');
     const blockers = enemyCreatures(view).filter((b) => !b.tapped && !b.cantBlock
       && (!flies || (b.keywords ?? []).some((k) => k === 'flying' || k === 'reach')));
     const face = P.tempPumpFaceDamageValue * Math.max(0, delta.power);
     if (blockers.length === 0) return face + vigilanceRider;
-    const before = duelStats(host, {});
-    const after = duelStats(host, delta);
+    const before = duelStats(recipient, {});
+    const after = duelStats(recipient, delta);
     const flips = enablesAttack || blockers.some((b) => {
       const bs = duelStats(b, {});
       return JSON.stringify(simulateCombat(before, [bs])) !== JSON.stringify(simulateCombat(after, [bs]));
@@ -5992,7 +6039,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const odds = P.tempPumpBlockOdds;
     return odds * (flips ? P.tempPumpTrickValue + (host.power ?? 0) : 0) + (1 - odds) * face + vigilanceRider;
   }
-  const PAYOFF_TEMP_PUMP_EFFECTS = new Set(['pump', 'buff_creature_until_end_of_turn']);
+  const PAYOFF_TEMP_PUMP_EFFECTS = new Set(['pump', 'buff_creature_until_end_of_turn', 'buff_attacking_creatures']);
   /** Warunki triggera rzutu, które bot umie ocenić z karty rzucanej (PMSSB-39). */
   function castTriggerConditionHolds(cond, castDef) {
     if (!cond) return true;
