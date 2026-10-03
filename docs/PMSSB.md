@@ -2616,7 +2616,8 @@ S4 −29,000 (jałowy warp bez zmian), S5 85,000 (5 lądów bez dropu nie pokryw
 mutacje m1→W2/W4/W6/W9, m2→W2/W6, m3→W5, m4→W1/W3/W4/W5 (po przywróceniu
 zielone); regresja PMSSB-41 + PMSSB-35 50/50.
 
-**Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s) · build **70 modułów /
+**Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s) · brama PR
+`npm run test:all` **7793/7793** EXIT 0 (447,1 s) · build **70 modułów /
 4806,9 kB** · `bot-scoring-snapshot` 4/4 bez dryfu · `event-contract-audit`
 0 naruszeń.
 

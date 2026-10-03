@@ -87,6 +87,9 @@ to nie bug, to ta sama bramka kosztu, tylko scenariusz bez land dropu.
   build **70 modułów / 4806,9 kB**, `bot-scoring-snapshot` 4/4 bez dryfu,
   `event-contract-audit` 0 naruszeń, regresja skoncentrowana PMSSB-41 +
   PMSSB-35 **50/50**.
+- Brama PR `npm run test:all` na drzewie z dokumentacją (`7d7be5e`):
+  **7793/7793** EXIT 0 (**447,1 s**) — pełny zakres PR (baseline F6: 7784/7784,
+  +9 = piny W1–W9).
 - Mutacje (oczekiwane RED → po przywróceniu zielone):
   m1 (brak dopłaty drugiego ETB) → W2, W4, W6, W9; m2 (bramka bez land dropu) →
   W2, W6; m3 (bramka bez kolorów) → W5; m4 (dopłata bezwarunkowa) → W1, W3,

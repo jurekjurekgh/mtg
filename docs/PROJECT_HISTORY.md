@@ -15378,7 +15378,8 @@ build **70 modułów / 4792,5 kB**.
   bramka land dropu (W3), kolor (W5), pokrętło ×0 (W6), anty-over-fix
   (W7 redundancja, W8 jałowy warp) i brak podwójnego liczenia przy rzucie
   z ręki (W9). Mutacje m1–m4 → RED W2/W4/W6/W9, W2/W6, W5, W1/W3/W4/W5.
-- **Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s), build 70 modułów /
+- **Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s), brama PR
+  `npm run test:all` **7793/7793** EXIT 0 (447,1 s), build 70 modułów /
   4806,9 kB, `bot-scoring-snapshot` 4/4 bez dryfu, `event-contract-audit`
   0 naruszeń, regresja PMSSB-41 + PMSSB-35 50/50.
 - **Granica świadoma:** proxy czyta tylko widok (własne lądy + ląd z ręki);
