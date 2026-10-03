@@ -15121,3 +15121,50 @@ z origin. Wniosek bez zmian: każdy zielony commit wypychać od razu.
 
 **Bramka końcowa:** `npm test` **7449/7449** EXIT 0, `node tools/run-tests.mjs all` ****7720/7720****
 EXIT 0, build **70 modułów / 4781,7 kB**.
+
+## 2026-10-03b — PMSSB-41: cztery zgłoszenia właściciela z testów (warp, untap, Station, badge'y)
+
+Wejście: **cztery uwagi właściciela z gry** (po sesji PMSSB-40) — Weftblade Enhancer (warp bez
+sensu), Nanoform Sentinel (untap celu triggera w permanent przeciwnika), Wedgelight Rammer
+(kolejność tapowania do Station), Xu-Ifit Osteoharmonist (brak badge'ów po reanimacji). Tryb:
+pętla PMSSB (`docs/PMSSB.md`, procedura 0–7); zgłoszenie = dowód wejściowy. Plan:
+`docs/plans/PLAN_2026-10-03b-pmssb41-uwagi-testow.md`.
+
+**Pomiar PRZED** (`/tmp/pr/probe-uwagi.mjs`, `probe-uwagi2.mjs`): A — rzut 74,703 > warp 66 przy
+6 lądach, ale przy 3 lądach warp **66 → wybrany bez żadnego stworu na stole**, a z flierem
+**66 — identycznie jak bez niego** (brak wymiaru celu; warp dawał płaskie +5 za fakt triggera
+i nie porównywał się z rzutem normalnym); B — oferta triggera `untap_permanent` miała
+`friendly=false` dla WSZYSTKICH celów, więc wycena szła gałęzią wrogą: `foeLand 58` >
+`foeCre 35` > `myLand −20` > `myCre −29` → bot odkręcał LĄD PRZECIWNIKA;
+C — obie oferty Station (`tapOtherCreatureId` 2/2 i 4/4) miały **identyczną notę 9** → wygrywała
+pierwsza z enumeracji (2/2), potem 4/4: 12 charge zamiast 10 i zbędnie tapnięty słabszy stwór;
+D — silnik liczył wszystko dobrze (`subtypes ['Giant','Skeleton']`, `abilitiesStripped: true`,
+migawka podtypów), ale kafel nie czytał ani utraty zdolności, ani dodanych podtypów →
+**badge'y = []**.
+
+**Zmiany (generyczne, ADR 0002; L41/L48):** `warpEtbHostPayoff` (suma `counterHostValue` top-`count`
+moich nie-tokenowych stworów + premie ewazyjne; brak gospodarza → `warpFutileEtbPenalty`, oferta
+rzutu normalnego → `warpRedundantPenalty`; próg `warpEtbHostMin 20` kalibrowany pomiarem:
+token 18 / vanilla 16 vs 3/3 24, trample 28, flier+zablokowany 20); `untap_permanent` wchodzi do
+PRZYJAZNYCH efektów triggera (`effect-intent.js`) i dostaje wspólną miarę `untapTargetValue`
+w trzech ścieżkach (czar / aktywacja / trigger — dotąd dwie kopie i luka); Station liczy
+`progress = min(moc, progu − charge)`, premię za domknięcie progu i karę za nadmiar (+ etykieta
+śladu `+station:<id>`, M195/B); PlayerView niesie `subtypesBeforeStrip`, a kafel badge'y
+`bez zdolności` i `typ: +Skeleton`.
+
+**Wartości PO:** A bez gospodarza warp = −29 (pass), z 3/3 = 85, dwa gospodary = 109, przy 6
+lądach rzut 71,1 bije warp; B wszystkie oferty `friendly=true`, wybór własnego tapniętego stwora
+(14 > −4 > −25); C charge 6 → tap 4/4, charge 8 → tap 2/2 (minimalny nadmiar), charge 9 → pass,
+charge 5 → tap 6/6 (domyka próg); D badge `["bez zdolności","typ: +Skeleton","choroba"]`
+w pełnym torze silnika.
+
+Test `test/audyt-pmssb41-uwagi-testow.test.js` (25 pinów; mutacje m1–m9 RED 5/2/1/1/1/1/3/1/1).
+Świadome przesunięcia pinów sąsiadów: PMSSB-35 D1 (koszt warp mierzony przy pokrętłach ×0 +
+osobny pin nowego zachowania) oraz M277 (dwa nowe pola na jawnej liście kontraktu widoku).
+Raport: `docs/PMSSB.md` §PMSSB-41. Golden-master: dryf 2/6 partii (te z `untap_permanent`:
+tenth-district-veteran, midnight-guard; +107/+80 `scoreSum`) — regeneracja świadoma.
+Tie-audit PO: 12 612 decyzji, 26,9% remisów (9,9% akcyjnych), GROZY 13. Mirror-eval nowy kod vs
+kopia `5cc7058`: **30:18 (0,6250)** na 48 meczach — wyraźny sygnał dodatni.
+
+**Bramka końcowa:** fast **7474/7474** EXIT 0, `node tools/run-tests.mjs all` **7745/7745** EXIT 0,
+build **70 modułów / 4790,6 kB**.

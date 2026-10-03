@@ -78,6 +78,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
 | payoffy z efektem tymczasowym przy rzucie (prowess, Jeskai Devotee, Kulrath Mystic) | Jeskai Windscout, Jeskai Devotee, Kulrath Mystic | DONE (2026-10-02e) | §PMSSB-39 niżej; plan `PLAN_2026-10-02e-pmssb39-pump-triggery.md`; `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów, 6 czerwonych PRZED + 4 kontrole); `temporaryPumpPayoff` (okna walki/głównej 1 + polityka ataku), warunki triggera rzutu; 3 pokrętła `tempPumpTrickValue`/`tempPumpFaceDamageValue`/`tempPumpBlockOdds` |
 | payoffy rzutu II: efekty skierowane (`requiresTarget`) + wymiar nietapnięcia (Molten Nursery, Goblin Battle Jester, Steelfin Whale, rider vigilance Kulratha) | 4 karty (`molten-nursery`, `goblin-battle-jester`, `steelfin-whale`, `kulrath-mystic`) | DONE (2026-10-03a) | §PMSSB-40 niżej; plan `PLAN_2026-10-03a-pmssb40-skierowane-nietapniecie.md`; `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (17 pinów, 11 czerwonych PRZED kodem; 6/6 mutacji RED); bramka `requiresTarget` przestaje pomijać trigger (wymóg celu → miara), nogi `damage`/`cant_block`/`untap_permanent`, `cantBlockPayoffValue`, `untappedBodyDefense`; 1 pokrętło `payoffUntappedBodyWeight` |
+| zgłoszenia właściciela z testów: warp bez celu (Weftblade Enhancer), untap celu triggera (Nanoform Sentinel), kolejność tapowania do Station (Wedgelight Rammer), badge'y reanimacji (Xu-Ifit) | 4 karty | DONE (2026-10-03b) | §PMSSB-41 niżej; plan `PLAN_2026-10-03b-pmssb41-uwagi-testow.md`; `test/audyt-pmssb41-uwagi-testow.test.js` (25 pinów, mutacje m1–m9 RED 5/2/1/1/1/1/3/1/1); `untapTargetValue` (3 ścieżki, L41), `warpEtbHostPayoff`, progress/closes/overshoot Station, badge'y `bez zdolności`/`typ: +X`; 4 pokrętła `warpEtbHostMin`/`warpFutileEtbPenalty`/`warpRedundantPenalty`/`stationCloseBonus` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2209,3 +2210,96 @@ thistledown-players, nanoform-sentinel) poza listą zdarzeń payoffu — wymaga 
 **Status:** rodzina ZAMKNIĘTA. Kolejka następnej pętli: koszt okazji drugiego trybu źródła
 (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden), dynamiczne X, `buff_attacking_creatures`,
 untap cudzego permanentu, bankowanie many.
+
+## PMSSB-41 — zgłoszenia właściciela z testów: warp bez celu, untap celu triggera, kolejność Station, badge'y reanimacji (2026-10-03b)
+
+Wejście: **cztery uwagi właściciela z gry** (kanał czatu po sesji PMSSB-40; wzorzec
+PMSSB-31/PMSSB-36 — zgłoszenie jest dowodem wejściowym, nie tylko „bugiem do załatania”).
+Plan: `docs/plans/PLAN_2026-10-03b-pmssb41-uwagi-testow.md`. Zielone commity: plan `59f6821`,
+kod+test `8915d03`, golden-master `20969a3`, piny sąsiednich rodzin `b1df1f1`.
+
+**A. `weftblade-enhancer` — warp bez celu.** Karta 3/4 za {5}{W}, warp {2}{W}; ETB „+1/+1 na
+każde z **do dwóch** celowanych stworów” (`requiresTarget {creature, count 2, upTo}`). PRZED:
+gałąź `warp_card` dawała **płaskie +5** za sam fakt triggera i nie porównywała się z rzutem
+normalnym — A1 (6 lądów, brak stworów) rzut 74,703 > warp 66 (OK), ale A2 (3 lądy, brak
+stworów) **warp 66 → wybrany**, a A3 (3 lądy + flier) **66 — identycznie jak A2** (brak wymiaru
+„cel wart wzmocnienia”). Kryterium właściciela: warp ma sens TYLKO gdy (a) rzut normalny jest
+nieosiągalny (wszystkie nietapnięte źródła many) ORAZ (b) na stole jest stwór WART wzmocnienia
+(nie token, nie cannon fodder — np. flying/menace/landwalk).
+
+**B. `nanoform-sentinel` — untap w złą stronę.** Trigger `self_becomes_tapped` (raz na turę):
+„untap another target permanent”. PRZED: `triggerTargetEffectFriendly` nie znał
+`untap_permanent`, więc oferta każdego celu miała `friendly=false` i wycena szła gałęzią WROGĄ:
+`foeLand 58` > `foeCre 35` > `myLand −20` > `myCre −29` → **bot odkręcał LĄD PRZECIWNIKA**
+(dokładnie zgłoszenie). To domknięcie granicy (5) z PMSSB-40 („untap cudzego permanentu”).
+
+**C. `wedgelight-rammer` — kolejność tapowania do Station.** PRZED (charge 6, moje stwory 2/2
+i 4/4, główna 2): obie oferty `tapOtherCreatureId` miały **identyczną notę 9** (wycena brała
+`threshold − charge`, a nie moc tapowanego ciała), więc wygrywała PIERWSZA z enumeracji — 2/2,
+potem 4/4 → 12 charge zamiast 10 i zbędnie tapnięty stwór 2/2.
+
+**D. `xu-ifit-osteoharmonist` — brak badge'ów.** Silnik liczył wszystko poprawnie
+(`subtypes ['Giant','Skeleton']`, `abilitiesStripped: true`, migawka `['Giant']`, zdolności 0),
+ale kafel nie czytał ANI utraty zdolności, ANI dodanych podtypów → **badge'y = []** (klasa
+L1/ADR 0017: fakt publiczny bez reprezentacji w warstwie gracza).
+
+**Naprawy (generyczne, ADR 0002; reuse istniejących miar — L41/L48):**
+- **A:** `warpEtbHostPayoff` = suma `counterHostValue` top-`count` MOICH nie-tokenowych stworów
+  (≠ rzucana karta), z premiami ewazyjnymi i blokerami wroga; brak gospodarza → kara
+  `warpFutileEtbPenalty` (warp POD pass), oferta rzutu normalnego → `warpRedundantPenalty`
+  (jak `plotRedundantPenalty` PMSSB-35/B1). Progi kalibrowane pomiarem (`/tmp/pr/probe-hostmin.mjs`:
+  token 2/2 **18**, vanilla 1/3 **16** vs hill-giant 3/3 **24**, tackle-artist **28** przy
+  atakującej nodze, flier z blokerem **20** → `warpEtbHostMin 20`).
+- **B:** `untap_permanent` wchodzi do listy PRZYJAZNYCH efektów triggera (silnik,
+  `effect-intent.js` — jedno źródło dla ofert i bota), a wartość celu liczy wspólna miara
+  `untapTargetValue` używana w CZARZE, AKTYWACJI i TRIGGERZE (L41: dotąd dwie kopie + luka).
+- **C:** `added = moc tapowanego ciała`, `progress = min(added, threshold − charge)`, premia
+  `stationCloseBonus` za DOMKNIĘCIE progu, kara za nadmiar, minus `tapBodyCost` ciała; etykieta
+  śladu niesie kandydata (`+station:<id>`, M195/B — bez tego 3 oferty station były nierozróżnialne).
+- **D:** PlayerView niesie `subtypesBeforeStrip` (migawka sprzed `stripAbilities`, obok
+  `abilitiesStripped`), `cardInfo` liczy `abilitiesStripped`/`subtypesAdded` (tylko gdy migawka
+  istnieje — inaczej każdy zwykły stwór miałby „dodane” wszystkie podtypy), nakładka dokłada
+  badge'y `bez zdolności` i `typ: +Skeleton`.
+
+**Wartości PO** (`probe-a-final.mjs`, `probe-c-final.mjs`, `probe-d3.mjs`): A1 rzut 71,1 > warp
+−89 → rzut; A2 pass (−29), A4 token → pass, A3/A5/A6 wart gospodarz → warp (85/89/82), A7 dwa
+gospodary 109; B oferty triggera wszystkie `friendly=true`, wybór `myCre` (14 > −4 > −25 = −25);
+C charge 6 → tap 4/4 (nie 2/2), charge 8 → tap 2/2 (minimalny nadmiar), charge 9 → pass,
+charge 5 → tap 6/6 (domyka próg); D badge `["bez zdolności", "typ: +Skeleton", "choroba"]` e2e
+przez pełny tor silnika.
+
+**Test:** `test/audyt-pmssb41-uwagi-testow.test.js` — **25 pinów** (A: 8, B: 5, C: 7, D: 4 +
+kontrola). **Mutacje m1–m9 (RED):** płaskie „+5” wraca **5**, brak kary redundancji **2**, brak
+`untap_permanent` w liście przyjaznej **1**, `progress` bez klampu **1**, brak kary za nadmiar
+**1**, brak premii za domknięcie **1**, brak kary za bezcelowy warp **3**, badge utraty zdolności
+**1**, badge dodanego podtypu **1**. Świadome przesunięcia pinów sąsiadów (wzorzec PMSSB-34
+„piny przesunięte o nowy wymiar”): PMSSB-35 D1 (koszt warp) mierzy teraz koszt przy pokrętłach
+×0 i osobno pinuje nowe zachowanie (61 zamiast 66 = utrata płaskiego +5), a M277 (kontrakt
+widok ↔ render) dopisuje `abilitiesStripped`/`subtypesBeforeStrip` do jawnej listy pól
+warunkowych spoza próbki, z dowodem konstrukcyjnym w D1–D3.
+
+**Ewaluacja:** golden-master — dryf **2/6 partii** (`ravnica|innistrad-wu` seedy 1000/1001,
+`scoreSum` +107 / +80, liczba decyzji i `chosenKinds` bez zmian; pozostałe 4 partie bit w bit).
+Przyczyna jest zamierzona i policzalna: talie wzorcowe mają dokładnie po jednej karcie
+z `untap_permanent` (`tenth-district-veteran`, `midnight-guard`) — to naprawa B. Fixture
+zregenerowany świadomie (`20969a3`, komentarz w commicie). Tie-audit PO: 24 partie / **12 612
+decyzji**, remisy 630/2341 z alternatywami = **26,9%** (442 pary „brak akcji” + 188 realnych =
+**9,9%** decyzji akcyjnych), GROZY **13** (`attack` 7, `block` 3, `cast_spell` 1,
+`resolve_discard_choice` 1, `resolve_color_choice` 1) — bez pogorszenia wobec poprzednich pętli.
+Mirror-eval NOWY KOD vs KOPIA STAREJ GAŁĘZI (`5cc7058`, zmiana jest w kodzie, nie w pokrętłach;
+6 talii bench × 4 seedy × 2 strony = 48 meczów): **30:18 (0,6250)**, 0 niedokończonych —
+pierwszy od kilku pętli pomiar lustra z wyraźnym sygnałem dodatnim.
+
+**Granice (świadome, nie bugi):** (1) premia ewazyjna w `warpEtbHostPayoff` jest wąska
+(flying/menace/landwalk + liczba blokerów) — „wart wzmocnienia” dla innych słów kluczowych
+(np. deathtouch, double strike) wychodzi z samej `counterHostValue`, bez własnej premii;
+(2) `warp_card` nie modeluje pełnej symulacji „warp w tej turze vs rzut w następnej” — porównuje
+się z OFERTĄ rzutu teraz (L48), nie z przyszłą turą; (3) Station nadal wymaga własnej Głównej 2
+(M153/A2 bez zmian); (4) `tapBodyCost` jest drabiną PMSSB-32 — dla bardzo dużych ciał pełna
+wartość obronna ciała nie jest liczona.
+
+**Bramy:** fast **7474/7474** EXIT 0 · `node tools/run-tests.mjs all` **7745/7745** EXIT 0 · build **70 modułów / 4790,6 kB**.
+
+**Status:** wszystkie cztery zgłoszenia ZAMKNIĘTE. Kolejka następnej pętli bez zmian:
+koszt okazji drugiego trybu źródła (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden),
+dynamiczne X, `buff_attacking_creatures`, bankowanie many.

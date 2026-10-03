@@ -87,3 +87,32 @@ Mutacje po commicie: (a) flat +5 wraca, (b) brak `untap_permanent` w liście
 przyjaznej, (c) `progress` liczone po odległości do progu, (d) badge usunięty.
 Bramy: `npm test`, `node tools/run-tests.mjs all`, build; golden-master; wpis
 w hubie (§PMSSB-41) + rejestr + `PROJECT_HISTORY.md`; PR #151 rozszerzony.
+
+## Postęp (2026-10-03b, zamknięte)
+
+Kroki 0–7 wykonane. Commity: plan `59f6821`, kod + test `8915d03`, golden-master `20969a3`,
+piny sąsiednich rodzin `b1df1f1` (wszystkie wypchnięte na `arena/01a0fe59-mtg`).
+
+**Pomiary potwierdzające naprawy** (PO):
+- **A** (`/tmp/pr/probe-a-final.mjs`): 6 lądów → `cast_permanent` 71,1 (warp −89); 3 lądy bez
+  stworów → `pass_priority` (warp −29); token 2/2 → `pass_priority`; 3/3 → warp 85; 4/3 trample
+  → 89; 2/1 flier + bloker → 82; dwa 3/3 → 109. Kalibracja progu: `probe-hostmin.mjs`
+  (token 18, vanilla 16, hill-giant 24, tackle-artist 28, flier+zablokowany 20) → `warpEtbHostMin 20`.
+- **B** (`probe-uwagi2.mjs`): wszystkie oferty `friendly=true`, wybór `myCre`, wyniki 14 / −4 /
+  −25 / −25 (`foeCre` = `foeLand`).
+- **C** (`probe-c-final.mjs`): charge 6 → tap 4/4; charge 8 → tap 2/2; charge 9 → pass;
+  charge 5 → tap 6/6; etykiety śladu `activate_ability(wr#1+station:c4)`.
+- **D** (`probe-d3.mjs`, pełny tor silnika): badge `["bez zdolności","typ: +Skeleton","choroba"]`.
+
+**Mutacje (m1–m9, RED):** 5 / 2 / 1 / 1 / 1 / 1 / 3 / 1 / 1 — szczegóły w §PMSSB-41 hubu.
+Dwie mutacje przeżyły pierwsze podejście (`progress` bez klampu, brak kary za nadmiar) i wymusiły
+dodatkowe piny C7 (remis rozstrzygany enumeracją) i C8 (premia za domknięcie progu).
+
+**Ewaluacja:** golden-master — dryf 2/6 partii (talie z `untap_permanent`: tenth-district-veteran,
+midnight-guard; `scoreSum` +107/+80, decyzje i `chosenKinds` bez zmian) → świadoma regeneracja
+`20969a3`; tie-audit PO 24 partie / 12 612 decyzji, 26,9% (9,9% akcyjnych), GROZY 13;
+mirror-eval nowy kod vs kopia `5cc7058`: **30:18 (0,6250)**, 0 niedokończonych.
+
+**Bramy:** fast **7474/7474** EXIT 0 · all **7745/7745** EXIT 0 · build **70 modułów / 4790,6 kB**.
+Trzy regresje ujawnione przez bramę fast (PMSSB-35 D1, M277 kontrakt widoku, klasa
+„zatapianie” w komentarzu) naprawione w `b1df1f1`.
