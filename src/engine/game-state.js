@@ -6623,6 +6623,14 @@ export function playerView(state, playerId) {
         if (object.subtypesBeforeStrip?.length && !hiddenFromViewer) {
           entry.subtypesBeforeStrip = [...object.subtypesBeforeStrip];
         }
+        // PMSSB-48/B (2026-10-03i): permanent rzucony za Warp nosi flagę
+        // `warped: true` (zapisuje ją resources.js przy rzucie na stos, a
+        // przy wejściu resolvePermanentSpell uzbraja opóźniony wygnanie na
+        // EOT). Gracz musi widzieć, że ten stwór ZOSTANIE WYGNANY przy
+        // najbliższym kroku końcowym — inaczej nie odróżnia go od normalnie
+        // rzuconego (zgłoszenie A właściciela). Fakt publiczny (każdy widzi
+        // rzut za warp).
+        if (object.warped === true) entry.enteredViaWarp = true;
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;

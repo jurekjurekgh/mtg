@@ -1445,11 +1445,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const raw = typeof spec === 'string' ? spec : spec?.type;
     return raw === 'creature' || raw === 'creature_you_control';
   };
+  // PMSSB-47 (2026-10-03h): etbFriendlyCounterTargetAvailable zwracało `true`
+  // dla spec.type === 'creature' bez względu na to, czy stół w ogóle ma jakiego
+  // przyjaznego stwora — przy pustym stole ETB +1/+1 na up-to-N celów dawało
+  // stałą premię +6, chociaż nie można było wybrać żadnego licznika (wynik=0).
+  // Kształt generyczny (ADR 0002): sprawdzamy, czy NA STOLE jest co najmniej
+  // jeden przyjazny stwór spełniający ewentualny filtr (subtype); notSelf
+  // nie zmienia wyniku dla ETB cast_permanent (wchodząca karta jeszcze nie ma
+  // na stole, a wchodzącemu samemu wolno być gospodarzem — CR 603.6d).
   const etbFriendlyCounterTargetAvailable = (view, spec) => {
     if (!spec || typeof spec === 'string') return true;
-    if (!spec.notSelf) return true;
     return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
-      && o.kind === 'creature' && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
+      && o.kind === 'creature'
+      && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
   };
   // PMSSB-2/A (F4): efekty oferowane PRZEZ token (z jego zdolności —
   // deskryptor efektu albo definicja tokena, wzorzec M243/C). Jedno źródło

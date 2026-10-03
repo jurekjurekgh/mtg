@@ -137,10 +137,13 @@ test('A4: rzut płatny z wygnania = rzut z ręki (L41: jedna arytmetyka dla stre
   const zReki = (() => { const s = game(); pole(s, 6); reka(s, 'we', 'weftblade-enhancer'); return s; })();
   const zWygnania = (() => { const s = game(); pole(s, 6); wExile(s, 'we', 'weftblade-enhancer', { warpReady: true, warpedAtTurn: 3 }); return s; })();
   assert.equal(wynik(zWygnania, 'cast_permanent(we)'), wynik(zReki, 'cast_permanent(we)'));
-  // PMSSB-36/B: ETB-licznik na „target creature" (cel dowolny — także własny)
-  // dostaje wartość 6×0,9 niezależnie od wroga na stole (dawniej 0 bez wroga):
-  // 65.703 → 71.103 w obu strefach.
-  blisko(wynik(zReki, 'cast_permanent(we)'), 71.103, 'kotwica PO (płatny rzut {5}{W})');
+  // PMSSB-36/B: ETB-licznik na „target creature" dostaje premię +6 TYLKO
+  // gdy na stole jest CO NAJMNIEJ JEDEN przyjazny stwór (możliwy cel dla
+  // +1/+1; PMSSB-47 naprawił zawyżkę przy pustym stole własnym: stała premia
+  // +6 „na zapas" dodawała się choć upTo nie dawał żadnego realnego buffa).
+  // W tej konfiguracji (tylko 6 lądów, zero stworów) rzut jest wart tyle,
+  // ile ciało 3/4 za 6 many = 65.703 (bez premii ETB).
+  blisko(wynik(zReki, 'cast_permanent(we)'), 65.703, 'kotwica PO (płatny rzut {5}{W}, 0 własnych stworów = premia ETB nie dotyczy)');
 });
 
 // --- B. suspend_card: dostępność z oferty silnika + cena + zwłoka ----------
