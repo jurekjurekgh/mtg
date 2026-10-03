@@ -2240,6 +2240,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const untappedEnemyBlockers = (view) => enemyCreatures(view)
     .filter((o) => !o.tapped && o.cantBlock !== true && o.detained !== true);
+
+  /**
+   * PMSSB-41/A-uzup. (zgłoszenie właściciela: gospodarz „wart wzmocnienia” to
+   * np. stwór z flying, menace albo LANDWALKIEM): czy gracz kontroluje ląd
+   * o podanym podtypie — warunek landwalka (CR 702.14). Liczone z WIDOKU
+   * (typy/podtypy lądów są w nim jawne, ADR 0017), tak samo jak reguła
+   * blokowania w `src/engine/combat.js` (`blockRestrictionError`): obrońca
+   * kontrolujący ląd podtypu landwalka NIE może blokować atakującego.
+   */
+  const controlsLandOfSubtype = (view, playerId, subtype) => (view.zones.battlefield ?? [])
+    .some((o) => o.controllerId === playerId && (o.types ?? []).includes('Land')
+      && (o.subtypes ?? []).includes(subtype));
   /**
    * M317 (zgłoszenie właściciela, Ghost Warden): wycena ataku ma zakładać,
    * że OBROŃCA może w oknie bloków pompać swojego blokera zdolnością ze
@@ -2975,8 +2987,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (host.cantBeBlocked === true) return true;
     const blockers = untappedEnemyBlockers(view);
     if (blockers.length === 0) return false;
-    if (hasKeyword(host, 'flying')) return blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
-    if (hasKeyword(host, 'menace')) return blockers.length <= 1;
+    // PMSSB-41/A-uzup.: każda zdolność ewazji rozstrzyga NIEZALEŻNIE (CR —
+    // suma warunków „nie może być blokowany”); wcześniejsze `return` przy
+    // flying ucinało np. menace na tym samym stworze.
+    if (hasKeyword(host, 'flying')
+      && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) return true;
+    if (hasKeyword(host, 'menace') && blockers.length <= 1) return true;
+    if (typeof host.landwalk === 'string'
+      && blockers.every((o) => controlsLandOfSubtype(view, o.controllerId, host.landwalk))) return true;
     return false;
   };
 

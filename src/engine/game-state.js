@@ -6721,6 +6721,19 @@ export function playerView(state, playerId) {
         // Flagi liczone jak w combat.js (effectiveAbilities — także nadane).
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantAttackAlone === true)) entry.cantAttackAlone = true;
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantBlockAlone === true)) entry.cantBlockAlone = true;
+        // PMSSB-41/A-uzup. (zgłoszenie właściciela: gospodarz „wart wzmocnienia”
+        // to np. stwór z flying, menace albo LANDWALKIEM): landwalk (CR 702.14)
+        // to wydrukowana zdolność statyczna — informacja publiczna (ADR 0017),
+        // a widok jej dotąd nie niósł, więc bot nie odróżniał `farbog-explorer`
+        // (swampwalk) od gołego 2/3 i ewazja, którą atak FAKTYCZNIE dostaje,
+        // nie wchodziła do wyceny gospodarza. Deskryptor (podtyp lądu), nie
+        // nazwa karty (ADR 0002) — ten sam kształt co `landwalk` w abilities.js.
+        {
+          const landwalkSubtype = effectiveAbilities(object)
+            .map((a) => (a?.type === 'static' ? a.landwalk?.subtype ?? null : null))
+            .find((subtype) => typeof subtype === 'string');
+          if (landwalkSubtype && !hiddenFromViewer) entry.landwalk = landwalkSubtype;
+        }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
         // zdolności permanentu to informacja PUBLICZNA (wydrukowany tekst),
         // a nie nosi jej rejestrz kart wszystkich obiektów — tokeny (Treasure)
