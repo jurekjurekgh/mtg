@@ -15279,3 +15279,76 @@ build **70 modułów / 4792,5 kB**.
 - **Piny:** `test/pmssb46-divided-pool-cap.test.js` (4 piny O1–O4). Mutacja 3/4 RED.
 - **Bramki:** fast **7492/7492** EXIT 0 (122,0 s), build **70 modułów / 4799,2 kB**,
   event-contract-audit 0 naruszeń, bot-scoring-snapshot 6/6 bez dryfu.
+
+
+## 2026-10-03h — PMSSB-47: cel ETB z licznikami przy rzucie permanentu (PR #153; korekta w PR #154)
+
+- **Luka (jak zgłoszono):** `cast_permanent` dawał płaską premię +6 dla ETB
+  `add_counter` także przy pustym stole własnym (sonda scenariusza D: 6 landów,
+  0 stworów → +71,1).
+- **Pierwotna naprawa (PR #153):** `etbFriendlyCounterTargetAvailable` wymagała
+  istniejącego przyjaznego stwora.
+- **KOREKTA (audyt PR #153, F1; PR #154 `6fa26e4`):** wchodzący stwór jest
+  legalnym celem własnego triggera ETB bez `notSelf` (CR 603.6d; silnik oferuje
+  `resolve_trigger_target` z `targetIds: ['permanent-1']`), więc pierwotna
+  naprawa zaniżała wycenę 3 kart (Weftblade Enhancer, Cloudbound Moogle, Simian
+  Simulacrum). Bramka liczy teraz wchodzącą kartę (`enteringDef`), a `notSelf`
+  nadal wymaga innego stwora (Jade Bearer). Kotwica A4 wraca 65.703 → 71.103.
+- **Piny:** `test/pmssb47-cast-etb-counter-available.test.js` E1–E4 (w tym
+  kontrola `notSelf`); mutacja m1 → A4 + E1 RED.
+- **Bramki:** merged tree `npm test` 7500/7500 EXIT 0 (103,3 s); po naprawie
+  7501/7501, build 70 modułów, bot-scoring-snapshot 4/4.
+
+## 2026-10-03i — PMSSB-48: oznaczenie wejścia przez Warp (PR #153)
+
+- **Zgłoszenie właściciela:** brak informacji, że permanent wchodzi przez Warp
+  (log i kafelek nie odróżniały od zwykłego rzutu).
+- **Naprawa (PR #153):** sufiks „(za Warp)" w `session.js`, pole
+  `enteredViaWarp` w PlayerView (`game-state.js`), badge „Warp · wygnanie na
+  EOT" w `render.js`; piny W1–W3 + rozszerzenie M277.
+- **Weryfikacja w audycie PR #153:** sonda e2e potwierdziła `warped: true` w
+  zdarzeniu `permanent_cast`, zachowanie flagi na permanencie i widok dla obu
+  graczy; mutacje W1/W2 → piny RED.
+- **Zgłoszenie B (Station po 3 tapach):** bez zmian kodu — sorcery-speed i
+  wymagany pass po zdolności na stosie (ADR 0022 §4).
+- **Bramki:** merged tree `npm test` 7500/7500 EXIT 0 (103,3 s).
+
+## 2026-10-03j — audyt PR #153 + naprawy u root cause (PR #154)
+
+- Audyt PR #153 (29 plików) — raport `docs/audits/AUDYT_PR153_2026-10-03.md`:
+  F1 (regresja wyceny PMSSB-47), F2 (kolejność ofert podziału obrażeń),
+  F3/F4 (dług i zdublowany komentarz), F5 (niedomknięte etapy docs PMSSB-47/48),
+  F6 (obserwacja: `name != null` w liczeniu typów z grobów).
+- Naprawy: `6fa26e4` (F1), `4ab6e80` (F2+F4), `b40e865` (F3); domknięcie
+  dokumentacji PMSSB-47/48 (ten wpis).
+- Bramki po naprawach: `npm test` 7503/7503 EXIT 0, build 70 modułów,
+  bot-scoring-snapshot bez dryfu; mutacje m1–m4, W1/W2 → piny RED.
+
+## 2026-10-03k — F6: „czy obiekt jest KARTĄ" = jawna flaga `isToken` (PR #154)
+
+- **Znalezisko F6 audytu PR #153** („obserwacja do kolejki") okazało się realną
+  rozbieżnością silnik↔bot: po audycie PR #136 (F-2) predykat „karta" naprawiono
+  TYLKO w `zones.isCardInOpponentGraveyard`, a **12 bliźniaczych miejsc** zostało
+  na heurystyce `name != null`. Pole `name` nosi także kopia z `enterAsCopy`
+  (CR 707.2), więc poległa kopia była „nie-kartą" w delirium (CR 207.2c),
+  u Tarmogoyfa/Disy (CR 205.3m), w warunku Gray Slaada, w pulach celów
+  „…card from your graveyard" i w descendzie. W bocie filtr był MARTWY (widok
+  nie wystawia `name` poza polem bitwy), więc bot liczył kopie, a silnik nie —
+  dla tego samego stanu silnik dawał 3 typy kart, a bot 4 (L1/L41/L48).
+- **Naprawa `898c238`:** `zones.isCardObject` = `!object.isToken` (CR 108.2b,
+  jawna flaga — L43) jako jedno źródło dla `triggers.js`, `permanents.js`,
+  `effects.js`, `game-state.js` i bota; widok wystawia `isToken` także poza
+  polem bitwy (grób publiczny, CR 400.2); wykrywacz tokenów po prefiksie
+  `cardId` w czyszczeniu poza polem bitwy też czyta flagę.
+- **Piny:** `test/karta-to-nie-token-nazwana-kopia-w-grobie.test.js` A1–A4,
+  B1–B2, C1, D, E; 4 niedokładne fixture'y w istniejących testach („token" ustawiany
+  polem `name`) poprawione na jawną flagę — w tym jeden pin wakacyjny
+  (typ tokenu powtarzał typ innej karty, więc wykluczenie było niewidoczne).
+- **Dowód mutacyjny:** m1 → A1, m2 → A2+D, m3 → B1, m4 → D, m5 → D+E, m6 → C1;
+  wszystkie po przywróceniu zielone.
+- **Bramki:** `npm test` **7513/7513** EXIT 0 (104,2 s), brama PR
+  `npm run test:all` **7784/7784** EXIT 0 (407,2 s), build 70 modułów /
+  4803,8 kB, `event-contract-audit` 0 naruszeń, bot-scoring-snapshot 4/4 bez dryfu.
+- **Świadomie odłożone:** wpis do `docs/LESSONS.md` („pole `name` nie jest
+  znacznikiem tokenu") — budżet lektury startowej jest na granicy (~99,9k/100k
+  bajtów), najpierw kondensacja rejestru; brak nowych kart (ADR 0029).

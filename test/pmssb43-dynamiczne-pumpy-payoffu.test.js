@@ -24,10 +24,16 @@ describe('PMSSB-43/A: pumpDelta rozwiązuje dynamiczne deskryptory pomp z widoku
     assert.deepEqual(pump, { power: 3, toughness: 3 }, 'Altar of the Goyf: X = liczba typów kart w grobach (podobnie jak silnik)');
   });
 
-  it('A2 card_types_in_all_graveyards ignoruje tokeny (name ustawione = nie jest kartą)', () => {
-    const view = { zones: { graveyard: [{ id: 't', name: 'Soldier', types: ['Creature'] }], battlefield: [] } };
+  it('A2 card_types_in_all_graveyards ignoruje tokeny (jawna flaga isToken = nie jest kartą)', () => {
+    const view = { zones: { graveyard: [{ id: 't', name: 'Soldier', isToken: true, types: ['Creature'] }], battlefield: [] } };
     const pump = temporaryPumpOf({ type: 'buff_creature_until_end_of_turn', power: 'card_types_in_all_graveyards', toughness: 0 }, view);
-    assert.equal(pump.power, 0, 'tokeny (name ustawione) nie są kartami i się nie liczą');
+    assert.equal(pump.power, 0, 'tokeny (jawna flaga isToken, CR 108.2b) nie są kartami i się nie liczą');
+  });
+
+  it('A2b anty-over-fix: NAZWANA kopia w grobie JEST kartą i wnosi typ (audyt PR #153/F6)', () => {
+    const view = { zones: { graveyard: [{ id: 'c', name: 'Coralhelm Guide', types: ['Creature'] }], battlefield: [] } };
+    const pump = temporaryPumpOf({ type: 'buff_creature_until_end_of_turn', power: 'card_types_in_all_graveyards', toughness: 0 }, view);
+    assert.equal(pump.power, 1, 'kopia z enterAsCopy nosi name, ale nie jest tokenem — liczy się (CR 707.2/108.2b)');
   });
 
   it('A3 source_power bierze moc z hosta/source', () => {

@@ -49,8 +49,14 @@ test('O-2/1: delirium i licznik wszystkich grobów czytają TĘ SAMĄ listę typ
   putObject(state, 'g4', 'p1', 'graveyard', {
     types: ['Creature'], supertypes: ['Basic', 'Legendary'],
   });
-  // Token w grobie nie jest kartą (name ustawione) i nie wnosi typu.
-  putObject(state, 'g5', 'p1', 'graveyard', { name: 'Goblin', types: ['Creature'] });
+  // Token w grobie nie jest kartą (JAWNA flaga `isToken`, CR 108.2b —
+  // audyt PR #153/F6: `name` nie jest znacznikiem tokenu, nosi je też kopia
+  // z `enterAsCopy`) i nie wnosi typu. Typ tokenu jest CELOWO nieobecny na
+  // pozostałych kartach — inaczej wykluczenie byłoby niewidoczne w zbiorze.
+  putObject(state, 'g5', 'p1', 'graveyard', { name: 'Goblin', types: ['Planeswalker'] });
+  // `addObject` nie przyjmuje flagi spoza kontraktu (L21) — token ustawiamy
+  // tak, jak robi to `createBattlefieldToken`: jawną flagą na obiekcie.
+  state.objects.set('g5', Object.freeze({ ...state.objects.get('g5'), isToken: true }));
 
   assert.equal(graveyardCardTypeCount(state, 'p1'), 4,
     'delirium: 4 typy kart (Dungeon, Kindred, Battle, Creature) — token i nadtypy się nie liczą');

@@ -2524,3 +2524,62 @@ Justice nie jest w taliach benchmarku).
 **Status:** zamknięty. Kolejka następnej pętli: warp_card vs rzut w następnej turze,
 premia ewazyjna (deathtouch/double strike), ward/zone-exile w strefie wygnania (jeśli
 znajdzie się karta dotknięta luką).
+
+
+## PMSSB-47 — cel ETB z licznikami przy rzucie permanentu: wchodzący stwór jest gospodarzem (2026-10-03h; korekta 2026-10-03j)
+
+**Wejście:** kolejka z handoffu 03e. Sonda `tools/probe-pmssb47-warp.mjs`
+(Weftblade Enhancer, scenariusz D: 6 landów, 0 stworów) pokazała, że rzut
+dostaje premię ETB +6 mimo pustego stołu własnego.
+
+**Naprawa w PR #153 (pierwotna):** `etbFriendlyCounterTargetAvailable` miała
+wymagać istniejącego przyjaznego stwora (spec `creature`/`creature_you_control`,
+filtr podtypu), zamiast zwracać `true` dla każdego spec-a bez `notSelf`.
+
+**KOREKTA w audycie PR #153 (znalezisko F1, `docs/audits/AUDYT_PR153_2026-10-03.md`):**
+premisa była błędna — wchodzący permanent JEST na polu bitwy, gdy trigger ETB
+trafia na stos (CR 603.6d), więc bez `notSelf` sam jest legalnym celem („up to
+two target creatures"). Silnik potwierdza to ofertą `resolve_trigger_target`
+z `targetIds: ['permanent-1']`; scenariusz D (+71,1) był POPRAWNY, nie zawyżony.
+Wersja z PR #153 zamieniła zawyżkę w zaniżkę dla 3 kart (Weftblade Enhancer,
+Cloudbound Moogle, Simian Simulacrum). Realna zawyżka dotyczyła LĄDU
+(Idyllic Grange — wchodzący nie jest stworzeniem) i ta część została.
+
+**Naprawa finalna (PR #154, `6fa26e4`):** bramka przyjmuje `enteringDef` i
+liczy wchodzącą kartę jako cel, gdy jest stworzeniem spełniającym filtr
+spec-a i spec nie ma `notSelf`; w przeciwnym razie wymaga istniejącego
+przyjaznego stwora. Kotwica A4 w `test/audyt-pmssb35-odroczenie.test.js`
+wraca 65.703 → 71.103. Piny E1–E4 (self-host, wybór rzutu, score skończony,
+kontrola `notSelf` z Jade Bearerem). Mutacja m1 → A4 + E1 RED.
+
+**Bramki:** PR #153 merged tree `npm test` 7500/7500 EXIT 0 (103,3 s); po
+naprawie 7501/7501, build 70 modułów, bot-scoring-snapshot 4/4 bez dryfu.
+
+**Granice świadome:** `castFutileEtbPenalty` (etap 2 planu) nie zrealizowany —
+brak karty demonstrującej rzut z ETB naprawdę bez celu (ADR 0022 §4); wraca do
+kolejki z taką kartą.
+
+**Status:** zamknięty po korekcie.
+
+## PMSSB-48 — oznaczenie wejścia przez Warp w logu i na kaflu (2026-10-03i)
+
+**Wejście:** zgłoszenie właściciela — karta rzucona za Warp nie różniła się w
+Rozgrywce ani w Logu od zwykłego rzutu.
+
+**Naprawa (PR #153):** `src/table/session.js` dopisuje „(za Warp)" do linii
+`permanent_cast`; `src/engine/game-state.js` wystawia `enteredViaWarp` w
+PlayerView permanentu (publiczny fakt — koszt alternatywny rzutu jest jawny);
+`src/table/render.js` pokazuje badge „Warp · wygnanie na EOT".
+
+**Weryfikacja (audyt PR #153, sonda e2e):** zdarzenie `permanent_cast` niesie
+`warped: true`, permanent zachowuje flagę po rozstrzygnięciu stosu, a widok
+wystawia `enteredViaWarp` obu graczom. Mutacje W1 (sufiks logu) i W2 (wpis
+widoku) → piny RED; rozszerzenie M277 o pole odczytu renderera.
+
+**Bramki merged tree:** `npm test` 7500/7500 EXIT 0 (103,3 s).
+
+**Granice świadome:** zgłoszenie B (Station po 3 tapach) bez zmian kodu —
+sorcery-speed i wymagany pass po zdolności na stosie (ADR 0022 §4), zgodnie z
+diagnozą planu.
+
+**Status:** zamknięty.

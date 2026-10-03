@@ -50,13 +50,13 @@ pozostawiamy jako ulepszenie UX przy innej okazji.
 ## Etapy
 
 - [x] Etap 0 — sonda potwierdza brak oznaczenia, `warped: true` jest w evencie
-- [ ] Etap 1 — log dopisuje „(za Warp)" przy permanent_cast
-- [ ] Etap 2 — PlayerView wystawia `enteredViaWarp` dla permanentu po warp
-- [ ] Etap 3 — kafelek/render pokazuje badge „Warp"
-- [ ] Etap 4 — piny W1–W3 w `test/pmssb48-warp-indication.test.js`
-- [ ] Etap 5 — mutacja (cofnij znaczenie → piny RED)
-- [ ] Etap 6 — bramki: fast, build, event-contract-audit
-- [ ] Etap 7 — docs (PMSSB §48, HISTORY, handoff)
+- [x] Etap 1 — log dopisuje „(za Warp)" przy permanent_cast
+- [x] Etap 2 — PlayerView wystawia `enteredViaWarp` dla permanentu po warp
+- [x] Etap 3 — kafelek/render pokazuje badge „Warp"
+- [x] Etap 4 — piny W1–W3 w `test/pmssb48-warp-indication.test.js`
+- [x] Etap 5 — mutacja (cofnij znaczenie → piny RED): W1/W2 zweryfikowane w PR #154
+- [x] Etap 6 — bramki: fast, build, event-contract-audit (merged tree: 7500/7500 EXIT 0)
+- [x] Etap 7 — docs (PMSSB §48, HISTORY, handoff) — domknięte w PR #154
 
 ## Piny
 
@@ -64,3 +64,19 @@ pozostawiamy jako ulepszenie UX przy innej okazji.
   zawiera napis „Warp" (test przez event opis w describeEvent).
 - W2: PlayerView permanentu, który wszedł za warp, ma `enteredViaWarp: true`.
 - W3: zwykły rzut (bez warpu) nadal bez oznaczenia (regresja).
+
+## Wykonanie (2026-10-03j)
+
+- **Etapy 1–4 zrealizowane w PR #153** (`src/table/session.js` — sufiks
+  „(za Warp)", `src/engine/game-state.js` — `enteredViaWarp` w widoku,
+  `src/table/render.js` — badge „Warp · wygnanie na EOT", piny W1–W3 +
+  rozszerzenie M277 o pole odczytu).
+- **Audyt PR #153 potwierdził tor end-to-end sondą:** zdarzenie
+  `permanent_cast` niesie `warped: true`, permanent zachowuje flagę po
+  rozstrzygnięciu stosu, a widok wystawia `enteredViaWarp` OBU graczom (fakt
+  publiczny — rzut za koszt alternatywny jest jawny, CR 601.2b).
+- **Mutacje w PR #154:** W2 (usunięcie wpisu widoku) → W2 RED; W1 (usunięcie
+  sufiksu logu) → W1 RED; po przywróceniu 5/5 zielone.
+- Bramki merged tree (pomiar PR #154): `npm test` 7500/7500 EXIT 0 (103,3 s).
+- **Zgłoszenie B (Station po 3 tapach)** — świadomie bez zmian kodu
+  (sorcery-speed/stack-pass, ADR 0022 §4), zgodnie z diagnozą planu.

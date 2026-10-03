@@ -55,12 +55,12 @@ granych kart „prawie na równi z passem", ale wciąż zostaje ciało (3/4 = 80
 ## Etapy
 
 - [x] Etap 0 — sonda (scenariusze A/B/C/D) potwierdza asymetrię
-- [ ] Etap 1 — fix `etbFriendlyCounterTargetAvailable` (generyczny)
-- [ ] Etap 2 — dodanie kary `castFutileEtbPenalty` do `cast_permanent` (przyjazne liczniki bez celu)
-- [ ] Etap 3 — piny w `test/pmssb47-cast-etb-counter-available.test.js`
-- [ ] Etap 4 — mutacje (usuń poprawkę → piny RED)
-- [ ] Etap 5 — bramki: fast, build, audit, scoring-snapshot
-- [ ] Etap 6 — docs (PMSSB §47, HISTORY, handoff)
+- [x] Etap 1 — fix `etbFriendlyCounterTargetAvailable` (generyczny) — w PR #153; SKORYGOWANY w audycie PR #153 (znalezisko F1, PR #154 `6fa26e4`): wchodzący stwór liczy się jako gospodarz własnego ETB
+- [ ] Etap 2 — dodanie kary `castFutileEtbPenalty` do `cast_permanent` — świadomie NIEzrealizowany (ADR 0022 §4; po korekcie F1 nieaktualny w tej formie — patrz „Wykonanie")
+- [x] Etap 3 — piny w `test/pmssb47-cast-etb-counter-available.test.js` (E1–E4 po korekcie F1, PR #154)
+- [x] Etap 4 — mutacje (usuń poprawkę → piny RED): m1 w PR #154 (E1 + kotwica A4 RED)
+- [x] Etap 5 — bramki: fast, build, audit, scoring-snapshot
+- [x] Etap 6 — docs (PMSSB §47, HISTORY, handoff) — domknięte w PR #154
 
 ## Piny
 
@@ -70,3 +70,28 @@ granych kart „prawie na równi z passem", ale wciąż zostaje ciało (3/4 = 80
 - E2: `etbFriendlyCounterTargetAvailable(view, {type: 'creature'})` === false
   dla pustego stołu własnego.
 - E3: przy 1 własnym stworze 2/2 premia ETB nadal jest naliczana (regresja).
+
+## Wykonanie (2026-10-03j)
+
+- **Etap 1 wykonany w PR #153, ale premisa była błędna.** Audyt PR #153
+  (`docs/audits/AUDYT_PR153_2026-10-03.md`, F1) wykazał sondą na żywym
+  silniku, że wchodzący stwór JEST legalnym celem własnego triggera ETB bez
+  `notSelf` (CR 603.6d; silnik oferuje `resolve_trigger_target` z
+  `targetIds: ['permanent-1']`), więc wymaganie stwora JUŻ na polu bitwy
+  zamieniło zawyżkę w zaniżkę dla 3 kart (Weftblade Enhancer, Cloudbound
+  Moogle, Simian Simulacrum). Realna zawyżka dotyczyła LĄDU (Idyllic Grange —
+  wchodzący nie jest stworzeniem) i ta część naprawy jest słuszna.
+- **Naprawa finalna (`6fa26e4`, PR #154):** bramka przyjmuje `enteringDef`
+  (kartę rzucaną) i liczy ją jako cel, gdy jest stworzeniem spełniającym
+  filtr spec-a i spec nie ma `notSelf`; `notSelf` (Jade Bearer) nadal wymaga
+  INNEGO Merfolka. Kotwica A4 w `test/audyt-pmssb35-odroczenie.test.js`
+  wraca 65.703 → 71.103.
+- **Piny po korekcie:** E1 (self-host — brak dziury ~6 pkt przy pustym stole),
+  E2 (rzut wybierany), E3 (score skończony), E4 (kontrola `notSelf`: bez
+  Merfolka 0 premii, z Merfolkiem +6; drugi Merfolk nic nie dodaje).
+- **Mutacja m1** (wyłączenie gałęzi self) → A4 + E1 RED. Bramki: `npm test`
+  7501/7501 EXIT 0, build 70 modułów, bot-scoring-snapshot 4/4 bez dryfu.
+- **Etap 2 odpuszczony świadomie** — rzut z ETB bez celu (LĄD/artefakt z
+  „target creature you control" przy pustym stole) nie ma dziś karty
+  demonstrującej lukę w katalogu; wraca do kolejki razem z taką kartą
+  (ADR 0022 §4).

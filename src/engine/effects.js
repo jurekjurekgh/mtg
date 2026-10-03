@@ -1,6 +1,6 @@
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
-import { spellExitZone } from './zones.js';
+import { spellExitZone, isCardObject } from './zones.js';
 import { blockingRequirementCount, hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
@@ -4896,7 +4896,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const ownerId = sourceObject.controllerId;
     const candidates = state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
-      return object && object.controllerId === ownerId && object.kind === 'creature' && object.name == null;
+      return isCardObject(object) && object.controllerId === ownerId && object.kind === 'creature';
     });
     if (candidates.length === 0) return;
     state.pendingGraveyardToTop = {
@@ -4922,7 +4922,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const anyTypes = effect.filter?.anyTypes ?? null;
     const candidates = state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
-      if (!object || object.controllerId !== ownerId || object.name != null) return false;
+      if (!isCardObject(object) || object.controllerId !== ownerId) return false;
       if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
       return true;
     });

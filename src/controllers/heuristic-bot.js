@@ -654,13 +654,16 @@ function pumpImprovesOutcome(view, recipient, pending, delta) {
  * PMSSB-43/A (pętla jakości 2026-10-03d): liczba RÓŻNYCH typów kart we WSZYSTKICH
  * grobach, liczona z WIDOKU (ADR 0017). Ta sama reguła co silnik
  * (`permanents.js.allGraveyardsCardTypeCount`, CR 205.3m — Tarmogoyf/Altar):
- * karty (nie-tokeny — name=undefined oznacza kartę), po typach ∩ CARD_TYPES
- * importowanym z permanents.js (O-2: jedno źródło prawdy dla listy typów kart).
+ * karty (nie-tokeny — jawna flaga `isToken` z widoku, CR 108.2b), po typach
+ * ∩ CARD_TYPES importowanym z permanents.js (O-2: jedno źródło prawdy dla
+ * listy typów kart). Audyt PR #153 (F6): filtr po `name` był MARTWY (widok nie
+ * wystawia `name` poza polem bitwy), więc bot liczył nazwane kopie, a silnik
+ * nie — jedna reguła, dwa wyniki (L41/L48).
  */
 function cardTypesInAllGraveyardsFromView(view) {
   const present = new Set();
   for (const o of (view?.zones?.graveyard ?? [])) {
-    if (!o || o.name != null) continue; // token (name ustawione) nie jest kartą
+    if (!o || o.isToken === true) continue; // token nie jest kartą (CR 108.2b, jawna flaga)
     for (const t of (o.types ?? [])) if (CARD_TYPES.includes(t)) present.add(t);
   }
   return present.size;
@@ -1445,16 +1448,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const raw = typeof spec === 'string' ? spec : spec?.type;
     return raw === 'creature' || raw === 'creature_you_control';
   };
-  // PMSSB-47 (2026-10-03h): etbFriendlyCounterTargetAvailable zwracało `true`
-  // dla spec.type === 'creature' bez względu na to, czy stół w ogóle ma jakiego
-  // przyjaznego stwora — przy pustym stole ETB +1/+1 na up-to-N celów dawało
-  // stałą premię +6, chociaż nie można było wybrać żadnego licznika (wynik=0).
-  // Kształt generyczny (ADR 0002): sprawdzamy, czy NA STOLE jest co najmniej
-  // jeden przyjazny stwór spełniający ewentualny filtr (subtype); notSelf
-  // nie zmienia wyniku dla ETB cast_permanent (wchodząca karta jeszcze nie ma
-  // na stole, a wchodzącemu samemu wolno być gospodarzem — CR 603.6d).
-  const etbFriendlyCounterTargetAvailable = (view, spec) => {
+  // PMSSB-47 (2026-10-03h, korekta w audycie PR #153): czy ETB „put a
+  // +1/+1 counter on target …” ma LEGALNY cel po mojej stronie przy rzucie
+  // nosiciela. Wchodzący permanent JEST już na polu bitwy, gdy trigger trafia
+  // na stos (CR 603.6d) — bez `notSelf` sam jest celem (silnik oferuje go jako
+  // `permanent-N`), a dla pól bitwy typu LĄD/artefakt (np. Idyllic Grange)
+  // wchodzący nie jest stworzeniem i wtedy potrzebny jest ISTNIEJĄCY stwór.
+  // `notSelf` = „another” wyklucza wchodzącego (Jade Bearer → inny Merfolk).
+  // Kształt generyczny (ADR 0002): typy/podtypy wchodzącej karty + filtr
+  // podtypu spec-a, bez nazw kart.
+  const etbFriendlyCounterTargetAvailable = (view, spec, enteringDef = null) => {
     if (!spec || typeof spec === 'string') return true;
+    const enteringQualifies = Boolean(enteringDef
+      && !spec.notSelf
+      && (enteringDef.types ?? []).includes('Creature')
+      && (!spec.subtype || (enteringDef.subtypes ?? []).includes(spec.subtype)));
+    if (enteringQualifies) return true;
     return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
       && o.kind === 'creature'
       && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
@@ -1688,8 +1697,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-36/B: licznik z ETB na SWOIM stworze (Jade Bearer, Moogle) — bramka
     // dostępności celu po stronie WŁASNEJ (dawniej `etbEnemyHasTarget` pytał o
     // wrogie permanenty, więc wartość zależała od wroga, nie od celu).
-    add_counter: (e, view, req) => (req
-      ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req) : etbEnemyHasTarget(view, req)) ? 6 : 0)
+    add_counter: (e, view, req, def) => (req
+      ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
       : 5),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
