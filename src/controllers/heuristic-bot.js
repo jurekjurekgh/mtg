@@ -7316,7 +7316,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // 70,000 w obu scenariuszach). Skala jak przy rzucie stwora (L41).
         score -= P.creatureManaCostWeight * ((card.warp.cost ?? 0) + (card.warp.colors ?? []).length);
         // PMSSB-41/A (kryterium właściciela): warp ma sens TYLKO, gdy rzut
-        // normalny jest nieosiągalny (wszystkie niezatapowane źródła many) —
+        // normalny jest nieosiągalny (wszystkie nietapnięte źródła many) —
         // inaczej gramy kartę, która zostaje na stole zamiast iść do wygnania.
         // `castOfferedNow` = oferta silnika (legalność: kolory, pipy, źródła),
         // ta sama bramka co przy `suspend_card` (PMSSB-35/B3) i redundancji

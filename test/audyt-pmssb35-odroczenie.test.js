@@ -227,12 +227,33 @@ test('C4: przy rzucie dostępnym tylko zwłoka i surcharge — czysty plot droż
 test('D1: koszt warp jest w wycenie (PRZED: 70,000 przy 4 i przy 6 polach)', () => {
   const cztery = (() => { const s = game({ turn: 5 }); pole(s, 4); reka(s, 'we', 'weftblade-enhancer'); return s; })();
   const szesc = (() => { const s = game({ turn: 5 }); pole(s, 6); reka(s, 'we', 'weftblade-enhancer'); return s; })();
-  assert.equal(wynik(cztery, 'warp_card'), 66,
-    '70 bazy (ciało 3/4: 70 + 2×3 + 4 = 80, − 15 tymczasowości, + 5 ETB) − 4 (warp {2}{W} = 3 many + 1 pip); gałąź w rodzinie `spell` (×1)');
-  assert.equal(wynik(szesc, 'warp_card'), 66, 'ten sam wariant = ten sam wynik (rzut stały to osobna oferta)');
-  // (próg 6: ETB-licznik rzutu stałego wyceniony wg PMSSB-36/B, warp ma stałe +5)
-  assert.ok(wynik(szesc, 'cast_permanent(we)') < wynik(szesc, 'warp_card') + 6,
+  // PMSSB-41/A (zgłoszenie właściciela): warp bez GODNEGO gospodarza licznika
+  // schodzi pod pass (kara `warpFutileEtbPenalty`), a przy ofercie rzutu
+  // normalnego dochodzi `warpRedundantPenalty`. Ten pin mierzy WYMIAR KOSZTU,
+  // więc nowe wymiary zerujemy (M429: ×0 = stan sprzed zmiany) — inaczej kara
+  // za bezcelowy warp zjada to, co pin ma pokazać. Zachowanie nowych pokręteł
+  // pinuje test/audyt-pmssb41-uwagi-testow (A2/A4/A7/A8).
+  const WOLNY_WARP = { warpFutileEtbPenalty: 0, warpRedundantPenalty: 0 };
+  assert.equal(wynik(cztery, 'warp_card', WOLNY_WARP), 61,
+    '65 bazy (ciało 3/4: 70 + 2×3 + 4 = 80, − 15 tymczasowości) + 0 payoffu ETB '
+    + '(płaskie „+5 za ETB" zastąpiła miara gospodarza licznika — bez gospodarza 0, PMSSB-41/A) '
+    + '− 4 (warp {2}{W} = 3 many + 1 pip); gałąź w rodzinie `spell` (×1)');
+  assert.equal(wynik(szesc, 'warp_card', WOLNY_WARP), 61, 'ten sam wariant = ten sam wynik (rzut stały to osobna oferta)');
+  // (próg 6: ETB-licznik rzutu stałego wyceniony wg PMSSB-36/B; porównanie
+  // z warpen robimy na stole z GODNYM gospodarzem — bez gospodarza warp nie ma
+  // po co być „w zasięgu”, bo oddaje kartę na wygnanie bez zysku, PMSSB-41/A)
+  const zHostem = (() => {
+    const s = game({ turn: 5 }); pole(s, 6); reka(s, 'we', 'weftblade-enhancer');
+    dodaj(s, 'host', 'hill-giant', 'battlefield', 'creature', { summoningSick: false, summoningSickness: false });
+    return s;
+  })();
+  assert.ok(wynik(zHostem, 'cast_permanent(we)', WOLNY_WARP) < wynik(zHostem, 'warp_card', WOLNY_WARP) + 6,
     'rzut stały pozostaje w zasięgu warpu — wycena nie „wybiera za gracza”');
+  // Nowy wymiar (bez zerowania): pusty stół = warp NIE jest wart wygnania karty,
+  // a przy 6 polach przegrywa z rzutem normalnym, który zostawia ciało na stole.
+  assert.equal(wynik(cztery, 'warp_card'), -29, 'bez gospodarza: 66 − 90 kary = −29 (pod passem)');
+  assert.equal(oferta(cztery).cmd.type, 'pass_priority', 'pusty stół: bot nie wyrzuca karty za warp');
+  assert.equal(oferta(szesc).cmd.type, 'cast_permanent', 'stać mnie na rzut normalny → rzucam kartę, nie warpię');
 });
 
 // --- E. Kontrola anty-over-fix: darmowy rzut bez premii --------------------
