@@ -15262,3 +15262,20 @@ build **70 modułów / 4792,5 kB**.
 **Bramki:** fast **7488/7488** EXIT 0 (120,4 s), build **70 modułów / 4797,5 kB**, `event-contract-audit.mjs` 0 naruszeń.
 
 **PR #153 po tej sesji (przed pushem):** ~14 commitów do przodu vs main (audyt PR151 + rescue PR152 + PMSSB-41/43/44/45).
+
+## 2026-10-03g — pętla jakości: PMSSB-46 O1 DIVIDED_POOL_CAP
+
+- Kolejka z handoffu 03d: ward/zone-exile/O1-creator. Ward poprawnie liczy podatek
+  (sonda `probe-pmssb46a-ward.mjs`: 5/5/2 decyzje zgodne z oczekiwaniami), zone-exile
+  bez wspartej karty demonstrującej lukę (ADR 0022 §4) → podjęto O1 `DIVIDED_POOL_CAP = 8`.
+- **Luka:** `src/engine/spells.js/dividedDamageDivisions` przycinał listę kandydatów
+  celów obrażeń podzielonych (Fiery Justice) do CAP=8 w kolejności wrogie stwory →
+  gracz-wróg → PW → moje stwory. Przy ≥8 wrogich stworach gracz-wróg znikał z puli
+  (sonda ustaliła próg n=8, nie 10 jak szacowano w HISTORY) — nie można dobić gracza
+  podzielonym czarem przy szerokim stole.
+- **Naprawa generyczna (ADR 0002/0022 §4):** rezerwacja 1 miejsca dla każdej nie-pustej
+  klasy celów innej niż najniższy rank (gracz-wróg, planeswalker), reszta wypełniana
+  dotychczasowym porządkiem. Self i moje stwory bez rezerwacji (samouszkodzenie marginalne).
+- **Piny:** `test/pmssb46-divided-pool-cap.test.js` (4 piny O1–O4). Mutacja 3/4 RED.
+- **Bramki:** fast **7492/7492** EXIT 0 (122,0 s), build **70 modułów / 4799,2 kB**,
+  event-contract-audit 0 naruszeń, bot-scoring-snapshot 6/6 bez dryfu.

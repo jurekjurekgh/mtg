@@ -2480,3 +2480,47 @@ w widoku, A2 Rust-Shield Rampager ma pole w widoku).
 
 **Status:** zamknięty. Kolejka następnej pętli: ward/zone-exile/O1-creator, warp_card vs
 rzut w następnej turze, premia ewazyjna (deathtouch/double strike).
+
+---
+
+## PMSSB-46 — pętla jakości: O1 DIVIDED_POOL_CAP (gracz-wróg wypada z puli celów obrażeń podzielonych) (2026-10-03g)
+
+**Wejście:** obserwacja z audytu PR #150 zapisana w HISTORY (~L15095): „O1 `DIVIDED_POOL_CAP = 8`
+(gracz-przeciwnik wypada z puli przy 10 wrogich stworach — kolejka handoffu)". Sonda z
+tą sesji skorygowała próg do 8 (nie 10).
+
+**Diagnoza (sonda `tools/probe-pmssb46-o1-dividedpool.mjs`):**
+- `dividedDamageDivisions` (`src/engine/spells.js` L2462) sortuje kandydatów po `rank()`:
+  - wrogie stwory = 0, gracz-wróg = 1, planeswalker = 2, my = 3, moje stwory = 4.
+- Następnie bierze `slice(0, 8)`. Przy ≥8 wrogich stworach cały CAP wypełniają one,
+  gracz-wróg (rank=1) znika z oferty — Fiery Justice nie może dobić gracza przy
+  szerokim stole mimo, że CR 601.2d na to pozwala.
+- Tabela: n=7 pula OK (7/7 stworów + p2), n=8 już BUG (8/8 stworów, p2 brak), n=12 pula
+  zawiera tylko 8 pierwszych stworów.
+
+**Naprawa (generyczna, ADR 0002/0022 §4):**
+- Przed wypełnieniem puli CAP=8 zarezerwowano 1 miejsce dla KAŻDEJ nie-pustej klasy
+  celów innej niż wrogie stwory (najniższy rank): gracz-wróg (rank=1) i planeswalker (rank=2).
+- Pozostałe miejsca wypełniane są dotychczasowym porządkiem po ranku.
+- Self (rank=3) i moje stwory (rank=4) NIE dostają rezerwacji — samouszkodzenie jest
+  marginalne (kod na zapas).
+- Kształt bez nazw kart; walidacja ofert pozostaje po stronie silnika (L48) — pule
+  kandydatów węższe niż walidacja, jak dotąd.
+
+**Piny:** `test/pmssb46-divided-pool-cap.test.js` — 4 piny (O1 n=8 p2 w puli, O2 n=12 p2 w puli,
+O3 regresja n=7 7/7 stworów + p2, O4 oferta 5→p2 istnieje). Mutacja (cofnięcie rezerwacji)
+→ 3/4 RED.
+
+**Bramki:** fast **7492/7492** EXIT 0 (122,0 s, +4 piny) · build **70 / 4799,2 kB** ·
+event-contract-audit 0 naruszeń · bot-scoring-snapshot 6/6 zielony (bez dryfu — Fiery
+Justice nie jest w taliach benchmarku).
+
+**Granice świadome:**
+- Rezerwacja tylko dla gracza-wroga i planeswalkera; self i moje stwory bez.
+- Liczba oferty pozostaje 792 dla n≥8 (CAP + rezerwacja = 8, jak wcześniej), koszt
+  obliczeniowy bez zmiany.
+- Nie podnosimy DIVIDED_POOL_CAP — zwiększyłoby to wykładniczo liczbę podziałów.
+
+**Status:** zamknięty. Kolejka następnej pętli: warp_card vs rzut w następnej turze,
+premia ewazyjna (deathtouch/double strike), ward/zone-exile w strefie wygnania (jeśli
+znajdzie się karta dotknięta luką).
