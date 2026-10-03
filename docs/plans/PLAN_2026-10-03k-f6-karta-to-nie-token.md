@@ -64,7 +64,8 @@ wpis grobu: {id, cardId, controllerId, zone, plotted, kind, types, power, toughn
 ## Wykonanie (2026-10-03k)
 
 - Commit `898c238` — naprawa + piny + fixture'y; `npm test` **7513/7513** EXIT 0,
-  build 70 modułów / 4803,8 kB, `event-contract-audit` 0 naruszeń, snapshot 4/4.
+  `npm run test:all` **7784/7784** EXIT 0 (407,2 s), build 70 modułów / 4803,8 kB,
+  `event-contract-audit` 0 naruszeń, snapshot 4/4.
 - Mutacje (wszystkie oczekiwane RED, po przywróceniu zielone): m1 → A1,
   m2 → A2 (i D), m3 → B1, m4 → D, m5 → D+E, m6 → C1.
 

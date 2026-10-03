@@ -15346,7 +15346,8 @@ build **70 modułów / 4792,5 kB**.
   (typ tokenu powtarzał typ innej karty, więc wykluczenie było niewidoczne).
 - **Dowód mutacyjny:** m1 → A1, m2 → A2+D, m3 → B1, m4 → D, m5 → D+E, m6 → C1;
   wszystkie po przywróceniu zielone.
-- **Bramki:** `npm test` **7513/7513** EXIT 0 (104,2 s), build 70 modułów /
+- **Bramki:** `npm test` **7513/7513** EXIT 0 (104,2 s), brama PR
+  `npm run test:all` **7784/7784** EXIT 0 (407,2 s), build 70 modułów /
   4803,8 kB, `event-contract-audit` 0 naruszeń, bot-scoring-snapshot 4/4 bez dryfu.
 - **Świadomie odłożone:** wpis do `docs/LESSONS.md` („pole `name` nie jest
   znacznikiem tokenu") — budżet lektury startowej jest na granicy (~99,9k/100k
