@@ -78,7 +78,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
 | payoffy z efektem tymczasowym przy rzucie (prowess, Jeskai Devotee, Kulrath Mystic) | Jeskai Windscout, Jeskai Devotee, Kulrath Mystic | DONE (2026-10-02e) | §PMSSB-39 niżej; plan `PLAN_2026-10-02e-pmssb39-pump-triggery.md`; `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów, 6 czerwonych PRZED + 4 kontrole); `temporaryPumpPayoff` (okna walki/głównej 1 + polityka ataku), warunki triggera rzutu; 3 pokrętła `tempPumpTrickValue`/`tempPumpFaceDamageValue`/`tempPumpBlockOdds` |
 | payoffy rzutu II: efekty skierowane (`requiresTarget`) + wymiar nietapnięcia (Molten Nursery, Goblin Battle Jester, Steelfin Whale, rider vigilance Kulratha) | 4 karty (`molten-nursery`, `goblin-battle-jester`, `steelfin-whale`, `kulrath-mystic`) | DONE (2026-10-03a) | §PMSSB-40 niżej; plan `PLAN_2026-10-03a-pmssb40-skierowane-nietapniecie.md`; `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (17 pinów, 11 czerwonych PRZED kodem; 6/6 mutacji RED); bramka `requiresTarget` przestaje pomijać trigger (wymóg celu → miara), nogi `damage`/`cant_block`/`untap_permanent`, `cantBlockPayoffValue`, `untappedBodyDefense`; 1 pokrętło `payoffUntappedBodyWeight` |
-| zgłoszenia właściciela z testów: warp bez celu (Weftblade Enhancer), untap celu triggera (Nanoform Sentinel), kolejność tapowania do Station (Wedgelight Rammer), badge'y reanimacji (Xu-Ifit) | 4 karty | DONE (2026-10-03b) | §PMSSB-41 niżej; plan `PLAN_2026-10-03b-pmssb41-uwagi-testow.md`; `test/audyt-pmssb41-uwagi-testow.test.js` (25 pinów, mutacje m1–m9 RED 5/2/1/1/1/1/3/1/1); `untapTargetValue` (3 ścieżki, L41), `warpEtbHostPayoff`, progress/closes/overshoot Station, badge'y `bez zdolności`/`typ: +X`; 4 pokrętła `warpEtbHostMin`/`warpFutileEtbPenalty`/`warpRedundantPenalty`/`stationCloseBonus` |
+| zgłoszenia właściciela z testów: warp bez celu (Weftblade Enhancer), untap celu triggera (Nanoform Sentinel), kolejność tapowania do Station (Wedgelight Rammer), badge'y reanimacji (Xu-Ifit) | 4 karty | DONE (2026-10-03b) | §PMSSB-41 niżej; plan `PLAN_2026-10-03b-pmssb41-uwagi-testow.md`; `test/audyt-pmssb41-uwagi-testow.test.js` (25 → 30 pinów, mutacje m1–m9 + m10–m13 RED); runda 2: LANDWALK w widoku (kryterium A) — plan `PLAN_2026-10-03c-pmssb41-runda2-landwalk.md`; `untapTargetValue` (3 ścieżki, L41), `warpEtbHostPayoff`, progress/closes/overshoot Station, badge'y `bez zdolności`/`typ: +X`; 4 pokrętła `warpEtbHostMin`/`warpFutileEtbPenalty`/`warpRedundantPenalty`/`stationCloseBonus` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2299,6 +2299,56 @@ się z OFERTĄ rzutu teraz (L48), nie z przyszłą turą; (3) Station nadal wyma
 wartość obronna ciała nie jest liczona.
 
 **Bramy:** fast **7474/7474** EXIT 0 · `node tools/run-tests.mjs all` **7745/7745** EXIT 0 · build **70 modułów / 4790,6 kB**.
+
+
+### Runda 2 (2026-10-03c) — weryfikacja po merge + luka LANDWALK
+
+**Wejście:** właściciel zgłosił te same cztery uwagi **po scaleniu PR #151** (`45fcaf6`,
+2026-10-03T09:28:44Z). Plan: `docs/plans/PLAN_2026-10-03c-pmssb41-runda2-landwalk.md`.
+
+**Diagnoza (krok 0):** fixy A–D **są w `main`** — po squash-merge pliki
+`heuristic-bot.js`/`heuristic-params.js`/`effect-intent.js`/`game-state.js`/`render.js` oraz
+fixture golden-mastera są IDENTYCZNE z gałęzią (`git diff --quiet origin/main HEAD`).
+Publikacja na GitHub Pages dla `main` była w chwili testu jeszcze **`in_progress`**
+(`gh run list`): workflow uruchamia pełny `run-tests.mjs all` (~8 min) PRZED buildem, więc
+strona serwowała build sprzed fixów. Scenariusze właściciela odtworzone na kodzie z `main`:
+**C e2e** — charge 6 + stwory 2/2 i 4/4 → tap **4/4**, charge **10**, artefakt-stwór,
+**2/2 nietknięty**, potem `pass_priority` (bez dobijania do 12); **B** — wybór `myCre` (14)
+nad wrogimi (−25); **D** — badge `["bez zdolności","typ: +Skeleton","choroba"]`;
+**A** — bez gospodarza warp −29 → pass, przy 6 lądach rzut 71,1 > warp.
+
+**Realna luka znaleziona w tej rundzie (nowa praca):** kryterium właściciela wymienia
+„flying, menace **albo landwalk**”, a `PlayerView` **nie niósł pola `landwalk`** — `emerald-oryx`
+(forestwalk) i `farbog-explorer` (swampwalk), jedyne karty z landwalkiem w katalogu, były dla
+bota gołym 2/3 (klasa L1/ADR 0017). PRZED (`/tmp/pr/probe-landwalk.mjs`): `widok.landwalk`
+= `undefined`, warp **−29** (`pass_priority`) ZARÓWNO gdy obrońca ma Las (forestwalk realnie
+działa, CR 702.14), jak i gdy go nie ma. PO: widok niesie `landwalk: "Forest"` (deskryptor
+podtypu, ADR 0002; ukryty dla zakrytego permanentu obcego kontrolera), a `hostEvadesBlockers`
+liczy ewazję regułą **tej samej postaci co silnik** (`combat.js` →
+`controlsLandWithSubtype(state, blocker.controllerId, subtype)`): z Lasem obrońcy warp **84 →
+wybrany**, bez Lasu −29 → pass. Drugi, węższy defekt tej samej funkcji: gałąź `flying`
+kończyła się `return false` przy blokerze z flying/reach, więc **menace na tym samym stworze
+nigdy nie był sprawdzany** — teraz zdolności ewazji rozstrzygają się niezależnie (CR: „nie
+może być blokowany” to suma warunków).
+
+**Test:** 25 → **30 pinów** w `test/audyt-pmssb41-uwagi-testow.test.js` (A9 landwalk z Lasem
+obrońcy, A10 kontrola CR 702.14 bez Lasu, A11 pole widoku, A12 flying+menace ucieka jednemu
+blokerowi z flying — wycena ścieżką CZARU, bo próg bramki warp maskuje różnicę przy małym
+ciele: 104 bez blokerów vs 111,5 nie-do-zatrzymania; C9 e2e scenariusz właściciela).
+**Mutacje tej rundy m10–m13 (RED 1/2/1/1):** landwalk znika z ewazji, widok nie niesie
+landwalka, ewazje wracają do pierwszego trafienia, station bez klampu progressu.
+
+**Ewaluacja:** golden-master **bez dryfu** (`innistrad-wu` ma `farbog-explorer`, ale w 6
+partiach wzorcowych sytuacja „landwalk + obrońca z lądem podtypu” nie wystąpiła); tie-audit PO
+bez zmian: 24 partie / 12 612 decyzji, 26,9% remisów (9,9% akcyjnych), GROZY 13. Mirror
+pominięty ŚWIADOMIE: żadna z 6 talii benchmarku nie zawiera karty z landwalkiem (sprawdzone
+`grep`), więc pomiar byłby konstrukcyjnie pusty (B6).
+
+**Bramy runda 2:** fast **7479/7479** EXIT 0 · all **7750/7750** EXIT 0 (435,5 s) · build **70 modułów / 4792,5 kB**.
+
+**Status runda 2:** zgłoszenia A–D nieroztwarzalne na kodzie z `main` (opisują build sprzed
+merge); dodatkowo domknięta luka landwalk z kryterium A. Właściciel dostaje świeży build
+dist na żywym podglądzie sesji, żeby przetestować fixy bez czekania na Pages.
 
 **Status:** wszystkie cztery zgłoszenia ZAMKNIĘTE. Kolejka następnej pętli bez zmian:
 koszt okazji drugiego trybu źródła (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden),
