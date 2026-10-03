@@ -1,7 +1,7 @@
 import { chooseDestructionReplacement } from './destruction.js';
 import { blockingRequirementCount, combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { assertZone, ZONES } from './zones.js';
+import { assertZone, ZONES, isCardObject } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
@@ -1489,7 +1489,7 @@ function graveyardToTopCandidates(state, playerId, filter = null) {
   const anyTypes = filter?.anyTypes ?? null;
   return state.zones.graveyard.filter((objectId) => {
     const object = state.objects.get(objectId);
-    if (!object || object.controllerId !== playerId || object.name != null) return false;
+    if (!isCardObject(object) || object.controllerId !== playerId) return false;
     if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
     return object.kind === 'creature';
   });
@@ -2046,7 +2046,7 @@ function accepted(state, cmd, result) {
   // czeka na decyzję. Token znika dopiero po dokończeniu rozstrzygania.
   const offBattlefieldTokens = stateBasedActionsOpen(state)
     ? [...state.objects.values()].filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
-      && o.name != null && o.zone !== 'battlefield')
+      && o.isToken && o.zone !== 'battlefield')
     : [];
   if (offBattlefieldTokens.length > 0) {
     for (const token of offBattlefieldTokens) {
@@ -7004,9 +7004,15 @@ export function playerView(state, playerId) {
         if (object.toughness != null) waiting.toughness = object.toughness;
         waiting.manaCost = object.manaCost ?? 0;
       }
+      // Audyt PR #153 (F6): bycie KARTĄ (CR 108.2b) to jawna flaga `isToken`,
+      // a nie domysł po polu `name` — bot czytał `o.name != null` z widoku,
+      // w którym grób `name` w ogóle nie wystawia, więc filtr był martwy
+      // (martwa gałąź liczyła wszystko). Flaga jest jawna na stole (M180/Z2),
+      // a token w strefie publicznej pozostaje tokenem — wysyłamy ją także
+      // tutaj, żeby konsument miał jedną regułę do odczytania (ADR 0017).
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
-        plotted: Boolean(object.plotted), ...waiting,
+        plotted: Boolean(object.plotted), ...(object.isToken ? { isToken: true } : {}), ...waiting,
         // M209: kolory karty w strefach JAWNYCH (grob, wygnanie, stos) — grob
         // jest publiczny (CR 400.2), a dla bota to jedyny legalny dowod, ze
         // przeciwnik GRA kartami wielokolorowymi. Reka i biblioteka wracaja

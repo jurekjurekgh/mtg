@@ -131,6 +131,32 @@ export function isOnAdventure(object) {
 }
 
 /**
+ * JEDNO źródło reguły „czy obiekt jest KARTĄ" (CR 108.2b): kartą nie jest
+ * WYŁĄCZNIE token — czytamy jawną flagę `isToken` (L43), nie domysł po innym
+ * polu. CR 108.2b (dosłownie, CR 2026-09-25): „Tokens aren't considered
+ * cards—even a card-sized game supplement that represents a token isn't
+ * considered a card for rules purposes."
+ *
+ * Audyt PR #136 (F-2) poprawił tym predykatem cel „card from an opponent's
+ * graveyard", ale bliźniacze gałęzie w `triggers.js`/`permanents.js`/
+ * `effects.js`/`game-state.js` zostały na heurystyce `name != null`
+ * („tokeny mają nazwę, karty nie"). To nieprawda: `name` nosi także KOPIA
+ * permanentu z `enterAsCopy` (nazwa kopiowalna, CR 707.2) i pole nie jest
+ * kasowane przy zmianie strefy (`objects.js`), więc poległa kopia liczyła się
+ * jako nie-karta w delirium (CR 207.2c), u Tarmogoyfa/Disy, w warunku Gray
+ * Slaada, w pulach celów „…card from your graveyard" i w descendzie.
+ * Audyt PR #153 (F6) nazwał to wprost: jedna heurystyka, dwanaście kopii
+ * w silniku — L41 (jedna definicja), L48 (oferta = walidacja), ADR 0002.
+ *
+ * Mieszka w `zones.js`, bo to najniższa warstwa grafu importów — czytają ją
+ * `triggers`, `permanents`, `effects`, `game-state` i kontroler bota, więc
+ * helper wyżej w grafie tworzyłby cykl (`test/module-graph.test.js`).
+ */
+export function isCardObject(object) {
+  return Boolean(object) && !object.isToken;
+}
+
+/**
  * Batch 59 (Scavenging Harpy): predykat celu „card from an opponent's
  * graveyard" — dowolna KARTA w grobie gracza innego niż wskazany kontroler.
  *

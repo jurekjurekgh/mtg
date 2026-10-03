@@ -654,13 +654,16 @@ function pumpImprovesOutcome(view, recipient, pending, delta) {
  * PMSSB-43/A (pętla jakości 2026-10-03d): liczba RÓŻNYCH typów kart we WSZYSTKICH
  * grobach, liczona z WIDOKU (ADR 0017). Ta sama reguła co silnik
  * (`permanents.js.allGraveyardsCardTypeCount`, CR 205.3m — Tarmogoyf/Altar):
- * karty (nie-tokeny — name=undefined oznacza kartę), po typach ∩ CARD_TYPES
- * importowanym z permanents.js (O-2: jedno źródło prawdy dla listy typów kart).
+ * karty (nie-tokeny — jawna flaga `isToken` z widoku, CR 108.2b), po typach
+ * ∩ CARD_TYPES importowanym z permanents.js (O-2: jedno źródło prawdy dla
+ * listy typów kart). Audyt PR #153 (F6): filtr po `name` był MARTWY (widok nie
+ * wystawia `name` poza polem bitwy), więc bot liczył nazwane kopie, a silnik
+ * nie — jedna reguła, dwa wyniki (L41/L48).
  */
 function cardTypesInAllGraveyardsFromView(view) {
   const present = new Set();
   for (const o of (view?.zones?.graveyard ?? [])) {
-    if (!o || o.name != null) continue; // token (name ustawione) nie jest kartą
+    if (!o || o.isToken === true) continue; // token nie jest kartą (CR 108.2b, jawna flaga)
     for (const t of (o.types ?? [])) if (CARD_TYPES.includes(t)) present.add(t);
   }
   return present.size;

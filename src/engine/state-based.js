@@ -288,8 +288,9 @@ export function runStateBasedActions(state) {
   // efektem reanimacji; token-kopia wygnana przez craft zostawała w exile.
   // Deskryptor tokenu jest generyczny (ADR 0002): jawna flaga `isToken`
   // ustawiana wyłącznie w createBattlefieldToken. Rozpoznawanie po
-  // `name != null` (tak robią delirium/wybór karty z grobu) to heurystyka —
-  // kartom również wolno nieść `name`, więc do KASOWANIA obiektu jest za słaba.
+  // `name != null` (tak robiły delirium/wybór karty z grobu do audytu
+  // PR #153/F6) to heurystyka — kartom również wolno nieść `name`, więc do
+  // KASOWANIA obiektu jest za słaba; bycie kartą orzeka `isCardObject`.
   // Token NA STOSIE to token-kopia czaru (CR 707.10) — istnieje legalnie.
   for (const object of [...state.objects.values()]) {
     if (!object.isToken) continue;
