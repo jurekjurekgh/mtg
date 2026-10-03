@@ -15386,3 +15386,37 @@ build **70 modułów / 4792,5 kB**.
   źródła wymagające aktywacji i przyszłe dobrania poza modelem. Talie wzorcowe
   nie zawierają karty z warp → pomiar lustra bez zmian; pełny B0 tylko na
   polecenie właściciela.
+
+## 2026-10-03m — PMSSB-50: premia ewazyjna deathtouch / double strike w wycenie ataku (PR #154)
+
+- **Kolejka 3 po PMSSB-48** (granica (1) §PMSSB-41): wycena deklaracji
+  atakujących liczyła progi zabicia gołą mocą, więc **deathtouch nie istniał**
+  (1/1 i 3/3 z DT wypadały identycznie jak bez niego: −10 = chump, a 3/3 DT
+  w blokera 1/5 trafiał w „przeżyje, ale nie zabije” = −2), a **double strike**
+  nie istniał ani w progu zabicia (2/2 DS zabija 4/4: 2+2), ani w obrażeniach
+  w twarz (2/2 DS = 4, nie 2 — lethal przy 4 życia obrońcy był niewidziany:
+  33 zamiast +1000).
+- **Naprawa `98b8de9`:** `lethalDamageOf` (deathtouch CR 702.2b → ∞ przy mocy
+  ≥1, double strike CR 702.7b → 2 × moc) w progach „zabija blokera”; próg
+  „zabija, ZANIM bloker odpowie” przy JEDNEJ odsłonie (`killsBeforeBlockerStrikes`,
+  CR 702.7) — dwie odsłony to próg wymiany; `faceDamageOf` (DS podwaja) w
+  gałęziach „przechodzi” i w `totalPower`; nowa gałąź „deathtouch praktycznie
+  nieblokowalny” (każdy nietapnięty bloker cenniejszy niż atakujący ⇒ blok nie
+  przyjdzie ⇒ atak jak ewazyjny M202/H; próg OSTRA nierówność). Bez nowych
+  pokręteł — to reguły CR, nie wagi. Zero nazw kart (ADR 0002).
+- **Pomiar PO:** A2 (1/1 DT w 5/5) −10 → **4**, A4 (3/3 DT w 5/5) −10 → **6**,
+  A5 (3/3 DT w 1/5) −2 → **6**, B2 (2/2 DS otwarty) 13 → **15**, B3 (DS lethal)
+  33 → **1035**, B5 (2/2 DS w 4/4) −10 → **1**; kotwice bez keywordów bez zmian.
+- **Piny:** `test/pmssb50-ewazja-dt-ds.test.js` E1–E9 (9/9); mutacje m1→E3,E6,
+  m2→E3, m3→E6, m4→E1,E2, m5→E4,E5, m6 (over-fix progu „przed blokerem”)→E6,
+  m7 (nierówność nieostra)→E9, m8 (podwojenie zawsze)→E4,E5.
+- **Golden-master — świadomy dryf 1/6 partii** (`tarkir-bg|warhammer-ubr@1001`,
+  decyzja #104, tura 9): bot ma `woolly-loxodon` 2/2 i `typhoid-rats` 1/1
+  deathtouch, a wrogie blokery 2/1 i 2/2 są cenniejsze od 1/1 — PRZED
+  `attack[permanent-12]` = 1 (typhoid-rats = −10, chump), PO
+  `attack[permanent-12,permanent-22]` = 5 (typhoid-rats = 1 + 3). Fixture
+  zregenerowany świadomie (precedens PMSSB-32).
+- **Bramki:** `npm test` **7531/7531** EXIT 0 (117,5 s), build 70 modułów /
+  4809,8 kB, `bot-scoring-snapshot` 4/4 po regeneracji, `event-contract-audit`
+  0 naruszeń, regresja skoncentrowana 252/252.
+

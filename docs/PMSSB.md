@@ -2292,7 +2292,9 @@ pierwszy od kilku pętli pomiar lustra z wyraźnym sygnałem dodatnim.
 
 **Granice (świadome, nie bugi):** (1) premia ewazyjna w `warpEtbHostPayoff` jest wąska
 (flying/menace/landwalk + liczba blokerów) — „wart wzmocnienia” dla innych słów kluczowych
-(np. deathtouch, double strike) wychodzi z samej `counterHostValue`, bez własnej premii;
+(np. deathtouch, double strike) wychodzi z samej `counterHostValue`, bez własnej premii
+(**domknięte w PMSSB-50**: keywordy deathtouch/double strike mają teraz własne reguły
+w wycenie ataku — próg zabicia i obrażenia w twarz — niezależnie od `warpEtbHostPayoff`);
 (2) `warp_card` nie modeluje pełnej symulacji „warp w tej turze vs rzut w następnej” — porównuje
 się z OFERTĄ rzutu teraz (L48), nie z przyszłą turą (**częściowo domknięte w PMSSB-49**: druga
 wypłata ETB z recastu po warp jest liczona, gdy recast jest osiągalny już w następnej turze;
@@ -2625,5 +2627,53 @@ zielone); regresja PMSSB-41 + PMSSB-35 50/50.
 źródła nielandowe wymagające aktywacji i przyszłe dobrania są poza modelem.
 Talie wzorcowe (`BENCH_DECKS`) nie mają karty z warp, więc pomiar lustra nie
 zmienia się od tej rundy; pełny B0 tylko na polecenie właściciela (ADR 0018/0025).
+
+**Status:** zamknięty.
+
+## PMSSB-50 — premia ewazyjna deathtouch / double strike w wycenie ataku (2026-10-03m)
+
+**Wejście:** pozycja 3 kolejki po PMSSB-48 (handoffy 03g/03h) — granica (1)
+z sekcji PMSSB-41: wycena ataku nie znała dwóch słów kluczowych, które
+rozstrzygają walkę.
+
+**Problem (sonda, PRZED):** progi zabicia liczone gołą mocą
+(`power >= blocker.toughness`), więc 1/1 i 3/3 z deathtouch wypadały tak samo
+jak bez niego (−10 = chump), 3/3 z DT w blokera 1/5 trafiał w „przeżyje, ale
+nie zabije” (−2), 2/2 z double strike dawał 13 = tyle samo co 2/2 bez DS
+(choć bije w twarz 4, nie 2), lethal przy 4 życia obrońcy nie był widziany
+(33 zamiast +1000), a 2/2 DS w blokera 4/4 był chumpem, choć to wymiana (2+2).
+
+**Naprawa:** `lethalDamageOf` (deathtouch CR 702.2b → ∞, double strike
+CR 702.7b → 2 × moc) w progach „zabija blokera”; próg „zabija, ZANIM bloker
+odpowie” zostaje przy jednej odsłonie (`killsBeforeBlockerStrikes`, CR 702.7) —
+dwie odsłony to próg wymiany; `faceDamageOf` (DS = 2 × moc) w gałęziach
+„przechodzi” i w `totalPower` (lethal); nowa gałąź „deathtouch praktycznie
+nieblokowalny”: gdy KAŻDY nietapnięty bloker jest cenniejszy niż atakujący
+(moc + wytrzymałość jak `blockerValueLost`), blok nie przyjdzie i atak liczy
+się jak ewazyjny (M202/H). Bez nowych pokręteł — to reguły CR, nie wagi.
+
+**Pomiar PO:** A2 4 / A4 6 / A5 6 / B2 15 / B3 1035 / B5 1; kotwice bez
+keywordów bez zmian (A1/A3 −10, B1 13, B4 33, B7 1).
+
+**Weryfikacja:** `test/pmssb50-ewazja-dt-ds.test.js` E1–E9 (9/9); mutacje
+m1→E3,E6; m2→E3; m3→E6; m4→E1,E2; m5→E4,E5; m6 (over-fix progu „przed
+blokerem”)→E6; m7 (nierówność nieostra)→E9; m8 (podwojenie zawsze)→E4,E5;
+regresja skoncentrowana 252/252.
+
+**Golden-master (świadomy dryf 1/6 partii):** `tarkir-bg|warhammer-ubr@1001`,
+decyzja #104 (tura 9): bot ma `woolly-loxodon` 2/2 i `typhoid-rats` 1/1
+deathtouch, a wrogie blokery (2/1, 2/2) są cenniejsze od 1/1 — PRZED
+`attack[permanent-12]` = 1, PO `attack[permanent-12,permanent-22]` = 5
+(typhoid-rats = 1 + 3). Fixture zregenerowany świadomie (precedens PMSSB-32).
+
+**Bramki:** `npm test` **7531/7531** EXIT 0 (117,5 s) · build **70 modułów /
+4809,8 kB** · `bot-scoring-snapshot` 4/4 po regeneracji · `event-contract-audit`
+0 naruszeń.
+
+**Granice świadome:** model ataku pracuje na agregatach (najsilniejszy bloker
++ gang top-2), więc „praktycznie nieblokowalny” to proxy wartości, nie
+symulacja wyboru blokera przeciwnika; `totalPower` dla zablokowanego atakującego
+z DS nadal nie modeluje drugiej odsłony (obsługuje ją blokowa ścieżka
+`blockExchangeOf`).
 
 **Status:** zamknięty.
