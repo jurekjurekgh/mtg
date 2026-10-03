@@ -242,6 +242,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'warpFutileEtbPenalty',        // kara, gdy trigger wejścia z celem nie ma godnego gospodarza
   'warpRedundantPenalty',        // kara, gdy rzut normalny TEJ karty jest oferowany (warp = strata karty)
   'warpRecastEtbWeight',         // waga DRUGIEGO ETB z recastu po warp (rzut z exile za koszt many)
+  // PMSSB-51 (kolejka 4, etap 2 planu PMSSB-47 — karta demonstrująca:
+  // Idyllic Grange, ląd z ETB „+1/+1 na target creature you control"): kara,
+  // gdy permanent z takim triggerem wchodzi BEZ legalnego celu (ETB przepada).
+  'castFutileEtbPenalty',        // kara za wejście permanentu, którego ETB z celem nie ma celu
   // PMSSB-41/C (zgłoszenie właściciela, Wedgelight Rammer): Station dokłada
   // charge równe MOCY tapowanego stwora, więc wycena liczy realny postęp
   // (nadmiar ponad próg = 0) i premię za DOMKNIĘCIE progu (artefakt → stwór).
@@ -675,6 +679,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // trigger przyjdzie turę później i po zapłaceniu kosztu many). ×0 = stan
   // sprzed PMSSB-49 (M429 anty-over-fix).
   warpRecastEtbWeight: 0.5,
+  // PMSSB-51: ląd (lub inny permanent nie będący stworzeniem) z ETB wymagającym
+  // MOJEGO stworzenia (Idyllic Grange) przy pustym stole pali trigger — kara
+  // jest mniejsza niż `warpFutileEtbPenalty`, bo permanent ZOSTAJE na stole
+  // (rzut/warp to strata karty, ląd to trwała mana). Wartość 40 wystarcza, by
+  // bot NAJPIERW wystawił gospodarza, a potem zagrał ląd (kolejność), a nie
+  // wyklucza samego land dropu (ląd 90 − 40 = 50 > pass 0). ×0 = stan sprzed
+  // PMSSB-51 (M429 anty-over-fix).
+  castFutileEtbPenalty: 40,
   stationCloseBonus: 6,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,

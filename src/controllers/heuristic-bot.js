@@ -1494,6 +1494,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && o.kind === 'creature'
       && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
   };
+  /**
+   * PMSSB-51 (kolejka 4, etap 2 planu PMSSB-47 — karta demonstrująca: Idyllic
+   * Grange): permanent wchodzi z triggerem „put a +1/+1 counter on target
+   * creature you control", a na stole nie ma mojego stwora. Dla STWORÓW to
+   * nigdy nie zachodzi (wchodzący jest legalnym celem własnego triggera,
+   * CR 603.6d — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
+   * trigger przepada. Kara mniejsza niż `warpFutileEtbPenalty`, bo permanent
+   * ZOSTAJE na stole (nie jest stratą karty) — jej rolą jest KOLEJNOŚĆ:
+   * ląd przestaje wygrywać z rzutem gospodarza, więc bot najpierw wystawia
+   * stwora, a potem zagra ląd (licznik ma wtedy cel).
+   * `entersTapped` = trigger z warunkiem „enters untapped" (Idyllic Grange)
+   * przy tapniętym wejściu NIE odpala — wtedy kary nie ma (L41: jedno miejsce
+   * na regułę, wołane przez `play_land`).
+   */
+  const futileFriendlyCounterEtbPenalty = (view, def, { entersTapped = false } = {}) => {
+    if (!def) return 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      if (ability.trigger?.condition?.enteredUntapped && entersTapped) continue;
+      const spec = ability.trigger?.requiresTarget;
+      if (!isFriendlyCounterSpec(spec)) continue;
+      const efekty = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      if (!efekty.some((e) => e?.type === 'add_counter')) continue;
+      if (!etbFriendlyCounterTargetAvailable(view, spec, def)) return P.castFutileEtbPenalty;
+    }
+    return 0;
+  };
   // PMSSB-2/A (F4): efekty oferowane PRZEZ token (z jego zdolności —
   // deskryptor efektu albo definicja tokena, wzorzec M243/C). Jedno źródło
   // dla wyceny roli (mana-bank / liczniki) i kary M243/C (L41).
@@ -4474,6 +4501,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
+  /**
+   * PMSSB-51: czy ląd wchodzi TAPNIĘTY — z warunkiem „enters tapped unless …"
+   * rozstrzyganym jak w silniku (`resources.playLand`, CR 614.1c; lustro
+   * z odwołaniem, jak `attackerCanBeBlocked` ↔ `combat.js`). Dotąd czytana
+   * była sama flaga `def.entersTapped`, więc Idyllic Grange przy 3+ innych
+   * Plains dostawał karę −8 „wchodzi tapnięty", choć wchodzi ODKRĘCONY
+   * (i dopiero wtedy odpala ETB z licznikiem). Wchodzący ląd nie jest jeszcze
+   * na polu bitwy, więc „other X" liczymy po istniejących moich landach.
+   */
+  const entersTappedOfLand = (def, mojeLandy, view) => {
+    if (!def?.entersTapped) return false;
+    const cond = def.entersTappedCondition;
+    if (!cond) return true;
+    const landy = mojeLandy ?? [];
+    if (cond.type === 'player_life_at_most'
+      && (view.players ?? []).some((p) => (p.life ?? 0) <= (cond.amount ?? 0))) return false;
+    if (cond.type === 'islands_you_control_at_least'
+      && landy.filter((o) => (o.subtypes ?? []).includes('Island')).length >= (cond.amount ?? 3)) return false;
+    if (cond.type === 'controls_land_subtype_any') {
+      const wanted = cond.subtypes ?? [];
+      if (landy.filter((o) => (o.subtypes ?? []).some((st) => wanted.includes(st))).length >= (cond.amount ?? 1)) return false;
+    }
+    if (cond.minOtherPlains
+      && landy.filter((o) => (o.subtypes ?? []).includes('Plains')).length >= cond.minOtherPlains) return false;
+    return true;
+  };
+
   function landAnaliza(view, objectId) {
     const ja = view.playerId;
     // M361/B3: land drop także z exile (okno impulsu, CR 701.18a) — wycena
@@ -4510,7 +4564,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       nowyKolor: kolory.length > 0 && !kolory.some((k) => dostepne.get(k)),
       dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
         && !manaOnlyAbility(a)),
-      entersTapped: Boolean(def?.entersTapped),
+      entersTapped: entersTappedOfLand(def, pola, view),
       // Batch 62 (Crumbling Vestige): ETB-trigger lądu dodający manę do puli —
       // ląd wchodzi tapnięty, ale ta mana jest do wydania W TEJ SAMEJ turze
       // (CR 605.1a: zdolność wyzwalana, nie many, więc przechodzi przez stos).
@@ -6107,14 +6161,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
   /**
-   * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
-   * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
-   * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
-   * ataku; poza oknem walki (druga główna, tura wroga) = 0, bo nic nie kupuje.
-   * Cel wybierze dopiero decyzja triggera, więc bierzemy NAJLEPSZEGO blokera
-   * wroga (best-of — jak best-of-targets przy rzucie z ręki).
-   */
-  /**
    * PMSSB-49 (kolejka: „warp_card vs rzut w następnej turze — opóźdzony zysk
    * vs stracona tura", granica (2) §PMSSB-41): czy rzut z wygnania po
    * warp-caście (CR 702.185a — „then you may cast it from exile on a later
@@ -6177,6 +6223,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return total;
   };
 
+  /**
+   * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
+   * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
+   * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
+   * ataku; poza oknem walki (druga główna, tura wroga) = 0, bo nic nie kupuje.
+   * Cel wybierze dopiero decyzja triggera, więc bierzemy NAJLEPSZEGO blokera
+   * wroga (best-of — jak best-of-targets przy rzucie z ręki).
+   */
   function cantBlockPayoffValue(view) {
     const combat = view.combat ?? null;
     const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
@@ -7143,7 +7197,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(uncoverValue > 0 ? uncoverValue : NEVER);
       }
       case 'draw_card': return finish(100);
-      case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
+      case 'play_land': {
+        // PMSSB-51: ETB lądu wymagający MOJEGO stworzenia (Idyllic Grange)
+        // przy pustym stole przepada — kara sprawia, że rzut gospodarza
+        // wygrywa kolejność, a sam land drop pozostaje opłacalny
+        // (90 − 40 = 50 > pass 0). Wołane po `landPlayDelta` (klamra delty
+        // ±14/25 zamknęłaby karę w sobie).
+        const analiza = landAnaliza(view, cmd.objectId);
+        const futile = futileFriendlyCounterEtbPenalty(view, analiza.def, { entersTapped: analiza.entersTapped });
+        return finish(90 + landPlayDelta(view, cmd.objectId) - futile);
+      }
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
         // a land zostaje tapowany całą turę — gorzej niż pass.
