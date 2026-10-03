@@ -314,3 +314,70 @@ test('F3 (CR 400.7, okno impulsu): stempel „zagrywalna do końca tury" nie prz
   assert.equal(hasFreeCastStamp(ex), false);
   assert.deepEqual(s.objects.get('grave-f3').playableUntilTurn ?? null, null, 'i nie wraca na nowym obiekcie');
 });
+
+// --- D. Pin O1 z audytu PR #149: rezerwacja many dla rzutu, który NIE płaci
+//        kosztu karty (kolejka handoffu 2026-10-01g/02 → domknięta 2026-10-02f)
+//
+// Audyt PR #149 odłożył ten pin z uzasadnieniem „żadna wspierana karta z plotem
+// nie ma celów (ward nieosiągalny), a darmowy impuls ze stemplem + cel nie ma
+// sondy". Pin jest dziś wykonalny BEZ warda i bez celu: ten sam warunek
+// (`castsWithoutPayingMana` w `reservedManaOf`) jest czytany przez wycenę
+// WYPŁATY triggerów „manaSpentBelow/AtLeast" (Opus — Tackle Artist), a ta nie
+// patrzy na cele. Silnik dla darmowego rzutu z wygnania emituje
+// `spell_cast.manaSpent = 0` → 1 licznik; dla płatnego 5 → 2 liczniki
+// (CR 601.2f: mana wydana NA CZAR). Wycena bota musi liczyć to samo (L41).
+//
+// Ścieżka WARD nadal czeka na kartę: zakryty permanent (disguise) nie niesie
+// w widoku `keywords`/`ward` (CR 708), a w katalogu nie ma odkrytego stworu
+// z ward — pin wardowy zostaje w kolejce razem z taką kartą.
+
+function liczniki(s, id) {
+  return (s.objects.get(id)?.counters ?? {})['+1/+1'] ?? 0;
+}
+
+/**
+ * Plansza do porównania: Tackle Artist (Opus) + ofiara rzutu. Zwraca stan
+ * i wynik wariantu rzutu z wygnania — `free` dodaje stempel darmowego impulsu
+ * (CR 701.18), bez niego karta płaci pełny koszt {4}{R}.
+ */
+function opusRzutZWygnania(free) {
+  const s = game({ turn: 6 });
+  lądy(s, 'basic-mountain', 5, 'mo');
+  dodaj(s, 'art', 'tackle-artist', 'battlefield', 'creature', { summoningSickness: false });
+  dodaj(s, 'b', 'hill-giant', 'battlefield', 'creature', { summoningSickness: false });
+  wExile(s, 'ex', 'rage-of-purphoros', free
+    ? { playableUntilTurn: 12, playableWithoutPaying: true }
+    : { playableUntilTurn: 12 });
+  return s;
+}
+
+test('D1 (pin O1, PR #149): darmowy impuls nie rezerwuje kosztu karty — wycena = silnik', () => {
+  // Silnik: darmowy rzut nie wydaje many na czar (1 licznik), płatny wydaje 5 (2).
+  const darmowy = opusRzutZWygnania(true);
+  const offer = playerView(darmowy, 'p1').legalCommands
+    .find((c) => c.type === 'cast_spell' && c.objectId === 'ex' && c.targets?.[0] === 'b');
+  assert.ok(offer, 'karta z exile ma ofertę rzutu (stempel okna impulsu)');
+  assert.ok(execute(darmowy, { type: 'cast_spell', playerId: 'p1', objectId: 'ex', targets: ['b'] }).ok);
+  assert.ok(rozstrzygnij(darmowy), 'stos pusty');
+  assert.equal(darmowy.events.filter((e) => e.type === 'spell_cast').at(-1)?.manaSpent, 0,
+    'darmowy rzut: manaSpent = 0 (CR 118.9)');
+  assert.equal(liczniki(darmowy, 'art'), 1, 'Opus: poniżej progu = 1 licznik');
+
+  const platny = opusRzutZWygnania(false);
+  assert.ok(execute(platny, { type: 'cast_spell', playerId: 'p1', objectId: 'ex', targets: ['b'] }).ok);
+  assert.ok(rozstrzygnij(platny), 'stos pusty');
+  assert.equal(platny.events.filter((e) => e.type === 'spell_cast').at(-1)?.manaSpent, 5,
+    'płatny rzut: manaSpent = koszt karty');
+  assert.equal(liczniki(platny, 'art'), 2, 'Opus: od progu = 2 liczniki');
+
+  // Bot: ta sama arytmetyka (L41). Δ = udział wypłaty Opusa w wyniku wariantu.
+  const delta = (s) => wynik(s, 'cast_spell(ex->b)') - wynik(s, 'cast_spell(ex->b)', { boardPayoffWeight: 0 });
+  const deltaDarmowy = delta(opusRzutZWygnania(true));
+  const deltaPlatny = delta(opusRzutZWygnania(false));
+  blisko(deltaDarmowy, 14, 'darmowy rzut: wycena liczy gałąź „poniżej pięciu many"');
+  blisko(deltaPlatny, 16, 'płatny rzut: wycena liczy gałąź „pięć lub więcej"');
+  blisko(deltaPlatny - deltaDarmowy, 4 * 0.5,
+    'różnica = jeden licznik (counterAmountWeight 4 × boardPayoffWeight 0,5)');
+  assert.ok(deltaDarmowy < deltaPlatny,
+    'mutacja: usunięcie gałęzi darmowego rzutu w `reservedManaOf` zrównuje obie wartości (16 = 16)');
+});
