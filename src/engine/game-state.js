@@ -6742,19 +6742,20 @@ export function playerView(state, playerId) {
             .find((subtype) => typeof subtype === 'string');
           if (landwalkSubtype && !hiddenFromViewer) entry.landwalk = landwalkSubtype;
         }
-        // PMSSB-45 (pętla jakości 2026-10-03f, następca landwalka): kolejne
-        // publiczne deskryptory blokowania z CR 509.1a, których PlayerView
-        // dotąd nie niósł, a które są potrzebne botu do oceny ewazji gospodarza
-        // w warpEtbHostPayoff (klasa L1/ADR 0017):
-        //  - cantBeBlockedExceptByColors: kolory blokujących (Dauthi Voidwalker);
-        //  - cantBeBlockedByPower: maksymalna moc blokującego (Aerial Maurer).
-        // Lista wyliczona przez effectiveAbilities (z uwzględnieniem nadanych
-        // do EOT, sprzętu i warstw postaci) — ta sama funkcja co w walidacji
-        // bloku (combat.js), tylko wyliczone na wejściu do widoku. Shape jak
-        // w silniku (ADR 0002/0017, bez nazw kart). cantBeBlockedBySubtypes
-        // (Blazing Torch) nie dodane — bot nie rozpoznaje ewazji podtypowej;
-        // pojawi się gdy karta z tym kształtem pojawi się w katalogu (B6/kod
-        // na zapas).
+        // PMSSB-45 (pętla jakości 2026-10-03f, następca landwalka): publiczny
+        // deskryptor blokowania z CR 509.1a, którego PlayerView dotąd nie niósł,
+        // a który jest potrzebny botu do oceny ewazji gospodarza
+        // (warpEtbHostPayoff, klasa L1/ADR 0017):
+        //  - cantBeBlockedExceptByColors: kolory blokujących (Dauthi Voidwalker).
+        // Lista z effectiveAbilities (wydrukowane + nadane do EOT / warstwy
+        // postaci) — ten sam kształt co w walidacji bloku (combat.js), ADR 0002.
+        // `cantBeBlockedByPower` NIE jest tu czytane ponownie: widok ustawia je
+        // wyżej JEDNYM źródłem — helperem silnika `attackerBlockPowerRestriction`
+        // (combat.js), który jako jedyny obejmuje też nadania sprzętu
+        // (`attachmentsAttachedTo → equipment.grantedAbilities`, L41).
+        // cantBeBlockedBySubtypes (Blazing Torch) nie dodane — bot nie
+        // rozpoznaje ewazji podtypowej; pojawi się, gdy karta z tym kształtem
+        // wejdzie do katalogu (ADR 0022 §4).
         if (!hiddenFromViewer) {
           for (const a of effectiveAbilities(object)) {
             if (a?.type !== 'static') continue;
@@ -6762,10 +6763,6 @@ export function playerView(state, playerId) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
               break;
             }
-          }
-          for (const a of effectiveAbilities(object)) {
-            if (a?.type !== 'static') continue;
-            if (a.cantBeBlockedByPower != null) { entry.cantBeBlockedByPower = a.cantBeBlockedByPower; break; }
           }
         }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
