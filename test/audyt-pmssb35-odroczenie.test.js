@@ -381,3 +381,36 @@ test('D1 (pin O1, PR #149): darmowy impuls nie rezerwuje kosztu karty — wycena
   assert.ok(deltaDarmowy < deltaPlatny,
     'mutacja: usunięcie gałęzi darmowego rzutu w `reservedManaOf` zrównuje obie wartości (16 = 16)');
 });
+
+// --- G. Odmowa rzutu z ZAWIESZENIA gasi uprawnienie (CR 702.62c) -----------
+//
+// Znalezisko 2026-10-02f (ta sama rodzina co F1/F2 z audytu PR #149 —
+// „uprawnienie do rzutu istnieje tylko wtedy, gdy daje je mechanika"):
+// decyzja `resolve_suspend_cast` przy odmowie zmieniała wyłącznie
+// `suspended`, a flagą czytaną przez ścieżki rzutu jest `suspendReady`
+// (`requireSpell`, `manaCostWaived` w `castSpell`, oferta `legalSpellCasts`,
+// `castModalSpell`) — karta zostawała więc w wygnaniu rzucalna BEZ KOSZTU
+// MANY, w dowolnej fazie i bez terminu (sonda: po odmowie 2 oferty
+// `cast_spell` i rzut PRZYJĘTY). Bliźniaczy rebound (CR 702.88a) gasi swoją
+// flagę `reboundReady` przy odmowie od dawna (L41: bliźniacze ścieżki nie
+// mogą się rozjeżdżać).
+
+test('G1 (CR 702.62c): po odmowie rzutu z zawieszenia karta NIE jest rzucalna', () => {
+  const s = game({ turn: 6 });
+  wExile(s, 'ms', 'mindstab', { suspended: true, timeCounters: 0, suspendReady: true });
+  s.pendingSuspendCast = { playerId: 'p1', objectId: 'ms', cardId: 'mindstab', restorePriorityTo: 'p1' };
+  s.turn.priorityPlayerId = 'p1';
+  assert.deepEqual(oferty(s, 'ms').filter((type) => type === 'cast_spell'), [],
+    'póki decyzja jest otwarta, rzut idzie wyłącznie przez nią');
+  assert.ok(execute(s, { type: 'resolve_suspend_cast', playerId: 'p1', objectId: 'ms', cast: false }).ok,
+    'odmowa przyjęta');
+  const obj = s.objects.get('ms');
+  assert.equal(obj.zone, 'exile', 'karta zostaje w wygnaniu');
+  assert.equal(obj.suspended, false, 'bez statusu „zawieszonej"');
+  assert.equal(obj.suspendReady, false, 'uprawnienie jest JEDNORAZOWE (CR 702.62c)');
+  assert.deepEqual(oferty(s, 'ms'), [], 'brak ofert dla karty (PRZED: 2 × cast_spell)');
+  const recznie = execute(s, { type: 'cast_spell', playerId: 'p1', objectId: 'ms', targets: ['p2'] });
+  assert.equal(recznie.ok, false, 'ręcznie zbudowana komenda też odrzucona (L48: oferta = walidacja)');
+  const reason = recznie.events.find((e) => e.type === 'command_rejected')?.reason ?? '';
+  assert.ok(reason.startsWith('illegal_spell'), `reason jawny (${reason})`);
+});

@@ -3297,9 +3297,22 @@ export function execute(state, input) {
     if (!cmd.cast) {
       // Odmowa: karta zostaje w exile, bez statusu „zawieszonej" (już bez
       // liczników i bez możliwości rzutu) — koniec.
+      //
+      // Znalezisko 2026-10-02f (CR 702.62c): uprawnienie do rzutu jest
+      // JEDNORAZOWE i zużywa się z decyzją. Sama zmiana `suspended` nie
+      // gasiła flagi `suspendReady`, a to ona — nie `suspended` — jest
+      // czytana przez ścieżki rzutu (`requireSpell`, `castSpell`
+      // `manaCostWaived`, oferta `legalSpellCasts`, `castModalSpell`) i przez
+      // `plottedCastAllowed` (bramka timingu WYŁĄCZA zawieszone, bo rzut
+      // rozstrzyga się w zdolności). Efekt: po odmowie karta zostawała
+      // w wygnaniu jako rzucalna BEZ KOSZTU MANY, w dowolnej fazie i bez
+      // terminu (promieniowanie: `requireSpell`, `castPermanent` i panel
+      // oferowały rzut, a wykonanie go przyjmowało). Bliźniacza mechanika
+      // (rebound, CR 702.88a) gasi swoją flagę (`reboundReady`) przy odmowie
+      // od dawna — L41: bliźniacze ścieżki nie mogą się rozjeżdżać.
       state.pendingSuspendCast = null;
       if (card && card.zone === 'exile') {
-        state.objects.set(pending.objectId, Object.freeze({ ...card, suspended: false }));
+        state.objects.set(pending.objectId, Object.freeze({ ...card, suspended: false, suspendReady: false }));
       }
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
