@@ -193,7 +193,16 @@ export function triggerTargetEffectFriendly(ability) {
     // wycena C-R2 dawała znak wrogi (−20−wartość) i bot wybierał „brak celu"
     // zamiast NAJLEPSZEJ karty grobu.
     || e?.type === 'return_card_from_graveyard_to_hand'
-    || e?.type === 'put_graveyard_card_on_top');
+    || e?.type === 'put_graveyard_card_on_top'
+    // PMSSB-41/B (zgłoszenie właściciela, Nanoform Sentinel): ODKRĘCENIE
+    // permanentu jest PRZYJAZNE dla obdarowanego — odkręcona karta działa dla
+    // SWOJEGO kontrolera (bloker/atakujący/źródło many wraca do gry).
+    // Bez tej gałęzi `friendly` było `false` dla KAŻDEGO celu, więc bot
+    // wyceniał trigger gałęzią WROGĄ i oddawał odkręcenie wrogowi: pomiar
+    // PRZED dał wybór „odkręć LĄD PRZECIWNIKA" (58 vs −29 dla własnego stwora).
+    // Wartość CELU liczy osobna miara `untapTargetValue` (bot) — ta sama
+    // w czarze, aktywacji i triggerze (L41).
+    || e?.type === 'untap_permanent');
 }
 
 /**

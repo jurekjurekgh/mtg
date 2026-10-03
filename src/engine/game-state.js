@@ -6614,6 +6614,15 @@ export function playerView(state, playerId) {
         // podtypie i kreator many oferował `tap_for_mana`, którego silnik
         // odrzuca (L1/L48: kontroler nie jest głupi — jest ślepy).
         if (object.abilitiesStripped === true) entry.abilitiesStripped = true;
+        // PMSSB-41/D (zgłoszenie właściciela, Xu-Ifit Osteoharmonist): dodane
+        // podtypy („It's a Skeleton in addition to its other types") to TEN SAM
+        // fakt publiczny co `subtypesBeforeOverride` obok — bez migawki sprzed
+        // nadania warstwa opisu nie odróżnia podtypu DODANEGO efektem od
+        // wydrukowanego na karcie, więc kafel nie ma z czego zbudować badge'a
+        // (pomiar PRZED: nakładka przywróconego stwora = 0 badge'ów).
+        if (object.subtypesBeforeStrip?.length && !hiddenFromViewer) {
+          entry.subtypesBeforeStrip = [...object.subtypesBeforeStrip];
+        }
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;

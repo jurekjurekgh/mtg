@@ -235,6 +235,16 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // `untappedBodyDefense` = waga × drabina tapnięcia CIAŁA (PMSSB-32:
   // wytrzymałość = wartość obronna), więc ×0 odtwarza stan sprzed zmiany.
   'payoffUntappedBodyWeight',    // waga wartości nietapniętego ciała w obronie przy payoffie rzutu
+  // PMSSB-41/A (zgłoszenie właściciela, Weftblade Enhancer): rzut za WARP to
+  // odesłanie karty na wygnanie w kroku końcowym — sens ma tylko, gdy rzut
+  // normalny jest nieosiągalny, a trigger wejścia ma GODNY cel na stole.
+  'warpEtbHostMin',              // próg „stwór wart wzmocnienia" (tokeny/gołe 2/2 poniżej)
+  'warpFutileEtbPenalty',        // kara, gdy trigger wejścia z celem nie ma godnego gospodarza
+  'warpRedundantPenalty',        // kara, gdy rzut normalny TEJ karty jest oferowany (warp = strata karty)
+  // PMSSB-41/C (zgłoszenie właściciela, Wedgelight Rammer): Station dokłada
+  // charge równe MOCY tapowanego stwora, więc wycena liczy realny postęp
+  // (nadmiar ponad próg = 0) i premię za DOMKNIĘCIE progu (artefakt → stwór).
+  'stationCloseBonus',           // premia za aktywację, która domyka próg charge
   // PMSSB-37/C: zapłata {N} triggera vs inny rzut tej tury (Oreplate Pangolin).
   'optionalPayBlockedCastMin',   // próg wyniku rzutu, który bot realnie chce wykonać (zablokowany zapłatą)
   'optionalPayCastScoreWeight',  // zysk triggera musi przebić tę wagę × wynik zablokowanego rzutu
@@ -654,6 +664,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   tempPumpFaceDamageValue: 4,
   tempPumpBlockOdds: 0.5,
   payoffUntappedBodyWeight: 1,
+  warpEtbHostMin: 20,
+  warpFutileEtbPenalty: 90,
+  warpRedundantPenalty: 60,
+  stationCloseBonus: 6,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,
   libraryDeckOutPenalty: 120,

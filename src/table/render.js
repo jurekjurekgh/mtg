@@ -4431,6 +4431,15 @@ export function cardInfo(session, object, combat = null) {
     // F-A (Wishful Merfolk): nadpisanie podtypów DO KOŃCA TURY — widok niesie
     // subtypesBeforeOverride (active), żywe `subtypes` to już cel („Human").
     subtypesOverride: faceDown ? false : Boolean(object.subtypesBeforeOverride?.length),
+    // PMSSB-41/D (zgłoszenie właściciela, Xu-Ifit): utrata zdolności i DODANE
+    // podtypy („Skeleton in addition to its other types", CR 613.1f) to skutki
+    // rozstrzygniętego efektu widoczne na stole — kafel musi je nazwać.
+    abilitiesStripped: faceDown ? false : Boolean(object.abilitiesStripped),
+    // Migawka istnieje TYLKO po zdjęciu zdolności (`stripAbilities`) — bez tego
+    // warunku zwykły stwór miałby „dodane" wszystkie swoje podtypy (audyt
+    // własny: pin D4 to złapał).
+    subtypesAdded: (faceDown || !object.subtypesBeforeStrip?.length) ? [] : (object.subtypes ?? [])
+      .filter((subtype) => !object.subtypesBeforeStrip.includes(subtype)),
     // W-8 (Krotiq Nestguard): atak „as though it didn't have defender” do
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
@@ -4833,6 +4842,14 @@ export function buildStateOverlay(visual, info) {
     // (tempControlNow/untapLockedNow). Nazwa podtypu = żywe info.subtypes.
     if (info.subtypesOverride && (info.subtypes ?? []).length) {
       flags.push(['kw', `typ: ${info.subtypes.join(' ')} do końca tury`]);
+    }
+    // PMSSB-41/D (zgłoszenie właściciela, Xu-Ifit): „has no abilities" (CR 613.1f)
+    // i dodane podtypy miały ZERO badge'ów — gracz nie widział, że przywrócony
+    // stwór stracił zdolności i stał się np. Skeletonem. Etykiety 1:1 z opisem
+    // efektu (L100: jedna etykieta na jedno zjawisko).
+    if (info.abilitiesStripped) flags.push(['kw', 'bez zdolności']);
+    if ((info.subtypesAdded ?? []).length > 0) {
+      flags.push(['kw', `typ: +${info.subtypesAdded.join(' +')}`]);
     }
     if (info.attacksAsThoughNoDefenderNow) flags.push(['kw', 'może atakować mimo obrońcy (do końca tury)']);
     // Zakaz ataku i/lub bloku — wspólna etykieta (Bonds of Faith na
