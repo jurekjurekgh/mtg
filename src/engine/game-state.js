@@ -6623,6 +6623,14 @@ export function playerView(state, playerId) {
         if (object.subtypesBeforeStrip?.length && !hiddenFromViewer) {
           entry.subtypesBeforeStrip = [...object.subtypesBeforeStrip];
         }
+        // PMSSB-48/B (2026-10-03i): permanent rzucony za Warp nosi flagę
+        // `warped: true` (zapisuje ją resources.js przy rzucie na stos, a
+        // przy wejściu resolvePermanentSpell uzbraja opóźniony wygnanie na
+        // EOT). Gracz musi widzieć, że ten stwór ZOSTANIE WYGNANY przy
+        // najbliższym kroku końcowym — inaczej nie odróżnia go od normalnie
+        // rzuconego (zgłoszenie A właściciela). Fakt publiczny (każdy widzi
+        // rzut za warp).
+        if (object.warped === true) entry.enteredViaWarp = true;
         if (object.goaded === true) entry.goaded = true;
         // M177/E: detain jest informacją publiczną (badge + boty).
         if (object.detained === true) entry.detained = true;
@@ -6721,6 +6729,45 @@ export function playerView(state, playerId) {
         // Flagi liczone jak w combat.js (effectiveAbilities — także nadane).
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantAttackAlone === true)) entry.cantAttackAlone = true;
         if (effectiveAbilities(object).some((a) => a?.type === 'static' && a.cantBlockAlone === true)) entry.cantBlockAlone = true;
+        // PMSSB-41/A-uzup. (zgłoszenie właściciela: gospodarz „wart wzmocnienia”
+        // to np. stwór z flying, menace albo LANDWALKIEM): landwalk (CR 702.14)
+        // to wydrukowana zdolność statyczna — informacja publiczna (ADR 0017),
+        // a widok jej dotąd nie niósł, więc bot nie odróżniał `farbog-explorer`
+        // (swampwalk) od gołego 2/3 i ewazja, którą atak FAKTYCZNIE dostaje,
+        // nie wchodziła do wyceny gospodarza. Deskryptor (podtyp lądu), nie
+        // nazwa karty (ADR 0002) — ten sam kształt co `landwalk` w abilities.js.
+        {
+          const landwalkSubtype = effectiveAbilities(object)
+            .map((a) => (a?.type === 'static' ? a.landwalk?.subtype ?? null : null))
+            .find((subtype) => typeof subtype === 'string');
+          if (landwalkSubtype && !hiddenFromViewer) entry.landwalk = landwalkSubtype;
+        }
+        // PMSSB-45 (pętla jakości 2026-10-03f, następca landwalka): kolejne
+        // publiczne deskryptory blokowania z CR 509.1a, których PlayerView
+        // dotąd nie niósł, a które są potrzebne botu do oceny ewazji gospodarza
+        // w warpEtbHostPayoff (klasa L1/ADR 0017):
+        //  - cantBeBlockedExceptByColors: kolory blokujących (Dauthi Voidwalker);
+        //  - cantBeBlockedByPower: maksymalna moc blokującego (Aerial Maurer).
+        // Lista wyliczona przez effectiveAbilities (z uwzględnieniem nadanych
+        // do EOT, sprzętu i warstw postaci) — ta sama funkcja co w walidacji
+        // bloku (combat.js), tylko wyliczone na wejściu do widoku. Shape jak
+        // w silniku (ADR 0002/0017, bez nazw kart). cantBeBlockedBySubtypes
+        // (Blazing Torch) nie dodane — bot nie rozpoznaje ewazji podtypowej;
+        // pojawi się gdy karta z tym kształtem pojawi się w katalogu (B6/kod
+        // na zapas).
+        if (!hiddenFromViewer) {
+          for (const a of effectiveAbilities(object)) {
+            if (a?.type !== 'static') continue;
+            if (Array.isArray(a.cantBeBlockedExceptByColors)) {
+              entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
+              break;
+            }
+          }
+          for (const a of effectiveAbilities(object)) {
+            if (a?.type !== 'static') continue;
+            if (a.cantBeBlockedByPower != null) { entry.cantBeBlockedByPower = a.cantBeBlockedByPower; break; }
+          }
+        }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
         // zdolności permanentu to informacja PUBLICZNA (wydrukowany tekst),
         // a nie nosi jej rejestrz kart wszystkich obiektów — tokeny (Treasure)

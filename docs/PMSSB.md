@@ -78,7 +78,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | licznik czarów w widoku bota + incubate (second-spell payoffy, Tiller of Flesh, Merciless Repurposing) | Illvoi Operative, Tiller of Flesh, Merciless Repurposing | DONE (2026-10-02d) | §PMSSB-38 niżej; plan `PLAN_2026-10-02d-pmssb38-licznik-spelli-incubate.md`; `test/audyt-pmssb38-licznik-spelli-incubate.test.js` (6 pinów, 4 czerwone PRZED + 2 kontrole); `playerView.spellsCastThisTurn`, `incubateValue`; bez nowych pokręteł |
 | payoffy z efektem tymczasowym przy rzucie (prowess, Jeskai Devotee, Kulrath Mystic) | Jeskai Windscout, Jeskai Devotee, Kulrath Mystic | DONE (2026-10-02e) | §PMSSB-39 niżej; plan `PLAN_2026-10-02e-pmssb39-pump-triggery.md`; `test/audyt-pmssb39-pump-triggery.test.js` (10 pinów, 6 czerwonych PRZED + 4 kontrole); `temporaryPumpPayoff` (okna walki/głównej 1 + polityka ataku), warunki triggera rzutu; 3 pokrętła `tempPumpTrickValue`/`tempPumpFaceDamageValue`/`tempPumpBlockOdds` |
 | payoffy rzutu II: efekty skierowane (`requiresTarget`) + wymiar nietapnięcia (Molten Nursery, Goblin Battle Jester, Steelfin Whale, rider vigilance Kulratha) | 4 karty (`molten-nursery`, `goblin-battle-jester`, `steelfin-whale`, `kulrath-mystic`) | DONE (2026-10-03a) | §PMSSB-40 niżej; plan `PLAN_2026-10-03a-pmssb40-skierowane-nietapniecie.md`; `test/audyt-pmssb40-skierowane-nietapniecie.test.js` (17 pinów, 11 czerwonych PRZED kodem; 6/6 mutacji RED); bramka `requiresTarget` przestaje pomijać trigger (wymóg celu → miara), nogi `damage`/`cant_block`/`untap_permanent`, `cantBlockPayoffValue`, `untappedBodyDefense`; 1 pokrętło `payoffUntappedBodyWeight` |
-| zgłoszenia właściciela z testów: warp bez celu (Weftblade Enhancer), untap celu triggera (Nanoform Sentinel), kolejność tapowania do Station (Wedgelight Rammer), badge'y reanimacji (Xu-Ifit) | 4 karty | DONE (2026-10-03b) | §PMSSB-41 niżej; plan `PLAN_2026-10-03b-pmssb41-uwagi-testow.md`; `test/audyt-pmssb41-uwagi-testow.test.js` (25 pinów, mutacje m1–m9 RED 5/2/1/1/1/1/3/1/1); `untapTargetValue` (3 ścieżki, L41), `warpEtbHostPayoff`, progress/closes/overshoot Station, badge'y `bez zdolności`/`typ: +X`; 4 pokrętła `warpEtbHostMin`/`warpFutileEtbPenalty`/`warpRedundantPenalty`/`stationCloseBonus` |
+| zgłoszenia właściciela z testów: warp bez celu (Weftblade Enhancer), untap celu triggera (Nanoform Sentinel), kolejność tapowania do Station (Wedgelight Rammer), badge'y reanimacji (Xu-Ifit) | 4 karty | DONE (2026-10-03b) | §PMSSB-41 niżej; plan `PLAN_2026-10-03b-pmssb41-uwagi-testow.md`; `test/audyt-pmssb41-uwagi-testow.test.js` (25 → 30 pinów, mutacje m1–m9 + m10–m13 RED); runda 2: LANDWALK w widoku (kryterium A) — plan `PLAN_2026-10-03c-pmssb41-runda2-landwalk.md`; `untapTargetValue` (3 ścieżki, L41), `warpEtbHostPayoff`, progress/closes/overshoot Station, badge'y `bez zdolności`/`typ: +X`; 4 pokrętła `warpEtbHostMin`/`warpFutileEtbPenalty`/`warpRedundantPenalty`/`stationCloseBonus` |
 
 ## PMSSB-1 — bounce (2026-09-25)
 
@@ -2300,6 +2300,227 @@ wartość obronna ciała nie jest liczona.
 
 **Bramy:** fast **7474/7474** EXIT 0 · `node tools/run-tests.mjs all` **7745/7745** EXIT 0 · build **70 modułów / 4790,6 kB**.
 
+
+### Runda 2 (2026-10-03c) — weryfikacja po merge + luka LANDWALK
+
+**Wejście:** właściciel zgłosił te same cztery uwagi **po scaleniu PR #151** (`45fcaf6`,
+2026-10-03T09:28:44Z). Plan: `docs/plans/PLAN_2026-10-03c-pmssb41-runda2-landwalk.md`.
+
+**Diagnoza (krok 0):** fixy A–D **są w `main`** — po squash-merge pliki
+`heuristic-bot.js`/`heuristic-params.js`/`effect-intent.js`/`game-state.js`/`render.js` oraz
+fixture golden-mastera są IDENTYCZNE z gałęzią (`git diff --quiet origin/main HEAD`).
+Publikacja na GitHub Pages dla `main` była w chwili testu jeszcze **`in_progress`**
+(`gh run list`): workflow uruchamia pełny `run-tests.mjs all` (~8 min) PRZED buildem, więc
+strona serwowała build sprzed fixów. Scenariusze właściciela odtworzone na kodzie z `main`:
+**C e2e** — charge 6 + stwory 2/2 i 4/4 → tap **4/4**, charge **10**, artefakt-stwór,
+**2/2 nietknięty**, potem `pass_priority` (bez dobijania do 12); **B** — wybór `myCre` (14)
+nad wrogimi (−25); **D** — badge `["bez zdolności","typ: +Skeleton","choroba"]`;
+**A** — bez gospodarza warp −29 → pass, przy 6 lądach rzut 71,1 > warp.
+
+**Realna luka znaleziona w tej rundzie (nowa praca):** kryterium właściciela wymienia
+„flying, menace **albo landwalk**”, a `PlayerView` **nie niósł pola `landwalk`** — `emerald-oryx`
+(forestwalk) i `farbog-explorer` (swampwalk), jedyne karty z landwalkiem w katalogu, były dla
+bota gołym 2/3 (klasa L1/ADR 0017). PRZED (`/tmp/pr/probe-landwalk.mjs`): `widok.landwalk`
+= `undefined`, warp **−29** (`pass_priority`) ZARÓWNO gdy obrońca ma Las (forestwalk realnie
+działa, CR 702.14), jak i gdy go nie ma. PO: widok niesie `landwalk: "Forest"` (deskryptor
+podtypu, ADR 0002; ukryty dla zakrytego permanentu obcego kontrolera), a `hostEvadesBlockers`
+liczy ewazję regułą **tej samej postaci co silnik** (`combat.js` →
+`controlsLandWithSubtype(state, blocker.controllerId, subtype)`): z Lasem obrońcy warp **84 →
+wybrany**, bez Lasu −29 → pass. Drugi, węższy defekt tej samej funkcji: gałąź `flying`
+kończyła się `return false` przy blokerze z flying/reach, więc **menace na tym samym stworze
+nigdy nie był sprawdzany** — teraz zdolności ewazji rozstrzygają się niezależnie (CR: „nie
+może być blokowany” to suma warunków).
+
+**Test:** 25 → **30 pinów** w `test/audyt-pmssb41-uwagi-testow.test.js` (A9 landwalk z Lasem
+obrońcy, A10 kontrola CR 702.14 bez Lasu, A11 pole widoku, A12 flying+menace ucieka jednemu
+blokerowi z flying — wycena ścieżką CZARU, bo próg bramki warp maskuje różnicę przy małym
+ciele: 104 bez blokerów vs 111,5 nie-do-zatrzymania; C9 e2e scenariusz właściciela).
+**Mutacje tej rundy m10–m13 (RED 1/2/1/1):** landwalk znika z ewazji, widok nie niesie
+landwalka, ewazje wracają do pierwszego trafienia, station bez klampu progressu.
+
+**Ewaluacja:** golden-master **bez dryfu** (`innistrad-wu` ma `farbog-explorer`, ale w 6
+partiach wzorcowych sytuacja „landwalk + obrońca z lądem podtypu” nie wystąpiła); tie-audit PO
+bez zmian: 24 partie / 12 612 decyzji, 26,9% remisów (9,9% akcyjnych), GROZY 13. Mirror
+pominięty ŚWIADOMIE: żadna z 6 talii benchmarku nie zawiera karty z landwalkiem (sprawdzone
+`grep`), więc pomiar byłby konstrukcyjnie pusty (B6).
+
+**Bramy runda 2:** fast **7479/7479** EXIT 0 · all **7750/7750** EXIT 0 (435,5 s) · build **70 modułów / 4792,5 kB**.
+
+**Status runda 2:** zgłoszenia A–D nieroztwarzalne na kodzie z `main` (opisują build sprzed
+merge); dodatkowo domknięta luka landwalk z kryterium A. Właściciel dostaje świeży build
+dist na żywym podglądzie sesji, żeby przetestować fixy bez czekania na Pages.
+
 **Status:** wszystkie cztery zgłoszenia ZAMKNIĘTE. Kolejka następnej pętli bez zmian:
 koszt okazji drugiego trybu źródła (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden),
 dynamiczne X, `buff_attacking_creatures`, bankowanie many.
+
+## PMSSB-43 — pętla jakości: dynamiczne X i buff_attacking_creatures w payoffie triggerów rzutu (2026-10-03d)
+
+**Wejście:** pozycja 1 kolejki po PMSSB-41 rundzie 2 + komentarz w `heuristic-bot.js:5945`
+(„Dynamiczne X (np. source_power) i efekty skierowane są poza modelem (0)") — luka
+jawnie oznaczona w kodzie, bez sygnału właściciela (pętla jakości ADR 0021 §4).
+
+**Diagnoza (sonda, nie domyślnie):**
+- `temporaryPumpPayoff` wcześnie `return 0` dla `buff_attacking_creatures` oraz gdy
+  `power` nie jest liczbą — deskryptory łańcuchowe (`'X'`, `'card_types_in_all_graveyards'`,
+  `'source_power'`) były obcinane przed jakąkolwiek symulacją walki, więc payoff
+  z pompy liczył zawsze 0.
+- `pumpDelta` rozwiązywał tylko `pump_by_creature_count`, `pump_by_gates`,
+  `sacrifice_food_choice`; dla reszty brał `effect.power ?? 0` jako LICZBĘ.
+- W katalogu wspieranych kart deskryptory dynamiczne w pompach do końca tury pojawiają
+  się przy `Altar of the Goyf` (trigger `attacks_alone` → `buff_creature_until_end_of_turn`
+  z power/toughness `'card_types_in_all_graveyards'`) oraz `Jyoti, Moag Ancient`
+  (`buff_land_creatures` z `'source_power'`; forma command zone nie w silniku, ale
+  deskryptor ma ogólny kształt).
+- `PAYOFF_TEMP_PUMP_EFFECTS` nie zawierał `'buff_attacking_creatures'` (kształt istnieje
+  w silniku, np. Thunderstaff, ale jest aktywacją a nie triggerem rzutu — bez znaczenia
+  dla payoffu, ale wpis zamyka przyszłe karty o tym kształcie).
+
+**Naprawa (generyczna, ADR 0002):**
+- `pumpDelta(view, effect, source)` przyjmuje opcjonalnego `source` i rozwiązuje
+  `'card_types_in_all_graveyards'` (z widoku, te same reguły co silnik w
+  `allGraveyardsCardTypeCount` — tokeny się nie liczą), `'source_power'` (z hosta),
+  `'oil_counters'` (z liczników hosta). Nie-liczbowy nieznany deskryptor → 0 (miękka
+  degradacja).
+- Lista typów kart importowana z `src/engine/permanents.js` (`CARD_TYPES`) — test O-2
+  wymaga JEDNEGO źródła prawdy; własny `Set` w bocie rozjechałby tę bramkę.
+- `temporaryPumpPayoff`: usunięty wczesny return 0 dla `buff_attacking_creatures`;
+  odbiorcą symulacji jest nasz atakujący (jeśli jest zadeklarowany), bez atakującego 0.
+- `PAYOFF_TEMP_PUMP_EFFECTS` rozszerzone o `'buff_attacking_creatures'`.
+
+**Piny:** `test/pmssb43-dynamiczne-pumpy-payoffu.test.js` — **7 pinów** (A1 liczenie typów,
+A2 tokeny, A3 source_power, A4 oil_counters, A5 nieznany deskryptor nie rzuca,
+A6 buff_attacking_creatures w rodzinie, A7 puste groby). Mutacja m1 (usunięcie resolvera
+`card_types_in_all_graveyards`) → 1/7 RED.
+
+**Bramki:** fast **7486/7486** EXIT 0 (118,1 s) · build **70 modułów / 4795,2 kB** ·
+`event-contract-audit.mjs` 0 naruszeń · bot-scoring-snapshot 4/4 zielony (bez dryfu).
+Pełny B0 NIE uruchamiany (ADR 0018).
+
+**Granice świadome:**
+- Brak obsługi `greatest_power_you_control` (pump przy create_token, nie należy do rodziny)
+  ani `greatest_mana_among_other_artifacts` (pump statyczny Emissary — PlayerView już
+  niesie wynikową moc w `power`).
+- Efekty skierowane (`targetIndex`) pozostają 0 — nie ma wspieranej karty tego kształtu,
+  bez kodu na zapas.
+- `buff_land_creatures` nie dodane do `PAYOFF_TEMP_PUMP_EFFECTS` — jedyna karta (Jyoti)
+  nie jest w formacie.
+
+**Status:** lukę z komentarza zamknięto. Kolejka następnej pętli: koszt okazji drugiego
+trybu źródła, przegląd deskryptorów statycznych w PlayerView (następcy landwalka), ward/
+zone-exile/O1-creator, warp_card vs rzut w następnej turze, premia ewazyjna
+(deathtouch/double strike).
+
+---
+
+## PMSSB-44 — pętla jakości: koszt okazji drugiego trybu źródła many (Seer/Balamb/Skullcairn) (2026-10-03e)
+
+**Wejście:** pozycja 2 kolejki po PMSSB-43 — uwaga na komentarz `M429`: źródło many z
+drugim trybem aktywowanym za dodatkową manę (np. Seer's Lantern: {2}{T} scry 1) może
+być bezsensownie aktywowane w main1 przed wykorzystaniem many do zagrania czaru.
+
+**Diagnoza (sonda `probe-pmssb44*`):**
+- Symulacje dla trzech kart:
+  - Seer's Lantern scry {2},{T} w main1 przy 3 Plains na ręce: `activate_ability` -12 vs `pass` 0 → bot passuje (M211 kary: koszt many, wastefulStep, non-EOT library arranging).
+  - To samo w enemy EOT: activate +10 vs pass 0 → bot aktywuje (poprawne).
+  - Darmowe scry {T} przy 1 Plains i czarze 1W w ręce: activate -10 vs pass 0 → passuje.
+  - Skullcairn/Balamb: `abilityManaCostPenalty` (0,6/manę) + `selfHarmPenalty`/wastefulStep wystarczają, żeby nie aktywować.
+- **WNIOSEK:** istniejące kary M211 + `abilityManaCostPenalty` + `producesManaOnly` dają poprawne wybory;
+  dodanie osobnej wagi `manaTapOpportunityWeight` byłoby „kodem na zapas" wbrew ADR 0022 §4 (kod tylko dla zademonstrowanego błedu).
+
+**Naprawa:** BRAK ZMIAN W KODZIE. Zapisany plan (`PLAN_2026-10-03e-*.md`) z wynikami sondy
+i uzasadnieniem. M429 ×0 kotwica zachowana.
+
+**Status:** zamknięty w planie. Kolejka: deskryptory statyczne w PlayerView (następcy landwalka).
+
+---
+
+## PMSSB-45 — brakujące deskryptory statyczne ewazji w PlayerView (2026-10-03f)
+
+**Wejście:** pozycja 3 kolejki po PMSSB-44 — sonda `abilities.js`: cztery deskryptory
+statyczne nie wystawione w PlayerView, z czego dwa dotyczą blokowania (krytyczne dla
+payoffu pomp/ewazji w `hostEvadesBlockers`): `cantBeBlockedExceptByColors` (Dauthi Voidwalker,
+Dread Warlock) i `cantBeBlockedByPower` (Rust-Shield Rampager, Aerial Maurer).
+Pozostałe dwa (`cantAttackUnlessDefenderHasFlying`, `preventCombatDamageToController`)
+nie są używane w botowych heurystykach ewazji — zostają bez zmian (ADR 0002, bez kodu
+na zapas).
+
+**Diagnoza:**
+- `hostEvadesBlockers` znał flying/menace/landwalk; nie znał dwóch pozostałych
+  deskryptorów — stwór typu Dread Warlock („can't be blocked except by black")
+  dostawał 0 punktów ewazji, więc bot nie pompował go, nie atakował w zegar i
+  przeceniał wymianę.
+- Reguły blokowania w `combat.js/blockRestrictionError` (L41/L48) były jedyne miejsce
+  definiujące te ograniczenia; PlayerView ich nie eksponował.
+
+**Naprawa (generyczna, ADR 0002/0017):**
+- `game-state.js` PlayerView: obok `landwalk` dodano `cantBeBlockedExceptByColors`
+  (tablica kolorów) oraz `cantBeBlockedByPower` (number), liczone z `effectiveAbilities`
+  (z uwzględnieniem nadanych do EOT, załączników, warstw postaci), tylko dla
+  nieukrytych permanentów (publiczny fakt CR 105.2 / 509.1a).
+- `heuristic-bot.js/hostEvadesBlockers`: dodano dwa rozgałęzienia o semantyce
+  lustrzanej do `combat.js`:
+  - `cantBeBlockedExceptByColors: C` → ewazja, gdy KAŻDY niezatapnięty blokujący wroga
+    nie ma ŻADNEGO koloru z dozwolonych (tj. żaden nie może zablokować).
+  - `cantBeBlockedByPower: N` → ewazja, gdy KAŻDY blokujący ma moc ≤ N.
+
+**Piny:** `test/pmssb45-desktopy-ewazji.test.js` — **2 piny** (A1 Dread Warlock ma pole
+w widoku, A2 Rust-Shield Rampager ma pole w widoku).
+
+**Bramki:** fast **7488/7488** EXIT 0 (120,4 s, +2 piny) · build **70 modułów / 4797,5 kB** ·
+`event-contract-audit.mjs` 0 naruszeń.
+
+**Granice świadome:**
+- `cantBeBlockedBySubtypes` (Blazing Torch, „can't be blocked except by Walls")
+  nie dodane — bot nie rozpoznaje ewazji podtypowej; pojawi się, gdy karta o tym
+  kształcie znajdzie się w katalogu (kod na zapas).
+- `cantAttackUnlessDefenderHasFlying` (Skyhunter Skirmisher) i
+  `preventCombatDamageToController` (Thunderstaff, M255 już istnieje)
+  nie dotykają logiki ewazji botowej; bez zmian.
+
+**Status:** zamknięty. Kolejka następnej pętli: ward/zone-exile/O1-creator, warp_card vs
+rzut w następnej turze, premia ewazyjna (deathtouch/double strike).
+
+---
+
+## PMSSB-46 — pętla jakości: O1 DIVIDED_POOL_CAP (gracz-wróg wypada z puli celów obrażeń podzielonych) (2026-10-03g)
+
+**Wejście:** obserwacja z audytu PR #150 zapisana w HISTORY (~L15095): „O1 `DIVIDED_POOL_CAP = 8`
+(gracz-przeciwnik wypada z puli przy 10 wrogich stworach — kolejka handoffu)". Sonda z
+tą sesji skorygowała próg do 8 (nie 10).
+
+**Diagnoza (sonda `tools/probe-pmssb46-o1-dividedpool.mjs`):**
+- `dividedDamageDivisions` (`src/engine/spells.js` L2462) sortuje kandydatów po `rank()`:
+  - wrogie stwory = 0, gracz-wróg = 1, planeswalker = 2, my = 3, moje stwory = 4.
+- Następnie bierze `slice(0, 8)`. Przy ≥8 wrogich stworach cały CAP wypełniają one,
+  gracz-wróg (rank=1) znika z oferty — Fiery Justice nie może dobić gracza przy
+  szerokim stole mimo, że CR 601.2d na to pozwala.
+- Tabela: n=7 pula OK (7/7 stworów + p2), n=8 już BUG (8/8 stworów, p2 brak), n=12 pula
+  zawiera tylko 8 pierwszych stworów.
+
+**Naprawa (generyczna, ADR 0002/0022 §4):**
+- Przed wypełnieniem puli CAP=8 zarezerwowano 1 miejsce dla KAŻDEJ nie-pustej klasy
+  celów innej niż wrogie stwory (najniższy rank): gracz-wróg (rank=1) i planeswalker (rank=2).
+- Pozostałe miejsca wypełniane są dotychczasowym porządkiem po ranku.
+- Self (rank=3) i moje stwory (rank=4) NIE dostają rezerwacji — samouszkodzenie jest
+  marginalne (kod na zapas).
+- Kształt bez nazw kart; walidacja ofert pozostaje po stronie silnika (L48) — pule
+  kandydatów węższe niż walidacja, jak dotąd.
+
+**Piny:** `test/pmssb46-divided-pool-cap.test.js` — 4 piny (O1 n=8 p2 w puli, O2 n=12 p2 w puli,
+O3 regresja n=7 7/7 stworów + p2, O4 oferta 5→p2 istnieje). Mutacja (cofnięcie rezerwacji)
+→ 3/4 RED.
+
+**Bramki:** fast **7492/7492** EXIT 0 (122,0 s, +4 piny) · build **70 / 4799,2 kB** ·
+event-contract-audit 0 naruszeń · bot-scoring-snapshot 6/6 zielony (bez dryfu — Fiery
+Justice nie jest w taliach benchmarku).
+
+**Granice świadome:**
+- Rezerwacja tylko dla gracza-wroga i planeswalkera; self i moje stwory bez.
+- Liczba oferty pozostaje 792 dla n≥8 (CAP + rezerwacja = 8, jak wcześniej), koszt
+  obliczeniowy bez zmiany.
+- Nie podnosimy DIVIDED_POOL_CAP — zwiększyłoby to wykładniczo liczbę podziałów.
+
+**Status:** zamknięty. Kolejka następnej pętli: warp_card vs rzut w następnej turze,
+premia ewazyjna (deathtouch/double strike), ward/zone-exile w strefie wygnania (jeśli
+znajdzie się karta dotknięta luką).

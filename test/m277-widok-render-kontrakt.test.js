@@ -167,6 +167,15 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // mierzy konstrukcyjnie test/zgloszenie-f-badge-klatwy-na-graczu.test.js
     // (F/1) — ta lista pilnuje tylko literówki w nazwie pola.
     'enchantedPlayerId',
+    // PMSSB-48/A (2026-10-03i): widok dokłada `enteredViaWarp` TYLKO
+    // permanentowi rzuconemu za Warp (warped:true, flagę ustawia
+    // resources.js przy warp_cast, a resolvePermanentSpell uzbraja wygnanie
+    // na EOT). Karty z próbki (gorehorn/servant/kappa) nie są rzucone za
+    // Warp, więc pole nie wchodzi w `wysylane`. Że widok REALNIE je niesie
+    // i że kafel pokazuje badge „Warp · wygnanie na EOT", mierzy
+    // konstrukcyjnie test/pmssb48-warp-indication.test.js (W2+W3) — ta
+    // lista pilnuje tylko literówki w nazwie pola (L113).
+    'enteredViaWarp',
   ]);
 
   const poza = [...czytane]

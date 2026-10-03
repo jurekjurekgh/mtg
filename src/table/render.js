@@ -4491,6 +4491,9 @@ export function cardInfo(session, object, combat = null) {
     summoningSickness: Boolean(object.summoningSickness) && !keywordsNow.includes('haste'),
     goaded: Boolean(object.goaded),
     detained: Boolean(object.detained),
+    // PMSSB-48/C (2026-10-03i): permanent weszedł za Warp (zostanie wygnany
+    // na najbliższy krok końcowy). Badge na kaflu jak „obsadzony"/„detain".
+    enteredViaWarp: Boolean(object.enteredViaWarp),
     damage: object.damage || 0,
     // A (2026-08-11): liczniki (np. +1/+1, oil, charge, lore) pokazane na karcie.
     // M386/A1 (zgłoszenie właściciela 2026-09-18, partia seed 596891): UWAGA —
@@ -4879,6 +4882,12 @@ export function buildStateOverlay(visual, info) {
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
+    // PMSSB-48/C (2026-10-03i): rzut za Warp — stwór zostanie wygnany na
+    // najbliższy krok końcowy (CR — mechanika własna karty). Badge musi być
+    // jawny, żeby gracz wiedział, że permanent jest „tymczasowy" (zgłoszenie
+    // A właściciela: kafel nie odróżniał Warp od zwykłego rzutu). Etykieta
+    // spójna z frazą logu "(za Warp)" — L41 jedno źródło brzmienia.
+    if (info.enteredViaWarp) flags.push(['kw', 'Warp · wygnanie na EOT']);
     {
       const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
       const pMod = Number(info.powerMod ?? 0);

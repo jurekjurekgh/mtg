@@ -1884,6 +1884,11 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Offspring — jak kicker: fakt opłacenia dodatkowego kosztu (log i ewent.
     // triggery „you cast a spell with offspring").
     offspring: Boolean(offspringPaid),
+    // PMSSB-48/A (2026-10-03i): Warp rzut (suspend-like) — informacja dla logu:
+    // permanent wchodzi na pole bitwy za Warp i zostanie wygnany na EOT (CR
+    // — mechanika własna karty). Stała fraza "(za Warp)" dopisywana przez
+    // formatter logu.
+    warped: Boolean(warpCast),
     // Surge (CR 702.117) / Cleave (CR 702.148; tekst zmienia 612), Batch 58/B1:
     // fakt rzutu za KOSZT ALTERNATYWNY
     // (nie dodatkowy) — jawny w logu tak samo, jak `spell_cast.surgeCast`.

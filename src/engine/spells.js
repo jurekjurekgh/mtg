@@ -2468,7 +2468,37 @@ export function dividedDamageDivisions(state, playerId, object) {
     if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
     return 2; // planeswalker
   };
-  const pool = [...candidates].sort((a, b) => rank(a) - rank(b)).slice(0, DIVIDED_POOL_CAP);
+  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
+  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
+  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
+  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
+  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
+  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
+  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
+  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
+  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
+  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
+  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
+  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
+  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
+  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
+  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
+  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
+  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
+  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
+  const byRank = [...candidates].sort((a, b) => rank(a) - rank(b));
+  const pool = [];
+  const included = new Set();
+  const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
+  for (const cls of reservedClasses) {
+    const rep = byRank.find((id) => rank(id) === cls && !included.has(id));
+    if (rep) { pool.push(rep); included.add(rep); }
+  }
+  for (const id of byRank) {
+    if (pool.length >= DIVIDED_POOL_CAP) break;
+    if (included.has(id)) continue;
+    pool.push(id); included.add(id);
+  }
   const total = divided.total;
   const out = [];
   const compositions = (parts, left) => {

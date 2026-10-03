@@ -19,6 +19,44 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-03 — audyt PR #151 + pętla jakości PMSSB-42 (bez kodu produkcyjnego, PR #153)
+
+Sesja audytowa po mergu PR #151 (sesja 2026-10-02f). Polecenie właściciela:
+„Kontynuujemy projekt" → pętla domyślna ADR 0021 (PR → audyt poprzedniego
+scalenia → bramki jakości).
+
+**Zrobiono:**
+- Plan sesji: `docs/plans/PLAN_2026-10-03-audyt-pr151.md`.
+- Audyt PR #151 (21 plików, +1500/-72) metodą „żywe sondy + mutacje", nie tylko odczyt diffu:
+  - Mutacja F (usunięcie `divided: true` z freeSpellCastOffers) → 3/5 testów F1 czerwonych (pin działa).
+  - Mutacja G (stary wzór `manaSpentToCast = payment + altNeed`) → F3 czerwony (pin działa).
+  - Zero specjałów per nazwa/ID karty w `src/engine/` i `src/controllers/` (ADR 0002 zachowany).
+  - Klasyfikacja efektów triggera kompletna; wybór celu `untap_permanent` przechodzi przez współdzieloną `untapTargetValue` (czar/aktywacja/trigger).
+  - PlayerView `subtypesBeforeStrip` chroniony `hiddenFromViewer` (brak wycieku informacji o zakrytych permanentach).
+  - `warpEtbHostPayoff`: clamp progress, warunki gospodarza, kary bezcelowości/redundancji — zgodne z wyliczeniami probe.
+- Werdykt audytu: **APPROVE bez znalezisk** (`docs/audits/AUDYT_PR151_2026-10-03.md`).
+- Bramki jakości (wszystkie zielone): `npm test` 7474/7474, build 70 modułów/4790,6 kB, event-contract-audit 0 naruszeń, quick benchmark 97,0%/78,0% (vs random/aggro, powyżej progów 0,82/0,63), Żywy Tester `the-edge vs ravnica` seed 1001 (51 kroków, 0 detektorów, 0 niewyceń), bot-scoring-snapshot 4/4.
+- Żadnych zmian w kodzie produkcyjnym (audyt czysty). Handoff: `docs/handoffs/HANDOFF_2026-10-03.md`.
+
+**PR:** #153, 2 commity (`48a7e60` plan, `0202ae7` raport audytu), scalany później.
+
+## 2026-10-03d — PMSSB-43: dynamiczne X/pumpy w payoffie triggerów rzutu (kod produkcyjny, PR #153)
+
+Pętla jakości po zamknięciu PMSSB-41/rundy2. Pozycja 1 kolejki (dynamiczne X +
+`buff_attacking_creatures`): komentarz w `heuristic-bot.js:5945` jawnie oznaczał lukę
+(„Dynamiczne X i efekty skierowane są poza modelem (0)").
+Diagnoza: `temporaryPumpPayoff` obcinał nie-liczbowe `power`/`toughness` (desktryptory
+łańcuchowe `'card_types_in_all_graveyards'`, `'source_power'`, `'oil_counters'` →
+payoff 0), a `pumpDelta` nie miało resolverów; `PAYOFF_TEMP_PUMP_EFFECTS` nie zawierał
+`buff_attacking_creatures`.
+Naprawa (generyczna, ADR 0002/0017): `pumpDelta(view, effect, source)` z resolverami
+desktryptorów (liczenie typów z widoku, te same reguły co silnik — tokeny nie liczą;
+import `CARD_TYPES` z `permanents.js`, jedno źródło prawdy per test O-2); `buff_attacking_creatures`
+w rodzinie pomp z odbiorcą-atakującym; payoff liczy deltę przez `pumpDelta` z hostem.
+Test: 7 pinów (`test/pmssb43-dynamiczne-pumpy-payoffu.test.js`), mutacja m1 RED.
+Bramki: fast **7486/7486** (+7), build **70/4795,2 kB**, event-contract-audit 0 naruszeń,
+bot-scoring-snapshot 4/4 bez dryfu. Pełny B0 nie uruchamiany (ADR 0018).
+
 ## 2026-10-02 — batch 62: kolekcja właściciela 176–210 (10 kart, PR #150)
 
 Zlecenie właściciela: 10 kart z kolekcji (lista przekazana w czacie). Kolumna „Plan"
@@ -15168,3 +15206,76 @@ kopia `5cc7058`: **30:18 (0,6250)** na 48 meczach — wyraźny sygnał dodatni.
 
 **Bramka końcowa:** fast **7474/7474** EXIT 0, `node tools/run-tests.mjs all` **7745/7745** EXIT 0,
 build **70 modułów / 4790,6 kB**.
+
+## 2026-10-03c — PMSSB-41 runda 2: weryfikacja po merge + luka LANDWALK
+
+**Wejście:** właściciel zgłosił ponownie te same cztery uwagi (Weftblade / Nanoform / Wedgelight /
+Xu-Ifit) po tym, jak PR #151 został scalony (`45fcaf6`, 09:28:44Z).
+
+**Diagnoza:** fixy A–D są w `main` (pliki identyczne z gałęzią), ale **publikacja na GitHub Pages
+dla `main` była jeszcze `in_progress`** — workflow publikacji uruchamia pełny pakiet testów przed
+buildem (~8 min), więc strona serwowała build sprzed fixów i zgłoszenie opisuje tamten stan.
+Scenariusze odtworzone na kodzie z `main`: C e2e (charge 6 → tap 4/4 → **10**, artefakt-stwór,
+2/2 nietknięty), B (`myCre` 14 vs wrogie −25), D (badge'y komplet), A (bez gospodarza pass,
+przy 6 lądach rzut > warp) — wszystkie nieroztwarzalne.
+
+**Realna luka tej rundy (kryterium właściciela wymienia landwalk obok flying/menace):**
+`PlayerView` nie niósł `landwalk`, więc `emerald-oryx` (forestwalk) i `farbog-explorer`
+(swampwalk) były dla bota gołym 2/3 — premia ewazyjna nigdy się nie zapalała, a warp schodził pod
+pass także wtedy, gdy ataku nie dało się zablokować. Naprawa: widok niesie `landwalk` (deskryptor
+podtypu lądu), a `hostEvadesBlockers` liczy ewazję tą samą regułą co silnik
+(`combat.js` → `controlsLandWithSubtype`) i rozstrzyga zdolności ewazji **niezależnie** (dotąd
+`return` przy flying pomijał menace na tym samym stworze). Pomiar: PRZED `widok.landwalk`
+undefined i warp −29 w obu wariantach; PO z Lasem obrońcy warp 84 (wybrany), bez Lasu −29 (pass).
+
+**Testy:** 25 → **30 pinów** (`test/audyt-pmssb41-uwagi-testow.test.js`; nowe A9–A12 + C9 e2e),
+mutacje m10–m13 RED (1/2/1/1). Golden-master **bez dryfu**; tie-audit 12 612 decyzji / 26,9%
+(9,9% akcyjnych) / GROZY 13 — bez zmian. Mirror pominięty świadomie: żadna talia benchmarku nie
+ma karty z landwalkiem (pomiar byłby konstrukcyjnie pusty, B6).
+
+**Bramka końcowa:** fast **7479/7479** EXIT 0, `node tools/run-tests.mjs all` **7750/7750** EXIT 0 (435,5 s),
+build **70 modułów / 4792,5 kB**.
+
+**Dodatkowo:** właściciel dostał świeży `dist/index.html` z fixami na żywym podglądzie sesji
+(serwer statyczny), żeby mógł przetestować poprawki bez czekania na publikację Pages.
+
+## 2026-10-03f — pętla jakości: PMSSB-44 zamknięty w planie, PMSSB-45 desktopy ewazji
+
+**PMSSB-44 — koszt okazji drugiego trybu źródła many (BEZ ZMIAN W KODZIE):**
+- Sonda `probe-pmssb44*` dla Seer's Lantern / Skullcairn Nomad / Balamb Grown Soldier wykazała, że
+  istniejące kary M211 (−12 non-EOT library arranging, +10 EOT), `abilityManaCostPenalty` (0,6/manę)
+  oraz `producesManaOnly` już produkują poprawne wybory w main1 i EOT.
+- Dodanie wagi `manaTapOpportunityWeight` uznano za „kod na zapas" wbrew ADR 0022 §4 — decyzja zapisana
+  w planie `PLAN_2026-10-03e-pmssb44-*.md`, M429 ×0 kotwica zachowana.
+
+**PMSSB-45 — brakujące deskryptory statyczne ewazji w PlayerView:**
+- Następcy landwalka z PMSSB-41 rundy 2: audyt `abilities.js` → cztery deskryptory statyczne poza PlayerView;
+  dwa są ewazyjne i bot potrzebuje ich do `hostEvadesBlockers`: `cantBeBlockedExceptByColors` (Dauthi Voidwalker,
+  Dread Warlock) oraz `cantBeBlockedByPower` (Rust-Shield Rampager).
+- Naprawa w `src/engine/game-state.js` PlayerView: obok `landwalk` pola `cantBeBlockedExceptByColors` i `cantBeBlockedByPower`
+  liczone z `effectiveAbilities` (publiczny fakt ADR 0017, uwzględnia nadane do EOT/sprzęt/warstwy).
+- `heuristic-bot.js/hostEvadesBlockers`: dwie nowe gałęzie o semantyce lustrzanej do `combat.js/blockRestrictionError`:
+  ewazja gdy KAŻDY niezatapnięty blokujący nie może blokować (kolor nie dozwolony albo moc ≤ N).
+- Shape generyczny bez nazw kart (ADR 0002). `cantBeBlockedBySubtypes` pominięty (kod na zapas).
+
+**Piny:** `test/pmssb45-desktopy-ewazji.test.js` (2 piny A1/A2). Plan `PLAN_2026-10-03f-pmssb45-*.md`.
+**Bramki:** fast **7488/7488** EXIT 0 (120,4 s), build **70 modułów / 4797,5 kB**, `event-contract-audit.mjs` 0 naruszeń.
+
+**PR #153 po tej sesji (przed pushem):** ~14 commitów do przodu vs main (audyt PR151 + rescue PR152 + PMSSB-41/43/44/45).
+
+## 2026-10-03g — pętla jakości: PMSSB-46 O1 DIVIDED_POOL_CAP
+
+- Kolejka z handoffu 03d: ward/zone-exile/O1-creator. Ward poprawnie liczy podatek
+  (sonda `probe-pmssb46a-ward.mjs`: 5/5/2 decyzje zgodne z oczekiwaniami), zone-exile
+  bez wspartej karty demonstrującej lukę (ADR 0022 §4) → podjęto O1 `DIVIDED_POOL_CAP = 8`.
+- **Luka:** `src/engine/spells.js/dividedDamageDivisions` przycinał listę kandydatów
+  celów obrażeń podzielonych (Fiery Justice) do CAP=8 w kolejności wrogie stwory →
+  gracz-wróg → PW → moje stwory. Przy ≥8 wrogich stworach gracz-wróg znikał z puli
+  (sonda ustaliła próg n=8, nie 10 jak szacowano w HISTORY) — nie można dobić gracza
+  podzielonym czarem przy szerokim stole.
+- **Naprawa generyczna (ADR 0002/0022 §4):** rezerwacja 1 miejsca dla każdej nie-pustej
+  klasy celów innej niż najniższy rank (gracz-wróg, planeswalker), reszta wypełniana
+  dotychczasowym porządkiem. Self i moje stwory bez rezerwacji (samouszkodzenie marginalne).
+- **Piny:** `test/pmssb46-divided-pool-cap.test.js` (4 piny O1–O4). Mutacja 3/4 RED.
+- **Bramki:** fast **7492/7492** EXIT 0 (122,0 s), build **70 modułów / 4799,2 kB**,
+  event-contract-audit 0 naruszeń, bot-scoring-snapshot 6/6 bez dryfu.

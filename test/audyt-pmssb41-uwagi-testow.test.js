@@ -130,6 +130,51 @@ test('A8 (M429): pokrętło `warpRedundantPenalty` ×0 przywraca dawną dominacj
     'bez kary warp wygrywałby z rzutem normalnym — to jest wymiar, który zgłosił właściciel');
 });
 
+test('A9 (runda 2, zgłoszenie właściciela): LANDWALK to ewazja — 2/2 forestwalk u obrońcy z Lasem jest wart wzmocnienia', () => {
+  // PRZED (pomiar /tmp/pr/probe-landwalk.mjs): widok NIE niósł `landwalk`,
+  // więc `farbog-explorer` (swampwalk) i `emerald-oryx` (forestwalk) byli dla
+  // bota gołym 2/3 — gospodarz nie przechodził progu i warp schodził pod pass
+  // MIMO że ataku nie da się zablokować (CR 702.14).
+  const s = scenaWarp({ n: 3, hosts: [['h1', 'emerald-oryx', { power: 2, toughness: 2 }]], foe: 'hill-giant' });
+  put(s, 'las', 'basic-forest', 'p2', 'battlefield', { kind: 'land' });
+  assert.equal(decyzja(s).cmd.type, 'warp_card', 'forestwalk z Lasem obrońcy = gospodarz wart wzmocnienia');
+  assert.ok(wynik(s, 'warp_card') > 0);
+});
+
+test('A10 (kontrola CR 702.14): bez lądu obrońcy landwalk NIE ucieka — 2/2 bez ewazji nie przechodzi progu', () => {
+  const s = scenaWarp({ n: 3, hosts: [['h1', 'emerald-oryx', { power: 2, toughness: 2 }]], foe: 'hill-giant' });
+  assert.equal(decyzja(s).cmd.type, 'pass_priority', 'forestwalk bez Lasu obrońcy to zwykłe 2/2');
+  assert.ok(wynik(s, 'warp_card') < 0);
+});
+
+test('A12: zdolności ewazji rozstrzygają NIEZALEŻNIE — flying+menace ucieka jednemu blokerowi z flying', () => {
+  // PRZED: gałąź `flying` kończyła się `return false`, gdy bloker miał flying —
+  // menace na TYM SAMYM stworze nie był sprawdzany (CR: „nie może być
+  // blokowany” to suma warunków, nie alternatywa pierwszego słowa kluczowego).
+  // Wycena liczona ścieżką CZARU (dragonscale-boon), bo próg bramki warp
+  // (20) maskuje różnicę przy małym ciele: bez blokerów 104, z blokerem
+  // nie-do-zatrzymania 111,5. PRZED: bloker z flying → 104 (menace pominięty).
+  const scen = (bloker) => {
+    const s = game();
+    for (let i = 0; i < 4; i += 1) put(s, `F${i}`, 'basic-forest', 'p1', 'battlefield', { kind: 'land' });
+    put(s, 'h0', 'dragonscale-boon');
+    put(s, 'host', 'tackle-artist', 'p1', 'battlefield', { ...READY, power: 5, toughness: 5, keywords: ['flying', 'menace'] });
+    if (bloker) put(s, 'blok', bloker, 'p2', 'battlefield', READY);
+    return s;
+  };
+  const bez = wynik(scen(null), 'cast_spell(h0->host)');
+  assert.equal(wynik(scen('jeskai-windscout'), 'cast_spell(h0->host)'), wynik(scen('hill-giant'), 'cast_spell(h0->host)'),
+    'bloker z flying (2/1) i bloker naziemny (3/3) dają TĘ SAMĄ ewazję — menace przy jednym blokerze');
+  assert.ok(wynik(scen('jeskai-windscout'), 'cast_spell(h0->host)') > bez,
+    'gospodarz, którego nie da się zatrzymać, jest wart więcej niż ten sam gospodarz przy pustym stole');
+});
+
+test('A11: widok niesie landwalk jako deskryptor podtypu (ADR 0017/0002, bez nazwy karty)', () => {
+  const s = scenaWarp({ n: 3, hosts: [['h1', 'emerald-oryx']] });
+  const wpis = playerView(s, 'p1').zones.battlefield.find((o) => o.id === 'h1');
+  assert.equal(wpis.landwalk, 'Forest');
+});
+
 // ── B. Nanoform Sentinel — trigger odkręca WŁASNY tapnięty permanent ─────────
 function scenaNanoform() {
   const s = game();
@@ -263,6 +308,25 @@ test('C6 (M153/A2): poza własną Główną 2 station nadal schodzi pod pass', (
   s.turn = jumpToStep(s.turn, 'main1', 'p1');
   s.turn.activePlayerId = s.turn.priorityPlayerId = 'p1';
   assert.ok(wynik(s, 'activate_ability(wr#1+station:c4)') < 0);
+});
+
+test('C9 (e2e, scenariusz właściciela): charge 6 + stwory 2/2 i 4/4 → po aktywacji 10 counterów, 2/2 NIETAPNIĘTY', () => {
+  // Pełny tor silnika (nie tylko wycena): zgłoszenie „najpierw 2, potem 4 → 12
+  // counterów; mógł odwrotnie i 2/2 w ogóle nie musiałby tapować".
+  const s = scenaStation(6, [['c2', 'maritime-guard', { power: 2, toughness: 2 }], ['c4', 'hill-giant', { power: 4, toughness: 4 }]]);
+  const bot = createHeuristicBot({ seed: 5 });
+  const cmd = bot.chooseCommand(playerView(s, 'p1'), {});
+  assert.equal(cmd.type, 'activate_ability');
+  assert.equal(cmd.tapOtherCreatureId, 'c4');
+  execute(s, cmd);
+  for (let i = 0; i < 10 && (s.zones.stack ?? []).length > 0; i += 1) {
+    execute(s, { type: 'pass_priority', playerId: s.turn.priorityPlayerId });
+  }
+  const wr = s.objects.get('wr');
+  assert.equal(wr.counters.charge, 10, '6 + 4 (moc tapniętego) — koniec, bez dobijania do 12');
+  assert.ok((wr.types ?? []).includes('Creature'), 'próg 9 domknięty → artefakt jest stworzem');
+  assert.equal(s.objects.get('c2').tapped, false, '2/2 został nietknięty (to była strata, którą zgłosił właściciel)');
+  assert.equal(s.objects.get('c4').tapped, true, 'tapnięty został wyłącznie mocniejszy stwór');
 });
 
 // ── D. Xu-Ifit — badge'y przywróconego stwora ──────────────────────────────

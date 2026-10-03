@@ -1204,7 +1204,12 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // znikał z relacji, choć zmienia skutek karty (ETB niszczy permanent).
         // Ta sama fraza w obu gałęziach rzutu (L41: jedno brzmienie).
         const extraCost = paidExtraCostSuffix(e) + alternativeCostSuffix(e);
-        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}`;
+        // PMSSB-48/A (2026-10-03i): Warp rzut — log wyraźnie mówi, że stwór
+        // wchodzi za Warp (będzie wygnany na EOT, analogicznie jak Suspend).
+        // Fraza w nawiasie, by nie rozbijać gramatyki zdania, spójnie z
+        // formatem innych suffixów (extraCost/phrexian).
+        const warpSuffix = e.warped ? ' (za Warp)' : '';
+        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}${warpSuffix}`;
       }
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
