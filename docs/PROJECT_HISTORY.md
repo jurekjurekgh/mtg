@@ -19,6 +19,27 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-03 — audyt PR #151 + pętla jakości PMSSB-42 (bez kodu produkcyjnego, PR #153)
+
+Sesja audytowa po mergu PR #151 (sesja 2026-10-02f). Polecenie właściciela:
+„Kontynuujemy projekt" → pętla domyślna ADR 0021 (PR → audyt poprzedniego
+scalenia → bramki jakości).
+
+**Zrobiono:**
+- Plan sesji: `docs/plans/PLAN_2026-10-03-audyt-pr151.md`.
+- Audyt PR #151 (21 plików, +1500/-72) metodą „żywe sondy + mutacje", nie tylko odczyt diffu:
+  - Mutacja F (usunięcie `divided: true` z freeSpellCastOffers) → 3/5 testów F1 czerwonych (pin działa).
+  - Mutacja G (stary wzór `manaSpentToCast = payment + altNeed`) → F3 czerwony (pin działa).
+  - Zero specjałów per nazwa/ID karty w `src/engine/` i `src/controllers/` (ADR 0002 zachowany).
+  - Klasyfikacja efektów triggera kompletna; wybór celu `untap_permanent` przechodzi przez współdzieloną `untapTargetValue` (czar/aktywacja/trigger).
+  - PlayerView `subtypesBeforeStrip` chroniony `hiddenFromViewer` (brak wycieku informacji o zakrytych permanentach).
+  - `warpEtbHostPayoff`: clamp progress, warunki gospodarza, kary bezcelowości/redundancji — zgodne z wyliczeniami probe.
+- Werdykt audytu: **APPROVE bez znalezisk** (`docs/audits/AUDYT_PR151_2026-10-03.md`).
+- Bramki jakości (wszystkie zielone): `npm test` 7474/7474, build 70 modułów/4790,6 kB, event-contract-audit 0 naruszeń, quick benchmark 97,0%/78,0% (vs random/aggro, powyżej progów 0,82/0,63), Żywy Tester `the-edge vs ravnica` seed 1001 (51 kroków, 0 detektorów, 0 niewyceń), bot-scoring-snapshot 4/4.
+- Żadnych zmian w kodzie produkcyjnym (audyt czysty). Handoff: `docs/handoffs/HANDOFF_2026-10-03.md`.
+
+**PR:** #153, 2 commity (`48a7e60` plan, `0202ae7` raport audytu), scalany później.
+
 ## 2026-10-02 — batch 62: kolekcja właściciela 176–210 (10 kart, PR #150)
 
 Zlecenie właściciela: 10 kart z kolekcji (lista przekazana w czacie). Kolumna „Plan"
