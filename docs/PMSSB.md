@@ -2353,3 +2353,60 @@ dist na żywym podglądzie sesji, żeby przetestować fixy bez czekania na Pages
 **Status:** wszystkie cztery zgłoszenia ZAMKNIĘTE. Kolejka następnej pętli bez zmian:
 koszt okazji drugiego trybu źródła (`Seer's Lantern`, Immersturm Skullcairn, Balamb Garden),
 dynamiczne X, `buff_attacking_creatures`, bankowanie many.
+
+## PMSSB-43 — pętla jakości: dynamiczne X i buff_attacking_creatures w payoffie triggerów rzutu (2026-10-03d)
+
+**Wejście:** pozycja 1 kolejki po PMSSB-41 rundzie 2 + komentarz w `heuristic-bot.js:5945`
+(„Dynamiczne X (np. source_power) i efekty skierowane są poza modelem (0)") — luka
+jawnie oznaczona w kodzie, bez sygnału właściciela (pętla jakości ADR 0021 §4).
+
+**Diagnoza (sonda, nie domyślnie):**
+- `temporaryPumpPayoff` wcześnie `return 0` dla `buff_attacking_creatures` oraz gdy
+  `power` nie jest liczbą — deskryptory łańcuchowe (`'X'`, `'card_types_in_all_graveyards'`,
+  `'source_power'`) były obcinane przed jakąkolwiek symulacją walki, więc payoff
+  z pompy liczył zawsze 0.
+- `pumpDelta` rozwiązywał tylko `pump_by_creature_count`, `pump_by_gates`,
+  `sacrifice_food_choice`; dla reszty brał `effect.power ?? 0` jako LICZBĘ.
+- W katalogu wspieranych kart deskryptory dynamiczne w pompach do końca tury pojawiają
+  się przy `Altar of the Goyf` (trigger `attacks_alone` → `buff_creature_until_end_of_turn`
+  z power/toughness `'card_types_in_all_graveyards'`) oraz `Jyoti, Moag Ancient`
+  (`buff_land_creatures` z `'source_power'`; forma command zone nie w silniku, ale
+  deskryptor ma ogólny kształt).
+- `PAYOFF_TEMP_PUMP_EFFECTS` nie zawierał `'buff_attacking_creatures'` (kształt istnieje
+  w silniku, np. Thunderstaff, ale jest aktywacją a nie triggerem rzutu — bez znaczenia
+  dla payoffu, ale wpis zamyka przyszłe karty o tym kształcie).
+
+**Naprawa (generyczna, ADR 0002):**
+- `pumpDelta(view, effect, source)` przyjmuje opcjonalnego `source` i rozwiązuje
+  `'card_types_in_all_graveyards'` (z widoku, te same reguły co silnik w
+  `allGraveyardsCardTypeCount` — tokeny się nie liczą), `'source_power'` (z hosta),
+  `'oil_counters'` (z liczników hosta). Nie-liczbowy nieznany deskryptor → 0 (miękka
+  degradacja).
+- Lista typów kart importowana z `src/engine/permanents.js` (`CARD_TYPES`) — test O-2
+  wymaga JEDNEGO źródła prawdy; własny `Set` w bocie rozjechałby tę bramkę.
+- `temporaryPumpPayoff`: usunięty wczesny return 0 dla `buff_attacking_creatures`;
+  odbiorcą symulacji jest nasz atakujący (jeśli jest zadeklarowany), bez atakującego 0.
+- `PAYOFF_TEMP_PUMP_EFFECTS` rozszerzone o `'buff_attacking_creatures'`.
+
+**Piny:** `test/pmssb43-dynamiczne-pumpy-payoffu.test.js` — **7 pinów** (A1 liczenie typów,
+A2 tokeny, A3 source_power, A4 oil_counters, A5 nieznany deskryptor nie rzuca,
+A6 buff_attacking_creatures w rodzinie, A7 puste groby). Mutacja m1 (usunięcie resolvera
+`card_types_in_all_graveyards`) → 1/7 RED.
+
+**Bramki:** fast **7486/7486** EXIT 0 (118,1 s) · build **70 modułów / 4795,2 kB** ·
+`event-contract-audit.mjs` 0 naruszeń · bot-scoring-snapshot 4/4 zielony (bez dryfu).
+Pełny B0 NIE uruchamiany (ADR 0018).
+
+**Granice świadome:**
+- Brak obsługi `greatest_power_you_control` (pump przy create_token, nie należy do rodziny)
+  ani `greatest_mana_among_other_artifacts` (pump statyczny Emissary — PlayerView już
+  niesie wynikową moc w `power`).
+- Efekty skierowane (`targetIndex`) pozostają 0 — nie ma wspieranej karty tego kształtu,
+  bez kodu na zapas.
+- `buff_land_creatures` nie dodane do `PAYOFF_TEMP_PUMP_EFFECTS` — jedyna karta (Jyoti)
+  nie jest w formacie.
+
+**Status:** lukę z komentarza zamknięto. Kolejka następnej pętli: koszt okazji drugiego
+trybu źródła, przegląd deskryptorów statycznych w PlayerView (następcy landwalka), ward/
+zone-exile/O1-creator, warp_card vs rzut w następnej turze, premia ewazyjna
+(deathtouch/double strike).

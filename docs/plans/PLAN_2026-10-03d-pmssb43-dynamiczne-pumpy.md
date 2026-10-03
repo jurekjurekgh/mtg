@@ -71,12 +71,12 @@ Naprawiam **generyczne rozwiązanie deskryptora dynamicznego** w `pumpDelta`
 
 ## Etapy
 
-- [ ] Etap 0 — sonda Altar-scenariusz PRZED naprawą (baseline)
-- [ ] Etap 1 — `pumpDelta` z opcjonalnym `source` + resolverami deskryptorów
-- [ ] Etap 2 — `temporaryPumpPayoff`: warunki wczesnego return 0 rozluźnione, `PAYOFF_TEMP_PUMP_EFFECTS` + `buff_attacking_creatures`
-- [ ] Etap 3 — piny + mutacje
-- [ ] Etap 4 — bramki (fast `npm test`, build, event-contract-audit)
-- [ ] Etap 5 — docs (PMSSB §43, HISTORY, handoff zaktualizowany)
+- [x] Etap 0 — sonda (baseline): komentarz L5945 potwierdza lukę; Altar/Jyoti są jedynymi kształtami; test O-2 wymaga JEDNEGO źródła listy typów
+- [x] Etap 1 — `pumpDelta(view, effect, source)` z resolverami deskryptorów + import `CARD_TYPES` z permanents.js
+- [x] Etap 2 — `temporaryPumpPayoff`: rozluźnienie early return, `PAYOFF_TEMP_PUMP_EFFECTS` + `buff_attacking_creatures`
+- [x] Etap 3 — 7 pinów (`test/pmssb43-…`), mutacja m1 RED
+- [x] Etap 4 — bramki: fast 7486/7486, build 70/4795,2, event-contract-audit 0, snapshot 4/4 bez dryfu
+- [x] Etap 5 — docs (PMSSB §43, HISTORY, handoff 2026-10-03 zaktualizowany)
 
 ## Granice świadome
 

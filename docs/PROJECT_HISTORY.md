@@ -40,6 +40,23 @@ scalenia → bramki jakości).
 
 **PR:** #153, 2 commity (`48a7e60` plan, `0202ae7` raport audytu), scalany później.
 
+## 2026-10-03d — PMSSB-43: dynamiczne X/pumpy w payoffie triggerów rzutu (kod produkcyjny, PR #153)
+
+Pętla jakości po zamknięciu PMSSB-41/rundy2. Pozycja 1 kolejki (dynamiczne X +
+`buff_attacking_creatures`): komentarz w `heuristic-bot.js:5945` jawnie oznaczał lukę
+(„Dynamiczne X i efekty skierowane są poza modelem (0)").
+Diagnoza: `temporaryPumpPayoff` obcinał nie-liczbowe `power`/`toughness` (desktryptory
+łańcuchowe `'card_types_in_all_graveyards'`, `'source_power'`, `'oil_counters'` →
+payoff 0), a `pumpDelta` nie miało resolverów; `PAYOFF_TEMP_PUMP_EFFECTS` nie zawierał
+`buff_attacking_creatures`.
+Naprawa (generyczna, ADR 0002/0017): `pumpDelta(view, effect, source)` z resolverami
+desktryptorów (liczenie typów z widoku, te same reguły co silnik — tokeny nie liczą;
+import `CARD_TYPES` z `permanents.js`, jedno źródło prawdy per test O-2); `buff_attacking_creatures`
+w rodzinie pomp z odbiorcą-atakującym; payoff liczy deltę przez `pumpDelta` z hostem.
+Test: 7 pinów (`test/pmssb43-dynamiczne-pumpy-payoffu.test.js`), mutacja m1 RED.
+Bramki: fast **7486/7486** (+7), build **70/4795,2 kB**, event-contract-audit 0 naruszeń,
+bot-scoring-snapshot 4/4 bez dryfu. Pełny B0 nie uruchamiany (ADR 0018).
+
 ## 2026-10-02 — batch 62: kolekcja właściciela 176–210 (10 kart, PR #150)
 
 Zlecenie właściciela: 10 kart z kolekcji (lista przekazana w czacie). Kolumna „Plan"
