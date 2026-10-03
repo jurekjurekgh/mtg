@@ -42,4 +42,4 @@ Krytyczny dla pompy/ewazji jest tylko `cantBeBlockedExceptByColors` i `cantBeBlo
 - [x] Etap 2 — hostEvadesBlockers rozpoznaje oba deskryptory (reguła jak combat.js/blockRestrictionError, L41/L48)
 - [x] Etap 3 — piny A1/A2 w test/pmssb45-desktopy-ewazji.test.js
 - [x] Etap 4 — bramki: fast **7488/7488** (+2 piny), build **70 / 4797,5 kB**, event-contract-audit 0 naruszeń
-- [ ] Etap 5 — docs (PMSSB §45, HISTORY, handoff)
+- [x] Etap 5 — docs (PMSSB §44/§45, HISTORY wpis 2026-10-03f, handoff 03d)

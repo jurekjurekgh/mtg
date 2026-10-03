@@ -2410,3 +2410,73 @@ Pełny B0 NIE uruchamiany (ADR 0018).
 trybu źródła, przegląd deskryptorów statycznych w PlayerView (następcy landwalka), ward/
 zone-exile/O1-creator, warp_card vs rzut w następnej turze, premia ewazyjna
 (deathtouch/double strike).
+
+---
+
+## PMSSB-44 — pętla jakości: koszt okazji drugiego trybu źródła many (Seer/Balamb/Skullcairn) (2026-10-03e)
+
+**Wejście:** pozycja 2 kolejki po PMSSB-43 — uwaga na komentarz `M429`: źródło many z
+drugim trybem aktywowanym za dodatkową manę (np. Seer's Lantern: {2}{T} scry 1) może
+być bezsensownie aktywowane w main1 przed wykorzystaniem many do zagrania czaru.
+
+**Diagnoza (sonda `probe-pmssb44*`):**
+- Symulacje dla trzech kart:
+  - Seer's Lantern scry {2},{T} w main1 przy 3 Plains na ręce: `activate_ability` -12 vs `pass` 0 → bot passuje (M211 kary: koszt many, wastefulStep, non-EOT library arranging).
+  - To samo w enemy EOT: activate +10 vs pass 0 → bot aktywuje (poprawne).
+  - Darmowe scry {T} przy 1 Plains i czarze 1W w ręce: activate -10 vs pass 0 → passuje.
+  - Skullcairn/Balamb: `abilityManaCostPenalty` (0,6/manę) + `selfHarmPenalty`/wastefulStep wystarczają, żeby nie aktywować.
+- **WNIOSEK:** istniejące kary M211 + `abilityManaCostPenalty` + `producesManaOnly` dają poprawne wybory;
+  dodanie osobnej wagi `manaTapOpportunityWeight` byłoby „kodem na zapas" wbrew ADR 0022 §4 (kod tylko dla zademonstrowanego błedu).
+
+**Naprawa:** BRAK ZMIAN W KODZIE. Zapisany plan (`PLAN_2026-10-03e-*.md`) z wynikami sondy
+i uzasadnieniem. M429 ×0 kotwica zachowana.
+
+**Status:** zamknięty w planie. Kolejka: deskryptory statyczne w PlayerView (następcy landwalka).
+
+---
+
+## PMSSB-45 — brakujące deskryptory statyczne ewazji w PlayerView (2026-10-03f)
+
+**Wejście:** pozycja 3 kolejki po PMSSB-44 — sonda `abilities.js`: cztery deskryptory
+statyczne nie wystawione w PlayerView, z czego dwa dotyczą blokowania (krytyczne dla
+payoffu pomp/ewazji w `hostEvadesBlockers`): `cantBeBlockedExceptByColors` (Dauthi Voidwalker,
+Dread Warlock) i `cantBeBlockedByPower` (Rust-Shield Rampager, Aerial Maurer).
+Pozostałe dwa (`cantAttackUnlessDefenderHasFlying`, `preventCombatDamageToController`)
+nie są używane w botowych heurystykach ewazji — zostają bez zmian (ADR 0002, bez kodu
+na zapas).
+
+**Diagnoza:**
+- `hostEvadesBlockers` znał flying/menace/landwalk; nie znał dwóch pozostałych
+  deskryptorów — stwór typu Dread Warlock („can't be blocked except by black")
+  dostawał 0 punktów ewazji, więc bot nie pompował go, nie atakował w zegar i
+  przeceniał wymianę.
+- Reguły blokowania w `combat.js/blockRestrictionError` (L41/L48) były jedyne miejsce
+  definiujące te ograniczenia; PlayerView ich nie eksponował.
+
+**Naprawa (generyczna, ADR 0002/0017):**
+- `game-state.js` PlayerView: obok `landwalk` dodano `cantBeBlockedExceptByColors`
+  (tablica kolorów) oraz `cantBeBlockedByPower` (number), liczone z `effectiveAbilities`
+  (z uwzględnieniem nadanych do EOT, załączników, warstw postaci), tylko dla
+  nieukrytych permanentów (publiczny fakt CR 105.2 / 509.1a).
+- `heuristic-bot.js/hostEvadesBlockers`: dodano dwa rozgałęzienia o semantyce
+  lustrzanej do `combat.js`:
+  - `cantBeBlockedExceptByColors: C` → ewazja, gdy KAŻDY niezatapnięty blokujący wroga
+    nie ma ŻADNEGO koloru z dozwolonych (tj. żaden nie może zablokować).
+  - `cantBeBlockedByPower: N` → ewazja, gdy KAŻDY blokujący ma moc ≤ N.
+
+**Piny:** `test/pmssb45-desktopy-ewazji.test.js` — **2 piny** (A1 Dread Warlock ma pole
+w widoku, A2 Rust-Shield Rampager ma pole w widoku).
+
+**Bramki:** fast **7488/7488** EXIT 0 (120,4 s, +2 piny) · build **70 modułów / 4797,5 kB** ·
+`event-contract-audit.mjs` 0 naruszeń.
+
+**Granice świadome:**
+- `cantBeBlockedBySubtypes` (Blazing Torch, „can't be blocked except by Walls")
+  nie dodane — bot nie rozpoznaje ewazji podtypowej; pojawi się, gdy karta o tym
+  kształcie znajdzie się w katalogu (kod na zapas).
+- `cantAttackUnlessDefenderHasFlying` (Skyhunter Skirmisher) i
+  `preventCombatDamageToController` (Thunderstaff, M255 już istnieje)
+  nie dotykają logiki ewazji botowej; bez zmian.
+
+**Status:** zamknięty. Kolejka następnej pętli: ward/zone-exile/O1-creator, warp_card vs
+rzut w następnej turze, premia ewazyjna (deathtouch/double strike).

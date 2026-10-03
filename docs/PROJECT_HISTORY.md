@@ -15238,3 +15238,27 @@ build **70 modułów / 4792,5 kB**.
 
 **Dodatkowo:** właściciel dostał świeży `dist/index.html` z fixami na żywym podglądzie sesji
 (serwer statyczny), żeby mógł przetestować poprawki bez czekania na publikację Pages.
+
+## 2026-10-03f — pętla jakości: PMSSB-44 zamknięty w planie, PMSSB-45 desktopy ewazji
+
+**PMSSB-44 — koszt okazji drugiego trybu źródła many (BEZ ZMIAN W KODZIE):**
+- Sonda `probe-pmssb44*` dla Seer's Lantern / Skullcairn Nomad / Balamb Grown Soldier wykazała, że
+  istniejące kary M211 (−12 non-EOT library arranging, +10 EOT), `abilityManaCostPenalty` (0,6/manę)
+  oraz `producesManaOnly` już produkują poprawne wybory w main1 i EOT.
+- Dodanie wagi `manaTapOpportunityWeight` uznano za „kod na zapas" wbrew ADR 0022 §4 — decyzja zapisana
+  w planie `PLAN_2026-10-03e-pmssb44-*.md`, M429 ×0 kotwica zachowana.
+
+**PMSSB-45 — brakujące deskryptory statyczne ewazji w PlayerView:**
+- Następcy landwalka z PMSSB-41 rundy 2: audyt `abilities.js` → cztery deskryptory statyczne poza PlayerView;
+  dwa są ewazyjne i bot potrzebuje ich do `hostEvadesBlockers`: `cantBeBlockedExceptByColors` (Dauthi Voidwalker,
+  Dread Warlock) oraz `cantBeBlockedByPower` (Rust-Shield Rampager).
+- Naprawa w `src/engine/game-state.js` PlayerView: obok `landwalk` pola `cantBeBlockedExceptByColors` i `cantBeBlockedByPower`
+  liczone z `effectiveAbilities` (publiczny fakt ADR 0017, uwzględnia nadane do EOT/sprzęt/warstwy).
+- `heuristic-bot.js/hostEvadesBlockers`: dwie nowe gałęzie o semantyce lustrzanej do `combat.js/blockRestrictionError`:
+  ewazja gdy KAŻDY niezatapnięty blokujący nie może blokować (kolor nie dozwolony albo moc ≤ N).
+- Shape generyczny bez nazw kart (ADR 0002). `cantBeBlockedBySubtypes` pominięty (kod na zapas).
+
+**Piny:** `test/pmssb45-desktopy-ewazji.test.js` (2 piny A1/A2). Plan `PLAN_2026-10-03f-pmssb45-*.md`.
+**Bramki:** fast **7488/7488** EXIT 0 (120,4 s), build **70 modułów / 4797,5 kB**, `event-contract-audit.mjs` 0 naruszeń.
+
+**PR #153 po tej sesji (przed pushem):** ~14 commitów do przodu vs main (audyt PR151 + rescue PR152 + PMSSB-41/43/44/45).
