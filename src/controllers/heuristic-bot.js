@@ -3025,6 +3025,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (hasKeyword(host, 'menace') && blockers.length <= 1) return true;
     if (typeof host.landwalk === 'string'
       && blockers.every((o) => controlsLandOfSubtype(view, o.controllerId, host.landwalk))) return true;
+    // PMSSB-45 (nastepca landwalka): dwa kolejne publiczne deskryptory blokowania
+    // czytane z PlayerView (ADR 0017). Reguly jak w combat.js blockRestrictionError (L41/L48):
+    //  - cantBeBlockedExceptByColors: Dauthi Voidwalker — tylko blokujacy majacy PRZYNAJMNIEJ JEDEN z wymienionych kolorow;
+    //  - cantBeBlockedByPower: Aerial Maurer — nie moze byc blokowany przez stwory o mocy <= N.
+    if (Array.isArray(host.cantBeBlockedExceptByColors) && host.cantBeBlockedExceptByColors.length > 0) {
+      const allowed = new Set(host.cantBeBlockedExceptByColors);
+      if (blockers.every((b) => !(b.colors ?? []).some((c) => allowed.has(c)))) return true;
+    }
+    if (Number.isFinite(host.cantBeBlockedByPower)) {
+      const threshold = host.cantBeBlockedByPower;
+      if (blockers.every((b) => (b.power ?? 0) <= threshold)) return true;
+    }
     return false;
   };
 
