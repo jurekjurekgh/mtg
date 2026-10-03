@@ -15323,3 +15323,31 @@ build **70 modułów / 4792,5 kB**.
   dokumentacji PMSSB-47/48 (ten wpis).
 - Bramki po naprawach: `npm test` 7503/7503 EXIT 0, build 70 modułów,
   bot-scoring-snapshot bez dryfu; mutacje m1–m4, W1/W2 → piny RED.
+
+## 2026-10-03k — F6: „czy obiekt jest KARTĄ" = jawna flaga `isToken` (PR #154)
+
+- **Znalezisko F6 audytu PR #153** („obserwacja do kolejki") okazało się realną
+  rozbieżnością silnik↔bot: po audycie PR #136 (F-2) predykat „karta" naprawiono
+  TYLKO w `zones.isCardInOpponentGraveyard`, a **12 bliźniaczych miejsc** zostało
+  na heurystyce `name != null`. Pole `name` nosi także kopia z `enterAsCopy`
+  (CR 707.2), więc poległa kopia była „nie-kartą" w delirium (CR 207.2c),
+  u Tarmogoyfa/Disy (CR 205.3m), w warunku Gray Slaada, w pulach celów
+  „…card from your graveyard" i w descendzie. W bocie filtr był MARTWY (widok
+  nie wystawia `name` poza polem bitwy), więc bot liczył kopie, a silnik nie —
+  dla tego samego stanu silnik dawał 3 typy kart, a bot 4 (L1/L41/L48).
+- **Naprawa `898c238`:** `zones.isCardObject` = `!object.isToken` (CR 108.2b,
+  jawna flaga — L43) jako jedno źródło dla `triggers.js`, `permanents.js`,
+  `effects.js`, `game-state.js` i bota; widok wystawia `isToken` także poza
+  polem bitwy (grób publiczny, CR 400.2); wykrywacz tokenów po prefiksie
+  `cardId` w czyszczeniu poza polem bitwy też czyta flagę.
+- **Piny:** `test/karta-to-nie-token-nazwana-kopia-w-grobie.test.js` A1–A4,
+  B1–B2, C1, D, E; 4 niedokładne fixture'y w istniejących testach („token" ustawiany
+  polem `name`) poprawione na jawną flagę — w tym jeden pin wakacyjny
+  (typ tokenu powtarzał typ innej karty, więc wykluczenie było niewidoczne).
+- **Dowód mutacyjny:** m1 → A1, m2 → A2+D, m3 → B1, m4 → D, m5 → D+E, m6 → C1;
+  wszystkie po przywróceniu zielone.
+- **Bramki:** `npm test` **7513/7513** EXIT 0 (104,2 s), build 70 modułów /
+  4803,8 kB, `event-contract-audit` 0 naruszeń, bot-scoring-snapshot 4/4 bez dryfu.
+- **Świadomie odłożone:** wpis do `docs/LESSONS.md` („pole `name` nie jest
+  znacznikiem tokenu") — budżet lektury startowej jest na granicy (~99,9k/100k
+  bajtów), najpierw kondensacja rejestru; brak nowych kart (ADR 0029).
