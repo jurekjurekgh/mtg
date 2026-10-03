@@ -90,6 +90,23 @@ a `PLAN_2026-10-03i-…` w etapach 1–7; `HANDOFF_2026-10-03e.md` twierdzi
 7. `docs: domknięcie sesji` — handoff `HANDOFF_2026-10-03f.md`, wpis
    w `docs/PROJECT_HISTORY.md`, Hub PMSSB, opis PR.
 
+## Wykonanie (2026-10-03j)
+
+- [x] Commit 1 — `846ef29` docs(plan) · PR #154 otwarty przed kodowaniem (ADR 0020 A).
+- [x] Commit 2 — `9043114` docs(audit): F1–F6 z dowodami sond (ADR 0020 B).
+- [x] Commit 3 — `6fa26e4` fix(pmssb47): F1 (bramka + piny E1–E4 + kotwica A4 71.103); mutacja m1 → A4+E1 RED.
+- [x] Commit 4 — `4ab6e80` fix(pmssb46): F2 **razem z F4** (zdublowany komentarz był częścią przepisywanego bloku — odchylenie od kolejności w planie); piny O5/O6; mutacje m2/m3.
+- [x] Commit 5 — `b40e865` fix(pmssb45): F3; mutacja m4 → A2 RED.
+- [x] Commit 6 — `233ffaa` docs(pmssb47/48): F5 (etapy, hub §47/§48, HISTORY `2026-10-03h/i`).
+- [x] Commit 7 — docs: status audytu, ten plan, handoff `HANDOFF_2026-10-03f.md`; opis PR #154 zaktualizowany.
+- Dodatkowo zweryfikowane mutacyjnie piny PMSSB-48 (W1/W2 → RED) jako dowód dla
+  domykanych etapów planu 03i.
+- Bramki końcowe: `npm test` 7503/7503 EXIT 0, `npm run test:all` 7774/7774
+  EXIT 0, build 70 modułów/4801,5 kB, event-contract-audit 0, snapshot 4/4.
+- Poza zakresem sesji (kolejka): F6 (jedno źródło „czy obiekt jest kartą"),
+  `warp_card` vs rzut w następnej turze, premia ewazyjna deathtouch/double strike,
+  `castFutileEtbPenalty` (etap 2 PMSSB-47) — tylko z kartą demonstrującą lukę.
+
 ## Kryteria ukończenia
 
 - `npm test` zielony (oczekiwane 7500 + nowe piny), `npm run build` bez błędu,
