@@ -2294,7 +2294,9 @@ pierwszy od kilku pętli pomiar lustra z wyraźnym sygnałem dodatnim.
 (flying/menace/landwalk + liczba blokerów) — „wart wzmocnienia” dla innych słów kluczowych
 (np. deathtouch, double strike) wychodzi z samej `counterHostValue`, bez własnej premii;
 (2) `warp_card` nie modeluje pełnej symulacji „warp w tej turze vs rzut w następnej” — porównuje
-się z OFERTĄ rzutu teraz (L48), nie z przyszłą turą; (3) Station nadal wymaga własnej Głównej 2
+się z OFERTĄ rzutu teraz (L48), nie z przyszłą turą (**częściowo domknięte w PMSSB-49**: druga
+wypłata ETB z recastu po warp jest liczona, gdy recast jest osiągalny już w następnej turze;
+pełna symulacja kolejnych tur nadal nie istnieje); (3) Station nadal wymaga własnej Głównej 2
 (M153/A2 bez zmian); (4) `tapBodyCost` jest drabiną PMSSB-32 — dla bardzo dużych ciał pełna
 wartość obronna ciała nie jest liczona.
 
@@ -2581,5 +2583,46 @@ widoku) → piny RED; rozszerzenie M277 o pole odczytu renderera.
 **Granice świadome:** zgłoszenie B (Station po 3 tapach) bez zmian kodu —
 sorcery-speed i wymagany pass po zdolności na stosie (ADR 0022 §4), zgodnie z
 diagnozą planu.
+
+**Status:** zamknięty.
+
+## PMSSB-49 — `warp_card` widzi DRUGI ETB z recastu po warp (2026-10-03l)
+
+**Wejście:** pozycja 2 kolejki po PMSSB-48 (handoff `03g`) — „warp_card vs rzut
+w następnej turze: opóźdzony zysk vs stracona tura", czyli granica (2)
+z sekcji PMSSB-41 powyżej.
+
+**Problem (sonda, PRZED):** `warp_card` porównywał się wyłącznie z OFERTĄ rzutu
+TERAZ (L48), więc S1 (3 lądy — rzut nieosiągalny), S3 (6 lądów, 4 nietapnięte —
+rzut za turę) i S5 (5 lądów bez land dropu) dawały **identyczne 85,000**.
+A karta po warp-caście wraca z wygnania ZA KOSZT MANY (CR 702.185a) i tam ETB
+odpala **drugi raz** — sonda pokazała rzut z exile jako `cast_permanent` przy
+6 lądach, brak oferty przy 3 manach (koszt = koszt many 6, nie warp 3) i drugi
+licznik `+1/+1` na tym samym gospodarzu.
+
+**Naprawa:** pokrętło `warpRecastEtbWeight: 0.5` + helper
+`warpRecastReachableNextTurn(view, card)` (untap własnych lądów + land drop
+z ręki ≥ `manaCost` i pokrycie kolorów; `false`, gdy rzut oferowany teraz —
+to gałąź redundancji). Gałąź `warp_card` dolicza
+`0,5 × secondEtbPayoff` (ta sama wypłata co dla wejścia teraz). `×0` = stan
+sprzed zmiany (M429).
+
+**Pomiar PO:** S1 85,000 (kotwica), S1b 85,000, **S1c 97,000**,
+S2 cast 71,103 > warp 25,000 (bez zmian), **S3 97,000** (było 85,000),
+S4 −29,000 (jałowy warp bez zmian), S5 85,000 (5 lądów bez dropu nie pokrywa
+{5}{W} — celowo). S1 i S3 różnią się o dokładnie 12 = 0,5 × 24.
+
+**Weryfikacja:** `test/pmssb49-warp-vs-nastepna-tura.test.js` W1–W9 (9/9);
+mutacje m1→W2/W4/W6/W9, m2→W2/W6, m3→W5, m4→W1/W3/W4/W5 (po przywróceniu
+zielone); regresja PMSSB-41 + PMSSB-35 50/50.
+
+**Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s) · build **70 modułów /
+4806,9 kB** · `bot-scoring-snapshot` 4/4 bez dryfu · `event-contract-audit`
+0 naruszeń.
+
+**Granice świadome:** proxy zna wyłącznie widok (własne lądy + ląd z ręki);
+źródła nielandowe wymagające aktywacji i przyszłe dobrania są poza modelem.
+Talie wzorcowe (`BENCH_DECKS`) nie mają karty z warp, więc pomiar lustra nie
+zmienia się od tej rundy; pełny B0 tylko na polecenie właściciela (ADR 0018/0025).
 
 **Status:** zamknięty.

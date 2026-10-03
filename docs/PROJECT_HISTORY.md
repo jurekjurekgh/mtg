@@ -15352,3 +15352,36 @@ build **70 modułów / 4792,5 kB**.
 - **Świadomie odłożone:** wpis do `docs/LESSONS.md` („pole `name` nie jest
   znacznikiem tokenu") — budżet lektury startowej jest na granicy (~99,9k/100k
   bajtów), najpierw kondensacja rejestru; brak nowych kart (ADR 0029).
+
+## 2026-10-03l — PMSSB-49: `warp_card` widzi DRUGI ETB z recastu po warp (PR #154)
+
+- **Kolejka 2 po PMSSB-48** („warp_card vs rzut w następnej turze — opóźdzony
+  zysk vs stracona tura", granica (2) §PMSSB-41): bot wyceniał warp wyłącznie
+  przeciw OFERCIE rzutu TERAZ (L48), więc nie odróżniał „rzutu nie ma i nie
+  będzie" od „rzut jest za turę" — S1 (3 lądy), S3 (6 lądów, 4 nietapnięte)
+  i S5 (5 lądów bez land dropu) dawały identyczne **85,000**.
+- **Fakt mechaniczny (sonda):** karta po warp-caście wraca z wygnania ZA KOSZT
+  MANY (CR 702.185a) i tam **ETB odpala drugi raz** — rzut z exile jest
+  oferowany jako `cast_permanent` przy 6 lądach, znika przy 3 manach (koszt =
+  koszt many 6, nie warp 3), a po recaście ten sam gospodarz dostaje drugi
+  licznik `+1/+1`.
+- **Naprawa `cfd4de2`:** pokrętło `warpRecastEtbWeight: 0.5` (dyskont czasu)
+  + helper `warpRecastReachableNextTurn(view, card)` — untap własnych lądów
+  z widoku + ląd z ręki (land drop) ≥ `manaCost` i pokrycie kolorów; `false`,
+  gdy rzut jest oferowany teraz (gałąź redundancji). Gałąź `warp_card` dolicza
+  drugą wypłatę ETB, gdy recast jest osiągalny za turę. `×0` = stan sprzed
+  (M429). Generycznie, bez nazw kart (ADR 0002).
+- **Pomiar PO:** S1 85,000 / S1b 85,000 / S1c **97,000** / S2 cast 71,103 >
+  warp 25,000 / S3 **97,000** (było 85,000) / S4 −29,000 / S5 85,000 — S1 i S3
+  różnią się o dokładnie 12 = 0,5 × 24 (proxy `counterHostValue` 3/3).
+- **Piny:** `test/pmssb49-warp-vs-nastepna-tura.test.js` W1–W9 (9/9), w tym
+  bramka land dropu (W3), kolor (W5), pokrętło ×0 (W6), anty-over-fix
+  (W7 redundancja, W8 jałowy warp) i brak podwójnego liczenia przy rzucie
+  z ręki (W9). Mutacje m1–m4 → RED W2/W4/W6/W9, W2/W6, W5, W1/W3/W4/W5.
+- **Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s), build 70 modułów /
+  4806,9 kB, `bot-scoring-snapshot` 4/4 bez dryfu, `event-contract-audit`
+  0 naruszeń, regresja PMSSB-41 + PMSSB-35 50/50.
+- **Granica świadoma:** proxy czyta tylko widok (własne lądy + ląd z ręki);
+  źródła wymagające aktywacji i przyszłe dobrania poza modelem. Talie wzorcowe
+  nie zawierają karty z warp → pomiar lustra bez zmian; pełny B0 tylko na
+  polecenie właściciela.
