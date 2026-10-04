@@ -615,6 +615,26 @@ a katalog ścieżek decydujących o niej nie był znany w jednym miejscu
 game-state/effects). Brak naturalnego choke pointa = każda nowa ścieżka
 dziedziczy błędne domyślne.
 
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}.
+
+**Reguła:**
+1. Ograniczenie definiuj przez to, czego druk ZAKAZUJE:
+   `restrictionApplies = purpose.castingSpell === true && purpose.artifactSpell !== true`.
+   Wtedy płatność domyślna (zdolność, plot, suspend, proliferate) jest legalna
+   z definicji, a wyjątek jest jawny w sygnaturze.
+2. Cel wydania jest częścią kontraktu płatności. Przy >10 ścieżkach przegląd
+   nie wystarczy — potrzebny **strażnik źródła**
+   (`test/m202-straznik-celu-wydania-many.test.js`: każda funkcja
+   `cast*`/`*Casts` pyta o manę z celem; zweryfikowany mutacyjnie).
+3. Oferta i walidacja czytają JEDEN odczyt (L48/L41): koszt dodatkowy na
+   obiekcie ma jedną funkcję (`exileAdditionalCostCandidates`) dla wszystkich
+   gałęzi. Test nie jest „testem karty", tylko „testem ścieżki".
+4. Sygnał przy audycie diffa: nowe pole `purpose`/`spendOnly`/`additionalCost`
+   bez wyliczenia ścieżek. Policz je grepem (5 s).
+5. Piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda: dwa
+   z trzech pinów N3 wyszły RED. Pin, który nigdy nie był RED, nie dowodzi
+   niczego (L13).
 ## L58 (2026-08-23) — przypadek
 
 **Objaw (M201/N1, audyt PR #72):** w `scoreCommand` heuristic-bota została
@@ -1178,6 +1198,25 @@ Dopiero wtedy kasacja duplikatu była bezpieczna.
 bazowa wartość rzutu czaru (~50–65) zjadała ją w całości i bot dalej rzucał
 triki w Głównej 1. Kara ISTNIAŁA, tylko liczona w oderwaniu od sumy.
 
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Reguła:**
+1. Kara/premia okna czasowego musi być zwymiarowana względem BAZY gałęzi
+   (czary ~50–65), inaczej jest dekoracją. Test zachowania („bot NIE rzuca X
+   w oknie Y") obowiązkowy — tylko on mierzy sumę.
+2. Timing to CZĘŚĆ okna: sorcery nie poczeka na combat (jedyne sensowne okno
+   to Główna 1 przed atakiem — M179/C); kara za instant w main wymusza
+   czekanie na deklaracje (M179/A1).
+3. Klasy zachowań to WHITELISTY z eksportem + strażnikiem katalogowym
+   (wzorzec L51): `IDEMPOTENT_EOT_EFFECTS`/`STACKING_ACTIVATED_EFFECTS`
+   (M179/B), `FRIENDLY_TARGET_EFFECTS` + `HOSTILE_*` (M179/E),
+   `KEYWORD_LABELS`/`KEYWORD_EVENT_LABELS` (M179/A2). Nowy typ bez przydziału
+   = czerwony strażnik.
+4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
+   (`selfHarmPenalty`) oraz przyjazny we wroga (`friendlyMisaimPenalty`) — w
+   call-site'ach gałęzi, nie w każdej gałązce osobno.
+5. Przy zagraniu JAŁOWYM (efekt z definicji nie zadziała) kara musi POMINĄĆ
+   premię (`continue`) — inaczej premia ją zjada; po zmianie wag dowiedź
+   testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum: L3).
 ## L149 (2026-09-17) — przypadek (M374, znalezisko benchmarku quick-25 seed 2039)
 
 **Objaw:** mecz `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039 —

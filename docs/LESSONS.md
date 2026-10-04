@@ -731,25 +731,18 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L59 (2026-08-24) — Ograniczenie zasobu i koszt dodatkowy żyją w WIELU ścieżkach: definiuj przez ZAKAZ i pilnuj strażnikiem każdej ścieżki
 
-**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}.
+**Reguła:** ograniczenie definiuj przez to, czego druk ZAKAZUJE (np.
+`purpose.castingSpell === true && purpose.artifactSpell !== true`), nigdy przez
+wyliczanie dozwolonych ścieżek — wtedy płatność domyślna (zdolność, plot, suspend,
+proliferate) jest legalna z definicji, a wyjątek jawny w sygnaturze. Cel wydania
+jest częścią kontraktu płatności: przy >10 ścieżkach przegląd nie wystarczy —
+potrzebny STRAŻNIK ŹRÓDŁA każdej funkcji `cast*`/`*Casts` (zweryfikowany
+mutacyjnie), a oferta i walidacja czytają JEDEN odczyt (L48/L41). Sygnał przy
+audycie diffa: nowe pole `purpose`/`spendOnly`/`additionalCost` bez wyliczenia
+ścieżek (policz grepem). Pin, który nigdy nie był RED, nie dowodzi niczego (L13) —
+piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda.
 
-**Reguła:**
-1. Ograniczenie definiuj przez to, czego druk ZAKAZUJE:
-   `restrictionApplies = purpose.castingSpell === true && purpose.artifactSpell !== true`.
-   Wtedy płatność domyślna (zdolność, plot, suspend, proliferate) jest legalna
-   z definicji, a wyjątek jest jawny w sygnaturze.
-2. Cel wydania jest częścią kontraktu płatności. Przy >10 ścieżkach przegląd
-   nie wystarczy — potrzebny **strażnik źródła**
-   (`test/m202-straznik-celu-wydania-many.test.js`: każda funkcja
-   `cast*`/`*Casts` pyta o manę z celem; zweryfikowany mutacyjnie).
-3. Oferta i walidacja czytają JEDEN odczyt (L48/L41): koszt dodatkowy na
-   obiekcie ma jedną funkcję (`exileAdditionalCostCandidates`) dla wszystkich
-   gałęzi. Test nie jest „testem karty", tylko „testem ścieżki".
-4. Sygnał przy audycie diffa: nowe pole `purpose`/`spendOnly`/`additionalCost`
-   bez wyliczenia ścieżek. Policz je grepem (5 s).
-5. Piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda: dwa
-   z trzech pinów N3 wyszły RED. Pin, który nigdy nie był RED, nie dowodzi
-   niczego (L13).
+**Strażnik:** `test/m202-straznik-celu-wydania-many.test.js` + wspólny odczyt `exileAdditionalCostCandidates`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L59)
 
@@ -817,24 +810,18 @@ DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
 
 ## L54 (2026-08-22) — Kara wyceny bota musi być MIERZONA względem bazy; każda klasa zachowań dostaje whitelistę ze strażnikiem
 
-**Reguła:**
-1. Kara/premia okna czasowego musi być zwymiarowana względem BAZY gałęzi
-   (czary ~50–65), inaczej jest dekoracją. Test zachowania („bot NIE rzuca X
-   w oknie Y") obowiązkowy — tylko on mierzy sumę.
-2. Timing to CZĘŚĆ okna: sorcery nie poczeka na combat (jedyne sensowne okno
-   to Główna 1 przed atakiem — M179/C); kara za instant w main wymusza
-   czekanie na deklaracje (M179/A1).
-3. Klasy zachowań to WHITELISTY z eksportem + strażnikiem katalogowym
-   (wzorzec L51): `IDEMPOTENT_EOT_EFFECTS`/`STACKING_ACTIVATED_EFFECTS`
-   (M179/B), `FRIENDLY_TARGET_EFFECTS` + `HOSTILE_*` (M179/E),
-   `KEYWORD_LABELS`/`KEYWORD_EVENT_LABELS` (M179/A2). Nowy typ bez przydziału
-   = czerwony strażnik.
-4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
-   (`selfHarmPenalty`) oraz przyjazny we wroga (`friendlyMisaimPenalty`) — w
-   call-site'ach gałęzi, nie w każdej gałązce osobno.
-5. Przy zagraniu JAŁOWYM (efekt z definicji nie zadziała) kara musi POMINĄĆ
-   premię (`continue`) — inaczej premia ją zjada; po zmianie wag dowiedź
-   testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum: L3).
+**Reguła:** kara/premia okna czasowego musi być zwymiarowana względem BAZY gałęzi
+(czary ~50–65), a test ZACHOWANIA („bot NIE rzuca X w oknie Y") jest obowiązkowy —
+tylko on mierzy sumę. Timing to CZĘŚĆ okna: sorcery nie poczeka na combat, a instant
+w main wymaga kary za czekanie na deklaracje. Klasy zachowań to WHITELISTY
+z eksportem + strażnikiem katalogowym (nowy typ bez przydziału = czerwony strażnik).
+Klamry celowania są SYMETRYCZNE i centralne (własny cel we wrogi efekt / wrogi cel
+w przyjazny efekt — w call-site'ach gałęzi, nie w każdej gałązce osobno).
+Przy zagraniu JAŁOWYM kara musi POMINĄĆ premię (`continue`), a po zmianie wag
+dowiedź testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum: L3).
+
+**Strażnik:** strażniki katalogowe whitelist (M179/A2, B, E) + testy zachowania okien.
+
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L54)
 
 
@@ -2450,3 +2437,12 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** zanim wycenisz zapłatę ratującą czar (ward CR 702.21a, zapłata kontrująca CR 608.2g), sprawdź, czy ratowany obiekt nie jest kopią bez nowej wartości: kopia + inna instancja TEJ SAMEJ karty z tym samym zestawem celów + WSZYSTKIE efekty w klasie „nie kumuluje się na tym samym celu" ⇒ odmowa (efekt dowiezie instancja pozostawiona na stosie — kopie rozwiązują się PRZED oryginałem). Karz WYŁĄCZNIE kopie (inaczej instancje odmawiają sobie nawzajem i efekt przepada), efektu spoza listy nie klasyfikuj (kotwica anty-over-fix), a fakt „stos niesie kopię" jest informacją PUBLICZNĄ — widok musi go nieść (ADR 0017), bo inaczej wycena jest ślepa.
 
 **Strażnik:** `test/pmssb56-ward-kopie-redundancja.test.js` E1–E12 (E2E storm × ward i storm × kontra, anty-over-fix na `damage`, kotwice: brak bliźniaka, inny zestaw celów, nieznany efekt; pokrętło `redundantCopyPayPenalty` — ×0 = stan sprzed naprawy; mutacje m1–m4 czerwienią właściwe piny). Audyt zdrowia scoringu: `tools/scoring-unvalued-audit.mjs` (12 partii / 6255 komend / 0 niewycenionych, 2026-10-04).
+
+## L179 (2026-10-04) — Próbka benchmarku rotuje (ADR 0024) i potrafi wykluczyć CAŁE rodziny decyzji — policz decyzje, zanim uznasz, że benchmark coś mierzy
+
+**Przypadek:** (PMSSB-57, `tools/scoring-pay-census.mjs`) 36 partii na BENCH_DECKS: **0 decyzji zapłat** — wszystkie 9 kart tych rodzin leży w taliach POZA próbką; na 23 taliach repo: 2 decyzje `pay_or_sacrifice` (koszty 1 i 3, obie zapłacone).
+
+**Reguła:** zanim uznasz, że benchmark mierzy jakąś rodzinę decyzji, POLICZ jej wystąpienia (`tools/scoring-pay-census.mjs --all`). Rodziny poza próbką pinuj SCENARIUSZAMI (wzorzec `test/pmssb56-...`), nie wynikiem benchmarku, i mierz je na `--decks=all` — inaczej zmiany w ich wycenie nie mają pokrycia w win-rate, a regresje przechodzą niezauważone.
+
+**Strażnik:** `tools/scoring-pay-census.mjs` (`--all`, `--decks=all`) + `tools/scoring-unvalued-audit.mjs` + `tools/scoring-mulligan-audit.mjs`.
+
