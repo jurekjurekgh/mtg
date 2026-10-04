@@ -68,7 +68,7 @@ E10–E12 kontra: kumulujący się / brak bliźniaka / nie-kumulujący.
 1. Trzy pomiary (A/B/C) z liczbami — ✅.
 2. Mechanika: widok + reguła + pokrętło, bez nazw kart (ADR 0002) — ✅.
 3. Bramki: `npm test` **7552/7552** EXIT 0 (+12 pinów), build 70 modułów /
-   4818,8 kB, brama PR `npm run test:all` na zamrożonym tipie (liczby w body PR
-   i handoffie 04e).
+   4818,8 kB, brama PR `npm run test:all` na zamrożonym tipie `413448d`:
+   **7823/7823** EXIT 0 (**592,4 s**, +12 względem 7811 na `55976dc`).
 4. Budżet lektury: L178 (~0,4k t.) zapłacone własnym zapasem; zapas po rundzie
    320 t. — następna partia kondensacji w kolejce (L48, L5, L54).

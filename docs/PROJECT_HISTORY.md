@@ -15563,4 +15563,5 @@ build **70 modułów / 4792,5 kB**.
 - **Piny:** E1–E12 (E2E ward/kontra + anty-over-fix `damage` + kotwice).
   **Mutacje m1–m4** czerwienią właściwe piny; restor z /tmp → GREEN 12/12.
 - **Lekcja L178.** **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
-  70 modułów / 4818,8 kB.
+  70 modułów / 4818,8 kB; brama PR na tipie `413448d`: **7823/7823** EXIT 0
+  (592,4 s).

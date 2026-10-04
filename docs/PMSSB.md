@@ -2854,6 +2854,7 @@ i kontra, anty-over-fix `damage`, kotwice: brak bliźniaka / inny zestaw celów
 E1; m3 `damage` w liście → E3; m4 kontra off → E9+E12; restor z /tmp → GREEN.
 
 **Lekcja:** L178. **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
-**70 modułów / 4818,8 kB**, brama PR — liczby w handoffie 04e.
+**70 modułów / 4818,8 kB**, brama PR na tipie `413448d`: **7823/7823** EXIT 0
+(592,4 s).
 
 **Status:** zamknięty.
