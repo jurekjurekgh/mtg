@@ -12937,6 +12937,42 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     power: 1, toughness: 1, manaCost: 0,
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez News Helicopter'] },
   }),
+
+  // ==========================================================================
+  // BATCH 63 — transza T1 (karty na istniejących mechanikach silnika)
+  // ==========================================================================
+
+  // 255 APC — Urborg Uprising {4}{B} sorcery: „Return up to two target creature
+  // cards from your graveyard to your hand. Draw a card." Dwa sloty OPCJONALNE
+  // z tym samym `targetWord` = JEDNO wystąpienie słowa „target" („up to two" —
+  // wzorzec Memory's Journey: podzbiory bez powtórzeń i bez luk). Efekty
+  // adresują sloty po indeksie; nielegalny/pusty cel = no-op (CR 608.2b),
+  // a dobranie karty należy do rozstrzygnięcia czaru (ruling APC 2022-12-08:
+  // rzucalny bez celów, żeby tylko dobrać kartę).
+  defineCard({
+    id: 'urborg-uprising', name: 'Urborg Uprising', set: 'APC',
+    types: ['Sorcery'], colors: ['B'], manaCost: 5,
+    oracleText: 'Return up to two target creature cards from your graveyard to your hand.\nDraw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/6/961619e3-f48b-4099-8a33-ca1e294085dd.jpg?1783945346',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'creature_card_in_graveyard', optional: true, targetWord: 'cards' },
+        { type: 'creature_card_in_graveyard', optional: true, targetWord: 'cards' },
+      ],
+      effects: [
+        { type: 'return_creature_card_to_hand', targetIndex: 0 },
+        { type: 'return_creature_card_to_hand', targetIndex: 1 },
+        { type: 'draw_cards', amount: 1 },
+      ],
+    },
+    artId: 255, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'cel możesz wskazać ZERO, JEDEN albo DWA razy („up to two") — rzut bez celów dozwolony (ruling APC 2022-12-08)',
+      'gdy wskażesz co najmniej jeden cel i WSZYSTKIE staną się nielegalne przy rozstrzyganiu, czar nie rozstrzyga się i NIE dobierasz (ruling APC 2022-12-08; CR 608.2b)',
+    ],
+  }),
 ]);
 
 /**

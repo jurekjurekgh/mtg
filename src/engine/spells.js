@@ -1910,6 +1910,12 @@ function resolveActivatedAbilityEntry(state, entry) {
   // tapowała stwora, który przestał być legalnym celem.
   const targetSpec = payload.ability?.targets ?? [];
   let targets = payload.targets ?? [];
+  // Batch 63/T1 (CR 608.2b): fizzle dotyczy celu WYBRANEGO, który stał się
+  // nielegalny — zdolność z samymi slotami OPCJONALNYMI („up to one target"),
+  // dla której wybrano ZERO celów, nie ma czego stracić i rozstrzyga się
+  // normalnie. `wybranoCel` liczymy z wektora PRZY AKTYWACJI (`payload.targets`),
+  // nie z listy po rewalidacji (ta jest już pusta w obu przypadkach).
+  const wybranoCel = targets.some((tId) => tId != null);
   if (targetSpec.length > 0) {
     const sourceColors = source?.colors ?? [];
     const revalidated = [];
@@ -1937,9 +1943,10 @@ function resolveActivatedAbilityEntry(state, entry) {
     // listą, więc np. Ballista Wielder („deals 1 damage to any target")
     // wywoływał markDamage(undefined) i engine rzucał „Nieprawidłowy cel
     // obrażeń", przerywając partię (crash pełnej macierzy benchmarku B0).
+    // (predykat `wybranoCel` liczony wyżej — wspólny dla obu przypadków)
     // Wyjątek: zdolności wewnętrzne (equip/ninjutsu/cycling) mają własne
     // ścieżki fizzle poniżej i nie korzystają z ability.targets.
-    if (targets.length === 0) {
+    if (wybranoCel && targets.length === 0) {
       state.events.push(event('ability_resolved', {
         playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
         abilityIndex: payload.abilityIndex, fizzled: true, reason: 'no_legal_targets',
@@ -2244,9 +2251,12 @@ export function resolveTopOfStack(state) {
     // celów rozstrzyga się normalnie (modeTargets wyliczone wyżej, dla walidacji).
     // Tryb zmienny rzucony z zerem celów (min 0, M146) celów NIE MA — fizzluje
     // tylko taki, którego wybrane cele wszystkie stały się nielegalne.
+    // Batch 63/T1 (CR 608.2b, ten sam predykat co ścieżka niemodalna): tryb
+    // z samymi slotami OPCJONALNYMI i zerem WYBRANYCH celów rozstrzyga się
+    // normalnie; fizzluje wyłącznie tryb, który MIAŁ wybrany cel i stracił go.
     const hadTargets = mode.variableTargets
       ? (object.chosenTargets ?? []).length > 0
-      : modeTargets.length > 0;
+      : (object.chosenTargets ?? []).some((tId) => tId != null);
     if (hadTargets && liveChosen.length === 0) {
       // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`;
       // flashback wygania przy KAŻDYM zejściu ze stosu (CR 702.34a).
@@ -2307,7 +2317,13 @@ export function resolveTopOfStack(state) {
     return state.events.slice(before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
-  const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
+  // Batch 63/T1 (CR 608.2b; ruling APC 2022-12-08 — Urborg Uprising):
+  // „up to two target …" — czar rzucany BEZ celów rozstrzyga się i wykonuje
+  // swoje efekty bezcelowe (dobranie karty). Fizzle jest wyłącznie wtedy, gdy
+  // co najmniej jeden cel WYBRANO, a przy rozstrzyganiu wszystkie wybrane są
+  // nielegalne (ten sam predykat co ścieżka fireball: `chosen.length > 0`).
+  const wybranoCel = chosen.some((tId) => tId != null);
+  const fizzled = wybranoCel && legalTargets.every((entry) => entry === null);
   // CR 702.174j (ruling BLB 2024-07-26): „For instants and sorceries with gift,
   // the gift is given … as part of the resolution of the spell. This happens
   // before any of the spell's other effects would take place." Czar, który się

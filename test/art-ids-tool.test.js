@@ -98,8 +98,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 62 (transza T5: 176 FIN): +1 → 540.
   // Batch 62 (transza T6: 210 2X2): +1 → 541.
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
-  // Batch 63 (transza T2: 239 SOS, 241 SPM, 244 BFZ, 250 MRD): +4 → 547.
-  assert.equal(data.length, 547, 'pełna lista kolekcji (543 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
+  // Batch 63 (transza T1: 255 APC; transza T2: 239 SOS, 241 SPM, 244 BFZ, 250 MRD): +5 → 548.
+  assert.equal(data.length, 548, 'pełna lista kolekcji (543 pozycji kolekcji MTG; wiersze STO usunięte 2026-09-23)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -164,8 +164,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 62 (transza T5: 176 FIN): +1 nazw → 537.
   // Batch 62 (transza T6: 210 2X2): +1 nazw → 538.
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 nazw → 540.
-  // Batch 63 (transza T2): +4 unikalne nazwy → 544.
-  assert.equal(dict.size, 544, 'słownik zawiera pełną listę kolekcji (540 unikalnych nazw)');
+  // Batch 63 (transze T1+T2): +5 unikalnych nazw → 545.
+  assert.equal(dict.size, 545, 'słownik zawiera pełną listę kolekcji (540 unikalnych nazw)');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -208,8 +208,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 62 (transza T5: 176 FIN): +1 → 540.
   // Batch 62 (transza T6: 210 2X2): +1 → 541.
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
-  // Batch 63 (transza T2): +4 karty z artId → 547.
-  assert.equal(withArt.length, 547, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
+  // Batch 63 (transze T1+T2): +5 kart z artId → 548.
+  assert.equal(withArt.length, 548, 'wszystkie realne karty mają artId (Batche 1–60 + Batch 61: 10/10)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

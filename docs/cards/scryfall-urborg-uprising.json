@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Urborg+Uprising&set=apc&format=json",
+  "print": "apc",
+  "name": "Urborg Uprising",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Return up to two target creature cards from your graveyard to your hand.\nDraw a card.",
+  "colors": [
+    "B"
+  ],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "53",
+  "rarity": "common",
+  "artist": "Adam Rex",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/6/961619e3-f48b-4099-8a33-ca1e294085dd.jpg?1783945346",
+    "normal": "https://cards.scryfall.io/normal/front/9/6/961619e3-f48b-4099-8a33-ca1e294085dd.jpg?1783945346"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "You can cast Urborg Uprising with no targets if you want to only draw a card."
+    },
+    {
+      "date": "2022-12-08",
+      "source": "wotc",
+      "comment": "If you chose at least one target and all targets are illegal as Urborg Uprising tries to resolve, the spell won’t resolve and you won’t draw a card."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/apc/53/rulings",
+  "rulingsPobrano": "2026-10-04"
+}

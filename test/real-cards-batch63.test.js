@@ -227,3 +227,76 @@ test('B63/250: Loxodon Mender — bez artefaktu i bez białej many brak oferty',
   assert.ok(!commands(bezMana).some((c) => c.type === 'activate_ability' && c.objectId === 'mender'),
     'bezbarwna mana nie opłaca białego pipu');
 });
+
+// ---- B63/255: Urborg Uprising (APC #53, plan Dominaria) ---------------------
+
+test('B63/255: Urborg Uprising — dane Oracle, sorcery {4}{B} z dwoma opcjonalnymi celami', () => {
+  const def = sanity('urborg-uprising', { set: 'APC', plan: 'Dominaria', artId: 255 });
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.manaCost, 5);
+  assert.deepEqual(def.spell.targets, [
+    { type: 'creature_card_in_graveyard', optional: true, targetWord: 'cards' },
+    { type: 'creature_card_in_graveyard', optional: true, targetWord: 'cards' },
+  ], 'dwa sloty opcjonalne z jednym słowem „target" („up to two")');
+  assert.deepEqual(def.spell.effects.at(-1), { type: 'draw_cards', amount: 1 });
+});
+
+test('B63/255: Urborg Uprising — dwa stwory z grobu wracają do ręki, dobierasz kartę', () => {
+  const state = game();
+  put(state, 'gr1', 'rustvine-cultivator', 'p1', 'graveyard');
+  put(state, 'gr2', 'loxodon-mender', 'p1', 'graveyard');
+  put(state, 'urborg', 'urborg-uprising', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  const libraryBefore = playerView(state, 'p1').zones.library.length;
+  const offer = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urborg'
+    && (c.targets ?? []).filter(Boolean).length === 2);
+  assert.ok(offer, 'oferta rzutu z dwoma celami istnieje');
+  run(state, offer);
+  settle(state);
+  const reka = playerView(state, 'p1').zones.hand;
+  assert.equal(reka.length, 3, 'dwie wrócone karty + dobrana');
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'rustvine-cultivator' && o.zone === 'hand'));
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'loxodon-mender' && o.zone === 'hand'));
+  assert.equal(playerView(state, 'p1').zones.library.length, libraryBefore - 1, 'dokładnie jedno dobranie');
+});
+
+test('B63/255: Urborg Uprising — rzut BEZ celów jest legalny i daje tylko dobranie (ruling 2022-12-08)', () => {
+  const state = game();
+  put(state, 'urborg', 'urborg-uprising', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  const libraryBefore = playerView(state, 'p1').zones.library.length;
+  const offer = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urborg'
+    && (c.targets ?? []).every((t) => t == null));
+  assert.ok(offer, '„up to two" — oferta bez celów istnieje także przy pustym grobie');
+  run(state, offer);
+  settle(state);
+  assert.equal(playerView(state, 'p1').zones.hand.length, 1, 'dobrana karta');
+  assert.equal(playerView(state, 'p1').zones.library.length, libraryBefore - 1);
+});
+
+test('B63/255: Urborg Uprising — sam stwór w grobie wystarcza (jeden cel), cudzy grób nie jest pulem', () => {
+  const state = game();
+  put(state, 'gr1', 'rustvine-cultivator', 'p1', 'graveyard');
+  put(state, 'gr2', 'loxodon-mender', 'p2', 'graveyard'); // grób PRZECIWNIKA
+  put(state, 'urborg', 'urborg-uprising', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  const offer = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urborg'
+    && (c.targets ?? []).filter(Boolean).length === 1);
+  assert.ok(offer, 'oferta z jednym (własnym) celem istnieje');
+  assert.ok(!(offer.targets ?? []).includes('gr2'), 'karta z grobu przeciwnika nie jest legalnym celem');
+  run(state, offer);
+  settle(state);
+  // Przeniesienie do ręki tworzy NOWY obiekt (nowe id) — szukamy po cardId.
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'rustvine-cultivator' && o.zone === 'hand'),
+    'własna karta wróciła do ręki');
+  assert.equal(state.objects.get('gr2').zone, 'graveyard', 'cudzy grób nietknięty');
+});
+
+test('B63/255: Urborg Uprising — brak many = brak oferty (sorcery bez okna)', () => {
+  const state = game();
+  put(state, 'urborg', 'urborg-uprising', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['B'] });
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'urborg'),
+    'cztery many to za mało na {4}{B}');
+});

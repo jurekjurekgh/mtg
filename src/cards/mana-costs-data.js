@@ -583,4 +583,6 @@ export const MANA_COSTS = {
   "news-helicopter": "{3}",
   "natural-connection": "{2}{G}",
   "loxodon-mender": "{5}{W}",
+  // Batch63/T1: Urborg Uprising (APC).
+  "urborg-uprising": "{4}{B}",
 };
