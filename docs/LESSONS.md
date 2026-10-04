@@ -2409,25 +2409,11 @@ rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny
 
 ## L170 (2026-09-25) — gest warstwy UI zjada kontrolkę osadzoną w przycisku; bramę daję GESTOWI, nie CSS
 
-**Przypadek:** ptaszek „ta opcja nie przerywa auto-passu" (uwaga C) nie przełączał,
-tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka" pusty.
+**Przypadek:** ptaszek „ta opcja nie przerywa auto-passu” (uwaga C) nie przełączał, tylko grał ofertę; osobno uwaga D — Log pełny, panel „Rozgrywka” pusty.
 
-**Reguła:**
-1. Aktywacja i zdarzenie kontrolki OSADZONEJ w przycisku muszą być PAROWANE:
-   przy aktywacji na `pointer*` `stopPropagation` na `click` jest iluzją. Wyspa
-   interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`), bramka
-   mieszka w gesturze — nie w klasach CSS.
-2. „Panel pusty, log pełny" to nie bramka treści, tylko ŻYWIOTNOŚĆ wpisu: modal
-   czyszczący bufor przy renderze gubi to, co doszło po renderze. Konsumpcja = po
-   potwierdzeniu gracza (`consumeBotMoves(n)`); re-render otwartego okna w pauzie
-   TYLKO gdy DOSZŁO nowa pozycja (inaczej mruga i klika się w kółko — łapie
-   `test/table-ui.test.js`).
-3. „Poprzedni PR przesunął obiekty" = czytam, KTÓRY element jest rodzicem słuchacza.
+**Reguła:** (1) kontrolka OSADZONA w przycisku wymaga PAROWANIA aktywacji i zdarzenia — przy `pointer*` `stopPropagation` na `click` jest iluzją; wyspa interakcji nosi markę w module gestu (`PRESS_EXEMPT_ATTRIBUTE`), a bramka mieszka w gesturze, nie w CSS; (2) „panel pusty, log pełny” to ŻYWIOTNOŚĆ wpisu — konsumpcja po potwierdzeniu gracza, re-render otwartego okna w pauzie tylko gdy DOSZŁO nowa pozycja; (3) „poprzedni PR przesunął obiekty” = czytam, KTÓRY element jest rodzicem słuchacza.
 
-**Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7, sekwencje
-zdarzeń na stubie MiniEl — repo bez zależności, więc bez jsdomu),
-`test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8),
-`test/b5-bramka-logu-gracza.test.js`.
+**Strażnik:** `test/uwaga-z-gry-C-ptaszek-2026-09-25.test.js` (C1–C7), `test/uwaga-z-gry-D-discover-bota-2026-09-25.test.js` (D1–D8).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L170)
 
@@ -2488,3 +2474,11 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** zrzuć `node tools/bot-scoring-snapshot.mjs --dump /tmp/d.json` PRZED i PO, znajdź PIERWSZĄ różniącą się decyzję i rozbierz ją na kanały; `scoreSum` myli (zmiany mogą się znosić), a kanały mutuj dopiero, gdy znasz decyzję.
 
 **Strażnik:** `test/bot-scoring-snapshot.test.js` (4/4); plany `PLAN_2026-10-03m*`/`03n*`.
+
+## L177 (2026-10-04) — Trigger na stosie: NASTĘPNA decyzja po komendzie nie dotyczy tego, co mierzysz
+
+**Przypadek:** sonda ward — po wykonaniu rzutu (`execute`) pierwsza decyzja bota to `pass_priority`, a nie `resolve_ward_pay_choice`; jednokrokowa sonda ogłosiła „decyzja ward nie pojawia się” (fałszywy alarm). Pełna sekwencja: rzut → pass p1 → pass p2 → DOPIERO pay/refuse.
+
+**Reguła:** po wykonaniu komendy, która stawia trigger na stosie (ward, backup, mentor, pay-trigger), decyzja triggera przychodzi po passach OBU graczy — mierz SEKWENCJĘ decyzji (bot dla aktualnego `priorityPlayerId` w pętli), nie jeden krok; brak decyzji w kroku N nie znaczy „mechanizm martwy”.
+
+**Strażnik:** procedura sond (wzorzec pełnej pętli: `docs/plans/PLAN_2026-10-04b-pmssb53-ward-pomiar.md`).

@@ -2730,3 +2730,39 @@ nie skaluje się jakością gospodarza (dokładniejsza wycena należy do
 `etbEnterBonusValue`, gdy land-ETB będzie miał więcej kart w katalogu).
 
 **Status:** zamknięty (kod `bd96e07`).
+
+## PMSSB-53 — ward zmierzony E2E: luki nie ma; granica kopii czarów (2026-10-04b)
+
+**Wejście:** kolejka handoffu `2026-10-04a` poz. 1 („Ward — rekonesans zrobiony,
+luki nie ma; postaw SONĘ na decyzję `resolve_ward_pay_choice`”). Karta
+demonstrująca: **`riftburst-hellion`** (MKM, disguise → zakryty 2/2 z ward {2},
+CR 702.168a; jedyna karta z ward, talia `ravnica`).
+
+**Pomiar 1 (sonda G1–G7, `douse-in-gloom` na zakryty permanent p2):**
+- G1 (3 Swampy — po zapłacie czaru brak many na ward): rzut = **−200**, bot pass;
+- G3 (5 Swampów, pełna sekwencja): rzut → pass p1 → pass p2 →
+  `resolve_ward_pay_choice pay=true` (80 vs 20) → czar rozstrzyga;
+- G5 vs G3: ten sam zakryty 2/2 bez warda (morph) = **82**, z wardem = **80**
+  ⇒ podatek dokładnie 2; G6 (morph, 3 Swampy) = 82, nie −200 ⇒ −200 z G1
+  pochodzi z warda, nie z kosztu many; G7: podatek KIERUJE rzut na cel bez
+  warda (disguise −200 vs zwykły 90).
+
+**Pomiar 2 (granica kopii, `spreading-insurrection` ze storm=2):**
+S1 (8 Mountain): ward #1 opłacony, ward kopii bez decyzji (silnik kontruje
+kopie, bo `producibleMana` 1 < 2 — poprawnie); S3 (14 Mountain): bot płaci
+**3×** (oryginał + 2 kopie) na potrójne przejęcie TEGO SAMEGO stwora.
+
+**Wniosek:** podatek ward (twardy: brak many = 200, poniżej passu) i decyzja
+dopłaty działają zgodnie z projektem (M320/NA2, M324/F1) — **kodu nie
+ruszamy**. Świadoma granica: nadpłata za REDUNDANTNE kopie (przejęcie kontroli
+się nie kumuluje, obrażenia owszem) wymaga modelu klas efektów + pola widoku
+„kopia celuje w to samo, co oryginał” — pozycja kolejki, nie łatka w decyzji;
+pary nie da się złożyć w BENCH_DECKS (`ixalan` bez `ravnica`).
+
+**Lekcja:** L177 (trigger na stosie: mierz SEKWENCJĘ decyzji, nie jeden krok —
+jednokrokowa sonda ogłosiła fałszywy alarm „brak decyzji ward”).
+
+**Bramki:** `npm test` **7537/7537** EXIT 0 (123,5 s) · build **70 modułów /
+4814,2 kB** · strażnicy docs 25/25.
+
+**Status:** zamknięty (pomiar; zero zmian w `src/`).

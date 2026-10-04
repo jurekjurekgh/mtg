@@ -2838,6 +2838,12 @@ tego samego strumienia (log vs panel). Dowód bierze się z transkryptu Żywego
 Testera, nie z repro na `createSession` — tam log jest pełny i test byłby zielony
 przy psuciu produktu.
 
+**Proza z rejestru (kondensacja 2026-10-04b):**
+
+Stuby bez zależności (MiniEl) — repo bez jsdomu. Re-render otwartego okna
+w pauzie „mruga i klika się w kółko" — łapie `test/table-ui.test.js`.
+
+
 ## L171 (2026-09-25) — przypadek
 
 **Objaw.** W transkrypcie Żywego Testera (sonda uwagi D, talie
@@ -2994,4 +3000,10 @@ E6/6 (`test/e6-pula-blokerow-ponad-cap.test.js`) czytał regexem kształt pola
 widoku (`buildBlockCandidatesView(...)`); po refaktorze z F14 (nowy
 `buildBlockerView` → `{pool, slots}`) pin padł — nie dlatego, że reguła się
 zepsuła, tylko dlatego, że zmienił się literał implementacji.
+
+**Proza z rejestru (kondensacja 2026-10-04b, cięcie L170):**
+
+Modal czyszczący bufor przy renderze gubi to, co doszło po renderze; stuby bez
+zależności (MiniEl) — repo bez jsdomu; „mruga i klika się w kółko" łapie
+`test/table-ui.test.js`; `test/b5-bramka-logu-gracza.test.js`.
 

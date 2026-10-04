@@ -15482,3 +15482,29 @@ build **70 modułów / 4792,5 kB**.
   licznik nagłówków `## L\d+ (`).
 - **Bramki:** `npm test` (fast) — patrz raport poniżej; budżet i strażnicy
   docs zielone.
+
+## 2026-10-04b — PMSSB-53: ward zmierzony E2E (luki nie ma) + granica kopii czarów (PR #154)
+
+- **Wejście:** kolejka handoffu 04a poz. 1 („Ward — rekonesans zrobiony, luki
+  nie ma; postaw SONĘ na `resolve_ward_pay_choice`”). Karta demonstrująca:
+  `riftburst-hellion` (disguise → zakryty 2/2 z ward {2}; jedyna karta z ward,
+  talia `ravnica`); zakrycie budowane jak w `resources.js` L1835–1841.
+- **Pomiar 1 (G1–G7, `douse-in-gloom`):** brak many na dopłatę → rzut **−200**
+  i pass; pełna sekwencja: rzut → passy OBU graczy → `resolve_ward_pay_choice
+  pay=true` (80 vs 20); ten sam zakryty 2/2 bez warda = 82 vs z wardem = 80
+  (podatek dokładnie 2); kontrola z 3 Swampami bez warda = 82 (nie −200) →
+  −200 pochodzi z warda; przy dwóch celach podatek KIERUJE rzut na ten bez
+  warda. **Wniosek: luki nie ma, kodu nie ruszamy** (zero zmian w `src/`).
+- **Pomiar 2 (granica kopii, `spreading-insurrection`, storm=2):** przy 8
+  Mountain kopie padają od warda bez decyzji (silnik kontruje, bo
+  `producibleMana` < 2 — poprawnie); przy 14 Mountain bot płaci **3×** za
+  potrójne przejęcie TEGO SAMEGO stwora. Świadoma granica: nadpłata za
+  redundantne kopie wymaga modelu klas efektów (obrażenia się kumulują,
+  przejęcie kontroli nie) + pola widoku — pozycja kolejki; para nieosiągalna
+  w BENCH_DECKS (`ixalan` bez `ravnica`).
+- **Lekcja L177:** trigger na stosie — po komendzie NASTĘPNA decyzja nie
+  dotyczy tego, co mierzysz (jednokrokowa sonda ogłosiła fałszywy alarm „brak
+  decyzji ward”); mierz SEKWENCJĘ (bot dla aktualnego `priorityPlayerId`).
+  Zapłacone skróceniem L170 (budżet 99 870/100 000, zapas 130).
+- **Bramki:** `npm test` **7537/7537** EXIT 0 (123,5 s), build 70 modułów /
+  4814,2 kB, strażnicy docs 25/25.
