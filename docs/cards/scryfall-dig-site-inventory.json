@@ -1,0 +1,56 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Dig+Site+Inventory&set=sos&format=json",
+  "print": "sos",
+  "name": "Dig Site Inventory",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Sorcery",
+  "oracle_text": "Put a +1/+1 counter on target creature you control. It gains vigilance until end of turn.\nFlashback {W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+    "W"
+  ],
+  "set": "sos",
+  "set_name": "Secrets of Strixhaven",
+  "collector_number": "10",
+  "rarity": "common",
+  "artist": "Alexandre Honoré",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/5/e52464ee-df8b-41ec-af93-4b0eb004383e.jpg?1783903707",
+    "normal": "https://cards.scryfall.io/normal/front/e/5/e52464ee-df8b-41ec-af93-4b0eb004383e.jpg?1783903707"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "\"Flashback [cost]\" means \"You may cast this card from your graveyard if the resulting spell is an instant or sorcery spell by paying [cost] rather than paying its mana cost\" and \"If the flashback cost was paid, exile this card instead of putting it anywhere else any time it would leave the stack.\""
+    },
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "You must still follow any timing restrictions and permissions, including those based on the card's type. For instance, you can cast a sorcery using flashback only when you could normally cast a sorcery."
+    },
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "To determine the total cost of a spell, start with the mana cost or alternative cost (such as a flashback cost) you're paying, add any cost increases, then apply any cost reductions. The mana value of the spell is determined only by its mana cost, no matter what the total cost to cast the spell was."
+    },
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "A spell cast using flashback will always be exiled afterward, whether it resolves, is countered, or leaves the stack in some other way."
+    },
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "You can cast a spell using flashback even if it was somehow put into your graveyard without having been cast."
+    },
+    {
+      "date": "2026-03-20",
+      "source": "wotc",
+      "comment": "If a card with flashback is put into your graveyard during your turn, you can cast it if it's legal to do so before any other player can take any actions."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/sos/10/rulings",
+  "rulingsPobrano": "2026-10-04"
+}

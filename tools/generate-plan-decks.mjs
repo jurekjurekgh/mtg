@@ -200,6 +200,11 @@ export const WOREK_DECKS = Object.freeze({
   Lorwyn: 'worek-legend', Arcavios: 'worek-legend',
   Duskmourn: 'worek-mroczny', Amonkhet: 'worek-mroczny',
   'Teenage Mutant Ninja Turtles': 'worek-dziki',
+  // Batch 63/T2 (2026-10-04): nowy plan właściciela „Marvel” (karta 241 News
+  // Helicopter, set SPM) — miejskie ulice i superbohaterowie, motyw spójny
+  // z TMNT („ulice poza prawem”), więc worek-dziki. Worek ma 15 kart
+  // nielandowych, +1 nie narusza minimum walidatora (ADR 0023 §4).
+  Marvel: 'worek-dziki',
 });
 
 export const WOREK_NAMES = Object.freeze({

@@ -12840,6 +12840,98 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: 'Flying',
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Griffin Guide'] },
   }),
+
+  // ==========================================================================
+  // BATCH 63 (2026-10-04): kolekcja właściciela 212–260 — transza T2
+  // (karty bez nowych mechanik silnika). Procedura: docs/cards/HOW_TO_ADD_CARD.md;
+  // dane Oracle: docs/cards/scryfall-*.json (pobrane 2026-10-04, set= obowiązkowy,
+  // ADR 0010 §2a, rulingi przy kartce ADR 0028); Plan z listy właściciela 1:1.
+  // ==========================================================================
+
+  // 239 SOS — Dig Site Inventory {W} sorcery: licznik + vigilance; flashback {W}.
+  defineCard({
+    id: 'dig-site-inventory', name: 'Dig Site Inventory', set: 'SOS',
+    types: ['Sorcery'], colors: ['W'], manaCost: 1,
+    oracleText: 'Put a +1/+1 counter on target creature you control. It gains vigilance until end of turn.\nFlashback {W} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/e/5/e52464ee-df8b-41ec-af93-4b0eb004383e.jpg?1783903707',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_you_control' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['vigilance'] },
+      ],
+      flashback: { cost: 1, colors: ['W'] },
+    },
+    artId: 239, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 241 SPM — News Helicopter {3} 1/1 Construct, flying; ETB: token 1/1 GW Human
+  // Citizen (token w rejestrze niżej — kafel i etykieta czytają ten wpis).
+  defineCard({
+    id: 'news-helicopter', name: 'News Helicopter', set: 'SPM',
+    types: ['Artifact', 'Creature'], subtypes: ['Construct'], colors: [],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nWhen this creature enters, create a 1/1 green and white Human Citizen creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/5/15717af0-30cd-4417-947a-c27cca06d93a.jpg?1783905303',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_human_citizen', name: 'Human Citizen',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'],
+          types: ['Creature'], subtypes: ['Human', 'Citizen'], amount: 1,
+        }],
+      }),
+    ],
+    artId: 241, plan: 'Marvel',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 244 BFZ — Natural Connection {2}{G} instant: basic land wchodzi TAPNIĘTY.
+  defineCard({
+    id: 'natural-connection', name: 'Natural Connection', set: 'BFZ',
+    types: ['Instant'], colors: ['G'], manaCost: 3,
+    oracleText: 'Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/e/9e11cd83-5930-4cff-8f9b-55337ed263b7.jpg?1783938187',
+    spell: {
+      timing: 'instant', targets: [],
+      effects: [{ type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true }],
+    },
+    artId: 244, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 250 MRD — Loxodon Mender {5}{W} 3/3: {W}, {T}: regenerate target artifact.
+  defineCard({
+    id: 'loxodon-mender', name: 'Loxodon Mender', set: 'MRD',
+    types: ['Creature'], subtypes: ['Elephant', 'Cleric'], colors: ['W'],
+    power: 3, toughness: 3, manaCost: 6,
+    oracleText: '{W}, {T}: Regenerate target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/c/1/c17ac7c1-6d53-40b4-921f-4e23e4026041.jpg?1783944561',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['W'], tap: true },
+        targets: [{ type: 'artifact' }],
+        effect: { type: 'regenerate' },
+      }),
+    ],
+    artId: 250, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Human Citizen (Tspm #4) — tworzony przez News Helicopter (batch 63).
+  // Rejestracja jak token Griffin/Eldrazi Scion (L26: adres WYŁĄCZNIE z API).
+  defineCard({
+    id: 'token_human_citizen', name: 'Human Citizen', set: null,
+    imageUri: 'https://cards.scryfall.io/large/front/3/9/398fbcd8-fac7-4396-9c69-5c72695121a9.jpg?1783905184',
+    types: ['Creature', 'Token'], subtypes: ['Human', 'Citizen'], colors: ['G', 'W'],
+    power: 1, toughness: 1, manaCost: 0,
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez News Helicopter'] },
+  }),
 ]);
 
 /**

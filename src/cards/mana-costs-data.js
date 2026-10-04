@@ -577,4 +577,10 @@ export const MANA_COSTS = {
   // Batch62/T2: Oreplate Pangolin (EOE), Crumbling Vestige (OGW).
   "oreplate-pangolin": "{1}{R}",
   "crumbling-vestige": "",
+  // Batch63/T2: Dig Site Inventory (SOS), News Helicopter (SPM),
+  // Natural Connection (BFZ), Loxodon Mender (MRD).
+  "dig-site-inventory": "{W}",
+  "news-helicopter": "{3}",
+  "natural-connection": "{2}{G}",
+  "loxodon-mender": "{5}{W}",
 };
