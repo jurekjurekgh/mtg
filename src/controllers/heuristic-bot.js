@@ -630,7 +630,7 @@ const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
  *   • wpis stosu `cmd.targetId` jest kopią czaru (`copy`, CR 707.10),
  *   • WSZYSTKIE jego efekty nie kumulują się na tym samym celu
  *     (`NON_ACCUMULATING_SPELL_EFFECTS`; efekt nieznany → brak wniosku),
- *   • na stosie wisi inna instancja TEJ SAMEJ karty z tym samym zestawem
+ *   • na stosie wisi inna instancja TEJ SAMEJ karty, kontrolera, efektów i uporządkowanych
  *     celów — efekt dostarczy ona (kopia rozwiązuje się PRZED oryginałem,
  *     więc odmowa dla kopii nie gubi efektu; dokładnie jedna instancja
  *     zachowuje płatność, bo karzemy wyłącznie kopie).
@@ -645,7 +645,12 @@ function redundantSpellCopyPayment(view, cmd) {
   const effects = stackEntryEffects(entry);
   if (effects.length === 0) return false;
   if (!effects.every((e) => NON_ACCUMULATING_SPELL_EFFECTS.has(e?.type))) return false;
-  const klucz = (e) => `${e.cardId}|${JSON.stringify([...(e.targets ?? [])].map(String).sort())}`;
+  // Audyt PR #154/F5: kolejność slotów, kontroler i wybrane efekty
+  // należą do znaczenia czaru. Sama nazwa + zbiór celów nie dowodzą
+  // redundancji (np. obca kontrola lub inny tryb tej samej karty).
+  const klucz = (e) => JSON.stringify([
+    e.cardId, e.kind, e.controllerId, e.targets ?? [], stackEntryEffects(e),
+  ]);
   const moj = klucz(entry);
   return stack.some((other) => other.id !== entry.id && klucz(other) === moj);
 }
@@ -10903,17 +10908,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // z PlayerView (ADR 0002/0017), nie po nazwie karty. PMSSB-50:
             // przechodzi obok blokerów, więc liczy obrażenia w twarz.
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
-          } else if (deathtouchUnblockable) {
-            // PMSSB-50: blok nie przyjdzie (każdy bloker droższy niż mój
-            // stwór), więc deathtouch zadaje obrażenia w twarz jak ewazyjny
-            // (M202/H), a nie jak chump.
-            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (diesBeforeDealingDamage(combatObject, blockers)) {
-            // M202/N: bloker z first strike zabija atakującego, zanim ten zada
-            // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
-            // stwora. Jałowy, więc premia wyścigu go nie uratuje.
+            // Audyt PR #154/F4: first/double strike może zabić przed
+            // zadaniem obrażeń. To ma pierwszeństwo przed premią DT:
+            // droższy bloker nie ryzykuje wtedy wymiany (CR 702.7b).
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
+          } else if (deathtouchUnblockable) {
+            // Premia za nieopłacalną wymianę tylko, gdy atakujący zdąży
+            // zadać obrażenia — zwykły droższy bloker nadal odstraszany.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (killsBeforeBlockerStrikes) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana

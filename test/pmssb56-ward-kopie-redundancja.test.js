@@ -250,3 +250,15 @@ test('E12 (kontra): bliźniak + efekt nie-kumulujący — bot odmawia', () => {
   ];
   assert.equal(decyzja(stack, 'spell-copy-1', {}, KONTRA), false);
 });
+
+for (const typ of ['resolve_ward_pay_choice', KONTRA]) {
+ for (const [name,patch] of [
+  ['inny kontroler',{controllerId:'p2'}],
+  ['inny efekt / tryb',{spell:{effects:[{type:'tap_permanent'}]}}],
+  ['inna kolejność celów',{targets:['Y','W']}],
+ ]) test(`AUD154 ${typ}: ${name} to nie bliźniak`,()=>{
+  const copy=wpis({id:'copy',copy:true,targets:['W','Y'],effects:[KOPIA_KONTROLI]});
+  const other={...wpis({id:'original',targets:['W','Y'],effects:[KOPIA_KONTROLI]}),...patch};
+  assert.equal(decyzja([copy,other],'copy',{},typ),true);
+ });
+}

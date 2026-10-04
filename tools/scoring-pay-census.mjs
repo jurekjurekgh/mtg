@@ -1,8 +1,8 @@
 // scoring-pay-census (PMSSB-57, 2026-10-04f) — POMIAR decyzji ZAPŁAT bota
 // w prawdziwych partiach benchmarku: ile ich jest, jakie koszty, jak często
-// bot płaci, i czy nie płaci za czar, który i tak by fizzlował (wszystkie cele
-// nielegalne przy rozstrzygnięciu, CR 608.2b — wtedy kontr i fizzle kończą się
-// IDENTYCZNIE: karta do grobu, a różnica to przepalona mana).
+// bot płaci, i czy wszystkie wybrane cele czaru zniknęły z widoku. To
+// detektor obecności (także gracze/grób), NIE pełna walidacja CR 608.2b:
+// nie rozstrzyga hexproof, zmiany typu, kontroli ani innych ograniczeń celu.
 //
 // Po co: audyt `scoring-unvalued-audit` mierzy BRAK wyceny; ten mierzy, CZY
 // wycena podejmuje decyzje sensowne w realnych pozycjach. Rodziny zapłat:
@@ -15,6 +15,7 @@
 // resolve_optional_pay_choice 25 decyzji (pay=24, koszty {1:9, 2:16});
 // ward/kontra nadal 0 (kart tych rodzin nie ma w żadnej talii repo — L179).
 // Uruchomienie: node tools/scoring-pay-census.mjs [seeds]
+import { parseAuditArgs, assertAuditCommand, assertAuditFinished, allChosenTargetsAbsent } from './scoring-audit-utils.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execute, playerView } from '../src/engine/game-state.js';
@@ -24,10 +25,10 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
 import { BENCH_DECKS, benchmarkDecks } from './benchmark.mjs';
 
-const seeds = Number(process.argv[2] ?? 2);
+const { seeds, flags } = parseAuditArgs(process.argv.slice(2), 2, ['--all', '--decks=all']);
 // `--all` = census WSZYSTKICH typów decyzji (nie tylko rodzin zapłat) — pokazuje,
 // co próbka benchmarku (ADR 0024) realnie ćwiczy, a czego nie mierzy wcale.
-const ALL = process.argv.includes('--all');
+const ALL = flags.has('--all');
 const RODZINY = new Set([
   'resolve_ward_pay_choice', 'resolve_counter_pay_choice',
   'resolve_pay_or_sacrifice', 'resolve_optional_pay_choice',
@@ -36,7 +37,7 @@ const RODZINY = new Set([
 // benchmarku (6, ADR 0024). Powód pomiarowy: próbka rotuje i potrafi NIE
 // zawierać ani jednej karty danej rodziny decyzji (np. zapłat: 0 w 36 partiach
 // na BENCH_DECKS, a karty zapłat leżą w dominaria-brg/innistrad-wu/ixalan).
-const WSZYSTKIE_TALIE = process.argv.includes('--decks=all');
+const WSZYSTKIE_TALIE = flags.has('--decks=all');
 const DECKS = WSZYSTKIE_TALIE ? benchmarkDecks() : BENCH_DECKS;
 const registry = createCardRegistry();
 const deckLists = new Map(DECKS.map((name) => [
@@ -46,22 +47,6 @@ const deckLists = new Map(DECKS.map((name) => [
 
 const agg = new Map();
 let games = 0;
-
-/** Czy obiekt o tym id żyje (jest na polu bitwy albo na stosie) — z widoku. */
-function zywy(view, id) {
-  if (id == null) return false;
-  const z = view.zones ?? {};
-  return (z.battlefield ?? []).some((o) => o.id === id)
-    || (z.stack ?? []).some((o) => o.id === id);
-}
-
-/** Czy WSZYSTKIE cele czaru na stosie są nielegalne (czar fizzluje). */
-function wszystkieCeleMartwe(view, targetId) {
-  const entry = (view.zones?.stack ?? []).find((e) => e.id === targetId);
-  const cele = entry?.targets ?? [];
-  if (cele.length === 0) return false; // brak celów = nie nasza sprawa
-  return cele.every((id) => !zywy(view, id));
-}
 
 function kartaZrodla(view, sourceId) {
   if (sourceId == null) return null;
@@ -87,7 +72,7 @@ function odnotuj(view, cmd) {
   if (cmd.pay) komorka.pay += 1;
   const koszt = cmd.cost ?? 0;
   komorka.koszty.set(koszt, (komorka.koszty.get(koszt) ?? 0) + 1);
-  if (cmd.pay && cmd.targetId != null && wszystkieCeleMartwe(view, cmd.targetId)) {
+  if (cmd.pay && cmd.targetId != null && allChosenTargetsAbsent(view, cmd.targetId)) {
     komorka.martweCele += 1;
     const karta = kartaZrodla(view, cmd.targetId);
     if (karta) komorka.przyklady.add(karta);
@@ -115,8 +100,9 @@ function match(deckA, deckB, seed) {
     if (cmd?.type) odnotujWszystkie(cmd);
     if (RODZINY.has(cmd?.type)) odnotuj(view, cmd);
     const r = execute(state, cmd);
-    if (!r?.ok) break;
+    assertAuditCommand(r, cmd);
   }
+  assertAuditFinished(state);
   games += 1;
 }
 
@@ -129,7 +115,7 @@ console.log(`partie: ${games} (talii w próbce: ${DECKS.length}${WSZYSTKIE_TALIE
 for (const [typ, k] of [...agg.entries()].sort()) {
   const koszty = [...k.koszty.entries()].sort((a, b) => a[0] - b[0]).map(([c, n]) => `${c}:${n}`).join(' ');
   console.log(`${typ}: ${k.decyzje} decyzji, pay=${k.pay}, koszty[{${koszty}}]`
-    + (k.martweCele ? `, PAY Z MARTWYMI CELAMI=${k.martweCele} (${[...k.przyklady].join(', ')})` : ''));
+    + (k.martweCele ? `, PAY BEZ WIDOCZNYCH WYBRANYCH CELÓW=${k.martweCele} (${[...k.przyklady].join(', ')})` : ''));
 }
 if (agg.size === 0) console.log('  BRAK decyzji zapłat w tej próbce (rodziny zapłat poza próbką talii — patrz raport zbiorczy)');
 if (ALL) {

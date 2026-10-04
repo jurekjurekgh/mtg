@@ -25,15 +25,15 @@ pakietu testów. Baza: `a362efa` (PR #154); gałąź tej sesji:
 
 ## Etapy i kolejność commitów
 
-1. [ ] **Plan / PR / zasada wyjścia testów.** Osobny commit planu i PR przed
+1. [x] **Plan / PR / zasada wyjścia testów.** Osobny commit planu i PR przed
    kodowaniem. W AGENTS trwały zakaz surowego `run-tests.mjs all` i aliasów;
    przekierowanie stdout ORAZ stderr do ignorowanego logu, zachowany exit code,
    tylko ograniczony raport. Budżet lektury <=100k bez podnoszenia progu.
-2. [ ] **Audyt PR #154 i reprodukcja CI.** Przegląd wszystkich zmienionych plików,
+2. [x] **Audyt PR #154 i reprodukcja CI.** Przegląd wszystkich zmienionych plików,
    porównanie bazowego i końcowego kodu, CR/Oracle dla znaczenia regułowego,
    wyniki i status każdego obszaru w `docs/audits/AUDYT_PR154_2026-10-04.md`.
    Bazowe `npm test` + build, logi tylko w `.arena/`; brak wyniku != zielony.
-3. [ ] **Naprawy CI u przyczyny.** Każde znalezisko z dowodem RED→GREEN;
+3. [x] **Naprawy CI u przyczyny.** Każde znalezisko z dowodem RED→GREEN;
    nie aktualizować golden-mastera ani progów bez wyjaśnienia pierwszej różnicy.
    Po samodzielnym kroku szybki rdzeń + build, osobny commit i push.
 4. [ ] **Brakujące karty / mechaniki.** Źródła Scryfall + rulingi + dosłowne CR
@@ -64,4 +64,18 @@ pakietu testów. Baza: `a362efa` (PR #154); gałąź tej sesji:
 
 ## Podsumowanie wykonania
 
-W toku; wyniki uzupełniane po każdym sprawdzonym etapie.
+- `9532c20`: plan i PR #155 przed zmianami kodu.
+- `9df45e0`: audyt 79 plików, reprodukcja **7846/7849** (3 FAIL), trwała
+  zasada cichych testów. Budżet lektury **99 344/100 000** bez zmiany limitu.
+  Tabela CR ze zweryfikowanego tekstu; snapshot po porównaniu pierwszych
+  różnic starych/nowych talii. Scout ujawnił brak ponownego sprawdzenia
+  deskryptora celu; poprawiono klasę triggerów, stały prefiks kontekstu i
+  zachowanie przydzielonych kwot. Błędne oczekiwanie Forge Devil poprawione
+  wobec CR, nie pod aktualny wynik.
+- Brama `9df45e0`: fast **7584/7584** (121,3 s), snapshot **4/4**, build
+  **70 modułów / 4832,9 kB**. Mutacja wyłączająca rewalidację: 3 FAIL
+  (Scout, Greatsword, Forge Devil). Nie jest to jeszcze końcowe `test:all`.
+- Drugi przyrost: F4/F5 naprawione z 8 pinami RED→GREEN, F6 z 9 pinami
+  i mutacją 5 FAIL. Fast **7601/7601**, snapshot **4/4** bez dryfu, build
+  **4833,1 kB**; po 6 ukończonych partii smoke każdego z 4 narzędzi.
+- W toku: cztery karty, mechaniki, integracja i końcowa pełna brama.
