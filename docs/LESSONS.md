@@ -2250,47 +2250,29 @@ widoczności) czerwienią.
 
 ## L163 (2026-09-21) — Rozszerzenie kontraktu decyzji o NOWĄ KLASĘ kandydata uczy wszystkie warstwy naraz (oferta, widok, etykieta, wycena, projekcja, narracja)
 
-**Przypadek (gospodarz-GRACZ aury):** CR 303.4f mówi „a legal object OR PLAYER",
-a `pendingAuraHost` niósł tylko id permanentów — `curse-of-the-pierced-heart`
-(Enchant player) wracająca z grobu nie miała wariantu (oferta pusta).
-
-**Reguła:**
-1. Nowa klasa kandydata to NIE łatka w jednym pliku: kontrakt decyzji
-   (`candidateIds` OBOK `candidatePlayerIds`), oferta `legalCommands`, widok
-   decydenta, etykieta (`PLAYER_NAMES`: „Ty"/„Nieprzyjaciel"), wycena bota
-   z projekcją pokrycia i narracja zdarzenia muszą poznać ją tego samego dnia —
-   inaczej wariant jest cicho „niewyceniony” (L40) lub poza ofertą (L48).
-2. Kształt obiektu po wejściu bez czarowania jest IDENTYCZNY z kształtem po
-   rzucie (`kind: 'enchantment'` + `enchantedPlayerId`, bez `attachedTo`) —
-   inaczej ta sama karta zachowuje się inaczej zależnie od drogi wejścia.
-3. Gracz nie jest permanentem: predykaty gospodarza to bliźniaki
-   (`isLegalAuraHost` milczy dla 'player', `isLegalAuraPlayerHost` rozstrzyga),
-   a wspólny zbiór kandydatów ma JEDNO źródło (`legalAuraHosts`).
+**Reguła:** nowa klasa kandydata to NIE łatka w jednym pliku — kontrakt decyzji
+(`candidateIds` OBOK `candidatePlayerIds`), oferta `legalCommands`, widok decydenta,
+etykieta, wycena bota z projekcją pokrycia i narracja zdarzenia muszą poznać ją
+tego samego dnia; inaczej wariant jest cicho „niewyceniony" (L40) albo poza ofertą
+(L48). Kształt obiektu po wejściu bez czarowania jest IDENTYCZNY z kształtem po
+rzucie. Gracz nie jest permanentem: predykaty gospodarza to bliźniaki, a wspólny
+zbiór kandydatów ma JEDNO źródło.
 
 **Strażnik:** `test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty, droga
-zwrotu z grobu, etykieta, walidacja 608.2b, oba boty); mutacja
-bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
+zwrotu z grobu, etykieta, walidacja 608.2b, oba boty); mutacja bez gałęzi gracza
+w `legalAuraHosts` czerwieni G/1.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L163)
 
 ## L164 (2026-09-24) — Lustro CR bywa o wydanie do tyłu: masowe przenumerowanie potwierdzaj w BIEŻĄCYM wydaniu, nie w pierwszym znalezionym źródle
 
-**Przypadek (audyt PR #134 → #135, F-3/fala 2):** przenumerowanie DFC `711.x` →
-`712.x` wg lustra `ancestral.vision` trafiło w CR 2026-09-25, gdzie meld został
-WCHŁONIĘTY przez 712 (cechy twarzy 712.8a–g, rzut 712.11, wejście 712.13), a
-dwie zmiany „poprawiały” cytaty POPRAWNE w tym wydaniu (712.9, 712.8e).
-
-**Reguła:**
-1. Przed przenumerowaniem CZEGOKOLWIEK masowo: sprawdź DATĘ WYDANIA w nagłówku
-   źródła i porównaj z wydaniem, które repo już cytuje. ADR 0030 wymaga
-   dosłownego tekstu z BIEŻĄCEGO źródła, nie jakiegokolwiek.
-2. Sekcje CR rosną przez WCHŁANIANIE (712 zjadło meld) — przesunięcie NIE jest
-   jednolite (+1 nie działa): każdy numer potwierdzaj osobno.
-3. Cytat, który „wygląda na stary”, może być poprawny: zanim go zmienisz,
-   sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie zostaw wiersz „BEZ ZMIAN”.
-4. Zamiana litery obok (508.1c ↔ 508.1d) przechodzi przez strażnik ISTNIENIA
-   numeru — pilnuj pary „numer ↔ pojęcie” (audyt PR #145, F5).
-5. PODPUNKT to nie wzorzec nazewniczy: literę weryfikuj u źródła TAK SAMO jak numer główny; wiersz w tabeli dopisuj z powodem u źródła (strona + data), a czerwony test istnienia po świeżym cytacie czytaj jako „sprawdziłeś podpunkt?”.
+**Reguła:** przed masowym przenumerowaniem sprawdź DATĘ WYDANIA źródła i porównaj
+z wydaniem, które repo już cytuje (ADR 0030: dosłowny tekst z BIEŻĄCEGO źródła).
+Sekcje CR rosną przez WCHŁANIANIE — przesunięcie NIE jest jednolite (+1 nie działa),
+więc każdy numer potwierdzaj osobno. Cytat, który „wygląda na stary", może być
+poprawny: zanim go zmienisz, sprawdź, co ten numer znaczy DZIŚ (wiersz „BEZ ZMIAN"
+w pinie). PODPUNKT to nie wzorzec nazewniczy — literę weryfikuj u źródła tak samo
+jak numer główny, z powodem (strona + data).
 
 **Strażnik:** `test/audyt-pr134-2026-09-24-cytaty-cr.test.js` C1/C2 + para DFC w `cr-numery-mechanik-straznik.test.js`.
 
@@ -2298,26 +2280,17 @@ dwie zmiany „poprawiały” cytaty POPRAWNE w tym wydaniu (712.9, 712.8e).
 
 ## L165 (2026-09-24) — Strażnik LINIOWY nie łapie rozjazdu, który siedzi o linię obok nazwy mechaniki
 
-**Przypadek (F-7):** `fabricate` jako 702.122a (= crew), vigilance jako 702.21,
-flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa była linię wyżej niż
-numer.
-
-**Reguła:**
-1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy, a numery i nazwy
-   siedzą w komentarzach wieloliniowych: detektor klasy musi mieć OKNO (±8
-   linii: 0 fałszywych trafień po aliasach).
-2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
-   X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
-   mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
-   świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
-3. Tabela potrzebuje ALIASÓW (polskie komentarze: „przydziały” = trample) i
-   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki
-   strażników są ze skanu wyłączone (opisują dowody RED).
+**Reguła:** pary „nazwa ↔ zakazany numer" nie da się łapać liniowo — cytaty siedzą
+w komentarzach wieloliniowych, więc detektor klasy musi mieć OKNO (±8 linii).
+Kierunek odwrócony jest silniejszy niż lista znanych błędów: „KAŻDY cytat
+`702.<n>` musi mieć w oknie nazwę mechaniki, którą `702.<n>` znaczy w bieżącym CR"
++ „numer spoza tabeli świeci" — to łapie też rozjazdy, których nikt jeszcze nie zna.
+Tabela potrzebuje ALIASÓW (polskie komentarze) i WYJĄTKÓW z powodem — bez powodu
+to wygaszanie detektora (L5); pliki strażników są ze skanu wyłączone (opisują dowody RED).
 
 **Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
-(CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
-z F-7 muszą świecić, poprawne nie). Mutacja M9 (vigilance 702.20 → 702.21)
-czerwieni oba detektory.
+(CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED. Mutacja M9
+(vigilance 702.20 → 702.21) czerwieni oba detektory.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L165)
 
@@ -2364,46 +2337,33 @@ obiektu — koniec jednego efektu kasował całą warstwę albo żadnej.
 
 ## L168 (2026-09-24) — „Kwota" kosztu alternatywnego to SUMA symboli, nie część generyczna
 
-**Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
-część GENERYCZNĄ — Join the Dance i Boulder Salvo rozjechane z Oracle o {1},
-a strażnik porównywał tylko PIPY.
+**Reguła:** `cost`/`manaCost` deskryptora = SUMA symboli (bestow {3}{G} = 4,
+escape {3}{U} = 4, flashback {1}{U} = 2); napis buduje `costSymbols(amount, colors)`.
+Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave trzyma
+kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu) wymienia się WPROST,
+a karta nieparowalna nie może przejść po cichu. Etykieta alt-kosztu ma JEDNO źródło
+składanki; gołe `{N}` obiecuje cenę nie do zapłacenia pipem (M151, M267/C, M428).
+Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu — popraw dane, potem tytuł.
 
-**Reguła:**
-1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
-   escape {3}{U} = 4, flashback {1}{U} = 2); napis buduje `costSymbols(amount,
-   colors)`.
-2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
-   trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
-   wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
-3. Etykieta alt-kosztu ma JEDNO źródło składanki (`costSymbols`); gołe `{N}`
-   obiecuje cenę nie do zapłacenia pipem (M151, M267/C, M428).
-4. Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu: popraw
-   dane, potem tytuł.
-
-**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (skan rodziny
-alt-kosztów, lista pominiętych, dowód RED, piny etykiet) + piny w
-`test/real-cards-batch{58,59}.test.js`.
+**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (skan rodziny alt-kosztów,
+lista pominiętych, dowód RED, piny etykiet) + piny w `test/real-cards-batch{58,59}.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L168)
 
 ## L169 (2026-09-24) — Remis wariantów to brak WYMIARU, nie brak wiedzy o karcie
 
-**Przypadek:** trzy karty batcha 59 wycenione PŁASKO — o „najlepszym”
-wariancie decydowała kolejność ofert (szczegóły: archiwum).
+**Reguła:** zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz
+w `PlayerView` (ADR 0017): wartość ciała gospodarza, karty w bibliotece, udział
+w walce, stwory w puli — waga bez wymiaru tylko przesuwa próg (L50). Wzorzec bierz
+z NAJBLIŻSZEJ istniejącej reguły (licznik = aura-buff, wtasowanie = rodzina
+biblioteczna, pump = `pumpImprovesOutcome` + `permanentDoomedThisTurn`). Kalibruj
+tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą, a wariant bez
+sensu schodzi PONIŻEJ passu (L3); zero jest ZEROWANE (M243/4). Ta sama reguła
+w OBU bliźniaczych gałęziach (L41); nowa stała pod nazwy + deskryptor tunera (T1),
+a koszt ŹRÓDŁA liczy się RAZ NA WARIANT, nie na każdy cel.
 
-**Reguła:**
-1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz w `PlayerView`
-   (ADR 0017): wartość ciała gospodarza, karty w bibliotece, udział w walce,
-   stwory w puli. Waga bez wymiaru tylko przesuwa próg (L50).
-2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły: licznik = aura-buff, wtasowanie
-   = rodzina biblioteczna, pump = `pumpImprovesOutcome` (M218/2) + `permanentDoomedThisTurn` (M236/2).
-3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą; wariant bez sensu schodzi PONIŻEJ passu (L3), a zero jest ZEROWANE (M243/4).
-4. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność, L41) — inaczej aktywacja zostaje na gołej bazie (spam za 5 many).
-5. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że pokrętło NIE jest atrapą; koszt ŹRÓDŁA liczy się RAZ NA WARIANT, nie na każdy cel.
-
-**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
-rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny
-`test/bot-params.test.js`.
+**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`; wycena rodziny
+odkręcania: `test/audyt-m431-untap-choice.test.js` + piny `test/bot-params.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L169, M431)
 

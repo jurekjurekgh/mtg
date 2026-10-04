@@ -15529,3 +15529,18 @@ build **70 modułów / 4792,5 kB**.
   (cmp zgodne) → GREEN 3/3; `src/` bez zmian.
 - **Bramki:** `npm test` **7540/7540** EXIT 0 (123,1 s), build 70 modułów /
   4814,2 kB.
+
+## 2026-10-04d — PMSSB-55: kondensacja rejestru lekcji, batch 2 (PR #154)
+
+- Skrócone 5 najgrubszych wpisów: **L164, L163, L169, L165, L168**
+  (1637/1519/1369/1367/1202 B → 904/964/1039/994/948 B); proza pod tymi
+  samymi numerami w `docs/LESSONS_PRZYPADKI.md` z markerem
+  `**Proza z rejestru (kondensacja 2026-10-04c):**` (5 sekcji).
+- **Pomiar:** `docs/LESSONS.md` 138 219 → **135 984 B** (−2235 B); budżet
+  lektury 99 870 → **99 072 t.** (zapas **130 → 928**); licznik wpisów stały
+  (168); odsyłacze `→ narracja` nienaruszone.
+- **Procedura:** backup /tmp → dokładny blok → asercje → strażnicy; pierwsza
+  asercja („archiwum ≥ rejestr") była błędna merytorycznie, wyjątek przed
+  zapisem = zero zmian (mechanizm bezpieczeństwa z 04a potwierdzony w boju).
+- **Bramki:** strażnicy docs 25/25, `npm test` **7540/7540** EXIT 0, build
+  70 modułów / 4814,2 kB.

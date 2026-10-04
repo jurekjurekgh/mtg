@@ -2797,3 +2797,26 @@ restore z /tmp (cmp zgodne) → GREEN 3/3, `src/` bez zmian.
 **70 modułów / 4814,2 kB**.
 
 **Status:** zamknięty (kod `522c514`).
+
+## PMSSB-55 — kondensacja rejestru lekcji, batch 2 (5 najgrubszych wpisów) (2026-10-04d)
+
+**Wejście:** kolejka handoffu `2026-10-04c` poz. 1. Skrócone: **L164, L163,
+L169, L165, L168** (1637/1519/1369/1367/1202 B → 904/964/1039/994/948 B);
+proza → `docs/LESSONS_PRZYPADKI.md` pod tymi samymi numerami, marker
+`**Proza z rejestru (kondensacja 2026-10-04c):**` (5 nowych sekcji).
+
+**Pomiar:** `docs/LESSONS.md` **138 219 → 135 984 B** (−2235 B); budżet
+lektury **99 870 → 99 072 t.** (zapas **130 → 928**). Licznik wpisów stały
+(168), odsyłacze `→ narracja` nienaruszone (oba końce istnieją).
+
+**Procedura:** backup /tmp → podmiana dokładnego bloku (regex nagłówek→następny
+`## L`) → asercje (nagłówek identyczny, markery reguły/strażnika, brak
+`Objaw`/`Przyczyna`, proza > 400 B, stałe liczniki) → strażnicy docs.
+Asercja „archiwum ≥ rejestr" z pierwszej próby była BŁĘDNA (archiwum ma tylko
+wpisy z prozą) — wyjątek przed `write_text` = nic nie zapisano (wzorzec L163
+z 04a działa).
+
+**Bramki:** strażnicy docs **25/25** · `npm test` **7540/7540** EXIT 0
+(117,8 s) · build **70 modułów / 4814,2 kB**.
+
+**Status:** zamknięty.
