@@ -3912,7 +3912,12 @@ export const REAL_CARDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         cost: { mana: 3, colors: ['G'] },
         channel: { searchBasicLandTapped: true },
-        effect: { type: 'search_library_to_battlefield_tapped', qualifier: { types: ['Basic', 'Land'] } },
+        // Audyt 2026-10-04 (batch 63/T2): był tu typ efektu nieistniejący
+        // w silniku (`search_library_to_battlefield_tapped`) — channel
+        // rozstrzyga się własną ścieżką (spells.js), więc zapis był martwy,
+        // ale `applyEffect` RZUCA na nieznany typ. Poprawny kontrakt:
+        // `search_library_to_battlefield` + `entersTapped: true`.
+        effect: { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'] }, entersTapped: true },
       }),
     ],
     artId: 449,
