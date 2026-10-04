@@ -460,6 +460,22 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       }
       return object;
     }
+    // Batch 63/T3 (Subterranean Scout, ORI): „target creature with power N or
+    // less" — bliźniak `creature_with_power_at_least` z górną granicą; moc
+    // EFEKTYWNA (CR 613), spójnie z ofertą i z rewalidacją (L48).
+    if (spec?.type === 'creature_with_power_at_most') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+        throw new Error(`Nielegalny cel: ${targetId}`);
+      }
+      const max = spec.max ?? 2;
+      if (hasHexproofAgainst(state, object, casterId)) {
+        throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      }
+      if ((effectivePower(object, state) ?? 0) > max) {
+        throw new Error(`Nielegalny cel: ${targetId} (moc > ${max})`);
+      }
+      return object;
+    }
     if (spec?.type === 'land') {
       if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
@@ -1658,6 +1674,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         return (effectivePower(object, state) ?? 0) >= min;
       });
     }
+    // Batch 63/T3 (Subterranean Scout): „power N or less" — górna granica.
+    case 'creature_with_power_at_most': {
+      const max = spec.max ?? 2;
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return (effectivePower(object, state) ?? 0) <= max;
+      });
+    }
     // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,
     // artefakt, enchantment, planeswalker; engine: każy nonland permanent
     // to obiekt strefy battlefield inny niż land).
@@ -1910,6 +1936,12 @@ function resolveActivatedAbilityEntry(state, entry) {
   // tapowała stwora, który przestał być legalnym celem.
   const targetSpec = payload.ability?.targets ?? [];
   let targets = payload.targets ?? [];
+  // Batch 63/T1 (CR 608.2b): fizzle dotyczy celu WYBRANEGO, który stał się
+  // nielegalny — zdolność z samymi slotami OPCJONALNYMI („up to one target"),
+  // dla której wybrano ZERO celów, nie ma czego stracić i rozstrzyga się
+  // normalnie. `wybranoCel` liczymy z wektora PRZY AKTYWACJI (`payload.targets`),
+  // nie z listy po rewalidacji (ta jest już pusta w obu przypadkach).
+  const wybranoCel = targets.some((tId) => tId != null);
   if (targetSpec.length > 0) {
     const sourceColors = source?.colors ?? [];
     const revalidated = [];
@@ -1937,9 +1969,10 @@ function resolveActivatedAbilityEntry(state, entry) {
     // listą, więc np. Ballista Wielder („deals 1 damage to any target")
     // wywoływał markDamage(undefined) i engine rzucał „Nieprawidłowy cel
     // obrażeń", przerywając partię (crash pełnej macierzy benchmarku B0).
+    // (predykat `wybranoCel` liczony wyżej — wspólny dla obu przypadków)
     // Wyjątek: zdolności wewnętrzne (equip/ninjutsu/cycling) mają własne
     // ścieżki fizzle poniżej i nie korzystają z ability.targets.
-    if (targets.length === 0) {
+    if (wybranoCel && targets.length === 0) {
       state.events.push(event('ability_resolved', {
         playerId: payload.playerId, sourceId: payload.sourceId, cardId: entry.cardId,
         abilityIndex: payload.abilityIndex, fizzled: true, reason: 'no_legal_targets',
@@ -2244,9 +2277,12 @@ export function resolveTopOfStack(state) {
     // celów rozstrzyga się normalnie (modeTargets wyliczone wyżej, dla walidacji).
     // Tryb zmienny rzucony z zerem celów (min 0, M146) celów NIE MA — fizzluje
     // tylko taki, którego wybrane cele wszystkie stały się nielegalne.
+    // Batch 63/T1 (CR 608.2b, ten sam predykat co ścieżka niemodalna): tryb
+    // z samymi slotami OPCJONALNYMI i zerem WYBRANYCH celów rozstrzyga się
+    // normalnie; fizzluje wyłącznie tryb, który MIAŁ wybrany cel i stracił go.
     const hadTargets = mode.variableTargets
       ? (object.chosenTargets ?? []).length > 0
-      : modeTargets.length > 0;
+      : (object.chosenTargets ?? []).some((tId) => tId != null);
     if (hadTargets && liveChosen.length === 0) {
       // M271 (błąd #14): także fizzle respektuje `exileInsteadOfGraveyard`;
       // flashback wygania przy KAŻDYM zejściu ze stosu (CR 702.34a).
@@ -2307,7 +2343,13 @@ export function resolveTopOfStack(state) {
     return state.events.slice(before);
   }
   const legalTargets = collectLegalTargets(state, targetSpec, chosen, object.controllerId, object.colors ?? [], object).map((entry) => entry?.id ?? null);
-  const fizzled = targetSpec.length > 0 && legalTargets.every((entry) => entry === null);
+  // Batch 63/T1 (CR 608.2b; ruling APC 2022-12-08 — Urborg Uprising):
+  // „up to two target …" — czar rzucany BEZ celów rozstrzyga się i wykonuje
+  // swoje efekty bezcelowe (dobranie karty). Fizzle jest wyłącznie wtedy, gdy
+  // co najmniej jeden cel WYBRANO, a przy rozstrzyganiu wszystkie wybrane są
+  // nielegalne (ten sam predykat co ścieżka fireball: `chosen.length > 0`).
+  const wybranoCel = chosen.some((tId) => tId != null);
+  const fizzled = wybranoCel && legalTargets.every((entry) => entry === null);
   // CR 702.174j (ruling BLB 2024-07-26): „For instants and sorceries with gift,
   // the gift is given … as part of the resolution of the spell. This happens
   // before any of the spell's other effects would take place." Czar, który się
@@ -2468,36 +2510,36 @@ export function dividedDamageDivisions(state, playerId, object) {
     if (target?.kind === 'creature') return target.controllerId === playerId ? 4 : 0;
     return 2; // planeswalker
   };
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
-  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
-  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
-  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
-  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
-  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
-  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
-  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
-  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150): sortowanie po ranku +
-  // `slice(0, DIVIDED_POOL_CAP)` odcinało gracza-wroga (rank=1) przy 8+
-  // wrogich stworach (rank=0), co uniemożliwiało dobicie przeciwnika
-  // podzielonym czarem (Fiery Justice) przy szerokim stole. Rezerwacja 1
-  // miejsca dla każdej nie-pustej klasy celów innej niż najniższa (stwory
-  // wroga) gwarantuje, że gracz-wróg nie znika z oferty, ale nie zmienia
-  // priorytetu celów-stworów — one nadal zajmują pozostałe miejsca.
-  // Kształt generyczny (bez nazw kart, ADR 0002); self (rank=3) nie dostaje
-  // rezerwacji — samouszkodzenie marginalne (kod na zapas, ADR 0022 §4).
+  // PMSSB-46 (2026-10-03g, O1 z audytu PR #150; korekta w audycie PR #153,
+  // F2): `sort + slice(0, CAP)` odcinało gracza-wroga (rank=1) przy 8+
+  // wrogich stworach (rank=0), więc Fiery Justice nie mogła dobić przeciwnika
+  // przy szerokim stole. Rezerwacja reprezentanta każdej nie-pustej klasy
+  // celów (poza najniższą — stwory wroga) obowiązuje jednak TYLKO wtedy, gdy
+  // pula jest faktycznie przycinana: bez cięcia zmiana kolejności psuła
+  // kontrakt docblocka („najpierw stwory przeciwników, potem gracze…”), a
+  // pierwsza oferta przestawiała się z celu-stwora na gracza. Przy cięciu
+  // odpada najniżej uprzywilejowany kandydat od KOŃCA listy ranków, z
+  // pominięciem reprezentantów — gracz-wróg wchodzi na swoją pozycję ranku,
+  // a stwory wroga zachowują przód puli. Kształt generyczny (bez nazw kart,
+  // ADR 0002); self (rank=3) bez rezerwacji — samouszkodzenie marginalne
+  // (ADR 0022 §4).
   const byRank = [...candidates].sort((a, b) => rank(a) - rank(b));
-  const pool = [];
-  const included = new Set();
-  const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
-  for (const cls of reservedClasses) {
-    const rep = byRank.find((id) => rank(id) === cls && !included.has(id));
-    if (rep) { pool.push(rep); included.add(rep); }
-  }
-  for (const id of byRank) {
-    if (pool.length >= DIVIDED_POOL_CAP) break;
-    if (included.has(id)) continue;
-    pool.push(id); included.add(id);
+  let pool = byRank;
+  if (byRank.length > DIVIDED_POOL_CAP) {
+    const reservedClasses = [1, 2]; // gracz-wróg, planeswalker
+    const reserved = new Set();
+    for (const cls of reservedClasses) {
+      const rep = byRank.find((id) => rank(id) === cls);
+      if (rep) reserved.add(rep);
+    }
+    let toDrop = byRank.length - DIVIDED_POOL_CAP;
+    const kept = [];
+    for (let i = byRank.length - 1; i >= 0; i -= 1) {
+      const id = byRank[i];
+      if (toDrop > 0 && !reserved.has(id)) { toDrop -= 1; continue; }
+      kept.push(id);
+    }
+    pool = kept.reverse();
   }
   const total = divided.total;
   const out = [];

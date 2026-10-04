@@ -8,7 +8,7 @@ import {
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
-import { deathZoneFor, isCardInOpponentGraveyard } from './zones.js';
+import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
 import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
@@ -84,13 +84,14 @@ function bumpSpeedOnLifeLost(state, loserId) {
 /**
  * Liczba różnych typów kart obecnych w grobie gracza (delirium, CR 207.2c:
  * próg 4). Filtr typów to wspólna `CARD_TYPES` (CR 205.2a) — nadtypy się nie
- * liczą, tokeny w grobie nie są kartami (`name` ustawione) i nie wnoszą typu.
+ * liczą, tokeny w grobie nie są kartami (jawna flaga `isToken`, CR 108.2b,
+ * `isCardObject` z `zones.js`) i nie wnoszą typu.
  */
 export function graveyardCardTypeCount(state, playerId) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {
     const object = state.objects.get(objectId);
-    if (!object || object.controllerId !== playerId || object.name != null) continue;
+    if (!isCardObject(object) || object.controllerId !== playerId) continue;
     for (const type of object.types ?? []) {
       if (CARD_TYPES.includes(type)) present.add(type);
     }
@@ -445,7 +446,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (object.name != null) return false; // tokeny nie są kartami
+      if (!isCardObject(object)) return false; // tokeny nie są kartami (CR 108.2b)
       const types = object.types ?? [];
       return types.includes('Instant') || types.includes('Sorcery');
     });
@@ -457,7 +458,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (object.name != null) return false;
+      if (!isCardObject(object)) return false;
       const isAura = (object.types ?? []).includes('Enchantment') && (object.subtypes ?? []).includes('Aura');
       const isEquipment = (object.types ?? []).includes('Artifact')
         && ((object.subtypes ?? []).includes('Equipment') || object.equipment != null);
@@ -471,7 +472,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (object.name != null) return false;
+      if (!isCardObject(object)) return false;
       return object.kind === 'land' || (object.types ?? []).includes('Land');
     });
   }
@@ -479,7 +480,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     return state.zones.graveyard.filter((objectId) => {
       const object = state.objects.get(objectId);
       if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (object.name != null) return false; // tokeny nie są kartami (CR 108.2b)
+      if (!isCardObject(object)) return false; // tokeny nie są kartami (CR 108.2b)
       if (object.kind === 'spell') return false;
       // CR 110.4a + ruling OTJ (2024-04-12, Annie Flash): „permanent card"
       // łapie TAKŻE land (Zoraline mówi „nonland" — jej deskryptor nie ma
@@ -705,6 +706,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
       if (hexproofBlocked(object) || protectedBlocked(object)) return false;
       return (effectivePower(object, state) ?? 0) >= min;
+    });
+  }
+  // Batch 63/T3 (Subterranean Scout, ORI): „target creature with power N or
+  // less" — bliźniak poprzedniego z górną granicą (moc efektywna, CR 613).
+  if (spec.type === 'creature_with_power_at_most') {
+    const max = spec.max ?? 2;
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
+      return (effectivePower(object, state) ?? 0) <= max;
     });
   }
   // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy
@@ -2251,7 +2263,7 @@ function fireOrQueuePay(state, ability, source, triggerTargets, events, extra) {
  * kartę w kontekście (graveyardCardId — efekt czyta ją z context).
  */
 function fireCardIntoGraveyardFromNonbattlefield(state, ev, entered, events) {
-  if (!entered || entered.name != null) return; // tokeny nie są kartami
+  if (!isCardObject(entered)) return; // tokeny nie są kartami (CR 108.2b)
   if (entered.kind === 'spell' || entered.kind === 'land') return; // nie permanent card
   for (const source of state.objects.values()) {
     if (source.zone !== 'battlefield') continue;
@@ -2527,7 +2539,7 @@ function processTriggersScan(state, recentEvents) {
    */
   const markDescended = (object) => {
     if (!object) return;
-    const isPermanentCard = object.name == null && object.kind !== 'spell';
+    const isPermanentCard = isCardObject(object) && object.kind !== 'spell';
     if (!isPermanentCard) return;
     if (!state.descendedThisTurn[object.controllerId]) {
       state.descendedThisTurn = { ...state.descendedThisTurn, [object.controllerId]: true };
@@ -3641,6 +3653,26 @@ function processTriggersScan(state, recentEvents) {
         for (const ability of effectiveAbilities(attacker)) {
           if (ability?.trigger?.event === 'becomes_blocked') {
             tryFire(state, ability, attacker, [], events);
+          }
+        }
+      }
+      // Batch 63/T3 (254 DMU Snarespinner): „Whenever this creature BLOCKS a
+      // creature with <cecha> …" — zdarzenie `blocks` na BLOKERZE. Filtr cechy
+      // blokowanego stwora pochodzi z DESKRYPTORA zdolności
+      // (`blockedHasKeyword`, ADR 0002) i jest sprawdzany keywordami
+      // efektywnymi (CR 613 — dar „gains flying" liczy się w tym oknie).
+      for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
+        if (!Array.isArray(blockerIds) || blockerIds.length === 0) continue;
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
+        for (const blockerId of blockerIds) {
+          const blocker = state.objects.get(blockerId);
+          if (!blocker || blocker.zone !== 'battlefield') continue;
+          for (const ability of effectiveAbilities(blocker)) {
+            if (ability?.trigger?.event !== 'blocks') continue;
+            const kw = ability.trigger.blockedHasKeyword;
+            if (kw && !effectiveKeywords(attacker, state).includes(kw)) continue;
+            tryFire(state, ability, blocker, [], events);
           }
         }
       }

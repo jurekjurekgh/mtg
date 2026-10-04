@@ -53,6 +53,12 @@ function damageTargetIds(view) {
   return ids;
 }
 
+/** Pierwsza oferta rzutu z podziałem — determinuje `pool[0]` (kolejność = treść). */
+function firstDivision(view) {
+  const cmd = view.legalCommands.find((c) => c.type?.startsWith('cast') && Array.isArray(c.damageDivision));
+  return cmd?.damageDivision ?? null;
+}
+
 describe('PMSSB-46: DIVIDED_POOL_CAP rezerwuje miejsce dla gracza-wroga', () => {
   it('O1 przy 8 wrogich stworach Fiery Justice nadal celuje w przeciwnika', () => {
     const view = playerView(setup(8), 'p1');
@@ -80,5 +86,22 @@ describe('PMSSB-46: DIVIDED_POOL_CAP rezerwuje miejsce dla gracza-wroga', () => 
       && Array.isArray(c.damageDivision) && c.damageDivision.length === 1
       && c.damageDivision[0].id === 'p2' && c.damageDivision[0].amount === 5);
     assert.ok(soloP2, 'oferta rzutu 5 obrażeń w p2 istnieje');
+  });
+
+  // Audyt PR #153 (F2): rezerwacja klas NIE MOŻE zmieniać kolejności puli,
+  // gdy pula nie jest przycinana — docblock kontraktuje „najpierw stwory
+  // przeciwników, potem gracze…”, a pierwsza oferta to `pool[0]` (kolejność
+  // jest tie-breakerem wyceny i prezentacji, L-M203/2).
+  it('O5 (kontrakt kolejności): bez przycięcia pula zostaje w porządku ranków — pierwsza oferta celuje w stwora wroga', () => {
+    const view = playerView(setup(3), 'p1');
+    assert.deepEqual(firstDivision(view), [{ id: 'e0', amount: 5 }],
+      'przy 3 wrogach (5 kandydatów ≤ CAP) kolejność ofert jak przed PMSSB-46');
+  });
+
+  it('O6 (kontrakt kolejności): przy przycięciu rezerwacja wchodzi na pozycję ranku, nie na czoło puli', () => {
+    const view = playerView(setup(8), 'p1');
+    assert.deepEqual(firstDivision(view), [{ id: 'e0', amount: 5 }],
+      'stwory wroga zachowują przód puli; gracz-wróg jest dalej osiągalny (O1)');
+    assert.ok(damageTargetIds(view).has('p2'));
   });
 });

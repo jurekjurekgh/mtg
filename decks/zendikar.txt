@@ -12,6 +12,7 @@
 1x Kor Sanctifiers
 1x Kozilek's Shrieker
 1x Molten Nursery
+1x Natural Connection
 1x Pilgrim's Eye
 1x Relic Robber
 1x Roiling Regrowth
@@ -24,7 +25,7 @@
 1x Jwar Isle Avenger
 1x Merfolk Falconer
 1x Mysteries of the Deep
-1x Plains
+2x Plains
 4x Island
 1x Swamp
 3x Mountain

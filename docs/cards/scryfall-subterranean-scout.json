@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Subterranean+Scout&set=ori&format=json",
+  "print": "ori",
+  "name": "Subterranean Scout",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Goblin Scout",
+  "oracle_text": "When this creature enters, target creature with power 2 or less can't be blocked this turn.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "R"
+  ],
+  "set": "ori",
+  "set_name": "Magic Origins",
+  "collector_number": "164",
+  "rarity": "common",
+  "artist": "Lucas Graciano",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/c/3c9289dd-f1a3-4be5-8ed1-4b4dd4e97743.jpg?1783938325",
+    "normal": "https://cards.scryfall.io/normal/front/3/c/3c9289dd-f1a3-4be5-8ed1-4b4dd4e97743.jpg?1783938325"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/ori/164/rulings",
+  "rulingsPobrano": "2026-10-04"
+}

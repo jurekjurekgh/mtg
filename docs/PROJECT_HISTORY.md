@@ -15279,3 +15279,309 @@ build **70 modułów / 4792,5 kB**.
 - **Piny:** `test/pmssb46-divided-pool-cap.test.js` (4 piny O1–O4). Mutacja 3/4 RED.
 - **Bramki:** fast **7492/7492** EXIT 0 (122,0 s), build **70 modułów / 4799,2 kB**,
   event-contract-audit 0 naruszeń, bot-scoring-snapshot 6/6 bez dryfu.
+
+
+## 2026-10-03h — PMSSB-47: cel ETB z licznikami przy rzucie permanentu (PR #153; korekta w PR #154)
+
+- **Luka (jak zgłoszono):** `cast_permanent` dawał płaską premię +6 dla ETB
+  `add_counter` także przy pustym stole własnym (sonda scenariusza D: 6 landów,
+  0 stworów → +71,1).
+- **Pierwotna naprawa (PR #153):** `etbFriendlyCounterTargetAvailable` wymagała
+  istniejącego przyjaznego stwora.
+- **KOREKTA (audyt PR #153, F1; PR #154 `6fa26e4`):** wchodzący stwór jest
+  legalnym celem własnego triggera ETB bez `notSelf` (CR 603.6d; silnik oferuje
+  `resolve_trigger_target` z `targetIds: ['permanent-1']`), więc pierwotna
+  naprawa zaniżała wycenę 3 kart (Weftblade Enhancer, Cloudbound Moogle, Simian
+  Simulacrum). Bramka liczy teraz wchodzącą kartę (`enteringDef`), a `notSelf`
+  nadal wymaga innego stwora (Jade Bearer). Kotwica A4 wraca 65.703 → 71.103.
+- **Piny:** `test/pmssb47-cast-etb-counter-available.test.js` E1–E4 (w tym
+  kontrola `notSelf`); mutacja m1 → A4 + E1 RED.
+- **Bramki:** merged tree `npm test` 7500/7500 EXIT 0 (103,3 s); po naprawie
+  7501/7501, build 70 modułów, bot-scoring-snapshot 4/4.
+
+## 2026-10-03i — PMSSB-48: oznaczenie wejścia przez Warp (PR #153)
+
+- **Zgłoszenie właściciela:** brak informacji, że permanent wchodzi przez Warp
+  (log i kafelek nie odróżniały od zwykłego rzutu).
+- **Naprawa (PR #153):** sufiks „(za Warp)" w `session.js`, pole
+  `enteredViaWarp` w PlayerView (`game-state.js`), badge „Warp · wygnanie na
+  EOT" w `render.js`; piny W1–W3 + rozszerzenie M277.
+- **Weryfikacja w audycie PR #153:** sonda e2e potwierdziła `warped: true` w
+  zdarzeniu `permanent_cast`, zachowanie flagi na permanencie i widok dla obu
+  graczy; mutacje W1/W2 → piny RED.
+- **Zgłoszenie B (Station po 3 tapach):** bez zmian kodu — sorcery-speed i
+  wymagany pass po zdolności na stosie (ADR 0022 §4).
+- **Bramki:** merged tree `npm test` 7500/7500 EXIT 0 (103,3 s).
+
+## 2026-10-03j — audyt PR #153 + naprawy u root cause (PR #154)
+
+- Audyt PR #153 (29 plików) — raport `docs/audits/AUDYT_PR153_2026-10-03.md`:
+  F1 (regresja wyceny PMSSB-47), F2 (kolejność ofert podziału obrażeń),
+  F3/F4 (dług i zdublowany komentarz), F5 (niedomknięte etapy docs PMSSB-47/48),
+  F6 (obserwacja: `name != null` w liczeniu typów z grobów).
+- Naprawy: `6fa26e4` (F1), `4ab6e80` (F2+F4), `b40e865` (F3); domknięcie
+  dokumentacji PMSSB-47/48 (ten wpis).
+- Bramki po naprawach: `npm test` 7503/7503 EXIT 0, build 70 modułów,
+  bot-scoring-snapshot bez dryfu; mutacje m1–m4, W1/W2 → piny RED.
+
+## 2026-10-03k — F6: „czy obiekt jest KARTĄ" = jawna flaga `isToken` (PR #154)
+
+- **Znalezisko F6 audytu PR #153** („obserwacja do kolejki") okazało się realną
+  rozbieżnością silnik↔bot: po audycie PR #136 (F-2) predykat „karta" naprawiono
+  TYLKO w `zones.isCardInOpponentGraveyard`, a **12 bliźniaczych miejsc** zostało
+  na heurystyce `name != null`. Pole `name` nosi także kopia z `enterAsCopy`
+  (CR 707.2), więc poległa kopia była „nie-kartą" w delirium (CR 207.2c),
+  u Tarmogoyfa/Disy (CR 205.3m), w warunku Gray Slaada, w pulach celów
+  „…card from your graveyard" i w descendzie. W bocie filtr był MARTWY (widok
+  nie wystawia `name` poza polem bitwy), więc bot liczył kopie, a silnik nie —
+  dla tego samego stanu silnik dawał 3 typy kart, a bot 4 (L1/L41/L48).
+- **Naprawa `898c238`:** `zones.isCardObject` = `!object.isToken` (CR 108.2b,
+  jawna flaga — L43) jako jedno źródło dla `triggers.js`, `permanents.js`,
+  `effects.js`, `game-state.js` i bota; widok wystawia `isToken` także poza
+  polem bitwy (grób publiczny, CR 400.2); wykrywacz tokenów po prefiksie
+  `cardId` w czyszczeniu poza polem bitwy też czyta flagę.
+- **Piny:** `test/karta-to-nie-token-nazwana-kopia-w-grobie.test.js` A1–A4,
+  B1–B2, C1, D, E; 4 niedokładne fixture'y w istniejących testach („token" ustawiany
+  polem `name`) poprawione na jawną flagę — w tym jeden pin wakacyjny
+  (typ tokenu powtarzał typ innej karty, więc wykluczenie było niewidoczne).
+- **Dowód mutacyjny:** m1 → A1, m2 → A2+D, m3 → B1, m4 → D, m5 → D+E, m6 → C1;
+  wszystkie po przywróceniu zielone.
+- **Bramki:** `npm test` **7513/7513** EXIT 0 (104,2 s), brama PR
+  `npm run test:all` **7784/7784** EXIT 0 (407,2 s), build 70 modułów /
+  4803,8 kB, `event-contract-audit` 0 naruszeń, bot-scoring-snapshot 4/4 bez dryfu.
+- **Świadomie odłożone:** wpis do `docs/LESSONS.md` („pole `name` nie jest
+  znacznikiem tokenu") — budżet lektury startowej jest na granicy (~99,9k/100k
+  bajtów), najpierw kondensacja rejestru; brak nowych kart (ADR 0029).
+
+## 2026-10-03l — PMSSB-49: `warp_card` widzi DRUGI ETB z recastu po warp (PR #154)
+
+- **Kolejka 2 po PMSSB-48** („warp_card vs rzut w następnej turze — opóźdzony
+  zysk vs stracona tura", granica (2) §PMSSB-41): bot wyceniał warp wyłącznie
+  przeciw OFERCIE rzutu TERAZ (L48), więc nie odróżniał „rzutu nie ma i nie
+  będzie" od „rzut jest za turę" — S1 (3 lądy), S3 (6 lądów, 4 nietapnięte)
+  i S5 (5 lądów bez land dropu) dawały identyczne **85,000**.
+- **Fakt mechaniczny (sonda):** karta po warp-caście wraca z wygnania ZA KOSZT
+  MANY (CR 702.185a) i tam **ETB odpala drugi raz** — rzut z exile jest
+  oferowany jako `cast_permanent` przy 6 lądach, znika przy 3 manach (koszt =
+  koszt many 6, nie warp 3), a po recaście ten sam gospodarz dostaje drugi
+  licznik `+1/+1`.
+- **Naprawa `cfd4de2`:** pokrętło `warpRecastEtbWeight: 0.5` (dyskont czasu)
+  + helper `warpRecastReachableNextTurn(view, card)` — untap własnych lądów
+  z widoku + ląd z ręki (land drop) ≥ `manaCost` i pokrycie kolorów; `false`,
+  gdy rzut jest oferowany teraz (gałąź redundancji). Gałąź `warp_card` dolicza
+  drugą wypłatę ETB, gdy recast jest osiągalny za turę. `×0` = stan sprzed
+  (M429). Generycznie, bez nazw kart (ADR 0002).
+- **Pomiar PO:** S1 85,000 / S1b 85,000 / S1c **97,000** / S2 cast 71,103 >
+  warp 25,000 / S3 **97,000** (było 85,000) / S4 −29,000 / S5 85,000 — S1 i S3
+  różnią się o dokładnie 12 = 0,5 × 24 (proxy `counterHostValue` 3/3).
+- **Piny:** `test/pmssb49-warp-vs-nastepna-tura.test.js` W1–W9 (9/9), w tym
+  bramka land dropu (W3), kolor (W5), pokrętło ×0 (W6), anty-over-fix
+  (W7 redundancja, W8 jałowy warp) i brak podwójnego liczenia przy rzucie
+  z ręki (W9). Mutacje m1–m4 → RED W2/W4/W6/W9, W2/W6, W5, W1/W3/W4/W5.
+- **Bramki:** `npm test` **7522/7522** EXIT 0 (116,1 s), brama PR
+  `npm run test:all` **7793/7793** EXIT 0 (447,1 s), build 70 modułów /
+  4806,9 kB, `bot-scoring-snapshot` 4/4 bez dryfu, `event-contract-audit`
+  0 naruszeń, regresja PMSSB-41 + PMSSB-35 50/50.
+- **Granica świadoma:** proxy czyta tylko widok (własne lądy + ląd z ręki);
+  źródła wymagające aktywacji i przyszłe dobrania poza modelem. Talie wzorcowe
+  nie zawierają karty z warp → pomiar lustra bez zmian; pełny B0 tylko na
+  polecenie właściciela.
+
+## 2026-10-03m — PMSSB-50: premia ewazyjna deathtouch / double strike w wycenie ataku (PR #154)
+
+- **Kolejka 3 po PMSSB-48** (granica (1) §PMSSB-41): wycena deklaracji
+  atakujących liczyła progi zabicia gołą mocą, więc **deathtouch nie istniał**
+  (1/1 i 3/3 z DT wypadały identycznie jak bez niego: −10 = chump, a 3/3 DT
+  w blokera 1/5 trafiał w „przeżyje, ale nie zabije” = −2), a **double strike**
+  nie istniał ani w progu zabicia (2/2 DS zabija 4/4: 2+2), ani w obrażeniach
+  w twarz (2/2 DS = 4, nie 2 — lethal przy 4 życia obrońcy był niewidziany:
+  33 zamiast +1000).
+- **Naprawa `98b8de9`:** `lethalDamageOf` (deathtouch CR 702.2b → ∞ przy mocy
+  ≥1, double strike CR 702.7b → 2 × moc) w progach „zabija blokera”; próg
+  „zabija, ZANIM bloker odpowie” przy JEDNEJ odsłonie (`killsBeforeBlockerStrikes`,
+  CR 702.7) — dwie odsłony to próg wymiany; `faceDamageOf` (DS podwaja) w
+  gałęziach „przechodzi” i w `totalPower`; nowa gałąź „deathtouch praktycznie
+  nieblokowalny” (każdy nietapnięty bloker cenniejszy niż atakujący ⇒ blok nie
+  przyjdzie ⇒ atak jak ewazyjny M202/H; próg OSTRA nierówność). Bez nowych
+  pokręteł — to reguły CR, nie wagi. Zero nazw kart (ADR 0002).
+- **Pomiar PO:** A2 (1/1 DT w 5/5) −10 → **4**, A4 (3/3 DT w 5/5) −10 → **6**,
+  A5 (3/3 DT w 1/5) −2 → **6**, B2 (2/2 DS otwarty) 13 → **15**, B3 (DS lethal)
+  33 → **1035**, B5 (2/2 DS w 4/4) −10 → **1**; kotwice bez keywordów bez zmian.
+- **Piny:** `test/pmssb50-ewazja-dt-ds.test.js` E1–E9 (9/9); mutacje m1→E3,E6,
+  m2→E3, m3→E6, m4→E1,E2, m5→E4,E5, m6 (over-fix progu „przed blokerem”)→E6,
+  m7 (nierówność nieostra)→E9, m8 (podwojenie zawsze)→E4,E5.
+- **Golden-master — świadomy dryf 1/6 partii** (`tarkir-bg|warhammer-ubr@1001`,
+  decyzja #104, tura 9): bot ma `woolly-loxodon` 2/2 i `typhoid-rats` 1/1
+  deathtouch, a wrogie blokery 2/1 i 2/2 są cenniejsze od 1/1 — PRZED
+  `attack[permanent-12]` = 1 (typhoid-rats = −10, chump), PO
+  `attack[permanent-12,permanent-22]` = 5 (typhoid-rats = 1 + 3). Fixture
+  zregenerowany świadomie (precedens PMSSB-32).
+- **Bramki:** `npm test` **7531/7531** EXIT 0 (117,5 s), build 70 modułów /
+  4809,8 kB, `bot-scoring-snapshot` 4/4 po regeneracji, `event-contract-audit`
+  0 naruszeń, regresja skoncentrowana 252/252.
+## 2026-10-03n — PMSSB-51: ETB lądu (z celem) bez legalnego celu osłabia land drop; warunek „enters untapped” jak w silniku (PR #154)
+
+- **Kolejka 4 = etap 2 planu 03h** (odroczony w ADR 0022 §4): wycena kolejności,
+  gdy ETB ma wymóg celu. Karta demonstrująca znaleziona w tej sesji:
+  **Idyllic Grange** (Land/Plains: wchodzi odkręcony przy 3+ innych Plains, ETB
+  „+1/+1 counter on target creature you control”).
+- **Luka (sonda G1–G5, PRZED):** `case 'play_land'` nie wołał żadnej wyceny ETB
+  → przy pustym stole ląd wygrywał kolejność z rzutem gospodarza (82 vs 63,9027)
+  i licznik przepadał; dodatkowo `landAnaliza` czytała GOŁĄ flagę `entersTapped`,
+  ignorując `entersTappedCondition` → ląd wchodzący odkręcony płacił fałszywe −8.
+- **Naprawa:** `entersTappedOfLand` (lustro rozstrzygnięć `resources.playLand`,
+  CR 614.1c — jedno miejsce reguły, L41) + `futileFriendlyCounterEtbPenalty`
+  (kara `castFutileEtbPenalty` = 40, gdy trigger ETB z celem „moje stworzenie”
+  nie ma legalnego celu; dla stworów nie zachodzi — wchodzący jest celem
+  własnego triggera, CR 603.6d); kara liczona w `play_land` PO klamrze
+  `landPlayDelta`, bo w klamrze ±14/25 zostałaby zjedzona (mutacja m5).
+  Zero nazw kart (ADR 0002); `×0` pokrętła = stan sprzed (M429).
+- **Pomiar PO:** G1/G4 ląd 82 → **50**, G4 bot wybiera **rzut** (63,9 > 50),
+  G2 82 → **90** (odkręcony + cel na stole), G5 (warunek niespełniony) 82 bez
+  zmian (trigger nie odpala → kary nie ma).
+- **Piny:** `test/pmssb51-etb-ladu-futile.test.js` E1–E6 (6/6); mutacje
+  m1→E1,E2; m2→E1,E2,E3,E5; m3→E4; m4→E1,E2; m5 (over-fix lokalizacji kary,
+  klamra ±14/25)→E1,E2.
+- **Golden-master — świadomy dryf DOKŁADNIE 1 decyzji z 6 partii**
+  (`tarkir-bg|warhammer-ubr@1001` #179): `play_land(kishla-village)` 84 → 92
+  (+8: warunek `controls_land_subtype_any` spełniony ⇒ ląd wchodzi ODKRĘCONY,
+  więc znika fałszywe −8 za tapnięcie); scoreSum 2755,6261 → 2763,6261,
+  decyzje 217 → 217, pozostałe partie bez zmian. Kara ETB w benchmarku nie
+  odpaliła ani razu. Fixture zregenerowany świadomie (precedens PMSSB-32/50):
+  `fff9c22c…` → `16a139c2efd5229d…`.
+- **Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s), brama PR
+  `npm run test:all` **7808/7808** EXIT 0 (502,9 s) na tipie `f640ba2`, build
+  70 modułów / 4814,2 kB, `bot-scoring-snapshot` 4/4 po regeneracji,
+  `event-contract-audit` 0 naruszeń, regresja skoncentrowana 269/269.
+
+## 2026-10-04a — PMSSB-52: kondensacja rejestru lekcji (budżet 99,96% → zapas 299 tokenów) + L174–L176 (PR #154)
+
+- **Wejście:** kolejka handoffu 03i/03j (poz. 3) + AGENTS.md §0 — budżet
+  lektury startowej stał na **99 958 tokenów (42 zapasu)** przy `c6181b8`,
+  więc każdy nowy wpis rejestru czerwienił bramkę.
+- **Naprawa (mechanizm PR #93/M284):** 20 wpisów skróconych do postaci
+  reguła + strażnik + `→ narracja`, proza przeniesiona W CAŁOŚCI do
+  `docs/LESSONS_PRZYPADKI.md` (L161, L113, L101, L34, L110, L37, L111, L31,
+  L73, L53, L141, L112, L146, L124, L123, L159, L160, L48, L164, L169);
+  nagłówek rejestru skrócony o ~0,6 kB. **Żaden numer nie zniknął**
+  (164 wpisy → 167), strażnicy docs 25/25.
+- **Trzy lekcje z tej sesji:** **L174** bramkę uruchamiaj na ZAMROŻONYM
+  drzewie (brak wyniku ≠ zielony; `test:all` po `c6181b8` zniknął w resecie
+  środowiska), **L175** `name != null` NIE znaczy „to karta” (CR 108.2b;
+  F6 audytu PR #153 — 12 kopii, filtr po `name` był MARTWY), **L176** dryf
+  golden-mastera lokalizuj `--dump` PRZED/PO, nie mutacjami kanałów
+  (PMSSB-50, pierwsza różnica: decyzja #104).
+- **Pomiar:** 99 958 → **99 701 tokenów** (zapas 42 → **299**) mimo dodania
+  trzech wpisów; nowy wpis kosztuje ~180–250 tokenów, więc pas wystarcza na
+  1–2 kolejne, a trzeci będzie wymagał następnego passu (granice: najgrubsze
+  wpisy 1,2–1,9 kB — L164, L169, L170, L165, L168, L163, L5, L167, L171).
+- **Pułapka rundy (do procedur, nie do rejestru):** pierwsza wersja skryptu
+  cięła wpis „od nagłówka do następnego” i przy złym dopasowaniu skasowała
+  50 wpisów z ogona pliku; ratunek dały kopie `/tmp` + metoda podmiany
+  DOKŁADNEGO bloku z asercjami (unikalność, proporcja długości, stały
+  licznik nagłówków `## L\d+ (`).
+- **Bramki:** `npm test` (fast) — patrz raport poniżej; budżet i strażnicy
+  docs zielone.
+
+## 2026-10-04b — PMSSB-53: ward zmierzony E2E (luki nie ma) + granica kopii czarów (PR #154)
+
+- **Wejście:** kolejka handoffu 04a poz. 1 („Ward — rekonesans zrobiony, luki
+  nie ma; postaw SONĘ na `resolve_ward_pay_choice`”). Karta demonstrująca:
+  `riftburst-hellion` (disguise → zakryty 2/2 z ward {2}; jedyna karta z ward,
+  talia `ravnica`); zakrycie budowane jak w `resources.js` L1835–1841.
+- **Pomiar 1 (G1–G7, `douse-in-gloom`):** brak many na dopłatę → rzut **−200**
+  i pass; pełna sekwencja: rzut → passy OBU graczy → `resolve_ward_pay_choice
+  pay=true` (80 vs 20); ten sam zakryty 2/2 bez warda = 82 vs z wardem = 80
+  (podatek dokładnie 2); kontrola z 3 Swampami bez warda = 82 (nie −200) →
+  −200 pochodzi z warda; przy dwóch celach podatek KIERUJE rzut na ten bez
+  warda. **Wniosek: luki nie ma, kodu nie ruszamy** (zero zmian w `src/`).
+- **Pomiar 2 (granica kopii, `spreading-insurrection`, storm=2):** przy 8
+  Mountain kopie padają od warda bez decyzji (silnik kontruje, bo
+  `producibleMana` < 2 — poprawnie); przy 14 Mountain bot płaci **3×** za
+  potrójne przejęcie TEGO SAMEGO stwora. Świadoma granica: nadpłata za
+  redundantne kopie wymaga modelu klas efektów (obrażenia się kumulują,
+  przejęcie kontroli nie) + pola widoku — pozycja kolejki; para nieosiągalna
+  w BENCH_DECKS (`ixalan` bez `ravnica`).
+- **Lekcja L177:** trigger na stosie — po komendzie NASTĘPNA decyzja nie
+  dotyczy tego, co mierzysz (jednokrokowa sonda ogłosiła fałszywy alarm „brak
+  decyzji ward”); mierz SEKWENCJĘ (bot dla aktualnego `priorityPlayerId`).
+  Zapłacone skróceniem L170 (budżet 99 870/100 000, zapas 130).
+- **Bramki:** `npm test` **7537/7537** EXIT 0 (123,5 s), build 70 modułów /
+  4814,2 kB, strażnicy docs 25/25.
+
+## 2026-10-04c — PMSSB-54: przegląd czytników `zone === 'exile'` (negatywny) + strażnik pokrycia komend (PR #154)
+
+- **Przegląd** 52 czytników `== 'exile'` (12 plików): permity rzutu z exile,
+  dowiązania „exiledBy” po LKI, zamienniki stref śmierci, kontrakt widoku
+  (CR 406.3) — **zero luk**. Jedyna granica jest UDOKUMENTOWANA w kodzie
+  (`game-state.js:3327–3331`): suspend oferuje rzut tylko dla
+  `kind === 'spell'`, a permanent z suspend wymagałby ścieżki permanentu
+  (haste, CR 702.62a); takiej karty nie ma w katalogu (Mindstab = sorcery)
+  ⇒ brak karty demonstrującej = brak fixa (ADR 0029, spójnie z PMSSB-53).
+- **Pomiar lustrzany:** silnik emituje **89** typów komend, bot obsługuje
+  **89/89** jawnym `case`; brak `case` = `default: finish(0)` (wybór
+  z kolejności ofert, L41), łapany dotąd dopiero w grze przez telemetrię
+  `bot.unvaluedDecisions()`.
+- **Strażnik** `test/bot-komendy-silnika-straznik.test.js` (3 piny: pełne
+  pokrycie, kotwice przeciw „przejściu na pusto”, brak gnijących wyjątków).
+  **RED→GREEN (L13):** m1 usunięcie `case 'resolve_ward_pay_choice'` → FAIL;
+  m2 `command('resolve_fake_probe_type')` w silniku → FAIL; restore z /tmp
+  (cmp zgodne) → GREEN 3/3; `src/` bez zmian.
+- **Bramki:** `npm test` **7540/7540** EXIT 0 (123,1 s), build 70 modułów /
+  4814,2 kB.
+
+## 2026-10-04d — PMSSB-55: kondensacja rejestru lekcji, batch 2 (PR #154)
+
+- Skrócone 5 najgrubszych wpisów: **L164, L163, L169, L165, L168**
+  (1637/1519/1369/1367/1202 B → 904/964/1039/994/948 B); proza pod tymi
+  samymi numerami w `docs/LESSONS_PRZYPADKI.md` z markerem
+  `**Proza z rejestru (kondensacja 2026-10-04c):**` (5 sekcji).
+- **Pomiar:** `docs/LESSONS.md` 138 219 → **135 984 B** (−2235 B); budżet
+  lektury 99 870 → **99 072 t.** (zapas **130 → 928**); licznik wpisów stały
+  (168); odsyłacze `→ narracja` nienaruszone.
+- **Procedura:** backup /tmp → dokładny blok → asercje → strażnicy; pierwsza
+  asercja („archiwum ≥ rejestr") była błędna merytorycznie, wyjątek przed
+  zapisem = zero zmian (mechanizm bezpieczeństwa z 04a potwierdzony w boju).
+- **Bramki:** strażnicy docs 25/25, `npm test` **7540/7540** EXIT 0, build
+  70 modułów / 4814,2 kB; brama PR `npm run test:all` na tipie `55976dc`:
+  **7811/7811** EXIT 0 (450,5 s).
+
+## 2026-10-04e — PMSSB-56: scoring bota — zapłata za redundantne kopie czarów (PR #154)
+
+- **Dyrektywa właściciela:** „dodawaj mechaniki i pomiary niezbędne do
+  poprawnego scoringu bota — nie pomijaj problemów, tylko je rozwiązuj”.
+- **Pomiar A:** `tools/scoring-unvalued-audit.mjs` (self-play przez harness):
+  12 partii / 6255 komend / **0 decyzji bez wyceny**.
+- **Pomiar B (RED):** storm × ward — bot płacił **3× {2}** za jedno przejęcie
+  kontroli; **PO: 1 płatność** + efekt dostarczony.
+- **Pomiar C (RED):** storm × kontra (`frightful-delusion` w kopię) — bot
+  płacił {1}; **PO: odmowa** (pin E9 był czerwony: `[true]` vs `[false]`).
+- **Mechanika:** widok stosu niesie `copy: true` dla `isSpellCopy` (CR 707.10,
+  ADR 0017); `NON_ACCUMULATING_SPELL_EFFECTS` + `redundantSpellCopyPayment`
+  (kara tylko dla kopii z nie-kumulującym się efektem i bliźniakiem na stosie);
+  pokrętło `redundantCopyPayPenalty: 120` (×0 = stan sprzed naprawy).
+- **Piny:** E1–E12 (E2E ward/kontra + anty-over-fix `damage` + kotwice).
+  **Mutacje m1–m4** czerwienią właściwe piny; restor z /tmp → GREEN 12/12.
+- **Lekcja L178.** **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
+  70 modułów / 4818,8 kB; brama PR na tipie `413448d`: **7823/7823** EXIT 0
+  (592,4 s).
+
+## 2026-10-04f — PMSSB-57: pomiary scoringu (zapłaty, mulligan, przestrzeń wyboru; PR #154)
+
+Sesja pomiarowa po dyrektywie właściciela „dodawaj mechaniki i pomiary
+niezbędne do poprawnego scoringu bota — nie pomijaj problemów”. Żadnych zmian
+wag — trzy pytania, trzy odpowiedzi z liczbami.
+
+- **Zapłaty:** `tools/scoring-pay-census.mjs` — 0 decyzji na BENCH_DECKS
+  (36 partii; żadna z 9 kart `payMana` nie leży w próbce); na 23 taliach próba
+  10× (230 partii): `resolve_pay_or_sacrifice` 15 decyzji (pay=15, koszty
+  {1:11, 3:4}), `resolve_optional_pay_choice` 25 (pay=24, koszty {1:9, 2:16}),
+  ward/kontra 0 → bez dowodu misplayu, bez zmian wag.
+- **Mulligan:** `tools/scoring-mulligan-audit.mjs` — 53 decyzje, **0 naruszeń**
+  trzech kryteriów jakości.
+- **Przestrzeń wyboru:** `tools/scoring-choice-space-audit.mjs` — 4 typy ze
+  stałym `finish(0)`; `resolve_damage_assignment` 39 decyzji zawsze z 1
+  wariantem; komentarze bota potwierdzone; tryb `--all-decisions` = mapa
+  wszystkich typów decyzji.
+- **Lekcja L179** + kondensacje L54/L59/L48. Budżet lektury: 99 724 (zapas 276).
+- **Bramki:** brama PR na tipie `ebbf486`: **7823/7823** EXIT 0 (461,8 s).

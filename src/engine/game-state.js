@@ -1,7 +1,7 @@
 import { chooseDestructionReplacement } from './destruction.js';
 import { blockingRequirementCount, combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
-import { assertZone, ZONES } from './zones.js';
+import { assertZone, ZONES, isCardObject } from './zones.js';
 import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
@@ -1489,7 +1489,7 @@ function graveyardToTopCandidates(state, playerId, filter = null) {
   const anyTypes = filter?.anyTypes ?? null;
   return state.zones.graveyard.filter((objectId) => {
     const object = state.objects.get(objectId);
-    if (!object || object.controllerId !== playerId || object.name != null) return false;
+    if (!isCardObject(object) || object.controllerId !== playerId) return false;
     if (anyTypes) return anyTypes.some((type) => (object.types ?? []).includes(type));
     return object.kind === 'creature';
   });
@@ -2046,7 +2046,7 @@ function accepted(state, cmd, result) {
   // czeka na decyzję. Token znika dopiero po dokończeniu rozstrzygania.
   const offBattlefieldTokens = stateBasedActionsOpen(state)
     ? [...state.objects.values()].filter((o) => typeof o.cardId === 'string' && o.cardId.startsWith('token_')
-      && o.name != null && o.zone !== 'battlefield')
+      && o.isToken && o.zone !== 'battlefield')
     : [];
   if (offBattlefieldTokens.length > 0) {
     for (const token of offBattlefieldTokens) {
@@ -6742,19 +6742,20 @@ export function playerView(state, playerId) {
             .find((subtype) => typeof subtype === 'string');
           if (landwalkSubtype && !hiddenFromViewer) entry.landwalk = landwalkSubtype;
         }
-        // PMSSB-45 (pętla jakości 2026-10-03f, następca landwalka): kolejne
-        // publiczne deskryptory blokowania z CR 509.1a, których PlayerView
-        // dotąd nie niósł, a które są potrzebne botu do oceny ewazji gospodarza
-        // w warpEtbHostPayoff (klasa L1/ADR 0017):
-        //  - cantBeBlockedExceptByColors: kolory blokujących (Dauthi Voidwalker);
-        //  - cantBeBlockedByPower: maksymalna moc blokującego (Aerial Maurer).
-        // Lista wyliczona przez effectiveAbilities (z uwzględnieniem nadanych
-        // do EOT, sprzętu i warstw postaci) — ta sama funkcja co w walidacji
-        // bloku (combat.js), tylko wyliczone na wejściu do widoku. Shape jak
-        // w silniku (ADR 0002/0017, bez nazw kart). cantBeBlockedBySubtypes
-        // (Blazing Torch) nie dodane — bot nie rozpoznaje ewazji podtypowej;
-        // pojawi się gdy karta z tym kształtem pojawi się w katalogu (B6/kod
-        // na zapas).
+        // PMSSB-45 (pętla jakości 2026-10-03f, następca landwalka): publiczny
+        // deskryptor blokowania z CR 509.1a, którego PlayerView dotąd nie niósł,
+        // a który jest potrzebny botu do oceny ewazji gospodarza
+        // (warpEtbHostPayoff, klasa L1/ADR 0017):
+        //  - cantBeBlockedExceptByColors: kolory blokujących (Dauthi Voidwalker).
+        // Lista z effectiveAbilities (wydrukowane + nadane do EOT / warstwy
+        // postaci) — ten sam kształt co w walidacji bloku (combat.js), ADR 0002.
+        // `cantBeBlockedByPower` NIE jest tu czytane ponownie: widok ustawia je
+        // wyżej JEDNYM źródłem — helperem silnika `attackerBlockPowerRestriction`
+        // (combat.js), który jako jedyny obejmuje też nadania sprzętu
+        // (`attachmentsAttachedTo → equipment.grantedAbilities`, L41).
+        // cantBeBlockedBySubtypes (Blazing Torch) nie dodane — bot nie
+        // rozpoznaje ewazji podtypowej; pojawi się, gdy karta z tym kształtem
+        // wejdzie do katalogu (ADR 0022 §4).
         if (!hiddenFromViewer) {
           for (const a of effectiveAbilities(object)) {
             if (a?.type !== 'static') continue;
@@ -6762,10 +6763,6 @@ export function playerView(state, playerId) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
               break;
             }
-          }
-          for (const a of effectiveAbilities(object)) {
-            if (a?.type !== 'static') continue;
-            if (a.cantBeBlockedByPower != null) { entry.cantBeBlockedByPower = a.cantBeBlockedByPower; break; }
           }
         }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
@@ -6866,6 +6863,13 @@ export function playerView(state, playerId) {
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, manaCost: object.manaCost, spell: object.spell,
+          // PMSSB-56 (CR 707.10 + ADR 0017): to, że obiekt na stosie jest KOPIĄ
+          // czaru, jest informacją publiczną (kopia nie była rzucana, nie ma
+          // śladu w historii rzutów). Bez tej flagi wycena bota nie odróżniała
+          // kopii od oryginału: bot płacił ward za KAŻDĄ kopię tego samego
+          // czaru na ten sam cel (pomiar: 3× {2} za jedno przejęcie kontroli,
+          // gdy efekt się nie kumuluje).
+          ...(object.isSpellCopy ? { copy: true } : {}),
           // M106/Z8 (ADR 0017 — kompletność widoku): cele są ogłaszane przy
           // kładzeniu na stos, więc są informacją PUBLICZNĄ. Zdolność
           // aktywowana trzyma je w activatedEntry — bez tego kontroler nie
@@ -7007,9 +7011,15 @@ export function playerView(state, playerId) {
         if (object.toughness != null) waiting.toughness = object.toughness;
         waiting.manaCost = object.manaCost ?? 0;
       }
+      // Audyt PR #153 (F6): bycie KARTĄ (CR 108.2b) to jawna flaga `isToken`,
+      // a nie domysł po polu `name` — bot czytał `o.name != null` z widoku,
+      // w którym grób `name` w ogóle nie wystawia, więc filtr był martwy
+      // (martwa gałąź liczyła wszystko). Flaga jest jawna na stole (M180/Z2),
+      // a token w strefie publicznej pozostaje tokenem — wysyłamy ją także
+      // tutaj, żeby konsument miał jedną regułę do odczytania (ADR 0017).
       return {
         id: object.id, cardId: object.cardId, controllerId: object.controllerId, zone: object.zone,
-        plotted: Boolean(object.plotted), ...waiting,
+        plotted: Boolean(object.plotted), ...(object.isToken ? { isToken: true } : {}), ...waiting,
         // M209: kolory karty w strefach JAWNYCH (grob, wygnanie, stos) — grob
         // jest publiczny (CR 400.2), a dla bota to jedyny legalny dowod, ze
         // przeciwnik GRA kartami wielokolorowymi. Reka i biblioteka wracaja

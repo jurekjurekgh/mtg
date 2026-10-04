@@ -1,5 +1,5 @@
 import { event } from '../protocol/types.js';
-import { assertZone, deathZoneFor } from './zones.js';
+import { assertZone, deathZoneFor, isCardObject } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
 import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
@@ -367,7 +367,7 @@ function staticConditionHolds(state, object, condition) {
     for (const objectId of state.zones.graveyard) {
       const candidate = state.objects.get(objectId);
       if (!candidate || candidate.controllerId !== object.controllerId) continue;
-      if (candidate.name != null) continue; // tokeny nie są kartami
+      if (!isCardObject(candidate)) continue; // tokeny nie są kartami (CR 108.2b)
       if (candidate.kind === 'creature' || (candidate.types ?? []).includes('Creature')) count += 1;
     }
     return count >= condition.minCreatureCardsInGraveyard;
@@ -428,7 +428,8 @@ function staticConditionHolds(state, object, condition) {
  *   • dozwolone typy kart w warstwie stołu (`render.js`).
  *
  * Nadtypy (Basic, Legendary, Snow, World) NIE są typami kart i nie wchodzą do
- * listy; tokeny w grobie nie są kartami (`name` ustawione) i nie wnoszą typu.
+ * listy; tokeny w grobie nie są kartami (jawna flaga `isToken` — `isCardObject`
+ * z `zones.js`, CR 108.2b) i nie wnoszą typu.
  */
 export const CARD_TYPES = Object.freeze([
   'Artifact', 'Battle', 'Conspiracy', 'Creature', 'Dungeon', 'Enchantment',
@@ -439,13 +440,14 @@ export const CARD_TYPES = Object.freeze([
 /**
  * Liczba RÓŻNYCH typów kart wśród kart we WSZYSTKICH grobach (Tarmogoyf —
  * token Disy the Restless; wariant graveyardCardTypeCount liczący jednego
- * gracza). Tokeny nie są kartami (name ustawione) i się nie liczą.
+ * gracza). Tokeny nie są kartami (jawna flaga `isToken`, CR 108.2b) i się nie
+ * liczą — nazwana kopia z `enterAsCopy` (CR 707.2) JEST kartą i liczy się.
  */
 export function allGraveyardsCardTypeCount(state) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {
     const object = state.objects.get(objectId);
-    if (!object || object.name != null) continue;
+    if (!isCardObject(object)) continue;
     for (const type of object.types ?? []) {
       if (CARD_TYPES.includes(type)) present.add(type);
     }

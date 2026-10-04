@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Loxodon+Mender&set=mrd&format=json",
+  "print": "mrd",
+  "name": "Loxodon Mender",
+  "mana_cost": "{5}{W}",
+  "cmc": 6,
+  "type_line": "Creature — Elephant Cleric",
+  "oracle_text": "{W}, {T}: Regenerate target artifact.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "set": "mrd",
+  "set_name": "Mirrodin",
+  "collector_number": "12",
+  "rarity": "common",
+  "artist": "Heather Hudson",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/1/c17ac7c1-6d53-40b4-921f-4e23e4026041.jpg?1783944561",
+    "normal": "https://cards.scryfall.io/normal/front/c/1/c17ac7c1-6d53-40b4-921f-4e23e4026041.jpg?1783944561"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/mrd/12/rulings",
+  "rulingsPobrano": "2026-10-04"
+}

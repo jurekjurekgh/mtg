@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=News+Helicopter&set=spm&format=json",
+  "print": "spm",
+  "name": "News Helicopter",
+  "mana_cost": "{3}",
+  "cmc": 3,
+  "type_line": "Artifact Creature — Construct",
+  "oracle_text": "Flying\nWhen this creature enters, create a 1/1 green and white Human Citizen creature token.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [],
+  "set": "spm",
+  "set_name": "Marvel's Spider-Man",
+  "collector_number": "169",
+  "rarity": "common",
+  "artist": "Lee Woo-chul",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/5/15717af0-30cd-4417-947a-c27cca06d93a.jpg?1783905303",
+    "normal": "https://cards.scryfall.io/normal/front/1/5/15717af0-30cd-4417-947a-c27cca06d93a.jpg?1783905303"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/spm/169/rulings",
+  "rulingsPobrano": "2026-10-04"
+}

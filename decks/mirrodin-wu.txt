@@ -16,7 +16,8 @@
 1x Strandwalker
 1x Trigon of Thought
 1x Chained Throatseeker
+1x Loxodon Mender
 1x Steelfin Whale
 1x True Conviction
-4x Plains
+5x Plains
 5x Island

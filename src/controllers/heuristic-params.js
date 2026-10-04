@@ -241,6 +241,18 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'warpEtbHostMin',              // próg „stwór wart wzmocnienia" (tokeny/gołe 2/2 poniżej)
   'warpFutileEtbPenalty',        // kara, gdy trigger wejścia z celem nie ma godnego gospodarza
   'warpRedundantPenalty',        // kara, gdy rzut normalny TEJ karty jest oferowany (warp = strata karty)
+  'warpRecastEtbWeight',         // waga DRUGIEGO ETB z recastu po warp (rzut z exile za koszt many)
+  // PMSSB-51 (kolejka 4, etap 2 planu PMSSB-47 — karta demonstrująca:
+  // Idyllic Grange, ląd z ETB „+1/+1 na target creature you control"): kara,
+  // gdy permanent z takim triggerem wchodzi BEZ legalnego celu (ETB przepada).
+  'castFutileEtbPenalty',        // kara za wejście permanentu, którego ETB z celem nie ma celu
+  // PMSSB-56 (pomiar storm × ward i storm × kontra): kara za zapłatę ratującą
+  // KOPIĘ czaru, której efekt nie kumuluje się na tym samym celu (na stosie
+  // wisi inna instancja tej samej karty z tymi samymi celami) — dotyczy wardu
+  // (`resolve_ward_pay_choice`) i zapłaty kontrującej
+  // (`resolve_counter_pay_choice`); bot odmawia i zachowuje efekt po stronie
+  // instancji pozostawionej na stosie.
+  'redundantCopyPayPenalty',     // ≥ 61 (ward: 80−kara<20) i ≥ 76 (kontra: 85−kara<10)
   // PMSSB-41/C (zgłoszenie właściciela, Wedgelight Rammer): Station dokłada
   // charge równe MOCY tapowanego stwora, więc wycena liczy realny postęp
   // (nadmiar ponad próg = 0) i premię za DOMKNIĘCIE progu (artefakt → stwór).
@@ -667,6 +679,26 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   warpEtbHostMin: 20,
   warpFutileEtbPenalty: 90,
   warpRedundantPenalty: 60,
+  // PMSSB-49: karta po warp-caście wraca z wygnania ZA KOSZT MANY i odpala ETB
+  // drugi raz (CR 702.185a; sonda: rzut z exile = `cast_permanent`, licznik
+  // ląduje na gospodarzu ponownie). Gdy ten recast jest osiągalny w następnej
+  // turze, druga wypłata jest realna — liczymy ją z wagą < 1 (dyskont czasu:
+  // trigger przyjdzie turę później i po zapłaceniu kosztu many). ×0 = stan
+  // sprzed PMSSB-49 (M429 anty-over-fix).
+  warpRecastEtbWeight: 0.5,
+  // PMSSB-51: ląd (lub inny permanent nie będący stworzeniem) z ETB wymagającym
+  // MOJEGO stworzenia (Idyllic Grange) przy pustym stole pali trigger — kara
+  // jest mniejsza niż `warpFutileEtbPenalty`, bo permanent ZOSTAJE na stole
+  // (rzut/warp to strata karty, ląd to trwała mana). Wartość 40 wystarcza, by
+  // bot NAJPIERW wystawił gospodarza, a potem zagrał ląd (kolejność), a nie
+  // wyklucza samego land dropu (ląd 90 − 40 = 50 > pass 0). ×0 = stan sprzed
+  // PMSSB-51 (M429 anty-over-fix).
+  castFutileEtbPenalty: 40,
+  // PMSSB-56: kara za zapłatę ratującą kopię czaru bez nowej wartości.
+  // Wynik zapłaty to 80 − kara (ward) albo 85 − kara (kontra); progi odmowy
+  // to 20/10, więc 120 daje zapas (−40 / −35), a ×0 = stan sprzed PMSSB-56
+  // (M429 anty-over-fix).
+  redundantCopyPayPenalty: 120,
   stationCloseBonus: 6,
   optionalPayBlockedCastMin: 40,
   optionalPayCastScoreWeight: 0.5,

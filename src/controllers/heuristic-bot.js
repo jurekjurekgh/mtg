@@ -426,6 +426,32 @@ function combatTrickWindow(view, recipient) {
 function combatPower(object) {
   return object?.combatDamageByToughness ? (object.toughness ?? 0) : (object?.power ?? 0);
 }
+/**
+ * PMSSB-50 (kolejka 3: „premia ewazyjna deathtouch/double strike w wycenie
+ * walki"): ile obrażeń REALNIE wystarcza, by zadać blokerowi śmiertelne —
+ * czyta wyłącznie keywordy atakującego (ADR 0002/0017):
+ *  • deathtouch (CR 702.2b): każde ≥1 obrażenie jest śmiertelne, więc próg
+ *    „zabija blokera" spada do 1 niezależnie od wytrzymałości (moc 1 czyni
+ *    atakującego praktycznie nieblokowalnym — blok = śmierć blokera);
+ *  • double strike (CR 702.7b): moc zadawana w OBU odsłonach, więc próg
+ *    zabicia to 2 × moc (2/2 DS zabija 4/4, czego model sum mocy nie widział).
+ * Bez tych keywordów wynik = moc (zero zmian dla reszty kart).
+ */
+function lethalDamageOf(object) {
+  const power = combatPower(object);
+  const kw = object?.keywords ?? [];
+  if (kw.includes('deathtouch') && power > 0) return Number.POSITIVE_INFINITY;
+  return power * (kw.includes('double_strike') ? 2 : 1);
+}
+/**
+ * PMSSB-50: ile obrażeń atakującego dochodzi do GRACZA, gdy nikt go nie
+ * zablokuje — double strike (CR 702.7b) uderza w twarz w obu odsłonach,
+ * więc 2/2 DS to 4 obrażenia, nie 2. Pozostałe słowa bez zmian.
+ */
+function faceDamageOf(object) {
+  const kw = object?.keywords ?? [];
+  return combatPower(object) * (kw.includes('double_strike') ? 2 : 1);
+}
 function duelStats(object, { power = 0, toughness = 0 } = {}) {
   const kw = object?.keywords ?? [];
   return {
@@ -580,6 +606,51 @@ function stackEntryEffects(entry) {
 }
 
 /**
+ * PMSSB-56: typy efektów, które na IDENTYCZNYM zestawie celów NIE kumulują się —
+ * druga rezolucja tego samego efektu na ten sam obiekt nie zmienia stanu gry
+ * (cel już zniknął / jest tapowany / kontrolowany / skontrowany). Lista jest
+ * ŚWIADOMIE wąska: typ spoza listy zostawia wycenę przy dawnej bazie (kotwica
+ * anty-over-fix, L41). Obrażenia, pompy, dobieranie i liczniki życia NIE należą:
+ * kopie tych efektów realnie dodają wartość (np. druga kopia 3 obrażeń zabija
+ * większe ciało). CR 707.10 (kopia czaru) + CR 702.21a (ward pyta każdą kopię).
+ */
+const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
+  'gain_control_until_end_of_turn', 'gain_control',
+  'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+  'exile_opponent_creature', 'exile_nonland_permanent_linked',
+  'bounce_permanent', 'counter_spell',
+  'tap_permanent', 'untap_permanent', 'dont_untap_next_untap_step',
+  'cant_block', 'cant_be_blocked',
+  'grant_keywords_until_end_of_turn',
+]);
+
+/**
+ * PMSSB-56: czy zapłata wardu za TĘ kopię czaru nie kupuje już niczego.
+ * Łączy trzy fakty z widoku (ADR 0017 — kompletność widoku):
+ *   • wpis stosu `cmd.targetId` jest kopią czaru (`copy`, CR 707.10),
+ *   • WSZYSTKIE jego efekty nie kumulują się na tym samym celu
+ *     (`NON_ACCUMULATING_SPELL_EFFECTS`; efekt nieznany → brak wniosku),
+ *   • na stosie wisi inna instancja TEJ SAMEJ karty z tym samym zestawem
+ *     celów — efekt dostarczy ona (kopia rozwiązuje się PRZED oryginałem,
+ *     więc odmowa dla kopii nie gubi efektu; dokładnie jedna instancja
+ *     zachowuje płatność, bo karzemy wyłącznie kopie).
+ * Wzorzec bliźniaczy: `pendingPumpDelta` (suma kopii aktywacji tej samej
+ * zdolności na tych samych celach) — tam efekt się KUMULUJE i wycena go liczy.
+ */
+function redundantSpellCopyPayment(view, cmd) {
+  if (!cmd.pay || cmd.targetId == null) return false;
+  const stack = view.zones?.stack ?? [];
+  const entry = stack.find((e) => e.id === cmd.targetId);
+  if (!entry?.copy) return false;
+  const effects = stackEntryEffects(entry);
+  if (effects.length === 0) return false;
+  if (!effects.every((e) => NON_ACCUMULATING_SPELL_EFFECTS.has(e?.type))) return false;
+  const klucz = (e) => `${e.cardId}|${JSON.stringify([...(e.targets ?? [])].map(String).sort())}`;
+  const moj = klucz(entry);
+  return stack.some((other) => other.id !== entry.id && klucz(other) === moj);
+}
+
+/**
  * M376 (pętla jakości ADR 0021 §4a — Żywy Tester, worek-dziki vs ixalan, seed
  * 2031): suma delt P/T kopii aktywacji TEJ SAMEJ zdolności (źródło + indeks +
  * cele) czekających na stosie. Wpis zdolności na stosie jest informacją
@@ -654,13 +725,16 @@ function pumpImprovesOutcome(view, recipient, pending, delta) {
  * PMSSB-43/A (pętla jakości 2026-10-03d): liczba RÓŻNYCH typów kart we WSZYSTKICH
  * grobach, liczona z WIDOKU (ADR 0017). Ta sama reguła co silnik
  * (`permanents.js.allGraveyardsCardTypeCount`, CR 205.3m — Tarmogoyf/Altar):
- * karty (nie-tokeny — name=undefined oznacza kartę), po typach ∩ CARD_TYPES
- * importowanym z permanents.js (O-2: jedno źródło prawdy dla listy typów kart).
+ * karty (nie-tokeny — jawna flaga `isToken` z widoku, CR 108.2b), po typach
+ * ∩ CARD_TYPES importowanym z permanents.js (O-2: jedno źródło prawdy dla
+ * listy typów kart). Audyt PR #153 (F6): filtr po `name` był MARTWY (widok nie
+ * wystawia `name` poza polem bitwy), więc bot liczył nazwane kopie, a silnik
+ * nie — jedna reguła, dwa wyniki (L41/L48).
  */
 function cardTypesInAllGraveyardsFromView(view) {
   const present = new Set();
   for (const o of (view?.zones?.graveyard ?? [])) {
-    if (!o || o.name != null) continue; // token (name ustawione) nie jest kartą
+    if (!o || o.isToken === true) continue; // token nie jest kartą (CR 108.2b, jawna flaga)
     for (const t of (o.types ?? [])) if (CARD_TYPES.includes(t)) present.add(t);
   }
   return present.size;
@@ -1445,19 +1519,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const raw = typeof spec === 'string' ? spec : spec?.type;
     return raw === 'creature' || raw === 'creature_you_control';
   };
-  // PMSSB-47 (2026-10-03h): etbFriendlyCounterTargetAvailable zwracało `true`
-  // dla spec.type === 'creature' bez względu na to, czy stół w ogóle ma jakiego
-  // przyjaznego stwora — przy pustym stole ETB +1/+1 na up-to-N celów dawało
-  // stałą premię +6, chociaż nie można było wybrać żadnego licznika (wynik=0).
-  // Kształt generyczny (ADR 0002): sprawdzamy, czy NA STOLE jest co najmniej
-  // jeden przyjazny stwór spełniający ewentualny filtr (subtype); notSelf
-  // nie zmienia wyniku dla ETB cast_permanent (wchodząca karta jeszcze nie ma
-  // na stole, a wchodzącemu samemu wolno być gospodarzem — CR 603.6d).
-  const etbFriendlyCounterTargetAvailable = (view, spec) => {
+  // PMSSB-47 (2026-10-03h, korekta w audycie PR #153): czy ETB „put a
+  // +1/+1 counter on target …” ma LEGALNY cel po mojej stronie przy rzucie
+  // nosiciela. Wchodzący permanent JEST już na polu bitwy, gdy trigger trafia
+  // na stos (CR 603.6d) — bez `notSelf` sam jest celem (silnik oferuje go jako
+  // `permanent-N`), a dla pól bitwy typu LĄD/artefakt (np. Idyllic Grange)
+  // wchodzący nie jest stworzeniem i wtedy potrzebny jest ISTNIEJĄCY stwór.
+  // `notSelf` = „another” wyklucza wchodzącego (Jade Bearer → inny Merfolk).
+  // Kształt generyczny (ADR 0002): typy/podtypy wchodzącej karty + filtr
+  // podtypu spec-a, bez nazw kart.
+  const etbFriendlyCounterTargetAvailable = (view, spec, enteringDef = null) => {
     if (!spec || typeof spec === 'string') return true;
+    const enteringQualifies = Boolean(enteringDef
+      && !spec.notSelf
+      && (enteringDef.types ?? []).includes('Creature')
+      && (!spec.subtype || (enteringDef.subtypes ?? []).includes(spec.subtype)));
+    if (enteringQualifies) return true;
     return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
       && o.kind === 'creature'
       && (!spec.subtype || (o.subtypes ?? []).includes(spec.subtype)));
+  };
+  /**
+   * PMSSB-51 (kolejka 4, etap 2 planu PMSSB-47 — karta demonstrująca: Idyllic
+   * Grange): permanent wchodzi z triggerem „put a +1/+1 counter on target
+   * creature you control", a na stole nie ma mojego stwora. Dla STWORÓW to
+   * nigdy nie zachodzi (wchodzący jest legalnym celem własnego triggera,
+   * CR 603.6d — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
+   * trigger przepada. Kara mniejsza niż `warpFutileEtbPenalty`, bo permanent
+   * ZOSTAJE na stole (nie jest stratą karty) — jej rolą jest KOLEJNOŚĆ:
+   * ląd przestaje wygrywać z rzutem gospodarza, więc bot najpierw wystawia
+   * stwora, a potem zagra ląd (licznik ma wtedy cel).
+   * `entersTapped` = trigger z warunkiem „enters untapped" (Idyllic Grange)
+   * przy tapniętym wejściu NIE odpala — wtedy kary nie ma (L41: jedno miejsce
+   * na regułę, wołane przez `play_land`).
+   */
+  const futileFriendlyCounterEtbPenalty = (view, def, { entersTapped = false } = {}) => {
+    if (!def) return 0;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      if (ability.trigger?.condition?.enteredUntapped && entersTapped) continue;
+      const spec = ability.trigger?.requiresTarget;
+      if (!isFriendlyCounterSpec(spec)) continue;
+      const efekty = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      if (!efekty.some((e) => e?.type === 'add_counter')) continue;
+      if (!etbFriendlyCounterTargetAvailable(view, spec, def)) return P.castFutileEtbPenalty;
+    }
+    return 0;
   };
   // PMSSB-2/A (F4): efekty oferowane PRZEZ token (z jego zdolności —
   // deskryptor efektu albo definicja tokena, wzorzec M243/C). Jedno źródło
@@ -1688,8 +1795,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-36/B: licznik z ETB na SWOIM stworze (Jade Bearer, Moogle) — bramka
     // dostępności celu po stronie WŁASNEJ (dawniej `etbEnemyHasTarget` pytał o
     // wrogie permanenty, więc wartość zależała od wroga, nie od celu).
-    add_counter: (e, view, req) => (req
-      ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req) : etbEnemyHasTarget(view, req)) ? 6 : 0)
+    add_counter: (e, view, req, def) => (req
+      ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
       : 5),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
@@ -4439,6 +4546,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /** Stan faktów o lądzie i rekem, potrzebny do wyboru (bez punktów). */
+  /**
+   * PMSSB-51: czy ląd wchodzi TAPNIĘTY — z warunkiem „enters tapped unless …"
+   * rozstrzyganym jak w silniku (`resources.playLand`, CR 614.1c; lustro
+   * z odwołaniem, jak `attackerCanBeBlocked` ↔ `combat.js`). Dotąd czytana
+   * była sama flaga `def.entersTapped`, więc Idyllic Grange przy 3+ innych
+   * Plains dostawał karę −8 „wchodzi tapnięty", choć wchodzi ODKRĘCONY
+   * (i dopiero wtedy odpala ETB z licznikiem). Wchodzący ląd nie jest jeszcze
+   * na polu bitwy, więc „other X" liczymy po istniejących moich landach.
+   */
+  const entersTappedOfLand = (def, mojeLandy, view) => {
+    if (!def?.entersTapped) return false;
+    const cond = def.entersTappedCondition;
+    if (!cond) return true;
+    const landy = mojeLandy ?? [];
+    if (cond.type === 'player_life_at_most'
+      && (view.players ?? []).some((p) => (p.life ?? 0) <= (cond.amount ?? 0))) return false;
+    if (cond.type === 'islands_you_control_at_least'
+      && landy.filter((o) => (o.subtypes ?? []).includes('Island')).length >= (cond.amount ?? 3)) return false;
+    if (cond.type === 'controls_land_subtype_any') {
+      const wanted = cond.subtypes ?? [];
+      if (landy.filter((o) => (o.subtypes ?? []).some((st) => wanted.includes(st))).length >= (cond.amount ?? 1)) return false;
+    }
+    if (cond.minOtherPlains
+      && landy.filter((o) => (o.subtypes ?? []).includes('Plains')).length >= cond.minOtherPlains) return false;
+    return true;
+  };
+
   function landAnaliza(view, objectId) {
     const ja = view.playerId;
     // M361/B3: land drop także z exile (okno impulsu, CR 701.18a) — wycena
@@ -4475,7 +4609,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       nowyKolor: kolory.length > 0 && !kolory.some((k) => dostepne.get(k)),
       dodatkowaZdolnosc: (def?.abilities ?? []).some((a) => a?.type === 'activated'
         && !manaOnlyAbility(a)),
-      entersTapped: Boolean(def?.entersTapped),
+      entersTapped: entersTappedOfLand(def, pola, view),
       // Batch 62 (Crumbling Vestige): ETB-trigger lądu dodający manę do puli —
       // ląd wchodzi tapnięty, ale ta mana jest do wydania W TEJ SAMEJ turze
       // (CR 605.1a: zdolność wyzwalana, nie many, więc przechodzi przez stos).
@@ -6072,12 +6206,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   const PAYOFF_TABLE_EFFECTS = new Set(['draw_cards', 'create_token', 'incubate', 'damage_each_opponent', 'scry', 'gain_life', 'lose_life']);
   /**
-   * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
-   * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
-   * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
-   * ataku; poza oknem walki (druga główna, tura wroga) = 0, bo nic nie kupuje.
-   * Cel wybierze dopiero decyzja triggera, więc bierzemy NAJLEPSZEGO blokera
-   * wroga (best-of — jak best-of-targets przy rzucie z ręki).
+   * PMSSB-49 (kolejka: „warp_card vs rzut w następnej turze — opóźdzony zysk
+   * vs stracona tura", granica (2) §PMSSB-41): czy rzut z wygnania po
+   * warp-caście (CR 702.185a — „then you may cast it from exile on a later
+   * turn", ZA KOSZT MANY) będzie osiągalny już w NASTĘPNEJ turze, choć nie
+   * jest oferowany teraz. Proxy liczone z widoku (bot nie zna przyszłości):
+   * wszystkie własne LĄDY odkręcą się w untapie (`manaSource` widoku), plus
+   * jeden ląd z ręki (land drop), plus pokrycie kolorów kosztu co najmniej
+   * jednym źródłem na kolor. Źródła nielandowe (artefakty, stwory) wymagają
+   * aktywacji — świadomie poza proxy, jak w `manaAvailableNow`.
+   * Gdy rzut normalny JEST oferowany teraz, to inna gałąź (redundancja) —
+   * ta miara dotyczy wyłącznie porównania z przyszłą turą.
    */
   /**
    * PMSSB-41/A (zgłoszenie właściciela, Weftblade Enhancer): ile REALNIE kupuje
@@ -6090,6 +6229,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * jakość gospodarza (flying/menace/landwalk albo duże ciało), a nie sam fakt
    * istnienia triggera. Brak godnego celu = 0 (i kara `warpFutileEtbPenalty`).
    */
+  const warpRecastReachableNextTurn = (view, card) => {
+    if (!card || castOfferedNow(view, card)) return false;
+    const sources = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && (o.kind === 'land' || (o.types ?? []).includes('Land')))
+      .map((o) => o.manaSource ?? { colors: o.colors ?? [], amount: 1 });
+    const landDrop = (view.zones.hand ?? []).some((o) => o.controllerId === view.playerId
+      && (o.kind === 'land' || (o.types ?? []).includes('Land')));
+    const mana = sources.reduce((sum, s) => sum + (s.amount ?? 1), 0) + (landDrop ? 1 : 0);
+    if (mana < (card.manaCost ?? 0)) return false;
+    // Kolory: co najmniej jedno źródło na każdy kolor karty (pip innego koloru
+    // nie da się opłacić lądem, który go nie produkuje).
+    return (card.colors ?? []).every((color) => sources.some((s) => (s.colors ?? []).includes(color)));
+  };
+
   const warpEtbHostPayoff = (view, def, excludeId) => {
     if (!def) return 0;
     let total = 0;
@@ -6115,6 +6268,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return total;
   };
 
+  /**
+   * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
+   * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
+   * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
+   * ataku; poza oknem walki (druga główna, tura wroga) = 0, bo nic nie kupuje.
+   * Cel wybierze dopiero decyzja triggera, więc bierzemy NAJLEPSZEGO blokera
+   * wroga (best-of — jak best-of-targets przy rzucie z ręki).
+   */
   function cantBlockPayoffValue(view) {
     const combat = view.combat ?? null;
     const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
@@ -7081,7 +7242,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(uncoverValue > 0 ? uncoverValue : NEVER);
       }
       case 'draw_card': return finish(100);
-      case 'play_land': return finish(90 + landPlayDelta(view, cmd.objectId));
+      case 'play_land': {
+        // PMSSB-51: ETB lądu wymagający MOJEGO stworzenia (Idyllic Grange)
+        // przy pustym stole przepada — kara sprawia, że rzut gospodarza
+        // wygrywa kolejność, a sam land drop pozostaje opłacalny
+        // (90 − 40 = 50 > pass 0). Wołane po `landPlayDelta` (klamra delty
+        // ±14/25 zamknęłaby karę w sobie).
+        const analiza = landAnaliza(view, cmd.objectId);
+        const futile = futileFriendlyCounterEtbPenalty(view, analiza.def, { entersTapped: analiza.entersTapped });
+        return finish(90 + landPlayDelta(view, cmd.objectId) - futile);
+      }
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
         // a land zostaje tapowany całą turę — gorzej niż pass.
@@ -7395,6 +7565,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (etbPayoff <= 0) score -= P.warpFutileEtbPenalty;
         } else if (etbTriggers.length > 0) {
           score += 5;
+        }
+        // PMSSB-49 („warp_card vs rzut w następnej turze"): warp nie kończy
+        // się w kroku końcowym — karta wraca z wygnania ZA KOSZT MANY
+        // (CR 702.185a) i tam ETB odpala DRUGI raz (sonda: rzut z exile =
+        // `cast_permanent`, drugi licznik ląduje na tym samym gospodarzu).
+        // Gdy ten recast jest osiągalny już w następnej turze, druga wypłata
+        // jest realna, a nie hipotetyczna — dotychczasowy model porównywał
+        // się wyłącznie z ofertą rzutu TERAZ (L48, granica (2) §PMSSB-41).
+        // Waga < 1 to dyskont czasu (trigger turę później, po zapłaceniu
+        // kosztu many); M429: pokrętło ×0 = zachowanie sprzed zmiany.
+        const secondEtbPayoff = etbNeedsHost ? etbPayoff : (etbTriggers.length > 0 ? 5 : 0);
+        if (secondEtbPayoff > 0 && warpRecastReachableNextTurn(view, card)) {
+          score += P.warpRecastEtbWeight * secondEtbPayoff;
         }
         // PMSSB-35/B2 (wymiar KOSZTU): koszt warp to realna cena wariantu —
         // bez niej wynik był identyczny przy 3 i 6 manach (pomiar PRZED:
@@ -10646,6 +10829,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Atak co turę w tego blokera to marnotrawstwo (dokładnie objaw E).
           // Jałowy niezależnie od wyścigu (jak M188/C), więc premia go nie ratuje.
           const neutralizedByProtection = attackerNeutralizedByProtection(object, blockers);
+          // PMSSB-50: próg „zabija, ZANIM bloker odpowie" to JEDNA odsłona —
+          // first strike (CR 702.7) albo pierwsza odsłona double strike
+          // (CR 702.7b); z deathtouch wystarcza 1 obrażenie (CR 702.2b).
+          // Dwie odsłony (`lethalDamageOf` = 2 × moc) to próg WYMIANY: bloker
+          // zdąży oddać w drugiej odsłonie, więc 2/2 DS vs 4/4 to trade, nie
+          // „przeżyje i zabije".
+          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, blockers)
+            && ((hasKeyword(combatObject, 'deathtouch') && combatPower(combatObject) > 0)
+              || blockedStats.power >= effBlockerToughness);
+          // PMSSB-50: „praktycznie nieblokowalny" z deathtouch — blok oznacza
+          // śmierć blokera (CR 702.2b), więc obrońca poświęci blokera tylko
+          // wtedy, gdy ten jest TAŃSZY od atakującego; gdy każdy nietapnięty
+          // bloker jest cenniejszy, blok nie przyjdzie i atak przechodzi jak
+          // ewazyjny (ta sama skala wartości co `blockerValueLost`).
+          const deathtouchUnblockable = hasKeyword(combatObject, 'deathtouch')
+            && combatPower(combatObject) > 0
+            && blockers.length > 0
+            && blockers.every((b) => (b.power ?? 0) + (b.toughness ?? 0) > power + toughness);
           if (neutralizedByProtection) {
             perAttacker = -2;
             futileAttackers += 1;
@@ -10653,9 +10854,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
-            perAttacker = power + P.attackThroughBonus;
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (attackerImmuneThisTurn) {
-            perAttacker = power + P.attackThroughBonus;
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
@@ -10687,10 +10888,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 perAttacker = P.attackThroughBonus;
               }
             } else {
-              perAttacker = power + P.attackThroughBonus; // otwarty / nie do zablokowania
+              perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty / nie do zablokowania
             }
           } else if (blockers.length === 0) {
-            perAttacker = power + P.attackThroughBonus; // otwarty — czysta presja
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty — czysta presja
           } else if (object.cantBlock && attackers.length > blockers.length) {
             // M221/G (zgłoszenie właściciela, token Phyrexian Mite „can't
             // block"): stwór, który NIE MOŻE blokować, nie ma wartości
@@ -10699,22 +10900,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // zagrożenia, więc mały cantBlock (zwykle token 1/1) przechodzi
             // i dokłada obrażenia (tu jeszcze toxic). Brak kosztu alternatywy:
             // i tak nigdy nie zablokuje. Reguła po deskryptorze cantBlock
-            // z PlayerView (ADR 0002/0017), nie po nazwie karty.
-            perAttacker = power + P.attackThroughBonus;
+            // z PlayerView (ADR 0002/0017), nie po nazwie karty. PMSSB-50:
+            // przechodzi obok blokerów, więc liczy obrażenia w twarz.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
+          } else if (deathtouchUnblockable) {
+            // PMSSB-50: blok nie przyjdzie (każdy bloker droższy niż mój
+            // stwór), więc deathtouch zadaje obrażenia w twarz jak ewazyjny
+            // (M202/H), a nie jak chump.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (diesBeforeDealingDamage(combatObject, blockers)) {
             // M202/N: bloker z first strike zabija atakującego, zanim ten zada
             // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
             // stwora. Jałowy, więc premia wyścigu go nie uratuje.
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
-          } else if (attackerStrikesFirst(combatObject, blockers) && blockedStats.power >= effBlockerToughness) {
+          } else if (killsBeforeBlockerStrikes) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
-          } else if (blockedStats.toughness > effBlockerPower && blockedStats.power >= effBlockerToughness) {
+          } else if (blockedStats.toughness > effBlockerPower && lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
-          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && blockedStats.power < effWeakestBlockerToughness) {
+          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
@@ -10736,7 +10943,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // M188/C: ten atak jest JAŁOWY — obrońca zablokuje bez straty,
             // więc nie przejdą obrażenia ani nie zginie żaden bloker.
             futileAttackers += 1;
-          } else if (blockedStats.power >= effBlockerToughness) {
+          } else if (lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
@@ -10763,7 +10970,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
-        const totalPower = attackers.reduce((sum, id) => sum + combatPower(objectOnBoard(view, id)), 0);
+        const totalPower = attackers.reduce((sum, id) => sum + faceDamageOf(objectOnBoard(view, id)), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
         // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
@@ -11331,10 +11538,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // skontrować. Silnik oferuje pay:true tylko gdy opłacalne; czar już na
       // stosie jest niemal zawsze warty więcej niż koszt.
       case 'resolve_counter_pay_choice':
+        // PMSSB-56 (ta sama klasa co ward): ratowanie KOPII, która nie wnosi
+        // już nic (efekt nie kumuluje się na tym samym celu, a na stosie wisi
+        // inna instancja tej samej karty z tymi samymi celami), to przepalona
+        // mana — odmowa zostawia efekt po stronie instancji na stosie.
+        // [pomiar E9: przed naprawą bot płacił {1} za ratowanie kopii storma]
+        if (redundantSpellCopyPayment(view, cmd)) return finish(85 - P.redundantCopyPayPenalty);
         return finish(cmd.pay ? 85 : 10);
       // M258/F3 — ward (CR 702.21): dopłata ratuje czar/zdolność, którą bot
       // właśnie wybrał jako wartą kosztu; rezygnacja to stracona mana.
       case 'resolve_ward_pay_choice':
+        // PMSSB-56 (pomiar storm × ward): zapłata za kopię, która nie wnosi już
+        // nic (efekt nie kumuluje się na tym samym celu, a na stosie wisi inna
+        // instancja tej samej karty z tymi samymi celami), to przepalanie
+        // many — bot odmawia (kopia jest NAD oryginałem, więc efekt dowiezie
+        // instancja pozostawiona na stosie). Różnica wyniku jest pokrętłem
+        // `redundantCopyPayPenalty` (×0 = stan sprzed PMSSB-56, M429).
+        if (redundantSpellCopyPayment(view, cmd)) return finish(80 - P.redundantCopyPayPenalty);
         return finish(cmd.pay ? 80 : 20);
       // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
       // decyzja otwiera się tylko gdy opłacalna (canPayTrigger) — efekt

@@ -117,7 +117,7 @@ liczone z plików `decks/*.txt`).
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
-| `dominaria-brg` | Dominaria (BRG) | BRG | 29 | 10 | 19 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 30 | 10 | 20 |
 | `dominaria-wu` | Dominaria (WU) | WUB | 26 | 9 | 17 |
 | `eldraine` | Eldraine | WUBRG | 23 | 8 | 15 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
@@ -127,7 +127,7 @@ liczone z plików `decks/*.txt`).
 | `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
 | `kaladesh` | Kaladesh | WUBRG | 29 | 10 | 19 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 32 | 11 | 21 |
-| `mirrodin-wu` | Mirrodin (WU) | WU | 27 | 9 | 18 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 29 | 10 | 19 |
 | `ravnica` | Ravnica | WUBRG | 44 | 15 | 29 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 39 | 13 | 26 |
@@ -138,15 +138,15 @@ liczone z plików `decks/*.txt`).
 | `warhammer-wg` | Warhammer Fantasy (WG) | WG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
-| `zendikar` | Zendikar | WURG | 36 | 12 | 24 |
+| `zendikar` | Zendikar | WURG | 38 | 13 | 25 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | nielandowych |
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśnie | WUBRG | 24 | 8 | 16 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 24 | 8 | 16 |
-| `worek-legend` | Worek: Legendy | WUBRG | 26 | 9 | 17 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 26 | 9 | 17 |
+| `worek-legend` | Worek: Legendy | WUBRG | 29 | 10 | 19 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 26 | 9 | 17 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

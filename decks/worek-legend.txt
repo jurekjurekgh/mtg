@@ -2,6 +2,7 @@
 
 1x Prismari Campus
 1x Cenn's Tactician
+1x Dig Site Inventory
 1x Goldmeadow Nomad
 1x Mosquito Guard
 1x Assert Perfection
@@ -9,6 +10,7 @@
 1x Curate (STX)
 1x Release the Ants
 1x Soulbright Flamekin
+1x Subterranean Scout
 1x Consign to Dream
 1x Kulrath Mystic
 1x Stomping Slabs
@@ -20,5 +22,5 @@
 2x Plains
 2x Island
 2x Swamp
-2x Mountain
+3x Mountain
 1x Forest

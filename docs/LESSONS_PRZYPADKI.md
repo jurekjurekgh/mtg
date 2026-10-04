@@ -615,6 +615,26 @@ a katalog ścieżek decydujących o niej nie był znany w jednym miejscu
 game-state/effects). Brak naturalnego choke pointa = każda nowa ścieżka
 dziedziczy błędne domyślne.
 
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Przypadek:** — **N1.** Powerstone: „{T}: Add {C}.
+
+**Reguła:**
+1. Ograniczenie definiuj przez to, czego druk ZAKAZUJE:
+   `restrictionApplies = purpose.castingSpell === true && purpose.artifactSpell !== true`.
+   Wtedy płatność domyślna (zdolność, plot, suspend, proliferate) jest legalna
+   z definicji, a wyjątek jest jawny w sygnaturze.
+2. Cel wydania jest częścią kontraktu płatności. Przy >10 ścieżkach przegląd
+   nie wystarczy — potrzebny **strażnik źródła**
+   (`test/m202-straznik-celu-wydania-many.test.js`: każda funkcja
+   `cast*`/`*Casts` pyta o manę z celem; zweryfikowany mutacyjnie).
+3. Oferta i walidacja czytają JEDEN odczyt (L48/L41): koszt dodatkowy na
+   obiekcie ma jedną funkcję (`exileAdditionalCostCandidates`) dla wszystkich
+   gałęzi. Test nie jest „testem karty", tylko „testem ścieżki".
+4. Sygnał przy audycie diffa: nowe pole `purpose`/`spendOnly`/`additionalCost`
+   bez wyliczenia ścieżek. Policz je grepem (5 s).
+5. Piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda: dwa
+   z trzech pinów N3 wyszły RED. Pin, który nigdy nie był RED, nie dowodzi
+   niczego (L13).
 ## L58 (2026-08-23) — przypadek
 
 **Objaw (M201/N1, audyt PR #72):** w `scoreCommand` heuristic-bota została
@@ -1178,6 +1198,25 @@ Dopiero wtedy kasacja duplikatu była bezpieczna.
 bazowa wartość rzutu czaru (~50–65) zjadała ją w całości i bot dalej rzucał
 triki w Głównej 1. Kara ISTNIAŁA, tylko liczona w oderwaniu od sumy.
 
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Reguła:**
+1. Kara/premia okna czasowego musi być zwymiarowana względem BAZY gałęzi
+   (czary ~50–65), inaczej jest dekoracją. Test zachowania („bot NIE rzuca X
+   w oknie Y") obowiązkowy — tylko on mierzy sumę.
+2. Timing to CZĘŚĆ okna: sorcery nie poczeka na combat (jedyne sensowne okno
+   to Główna 1 przed atakiem — M179/C); kara za instant w main wymusza
+   czekanie na deklaracje (M179/A1).
+3. Klasy zachowań to WHITELISTY z eksportem + strażnikiem katalogowym
+   (wzorzec L51): `IDEMPOTENT_EOT_EFFECTS`/`STACKING_ACTIVATED_EFFECTS`
+   (M179/B), `FRIENDLY_TARGET_EFFECTS` + `HOSTILE_*` (M179/E),
+   `KEYWORD_LABELS`/`KEYWORD_EVENT_LABELS` (M179/A2). Nowy typ bez przydziału
+   = czerwony strażnik.
+4. Klamry celowania są SYMETRYCZNE i centralne: wrogi efekt we własny cel
+   (`selfHarmPenalty`) oraz przyjazny we wroga (`friendlyMisaimPenalty`) — w
+   call-site'ach gałęzi, nie w każdej gałązce osobno.
+5. Przy zagraniu JAŁOWYM (efekt z definicji nie zadziała) kara musi POMINĄĆ
+   premię (`continue`) — inaczej premia ją zjada; po zmianie wag dowiedź
+   testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum: L3).
 ## L149 (2026-09-17) — przypadek (M374, znalezisko benchmarku quick-25 seed 2039)
 
 **Objaw:** mecz `random(wiedzmin-bg) vs heuristic(tarkir-wur)`, seed 2039 —
@@ -1272,6 +1311,30 @@ przez `legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
 
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
 to crash w benchmarku („Bot wybrał nielegalną komendę").
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Audyt PR #130/D (`resolve_aura_host`): mutacje Q3–Q5 przeżyły pin
+ścieżki „szczęśliwej”.
+
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets…
+
+**Reguła:**
+1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
+   (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
+   `aggro`: `simple`).
+2. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej rodziny (`dies`,
+   `leaves_battlefield`, „permanents you control leave").
+3. „Kto decyduje" to JEDNA funkcja (`firstPendingDecision → { playerId, kind }`):
+   pierwszy właściciel = pierwsza bramka `execute` = pierwsza gałąź ofert.
+4. Bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość
+   kolejki (blokowałaby wcześniejszą decyzję).
+5. Predykat blokady jest jeden i wołają go OBIE strony (`exploitDecisionPendingFor`,
+   `closingCombatPassBlocked`).
+6. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28).
+7. Martwy wartownik (mutacja nie czerwieni) do usunięcia, nie „dokumentacja
+   zamiaru" (L5).
+8. Nowy `pending*` ma SIEDEM bramek do zmutowania, nie jedną ścieżkę: oferta po wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja przy wykonaniu (CR 608.2b); pin ścieżki „szczęśliwej” zostawia pięć żywych. Strażnik: `test/audyt-pr130-gospodarz-aury.test.js`.
 ## L49 (2026-08-18) — przypadek
 
 **Objaw:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR
@@ -1754,6 +1817,11 @@ wielocelowe 2026-09-03 i cała gałąź `0434199` została zrevertowana. Lekcja 
 to; jeśli karta wielocelowa wejdzie kiedyś za zgodą właściciela, te cztery asercje są
 pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L123)
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+`docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągnięcie tych samych URL-i przez
+`fetch_page`, a ja w turze 10 uznałem brak egressu za koniec wątku (b).
+
 ## L132 (2026-09-06) — przypadek: Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
 **Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
@@ -1925,6 +1993,11 @@ przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
 do `docs/LESSONS_PRZYPADKI.md` L124).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+U nas pierwszy `--write` zamroził ślad bota bez wpisu `MANA_COSTS` nowej
+karty i test znowu świecił, choć nic już nie było nie tak z kodem.
+
 ## L130 (2026-09-03) — przypadek: „trigger bez opisu" i pułapki tamtej sesji
 
 **Przypadek:** dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
@@ -2331,6 +2404,11 @@ pola w `session.js`, `triggers.js`) — z 36 kandydatów realne były 2; lista
 wyjątków JAWNA i z POWODEM; analizator jest produktem (fałszywy alarm poprawiaj w
 TEŚCIE, nie w kodzie).
 
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
+([L107]): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
+konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
+
 ## L121 (2026-09-02) — przypadek (proza z rejestru, dodana 2026-09-20e)
 
 **Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
@@ -2490,6 +2568,27 @@ zostawienie jej w grobie (`aura_returned_without_host`).
 w `spells.js`), a warstwy widza (etykieta „Ty"/„Nieprzyjaciel", wycena bota,
 projekcja pokrycia, narracja) poznały nową klasę tego samego dnia.
 
+**Proza z rejestru (kondensacja 2026-10-04c):**
+**Przypadek (gospodarz-GRACZ aury):** CR 303.4f mówi „a legal object OR PLAYER",
+a `pendingAuraHost` niósł tylko id permanentów — `curse-of-the-pierced-heart`
+(Enchant player) wracająca z grobu nie miała wariantu (oferta pusta).
+
+**Reguła:**
+1. Nowa klasa kandydata to NIE łatka w jednym pliku: kontrakt decyzji
+   (`candidateIds` OBOK `candidatePlayerIds`), oferta `legalCommands`, widok
+   decydenta, etykieta (`PLAYER_NAMES`: „Ty"/„Nieprzyjaciel"), wycena bota
+   z projekcją pokrycia i narracja zdarzenia muszą poznać ją tego samego dnia —
+   inaczej wariant jest cicho „niewyceniony” (L40) lub poza ofertą (L48).
+2. Kształt obiektu po wejściu bez czarowania jest IDENTYCZNY z kształtem po
+   rzucie (`kind: 'enchantment'` + `enchantedPlayerId`, bez `attachedTo`) —
+   inaczej ta sama karta zachowuje się inaczej zależnie od drogi wejścia.
+3. Gracz nie jest permanentem: predykaty gospodarza to bliźniaki
+   (`isLegalAuraHost` milczy dla 'player', `isLegalAuraPlayerHost` rozstrzyga),
+   a wspólny zbiór kandydatów ma JEDNO źródło (`legalAuraHosts`).
+
+**Strażnik:** `test/granica-aura-host-2026-09-21.test.js` G/1–G/4 (predykaty, droga
+zwrotu z grobu, etykieta, walidacja 608.2b, oba boty); mutacja
+bez gałęzi gracza w `legalAuraHosts` czerwieni G/1.
 ## L164 (2026-09-24) — przypadek
 
 **Sytuacja.** Audyt PR #134 znalazł przestarzałe numery CR w komentarzach
@@ -2525,6 +2624,32 @@ komentarz przy `transformedCharacteristics`, który zamiast powoływać 400.7 +
 711.2 jako rzekomą regułę dla resetu cech, cytuje 712.18 i nazywa reset
 ZNANYM ODSTĘPSTWEM (obserwacja O-6 audytu).
 
+**Proza z rejestru (kondensacja 2026-10-04o):**
+C2 trzyma oba cytaty „BEZ ZMIAN” (712.9, 712.8e), C1 zakazuje martwych
+numerów (711.x, 712.4a/4d/5); para DFC w `cr-numery-mechanik-straznik.test.js`
+świeci na `711.\d` i `712.4`. „702.114b” (devoid) dopisane z przyzwyczajenia,
+gdy 702.114 był już w tabeli, wywróciło bramkę o 1 test — CR 2026-09-25 ma
+tylko 702.114a (Etap 9, U2); audyt PR #145 F5.
+
+**Proza z rejestru (kondensacja 2026-10-04c):**
+**Przypadek (audyt PR #134 → #135, F-3/fala 2):** przenumerowanie DFC `711.x` →
+`712.x` wg lustra `ancestral.vision` trafiło w CR 2026-09-25, gdzie meld został
+WCHŁONIĘTY przez 712 (cechy twarzy 712.8a–g, rzut 712.11, wejście 712.13), a
+dwie zmiany „poprawiały” cytaty POPRAWNE w tym wydaniu (712.9, 712.8e).
+
+**Reguła:**
+1. Przed przenumerowaniem CZEGOKOLWIEK masowo: sprawdź DATĘ WYDANIA w nagłówku
+   źródła i porównaj z wydaniem, które repo już cytuje. ADR 0030 wymaga
+   dosłownego tekstu z BIEŻĄCEGO źródła, nie jakiegokolwiek.
+2. Sekcje CR rosną przez WCHŁANIANIE (712 zjadło meld) — przesunięcie NIE jest
+   jednolite (+1 nie działa): każdy numer potwierdzaj osobno.
+3. Cytat, który „wygląda na stary”, może być poprawny: zanim go zmienisz,
+   sprawdź, co ten numer znaczy DZIŚ (712.9 i 712.8e były dobre). W pinie zostaw wiersz „BEZ ZMIAN”.
+4. Zamiana litery obok (508.1c ↔ 508.1d) przechodzi przez strażnik ISTNIENIA
+   numeru — pilnuj pary „numer ↔ pojęcie” (audyt PR #145, F5).
+5. PODPUNKT to nie wzorzec nazewniczy: literę weryfikuj u źródła TAK SAMO jak numer główny; wiersz w tabeli dopisuj z powodem u źródła (strona + data), a czerwony test istnienia po świeżym cytacie czytaj jako „sprawdziłeś podpunkt?”.
+
+**Strażnik:** `test/audyt-pr134-2026-09-24-cytaty-cr.test.js` C1/C2 + para DFC w `cr-numery-mechanik-straznik.test.js`.
 ## L165 (2026-09-24) — przypadek
 
 **Sytuacja.** Po fali 1 (72 zamiany parami „mechanika + numer na linii”) i
@@ -2578,6 +2703,27 @@ Pliki-strażniki są wyłączone ze skanu innych strażników, bo opisują histo
 rozjazdów i zawierają dowody RED (syntetyczne linie z F-7 muszą świecić) —
 inaczej detektor świeci na własną dokumentację.
 
+**Proza z rejestru (kondensacja 2026-10-04c):**
+**Przypadek (F-7):** `fabricate` jako 702.122a (= crew), vigilance jako 702.21,
+flashback jako 702.33a — 9 miejsc przechodziło, bo nazwa była linię wyżej niż
+numer.
+
+**Reguła:**
+1. Detektor pary „nazwa ↔ zakazany numer” jest liniowy, a numery i nazwy
+   siedzą w komentarzach wieloliniowych: detektor klasy musi mieć OKNO (±8
+   linii: 0 fałszywych trafień po aliasach).
+2. Kierunek odwrócony jest silniejszy niż lista znanych błędów: nie „mechanika
+   X nie może cytować Y”, ale „KAŻDY cytat `702.<n>` musi mieć w oknie nazwę
+   mechaniki, którą `702.<n>` znaczy w bieżącym CR” + „numer spoza tabeli
+   świeci”. To łapie też rozjazdy, których nikt jeszcze nie zna.
+3. Tabela potrzebuje ALIASÓW (polskie komentarze: „przydziały” = trample) i
+   WYJĄTKÓW z powodem — bez powodu to wygaszanie detektora (L5); pliki
+   strażników są ze skanu wyłączone (opisują dowody RED).
+
+**Strażnik:** `test/cr-numery-702-tabela-straznik.test.js` — tabela 702.1–702.195
+(CR 2026-09-25) + aliasy + wyjątki + wbudowany dowód RED (syntetyczne linie
+z F-7 muszą świecić, poprawne nie). Mutacja M9 (vigilance 702.20 → 702.21)
+czerwieni oba detektory.
 ## L166 (2026-09-24) — przypadek
 
 Właściciel zapytał, czym jest „D4b” z planu, i postawił warunek: jeśli to
@@ -2659,6 +2805,26 @@ testów batchy 58/59 (tytuły twierdzące błędną arytmetykę) i ze strażniki
 `test/audyt-m428-kwota-alt-kosztu.test.js`, który ma wbudowany dowód RED na
 obu znalezionych rozjazdach.
 
+**Proza z rejestru (kondensacja 2026-10-04c):**
+**Przypadek (M428, F1/F3 z Żywego Testera):** `cost` alt-kosztów czytano jako
+część GENERYCZNĄ — Join the Dance i Boulder Salvo rozjechane z Oracle o {1},
+a strażnik porównywał tylko PIPY.
+
+**Reguła:**
+1. `cost`/`manaCost` deskryptora = SUMA symboli (dowód: bestow {3}{G} = 4,
+   escape {3}{U} = 4, flashback {1}{U} = 2); napis buduje `costSymbols(amount,
+   colors)`.
+2. Skan Oracle↔definicja porównuje CAŁY napis, nie tylko pipy; wyjątki (cleave
+   trzyma kwotę w `manaCost`, adventure nie ma kosztu przy słowie-kluczu)
+   wymienia się WPROST, a karta nieparowalna nie może przejść po cichu.
+3. Etykieta alt-kosztu ma JEDNO źródło składanki (`costSymbols`); gołe `{N}`
+   obiecuje cenę nie do zapłacenia pipem (M151, M267/C, M428).
+4. Test, którego TYTUŁ powtarza arytmetykę, bywa konserwatorem błędu: popraw
+   dane, potem tytuł.
+
+**Strażnik:** `test/audyt-m428-kwota-alt-kosztu.test.js` (skan rodziny
+alt-kosztów, lista pominiętych, dowód RED, piny etykiet) + piny w
+`test/real-cards-batch{58,59}.test.js`.
 ## L169 (2026-09-24) — przypadek
 
 Zlecenie właściciela po raporcie 24d brzmiało: „Pociągnij ten temat" — taktyczne
@@ -2757,7 +2923,26 @@ silnik działa, ale to, że test nic nie mierzy (L21). Naprawa: `addObject`
 dostaje `...data` całym spreadem, a pola bojowe (`tapped`,
 `untapLockedBy`) nadal osobno, bo `addObject` je normalizuje i ostrzega.
 
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Kalibracja: baza 2 + 2·worth(1/1) = 6 = dawna stała 8.
 
+**Proza z rejestru (kondensacja 2026-10-04c):**
+**Przypadek:** trzy karty batcha 59 wycenione PŁASKO — o „najlepszym”
+wariancie decydowała kolejność ofert (szczegóły: archiwum).
+
+**Reguła:**
+1. Zanim dodasz wagę, znajdź WYMIAR RÓŻNICOWANIA w tym, co już masz w `PlayerView`
+   (ADR 0017): wartość ciała gospodarza, karty w bibliotece, udział w walce,
+   stwory w puli. Waga bez wymiaru tylko przesuwa próg (L50).
+2. Wzorzec bierz z NAJBLIŻSZEJ istniejącej reguły: licznik = aura-buff, wtasowanie
+   = rodzina biblioteczna, pump = `pumpImprovesOutcome` (M218/2) + `permanentDoomedThisTurn` (M236/2).
+3. Kalibruj tak, żeby NAJSŁABSZY realny wariant był wart tyle co przed zmianą; wariant bez sensu schodzi PONIŻEJ passu (L3), a zero jest ZEROWANE (M243/4).
+4. Ta sama reguła w OBU bliźniaczych gałęziach (czar i aktywowana zdolność, L41) — inaczej aktywacja zostaje na gołej bazie (spam za 5 many).
+5. Nowa stała wchodzi pod nazwy + deskryptor tunera (T1), a pin dowodzi, że pokrętło NIE jest atrapą; koszt ŹRÓDŁA liczy się RAZ NA WARIANT, nie na każdy cel.
+
+**Strażnik:** `test/audyt-m429-taktyczna-wycena-batch59.test.js`, wycena
+rodziny odkręcania: `test/audyt-m431-untap-choice.test.js` + piny
+`test/bot-params.test.js`.
 ## L170 (2026-09-25) — przypadek
 
 **Objaw C (uwaga właściciela, KRYTYCZNE):** „Nie działa »zaptaszkowanie« zdolności,
@@ -2809,6 +2994,12 @@ tego samego strumienia (log vs panel). Dowód bierze się z transkryptu Żywego
 Testera, nie z repro na `createSession` — tam log jest pełny i test byłby zielony
 przy psuciu produktu.
 
+**Proza z rejestru (kondensacja 2026-10-04b):**
+
+Stuby bez zależności (MiniEl) — repo bez jsdomu. Re-render otwartego okna
+w pauzie „mruga i klika się w kółko" — łapie `test/table-ui.test.js`.
+
+
 ## L171 (2026-09-25) — przypadek
 
 **Objaw.** W transkrypcie Żywego Testera (sonda uwagi D, talie
@@ -2856,3 +3047,119 @@ bez flagi (rusza wskaźnik, zostawia drzewo i indeks). Wcześniejsza wersja tej
 procedury (ślepy `reset --hard`) skasowała kiedyś niecommitowane naprawy —
 różnica jest w kolejności: NAJPIERW porównanie co do ścieżki, dopiero potem
 przestawienie wskaźnika.
+
+## L161 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Zero zgłoszeń detektorów (L27); znalazła ręczna lektura transkryptu E3
+(alara-76, krok z Shieldmage). Komunikat mówił „obrażenia zadawane chronionym
+obiektom będą niwelowane do końca tury” — bez zakresu.
+
+## L113 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M274. Strażnik z M273 („każda ścieżka ETB zna liczniki”) przepuścił trzy
+ścieżki: skanował jeden plik (`effects.js`), a klasa mieszka w trzech;
+wyciszenie po ciągu znaków pomijało okno zawierające `faceDown` (intencja:
+„wejście zakryte nie dostaje liczników”, CR 708.2), ale Pyxis ustawia
+`faceDown: false` — ODKRYWA kartę — więc wyciszył przypadek, którego miał
+pilnować. Po poszerzeniu skanu filtr sam wskazał czwartą ścieżkę (Dragon Arch),
+której nie dał ręczny przegląd.
+
+## L101 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Panel pokazywał „Rzuć za warp: Weftblade Enhancer (koszt ?)”. Enumeracja
+katalogu wykazała cztery gubione deskryptory kosztu w `playerView`: `warp`,
+`surge`, `kicker` i `treasureAltCost`. M151 dopisał tam wcześniej `suspend`
+i zamknął temat testem na JEDNĄ kartę — reszta dojechała później i nikt jej nie
+zauważył, bo silnik liczył ofertę poprawnie; kłamała tylko etykieta.
+
+## L34 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Prawdę dało: `git show HEAD:<plik>` jako wersja sprzed zmiany (nigdy lokalna
+kopia „gdzieś po drodze”) oraz skrypt wypisujący FAKTYCZNIE wybraną komendę
+zamiast predykatu.
+
+## L110 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M271: zastąpienie ręcznej kopii choke pointem wywołało regresję — benchmark
+botów wywracał partię na inwariancie „załącznik wskazuje nieistniejącego
+gospodarza”. Winna nie była nowa zmiana: ręczna kopia nie sprawdzała
+inwariantów, więc niespójny stan pośredni nikogo nie bolał. Prawdziwym błędem
+była kolejność odczepiania KILKU załączników (#16).
+
+## L37 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Benchmark „przechodził wcześniej”, bo dotychczasowe rozdania nie trafiały
+w tę ścieżkę. Objaw mylił dwa razy: wyszedł dopiero przy `--seeds 16`
+i wyglądał jak skutek zmiany talii.
+
+## L111 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Repro przez `applyEffect` pokazywało stwora w `state.combat.attackers` po
+zmianie kontroli. Regułę egzekwuje jednak `state-based.js` od M201; sonda nie
+przepuszczała stanu przez pętlę SBA, więc widziała stan pośredni.
+
+## L31 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M122 dołożyło test „każdy event triggera ma wpis w `TRIGGER_EVENT_LABELS`”.
+Zielony — a właściciel zobaczył „Chronic Flooding — trigger
+(enchanted_permanent_tapped)”: ten sam `case` miał TRZY gałęzie `return`
+i tylko jedna sięgała po słownik. Strażnik pilnował DANYCH, błąd siedział
+w KODZIE.
+
+## L73 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M212: trzy partie po naprawie dały 0 zgłoszeń — fałszywie, bo archiwalny
+transkrypt SPRZED naprawy zawierał wzorcowy przypadek, którego detektor też nie
+widział.
+
+## L53 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Każda zmiana talii oznaczała polowanie na seedy; rewolucja talii (M178,
+ADR 0023) dała 95 czerwonych testów naraz.
+
+## L141 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Numery cloaków po `cardId` zdradzały równość zakrytych kart i tworzyły
+duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stół.
+
+## L146 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Zdarzenie węższe od pojęcia reguł + brak testu na alternatywną drogę:
+prewencja/infect odpadają z natury, płatność życiem i `lose_life` dochodzą.
+
+## L159 (2026-10-04) — przypadek z rejestru: mutacja, która nie zaszła, i no-op
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+
+N17 — podmiana wielolinijkowego bloku `auraCard` (z komentarzami) zakończyła się
+komunikatem „WZORZEC NIEZNALEZIONY", a wynik wyglądał jak zielony. N18 —
+usunięcie wpisu `resolve_aura_host` z listy komend aggro-bota przy domyślnych
+wagach (`ability: 1`) było no-opem. Procedura: `/tmp/mut*.sh`.
+
+## L160 (2026-10-04) — przypadek z rejestru: guard czytający kształt implementacji
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+
+E6/6 (`test/e6-pula-blokerow-ponad-cap.test.js`) czytał regexem kształt pola
+widoku (`buildBlockCandidatesView(...)`); po refaktorze z F14 (nowy
+`buildBlockerView` → `{pool, slots}`) pin padł — nie dlatego, że reguła się
+zepsuła, tylko dlatego, że zmienił się literał implementacji.
+
+**Proza z rejestru (kondensacja 2026-10-04b, cięcie L170):**
+
+Modal czyszczący bufor przy renderze gubi to, co doszło po renderze; stuby bez
+zależności (MiniEl) — repo bez jsdomu; „mruga i klika się w kółko" łapie
+`test/table-ui.test.js`; `test/b5-bramka-logu-gracza.test.js`.
+

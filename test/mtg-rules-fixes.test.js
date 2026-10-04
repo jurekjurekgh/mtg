@@ -937,6 +937,9 @@ test('T18: poświęcony token znika z grobu (przestaje istnieć)', () => {
   // Token ze zdolnością Skarbu (koszt {T}, Sacrifice → mana).
   state.objects.set('treasure', Object.freeze({
     ...state.objects.get('treasure'), name: 'Treasure', cardId: 'token_treasure',
+    // Audyt PR #153 (F6): tokenem czyni obiekt jawna flaga `isToken`
+    // (createBattlefieldToken), a nie prefiks cardId czy pole `name`.
+    isToken: true,
     abilities: [{ type: 'activated', cost: { tap: true, sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1, fromTreasure: true } }],
   }));
   const t = state.objects.get('treasure');

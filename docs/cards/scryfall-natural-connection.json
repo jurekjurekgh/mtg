@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Natural+Connection&set=bfz&format=json",
+  "print": "bfz",
+  "name": "Natural Connection",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.",
+  "colors": [
+    "G"
+  ],
+  "set": "bfz",
+  "set_name": "Battle for Zendikar",
+  "collector_number": "179",
+  "rarity": "common",
+  "artist": "Wesley Burt",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/e/9e11cd83-5930-4cff-8f9b-55337ed263b7.jpg?1783938187",
+    "normal": "https://cards.scryfall.io/normal/front/9/e/9e11cd83-5930-4cff-8f9b-55337ed263b7.jpg?1783938187"
+  },
+  "pobrano": "2026-10-04",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/bfz/179/rulings",
+  "rulingsPobrano": "2026-10-04"
+}
