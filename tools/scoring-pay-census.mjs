@@ -58,7 +58,7 @@ function wszystkieCeleMartwe(view, targetId) {
   return cele.every((id) => !zywy(view, id));
 }
 
-function kartаZrodla(view, sourceId) {
+function kartaZrodla(view, sourceId) {
   if (sourceId == null) return null;
   const z = view.zones ?? {};
   for (const strefa of ['battlefield', 'stack', 'graveyard', 'exile', 'hand']) {
@@ -84,7 +84,7 @@ function odnotuj(view, cmd) {
   komorka.koszty.set(koszt, (komorka.koszty.get(koszt) ?? 0) + 1);
   if (cmd.pay && cmd.targetId != null && wszystkieCeleMartwe(view, cmd.targetId)) {
     komorka.martweCele += 1;
-    const karta = kartаZrodla(view, cmd.targetId);
+    const karta = kartaZrodla(view, cmd.targetId);
     if (karta) komorka.przyklady.add(karta);
   }
   agg.set(cmd.type, komorka);
