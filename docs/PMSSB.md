@@ -2718,7 +2718,8 @@ liczba decyzji 217 → 217; pozostałe 5 partii bez zmian. Kara ETB nie odpalił
 w benchmarku ani raz. Fixture zregenerowany świadomie (precedens PMSSB-32/50):
 `fff9c22c…` → `16a139c2efd5229d…`.
 
-**Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s) · build **70 modułów /
+**Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s) · brama PR
+`npm run test:all` **7808/7808** EXIT 0 (502,9 s) · build **70 modułów /
 4814,2 kB** · `bot-scoring-snapshot` 4/4 po regeneracji · `event-contract-audit`
 0 naruszeń.
 

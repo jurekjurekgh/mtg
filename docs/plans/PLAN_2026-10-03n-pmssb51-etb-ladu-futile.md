@@ -134,8 +134,9 @@ m5 dowodzi, że lokalizacja kary (po klamrze) jest istotna, nie kosmetyczna.
 | G4 (pusty stół, Grange + 3/1 za 3) | 50 | 63,9027 | **`cast_permanent`** (kolejność naprawiona) |
 | G5 (2 Plainsy, warunek niespełniony) | 82 | — | `play_land` |
 
-**Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s) · build **70 modułów /
-4814,2 kB** · `bot-scoring-snapshot` **4/4** po regeneracji ·
+**Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s) · brama PR
+`npm run test:all` **7808/7808** EXIT 0 (502,9 s) na tipie `f640ba2` · build
+**70 modułów / 4814,2 kB** · `bot-scoring-snapshot` **4/4** po regeneracji ·
 `event-contract-audit` **0 naruszeń**.
 
 **Granice świadome:** proxy dostępności celu czyta WIDOK (bot nie zna

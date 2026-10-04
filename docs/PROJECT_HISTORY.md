@@ -15449,6 +15449,7 @@ build **70 modułów / 4792,5 kB**.
   decyzje 217 → 217, pozostałe partie bez zmian. Kara ETB w benchmarku nie
   odpaliła ani razu. Fixture zregenerowany świadomie (precedens PMSSB-32/50):
   `fff9c22c…` → `16a139c2efd5229d…`.
-- **Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s), build 70 modułów /
-  4814,2 kB, `bot-scoring-snapshot` 4/4 po regeneracji, `event-contract-audit`
-  0 naruszeń, regresja skoncentrowana 269/269.
+- **Bramki:** `npm test` **7537/7537** EXIT 0 (117,8 s), brama PR
+  `npm run test:all` **7808/7808** EXIT 0 (502,9 s) na tipie `f640ba2`, build
+  70 modułów / 4814,2 kB, `bot-scoring-snapshot` 4/4 po regeneracji,
+  `event-contract-audit` 0 naruszeń, regresja skoncentrowana 269/269.
