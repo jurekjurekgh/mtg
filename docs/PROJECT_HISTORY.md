@@ -15508,3 +15508,24 @@ build **70 modułów / 4792,5 kB**.
   Zapłacone skróceniem L170 (budżet 99 870/100 000, zapas 130).
 - **Bramki:** `npm test` **7537/7537** EXIT 0 (123,5 s), build 70 modułów /
   4814,2 kB, strażnicy docs 25/25.
+
+## 2026-10-04c — PMSSB-54: przegląd czytników `zone === 'exile'` (negatywny) + strażnik pokrycia komend (PR #154)
+
+- **Przegląd** 52 czytników `== 'exile'` (12 plików): permity rzutu z exile,
+  dowiązania „exiledBy” po LKI, zamienniki stref śmierci, kontrakt widoku
+  (CR 406.3) — **zero luk**. Jedyna granica jest UDOKUMENTOWANA w kodzie
+  (`game-state.js:3327–3331`): suspend oferuje rzut tylko dla
+  `kind === 'spell'`, a permanent z suspend wymagałby ścieżki permanentu
+  (haste, CR 702.62a); takiej karty nie ma w katalogu (Mindstab = sorcery)
+  ⇒ brak karty demonstrującej = brak fixa (ADR 0029, spójnie z PMSSB-53).
+- **Pomiar lustrzany:** silnik emituje **89** typów komend, bot obsługuje
+  **89/89** jawnym `case`; brak `case` = `default: finish(0)` (wybór
+  z kolejności ofert, L41), łapany dotąd dopiero w grze przez telemetrię
+  `bot.unvaluedDecisions()`.
+- **Strażnik** `test/bot-komendy-silnika-straznik.test.js` (3 piny: pełne
+  pokrycie, kotwice przeciw „przejściu na pusto”, brak gnijących wyjątków).
+  **RED→GREEN (L13):** m1 usunięcie `case 'resolve_ward_pay_choice'` → FAIL;
+  m2 `command('resolve_fake_probe_type')` w silniku → FAIL; restore z /tmp
+  (cmp zgodne) → GREEN 3/3; `src/` bez zmian.
+- **Bramki:** `npm test` **7540/7540** EXIT 0 (123,1 s), build 70 modułów /
+  4814,2 kB.

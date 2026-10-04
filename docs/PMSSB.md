@@ -2766,3 +2766,34 @@ jednokrokowa sonda ogłosiła fałszywy alarm „brak decyzji ward”).
 4814,2 kB** · strażnicy docs 25/25.
 
 **Status:** zamknięty (pomiar; zero zmian w `src/`).
+
+## PMSSB-54 — przegląd czytników `zone === 'exile'` (negatywny) + strażnik pokrycia komend (2026-10-04c)
+
+**Wejście:** kolejka handoffu `2026-10-04b` poz. 1 (zaległe z 03d/03i/03j
+„przegląd czytników `zone === 'exile'`”).
+
+**Przegląd:** `grep "== 'exile'" src/` → **52 miejsca / 12 plików**:
+budowa id stref, permity rzutu z exile (impuls/plot/suspend/rebound/madness/
+warp/epic) z bramką flagi + stampu tury, dowiązania „exiledBy” po LKI,
+zamienniki stref śmierci (finality/unearth/flashback), kontrakt widoku
+(CR 406.3 — zakryte wygnanie nie ujawnia tożsamości). **Zero luk.** Jedyna
+granica (udokumentowana w kodzie, `game-state.js:3327–3331`): rzut karty
+z suspend oferowany tylko dla `kind === 'spell'` — permanent z suspend
+wymagałby ścieżki permanentu (haste, CR 702.62a); w katalogu nie ma takiej
+karty (Mindstab to sorcery) ⇒ **brak karty demonstrującej = brak fixa**.
+
+**Pomiar lustrzany:** silnik emituje **89** typów komend, bot ma **89/89**
+jawne `case` — brak `case` spada do `default: finish(0)` (wybór z kolejności
+ofert, antywzorzec L41), a telemetria `bot.unvaluedDecisions()` łapie to
+dopiero w grze.
+
+**Fix:** strażnik `test/bot-komendy-silnika-straznik.test.js` (3 piny: pełne
+pokrycie + kotwice przeciw „przejściu na pusto” + brak gnijących wyjątków).
+**RED→GREEN (L13):** m1 usunięcie `case 'resolve_ward_pay_choice'` → FAIL
+z nazwą typu; m2 `command('resolve_fake_probe_type')` w silniku → FAIL;
+restore z /tmp (cmp zgodne) → GREEN 3/3, `src/` bez zmian.
+
+**Bramki:** `npm test` **7540/7540** EXIT 0 (123,1 s; +3 piny) · build
+**70 modułów / 4814,2 kB**.
+
+**Status:** zamknięty (kod `522c514`).
