@@ -2858,3 +2858,41 @@ E1; m3 `damage` w liście → E3; m4 kontra off → E9+E12; restor z /tmp → GR
 (592,4 s).
 
 **Status:** zamknięty.
+
+## PMSSB-57 — pomiary scoringu: zapłaty, mulligan, przestrzeń wyboru (2026-10-04f)
+
+**Wejście:** dyrektywa właściciela („dodawaj mechaniki i pomiary niezbędne do
+poprawnego scoringu bota — nie pomijaj problemów”) + kolejka 2 z handoffu 04e
+(rodziny zapłat). Runda **pomiarowa**: bez zmian wag bez dowodu misplayu.
+
+**Pomiar 1 (zapłaty):** nowe narzędzie `tools/scoring-pay-census.mjs`. Na
+BENCH_DECKS (36 partii, seedy 2 i 6) — **0 decyzji** czterech rodzin zapłat,
+bo żadna z 9 kart z polem `payMana` nie leży w 6 taliach próbki. Na wszystkich
+23 taliach (`--decks=all`, seed 1): jedyna zmierzona rodzina
+`resolve_pay_or_sacrifice` — **2 decyzje, pay=2, koszty {1:1, 3:1}**; za mała
+próba na zmianę `finish(cmd.pay ? 90 : 5)` → bez zmian (ADR 0021/0026).
+
+**Pomiar 2 (mulligan):** nowe narzędzie `tools/scoring-mulligan-audit.mjs`
+(23 partie, 53 decyzje): 0 lądów 0 keep/1 mulligan; 1: 0/6; 2: 21/0; 3: 12/0;
+4: 12/0; 5: 1/0 — **0 naruszeń** trzech kryteriów (keep bez polityki, mulligan
+mimo 2+ lądów, keep bez grywalnego czaru). Polityka zmierzona i trzymana.
+
+**Pomiar 3 (przestrzeń wyboru):** nowe narzędzie
+`tools/scoring-choice-space-audit.mjs` — czy decyzje ze stałym `finish(0)`
+mają NAPRAWDĘ jeden wariant (komentarz to nie pomiar, precedens PMSSB-30).
+69 partii / 23 talie: `resolve_damage_assignment` 39 decyzji — zawsze 1;
+`resolve_index_choice` 1/1; `resolve_reveal_order` i `resolve_replacement_choice`
+bez wystąpień. **Komentarze POPRAWNE tam, gdzie próba istnieje.** Tryb
+`--all-decisions` daje mapę wszystkich typów (pass_priority 1, declare_blockers
+1..32, resolve_mulligan_choice zawsze 2, resolve_optional_trigger_choice zawsze
+1 — z definicji oferty: odmowa przez `pass_priority`).
+
+**Lekcja:** L179 (rotująca próbka benchmarku może wykluczyć całe rodziny
+decyzji — policz wystąpienia, zanim uznasz, że benchmark coś mierzy).
+Kondensacje budżetu: L54, L59, L48 (proza w `LESSONS_PRZYPADKI`).
+
+**Bramki:** brama PR `npm run test:all` na tipie kodu `ebbf486`: **7823/7823**
+EXIT 0 (461,8 s). Budżet lektury: **99 859 / 100 000** (zapas 141 → po L48:
+**99 724**, zapas 276).
+
+**Status:** zamknięty (wszystkie trzy pytania — negatywne z liczbami).

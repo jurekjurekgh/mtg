@@ -15565,3 +15565,22 @@ build **70 modułów / 4792,5 kB**.
 - **Lekcja L178.** **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
   70 modułów / 4818,8 kB; brama PR na tipie `413448d`: **7823/7823** EXIT 0
   (592,4 s).
+
+## 2026-10-04f — PMSSB-57: pomiary scoringu (zapłaty, mulligan, przestrzeń wyboru; PR #154)
+
+Sesja pomiarowa po dyrektywie właściciela „dodawaj mechaniki i pomiary
+niezbędne do poprawnego scoringu bota — nie pomijaj problemów”. Żadnych zmian
+wag — trzy pytania, trzy odpowiedzi z liczbami.
+
+- **Zapłaty:** `tools/scoring-pay-census.mjs` — 0 decyzji na BENCH_DECKS
+  (36 partii; żadna z 9 kart `payMana` nie leży w próbce), 2 decyzje
+  `resolve_pay_or_sacrifice` na 23 taliach (koszty 1 i 3) → za mała próba
+  na zmianę wyceny.
+- **Mulligan:** `tools/scoring-mulligan-audit.mjs` — 53 decyzje, **0 naruszeń**
+  trzech kryteriów jakości.
+- **Przestrzeń wyboru:** `tools/scoring-choice-space-audit.mjs` — 4 typy ze
+  stałym `finish(0)`; `resolve_damage_assignment` 39 decyzji zawsze z 1
+  wariantem; komentarze bota potwierdzone; tryb `--all-decisions` = mapa
+  wszystkich typów decyzji.
+- **Lekcja L179** + kondensacje L54/L59/L48. Budżet lektury: 99 724 (zapas 276).
+- **Bramki:** brama PR na tipie `ebbf486`: **7823/7823** EXIT 0 (461,8 s).
