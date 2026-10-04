@@ -6863,6 +6863,13 @@ export function playerView(state, playerId) {
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, manaCost: object.manaCost, spell: object.spell,
+          // PMSSB-56 (CR 707.10 + ADR 0017): to, że obiekt na stosie jest KOPIĄ
+          // czaru, jest informacją publiczną (kopia nie była rzucana, nie ma
+          // śladu w historii rzutów). Bez tej flagi wycena bota nie odróżniała
+          // kopii od oryginału: bot płacił ward za KAŻDĄ kopię tego samego
+          // czaru na ten sam cel (pomiar: 3× {2} za jedno przejęcie kontroli,
+          // gdy efekt się nie kumuluje).
+          ...(object.isSpellCopy ? { copy: true } : {}),
           // M106/Z8 (ADR 0017 — kompletność widoku): cele są ogłaszane przy
           // kładzeniu na stos, więc są informacją PUBLICZNĄ. Zdolność
           // aktywowana trzyma je w activatedEntry — bez tego kontroler nie

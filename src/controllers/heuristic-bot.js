@@ -606,6 +606,51 @@ function stackEntryEffects(entry) {
 }
 
 /**
+ * PMSSB-56: typy efektów, które na IDENTYCZNYM zestawie celów NIE kumulują się —
+ * druga rezolucja tego samego efektu na ten sam obiekt nie zmienia stanu gry
+ * (cel już zniknął / jest tapowany / kontrolowany / skontrowany). Lista jest
+ * ŚWIADOMIE wąska: typ spoza listy zostawia wycenę przy dawnej bazie (kotwica
+ * anty-over-fix, L41). Obrażenia, pompy, dobieranie i liczniki życia NIE należą:
+ * kopie tych efektów realnie dodają wartość (np. druga kopia 3 obrażeń zabija
+ * większe ciało). CR 707.10 (kopia czaru) + CR 702.21a (ward pyta każdą kopię).
+ */
+const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
+  'gain_control_until_end_of_turn', 'gain_control',
+  'destroy_permanent', 'exile_permanent', 'exile_target_creature',
+  'exile_opponent_creature', 'exile_nonland_permanent_linked',
+  'bounce_permanent', 'counter_spell',
+  'tap_permanent', 'untap_permanent', 'dont_untap_next_untap_step',
+  'cant_block', 'cant_be_blocked',
+  'grant_keywords_until_end_of_turn',
+]);
+
+/**
+ * PMSSB-56: czy zapłata wardu za TĘ kopię czaru nie kupuje już niczego.
+ * Łączy trzy fakty z widoku (ADR 0017 — kompletność widoku):
+ *   • wpis stosu `cmd.targetId` jest kopią czaru (`copy`, CR 707.10),
+ *   • WSZYSTKIE jego efekty nie kumulują się na tym samym celu
+ *     (`NON_ACCUMULATING_SPELL_EFFECTS`; efekt nieznany → brak wniosku),
+ *   • na stosie wisi inna instancja TEJ SAMEJ karty z tym samym zestawem
+ *     celów — efekt dostarczy ona (kopia rozwiązuje się PRZED oryginałem,
+ *     więc odmowa dla kopii nie gubi efektu; dokładnie jedna instancja
+ *     zachowuje płatność, bo karzemy wyłącznie kopie).
+ * Wzorzec bliźniaczy: `pendingPumpDelta` (suma kopii aktywacji tej samej
+ * zdolności na tych samych celach) — tam efekt się KUMULUJE i wycena go liczy.
+ */
+function redundantSpellCopyPayment(view, cmd) {
+  if (!cmd.pay || cmd.targetId == null) return false;
+  const stack = view.zones?.stack ?? [];
+  const entry = stack.find((e) => e.id === cmd.targetId);
+  if (!entry?.copy) return false;
+  const effects = stackEntryEffects(entry);
+  if (effects.length === 0) return false;
+  if (!effects.every((e) => NON_ACCUMULATING_SPELL_EFFECTS.has(e?.type))) return false;
+  const klucz = (e) => `${e.cardId}|${JSON.stringify([...(e.targets ?? [])].map(String).sort())}`;
+  const moj = klucz(entry);
+  return stack.some((other) => other.id !== entry.id && klucz(other) === moj);
+}
+
+/**
  * M376 (pętla jakości ADR 0021 §4a — Żywy Tester, worek-dziki vs ixalan, seed
  * 2031): suma delt P/T kopii aktywacji TEJ SAMEJ zdolności (źródło + indeks +
  * cele) czekających na stosie. Wpis zdolności na stosie jest informacją
@@ -11493,10 +11538,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // skontrować. Silnik oferuje pay:true tylko gdy opłacalne; czar już na
       // stosie jest niemal zawsze warty więcej niż koszt.
       case 'resolve_counter_pay_choice':
+        // PMSSB-56 (ta sama klasa co ward): ratowanie KOPII, która nie wnosi
+        // już nic (efekt nie kumuluje się na tym samym celu, a na stosie wisi
+        // inna instancja tej samej karty z tymi samymi celami), to przepalona
+        // mana — odmowa zostawia efekt po stronie instancji na stosie.
+        // [pomiar E9: przed naprawą bot płacił {1} za ratowanie kopii storma]
+        if (redundantSpellCopyPayment(view, cmd)) return finish(85 - P.redundantCopyPayPenalty);
         return finish(cmd.pay ? 85 : 10);
       // M258/F3 — ward (CR 702.21): dopłata ratuje czar/zdolność, którą bot
       // właśnie wybrał jako wartą kosztu; rezygnacja to stracona mana.
       case 'resolve_ward_pay_choice':
+        // PMSSB-56 (pomiar storm × ward): zapłata za kopię, która nie wnosi już
+        // nic (efekt nie kumuluje się na tym samym celu, a na stosie wisi inna
+        // instancja tej samej karty z tymi samymi celami), to przepalanie
+        // many — bot odmawia (kopia jest NAD oryginałem, więc efekt dowiezie
+        // instancja pozostawiona na stosie). Różnica wyniku jest pokrętłem
+        // `redundantCopyPayPenalty` (×0 = stan sprzed PMSSB-56, M429).
+        if (redundantSpellCopyPayment(view, cmd)) return finish(80 - P.redundantCopyPayPenalty);
         return finish(cmd.pay ? 80 : 20);
       // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
       // decyzja otwiera się tylko gdy opłacalna (canPayTrigger) — efekt
