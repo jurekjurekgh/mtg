@@ -2197,29 +2197,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // w JEDNEJ komendzie (pendingDamageDivision + resolve_damage_division —
     // kompozycje total na N części po ≥1, przestrzeń: 3=[3]|[2,1]|[1,1,1]).
     const total = effect.amount ?? 3;
-    const chosen = (targets ?? []).filter((id) => id != null);
+    const slots = targets ?? [];
+    const chosen = slots.filter((id) => id != null);
     if (chosen.length === 0) return;
-    if (chosen.length === 1) {
-      dealNonCombatDamage(state, sourceObject, chosen[0], total);
-      return;
-    }
-    // M171/Z6 (CR 603.3d/601.2d): kwoty ZADEKLAROWANE przy umieszczaniu na
-    // stosie jadą w context.damageDivision (announce w resolve_trigger_target,
-    // zapis na wpisie stosu). Cel nielegalny przy rozstrzyganiu nie dostaje
-    // nic — bez realokacji (CR 608.2b). Brak deklaracji przy >=2 celach =
-    // producent ominął ścieżkę announce (pierwszy CZAR z damage_divided —
-    // strażnik w test/m171-damage-division-announce.test.js) — jawny błąd
-    // zamiast cichej ścieżki niezgodnej z CR (L52).
+    // Kwoty zadeklarowano wcześniej (CR 601.2d/603.3d). Nie kompresujemy
+    // slotów null po rewalidacji: kwota znikniętego celu przepada i NIE
+    // przechodzi na pozostały cel (audyt PR #154/F3; CR 608.2b).
     const declared = Array.isArray(context.damageDivision) ? context.damageDivision : null;
-    if (!declared || declared.length !== chosen.length) {
+    if (declared) {
+      if (declared.length !== slots.length) throw new Error('damage_divided: niezgodna liczba slotów i kwot');
+      for (let i = 0; i < slots.length; i += 1) {
+        const targetId = slots[i];
+        if (targetId == null) continue;
+        const isPlayer = state.players.some((pl) => pl.id === targetId);
+        const stillLegal = isPlayer || state.objects.get(targetId)?.zone === 'battlefield';
+        if (stillLegal) dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
+      }
+    } else if (chosen.length === 1) {
+      dealNonCombatDamage(state, sourceObject, chosen[0], total);
+    } else {
       throw new Error('damage_divided: podział niezadeklarowany przy umieszczaniu na stosie (CR 601.2d/603.3d)');
-    }
-    for (let i = 0; i < chosen.length; i += 1) {
-      const targetId = chosen[i];
-      const isPlayer = state.players.some((pl) => pl.id === targetId);
-      const stillLegal = isPlayer || (state.objects.get(targetId)?.zone === 'battlefield');
-      if (!stillLegal) continue; // CR 608.2b: kwota przepada.
-      dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
     }
     return;
   }

@@ -12,12 +12,12 @@
 // Wydanie CR: 2026-09-25
 // SHA-256 pliku CR: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca
 // Źródło (ADR 0030): mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0
-// Data pobrania: 2026-09-28
+// Data pobrania: 2026-10-04
 
 export const CR_WYDANIE = "2026-09-25";
 export const CR_SHA256 = "8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca";
 export const CR_ZRODLO = "mirror nwgarne/mtg-data (rules/cr-raw.txt) — patrz docs/audits/AUDYT_PR135_2026-09-24b.md §0";
-export const CR_DATA_POBRANIA = "2026-09-28";
+export const CR_DATA_POBRANIA = "2026-10-04";
 
 export const NUMERY = [
   // 1xx
@@ -228,6 +228,7 @@ export const NUMERY = [
   '603.4',
   '603.5',
   '603.6a',
+  '603.6b',
   '603.6c',
   '603.6d',
   '603.7',
@@ -346,11 +347,6 @@ export const NUMERY = [
   '702.2b',
   '702.2c',
   '702.3',
-  // PMSSB-32: obrońca („A creature with defender can't attack") — kara za
-  // tapnięcie ciała nie dotyczy stworu, który i tak nie atakuje. Zweryfikowane
-  // dosłownie w CR 2026-09-25 (mtg.wiki/page/Defender, sekcja Rules; ruling
-  // CHK FAQ: zmiana typu nie zmienia zdolności). Cytat w `tapBodyCost`
-  // i pinie test/audyt-pmssb32-mana.test.js B9.
   '702.3b',
   '702.4b',
   '702.6',
@@ -378,16 +374,11 @@ export const NUMERY = [
   '702.16e',
   '702.16f',
   '702.17',
+  '702.17b',
   '702.19',
   '702.19a',
   '702.19b',
   '702.20',
-  // PMSSB-32: czujność w pętli scoringu many — „Attacking doesn't cause
-  // creatures with vigilance to tap" to 702.20b (702.20a definiuje tylko, że
-  // czujność modyfikuje krok deklaracji atakujących). Zweryfikowane dosłownie
-  // w CR 2026-09-25 (mtg.wiki/page/Vigilance, sekcja Rules). Cytat w
-  // `tapBodyCost` (src/controllers/heuristic-bot.js) i pinie
-  // test/audyt-pmssb32-mana.test.js B7.
   '702.20b',
   '702.21',
   '702.21a',
@@ -428,11 +419,6 @@ export const NUMERY = [
   '702.82',
   '702.82a',
   '702.83',
-  // Etap 12: „z każde WYSTĄPIENIE egzaltacji" — 702.83a zweryfikowane
-  // dosłownie w CR 2026-09-25 (mtg.wiki/page/Exalted: „'Exalted' means
-  // 'Whenever a creature you control attacks alone, that creature gets +1/+1
-  // until end of turn.'"; 702.83b definiuje „attacks alone"). Cytat w pinie
-  // test/real-cards-batch34.test.js (mnożenie dwóch egzaltacji).
   '702.83a',
   '702.83b',
   '702.84a',
@@ -459,10 +445,6 @@ export const NUMERY = [
   '702.112a',
   '702.112b',
   '702.114',
-  // Weryfikacja u źródła 2026-10-01 (mtg.wiki/page/Devoid, CR 2026-09-25 —
-  // Reality Fracture): 702.114a = „Devoid is a characteristic-defining
-  // ability. «Devoid» means «This object is colorless.»”; sekcja 702.114 nie
-  // ma podpunktu b. Cytat użyty w strażniku konwencji `keywords` (U2).
   '702.114a',
   '702.117',
   '702.117a',
@@ -480,25 +462,15 @@ export const NUMERY = [
   '702.145d',
   '702.145g',
   '702.148',
-  // Batch 61 (Gryffwing Cavalry): Training — numer zweryfikowany wobec
-  // wydania CR 2026-09-25 (para „mechanika ↔ numer” w
-  // test/cr-numery-mechanik-straznik.test.js zna 702.149 = Training).
   '702.149',
   '702.164',
-  // Batch 61 (Riftburst Hellion): Disguise — numer zweryfikowany wobec
-  // wydania CR 2026-09-25 (para „mechanika ↔ numer” w
-  // test/cr-numery-702-tabela-straznik.test.js zna 702.168 = Disguise).
-  '702.168',
-  '702.168a',
   '702.164a',
-  // Etap 12: „total toxic value" — 702.164b zweryfikowane dosłownie w CR
-  // 2026-09-25 (mtg.wiki/page/Toxic: „the sum of all N values of toxic
-  // abilities that creature has", przykład toxic 2 + toxic 1 = 3). Cytat użyty
-  // w komentarzu-śladzie O-d w src/engine/combat.js (bez kodu na zapas).
   '702.164b',
   '702.165',
   '702.165a',
   '702.167',
+  '702.168',
+  '702.168a',
   '702.170',
   '702.170a',
   '702.170d',
@@ -510,12 +482,6 @@ export const NUMERY = [
   '702.174j',
   '702.175a',
   '702.185a',
-  // PMSSB-35/E: dopisane RĘCZNIE (brak pliku CR w sandboxie — brak egressu),
-  // po weryfikacji wobec dosłownego tekstu CR 2026-09-25 (mtg.wiki, strona
-  // „Warp» §Rules: „702.185b Some effects refer to “warped” cards in exile.
-  // A warped card in exile is one that was exiled by the delayed triggered
-  // ability created by a warp ability.”). Powód cytatu: rozstrzygnięcie, że
-  // pieczęć rzutu z wygnania nie przeżywa ponownego wygnania innym efektem.
   '702.185b',
   '704.3',
   '704.4',
@@ -557,12 +523,6 @@ export const NUMERY = [
   '714.3a',
   '714.3b',
   '714.4',
-  // 715.2a dopisany RĘCZNIE (sesja 2026-10-01g, sandbox bez egressu): dosłowny tekst
-  // z CR 2026-09-25 przez mtg.wiki/page/Adventure: „If an effect refers to a card,
-  // spell, or permanent that "has an Adventure," it refers to an object that has
-  // the alternative characteristics of an Adventure spell, even if the object
-  // currently doesn't use them." Przy najbliższej regeneracji --zapisz zostanie
-  // potwierdzony wobec pliku CR.
   '715.2a',
   '715.3',
   '715.3a',

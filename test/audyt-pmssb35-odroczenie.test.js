@@ -140,7 +140,7 @@ test('A4: rzut płatny z wygnania = rzut z ręki (L41: jedna arytmetyka dla stre
   // PMSSB-36/B (korekta PMSSB-47 w audycie PR #153, sesja 2026-10-03j):
   // ETB-licznik na „up to two target creatures" dostaje 6×0,9 TAKŻE przy
   // pustym stole własnym — wchodzący stwór jest na polu bitwy, gdy trigger
-  // trafia na stos (CR 603.6d) i bez `notSelf` sam jest legalnym celem.
+  // trafia na stos (CR 603.6a) i bez `notSelf` sam jest legalnym celem.
   // Kotwica wraca do 71.103: wersja z PR #153 (65.703) wyceniała ten sam rzut
   // o +6 niżej, mimo że licznik realnie ląduje na wchodzącym stworze.
   blisko(wynik(zReki, 'cast_permanent(we)'), 71.103, 'kotwica PO (płatny rzut {5}{W}, self-host ETB)');

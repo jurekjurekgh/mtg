@@ -955,8 +955,8 @@ function applyTriggerEffects(state, ability, source, targets, context = {}) {
   // M157/F4(a) (ADR 0022): trigger wielocelowy („on EACH of up to N target
   // ...", requiresTarget.count > 1) aplikuje listę efektów RAZ NA CEL —
   // „each of" to ten sam efekt dla każdego wybranego celu (Weftblade
-  // Enhancer). Cele, które stały się nielegalne, pomijają efekty same
-  // (applyEffect sprawdza strefę — CR 608.2b).
+  // Enhancer). Nielegalne sloty z ponownej walidacji są null i pomijamy je
+  // w całości, zamiast pozwalać efektom użyć źródła jako domyślnego celu.
   const spec = ability?.trigger?.requiresTarget;
   const multi = Number.isInteger(spec?.count) && spec.count > 1;
   if (multi && targets.length > 0) {
@@ -971,6 +971,7 @@ function applyTriggerEffects(state, ability, source, targets, context = {}) {
       return state.events.slice(before);
     }
     for (const targetId of targets) {
+      if (targetId == null) continue;
       for (const effect of effects) {
         applyEffect(state, effect, source, [targetId], context);
       }
@@ -1682,6 +1683,27 @@ export function resolveTriggerEntry(state, entry) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
+  // Audyt PR #154/F3 (CR 608.2b): strefa to za mało — cel mógł
+  // zmienić moc, kontrolera lub dostać ochronę. Ponownie używamy CAŁEGO
+  // deskryptora z oferty (jedna reguła), zanim zapytamy o „may"/zapłatę.
+  // Zero WYBRANYCH celów pozostaje legalne; wybrane, ale teraz nielegalne
+  // cele nie mogą dostać efektu, a brak wszystkich kończy całą zdolność.
+  const targetSpec = payload.ability?.trigger?.requiresTarget;
+  let resolutionTargets = payload.targets ?? [];
+  // Wspólna lista może zaczynać się kontekstem (np. nosiciel Equipmentu),
+  // który NIE jest celem Oracle. Offset pochodzi od producenta decyzji.
+  const targetOffset = extra.fixedTargetCount ?? 0;
+  if (targetSpec && resolutionTargets.slice(targetOffset).some((id) => id != null)) {
+    const candidates = new Set(triggerTargetCandidates(state, targetSpec, source, extra));
+    resolutionTargets = resolutionTargets.map((id, index) => index < targetOffset || candidates.has(id) ? id : null);
+    if (!resolutionTargets.slice(targetOffset).some((id) => id != null)) {
+      state.events.push(event('trigger_resolved', {
+        objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+        noEffect: true, reason: 'no_targets',
+      }));
+      return state.events.slice(before);
+    }
+  }
   // Etap F (CR 603.5): wybór „may" / płatność „you may pay" / „unless"
   // zapada TERAZ — przy rozstrzyganiu, po sprawdzeniu intervening-if.
   // „You may [czasownik] target ..." (Reclusive Artificer, Battle-Rattle
@@ -1692,15 +1714,14 @@ export function resolveTriggerEntry(state, entry) {
   const deferredChoice = extra.deferredChoice
     ?? (payload.ability?.trigger?.mayFire ? Object.freeze({ kind: 'optional' }) : null);
   if (deferredChoice) {
-    resolveDeferredChoice(state, entry, payload, source, extra, deferredChoice);
+    resolveDeferredChoice(state, entry, { ...payload, targets: resolutionTargets }, source, extra, deferredChoice);
     return state.events.slice(before);
   }
-  // Cele: efekty same pomijają cele, które przestały być legalne
-  // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  // Cele sprawdzono przed efektami; zachowujemy sloty nielegalnych jako null.
   const beforeEffects = state.events.length;
   // M171/Z6 (CR 603.3d): kwoty podziału obrażeń zadeklarowane przy
   // umieszczaniu na stosie jadą w kontekście do applyEffect.
-  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [],
+  applyTriggerEffects(state, payload.ability, source, resolutionTargets,
     payload.damageDivision ? { ...(payload.extra ?? {}), damageDivision: payload.damageDivision } : (payload.extra ?? {}));
   // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
@@ -1965,7 +1986,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     candidates: [...candidates],
     allowNone: Boolean(allowNone),
     fixedTargetIds: [...(fixedTargetIds ?? [])],
-    extra: Object.freeze({ ...extra }),
+    extra: Object.freeze({ ...extra, fixedTargetCount: fixedTargetIds.length }),
     // Spec celów może żyć poza zdolnością (Greatsword — spec tworzony
     // w locie); bez override rozstrzyganie nie znałoby kandydatów.
     specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,

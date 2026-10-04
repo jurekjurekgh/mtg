@@ -289,7 +289,7 @@ test('Angel\'s Feather: „you may gain 1 life\" to decyzja gracza (tak/nie)', (
   assert.equal(state2.players[0].life, 21);
 });
 
-test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicielu zawsze', () => {
+test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik także przy zerze wybranych celów', () => {
   const state = game();
   addRealCard(state, 'sword', 'greatsword-of-tyr', 'p1', 'battlefield');
   addCreature(state, 'bearer', 'p1', 2, 2);
@@ -310,7 +310,7 @@ test('Greatsword of Tyr: cel „up to one" wybiera kontroler; licznik na nosicie
   // Odmowa: licznik na nosicielu, nic nie tapowane.
   assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: null }).ok);
   resolveStack(state); // T6: rozstrzygnij trigger ze stosu
-  assert.equal((state.objects.get('bearer').counters ?? {})['+1/+1'], 1, 'licznik na nosicielu zawsze');
+  assert.equal((state.objects.get('bearer').counters ?? {})['+1/+1'], 1, 'licznik przy zerze wybranych celów');
   assert.equal(state.objects.get('def1').tapped, false);
   assert.equal(state.objects.get('def2').tapped, false);
   // Z wyborem celu — tapnięcie.
@@ -512,4 +512,25 @@ test('Mesmerize + Cold Snap: rozdziały I/II wymagają celu, rozdział III idzie
   assert.equal(state.pendingTriggerTargets.length, 0, 'rozdział III nie kolejkuje decyzji celu');
   // Stos MA wpis (trigger Sagi rozdział III).
   assert.equal(state.zones.stack.length, before3 + 1, 'rozdział III idzie na stos');
+});
+
+// Audyt PR #154/F3: nosiciel to kontekst efektu, nie „target” Oracle.
+test('Greatsword of Tyr: wybrany cel znika — cały trigger przepada, mimo żywego nosiciela', () => {
+  const state = game();
+  addRealCard(state, 'sword', 'greatsword-of-tyr', 'p1', 'battlefield');
+  addCreature(state, 'bearer', 'p1', 2, 2);
+  addCreature(state, 'def1', 'p2', 1, 1);
+  addMana(state, 'p1', 1, ['W']);
+  assert.ok(execute(state, { type: 'activate_ability', playerId: 'p1', objectId: 'sword', abilityIndex: 1, targets: ['bearer'] }).ok);
+  resolveStack(state);
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['bearer'] }).ok);
+  assert.ok(execute(state, { type: 'resolve_trigger_target', playerId: 'p1', targetId: 'def1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  const response = execute(state, { type: 'move_object', playerId: 'p2', objectId: 'def1', toZone: 'graveyard', newObjectId: 'dead-def1' });
+  assert.ok(response.ok, JSON.stringify(response.events));
+  resolveStack(state);
+  assert.equal(state.objects.get('bearer').counters['+1/+1'] ?? 0, 0,
+    'nielegalny jedyny WYBRANY cel: brak także licznika (CR 608.2b)');
+  assert.equal(state.zones.stack.length, 0);
 });

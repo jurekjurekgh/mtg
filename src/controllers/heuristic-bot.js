@@ -1522,7 +1522,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // PMSSB-47 (2026-10-03h, korekta w audycie PR #153): czy ETB „put a
   // +1/+1 counter on target …” ma LEGALNY cel po mojej stronie przy rzucie
   // nosiciela. Wchodzący permanent JEST już na polu bitwy, gdy trigger trafia
-  // na stos (CR 603.6d) — bez `notSelf` sam jest celem (silnik oferuje go jako
+  // na stos (CR 603.6a) — bez `notSelf` sam jest celem (silnik oferuje go jako
   // `permanent-N`), a dla pól bitwy typu LĄD/artefakt (np. Idyllic Grange)
   // wchodzący nie jest stworzeniem i wtedy potrzebny jest ISTNIEJĄCY stwór.
   // `notSelf` = „another” wyklucza wchodzącego (Jade Bearer → inny Merfolk).
@@ -1544,7 +1544,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Grange): permanent wchodzi z triggerem „put a +1/+1 counter on target
    * creature you control", a na stole nie ma mojego stwora. Dla STWORÓW to
    * nigdy nie zachodzi (wchodzący jest legalnym celem własnego triggera,
-   * CR 603.6d — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
+   * CR 603.6a — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
    * trigger przepada. Kara mniejsza niż `warpFutileEtbPenalty`, bo permanent
    * ZOSTAJE na stole (nie jest stratą karty) — jej rolą jest KOLEJNOŚĆ:
    * ląd przestaje wygrywać z rzutem gospodarza, więc bot najpierw wystawia

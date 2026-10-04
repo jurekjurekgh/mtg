@@ -109,7 +109,7 @@ test('Prowess (pump): źródło żywe — trigger normalnie pumpuje +1/+1 (kontr
   assert.equal(effectivePower(updated, state), 3, '2/1 + prowess = 3/2 do końca tury');
 });
 
-test('Forge Devil: cel triggera zniknął z pola bitwy — obrażenia na niego nie przechodzą, reszta efektów tak', () => {
+test('Forge Devil: cel triggera zniknął — CAŁA zdolność nie rozstrzyga się (CR 608.2b)', () => {
   const state = game();
   addSimpleCreature(state, 'c1', 'p1', { power: 1, toughness: 1 });
   addRealCard(state, 'devil', 'forge-devil', 'p1', 'hand');
@@ -128,11 +128,12 @@ test('Forge Devil: cel triggera zniknął z pola bitwy — obrażenia na niego n
   assert.ok(move.ok, move.events[0]?.reason);
 
   // Rozstrzygnięcie: bez crasha — cel nielegalny (CR 608.2b) => brak obrażeń
-  // na c1; efekt bezcelowy (1 dmg do kontrolera) wciąż działa.
+  // na c1 ani do kontrolera. Audyt PR #154/F3: wcześniej test żądał
+  // działania reszty zdolności mimo utraty WSZYSTKICH wybranych celów.
   const events = resolveStack(state);
   assert.equal(state.zones.stack.length, 0);
   assert.ok(!events.some((e) => e.type === 'damage_dealt' && e.target === 'c1'), 'brak obrażeń na znikniętym celu');
-  assert.equal(state.players[0].life, 19, '1 obrażeń do kontrolera wciąż przeszło');
+  assert.equal(state.players[0].life, 20, 'jedyny cel nielegalny: także obrażenia do kontrolera przepadają');
   assert.equal(state.pendingTriggerTargets.length, 0);
 });
 

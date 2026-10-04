@@ -163,6 +163,28 @@ zawierające daną mechanikę (patrz lekcja L2 w `docs/LESSONS.md`).
 
 ---
 
+## 5a. Testy bez zalewania wyjścia
+
+**Zakaz pełnego wyjścia pakietu testów** (AGENTS, polecenie właściciela):
+7000+ wyników zawiesza przeglądarkę. Dotyczy fast/slow/all i aliasów npm.
+Przed startem zapewnij ignorowanie katalogu logów (np. `.git/info/exclude`).
+Długi bieg uruchamiaj narzędziem procesu w tle; nie zmieniaj drzewa do końca.
+
+```sh
+mkdir -p .arena
+npm run test:all > .arena/test-all.log 2>&1
+rc=$?
+tail -n 12 .arena/test-all.log
+exit "$rc"
+```
+
+Ten sam wzorzec dla `npm test`, `npm run test:slow` i bezpośredniego runnera.
+Błędy czytaj osobno: maks. 40 linii kontekstu na błąd, bez całego logu.
+Nie używaj `tee` ani `testy | tail` (utrata exit code). Brak końcowego wyniku
+nie oznacza sukcesu. Log jest roboczy, nie trafia do Git.
+
+---
+
 ## 6. Checklista startu sesji
 
 1. `git log --oneline -3` i `git status` — gdzie jestem, czy czysto.

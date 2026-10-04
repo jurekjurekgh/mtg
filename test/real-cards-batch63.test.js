@@ -65,9 +65,10 @@ function settle(s, max = 60) {
     const pick = choices.find((c) => c.type === 'pass_priority' && s.zones.stack.length)
       ?? choices.find((c) => c.type.startsWith('resolve_'))
       ?? choices.find((c) => c.type === 'pass_priority');
-    if (!pick) return;
+    assert.ok(pick, 'rozstrzyganie ma dostępną komendę');
     run(s, pick);
   }
+  assert.fail('przekroczono limit rozstrzygania stosu');
 }
 
 /** Passy aż do decyzji o celu triggera (ETB czeka na stosie PO rozstrzygnięciu czaru). */
@@ -344,16 +345,48 @@ test('B63/247: Subterranean Scout — ETB: cel o sile ≤ 2 dostaje „can\'t be
     'dar ewazji do końca tury (M407)');
 });
 
-test('B63/247: Subterranean Scout — bez celu o sile ≤ 2 trigger NIE wchodzi na stos (CR 603.3d)', () => {
+test('B63/247: Subterranean Scout — sam jest jedynym legalnym celem ETB', () => {
   const state = game();
   put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
   put(state, 'duzy', 'loxodon-mender', 'p1', 'battlefield');
   addMana(state, 'p1', 2, { colors: ['R'] });
   run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
-  doDecyzjiTriggera(state);
-  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'), 'brak decyzji o cel (CR 603.3d)');
   settle(state);
-  assert.ok(!state.objects.get('duzy').cantBeBlockedUntilTurn, 'nic nie dostało daru');
+  const scout = find(state, 'subterranean-scout');
+  assert.equal(scout.cantBeBlockedUntilTurn, state.turn.number + 1,
+    'jedyny cel może być obsłużony automatycznie, ale EFEKT musi nastąpić (CR 603.6a)');
+  assert.ok(!state.objects.get('duzy').cantBeBlockedUntilTurn);
+});
+
+test('B63/247: Subterranean Scout — anthem podnosi także jego moc, naprawdę brak celu', () => {
+  const state = game();
+  put(state, 'anthem', 'anthem-of-champions', 'p1', 'battlefield');
+  put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
+  put(state, 'duzy', 'loxodon-mender', 'p1', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
+  settle(state);
+  const scout = find(state, 'subterranean-scout');
+  assert.equal(effectivePower(scout, state), 3, 'stały efekt działa od chwili wejścia (CR 603.6b)');
+  assert.ok(!scout.cantBeBlockedUntilTurn, 'samocelowanie też nielegalne');
+  assert.ok(!state.objects.get('duzy').cantBeBlockedUntilTurn);
+  assert.equal(state.zones.stack.length, 0);
+  assert.equal(state.pendingTriggerTargets.length, 0, 'brak oczekującej decyzji (CR 603.3d)');
+});
+
+test('B63/247: Subterranean Scout — wzrost mocy po wyborze celu unieważnia go przy rezolucji', () => {
+  const state = game();
+  put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
+  put(state, 'cel', 'rustvine-cultivator', 'p1', 'battlefield');
+  put(state, 'surge', 'savage-surge', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['R', 'G'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
+  doDecyzjiTriggera(state);
+  run(state, commands(state).find((c) => c.type === 'resolve_trigger_target' && c.targetId === 'cel'));
+  run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'surge' && c.targets?.[0] === 'cel'));
+  settle(state);
+  assert.equal(effectivePower(state.objects.get('cel'), state), 3);
+  assert.ok(!state.objects.get('cel').cantBeBlockedUntilTurn, 'moc >2 w rezolucji: dar nie następuje (CR 608.2b)');
 });
 
 test('B63/247: Subterranean Scout — granica mocy z buforami (moc EFEKTYWNA, CR 613)', () => {
@@ -428,3 +461,25 @@ test('B63/ENG: `blocks` — blok stwora BEZ cechy nie odpala triggera (filtr des
   settle(state);
   assert.equal(effectivePower(state.objects.get('pajak'), state), 1, 'brak pompy bez cechy flying');
 });
+
+// Audyt PR #154/F3: „zero wybranych” != „wybrane cele zniknęły”.
+for (const [chosen, exiled] of [[1, 1], [2, 1], [2, 2]]) {
+  test(`B63/255: Urborg — ${chosen} wybrane, ${exiled} wygnane w odpowiedzi`, () => {
+    const state = game();
+    for (let i = 0; i < chosen; i++) put(state, `survivor${i}`, 'survivor-of-korlis', 'p1', 'graveyard');
+    put(state, 'urborg', 'urborg-uprising', 'p1', 'hand');
+    addMana(state, 'p1', 9, { colors: ['B', 'W', 'W'] });
+    const before = playerView(state, 'p1').zones.library.length;
+    const targetIds = Array.from({ length: chosen }, (_, i) => `survivor${i}`);
+    run(state, commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urborg'
+      && c.targets?.filter(Boolean).length === chosen && targetIds.every((id) => c.targets.includes(id))));
+    for (let i = 0; i < exiled; i++) {
+      run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === `survivor${i}`));
+    }
+    settle(state);
+    const anyLegal = chosen > exiled;
+    assert.equal(playerView(state, 'p1').zones.library.length, before - (anyLegal ? 1 : 0),
+      'dobranie tylko gdy został legalny cel; bez legalnych całość się nie rozstrzyga');
+    assert.equal(playerView(state, 'p1').zones.hand.filter((c) => c.cardId === 'survivor-of-korlis').length, chosen - exiled);
+  });
+}
