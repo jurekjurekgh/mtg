@@ -68,3 +68,20 @@ Egress z bash/node/python jest ZABLOKOWANY w tej sesji (curl → HTTP 000,
 - Jeśli karta dotknie wyceny bota: `node --test test/bot-benchmark.test.js`;
   pełne B0 tylko na polecenie właściciela (ADR 0018/0025).
 - Brama PR `npm run test:all` na tipie kodu po zamknięciu batcha.
+
+## 4. Status realizacji (2026-10-04)
+
+- **T1 DONE** (`3e6619c`): 255 Urborg Uprising + fix fizzle „zero wybranych celów" (CR 608.2b).
+- **T2 DONE** (`4e8fe73`, `225eba0`): 239 SOS, 241 SPM, 244 BFZ, 250 MRD + token Human Citizen.
+- **T3**: 247 Subterranean Scout DONE (`12d26e9`). **254 Snarespinner WSTRZYMANA** —
+  wsparcie silnika (zdarzenie `blocks` + `blockedHasKeyword`, CR 613) gotowe i wypchnięte
+  (`cd0858d`, piny ENG w `test/real-cards-batch63.test.js`), ale sama karta czeka na
+  decyzję o migracji nazw talii: plan „Dominaria" ma 37 nielandów (>= próg 30), więc
+  dodanie karty przelicza podział i zmienia nazwy plików `dominaria-wu`/`dominaria-brg`
+  -> `dominaria-ub`/`dominaria-wrg`, a repo ma 596 referencji do starych nazw (fixture'y
+  sesji, BENCH_DECKS, talie testera) — to migracja, nie dodanie karty (L180).
+  Snapshot: `docs/cards/scryfall-snarespinner.json.pending`.
+- **Pozostałe do dodania**: 212, 259, 260 (260 = GAP battle/defense).
+- **Budżet lektury**: 99 974/100 000 (zapas 26 tokenów) — kolejny wpis `docs/LESSONS.md`
+  wymaga kondensacji starszej sekcji.
+

@@ -2440,4 +2440,10 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** zanim uznasz, że benchmark mierzy jakąś rodzinę decyzji, POLICZ jej wystąpienia (`tools/scoring-pay-census.mjs --all`). Rodziny poza próbką pinuj SCENARIUSZAMI (wzorzec `test/pmssb56-...`), nie wynikiem benchmarku, i mierz je na `--decks=all` — inaczej zmiany w ich wycenie nie mają pokrycia w win-rate, a regresje przechodzą niezauważone.
 
 **Strażnik:** `tools/scoring-pay-census.mjs` (`--all`, `--decks=all`) + `tools/scoring-unvalued-audit.mjs` + `tools/scoring-mulligan-audit.mjs` + `tools/scoring-choice-space-audit.mjs` (czy decyzje ze stałym `finish(0)` mają NAPRAWDĘ jeden wariant — komentarz to nie pomiar).
+## L180 (2026-10-04) — Dodanie karty do planu z podziałem zmienia NAZWY plików talii: to migracja, nie wpis
 
+**Przypadek:** (batch 63/T3) plan „Dominaria" (37 nielandów ≥ próg 30) po dodaniu karty przeliczył podział i ZMIENIŁ nazwy plików: `dominaria-wu`/`dominaria-brg` → `dominaria-ub`/`dominaria-wrg`; repo ma **596** referencji do starych nazw (fixture'y sesji, BENCH_DECKS, talie testera).
+
+**Reguła:** przed dodaniem karty do planu z podziałem uruchom generator i sprawdź `git status decks/`; zmiana sufiksów stron = migracja nazw (osobne zadanie) — wstrzymaj kartę (`.pending`) i udokumentuj.
+
+**Strażnik:** `tools/split-deck-colors.mjs` + `test/m203-plany-kolekcji.test.js`.
