@@ -2817,6 +2817,7 @@ wpisy z prozą) — wyjątek przed `write_text` = nic nie zapisano (wzorzec L163
 z 04a działa).
 
 **Bramki:** strażnicy docs **25/25** · `npm test` **7540/7540** EXIT 0
-(117,8 s) · build **70 modułów / 4814,2 kB**.
+(117,8 s) · build **70 modułów / 4814,2 kB** · brama PR `npm run test:all`
+na tipie `55976dc`: **7811/7811** EXIT 0 (450,5 s).
 
 **Status:** zamknięty.

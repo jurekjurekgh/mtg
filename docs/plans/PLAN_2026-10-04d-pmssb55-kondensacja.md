@@ -36,8 +36,9 @@ odsyłacze `→ narracja` bez zmian (oba końce istnieją).
 2. Strażnicy docs **25/25** (kontrakt kondensacji: ≥50 odsyłaczy, adresaci,
    reguła w skrócie, brak prozy w rejestrze).
 3. Bramki: `npm test` **7540/7540** EXIT 0 (117,8 s) · build 70 modułów /
-   4814,2 kB · brama PR `npm run test:all` na zamrożonym tipie (liczby
-   w body PR i handoffie 04d).
+   4814,2 kB · brama PR `npm run test:all` na zamrożonym tipie `55976dc`:
+   **7811/7811** EXIT 0 (**450,5 s**, +3 piny strażnika PMSSB-54 względem
+   7808 na `01ae241`).
 
 ## Kolejna partia (gdy znów potrzebny zapas)
 

@@ -15543,4 +15543,5 @@ build **70 modułów / 4792,5 kB**.
   asercja („archiwum ≥ rejestr") była błędna merytorycznie, wyjątek przed
   zapisem = zero zmian (mechanizm bezpieczeństwa z 04a potwierdzony w boju).
 - **Bramki:** strażnicy docs 25/25, `npm test` **7540/7540** EXIT 0, build
-  70 modułów / 4814,2 kB.
+  70 modułów / 4814,2 kB; brama PR `npm run test:all` na tipie `55976dc`:
+  **7811/7811** EXIT 0 (450,5 s).
