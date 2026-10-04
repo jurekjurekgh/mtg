@@ -9,6 +9,11 @@
 //   resolve_ward_pay_choice, resolve_counter_pay_choice,
 //   resolve_pay_or_sacrifice, resolve_optional_pay_choice.
 //
+//
+// Próba 10× (230 partii, 23 talie, seedy 1..10) — rodzina rzadka, ale mierzalna:
+// resolve_pay_or_sacrifice 15 decyzji (pay=15, koszty {1:11, 3:4}),
+// resolve_optional_pay_choice 25 decyzji (pay=24, koszty {1:9, 2:16});
+// ward/kontra nadal 0 (kart tych rodzin nie ma w żadnej talii repo — L179).
 // Uruchomienie: node tools/scoring-pay-census.mjs [seeds]
 import fs from 'node:fs';
 import path from 'node:path';
