@@ -94,6 +94,34 @@ export const TREASURE_TOKEN_EFFECT = Object.freeze({
   abilities: Object.freeze([TREASURE_TOKEN_ABILITY]),
 });
 
+/** Blood — CR 111.10g; jeden kontrakt kosztu dla katalogu i tworzenia. */
+export const BLOOD_TOKEN_ABILITY = Object.freeze({
+  type: 'activated', timing: 'instant', keyword: null,
+  cost: Object.freeze({ mana: 1, tap: true, discardCard: true, sacrificeSelf: true }),
+  effect: Object.freeze({ type: 'draw_cards', amount: 1 }),
+  trigger: null, targets: null, cycling: null, condition: null, pump: null,
+  keywords: null, oncePerTurn: false, mustAttack: false,
+});
+export const BLOOD_TOKEN_EFFECT = Object.freeze({
+  type: 'create_token', cardId: 'token_blood', name: 'Blood', kind: 'artifact',
+  colors: [], types: Object.freeze(['Artifact']), subtypes: Object.freeze(['Blood']),
+  abilities: Object.freeze([BLOOD_TOKEN_ABILITY]),
+});
+
+/** Eldrazi Spawn — koszt bez {T}; zdolność many działa także w turze wejścia. */
+export const SPAWN_TOKEN_ABILITY = Object.freeze({
+  type: 'activated', timing: 'instant', keyword: null,
+  cost: Object.freeze({ sacrificeSelf: true }),
+  effect: Object.freeze({ type: 'add_mana', amount: 1 }),
+  trigger: null, targets: null, cycling: null, condition: null, pump: null,
+  keywords: null, oncePerTurn: false, mustAttack: false,
+});
+export const SPAWN_TOKEN_EFFECT = Object.freeze({
+  type: 'create_token', cardId: 'token_eldrazi_spawn', name: 'Eldrazi Spawn', kind: 'creature',
+  power: 0, toughness: 1, colors: [], types: Object.freeze(['Creature']),
+  subtypes: Object.freeze(['Eldrazi', 'Spawn']), abilities: Object.freeze([SPAWN_TOKEN_ABILITY]),
+});
+
 /**
  * Reguła identyfikatora tokenu: `token_<slug nazwy>` — JEDNO źródło prawdy
  * (L41: dwie kopie tej samej reguły rozjeżdżają się cicho). Używają jej

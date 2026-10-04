@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Snarespinner&set=dmu&format=json",
+  "print": "dmu",
+  "name": "Snarespinner",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature — Spider",
+  "oracle_text": "Reach\nWhenever this creature blocks a creature with flying, this creature gets +2/+0 until end of turn.",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "keywords": [
+    "Reach"
+  ],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "179",
+  "rarity": "common",
+  "artist": "Michele Giorgi",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/b/0b51c3b5-db70-4976-986d-ed3fc8584d1a.jpg?1783921293",
+    "normal": "https://cards.scryfall.io/normal/front/0/b/0b51c3b5-db70-4976-986d-ed3fc8584d1a.jpg?1783921293"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/dmu/179/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": [
+    {
+      "date": "2019-04-18",
+      "source": "scryfall",
+      "comment": "This free card preview was provided to Scryfall by Wizards of the Coast. Thank you!"
+    }
+  ]
+}

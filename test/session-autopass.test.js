@@ -492,7 +492,7 @@ test('M205: pełna partia — każdy wpis „Auto-pass" odpowiada realnemu oddan
   // wpisy MUSZĄ się pojawić, bo bot rzuca czary, przy których człowiek pasuje.
   const registry = createCardRegistry();
   const deckOf = (name) => parseDeckText(fs.readFileSync(new URL(`../decks/${name}.txt`, import.meta.url), 'utf8'), registry).cardIds;
-  const session = createSession({ seed: 42, registry, decks: new Map([[HUMAN_ID, deckOf('dominaria-brg')], [BOT_ID, deckOf('ravnica')]]) });
+  const session = createSession({ seed: 42, registry, decks: new Map([[HUMAN_ID, deckOf('dominaria-wrg')], [BOT_ID, deckOf('ravnica')]]) });
   const mull = session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice');
   if (mull) session.apply({ ...mull, keep: true });
   for (let i = 0; i < 400; i += 1) {

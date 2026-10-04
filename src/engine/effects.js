@@ -1,3 +1,5 @@
+import { countedEffectValue } from './effect-values.js';
+import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
@@ -1731,6 +1733,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     dealNonCombatDamage(state, sourceObject, targetId, effect.amount);
     return;
   }
+  if (effect.type === 'adjust_battle_defense') {
+    const battle = state.objects.get(targets[0]);
+    if (!battle || battle.zone !== 'battlefield' || !isBattle(battle)) return;
+    const delta = battleDefenseDelta(effect, battle, sourceObject.controllerId);
+    if (delta > 0) addCounter(state, battle.id, 'defense', delta);
+    else if (delta < 0) {
+      // Efekt, nie koszt: zdejmij tyle, ile możliwe (CR 609.3).
+      const amount = Math.min(-delta, battle.counters?.defense ?? 0);
+      if (amount > 0) removeCounter(state, battle.id, 'defense', amount);
+    }
+    return;
+  }
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
@@ -1742,6 +1756,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
     // Altar of the Goyf: pump wg liczby typów kart we wszystkich grobach.
     const dynt = (v, fallback) => {
+      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
+      if (counted != null) return counted;
       if (v === 'source_power') return effectivePower(sourceObject, state);
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       return v ?? fallback;
@@ -2726,6 +2742,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const target = state.objects.get(targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
     const dyn = (v, fb) => {
+      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
+      if (counted != null) return counted;
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       if (v === 'source_power') return effectivePower(sourceObject, state);
       return v ?? fb;

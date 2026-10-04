@@ -1,6 +1,7 @@
 # Innistrad (WU)
 
 1x Dream Twist
+1x Scroll of Avacyn
 1x Bonds of Faith
 1x Gather the Townsfolk
 1x Lunar Rejection
@@ -20,5 +21,5 @@
 1x Gryffwing Cavalry
 1x Makeshift Mauler
 1x Murder of Crows
-4x Plains
+5x Plains
 6x Island

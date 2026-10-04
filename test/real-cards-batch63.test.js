@@ -409,7 +409,7 @@ test('B63/247: Subterranean Scout — granica mocy z buforami (moc EFEKTYWNA, CR
 // ---- BATCH 63 / silnik: zdarzenie triggera `blocks` (karta 254 wstrzymana) --
 // 254 Snarespinner (DMU, plan Dominaria) jest WSTRZYMANA do decyzji o migracji
 // podziału talii Dominaria (re-balans M228/ADR 0024 zmienia nazwy plików
-// dominaria-wu/brg → dominaria-ub/wrg i unieważnia ~600 referencji: fixture'y
+// dominaria-ub/brg → dominaria-ub/wrg i unieważnia ~600 referencji: fixture'y
 // sesji, BENCH_DECKS, domyślne talie testera). Silnikowe wsparcie karty jest
 // gotowe i pokryte pinem syntetycznym poniżej; po migracji wystarczy definicja
 // danych + snapshot `scryfall-snarespinner.json.pending`.

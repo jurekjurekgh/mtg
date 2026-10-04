@@ -101,6 +101,16 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
       }
     }
   }
+  // Batch 63: role Battle są publiczne, lecz katalog nie zawiera jeszcze
+  // karty Battle. Rozszerzamy PRÓBKĘ runtime zamiast wyłączać pole z guardu.
+  const battleState = createGameState({ seed: 277, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(battleState, { id: 'battle', instanceId: 'i-battle', cardId: 'fixture-battle',
+    controllerId: 'p1', protectorId: 'p2', zone: 'battlefield', kind: 'battle',
+    types: ['Battle'], subtypes: ['Siege'] });
+  addCounter(battleState, 'battle', 'defense', 5);
+  const battleView = playerView(battleState, 'p1').zones.battlefield.find(o => o.id === 'battle');
+  assert.equal(battleView.protectorId, 'p2', 'protektor nie jest kontrolerem');
+  for (const key of Object.keys(battleView)) wysylane.add(key);
   // Pola dokładane wyłącznie przez mechaniki spoza tej próbki (aura/equipment,
   // saga, kopie, efekty tymczasowe) — widok ustawia je warunkowo tam, gdzie
   // występują. Trzymamy je na jawnej liście, żeby skan nie milczał o pomyłce

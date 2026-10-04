@@ -322,6 +322,7 @@ function defaultBotFactory(seed, ctx) {
    */
   const ABILITY_EFFECT_LABELS = Object.freeze({
     add_counter: 'licznik na celu',
+    adjust_battle_defense: 'zmiana liczników obrony bitwy',
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
     cant_block: 'docelowy stwór nie może blokować do końca tury',
@@ -775,6 +776,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
+  blocks: 'blokowanie stwora',
   equipped_creature_attacks: 'atak wyposażonego stwora',
   // Batch 48 (Wooden Stake): blok w OBIE strony (CR 509.1).
   equipped_creature_blocks_or_blocked_by: 'blok wyposażonego stwora (w obie strony)',

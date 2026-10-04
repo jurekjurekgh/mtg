@@ -362,6 +362,8 @@ test('D2: Downwind Ambusher — modal ETB: tryb destroy TYLKO dla rannego stwora
   assert.deepEqual(destroyOffers.map((c) => c.targetId), ['hurt'],
     'tryb destroy tylko na RANIONEGO stwora wroga');
   assert.ok(execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 1, targetId: 'hurt' }).ok);
+  assert.equal(state.objects.get('hurt')?.zone, 'battlefield', 'CR 603.3c: wybór nie wykonuje efektu');
+  assert.ok(resolveStack(state), 'wybrany trigger rozstrzyga się po passach obu graczy');
   assert.notEqual(state.objects.get('hurt')?.zone, 'battlefield', 'ranny stwór zniszczony');
 });
 
@@ -378,6 +380,8 @@ test('D2b: Downwind Ambusher — tryb −1/−1 dobija 1/1 wroga (SBA)', () => {
     } else break;
   }
   assert.ok(execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0, targetId: 'small' }).ok);
+  assert.equal(state.objects.get('small')?.zone, 'battlefield', 'CR 603.3c: wybór nie wykonuje efektu');
+  assert.ok(resolveStack(state), 'wybrany trigger rozstrzyga się po passach obu graczy');
   assert.notEqual(state.objects.get('small')?.zone, 'battlefield', '1/1 z −1/−1 ginie (SBA)');
 });
 

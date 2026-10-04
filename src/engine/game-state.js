@@ -1,3 +1,4 @@
+import { battleProtectorId } from './battles.js';
 import { chooseDestructionReplacement } from './destruction.js';
 import { blockingRequirementCount, combatDamageByToughness, effectiveSubtypes, hasCreatureType, hasFlashPermission, isUntapStepLocked, untapChoiceCandidates } from './permanents.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
@@ -26,7 +27,7 @@ import { legalActivatedAbilities, legalManaAbilities, activateAbility, performAc
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, fireWardTriggers, triggerSourceZoneResolvable } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -558,7 +559,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
-  'delve',
+  'delve', 'protectorId',
 ]);
 
 const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
@@ -619,12 +620,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -2476,68 +2477,59 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja modalnego triggera (Batch 22: Etherwrought Page):
-  // gracz wybiera tryb (modeIndex). Wybrane efekty trybu są
-  // aplikowane (jak zwykły efekt triggera w applyTriggerEffects).
+  // gracz ogłasza tryb i cel (CR 603.3c); wybrana zdolność trafia na stos,
+  // a jej efekty czekają na rozstrzygnięcie z oknem odpowiedzi.
   if (state.pendingModalTrigger) {
     if (cmd.type !== 'resolve_modal_choice') return reject('modal_trigger_unresolved');
     if (cmd.playerId !== state.pendingModalTrigger.playerId) return reject('modal_trigger_not_your_decision');
     const pending = state.pendingModalTrigger;
-    // M174/E-fix: kandydaci trybów mogli zniknąć MIĘDZY kolejką a decyzją —
-    // skip legalny wyłącznie, gdy ŻADEN tryb nie jest już wybieralny
-    // (oferta=walidacja, L48; zwykłe tryby nadal obowiązkowe).
+    const source = state.objects.get(pending.sourceId) ?? pending.sourceLki;
+    const finishChoice = () => {
+      state.pendingModalTrigger = pending.next ?? null;
+      state.turn.priorityPlayerId = state.pendingModalTrigger?.playerId
+        ?? pending.restorePriorityTo ?? pending.playerId;
+    };
     if (cmd.skip === true) {
-      const src = state.objects.get(pending.sourceId);
       const anyAvailable = pending.modes.some((mode) => {
         const spec = mode.targets?.[0];
-        if (!spec) return true;
-        return src ? triggerTargetCandidates(state, spec, src, pending.extra ?? {}).length > 0 : false;
+        return !spec || (source && triggerTargetCandidates(state, spec, source, pending.extra ?? {}).length > 0);
       });
       if (anyAvailable) return reject('illegal_modal_choice');
-      const beforeSkip = state.events.length;
-      state.pendingModalTrigger = null;
-      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-        state.turn.priorityPlayerId = pending.restorePriorityTo;
-      }
+      const before = state.events.length;
+      finishChoice();
       state.events.push(event('modal_trigger_resolved', {
         playerId: cmd.playerId, sourceId: pending.sourceId,
         cardId: pending.cardId ?? null, skipped: true,
       }));
-      return accepted(state, cmd, { ok: true, events: state.events.slice(beforeSkip) });
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const modeIndex = cmd.modeIndex;
     if (!Number.isInteger(modeIndex) || modeIndex < 0 || modeIndex >= pending.modes.length) {
       return reject('illegal_modal_choice');
     }
-    const source = state.objects.get(pending.sourceId);
-    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    const mode = pending.modes[modeIndex];
+    const spec = mode.targets?.[0];
+    // Cała walidacja PRZED zmianą kolejki/priorytetu/logu (atomowa odmowa).
+    if (spec && (!source || !triggerTargetCandidates(state, spec, source, pending.extra ?? {}).includes(cmd.targetId))) {
+      return reject('illegal_modal_trigger_target');
     }
+    const before = state.events.length;
+    finishChoice();
     state.events.push(event('modal_trigger_resolved', {
       playerId: cmd.playerId, sourceId: pending.sourceId,
-      cardId: pending.cardId ?? null,
-      modeIndex, modeName: pending.modes[modeIndex].name,
+      cardId: pending.cardId ?? null, modeIndex, modeName: mode.name,
     }));
-    const before = state.events.length;
-    state.pendingModalTrigger = null;
     if (source) {
-      const mode = pending.modes[modeIndex];
-      // Aplikujemy wybrany tryb. Tryby mogą mieć CEL (Inspiring Bard —
-      // „Bardic Inspiration: target creature gets +2/+2"): cel wybiera
-      // gracz (cmd.targetId), walidowany względem spec trybu. Tryby bez
-      // celu (Etherwrought Page) aplikują efekty na puste cele.
-      let effTargets = [];
-      const modeTargetSpec = mode.targets?.[0];
-      if (modeTargetSpec) {
-        const targetId = cmd.targetId;
-        const candidates = triggerTargetCandidates(state, modeTargetSpec, source, {});
-        if (targetId == null || !candidates.includes(targetId)) {
-          return reject('illegal_modal_trigger_target');
-        }
-        effTargets = [targetId];
-      }
-      for (const effect of (mode.effects ?? [])) {
-        applyEffect(state, effect, source, effTargets);
-      }
+      // CR 603.3c/608.2b: tryb i cel ogłaszamy TERAZ. Efekt trafia na stos,
+      // daje odpowiedź i rewaliduje cel jak każdy inny trigger — nie jest
+      // stosowany wewnątrz komendy wyboru (dawny błąd rodziny modalnej).
+      const selectedAbility = Object.freeze({
+        ...pending.ability,
+        trigger: Object.freeze({ ...pending.ability?.trigger, modes: null, requiresTarget: spec ?? null }),
+        effect: Object.freeze([...(mode.effects ?? [])]),
+      });
+      queueTriggerToStack(state, selectedAbility, { ...source, controllerId: pending.playerId },
+        spec ? [cmd.targetId] : [], [], { ...pending.extra, modeIndex, modeName: mode.name });
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -4512,13 +4504,7 @@ export function execute(state, input) {
     const mayFire = pending.ability?.trigger?.mayFire === true;
     if (sourceLegal && (chosen !== null || (!specOptional && !mayFire))) {
       // T6: wybrany cel wędruje z triggerem na STOS — rozstrzyga się po passach.
-      const queuedTrigger = queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
-      // M258/F3 — WARD (CR 702.21): zdolność triggerowana z celem w
-      // permanencie PRZECIWNIKA z ward — trigger ward ląduje nad nią.
-      if (source && queuedTrigger) {
-        fireWardTriggers(state, source.controllerId, queuedTrigger.id,
-          [...pending.fixedTargetIds, chosen].filter((tId) => tId != null), []);
-      }
+      queueTriggerToStack(state, pending.ability, source, [...pending.fixedTargetIds, chosen], [], pending.extra ?? {});
     }
     state.events.push(event('trigger_target_resolved', {
       playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -6496,6 +6482,8 @@ export function playerView(state, playerId) {
         // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
         // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
         const hiddenFromViewer = object.faceDown && object.controllerId !== playerId && !knowsFaceDown;
+        const protector = battleProtectorId(object);
+        if (protector != null) entry.protectorId = protector;
         // M149 (uwaga właściciela): mana value (koszt many) permanentu na polu
         // bitwy to informacja publiczna wydrukowana na karcie — bot potrzebuje
         // jej do wyceny wymiany (np. Bone Splinters: porównanie TMC ofiary
@@ -7393,7 +7381,7 @@ export function playerView(state, playerId) {
         // Tryb z celem (Inspiring Bard — „target creature gets +2/+2"):
         // oferujemy osobne komendy per legalny cel. Tryb bez legalnego celu
         // jest NIEDOSTĘPNY (jak modalny czar „choose one") — nie oferujemy go.
-        const candidates = triggerTargetCandidates(state, modeSpec, state.objects.get(pending.sourceId), {});
+        const candidates = triggerTargetCandidates(state, modeSpec, state.objects.get(pending.sourceId) ?? pending.sourceLki, pending.extra ?? {});
         for (const targetId of candidates) {
           legalCommands.push(command('resolve_modal_choice', playerId, { modeIndex, targetId }));
         }
@@ -8869,7 +8857,7 @@ export function playerView(state, playerId) {
         playerId: state.pendingModalTrigger.playerId,
         sourceId: state.pendingModalTrigger.sourceId,
         cardId: state.pendingModalTrigger.cardId ?? null,
-        modes: state.pendingModalTrigger.modes.map((m) => Object.freeze({ name: m.name ?? null })),
+        modes: state.pendingModalTrigger.modes.map((m) => Object.freeze({ name: m.name ?? null, effects: m.effects ?? [], targets: m.targets ?? [] })),
       }
     : null;
   const pendingProliferateView = state.pendingProliferate

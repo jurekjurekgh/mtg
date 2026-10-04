@@ -21,12 +21,13 @@
 1x Battle-Rattle Shaman
 1x Kabira Vindicator
 1x Kor Cartographer
+1x Kozilek's Predator
 1x Boulder Salvo
 1x Jwar Isle Avenger
 1x Merfolk Falconer
 1x Mysteries of the Deep
-2x Plains
+1x Plains
 4x Island
 1x Swamp
 3x Mountain
-3x Forest
+4x Forest

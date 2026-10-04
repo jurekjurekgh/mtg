@@ -1,3 +1,4 @@
+import { isBattle } from './battles.js';
 import { destroyPermanents, regeneratePermanent } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
@@ -219,6 +220,19 @@ export function runStateBasedActions(state) {
     if (object.zone === 'battlefield' && isPlaneswalker(object) && (object.counters?.loyalty ?? 0) === 0) {
       dying.push({ object, put: true });
       continue;
+    }
+    // CR 310.7–8: zero obrony nie jest zniszczeniem. Siege czeka, jeśli
+    // jego własna zdolność pozostaje na stosie; nie utożsamiaj jej ze
+    // zdolnością innego źródła, która tylko celuje w tę bitwę.
+    if (object.zone === 'battlefield' && isBattle(object) && (object.counters?.defense ?? 0) === 0) {
+      const siegeWaiting = (object.subtypes ?? []).includes('Siege') && state.zones.stack.some(id =>
+        state.objects.get(id)?.triggerEntry?.sourceId === object.id);
+      if (!siegeWaiting) {
+        dying.push({ object, put: true });
+        continue;
+      }
+      // Oczekiwanie chroni przed SBA zera obrony, nie przed innymi SBA
+      // (bitwa będąca też stworzeniem może nadal umrzeć od 0 toughness).
     }
     if (object.zone !== 'battlefield' || object.kind !== 'creature' || object.toughness === null) continue;
     // Jwari: „enter as a copy” — SBA nie zabija 0/0, dopoki gracz nie wybierze celu.

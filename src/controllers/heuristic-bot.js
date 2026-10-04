@@ -1,3 +1,5 @@
+import { countedEffectValue, countedEffectSign } from '../engine/effect-values.js';
+import { battleDefenseDelta } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
@@ -586,6 +588,17 @@ function pumpChangesOutcome(view, recipient, delta = {}) {
   return JSON.stringify(before) !== JSON.stringify(after);
 }
 
+/** Wspólna wycena ujemnej pompy czaru/aktywacji; delta już policzona
+ * z widoku, więc dynamiczne P/T nie trafiają do Math.abs jako obiekt.
+ * Kill przez 0 toughness działa także poza walką (CR 704.5f).
+ */
+function negativePumpValue(view, target, delta) {
+  if (!target || target.controllerId === view.playerId) return -60;
+  return pumpChangesOutcome(view, target, delta)
+    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0)
+    : -75;
+}
+
 /**
  * Audyt #144/F2 (L1+L41): JEDEN czytnik efektów wpisu stosu. Zdolność na
  * stosie nie ma `spell` — jej deskryptor mieszka w `abilityEffects` (ADR 0017;
@@ -779,6 +792,8 @@ function pumpDelta(view, effect, source = null) {
   // Nieobsłużony deskryptor (liczba albo nieznany łańcuch) → 0 (nie gubi,
   // nie psuje, tak jak dotąd).
   const resolveDynamic = (v) => {
+    const counted = countedEffectValue(v, view.zones.battlefield ?? [], source?.controllerId ?? view.playerId);
+    if (counted != null) return counted;
     if (typeof v === 'number') return v;
     if (v === 'card_types_in_all_graveyards') return cardTypesInAllGraveyardsFromView(view);
     if (v === 'source_power') return source?.power ?? 0;
@@ -1288,7 +1303,7 @@ export function temporaryPumpOf(effect, view = null, source = null) {
   // Liczby bierze `pumpDelta` — JEDNO źródło prawdy dla P/T efektów pump
   // (X = liczba stworów/bram/dynamicznych deskryptorów liczy się z widoku).
   if (view?.zones) return pumpDelta(view, effect, source);
-  return { power: typeof effect.power === 'number' ? effect.power : 0, toughness: typeof effect.toughness === 'number' ? effect.toughness : 0 };
+  return { power: typeof effect.power === 'number' ? effect.power : countedEffectSign(effect.power), toughness: typeof effect.toughness === 'number' ? effect.toughness : countedEffectSign(effect.toughness) };
 }
 
 /**
@@ -1486,6 +1501,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
     return { power, toughness };
+  };
+
+  // „Whenever this creature blocks ...”: ta sama projekcja P/T dla
+  // wyboru bloków i oceny ataku w takiego obrońcę. Publiczne deskryptory,
+  // efektywne keywordy atakera; żadnych nazw kart ani domysłu po reach.
+  const afterBlockTriggers = (view, blocker, attackers) => {
+    const abilities = blocker.activatableAbilities ?? cardDef(blocker.cardId)?.abilities ?? [];
+    let power = 0, toughness = 0;
+    for (const attacker of attackers) for (const ability of abilities) {
+      if (ability?.trigger?.event !== 'blocks' || ability.trigger.requiresTarget || ability.trigger.condition) continue;
+      const required = ability.trigger.blockedHasKeyword;
+      if (required && !hasKeyword(attacker, required)) continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const effect of effects) {
+        if (effect?.type !== 'pump') continue;
+        const delta = pumpDelta(view, effect, blocker);
+        power += delta.power; toughness += delta.toughness;
+      }
+    }
+    return power || toughness ? { ...blocker, power: (blocker.power ?? 0) + power,
+      toughness: (blocker.toughness ?? 0) + toughness } : blocker;
   };
 
   const enemyNonlandPermanents = (view) => (view.zones.battlefield ?? [])
@@ -7159,7 +7195,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const pending = view.pendingModalTrigger;
       const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
       const ability = (def?.abilities ?? []).find((entry) => Array.isArray(entry?.trigger?.modes));
-      const modeEffects = ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
+      const modeEffects = pending?.modes?.[cmd.modeIndex]?.effects ?? ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
       if (modeEffects.length === 0) return finish(0);
       if (allEffectsInertNow(view, modeEffects, cmd)) return finish(-40);
       const foe = enemy(view);
@@ -7170,6 +7206,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
           // Dobicie przeciwnika kończy partię — to zawsze najlepszy tryb.
           modeScore += amount >= (foe?.life ?? 20) ? 80 : 4 * amount;
+        } else if (effect.type === 'adjust_battle_defense') {
+          const battle = objectOnBoard(view, cmd.targetId);
+          const delta = battleDefenseDelta(effect, battle, view.playerId);
+          // Wartość względem chroniącego, nie właściciela bitwy. Zmniejszenie
+          // wrogiej obrony / zwiększenie własnej jest korzystne; zero no-op.
+          const actual = delta < 0 ? Math.min(-delta, battle?.counters?.defense ?? 0) : delta;
+          modeScore += Math.abs(actual) * 3;
+          if (delta < 0 && actual > 0 && actual >= (battle?.counters?.defense ?? 0)) modeScore += 8;
         } else if (effect.type === 'gain_life') {
           modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
         } else if (effect.type === 'draw_cards') {
@@ -9122,12 +9166,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
               // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
               // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
-              const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
-              if (changes) {
-                score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
-              } else {
-                score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
-              }
+              score += negativePumpValue(view, target, pumpDelta(view, effect));
               }
             }
           }
@@ -9652,8 +9691,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Batch 51 (Savage Surge — „+2/+2 i odkręcenie do końca tury"):
           // gałąź rozpoznaje efekt po WSPÓLNYM MIANOWNIKU (nadanie P/T do
           // końca tury — `temporaryPumpOf`), nie po łańcuchu nazw typów.
-          const pump = temporaryPumpOf(effect, view);
-          if (pump) {
+          const pump = temporaryPumpOf(effect, view, source);
+          if (pump && target && target.controllerId !== view.playerId && isNegativePump(effect)) {
+            score += negativePumpValue(view, target, pump);
+            // Ten sam wymiar straty ciała co sac-self za discard.
+            if (ability?.cost?.sacrificeSelf && source) {
+              score -= (source.power ?? 0) * 2 + (source.toughness ?? 0) + (source.manaCost ?? 0);
+            }
+          } else if (pump) {
             const pGain = pump.power;
             const tGain = pump.toughness;
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
@@ -10768,26 +10813,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
-        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, combatPower(o)), 0);
-        const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
-        // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
-        // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
-        // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
-        // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
-        const blockerPowersDesc = blockers.map((o) => combatPower(o)).sort((a, b) => b - a);
-        const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
-        const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
-        // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
-        // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
-        // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
-        // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
-        const trick = enemyDefensivePumpBonus(view);
-        const effBlockerPower = strongestBlockerPower + trick.power;
-        const effBlockerToughness = strongestBlockerToughness + trick.toughness;
-        const effGangPower = gangPower + trick.power;
-        const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
-          ? Number.POSITIVE_INFINITY
-          : weakestBlockerToughness + trick.toughness;
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -10797,6 +10822,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
+          const candidates = blockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
+          const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
+          const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
+          // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
+          // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
+          // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
+          // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
+          const blockerPowersDesc = candidates.map((o) => combatPower(o)).sort((a, b) => b - a);
+          const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
+          const weakestBlockerToughness = candidates.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
+          // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
+          // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
+          // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
+          // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
+          const trick = enemyDefensivePumpBonus(view);
+          const effBlockerPower = strongestBlockerPower + trick.power;
+          const effBlockerToughness = strongestBlockerToughness + trick.toughness;
+          const effGangPower = gangPower + trick.power;
+          const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
+            ? Number.POSITIVE_INFINITY
+            : weakestBlockerToughness + trick.toughness;
           const power = combatPower(object);
           const toughness = object.toughness ?? 0;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
@@ -10840,7 +10886,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Dwie odsłony (`lethalDamageOf` = 2 × moc) to próg WYMIANY: bloker
           // zdąży oddać w drugiej odsłonie, więc 2/2 DS vs 4/4 to trade, nie
           // „przeżyje i zabije".
-          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, blockers)
+          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, candidates)
             && ((hasKeyword(combatObject, 'deathtouch') && combatPower(combatObject) > 0)
               || blockedStats.power >= effBlockerToughness);
           // PMSSB-50: „praktycznie nieblokowalny" z deathtouch — blok oznacza
@@ -10908,7 +10954,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // z PlayerView (ADR 0002/0017), nie po nazwie karty. PMSSB-50:
             // przechodzi obok blokerów, więc liczy obrażenia w twarz.
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
-          } else if (diesBeforeDealingDamage(combatObject, blockers)) {
+          } else if (diesBeforeDealingDamage(combatObject, candidates)) {
             // Audyt PR #154/F4: first/double strike może zabić przed
             // zadaniem obrażeń. To ma pierwszeństwo przed premią DT:
             // droższy bloker nie ryzykuje wtedy wymiany (CR 702.7b).
@@ -11180,7 +11226,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const blockerObjs = [];
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
-            if (blocker) blockerObjs.push(blocker);
+            if (blocker) {
+              const opponents = Object.entries(assignments).filter(([, ids]) => ids.includes(blockerId))
+                .map(([id]) => objectOnBoard(view, id)).filter(Boolean);
+              blockerObjs.push(afterBlockTriggers(view, blocker, opponents));
+            }
           }
           const blockersUsed = blockerObjs.length;
           // I (zgłoszenie z testów 2026-09-22, Porcelain Legionnaire): wymianę

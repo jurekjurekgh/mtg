@@ -1,0 +1,28 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Eldrazi+Spawn&set=t2xm&format=json",
+  "print": "t2xm",
+  "name": "Eldrazi Spawn",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Token Creature — Eldrazi Spawn",
+  "oracle_text": "Sacrifice this creature: Add {C}.",
+  "power": "0",
+  "toughness": "1",
+  "colors": [],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "t2xm",
+  "set_name": "Double Masters Tokens",
+  "collector_number": "1",
+  "rarity": "common",
+  "artist": "Aleksi Briclot",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/6/06e3f3c1-866c-4214-82e0-dcca2d1aba1e.jpg?1783930237",
+    "normal": "https://cards.scryfall.io/normal/front/0/6/06e3f3c1-866c-4214-82e0-dcca2d1aba1e.jpg?1783930237"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/t2xm/1/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": []
+}

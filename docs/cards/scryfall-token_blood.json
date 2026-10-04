@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Blood&set=tvow&format=json",
+  "print": "tvow",
+  "name": "Blood",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Token Artifact — Blood",
+  "oracle_text": "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.",
+  "colors": [],
+  "set": "tvow",
+  "set_name": "Innistrad: Crimson Vow Tokens",
+  "collector_number": "17",
+  "rarity": "common",
+  "artist": "Miranda Meeks",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/6/a6f374bc-cd29-469f-808a-6a6c004ee8aa.jpg?1783924692",
+    "normal": "https://cards.scryfall.io/normal/front/a/6/a6f374bc-cd29-469f-808a-6a6c004ee8aa.jpg?1783924692"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/tvow/17/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": []
+}

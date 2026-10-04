@@ -21,7 +21,7 @@ export const COUNTER_LABELS = Object.freeze({
   stun: 'ogłuszenie', level: 'poziom', loyalty: 'lojalność',
   // Batch 48 (Contested Game Ball): licznik punktowy — po piątym artefakt
   // jest poświęcany w zamian za Skarb.
-  point: 'punkt',
+  point: 'punkt', defense: 'obrona',
   // B7: tarcza regeneracyjna (silnikowy licznik `shield`, np. Voice of the
   // Vermin) — na kaflach świeciło surowe „shield"/„1x shield". Silnikowa
   // (spoza bazy kart), więc strażnik M126 jej nie widzi.
@@ -36,7 +36,7 @@ export const COUNTER_LABELS = Object.freeze({
 export const COUNTER_LABELS_GEN = Object.freeze({
   flying: 'Latania', deathtouch: 'Dotyku śmierci', lifelink: 'Więzi życia',
   finality: 'ostateczności', stun: 'ogłuszenia', level: 'poziomu',
-  loyalty: 'lojalności', point: 'punktu', shield: 'tarczy',
+  loyalty: 'lojalności', point: 'punktu', defense: 'obrony', shield: 'tarczy',
 });
 
 /** Nazwa licznika w dopełniaczu (log, koszty, warunki, „wchodzi z"). */

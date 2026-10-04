@@ -36,7 +36,7 @@ const RODZINY = new Set([
 // `--decks=all` = WSZYSTKIE talie jednoplanowe repo (23), nie tylko próbka
 // benchmarku (6, ADR 0024). Powód pomiarowy: próbka rotuje i potrafi NIE
 // zawierać ani jednej karty danej rodziny decyzji (np. zapłat: 0 w 36 partiach
-// na BENCH_DECKS, a karty zapłat leżą w dominaria-brg/innistrad-wu/ixalan).
+// na BENCH_DECKS, a karty zapłat leżą w dominaria-wrg/innistrad-wu/ixalan).
 const WSZYSTKIE_TALIE = flags.has('--decks=all');
 const DECKS = WSZYSTKIE_TALIE ? benchmarkDecks() : BENCH_DECKS;
 const registry = createCardRegistry();

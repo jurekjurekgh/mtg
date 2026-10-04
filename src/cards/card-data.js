@@ -1,5 +1,6 @@
 import { defineCard, createRegistry } from './registry.js';
 import { ABILITY_TYPE, createAbility } from '../engine/abilities.js';
+import { BLOOD_TOKEN_ABILITY, BLOOD_TOKEN_EFFECT, SPAWN_TOKEN_ABILITY, SPAWN_TOKEN_EFFECT } from '../engine/tokens.js';
 
 /**
  * Syntetyczny katalog testowy.
@@ -12999,6 +13000,87 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       'cel możesz wskazać ZERO, JEDEN albo DWA razy („up to two") — rzut bez celów dozwolony (ruling APC 2022-12-08)',
       'gdy wskażesz co najmniej jeden cel i WSZYSTKIE staną się nielegalne przy rozstrzyganiu, czar nie rozstrzyga się i NIE dobierasz (ruling APC 2022-12-08; CR 608.2b)',
     ],
+  }),
+
+  // BATCH 63 / dokończenie (2026-10-04h): cztery brakujące karty właściciela.
+  defineCard({
+    id: "bloodtithe-harvester", name: "Bloodtithe Harvester", set: "VOW",
+    types: ['Creature'], subtypes: ["Vampire"], colors: ["B", "R"],
+    power: 3, toughness: 2, manaCost: 2,
+    oracleText: "When this creature enters, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\n{T}, Sacrifice this creature: Target creature gets -X/-X until end of turn, where X is twice the number of Blood tokens you control. Activate only as a sorcery.",
+    imageUri: "https://cards.scryfall.io/large/front/f/0/f0192cf7-3391-4720-b9c8-72dec5dde01e.jpg?1783924794",
+    artId: 212, plan: "Innistrad",
+    support: { status: 'supported', limitations: [] },
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' }, effect: [BLOOD_TOKEN_EFFECT] }),
+      createAbility({ type: ABILITY_TYPE.activated, timing: 'sorcery',
+        cost: { tap: true, sacrificeSelf: true }, targets: [{ type: 'creature' }],
+        effect: { type: 'pump',
+          power: { kind: 'permanent_count', types: ['Artifact'], subtypes: ['Blood'], token: true, multiplier: -2 },
+          toughness: { kind: 'permanent_count', types: ['Artifact'], subtypes: ['Blood'], token: true, multiplier: -2 },
+        },
+      }),
+    ],
+  }),
+  defineCard({
+    id: "snarespinner", name: "Snarespinner", set: "DMU",
+    types: ['Creature'], subtypes: ["Spider"], colors: ["G"],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: "Reach\nWhenever this creature blocks a creature with flying, this creature gets +2/+0 until end of turn.",
+    imageUri: "https://cards.scryfall.io/large/front/0/b/0b51c3b5-db70-4976-986d-ed3fc8584d1a.jpg?1783921293",
+    artId: 254, plan: "Dominaria",
+    support: { status: 'supported', limitations: [] },
+    keywords: ['reach'],
+    abilities: [createAbility({ type: ABILITY_TYPE.triggered,
+      trigger: { event: 'blocks', blockedHasKeyword: 'flying' },
+      effect: { type: 'pump', power: 2, toughness: 0, target: 'self' },
+    })],
+  }),
+  defineCard({
+    id: "kozileks-predator", name: "Kozilek's Predator", set: "2XM",
+    types: ['Creature'], subtypes: ["Eldrazi", "Drone"], colors: ["G"],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: "When this creature enters, create two 0/1 colorless Eldrazi Spawn creature tokens. They have \"Sacrifice this token: Add {C}.\"",
+    imageUri: "https://cards.scryfall.io/large/front/c/8/c8614f43-21c3-47cd-894a-8cc952bc561a.jpg?1783930144",
+    artId: 259, plan: "Zendikar",
+    support: { status: 'supported', limitations: [] },
+    abilities: [createAbility({ type: ABILITY_TYPE.triggered,
+      trigger: { event: 'enter_battlefield' }, effect: [{ ...SPAWN_TOKEN_EFFECT, amount: 2 }],
+    })],
+  }),
+  defineCard({
+    id: "etched-host-doombringer", name: "Etched Host Doombringer", set: "MOM",
+    types: ['Creature'], subtypes: ["Phyrexian", "Demon"], colors: ["B"],
+    power: 3, toughness: 5, manaCost: 5,
+    oracleText: "When this creature enters, choose one —\n• Target opponent loses 2 life and you gain 2 life.\n• Choose target battle. If an opponent protects it, remove three defense counters from it. Otherwise, put three defense counters on it.",
+    imageUri: "https://cards.scryfall.io/large/front/b/2/b2f1afa2-ca71-49cf-953b-d5dfc60c178f.jpg?1783917012",
+    artId: 260, plan: "Kaldheim",
+    support: { status: 'supported', limitations: [] },
+    abilities: [createAbility({ type: ABILITY_TYPE.triggered,
+      trigger: { event: 'enter_battlefield', modes: [
+        { name: 'Przeciwnik traci 2 życia, ty zyskujesz 2', targets: [{ type: 'opponent' }],
+          effects: [{ type: 'lose_life', amount: 2, scope: 'target' }, { type: 'gain_life', amount: 2 }] },
+        { name: 'Bitwa: −3 obrony chroniona przez przeciwnika, inaczej +3', targets: [{ type: 'battle' }],
+          effects: [{ type: 'adjust_battle_defense', opponentAmount: -3, otherwiseAmount: 3 }] },
+      ] },
+      effect: [],
+    })],
+  }),
+  defineCard({
+    id: 'token_blood', name: "Blood", set: null,
+    types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,
+    oracleText: "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.", imageUri: "https://cards.scryfall.io/large/front/a/6/a6f374bc-cd29-469f-808a-6a6c004ee8aa.jpg?1783924692",
+    abilities: [BLOOD_TOKEN_ABILITY],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+  defineCard({
+    id: 'token_eldrazi_spawn', name: "Eldrazi Spawn", set: null,
+    types: ['Creature', 'Token'], subtypes: ["Eldrazi", "Spawn"], colors: [], manaCost: 0,
+    power: 0, toughness: 1,
+    oracleText: "Sacrifice this creature: Add {C}.", imageUri: "https://cards.scryfall.io/large/front/0/6/06e3f3c1-866c-4214-82e0-dcca2d1aba1e.jpg?1783930237",
+    abilities: [SPAWN_TOKEN_ABILITY],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
 ]);
 

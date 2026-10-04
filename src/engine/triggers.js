@@ -1,3 +1,4 @@
+import { isBattle } from './battles.js';
 import { holdReplacementResolution } from './destruction.js';
 import { isTargetingBlockedByProtection } from './attachments.js';
 import { event } from '../protocol/types.js';
@@ -395,6 +396,13 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.controllerId === damagedPlayerId && isArtifactOrEnchantment(object)
         && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
+  if (spec.type === 'battle') {
+    return state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isBattle(object)
+        && !hexproofBlocked(object) && !protectedBlocked(object);
     });
   }
   if (spec.type === 'player') {
@@ -1102,11 +1110,13 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   const fired = event('ability_triggered', {
     objectId: source.id, cardId: source.cardId,
     trigger: ability?.trigger?.event ?? null, onStack: true,
+    stackEntryId: id, playerId: source.controllerId,
+    targets: ability?.trigger?.requiresTarget
+      ? targets.slice(extra?.fixedTargetCount ?? 0).filter(targetId => targetId != null) : [],
   });
   state.events.push(fired);
   events.push(fired);
   // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
-  return entry;
   return entry;
 }
 
@@ -2204,16 +2214,25 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
       events.push(skipped);
       return false;
     }
-    state.pendingModalTrigger = {
+    const pending = {
       playerId: source.controllerId,
       sourceId: source.id,
+      sourceLki: Object.freeze({ ...source }),
       cardId: source.cardId,
       ability: Object.freeze({ ...ability }),
       modes: trigger.modes.map((m) => Object.freeze({ ...m, name: m.name ?? null })),
       extra: Object.freeze({ ...extra }),
-      restorePriorityTo: state.turn.priorityPlayerId,
+      restorePriorityTo: state.pendingModalTrigger?.restorePriorityTo ?? state.turn.priorityPlayerId,
+      next: null,
     };
-    state.turn.priorityPlayerId = source.controllerId;
+    // Kilka ETB naraz nie może nadpisać poprzedniego wyboru. Kolejka w
+    // rekordzie zachowuje zgodność pojedynczej bramki i structuredClone.
+    if (state.pendingModalTrigger) {
+      let tail = state.pendingModalTrigger;
+      while (tail.next) tail = tail.next;
+      tail.next = pending;
+    } else state.pendingModalTrigger = pending;
+    state.turn.priorityPlayerId = state.pendingModalTrigger.playerId;
     const required = event('modal_trigger_required', {
       playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
       modeCount: trigger.modes.length,
@@ -3171,8 +3190,16 @@ function processTriggersScan(state, recentEvents) {
       const enteredKey = ev.object?.id ?? ev.objectId;
       if (etbEnterFired.has(enteredKey)) return;
       etbEnterFired.add(enteredKey);
-      let entered = state.objects.get(ev.object?.id);
-      if (!entered) return;
+      let entered = state.objects.get(enteredKey);
+      if (!entered) {
+        // CR 603.6a/113.7a: wejście zaszło, nawet gdy nowy obiekt zginął
+        // w SBA przed skanem (np. token 3/0). Zwykłe ETB i obserwatorzy
+        // korzystają z migawki zdarzenia. Nie powtarzaj tu „as enters”
+        // (liczniki Sagi/devour) na obiekcie, którego już nie ma.
+        if (ev.object) fireEnterBattlefieldTriggers(state, ev.object, events,
+          { enteredTapped: Boolean(ev.object.tapped) });
+        return;
+      }
       // CR 730.2c / 702.145: daybound LUB nightbound przy designation=null
       // ustawia dzień (setDayNight transformuje nightbound → daybound).
       // Przy ustalonej designation permanent wchodzi właściwą stroną —
@@ -4138,6 +4165,21 @@ function processTriggersScan(state, recentEvents) {
   // pole bitwy), więc gdy permanent gracza nieaktywnego był wcześniejszy, jego
   // zdolność rozstrzygała się OSTATNIA zamiast pierwszej.
   placeTriggerBatchInApnapOrder(state, stackStart);
+  // CR 603.3: celowanie przy ogłaszaniu triggera (auto, wybór lub tryb)
+  // wyzwala ward w NASTĘPNEJ partii. Nie mieszamy go z APNAP rodziców,
+  // bo ward aktywnego gracza trafiłby wtedy POD trigger gracza nieaktywnego.
+  // Obejmuje też późno dodane ETB po domknięciu devour. Znaczniki są
+  // publicznymi faktami zapowiedzi; prefiksy-konteksty nie są w targets.
+  const wardStart = state.zones.stack.length;
+  const announcements = new Set();
+  for (const ev of [...recentEvents, ...events]) {
+    if (ev.type !== 'ability_triggered' || !ev.onStack || !ev.targets?.length
+      || announcements.has(ev.stackEntryId) || !state.objects.has(ev.stackEntryId)) continue;
+    announcements.add(ev.stackEntryId);
+    fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+  }
+  placeTriggerBatchInApnapOrder(state, wardStart);
+
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki
   // kroków dopisują je przy tworzeniu, a lokalny `events` zbiera wyłącznie
   // wycinki state.events (slice(before)). Ponowny push duplikowałby każde

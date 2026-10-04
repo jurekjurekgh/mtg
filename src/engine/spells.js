@@ -1,3 +1,4 @@
+import { isBattle } from './battles.js';
 import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardInOpponentGraveyard, isOnAdventure } from './zones.js';
@@ -193,6 +194,10 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (isTargetingBlockedByProtection(state, object, sourceObject, { sourceColors: srcColors })) {
         throw new Error(`Nielegalny cel: ${targetId} (protection)`);
       }
+    }
+    if (spec?.type === 'battle') {
+      if (!object || object.zone !== 'battlefield' || !isBattle(object)) throw new Error(`Nielegalny cel bitwy: ${targetId}`);
+      return object;
     }
     if (spec?.type === 'creature') {
       if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') throw new Error(`Nielegalny cel: ${targetId}`);
@@ -1687,6 +1692,10 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,
     // artefakt, enchantment, planeswalker; engine: każy nonland permanent
     // to obiekt strefy battlefield inny niż land).
+    case 'battle': return state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isBattle(object) && !hasHexproofAgainst(state, object, playerId);
+    });
     case 'permanent': return state.zones.battlefield.filter(id => {
       const object = state.objects.get(id);
       return object?.zone === 'battlefield' && !hasHexproofAgainst(state, object, playerId);

@@ -1,3 +1,4 @@
+import { isCountedEffectValue, countedEffectSign } from '../engine/effect-values.js';
 import {
   IMAGE_MODE, cardImageSources, hoverImageSources, hoverModeLabel, hoverPreviewShape,
   nextHoverMode, HOVER_MODES, tileImageSources, localArtUrl, scryfallCardUrl, IMAGE_SIZE,
@@ -171,7 +172,7 @@ export function stepLabel(turn) {
 const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel', player_or_planeswalker: 'gracz lub planeswalker',
   // M166/B (Cacophodon — untap target permanent).
-  permanent: 'permanent',
+  permanent: 'permanent', battle: 'bitwa',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
   artifact_or_enchantment: 'artefakt lub zaklęcie',
   artifact_or_enchantment_or_land: 'artefakt, zaklęcie lub ląd',
@@ -1113,6 +1114,10 @@ function altarTypeCount(session) {
 }
 
 function ptAmount(n) {
+  if (isCountedEffectValue(n)) {
+    const subject = [...(n.types ?? []), ...(n.subtypes ?? [])].join(' — ');
+    return `${Math.abs(n.multiplier ?? 1)} × liczba ${n.token ? 'tokenów' : 'permanentów'} ${subject} pod kontrolą kontrolera zdolności`;
+  }
   if (typeof n === 'number') return signed(n);
   return DYNAMIC_PT_LABELS[n] ?? n;
 }
@@ -1125,8 +1130,10 @@ function ptAmount(n) {
 function ptPair(power, toughness) {
   const p = ptAmount(power ?? 0);
   const t = ptAmount(toughness ?? 0);
-  const pDyn = typeof power === 'string';
-  const tDyn = typeof toughness === 'string';
+  const pDyn = typeof power === 'string' || isCountedEffectValue(power);
+  const tDyn = typeof toughness === 'string' || isCountedEffectValue(toughness);
+  const pSign = countedEffectSign(power) < 0 ? '-' : '+';
+  const tSign = countedEffectSign(toughness) < 0 ? '-' : '+';
   if (!pDyn && !tDyn) return `${p}/${t}`;
   // M255/D (pętla jakości, Altar of the Goyf / Jyoti / Tarmogoyf): wartość
   // DYNAMICZNA (string) to DEFINICJA X, a nie liczba premii. Drukowanie jej
@@ -1139,8 +1146,8 @@ function ptPair(power, toughness) {
   // Równe definicje (Jyoti: source_power/source_power; Altar: liczba typów
   // kart w grobach dla obu) pokazujemy RAZ (pin: test/bug-ptpair-description).
   const pair = (pDyn && tDyn && p === t)
-    ? `+X/+X (X = ${p})`
-    : `${pDyn ? '+X' : p}/${tDyn ? '+Y' : t}${pDyn || tDyn ? ` (${[
+    ? `${pSign}X/${tSign}X (X = ${p})`
+    : `${pDyn ? `${pSign}X` : p}/${tDyn ? `${tSign}Y` : t}${pDyn || tDyn ? ` (${[
         ...(pDyn ? [`X = ${p}`] : []),
         ...(tDyn ? [`Y = ${t}`] : []),
       ].join(', ')})` : ''}`;
@@ -1197,6 +1204,7 @@ function describeEffect(e, ctx = {}) {
     get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}`,
+    adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
     // drukowało surowe „tap” — ta sama ścieżka publiczna (tekst karty).
@@ -1840,6 +1848,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const clause = triggerConditionClause(trigger);
     return `Gdy atakuje${clause ? ` (gdy ${clause})` : ''}: ${parts}.`;
   }
+  if (trigger.event === 'blocks') return `Gdy blokuje stwora${trigger.blockedHasKeyword ? ` z cechą ${KEYWORD_LABELS[trigger.blockedHasKeyword] ?? trigger.blockedHasKeyword}` : ''}: ${parts}.`;
   if (trigger.event === 'bat_attacks') return `Gdy nietoperz, który kontrolujesz, atakuje: ${parts}.`;
   if (trigger.event === 'upkeep') {
     // PR #98: strona CZASU wynika z pól deskryptora (eachUpkeep — wilkołaki
@@ -4580,6 +4589,7 @@ export function cardInfo(session, object, combat = null) {
       : null,
     // M112: znacznik walki („atakuje — niezablokowany", „blokuje: X").
     combatRole: combatRoleOf(object, combat, session),
+    battleProtector: object.protectorId ? `Chroni: ${PLAYER_NAMES[object.protectorId] ?? 'gracz'}` : null,
     isBattlefield: object.zone === 'battlefield',
     // Dane potrzebne wyłącznie do ilustracji. `cardId` obiektu zmienia się przy
     // transformacji (DFC), więc `imageUri` sam z siebie wskazuje właściwą stronę.
@@ -4706,6 +4716,7 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
       flags.push(hostName ? `${label} → ${hostName}` : label);
     }
     if (info.combatRole) flags.push(info.combatRole);
+    if (info.battleProtector) flags.push(info.battleProtector);
     if (info.damage > 0) flags.push(`obrażenia ${info.damage}`);
     // M100/E12: kafel zakrytego permanentu niesie znacznik mechaniki — własny
     // ma nazwę + „zakryty (morph)", wrogi „Face-down creature" + „morph".
@@ -4929,6 +4940,7 @@ export function buildStateOverlay(visual, info) {
       }
     }
     if (info.combatRole) flags.push(['combat', info.combatRole]);
+    if (info.battleProtector) flags.push(['battle', info.battleProtector]);
     if (info.damage > 0) flags.push(['dmg', `−${info.damage}`]);
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push(['sick', 'choroba']);
     // A (2026-08-11): liczniki na nakładce ilustracji.

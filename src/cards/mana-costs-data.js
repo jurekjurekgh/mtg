@@ -1,4 +1,9 @@
 export const MANA_COSTS = {
+  "bloodtithe-harvester": "{B}{R}",
+  "snarespinner": "{1}{G}",
+  "kozileks-predator": "{3}{G}",
+  "etched-host-doombringer": "{4}{B}",
+
   "treefolk-umbra": "{2}{G}",
   "containment-membrane": "{2}{U}",
   "thornwood-falls": "",

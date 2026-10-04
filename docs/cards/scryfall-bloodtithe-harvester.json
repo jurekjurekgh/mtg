@@ -1,0 +1,49 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bloodtithe+Harvester&set=vow&format=json",
+  "print": "vow",
+  "name": "Bloodtithe Harvester",
+  "mana_cost": "{B}{R}",
+  "cmc": 2,
+  "type_line": "Creature — Vampire",
+  "oracle_text": "When this creature enters, create a Blood token. (It's an artifact with \"{1}, {T}, Discard a card, Sacrifice this token: Draw a card.\")\n{T}, Sacrifice this creature: Target creature gets -X/-X until end of turn, where X is twice the number of Blood tokens you control. Activate only as a sorcery.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "B",
+    "R"
+  ],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "232",
+  "rarity": "uncommon",
+  "artist": "Lucas Graciano",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/0/f0192cf7-3391-4720-b9c8-72dec5dde01e.jpg?1783924794",
+    "normal": "https://cards.scryfall.io/normal/front/f/0/f0192cf7-3391-4720-b9c8-72dec5dde01e.jpg?1783924794"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/vow/232/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": [
+    {
+      "date": "2025-01-24",
+      "source": "wotc",
+      "comment": "The value of X is determined only once, as Bloodtithe Harvester’s last ability resolves."
+    },
+    {
+      "date": "2025-01-24",
+      "source": "wotc",
+      "comment": "If an effect refers to a Blood token, it means any artifact token with the subtype Blood, even if it has gained other subtypes."
+    },
+    {
+      "date": "2025-01-24",
+      "source": "wotc",
+      "comment": "You can't sacrifice a Blood token to pay multiple costs."
+    },
+    {
+      "date": "2025-01-24",
+      "source": "wotc",
+      "comment": "Some triggered abilities trigger \"whenever you sacrifice a Blood token.\" These abilities trigger regardless of why you sacrificed that Blood token."
+    }
+  ]
+}

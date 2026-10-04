@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Etched+Host+Doombringer&set=mom&format=json",
+  "print": "mom",
+  "name": "Etched Host Doombringer",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Phyrexian Demon",
+  "oracle_text": "When this creature enters, choose one —\n• Target opponent loses 2 life and you gain 2 life.\n• Choose target battle. If an opponent protects it, remove three defense counters from it. Otherwise, put three defense counters on it.",
+  "power": "3",
+  "toughness": "5",
+  "colors": [
+    "B"
+  ],
+  "set": "mom",
+  "set_name": "March of the Machine",
+  "collector_number": "102",
+  "rarity": "common",
+  "artist": "Helge C. Balzer",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/2/b2f1afa2-ca71-49cf-953b-d5dfc60c178f.jpg?1783917012",
+    "normal": "https://cards.scryfall.io/normal/front/b/2/b2f1afa2-ca71-49cf-953b-d5dfc60c178f.jpg?1783917012"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/mom/102/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": []
+}
