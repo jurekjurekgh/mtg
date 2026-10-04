@@ -460,6 +460,22 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       }
       return object;
     }
+    // Batch 63/T3 (Subterranean Scout, ORI): „target creature with power N or
+    // less" — bliźniak `creature_with_power_at_least` z górną granicą; moc
+    // EFEKTYWNA (CR 613), spójnie z ofertą i z rewalidacją (L48).
+    if (spec?.type === 'creature_with_power_at_most') {
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') {
+        throw new Error(`Nielegalny cel: ${targetId}`);
+      }
+      const max = spec.max ?? 2;
+      if (hasHexproofAgainst(state, object, casterId)) {
+        throw new Error(`Nielegalny cel: ${targetId} (hexproof)`);
+      }
+      if ((effectivePower(object, state) ?? 0) > max) {
+        throw new Error(`Nielegalny cel: ${targetId} (moc > ${max})`);
+      }
+      return object;
+    }
     if (spec?.type === 'land') {
       if (!object || object.zone !== 'battlefield') throw new Error(`Nielegalny cel: ${targetId}`);
       const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
@@ -1656,6 +1672,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
         if (hasHexproofAgainst(state, object, playerId)) return false;
         return (effectivePower(object, state) ?? 0) >= min;
+      });
+    }
+    // Batch 63/T3 (Subterranean Scout): „power N or less" — górna granica.
+    case 'creature_with_power_at_most': {
+      const max = spec.max ?? 2;
+      return state.zones.battlefield.filter((objectId) => {
+        const object = state.objects.get(objectId);
+        if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+        if (hasHexproofAgainst(state, object, playerId)) return false;
+        return (effectivePower(object, state) ?? 0) <= max;
       });
     }
     // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy (stwór,

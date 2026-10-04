@@ -69,6 +69,16 @@ function settle(s, max = 60) {
   }
 }
 
+/** Passy aż do decyzji o celu triggera (ETB czeka na stosie PO rozstrzygnięciu czaru). */
+function doDecyzjiTriggera(s, max = 20) {
+  for (let i = 0; i < max; i += 1) {
+    if (commands(s).some((c) => c.type === 'resolve_trigger_target')) return;
+    const pass = commands(s).find((c) => c.type === 'pass_priority');
+    if (!pass) return;
+    run(s, pass);
+  }
+}
+
 const find = (s, cardId, zone = 'battlefield') => [...s.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
 const snapshotOf = (slug) => JSON.parse(fs.readFileSync(`docs/cards/scryfall-${slug}.json`, 'utf8'));
 
@@ -299,4 +309,65 @@ test('B63/255: Urborg Uprising — brak many = brak oferty (sorcery bez okna)', 
   addMana(state, 'p1', 4, { colors: ['B'] });
   assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'urborg'),
     'cztery many to za mało na {4}{B}');
+});
+
+// ---- B63/247: Subterranean Scout (ORI #164, plan Lorwyn) --------------------
+
+test('B63/247: Subterranean Scout — dane Oracle, 2/1 Goblin Scout za {1}{R}', () => {
+  const def = sanity('subterranean-scout', { set: 'ORI', plan: 'Lorwyn', artId: 247 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Goblin', 'Scout']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 1);
+  assert.equal(def.manaCost, 2);
+  assert.deepEqual(def.abilities[0].trigger.requiresTarget,
+    { type: 'creature_with_power_at_most', max: 2 }, 'nowy deskryptor górnej granicy mocy');
+});
+
+test('B63/247: Subterranean Scout — ETB: cel o sile ≤ 2 dostaje „can\'t be blocked" do końca tury', () => {
+  const state = game();
+  put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
+  put(state, 'maly', 'rustvine-cultivator', 'p1', 'battlefield'); // 1/2
+  put(state, 'duzy', 'loxodon-mender', 'p1', 'battlefield'); // 3/3 — moc 3 > 2
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
+  doDecyzjiTriggera(state);
+  const oferty = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+  assert.ok(oferty.length > 0, 'trigger ETB czeka na cel (decyzja gracza)');
+  assert.ok(oferty.some((c) => c.targetId === 'maly'), 'stwór o sile 1 jest legalnym celem');
+  assert.ok(oferty.every((c) => c.targetId !== 'duzy'), 'stwór o sile 3 NIE jest legalnym celem');
+  run(state, oferty.find((c) => c.targetId === 'maly'));
+  settle(state);
+  assert.equal(state.objects.get('maly').cantBeBlockedUntilTurn, state.turn.number + 1,
+    'dar ewazji do końca tury (M407)');
+});
+
+test('B63/247: Subterranean Scout — bez celu o sile ≤ 2 trigger NIE wchodzi na stos (CR 603.3d)', () => {
+  const state = game();
+  put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
+  put(state, 'duzy', 'loxodon-mender', 'p1', 'battlefield');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
+  doDecyzjiTriggera(state);
+  assert.ok(!commands(state).some((c) => c.type === 'resolve_trigger_target'), 'brak decyzji o cel (CR 603.3d)');
+  settle(state);
+  assert.ok(!state.objects.get('duzy').cantBeBlockedUntilTurn, 'nic nie dostało daru');
+});
+
+test('B63/247: Subterranean Scout — granica mocy z buforami (moc EFEKTYWNA, CR 613)', () => {
+  const zLicznikiem = (ile) => {
+    const state = game();
+    put(state, 'scout', 'subterranean-scout', 'p1', 'hand');
+    put(state, 'cel', 'rustvine-cultivator', 'p1', 'battlefield');
+    state.objects.set('cel', Object.freeze({ ...state.objects.get('cel'), counters: { '+1/+1': ile } }));
+    addMana(state, 'p1', 2, { colors: ['R'] });
+    run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'scout'));
+    doDecyzjiTriggera(state);
+    const oferty = commands(state).filter((c) => c.type === 'resolve_trigger_target');
+    return { oferty, state };
+  };
+  // 1/2 + jeden licznik = moc 2 → legalny; + dwa liczniki = moc 3 → nielegalny.
+  assert.ok(zLicznikiem(1).oferty.some((c) => c.targetId === 'cel'), 'moc 2 (1/2 + licznik) jest legalna');
+  assert.ok(zLicznikiem(2).oferty.every((c) => c.targetId !== 'cel'), 'moc 3 (1/2 + dwa liczniki) nie jest legalna');
 });

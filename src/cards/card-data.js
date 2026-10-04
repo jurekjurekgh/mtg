@@ -12939,6 +12939,33 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // ==========================================================================
+  // BATCH 63 — transza T3 (nowe, generyczne deskryptory silnika)
+  // ==========================================================================
+
+  // 247 ORI — Subterranean Scout {1}{R} 2/1 Goblin Scout. Wejście: „target
+  // creature with power 2 or less can't be blocked this turn" — nowy
+  // deskryptor celu `creature_with_power_at_most` (górna granica mocy;
+  // bliźniak istniejącego `creature_with_power_at_least`, ADR 0002), efekt
+  // `cant_be_blocked` (dar ewazji do końca tury — M407).
+  defineCard({
+    id: 'subterranean-scout', name: 'Subterranean Scout', set: 'ORI',
+    types: ['Creature'], subtypes: ['Goblin', 'Scout'], colors: ['R'],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: "When this creature enters, target creature with power 2 or less can't be blocked this turn.",
+    imageUri: 'https://cards.scryfall.io/large/front/3/c/3c9289dd-f1a3-4be5-8ed1-4b4dd4e97743.jpg?1783938325',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature_with_power_at_most', max: 2 } },
+        effect: { type: 'cant_be_blocked' },
+      }),
+    ],
+    artId: 247, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['moc licząca się przy ofercie i rozstrzyganiu to moc EFEKTYWNA (CR 613) — cel z buforami ponad 2 wypada (L48)'],
+  }),
+
+  // ==========================================================================
   // BATCH 63 — transza T1 (karty na istniejących mechanikach silnika)
   // ==========================================================================
 

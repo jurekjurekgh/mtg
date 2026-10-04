@@ -708,6 +708,17 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return (effectivePower(object, state) ?? 0) >= min;
     });
   }
+  // Batch 63/T3 (Subterranean Scout, ORI): „target creature with power N or
+  // less" — bliźniak poprzedniego z górną granicą (moc efektywna, CR 613).
+  if (spec.type === 'creature_with_power_at_most') {
+    const max = spec.max ?? 2;
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield' || object.kind !== 'creature') return false;
+      if (hexproofBlocked(object) || protectedBlocked(object)) return false;
+      return (effectivePower(object, state) ?? 0) <= max;
+    });
+  }
   // Batch 22: Thistledown Players — dowolny NIE-land na polu bitwy
   // (stwór, artefakt, enchantment). Źródło triggera nie jest celem
   // własnym (żeby ETB Thistledown nie odpalał na siebie).

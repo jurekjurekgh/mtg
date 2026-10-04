@@ -194,6 +194,7 @@ const TARGET_TYPE_LABELS = Object.freeze({
   attacking_creature: 'atakujący stwór',
   creature_defending_player_controls: 'stwór broniącego się gracza',
   creature_with_subtypes: 'stwór z podtypem', creature_with_power_at_least: 'stwór o sile ≥',
+  creature_with_power_at_most: 'stwór o sile ≤',
   creature_card_in_graveyard: 'karta-stwór w grobie', creature_card_in_opponent_graveyard: 'karta-stwór w grobie przeciwnika',
   card_in_graveyard: 'karta w grobie', permanent_card_in_graveyard: 'karta-permanent w grobie',
   // Batch 59 (Scavenging Harpy): „exile target card from an opponent's
@@ -234,6 +235,7 @@ export const targetTypeLabel = (spec) => {
   if (type === 'creature_without_subtype' && spec.subtype) return `stwór bez podtypu ${spec.subtype}`;
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
+  if (type === 'creature_with_power_at_most' && spec.max != null) return `stwór o sile ≤ ${spec.max}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
   // Batch 59 (Memory's Journey): karty z grobu GRACZA wskazanego w innej
   // pozycji („target cards from their graveyard").

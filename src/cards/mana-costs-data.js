@@ -585,4 +585,6 @@ export const MANA_COSTS = {
   "loxodon-mender": "{5}{W}",
   // Batch63/T1: Urborg Uprising (APC).
   "urborg-uprising": "{4}{B}",
+  // Batch63/T3: Subterranean Scout (ORI).
+  "subterranean-scout": "{1}{R}",
 };

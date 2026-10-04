@@ -236,7 +236,10 @@ test('F/4 okno „this turn”: po własnych walkach dar wygaśnie — wszystkie
 test('F/5 klasa (ADR 0002): inwentarz descriptorowy cant_be_blocked + Enter the Enigma celuje zywym atakujacym', () => {
   // (a) Strażnik: KAŻDY karta z efektem cant_be_blocked musi być na liście
   // klas — nowy dar ewazji w paczce kart = czerwone bramki do czasu przeglądu.
-  const KNOWN = new Set(['shiva-warden-of-ice', 'enter-the-enigma', 'coralhelm-guide']);
+  // Batch 63/T3 (247 ORI Subterranean Scout): nowy dawca daru ewazji — dar
+  // na cel o sile ≤ 2; wycena celu idzie tą samą polityką klasy (F/5), piny
+  // scenariuszowe w test/real-cards-batch63.test.js (B63/247).
+  const KNOWN = new Set(['shiva-warden-of-ice', 'enter-the-enigma', 'coralhelm-guide', 'subterranean-scout']);
   const found = new Set();
   for (const card of REGISTRY.all()) {
     const hits = [];
