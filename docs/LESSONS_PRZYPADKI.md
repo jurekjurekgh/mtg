@@ -1316,6 +1316,25 @@ to crash w benchmarku („Bot wybrał nielegalną komendę").
 Audyt PR #130/D (`resolve_aura_host`): mutacje Q3–Q5 przeżyły pin
 ścieżki „szczęśliwej”.
 
+**Proza z rejestru (kondensacja 2026-10-04f):**
+**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets…
+
+**Reguła:**
+1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
+   (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
+   `aggro`: `simple`).
+2. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej rodziny (`dies`,
+   `leaves_battlefield`, „permanents you control leave").
+3. „Kto decyduje" to JEDNA funkcja (`firstPendingDecision → { playerId, kind }`):
+   pierwszy właściciel = pierwsza bramka `execute` = pierwsza gałąź ofert.
+4. Bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość
+   kolejki (blokowałaby wcześniejszą decyzję).
+5. Predykat blokady jest jeden i wołają go OBIE strony (`exploitDecisionPendingFor`,
+   `closingCombatPassBlocked`).
+6. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28).
+7. Martwy wartownik (mutacja nie czerwieni) do usunięcia, nie „dokumentacja
+   zamiaru" (L5).
+8. Nowy `pending*` ma SIEDEM bramek do zmutowania, nie jedną ścieżkę: oferta po wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja przy wykonaniu (CR 608.2b); pin ścieżki „szczęśliwej” zostawia pięć żywych. Strażnik: `test/audyt-pr130-gospodarz-aury.test.js`.
 ## L49 (2026-08-18) — przypadek
 
 **Objaw:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR

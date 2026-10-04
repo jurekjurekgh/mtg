@@ -1388,25 +1388,20 @@ przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
 
 ## L48 (2026-08-18) — OFERTA i WALIDACJA to jeden filtr, jeden porządek i jeden rejestr
 
-**Przypadek:** Bot wybierał biały czar na cel z `protection from white`: `legalSpellCasts` filtrował tylko `isProtectedFromSource`, a `validateTargets…
+**Reguła:** nowa ochrona / `pending*` trafia w TRZY miejsca (oferta
+`legalTargetCandidates`, `validateTargets` i OBA boty), a nowe zdarzenie z rodziny
+— do KAŻDEGO skanu tej rodziny (`dies`, `leaves_battlefield`, „permanents you
+control leave"). „Kto decyduje" to JEDNA funkcja (`firstPendingDecision`);
+bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość kolejki
+(blokowałaby wcześniejszą decyzję). Predykat blokady jest jeden i wołają go OBIE
+strony. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28), a martwy
+wartownik (mutacja nie czerwieni) idzie do usunięcia, nie do „dokumentacji
+zamiaru" (L5). Nowy `pending*` ma SIEDEM bramek do zmutowania: oferta po
+wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole
+w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja
+przy wykonaniu (CR 608.2b) — pin ścieżki „szczęśliwej" zostawia pięć żywych.
 
-**Reguła:**
-1. Nowa ochrona / `pending*` trafia w TRZY miejsca: `legalTargetCandidates`
-   (oferta), `validateTargets` i OBA boty (`heuristic`: `anyResolve`;
-   `aggro`: `simple`).
-2. Nowe zdarzenie z rodziny trafia do KAŻDEGO skanu tej rodziny (`dies`,
-   `leaves_battlefield`, „permanents you control leave").
-3. „Kto decyduje" to JEDNA funkcja (`firstPendingDecision → { playerId, kind }`):
-   pierwszy właściciel = pierwsza bramka `execute` = pierwsza gałąź ofert.
-4. Bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość
-   kolejki (blokowałaby wcześniejszą decyzję).
-5. Predykat blokady jest jeden i wołają go OBIE strony (`exploitDecisionPendingFor`,
-   `closingCombatPassBlocked`).
-6. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28).
-7. Martwy wartownik (mutacja nie czerwieni) do usunięcia, nie „dokumentacja
-   zamiaru" (L5).
-8. Nowy `pending*` ma SIEDEM bramek do zmutowania, nie jedną ścieżkę: oferta po wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja przy wykonaniu (CR 608.2b); pin ścieżki „szczęśliwej” zostawia pięć żywych. Strażnik: `test/audyt-pr130-gospodarz-aury.test.js`.
-
+**Strażnik:** `test/audyt-pr130-gospodarz-aury.test.js` + piny trzech miejsc oferty/walidacji.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L48)
 
 
@@ -2444,5 +2439,5 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 
 **Reguła:** zanim uznasz, że benchmark mierzy jakąś rodzinę decyzji, POLICZ jej wystąpienia (`tools/scoring-pay-census.mjs --all`). Rodziny poza próbką pinuj SCENARIUSZAMI (wzorzec `test/pmssb56-...`), nie wynikiem benchmarku, i mierz je na `--decks=all` — inaczej zmiany w ich wycenie nie mają pokrycia w win-rate, a regresje przechodzą niezauważone.
 
-**Strażnik:** `tools/scoring-pay-census.mjs` (`--all`, `--decks=all`) + `tools/scoring-unvalued-audit.mjs` + `tools/scoring-mulligan-audit.mjs`.
+**Strażnik:** `tools/scoring-pay-census.mjs` (`--all`, `--decks=all`) + `tools/scoring-unvalued-audit.mjs` + `tools/scoring-mulligan-audit.mjs` + `tools/scoring-choice-space-audit.mjs` (czy decyzje ze stałym `finish(0)` mają NAPRAWDĘ jeden wariant — komentarz to nie pomiar).
 
