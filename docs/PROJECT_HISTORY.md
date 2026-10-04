@@ -15573,9 +15573,10 @@ niezbędne do poprawnego scoringu bota — nie pomijaj problemów”. Żadnych z
 wag — trzy pytania, trzy odpowiedzi z liczbami.
 
 - **Zapłaty:** `tools/scoring-pay-census.mjs` — 0 decyzji na BENCH_DECKS
-  (36 partii; żadna z 9 kart `payMana` nie leży w próbce), 2 decyzje
-  `resolve_pay_or_sacrifice` na 23 taliach (koszty 1 i 3) → za mała próba
-  na zmianę wyceny.
+  (36 partii; żadna z 9 kart `payMana` nie leży w próbce); na 23 taliach próba
+  10× (230 partii): `resolve_pay_or_sacrifice` 15 decyzji (pay=15, koszty
+  {1:11, 3:4}), `resolve_optional_pay_choice` 25 (pay=24, koszty {1:9, 2:16}),
+  ward/kontra 0 → bez dowodu misplayu, bez zmian wag.
 - **Mulligan:** `tools/scoring-mulligan-audit.mjs` — 53 decyzje, **0 naruszeń**
   trzech kryteriów jakości.
 - **Przestrzeń wyboru:** `tools/scoring-choice-space-audit.mjs` — 4 typy ze

@@ -2869,8 +2869,12 @@ poprawnego scoringu bota — nie pomijaj problemów”) + kolejka 2 z handoffu 0
 BENCH_DECKS (36 partii, seedy 2 i 6) — **0 decyzji** czterech rodzin zapłat,
 bo żadna z 9 kart z polem `payMana` nie leży w 6 taliach próbki. Na wszystkich
 23 taliach (`--decks=all`, seed 1): jedyna zmierzona rodzina
-`resolve_pay_or_sacrifice` — **2 decyzje, pay=2, koszty {1:1, 3:1}**; za mała
-próba na zmianę `finish(cmd.pay ? 90 : 5)` → bez zmian (ADR 0021/0026).
+`resolve_pay_or_sacrifice` — **2 decyzje, pay=2, koszty {1:1, 3:1}**. Próba
+**10× (230 partii)**: `resolve_pay_or_sacrifice` **15 decyzji, pay=15**
+(koszty {1:11, 3:4}), `resolve_optional_pay_choice` **25 decyzji, pay=24**
+(koszty {1:9, 2:16}); ward/kontra nadal 0 — karty tych rodzin nie leżą
+w żadnej talii repo (L179). Bez dowodu misplayu → **bez zmian wag**
+(ADR 0021/0026).
 
 **Pomiar 2 (mulligan):** nowe narzędzie `tools/scoring-mulligan-audit.mjs`
 (23 partie, 53 decyzje): 0 lądów 0 keep/1 mulligan; 1: 0/6; 2: 21/0; 3: 12/0;
