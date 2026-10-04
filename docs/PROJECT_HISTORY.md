@@ -15453,3 +15453,32 @@ build **70 modułów / 4792,5 kB**.
   `npm run test:all` **7808/7808** EXIT 0 (502,9 s) na tipie `f640ba2`, build
   70 modułów / 4814,2 kB, `bot-scoring-snapshot` 4/4 po regeneracji,
   `event-contract-audit` 0 naruszeń, regresja skoncentrowana 269/269.
+
+## 2026-10-04a — PMSSB-52: kondensacja rejestru lekcji (budżet 99,96% → zapas 299 tokenów) + L174–L176 (PR #154)
+
+- **Wejście:** kolejka handoffu 03i/03j (poz. 3) + AGENTS.md §0 — budżet
+  lektury startowej stał na **99 958 tokenów (42 zapasu)** przy `c6181b8`,
+  więc każdy nowy wpis rejestru czerwienił bramkę.
+- **Naprawa (mechanizm PR #93/M284):** 20 wpisów skróconych do postaci
+  reguła + strażnik + `→ narracja`, proza przeniesiona W CAŁOŚCI do
+  `docs/LESSONS_PRZYPADKI.md` (L161, L113, L101, L34, L110, L37, L111, L31,
+  L73, L53, L141, L112, L146, L124, L123, L159, L160, L48, L164, L169);
+  nagłówek rejestru skrócony o ~0,6 kB. **Żaden numer nie zniknął**
+  (164 wpisy → 167), strażnicy docs 25/25.
+- **Trzy lekcje z tej sesji:** **L174** bramkę uruchamiaj na ZAMROŻONYM
+  drzewie (brak wyniku ≠ zielony; `test:all` po `c6181b8` zniknął w resecie
+  środowiska), **L175** `name != null` NIE znaczy „to karta” (CR 108.2b;
+  F6 audytu PR #153 — 12 kopii, filtr po `name` był MARTWY), **L176** dryf
+  golden-mastera lokalizuj `--dump` PRZED/PO, nie mutacjami kanałów
+  (PMSSB-50, pierwsza różnica: decyzja #104).
+- **Pomiar:** 99 958 → **99 701 tokenów** (zapas 42 → **299**) mimo dodania
+  trzech wpisów; nowy wpis kosztuje ~180–250 tokenów, więc pas wystarcza na
+  1–2 kolejne, a trzeci będzie wymagał następnego passu (granice: najgrubsze
+  wpisy 1,2–1,9 kB — L164, L169, L170, L165, L168, L163, L5, L167, L171).
+- **Pułapka rundy (do procedur, nie do rejestru):** pierwsza wersja skryptu
+  cięła wpis „od nagłówka do następnego” i przy złym dopasowaniu skasowała
+  50 wpisów z ogona pliku; ratunek dały kopie `/tmp` + metoda podmiany
+  DOKŁADNEGO bloku z asercjami (unikalność, proporcja długości, stały
+  licznik nagłówków `## L\d+ (`).
+- **Bramki:** `npm test` (fast) — patrz raport poniżej; budżet i strażnicy
+  docs zielone.

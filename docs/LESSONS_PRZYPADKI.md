@@ -1272,6 +1272,11 @@ przez `legalTargetCandidates`, nawet gdy typ celu „wynika z gałęzi".
 
 **Wpis zbiorczy** (4 powtórki; L90 to kotwica): rozjazd oferty i walidacji
 to crash w benchmarku („Bot wybrał nielegalną komendę").
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Audyt PR #130/D (`resolve_aura_host`): mutacje Q3–Q5 przeżyły pin
+ścieżki „szczęśliwej”.
+
 ## L49 (2026-08-18) — przypadek
 
 **Objaw:** nowa sesja zapytała właściciela „co robimy?" zamiast wykonać ADR
@@ -1754,6 +1759,11 @@ wielocelowe 2026-09-03 i cała gałąź `0434199` została zrevertowana. Lekcja 
 to; jeśli karta wielocelowa wejdzie kiedyś za zgodą właściciela, te cztery asercje są
 pierwszą rzeczą do odtworzenia (treść testu jest w commicie `0434199`).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L123)
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+`docs/cards/HOW_TO_ADD_CARD.md` dopuszcza ściągnięcie tych samych URL-i przez
+`fetch_page`, a ja w turze 10 uznałem brak egressu za koniec wątku (b).
+
 ## L132 (2026-09-06) — przypadek: Wycena oparta o STREFĘ UKRYTĄ jest inertna; audyt czytający to samo źródło tego nie zobaczy
 
 **Przypadek:** PR #100 dodał wyceny `resolve_manifest_dread`,
@@ -1925,6 +1935,11 @@ przedwczesnym `--write`) oraz tabela atrybucji i kolejność wejścia karty w
 `test/audyt-bot-walka-remisy.test.js` (historia sufitu `block` przeniesiona
 do `docs/LESSONS_PRZYPADKI.md` L124).
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L124)
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+U nas pierwszy `--write` zamroził ślad bota bez wpisu `MANA_COSTS` nowej
+karty i test znowu świecił, choć nic już nie było nie tak z kodem.
+
 ## L130 (2026-09-03) — przypadek: „trigger bez opisu" i pułapki tamtej sesji
 
 **Przypadek:** dwa zgłoszenia właściciela (uwagi C/D) miały JEDEN root cause: bramki
@@ -2331,6 +2346,11 @@ pola w `session.js`, `triggers.js`) — z 36 kandydatów realne były 2; lista
 wyjątków JAWNA i z POWODEM; analizator jest produktem (fałszywy alarm poprawiaj w
 TEŚCIE, nie w kodzie).
 
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M273 (platyna, ADR 0027). 10 z 25 błędów czterech odznak to JEDEN wzorzec
+([L107]): ścieżka omija choke point albo gubi pole zdarzenia oczekiwane przez
+konsumenta. Emitera bez `toZone` (#20) przeoczyłem wzrokiem — znalazł go skan.
+
 ## L121 (2026-09-02) — przypadek (proza z rejestru, dodana 2026-09-20e)
 
 **Strażnik (pełna treść z rejestru, kondensacja 2026-09-20e):**
@@ -2524,6 +2544,13 @@ mechanik (zakaz `711.\d` i `712.4` w kontekście kart dwustronnych) oraz
 komentarz przy `transformedCharacteristics`, który zamiast powoływać 400.7 +
 711.2 jako rzekomą regułę dla resetu cech, cytuje 712.18 i nazywa reset
 ZNANYM ODSTĘPSTWEM (obserwacja O-6 audytu).
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+C2 trzyma oba cytaty „BEZ ZMIAN” (712.9, 712.8e), C1 zakazuje martwych
+numerów (711.x, 712.4a/4d/5); para DFC w `cr-numery-mechanik-straznik.test.js`
+świeci na `711.\d` i `712.4`. „702.114b” (devoid) dopisane z przyzwyczajenia,
+gdy 702.114 był już w tabeli, wywróciło bramkę o 1 test — CR 2026-09-25 ma
+tylko 702.114a (Etap 9, U2); audyt PR #145 F5.
 
 ## L165 (2026-09-24) — przypadek
 
@@ -2757,6 +2784,8 @@ silnik działa, ale to, że test nic nie mierzy (L21). Naprawa: `addObject`
 dostaje `...data` całym spreadem, a pola bojowe (`tapped`,
 `untapLockedBy`) nadal osobno, bo `addObject` je normalizuje i ostrzega.
 
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Kalibracja: baza 2 + 2·worth(1/1) = 6 = dawna stała 8.
 
 ## L170 (2026-09-25) — przypadek
 
@@ -2856,3 +2885,113 @@ bez flagi (rusza wskaźnik, zostawia drzewo i indeks). Wcześniejsza wersja tej
 procedury (ślepy `reset --hard`) skasowała kiedyś niecommitowane naprawy —
 różnica jest w kolejności: NAJPIERW porównanie co do ścieżki, dopiero potem
 przestawienie wskaźnika.
+
+## L161 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Zero zgłoszeń detektorów (L27); znalazła ręczna lektura transkryptu E3
+(alara-76, krok z Shieldmage). Komunikat mówił „obrażenia zadawane chronionym
+obiektom będą niwelowane do końca tury” — bez zakresu.
+
+## L113 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M274. Strażnik z M273 („każda ścieżka ETB zna liczniki”) przepuścił trzy
+ścieżki: skanował jeden plik (`effects.js`), a klasa mieszka w trzech;
+wyciszenie po ciągu znaków pomijało okno zawierające `faceDown` (intencja:
+„wejście zakryte nie dostaje liczników”, CR 708.2), ale Pyxis ustawia
+`faceDown: false` — ODKRYWA kartę — więc wyciszył przypadek, którego miał
+pilnować. Po poszerzeniu skanu filtr sam wskazał czwartą ścieżkę (Dragon Arch),
+której nie dał ręczny przegląd.
+
+## L101 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Panel pokazywał „Rzuć za warp: Weftblade Enhancer (koszt ?)”. Enumeracja
+katalogu wykazała cztery gubione deskryptory kosztu w `playerView`: `warp`,
+`surge`, `kicker` i `treasureAltCost`. M151 dopisał tam wcześniej `suspend`
+i zamknął temat testem na JEDNĄ kartę — reszta dojechała później i nikt jej nie
+zauważył, bo silnik liczył ofertę poprawnie; kłamała tylko etykieta.
+
+## L34 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Prawdę dało: `git show HEAD:<plik>` jako wersja sprzed zmiany (nigdy lokalna
+kopia „gdzieś po drodze”) oraz skrypt wypisujący FAKTYCZNIE wybraną komendę
+zamiast predykatu.
+
+## L110 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M271: zastąpienie ręcznej kopii choke pointem wywołało regresję — benchmark
+botów wywracał partię na inwariancie „załącznik wskazuje nieistniejącego
+gospodarza”. Winna nie była nowa zmiana: ręczna kopia nie sprawdzała
+inwariantów, więc niespójny stan pośredni nikogo nie bolał. Prawdziwym błędem
+była kolejność odczepiania KILKU załączników (#16).
+
+## L37 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Benchmark „przechodził wcześniej”, bo dotychczasowe rozdania nie trafiały
+w tę ścieżkę. Objaw mylił dwa razy: wyszedł dopiero przy `--seeds 16`
+i wyglądał jak skutek zmiany talii.
+
+## L111 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Repro przez `applyEffect` pokazywało stwora w `state.combat.attackers` po
+zmianie kontroli. Regułę egzekwuje jednak `state-based.js` od M201; sonda nie
+przepuszczała stanu przez pętlę SBA, więc widziała stan pośredni.
+
+## L31 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M122 dołożyło test „każdy event triggera ma wpis w `TRIGGER_EVENT_LABELS`”.
+Zielony — a właściciel zobaczył „Chronic Flooding — trigger
+(enchanted_permanent_tapped)”: ten sam `case` miał TRZY gałęzie `return`
+i tylko jedna sięgała po słownik. Strażnik pilnował DANYCH, błąd siedział
+w KODZIE.
+
+## L73 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+M212: trzy partie po naprawie dały 0 zgłoszeń — fałszywie, bo archiwalny
+transkrypt SPRZED naprawy zawierał wzorcowy przypadek, którego detektor też nie
+widział.
+
+## L53 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Każda zmiana talii oznaczała polowanie na seedy; rewolucja talii (M178,
+ADR 0023) dała 95 czerwonych testów naraz.
+
+## L141 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Numery cloaków po `cardId` zdradzały równość zakrytych kart i tworzyły
+duplikaty etykiet dla różnych kart; teraz zależą od jawnych wejść na stół.
+
+## L146 (2026-10-04) — przypadek z rejestru
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+Zdarzenie węższe od pojęcia reguł + brak testu na alternatywną drogę:
+prewencja/infect odpadają z natury, płatność życiem i `lose_life` dochodzą.
+
+## L159 (2026-10-04) — przypadek z rejestru: mutacja, która nie zaszła, i no-op
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+
+N17 — podmiana wielolinijkowego bloku `auraCard` (z komentarzami) zakończyła się
+komunikatem „WZORZEC NIEZNALEZIONY", a wynik wyglądał jak zielony. N18 —
+usunięcie wpisu `resolve_aura_host` z listy komend aggro-bota przy domyślnych
+wagach (`ability: 1`) było no-opem. Procedura: `/tmp/mut*.sh`.
+
+## L160 (2026-10-04) — przypadek z rejestru: guard czytający kształt implementacji
+
+**Proza z rejestru (kondensacja 2026-10-04o):**
+
+E6/6 (`test/e6-pula-blokerow-ponad-cap.test.js`) czytał regexem kształt pola
+widoku (`buildBlockCandidatesView(...)`); po refaktorze z F14 (nowy
+`buildBlockerView` → `{pool, slots}`) pin padł — nie dlatego, że reguła się
+zepsuła, tylko dlatego, że zmienił się literał implementacji.
+
