@@ -2442,3 +2442,11 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** po wykonaniu komendy, która stawia trigger na stosie (ward, backup, mentor, pay-trigger), decyzja triggera przychodzi po passach OBU graczy — mierz SEKWENCJĘ decyzji (bot dla aktualnego `priorityPlayerId` w pętli), nie jeden krok; brak decyzji w kroku N nie znaczy „mechanizm martwy”.
 
 **Strażnik:** procedura sond (wzorzec pełnej pętli: `docs/plans/PLAN_2026-10-04b-pmssb53-ward-pomiar.md`).
+
+## L178 (2026-10-04) — Zapłata ratująca KOPIĘ czaru musi wiedzieć, czy kopia wnosi coś nowego; fakt „to kopia" należy do widoku
+
+**Przypadek:** (pomiar PMSSB-56) storm × ward: `spreading-insurrection` (storm=2) na zakrytym disguise z ward {2} — bot płacił **3× {2}** za JEDNO przejęcie kontroli (kopia i oryginał celują w ten sam stwór, efekt się nie kumuluje), a `resolve_counter_pay_choice` płacił {1} za uratowanie takiej kopii (Frightful Delusion). Widok wpisu stosu nie niósł flagi `copy` (CR 707.10), więc wycena nie odróżniała kopii od oryginału.
+
+**Reguła:** zanim wycenisz zapłatę ratującą czar (ward CR 702.21a, zapłata kontrująca CR 608.2g), sprawdź, czy ratowany obiekt nie jest kopią bez nowej wartości: kopia + inna instancja TEJ SAMEJ karty z tym samym zestawem celów + WSZYSTKIE efekty w klasie „nie kumuluje się na tym samym celu" ⇒ odmowa (efekt dowiezie instancja pozostawiona na stosie — kopie rozwiązują się PRZED oryginałem). Karz WYŁĄCZNIE kopie (inaczej instancje odmawiają sobie nawzajem i efekt przepada), efektu spoza listy nie klasyfikuj (kotwica anty-over-fix), a fakt „stos niesie kopię" jest informacją PUBLICZNĄ — widok musi go nieść (ADR 0017), bo inaczej wycena jest ślepa.
+
+**Strażnik:** `test/pmssb56-ward-kopie-redundancja.test.js` E1–E12 (E2E storm × ward i storm × kontra, anty-over-fix na `damage`, kotwice: brak bliźniaka, inny zestaw celów, nieznany efekt; pokrętło `redundantCopyPayPenalty` — ×0 = stan sprzed naprawy; mutacje m1–m4 czerwienią właściwe piny). Audyt zdrowia scoringu: `tools/scoring-unvalued-audit.mjs` (12 partii / 6255 komend / 0 niewycenionych, 2026-10-04).

@@ -15545,3 +15545,22 @@ build **70 modułów / 4792,5 kB**.
 - **Bramki:** strażnicy docs 25/25, `npm test` **7540/7540** EXIT 0, build
   70 modułów / 4814,2 kB; brama PR `npm run test:all` na tipie `55976dc`:
   **7811/7811** EXIT 0 (450,5 s).
+
+## 2026-10-04e — PMSSB-56: scoring bota — zapłata za redundantne kopie czarów (PR #154)
+
+- **Dyrektywa właściciela:** „dodawaj mechaniki i pomiary niezbędne do
+  poprawnego scoringu bota — nie pomijaj problemów, tylko je rozwiązuj”.
+- **Pomiar A:** `tools/scoring-unvalued-audit.mjs` (self-play przez harness):
+  12 partii / 6255 komend / **0 decyzji bez wyceny**.
+- **Pomiar B (RED):** storm × ward — bot płacił **3× {2}** za jedno przejęcie
+  kontroli; **PO: 1 płatność** + efekt dostarczony.
+- **Pomiar C (RED):** storm × kontra (`frightful-delusion` w kopię) — bot
+  płacił {1}; **PO: odmowa** (pin E9 był czerwony: `[true]` vs `[false]`).
+- **Mechanika:** widok stosu niesie `copy: true` dla `isSpellCopy` (CR 707.10,
+  ADR 0017); `NON_ACCUMULATING_SPELL_EFFECTS` + `redundantSpellCopyPayment`
+  (kara tylko dla kopii z nie-kumulującym się efektem i bliźniakiem na stosie);
+  pokrętło `redundantCopyPayPenalty: 120` (×0 = stan sprzed naprawy).
+- **Piny:** E1–E12 (E2E ward/kontra + anty-over-fix `damage` + kotwice).
+  **Mutacje m1–m4** czerwienią właściwe piny; restor z /tmp → GREEN 12/12.
+- **Lekcja L178.** **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
+  70 modułów / 4818,8 kB.

@@ -2821,3 +2821,39 @@ z 04a działa).
 na tipie `55976dc`: **7811/7811** EXIT 0 (450,5 s).
 
 **Status:** zamknięty.
+
+## PMSSB-56 — scoring bota: zapłata za redundantne KOPIE czarów (2026-10-04e)
+
+**Wejście:** dyrektywa właściciela („dodawaj mechaniki i pomiary niezbędne do
+poprawnego scoringu bota — nie pomijaj problemów”) + pomiar 2 z PMSSB-53.
+
+**Pomiar A (zdrowie scoringu):** nowe narzędzie `tools/scoring-unvalued-audit.mjs`
+(self-play heuristic przez harness benchmarku) → **12 partii / 6255 komend /
+0 decyzji bez wyceny**; klasa „brak case” domknięta statycznie (PMSSB-54)
+i mierzalnie.
+
+**Pomiar B (RED):** storm × ward (`spreading-insurrection` storm=2 na zakrytym
+disguise z ward {2}, 14 Mountain) — bot płacił **3× {2}** za jedno przejęcie
+kontroli. **PO:** dokładnie **1 płatność**, efekt dostarczony.
+
+**Pomiar C (RED):** storm × zapłata kontrująca (`frightful-delusion` w KOPIĘ,
+„zapłać {1}”) — bot płacił {1}. **PO:** odmowa, efekt dostarcza instancja
+pozostawiona na stosie.
+
+**Mechanika:** (1) widok wpisu stosu niesie `copy: true` dla `isSpellCopy`
+(CR 707.10 — luka kompletności ADR 0017); (2) `NON_ACCUMULATING_SPELL_EFFECTS`
++ `redundantSpellCopyPayment` — kara wyłącznie dla KOPII, której WSZYSTKIE
+efekty nie kumulują się na tym samym celu, gdy na stosie wisi inna instancja
+tej samej karty z tym samym zestawem celów (karzemy tylko kopie — inaczej
+instancje odmawiałyby sobie nawzajem); (3) pokrętło `redundantCopyPayPenalty`
+(120; ×0 = stan sprzed naprawy, M429).
+
+**Piny:** `test/pmssb56-ward-kopie-redundancja.test.js` E1–E12 (E2E ward
+i kontra, anty-over-fix `damage`, kotwice: brak bliźniaka / inny zestaw celów
+/ nieznany efekt). **Mutacje:** m1 reguła off → E1+E8; m2 flaga `copy` off →
+E1; m3 `damage` w liście → E3; m4 kontra off → E9+E12; restor z /tmp → GREEN.
+
+**Lekcja:** L178. **Bramki:** `npm test` **7552/7552** EXIT 0 (+12), build
+**70 modułów / 4818,8 kB**, brama PR — liczby w handoffie 04e.
+
+**Status:** zamknięty.
