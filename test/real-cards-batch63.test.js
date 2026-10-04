@@ -18,10 +18,11 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { createAbility } from '../src/engine/abilities.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { effectiveKeywords } from '../src/engine/permanents.js';
+import { effectiveKeywords, effectivePower } from '../src/engine/permanents.js';
 import { addMana } from '../src/engine/resources.js';
 
 const registry = createCardRegistry();
@@ -370,4 +371,60 @@ test('B63/247: Subterranean Scout — granica mocy z buforami (moc EFEKTYWNA, CR
   // 1/2 + jeden licznik = moc 2 → legalny; + dwa liczniki = moc 3 → nielegalny.
   assert.ok(zLicznikiem(1).oferty.some((c) => c.targetId === 'cel'), 'moc 2 (1/2 + licznik) jest legalna');
   assert.ok(zLicznikiem(2).oferty.every((c) => c.targetId !== 'cel'), 'moc 3 (1/2 + dwa liczniki) nie jest legalna');
+});
+
+// ---- BATCH 63 / silnik: zdarzenie triggera `blocks` (karta 254 wstrzymana) --
+// 254 Snarespinner (DMU, plan Dominaria) jest WSTRZYMANA do decyzji o migracji
+// podziału talii Dominaria (re-balans M228/ADR 0024 zmienia nazwy plików
+// dominaria-wu/brg → dominaria-ub/wrg i unieważnia ~600 referencji: fixture'y
+// sesji, BENCH_DECKS, domyślne talie testera). Silnikowe wsparcie karty jest
+// gotowe i pokryte pinem syntetycznym poniżej; po migracji wystarczy definicja
+// danych + snapshot `scryfall-snarespinner.json.pending`.
+
+/** Wstawia stwora z DOWOLNYMI zdolnościami (pin silnikowy bez wpisu w katalogu). */
+function putZAbilities(state, id, cardId, controllerId, abilities, extra = {}) {
+  const def = registry.get(cardId);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone: 'battlefield',
+    ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes, keywords: def.keywords, abilities, ...extra,
+  });
+  return state.objects.get(id);
+}
+
+/** Deklaruje atak p1 i blok p2 (pary: atakujący → [blokerzy]). */
+function zablokuj(state, attackerIds, assignments) {
+  for (const id of [...attackerIds, ...Object.values(assignments).flat()]) {
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
+  }
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  assert.ok(execute(state, { type: 'declare_attackers', playerId: 'p1', attackerIds }).ok, 'atak zadeklarowany');
+  execute(state, { type: 'pass_priority', playerId: 'p1' }); // okno po deklaracji (CR 508.2)
+  execute(state, { type: 'pass_priority', playerId: 'p2' });
+  assert.ok(execute(state, { type: 'declare_blockers', playerId: 'p2', assignments }).ok, 'blok zadeklarowany');
+}
+
+const TRIGGER_BLOKS = createAbility({
+  type: 'triggered',
+  trigger: { event: 'blocks', blockedHasKeyword: 'flying' },
+  effect: { type: 'pump', power: 2, toughness: 0 },
+});
+
+test('B63/ENG: `blocks` + `blockedHasKeyword` — blok lotnika daje +2/+0 (silnik gotowy dla 254)', () => {
+  const state = game(['p1', 'p2']);
+  // `reach` (CR 702.17b) jest niezbędny, by pinowany stwór mógł zablokować lotnika.
+  putZAbilities(state, 'pajak', 'rustvine-cultivator', 'p2', [TRIGGER_BLOKS], { keywords: ['reach'] }); // 1/2
+  put(state, 'lotnik', 'delta-bloodflies', 'p1', 'battlefield'); // 1/2 z flying (bloker przeżyje 1 obrażenie)
+  zablokuj(state, ['lotnik'], { lotnik: ['pajak'] });
+  settle(state);
+  assert.equal(effectivePower(state.objects.get('pajak'), state), 3, '1 + 2 = 3 (pump +2/+0)');
+  assert.equal(state.objects.get('pajak').toughness, 2, 'wytrzymałość bez zmian (+0)');
+});
+
+test('B63/ENG: `blocks` — blok stwora BEZ cechy nie odpala triggera (filtr deskryptora)', () => {
+  const state = game(['p1', 'p2']);
+  putZAbilities(state, 'pajak', 'rustvine-cultivator', 'p2', [TRIGGER_BLOKS]);
+  put(state, 'naziemny', 'loxodon-mender', 'p1', 'battlefield'); // 3/3 bez flying
+  zablokuj(state, ['naziemny'], { naziemny: ['pajak'] });
+  settle(state);
+  assert.equal(effectivePower(state.objects.get('pajak'), state), 1, 'brak pompy bez cechy flying');
 });

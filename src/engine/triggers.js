@@ -3656,6 +3656,26 @@ function processTriggersScan(state, recentEvents) {
           }
         }
       }
+      // Batch 63/T3 (254 DMU Snarespinner): „Whenever this creature BLOCKS a
+      // creature with <cecha> …" — zdarzenie `blocks` na BLOKERZE. Filtr cechy
+      // blokowanego stwora pochodzi z DESKRYPTORA zdolności
+      // (`blockedHasKeyword`, ADR 0002) i jest sprawdzany keywordami
+      // efektywnymi (CR 613 — dar „gains flying" liczy się w tym oknie).
+      for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
+        if (!Array.isArray(blockerIds) || blockerIds.length === 0) continue;
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
+        for (const blockerId of blockerIds) {
+          const blocker = state.objects.get(blockerId);
+          if (!blocker || blocker.zone !== 'battlefield') continue;
+          for (const ability of effectiveAbilities(blocker)) {
+            if (ability?.trigger?.event !== 'blocks') continue;
+            const kw = ability.trigger.blockedHasKeyword;
+            if (kw && !effectiveKeywords(attacker, state).includes(kw)) continue;
+            tryFire(state, ability, blocker, [], events);
+          }
+        }
+      }
     }
     // Deklaracja atakujących: triggery „attacks" (na atakującym), tribał
     // „bat_attacks" (na kontrolowanych permanentach — np. Zoraline) oraz
