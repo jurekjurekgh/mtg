@@ -19,7 +19,14 @@
 // i resolve_replacement_choice nie wystąpiły w próbce. Stałe finish(0) tam,
 // gdzie próba istnieje, są POPRAWNE.
 //
-// Uruchomienie: node tools/scoring-choice-space-audit.mjs [seeds] [--decks=all]
+// Tryb --all-decisions: mapa WSZYSTKICH typów decyzji (ile wariantów realnie ma
+// każdy typ). Wynik na katalogu 2026-10-04 (46 partii, 23 talie): pass_priority
+// zawsze 1 (19369), declare_blockers wybór 1..32 (704 jednowariantowych z 878),
+// resolve_mulligan_choice zawsze 2 (keep/mulligan), resolve_optional_trigger_choice
+// zawsze 1 — z DEFINICJI oferty (odmowa to osobne `pass_priority`; sprawdzone
+// w game-state.js:7637 → tylko `fire: true`).
+//
+// Uruchomienie: node tools/scoring-choice-space-audit.mjs [seeds] [--decks=all] [--all-decisions]
 // Exit code: 1, gdy typ z listy ma KIEDYKOLWIEK >1 wariant (dowód braku wyceny).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -32,6 +39,7 @@ import { BENCH_DECKS, benchmarkDecks } from './benchmark.mjs';
 
 const seeds = Number(process.argv[2] ?? 1);
 const WSZYSTKIE_TALIE = process.argv.includes('--decks=all');
+const ALL_DECISIONS = process.argv.includes('--all-decisions');
 const DECKS = WSZYSTKIE_TALIE ? benchmarkDecks() : BENCH_DECKS;
 const registry = createCardRegistry();
 const deckLists = new Map(DECKS.map((name) => [
@@ -81,7 +89,7 @@ function match(deckA, deckB, seed) {
     const p = state.turn.priorityPlayerId;
     const view = playerView(state, p);
     const cmd = bots.get(p).chooseCommand(view, {});
-    if (cmd?.type && STALE_ZERO.has(cmd.type)) odnotuj(view, cmd, deckA, deckB, seed);
+    if (cmd?.type && (STALE_ZERO.has(cmd.type) || ALL_DECISIONS)) odnotuj(view, cmd, deckA, deckB, seed);
     const r = execute(state, cmd);
     if (!r?.ok) break;
   }
@@ -94,6 +102,19 @@ for (let i = 0; i < DECKS.length; i += 1) {
 }
 
 console.log(`partie: ${games} (talii w próbce: ${DECKS.length}${WSZYSTKIE_TALIE ? ', --decks=all' : ''})`);
+if (ALL_DECISIONS) {
+  // Mapa WSZYSTKICH decyzji: ile wariantów ma realnie każdy typ. Typy z histem
+  // {1:N} to decyzje bez wyboru (wycena zbędna — ale sprawdź, czy to ZAWSZE 1);
+  // typy z wariantami ≥2 wymagają wyceny rozróżniającej (inaczej L41).
+  const wgDecyzji = [...agg.entries()].sort((a, b) => b[1].decyzje - a[1].decyzje);
+  console.log('\nWSZYSTKIE typy decyzji (warianty: liczba wystąpień):');
+  for (const [typ, k] of wgDecyzji) {
+    const hist = [...k.hist.entries()].sort((a, b) => a[0] - b[0]).map(([n, ile]) => `${n}:${ile}`).join(' ');
+    const maxW = Math.max(...k.hist.keys());
+    console.log(`  ${String(k.decyzje).padStart(5)}  ${typ}  {${hist}}${maxW > 1 ? '  ← WYBÓR' : ''}`);
+  }
+  process.exitCode = 0; // tryb mapy nie jest bramką
+} else {
 for (const [typ, uzasadnienie] of STALE_ZERO) {
   const k = agg.get(typ);
   if (!k) {
@@ -110,4 +131,5 @@ if (naruszenia.length === 0) {
 } else {
   console.log(`\nWYNIK: ${naruszenia.length} decyzji z >1 wariantem i BEZ wyceny — potrzebna wycena w bocie.`);
   process.exitCode = 1;
+}
 }
