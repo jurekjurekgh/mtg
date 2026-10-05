@@ -155,3 +155,9 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   parametr OFF/ON audytu remisów oraz guardy pustej/urwanej próby. Bez tego
   nowe sprawdzenia znanych trafień/rampy nie miały całego publicznego kontekstu.
   Przyrost zapisany osobno przed długimi pomiarami; jego brama jeszcze w toku.
+
+- `0c70a01`: narzędzia ewaluacji zabezpieczone. Następnie **7747/7747**, build
+  **72 / 4871,5 kB**, exit 0. Tie na 7 taliach: 55→54 remisów akcyjnych
+  (7+7 ukończonych gier); mirror OFF/ON **13:15**, 28/28 ukończonych.
+  Wyniki zapisane od razu w kolejnym commicie, nie tylko w logach sandboxa.
+  Pozostają Żywy Tester oraz końcowa brama all/quick.
