@@ -71,7 +71,7 @@ prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i sku
    Scout, Mender, Snarespinner: nowe dowody → naprawy wspólnej rodziny;
    brak błędu → jawny wynik z pinem, nie pozorna zmiana parametrów.
    Fast + build, osobny commit i push po samodzielnym kroku.
-5. [ ] **Ewaluacja PMSSB.** Snapshot z pierwszą różnicą (cel: bez refreshu;
+5. [x] **Ewaluacja PMSSB.** Snapshot z pierwszą różnicą (cel: bez refreshu;
    uzasadniony dryf wymaga kontroli parametrów OFF na tych samych wejściach),
    tie-audit przed/po, mirror OFF/ON oraz Żywy Tester na taliach z mechanikami.
    Każda talia batcha musi mieć obserwację albo jawny scenariusz wymuszony;
@@ -161,3 +161,9 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   (7+7 ukończonych gier); mirror OFF/ON **13:15**, 28/28 ukończonych.
   Wyniki zapisane od razu w kolejnym commicie, nie tylko w logach sandboxa.
   Pozostają Żywy Tester oraz końcowa brama all/quick.
+
+- Żywy Tester: siedem talii po stronie bota, seedy 5800–5806, **7/7 końców**,
+  0 flag / niewycenionych / limitów. Nieobecne decyzje Connection/Mender/Urborg
+  mają jawne wymuszone sceny C/B. Czytanie transkryptu znalazło drobiazg F17
+  „gracz wybierasz tryb”; 3 RED→GREEN, integracja **23/23**. Poprawka i wyniki
+  zapisane natychmiast przed kolejną bramą, żeby nie gromadzić pracy lokalnie.

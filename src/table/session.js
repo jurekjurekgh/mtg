@@ -1636,8 +1636,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // upkeep, choose one") — było surowe „modal_trigger_required".
       case 'modal_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — wybierz tryb zdolności triggerowanej`;
       case 'modal_trigger_resolved': {
-        const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${objectOrLki(e.sourceId, e.cardId)} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
+        const source = objectOrLki(e.sourceId, e.cardId);
+        if (e.skipped) return `${source} — brak legalnego trybu`;
+        const mode = e.modeName ? `: ${e.modeName}` : '';
+        return `${source} — ${whoN(e.playerId)} wybiera tryb${mode}`;
       }
       case 'hand_creature_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki`;
       case 'hand_creature_choice_resolved': return e.putCreature
