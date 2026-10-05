@@ -50,9 +50,10 @@ test('F1/1: w resources.js nie ma ręcznej kopii predykatu pokrycia pipa', () =>
 test('F1/2: reguła jest wołana przez wspólną funkcję (kotwica, nie pusty skan)', () => {
   // L29/L39: skan „zero trafień" przechodzi też wtedy, gdy reguła zniknie —
   // kotwica mówi, ile wywołań wspólnej funkcji jest w pliku.
+  // M179/E: +2 wywołania dla Treasure auto-tap (pip i obrona w głąb, L48).
   const wywolania = [...kod().matchAll(/unitCoversAnyRequirement\(/g)].length;
-  assert.equal(wywolania, 17,
-    `oczekiwane 17 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146); `
+  assert.equal(wywolania, 19,
+    `oczekiwane 19 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146 + M179/E); `
     + 'nowe miejsce = świadoma aktualizacja kotwicy');
 });
 

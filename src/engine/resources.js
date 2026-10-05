@@ -447,6 +447,21 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
         covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
       }
     }
+    // M179/E: Treasure — auto-tap jak wolne, ale z poświęceniem (CR 601.2h).
+    // Fresh nie liczy Skarbów — rezerwa fałszywie blokowałaby tapnięcie.
+    if (!covered) {
+      for (const id of [...state.zones.battlefield]) {
+        if (covered) break;
+        const object = state.objects.get(id);
+        if (!object || object.controllerId !== playerId || object.tapped) continue;
+        const ability = treasureManaAbilityOf(object);
+        if (!ability) continue;
+        if (!unitCoversAnyRequirement(ability.colors, singleColorRequirements(new Set(requirements.flat())))) continue;
+        const need = firstUncoveredPipColor(expandManaPool(player.manaPool), requirements);
+        tapTreasureForMana(state, playerId, id, { grantColor: need ?? ability.colors[0] });
+        covered = matchColorRequirements(expandManaPool(player.manaPool), requirements);
+      }
+    }
     // A (Mana Cylix): pipy niedomknięte darmowymi źródłami pokrywają źródła
     // KOSZTOWE — ostatnia deska (po lądach i wolnych), tylko w brakującym
     // kolorze. Atomowość w tapCostedManaSource (bramka przed mutacją).
@@ -537,6 +552,19 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
         && freshSumNow - entry.amount < untappedCostedTotal(state, playerId, purpose, true)) continue;
       tapFreeManaSource(state, playerId, entry);
     }
+    // M179/E: Treasure — auto-tap na sumę (po wolnych, przed kosztowymi).
+    // Fresh nie liczy Skarbów, więc rezerwa dla kosztowych byłaby fałszywie dodatnia
+    // (fresh 0 −1 <0) i blokowała tapnięcie Skarba nawet gdy jest potrzebny do sumy.
+    // Skarb jest ostatnią deską przed kosztowymi — tapujemy gdy wciąż brakuje many.
+    for (const id of [...state.zones.battlefield]) {
+      if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
+      const object = state.objects.get(id);
+      if (!object || object.controllerId !== playerId || object.tapped) continue;
+      const ability = treasureManaAbilityOf(object);
+      if (!ability) continue;
+      const need = requirements.length > 0 ? firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) : null;
+      tapTreasureForMana(state, playerId, id, { grantColor: need ?? ability.colors[0] });
+    }
     // A: darmowe nie starczyły — dopłacamy ze źródeł kosztowych NETTO-DODATNICH
     // (Apprentice +3; konwerter netto-0 (Cylix) sumy nie zwiększy — jego domeną
     // są pipy wyżej). Niezmiennik jak lądy+wolne: bramka gwarantuje domknięcie.
@@ -591,6 +619,16 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       if (matchColorRequirements(payableUnits(), requirements)) break;
       if (!unitCoversAnyRequirement(entry.colors, reqUnits)) continue;
       tapFreeManaSource(state, playerId, entry);
+    }
+    for (const id of [...state.zones.battlefield]) {
+      if (matchColorRequirements(payableUnits(), requirements)) break;
+      const object = state.objects.get(id);
+      if (!object || object.controllerId !== playerId || object.tapped) continue;
+      const ability = treasureManaAbilityOf(object);
+      if (!ability) continue;
+      if (!unitCoversAnyRequirement(ability.colors, reqUnits)) continue;
+      const need = firstUncoveredPipColor(expandManaPool(player.manaPool), requirements);
+      tapTreasureForMana(state, playerId, id, { grantColor: need ?? ability.colors[0] });
     }
     // Obrona w głąb: gdyby pokrycia nie dało się odtworzyć, płatność jest
     // nielegalna — throw PRZED konsumpcją (nie zostawiamy mutacji puli).
@@ -1154,6 +1192,28 @@ export function tapFreeManaSource(state, playerId, entry) {
   return [tappedEvent, mana, produced];
 }
 
+export function tapTreasureForMana(state, playerId, objectId, { grantColor = null } = {}) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  const ability = treasureManaAbilityOf(object);
+  if (!ability) throw new Error('Nielegalne źródło Skarbu (auto-tap)');
+  // Koszt {T},Sacrifice — poświęcenie jest częścią kosztu PRZED efektem (CR 601.2h).
+  // Dla spójności z ręczną aktywacją emitujemy object_tapped, potem permanent_sacrificed.
+  const tappedEvent = event('object_tapped', { objectId, playerId, forMana: true });
+  state.events.push(tappedEvent);
+  const toZone = 'graveyard';
+  const destId = `${toZone}-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, objectId, toZone, destId);
+  state.events.push(event('permanent_sacrificed', {
+    fromId: objectId, objectId: destId, playerId, cardId: moved.cardId, toZone,
+  }));
+  const colors = grantColor ? [grantColor] : ability.colors;
+  const mana = addMana(state, playerId, ability.amount, { colors, fromTreasure: true });
+  const produced = event('mana_produced', { playerId, source: objectId, amount: ability.amount, colors: [...colors] });
+  state.events.push(produced);
+  return [tappedEvent, mana, produced];
+}
+
 /**
  * A: auto-tap KOSZTOWEGO źródła many (lustro tapFreeManaSource + finansowanie
  * kosztu). Kolejność (CR 601.2h/602): NAJPIERW bramka (fundableCostedSources
@@ -1295,7 +1355,24 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
   for (const entry of fundableCostedSources(state, playerId, reqs, excludeSourceId, purpose)) {
     fromCosted += entry.amount - entry.costGeneric - entry.costPips.length;
   }
-  return base + fromCosted;
+  // M179/E: Treasure Tokens - liczą się do oferty rzutu (deska bez stocku many).
+  // Dawny model wymagał ręcznej aktywacji {T},Sacrifice przed rzutem — offer=
+  // payment (L48) nie widział skarbów w producibleMana i canPayColoredCost,
+  // więc Waveskimmer Aven {2}{G}{W}{U} z deską Forest+Mountain+Gond/Heap+2xTreasure
+  // nie miał oferty cast mimo 6 źródeł (4 landy +2 skarby) i kolorów any od
+  // Gond Gate (union via manaColorsIgnoringCosts). Skarb to {T},Sacrifice:any
+  // (tap+sacrifice, length 2 → nie free, nie costed), więc dodajemy jego
+  // jednostki jawnie — pool już w `base`, tu tylko untapped tokeny na stole.
+  let fromTreasureBoard = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || object.tapped) continue;
+    if (excluded != null && excluded.has(id)) continue;
+    const ability = treasureManaAbilityOf(object);
+    if (!ability) continue;
+    fromTreasureBoard += ability.amount;
+  }
+  return base + fromCosted + fromTreasureBoard;
 }
 
 /**
@@ -1357,6 +1434,19 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
   // mówi, które) — inaczej obie strony wydałyby ten sam grant dwukrotnie.
   for (const entry of costedPlan.entries) {
     for (let i = 0; i < entry.amount; i += 1) units.push([...entry.colors]);
+  }
+  // M179/E: Treasure Tokens jako jednostki any do pokrycia pipów kolorowych.
+  // Nie są w untappedFree (tap+sacrifice → extraCostKeys) ani w costed (land
+  // wykluczone / costKeys nie matchuje sacrifice), więc dodajemy je jawnie.
+  // Pool (player.manaPool) już w `units`, tu tylko untapped tokeny na stole.
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.controllerId !== playerId || object.tapped) continue;
+    if (excludedGrant != null && excludedGrant.has(id)) continue;
+    if (costedPlan.grantSpent.has(id)) continue;
+    const ability = treasureManaAbilityOf(object);
+    if (!ability) continue;
+    for (let i = 0; i < ability.amount; i += 1) units.push([...ability.colors]);
   }
   if (grantLands.length === 0) {
     return matchColorRequirements(units, requirements) ? [] : null;

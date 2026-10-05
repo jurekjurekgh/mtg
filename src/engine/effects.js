@@ -2964,10 +2964,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       playerId: sourceObject.controllerId,
       sourceCardId: sourceObject.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
+      stage: 'x',
+      xValue: null,
+      objectId: null,
+      cardId: null,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('grave_free_cast_required', {
       playerId: sourceObject.controllerId, sourceCardId: sourceObject.cardId ?? null,
+      stage: 'x',
     }));
     return true;
   }

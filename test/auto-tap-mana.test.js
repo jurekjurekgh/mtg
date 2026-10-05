@@ -129,7 +129,7 @@ test('auto-tap oszczędza land creatures: najpierw zwykłe landy', () => {
   assert.equal(state.objects.get('dryad').tapped, true);
 });
 
-test('Skarb NIE jest auto-tapowany: ręczna aktywacja zostaje decyzją gracza', () => {
+test('Skarb JEST auto-tapowany: oferta rzutu istnieje i płatność poświęca Skarb (M179/E)', () => {
   const state = mainPhaseState();
   addLand(state, 'l1');
   // Token Skarbu: {T}, poświęć: dodaj 1 manę (identyfikowalna jako treasure mana).
@@ -139,30 +139,30 @@ test('Skarb NIE jest auto-tapowany: ręczna aktywacja zostaje decyzją gracza', 
     abilities: [{
       type: 'activated',
       cost: { mana: 0, tap: true, sacrificeSelf: true },
-      effect: { type: 'add_mana', amount: 1, fromTreasure: true },
+      effect: { type: 'add_mana', amount: 1, colors: ['W','U','B','R','G'], fromTreasure: true },
       trigger: null,
     }],
   });
   addCastableCreature(state, 'cub', 2);
-  // Pula 0 + 1 land = 1 produkowalnej many: koszt 2 jest NIEOFEROWANY, mimo
-  // że Skarb mógłby dopłacić — jego wydatek (poświęcenie) to wybór gracza.
-  assert.equal(producibleMana(state, 'p1'), 1);
+  // M179/E: Skarb liczy się do producibleMana i planGrantManaColors (offer=
+  // payment L48) — pula 0 + 1 land + 1 Skarb = 2, więc koszt 2 JEST oferowany.
+  assert.equal(producibleMana(state, 'p1'), 2);
   const view = playerView(state, 'p1');
-  assert.equal(view.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'cub'), false);
-  // Gracz aktywuje Skarb ręcznie (komenda jest oferowana)…
+  assert.equal(view.legalCommands.some((c) => c.type === 'cast_permanent' && c.objectId === 'cub'), true,
+    'M179/E: Skarb auto-tapuje — oferta rzutu istnieje bez ręcznej aktywacji');
+  // Ręczna aktywacja nadal oferowana (alternatywna ścieżka), ale nie jest wymagana.
   const activate = view.legalCommands.find((c) => c.type === 'activate_ability' && c.objectId === 'treasure');
-  assert.ok(activate, 'zdolność Skarba ma być oferowana');
-  assert.equal(execute(state, activate).ok, true);
-  assert.equal(state.players[0].mana, 1);
-  assert.equal(state.players[0].treasureMana, 1, 'mana ze Skarba jest identyfikowalna');
-  // …a teraz zagranie jest legalne; płatność do-tapuje tylko brakujący land.
+  assert.ok(activate, 'zdolność Skarba ma być oferowana (ręcznie)');
+  // Bezpośredni rzut auto-poświęca Skarb i tapuje land (spendMana).
   const cast = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'cub' });
   resolveStack(state);
 
   assert.equal(cast.ok, true, cast.events[0]?.reason);
   assert.equal(state.objects.get('l1').tapped, true);
+  assert.equal(state.zones.battlefield.includes('treasure'), false, 'Skarb poświęcony auto-tapem');
+  assert.ok(state.zones.graveyard.length > 0, 'Skarb w grobie');
   assert.equal(state.players[0].mana, 0);
-  assert.equal(state.players[0].treasureMana, 0, 'mana ze Skarba wydana w pierwszej kolejności');
+  assert.equal(state.players[0].treasureMana, 0, 'mana ze Skarba wydana');
 });
 
 test('zdolność z kosztem many jest oferowana z pustą pulą (auto-tap przy aktywacji)', () => {

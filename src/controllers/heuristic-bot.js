@@ -12487,22 +12487,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(freeCastVariantScore(view, effects, cmd, 45));
       }
       case 'resolve_grave_free_cast': {
-        // M174/E (Halo Forager): darmowy czar z grobu za {X} = zwykle zysk
-        // (karta + efekt za samą manę); tanie czary lepsze. Rezygnacja przy
-        // braku budżetu/sensu ma niski dodatni score (nie blokuje decyzji).
+        // M174/E (Halo Forager) — STAGED: X → karta → cele (zgłoszenie sekcja A).
         if (cmd.decline) return finish(4);
-        // M265 (Żywy Tester, theros vs worek-basni seed 332): oferta jest
-        // enumerowana PER ZESTAW CELÓW (epicCastOffers), więc stała wartość
-        // kazała botu brać pierwszy zestaw z brzegu — zmierzone: rzucił
-        // Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO
-        // Blade-Blizzard Kitsune, który w tej samej turze miał atakować.
-        // Bliźniacza gałąź suspend/rebound/madness liczy tę karę od M212/Z7;
-        // ta jedna z rodziny jej nie miała (klasa L41). Deskryptor czaru
-        // wisi na karcie w GROBIE (strefa jawna, CR 400.2).
+        const hasTargetPayload = Array.isArray(cmd.targets) || cmd.modeIndex != null || cmd.sacrificeTargetId != null || cmd.payAltCost != null || cmd.stunTargetId != null || cmd.damageDivision != null || Array.isArray(cmd.discardCardIds);
+        // Etap X: tylko xValue, bez karty — baza jak wcześniej, bez kary za cel
+        if (cmd.objectId == null && cmd.xValue != null && !hasTargetPayload) {
+          return finish(Math.max(6, 40 - 3 * cmd.xValue));
+        }
+        // Etap card: wybrana karta, brak celów — wycena per karta (best variant proxy)
+        if (cmd.objectId != null && !hasTargetPayload) {
+          const graveCardPick = (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId) ?? null;
+          const effPick = freeCastVariantEffects(graveCardPick, cmd);
+          // Jeśli karta bez celów — użyj tej wyceny; jeśli wymaga celów — lekka kara, bo wybór celu dopiero nastąpi
+          const isTargeted = (graveCardPick?.spell?.targets?.length ?? 0) > 0 || (graveCardPick?.spell?.modes?.some((m) => (m.targets ?? []).length > 0 || m.variableTargets)) || graveCardPick?.spell?.fireball || graveCardPick?.spell?.divided;
+          const basePick = Math.max(6, 40 - 3 * (cmd.xValue ?? graveCardPick?.manaCost ?? 0));
+          // Lekka zachęta do kart bez celów (mniej ryzyka); dla targetowanych odejmij 2 by preferować X bez ryzyka?
+          return finish(freeCastVariantScore(view, effPick, cmd, isTargeted ? basePick - 2 : basePick));
+        }
+        // Etap target: pełny rzut z celami — poprzednia logika z karą per cel (L41) i trybem (F)
         const graveCard = cmd.objectId
           ? (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId)
           : null;
-        // Audyt PR #93 (znalezisko F): efekty WYBRANEGO trybu i wycena per cel.
         const effects = freeCastVariantEffects(graveCard, cmd);
         return finish(freeCastVariantScore(view, effects, cmd, Math.max(6, 40 - 3 * (cmd.xValue ?? 0))));
       }

@@ -138,6 +138,14 @@ export const CONTRACT_EXCEPTIONS = {
   'permanent_cast.colors':
     'Emiter pomocniczy (resources.js) opisuje samo zagranie permanentu z ręki; '
     + 'kolory niesie ścieżka rzutu czaru, którą czytają triggery na kolor.',
+  'grave_free_cast_resolved.cardId':
+    'Rezygnacja z rzutu z grobu (Halo Forager, „you may pay {X} ... you may cast") — '
+    + 'gdy gracz rezygnuje (declined:true), nie wybrano karty, więc cardId nie istnieje.',
+  'grave_free_cast_resolved.xPaid':
+    'Jak wyżej — rezygnacja nie płaci {X}, więc xPaid nie ma czego opisywać.',
+  'grave_free_cast_required.xValue':
+    'Sekwencyjne modale Halo Foragera (X→karta→cele): początkowy emiter (stage=x) '
+    + 'otwiera wybór X, więc xValue nie jest jeszcze znany; mają go dopiero emitery przejścia x→card i card→target.',
 };
 
 /** Próg: pole uznajemy za część kontraktu, gdy niesie je >= tyle emiterów. */

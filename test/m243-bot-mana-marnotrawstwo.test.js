@@ -102,14 +102,17 @@ test('M243/E: bot NIE poświęca Treasure na manę, gdy czary spłacają same l�
   assert.notEqual(pick, treasureOpt.cmd, 'bot bierze rzut lub pass, nie Skarb');
 });
 
-test('M243/E2: Treasure NA POŻYCIE pozostaje legalny, gdy ODblokowuje rzut (regresja: nie panikuj)', () => {
-  // Jedna Mountain + jeden Skarb + karta za 2: bez Skarba nie stać nas na nic.
+test('M243/E2: Treasure auto-płaci — rzut ODblokowany ofertą, nie ręczną aktywacją (M179/E)', () => {
+  // Jedna Mountain + jeden Skarb + karta za 2: M179/E Skarb liczy się do producibleMana,
+  // więc rzut jest już w ofercie (offer=payment L48) — ręczna aktywacja nie dostaje premii
+  // za odblokowanie i pozostaje pod passem, bot rzuca bezpośrednio.
   const state = game({ treasure: true, handCosts: [2, 2], lands: 1 });
-  const { options } = pickScores(state);
+  const { pick, options } = pickScores(state);
   const treasureOpt = options.find((o) => o.cmd.startsWith('activate_ability(treas'));
   assert.ok(treasureOpt, 'oferta istnieje');
-  assert.ok(treasureOpt.score > 0,
-    `Skarb odblokowujący rzut jest nadal dobry (unlocksSomething): score=${treasureOpt.score}`);
+  assert.ok(treasureOpt.score < 0,
+    `M179/E: Skarb nie musi odblokowywać — oferta rzutu już istnieje (L48): score=${treasureOpt.score}`);
+  assert.ok(pick.startsWith('cast_permanent'), `M179/E: bot rzuca bezpośrednio: ${pick}`);
 });
 
 test('M243/C: Heap Gate #3 (Treasure za {1},{T}+tap bramy) nie wygrywa z passem', () => {

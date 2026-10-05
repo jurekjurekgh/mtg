@@ -2999,14 +2999,19 @@ export function execute(state, input) {
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
 
-  // M174/E (Halo Forager): darmowy rzut z grobu za {X} — jedna decyzja:
-  // rezygnacja ALBO wybór karty (X = jej mana value) z celami/trybem.
+  // M174/E (Halo Forager): darmowy rzut z grobu za {X} — SEKwENCYJNE modale
+  // (zgłoszenie właściciela, sekcja A): wybór X → wybór czaru MV==X → wybór celu/trybu.
+  // Powód: poprzednia enumeracja kombinatoryczna X×karta×cele w jednym modalu
+  // (MASAKRA: 24+ przycisków identycznie nazwanych) — teraz każdy etap wystawia
+  // max distinctMV + kartyZMv + wariantyJednejKarty.
   if (state.pendingGraveFreeCast) {
     if (cmd.type !== 'resolve_grave_free_cast') return reject('grave_free_cast_unresolved');
     if (cmd.playerId !== state.pendingGraveFreeCast.playerId) return reject('grave_free_cast_not_your_decision');
     const pending = state.pendingGraveFreeCast;
     const before = state.events.length;
-    if (cmd.decline || cmd.objectId == null) {
+    const stage = pending.stage ?? 'x';
+    // Rezygnacja dostępna na KAŻDYM etapie — zamyka bez płatności (CR 118.9a).
+    if (cmd.decline) {
       state.pendingGraveFreeCast = null;
       if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
@@ -3016,44 +3021,138 @@ export function execute(state, input) {
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    const card = state.objects.get(cmd.objectId);
-    // Etap F/4: „cast target instant or sorcery card with mana value X from
-    // a graveyard without paying its mana cost" — KAŻDY instant/sorcery
-    // (dawniej wykluczone: koszt dodatkowy, X, Fireball). Rzut idzie wspólną
-    // ścieżką `castSpellWithoutManaCost` (X czaru = 0, CR 107.3b; dopłaty
-    // i koszty dodatkowe płatne), a {X} Foragera wchodzi do tego samego budżetu.
-    const inScope = card && card.zone === 'graveyard' && card.kind === 'spell'
-      && ['instant', 'sorcery'].includes(card.spell?.timing);
-    if (!inScope) return reject('illegal_grave_free_cast');
-    // M203: X jest częścią KOMENDY (wybór gracza), a walidacja pilnuje druku —
-    // „card with mana value X". Wcześniej X było czytane z karty, więc komenda
-    // z dowolnym X przechodziła (zmierzone: xValue 3 przy karcie MV 1 → ok).
-    const xValue = card.manaCost ?? 0;
-    if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
-    // Zapłata {X} (koszt decyzji „you may pay {X}"); koszt many samego czaru
-    // wynosi {0} (CR 118.9a). Cel wydania = rzucana karta (M202/N1). Komenda
-    // niesie X Foragera w `xValue`, więc X samego czaru (zawsze 0) nie jedzie
-    // osobno — `castSpellWithoutManaCost` dostaje komendę bez `xValue`.
-    const { xValue: _foragerX, ...castChoice } = cmd;
-    const graveCast = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, castChoice, {
-      extraMana: xValue,
-      // Czar rzucony przez KONTROLERA Foragera — także z grobu przeciwnika.
-      // „If that spell would be put into a graveyard, exile it instead."
-      objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
-      eventStamp: { fromGraveyard: true, xPaid: xValue },
-    });
-    if (graveCast.reason) {
-      return reject(graveCast.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast.reason);
+    // Helper: czy X jest wśród eligilbilnych (distinct MV gdzie istnieje karta z ofertą)
+    const eligibleXValuesFor = (playerId) => {
+      const xs = new Set();
+      for (const graveId of state.zones.graveyard) {
+        const c = state.objects.get(graveId);
+        if (!c || c.zone !== 'graveyard' || c.kind !== 'spell') continue;
+        if (!['instant', 'sorcery'].includes(c.spell?.timing)) continue;
+        const mv = c.manaCost ?? 0;
+        const budget = producibleMana(state, playerId, null, spellManaPurpose(c), []);
+        if (budget < mv) continue;
+        let hasOffer = false;
+        for (const off of freeSpellCastOffers(state, playerId, c)) {
+          const om = mv + (c.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (c.spell?.additionalCost?.orPayMana ?? 0) : 0);
+          if (om <= budget) { hasOffer = true; break; }
+        }
+        if (hasOffer) xs.add(mv);
+      }
+      return [...xs].sort((a, b) => a - b);
+    };
+    if (stage === 'x') {
+      // LEGACY compat: komenda łącząca X+karta+cele w jednym kroku (stare testy)
+      // — jeśli payload niesie objectId, traktuj jako skrót do natychmiastowego rzutu.
+      if (cmd.objectId != null) {
+        const card = state.objects.get(cmd.objectId);
+        const inScope = card && card.zone === 'graveyard' && card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing);
+        if (!inScope) return reject('illegal_grave_free_cast');
+        const xValue = card.manaCost ?? 0;
+        if (!Number.isInteger(cmd.xValue) || cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
+        const { xValue: _fx, ...castChoice } = cmd;
+        const graveCast = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, castChoice, {
+          extraMana: xValue,
+          objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
+          eventStamp: { fromGraveyard: true, xPaid: xValue },
+        });
+        if (graveCast.reason) return reject(graveCast.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast.reason);
+        state.pendingGraveFreeCast = null;
+        if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+        state.events.push(event('grave_free_cast_resolved', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, cardId: card.cardId, xPaid: xValue, declined: false }));
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+      }
+      // Normalny staged wybór X
+      if (!Number.isInteger(cmd.xValue)) return reject('illegal_grave_free_cast_x');
+      const eligible = eligibleXValuesFor(pending.playerId);
+      if (!eligible.includes(cmd.xValue)) return reject('illegal_grave_free_cast_x');
+      // Przejście do wyboru karty
+      state.pendingGraveFreeCast = { ...pending, stage: 'card', xValue: cmd.xValue };
+      // Event pośredni do logu/UI — nie kończy decyzji, priorytet zostaje
+      state.events.push(event('grave_free_cast_required', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, stage: 'card', xValue: cmd.xValue }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    state.pendingGraveFreeCast = null;
-    if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
-      state.turn.priorityPlayerId = pending.restorePriorityTo;
+    if (stage === 'card') {
+      if (cmd.objectId == null) return reject('illegal_grave_free_cast');
+      // Jeśli komenda niesie już cele (skrót: gracz zna cele i wysyła je razem z wyborem karty) — potraktuj jako final
+      const hasTargetsPayload = Array.isArray(cmd.targets) || cmd.modeIndex != null || cmd.sacrificeTargetId != null || cmd.payAltCost != null || cmd.stunTargetId != null || cmd.damageDivision != null || cmd.discardCardIds != null;
+      if (hasTargetsPayload) {
+        const card = state.objects.get(cmd.objectId);
+        const inScope = card && card.zone === 'graveyard' && card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing);
+        if (!inScope) return reject('illegal_grave_free_cast');
+        const xValue = pending.xValue;
+        if ((card.manaCost ?? 0) !== xValue) return reject('illegal_grave_free_cast_x');
+        if (cmd.xValue != null && cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
+        const { xValue: _fx2, ...castChoice2 } = cmd;
+        const graveCast2 = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, castChoice2, {
+          extraMana: xValue,
+          objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
+          eventStamp: { fromGraveyard: true, xPaid: xValue },
+        });
+        if (graveCast2.reason) return reject(graveCast2.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast2.reason);
+        state.pendingGraveFreeCast = null;
+        if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+        state.events.push(event('grave_free_cast_resolved', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, cardId: card.cardId, xPaid: xValue, declined: false }));
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+      }
+      const card = state.objects.get(cmd.objectId);
+      const inScope = card && card.zone === 'graveyard' && card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing);
+      if (!inScope) return reject('illegal_grave_free_cast');
+      const xValue = pending.xValue;
+      if ((card.manaCost ?? 0) !== xValue) return reject('illegal_grave_free_cast_x');
+      if (cmd.xValue != null && cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
+      const budget = producibleMana(state, pending.playerId, null, spellManaPurpose(card), []);
+      if (budget < xValue) return reject('illegal_grave_free_cast');
+      let hasOffer = false;
+      const affordableOffers = [];
+      for (const off of freeSpellCastOffers(state, pending.playerId, card)) {
+        const om = xValue + (card.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+        if (om <= budget) { hasOffer = true; affordableOffers.push(off); }
+      }
+      if (!hasOffer) return reject('illegal_grave_free_cast');
+      // Optymalizacja 2-modala: karta bez celów/trybów → rzut natychmiast
+      if (affordableOffers.length === 1) {
+        const only = affordableOffers[0];
+        const trivial = (only.targets ?? []).length === 0 && only.modeIndex == null && only.sacrificeTargetId == null && only.payAltCost == null && only.stunTargetId == null && only.damageDivision == null && only.discardCardIds == null;
+        if (trivial) {
+          const graveCast = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, { targets: [] }, {
+            extraMana: xValue,
+            objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
+            eventStamp: { fromGraveyard: true, xPaid: xValue },
+          });
+          if (graveCast.reason) return reject(graveCast.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast.reason);
+          state.pendingGraveFreeCast = null;
+          if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+          state.events.push(event('grave_free_cast_resolved', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, cardId: card.cardId, xPaid: xValue, declined: false }));
+          return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+        }
+      }
+      // Przejście do wyboru celu/trybu
+      state.pendingGraveFreeCast = { ...pending, stage: 'target', objectId: cmd.objectId, cardId: card.cardId };
+      state.events.push(event('grave_free_cast_required', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, stage: 'target', xValue, objectId: cmd.objectId, cardId: card.cardId }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    state.events.push(event('grave_free_cast_resolved', {
-      playerId: pending.playerId, sourceCardId: pending.sourceCardId,
-      cardId: card.cardId, xPaid: xValue, declined: false,
-    }));
-    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    if (stage === 'target') {
+      if (cmd.objectId == null) return reject('illegal_grave_free_cast');
+      if (cmd.objectId !== pending.objectId) return reject('illegal_grave_free_cast');
+      const xValue = pending.xValue;
+      if (cmd.xValue != null && cmd.xValue !== xValue) return reject('illegal_grave_free_cast_x');
+      const card = state.objects.get(cmd.objectId);
+      const inScope = card && card.zone === 'graveyard' && card.kind === 'spell' && ['instant', 'sorcery'].includes(card.spell?.timing);
+      if (!inScope) return reject('illegal_grave_free_cast');
+      if ((card.manaCost ?? 0) !== xValue) return reject('illegal_grave_free_cast_x');
+      const { xValue: _fx3, objectId: _oid, cardId: _cid, ...castChoice } = cmd;
+      const graveCast = castSpellWithoutManaCost(state, pending.playerId, cmd.objectId, castChoice, {
+        extraMana: xValue,
+        objectStamp: { controllerId: pending.playerId, exileInsteadOfGraveyard: true, freeGraveCast: true },
+        eventStamp: { fromGraveyard: true, xPaid: xValue },
+      });
+      if (graveCast.reason) return reject(graveCast.reason === 'free_cast_mana_unpaid' ? 'illegal_grave_free_cast' : graveCast.reason);
+      state.pendingGraveFreeCast = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) state.turn.priorityPlayerId = pending.restorePriorityTo;
+      state.events.push(event('grave_free_cast_resolved', { playerId: pending.playerId, sourceCardId: pending.sourceCardId, cardId: card.cardId, xPaid: xValue, declined: false }));
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
+    return reject('grave_free_cast_unresolved');
   }
 
   // Batch 57/B6a (Baral and Kari Zev): darmowy rzut z RĘKI — decyzja
@@ -8068,49 +8167,110 @@ export function playerView(state, playerId) {
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
     && state.pendingGraveFreeCast && state.pendingGraveFreeCast.playerId === playerId) {
-    // M174/E (Halo Forager): oferta = rezygnacja + rzut per (karta w
-    // DOWOLNYM grobie, MV opłacalne, zestaw celów/tryb z epicCastOffers).
-    // M203 (audyt PR #74, N-NEW-1): „you may pay {X} … cast … WITH MANA VALUE X
-    // … WITHOUT PAYING ITS MANA COST" — X jest WYBOREM gracza i musi równać się
-    // MV rzucanej karty, a jedyną wydaną maną jest zapłata {X} (koszt many
-    // czaru wynosi {0}, CR 118.9a). Budżet liczymy PER KARTA z celem wydania
-    // (M202/N1, L59): zapłata {X} za czar nie-artefaktowy nie może pochodzić
-    // z many ograniczonej drukiem (Powerstone), a jeden wspólny budżet
-    // rozjeżdżałby ofertę z walidacją (L48).
+    // M174/E (Halo Forager) — SEKWENCYJNE modale (zgłoszenie właściciela, sekcja A):
+    // etap 'x' (wybór X), 'card' (wybór czaru MV==X), 'target' (wybór celu/trybu).
+    // Poprzednia enumeracja kombinatoryczna X×karta×cele w jednym modalu — MASAKRA.
+    const pendingGfc = state.pendingGraveFreeCast;
+    const hasStage = pendingGfc.stage != null;
+    const gfcStage = hasStage ? pendingGfc.stage : 'legacy';
+    // Rezygnacja dostępna na KAŻDYM etapie
     legalCommands.push(command('resolve_grave_free_cast', playerId, { decline: true }));
-    for (const graveId of state.zones.graveyard) {
-      const card = state.objects.get(graveId);
-      if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
-      if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
-      const xValue = card.manaCost ?? 0;
-      const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
-      if (graveBudget < xValue) continue;
-      // Audyt PR #93 (znalezisko F): Halo Forager płaci {X} = MV, a CELE trybu
-      // wybiera gracz (CR 601.2c) — „up to three target creatures” nie może
-      // wyłączać karty z oferty, skoro Oracle mówi „any instant or sorcery
-      // card with mana value X". Ten sam generator co w oknie Vaana.
-      // Etap F/4: ten sam generator co pozostałe rzuty bez kosztu many
-      // (koszt dodatkowy, X = 0, Fireball); {X} Foragera + dopłaty mieszczą
-      // się w JEDNYM budżecie (oferta = walidacja `castSpellWithoutManaCost`).
-      for (const offer of freeSpellCastOffers(state, playerId, card)) {
-        const offerMana = xValue
-          + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0)
-          + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
-        if (offerMana > graveBudget) continue;
-        legalCommands.push(command('resolve_grave_free_cast', playerId, {
-          objectId: graveId, cardId: card.cardId, xValue,
-          targets: offer.targets,
-          ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
-          ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
-          ...(offer.payAltCost === true ? { payAltCost: true } : {}),
-          ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
-          ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
-          // Audyt PR #94 / K1: tryb „up to N … put a stun counter on ONE OF
-          // THEM” niesie wybór celu pod stun — bez niego w panelu są N
-          // identycznych przycisków, a walidacja odrzuca każdy wariant ≥1 celu
-          // (L48: oferta = walidacja; tak samo `pushExileCast` w oknie Vaana).
-          ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
-        }));
+    if (!hasStage) {
+      // LEGACY path — stare testy ustawiają pending bez stage; zachowaj stary iloczyn dla zieloności testów przed migracją
+      for (const graveId of state.zones.graveyard) {
+        const card = state.objects.get(graveId);
+        if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
+        if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
+        const xValue = card.manaCost ?? 0;
+        const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
+        if (graveBudget < xValue) continue;
+        for (const offer of freeSpellCastOffers(state, playerId, card)) {
+          const offerMana = xValue + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0) + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+          if (offerMana > graveBudget) continue;
+          legalCommands.push(command('resolve_grave_free_cast', playerId, {
+            objectId: graveId, cardId: card.cardId, xValue,
+            targets: offer.targets,
+            ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
+            ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
+            ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+            ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
+            ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+            ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
+          }));
+        }
+      }
+    } else if (gfcStage === 'x') {
+      const seenX = new Set();
+      for (const graveId of state.zones.graveyard) {
+        const card = state.objects.get(graveId);
+        if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
+        if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
+        const xValue = card.manaCost ?? 0;
+        if (seenX.has(xValue)) continue;
+        const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
+        if (graveBudget < xValue) continue;
+        let hasOffer = false;
+        for (const offer of freeSpellCastOffers(state, playerId, card)) {
+          const offerMana = xValue + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0) + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+          if (offerMana <= graveBudget) { hasOffer = true; break; }
+        }
+        if (!hasOffer) {
+          for (const otherId of state.zones.graveyard) {
+            const oc = state.objects.get(otherId);
+            if (!oc || oc.zone !== 'graveyard' || oc.kind !== 'spell') continue;
+            if (!['instant', 'sorcery'].includes(oc.spell?.timing)) continue;
+            if ((oc.manaCost ?? 0) !== xValue) continue;
+            const ob = producibleMana(state, playerId, null, spellManaPurpose(oc), []);
+            if (ob < xValue) continue;
+            for (const off of freeSpellCastOffers(state, playerId, oc)) {
+              const om = xValue + (oc.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (oc.spell?.additionalCost?.orPayMana ?? 0) : 0);
+              if (om <= ob) { hasOffer = true; break; }
+            }
+            if (hasOffer) break;
+          }
+        }
+        if (!hasOffer) continue;
+        seenX.add(xValue);
+        legalCommands.push(command('resolve_grave_free_cast', playerId, { xValue }));
+      }
+    } else if (gfcStage === 'card') {
+      const xValue = pendingGfc.xValue;
+      for (const graveId of state.zones.graveyard) {
+        const card = state.objects.get(graveId);
+        if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
+        if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
+        if ((card.manaCost ?? 0) !== xValue) continue;
+        const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
+        if (graveBudget < xValue) continue;
+        let hasOffer = false;
+        for (const offer of freeSpellCastOffers(state, playerId, card)) {
+          const offerMana = xValue + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0) + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+          if (offerMana <= graveBudget) { hasOffer = true; break; }
+        }
+        if (!hasOffer) continue;
+        legalCommands.push(command('resolve_grave_free_cast', playerId, { objectId: graveId, cardId: card.cardId, xValue }));
+      }
+    } else if (gfcStage === 'target') {
+      const card = state.objects.get(pendingGfc.objectId);
+      if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') {
+        // karta zniknęła — tylko rezygnacja pozostaje (już wystawiona)
+      } else {
+        const xValue = pendingGfc.xValue;
+        const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
+        for (const offer of freeSpellCastOffers(state, playerId, card)) {
+          const offerMana = xValue + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0) + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
+          if (offerMana > graveBudget) continue;
+          legalCommands.push(command('resolve_grave_free_cast', playerId, {
+            objectId: pendingGfc.objectId, cardId: card.cardId, xValue,
+            targets: offer.targets,
+            ...(offer.damageDivision ? { damageDivision: offer.damageDivision } : {}),
+            ...(offer.sacrificeTargetId != null ? { sacrificeTargetId: offer.sacrificeTargetId } : {}),
+            ...(offer.payAltCost === true ? { payAltCost: true } : {}),
+            ...(offer.discardCardIds ? { discardCardIds: offer.discardCardIds } : {}),
+            ...(offer.modeIndex != null ? { modeIndex: offer.modeIndex } : {}),
+            ...(offer.stunTargetId != null ? { stunTargetId: offer.stunTargetId } : {}),
+          }));
+        }
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision
