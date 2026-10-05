@@ -36,16 +36,16 @@ pakietu testów. Baza: `a362efa` (PR #154); gałąź tej sesji:
 3. [x] **Naprawy CI u przyczyny.** Każde znalezisko z dowodem RED→GREEN;
    nie aktualizować golden-mastera ani progów bez wyjaśnienia pierwszej różnicy.
    Po samodzielnym kroku szybki rdzeń + build, osobny commit i push.
-4. [ ] **Brakujące karty / mechaniki.** Źródła Scryfall + rulingi + dosłowne CR
+4. [x] **Brakujące karty / mechaniki.** Źródła Scryfall + rulingi + dosłowne CR
    (ADR 0030), piny legalności i interakcji przez execute. Mechaniki ogólne,
    pełny Oracle, wszystkie warstwy (transport, widok, bot, UI, log), żadnych
    warunków po nazwie karty. Przyrosty: Blood / Spawn; Snarespinner i talie;
    Etched Host Doombringer z obiema opcjami triggera. Dokładny podział zależy
    od weryfikacji źródeł, nie od pamięci.
-5. [ ] **Integracja batcha.** Generator talii, proweniencja i zgodność snapshotów;
+5. [x] **Integracja batcha.** Generator talii, proweniencja i zgodność snapshotów;
    migracja nazw talii jeżeli wymagana, README z rzeczywistymi licznościami;
    aktualizacja fixture'ów dopiero po pomiarze przyczyny dryfu.
-6. [ ] **Brama i przekazanie.** Pełny `test:all` WYCISZONY na zamrożonym drzewie,
+6. [x] **Brama i przekazanie.** Pełny `test:all` WYCISZONY na zamrożonym drzewie,
    build, szybki benchmark (bez `--full`), odczyt statusu CI PR. Aktualizacja
    planów, historii, milestone'u i handoffu z faktycznymi wynikami oraz
    kumulacyjnego opisu PR; wszystko wypchnięte na gałąź sesji.
@@ -78,4 +78,43 @@ pakietu testów. Baza: `a362efa` (PR #154); gałąź tej sesji:
 - Drugi przyrost: F4/F5 naprawione z 8 pinami RED→GREEN, F6 z 9 pinami
   i mutacją 5 FAIL. Fast **7601/7601**, snapshot **4/4** bez dryfu, build
   **4833,1 kB**; po 6 ukończonych partii smoke każdego z 4 narzędzi.
-- W toku: cztery karty, mechaniki, integracja i końcowa pełna brama.
+- Karty i integracja wdrożone; raport:
+  [`BATCH63_DOKONCZENIE_2026-10-04.md`](../audits/BATCH63_DOKONCZENIE_2026-10-04.md).
+  Nowe piny **32/32**, integracja **123/123**, po naprawie dodatkowych
+  strażników **79/79**. Mutacje: protektor 2 FAIL, blok i atak po 1 FAIL.
+  Kontrola starych talii odtwarza poprzedni golden; nowe talie zmieniają
+  4/6 śladów. Dominaria przeszła na UB/WRG, 27 plików talii bez zmiany.
+- `05947b9`: cztery karty + dwa tokeny, modalne ETB na stosie, Ward w kolejnej
+  partii APNAP, migracja 40 aktywnych plików bez zmiany raportów historycznych.
+  Ponowna brama: fast **7633/7633** (122,5 s), snapshot **4/4**, build
+  **72 moduły / 4849,8 kB**. Commit natychmiast wypchnięty.
+- Punkt kontrolny przed pełną bramą: oczekiwały `all`, quick i dokumentacja przekazania.
+  CI commita `ff64ae4` jest zielone (run `37238317611`, job `111541789217`, 5m6s).
+
+- Pierwszy końcowy `all` na `05947b9`: **7902/7904**, dwie dodatkowe luki:
+  miejsce danych tokenów naruszało M212, losowy test panelu miał zero
+  obserwacji po migracji. Dane przeniesione do warstwy kart bez wyjątków;
+  pin Cutthroat deterministyczny, obie kolejności passów, mutacja 2 FAIL,
+  plik wrócił do fast (0,37 s). Celowane **44/44**; wynik kolejnej bramy poniżej.
+- `f54e21a`: korekty pełnej bramy, fast **7642/7642** (117,2 s), build
+  **72 moduły / 4850,0 kB**, celowane **44/44**, wszystko wypchnięte.
+  Kod ponownie zamrożony do `all` i `--quick`.
+
+## Zamknięcie — 2026-10-05
+
+Kod `f54e21ad5f0392c02bbde10ffa341beb9935abab` pozostał niezmieniony od startu
+do zakończenia obu przebiegów. Po bramach zmieniano wyłącznie dokumentację.
+
+- **Pełny `all`: 7905/7905**, exit 0, 631 615,783105 ms. Oba strumienie
+  zapisane do ignorowanego logu; do rozmowy trafiło tylko podsumowanie.
+- **Build: 72 moduły / 4850,0 kB**, exit 0.
+- **Quick: 672/672 ukończonych meczów**, zero niedokończonych, 570 131 ms.
+  Heuristic: **585/672 (87,1%)**, vs random **315/336 (93,8%)**, vs aggro
+  **270/336 (80,4%)**. Sześć talii, 8 seedów od 2026, limit 8000 komend.
+  To próba regresyjna, nie pełne B0 ani dowód pokrycia każdej nowej karty.
+- **CI kodu: PASS**, [run 37242752307](https://github.com/jurekjurekgh/mtg/actions/runs/37242752307),
+  job `111554556573`, 5m28s (testy i build).
+- Raporty: audyt PR #154 i raport dokończenia batcha; historia, **M437**,
+  [handoff 2026-10-05](../setup/HANDOFF_2026-10-05.md) i opis PR #155.
+- Batch **10/10**, brak pozostałych kart z odziedziczonej listy. Nie scalano PR;
+  decyzja o merge pozostaje u właściciela. Nie uruchamiano `--full`.

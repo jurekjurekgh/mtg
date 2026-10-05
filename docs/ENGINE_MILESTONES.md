@@ -8162,3 +8162,36 @@ celowanych (CR 608.2d — Fireball dalej dzieli równo, własny tor); pula celó
 powyżej 8 (człowiek nie wybierze odciętych); bank many z triggera ponad krok.
 
 **Bramy.** `npm test` 7384/7384, build 70 modułów / 4748,8 kB; golden-master bez zmian.
+
+
+## M437 — naprawa CI po PR #154 i domknięcie batcha 63 (2026-10-04–05, PR #155)
+
+**Zakres.** Przejęcie przerwanego batcha właściciela 212–260; bez dopisywania
+kart spoza listy. Audyt 79 plików poprzednika, naprawy CI i jakości pomiarów,
+cztery brakujące karty oraz migracja zależności.
+
+- Trwała reguła w AGENTS / ENVIRONMENT §5a: pełny pakiet wyłącznie ze stdout
+  i stderr do ignorowanego logu, zachowany exit code, ograniczony raport.
+- CR ze zweryfikowanego tekstu i golden-master odświeżany wyłącznie po
+  kontroli starych/nowych talii. Wspólna rewalidacja celów triggerów z
+  zachowaniem prefiksu kontekstu i slotów podziału obrażeń.
+- Bot: pierwszeństwo śmierci od first/double strike przed premią deathtouch;
+  tożsamość kopii z kontrolerem, efektami i kolejnością celów. Cztery sondy
+  scoringu odrzucają fałszywe próby i wymagają wykonanych komend/końca partii.
+- Bloodtithe Harvester, Snarespinner, Kozilek's Predator, Etched Host
+  Doombringer — batch **10/10**, plus kanoniczne dane tokenów Blood / Spawn.
+  Dynamiczne X liczone przy rozstrzygnięciu; oba tryby Doombringer; protektor
+  bitwy niezależny od kontrolera. Snarespinner wyceniany po obu stronach bloku.
+- Modalne ETB po wyborze trafiają na stos, zachowują LKI i wiele oczekujących
+  wyborów; ward od zapowiedzi triggera trafia do kolejnej partii APNAP.
+- Dominaria **UB/WRG**, 40 aktywnych plików odwołań; 27 talii. Historyczne
+  raporty niezmienione. Dwa rozstrzygnięcia Cutthroat przypięte deterministycznie
+  przez sesję; próba bez zdarzeń nie może udawać testu panelu.
+
+**Bramy końcowe (`f54e21a`).** Fast **7642/7642**, all **7905/7905**, build
+**72 moduły / 4850,0 kB**; quick **672/672**, 0 niedokończonych, heuristic
+**87,1%** (585/672). CI **PASS**. Nie uruchamiano pełnego B0 ani nie scalano PR.
+
+Dowody: [audyt PR #154](audits/AUDYT_PR154_2026-10-04.md),
+[raport batcha i migracji](audits/BATCH63_DOKONCZENIE_2026-10-04.md),
+[handoff](setup/HANDOFF_2026-10-05.md).

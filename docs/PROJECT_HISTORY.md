@@ -19,6 +19,42 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-04–05 — przejęcie batcha 63 i naprawa CI po PR #154 (PR #155, M437)
+
+Właściciel przekazał przerwany batch, czerwone CI po scaleniu oraz żądanie
+trwałego zakazu zalewania rozmowy wynikiem 7000+ testów. Lektura obowiązkowa
+wykonana; plan przed kodem (`9532c20`), praca na `arena/01a108d2-mtg`.
+
+1. `9df45e0`: audyt 79 plików, odtworzony baseline **7846/7849**; weryfikacja
+   CR i przyczyny dryfu golden-mastera, reguła cichych testów, rewalidacja
+   celów triggerów. Nie osłabiano strażników ani reguł MTG.
+2. `ff64ae4`: first/double strike vs deathtouch, semantyczna tożsamość kopii
+   i wiarygodne CLI audytowe. Piny oraz mutacje, fast **7601/7601**, CI zielone.
+3. `05947b9`: cztery brakujące karty, dwa tokeny, modalne ETB na stosie,
+   ward w osobnej partii APNAP, migracja Dominarii na UB/WRG. Świadomy
+   refresh snapshotu: nowy kod ze starymi taliami odtworzył stary hash;
+   dopiero nowy skład zmienił 4/6 śladów.
+4. `f54e21a`: pełna brama ujawniła dwie luki poza fast — miejsce danych
+   tokenów oraz losowy test panelu bez obserwacji. Dane przeniesiono poza
+   rdzeń, pin Cutthroat obejmuje oba ostatnie passy przez sesję (mutacja:
+   2 FAIL); plik wrócił do fast po pomiarze 0,37 s.
+
+**Końcowy kod `f54e21a`:** fast **7642/7642**, all **7905/7905** (631,6 s),
+build **72 moduły / 4850,0 kB**, quick **672/672 ukończonych** (570,1 s,
+heuristic 585/672 = 87,1%; vs random 93,8%, vs aggro 80,4%). All i quick
+pracowały równolegle bez zmian drzewa. GitHub CI **PASS**:
+[run 37242752307](https://github.com/jurekjurekgh/mtg/actions/runs/37242752307).
+
+Katalog: 544 realne supported + 5 virtual basic, 9 back, 48 token; CSV
+553 wiersze / 550 nazw; nadal 27 talii. Batch 63 **10/10**, żadnych nowych
+kart poza listą. AGENTS i ENVIRONMENT §5a utrwalają ciche uruchamianie testów.
+Po bramach wyłącznie dokumentacja. Bez `--full`, merge i force push.
+
+Dokumenty: [plan](plans/PLAN_2026-10-04h-ci-i-dokonczenie-batch63.md),
+[audyt](audits/AUDYT_PR154_2026-10-04.md),
+[raport kart/migracji](audits/BATCH63_DOKONCZENIE_2026-10-04.md),
+[handoff 2026-10-05](setup/HANDOFF_2026-10-05.md).
+
 ## 2026-10-03 — audyt PR #151 + pętla jakości PMSSB-42 (bez kodu produkcyjnego, PR #153)
 
 Sesja audytowa po mergu PR #151 (sesja 2026-10-02f). Polecenie właściciela:
