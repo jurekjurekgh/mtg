@@ -1523,7 +1523,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // wyboru bloków i oceny ataku w takiego obrońcę. Publiczne deskryptory,
   // efektywne keywordy atakera; żadnych nazw kart ani domysłu po reach.
   const afterBlockTriggers = (view, blocker, attackers) => {
-    const abilities = blocker.activatableAbilities ?? cardDef(blocker.cardId)?.abilities ?? [];
+    const abilities = blocker.activatableAbilities
+      ?? (blocker.abilitiesStripped || blocker.faceDown ? [] : cardDef(blocker.cardId)?.abilities ?? []);
     let power = 0, toughness = 0;
     for (const attacker of attackers) for (const ability of abilities) {
       if (ability?.trigger?.event !== 'blocks' || ability.trigger.requiresTarget || ability.trigger.condition) continue;
@@ -1962,6 +1963,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // L41; Envoy bral 0 w obu galeziach).
       const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
       for (const e of effs) {
+        if (e?.type === 'cant_be_blocked' && req) {
+          const blockers = untappedEnemyBlockers(view);
+          const source = { ...def, cardId: def.id, controllerId: view.playerId };
+          const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
+          const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
+            .map(o => cantBeBlockedTargetValue(view, o)));
+          total += P.evasionEtbValueWeight * best;
+          continue;
+        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         total += fn(e, view, req, def);
@@ -3019,6 +3029,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
     return false;
   };
+
+  /** PMSSB-58/C: regeneracja zapobiega ZNISZCZENIU, nie każdemu odejściu.
+   * Jedna miara dla czaru i zdolności; 0 toughness i brak P/T nie są lethal
+   * damage. Ofiara w walce to konkretny recipient, nie umierający przeciwnik.
+   */
+  function regenerationValue(view, victim, { ability = false } = {}) {
+    const shields = view.regenerationShields ?? [];
+    const already = victim && shields.includes(victim.id);
+    const urgent = view.turn.step === 'combat_damage' ? 60 : 30;
+    const old = already ? -25 : victim && isCreatureThreatened(view, victim)
+      ? (ability ? urgent : 30) : -20;
+    let value = -20;
+    if (victim && victim.controllerId === view.playerId) {
+      const stack = view.zones.stack ?? [];
+      const affects = (entry, effect) => (entry.targets ?? [])[effect.targetIndex ?? 0] === victim.id;
+      const pendingShield = stack.some(entry => stackEntryEffects(entry)
+        .some(effect => effect.type === 'regenerate' && affects(entry, effect)));
+      const ban = victim.cantBeRegeneratedThisTurn
+        || (view.cantBeRegeneratedThisTurn ?? []).includes(victim.id)
+        || stack.some(entry => stackEntryEffects(entry)
+          .some(effect => effect.type === 'cant_be_regenerated_this_turn' && affects(entry, effect)));
+      if (already || pendingShield) value = -25;
+      else if (!ban && !hasKeyword(victim, 'indestructible')) {
+        const isCreature = victim.kind === 'creature' && Number.isFinite(victim.toughness) && victim.toughness > 0;
+        const outcome = isCreature ? combatOutcome(view, victim) : null;
+        const diesInCombat = outcome && (((view.combat?.attackers ?? []).includes(victim.id) && outcome.attackerDies)
+          || (outcome.deadBlockers ?? []).includes(victim.id));
+        const markedLethal = isCreature && (victim.damage ?? 0) > 0 && victim.damage >= victim.toughness;
+        const destroyPending = stack.some(entry => stackEntryEffects(entry).some(effect => {
+          if (!affects(entry, effect)) return false;
+          if (['destroy_permanent','destroy_artifact_gain_life_mana_value'].includes(effect.type)) return true;
+          if (effect.type === 'destroy_if_least_power') return isCreature
+            && !(view.zones.battlefield ?? []).some(o => o.kind === 'creature' && (o.power ?? 0) < (victim.power ?? 0));
+          if (effect.type !== 'damage' || !isCreature || !(effect.amount > 0)) return false;
+          const src = objectOnBoard(view, entry.sourceId) ?? entry;
+          if (hasKeyword(src, 'infect')) return false;
+          return effect.amount >= victim.toughness - (victim.damage ?? 0) || hasKeyword(src, 'deathtouch');
+        }));
+        if (diesInCombat || markedLethal || destroyPending) value = urgent;
+      }
+    }
+    return old + P.regenerationModelWeight * (value - old);
+  }
 
   // M236/2 (KOREKTA właściciela): permanent jest „skazany w tej turze" — więc
   // poświęcenie go (np. za życie) jest praktycznie DARMOWE — gdy:
@@ -5791,7 +5844,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return P.searchTwoCardsValue; // 9 (ręka) + 7 (grób = setup reanimacji)
     }
     if (type === 'search_library_to_battlefield' || type === 'search_library_to_battlefield_tapped') {
-      return P.searchToBattlefieldBase; // trwały ramp (stara ETB-10)
+      return P.searchToBattlefieldBase * (1 - (landRampUnneeded(view, effect) ? P.rampNeedWeight : 0)); // ETB nie płaci kary za pusty czar
     }
     if (type === 'search_library_to_hand') {
       const lands = (view.zones.battlefield ?? []).filter(
@@ -5813,6 +5866,67 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'search_library_to_hand', 'search_library_to_battlefield',
     'search_library_to_battlefield_tapped', 'search_library_two_cards_hand_and_grave',
   ]);
+
+  const isLandRamp = effect => ['search_library_to_battlefield','search_library_to_battlefield_tapped'].includes(effect?.type)
+    && searchFindsLand(effect);
+  const hasLandEnterPayoff = view => (view.zones.battlefield ?? []).some(o => o.controllerId === view.playerId
+    && (o.activatableAbilities ?? (o.abilitiesStripped || o.faceDown ? [] : cardDef(o.cardId)?.abilities ?? []))
+      .some(a => a?.trigger?.event === 'land_entered_under_your_control'));
+  function landRampUnneeded(view, effect) {
+    if (!isLandRamp(effect)) return false;
+    const q = effect.qualifier ?? {};
+    let candidates = registry.all().filter(def => matchesSearchCriteria(def.id, { allTypes: q.types, subtypes: q.subtypes }));
+    if (knownOwnDeck) {
+      const outside = new Map();
+      for (const zone of ['hand','battlefield','graveyard','exile','stack']) for (const o of view.zones[zone] ?? []) {
+        if ((o.ownerId ?? o.controllerId) !== view.playerId || o.hidden || o.isToken || o.copyNumber) continue;
+        outside.set(o.cardId, (outside.get(o.cardId) ?? 0) + 1);
+      }
+      candidates = candidates.filter(def => (ownCounts.get(def.id) ?? 0) > (outside.get(def.id) ?? 0));
+      if (candidates.length === 0) return true;
+    }
+    if (hasLandEnterPayoff(view)) return false;
+    // Pula wyparuje — nie zastępuje trwałej podaży. Tapnięcie landu nie
+    // odbiera natomiast jego wartości w przyszłej turze.
+    const permanentUnits = [];
+    for (const o of view.zones.battlefield ?? []) {
+      if (o.controllerId !== view.playerId || o.kind !== 'land') continue;
+      const src = manaSourceOfView(o);
+      for (let i=0;i<(src?.amount ?? 1);i++) permanentUnits.push(src?.colors ?? []);
+    }
+    const known = [...(view.zones.hand ?? []), ...[...ownCounts.keys()].map(id => cardDef(id)).filter(Boolean)];
+    const boardAbilities = (view.zones.battlefield ?? []).filter(o => o.controllerId === view.playerId)
+      .flatMap(o => o.activatableAbilities ?? (o.abilitiesStripped || o.faceDown ? [] : cardDef(o.cardId)?.abilities ?? []));
+    const curve = Math.max(P.rampManaFloor, ...known.map(o => o.manaCost ?? 0),
+      ...boardAbilities.map(a => Number.isFinite(a.cost?.mana) ? a.cost.mana : 0));
+    if (permanentUnits.length < curve || known.some(o => (o.spell ?? cardDef(o.cardId)?.spell)?.xCost)
+      || boardAbilities.some(a => a.cost?.maxPowerX)) return false;
+    const covered = (units, requirements) => {
+      const picked = [];
+      for (const req of requirements) if (matchColorRequirements(units, [...picked, req])) picked.push(req);
+      return picked.length;
+    };
+    // Także częściowy postęp GG (0→1 albo 1→2) jest fixingiem. Matching
+    // pipów jest ten sam co w silniku, nie test „czy mam dowolny zielony”.
+    const fixesColor = (view.zones.hand ?? []).some(card => {
+      const requirements = coloredPipsOf(card.cardId);
+      const before = covered(permanentUnits, requirements);
+      return before < requirements.length && candidates.some(def => {
+        const src = manaSourceOfCardDefinition(def.id, def);
+        return src && covered([...permanentUnits, src.colors ?? []], requirements) > before;
+      });
+    });
+    return !fixesColor;
+  }
+  function landRampActionPenalty(view, effects, timing) {
+    if (!effects.length || !effects.every(isLandRamp)) return 0;
+    if (effects.every(e => landRampUnneeded(view, e))) return P.rampNeedWeight * P.rampSaturationPenalty;
+    const tapped = effects.every(e => e.entersTapped || e.type === 'search_library_to_battlefield_tapped');
+    const pool = view.players.find(p => p.id === view.playerId)?.mana ?? 0;
+    const opponentEnd = !myTurn(view) && view.turn.step === 'end';
+    return timing === 'instant' && tapped && !opponentEnd && pool === 0 && !hasLandEnterPayoff(view)
+      ? P.tappedRampWaitPenalty : 0;
+  }
 
   /** PMSSB-20: synergia grobu dla mill-siebie (M173/A — historyczna logika). */
   function selfMillGraveSynergy(view) {
@@ -8323,11 +8437,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
-        // PMSSB-58/B (kontrola kosztu): zysk z dwóch zwrotów nie płaci
-        // dwukrotnie many, ale ta sama wypłata za 5 nie jest równa tej za 2.
-        if (effects.some(e => e?.type === 'return_card_from_graveyard_to_hand' || e?.type === 'return_creature_card_to_hand')) {
-          score -= P.graveReturnCastManaWeight * reservedManaOf(view, cmd);
-        }
         // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
         // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
         // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
@@ -9226,9 +9335,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // wartość tylko gdy cel zagrożony, inaczej kara.
           if (effect.type === 'regenerate') {
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target ?? null;
-            const alreadyShielded = victim && (view.regenerationShields ?? []).includes(victim.id);
-            if (alreadyShielded) score -= 25;
-            else score += victim && isCreatureThreatened(view, victim) ? 30 : -20;
+            score += regenerationValue(view, victim);
           }
           // Audyt PR #93 (znalezisko F): wycena wrappera „each of up to N
           // targets” wyciągnięta do `wrapTargetsValue` — to samo liczenie
@@ -9512,6 +9619,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += searchRiderValue(view, effect);
           }
         }
+        score -= landRampActionPenalty(view, scoredEffects, spell.timing);
+        // PMSSB-58: cena rodziny raz na CZAR, nie na nogę/slot. Przy
+        // połączeniu kilku rodzin nie można zapłacić dwa razy tej samej many.
+        const manaPriceWeight = Math.max(0,
+          scoredEffects.some(e => ['return_card_from_graveyard_to_hand','return_creature_card_to_hand'].includes(e.type)) ? P.graveReturnCastManaWeight : 0,
+          scoredEffects.length && scoredEffects.every(isLandRamp) ? P.rampCastManaWeight : 0,
+          scoredEffects.some(e => ['add_counter','add_counter_to_creatures_you_control'].includes(e.type)) ? P.counterCastManaWeight : 0);
+        score -= manaPriceWeight * reservedManaOf(view, cmd);
         // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
         // nie czeka na okno: fizzle musi nastąpić PRZED rozstrzygnięciem).
@@ -9734,26 +9849,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isRegenerateAbility = ability?.keyword === 'regenerate'
           || abilityEffectTypes.includes('regenerate')
           || effects.some((e) => e?.type === 'regenerate');
-        if (isRegenerateAbility) {
-          const regenTarget = target ?? source;
-          // Jeśli cel ma już tarczę regeneracji, druga jest zbędna (idempotentna
-          // w sensie M179/B — druga tarcza nic nie dodaje, bo pierwsza już chroni).
-          const alreadyShielded = regenTarget && (view.regenerationShields ?? []).includes(regenTarget.id);
-          if (alreadyShielded) {
-            score -= 25;
-          } else {
-            const threatened = isCreatureThreatened(view, regenTarget);
-            if (threatened) {
-              // M257/F: krok combat_damage = OSTATNIA szansa — krok domyka
-              // `resolve_combat` (stała 50), a tarcza musi stać PRZED nim.
-              // 2 + 60 = 62 > 50: bot stawia tarczę w tym oknie, a walkę
-              // rozstrzyga w następnej decyzji (wtedy alreadyShielded −25).
-              score += view.turn.step === 'combat_damage' ? 60 : 30;
-            } else {
-              score -= 20;
-            }
-          }
-        }
+        if (isRegenerateAbility) score += regenerationValue(view, target ?? source, { ability: true });
+        score -= landRampActionPenalty(view, effects, ability?.timing);
         // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
         let tokenAbilityTimingApplied = false;
         // PMSSB-4/F-A0+F-A5b (L41): cala petla M236-gain wyciagnieta PRZED

@@ -74,6 +74,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
   // PMSSB-58/B: najlepszy tryb ETB, wspólna miara efektów i aliasy zwrotu.
+  // PMSSB-58/C: wspólne wypłaty regeneracji/ewazji oraz czysta rampa.
+  'regenerationModelWeight', 'evasionEtbValueWeight', 'counterCastManaWeight',
+  'rampNeedWeight', 'rampSaturationPenalty', 'rampManaFloor',
+  'tappedRampWaitPenalty', 'rampCastManaWeight',
   'modalEtbValueWeight',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -535,6 +539,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // nie darmową kartą. Jednostka ceny discard/materialu = wspólna miara;
   // ×0 odtwarza pominięty wymiar. Pewny lethal ma skalę ochrony życia 1000.
   // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
+  regenerationModelWeight: 1,
+  evasionEtbValueWeight: 1,
+  counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
+  rampNeedWeight: 1,
+  rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem
+  rampManaFloor: 6, // ostrożny bufor przyszłych losowych doborów przy niepełnej wiedzy
+  tappedRampWaitPenalty: 70, // czekanie nic nie traci; przebija bazę 50 + rider 10
+  rampCastManaWeight: 1, // ta sama jednostka kosztu co aktywacje, raz na czar
   modalEtbValueWeight: 1,
   modalEffectModelWeight: 1,
   // Ekstrakcja dotychczasowej miary obrony (bez zmiany liczb).

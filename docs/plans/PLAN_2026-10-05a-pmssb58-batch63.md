@@ -120,3 +120,27 @@ przyczynę. Nie wolno ogłosić całej macierzy DONE po samej fali A.
 - Fala B: **fast 7697/7697** (110 436,316111 ms), build **72 moduły /
   4864,3 kB**, snapshot **4/4**, exit 0. Stare fixture zwrotów dostały realne
   kolory/manabazę i bibliotekę zamiast nagradzać niemożliwe zagranie/deck-out.
+
+- Wznowienie: środowisko odtworzyło pliki `c60fb42`, ale zdalna gałąź miała
+  już fale A/B do `77ebd06`. Zweryfikowano brak lokalnych zmian względem
+  `c60fb42`, odzyskano dokładnie 14 zmienionych/nowych plików, bez force push.
+- Fala C: 44 piny, integracja **135/135**. F9–F11 oraz nowe dowody F14–F16
+  (żywe zdolności, rzeczywisty brak trafień, koszt Dig Site). Osiem mutacji:
+  **6/1/2/5/1/1/2/2 FAIL**. Causal OFF odtwarza hash B; ON zmienia tylko jeden
+  wpis o koszt 4, bez zmiany wyboru. Brama fast/build/snapshot w toku.
+
+### Checkpoint na polecenie właściciela — 2026-10-05
+
+Zapisywany natychmiast jako **WIP**, przed następną bramą, żeby postęp nie
+pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
+
+- Kod i 44 nowe piny fali C są zachowane; osiem mutacji cofnięto.
+- Pierwszy fast C: **7730/7741**, 11 FAIL. Dziesięć starych kotwic fight/
+  proliferate uwzględniało cenę czaru w pomiarze historycznej wypłaty;
+  ostatni guard obejmował też dopisane helpery search zamiast samej proliferacji.
+- Oddzielono cenę od starych macierzy efektów i przywrócono granicę sekcji
+  bez podnoszenia limitu guardu. Po korektach celowane **88/88**, exit 0.
+- **Nie wykonano jeszcze ponownej pełnej bramy fast/build po tych korektach.**
+  Następny krok: wyciszony fast + snapshot + build, następnie osobny commit
+  wyniku/ewentualnych napraw i natychmiastowy push. Dalej ewaluacja §5 i all §6.
+- Ten checkpoint jest zabezpieczeniem postępu, nie deklaracją zielonej bramy.

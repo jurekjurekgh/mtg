@@ -77,7 +77,10 @@ function base({ step = 'main1', mana = 12, foeLife = 20 } = {}) {
 }
 
 function decide(state, actor = 'p2', params = undefined) {
-  const bot = createHeuristicBot({ seed: 99, ...(params ? { params } : {}) });
+  // PMSSB-58 dodało osobną cenę many czaru. Ta macierz mierzy historyczną
+  // wypłatę LICZNIKÓW, nie koszt; zachowuje stare dokładne kotwice.
+  // Cena i parity hand/flashback mają niezależne piny 58/C30–32.
+  const bot = createHeuristicBot({ seed: 99, params: { ...params, counterCastManaWeight: 0 } });
   const choice = bot.chooseCommand(playerView(state, actor), {});
   return { choice, options: bot.trace().at(-1)?.options ?? [] };
 }
