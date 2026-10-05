@@ -67,7 +67,7 @@ prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i sku
 3. [x] **Fala B — tryby i odzyskiwanie.** Doombringer (cast/modal, życie,
    bitwa/ward) oraz Urborg (sloty/ilość/jakość/dobór), według findingów.
    Piny, mutacje, fast + build, osobny commit i push.
-4. [ ] **Fala C — pozostałe kombinacje.** Dig Site, Helicopter, Connection,
+4. [x] **Fala C — pozostałe kombinacje.** Dig Site, Helicopter, Connection,
    Scout, Mender, Snarespinner: nowe dowody → naprawy wspólnej rodziny;
    brak błędu → jawny wynik z pinem, nie pozorna zmiana parametrów.
    Fast + build, osobny commit i push po samodzielnym kroku.
@@ -144,3 +144,9 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   Następny krok: wyciszony fast + snapshot + build, następnie osobny commit
   wyniku/ewentualnych napraw i natychmiastowy push. Dalej ewaluacja §5 i all §6.
 - Ten checkpoint jest zabezpieczeniem postępu, nie deklaracją zielonej bramy.
+
+
+- `1bf6c31`: checkpoint WIP wypchnięty natychmiast na polecenie właściciela.
+  Następnie zamrożona brama: **fast 7741/7741** (128 025,529545 ms), snapshot
+  **4/4** (17 167,004561 ms), build **72 moduły / 4871,5 kB**, wszystko exit 0.
+  Fala C ma zieloną bramę. **Ewaluacja §5 i końcowe all §6 nadal otwarte.**
