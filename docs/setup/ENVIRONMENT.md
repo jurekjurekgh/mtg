@@ -90,6 +90,14 @@ Konflikty w `docs/PROJECT_HISTORY.md` i handoffach przy cherry-picku są typowe
 (`git checkout HEAD -- <plik>`) i **nałóż zmiany ponownie**, zamiast ręcznie
 sklejać znaczniki konfliktu.
 
+### Checkpoint podczas długiej naprawy (uwaga właściciela, 2026-10-05)
+
+Nie gromadź kilku godzin pracy lokalnie, czekając na jedną wielką bramę.
+Dziel naprawę na małe przyrosty i pushuj każdy od razu. Gdy właściciel
+żąda natychmiastowego zabezpieczenia, wypchnij jawny **WIP** z zapisanym
+stanem testów i następnym krokiem; nie oznaczaj go jako zielony/DONE.
+Checkpoint nie zastępuje pełnej bramy — jej wynik zapisz kolejnym commitem.
+
 ### Profilaktyka
 
 - Po każdym commicie sprawdź `git log --oneline -1` i `git status`.

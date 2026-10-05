@@ -19,6 +19,36 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-05 — PMSSB-58: jakościowe domknięcie dziesięciu kart (kontynuacja PR #155, M438)
+
+Po odróżnieniu gotowości engine od jakości scoringu właściciel zlecił pełną
+pętlę dla batcha 63. Plan `7bff147` przed kodem, baza `c60fb42`. A/B:
+`8f1a907` / `77ebd06` — ekonomia zasobów, tryby/ward i odzyskiwanie kart.
+C: `1bf6c31` (WIP), `1a2f313` (zielona brama) — pozostałe kombinacje i
+kontrole. Narzędzia `0c70a01`, zapis pomiarów `5965df5`, stół/F17 `45e7faa`,
+zapis all/quick `60436c3`. Wszystko na tej samej gałęzi; nic nie zostało scalone.
+
+Właściciel zwrócił uwagę na zbyt rzadkie commity podczas długiej fali.
+Zabezpieczono natychmiast WIP z jawnymi brakami bramy, a następnie każdy
+wynik osobnym pushem. Wznowienie środowiska wymagało wcześniej odzyskania
+A/B z GH — pliki były stare, praca zdalna zachowana. Nie było force push.
+
+**Jakość:** 98 pinów A/B/C, mutacje i kontrole ×0; inwentarz obejmuje całą
+10-kartową listę. Snapshot C zmienił 1 wpis wyceny, 0 wyborów; OFF odtwarza
+poprzedni hash. Tie 55→54 remisów akcyjnych na 7 taliach, mirror 15:13
+(28/28 końców), stół 7/7 naturalnych końców i 0 flag. Ręczny odczyt mimo
+0 flag ujawnił „gracz wybierasz tryb”; 3 piny i replay potwierdziły poprawkę.
+Brak obserwacji Connection/Mender/Urborg nie udaje pokrycia — są sceny wymuszone.
+
+**Brama `45e7faa`:** all **8013/8013**, build **72 / 4871,6 kB**, quick
+**672/672**, 0 unfinished, 584/672 zwycięstw heuristic (86,9%; poprzednio
+585/672). Różnica jednej wygranej jest jawna; nie zmieniano progów/seedów.
+CI kodu PASS, run `37304592016`, 5m6s. Pełnego B0 nie uruchamiano.
+
+Dokumenty: [plan](plans/PLAN_2026-10-05a-pmssb58-batch63.md),
+[raport](audits/PMSSB58_BATCH63_2026-10-05.md), [hub](PMSSB.md),
+[handoff](setup/HANDOFF_2026-10-05b-pmssb58.md).
+
 ## 2026-10-04–05 — przejęcie batcha 63 i naprawa CI po PR #154 (PR #155, M437)
 
 Właściciel przekazał przerwany batch, czerwone CI po scaleniu oraz żądanie

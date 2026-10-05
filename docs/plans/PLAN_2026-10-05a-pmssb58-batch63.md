@@ -76,7 +76,7 @@ prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i sku
    tie-audit przed/po, mirror OFF/ON oraz Żywy Tester na taliach z mechanikami.
    Każda talia batcha musi mieć obserwację albo jawny scenariusz wymuszony;
    zero obserwacji nie jest PASS jakości. Bez `--full` i bez strojenia progu.
-6. [ ] **Domknięcie.** Pełny wyciszony `all`, build, quick (bez `--full`),
+6. [x] **Domknięcie.** Pełny wyciszony `all`, build, quick (bez `--full`),
    faktyczny status CI; raport PMSSB-58 + wpis rejestru rodzin, historia,
    handoff i kumulacyjny opis PR. Wszystko wypchnięte, brak sond w Git.
 
@@ -173,3 +173,25 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   o jedną wygraną mniej niż przed pętlą — bez ukrywania różnicy i bez
   strojenia pod wynik. CI PASS (`37304592016`, 5m6s). Wyniki zabezpieczone
   następnym commitem przed zamknięciem dokumentacji.
+
+
+## Zamknięcie PMSSB-58
+
+Wszystkie etapy wykonano; wynik dotyczy **wszystkich dziesięciu kart**, nie
+wyłącznie obecności gałęzi scoringu. Dedykowane fale A/B/C mają **98 pinów**,
+pozostałe dowody to testy narzędzi/UI, mutacje, snapshot OFF/ON, tie, mirror
+oraz Żywy Tester. Szczegółowy inwentarz i granice modeli są w raporcie.
+
+- Ostatni kod: `45e7faa`. All **8013/8013**, build **72 / 4871,6 kB**,
+  quick **672/672**, bez unfinished. CI kodu PASS.
+- Replay poprawki F17 na świeżym artefakcie: seed 5801, Worek Dzikie Światy
+  vs Worek Legendy, naturalny koniec i 0 flag; tekst faktycznie brzmi
+  „Etched Host Doombringer — wybierasz tryb: …”.
+- Wynik quick **584/672**, referencja **585/672**: nie ukryto spadku jednej
+  wygranej ani nie strojono progów/seedów. Mirror ON/OFF **15:13** na innych
+  seedach siedmiu talii nie jest dowodem statystycznym przewagi.
+- Każdy etap i wyniki zabezpieczono na GH. Po uwadze właściciela nie czekano
+  z całym przyrostem na końcowy all: checkpointy WIP były jawnie nie-DONE,
+  a następne commity dopisywały uzyskane bramy.
+- Handoff: `docs/setup/HANDOFF_2026-10-05b-pmssb58.md`; hub `docs/PMSSB.md`,
+  historia i M438. Bez pełnego B0, nowych kart, zmian talii i merge PR.

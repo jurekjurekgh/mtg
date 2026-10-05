@@ -34,6 +34,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 
 | Rodzina (typy efektów) | Kart | Status | Raport / testy / pokrętła |
 |---|---|---|---|
+| batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -2900,3 +2901,43 @@ EXIT 0 (461,8 s). Budżet lektury: **99 859 / 100 000** (zapas 141 → po L48:
 **99 724**, zapas 276).
 
 **Status:** zamknięty (wszystkie trzy pytania — negatywne z liczbami).
+
+
+## PMSSB-58 — jakościowe domknięcie batcha 63 (2026-10-05, PR #155)
+
+Właściciel wskazał, że „karta działa / CI zielone” nie dowodzi jakości
+scoringu. Audyt objął **wszystkie 10 kart**, nie tylko cztery dopisane po
+przejęciu. Plan przed kodem `7bff147`; baza `c60fb42`.
+
+**Fale:** A (`8f1a907`) — wartość opcji Blood, cena discard tym samym pickerem,
+bilans ofiary ujemnej pompy, rezerwa liczonych zasobów, koszt ostatniego
+blokującego Spawn. B (`77ebd06`) — jedna najlepsza legalna wypłata modalnego
+ETB dla rzutu i wyboru, ward, każdy slot zwrotu z grobu, dostępność kolorów,
+koszt raz na czar, rozróżnialne etykiety. C (`1bf6c31`, brama `1a2f313`) —
+regeneracja wobec prawdziwego zniszczenia, ETB ewazji wobec realnego bloku,
+popyt/fixing/timing rampy, żywe zdolności Snarespinner i cena czarów z licznikami.
+Nie ma gałęzi po nazwach kart, zmian danych talii ani automatycznego tuningu.
+
+**Piny i pomiary:** A/B/C **29+25+44 = 98** pinów; pokrętła ×0 i mutacje
+każdej naprawianej klasy. Snapshot OFF odtwarza poprzedni hash, ON w C
+zmienia jeden wpis o koszt 4, nie wybór. Końcowy hash `ea4cee6850362582…`.
+Tie na 7 taliach: akcyjne remisy **55→54**, po 7 ukończonych gier. Mirror
+**15:13**, 28/28, 0 unfinished. Żywy Tester **7/7** naturalnych końców,
+0 flag; ręczny przegląd wykrył F17 „gracz wybierasz tryb”, naprawiony
+3 pinami i replayem. Nieobecne decyzje mają wymuszone scenariusze, nie
+pozorne zaliczenie. Narzędzia dostały pełny kontekst własnej talii i guardy próby.
+
+**Bramy kodu `45e7faa`:** all **8013/8013**, build **72 moduły / 4871,6 kB**,
+quick **672/672**, 0 unfinished, CI PASS. Heuristic **584/672 (86,9%)** vs
+referencyjne 585/672 — o jedną wygraną mniej; progi regresji bez zmiany.
+Nie przypisujemy małym różnicom istotności statystycznej i nie dobieramy pod
+nie seedów. Wąskie scenariusze są dowodem konkretnych napraw, nie cały win-rate.
+
+**Jawne granice:** wartość Battle nie modeluje nieznanej tylnej strony;
+podaż many i ratunek przez zachowanie blokera nie są planowaniem całej
+sekwencji wieloataku/wielu przyszłych czarów. Nie dodano żadnej karty Battle.
+
+Dowody, wartości PRZED→PO, wszystkie nowe parametry i pokrycie per karta:
+[raport PMSSB-58](audits/PMSSB58_BATCH63_2026-10-05.md),
+[plan](plans/PLAN_2026-10-05a-pmssb58-batch63.md),
+[handoff](setup/HANDOFF_2026-10-05b-pmssb58.md).

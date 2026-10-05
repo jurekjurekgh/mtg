@@ -8195,3 +8195,27 @@ cztery brakujące karty oraz migracja zależności.
 Dowody: [audyt PR #154](audits/AUDYT_PR154_2026-10-04.md),
 [raport batcha i migracji](audits/BATCH63_DOKONCZENIE_2026-10-04.md),
 [handoff](setup/HANDOFF_2026-10-05.md).
+
+
+## M438 — PMSSB-58: jakościowe domknięcie batcha 63 (2026-10-05, PR #155)
+
+Po wdrożeniu kart właściciel zażądał osobnego domknięcia jakości bota.
+Zbadano 10 kart, a nie samą obecność obsługiwanych efektów. Fale zasobów,
+modali/zwrotów oraz pozostałych kombinacji mają **98 pinów**, mutacje,
+kontrole kosztu/ścieżek i snapshot OFF/ON. Naprawy obejmują Blood/discard,
+ujemną pompę z ofiarą, bank many z utratą blokera, modalny ETB/ward, sloty
+Urborg, regenerację, EWAZJĘ przy rzucie, nasycenie/fixing/timing rampy,
+żywe zdolności i cenę licznika. Bez nazwowych wyjątków i bez nowych kart.
+
+Tie **55→54** remisów akcyjnych; mirror **15:13**, 28 ukończonych gier;
+stół **7/7** oraz replay poprawki F17. Nieobserwowane decyzje są rozdzielone
+od faktycznych obserwacji i mają wymuszone sceny. Po uwadze właściciela
+checkpointy WIP i wyniki kolejnych bram wypychano oddzielnie, bez odkładania
+całej fali do końcowego test:all.
+
+**Końcowy kod `45e7faa`:** all **8013/8013**, build **72 / 4871,6 kB**,
+quick **672/672 ukończonych**, heuristic **584/672 (86,9%)**, CI PASS.
+Referencja quick 585/672 — spadek jednej wygranej ujawniony, nie zamaskowany
+strojeniem/progiem. Nie uruchamiano pełnego B0. Granice modeli i dowody:
+[raport](audits/PMSSB58_BATCH63_2026-10-05.md),
+[hub PMSSB](PMSSB.md#pmssb-58--jakościowe-domknięcie-batcha-63-2026-10-05-pr-155).
