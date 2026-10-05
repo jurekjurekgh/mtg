@@ -1,0 +1,104 @@
+# PLAN 2026-10-05a — PMSSB-58: jakościowe domknięcie wszystkich mechanik batcha 63
+
+Zlecenie właściciela: po wyjaśnieniu, że „10/10 kart” nie oznacza zakończonego
+PMSSB, przeprowadzić jakościowe domknięcie. Kontynuacja **tego samego PR #155**
+i gałęzi `arena/01a108d2-mtg`, baza jakościowa **`c60fb42`** (kod `f54e21a`).
+Bez nowych kart, zmian talii, pełnego B0 ani automatycznego tuningu.
+
+## 0. Rozpoznanie i warunki pracy
+
+- Obowiązkową lekturę i audyt 79 plików poprzedniego scalenia PR #154 wykonano
+  wcześniej w tej sesji (raport `AUDYT_PR154_2026-10-04.md`). PR #155 nadal OPEN,
+  `main` nadal `a362efa`; nie pojawiło się nowe scalenie do audytu.
+- Po odtworzeniu środowiska porównano wszystkie pliki z wypchniętym `c60fb42`
+  (brak różnic/braków), następnie odtworzono HEAD/index bez nadpisywania plików.
+- Odświeżono AGENTS, ENVIRONMENT, procedurę PMSSB i raporty powiązanych rodzin.
+  Pozostałe ADR-y i LESSONS są niezmienione względem wykonanej lektury sesji.
+- Świeży baseline: **fast 7642/7642**, exit 0, **113 087,029916 ms**; build
+  **72 moduły / 4850,0 kB**, exit 0. Referencyjny snapshot `577aa78e…`.
+- Wszystkie duże przebiegi: stdout **i** stderr do ignorowanego `.arena/`,
+  zachowany kod wyjścia, ograniczone podsumowanie. Zamrożenie drzewa podczas bram.
+- Pomiar negatywny jest wynikiem. Rodziny DONE nie są otwierane „na wyczucie”:
+  nowy deskryptor/koszt/kombinacja musi dać nowy dowód, inaczej pozostaje kontrolą.
+
+## 1. Inwentarz dziesięciu kart i decyzji
+
+| Karta | Mechaniki / ścieżki obowiązkowo sprawdzane |
+|---|---|
+| Bloodtithe Harvester | ETB artefaktowego tokena; koszt {1}+tap+discard+sacrifice przy doborze; decyzja odrzucenia; zachowanie Blood vs zużycie; ujemny dynamiczny pump i koszt ofiary; sorcery / wybór celu / zero Blood |
+| Dig Site Inventory | +1/+1 counter + vigilance do końca tury; wybór własnego gospodarza; flashback vs ręka; czas i koszt |
+| News Helicopter | ciało artefaktowego latacza + ETB 1/1; przyrost z tokena, kierunek, liczba, koszt rzutu |
+| Natural Connection | basic na pole tapnięty; ramp vs brak trafień / nasycenie; timing instant; wybór koloru lądu i koszt |
+| Subterranean Scout | ETB ewazji dla power ≤2; żywy atakujący vs chory/tapnięty/wróg; main1 vs main2; wartość rzutu i wyboru celu |
+| Loxodon Mender | regenerate artefaktu (stwór **i nie-stwór**); zagrożenie na stosie/walka; własny vs obcy; duplikat tarczy; nieskuteczna regeneracja; koszt many i tapu |
+| Snarespinner | reach i warunkowy trigger bloku; projekcja blokera oraz atakującego; latanie efektywne, brak/utrata zdolności, przed/po rozstrzygnięciu |
+| Urborg Uprising | zwrot 0/1/2 stworów + dobór; każdy slot celu i brak duplikowania zysku; jakość/zagrywalność kart; biblioteka, mana i wybór pomiędzy wariantami |
+| Kozilek's Predator | 2× Spawn: ciało vs bank many; mana bezbarwna; poświęcenie tylko za realne odblokowanie akcji; koszt utraconego blokera |
+| Etched Host Doombringer | wartość modalnego ETB przy rzucie i wyborze; wskazany przeciwnik, zysk życia, lethal; obrona/protektor, rzeczywista zmiana i koszt wardu; porównanie trybów |
+
+Każda pozycja dostaje macierz **kierunek × cel × timing × stan** oraz wymiar
+kosztu. Ręka / aktywacja / trigger-decyzja / modal / wrapper i flashback używają
+wspólnej miary, jeżeli opisują ten sam skutek (L41). Sterownik nigdy nie czyta
+prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i skutkiem.
+
+## 2. Znane przesłanki, nie gotowe werdykty
+
+- Przegląd wskazuje brak roli lootu w `tokenBodyValue` (Blood) oraz brak jawnej
+  ceny `cost.discardCard` w wycenie aktywacji. Trzeba zmierzyć PRZED, nie dopisać
+  arbitralnej premii do nazwy tokena.
+- Dotychczasowy pin Harvester sprawdza jedną zabójczą aktywację, nie rangowanie
+  małej/dużej ofiary ani bilans oddania własnego ciała.
+- Scoring obrony i modalnego ETB wymaga niezależnego sprawdzenia; test efektu
+  Doombringer wybierał tryb ręcznie. Nie jest to test jakości wyboru bota.
+- Próbka quick ma talie z dwiema kartami batcha (Snarespinner, Urborg), nie
+  całą dziesiątkę. Pokrycie musi być dodatkowo scenariuszowe i ukierunkowane.
+
+## 3. Mini-roadmapa i planowane commity
+
+0. [x] Odtworzenie punktu wyjścia, baseline, plan wypchnięty **przed kodem**.
+1. [ ] **Inwentarz + pomiar PRZED.** Powtarzalny harness prawdziwego silnika,
+   pełny PlayerView i decide/trace; tablica wyników/F1…Fn dla wszystkich kart.
+   Jawne kontrole ujemne, koszt i ścieżki bliźniacze. Sondy w `.arena/`,
+   trwałe wyniki w raporcie. Nie zmieniać wag, zanim istnieje czerwony dowód.
+2. [ ] **Fala A — ekonomia zasobów.** Loot/discard jako koszt, rola tokena,
+   Harvester/pump-ofiara, Spawn/mana. Wspólne helpery i parametry rodzinowe,
+   ×0 kontroluje nowy wymiar; stare poprawne przypadki mają kotwice.
+   Nowe piny + mutacje, fast + build, osobny commit i natychmiastowy push.
+3. [ ] **Fala B — tryby i odzyskiwanie.** Doombringer (cast/modal, życie,
+   bitwa/ward) oraz Urborg (sloty/ilość/jakość/dobór), według findingów.
+   Piny, mutacje, fast + build, osobny commit i push.
+4. [ ] **Fala C — pozostałe kombinacje.** Dig Site, Helicopter, Connection,
+   Scout, Mender, Snarespinner: nowe dowody → naprawy wspólnej rodziny;
+   brak błędu → jawny wynik z pinem, nie pozorna zmiana parametrów.
+   Fast + build, osobny commit i push po samodzielnym kroku.
+5. [ ] **Ewaluacja PMSSB.** Snapshot z pierwszą różnicą (cel: bez refreshu;
+   uzasadniony dryf wymaga kontroli parametrów OFF na tych samych wejściach),
+   tie-audit przed/po, mirror OFF/ON oraz Żywy Tester na taliach z mechanikami.
+   Każda talia batcha musi mieć obserwację albo jawny scenariusz wymuszony;
+   zero obserwacji nie jest PASS jakości. Bez `--full` i bez strojenia progu.
+6. [ ] **Domknięcie.** Pełny wyciszony `all`, build, quick (bez `--full`),
+   faktyczny status CI; raport PMSSB-58 + wpis rejestru rodzin, historia,
+   handoff i kumulacyjny opis PR. Wszystko wypchnięte, brak sond w Git.
+
+Fale można podzielić na mniejsze zielone przyrosty, jeśli ujawnią odrębną
+przyczynę. Nie wolno ogłosić całej macierzy DONE po samej fali A.
+
+## 4. Kryteria zamknięcia i ryzyka
+
+- Każda karta ma jawny wynik audytu scoringu i piny wyboru, nie tylko reguł.
+- Nowe findingi mają liczby PRZED→PO, testy czułe na usunięcie poprawki,
+  kontrole anty-over-fix i — gdy dochodzi nowa waga — sterowanie ×0.
+- Istniejące rodziny nie są globalnie przestrojone pod jeden nowy przypadek.
+  Bez wyjątków po nazwie/ID karty; bez nowych kart i bez zmian talii.
+- Własny koszt discard/sacrifice to realna utrata zasobu. Efekt „dobierz”
+  nie może być dodatnią wartością, gdy płatność niszczy lepszy plan.
+- Battle pozostaje kontraktem publicznych ról/obrony; brak kart Battle w
+  katalogu nie usprawiedliwia pominięcia testów decyzji Doombringer. Nie
+  rozszerzamy reguł atakowania/tylnych stron bitwy na zapas.
+- Golden-master mierzy dryf, nie jakość. Benchmark nie dowodzi pokrycia.
+- Testy pomagające budować scenę sprawdzają każdą komendę; nie mogą maskować
+  odrzuceń `break`/`try-catch` ani złych pól (np. `summoningSick`).
+
+## Wykonanie
+
+Na etapie planu: brak zmian produkcyjnych. Baseline i punkt wyjścia podano wyżej.
