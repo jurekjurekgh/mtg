@@ -150,3 +150,8 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   Następnie zamrożona brama: **fast 7741/7741** (128 025,529545 ms), snapshot
   **4/4** (17 167,004561 ms), build **72 moduły / 4871,5 kB**, wszystko exit 0.
   Fala C ma zieloną bramę. **Ewaluacja §5 i końcowe all §6 nadal otwarte.**
+
+- Ewaluacja: uzupełniono własną talię w kontekście mirror/tie (jak w grze),
+  parametr OFF/ON audytu remisów oraz guardy pustej/urwanej próby. Bez tego
+  nowe sprawdzenia znanych trafień/rampy nie miały całego publicznego kontekstu.
+  Przyrost zapisany osobno przed długimi pomiarami; jego brama jeszcze w toku.
