@@ -72,6 +72,24 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
+  // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
+  // PMSSB-58/B: najlepszy tryb ETB, wspólna miara efektów i aliasy zwrotu.
+  // PMSSB-58/C: wspólne wypłaty regeneracji/ewazji oraz czysta rampa.
+  'regenerationModelWeight', 'evasionEtbValueWeight', 'counterCastManaWeight',
+  'rampNeedWeight', 'rampSaturationPenalty', 'rampManaFloor',
+  'tappedRampWaitPenalty', 'rampCastManaWeight',
+  'modalEtbValueWeight',
+  'modalEffectModelWeight',
+  'battleDefensePerCounter',
+  'battleDefeatBonus',
+  'graveReturnAliasWeight',
+  'graveReturnAvailabilityWeight',
+  'graveReturnCastManaWeight',
+  'tokenDrawBankWeight',
+  'abilityDiscardCostWeight',
+  'sacrificePumpTradeWeight',
+  'countedPumpReserveWeight',
+  'manaSacrificeLethalPenalty',
   'tokenManaBankWeight',     // wartość 1 many z tokena-bank (Treasure ≈ 3)
   'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
@@ -517,6 +535,32 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceOverflowBonus: 12,
   // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
   // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
+  // PMSSB-58/A: opcja doboru z tokena jest odroczona (1/2 wartości netto),
+  // nie darmową kartą. Jednostka ceny discard/materialu = wspólna miara;
+  // ×0 odtwarza pominięty wymiar. Pewny lethal ma skalę ochrony życia 1000.
+  // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
+  regenerationModelWeight: 1,
+  evasionEtbValueWeight: 1,
+  counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
+  rampNeedWeight: 1,
+  rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem
+  rampManaFloor: 6, // ostrożny bufor przyszłych losowych doborów przy niepełnej wiedzy
+  tappedRampWaitPenalty: 70, // czekanie nic nie traci; przebija bazę 50 + rider 10
+  rampCastManaWeight: 1, // ta sama jednostka kosztu co aktywacje, raz na czar
+  modalEtbValueWeight: 1,
+  modalEffectModelWeight: 1,
+  // Ekstrakcja dotychczasowej miary obrony (bez zmiany liczb).
+  battleDefensePerCounter: 3,
+  battleDefeatBonus: 8,
+  // Alias i dostępność karty wracającej do RĘKI, nie na pole.
+  graveReturnAliasWeight: 1,
+  graveReturnAvailabilityWeight: 1,
+  graveReturnCastManaWeight: 1, // ta sama jednostka many co aktywacja/ciało, raz na czar
+  tokenDrawBankWeight: 0.5,
+  abilityDiscardCostWeight: 1,
+  sacrificePumpTradeWeight: 1,
+  countedPumpReserveWeight: 1,
+  manaSacrificeLethalPenalty: 1000,
   tokenManaBankWeight: 3,
   // PMSSB-2/B (F1): 8 jak bounce-TimingSwing (lustro — ta sama skala
   // „pół tempa": rozstrzyga okna, nie przebija różnicy celów).

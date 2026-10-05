@@ -31,8 +31,10 @@ import { readFileSync } from 'node:fs';
 
 const BOT_SOURCE = readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
 const RAW_STATS = /strongestBlockerToughness|strongestBlockerPower|gangPower|weakestBlockerToughness/;
+// Batch 63: candidates = blockers po projekcji triggerów blokowania; nadal
+// wolno czytać surowe nazwy WYŁĄCZNIE w deklaracji reducerów, nie porównaniach.
 const ALLOWED = [
-  /^\s*const strongest(BlockerPower|BlockerToughness) = blockers\.reduce/,
+  /^\s*const strongest(BlockerPower|BlockerToughness) = (blockers|candidates)\.reduce/,
   /^\s*const (gangPower|weakestBlockerToughness) = /,
   /^\s*const eff\w+ = /,
   /^\s*: weakestBlockerToughness \+ trick\.toughness;$/,

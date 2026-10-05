@@ -38,6 +38,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
+import { assertAuditFinished } from './scoring-audit-utils.mjs';
 
 const REPO = path.resolve(import.meta.dirname, '..');
 
@@ -47,9 +48,9 @@ const REPO = path.resolve(import.meta.dirname, '..');
  * decyzji co tuning i przestawał być niezależnym pomiarem.
  */
 export const AUDIT_PAIRS = Object.freeze([
-  ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
+  ['ravnica', 'innistrad-wu'], ['dominaria-wrg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
   ['wiedzmin-bg', 'tarkir-bg'], ['worek-legend', 'wiedzmin-bg'], ['srodziemie', 'theros'],
-  ['kaladesh', 'zendikar'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-wu', 'worek-mroczny'],
+  ['kaladesh', 'zendikar'], ['warhammer-wg', 'innistrad-brg'], ['dominaria-ub', 'worek-mroczny'],
   ['forgotten-realms', 'worek-dziki'], ['tarkir-wur', 'wiedzmin-bg'], ['worek-basni', 'mirrodin-brg'],
 ].map((p) => Object.freeze(p)));
 
@@ -81,7 +82,9 @@ const BRAK_ACJI = new Set(['pass_priority', 'block[]', 'attack[]']);
  * Funkcja jest eksportowana, żeby test bramkowy mógł ją wywołać na małym
  * zbiorze par bez odpalania procesu.
  */
-export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '' } = {}) {
+export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '', params = undefined, maxCommands = 4000 } = {}) {
+  if (!Array.isArray(pary) || !pary.length || !Number.isSafeInteger(gry) || gry < 1
+    || !Number.isSafeInteger(maxCommands) || maxCommands < 1) throw new Error('Audyt remisów wymaga niepustej próby i dodatnich limitów');
   const stat = new Map();
   const global = { single: 0, decided: 0, tie_top: 0, tie_all: 0, decisions: 0, gry: 0,
     tieNoOp: 0, tieAkcyjne: 0 };
@@ -169,9 +172,10 @@ export function audytRemisow({ pary = AUDIT_PAIRS, gry = 1, kindFilter = '' } = 
       const d2 = deckOf(dy);
       const state = setupCardMatch({ seed, players: [{ id: 'p1' }, { id: 'p2' }],
         decks: new Map([['p1', d1], ['p2', d2]]), registry });
-      const b1 = createHeuristicBot({ seed: seed + 1, opponentDeck: d2, registry });
-      const b2 = createHeuristicBot({ seed: seed + 2, opponentDeck: d1, registry });
-      runSimulation({ state, controllers: new Map([['p1', b1], ['p2', b2]]), maxCommands: 4000 });
+      const b1 = createHeuristicBot({ seed: seed + 1, opponentDeck: d2, ownDeck: d1, params, registry });
+      const b2 = createHeuristicBot({ seed: seed + 2, opponentDeck: d1, ownDeck: d2, params, registry });
+      runSimulation({ state, controllers: new Map([['p1', b1], ['p2', b2]]), maxCommands });
+      assertAuditFinished(state);
       zlicz(b1.trace(), { para: `${dx}|${dy}`, seed, gracz: 'p1' });
       zlicz(b2.trace(), { para: `${dx}|${dy}`, seed, gracz: 'p2' });
       global.gry += 1;

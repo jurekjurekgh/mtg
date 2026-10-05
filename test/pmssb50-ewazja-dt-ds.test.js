@@ -167,3 +167,10 @@ test('E9: deathtouch NIE daje ewazji, gdy bloker jest równie tani (równa wymia
   }));
   assert.deepEqual(r, { score: 1, wybrany: true });
 });
+
+for (const keyword of ['first_strike', 'double_strike']) {
+ test(`AUD154: DT nie jest ewazją przed ${keyword}`, () => {
+  const r=atak(scena({atk:{power:1,toughness:1,keywords:['deathtouch']},blocker:{power:5,toughness:5,keywords:[keyword]}}));
+  assert.equal(r.wybrany,false,JSON.stringify(r));
+ });
+}

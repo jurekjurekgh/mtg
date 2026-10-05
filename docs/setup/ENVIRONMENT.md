@@ -90,6 +90,14 @@ Konflikty w `docs/PROJECT_HISTORY.md` i handoffach przy cherry-picku są typowe
 (`git checkout HEAD -- <plik>`) i **nałóż zmiany ponownie**, zamiast ręcznie
 sklejać znaczniki konfliktu.
 
+### Checkpoint podczas długiej naprawy (uwaga właściciela, 2026-10-05)
+
+Nie gromadź kilku godzin pracy lokalnie, czekając na jedną wielką bramę.
+Dziel naprawę na małe przyrosty i pushuj każdy od razu. Gdy właściciel
+żąda natychmiastowego zabezpieczenia, wypchnij jawny **WIP** z zapisanym
+stanem testów i następnym krokiem; nie oznaczaj go jako zielony/DONE.
+Checkpoint nie zastępuje pełnej bramy — jej wynik zapisz kolejnym commitem.
+
 ### Profilaktyka
 
 - Po każdym commicie sprawdź `git log --oneline -1` i `git status`.
@@ -160,6 +168,28 @@ sklejać znaczniki konfliktu.
 Benchmark uruchamiaj **bez** `| tail` — potok potrafi uciąć proces przed
 wypisaniem tabeli. Przy zmianach bota mierz też **ukierunkowanie** na talie
 zawierające daną mechanikę (patrz lekcja L2 w `docs/LESSONS.md`).
+
+---
+
+## 5a. Testy bez zalewania wyjścia
+
+**Zakaz pełnego wyjścia pakietu testów** (AGENTS, polecenie właściciela):
+7000+ wyników zawiesza przeglądarkę. Dotyczy fast/slow/all i aliasów npm.
+Przed startem zapewnij ignorowanie katalogu logów (np. `.git/info/exclude`).
+Długi bieg uruchamiaj narzędziem procesu w tle; nie zmieniaj drzewa do końca.
+
+```sh
+mkdir -p .arena
+npm run test:all > .arena/test-all.log 2>&1
+rc=$?
+tail -n 12 .arena/test-all.log
+exit "$rc"
+```
+
+Ten sam wzorzec dla `npm test`, `npm run test:slow` i bezpośredniego runnera.
+Błędy czytaj osobno: maks. 40 linii kontekstu na błąd, bez całego logu.
+Nie używaj `tee` ani `testy | tail` (utrata exit code). Brak końcowego wyniku
+nie oznacza sukcesu. Log jest roboczy, nie trafia do Git.
 
 ---
 

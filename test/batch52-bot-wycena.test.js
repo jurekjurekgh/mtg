@@ -82,6 +82,8 @@ test('B52-bot: Cemetery Recruitment zwraca NAJLEPSZEGO stwora z grobu (bez remis
   put(state, 'recruit', 'cemetery-recruitment', 'p1', 'hand');
   put(state, 'g1', 'highland-game', 'p1', 'graveyard');   // 2/1 — słaby
   put(state, 'g2', 'woolly-loxodon', 'p1', 'graveyard');  // 6/7 — mocny
+  // PMSSB-58: oba zielone cele mają realną manabazę, nie samą pulę {B}{B}.
+  for (let i = 0; i < 7; i++) put(state, `forest-${i}`, 'basic-forest', 'p1');
   const view = playerView(state, 'p1');
   const { chosen, options } = decide(view);
   const g1 = scoreOf(options, 'cast_spell(recruit->g1)');
@@ -100,6 +102,9 @@ test('B52-bot: Cemetery Recruitment premiuje Zombie (dodatkowe dobranie)', () =>
   // dobranie wygrałby nie-Zombie. Z premią (drawIfSubtypes: Zombie) wygrywa Zombie.
   put(state, 'g1', 'gloomfang-mauler', 'p1', 'graveyard');      // 5/5 nie-Zombie
   put(state, 'g2', 'minotaur-abomination', 'p1', 'graveyard');  // 4/6 Zombie
+  // Dobór ma być zaletą, nie przegraną z pustej biblioteki.
+  for (let i = 0; i < 7; i++) put(state, `swamp-${i}`, 'basic-swamp', 'p1');
+  for (let i = 0; i < 24; i++) put(state, `library-${i}`, 'basic-swamp', 'p1', 'library');
   const view = playerView(state, 'p1');
   const { chosen, options } = decide(view);
   const g1 = scoreOf(options, 'cast_spell(recruit->g1)');

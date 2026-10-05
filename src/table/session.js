@@ -322,6 +322,7 @@ function defaultBotFactory(seed, ctx) {
    */
   const ABILITY_EFFECT_LABELS = Object.freeze({
     add_counter: 'licznik na celu',
+    adjust_battle_defense: 'zmiana liczników obrony bitwy',
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
     cant_block: 'docelowy stwór nie może blokować do końca tury',
@@ -775,6 +776,7 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   enchanted_creature_damage_to_opponent: 'obrażenia zaczarowanego stwora',
   end_step: 'krok końca tury',
   enter_battlefield: 'wejście na pole bitwy',
+  blocks: 'blokowanie stwora',
   equipped_creature_attacks: 'atak wyposażonego stwora',
   // Batch 48 (Wooden Stake): blok w OBIE strony (CR 509.1).
   equipped_creature_blocks_or_blocked_by: 'blok wyposażonego stwora (w obie strony)',
@@ -1634,8 +1636,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // upkeep, choose one") — było surowe „modal_trigger_required".
       case 'modal_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — wybierz tryb zdolności triggerowanej`;
       case 'modal_trigger_resolved': {
-        const mode = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${objectOrLki(e.sourceId, e.cardId)} — gracz ${whoN(e.playerId)} wybiera tryb${mode}`;
+        const source = objectOrLki(e.sourceId, e.cardId);
+        if (e.skipped) return `${source} — brak legalnego trybu`;
+        const mode = e.modeName ? `: ${e.modeName}` : '';
+        return `${source} — ${whoN(e.playerId)} wybiera tryb${mode}`;
       }
       case 'hand_creature_choice_required': return `${srcName(e)}${whoN(e.playerId)} wybiera wielokolorowego stwora z ręki`;
       case 'hand_creature_choice_resolved': return e.putCreature

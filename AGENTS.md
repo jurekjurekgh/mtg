@@ -146,6 +146,14 @@ manifestu, gdy jego samodzielny czas przekracza ~5 s. Wzrost katalogu kart
 nie rośnie w testy ręczne — `test/catalog-coverage.test.js` weryfikuje
 KAŻDĄ kartę rejestru strukturalnie.
 
+**OBOWIĄZKOWO: ciche uruchamianie testów (polecenie właściciela).** Nigdy
+nie uruchamiaj `node tools/run-tests.mjs all`, `npm run test:all` ani
+`npm run test:ci` z pełnym wyjściem do czatu/terminala narzędzia. Tysiące
+wyników zawieszają przeglądarkę. Także `npm test` i `test:slow`: przekieruj
+**stdout i stderr** do ignorowanego pliku (`> log 2>&1`), zachowaj exit code,
+pokaż tylko ograniczone podsumowanie i wycinek błędu. Zakaz `tee`, pełnego
+`cat` logu oraz potoku maskującego kod testów. Wzorzec: ENVIRONMENT §5a.
+
 ## Źródło prawdy
 
 Repozytorium, testy i dokumentacja są źródłem prawdy. Historia czatu, opis zadania i komentarze mogą być niepełne. Jeżeli są sprzeczne:

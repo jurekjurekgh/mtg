@@ -28,6 +28,7 @@
 //
 // Uruchomienie: node tools/scoring-choice-space-audit.mjs [seeds] [--decks=all] [--all-decisions]
 // Exit code: 1, gdy typ z listy ma KIEDYKOLWIEK >1 wariant (dowód braku wyceny).
+import { parseAuditArgs, assertAuditCommand, assertAuditFinished } from './scoring-audit-utils.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execute, playerView } from '../src/engine/game-state.js';
@@ -37,9 +38,9 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
 import { BENCH_DECKS, benchmarkDecks } from './benchmark.mjs';
 
-const seeds = Number(process.argv[2] ?? 1);
-const WSZYSTKIE_TALIE = process.argv.includes('--decks=all');
-const ALL_DECISIONS = process.argv.includes('--all-decisions');
+const { seeds, flags } = parseAuditArgs(process.argv.slice(2), 1, ['--decks=all', '--all-decisions']);
+const WSZYSTKIE_TALIE = flags.has('--decks=all');
+const ALL_DECISIONS = flags.has('--all-decisions');
 const DECKS = WSZYSTKIE_TALIE ? benchmarkDecks() : BENCH_DECKS;
 const registry = createCardRegistry();
 const deckLists = new Map(DECKS.map((name) => [
@@ -57,7 +58,7 @@ const STALE_ZERO = new Map([
 
 const agg = new Map(); // typ → { decyzje, hist: Map(liczba wariantów → ile razy), przyklady: [] }
 let games = 0;
-const naruszenia = [];
+let naruszenia = 0;
 
 function odnotuj(view, cmd, deckA, deckB, seed) {
   const tegoTypu = (view.legalCommands ?? []).filter((c) => c.type === cmd.type);
@@ -65,10 +66,10 @@ function odnotuj(view, cmd, deckA, deckB, seed) {
   const k = agg.get(cmd.type) ?? { decyzje: 0, hist: new Map(), przyklady: [] };
   k.decyzje += 1;
   k.hist.set(n, (k.hist.get(n) ?? 0) + 1);
+  if (n > 1) naruszenia += 1;
   if (n > 1 && k.przyklady.length < 5) {
     const opis = tegoTypu.map((c) => `${c.cardId ?? c.pickId ?? c.choice ?? c.targetId ?? '?'}`).join(', ');
     k.przyklady.push(`seed ${seed} ${deckA} vs ${deckB}: ${n} wariantów [${opis}]`);
-    naruszenia.push(`${cmd.type}: ${n} wariantów (seed ${seed}, ${deckA} vs ${deckB})`);
   }
   agg.set(cmd.type, k);
 }
@@ -91,8 +92,9 @@ function match(deckA, deckB, seed) {
     const cmd = bots.get(p).chooseCommand(view, {});
     if (cmd?.type && (STALE_ZERO.has(cmd.type) || ALL_DECISIONS)) odnotuj(view, cmd, deckA, deckB, seed);
     const r = execute(state, cmd);
-    if (!r?.ok) break;
+    assertAuditCommand(r, cmd);
   }
+  assertAuditFinished(state);
   games += 1;
 }
 
@@ -126,10 +128,10 @@ for (const [typ, uzasadnienie] of STALE_ZERO) {
   console.log(`${typ}: ${k.decyzje} decyzji, warianty{${hist}} — ${uzasadnienie}`);
   for (const p of k.przyklady) console.log(`    ${p}`);
 }
-if (naruszenia.length === 0) {
-  console.log('\nWYNIK: każdy typ z listy miał zawsze 1 komendę — stałe finish(0) POPRAWNE.');
+if (naruszenia === 0) {
+  console.log('\nWYNIK: w ZAOBSERWOWANYCH decyzjach z listy nie było >1 wariantu. Typy z 0 obserwacji: brak danych, nie dowód poprawności.');
 } else {
-  console.log(`\nWYNIK: ${naruszenia.length} decyzji z >1 wariantem i BEZ wyceny — potrzebna wycena w bocie.`);
+  console.log(`\nWYNIK: ${naruszenia} decyzji z >1 wariantem i BEZ wyceny — potrzebna wycena w bocie.`);
   process.exitCode = 1;
 }
 }

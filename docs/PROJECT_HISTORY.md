@@ -19,6 +19,72 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-05 — PMSSB-58: jakościowe domknięcie dziesięciu kart (kontynuacja PR #155, M438)
+
+Po odróżnieniu gotowości engine od jakości scoringu właściciel zlecił pełną
+pętlę dla batcha 63. Plan `7bff147` przed kodem, baza `c60fb42`. A/B:
+`8f1a907` / `77ebd06` — ekonomia zasobów, tryby/ward i odzyskiwanie kart.
+C: `1bf6c31` (WIP), `1a2f313` (zielona brama) — pozostałe kombinacje i
+kontrole. Narzędzia `0c70a01`, zapis pomiarów `5965df5`, stół/F17 `45e7faa`,
+zapis all/quick `60436c3`. Wszystko na tej samej gałęzi; nic nie zostało scalone.
+
+Właściciel zwrócił uwagę na zbyt rzadkie commity podczas długiej fali.
+Zabezpieczono natychmiast WIP z jawnymi brakami bramy, a następnie każdy
+wynik osobnym pushem. Wznowienie środowiska wymagało wcześniej odzyskania
+A/B z GH — pliki były stare, praca zdalna zachowana. Nie było force push.
+
+**Jakość:** 98 pinów A/B/C, mutacje i kontrole ×0; inwentarz obejmuje całą
+10-kartową listę. Snapshot C zmienił 1 wpis wyceny, 0 wyborów; OFF odtwarza
+poprzedni hash. Tie 55→54 remisów akcyjnych na 7 taliach, mirror 15:13
+(28/28 końców), stół 7/7 naturalnych końców i 0 flag. Ręczny odczyt mimo
+0 flag ujawnił „gracz wybierasz tryb”; 3 piny i replay potwierdziły poprawkę.
+Brak obserwacji Connection/Mender/Urborg nie udaje pokrycia — są sceny wymuszone.
+
+**Brama `45e7faa`:** all **8013/8013**, build **72 / 4871,6 kB**, quick
+**672/672**, 0 unfinished, 584/672 zwycięstw heuristic (86,9%; poprzednio
+585/672). Różnica jednej wygranej jest jawna; nie zmieniano progów/seedów.
+CI kodu PASS, run `37304592016`, 5m6s. Pełnego B0 nie uruchamiano.
+
+Dokumenty: [plan](plans/PLAN_2026-10-05a-pmssb58-batch63.md),
+[raport](audits/PMSSB58_BATCH63_2026-10-05.md), [hub](PMSSB.md),
+[handoff](setup/HANDOFF_2026-10-05b-pmssb58.md).
+
+## 2026-10-04–05 — przejęcie batcha 63 i naprawa CI po PR #154 (PR #155, M437)
+
+Właściciel przekazał przerwany batch, czerwone CI po scaleniu oraz żądanie
+trwałego zakazu zalewania rozmowy wynikiem 7000+ testów. Lektura obowiązkowa
+wykonana; plan przed kodem (`9532c20`), praca na `arena/01a108d2-mtg`.
+
+1. `9df45e0`: audyt 79 plików, odtworzony baseline **7846/7849**; weryfikacja
+   CR i przyczyny dryfu golden-mastera, reguła cichych testów, rewalidacja
+   celów triggerów. Nie osłabiano strażników ani reguł MTG.
+2. `ff64ae4`: first/double strike vs deathtouch, semantyczna tożsamość kopii
+   i wiarygodne CLI audytowe. Piny oraz mutacje, fast **7601/7601**, CI zielone.
+3. `05947b9`: cztery brakujące karty, dwa tokeny, modalne ETB na stosie,
+   ward w osobnej partii APNAP, migracja Dominarii na UB/WRG. Świadomy
+   refresh snapshotu: nowy kod ze starymi taliami odtworzył stary hash;
+   dopiero nowy skład zmienił 4/6 śladów.
+4. `f54e21a`: pełna brama ujawniła dwie luki poza fast — miejsce danych
+   tokenów oraz losowy test panelu bez obserwacji. Dane przeniesiono poza
+   rdzeń, pin Cutthroat obejmuje oba ostatnie passy przez sesję (mutacja:
+   2 FAIL); plik wrócił do fast po pomiarze 0,37 s.
+
+**Końcowy kod `f54e21a`:** fast **7642/7642**, all **7905/7905** (631,6 s),
+build **72 moduły / 4850,0 kB**, quick **672/672 ukończonych** (570,1 s,
+heuristic 585/672 = 87,1%; vs random 93,8%, vs aggro 80,4%). All i quick
+pracowały równolegle bez zmian drzewa. GitHub CI **PASS**:
+[run 37242752307](https://github.com/jurekjurekgh/mtg/actions/runs/37242752307).
+
+Katalog: 544 realne supported + 5 virtual basic, 9 back, 48 token; CSV
+553 wiersze / 550 nazw; nadal 27 talii. Batch 63 **10/10**, żadnych nowych
+kart poza listą. AGENTS i ENVIRONMENT §5a utrwalają ciche uruchamianie testów.
+Po bramach wyłącznie dokumentacja. Bez `--full`, merge i force push.
+
+Dokumenty: [plan](plans/PLAN_2026-10-04h-ci-i-dokonczenie-batch63.md),
+[audyt](audits/AUDYT_PR154_2026-10-04.md),
+[raport kart/migracji](audits/BATCH63_DOKONCZENIE_2026-10-04.md),
+[handoff 2026-10-05](setup/HANDOFF_2026-10-05.md).
+
 ## 2026-10-03 — audyt PR #151 + pętla jakości PMSSB-42 (bez kodu produkcyjnego, PR #153)
 
 Sesja audytowa po mergu PR #151 (sesja 2026-10-02f). Polecenie właściciela:

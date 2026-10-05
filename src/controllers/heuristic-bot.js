@@ -1,3 +1,5 @@
+import { countedEffectValue, countedEffectSign, isCountedEffectValue } from '../engine/effect-values.js';
+import { battleDefenseDelta, isBattle } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
@@ -574,16 +576,43 @@ function combatOutcome(view, recipient, delta = {}) {
  * (albo natychmiastowa śmierć z SBA przy wytrzymałości ≤0 — CR 704.5f,
  * niezależnie od walki); false = okno jest, ale skutek będzie zerowy.
  */
+/** PMSSB-58: ta sama miara co sac-economics/fight (2p+t+MV). */
+function permanentMaterialValue(object) {
+  return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
+}
+
+/** Rzeczywiste 0 toughness != pozostała wytrzymałość po obrażeniach.
+ * Pierwsze omija indestructible/regenerację; drugie jest zniszczeniem.
+ */
+function pumpRemovesCreature(view, target, delta) {
+  if (!target || target.kind !== 'creature') return false;
+  const toughness = (target.toughness ?? 0) + (delta.toughness ?? 0);
+  if (toughness <= 0) return true;
+  const shield = (view.regenerationShields ?? []).includes(target.id)
+    && !target.cantBeRegeneratedThisTurn;
+  return (target.damage ?? 0) >= toughness
+    && !(target.keywords ?? []).includes('indestructible') && !shield;
+}
+
 function pumpChangesOutcome(view, recipient, delta = {}) {
   if (!recipient) return false;
-  const stats = duelStats(recipient, delta);
-  // Natychmiastowa SBA (CR 704.5f): wytrzymałość spada do 0 — cel umiera
-  // zaraz po rozstrzygnięciu, to realna zmiana stanu gry.
-  if (stats.toughness <= 0) return true;
+  // CR 704.5f/g: sprawdź realne toughness i osobno śmiertelne obrażenia.
+  if (pumpRemovesCreature(view, recipient, delta)) return true;
   const before = combatOutcome(view, recipient, {});
   const after = combatOutcome(view, recipient, delta);
   if (!before || !after) return false;
   return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+/** Wspólna wycena ujemnej pompy czaru/aktywacji; delta już policzona
+ * z widoku, więc dynamiczne P/T nie trafiają do Math.abs jako obiekt.
+ * Kill przez 0 toughness działa także poza walką (CR 704.5f).
+ */
+function negativePumpValue(view, target, delta) {
+  if (!target || target.controllerId === view.playerId) return -60;
+  return pumpChangesOutcome(view, target, delta)
+    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0)
+    : -75;
 }
 
 /**
@@ -630,7 +659,7 @@ const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
  *   • wpis stosu `cmd.targetId` jest kopią czaru (`copy`, CR 707.10),
  *   • WSZYSTKIE jego efekty nie kumulują się na tym samym celu
  *     (`NON_ACCUMULATING_SPELL_EFFECTS`; efekt nieznany → brak wniosku),
- *   • na stosie wisi inna instancja TEJ SAMEJ karty z tym samym zestawem
+ *   • na stosie wisi inna instancja TEJ SAMEJ karty, kontrolera, efektów i uporządkowanych
  *     celów — efekt dostarczy ona (kopia rozwiązuje się PRZED oryginałem,
  *     więc odmowa dla kopii nie gubi efektu; dokładnie jedna instancja
  *     zachowuje płatność, bo karzemy wyłącznie kopie).
@@ -645,7 +674,12 @@ function redundantSpellCopyPayment(view, cmd) {
   const effects = stackEntryEffects(entry);
   if (effects.length === 0) return false;
   if (!effects.every((e) => NON_ACCUMULATING_SPELL_EFFECTS.has(e?.type))) return false;
-  const klucz = (e) => `${e.cardId}|${JSON.stringify([...(e.targets ?? [])].map(String).sort())}`;
+  // Audyt PR #154/F5: kolejność slotów, kontroler i wybrane efekty
+  // należą do znaczenia czaru. Sama nazwa + zbiór celów nie dowodzą
+  // redundancji (np. obca kontrola lub inny tryb tej samej karty).
+  const klucz = (e) => JSON.stringify([
+    e.cardId, e.kind, e.controllerId, e.targets ?? [], stackEntryEffects(e),
+  ]);
   const moj = klucz(entry);
   return stack.some((other) => other.id !== entry.id && klucz(other) === moj);
 }
@@ -774,6 +808,8 @@ function pumpDelta(view, effect, source = null) {
   // Nieobsłużony deskryptor (liczba albo nieznany łańcuch) → 0 (nie gubi,
   // nie psuje, tak jak dotąd).
   const resolveDynamic = (v) => {
+    const counted = countedEffectValue(v, view.zones.battlefield ?? [], source?.controllerId ?? view.playerId);
+    if (counted != null) return counted;
     if (typeof v === 'number') return v;
     if (v === 'card_types_in_all_graveyards') return cardTypesInAllGraveyardsFromView(view);
     if (v === 'source_power') return source?.power ?? 0;
@@ -978,7 +1014,7 @@ const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
 // karty (CR 702.66) i sprawdzane obok.
 const GRAVE_RECURSION_EFFECTS = new Set([
   'return_permanent_from_graveyard',
-  'return_card_from_graveyard_to_hand',
+  'return_card_from_graveyard_to_hand', 'return_creature_card_to_hand',
   'put_graveyard_card_onto_battlefield',
   'graveyard_creatures_to_library_top_choice',
 ]);
@@ -1283,7 +1319,7 @@ export function temporaryPumpOf(effect, view = null, source = null) {
   // Liczby bierze `pumpDelta` — JEDNO źródło prawdy dla P/T efektów pump
   // (X = liczba stworów/bram/dynamicznych deskryptorów liczy się z widoku).
   if (view?.zones) return pumpDelta(view, effect, source);
-  return { power: typeof effect.power === 'number' ? effect.power : 0, toughness: typeof effect.toughness === 'number' ? effect.toughness : 0 };
+  return { power: typeof effect.power === 'number' ? effect.power : countedEffectSign(effect.power), toughness: typeof effect.toughness === 'number' ? effect.toughness : countedEffectSign(effect.toughness) };
 }
 
 /**
@@ -1323,7 +1359,7 @@ const FREE_CAST_WINDOW_TYPES = new Set([
 
 export const WARD_TAXED_TYPES = new Set([
   ...COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
-  'activate_ability', 'resolve_trigger_target',
+  'activate_ability', 'resolve_trigger_target', 'resolve_modal_choice',
   // D3 (Żywy Tester, PR #135): okna Epic i Discover RZUCAJĄ czar (spell_cast →
   // `fireWardTriggers`), choć nazwa komendy nie kończy się na `_cast` — filtr
   // po nazwie je gubił. Zmierzone sondą: bot bez many rzucał z Discover
@@ -1483,6 +1519,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return { power, toughness };
   };
 
+  // „Whenever this creature blocks ...”: ta sama projekcja P/T dla
+  // wyboru bloków i oceny ataku w takiego obrońcę. Publiczne deskryptory,
+  // efektywne keywordy atakera; żadnych nazw kart ani domysłu po reach.
+  const afterBlockTriggers = (view, blocker, attackers) => {
+    const abilities = blocker.activatableAbilities
+      ?? (blocker.abilitiesStripped || blocker.faceDown ? [] : cardDef(blocker.cardId)?.abilities ?? []);
+    let power = 0, toughness = 0;
+    for (const attacker of attackers) for (const ability of abilities) {
+      if (ability?.trigger?.event !== 'blocks' || ability.trigger.requiresTarget || ability.trigger.condition) continue;
+      const required = ability.trigger.blockedHasKeyword;
+      if (required && !hasKeyword(attacker, required)) continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const effect of effects) {
+        if (effect?.type !== 'pump') continue;
+        const delta = pumpDelta(view, effect, blocker);
+        power += delta.power; toughness += delta.toughness;
+      }
+    }
+    return power || toughness ? { ...blocker, power: (blocker.power ?? 0) + power,
+      toughness: (blocker.toughness ?? 0) + toughness } : blocker;
+  };
+
   const enemyNonlandPermanents = (view) => (view.zones.battlefield ?? [])
     .filter((o) => o.controllerId !== view.playerId && o.kind !== 'land' && (o.types ?? []).every((t) => t !== 'Land'));
   const etbEnemyHasTarget = (view, spec) => {
@@ -1522,7 +1580,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // PMSSB-47 (2026-10-03h, korekta w audycie PR #153): czy ETB „put a
   // +1/+1 counter on target …” ma LEGALNY cel po mojej stronie przy rzucie
   // nosiciela. Wchodzący permanent JEST już na polu bitwy, gdy trigger trafia
-  // na stos (CR 603.6d) — bez `notSelf` sam jest celem (silnik oferuje go jako
+  // na stos (CR 603.6a) — bez `notSelf` sam jest celem (silnik oferuje go jako
   // `permanent-N`), a dla pól bitwy typu LĄD/artefakt (np. Idyllic Grange)
   // wchodzący nie jest stworzeniem i wtedy potrzebny jest ISTNIEJĄCY stwór.
   // `notSelf` = „another” wyklucza wchodzącego (Jade Bearer → inny Merfolk).
@@ -1544,7 +1602,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Grange): permanent wchodzi z triggerem „put a +1/+1 counter on target
    * creature you control", a na stole nie ma mojego stwora. Dla STWORÓW to
    * nigdy nie zachodzi (wchodzący jest legalnym celem własnego triggera,
-   * CR 603.6d — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
+   * CR 603.6a — korekta F1), ale LĄD/artefakt nie jest stworzeniem i wtedy
    * trigger przepada. Kara mniejsza niż `warpFutileEtbPenalty`, bo permanent
    * ZOSTAJE na stole (nie jest stratą karty) — jej rolą jest KOLEJNOŚĆ:
    * ląd przestaje wygrywać z rzutem gospodarza, więc bot najpierw wystawia
@@ -1589,6 +1647,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (effect?.power ?? tokenDef?.power ?? 0) <= 0 && granted.length > 0
       && granted.every((fx) => fx?.type === 'add_mana');
   };
+  // PMSSB-58/F1: token z aktywacją doboru jest BANKIEM OPCJI. Przyszłej
+  // odrzucanej karty nie znamy; używamy istniejącej miary lootu, odliczamy
+  // koszt many i dyskontujemy zwłokę. Aktywacja niżej płaci rzeczywisty discard.
+  const tokenDrawBankValue = (view, effect) => {
+    const abilities = effect.abilities ?? cardDef(effect.cardId)?.abilities ?? [];
+    let best = 0;
+    for (const ability of abilities) {
+      if (ability?.type !== 'activated') continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      const draw = effects.filter(e => e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
+      if (!draw.length) continue;
+      let value = draw.reduce((sum, e) => sum + drawResourceValue(e)
+        + drawDeckingPenalty(view, e.amount ?? 1), 0);
+      if (ability.cost?.discardCard) value -= P.drawCardValue - LOOT_NET_VALUE;
+      value -= P.abilityManaCostPenalty * ((ability.cost?.mana ?? 0) + (ability.cost?.generic ?? 0));
+      best = Math.max(best, value);
+    }
+    return P.tokenDrawBankWeight * best;
+  };
+
   // PMSSB-2/B (F1): czy efekt robi token-STWORA (tylko stwory mają okna —
   // Treasure/Mutagen nie blokują ani nie atakują, ich timing to przyszła
   // pętla mana-castability, nie ta).
@@ -1673,7 +1751,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // znak go nie dotyczy.
     const controller = tokenControllerId ?? view.playerId;
     const sign = controller === view.playerId ? 1 : -1;
-    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth)
+    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect))
       + tokenRiderDamage(view, effect, controller));
   };
   // PMSSB-2/C (F5): RIDERZY bezwarunkowe — token, który sam zadaje obrażenia
@@ -1716,6 +1794,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // `draw_then_discard` liczył pełne +6 (błąd: karta-w-do-grobu jak
   // zatrzymana). Obie pisownie i gałąź ability schodzą do +2.
   const LOOT_NET_VALUE = 2;
+  const drawResourceValue = effect => (Number.isInteger(effect?.amount) ? effect.amount : 1)
+    * (effect?.type === 'draw_then_discard' ? LOOT_NET_VALUE : P.drawCardValue);
+
   // PMSSB-38 (L41): jedna miara incubate — ciało N/N (10·(2N+N)/3 jak
   // tokenBodyValue) pomniejszone o koszt przemiany {2} (jak koszt many
   // stwora). Token jest artefaktem, dopóki się nie przemieni (nie blokuje).
@@ -1864,7 +1945,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     mill_cards: (e) => 20 + 3 * (e.amount ?? 1),
     mill_from_bottom: (e) => 20 + 3 * (e.amount ?? 1),
   });
-  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
+  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
     for (const ability of def.abilities ?? []) {
@@ -1873,11 +1954,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (cond.wasKicked && !kicked) continue;
       if (cond.wasOffspring && !offspring) continue;
       if (cond.delirium || cond.descendedThisTurn || cond.controlsCreatureWithCounter) continue; // zbyt sytuacyjne — bez zmian
+      if (ability.trigger.modes?.length) {
+        total += P.modalEtbValueWeight * modalEnterBonusValue(view, def, ability.trigger.modes, reservedMana);
+        continue;
+      }
       const req = ability.trigger.requiresTarget ?? null;
       // PMSSB-3/F-envoy: rozwijanie conditional w ETB (lustro selfDamageOfEffects,
       // L41; Envoy bral 0 w obu galeziach).
       const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
       for (const e of effs) {
+        if (e?.type === 'cant_be_blocked' && req) {
+          const blockers = untappedEnemyBlockers(view);
+          const source = { ...def, cardId: def.id, controllerId: view.playerId };
+          const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
+          const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
+            .map(o => cantBeBlockedTargetValue(view, o)));
+          total += P.evasionEtbValueWeight * best;
+          continue;
+        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         total += fn(e, view, req, def);
@@ -2935,6 +3029,49 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if ((creature.damage ?? 0) >= (creature.toughness ?? 0)) return true;
     return false;
   };
+
+  /** PMSSB-58/C: regeneracja zapobiega ZNISZCZENIU, nie każdemu odejściu.
+   * Jedna miara dla czaru i zdolności; 0 toughness i brak P/T nie są lethal
+   * damage. Ofiara w walce to konkretny recipient, nie umierający przeciwnik.
+   */
+  function regenerationValue(view, victim, { ability = false } = {}) {
+    const shields = view.regenerationShields ?? [];
+    const already = victim && shields.includes(victim.id);
+    const urgent = view.turn.step === 'combat_damage' ? 60 : 30;
+    const old = already ? -25 : victim && isCreatureThreatened(view, victim)
+      ? (ability ? urgent : 30) : -20;
+    let value = -20;
+    if (victim && victim.controllerId === view.playerId) {
+      const stack = view.zones.stack ?? [];
+      const affects = (entry, effect) => (entry.targets ?? [])[effect.targetIndex ?? 0] === victim.id;
+      const pendingShield = stack.some(entry => stackEntryEffects(entry)
+        .some(effect => effect.type === 'regenerate' && affects(entry, effect)));
+      const ban = victim.cantBeRegeneratedThisTurn
+        || (view.cantBeRegeneratedThisTurn ?? []).includes(victim.id)
+        || stack.some(entry => stackEntryEffects(entry)
+          .some(effect => effect.type === 'cant_be_regenerated_this_turn' && affects(entry, effect)));
+      if (already || pendingShield) value = -25;
+      else if (!ban && !hasKeyword(victim, 'indestructible')) {
+        const isCreature = victim.kind === 'creature' && Number.isFinite(victim.toughness) && victim.toughness > 0;
+        const outcome = isCreature ? combatOutcome(view, victim) : null;
+        const diesInCombat = outcome && (((view.combat?.attackers ?? []).includes(victim.id) && outcome.attackerDies)
+          || (outcome.deadBlockers ?? []).includes(victim.id));
+        const markedLethal = isCreature && (victim.damage ?? 0) > 0 && victim.damage >= victim.toughness;
+        const destroyPending = stack.some(entry => stackEntryEffects(entry).some(effect => {
+          if (!affects(entry, effect)) return false;
+          if (['destroy_permanent','destroy_artifact_gain_life_mana_value'].includes(effect.type)) return true;
+          if (effect.type === 'destroy_if_least_power') return isCreature
+            && !(view.zones.battlefield ?? []).some(o => o.kind === 'creature' && (o.power ?? 0) < (victim.power ?? 0));
+          if (effect.type !== 'damage' || !isCreature || !(effect.amount > 0)) return false;
+          const src = objectOnBoard(view, entry.sourceId) ?? entry;
+          if (hasKeyword(src, 'infect')) return false;
+          return effect.amount >= victim.toughness - (victim.damage ?? 0) || hasKeyword(src, 'deathtouch');
+        }));
+        if (diesInCombat || markedLethal || destroyPending) value = urgent;
+      }
+    }
+    return old + P.regenerationModelWeight * (value - old);
+  }
 
   // M236/2 (KOREKTA właściciela): permanent jest „skazany w tej turze" — więc
   // poświęcenie go (np. za życie) jest praktycznie DARMOWE — gdy:
@@ -5465,7 +5602,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** Wartość ciała stwora (skala M149/A3/sac-economics: 2p+t+mv) — R4. */
   function bodyWorth(object) {
-    return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
+    return permanentMaterialValue(object);
   }
 
   /**
@@ -5707,7 +5844,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return P.searchTwoCardsValue; // 9 (ręka) + 7 (grób = setup reanimacji)
     }
     if (type === 'search_library_to_battlefield' || type === 'search_library_to_battlefield_tapped') {
-      return P.searchToBattlefieldBase; // trwały ramp (stara ETB-10)
+      return P.searchToBattlefieldBase * (1 - (landRampUnneeded(view, effect) ? P.rampNeedWeight : 0)); // ETB nie płaci kary za pusty czar
     }
     if (type === 'search_library_to_hand') {
       const lands = (view.zones.battlefield ?? []).filter(
@@ -5729,6 +5866,67 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'search_library_to_hand', 'search_library_to_battlefield',
     'search_library_to_battlefield_tapped', 'search_library_two_cards_hand_and_grave',
   ]);
+
+  const isLandRamp = effect => ['search_library_to_battlefield','search_library_to_battlefield_tapped'].includes(effect?.type)
+    && searchFindsLand(effect);
+  const hasLandEnterPayoff = view => (view.zones.battlefield ?? []).some(o => o.controllerId === view.playerId
+    && (o.activatableAbilities ?? (o.abilitiesStripped || o.faceDown ? [] : cardDef(o.cardId)?.abilities ?? []))
+      .some(a => a?.trigger?.event === 'land_entered_under_your_control'));
+  function landRampUnneeded(view, effect) {
+    if (!isLandRamp(effect)) return false;
+    const q = effect.qualifier ?? {};
+    let candidates = registry.all().filter(def => matchesSearchCriteria(def.id, { allTypes: q.types, subtypes: q.subtypes }));
+    if (knownOwnDeck) {
+      const outside = new Map();
+      for (const zone of ['hand','battlefield','graveyard','exile','stack']) for (const o of view.zones[zone] ?? []) {
+        if ((o.ownerId ?? o.controllerId) !== view.playerId || o.hidden || o.isToken || o.copyNumber) continue;
+        outside.set(o.cardId, (outside.get(o.cardId) ?? 0) + 1);
+      }
+      candidates = candidates.filter(def => (ownCounts.get(def.id) ?? 0) > (outside.get(def.id) ?? 0));
+      if (candidates.length === 0) return true;
+    }
+    if (hasLandEnterPayoff(view)) return false;
+    // Pula wyparuje — nie zastępuje trwałej podaży. Tapnięcie landu nie
+    // odbiera natomiast jego wartości w przyszłej turze.
+    const permanentUnits = [];
+    for (const o of view.zones.battlefield ?? []) {
+      if (o.controllerId !== view.playerId || o.kind !== 'land') continue;
+      const src = manaSourceOfView(o);
+      for (let i=0;i<(src?.amount ?? 1);i++) permanentUnits.push(src?.colors ?? []);
+    }
+    const known = [...(view.zones.hand ?? []), ...[...ownCounts.keys()].map(id => cardDef(id)).filter(Boolean)];
+    const boardAbilities = (view.zones.battlefield ?? []).filter(o => o.controllerId === view.playerId)
+      .flatMap(o => o.activatableAbilities ?? (o.abilitiesStripped || o.faceDown ? [] : cardDef(o.cardId)?.abilities ?? []));
+    const curve = Math.max(P.rampManaFloor, ...known.map(o => o.manaCost ?? 0),
+      ...boardAbilities.map(a => Number.isFinite(a.cost?.mana) ? a.cost.mana : 0));
+    if (permanentUnits.length < curve || known.some(o => (o.spell ?? cardDef(o.cardId)?.spell)?.xCost)
+      || boardAbilities.some(a => a.cost?.maxPowerX)) return false;
+    const covered = (units, requirements) => {
+      const picked = [];
+      for (const req of requirements) if (matchColorRequirements(units, [...picked, req])) picked.push(req);
+      return picked.length;
+    };
+    // Także częściowy postęp GG (0→1 albo 1→2) jest fixingiem. Matching
+    // pipów jest ten sam co w silniku, nie test „czy mam dowolny zielony”.
+    const fixesColor = (view.zones.hand ?? []).some(card => {
+      const requirements = coloredPipsOf(card.cardId);
+      const before = covered(permanentUnits, requirements);
+      return before < requirements.length && candidates.some(def => {
+        const src = manaSourceOfCardDefinition(def.id, def);
+        return src && covered([...permanentUnits, src.colors ?? []], requirements) > before;
+      });
+    });
+    return !fixesColor;
+  }
+  function landRampActionPenalty(view, effects, timing) {
+    if (!effects.length || !effects.every(isLandRamp)) return 0;
+    if (effects.every(e => landRampUnneeded(view, e))) return P.rampNeedWeight * P.rampSaturationPenalty;
+    const tapped = effects.every(e => e.entersTapped || e.type === 'search_library_to_battlefield_tapped');
+    const pool = view.players.find(p => p.id === view.playerId)?.mana ?? 0;
+    const opponentEnd = !myTurn(view) && view.turn.step === 'end';
+    return timing === 'instant' && tapped && !opponentEnd && pool === 0 && !hasLandEnterPayoff(view)
+      ? P.tappedRampWaitPenalty : 0;
+  }
 
   /** PMSSB-20: synergia grobu dla mill-siebie (M173/A — historyczna logika). */
   function selfMillGraveSynergy(view) {
@@ -6500,6 +6698,131 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return tax;
   }
 
+  /** PMSSB-58/B: kandydaci ANTICYPACJI z publicznych faktów. Rzeczywistą
+   * legalność wyboru zawsze ustala engine; tutaj nie wolno nagradzać celu,
+   * którego już widoczny typ/ochrona wykluczają. Zakres = obecne modale/ETB.
+   */
+  function publicEtbTargets(view, spec, source) {
+    if (!spec) return [null];
+    if (spec.type === 'opponent') return view.players.filter(p => p.id !== view.playerId).map(p => p.id);
+    if (spec.type === 'player') return view.players.map(p => p.id);
+    let candidates = (view.zones.battlefield ?? []).filter(object => {
+      if (spec.type === 'battle') return isBattle(object);
+      if (!['creature', 'creature_you_control', 'creature_opponent_controls',
+        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most'].includes(spec.type)) return false;
+      if (object.kind !== 'creature') return false;
+      if (spec.type === 'creature_you_control' && object.controllerId !== view.playerId) return false;
+      if (['creature_opponent_controls','creature_opponent_damaged_this_turn'].includes(spec.type)
+        && object.controllerId === view.playerId) return false;
+      if (spec.type === 'creature_opponent_damaged_this_turn' && !(object.damage > 0 || object.damagedThisTurn)) return false;
+      if (spec.type === 'creature_with_power_at_most' && (object.power ?? 0) > (spec.max ?? 0)) return false;
+      return (!spec.subtype || (object.subtypes ?? []).includes(spec.subtype))
+        && (!spec.notSelf || object.id !== source?.id);
+    });
+    candidates = candidates.filter(object => !hasKeyword(object, 'shroud')
+      && !(object.controllerId !== view.playerId && hasKeyword(object, 'hexproof'))
+      && !(object.protection ?? []).some(q => sourceHasProtectionQuality(q, source ?? {})));
+    return candidates.map(object => object.id);
+  }
+
+  function battleDefenseValue(view, effect, target) {
+    if (!isBattle(target)) return 0;
+    const delta = battleDefenseDelta(effect, target, view.playerId);
+    const current = target.counters?.defense ?? 0;
+    const actual = delta < 0 ? Math.min(-delta, current) : delta;
+    return Math.abs(actual) * P.battleDefensePerCounter
+      + (delta < 0 && actual > 0 && actual >= current ? P.battleDefeatBonus : 0);
+  }
+
+  /** Dawny model jest jawnie zachowany wyłącznie do kontroli OFF/mirror. */
+  function legacyModalEffectsValue(view, effects, targetId) {
+    let value = 0;
+    for (const effect of effects) {
+      const amount = effect.amount ?? 1;
+      if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') value += opponentLifeEffectValue(view, effect);
+      else if (effect.type === 'gain_life') value += myLife(view) <= 5 ? 4 * amount : amount;
+      else if (effect.type === 'draw_cards') value += P.drawCardValue * amount;
+      else if (effect.type === 'damage') value += 5 + 2 * amount;
+      else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      else if (effect.type === 'create_token') value += 8;
+      else if (effect.type === 'adjust_battle_defense') value += battleDefenseValue(view, effect, objectOnBoard(view, targetId));
+    }
+    return value;
+  }
+
+  /** Jedna miara wybranego skutku: rzut modalnego nosiciela i decyzja trybu.
+   * Nie dolicza bazy decyzji ani podatku ward (wołający zna koszt rzutu).
+   */
+  function modalModeValue(view, mode, targetId, source) {
+    const effects = mode?.effects ?? [];
+    const target = objectOnBoard(view, targetId);
+    const cmd = { type: 'resolve_modal_choice', targetId, targets: targetId != null ? [targetId] : [] };
+    let value = 0;
+    for (const effect of effects) {
+      const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+      if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
+        const victim = effect.scope === 'target' ? view.players.find(p => p.id === targetId) : enemy(view);
+        value += victim?.id === view.playerId ? -selfLifeLossPenalty(view, amount)
+          : (victim && amount >= victim.life ? 80 : 4 * amount);
+      } else if (effect.type === 'gain_life') value += gainLifeValue(view, amount);
+      else if (effect.type === 'draw_cards' || effect.type === 'draw_then_discard') {
+        value += drawResourceValue(effect) + drawDeckingPenalty(view, amount);
+      } else if (effect.type === 'adjust_battle_defense') value += battleDefenseValue(view, effect, target);
+      else if (effect.type === 'create_token') value += tokenBodyValue(view, effect, { source });
+      else if (temporaryPumpOf(effect, view, source)) {
+        const delta = pumpDelta(view, effect, source);
+        if (isNegativePump(effect)) {
+          if (target?.controllerId === view.playerId) value -= 60;
+          else if (pumpRemovesCreature(view, target, delta)) value += P.drawCardValue + bodyWorth(target);
+          else if (target && pumpChangesOutcome(view, target, delta)) value += Math.max(0, negativePumpValue(view, target, delta));
+        } else if (target?.controllerId === view.playerId) {
+          value += temporaryPumpPayoff(view, target, { ...effect, targetIndex: undefined });
+        }
+      } else if (effect.type === 'destroy_permanent') {
+        if (target && !hasKeyword(target, 'indestructible')) value += P.drawCardValue + bodyWorth(target);
+      } else if (effect.type === 'damage') value += damageTargetValue(view, targetId, amount);
+      else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
+    }
+    const old = legacyModalEffectsValue(view, effects, targetId);
+    return old + P.modalEffectModelWeight * (value - old)
+      - selfHarmPenalty(view, effects, cmd, target) - friendlyMisaimPenalty(view, effects, cmd, target);
+  }
+
+  function modalEnterBonusValue(view, def, modes, reservedMana) {
+    const source = { ...def, id: 'pmssb58-entering', cardId: def.id, controllerId: view.playerId,
+      kind: (def.types ?? []).includes('Creature') ? 'creature' : 'artifact', summoningSickness: true };
+    const projected = { ...view, zones: { ...view.zones, battlefield: [...view.zones.battlefield, source] } };
+    let best = 0;
+    for (const mode of modes) for (const targetId of publicEtbTargets(projected, mode.targets?.[0], source)) {
+      const tax = wardTargetTax(view, targetId == null ? [] : [targetId], reservedMana);
+      if (tax >= 200) continue;
+      best = Math.max(best, modalModeValue(projected, mode, targetId, source) - tax);
+    }
+    return best;
+  }
+
+  /** PMSSB-58/F8: oba deskryptory zwrotu do RĘKI liczą własny slot.
+   * Dodatnia wartość odzyskania zostaje nawet dla karty dziś niegrywalnej;
+   * jej ciało/tempo nie udaje jednak stworzenia już obecnego na planszy.
+   */
+  function graveReturnEffectValue(view, effect, cmd) {
+    const slot = cmd.targets?.[effect.targetIndex ?? 0];
+    const card = slot && (view.zones.graveyard ?? []).find(o => o.id === slot);
+    if (!card) return 0;
+    const def = cardDef(card.cardId);
+    const body = 2 * (card.power ?? def?.power ?? 0) + (card.toughness ?? def?.toughness ?? 0);
+    const mv = card.manaCost ?? def?.manaCost ?? 0;
+    const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
+    const boardValue = body + P.graveReturnManaWeight * Math.min(mv, potential);
+    const soon = colorCastable(view, card) && cardKeepValue(view, card) >= 0;
+    let value = P.drawCardValue + boardValue * (soon ? 1 : 1 - P.graveReturnAvailabilityWeight);
+    if ((effect.drawIfSubtypes ?? []).some(subtype => (card.subtypes ?? def?.subtypes ?? []).includes(subtype))) {
+      value += P.drawCardValue + drawDeckingPenalty(view, 1);
+    }
+    return (effect.type === 'return_creature_card_to_hand' ? P.graveReturnAliasWeight : 1) * value;
+  }
+
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
   /**
    * D3 (Żywy Tester, PR #135 — Etap F/4 domknięty po stronie bota): okna rzutu
@@ -7075,6 +7398,84 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return -Math.min(30, Math.max(wartosc, wspolna));
   }
 
+  /** PMSSB-58/F2: cena kosztu zgadza się z pickerem (PMSSB-25/26),
+   * a nie z dowolną/pierwszą kartą. Preferencja dodatnia oznacza śmieć.
+   */
+  function abilityDiscardLoss(view, cost, source) {
+    if (!cost?.discardCard) return 0;
+    const hand = (view.zones.hand ?? []).filter(card => card.id !== source?.id);
+    if (!hand.length) return P.drawCardValue + 1;
+    return Math.max(0, -Math.max(...hand.map(card => discardCostPreference(view, card))));
+  }
+
+  /** PMSSB-58/F4: zjedzenie tokena może odebrać innej zdolności opłacalny
+   * kill. Zależność wynika z counted-value, nie z nazwy zasobu/karty.
+   * Oceniany jest obecny jawny próg, bez zgadywania przyszłych dobierań.
+   */
+  function countedPumpReserveLoss(view, consumed) {
+    if (!consumed || P.countedPumpReserveWeight === 0) return 0;
+    const after = { ...view, zones: { ...view.zones,
+      battlefield: view.zones.battlefield.filter(o => o.id !== consumed.id) } };
+    let bestLoss = 0;
+    for (const source of view.zones.battlefield) {
+      if (source.id === consumed.id || source.controllerId !== view.playerId
+        || source.faceDown || source.abilitiesStripped) continue;
+      const abilities = source.activatableAbilities ?? cardDef(source.cardId)?.abilities ?? [];
+      for (const ability of abilities) {
+        if (ability?.type !== 'activated') continue;
+        const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        for (const effect of effects) {
+          if (!isNegativePump(effect) || !(isCountedEffectValue(effect.power)
+            || isCountedEffectValue(effect.toughness))) continue;
+          const beforeDelta = pumpDelta(view, effect, source), afterDelta = pumpDelta(after, effect, source);
+          if (beforeDelta.toughness === afterDelta.toughness) continue;
+          const loss = ability.cost?.sacrificeSelf ? bodyWorth(source) : 0;
+          const bestKill = (v, delta) => enemyCreatures(v)
+            .filter(target => !hasKeyword(target, 'hexproof') && !hasKeyword(target, 'shroud'))
+            .filter(target => pumpRemovesCreature(v, target, delta))
+            .reduce((best, target) => Math.max(best, bodyWorth(target) - loss), 0);
+          bestLoss = Math.max(bestLoss, bestKill(view, beforeDelta) - bestKill(after, afterDelta));
+        }
+      }
+    }
+    return P.countedPumpReserveWeight * bestLoss;
+  }
+
+  /** PMSSB-58/F5: pewny lethal po oddaniu blokera dla samego filtrowania/
+   * doboru nie jest „odblokowaniem dobrego czaru”. Model pojedynczego ataku
+   * używa publicznych ograniczeń bloku, absorpcji trample oraz zegara infect.
+   * Po bloku bez trample atak pozostaje zablokowany mimo ofiary.
+   */
+  function manaSacrificeLosesLastBlock(view, source, unlockedCards) {
+    const combat = view.combat;
+    if (P.manaSacrificeLethalPenalty === 0 || source?.kind !== 'creature'
+      || !combat || combat.defendingPlayerId !== view.playerId
+      || combat.attackers?.length !== 1 || combat.damageAssigned) return false;
+    const onlyLibrary = card => {
+      const fx = (card.spell ?? cardDef(card.cardId)?.spell)?.effects ?? [];
+      return fx.length > 0 && fx.every(e => ['draw_cards', 'draw_then_discard', 'scry', 'surveil'].includes(e?.type));
+    };
+    if (!unlockedCards.length || !unlockedCards.every(onlyLibrary)) return false;
+    const attacker = objectOnBoard(view, combat.attackers[0]);
+    if (!attacker) return false;
+    const assigned = combat.blockers?.[attacker.id] ?? [];
+    const beforeBlocks = view.turn.step === 'declare_attackers';
+    if (!beforeBlocks && !assigned.includes(source.id)) return false;
+    if (!beforeBlocks && !hasKeyword(attacker, 'trample')) return false;
+    const individual = { ...attacker, keywords: (attacker.keywords ?? []).filter(k => k !== 'menace') };
+    const blockers = beforeBlocks
+      ? myCreatures(view).filter(o => !o.tapped && !o.cantBlock && attackerCanBeBlocked(individual, [o]))
+      : assigned.map(id => objectOnBoard(view, id)).filter(Boolean);
+    if (!blockers.some(o => o.id === source.id)) return false;
+    const face = list => {
+      const canBlock = (!beforeBlocks || attackerCanBeBlocked(attacker, list))
+        && !(beforeBlocks && list.length === 1 && list[0].cantBlockAlone);
+      return Math.max(0, faceDamageOf(attacker) - (canBlock ? blockAbsorbedDamageOf(attacker, list) : 0));
+    };
+    const clock = hasKeyword(attacker, 'infect') ? 10 - myPoison(view) : myLife(view);
+    return face(blockers) < clock && face(blockers.filter(o => o.id !== source.id)) >= clock;
+  }
+
   function attackIntendsCreature(view, objectId) {
     if (!objectId || attackIntentEval) return false;
     const legal = myCreatures(view)
@@ -7154,45 +7555,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const pending = view.pendingModalTrigger;
       const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
       const ability = (def?.abilities ?? []).find((entry) => Array.isArray(entry?.trigger?.modes));
-      const modeEffects = ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
+      const modeEffects = pending?.modes?.[cmd.modeIndex]?.effects ?? ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
       if (modeEffects.length === 0) return finish(0);
       if (allEffectsInertNow(view, modeEffects, cmd)) return finish(-40);
-      const foe = enemy(view);
-      const self = view.players.find((p) => p.id === view.playerId);
-      let modeScore = 10;
-      for (const effect of modeEffects) {
-        const amount = effect.amount ?? 1;
-        if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
-          // Dobicie przeciwnika kończy partię — to zawsze najlepszy tryb.
-          modeScore += amount >= (foe?.life ?? 20) ? 80 : 4 * amount;
-        } else if (effect.type === 'gain_life') {
-          modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
-        } else if (effect.type === 'draw_cards') {
-          modeScore += P.drawCardValue * amount; // PMSSB-3/F1: param zamiast literalu (bez zmiany zachowania)
-        } else if (effect.type === 'damage') {
-          modeScore += 5 + 2 * amount;
-        } else if (effect.type === 'surveil' || effect.type === 'scry') {
-          modeScore += 3;
-        } else if (effect.type === 'create_token') {
-          // PMSSB-2/A (F3-OUT): tryb modalnego TRIGGERA z tokenem — 0 kart
-          // w katalogu (wszystkie tokeny to czary/zdolności/zwykłe triggery),
-          // a gałąź czyta rejestr (nie widok), więc jest nietestowalna
-          // synetycznie. Zostaje flat 8 + ten wskaźnik długu L41.
-          modeScore += 8;
-        }
-      }
-      // E2/A (plan 2026-09-07): tryb z CELEM — dotąd modeScore był wspólny dla
-      // wszystkich kandydatów i wybór celu spadał na kolejność oferty (pump
-      // wzmacniał stwora PRZECIWNIKA, gdy stał pierwszy na polu). Znak efektów
-      // trybu rozstrzygają wspólne tablice kar (L41: jedno źródło prawdy o
-      // celu — jak przy cast_spell): wrogi efekt we własne rzeczy i przyjazny
-      // efekt we wroga są karane (M121/M179).
-      if (cmd.targetId != null) {
-        const targetObj = objectOnBoard(view, cmd.targetId);
-        modeScore -= selfHarmPenalty(view, modeEffects, cmd, targetObj);
-        modeScore -= friendlyMisaimPenalty(view, modeEffects, cmd, targetObj);
-      }
-      return finish(modeScore);
+      const printedMode = ability?.trigger?.modes?.[cmd.modeIndex];
+      const publicMode = pending?.modes?.[cmd.modeIndex];
+      const mode = { ...printedMode, ...publicMode, effects: modeEffects,
+        targets: publicMode?.targets ?? printedMode?.targets ?? [] };
+      const source = objectOnBoard(view, pending?.sourceId) ?? { ...def, controllerId: view.playerId };
+      return finish(10 + modalModeValue(view, mode, cmd.targetId, source));
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
@@ -7932,7 +8303,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (premia +2×moc wyżej), attach_self_to_target (gałąź equipment),
         // damage_to_controller/lose_life (kary M169/K). Typy poza tabelą → 0
         // (zachowanie bez zmian).
-        score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true });
+        score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true, reservedMana: reservedManaOf(view, cmd) });
         // PMSSB-4/F-C: imminent-trigger-gain nosiciela (0 bez enablerow).
         score += imminentTriggerGainValue(view, def);
         // PMSSB-9/F-T1: anticipacja-dies nosiciela (0 bez triggerów-dies).
@@ -8964,9 +9335,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // wartość tylko gdy cel zagrożony, inaczej kara.
           if (effect.type === 'regenerate') {
             const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 0]) ?? target ?? null;
-            const alreadyShielded = victim && (view.regenerationShields ?? []).includes(victim.id);
-            if (alreadyShielded) score -= 25;
-            else score += victim && isCreatureThreatened(view, victim) ? 30 : -20;
+            score += regenerationValue(view, victim);
           }
           // Audyt PR #93 (znalezisko F): wycena wrappera „each of up to N
           // targets” wyciągnięta do `wrapTargetsValue` — to samo liczenie
@@ -8995,30 +9364,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // case'a" (L50). Zombie → dodatkowe dobranie (CR 608.2g — podtyp
           // sprawdzany z odzyskanej karty). Generycznie po deskryptorze
           // (ADR 0002), zero nazw kart.
-          if (effect.type === 'return_card_from_graveyard_to_hand') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += P.drawCardValue + gyValue;
-              // D (uwaga właściciela 2026-09-23c): karta wraca do RĘKI, więc
-              // bot musi ją jeszcze RZUCIĆ — warianty o równym ciele remisowały
-              // i wygrywał pierwszy z brzegu (zwykle najtańszy, dokładnie objaw
-              // zgłoszenia). Wartość rośnie z mana value, ale PRZYCIĘTA do
-              // potencjału many bota (źródła na stole niezależnie od tapnięcia
-              // + pula), pomniejszonego o manę zarezerwowaną na rzucany właśnie
-              // czar — reguła: „na jakiego MA manę". Waga 0 = wycena po samym
-              // ciele (pokrętło właściciela, test D/5).
-              const manaValue = gyCard.manaCost ?? gyDef?.manaCost ?? 0;
-              const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
-              score += P.graveReturnManaWeight * Math.min(manaValue, potential);
-              const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
-              if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
-                score += P.drawCardValue; // Zombie → dobranie
-              }
-            }
+          if (effect.type === 'return_card_from_graveyard_to_hand' || effect.type === 'return_creature_card_to_hand') {
+            score += graveReturnEffectValue(view, effect, cmd);
           }
           // M156/Q1 + B (zgłoszenie właściciela 2026-09-28e, taktyka
           // właściciela): prewencja celowana ma JEDNO źródło prawdy
@@ -9117,12 +9464,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // sensowny wyłącznie w sytuacji bojowej, w której realnie zmienia
               // wynik — 5/5 atakujący po −1/−0 ginie od 4/4, a 5/5 vs 1/1
               // dalej zabija i przeżywa (skutek zerowy). Symulujemy przed/po.
-              const changes = pumpChangesOutcome(view, target, pumpDelta(view, effect));
-              if (changes) {
-                score += 25 + 4 * Math.abs(effect.power ?? 0) + 4 * Math.abs(effect.toughness ?? 0);
-              } else {
-                score -= 75; // karta na nic — kara klasy „okno poza walką" (L3)
-              }
+              score += negativePumpValue(view, target, pumpDelta(view, effect));
               }
             }
           }
@@ -9277,6 +9619,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += searchRiderValue(view, effect);
           }
         }
+        score -= landRampActionPenalty(view, scoredEffects, spell.timing);
+        // PMSSB-58: cena rodziny raz na CZAR, nie na nogę/slot. Przy
+        // połączeniu kilku rodzin nie można zapłacić dwa razy tej samej many.
+        const manaPriceWeight = Math.max(0,
+          scoredEffects.some(e => ['return_card_from_graveyard_to_hand','return_creature_card_to_hand'].includes(e.type)) ? P.graveReturnCastManaWeight : 0,
+          scoredEffects.length && scoredEffects.every(isLandRamp) ? P.rampCastManaWeight : 0,
+          scoredEffects.some(e => ['add_counter','add_counter_to_creatures_you_control'].includes(e.type)) ? P.counterCastManaWeight : 0);
+        score -= manaPriceWeight * reservedManaOf(view, cmd);
         // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
         // nie czeka na okno: fizzle musi nastąpić PRZED rozstrzygnięciem).
@@ -9441,6 +9791,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
         }
+        const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
+        const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;
+        score -= discardLoss + reserveLoss;
+        const ownDrawOnly = effects.length > 0 && effects.every(e =>
+          e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
+        if (ownDrawOnly && ((ability?.cost?.discardCard && P.abilityDiscardCostWeight > 0) || reserveLoss > 0)) {
+          const drawValue = effects.reduce((sum, e) => sum + drawResourceValue(e), 0);
+          const paid = discardLoss + reserveLoss + P.abilityManaCostPenalty * abilityManaCost
+            + (ability?.cost?.sacrificeSelf ? (source?.kind === 'creature' ? 4 : 1) : 0);
+          // L3: baza +2 i premia EOT nie mogą uczynić straty kart zyskiem.
+          if (drawValue <= paid) return finish(-Math.max(1, paid - drawValue));
+        }
         // M121: ta sama bramka co dla czarów — zdolność aktywowana potrafi
         // tapować/niszczyć/mielić dokładnie tak samo (Entrancing Lyre,
         // Sterling Keykeeper, Cellar Door).
@@ -9487,26 +9849,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isRegenerateAbility = ability?.keyword === 'regenerate'
           || abilityEffectTypes.includes('regenerate')
           || effects.some((e) => e?.type === 'regenerate');
-        if (isRegenerateAbility) {
-          const regenTarget = target ?? source;
-          // Jeśli cel ma już tarczę regeneracji, druga jest zbędna (idempotentna
-          // w sensie M179/B — druga tarcza nic nie dodaje, bo pierwsza już chroni).
-          const alreadyShielded = regenTarget && (view.regenerationShields ?? []).includes(regenTarget.id);
-          if (alreadyShielded) {
-            score -= 25;
-          } else {
-            const threatened = isCreatureThreatened(view, regenTarget);
-            if (threatened) {
-              // M257/F: krok combat_damage = OSTATNIA szansa — krok domyka
-              // `resolve_combat` (stała 50), a tarcza musi stać PRZED nim.
-              // 2 + 60 = 62 > 50: bot stawia tarczę w tym oknie, a walkę
-              // rozstrzyga w następnej decyzji (wtedy alreadyShielded −25).
-              score += view.turn.step === 'combat_damage' ? 60 : 30;
-            } else {
-              score -= 20;
-            }
-          }
-        }
+        if (isRegenerateAbility) score += regenerationValue(view, target ?? source, { ability: true });
+        score -= landRampActionPenalty(view, effects, ability?.timing);
         // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
         let tokenAbilityTimingApplied = false;
         // PMSSB-4/F-A0+F-A5b (L41): cala petla M236-gain wyciagnieta PRZED
@@ -9647,8 +9991,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Batch 51 (Savage Surge — „+2/+2 i odkręcenie do końca tury"):
           // gałąź rozpoznaje efekt po WSPÓLNYM MIANOWNIKU (nadanie P/T do
           // końca tury — `temporaryPumpOf`), nie po łańcuchu nazw typów.
-          const pump = temporaryPumpOf(effect, view);
-          if (pump) {
+          const pump = temporaryPumpOf(effect, view, source);
+          if (pump && target && target.controllerId !== view.playerId && isNegativePump(effect)) {
+            const cost = ability?.cost?.sacrificeSelf && source ? bodyWorth(source) : 0;
+            const oldValue = negativePumpValue(view, target, pump) - cost;
+            let value = oldValue;
+            if (ability?.cost?.sacrificeSelf && source && pumpRemovesCreature(view, target, pump)) {
+              const loss = permanentDoomedThisTurn(view, source) ? 0 : cost;
+              const net = bodyWorth(target) - loss;
+              // Sama ilość -X/-X nie usprawiedliwia złej wymiany ciał.
+              // Dla nieopłacalnej wymiany ta sama kara co dla jałowej pompy.
+              value += P.sacrificePumpTradeWeight * ((net > 0 ? net : -75) - oldValue);
+            }
+            score += value;
+          } else if (pump) {
             const pGain = pump.power;
             const tGain = pump.toughness;
             // Pump bez jawnych celów działa na samo źródło (np. Warboar);
@@ -10370,6 +10726,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // bota (ta sama wycena kastru co oferty, L41).
               unlocksSomething = unlockedCards.some((card) => castScoreForUnlock(view, card) > 0);
             }
+            if (ability?.cost?.sacrificeSelf && unlocksSomething
+              && manaSacrificeLosesLastBlock(view, source, unlockedCards)) {
+              return finish(-P.manaSacrificeLethalPenalty);
+            }
             // Wartość wyłącznie za realne odblokowanie zagrania. Zdolność
             // o bilansie net <= 0 (filtr koloru) płaci samą bazę 2 — realne
             // odblokowanie jest jedynym warunkiem, więc kara M150/C1 za
@@ -10483,8 +10843,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // PMSSB-8/F-L1: loot w zdolności = wartość SIECIOWA (jak ETB),
             // nie pełny draw (scholar 8→4; bonus-EOT i koszt-sac BEZ ZMIAN —
             // timing loota ≡ timing doboru).
-            const perCard = effect.type === 'draw_then_discard' ? LOOT_NET_VALUE : P.drawCardValue;
-            score += perCard * drawAmount + drawDeckingPenalty(view, drawAmount);
+            score += drawResourceValue(effect) + drawDeckingPenalty(view, drawAmount);
             // PMSSB-3/F2 (lustro M211/A1): ability-draw instant-speed na EOT wroga.
             if (ability?.timing === 'instant' && !myTurn(view) && view.turn.step === 'end') score += P.instantDrawFoeEndBonus;
             // PMSSB-3/F-scroll-sac (lustro galezi-token): poswiecenie zrodla
@@ -10763,26 +11122,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
-        const strongestBlockerPower = blockers.reduce((max, o) => Math.max(max, combatPower(o)), 0);
-        const strongestBlockerToughness = blockers.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
-        // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
-        // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
-        // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
-        // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
-        const blockerPowersDesc = blockers.map((o) => combatPower(o)).sort((a, b) => b - a);
-        const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
-        const weakestBlockerToughness = blockers.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
-        // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
-        // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
-        // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
-        // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
-        const trick = enemyDefensivePumpBonus(view);
-        const effBlockerPower = strongestBlockerPower + trick.power;
-        const effBlockerToughness = strongestBlockerToughness + trick.toughness;
-        const effGangPower = gangPower + trick.power;
-        const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
-          ? Number.POSITIVE_INFINITY
-          : weakestBlockerToughness + trick.toughness;
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -10792,6 +11131,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         for (const id of attackers) {
           const object = objectOnBoard(view, id);
           if (!object) continue;
+          const candidates = blockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
+          const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
+          const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
+          // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
+          // „przeżywa" najsilniejszego pojedynczego blokera (3/4? nie: 3 < 4),
+          // ale para 1/3 + 3/3 zabija go łącznymi obrażeniami. Suma top-2 mocy
+          // blokerów + najniższa wytrzymałość (czy atakujący COKOLWIEK zabije).
+          const blockerPowersDesc = candidates.map((o) => combatPower(o)).sort((a, b) => b - a);
+          const gangPower = (blockerPowersDesc[0] ?? 0) + (blockerPowersDesc[1] ?? 0);
+          const weakestBlockerToughness = candidates.reduce((min, o) => Math.min(min, o.toughness ?? 0), Number.POSITIVE_INFINITY);
+          // M317 (Ghost Warden): obrońca może w oknie bloków pompać blokera
+          // zdolnością ze stołu (tap albo mana) — bot zakłada NAJGORSZY przypadek
+          // i liczy staty blokerów Z BONUSEM. Bez tego bot „kupował" wymianę
+          // 2/2↔2/2, która po wrogim pumpecie stawała się stratą 2/2 za 0.
+          const trick = enemyDefensivePumpBonus(view);
+          const effBlockerPower = strongestBlockerPower + trick.power;
+          const effBlockerToughness = strongestBlockerToughness + trick.toughness;
+          const effGangPower = gangPower + trick.power;
+          const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
+            ? Number.POSITIVE_INFINITY
+            : weakestBlockerToughness + trick.toughness;
           const power = combatPower(object);
           const toughness = object.toughness ?? 0;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
@@ -10835,7 +11195,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Dwie odsłony (`lethalDamageOf` = 2 × moc) to próg WYMIANY: bloker
           // zdąży oddać w drugiej odsłonie, więc 2/2 DS vs 4/4 to trade, nie
           // „przeżyje i zabije".
-          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, blockers)
+          const killsBeforeBlockerStrikes = attackerStrikesFirst(combatObject, candidates)
             && ((hasKeyword(combatObject, 'deathtouch') && combatPower(combatObject) > 0)
               || blockedStats.power >= effBlockerToughness);
           // PMSSB-50: „praktycznie nieblokowalny" z deathtouch — blok oznacza
@@ -10903,17 +11263,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // z PlayerView (ADR 0002/0017), nie po nazwie karty. PMSSB-50:
             // przechodzi obok blokerów, więc liczy obrażenia w twarz.
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
-          } else if (deathtouchUnblockable) {
-            // PMSSB-50: blok nie przyjdzie (każdy bloker droższy niż mój
-            // stwór), więc deathtouch zadaje obrażenia w twarz jak ewazyjny
-            // (M202/H), a nie jak chump.
-            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
-          } else if (diesBeforeDealingDamage(combatObject, blockers)) {
-            // M202/N: bloker z first strike zabija atakującego, zanim ten zada
-            // cokolwiek (CR 510.4) — atak ma 0% szans: 0 obrażeń i strata
-            // stwora. Jałowy, więc premia wyścigu go nie uratuje.
+          } else if (diesBeforeDealingDamage(combatObject, candidates)) {
+            // Audyt PR #154/F4: first/double strike może zabić przed
+            // zadaniem obrażeń. To ma pierwszeństwo przed premią DT:
+            // droższy bloker nie ryzykuje wtedy wymiany (CR 702.7b).
             perAttacker = -(toughness + 8);
             futileAttackers += 1;
+          } else if (deathtouchUnblockable) {
+            // Premia za nieopłacalną wymianę tylko, gdy atakujący zdąży
+            // zadać obrażenia — zwykły droższy bloker nadal odstraszany.
+            perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (killsBeforeBlockerStrikes) {
             // M202/N (symetrycznie): first strike atakującego zabija blokera,
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
@@ -11176,7 +11535,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const blockerObjs = [];
           for (const blockerId of blockerIds) {
             const blocker = objectOnBoard(view, blockerId);
-            if (blocker) blockerObjs.push(blocker);
+            if (blocker) {
+              const opponents = Object.entries(assignments).filter(([, ids]) => ids.includes(blockerId))
+                .map(([id]) => objectOnBoard(view, id)).filter(Boolean);
+              blockerObjs.push(afterBlockTriggers(view, blocker, opponents));
+            }
           }
           const blockersUsed = blockerObjs.length;
           // I (zgłoszenie z testów 2026-09-22, Porcelain Legionnaire): wymianę
@@ -13139,6 +13502,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // M130-rodzina: nazwy wariantów rozstrzygnięć wyborów (L34/L40/M195/M203) —
     // bez nich wszystkie warianty jednego type są nierozróżnialne w śladzie i
     // tieProjection nie ma czego parować.
+    if (cmd.type === 'resolve_modal_choice') return cmd.skip
+      ? 'resolve_modal_choice(skip)'
+      : `resolve_modal_choice(${cmd.modeIndex}${cmd.targetId != null ? '->' + cmd.targetId : ''})`;
+    if (cmd.type === 'cast_flashback') return `cast_flashback(${cmd.objectId}->${(cmd.targets ?? []).join('+')})`;
     if (cmd.type === 'resolve_discard_choice') {
       return cmd.cardId == null
         ? 'resolve_discard_choice(skip)'

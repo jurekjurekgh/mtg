@@ -25,7 +25,7 @@
 //   • `futileFriendlyCounterEtbPenalty` — kara `castFutileEtbPenalty` (40),
 //     gdy trigger „add_counter na moim stworze" nie ma legalnego celu
 //     (dla STWORÓW nie zachodzi: wchodzący jest celem sam dla siebie,
-//     CR 603.6d — korekta F1; dla lądu/artefaktu zachodzi),
+//     CR 603.6a — korekta F1; dla lądu/artefaktu zachodzi),
 //   • kara wołana po klamrze `landPlayDelta` (±14/25) i tylko gdy trigger
 //     naprawdę odpala (`condition.enteredUntapped` przy tapniętym wejściu).
 //

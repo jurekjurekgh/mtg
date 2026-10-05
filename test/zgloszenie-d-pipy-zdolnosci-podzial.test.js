@@ -62,8 +62,8 @@ test('D/2: karta bezkolorowa z pipami idzie na stronę, która może je zapłaci
 
 test('D/3: realny generator — Simian Simulacrum w Dominaria (BRG), nie w (WU)', () => {
   const files = buildDecks(registry);
-  const dominariaWu = files.get('dominaria-wu');
-  const dominariaBrg = files.get('dominaria-brg');
+  const dominariaWu = files.get('dominaria-ub');
+  const dominariaBrg = files.get('dominaria-wrg');
   assert.ok(dominariaWu && dominariaBrg,
     'zgłoszenie D nie przemianowuje talii: strony Dominarii to nadal WU i BRG');
   assert.match(dominariaBrg, /1x Simian Simulacrum/,
@@ -78,8 +78,8 @@ test('D/3: realny generator — Simian Simulacrum w Dominaria (BRG), nie w (WU)'
   // dopisuje basic landy pod pipy, a te nie liczą się do progu).
   const nonland = (text) => parseDeckText(text, registry).cardIds
     .filter((cardId) => !cardId.startsWith('basic-')).length;
-  assert.ok(nonland(dominariaWu) >= MIN_NONLAND, `dominaria-wu ma ${nonland(dominariaWu)} kart nielandowych`);
-  assert.ok(nonland(dominariaBrg) >= MIN_NONLAND, `dominaria-brg ma ${nonland(dominariaBrg)} kart nielandowych`);
+  assert.ok(nonland(dominariaWu) >= MIN_NONLAND, `dominaria-ub ma ${nonland(dominariaWu)} kart nielandowych`);
+  assert.ok(nonland(dominariaBrg) >= MIN_NONLAND, `dominaria-wrg ma ${nonland(dominariaBrg)} kart nielandowych`);
 });
 
 test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pokryte sufiksem', () => {
@@ -135,11 +135,11 @@ test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pok
 // byłoby stratą większą), a pipy zdolności są zgodne z rejestrem.
 const WYJATKI_PIPY_KART_KOLOROWYCH = new Map([
   ['mournful-zombie', {
-    talia: 'dominaria-brg.txt',
+    talia: 'dominaria-ub.txt',
     pipyPozaSufiksem: 'w',
     pipyZdolnosci: 'W',
     powod: 'stwór B 2/1 za {2}{B} ze zdolnością „{W}, {T}: Target player gains '
-      + '1 life". Strona BRG pozwala go rzucić i używać jako ciała; strona WU '
+      + '1 life". Po migracji Batch 63 strona UB pozwala go rzucić i używać jako ciała; strona WRG '
       + 'płaci {W}, ale nie ma czerni — tam karta jest nierzuca. Mniejsza '
       + 'strata: zdolność opcjonalna (CR 602.2), nie sama karta.',
   }],

@@ -69,7 +69,9 @@ function base() {
 
 function decide(state, params = undefined) {
   const view = playerView(state, 'p2');
-  const bot = createHeuristicBot({ seed: 99, ...(params ? { params } : {}) });
+  // PMSSB-58: izolacja historycznej wypłaty fight/proliferate od nowej
+  // ceny many czaru z licznikiem (osobne domyślne piny 58/C30–32).
+  const bot = createHeuristicBot({ seed: 99, params: { ...params, counterCastManaWeight: 0 } });
   const choice = bot.chooseCommand(view, {});
   const last = bot.trace().at(-1) ?? {};
   return { choice, options: last.options ?? [] };

@@ -6,18 +6,18 @@
 // case; ten pomiar mówi, czy w PRAWDZIWYCH partiach benchmarku któryś typ
 // faktycznie spada do default. Wynik: tabela typ → liczba trafień (p1/p2).
 //
-// Uruchomienie: node tools/probe-unvalued-scan.mjs [seeds]
+// Uruchomienie: node tools/scoring-unvalued-audit.mjs [seeds]
+import { parseAuditArgs, assertAuditCommand, assertAuditFinished } from './scoring-audit-utils.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runSimulation } from '../src/engine/simulation.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
-import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
 import { BENCH_DECKS } from './benchmark.mjs';
 
-const seeds = Number(process.argv[2] ?? 2);
+const { seeds, flags } = parseAuditArgs(process.argv.slice(2), 2, []);
 const registry = createCardRegistry();
 const deckLists = new Map(BENCH_DECKS.map((name) => [
   name,
@@ -41,6 +41,8 @@ function match(deckA, deckB, seed) {
   const { state: finalState, results } = runSimulation({
     state, controllers: new Map([['p1', p1], ['p2', p2]]), maxCommands: 5000,
   });
+  for (const step of results) assertAuditCommand(step.result, step.command);
+  assertAuditFinished(finalState);
   games += 1; commands += results.length;
   if (finalState.status !== 'finished') unfinished += 1;
   for (const [player, bot] of [['p1', p1], ['p2', p2]]) {

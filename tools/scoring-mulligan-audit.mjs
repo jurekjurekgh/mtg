@@ -15,6 +15,7 @@
 // Uruchomienie: node tools/scoring-mulligan-audit.mjs [seeds]
 // Exit code: 1, gdy audyt znajdzie naruszenia (bramka ręczna).
 //
+import { parseAuditArgs, assertAuditCommand, assertAuditFinished } from './scoring-audit-utils.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execute, playerView } from '../src/engine/game-state.js';
@@ -24,7 +25,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { setupCardMatch } from '../src/cards/materialize.js';
 import { benchmarkDecks } from './benchmark.mjs';
 
-const seeds = Number(process.argv[2] ?? 1);
+const { seeds, flags } = parseAuditArgs(process.argv.slice(2), 1, []);
 const DECKS = benchmarkDecks();
 const registry = createCardRegistry();
 const deckLists = new Map(DECKS.map((name) => [
@@ -73,8 +74,9 @@ function match(deckA, deckB, seed) {
       }
     }
     const r = execute(state, cmd);
-    if (!r?.ok) break;
+    assertAuditCommand(r, cmd);
   }
+  assertAuditFinished(state);
   games += 1;
 }
 

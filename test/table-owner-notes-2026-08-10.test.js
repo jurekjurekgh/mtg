@@ -213,3 +213,15 @@ test('B3: trigger_target_resolved wielocelowy wymienia WSZYSTKIE cele (Glorifier
   });
   assert.equal(text, 'Glorifier of Suffering — cele: Ramroller, Glorifier of Suffering');
 });
+
+for (const [playerId, expected] of [['p1', 'wybierasz tryb: Życie'], ['p2', 'Nieprzyjaciel wybiera tryb: Życie']]) {
+  test(`PMSSB-58/UI: wybór trybu ${playerId} bez „gracz wybierasz” i podwójnego trybu`, () => {
+    const text = d({ type: 'modal_trigger_resolved', playerId, sourceId: 'source', cardId: 'etched-host-doombringer', modeIndex: 0, modeName: 'Życie' });
+    assert.equal(text, `Etched Host Doombringer — ${expected}`);
+  });
+}
+test('PMSSB-58/UI: brak legalnego trybu nie udaje dokonanego wyboru', () => {
+  const text = d({ type: 'modal_trigger_resolved', playerId: 'p1', sourceId: 'source', cardId: 'etched-host-doombringer', skipped: true });
+  assert.match(text, /brak legalnego trybu/);
+  assert.doesNotMatch(text, /wybierasz/);
+});

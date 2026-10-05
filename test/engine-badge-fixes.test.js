@@ -224,5 +224,7 @@ test('B2: widok oferuje resolve_modal_choice (Etherwrought Page upkeep)', () => 
   assert.equal(offers.length, 3, 'widok oferuje 3 tryby');
   const r = execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0 });
   assert.equal(r.ok, true);
+  assert.equal(state.players[0].life, 20, 'CR 603.3c: najpierw tryb na stosie');
+  assert.ok(resolveStack(state));
   assert.equal(state.players[0].life, 22, 'tryb 0: gain 2 life');
 });

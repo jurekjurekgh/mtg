@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kozilek%27s+Predator&set=2xm&format=json",
+  "print": "2xm",
+  "name": "Kozilek's Predator",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Eldrazi Drone",
+  "oracle_text": "When this creature enters, create two 0/1 colorless Eldrazi Spawn creature tokens. They have \"Sacrifice this token: Add {C}.\"",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "2xm",
+  "set_name": "Double Masters",
+  "collector_number": "173",
+  "rarity": "common",
+  "artist": "Steve Argyle",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/8/c8614f43-21c3-47cd-894a-8cc952bc561a.jpg?1783930144",
+    "normal": "https://cards.scryfall.io/normal/front/c/8/c8614f43-21c3-47cd-894a-8cc952bc561a.jpg?1783930144"
+  },
+  "pobrano": "2026-10-04",
+  "rulingsSource": "https://api.scryfall.com/cards/2xm/173/rulings",
+  "rulingsPobrano": "2026-10-04",
+  "rulings": []
+}

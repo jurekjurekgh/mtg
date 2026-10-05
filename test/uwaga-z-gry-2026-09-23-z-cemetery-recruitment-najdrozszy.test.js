@@ -54,8 +54,11 @@ function scenariusz({ g1, g2, lands = 5, tapped = false }) {
   karta(state, 'g1', g1, BOT, 'graveyard');
   karta(state, 'g2', g2, BOT, 'graveyard');
   for (let i = 0; i < lands; i += 1) {
-    karta(state, `land${i}`, 'basic-swamp', BOT, 'battlefield', tapped ? { tapped: true } : {});
+    karta(state, `land${i}`, i === 0 ? 'basic-mountain' : 'basic-swamp', BOT, 'battlefield', tapped ? { tapped: true } : {});
   }
+  // PMSSB-58: kwalifikowane piny mana-value wymagają kolorów obu kart,
+  // a premia Zombie wymaga biblioteki, z której da się dobrać.
+  for (let i = 0; i < 24; i++) karta(state, `library-${i}`, 'basic-swamp', BOT, 'library');
   return state;
 }
 
@@ -85,8 +88,13 @@ test('D/1: równe ciało — bot bierze DROŻSZĄ kartę, na którą ma manę', 
 
 test('D/2: potencjał many jest CZAPKĄ — przy 3 lądach droga karta nie ucieka', () => {
   const biedny = decyzja(scenariusz({ g1: TANI, g2: DROGI, lands: 3 }));
-  assert.equal(scoreOf(biedny.options, 'g2'), scoreOf(biedny.options, 'g1'),
-    'oba 5/5, oba przycięte do potencjału 3 — wycena równa (kara za nieosiągalny koszt)');
+  assert.ok(scoreOf(biedny.options, 'g2') < scoreOf(biedny.options, 'g1'),
+    'PMSSB-58: MV4 blisko zagrania, MV7 daleko — sama czapka many to nie dostępność karty');
+  const state = scenariusz({ g1: TANI, g2: DROGI, lands: 3 });
+  const bot = createHeuristicBot({ seed: 3, params: { graveReturnAvailabilityWeight: 0 } });
+  bot.chooseCommand(playerView(state, BOT));
+  const old = bot.trace().at(-1).options;
+  assert.equal(scoreOf(old, 'g2'), scoreOf(old, 'g1'), 'OFF: dawna równość po obcięciu mana value');
 });
 
 test('D/3: tapnięte lądy liczą się do potencjału („także z tapniętych")', () => {

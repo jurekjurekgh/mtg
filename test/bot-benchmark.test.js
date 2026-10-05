@@ -213,8 +213,8 @@ import {
  *
  * M228 (ADR 0024, podział talii + AUTO-PRÓBKA benchmarku): BENCH_DECKS to teraz
  * deterministyczny wybór 6 pierwszych talii jednoplanowych (selectBenchDecks) —
- * po podziale 5 dużych talii na połówki próbka to alara, dominaria-brg,
- * dominaria-wu, final-fantasy, forgotten-realms, innistrad-brg. To ŚWIADOMA
+ * po podziale 5 dużych talii na połówki próbka to alara, dominaria-wrg,
+ * dominaria-ub, final-fantasy, forgotten-realms, innistrad-brg. To ŚWIADOMA
  * zmiana „środowiska” (rotująca próbka). Pomiar na nowej próbce (672 mecze):
  * heuristic 90.8% (305/336) vs random, 77.1% (259/336) vs aggro, 0
  * niedokończonych. Reguła „zmierzone −15 p.p., tylko w górę”: vs aggro
@@ -225,7 +225,7 @@ import {
  *
  * Audyt PR #145 (2026-09-29) — rotacja próbki bez pomiaru: batch 61 awansował
  * plan Eldraine do własnej talii (`decks/eldraine.txt`, ADR 0023), więc
- * `selectBenchDecks()` wybrał: alara, dominaria-brg, dominaria-wu, eldraine,
+ * `selectBenchDecks()` wybrał: alara, dominaria-wrg, dominaria-ub, eldraine,
  * final-fantasy, forgotten-realms — `innistrad-brg` wypadł z próbki. Sesja,
  * która to zrobiła, nie uruchomiła pomiaru (ADR 0024 §3), więc progi zostały
  * sprzed rotacji. Pomiar na obecnej próbce (672 mecze, 8 seedów, ~2m45s,

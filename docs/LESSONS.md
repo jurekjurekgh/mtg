@@ -2395,55 +2395,42 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 
 ## L174 (2026-10-04) — Bramkę uruchamiaj na ZAMROŻONYM drzewie; brak wyniku to NIE zielony
 
-**Przypadek:** `npm run test:all` po `c6181b8` zniknął razem z resetem środowiska (wynik nieznany), a edycja drzewa w trakcie bramki unieważnia przebieg — testy biegłyby na stanie, którego nie ma w żadnym commicie.
+**Reguła:** od startu bramki do jej końca zamroź drzewo (także sondy i fixture). Wiąż wynik z hashem; reset/przerwanie = wynik NIEZNANY, nigdy zielony. Po edycji powtórz bieg. Logi zapisuj w ignorowanym katalogu. **Strażnik:** ENVIRONMENT §2, procedura bramek.
 
-**Reguła:** (1) od startu bramki do jej końca nie ruszaj drzewa (edycji, `rm` sond, `--write` fixture'ów); edycję rób PO bramce i powtórz bieg; (2) wynik wiąż z KONKRETNYM commitem (hash tipa w notatce) — po resecie/przerwaniu brak wyniku = nieznany, nie „zielony”; (3) sondy trzymaj poza drzewem albo usuwaj PRZED bramką (untracked też wchodzą do lintu prozy).
-
-**Strażnik:** procedura; checklista `docs/setup/ENVIRONMENT.md` §2.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L174)
 
 ## L175 (2026-10-04) — `name != null` NIE znaczy „to karta”: tokeny mają nazwy (CR 108.2b)
 
-**Przypadek:** F6 audytu PR #153 — 12 kopii predykatu „czy obiekt jest KARTĄ” stało na obecności `name`; token nosi nazwę, więc filtr bota po `name` był MARTWY, a grób publiczny (CR 400.2) gubił rozróżnienie karta/token.
+**Reguła:** karta/token to jawna flaga `isToken` i jeden predykat `zones.isCardObject`, nigdy `name`/`cardId`. Transportuj flagę do widoku w każdej strefie. Pin: nazwana kopia-karta vs token tej samej nazwy. **Strażnik:** `test/karta-to-nie-token-nazwana-kopia-w-grobie.test.js` (m1–m6).
 
-**Reguła:** „czy to karta” czytaj z JEDNEJ jawnej flagi (`isToken` → `zones.isCardObject`), nigdy z `name`/`cardId`; pole towarzyszy obiektowi w KAŻDEJ strefie; pin ma dwie nogi (nazwana kopia karty vs token o tej samej nazwie).
-
-**Strażnik:** `test/karta-to-nie-token-nazwana-kopia-w-grobie.test.js` (mutacje m1–m6).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L175)
 
 ## L176 (2026-10-04) — Dryf golden-mastera lokalizuj `--dump`, nie mutacjami kanałów
 
-**Przypadek:** PMSSB-50 — dryf 1/6 partii oparł się mutacjom pojedynczym, parom i m9; pierwszy różniący się krok wskazał dopiero zrzut śladu (#104 `attack[permanent-12]` 1 → `attack[permanent-12,permanent-22]` 5).
+**Reguła:** przy dryfie golden-mastera zrób `bot-scoring-snapshot.mjs --dump` PRZED/PO, znajdź PIERWSZĄ różną decyzję i dopiero analizuj/mutuj kanały. Suma ocen nie lokalizuje przyczyny. **Strażnik:** `test/bot-scoring-snapshot.test.js`; plany PMSSB-50/51.
 
-**Reguła:** zrzuć `node tools/bot-scoring-snapshot.mjs --dump /tmp/d.json` PRZED i PO, znajdź PIERWSZĄ różniącą się decyzję i rozbierz ją na kanały; `scoreSum` myli (zmiany mogą się znosić), a kanały mutuj dopiero, gdy znasz decyzję.
-
-**Strażnik:** `test/bot-scoring-snapshot.test.js` (4/4); plany `PLAN_2026-10-03m*`/`03n*`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L176)
 
 ## L177 (2026-10-04) — Trigger na stosie: NASTĘPNA decyzja po komendzie nie dotyczy tego, co mierzysz
 
-**Przypadek:** sonda ward — po wykonaniu rzutu (`execute`) pierwsza decyzja bota to `pass_priority`, a nie `resolve_ward_pay_choice`; jednokrokowa sonda ogłosiła „decyzja ward nie pojawia się” (fałszywy alarm). Pełna sekwencja: rzut → pass p1 → pass p2 → DOPIERO pay/refuse.
+**Reguła:** trigger (ward, backup, mentor, pay) czeka na stosie. Mierz całą sekwencję, z passami obu graczy i botem aktualnego `priorityPlayerId`, nie tylko decyzję po rzucie. **Strażnik:** wzorzec pętli w `PLAN_2026-10-04b-pmssb53-ward-pomiar.md`.
 
-**Reguła:** po wykonaniu komendy, która stawia trigger na stosie (ward, backup, mentor, pay-trigger), decyzja triggera przychodzi po passach OBU graczy — mierz SEKWENCJĘ decyzji (bot dla aktualnego `priorityPlayerId` w pętli), nie jeden krok; brak decyzji w kroku N nie znaczy „mechanizm martwy”.
-
-**Strażnik:** procedura sond (wzorzec pełnej pętli: `docs/plans/PLAN_2026-10-04b-pmssb53-ward-pomiar.md`).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L177)
 
 ## L178 (2026-10-04) — Zapłata ratująca KOPIĘ czaru musi wiedzieć, czy kopia wnosi coś nowego; fakt „to kopia" należy do widoku
 
-**Przypadek:** (pomiar PMSSB-56) storm × ward: `spreading-insurrection` (storm=2) na zakrytym disguise z ward {2} — bot płacił **3× {2}** za JEDNO przejęcie kontroli (kopia i oryginał celują w ten sam stwór, efekt się nie kumuluje), a `resolve_counter_pay_choice` płacił {1} za uratowanie takiej kopii (Frightful Delusion). Widok wpisu stosu nie niósł flagi `copy` (CR 707.10), więc wycena nie odróżniała kopii od oryginału.
+**Reguła:** zapłata wardu/kontry za kopię bez nowej wartości wymaga dowodu redundancji: ten sam kontroler, efekty i uporządkowane cele, wszystkie efekty niekumulujące, druga instancja na stosie. Karz tylko kopie; nieznany efekt nie daje wniosku. Publiczna flaga `copy` musi być w widoku (ADR 0017). **Strażnik:** `test/pmssb56-ward-kopie-redundancja.test.js` (E2E i anty-over-fix, pokrętło ×0).
 
-**Reguła:** zanim wycenisz zapłatę ratującą czar (ward CR 702.21a, zapłata kontrująca CR 608.2g), sprawdź, czy ratowany obiekt nie jest kopią bez nowej wartości: kopia + inna instancja TEJ SAMEJ karty z tym samym zestawem celów + WSZYSTKIE efekty w klasie „nie kumuluje się na tym samym celu" ⇒ odmowa (efekt dowiezie instancja pozostawiona na stosie — kopie rozwiązują się PRZED oryginałem). Karz WYŁĄCZNIE kopie (inaczej instancje odmawiają sobie nawzajem i efekt przepada), efektu spoza listy nie klasyfikuj (kotwica anty-over-fix), a fakt „stos niesie kopię" jest informacją PUBLICZNĄ — widok musi go nieść (ADR 0017), bo inaczej wycena jest ślepa.
-
-**Strażnik:** `test/pmssb56-ward-kopie-redundancja.test.js` E1–E12 (E2E storm × ward i storm × kontra, anty-over-fix na `damage`, kotwice: brak bliźniaka, inny zestaw celów, nieznany efekt; pokrętło `redundantCopyPayPenalty` — ×0 = stan sprzed naprawy; mutacje m1–m4 czerwienią właściwe piny). Audyt zdrowia scoringu: `tools/scoring-unvalued-audit.mjs` (12 partii / 6255 komend / 0 niewycenionych, 2026-10-04).
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L178)
 
 ## L179 (2026-10-04) — Próbka benchmarku rotuje (ADR 0024) i potrafi wykluczyć CAŁE rodziny decyzji — policz decyzje, zanim uznasz, że benchmark coś mierzy
 
-**Przypadek:** (PMSSB-57, `tools/scoring-pay-census.mjs`) 36 partii na BENCH_DECKS: **0 decyzji zapłat** — wszystkie 9 kart tych rodzin leży w taliach POZA próbką; na 23 taliach repo: 2 decyzje `pay_or_sacrifice` (koszty 1 i 3, obie zapłacone).
+**Reguła:** POLICZ wystąpienia rodzin decyzji, zanim uznasz benchmark za pokrycie (próbka rotuje, ADR 0024). Rodziny nieobecne pinuj scenariuszami i mierz na `--decks=all`; 0 obserwacji to brak danych. **Strażnik:** narzędzia `tools/scoring-{pay-census,unvalued-audit,mulligan-audit,choice-space-audit}.mjs`.
 
-**Reguła:** zanim uznasz, że benchmark mierzy jakąś rodzinę decyzji, POLICZ jej wystąpienia (`tools/scoring-pay-census.mjs --all`). Rodziny poza próbką pinuj SCENARIUSZAMI (wzorzec `test/pmssb56-...`), nie wynikiem benchmarku, i mierz je na `--decks=all` — inaczej zmiany w ich wycenie nie mają pokrycia w win-rate, a regresje przechodzą niezauważone.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L179)
 
-**Strażnik:** `tools/scoring-pay-census.mjs` (`--all`, `--decks=all`) + `tools/scoring-unvalued-audit.mjs` + `tools/scoring-mulligan-audit.mjs` + `tools/scoring-choice-space-audit.mjs` (czy decyzje ze stałym `finish(0)` mają NAPRAWDĘ jeden wariant — komentarz to nie pomiar).
 ## L180 (2026-10-04) — Dodanie karty do planu z podziałem zmienia NAZWY plików talii: to migracja, nie wpis
 
-**Przypadek:** (batch 63/T3) plan „Dominaria" (37 nielandów ≥ próg 30) po dodaniu karty przeliczył podział i ZMIENIŁ nazwy plików: `dominaria-wu`/`dominaria-brg` → `dominaria-ub`/`dominaria-wrg`; repo ma **596** referencji do starych nazw (fixture'y sesji, BENCH_DECKS, talie testera).
+**Reguła:** dodając kartę do dzielonego planu, sprawdź wynik generatora i zmiany nazw talii. Nowe sufiksy oznaczają jawną migrację aktywnych narzędzi/testów/fixture, nie masową zmianę historii ani trwałe wstrzymanie karty. Zachowaj ślad PRZED/PO. **Strażnik:** `tools/split-deck-colors.mjs`, `test/m203-plany-kolekcji.test.js`.
 
-**Reguła:** przed dodaniem karty do planu z podziałem uruchom generator i sprawdź `git status decks/`; zmiana sufiksów stron = migracja nazw (osobne zadanie) — wstrzymaj kartę (`.pending`) i udokumentuj.
-
-**Strażnik:** `tools/split-deck-colors.mjs` + `test/m203-plany-kolekcji.test.js`.
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L180)

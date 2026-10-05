@@ -1,3 +1,5 @@
+import { countedEffectValue } from './effect-values.js';
+import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
@@ -1731,6 +1733,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     dealNonCombatDamage(state, sourceObject, targetId, effect.amount);
     return;
   }
+  if (effect.type === 'adjust_battle_defense') {
+    const battle = state.objects.get(targets[0]);
+    if (!battle || battle.zone !== 'battlefield' || !isBattle(battle)) return;
+    const delta = battleDefenseDelta(effect, battle, sourceObject.controllerId);
+    if (delta > 0) addCounter(state, battle.id, 'defense', delta);
+    else if (delta < 0) {
+      // Efekt, nie koszt: zdejmij tyle, ile możliwe (CR 609.3).
+      const amount = Math.min(-delta, battle.counters?.defense ?? 0);
+      if (amount > 0) removeCounter(state, battle.id, 'defense', amount);
+    }
+    return;
+  }
   if (effect.type === 'pump') {
     // Trigger bez jawnych celów (np. landfall) pumpuje samo źródło.
     const targetId = targets[0] ?? sourceObject.id;
@@ -1742,6 +1756,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Dynamiczna wartość „source_power" (np. Jyoti: pump wg mocy źródła).
     // Altar of the Goyf: pump wg liczby typów kart we wszystkich grobach.
     const dynt = (v, fallback) => {
+      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
+      if (counted != null) return counted;
       if (v === 'source_power') return effectivePower(sourceObject, state);
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       return v ?? fallback;
@@ -2197,29 +2213,26 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // w JEDNEJ komendzie (pendingDamageDivision + resolve_damage_division —
     // kompozycje total na N części po ≥1, przestrzeń: 3=[3]|[2,1]|[1,1,1]).
     const total = effect.amount ?? 3;
-    const chosen = (targets ?? []).filter((id) => id != null);
+    const slots = targets ?? [];
+    const chosen = slots.filter((id) => id != null);
     if (chosen.length === 0) return;
-    if (chosen.length === 1) {
-      dealNonCombatDamage(state, sourceObject, chosen[0], total);
-      return;
-    }
-    // M171/Z6 (CR 603.3d/601.2d): kwoty ZADEKLAROWANE przy umieszczaniu na
-    // stosie jadą w context.damageDivision (announce w resolve_trigger_target,
-    // zapis na wpisie stosu). Cel nielegalny przy rozstrzyganiu nie dostaje
-    // nic — bez realokacji (CR 608.2b). Brak deklaracji przy >=2 celach =
-    // producent ominął ścieżkę announce (pierwszy CZAR z damage_divided —
-    // strażnik w test/m171-damage-division-announce.test.js) — jawny błąd
-    // zamiast cichej ścieżki niezgodnej z CR (L52).
+    // Kwoty zadeklarowano wcześniej (CR 601.2d/603.3d). Nie kompresujemy
+    // slotów null po rewalidacji: kwota znikniętego celu przepada i NIE
+    // przechodzi na pozostały cel (audyt PR #154/F3; CR 608.2b).
     const declared = Array.isArray(context.damageDivision) ? context.damageDivision : null;
-    if (!declared || declared.length !== chosen.length) {
+    if (declared) {
+      if (declared.length !== slots.length) throw new Error('damage_divided: niezgodna liczba slotów i kwot');
+      for (let i = 0; i < slots.length; i += 1) {
+        const targetId = slots[i];
+        if (targetId == null) continue;
+        const isPlayer = state.players.some((pl) => pl.id === targetId);
+        const stillLegal = isPlayer || state.objects.get(targetId)?.zone === 'battlefield';
+        if (stillLegal) dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
+      }
+    } else if (chosen.length === 1) {
+      dealNonCombatDamage(state, sourceObject, chosen[0], total);
+    } else {
       throw new Error('damage_divided: podział niezadeklarowany przy umieszczaniu na stosie (CR 601.2d/603.3d)');
-    }
-    for (let i = 0; i < chosen.length; i += 1) {
-      const targetId = chosen[i];
-      const isPlayer = state.players.some((pl) => pl.id === targetId);
-      const stillLegal = isPlayer || (state.objects.get(targetId)?.zone === 'battlefield');
-      if (!stillLegal) continue; // CR 608.2b: kwota przepada.
-      dealNonCombatDamage(state, sourceObject, targetId, declared[i]);
     }
     return;
   }
@@ -2729,6 +2742,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const target = state.objects.get(targetId);
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return; // CR 608.2b
     const dyn = (v, fb) => {
+      const counted = countedEffectValue(v, state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
+      if (counted != null) return counted;
       if (v === 'card_types_in_all_graveyards') return allGraveyardsCardTypeCount(state);
       if (v === 'source_power') return effectivePower(sourceObject, state);
       return v ?? fb;

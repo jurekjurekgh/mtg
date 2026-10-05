@@ -6,10 +6,13 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
 import { BOT_ID, HUMAN_ID, createSession, describeGameEvent } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { parseDeckText } from '../src/cards/deck-text.js';
+import { playerView } from '../src/engine/game-state.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
+import { addMana } from '../src/engine/resources.js';
+import { markDamage } from '../src/engine/permanents.js';
+import { jumpToStep } from '../src/engine/turn.js';
 
 const helpers = {
   nameOf: (id) => ({ swamp: 'Swamp', 'chittering-rats': 'Chittering Rats' }[id] ?? id),
@@ -53,86 +56,79 @@ test('Bug A: hand_top_choice_required nie wpisuje nazwy karty z palca (ADR 0002)
 
 // --- Bug B: Fathom Fleet Cutthroat — sprawdź że zniszczenia trafiają do panelu ---
 
-/**
- * Symuluje pętlę UI: playDirect → apply → showBotMoves.
- * Zwraca wszystkie teksty, które gracz zobaczył w panelu Rozgrywka.
+/** Realna karta i wymuszony scenariusz zamiast polowania na zniszczenie
+ * w 14 seedach ruchomych talii repo. Dawny test nie musiał nawet zagrać
+ * Fathom Fleet Cutthroat; migracja Dominarii wyzerowała jego obserwacje.
  */
-function playAndCollectPanel(session, { maxMoves = 400 } = {}) {
-  const shown = [];
-  const showBotMoves = () => {
-    // M146: kolekcjonujemy OSTATNIE ruchy także po zakończeniu partii — gdy
-    // partia kończy się w trakcie ruchu bota (np. śmiertelne obrażenia),
-    // bufor modala niesie ostatnie zagrania, a `status !== 'active'` kończył
-    // pętlę PRZED ich zebraniem (fałszywy alarm „zniszczenie poza panelem").
-    for (let guard = 0; guard < 500; guard += 1) {
-      const moves = session.botMoves ?? [];
-      const meaningful = moves.filter((m) => !/^Faza:/.test(m.text ?? ''));
-      if (meaningful.length === 0 && moves.length > 0) {
-        session.clearBotMoves();
-        if (session.botPausePending) { session.continueBotPlay(); continue; }
-        return;
-      }
-      if (moves.length > 0) {
-        for (const m of moves) shown.push(m.text);
-        session.clearBotMoves();
-        return;
-      }
-      if (session.botPausePending) { session.continueBotPlay(); continue; }
-      return;
-    }
-  };
-  for (let i = 0; i < maxMoves && session.state.status === 'active'; i += 1) {
-    if (session.botPausePending) {
-      session.continueBotPlay();
-      showBotMoves();
-      continue;
-    }
-    const view = session.view();
-    const meaningful = view.legalCommands.filter(
-      (c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type),
-    );
-    const cmd = meaningful[0]
-      ?? view.legalCommands.find((c) => c.type === 'pass_priority')
-      ?? view.legalCommands.find((c) => c.type !== 'concede');
-    if (!cmd) break;
-    if (!session.apply(cmd).ok) break;
-    showBotMoves();
-  }
-  return { shown, log: session.log.map((e) => e.text ?? String(e)) };
-}
-
-function makeSession(seed, humanDeck, botDeck) {
+function cutthroatSession() {
   const registry = createCardRegistry();
-  const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync(`decks/${humanDeck}`, 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync(`decks/${botDeck}`, 'utf8'), registry).cardIds],
-  ]);
-  return createSession({ registry, decks, seed, pauseOnBotMoves: true });
+  const session = createSession({ registry, seed: 141, pauseOnBotMoves: true,
+    decks: new Map([
+      [HUMAN_ID, ['woolly-loxodon', ...Array(20).fill('basic-forest')]],
+      [BOT_ID, ['fathom-fleet-cutthroat', ...Array(20).fill('basic-swamp')]],
+    ]),
+    // Sterownik scenariusza, nie test strategii: gra prawdziwym ETB, a
+    // pozostałe kroki pasuje. Każda zwracana komenda pochodzi z oferty.
+    botFactory: () => ({ chooseCommand(view) {
+      const source = view.zones.hand.find(o => o.cardId === 'fathom-fleet-cutthroat');
+      const cmd = view.legalCommands.find(c => c.type === 'cast_permanent' && c.objectId === source?.id)
+        ?? view.legalCommands.find(c => c.type === 'resolve_trigger_target')
+        ?? view.legalCommands.find(c => c.type === 'pass_priority')
+        ?? view.legalCommands.find(c => c.type !== 'concede');
+      assert.ok(cmd, 'sterownik ma legalną komendę');
+      return cmd;
+    } }),
+  });
+  const state = session.state;
+  state.pendingMulligans = [];
+  const locate = cardId => [...state.objects.values()].find(o => o.cardId === cardId);
+  const victim = moveObjectDirectly(state, locate('woolly-loxodon').id, 'battlefield', 'victim');
+  const cutthroat = locate('fathom-fleet-cutthroat');
+  moveObjectDirectly(state, cutthroat.id, 'hand', 'cutthroat');
+  state.turn = jumpToStep(state.turn, 'main', BOT_ID);
+  state.turn.activePlayerId = BOT_ID; state.turn.priorityPlayerId = BOT_ID;
+  markDamage(state, victim.id, 1); // 6/7 żyje, ale został zraniony w tej turze.
+  addMana(state, BOT_ID, 4, { colors: ['B'] });
+  return session;
 }
 
-test('Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu Rozgrywka', () => {
-  let laczniePanel = 0;
-  let lacznieLog = 0;
-  const raport = [];
-
-  for (const seed of [1, 3, 5, 7, 11, 13, 17, 23, 27, 31, 37, 42, 77, 99]) {
-    const session = makeSession(seed, 'dominaria-brg.txt', 'tarkir-bg.txt');
-    const { shown, log } = playAndCollectPanel(session);
-    const panelZniszczenia = shown.filter((t) => t.includes('zostaje zniszczony'));
-    const logZniszczenia = log.filter((t) => t.includes('zostaje zniszczony'));
-    laczniePanel += panelZniszczenia.length;
-    lacznieLog += logZniszczenia.length;
-    if (logZniszczenia.length > panelZniszczenia.length) {
-      raport.push(`seed ${seed}: panel ${panelZniszczenia.length} < log ${logZniszczenia.length}`);
+for (const finalPass of [HUMAN_ID, BOT_ID]) {
+  test(`Bug B: Fathom Fleet Cutthroat — zniszczenie w panelu, ostatni pass ${finalPass}`, () => {
+    const session = cutthroatSession(); const state = session.state;
+    const offered = () => playerView(state, state.turn.priorityPlayerId).legalCommands;
+    const cast = offered().find(c => c.type === 'cast_permanent' && c.objectId === 'cutthroat');
+    assert.ok(cast, 'rzut rzeczywistego Cutthroat jest legalny');
+    assert.ok(session.apply(cast, { holdPriority: true }).ok);
+    // Cały przebieg idzie przez sesję, aby jej tracker stosu dostał zapowiedź.
+    // Rozstrzygnij TYLKO czar stworzenia. ETB z jedynym legalnym celem
+    // pozostaje na stosie; oba passy muszą zostać zaakceptowane.
+    for (let i = 0; i < 8 && !state.zones.stack.some(id => state.objects.get(id)?.triggerEntry); i++) {
+      assert.ok(session.apply(offered().find(c => c.type === 'pass_priority'), { holdPriority: true }).ok);
     }
-  }
-
-  assert.equal(
-    raport.length, 0,
-    `Zniszczenia w panelu są mniejsze niż w logu:\n${raport.join('\n')}\nŁącznie: panel ${laczniePanel}, log ${lacznieLog}`,
-  );
-  assert.ok(lacznieLog > 0, 'żaden seed nie wyprodukował zniszczeń — test nic nie sprawdza');
-});
+    const trigger = state.objects.get(state.zones.stack.at(-1));
+    assert.equal(trigger?.cardId, 'fathom-fleet-cutthroat');
+    assert.deepEqual(trigger.triggerEntry.targets, ['victim']);
+    assert.equal(state.objects.get('victim')?.zone, 'battlefield');
+    session.clearBotMoves();
+    // Ustaw wyłącznie punkt startu priorytetu fixture. Od teraz wejście
+    // przez sesję: obejmuje obie ścieżki streamowania skutku (M141/M146).
+    const firstPass = finalPass === HUMAN_ID ? BOT_ID : HUMAN_ID;
+    state.turn.priorityPlayerId = firstPass; state.turn.passes = 0;
+    if (firstPass === BOT_ID) {
+      assert.ok(session.apply(offered().find(c => c.type === 'pass_priority'), { holdPriority: true }).ok);
+    }
+    const humanPass = session.view().legalCommands.find(c => c.type === 'pass_priority');
+    assert.ok(humanPass); assert.ok(session.apply(humanPass).ok);
+    const log = session.log.filter(e => (e.text ?? '').includes('zostaje zniszczony'));
+    const panel = session.botMoves.filter(e => (e.text ?? '').includes('zostaje zniszczony'));
+    assert.equal(state.events.filter(e => e.type === 'permanent_destroyed' && e.fromId === 'victim').length, 1,
+      'zdarzenie naprawdę zaszło, dokładnie raz');
+    assert.equal(log.length, 1, 'konkretne zniszczenie w logu, nie warunkowy skip');
+    assert.equal(panel.length, 1, 'ten sam skutek w panelu Rozgrywka');
+    assert.match(panel[0].text, /Woolly Loxodon/);
+    assert.equal(panel[0].cardId, 'woolly-loxodon', 'publiczna miniatura ofiary');
+  });
+}
 
 // --- M146: stats_modified opisuje każdy wariant skutku (nie „undefined/undefined") ---
 

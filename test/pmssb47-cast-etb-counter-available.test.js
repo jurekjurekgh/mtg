@@ -4,7 +4,7 @@
 // Wersja z PR #153 wymagała stwora JUŻ na polu bitwy, więc rzut Weftblade
 // Enhancer przy pustym stole własnym nie dostawał premii ETB. Tymczasem
 // wchodzący permanent JEST na polu bitwy, gdy trigger ETB trafia na stos
-// (CR 603.6d) i — bez `notSelf` — sam jest legalnym celem („up to two target
+// (CR 603.6a) i — bez `notSelf` — sam jest legalnym celem („up to two target
 // creatures”, „target creature you control”; silnik oferuje go w
 // `resolve_trigger_target` jako `permanent-N`). Wchodzący LĄD/artefakt
 // (Idyllic Grange) nadal nie może być własnym gospodarzem, a spec `notSelf`
@@ -78,7 +78,7 @@ describe('PMSSB-47 (po korekcie audytu PR #153): bramka celu ETB widzi wchodząc
     scoreJade2 = castScore(setup('jade-bearer', { lands: 'basic-forest', n: 2, subtype: 'Merfolk' }));
   });
 
-  it('E1 (CR 603.6d): wchodzący stwór jest własnym gospodarzem — brak dziury ~6 pkt przy pustym stole', () => {
+  it('E1 (CR 603.6a): wchodzący stwór jest własnym gospodarzem — brak dziury ~6 pkt przy pustym stole', () => {
     assert.ok(score0 >= score1 - 3,
       `score przy 0 stworach (${score0}) nie może być niższy od score przy 1 stworze (${score1}) o premię ETB — wchodzący stwór jest legalnym celem`);
   });

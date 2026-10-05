@@ -1,3 +1,4 @@
+import { isBattle } from './battles.js';
 import { holdReplacementResolution } from './destruction.js';
 import { isTargetingBlockedByProtection } from './attachments.js';
 import { event } from '../protocol/types.js';
@@ -395,6 +396,13 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       const object = state.objects.get(objectId);
       return object && object.controllerId === damagedPlayerId && isArtifactOrEnchantment(object)
         && (!hexproofBlocked(object) && !protectedBlocked(object));
+    });
+  }
+  if (spec.type === 'battle') {
+    return state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isBattle(object)
+        && !hexproofBlocked(object) && !protectedBlocked(object);
     });
   }
   if (spec.type === 'player') {
@@ -955,8 +963,8 @@ function applyTriggerEffects(state, ability, source, targets, context = {}) {
   // M157/F4(a) (ADR 0022): trigger wielocelowy („on EACH of up to N target
   // ...", requiresTarget.count > 1) aplikuje listę efektów RAZ NA CEL —
   // „each of" to ten sam efekt dla każdego wybranego celu (Weftblade
-  // Enhancer). Cele, które stały się nielegalne, pomijają efekty same
-  // (applyEffect sprawdza strefę — CR 608.2b).
+  // Enhancer). Nielegalne sloty z ponownej walidacji są null i pomijamy je
+  // w całości, zamiast pozwalać efektom użyć źródła jako domyślnego celu.
   const spec = ability?.trigger?.requiresTarget;
   const multi = Number.isInteger(spec?.count) && spec.count > 1;
   if (multi && targets.length > 0) {
@@ -971,6 +979,7 @@ function applyTriggerEffects(state, ability, source, targets, context = {}) {
       return state.events.slice(before);
     }
     for (const targetId of targets) {
+      if (targetId == null) continue;
       for (const effect of effects) {
         applyEffect(state, effect, source, [targetId], context);
       }
@@ -1101,11 +1110,13 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   const fired = event('ability_triggered', {
     objectId: source.id, cardId: source.cardId,
     trigger: ability?.trigger?.event ?? null, onStack: true,
+    stackEntryId: id, playerId: source.controllerId,
+    targets: ability?.trigger?.requiresTarget
+      ? targets.slice(extra?.fixedTargetCount ?? 0).filter(targetId => targetId != null) : [],
   });
   state.events.push(fired);
   events.push(fired);
   // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
-  return entry;
   return entry;
 }
 
@@ -1682,6 +1693,27 @@ export function resolveTriggerEntry(state, entry) {
     state.events.push(resolved);
     return state.events.slice(before);
   }
+  // Audyt PR #154/F3 (CR 608.2b): strefa to za mało — cel mógł
+  // zmienić moc, kontrolera lub dostać ochronę. Ponownie używamy CAŁEGO
+  // deskryptora z oferty (jedna reguła), zanim zapytamy o „may"/zapłatę.
+  // Zero WYBRANYCH celów pozostaje legalne; wybrane, ale teraz nielegalne
+  // cele nie mogą dostać efektu, a brak wszystkich kończy całą zdolność.
+  const targetSpec = payload.ability?.trigger?.requiresTarget;
+  let resolutionTargets = payload.targets ?? [];
+  // Wspólna lista może zaczynać się kontekstem (np. nosiciel Equipmentu),
+  // który NIE jest celem Oracle. Offset pochodzi od producenta decyzji.
+  const targetOffset = extra.fixedTargetCount ?? 0;
+  if (targetSpec && resolutionTargets.slice(targetOffset).some((id) => id != null)) {
+    const candidates = new Set(triggerTargetCandidates(state, targetSpec, source, extra));
+    resolutionTargets = resolutionTargets.map((id, index) => index < targetOffset || candidates.has(id) ? id : null);
+    if (!resolutionTargets.slice(targetOffset).some((id) => id != null)) {
+      state.events.push(event('trigger_resolved', {
+        objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
+        noEffect: true, reason: 'no_targets',
+      }));
+      return state.events.slice(before);
+    }
+  }
   // Etap F (CR 603.5): wybór „may" / płatność „you may pay" / „unless"
   // zapada TERAZ — przy rozstrzyganiu, po sprawdzeniu intervening-if.
   // „You may [czasownik] target ..." (Reclusive Artificer, Battle-Rattle
@@ -1692,15 +1724,14 @@ export function resolveTriggerEntry(state, entry) {
   const deferredChoice = extra.deferredChoice
     ?? (payload.ability?.trigger?.mayFire ? Object.freeze({ kind: 'optional' }) : null);
   if (deferredChoice) {
-    resolveDeferredChoice(state, entry, payload, source, extra, deferredChoice);
+    resolveDeferredChoice(state, entry, { ...payload, targets: resolutionTargets }, source, extra, deferredChoice);
     return state.events.slice(before);
   }
-  // Cele: efekty same pomijają cele, które przestały być legalne
-  // (CR 608.2b — applyEffect sprawdza strefę przy każdej akcji).
+  // Cele sprawdzono przed efektami; zachowujemy sloty nielegalnych jako null.
   const beforeEffects = state.events.length;
   // M171/Z6 (CR 603.3d): kwoty podziału obrażeń zadeklarowane przy
   // umieszczaniu na stosie jadą w kontekście do applyEffect.
-  applyTriggerEffects(state, payload.ability, source, payload.targets ?? [],
+  applyTriggerEffects(state, payload.ability, source, resolutionTargets,
     payload.damageDivision ? { ...(payload.extra ?? {}), damageDivision: payload.damageDivision } : (payload.extra ?? {}));
   // M106/Z2 (decyzja właściciela 2026-08-16): trigger, który rozstrzygnął się
   // BEZ ŻADNEGO skutku (Undead Servant przy pustym grobie — 0 Zombie, Jyoti
@@ -1965,7 +1996,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     candidates: [...candidates],
     allowNone: Boolean(allowNone),
     fixedTargetIds: [...(fixedTargetIds ?? [])],
-    extra: Object.freeze({ ...extra }),
+    extra: Object.freeze({ ...extra, fixedTargetCount: fixedTargetIds.length }),
     // Spec celów może żyć poza zdolnością (Greatsword — spec tworzony
     // w locie); bez override rozstrzyganie nie znałoby kandydatów.
     specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,
@@ -2183,16 +2214,25 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
       events.push(skipped);
       return false;
     }
-    state.pendingModalTrigger = {
+    const pending = {
       playerId: source.controllerId,
       sourceId: source.id,
+      sourceLki: Object.freeze({ ...source }),
       cardId: source.cardId,
       ability: Object.freeze({ ...ability }),
       modes: trigger.modes.map((m) => Object.freeze({ ...m, name: m.name ?? null })),
       extra: Object.freeze({ ...extra }),
-      restorePriorityTo: state.turn.priorityPlayerId,
+      restorePriorityTo: state.pendingModalTrigger?.restorePriorityTo ?? state.turn.priorityPlayerId,
+      next: null,
     };
-    state.turn.priorityPlayerId = source.controllerId;
+    // Kilka ETB naraz nie może nadpisać poprzedniego wyboru. Kolejka w
+    // rekordzie zachowuje zgodność pojedynczej bramki i structuredClone.
+    if (state.pendingModalTrigger) {
+      let tail = state.pendingModalTrigger;
+      while (tail.next) tail = tail.next;
+      tail.next = pending;
+    } else state.pendingModalTrigger = pending;
+    state.turn.priorityPlayerId = state.pendingModalTrigger.playerId;
     const required = event('modal_trigger_required', {
       playerId: source.controllerId, sourceId: source.id, cardId: source.cardId,
       modeCount: trigger.modes.length,
@@ -3150,8 +3190,16 @@ function processTriggersScan(state, recentEvents) {
       const enteredKey = ev.object?.id ?? ev.objectId;
       if (etbEnterFired.has(enteredKey)) return;
       etbEnterFired.add(enteredKey);
-      let entered = state.objects.get(ev.object?.id);
-      if (!entered) return;
+      let entered = state.objects.get(enteredKey);
+      if (!entered) {
+        // CR 603.6a/113.7a: wejście zaszło, nawet gdy nowy obiekt zginął
+        // w SBA przed skanem (np. token 3/0). Zwykłe ETB i obserwatorzy
+        // korzystają z migawki zdarzenia. Nie powtarzaj tu „as enters”
+        // (liczniki Sagi/devour) na obiekcie, którego już nie ma.
+        if (ev.object) fireEnterBattlefieldTriggers(state, ev.object, events,
+          { enteredTapped: Boolean(ev.object.tapped) });
+        return;
+      }
       // CR 730.2c / 702.145: daybound LUB nightbound przy designation=null
       // ustawia dzień (setDayNight transformuje nightbound → daybound).
       // Przy ustalonej designation permanent wchodzi właściwą stroną —
@@ -4117,6 +4165,21 @@ function processTriggersScan(state, recentEvents) {
   // pole bitwy), więc gdy permanent gracza nieaktywnego był wcześniejszy, jego
   // zdolność rozstrzygała się OSTATNIA zamiast pierwszej.
   placeTriggerBatchInApnapOrder(state, stackStart);
+  // CR 603.3: celowanie przy ogłaszaniu triggera (auto, wybór lub tryb)
+  // wyzwala ward w NASTĘPNEJ partii. Nie mieszamy go z APNAP rodziców,
+  // bo ward aktywnego gracza trafiłby wtedy POD trigger gracza nieaktywnego.
+  // Obejmuje też późno dodane ETB po domknięciu devour. Znaczniki są
+  // publicznymi faktami zapowiedzi; prefiksy-konteksty nie są w targets.
+  const wardStart = state.zones.stack.length;
+  const announcements = new Set();
+  for (const ev of [...recentEvents, ...events]) {
+    if (ev.type !== 'ability_triggered' || !ev.onStack || !ev.targets?.length
+      || announcements.has(ev.stackEntryId) || !state.objects.has(ev.stackEntryId)) continue;
+    announcements.add(ev.stackEntryId);
+    fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+  }
+  placeTriggerBatchInApnapOrder(state, wardStart);
+
   // Uwaga: zdarzenia triggerów są JUŻ w state.events — fireTrigger i bloki
   // kroków dopisują je przy tworzeniu, a lokalny `events` zbiera wyłącznie
   // wycinki state.events (slice(before)). Ponowny push duplikowałby każde

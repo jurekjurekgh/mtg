@@ -314,6 +314,8 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // Batch 62/198 (Tackle Artist): Opus — „whenever you cast an instant or
   // sorcery spell" (skan zdarzenia spell_cast w triggers.js).
   'you_cast_instant_or_sorcery_spell',
+  // Batch 63: handler blockers_declared + effectiveKeywords; piny ENG i Snarespinner.
+  'blocks',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

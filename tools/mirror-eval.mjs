@@ -40,8 +40,8 @@ function playMirrorLeg({ paramsA, paramsB, deckIds, seed, registry, maxCommands 
   const { state: finalState } = runSimulation({
     state,
     controllers: new Map([
-      ['p1', createHeuristicBot({ seed: seed + 1, opponentDeck: deckIds, params: paramsA, registry })],
-      ['p2', createHeuristicBot({ seed: seed + 2, opponentDeck: deckIds, params: paramsB, registry })],
+      ['p1', createHeuristicBot({ seed: seed + 1, opponentDeck: deckIds, ownDeck: deckIds, params: paramsA, registry })],
+      ['p2', createHeuristicBot({ seed: seed + 2, opponentDeck: deckIds, ownDeck: deckIds, params: paramsB, registry })],
     ]),
     maxCommands,
   });
@@ -66,6 +66,8 @@ export function mirrorEval({
   decksDir = 'decks',
   registry = undefined,
 } = {}) {
+  if (!Array.isArray(decks) || decks.length === 0 || !Number.isSafeInteger(seedsCount) || seedsCount < 1
+    || !Number.isSafeInteger(maxCommands) || maxCommands < 1) throw new Error('Lustro wymaga niepustej próby i dodatnich limitów');
   const reg = registry ?? createCardRegistry();
   const deckLists = new Map(decks.map((name) => [
     name,

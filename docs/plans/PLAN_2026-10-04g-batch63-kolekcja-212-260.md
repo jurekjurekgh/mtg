@@ -69,7 +69,7 @@ Egress z bash/node/python jest ZABLOKOWANY w tej sesji (curl → HTTP 000,
   pełne B0 tylko na polecenie właściciela (ADR 0018/0025).
 - Brama PR `npm run test:all` na tipie kodu po zamknięciu batcha.
 
-## 4. Status realizacji (2026-10-04)
+## 4. Stan przy przerwaniu poprzedniej sesji (2026-10-04)
 
 - **T1 DONE** (`3e6619c`): 255 Urborg Uprising + fix fizzle „zero wybranych celów" (CR 608.2b).
 - **T2 DONE** (`4e8fe73`, `225eba0`): 239 SOS, 241 SPM, 244 BFZ, 250 MRD + token Human Citizen.
@@ -85,3 +85,26 @@ Egress z bash/node/python jest ZABLOKOWANY w tej sesji (curl → HTTP 000,
 - **Budżet lektury**: 99 974/100 000 (zapas 26 tokenów) — kolejny wpis `docs/LESSONS.md`
   wymaga kondensacji starszej sekcji.
 
+
+## 5. Domknięcie po przejęciu — 2026-10-05 (PR #155)
+
+**Batch 63: 10/10, żadna karta nie pozostaje wstrzymana.**
+Plan kontynuacji: [2026-10-04h](PLAN_2026-10-04h-ci-i-dokonczenie-batch63.md).
+
+- `05947b9`: 212 Bloodtithe Harvester, 254 Snarespinner, 259 Kozilek's
+  Predator, 260 Etched Host Doombringer oraz tokeny Blood / Eldrazi Spawn.
+- Użyto istniejącego `blocks` od poprzednika, dodano dane/UI/projekcję bota.
+  Doombringer obsługuje oba tryby, wybór na stosie, rzeczywistą rolę protektora
+  i defense. Harvester liczy Blood przy rozstrzygnięciu.
+- Brakujący plik `.pending` nie był zachowany; komplet sześciu snapshotów
+  exact-set z rulingami odtworzono ze źródeł, nie z pamięci.
+- Generator sam przeliczył Dominarię na **UB/WRG**. Zmigrowano 40 aktywnych
+  plików odwołań, raporty historyczne zachowano. Nadal **27 talii**.
+- `f54e21a`: korekty ujawnione pełną bramą (dane tokenów poza rdzeniem,
+  deterministyczny pin panelu Cutthroat zamiast losowej próby bez obserwacji).
+- Końcowe wyniki: fast **7642/7642**, all **7905/7905**, build **72 moduły /
+  4850,0 kB**, quick **672/672 ukończonych**, CI **PASS**.
+
+Szczegóły: [raport batcha](../audits/BATCH63_DOKONCZENIE_2026-10-04.md),
+[handoff](../setup/HANDOFF_2026-10-05.md). Zakaz pełnego B0 bez polecenia
+właściciela oraz obowiązek wyciszania dużych pakietów pozostają w mocy.

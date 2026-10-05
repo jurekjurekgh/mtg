@@ -1,4 +1,4 @@
-// M231 — audyt Żywym Testerem (2026-08-27), partia dominaria-wu (gracz) vs
+// M231 — audyt Żywym Testerem (2026-08-27), partia dominaria-ub (gracz) vs
 // mirrodin-brg (bot), seed 33: bot rzucił Awaken the Sleeper
 // (gain_control_until_end_of_turn) na WŁASNEGO stwora (Bone Shredder). Przejęcie
 // kontroli nad stworem, którego JUŻ się kontroluje, jest jałowe — „kradzież"

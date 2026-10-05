@@ -18,6 +18,13 @@ function newState() {
   return state;
 }
 
+function resolveChosenMode(state) {
+  for (let i = 0; i < 12 && state.zones.stack.length; i++) {
+    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+  }
+  assert.equal(state.zones.stack.length, 0);
+}
+
 function stateInDeclareAttackers() {
   const state = newState();
   state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
@@ -120,6 +127,8 @@ test('Etherwrought Page: upkeep trigger kolejkuje resolve_modal_choice', () => {
   // Gracz wybiera tryb 0 (Life Gain)
   const r = execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 0 });
   assert.equal(r.ok, true, 'resolve_modal_choice');
+  assert.equal(state.players.find(p => p.id === 'p1').life, p1Before, 'CR 603.3c: wybór trybu nie jest efektem');
+  resolveChosenMode(state);
   // p1 +2 życia
   const p1After = state.players.find((p) => p.id === 'p1').life;
   assert.equal(p1After - p1Before, 2, 'p1 +2 life (tryb 0)');
@@ -134,6 +143,7 @@ test('Etherwrought Page: upkeep trigger kolejkuje resolve_modal_choice', () => {
   assert.ok(state.pendingModalTrigger, 'pending znowu kolejkuje');
   const r2 = execute(state, { type: 'resolve_modal_choice', playerId: 'p1', modeIndex: 2 });
   assert.equal(r2.ok, true);
+  resolveChosenMode(state);
   const p2After = state.players.find((p) => p.id === 'p2').life;
   assert.equal(p2Before - p2After, 1, 'p2 -1 life (tryb 2)');
 });
