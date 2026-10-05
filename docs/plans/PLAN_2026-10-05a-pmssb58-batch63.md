@@ -167,3 +167,9 @@ pozostał wyłącznie w sandboxie. Fala C ani całe PMSSB-58 **nie są DONE**.
   mają jawne wymuszone sceny C/B. Czytanie transkryptu znalazło drobiazg F17
   „gracz wybierasz tryb”; 3 RED→GREEN, integracja **23/23**. Poprawka i wyniki
   zapisane natychmiast przed kolejną bramą, żeby nie gromadzić pracy lokalnie.
+
+- `45e7faa`: kod końcowej bramy. **All 8013/8013**, build **72 / 4871,6 kB**,
+  quick **672/672 ukończonych**, 0 unfinished. Heuristic 584/672 (86,9%),
+  o jedną wygraną mniej niż przed pętlą — bez ukrywania różnicy i bez
+  strojenia pod wynik. CI PASS (`37304592016`, 5m6s). Wyniki zabezpieczone
+  następnym commitem przed zamknięciem dokumentacji.
