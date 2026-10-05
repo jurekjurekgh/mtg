@@ -142,7 +142,7 @@ test('C53/C: bot rzuca ciała z ETB (Ghirapur, Inspiring) zamiast passować', ()
   }
 });
 
-test('C53/C: Óin lootuje za wolną manę (nie deck-out)', () => {
+test('C53/C: Óin nie odrzuca pierwszego landu tylko dlatego, że ma chwilową pulę many', () => {
   const s = game();
   library(s, 'p1', 30);
   library(s, 'p2', 30);
@@ -153,7 +153,24 @@ test('C53/C: Óin lootuje za wolną manę (nie deck-out)', () => {
   const cmd = b.chooseCommand(playerView(s, 'p1'));
   const entry = b.trace().at(-1);
   const loot = entry.options.find((o) => o.cmd.startsWith('activate_ability'));
-  assert.ok(loot && loot.score > 0, `loot wyceniony dodatnio (dostał ${loot?.score})`);
-  assert.ok(['play_land', 'activate_ability'].includes(cmd.type),
-    `bot gra ląd albo lootuje (wybrał ${cmd.type}), nie passuje z maną na stole`);
+  // PMSSB-58/F2: 6 many W PULI nie jest sześcioma lądami. Oddanie
+  // jedynego landu przy pustej manabazie nie jest darmowym doborem.
+  assert.ok(loot && loot.score < 0, `cena potrzebnego landu (jest ${loot?.score})`);
+  assert.equal(cmd.type, 'play_land');
+  assert.equal(cmd.objectId, 'f1');
+  assert.ok(execute(s, cmd).ok);
+});
+
+test('C53/C: Óin naprawdę lootuje zbędny land przy pełnej manabazie na EOT przeciwnika', () => {
+  const s = game('end', 'p2');
+  s.turn.priorityPlayerId = 'p1';
+  library(s, 'p1', 30); library(s, 'p2', 30);
+  for (let i = 0; i < 6; i++) addCard(s, `f${i}`, 'basic-forest', 'p1', 'battlefield');
+  addCard(s, 'o', 'oin-the-brave', 'p1', 'battlefield');
+  addCard(s, 'spare', 'basic-forest', 'p1');
+  const b = createHeuristicBot({ seed: 7 });
+  const cmd = b.chooseCommand(playerView(s, 'p1'));
+  assert.equal(cmd.type, 'activate_ability');
+  assert.equal(cmd.objectId, 'o');
+  assert.ok(execute(s, cmd).ok);
 });

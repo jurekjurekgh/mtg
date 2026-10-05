@@ -72,6 +72,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
+  // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
+  'tokenDrawBankWeight',
+  'abilityDiscardCostWeight',
+  'sacrificePumpTradeWeight',
+  'countedPumpReserveWeight',
+  'manaSacrificeLethalPenalty',
   'tokenManaBankWeight',     // wartość 1 many z tokena-bank (Treasure ≈ 3)
   'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
@@ -517,6 +523,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceOverflowBonus: 12,
   // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
   // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
+  // PMSSB-58/A: opcja doboru z tokena jest odroczona (1/2 wartości netto),
+  // nie darmową kartą. Jednostka ceny discard/materialu = wspólna miara;
+  // ×0 odtwarza pominięty wymiar. Pewny lethal ma skalę ochrony życia 1000.
+  tokenDrawBankWeight: 0.5,
+  abilityDiscardCostWeight: 1,
+  sacrificePumpTradeWeight: 1,
+  countedPumpReserveWeight: 1,
+  manaSacrificeLethalPenalty: 1000,
   tokenManaBankWeight: 3,
   // PMSSB-2/B (F1): 8 jak bounce-TimingSwing (lustro — ta sama skala
   // „pół tempa": rozstrzyga okna, nie przebija różnicy celów).

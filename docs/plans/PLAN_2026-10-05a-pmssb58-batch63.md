@@ -56,11 +56,11 @@ prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i sku
 ## 3. Mini-roadmapa i planowane commity
 
 0. [x] Odtworzenie punktu wyjścia, baseline, plan wypchnięty **przed kodem**.
-1. [ ] **Inwentarz + pomiar PRZED.** Powtarzalny harness prawdziwego silnika,
+1. [x] **Inwentarz + pomiar PRZED.** Powtarzalny harness prawdziwego silnika,
    pełny PlayerView i decide/trace; tablica wyników/F1…Fn dla wszystkich kart.
    Jawne kontrole ujemne, koszt i ścieżki bliźniacze. Sondy w `.arena/`,
    trwałe wyniki w raporcie. Nie zmieniać wag, zanim istnieje czerwony dowód.
-2. [ ] **Fala A — ekonomia zasobów.** Loot/discard jako koszt, rola tokena,
+2. [x] **Fala A — ekonomia zasobów.** Loot/discard jako koszt, rola tokena,
    Harvester/pump-ofiara, Spawn/mana. Wspólne helpery i parametry rodzinowe,
    ×0 kontroluje nowy wymiar; stare poprawne przypadki mają kotwice.
    Nowe piny + mutacje, fast + build, osobny commit i natychmiastowy push.
@@ -101,4 +101,14 @@ przyczynę. Nie wolno ogłosić całej macierzy DONE po samej fali A.
 
 ## Wykonanie
 
-Na etapie planu: brak zmian produkcyjnych. Baseline i punkt wyjścia podano wyżej.
+- `7bff147`: plan wypchnięty przed kodem; PR #155 oznaczony jako kontynuowany.
+- Pomiar 59 scen z zaakceptowanymi komendami: F1–F12 w
+  `docs/audits/PMSSB58_BATCH63_2026-10-05.md`; kontrole dodatnie dla tokenów,
+  pipów/timingu many, biblioteki, flashbacku, wyboru Scouta i bloku Snarespinner.
+- Fala A w implementacji: 29 pinów; pierwsze 25 dały 12 FAIL przed zmianą.
+  Po poprawkach integracja **123/123**. Sześć mutacji: 2/5/2/1/2/1 FAIL;
+  każda cofnięta. Snapshot OFF odtwarza `577aa78e…`; ON `94a9d975…`,
+  49 zmienionych wpisów w dwóch śladach, **zero zmian wyborów**. Różnice
+  to koszt discard Goblin Pickera, nie zmiana talii ani seedów.
+- Brama fali A: **fast 7672/7672** (110 002,814634 ms), build **72 moduły /
+  4858,3 kB**, snapshot **4/4**, exit 0. Pozostałe fale nie są DONE.
