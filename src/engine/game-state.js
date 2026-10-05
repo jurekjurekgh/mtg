@@ -6482,6 +6482,9 @@ export function playerView(state, playerId) {
         // dało się jednoznacznie rozpoznać, więc mgła wojny była pozorna.
         // Kontroler swoją kartę zna, więc dla niego widok zostaje pełny.
         const hiddenFromViewer = object.faceDown && object.controllerId !== playerId && !knowsFaceDown;
+        // Jawny fakt bieżącej tury — potrzebny celom i anticipacji ETB
+        // także po regeneracji/wyczyszczeniu markerów obrażeń.
+        if (object.damagedThisTurn) entry.damagedThisTurn = true;
         const protector = battleProtectorId(object);
         if (protector != null) entry.protectorId = protector;
         // M149 (uwaga właściciela): mana value (koszt many) permanentu na polu

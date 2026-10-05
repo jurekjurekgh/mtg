@@ -73,6 +73,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
+  // PMSSB-58/B: najlepszy tryb ETB, wspólna miara efektów i aliasy zwrotu.
+  'modalEtbValueWeight',
+  'modalEffectModelWeight',
+  'battleDefensePerCounter',
+  'battleDefeatBonus',
+  'graveReturnAliasWeight',
+  'graveReturnAvailabilityWeight',
+  'graveReturnCastManaWeight',
   'tokenDrawBankWeight',
   'abilityDiscardCostWeight',
   'sacrificePumpTradeWeight',
@@ -526,6 +534,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-58/A: opcja doboru z tokena jest odroczona (1/2 wartości netto),
   // nie darmową kartą. Jednostka ceny discard/materialu = wspólna miara;
   // ×0 odtwarza pominięty wymiar. Pewny lethal ma skalę ochrony życia 1000.
+  // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
+  modalEtbValueWeight: 1,
+  modalEffectModelWeight: 1,
+  // Ekstrakcja dotychczasowej miary obrony (bez zmiany liczb).
+  battleDefensePerCounter: 3,
+  battleDefeatBonus: 8,
+  // Alias i dostępność karty wracającej do RĘKI, nie na pole.
+  graveReturnAliasWeight: 1,
+  graveReturnAvailabilityWeight: 1,
+  graveReturnCastManaWeight: 1, // ta sama jednostka many co aktywacja/ciało, raz na czar
   tokenDrawBankWeight: 0.5,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,

@@ -64,7 +64,7 @@ prywatnego GameState. Pozytywne piny kończą się zaakceptowaną komendą i sku
    Harvester/pump-ofiara, Spawn/mana. Wspólne helpery i parametry rodzinowe,
    ×0 kontroluje nowy wymiar; stare poprawne przypadki mają kotwice.
    Nowe piny + mutacje, fast + build, osobny commit i natychmiastowy push.
-3. [ ] **Fala B — tryby i odzyskiwanie.** Doombringer (cast/modal, życie,
+3. [x] **Fala B — tryby i odzyskiwanie.** Doombringer (cast/modal, życie,
    bitwa/ward) oraz Urborg (sloty/ilość/jakość/dobór), według findingów.
    Piny, mutacje, fast + build, osobny commit i push.
 4. [ ] **Fala C — pozostałe kombinacje.** Dig Site, Helicopter, Connection,
@@ -112,3 +112,11 @@ przyczynę. Nie wolno ogłosić całej macierzy DONE po samej fali A.
   to koszt discard Goblin Pickera, nie zmiana talii ani seedów.
 - Brama fali A: **fast 7672/7672** (110 002,814634 ms), build **72 moduły /
   4858,3 kB**, snapshot **4/4**, exit 0. Pozostałe fale nie są DONE.
+
+- `8f1a907`: fala A zapisana i wypchnięta. Rozpoczęta fala B: 25 pinów,
+  17/19 początkowych RED; po poprawkach integracja **342/342**, osiem mutacji
+  czułych. ON/OFF snapshotu takie same; dryf z A wynika wyłącznie z bogatszych
+  etykiet flashbacku (po normalizacji wraca hash A). Brama B w toku.
+- Fala B: **fast 7697/7697** (110 436,316111 ms), build **72 moduły /
+  4864,3 kB**, snapshot **4/4**, exit 0. Stare fixture zwrotów dostały realne
+  kolory/manabazę i bibliotekę zamiast nagradzać niemożliwe zagranie/deck-out.

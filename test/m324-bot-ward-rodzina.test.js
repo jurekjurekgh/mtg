@@ -81,6 +81,8 @@ test('M324/A1 (strażnik klasy): każdy typ rzutu z kontraktu podlega podatkowi 
     // podatkowi w wycenie bota (jak okno Vaana i rzut z grobu).
     'resolve_hand_free_cast',
     'resolve_madness_cast', 'resolve_rebound_cast', 'resolve_suspend_cast', 'resolve_trigger_target',
+    // PMSSB-58: zapowiedź wybranego trybu triggera też obiera cel (Ward).
+    'resolve_modal_choice',
     // D3 (PR #135): Discover i Epic RZUCAJĄ czar, choć nazwa komendy nie
     // kończy się na `_cast` (test/d3-2026-09-24-bot-ward-okna-darmowe.test.js).
     'resolve_discover_choice', 'resolve_epic_choice',

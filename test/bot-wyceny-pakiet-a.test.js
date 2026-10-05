@@ -111,6 +111,8 @@ test('E2/A4: modalny trigger z celem (Inspiring Bard) — pump idzie we WŁASNEG
     id: 'bard', instanceId: 'i-bard', cardId: 'inspiring-bard', controllerId: 'p1', zone: 'battlefield',
     ...gameObjectDataOf(def),
   });
+  // ETB: świeżo wchodzący Bard jest chory, nie gotowym atakującym 3/3.
+  state.objects.set('bard', Object.freeze({ ...state.objects.get('bard'), summoningSickness: true }));
   putCreature(state, 'moj', 'p1', 2, 2);
   putCreature(state, 'wrogi', 'p2', 5, 5); // pierwszy w kolejności pola — dotąd dostawał pump
   // Kolejność pola bitwy z wrogim pierwszym: oferta pierwsza = wrogi stwór.
@@ -126,4 +128,8 @@ test('E2/A4: modalny trigger z celem (Inspiring Bard) — pump idzie we WŁASNEG
   assert.equal(chosen.type, 'resolve_modal_choice');
   assert.deepEqual([chosen.modeIndex, chosen.targetId], [0, 'moj'],
     `+2/+2 ma wzmocnić własnego stwora, wybrał: ${JSON.stringify(chosen)}`);
+  // Kontrola jakości celu (PMSSB-58): gdy 3/3 jest gotowe, pompa pozwala mu
+  // wymienić się z 5/5; 2/2 po pompie nadal przegrywa. Nie pinuje kolejności.
+  state.objects.set('bard', Object.freeze({ ...state.objects.get('bard'), summoningSickness: false }));
+  assert.equal(botChoice(state).targetId, 'bard');
 });

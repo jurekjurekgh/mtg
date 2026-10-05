@@ -1,5 +1,5 @@
 import { countedEffectValue, countedEffectSign, isCountedEffectValue } from '../engine/effect-values.js';
-import { battleDefenseDelta } from '../engine/battles.js';
+import { battleDefenseDelta, isBattle } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
 import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
@@ -1014,7 +1014,7 @@ const STAT_COUNTERS = new Set(['+1/+1', '+1/+0', '+0/+1', 'shield']);
 // karty (CR 702.66) i sprawdzane obok.
 const GRAVE_RECURSION_EFFECTS = new Set([
   'return_permanent_from_graveyard',
-  'return_card_from_graveyard_to_hand',
+  'return_card_from_graveyard_to_hand', 'return_creature_card_to_hand',
   'put_graveyard_card_onto_battlefield',
   'graveyard_creatures_to_library_top_choice',
 ]);
@@ -1359,7 +1359,7 @@ const FREE_CAST_WINDOW_TYPES = new Set([
 
 export const WARD_TAXED_TYPES = new Set([
   ...COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
-  'activate_ability', 'resolve_trigger_target',
+  'activate_ability', 'resolve_trigger_target', 'resolve_modal_choice',
   // D3 (Żywy Tester, PR #135): okna Epic i Discover RZUCAJĄ czar (spell_cast →
   // `fireWardTriggers`), choć nazwa komendy nie kończy się na `_cast` — filtr
   // po nazwie je gubił. Zmierzone sondą: bot bez many rzucał z Discover
@@ -1944,7 +1944,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     mill_cards: (e) => 20 + 3 * (e.amount ?? 1),
     mill_from_bottom: (e) => 20 + 3 * (e.amount ?? 1),
   });
-  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false } = {}) => {
+  const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
     for (const ability of def.abilities ?? []) {
@@ -1953,6 +1953,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (cond.wasKicked && !kicked) continue;
       if (cond.wasOffspring && !offspring) continue;
       if (cond.delirium || cond.descendedThisTurn || cond.controlsCreatureWithCounter) continue; // zbyt sytuacyjne — bez zmian
+      if (ability.trigger.modes?.length) {
+        total += P.modalEtbValueWeight * modalEnterBonusValue(view, def, ability.trigger.modes, reservedMana);
+        continue;
+      }
       const req = ability.trigger.requiresTarget ?? null;
       // PMSSB-3/F-envoy: rozwijanie conditional w ETB (lustro selfDamageOfEffects,
       // L41; Envoy bral 0 w obu galeziach).
@@ -6580,6 +6584,131 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return tax;
   }
 
+  /** PMSSB-58/B: kandydaci ANTICYPACJI z publicznych faktów. Rzeczywistą
+   * legalność wyboru zawsze ustala engine; tutaj nie wolno nagradzać celu,
+   * którego już widoczny typ/ochrona wykluczają. Zakres = obecne modale/ETB.
+   */
+  function publicEtbTargets(view, spec, source) {
+    if (!spec) return [null];
+    if (spec.type === 'opponent') return view.players.filter(p => p.id !== view.playerId).map(p => p.id);
+    if (spec.type === 'player') return view.players.map(p => p.id);
+    let candidates = (view.zones.battlefield ?? []).filter(object => {
+      if (spec.type === 'battle') return isBattle(object);
+      if (!['creature', 'creature_you_control', 'creature_opponent_controls',
+        'creature_opponent_damaged_this_turn', 'creature_with_power_at_most'].includes(spec.type)) return false;
+      if (object.kind !== 'creature') return false;
+      if (spec.type === 'creature_you_control' && object.controllerId !== view.playerId) return false;
+      if (['creature_opponent_controls','creature_opponent_damaged_this_turn'].includes(spec.type)
+        && object.controllerId === view.playerId) return false;
+      if (spec.type === 'creature_opponent_damaged_this_turn' && !(object.damage > 0 || object.damagedThisTurn)) return false;
+      if (spec.type === 'creature_with_power_at_most' && (object.power ?? 0) > (spec.max ?? 0)) return false;
+      return (!spec.subtype || (object.subtypes ?? []).includes(spec.subtype))
+        && (!spec.notSelf || object.id !== source?.id);
+    });
+    candidates = candidates.filter(object => !hasKeyword(object, 'shroud')
+      && !(object.controllerId !== view.playerId && hasKeyword(object, 'hexproof'))
+      && !(object.protection ?? []).some(q => sourceHasProtectionQuality(q, source ?? {})));
+    return candidates.map(object => object.id);
+  }
+
+  function battleDefenseValue(view, effect, target) {
+    if (!isBattle(target)) return 0;
+    const delta = battleDefenseDelta(effect, target, view.playerId);
+    const current = target.counters?.defense ?? 0;
+    const actual = delta < 0 ? Math.min(-delta, current) : delta;
+    return Math.abs(actual) * P.battleDefensePerCounter
+      + (delta < 0 && actual > 0 && actual >= current ? P.battleDefeatBonus : 0);
+  }
+
+  /** Dawny model jest jawnie zachowany wyłącznie do kontroli OFF/mirror. */
+  function legacyModalEffectsValue(view, effects, targetId) {
+    let value = 0;
+    for (const effect of effects) {
+      const amount = effect.amount ?? 1;
+      if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') value += opponentLifeEffectValue(view, effect);
+      else if (effect.type === 'gain_life') value += myLife(view) <= 5 ? 4 * amount : amount;
+      else if (effect.type === 'draw_cards') value += P.drawCardValue * amount;
+      else if (effect.type === 'damage') value += 5 + 2 * amount;
+      else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      else if (effect.type === 'create_token') value += 8;
+      else if (effect.type === 'adjust_battle_defense') value += battleDefenseValue(view, effect, objectOnBoard(view, targetId));
+    }
+    return value;
+  }
+
+  /** Jedna miara wybranego skutku: rzut modalnego nosiciela i decyzja trybu.
+   * Nie dolicza bazy decyzji ani podatku ward (wołający zna koszt rzutu).
+   */
+  function modalModeValue(view, mode, targetId, source) {
+    const effects = mode?.effects ?? [];
+    const target = objectOnBoard(view, targetId);
+    const cmd = { type: 'resolve_modal_choice', targetId, targets: targetId != null ? [targetId] : [] };
+    let value = 0;
+    for (const effect of effects) {
+      const amount = Number.isInteger(effect.amount) ? effect.amount : 1;
+      if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
+        const victim = effect.scope === 'target' ? view.players.find(p => p.id === targetId) : enemy(view);
+        value += victim?.id === view.playerId ? -selfLifeLossPenalty(view, amount)
+          : (victim && amount >= victim.life ? 80 : 4 * amount);
+      } else if (effect.type === 'gain_life') value += gainLifeValue(view, amount);
+      else if (effect.type === 'draw_cards' || effect.type === 'draw_then_discard') {
+        value += drawResourceValue(effect) + drawDeckingPenalty(view, amount);
+      } else if (effect.type === 'adjust_battle_defense') value += battleDefenseValue(view, effect, target);
+      else if (effect.type === 'create_token') value += tokenBodyValue(view, effect, { source });
+      else if (temporaryPumpOf(effect, view, source)) {
+        const delta = pumpDelta(view, effect, source);
+        if (isNegativePump(effect)) {
+          if (target?.controllerId === view.playerId) value -= 60;
+          else if (pumpRemovesCreature(view, target, delta)) value += P.drawCardValue + bodyWorth(target);
+          else if (target && pumpChangesOutcome(view, target, delta)) value += Math.max(0, negativePumpValue(view, target, delta));
+        } else if (target?.controllerId === view.playerId) {
+          value += temporaryPumpPayoff(view, target, { ...effect, targetIndex: undefined });
+        }
+      } else if (effect.type === 'destroy_permanent') {
+        if (target && !hasKeyword(target, 'indestructible')) value += P.drawCardValue + bodyWorth(target);
+      } else if (effect.type === 'damage') value += damageTargetValue(view, targetId, amount);
+      else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
+    }
+    const old = legacyModalEffectsValue(view, effects, targetId);
+    return old + P.modalEffectModelWeight * (value - old)
+      - selfHarmPenalty(view, effects, cmd, target) - friendlyMisaimPenalty(view, effects, cmd, target);
+  }
+
+  function modalEnterBonusValue(view, def, modes, reservedMana) {
+    const source = { ...def, id: 'pmssb58-entering', cardId: def.id, controllerId: view.playerId,
+      kind: (def.types ?? []).includes('Creature') ? 'creature' : 'artifact', summoningSickness: true };
+    const projected = { ...view, zones: { ...view.zones, battlefield: [...view.zones.battlefield, source] } };
+    let best = 0;
+    for (const mode of modes) for (const targetId of publicEtbTargets(projected, mode.targets?.[0], source)) {
+      const tax = wardTargetTax(view, targetId == null ? [] : [targetId], reservedMana);
+      if (tax >= 200) continue;
+      best = Math.max(best, modalModeValue(projected, mode, targetId, source) - tax);
+    }
+    return best;
+  }
+
+  /** PMSSB-58/F8: oba deskryptory zwrotu do RĘKI liczą własny slot.
+   * Dodatnia wartość odzyskania zostaje nawet dla karty dziś niegrywalnej;
+   * jej ciało/tempo nie udaje jednak stworzenia już obecnego na planszy.
+   */
+  function graveReturnEffectValue(view, effect, cmd) {
+    const slot = cmd.targets?.[effect.targetIndex ?? 0];
+    const card = slot && (view.zones.graveyard ?? []).find(o => o.id === slot);
+    if (!card) return 0;
+    const def = cardDef(card.cardId);
+    const body = 2 * (card.power ?? def?.power ?? 0) + (card.toughness ?? def?.toughness ?? 0);
+    const mv = card.manaCost ?? def?.manaCost ?? 0;
+    const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
+    const boardValue = body + P.graveReturnManaWeight * Math.min(mv, potential);
+    const soon = colorCastable(view, card) && cardKeepValue(view, card) >= 0;
+    let value = P.drawCardValue + boardValue * (soon ? 1 : 1 - P.graveReturnAvailabilityWeight);
+    if ((effect.drawIfSubtypes ?? []).some(subtype => (card.subtypes ?? def?.subtypes ?? []).includes(subtype))) {
+      value += P.drawCardValue + drawDeckingPenalty(view, 1);
+    }
+    return (effect.type === 'return_creature_card_to_hand' ? P.graveReturnAliasWeight : 1) * value;
+  }
+
   /** M320/NA2: mana zarezerwowana na sam koszt czaru/zdolności (przed ward). */
   /**
    * D3 (Żywy Tester, PR #135 — Etap F/4 domknięty po stronie bota): okna rzutu
@@ -7315,50 +7444,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const modeEffects = pending?.modes?.[cmd.modeIndex]?.effects ?? ability?.trigger?.modes?.[cmd.modeIndex]?.effects ?? [];
       if (modeEffects.length === 0) return finish(0);
       if (allEffectsInertNow(view, modeEffects, cmd)) return finish(-40);
-      const foe = enemy(view);
-      const self = view.players.find((p) => p.id === view.playerId);
-      let modeScore = 10;
-      for (const effect of modeEffects) {
-        const amount = effect.amount ?? 1;
-        if (effect.type === 'lose_life' || effect.type === 'damage_each_opponent') {
-          // Dobicie przeciwnika kończy partię — to zawsze najlepszy tryb.
-          modeScore += amount >= (foe?.life ?? 20) ? 80 : 4 * amount;
-        } else if (effect.type === 'adjust_battle_defense') {
-          const battle = objectOnBoard(view, cmd.targetId);
-          const delta = battleDefenseDelta(effect, battle, view.playerId);
-          // Wartość względem chroniącego, nie właściciela bitwy. Zmniejszenie
-          // wrogiej obrony / zwiększenie własnej jest korzystne; zero no-op.
-          const actual = delta < 0 ? Math.min(-delta, battle?.counters?.defense ?? 0) : delta;
-          modeScore += Math.abs(actual) * 3;
-          if (delta < 0 && actual > 0 && actual >= (battle?.counters?.defense ?? 0)) modeScore += 8;
-        } else if (effect.type === 'gain_life') {
-          modeScore += (self?.life ?? 20) <= 5 ? 4 * amount : amount;
-        } else if (effect.type === 'draw_cards') {
-          modeScore += P.drawCardValue * amount; // PMSSB-3/F1: param zamiast literalu (bez zmiany zachowania)
-        } else if (effect.type === 'damage') {
-          modeScore += 5 + 2 * amount;
-        } else if (effect.type === 'surveil' || effect.type === 'scry') {
-          modeScore += 3;
-        } else if (effect.type === 'create_token') {
-          // PMSSB-2/A (F3-OUT): tryb modalnego TRIGGERA z tokenem — 0 kart
-          // w katalogu (wszystkie tokeny to czary/zdolności/zwykłe triggery),
-          // a gałąź czyta rejestr (nie widok), więc jest nietestowalna
-          // synetycznie. Zostaje flat 8 + ten wskaźnik długu L41.
-          modeScore += 8;
-        }
-      }
-      // E2/A (plan 2026-09-07): tryb z CELEM — dotąd modeScore był wspólny dla
-      // wszystkich kandydatów i wybór celu spadał na kolejność oferty (pump
-      // wzmacniał stwora PRZECIWNIKA, gdy stał pierwszy na polu). Znak efektów
-      // trybu rozstrzygają wspólne tablice kar (L41: jedno źródło prawdy o
-      // celu — jak przy cast_spell): wrogi efekt we własne rzeczy i przyjazny
-      // efekt we wroga są karane (M121/M179).
-      if (cmd.targetId != null) {
-        const targetObj = objectOnBoard(view, cmd.targetId);
-        modeScore -= selfHarmPenalty(view, modeEffects, cmd, targetObj);
-        modeScore -= friendlyMisaimPenalty(view, modeEffects, cmd, targetObj);
-      }
-      return finish(modeScore);
+      const printedMode = ability?.trigger?.modes?.[cmd.modeIndex];
+      const publicMode = pending?.modes?.[cmd.modeIndex];
+      const mode = { ...printedMode, ...publicMode, effects: modeEffects,
+        targets: publicMode?.targets ?? printedMode?.targets ?? [] };
+      const source = objectOnBoard(view, pending?.sourceId) ?? { ...def, controllerId: view.playerId };
+      return finish(10 + modalModeValue(view, mode, cmd.targetId, source));
     }
     switch (cmd.type) {
       case 'concede': return finish(NEVER);
@@ -8098,7 +8189,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (premia +2×moc wyżej), attach_self_to_target (gałąź equipment),
         // damage_to_controller/lose_life (kary M169/K). Typy poza tabelą → 0
         // (zachowanie bez zmian).
-        score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true });
+        score += etbEnterBonusValue(view, def, { kicked: cmd.kicked === true, offspring: cmd.offspring === true, reservedMana: reservedManaOf(view, cmd) });
         // PMSSB-4/F-C: imminent-trigger-gain nosiciela (0 bez enablerow).
         score += imminentTriggerGainValue(view, def);
         // PMSSB-9/F-T1: anticipacja-dies nosiciela (0 bez triggerów-dies).
@@ -8232,6 +8323,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
+        // PMSSB-58/B (kontrola kosztu): zysk z dwóch zwrotów nie płaci
+        // dwukrotnie many, ale ta sama wypłata za 5 nie jest równa tej za 2.
+        if (effects.some(e => e?.type === 'return_card_from_graveyard_to_hand' || e?.type === 'return_creature_card_to_hand')) {
+          score -= P.graveReturnCastManaWeight * reservedManaOf(view, cmd);
+        }
         // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
         // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
         // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
@@ -9161,30 +9257,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // case'a" (L50). Zombie → dodatkowe dobranie (CR 608.2g — podtyp
           // sprawdzany z odzyskanej karty). Generycznie po deskryptorze
           // (ADR 0002), zero nazw kart.
-          if (effect.type === 'return_card_from_graveyard_to_hand') {
-            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? null;
-            const gyCard = slot ? (view.zones.graveyard ?? []).find((o) => o.id === slot) : null;
-            if (gyCard) {
-              const gyDef = cardDef(gyCard.cardId);
-              const gyValue = ((gyCard.power ?? gyDef?.power ?? 0) * 2)
-                + (gyCard.toughness ?? gyDef?.toughness ?? 0);
-              score += P.drawCardValue + gyValue;
-              // D (uwaga właściciela 2026-09-23c): karta wraca do RĘKI, więc
-              // bot musi ją jeszcze RZUCIĆ — warianty o równym ciele remisowały
-              // i wygrywał pierwszy z brzegu (zwykle najtańszy, dokładnie objaw
-              // zgłoszenia). Wartość rośnie z mana value, ale PRZYCIĘTA do
-              // potencjału many bota (źródła na stole niezależnie od tapnięcia
-              // + pula), pomniejszonego o manę zarezerwowaną na rzucany właśnie
-              // czar — reguła: „na jakiego MA manę". Waga 0 = wycena po samym
-              // ciele (pokrętło właściciela, test D/5).
-              const manaValue = gyCard.manaCost ?? gyDef?.manaCost ?? 0;
-              const potential = Math.max(0, ownPotentialMana(view) - reservedManaOf(view, cmd));
-              score += P.graveReturnManaWeight * Math.min(manaValue, potential);
-              const gySubtypes = gyCard.subtypes ?? gyDef?.subtypes ?? [];
-              if ((effect.drawIfSubtypes ?? []).some((s) => gySubtypes.includes(s))) {
-                score += P.drawCardValue; // Zombie → dobranie
-              }
-            }
+          if (effect.type === 'return_card_from_graveyard_to_hand' || effect.type === 'return_creature_card_to_hand') {
+            score += graveReturnEffectValue(view, effect, cmd);
           }
           // M156/Q1 + B (zgłoszenie właściciela 2026-09-28e, taktyka
           // właściciela): prewencja celowana ma JEDNO źródło prawdy
@@ -13331,6 +13405,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // M130-rodzina: nazwy wariantów rozstrzygnięć wyborów (L34/L40/M195/M203) —
     // bez nich wszystkie warianty jednego type są nierozróżnialne w śladzie i
     // tieProjection nie ma czego parować.
+    if (cmd.type === 'resolve_modal_choice') return cmd.skip
+      ? 'resolve_modal_choice(skip)'
+      : `resolve_modal_choice(${cmd.modeIndex}${cmd.targetId != null ? '->' + cmd.targetId : ''})`;
+    if (cmd.type === 'cast_flashback') return `cast_flashback(${cmd.objectId}->${(cmd.targets ?? []).join('+')})`;
     if (cmd.type === 'resolve_discard_choice') {
       return cmd.cardId == null
         ? 'resolve_discard_choice(skip)'

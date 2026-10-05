@@ -16,10 +16,10 @@ export function put(s,id,cid,pid='p1',zone='battlefield',patch={}){
  if(Object.keys(patch).length)s.objects.set(id,Object.freeze({...s.objects.get(id),...patch}));
  return s.objects.get(id);
 }
-export function game({step='main',active='p1',priority=active,lib=24}={}){
- const s=createGameState({seed:58,players:[{id:'p1'},{id:'p2'}]});
+export function game({step='main',active='p1',priority=active,lib=24,players=['p1','p2']}={}){
+ const s=createGameState({seed:58,players:players.map(id=>({id}))});
  s.turn=jumpToStep(s.turn,step,active);s.turn.activePlayerId=active;s.turn.priorityPlayerId=priority;
- for(const pid of ['p1','p2'])for(let i=0;i<lib;i++)put(s,`lib-${pid}-${i}`,'basic-swamp',pid,'library');
+ for(const pid of players)for(let i=0;i<lib;i++)put(s,`lib-${pid}-${i}`,'basic-swamp',pid,'library');
  return s;
 }
 export function creature(s,id,pid='p2',patch={}){
