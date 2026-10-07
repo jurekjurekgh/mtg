@@ -48,7 +48,7 @@ okazał się nierzetelny.
     regułowych), generyczność (ADR 0002), kompletność widoku (ADR 0017).
   - Kryterium: `docs/audits/AUDYT_PR156_2026-10-07.md` z werdyktem i listą
     znalezisk (każde z dowodem).
-- [ ] E3. **Zaległy audyt PR #155** (a362efa → 70fed53, 124 pliki) — obszary:
+- [x] E3. **Zaległy audyt PR #155** (a362efa → 70fed53, 124 pliki) — obszary:
   - engine: `battles.js`, `effect-values.js`, `damage_divided` (CR 601.2d/
     603.3d/608.2b), kolejka modalnych ETB, re-walidacja celów triggerów
     (CR 608.2b), ward batch (CR 603.3), SBA bitew (CR 310.7/704.5v-w);
@@ -58,7 +58,7 @@ okazał się nierzetelny.
   - bot (+649 linii), podział talii Dominaria (ADR 0024), fix CI;
   - testy PMSSB-58 (98 pinów) — wyrywkowa weryfikacja mutacyjna (L13).
   - Kryterium: `docs/audits/AUDYT_PR155_2026-10-07.md` z werdyktem.
-- [ ] E4. Naprawa znalezisk z E2/E3 u root cause (jeśli będą) — każdy fix
+- [x] E4. Naprawa znalezisk z E2/E3 u root cause (jeśli będą) — każdy fix
   osobnym commitem z testem RED→GREEN; korekta rozjazdu dokumentacji
   (wpis-sprostowanie w `PROJECT_HISTORY.md`, bez przepisywania historii).
 - [ ] E5. **Pętla jakości** (ADR 0021 pkt 4): partie Żywym Testerem
