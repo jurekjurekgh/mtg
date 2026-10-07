@@ -60,6 +60,36 @@
   handoff `docs/setup/HANDOFF_2026-10-07b.md`, wpis PROJECT_HISTORY,
   kumulatywny opis PR.
 
+## Zgłoszenie E właściciela (2026-10-07): regeneracja jednorazowo
+
+Skarga: bot aktywował `{1}{B}: Regenerate this creature` (Exterminator
+Magmarch 5/3) TRZY RAZY w jednej walce z Ballista Watcher 4/3, wypalając całą
+dostępną manę. Mechanizm (odkryty przy reprodukcji): w `session.js` bot
+dostaje priorytet, a aktywacja go NIE oddaje — stół pyta go ponownie, gdy
+pierwsza tarcza wisi jeszcze NA STOSIE (puste `view.regenerationShields`),
+więc każda kolejna aktywacja wyglądała na pierwszą (+60 urgent, M218/4).
+Reguła (CR 701.19a, dosłownie): „creates a replacement effect that protects
+the permanent **the next time** it would be destroyed this turn" — kopia na
+stosie nic nie zmienia dla tego zniszczenia.
+
+- [x] Test reprodukujący `test/zgloszenie-e-regeneracja-jednorazowo.test.js`
+  (piny E/1–E/5). BEZ fixa: E/5 (tarcza na stosie) i E/4 (pełny przepływ w
+  architekturze session.js) są RED — E/4 pokazuje `aktywacje=3`, dokładnie jak
+  log właściciela. Z fixem: 5/5 GREEN.
+- [x] Fix w `src/controllers/heuristic-bot.js` (guard E, wzorzec M179/M219/
+  M230): tarcza regeneracji JUŻ na celu (`view.regenerationShields`) LUB
+  identyczna regeneracja wisi na stosie → `finish(-30)`. Cytat CR 701.19a ze
+  źródła online (ADR 0030). Bez nazw kart (ADR 0002), wyłącznie PlayerView
+  (ADR 0017).
+- [x] Bramka fast po fixie: 7784/7784 (było 7775 przed sesją).
+- [ ] Cenzus cytatów (E3/b, znalezisko L164): komentarz przy M218/4 cytuje
+  „CR 702.14" jako numer regeneracji — 702.14 to Landwalk, poprawne 701.19.
+- [ ] Świadoma granica (pin E/3): druga tarcza przy DWÓCH niezależnych
+  groźbach niszczenia w tej turze nie jest wartościowana (kryterium
+  właściciela: „tylko gdy tarcza jeszcze nie ma"). Wycena zachowawcza —
+  bot nie marnuje many, ale rezygnuje z teoretycznie poprawnej drugiej
+  tarczy; zmiana wymaga osobnej decyzji.
+
 ## Ryzyka i pułapki
 
 - Reset workspace w trakcie sesji (ENVIRONMENT §2): commit + push po każdym

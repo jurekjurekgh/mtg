@@ -9817,6 +9817,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
+        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
+        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
+        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
+        // `{type:'regenerate'}` (Exterminator Magmarch).
+        const isRegenerateAbility = ability?.keyword === 'regenerate'
+          || abilityEffectTypes.includes('regenerate')
+          || effects.some((e) => e?.type === 'regenerate');
         // M179/B (uogólnienie M175/A2): IDENTYCZNA aktywacja (źródło +
         // zdolność + cele) już WISI na stosie, a wszystkie efekty są
         // idempotentne do EOT — drugi egzemplarz nic nie zmieni w grze.
@@ -9858,6 +9865,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.tapped === true) {
             return finish(-10);
           }
+        }
+        // E (zgłoszenie właściciela 2026-10-07, Exterminator Magmarch 5/3 vs
+        // Ballista Watcher 4/3): tarcza regeneracji chroni „the next time it
+        // would be destroyed this turn" (CR 701.19a) — JEDNO niszczenie. Bot
+        // aktywował tę samą zdolność 3× z rzędu w jednej walce (log właściciela:
+        // 3× „tarcza regeneracji", 7 many w błoto), bo dopóki PIERWSZA tarcza
+        // wisiała NA STOSIE, `view.regenerationShields` był pusty i każda
+        // aktywacja wyglądała na pierwszą (+60 urgent, M218/4). Komentarz przy
+        // IDEMPOTENT_EOT_EFFECTS zakładał, że „tarcze regeneracji kumulują się"
+        // — dla NADCHODZĄCEGO zniszczenia kopia nie zmienia NIC (pierwsza
+        // tarcza je już pokrywa). Jak M179 (kopia na stosie) i M219/M230
+        // (efekt idempotentny do EOT już zastosowany): blokada po STANIE
+        // czytanym z PlayerView (ADR 0017), bez nazw kart (ADR 0002).
+        if (isRegenerateAbility) {
+          const shieldTargets = (cmd.targets ?? []).length > 0 ? cmd.targets : [cmd.objectId];
+          const alreadyShielded = (view.regenerationShields ?? [])
+            .some((id) => shieldTargets.includes(id));
+          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
+            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
+            && JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []));
+          if (alreadyShielded || pendingTwin) return finish(-30);
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
@@ -9969,13 +9997,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 12;
           }
         }
-        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
-        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
-        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
-        // `{type:'regenerate'}` (Exterminator Magmarch).
-        const isRegenerateAbility = ability?.keyword === 'regenerate'
-          || abilityEffectTypes.includes('regenerate')
-          || effects.some((e) => e?.type === 'regenerate');
         if (isRegenerateAbility) score += regenerationValue(view, target ?? source, { ability: true });
         score -= landRampActionPenalty(view, effects, ability?.timing);
         // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
