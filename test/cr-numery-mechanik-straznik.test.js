@@ -173,6 +173,14 @@ const PARY = [
     zakazany: /107\.3a/, poprawny: '602.5d',
     wyklucz: /602\.5d/,
     zrodlo: '107.3a to X w koszcie czaru; „Activate only as a sorcery” = 602.5d (F-1)' },
+  // Para dodana w sesji 2026-10-07 (zgłoszenie E, cenzus cytatów L164).
+  // Regeneracja to AKCJA słowa kluczowego (sekcja 701), nie zdolność kluczowa
+  // (702) — komentarz przy M218/4 cytował „CR 702.14" (Landwalk). Źródła
+  // dosłowne: mtg.wiki/page/Keyword_action (CR 2026-09-25: „701.19 Regenerate”)
+  // oraz yawgatog chunk 701.18e–701.20a („creates a replacement effect that
+  // protects the permanent the next time it would be destroyed this turn”).
+  { mechanika: /regener/i, zakazany: /702\.14(?!\d)/, poprawny: '701.19',
+    zrodlo: '701.19 Regenerate (keyword action); 702.14 to Landwalk' },
 ];
 
 /** Rekurencyjna lista plików `.js` w katalogu (bez node_modules). */

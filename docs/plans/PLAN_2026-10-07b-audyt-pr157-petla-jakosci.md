@@ -82,8 +82,19 @@ stosie nic nie zmienia dla tego zniszczenia.
   źródła online (ADR 0030). Bez nazw kart (ADR 0002), wyłącznie PlayerView
   (ADR 0017).
 - [x] Bramka fast po fixie: 7784/7784 (było 7775 przed sesją).
-- [ ] Cenzus cytatów (E3/b, znalezisko L164): komentarz przy M218/4 cytuje
-  „CR 702.14" jako numer regeneracji — 702.14 to Landwalk, poprawne 701.19.
+- [x] Cenzus cytatów (E3/b, znalezisko L164): komentarz przy M218/4 cytuje
+  „CR 702.14" jako numer regeneracji — 702.14 to Landwalk, poprawne 701.19
+  (commit `7033da4`).
+- [x] Cenzus horyzontalny (skrypt `.arena/cenzus-cr.mjs`, źródła: mtg.wiki
+  `Keyword_ability` 702.1–702.195 + `Keyword_action` 701.1–701.71, CR
+  2026-09-25): 210 różnych numerów 701/702 w repo, po recznym przeględzie
+  wszystkich trafień **0 nowych rozjazdów** — jedyny był ten naprawiony.
+- [x] Utwardzenie strażników (żeby klasa nie wróciła): para
+  „regener ↔ 702.14" w `cr-numery-mechanik-straznik.test.js` + **naprawa
+  aliasu Landwalk** (`'walk'` → `'walk\b'`) — polskie „walka" (combat)
+  dopasowywało się pod alias i wygaszało detektor okna. Dowód RED: powrót
+  starego cytatu świeci na `heuristic-bot.js:3135` (ta sama linia, co
+  oryginalny bug).
 - [ ] Świadoma granica (pin E/3): druga tarcza przy DWÓCH niezależnych
   groźbach niszczenia w tej turze nie jest wartościowana (kryterium
   właściciela: „tylko gdy tarcza jeszcze nie ma"). Wycena zachowawcza —
