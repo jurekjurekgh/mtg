@@ -58,9 +58,31 @@
 - [x] E4. Domknięcie: końcowa brama `npm run test:all` na zamrożonym drzewie
   (L174) = **8048/8048** EXIT 0 (474,9 s), build 72 moduły / 4904,0 kB EXIT 0,
   handoff `docs/setup/HANDOFF_2026-10-07b.md`, wpis PROJECT_HISTORY,
-  kumulatywny opis PR #158. Otwarta pozostaje JEDNA pozycja pętli jakości:
-  **E3(a) — audyt Żywym Testerem** (rekomendacja: tali the-edge, seedy na
-  regenerację; wymaga `npm i` w `tools/table-tester` + `npm run build`).
+  kumulatywny opis PR #158. Pętla jakości (E3) DOMKNIĘTA — obie pozycje
+  (a) i (b) zaliczone, patrz niżej.
+
+- [x] **Żywy Tester (E3a): PASS** (2026-10-07, 21 partii na artefakcie
+  `dist/`, jsdom). Talia nastawna `decks/regen-audyt.txt` (fixture audytowy:
+  Exterminator Magmarch + Loxodon Mender + Ballista Watcher + talia the-edge),
+  seedy 77/808/31337/4242/11/22/33/44/55/66/88/99/123/2024/5/15/25/35/45/55,
+  profile `greedy`, kroki 400–500:
+  - **21/21 naturalnych końców partii, 0 zgłoszeń detektorów, 0 niewycenionych
+    ruchów bota** (`NIEWYCENIONE == brak`, `DETEKTORY: brak zgłoszeń`);
+  - **regeneracja: 0 spamów po stronie BOTA** w 21 partiach (analiza
+    `.arena/analiza-regen.mjs` — sygnał z logu właściciela to 2+ tarcze na tym
+    samym stwórze w tej samej turze). Jedyny powtórzony przypadek (t2-11,
+    tura 14) to **greedy policy TESTERA** grającego za człowieka (aktywuje
+    regenerację w upkeep bez zagrożenia) — polityka syntetycznego gracza, nie
+    defekt bota: aktywacja w upkeep jest legalna, decyzja należy do gracza;
+  - Magmarch bota nie zginął w żadnej partii; jedyna śmierć Magmarcha
+    (t2-2024, tura 11) to stwor TESTERA, który zablokował War-Ragera bota
+    (3 obrażenia = lethal) i nie zregenerował — ponownie polityka greedy;
+  - sonda engine-level (`.arena/probe-regen-blok.mjs`): blokujący z mocą RÓWNĄ
+    wytrzymałości (3 vs 3) jest poprawnie rozpoznany jako zagrożenie
+    (+60 urgent, bot regeneruje) — `blockKillsAttacker` używa `>=`
+    (CR 704.5g: obrażenia ≥ wytrzymałości = zniszczenie). Brak off-by-one;
+  - wniosek: fix E (commit `8395679`) utrzymuje się w prawdziwych partiach;
+    talia `decks/regen-audyt.txt` zostaje jako fixture do powtórki audytu.
 
 ## Zgłoszenie E właściciela (2026-10-07): regeneracja jednorazowo
 
