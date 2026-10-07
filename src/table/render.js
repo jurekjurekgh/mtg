@@ -4041,14 +4041,21 @@ export function commandLabel(cmd, session, view) {
       return `Rzuć z ręki za darmo: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${hfcModeName}${hfcTargets ? ` → cel: ${hfcTargets}` : ''}${hfcStun}${hfcSac}${freeCastChoiceSuffix(cmd, hfcCard, { mode: false, sacrifice: false })}`;
     }
     case 'resolve_grave_free_cast': {
-      // M174/E: oferta nazywa kartę, koszt X i cele — inaczej N wpisów
-      // wygląda identycznie (L29).
-      if (cmd.decline || cmd.objectId == null) return 'Zrezygnuj (nie płać {X})';
+      // M174/E: staged modale (X → karta → cele) — MASAKRA kombinatoryczna naprawiona.
+      // Etap x: tylko xValue; etap card: objectId+cardId+xValue; etap target: pełny rzut z celami.
+      if (cmd.decline) return 'Zrezygnuj (nie płać {X})';
+      if (cmd.objectId == null) {
+        // etap X: wybór wartości X
+        if (cmd.xValue != null) return `Wybierz {X} = {${cmd.xValue}} — pokaż czary o MV ${cmd.xValue}`;
+        return 'Zrezygnuj (nie płać {X})';
+      }
+      // etap card: wybór czaru bez celów
+      const hasTargetPayload = Array.isArray(cmd.targets) || cmd.modeIndex != null || cmd.sacrificeTargetId != null || cmd.payAltCost != null || cmd.stunTargetId != null || cmd.damageDivision != null || cmd.discardCardIds != null;
+      if (!hasTargetPayload) {
+        const gfcCardName = cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId);
+        return `Wybierz czar: ${gfcCardName} za {${cmd.xValue ?? '?'}}`;
+      }
       const gfcTargets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
-      // Audyt PR #94 / K1 (M91/uwaga D): po fix F okno grobu wystawia tryby —
-      // bez nazwy trybu „Winda” i puste „Schody” (Aerith Rescue Mission)
-      // nazywają się identycznie, a warianty różniące się celem pod stun
-      // counter muszą mówić, KTÓRY stwór dostaje licznik.
       const gfcCard = obj(cmd.objectId);
       const gfcMode = (cmd.modeIndex != null && gfcCard?.spell?.modes) ? gfcCard.spell.modes[cmd.modeIndex] : null;
       const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';

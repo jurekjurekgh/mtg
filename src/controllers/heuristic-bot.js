@@ -2414,6 +2414,126 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return total;
   };
+  // C (Grazing Gladehart, landfall „you may gain 2 life"): land drop
+  // marnuje trigger gdy w ręce jest RZUCALNY nosiciel landfall. Bot
+  // wybierał `play_land 90` przed `cast 66` mimo +2 życia za darmo, bo
+  // imminentTriggerGainValue dodawał tylko gainLifeValue (2 przy 20 życia),
+  // a land 90 ≫ 66+2. Kolejność ma być: najpierw stwór, potem ląd w tej
+  // samej turze. Kara za land w oknie landfall jest STAŁA (30) + wartość
+  // życia, więc nawet przy 20 życia (gain 2) ląd 90→58 < stwór 68 i
+  // kolejność się odwraca; przy 2 lądach (stwór nie rzucalny) kary nie
+  // ma — ląd jest potrzebny do many, więc kolejność ląd→stwór jest
+  // poprawna. Reguła generyczna po deskryptorze (ADR 0002), nie nazwie.
+  // C2 (doprecyzowanie właściciela): jeśli dołożenie ląda PRZED stworem
+  // odblokuje INNY, droższy/lepszy czar (np. 4-mana bombę przy 3 lądach),
+  // to taktycznie lepsze może być ląd→bomba niż stwór(3)+landfall. Kara
+  // nie jest wtedy naliczana — land umożliwia lepszy play.
+  const landDropWastesLandfallPenalty = (view) => {
+    if (view.landEnteredThisTurn === true) return 0;
+    if (!myTurn(view) || !['precombat_main', 'postcombat_main'].includes(view.turn.phase)) return 0;
+    const hasLandInHand = (view.zones.hand ?? []).some((o) => o.kind === 'land' || (o.types ?? []).includes('Land'));
+    if (!hasLandInHand) return 0;
+    // Czy w ręce jest rzucalny stwór z landfall gain?
+    const legalCasts = new Set((view.legalCommands ?? []).filter((c) => c.type === 'cast_permanent' || c.type === 'cast_spell').map((c) => c.objectId));
+    if (legalCasts.size === 0) return 0;
+    let maxGain = 0;
+    let bestLandfallScore = -Infinity;
+    let bestLandfallId = null;
+    for (const card of view.zones.hand ?? []) {
+      if (!card || !legalCasts.has(card.id)) continue;
+      const def = cardDef(card.cardId);
+      if (!def) continue;
+      for (const ability of def.abilities ?? []) {
+        if (ability?.type !== 'triggered' || ability.trigger?.event !== 'land_entered_under_your_control') continue;
+        const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' ? (e.amount ?? 0) : 0), 0);
+        if (amt > 0) {
+          const g = gainLifeValue(view, amt);
+          if (g > maxGain) {
+            maxGain = g;
+            // Szacunkowa wartość rzutu nosiciela (bez triggera, bo trigger jest w maxGain)
+            const base = P.creatureBase + (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight
+              - P.creatureManaCostWeight * ((card.manaCost ?? 0) + coloredPipsOf(card.cardId ?? '').length);
+            bestLandfallScore = base;
+            bestLandfallId = card.id;
+          }
+        }
+      }
+    }
+    if (maxGain === 0) return 0;
+    // C2: czy ląd odblokuje lepszy czar, który dziś nie jest legalny?
+    // Szukamy w ręce karty, która NIE jest w legalCasts, ale byłaby po +1 lądzie.
+    // Prosty test: manaCost <= producible+1 i kolory pokryte po dodaniu koloru ląda.
+    // Kolory ląda bierzemy z definicji karty ląda w ręce.
+    const landsOnBoard = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+    const producibleNow = landsOnBoard + (view.players.find((p) => p.id === view.playerId)?.mana ?? 0);
+    // Kolory dostępne teraz (z lądów na stole)
+    const availableNow = new Set();
+    for (const o of view.zones.battlefield ?? []) {
+      if (o.controllerId !== view.playerId || o.kind !== 'land') continue;
+      for (const c of koloryZrodlaWidoku(o)) availableNow.add(c);
+    }
+    // Kolory które dałby ląd z ręki (pierwszy land w ręce — reprezentatywny)
+    const handLand = (view.zones.hand ?? []).find((o) => o.kind === 'land' || (o.types ?? []).includes('Land'));
+    const handLandDef = handLand ? cardDef(handLand.cardId) : null;
+    const handLandColors = handLandDef ? (manaSourceOfCardDefinition(handLand.cardId, handLandDef, null)?.colors ?? []) : [];
+    const availableAfter = new Set(availableNow);
+    for (const c of handLandColors) availableAfter.add(c);
+    let bestUnlockScore = -Infinity;
+    let bestUnlockCost = -Infinity;
+    for (const card of view.zones.hand ?? []) {
+      if (!card || legalCasts.has(card.id) || card.kind === 'land') continue;
+      const def = cardDef(card.cardId);
+      if (!def) continue;
+      // Czy karta byłaby castowalna po +1 lądzie? (prosty test manaCost i kolorów)
+      const cost = card.manaCost ?? 0;
+      if (cost > producibleNow + 1) continue;
+      // Kolory: wszystkie pipy muszą być pokryte przez availableAfter
+      let colorOk = true;
+      for (const pip of coloredPipsOf(card.cardId ?? '')) {
+        if (!pip.some((c) => availableAfter.has(c))) { colorOk = false; break; }
+      }
+      if (!colorOk) continue;
+      // Szacunkowa wartość tego odblokowanego czaru (bez triggera landfall)
+      let est = 0;
+      if (card.kind === 'creature') {
+        est = P.creatureBase + (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight
+          - P.creatureManaCostWeight * (cost + coloredPipsOf(card.cardId ?? '').length);
+        // ETB bonus dla odblokowanego stwora (jeśli ma)
+        est += etbEnterBonusValue(view, def, { kicked: false, offspring: false, reservedMana: 0 });
+      } else {
+        // Dla czarów — baza + efekty
+        est = P.spellBase;
+        // Prosty proxy: jeśli czar ma duży koszt, jest lepszy
+        est += cost * 2;
+      }
+      if (est > bestUnlockScore) bestUnlockScore = est;
+      if (cost > bestUnlockCost) bestUnlockCost = cost;
+    }
+    // C2: droższy/lepszy czar odblokowany lądem — taktycznie lepszy niż słabszy stwór + trigger
+    // Jeśli odblokowany czar ma wyższy koszt (droższy) niż nosiciel landfall, to ląd umożliwia lepszy play
+    let bestLandfallCost = -Infinity;
+    for (const card of view.zones.hand ?? []) {
+      if (!card || !legalCasts.has(card.id)) continue;
+      const def = cardDef(card.cardId);
+      if (!def) continue;
+      let isLandfall = false;
+      for (const ab of def.abilities ?? []) {
+        if (ab?.type === 'triggered' && ab.trigger?.event === 'land_entered_under_your_control') {
+          const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
+          if (effs.some((e) => e?.type === 'gain_life')) { isLandfall = true; break; }
+        }
+      }
+      if (isLandfall) bestLandfallCost = Math.max(bestLandfallCost, card.manaCost ?? 0);
+    }
+    if (bestUnlockCost > bestLandfallCost) return 0;
+    // Jeśli odblokowany czar jest lepszy niż landfall stwór + trigger, nie karz ląda
+    // Landfall stwór + trigger = bestLandfallScore + maxGain + 30 (kara) vs odblokowany
+    // Porównujemy czyste wartości: odblokowany vs landfall+gain
+    if (bestUnlockScore > bestLandfallScore + maxGain + 5) return 0;
+    // Stała 30 zapewnia przewrócenie kolejności nawet przy 20 życia (gain 2 → 32 > 90-66=24).
+    return 30 + maxGain;
+  };
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
@@ -7619,9 +7739,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wygrywa kolejność, a sam land drop pozostaje opłacalny
         // (90 − 40 = 50 > pass 0). Wołane po `landPlayDelta` (klamra delty
         // ±14/25 zamknęłaby karę w sobie).
+        // C (Gladehart): land marnuje landfall triggera gdy w ręce jest
+        // rzucalny nosiciel — kara odwraca kolejność na stwór→ląd.
         const analiza = landAnaliza(view, cmd.objectId);
         const futile = futileFriendlyCounterEtbPenalty(view, analiza.def, { entersTapped: analiza.entersTapped });
-        return finish(90 + landPlayDelta(view, cmd.objectId) - futile);
+        const wastesLandfall = landDropWastesLandfallPenalty(view);
+        return finish(90 + landPlayDelta(view, cmd.objectId) - futile - wastesLandfall);
       }
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
@@ -12487,22 +12610,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(freeCastVariantScore(view, effects, cmd, 45));
       }
       case 'resolve_grave_free_cast': {
-        // M174/E (Halo Forager): darmowy czar z grobu za {X} = zwykle zysk
-        // (karta + efekt za samą manę); tanie czary lepsze. Rezygnacja przy
-        // braku budżetu/sensu ma niski dodatni score (nie blokuje decyzji).
+        // M174/E (Halo Forager) — STAGED: X → karta → cele (zgłoszenie sekcja A).
         if (cmd.decline) return finish(4);
-        // M265 (Żywy Tester, theros vs worek-basni seed 332): oferta jest
-        // enumerowana PER ZESTAW CELÓW (epicCastOffers), więc stała wartość
-        // kazała botu brać pierwszy zestaw z brzegu — zmierzone: rzucił
-        // Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO
-        // Blade-Blizzard Kitsune, który w tej samej turze miał atakować.
-        // Bliźniacza gałąź suspend/rebound/madness liczy tę karę od M212/Z7;
-        // ta jedna z rodziny jej nie miała (klasa L41). Deskryptor czaru
-        // wisi na karcie w GROBIE (strefa jawna, CR 400.2).
+        const hasTargetPayload = Array.isArray(cmd.targets) || cmd.modeIndex != null || cmd.sacrificeTargetId != null || cmd.payAltCost != null || cmd.stunTargetId != null || cmd.damageDivision != null || Array.isArray(cmd.discardCardIds);
+        // Etap X: tylko xValue, bez karty — baza jak wcześniej, bez kary za cel
+        if (cmd.objectId == null && cmd.xValue != null && !hasTargetPayload) {
+          return finish(Math.max(6, 40 - 3 * cmd.xValue));
+        }
+        // Etap card: wybrana karta, brak celów — wycena per karta (best variant proxy)
+        if (cmd.objectId != null && !hasTargetPayload) {
+          const graveCardPick = (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId) ?? null;
+          const effPick = freeCastVariantEffects(graveCardPick, cmd);
+          // Jeśli karta bez celów — użyj tej wyceny; jeśli wymaga celów — lekka kara, bo wybór celu dopiero nastąpi
+          const isTargeted = (graveCardPick?.spell?.targets?.length ?? 0) > 0 || (graveCardPick?.spell?.modes?.some((m) => (m.targets ?? []).length > 0 || m.variableTargets)) || graveCardPick?.spell?.fireball || graveCardPick?.spell?.divided;
+          const basePick = Math.max(6, 40 - 3 * (cmd.xValue ?? graveCardPick?.manaCost ?? 0));
+          // Lekka zachęta do kart bez celów (mniej ryzyka); dla targetowanych odejmij 2 by preferować X bez ryzyka?
+          return finish(freeCastVariantScore(view, effPick, cmd, isTargeted ? basePick - 2 : basePick));
+        }
+        // Etap target: pełny rzut z celami — poprzednia logika z karą per cel (L41) i trybem (F)
         const graveCard = cmd.objectId
           ? (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId)
           : null;
-        // Audyt PR #93 (znalezisko F): efekty WYBRANEGO trybu i wycena per cel.
         const effects = freeCastVariantEffects(graveCard, cmd);
         return finish(freeCastVariantScore(view, effects, cmd, Math.max(6, 40 - 3 * (cmd.xValue ?? 0))));
       }

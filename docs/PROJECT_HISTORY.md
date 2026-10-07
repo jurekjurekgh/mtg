@@ -15651,3 +15651,14 @@ wag — trzy pytania, trzy odpowiedzi z liczbami.
   wszystkich typów decyzji.
 - **Lekcja L179** + kondensacje L54/L59/L48. Budżet lektury: 99 724 (zapas 276).
 - **Bramki:** brama PR na tipie `ebbf486`: **7823/7823** EXIT 0 (461,8 s).
+## 2026-10-05c — Audyt PR #155 + pętla jakości (PR #156)
+
+- **Zakres:** audyt 124 plików PR #155 (a362efa → 70fed53, 4689+/631-) przed nowym kodowaniem (ADR 0020 B). Baseline na 70fed53: fast **7750/7750** exit 0, all **8013/8013** exit 0 (505 s), build **72/4871,6 kB**. CI poprzednika PASS (37306496657/37304592016).
+- **Engine:** `battles.js` (CR 310.9/310.7-8, 704.5v/w) + `effect-values.js` (CR 608.2h, counted pump −2×Blood) — generyczne liście bez stanu; `effects.js` damage_divided (sloty null nie kompresowane, declared.length == slots.length, CR 601.2d/603.3d/608.2b) + adjust_battle_defense (CR 609.3); `game-state.js` kolejka modalnych ETB (next) i atomowa walidacja resolve_modal_choice (na stos, nie inline); `triggers.js` re-walidacja celów na resolution (offset fixedTargetCount, no_targets, przed may/pay, CR 608.2b) + ward batch (603.3) po APNAP; `spells.js`/`identity.js`/`state-based.js` Battle SBA — wszystko bez ifów po nazwie karty (ADR 0002) ✔.
+- **Batch 63:** 212 VOW Bloodtithe Harvester (−X/−X z liczonych Blood tokenów), 254 DMU Snarespinner (blocks + flying → +2/+0), 259 2XM Kozilek’s Predator (2× Spawn {C}), 260 MOM Etched Host Doombringer (modal life/battle ±3) — snapshoty Scryfall dosłowne, proweniencja CSV (212VOW/Innistrad, 254DMU/Dominaria, 259_2XM/Zendikar, 260MOM/Kaldheim, ADR 0029), tokeny Blood/Spawn jako dane kart, nie core.
+- **Bot:** +649 linii (negativePumpValue, battleDefense, modalMode, graveReturn, discardLoss, countedPumpReserve) — generyczne deskryptory, brak nazw kart; `counter-labels`/`render`/`session` tylko prezentacja Battle/counted.
+- **Testy:** Forge Devil + Greatsword poprawione do dosłownego CR 608.2b (utrata wszystkich wybranych celów = cała zdolność nie rozstrzyga), Cutthroat z losowych 14 seedów na deterministyczny scenariusz z `botFactory`/`markDamage` — wszystkie zielone. PMSSB58 98 pinów pozostaje zielonych.
+- **Talie:** Dominaria 19+19 (38 nie-basiców), 27 talii, generator deterministyczny — PASS.
+- **Pętla jakości:** Żywy Tester 3 partie (dominaria-wrg/innistrad-brg s42, s7, s5801) — 3/3 naturalne końce, 0 flag/stop/niewycenionych/detektorów, Snarespinner obserwowany; Harvester/Predator/Doombringer nie wylosowane w tych seedach (98 pinów PMSSB-58 pokrywa reguły, obserwacja stołowa tej trójki = otwarta na kolejną sesję). CR hunt punktowy bez nowych ustaleń blokujących.
+- **Werdykt audytu:** **PASS — brak uwag blokujących.** Dokument: `docs/audits/AUDYT_PR155_2026-10-05.md`; plan `PLAN_2026-10-05c`; handoff `HANDOFF_2026-10-05c`. Bez pełnego B0 (ADR 0018), bez nowych kart (ADR 0029), brak merge przez agenta.
+

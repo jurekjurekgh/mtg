@@ -202,20 +202,27 @@ test('PMSSB-32/A5 (L48, F3 rozwiązane): filtr koloru auto-płaci SILNIK — rę
   assert.equal(o.wybrany.type, 'cast_spell', 'bot rzuca czar, zamiast filtrować manę ręcznie');
 });
 
-test('PMSSB-32/A5b (F3+F6): Skarb + kolor odblokowuje CZAR Z CELEM — to najmocniejsze okno', () => {
-  // Treasure (poświęcenie — silnik NIE auto-tapuje), Las i Shock {R} z celem
-  // (stwór wroga). PRZED: −10 (a) próg liczbowy 1 → 2 nie widział, że brakuje
-  // PIPÓW, (b) bramka „chcę to rzucić” pytała komendę bez celów (−10), więc
-  // Skarb nigdy nie finansował removal/burna. PO: +6 i wybór aktywacji.
+test('PMSSB-32/A5b (F3+F6): Skarb auto-płaci CZAR Z CELEM — oferta rzutu istnieje (M179/E)', () => {
+  // Treasure ({T},Sacrifice:any) + Las i Shock {R} z celem (stwór wroga).
+  // PRZED M179/E: −10 (a) próg liczbowy 1 → 2 nie widział pipów, (b) bramka
+  // „chcę to rzucić" pytała komendę bez celów (−10), więc Skarb nigdy nie
+  // finansował removal/burna. M179/E: Treasure liczy się do producibleMana
+  // i planGrantManaColors (offer=payment L48), więc silnik oferuje rzut
+  // bezpośrednio — ręczna aktywacja zbędna (jak Powerstone dla artefaktu w A3).
   const s = stol();
   put(s, 'las', 'basic-forest');
   put(s, 'tre', 'token_treasure');
   put(s, 'h-shock', 'shock', { zone: 'hand' });
   cialo(s, 'foe', 2, 2, { controllerId: 'p2' });
   const o = opcje(s);
-  assert.equal(o.oferta('cast_spell(h-shock'), undefined, 'silnik nie auto-płaci Skarbem — aktywacja to jedyna droga');
-  assert.equal(o.wynik('activate_ability(tre#0'), 6, '2 (baza) + 4 (realne odblokowanie rzutu)');
-  assert.equal(o.wybrany.type, 'activate_ability', 'Skarb jest po to, żeby go wydać na wartościowy czar');
+  assert.ok(o.oferta('cast_spell(h-shock'), 'M179/E: silnik auto-płaci Skarbem — oferta rzutu istnieje');
+  const castFoe = o.oferta('cast_spell(h-shock->foe');
+  const castP2 = o.oferta('cast_spell(h-shock->p2');
+  assert.ok(castFoe || castP2, 'oferta Shock z celem istnieje');
+  if (castFoe) assert.equal(castFoe.score, 86, 'oferta Shock na stwora wroga 2/2 = 86');
+  else assert.equal(castP2.score, 60, 'oferta Shock na gracza = 60');
+  assert.equal(o.wybrany.type, 'cast_spell', 'M179/E: bot rzuca czar bezpośrednio, zamiast ręcznie aktywować Skarb');
+  assert.ok(o.wynik('activate_ability(tre#0') < 0, 'skoro silnik płaci sam, ręczna aktywacja zbędna (L48)');
 });
 
 test('PMSSB-32/A6 (F3, kontrola): kolor, którego źródło NIE produkuje, nie odblokowuje', () => {

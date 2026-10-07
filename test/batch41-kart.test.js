@@ -458,10 +458,17 @@ test('E1: Forager — rzut instanta z GROBU PRZECIWNIKA za {X}=MV; po rozstrzygn
   putCard(state, 'foe', 'segmented-krotiq', 'p2', 'battlefield');
   castForager(state);
   addMana(state, 'p1', 3, { colors: [] }); // {X}=3 (generic)
+  // Staged: X → karta → cel
+  const xPick = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_grave_free_cast' && c.xValue === 3 && c.objectId == null);
+  assert.ok(xPick, 'oferta X=3');
+  assert.ok(execute(state, xPick).ok, 'wybór X');
+  const cardPick = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'gspin');
+  assert.ok(cardPick, 'oferta karty z grobu wroga');
+  assert.equal(cardPick.xValue, 3, 'X = mana value karty');
+  assert.ok(execute(state, cardPick).ok, 'wybór karty');
   const offer = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'gspin' && c.targets?.[0] === 'foe');
   assert.ok(offer, 'oferta rzutu z grobu wroga z celem');
-  assert.equal(offer.xValue, 3, 'X = mana value karty');
   assert.ok(execute(state, offer).ok);
   const onStack = [...state.objects.values()].find((o) => o.cardId === 'spin-out' && o.zone === 'stack');
   assert.equal(onStack?.controllerId, 'p1', 'czar pod kontrolą kontrolera Foragera');
@@ -494,12 +501,21 @@ test('E3 → F/4: Forager — czar z kosztem dodatkowym oferowany; ofiara płaco
   putCard(state, 'own', 'highland-game', 'p1', 'battlefield');
   castForager(state);
   addMana(state, 'p1', 1, { colors: [] });
-  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast');
-  const cast = offers.find((c) => c.objectId === 'grites' && c.sacrificeTargetId === 'own');
-  assert.ok(cast, 'oferta z wariantem ofiary');
+  // Staged: najpierw X, potem karta
+  const xPick3 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_grave_free_cast' && c.xValue === 1 && c.objectId == null);
+  assert.ok(xPick3, 'oferta X=1');
+  assert.ok(execute(state, xPick3).ok);
+  const cardOffers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'grites');
+  assert.ok(cardOffers.length > 0, 'oferta karty village-rites');
   // Komenda bez wskazania ofiary = jawny reject (koszt dodatkowy obowiązkowy).
   const bad = execute(state, { type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grites', xValue: 1, targets: [] });
   assert.equal(bad.ok, false, 'bez ofiary — odrzucone');
+  const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'grites');
+  // Po wyborze karty przechodzimy do wyboru celu/ofiary
+  assert.ok(execute(state, cardOffers[0]).ok, 'wybór karty');
+  const finalOffers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'resolve_grave_free_cast' && c.objectId === 'grites');
+  const cast = finalOffers.find((c) => c.sacrificeTargetId === 'own');
+  assert.ok(cast, 'oferta z wariantem ofiary');
   assert.ok(execute(state, cast).ok, 'rzut z ofiarą przyjęty');
   assert.notEqual(state.objects.get('own')?.zone, 'battlefield', 'stwór poświęcony jako koszt');
   assert.ok(state.zones.stack.some((id) => state.objects.get(id)?.cardId === 'village-rites'), 'czar na stosie');
