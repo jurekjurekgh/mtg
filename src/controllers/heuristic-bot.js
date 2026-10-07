@@ -2414,6 +2414,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     return total;
   };
+  // C (Grazing Gladehart, landfall „you may gain 2 life"): land drop
+  // marnuje trigger gdy w ręce jest RZUCALNY nosiciel landfall. Bot
+  // wybierał `play_land 90` przed `cast 66` mimo +2 życia za darmo, bo
+  // imminentTriggerGainValue dodawał tylko gainLifeValue (2 przy 20 życia),
+  // a land 90 ≫ 66+2. Kolejność ma być: najpierw stwór, potem ląd w tej
+  // samej turze. Kara za land w oknie landfall jest STAŁA (30) + wartość
+  // życia, więc nawet przy 20 życia (gain 2) ląd 90→58 < stwór 68 i
+  // kolejność się odwraca; przy 2 lądach (stwór nie rzucalny) kary nie
+  // ma — ląd jest potrzebny do many, więc kolejność ląd→stwór jest
+  // poprawna. Reguła generyczna po deskryptorze (ADR 0002), nie nazwie.
+  const landDropWastesLandfallPenalty = (view) => {
+    if (view.landEnteredThisTurn === true) return 0;
+    if (!myTurn(view) || !['precombat_main', 'postcombat_main'].includes(view.turn.phase)) return 0;
+    const hasLandInHand = (view.zones.hand ?? []).some((o) => o.kind === 'land' || (o.types ?? []).includes('Land'));
+    if (!hasLandInHand) return 0;
+    // Czy w ręce jest rzucalny stwór z landfall gain?
+    const legalCasts = new Set((view.legalCommands ?? []).filter((c) => c.type === 'cast_permanent').map((c) => c.objectId));
+    if (legalCasts.size === 0) return 0;
+    let maxGain = 0;
+    for (const card of view.zones.hand ?? []) {
+      if (!card || !legalCasts.has(card.id)) continue;
+      const def = cardDef(card.cardId);
+      if (!def) continue;
+      for (const ability of def.abilities ?? []) {
+        if (ability?.type !== 'triggered' || ability.trigger?.event !== 'land_entered_under_your_control') continue;
+        const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        const amt = effs.reduce((s, e) => s + (e?.type === 'gain_life' ? (e.amount ?? 0) : 0), 0);
+        if (amt > 0) maxGain = Math.max(maxGain, gainLifeValue(view, amt));
+      }
+    }
+    if (maxGain === 0) return 0;
+    // Stała 30 zapewnia przewrócenie kolejności nawet przy 20 życia (gain 2 → 32 > 90-66=24).
+    return 30 + maxGain;
+  };
   const myCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
   const enemyCreatures = (view) => view.zones.battlefield.filter((o) => o.controllerId !== view.playerId && o.kind === 'creature');
   // Potencjalni blokerzy = wrogie stwory, które FAKTYCZNIE mogą blokować.
@@ -7619,9 +7653,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wygrywa kolejność, a sam land drop pozostaje opłacalny
         // (90 − 40 = 50 > pass 0). Wołane po `landPlayDelta` (klamra delty
         // ±14/25 zamknęłaby karę w sobie).
+        // C (Gladehart): land marnuje landfall triggera gdy w ręce jest
+        // rzucalny nosiciel — kara odwraca kolejność na stwór→ląd.
         const analiza = landAnaliza(view, cmd.objectId);
         const futile = futileFriendlyCounterEtbPenalty(view, analiza.def, { entersTapped: analiza.entersTapped });
-        return finish(90 + landPlayDelta(view, cmd.objectId) - futile);
+        const wastesLandfall = landDropWastesLandfallPenalty(view);
+        return finish(90 + landPlayDelta(view, cmd.objectId) - futile - wastesLandfall);
       }
       case 'tap_for_mana': {
         // Własne kroki początkowe/końcowe: mana wyparuje na końcu kroku,
