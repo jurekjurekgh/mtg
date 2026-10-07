@@ -1613,12 +1613,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „it deals that much damage to each opponent" — wydana mana rzutu).
     // Batch 45 (Pain for All): amountFrom generycznie z kontekstu
     // ('damageAmount' — tyle, ile obrażeń dostał zaczarowany stwór), a
-    // fromEnchanted przenosi ŹRÓDŁO obrażeń na gospodarza aury (CR 611.2c
-    // — to stwór zadaje, nie aura; istotne dla lifelinka/protection hosta).
+    // fromEnchanted przenosi ŹRÓDŁO obrażeń na gospodarza aury (CR 608.2h —
+    // „If an ability states that an object does something, it's the object as
+    // it exists—or as it most recently existed—that does it, not the ability":
+    // to stwór zadaje, nie aura; istotne dla lifelinka/protection hosta).
     const amount = effect.amountFrom ? (context?.[effect.amountFrom] ?? 0) : effect.amount;
     // Zgłoszenie D (2026-10-07): gdy host zginął razem z aurą (CR 603.10
     // looks-back), `attachedTo` prowadzi donikąd — źródłem obrażeń jest wtedy
-    // LKI hosta z kontekstu triggera (CR 608.2g), nie aura.
+    // LKI hosta z kontekstu triggera (CR 608.2h: „the effect uses the object's
+    // last known information"), nie aura.
     const dmgSource = effect.fromEnchanted
       ? (state.objects.get(sourceObject.attachedTo) ?? context?.enchantedHostLki ?? sourceObject)
       : sourceObject;

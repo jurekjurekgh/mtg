@@ -30,7 +30,7 @@
   - engine: `src/engine/game-state.js` (+30/−51), `effects.js` (+4/−1),
     `resources.js` (+7/−1), `triggers.js` (+24) — zgłoszenie D (Pain for All:
     CR 603.10 looks-back aury, LKI ze zdarzenia odejścia z `attachedTo`,
-    CR 608.2g);
+    CR 608.2h — korekta audytu: 608.2g to mana/rzuty podczas resolution);
   - kontrolery: `heuristic-bot.js` (+50/−1), `heuristic-params.js` (+14) —
     zgłoszenie D1 (koszt odbicia przez drabinę `selfLifeLossPenalty`,
     progi `reflectedDamageLifeRatio: 0.25` / `reflectedDamageDeterrent: 25`)

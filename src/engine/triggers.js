@@ -3006,8 +3006,9 @@ function processTriggersScan(state, recentEvents) {
           }
         }
         // Zgłoszenie D właściciela (2026-10-07, CR 603.10 looks-back):
-        // aura odeszła W TEJ SAMEJ komendzie co host (SBA 704.5m po
-        // śmiertelnych obrażeniach) — skan działa PO SBA, więc pętla wyżej
+        // aura odeszła W TEJ SAMEJ komendzie co host (SBA 704.5g niszczy
+        // stwora po śmiertelnych obrażeniach, 704.5m wyrzuca aurę bez
+        // legalnego gospodarza) — skan działa PO SBA, więc pętla wyżej
         // nie widzi aury na polu bitwy, choć w chwili zdarzenia BYŁA
         // przypięta i zdolność odpala. Wzorzec jak dla zdolności WŁASNYCH
         // stwora (targetLki): LKI aury to obiekt po ruchu (`toId` ze
