@@ -2461,20 +2461,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
     if (maxGain === 0) return 0;
-        if (amt > 0) {
-          const g = gainLifeValue(view, amt);
-          if (g > maxGain) {
-            maxGain = g;
-            // Szacunkowa wartość rzutu nosiciela (bez triggera, bo trigger jest w maxGain)
-            const base = P.creatureBase + (card.power ?? 0) * P.creaturePowerWeight + (card.toughness ?? 0) * P.creatureToughnessWeight
-              - P.creatureManaCostWeight * ((card.manaCost ?? 0) + coloredPipsOf(card.cardId ?? '').length);
-            bestLandfallScore = base;
-            bestLandfallId = card.id;
-          }
-        }
-      }
-    }
-    if (maxGain === 0) return 0;
     // C2: czy ląd odblokuje lepszy czar, który dziś nie jest legalny?
     // Szukamy w ręce karty, która NIE jest w legalCasts, ale byłaby po +1 lądzie.
     // Prosty test: manaCost <= producible+1 i kolory pokryte po dodaniu koloru ląda.
