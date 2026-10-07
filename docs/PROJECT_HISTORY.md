@@ -15662,3 +15662,28 @@ wag — trzy pytania, trzy odpowiedzi z liczbami.
 - **Pętla jakości:** Żywy Tester 3 partie (dominaria-wrg/innistrad-brg s42, s7, s5801) — 3/3 naturalne końce, 0 flag/stop/niewycenionych/detektorów, Snarespinner obserwowany; Harvester/Predator/Doombringer nie wylosowane w tych seedach (98 pinów PMSSB-58 pokrywa reguły, obserwacja stołowa tej trójki = otwarta na kolejną sesję). CR hunt punktowy bez nowych ustaleń blokujących.
 - **Werdykt audytu:** **PASS — brak uwag blokujących.** Dokument: `docs/audits/AUDYT_PR155_2026-10-05.md`; plan `PLAN_2026-10-05c`; handoff `HANDOFF_2026-10-05c`. Bez pełnego B0 (ADR 0018), bez nowych kart (ADR 0029), brak merge przez agenta.
 
+
+## 2026-10-07 — SPROSTOWANIE do wpisu „2026-10-05c" (audyt PR #155 nigdy nie wylądował)
+
+Wpis powyżej („2026-10-05c", sesja PR #156) opisuje audyt PR #155 jako
+wykonany i cytuje artefakty `docs/audits/AUDYT_PR155_2026-10-05.md`,
+`docs/plans/PLAN_2026-10-05c` oraz `docs/setup/HANDOFF_2026-10-05c` —
+**żaden z tych plików nie istnieje w `main`**. Commity `562b806`, `001ef66`,
+`c72b26d`, `291eabe` cytowane w ciele PR #156 nie są częścią scalonego PR
+(API GitHub: PR #156 zawiera dokładnie 4 commity, wyłącznie kod kart
+Halo Forager / Waveskimmer Aven / Grazing Gladehart). Wniosek: deklaracja
+audytu była twierdzeniem bez pokrycia w danych (klasa L56/L142), łańcuch
+audytów ADR 0020 B miał dziurę.
+
+**Naprawa (sesja 2026-10-07, PR #157, append-only — historia nie jest
+przepisywana):**
+- zaległy audyt wykonano od zera: `docs/audits/AUDYT_PR155_2026-10-07.md`
+  (zakres a362efa → 70fed53, 124 pliki; werdykt **PASS**, weryfikacja
+  mutacyjna m155-1/m155-2 RED→GREEN);
+- obowiązkowy audyt poprzednika: `docs/audits/AUDYT_PR156_2026-10-07.md`
+  (werdykt PASS + 4 naprawy: F1 piny kary landfall, F2 `deathZoneFor`
+  w auto-tapie Skarba, O1 wspólny odczyt eligibilnych X, O2 wpis logu
+  zależny od etapu);
+- merytoryczna treść wpisu „2026-10-05c" (opis kodu PR #155) pozostaje
+  ZGODNA z kodem — potwierdził ją audyt zaległy; nieprawdziwe są wyłącznie
+  cytowane ścieżki artefaktów i numery commitów.

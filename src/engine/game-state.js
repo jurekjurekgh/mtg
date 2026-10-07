@@ -2122,6 +2122,30 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
   return false;
 }
 
+// Audyt PR #156 (O1, klasa L48): JEDEN odczyt eligibilnych X dla OFERTY
+// (playerView, etap 'x') i WALIDACJI (execute, etap 'x') darmowego rzutu
+// z grobu (Halo Forager). Przed refactor'em istniały dwie kopie tego filtra
+// (enumeracja w widoku + lokalny helper w walidacji) — oferta i walidacja
+// mogły się rozjechać przy pierwszej zmianie (L41/L48).
+export function graveFreeCastEligibleXValues(state, playerId) {
+  const xs = new Set();
+  for (const graveId of state.zones.graveyard) {
+    const c = state.objects.get(graveId);
+    if (!c || c.zone !== 'graveyard' || c.kind !== 'spell') continue;
+    if (!['instant', 'sorcery'].includes(c.spell?.timing)) continue;
+    const mv = c.manaCost ?? 0;
+    const budget = producibleMana(state, playerId, null, spellManaPurpose(c), []);
+    if (budget < mv) continue;
+    let hasOffer = false;
+    for (const off of freeSpellCastOffers(state, playerId, c)) {
+      const om = mv + (c.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (c.spell?.additionalCost?.orPayMana ?? 0) : 0);
+      if (om <= budget) { hasOffer = true; break; }
+    }
+    if (hasOffer) xs.add(mv);
+  }
+  return [...xs].sort((a, b) => a - b);
+}
+
 export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
@@ -3021,25 +3045,8 @@ export function execute(state, input) {
       }));
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    // Helper: czy X jest wśród eligilbilnych (distinct MV gdzie istnieje karta z ofertą)
-    const eligibleXValuesFor = (playerId) => {
-      const xs = new Set();
-      for (const graveId of state.zones.graveyard) {
-        const c = state.objects.get(graveId);
-        if (!c || c.zone !== 'graveyard' || c.kind !== 'spell') continue;
-        if (!['instant', 'sorcery'].includes(c.spell?.timing)) continue;
-        const mv = c.manaCost ?? 0;
-        const budget = producibleMana(state, playerId, null, spellManaPurpose(c), []);
-        if (budget < mv) continue;
-        let hasOffer = false;
-        for (const off of freeSpellCastOffers(state, playerId, c)) {
-          const om = mv + (c.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (c.spell?.additionalCost?.orPayMana ?? 0) : 0);
-          if (om <= budget) { hasOffer = true; break; }
-        }
-        if (hasOffer) xs.add(mv);
-      }
-      return [...xs].sort((a, b) => a - b);
-    };
+    // O1 (audyt PR #156): wspólny odczyt eligibilnych X — oferta i walidacja
+    // korzystają z JEDNEJ funkcji (graveFreeCastEligibleXValues, L48).
     if (stage === 'x') {
       // LEGACY compat: komenda łącząca X+karta+cele w jednym kroku (stare testy)
       // — jeśli payload niesie objectId, traktuj jako skrót do natychmiastowego rzutu.
@@ -3063,7 +3070,7 @@ export function execute(state, input) {
       }
       // Normalny staged wybór X
       if (!Number.isInteger(cmd.xValue)) return reject('illegal_grave_free_cast_x');
-      const eligible = eligibleXValuesFor(pending.playerId);
+      const eligible = graveFreeCastEligibleXValues(state, pending.playerId);
       if (!eligible.includes(cmd.xValue)) return reject('illegal_grave_free_cast_x');
       // Przejście do wyboru karty
       state.pendingGraveFreeCast = { ...pending, stage: 'card', xValue: cmd.xValue };
@@ -8200,37 +8207,9 @@ export function playerView(state, playerId) {
         }
       }
     } else if (gfcStage === 'x') {
-      const seenX = new Set();
-      for (const graveId of state.zones.graveyard) {
-        const card = state.objects.get(graveId);
-        if (!card || card.zone !== 'graveyard' || card.kind !== 'spell') continue;
-        if (!['instant', 'sorcery'].includes(card.spell?.timing)) continue;
-        const xValue = card.manaCost ?? 0;
-        if (seenX.has(xValue)) continue;
-        const graveBudget = producibleMana(state, playerId, null, spellManaPurpose(card), []);
-        if (graveBudget < xValue) continue;
-        let hasOffer = false;
-        for (const offer of freeSpellCastOffers(state, playerId, card)) {
-          const offerMana = xValue + (card.spell?.fireball ? Math.max(0, (offer.targets ?? []).length - 1) : 0) + (offer.payAltCost === true ? (card.spell?.additionalCost?.orPayMana ?? 0) : 0);
-          if (offerMana <= graveBudget) { hasOffer = true; break; }
-        }
-        if (!hasOffer) {
-          for (const otherId of state.zones.graveyard) {
-            const oc = state.objects.get(otherId);
-            if (!oc || oc.zone !== 'graveyard' || oc.kind !== 'spell') continue;
-            if (!['instant', 'sorcery'].includes(oc.spell?.timing)) continue;
-            if ((oc.manaCost ?? 0) !== xValue) continue;
-            const ob = producibleMana(state, playerId, null, spellManaPurpose(oc), []);
-            if (ob < xValue) continue;
-            for (const off of freeSpellCastOffers(state, playerId, oc)) {
-              const om = xValue + (oc.spell?.fireball ? Math.max(0, (off.targets ?? []).length - 1) : 0) + (off.payAltCost === true ? (oc.spell?.additionalCost?.orPayMana ?? 0) : 0);
-              if (om <= ob) { hasOffer = true; break; }
-            }
-            if (hasOffer) break;
-          }
-        }
-        if (!hasOffer) continue;
-        seenX.add(xValue);
+      // O1 (audyt PR #156): oferta = walidacja (L48) — ten sam odczyt
+      // eligibilnych X co w execute(); jedna funkcja, zero kopii filtra.
+      for (const xValue of graveFreeCastEligibleXValues(state, playerId)) {
         legalCommands.push(command('resolve_grave_free_cast', playerId, { xValue }));
       }
     } else if (gfcStage === 'card') {

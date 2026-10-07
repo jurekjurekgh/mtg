@@ -360,7 +360,11 @@ export function blockExchangeOf(attacker, blockers) {
 
   return { attackerDies, blockerValueLost, wastedBlockers, uselessBlockerIds,
     // PMSSB-2/C (F8): które blokery realnie giną (ubezpieczenie dies→token).
-    diedBlockerIds: [...realnieGinie] };
+    diedBlockerIds: [...realnieGinie],
+    // D1-mirror (2026-10-07): ile obrażeń blokerzy realnie zadadzą atakującemu
+    // (first strike atakującego kasuje cios zabitych blokerów, CR 702.7b) —
+    // potrzebne do kosztu odbicia przy aurach typu Pain for All.
+    blockerDamage: effectivePower };
 }
 
 
@@ -11443,6 +11447,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             futileAttackers += 1;
           }
           score += perAttacker;
+          // D1 (zgłoszenie właściciela 2026-10-07, Pain for All): bloker
+          // z aurą odbijającą („Whenever enchanted creature is dealt damage,
+          // it deals that much damage to each opponent") — zablokowany
+          // atakujący zada obrażenia WŁASNEMU kontrolerowi (dokładnie tyle,
+          // ile sam zada zaczarowanemu blokerowi). Generycznie po
+          // deskryptorze triggera na aurze z widoku (ADR 0002), koszt przez
+          // wspólną drabinę samouszkodzenia (PMSSB-36, L41). Gdy odbicie
+          // przekracza próg udziału w życiu (domyślnie 25% — dyrektywa
+          // właściciela), dochodzi odstraszacz: atak w takiego blokera nie
+          // może być opłacalny niezależnie od wymiany (klasa L3 — kara musi
+          // przebijać premie, inaczej jest martwa).
+          const reflectBlocker = canBeBlocked && !diesBeforeDealingDamage(combatObject, candidates)
+            && candidates.some((blocker) => (view.zones.battlefield ?? []).some((aura) =>
+              aura?.attachedTo === blocker.id && aura?.kind === 'aura'
+              && (cardDef(aura.cardId)?.abilities ?? []).some((ability) =>
+                ability?.trigger?.event === 'enchanted_creature_dealt_damage')));
+          if (reflectBlocker) {
+            const reflected = Math.max(0, blockedStats.power ?? 0);
+            let reflectCost = selfLifeLossPenalty(view, reflected);
+            const life = myLife(view);
+            if (life > 0 && reflected / life > P.reflectedDamageLifeRatio) {
+              reflectCost += P.reflectedDamageDeterrent;
+            }
+            score -= reflectCost;
+          }
           // Evasion: latający atakujący omija blockerów bez flying/reach.
           if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += P.attackEvasionBonus;
           // Drenaż z triggera ataku przechodzi niezależnie od bloków.
@@ -11682,6 +11711,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (attackerDies) score += attackerPower * 2 + attackerToughness;
           // Koszt: utracone blokery.
           score -= blockerValueLost;
+          // D1-mirror (Żywy Tester 2026-10-07, the-edge s77 — bot zablokował
+          // zaczarowanego Escorta i odbite obrażenia go zabiły): bloker
+          // zadający obrażenia atakującemu z aurą odbijającą (Pain for All —
+          // „Whenever enchanted creature is dealt damage, it deals that much
+          // damage to each opponent") dostaje te obrażenia z powrotem. Ten sam
+          // koszt i próg co D1 po stronie ataku (drabina PMSSB-36, L41):
+          // generycznie po deskryptorze triggera aury (ADR 0002).
+          const attackerReflects = (view.zones.battlefield ?? []).some((aura) =>
+            aura?.attachedTo === attackerId && aura?.kind === 'aura'
+            && (cardDef(aura.cardId)?.abilities ?? []).some((ability) =>
+              ability?.trigger?.event === 'enchanted_creature_dealt_damage'));
+          if (attackerReflects && blockerObjs.length > 0) {
+            const reflected = Math.max(0, exchange.blockerDamage ?? 0);
+            let reflectCost = selfLifeLossPenalty(view, reflected);
+            const life = myLife(view);
+            if (life > 0 && reflected / life > P.reflectedDamageLifeRatio) {
+              reflectCost += P.reflectedDamageDeterrent;
+            }
+            score -= reflectCost;
+          }
           // PMSSB-31 (zgłoszenie właściciela z gry): KORZYSTNA WYMIANA.
           // Dotąd `+attackerPower` i `−(P+T)` były w jednej skali, więc chump
           // 3/3 tokenem 1/1 dawał dokładnie 3 − 2 − 1 = 0 — tyle samo co pass.

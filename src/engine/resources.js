@@ -1,5 +1,6 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
+import { deathZoneFor } from './zones.js';
 import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant } from './permanents.js';
 import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
@@ -1201,7 +1202,12 @@ export function tapTreasureForMana(state, playerId, objectId, { grantColor = nul
   // Dla spójności z ręczną aktywacją emitujemy object_tapped, potem permanent_sacrificed.
   const tappedEvent = event('object_tapped', { objectId, playerId, forMana: true });
   state.events.push(tappedEvent);
-  const toZone = 'graveyard';
+  // Audyt PR #156 (F2, klasa L109/L41): strefa śmierci z choke pointu
+  // `deathZoneFor` (finality / exileIfDiesThisTurn / Kumano), jak KAŻDA inna
+  // ścieżka poświęcenia — ręczne 'graveyard' było drugą kopią reguły
+  // „gdzie ląduje poświęcony obiekt" (dziś równoważną dla tokenów Skarbu,
+  // ale rozjazdową dla animowanego Skarbu ze znacznikiem finality).
+  const toZone = deathZoneFor(state, object);
   const destId = `${toZone}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {

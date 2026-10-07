@@ -7,6 +7,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { addCounter } from '../src/engine/counters.js';
 import { deathZoneFor } from '../src/engine/permanents.js';
+import { tapTreasureForMana } from '../src/engine/resources.js';
 
 /**
  * M269 błąd #5 — poświęcenie JEST śmiercią (CR 700.4 + 701.21a), więc strefę docelową
@@ -73,4 +74,45 @@ test('bez licznika finality poświęcenie idzie normalnie do cmentarza', () => {
   state.pendingSacrifice = { playerId: 'p1', candidateIds: ['vic'], restorePriorityTo: 'p1' };
   execute(state, { type: 'resolve_sacrifice_choice', playerId: 'p1', targetId: 'vic' });
   assert.equal(strefaOfiary(state), 'graveyard', 'kontrola negatywna');
+});
+
+// Audyt PR #156 (F2, 2026-10-07): auto-tap Skarba w `spendMana`
+// (`tapTreasureForMana`) miał RĘCZNE `toZone = 'graveyard'` — drugą kopię
+// reguły „gdzie ląduje poświęcony obiekt" (klasa L109/L41; wszystkie inne
+// ścieżki poświęcenia wołają `deathZoneFor`). Token Skarbu jest syntetyczny
+// (poza katalogiem, ADR 0029) — zdolność w deskryptorze obiektu, jak w
+// testach auto-tap-mana. Ścieżka porównana z referencyjną: ten sam strażnik
+// klasowy, nie karta (ADR 0002).
+const skarbStan = ({ finality = false } = {}) => {
+  const state = createGameState({ seed: 1, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  addObject(state, {
+    id: 'treas', instanceId: 'i-treas', cardId: 'token_treasure', cardName: 'Treasure',
+    controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'artifact', manaCost: 0,
+    subtypes: ['Treasure'], types: ['Artifact'], keywords: [], colors: [],
+    abilities: [Object.freeze({
+      type: 'activated', timing: 'instant', keyword: null,
+      cost: Object.freeze({ tap: true, sacrificeSelf: true }),
+      effect: Object.freeze({ type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true }),
+      trigger: null, targets: null, cycling: null, condition: null, pump: null,
+      keywords: null, oncePerTurn: false, mustAttack: false,
+    })],
+  });
+  if (finality) addCounter(state, 'treas', 'finality', 1);
+  return state;
+};
+
+test('auto-tap Skarba (tapTreasureForMana) wygania Skarb z licznikiem finality', () => {
+  const state = skarbStan({ finality: true });
+  assert.equal(deathZoneFor(state, state.objects.get('treas')), 'exile');
+  tapTreasureForMana(state, 'p1', 'treas', {});
+  const skarb = [...state.objects.values()].find((o) => o.instanceId === 'i-treas');
+  assert.equal(skarb.zone, 'exile', 'auto-tap nie omija finality (deathZoneFor)');
+});
+
+test('auto-tap Skarba bez finality idzie normalnie do cmentarza', () => {
+  const state = skarbStan();
+  tapTreasureForMana(state, 'p1', 'treas', {});
+  const skarb = [...state.objects.values()].find((o) => o.instanceId === 'i-treas');
+  assert.equal(skarb.zone, 'graveyard', 'kontrola negatywna');
 });
