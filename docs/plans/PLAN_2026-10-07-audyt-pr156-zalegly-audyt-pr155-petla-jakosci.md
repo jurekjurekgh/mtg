@@ -34,7 +34,7 @@ okazał się nierzetelny.
 
 - [x] E0. Lektura obowiązkowa + baseline (`npm test` 7750/7750, build 72/4896,6 kB).
 - [x] E1. Ten plan wypchnięty jako osobny commit + otwarty PR (ADR 0020 A).
-- [ ] E2. **Audyt PR #156** (13 plików) — przegląd każdego zmienionego pliku:
+- [x] E2. **Audyt PR #156** (13 plików) — przegląd każdego zmienionego pliku:
   - `src/engine/game-state.js` (+241/−81): sekwencyjne modale Halo Forager
     (`pendingGfc`), Treasure-mana Waveskimmer Aven (offer=payment, L48);
   - `src/engine/resources.js` (+91/−1), `effects.js`, `fingerprint.js`,
