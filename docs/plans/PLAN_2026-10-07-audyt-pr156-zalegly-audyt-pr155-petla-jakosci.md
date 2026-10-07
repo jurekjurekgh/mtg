@@ -61,11 +61,11 @@ okazał się nierzetelny.
 - [x] E4. Naprawa znalezisk z E2/E3 u root cause (jeśli będą) — każdy fix
   osobnym commitem z testem RED→GREEN; korekta rozjazdu dokumentacji
   (wpis-sprostowanie w `PROJECT_HISTORY.md`, bez przepisywania historii).
-- [ ] E5. **Pętla jakości** (ADR 0021 pkt 4): partie Żywym Testerem
+- [x] E5. **Pętla jakości** (ADR 0021 pkt 4): partie Żywym Testerem
   (naturalne końce, detektory, oś „bezsensowne działania bota / kompletność
   logu / ptaszki auto-pass") + polowanie na niezgodności z CR ścieżką inną
   niż poprzednie sesje. Bez nowych kart (ADR 0029), bez pełnego B0 (ADR 0018).
-- [ ] E6. Domknięcie: handoff `docs/setup/HANDOFF_2026-10-07.md`, opis PR
+- [x] E6. Domknięcie: handoff `docs/setup/HANDOFF_2026-10-07.md`, opis PR
   kumulacyjnie, brama końcowa (`npm test` + `npm run build`, a przed końcem
   `npm run test:all` na zamrożonym drzewie — L174, wyciszone do logu).
 
@@ -77,6 +77,16 @@ okazał się nierzetelny.
 4. Fix(y) znalezisk — każdy osobno, z testem.
 5. Pętla jakości — commit(y) napraw/detektorów.
 6. Handoff + aktualizacja planu (podsumowanie).
+
+## Zgłoszenie właściciela w trakcie sesji (poza planem)
+
+- [x] D. Pain for All: zdolność nie odpalała, gdy zaczarowany stwór ginął
+  od obrażeń (CR 603.10 looks-back aury) — fix `triggers.js`/`effects.js`,
+  piny D/1–D/3, mutacja mD1 RED.
+- [x] D1. Bot nie liczył odbitych obrażeń przy ataku w aurę — scoring
+  `declare_attackers` + pokrętła `reflectedDamageLifeRatio` (0,25 — dyrektywa
+  właściciela) / `reflectedDamageDeterrent` (25), piny D1/1–D1/4, mutacja
+  mD2 RED.
 
 ## Ryzyka i pułapki
 
