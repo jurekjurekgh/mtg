@@ -1874,8 +1874,19 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${srcName(e)}${whoN(e.playerId)} wygania ${e.count} ${polishPlural(e.count, 'kartę', 'karty', 'kart')} z wierzchu biblioteki${exiled ? `: ${exiled}` : ''}`;
       }
       case 'epic_experiment_resolved': return `${srcName(e)}${whoN(e.playerId)} kończy darmowe rzuty (${e.restToGrave} ${polishPlural(e.restToGrave, 'karta', 'karty', 'kart')} do grobu)`;
-      case 'grave_free_cast_required':
-        return `${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (${nameOf(e.sourceCardId)})`;
+      case 'grave_free_cast_required': {
+        // O2 (audyt PR #156): trzy RÓŻNE decyzje (X → karta → cele) miały
+        // IDENTYCZNY wpis — log opisywał pierwszą i milczał o dwóch kolejnych
+        // (klasa Z1c/M106: log mówi połowę prawdy). Wpis zależny od stage.
+        const zrodlo = nameOf(e.sourceCardId);
+        if (e.stage === 'card') {
+          return `${zrodlo}: ${whoN(e.playerId)} wybiera kartę do rzutu za {X}=${e.xValue} (instant/sorcery o MV ${e.xValue} z dowolnego grobu)`;
+        }
+        if (e.stage === 'target') {
+          return `${zrodlo}: ${whoN(e.playerId)} wybiera cele dla ${nameOf(e.cardId)} (rzut za {X}=${e.xValue} z grobu)`;
+        }
+        return `${zrodlo}: ${whoN(e.playerId)} może zapłacić {X} i rzucić instant/sorcery o MV X z dowolnego grobu (wybiera X)`;
+      }
       // Batch 57/B6a (Baral and Kari Zev): decyzja darmowego rzutu z ręki —
       // bez widełek MV i wspólnego typu w komunikacie gracz nie wie, czego
       // dotyczy wybór (M106/Z2).
