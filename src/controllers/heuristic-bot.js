@@ -11443,6 +11443,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             futileAttackers += 1;
           }
           score += perAttacker;
+          // D1 (zgłoszenie właściciela 2026-10-07, Pain for All): bloker
+          // z aurą odbijającą („Whenever enchanted creature is dealt damage,
+          // it deals that much damage to each opponent") — zablokowany
+          // atakujący zada obrażenia WŁASNEMU kontrolerowi (dokładnie tyle,
+          // ile sam zada zaczarowanemu blokerowi). Generycznie po
+          // deskryptorze triggera na aurze z widoku (ADR 0002), koszt przez
+          // wspólną drabinę samouszkodzenia (PMSSB-36, L41). Gdy odbicie
+          // przekracza próg udziału w życiu (domyślnie 25% — dyrektywa
+          // właściciela), dochodzi odstraszacz: atak w takiego blokera nie
+          // może być opłacalny niezależnie od wymiany (klasa L3 — kara musi
+          // przebijać premie, inaczej jest martwa).
+          const reflectBlocker = canBeBlocked && !diesBeforeDealingDamage(combatObject, candidates)
+            && candidates.some((blocker) => (view.zones.battlefield ?? []).some((aura) =>
+              aura?.attachedTo === blocker.id && aura?.kind === 'aura'
+              && (cardDef(aura.cardId)?.abilities ?? []).some((ability) =>
+                ability?.trigger?.event === 'enchanted_creature_dealt_damage')));
+          if (reflectBlocker) {
+            const reflected = Math.max(0, blockedStats.power ?? 0);
+            let reflectCost = selfLifeLossPenalty(view, reflected);
+            const life = myLife(view);
+            if (life > 0 && reflected / life > P.reflectedDamageLifeRatio) {
+              reflectCost += P.reflectedDamageDeterrent;
+            }
+            score -= reflectCost;
+          }
           // Evasion: latający atakujący omija blockerów bez flying/reach.
           if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += P.attackEvasionBonus;
           // Drenaż z triggera ataku przechodzi niezależnie od bloków.

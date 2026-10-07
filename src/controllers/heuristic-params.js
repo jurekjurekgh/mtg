@@ -33,6 +33,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
   'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
   'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
+  // Zgłoszenie D1 właściciela (2026-10-07, Pain for All): bloker z aurą
+  // odbijającą („Whenever enchanted creature is dealt damage, it deals that
+  // much damage to each opponent") — zablokowany atakujący zadaje obrażenia
+  // WŁASNEMU kontrolerowi. Koszt bazowy liczy wspólna drabina
+  // samouszkodzenia (selfLifeLossPenalty, PMSSB-36), a po przekroczeniu
+  // progu udziału w życiu dochodzi odstraszacz (klasa L3 — musi przebić
+  // premie ataku, inaczej jest martwy).
+  'reflectedDamageLifeRatio', // próg udziału odbicia w moim życiu (0,25 = 25% HP — dyrektywa właściciela)
+  'reflectedDamageDeterrent', // dodatkowa kara po przekroczeniu progu (musi przebić premie ataku)
   // E (zgłoszenie właściciela 2026-09-20): kara za ODDANIE GARDY — atak
   // tapnięciem stwora, który był potrzebny, by przeżyć następną turę
   // (crackback). Kara (nie premia), bo tylko ona niweluje dodatnią wycenę
@@ -510,6 +519,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
   attackEvasionBonus: 3,
+  // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25
+  // przebija premię wyścigu i typowe zyski ataku (power+3/+8), a zostaje
+  // poniżej samobójstwa 1000 z drabiny PMSSB-36.
+  reflectedDamageLifeRatio: 0.25,
+  reflectedDamageDeterrent: 25,
   crackbackPenalty: 12,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
