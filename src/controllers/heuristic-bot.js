@@ -3132,7 +3132,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * M257/F (znalezisko pętli jakości): usunięto gałąź 3 M218/4 — „przeciwnik
    * ma otwartą manę i removal, który MOŻE go zabić” (B3, hipergeometria).
    * To spekulacja ręki, nie pewna śmierć: regeneracja trwa do końca tury
-   * (CR 702.14), a wróg mógłby nie rzucić (albo mieć countera po drugiej
+   * (CR 701.19a), a wróg mógłby nie rzucić (albo mieć countera po drugiej
    * stronie — tarcza byłaby stratą). Reguła repo (M236/2,
    * permanentDoomedThisTurn): spekulacja „removal w ręce” jest „za mało
    * pewna”, by uznać permanent za skazany. Regenerate w G1 bez nadchodzącej
