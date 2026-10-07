@@ -55,10 +55,12 @@
     (strażniki `cr-numery.mjs`, `event-contract-audit.mjs`);
   - bez nowych kart (ADR 0029), bez pełnego B0 (ADR 0018); szybka próbka
     benchmarku tylko gdy zmieniony jest bot.
-- [ ] E4. Domknięcie: końcowa brama `npm run test:all` na zamrożonym drzewie
-  (L174), build, odświeżenie liczb „bieżącego stanu" na końcu (L92),
+- [x] E4. Domknięcie: końcowa brama `npm run test:all` na zamrożonym drzewie
+  (L174) = **8048/8048** EXIT 0 (474,9 s), build 72 moduły / 4904,0 kB EXIT 0,
   handoff `docs/setup/HANDOFF_2026-10-07b.md`, wpis PROJECT_HISTORY,
-  kumulatywny opis PR.
+  kumulatywny opis PR #158. Otwarta pozostaje JEDNA pozycja pętli jakości:
+  **E3(a) — audyt Żywym Testerem** (rekomendacja: tali the-edge, seedy na
+  regenerację; wymaga `npm i` w `tools/table-tester` + `npm run build`).
 
 ## Zgłoszenie E właściciela (2026-10-07): regeneracja jednorazowo
 
