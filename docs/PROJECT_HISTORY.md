@@ -15687,3 +15687,28 @@ przepisywana):**
 - merytoryczna treść wpisu „2026-10-05c" (opis kodu PR #155) pozostaje
   ZGODNA z kodem — potwierdził ją audyt zaległy; nieprawdziwe są wyłącznie
   cytowane ścieżki artefaktów i numery commitów.
+
+## 2026-10-07b — zgłoszenie E (regeneracja jednorazowo) + cenzus cytatów CR
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158. Handoff:
+`docs/setup/HANDOFF_2026-10-07b.md`, plan: `docs/plans/PLAN_2026-10-07b-audyt-pr157-petla-jakosci.md`.
+
+- **Zgłoszenie E** (`8395679`): bot aktywował tę samą zdolność regeneracji 3×
+  z rzędu w jednej walce (log właściciela: Magmarch 5/3 vs Ballista Watcher
+  4/3, cała mana w błoto). Przyczyna nie była „bot nie widzi tarczy" — tarcza
+  wisi wtedy jeszcze **na stosie**, a `session.py` pyta bota ponownie, bo
+  aktywacja nie oddaje priorytetu. Fix w `heuristic-bot.js` (wzorzec
+  M179/M219/M230): tarcza już na celu LUB identyczna regeneracja na stosie →
+  `finish(-30)`; cytat **CR 701.19a** ze źródła (ADR 0030). Piny E/1–E/5 w
+  `test/zgloszenie-e-regeneracja-jednorazowo.test.js`; bez fixa E/4 pokazuje
+  `aktywacje=3`.
+- **Korekta cytatu** (`7033da4`): regeneracja to CR 701.19, nie 702.14
+  (702.14 = Landwalk) — znalezisko klasy L164.
+- **Cenzus horyzontalny** (`151cadb`): 210 numerów 701/702 w repo sprawdzonych
+  przeciwko nazwom cytowanych reguł (źródła: mtg.wiki `Keyword_ability` /
+  `Keyword_action`, CR 2026-09-25) — 0 nowych rozjazdów. Znalezisko: alias
+  Landwalk `'walk'` w strażniku `cr-numery-702-tabela-straznik.test.js`
+  dopasowywał polskie „walka" (combat) i wygaszał detektor — zaweżony do
+  `'walk\b'`, dowód RED na oryginalnej linii buga.
+- Bramy: fast 7784/7784, końcowa `test:all` **8048/8048** EXIT 0 (474,9 s),
+  build 72 moduły / 4904,0 kB. Otwarte: audyt Żywym Testerem (E3a).
