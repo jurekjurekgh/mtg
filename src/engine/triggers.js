@@ -3005,6 +3005,30 @@ function processTriggersScan(state, recentEvents) {
             }
           }
         }
+        // Zgłoszenie D właściciela (2026-10-07, CR 603.10 looks-back):
+        // aura odeszła W TEJ SAMEJ komendzie co host (SBA 704.5m po
+        // śmiertelnych obrażeniach) — skan działa PO SBA, więc pętla wyżej
+        // nie widzi aury na polu bitwy, choć w chwili zdarzenia BYŁA
+        // przypięta i zdolność odpala. Wzorzec jak dla zdolności WŁASNYCH
+        // stwora (targetLki): LKI aury to obiekt po ruchu (`toId` ze
+        // zdarzenia odejścia), a przypięcie niesie `attachedTo` zdarzenia
+        // permanent_put_into_graveyard (ten sam kontrakt, który obsługuje
+        // Griffin Guide „when enchanted creature dies", M271). Aura
+        // zniszczona/odebrana PRZED obrażeniami nie odpala (kolejność).
+        for (const departure of recentEvents) {
+          if (departure.type !== 'permanent_put_into_graveyard'
+            || departure.reason !== 'aura_without_legal_host'
+            || departure.attachedTo !== ev.target) continue;
+          if (recentEvents.indexOf(departure) < recentEvents.indexOf(ev)) continue;
+          const auraLki = state.objects.get(departure.toId);
+          if (!auraLki) continue;
+          const attachment = Object.freeze({ ...auraLki, attachedTo: ev.target });
+          for (const ability of effectiveAbilities(attachment)) {
+            if (ability?.trigger?.event === 'enchanted_creature_dealt_damage') {
+              tryFire(state, ability, attachment, [], events, { damageAmount: ev.amount, damageSourceId: ev.source, enchantedHostLki: ev.targetLki ?? null });
+            }
+          }
+        }
       }
     }
     // Curiosity (ISD): „Whenever enchanted creature deals damage to an

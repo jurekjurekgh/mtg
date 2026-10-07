@@ -1616,8 +1616,11 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // fromEnchanted przenosi ŹRÓDŁO obrażeń na gospodarza aury (CR 611.2c
     // — to stwór zadaje, nie aura; istotne dla lifelinka/protection hosta).
     const amount = effect.amountFrom ? (context?.[effect.amountFrom] ?? 0) : effect.amount;
+    // Zgłoszenie D (2026-10-07): gdy host zginął razem z aurą (CR 603.10
+    // looks-back), `attachedTo` prowadzi donikąd — źródłem obrażeń jest wtedy
+    // LKI hosta z kontekstu triggera (CR 608.2g), nie aura.
     const dmgSource = effect.fromEnchanted
-      ? (state.objects.get(sourceObject.attachedTo) ?? sourceObject)
+      ? (state.objects.get(sourceObject.attachedTo) ?? context?.enchantedHostLki ?? sourceObject)
       : sourceObject;
     for (const player of state.players) {
       if (player.id === sourceObject.controllerId) continue;
