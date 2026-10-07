@@ -17,6 +17,9 @@ import { createGameState, addObject, execute } from '../src/engine/game-state.js
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
+import { applyEffect } from '../src/engine/effects.js';
+import { runStateBasedActions } from '../src/engine/state-based.js';
+import { processTriggers } from '../src/engine/triggers.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -87,4 +90,29 @@ test('D/2: Pain for All — NIEśmiertelne obrażenia w bloku nadal odbijają', 
   const blk = [...state.objects.values()].find((o) => o.instanceId === 'i-blk');
   assert.equal(blk.zone, 'battlefield', 'bloker przeżył (1 < 3)');
   assert.equal(before - after, 1, 'atakujący gracz dostaje 1');
+});
+
+test('D/3: Pain for All — niecombatowe śmiertelne obrażenia też odbijają', () => {
+  // Ta sama ścieżka skanu, ale damage_dealt bez flagi combat (efekt
+  // `damage`); host ginie, aura do grobu — looks-back ma działać tak samo.
+  const state = stan();
+  put(state, 'blk', 'giant-spider', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'aura', 'pain-for-all', 'p1', 'battlefield');
+  attachAuraToCreature(state, 'aura', 'blk');
+  const before = state.players.find((p) => p.id === 'p2').life;
+  // Odzwierciedlenie pipeline'u execute(): efekt → SBA (host i aura do grobu)
+  // → skan triggerów (looks-back widzi aurę po zdarzeniu jej odejścia).
+  const evBefore = state.events.length;
+  applyEffect(state, { type: 'damage', amount: 5 }, state.objects.get('blk'), ['blk']);
+  // SBA pushuje zdarzenia TAKŻE do state.events — slice wystarczy (podwójne
+  // podanie listy dublowałoby trigger looks-back, jak w execute() jest raz).
+  runStateBasedActions(state);
+  processTriggers(state, state.events.slice(evBefore));
+  for (let i = 0; i < 10 && state.zones.stack.length > 0; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const blk = [...state.objects.values()].find((o) => o.instanceId === 'i-blk');
+  assert.equal(blk.zone, 'graveyard', '5 obrażeń zabija 2/3');
+  const after = state.players.find((p) => p.id === 'p2').life;
+  assert.equal(before - after, 5, 'przeciwnik dostaje 5 (odbicie)');
 });
