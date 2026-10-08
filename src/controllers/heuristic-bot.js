@@ -4318,16 +4318,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
-   * PMSSB-41/B (zgłoszenie właściciela, Nanoform Sentinel): JEDNA miara
-   * wartości ODKRĘCENIA celu — dotąd dwie identyczne kopie (czar Twiddle
-   * i aktywacja), a trigger `self_becomes_tapped` nie miał jej WCALE i wyceniał
-   * cel gałęzią wrogą („odkręć ląd przeciwnika"). Wartość ma wyłącznie własny
-   * TAPNIĘTY stwór (wraca bloker/atakujący); ląd i tak odkręca się w untap
-   * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama liczba
-   * w trzech ścieżkach (czar, aktywacja, trigger).
-   */
-  /**
-  /**
    * H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „{X}{B}, {T}, Pay X
    * life: This creature endures X" — wartość X NIE jest liniowa w koszcie.
    * Właściciel: „co kolejkę tworzy za 1 życia spirit 1/1... mógłby stworzyć
@@ -4349,12 +4339,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * bezpiecznym budżecie życia (próg `lifePayThreshold`) — inaczej karta
    * degraduje do „1/1 za 1 życia co kolejkę", czyli dokładnie do zgłoszenia.
    *
-   * Endure ma DWA tryby (CR 701.63): liczniki na ŹRÓDŁE (rozmiar = źródło + X)
+   * Endure ma DWA tryby (CR 701.63): liczniki na ŹRÓDLE (rozmiar = źródło + X)
    * albo token X/X (rozmiar = X). Tryb wybiera kontroler przy ROZSTRZYGANIU,
    * więc wycena aktywacji bierze LEPSZY z nich — dla źródła 2/2 i wrogiej 5/5
    * liczniki dają 6/6 już za X=4, a token dopiero 5/5 za X=5 (ten sam efekt,
    * mniej życia — druga połowa uwagi właściciela).
    */
+  // Próg budżetu życia przy koszcie „Pay X life" (H) — zadeklarowany PRZED
+  // pierwszym konsumentem: `endureBodyValue` woła go w gałęzi „przeciwnik nie ma
+  // ciał", a `const` przed inicjalizacją to TDZ (ReferenceError przy trafieniu
+  // w tę gałąź). Wycena aktywacji liczy się LENIWIE, więc do PR #158 nie było
+  // wywrotki, ale kolejność była o krok od awarii (audyt PR #158, F-2).
+  const lifePayThreshold = (view) => Math.max(1, Math.floor(myLife(view) * P.payLifeXThreshold));
   const endureBodyValue = (view, size) => {
     const foes = enemyCreatures(view);
     const need = foes.length === 0
@@ -4370,8 +4366,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const sourceSize = source ? Math.max(source.power ?? 0, source.toughness ?? 0) : 0;
     return Math.max(endureBodyValue(view, sourceSize + n), endureBodyValue(view, n));
   };
-  const lifePayThreshold = (view) => Math.max(1, Math.floor(myLife(view) * P.payLifeXThreshold));
-
+  /**
+   * PMSSB-41/B (zgłoszenie właściciela, Nanoform Sentinel): JEDNA miara
+   * wartości ODKRĘCENIA celu — dotąd dwie identyczne kopie (czar Twiddle
+   * i aktywacja), a trigger `self_becomes_tapped` nie miał jej WCALE i wyceniał
+   * cel gałęzią wrogą („odkręć ląd przeciwnika"). Wartość ma wyłącznie własny
+   * TAPNIĘTY stwór (wraca bloker/atakujący); ląd i tak odkręca się w untap
+   * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama liczba
+   * w trzech ścieżkach (czar, aktywacja, trigger).
+   */
   const untapTargetValue = (view, victim) => {
     if (!victim) return 0;
     const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
@@ -8723,7 +8726,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (ping) { etbPingSpec = ability.trigger.requiresTarget; etbPingAmount = ping.amount ?? 1; break; }
         }
         if (etbPingSpec) {
-          // G (zgłoszenie właściciela 2026-10-08): gdy wręg nie ma STWORA, ping
+          // G (zgłoszenie właściciela 2026-10-08): gdy wróg nie ma STWORA, ping
           // obowiązkowo trafia we własne ciało — bot zabijał swojego stwora,
           // tracił 1 życie i nic nie zyskiwał. Kara = ciało najtańszej ofiary
           // (0, gdy własne ciało wchłonie obrażenia); pusty stół daje karę 80
@@ -12711,7 +12714,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // 4/4, który tej wrogiej 5/5 nie przeżyje. Token dostaje premię za
         // DRUGIE ciało (chump-blocker/atakujący obok źródła), ale tylko
         // wtedy, gdy sam jest wystarczająco duży — przy małym N wygryzają
-        // liczniki na źródłe.
+        // liczniki na źródle.
         const liczniki = endureBodyValue(view, sourceSize + n);
         const token = endureBodyValue(view, n) + P.endureTokenBodyPremium;
         return finish(cmd.mode === 'token' ? token : liczniki);
@@ -14193,8 +14196,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_food_choice') {
       return `resolve_food_choice(${cmd.sacrifice ? 'sacrifice' : 'keep'})`;
     }
-    // H (zgłoszenie włałaściciela 2026-10-08, Krumar Initiate): tryby endure
-    // (liczniki na źródłe albo token Spirit) mają RÓŻNE noty zależne od N,
+    // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): tryby endure
+    // (liczniki na źródle albo token Spirit) mają RÓŻNE noty zależne od N,
     // więc bez wariantu w etykiecie ślad pokazywał „resolve_endure_choice” × 2
     // i audyt remisów nie miał czego parować (ta sama klasa L34/L40 co
     // M195/B / M203/2 / PMSSB-41/C).

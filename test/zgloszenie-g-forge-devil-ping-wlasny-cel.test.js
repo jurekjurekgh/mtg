@@ -147,10 +147,10 @@ test('G/2d: PUSTY stół (jedyny cel = sam wchodzący) — odmowa (pin M103/A)',
 });
 
 // =============================================================================
-// G/3 — precyzja celu: wręg z SAMYM artefaktem nie jest celem pingu
+// G/3 — precyzja celu: wróg z SAMYM artefaktem nie jest celem pingu
 // =============================================================================
 
-test('G/3: wręg ma artefakt, ale nie stwora — ping i tak zmuszony we własne ciało', () => {
+test('G/3: wróg ma artefakt, ale nie stwora — ping i tak zmuszony we własne ciało', () => {
   const s = scena({ own: [['my11', 1, 1]] });
   put(s, 'foeart', 'warmaker-gunship', 'p2', 'battlefield', { kind: 'artifact' });
   const { cmd } = decyzja(s);
