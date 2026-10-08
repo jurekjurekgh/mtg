@@ -3271,3 +3271,65 @@ karta w ręce, realny bloker naziemny = anty-over-fix, beginning_of_combat,
 menace, flyer/reach, okno obronne, postcombat, E2E). Mutacje mJ1–mJ5 czerwienią
 właściwe piny (mJ2 — „zero zamiast kary" — łapie wyłącznie jałowy efekt, stąd
 osobny test J/2c ze zbędną kartą).
+
+## L183 (2026-10-08) — Sztuczka bojowa (flash) ma WYMIAŁ OKNA: kara wyzerowuje wycenę, nie „przebija" bazę stałą
+
+**Przypadek:** (zgłoszenie K, Village Bell-Ringer „Flash / When this creature
+enters, untap all creatures you control.", 1/4 za 3 many) właściciel: karty z
+flash mają być promowane jako COMBAT TRICK — bot ma ŚWIADOMIE nie rzucać
+kreatury z flash w swojej turze (lądy nietknięte, mana trzymana), ma ją
+wystawiać PO deklaracji atakujących przeciwnika (zaskoczenie blokiem), a gdy
+wróg nie atakował — w Głównej 2 przeciwnika, żeby mana nie wyparowała.
+
+Pomiar PRZED (sonda `.arena/probe-k-bellringer.mjs`; bot = p1 z Bell-Ringerem w
+ręce, 4 lądy + 3 many w puli):
+
+| scena | wybór PRZED | nota cast |
+|---|---|---|
+| main1 bota, wróg 2/4 nietapnięty | **cast** | +67,5 |
+| main1 bota, wróg 4/4 + 3/3 | **cast** | +67,5 |
+| tura wroga, `beginning_of_combat` | **cast** | +71,1 |
+| tura wroga, `declare_attackers` (atak 2/4) | cast | +71,1 |
+| tura wroga, `declare_blockers` (atak 2/4) | **cast** | +71,1 |
+| tura wroga, `main2` (wróg nie atakował) | cast | +71,1 |
+
+Rozkład noty: ciało 70 + P 2 + T 4 − mana 4 + ETB 3 = 75, × waga rodziny
+`permanent` 0,9 = 67,5, + parytet stworów 4 × 0,9 = 71,1.
+
+**Przyczyna:** baza ciała (~70) znosiła KAŻDY wariant rzutu — wycena nie pytała o
+OKNO. W konsekwencji bot rzucał sztuczkę w swojej Głównej 1 (odsłaniając ją
+przeciwnikowi, CR 302.6: bez haste kreatura nie atakuje w tej turze) i po
+deklaracji blokujących (gdzie wchodzące ciało nie jest już zadeklarowanym
+blokerem, CR 509.1a). ETB „untap all creatures you control" było płaskie 3 —
+wartość bez wymiaru (L50/L131), choć w turze przeciwnika stwory bota są NADAL
+TAPNIĘTE (odkręca je wyłącznie właściciel w swoim kroku odkręcenia, CR 502.3),
+więc to ETB realnie oddaje blokera.
+
+**Reguła:** gdy wartość karty zależy od OKNA, wycenę karty (ciało + ETB +
+parytet) WYZERUJ i obniż o margines (`Math.min(score,0) - param`), nie odejmuj
+stałej od noty — stała nie przebije bardzo silnego ETB (L3). Epsilon ma ZAOSTAĆ
+poniżej passu, żeby różnicował karty z flash (L48; kroki wyceny ≥ 0,1, więc
+epsilon nigdy nie odwraca realnej różnicy). Okno po deskryptorze
+(`flash` + `Creature`, ADR 0002) i ze stanu `PlayerView` (ADR 0017):
+- „za wcześnie" = każdy krok własnej tury oraz tura przeciwnika przed
+  `declare_attackers` (wróg dopiero wybiera, z czym atakować) i po
+  `declare_blockers`;
+- jedyny krok obronny to `declare_attackers` i tylko gdy kreatura realnie może
+  zablokować któregoś atakującego (`attackerCanBeBlocked` — flying/reach/menace,
+  CR 509.1b + M202/H);
+- post-combat (`main2`/`end`/`cleanup`) dozwolony (CR 500.5: mana wyparowuje).
+Wyjątki: `haste` (kreatura realnie atakuje w tej turze), `entersWithCountersIf`
+(warunek wejścia zależy od STANU tury) oraz brak możliwości opłacenia kosztu z
+nietapniętych lądów później (mana jednorazowa — skarb/tap ciała nie przeżyje
+odroczenia). ETB liczone po kreaturze (suma `untapTargetValue` po TAPNIĘTYCH
+własnych stworach) tylko w oknach, gdzie odkręcenie daje NOWĄ akcję: blok w
+cudzej turze (bramka `cantBlock`) i atak we własnym `precombat_main`/`combat`
+(bramka `canAttackNow`); poza nimi 0.
+
+**Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js` (16 scenów:
+K/1–K/13). Pomiar PO: main1 bota → pass (−9,0), lądy nietknięte, mana 3 w puli;
+`beginning_of_combat` wroga → pass; `declare_attackers` z naziemnym atakującym →
+cast (68,4; z tapniętym 3/3 = 77,4 = ETB 8+2×3); `declare_blockers` → poniżej
+passu; `main2` wroga bez ataku → cast. E2E: bot trzyma kartę w main1, rzuca w
+`declare_attackers` i BLOKUJE nią 2/4 — 0 obrażeń w bota. Dowód mutacyjny
+mK1–mK10: każda mutacja wyłącza konkretne testy.

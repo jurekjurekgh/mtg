@@ -15860,6 +15860,52 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
   `docs/plans/PR_158_OPIS.md` (`.arena/pr-body.txt` ginie przy resecie
   sandboxa) — wniosek z poprzedniego resetu.
 
+## 2026-10-08 — zgłoszenie K: Village Bell-Ringer i kreatury z flash jako COMBAT TRICK
+
+- **Zgłoszenie**: karty z flash mają być promowane przez scoring jako sztuczka
+  bojowa. 1) W własnej turze bota, gdy jest mana na kreaturę z flash — bot
+  ŚWIADOMIE jej nie rzuca, lądy zostają nietknięte (mana trzymana). 2) W turze
+  przeciwnika PO deklaracji atakujących taka kreatura wchodzi (bot nic nie traci,
+  mana się nie marnuje) i ma szansę zaskoczyć przeciwnika blokiem. 3) ETB
+  Bell-Ringera (odtapowanie własnych stworów) ma być częścią wartości tej gry.
+  4) Jeśli przeciwnik nie zaatakował — kreatura wchodzi w Głównej 2 przeciwnika,
+  żeby nie zmarnować zostawionej na nią many.
+- **Przyczyna**: baza ciała (~70) znosiła każdy wariant rzutu — wycena nie pytała o
+  OKNO, więc bot rzucał sztuczkę w każdym kroku (także po deklaracji blokujących,
+  gdzie wchodzące ciało nie jest już blokerem, CR 509.1a) i w własnej Głównej 1
+  (CR 302.6: bez haste kreatura nie atakuje w tej turze). ETB „untap all creatures
+  you control” było płaskie 3 — wartość bez wymiaru. Klasa awarii: **L50/L131** +
+  **L48**.
+- **Fix** (po deskryptorach flash + Creature, ADR 0002; wyłącznie z PlayerView,
+  ADR 0017; wspólne dla 7 kreatur z flash w rejestrze, L41):
+  flashCreatureCastTooEarly(view, def, card) — rzut jest „za wcześnie” w każdym
+  kroku własnej tury i w turze przeciwnika przed declare_attackers oraz po
+  declare_blockers; jedyny krok obronny to declare_attackers i tylko gdy
+  kreatura realnie może zablokować atakującego (attackerCanBeBlocked — CR 509.1b
+  + M202/H); post-combat dozwolony (CR 500.5). Wyjątki: haste,
+  entersWithCountersIf, koszt nieopłacalny z nietapniętych lądów później.
+  Kara okna: Math.min(score,0) - P.flashCreatureEarlyWindowPenalty (nowy parametr,
+  10) — wycena karty WYZEROWANA, więc nawet bardzo silne ETB nie wróci ponad pass
+  (L3), a epsilon nadal różnicuje karty z flash (L48). ETB „untap all creatures you
+  control”: płaskie 3 → untapAllCreaturesValue (suma untapTargetValue po
+  TAPNIĘTYCH własnych stworach, tylko tam, gdzie odkręcenie daje NOWĄ akcję — blok w
+  cudzej turze z bramką cantBlock, atak we własnym precombat/combat z bramką
+  canAttackNow; CR 502.3).
+- **Efekt**: main1 bota → **pass** (−9,0; lądy nietknięte, mana 3 w puli);
+  beginning_of_combat wroga → pass; declare_attackers z naziemnym atakującym →
+  **cast** (68,4; z tapniętym własnym 3/3 = 77,4 = ETB 8+2×3); atak LATAJĄCY → pass
+  (brak reakcji); declare_blockers → poniżej passu; main2 wroga bez ataku →
+  **cast**. E2E: bot trzyma kartę w main1, rzuca w declare_attackers i BLOKUJE nią
+  2/4 — 0 obrażeń w bota.
+- Testy K/1–K/13 (16 scenów), dowód mutacyjny: mK1–mK10, każda mutacja wyłącza
+  konkretne testy. Cytaty CR 302.6 / 509.1a / 502.3 / 500.5 zweryfikowane przy
+  źródle (SHA-256 8d860e45…); 500.5 dopisany do tabeli numerów procedurą
+  cr-numery.mjs --zapisz, cytaty CR 500.4 w module many ujednolicone do 500.5.
+- Bramy: fast **7853/7853** EXIT 0, test:slow **264/264** EXIT 0, pełny pakiet
+  **8117/8117** EXIT 0 (było 8101 — +16 testów K), build 72 moduły / 4935,8 kB
+  EXIT 0, cr-numery OK (516 numerów / 5551 cytatów). Lektura startowa po lekcji L183:
+  **99 985 tokenów** (zapas 15; skrócenia wg kontraktu AGENTS.md §0).
+
 ## 2026-10-08 — zgłoszenie J: Fledgling Imp — latanie aktywowane bez powodu
 
 - **Zgłoszenie**: „{B}, Discard a card: This creature gains flying until end of

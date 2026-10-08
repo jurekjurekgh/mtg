@@ -229,3 +229,64 @@ Raport: `docs/audits/AUDYT_PR157_2026-10-07.md`; plan:
   tokenów (ćzerwone CI na commicie dokumentacyjnym) — zapłacono skróceniem
   istniejących wpisów (AGENTS.md §0 + L5/L55/L58/L60/L106/L134, bez utraty
   faktów). Lektura: **99 728** tokenów (zapas 272).
+## Sekcja K (2026-10-08) — Village Bell-Ringer i kreatury z flash jako COMBAT TRICK
+
+**Zgłoszenie właściciela:** „Karty z flash mają być promowane przez scoring jako
+COMBAT TRICK. 1) W własnej turze bota, gdy jest mana na kreaturę z flash — bot
+ŚWIADOMIE jej nie rzuca; lądy zostają NIEZATAPIANE (mana trzymana). 2) W turze
+przeciwnika, PO deklaracji atakujących — taka kreatura wchodzi (bot nic nie
+traci, mana się nie marnuje) i ma szansę ZASKOCZYĆ przeciwnika blokiem, mimo że
+przeciwnik myślał, że przejdzie. 3) ETB Bell-Ringera (odtapowanie własnych
+stworów) ma być częścią wartości tej gry. 4) Jeśli przeciwnik NIE zaatakował —
+kreatura wchodzi w GŁÓWNEJ 2 przeciwnika, żeby nie zmarnować zostawionej na nią
+many."
+
+**Karta:** Village Bell-Ringer (ISD, 1/4 za 3 many, `keywords: ['flash']`,
+trigger ETB `untap_all_creatures_you_control`, status `supported` — ADR 0022).
+Reguła po deskryptorach (`flash` + `Creature`, ADR 0002) — obejmuje wszystkie 7
+kreatur z flash w rejestrze, nie tylko tę kartę.
+
+**Przyczyna:** baza ciała (~70) znosiła każdy wariant rzutu — wycena nie pytała o
+OKNO. Pomiar PRZED: bot rzucał kreaturę z flash w KAŻDYM kroku (main1 własny
++67,5; beginning_of_combat / declare_attackers / declare_blockers / main2 wroga
++71,1). ETB odkręcające było płaskie 3 — wartość bez wymiaru. Klasa awarii:
+**L50/L131** + **L48**.
+
+**Fix** (`src/controllers/heuristic-bot.js` + `heuristic-params.js`):
+- `flashCreatureCastTooEarly(view, def, card)` — rzut „za wcześnie" w każdym
+  kroku własnej tury (CR 302.6) oraz w turze przeciwnika przed
+  `declare_attackers` i po `declare_blockers` (CR 509.1a). Jedyny krok obronny:
+  `declare_attackers` **i** tylko gdy kreatura realnie może zablokować któregoś
+  atakującego (`attackerCanBeBlocked` — flying/reach/menace, CR 509.1b + M202/H).
+  Post-combat (`main2`/`end`/`cleanup`) dozwolony (CR 500.5). Wyjątki: haste,
+  `entersWithCountersIf`, koszt nieopłacalny z nietapniętych lądów później.
+- Kara okna: `Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty` (nowy
+  parametr, domyślnie 10) — wycena karty WYZEROWANA, więc nawet bardzo silne ETB
+  nie wróci ponad pass (L3); epsilon nadal różnicuje karty z flash (L48).
+- ETB `untap_all_creatures_you_control`: płaskie 3 → `untapAllCreaturesValue`
+  (suma `untapTargetValue` po TAPNIĘTYCH własnych stworach, tylko w oknach dających
+  NOWĄ akcję: blok w cudzej turze z bramką `cantBlock`, atak we własnym
+  precombat/combat z bramką `canAttackNow`; CR 502.3).
+
+**Efekt:** main1 bota → **pass** (−9,0; lądy nietknięte, mana trzymana w puli);
+`beginning_of_combat` wroga → pass; `declare_attackers` z naziemnym atakującym →
+**cast** (68,4; z tapniętym własnym 3/3 = 77,4 = ETB 8+2×3); atak LATAJĄCY →
+pass (brak reakcji); `declare_blockers` → poniżej passu; `main2` wroga bez ataku
+→ **cast**. E2E: bot trzyma kartę w main1, rzuca w `declare_attackers` i BLOKUJE
+nią 2/4 — 0 obrażeń w bota. Rodziny inne niż kreatury nietknięte: vanilla bez
+flash, aura ochronna (M235), artefakt bez celu.
+
+**Testy:** `test/zgloszenie-k-flash-combat-trick.test.js` (16 scenów K/1–K/13).
+Dowód mutacyjny: mK1–mK10, każda mutacja wyłącza konkretne testy. Cytaty CR
+dosłowne z mirroru (CR 2026-09-25, SHA-256 `8d860e45…`, ADR 0030): **302.6**,
+**509.1a**, **502.3**, **500.5** (nowy numer w tabeli `cr-numery`; cytaty
+`CR 500.4` w module many ujednolicone do 500.5).
+
+- Bramy: fast **7853/7853** EXIT 0, `test:slow` **264/264** EXIT 0, pełny pakiet
+  `node tools/run-tests.mjs all` **8117/8117** EXIT 0, build 72 moduły /
+  4935,8 kB EXIT 0, cr-numery OK. Plan:
+  `docs/plans/PLAN_2026-10-08-zgloszenie-k-flash-combat-trick.md`.
+- **Budżet lektury startowej** (L66): wpis L183 wypchnął lekturę ponad próg 100k
+  tokenów — zapłacono skróceniem istniejących wpisów (kanoniczny wzorzec wpisu
+  L183, AGENTS.md §0, mapa klas; pełna narracja L183 w
+  `docs/LESSONS_PRZYPADKI.md`). Lektura: **99 985** tokenów (zapas 15).

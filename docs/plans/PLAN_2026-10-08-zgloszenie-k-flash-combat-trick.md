@@ -163,3 +163,75 @@ liczbą, nie oknem).
   odwraca realnej różnicy — kroki wyceny ≥ 0,1); testy mają tolerancję 0,01.
 - **`declare_blockers` po stronie wroga** nie jest oknem rzutu — kreatura
   wchodząca w tym kroku nie jest blokerem (CR 509.1a), test K/6.
+
+## Podsumowanie wykonania (2026-10-08)
+
+**Fix w `src/controllers/heuristic-bot.js` + `src/controllers/heuristic-params.js`:**
+
+| etap | co zrobiono | gdzie |
+|---|---|---|
+| E2a/E2b | `flashCreatureCastTooEarly(view, def, card)` — kreatura z flash bez haste jest „za wcześnie" w każdym kroku własnej tury (CR 302.6) i w turze przeciwnika przed `declare_attackers` (odsłonięcie marnuje zaskoczenie) oraz po `declare_blockers` (CR 509.1a). Jedyny krok obronny: `declare_attackers` **i** tylko gdy kreatura realnie może zablokować któregoś atakującego (`attackerCanBeBlocked` — flying/reach/menace, CR 509.1b + M202/H). Post-combat dozwolony (CR 500.5). Wyjątki: haste, `entersWithCountersIf`, koszt nieopłacalny z nietapniętych lądów później (nowa opcja `landsOnly` w `manaUnitsOfView`). | przed `keywordGrantWindowValue` (wzorzec M179/A1) |
+| E2c/E2d | Kara okna w bloku `cast_permanent` (przed epsilionem): `score = Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty`. Wycena karty WYZEROWANA — nawet bardzo silne ETB nie wróci ponad pass (L3), epsilon nadal różnicuje karty z flash (L41/L48). Nowy parametr `flashCreatureEarlyWindowPenalty: 10` (lista kluczy + domyślna + pin). | `heuristic-params.js`, pin w `test/bot-params.test.js` |
+| E3 | ETB `untap_all_creatures_you_control`: płaskie 3 → `untapAllCreaturesValue(view)` (suma `untapTargetValue` po TAPNIĘTYCH własnych stworach, tylko w oknach dających NOWĄ akcję: blok w cudzej turze z bramką `cantBlock`, atak we własnym precombat/combat z bramką `canAttackNow`; poza nimi 0). | obok `untapTargetValue` (ta sama miara, L41) |
+
+**Pomiar PO** (ta sama sonda `.arena/probe-k-bellringer.mjs`):
+
+| scena | przed | po | wybór po |
+|---|---|---|---|
+| main1 bota, wróg 2/4 nietapnięty | cast +67,5 | −9,0 | **pass** ✓ |
+| main1 bota, wróg 4/4 + 3/3 | cast +67,5 | −9,0 | **pass** ✓ |
+| main1 bota + własny 3/3 do ataku | cast +67,5 | −9,0 | **pass** ✓ |
+| tura wroga, `beginning_of_combat` | cast +71,1 | −9,0 | **pass** ✓ |
+| tura wroga, `declare_attackers` (atak 2/4) | cast +71,1 | **68,4** | **cast** ✓ |
+| tura wroga, `declare_attackers`, atak LATAJĄCY 3/3 | cast | −9,0 | **pass** ✓ (brak reakcji) |
+| tura wroga, `declare_blockers` | cast +71,1 | −9,0 | poniżej passu ✓ |
+| tura wroga, `main2` (bez ataku) | cast +71,1 | **68,4** | **cast** ✓ |
+| `declare_attackers` + TAPNIĘTY własny 3/3 | — | **77,4** | cast (ETB = 8+2×3 = 14, ×0,9) |
+
+E2E (`.arena/probe-k-e2e4.mjs`): bot trzyma kartę w main1 (lądy nietknięte, mana
+3 w puli) → wróg atakuje 2/4 → bot rzuca Bell-Ringera w `declare_attackers` →
+bot deklaruje go blokerem → walka: **0 obrażeń w bota**, oba stwory na stole.
+
+**Testy:** `test/zgloszenie-k-flash-combat-trick.test.js` — 16 scenów (K/1, K/1b,
+K/2, K/3, K/4, K/4b, K/5-latający, K/6-po blokerach, K/7-main2 wroga, K/8-ETB po
+kreaturze, K/8b-cantBlock, K/9-ETB poza oknem, K/10-E2E, K/11-vanilla bez flash,
+K/12-aura M235, K/13-artefakt bez celu).
+
+**Dowód mutacyjny** (`.arena/k-mutations.mjs`; mutacje na kopiach, po każdej
+przywrócenie oryginału; pass/fail dla 16 testów):
+
+| mutacja | czerwone testy |
+|---|---|
+| mK1: usunięta kara okna | K/1, K/1b, K/2, K/3, K/5, K/6, K/10 |
+| mK2: kara bez wyzerowania wyceny (tylko −10 do noty) | K/1, K/1b, K/2, K/3, K/5, K/6, K/10 |
+| mK3: brak pytania o blokowalność atakujących | K/5 |
+| mK4: okno obronne rozszerzone na `declare_blockers` | K/6 |
+| mK5: okno obronne rozszerzone na własną turę | K/1, K/1b, K/2, K/10 |
+| mK6: `untapAllCreaturesValue` płaskie (3) | K/8 |
+| mK7: `untapAllCreaturesValue` ignoruje `cantBlock` | K/8b |
+| mK8: `untapAllCreaturesValue` liczy poza oknem | K/9 |
+| mK9: reguła dotyka też nie-kreatur (artefakt bez celu) | K/13 |
+| mK10: reguła dotyka kreatur bez flash | K/11 |
+
+**Uwaga o cytatach CR:** nowe cytaty **500.5** (mana wyparowuje na końcu kroku)
+oraz **502.3** (odkręca się wyłącznie w kroku odkręcenia WŁASNEJ tury) dopisane
+do tabeli `test/helpers/cr-numery-tabela.js` procedurą
+`node tools/cr-numery.mjs --zapisz --cr <plik CR>` — strażnik istnienia
+(`test/cr-numery-istnienie-straznik.test.js`) czerwienił, dopóki numeru 500.5 nie
+było w zweryfikowanej tabeli. Dotychczasowe cytaty `CR 500.4` w module many
+(zmieniające znaczenie w bieżącym wydaniu) ujednolicone do 500.5.
+
+**Bramka:** fast **7853/7853** EXIT 0; `npm run test:slow` EXIT 0 (264/264);
+pełny pakiet `node tools/run-tests.mjs all` **8117/8117** EXIT 0 (było 8101 —
++16 testów K); build 72 moduły / **4935,8 kB** EXIT 0;
+`node tools/cr-numery.mjs` OK (516 numerów / 5551 cytatów). Bez pełnego B0
+(ADR 0018); zmiana dotyczy wyłącznie wyceny bota.
+
+**Budżet lektury (AGENTS.md §0):** nowa lekcja L183 wypchnęła lekturę ponad próg
+100k. Zgodnie z kontraktem (procedura M284/PR #93) skrócono istniejące wpisy bez
+usuwania faktów (karty, testy, numery CR): kanoniczny wzorzec wpisu L183
+(Objaw/Przyczyna → archiwum), AGENTS.md §0 (blok czytania, audytu pkt 2, „czego
+nie czytasz", mapa klas „~1150 razy"), normalizacja podwójnych pustych linii w
+rejestrze. Pełna narracja L183 (pomiar PRZED/PO, rozkład noty, zasada okna,
+dowód mutacyjny) jest w `docs/LESSONS_PRZYPADKI.md`. Wynik: **99 985 tokenów**
+(zapas 15).
