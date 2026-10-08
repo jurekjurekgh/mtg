@@ -15744,3 +15744,36 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
   Uwaga techniczna: sandbox startowy był zresetowany do commitu bazowego
   (`1222754`) — praca dosypana na wierzch zdalnej gałęzi rebase'em logicznym
   (`git reset --mixed origin/…`), bez force push (ADR 0020 D).
+
+## 2026-10-08 — zgłoszenie G (Forge Devil: OBOWIĄZKOWY ETB-ping skazany na własne ciało)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-g-forge-devil-ping-wlasny-cel.md`.
+
+- **Zgłoszenie G**: Forge Devil („it deals 1 damage to target creature and 1
+  damage to you\") — bot wystawiał go, gdy jedynym celem pingu była jego własna
+  1/1: zabijał własnego stwora, tracił 1 życia, nic nie zyskiwał. Pomiar przed
+  fixem: własna 1/1 tylko → cast **62,1** (powyżej passu 0).
+- **Przyczyna**: strażnik M103/A bronił wyłącznie PUSTEGO stołu — bramka „jest
+  jakikolwiek stwór na stole" (`anyCreatureOnBoard`) przepuszczała własne
+  ciało; premia ETB za obrażenia nie odróżniała „biję wroga" od „muszę bić
+  siebie". Klasa awarii: **L14** (bramka zastępcza zamiast warunku).
+- **Fix**: nowy helper `etbForcedOwnPingPenalty` (`heuristic-bot.js`) — liczy
+  OFIARY pingu przez `publicEtbTargets` + `controllerId`: cel wrogi → 0,
+  własne ciało, które wchłonie obrażenia (indestructible też) → 0, spłoną
+  wszyscy (własne stwory + sam wchodzący, CR 603.6a) → kara = ciało najtańszej
+  ofiary (CR 704.5g/702.12b), brak kandydatów → 80 jak w M103/A. Blok M103/A
+  przepisany na detektor OBOWIĄZKOWEGO pingu (bez `mayFire` — odmowa jest
+  darmowa; kwota nie-liczbowa → 0). Generycznie po deskryptorze `requiresTarget`
+  (ADR 0002), wycena tylko z `PlayerView` (ADR 0017).
+- **Efekt**: własna 1/1 tylko → pass (−3,6); dwie własne 1/1 → pass; 1/1 z
+  obrażeniami → pass; własna 3/3 i 2/2 (wchłaniają) → cast 62,1 ✓; wróg ma
+  stwora → cast 64,8 (pin M103/A); pusty stół → pass (pin M103/A); wróg ma
+  tylko artefakt → pass (−0,9, przed fixem błędnie cast 64,8); Reclusive
+  Artificer (trigger opcjonalny) → cast 63,9 bez kary. Testy G/1–G/5 (10
+  scenów), dowód mutacyjny: mG1 8/2, mG2 9/1, mG3 9/1; mG4/mG5 równoważne
+  (dwie gałęzie defensywne — w katalogu obie karty w detektorze są stworami,
+  a jedyna `mayFire` ma kwotę dynamiczną).
+- Bramy: fast **7801/7801** EXIT 0, piny Forge Devil 13/13. Cytaty CR 603.6a,
+  702.12b, 704.5g pobrane z mirroru (SHA-256 `8d860e45…`) — wszystkie już w
+  tabeli cytatów.
