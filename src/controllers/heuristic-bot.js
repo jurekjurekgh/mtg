@@ -10630,7 +10630,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 : pumpChangesOutcome(view, recipient, pumpNow);
               if (!pumpOk) value -= 26 + pGain;
             }
-            if (!inCombat && myTurn(view)) value -= 26;
+            // PMSSB-59/B (F2): kara „poza walką w mojej turze" jest pisana dla
+            // sztuczek INSTANT-speed — te zawsze można odłożyć do walki, więc
+            // wcześniejsza aktywacja niczego nie kupi. Zdolność z ograniczeniem
+            // sorcery NIE MA późniejszego okna (w walce własnej tury i w turze
+            // przeciwnika jest nielegalna — CR 307.1), więc ta sama kara
+            // wyceniała JEDYNE legalne okno jak błąd. Pomiar (seed 2026):
+            // Brave-Kin Duo „{1}, {T}: celowy stwor +1/+1 do końca tury,
+            // activate only as a sorcery" = −28 w main1 (jedyna faza), pass = 0
+            // → bot nigdy nie użył zdolności. Zamiast kary: pump sorcery-speed
+            // ma wartość tylko wtedy, gdy bot REALNIE zamierza atakować w tej
+            // turze i odbiorca może dołączyć (inaczej +1/+1 wygasa w cleanup,
+            // CR 514.2, a źródło zostaje tapnięte — ten sam argument co wyżej).
+            const sorceryPump = ability?.timing === 'sorcery';
+            if (!inCombat && myTurn(view) && !sorceryPump) value -= 26;
+            if (!inCombat && myTurn(view) && sorceryPump) {
+              const recipientJoinsAttack = Boolean(recipient)
+                && recipient.controllerId === view.playerId
+                && canAttackNow(recipient)
+                && intendsToAttackThisTurn(view);
+              if (!recipientJoinsAttack) value -= 26;
+              // PMSSB-59/B: pump, który zamienia atak w LETALNY, jest warty
+              // zamknięcia partii — bez tego bot przepuszczał jedyne okno, w
+              // którym +1 mocy wygrywa grę (kara za tap źródła przebijała
+              // zysk, więc zdolność wychodziła na remisie z passem). Moc
+              // liczymy tym samym rachunkiem co deklaracja ataku
+              // (`intendsToAttackThisTurn` — L41/L48), skala jak dla
+              // „zbliża się lethal" (P.counterLethalClockBonus).
+              if (recipientJoinsAttack && pGain > 0) {
+                const sentPower = myCreatures(view)
+                  .filter((o) => canAttackNow(o) && (o.power ?? 0) > 0 && attackIntendsCreature(view, o.id))
+                  .reduce((sum, o) => sum + combatPower(o), 0);
+                const foeLife = enemy(view)?.life ?? 0;
+                if (sentPower < foeLife && sentPower + pGain >= foeLife) value += P.counterLethalClockBonus;
+              }
+            }
             // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
             // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
             // na stwora, ktory nikogo nie blokowal.
@@ -10642,9 +10676,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // patologia B1: bot pumpował w beginning_of_combat i stał
               // z tapowanymi stworem, przegrywając deck-outem.
               if (view.turn.step === 'declare_blockers' && !myTurn(view)) value += 2 * pGain;
-              // Pump kosztem tapu na stworze gotowym do ataku (main/combat
-              // własnej tury) kosztuje utratę tego ataku — zwykle się nie opłaca.
-              if (source?.kind === 'creature' && taps && canAttackNow(recipient)) value -= (recipient.power ?? 0) + 3;
+              // PMSSB-59/B (F2): utratę ataku za koszt {T} liczymy na
+              // TAPNIĘTYM permanencie (ŹRÓDLE), nie na odbiorcy pumpu.
+              // Komentarz wyżej mówi o „stworze gotowym do ataku", którym jest
+              // właśnie źródło — odbiorca (inny stwór) atakuje dalej, więc
+              // doliczanie jego ataku do kosztu podwajało karę dla zdolności
+              // pompującej kogoś innego. Pomiar: Duo −28 = −26 (sorcery, wyżej)
+              // − (2+3) (atak ODBIORCY, którego tapnięcie nie rusza) + 2 (pump).
+              // Kara tylko przy ZAMIARZE ataku tym źródłem (M195/B — inaczej
+              // płacimy za atak, który i tak by się nie odbył).
+              if (source?.kind === 'creature' && taps && canAttackNow(source)
+                && attackIntendsCreature(view, source.id)) value -= (source.power ?? 0) + 3;
               // M195/B (uwaga właściciela, Ghost Warden): trick bojowy użyty
               // NA SAMYM SOBIE kosztem {T}. Bot tapował Ghost Wardena w swojej
               // fazie walki, żeby dać sobie +1/+1 — stwór i tak nie atakował
