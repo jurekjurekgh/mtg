@@ -647,6 +647,22 @@ function stackEntryEffects(entry) {
  * kopie tych efektów realnie dodają wartość (np. druga kopia 3 obrażeń zabija
  * większe ciało). CR 707.10 (kopia czaru) + CR 702.21a (ward pyta każdą kopię).
  */
+/**
+ * M146 (+ I, zgłoszenie właściciela 2026-10-08 — Wrap in Flames): typy
+ * efektów, których CAŁA wartość siedzi w efekcie na konkretnym celu — czar
+ * złożony wyłącznie z nich startuje PONIŻEJ passu (−1), nie od bazy
+ * `spellBase` 50, bo inaczej baza niosłaby go ponad pass przy bezcelowym
+ * lub jałowym wyborze. Wrapper „each of up to N targets" zaliczamy, gdy
+ * KAŻDY jego wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ
+ * kwocie (obrażenia skalujące z maną wartości same w sobie nie mają).
+ */
+const UTILITY_EFFECT_TYPES = new Set([
+  'tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
+  'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
+  'creatures_cant_block_this_turn',
+  'buff_opponents_creatures', 'buff_creatures_you_control',
+]);
+
 const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
   'gain_control_until_end_of_turn', 'gain_control',
   'destroy_permanent', 'exile_permanent', 'exile_target_creature',
@@ -983,6 +999,39 @@ function enemyHasUntappedFlyingOrReachBlocker(view) {
       !o.tapped &&
       !o.cantBlock &&
       ((o.keywords ?? []).includes('flying') || (o.keywords ?? []).includes('reach')),
+  );
+}
+
+/**
+ * J (zgłoszenie właściciela 2026-10-08, Fledgling Imp „{B}, Discard a card:
+ * This creature gains flying until end of turn."): czy przeciwnik ma
+ * NIETAPNIĘTEGO stwora, który bez latania ZABLOKOWAŁBY `recipient`.
+ *
+ * Latanie jest ewazją (CR 702.9b: „A creature with flying can't be blocked
+ * except by creatures with flying and/or reach"), więc zmienia ono coś
+ * WYŁĄCZNIE wtedy, gdy obrońca ma takiego blokera. Gdy wszystkie kreatury
+ * wroga są tapnięte (CR 509.1a: „The chosen creatures must be untapped…"),
+ * nie blokują (CR 509.1b), albo wróg nie ma w ogóle stworów — atak przejdzie
+ * i tak, a grant latania nic nie kupuje. Przeciwnik nie odkręca swoich
+ * stworów w mojej turze (CR 502.3: odkręcenie jest wyłącznie w kroku
+ * odkręcenia WŁASNEJ tury), więc stan z main1/beginning_of_combat jest stanem
+ * z momentu deklaracji blokerów — decyzja nie może „poczekać na lepszy moment"
+ * dla tego wymiaru.
+ *
+ * Idzie przez `attackerCanBeBlocked` (CR 509.1b + M202/H): menace, ewazja
+ * mocowa i `cantBlock` blokera są liczone TĄ SAMĄ regułą co w wycenie ataku
+ * (L41 — bliźniacze gałęzie nie mogą się rozjeżdżać), nie osobnym liczeniem
+ * keywordów.
+ */
+function enemyHasUntappedGroundBlockerFor(view, recipient) {
+  if (!recipient) return false;
+  return (view.zones.battlefield ?? []).some(
+    (o) =>
+      o.controllerId !== view.playerId &&
+      o.kind === 'creature' &&
+      !o.tapped &&
+      !o.cantBlock &&
+      attackerCanBeBlocked(recipient, [o]),
   );
 }
 
@@ -1911,7 +1960,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     take_initiative: () => 6,
     amass: () => 6,
     fabricate: () => 8,
-    untap_all_creatures_you_control: () => 3,
+    // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): wartość
+    // odkręcenia liczymy PO KREATURZE (a nie płasko), bo odkręcenie ma sens
+    // wyłącznie tam, gdzie odkręcony stwór od razu zyskuje akcję — szczegół w
+    // `untapAllCreaturesValue` (L50/L131: wartość bez wymiaru).
+    untap_all_creatures_you_control: (e, view) => untapAllCreaturesValue(view),
     animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
     // PMSSB-15/F4: ETB-prewencji (Shieldmage) — okno wartości liczone dla
     // moich pasujących stworów, które realnie oberżą (walka/burn na stosie);
@@ -1949,6 +2002,50 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     mill_cards: (e) => 20 + 3 * (e.amount ?? 1),
     mill_from_bottom: (e) => 20 + 3 * (e.amount ?? 1),
   });
+  /**
+   * G (zgłoszenie właściciela 2026-10-08, Forge Devil): kara za OBOWIĄZKOWY
+   * ping ETB, który MUSI trafić we WŁASNE ciało. Trigger „deals N damage to
+   * target creature" z celem typu `creature` (obejmuje własnych) nie ma wyjścia,
+   * gdy wróg nie ma STWORA. Liczymy więc OFIARY (a nie „czy jest jakikolwiek
+   * stwór na stole" — ta bramka z M103/A była za gruba i przepuszczała własne
+   * ciało):
+   *  - wróg ma legalny cel → 0 (ping idzie w niego),
+   *  - jest własne ciało, które N przetrwa → 0 (obrażenia wchłonięte;
+   *    właściciel: „w najgorszym razie bot będzie miał kogoś, kto może wchłonąć
+   *    ten damage"),
+   *  - SPŁONĄ wszyscy kandydaci (własne stwory + sam wchodzący — trigger
+   *    rozstrzyga się, gdy permanent już jest na polu, CR 603.6a, i silnik
+   *    oferuje go jako cel) → kara = ciało najtańszej ofiary (CR 704.5g), czyli
+   *    dokładnie tyle, ile gałąź rzutu dodała za wchodzące ciało,
+   *  - brak legalnego celu w ogóle → trigger fizzluje, kara M103/A (80).
+   * Generycznie po deskryptorze `requiresTarget` (ADR 0002); P/T, obrażenia i
+   * keywordy z `PlayerView` (ADR 0017). Kwota NIEliczbowa (wariant dynamiczny,
+   * np. `artifacts_you_control`) nie jest wyliczana z widoku — wtedy 0, bez
+   * wymyślania (w katalogu obowiązkowy ping ma kwotę stałą).
+   */
+  const etbForcedOwnPingPenalty = (view, def, spec, amount) => {
+    const dmg = Number.isInteger(amount) ? amount : 0;
+    const source = { ...def, cardId: def?.id, controllerId: view.playerId };
+    const cands = publicEtbTargets(view, spec, source);
+    // Cel po stronie PRZECIWNIKA (stwor albo gracz — `objectOnBoard` daje null
+    // dla gracza) zawsze istnieje → ping nie jest skazany na wlasne cialo.
+    if (cands.some((id) => (objectOnBoard(view, id)?.controllerId ?? id) !== view.playerId)) return 0;
+    // Dojscie tutaj = WSZYSTKIE kandydaty sa po naszej stronie, wiec filtr
+    // kontrolera bylby bezdziedzny (wczesny return juz to zagwarantowal).
+    const own = cands.map((id) => objectOnBoard(view, id)).filter((o) => o);
+    const entering = (def?.types ?? []).includes('Creature')
+      ? [{ power: def.power ?? 0, toughness: def.toughness ?? 0, keywords: def.keywords ?? [] }]
+      : [];
+    const victims = [...own, ...entering];
+    if (victims.length === 0) return 80;
+    const burns = (o) => dmg > 0
+      && (o.damage ?? 0) + dmg >= (o.toughness ?? 0)
+      && !hasKeyword(o, 'indestructible'); // CR 702.12b — nie ginie
+    if (victims.some((o) => !burns(o))) return 0;
+    return Math.min(...victims.map((o) => P.creatureBase
+      + (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight));
+  };
+
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
@@ -3132,7 +3229,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * M257/F (znalezisko pętli jakości): usunięto gałąź 3 M218/4 — „przeciwnik
    * ma otwartą manę i removal, który MOŻE go zabić” (B3, hipergeometria).
    * To spekulacja ręki, nie pewna śmierć: regeneracja trwa do końca tury
-   * (CR 702.14), a wróg mógłby nie rzucić (albo mieć countera po drugiej
+   * (CR 701.19a), a wróg mógłby nie rzucić (albo mieć countera po drugiej
    * stronie — tarcza byłaby stratą). Reguła repo (M236/2,
    * permanentDoomedThisTurn): spekulacja „removal w ręce” jest „za mało
    * pewna”, by uznać permanent za skazany. Regenerate w G1 bez nadchodzącej
@@ -3634,6 +3731,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // top (odzyska kartę doborem), więc pesymistycznie liczymy top.
     ['owner_library_top_or_bottom', P.bounceLibraryTopBonus],
     ['bounce_to_library_bottom', P.bounceLibraryBottomBonus],
+  ]);
+  // PMSSB-59/A (F1): zestaw twardego removalu WYCIĄGNIĘTY z wnętrza ścieżki
+  // czarów na poziom modułu, bo ta sama rodzina musi być wyceniana w ścieżce
+  // ZDOLNOŚCI aktywowanych (Universal Solvent: „{7}, {T}, poświęć: zniszcz
+  // celowy permanent"). Wcześniej ścieżka zdolności nie miała tej listy
+  // w ogóle, więc twarde usuwanie nie dostawało PREMII za cel wroga: bot
+  // płacił koszt zdolności i nie dostawał niczego — remis z passem.
+  // ADR 0002 (po typie efektu, nie po nazwie karty); L41 (bliźniacze gałęzie
+  // rozdzielone świadomie, jeden zestaw typów).
+  const REMOVAL_EFFECTS = new Set([
+    'destroy_permanent', 'destroy_if_least_power',
+    'destroy_artifact_gain_life_mana_value',
+    'exile_permanent', 'exile_target_creature',
+    'bounce_permanent', 'bounce_to_library_top',
+    'bounce_to_library_bottom',
+    // PMSSB-1/A (F7): Vanish from Sight też jest removalem
+    // (top/bottom właściciela) — bez wpisu czar nie skalował
+    // wartością celu (remis 38/38 w sondzie S10).
+    'owner_library_top_or_bottom',
   ]);
   const bounceEffectStrengthBonus = (effectType) => BOUNCE_STRENGTH.get(effectType) ?? 0;
   // PMSSB-1/B: aura-delta wyjęta ze wspólnego mianownika (L41) — ten sam
@@ -4144,9 +4260,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * generic) — DOKŁADNIE ten kształt, co `expandManaPool` i `matchColorRequirements`
    * w silniku (L41/L48: jedno rozwiązanie, nie druga arytmetyka).
    */
-  const manaUnitsOfView = (view, { artifactSpell = false } = {}) => {
+  const manaUnitsOfView = (view, { artifactSpell = false, landsOnly = false } = {}) => {
     const me = view.players?.find((p) => p.id === view.playerId) ?? {};
-    const units = [
+    // K: `landsOnly` = WYŁĄCZNIE nietapnięte lądy — mana, która przetrwa do tury
+    // przeciwnika (pula wyparowuje na końcu kroku, CR 500.5, a lądy zostają
+    // nietknięte, bo bot ich nie tapał). Potrzebne do decyzji „czy odroczenie rzutu
+    // karty z flash jest darmowe”.
+    const units = landsOnly ? [] : [
       ...expandManaPool(me.manaPool ?? {}),
       // M201/M214: pula ograniczona drukiem jest dla celu nie-artefaktowego
       // niewidoczna — ta sama bramka co `restrictedManaBlocked` w resources.js.
@@ -4206,6 +4326,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama liczba
    * w trzech ścieżkach (czar, aktywacja, trigger).
    */
+  /**
+  /**
+   * H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „{X}{B}, {T}, Pay X
+   * life: This creature endures X" — wartość X NIE jest liniowa w koszcie.
+   * Właściciel: „co kolejkę tworzy za 1 życia spirit 1/1... mógłby stworzyć
+   * potwora typu 5/5 który zblokowałby wszelkie moje stwory (zamiast 5 razy
+   * tworzyć 1/1 za te same 5 życia stworzyłby 5/5) albo mógłby siebie dopakować
+   * +3/+3 counterami i mieć ten sam efekt. Tak myślę, że optymalnie to byłoby
+   * stworzyć spirit token albo siebie dopakować tak, żeby mieć kreaturę o power
+   * większym niż toughness mojego największego stwora albo toughness większy
+   * niż power mojego największego stwora (do blokowania)".
+   *
+   * Reguła generyczna (ADR 0002 — deskryptor efektu `endure_x` + koszt
+   * `payLifeX`, bez nazw kart; ADR 0017 — P/T i życie wyłącznie z PlayerView):
+   * cel ROZMIARU to ciało, które przeżyje największe ciało przeciownika
+   * (`need` = max(P, T) wroga + 1 — „power większy niż toughness albo
+   * toughness większa niż power"). Punkty do `need` mają pełną wagę ciała
+   * (P×2 + T×1, L41); powyżej `need` rozmiar jest wciąż ciałem, ale waży
+   * MNIEJ niż koszt życia za punkt — bot nie przepłaca. Gdy przeciwnik nie ma
+   * ciał, nie ma czego przeżywać, więc celem jest największe ciało w
+   * bezpiecznym budżecie życia (próg `lifePayThreshold`) — inaczej karta
+   * degraduje do „1/1 za 1 życia co kolejkę", czyli dokładnie do zgłoszenia.
+   *
+   * Endure ma DWA tryby (CR 701.63): liczniki na ŹRÓDŁE (rozmiar = źródło + X)
+   * albo token X/X (rozmiar = X). Tryb wybiera kontroler przy ROZSTRZYGANIU,
+   * więc wycena aktywacji bierze LEPSZY z nich — dla źródła 2/2 i wrogiej 5/5
+   * liczniki dają 6/6 już za X=4, a token dopiero 5/5 za X=5 (ten sam efekt,
+   * mniej życia — druga połowa uwagi właściciela).
+   */
+  const endureBodyValue = (view, size) => {
+    const foes = enemyCreatures(view);
+    const need = foes.length === 0
+      ? lifePayThreshold(view)
+      : Math.max(...foes.map((o) => Math.max(o.power ?? 0, o.toughness ?? 0))) + 1;
+    const useful = Math.min(size, need);
+    return useful * (2 * P.creaturePowerWeight + P.creatureToughnessWeight)
+      + Math.max(0, size - useful) * P.endureOversizeWeight;
+  };
+  const endureXValue = (view, x, source) => {
+    const n = Number.isInteger(x) && x > 0 ? x : 0;
+    if (n === 0) return -20; // jałowa aktywacja (X=0) — karta i mana w błoto
+    const sourceSize = source ? Math.max(source.power ?? 0, source.toughness ?? 0) : 0;
+    return Math.max(endureBodyValue(view, sourceSize + n), endureBodyValue(view, n));
+  };
+  const lifePayThreshold = (view) => Math.max(1, Math.floor(myLife(view) * P.payLifeXThreshold));
+
   const untapTargetValue = (view, victim) => {
     if (!victim) return 0;
     const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
@@ -4213,6 +4379,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return (!isLand && victim.tapped) ? 8 + 2 * (victim.power ?? 0) : -4;
     }
     return -25; // odkręcanie wroga — zawsze złe
+  };
+
+  /**
+   * K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer — „Flash… When this
+   * creature enters, untap all creatures you control.”): wartość ETB
+   * „odkręć wszystkie twoje stwory” liczona PO KREATURZE, nie płasko. Dotąd stałe 3
+   * niezależnie od stołu — wartość bez wymiaru (L50/L131).
+   *
+   * Odkręcenie ma wartość WYŁĄCZNIE wtedy, gdy odkręcony stwór od razu zyskuje akcję,
+   * której tapnięcie mu zabierało:
+   *  - BLOK w cudzej turze (atakujący zadeklarowani / nadlatują) — bot atakował w
+   *    własnej turze, a odkręca się wyłącznie właściciel własnego permanentu w KROKU
+   *    ODRKĘCENIA WŁASNEJ tury (CR 502.3), więc w turze przeciwnika jego stwory są
+   *    NADAL TAPNIĘTE i wejście Bell-Ringer'a oddaje je do gry jako blokery;
+   *  - ATAK we własnej turze przed deklaracją atakujących (stwór tapnięty pod
+   *    manę/zdolność wraca do planu ataku).
+   * Poza tymi oknami stwór odkręciłby się i tak we własnym kroku odkręcania — efekt
+   * jałowy (0), nie premia. Miara pojedynczego odkręcenia to TA SAMA drabina co w
+   * czarze/zdolności odkręcającej (`untapTargetValue`, L41), plus bramka `cantBlock`
+   * w oknie obronnym (odkręcony, ale i tak nie blokuje — CR 509.1b).
+   */
+  const untapAllCreaturesValue = (view) => {
+    const step = view.turn.step;
+    const defensive = !myTurn(view)
+      && ['beginning_of_combat', 'declare_attackers', 'declare_blockers'].includes(step);
+    const offensive = myTurn(view) && ['precombat_main', 'combat'].includes(view.turn.phase);
+    if (!defensive && !offensive) return 0;
+    let total = 0;
+    for (const o of myCreatures(view)) {
+      if (!o.tapped) continue;
+      if (defensive && o.cantBlock) continue;
+      if (offensive && !canAttackNow(o)) continue;
+      total += untapTargetValue(view, o);
+    }
+    return total;
   };
 
   /** Czy kartę da się opłacić CAŁĄ z tych jednostek (liczba + pipy, także {C})? */
@@ -4275,7 +4476,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /**
    * E6/A1 (zgłoszenie właściciela, Moonscarred Werewolf): kandydat na
    * ODBLOKOWANIE many liczy się tylko, gdy jest RZUTOWALNY W TYM KROKU —
-   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.4), więc tap w
+   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.5), więc tap w
    * cudzym upkeepie pod sorcery/stwora (nielegalne poza własną główną,
    * CR 307.1/117.1a) odblokowuje nic. Instant rzucisz w każdym kroku,
    * gdy masz priorytet (CR 307.5). Wspólna lista dla M167/D (early-return)
@@ -4680,6 +4881,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * dobicie pod-rannego małym ciosem premiowane. SIEBIE/własny stwór = zakaz.
    * Pełna prewencja / tarcza pochłaniająca cios = 0 zadanych → strata.
    */
+  // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): JEDEN predykat
+  // „te obrażenia ZABIJĄ ten cel" dla czarów, zdolności i TRIGGERÓW (L41) —
+  // dotąd śmiertelność liczyła tylko gałąź czaru, a trigger zobrażeniowy
+  // (Warmaker/Reclusive Artificer) widział wyłącznie rozmiar celu, więc wolał
+  // 2/4 (38) nad 1/1 (33) i marnował zdolność. CR 704.5g: obrażenia są
+  // śmiertelne, gdy naniesione wcześniej + te ≥ wytrzymałości (planswalker
+  // ginie przy lojalności 0 — CR 704.5i). P rewencja cofa śmiertelność
+  // (CR 615.6 — „if damage that would be dealt is prevented, it never
+  // happens"), indestructible też (CR 702.12b — „aren't destroyed by lethal
+  // damage"). Kontroler celu nie gra roli: ten sam test służy wrogowi (premia)
+  // i własnemu stworowi (kara).
+  const damageIsLethal = (view, targetId, amount) => {
+    const amt = Number.isInteger(amount) ? amount : 0;
+    if (amt <= 0) return false;
+    const t = objectOnBoard(view, targetId);
+    if (!t) return false;
+    if (damageFullyPrevented(view, t) || shieldedAmount(view, t.id) >= amt) return false;
+    if (hasKeyword(t, 'indestructible')) return false;
+    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
+      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
+    return amt >= remaining && remaining > 0;
+  };
+
+  // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): wartość
+  // ŚMIERTELNYCH obrażeń w wrogiego stwora = usunięcie ciała ze stołu. JEDNA
+  // formuła dla czarów/zdolności (`damageTargetValue`) i dla wrappera
+  // „1 obrażenie KAŻDEMU z celów" (`wrapTargetsValue`) — L41: dwie kopie
+  // tej samej reguły rozjeżdżają się po cichu.
+  const lethalEnemyCreatureValue = (view, t) => P.removalEnemyBase
+    + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
+    + enemyRemovalTargetBonus(view, t);
+
   const damageTargetValue = (view, targetId, amount, scaling = false) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     const foe = enemy(view);
@@ -4700,10 +4933,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
     if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
-    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
-      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
-    const lethal = amt >= remaining && remaining > 0;
-    if (lethal) {
+    if (damageIsLethal(view, targetId, amt)) {
       if (scaling) {
         // Skalujący zasób (Fireball, Consume Spirit) marnujemy tylko na TANIEGO
         // chumpa BEZ znaczenia. Wart zabicia (model właściciela), gdy:
@@ -4723,8 +4953,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // trzyma skalujący zasób zamiast marnować go na tani chumpa.
         if (!worth) return -90;
       }
-      return P.removalEnemyBase + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
-        + enemyRemovalTargetBonus(view, t);
+      return lethalEnemyCreatureValue(view, t);
     }
     // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
     // osobno); poza walką CZYSTA STRATA — zakaz.
@@ -5349,8 +5578,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let score = 0;
     if (effect?.type !== 'apply_to_each_target') return 0;
     const inner = Array.isArray(effect.effects) ? effect.effects : [];
-    const hasDamage = inner.some((x) => x?.type === 'damage');
+    const damageLegs = inner.filter((x) => x?.type === 'damage');
+    const hasDamage = damageLegs.length > 0;
     const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
+    // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): „can't block"
+    // we wrapperze ma wartość WYŁĄCZNIE w oknie ataku (CR 509.1b: zakaz
+    // blokowania liczy się przy deklaracji blokerów). Poza oknem, na ciele
+    // tapniętym albo już nieblokującym efekt jest jałowy — 0, nie kara
+    // (obrażenia w tym samym rzucie mogą i tak zabijać, a kara odcinałaby
+    // legalny zysk — L121). Ten sam odczyt okna co payoff triggera (PMSSB-40, L41).
+    const attackIds = hasCantBlock ? attackWindowAttackerIds(view) : null;
     // M233/2 (audyt Żywym Testerem, Sea God's Scorn): wrapper może nieść
     // efekt USUWAJĄCY permanent (bounce/destroy/exile). Bez wyceny celu
     // odbicie WŁASNEGO stwora zostawało na bazie 50 i bot odbijał
@@ -5372,8 +5609,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const t3 = objectOnBoard(view, slot);
         if (!t3) continue;
         const mine = t3.controllerId === view.playerId;
-        if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
-        else if (hasCantBlock) score += mine ? -10 : 8;
+        // Obrażenia per cel: wroga — Śmiertelne = usunięcie ciała (ta sama
+        // formuła co czar/zdolność, L41), NIEśmierelne = 0 (chip sam w sobie
+        // nic nie wart; „can't block" w tym samym rzucie jedzie za darmo, więc nie
+        // karzemy — inaczej karta byłaby bezużyteczna przy ataku). Własny cel:
+        // jak dotąd strata (moje ciało, obrażenia je ranią).
+        if (hasDamage) {
+          const dmg = damageLegs.reduce((sum, leg) => sum
+            + (Number.isInteger(leg.amount) ? leg.amount : 0), 0);
+          if (mine) score -= 60;
+          else if (damageIsLethal(view, t3.id, dmg)) score += lethalEnemyCreatureValue(view, t3);
+        }
+        // Rider „can't block" liczy się OSOBNO od obrażeń: oba efekty wrappera
+        // stosują się do KAŻDEGO celu (jak w silniku), a stary `else if` gubił
+        // ridera, gdy oba były w deskryptorze.
+        if (hasCantBlock) {
+          if (mine) score -= 10;
+          else if (attackIds && !t3.tapped && !t3.cantBlock) {
+            score += cantBlockRemovalValue(view, t3, attackIds) ?? 0;
+          }
+        }
         if (hasRemoval) {
           // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
           // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
@@ -6591,6 +6846,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * I (zgłoszenie właściciela 2026-10-08, Wrap in Flames) — JEDEN odczyt OKNA
+   * ATAKU dla każdego efektu „ten stwór nie może blokować w tej turze" (L41:
+   * ta sama reguła w obu bliźniaczych gałęziach). Zwraca listę MOICH
+   * atakujących, dla których usunięcie blokera coś wart, albo `null`, gdy
+   * bot w tej turze NIE zamierza atakować — wtedy efekt nie kupuje nic
+   * (CR 509.1b: zakaz blokowania ma znaczenie wyłącznie przy deklaracji
+   * blokerów, więc „can't block" po walce albo w cudzej turze jest jałowy).
+   *
+   * Okno: (a) walka już zadeklarowana MOIM atakiem, albo (b) precombat
+   * (main1 / beginning_of_combat) z ciałem, które MOŻE teraz atakować
+   * (nietapnięte, bez choroby przywołania, moc > 0) — choroba przywołania
+   * wyłącza zamiar, bo stwór nie zadeklaruje ataku w tej turze (CR 302.6).
+   * Druga główna faza i tura przeciwnika celowo nie wchodzą do okna.
+   */
+  const attackWindowAttackerIds = (view) => {
+    const combat = view.combat ?? null;
+    const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
+      && (combat.attackers ?? []).length > 0;
+    const ableAttackers = () => myCreatures(view)
+      .filter((c) => canAttackNow(c) && combatPower(c) > 0);
+    if (declaredAttack) return combat.attackers ?? [];
+    const preAttackWindow = myTurn(view)
+      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
+      && ableAttackers().length > 0;
+    return preAttackWindow ? ableAttackers().map((c) => c.id) : null;
+  };
+
+  /**
    * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
    * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
    * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
@@ -6599,16 +6882,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * wroga (best-of — jak best-of-targets przy rzucie z ręki).
    */
   function cantBlockPayoffValue(view) {
-    const combat = view.combat ?? null;
-    const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
-      && (combat.attackers ?? []).length > 0;
-    const preAttackWindow = !declaredAttack && myTurn(view)
-      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
-      && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
-    if (!declaredAttack && !preAttackWindow) return 0;
-    const ids = declaredAttack
-      ? (combat.attackers ?? [])
-      : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
+    const ids = attackWindowAttackerIds(view);
+    if (!ids || ids.length === 0) return 0;
     let best = 0;
     for (const blocker of enemyCreatures(view)) {
       if (blocker.tapped || blocker.cantBlock) continue;
@@ -7086,6 +7361,66 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer i inne kreatury z
+   * flash): kreatura z flash to SZTUCZKA BOJOWA — jej wartość siedzi w ZASKOCZENIU,
+   * nie w ciele na stole. Właściciel: „bot ma w swojej turze manę na rzucenie kreatury z
+   * flash, ale świadomie tego nie robi — lądy zostają nietknięte. Gdy następuje tura
+   * przeciwnika i przeciwnik atakuje, w tym momencie (po deklaracji atakujących)
+   * wchodzi taki Village Bell-Ringer. Bot nic nie traci, bo mana się nie marnuje, a
+   * wystawiając go w ten sposób ma szansę zaskoczyć przeciwnika, zablokować mimo, że
+   * przeciwnik myślał, że przejdzie. Jeśli przeciwnik nie zaatakował, Bell-Ringer
+   * powinien wejść w Główną 2 przeciwnika, żeby nie zmarnowała się mana.”
+   *
+   * Reguła po deskryptorze (ADR 0002: keyword `flash` na kreaturze, zero nazw kart):
+   * rzut jest ZA WCZEŚNIE (= kara), gdy
+   *  - to WŁASNA tura — kreatura bez haste nie może atakować w tej turze (CR 302.6:
+   *    choroba przywołania), więc rzut teraz nie daje tempa, a odsłania sztuczkę
+   *    przeciwnikowi; ciało i tak będą na stole przed jego turą;
+   *  - to tura przeciwnika PRZED deklaracją atakujących (upkeep/draw/main1/
+   *    beginning_of_combat) — wróg dopiero wybiera, z czym atakować, i widzi naszą
+   *    kartę na stole — zaskoczenie przepada;
+   *  - to tura przeciwnika PO deklaracji blokujących (declare_blockers, combat_damage,
+   *    end_of_combat) — kreatura wchodząca w tym kroku NIE jest zadeklarowanym
+   *    blokerem (CR 509.1a), więc okno zaskoczenia już minęło.
+   * Jedyny moment, w którym rzut MA sens ofensywnie-defensywny: krok
+   * `declare_attackers` w turze przeciwnika — atakujący są już zadeklarowani, a blokerów
+   * jeszcze nie ma, więc kreatura wchodzi jako UKRYTY bloker. Razem z post-combatem
+   * (main2/end/cleanup), gdzie rzut ratuje kartę i manę przed wyparowaniem (CR 500.5).
+   *
+   * Wyjątki (rzut zostaje własnej turze dopuszczony):
+   *  - `haste` — kreatura realnie atakuje w tej turze, więc odroczenie kosztuje tempo;
+   *  - `entersWithCountersIf` (morbid/adamant) — warunek wejścia zależy od STANU
+   *    tury, a własna Główna 2 może być jedynym oknem, w którym zostanie spełniony;
+   *  - brak many na później — gdy kosztu nie da się zapłacić z nietapniętych lądów (bot
+   *    polegałby na skarbie/tapie ciała), odroczenie = UTRATA many, nie oszczędność.
+   */
+  function flashCreatureCastTooEarly(view, def, card) {
+    if (!def || !hasKeyword(def, 'flash')) return false;
+    const isCreature = card?.kind === 'creature'
+      || (card?.types ?? []).includes('Creature')
+      || (def.types ?? []).includes('Creature');
+    if (!isCreature) return false; // aury/artefakty mają własną regułę okna (M235/M258)
+    if (hasKeyword(def, 'haste')) return false;
+    if (def.entersWithCountersIf) return false;
+    // Mana musi przetrwać: lądy nietknięte (bot ich nie tapał), więc koszt da się
+    // zapłacić ponownie w turze przeciwnika. Jednorazowe źródła (skarb, tap ciała)
+    // odroczenia nie przeżyją — wtedy rzut teraz jest lepszy niż utrata karty.
+    if (!canCastWithUnits(manaUnitsOfView(view, { landsOnly: true }), card)) return false;
+    if (myTurn(view)) return true;
+    const step = view.turn.step;
+    if (['main2', 'end', 'cleanup'].includes(step)) return false; // po walce wroga: karta wchodzi, mana by wyparowała
+    if (step !== 'declare_attackers') return true;
+    // Jedyne okno zaskoczenia: atakujący zadeklarowani, blokerów jeszcze nie ma.
+    // Gdy żaden z nich nie jest blokowalny przez TWÓJ kreaturę (wszystko z flying,
+    // a my bez reach), sztuczka jest jałowa — czekamy na Główną 2 przeciwnika.
+    const incoming = { controllerId: view.playerId, keywords: def.keywords ?? [], cantBlock: false };
+    return !(view.combat?.attackers ?? []).some((id) => {
+      const attacker = objectOnBoard(view, id);
+      return attacker && attackerCanBeBlocked(attacker, [incoming]);
+    });
+  }
+
+  /**
    * M179/A1 + M218/3 (zlecenie właściciela 2026-08-26): wartość grantu
    * keywordów-do-EOT dla WŁASNEGO stwora — WSPÓLNE dla zdolności i czarów.
    *
@@ -7115,29 +7450,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         value += (hasFlyingAttackers && canBlock
           && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
       } else if (kw === 'flying') {
+        // J (zgłoszenie właściciela 2026-10-08, Fledgling Imp „{B}, Discard a
+        // card: This creature gains flying until end of turn."): latanie jest
+        // EWAZJĄ (CR 702.9b: „A creature with flying can't be blocked except by
+        // creatures with flying and/or reach"), więc zmienia coś TYLKO wtedy, gdy
+        // obrońca ma NIETAPNIĘTEGO blokera NAZIEMNEGO, który bez latania
+        // ZABLOKOWAŁBY tego stwora. Gdy wszystkie kreatury wroga są tapnięte
+        // (CR 509.1a: „The chosen creatures must be untapped…"), nie blokują
+        // (CR 509.1b) albo wroga nie ma w ogóle — atak przejdzie i tak, a grant
+        // latania nie kupuje NIC, a kosztuje manę i kartę z ręki (CR 701.9a:
+        // odrzucona karta idzie do grobu). Wróg nie odkręca swoich stworów w
+        // mojej turze (CR 502.3: odkręcenie jest wyłącznie w kroku odkręcenia
+        // własnej tury), więc stan z main1/beginning_of_combat jest stanem z
+        // momentu deklaracji blokerów — „poczekaję na lepszy moment” nie istnieje.
+        // Efekt jałowy = kara (jak duplikat keywordu), NIE zero: baza zdolności
+        // +2 minus mana muszą zejść poniżej passu (L3).
+        const groundBlocker = enemyHasUntappedGroundBlockerFor(view, recipient);
         // M218/3: flying na ATAKUJĄCYCH gdy wróg NIE MA latających/reach —
         // wtedy atakujący staje się nieblokowalny (CR 702.9 + 509.1b).
         // Na BLOKUJĄCYCH — jak reach: tylko gdy nadlatuje flying.
         if (attacking) {
-          // Już atakuje: jeśli wróg ma flyera/reach, który może zablokować,
-          // latanie nie czyni go nieblokowalnym — brak wartości (kara, żeby
-          // nie palić many na efekt jałowy — L3).
-          value += hasUntappedFlyingBlocker ? -10 : 2 + (recipient.power ?? 0);
+          // Już atakuje: latanie ma wartość wyłącznie gdy istnieje bloker
+          // naziemny, którego ewazja realnie omija. Odpowiedź w powietrzu
+          // (flyer/reach) albo brak blokerów = efekt jałowy.
+          value += groundBlocker && !hasUntappedFlyingBlocker
+            ? 2 + (recipient.power ?? 0) : -10;
         } else if (blocking) {
           // Już blokuje — za późno na nadanie reach/flying.
           value += -10;
         } else if (view.turn.step === 'declare_blockers' && hasFlyingAttackers) {
-          // Okno obrony: nie jest jeszcze blokerem, ale może nim zostać.
+          // Okno obrony: nie jest jeszcze blokerem, ale może nim zostać. Tu
+          // latanie NIE jest jałowe — wróg właśnie atakuje z powietrza i bez
+          // ewazji ten stwór nie mógłby go zablokować (kryterium właściciela:
+          // „albo gdy chce tym impem blokować kogoś z lataniem").
           const canBlock = !recipient.tapped && !recipient.cantBlock;
           value += canBlock ? 8 : -10;
         } else if (myTurn(view) && canAttackNow(recipient)
           && ['precombat_main', 'combat'].includes(view.turn.phase)) {
           // Przed własnym atakiem: latanie ma sens tylko gdy wróg nie ma
-          // odpowiedzi w powietrzu.
-          value += hasUntappedFlyingBlocker ? -2 : 2 + (recipient.power ?? 0);
+          // odpowiedzi w powietrzu ORAZ ma kogo postawić na ziemi.
+          value += hasUntappedFlyingBlocker ? -2
+            : (groundBlocker ? 2 + (recipient.power ?? 0) : -10);
         } else {
           value -= 10;
         }
+
       } else if (['first_strike', 'double_strike', 'deathtouch', 'trample'].includes(kw)) {
         // M218/3: first strike / double strike / deathtouch / trample mają
         // wartość tylko gdy ZMIENIAJĄ wynik toczącej się wymiany (helper
@@ -8348,19 +8705,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (targets.length === 0) return finish(-60);
         }
         // M103/A (zgłoszenie właściciela): obowiązkowy ETB trigger „obrażenia
-        // celowemu stworowi + obrażenia kontrolerowi" (Forge Devil) przy
-        // PUSTYM stole ma jedyny legalny cel — samego wchodzącego stwora:
-        // stwór ginie, kontroler traci życie, karta i mana zmarnowane.
-        // Generycznie (ADR 0002): trigger wejścia z requiresTarget creature
-        // i efektami damage + damage_to_controller.
-        const etbPingAndSelfPain = (def?.abilities ?? []).some((a) => {
-          if (a?.type !== 'triggered' || a.trigger?.event !== 'enter_battlefield') return false;
-          if (a.trigger?.requiresTarget?.type !== 'creature') return false;
-          const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
-          return effs.some((e) => e?.type === 'damage') && effs.some((e) => e?.type === 'damage_to_controller');
-        });
-        const anyCreatureOnBoard = [...myCreatures(view), ...enemyCreatures(view)].length > 0;
-        if (etbPingAndSelfPain && !anyCreatureOnBoard) score -= 80;
+        // celowemu stworowi (+ obrażenia kontrolerowi)" (Forge Devil) — dotąd
+        // bronił tylko PUSTEGO stołu, gdzie jedynym legalnym celem jest sam
+        // wchodzący stwór: ginie, kontroler traci życie, karta i mana
+        // zmarnowane. Generycznie (ADR 0002): trigger wejścia z requiresTarget
+        // `creature` i efektem damage, bez „may" (inaczej trigger jest opcjonalny
+        // i odmowa jest darmowa — Reclusive Artificer). Spec i kwotę nosimy
+        // dalej, bo G liczy kary po OFIARACH, nie po pustce stołu.
+        let etbPingSpec = null;
+        let etbPingAmount = 0;
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+          if (ability.trigger?.mayFire === true) continue;
+          if (ability.trigger?.requiresTarget?.type !== 'creature') continue;
+          const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+          const ping = effs.find((e) => e?.type === 'damage');
+          if (ping) { etbPingSpec = ability.trigger.requiresTarget; etbPingAmount = ping.amount ?? 1; break; }
+        }
+        if (etbPingSpec) {
+          // G (zgłoszenie właściciela 2026-10-08): gdy wręg nie ma STWORA, ping
+          // obowiązkowo trafia we własne ciało — bot zabijał swojego stwora,
+          // tracił 1 życie i nic nie zyskiwał. Kara = ciało najtańszej ofiary
+          // (0, gdy własne ciało wchłonie obrażenia); pusty stół daje karę 80
+          // jak w M103/A.
+          score -= etbForcedOwnPingPenalty(view, def, etbPingSpec, etbPingAmount);
+        }
         // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
         // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
         // do 1 „przy okazji". Generycznie: skan triggerów wejścia pod kątem
@@ -8475,6 +8844,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const maFlash = (def?.keywords ?? []).includes('flash') || Boolean(def?.flash);
             if (!(maFlash && intendsToAttackThisTurn(view))) score -= P.morbidMain1Penalty;
           }
+        }
+        // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): kreatura z
+        // flash jest SZTUCZKĄ BOJOWĄ — w oknie „za wcześnie” cała jej wycena (ciało +
+        // ETB) jest wyzerowana i schodzi poniżej passu o margines, żeby bot świadomie
+        // trzymał manę (lądy nietknięte) do tury przeciwnika. Bez tego baza ciała (~70)
+        // znosiła wariant w każdym kroku, w tym po deklaracji blokujących, gdzie kreatura
+        // już nie może blokować (CR 509.1a). Kara NIE jest stałą liczbą przebijającą bazę
+        // (jak w M235): wycenę wyzerowujemy, więc nawet bardzo silne ETB nie wrócą nad
+        // pass, a epsilon poniżej nadal różnicuje karty z flash (L41/L48 — żadnego remisu
+        // rozstrzyganego kolejnością ofert).
+        if (flashCreatureCastTooEarly(view, def, card)) {
+          score = Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty;
         }
         // Grzechotka remisów (audyt-bot-walka-remisy, tura 6): przy EX AEQUO
         // rzutów różnica gęstości wartości („waluta" z tieProjection:
@@ -8596,11 +8977,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // za zły cel nie miała jak przebić domyślnej premii. Czysto-utylitarny
         // czar startuje od zera: wariant z dobrym celem sam się wynagradza,
         // wariant z bezcelowym celem schodzi poniżej passu.
-        const isUtilityOnly = effects.length > 0 && effects.every((e) => e?.type
-          && ['tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
-            'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
-            'creatures_cant_block_this_turn',
-            'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
+        // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): UTILITARNY jest
+        // również czar zapakowany we wrapper „each of up to N targets", gdy KAŻDY
+        // jego wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ kwocie —
+        // wartość takiego czaru żyje wyłącznie w efekcie na konkretnym celu
+        // (1 obrażenie zabija albo nie; „can't block" kupuje coś tylko w oknie
+        // ataku), a baza 50 niosłaby go ponad pass nawet przy zerowym efekcie.
+        // Obrażenia SKALUJĄCE (amount 'X') utylitarne nie są — skalują z maną.
+        const isUtilityEffect = (e, insideWrapper = false) => {
+          if (e?.type === 'apply_to_each_target') {
+            const innerE = Array.isArray(e.effects) ? e.effects : [];
+            return innerE.length > 0 && innerE.every((x) => isUtilityEffect(x, true));
+          }
+          // Obrażenia o stałej kwocie są utylitarne WYŁĄCZNIE wewnątrz wrappera
+          // (tam są riderem „can't block" i same nic nie wartoścą); czar, którego
+          // CAŁA treść to obrażenia (Shock), zachowuje bazę spellBase.
+          if (e?.type === 'damage') return insideWrapper && Number.isInteger(e.amount);
+          return UTILITY_EFFECT_TYPES.has(e?.type);
+        };
+        const isUtilityOnly = effects.length > 0 && effects.every(isUtilityEffect);
         // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
         // (tap własnego landa, tap już tapniętego, odkręcenie wroga) ma
         // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
@@ -8818,17 +9213,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Shatterem własny Great Furnace. Reguła generyczna (ADR 0002):
           // usunięcie WŁASNEGO permanentu to strata, usunięcie permanentu
           // PRZECIWNIKA — zysk skalowany jego wartością.
-          const REMOVAL_EFFECTS = new Set([
-            'destroy_permanent', 'destroy_if_least_power',
-            'destroy_artifact_gain_life_mana_value',
-            'exile_permanent', 'exile_target_creature',
-            'bounce_permanent', 'bounce_to_library_top',
-            'bounce_to_library_bottom',
-            // PMSSB-1/A (F7): Vanish from Sight też jest removalem
-            // (top/bottom właściciela) — bez wpisu czar nie skalował
-            // wartością celu (remis 38/38 w sondzie S10).
-            'owner_library_top_or_bottom',
-          ]);
+          // PMSSB-59/A (F1): ten sam zestaw REMOVAL_EFFECTS co w ścieżce czarów
+          // (L41 — jeden zestaw, nie kopia).
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
             // P (uwaga właściciela 2026-09-23, Vandalize — „Choose one or both
             // — • Destroy target artifact. • Destroy target land.”): tryb „oba”
@@ -9817,6 +10203,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
+        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
+        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
+        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
+        // `{type:'regenerate'}` (Exterminator Magmarch).
+        const isRegenerateAbility = ability?.keyword === 'regenerate'
+          || abilityEffectTypes.includes('regenerate')
+          || effects.some((e) => e?.type === 'regenerate');
         // M179/B (uogólnienie M175/A2): IDENTYCZNA aktywacja (źródło +
         // zdolność + cele) już WISI na stosie, a wszystkie efekty są
         // idempotentne do EOT — drugi egzemplarz nic nie zmieni w grze.
@@ -9858,6 +10251,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (abilityEffectTypes.includes('animate_permanent_until_end_of_turn') && source?.tapped === true) {
             return finish(-10);
           }
+        }
+        // E (zgłoszenie właściciela 2026-10-07, Exterminator Magmarch 5/3 vs
+        // Ballista Watcher 4/3): tarcza regeneracji chroni „the next time it
+        // would be destroyed this turn" (CR 701.19a) — JEDNO niszczenie. Bot
+        // aktywował tę samą zdolność 3× z rzędu w jednej walce (log właściciela:
+        // 3× „tarcza regeneracji", 7 many w błoto), bo dopóki PIERWSZA tarcza
+        // wisiała NA STOSIE, `view.regenerationShields` był pusty i każda
+        // aktywacja wyglądała na pierwszą (+60 urgent, M218/4). Komentarz przy
+        // IDEMPOTENT_EOT_EFFECTS zakładał, że „tarcze regeneracji kumulują się"
+        // — dla NADCHODZĄCEGO zniszczenia kopia nie zmienia NIC (pierwsza
+        // tarcza je już pokrywa). Jak M179 (kopia na stosie) i M219/M230
+        // (efekt idempotentny do EOT już zastosowany): blokada po STANIE
+        // czytanym z PlayerView (ADR 0017), bez nazw kart (ADR 0002).
+        if (isRegenerateAbility) {
+          const shieldTargets = (cmd.targets ?? []).length > 0 ? cmd.targets : [cmd.objectId];
+          const alreadyShielded = (view.regenerationShields ?? [])
+            .some((id) => shieldTargets.includes(id));
+          const pendingTwin = (view.zones.stack ?? []).some((entry) => entry.controllerId === view.playerId
+            && entry.sourceId === cmd.objectId && entry.abilityIndex === (cmd.abilityIndex ?? 0)
+            && JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []));
+          if (alreadyShielded || pendingTwin) return finish(-30);
         }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
@@ -9969,13 +10383,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score -= 12;
           }
         }
-        // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
-        // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
-        // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
-        // `{type:'regenerate'}` (Exterminator Magmarch).
-        const isRegenerateAbility = ability?.keyword === 'regenerate'
-          || abilityEffectTypes.includes('regenerate')
-          || effects.some((e) => e?.type === 'regenerate');
         if (isRegenerateAbility) score += regenerationValue(view, target ?? source, { ability: true });
         score -= landRampActionPenalty(view, effects, ability?.timing);
         // PMSSB-2/B (F1): timing tokena raz na zdolność (L41 z cast_spell).
@@ -10223,7 +10630,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 : pumpChangesOutcome(view, recipient, pumpNow);
               if (!pumpOk) value -= 26 + pGain;
             }
-            if (!inCombat && myTurn(view)) value -= 26;
+            // PMSSB-59/B (F2): kara „poza walką w mojej turze" jest pisana dla
+            // sztuczek INSTANT-speed — te zawsze można odłożyć do walki, więc
+            // wcześniejsza aktywacja niczego nie kupi. Zdolność z ograniczeniem
+            // sorcery NIE MA późniejszego okna (w walce własnej tury i w turze
+            // przeciwnika jest nielegalna — CR 307.1), więc ta sama kara
+            // wyceniała JEDYNE legalne okno jak błąd. Pomiar (seed 2026):
+            // Brave-Kin Duo „{1}, {T}: celowy stwor +1/+1 do końca tury,
+            // activate only as a sorcery" = −28 w main1 (jedyna faza), pass = 0
+            // → bot nigdy nie użył zdolności. Zamiast kary: pump sorcery-speed
+            // ma wartość tylko wtedy, gdy bot REALNIE zamierza atakować w tej
+            // turze i odbiorca może dołączyć (inaczej +1/+1 wygasa w cleanup,
+            // CR 514.2, a źródło zostaje tapnięte — ten sam argument co wyżej).
+            const sorceryPump = ability?.timing === 'sorcery';
+            if (!inCombat && myTurn(view) && !sorceryPump) value -= 26;
+            if (!inCombat && myTurn(view) && sorceryPump) {
+              const recipientJoinsAttack = Boolean(recipient)
+                && recipient.controllerId === view.playerId
+                && canAttackNow(recipient)
+                && intendsToAttackThisTurn(view);
+              if (!recipientJoinsAttack) value -= 26;
+              // PMSSB-59/B: pump, który zamienia atak w LETALNY, jest warty
+              // zamknięcia partii — bez tego bot przepuszczał jedyne okno, w
+              // którym +1 mocy wygrywa grę (kara za tap źródła przebijała
+              // zysk, więc zdolność wychodziła na remisie z passem). Moc
+              // liczymy tym samym rachunkiem co deklaracja ataku
+              // (`intendsToAttackThisTurn` — L41/L48), skala jak dla
+              // „zbliża się lethal" (P.counterLethalClockBonus).
+              if (recipientJoinsAttack && pGain > 0) {
+                const sentPower = myCreatures(view)
+                  .filter((o) => canAttackNow(o) && (o.power ?? 0) > 0 && attackIntendsCreature(view, o.id))
+                  .reduce((sum, o) => sum + combatPower(o), 0);
+                const foeLife = enemy(view)?.life ?? 0;
+                if (sentPower < foeLife && sentPower + pGain >= foeLife) value += P.counterLethalClockBonus;
+              }
+            }
             // Tura przeciwnika: pump poza walka byl dotad darmowy (kara wyzej
             // dotyczy tylko wlasnej tury), wiec bot palil mane w jego upkeepie
             // na stwora, ktory nikogo nie blokowal.
@@ -10235,9 +10676,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // patologia B1: bot pumpował w beginning_of_combat i stał
               // z tapowanymi stworem, przegrywając deck-outem.
               if (view.turn.step === 'declare_blockers' && !myTurn(view)) value += 2 * pGain;
-              // Pump kosztem tapu na stworze gotowym do ataku (main/combat
-              // własnej tury) kosztuje utratę tego ataku — zwykle się nie opłaca.
-              if (source?.kind === 'creature' && taps && canAttackNow(recipient)) value -= (recipient.power ?? 0) + 3;
+              // PMSSB-59/B (F2): utratę ataku za koszt {T} liczymy na
+              // TAPNIĘTYM permanencie (ŹRÓDLE), nie na odbiorcy pumpu.
+              // Komentarz wyżej mówi o „stworze gotowym do ataku", którym jest
+              // właśnie źródło — odbiorca (inny stwór) atakuje dalej, więc
+              // doliczanie jego ataku do kosztu podwajało karę dla zdolności
+              // pompującej kogoś innego. Pomiar: Duo −28 = −26 (sorcery, wyżej)
+              // − (2+3) (atak ODBIORCY, którego tapnięcie nie rusza) + 2 (pump).
+              // Kara tylko przy ZAMIARZE ataku tym źródłem (M195/B — inaczej
+              // płacimy za atak, który i tak by się nie odbył).
+              if (source?.kind === 'creature' && taps && canAttackNow(source)
+                && attackIntendsCreature(view, source.id)) value -= (source.power ?? 0) + 3;
               // M195/B (uwaga właściciela, Ghost Warden): trick bojowy użyty
               // NA SAMYM SOBIE kosztem {T}. Bot tapował Ghost Wardena w swojej
               // fazie walki, żeby dać sobie +1/+1 — stwór i tak nie atakował
@@ -10516,7 +10965,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntreader Elk —
+          // PMSSB-59/A (F1): twarde usuwanie w ścieżce ZDOLNOŚCI nie miało
+          // PREMII za cel wroga. Rodzina odbijająca ma własną gałąź
+          // (BOUNCE_STRENGTH powyżej — pełna skala ofiary), ale
+          // `destroy_permanent`/`exile_*` nie wyceniały NICZEGO: zdolność
+          // płaciła koszt (mana + tap + poświęcenie) i wychodziła na remisie
+          // z passem. Pomiar (seed 2026, 10 many, wrogi 4/4 na stole):
+          // aktywacja −5 DLA KAŻDEGO celu — 4/4, 1/1, ląd i własny permanent
+          // punktowane identycznie, czyli cel w ogóle nie wchodził do oceny.
+          // Skala lustrzana do ścieżki czarów (L41): baza + waga ofiary +
+          // bonus TMC; cel własny −90, czysty ląd −60, regeneracja zużywa
+          // tarczę bez efektu (M92).
+          if (REMOVAL_EFFECTS.has(effect.type) && !BOUNCE_STRENGTH.has(effect.type)) {
+            const victimIdx = Array.isArray(effect.targetIndices) && effect.targetIndices.length > 0
+              ? effect.targetIndices
+              : [effect.targetIndex ?? 0];
+            for (const idx of victimIdx) {
+              const victim = objectOnBoard(view, cmd.targets?.[idx]);
+              if (!victim) continue;
+              if (effect.type === 'destroy_permanent' && willRegenerate(view, victim.id)) {
+                score -= 70;
+                continue;
+              }
+              if (victim.controllerId === view.playerId) {
+                // Kara za cel WŁASNY: BEZ własnego −90 — `selfHarmPenalty`
+                // już go pobiera (HOSTILE_PERMANENT_EFFECTS: 90 + moc +
+                // wytrzymałość), więc drugi raz to podwójne liczenie.
+                // Mierzone przed poprawką: −185 we własnego stwora (dwie
+                // kary nałożone na ten sam wybór).
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+                  score += gainLifeValue(view, victim.manaCost ?? 0);
+                }
+              } else if (pureLandTarget(victim)) {
+                // Bez premii removalu i z karą przebijającą bazę zdolności —
+                // pass musi wygrać z „aktywuję, bo jest dowolny cel".
+                score -= P.removalPureLandPenalty;
+              } else {
+                const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
+                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                score += enemyRemovalTargetBonus(view, victim); // M234
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+                  score += gainLifeValue(view, victim.manaCost ?? 0);
+                }
+              }
+            }
+          }
+          // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntinder Elk —
           // poświęcenie stwora po ląd) — dawniej 0, bot nigdy nie aktywował.
           // Wspólna skala `searchRiderValue` (L41).
           if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
@@ -10784,7 +11278,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Tymczasem engine auto-tapuje przy płatności same LĄDY
             // (producibleMana) — więc gdy lądy już pokrywają wszystko, co bot
             // zamierza rzucić, aktywacja latarni nie odblokowuje NICZEGO.
-            // Wyprodukowana mana ginie w cleanup (CR 500.4): czysta strata
+            // Wyprodukowana mana ginie w cleanup (CR 500.5): czysta strata
             // tempa, a przy Seer's Lantern dodatkowo blokada drugiej zdolności
             // ({2},{T}: Scry 1), bo źródło jest już tapnięte.
             //
@@ -10801,7 +11295,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // {W} (F1), mana Powerstone'a nie odblokowuje stwora (F2), a filtr
             // koloru odblokowuje kartę, której brakuje wyłącznie pipa (F3).
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
-            // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.4).
+            // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.5).
             const unlockUnitsCache = new Map();
             const unitsBefore = (artifactSpell) => {
               const key = artifactSpell ? 'art' : 'std';
@@ -10841,7 +11335,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // F (zgłoszenie właściciela 2026-09-19b, „Skarb zużyty, nic się nie
             // stało"): próg KOSZTU to nie to samo co „bot to zagra". Źródło
             // JEDNORAZOWE (koszt: poświęcenie — Skarb, Powerstone) przepada
-            // razem z niewydaną maną (CR 500.4), a bot potrafił poświęcić Skarb
+            // razem z niewydaną maną (CR 500.5), a bot potrafił poświęcić Skarb
             // „na" kartę, której sam nie chciał rzucić (zmierzone: seed 21,
             // t. 12 — Cloak of the Bat odblokowany progiem, wyceniony -2,7).
             // Dlatego dla takich źródeł odblokowanie musi mieć pokrycie w
@@ -10872,7 +11366,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // nie rzucał potem żadnego czaru. Przy net<=0 pula liczbowo się nie
             // zmienia, więc `unlocksSomething` (progi liczbowe) JEST ZAWSZE
             // fałszem — a tapnięty ląd + spent many zostaje (mana wyparuje
-            // w cleanup, CR 500.4). Kara musi być mocna NIEZALEŻNIE od
+            // w cleanup, CR 500.5). Kara musi być mocna NIEZALEŻNIE od
             // hasPlayable: „coś w ręce istnieje” nie znaczy, że filtrowanie
             // many cokolwiek odblokowuje (bot nie modeluje kolorów liczbowej
             // puli). Zostawiamy jawnie ujemną, żeby nie remisowała z passem.
@@ -11021,6 +11515,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += impulseLookValue(view, x);
             if (x > 0) score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
           }
+          // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „endures X”
+          // — aktywacja skalowana X-em, której wycena była GOŁA (brak wpisu
+          // w tej gałęzi), więc jedynym składnikiem zależnym od X była kara
+          // za manę (`min(X,2) * 0,5`) — bot legalnie wybierał X=1 każdej
+          // tury: 1/1 za 1 życia, które następnie ginie. Wartość ciała liczy
+          // `endureXValue` (pełna waga do rozmiaru przewyższającego największe
+          // ciało wroga, potem połowa). Kwotę bierzemy z KOMENDY (wariant
+          // oferty), nie z deskryptora — tam `amount` jest opisowe.
+          if (effect.type === 'endure_x') {
+            score += endureXValue(view, cmd.xValue ?? 0, source);
+            // Tap źródła w precombat odbiera mu atak w TEJ turze — ta sama
+            // miara co w gałęzi many (tapBodyCost, L41). Dla endurable'a
+            // strata jest realna, ale mała: rośnięce ciało jest warte
+            // więcej niż jeden atak 2/2, a po walce (main2) kara wychodzi 0.
+            if (taps && (source?.kind === 'creature' || (source?.types ?? []).includes('Creature'))) {
+              score -= tapBodyCost(view, source.id);
+            }
+          }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
           // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
@@ -11050,6 +11562,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+        }
+        // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „Pay X life”
+        // to KOSZT (CR 601.2h) — dotąd nie był wyceniony NIGDZIE, więc płacenie 1
+        // i 8 życia wychodziło dla bota po samo (brak kary, brak zysku — X=1
+        // wygrywało na koszcie many). Drabina samouszkodzenia jest wspólna
+        // (PMSSB-36, L41), a do niej dochodzi próg 25% puli życia (uwaga
+        // właściciela: „nie więcej płacę niż 25% mojego życia”).
+        if (ability?.cost?.payLifeX) {
+          const x = cmd.xValue ?? 0;
+          score -= selfLifeLossPenalty(view, x);
+          score -= Math.max(0, x - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy
@@ -12173,9 +12696,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(value <= 3 ? 45 : 5 - value);
       }
       case 'resolve_endure_choice': {
-        // Endure (Kin-Tree Nurturer): dwa ciała (token Spirit) są generycznie
-        // nieco cenniejsze niż jeden licznik (drugi chump-blocker/atakujący).
-        return finish(cmd.mode === 'token' ? 42 : 40);
+        // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): wybór trybu
+        // endure był PŁASKI (42 token / 40 liczniki) niezależnie od N — bot
+        // tworzył 1/1 za 1 życia i to się nie zmieniało przy N=6. Wartość liczy
+        // ciało (P×2 + T×1, L41), a token dostaje premię za DRUGIE ciało
+        // (chump-blocker/atakujący obok źródła) — ta sama obserwacja, co
+        // kiedyś była zapisana jako stałe 42/40, tylko teraz skaluje się z N.
+        const n = view.pendingEndures?.counters ?? 1;
+        const src = view.pendingEndures?.sourceId
+          ? objectOnBoard(view, view.pendingEndures.sourceId) : null;
+        const sourceSize = src ? Math.max(src.power ?? 0, src.toughness ?? 0) : 0;
+        // TA SAMA miara ciała co przy wyborze X (L41) — inaczej aktywacja
+        // wybierała X pod liczniki (6/6 za X=4), a rozstrzyganie robiło token
+        // 4/4, który tej wrogiej 5/5 nie przeżyje. Token dostaje premię za
+        // DRUGIE ciało (chump-blocker/atakujący obok źródła), ale tylko
+        // wtedy, gdy sam jest wystarczająco duży — przy małym N wygryzają
+        // liczniki na źródłe.
+        const liczniki = endureBodyValue(view, sourceSize + n);
+        const token = endureBodyValue(view, n) + P.endureTokenBodyPremium;
+        return finish(cmd.mode === 'token' ? token : liczniki);
       }
       case 'resolve_delirium_target': {
         // Delirium (Fear of Burning Alive): cel to stwór przeciwnika —
@@ -12224,6 +12763,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
           return deadAfter && !deadBefore;
         };
+        // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): trigger
+        // ZADAJĄCY obrażenia ma tę samą świadomość śmiertelności co czar
+        // (wspólny predykat damageIsLethal, L41). Kwotę niesie komenda
+        // (`cmd.damage` — policzoną TEN SAM resolverem co rozstrzyganie, więc
+        // oferta = efekt), więc 1 obrażenia na 1/1 to lethal (+60) i wygrywa z
+        // nieletalnym cięciem w 2/4. Bez tego bot wracał do „największy cel"
+        // (38 vs 33) i marnował zdolność, a na WŁASNYM celu nie widział, że
+        // zabija swojego stwora.
+        const damageKills = (t) => (t && Number.isInteger(cmd.damage)
+          ? damageIsLethal(view, t.id, cmd.damage) : false);
         // C (znalezisko właściciela 2026-09-12, Academy Journeymage):
         // usunięcie stwora zrywa też przyklejone AURY (cmentarz właściciela,
         // CR 704.5m). Każda CUDZA aura na celu to dodatkowa karta wroga
@@ -12391,7 +12940,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(-20 - value);
         }
         // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
-        const kill = debuffKills(target);
+        // F (2026-10-08): zabójstwo OBRAŻENIAMI tak samo (Warmaker Gunship) —
+        // wspólny predykat, obie strony (wrogi cel +60, własny −60).
+        const kill = debuffKills(target) || damageKills(target);
         // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
         const aura = auraStripDelta(target);
         // PMSSB-1/A (L41 z cast_spell): trigger-bounce (Jill/Academy/
@@ -13642,6 +14193,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_food_choice') {
       return `resolve_food_choice(${cmd.sacrifice ? 'sacrifice' : 'keep'})`;
     }
+    // H (zgłoszenie włałaściciela 2026-10-08, Krumar Initiate): tryby endure
+    // (liczniki na źródłe albo token Spirit) mają RÓŻNE noty zależne od N,
+    // więc bez wariantu w etykiecie ślad pokazywał „resolve_endure_choice” × 2
+    // i audyt remisów nie miał czego parować (ta sama klasa L34/L40 co
+    // M195/B / M203/2 / PMSSB-41/C).
+    if (cmd.type === 'resolve_endure_choice') {
+      return `resolve_endure_choice(${cmd.mode})`;
+    }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
     // Świadomie BEZ karty w śladzie (próba z tury 6 odwrócona): ~19 testów
@@ -13665,7 +14224,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (identyczne noty i nierozróżnialny wybór dla testu wyceny i audytu
       // remisów; ta sama lekcja M195/B co `tapCreatureId` wyżej).
       const celStation = cmd.tapOtherCreatureId ? `+station:${cmd.tapOtherCreatureId}` : '';
-      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+      // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): warianty
+      // zdolności {X} (manaX / payLifeX / maxPowerX) różnią się WYŁĄCZNIE
+      // `xValue`, więc wszystkie streszczały się do tej samej etykiety —
+      // ani test wyceny, ani audyt remisów nie miały czego parować (ta sama
+      // klasa L34/L40 co M195/B / M203/2 / PMSSB-41/C wyżej). X w etykiecie
+      // tylko gdy komenda go niesie, żeby nie ruszyć pinów zdolności bez {X}.
+      const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
     if (cmd.type === 'play_land') {
       // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy

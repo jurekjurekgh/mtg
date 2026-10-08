@@ -185,6 +185,12 @@ export function defineCard(data) {
     transformTo: data.transformTo ?? null,
     // Landy i inne permanenty wchodzące tapnięte (Rupture Spire, Prismari Campus).
     entersTapped: Boolean(data.entersTapped),
+    // Wydrukowany zakaz blokowania (CR 509.1a, Bog Hoodlums — „This
+    // creature can't block”). Flaga na KARCIE, a nie efekcie „can't block this
+    // turn” (Panic Spellbomb): materializacja przenosi ją na obiekt jako
+    // trwały `cantBlockPrinted`, którego cleanup nie zdejmuje (wzorzec tokenów
+    // — Phyrexian Mite; permanents.creatureCantBlock czyta oba źródła).
+    cantBlock: Boolean(data.cantBlock),
     entersTappedCondition: data.entersTappedCondition ? Object.freeze({ ...data.entersTappedCondition }) : null,
     // Bestow (CR 702.103): alternatywny koszt rzucenia karty jako czaru aury.
     // Deskryptor: { cost, pump: { power, toughness }, keywords } — buff, który

@@ -1750,6 +1750,9 @@ function triggerConditionClause(trigger) {
   if (cond.selfHasCounter) czlony.push(`ma licznik ${counterLabelGen(cond.selfHasCounter)}`);
   if (cond.didntAttackThisTurn) czlony.push('nie atakował w tej turze');
   if (cond.delirium) czlony.push('delirium');
+  // Batch 64 (Scouting Hawk, Keen Sight): intervening-if na stanie pól
+  // bitwy — semantyka w conditionHolds (engine/triggers.js).
+  if (cond.opponentControlsMoreLands) czlony.push('przeciwnik kontroluje więcej lądów niż ty');
   if (cond.wasKicked) czlony.push('opłacono kicker');
   if (cond.wasOffspring) czlony.push('opłacono koszt offspring');
   if (cond.ifCast) czlony.push('rzuciłeś tę kartę');

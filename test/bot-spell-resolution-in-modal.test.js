@@ -38,7 +38,7 @@ import { parseDeckText } from '../src/cards/deck-text.js';
 function makeSession(seed) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria-wrg.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/dominaria-brg.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
   ]);
   return createSession({ registry, decks, seed, pauseOnBotMoves: true });
@@ -133,7 +133,7 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Seed 2 po Batchu 49 (10 nowych kart: tarkir +Kishla Village, dominaria
   // +Razorfoot Griffin +Koilos Roc, landy przeliczone) — hunter (kolejne
   // sprawdzone: 7, 11, 16, 17, 19, 20, 21). Konwencja L25.
-  // Seed 3 po M228 (ADR 0024: podział talii — dominaria→dominaria-wrg,
+  // Seed 3 po M228 (ADR 0024: podział talii — dominaria→dominaria-brg,
   // tarkir→tarkir-bg; Awaken the Bear jest po zielonej stronie tarkir-bg) —
   // hunter (kolejne sprawdzone z pump w modalu: 8, 9, 10, 16, 17, 21, 23).
   // Konwencja L25.
@@ -146,11 +146,16 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // Batch 55/B1: tarkir-bg +Douse in Gloom (landy przeliczone) — stary seed 5
   // nie ma już pumpa. Hunter 1–60: 3 daje Awaken the Bear +3/+3 (cel: Morph)
   // w logu I modalu — ten sam świadek, co w oryginale znalazcy (L25).
-  // Batch 61/T1 (dominaria-wrg +Fiery Hellhound, tarkir-bg +Dragonscale Boon)
+  // Batch 61/T1 (dominaria-brg +Fiery Hellhound, tarkir-bg +Dragonscale Boon)
   // — stary seed 3 nie ma już pumpa. Hunter 1–40: seed 1 daje Awaken the Bear
   // +3/+3 (cel: Morph) w logu I modalu, czyli DOKŁADNIE tego samego świadka
   // (partia bota to tarkir-bg). Konwencja L25.
-  const session = makeSession(1);
+  // Batch 64 (10 kart kolekcji 261-328: tarkir-bg +Narset's Rebuke,
+  // dominaria-brg +Druid of the Cowl; landy przeliczone) — stary seed 1 nie
+  // ma już pumpa w logu. Hunter 1-60: seed 2 daje Fiery Hellhound +1/+0
+  // (cel: Morph) w logu I modalu — ten sam świadek klasy (pump czaru bota),
+  // co w oryginale znalazcy (L25).
+  const session = makeSession(2);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(pumpInLog.length > 0, 'seed 1 miał produkować pump w logu');

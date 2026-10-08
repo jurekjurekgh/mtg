@@ -1,0 +1,48 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Sultai%20Scavenger&set=KTK",
+ "print": "ktk",
+ "name": "Sultai Scavenger",
+ "mana_cost": "{5}{B}",
+ "cmc": 6,
+ "type_line": "Creature — Bird Warrior",
+ "oracle_text": "Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nFlying",
+ "power": "3",
+ "toughness": "3",
+ "colors": [
+  "B"
+ ],
+ "color_identity": [
+  "B"
+ ],
+ "keywords": [
+  "Flying",
+  "Delve"
+ ],
+ "set": "ktk",
+ "set_name": "Khans of Tarkir",
+ "collector_number": "91",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/2/c/2cb8e423-f7e7-4ac3-acc2-2a3722e409e7.jpg?1783939077"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [
+  {
+   "date": "2021-03-19",
+   "source": "wotc",
+   "comment": "Delve doesn't change a spell's mana cost or mana value. For example, Treasure Cruise's mana value is 8 even if you exiled three cards to cast it."
+  },
+  {
+   "date": "2021-03-19",
+   "source": "wotc",
+   "comment": "You can exile cards to pay only for generic mana, and you can't exile more cards than the generic mana requirement of a spell with delve. For example, you can't exile more than seven cards from your graveyard to cast Treasure Cruise unless an effect has increased its cost."
+  },
+  {
+   "date": "2021-03-19",
+   "source": "wotc",
+   "comment": "Because delve isn't an alternative cost, it can be used in conjunction with alternative costs, such as flashback. It can also be used to pay for additional costs that include generic mana."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/ktk/91/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

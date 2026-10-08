@@ -12,7 +12,7 @@ import { choiceGroupTitle, choiceRequestType } from '../src/table/render.js';
  *
  * Znalezione Żywym Testerem: resolve_escape_exile (theros/warhammer-wg s308),
  * resolve_look_top_choice (tarkir-wur/innistrad-brg s316),
- * resolve_reveal_exile_hand (dominaria-wrg/dominaria-ub s414). Po trzecim
+ * resolve_reveal_exile_hand (dominaria-brg/dominaria-wu s414). Po trzecim
  * przypadku zamykamy KLASĘ: każdy typ komendy, który `choiceRequestGroupKey`
  * mapuje na stały klucz, MUSI mieć deskryptor fallbacku — nigdy „Wariant".
  */

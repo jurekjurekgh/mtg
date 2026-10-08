@@ -1,0 +1,29 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Druid%20of%20the%20Cowl&set=M19",
+ "print": "m19",
+ "name": "Druid of the Cowl",
+ "mana_cost": "{1}{G}",
+ "cmc": 2,
+ "type_line": "Creature — Elf Druid",
+ "oracle_text": "{T}: Add {G}.",
+ "power": "1",
+ "toughness": "3",
+ "colors": [
+  "G"
+ ],
+ "color_identity": [
+  "G"
+ ],
+ "keywords": [],
+ "set": "m19",
+ "set_name": "Core Set 2019",
+ "collector_number": "177",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/7/6/76ceff1d-9e83-41cc-b54b-8bf90d985da9.jpg?1783934537"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/m19/177/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

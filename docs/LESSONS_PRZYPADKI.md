@@ -3219,3 +3219,117 @@ zależności (MiniEl) — repo bez jsdomu; „mruga i klika się w kółko" łap
 **Reguła:** przed dodaniem karty do planu z podziałem uruchom generator i sprawdź `git status decks/`; zmiana sufiksów stron = migracja nazw (osobne zadanie) — wstrzymaj kartę (`.pending`) i udokumentuj.
 
 **Strażnik:** `tools/split-deck-colors.mjs` + `test/m203-plany-kolekcji.test.js`.
+
+## L181 (2026-10-08) — Pin testowy może cementować ZGŁOSZONE zachowanie: czytaj go jak wymaganie, nie jak fakt
+
+**Przypadek:** (zgłoszenie I, Wrap in Flames — „1 damage to each of up to three
+target creatures. Those creatures can't block this turn.", {3}{R}) właściciel
+zgłosił, że bot rzuca czar zawsze, gdy ma manę, i marnuje go: dwa ciała >1
+toughness nie dostawały nic, a bot nie atakował. Pomiar przed fixem:
+cast(wif->f24+f33) = **84,0** przy braku zamiaru ataku. Fix przeszedł zielony
+przez fast, ALE czerwienił pin `test/m233-bot-wrap-no-targets-noop.test.js`
+(„Wrap in Flames NADAL premiowany na stworze wroga (regresja M158)") — pin
+bronił DOKŁADNIE tego, na co właściciel skarżył: premii za każdy wrogi cel
+bez pytań o śmiertelność i zamiar ataku.
+
+**Reguła:** przed naprawą przeczytaj piny obronne i oceń, czy nie są treścią
+skargi. Pin aktualizuj RAZEM z kodem, z komentarzem o intencji, i zamień jedną
+zasadę na piny WARUNKOWE pokrywające oba kierunki reguły (tu: nieśmiertelne
+ciało bez ataku ⇒ pass; lethal ⇒ cast; precombat z własnym atakującym ⇒ cast).
+Drugi wniosek z tego samego zadania: zawężaj predykat klasyfikujący do
+kontekstu — `damage` liczący się jako „utylitarny" także na TOP-LEVEL zabrał
+bazę Shockowi (audyt-pmssb32-mana 60 → 9), czyli regresja własnego fixa złapana
+dopiero fast bramką po E2a–E2d.
+
+**Strażnik:** `test/zgloszenie-i-wrap-in-flames.test.js` (10 scenów, w tym E2E
+z `cantBlock` na celu) + trzy piny warunkowe w
+`test/m233-bot-wrap-no-targets-noop.test.js`; mutacje mI1 8/7, mI2 10/5,
+mI3 10/5, mI4 14/1, mI4b 14/1, mI5 14/1 → z fixem 15/15.
+
+## L182 (2026-10-08) — Premia za keyword/ewazję do EOT ma DWA warunki: „czy wróg zneutralizuje" ORAZ „czy efekt cokolwiek zmienia"
+
+**Przypadek:** (zgłoszenie J, Fledgling Imp „{B}, Discard a card: This creature
+gains flying until end of turn.") właściciel: wszystkie jego kreatury TAPNIĘTE,
+bot aktywuje latanie na impie (płaci {B} + wyrzuca Brute Force, którym mógł
+dodać +3/+3) i atakuje za 2 obrażenia, które i tak przeszły. Pomiar przed
+fixem: aktywacja = **+1** przy pass 0; ten sam błąd, gdy wróg nie ma ŻADNEGO
+stwora.
+
+**Reguła:** M218/3 dopytało wycenę tylko o pierwszą stronę — „czy wróg ma
+latającego/reach, który zablokuje" — i wypisało premię `2 + moc` za samo
+BRAK takiej odpowiedzi. Drugiej strony nikt nie zadał: „czy wróg ma w ogóle
+nietapniętego blokera NAZIEMNEGO, którego latanie omija". Przy tapniętym stole
+(CR 509.1a) albo bez stworów atak przechodzi i tak, więc efekt nie zmienia NIC,
+a baza zdolności (+2) minus {B} daje +1 — wariant ponad pass. Efekt jałowy musi
+być więc KARĄ przebijającą bazę (L3), a nie zerem: karta zbędna w ręce (poza
+zasięgiem koloru) ma strata odrzucenia 0, więc wycena samego efektu jest
+jedyną barierą.
+
+**Strażnik:** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (13 scenów:
+scena ze zgłoszenia, wróg bez stworów, bloker z zakazem blokowania, zbędna
+karta w ręce, realny bloker naziemny = anty-over-fix, beginning_of_combat,
+menace, flyer/reach, okno obronne, postcombat, E2E). Mutacje mJ1–mJ5 czerwienią
+właściwe piny (mJ2 — „zero zamiast kary" — łapie wyłącznie jałowy efekt, stąd
+osobny test J/2c ze zbędną kartą).
+
+## L183 (2026-10-08) — Sztuczka bojowa (flash) ma WYMIAŁ OKNA: kara wyzerowuje wycenę, nie „przebija" bazę stałą
+
+**Przypadek:** (zgłoszenie K, Village Bell-Ringer „Flash / When this creature
+enters, untap all creatures you control.", 1/4 za 3 many) właściciel: karty z
+flash mają być promowane jako COMBAT TRICK — bot ma ŚWIADOMIE nie rzucać
+kreatury z flash w swojej turze (lądy nietknięte, mana trzymana), ma ją
+wystawiać PO deklaracji atakujących przeciwnika (zaskoczenie blokiem), a gdy
+wróg nie atakował — w Głównej 2 przeciwnika, żeby mana nie wyparowała.
+
+Pomiar PRZED (sonda `.arena/probe-k-bellringer.mjs`; bot = p1 z Bell-Ringerem w
+ręce, 4 lądy + 3 many w puli):
+
+| scena | wybór PRZED | nota cast |
+|---|---|---|
+| main1 bota, wróg 2/4 nietapnięty | **cast** | +67,5 |
+| main1 bota, wróg 4/4 + 3/3 | **cast** | +67,5 |
+| tura wroga, `beginning_of_combat` | **cast** | +71,1 |
+| tura wroga, `declare_attackers` (atak 2/4) | cast | +71,1 |
+| tura wroga, `declare_blockers` (atak 2/4) | **cast** | +71,1 |
+| tura wroga, `main2` (wróg nie atakował) | cast | +71,1 |
+
+Rozkład noty: ciało 70 + P 2 + T 4 − mana 4 + ETB 3 = 75, × waga rodziny
+`permanent` 0,9 = 67,5, + parytet stworów 4 × 0,9 = 71,1.
+
+**Przyczyna:** baza ciała (~70) znosiła KAŻDY wariant rzutu — wycena nie pytała o
+OKNO. W konsekwencji bot rzucał sztuczkę w swojej Głównej 1 (odsłaniając ją
+przeciwnikowi, CR 302.6: bez haste kreatura nie atakuje w tej turze) i po
+deklaracji blokujących (gdzie wchodzące ciało nie jest już zadeklarowanym
+blokerem, CR 509.1a). ETB „untap all creatures you control" było płaskie 3 —
+wartość bez wymiaru (L50/L131), choć w turze przeciwnika stwory bota są NADAL
+TAPNIĘTE (odkręca je wyłącznie właściciel w swoim kroku odkręcenia, CR 502.3),
+więc to ETB realnie oddaje blokera.
+
+**Reguła:** gdy wartość karty zależy od OKNA, wycenę karty (ciało + ETB +
+parytet) WYZERUJ i obniż o margines (`Math.min(score,0) - param`), nie odejmuj
+stałej od noty — stała nie przebije bardzo silnego ETB (L3). Epsilon ma ZAOSTAĆ
+poniżej passu, żeby różnicował karty z flash (L48; kroki wyceny ≥ 0,1, więc
+epsilon nigdy nie odwraca realnej różnicy). Okno po deskryptorze
+(`flash` + `Creature`, ADR 0002) i ze stanu `PlayerView` (ADR 0017):
+- „za wcześnie" = każdy krok własnej tury oraz tura przeciwnika przed
+  `declare_attackers` (wróg dopiero wybiera, z czym atakować) i po
+  `declare_blockers`;
+- jedyny krok obronny to `declare_attackers` i tylko gdy kreatura realnie może
+  zablokować któregoś atakującego (`attackerCanBeBlocked` — flying/reach/menace,
+  CR 509.1b + M202/H);
+- post-combat (`main2`/`end`/`cleanup`) dozwolony (CR 500.5: mana wyparowuje).
+Wyjątki: `haste` (kreatura realnie atakuje w tej turze), `entersWithCountersIf`
+(warunek wejścia zależy od STANU tury) oraz brak możliwości opłacenia kosztu z
+nietapniętych lądów później (mana jednorazowa — skarb/tap ciała nie przeżyje
+odroczenia). ETB liczone po kreaturze (suma `untapTargetValue` po TAPNIĘTYCH
+własnych stworach) tylko w oknach, gdzie odkręcenie daje NOWĄ akcję: blok w
+cudzej turze (bramka `cantBlock`) i atak we własnym `precombat_main`/`combat`
+(bramka `canAttackNow`); poza nimi 0.
+
+**Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js` (16 scenów:
+K/1–K/13). Pomiar PO: main1 bota → pass (−9,0), lądy nietknięte, mana 3 w puli;
+`beginning_of_combat` wroga → pass; `declare_attackers` z naziemnym atakującym →
+cast (68,4; z tapniętym 3/3 = 77,4 = ETB 8+2×3); `declare_blockers` → poniżej
+passu; `main2` wroga bez ataku → cast. E2E: bot trzyma kartę w main1, rzuca w
+`declare_attackers` i BLOKUJE nią 2/4 — 0 obrażeń w bota. Dowód mutacyjny
+mK1–mK10: każda mutacja wyłącza konkretne testy.

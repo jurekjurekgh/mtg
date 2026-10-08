@@ -140,6 +140,19 @@ export function triggerTargetEvasionGrantOf(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   return effs.some((e) => e?.type === 'cant_be_blocked');
 }
+/**
+ * F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship / Reclusive
+ * Artificer): deskryptor obrażeń triggera (`effect: {type:'damage', amount}`),
+ * inaczej null. Kwotę niesie jako LICZBĘ albo WARIANT dynamiczny
+ * (`artifacts_you_control` = „equal to the number of artifacts you control"),
+ * więc sam deskryptor nie wystarczy — kwotę liczy wspólny resolver silnika
+ * (`resolveDamageAmount`, L41). Ten helper odpowiada wyłącznie na pytanie o
+ * INTENCJĘ (jak friendly/debuff/pump): czy trigger celowi ZADAJE obrażenia.
+ */
+export function triggerTargetDamageEffectOf(ability) {
+  const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  return effs.find((e) => e?.type === 'damage') ?? null;
+}
 export function triggerTargetPowerPumpOf(ability) {
   const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
   for (const e of effs) {

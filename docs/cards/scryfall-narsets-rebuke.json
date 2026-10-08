@@ -1,0 +1,23 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Narset%27s%20Rebuke&set=TDM",
+ "print": "tdm",
+ "name": "Narset's Rebuke",
+ "mana_cost": "{4}{R}",
+ "cmc": 5,
+ "type_line": "Instant",
+ "oracle_text": "Narset's Rebuke deals 5 damage to target creature. Add {U}{R}{W}. If that creature would die this turn, exile it instead.",
+ "colors": [
+  "R"
+ ],
+ "set": "tdm",
+ "set_name": "Tarkir: Dragonstorm",
+ "collector_number": "114",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/5/0/5098bd73-d51c-4db4-bf06-fd4854089d37.jpg?1783907358"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/tdm/114/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

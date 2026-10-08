@@ -31,7 +31,7 @@ import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTyp
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -70,9 +70,10 @@ import {
   triggerTargetPowerPumpOf,
   triggerTargetRemovesTargetOf,
   triggerTargetEffectFriendly, triggerTargetEvasionGrantOf,
+  triggerTargetDamageEffectOf,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf, triggerTargetDamageEffectOf };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -559,7 +560,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
-  'delve', 'protectorId',
+  'delve', 'protectorId', 'cantBlockPrinted',
 ]);
 
 const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
@@ -620,12 +621,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false, cantBlockPrinted = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, cantBlockPrinted });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -3646,6 +3647,21 @@ export function execute(state, input) {
     if (clash.choices.length === 0) {
       state.pendingClash = null;
       if (clash.won && clash.returnToHandOnWin) state.pendingSpellReturnToHand = true;
+      // Bog Hoodlums (LRW): „If you win, put a +1/+1 counter on this creature"
+      // — nagroda clashu kładzie licznik na ŹRÓDLE zdolności. Cel brał
+      // uczestnictwo w clashu, więc sprawdzamy, czy wciąż jest na polu bitwy
+      // (CR 608.2b/LKI: zniknięte źródło = brak celu); licznik przez wspólny
+      // choke point (addCounter), jak każdy inny licznik w silniku. Przyrost
+      // zdarzeń dokładamy do wyniku komendy (L130/L153) — inaczej skan
+      // triggerów nie zobaczy licznika.
+      if (clash.won && clash.counterOnWin && clash.counterTargetId) {
+        const counterTarget = state.objects.get(clash.counterTargetId);
+        if (counterTarget && counterTarget.zone === 'battlefield') {
+          const beforeCounter = state.events.length;
+          addCounter(state, clash.counterTargetId, clash.counterOnWin, 1);
+          resolvedEvents.push(...state.events.slice(beforeCounter));
+        }
+      }
       if (clash.restorePriorityTo && state.players.some((p) => p.id === clash.restorePriorityTo)) {
         state.turn.priorityPlayerId = clash.restorePriorityTo;
       } else {
@@ -7833,6 +7849,22 @@ export function playerView(state, playerId) {
     // M407 (uwaga z gry — Shiva/Mesmerize): sygnał daru ewazji (jak pump) —
     // bot wycenia cel zdolnością ataku, nie rozmiarem.
     const triggerEvasionGrant = triggerTargetEvasionGrantOf(intentAbility);
+    // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): KWOTA obrażeń
+    // triggera w komendzie (jak debuff/pump) — bot premiuje obrażenia
+    // ŚMIERTELNE (CR 704.5g), a bez kwoty widział wyłącznie rozmiar celu, więc
+    // wolał 2/4 (38) nad 1/1 (33) i marnował zdolność. Kwotę liczy TEN SAM
+    // resolver co rozstrzyganie (L41 — jeden odczyt dla oferty i efektu), więc
+    // liczba w ofercie równa się liczbie w efekcie; wariant zależny od CELU
+    // (Bring Low) dla różnych kandydatów daje różną kwotę. Triggerów
+    // obrażeniowych WIELOCELOWYCH katalog nie ma — pole tylko w ścieżce
+    // jednocelowej (wielocelowa ma własny budżet `damage_divided`).
+    const triggerDamageEffect = triggerTargetDamageEffectOf(intentAbility);
+    const triggerDamageField = (targetId) => {
+      if (!triggerDamageEffect) return {};
+      const source = state.objects.get(triggerTargetHead.sourceId);
+      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId);
+      return Number.isFinite(amount) ? { damage: amount } : {};
+    };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -7868,10 +7900,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...triggerDamageField(targetId), ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...triggerDamageField(null), ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
@@ -9460,6 +9492,18 @@ export function playerView(state, playerId) {
       sourceId: state.pendingExploits[0].sourceId,
       candidateIds: [...state.pendingExploits[0].candidateIds],
     } : null,
+    // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): decyzja
+    // „endure N” (liczniki na źródłe albo token N/N) pyta o TRYB, ale bez N
+    // wycena bota nie miała czym różnicować wielkości — zostawała płaska
+    // (42/40). N jest informacją PUBLICZNą (X wybiera gracz jawnie, komenda
+    // przechodzi przez stos), a źródło leży na polu bitwy — wystawiamy
+    // wyłącznie właścicielowi decyzji (wzorzec pendingExploits, L48).
+    pendingEndures: state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId
+      ? {
+          sourceId: state.pendingEndures[0].sourceId,
+          counters: state.pendingEndures[0].counters ?? 0,
+        }
+      : null,
     // A1/A2 (Final Parting): szukanie w bibliotece ujawnia WSZYSTKIE karty
     // decydentowi (CR 400.2 + 701.23 — przeszukanie = full information),
     // tak samo jak manifest_dread (M223), peek-pick-order (M293) czy scry.

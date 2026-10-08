@@ -19,6 +19,47 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-08 — batch64: kolekcja właściciela 261–328, 10 kart (PR #158, M439)
+
+Zlecenie: 10 kart z kolekcji (lista + kolumna `Plan` wiążąca). Plan commitem
+PRZED kodem (`8084c8f`, ADR 0020 A/C), potem jedna transza kodu (`ab68fa8`).
+Snapshoty i rulingi ze Scryfall (żadnego zapisu poza workspace — ADR 0010/0030);
+dwie rozbieżności wobec pamięci zweryfikowane przed kodowaniem (L57): ruling
+Man-o'-War mówi wprost „must target itself”, Druida potwierdzony drugim
+endpointem.
+
+Karty: Brave-Kin Duo (BLB), Bog Hoodlums (LRW), Druid of the Cowl (M19),
+Man-o'-War (MH1), Narset's Rebuke (TDM), Quandrix Campus (STX), Scouting Hawk
+(KTK), Spineseeker Centipede (DSK), Sultai Scavenger (CMR), Universal Solvent
+(CLB) — wszystkie `supported` (ADR 0022, limitations puste).
+
+Nowe elementy silnika (generyczne, ADR 0002): warunek Keen Sight (przeciwnik
+kontroluje więcej landów), clash z nagrodą licznikiem, delirium jako warunek
+statyczny (licznik typów kart grobu wyniesiony do liścia `graveyard-types.js`
+— bez cyklu importów, wzorzec L171), wpis Quandrix Campus w MANA_SOURCE_MAP
+oraz „Add {U}{R}{W}” jako trzy jednostki many. Czwarty element — poza założeniami
+roadmapy — to kartowy `cantBlock` („This creature can't block”, CR 509.1a):
+przeszedł CAŁY łańcuch L21 (registry → materialize → fabryka
+`createGameObject`/`addObject` z wpisem w `ADD_OBJECT_FIELDS` → `installDeck`),
+bo strażnik M379/C wykrył, że bez wpisu w `installDeck` mechanika żyje tylko
+w testach helperowych (`...gameObjectDataOf`) i jest martwa w prawdziwych
+partiach. To jedyny przypadek w tym batchu, gdzie test zielony kłamał.
+
+Talie: generator przeliczył podział Dominaria po doswiadczeniu Man-o'-War —
+`dominaria-ub`/`dominaria-wrg` → `dominaria-wu`/`dominaria-brg` (L180, ta sama
+klasa zdarzenia co batch 63, w drugą stronę). Migracja wykonana razem z
+batchem (precedens domknięcia batcha 63): 72 żywe referencje ścieżek
+przeniesione (28 plików testów, snapshot bota, narzędzia, TESTER_STOLU),
+rekordy historyczne bez zmian, seed 1 → 3 w `test/m257-uwagi-runda3.test.js`
+(clash/morph przestał wypadać w limicie kroków — L25).
+
+`test/real-cards-batch64.test.js`: 34 testy (scenariusze legalne i nielegalne
++ sanity Oracle/artId/plan). Każdy z trzech pinów na nową mechanikę
+sprawdzony mutacyjnie (usunięcie gałęzi czerwieni test partii). Bramki:
+`npm test` **7887/7887** (baseline 7853), build **73 moduły / 4953,4 kB**,
+audyty bota czysto (0 niewycenionych decyzji, pay-census 46 partii). Bez
+pełnego B0 (ADR 0018); nic nie scalone.
+
 ## 2026-10-05 — PMSSB-58: jakościowe domknięcie dziesięciu kart (kontynuacja PR #155, M438)
 
 Po odróżnieniu gotowości engine od jakości scoringu właściciel zlecił pełną
@@ -15687,3 +15728,302 @@ przepisywana):**
 - merytoryczna treść wpisu „2026-10-05c" (opis kodu PR #155) pozostaje
   ZGODNA z kodem — potwierdził ją audyt zaległy; nieprawdziwe są wyłącznie
   cytowane ścieżki artefaktów i numery commitów.
+
+## 2026-10-07b — zgłoszenie E (regeneracja jednorazowo) + cenzus cytatów CR
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158. Handoff:
+`docs/setup/HANDOFF_2026-10-07b.md`, plan: `docs/plans/PLAN_2026-10-07b-audyt-pr157-petla-jakosci.md`.
+
+- **Zgłoszenie E** (`8395679`): bot aktywował tę samą zdolność regeneracji 3×
+  z rzędu w jednej walce (log właściciela: Magmarch 5/3 vs Ballista Watcher
+  4/3, cała mana w błoto). Przyczyna nie była „bot nie widzi tarczy" — tarcza
+  wisi wtedy jeszcze **na stosie**, a `session.py` pyta bota ponownie, bo
+  aktywacja nie oddaje priorytetu. Fix w `heuristic-bot.js` (wzorzec
+  M179/M219/M230): tarcza już na celu LUB identyczna regeneracja na stosie →
+  `finish(-30)`; cytat **CR 701.19a** ze źródła (ADR 0030). Piny E/1–E/5 w
+  `test/zgloszenie-e-regeneracja-jednorazowo.test.js`; bez fixa E/4 pokazuje
+  `aktywacje=3`.
+- **Korekta cytatu** (`7033da4`): regeneracja to CR 701.19, nie 702.14
+  (702.14 = Landwalk) — znalezisko klasy L164.
+- **Cenzus horyzontalny** (`151cadb`): 210 numerów 701/702 w repo sprawdzonych
+  przeciwko nazwom cytowanych reguł (źródła: mtg.wiki `Keyword_ability` /
+  `Keyword_action`, CR 2026-09-25) — 0 nowych rozjazdów. Znalezisko: alias
+  Landwalk `'walk'` w strażniku `cr-numery-702-tabela-straznik.test.js`
+  dopasowywał polskie „walka" (combat) i wygaszał detektor — zaweżony do
+  `'walk\b'`, dowód RED na oryginalnej linii buga.
+- Bramy: fast 7784/7784, końcowa `test:all` **8048/8048** EXIT 0 (474,9 s),
+  build 72 moduły / 4904,0 kB. Otwarte: audyt Żywym Testerem (E3a).
+
+## 2026-10-08 — zgłoszenie F (Warmaker Gunship: trigger obrażeniowy marnuje lethal)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-f-warmaker-trigger-damage.md`.
+
+- **Zgłoszenie F**: Warmaker Gunship („deals damage equal to the number of
+  artifacts you control to target creature an opponent controls") — bot
+  wprowadzał statek, dostawał 1 obrażenia i bił 2/4 zamiast 1/1, marnując
+  zdolność. Pomiar przed fixem: 1/1 (lethal) = 33, 2/4 = 38, 3/3 = 39.
+- **Przyczyna**: gałąź `resolve_trigger_target` wyceniała cel jako
+  `30 + 2P + T`, a śmiertelność (`kill`) brała WYŁĄCZNIE z `debuffKills()`
+  (wymaga `cmd.debuff`); efekt `damage` nie nosił kwoty w komendzie, więc
+  większe ciało zawsze wygrywało. Klasa awarii: **L21** (jawna lista pól gubi
+  dane).
+- **Fix**: (1) `resolveDamageAmount` wydzielony z `applyEffect`
+  (`effects.js`) — JEDEN resolver kwoty dla rozstrzygania i oferty (L41);
+  (2) oferta `resolve_trigger_target` niesie `damage` (deskryptor intencji
+  `triggerTargetDamageEffectOf` w `effect-intent.js`); (3) z
+  `damageTargetValue` wydzielony predykat `damageIsLethal` (CR 704.5g/704.5i/
+  615.6/702.12b) złożony z `debuffKills` w premię `kill` (+60 wrogi / −60
+  własny).
+- **Efekt**: 1/1 = 93 > 2/4 = 38 > 3/3 = 39; Reclusive Artificer nie zabija
+  własnego stwora (−63). Testy F/1–F/6, dowód mutacyjny 0/7, 3/7, 6/7.
+  Numery CR 702.12b i 704.5i dopisane do tabeli cytatów (plik CR zweryfikowany
+  SHA-256).
+- **Porządek**: fixture audytowy `decks/regen-audyt.txt` (E3a) przeniesiony do
+  `tools/table-tester/fixtures/` — w `decks/` czerwienił 6 strażników talii.
+- Bramy: fast **7791/7791** EXIT 0, build 72 moduły / 4909,0 kB EXIT 0.
+  Uwaga techniczna: sandbox startowy był zresetowany do commitu bazowego
+  (`1222754`) — praca dosypana na wierzch zdalnej gałęzi rebase'em logicznym
+  (`git reset --mixed origin/…`), bez force push (ADR 0020 D).
+
+## 2026-10-08 — zgłoszenie G (Forge Devil: OBOWIĄZKOWY ETB-ping skazany na własne ciało)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-g-forge-devil-ping-wlasny-cel.md`.
+
+- **Zgłoszenie G**: Forge Devil („it deals 1 damage to target creature and 1
+  damage to you\") — bot wystawiał go, gdy jedynym celem pingu była jego własna
+  1/1: zabijał własnego stwora, tracił 1 życia, nic nie zyskiwał. Pomiar przed
+  fixem: własna 1/1 tylko → cast **62,1** (powyżej passu 0).
+- **Przyczyna**: strażnik M103/A bronił wyłącznie PUSTEGO stołu — bramka „jest
+  jakikolwiek stwór na stole" (`anyCreatureOnBoard`) przepuszczała własne
+  ciało; premia ETB za obrażenia nie odróżniała „biję wroga" od „muszę bić
+  siebie". Klasa awarii: **L14** (bramka zastępcza zamiast warunku).
+- **Fix**: nowy helper `etbForcedOwnPingPenalty` (`heuristic-bot.js`) — liczy
+  OFIARY pingu przez `publicEtbTargets` + `controllerId`: cel wrogi → 0,
+  własne ciało, które wchłonie obrażenia (indestructible też) → 0, spłoną
+  wszyscy (własne stwory + sam wchodzący, CR 603.6a) → kara = ciało najtańszej
+  ofiary (CR 704.5g/702.12b), brak kandydatów → 80 jak w M103/A. Blok M103/A
+  przepisany na detektor OBOWIĄZKOWEGO pingu (bez `mayFire` — odmowa jest
+  darmowa; kwota nie-liczbowa → 0). Generycznie po deskryptorze `requiresTarget`
+  (ADR 0002), wycena tylko z `PlayerView` (ADR 0017).
+- **Efekt**: własna 1/1 tylko → pass (−3,6); dwie własne 1/1 → pass; 1/1 z
+  obrażeniami → pass; własna 3/3 i 2/2 (wchłaniają) → cast 62,1 ✓; wróg ma
+  stwora → cast 64,8 (pin M103/A); pusty stół → pass (pin M103/A); wróg ma
+  tylko artefakt → pass (−0,9, przed fixem błędnie cast 64,8); Reclusive
+  Artificer (trigger opcjonalny) → cast 63,9 bez kary. Testy G/1–G/5 (10
+  scenów), dowód mutacyjny: mG1 8/2, mG2 9/1, mG3 9/1; mG4/mG5 równoważne
+  (dwie gałęzie defensywne — w katalogu obie karty w detektorze są stworami,
+  a jedyna `mayFire` ma kwotę dynamiczną).
+- Bramy: fast **7801/7801** EXIT 0, piny Forge Devil 13/13. Cytaty CR 603.6a,
+  702.12b, 704.5g pobrane z mirroru (SHA-256 `8d860e45…`) — wszystkie już w
+  tabeli cytatów.
+
+## 2026-10-08 — zgłoszenie H (Krumar Initiate: „endure X" co kolejkę 1/1 za 1 życie)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-h-krumar-initiate-endure-x.md`.
+
+- **Zgłoszenie H**: bot co kolejkę płacił 1 życia za token Spirit 1/1, który
+  potem ginie. Pomiar przed fixem: X=1 = 0,5, X=2..8 = 0 — X=1 wygrywało
+  ZAWSZE, bo efekt `endure_x` nie miał wyceny w gałęzi `activate_ability`, a
+  koszt „Pay X life" nie był wyceniony NIGDZIE. Tryb endure był płaski (42/40),
+  a warianty X miały w śladzie identyczną etykietę (klasa L34/L40).
+- **Przyczyna**: skalowany efekt bez wyceny → jedyny składnik zależny od X to
+  kara za manę (stropiona na X=2), więc minimum wygrywa bez znaczenia dla
+  stołu. Klasa awarii: **L50/L131** (efekt bez wyceny + wariant oferty bez
+  różnicy w notacji).
+- **Fix** (generycznie po deskryptorze `endure_x` + koszcie `payLifeX`,
+  ADR 0002; wycena tylko z `PlayerView`, ADR 0017):
+  `endureBodyValue` — JEDNA miara ciała dla obu trybów (CR 701.63a): punkty do
+  `need` = max(P, T) największego ciała wroga + 1 (reguła właściciela: „power
+  większy niż toughness albo toughness większy niż power") mają pełną wagę
+  (P×2 + T×1), powyżej ważą mniej niż życie za punkt — bot rośnie do celu, nie
+  do limitu many; bez ciał wroga celem jest bezpieczny budżet życia.
+  `endureXValue` = lepszy z trybów (liczniki na ŹRÓDLE: rozmiar = źródło + X,
+  albo token X/X). Koszt „Pay X life" (CR 601.2h): drabina samouszkodzenia
+  (PMSSB-36) + próg 25% puli z karą za każdy punkt powyżej.
+  `resolve_endure_choice` liczy ciało z N (nowe pole widoku `pendingEndures`)
+  tą samą miarą + premia za drugie ciało. Ślad nosi `,X=n` i `(tryb)`.
+- **Efekt** (E2E): wróg 5/5 + 20 życia → X=4, liczniki, źródło 6/6 za 4 życia
+  (przed fixem 1/1 za 1 życie); wróg 2/2 → X=1 (3/3); wróg 4/4 → X=3 (5/5);
+  wróg 8/8 + 40 życia → X=7 (9/9); pusty stół → X=3 (5/5); 8 życia → X=1;
+  X większy niż pula życia jest poza ofertą, a wycena i tak karze samobójstwo.
+- Testy H/1–H/6 (11 scenów), dowód mutacyjny: mH1 2/9, mH2 10/1, mH3 8/3,
+  mH4 5/6, mH5 3/8, mH6 10/1. Cytaty CR 701.63a/b, 601.2h, 118.4, 302.6
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`) — wszystkie już w tabeli.
+- Bramy: fast **7812/7812** EXIT 0, build 72 moduły / 4920,6 kB EXIT 0,
+  cr-numery OK (513 numerów / 5505 cytatów).
+- Uwaga techniczna: sandbox został w trakcie sesji zresetowany do commitu
+  bazowego `1222754` (lokalne refy zniknęły, drzewo robotcze zostało).
+  Procedura ADR 0020 D: `git fetch` + `git reset --mixed origin/<gałąź>`
+  (HEAD = `7c2ec2e`, zero commitów do przepchnęcia) — bez force-push; praca H
+  była wyłącznie w drzewie roboczym, więc nic nie przepadło.
+
+## 2026-10-08 — zgłoszenie I: Wrap in Flames rzucany bez przesłanki (84 → pass)
+
+- **Zgłoszenie**: „Wrap in Flames deals 1 damage to each of up to three target
+  creatures. Those creatures can't block this turn." ({3}{R}) — bot rzucał ją
+  zawsze, gdy miał manę: „dwie kreatury miały >1 toughness i nic im się nie
+  stało, a bot nie atakował w ogóle".
+- **Przyczyna**: baza czaru (`spellBase` 50) + płaska wartość celu
+  (`12 + 2P` za wrogi cel, 8 za „can't block") nosiły czar ponad pass ZAWSZE,
+  gdy na stole stał choć jeden wrogi stwór — żadna składowa nie pytała o
+  śmiertelność obrażeń ani o zamiar ataku, a stary `else if` gubił ridera
+  „can't block", gdy oba efekty siedziały w deskryptorze. Klasa awarii:
+  **L50/L131** (efekt bez wyceny + baza niosąca wariant) w wariancie **M146**.
+- **Fix** (generycznie po deskryptorze `apply_to_each_target` + typach efektów,
+  ADR 0002; wycena tylko z `PlayerView`, ADR 0017):
+  `attackWindowAttackerIds` — JEDEN odczyt okna ataku (zadeklarowany atak albo
+  precombat main1/beginning_of_combat z ciałem zdolnym atakować; `null` = brak
+  zamiaru), używany też przez `cantBlockPayoffValue` (PMSSB-40, L41);
+  `lethalEnemyCreatureValue` — wydzielona z `damageTargetValue` formuła removalu
+  ciała, użyta też w wrapperze; obrażenia w wrogiego stwora: śmiertelne ⇒ ta
+  wartość, nieśmiertelne ⇒ 0 (chip nie jest stratą, „can't block" w tym samym
+  rzucie jedzie za darmo — L121); „can't block" w osobnym `if` z
+  `cantBlockRemovalValue` WYŁĄCZNIE w oknie ataku; czar zapakowany we wrapper,
+  którego KAŻDY wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ
+  kwocie, startuje od −1 (M146) — obrażenia skalujące (`amount 'X'`) nie są
+  utylitarne.
+- **Efekt** (E2E): wróg 2/4 + 3/3 bez atakujących → **pass** (przed fixem
+  cast 84,0); wróg 1/1 → cast 29,0 (cel = ciało śmiertelne); atakujący 3/3 +
+  bloker 2/4 → cast 5,0 (cel = bloker); postcombat main2 → pass; tapnięty
+  bloker → pass; atakujący + 1/1 + 2/4 → cast 26,0 (cel = oba).
+- Testy I/1–I/7 (10 scenów), pin M233 zaktualizowany (trzeci test cementował
+  zgłoszone zachowanie), dowód mutacyjny: mI1 8/7, mI2 10/5, mI3 10/5,
+  mI4 14/1, mI4b 14/1, mI5 14/1. Cytaty CR 601.2c / 509.1a / 509.1b / 704.5g
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`).
+- Bramy: fast **7824/7824** EXIT 0, `test:slow` **264/264** EXIT 0, build EXIT 0,
+  cr-numery OK. Golden master zregenerowany — dryf pochodził z poprzedniego
+  zgłoszenia H (test czerwienił już w HEAD), pomiar potwierdza neutralność
+  zgłoszenia I dla fixture (overallHash identyczny z i bez fixa).
+- Uwaga techniczna: opis PR #158 trzymany od tej sesji w śledzonym pliku
+  `docs/plans/PR_158_OPIS.md` (`.arena/pr-body.txt` ginie przy resecie
+  sandboxa) — wniosek z poprzedniego resetu.
+
+## 2026-10-08 — zgłoszenie K: Village Bell-Ringer i kreatury z flash jako COMBAT TRICK
+
+- **Zgłoszenie**: karty z flash mają być promowane przez scoring jako sztuczka
+  bojowa. 1) W własnej turze bota, gdy jest mana na kreaturę z flash — bot
+  ŚWIADOMIE jej nie rzuca, lądy zostają nietknięte (mana trzymana). 2) W turze
+  przeciwnika PO deklaracji atakujących taka kreatura wchodzi (bot nic nie traci,
+  mana się nie marnuje) i ma szansę zaskoczyć przeciwnika blokiem. 3) ETB
+  Bell-Ringera (odtapowanie własnych stworów) ma być częścią wartości tej gry.
+  4) Jeśli przeciwnik nie zaatakował — kreatura wchodzi w Głównej 2 przeciwnika,
+  żeby nie zmarnować zostawionej na nią many.
+- **Przyczyna**: baza ciała (~70) znosiła każdy wariant rzutu — wycena nie pytała o
+  OKNO, więc bot rzucał sztuczkę w każdym kroku (także po deklaracji blokujących,
+  gdzie wchodzące ciało nie jest już blokerem, CR 509.1a) i w własnej Głównej 1
+  (CR 302.6: bez haste kreatura nie atakuje w tej turze). ETB „untap all creatures
+  you control” było płaskie 3 — wartość bez wymiaru. Klasa awarii: **L50/L131** +
+  **L48**.
+- **Fix** (po deskryptorach flash + Creature, ADR 0002; wyłącznie z PlayerView,
+  ADR 0017; wspólne dla 7 kreatur z flash w rejestrze, L41):
+  flashCreatureCastTooEarly(view, def, card) — rzut jest „za wcześnie” w każdym
+  kroku własnej tury i w turze przeciwnika przed declare_attackers oraz po
+  declare_blockers; jedyny krok obronny to declare_attackers i tylko gdy
+  kreatura realnie może zablokować atakującego (attackerCanBeBlocked — CR 509.1b
+  + M202/H); post-combat dozwolony (CR 500.5). Wyjątki: haste,
+  entersWithCountersIf, koszt nieopłacalny z nietapniętych lądów później.
+  Kara okna: Math.min(score,0) - P.flashCreatureEarlyWindowPenalty (nowy parametr,
+  10) — wycena karty WYZEROWANA, więc nawet bardzo silne ETB nie wróci ponad pass
+  (L3), a epsilon nadal różnicuje karty z flash (L48). ETB „untap all creatures you
+  control”: płaskie 3 → untapAllCreaturesValue (suma untapTargetValue po
+  TAPNIĘTYCH własnych stworach, tylko tam, gdzie odkręcenie daje NOWĄ akcję — blok w
+  cudzej turze z bramką cantBlock, atak we własnym precombat/combat z bramką
+  canAttackNow; CR 502.3).
+- **Efekt**: main1 bota → **pass** (−9,0; lądy nietknięte, mana 3 w puli);
+  beginning_of_combat wroga → pass; declare_attackers z naziemnym atakującym →
+  **cast** (68,4; z tapniętym własnym 3/3 = 77,4 = ETB 8+2×3); atak LATAJĄCY → pass
+  (brak reakcji); declare_blockers → poniżej passu; main2 wroga bez ataku →
+  **cast**. E2E: bot trzyma kartę w main1, rzuca w declare_attackers i BLOKUJE nią
+  2/4 — 0 obrażeń w bota.
+- Testy K/1–K/13 (16 scenów), dowód mutacyjny: mK1–mK10, każda mutacja wyłącza
+  konkretne testy. Cytaty CR 302.6 / 509.1a / 502.3 / 500.5 zweryfikowane przy
+  źródle (SHA-256 8d860e45…); 500.5 dopisany do tabeli numerów procedurą
+  cr-numery.mjs --zapisz, cytaty CR 500.4 w module many ujednolicone do 500.5.
+- Bramy: fast **7853/7853** EXIT 0, test:slow **264/264** EXIT 0, pełny pakiet
+  **8117/8117** EXIT 0 (było 8101 — +16 testów K), build 72 moduły / 4935,8 kB
+  EXIT 0, cr-numery OK (516 numerów / 5551 cytatów). Lektura startowa po lekcji L183:
+  **99 985 tokenów** (zapas 15; skrócenia wg kontraktu AGENTS.md §0).
+
+## 2026-10-08 — zgłoszenie J: Fledgling Imp — latanie aktywowane bez powodu
+
+- **Zgłoszenie**: „{B}, Discard a card: This creature gains flying until end of
+  turn." — bot aktywował zdolność, gdy WSZYSTKIE kreatury właściciela były
+  tapnięte: zapłacił {B}, wyrzucił Brute Force (którym mógł dodać +3/+3) i
+  zadał 2 obrażeń, które i tak przeszedby. „To latanie to ma sens tylko gdy
+  jest do czegoś potrzebne … I warunek konieczny — ma na ręce ZBĘDNĄ kartę."
+- **Przyczyna**: gałąź `flying` w `keywordGrantWindowValue` pytała wyłącznie o
+  odpowiedź w powietrzu (`hasUntappedFlyingBlocker`) i nigdy nie pytała, czy
+  wróg ma w ogóle NIETAPNIĘTEGO blokera NAZIEMNEGO. Przy tapniętym stole atak
+  przechodzi i tak, więc grant nie zmienia NIC — a baza zdolności (+2) minus
+  mana (−1) plus premia okna (+2 + moc) dawało +1, czyli ponad pass. Ten sam
+  błąd dla „wróg bez stworów". Klasa awarii: **L50/L131** w wariancie **M146**.
+- **Fix** (generycznie po typie efektu `grant_keywords_until_end_of_turn` i
+  stanie z PlayerView, ADR 0002/0017; wspólne dla czarów i zdolności, L41):
+  `enemyHasUntappedGroundBlockerFor` — przeciwnik ma nietapniętego stwora,
+  który bez latania ZABLOKOWAŁBY odbiorcę (przez `attackerCanBeBlocked`, więc
+  menace / ewazja mocowa / `cantBlock` liczone tą samą regułą co wycena ataku);
+  premia `2 + moc` za latanie tylko gdy taki bloker ISTNIEJE i wróg nie ma
+  flyera/reach, w przeciwnym razie kara −10 (efekt jałowy, nie zero — L3).
+  Gałąź obronna (blok nadlatującego latającego atakującego) bez zmian.
+- **Efekt** (E2E): wróg 2/4 + 2/3 tapnięte → **pass** (przed fixem
+  activate_ability +1); wróg bez stworów → pass; wróg 2/4 nietapnięty →
+  activate (latanie omija blokera); wróg z flyer/reach → pass; imp z menace i
+  jednym blokerem → pass; okno obronne (tura wroga, atakujący z flying) →
+  activate; main2 → pass. Aktywacja faktycznie płaci {B}, wyrzuca kartę do
+  grobu (CR 701.9a) i nadaje flying (CR 702.9b).
+- Testy J/1–J/7 (13 scenów), dowód mutacyjny: mJ1 7/6, mJ2 11/2, mJ3 10/3,
+  mJ4 10/3, mJ5 11/2. Cytaty CR 702.9b / 509.1a / 509.1b / 502.3 / 701.9a
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`); 701.9a dopisany do tabeli
+  numerów procedurą `cr-numery.mjs --zapisz`.
+- Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, build
+  72 moduły / 4928,2 kB EXIT 0, cr-numery OK (514 numerów / 5534 cytatów).
+- Budżet lektury startowej (L66): wpis L182 wypchnął lekturę ponad próg 100k
+  tokenów — CI czerwone na samym commicie dokumentacyjnym. Zapłacono
+  skróceniem istniejących wpisów (AGENTS.md §0 + L5/L55/L58/L60/L106/L134, bez
+  utraty faktów); pełny pakiet `node tools/run-tests.mjs all` **8101/8101** EXIT 0,
+  lektura **99 728** tokenów (zapas 272).
+
+## 2026-10-08 — PMSSB-59: jakościowe domknięcie batcha 64 (PR #158, M441)
+
+Komplet 10/10 kart batcha 64 w engine nie był kompletem PMSSB. Plan `3b8c48e`
+przed kodem (ADR 0020 A/C), baza `ab68fa8`. Dwie zielone fale osobno:
+`d49100d` (A) i `e5a29a1` (B); werdykty kontrolne test-only. Gałąź sesji
+`arena/6b9bb8b8-mtg`, bez force push, nic na `main`.
+
+**Fala A (F1, Universal Solvent):** ścieżka `activate_ability` nie miała gałęzi
+nagrody dla twardego removalu — wyceniana wyłącznie rodzina `BOUNCE_STRENGTH`,
+więc „{7}, {T}, poświęć: zniszcz celowy permanent" płaciła koszt i dostawała za
+NIC (−5 dla każdego celu, pass = 0 → bot nigdy nie aktywował). `REMOVAL_EFFECTS`
+wyciągnięte ze ścieżki czarów na poziom modułu (L41 — jeden zestaw typów) i
+lustrzana gałąź z tą samą skalą ofiary. Kara własnego celu bez podwójnego −90
+(`selfHarmPenalty` już go pobiera). PO: 2/1 → +27, 6/5 → +51.
+
+**Fala B (F2, Brave-Kin Duo):** kara „pump poza walką w mojej turze" (−26) jest
+pisana dla sztuczek instant-speed, które można odłożyć do walki; zdolność z
+ograniczeniem sorcery NIE MA późniejszego okna, więc kara wyceniała jedyne
+legalne okno jak błąd (−28 = pass). Dodatkowo utrata ataku za {T} była liczona
+na odbiorcy zamiast na tapniętym źródle. PO: pump domykający lethal → +49
+(aktywacja), jałowa pompa → pass.
+
+**Werdykty „by design" (bez zmiany kodu):** ręczna aktywacja many ze stwora
+(silnik sam tapuje stwora przy auto-płatności), skrut lądu przy spornej manie,
+drabinka cienkiej biblioteki za ETB-tutora. Proponowana fala D (rozdzielenie
+searchu ETB na drabinkę „tylko deck-out") została WYCOFANA, bo łamała istniejący
+pin C/5 w `dawntreader-elk-tutor-cienka-biblioteka.test.js` (fast 7899/7900,
+all 8163/8164 — jedyny FAIL) — komentarz `libraryDrainTax` obiecuje „tylko
+deck-out" dla drenaży draw/mill (Rager/Skaab), a search celowo idzie pełną
+drabinką. Trzy testy-kontroli utrwalają werdykt.
+
+**Pułapka metodyczna:** karty właściciela siedzą w `VIRTUAL_BASIC_LANDS`, nie w
+`REAL_CARDS` — kontrfaktyka patchuje ten wpis, inaczej override przepada i
+porównania wychodzą zerowe (pierwszy przebieg pomiarów Keen Sight/delirium
+przez to padł).
+
+**Bramy:** all 8160/8160 po fali B, fast 7900/7900 i all 8164/8164 po
+werdyktach kontrolnych, build 73 moduły / 4959,4 kB. Benchmark B0 na TEJ SAMEJ
+talii (deki zmieniły się w batchcie 64, więc porównanie z PMSSB-58 byłoby
+nieporównywalne): 603/672 (89,7%) vs 604/672 (89,9%) baseline — bez zmiany w
+granicach szumu, vs aggio identycznie 80,7%.

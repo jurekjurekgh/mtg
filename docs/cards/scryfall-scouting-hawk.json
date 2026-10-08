@@ -1,0 +1,32 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Scouting%20Hawk&set=CLB",
+ "print": "clb",
+ "name": "Scouting Hawk",
+ "mana_cost": "{2}{W}",
+ "cmc": 3,
+ "type_line": "Creature — Bird",
+ "oracle_text": "Flying\nKeen Sight — When this creature enters, if an opponent controls more lands than you, search your library for a basic Plains card, put it onto the battlefield tapped, then shuffle.",
+ "power": "1",
+ "toughness": "1",
+ "colors": [
+  "W"
+ ],
+ "color_identity": [
+  "W"
+ ],
+ "keywords": [
+  "Flying",
+  "Keen Sight"
+ ],
+ "set": "clb",
+ "set_name": "Commander Legends: Battle for Baldur's Gate",
+ "collector_number": "41",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/b/c/bce2209e-7a5c-4394-876c-e0f68cfba9ca.jpg?1783922803"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/clb/41/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

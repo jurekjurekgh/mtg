@@ -1,25 +1,26 @@
-# Dominaria (WRG)
+# Dominaria (BRG)
 
 1x Chatter of the Squirrel
-1x Survivor of Korlis
+1x Dreams of Steel and Oil
 1x Blanchwood Prowler
-1x Enduring Sliver
 1x Garruk's Companion
 1x Goblin Picker
 1x Jolrael, Mwonvuli Recluse
 1x Snarespinner
-1x Alaborn Trooper
-1x Charismatic Vanguard
+1x Expunge
 1x Fiery Hellhound
-1x Fortify
+1x Mournful Zombie
+1x Phyrexian Rager (DMU)
 1x Simian Simulacrum
+1x Faceless Butcher
 1x Giant Spider
-1x Razorfoot Griffin
-1x Serra's Embrace
 1x Shiv's Embrace
-1x Static Net
+1x Undead Servant
+1x Dead Ringers
 1x Disa the Restless
-4x Plains
-1x Swamp
-2x Mountain
+1x Final Parting
+1x Urborg Uprising
+1x Mindstab
+5x Swamp
+3x Mountain
 3x Forest

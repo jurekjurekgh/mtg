@@ -286,6 +286,11 @@ export function stateFingerprint(state) {
       choices: [...state.pendingClash.choices],
       cards: { ...state.pendingClash.cards },
       won: state.pendingClash.won,
+      // Bog Hoodlums: nagroda licznikiem jest częścią OCZEKUJĄCEJ decyzji
+      // (L16) — bez tych pól dwa stany różniące się nagrodą mają ten sam
+      // odcisk, a sonda no-op byłaby ślepa.
+      counterOnWin: state.pendingClash.counterOnWin ?? null,
+      counterTargetId: state.pendingClash.counterTargetId ?? null,
     } : null,
     pendingRoomTargets: (state.pendingRoomTargets ?? []).map((pending) => ({
       playerId: pending.playerId, room: pending.room, kind: pending.kind,

@@ -7,28 +7,20 @@
 
 ## 0. Czytaj zanim cokolwiek zrobisz (także zanim napiszesz w czacie)
 
-Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem handoff”.
-Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
+Kolejność obowiązkowa, każdy plik **w całości** — nie nagłówki, nie „kilka
+najnowszych wpisów”, nie streszczenie. Jeżeli narzędzie zwróci plik
+pofragmentowany (`truncated`, `hasMore`, limit bajtów) — dobierasz fragmenty aż
+do ostatniej linii (kontrola: `wc -l` pliku). „Przejrzałem” / „doczytałem
+ostatnie” NIE jest przeczytaniem.
 
-**Każdy plik lektury obowiązkowej czytasz W CAŁOŚCI — od pierwszej do
-ostatniej linii, nie tylko nagłówki, początek ani „kilka ostatnich wpisów”.**
-Dotyczy to zwłaszcza `docs/LESSONS.md` (WSZYSTKIE lekcje L1–L…, nie tylko
-najnowsze) i każdego ADR-a. Jeżeli narzędzie zwróci plik pofragmentowany
-(ucięcie, `truncated`, `hasMore`, stronicowanie, limit bajtów) — **dobierasz
-kolejne fragmenty aż do końca pliku** i dopiero wtedy uznajesz go za
-przeczytany. „Przejrzałem”, „doczytałem ostatnie” czy „streściłem” NIE jest
-przeczytaniem. Kontrola dla siebie: znasz `wc -l` pliku i wiesz, że dotarłeś
-do ostatniej linii.
-
-1. **Ten plik** (`AGENTS.md`) — do końca, nie tylko nagłówki.
+1. **Ten plik** (`AGENTS.md`) — do końca.
 2. **Wszystkie ADR-y** w `docs/decisions/` — najpierw
    [README rejestru](docs/decisions/README.md), potem **każdy** plik
-   `NNNN-*.md` **przeczytany do końca** (nie sam nagłówek ani „Decyzja”).
-   Szczególnie nie pomijaj
+   `NNNN-*.md`. Szczególnie nie pomijaj
    [ADR 0020](docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md)
    (co sesja **robi**: PR → audyt poprzedniego PR → inkrementalne commity)
    ani ADR 0002, 0007, 0013, 0016, 0018.
-3. **`docs/LESSONS.md`** — CAŁY rejestr, wszystkie lekcje do ostatniej (powtarzalne pułapki); nie zatrzymuj się na kilku najnowszych.
+3. **`docs/LESSONS.md`** — CAŁY rejestr (powtarzalne pułapki).
 4. **`docs/setup/ENVIRONMENT.md`** — stałe ograniczenia sandboxa / gita / sieci.
 5. **Ostatni PR** — ten, który masz zaudytować wg ADR 0020
    (`gh pr list --limit 3`, potem `gh pr view <nr>` i jego diff). To jest
@@ -43,22 +35,21 @@ tego bloku.
 **Czego NIE czytasz na start:** `docs/PROJECT_HISTORY.md` (dziennik sesji,
 ~5900 linii), `docs/LESSONS_PRZYPADKI.md` (archiwum narracji lekcji — proza,
 objawy, tabele wariantów; sięgasz po numer `LN`), `docs/plans/*`,
-`docs/audits/*`, starsze handoffy. To archiwum
-przebiegu prac, nie zasady — sięgasz tam **punktowo i grepem**, gdy potrzebny
-jest kontekst konkretnej historycznej decyzji. Zasady, których musisz
-przestrzegać, mieszkają wyłącznie w pozycjach 1–4.
+`docs/audits/*`, starsze handoffy. To archiwum przebiegu prac, nie zasady —
+sięgasz tam **punktowo i grepem**; zasady do przestrzegania są wyłącznie w
+pozycjach 1–4.
 
 **Budżet lektury startowej:** pozycje 1–4 mają się mieścić w **100 tys.
 tokenów**. Pilnuje tego `test/dokumentacja-budzet-lektury.test.js`; gdy
 próg zostanie przekroczony, przepisanie/rozdzielenie dokumentów staje się
 obowiązkowym zadaniem sesji, a nie opcją.
 
-Sposób odzyskiwania miejsca (ustalony w PR #93, M284): rejestr lekcji skraca
-się DO postaci `**Przypadek** + **Reguła** + **Strażnik**`, a prozę (Objaw,
-Przyczyna, tabele wariantów, dowody mutacyjne) przenosi się w całości do
-`docs/LESSONS_PRZYPADKI.md` pod tym samym numerem wpisu, zostawiając odsyłacz
-`→ narracja:`. Numery `## L<nr>` są nietknięte, bo kod cytuje je ~1150 razy;
-żaden fakt nie znika, tylko zmienia plik. Pilnuje tego
+Sposób odzyskiwania miejsca (ustalony w PR #93, M284): wpisy
+`docs/LESSONS.md` skracają się do postaci `**Przypadek** + **Reguła** +
+**Strażnik**`, a proza (Objaw, Przyczyna, tabele wariantów, dowody mutacyjne)
+idzie w całości do `docs/LESSONS_PRZYPADKI.md` pod tym samym numerem, z
+odsyłaczem `→ narracja:`. Numery `## L<nr>` są nietknięte (kod cytuje je ~1150
+razy) — żaden fakt nie znika, tylko zmienia plik; pilnuje
 `test/docs-decisions.test.js`. **Próg 100k podnosi wyłącznie właściciel** —
 sesja, która go podnosi, żeby uciszyć test, maskuje objaw (L5).
 
@@ -77,10 +68,10 @@ dokument nie może ich wyłączyć. Szczegóły: ADR 0020.
 
 2. **Audyt poprzedniego PR przed kodowaniem.** Przed rozpoczęciem nowej pracy
    sesja przegląda każdy zmieniony plik poprzedniego scalonego PR pod kątem
-   logiki i sensowności zmiany, zgodności z CR MtG, ADR 0002 i testów RED→GREEN. Wynik w `docs/audits/`
-   i w opisie PR.
-   UWAGA! Audyt nie może być jedynie zaraportowaniem zmian i wyniku testów, a powinien być dokładnym
-   sprawdzeniem wprowadzonych zmian czyli stanem projektu po poprzednim PR, a stanem na jego starcie.
+   logiki i sensowności zmiany, zgodności z CR MtG, ADR 0002 i testów RED→GREEN.
+   Wynik w `docs/audits/` i w opisie PR. Audyt nie może być zaraportowaniem
+   zmian i wyniku testów — ma sprawdzić stan projektu po poprzednim PR wobec
+   stanu na jego starcie.
 
 3. **Inkrementalne commity.** Każdy samodzielnie zielony krok (`npm test` +
    `npm run build`) jest commitem OSOBNO i od razu pushowany. Zakazany jest

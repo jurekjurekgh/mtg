@@ -115,7 +115,7 @@ const ALIASY_702 = {
   11: ['hexproof'],
   12: ['indestruct', 'niezniszcz'],
   13: ['intimidate', 'zastrasz'],
-  14: ['walk', 'chodzen', 'ląd', 'bagno', 'wysp', 'las', 'gór'],
+  14: ['walk\\b', 'chodzen', 'ląd', 'bagno', 'wysp', 'las', 'gór'],
   15: ['lifelink', 'więź życia', 'lecz'],
   16: ['protection', 'ochron', 'chronion'],
   17: ['reach', 'zasięg'],

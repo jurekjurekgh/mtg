@@ -10,6 +10,7 @@ import {
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
+import { countGraveyardCardTypes } from './graveyard-types.js';
 import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
@@ -87,17 +88,15 @@ function bumpSpeedOnLifeLost(state, loserId) {
  * próg 4). Filtr typów to wspólna `CARD_TYPES` (CR 205.2a) — nadtypy się nie
  * liczą, tokeny w grobie nie są kartami (jawna flaga `isToken`, CR 108.2b,
  * `isCardObject` z `zones.js`) i nie wnoszą typu.
+ *
+ * Reguła żyje w liściu `graveyard-types.js` (zero zależności) — ten plik nie
+ * mógłby jej brać z `permanents.js` (cykl importów, ADR 0011), a konsumentów
+ * jest trzy: triggery, bramka aktywacji (`abilities.js`) i warunek statyczny
+ * (`permanents.js` — Spineseeker Centipede). Eksport zostaje, żeby nie
+ * przepinać importów u konsumentów (L171).
  */
 export function graveyardCardTypeCount(state, playerId) {
-  const present = new Set();
-  for (const objectId of state.zones.graveyard) {
-    const object = state.objects.get(objectId);
-    if (!isCardObject(object) || object.controllerId !== playerId) continue;
-    for (const type of object.types ?? []) {
-      if (CARD_TYPES.includes(type)) present.add(type);
-    }
-  }
-  return present.size;
+  return countGraveyardCardTypes(state, playerId, CARD_TYPES);
 }
 
 function toEffectList(ability) {
@@ -119,6 +118,19 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
     if (powers.size < condition.distinctCreaturePowersAtLeast) return false;
   }
   if (condition.noSpellsLastTurn) return state.lastTurnSpellsCast === 0;
+  // Keen Sight (Scouting Hawk, CLB): „if an opponent controls more lands than
+  // you" — porównanie liczby lądów NA POLU BITWY kontrolera źródła z każdym
+  // przeciwnikiem. Warunek liczony ze STANU przy wyzwoleniu (CR 603.4),
+  // bez literału nazwy karty (ADR 0002).
+  if (condition.opponentControlsMoreLands) {
+    const landsOf = (playerId) => [...(state?.objects?.values?.() ?? [])]
+      .filter((candidate) => candidate.zone === 'battlefield'
+        && candidate.controllerId === playerId
+        && (candidate.kind === 'land' || (candidate.types ?? []).includes('Land'))).length;
+    const mine = landsOf(sourceObject.controllerId);
+    return state.players.some((player) => player.id !== sourceObject.controllerId
+      && landsOf(player.id) > mine);
+  }
   // M158/Batch 39 (Exterminator Magmarch): warunki multiplayer („if ANOTHER
   // opponent ...") są w 1v1 martwe z definicji formatu (jest dokładnie jeden
   // przeciwnik) — jak brak strefy dowodzenia (ADR 0022: fakt formatu).
@@ -3006,8 +3018,9 @@ function processTriggersScan(state, recentEvents) {
           }
         }
         // Zgłoszenie D właściciela (2026-10-07, CR 603.10 looks-back):
-        // aura odeszła W TEJ SAMEJ komendzie co host (SBA 704.5m po
-        // śmiertelnych obrażeniach) — skan działa PO SBA, więc pętla wyżej
+        // aura odeszła W TEJ SAMEJ komendzie co host (SBA 704.5g niszczy
+        // stwora po śmiertelnych obrażeniach, 704.5m wyrzuca aurę bez
+        // legalnego gospodarza) — skan działa PO SBA, więc pętla wyżej
         // nie widzi aury na polu bitwy, choć w chwili zdarzenia BYŁA
         // przypięta i zdolność odpala. Wzorzec jak dla zdolności WŁASNYCH
         // stwora (targetLki): LKI aury to obiekt po ruchu (`toId` ze

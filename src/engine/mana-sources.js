@@ -28,6 +28,10 @@ const MANA_SOURCE_MAP = Object.freeze({
   // Non-basic lands
   'rupture-spire': { colors: ['W', 'U', 'B', 'R', 'G'], amount: 1 }, // any
   'prismari-campus': { colors: ['U', 'R'], amount: 1 },
+  // Quandrix Campus (STX) — bliżniak Prismari (ten sam ksztalt Oracle:
+  // „wchodzi tapnięty; {T}: Add {G} lub {U}; {4}, {T}: skrut 1”), inna para
+  // kolorów. Batch 64.
+  'quandrix-campus': { colors: ['G', 'U'], amount: 1 },
   'unstable-frontier': { colors: [], amount: 1 }, // tylko {C}
   'secluded-steppe': { colors: ['W'], amount: 1 },
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },

@@ -13096,6 +13096,193 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       effect: [],
     })],
   }),
+  // =============================================================================
+  // Dwudziesty czwarty batch realnych kart (kolekcja 261–328). Roadmapa:
+  // docs/plans/PLAN_2026-10-08-batch64-kolekcja-261-328.md. Wzorce:
+  // Solvent ← Juggernaut (activated + destroy), Man-o'-War ← Jill (trigger +
+  // bounce), Druid ← Scorned Villager (add_mana w deskryptorze), Hawk ←
+  // wydobycie lądów + nowy warunek statyczny, Campus ← Prismari Campus,
+  // Duo ← Basilisk Gate (aktywacja z timingiem), Hoodlums ← Release the Ants
+  // (deskryptor clash z nowym polem nagrody).
+  // =============================================================================
+  defineCard({
+    id: 'universal-solvent', name: 'Universal Solvent', set: 'CMR',
+    types: ['Artifact'], colors: [], manaCost: 1,
+    oracleText: '{7}, {T}, Sacrifice this artifact: Destroy target permanent.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/b/bbe257c5-d2f8-4a4f-bf74-f6dc4b6861e4.jpg?1783928743',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 7, tap: true, sacrificeSelf: true },
+        targets: [{ type: 'permanent' }],
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    artId: 261, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['jako jedyna karta celuje w DOWOLNY permanent (type permanent), a nie tylko w stwora ani cel gracza'],
+  }),
+  defineCard({
+    id: 'man-o-war', name: "Man-o'-War", set: 'MH1',
+    types: ['Creature'], subtypes: ['Jellyfish'], colors: ['U'],
+    keywords: ['flying'], power: 2, toughness: 2, manaCost: 3,
+    oracleText: "When this creature enters, return target creature to its owner's hand.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/e/5eaa4199-df9b-494a-af7a-2491e8b0ef70.jpg?1783933145',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: [{ type: 'bounce_permanent' }],
+      }),
+    ],
+    artId: 263, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ["ruling MH1 2019-06-14: gdy nie ma innego stworu na polu bitwy, zdolność celuje w SIEBIE - Oracle nie zawiera zastrzezenia 'you don't control'"],
+  }),
+  defineCard({
+    id: 'druid-of-the-cowl', name: 'Druid of the Cowl', set: 'M19',
+    types: ['Creature'], subtypes: ['Elf', 'Druid'], colors: ['G'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: '{T}: Add {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/76ceff1d-9e83-41cc-b54b-8bf90d985da9.jpg?1783934537',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['G'] },
+      }),
+    ],
+    artId: 266, plan: 'Kaladesh',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mana z DESKRYPTORA karty (M193/A) - bez wpisu w MANA_SOURCE_MAP (strażnik M200/N1: mapa nie cieniuje deskryptora)'],
+  }),
+  defineCard({
+    id: 'scouting-hawk', name: 'Scouting Hawk', set: 'CLB',
+    types: ['Creature'], subtypes: ['Bird'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 3,
+    oracleText: 'Flying\nKeen Sight — When this creature enters, if an opponent controls more lands than you, search your library for a basic Plains card, put it onto the battlefield tapped, then shuffle.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bce2209e-7a5c-4394-876c-e0f68cfba9ca.jpg?1783922803',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', condition: { opponentControlsMoreLands: true } },
+        effect: { type: 'search_library_to_battlefield', qualifier: { types: ['Basic', 'Land'], subtypes: ['Plains'] }, entersTapped: true },
+      }),
+    ],
+    artId: 269, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Keen Sight: warunek liczony ZE STANU w conditionHolds (tylko lądów w kolorze karty, nie wszystkich lądów), a nie z deklaracji karty', 'brak slowa target - zdolność nie wybiera celu (CR 608.2b)'],
+  }),
+  defineCard({
+    id: 'sultai-scavenger', name: 'Sultai Scavenger', set: 'KTK',
+    types: ['Creature'], subtypes: ['Bird', 'Warrior'], colors: ['B'],
+    keywords: ['flying'], power: 3, toughness: 3, manaCost: 6,
+    oracleText: 'Delve (Each card you exile from your graveyard while casting this spell pays for {1}.)\nFlying',
+    imageUri: 'https://cards.scryfall.io/large/front/2/c/2cb8e423-f7e7-4ac3-acc2-2a3722e409e7.jpg?1783939077',
+    delve: true,
+    artId: 280, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['delve: wybór liczby wygnanych kart to blokująca decyzja w trakcie rzucania (pendingDelveExile)', 'rulingi KTK 2021-03-19: delve oplaca wyłącznie część generyczna kosztu; koszt kolorowy i mana value pozostają bez zmian'],
+  }),
+  defineCard({
+    id: 'quandrix-campus', name: 'Quandrix Campus', set: 'STX',
+    types: ['Land'], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {G} or {U}.\n{4}, {T}: Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f788da28-481b-41fa-a70c-b53db6b0f068.jpg?1783927273',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, tap: true },
+        effect: { type: 'scry', amount: 1 },
+      }),
+    ],
+    artId: 323, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['produkcja {G}/{U} z MANA_SOURCE_MAP (wpis quandrix-campus), a nie z deskryptora - jak Prismari Campus', 'wchodzi tapnięty (entersTapped), drugi tryb aktywacji to skrut 1'],
+  }),
+  defineCard({
+    id: 'spineseeker-centipede', name: 'Spineseeker Centipede', set: 'DSK',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['G'],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'When this creature enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nDelirium — This creature gets +1/+2 and has vigilance as long as there are four or more card types among cards in your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/5/b50d697c-8358-429b-8f79-7ad9d01a5edd.jpg?1783909448',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'search_library_to_hand', qualifier: { types: ['Basic', 'Land'] } }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.static,
+        condition: { delirium: true },
+        pump: { power: 1, toughness: 2 },
+        keywords: ['vigilance'],
+      }),
+    ],
+    artId: 324, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['delirium jako warunek STATYCZNY (CR 207.2c) - ten sam licznik typów kart w grobie co bramka aktywacji Resurrected Cultist'],
+  }),
+  defineCard({
+    id: 'narsets-rebuke', name: "Narset's Rebuke", set: 'TDM',
+    types: ['Instant'], colors: ['R'], manaCost: 5,
+    oracleText: "Narset's Rebuke deals 5 damage to target creature. Add {U}{R}{W}. If that creature would die this turn, exile it instead.",
+    imageUri: 'https://cards.scryfall.io/large/front/5/0/5098bd73-d51c-4db4-bf06-fd4854089d37.jpg?1783907358',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        // Znacznik exile PRZED obrażeniami — jak Agate Assault (ten sam
+        // kształt Oracle: obrażenia + „if it would die this turn, exile it
+        // instead”); SBA biegnie dopiero po całym czarze, więc kolejność nie
+        // zmienia wyniku, ale trzymamy jeden wzorzec w katalogu.
+        { type: 'exile_if_dies_this_turn' },
+        { type: 'damage', amount: 5 },
+        { type: 'add_mana', amount: 1, colors: ['U'] },
+        { type: 'add_mana', amount: 1, colors: ['R'] },
+        { type: 'add_mana', amount: 1, colors: ['W'] },
+      ],
+    },
+    artId: 325, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['"Add {U}{R}{W}" to trzy OSOBNE jednostki many (pula kolorowa, ADR 0015), nie jedna trójkolorowa', 'wygnanie zamiast grobu to znacznik exile_if_dies_this_turn na celu (M177/A)'],
+  }),
+  defineCard({
+    id: 'brave-kin-duo', name: 'Brave-Kin Duo', set: 'BLB',
+    types: ['Creature'], subtypes: ['Rabbit', 'Mouse'], colors: ['W'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: '{1}, {T}: Target creature gets +1/+1 until end of turn. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/8/b8dd4693-424d-4d6e-86cf-24401a23d6b1.jpg?1783910865',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 1, tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'buff_creature_until_end_of_turn', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 327, plan: 'Bloomburrow',
+    support: { status: 'supported', limitations: [] },
+    notes: ['timing sorcery: zdolność nie działa, gdy na stosie jest czar (pole timing w definicji aktywacji, jak Bazukinx)'],
+  }),
+  defineCard({
+    id: 'bog-hoodlums', name: 'Bog Hoodlums', set: 'LRW',
+    types: ['Creature'], subtypes: ['Goblin', 'Warrior'], colors: ['B'],
+    cantBlock: true, power: 4, toughness: 1, manaCost: 6,
+    oracleText: "This creature can't block.\nWhen this creature enters, clash with an opponent. If you win, put a +1/+1 counter on this creature. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+    imageUri: 'https://cards.scryfall.io/large/front/f/2/f2459953-a4b5-4a9c-85ed-928b684d7240.jpg?1783942894',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'clash', counterOnWin: '+1/+1' }],
+      }),
+    ],
+    artId: 328, plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+    notes: ['cantBlock: stal flaga karty (jak Goreclaw), nie deskryptor', 'clash z nagrodą licznikiem (CR 701.30) - licznik kładzie sie po decyzjach obu graczy, gdy źródło wciąż na polu bitwy'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

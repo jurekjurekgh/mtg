@@ -27,6 +27,11 @@ export function gameObjectDataOf(card) {
   }
   if (card.types.includes('Creature')) {
     const data = { kind: 'creature', power: card.power, toughness: card.toughness, manaCost: card.manaCost, abilities: card.abilities ?? [], colors: colors(), cardName: card.name };
+    // Wydrukowane „This creature can't block” (Bog Hoodlums) — trwały znacznik
+    // na obiekcie, ten sam co w tokenach (tokens.js); odczyt przez
+    // creatureCantBlock (permanents.js). Efekt „can't block this turn” jest
+    // INNYM polem (`cantBlock`) — ten z każdego cleanupu wychodzi (CR 514.2).
+    if (card.cantBlock) data.cantBlockPrinted = true;
     if (card.entersTapped) data.entersTapped = true;
     if (card.morph) data.morph = card.morph;
     if (card.entersWithCounters) data.entersWithCounters = card.entersWithCounters;

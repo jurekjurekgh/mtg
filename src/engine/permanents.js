@@ -2,6 +2,10 @@ import { event } from '../protocol/types.js';
 import { assertZone, deathZoneFor, isCardObject } from './zones.js';
 import { addCounter, removeCounter, syncStationKind } from './counters.js';
 import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.js';
+// Delirium (CR 207.2c): licznik typów kart w grobie jest w osobnym liściu
+// (`graveyard-types.js`) — triggers.js importuje permanents, więc branie tej
+// reguły stamtąd robiłoby cykl, a build odmawia cykli (ADR 0011; L171).
+import { countGraveyardCardTypes } from './graveyard-types.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -408,6 +412,14 @@ function staticConditionHolds(state, object, condition) {
     if (condition.minLevel != null && level < condition.minLevel) return false;
     if (condition.maxLevel != null && level > condition.maxLevel) return false;
     return true;
+  }
+  // Spineseeker Centipede — Delirium (CR 207.2c) jako warunek STATYCZNY:
+  // „gets +1/+2 and has vigilance as long as there are four or more card
+  // types among cards in your graveyard”. Licznik typów kart grobu ma JEDNO
+  // źródło (`graveyard-types.js` — ten sam odczyt co bramka aktywacji
+  // Resurrected Cultist i triggery; L41/L48). Próg 4 z reguły, nie z karty.
+  if (condition.delirium) {
+    return countGraveyardCardTypes(state, object.controllerId, CARD_TYPES) >= 4;
   }
   return false;
 }
