@@ -74,10 +74,43 @@ test('M233: wycena Wrap in Flames bez celów < pass', () => {
   for (const s of wrap) assert.ok(s < pass, `Wrap bez celów (${s}) musi być poniżej passu (${pass})`);
 });
 
-test('M233: Wrap in Flames NADAL premiowany na stworze wroga (regresja M158)', () => {
+// I (zgłoszenie właściciela 2026-10-08): pin powyżej („Wrap NADAL premiowany na
+// stworze wroga") opisuje STARE zachowanie, które właściciel zgłosił jako
+// marnotrawstwo: „dwie kreatury miały >1 toughness i nic im się nie stało, a
+// bot nie atakował w ogóle". Nowa reguła (Oracle: „1 damage to each of up to
+// three target creatures. Those creatures can't block this turn.") — czar ma
+// sens tylko gdy (a) 1 obrażenia ZABIJAJĄ któregoś stwora wroga (CR 704.5g)
+// ALBO (b) bot realnie atakuje w tej turze i „can't block" usuwa blokera
+// (CR 509.1b). Premia jest więc WARUNKOWA, a baza czaru (spellBase 50) jej
+// nie niesie — stąd poniższe trzy piny zamiast jednego.
+test('M233/I: Wrap na NIEŚMIERTELNE ciało bez zamiaru ataku schodzi poniżej passu', () => {
   const state = botTurn();
   putCard(state, 'w', 'wrap-in-flames', 'p2', 'hand');
+  // Thornhide Wolves 4/5: 1 obrażenia go nie zabija, a bot nie ma żadnego
+  // stworu zdolnego atakować — „can't block" nie kupuje nic (jego tura, ale
+  // brak atakujących = brak okna ataku).
   putCard(state, 'foe', 'thornhide-wolves', 'p1', 'battlefield');
   const { pass, wrap } = wrapScores(state);
-  assert.ok(wrap.some((s) => s > pass), `Wrap na cel wroga powinien przebić pass: ${JSON.stringify(wrap)} vs ${pass}`);
+  assert.ok(wrap.length > 0, 'warianty z celem istnieją w śladzie');
+  for (const s of wrap) assert.ok(s < pass,
+    `Wrap na ciało, które 1 obrażenia nie zabijają (${s}) musi być poniżej passu (${pass})`);
+});
+
+test('M233/I: Wrap na ciało, które 1 obrażenia ZABIJAJĄ — nadal premiowany (regresja M158)', () => {
+  const state = botTurn();
+  putCard(state, 'w', 'wrap-in-flames', 'p2', 'hand');
+  putCard(state, 'foe', 'soulmender', 'p1', 'battlefield'); // 1/1 — lethal dla 1 dmg
+  const { pass, wrap } = wrapScores(state);
+  assert.ok(wrap.some((s) => s > pass),
+    `Wrap na cel, który zabija (${JSON.stringify(wrap)}), powinien przebić pass (${pass})`);
+});
+
+test('M233/I: Wrap w precombat z WŁASNYM atakującym — premiowany (wyłącza blokera)', () => {
+  const state = botTurn();
+  putCard(state, 'w', 'wrap-in-flames', 'p2', 'hand');
+  putCard(state, 'mine', 'thornhide-wolves', 'p2', 'battlefield'); // 4/5, bez choroby
+  putCard(state, 'foe', 'thornhide-wolves', 'p1', 'battlefield');  // 4/5 bloker wroga
+  const { pass, wrap } = wrapScores(state);
+  assert.ok(wrap.some((s) => s > pass),
+    `Wrap w oknie ataku wyłącza blokera (${JSON.stringify(wrap)} vs pass ${pass})`);
 });

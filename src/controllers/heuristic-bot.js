@@ -647,6 +647,22 @@ function stackEntryEffects(entry) {
  * kopie tych efektów realnie dodają wartość (np. druga kopia 3 obrażeń zabija
  * większe ciało). CR 707.10 (kopia czaru) + CR 702.21a (ward pyta każdą kopię).
  */
+/**
+ * M146 (+ I, zgłoszenie właściciela 2026-10-08 — Wrap in Flames): typy
+ * efektów, których CAŁA wartość siedzi w efekcie na konkretnym celu — czar
+ * złożony wyłącznie z nich startuje PONIŻEJ passu (−1), nie od bazy
+ * `spellBase` 50, bo inaczej brada niosła go ponad pass przy bezcelowym
+ * lub jałowym wyborze. Wrapper „each of up to N targets" zaliczamy, gdy
+ * KAŻDY jego wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ
+ * kwocie (obrażenia skalujące z maną wartości same w sobie nie dają).
+ */
+const UTILITY_EFFECT_TYPES = new Set([
+  'tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
+  'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
+  'creatures_cant_block_this_turn',
+  'buff_opponents_creatures', 'buff_creatures_you_control',
+]);
+
 const NON_ACCUMULATING_SPELL_EFFECTS = new Set([
   'gain_control_until_end_of_turn', 'gain_control',
   'destroy_permanent', 'exile_permanent', 'exile_target_creature',
@@ -4793,6 +4809,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return amt >= remaining && remaining > 0;
   };
 
+  // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): wartość
+  // ŚMIERTELNYCH obrażeń w wrogiego stwora = usunięcie ciała ze stołu. JEDNA
+  // formuła dla czarów/zdolności (`damageTargetValue`) i dla wrappera
+  // „1 obrażenie KAŻDEMU z celów" (`wrapTargetsValue`) — L41: dwie kopie
+  // tej samej reguły rozjeżdżają się po cichu.
+  const lethalEnemyCreatureValue = (view, t) => P.removalEnemyBase
+    + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
+    + enemyRemovalTargetBonus(view, t);
+
   const damageTargetValue = (view, targetId, amount, scaling = false) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     const foe = enemy(view);
@@ -4833,8 +4858,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // trzyma skalujący zasób zamiast marnować go na tani chumpa.
         if (!worth) return -90;
       }
-      return P.removalEnemyBase + P.removalWorthWeight * ((t.power ?? 0) + (t.toughness ?? 0))
-        + enemyRemovalTargetBonus(view, t);
+      return lethalEnemyCreatureValue(view, t);
     }
     // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
     // osobno); poza walką CZYSTA STRATA — zakaz.
@@ -5459,8 +5483,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     let score = 0;
     if (effect?.type !== 'apply_to_each_target') return 0;
     const inner = Array.isArray(effect.effects) ? effect.effects : [];
-    const hasDamage = inner.some((x) => x?.type === 'damage');
+    const damageLegs = inner.filter((x) => x?.type === 'damage');
+    const hasDamage = damageLegs.length > 0;
     const hasCantBlock = inner.some((x) => x?.type === 'cant_block');
+    // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): „can't block"
+    // we wrapperze ma wartość WYŁĄCZNIE w oknie ataku (CR 509.1b: zakaz
+    // blokowania liczy się przy deklaracji blokerów). Poza oknem, na ciele
+    // tapniętym albo już nieblokującym efekt jest jałowy — 0, nie kara
+    // (obrażenia w tym samym rzucie mogą i tak zabijać, a kara odcinałaby
+    // legalny zysk — L121). Ten sam odczyt okna co payoff triggera (PMSSB-40, L41).
+    const attackIds = hasCantBlock ? attackWindowAttackerIds(view) : null;
     // M233/2 (audyt Żywym Testerem, Sea God's Scorn): wrapper może nieść
     // efekt USUWAJĄCY permanent (bounce/destroy/exile). Bez wyceny celu
     // odbicie WŁASNEGO stwora zostawało na bazie 50 i bot odbijał
@@ -5482,8 +5514,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const t3 = objectOnBoard(view, slot);
         if (!t3) continue;
         const mine = t3.controllerId === view.playerId;
-        if (hasDamage) score += mine ? -60 : 12 + (t3.power ?? 0) * 2;
-        else if (hasCantBlock) score += mine ? -10 : 8;
+        // Obrażenia per cel: wroga — Śmiertelne = usunięcie ciała (ta sama
+        // formuła co czar/zdolność, L41), NIEśmierelne = 0 (chip sam w sobie
+        // nic nie wart; „can't block" w tym samym rzucie jedzie za darmo, więc nie
+        // karzemy — inaczej karta byłaby bezużyteczna przy ataku). Własny cel:
+        // jak dotąd strata (moje ciało, obrażenia je ranią).
+        if (hasDamage) {
+          const dmg = damageLegs.reduce((sum, leg) => sum
+            + (Number.isInteger(leg.amount) ? leg.amount : 0), 0);
+          if (mine) score -= 60;
+          else if (damageIsLethal(view, t3.id, dmg)) score += lethalEnemyCreatureValue(view, t3);
+        }
+        // Rider „can't block" liczy się OSOBNO od obrażeń: oba efekty wrappera
+        // stosują się do KAŻDEGO celu (jak w silniku), a stary `else if` gubił
+        // ridera, gdy oba były w deskryptorze.
+        if (hasCantBlock) {
+          if (mine) score -= 10;
+          else if (attackIds && !t3.tapped && !t3.cantBlock) {
+            score += cantBlockRemovalValue(view, t3, attackIds) ?? 0;
+          }
+        }
         if (hasRemoval) {
           // Uwaga L39/L48: wrappery z removal-efektami wewnętrznymi
           // celują wyłącznie w stwory/enchantmenty (spec z deskryptora,
@@ -6701,6 +6751,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * I (zgłoszenie właściciela 2026-10-08, Wrap in Flames) — JEDEN odczyt OKNA
+   * ATAKU dla każdego efektu „ten stwór nie może blokować w tej turze" (L41:
+   * ta sama reguła w obu bliźniaczych gałęziach). Zwraca listę MOICH
+   * atakujących, dla których usunięcie blokera coś wart, albo `null`, gdy
+   * bot w tej turze NIE zamierza atakować — wtedy efekt nie kupuje nic
+   * (CR 509.1b: zakaz blokowania ma znaczenie wyłącznie przy deklaracji
+   * blokerów, więc „can't block" po walce albo w cudzej turze jest jałowy).
+   *
+   * Okno: (a) walka już zadeklarowana MOIM atakiem, albo (b) precombat
+   * (main1 / beginning_of_combat) z ciałem, które MOŻE teraz atakować
+   * (nietapnięte, bez choroby przywołania, moc > 0) — choroba przywołania
+   * wyłącza zamiar, bo stwór nie zadeklaruje ataku w tej turze (CR 302.6).
+   * Druga główna faza i tura przeciwnika celowo nie wchodzą do okna.
+   */
+  const attackWindowAttackerIds = (view) => {
+    const combat = view.combat ?? null;
+    const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
+      && (combat.attackers ?? []).length > 0;
+    const ableAttackers = () => myCreatures(view)
+      .filter((c) => canAttackNow(c) && combatPower(c) > 0);
+    if (declaredAttack) return combat.attackers ?? [];
+    const preAttackWindow = myTurn(view)
+      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
+      && ableAttackers().length > 0;
+    return preAttackWindow ? ableAttackers().map((c) => c.id) : null;
+  };
+
+  /**
    * PMSSB-40 (F2): payoff triggera „target creature can't block this turn"
    * (Goblin Battle Jester). Ten sam predykat okna co ścieżka rzutu (M221/A +
    * Batch60 — L41): efekt jest wart tyle, ile bloker, którego usuwa z planu
@@ -6709,16 +6787,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * wroga (best-of — jak best-of-targets przy rzucie z ręki).
    */
   function cantBlockPayoffValue(view) {
-    const combat = view.combat ?? null;
-    const declaredAttack = Boolean(combat) && combat.attackingPlayerId === view.playerId
-      && (combat.attackers ?? []).length > 0;
-    const preAttackWindow = !declaredAttack && myTurn(view)
-      && ['main1', 'beginning_of_combat'].includes(view.turn.step)
-      && myCreatures(view).some((c) => canAttackNow(c) && combatPower(c) > 0);
-    if (!declaredAttack && !preAttackWindow) return 0;
-    const ids = declaredAttack
-      ? (combat.attackers ?? [])
-      : myCreatures(view).filter((c) => canAttackNow(c) && combatPower(c) > 0).map((c) => c.id);
+    const ids = attackWindowAttackerIds(view);
+    if (!ids || ids.length === 0) return 0;
     let best = 0;
     for (const blocker of enemyCreatures(view)) {
       if (blocker.tapped || blocker.cantBlock) continue;
@@ -8718,11 +8788,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // za zły cel nie miała jak przebić domyślnej premii. Czysto-utylitarny
         // czar startuje od zera: wariant z dobrym celem sam się wynagradza,
         // wariant z bezcelowym celem schodzi poniżej passu.
-        const isUtilityOnly = effects.length > 0 && effects.every((e) => e?.type
-          && ['tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
-            'dont_untap_next_untap_step', 'cant_be_blocked', 'cant_block',
-            'creatures_cant_block_this_turn',
-            'buff_opponents_creatures', 'buff_creatures_you_control'].includes(e.type));
+        // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): UTILITARNY jest
+        // również czar zapakowany we wrapper „each of up to N targets", gdy KAŻDY
+        // jego wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ kwocie —
+        // wartość takiego czaru żyje wyłącznie w efekcie na konkretnym celu
+        // (1 obrażenie zabija albo nie; „can't block" kupuje coś tylko w oknie
+        // ataku), a baza 50 niosłaby go ponad pass nawet przy zerowym efekcie.
+        // Obrażenia SKALUJĄCE (amount 'X') utylitarne nie są — skalują z maną.
+        const isUtilityEffect = (e, insideWrapper = false) => {
+          if (e?.type === 'apply_to_each_target') {
+            const innerE = Array.isArray(e.effects) ? e.effects : [];
+            return innerE.length > 0 && innerE.every((x) => isUtilityEffect(x, true));
+          }
+          // Obrażenia o stałej kwocie są utylitarne WYŁĄCZNIE wewnątrz wrappera
+          // (tam są riderem „can't block" i same nic nie wartoścą); czar, którego
+          // CAŁA treść to obrażenia (Shock), zachowuje bazę spellBase.
+          if (e?.type === 'damage') return insideWrapper && Number.isInteger(e.amount);
+          return UTILITY_EFFECT_TYPES.has(e?.type);
+        };
+        const isUtilityOnly = effects.length > 0 && effects.every(isUtilityEffect);
         // Start PONIŻEJ passu (0): czysto-utylitarny czar z bezcelowym celem
         // (tap własnego landa, tap już tapniętego, odkręcenie wroga) ma
         // przegrać z passem — przy starcie od 0 remis szedł w rzut (sort
