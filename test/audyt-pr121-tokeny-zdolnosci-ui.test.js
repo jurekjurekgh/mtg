@@ -1,4 +1,4 @@
-// AUDYT ŻYWYM TESTEREM (PR #121, 2026-09-15) — partie dominaria-ub (seedy 921+):
+// AUDYT ŻYWYM TESTEREM (PR #121, 2026-09-15) — partie dominaria-wu (seedy 921+):
 // Static Net/Koilos Roc tworzą tokeny Powerstone, ale panel pokazywał
 // „Aktywuj: Powerstone (Ty) — " — bez kosztu i bez opisu zdolności, a kafel
 // tokenu nie miał ŻADNEGO tekstu reguł. Gracz nie widział ani tego, co klik,

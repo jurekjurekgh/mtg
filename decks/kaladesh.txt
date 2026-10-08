@@ -5,7 +5,9 @@
 1x Gearsmith Prodigy
 1x Merchant's Dockhand
 1x Renegade Tactics
+1x Universal Solvent
 1x Cathartic Reunion
+1x Druid of the Cowl
 1x Silken Strength
 1x Stall Out
 1x Welder Automaton
@@ -21,6 +23,6 @@
 1x Reclusive Artificer
 1x Plains
 3x Island
-2x Swamp
+3x Swamp
 3x Mountain
 1x Forest

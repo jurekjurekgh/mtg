@@ -592,4 +592,16 @@ export const MANA_COSTS = {
   "urborg-uprising": "{4}{B}",
   // Batch63/T3: Subterranean Scout (ORI).
   "subterranean-scout": "{1}{R}",
+  // Batch64: kolekcja 261-328. Ląd (Quandrix Campus) ma wpis pusty - jak
+  // Prismari Campus (L26/M66: koszty generowane z plików Scryfalla).
+  "universal-solvent": "{1}",
+  "man-o-war": "{2}{U}",
+  "druid-of-the-cowl": "{1}{G}",
+  "scouting-hawk": "{2}{W}",
+  "sultai-scavenger": "{5}{B}",
+  "quandrix-campus": "",
+  "spineseeker-centipede": "{2}{G}",
+  "narsets-rebuke": "{4}{R}",
+  "brave-kin-duo": "{W}",
+  "bog-hoodlums": "{5}{B}",
 };

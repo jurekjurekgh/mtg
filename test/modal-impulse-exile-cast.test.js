@@ -22,7 +22,7 @@ import { setupCardMatch } from '../src/cards/materialize.js';
  * (playableUntilTurn), a rzut „without paying" liczy koszt 0 — mirror
  * requireSpell (jedna reguła rzucalności, jeden odczyt).
  *
- * Determinizm (ADR 0005): seed 2031, dominaria-wrg (aggro) vs forgotten-realms
+ * Determinizm (ADR 0005): seed 2031, dominaria-brg (aggro) vs forgotten-realms
  * (heuristic) — powtarzalny.
  */
 
@@ -33,7 +33,7 @@ test('modal-impulse: partia z forgotten-realms nie pada na rzucie modala z exile
   const state = setupCardMatch({
     seed: 2031,
     players: [{ id: 'p1' }, { id: 'p2' }],
-    decks: new Map([['p1', deckOf('dominaria-wrg')], ['p2', deckOf('forgotten-realms')]]),
+    decks: new Map([['p1', deckOf('dominaria-brg')], ['p2', deckOf('forgotten-realms')]]),
     registry,
   });
   let finalState;
@@ -42,7 +42,7 @@ test('modal-impulse: partia z forgotten-realms nie pada na rzucie modala z exile
       state,
       controllers: new Map([
         ['p1', createAggroBot(2032)],
-        ['p2', createHeuristicBot({ seed: 2033, opponentDeck: deckOf('dominaria-wrg'), registry })],
+        ['p2', createHeuristicBot({ seed: 2033, opponentDeck: deckOf('dominaria-brg'), registry })],
       ]),
       maxCommands: 8000,
     }));

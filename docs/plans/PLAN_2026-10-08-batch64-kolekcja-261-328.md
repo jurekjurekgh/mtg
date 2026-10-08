@@ -102,14 +102,63 @@ z celem „tylko jako sorcery" (327, wzorzec Basilisk Gate), „nie może blokow
    opis PR #158. Bez pełnego B0 (ADR 0018); próbka szybka benchmarku tylko
    jeśli zmieni się próba `BENCH_DECKS` (regeneracja talii).
 
+## 4. Realizacja (2026-10-08) — stan i odstępstwa od planu
+
+
+**Kroki 1–2 zrobione przed kodem** (snapshoty 10/10 + roadmapa zacommitowana
+jako `8084c8f`). Poniżej to, co wypadło inaczej niż zakładano:
+
+
+### 4a. Migracja nazw talii Dominaria (L180 — zadanie OSOBNE, nie wpis)
+
+
+Man-o'-War (MH1 #55, U) doszedł do planu „Dominaria" (38 → 39 kart
+nielandowych) i generator przeliczył PODZIAŁ (ADR 0024):
+`dominaria-ub`/`dominaria-wrg` → **`dominaria-wu`/`dominaria-brg`**.
+To ta sama klasa zdarzenia co w Batch 63 (L180), w drugą stronę. Migracja
+wykonana razem z batchem (wg precedensu domknięcia Batch 63):
+
+
+- 2 nowe pliki talii, 2 usunięte; `README.md` (tabela liczności + kolory);
+- **72 referencje żywych** Ścieżek: 28 plików testów,
+  `test/fixtures/bot-scoring-snapshot.json`, `tools/` (bot-scoring-snapshot,
+  bot-tie-audit, scoring-pay-census, table-tester), `docs/setup/TESTER_STOLU.md`;
+- rekordy historyczne (PROJECT_HISTORY, audyty, LESSONS, plany, datowane
+  HANDOFFy) — bez zmian, że nie fałszują zapisu;
+- następstwa: wyjątek `mournful-zombie` w
+  `test/zgloszenie-d-pipy-zdolnosci-podzial.test.js` przeniesiony z `dominaria-wu`
+  na `dominaria-brg` (z nowym usprawiedliwieniem) oraz **seed 1 → 3** w
+  `test/m257-uwagi-runda3.test.js` (clash/morph przestał wypadać w limicie
+  400 kroków — L25: „przelosowany po zmianie X”).
+
+
+### 4b. Czwarty nowy element silnika (poza założeniami §1)
+
+
+Bog Hoodlums potrzebował **kartowego `cantBlock`** — w katalogu nie było
+pola dla wydrukowanego „This creature can't block" (były tylko aury,
+sprzęt i tokeny). Dane: `registry.js` (pole karty) → `materialize.js`
+(`cantBlockPrinted` na obiekcie) → `identity.js`/`game-state.js` (fabryka i
+biała lista `addObject`) → `deck.js` (`installDeck`, inaczej mechanika byłaby
+martwa w prawdziwych partiach — łapał to strażnik M379/C). Cztery
+dowiązania + test (L84/L21).
+
+
+### 4c. Wynik bramek
+
+- `npm test`: **7887 testów / 0 fail** (baseline 7853 + 34 nowe);
+- `npm run build`: **73 moduły, 4953.2 kB** (baseline 72 / 4935.8 kB);
+- audyty bota: `scoring-unvalued-audit.mjs` (12 partii / 5894 komend / 0
+  niewycenionych) i `scoring-pay-census.mjs --decks=all` (46 partii) — czysto.
+
 ## 3. Kryteria ukończenia
 
-- [ ] 10 snapshotów z rulingami w `docs/cards/`
-- [ ] 10 definicji w katalogu, wszystkie `supported` (limitations puste)
-- [ ] strażnik proweniencji zielony (artId + nazwa + plan = słownik kolekcji)
-- [ ] talie zregenerowane; zmiany nazw (jeśli będą) opisane w milestone
-- [ ] `test/real-cards-batch64.test.js` zielony + mutacyjna weryfikacja co
+- [x] 10 snapshotów z rulingami w `docs/cards/`
+- [x] 10 definicji w katalogu, wszystkie `supported` (limitations puste)
+- [x] strażnik proweniencji zielony (artId + nazwa + plan = słownik kolekcji)
+- [x] talie zregenerowane; zmiany nazw (jeśli będą) opisane w milestone
+- [x] `test/real-cards-batch64.test.js` zielony + mutacyjna weryfikacja co
       najmniej jednego pinu na nową mechanikę (Keen Sight, clash-nagroda,
       delirium-statyczny)
-- [ ] `npm test` i `npm run build` zielone; push na `arena/6b9bb8b8-mtg`
-- [ ] milestone M439 + historia + opis PR #158
+- [x] `npm test` i `npm run build` zielone; push na `arena/6b9bb8b8-mtg`
+- [x] milestone M439 + historia + opis PR #158

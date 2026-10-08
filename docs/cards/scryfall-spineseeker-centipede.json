@@ -1,0 +1,31 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Spineseeker%20Centipede&set=DSK",
+ "print": "dsk",
+ "name": "Spineseeker Centipede",
+ "mana_cost": "{2}{G}",
+ "cmc": 3,
+ "type_line": "Creature — Insect",
+ "oracle_text": "When this creature enters, search your library for a basic land card, reveal it, put it into your hand, then shuffle.\nDelirium — This creature gets +1/+2 and has vigilance as long as there are four or more card types among cards in your graveyard.",
+ "power": "2",
+ "toughness": "1",
+ "colors": [
+  "G"
+ ],
+ "color_identity": [
+  "G"
+ ],
+ "keywords": [
+  "Delirium"
+ ],
+ "set": "dsk",
+ "set_name": "Duskmourn: House of Horror",
+ "collector_number": "199",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/b/5/b50d697c-8358-429b-8f79-7ad9d01a5edd.jpg?1783909448"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/dsk/199/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

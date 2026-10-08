@@ -22,7 +22,7 @@ npm i                  # instaluje jsdom (jedyna zależność)
 ## Użycie
 
 ```bash
-node run-game.mjs --human dominaria-wrg --bot ravnica --seed 42 --steps 300 --out t.txt
+node run-game.mjs --human dominaria-brg --bot ravnica --seed 42 --steps 300 --out t.txt
 ```
 
 Opcje: `--human <talia>`, `--bot <talia>` (nazwy z `decks/*.txt` — listę

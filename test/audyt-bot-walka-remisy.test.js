@@ -28,7 +28,7 @@
  * talia `wiedzmin` straciła jedną kartę, więc sufit `block` musiał pęknąć
  * (3 → 6 przy 7 parach). Rozjazd jest ZMIERZONY, nie zgadnięty: pary bez
  * `wiedzmin` dały identyczne liczby przed i po (ravnica|innistrad-wu 1,
- * kaladesh|zendikar 2, dominaria-ub|worek-mroczny 0), a CAŁY przyrost padł na
+ * kaladesh|zendikar 2, dominaria-wu|worek-mroczny 0), a CAŁY przyrost padł na
  * `wiedzmin|tarkir-bg` (block 0 → 3, attack 0 → 1) — czyli na zmianę
  * trajektorii partii, nie na zmianę wag. Cztery nowe pozycje przejrzane co do
  * klasy:
@@ -45,7 +45,7 @@
  * wag — to już nie ten przypadek i trzeba diagnostyki, nie podnoszenia progu.
  *
  * REAUDYT 2026-09-17 (batch 56, B6 — awans Ixalanu przetasował worki):
- * `play_land.rozroznialne` wróciło do 1 na parze `dominaria-ub|worek-mroczny`
+ * `play_land.rozroznialne` wróciło do 1 na parze `dominaria-wu|worek-mroczny`
  * (nowy worek-mroczny trafił rękę z lądami „pokrywa 4" vs „pokrywa 3", oba
  * nowego koloru). Pomiar: na talii z HEAD licznik był 0 — wzrost jest SKUTKIEM
  * zmiany zawartości talii, nie dryfu wag. Źródło: wspólna klamra delty (16)
@@ -142,9 +142,9 @@ test('projekcja walki istnieje — bez niej bramka milczałaby zamiast mierzyć'
 
 test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany', () => {
   const { global, rows } = audytRemisow({ pary: [
-    ['ravnica', 'innistrad-wu'], ['dominaria-wrg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
+    ['ravnica', 'innistrad-wu'], ['dominaria-brg', 'mirrodin-wu'], ['tarkir-bg', 'warhammer-ubr'],
     ['wiedzmin-bg', 'tarkir-bg'], ['srodziemie', 'theros'], ['kaladesh', 'zendikar'],
-    ['dominaria-ub', 'worek-mroczny'],
+    ['dominaria-wu', 'worek-mroczny'],
   ], gry: 1 });
   const dla = (k) => rows.find((r) => r.kind === k) ?? { rozroznialne: 0, akcyjne: 0, noOp: 0 };
   const lad = dla('play_land'); const atak = dla('attack'); const blok = dla('block');
@@ -167,9 +167,9 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // `kaladesh`, co ZMIENIŁO TRAJEKTORIĘ pary `kaladesh|zendikar` (seed 4008 —
   // stały, nazwy talii bez zmian). Rozjazd ZMIERZONY per para, nie zgadnięty
   // (tools/bot-tie-audit.mjs, ten sam kod, podstawiane talie):
-  //   stare talie: ravnica|innistrad-wu 0, dominaria-wrg|mirrodin-wu 0,
+  //   stare talie: ravnica|innistrad-wu 0, dominaria-brg|mirrodin-wu 0,
   //   tarkir-bg|warhammer-ubr 1, wiedzmin|tarkir-bg 0, srodziemie|theros 0,
-  //   kaladesh|zendikar 0, dominaria-ub|worek-mroczny 2 → razem 3;
+  //   kaladesh|zendikar 0, dominaria-wu|worek-mroczny 2 → razem 3;
   //   po B2: identyczne poza `kaladesh|zendikar` 0 → 4 (razem 7).
   // Wiedźmin (re-podział ADR 0024 → wiedzmin-bg|wiedzmin-wur) nie dołożył nic.
   // Cztery nowe pozycje przejrzane co do klasy — wszystkie to klasa B

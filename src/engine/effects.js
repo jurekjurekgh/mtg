@@ -4137,6 +4137,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // scry/surveil). Wygrywa wyższa mana value; remis i brak karty (pusta
     // biblioteka) to przegrana tej strony. „If you win, return the spell to
     // its owner's hand" rozstrzyga się po decyzjach — pendingSpellReturnToHand.
+    // Bog Hoodlums (LRW): „If you win, put a +1/+1 counter on this creature" —
+    // deskryptor `counterOnWin` niesie nazwę licznika, a `sourceId` cel
+    // (źródło zdolności). Reguła jest DRUKOWANA na karcie, więc licznik kładzie
+    // się po decyzjach obu graczy, gdy źródło wciąż na polu bitwy (CR 701.30;
+    // zniknięte źródło = brak celu, jak każdy efekt „this creature").
     if (!state.players.some((player) => player.id === sourceObject.controllerId)) {
       throw new Error('Nieznany kontroler clash');
     }
@@ -4176,6 +4181,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
       },
       won,
       returnToHandOnWin: Boolean(effect.returnToHandOnWin),
+      // Nagroda licznikiem (Bog Hoodlums) — niesie cel (źródło) i nazwę
+      // licznika; rozstrzyga się w resolve_clash_choice po ostatniej decyzji.
+      counterOnWin: effect.counterOnWin ?? null,
+      counterTargetId: effect.counterOnWin ? sourceObject.id : null,
       restorePriorityTo: state.turn.activePlayerId,
     };
     // Priorytet przechodzi na pierwszego wybierającego (jak scry/surveil) —

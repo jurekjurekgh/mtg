@@ -1,0 +1,35 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Man-o%27-War&set=MH1",
+ "print": "mh1",
+ "name": "Man-o'-War",
+ "mana_cost": "{2}{U}",
+ "cmc": 3,
+ "type_line": "Creature — Jellyfish",
+ "oracle_text": "When this creature enters, return target creature to its owner's hand.",
+ "power": "2",
+ "toughness": "2",
+ "colors": [
+  "U"
+ ],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [],
+ "set": "mh1",
+ "set_name": "Modern Horizons",
+ "collector_number": "55",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/5/e/5eaa4199-df9b-494a-af7a-2491e8b0ef70.jpg?1783933145"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [
+  {
+   "date": "2019-06-14",
+   "source": "wotc",
+   "comment": "If there are no other creatures on the battlefield when Man-o'-War enters the battlefield, its ability must target itself."
+  }
+ ],
+ "rulingsSource": "https://api.scryfall.com/cards/mh1/55/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

@@ -55,6 +55,11 @@ export function installDeck(state, deck, { seed }) {
       frontFaceId: card.frontFaceId ?? null,
       types: card.types,
       entersTapped: card.entersTapped,
+      // Wydrukowany zakaz blokowania (CR 509.1a, Bog Hoodlums): materializacja
+      // kładzie go na egzemplarzu talii, więc ta jawna lista musi go przenieść
+      // na obiekt biblioteki — inaczej w PRAWDZIWEJ partii karta blokowałaby
+      // (helpery testowe robia `...gameObjectDataOf`, wiec tego nie widza — L21).
+      cantBlockPrinted: card.cantBlockPrinted ?? false,
       entersTappedCondition: card.entersTappedCondition,
       bestow: card.bestow,
       aura: card.aura,

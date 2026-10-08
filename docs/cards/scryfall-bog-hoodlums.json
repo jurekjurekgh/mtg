@@ -1,0 +1,31 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Bog%20Hoodlums&set=LRW",
+ "print": "lrw",
+ "name": "Bog Hoodlums",
+ "mana_cost": "{5}{B}",
+ "cmc": 6,
+ "type_line": "Creature — Goblin Warrior",
+ "oracle_text": "This creature can't block.\nWhen this creature enters, clash with an opponent. If you win, put a +1/+1 counter on this creature. (Each clashing player reveals the top card of their library, then puts that card on their choice of the top or bottom. A player wins if their card had a greater mana value.)",
+ "power": "4",
+ "toughness": "1",
+ "colors": [
+  "B"
+ ],
+ "color_identity": [
+  "B"
+ ],
+ "keywords": [
+  "Clash"
+ ],
+ "set": "lrw",
+ "set_name": "Lorwyn",
+ "collector_number": "100",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/f/2/f2459953-a4b5-4a9c-85ed-928b684d7240.jpg?1783942894"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/lrw/100/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

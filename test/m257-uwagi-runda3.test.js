@@ -253,7 +253,10 @@ const MORPH_IDS = new Set(['segmented-krotiq', 'woolly-loxodon', 'ainok-tracker'
 
 test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypływ FoW zamknięty u źródła)', () => {
   const calls = [];
-  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 1 });
+  // Seed 3 (przelosowany po zmianie talii — Batch 64: Sultai Scavenger doszedł
+  // do planu Tarkir, więc tarkir-bg ma kartę więcej i seed 1 przestał rzucać
+  // morpha w limicie 400 kroków; L25: „przelosowany po zmianie X”).
+  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 3 });
   for (let i = 0; i < 400 && session.state.status === 'active'; i += 1) {
     if (session.botPausePending) { session.continueBotPlay(); continue; }
     if (session.artPausePending) { session.continueArtPlay(); continue; }

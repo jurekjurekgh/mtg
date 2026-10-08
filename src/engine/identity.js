@@ -32,7 +32,7 @@ export function copyManaValueOf(source) {
   return source.manaCost ?? 0;
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, protectorId = null, kind = 'card', echo = null, echoColors = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, untapChoice = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, ward = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, delve = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, protectorId = null, kind = 'card', echo = null, echoColors = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, untapChoice = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, ward = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, delve = false, cantBlockPrinted = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -136,6 +136,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
     types: Object.freeze([...types]),
     // Cecha z definicji (np. Rupture Spire): permanent wchodzi na pole bitwy tapped.
     entersTapped: Boolean(entersTapped),
+    // Wydrukowany zakaz blokowania (CR 509.1a, „This creature can't block” —
+    // Bog Hoodlums): tokeny (tokens.js) i materializacja kart (materialize.js)
+    // stawiaja go przy tworzeniu obiektu. Trwaly — cleanup go nie rusza, w
+    // przeciwieństwie do efektywego „can't block this turn” (`cantBlock`).
+    cantBlockPrinted: Boolean(cantBlockPrinted),
     // Czasowe entersTapped z warunkiem (Raucous Carnival): land wchodzi
     // tapnięty, chyba że warunek jest spełniony (wtedy wchodzi untapped).
     entersTappedCondition: entersTappedCondition ? Object.freeze({ ...entersTappedCondition }) : null,

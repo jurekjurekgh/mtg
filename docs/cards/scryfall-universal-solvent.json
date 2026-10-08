@@ -1,0 +1,21 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Universal%20Solvent&set=CMR",
+ "print": "cmr",
+ "name": "Universal Solvent",
+ "mana_cost": "{1}",
+ "cmc": 1,
+ "type_line": "Artifact",
+ "oracle_text": "{7}, {T}, Sacrifice this artifact: Destroy target permanent.",
+ "colors": [],
+ "set": "cmr",
+ "set_name": "Commander Legends",
+ "collector_number": "347",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/b/b/bbe257c5-d2f8-4a4f-bf74-f6dc4b6861e4.jpg?1783928743"
+ },
+ "pobrano": "2026-10-08",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/cmr/347/rulings",
+ "rulingsPobrano": "2026-10-08"
+}

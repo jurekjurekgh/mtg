@@ -273,7 +273,7 @@ test('E1: zwolnienie z kosztu to BRAK kary, nie premia (stała bazy nietknięta)
 // --- F. Silnik: pieczęć odroczenia nie przeżywa WYJŚCIA z wygnania (CR 400.7) --
 //
 // Znalezisko pomiaru wypłaty (`/home/user/scratch/pmssb35-wyplata.mjs`):
-// w partii worek-legend|dominaria-wrg seed 1000 ta sama karta była rzucana
+// w partii worek-legend|dominaria-brg seed 1000 ta sama karta była rzucana
 // z wygnania DWA razy (t12 i t14) — drugi raz po tym, jak Faceless Butcher
 // wygnał ją ponownie. Pieczęć (`warpReady`/`plotted`) jechała z obiektem przez
 // zmianę strefy, a oferta rzutu z wygnania czyta ją bez pytania o źródło
