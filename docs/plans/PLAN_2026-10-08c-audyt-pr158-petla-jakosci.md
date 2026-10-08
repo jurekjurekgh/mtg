@@ -95,3 +95,17 @@ samej sesji (ADR 0021 pkt 2), każde osobnym commitem (ADR 0020 C).
 - S0 — lektura: `AGENTS.md` (do końca), 30 ADR-ów + README rejestru,
   `docs/LESSONS.md` 1–2339, `docs/setup/ENVIRONMENT.md` 1–219, handoff
   2026-10-08 i 2026-10-07b.
+- S1 — PR **#159** otwarty przed kodem (`gh pr create`, ADR 0020 A).
+- S2 — **baseline na `f836c90`** (plan + opis PR, kod nietknięty), brama na
+  zamrożonym drzewie (L174), logi w `.arena/`:
+
+  | Brama | Wynik | Exit |
+  |---|---|---|
+  | `npm test` (fast) | **7900/7900** | 0 |
+  | `npm run build` | 73 moduły / **4959,4 kB** | 0 |
+  | `node tools/run-tests.mjs all` | **8164/8164** (352,6 s) | 0 |
+
+  Zgodne co do testu z liczbami zgłoszonymi w PR #158 (L92 — liczby stanu
+  się nie rozjechały). Strażnik cytatów CR: `node tools/cr-numery.mjs`
+  → **OK, 515 numerów / 5575 cytatów** (CR effective 2026-09-25, SHA-256
+  `8d860e45…` pobrany z mirroru `nwgarne/mtg-data`, ADR 0030).
