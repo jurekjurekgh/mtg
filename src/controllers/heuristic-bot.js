@@ -4250,6 +4250,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * step, a cudzy permanent to pomoc wrogowi (kara 25). L41: ta sama liczba
    * w trzech ścieżkach (czar, aktywacja, trigger).
    */
+  /**
+  /**
+   * H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „{X}{B}, {T}, Pay X
+   * life: This creature endures X" — wartość X NIE jest liniowa w koszcie.
+   * Właściciel: „co kolejkę tworzy za 1 życia spirit 1/1... mógłby stworzyć
+   * potwora typu 5/5 który zblokowałby wszelkie moje stwory (zamiast 5 razy
+   * tworzyć 1/1 za te same 5 życia stworzyłby 5/5) albo mógłby siebie dopakować
+   * +3/+3 counterami i mieć ten sam efekt. Tak myślę, że optymalnie to byłoby
+   * stworzyć spirit token albo siebie dopakować tak, żeby mieć kreaturę o power
+   * większym niż toughness mojego największego stwora albo toughness większy
+   * niż power mojego największego stwora (do blokowania)".
+   *
+   * Reguła generyczna (ADR 0002 — deskryptor efektu `endure_x` + koszt
+   * `payLifeX`, bez nazw kart; ADR 0017 — P/T i życie wyłącznie z PlayerView):
+   * cel ROZMIARU to ciało, które przeżyje największe ciało przeciownika
+   * (`need` = max(P, T) wroga + 1 — „power większy niż toughness albo
+   * toughness większa niż power"). Punkty do `need` mają pełną wagę ciała
+   * (P×2 + T×1, L41); powyżej `need` rozmiar jest wciąż ciałem, ale waży
+   * MNIEJ niż koszt życia za punkt — bot nie przepłaca. Gdy przeciwnik nie ma
+   * ciał, nie ma czego przeżywać, więc celem jest największe ciało w
+   * bezpiecznym budżecie życia (próg `lifePayThreshold`) — inaczej karta
+   * degraduje do „1/1 za 1 życia co kolejkę", czyli dokładnie do zgłoszenia.
+   *
+   * Endure ma DWA tryby (CR 701.63): liczniki na ŹRÓDŁE (rozmiar = źródło + X)
+   * albo token X/X (rozmiar = X). Tryb wybiera kontroler przy ROZSTRZYGANIU,
+   * więc wycena aktywacji bierze LEPSZY z nich — dla źródła 2/2 i wrogiej 5/5
+   * liczniki dają 6/6 już za X=4, a token dopiero 5/5 za X=5 (ten sam efekt,
+   * mniej życia — druga połowa uwagi właściciela).
+   */
+  const endureBodyValue = (view, size) => {
+    const foes = enemyCreatures(view);
+    const need = foes.length === 0
+      ? lifePayThreshold(view)
+      : Math.max(...foes.map((o) => Math.max(o.power ?? 0, o.toughness ?? 0))) + 1;
+    const useful = Math.min(size, need);
+    return useful * (2 * P.creaturePowerWeight + P.creatureToughnessWeight)
+      + Math.max(0, size - useful) * P.endureOversizeWeight;
+  };
+  const endureXValue = (view, x, source) => {
+    const n = Number.isInteger(x) && x > 0 ? x : 0;
+    if (n === 0) return -20; // jałowa aktywacja (X=0) — karta i mana w błoto
+    const sourceSize = source ? Math.max(source.power ?? 0, source.toughness ?? 0) : 0;
+    return Math.max(endureBodyValue(view, sourceSize + n), endureBodyValue(view, n));
+  };
+  const lifePayThreshold = (view) => Math.max(1, Math.floor(myLife(view) * P.payLifeXThreshold));
+
   const untapTargetValue = (view, victim) => {
     if (!victim) return 0;
     const isLand = victim.kind === 'land' || (victim.types ?? []).includes('Land');
@@ -11118,6 +11164,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += impulseLookValue(view, x);
             if (x > 0) score -= (cmd.tapArtifactIds?.length ?? x); // koszt: tap X artefaktów
           }
+          // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „endures X”
+          // — aktywacja skalowana X-em, której wycena była GOŁA (brak wpisu
+          // w tej gałęzi), więc jedynym składnikiem zależnym od X była kara
+          // za manę (`min(X,2) * 0,5`) — bot legalnie wybierał X=1 każdej
+          // tury: 1/1 za 1 życia, które następnie ginie. Wartość ciała liczy
+          // `endureXValue` (pełna waga do rozmiaru przewyższającego największe
+          // ciało wroga, potem połowa). Kwotę bierzemy z KOMENDY (wariant
+          // oferty), nie z deskryptora — tam `amount` jest opisowe.
+          if (effect.type === 'endure_x') {
+            score += endureXValue(view, cmd.xValue ?? 0, source);
+            // Tap źródła w precombat odbiera mu atak w TEJ turze — ta sama
+            // miara co w gałęzi many (tapBodyCost, L41). Dla endurable'a
+            // strata jest realna, ale mała: rośnięce ciało jest warte
+            // więcej niż jeden atak 2/2, a po walce (main2) kara wychodzi 0.
+            if (taps && (source?.kind === 'creature' || (source?.types ?? []).includes('Creature'))) {
+              score -= tapBodyCost(view, source.id);
+            }
+          }
           // Batch 52 (Jolrael, Mwonvuli Recluse): „{4}{G}{G}: twoje stwory
           // mają bazowe X/X do końca tury (X = karty w ręce)". Bez wyceny
           // zdolność dostawała gołe score=2 i bot aktywował ją nawet, gdy
@@ -11147,6 +11211,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+        }
+        // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „Pay X life”
+        // to KOSZT (CR 601.2h) — dotąd nie był wyceniony NIGDZIE, więc płacenie 1
+        // i 8 życia wychodziło dla bota po samo (brak kary, brak zysku — X=1
+        // wygrywało na koszcie many). Drabina samouszkodzenia jest wspólna
+        // (PMSSB-36, L41), a do niej dochodzi próg 25% puli życia (uwaga
+        // właściciela: „nie więcej płacę niż 25% mojego życia”).
+        if (ability?.cost?.payLifeX) {
+          const x = cmd.xValue ?? 0;
+          score -= selfLifeLossPenalty(view, x);
+          score -= Math.max(0, x - lifePayThreshold(view)) * P.payLifeXOverThresholdPenalty;
         }
         if (cmd.xValue != null) score -= Math.min(cmd.xValue ?? 0, 2) * 0.5; // koszt {X} — drobna kara
         // Equip: załączenie na własnym stworze jest tym lepsze, im większy
@@ -12270,9 +12345,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return finish(value <= 3 ? 45 : 5 - value);
       }
       case 'resolve_endure_choice': {
-        // Endure (Kin-Tree Nurturer): dwa ciała (token Spirit) są generycznie
-        // nieco cenniejsze niż jeden licznik (drugi chump-blocker/atakujący).
-        return finish(cmd.mode === 'token' ? 42 : 40);
+        // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): wybór trybu
+        // endure był PŁASKI (42 token / 40 liczniki) niezależnie od N — bot
+        // tworzył 1/1 za 1 życia i to się nie zmieniało przy N=6. Wartość liczy
+        // ciało (P×2 + T×1, L41), a token dostaje premię za DRUGIE ciało
+        // (chump-blocker/atakujący obok źródła) — ta sama obserwacja, co
+        // kiedyś była zapisana jako stałe 42/40, tylko teraz skaluje się z N.
+        const n = view.pendingEndures?.counters ?? 1;
+        const src = view.pendingEndures?.sourceId
+          ? objectOnBoard(view, view.pendingEndures.sourceId) : null;
+        const sourceSize = src ? Math.max(src.power ?? 0, src.toughness ?? 0) : 0;
+        // TA SAMA miara ciała co przy wyborze X (L41) — inaczej aktywacja
+        // wybierała X pod liczniki (6/6 za X=4), a rozstrzyganie robiło token
+        // 4/4, który tej wrogiej 5/5 nie przeżyje. Token dostaje premię za
+        // DRUGIE ciało (chump-blocker/atakujący obok źródła), ale tylko
+        // wtedy, gdy sam jest wystarczająco duży — przy małym N wygryzają
+        // liczniki na źródłe.
+        const liczniki = endureBodyValue(view, sourceSize + n);
+        const token = endureBodyValue(view, n) + P.endureTokenBodyPremium;
+        return finish(cmd.mode === 'token' ? token : liczniki);
       }
       case 'resolve_delirium_target': {
         // Delirium (Fear of Burning Alive): cel to stwór przeciwnika —
@@ -13751,6 +13842,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_food_choice') {
       return `resolve_food_choice(${cmd.sacrifice ? 'sacrifice' : 'keep'})`;
     }
+    // H (zgłoszenie włałaściciela 2026-10-08, Krumar Initiate): tryby endure
+    // (liczniki na źródłe albo token Spirit) mają RÓŻNE noty zależne od N,
+    // więc bez wariantu w etykiecie ślad pokazywał „resolve_endure_choice” × 2
+    // i audyt remisów nie miał czego parować (ta sama klasa L34/L40 co
+    // M195/B / M203/2 / PMSSB-41/C).
+    if (cmd.type === 'resolve_endure_choice') {
+      return `resolve_endure_choice(${cmd.mode})`;
+    }
     if (cmd.type === 'declare_attackers') return `attack[${cmd.attackerIds.join(',')}]`;
     if (cmd.type === 'declare_blockers') return `block[${Object.entries(cmd.assignments ?? {}).map(([a, b]) => `${a}<${b.join('+')}`).join(' ')}]`;
     // Świadomie BEZ karty w śladzie (próba z tury 6 odwrócona): ~19 testów
@@ -13774,7 +13873,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (identyczne noty i nierozróżnialny wybór dla testu wyceny i audytu
       // remisów; ta sama lekcja M195/B co `tapCreatureId` wyżej).
       const celStation = cmd.tapOtherCreatureId ? `+station:${cmd.tapOtherCreatureId}` : '';
-      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
+      // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): warianty
+      // zdolności {X} (manaX / payLifeX / maxPowerX) różnią się WYŁĄCZNIE
+      // `xValue`, więc wszystkie streszczały się do tej samej etykiety —
+      // ani test wyceny, ani audyt remisów nie miały czego parować (ta sama
+      // klasa L34/L40 co M195/B / M203/2 / PMSSB-41/C wyżej). X w etykiecie
+      // tylko gdy komenda go niesie, żeby nie ruszyć pinów zdolności bez {X}.
+      const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
+      return `activate_ability(${cmd.objectId}#${cmd.abilityIndex ?? 0}${celTapniecia}${celStation}${wariantX}${(cmd.targets ?? []).length ? '->' + cmd.targets.join('+') : ''})`;
     }
     if (cmd.type === 'play_land') {
       // Ślad ma nazywać WARIANT (lekcja M195/B i M203/2, ta sama co wyżej): przy

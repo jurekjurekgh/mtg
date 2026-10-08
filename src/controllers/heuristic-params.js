@@ -492,6 +492,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // i obrońca nie tracą nic — CR 702.20b/702.3b).
   'manaTapBodyPerStat',          // kara za tapnięcie ciała bojowego, za każdy punkt (moc/wyt.)
   'manaTapBodyMax',              // sufit kary za tapnięcie ciała
+  'payLifeXThreshold',           // H (Krumar Initiate): maks. udział puli życia w koszcie „Pay X life”
+  'payLifeXOverThresholdPenalty', // kara za każdy punkt X powyżej progu życiowego
+  'endureOversizeWeight',         // H: waga punktu X POWYżej potrzebnego rozmiaru (< koszt życia)
+  'endureTokenBodyPremium',       // H: premia za DRUGIE ciało (token Spirit obok źródła)
   // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
   // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
   'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
@@ -875,6 +879,19 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzutu (auto-płatność silnika i tak do-tapuje źródło przy cast ofercie).
   manaTapBodyPerStat: 2,
   manaTapBodyMax: 8,
+  // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): „Pay X life”
+  // można wydać bezpiecznie do 25% puli — powyżej każdy punkt X jest karany
+  // na tyle mocno, że X zatrzymuje się na progu (przykład właściciela: 5 życia
+  // za 5/5 przy 20 życia, nie 8 za 8/8).
+  payLifeXThreshold: 0.25,
+  payLifeXOverThresholdPenalty: 6,
+  // H: punkt powyżej rozmiaru, który już przeżywa największe ciało wroga, jest
+  // wciąż ciałem — ale waży MNIEJ niż życie płacone za punkt (2 pkt), więc
+  // bot nie przepłaca: rośnie do celu, nie do limitu many.
+  endureOversizeWeight: 1,
+  // H: token endure to DRUGIE ciało na polu (może blokować, gdy źródło
+  // atakuje) — stara, płaska wycena 42/40 kodowała to samo na stałe 2 punkty.
+  endureTokenBodyPremium: 6,
   // PMSSB-34 (pomiar PRZED: /home/user/scratch/pmssb34-koszt-przed.mjs, scenariusze A/B):
   // 1 punkt za manę — DOKŁADNIE ta sama skala co `creatureManaCostWeight` przy
   // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są

@@ -9477,6 +9477,18 @@ export function playerView(state, playerId) {
       sourceId: state.pendingExploits[0].sourceId,
       candidateIds: [...state.pendingExploits[0].candidateIds],
     } : null,
+    // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): decyzja
+    // „endure N” (liczniki na źródłe albo token N/N) pyta o TRYB, ale bez N
+    // wycena bota nie miała czym różnicować wielkości — zostawała płaska
+    // (42/40). N jest informacją PUBLICZNą (X wybiera gracz jawnie, komenda
+    // przechodzi przez stos), a źródło leży na polu bitwy — wystawiamy
+    // wyłącznie właścicielowi decyzji (wzorzec pendingExploits, L48).
+    pendingEndures: state.pendingEndures.length > 0 && state.pendingEndures[0].playerId === playerId
+      ? {
+          sourceId: state.pendingEndures[0].sourceId,
+          counters: state.pendingEndures[0].counters ?? 0,
+        }
+      : null,
     // A1/A2 (Final Parting): szukanie w bibliotece ujawnia WSZYSTKIE karty
     // decydentowi (CR 400.2 + 701.23 — przeszukanie = full information),
     // tak samo jak manifest_dread (M223), peek-pick-order (M293) czy scry.
