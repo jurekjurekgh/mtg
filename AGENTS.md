@@ -7,28 +7,20 @@
 
 ## 0. Czytaj zanim cokolwiek zrobisz (także zanim napiszesz w czacie)
 
-Kolejność jest obowiązkowa. Nie skracaj jej do „przejrzałem handoff”.
-Nie wybieraj „właściwych” ADR-ów — **czytasz wszystkie**.
+Kolejność obowiązkowa, każdy plik **w całości** — nie nagłówki, nie „kilka
+najnowszych wpisów”, nie streszczenie. Jeżeli narzędzie zwróci plik
+pofragmentowany (`truncated`, `hasMore`, limit bajtów) — dobierasz fragmenty
+aż do końca pliku (kontrola: znasz `wc -l` pliku i dotarłeś do ostatniej
+linii). „Przejrzałem” / „doczytałem ostatnie” NIE jest przeczytaniem.
 
-**Każdy plik lektury obowiązkowej czytasz W CAŁOŚCI — od pierwszej do
-ostatniej linii, nie tylko nagłówki, początek ani „kilka ostatnich wpisów”.**
-Dotyczy to zwłaszcza `docs/LESSONS.md` (WSZYSTKIE lekcje L1–L…, nie tylko
-najnowsze) i każdego ADR-a. Jeżeli narzędzie zwróci plik pofragmentowany
-(ucięcie, `truncated`, `hasMore`, stronicowanie, limit bajtów) — **dobierasz
-kolejne fragmenty aż do końca pliku** i dopiero wtedy uznajesz go za
-przeczytany. „Przejrzałem”, „doczytałem ostatnie” czy „streściłem” NIE jest
-przeczytaniem. Kontrola dla siebie: znasz `wc -l` pliku i wiesz, że dotarłeś
-do ostatniej linii.
-
-1. **Ten plik** (`AGENTS.md`) — do końca, nie tylko nagłówki.
+1. **Ten plik** (`AGENTS.md`) — do końca.
 2. **Wszystkie ADR-y** w `docs/decisions/` — najpierw
    [README rejestru](docs/decisions/README.md), potem **każdy** plik
-   `NNNN-*.md` **przeczytany do końca** (nie sam nagłówek ani „Decyzja”).
-   Szczególnie nie pomijaj
+   `NNNN-*.md`. Szczególnie nie pomijaj
    [ADR 0020](docs/decisions/0020-mandatory-session-workflow-pr-audit-incremental.md)
    (co sesja **robi**: PR → audyt poprzedniego PR → inkrementalne commity)
    ani ADR 0002, 0007, 0013, 0016, 0018.
-3. **`docs/LESSONS.md`** — CAŁY rejestr, wszystkie lekcje do ostatniej (powtarzalne pułapki); nie zatrzymuj się na kilku najnowszych.
+3. **`docs/LESSONS.md`** — CAŁY rejestr (powtarzalne pułapki).
 4. **`docs/setup/ENVIRONMENT.md`** — stałe ograniczenia sandboxa / gita / sieci.
 5. **Ostatni PR** — ten, który masz zaudytować wg ADR 0020
    (`gh pr list --limit 3`, potem `gh pr view <nr>` i jego diff). To jest
@@ -43,10 +35,9 @@ tego bloku.
 **Czego NIE czytasz na start:** `docs/PROJECT_HISTORY.md` (dziennik sesji,
 ~5900 linii), `docs/LESSONS_PRZYPADKI.md` (archiwum narracji lekcji — proza,
 objawy, tabele wariantów; sięgasz po numer `LN`), `docs/plans/*`,
-`docs/audits/*`, starsze handoffy. To archiwum
-przebiegu prac, nie zasady — sięgasz tam **punktowo i grepem**, gdy potrzebny
-jest kontekst konkretnej historycznej decyzji. Zasady, których musisz
-przestrzegać, mieszkają wyłącznie w pozycjach 1–4.
+`docs/audits/*`, starsze handoffy. To archiwum przebiegu prac, nie zasady —
+sięgasz tam **punktowo i grepem**. Zasady, których musisz przestrzegać,
+mieszkają wyłącznie w pozycjach 1–4.
 
 **Budżet lektury startowej:** pozycje 1–4 mają się mieścić w **100 tys.
 tokenów**. Pilnuje tego `test/dokumentacja-budzet-lektury.test.js`; gdy

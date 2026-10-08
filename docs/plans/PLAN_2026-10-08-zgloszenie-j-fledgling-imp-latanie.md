@@ -120,6 +120,16 @@ NIC — a baza zdolności (+2) minus mana (−1) plus premia okna (+2 + moc) daj
   muszą zostać zielone (inaczej L124/L176: lokalizować `--dump`).
 - [x] E6. **Domknięcie**: wpis PROJECT_HISTORY, sekcja J w opisie PR
   (`docs/plans/PR_158_OPIS.md`), uzupełnienie handoffu sesji.
+- [x] E7. **Budżet lektury startowej** (`test/dokumentacja-budzet-lektury.test.js`,
+  L66): wpis L182 wypchnął lekturę ponad próg 100k (100 095 tokenów). Zgodnie
+  z kontraktem z AGENTS.md §0 („nowy wpis płaci się skróceniem innego",
+  procedura M284/PR #93) skrócono istniejące wpisy — bez usuwania faktów
+  (karty, testy, numery CR): `AGENTS.md` §0 (zredukowane powtórzenia
+  „czytaj w całości"), L5 (numeracja 1–5), L55 pkt 5 (powtórzenie L1/ADR 0017),
+  L58 pkt 4, L60 pkt 4 (sygnały już zawarte w punktach reguły), L106/L134
+  (zdjęty zduplikowany odsyłacz „Pełna narracja"). Skrócone fragmenty to
+  POWTÓRZONE reguły (zawarte w innych wpisach/ADR), nie fakty — żadna karta,
+  test ani numer CR nie przepadł. Wynik: **99 728 tokenów** (zapas 272).
 
 ## Ryzyka i pułapki
 
@@ -141,8 +151,8 @@ NIC — a baza zdolności (+2) minus mana (−1) plus premia okna (+2 + moc) daj
 
 | etap | co zrobiono | gdzie |
 |---|---|---|
-| E2a | `enemyHasUntappedGroundBlockerFor(view, recipient)` — przeciwnik ma nietapniętego stwora, który bez latania ZABLOKOWAŁBY odbiorcę; idzie przez `attackerCanBeBlocked` (menace / ewazja mocowa / `cantBlock` liczone tą samą regułą co wycena ataku, CR 509.1b + M202/H). | ok. 1017, obok `enemyHasUntappedFlyingOrReachBlocker` |
-| E2b | gałąź `flying` w `keywordGrantWindowValue`: premia `2 + moc` tylko gdy taki bloker ISTNIEJE **i** wróg nie ma odpowiedzi flying/reach; w przeciwnym razie kara −10 (efekt jałowy), nie zero. Obie gałęzie okna ofensywnego (`attacking` + precombat); gałąź obronna (blok nadlatującego latającego) bez zmian. | ok. 7329 |
+| E2a | `enemyHasUntappedGroundBlockerFor(view, recipient)` — przeciwnik ma nietapniętego stwora, który bez latania ZABLOKOWAŁBY odbiorcę; idzie przez `attackerCanBeBlocked` (menace / ewazja mocowa / `cantBlock` liczone tą samą regułą co wycena ataku, CR 509.1b + M202/H). | ok. 1026, obok `enemyHasUntappedFlyingOrReachBlocker` |
+| E2b | gałąź `flying` w `keywordGrantWindowValue`: premia `2 + moc` tylko gdy taki bloker ISTNIEJE **i** wróg nie ma odpowiedzi flying/reach; w przeciwnym razie kara −10 (efekt jałowy), nie zero. Obie gałęzie okna ofensywnego (`attacking` + precombat); gałąź obronna (blok nadlatującego latającego) bez zmian. | ok. 7330 (warunek na 7346) |
 | E2c | koszt-discard zostaje przy `abilityDiscardLoss` (PMSSB-58/F2 — JEDNA miara z pickerem, L41). Pomiar: Brute Force w tej scenie kosztuje 4 pkt w notcie aktywacji; nie dodano drugiej kary, żeby nie dublować wymiaru. | bez zmian |
 
 **Pomiar PO** (ta sama sonda `.arena/probe-j-imp.mjs`):
@@ -184,5 +194,6 @@ its owner's hand to that player's graveyard.") dopisany do tabeli
 było w zweryfikowanej tabeli.
 
 **Bramka:** fast **7837/7837** EXIT 0; `npm run test:slow` EXIT 0
-(264/264); build 72 moduły / **4928,2 kB** EXIT 0; `node tools/cr-numery.mjs` OK
-(514 numerów / 5527 cytatów). Bez pełnego B0 (ADR 0018).
+(264/264); pełny pakiet `node tools/run-tests.mjs all` **8101/8101** EXIT 0; build
+72 moduły / **4928,2 kB** EXIT 0; `node tools/cr-numery.mjs` OK
+(514 numerów / 5534 cytatów). Bez pełnego B0 (ADR 0018).

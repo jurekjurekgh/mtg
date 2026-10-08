@@ -66,13 +66,14 @@ są cytowane w kodzie i testach).
 
 **Przypadek (M269):** — po „Creatures you control get +2/+2 until end of turn"
 kradzież stwora kasowała bonus (4/6 → 2/4), a buff ujemny po przejęciu leczył
-—… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L106).
+—…
 
 **Reguła:** (1) Dokładając precyzyjniejsze kryterium, USUŃ stare — dwa filtry
 tej samej przynależności to jeden za dużo. (2) Redundancja jest niewidoczna,
 póki kryteria się zgadzają; testu szukaj tam, gdzie się rozjeżdżają (zmiana
 kontroli, typu, strefy).
 
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L106)
 
 ## L105 (2026-08-31) — „Dziś to ryzyko, nie błąd" trzeba ZWERYFIKOWAĆ skanem, a nie założyć; sklejka pipów OBOK kwoty zawyża cenę
 
@@ -720,8 +721,6 @@ istnieje, ma nazwę i komentarz, więc temat uchodzi za zabezpieczony.
    `BENCH_DECKS`), a listę w dokumentacji zastępuje komendą (`--list-decks`).
 3. Rozjazd nazw dostaje strażnika
    (`test/m203-talie-testera-i-dokumentacji.test.js`) — L56.
-4. Sygnał: narzędzie zwracające sensowny wynik dla nieistniejącego parametru.
-   Sprawdź to raz celowo (10 s).
 
 **Strażnik:** M203 (walidacja w `parseArgs`, drugi bezpiecznik przy wyborze w
 DOM, `--list-decks`, leniwy import, strażnik dokumentacji).
@@ -759,8 +758,6 @@ piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda.
    bezpieczna w przeglądarce (`globalThis`) i generyczna (bez nazw/ID kart).
 3. Zakaz egzekwuje **strażnik skanujący graf modułów artefaktu**
    (`test/m201-audyt-pr72.test.js`, `collectModules`), nie recenzja.
-4. Sygnał: `process.`, `console.log/error`, nazwa karty w kodzie rdzenia —
-   trzy niezależne powody do RED.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L58)
 
@@ -802,8 +799,6 @@ piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda.
 4. Nazwy potrzebne PO zniknięciu obiektu (token, LKI) odtwarzaj z danych
    trwałych: mapa GENERYCZNA ze skanu katalogu (ADR 0002) + strażnik „każdy
    token ma nazwę".
-5. Sygnał: silnik liczy dobrze, a gracz nie widzi skutku → błąd w kontrakcie
-   widoku (ADR 0017), nie w regułach.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L55)
 
@@ -919,10 +914,9 @@ przyjęta. Operacje „na wszelki wypadek przed" zostawiają niespójność na k
 4. Pin ma DWIE nogi (L67): (a) kompozycja nie liczy zakomentowanego odczytu;
    (b) ścieżka produkcyjna idzie przez tę kompozycję. Bez (b) obejście funkcji
    zostawia pin zielony.
-6. Pytanie kontrolne do każdego strażnika: **czy da się przejść tę kontrolę bez
-   zmiany kodu?** Jeśli tak — mierzy tekst (przykład: `repo-artefakty-audytu`,
-   `.gitignore` przez `includes`). Obowiązuje też wobec strażników, które sam
-   piszesz, w dniu ich powstania.
+5. Pytanie kontrolne do każdego strażnika: **czy da się przejść tę kontrolę bez
+   zmiany kodu?** (`repo-artefakty-audytu`, `.gitignore` przez `includes`) —
+   obowiązuje też wobec strażników, które sam piszesz, w dniu ich powstania.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L5)
 
@@ -1845,7 +1839,7 @@ i bez `[STOP]` (zmierzone w tej sesji: 4 partie, 0 zgłoszeń detektorów).
 ## L134 (2026-09-06) — Brak nośnika mechaniki NIE powodem poszerzania katalogu: talia jest wyprowadzona z katalogu
 
 **Przypadek:** — sesja PR #93 potrzebowała karty do testu `counter_ability` i
-dopisała do katalogu realną kartę `Stifle` — poprawną, ze snapshotem Scryf… Pełna narracja: `docs/LESSONS_PRZYPADKI.md` (L134).
+dopisała do katalogu realną kartę `Stifle` — poprawną, ze snapshotem Scryf…
 
 **Reguła:** katalog rośnie wyłącznie z list właściciela (ADR 0029); wolno tylko
 tokenom i landom podstawowym. Test potrzebujący nośnika buduje kartę
@@ -1858,6 +1852,7 @@ nie edit `card-data.js`. Usuwanie karty jest pełne, gdy znika definicja, klucz
 
 **Strażnik:** `test/proweniencja-katalogu.test.js` — szczegóły: archiwum (L134).
 
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L134)
 
 ## L135 (2026-09-06) — Nowy KSZTAŁT komendy musi mieć obsługę u każdego konsumenta: silnik → kreator UI → sterownik testera
 

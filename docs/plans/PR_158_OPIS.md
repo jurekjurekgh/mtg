@@ -221,6 +221,11 @@ Raport: `docs/audits/AUDYT_PR157_2026-10-07.md`; plan:
 - **Testy:** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (13 scenów).
   Dowód mutacyjny: mJ1 7/6, mJ2 11/2, mJ3 10/3, mJ4 10/3, mJ5 11/2 → z fixem
   13/13.
-- Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, build
-  72 moduły / 4928,2 kB EXIT 0, cr-numery OK. Plan:
+- Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, pełny pakiet
+  `node tools/run-tests.mjs all` **8101/8101** EXIT 0, build 72 moduły /
+  4928,2 kB EXIT 0, cr-numery OK. Plan:
   `docs/plans/PLAN_2026-10-08-zgloszenie-j-fledgling-imp-latanie.md`.
+- **Budżet lektury startowej** (L66): wpis L182 wypchnął lekturę ponad próg 100k
+  tokenów (ćzerwone CI na commicie dokumentacyjnym) — zapłacono skróceniem
+  istniejących wpisów (AGENTS.md §0 + L5/L55/L58/L60/L106/L134, bez utraty
+  faktów). Lektura: **99 728** tokenów (zapas 272).

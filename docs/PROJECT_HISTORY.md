@@ -15892,4 +15892,9 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
   zweryfikowane przy źródle (SHA-256 `8d860e45…`); 701.9a dopisany do tabeli
   numerów procedurą `cr-numery.mjs --zapisz`.
 - Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, build
-  72 moduły / 4928,2 kB EXIT 0, cr-numery OK (514 numerów / 5527 cytatów).
+  72 moduły / 4928,2 kB EXIT 0, cr-numery OK (514 numerów / 5534 cytatów).
+- Budżet lektury startowej (L66): wpis L182 wypchnął lekturę ponad próg 100k
+  tokenów — CI czerwone na samym commicie dokumentacyjnym. Zapłacono
+  skróceniem istniejących wpisów (AGENTS.md §0 + L5/L55/L58/L60/L106/L134, bez
+  utraty faktów); pełny pakiet `node tools/run-tests.mjs all` **8101/8101** EXIT 0,
+  lektura **99 728** tokenów (zapas 272).
