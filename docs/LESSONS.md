@@ -1281,15 +1281,14 @@ choć jego przyczyna nadal istnieje.
 
 **Przypadek:** — token-kopia Wedgelight Rammer (Cogwork Assembler, CR 707.2) rodziła się jako artefakt bez progu 9+ i nigdy nie stawała się stworem; ten s…
 
-**Reguła:** przy nowym deskryptorze karty (station, saga,
-`entersWithCounters`…) dopisz go w KAŻDEJ ścieżce kopiowania — rodzinę
-ścieżek wymieniaj grepem, bo listy pól żyją per-ścieżka: `create_copy_token`
-(`effects.js`), `resolve_enter_as_copy` (`game-state.js`), konfig
-`createBattlefieldToken` (`tokens.js`) i `printLki` (`triggers.js` — kopia
-z LKI po zejściu źródła, F3/PR #97). **Korekta 2026-09-05 (audyt PR #97/O4):**
-`copyableDescriptorKeys` nigdy nie powstało — „listę w jednym miejscu" było
-postulatem, nie stanem kodu; strażnikiem jest test kopiujący NOWY deskryptor
-przez realną ścieżkę (wzorzec L21 pkt 3), a nie obietnica wspólnej listy.
+**Reguła:** przy nowym deskryptorze karty (station, saga, `entersWithCounters`,
+`cantBlock`…) dopisz go w KAŻDEJ ścieżce kopiowania; lista pól żyje per-ścieżka.
+**Korekta 2026-09-05 (audyt PR #97/O4):** `copyableDescriptorKeys` nigdy nie
+powstało — „lista w jednym miejscu" była postulatem, nie stanem kodu.
+**Korekta 2026-10-08 (PR #158/F-1):** grep po rodzinie NIE wystarcza — trzy
+ścieżki z listy wyżej przestały być kompletne, a trzy inne (offspring, embalm,
+Moonlit) nie były w niej wcale. Straż: test kopiujący deskryptor przez
+REALNĄ ścieżkę (L21 pkt 3) + `createBattlefieldToken` kopiujące musi nieść KLUCZ — podłańcuch `cantBlock` łapie sam warunek spreadu (mF5 przeszła zielono).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L47)
 
