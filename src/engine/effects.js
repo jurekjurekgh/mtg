@@ -1853,6 +1853,12 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       subtypes: [...(copyBase.subtypes ?? src.subtypes ?? [])],
       keywords: [...new Set([...(src.keywords ?? []), 'haste'])],
       abilities: [...(src.abilities ?? [])],
+      // Audyt PR #158/F-1 (CR 707.2 + 707.2a): wydrukowany zakaz blokowania
+      // („This creature can't block", Bog Hoodlums) jest WARTOŚCIĄ KOPIOWALNĄ —
+      // to reguła z tekstu karty, nie efekt. Bez tego kopia mogłaby blokować
+      // (CR 509.1b). `createBattlefieldToken` stawia z tego oba pola
+      // (`cantBlock` + trwały `cantBlockPrinted`), jak przy druku tokenu.
+      ...(copyBase.cantBlockPrinted ? { cantBlock: true } : {}),
       // CR 202.3b (M258): kopia TYLNEJ twarzy karty dwustronnej ma MV 0,
       // a kopia przedniej/przodowej twarzy — koszt pierwowzoru. Wcześniej
       // pole lądowało cicho w createBattlefieldToken (destrukturyzacja go
@@ -1938,6 +1944,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.saga ? { saga: src.saga } : {}),
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+      // Audyt PR #158/F-1 (CR 702.175a + 707.2): offspring to token-kopia DRUKU
+      // źródła — wydrukowany zakaz blokowania przechodzi na token.
+      ...(src.cantBlockPrinted ? { cantBlock: true } : {}),
     });
     // „As [this creature] enters" / „enters with" kopii działają (ruling
     // Offspring) — liczniki wejścia aplikujemy jak przy zwykłym permanencie.
@@ -1976,6 +1985,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ...(src.saga ? { saga: src.saga } : {}),
       ...(src.transformTo ? { transformTo: src.transformTo } : {}),
       ...(src.transformTo && src.frontFaceId ? { frontFaceId: src.frontFaceId } : {}),
+      // Audyt PR #158/F-1 (CR 702.128a + 707.2): embalm kopiuje KARTĘ — jej
+      // wydrukowany zakaz blokowania jest wartością kopiowalną (nadpisywane są
+      // wyłącznie kolor, podtypy i koszt, jak w tekście mechaniki).
+      ...(src.cantBlockPrinted ? { cantBlock: true } : {}),
     });
     return;
   }
@@ -2012,6 +2025,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       keywords: [...(target.keywords ?? [])],
       abilities: [...(target.abilities ?? [])],
       cardName: target.cardName ?? target.cardId,
+      // Audyt PR #158/F-1 (CR 707.2): kopia PRZEJMUJE druk celu — także wtedy,
+      // gdy źródło miało własny zakaz blokowania (nadpisuje w obie strony).
+      cantBlockPrinted: Boolean(target.cantBlockPrinted),
     });
     state.objects.set(sourceObject.id, updated);
     state.events.push(event('stats_modified', {
