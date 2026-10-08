@@ -109,3 +109,17 @@ samej sesji (ADR 0021 pkt 2), każde osobnym commitem (ADR 0020 C).
   się nie rozjechały). Strażnik cytatów CR: `node tools/cr-numery.mjs`
   → **OK, 515 numerów / 5575 cytatów** (CR effective 2026-09-25, SHA-256
   `8d860e45…` pobrany z mirroru `nwgarne/mtg-data`, ADR 0030).
+
+## Zdarzenia sesji
+
+* **Zniekształcony komunikat commitu `619222f` (docs/lessons):** komunikat
+  przekazany przez `git commit -m "…"` zawierał odwołania w odwrotnych
+  apostrofach, które bash podstawił jako puste (nazwy `create_offspring_token`
+  i `create_token_copy_of_source` zniknęły z treści). Commit był już wypchnięty,
+  a `--amend` + push wymagałby force-pushu — zakazanego na każdej gałęzi
+  (ADR 0020 D). Stan zostawiony jak jest; **treść plików jest poprawna**
+  (`git diff 619222f` po amencie: pusty). Wniosek: komunikaty commitów tylko
+  przez `git commit -F <plik>` (heredoc z cytowaniem), nigdy `-m` z tekstem
+  zawierającym odwrotne apostrofy.
+* Straże tej sesji były słabsze, niż deklarowałem w pierwszym podejściu — wykrył
+  to protokół mutacyjny (mF5, mF6), nie lektura. Poprawione w `c57da05`.
