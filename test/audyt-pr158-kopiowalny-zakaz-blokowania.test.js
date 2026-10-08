@@ -182,3 +182,33 @@ test('F-1/6: create_copy_token (CR 707.2) — token-kopia artefaktu z drukowanym
   assert.equal(tokens[0].cantBlockPrinted, true,
     'CR 707.2 — kopiowalne wartości to WSZYSTKIE cechy z druku, nie tylko P/T (L47)');
 });
+
+// F-1/7 — ścieżka `copy_creature` (effects.js) nie ma dziś wytwórcy w katalogu
+// (Jwari Shapeshifter poszedł drogą `enterAsCopy` + `resolve_enter_as_copy`),
+// więc bez tego pinu mutacja w jej bloku była NIEWYKRYWALNA (audyt PR #158,
+// mF6: `cantBlockPrinted: Boolean(target…)` → `true` nie zapalało niczego).
+// Pin jest też znacznikiem dla właściciela: jeśli gałąź zostanie usunięta jako
+// martwy kod, ten test zgaśnie razem z nią (F-6 w raporcie audytu).
+test('F-1/7: copy_creature — kopia PRZEJMUJE druk celu w obie strony', () => {
+  // a) źródło bez zakazu kopiuje stwor z zakazem → zakaz się pojawia
+  const s = state();
+  const zrodlo = put(s, 'src', 'rotting-legion');
+  assert.equal(zrodlo.cantBlockPrinted, false, 'źródło bez druku');
+  put(s, 'hood', 'bog-hoodlums');
+  applyEffect(s, { type: 'copy_creature' }, zrodlo, ['hood']);
+  const po1 = s.objects.get('src');
+  assert.equal(po1.cardName, 'Bog Hoodlums', 'kontrola: kopia zaszła');
+  assert.equal(po1.cantBlockPrinted, true, 'CR 707.2 — druk celu przechodzi na źródło');
+  assert.equal(creatureCantBlock(po1, s), true, 'CR 509.1b');
+
+  // b) źródło Z zakazem kopiuje stwor bez zakazu → zakaz znika (nadpisanie
+  //    w drugą stronę; kopiowalna jest cecha celu, nie historia źródła)
+  const s2 = state();
+  const zrodlo2 = put(s2, 'src', 'bog-hoodlums');
+  assert.equal(zrodlo2.cantBlockPrinted, true, 'źródło z drukiem');
+  put(s2, 'legion', 'rotting-legion');
+  applyEffect(s2, { type: 'copy_creature' }, zrodlo2, ['legion']);
+  const po2 = s2.objects.get('src');
+  assert.equal(po2.cantBlockPrinted, false, 'CR 707.2 — kopia ma druk celu');
+  assert.equal(creatureCantBlock(po2, s2), false);
+});

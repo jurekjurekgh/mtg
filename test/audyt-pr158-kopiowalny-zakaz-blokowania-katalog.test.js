@@ -216,9 +216,13 @@ test('F-1/S7: straż źródła — każda ścieżka token-kopii przenosi `cantBl
         || blok.includes('copyManaValueOf(');
       if (!znacznik) continue;
       sprawdzono += 1;
-      assert.ok(blok.includes('cantBlock'),
+      // Sprawdzamy KLUCZ (`cantBlock:`), nie sam podłańcuch `cantBlock`: warunek
+      // `...(x.cantBlockPrinted ? { … } : {})` sam zawiera `cantBlockPrinted` i
+      // słabszy test przeszedłby przy usuniętym kluczu (mutacja mF5 — zielono
+      // mimo braku cechy na tokenie).
+      assert.ok(blok.includes('cantBlock:'),
         `${plik}: ścieżka token-kopii (createBattlefieldToken + nextCopyNumber) nie przenosi `
-        + `kopiowalnego ${ZNAK}cantBlock${ZNAK} — por. CR 707.2/707.2a `
+        + `kopiowalnego klucza ${ZNAK}cantBlock:${ZNAK} — por. CR 707.2/707.2a `
         + `i znalezisko F-1 audytu PR #158`);
     }
   }
