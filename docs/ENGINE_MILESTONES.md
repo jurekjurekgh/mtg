@@ -8197,6 +8197,40 @@ Dowody: [audyt PR #154](audits/AUDYT_PR154_2026-10-04.md),
 [handoff](setup/HANDOFF_2026-10-05.md).
 
 
+## M439 — batch64: kolekcja 261–328, 10 kart + łańcuch `cantBlock` (2026-10-08, PR #158)
+
+Dziesięć kart z kolekcji właściciela, wszystkie 100% obsługiwane (ADR
+0022). Snapshoty i rulingi ze Scryfall; plan commitem PRZED kodem (ADR 0020
+A/C). Nowe elementy silnika są generyczne (ADR 0002 — żadnej nazwy karty poza
+katalogiem): warunek **Keen Sight** (przeciwnik kontroluje więcej landów),
+**clash z nagrodą licznikiem**, **delirium jako warunek statyczny** (licznik
+typów kart grobu wyniesiony do liścia `graveyard-types.js` — jeden odczyt dla
+`abilities`/`triggers`/`permanents`, zero cyklu importów, L41/L48/L171) oraz
+wpis **Quandrix Campus** w `MANA_SOURCE_MAP`.
+
+Najbardziej pouczający element — kartowy **`cantBlock`** (CR 509.1a, Bog
+Hoodlums). Pole przeszło cały łańcuch L21: karta → `gameObjectDataOf` →
+fabryka `createGameObject` (parametr + `Boolean`) → `addObject`
+(destructuring + wpis w `ADD_OBJECT_FIELDS`) → **`installDeck`**. Dopisek do
+`installDeck` był konieczny: ta ścieżka ma WŁASNĄ jawną listę pól, więc
+deskryptor żyjący w `gameObjectDataOf` ginął po cichu — zielone testy
+helperowe (`...gameObjectDataOf`) tego nie widziały, a strażnik **M379/C**
+(porównanie pól z obiektami zainstalowanej talii ze wszystkich wspieranych
+kart) wyłapał to na bramce. Wniosek operacyjny: każdy nowy deskryptor karty
+ma cztery dowiązania, nie dwa.
+
+Talie: doswiadczenie Man-o'-War przeważyło podział Dominaria —
+`dominaria-ub`/`dominaria-wrg` → **`dominaria-wu`/`dominaria-brg`** (L180,
+migracja opisana w roadmapie batcha; 72 żywe referencje ścieżek, seed
+`m257-uwagi-runda3` 1 → 3).
+
+Bramki końcowe: all **7887/7887** (baseline 7853 + 34 nowe), build **73
+moduły / 4953,4 kB**, audyty bota czysto (0 niewycenionych decyzji;
+pay-census 46 partii). Trzy piny na nowe mechaniki potwierdzone mutacyjnie.
+Bez pełnego B0 (ADR 0018). Dowody:
+[roadmapa + realizacja](plans/PLAN_2026-10-08-batch64-kolekcja-261-328.md).
+
+
 ## M438 — PMSSB-58: jakościowe domknięcie batcha 63 (2026-10-05, PR #155)
 
 Po wdrożeniu kart właściciel zażądał osobnego domknięcia jakości bota.

@@ -19,6 +19,47 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-08 — batch64: kolekcja właściciela 261–328, 10 kart (PR #158, M439)
+
+Zlecenie: 10 kart z kolekcji (lista + kolumna `Plan` wiążąca). Plan commitem
+PRZED kodem (`8084c8f`, ADR 0020 A/C), potem jedna transza kodu (`ab68fa8`).
+Snapshoty i rulingi ze Scryfall (żadnego zapisu poza workspace — ADR 0010/0030);
+dwie rozbieżności wobec pamięci zweryfikowane przed kodowaniem (L57): ruling
+Man-o'-War mówi wprost „must target itself”, Druida potwierdzony drugim
+endpointem.
+
+Karty: Brave the Elements (MH1), Bog Hoodlums (LRW), Druid of the Cowl (M19),
+Man-o'-War (MH1), Narset's Rebuke (TDM), Quandrix Campus (STX), Scouting Hawk
+(KTK), Spineseeker Centipede (DSK), Sultai Scavenger (CMR), Universal Solvent
+(CLB) — wszystkie `supported` (ADR 0022, limitations puste).
+
+Nowe elementy silnika (generyczne, ADR 0002): warunek Keen Sight (przeciwnik
+kontroluje więcej landów), clash z nagrodą licznikiem, delirium jako warunek
+statyczny (licznik typów kart grobu wyniesiony do liścia `graveyard-types.js`
+— bez cyklu importów, wzorzec L171), wpis Quandrix Campus w MANA_SOURCE_MAP
+oraz „Add {U}{R}{W}” jako trzy jednostki many. Czwarty element — poza założeniami
+roadmapy — to kartowy `cantBlock` („This creature can't block”, CR 509.1a):
+przeszedł CAŁY łańcuch L21 (registry → materialize → fabryka
+`createGameObject`/`addObject` z wpisem w `ADD_OBJECT_FIELDS` → `installDeck`),
+bo strażnik M379/C wykrył, że bez wpisu w `installDeck` mechanika żyje tylko
+w testach helperowych (`...gameObjectDataOf`) i jest martwa w prawdziwych
+partiach. To jedyny przypadek w tym batchu, gdzie test zielony kłamał.
+
+Talie: generator przeliczył podział Dominaria po doswiadczeniu Man-o'-War —
+`dominaria-ub`/`dominaria-wrg` → `dominaria-wu`/`dominaria-brg` (L180, ta sama
+klasa zdarzenia co batch 63, w drugą stronę). Migracja wykonana razem z
+batchem (precedens domknięcia batcha 63): 72 żywe referencje ścieżek
+przeniesione (28 plików testów, snapshot bota, narzędzia, TESTER_STOLU),
+rekordy historyczne bez zmian, seed 1 → 3 w `test/m257-uwagi-runda3.test.js`
+(clash/morph przestał wypadać w limicie kroków — L25).
+
+`test/real-cards-batch64.test.js`: 34 testy (scenariusze legalne i nielegalne
++ sanity Oracle/artId/plan). Każdy z trzech pinów na nową mechanikę
+sprawdzony mutacyjnie (usunięcie gałęzi czerwieni test partii). Bramki:
+`npm test` **7887/7887** (baseline 7853), build **73 moduły / 4953,4 kB**,
+audyty bota czysto (0 niewycenionych decyzji, pay-census 46 partii). Bez
+pełnego B0 (ADR 0018); nic nie scalone.
+
 ## 2026-10-05 — PMSSB-58: jakościowe domknięcie dziesięciu kart (kontynuacja PR #155, M438)
 
 Po odróżnieniu gotowości engine od jakości scoringu właściciel zlecił pełną
