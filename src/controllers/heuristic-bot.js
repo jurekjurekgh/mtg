@@ -1002,6 +1002,39 @@ function enemyHasUntappedFlyingOrReachBlocker(view) {
   );
 }
 
+/**
+ * J (zgłoszenie właściciela 2026-10-08, Fledgling Imp „{B}, Discard a card:
+ * This creature gains flying until end of turn."): czy przeciwnik ma
+ * NIETAPNIĘTEGO stwora, który bez latania ZABLOKOWAŁBY `recipient`.
+ *
+ * Latanie jest ewazją (CR 702.9b: „A creature with flying can't be blocked
+ * except by creatures with flying and/or reach"), więc zmienia ono coś
+ * WYŁĄCZNIE wtedy, gdy obrońca ma takiego blokera. Gdy wszystkie kreatury
+ * wroga są tapnięte (CR 509.1a: „The chosen creatures must be untapped…"),
+ * nie blokują (CR 509.1b), albo wróg nie ma w ogóle stworów — atak przejdzie
+ * i tak, a grant latania nic nie kupuje. Przeciwnik nie odkręca swoich
+ * stworów w mojej turze (CR 502.3: odkręcenie jest wyłącznie w kroku
+ * odkręcenia WŁASNEJ tury), więc stan z main1/beginning_of_combat jest stanem
+ * z momentu deklaracji blokerów — decyzja nie może „poczekać na lepszy moment"
+ * dla tego wymiaru.
+ *
+ * Idzie przez `attackerCanBeBlocked` (CR 509.1b + M202/H): menace, ewazja
+ * mocowa i `cantBlock` blokera są liczone TĄ SAMĄ regułą co w wycenie ataku
+ * (L41 — bliźniacze gałęzie nie mogą się rozjeżdżać), nie osobnym liczeniem
+ * keywordów.
+ */
+function enemyHasUntappedGroundBlockerFor(view, recipient) {
+  if (!recipient) return false;
+  return (view.zones.battlefield ?? []).some(
+    (o) =>
+      o.controllerId !== view.playerId &&
+      o.kind === 'creature' &&
+      !o.tapped &&
+      !o.cantBlock &&
+      attackerCanBeBlocked(recipient, [o]),
+  );
+}
+
 function enemyHasFlyingAttackers(view) {
   const combat = view.combat ?? null;
   if (!combat || combat.attackingPlayerId === view.playerId) return false;
@@ -7295,29 +7328,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         value += (hasFlyingAttackers && canBlock
           && view.turn.step === 'declare_blockers' && !blocking) ? 8 : -10;
       } else if (kw === 'flying') {
+        // J (zgłoszenie właściciela 2026-10-08, Fledgling Imp „{B}, Discard a
+        // card: This creature gains flying until end of turn."): latanie jest
+        // EWAZJĄ (CR 702.9b: „A creature with flying can't be blocked except by
+        // creatures with flying and/or reach"), więc zmienia coś TYLKO wtedy, gdy
+        // obrońca ma NIETAPNIĘTEGO blokera NAZIEMNEGO, który bez latania
+        // ZABLOKOWAŁBY tego stwora. Gdy wszystkie kreatury wroga są tapnięte
+        // (CR 509.1a: „The chosen creatures must be untapped…"), nie blokują
+        // (CR 509.1b) albo wroga nie ma w ogóle — atak przejdzie i tak, a grant
+        // latania nie kupuje NIC, a kosztuje manę i kartę z ręki (CR 701.9a:
+        // odrzucona karta idzie do grobu). Wróg nie odkręca swoich stworów w
+        // mojej turze (CR 502.3: odkręcenie jest wyłącznie w kroku odkręcenia
+        // własnej tury), więc stan z main1/beginning_of_combat jest stanem z
+        // momentu deklaracji blokerów — „poczekaję na lepszy moment” nie istnieje.
+        // Efekt jałowy = kara (jak duplikat keywordu), NIE zero: baza zdolności
+        // +2 minus mana muszą zejść poniżej passu (L3).
+        const groundBlocker = enemyHasUntappedGroundBlockerFor(view, recipient);
         // M218/3: flying na ATAKUJĄCYCH gdy wróg NIE MA latających/reach —
         // wtedy atakujący staje się nieblokowalny (CR 702.9 + 509.1b).
         // Na BLOKUJĄCYCH — jak reach: tylko gdy nadlatuje flying.
         if (attacking) {
-          // Już atakuje: jeśli wróg ma flyera/reach, który może zablokować,
-          // latanie nie czyni go nieblokowalnym — brak wartości (kara, żeby
-          // nie palić many na efekt jałowy — L3).
-          value += hasUntappedFlyingBlocker ? -10 : 2 + (recipient.power ?? 0);
+          // Już atakuje: latanie ma wartość wyłącznie gdy istnieje bloker
+          // naziemny, którego ewazja realnie omija. Odpowiedź w powietrzu
+          // (flyer/reach) albo brak blokerów = efekt jałowy.
+          value += groundBlocker && !hasUntappedFlyingBlocker
+            ? 2 + (recipient.power ?? 0) : -10;
         } else if (blocking) {
           // Już blokuje — za późno na nadanie reach/flying.
           value += -10;
         } else if (view.turn.step === 'declare_blockers' && hasFlyingAttackers) {
-          // Okno obrony: nie jest jeszcze blokerem, ale może nim zostać.
+          // Okno obrony: nie jest jeszcze blokerem, ale może nim zostać. Tu
+          // latanie NIE jest jałowe — wróg właśnie atakuje z powietrza i bez
+          // ewazji ten stwór nie mógłby go zablokować (kryterium właściciela:
+          // „albo gdy chce tym impem blokować kogoś z lataniem").
           const canBlock = !recipient.tapped && !recipient.cantBlock;
           value += canBlock ? 8 : -10;
         } else if (myTurn(view) && canAttackNow(recipient)
           && ['precombat_main', 'combat'].includes(view.turn.phase)) {
           // Przed własnym atakiem: latanie ma sens tylko gdy wróg nie ma
-          // odpowiedzi w powietrzu.
-          value += hasUntappedFlyingBlocker ? -2 : 2 + (recipient.power ?? 0);
+          // odpowiedzi w powietrzu ORAZ ma kogo postawić na ziemi.
+          value += hasUntappedFlyingBlocker ? -2
+            : (groundBlocker ? 2 + (recipient.power ?? 0) : -10);
         } else {
           value -= 10;
         }
+
       } else if (['first_strike', 'double_strike', 'deathtouch', 'trample'].includes(kw)) {
         // M218/3: first strike / double strike / deathtouch / trample mają
         // wartość tylko gdy ZMIENIAJĄ wynik toczącej się wymiany (helper
