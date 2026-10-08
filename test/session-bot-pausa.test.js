@@ -334,7 +334,12 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // partii niepokazanego „Ainok Artillerist", a 31 schodzi do 2/2. Hunter
   // 1..40 na nowych taliach: 31 (2/2), 33 (3/3) i 40 (6/6) — suma 11/11,
   // każda para pełna (sledzone == opisane). Konwencja L25.
-  for (const seed of [31, 33, 40]) {
+  // Batch 64 (10 kart kolekcji 261-328: tarkir-bg +Narset's Rebuke) — seed
+  // 40 zostawia na końcu partii niepokazanego Awaken the Bear i Krumar
+  // Initiate (4 sledzone / 1 opisane), więc trójka się rozjechała. Hunter
+  // 1..45 na nowych taliach: 31 (3/3) zostaje, 34 (2/2) i 37 (2/2) — suma
+  // 7/7, każda para pełna (sledzone == opisane). Konwencja L25.
+  for (const seed of [31, 34, 37]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);

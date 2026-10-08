@@ -249,7 +249,12 @@ test('C (korekta właściciela): sekcja „Log partii" to JEDNA lista + select +
 
 test('C/3: lista logu renderuje się chronologicznie — najstarsze u góry, nowe na końcu', () => {
   const { registry, decks } = buildDecks();
-  const session = createSession({ seed: 36, registry, decks });
+  // Batch 64 (10 kart kolekcji 261-328: tarkir-bg +Narset's Rebuke): stary
+  // seed 36 przestał dopisywać wpisy logu między 10. a 20. komendą (log nie
+  // rosło — „sesja dopisała wpisy”). Hunter 1–40 → seed 2 jest partią w toku
+  // po 10 i po 20 komendach, log rośnie i dopisuje na końcu (L25 — ten sam
+  // świadek).
+  const session = createSession({ seed: 2, registry, decks });
   playSome(session, 10);
   const els = makeEls();
   const play = () => {};

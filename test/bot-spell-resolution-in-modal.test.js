@@ -150,7 +150,12 @@ test('M99: skutek czaru bota (+X/+X) też trafia do modala, nie tylko do logu', 
   // — stary seed 3 nie ma już pumpa. Hunter 1–40: seed 1 daje Awaken the Bear
   // +3/+3 (cel: Morph) w logu I modalu, czyli DOKŁADNIE tego samego świadka
   // (partia bota to tarkir-bg). Konwencja L25.
-  const session = makeSession(1);
+  // Batch 64 (10 kart kolekcji 261-328: tarkir-bg +Narset's Rebuke,
+  // dominaria-brg +Druid of the Cowl; landy przeliczone) — stary seed 1 nie
+  // ma już pumpa w logu. Hunter 1-60: seed 2 daje Fiery Hellhound +1/+0
+  // (cel: Morph) w logu I modalu — ten sam świadek klasy (pump czaru bota),
+  // co w oryginale znalazcy (L25).
+  const session = makeSession(2);
   const { modalTexts, log } = playCollectingModals(session);
   const pumpInLog = log.filter((t) => /dostaje \+\d+\/\+\d+/.test(t));
   assert.ok(pumpInLog.length > 0, 'seed 1 miał produkować pump w logu');
