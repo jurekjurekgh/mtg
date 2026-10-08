@@ -1960,7 +1960,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     take_initiative: () => 6,
     amass: () => 6,
     fabricate: () => 8,
-    untap_all_creatures_you_control: () => 3,
+    // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): wartość
+    // odkręcenia liczymy PO KREATURZE (a nie plasko), bo odkręcenie ma sens
+    // wyłącznie tam, gdzie odkręcony stwór od razu zyskuje akcję — szczegół w
+    // `untapAllCreaturesValue` (L50/L131: wartość bez wymiaru).
+    untap_all_creatures_you_control: (e, view) => untapAllCreaturesValue(view),
     animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
     // PMSSB-15/F4: ETB-prewencji (Shieldmage) — okno wartości liczone dla
     // moich pasujących stworów, które realnie oberżą (walka/burn na stosie);
@@ -4237,9 +4241,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * generic) — DOKŁADNIE ten kształt, co `expandManaPool` i `matchColorRequirements`
    * w silniku (L41/L48: jedno rozwiązanie, nie druga arytmetyka).
    */
-  const manaUnitsOfView = (view, { artifactSpell = false } = {}) => {
+  const manaUnitsOfView = (view, { artifactSpell = false, landsOnly = false } = {}) => {
     const me = view.players?.find((p) => p.id === view.playerId) ?? {};
-    const units = [
+    // K: `landsOnly` = WYŁĄCZNIE nietapnięte lądy — mana, która przetrwa do tury
+    // przeciwnika (pula wyparowuje na końcu kroku, CR 500.5, a lądy zostają
+    // nietknięte, bo bot ich nie tapał). Potrzebne do decyzji „czy odroczenie rzutu
+    // karty z flash jest darmowe”.
+    const units = landsOnly ? [] : [
       ...expandManaPool(me.manaPool ?? {}),
       // M201/M214: pula ograniczona drukiem jest dla celu nie-artefaktowego
       // niewidoczna — ta sama bramka co `restrictedManaBlocked` w resources.js.
@@ -4354,6 +4362,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return -25; // odkręcanie wroga — zawsze złe
   };
 
+  /**
+   * K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer — „Flash… When this
+   * creature enters, untap all creatures you control.”): wartość ETB
+   * „odkręć wszystkie twoje stwory” liczona PO KREATURZE, nie plasko. Dotłd stałe 3
+   * niezależnie od stołu — wartość bez wymiaru (L50/L131).
+   *
+   * Odkręcenie ma wartość WYŁĄCZNIE wtedy, gdy odkręcony stwór od razu zyskuje akcję,
+   * której tapnięcie mu zabierało:
+   *  - BLOK w cudzej turze (atakujący zadeklarowani / nadlatują) — bot atakował w
+   *    własnej turze, a odkręca się wyłącznie właściciel własnego permanentu w KROKU
+   *    ODRKĘCENIA WŁASNEJ tury (CR 502.3), więc w turze przeciwnika jego stwory są
+   *    NADAL TAPNIĘTE i wejście Bell-Ringer'a oddaje je do gry jako blokery;
+   *  - ATAK we własnej turze przed deklaracją atakujących (stwór tapnięty pod
+   *    manę/zdolność wraca do planu ataku).
+   * Poza tymi oknami stwór odkręciłby się i tak we własnym kroku odkręcania — efekt
+   * jałowy (0), nie premia. Miara pojedynczego odkręcenia to TA SAMA drabina co w
+   * czarze/zdolności odkręcającej (`untapTargetValue`, L41), plus bramka `cantBlock`
+   * w oknie obronnym (odkręcony, ale i tak nie blokuje — CR 509.1b).
+   */
+  const untapAllCreaturesValue = (view) => {
+    const step = view.turn.step;
+    const defensive = !myTurn(view)
+      && ['beginning_of_combat', 'declare_attackers', 'declare_blockers'].includes(step);
+    const offensive = myTurn(view) && ['precombat_main', 'combat'].includes(view.turn.phase);
+    if (!defensive && !offensive) return 0;
+    let total = 0;
+    for (const o of myCreatures(view)) {
+      if (!o.tapped) continue;
+      if (defensive && o.cantBlock) continue;
+      if (offensive && !canAttackNow(o)) continue;
+      total += untapTargetValue(view, o);
+    }
+    return total;
+  };
+
   /** Czy kartę da się opłacić CAŁĄ z tych jednostek (liczba + pipy, także {C})? */
   const canCastWithUnits = (units, card) => {
     if (!card) return false;
@@ -4414,7 +4457,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /**
    * E6/A1 (zgłoszenie właściciela, Moonscarred Werewolf): kandydat na
    * ODBLOKOWANIE many liczy się tylko, gdy jest RZUTOWALNY W TYM KROKU —
-   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.4), więc tap w
+   * mana z tapu wyparuje na końcu bieżącego kroku (CR 500.5), więc tap w
    * cudzym upkeepie pod sorcery/stwora (nielegalne poza własną główną,
    * CR 307.1/117.1a) odblokowuje nic. Instant rzucisz w każdym kroku,
    * gdy masz priorytet (CR 307.5). Wspólna lista dla M167/D (early-return)
@@ -7299,6 +7342,66 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer i inne kreatury z
+   * flash): kreatura z flash to SZTUCZKA BOJOWA — jej wartość siedzi w ZASKOCZENIU,
+   * nie w ciele na stole. Właściciel: „bot ma w swojej turze manę na rzucenie kreatury z
+   * flash, ale świadomie tego nie robi — lądy zostają nietknięte. Gdy następuje tura
+   * przeciwnika i przeciwnik atakuje, w tym momencie (po deklaracji atakujących)
+   * wchodzi taki Village Bell-Ringer. Bot nic nie traci, bo mana się nie marnuje, a
+   * wystawiając go w ten sposób ma szansę zaskoczyć przeciwnika, zablokować mimo, że
+   * przeciwnik myślał, że przejdzie. Jeśli przeciwnik nie zaatakował, Bell-Ringer
+   * powinien wejść w Główną 2 przeciwnika, żeby nie zmarnowała się mana.”
+   *
+   * Reguła po deskryptorze (ADR 0002: keyword `flash` na kreaturze, zero nazw kart):
+   * rzut jest ZA WCZEŚNIE (= kara), gdy
+   *  - to WŁASNA tura — kreatura bez haste nie może atakować w tej turze (CR 302.6:
+   *    choroba przywołania), więc rzut teraz nie daje tempa, a odsłania sztuczkę
+   *    przeciwnikowi; ciało i tak będą na stole przed jego turą;
+   *  - to tura przeciwnika PRZED deklaracją atakujących (upkeep/draw/main1/
+   *    beginning_of_combat) — wróg dopiero wybiera, z czym atakować, i widzi naszą
+   *    kartę na stole — zaskoczenie przepada;
+   *  - to tura przeciwnika PO deklaracji blokujących (declare_blockers, combat_damage,
+   *    end_of_combat) — kreatura wchodząca w tym kroku NIE jest zadeklarowanym
+   *    blokerem (CR 509.1a), więc okno zaskoczenia już minęło.
+   * Jedyny moment, w którym rzut MA sens ofensywnie-defensywny: krok
+   * `declare_attackers` w turze przeciwnika — atakujący są już zadeklarowani, a blokerów
+   * jeszcze nie ma, więc kreatura wchodzi jako UKRYTY bloker. Razem z post-combatem
+   * (main2/end/cleanup), gdzie rzut ratuje kartę i manę przed wyparowaniem (CR 500.5).
+   *
+   * Wyjątki (rzut zostaje własnej turze dopuszczony):
+   *  - `haste` — kreatura realnie atakuje w tej turze, więc odroczenie kosztuje tempo;
+   *  - `entersWithCountersIf` (morbid/adamant) — warunek wejścia zależy od STANU
+   *    tury, a własna Główna 2 może być jedynym oknem, w którym zostanie spełniony;
+   *  - brak many na później — gdy kosztu nie da się zapłacić z nietapniętych lądów (bot
+   *    polegałby na skarbie/tapie ciała), odroczenie = UTRATA many, nie oszczędność.
+   */
+  function flashCreatureCastTooEarly(view, def, card) {
+    if (!def || !hasKeyword(def, 'flash')) return false;
+    const isCreature = card?.kind === 'creature'
+      || (card?.types ?? []).includes('Creature')
+      || (def.types ?? []).includes('Creature');
+    if (!isCreature) return false; // aury/artefakty mają własną regułę okna (M235/M258)
+    if (hasKeyword(def, 'haste')) return false;
+    if (def.entersWithCountersIf) return false;
+    // Mana musi przetrwać: lądy nietknięte (bot ich nie tapał), więc koszt da się
+    // zapłacić ponownie w turze przeciwnika. Jednorazowe źródła (skarb, tap ciała)
+    // odroczenia nie przeżyją — wtedy rzut teraz jest lepszy niże utrata karty.
+    if (!canCastWithUnits(manaUnitsOfView(view, { landsOnly: true }), card)) return false;
+    if (myTurn(view)) return true;
+    const step = view.turn.step;
+    if (['main2', 'end', 'cleanup'].includes(step)) return false; // po walce wroga: karta wchodzi, mana by wyparowała
+    if (step !== 'declare_attackers') return true;
+    // Jedyne okno zaskoczenia: atakujący zadeklarowani, blokerów jeszcze nie ma.
+    // Gdy żaden z nich nie jest blokowalny przez TWÓJ kreaturę (wszystko z flying,
+    // a my bez reach), sztuczka jest jałowa — czekamy na Główną 2 przeciwnika.
+    const incoming = { controllerId: view.playerId, keywords: def.keywords ?? [], cantBlock: false };
+    return !(view.combat?.attackers ?? []).some((id) => {
+      const attacker = objectOnBoard(view, id);
+      return attacker && attackerCanBeBlocked(attacker, [incoming]);
+    });
+  }
+
+  /**
    * M179/A1 + M218/3 (zlecenie właściciela 2026-08-26): wartość grantu
    * keywordów-do-EOT dla WŁASNEGO stwora — WSPÓLNE dla zdolności i czarów.
    *
@@ -8722,6 +8825,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const maFlash = (def?.keywords ?? []).includes('flash') || Boolean(def?.flash);
             if (!(maFlash && intendsToAttackThisTurn(view))) score -= P.morbidMain1Penalty;
           }
+        }
+        // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): kreatura z
+        // flash jest SZTUCZKĄ BOJOWĄ — w oknie „za wcześnie” cała jej wycena (ciało +
+        // ETB) jest wyzerowana i schodzi poniżej passu o margines, żeby bot świadomie
+        // trzymał manę (lądy nietknięte) do tury przeciwnika. Bez tego baza ciała (~70)
+        // znosiła wariant w każdym kroku, w tym po deklaracji blokujących, gdzie kreatura
+        // już nie może blokować (CR 509.1a). Kara NIE jest stałą liczbą przebijającą bazę
+        // (jak w M235): wycenę wyzerowujemy, więc nawet bardzo silne ETB nie wrócą nad
+        // pass, a epsilon poniżej nadal różnicuje karty z flash (L41/L48 — żadnego remisu
+        // rozstrzyganego kolejnością ofert).
+        if (flashCreatureCastTooEarly(view, def, card)) {
+          score = Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty;
         }
         // Grzechotka remisów (audyt-bot-walka-remisy, tura 6): przy EX AEQUO
         // rzutów różnica gęstości wartości („waluta" z tieProjection:
@@ -11066,7 +11181,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Tymczasem engine auto-tapuje przy płatności same LĄDY
             // (producibleMana) — więc gdy lądy już pokrywają wszystko, co bot
             // zamierza rzucić, aktywacja latarni nie odblokowuje NICZEGO.
-            // Wyprodukowana mana ginie w cleanup (CR 500.4): czysta strata
+            // Wyprodukowana mana ginie w cleanup (CR 500.5): czysta strata
             // tempa, a przy Seer's Lantern dodatkowo blokada drugiej zdolności
             // ({2},{T}: Scry 1), bo źródło jest już tapnięte.
             //
@@ -11083,7 +11198,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // {W} (F1), mana Powerstone'a nie odblokowuje stwora (F2), a filtr
             // koloru odblokowuje kartę, której brakuje wyłącznie pipa (F3).
             // E6/A1: kandydaci po TIMINGU rzucania (manaUnlockCandidates) —
-            // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.4).
+            // sorcery/stwór w cudzym kroku nadal nie „odblokowuje" (CR 500.5).
             const unlockUnitsCache = new Map();
             const unitsBefore = (artifactSpell) => {
               const key = artifactSpell ? 'art' : 'std';
@@ -11123,7 +11238,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // F (zgłoszenie właściciela 2026-09-19b, „Skarb zużyty, nic się nie
             // stało"): próg KOSZTU to nie to samo co „bot to zagra". Źródło
             // JEDNORAZOWE (koszt: poświęcenie — Skarb, Powerstone) przepada
-            // razem z niewydaną maną (CR 500.4), a bot potrafił poświęcić Skarb
+            // razem z niewydaną maną (CR 500.5), a bot potrafił poświęcić Skarb
             // „na" kartę, której sam nie chciał rzucić (zmierzone: seed 21,
             // t. 12 — Cloak of the Bat odblokowany progiem, wyceniony -2,7).
             // Dlatego dla takich źródeł odblokowanie musi mieć pokrycie w
@@ -11154,7 +11269,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // nie rzucał potem żadnego czaru. Przy net<=0 pula liczbowo się nie
             // zmienia, więc `unlocksSomething` (progi liczbowe) JEST ZAWSZE
             // fałszem — a tapnięty ląd + spent many zostaje (mana wyparuje
-            // w cleanup, CR 500.4). Kara musi być mocna NIEZALEŻNIE od
+            // w cleanup, CR 500.5). Kara musi być mocna NIEZALEŻNIE od
             // hasPlayable: „coś w ręce istnieje” nie znaczy, że filtrowanie
             // many cokolwiek odblokowuje (bot nie modeluje kolorów liczbowej
             // puli). Zostawiamy jawnie ujemną, żeby nie remisowała z passem.

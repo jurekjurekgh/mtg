@@ -195,6 +195,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // własnym upkeepie/kroku bez walki to zmarnowana elastyczność (lepiej trzymać
   // kartę do właściwego okna). Deskryptor: flash + pure-protection (ADR 0002).
   'flashProtectionAuraOffWindowPenalty', // kara za rzut flash-aury ochronnej poza oknem walki
+  // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): kara za rzut
+  // kreatury z flash ZA WCZEŚNIE (we własnej turze albo w turze przeciwnika
+  // przed deklaracją atakujących) — sztuczka bojowa trzymana do okna zaskoczenia.
+  'flashCreatureEarlyWindowPenalty',
   // Rodzina „aura” (M257 r4, B6 T1) — wycena rzutu aury/bestow w
   // cast_permanent. Dotąd magiczne stałe w bloku aury scoreCommand: baza
   // buffa 66, unieruchomienie stwora wroga/własnego (auraIsHostile:
@@ -684,6 +688,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // wariant zszedł PONIŻEJ passu (0) — bot trzyma kartę do właściwego okna.
   // W oknie walki kara nie działa, więc aura nadal wygrywa.
   flashProtectionAuraOffWindowPenalty: 120,
+  // K: margines, o który wariant „teraz” schodzi PONIŻEJ passu. Wycena karty
+  // (ciało + ETB) jest wyzerowana, a epsilon nadal różnicuje karty z flash —
+  // żadna wartość dodatnia nie może wrócić ponad pass (L3).
+  flashCreatureEarlyWindowPenalty: 10,
   // M257 r4/B6 T1 — rodzina „aura”: ekstrakcja stałych bloku aury
   // scoreCommand (domyślne = dawne stałe co do punktu; golden-master
   // pilnuje, że domyślne nic nie zmieniają).
