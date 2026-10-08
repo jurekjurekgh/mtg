@@ -28,7 +28,7 @@ dwie rozbieżności wobec pamięci zweryfikowane przed kodowaniem (L57): ruling
 Man-o'-War mówi wprost „must target itself”, Druida potwierdzony drugim
 endpointem.
 
-Karty: Brave the Elements (MH1), Bog Hoodlums (LRW), Druid of the Cowl (M19),
+Karty: Brave-Kin Duo (BLB), Bog Hoodlums (LRW), Druid of the Cowl (M19),
 Man-o'-War (MH1), Narset's Rebuke (TDM), Quandrix Campus (STX), Scouting Hawk
 (KTK), Spineseeker Centipede (DSK), Sultai Scavenger (CMR), Universal Solvent
 (CLB) — wszystkie `supported` (ADR 0022, limitations puste).
