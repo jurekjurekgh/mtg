@@ -1961,7 +1961,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     amass: () => 6,
     fabricate: () => 8,
     // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): wartość
-    // odkręcenia liczymy PO KREATURZE (a nie plasko), bo odkręcenie ma sens
+    // odkręcenia liczymy PO KREATURZE (a nie płasko), bo odkręcenie ma sens
     // wyłącznie tam, gdzie odkręcony stwór od razu zyskuje akcję — szczegół w
     // `untapAllCreaturesValue` (L50/L131: wartość bez wymiaru).
     untap_all_creatures_you_control: (e, view) => untapAllCreaturesValue(view),
@@ -4365,7 +4365,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /**
    * K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer — „Flash… When this
    * creature enters, untap all creatures you control.”): wartość ETB
-   * „odkręć wszystkie twoje stwory” liczona PO KREATURZE, nie plasko. Dotłd stałe 3
+   * „odkręć wszystkie twoje stwory” liczona PO KREATURZE, nie płasko. Dotąd stałe 3
    * niezależnie od stołu — wartość bez wymiaru (L50/L131).
    *
    * Odkręcenie ma wartość WYŁĄCZNIE wtedy, gdy odkręcony stwór od razu zyskuje akcję,
@@ -7385,7 +7385,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (def.entersWithCountersIf) return false;
     // Mana musi przetrwać: lądy nietknięte (bot ich nie tapał), więc koszt da się
     // zapłacić ponownie w turze przeciwnika. Jednorazowe źródła (skarb, tap ciała)
-    // odroczenia nie przeżyją — wtedy rzut teraz jest lepszy niże utrata karty.
+    // odroczenia nie przeżyją — wtedy rzut teraz jest lepszy niż utrata karty.
     if (!canCastWithUnits(manaUnitsOfView(view, { landsOnly: true }), card)) return false;
     if (myTurn(view)) return true;
     const step = view.turn.step;
