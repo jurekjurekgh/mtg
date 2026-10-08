@@ -15859,3 +15859,37 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
 - Uwaga techniczna: opis PR #158 trzymany od tej sesji w śledzonym pliku
   `docs/plans/PR_158_OPIS.md` (`.arena/pr-body.txt` ginie przy resecie
   sandboxa) — wniosek z poprzedniego resetu.
+
+## 2026-10-08 — zgłoszenie J: Fledgling Imp — latanie aktywowane bez powodu
+
+- **Zgłoszenie**: „{B}, Discard a card: This creature gains flying until end of
+  turn." — bot aktywował zdolność, gdy WSZYSTKIE kreatury właściciela były
+  tapnięte: zapłacił {B}, wyrzucił Brute Force (którym mógł dodać +3/+3) i
+  zadał 2 obrażeń, które i tak przeszedby. „To latanie to ma sens tylko gdy
+  jest do czegoś potrzebne … I warunek konieczny — ma na ręce ZBĘDNĄ kartę."
+- **Przyczyna**: gałąź `flying` w `keywordGrantWindowValue` pytała wyłącznie o
+  odpowiedź w powietrzu (`hasUntappedFlyingBlocker`) i nigdy nie pytała, czy
+  wróg ma w ogóle NIETAPNIĘTEGO blokera NAZIEMNEGO. Przy tapniętym stole atak
+  przechodzi i tak, więc grant nie zmienia NIC — a baza zdolności (+2) minus
+  mana (−1) plus premia okna (+2 + moc) dawało +1, czyli ponad pass. Ten sam
+  błąd dla „wróg bez stworów". Klasa awarii: **L50/L131** w wariancie **M146**.
+- **Fix** (generycznie po typie efektu `grant_keywords_until_end_of_turn` i
+  stanie z PlayerView, ADR 0002/0017; wspólne dla czarów i zdolności, L41):
+  `enemyHasUntappedGroundBlockerFor` — przeciwnik ma nietapniętego stwora,
+  który bez latania ZABLOKOWAŁBY odbiorcę (przez `attackerCanBeBlocked`, więc
+  menace / ewazja mocowa / `cantBlock` liczone tą samą regułą co wycena ataku);
+  premia `2 + moc` za latanie tylko gdy taki bloker ISTNIEJE i wróg nie ma
+  flyera/reach, w przeciwnym razie kara −10 (efekt jałowy, nie zero — L3).
+  Gałąź obronna (blok nadlatującego latającego atakującego) bez zmian.
+- **Efekt** (E2E): wróg 2/4 + 2/3 tapnięte → **pass** (przed fixem
+  activate_ability +1); wróg bez stworów → pass; wróg 2/4 nietapnięty →
+  activate (latanie omija blokera); wróg z flyer/reach → pass; imp z menace i
+  jednym blokerem → pass; okno obronne (tura wroga, atakujący z flying) →
+  activate; main2 → pass. Aktywacja faktycznie płaci {B}, wyrzuca kartę do
+  grobu (CR 701.9a) i nadaje flying (CR 702.9b).
+- Testy J/1–J/7 (13 scenów), dowód mutacyjny: mJ1 7/6, mJ2 11/2, mJ3 10/3,
+  mJ4 10/3, mJ5 11/2. Cytaty CR 702.9b / 509.1a / 509.1b / 502.3 / 701.9a
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`); 701.9a dopisany do tabeli
+  numerów procedurą `cr-numery.mjs --zapisz`.
+- Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, build
+  72 moduły / 4928,2 kB EXIT 0, cr-numery OK (514 numerów / 5527 cytatów).

@@ -174,3 +174,53 @@ Raport: `docs/audits/AUDYT_PR157_2026-10-07.md`; plan:
 - Bramy: fast **7824/7824** EXIT 0, `bot-scoring-snapshot` +
   `bot-benchmark` 29/29 EXIT 0, build 72 moduły EXIT 0, cr-numery OK.
   Plan: `docs/plans/PLAN_2026-10-08-zgloszenie-i-wrap-in-flames.md`.
+
+## Zgłoszenie J — Fledgling Imp: latanie aktywowane bez powodu (+1 → pass)
+
+- **Zgłoszenie:** „{B}, Discard a card: This creature gains flying until end of
+  turn." — „Bot ma na stole impa. Ja mam wszystkie kreatury tapnięte. Bot używa
+  tej zdolności i nadaje sobie latanie (musi zapłacić manę i odrzucić kartę —
+  wyrzuca Brute Force, którym mógłby sobie pumpować +3/+3 IDIOTA!). Atakuje.
+  Zadaje mi 2 dmg. PO CO SIĘ PYTAM ON AKTYWOWAŁ TO LATANIE??? … To latanie to
+  ma sens tylko gdy jest do czegoś potrzebne (np. ja mam blokerów z lataniem
+  albo reach) albo gdy chce tym impem blokować kogoś z lataniem. I warunek
+  konieczny — ma na ręce ZBĘDNĄ kartę — np. taką na którą nie ma many."
+- **Pomiar PRZED** (sonda `.arena/probe-j-imp.mjs`; bot z impem 2/2, 8 lądów w
+  tym 3 Mountains, Brute Force w ręce): wszystkie kreatury wroga TAPNIĘTE →
+  aktywacja **+1** przy pass 0 (i pass_przejście ataku za 2 obrażeń); wróg bez
+  stworów → również **+1**. Premia `2 + moc` za latanie wypisywana była za samo
+  BRAK odpowiedzi flying/reach — nikt nie pytał, czy wróg ma w ogóle
+  nietapniętego blokera naziemnego.
+- **Przyczyna:** gałąź `flying` w `keywordGrantWindowValue` (M218/3) miała
+  tylko jeden z dwóch warunków. Klasa awarii: **L50/L131** (efekt bez wyceny
+  wymiaru „czy efekt cokolwiek zmienia") w wariancie **M146** (basa +2 nosi
+  wariant).
+- **Fix** (generycznie po typie efektu `grant_keywords_until_end_of_turn` +
+  `PlayerView`, ADR 0002/0017; wspólne dla czarów i zdolności, L41):
+  `enemyHasUntappedGroundBlockerFor(view, recipient)` — przeciwnik ma
+  nietapniętego stwora, który bez latania ZABLOKOWAŁBY odbiorcę (przez
+  `attackerCanBeBlocked`: menace / ewazja mocowa / `cantBlock` liczone tą samą
+  regułą co wycena ataku, CR 509.1b + M202/H). Premia `2 + moc` tylko gdy taki
+  bloker ISTNIEJE i wróg nie ma flyera/reach; w przeciwnym razie **kara −10**
+  (efekt jałowy), nie zero — baza zdolności +2 minus {B} znów niosłaby wariant
+  ponad pass (L3). Gałąź obronna (imp blokujący nadlatującego latającego
+  atakującego) bez zmian.
+  Cytaty CR dosłowne z mirroru (CR 2026-09-25, SHA-256 `8d860e45…`, ADR 0030):
+  **702.9b** „A creature with flying can't be blocked except by creatures with
+  flying and/or reach.", **509.1a** „The chosen creatures must be untapped…",
+  **509.1b** „…If any restrictions are being disobeyed, the declaration of
+  blockers is illegal.", **502.3** odkręcenie tylko we własnym kroku
+  odkręcenia, **701.9a** „To discard a card, move it from its owner's hand to
+  that player's graveyard." (nowy numer w tabeli `cr-numery`).
+- **Efekt:** wróg 2/4 + 2/3 tapnięte → **pass** (−13, przed fixem +1); wróg bez
+  stworów → pass; wróg 2/4 nietapnięty → activate (+1 — anty-over-fix, regresja
+  M218/3 chroniona); beginning_of_combat z blokerem → activate; wróg z
+  flyer/reach → pass; imp z menace i jednym blokerem → pass; okno obronne (tura
+  wroga, atakujący z flying) → activate; main2 → pass. E2E: aktywacja płaci
+  {B}, karta ląduje w grobie, imp dostaje flying.
+- **Testy:** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (13 scenów).
+  Dowód mutacyjny: mJ1 7/6, mJ2 11/2, mJ3 10/3, mJ4 10/3, mJ5 11/2 → z fixem
+  13/13.
+- Bramy: fast **7837/7837** EXIT 0, `test:slow` **264/264** EXIT 0, build
+  72 moduły / 4928,2 kB EXIT 0, cr-numery OK. Plan:
+  `docs/plans/PLAN_2026-10-08-zgloszenie-j-fledgling-imp-latanie.md`.

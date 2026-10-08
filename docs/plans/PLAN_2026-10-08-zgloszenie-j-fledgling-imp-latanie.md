@@ -84,41 +84,41 @@ NIC — a baza zdolności (+2) minus mana (−1) plus premia okna (+2 + moc) daj
 
 ## Etapy i kryteria ukończenia
 
-- [ ] E0. Lektura obowiązkowa + rozpoznanie (pomiar PRZED powyżej).
-- [ ] E1. Ten plan wypchnięty jako osobny commit PRZED kodem (ADR 0020 A/C).
-- [ ] E2. **Fix wyceny** (`src/controllers/heuristic-bot.js`, bez nazw kart —
+- [x] E0. Lektura obowiązkowa + rozpoznanie (pomiar PRZED powyżej).
+- [x] E1. Ten plan wypchnięty jako osobny commit PRZED kodem (ADR 0020 A/C).
+- [x] E2. **Fix wyceny** (`src/controllers/heuristic-bot.js`, bez nazw kart —
   ADR 0002; wyłącznie z `PlayerView` — ADR 0017):
-  - [ ] E2a. Nowy helper `enemyHasUntappedGroundBlockerFor(view, recipient)` —
+  - [x] E2a. Nowy helper `enemyHasUntappedGroundBlockerFor(view, recipient)` —
     przeciwnik ma NIETAPNIĘTEGO stwora, który mógłby zablokować `recipient`
     BEZ latania (po `attackerCanBeBlocked`, czyli z uwzględnieniem
     `cantBlock`/menace/ewazji mocowej). Wróg bez takiego blokera = latanie nie
     zmienia NIC (CR 702.9b + 509.1a).
-  - [ ] E2b. Gałąź `flying` w `keywordGrantWindowValue`: premia `2 + moc`
+  - [x] E2b. Gałąź `flying` w `keywordGrantWindowValue`: premia `2 + moc`
     tylko gdy `hasUntappedGroundBlocker` (a wróg nie ma odpowiedzi
     flying/reach — jak dotąd). Brak blokera naziemnego ⇒ efekt jałowy jak
     duplikat keywordu: kara, nie zero (baza +2 − mana muszą zejść poniżej
     passu, L3). Dotyczy OBU gałęzi okna: `attacking` (już zadeklarowany
     atakujący) i precombat (main1/beginning_of_combat). Gałąź obronna
     (blok latającego atakującego) bez zmian — to realne okno.
-  - [ ] E2c. Koszt-discard zostaje po `abilityDiscardLoss` (PMSSB-58/F2 —
+  - [x] E2c. Koszt-discard zostaje po `abilityDiscardLoss` (PMSSB-58/F2 —
     JEDNA miara z pickerem, L41); nie dodajemy drugiej kary za kartę, żeby nie
     dublować wymiaru. Sprawdzić pomiarem, że strata karty realnie opada z
     noty aktywacji (J: −4 za Brute Force).
-- [ ] E3. **Test** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (J/1–J/6):
+- [x] E3. **Test** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (J/1–J/6):
   scena ze zgłoszenia (wszyscy tapnięci ⇒ pass), wróg bez stworów ⇒ pass,
   wróg z nietapniętym blokerem naziemnym ⇒ activate (anty-over-fix, regresja
   M218/3), wróg z flying/reach ⇒ pass, okno obronne (tura wroga, atakujący z
   flying) ⇒ activate, main2/postcombat ⇒ pass.
-- [ ] E4. **Dowód mutacyjny** (L13/L34/L159 — mutacja per gałąź, wersja bazowa
+- [x] E4. **Dowód mutacyjny** (L13/L34/L159 — mutacja per gałąź, wersja bazowa
   z `git show HEAD:<plik>`): mJ1 (usunięty warunek `hasUntappedGroundBlocker`),
   mJ2 (brak kary za jałowe latanie — zero zamiast kary), mJ3 (helper ignoruje
   `tapped`), mJ4 (helper ignoruje flying/reach blokera).
-- [ ] E5. **Bramka** na zamrożonym drzewie (L174): `npm test` (fast) EXIT 0,
+- [x] E5. **Bramka** na zamrożonym drzewie (L174): `npm test` (fast) EXIT 0,
   `npm run build` EXIT 0, `node tools/cr-numery.mjs` OK. Bez pełnego B0
   (ADR 0018); zmiana dotyczy wyłącznie wyceny bota — próbka regresji
   `test/bot-benchmark.test.js` + golden-master `test/bot-scoring-snapshot.test.js`
   muszą zostać zielone (inaczej L124/L176: lokalizować `--dump`).
-- [ ] E6. **Domknięcie**: wpis PROJECT_HISTORY, sekcja J w opisie PR
+- [x] E6. **Domknięcie**: wpis PROJECT_HISTORY, sekcja J w opisie PR
   (`docs/plans/PR_158_OPIS.md`), uzupełnienie handoffu sesji.
 
 ## Ryzyka i pułapki
@@ -134,3 +134,55 @@ NIC — a baza zdolności (+2) minus mana (−1) plus premia okna (+2 + moc) daj
   menace i jednym blokerem byłoby fałszywie opłacalne.
 - **Okno obronne** (blok latającego atakującego) jest realne i nie zależy od
   blokera naziemnego — nie ruszać.
+
+## Podsumowanie wykonania (2026-10-08)
+
+**Fix w `src/controllers/heuristic-bot.js`:**
+
+| etap | co zrobiono | gdzie |
+|---|---|---|
+| E2a | `enemyHasUntappedGroundBlockerFor(view, recipient)` — przeciwnik ma nietapniętego stwora, który bez latania ZABLOKOWAŁBY odbiorcę; idzie przez `attackerCanBeBlocked` (menace / ewazja mocowa / `cantBlock` liczone tą samą regułą co wycena ataku, CR 509.1b + M202/H). | ok. 1017, obok `enemyHasUntappedFlyingOrReachBlocker` |
+| E2b | gałąź `flying` w `keywordGrantWindowValue`: premia `2 + moc` tylko gdy taki bloker ISTNIEJE **i** wróg nie ma odpowiedzi flying/reach; w przeciwnym razie kara −10 (efekt jałowy), nie zero. Obie gałęzie okna ofensywnego (`attacking` + precombat); gałąź obronna (blok nadlatującego latającego) bez zmian. | ok. 7329 |
+| E2c | koszt-discard zostaje przy `abilityDiscardLoss` (PMSSB-58/F2 — JEDNA miara z pickerem, L41). Pomiar: Brute Force w tej scenie kosztuje 4 pkt w notcie aktywacji; nie dodano drugiej kary, żeby nie dublować wymiaru. | bez zmian |
+
+**Pomiar PO** (ta sama sonda `.arena/probe-j-imp.mjs`):
+
+| scena | przed | po | wybór po |
+|---|---|---|---|
+| wróg 2/4 + 2/3 TAPNIĘTE (zgłoszenie) | **+1 activate** | −13 | **pass** |
+| wróg bez stworów | **+1 activate** | −13 | **pass** |
+| wróg TAPNIĘTY, w ręce karta bez koloru many | +1 activate | −13 | **pass** |
+| wróg 2/4 NIETAPNIĘTY (realny bloker) | +1 activate | +1 | activate ✓ |
+| beginning_of_combat + bloker nietapnięty | +1 activate | +1 | activate ✓ |
+| wróg 2/4 z flying | −5 pass | −5 | pass ✓ |
+| wróg 2/4 + 2/2 z reach | −5 pass | −5 | pass ✓ |
+| main2 (postcombat) | −13 pass | −13 | pass ✓ |
+
+**Testy:** `test/zgloszenie-j-fledgling-imp-latanie.test.js` — 13 scenów (J/1,
+J/1b, J/2, J/2b, J/2c, J/3, J/3b, J/3c-menace, J/4, J/4b-reach, J/5-okno
+obronne, J/6-postcombat, J/7-E2E). Anty-over-fix: realny bloker naziemny nadal
+daje aktywację (regresja M218/3).
+
+**Dowód mutacyjny** (mutacje na kopiach w `.arena/`, po każdej przywrócenie
+oryginału; pass/fail dla 13 testów):
+
+| mutacja | pass / fail | co łapie |
+|---|---|---|
+| mJ1: `groundBlocker = true` (premia bez pytania o blokera) | 7 / **6** | J/1, J/1b, J/2, J/2b, J/2c, J/3c |
+| mJ2: jałowe latanie = 0 zamiast kary | 11 / **2** | J/1, J/2c — baza znów niesie wariant |
+| mJ3: helper ignoruje `tapped` | 10 / **3** | J/1, J/1b, J/2c |
+| mJ4: helper liczy flyera/reach jako blokera naziemnego | 10 / **3** | J/3, J/3b, J/7 |
+| mJ5: zdjęta kara za odpowiedź flying/reach | 11 / **2** | J/4, J/4b |
+
+Po przywróceniu kodu: 13/13.
+
+**Uwaga o cytacie CR:** nowy cytat **701.9a** („To discard a card, move it from
+its owner's hand to that player's graveyard.") dopisany do tabeli
+`test/helpers/cr-numery-tabela.js` procedurą
+`node tools/cr-numery.mjs --zapisz --cr <plik CR>` — strażnik istnienia
+(`test/cr-numery-istnienie-straznik.test.js`) czerwienił, dopóki numeru nie
+było w zweryfikowanej tabeli.
+
+**Bramka:** fast **7837/7837** EXIT 0; `npm run test:slow` EXIT 0
+(264/264); build 72 moduły / **4928,2 kB** EXIT 0; `node tools/cr-numery.mjs` OK
+(514 numerów / 5527 cytatów). Bez pełnego B0 (ADR 0018).

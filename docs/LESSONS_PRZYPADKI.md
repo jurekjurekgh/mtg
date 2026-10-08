@@ -3245,3 +3245,29 @@ dopiero fast bramką po E2a–E2d.
 z `cantBlock` na celu) + trzy piny warunkowe w
 `test/m233-bot-wrap-no-targets-noop.test.js`; mutacje mI1 8/7, mI2 10/5,
 mI3 10/5, mI4 14/1, mI4b 14/1, mI5 14/1 → z fixem 15/15.
+
+## L182 (2026-10-08) — Premia za keyword/ewazję do EOT ma DWA warunki: „czy wróg zneutralizuje" ORAZ „czy efekt cokolwiek zmienia"
+
+**Przypadek:** (zgłoszenie J, Fledgling Imp „{B}, Discard a card: This creature
+gains flying until end of turn.") właściciel: wszystkie jego kreatury TAPNIĘTE,
+bot aktywuje latanie na impie (płaci {B} + wyrzuca Brute Force, którym mógł
+dodać +3/+3) i atakuje za 2 obrażenia, które i tak przeszły. Pomiar przed
+fixem: aktywacja = **+1** przy pass 0; ten sam błąd, gdy wróg nie ma ŻADNEGO
+stwora.
+
+**Reguła:** M218/3 dopytało wycenę tylko o pierwszą stronę — „czy wróg ma
+latającego/reach, który zablokuje" — i wypisało premię `2 + moc` za samo
+BRAK takiej odpowiedzi. Drugiej strony nikt nie zadał: „czy wróg ma w ogóle
+nietapniętego blokera NAZIEMNEGO, którego latanie omija". Przy tapniętym stole
+(CR 509.1a) albo bez stworów atak przechodzi i tak, więc efekt nie zmienia NIC,
+a baza zdolności (+2) minus {B} daje +1 — wariant ponad pass. Efekt jałowy musi
+być więc KARĄ przebijającą bazę (L3), a nie zerem: karta zbędna w ręce (poza
+zasięgiem koloru) ma strata odrzucenia 0, więc wycena samego efektu jest
+jedyną barierą.
+
+**Strażnik:** `test/zgloszenie-j-fledgling-imp-latanie.test.js` (13 scenów:
+scena ze zgłoszenia, wróg bez stworów, bloker z zakazem blokowania, zbędna
+karta w ręce, realny bloker naziemny = anty-over-fix, beginning_of_combat,
+menace, flyer/reach, okno obronne, postcombat, E2E). Mutacje mJ1–mJ5 czerwienią
+właściwe piny (mJ2 — „zero zamiast kary" — łapie wyłącznie jałowy efekt, stąd
+osobny test J/2c ze zbędną kartą).

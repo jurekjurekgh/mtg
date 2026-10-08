@@ -2446,3 +2446,17 @@ mogła być wpisana jako test. **Strażnik:** `test/m233-bot-wrap-no-targets-noo
 (trzy piny warunkowe po fixie I), `test/zgloszenie-i-wrap-in-flames.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L181)
+
+## L182 (2026-10-08) — Premia za keyword/ewazję do EOT ma DWA warunki: „czy wróg zneutralizuje" ORAZ „czy efekt cokolwiek zmienia"
+
+**Reguła:** wyceniając grant keywordu do końca tury (flying, menace, haste…)
+sprawdź obie strony: (a) czy przeciwnik ma odpowiedź, która efekt obraca w
+niwecz (flyer/reach na latającego), (b) czy efekt W OGÓLE zmienia wynik, gdyby
+go nie było (bloker naziemny do ominięcia, ciało do przebicia). Sam warunek
+(a) zostawia jałowy zakup, gdy efekt nie ma czego zmieniać — a baza zdolności
+plus koszt many same w sobie nie schodzą poniżej passu, więc jałowy efekt musi
+być KARĄ, nie zerem (L3). Reguła po treści efektu i stanie z `PlayerView`
+(ADR 0002/0017), wspólna dla czarów i zdolności (L41). **Strażnik:**
+`test/zgloszenie-j-fledgling-imp-latanie.test.js` (mJ1–mJ5).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L182)
