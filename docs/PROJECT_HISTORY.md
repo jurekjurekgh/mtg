@@ -15777,3 +15777,44 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
 - Bramy: fast **7801/7801** EXIT 0, piny Forge Devil 13/13. Cytaty CR 603.6a,
   702.12b, 704.5g pobrane z mirroru (SHA-256 `8d860e45…`) — wszystkie już w
   tabeli cytatów.
+
+## 2026-10-08 — zgłoszenie H (Krumar Initiate: „endure X" co kolejkę 1/1 za 1 życie)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-h-krumar-initiate-endure-x.md`.
+
+- **Zgłoszenie H**: bot co kolejkę płacił 1 życia za token Spirit 1/1, który
+  potem ginie. Pomiar przed fixem: X=1 = 0,5, X=2..8 = 0 — X=1 wygrywało
+  ZAWSZE, bo efekt `endure_x` nie miał wyceny w gałęzi `activate_ability`, a
+  koszt „Pay X life" nie był wyceniony NIGDZIE. Tryb endure był płaski (42/40),
+  a warianty X miały w śladzie identyczną etykietę (klasa L34/L40).
+- **Przyczyna**: skalowany efekt bez wyceny → jedyny składnik zależny od X to
+  kara za manę (stropiona na X=2), więc minimum wygrywa bez znaczenia dla
+  stołu. Klasa awarii: **L50/L131** (efekt bez wyceny + wariant oferty bez
+  różnicy w notacji).
+- **Fix** (generycznie po deskryptorze `endure_x` + koszcie `payLifeX`,
+  ADR 0002; wycena tylko z `PlayerView`, ADR 0017):
+  `endureBodyValue` — JEDNA miara ciała dla obu trybów (CR 701.63a): punkty do
+  `need` = max(P, T) największego ciała wroga + 1 (reguła właściciela: „power
+  większy niż toughness albo toughness większy niż power") mają pełną wagę
+  (P×2 + T×1), powyżej ważą mniej niż życie za punkt — bot rośnie do celu, nie
+  do limitu many; bez ciał wroga celem jest bezpieczny budżet życia.
+  `endureXValue` = lepszy z trybów (liczniki na ŹRÓDLE: rozmiar = źródło + X,
+  albo token X/X). Koszt „Pay X life" (CR 601.2h): drabina samouszkodzenia
+  (PMSSB-36) + próg 25% puli z karą za każdy punkt powyżej.
+  `resolve_endure_choice` liczy ciało z N (nowe pole widoku `pendingEndures`)
+  tą samą miarą + premia za drugie ciało. Ślad nosi `,X=n` i `(tryb)`.
+- **Efekt** (E2E): wróg 5/5 + 20 życia → X=4, liczniki, źródło 6/6 za 4 życia
+  (przed fixem 1/1 za 1 życie); wróg 2/2 → X=1 (3/3); wróg 4/4 → X=3 (5/5);
+  wróg 8/8 + 40 życia → X=7 (9/9); pusty stół → X=3 (5/5); 8 życia → X=1;
+  X większy niż pula życia jest poza ofertą, a wycena i tak karze samobójstwo.
+- Testy H/1–H/6 (11 scenów), dowód mutacyjny: mH1 2/9, mH2 10/1, mH3 8/3,
+  mH4 5/6, mH5 3/8, mH6 10/1. Cytaty CR 701.63a/b, 601.2h, 118.4, 302.6
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`) — wszystkie już w tabeli.
+- Bramy: fast **7812/7812** EXIT 0, build 72 moduły / 4920,6 kB EXIT 0,
+  cr-numery OK (513 numerów / 5505 cytatów).
+- Uwaga techniczna: sandbox został w trakcie sesji zresetowany do commitu
+  bazowego `1222754` (lokalne refy zniknęły, drzewo robotcze zostało).
+  Procedura ADR 0020 D: `git fetch` + `git reset --mixed origin/<gałąź>`
+  (HEAD = `7c2ec2e`, zero commitów do przepchnęcia) — bez force-push; praca H
+  była wyłącznie w drzewie roboczym, więc nic nie przepadło.
