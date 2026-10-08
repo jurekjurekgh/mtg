@@ -1949,6 +1949,50 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     mill_cards: (e) => 20 + 3 * (e.amount ?? 1),
     mill_from_bottom: (e) => 20 + 3 * (e.amount ?? 1),
   });
+  /**
+   * G (zgłoszenie właściciela 2026-10-08, Forge Devil): kara za OBOWIĄZKOWY
+   * ping ETB, który MUSI trafić we WŁASNE ciało. Trigger „deals N damage to
+   * target creature" z celem typu `creature` (obejmuje własnych) nie ma wyjścia,
+   * gdy wróg nie ma STWORA. Liczymy więc OFIARY (a nie „czy jest jakikolwiek
+   * stwór na stole" — ta bramka z M103/A była za gruba i przepuszczała własne
+   * ciało):
+   *  - wróg ma legalny cel → 0 (ping idzie w niego),
+   *  - jest własne ciało, które N przetrwa → 0 (obrażenia wchłonięte;
+   *    właściciel: „w najgorszym razie bot będzie miał kogoś, kto może wchłonąć
+   *    ten damage"),
+   *  - SPŁONĄ wszyscy kandydaci (własne stwory + sam wchodzący — trigger
+   *    rozstrzyga się, gdy permanent już jest na polu, CR 603.6a, i silnik
+   *    oferuje go jako cel) → kara = ciało najtańszej ofiary (CR 704.5g), czyli
+   *    dokładnie tyle, ile gałąź rzutu dodała za wchodzące ciało,
+   *  - brak legalnego celu w ogóle → trigger fizzluje, kara M103/A (80).
+   * Generycznie po deskryptorze `requiresTarget` (ADR 0002); P/T, obrażenia i
+   * keywordy z `PlayerView` (ADR 0017). Kwota NIEliczbowa (wariant dynamiczny,
+   * np. `artifacts_you_control`) nie jest wyliczana z widoku — wtedy 0, bez
+   * wymyślania (w katalogu obowiązkowy ping ma kwotę stałą).
+   */
+  const etbForcedOwnPingPenalty = (view, def, spec, amount) => {
+    const dmg = Number.isInteger(amount) ? amount : 0;
+    const source = { ...def, cardId: def?.id, controllerId: view.playerId };
+    const cands = publicEtbTargets(view, spec, source);
+    // Cel po stronie PRZECIWNIKA (stwor albo gracz — `objectOnBoard` daje null
+    // dla gracza) zawsze istnieje → ping nie jest skazany na wlasne cialo.
+    if (cands.some((id) => (objectOnBoard(view, id)?.controllerId ?? id) !== view.playerId)) return 0;
+    // Dojscie tutaj = WSZYSTKIE kandydaty sa po naszej stronie, wiec filtr
+    // kontrolera bylby bezdziedzny (wczesny return juz to zagwarantowal).
+    const own = cands.map((id) => objectOnBoard(view, id)).filter((o) => o);
+    const entering = (def?.types ?? []).includes('Creature')
+      ? [{ power: def.power ?? 0, toughness: def.toughness ?? 0, keywords: def.keywords ?? [] }]
+      : [];
+    const victims = [...own, ...entering];
+    if (victims.length === 0) return 80;
+    const burns = (o) => dmg > 0
+      && (o.damage ?? 0) + dmg >= (o.toughness ?? 0)
+      && !hasKeyword(o, 'indestructible'); // CR 702.12b — nie ginie
+    if (victims.some((o) => !burns(o))) return 0;
+    return Math.min(...victims.map((o) => P.creatureBase
+      + (o.power ?? 0) * P.creaturePowerWeight + (o.toughness ?? 0) * P.creatureToughnessWeight));
+  };
+
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
@@ -8368,19 +8412,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (targets.length === 0) return finish(-60);
         }
         // M103/A (zgłoszenie właściciela): obowiązkowy ETB trigger „obrażenia
-        // celowemu stworowi + obrażenia kontrolerowi" (Forge Devil) przy
-        // PUSTYM stole ma jedyny legalny cel — samego wchodzącego stwora:
-        // stwór ginie, kontroler traci życie, karta i mana zmarnowane.
-        // Generycznie (ADR 0002): trigger wejścia z requiresTarget creature
-        // i efektami damage + damage_to_controller.
-        const etbPingAndSelfPain = (def?.abilities ?? []).some((a) => {
-          if (a?.type !== 'triggered' || a.trigger?.event !== 'enter_battlefield') return false;
-          if (a.trigger?.requiresTarget?.type !== 'creature') return false;
-          const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
-          return effs.some((e) => e?.type === 'damage') && effs.some((e) => e?.type === 'damage_to_controller');
-        });
-        const anyCreatureOnBoard = [...myCreatures(view), ...enemyCreatures(view)].length > 0;
-        if (etbPingAndSelfPain && !anyCreatureOnBoard) score -= 80;
+        // celowemu stworowi (+ obrażenia kontrolerowi)" (Forge Devil) — dotąd
+        // bronił tylko PUSTEGO stołu, gdzie jedynym legalnym celem jest sam
+        // wchodzący stwór: ginie, kontroler traci życie, karta i mana
+        // zmarnowane. Generycznie (ADR 0002): trigger wejścia z requiresTarget
+        // `creature` i efektem damage, bez „may" (inaczej trigger jest opcjonalny
+        // i odmowa jest darmowa — Reclusive Artificer). Spec i kwotę nosimy
+        // dalej, bo G liczy kary po OFIARACH, nie po pustce stołu.
+        let etbPingSpec = null;
+        let etbPingAmount = 0;
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+          if (ability.trigger?.mayFire === true) continue;
+          if (ability.trigger?.requiresTarget?.type !== 'creature') continue;
+          const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+          const ping = effs.find((e) => e?.type === 'damage');
+          if (ping) { etbPingSpec = ability.trigger.requiresTarget; etbPingAmount = ping.amount ?? 1; break; }
+        }
+        if (etbPingSpec) {
+          // G (zgłoszenie właściciela 2026-10-08): gdy wręg nie ma STWORA, ping
+          // obowiązkowo trafia we własne ciało — bot zabijał swojego stwora,
+          // tracił 1 życie i nic nie zyskiwał. Kara = ciało najtańszej ofiary
+          // (0, gdy własne ciało wchłonie obrażenia); pusty stół daje karę 80
+          // jak w M103/A.
+          score -= etbForcedOwnPingPenalty(view, def, etbPingSpec, etbPingAmount);
+        }
         // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
         // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
         // do 1 „przy okazji". Generycznie: skan triggerów wejścia pod kątem
