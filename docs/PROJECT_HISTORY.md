@@ -15985,3 +15985,45 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
   skróceniem istniejących wpisów (AGENTS.md §0 + L5/L55/L58/L60/L106/L134, bez
   utraty faktów); pełny pakiet `node tools/run-tests.mjs all` **8101/8101** EXIT 0,
   lektura **99 728** tokenów (zapas 272).
+
+## 2026-10-08 — PMSSB-59: jakościowe domknięcie batcha 64 (PR #158, M441)
+
+Komplet 10/10 kart batcha 64 w engine nie był kompletem PMSSB. Plan `3b8c48e`
+przed kodem (ADR 0020 A/C), baza `ab68fa8`. Dwie zielone fale osobno:
+`d49100d` (A) i `e5a29a1` (B); werdykty kontrolne test-only. Gałąź sesji
+`arena/6b9bb8b8-mtg`, bez force push, nic na `main`.
+
+**Fala A (F1, Universal Solvent):** ścieżka `activate_ability` nie miała gałęzi
+nagrody dla twardego removalu — wyceniana wyłącznie rodzina `BOUNCE_STRENGTH`,
+więc „{7}, {T}, poświęć: zniszcz celowy permanent" płaciła koszt i dostawała za
+NIC (−5 dla każdego celu, pass = 0 → bot nigdy nie aktywował). `REMOVAL_EFFECTS`
+wyciągnięte ze ścieżki czarów na poziom modułu (L41 — jeden zestaw typów) i
+lustrzana gałąź z tą samą skalą ofiary. Kara własnego celu bez podwójnego −90
+(`selfHarmPenalty` już go pobiera). PO: 2/1 → +27, 6/5 → +51.
+
+**Fala B (F2, Brave-Kin Duo):** kara „pump poza walką w mojej turze" (−26) jest
+pisana dla sztuczek instant-speed, które można odłożyć do walki; zdolność z
+ograniczeniem sorcery NIE MA późniejszego okna, więc kara wyceniała jedyne
+legalne okno jak błąd (−28 = pass). Dodatkowo utrata ataku za {T} była liczona
+na odbiorcy zamiast na tapniętym źródle. PO: pump domykający lethal → +49
+(aktywacja), jałowa pompa → pass.
+
+**Werdykty „by design" (bez zmiany kodu):** ręczna aktywacja many ze stwora
+(silnik sam tapuje stwora przy auto-płatności), skrut lądu przy spornej manie,
+drabinka cienkiej biblioteki za ETB-tutora. Proponowana fala D (rozdzielenie
+searchu ETB na drabinkę „tylko deck-out") została WYCOFANA, bo łamała istniejący
+pin C/5 w `dawntreader-elk-tutor-cienka-biblioteka.test.js` (fast 7899/7900,
+all 8163/8164 — jedyny FAIL) — komentarz `libraryDrainTax` obiecuje „tylko
+deck-out" dla drenaży draw/mill (Rager/Skaab), a search celowo idzie pełną
+drabinką. Trzy testy-kontroli utrwalają werdykt.
+
+**Pułapka metodyczna:** karty właściciela siedzą w `VIRTUAL_BASIC_LANDS`, nie w
+`REAL_CARDS` — kontrfaktyka patchuje ten wpis, inaczej override przepada i
+porównania wychodzą zerowe (pierwszy przebieg pomiarów Keen Sight/delirium
+przez to padł).
+
+**Bramy:** all 8160/8160 po fali B, fast 7900/7900 i all 8164/8164 po
+werdyktach kontrolnych, build 73 moduły / 4959,4 kB. Benchmark B0 na TEJ SAMEJ
+talii (deki zmieniły się w batchcie 64, więc porównanie z PMSSB-58 byłoby
+nieporównywalne): 603/672 (89,7%) vs 604/672 (89,9%) baseline — bez zmiany w
+granicach szumu, vs aggio identycznie 80,7%.

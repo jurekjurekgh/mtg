@@ -35,6 +35,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | Rodzina (typy efektów) | Kart | Status | Raport / testy / pokrętła |
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
+| batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -2941,3 +2942,59 @@ Dowody, wartości PRZED→PO, wszystkie nowe parametry i pokrycie per karta:
 [raport PMSSB-58](audits/PMSSB58_BATCH63_2026-10-05.md),
 [plan](plans/PLAN_2026-10-05a-pmssb58-batch63.md),
 [handoff](setup/HANDOFF_2026-10-05b-pmssb58.md).
+
+
+## PMSSB-59 — jakościowe domknięcie batcha 64 (2026-10-08, PR #158)
+
+Dwie realne poprawki scoringu i trzy werdykty kontrolne na 10 kartach i ośmiu
+mechanikach batcha 64 (aktywowane `destroy_permanent` na dowolny permanent,
+pompka sorcery-speed, mana ze stwora, clash z nagrodą licznikiem, Keen Sight,
+delirium jako warunek statyczny, `add_mana` trójkolorowy, ląd z
+`MANA_SOURCE_MAP` + skrut).
+
+**Fala A (F1, Universal Solvent):** ścieżka `activate_ability` nie miała gałęzi
+nagrody dla twardego removalu — wyceniana wyłącznie rodzina `BOUNCE_STRENGTH`,
+więc zdolność „{7}, {T}, poświęć: zniszcz celowy permanent" płaciła koszt i
+dostawała za NIC (−5 dla KAŻDEGO celu: 2/1, 6/5, ląd, własny permanent;
+pass = 0). `REMOVAL_EFFECTS` wyciągnięte ze ścieżki czarów na poziom modułu
+(L41 — jeden zestaw) + lustrzana gałąź z tą samą skalą ofiary (baza 22 + waga 2
+× ofiara + bonus TMC), czysty ląd −60, regeneracja bez premi (M92). Kara za
+własny cel bez podwójnego −90 (`selfHarmPenalty` już go pobiera: −185 → −98).
+PO: 2/1 → **+27**, 6/5 → **+51**, własny −95/−98.
+
+**Fala B (F2, Brave-Kin Duo):** kara „pump «do końca tury» poza walką w mojej
+turze" (−26) jest pisana dla sztuczek INSTANT-speed — te zawsze można odłożyć
+do walki. Zdolność z ograniczeniem sorcery NIE MA późniejszego okna, więc ta
+sama kara wyceniała JEDYNE legalne okno jak błąd (−28 = pass, bot nigdy nie
+użył). Zamiast kary: wartość przy realnym zamiarze ataku
+(`intendsToAttackThisTurn`), plus premia za pump domykający LETAL (skala
+`counterLethalClockBonus`). Druga przyczyna: utrata ataku za {T} liczona na
+ODBIORCY zamiast na TAPNIĘTYM źródle. PO: wróg w 4 życia przy mocy wysyłanej 3
+→ **+49** (aktywacja); atak już letalny / pusta plansza → pass; pump wroga −79.
+
+**Werdykty „by design" (bez zmiany kodu):** ręczna aktywacja many ze stwora
+poniżej passu (silnik sam tapuje stwora przy auto-płatności — test wykonuje
+rzut i sprawdza stan po wykonaniu); skrut lądu przy spornej manie (strata
+tempa); drabinka cienkiej biblioteki za ETB-tutora (celowa decyzja wcześniejszego
+audytu, pin C/5 — proponowana fala D została wycofana, bo łamała ten pin:
+fast 7899/7900, all 8163/8164). Clash + `counterOnWin` + `cantBlockPrinted`,
+delirium, Keen Sight i `add_mana` trójkolorowy są zdrowe.
+
+**Pułapka metodyczna:** karty właściciela siedzą w `VIRTUAL_BASIC_LANDS`, nie w
+`REAL_CARDS` — kontrfaktyka patchuje ten wpis, inaczej override przepada i
+wszystkie porównania wychodzą zerowe (pierwszy przebieg pomiarów Keen Sight /
+delirium przez to padł).
+
+**Piny:** 13 w `test/audyt-pmssb59-batch64.test.js`; mutacje każdej naprawianej
+klasy dają 2 czerwone testy, stan naprawiony 13/13. Bramy: all **8160/8160**
+po fali B, build **73 moduły / 4959,4 kB**, fast **7900/7900** po werdyktach
+kontrolnych, all **8164/8164**. Benchmark B0 (672 mecze, te same talie co
+baseline): **603/672 (89,7%)** vs **604/672 (89,9%)** przed zmianami — bez
+zmiany w granicach szumu.
+
+**Jawne granice:** bot nie planuje wieloatakowania i nie zna przyszłych bloków,
+więc pumpa sorcery-speed jest wyceniana z zamiaru ataku, nie z pewności wymiany.
+
+Dowody, wartości PRZED→PO i werdykty per karta:
+[raport PMSSB-59](audits/PMSSB59_BATCH64_2026-10-08.md),
+[plan](plans/PLAN_2026-10-08b-pmssb59-batch64.md).

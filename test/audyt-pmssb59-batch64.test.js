@@ -15,7 +15,7 @@
 //   zdolności z tą samą skalą ofiary (baza + waga + TMC).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -57,6 +57,10 @@ function decide(state) {
   const choice = bot.chooseCommand(view, {});
   const last = bot.trace().at(-1) ?? {};
   return { choice, options: last.options ?? [] };
+}
+
+function approx(actual, expected, label) {
+  assert.ok(Math.abs(actual - expected) < 0.01, `${label}: ${actual} != ${expected} +-0.01`);
 }
 
 function optionScore(options, cmd) {
@@ -158,4 +162,78 @@ test('PMSSB-59/B-źródło: utrata ataku liczona na TAPNIĘTYM źródle — pump
 test('PMSSB-59/B-wróg: debuff wrogiego stwora nadal mocno karany', () => {
   const { options } = decide(duoScene({ foeId: 'highland-game' }));
   assert.ok(optionScore(options, 'activate_ability(duo#0->foe)') < -50, 'pump wroga to strata');
+});
+
+// ---------------------------------------------------------------------------
+// Kontrole — werdykt „by design" (pomiar PRZED, brak defektu).
+//
+// F3 (Druid of the Cowl, {T}: dodaj {G}): ręczna aktywacja jest wyceniana
+// poniżej passu (−6), A TO JEST POPRAWNE — silnik sam opłaca czar tapnięciem
+// stwora (auto-płatność przy płatności, M101/A + PMSSB-32/A2). Bot nie musi
+// rekecznie aktywować zdolności many: wystarczy rzucić czar. Dowód: po
+// cast_permanent Druid staje się tapped, a pula many jest pusta.
+//
+// F-B / F5 (Scouting Hawk — ETB search + Keen Sight): tutor z triggera wejścia
+// uszczupla bibliotekę TĄ SAMĄ drabinką co tutor z treści czaru — to
+// celowa decyzja wcześniejszego audytu (pin C/5 w
+// `dawntreader-elk-tutor-cienka-biblioteka.test.js`: „rzut stwora z tutorem
+// też uszczupla bibliotekę"), spójna z komentarzem `libraryDrainTax`
+// („tutor z czaru uszczupla bibliotekę tak samo jak wariant aktywowany").
+// Pomiar (seed 2026, 12 many, wrogi 2/1): biblio 50 → 77,4 | 19 → 12,6 |
+// 4 → −68,4 (pass). Przy zdrowej bibliotece obie drabinki dają 0.
+// ---------------------------------------------------------------------------
+
+function hawkScene(libraryCount) {
+  const state = createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 12);
+  put(state, { id: 'k', cardId: 'scouting-hawk', controllerId: 'p2', zone: 'hand' });
+  for (let i = 0; i < libraryCount; i += 1) {
+    put(state, { id: `l${i}`, cardId: 'basic-forest', controllerId: 'p2', zone: 'library', kind: 'land' });
+  }
+  put(state, { id: 'foe', cardId: 'highland-game', controllerId: 'p1', zone: 'battlefield' });
+  return state;
+}
+
+function castScore(state) {
+  const { choice, options } = decide(state);
+  return { choice, score: optionScore(options, 'cast_permanent(k)') };
+}
+
+test('PMSSB-59/kontrola F-B: Hawk przy zdrowej bibliotece (50) = 77.4', () => {
+  const { choice, score } = castScore(hawkScene(50));
+  assert.deepEqual(choice, { type: 'cast_permanent', playerId: 'p2', objectId: 'k' });
+  approx(score, 77.3991, 'hawk biblio 50');
+});
+
+test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 19 = 12.6 (drabinka cienkiej biblioteki — by design)', () => {
+  approx(castScore(hawkScene(19)).score, 12.6, 'hawk biblio 19');
+});
+
+test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 4 = -68.4 i pass (ten sam pin co Pilgrim\'s Eye C/5)', () => {
+  const { choice, score } = castScore(hawkScene(4));
+  approx(score, -68.4, 'hawk biblio 4');
+  assert.deepEqual(choice, { type: 'pass_priority', playerId: 'p2' });
+});
+
+test('PMSSB-59/kontrola F3: Druid rzuca czar z {G} BEZ ręcznej aktywacji — silnik tapuje stwora', () => {
+  const state = createGameState({ seed: 2026, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p2');
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  addMana(state, 'p2', 0);
+  put(state, { id: 'druid', cardId: 'druid-of-the-cowl', controllerId: 'p2', zone: 'battlefield' });
+  put(state, { id: 'h0', cardId: 'rustvine-cultivator', controllerId: 'p2', zone: 'hand' });
+  put(state, { id: 'foe', cardId: 'highland-game', controllerId: 'p1', zone: 'battlefield' });
+  const { choice, options } = decide(state);
+  assert.deepEqual(choice, { type: 'cast_permanent', playerId: 'p2', objectId: 'h0' });
+  // Ręczna aktywacja zdolności many zostaje PONIŻEJ passu — auto-płatność ją
+  // załatwia, więc „tapnij stwora na zapas" nie jest opłacalne (M128).
+  assert.ok(optionScore(options, 'activate_ability(druid#0)') < 0, 'ręczna aktywacja < pass');
+  // Dowód wykonania: po rzucie Druid jest tapped, pula many pusta.
+  execute(state, choice);
+  assert.equal(state.objects.get('druid').tapped, true);
+  assert.deepEqual(state.players.find((p) => p.id === 'p2').manaPool, {});
 });
