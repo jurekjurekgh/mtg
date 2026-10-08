@@ -24,6 +24,39 @@ Prompt startowy nie nazwał tematu, więc sesja działa pętlą domyślną
 
 Roadmapa: `docs/plans/PLAN_2026-10-08c-audyt-pr158-petla-jakosci.md`.
 
-## Bramki
+## Bramki (mierzone, nie przepisywane; L92)
 
-(uzupełniane commitami — liczby mierzone, nie przepisywane; L92)
+| Brama | Przed zmianami (`f836c90`) | Po zmianach (HEAD) |
+|---|---|---|
+| `npm test` (fast) | 7900/7900, EXIT 0 | **7915/7915**, EXIT 0 |
+| `node tools/run-tests.mjs all` | 8164/8164, 352,6 s | **8179/8179**, 346,5 s, EXIT 0 |
+| `npm run build` | 73 moduły / 4959,4 kB | 73 moduły / **4961,5 kB** |
+| `node tools/cr-numery.mjs` | OK, 515 numerów / 5575 cytatów | OK, **516 / 5600** (+707.2a) |
+| Żywy Tester (3 partie audytowe + 1 przeglądowa) | — | **0 detektorów, 0 niewycenionych ruchów** |
+
+## Znaleziska i naprawy
+
+| # | Treść | Naprawa |
+|---|---|---|
+| **F-1** | Kopiowalny zakaz blokowania (CR 707.2/707.2a) ginął w **sześciu** ścieżkach kopiowania: enter as copy, `copy_creature`, offspring (702.175a), embalm (702.128a), token-kopia Moonlit, `create_copy_token` | `cantBlockPrinted` w kopiach w miejscu + `cantBlock:` w tokenach; 15 testów (8 pinów ścieżek + 7 straży katalogowych/źródłowych); protokół mutacyjny mF1–mF6 + anty-over-fix |
+| **F-2** | Sierocy JSDoc PMSSB-41/B nad `endureBodyValue` (podwójny `/**`) opisywał `untapTargetValue` | przeniesiony na właściciela |
+| **F-3** | `lifePayThreshold` zadeklarowany PO konsumencie (TDZ; wywrotki nie było, bo wycena jest leniwa) | przeniesiony przed `endureBodyValue` |
+| **F-4** | Literówki w komentarzach (8 miejsc) | poprawione |
+| **F-5** | 18 spełnionych kryteriów w dwóch planach zostało nieodhaczonych | odhaczone z adnotacją dowodu |
+| **F-6** | `copy_creature` nie ma wytwórcy (martwa gałąź) | obserwacja + pin F-1/7, decyzja właściciela |
+| **F-7** | `.gitignore` wykluczał fixture'y Żywego Testera, które README opisuje jako rejestr | negacja `!tools/table-tester/fixtures/*.txt` + fixture w repo |
+
+Nowe detektory (L27): straż katalogowa (pętla po każdej karcie z drukowanym
+`cantBlock` przez wszystkie ścieżki kopiowania) i straż źródłowa (każde
+`createBattlefieldToken` kopiujące musi nieść KLUCZ `cantBlock:`) — obie
+sprawdzone mutacją.
+
+## Pętla jakości — Żywy Tester
+
+Powtórka audytu zgłoszenia E z kolejki `HANDOFF_2026-10-08` (klasy L14/L50/L131)
+na `dist/mtg-table.html` w jsdom: fixture `regen-audyt`, seedy 77/808/31337,
+profil `greedy`, przeciwnik `the-edge`. **Po stronie bota 0 aktywacji
+regeneracji** we wszystkich trzech partiach (tester greedy: 4/0/5), detektory 0,
+ruchy niewycenione: brak, wszystkie partie zakończone naturalnie — fix E
+(CR 701.19a) się utrzymuje. Partie przeglądowe `dominaria-wu` vs `dominaria-brg`
+(seed 42, 120 kroków): 21 tur, 0 zgłoszeń, pokrycie UI 23/23.
