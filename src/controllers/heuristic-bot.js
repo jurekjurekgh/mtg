@@ -3732,6 +3732,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ['owner_library_top_or_bottom', P.bounceLibraryTopBonus],
     ['bounce_to_library_bottom', P.bounceLibraryBottomBonus],
   ]);
+  // PMSSB-59/A (F1): zestaw twardego removalu WYCIĄGNIĘTY z wnętrza ścieżki
+  // czarów na poziom modułu, bo ta sama rodzina musi być wyceniana w ścieżce
+  // ZDOLNOŚCI aktywowanych (Universal Solvent: „{7}, {T}, poświęć: zniszcz
+  // celowy permanent"). Wcześniej ścieżka zdolności nie miała tej listy
+  // w ogóle, więc twarde usuwanie nie dostawało PREMII za cel wroga: bot
+  // płacił koszt zdolności i nie dostawał niczego — remis z passem.
+  // ADR 0002 (po typie efektu, nie po nazwie karty); L41 (bliźniacze gałęzie
+  // rozdzielone świadomie, jeden zestaw typów).
+  const REMOVAL_EFFECTS = new Set([
+    'destroy_permanent', 'destroy_if_least_power',
+    'destroy_artifact_gain_life_mana_value',
+    'exile_permanent', 'exile_target_creature',
+    'bounce_permanent', 'bounce_to_library_top',
+    'bounce_to_library_bottom',
+    // PMSSB-1/A (F7): Vanish from Sight też jest removalem
+    // (top/bottom właściciela) — bez wpisu czar nie skalował
+    // wartością celu (remis 38/38 w sondzie S10).
+    'owner_library_top_or_bottom',
+  ]);
   const bounceEffectStrengthBonus = (effectType) => BOUNCE_STRENGTH.get(effectType) ?? 0;
   // PMSSB-1/B: aura-delta wyjęta ze wspólnego mianownika (L41) — ten sam
   // wymiar liczy cel wroga (fala A) i cel własny (fala B: własne aury na
@@ -9194,17 +9213,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Shatterem własny Great Furnace. Reguła generyczna (ADR 0002):
           // usunięcie WŁASNEGO permanentu to strata, usunięcie permanentu
           // PRZECIWNIKA — zysk skalowany jego wartością.
-          const REMOVAL_EFFECTS = new Set([
-            'destroy_permanent', 'destroy_if_least_power',
-            'destroy_artifact_gain_life_mana_value',
-            'exile_permanent', 'exile_target_creature',
-            'bounce_permanent', 'bounce_to_library_top',
-            'bounce_to_library_bottom',
-            // PMSSB-1/A (F7): Vanish from Sight też jest removalem
-            // (top/bottom właściciela) — bez wpisu czar nie skalował
-            // wartością celu (remis 38/38 w sondzie S10).
-            'owner_library_top_or_bottom',
-          ]);
+          // PMSSB-59/A (F1): ten sam zestaw REMOVAL_EFFECTS co w ścieżce czarów
+          // (L41 — jeden zestaw, nie kopia).
           if (REMOVAL_EFFECTS.has(effect.type) && target) {
             // P (uwaga właściciela 2026-09-23, Vandalize — „Choose one or both
             // — • Destroy target artifact. • Destroy target land.”): tryb „oba”
@@ -10913,7 +10923,52 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
-          // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntreader Elk —
+          // PMSSB-59/A (F1): twarde usuwanie w ścieżce ZDOLNOŚCI nie miało
+          // PREMII za cel wroga. Rodzina odbijająca ma własną gałąź
+          // (BOUNCE_STRENGTH powyżej — pełna skala ofiary), ale
+          // `destroy_permanent`/`exile_*` nie wyceniały NICZEGO: zdolność
+          // płaciła koszt (mana + tap + poświęcenie) i wychodziła na remisie
+          // z passem. Pomiar (seed 2026, 10 many, wrogi 4/4 na stole):
+          // aktywacja −5 DLA KAŻDEGO celu — 4/4, 1/1, ląd i własny permanent
+          // punktowane identycznie, czyli cel w ogóle nie wchodził do oceny.
+          // Skala lustrzana do ścieżki czarów (L41): baza + waga ofiary +
+          // bonus TMC; cel własny −90, czysty ląd −60, regeneracja zużywa
+          // tarczę bez efektu (M92).
+          if (REMOVAL_EFFECTS.has(effect.type) && !BOUNCE_STRENGTH.has(effect.type)) {
+            const victimIdx = Array.isArray(effect.targetIndices) && effect.targetIndices.length > 0
+              ? effect.targetIndices
+              : [effect.targetIndex ?? 0];
+            for (const idx of victimIdx) {
+              const victim = objectOnBoard(view, cmd.targets?.[idx]);
+              if (!victim) continue;
+              if (effect.type === 'destroy_permanent' && willRegenerate(view, victim.id)) {
+                score -= 70;
+                continue;
+              }
+              if (victim.controllerId === view.playerId) {
+                // Kara za cel WŁASNY: BEZ własnego −90 — `selfHarmPenalty`
+                // już go pobiera (HOSTILE_PERMANENT_EFFECTS: 90 + moc +
+                // wytrzymałość), więc drugi raz to podwójne liczenie.
+                // Mierzone przed poprawką: −185 we własnego stwora (dwie
+                // kary nałożone na ten sam wybór).
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+                  score += gainLifeValue(view, victim.manaCost ?? 0);
+                }
+              } else if (pureLandTarget(victim)) {
+                // Bez premii removalu i z karą przebijającą bazę zdolności —
+                // pass musi wygrać z „aktywuję, bo jest dowolny cel".
+                score -= P.removalPureLandPenalty;
+              } else {
+                const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
+                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                score += enemyRemovalTargetBonus(view, victim); // M234
+                if (effect.type === 'destroy_artifact_gain_life_mana_value') {
+                  score += gainLifeValue(view, victim.manaCost ?? 0);
+                }
+              }
+            }
+          }
+          // PMSSB-19: rider szukania w ścieżce ZDOLNOŚCI (Dawntinder Elk —
           // poświęcenie stwora po ląd) — dawniej 0, bot nigdy nie aktywował.
           // Wspólna skala `searchRiderValue` (L41).
           if (SEARCH_LIBRARY_EFFECT_TYPES.has(effect.type)) {
