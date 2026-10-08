@@ -15712,3 +15712,35 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158. Handoff:
   `'walk\b'`, dowód RED na oryginalnej linii buga.
 - Bramy: fast 7784/7784, końcowa `test:all` **8048/8048** EXIT 0 (474,9 s),
   build 72 moduły / 4904,0 kB. Otwarte: audyt Żywym Testerem (E3a).
+
+## 2026-10-08 — zgłoszenie F (Warmaker Gunship: trigger obrażeniowy marnuje lethal)
+
+Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
+`docs/plans/PLAN_2026-10-08-zgloszenie-f-warmaker-trigger-damage.md`.
+
+- **Zgłoszenie F**: Warmaker Gunship („deals damage equal to the number of
+  artifacts you control to target creature an opponent controls") — bot
+  wprowadzał statek, dostawał 1 obrażenia i bił 2/4 zamiast 1/1, marnując
+  zdolność. Pomiar przed fixem: 1/1 (lethal) = 33, 2/4 = 38, 3/3 = 39.
+- **Przyczyna**: gałąź `resolve_trigger_target` wyceniała cel jako
+  `30 + 2P + T`, a śmiertelność (`kill`) brała WYŁĄCZNIE z `debuffKills()`
+  (wymaga `cmd.debuff`); efekt `damage` nie nosił kwoty w komendzie, więc
+  większe ciało zawsze wygrywało. Klasa awarii: **L21** (jawna lista pól gubi
+  dane).
+- **Fix**: (1) `resolveDamageAmount` wydzielony z `applyEffect`
+  (`effects.js`) — JEDEN resolver kwoty dla rozstrzygania i oferty (L41);
+  (2) oferta `resolve_trigger_target` niesie `damage` (deskryptor intencji
+  `triggerTargetDamageEffectOf` w `effect-intent.js`); (3) z
+  `damageTargetValue` wydzielony predykat `damageIsLethal` (CR 704.5g/704.5i/
+  615.6/702.12b) złożony z `debuffKills` w premię `kill` (+60 wrogi / −60
+  własny).
+- **Efekt**: 1/1 = 93 > 2/4 = 38 > 3/3 = 39; Reclusive Artificer nie zabija
+  własnego stwora (−63). Testy F/1–F/6, dowód mutacyjny 0/7, 3/7, 6/7.
+  Numery CR 702.12b i 704.5i dopisane do tabeli cytatów (plik CR zweryfikowany
+  SHA-256).
+- **Porządek**: fixture audytowy `decks/regen-audyt.txt` (E3a) przeniesiony do
+  `tools/table-tester/fixtures/` — w `decks/` czerwienił 6 strażników talii.
+- Bramy: fast **7791/7791** EXIT 0, build 72 moduły / 4909,0 kB EXIT 0.
+  Uwaga techniczna: sandbox startowy był zresetowany do commitu bazowego
+  (`1222754`) — praca dosypana na wierzch zdalnej gałęzi rebase'em logicznym
+  (`git reset --mixed origin/…`), bez force push (ADR 0020 D).

@@ -62,6 +62,14 @@ obrażeniowego wielocelowego.
 
 Efekt (ten sam scenariusz): 1/1 → **93**, 2/4 → 38, 3/3 → 39. Bot wybiera 1/1.
 
+Klasa awarii to **L21** (jawna lista pól gubi dane: fabryka → generator →
+transport → widok): komenda ofery celowała „flagami" (friendly/removesTarget/
+debuff/pump/evasionGrant), a KWOTA efektu nie była na liście — dlatego bot
+musiał zgadywać z rozmiaru. WPIS do `docs/LESSONS.md` celowo NIE dodany:
+budżet lektury startowej ma 492 tokeny zapasu (`test/dokumentacja-budzet-
+lektury.test.js`, próg 100k) — wiedza trwała ląduje w tym planie,
+`PROJECT_HISTORY.md` i handoffie sesji.
+
 ## Cytaty CR (ADR 0030 — tylko z fetch)
 
 Plik CR: mirror `nwgarne/mtg-data` (`gh api .../contents/rules/cr-raw.txt`),
