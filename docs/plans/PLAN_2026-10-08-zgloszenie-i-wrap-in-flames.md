@@ -64,45 +64,45 @@
 
 - [x] E0. Lektura obowiązkowa + rozpoznanie (pomiar PRZED powyżej).
 - [x] E1. Ten plan wypchnięty jako osobny commit PRZED kodem (ADR 0020 A/C).
-- [ ] E2. **Fix wyceny** (`src/controllers/heuristic-bot.js`, bez nazw kart —
+- [x] E2. **Fix wyceny** (`src/controllers/heuristic-bot.js`, bez nazw kart —
   ADR 0002; wyłącznie z `PlayerView` — ADR 0017):
-  - [ ] E2a. `attackWindowAttackerIds(view)` — JEDEN odczyt okna ataku
+  - [x] E2a. `attackWindowAttackerIds(view)` — JEDEN odczyt okna ataku
     (zadeklarowany atak ALBO precombat main1/beginning_of_combat z ciałem
     zdolnym atakować; `null` = brak zamiaru). `cantBlockPayoffValue`
     (PMSSB-40) i nowa gałąź wrappera liczą z TEJ SAMEJ funkcji (L41).
-  - [ ] E2b. `wrapTargetsValue`: obrażenia w wrogiego stwora —
+  - [x] E2b. `wrapTargetsValue`: obrażenia w wrogiego stwora —
     `damageIsLethal` ⇒ wartość removalu (wspólna formuła z
     `damageTargetValue`, wydzielona jako `lethalEnemyCreatureValue`), brak
     śmiertelności ⇒ 0 (chip nie jest stratą, bo „can't block" jedzie za
     darmo — anty-over-fix L121: nie ucina rzutu, który realnie coś kupuje).
     Własny cel: jak dotąd (−60 obrażenia / −10 „can't block"), ale obie
     składowe liczone osobno (obecny `else if` gubił ridera).
-  - [ ] E2c. „can't block" w wrapperze: `cantBlockRemovalValue(view, cel,
+  - [x] E2c. „can't block" w wrapperze: `cantBlockRemovalValue(view, cel,
     attackerIds)` (wartość usunięcia NAJLEPSZEGO bloku, Batch60-followup/2)
     zamiast płaskiego +8; poza oknem ataku, na tapniętym / już
     nieblokującym celu ⇒ 0.
-  - [ ] E2d. Baza: czar, którego CAŁA treść to efekty utylitarne — także
+  - [x] E2d. Baza: czar, którego CAŁA treść to efekty utylitarne — także
     zapakowane we wrapper „each of up to N targets" (wewnątrz: typy
     utylitarne + obrażenia o STAŁEJ kwocie) — startuje od −1 jak w M146,
     nie od `spellBase` 50. Bounce we wrapperze (Sea God's Scorn,
     Captivating Gyre) NIE jest utylitarny ⇒ bez zmian.
-  - [ ] E2e. Ślad: warianty rozróżnialne (są już — cele w etykiecie
+  - [x] E2e. Ślad: warianty rozróżnialne (są już — cele w etykiecie
     `cast_spell(wif->f24+f33)`); potwierdzić, że wybór podzbioru wynika
     z wyceny, a nie z kolejności ofert.
-- [ ] E3. **Test** `test/zgloszenie-i-wrap-in-flames.test.js` (I/1–I/6):
+- [x] E3. **Test** `test/zgloszenie-i-wrap-in-flames.test.js` (I/1–I/6):
   scena właściciela (brak śmiertelności + brak ataku ⇒ pass), lethal ⇒ cast,
   precombat z atakującym ⇒ cast, postcombat ⇒ pass, wybór podzbioru celów,
   własny cel karany, anty-over-fix (atak z blokerem wciąż rzuca).
-- [ ] E4. **Dowód mutacyjny** (L13/L34/L159 — mutacja per gałąź, wersja bazowa
+- [x] E4. **Dowód mutacyjny** (L13/L34/L159 — mutacja per gałąź, wersja bazowa
   z `git show HEAD:<plik>`): mI1 (obrażenia płaskie `12+2P`), mI2
   („can't block" płaski +8), mI3 (baza 50 zamiast −1), mI4 (brak bramki okna
   ataku), mI5 (brak kary za własny cel).
-- [ ] E5. **Bramka** na zamrożonym drzewie (L174): `npm test` (fast) EXIT 0,
+- [x] E5. **Bramka** na zamrożonym drzewie (L174): `npm test` (fast) EXIT 0,
   `npm run build` EXIT 0, `node tools/cr-numery.mjs` OK. Bez pełnego B0
   (ADR 0018); zmiana dotyczy wyłącznie wyceny bota — próbka regresji
   `test/bot-benchmark.test.js` + golden-master `test/bot-scoring-snapshot.test.js`
   muszą zostać zielone (inaczej L124/L176: lokalizować `--dump`).
-- [ ] E6. **Domknięcie**: wpis PROJECT_HISTORY, sekcja I w opisie PR,
+- [x] E6. **Domknięcie**: wpis PROJECT_HISTORY, sekcja I w opisie PR,
   uzupełnienie handoffu sesji.
 
 ## Ryzyka i pułapki
@@ -122,3 +122,52 @@
 - **Golden-master / benchmark** (L124/L176): zmiana wyceny czaru może przesunąć
   decyzje bota — jeżeli `bot-scoring-snapshot` czerwienieje, lokalizować
   pierwszy dryf `--dump`, nie podnosić progów na ślepo.
+
+## Podsumowanie wykonania (2026-10-08)
+
+**Fix w `src/controllers/heuristic-bot.js`:**
+
+| etap | co zrobiono | gdzie |
+|---|---|---|
+| E2a | `attackWindowAttackerIds(view)` — zadeklarowany atak ALBO precombat main1/beginning_of_combat z ciałem zdolnym atakować (`canAttackNow && combatPower > 0`); `null` = brak zamiaru. `cantBlockPayoffValue` (PMSSB-40) liczy z TEJ SAMEJ funkcji. | ok. 6768 + refactor `cantBlockPayoffValue` |
+| E2b | wydzielony `lethalEnemyCreatureValue(view, t)` = `removalEnemyBase + removalWorthWeight·(P+T) + enemyRemovalTargetBonus` (ta sama formuła co `damageTargetValue`, L41); w `wrapTargetsValue` obrażenia: wrogi śmiertelny ⇒ ta wartość, nieśmiertelny ⇒ 0, własny ⇒ −60. | ok. 4796, ok. 5515 |
+| E2c | rider „can't block" w OSOBNYM `if` (stary `else if` gubił go przy obrażeniach): `attackIds && !tapped && !cantBlock` ⇒ `cantBlockRemovalValue(view, t3, attackIds)`, poza oknem/tapnięty ⇒ 0 (nie kara — L121). | ok. 5495, ok. 5527 |
+| E2d | modułowy `UTILITY_EFFECT_TYPES` + rekurencyjny `isUtilityEffect(e, insideWrapper)`: wrapper utylitarny gdy każdy wewnętrzny efekt utylitarny LUB `damage` o CAŁKOWITEJ kwocie — ale `damage` liczy się WYŁĄCZNIE wewnątrz wrappera (inaczej Shock tracił bazę: regresja własna złapana fast bramką, audyt-pmssb32-mana 60 → 9). Baza −1 (M146). | ok. 659, ok. 8798 |
+
+**Pomiar PO (sonda `.arena/probe-i-wrap.mjs`):** wróg 2/4 + 3/3, brak atakujących
+→ **pass** (wszystkie warianty −1, przed fixem 84,0); ten sam stół bez własnych
+stworów → pass; postcombat main2 → pass; wróg 1/1 → cast 29,0 (cel = 1/1);
+atakujący 3/3 + bloker 2/4 → cast 5,0 (cel = bloker); atakujący + 1/1 + 2/4 →
+cast 26,0 (cel = oba).
+
+**Testy:** `test/zgloszenie-i-wrap-in-flames.test.js` — 10 scenów (I/1, I/1b,
+I/2, I/2b, I/3, I/3b, I/4, I/5, I/6, I/7-E2E). Pin
+`test/m233-bot-wrap-no-targets-noop.test.js` — trzeci test cementował STARE
+zachowanie („Wrap NADAL premiowany na stworze wroga"), które właściciel zgłosił
+jako marnotrawstwo; zastąpiony trzema pinami warunkowymi (nieśmiertelne ciało
+bez ataku ⇒ pass; lethal ⇒ cast; precombat z własnym atakującym ⇒ cast).
+
+**Dowód mutacyjny** (mutacje na kopiach w `.arena/`, po każdej przywrócenie
+oryginału; pass/fail dla 15 testów obu plików):
+
+| mutacja | pass / fail | co łapie |
+|---|---|---|
+| mI1: obrażenia z powrotem płaskie `12 + 2P` | 8 / **7** | I/1, I/1b, I/2, I/3b, I/4, I/5, M233/I |
+| mI2: „can't block" z powrotem płaski +8 | 10 / **5** | M233/I, I/1, I/1b, I/2, I/4 |
+| mI3: wrapper nie utylitarny ⇒ baza `spellBase` 50 | 10 / **5** | M233/I, I/1, I/1b, I/3b, I/4 |
+| mI4: zdjęta bramka kroków main1/beginning_of_combat | 14 / **1** | I/4 |
+| mI4b: `canAttackNow` zignorowany (chore ciało = atakujące) | 14 / **1** | I/1 |
+| mI5: bez kary za własny cel (obrażenia + „can't block") | 14 / **1** | I/6 |
+
+Po przywróceniu kodu: 15/15.
+
+**Golden master:** fixture `test/fixtures/bot-scoring-snapshot.json`
+zregenerowany (3 hashe). Dryf był już w HEAD po zgłoszeniu H (test czerwienił
+PRZED tą zmianą — potwierdzone eksperymentem `git stash`); pomiar pokazuje, że
+zgłoszenie I nie rusza żadnej z 6 partii fixture (`--dump` identyczny z i bez
+fixa, overallHash `b551a8b1…`).
+
+**Bramka:** fast **7824/7824** EXIT 0; `npm run test:slow` **264/264** EXIT 0
+(w tym `bot-scoring-snapshot` + `bot-benchmark` 29/29); build EXIT 0;
+`node tools/cr-numery.mjs` OK (513 numerów / 5517 cytatów). Bez pełnego B0
+(ADR 0018).

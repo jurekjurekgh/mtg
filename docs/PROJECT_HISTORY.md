@@ -15818,3 +15818,44 @@ Sesja na gałęzi `arena/6b9bb8b8-mtg`, PR #158 (kontynuacja). Plan:
   Procedura ADR 0020 D: `git fetch` + `git reset --mixed origin/<gałąź>`
   (HEAD = `7c2ec2e`, zero commitów do przepchnęcia) — bez force-push; praca H
   była wyłącznie w drzewie roboczym, więc nic nie przepadło.
+
+## 2026-10-08 — zgłoszenie I: Wrap in Flames rzucany bez przesłanki (84 → pass)
+
+- **Zgłoszenie**: „Wrap in Flames deals 1 damage to each of up to three target
+  creatures. Those creatures can't block this turn." ({3}{R}) — bot rzucał ją
+  zawsze, gdy miał manę: „dwie kreatury miały >1 toughness i nic im się nie
+  stało, a bot nie atakował w ogóle".
+- **Przyczyna**: baza czaru (`spellBase` 50) + płaska wartość celu
+  (`12 + 2P` za wrogi cel, 8 za „can't block") nosiły czar ponad pass ZAWSZE,
+  gdy na stole stał choć jeden wrogi stwór — żadna składowa nie pytała o
+  śmiertelność obrażeń ani o zamiar ataku, a stary `else if` gubił ridera
+  „can't block", gdy oba efekty siedziały w deskryptorze. Klasa awarii:
+  **L50/L131** (efekt bez wyceny + baza niosąca wariant) w wariancie **M146**.
+- **Fix** (generycznie po deskryptorze `apply_to_each_target` + typach efektów,
+  ADR 0002; wycena tylko z `PlayerView`, ADR 0017):
+  `attackWindowAttackerIds` — JEDEN odczyt okna ataku (zadeklarowany atak albo
+  precombat main1/beginning_of_combat z ciałem zdolnym atakować; `null` = brak
+  zamiaru), używany też przez `cantBlockPayoffValue` (PMSSB-40, L41);
+  `lethalEnemyCreatureValue` — wydzielona z `damageTargetValue` formuła removalu
+  ciała, użyta też w wrapperze; obrażenia w wrogiego stwora: śmiertelne ⇒ ta
+  wartość, nieśmiertelne ⇒ 0 (chip nie jest stratą, „can't block" w tym samym
+  rzucie jedzie za darmo — L121); „can't block" w osobnym `if` z
+  `cantBlockRemovalValue` WYŁĄCZNIE w oknie ataku; czar zapakowany we wrapper,
+  którego KAŻDY wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ
+  kwocie, startuje od −1 (M146) — obrażenia skalujące (`amount 'X'`) nie są
+  utylitarne.
+- **Efekt** (E2E): wróg 2/4 + 3/3 bez atakujących → **pass** (przed fixem
+  cast 84,0); wróg 1/1 → cast 29,0 (cel = ciało śmiertelne); atakujący 3/3 +
+  bloker 2/4 → cast 5,0 (cel = bloker); postcombat main2 → pass; tapnięty
+  bloker → pass; atakujący + 1/1 + 2/4 → cast 26,0 (cel = oba).
+- Testy I/1–I/7 (10 scenów), pin M233 zaktualizowany (trzeci test cementował
+  zgłoszone zachowanie), dowód mutacyjny: mI1 8/7, mI2 10/5, mI3 10/5,
+  mI4 14/1, mI4b 14/1, mI5 14/1. Cytaty CR 601.2c / 509.1a / 509.1b / 704.5g
+  zweryfikowane przy źródle (SHA-256 `8d860e45…`).
+- Bramy: fast **7824/7824** EXIT 0, `test:slow` **264/264** EXIT 0, build EXIT 0,
+  cr-numery OK. Golden master zregenerowany — dryf pochodził z poprzedniego
+  zgłoszenia H (test czerwienił już w HEAD), pomiar potwierdza neutralność
+  zgłoszenia I dla fixture (overallHash identyczny z i bez fixa).
+- Uwaga techniczna: opis PR #158 trzymany od tej sesji w śledzonym pliku
+  `docs/plans/PR_158_OPIS.md` (`.arena/pr-body.txt` ginie przy resecie
+  sandboxa) — wniosek z poprzedniego resetu.
