@@ -4680,6 +4680,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * dobicie pod-rannego małym ciosem premiowane. SIEBIE/własny stwór = zakaz.
    * Pełna prewencja / tarcza pochłaniająca cios = 0 zadanych → strata.
    */
+  // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): JEDEN predykat
+  // „te obrażenia ZABIJĄ ten cel" dla czarów, zdolności i TRIGGERÓW (L41) —
+  // dotąd śmiertelność liczyła tylko gałąź czaru, a trigger zobrażeniowy
+  // (Warmaker/Reclusive Artificer) widział wyłącznie rozmiar celu, więc wolał
+  // 2/4 (38) nad 1/1 (33) i marnował zdolność. CR 704.5g: obrażenia są
+  // śmiertelne, gdy naniesione wcześniej + te ≥ wytrzymałości (planswalker
+  // ginie przy lojalności 0 — CR 704.5i). P rewencja cofa śmiertelność
+  // (CR 615.6 — „if damage that would be dealt is prevented, it never
+  // happens"), indestructible też (CR 702.12b — „aren't destroyed by lethal
+  // damage"). Kontroler celu nie gra roli: ten sam test służy wrogowi (premia)
+  // i własnemu stworowi (kara).
+  const damageIsLethal = (view, targetId, amount) => {
+    const amt = Number.isInteger(amount) ? amount : 0;
+    if (amt <= 0) return false;
+    const t = objectOnBoard(view, targetId);
+    if (!t) return false;
+    if (damageFullyPrevented(view, t) || shieldedAmount(view, t.id) >= amt) return false;
+    if (hasKeyword(t, 'indestructible')) return false;
+    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
+      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
+    return amt >= remaining && remaining > 0;
+  };
+
   const damageTargetValue = (view, targetId, amount, scaling = false) => {
     const amt = Number.isInteger(amount) ? amount : 0;
     const foe = enemy(view);
@@ -4700,10 +4723,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
     if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
-    const remaining = isPlaneswalker(t) ? (t.counters?.loyalty ?? 0)
-      : (t.toughness ?? 0) - (t.damage ?? 0); // POZOSTAŁE życie / lojalność
-    const lethal = amt >= remaining && remaining > 0;
-    if (lethal) {
+    if (damageIsLethal(view, targetId, amt)) {
       if (scaling) {
         // Skalujący zasób (Fireball, Consume Spirit) marnujemy tylko na TANIEGO
         // chumpa BEZ znaczenia. Wart zabicia (model właściciela), gdy:
@@ -12245,6 +12265,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const deadBefore = t.toughness <= 0 || (t.damage ?? 0) >= t.toughness;
           return deadAfter && !deadBefore;
         };
+        // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): trigger
+        // ZADAJĄCY obrażenia ma tę samą świadomość śmiertelności co czar
+        // (wspólny predykat damageIsLethal, L41). Kwotę niesie komenda
+        // (`cmd.damage` — policzoną TEN SAM resolverem co rozstrzyganie, więc
+        // oferta = efekt), więc 1 obrażenia na 1/1 to lethal (+60) i wygrywa z
+        // nieletalnym cięciem w 2/4. Bez tego bot wracał do „największy cel"
+        // (38 vs 33) i marnował zdolność, a na WŁASNYM celu nie widział, że
+        // zabija swojego stwora.
+        const damageKills = (t) => (t && Number.isInteger(cmd.damage)
+          ? damageIsLethal(view, t.id, cmd.damage) : false);
         // C (znalezisko właściciela 2026-09-12, Academy Journeymage):
         // usunięcie stwora zrywa też przyklejone AURY (cmentarz właściciela,
         // CR 704.5m). Każda CUDZA aura na celu to dodatkowa karta wroga
@@ -12412,7 +12442,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(-20 - value);
         }
         // B: jak w gałęzi wielocelowej (L41) — zabójstwo debuffem bije rozmiar.
-        const kill = debuffKills(target);
+        // F (2026-10-08): zabójstwo OBRAŻENIAMI tak samo (Warmaker Gunship) —
+        // wspólny predykat, obie strony (wrogi cel +60, własny −60).
+        const kill = debuffKills(target) || damageKills(target);
         // C: jak w gałęzi wielocelowej (L41) — zrywanie aur przy usuwaniu.
         const aura = auraStripDelta(target);
         // PMSSB-1/A (L41 z cast_spell): trigger-bounce (Jill/Academy/

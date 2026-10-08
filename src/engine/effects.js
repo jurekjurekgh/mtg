@@ -438,6 +438,47 @@ function countArtifactsControlled(state, controllerId) {
 }
 
 /**
+ * F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): JEDNO źródło kwoty
+ * obrażeń dla ROZSTRZYGNIĘCIA efektu i dla OFERTY celu — bot musi widzieć tę
+ * samą liczbę, którą rozstrzygnie silnik (L41). Bez tego wybór celu był ślepy:
+ * gałąź triggera premiuje obrażenia śmiertelne (CR 704.5g), ale nie znała
+ * kwoty dynamicznej („equal to the number of artifacts you control").
+ * Warianty kwoty (jak przy rozstrzyganiu):
+ *  - `artifacts_you_control` / `basic_land_types_you_control` — liczone z
+ *    BIEGĄCEGO stanu (CR 608.2h), dlatego helper dostaje `state`,
+ *  - `amountIfTargetHasCounter` — warunek na CELU (Bring Low), więc dostaje
+ *    kandydata (`targetId`) i dla różnych celów daje różną kwotę,
+ *  - `amountIfAddendum` — migawka rzutu (Batch60).
+ */
+export function resolveDamageAmount(state, effect, sourceObject, targetId = null) {
+  let amount = effect.amount;
+  if (amount === 'artifacts_you_control') {
+    amount = countArtifactsControlled(state, sourceObject?.controllerId);
+  }
+  if (amount === 'basic_land_types_you_control') {
+    amount = basicLandTypeCount(
+      state.zones.battlefield.map((id) => state.objects.get(id)),
+      sourceObject?.controllerId,
+    );
+  }
+  // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
+  // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
+  // (CR 608.2) — licznik dołożony w oknie odpowiedzi podbija kwotę.
+  const bonus = effect.amountIfTargetHasCounter;
+  if (bonus && targetId != null) {
+    const target = state.objects.get(targetId);
+    if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
+  }
+  // Batch60 (Summary Judgment): „Addendum — ... it deals 5 damage instead."
+  // Wariant „instead" na migawce rzutu (nie na bieżącej fazie — rozstrzygnięcie
+  // może nastąpić później; ruling RNA 2024-01-12).
+  if (effect.amountIfAddendum != null && sourceObject?.castDuringMainPhase) {
+    amount = effect.amountIfAddendum;
+  }
+  return amount;
+}
+
+/**
  * Zbiór stworów objętych masowym buffem „do końca tury" — ustalany W CHWILI
  * ROZSTRZYGNIĘCIA efektu (CR 611.2c: „the set of objects a continuous effect
  * affects is determined when that effect begins"). `opponent` przełącza między
@@ -1330,27 +1371,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       const targetObj = state.objects.get(targetId);
       if (!targetObj || targetObj.zone !== 'battlefield' || (targetObj.kind !== 'creature' && !isPlaneswalker(targetObj))) return;
     }
-    let amount = effect.amount;
-    if (amount === 'artifacts_you_control') {
-      amount = countArtifactsControlled(state, sourceObject.controllerId);
-    }
-    if (amount === 'basic_land_types_you_control') {
-      amount = basicLandTypeCount(state.zones.battlefield.map(id => state.objects.get(id)), sourceObject.controllerId);
-    }
-    // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
-    // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
-    // (CR 608.2) — licznik dołożony w oknie odpowiedzi podbija kwotę.
-    const bonus = effect.amountIfTargetHasCounter;
-    if (bonus && targetId != null) {
-      const target = state.objects.get(targetId);
-      if ((target?.counters?.[bonus.counter] ?? 0) > 0) amount = bonus.amount;
-    }
-    // Batch60 (Summary Judgment): „Addendum — ... it deals 5 damage instead."
-    // Wariant „instead" na migawce rzutu (nie na bieżącej fazie — rozstrzygnięcie
-    // może nastąpić później; ruling RNA 2024-01-12).
-    if (effect.amountIfAddendum != null && sourceObject?.castDuringMainPhase) {
-      amount = effect.amountIfAddendum;
-    }
+    // F (2026-10-08): kwota z WSPÓLNEGO helpera (L41) — ten sam odczyt co w
+    // ofercie celu triggera (`resolve_trigger_target` w game-state.js), więc
+    // bot wybiera cel widząc liczbę, która faktycznie zostanie rozstrzygnięta.
+    const amount = resolveDamageAmount(state, effect, sourceObject, targetId);
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }

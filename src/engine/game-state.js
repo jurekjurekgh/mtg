@@ -31,7 +31,7 @@ import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTyp
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
-import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome } from './effects.js';
+import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount } from './effects.js';
 import { changeLife, recordCardDrawn } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
@@ -70,9 +70,10 @@ import {
   triggerTargetPowerPumpOf,
   triggerTargetRemovesTargetOf,
   triggerTargetEffectFriendly, triggerTargetEvasionGrantOf,
+  triggerTargetDamageEffectOf,
 } from './effect-intent.js';
 
-export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf };
+export { HOSTILE_TRIGGER_TARGET_EFFECTS, triggerEffectIsHostile, triggerTargetDebuffOf, triggerTargetPowerPumpOf, triggerTargetRemovesTargetOf, triggerTargetEffectFriendly, triggerTargetEvasionGrantOf, triggerTargetDamageEffectOf };
 
 // Re-eksport niskopoziomowych API dla kompatybilności istniejących konsumentów.
 export { moveObjectDirectly, changeLife };
@@ -7833,6 +7834,22 @@ export function playerView(state, playerId) {
     // M407 (uwaga z gry — Shiva/Mesmerize): sygnał daru ewazji (jak pump) —
     // bot wycenia cel zdolnością ataku, nie rozmiarem.
     const triggerEvasionGrant = triggerTargetEvasionGrantOf(intentAbility);
+    // F (zgłoszenie właściciela 2026-10-08, Warmaker Gunship): KWOTA obrażeń
+    // triggera w komendzie (jak debuff/pump) — bot premiuje obrażenia
+    // ŚMIERTELNE (CR 704.5g), a bez kwoty widział wyłącznie rozmiar celu, więc
+    // wolał 2/4 (38) nad 1/1 (33) i marnował zdolność. Kwotę liczy TEN SAM
+    // resolver co rozstrzyganie (L41 — jeden odczyt dla oferty i efektu), więc
+    // liczba w ofercie równa się liczbie w efekcie; wariant zależny od CELU
+    // (Bring Low) dla różnych kandydatów daje różną kwotę. Triggerów
+    // obrażeniowych WIELOCELOWYCH katalog nie ma — pole tylko w ścieżce
+    // jednocelowej (wielocelowa ma własny budżet `damage_divided`).
+    const triggerDamageEffect = triggerTargetDamageEffectOf(intentAbility);
+    const triggerDamageField = (targetId) => {
+      if (!triggerDamageEffect) return {};
+      const source = state.objects.get(triggerTargetHead.sourceId);
+      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId);
+      return Number.isFinite(amount) ? { damage: amount } : {};
+    };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
     // warianty = podzbiory celów o rozmiarze 1..count (bez powtórzeń,
     // porządek deterministyczny) + zero celów przy upTo. CAP 32 wariantów
@@ -7868,10 +7885,10 @@ export function playerView(state, playerId) {
       // pierwszą ofertę), a odmowa („up to one"/„you may") jest OSTATNIA —
       // dawniej wymuszało to odwrócenie przez unshift.
       for (const targetId of legal) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...triggerDamageField(targetId), ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
       if (triggerTargetHead.allowNone) {
-        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
+        legalCommands.push(command('resolve_trigger_target', playerId, { targetId: null, friendly: triggerFriendly, removesTarget: triggerRemovesTarget, ...triggerDamageField(null), ...(triggerDebuff ? { debuff: triggerDebuff } : {}), ...(triggerPump ? { pump: triggerPump } : {}), ...(triggerEvasionGrant ? { evasionGrant: true } : {}) }));
       }
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeMoonlitChoice) {
