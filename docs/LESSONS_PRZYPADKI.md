@@ -3219,3 +3219,29 @@ zależności (MiniEl) — repo bez jsdomu; „mruga i klika się w kółko" łap
 **Reguła:** przed dodaniem karty do planu z podziałem uruchom generator i sprawdź `git status decks/`; zmiana sufiksów stron = migracja nazw (osobne zadanie) — wstrzymaj kartę (`.pending`) i udokumentuj.
 
 **Strażnik:** `tools/split-deck-colors.mjs` + `test/m203-plany-kolekcji.test.js`.
+
+## L181 (2026-10-08) — Pin testowy może cementować ZGŁOSZONE zachowanie: czytaj go jak wymaganie, nie jak fakt
+
+**Przypadek:** (zgłoszenie I, Wrap in Flames — „1 damage to each of up to three
+target creatures. Those creatures can't block this turn.", {3}{R}) właściciel
+zgłosił, że bot rzuca czar zawsze, gdy ma manę, i marnuje go: dwa ciała >1
+toughness nie dostawały nic, a bot nie atakował. Pomiar przed fixem:
+cast(wif->f24+f33) = **84,0** przy braku zamiaru ataku. Fix przeszedł zielony
+przez fast, ALE czerwienił pin `test/m233-bot-wrap-no-targets-noop.test.js`
+(„Wrap in Flames NADAL premiowany na stworze wroga (regresja M158)") — pin
+bronił DOKŁADNIE tego, na co właściciel skarżył: premii za każdy wrogi cel
+bez pytań o śmiertelność i zamiar ataku.
+
+**Reguła:** przed naprawą przeczytaj piny obronne i oceń, czy nie są treścią
+skargi. Pin aktualizuj RAZEM z kodem, z komentarzem o intencji, i zamień jedną
+zasadę na piny WARUNKOWE pokrywające oba kierunki reguły (tu: nieśmiertelne
+ciało bez ataku ⇒ pass; lethal ⇒ cast; precombat z własnym atakującym ⇒ cast).
+Drugi wniosek z tego samego zadania: zawężaj predykat klasyfikujący do
+kontekstu — `damage` liczący się jako „utylitarny" także na TOP-LEVEL zabrał
+bazę Shockowi (audyt-pmssb32-mana 60 → 9), czyli regresja własnego fixa złapana
+dopiero fast bramką po E2a–E2d.
+
+**Strażnik:** `test/zgloszenie-i-wrap-in-flames.test.js` (10 scenów, w tym E2E
+z `cantBlock` na celu) + trzy piny warunkowe w
+`test/m233-bot-wrap-no-targets-noop.test.js`; mutacje mI1 8/7, mI2 10/5,
+mI3 10/5, mI4 14/1, mI4b 14/1, mI5 14/1 → z fixem 15/15.

@@ -2434,3 +2434,15 @@ najwyżej ZEROWAĆ składnik jako bramka pierwszeństwa (`lifeAfter >= 1`, M146)
 **Reguła:** dodając kartę do dzielonego planu, sprawdź wynik generatora i zmiany nazw talii. Nowe sufiksy oznaczają jawną migrację aktywnych narzędzi/testów/fixture, nie masową zmianę historii ani trwałe wstrzymanie karty. Zachowaj ślad PRZED/PO. **Strażnik:** `tools/split-deck-colors.mjs`, `test/m203-plany-kolekcji.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L180)
+
+## L181 (2026-10-08) — Pin testowy może cementować ZGŁOSZONE zachowanie: czytaj go jak wymaganie, nie jak fakt
+
+**Reguła:** przed naprawą zgłoszenia przeczytaj piny, które bronią obecnego
+zachowania, i oceń, czy nie są treścią skargi (tu: pin „Wrap NADAL premiowany na
+stworze wroga" bronił dokładnie marnotrawstwa, które właściciel zgłosił). Pin
+aktualizuj RAZEM z kodem, z komentarzem o intencji i nowymi pinami warunkowymi
+(oba kierunki reguły). Dotyczy każdej zmiany wyceny: stara zasada „premiujemy X"
+mogła być wpisana jako test. **Strażnik:** `test/m233-bot-wrap-no-targets-noop.test.js`
+(trzy piny warunkowe po fixie I), `test/zgloszenie-i-wrap-in-flames.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L181)
