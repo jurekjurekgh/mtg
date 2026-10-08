@@ -651,10 +651,10 @@ function stackEntryEffects(entry) {
  * M146 (+ I, zgłoszenie właściciela 2026-10-08 — Wrap in Flames): typy
  * efektów, których CAŁA wartość siedzi w efekcie na konkretnym celu — czar
  * złożony wyłącznie z nich startuje PONIŻEJ passu (−1), nie od bazy
- * `spellBase` 50, bo inaczej brada niosła go ponad pass przy bezcelowym
+ * `spellBase` 50, bo inaczej baza niosłaby go ponad pass przy bezcelowym
  * lub jałowym wyborze. Wrapper „each of up to N targets" zaliczamy, gdy
  * KAŻDY jego wewnętrzny efekt jest utylitarny albo obrażeniem o STAŁEJ
- * kwocie (obrażenia skalujące z maną wartości same w sobie nie dają).
+ * kwocie (obrażenia skalujące z maną wartości same w sobie nie mają).
  */
 const UTILITY_EFFECT_TYPES = new Set([
   'tap_permanent', 'tap_permanents', 'untap_permanent', 'lock_untap',
