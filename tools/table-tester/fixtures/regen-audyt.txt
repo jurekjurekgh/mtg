@@ -1,0 +1,20 @@
+# Fixture audytowy — odtworzony w sesji 2026-10-08c (audyt PR #158, pętla jakości).
+# Skład z docs/plans/PLAN_2026-10-07b-audyt-pr157-petla-jakosci.md (Exterminator
+# Magmarch + Loxodon Mender + Ballista Watcher) oraz z
+# tools/table-tester/fixtures/README.md (Frontline War-Rager, Wedgelight Rammer,
+# Warmaker Gunship). Talia SONDAŻOWA: leży poza `decks/`, kopiowana tam tylko na
+# czas pomiaru (instrukcja w README tego katalogu).
+1x Exterminator Magmarch
+3x Exterminator Magmarch
+1x Loxodon Mender
+1x Ballista Watcher
+1x Frontline War-Rager
+1x Wedgelight Rammer
+1x Warmaker Gunship
+1x Frontline War-Rager
+2x Loxodon Mender
+2x Ballista Watcher
+4x Swamp
+3x Mountain
+3x Forest
+2x Plains
