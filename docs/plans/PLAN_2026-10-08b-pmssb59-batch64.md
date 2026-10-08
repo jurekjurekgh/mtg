@@ -92,13 +92,13 @@ która zabiera 1 kartę z biblioteki i dokłada permanent.
 
 ## 5. Kryteria ukończenia
 
-- [ ] Fala A zielona + pin mutacyjny (usunięcie gałęzi = czerwień)
-- [ ] Fala B zielona + pin mutacyjny
-- [ ] Fala C zielona + pin mutacyjny
-- [ ] Fala D: werdykt + ewentualna zmiana z pinem
-- [ ] kontrole dodatnie (F4/F7) zapisane jako testy — regresja nie może wyceny
+- [x] Fala A zielona + pin mutacyjny (usunięcie gałęzi = czerwień) ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: raport §Fala A, 4 piny*
+- [x] Fala B zielona + pin mutacyjny ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: raport §Fala B, 5 pinów*
+- [x] Fala C zielona + pin mutacyjny ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: werdykt „bez defektu" + kontrola `PMSSB-59/kontrola F3` (auto-płatność M101/A)*
+- [x] Fala D: werdykt + ewentualna zmiana z pinem ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: wycofana z werdyktem (raport §52, `PMSSB.md` §2979)*
+- [x] kontrole dodatnie (F4/F7) zapisane jako testy — regresja nie może wyceny ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: 4 kontrole w `test/audyt-pmssb59-batch64.test.js`*
       „naprawić" w drugą stronę
-- [ ] `npm test` i `node tools/run-tests.mjs all` + `npm run build` zielone
-- [ ] raport `docs/audits/PMSSB59_BATCH64_2026-10-08.md`, wpis w `PMSSB.md`,
+- [x] `npm test` i `node tools/run-tests.mjs all` + `npm run build` zielone ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: bramki PR #158 (fast 7900, all 8164, build 4959,4 kB)*
+- [x] raport `docs/audits/PMSSB59_BATCH64_2026-10-08.md`, wpis w `PMSSB.md`, ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: raport + `PMSSB.md` §2947 + opis PR #158*
       historia, opis PR #158
-- [ ] push na `arena/6b9bb8b8-mtg` (bez force-push, bez merge, nic na `main`)
+- [x] push na `arena/6b9bb8b8-mtg` (bez force-push, bez merge, nic na `main`) ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: PR #158 scalony 2026-10-08T21:13:51Z*
