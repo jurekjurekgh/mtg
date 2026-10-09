@@ -26,14 +26,14 @@ batcha — poprzedni agent zrobił to strasznie szybko". Zakres: 10 kart batcha 
 |---|---|---|---|
 | Brave-Kin Duo (BLB) | zgodne | `{1},{T}` +1/+1 do EOT, sorcery-speed | **OK** |
 | Bog Hoodlums (LRW) | zgodne | `cantBlock` + clash z licznikiem | **OK** |
-| Druid of the Cowl (M19) | zgodne | `{T}: Add {G}` | **OK** (metadane `plan` — B-3) |
+| Druid of the Cowl (M19) | zgodne | `{T}: Add {G}` | **OK** |
 | **Man-o'-War (MH1)** | **ROZJAZD** | ETB bounce | **B-1 — zmyślone `flying`**, naprawione |
 | Narset's Rebuke (TDM) | zgodne | 5 obrażeń + {U}{R}{W} + exile zamiast grobu | **OK** |
 | Quandrix Campus (STX) | zgodne | enters tapped, {G}/{U}, {4}{T} scry 1 | **OK** |
 | Scouting Hawk (CLB) | zgodne | Keen Sight (warunek z liczby lądów) | **OK** (mylący `notes` — B-4) |
 | Spineseeker Centipede (DSK) | zgodne | tutor landu + delirium statyczne | **OK** |
 | Sultai Scavenger (KTK) | zgodne | delve + flying | **OK** |
-| Universal Solvent (CMR) | zgodne | `{7},{T}`, poświęcenie: zniszcz permanent | **OK** (metadane `plan` — B-3) |
+| Universal Solvent (CMR) | zgodne | `{7},{T}`, poświęcenie: zniszcz permanent | **OK** |
 
 Dodatkowo: **„Keen Sight" nie jest kartą** — to ability word na Scouting Hawk.
 W PR #158 figurował w wyliczeniu „Keen Sight (`condition.opponentControlsMoreLands`)",
@@ -148,23 +148,37 @@ stworze na polu kandydaci to `["us","las1","stwor"]` — wszystkie trzy legalne.
 
 ## 5. Zgłoszenia bez naprawy (decyzja właściciela)
 
-**B-3 — pole `plan` (metadane talii) przy trzech kartach batcha.** `plan` to
-grupa planów/światów używana przez `tools/generate-plan-decks.mjs` (auto-awans
-planu do własnej talii przy progu liczebności). Trzy karty mają plan niezgodny
-z faktycznym planem:
+**B-3 — WYCOFANE jako błąd; zostaje pytanie o kryterium pola `plan`.**
+Pierwsza wersja tego zgłoszenia twierdziła, że trzy karty batcha mają `plan`
+„niezgodny z faktycznym planem" (Druid of the Cowl M19 → Kaladesh, Scouting Hawk
+CLB → Kaldheim, Universal Solvent CMR → Kaladesh). Założenie, że `plan` ma być
+planem karty, **nie wynika z repo** — pomiar całego katalogu:
 
-| Karta | Set | `plan` w definicji | Faktyczny plan |
-|---|---|---|---|
-| Druid of the Cowl | M19 (Core Set 2019) | Kaladesh | brak (rdzeniówka) |
-| Scouting Hawk | CLB (Commander Legends) | Kaldheim | brak |
-| Universal Solvent | CMR (Commander Masters) | Kaladesh | brak |
+| Grupa `plan` | Kart | Różnych setów |
+|---|---|---|
+| Tarkir | 49 | 5 |
+| Innistrad | 45 | 10 |
+| Warhammer Fantasy | 42 | **30** |
+| Mirrodin | 40 | 10 |
+| Dominaria | 39 | **20** |
+| Wiedźmin | 37 | **29** |
+| Kaladesh | 21 | 8 |
+| Kaldheim | 9 | **8** |
 
-(Narset's Rebuke TDM i Sultai Scavenger KTK mają `plan: 'Tarkir'` — to się
-zgadza.) Nie zmieniam bez zgody: `plan` decyduje o przynależności do talii
-(`tools/generate-plan-decks.mjs`, próg auto-awansu `SINGLE_PLAN_MIN = 15`), więc
-korekta zmieni zawartość `decks/`: Kaladesh 21 → 19 kart (próg już przekroczony,
-awans zostaje), Kaldheim 9 → 8 (poniżej progu, bez zmian). To decyzja
-produktowa właściciela, nie błąd regułowy.
+**19 z 28 grup** zawiera karty z czterech i więcej różnych dodatków, a 53 karty
+mają `plan: null` (generator rzuca wtedy `Karta bez planu`, więc null jest
+dozwolony wyłącznie dla kart odpuszczonych). Przykład: grupa „Kaldheim" to
+`invasion-of-the-giants` [KHM], `immersturm-skullcairn` [KHM], ale też
+`savage-hunger` i `volcanic-submersion` [ALA], `infectious-bloodlust` [ORI],
+`golem-skin-gauntlets` [2XM], `fiery-justice` [2X2], `etched-host-doombringer`
+[MOM] — osiem różnych dodatków. Pole jest więc **workiem grupującym**, nie
+metryką planu, a Scouting Hawk w tym worku nie jest odosobniony.
+
+Co z tego realnie wynika (i co właściciel już widzi na stole): `decks/kaladesh.txt`
+zawiera `Universal Solvent` i `Druid of the Cowl`, choć żadna z nich nie jest
+z Kaladesh; Scouting Hawk leży w `decks/worek-dziki.txt` (worek, Kaldheim ma 9
+kart i jest poniżej progu `SINGLE_PLAN_MIN = 15`). Czy to wada, zależy od
+kryterium, którego w repo nie ma zapisanego — dlatego pytanie, nie poprawka.
 
 **B-4 — mylący wpis `notes` w Scouting Hawk.** Uwaga brzmi „warunek liczony ZE
 STANU w conditionHolds (tylko lądów w kolorze karty, nie wszystkich lądów)",
