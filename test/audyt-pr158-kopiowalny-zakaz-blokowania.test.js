@@ -46,6 +46,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { clearStatModifiers, replaceObject, creatureCantBlock } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
 import { createBattlefieldToken } from '../src/engine/tokens.js';
+import { moveObjectDirectly } from '../src/engine/objects.js';
 
 const registry = createCardRegistry();
 
@@ -254,4 +255,65 @@ test('F-1/7: copy_creature — kopia przejmuje druk celu, nie druk źródła ani
   assert.equal(po4AfterCleanup.cantBlockUntilCleanup, false, 'cleanup wygasza efekt');
   assert.equal(po4AfterCleanup.cantBlock, false, 'raw blokada znika, bo kopia nie ma druku');
   assert.equal(creatureCantBlock(po4AfterCleanup, s4), false, 'po cleanup kopia znów może blokować');
+});
+
+// Audyt PR #160 (sesja 2026-10-09b), znalezisko Z-1: R-1 dodało nowe pole
+// efektu „do końca tury" (`cantBlockUntilCleanup`), ale bez resetu w choke
+// poincie zmian stref. L166 wymaga dla takiego pola TRZECH miejsc
+// (ustawienie, cleanup, reset w moveObjectDirectly — CR 400.7: „An object
+// that moves from one zone to another becomes a new object with no memory
+// of, or relation to, its previous existence."). Bez resetu stwór odbity na
+// rękę i zagrany ponownie w tej samej turze wciąż nie mógł blokować —
+// tak samo jak przed R-1 wyciekało samo raw `cantBlock` (ten test zamyka oba).
+test('Z-1: zmiana strefy kończy efekt „can\'t block this turn" (CR 400.7)', () => {
+  const s = state();
+  put(s, 'legion', 'rotting-legion');
+  applyEffect(s, { type: 'cant_block' },
+    { id: 'spell', cardId: 'panic-spellbomb', controllerId: 'p1' }, ['legion']);
+  assert.equal(creatureCantBlock(s.objects.get('legion'), s), true, 'efekt działa na polu bitwy');
+  moveObjectDirectly(s, 'legion', 'hand', 'legion-reka');
+  moveObjectDirectly(s, 'legion-reka', 'battlefield', 'legion-wrocil');
+  const poPowrocie = s.objects.get('legion-wrocil');
+  assert.equal(poPowrocie.cantBlockUntilCleanup ?? false, false, 'znacznik efektu nie przechodzi przez strefy');
+  assert.equal(poPowrocie.cantBlock, false, 'raw pole nie niesie wygasłego efektu');
+  assert.equal(creatureCantBlock(poPowrocie, s), false, 'nowy obiekt może blokować (CR 400.7)');
+});
+
+// Kontrola Z-1: drukowana cecha karty (`cantBlockPrinted`) NIE jest efektem
+// i zmiana strefy jej nie zdejmuje — gaśnie wyłącznie efekt czasowy.
+test('Z-1b: drukowany zakaz tokenu przeżywa zmianę strefy (kontrola Z-1)', () => {
+  const s = state();
+  const mite = createBattlefieldToken(s, 'p1', {
+    cardId: 'token_phyrexian_mite', name: 'Phyrexian Mite', kind: 'creature',
+    power: 1, toughness: 1, types: ['Artifact', 'Creature'],
+    subtypes: ['Phyrexian', 'Mite'], cantBlock: true,
+  });
+  applyEffect(s, { type: 'cant_block' },
+    { id: 'spell', cardId: 'panic-spellbomb', controllerId: 'p1' }, [mite.id]);
+  moveObjectDirectly(s, mite.id, 'hand', 'mite-reka');
+  moveObjectDirectly(s, 'mite-reka', 'battlefield', 'mite-wrocil');
+  const po = s.objects.get('mite-wrocil');
+  assert.equal(po.cantBlockPrinted, true, 'druk to cecha karty, nie efekt');
+  assert.equal(po.cantBlockUntilCleanup ?? false, false, 'efekt czasowy zgasł w zmianie strefy');
+  assert.equal(po.cantBlock, true, 'raw pole jest lustrem ocalałego druku');
+  assert.equal(creatureCantBlock(po, s), true, 'token z drukiem nadal nie blokuje');
+});
+
+// Z-2: token-kopia nie dziedziczy EFEKTU czasowego źródła (CR 707.2: „Other
+// effects […] are not copied" — nagłówek pliku). Ścieżki tokenowe budują
+// świeży obiekt fabryką z jawną listą pól, więc wyciek jest strukturalnie
+// niemożliwy — pin dokumentuje inwariant, na którym polega R-1 (efekt
+// zostaje na obiekcie źródłowym kopii in-place, nie wędruje na kopie-tokeny).
+test('Z-2: offspring stworu z efektem „can\'t block this turn" może blokować (CR 707.2)', () => {
+  const s = state();
+  put(s, 'rampager', 'rust-shield-rampager');
+  applyEffect(s, { type: 'cant_block' },
+    { id: 'spell', cardId: 'panic-spellbomb', controllerId: 'p1' }, ['rampager']);
+  assert.equal(creatureCantBlock(s.objects.get('rampager'), s), true, 'efekt działa na źródle');
+  const przed = new Set(s.objects.keys());
+  applyEffect(s, { type: 'create_offspring_token' }, s.objects.get('rampager'), []);
+  const token = nowi(s, przed)[0];
+  assert.ok(token, 'token-offspring powstał (L68)');
+  assert.equal(token.cantBlockUntilCleanup ?? false, false, 'efekt czasowy nie jest kopiowany');
+  assert.equal(creatureCantBlock(token, s), false, 'CR 707.2 — kopia-token może blokować');
 });

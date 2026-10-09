@@ -4,7 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersTappedNow, animationEffectsOf, animationFieldsAfter } from './permanents.js';
+import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 import { clearImpulseWindowStamp } from './impulse-window.js';
 
@@ -208,6 +208,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     ...(object.abilitiesStrippedAt != null ? { abilitiesStrippedAt: null } : {}),
     ...(object.blocksIfAble ? { blocksIfAble: false } : {}),
     ...(object.blockRequirementCount != null ? { blockRequirementCount: 0 } : {}),
+    // Audyt PR #160/Z-1 (CR 400.7): efekt „can't block this turn" (R-1:
+    // `cantBlockUntilCleanup`, Panic Spellbomb) nie przechodzi na nowy
+    // obiekt — odbity i zagrany ponownie stwór może blokować. Druk
+    // (`cantBlockPrinted` — cecha karty) zostaje; raw pole wraca do jego
+    // lustra. Warunkowo jak blocksIfAble (bez szumu w sondzie no-op).
+    ...(hasTemporaryCantBlock(object)
+      ? { cantBlock: Boolean(object.cantBlockPrinted), cantBlockUntilCleanup: false }
+      : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
   // PMSSB-35/E (CR 400.7 + 702.170d/702.185a/b + glosariusz „Plotted"):
