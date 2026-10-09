@@ -1,18 +1,38 @@
 // Audyt PR #158 (sesja 2026-10-08c), znalezisko F-1 — STRAŻ KATALOGOWA.
 //
-// `test/audyt-pr158-kopiowalny-zakaz-blokowania.test.js` pinuje pięć ścieżek
+// `test/audyt-pr158-kopiowalny-zakaz-blokowania.test.js` pinuje ścieżki
 // kopiowania na kartach podanych wprost. Ten plik dokłada warstwę nad katalogiem
 // (L52: „nowa karta nie może po cichu ominąć ścieżki"): gdy właściciel doda kartę
-// z wydrukowanym zakazem blokowania (`cantBlock` w definicji → Bog Hoodlums dziś),
-// KAŻDA dostępna dla niej ścieżka kopiowania ma być sprawdzona z tą właśnie
-// kartą, a nie z obiektem syntetycznym.
+// niosącą zakaz blokowania, KAŻDA dostępna dla niej ścieżka kopiowania ma być
+// sprawdzona z tą właśnie kartą, a nie z obiektem syntetycznym.
+//
+// **Korekta F-8 (uwaga właściciela 2026-10-08):** pierwsza wersja tej straży
+// brała wyłącznie karty z `cantBlock: true` W DEFINICJI (dziś: Bog Hoodlums) i
+// przez to twierdziła, że „jedyny nośnik" w katalogu to jedna karta. Nośników
+// jest więcej — zakaz blokowania przychodzi TRZEMA kształtami danych:
+//
+//   1. druk na karcie          → `def.cantBlock` (Bog Hoodlums),
+//   2. stała cecha TOKENU      → `create_token` z `cantBlock: true`
+//                                (Goblin Construct z Relic Robber, Phyrexian
+//                                Mite z Crawling Chorus),
+//   3. zakaz z ZAŁĄCZNIKA      → `aura.cantBlock` (Clawing Torment, Hobble
+//                                warunkowo kolorem, Bonds of Faith warunkowo
+//                                podtypem) — to efekt, nie druk, więc NIE jest
+//                                wartością kopiowalną (CR 707.2: „Other effects
+//                                […] are not copied") i ścieżek kopiowania nie
+//                                dotyczy; pilnuje go `attachmentRestrictions`
+//                                (Batch 48) i `entry.cantBlock` w PlayerView.
+//
+// Straż poniżej wylicza kształty 1 i 2. Trzeci ma osobny pin (F-1/S8).
 //
 // Podstawa regułowa (dosłowny tekst, CR effective 2026-09-25, mirror
 // nwgarne/mtg-data `rules/cr-raw.txt`, SHA-256 8d860e45…; ADR 0030):
 //
 //  • CR 707.2: „The copiable values are the values derived from the text printed
 //    on the object (that text being name, mana cost, color indicator, card type,
-//    subtype, supertype, rules text, power, toughness, and/or loyalty) […]."
+//    subtype, supertype, rules text, power, toughness, and/or loyalty) […].
+//    Other effects (including type-changing and text-changing effects), status,
+//    counters, and stickers are not copied."
 //  • CR 707.2a: „A copy acquires the abilities of the object it's copying because
 //    those values are derived from its rules text."
 //  • CR 509.1b: „[…] effects that say a creature can't block, or that it can't
@@ -36,14 +56,37 @@ import { replaceObject, creatureCantBlock } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
 
 const registry = createCardRegistry();
-
-// Karty z WYDRUKOWANYM zakazem blokowania (nie „can't block unless …", nie
-// efekt do EOT) — dziś dokładnie jedna: Bog Hoodlums (batch 64, PR #158).
-const kartyZDrukowanymZakazem = () => registry.all()
-  .filter((d) => d.cantBlock === true)
-  .map((d) => d.id);
-
 const KORZEN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/** Efekty karty (pojedynczy albo lista) — definicje trzymają obie formy. */
+function efektyZdolnosci(def) {
+  const out = [];
+  for (const a of def.abilities ?? []) {
+    const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
+    for (const e of effs) if (e) out.push(e);
+    // efekty zagnieżdżone (np. wybór trybu) — płytki przegląd, resztę łapie S7
+    if (a.effect && typeof a.effect === 'object') {
+      for (const v of Object.values(a.effect)) {
+        if (Array.isArray(v)) for (const e of v) if (e && typeof e === 'object') out.push(e);
+      }
+    }
+  }
+  return out;
+}
+
+/** Kształt 1: wydrukowany zakaz blokowania na samej karcie. */
+const kartyZDrukowanymZakazem = () => registry.all()
+  .filter((d) => d.cantBlock === true);
+
+/** Kształt 2: karta tworzy token, którego STAŁĄ cechą jest zakaz blokowania. */
+const kartyZTokenemZakazu = () => registry.all()
+  .filter((d) => efektyZdolnosci(d).some((e) => e.type === 'create_token' && e.cantBlock === true));
+
+/** Konfigi tokenów z zakazem (do odtworzenia tokenu bez odpalania triggerów). */
+function konfigiTokenowZakazu(def) {
+  return efektyZdolnosci(def)
+    .filter((e) => e.type === 'create_token' && e.cantBlock === true);
+}
 
 function put(s, id, cardId, { zone = 'battlefield', controllerId = 'p1', extra = {} } = {}) {
   const d = registry.get(cardId);
@@ -70,80 +113,80 @@ const nowi = (s, before) => [...s.objects.values()]
 // Kontrola spójności katalogu z silnikiem (L21): wydruk musi dotrzeć na obiekt —
 // bez tego reszta straży mierzyłaby brak danych wejściowych, a nie kopiowanie.
 test('F-1/S1: druk `cantBlock` z definicji karty ląduje na obiekcie', () => {
-  for (const cardId of kartyZDrukowanymZakazem()) {
+  for (const def of kartyZDrukowanymZakazem()) {
     const s = state();
-    const o = put(s, 'x', cardId);
-    assert.equal(o.cantBlockPrinted, true, `${cardId}: cantBlockPrinted na obiekcie`);
-    assert.equal(creatureCantBlock(o, s), true, `${cardId}: CR 509.1b`);
+    const o = put(s, 'x', def.id);
+    assert.equal(o.cantBlockPrinted, true, `${def.id}: cantBlockPrinted na obiekcie`);
+    assert.equal(creatureCantBlock(o, s), true, `${def.id}: CR 509.1b`);
     // PlayerView (ADR 0003/0017): bot czyta ograniczenie z WIDOKU, nie z druku —
     // `entry.cantBlock` stawia `creatureCantBlock(object, state)` (game-state.js:
     // 6775) razem z zakazem z załącznika (Batch 48). Surowe pole `cantBlock` na
     // obiekcie zostaje `false`: przy druku nośnikiem jest `cantBlockPrinted`,
     // a `cantBlock` stawiają tokeny i efekty/załączniki.
-    assert.equal(o.cantBlock, false, `${cardId}: druk nie nadpisuje pola efektów`);
+    assert.equal(o.cantBlock, false, `${def.id}: druk nie nadpisuje pola efektów`);
     const wpis = playerView(s, 'p1').zones.battlefield.find((e) => e.id === 'x');
-    assert.equal(wpis.cantBlock, true, `${cardId}: entry.cantBlock w PlayerView`);
+    assert.equal(wpis.cantBlock, true, `${def.id}: entry.cantBlock w PlayerView`);
   }
 });
 
 test('F-1/S2: enter as a copy — każda karta z drukowanym zakazem daje kopię, która nie blokuje', () => {
-  for (const cardId of kartyZDrukowanymZakazem()) {
+  for (const def of kartyZDrukowanymZakazem()) {
     const s = state();
     put(s, 'shape', 'jwari-shapeshifter');
-    put(s, 'wzor', cardId);
+    put(s, 'wzor', def.id);
     replaceObject(s, s.objects.get('shape'), { enteringAsCopy: true });
     s.pendingEnterAsCopy = { playerId: 'p1', sourceId: 'shape', candidateIds: ['wzor'], restorePriorityTo: null };
     const cmd = playerView(s, 'p1').legalCommands
       .find((c) => c.type === 'resolve_enter_as_copy' && c.targetId === 'wzor');
-    assert.ok(cmd, `${cardId}: kopia oferowana`);
-    assert.ok(execute(s, cmd).ok, `${cardId}: komenda przyjęta (L68)`);
+    assert.ok(cmd, `${def.id}: kopia oferowana`);
+    assert.ok(execute(s, cmd).ok, `${def.id}: komenda przyjęta (L68)`);
     const copy = s.objects.get('shape');
-    assert.equal(copy.cantBlockPrinted, true, `${cardId}: kopiowalny druk (CR 707.2)`);
-    assert.equal(creatureCantBlock(copy, s), true, `${cardId}: kopia nie blokuje (CR 509.1b)`);
+    assert.equal(copy.cantBlockPrinted, true, `${def.id}: kopiowalny druk (CR 707.2)`);
+    assert.equal(creatureCantBlock(copy, s), true, `${def.id}: kopia nie blokuje (CR 509.1b)`);
   }
 });
 
 test('F-1/S3: offspring — token-kopia 1/1 karty z drukowanym zakazem nie blokuje', () => {
-  for (const cardId of kartyZDrukowanymZakazem()) {
+  for (const def of kartyZDrukowanymZakazem()) {
     const s = state();
-    put(s, 'wzor', cardId, { extra: { offspring: { cost: 2, colors: [] } } });
+    put(s, 'wzor', def.id, { extra: { offspring: { cost: 2, colors: [] } } });
     const before = new Set(s.objects.keys());
     applyEffect(s, { type: 'create_offspring_token' }, s.objects.get('wzor'), []);
     const token = nowi(s, before)[0];
-    assert.ok(token, `${cardId}: token powstał`);
-    assert.equal(token.power, 1, `${cardId}: offspring jest zawsze 1/1 (CR 702.175a)`);
-    assert.equal(token.cantBlockPrinted, true, `${cardId}: dziedziczy druk (CR 707.2)`);
+    assert.ok(token, `${def.id}: token powstał`);
+    assert.equal(token.power, 1, `${def.id}: offspring jest zawsze 1/1 (CR 702.175a)`);
+    assert.equal(token.cantBlockPrinted, true, `${def.id}: dziedziczy druk (CR 707.2)`);
     assert.equal(creatureCantBlock(token, s), true);
   }
 });
 
 test('F-1/S4: embalm — token-kopia karty z drukowanym zakazem nie blokuje', () => {
-  for (const cardId of kartyZDrukowanymZakazem()) {
+  for (const def of kartyZDrukowanymZakazem()) {
     const s = state();
-    const wGrobie = put(s, 'wzor', cardId, { zone: 'exile' });
+    const wGrobie = put(s, 'wzor', def.id, { zone: 'exile' });
     const before = new Set(s.objects.keys());
     applyEffect(s, { type: 'create_token_copy_of_source', colors: ['W'], addSubtypes: ['Zombie'] }, wGrobie, []);
     const token = nowi(s, before)[0];
-    assert.ok(token, `${cardId}: token powstał`);
-    assert.equal(token.cantBlockPrinted, true, `${cardId}: dziedziczy druk (CR 702.128a + 707.2)`);
+    assert.ok(token, `${def.id}: token powstał`);
+    assert.equal(token.cantBlockPrinted, true, `${def.id}: dziedziczy druk (CR 702.128a + 707.2)`);
     assert.equal(creatureCantBlock(token, s), true);
   }
 });
 
 test('F-1/S5: Moonlit Meditation — token-kopia permanentu z drukowanym zakazem nie blokuje', () => {
-  for (const cardId of kartyZDrukowanymZakazem()) {
+  for (const def of kartyZDrukowanymZakazem()) {
     const s = state();
-    put(s, 'wzor', cardId);
+    put(s, 'wzor', def.id);
     s.pendingMoonlitChoice = {
       playerId: 'p1', enchantedId: 'wzor', effect: { amount: 1 },
       sourceObjectId: 'moon', targets: [], restorePriorityTo: null,
     };
     const before = new Set(s.objects.keys());
     assert.ok(execute(s, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok,
-      `${cardId}: komenda przyjęta (L68)`);
+      `${def.id}: komenda przyjęta (L68)`);
     const token = nowi(s, before)[0];
-    assert.ok(token, `${cardId}: token-kopia powstała`);
-    assert.equal(token.cantBlockPrinted, true, `${cardId}: dziedziczy druk (CR 707.2)`);
+    assert.ok(token, `${def.id}: token-kopia powstała`);
+    assert.equal(token.cantBlockPrinted, true, `${def.id}: dziedziczy druk (CR 707.2)`);
     assert.equal(creatureCantBlock(token, s), true);
   }
 });
@@ -153,25 +196,117 @@ test('F-1/S6: create_copy_token — token-kopia z drukowanym zakazem nie blokuje
   // dodawać kart z własnej głowy, więc ścieżkę pilnuje test jednostkowy
   // (F-1/6) na obiekcie podanym wprost. Tu tylko pin, że gdy taki nośnik
   // kiedyś wejdzie do katalogu, straż katalogowa go obejmie.
-  const sztuczne = kartyZDrukowanymZakazem().filter((id) => registry.get(id).types?.includes('Artifact'));
-  for (const cardId of sztuczne) {
+  const sztuczne = kartyZDrukowanymZakazem()
+    .filter((d) => (d.types ?? []).includes('Artifact'));
+  for (const def of sztuczne) {
     const s = state();
-    put(s, 'wzor', cardId);
+    put(s, 'wzor', def.id);
     const before = new Set(s.objects.keys());
     applyEffect(s, { type: 'create_copy_token' },
       { id: 'assembler', cardId: 'cogwork-assembler', controllerId: 'p1' }, ['wzor']);
     const token = nowi(s, before)[0];
-    assert.equal(token.cantBlockPrinted, true, `${cardId}: dziedziczy druk (CR 707.2)`);
+    assert.equal(token.cantBlockPrinted, true, `${def.id}: dziedziczy druk (CR 707.2)`);
   }
   assert.ok(true, 'brak artefaktu z drukowanym zakazem w katalogu — pin pusty (OK)');
 });
 
+// F-8: tokeny ze STAŁYM zakazem blokowania (kształt 2). Tworzy je
+// `createBattlefieldToken`, który z `cantBlock: true` stawia OBA pola
+// (`tokens.js:225` — CR 514.2: znacznik kopii nie zdejmuje druku).
+test('F-1/S7: tokeny z wydrukowanym zakazem — każda taka karta w katalogu działa', () => {
+  const nośniki = kartyZTokenemZakazu();
+  assert.ok(nośniki.length >= 1,
+    'oczekiwano co najmniej jednego nośnika tokenu z zakazem blokowania '
+    + '(Relic Robber / Crawling Chorus) — straż wymaga przeglądu');
+  for (const def of nośniki) {
+    for (const cfg of konfigiTokenowZakazu(def)) {
+      const s = state();
+      const before = new Set(s.objects.keys());
+      applyEffect(s, cfg, { id: 'zrodlo', cardId: def.id, controllerId: 'p1' }, []);
+      const token = nowi(s, before)[0];
+      assert.ok(token, `${def.id}/${cfg.name}: token powstał`);
+      assert.equal(token.cantBlockPrinted, true,
+        `${def.id}/${cfg.name}: stała cecha tokenu (tokens.js:225)`);
+      assert.equal(token.cantBlock, true, `${def.id}/${cfg.name}: pole efektu`);
+      assert.equal(creatureCantBlock(token, s), true, `${def.id}/${cfg.name}: CR 509.1b`);
+      const wpis = playerView(s, 'p1').zones.battlefield.find((e) => e.id === token.id);
+      assert.equal(wpis.cantBlock, true, `${def.id}/${cfg.name}: widoczne w PlayerView`);
+    }
+  }
+});
+
+// F-8: token z zakazem jako PIERWOWZÓR kopii — tu F-1 naprawdę się liczy, bo
+// Phyrexian Mite jest artefaktem (Moonlit Meditation: „enchant artifact or
+// creature"), więc ścieżka token-kopii jest dla niego OSIĄGALNA już dziś.
+test('F-1/S8: token z drukowanym zakazem jako pierwowzór token-kopii (Moonlit)', () => {
+  for (const def of kartyZTokenemZakazu()) {
+    for (const cfg of konfigiTokenowZakazu(def)) {
+      const s = state();
+      const before = new Set(s.objects.keys());
+      applyEffect(s, cfg, { id: 'zrodlo', cardId: def.id, controllerId: 'p1' }, []);
+      const token = nowi(s, before)[0];
+      assert.ok(token, `${def.id}/${cfg.name}: token powstał`);
+      s.pendingMoonlitChoice = {
+        playerId: 'p1', enchantedId: token.id, effect: { amount: 1 },
+        sourceObjectId: 'moon', targets: [], restorePriorityTo: null,
+      };
+      const przed = new Set(s.objects.keys());
+      assert.ok(execute(s, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok,
+        `${def.id}/${cfg.name}: komenda przyjęta (L68)`);
+      const kopia = nowi(s, przed)[0];
+      assert.ok(kopia, `${def.id}/${cfg.name}: token-kopia powstała`);
+      assert.equal(kopia.cantBlockPrinted, true,
+        `${def.id}/${cfg.name}: kopia tokenu niesie jego druk (CR 707.2 + 707.2a)`);
+      assert.equal(creatureCantBlock(kopia, s), true, `${def.id}/${cfg.name}: CR 509.1b`);
+    }
+  }
+});
+
+// F-8: trzeci kształt — zakaz z ZAŁĄCZNIKA. To efekt, nie druk, więc NIE jest
+// wartością kopiowalną (CR 707.2: „Other effects […] are not copied"): kopia
+// permanentu z aurą Hobble/Clawing Torment blokuje normalnie, a sam gospodarz
+// nie. Pin pilnuje, by ktoś „przy okazji" nie zaczął kopiować efektów.
+test('F-1/S9: zakaz z załącznika nie jest kopiowalny — zostaje na gospodarzu', () => {
+  const aury = registry.all().filter((d) => d.aura && d.aura.cantBlock !== undefined
+    && d.aura.cantBlock !== false);
+  assert.ok(aury.length >= 1, 'oczekiwano aur z zakazem blokowania (Hobble / Clawing Torment / Bonds of Faith)');
+  for (const aura of aury) {
+    const s = state();
+    put(s, 'host', 'rotting-legion');
+    addObject(s, {
+      id: 'aura', instanceId: 'i-aura', cardId: aura.id, controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'enchantment', types: ['Enchantment'], colors: [],
+      abilities: [], keywords: [], subtypes: [], attachedToId: 'host',
+    });
+    const host = s.objects.get('host');
+    const wpis = playerView(s, 'p1').zones.battlefield.find((e) => e.id === 'host');
+    const maZakaz = creatureCantBlock(host, s) || wpis?.cantBlock === true;
+    // Warunkowe aury (Hobble: tylko czarny gospodarz; Bonds of Faith: tylko
+    // nie-człowiek) mogą zgodnie z Oracle nie łapać naszego gospodarza.
+    if (!maZakaz) continue;
+    assert.equal(host.cantBlockPrinted, false,
+      `${aura.id}: zakaz z załącznika NIE jest drukiem (CR 707.2 — efekty nie są kopiowane)`);
+    // Kopia tego permanentu (Moonlit) nie dziedziczy efektu aury.
+    s.pendingMoonlitChoice = {
+      playerId: 'p1', enchantedId: 'host', effect: { amount: 1 },
+      sourceObjectId: 'moon', targets: [], restorePriorityTo: null,
+    };
+    const przed = new Set(s.objects.keys());
+    assert.ok(execute(s, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok);
+    const kopia = nowi(s, przed)[0];
+    assert.ok(kopia, `${aura.id}: token-kopia powstała`);
+    assert.equal(kopia.cantBlockPrinted, false,
+      `${aura.id}: kopia nie dziedziczy efektu załącznika (CR 707.2)`);
+  }
+});
+
 // Straż „nowa ścieżka": token-kopie buduje wyłącznie `createBattlefieldToken`
 // w `effects.js`/`game-state.js`. Każde takie wywołanie, które JEST kopiowaniem
-// (niesie `nextCopyNumber`), musi nieść `cantBlock` — inaczej kolejna kopiowalna
-// cecha zginie po cichu tak, jak `entersTapped` (F3), `station`/`saga`
-// (M141-B) i `cantBlockPrinted` (F-1).
-test('F-1/S7: straż źródła — każda ścieżka token-kopii przenosi `cantBlock`', () => {
+// (znacznik: `nextCopyNumber(` | `'token_clone'` | `copyManaValueOf(`), musi
+// nieść klucz `cantBlock:` — inaczej kolejna kopiowalna cecha zginie po cichu
+// tak, jak `entersTapped` (F3), `station`/`saga` (M141-B) i `cantBlockPrinted`
+// (F-1).
+test('F-1/S10: straż źródła — każda ścieżka token-kopii przenosi `cantBlock`', () => {
   const pliki = ['src/engine/effects.js', 'src/engine/game-state.js'];
   const ZNAK = '`';
   const otwierajace = /^.*createBattlefieldToken\(.*$/gm;
@@ -206,11 +341,6 @@ test('F-1/S7: straż źródła — każda ścieżka token-kopii przenosi `cantBl
       }
       assert.ok(koniec > 0, `${plik}: nie znaleziono końca wywołania createBattlefieldToken`);
       const blok = src.slice(poczatek, koniec);
-      // Kopiowanie poznajemy po znacznikach kopiowalnych cech: `nextCopyNumber`
-      // (numerowana kopia), `cardId: 'token_clone'` (token-kopia Moonlit) albo
-      // `copyManaValueOf` (MV dziedziczone z pierwowzoru, CR 202.3b). Zwykłe
-      // tokeny (Skarb, Zombie, 1/1 bez pierwowzoru) ich nie mają — nie
-      // dziedziczą druku i `cantBlock` ich nie dotyczy.
       const znacznik = blok.includes('nextCopyNumber(')
         || blok.includes("'token_clone'")
         || blok.includes('copyManaValueOf(');
@@ -226,9 +356,6 @@ test('F-1/S7: straż źródła — każda ścieżka token-kopii przenosi `cantBl
         + `i znalezisko F-1 audytu PR #158`);
     }
   }
-  // Dziś: create_copy_token, create_offspring_token, create_token_copy_of_source
-  // (effects.js) + token-kopia Moonlit (game-state.js). Jeśli liczba spadnie —
-  // ścieżka zniknęła albo zmieniła kształt i straż przestała mierzyć.
   assert.ok(sprawdzono >= 4,
     `oczekiwano co najmniej 4 ścieżek token-kopii, znaleziono ${sprawdzono} — straż wymaga przeglądu`);
 });

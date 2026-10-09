@@ -123,3 +123,18 @@ samej sesji (ADR 0021 pkt 2), każde osobnym commitem (ADR 0020 C).
   zawierającym odwrotne apostrofy.
 * Straże tej sesji były słabsze, niż deklarowałem w pierwszym podejściu — wykrył
   to protokół mutacyjny (mF5, mF6), nie lektura. Poprawione w `c57da05`.
+* **Reset sandboxa w trakcie sesji (2026-10-08c).** Po odtworzeniu środowiska
+  lokalny klon wrócił do `c27655f` (płytki, bez commitów sesji), a w drzewie
+  została tylko część plików roboczych. Odzyskanie zgodnie z `ENVIRONMENT.md`
+  §2: `git fetch origin refs/heads/arena/563e279e-mtg:refs/remotes/origin/arena/563e279e-mtg`
+  → `git checkout -- .` + `git clean -fd -e .arena` → `git reset --hard
+  origin/arena/563e279e-mtg` (HEAD `2888a9e`). Nowy plik testowy zabezpieczony
+  wcześniej kopią poza drzewem. Wniosek: push natychmiast po każdym zielonym
+  kroku (ADR 0020 C) jest tym, co ratuje sesję po resecie — 12 commitów było na
+  zdalnej gałęzi, więc strata wyniosła zero.
+* **F-8 — błąd audytu znaleziony przez właściciela.** Straż katalogowa brała
+  wyłącznie `def.cantBlock === true`, więc raport twierdził „jedyny nośnik w
+  katalogu". Nośników jest 7 w trzech kształtach danych (druk karty / stała cecha
+  tokenu / zakaz z załącznika); straż rozszerzona o S7–S9, §2 raportu
+  poprawiony. Wniosek dla kolejnych audytów: spis nośników mechaniki robić
+  przeglądem KSZTAŁTÓW DANYCH w `registry.all()`, nie jednego pola.
