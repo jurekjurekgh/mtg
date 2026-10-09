@@ -19,6 +19,27 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09b — audyt PR #160 i naprawa Z-1 (PR #161)
+
+Plan `docs/plans/PLAN_2026-10-09b-audyt-pr160.md`, raport
+`docs/audits/AUDYT_PR160_2026-10-09.md`. Werdykt: PASS WITH FINDINGS.
+R-1–R-5 zweryfikowane (mutacje M1–M8 wszystkie zgodne z oczekiwaniami;
+metryki raportu i pre-fixu odtworzone co do sztuki, w tym 7922/4961,9 kB
+na drzewie eed5571).
+
+* **Z-1 (naprawione):** efekt „can't block this turn" (R-1:
+  `cantBlockUntilCleanup`) nie gasł w zmianie strefy (CR 400.7; wyjątki
+  400.7a–m przejrzane — żaden nie dotyczy; L166). Warunkowy reset w
+  `moveObjectDirectly` (wzorzec `blocksIfAble`); druk zostaje. Piny Z-1/Z-1b
+  RED→GREEN, Z-2 (offspring nie kopiuje efektu, CR 707.2) dokumentuje inwariant.
+* **O-1 (naprawione):** komentarz w `materialize.js` o polu efektu
+  zaktualizowany do modelu R-1. Obserwacje O-2–O-4 bez działań.
+
+Bramki: baseline 7923/7923 + 73/4963,2 kB + bot-benchmark 10/10;
+post-fix 7926/7926 + 73/4963,7 kB; cr-numery --cr OK (518/517/5633).
+Tekst CR dociągnięty ponownie (codeload, SHA-256 identyczne z przypiętym).
+Bez pełnego B0 i test:all. PR #161 — po raporcie sesja zatrzymana.
+
 ## 2026-10-09 — audyt PR #159 i naprawy R-1–R-5 (follow-up PR #160)
 
 Plan audytu `docs/plans/PLAN_2026-10-09-audyt-pr159.md` został opublikowany

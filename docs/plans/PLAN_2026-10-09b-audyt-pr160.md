@@ -57,9 +57,12 @@ testowe (S9, katalog–snapshot, `plan`), dokumentacja/raporty. Bez nowych kart.
 
 ## Wykonanie
 
-- [ ] PR bieżącej sesji otwarty przed audytem.
-- [ ] Wszystkie 20 plików PR #160 ocenione; dowody i rejestr przeglądu w raporcie.
-- [ ] `npm test`, `npm run build`, `node --test test/bot-benchmark.test.js` —
-      wyniki zapisane. Pełne B0/`test:all` nieuruchomione.
-- [ ] Raport `docs/audits/AUDYT_PR160_2026-10-09.md` zapisany; opis PR uzupełniony.
-- [ ] Zatrzymanie po audycie (i ewentualnych naprawach): brak pętli jakości.
+- [x] PR bieżącej sesji otwarty przed audytem: **#161**.
+- [x] Wszystkie 20 plików PR #160 ocenione; dowody i rejestr przeglądu w raporcie.
+- [x] Baseline: `npm test` 7923/7923, build 73/4963,2 kB, bot-benchmark 10/10;
+      pre-fix (worktree eed5571): 7922/7922, 73/4961,9 kB, cr-numery 518/517/5628;
+      post-fix: 7926/7926, 73/4963,7 kB, cr-numery 518/517/5633. Pełne B0/`test:all`
+      nieuruchomione.
+- [x] Raport `docs/audits/AUDYT_PR160_2026-10-09.md` zapisany; opis PR #161 uzupełniony.
+- [x] Naprawy: Z-1 (CR 400.7, RED→GREEN) + O-1 (komentarz) — osobne commity.
+- [x] Zatrzymanie po audycie i naprawach: brak pętli jakości.
