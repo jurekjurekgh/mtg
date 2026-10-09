@@ -623,6 +623,18 @@ export function blockingRequirementCount(object) {
   return object?.blocksIfAble === true ? Math.max(1, object.blockRequirementCount ?? 1) : 0;
 }
 
+/**
+ * Czy na permanentcie działa niezależny efekt „can't block this turn”.
+ * `cantBlock` jest legacy widokiem obu źródeł dla tokenów, więc samo pole
+ * nie wystarcza, gdy wydrukowany zakaz i efekt czasowy współistnieją. Nowy
+ * efekt stawia jawne `cantBlockUntilCleanup`; warunek zgodności obsługuje też
+ * starsze obiekty/test-fixture'y, w których raw pole nie ma markera druku.
+ */
+export function hasTemporaryCantBlock(object) {
+  return Boolean(object?.cantBlockUntilCleanup === true
+    || (object?.cantBlock === true && object?.cantBlockPrinted !== true));
+}
+
 export function creatureCantBlock(object, state = null) {
   return Boolean(object?.cantBlockPrinted || object?.cantBlock || turnCantBlockRestricts(state, object));
 }
@@ -1612,7 +1624,7 @@ export function clearStatModifiers(state) {
       // Granty z TERMINEM tury (`cantBeBlockedUntilTurn` — M407,
       // `hexproofUntilTurn`) celowo poza tą bramką: wygasają read-time
       // (`state.turn.number < termin`), więc obiekt nie jest „brudny”.
-      || (current.cantBlock === true && current.cantBlockPrinted !== true)
+      || hasTemporaryCantBlock(current)
       // Batch60 („blocks if able" — Timely Interference): wymóg bloku
       // „this turn" wygasa w cleanup (CR 514.2).
       || current.blocksIfAble === true;
@@ -1620,12 +1632,12 @@ export function clearStatModifiers(state) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
         abilityGrants: [], typeGrant: null,
-        // „Can't block this turn\" (Panic Spellbomb) — cleanup zdejmuje
-        // EFEKT (CR 514.2). Cecha WYDRUKOWANA („This token can't block\" —
-        // Phyrexian Mite, Goblin Construct) jest trwała: znacznik
-        // `cantBlockPrinted` przeżywa cleanup, a `cantBlock` pozostaje z nim
-        // zgodne, żeby każdy odczyt (widok, boty, walka) widział ten sam stan.
+        // „Can't block this turn" (Panic Spellbomb) — cleanup zdejmuje EFEKT
+        // (CR 514.2), nawet gdy współistnieje z drukiem na tokenie.
+        // `cantBlock` pozostaje lustrzanym polem dla starego widoku, a osobny
+        // marker pozwala kopiowaniu nie zabrać druku zamiast efektu (albo odwrotnie).
         cantBlock: Boolean(current.cantBlockPrinted),
+        cantBlockUntilCleanup: false,
         // Batch60: wymóg bloku „this turn" zdejmowany w cleanup (CR 514.2).
         blocksIfAble: false,
         ...(current.blockRequirementCount != null ? { blockRequirementCount: 0 } : {}),

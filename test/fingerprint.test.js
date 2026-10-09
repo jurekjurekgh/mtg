@@ -89,6 +89,27 @@ test('M122: fingerprint odnotowuje cantBlock (efekt do końca tury)', () => {
   const before = stateFingerprint(state);
   state.objects.set('def', Object.freeze({ ...state.objects.get('def'), cantBlock: true }));
   assert.notEqual(stateFingerprint(state), before, 'cantBlock musi być częścią odcisku stanu');
+
+  // Token może mieć oba źródła: drukowane `cantBlock` i czasowy efekt
+  // „this turn". Sam raw bool pozostaje true w obu stanach, więc odcisk musi
+  // uwzględniać jawny termin, bo po skopiowaniu tylko efekt czasowy zostaje.
+  const printedOnly = createGameState({ seed: 7, players: [{ id: 'p1' }, { id: 'p2' }] });
+  addObject(printedOnly, {
+    id: 'mite', instanceId: 'i-mite', cardId: 'token_phyrexian_mite', controllerId: 'p1',
+    zone: 'battlefield', kind: 'creature', power: 1, toughness: 1,
+    abilities: [], keywords: [], subtypes: ['Phyrexian', 'Mite'],
+    types: ['Artifact', 'Creature'], colors: [],
+  });
+  const mite = printedOnly.objects.get('mite');
+  printedOnly.objects.set('mite', Object.freeze({
+    ...mite, cantBlock: true, cantBlockPrinted: true, cantBlockUntilCleanup: false,
+  }));
+  const printedFingerprint = stateFingerprint(printedOnly);
+  printedOnly.objects.set('mite', Object.freeze({
+    ...printedOnly.objects.get('mite'), cantBlockUntilCleanup: true,
+  }));
+  assert.notEqual(stateFingerprint(printedOnly), printedFingerprint,
+    'cantBlockUntilCleanup rozróżnia niezależny efekt od samego druku');
 });
 
 test('M264/2.3: fingerprint odnotowuje frontFaceId (dwustronny token — MV 0 / reset K5)', () => {

@@ -57,27 +57,27 @@ samej sesji (ADR 0021 pkt 2), każde osobnym commitem (ADR 0020 C).
 
 ## 3. Etapy i kryteria ukończenia
 
-- [ ] **S0.** Lektura obowiązkowa (`AGENTS.md`, 30 ADR-ów, `docs/LESSONS.md`
-      2339 linii, `docs/setup/ENVIRONMENT.md`) — WYKONANE przed tym planem.
-- [ ] **S1.** PR sesji otwarty na GitHubie PRZED kodem (ADR 0020 A).
-- [ ] **S2.** Baseline na `c27655f`: `npm test`, `npm run build`,
-      `node tools/run-tests.mjs all` — liczby zapisane poniżej (L174: brama na
-      zamrożonym drzewie, logi w `.arena/`).
-- [ ] **S3.** Audyt A–E; raport `docs/audits/AUDYT_PR158_2026-10-08.md`
-      z werdyktem i listą znalezisk (każde z dowodem: plik, linia, cytat CR).
-- [ ] **S4.** Naprawy znalezisk u root cause — każda z pinem RED→GREEN i
-      dowodem mutacyjnym (L13), osobny commit + push.
-- [ ] **S5.** Pętla jakości (ADR 0021 pkt 4): (a) audyt Żywym Testerem z
-      perspektywy gracza na artefakcie `dist/` + naprawy u root cause + nowy
-      detektor dla każdej klasy znalezionej ręcznie (L27); (b) łowy na
-      niezgodności z CR inną ścieżką niż poprzednia sesja (cenzus cytatów był
-      w #158 — szukać poza cytatami: semantyka reguł, nie numeracja).
-- [ ] **S6.** Bramka końcowa na zamrożonym drzewie: `npm test`,
-      `node tools/run-tests.mjs all`, `npm run build`, strażnik cytatów CR,
-      budżet lektury startowej — wszystkie EXIT 0.
-- [ ] **S7.** Domknięcie: raport audytu, wpis `docs/PROJECT_HISTORY.md`,
-      handoff `docs/setup/HANDOFF_2026-10-08c.md`, opis PR, lekcje (nowy wpis
-      płaci się skróceniem innego — L66).
+- [x] **S0.** Lektura obowiązkowa (`AGENTS.md`, 30 ADR-ów, `docs/LESSONS.md`
+      2339 linii, `docs/setup/ENVIRONMENT.md`) — WYKONANE przed tym planem (§5).
+- [x] **S1.** PR #159 otwarty przed kodem na GitHubie (ADR 0020 A; §5).
+- [x] **S2.** Baseline na zamrożonym drzewie `f836c90`: `npm test`, `npm run build`,
+      `node tools/run-tests.mjs all` — wyniki, EXIT-y i lokalne logi zapisano w §5
+      (L174: pomiar przed zmianami).
+- [x] **S3.** Audyt A–E; raport `docs/audits/AUDYT_PR158_2026-10-08.md`
+      zawiera werdykt i znaleziska z dowodami (§1–§8 raportu).
+- [x] **S4.** Naprawialne znaleziska zamknięte u root cause z pinami RED→GREEN
+      i dowodem mutacyjnym, osobnymi commitami/pushami; F-6 jawnie wyłączono z
+      naprawy jako martwą gałąź bez wytwórcy — do osobnej decyzji właściciela
+      (§5 i §7 raportu).
+- [x] **S5.** Pętla jakości wykonana: Żywy Tester na artefakcie `dist/` z
+      perspektywy gracza, detektory i powtórka zgłoszenia E; osobny łów na
+      niezgodności z CR poza numeracją cytatów (§8 raportu).
+- [x] **S6.** Bramka końcowa na zamrożonym drzewie: `npm test`,
+      `node tools/run-tests.mjs all`, `npm run build`, strażnik cytatów CR i
+      budżet lektury startowej — wyniki EXIT 0 w §7–§8 raportu.
+- [x] **S7.** Domknięcie: raport audytu, wpis `docs/PROJECT_HISTORY.md`,
+      handoff `docs/setup/HANDOFF_2026-10-08c.md`, opis PR i korekta L47
+      zapisane/wypchnięte (§5; handoff uzupełniono w follow-upie R-5).
 
 ## 4. Ryzyka i pułapki
 

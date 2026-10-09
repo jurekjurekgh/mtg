@@ -28,17 +28,21 @@ Roadmapa: `docs/plans/PLAN_2026-10-08c-audyt-pr158-petla-jakosci.md`.
 
 | Brama | Przed zmianami (`f836c90`) | Po zmianach (HEAD) |
 |---|---|---|
-| `npm test` (fast) | 7900/7900, EXIT 0 | **7918/7918**, EXIT 0 |
+| `npm test` (fast) | 7900/7900, EXIT 0 | **7922/7922**, EXIT 0 |
 | `node tools/run-tests.mjs all` | 8164/8164, 352,6 s | **8179/8179**, 346,5 s, EXIT 0 |
-| `npm run build` | 73 moduły / 4959,4 kB | 73 moduły / **4961,5 kB** |
-| `node tools/cr-numery.mjs` | OK, 515 numerów / 5575 cytatów | OK, **516 / 5600** (+707.2a) |
+| `npm run build` | 73 moduły / 4959,4 kB | 73 moduły / **4961,9 kB** |
+| `node tools/cr-numery.mjs` | OK, 515 numerów / 5575 cytatów | OK, **518 numerów w tabeli / 517 unikalnych / 5628 cytatów** |
 | Żywy Tester (3 partie audytowe + 1 przeglądowa) | — | **0 detektorów, 0 niewycenionych ruchów** |
+
+Kolumna „Po zmianach" opisuje pomiar PR #159 na scalonym drzewie, przed
+follow-upem R-1–R-5. Ponowne bramki po tych naprawach (PR #160) zapisano w
+`docs/audits/AUDYT_PR159_2026-10-09.md`.
 
 ## Znaleziska i naprawy
 
 | # | Treść | Naprawa |
 |---|---|---|
-| **F-1** | Kopiowalny zakaz blokowania (CR 707.2/707.2a) ginął w **sześciu** ścieżkach kopiowania: enter as copy, `copy_creature`, offspring (702.175a), embalm (702.128a), token-kopia Moonlit, `create_copy_token` | `cantBlockPrinted` w kopiach w miejscu + `cantBlock:` w tokenach; 15 testów (8 pinów ścieżek + 7 straży katalogowych/źródłowych); protokół mutacyjny mF1–mF6 + anty-over-fix |
+| **F-1** | Kopiowalny zakaz blokowania (CR 707.2/707.2a) ginął w **sześciu** ścieżkach kopiowania: enter as copy, `copy_creature`, offspring (702.175a), embalm (702.128a), token-kopia Moonlit, `create_copy_token` | `cantBlockPrinted` w kopiach w miejscu + `cantBlock:` w tokenach; 18 testów w finalnych plikach (8 pinów ścieżek + 10 straży katalogowych/źródłowych; S9 naprawione w R-2); protokół mutacyjny mF1–mF6 + anty-over-fix |
 | **F-2** | Sierocy JSDoc PMSSB-41/B nad `endureBodyValue` (podwójny `/**`) opisywał `untapTargetValue` | przeniesiony na właściciela |
 | **F-3** | `lifePayThreshold` zadeklarowany PO konsumencie (TDZ; wywrotki nie było, bo wycena jest leniwa) | przeniesiony przed `endureBodyValue` |
 | **F-4** | Literówki w komentarzach (8 miejsc) | poprawione |
@@ -64,12 +68,14 @@ każdą mechanikę na żywym silniku. Raport:
 
 * **B-1 (naprawione):** Man-o'-War miał w definicji `keywords: ['flying']`,
   którego nie ma ani w Oracle, ani w snapshotie — karta w grze **latała**. Pin
-  „dane Oracle" przypisywał ten lot jako fakt (L181). Naprawa + pin + nowa straż
-  katalogowa porównująca **każdą** kartę mającą snapshot (561 z 616) w siedmiu
-  polach i `oracleText` (po wycięciu reminder text, CR 207.2a).
-* 9/10 kart zgodnych co do pola; mechaniki clash (701.30), delve (limit = część
-  generyczna, ruling KTK), delirium (207.2c statycznie), Keen Sight, scry,
-  exile-zamiast-grobu i cel „any permanent" — zmierzone, zgodne.
+  „dane Oracle" przypisywał ten lot jako fakt (L181). Po fixie: **10/10 kart
+  batcha 64 zgodnych**. Straż katalogowa porównuje **każdą** kartę mającą
+  snapshot (561 z 616) w siedmiu polach i `oracleText` (po wycięciu reminder
+  text, CR 207.2a); R-3 doprecyzował coverage/front DFC i keywordy.
+* Zgodność danych: **9/10 przed naprawą B-1, 10/10 po niej**. Mechaniki clash
+  (701.30), delve (limit = część generyczna, ruling KTK), delirium (207.2c
+  statycznie), Keen Sight, scry, exile-zamiast-grobu i cel „any permanent" —
+  zmierzone, zgodne.
 * **B-3 wycofane w całości** (poprawka właściciela): `plan` to fabularne
   przyporządkowanie karty z dostawy batcha, nie pochodzenie z dodatku — Druid of
   the Cowl (M19) i Universal Solvent (CMR) są z Kaladeshu (Cowl to fragment
@@ -77,9 +83,11 @@ każdą mechanikę na żywym silniku. Raport:
   setem. Reguła wpisana do `AGENTS.md` + strażnik `test/katalog-pole-plan.test.js`
   (bez planu tylko basic landy, tokeny, karty specjalne i tyły DFC — pomiar:
   53 = 5 basic + 48 tokenów, zero regularnych).
-* **B-4/B-5** zgłoszone bez naprawy: mylący `notes` w Scouting Hawk (mówi „lady
-  w kolorze karty", kod liczy wszystkie — kod dobry); niekonsekwentny reminder
-  text w `oracleText` (CR 207.2a — nie reguła).
+* **B-4/B-5** zgłoszone bez naprawy: mylący `notes` w Scouting Hawk (mówi „lądów
+  w kolorze karty", kod liczy wszystkie lądy — kod dobry); reminder text w
+  `oracleText` jest niespójny (CR 207.2a — nie reguła). Brak nawiasów dotyczy
+  sześciu zwykłych kart plus tokenu `token_tarmogoyf` (7 wpisów); Merfolk
+  Falconer ma reminder text.
 
 ## Pętla jakości — Żywy Tester
 

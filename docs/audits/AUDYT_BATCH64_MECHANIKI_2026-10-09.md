@@ -62,27 +62,35 @@ w siebie (pomiar).
 ## 3. Nowa straż: definicja ↔ snapshot dla CAŁEGO katalogu
 
 `test/audyt-katalog-dane-vs-snapshoty.test.js` — porównuje każdą kartę mającą
-snapshot (561 z 616; pomiar w §3) w siedmiu polach plus `oracleText`. Granice oznaczone
-uczciwie, nie „zielone":
+snapshot (561 z 616; pomiar w §3) w siedmiu polach plus `oracleText`, z osobną
+strażą dokładnego pokrycia. Granice oznaczone uczciwie, nie „zielone":
 
-* 55 kart bez snapshotu — pomijane (licznik w komunikacie);
-* 21 snapshotów kart dwustronnych bez `oracle_text` (np.
-  `scryfall-lodestone-needle.json`: `oracle_text: null`, `type_line: "Artifact //
-  Artifact"`) — porównanie tekstu/typów pomijane;
+* 55 kart bez snapshotu — dokładna lista asertowana; spośród 562 plików jest
+  jeden jawnie osierocony (`undercity`);
+* w 561 dopasowanych snapshotach `oracle_text` jest falsy dla 21, ale są to dwie
+  różne wartości: **9 DFC ma `null` na top-level** (front tekst porównywany z
+  `card_faces[0]`), a **12 kart jednostronnych ma pusty string** (porównywany
+  jako pusty Oracle, nie traktowany jak brak pola). Wszystkie 11 DFC mają
+  porównywane typy/podtypy przedniej twarzy;
 * reminder text (CR 207.2a, linia 1496: „Reminder text is italicized text within
   parentheses that summarizes a rule that applies to that card.") wycinany przed
   porównaniem — definicje raz go mają (Merfolk Falconer), raz nie (Courage in
   Crisis), a regułą nie jest (CR 207.2, linia 1494: „The text box may also
   contain italicized text that has no game function.");
+* keyword check działa w obie strony z jawną listą keyword abilities i
+  ograniczeniem frontu DFC; `transform`/keyword actions nie są traktowane jak
+  `def.keywords`, `morph` i `saddle` sprawdzane są przez osobne deskryptory,
+  a `devoid` przez kolor.
 * tokeny: `set` i mana value nieporównywane (snapshot niesie kod dodatku wydruku
   i koszt druku tokenu, np. Tarmogoyf token `{1}{G}`); P/T zmienne (`*/1+*`)
   pomijane; typ `Token` znormalizowany po obu stronach; podtypy wielowyrazowe
   („Urza's Mine") łączone.
 
-Wynik po naprawie B-1: **2/2 zielone, zero rozjazdów**. Liczniki (pomiar):
-616 kart w rejestrze, **561 ma snapshot** (55 bez — pomijane), z 562 plików
-snapshotów **10 nie ma `oracle_text`** i 9 to karty dwustronne — dla nich
-porównanie tekstu i typów jest pomijane, reszta pól i tak porównana.
+Po naprawie B-1 i R-3: **3/3 zielone, zero rozjazdów** w tym pliku (coverage,
+porównanie Oracle, pin B-1). Liczniki: 616 kart w rejestrze, **561 ma snapshot**
+(55 bez), 562 pliki snapshotów (w tym `undercity`), 11 DFC; top-level Oracle:
+9 `null` na DFC + 12 pustych stringów na kartach jednostronnych; typy i tekst
+frontu porównano dla wszystkich 561 dopasowanych snapshotów.
 
 ## 4. Mechanika po mechanice — dowody
 
@@ -181,17 +189,19 @@ STANU w conditionHolds (tylko lądów w kolorze karty, nie wszystkich lądów)",
 a implementacja liczy **wszystkie** lądy (poprawnie wobec Oracle). Czytelnik
 dostaje sprzeczną informację; sam kod jest dobry.
 
-**B-5 — niekonsekwentny reminder text w `oracleText`.** Siedem kart ma tekst bez
-nawiasów wyjaśniających (Courage in Crisis, Spread the Sickness, Dunland Crebain,
-Voice of the Vermin, Somberwald Spider, Time to Feed), a Merfolk Falconer —
-z nawiasami. Reminder text nie jest regułą (CR 207.2a), więc to wyłącznie spójność
-wyświetlania; straż katalogowa porównuje tekst po jego wycięciu.
+**B-5 — niekonsekwentny reminder text w `oracleText`.** Siedem wpisów ma tekst
+bez nawiasów wyjaśniających: sześć zwykłych kart (Courage in Crisis, Spread the
+Sickness, Dunland Crebain, Voice of the Vermin, Somberwald Spider, Time to Feed)
+plus token `token_tarmogoyf` (jego snapshot dodaje reminder o koszcie tokenu,
+a definicja go pomija). Merfolk Falconer jest przykładem z reminderem w
+`oracleText`. Reminder text nie jest regułą (CR 207.2a), więc to wyłącznie
+spójność wyświetlania; straż katalogowa porównuje tekst po jego wycięciu.
 
 ## 6. Bramki
 
 | Brama | Wynik |
 |---|---|
-| `npm test` (fast) | **7920/7920**, EXIT 0 |
+| `npm test` (fast, pomiar na scalonym PR #159 przed naprawami R-1–R-5) | **7922/7922**, EXIT 0 |
 | `node tools/cr-numery.mjs --cr /tmp/cr.txt` | OK, 518 numerów / wydanie 2026-09-25 |
-| straż katalogowa definicja ↔ snapshot | 2/2, 561 kart z snapshotem, 0 rozjazdów |
+| straż katalogowa definicja ↔ snapshot | 3/3, 561 kart z snapshotem, 0 rozjazdów |
 | `test/real-cards-batch64.test.js` | 34/34 (pin lotu poprawiony) |

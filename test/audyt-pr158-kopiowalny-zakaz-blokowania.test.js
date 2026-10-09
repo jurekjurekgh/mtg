@@ -43,8 +43,9 @@ import { createGameState, addObject, execute, playerView } from '../src/engine/g
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { replaceObject, creatureCantBlock } from '../src/engine/permanents.js';
+import { clearStatModifiers, replaceObject, creatureCantBlock } from '../src/engine/permanents.js';
 import { applyEffect } from '../src/engine/effects.js';
+import { createBattlefieldToken } from '../src/engine/tokens.js';
 
 const registry = createCardRegistry();
 
@@ -187,9 +188,9 @@ test('F-1/6: create_copy_token (CR 707.2) — token-kopia artefaktu z drukowanym
 // (Jwari Shapeshifter poszedł drogą `enterAsCopy` + `resolve_enter_as_copy`),
 // więc bez tego pinu mutacja w jej bloku była NIEWYKRYWALNA (audyt PR #158,
 // mF6: `cantBlockPrinted: Boolean(target…)` → `true` nie zapalało niczego).
-// Pin jest też znacznikiem dla właściciela: jeśli gałąź zostanie usunięta jako
-// martwy kod, ten test zgaśnie razem z nią (F-6 w raporcie audytu).
-test('F-1/7: copy_creature — kopia PRZEJMUJE druk celu w obie strony', () => {
+// Pin obejmuje druk karty, token z lustrzanym raw `cantBlock`, i niezależny
+// efekt czasowy, który może współistnieć z cechą drukowaną (R-1, audyt PR #159).
+test('F-1/7: copy_creature — kopia przejmuje druk celu, nie druk źródła ani cudzy efekt', () => {
   // a) źródło bez zakazu kopiuje stwor z zakazem → zakaz się pojawia
   const s = state();
   const zrodlo = put(s, 'src', 'rotting-legion');
@@ -211,4 +212,46 @@ test('F-1/7: copy_creature — kopia PRZEJMUJE druk celu w obie strony', () => {
   const po2 = s2.objects.get('src');
   assert.equal(po2.cantBlockPrinted, false, 'CR 707.2 — kopia ma druk celu');
   assert.equal(creatureCantBlock(po2, s2), false);
+
+  // c) token nieblokujący ma cantBlock=true jako kopię druku. Po skopiowaniu
+  //    zwykłego stwora surowy znacznik tokenu nie może już blokować.
+  const s3 = state();
+  const mite = createBattlefieldToken(s3, 'p1', {
+    cardId: 'token_phyrexian_mite', name: 'Phyrexian Mite', kind: 'creature',
+    power: 1, toughness: 1, types: ['Artifact', 'Creature'],
+    subtypes: ['Phyrexian', 'Mite'], cantBlock: true,
+  });
+  assert.equal(mite.cantBlock, true, 'token niesie lustrzane raw pole');
+  assert.equal(mite.cantBlockPrinted, true, 'token niesie osobny znacznik druku');
+  put(s3, 'legion', 'rotting-legion');
+  applyEffect(s3, { type: 'copy_creature' }, mite, ['legion']);
+  const po3 = s3.objects.get(mite.id);
+  assert.equal(po3.cantBlockPrinted, false, 'zwykły cel nie ma drukowanego zakazu');
+  assert.equal(po3.cantBlock, false, 'raw cantBlock z druku tokenu nie zostaje');
+  assert.equal(creatureCantBlock(po3, s3), false, 'kopia zwykłego stwora może blokować');
+
+  // d) jeśli ten sam token ma NIEZALEŻNY efekt „can't block this turn",
+  //    kopiowanie nie może go zgubić razem ze swoim drukowanym zakazem.
+  const s4 = state();
+  const miteWithEffect = createBattlefieldToken(s4, 'p1', {
+    cardId: 'token_phyrexian_mite', name: 'Phyrexian Mite', kind: 'creature',
+    power: 1, toughness: 1, types: ['Artifact', 'Creature'],
+    subtypes: ['Phyrexian', 'Mite'], cantBlock: true,
+  });
+  applyEffect(s4, { type: 'cant_block' },
+    { id: 'spell', cardId: 'panic-spellbomb', controllerId: 'p1' }, [miteWithEffect.id]);
+  assert.equal(s4.objects.get(miteWithEffect.id).cantBlockUntilCleanup, true,
+    'efekt czasowy jest jawnie odróżniony od druku');
+  put(s4, 'legion', 'rotting-legion');
+  applyEffect(s4, { type: 'copy_creature' }, miteWithEffect, ['legion']);
+  const po4 = s4.objects.get(miteWithEffect.id);
+  assert.equal(po4.cantBlockPrinted, false, 'kopia celu nie ma druku');
+  assert.equal(po4.cantBlock, true, 'niezależny efekt blokady nadal działa');
+  assert.equal(po4.cantBlockUntilCleanup, true, 'termin efektu również przeżywa kopiowanie');
+  assert.equal(creatureCantBlock(po4, s4), true, 'blokada tymczasowa działa po kopii');
+  clearStatModifiers(s4, 'p1');
+  const po4AfterCleanup = s4.objects.get(miteWithEffect.id);
+  assert.equal(po4AfterCleanup.cantBlockUntilCleanup, false, 'cleanup wygasza efekt');
+  assert.equal(po4AfterCleanup.cantBlock, false, 'raw blokada znika, bo kopia nie ma druku');
+  assert.equal(creatureCantBlock(po4AfterCleanup, s4), false, 'po cleanup kopia znów może blokować');
 });

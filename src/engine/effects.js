@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -2016,6 +2016,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (!target || target.zone !== 'battlefield' || target.kind !== 'creature') return;
     const src = state.objects.get(sourceObject.id);
     if (!src || src.zone !== 'battlefield') return;
+    const temporaryCantBlock = hasTemporaryCantBlock(src);
     const updated = Object.freeze({
       ...src,
       power: target.power, toughness: target.toughness,
@@ -2025,9 +2026,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       keywords: [...(target.keywords ?? [])],
       abilities: [...(target.abilities ?? [])],
       cardName: target.cardName ?? target.cardId,
-      // Audyt PR #158/F-1 (CR 707.2): kopia PRZEJMUJE druk celu — także wtedy,
-      // gdy źródło miało własny zakaz blokowania (nadpisuje w obie strony).
+      // Audyt PR #159/R-1 + CR 707.2: kopiowana cecha drukowana pochodzi
+      // wyłącznie z celu; raw `cantBlock` źródła mógł być tylko lustrzanym
+      // polem druku tokenu. Niezależny efekt „this turn" trwa na źródłowym
+      // obiekcie i musi jednak przeżyć zmianę kopiowanych cech.
       cantBlockPrinted: Boolean(target.cantBlockPrinted),
+      cantBlock: Boolean(target.cantBlockPrinted || temporaryCantBlock),
+      cantBlockUntilCleanup: temporaryCantBlock,
     });
     state.objects.set(sourceObject.id, updated);
     state.events.push(event('stats_modified', {
@@ -4563,7 +4568,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const last = [...state.events].reverse().find((ev) => ev.type === 'damage_dealt');
       if (!last || last.target !== targetId || (last.amount ?? 0) <= 0) return;
     }
-    state.objects.set(targetId, Object.freeze({ ...object, cantBlock: true }));
+    state.objects.set(targetId, Object.freeze({
+      ...object, cantBlock: true, cantBlockUntilCleanup: true,
+    }));
     state.events.push(event('cant_block_granted', { objectId: targetId, cardId: object.cardId }));
     return;
   }
