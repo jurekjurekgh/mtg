@@ -608,15 +608,85 @@ function pumpChangesOutcome(view, recipient, delta = {}) {
   return JSON.stringify(before) !== JSON.stringify(after);
 }
 
+/**
+ * J (zgłoszenie właściciela 2026-10-09, Fleeting Distraction): debuff MOCY
+ * na wrogim ATAKUJĄCYM może odwrócić wynik hipotetycznej walki — mój bloker
+ * ginie przed („lethal przy blokowaniu"), żyje po debuffie. Bez tego wymiaru
+ * debuff w sima (2/2→1/2: witch zabija sima i sama przeżywa) i w butchera
+ * (3/2→2/2: tylko −1 obrażeń w twarz) dostawały RÓWNĄ wartość (oba „zmieniają
+ * wynik” przez redukcję face-damage) i bot wybierał pierwszy z listy ofert.
+ * Model: pojedynczy hipotetyczny blok 1v1 (jak hypotheticalSaves savage-like,
+ * CR 510); evasion uproszczona — flying atakującego wymaga flying/reach
+ * blokera (CR 702.9b), reszta ograniczeń blokowania poza zakresem.
+ * Generycznie po deskryptorze (delta mocy < 0 na atakującym, ADR 0002).
+ */
+function negativePumpBlockerSaveValue(view, attacker, delta) {
+  if (!attacker || attacker.controllerId === view.playerId) return 0;
+  if ((delta?.power ?? 0) >= 0) return 0; // tylko debuff mocy ratuje blokera
+  const combat = view.combat ?? null;
+  if (!combat || !(combat.attackers ?? []).includes(attacker.id)) return 0;
+  const attackerFlies = (attacker.keywords ?? []).includes('flying');
+  const aBefore = duelStats(attacker, {});
+  const aAfter = duelStats(attacker, delta);
+  let best = 0;
+  for (const b of view.zones.battlefield ?? []) {
+    if (b.controllerId !== view.playerId || b.kind !== 'creature') continue;
+    if (b.tapped || b.cantBlock) continue;
+    const bkw = b.keywords ?? [];
+    if (attackerFlies && !bkw.includes('flying') && !bkw.includes('reach')) continue;
+    const bStats = duelStats(b, {});
+    const before = simulateCombat(aBefore, [bStats]);
+    if (!before.deadBlockers.includes(b.id)) continue; // bloker i tak przeżywa
+    const after = simulateCombat(aAfter, [bStats]);
+    if (after.deadBlockers.includes(b.id)) continue; // debuff nie ratuje
+    best = Math.max(best, permanentMaterialValue(b));
+  }
+  return best;
+}
+
+/**
+ * M (zgłoszenie właściciela 2026-10-09, Keep Out): czy nieletalny chip
+ * `amount` obrażeń we wrogiego ATAKUJĄCEGO umożliwia jego zabójstwo — mój
+ * potencjalny bloker przed chipem go nie zabija, po chippie (toughness
+ * − amount) już tak. Symulacja pojedynczego bloku 1v1 (jak J/savage
+ * hypotheticalSaves, CR 510); evasion uproszczona — flying atakującego
+ * wymaga flying/reach blokera (CR 702.9b). Cel-bloker (chip we wrogiego
+ * blokera) poza zakresem: rzadziej castowany, mniej jednoznaczny.
+ * Generycznie po deskryptorze (zadeklarowany atakujący + delta obrażeń,
+ * ADR 0002).
+ */
+function damageChipEnablesKill(view, attacker, amount) {
+  if (!attacker || attacker.controllerId === view.playerId) return false;
+  const amt = Number.isInteger(amount) ? amount : 0;
+  if (amt <= 0) return false;
+  const combat = view.combat ?? null;
+  if (!combat || !(combat.attackers ?? []).includes(attacker.id)) return false;
+  const attackerFlies = (attacker.keywords ?? []).includes('flying');
+  const aBefore = duelStats(attacker, {});
+  const aAfter = duelStats(attacker, { toughness: -amt });
+  for (const b of view.zones.battlefield ?? []) {
+    if (b.controllerId !== view.playerId || b.kind !== 'creature') continue;
+    if (b.tapped || b.cantBlock) continue;
+    const bkw = b.keywords ?? [];
+    if (attackerFlies && !bkw.includes('flying') && !bkw.includes('reach')) continue;
+    const bStats = duelStats(b, {});
+    if (simulateCombat(aBefore, [bStats]).attackerDies) continue; // ginie i bez chipa
+    if (simulateCombat(aAfter, [bStats]).attackerDies) return true; // chip dobija
+  }
+  return false;
+}
+
 /** Wspólna wycena ujemnej pompy czaru/aktywacji; delta już policzona
  * z widoku, więc dynamiczne P/T nie trafiają do Math.abs jako obiekt.
  * Kill przez 0 toughness działa także poza walką (CR 704.5f).
  */
 function negativePumpValue(view, target, delta) {
   if (!target || target.controllerId === view.playerId) return -60;
+  // J: do wartości debuffu doliczamy uratowane ciało blokera (0 poza walką).
+  const saved = negativePumpBlockerSaveValue(view, target, delta);
   return pumpChangesOutcome(view, target, delta)
-    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0)
-    : -75;
+    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0) + saved
+    : (saved > 0 ? saved : -75);
 }
 
 /**
@@ -4958,9 +5028,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return lethalEnemyCreatureValue(view, t);
     }
-    // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
-    // osobno); poza walką CZYSTA STRATA — zakaz.
-    return combatTrickWindow(view, t) ? 0 : -80;
+    // Nieletalny cios: w oknie walki ma wartość TYLKO gdy razem z moim
+    // blokiem DOBIJA ten stwór (M — zgłoszenie właściciela 2026-10-09,
+    // Keep Out: chip 4 w atakującą 4/5 bez blokerów = czar i mana
+    // zmarnowane; czysto-ofensywny czar nie jest wtedy rzucany — patrz
+    // isDamageOnly w cast_spell). Bez możliwości dobicia chip to 0,
+    // poza walką CZYSTA STRATA — zakaz.
+    if (combatTrickWindow(view, t)) {
+      return damageChipEnablesKill(view, t, amt) ? lethalEnemyCreatureValue(view, t) : 0;
+    }
+    return -80;
   };
 
   // Batch60-followup/1 (2026-09-27, ograniczenie 1): czy TRZYMANIE czaru do
@@ -9016,6 +9093,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards'
           || e?.type === 'draw_cards_both_players');
         if (isDrawOnly) score = -1;
+        // M (zgłoszenie właściciela 2026-10-09, Keep Out): czar, którego
+        // CAŁA treść to zadawanie obrażeń celowych (każdy efekt typu damage
+        // albo damage_divided_among_targets), startuje PONIŻEJ passu — jak
+        // M146 (czysto-utylitarny) i A4-4 (czysto-dobór). Bez tego baza
+        // spellBase 50 sama niosła rzut ponad pass, gdy żaden cel nie
+        // dostawał wartości: nieletalny chip w stwora w oknie walki wycenia
+        // się na 0, więc bot rzucał Keep Out (4 dmg) w atakującą 4/5 bez
+        // blokerów — czar i mana zmarnowane, kreatura nic nie straciła.
+        // Wartość efektów sama decyduje: lethal = removal (>0), twarz =
+        // % życia (>0), chip bez możliwości dobicia = 0 (z −1 poniżej
+        // passu). Czar Z riderem (draw, gain_life…) NIE jest
+        // czysto-ofensywny — baza zostaje, chip jedzie jako darmowy bonus.
+        const isDamageOnly = effects.length > 0 && effects.every((e) => e?.type === 'damage'
+          || e?.type === 'damage_divided_among_targets');
+        if (isDamageOnly) score = -1;
         score -= castSacrificePenalty(view);
         // PMSSB-36/C: wypłata triggerów-licznika na polu (Opus: instant/sorcery).
         score += boardCastPayoffValue(view, cmd, cmd.type === 'cast_adventure'

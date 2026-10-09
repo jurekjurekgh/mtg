@@ -19,6 +19,39 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09d — zgłoszenie M: Keep Out, czysto-ofensywny czar bez efektu (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** bot rzucał Keep Out („4 damage to
+target tapped creature” / „destroy target enchantment”) w atakującą 4/5
+bez blokerów ani czego dobić — chip 4 w 4/5 nic nie dawał, czar i mana
+zmarnowane.
+
+**Root cause:** nieletalny chip w stwora w oknie walki wyceniał się na 0
+(„może zmienić wynik”), a baza `spellBase` 50 sama niosła rzut ponad pass
+— czar czysto-ofensywny nie miał bramki jak M146 (czysto-utylitarny) czy
+A4-4 (czysto-dobór). Sonda: Keep Out tryb 1 w 4/5 = 50 → rzut (błąd).
+
+**Fix (dwie części, jedna klasa):**
+1. `isDamageOnly` (cast_spell): czar, którego CAŁA treść to obrażenia
+   celowe (`damage` / `damage_divided_among_targets`), startuje poniżej
+   passu (−1) — wartość efektów sama decyduje: lethal = removal, twarz =
+   % życia, chip bez kill-a = 0 (poniżej passu). Z riderem (draw/gain_life)
+   baza zostaje — chip jedzie jako darmowy bonus.
+2. `damageChipEnablesKill` (damageTargetValue — L41: czary + zdolności):
+   chip w stwora w oknie walki ma wartość TYLKO gdy razem z moim blokerem
+   dobija atakującego (symulacja 1v1, CR 510 — jak J). Anti-over-fix:
+   Keep Out w 4/5 z blokerem 1/1 = 49 → rzuca (chip 4 + blok 1 = kill).
+
+**Testy:** 6 nowych w `test/uwaga-m-keepout-chip.test.js` (M główny: −1,
+trzyma; anti-over-fix 49; enchantment → tryb 2 = 76; lethal 4/4 → 47;
+twarz Shock → 9 rzuca; chip poza walką −81). Aktualizacja pinów Shock
+(PMSSB-32/A5 60→9, A5b 86→35/60→9, PMSSB36-C1 60→9 — decyzje bez zmiany,
+wartości tracą starą bazę 50). Golden-master: decyzje 263 vs 263 bez
+zmiany, scoreSum −51 → fixture zregenerowany świadomie.
+
+**Bramki:** fast 7943/7943, build 73/4972,8 kB, benchmark 10/10,
+golden-master 4/4 (po regeneracji). PR #161.
+
 ## 2026-10-09c — zgłoszenie L: Steel Sabotage, kontra bez premii (PR #161)
 
 **Zgłoszenie właściciela (uwaga z gry):** bot rzucał Steel Sabotage i

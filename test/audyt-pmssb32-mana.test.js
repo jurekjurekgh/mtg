@@ -198,7 +198,9 @@ test('PMSSB-32/A5 (L48, F3 rozwiązane): filtr koloru auto-płaci SILNIK — rę
   put(s, 'h-shock', 'shock', { zone: 'hand' });
   const o = opcje(s);
   assert.equal(o.wynik('activate_ability(dev#1'), -8, 'wartość sprzed pętli (M150/C1)');
-  assert.equal(o.oferta('cast_spell(h-shock->p2')?.score, 60, 'silnik oferuje rzut — sam finansuje filtr');
+  // M (2026-10-09): Shock to czar czysto-ofensywny (isDamageOnly) — start −1
+  // zamiast bazy 50; wartość twarzy 10 bez zmian → 9 (decyzja bez zmiany).
+  assert.equal(o.oferta('cast_spell(h-shock->p2')?.score, 9, 'silnik oferuje rzut — sam finansuje filtr');
   assert.equal(o.wybrany.type, 'cast_spell', 'bot rzuca czar, zamiast filtrować manę ręcznie');
 });
 
@@ -219,8 +221,9 @@ test('PMSSB-32/A5b (F3+F6): Skarb auto-płaci CZAR Z CELEM — oferta rzutu istn
   const castFoe = o.oferta('cast_spell(h-shock->foe');
   const castP2 = o.oferta('cast_spell(h-shock->p2');
   assert.ok(castFoe || castP2, 'oferta Shock z celem istnieje');
-  if (castFoe) assert.equal(castFoe.score, 86, 'oferta Shock na stwora wroga 2/2 = 86');
-  else assert.equal(castP2.score, 60, 'oferta Shock na gracza = 60');
+  // M (2026-10-09): isDamageOnly — start −1 zamiast bazy 50 (decyzje bez zmiany).
+  if (castFoe) assert.equal(castFoe.score, 35, 'oferta Shock na stwora wroga 2/2 = 35 (lethal 36 − 1)');
+  else assert.equal(castP2.score, 9, 'oferta Shock na gracza = 9 (twarz 10 − 1)');
   assert.equal(o.wybrany.type, 'cast_spell', 'M179/E: bot rzuca czar bezpośrednio, zamiast ręcznie aktywować Skarb');
   assert.ok(o.wynik('activate_ability(tre#0') < 0, 'skoro silnik płaci sam, ręczna aktywacja zbędna (L48)');
 });
