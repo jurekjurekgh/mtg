@@ -28,7 +28,7 @@ Roadmapa: `docs/plans/PLAN_2026-10-08c-audyt-pr158-petla-jakosci.md`.
 
 | Brama | Przed zmianami (`f836c90`) | Po zmianach (HEAD) |
 |---|---|---|
-| `npm test` (fast) | 7900/7900, EXIT 0 | **7915/7915**, EXIT 0 |
+| `npm test` (fast) | 7900/7900, EXIT 0 | **7918/7918**, EXIT 0 |
 | `node tools/run-tests.mjs all` | 8164/8164, 352,6 s | **8179/8179**, 346,5 s, EXIT 0 |
 | `npm run build` | 73 moduły / 4959,4 kB | 73 moduły / **4961,5 kB** |
 | `node tools/cr-numery.mjs` | OK, 515 numerów / 5575 cytatów | OK, **516 / 5600** (+707.2a) |
@@ -45,11 +45,14 @@ Roadmapa: `docs/plans/PLAN_2026-10-08c-audyt-pr158-petla-jakosci.md`.
 | **F-5** | 18 spełnionych kryteriów w dwóch planach zostało nieodhaczonych | odhaczone z adnotacją dowodu |
 | **F-6** | `copy_creature` nie ma wytwórcy (martwa gałąź) | obserwacja + pin F-1/7, decyzja właściciela |
 | **F-7** | `.gitignore` wykluczał fixture'y Żywego Testera, które README opisuje jako rejestr | negacja `!tools/table-tester/fixtures/*.txt` + fixture w repo |
+| **F-8** | Błąd samego audytu (poprawiony po uwadze właściciela): spis nośników „can't block" brał jedno pole, więc raport twierdził „jedyny nośnik". Nośników jest **7** w trzech kształtach: druk karty (Bog Hoodlums), stała cecha tokenu (Goblin Construct z Relic Robber, Phyrexian Mite z Crawling Chorus), zakaz z załącznika (Clawing Torment, Hobble, Bonds of Faith) | straż S7–S9; korekta §2 raportu. Tokeny to artefakty, a Moonlit czepia „artifact or creature" — więc dla token-kopii luka była **osiągalna już dziś**, nie utajona |
 
 Nowe detektory (L27): straż katalogowa (pętla po każdej karcie z drukowanym
-`cantBlock` przez wszystkie ścieżki kopiowania) i straż źródłowa (każde
-`createBattlefieldToken` kopiujące musi nieść KLUCZ `cantBlock:`) — obie
-sprawdzone mutacją.
+`cantBlock` **i po każdym tokenie z takim drukiem** przez wszystkie ścieżki
+kopiowania, plus pin „efekt załącznika nie jest kopiowalny") i straż źródłowa
+(każde `createBattlefieldToken` kopiujące musi nieść KLUCZ `cantBlock:`) —
+sprawdzone mutacją (mF1–mF6 + anty-over-fix; usunięcie linii naprawy w
+token-kopii Moonlit daje `# fail 4`).
 
 ## Pętla jakości — Żywy Tester
 
