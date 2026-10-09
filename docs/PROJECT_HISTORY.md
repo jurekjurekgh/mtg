@@ -19,6 +19,41 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09 — audyt PR #159 i naprawy R-1–R-5 (follow-up PR #160)
+
+Plan audytu `docs/plans/PLAN_2026-10-09-audyt-pr159.md` został opublikowany
+przed przeglądem; raport `docs/audits/AUDYT_PR159_2026-10-09.md`. PR #159
+audytował PR #158 i został scalony 2026-10-09T13:24:50Z. Początkowe polecenie
+kończyło pracę po audycie; późniejsza jawna autoryzacja właściciela zatwierdziła
+wyłącznie naprawy R-1–R-5 (planowe addendum w commicie `6c3b6b90`) i utworzyła
+follow-up PR #160.
+
+* **R-1:** rozdzielono drukowane `cantBlockPrinted` od efektu do cleanup
+  `cantBlockUntilCleanup`; kopiowanie `copy_creature` i `enterAsCopy` przejmuje
+  druk celu, zachowując niezależny efekt na tym samym obiekcie. Cleanup
+  przywraca druk, fingerprint uwzględnia aktywny marker; regresja dla tokenu
+  Phyrexian Mite i zwykłego celu.
+* **R-2:** S9 używa deskryptorów wszystkich trzech aur (`Bonds of Faith`,
+  `Clawing Torment`, `Hobble`) i `attachAuraToCreature`; restrykcja działa na
+  gospodarzu, nie przechodzi na token-kopię Moonlit.
+* **R-3:** straż katalog–snapshot asertuje dokładne pokrycie: 616 definicji,
+  561 dopasowań, 55 jawnych braków i jeden sierocy `undercity`; porównuje front
+  wszystkich 11 DFC i rozróżnia 9 top-level `null` od 12 pustych Oracle.
+  Kierunek reverse-keyword ma jawny zakres i mapowania dla `devoid`, `morph`,
+  `saddle`.
+* **R-4:** straż `plan` klasyfikuje semantycznie basic landy, tokeny, karty
+  specjalne i potwierdzone tyły DFC; każdy tył musi wskazywać wspierany przód.
+* **R-5:** skorygowano checklistę S0–S7 PR #158, historyczne metryki po merge
+  PR #159, licznik testów, zgodność kart, B-5 (sześć kart + token Tarmogoyf)
+  i odsyłacz F-3; dodano brakujący handoff.
+
+Bramki na drzewie napraw: fast **7923/7923**, build **73 moduły / 4963,2 kB**,
+`node --test test/bot-benchmark.test.js` **10/10**, straż CR **OK** (518 wpisów
+tabeli, 517 unikalnych numerów, 5626 cytatów). Pełne B0 i
+`node tools/run-tests.mjs all` nieuruchomione zgodnie z zakresem.
+PR #160: <https://github.com/jurekjurekgh/mtg/pull/160> — stan na tej gałęzi;
+po domknięciu tej naprawy następny krok wyłącznie na polecenie właściciela.
+
 ## 2026-10-08 — batch64: kolekcja właściciela 261–328, 10 kart (PR #158, M439)
 
 Zlecenie: 10 kart z kolekcji (lista + kolumna `Plan` wiążąca). Plan commitem

@@ -4349,7 +4349,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // pierwszym konsumentem: `endureBodyValue` woła go w gałęzi „przeciwnik nie ma
   // ciał", a `const` przed inicjalizacją to TDZ (ReferenceError przy trafieniu
   // w tę gałąź). Wycena aktywacji liczy się LENIWIE, więc do PR #158 nie było
-  // wywrotki, ale kolejność była o krok od awarii (audyt PR #158, F-2).
+  // wywrotki, ale kolejność była o krok od awarii (audyt PR #158, F-3).
   const lifePayThreshold = (view) => Math.max(1, Math.floor(myLife(view) * P.payLifeXThreshold));
   const endureBodyValue = (view, size) => {
     const foes = enemyCreatures(view);
