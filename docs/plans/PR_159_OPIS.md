@@ -54,6 +54,27 @@ kopiowania, plus pin „efekt załącznika nie jest kopiowalny") i straż źród
 sprawdzone mutacją (mF1–mF6 + anty-over-fix; usunięcie linii naprawy w
 token-kopii Moonlit daje `# fail 4`).
 
+## Audyt mechanik batcha 64 (zlecenie właściciela, 2026-10-09)
+
+Raport PR #158 mierzył jakość **wyceny bota**, nie zgodność z Oracle — osobny
+audyt porównał wszystkie 10 kart ze snapshotami właściciela (name, set, typy,
+`cmc`, kolory, P/T, `keywords`, dosłowny `oracle_text`, rulingi) i sprawdził
+każdą mechanikę na żywym silniku. Raport:
+`docs/audits/AUDYT_BATCH64_MECHANIKI_2026-10-09.md`.
+
+* **B-1 (naprawione):** Man-o'-War miał w definicji `keywords: ['flying']`,
+  którego nie ma ani w Oracle, ani w snapshotie — karta w grze **latała**. Pin
+  „dane Oracle" przypisywał ten lot jako fakt (L181). Naprawa + pin + nowa straż
+  katalogowa porównująca **każdą** kartę mającą snapshot (561 z 616) w siedmiu
+  polach i `oracleText` (po wycięciu reminder text, CR 207.2a).
+* 9/10 kart zgodnych co do pola; mechaniki clash (701.30), delve (limit = część
+  generyczna, ruling KTK), delirium (207.2c statycznie), Keen Sight, scry,
+  exile-zamiast-grobu i cel „any permanent" — zmierzone, zgodne.
+* **B-3/B-4/B-5** zgłoszone bez naprawy (decyzja właściciela): pole `plan` przy
+  trzech kartach (M19 → „Kaladesh", CLB → „Kaldheim", CMR → „Kaladesh") zmienia
+  przynależność do talii; mylący `notes` w Scouting Hawk; niekonsekwentny
+  reminder text.
+
 ## Pętla jakości — Żywy Tester
 
 Powtórka audytu zgłoszenia E z kolejki `HANDOFF_2026-10-08` (klasy L14/L50/L131)
