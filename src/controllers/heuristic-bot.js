@@ -9066,6 +9066,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const entry = stack.find((item) => item.id === id);
             return entry && entry.controllerId !== view.playerId;
           });
+          // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): flaga
+          // „kontra wykupiona" liczona RAZ, używana w dwóch miejscach —
+          // premia za zatrzymanie (niżej, tylko gdy NIE wykupiona) i kara
+          // E7/D2 (bez zmian decyzji). „Counter unless pays", którego
+          // płatnik ma czym opłacić, WYGAŚNIE — nie wolno mu dopisywać
+          // premii za zatrzymanie czaru, którego nie zatrzyma. Wypłacalność
+          // jak manaAvailableNow: pula + nietapnięte lądy (auto-tap silnika
+          // obejmuje wyłącznie lądy).
+          const counterUnlessPaidOff = (() => {
+            const unlessPays = effects.find((e) => e?.type === 'counter_spell_unless_pays');
+            if (!unlessPays || !foeTarget || ownTarget) return false;
+            const foeEntryId = (targets ?? []).find((tid) => {
+              const entry = stack.find((item) => item.id === tid);
+              return entry && entry.controllerId !== view.playerId;
+            });
+            const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
+            const payer = view.players.find((p) => p.id === payerId);
+            if (!payer) return false;
+            const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
+              && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+            return (payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1);
+          })();
           if (ownTarget && !foeTarget) return finish(-90);
           if (ownTarget) score -= 60;
           // M237/2 (audyt Żywym Testerem): kontrujemy WROGI czar, ale wartość
@@ -9106,7 +9128,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
               return effs.some((e) => HIGH_IMPACT.has(e?.type));
             });
-            if (!targetImpactful) score -= 60; // trywialny cel — trzymaj kontrę
+            if (!targetImpactful) {
+              score -= 60; // trywialny cel — trzymaj kontrę
+            } else if (!counterUnlessPaidOff) {
+              // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage):
+              // premia za ZATRZYMANIE groźnego wpisu wroga — skala
+              // zatrzymanym zagrożeniem, nie flat. Root cause zgłoszenia:
+              // tryb kontry dostawał płaskie spellBase (50), więc w modalu
+              // kontra-vs-bounce bounce (80) wygrywał strukturalnie i bot
+              // odsyłał artefakt do ręki zamiast wysłać czar do grobu.
+              // Zatrzymany wpis wyceniamy jak removal celu wroga (ta sama
+              // baza i waga ciała — stwór na stosie to ciało, którego nie
+              // będzie) + dopłata za TMC (inwestycja many wroga, proxy
+              // groźby jak M237; stromsza niż removal, bo denial trwalszy
+              // niż tempo). Pierwszy wrogi wpis spośród celów — kontry są
+              // w praktyce jednocelowe. Generycznie po deskryptorze celu
+              // ze stosu (ADR 0002), nie po nazwie karty.
+              const stopped = targets.map((tid) => stack.find((item) => item.id === tid))
+                .find((entry) => entry && entry.controllerId !== view.playerId);
+              // Ciało zatrzymywanego stwora bierzemy z DEFINICJI (widok nie
+              // niesie P/T wpisów stosu — tylko manaCost/kind): na stosie nie
+              // działają liczniki ani efekty ciągłe P/T, więc drukowane P/T
+              // ZAWSZE równa się aktualnym (brak wyjątków w silniku).
+              const stoppedDef = stopped?.cardId ? cardDef(stopped.cardId) : undefined;
+              const stoppedWorth = (stopped?.power ?? stoppedDef?.power ?? 0)
+                + (stopped?.toughness ?? stoppedDef?.toughness ?? 0);
+              score += P.removalEnemyBase + P.removalWorthWeight * stoppedWorth
+                + P.counterspellTmcWeight * (stopped?.manaCost ?? 0);
+            }
           }
           // E7/D2 (zgłoszenie właściciela): „counter unless its controller
           // pays {N}" (Frightful Delusion) — kontroler CELU decyduje o dopłacie,
@@ -9124,12 +9173,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               return entry && entry.controllerId !== view.playerId;
             });
             const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
-            const payer = view.players.find((p) => p.id === payerId);
-            if (payer) {
-              const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
-                && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
-              if ((payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1)) score -= 90;
-            }
+            // E7/D2: wykupiona kontra wygasa (-90); wypłacalność liczy flaga
+            // counterUnlessPaidOff (L, wyżej) — ta sama decyzja, jedno źródło.
+            if (counterUnlessPaidOff) score -= 90;
             // PMSSB-6/F-A4: rider-odrzut delusion (bezwarunkowy — jedzie przy
             // strzale-teraz i przy strzale-później, więc dowód kasowania
             // PMSSB-5 żyje (hold/fire bez zmian); tu tylko porządek

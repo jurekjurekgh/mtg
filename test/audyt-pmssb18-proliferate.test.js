@@ -172,14 +172,15 @@ test('PMSSB-18/R5: spread na pustej planszy = 86 — proliferate jałowy', () =>
 // (ta sama skala, L41).
 // ---------------------------------------------------------------------------
 
-test('PMSSB-18/R1: fuel — rider proliferate na planszy z licznikiem+poison = +7 (57)', () => {
+test('PMSSB-18/R1: fuel — rider proliferate na planszy z licznikiem+poison = +7 (97)', () => {
   const state = base();
   putSpell(state, 'a', 'fuel-for-the-cause', 'p2', 'hand');
   putSpell(state, 'foespell', 'act-of-treason', 'p1', 'stack');
   putCreature(state, 'mine', 'p2', 2, 2, { '+1/+1': 1 });
   setPoison(state, 'p1', 4);
   const { options } = decide(state);
-  assert.equal(optionScore(options, 'cast_spell(a->foespell)'), 57);
+  // L: 57 → 97 (+40 premii za zatrzymany czar MV3: 22+6×3; rider +7 bez zmian).
+  assert.equal(optionScore(options, 'cast_spell(a->foespell)'), 97);
 });
 
 test('PMSSB-18/resolve: wybór wygrywającego podzbioru; własna 10 = NEVER', () => {

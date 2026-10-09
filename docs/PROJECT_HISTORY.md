@@ -19,6 +19,40 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09c — zgłoszenie L: Steel Sabotage, kontra bez premii (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** bot rzucał Steel Sabotage i
+zamiast skontrować czar artefaktu wybierał „zwrot do ręki" — dając
+przeciwnikowi darmową powtórkę.
+
+**Root cause:** wycena kontry (`counter_spell`/`counter_spell_unless_pays`/
+`counter_ability`) dawała płaskie `spellBase` (50), bez premii za CO
+zatrzymuje — w modalu kontra-vs-bounce bounce (80) wygrywał strukturalnie.
+Sonda potwierdziła: sabotaż vs Lantern MV3 na stosie + artefakt 0/0 na stole
+= kontra 50, bounce 80 → modeIndex 1.
+
+**Fix:** kontra groźnego wpisu wroga dostaje premię jak removal celu
+(`removalEnemyBase` + `removalWorthWeight` × ciało; P/T z definicji — widok
+nie niesie P/T wpisów stosu) + nowy parametr `counterspellTmcWeight` = 6
+(2 parytet removalu + 4 trwałość: grób zamiast ręki, denial trwalszy niż
+tempo). Skaluje generycznie po deskryptorze celu ze stosu (ADR 0002); zero
+nazw kart. `counter_spell_unless_pays`, którego płatnik ma czym opłacić,
+NIE dostaje premii (kontra wygasa) — flaga `counterUnlessPaidOff` liczona raz,
+używana w dwóch miejscach (premia + kara E7/D2, bez zmiany decyzji).
+Podłoga 5: poniżej wraca błąd L. Anti-over-fix: bounce 5/5 (104) bije kontrę
+MV3 (90) — przeżycie przede wszystkim.
+
+**Testy:** 4 nowe w `bot-modal-modes.test.js` (sabotaż kontruje; anti-over-fix
+bounce 5/5; izzet-charm kontra MV7 = 114; wybór celu 7/7 > 2/2 — 130 vs 98).
+Pin `counterspellTmcWeight` (przepływ 78 → 132) w `bot-params.test.js`.
+Aktualizacja pinów F-H3 (pmssb5: 50 → 78/84, delusion tapped-out 50 → 78,
+abstruse 59.97 → 87.97, fuel 50 → 78, wojna 50 → 84) i PMSSB-18/R1 (57 → 97,
++40 za zatrzymany czar MV3). PMSSB-6/F-A4 delusion 54 → 82.
+
+**Bramki:** fast 7931/7931, build 73/4967,8 kB, benchmark 10/10,
+golden-master TRZYMA (partie nie produkują decyzji kontr — zmiana jest
+poza jego promieniem). PR #161.
+
 ## 2026-10-09b — audyt PR #160 i naprawa Z-1 (PR #161)
 
 Plan `docs/plans/PLAN_2026-10-09b-audyt-pr160.md`, raport
