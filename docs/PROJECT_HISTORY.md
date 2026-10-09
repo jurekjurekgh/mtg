@@ -19,6 +19,36 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09e — zgłoszenie N: Crumb and Get It, brak wyboru daru (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** rzucając Crumb and Get It („Gift a
+Food” + pump + ew. indestructible) użytkownik nie miał wyboru, czy obiecuje
+gift przeciwnikowi.
+
+**Root cause:** silnik oferuje oba warianty (z/bez `gifted`, CR 702.174a) i K
+(2026-09-19b) grupuje je w jeden wpis panelu z modalem — ale grupa „cel ×
+obietnica” łapała `singleTargetPlanOf` (kreator celów), a jego zatwierdzenie
+(`commandForSelection`) dopasowuje komendę TYLKO po `targets` (+ `xValue`) —
+nie zna `gifted`. Zatwierdzenie wybierało pierwszy wariant (bez daru): wybór
+przepadał. K pinował tylko grupowanie panelu, nie ścieżkę kreatora.
+
+**Fix:** strażnik `uniformGiftOf` (multi-target.js) w planach kreatora —
+`singleTargetPlanOf`, `multiTargetPlanOf`, `castModePlanOf`,
+`sacrificeCastPlanOf`, `dividedCastPlanOf`: grupa z NIEJEDNOLITYM darem
+wraca null i pada na fallback `buttonsPlanOf` — osobny przycisk na wariant,
+etykieta „(dar)” rozróżnia. Kontrakt K trzymany (jeden wpis panelu, modal
+z wyborem). Jednolity dar (wszędzie taki sam) nie jest wyborem — plan wolny.
+ADR 0002 — po polu komendy, nie po karcie. `castWindowPlanOf` bezpieczny
+(wiersz = tożsamościowo komenda).
+
+**Testy:** 8 nowych w `test/uwaga-n-gift-wybor.test.js` (N/1–N/5: plany
+odrzucają niejednolity dar, fallback, integracja panelu; N/6–N/8 kontrole:
+bez daru kreator działa, jednolity dar plan wolny, silnik oferuje oba
+warianty). Testy K zielone bez zmian.
+
+**Bramki:** fast 7951/7951, build 73/4974,6 kB, benchmark 10/10,
+golden-master trzyma (zmiana czysto UI). PR #161.
+
 ## 2026-10-09d — zgłoszenie M: Keep Out, czysto-ofensywny czar bez efektu (PR #161)
 
 **Zgłoszenie właściciela (uwaga z gry):** bot rzucał Keep Out („4 damage to
