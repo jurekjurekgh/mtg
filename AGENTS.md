@@ -343,6 +343,7 @@ Przed implementacją karty ustal:
 - brakujące reguły;
 - pozytywne i negatywne scenariusze testowe;
 - najważniejsze interakcje z istniejącym katalogiem;
+- `plan` — fabularne przyporządkowanie karty (patrz niżej);
 - jawne ograniczenia wsparcia.
 
 **`limitations` kontra `notes` (M111, zastąpione przez [ADR 0022](docs/decisions/0022-full-oracle-or-unsupported.md)).**
@@ -357,6 +358,10 @@ wiarygodnym licznikiem długu wobec Oracle. Strażnik
 strona karty dwustronnej, brak strefy dowodzenia w formacie 1v1) — nowe
 ograniczenie wymaga świadomej decyzji: albo implementujesz pełne Oracle,
 albo dopisujesz powód z uzasadnieniem.
+
+**Pole `plan` (właściciel, 2026-10-09).** Fabularne przyporządkowanie karty do
+planu/świata z dostawy batcha — **nie** dodruk: set nie jest dowodem na błędny
+`plan`. Bez planu: basic landy, tokeny, karty specjalne, tyły DFC.
 
 Jeżeli karta ujawnia brak w core, najpierw nazwij brakującą ogólną regułę. Nie naprawiaj go warunkiem zależnym od nazwy karty.
 

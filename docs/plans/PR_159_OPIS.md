@@ -70,10 +70,16 @@ każdą mechanikę na żywym silniku. Raport:
 * 9/10 kart zgodnych co do pola; mechaniki clash (701.30), delve (limit = część
   generyczna, ruling KTK), delirium (207.2c statycznie), Keen Sight, scry,
   exile-zamiast-grobu i cel „any permanent" — zmierzone, zgodne.
-* **B-3/B-4/B-5** zgłoszone bez naprawy (decyzja właściciela): pole `plan` przy
-  trzech kartach (M19 → „Kaladesh", CLB → „Kaldheim", CMR → „Kaladesh") zmienia
-  przynależność do talii; mylący `notes` w Scouting Hawk; niekonsekwentny
-  reminder text.
+* **B-3 wycofane w całości** (poprawka właściciela): `plan` to fabularne
+  przyporządkowanie karty z dostawy batcha, nie pochodzenie z dodatku — Druid of
+  the Cowl (M19) i Universal Solvent (CMR) są z Kaladeshu (Cowl to fragment
+  Ghirapur), a talie Wiedźmina/Warhammera nie powstałyby, gdyby `plan` miał być
+  setem. Reguła wpisana do `AGENTS.md` + strażnik `test/katalog-pole-plan.test.js`
+  (bez planu tylko basic landy, tokeny, karty specjalne i tyły DFC — pomiar:
+  53 = 5 basic + 48 tokenów, zero regularnych).
+* **B-4/B-5** zgłoszone bez naprawy: mylący `notes` w Scouting Hawk (mówi „lady
+  w kolorze karty", kod liczy wszystkie — kod dobry); niekonsekwentny reminder
+  text w `oracleText` (CR 207.2a — nie reguła).
 
 ## Pętla jakości — Żywy Tester
 

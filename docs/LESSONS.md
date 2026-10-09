@@ -1283,12 +1283,9 @@ choć jego przyczyna nadal istnieje.
 
 **Reguła:** przy nowym deskryptorze karty (station, saga, `entersWithCounters`,
 `cantBlock`…) dopisz go w KAŻDEJ ścieżce kopiowania; lista pól żyje per-ścieżka.
-**Korekta 2026-09-05 (audyt PR #97/O4):** `copyableDescriptorKeys` nigdy nie
-powstało — „lista w jednym miejscu" była postulatem, nie stanem kodu.
-**Korekta 2026-10-08 (PR #158/F-1):** grep po rodzinie NIE wystarcza — trzy
-ścieżki z listy wyżej przestały być kompletne, a trzy inne (offspring, embalm,
-Moonlit) nie były w niej wcale. Straż: test kopiujący deskryptor przez
-REALNĄ ścieżkę (L21 pkt 3) + `createBattlefieldToken` kopiujące musi nieść KLUCZ — podłańcuch `cantBlock` łapie sam warunek spreadu (mF5 przeszła zielono).
+Wspólna lista pól nigdy nie powstała (PR #97/O4), a grep po rodzinie nie
+wystarcza — trzech ścieżek (offspring, embalm, Moonlit) nie było w liście (F-1). Straż: test przez REALNĄ ścieżkę (L21 pkt 3) + `createBattlefieldToken` musi
+nieść KLUCZ.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L47)
 

@@ -148,37 +148,33 @@ stworze na polu kandydaci to `["us","las1","stwor"]` — wszystkie trzy legalne.
 
 ## 5. Zgłoszenia bez naprawy (decyzja właściciela)
 
-**B-3 — WYCOFANE jako błąd; zostaje pytanie o kryterium pola `plan`.**
-Pierwsza wersja tego zgłoszenia twierdziła, że trzy karty batcha mają `plan`
-„niezgodny z faktycznym planem" (Druid of the Cowl M19 → Kaladesh, Scouting Hawk
-CLB → Kaldheim, Universal Solvent CMR → Kaladesh). Założenie, że `plan` ma być
-planem karty, **nie wynika z repo** — pomiar całego katalogu:
+**B-3 — WYCOFANE w całości; audyt orzekał wobec kryterium, którego nie ma.**
+Pierwsza wersja twierdziła, że trzy karty batcha mają `plan` „niezgodny
+z faktycznym planem" (Druid of the Cowl M19 → Kaladesh, Scouting Hawk CLB →
+Kaldheim, Universal Solvent CMR → Kaladesh), druga wersja szukała „kryterium
+właściciela". Obie były błędne: przyjęły, że `plan` ma wynikać z dodatku.
 
-| Grupa `plan` | Kart | Różnych setów |
-|---|---|---|
-| Tarkir | 49 | 5 |
-| Innistrad | 45 | 10 |
-| Warhammer Fantasy | 42 | **30** |
-| Mirrodin | 40 | 10 |
-| Dominaria | 39 | **20** |
-| Wiedźmin | 37 | **29** |
-| Kaladesh | 21 | 8 |
-| Kaldheim | 9 | **8** |
+**Reguła właściciela (2026-10-09):** `plan` to **fabularne przyporządkowanie
+karty**, przekazane przy dostawie batcha i zapisane w katalogu jako prawda
+obowiązująca — z setem/drukiem ma niewiele wspólnego, a skrypt układa z niego
+talię. Dlatego:
 
-**19 z 28 grup** zawiera karty z czterech i więcej różnych dodatków, a 53 karty
-mają `plan: null` (generator rzuca wtedy `Karta bez planu`, więc null jest
-dozwolony wyłącznie dla kart odpuszczonych). Przykład: grupa „Kaldheim" to
-`invasion-of-the-giants` [KHM], `immersturm-skullcairn` [KHM], ale też
-`savage-hunger` i `volcanic-submersion` [ALA], `infectious-bloodlust` [ORI],
-`golem-skin-gauntlets` [2XM], `fiery-justice` [2X2], `etched-host-doombringer`
-[MOM] — osiem różnych dodatków. Pole jest więc **workiem grupującym**, nie
-metryką planu, a Scouting Hawk w tym worku nie jest odosobniony.
+* Druid of the Cowl (M19) i Universal Solvent (CMR) **są** z Kaladeshu — Cowl to
+  dzielnica/fragment Ghirapur; obie karty leżą w `decks/kaladesh.txt` poprawnie;
+* talie Wiedźmina i Warhammer Fantasy w ogóle by nie powstały, gdyby `plan`
+  miał być setem — w vanilla MtG nie ma takich setów ani planów;
+* grupa „Kaldheim" (9 kart: KHM ×2, ALA ×2, ORI, 2XM, 2X2, MOM) i „Warhammer
+  Fantasy" (42 karty z 30 dodatków) są spójne fabularnie, nie dodatkami.
 
-Co z tego realnie wynika (i co właściciel już widzi na stole): `decks/kaladesh.txt`
-zawiera `Universal Solvent` i `Druid of the Cowl`, choć żadna z nich nie jest
-z Kaladesh; Scouting Hawk leży w `decks/worek-dziki.txt` (worek, Kaldheim ma 9
-kart i jest poniżej progu `SINGLE_PLAN_MIN = 15`). Czy to wada, zależy od
-kryterium, którego w repo nie ma zapisanego — dlatego pytanie, nie poprawka.
+Druga część reguły: bez planu zostają **wyłącznie** basic landy, tokeny, karty
+specjalne i tylne strony DFC — żadna regularna karta nie ma prawa nie mieć planu.
+Pomiar katalogu to potwierdza: 53 karty bez planu = 5 basic landów
+(`basic-plains`…`basic-forest`) + 48 tokenów (`token_*`), zero innych; wśród kart
+`supported` bez planu są tylko basic landy, które generator i tak odsiewa.
+
+Wdrożone: reguła w `AGENTS.md` §„Dodawanie kart" + strażnik
+`test/katalog-pole-plan.test.js` (2 testy: brak regularnych kart bez planu oraz
+pin, że grupy planowe mieszają dodatki — żeby nikt nie „naprawił" pola setem).
 
 **B-4 — mylący wpis `notes` w Scouting Hawk.** Uwaga brzmi „warunek liczony ZE
 STANU w conditionHolds (tylko lądów w kolorze karty, nie wszystkich lądów)",
