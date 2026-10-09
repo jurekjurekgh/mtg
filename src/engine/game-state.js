@@ -24,7 +24,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0) {
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
@@ -4297,6 +4297,7 @@ export function execute(state, input) {
       if (chosen != null) {
         const target = state.objects.get(chosen);
         if (target && target.zone === 'battlefield' && target.kind === 'creature') {
+          const temporaryCantBlock = hasTemporaryCantBlock(src);
           // CR 707.2: kopiowane są WYŁĄCZNIE wartości kopiowalne, czyli te
           // wydrukowane na karcie (plus efekty kopiowania i „as enters”).
           // Efekt „until end of turn” zmieniający charakterystyki — animacja
@@ -4336,11 +4337,13 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
-            // Audyt PR #158/F-1 (CR 707.2 + 707.2a): wydrukowany zakaz
-            // blokowania celu („This creature can't block") jest wartością
-            // kopiowalną — to reguła z tekstu karty, nie efekt do EOT. Kopia
-            // PRZEJMUJE druk celu w obie strony (nadpisuje też własny).
+            // Audyt PR #159/R-1 + CR 707.2: druk blokowania bierze się z celu,
+            // a nie z raw `cantBlock` źródła (token może nim tylko odbijać
+            // druk). Niezależny, aktywny efekt do cleanup pozostaje na tym
+            // samym obiekcie mimo skopiowania innych cech.
             cantBlockPrinted: Boolean(copyBase.cantBlockPrinted),
+            cantBlock: Boolean(copyBase.cantBlockPrinted || temporaryCantBlock),
+            cantBlockUntilCleanup: temporaryCantBlock,
             // F3 (audyt PR106, CR 707.2 + 614.1d): „enters tapped” to
             // kopiowalny tekst karty. Obiekt jest JUŻ na polu (decyzja po
             // permanent_entered_battlefield), więc samo pole go nie tapnie —

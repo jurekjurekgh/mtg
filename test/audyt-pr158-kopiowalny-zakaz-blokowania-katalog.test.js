@@ -53,6 +53,7 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { replaceObject, creatureCantBlock } from '../src/engine/permanents.js';
+import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { applyEffect } from '../src/engine/effects.js';
 
 const registry = createCardRegistry();
@@ -264,39 +265,44 @@ test('F-1/S8: token z drukowanym zakazem jako pierwowzór token-kopii (Moonlit)'
 
 // F-8: trzeci kształt — zakaz z ZAŁĄCZNIKA. To efekt, nie druk, więc NIE jest
 // wartością kopiowalną (CR 707.2: „Other effects […] are not copied"): kopia
-// permanentu z aurą Hobble/Clawing Torment blokuje normalnie, a sam gospodarz
-// nie. Pin pilnuje, by ktoś „przy okazji" nie zaczął kopiować efektów.
-test('F-1/S9: zakaz z załącznika nie jest kopiowalny — zostaje na gospodarzu', () => {
+// permanentu z aurą Hobble/Clawing Torment/Bonds of Faith blokuje normalnie,
+// a sam gospodarz nie. W odróżnieniu od pierwotnego S9 fixture używa deskryptora
+// karty i prawdziwego attachAuraToCreature/attachedTo; każda iteracja asertuje.
+test('F-1/S9: zakaz z załącznika nie jest kopiowalny — wszystkie trzy aury są przypięte', () => {
   const aury = registry.all().filter((d) => d.aura && d.aura.cantBlock !== undefined
     && d.aura.cantBlock !== false);
-  assert.ok(aury.length >= 1, 'oczekiwano aur z zakazem blokowania (Hobble / Clawing Torment / Bonds of Faith)');
+  assert.deepEqual(aury.map((d) => d.id).sort(),
+    ['bonds-of-faith', 'clawing-torment', 'hobble'],
+    'pokrycie katalogu: Hobble, Clawing Torment i Bonds of Faith');
   for (const aura of aury) {
     const s = state();
-    put(s, 'host', 'rotting-legion');
-    addObject(s, {
-      id: 'aura', instanceId: 'i-aura', cardId: aura.id, controllerId: 'p1', ownerId: 'p1',
-      zone: 'battlefield', kind: 'enchantment', types: ['Enchantment'], colors: [],
-      abilities: [], keywords: [], subtypes: [], attachedToId: 'host',
-    });
-    const host = s.objects.get('host');
+    const host = put(s, 'host', 'rotting-legion'); // czarny, nie-Human — spełnia wszystkie trzy warunki
+    const auraObject = put(s, 'aura', aura.id);
+    assert.deepEqual(auraObject.aura, aura.aura, `${aura.id}: fixture niesie deskryptor aury`);
+    const attached = attachAuraToCreature(s, 'aura', 'host');
+    assert.equal(attached.attachedTo, 'host', `${aura.id}: aura faktycznie przypięta`);
+
     const wpis = playerView(s, 'p1').zones.battlefield.find((e) => e.id === 'host');
-    const maZakaz = creatureCantBlock(host, s) || wpis?.cantBlock === true;
-    // Warunkowe aury (Hobble: tylko czarny gospodarz; Bonds of Faith: tylko
-    // nie-człowiek) mogą zgodnie z Oracle nie łapać naszego gospodarza.
-    if (!maZakaz) continue;
-    assert.equal(host.cantBlockPrinted, false,
-      `${aura.id}: zakaz z załącznika NIE jest drukiem (CR 707.2 — efekty nie są kopiowane)`);
+    assert.equal(host.cantBlockPrinted, false, `${aura.id}: host nie ma druku`);
+    assert.equal(creatureCantBlock(host, s), false, `${aura.id}: restrykcja aury nie jest raw cantBlock`);
+    assert.equal(wpis?.cantBlock, true, `${aura.id}: zakaz działa na hosta w PlayerView`);
+
     // Kopia tego permanentu (Moonlit) nie dziedziczy efektu aury.
     s.pendingMoonlitChoice = {
       playerId: 'p1', enchantedId: 'host', effect: { amount: 1 },
       sourceObjectId: 'moon', targets: [], restorePriorityTo: null,
     };
     const przed = new Set(s.objects.keys());
-    assert.ok(execute(s, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok);
+    assert.ok(execute(s, { type: 'resolve_moonlit_choice', playerId: 'p1', replace: true }).ok,
+      `${aura.id}: token-kopia przyjęta`);
     const kopia = nowi(s, przed)[0];
     assert.ok(kopia, `${aura.id}: token-kopia powstała`);
     assert.equal(kopia.cantBlockPrinted, false,
       `${aura.id}: kopia nie dziedziczy efektu załącznika (CR 707.2)`);
+    assert.equal(creatureCantBlock(kopia, s), false,
+      `${aura.id}: token-kopia nie dziedziczy restrykcji gospodarza`);
+    const wpisKopii = playerView(s, 'p1').zones.battlefield.find((e) => e.id === kopia.id);
+    assert.notEqual(wpisKopii?.cantBlock, true, `${aura.id}: PlayerView kopii bez restrykcji`);
   }
 });
 

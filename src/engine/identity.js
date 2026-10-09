@@ -308,9 +308,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
     // w każdym combacie, jeśli tylko może; znacznik znika w cleanup (do końca
     // tury), razem z innymi grantami.
     goaded: false, goadedUntilTurn: null,
-    // „Can't block this turn\" (Panic Spellbomb): tymczasowy znacznik
-    // zdejmowany w cleanup razem z innymi grantami „do końca tury\".
+    // „Can't block this turn" (Panic Spellbomb): tymczasowy znacznik
+    // widoczny przez `cantBlock` i zdejmowany w cleanup. Jawny `cantBlockUntilCleanup`
+    // oddziela go od wydrukowanego zakazu tokenu, nawet jeśli oba współistnieją.
     cantBlock: false,
+    cantBlockUntilCleanup: false,
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this
     // turn"; zdejmowany w cleanup (CR 514.2), egzekwowany w combat.js.
     blocksIfAble: false,
