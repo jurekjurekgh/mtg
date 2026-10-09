@@ -4336,6 +4336,11 @@ export function execute(state, input) {
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
             ...(target.station ? { station: target.station } : {}),
             ...(target.saga ? { saga: target.saga } : {}),
+            // Audyt PR #158/F-1 (CR 707.2 + 707.2a): wydrukowany zakaz
+            // blokowania celu („This creature can't block") jest wartością
+            // kopiowalną — to reguła z tekstu karty, nie efekt do EOT. Kopia
+            // PRZEJMUJE druk celu w obie strony (nadpisuje też własny).
+            cantBlockPrinted: Boolean(copyBase.cantBlockPrinted),
             // F3 (audyt PR106, CR 707.2 + 614.1d): „enters tapped” to
             // kopiowalny tekst karty. Obiekt jest JUŻ na polu (decyzja po
             // permanent_entered_battlefield), więc samo pole go nie tapnie —
@@ -4671,6 +4676,9 @@ export function execute(state, input) {
             // pierwowzoru (kopia tylnej twarzy → 0) — jak pozostałe
             // ścieżki kopiowania.
             manaCost: copyManaValueOf(enchanted),
+            // Audyt PR #158/F-1 (CR 707.2): drukowany zakaz blokowania
+            // pierwowzoru przechodzi na token-kopię (CR 509.1b).
+            ...(enchanted.cantBlockPrinted ? { cantBlock: true } : {}),
           });
         }
       }
@@ -9493,7 +9501,7 @@ export function playerView(state, playerId) {
       candidateIds: [...state.pendingExploits[0].candidateIds],
     } : null,
     // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): decyzja
-    // „endure N” (liczniki na źródłe albo token N/N) pyta o TRYB, ale bez N
+    // „endure N” (liczniki na źródle albo token N/N) pyta o TRYB, ale bez N
     // wycena bota nie miała czym różnicować wielkości — zostawała płaska
     // (42/40). N jest informacją PUBLICZNą (X wybiera gracz jawnie, komenda
     // przechodzi przez stos), a źródło leży na polu bitwy — wystawiamy

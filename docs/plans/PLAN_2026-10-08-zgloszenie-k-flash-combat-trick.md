@@ -94,9 +94,9 @@ liczbą, nie oknem).
 
 - [x] E0. Lektura obowiązkowa + rozpoznanie (pomiar PRZED powyżej).
 - [x] E1. Ten plan wypchnięty jako osobny commit PRZED kodem (ADR 0020 A/C).
-- [ ] E2. **Reguła okna** (`src/controllers/heuristic-bot.js`, bez nazw kart —
+- [x] E2. **Reguła okna** (`src/controllers/heuristic-bot.js`, bez nazw kart — ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: reguła + kara + parametr w kodzie*
   ADR 0002; wyłącznie z `PlayerView` — ADR 0017):
-  - [ ] E2a. Helper `flashCreatureCastTooEarly(view, def, card)` — kreatura z
+  - [x] E2a. Helper `flashCreatureCastTooEarly(view, def, card)` — kreatura z ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: `flashCreatureCastTooEarly` 7400*
     flash bez haste jest „za wcześnie" w KAŻDYM kroku własnej tury (CR 302.6) i
     w turze przeciwnika przed `declare_attackers` (odsłonięcie karty marnuje
     zaskoczenie) oraz po `declare_blockers` (CR 509.1a). Jedyny krok obronny:
@@ -104,44 +104,44 @@ liczbą, nie oknem).
     atakującego (`attackerCanBeBlocked` — flying/reach/menace tą samą regułą co
     wycena ataku, CR 509.1b + M202/H). Post-combat (`main2`/`end`/`cleanup`)
     dozwolony (CR 500.5).
-  - [ ] E2b. Wyjątki: `haste` (kreatura realnie atakuje w tej turze),
+  - [x] E2b. Wyjątki: `haste` (kreatura realnie atakuje w tej turze), ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: wyjątki haste/`entersWithCountersIf`/mana 7406–7411*
     `entersWithCountersIf` (warunek wejścia zależy od STANU tury — własna Główna 2
     bywa jedynym oknem spełnienia) oraz brak możliwości opłacenia kosztu z
     nietapniętych lądów później (mana jednorazowa: skarb/tap ciała nie przeżyje
     odroczenia).
-  - [ ] E2c. Kara okna w bloku `cast_permanent` (przed epsilionem):
+  - [x] E2c. Kara okna w bloku `cast_permanent` (przed epsilionem): ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: `score = Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty` 8861*
     `score = Math.min(score, 0) - P.flashCreatureEarlyWindowPenalty` — wycena
     karty (ciało + ETB + parytet) WYZEROWANA, więc nawet bardzo silne ETB nie
     wróci ponad pass (L3), a epsilon nadal różnicuje karty z flash (L41/L48).
     Kara NIE jest stałą liczbą przebijającą bazę (jak w M235).
-  - [ ] E2d. Nowy parametr `flashCreatureEarlyWindowPenalty` (10) w
+  - [x] E2d. Nowy parametr `flashCreatureEarlyWindowPenalty` (10) w ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: `heuristic-params.js:201/694` + `bot-params.test.js:54`*
     `src/controllers/heuristic-params.js` (lista kluczy + domyślna + pin w
     `test/bot-params.test.js`).
-- [ ] E3. **ETB po kreaturze**: `untap_all_creatures_you_control` przestaje być
+- [x] E3. **ETB po kreaturze**: `untap_all_creatures_you_control` przestaje być ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: `untapAllCreaturesValue` 4406 + gałąź 1967*
   płaskie 3 → `untapAllCreaturesValue(view)`: suma `untapTargetValue` po
   TAPNIĘTYCH własnych stworach, licząc tylko okna, gdzie odkręcenie daje akcję —
   obronne (cudza tura, `beginning_of_combat`/`declare_attackers`/
   `declare_blockers`, z bramką `cantBlock`) i ofensywne (własne
   `precombat_main`/`combat`, z bramką `canAttackNow`); poza nimi 0.
-- [ ] E4. **Test** `test/zgloszenie-k-flash-combat-trick.test.js`: main1 bota
+- [x] E4. **Test** `test/zgloszenie-k-flash-combat-trick.test.js`: main1 bota ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: plik 439 linii*
   (pass, lądy nietknięte, mana trzymana), `beginning_of_combat` wroga (pass),
   `declare_attackers` z naziemnym atakującym (cast), `declare_attackers` z
   LATAJĄCYM atakującym (pass — brak reakcji), `declare_blockers` (poniżej passu),
   `main2` wroga bez ataku (cast), ETB po kreaturze (+8+2×moc, 0 przy
   `cantBlock`, 0 poza oknem), E2E (hold → rzut → blok → 0 obrażeń), izolacja
   rodziny (vanilla bez flash = cast, aura M235 i artefakt bez celu nietknięte).
-- [ ] E5. **Dowód mutacyjny**: mK1 (usunięta kara), mK2 (kara bez wyzerowania
+- [x] E5. **Dowód mutacyjny**: mK1 (usunięta kara), mK2 (kara bez wyzerowania ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: mK1–mK10 w nagłówku testu*
   wyceny), mK3 (brak pytania o blokowalność atakujących), mK4 (okno obronne
   rozszerzone na `declare_blockers`), mK5 (okno obronne rozszerzone na własną
   turę), mK6 (ETB płaskie), mK7 (ETB ignoruje `cantBlock`), mK8 (ETB poza
   oknem), mK9 (reguła dotyka nie-kreatur), mK10 (reguła dotyka kreatur bez
   flash).
-- [ ] E6. **Bramka** na zamrożonym drzewie: `npm test` (fast) EXIT 0,
+- [x] E6. **Bramka** na zamrożonym drzewie: `npm test` (fast) EXIT 0, ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: bramki PR #158 (fast 7900, build, `cr-numery` OK)*
   `npm run build` EXIT 0, `node tools/cr-numery.mjs` OK (nowy cytat **500.5**
   dopisany do tabeli procedurą `--zapisz`). Bez pełnego B0 (ADR 0018); regresja
   `test/bot-benchmark.test.js` + golden-master `test/bot-scoring-snapshot.test.js`
   muszą zostać zielone.
-- [ ] E7. **Domknięcie**: wpis PROJECT_HISTORY, sekcja K w opisie PR
+- [x] E7. **Domknięcie**: wpis PROJECT_HISTORY, sekcja K w opisie PR ✅ *spełnione w PR #158; odhaczone w audycie 2026-10-08c (F-5) — dowód: PROJECT_HISTORY + `PR_158_OPIS.md` + L183*
   (`docs/plans/PR_158_OPIS.md`), uzupełnienie handoffu sesji, lekcja w
   `docs/LESSONS.md` (zgodnie z kontraktem budżetu z AGENTS.md §0 — nowy wpis
   płaci się skróceniem innego).

@@ -194,7 +194,7 @@ test('B64/263: Man-o-War — dane Oracle: 2/2 jellyfish za {2}{U} z ETB bounce',
   assert.equal(def.power, 2);
   assert.equal(def.toughness, 2);
   assert.equal(def.manaCost, 3);
-  assert.deepEqual(def.keywords, ['flying'], 'lot');
+  assert.deepEqual(def.keywords, [], 'Oracle MH1 nie zawiera żadnego słowa kluczowego');
   assert.deepEqual(def.abilities[0].trigger.requiresTarget, { type: 'creature' });
   assert.deepEqual(def.abilities[0].effect, [{ type: 'bounce_permanent' }]);
 });

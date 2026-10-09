@@ -13125,7 +13125,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   defineCard({
     id: 'man-o-war', name: "Man-o'-War", set: 'MH1',
     types: ['Creature'], subtypes: ['Jellyfish'], colors: ['U'],
-    keywords: ['flying'], power: 2, toughness: 2, manaCost: 3,
+    // Audyt batcha 64 (sesja 2026-10-08c, znalezisko B-1): definicja miała
+    // `keywords: ['flying']`, którego NIE MA ani w Oracle, ani w polu
+    // `keywords` snapshotu (`docs/cards/scryfall-man-o-war.json`: `[]`,
+    // type_line „Creature — Jellyfish"). Man-o'-War NIE lata — a pin testowy
+    // (`real-cards-batch64.test.js`) przypisywał ten lot jako fakt (L181: pin
+    // skopiowany z definicji cementuje błąd zamiast go łapać). Strażnikiem jest
+    // `test/audyt-katalog-dane-vs-snapshoty.test.js`.
+    power: 2, toughness: 2, manaCost: 3,
     oracleText: "When this creature enters, return target creature to its owner's hand.",
     imageUri: 'https://cards.scryfall.io/large/front/5/e/5eaa4199-df9b-494a-af7a-2491e8b0ef70.jpg?1783933145',
     abilities: [
