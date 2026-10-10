@@ -16356,7 +16356,7 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   `check-runs` poprzedniego commitu: trzy ostatnie commity batcha 65 były
   czerwone i nikt tego nie zauważył, bo lokalnie odpalano tylko szybki zestaw.
 
-## 2026-10-10 — PMSSB-60: pętla jakości scoringu dla batcha 65 (CZĘŚCIOWA)
+## 2026-10-10 — PMSSB-60: pętla jakości scoringu dla batcha 65
 
 - **Zlecenie**: „Uruchom pełne PMSSB dla B65". Wcześniejsze sprawdzenie pokazało,
   że batch 65 nie miał ŻADNEJ pętli: `grep "batch 65|batch65|B65" docs/PMSSB.md`
@@ -16409,3 +16409,40 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   Przy okazji: `.arena/` nie ma w `.gitignore`, ignorowanie szło przez
   `.git/info/exclude`, który świeży klon gubi — scratch trafił do commitu
   i został z niego wyjęty przez `git rm --cached` + amend.
+
+- **Domknięte (fale C, E, F — dokończenie tego samego dnia)**:
+  - **F2** Zombie Boa — typ efektu `choose_color_grant_block_destroy` istniał
+    tylko w zbiorze efektów kumulujących się na stosie i nie miał gałęzi
+    w wycenie aktywacji (pomiar PRZED: dokładnie 0,0). Nowy helper
+    `blockDestroyColorValue`: bramka ataku × najlepsza ofiara danego koloru
+    (maksimum, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za warunkowość.
+    PO: 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; pusty stół wroga = 0,0 (anty-over-fix).
+  - **F7** Skyscythe Engulfer — `hostEvadesBlockers` bez gałęzi
+    `cantBeBlockedByKeywords` (komentarz przy `cantBeBlockedByPower` obiecuje
+    parzystość z `combat.js`, L41/L48) + premia w `cast_permanent` z bramką
+    `withKeyword > 0`. PO: 78,309 vs 75,609 (+2,700), warianty bez zakazanego
+    keywordu równe kontrfaktykowi.
+  - **F8** Ambulatory Edifice — wpis `pump` w `ETB_EFFECT_BONUS` liczył
+    P×2+T×1 bez względu na CZYJE ciało rośnie, więc −1/−1 we wroga dawało −3.
+    PO naprawie ujemny pump z wymaganiem celu idzie po kierunku, na skali
+    wpisu `damage` (3/punkt, sufit 15). PO: 75,6036 vs 70,2036 (+5,4),
+    pusty stół wroga delta 0, kontrola znaku (+1/+1 = +2,7 starym wzorem).
+- **Poprawka metody, która unieważniła część pierwszego pomiaru**: kontrfaktyki
+  tworzyły bota BEZ rejestru sceny, więc `cardDef()` czytał prawdziwe definicje
+  i kontrfaktyk działał tylko na obiekcie w widoku — reguły czytane z `def`
+  widziały kartę pełną. Dowód: przy prowizorycznym `score += 1000` wariant
+  „pełny" i „bez statyki" dały identyczne 975,6. Werdykty F1/F3/F6 się nie
+  zmieniły (tam decydowały efekty z obiektu), ale F7 i F8 tak — oba „delta 0"
+  były artefaktem. `scene()`/`punkty()` zapisują teraz rejestr na stanie, a
+  `scoreOf`/`punkty` przekazują go do `createHeuristicBot`.
+- **Punkt M2 planu zamknięty pomiarem, nie kodem**: plan zakładał dopłatę za
+  rider `exile_if_dies_this_turn`. Pomiar: pełny czar 96,0 vs 45,0 bez ridera
+  (+51), ale rider zastąpiony typem NIEZNANYM daje te same 96,0 — czyli +51 to
+  ucieczka od resetu `if (isDamageOnly) score = -1;` (heuristic-bot.js:9226),
+  nie wartość typu. Premia za typ byłaby podwójnym liczeniem, więc kod
+  nietknięty; zamiast tego pinezka A7 zabezpieczająca pomiar.
+- **Bramki końcowe**: `npm test` 8027/8027 (pełne B0 `run-tests.mjs all`
+  na `3027ed0` dało 8281/8281), build 73 moduły / 5009,8 kB, `cr-numery --cr`
+  OK, CI zielone. 22 piny w `test/audyt-pmssb60-batch65.test.js`, każdy
+  z dowodem mutacyjnym RED→GREEN. Commity fal: `01ffc94` (E), `5bbd324` (F),
+  `498b917` (C), `56f546a` (A7).

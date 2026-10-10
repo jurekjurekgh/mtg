@@ -36,7 +36,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
-| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **CZĘŚCIOWO (2026-10-10)** — fale A/B/D DONE, fale C/E/F OTWARTE | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (12 pinów: 6 fala A + 3 fala B + 3 fala D); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11); 0 nowych pokręteł |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (22 piny: 7 fala A + 3 fala B + 3 fala C + 3 fala D + 3 fala E + 3 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E); 0 nowych pokręteł |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3000,7 +3000,7 @@ Dowody, wartości PRZED→PO i werdykty per karta:
 [raport PMSSB-59](audits/PMSSB59_BATCH64_2026-10-08.md),
 [plan](plans/PLAN_2026-10-08b-pmssb59-batch64.md).
 
-## PMSSB-60 — jakościowe domknięcie batcha 65 (2026-10-10, PR #162) — CZĘŚCIOWE
+## PMSSB-60 — jakościowe domknięcie batcha 65 (2026-10-10, PR #162)
 
 Zlecenie właściciela: „Uruchom pełne PMSSB dla B65". Pętla **nie jest zamknięta**:
 z 6 findingów domknięte są 3 (fale A, B, D), a 3 (fale C, E, F) pozostają
@@ -3054,6 +3054,88 @@ zastanego modelu M237/4, kontrola ujemna).
 
 **Bramki:** `npm test` 8017/8017, build 73 moduły / 5004,9 kB, `cr-numery --cr`
 OK. 0 nowych pokręteł.
+
+### Poprawka metody pomiaru (fale E–F)
+
+Kontrfaktyki z pierwszego pomiaru były **nieważne**: `createHeuristicBot`
+w sondzie i w `scoreOf` nie dostawał rejestru sceny, więc używał rejestru
+domyślnego i `cardDef()` czytał PRAWDZIWE definicje kart. Kontrfaktyk
+działał wyłącznie na obiekcie w widoku — każda reguła czytana z `def`
+(właśnie `def.abilities`) widziała kartę pełną. Dowód: przy prowizorycznym
+`score += 1000` wariant „pełny" i „bez statyki" dały identyczne 975,6.
+Po przekazaniu rejestru (`state.__registry`) werdykty F1/F3/F6 się nie
+zmieniły (tam decydowały efekty z obiektu), ale F7 i F8 tak:
+
+| | werdykt PRZED (błędna metoda) | werdykt PO (rejestr przekazany) |
+|---|---|---|
+| F7 Skyscythe | delta 0 — „fix nie działa" | 78,309 vs 75,609, delta **+2,700** |
+| F8 Ambulatory Edifice | delta 0 — „trigger niewyceniany" | 67,5 vs 70,2, delta **−2,7** |
+
+### Fala E — selektywna ewazja (F7 Skyscythe Engulfer)
+
+`hostEvadesBlockers` nie miało gałęzi `cantBeBlockedByKeywords`, choć
+komentarz przy `cantBeBlockedByPower` obiecuje parzystość z
+`combat.js:blockRestrictionError` (L41/L48). Reguła lustrzana: bloker nie
+może blokować, gdy ma KTÓRYKOLWIEK z wymienionych keywordów, więc
+atakujący omija wszystkich dopiero, gdy KAŻDY potencjalny bloker taki
+keyword ma. Plus premia w `cast_permanent` przy `hasKeyword(def,'flying')`:
++3 gdy wszystkie wrogie blokery niosą zakazany keyword, +1,5 przy
+częściowym pokryciu — ta sama jednostka co flying, nie nowa skala.
+Brama `withKeyword > 0` to anty-over-fix.
+
+POMIAR: wróg z flying 78,309 vs kontrfaktyk 75,609 (+2,700); wróg bez
+keywordów 75,609 = 75,609; brak wrogich stworów 72,009 = 72,009.
+
+### Fala F — kierunek pumpa w tabeli ETB (F8 Ambulatory Edifice)
+
+Wpis `pump` w `ETB_EFFECT_BONUS` liczył P×2+T×1 bez względu na to, CZYJE
+ciało rośnie. Trigger „target creature gets −1/−1" dawał (−1)×2+(−1) = −3,
+czyli bot wyceniał OSŁABIENIE WROGA jako stratę własnego ciała. POMIAR
+PRZED: płaskie 67,5 dla wroga 1/1 (który od tego pumpa ginie!), 5/5 i dla
+pustego stołu wroga.
+
+Po naprawie ujemny pump z wymaganiem celu idzie po kierunku: wróg
+z legalnym celem = zysk na skali wpisu `damage` (3 za punkt, sufit 15 —
+ta sama tabela, bez nowej skali); brak legalnego celu u wroga = 0; bez
+wymagania celu stare zachowanie co do joty. POMIAR PO: 75,6036 wobec
+kontrfaktyku 70,2036 (+5,4); pusty stół wroga 66,6036 = 66,6036; kontrola
+znaku — pump +1/+1 daje 72,9036 (+2,7 = stary wzór), nie +5,4.
+
+Koszt `trigger.payLife` (opcjonalne 2 życia) celowo poza zakresem: to luka
+ogólnorepozytoryjna dla wszystkich pay-gated triggerów, już zapisana jako
+forward „pay-trigger-net-model" przy `anticipatedDiesValue`. Zmierzono
+`selfLifeLossPenalty(view, 2)` = 4 przy zdrowym życiu.
+
+### Fala C — warunkowe zniszczenie blokera (F2 Zombie Boa)
+
+Typ efektu `choose_color_grant_block_destroy` był obecny wyłącznie
+w zbiorze efektów kumulujących się na stosie (l.1208) i nie miał gałęzi
+w wycenie aktywacji — POMIAR PRZED: dokładnie 0,0 dla każdego układu
+wroga. Nowy helper `blockDestroyColorValue`: bramka ataku (martwy atak
+= 0, zasada M407) × NAJLEPSZA ofiara wśród wrogich blokerów danego koloru
+(maksimum po kolorach, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za
+warunkowość (ta sama asumpcja likelihood-0,5 co `anticipatedDiesValue`).
+
+POMIAR PO: wróg 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; 3/3 R + 3/3 G = 4,5
+(maksimum, nie suma); pusty stół wroga = 0,0 — dokładnie wartość PRZED.
+
+### Punkt M2 planu — rider Blitza: pomiar zamiast kodu
+
+Plan zakładał, że `exile_if_dies_this_turn` jako rider czaru nie jest
+wyceniany i że fala A dopisze dopłatę. Pomiar temu przeczy: pełny czar
+96,0 wobec 45,0 bez ridera (+51), ale podstawienie za rider typu
+NIEZNANEGO daje dokładnie te same 96,0. Czyli +51 to ucieczka od resetu
+`if (isDamageOnly) score = -1;` (heuristic-bot.js:9226), nie wartość typu.
+Dopisanie premii za typ byłoby podwójnym liczeniem — kod nietknięty,
+zamiast tego pinezka A7 zabezpieczająca pomiar.
+
+**Testy (fale C/E/F):** 10 nowych pinów (C1–C3, E1–E3, F1–F3) plus A7 —
+razem 22. RED→GREEN per fala: C — 3/3 → 1/3 (C2 kotwica 0,0 z założenia);
+E — 3/3 → 2/3 (E2/E3 kontrole ujemne z założenia); F — 3/3 → 1/3
+(F3 kontrola znaku z założenia).
+
+**Bramki końcowe:** `npm test` 8027/8027, build 73 moduły / 5009,8 kB,
+`cr-numery --cr` OK. 0 nowych pokręteł.
 
 Dowody, wartości PRZED→PO i pełna macierz:
 [plan PMSSB-60](plans/PLAN_2026-10-10c-pmssb60-batch65.md),
