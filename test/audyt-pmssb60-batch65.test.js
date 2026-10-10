@@ -185,3 +185,45 @@ test('PMSSB-60/B3: L41 — ten sam typ efektu wyceniany w obu ścieżkach', () =
   // Oś L41: obie ścieżki reagują na rozmiar przeglądu (tu: Impulse na bibliotekę).
   assert.ok(impulse(30) > impulse(0), 'cast_spell też reaguje — jedna skala, nie kopia');
 });
+
+// ============================================================ FALA D — F6
+
+function giantScene(enchantments) {
+  return scene({ many: 14, setup: (st) => {
+    for (let i = 0; i < enchantments; i++) addObject(st, { id: `e${i}`, instanceId: `i-e${i}`,
+      cardId: 'x', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'enchantment',
+      power: 0, toughness: 0, manaCost: 1, abilities: [], keywords: [], subtypes: [],
+      types: ['Enchantment'], colors: [], cardName: 'e' });
+    put(st, 'c1', 'brine-giant', 'p1', 'hand');
+  } });
+}
+const giant = (ench) => scoreOf(giantScene(ench), (o) => o.cmd.includes('(c1'));
+
+test('PMSSB-60/D1: affinity obniża koszt w wycenie (kontrola S11)', () => {
+  const zero = giant(0);
+  const trzy = giant(3);
+  const szesc = giant(6);
+  assert.ok(trzy > zero, `3 enchantmenty (${trzy}) > 0 (${zero}) — koszt 4 vs 7 many`);
+  assert.ok(szesc > trzy, `6 enchantmentów (${szesc}) > 3 (${trzy}) — koszt 1 vs 4 many`);
+});
+
+// Wartość bazowa zmierzona PRZED falą D (sonda .arena/pomiar-giant.mjs po
+// zdjęciu redukcji): 70.2072 — identyczna dla 0 enchantmentów, 3 własnych
+// i 4 wrogich, czyli płasko. To dokładnie defekt F6.
+const GIANT_PRZED = 70.2072;
+
+test('PMSSB-60/D2: anty-over-fix M429 — bez enchantmentów dawna wartość', () => {
+  assert.equal(giant(0), GIANT_PRZED, '0 enchantmentów = 70,2072 (sprzed fali D)');
+});
+
+test('PMSSB-60/D3: enchantmenty PRZECIWNIKA nie obniżają mojego kosztu', () => {
+  const state = scene({ many: 14, setup: (st) => {
+    for (let i = 0; i < 4; i++) addObject(st, { id: `e${i}`, instanceId: `i-e${i}`, cardId: 'x',
+      controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'enchantment', power: 0,
+      toughness: 0, manaCost: 1, abilities: [], keywords: [], subtypes: [],
+      types: ['Enchantment'], colors: [], cardName: 'e' });
+    put(st, 'c1', 'brine-giant', 'p1', 'hand');
+  } });
+  assert.equal(scoreOf(state, (o) => o.cmd.includes('(c1')), GIANT_PRZED,
+    'affinity liczy wyłącznie enchantmenty pod MOJĄ kontrolą (CR 601.2f)');
+});

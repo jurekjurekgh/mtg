@@ -1508,6 +1508,29 @@ export const LIBRARY_DRAIN_CAST_TYPES = new Set(
   COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
 );
 
+/**
+ * PMSSB-60/F6 (Brine Giant, batch 65): obniżka kosztu z `costReduction` karty,
+ * liczona z WIDOKU bota.
+ *
+ * Silnik liczy koszt efektywny przez `effectiveSpellManaCost` na pełnym stanie
+ * (CR 601.2f); bot działa na widoku, więc ten sam warunek affinity liczymy na
+ * `zones.battlefield`. Obsługujemy wyłącznie warunek `affinityToEnchantments`
+ * (jedyny w katalogu) — nieznany warunek zwraca 0, czyli zachowanie sprzed fali
+ * (anty-over-fix M429: nic nie zgadujemy).
+ *
+ * Redukcja dotyczy części GENERYCZNEJ kosztu, więc wywołujący obcina ją do
+ * `manaCost` (pipy kolorowe zostają).
+ */
+function cardCostReductionForView(view, def) {
+  const reduction = def?.costReduction;
+  if (!reduction || !Number.isInteger(reduction.amount) || reduction.amount <= 0) return 0;
+  if (!reduction.condition?.affinityToEnchantments) return 0;
+  const count = (view.zones.battlefield ?? []).filter((object) => object
+    && object.controllerId === view.playerId
+    && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
+  return reduction.amount * count;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -8754,8 +8777,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie wydaje. Warp z wygnania (CR 702.185a) płaci pełny koszt, więc
         // zostaje na ścieżce ogólnej.
         if (!castsWithoutPayingMana(card)) {
+          // PMSSB-60/F6 (Brine Giant): affinity for enchantments obniża koszt
+          // generyczny o 1 za każdy enchantment pod moją kontrolą (CR 601.2f).
+          // Pomiar PRZED: 70,2 płasko dla 0 / 3 / 6 enchantmentów — bot nie
+          // wiedział, że czar kosztuje 7 / 4 / 1 many, czyli naruszenie
+          // kontroli (b) procedury (S11: różne koszty nie mogą remisować).
+          const costReduction = cardCostReductionForView(view, def);
           score -= P.creatureManaCostWeight
-            * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+            * (Math.max(0, (card?.manaCost ?? 0) - costReduction)
+              + coloredPipsOf(card?.cardId ?? '').length);
         }
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
