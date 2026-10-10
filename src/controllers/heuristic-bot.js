@@ -2085,7 +2085,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     exalted_pump: () => 2,
     // PMSSB-10/F-O (Wave-A): wpisy dla anticipacji-ogona.
     // pump = ciało (lustro 5395/9867: P×2+T×1 — L41!).
-    pump: (e) => (e.power ?? 0) * 2 + (e.toughness ?? 0),
+    // PMSSB-60/F8 (Ambulatory Edifice, batch 65): KIERUNEK pumpa. Tabela
+    // liczyła P×2+T×1 bez względu na to, CZYJE ciało rośnie, więc trigger
+    // „target creature gets −1/−1" dawał (−1)×2+(−1) = −3 i bot wyceniał
+    // osłabienie WROGA jako stratę własnego ciała. Pomiar PRZED: płaskie
+    // 67,5 dla wroga 1/1 (który od tego ginie!), 5/5 i dla pustego stołu.
+    // Ujemny pump z wymaganiem celu wyceniamy po KIERUNKU: wróg z legalnym
+    // celem = zysk na skali `damage` (3 za punkt, sufit 15 — ta sama tabela,
+    // L41, bez nowej skali); brak legalnego celu wroga = 0, bo zdolność nic
+    // wtedy nie daje (a przy płatności opcjonalnej po prostu się jej nie
+    // opłaca). Bez wymagania celu pump dotyczy własnych ciał — stare
+    // zachowanie co do joty (anty-over-fix).
+    pump: (e, view, req) => {
+      const p = e.power ?? 0;
+      const t = e.toughness ?? 0;
+      if ((p < 0 || t < 0) && req) {
+        return etbEnemyHasTarget(view, req) ? Math.min(3 * (-p - t), 15) : 0;
+      }
+      return p * 2 + t;
+    },
     // cant_block = usunięcie blokera z przyszłej walki (+2: połowa untapu-4
     // (jednorazowe-vs-trwałe); konserwatywnie, pin na kształcie jestera!).
     cant_block: () => 2,

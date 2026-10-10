@@ -284,3 +284,53 @@ test('PMSSB-60/E3: bez wrogich stworów nie ma czego wyeważować — dawna wart
   assert.ok(blisko(sky(null), SKY_BEZ_WROGA), `oczekiwano ${SKY_BEZ_WROGA}, jest ${sky(null)}`);
   assert.ok(blisko(sky(null), sky(null, true)), `over-fix: ${sky(null)} vs ${sky(null, true)}`);
 });
+
+// ============================================================ FALA F — F8
+
+/**
+ * Ambulatory Edifice w ręce + opcjonalny wrogi stwór (`foePt === null` =
+ * pusty stół wroga). `mut` pozwala podstawić wariant triggera: kontrfaktyk
+ * bez zdolności albo pump +1/+1 jako kontrola znaku.
+ */
+function edificeScene(foePt, mut = null) {
+  const registry = mut ? registryKontra('ambulatory-edifice', mut) : REGISTRY;
+  return scene({ registry, setup: (st, r) => {
+    if (foePt !== null) foe(st, 'f1', foePt[0], foePt[1]);
+    put(st, 'c1', 'ambulatory-edifice', 'p1', 'hand', r);
+  } });
+}
+const edifice = (foePt, mut = null) => scoreOf(edificeScene(foePt, mut), (o) => o.cmd.includes('(c1'));
+const BEZ_ZDOLNOSCI = (d) => ({ ...d, abilities: [] });
+const PUMP_DODATNI = (d) => ({ ...d, abilities: d.abilities.map((a) => ({
+  ...a, effect: { type: 'pump', power: 1, toughness: 1 } })) });
+
+/** Zmierzono na `01ffc94`+fala F (harness tego pliku, nie sonda). */
+const EDIFICE_WROG = 75.6036;   // wróg na stole: −1/−1 to zysk
+const EDIFICE_BAZA = 70.2036;   // kontrfaktyk bez triggera
+const EDIFICE_PUSTY = 66.6036;  // pusty stół wroga = kontrfaktyk
+const EDIFICE_PLUS = 72.9036;   // pump +1/+1 — stary wzór P×2+T×1
+
+test('PMSSB-60/F1: −1/−1 wymierzone we wroga jest zyskiem, nie stratą ciała', () => {
+  const pelny = edifice([3, 3]);
+  const kontra = edifice([3, 3], BEZ_ZDOLNOSCI);
+  assert.ok(blisko(pelny, EDIFICE_WROG), `oczekiwano ${EDIFICE_WROG}, jest ${pelny}`);
+  assert.ok(blisko(kontra, EDIFICE_BAZA), `oczekiwano ${EDIFICE_BAZA}, jest ${kontra}`);
+  // POMIAR PRZED: płaskie 67,5 dla wroga 1/1, 5/5 i pustego stołu — trigger
+  // wyceniany na MINUSIE (−2,7), bo tabela liczyła P×2+T×1 bez kierunku.
+  assert.ok(pelny - kontra > 5, `oczekiwano delty > 5, jest ${pelny - kontra}`);
+});
+
+test('PMSSB-60/F2: anty-over-fix — bez legalnego celu u wroga trigger nic nie daje', () => {
+  assert.ok(blisko(edifice(null), EDIFICE_PUSTY), `oczekiwano ${EDIFICE_PUSTY}, jest ${edifice(null)}`);
+  assert.ok(blisko(edifice(null), edifice(null, BEZ_ZDOLNOSCI)),
+    `over-fix: ${edifice(null)} vs ${edifice(null, BEZ_ZDOLNOSCI)}`);
+});
+
+test('PMSSB-60/F3: kontrola znaku — dodatni pump idzie starym wzorem P×2+T×1', () => {
+  // +1/+1 daje +2,7 (P×2+T×1 = 3 po skalowaniu), NIE +5,4 ze skali `damage`.
+  // Gdyby warunek `(p < 0 || t < 0)` zniknął, ta pinezka by się wysypała.
+  assert.ok(blisko(edifice([3, 3], PUMP_DODATNI), EDIFICE_PLUS),
+    `oczekiwano ${EDIFICE_PLUS}, jest ${edifice([3, 3], PUMP_DODATNI)}`);
+  assert.ok(edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA < 4,
+    `dodatni pump wszedł w skalę damage: ${edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA}`);
+});

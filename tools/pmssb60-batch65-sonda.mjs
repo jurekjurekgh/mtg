@@ -200,16 +200,21 @@ console.log(`   wróg BEZ keywordów:     ${skyZBlokerem(false, null)}`);
 
 // ==================================================== F8 — Ambulatory Edifice
 console.log('\n=== F8 Ambulatory Edifice — ETB optionalPay 2 życia → pump -1/-1');
-function edifice(scen) {
-  const reg = scen === 'kontra' ? registryKontra('ambulatory-edifice', (d) => ({ ...d, abilities: [] })) : REG;
+function edifice(kontra, pt = [3, 3]) {
+  const reg = kontra ? registryKontra('ambulatory-edifice', (d) => ({ ...d, abilities: [] })) : REG;
   const s = scene({ registry: reg, setup: (st, r) => {
-    foe(st, 'f1', 3, 3);
+    if (pt !== null) foe(st, 'f1', pt[0], pt[1]); // null = pusty stół wroga
     put(st, 'c1', 'ambulatory-edifice', 'p1', 'hand', r);
   } });
   return fmt(punkty(s, (o) => o.cmd.includes('(c1')));
 }
-console.log(`   pełny (wróg 3/3):       ${edifice('pełny')}`);
-console.log(`   KONTRFAKTYK (bez triggera): ${edifice('kontra')}`);
+console.log(`   pełny (wróg 3/3):       ${edifice(false)}`);
+console.log(`   KONTRFAKTYK (bez triggera): ${edifice(true)}`);
+// Czy wyceniany jest SAM efekt -1/-1? Wróg 1/1 ginie od tego pumpa (zysk),
+// wróg 5/5 tylko traci 1/1 (mniejszy zysk). Różnica = wartość pumpa.
+console.log(`   wróg 1/1 (ginie):       ${edifice(false, [1, 1])}   | kontra: ${edifice(true, [1, 1])}`);
+console.log(`   wróg 5/5 (nie ginie):   ${edifice(false, [5, 5])}   | kontra: ${edifice(true, [5, 5])}`);
+console.log(`   brak wrogich stworów:   ${edifice(false, null)}   | kontra: ${edifice(true, null)}`);
 
 // ==================================================== F9 — Temple of Abandon
 console.log('\n=== F9 Temple of Abandon — entersTapped + scry 1 + {T}: {R} lub {G}');
