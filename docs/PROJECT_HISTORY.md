@@ -16221,3 +16221,40 @@ werdyktach kontrolnych, build 73 moduły / 4959,4 kB. Benchmark B0 na TEJ SAMEJ
 talii (deki zmieniły się w batchcie 64, więc porównanie z PMSSB-58 byłoby
 nieporównywalne): 603/672 (89,7%) vs 604/672 (89,9%) baseline — bez zmiany w
 granicach szumu, vs aggio identycznie 80,7%.
+
+## 2026-10-10 — batch65: kolekcja 329–350, 10 kart (PR #162, M442)
+
+Dziesięć kart z listy właściciela: 329 Blinding Drone (OGW), 332 Blitz of
+the Thunder-Raptor (IKO), 333 Bring to Trial (RNA), 334 Skyscythe Engulfer
+(ONE), 336 Zombie Boa (APC), 338 Brine Giant (THB), 340 Ambulatory Edifice
+(ONE), 341 Pacifism (DTK), 348 Impulse (DMU), 350 Temple of Abandon (BLC).
+Kolumna Plan listy właściciela wiążąca i przepisana 1:1 (np. Zombie Boa →
+Amonkhet, Skyscythe → Mirrodin). Karta po karcie z natychmiastowym commitem
+i pushem (L184 — reset sandboxa zabrał poprzedniemu agentowi cały
+niezacommitowany batch).
+
+**Silnik:** Affinity for enchantments (Brine Giant — `affinityToEnchantments`
+w `conditionalCostReduction`; rabat tylko część generyczną, ruling WotC
+2020-01-24), Devoid (Drone, Thunder-Raptor), choose a color + niszczenie
+blokujących tym kolorem (Zombie Boa — `becomes_blocked_by_color` per para
+bloku + `blockDestroyColorsThisTurn` czyszczone w `clearStatModifiers`),
+refleks „you may pay 2 life. When you do” (Ambulatory Edifice —
+optionalPay/Etap F, cel PO zapłacie wg rulingu 2023-02-04), aura
+cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech aurach), look 4/
+jedna do ręki (Impulse — `look_top_put_one_hand_rest_bottom`, rulingi „not
+a draw” i „no shuffle” testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}`
+(Temple of Abandon — wzorzec Dismal Backwater, jednostka wielokolorowa M67).
+Bez zmian silnika: Bring to Trial (exile mocy 4+) i Skyscythe Engulfer
+(reach/trample/can’t be blocked by flying).
+
+**Pułapki:** nowe zdarzenie + efekt zapalają osiem strażników rejestracji
+(TRIGGER_EVENT_LABELS, ABILITY_EFFECT_LABELS jako mapa LOG M255/C1, render
+`generic`, STACKING_ACTIVATED_EFFECTS, batch25, M273 zgodność pól emiterów);
+`play_land`/ruchy między strefami nadają nowy objectId — asercje po `id`
+z `find()`, nie po id sprzed ruchu; `git commit -m` z cudzysłowem ASCII w
+wiadomości tnie komunikat — wiadomości tylko przez `git commit -F`.
+
+**Domknięcie:** talie z generatora (mirrodin-brg 35/12/23, tarkir-wur
+35/12/23, dominaria-wu 29/10/19, theros 29/10/19, worek-basni 27/9/18;
+README w tych samych commitach — M203). Bramki: all **7994/7994** (34 testy
+B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).

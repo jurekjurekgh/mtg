@@ -66,4 +66,4 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 - [x] 341 Pacifism (DTK, Tarkir)
 - [x] 348 Impulse (DMU, Dominaria)
 - [x] 350 Temple of Abandon (BLC, Kamigawa)
-- [ ] Domknięcie: milestone + historia + opis PR.
+- [x] Domknięcie: milestone (M442) + historia + opis PR.
