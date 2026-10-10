@@ -2640,16 +2640,28 @@ export function execute(state, input) {
         : Object.freeze({ ...chosenOn, chosenColor: cmd.color });
       state.objects.set(targetId, updated);
     }
-    // Batch65 (Zombie Boa): aktywacja „choose a color" dokłada znacznik
-    // blokowego zniszczenia NA TĘ TURĘ — lista, bo każda aktywacja to osobny
-    // „grant" (jak osobne zdolności opóźnione w oryginalnych zasadach).
+    // Batch65 (Zombie Boa): aktywacja „choose a color" TWORZY zdolność
+    // opóźnioną na tę turę. Rejestr stanowy jest tym samym mechanizmem co
+    // delayed trigger rozdziału Sagi: wpis żyje niezależnie od późniejszej
+    // utraty wydrukowanych zdolności, lecz wskazuje konkretny obiekt Boa.
+    // Każda aktywacja dokłada osobny grant (kolory mogą się powtarzać).
     if (pending.grantBlockDestroy) {
-      const withMark = state.objects.get(targetId);
-      if (withMark) {
-        state.objects.set(targetId, Object.freeze({
-          ...withMark,
-          blockDestroyColorsThisTurn: Object.freeze([...(withMark.blockDestroyColorsThisTurn ?? []), cmd.color]),
-        }));
+      const source = state.objects.get(targetId);
+      if (source?.zone === 'battlefield' && pending.delayedAbility?.trigger) {
+        state.turnAbilityGrants = [...(state.turnAbilityGrants ?? []), Object.freeze({
+          kind: 'block_destroy_delayed',
+          cardId: pending.sourceCardId ?? source.cardId ?? null,
+          sourceId: targetId,
+          controllerId: pending.playerId,
+          armedOnTurn: state.turn.number,
+          expiresWhenSourceChangesZone: true,
+          color: cmd.color,
+          trigger: Object.freeze({ ...pending.delayedAbility.trigger }),
+          effect: Object.freeze((Array.isArray(pending.delayedAbility.effect)
+            ? pending.delayedAbility.effect : [pending.delayedAbility.effect].filter(Boolean))
+            .map((effect) => Object.freeze({ ...effect }))),
+          sourceLki: pending.sourceLki ?? source,
+        })];
       }
     }
     state.events.push(event('color_choice_resolved', {

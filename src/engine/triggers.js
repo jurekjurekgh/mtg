@@ -3743,26 +3743,39 @@ function processTriggersScan(state, recentEvents) {
       }
       // Batch65 (Zombie Boa): „Whenever this creature becomes blocked by a
       // creature of that color this turn, destroy that creature." Para
-      // (atakujący × bloker) jak Wooden Stake („becomes blocked by a Vampire"),
-      // filtr = KOLOR blokera ze ZZNACZNIKÓW aktywacji „choose a color"
-      // (blockDestroyColorsThisTurn — po jednym znaczniku na aktywację;
-      // wygasają w cleanup). Kolor blokera EFEKTYWNY (CR 613). Cel znany
-      // z zdarzenia („that creature" = bloker) — queueTriggerToStack wprost
-      // z [blockerId], jak wzorzec Wooden Stake (tryFire zsyła []).
+      // (atakujący × bloker) jak Wooden Stake („becomes blocked by a Vampire").
+      //
+      // Audyt PR #162/F-5..F-7: źródłem prawdy jest UTWORZONA zdolność
+      // opóźniona z `turnAbilityGrants`, nie bieżące `effectiveAbilities(Boa)`.
+      // Wpis zachowuje wybrany kolor, deskryptor efektu i kontrolera z chwili
+      // utworzenia; utrata zdolności albo późniejsza zmiana kontroli Boa nie
+      // zmieniają kontrolera delayed triggera (CR 603.7). Zmiana strefy usuwa
+      // wpis w jedynym choke poincie `moveObjectDirectly` (CR 400.7).
       for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
-        const marks = attacker.blockDestroyColorsThisTurn ?? [];
-        if (marks.length === 0) continue;
-        for (const ability of effectiveAbilities(attacker)) {
-          if (ability?.trigger?.event !== 'becomes_blocked_by_color') continue;
-          for (const blockerId of blockerIds ?? []) {
-            const blocker = state.objects.get(blockerId);
-            if (!blocker || blocker.zone !== 'battlefield') continue;
-            for (const color of marks) {
-              if (!effectiveColors(blocker).includes(color)) continue;
-              queueTriggerToStack(state, ability, attacker, [blockerId], events);
-            }
+        const grants = (state.turnAbilityGrants ?? []).filter((grant) =>
+          grant.kind === 'block_destroy_delayed'
+          && grant.sourceId === attackerId
+          && grant.armedOnTurn === state.turn.number
+          && grant.trigger?.event === 'becomes_blocked_by_color');
+        if (grants.length === 0) continue;
+        for (const blockerId of blockerIds ?? []) {
+          const blocker = state.objects.get(blockerId);
+          if (!blocker || blocker.zone !== 'battlefield') continue;
+          const blockerColors = effectiveColors(blocker);
+          for (const grant of grants) {
+            if (!blockerColors.includes(grant.color)) continue;
+            // Kolejkowanie używa bieżącej LKI ciała, lecz kontroler zdolności
+            // pochodzi z chwili jej utworzenia, nie z aktualnego permanentu.
+            const grantSource = Object.freeze({
+              ...attacker,
+              cardId: grant.cardId ?? attacker.cardId,
+              controllerId: grant.controllerId,
+            });
+            queueTriggerToStack(state, {
+              type: 'triggered', trigger: grant.trigger, effect: grant.effect,
+            }, grantSource, [blockerId], events);
           }
         }
       }

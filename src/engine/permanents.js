@@ -1569,8 +1569,8 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
-  // Zgłoszenie właściciela B1: opóźnione zdolności „this turn" (rozdział III
-  // Sagi) wygasają razem z resztą efektów do końca tury.
+  // Opóźnione zdolności „this turn" (rozdział III Sagi, Zombie Boa) wygasają
+  // razem z resztą efektów do końca tury.
   state.turnAbilityGrants = [];
   // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
   state.subtypeFlashThisTurn = [];
@@ -1591,11 +1591,6 @@ export function clearStatModifiers(state) {
     // defender” — flaga reguły ataku wygasa w cleanup.
     if (object.attacksAsThoughNoDefenderUntilEOT) {
       replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
-    }
-    // Batch65 (Zombie Boa): znaczniki „choose a color … this turn" (aktywacje
-    // z tej tury) wygasają w cleanup razem z resztą efektów do końca tury.
-    if ((object.blockDestroyColorsThisTurn ?? []).length > 0) {
-      replaceObject(state, state.objects.get(object.id), { blockDestroyColorsThisTurn: Object.freeze([]) });
     }
     const animated = state.objects.get(object.id);
     const animationEffects = animationEffectsOf(animated);

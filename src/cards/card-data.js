@@ -13376,9 +13376,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // 5. Zombie Boa (APC #54) {4}{B} — 3/3 Zombie Snake. „{1}{B}: Choose a
   // color. Whenever this creature becomes blocked by a creature of that color
   // this turn, destroy that creature. Activate only as a sorcery."
-  // Aktywacja: wybór koloru (pendingColorChoice) + znacznik na turę
-  // (choose_color_grant_block_destroy); trigger per para bloku jak Wooden
-  // Stake („becomes blocked by a Vampire"), cel = bloker („that creature").
+  // Aktywacja: wybór koloru (pendingColorChoice) TWORZY niezależną zdolność
+  // opóźnioną na tę turę. Deskryptor siedzi w samym efekcie aktywowanym — Boa
+  // nie ma osobnej, stale wydrukowanej zdolności triggerowanej. Dzięki temu
+  // delayed trigger działa po utracie zdolności i pamięta swego kontrolera.
   defineCard({
     id: 'zombie-boa', name: 'Zombie Boa', set: 'APC',
     types: ['Creature'], subtypes: ['Zombie', 'Snake'], colors: ['B'],
@@ -13391,12 +13392,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
         cost: { mana: 2, colors: ['B'] },
-        effect: { type: 'choose_color_grant_block_destroy' },
-      }),
-      createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'becomes_blocked_by_color' },
-        effect: [{ type: 'destroy_permanent' }],
+        effect: {
+          type: 'choose_color_grant_block_destroy',
+          delayedAbility: {
+            type: ABILITY_TYPE.triggered,
+            trigger: { event: 'becomes_blocked_by_color' },
+            effect: [{ type: 'destroy_permanent' }],
+          },
+        },
       }),
     ],
     support: { status: 'supported', limitations: [] },

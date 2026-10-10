@@ -115,6 +115,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
     toZone = 'exile';
   }
+  // Audyt PR #162/F-6 (CR 400.7): opóźniony grant wskazujący „this creature"
+  // należy do konkretnego obiektu pola bitwy. Po każdej zmianie strefy stary
+  // obiekt przestaje istnieć, więc jego grant nie może przykleić się do karty
+  // wracającej pod nowym id. Flaga zakresu chroni granty, które z definicji
+  // przeżywają odejście źródła (np. rozdział III Rediscover the Way).
+  if ((state.turnAbilityGrants ?? []).some((grant) =>
+    grant.expiresWhenSourceChangesZone && grant.sourceId === object.id)) {
+    state.turnAbilityGrants = state.turnAbilityGrants.filter((grant) =>
+      !(grant.expiresWhenSourceChangesZone && grant.sourceId === object.id));
+  }
   // Obiekt może opuścić pole bitwy przez koszt/efekt w oknie combat (np.
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
@@ -215,6 +225,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // lustra. Warunkowo jak blocksIfAble (bez szumu w sondzie no-op).
     ...(hasTemporaryCantBlock(object)
       ? { cantBlock: Boolean(object.cantBlockPrinted), cantBlockUntilCleanup: false }
+      : {}),
+    // Migracja zapisu Batch65: stare replaye mogły nosić ten znacznik na
+    // obiekcie. Nie wolno mu przeżyć zmiany strefy (CR 400.7); nowy silnik
+    // trzyma delayed trigger w `state.turnAbilityGrants`.
+    ...(object.blockDestroyColorsThisTurn
+      ? { blockDestroyColorsThisTurn: Object.freeze([]) }
       : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };

@@ -3827,9 +3827,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch65 (Zombie Boa): „{1}{B}: Choose a color. Whenever this creature
   // becomes blocked by a creature of that color this turn, destroy that
   // creature." — aktywowany wybór koloru przez WSPÓLNY mechanizm
-  // pendingColorChoice (Manor Gate/Benevolent Blessing); znacznik „na tę
-  // turę" dokłada handler resolve_color_choice (game-state.js, pole
-  // grantBlockDestroy) — jeden zapis wyboru, jedno źródło (L41).
+  // pendingColorChoice (Manor Gate/Benevolent Blessing).
+  //
+  // Audyt PR #162/F-5..F-7: deskryptor zdolności opóźnionej podróżuje ze
+  // zdolnością aktywowaną na stosie. Nie wolno później ponownie szukać
+  // „wydrukowanego triggera" na Boa: aktywowana zdolność jest niezależna od
+  // źródła (CR 113.7a), a utworzony delayed trigger działa mimo utraty
+  // abilities i zachowuje kontrolera z chwili utworzenia (CR 603.7).
   if (effect.type === 'choose_color_grant_block_destroy') {
     const targetId = sourceObject.id;
     if (!state.objects.get(targetId)) return;
@@ -3839,6 +3843,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       purpose: 'blockDestroy',
       grantBlockDestroy: true,
       sourceCardId: sourceObject.cardId ?? null,
+      delayedAbility: effect.delayedAbility ?? null,
+      sourceLki: sourceObject,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('color_choice_required', {

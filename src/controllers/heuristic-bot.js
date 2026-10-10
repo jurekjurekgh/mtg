@@ -1203,8 +1203,8 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   // Batch 58/B5 (Resurrected Cultist): powrót z grobu — jak unearth.
   'return_source_from_graveyard',
   'attach_equipment_to_source', 'craft_transform', 'gain_life',
-  // Batch65 (Zombie Boa): każda aktywacja dokłada ZNACZNIK koloru na turę
-  // (lista blockDestroyColorsThisTurn) — dublowanie na stosie kumuluje.
+  // Batch65 (Zombie Boa): każda aktywacja tworzy osobny delayed trigger
+  // w `turnAbilityGrants` — dublowanie na stosie kumuluje.
   'choose_color_grant_block_destroy',
   // Batch 58/B4 (Scroll of Avacyn): `conditional` to OPAKOWANIE efektów, więc
   // o kumulacji decydują gałęzie — w katalogu są to dobranie kart i zysk

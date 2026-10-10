@@ -15,13 +15,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView, moveObjectDirectly } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalTargetCandidates } from '../src/engine/spells.js';
+import { processTriggers } from '../src/engine/triggers.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
@@ -419,13 +420,13 @@ test('B65/336: Zombie Boa — dane Oracle: 3/3 za {4}{B}, „choose a color" + d
   assert.equal(def.power, 3);
   assert.equal(def.toughness, 3);
   assert.equal(def.manaCost, 5);
-  assert.equal(def.abilities.length, 2);
+  assert.equal(def.abilities.length, 1, 'Oracle ma jedną zdolność aktywowaną tworzącą delayed trigger');
   const act = def.abilities[0];
   assert.equal(act.type, 'activated');
   assert.equal(act.timing, 'sorcery', '„Activate only as a sorcery"');
   assert.deepEqual(act.cost, { mana: 2, colors: ['B'] }, '{1}{B}');
-  assert.deepEqual(act.effect, { type: 'choose_color_grant_block_destroy' });
-  const trg = def.abilities[1];
+  assert.equal(act.effect.type, 'choose_color_grant_block_destroy');
+  const trg = act.effect.delayedAbility;
   assert.equal(trg.type, 'triggered');
   assert.deepEqual(trg.trigger, { event: 'becomes_blocked_by_color' });
   assert.deepEqual(trg.effect, [{ type: 'destroy_permanent' }], 'cel = bloker („that creature”)');
@@ -439,7 +440,8 @@ test('B65/336: Zombie Boa — wybrany kolor: bloker tego koloru jest NISZCZONY p
   put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, colors: ['R'] });
   addMana(st, 'p1', 2, { colors: ['B'] });
   wybierzKolor(st, 'boa', 'R'); // aktywacja TYLKO jako sorcery — więc w main
-  assert.deepEqual(st.objects.get('boa').blockDestroyColorsThisTurn, ['R'], 'znacznik na turę zapisany');
+  assert.deepEqual(st.turnAbilityGrants.map((grant) => grant.color), ['R'],
+    'niezależny delayed trigger na tę turę zapisany w rejestrze stanu');
   st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
   st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
   enterBlocks65(st, ['boa']);
@@ -475,6 +477,62 @@ test('B65/336: Zombie Boa — filtr koloru: bloker innego koloru przeżywa; bez 
   assert.ok(decl2.ok);
   settle(st2);
   assert.ok(find(st2, 'rustvine-cultivator', 'battlefield'), 'bez aktywacji trigger nie działa („this turn”)');
+});
+
+test('B65/336: Zombie Boa — delayed trigger działa po utracie wydrukowanych zdolności', () => {
+  // RED audytu PR #162: aktywacja tworzy niezależną zdolność opóźnioną.
+  // Jej istnienie nie może być ponownie wyprowadzane z abilities Boa w chwili bloku.
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  const boa = st.objects.get('boa');
+  st.objects.set('boa', Object.freeze({
+    ...boa, abilitiesStripped: true, abilitiesStrippedAt: (boa.timestamp ?? 0) + 1,
+  }));
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa']);
+  run(st, { type: 'declare_blockers', playerId: 'p2', assignments: { boa: ['blok'] } });
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'graveyard'),
+    'utworzony delayed trigger niszczy blokera mimo późniejszej utraty abilities');
+});
+
+test('B65/336: Zombie Boa — zmiana strefy kasuje grant starego obiektu (CR 400.7)', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  moveObjectDirectly(st, 'boa', 'hand', 'boa-hand');
+  assert.equal(st.turnAbilityGrants.some((grant) => grant.sourceId === 'boa'), false,
+    'choke point zmiany strefy usuwa wpis starego obiektu od razu');
+  moveObjectDirectly(st, 'boa-hand', 'battlefield', 'boa-return');
+  st.objects.set('boa-return', Object.freeze({ ...st.objects.get('boa-return'), summoningSickness: false }));
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa-return']);
+  run(st, { type: 'declare_blockers', playerId: 'p2', assignments: { 'boa-return': ['blok'] } });
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'battlefield'),
+    'powracająca Boa jest nowym obiektem i nie dziedziczy wyboru koloru');
+});
+
+test('B65/336: Zombie Boa — delayed trigger zachowuje kontrolera z chwili utworzenia', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  st.objects.set('boa', Object.freeze({ ...st.objects.get('boa'), controllerId: 'p2' }));
+  processTriggers(st, [{ type: 'blockers_declared', assignments: { boa: ['blok'] } }]);
+  const queued = st.zones.stack.map((id) => st.objects.get(id))
+    .find((o) => o?.kind === 'trigger' && o.triggerEntry?.targets?.[0] === 'blok');
+  assert.ok(queued, 'blok koloru R kolejkuje wcześniej utworzony delayed trigger');
+  assert.equal(queued.controllerId, 'p1',
+    'kontroler delayed triggera jest utrwalony przy utworzeniu, nie odczytany z Boa po zmianie kontroli');
 });
 
 test('B65/336: Zombie Boa — aktywacja tylko jako sorcery (brak oferty poza główną fazą)', () => {
