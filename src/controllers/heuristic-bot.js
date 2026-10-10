@@ -608,15 +608,85 @@ function pumpChangesOutcome(view, recipient, delta = {}) {
   return JSON.stringify(before) !== JSON.stringify(after);
 }
 
+/**
+ * J (zgłoszenie właściciela 2026-10-09, Fleeting Distraction): debuff MOCY
+ * na wrogim ATAKUJĄCYM może odwrócić wynik hipotetycznej walki — mój bloker
+ * ginie przed („lethal przy blokowaniu"), żyje po debuffie. Bez tego wymiaru
+ * debuff w sima (2/2→1/2: witch zabija sima i sama przeżywa) i w butchera
+ * (3/2→2/2: tylko −1 obrażeń w twarz) dostawały RÓWNĄ wartość (oba „zmieniają
+ * wynik” przez redukcję face-damage) i bot wybierał pierwszy z listy ofert.
+ * Model: pojedynczy hipotetyczny blok 1v1 (jak hypotheticalSaves savage-like,
+ * CR 510); evasion uproszczona — flying atakującego wymaga flying/reach
+ * blokera (CR 702.9b), reszta ograniczeń blokowania poza zakresem.
+ * Generycznie po deskryptorze (delta mocy < 0 na atakującym, ADR 0002).
+ */
+function negativePumpBlockerSaveValue(view, attacker, delta) {
+  if (!attacker || attacker.controllerId === view.playerId) return 0;
+  if ((delta?.power ?? 0) >= 0) return 0; // tylko debuff mocy ratuje blokera
+  const combat = view.combat ?? null;
+  if (!combat || !(combat.attackers ?? []).includes(attacker.id)) return 0;
+  const attackerFlies = (attacker.keywords ?? []).includes('flying');
+  const aBefore = duelStats(attacker, {});
+  const aAfter = duelStats(attacker, delta);
+  let best = 0;
+  for (const b of view.zones.battlefield ?? []) {
+    if (b.controllerId !== view.playerId || b.kind !== 'creature') continue;
+    if (b.tapped || b.cantBlock) continue;
+    const bkw = b.keywords ?? [];
+    if (attackerFlies && !bkw.includes('flying') && !bkw.includes('reach')) continue;
+    const bStats = duelStats(b, {});
+    const before = simulateCombat(aBefore, [bStats]);
+    if (!before.deadBlockers.includes(b.id)) continue; // bloker i tak przeżywa
+    const after = simulateCombat(aAfter, [bStats]);
+    if (after.deadBlockers.includes(b.id)) continue; // debuff nie ratuje
+    best = Math.max(best, permanentMaterialValue(b));
+  }
+  return best;
+}
+
+/**
+ * M (zgłoszenie właściciela 2026-10-09, Keep Out): czy nieletalny chip
+ * `amount` obrażeń we wrogiego ATAKUJĄCEGO umożliwia jego zabójstwo — mój
+ * potencjalny bloker przed chipem go nie zabija, po chippie (toughness
+ * − amount) już tak. Symulacja pojedynczego bloku 1v1 (jak J/savage
+ * hypotheticalSaves, CR 510); evasion uproszczona — flying atakującego
+ * wymaga flying/reach blokera (CR 702.9b). Cel-bloker (chip we wrogiego
+ * blokera) poza zakresem: rzadziej castowany, mniej jednoznaczny.
+ * Generycznie po deskryptorze (zadeklarowany atakujący + delta obrażeń,
+ * ADR 0002).
+ */
+function damageChipEnablesKill(view, attacker, amount) {
+  if (!attacker || attacker.controllerId === view.playerId) return false;
+  const amt = Number.isInteger(amount) ? amount : 0;
+  if (amt <= 0) return false;
+  const combat = view.combat ?? null;
+  if (!combat || !(combat.attackers ?? []).includes(attacker.id)) return false;
+  const attackerFlies = (attacker.keywords ?? []).includes('flying');
+  const aBefore = duelStats(attacker, {});
+  const aAfter = duelStats(attacker, { toughness: -amt });
+  for (const b of view.zones.battlefield ?? []) {
+    if (b.controllerId !== view.playerId || b.kind !== 'creature') continue;
+    if (b.tapped || b.cantBlock) continue;
+    const bkw = b.keywords ?? [];
+    if (attackerFlies && !bkw.includes('flying') && !bkw.includes('reach')) continue;
+    const bStats = duelStats(b, {});
+    if (simulateCombat(aBefore, [bStats]).attackerDies) continue; // ginie i bez chipa
+    if (simulateCombat(aAfter, [bStats]).attackerDies) return true; // chip dobija
+  }
+  return false;
+}
+
 /** Wspólna wycena ujemnej pompy czaru/aktywacji; delta już policzona
  * z widoku, więc dynamiczne P/T nie trafiają do Math.abs jako obiekt.
  * Kill przez 0 toughness działa także poza walką (CR 704.5f).
  */
 function negativePumpValue(view, target, delta) {
   if (!target || target.controllerId === view.playerId) return -60;
+  // J: do wartości debuffu doliczamy uratowane ciało blokera (0 poza walką).
+  const saved = negativePumpBlockerSaveValue(view, target, delta);
   return pumpChangesOutcome(view, target, delta)
-    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0)
-    : -75;
+    ? 25 + 4 * Math.abs(delta.power ?? 0) + 4 * Math.abs(delta.toughness ?? 0) + saved
+    : (saved > 0 ? saved : -75);
 }
 
 /**
@@ -4958,9 +5028,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       return lethalEnemyCreatureValue(view, t);
     }
-    // Nieletalny cios: w oknie walki neutralny (może zmienić wynik — liczone
-    // osobno); poza walką CZYSTA STRATA — zakaz.
-    return combatTrickWindow(view, t) ? 0 : -80;
+    // Nieletalny cios: w oknie walki ma wartość TYLKO gdy razem z moim
+    // blokiem DOBIJA ten stwór (M — zgłoszenie właściciela 2026-10-09,
+    // Keep Out: chip 4 w atakującą 4/5 bez blokerów = czar i mana
+    // zmarnowane; czysto-ofensywny czar nie jest wtedy rzucany — patrz
+    // isDamageOnly w cast_spell). Bez możliwości dobicia chip to 0,
+    // poza walką CZYSTA STRATA — zakaz.
+    if (combatTrickWindow(view, t)) {
+      return damageChipEnablesKill(view, t, amt) ? lethalEnemyCreatureValue(view, t) : 0;
+    }
+    return -80;
   };
 
   // Batch60-followup/1 (2026-09-27, ograniczenie 1): czy TRZYMANIE czaru do
@@ -9016,6 +9093,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const isDrawOnly = effects.length > 0 && effects.every((e) => e?.type === 'draw_cards'
           || e?.type === 'draw_cards_both_players');
         if (isDrawOnly) score = -1;
+        // M (zgłoszenie właściciela 2026-10-09, Keep Out): czar, którego
+        // CAŁA treść to zadawanie obrażeń celowych (każdy efekt typu damage
+        // albo damage_divided_among_targets), startuje PONIŻEJ passu — jak
+        // M146 (czysto-utylitarny) i A4-4 (czysto-dobór). Bez tego baza
+        // spellBase 50 sama niosła rzut ponad pass, gdy żaden cel nie
+        // dostawał wartości: nieletalny chip w stwora w oknie walki wycenia
+        // się na 0, więc bot rzucał Keep Out (4 dmg) w atakującą 4/5 bez
+        // blokerów — czar i mana zmarnowane, kreatura nic nie straciła.
+        // Wartość efektów sama decyduje: lethal = removal (>0), twarz =
+        // % życia (>0), chip bez możliwości dobicia = 0 (z −1 poniżej
+        // passu). Czar Z riderem (draw, gain_life…) NIE jest
+        // czysto-ofensywny — baza zostaje, chip jedzie jako darmowy bonus.
+        const isDamageOnly = effects.length > 0 && effects.every((e) => e?.type === 'damage'
+          || e?.type === 'damage_divided_among_targets');
+        if (isDamageOnly) score = -1;
         score -= castSacrificePenalty(view);
         // PMSSB-36/C: wypłata triggerów-licznika na polu (Opus: instant/sorcery).
         score += boardCastPayoffValue(view, cmd, cmd.type === 'cast_adventure'
@@ -9066,6 +9158,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const entry = stack.find((item) => item.id === id);
             return entry && entry.controllerId !== view.playerId;
           });
+          // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): flaga
+          // „kontra wykupiona" liczona RAZ, używana w dwóch miejscach —
+          // premia za zatrzymanie (niżej, tylko gdy NIE wykupiona) i kara
+          // E7/D2 (bez zmian decyzji). „Counter unless pays", którego
+          // płatnik ma czym opłacić, WYGAŚNIE — nie wolno mu dopisywać
+          // premii za zatrzymanie czaru, którego nie zatrzyma. Wypłacalność
+          // jak manaAvailableNow: pula + nietapnięte lądy (auto-tap silnika
+          // obejmuje wyłącznie lądy).
+          const counterUnlessPaidOff = (() => {
+            const unlessPays = effects.find((e) => e?.type === 'counter_spell_unless_pays');
+            if (!unlessPays || !foeTarget || ownTarget) return false;
+            const foeEntryId = (targets ?? []).find((tid) => {
+              const entry = stack.find((item) => item.id === tid);
+              return entry && entry.controllerId !== view.playerId;
+            });
+            const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
+            const payer = view.players.find((p) => p.id === payerId);
+            if (!payer) return false;
+            const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
+              && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
+            return (payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1);
+          })();
           if (ownTarget && !foeTarget) return finish(-90);
           if (ownTarget) score -= 60;
           // M237/2 (audyt Żywym Testerem): kontrujemy WROGI czar, ale wartość
@@ -9106,7 +9220,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // Sam tap/untap/self-mill/scry jednego permanentu = niski wpływ.
               return effs.some((e) => HIGH_IMPACT.has(e?.type));
             });
-            if (!targetImpactful) score -= 60; // trywialny cel — trzymaj kontrę
+            if (!targetImpactful) {
+              score -= 60; // trywialny cel — trzymaj kontrę
+            } else if (!counterUnlessPaidOff) {
+              // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage):
+              // premia za ZATRZYMANIE groźnego wpisu wroga — skala
+              // zatrzymanym zagrożeniem, nie flat. Root cause zgłoszenia:
+              // tryb kontry dostawał płaskie spellBase (50), więc w modalu
+              // kontra-vs-bounce bounce (80) wygrywał strukturalnie i bot
+              // odsyłał artefakt do ręki zamiast wysłać czar do grobu.
+              // Zatrzymany wpis wyceniamy jak removal celu wroga (ta sama
+              // baza i waga ciała — stwór na stosie to ciało, którego nie
+              // będzie) + dopłata za TMC (inwestycja many wroga, proxy
+              // groźby jak M237; stromsza niż removal, bo denial trwalszy
+              // niż tempo). Pierwszy wrogi wpis spośród celów — kontry są
+              // w praktyce jednocelowe. Generycznie po deskryptorze celu
+              // ze stosu (ADR 0002), nie po nazwie karty.
+              const stopped = targets.map((tid) => stack.find((item) => item.id === tid))
+                .find((entry) => entry && entry.controllerId !== view.playerId);
+              // Ciało zatrzymywanego stwora bierzemy z DEFINICJI (widok nie
+              // niesie P/T wpisów stosu — tylko manaCost/kind): na stosie nie
+              // działają liczniki ani efekty ciągłe P/T, więc drukowane P/T
+              // ZAWSZE równa się aktualnym (brak wyjątków w silniku).
+              const stoppedDef = stopped?.cardId ? cardDef(stopped.cardId) : undefined;
+              const stoppedWorth = (stopped?.power ?? stoppedDef?.power ?? 0)
+                + (stopped?.toughness ?? stoppedDef?.toughness ?? 0);
+              score += P.removalEnemyBase + P.removalWorthWeight * stoppedWorth
+                + P.counterspellTmcWeight * (stopped?.manaCost ?? 0);
+            }
           }
           // E7/D2 (zgłoszenie właściciela): „counter unless its controller
           // pays {N}" (Frightful Delusion) — kontroler CELU decyduje o dopłacie,
@@ -9124,12 +9265,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               return entry && entry.controllerId !== view.playerId;
             });
             const payerId = stack.find((item) => item.id === foeEntryId)?.controllerId ?? null;
-            const payer = view.players.find((p) => p.id === payerId);
-            if (payer) {
-              const fromLands = view.zones.battlefield.filter((o) => o.controllerId === payerId
-                && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
-              if ((payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1)) score -= 90;
-            }
+            // E7/D2: wykupiona kontra wygasa (-90); wypłacalność liczy flaga
+            // counterUnlessPaidOff (L, wyżej) — ta sama decyzja, jedno źródło.
+            if (counterUnlessPaidOff) score -= 90;
             // PMSSB-6/F-A4: rider-odrzut delusion (bezwarunkowy — jedzie przy
             // strzale-teraz i przy strzale-później, więc dowód kasowania
             // PMSSB-5 żyje (hold/fire bez zmian); tu tylko porządek

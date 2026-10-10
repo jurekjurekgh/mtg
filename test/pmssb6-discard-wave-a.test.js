@@ -139,7 +139,7 @@ test('F-A1 guard: loot (PMSSB-8/F-L1: scholar 4, fisher 71.1036)', () => {
   handCard(b, 'c1', 'shock'); handCard(b, 'c2', 'twiddle');
   assert.ok(Math.abs(scores(b, 'cast_permanent(fi').options[0].score - 71.1036) < 1e-9);
 });
-test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 54)', () => {
+test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 82)', () => {
   const s = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
   s.turn = jumpToStep(s.turn, 'main', 'p2');
   s.turn.activePlayerId = 'p2';
@@ -151,6 +151,7 @@ test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 54)', () => {
   addObject(s, { id: 'fbst', instanceId: 'i-fbst', cardId: 'fireball', controllerId: 'p2', ownerId: 'p2', zone: 'stack', ...gameObjectDataOf(fb) });
   foeHand(s, ['shock', 'twiddle', 'fireball']);
   const { chosen, options } = scores(s, 'cast_spell(dl');
-  assert.equal(options[0].score, 54);
+  // L: 54 → 82 (+28 premii za zatrzymany fireball MV1: 50+22+6+4 rider).
+  assert.equal(options[0].score, 82);
   assert.equal(chosen.type, 'cast_spell');
 });

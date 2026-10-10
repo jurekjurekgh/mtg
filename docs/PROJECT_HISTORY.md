@@ -19,6 +19,124 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-09e — zgłoszenie N: Crumb and Get It, brak wyboru daru (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** rzucając Crumb and Get It („Gift a
+Food” + pump + ew. indestructible) użytkownik nie miał wyboru, czy obiecuje
+gift przeciwnikowi.
+
+**Root cause:** silnik oferuje oba warianty (z/bez `gifted`, CR 702.174a) i K
+(2026-09-19b) grupuje je w jeden wpis panelu z modalem — ale grupa „cel ×
+obietnica” łapała `singleTargetPlanOf` (kreator celów), a jego zatwierdzenie
+(`commandForSelection`) dopasowuje komendę TYLKO po `targets` (+ `xValue`) —
+nie zna `gifted`. Zatwierdzenie wybierało pierwszy wariant (bez daru): wybór
+przepadał. K pinował tylko grupowanie panelu, nie ścieżkę kreatora.
+
+**Fix:** strażnik `uniformGiftOf` (multi-target.js) w planach kreatora —
+`singleTargetPlanOf`, `multiTargetPlanOf`, `castModePlanOf`,
+`sacrificeCastPlanOf`, `dividedCastPlanOf`: grupa z NIEJEDNOLITYM darem
+wraca null i pada na fallback `buttonsPlanOf` — osobny przycisk na wariant,
+etykieta „(dar)” rozróżnia. Kontrakt K trzymany (jeden wpis panelu, modal
+z wyborem). Jednolity dar (wszędzie taki sam) nie jest wyborem — plan wolny.
+ADR 0002 — po polu komendy, nie po karcie. `castWindowPlanOf` bezpieczny
+(wiersz = tożsamościowo komenda).
+
+**Testy:** 8 nowych w `test/uwaga-n-gift-wybor.test.js` (N/1–N/5: plany
+odrzucają niejednolity dar, fallback, integracja panelu; N/6–N/8 kontrole:
+bez daru kreator działa, jednolity dar plan wolny, silnik oferuje oba
+warianty). Testy K zielone bez zmian.
+
+**Bramki:** fast 7951/7951, build 73/4974,6 kB, benchmark 10/10,
+golden-master trzyma (zmiana czysto UI). PR #161.
+
+## 2026-10-09d — zgłoszenie M: Keep Out, czysto-ofensywny czar bez efektu (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** bot rzucał Keep Out („4 damage to
+target tapped creature” / „destroy target enchantment”) w atakującą 4/5
+bez blokerów ani czego dobić — chip 4 w 4/5 nic nie dawał, czar i mana
+zmarnowane.
+
+**Root cause:** nieletalny chip w stwora w oknie walki wyceniał się na 0
+(„może zmienić wynik”), a baza `spellBase` 50 sama niosła rzut ponad pass
+— czar czysto-ofensywny nie miał bramki jak M146 (czysto-utylitarny) czy
+A4-4 (czysto-dobór). Sonda: Keep Out tryb 1 w 4/5 = 50 → rzut (błąd).
+
+**Fix (dwie części, jedna klasa):**
+1. `isDamageOnly` (cast_spell): czar, którego CAŁA treść to obrażenia
+   celowe (`damage` / `damage_divided_among_targets`), startuje poniżej
+   passu (−1) — wartość efektów sama decyduje: lethal = removal, twarz =
+   % życia, chip bez kill-a = 0 (poniżej passu). Z riderem (draw/gain_life)
+   baza zostaje — chip jedzie jako darmowy bonus.
+2. `damageChipEnablesKill` (damageTargetValue — L41: czary + zdolności):
+   chip w stwora w oknie walki ma wartość TYLKO gdy razem z moim blokerem
+   dobija atakującego (symulacja 1v1, CR 510 — jak J). Anti-over-fix:
+   Keep Out w 4/5 z blokerem 1/1 = 49 → rzuca (chip 4 + blok 1 = kill).
+
+**Testy:** 6 nowych w `test/uwaga-m-keepout-chip.test.js` (M główny: −1,
+trzyma; anti-over-fix 49; enchantment → tryb 2 = 76; lethal 4/4 → 47;
+twarz Shock → 9 rzuca; chip poza walką −81). Aktualizacja pinów Shock
+(PMSSB-32/A5 60→9, A5b 86→35/60→9, PMSSB36-C1 60→9 — decyzje bez zmiany,
+wartości tracą starą bazę 50). Golden-master: decyzje 263 vs 263 bez
+zmiany, scoreSum −51 → fixture zregenerowany świadomie.
+
+**Bramki:** fast 7943/7943, build 73/4972,8 kB, benchmark 10/10,
+golden-master 4/4 (po regeneracji). PR #161.
+
+## 2026-10-09c — zgłoszenie L: Steel Sabotage, kontra bez premii (PR #161)
+
+**Zgłoszenie właściciela (uwaga z gry):** bot rzucał Steel Sabotage i
+zamiast skontrować czar artefaktu wybierał „zwrot do ręki" — dając
+przeciwnikowi darmową powtórkę.
+
+**Root cause:** wycena kontry (`counter_spell`/`counter_spell_unless_pays`/
+`counter_ability`) dawała płaskie `spellBase` (50), bez premii za CO
+zatrzymuje — w modalu kontra-vs-bounce bounce (80) wygrywał strukturalnie.
+Sonda potwierdziła: sabotaż vs Lantern MV3 na stosie + artefakt 0/0 na stole
+= kontra 50, bounce 80 → modeIndex 1.
+
+**Fix:** kontra groźnego wpisu wroga dostaje premię jak removal celu
+(`removalEnemyBase` + `removalWorthWeight` × ciało; P/T z definicji — widok
+nie niesie P/T wpisów stosu) + nowy parametr `counterspellTmcWeight` = 6
+(2 parytet removalu + 4 trwałość: grób zamiast ręki, denial trwalszy niż
+tempo). Skaluje generycznie po deskryptorze celu ze stosu (ADR 0002); zero
+nazw kart. `counter_spell_unless_pays`, którego płatnik ma czym opłacić,
+NIE dostaje premii (kontra wygasa) — flaga `counterUnlessPaidOff` liczona raz,
+używana w dwóch miejscach (premia + kara E7/D2, bez zmiany decyzji).
+Podłoga 5: poniżej wraca błąd L. Anti-over-fix: bounce 5/5 (104) bije kontrę
+MV3 (90) — przeżycie przede wszystkim.
+
+**Testy:** 4 nowe w `bot-modal-modes.test.js` (sabotaż kontruje; anti-over-fix
+bounce 5/5; izzet-charm kontra MV7 = 114; wybór celu 7/7 > 2/2 — 130 vs 98).
+Pin `counterspellTmcWeight` (przepływ 78 → 132) w `bot-params.test.js`.
+Aktualizacja pinów F-H3 (pmssb5: 50 → 78/84, delusion tapped-out 50 → 78,
+abstruse 59.97 → 87.97, fuel 50 → 78, wojna 50 → 84) i PMSSB-18/R1 (57 → 97,
++40 za zatrzymany czar MV3). PMSSB-6/F-A4 delusion 54 → 82.
+
+**Bramki:** fast 7931/7931, build 73/4967,8 kB, benchmark 10/10,
+golden-master TRZYMA (partie nie produkują decyzji kontr — zmiana jest
+poza jego promieniem). PR #161.
+
+## 2026-10-09b — audyt PR #160 i naprawa Z-1 (PR #161)
+
+Plan `docs/plans/PLAN_2026-10-09b-audyt-pr160.md`, raport
+`docs/audits/AUDYT_PR160_2026-10-09.md`. Werdykt: PASS WITH FINDINGS.
+R-1–R-5 zweryfikowane (mutacje M1–M8 wszystkie zgodne z oczekiwaniami;
+metryki raportu i pre-fixu odtworzone co do sztuki, w tym 7922/4961,9 kB
+na drzewie eed5571).
+
+* **Z-1 (naprawione):** efekt „can't block this turn" (R-1:
+  `cantBlockUntilCleanup`) nie gasł w zmianie strefy (CR 400.7; wyjątki
+  400.7a–m przejrzane — żaden nie dotyczy; L166). Warunkowy reset w
+  `moveObjectDirectly` (wzorzec `blocksIfAble`); druk zostaje. Piny Z-1/Z-1b
+  RED→GREEN, Z-2 (offspring nie kopiuje efektu, CR 707.2) dokumentuje inwariant.
+* **O-1 (naprawione):** komentarz w `materialize.js` o polu efektu
+  zaktualizowany do modelu R-1. Obserwacje O-2–O-4 bez działań.
+
+Bramki: baseline 7923/7923 + 73/4963,2 kB + bot-benchmark 10/10;
+post-fix 7926/7926 + 73/4963,7 kB; cr-numery --cr OK (518/517/5633).
+Tekst CR dociągnięty ponownie (codeload, SHA-256 identyczne z przypiętym).
+Bez pełnego B0 i test:all. PR #161 — po raporcie sesja zatrzymana.
+
 ## 2026-10-09 — audyt PR #159 i naprawy R-1–R-5 (follow-up PR #160)
 
 Plan audytu `docs/plans/PLAN_2026-10-09-audyt-pr159.md` został opublikowany

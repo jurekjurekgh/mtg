@@ -62,6 +62,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // efektu (destroy/exile/bounce, damage, draw), zero nazw kart (ADR 0002).
   'removalEnemyBase',        // baza za usunięcie permanentu wroga (dawniej +22)
   'removalWorthWeight',      // waga (power+toughness) usuwanego permanentu (dawniej *2)
+  // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): waga TMC
+  // ZATRZYMYWANEGO wpisu przy kontrze groźnego czaru/zdolności wroga.
+  // Kontra dostawała płaskie spellBase bez premii za CO zatrzymuje, więc
+  // w modalu kontra-vs-bounce bounce bił kontrę strukturalnie.
+  'counterspellTmcWeight',   // waga many zatrzymywanego czaru (6 = 2 parytet + 4 trwalość)
   // PMSSB-1 (M239/2: bounceEnemyBase/Weight usunięte — martwe; typ
   // return_to_hand nie występuje w kartach ani silniku). Rodzina „bounce":
   // siła efektu (hand < top < bottom) + wymiary celu (token-trwałość
@@ -535,6 +540,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   crackbackPenalty: 12,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
+  // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): kontra groźnego
+  // wpisu wroga dostaje premię jak removal (baza + waga ciała) + dopłatę za
+  // TMC zatrzymywanego czaru. 6 = 2 (parytet removalu M234 — jakby usunąć
+  // ten permanent) + 4 (trwałość: grób zamiast ręki, brak triggerów
+  // cast/ETB — denial wart więcej niż tempo bounce). Kalibracja: kontra
+  // MV3 (50+22+18=90) bije bounce drobiazgu, ale przegrywa z bounce
+  // realnej groźby ze stołu (przeżycie przede wszystkim). Podłoga 5:
+  // poniżej wraca błąd L (kontra MV3 ≤ bounce 2/2).
+  counterspellTmcWeight: 6,
   // PMSSB-1 (wartości przemyślane, pomiar PRZED: /tmp/pmssb1-bounce-przed.mjs):
   // top 8 (~1 dobór wroga mniej), bottom 18 (jak destroy-ETB — prawie
   // removal), token 12 (symetria z create_token 12), ETB waga 1 (pełna

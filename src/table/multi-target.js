@@ -37,6 +37,26 @@ function targetKey(targets) {
 }
 
 /**
+ * N (zgłoszenie właściciela 2026-10-09, Crumb and Get It): czy grupa wariantów
+ * jednego rzutu ma JEDNOLITY dar (CR 702.174a — `gifted`/`giftRecipientId`).
+ *
+ * Kreator celów (`singleTargetPlanOf`/`multiTargetPlanOf`) kończy wybór przez
+ * `commandForSelection`, który dopasowuje komendę TYLKO po `targets` (+ `xValue`)
+ * — nie zna wymiaru daru. Grupa „cel × obietnica” dawała więc kreator z samymi
+ * celami, a zatwierdzenie wybierało pierwszy pasujący wariant (bez daru):
+ * użytkownik nie miał żadnego wyboru, czy obiecuje gift (K/2026-09-19b pinował
+ * tylko grupowanie panelu, nie ścieżkę kreatora w modalu).
+ *
+ * Reguła: grupa z NIEJEDNOLITYM giftem nie może iść przez kreator — wraca
+ * null i pada na fallback `buttonsPlanOf` (wiersz na opcję, etykieta „(dar)”
+ * rozróżnia warianty). Jednolity gift (wszędzie taki sam) nie jest wyborem
+ * — plan wolno użyć. Generycznie po polu komendy (ADR 0002), nie po karcie.
+ */
+function uniformGiftOf(list) {
+  return new Set((list ?? []).map((cmd) => `${Boolean(cmd?.gifted)}:${cmd?.giftRecipientId ?? ''}`)).size <= 1;
+}
+
+/**
  * Plan wyboru dla grupy wariantów tego samego rzutu albo null, gdy grupa nie
  * jest „wielowymiarowa" (zwykły czar celowany radzi sobie listą celów).
  *
@@ -49,6 +69,10 @@ export function multiTargetPlanOf(commands) {
   const all = commands ?? [];
   const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
+  // N: niejednolity dar (cel × obietnica) — patrz uniformGiftOf. Bez tego
+  // zatwierdzenie kreatora wybierało wariant bez daru (commandForSelection
+  // nie zna `gifted`).
+  if (!uniformGiftOf(list)) return null;
   // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
   // okno rzutu z odmową (decline/cast:false) i wariantami celowanymi
   // dawało kreator wielocelowy BEZ wiersza odmowy (zmierzone: Vaan + czar
@@ -230,6 +254,8 @@ export function sacrificeCastPlanOf(commands) {
     && cmd.sacrificeTargetId != null
     && Array.isArray(cmd.targets) && cmd.targets.length >= 1);
   if (list.length !== options.length) return null;
+  // N: niejednolity dar — commandForSacrificeSelection nie zna `gifted`.
+  if (!uniformGiftOf(list)) return null;
   if (!list.every((cmd) => cmd.objectId === list[0].objectId
     && (cmd.modeIndex ?? null) === (list[0].modeIndex ?? null))) return null;
   const sacrifices = [];
@@ -286,6 +312,8 @@ export function commandForSacrificeSelection(commands, { targets = [], sacrifice
 export function dividedCastPlanOf(commands) {
   const list = (commands ?? []).filter((cmd) => cmd?.type === 'cast_spell' && Array.isArray(cmd.damageDivision));
   if (list.length < 2 || list.length !== (commands ?? []).length) return null;
+  // N: niejednolity dar — commandForDivisionSelection nie zna `gifted`.
+  if (!uniformGiftOf(list)) return null;
   if (!list.every((cmd) => cmd.objectId === list[0].objectId
     && targetKey(cmd.targets ?? []) === targetKey(list[0].targets ?? []))) return null;
   const candidateIds = [];
@@ -573,6 +601,8 @@ export function singleTargetPlanOf(commands) {
   if (spells.length === options.length) {
     const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
     if (xValues.size > 1) return null; // grupa z {X} → kreator z licznikiem
+    // N: niejednolity dar (cel × obietnica) — kreator celów zgubiłby wybór.
+    if (!uniformGiftOf(spells)) return null;
     if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
       && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;
     const targets = [];
@@ -932,6 +962,9 @@ export function castModePlanOf(commands) {
   // Wyłącznie warianty JEDNEGO rzutu: ta sama karta, ten sam typ komendy,
   // każda komenda niesie tryb (deskryptor `modeIndex`, ADR 0002 — zero nazw kart).
   if (!options.every((cmd) => cmd?.type === 'cast_spell' && cmd.modeIndex != null)) return null;
+  // N: niejednolity dar (tryb × obietnica) — reps biorą pierwszy wariant,
+  // wybór daru przepadłby w kroku 2 (kreator celów, patrz uniformGiftOf).
+  if (!uniformGiftOf(options)) return null;
   const objectId = options[0].objectId;
   if (!options.every((cmd) => cmd.objectId === objectId)) return null;
   const modes = [...new Set(options.map((cmd) => cmd.modeIndex))].sort((a, b) => a - b);

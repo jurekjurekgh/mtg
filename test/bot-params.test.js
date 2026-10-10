@@ -32,6 +32,9 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   // Rodzina „removal, obrażenia i przewaga kartowa".
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalEnemyBase, 22);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalWorthWeight, 2);
+  // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): waga TMC
+  // zatrzymywanego czaru przy kontrze (2 parytet + 4 trwałość).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.counterspellTmcWeight, 6);
   // PMSSB-1/A (M239/2): bounceEnemyBase/Weight usunięte (typ
   // return_to_hand nie istnieje); rodzina „bounce” (wartości przemyślane —
   // test/audyt-pmssb1-bounce.test.js).
@@ -174,6 +177,42 @@ test('params: removalEnemyBase realnie przepływa do wyceny czaru usuwającego',
   const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { removalEnemyBase: 80 }, registry }));
   assert.ok(base != null && bumped != null, 'oba boty muszą widzieć wariant rzutu removalu');
   assert.ok(bumped > base, `podbita baza removalu ma zwiększyć wycenę (${bumped} > ${base})`);
+});
+
+test('params: counterspellTmcWeight realnie przepływa do wyceny kontry', () => {
+  // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): negate w ręce +
+  // wrogi fireball (MV1) na stosie. Podbicie wagi 6→60 musi podnieść wycenę
+  // DOKŁADNIE o (60−6)×1 = 54 — dowód, że pokrętło działa (nie atrapa).
+  const build = () => {
+    const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
+    initializeResources(state);
+    state.turn = jumpToStep(state.turn, 'main', 'p2');
+    state.turn.activePlayerId = 'p2';
+    state.turn.priorityPlayerId = 'p1';
+    const neg = registry.get('negate');
+    const fb = registry.get('fireball');
+    addObject(state, {
+      id: 'ng', instanceId: 'ing', cardId: 'negate', controllerId: 'p1',
+      zone: 'hand', kind: 'spell', manaCost: neg.manaCost, spell: neg.spell,
+      abilities: [], keywords: [], subtypes: [], types: ['Instant'],
+    });
+    addObject(state, {
+      id: 'fb', instanceId: 'ifb', cardId: 'fireball', controllerId: 'p2', ownerId: 'p2',
+      zone: 'stack', kind: 'spell', manaCost: fb.manaCost, spell: fb.spell,
+      abilities: [], keywords: [], subtypes: [], types: ['Sorcery'],
+    });
+    addMana(state, 'p1', 9);
+    return playerView(state, 'p1');
+  };
+  const scoreOf = (bot) => {
+    bot.chooseCommand(build());
+    const cast = bot.trace().at(-1).options.find((o) => o.cmd.startsWith('cast_spell(ng'));
+    return cast ? cast.score : null;
+  };
+  const base = scoreOf(createHeuristicBot({ seed: 1, registry }));
+  const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { counterspellTmcWeight: 60 }, registry }));
+  assert.equal(base, 78);
+  assert.equal(bumped, 132);
 });
 
 // --- M257 r4/B6 T1: rodzina „aura” -------------------------------------------
