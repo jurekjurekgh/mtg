@@ -16417,7 +16417,8 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
     tylko w zbiorze efektów kumulujących się na stosie i nie miał gałęzi
     w wycenie aktywacji (pomiar PRZED: dokładnie 0,0). Nowy helper
     `blockDestroyColorValue`: bramka ataku × najlepsza ofiara danego koloru
-    (maksimum, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za warunkowość.
+    (maksimum, nie suma — wybór przy rozstrzyganiu, CR 608.2d) × ciało
+    P×2+T×1 × 0,5 za warunkowość.
     PO: 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; pusty stół wroga = 0,0 (anty-over-fix).
   - **F7** Skyscythe Engulfer — `hostEvadesBlockers` bez gałęzi
     `cantBeBlockedByKeywords` (komentarz przy `cantBeBlockedByPower` obiecuje
@@ -16474,3 +16475,31 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
 - **Commity**: `6a62018` (audyt zasięgu, pin F4), `69b3483`
   (pay-trigger-net-model, piny F5/F6). Bramki: pełne B0 8291/8291,
   `npm test` 8030/8030, build 73 / 5010,6 kB, cr-numery OK, CI zielone.
+
+## 2026-10-10 — audyt PR #162: batch 65, delayed triggery i LKI refleksu
+
+- Audyt pełnego net-diffu PR #162: **59 plików, +4309/−92**, baza
+  `1732c3d`, merge `dab1488`. Raport z jawnym rejestrem każdego pliku:
+  `docs/audits/AUDYT_PR162_2026-10-10.md`. Werdykt **PASS WITH FINDINGS**;
+  12 findingów kodu/kontraktu/UX/dokumentacji i 3 luki jakości testów, wszystkie zamknięte.
+- Bot: Zombie Boa wybiera teraz kolor najcenniejszego blokera tą samą miarą,
+  którą wycenia aktywację (`80de4c8`, pin PMSSB C4). Ambulatory Edifice nie
+  płaci 2 życia przy samym szkodliwym celu ani śmiertelnym stanie życia, lecz
+  płaci przy zdrowiu i wrogim celu (`b9fae79`).
+- Silnik: `creature_or_planeswalker` deduplikuje obiekt hybrydowy u źródła
+  (`97bf51a`). Zombie Boa tworzy prawdziwy delayed trigger w
+  `turnAbilityGrants`: działa po utracie abilities, nie przeżywa zmiany strefy
+  starego obiektu i zachowuje kontrolera z chwili utworzenia (`acb241c`, CR
+  113.7a/400.7/603.7). Refleks Edifice niesie LKI źródła po jego odejściu z
+  battlefield i nadal wybiera cel (`4dca386`, `reflexive_pay`).
+- Kontrakt/UI: `PlayerView` akumuluje równoczesne niezależne restrykcje
+  blokowania (`e90ca2a`); tytuł wyboru Boa nazywa niszczenie blokera
+  (`19577e4`). Diagnostyka ratchetów Batcha 65 i trzy mylące tezy testów
+  zostały sprostowane (`acd7d2c`, `0d8574f`). Test Blitza wykonuje teraz
+  obrażenia Creature Planeswalkerowi, zamiast sprawdzać wyłącznie ofertę.
+- Dokumentacja: Blitz nie ma Devoid; Skyscythe wymagał zmian w combat/view/UI/
+  heurystyce; PMSSB-60 jest zamknięte i ma **26 pinów**. Błędną podstawę
+  „maksimum kolorów” CR 601.2f zastąpiono wyborem przy rozstrzyganiu — CR
+  608.2d (`3cfb05e`). `cr-numery --cr` pozostaje zielone.
+- Pełna brama końcowa i dokładne wyniki są zapisane w raporcie audytu oraz
+  `docs/setup/HANDOFF_2026-10-10.md`.

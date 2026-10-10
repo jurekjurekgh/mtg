@@ -23,15 +23,15 @@ Gałąź sesji: `arena/8ec8f610-mtg`; jeden PR tej sesji do `main`.
 
 ### A. Plan i PR sesji
 
-- [ ] Zapisać ten plan jako osobny commit, po zielonych `npm test` + build.
-- [ ] Pushnąć commit przyrostowo i otworzyć PR tej sesji przed zmianami kodu.
-- [ ] W opisie PR utrzymywać kumulatywnie wynik audytu i kolejne naprawy.
+- [x] Zapisać ten plan jako osobny commit, po zielonych `npm test` + build.
+- [x] Pushnąć commit przyrostowo i otworzyć PR tej sesji przed zmianami kodu.
+- [x] W opisie PR utrzymywać kumulatywnie wynik audytu i kolejne naprawy.
 
 **Commit 1:** `docs(plan): roadmapa audytu PR #162 i pętli jakości`.
 
 ### B. Audyt pełnego diffu PR #162 (ADR 0020 B)
 
-- [ ] Przejrzeć **każdy z 59 zmienionych plików**, z rejestrem w raporcie:
+- [x] Przejrzeć **każdy z 59 zmienionych plików**, z rejestrem w raporcie:
   1. dokumentacja/plany/handoff i zgodność deklarowanych pomiarów;
   2. snapshoty 10 kart, słownik kolekcji, definicje, koszty, talie i README;
   3. nowe/zmienione mechaniki engine: dynamic damage, target
@@ -40,20 +40,20 @@ Gałąź sesji: `arena/8ec8f610-mtg`; jeden PR tej sesji do `main`.
   4. UI daru i publiczne pola widoku;
   5. PMSSB-60 — wyceny, kontrfaktyki, pokrętła i zakres fal;
   6. wszystkie testy: czy mierzą deklarowaną regułę i czerwienieją po rewersie.
-- [ ] Zweryfikować Oracle/rulingi dziesięciu kart wobec źródeł zapisanych w
+- [x] Zweryfikować Oracle/rulingi dziesięciu kart wobec źródeł zapisanych w
   snapshotach i niezależnego źródła dostępnego przez GitHub; sprawdzić `plan`,
   `artId`, druk i pełne Oracle 1:1 (ADR 0010/0022/0028/0029).
-- [ ] Zweryfikować cytaty CR dla zmian regułowych z dosłownym aktualnym tekstem
+- [x] Zweryfikować cytaty CR dla zmian regułowych z dosłownym aktualnym tekstem
   CR pobranym online z dozwolonego źródła GitHub (ADR 0030), szczególnie CR
   107.4c, 205.2a, 400.7, 608.2h, 702.41, 702.114, 715.3b/715.4.
-- [ ] Odtworzyć kluczowe scenariusze produkcyjnymi ścieżkami, nie helperami
+- [x] Odtworzyć kluczowe scenariusze produkcyjnymi ścieżkami, nie helperami
   omijającymi `execute`/SBA (L68/L111): Adventure, ostatnia decyzja czaru,
   affinity, trigger Zombie Boa i dynamiczne obrażenia.
-- [ ] Sprawdzić generyczność (zero branchy po nazwie/ID karty w core), FoW,
+- [x] Sprawdzić generyczność (zero branchy po nazwie/ID karty w core), FoW,
   determinizm, kompletność `PlayerView` i zgodność oferta↔walidacja.
-- [ ] Uruchomić baseline `node --test test/bot-benchmark.test.js` oraz właściwe
+- [x] Uruchomić baseline `node --test test/bot-benchmark.test.js` oraz właściwe
   testy celowane; pełne logi wyłącznie do `.arena/`.
-- [ ] Zapisać raport `docs/audits/AUDYT_PR162_2026-10-10.md` z werdyktem,
+- [x] Zapisać raport `docs/audits/AUDYT_PR162_2026-10-10.md` z werdyktem,
   rejestrem 59 plików, dowodami i findingami.
 
 **Kryterium:** każdy plik ma jawny wynik przeglądu; każdy claim regułowy ma
@@ -69,34 +69,34 @@ Dla każdego znalezionego defektu, osobny mały przyrost:
 4. `npm test` + `npm run build` na zamrożonym drzewie;
 5. osobny commit i natychmiastowy push.
 
-- [ ] Findingi kodu/reguł naprawione.
-- [ ] Findingi testów/strażników naprawione.
-- [ ] Dokumentacja audytu aktualizowana po każdym przyroście.
+- [x] Findingi kodu/reguł naprawione.
+- [x] Findingi testów/strażników naprawione.
+- [x] Dokumentacja audytu aktualizowana po każdym przyroście.
 
 **Commity 2…N:** po jednym na samodzielnie zielony finding; bez squasha i bez
 force-pusha.
 
 ### D. Domyślna kontynuacja po audycie (ADR 0021)
 
-- [ ] Skonfrontować najnowsze plany na `main` ze stanem faktycznym. PMSSB-60
+- [x] Skonfrontować najnowsze plany na `main` ze stanem faktycznym. PMSSB-60
   nie ma checkboxów realizacji, więc jego kryteria weryfikujemy w audycie;
   nie powtarzamy wykonanych fal tylko dlatego, że handoff jest niepełny.
-- [ ] Jeśli plan ma realnie otwarte kryterium — podjąć je w miejscu urwania.
-- [ ] W przeciwnym razie wykonać jedną celowaną pętlę jakości na rodzinach
+- [x] Jeśli plan ma realnie otwarte kryterium — podjąć je w miejscu urwania.
+- [x] W przeciwnym razie wykonać jedną celowaną pętlę jakości na rodzinach
   dotkniętych PR #162: Żywy Tester/sonda headless + ręczna lektura wyniku,
   audyt innej osi CR i naprawa każdego wykrytego błędu.
-- [ ] Nie dodawać kart bez nowej listy właściciela (ADR 0029).
+- [x] Nie dodawać kart bez nowej listy właściciela (ADR 0029).
 
 **Kryterium:** dalsza praca wynika ze stanu repo, nie z backlogu ani wymyślonego
 batcha; znaleziony błąd ma root-cause fix i strażnika.
 
 ### E. Brama końcowa i dokumentacja
 
-- [ ] `npm test` (cicho), `npm run build` (cicho).
-- [ ] `npm run test:all` jako pełna brama CI, cicho do `.arena/` (ADR 0019).
-- [ ] `node --test test/bot-benchmark.test.js` po zmianach bota/enumeracji.
-- [ ] `node tools/cr-numery.mjs --cr` po zmianach regułowych/cytatach.
-- [ ] Zaktualizować plan (checkboxy + podsumowanie), raport audytu,
+- [x] `npm test` (cicho), `npm run build` (cicho).
+- [x] `npm run test:all` jako pełna brama CI, cicho do `.arena/` (ADR 0019).
+- [x] `node --test test/bot-benchmark.test.js` po zmianach bota/enumeracji.
+- [x] `node tools/cr-numery.mjs --cr` po zmianach regułowych/cytatach.
+- [x] Zaktualizować plan (checkboxy + podsumowanie), raport audytu,
   `docs/PROJECT_HISTORY.md`, nowy handoff sesji i opis PR.
 - [ ] Potwierdzić czyste drzewo, zgodność lokalnego HEAD ze zdalną gałęzią i
   zielone checki GitHub.
@@ -120,3 +120,12 @@ przyrostach; push przyrostowy.
 - Żywy Tester mierzy `dist/`; zawsze build przed pomiarem i żadnych
   transkryptów w Git.
 - Testy są uruchamiane cicho; brak końcowego wyniku = wynik nieznany, nie GREEN.
+
+## Podsumowanie realizacji
+
+Audyt zamknął **15 findingów** (12 kod/kontrakt/UX/dokumentacja + 3 jakość
+testów) w 10 przyrostach naprawczych. Celowana pętla jakości po audycie objęła granice
+Batcha 65: semantykę self-target no-op Drone, faktyczne obrażenia Blitza
+Creature Planeswalkerowi i poprawną podstawę zejścia Impulse ze stosu.
+PMSSB-60 było wykonane, ale dostało brakujący pin C4 decyzji koloru; razem
+26 pinów. Raport: `docs/audits/AUDYT_PR162_2026-10-10.md`.
