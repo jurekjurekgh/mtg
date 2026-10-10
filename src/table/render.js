@@ -2586,13 +2586,15 @@ function choiceSourceTitle(cmd, session, view) {
   // „Kolor (np. ochrona)" zgadywał CEL wyboru po pierwszym użyciu deskryptora
   // (aura), więc ląd z chooseColor proponował „ochronę", choć wybiera kolor
   // PRODUKOWANEJ many. Cel niesie pending z engine (purpose: 'mana' lądu /
-  // 'protection' aury), a źródło idzie z sourceCardId (M240/K) — panel i
-  // modal mówią to, co log „Rozgrywki": „Manor Gate — wybór koloru (produkcja
-  // many)". Bez pendingu w widoku zostaje goły deskryptor „Kolor".
+  // 'protection' aury / 'blockDestroy' Zombie Boa), a źródło idzie z
+  // sourceCardId (M240/K) — panel i modal mówią to, co log „Rozgrywki":
+  // „Manor Gate — wybór koloru (produkcja many)". Bez pendingu w widoku
+  // zostaje goły deskryptor „Kolor".
   if (cmd?.type === 'resolve_color_choice' && view?.pendingColorChoice) {
     const pcc = view.pendingColorChoice;
     const purpose = pcc.purpose === 'mana' ? 'produkcja many'
-      : (pcc.purpose === 'protection' ? 'ochrona przed nim' : null);
+      : (pcc.purpose === 'protection' ? 'ochrona przed nim'
+        : (pcc.purpose === 'blockDestroy' ? 'niszczenie blokera tego koloru' : null));
     const src = pcc.sourceCardId ? session.nameOf(pcc.sourceCardId) : null;
     const tail = purpose ? ` (${purpose})` : '';
     if (src) return `${src} — wybór koloru${tail}`;

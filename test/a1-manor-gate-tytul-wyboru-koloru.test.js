@@ -31,6 +31,15 @@ test('A1: aura z chooseColor — tytuł nazywa ochronę', () => {
   assert.equal(title, 'Benevolent Blessing — wybór koloru (ochrona przed nim)');
 });
 
+test('F-8 audytu PR #162: Zombie Boa — tytuł opisuje skutek wyboru koloru', () => {
+  const title = choiceGroupTitle(
+    colorRequest(),
+    fakeSession({ 'zombie-boa': 'Zombie Boa' }),
+    { pendingColorChoice: { purpose: 'blockDestroy', sourceCardId: 'zombie-boa' } },
+  );
+  assert.equal(title, 'Zombie Boa — wybór koloru (niszczenie blokera tego koloru)');
+});
+
 test('A1: bez pendingu w widoku zostaje goły „Kolor” — nigdy „(np. ochrona)”', () => {
   assert.equal(choiceGroupTitle(colorRequest(), fakeSession({}), null), 'Wybierz: Kolor');
   assert.equal(
