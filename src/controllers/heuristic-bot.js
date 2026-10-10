@@ -2177,6 +2177,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // PMSSB-3/F-envoy: rozwijanie conditional w ETB (lustro selfDamageOfEffects,
       // L41; Envoy bral 0 w obu galeziach).
       const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+      // PMSSB-60 (forward „pay-trigger-net-model" z anticipatedDiesValue):
+      // koszt opcjonalnej platnosci zyciem. Skan rejestru: `trigger.payLife`
+      // nosza DOKLADNIE dwie karty — zoraline (ETB + attacks) i
+      // ambulatory-edifice (ETB), obie payLife=2. Tabela ETB nie zna typu
+      // `pay_life`, wiec `trigger.payLife` jest jedynym autorytatywnym polem
+      // kosztu i naliczam go raz (bez podwojnego liczenia z efektem).
+      // Platnosc jest OPCJONALNA („you may pay"), wiec gracz zaplaci tylko,
+      // gdy efekt to przewyzsza — stad podloga 0 na sumie zdolnosci.
+      // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
+      let sub = 0;
       for (const e of effs) {
         if (e?.type === 'cant_be_blocked' && req) {
           const blockers = untappedEnemyBlockers(view);
@@ -2184,13 +2194,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
           const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
             .map(o => cantBeBlockedTargetValue(view, o)));
-          total += P.evasionEtbValueWeight * best;
+          sub += P.evasionEtbValueWeight * best;
           continue;
         }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
-        total += fn(e, view, req, def);
+        sub += fn(e, view, req, def);
       }
+      const zaplata = ability.trigger.payLife ?? 0;
+      if (zaplata > 0) sub = Math.max(0, sub - selfLifeLossPenalty(view, zaplata));
+      total += sub;
     }
     return total;
   };

@@ -309,11 +309,17 @@ const BEZ_ZDOLNOSCI = (d) => ({ ...d, abilities: [] });
 const PUMP_DODATNI = (d) => ({ ...d, abilities: d.abilities.map((a) => ({
   ...a, effect: { type: 'pump', power: 1, toughness: 1 } })) });
 
-/** Zmierzono na `01ffc94`+fala F (harness tego pliku, nie sonda). */
-const EDIFICE_WROG = 75.6036;   // wróg na stole: −1/−1 to zysk
-const EDIFICE_BAZA = 70.2036;   // kontrfaktyk bez triggera
-const EDIFICE_PUSTY = 66.6036;  // pusty stół wroga = kontrfaktyk
-const EDIFICE_PLUS = 72.9036;   // pump +1/+1 — stary wzór P×2+T×1
+/** Mutacja zdejmująca opcjonalną płatność życiem z triggera — izoluje logikę
+ * znaku pumpa od modelu kosztu (bez niej te dwie rzeczy się zagłuszają). */
+const BEZ_PAYLIFE = (d) => ({ ...d, abilities: d.abilities.map((a) => ({
+  ...a, trigger: { ...a.trigger, payLife: undefined } })) });
+
+/** Zmierzono na `6a62018`+pay-trigger-net-model (harness tego pliku). */
+const EDIFICE_WROG = 72.0036;      // −1/−1 we wroga, NETTO po 2 życiu
+const EDIFICE_WROG_BRUTTO = 75.6036; // to samo bez płatności
+const EDIFICE_BAZA = 70.2036;      // kontrfaktyk bez triggera
+const EDIFICE_PUSTY = 66.6036;     // pusty stół wroga = kontrfaktyk
+const EDIFICE_PLUS = 72.9036;      // pump +1/+1 bez płatności — wzór P×2+T×1
 
 test('PMSSB-60/F1: −1/−1 wymierzone we wroga jest zyskiem, nie stratą ciała', () => {
   const pelny = edifice([3, 3]);
@@ -322,7 +328,11 @@ test('PMSSB-60/F1: −1/−1 wymierzone we wroga jest zyskiem, nie stratą ciał
   assert.ok(blisko(kontra, EDIFICE_BAZA), `oczekiwano ${EDIFICE_BAZA}, jest ${kontra}`);
   // POMIAR PRZED: płaskie 67,5 dla wroga 1/1, 5/5 i pustego stołu — trigger
   // wyceniany na MINUSIE (−2,7), bo tabela liczyła P×2+T×1 bez kierunku.
-  assert.ok(pelny - kontra > 5, `oczekiwano delty > 5, jest ${pelny - kontra}`);
+  assert.ok(pelny - kontra > 1.5, `oczekiwano delty > 1,5, jest ${pelny - kontra}`);
+  // Rozkład: brutto 75,6036 (sama naprawa kierunku) − 3,6 kosztu życia
+  // (= selfLifeLossPenalty(view, 2) = 4 po skalowaniu ×0,9).
+  assert.ok(blisko(edifice([3, 3], BEZ_PAYLIFE), EDIFICE_WROG_BRUTTO),
+    `brutto bez płatności: ${edifice([3, 3], BEZ_PAYLIFE)}`);
 });
 
 test('PMSSB-60/F2: anty-over-fix — bez legalnego celu u wroga trigger nic nie daje', () => {
@@ -332,12 +342,26 @@ test('PMSSB-60/F2: anty-over-fix — bez legalnego celu u wroga trigger nic nie 
 });
 
 test('PMSSB-60/F3: kontrola znaku — dodatni pump idzie starym wzorem P×2+T×1', () => {
-  // +1/+1 daje +2,7 (P×2+T×1 = 3 po skalowaniu), NIE +5,4 ze skali `damage`.
-  // Gdyby warunek `(p < 0 || t < 0)` zniknął, ta pinezka by się wysypała.
-  assert.ok(blisko(edifice([3, 3], PUMP_DODATNI), EDIFICE_PLUS),
-    `oczekiwano ${EDIFICE_PLUS}, jest ${edifice([3, 3], PUMP_DODATNI)}`);
-  assert.ok(edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA < 4,
-    `dodatni pump wszedł w skalę damage: ${edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA}`);
+  // Izolowane od płatności: +1/+1 daje +2,7 (P×2+T×1 = 3 po skalowaniu),
+  // NIE +5,4 ze skali `damage`. Gdyby warunek `(p < 0 || t < 0)` zniknął,
+  // ta pinezka by się wysypała.
+  const plus = edifice([3, 3], (d) => PUMP_DODATNI(BEZ_PAYLIFE(d)));
+  assert.ok(blisko(plus, EDIFICE_PLUS), `oczekiwano ${EDIFICE_PLUS}, jest ${plus}`);
+  assert.ok(plus - EDIFICE_BAZA < 4, `dodatni pump wszedł w skalę damage: ${plus - EDIFICE_BAZA}`);
+});
+
+test('PMSSB-60/F5: opcjonalna płatność życiem jest kosztem, a nieopłacalna — odrzucana', () => {
+  // Skan rejestru: `trigger.payLife` noszą dokładnie dwie karty (zoraline,
+  // ambulatory-edifice), obie payLife=2; tabela ETB nie zna typu `pay_life`,
+  // więc `trigger.payLife` to jedyne pole kosztu i naliczane jest raz.
+  // Zdolność jest OPCJONALNA („you may pay"), więc wartość = max(0, efekt − życie):
+  //  • −1/−1 we wroga: 6 − 4 > 0 → płaci (delta +1,8 netto);
+  //  • +1/+1 własnemu: 3 − 4 < 0 → nie płaci, trigger wart 0.
+  const nieoplacalny = edifice([3, 3], PUMP_DODATNI);
+  assert.ok(blisko(nieoplacalny, EDIFICE_BAZA),
+    `nieopłacalna płatność odrzucona (delta 0): ${nieoplacalny} vs ${EDIFICE_BAZA}`);
+  assert.ok(blisko(edifice([3, 3], BEZ_PAYLIFE) - edifice([3, 3]), 3.6),
+    `koszt życia = 3,6: ${edifice([3, 3], BEZ_PAYLIFE)} − ${edifice([3, 3])}`);
 });
 
 // ============================================================ FALA C — F2
@@ -415,4 +439,21 @@ test('PMSSB-60/F4: fala F nie rusza Silumgar Butchera — zasięg zmiany to jedn
   } });
   assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 71.1027),
     `oczekiwano 71.1027, jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
+});
+
+test('PMSSB-60/F6: model kosztu dosięga obu kart z trigger.payLife — Zoraline', () => {
+  // Druga (i ostatnia) karta z `trigger.payLife` w całym rejestrze. Zmierzono
+  // 81,9036 przed modelem kosztu i 78,3036 po — różnica dokładnie 3,6, czyli
+  // ta sama opłata za 2 życia co u Ambulatory Edifice (4 × 0,9). Efekt
+  // `return_permanent_from_graveyard` (10) nadal przewyższa koszt, więc
+  // decyzja o rzucie się nie zmienia — zmieniła się tylko uczciwość wyceny.
+  const scen = () => scene({ setup: (st) => {
+    foe(st, 'f1', 3, 3);
+    addObject(st, { id: 'gy1', instanceId: 'i-gy1', cardId: 'x', controllerId: 'p1', ownerId: 'p1',
+      zone: 'graveyard', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [],
+      keywords: [], subtypes: [], types: ['Creature'], colors: ['B'], cardName: 'gy' });
+    put(st, 'c1', 'zoraline', 'p1', 'hand');
+  } });
+  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 78.3036),
+    `oczekiwano 78.3036, jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
 });
