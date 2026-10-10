@@ -396,3 +396,23 @@ test('PMSSB-60/A7: rider Blitza wnosi wartość, ale NIE przez swój typ (zamkni
   assert.ok(blisko(pelny, riderNoop),
     `+51 nie zależy od typu ridera: pełny ${pelny} vs noop ${riderNoop}`);
 });
+
+test('PMSSB-60/F4: fala F nie rusza Silumgar Butchera — zasięg zmiany to jedna karta', () => {
+  // Audyt zasięgu (skan całego rejestru): JEDYNE dwie karty z ujemnym `pump`
+  // w triggerze to ambulatory-edifice (enter_battlefield) i silumgar-butcher
+  // (exploits). Butcher NIE przechodzi przez `ETB_EFFECT_BONUS` — exploit
+  // wycenia `anticipatedSacValue` własnym modelem (`exploitDebuff` +
+  // `killValue`), a użytkownicy tabeli filtrują event na
+  // `enter_battlefield`/`dies`/`attacks` i explicite `continue` przy
+  // `exploits` (heuristic-bot.js:2508). Zmierzono: 71,1027 zarówno z falą F,
+  // jak i po jej cofnięciu — pin blokuje przypadkowe rozszerzenie zasięgu.
+  const scen = () => scene({ setup: (st) => {
+    foe(st, 'f1', 3, 3);
+    addObject(st, { id: 'v1', instanceId: 'i-v1', cardId: 'x', controllerId: 'p1', ownerId: 'p1',
+      zone: 'battlefield', kind: 'creature', power: 1, toughness: 1, manaCost: 1, abilities: [],
+      keywords: [], subtypes: [], types: ['Creature'], colors: ['B'], cardName: 'v' });
+    put(st, 'c1', 'silumgar-butcher', 'p1', 'hand');
+  } });
+  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 71.1027),
+    `oczekiwano 71.1027, jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
+});
