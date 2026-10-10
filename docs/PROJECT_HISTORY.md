@@ -16355,3 +16355,57 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   uruchamia `node tools/run-tests.mjs all`. Przed pushem warto sprawdzić
   `check-runs` poprzedniego commitu: trzy ostatnie commity batcha 65 były
   czerwone i nikt tego nie zauważył, bo lokalnie odpalano tylko szybki zestaw.
+
+## 2026-10-10 — PMSSB-60: pętla jakości scoringu dla batcha 65 (CZĘŚCIOWA)
+
+- **Zlecenie**: „Uruchom pełne PMSSB dla B65". Wcześniejsze sprawdzenie pokazało,
+  że batch 65 nie miał ŻADNEJ pętli: `grep "batch 65|batch65|B65" docs/PMSSB.md`
+  = 0 trafień, ostatni plan `pmssb59-batch64`, ostatni test
+  `audyt-pmssb59-batch64.test.js`. Rejestr kończył się na batchu 64.
+- **Pomiar PRZED** (`3b63c79`, sonda `tools/pmssb60-batch65-sonda.mjs`, bot
+  w konfiguracji produkcyjnej `randomness: 0`/`lookahead: 0`, kontrfaktyki
+  z rejestru złożonego z `REAL_CARDS` + `VIRTUAL_BASIC_LANDS` — karty batcha 65
+  siedzą w tej drugiej liście, pułapka PMSSB-59 potwierdzona): **6 findingów
+  i 4 kontrole dodatnie**.
+- **Domknięte (fale A, B, D)**:
+  - **F1** Blitz of the Thunder-Raptor — deskryptor
+    `instants_and_sorceries_in_your_graveyard` miał 0 trafień w heurystyce, więc
+    `amount` spadał na 0 i efekt ciągnął score w dół (delta **−80** wobec
+    kontrfaktyku). Silnik działał poprawnie (`damage_dealt amount:6` →
+    `creature_destroyed toZone:'exile'`), więc bot po prostu nigdy nie rzucał tej
+    karty. Fix L41 u źródła: wspólny licznik `instantSorceryGraveyardCount`
+    w `engine/permanents.js` podpięty po obu stronach. PO: grób 4/6 → 96,0.
+  - **F3** Impulse — `look_top_put_one_hand_rest_bottom` wyceniane w sadze,
+    w exploicie i w aktywacji (Dockhand), ale nie w `cast_spell`; delta 0,
+    płasko 50,0. Fix: ten sam `impulseLookValue` w ścieżce czaru. PO: 59,0 przy
+    zdrowej bibliotece, 33,0 przy pustej.
+  - **F6** Brine Giant — `costReduction` z affinity miało 0 trafień; 70,2072
+    płasko dla 0/3/6 enchantmentów (naruszenie kontroli S11). Fix:
+    `cardCostReductionForView`. PO: 70,2072 → 72,9 → 75,6.
+- **OTWARTE (fale C, E, F)** — zmierzone, nie naprawione: **F2** Zombie Boa
+  (aktywacja dokładnie 0,0 — brak modelu `choose_color_grant_block_destroy`),
+  **F7** Skyscythe Engulfer (delta 0 — `cantBeBlockedByKeywords: ['flying']`
+  niewyceniane), **F8** Ambulatory Edifice (delta 0 — trigger ETB
+  `requiresTarget` + `payLife` → `pump -1/-1` niewyceniany). Rejestr rodzin
+  oznacza batch 65 jako CZĘŚCIOWO, żeby nikt go nie uznał za przejrzany.
+- **Dwie własne tezy obalone pomiarem** (zapisane w hubie, żeby nie wracały):
+  F9 Temple of Abandon (aktywacja −4,0 to poprawna redundancja — rzut 6G jest
+  oferowany bez aktywacji, mana nietapniętego lądu już policzona, B54/s4008)
+  i F10 Blinding Drone (brak oferty przy manie kolorowej poprawny — koszt `{C}`,
+  CR 107.4c; z bezbarwną +20,0).
+- **Testy**: `test/audyt-pmssb60-batch65.test.js` — 12 pinów. RED→GREEN: fale A/B
+  9/9 → 3/9 po zdjęciu gałęzi bota; fala D 12/12 → 11/12 po zdjęciu redukcji.
+  Wartość bazowa 70,2072 zmierzona przez faktyczne zdjęcie zmiany — pierwsza
+  wersja pinu miała 70,2 z `.toFixed(1)` i słusznie padła (lekcja: pin bierz
+  z pomiaru, nie z wyświetlenia sondy).
+- Bramki: `npm test` **8017/8017**, build 73 moduły / 5004,9 kB, cr-numery OK.
+  0 nowych pokręteł.
+- **Uwaga środowiskowa**: w trakcie pętli sandbox został odtworzony ze świeżego
+  klona — lokalne commity sesji zniknęły, a cała praca wróciła jako
+  niezacommitowane pliki. Zdalna gałąź miała ostatni push (`3b63c79`), więc
+  odzyskanie przez `git fetch` + `git reset FETCH_HEAD` (mieszany — drzewo
+  robocze nietknięte) przywróciło historię bez straty plików. Reflog miał wtedy
+  2 wpisy (clone + checkout) — to sygnał rozpoznawczy takiej sytuacji.
+  Przy okazji: `.arena/` nie ma w `.gitignore`, ignorowanie szło przez
+  `.git/info/exclude`, który świeży klon gubi — scratch trafił do commitu
+  i został z niego wyjęty przez `git rm --cached` + amend.

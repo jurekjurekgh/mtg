@@ -36,6 +36,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **CZĘŚCIOWO (2026-10-10)** — fale A/B/D DONE, fale C/E/F OTWARTE | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (12 pinów: 6 fala A + 3 fala B + 3 fala D); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11); 0 nowych pokręteł |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -2998,3 +2999,62 @@ więc pumpa sorcery-speed jest wyceniana z zamiaru ataku, nie z pewności wymian
 Dowody, wartości PRZED→PO i werdykty per karta:
 [raport PMSSB-59](audits/PMSSB59_BATCH64_2026-10-08.md),
 [plan](plans/PLAN_2026-10-08b-pmssb59-batch64.md).
+
+## PMSSB-60 — jakościowe domknięcie batcha 65 (2026-10-10, PR #162) — CZĘŚCIOWE
+
+Zlecenie właściciela: „Uruchom pełne PMSSB dla B65". Pętla **nie jest zamknięta**:
+z 6 findingów domknięte są 3 (fale A, B, D), a 3 (fale C, E, F) pozostają
+otwarte z pełnym pomiarem PRZED w planie. Rejestr rodzin oznacza to wprost, żeby
+kolejny agent nie uznał batcha 65 za przejrzany.
+
+**Pomiar PRZED** (`3b63c79`, sonda `tools/pmssb60-batch65-sonda.mjs`, bot
+w konfiguracji produkcyjnej, kontrfaktyki izolujące efekt od ciała): 6 findingów
++ 4 kontrole dodatnie. Pułapka PMSSB-59 potwierdzona — karty batcha 65 siedzą
+w `VIRTUAL_BASIC_LANDS` (card-data.js 13299-13491), więc rejestr kontrfaktyczny
+składamy z obu list.
+
+| Finding | Pomiar PRZED | Stan |
+|---|---|---|
+| **F1** Blitz — `damage` z `amount: 'instants_and_sorceries_in_your_graveyard'` | −30,0 płasko dla grobu 0/2/4/6 i celu 2/2–8/8; kontrfaktyk bez efektów +50,0 (**delta −80**) | **DONE (fala A)** — grób 4/6 → 96,0; cel 2/2 → 84,0; grób 0 bez zmian |
+| **F3** Impulse — `look_top_put_one_hand_rest_bottom` jako czar | delta **0** wobec kontrfaktyku; płasko 50,0 dla biblioteki 0/1/4/30 | **DONE (fala B)** — biblioteka 30 → 59,0, biblioteka 0 → 33,0 |
+| **F6** Brine Giant — affinity for enchantments | 70,2072 płasko dla 0 / 3 / 6 enchantmentów (i dla 4 wrogich) | **DONE (fala D)** — 70,2072 → 72,9 → 75,6 |
+| **F2** Zombie Boa — `choose_color_grant_block_destroy` | aktywacja **dokładnie 0,0**; jedyne trafienie w kodzie to lista kumulacji | **OTWARTY (fala C)** |
+| **F7** Skyscythe Engulfer — `cantBeBlockedByKeywords: ['flying']` | delta **0** wobec kontrfaktyku (72,0 = 72,0) | **OTWARTY (fala E)** |
+| **F8** Ambulatory Edifice — ETB `requiresTarget` + `payLife` → `pump -1/-1` | delta **0** wobec kontrfaktyku (67,5 = 67,5) | **OTWARTY (fala F)** |
+
+**Kontrole dodatnie (bez zmian, celowo):** F4 Bring to Trial (96,0 dla 4/4,
+120,0 dla 8/8, cel 2/2 filtrowany), F5 Pacifism (76,5 wróg / −68,4 własny),
+F9 Temple of Abandon, F10 Blinding Drone.
+
+**Dwie obalone tezy — zapisane, żeby nikt ich nie powtórzył:**
+- **F9 Temple of Abandon NIE jest defektem.** Wczesna sonda pokazała aktywację
+  −4,0 nawet przy 5G + 6-mana zielonym w ręce, co wyglądało na brak modelu
+  „odblokowania rzutu". Pomiar rozstrzygający: rzut 6G jest oferowany (72,0)
+  BEZ jawnej aktywacji, czyli mana nietapniętego lądu jest już policzona
+  w jednostkach (B54/s4008) i aktywacja jest redundancją. Zachowanie poprawne.
+- **F10 Blinding Drone NIE jest defektem.** „Brak oferty" przy 5 many KOLOROWEJ
+  jest poprawny — koszt to `{C}` (CR 107.4c), którego kolorowa mana nie opłaci.
+  Z maną bezbarwną zdolność jest oferowana i wyceniona na +20,0.
+
+**Rozjazdy L41 domknięte w tej pętli:**
+- `instantSorceryGraveyardCount` (engine/permanents.js) — JEDEN licznik dla
+  `effects.js` (rozstrzyganie, CR 608.2h) i heurystyki (wycena). Wcześniej
+  silnik liczył inline, a bot wcale.
+- `impulseLookValue` — czwarta ścieżka (cast_spell) dołączona do istniejących
+  trzech (rozdziały sagi, fallback exploita, zdolność aktywowana).
+- `cardCostReductionForView` — koszt efektywny po stronie widoku; silnik ma
+  `effectiveSpellManaCost` na pełnym stanie (CR 601.2f), bot nie mógł go użyć,
+  więc warunek affinity jest liczony równolegle na `zones.battlefield`.
+
+**Testy:** `test/audyt-pmssb60-batch65.test.js` — 12 pinów (A1–A6, B1–B3,
+D1–D3). RED→GREEN per fala: A/B razem 9/9 → 3/9 po zdjęciu gałęzi bota;
+D 12/12 → 11/12 po zdjęciu samej redukcji. W każdym razie przechodzą wyłącznie
+piny, które mają przechodzić zawsze (anty-over-fix, unit-test helpera, pin
+zastanego modelu M237/4, kontrola ujemna).
+
+**Bramki:** `npm test` 8017/8017, build 73 moduły / 5004,9 kB, `cr-numery --cr`
+OK. 0 nowych pokręteł.
+
+Dowody, wartości PRZED→PO i pełna macierz:
+[plan PMSSB-60](plans/PLAN_2026-10-10c-pmssb60-batch65.md),
+sonda `tools/pmssb60-batch65-sonda.mjs`.
