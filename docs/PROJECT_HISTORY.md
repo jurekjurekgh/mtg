@@ -19,6 +19,47 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-10 — audyt PR #161 i naprawy F-1/F-2 (PR #162)
+
+**Zadanie właściciela:** kontynuacja projektu — przeczytać dokumentację,
+zaudytować ostatni scalony PR (ADR 0020 B), naprawić znaleziska, zatrzymać
+się (bez pętli jakości).
+
+**Audyt PR #161** (audyt #160 + naprawy Z-1/O-1/L/M/N/J; 20 plików,
++1218/−44): werdykt **PASS WITH FINDINGS** — raport
+`docs/audits/AUDYT_PR161_2026-10-10.md`. Naprawy PR zweryfikowane kodowo
+i mutacyjnie (7 mutacji, wszystkie piny gasną przy rewersie — tabela
+w raporcie); piny pmssb5/6/18/32/36 i bot-params arytmetycznie spójne;
+regeneracja snapshota świadoma (scoreSum −51, decyzje 263→263); cytaty CR
+(400.7, 702.174a–b, 707.2) werbatim wobec przypiętego cr-raw.txt
+(SHA-256 identyczny z pinem audytu #160).
+
+**Znaleziska F-1/F-2 (rodzina N, L72) — naprawione RED→GREEN, osobne
+commity:**
+
+- **F-1 (`ea04f66`):** `chooseOneOrBothPlanOf` — szósty plan składający
+  warianty — nie miał guardu `uniformGiftOf` (pięć miało). Mapa
+  `bySelection` (klucz = same gniazda `a|b`) nadpisywała wariant z darem
+  wariantem bez daru — wybór obietnicy cicho przepadał. Hipotetyczna karta
+  (L52): fix generyczny + piny F-1/1–2 RED→GREEN, F-1/3–5 kontrole.
+- **F-2 (`ccb81c3`):** wyróżnik daru w etykietach („· dar dla przeciwnika:
+  …”, „(dar)”) tylko dla `cast_spell` — fallback `buttonsPlanOf` rodziny N
+  dawał nierozróżnialne wiersze dla cast_permanent/cleave/flashback/
+  escape/adventure (M101/B). Fix u root cause (L41): jeden helper
+  `giftPartOf` w lejkach `commandLabel` (wrapper; ciało →
+  `commandLabelBase`) i `choiceSourceTitle`; strażnik A3 (m163) skanuje
+  teraz ciało `commandLabelBase`. Piny F-2/1/2/4 RED→GREEN, F-2/3
+  obustronnie zielona.
+
+Obserwacje O-1–O-5 w raporcie (bez działań): m.in. `targetIds` = wyłącznie
+decyzje resolve_* (dar tam niedostępny — CR 702.174a), drugie wymiary
+poza darem (stun) łapie wzorzec A2, martwy `stopped?.power`, siatka
+numerowania etykiet, inwariant bramki Z-1.
+
+**Bramki HEAD:** `npm test` 7960/7960, `npm run build` 73/4976,1 kB,
+`test/bot-benchmark.test.js` 10/10 (decyzje stabilne mimo zmian L/M/J).
+`test:all` nie uruchamiany (zgodnie z zadaniem).
+
 ## 2026-10-09e — zgłoszenie N: Crumb and Get It, brak wyboru daru (PR #161)
 
 **Zgłoszenie właściciela (uwaga z gry):** rzucając Crumb and Get It („Gift a
