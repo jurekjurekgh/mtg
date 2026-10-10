@@ -98,20 +98,22 @@ console.log(`   KONTRFAKTYK (bez efektu): ${blitz(6, [4, 4], true)}`);
 
 // ==================================================== F2 — Zombie Boa
 console.log('\n=== F2 Zombie Boa — {1}{B} choose color → becomes_blocked_by_color → destroy');
-function boa(scen) {
-  const reg = scen === 'kontra' ? registryKontra('zombie-boa', (d) => ({
+function boa(kontra, wrogowie = [[3, 3, 'R'], [3, 3, 'G']]) {
+  const reg = kontra ? registryKontra('zombie-boa', (d) => ({
     ...d, abilities: (d.abilities ?? []).filter((a) => a.type !== 'activated'),
   })) : REG;
   const s = scene({ many: 8, registry: reg, setup: (st, r) => {
     put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', r);
-    // wróg ma stwory w kolorach R i G — jest co zniszczyć przy bloku
-    foe(st, 'fr', 3, 3, ['R']);
-    foe(st, 'fg', 3, 3, ['G']);
+    wrogowie.forEach(([p, t, c], i) => foe(st, `f${i}`, p, t, [c]));
   } });
   return fmt(punkty(s, (o) => o.cmd.includes('(boa')));
 }
-console.log(`   main, wróg z R i G:     ${boa('pełna')}`);
-console.log(`   KONTRFAKTYK (bez zdolności): ${boa('kontra')}`);
+console.log(`   wróg 3/3 R + 3/3 G:     ${boa(false)}`);
+console.log(`   KONTRFAKTYK (bez zdolności): ${boa(true)}`);
+// Skalowanie po ofierze i anty-over-fix: pusty stół wroga = brak wkładu.
+console.log(`   wróg 1/1 R:             ${boa(false, [[1, 1, 'R']])}`);
+console.log(`   wróg 6/6 R:             ${boa(false, [[6, 6, 'R']])}   | kontra: ${boa(true, [[6, 6, 'R']])}`);
+console.log(`   pusty stół wroga:       ${boa(false, [])}   | kontra: ${boa(true, [])}`);
 
 // ==================================================== F3 — Impulse (L41)
 console.log('\n=== F3 Impulse — look_top_put_one_hand_rest_bottom JAKO CZAR (L41 vs Dockhand/saga)');

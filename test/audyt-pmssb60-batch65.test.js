@@ -334,3 +334,44 @@ test('PMSSB-60/F3: kontrola znaku — dodatni pump idzie starym wzorem P×2+T×1
   assert.ok(edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA < 4,
     `dodatni pump wszedł w skalę damage: ${edifice([3, 3], PUMP_DODATNI) - EDIFICE_BAZA}`);
 });
+
+// ============================================================ FALA C — F2
+
+/**
+ * Zombie Boa na polu bitwy + wrogie stwory `foes` jako [moc, wyt, kolor].
+ * `kontra` wycina zdolność aktywowaną (zostaje trigger) — bez niej brak oferty.
+ */
+function boaScene(foes, kontra = false) {
+  const registry = kontra ? registryKontra('zombie-boa', (d) => ({
+    ...d, abilities: (d.abilities ?? []).filter((a) => a.type !== 'activated'),
+  })) : REGISTRY;
+  return scene({ many: 8, registry, setup: (st, r) => {
+    put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', r);
+    foes.forEach(([p, t, c], i) => foe(st, `f${i}`, p, t, [c]));
+  } });
+}
+const boa = (foes, kontra = false) => scoreOf(boaScene(foes, kontra), (o) => o.cmd.includes('(boa'));
+
+test('PMSSB-60/C1: aktywacja „wybierz kolor → zniszcz blokera" ma wartość i skaluje się z ofiarą', () => {
+  const r11 = boa([[1, 1, 'R']]);
+  const r33 = boa([[3, 3, 'R']]);
+  const r66 = boa([[6, 6, 'R']]);
+  // POMIAR PRZED: dokładnie 0.0 dla każdego układu wroga — typ efektu
+  // `choose_color_grant_block_destroy` nie miał gałęzi w wycenie aktywacji.
+  assert.ok(r11 > 0 && r33 > 0 && r66 > 0, `wszystkie dodatnie: ${r11} / ${r33} / ${r66}`);
+  assert.ok(r66 > r33 && r33 > r11, `rosnąco z ciałem ofiary: ${r11} < ${r33} < ${r66}`);
+  assert.ok(blisko(r11, 1.5) && blisko(r33, 4.5) && blisko(r66, 9),
+    `ciało×0,5: ${r11} / ${r33} / ${r66}`);
+});
+
+test('PMSSB-60/C2: anty-over-fix — bez wrogich stworów nie ma kogo zniszczyć (0 jak PRZED)', () => {
+  assert.equal(boa([]), 0);
+});
+
+test('PMSSB-60/C3: wybierany jest JEDEN kolor, więc dwa kolory się nie sumują', () => {
+  // CR 601.2f — wybór koloru należy do kontrolera, więc liczy się NAJLEPSZA
+  // ofiara, nie suma. Gdyby helper sumował kolory, 3/3 R + 3/3 G dałoby 9.
+  assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), boa([[3, 3, 'R']])),
+    `maksimum, nie suma: ${boa([[3, 3, 'R'], [3, 3, 'G']])} vs ${boa([[3, 3, 'R']])}`);
+  assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), 4.5));
+});

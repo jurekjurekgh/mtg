@@ -4300,6 +4300,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * PMSSB-60/F2 (Zombie Boa, batch 65): „{1}{B}: Choose a color. Whenever
+   * this creature becomes blocked by a creature of that color this turn,
+   * destroy that creature." POMIAR PRZED: `activate_ability` = dokładnie
+   * 0.0 — typ efektu `choose_color_grant_block_destroy` nie miał gałęzi
+   * w wycenie aktywacji, więc bot oferował ją bez żadnej wartości i nigdy
+   * nie wybierał koloru sensownie.
+   *
+   * Model (bez nazw kart, ADR 0002):
+   *   • bramka ataku — źródło musi móc atakować w tym oknie, inaczej trigger
+   *     nigdy nie odpali (martwy atak = 0, ta sama zasada co M407);
+   *   • wybór koloru = NAJLEPSZA ofiara spośród wrogich blokerów tego koloru
+   *     (gracz wybiera kolor, więc liczymy maksimum po kolorach, CR 601.2f —
+   *     wybór należy do kontrolera);
+   *   • ciało ofiary w skali P×2+T×1 — ta sama skala co ciało/`pump` (L41),
+   *     nie nowa;
+   *   • ×0,5 za warunkowość — trigger wymaga, by źródło zaatakowało I zostało
+   *     zablokowane; to ta sama asumpcja likelihood-0,5 co w
+   *     `anticipatedDiesValue`/`anticipatedAttacksValue` (połowa stworów
+   *     wchodzi w walkę w typowej grze), bez nowego parametru.
+   *   • wróg bez stworów = 0 (anty-over-fix: nie ma kogo zniszczyć).
+   */
+  const blockDestroyColorValue = (view, source) => {
+    if (!source || source.tapped || !canAttackNow(source)) return 0;
+    const blockers = untappedEnemyBlockers(view);
+    if (blockers.length === 0) return 0;
+    let best = 0;
+    for (const color of ['W', 'U', 'B', 'R', 'G']) {
+      const victim = blockers.filter((o) => (o.colors ?? []).includes(color))
+        .reduce((max, o) => Math.max(max, (o.power ?? 0) * 2 + (o.toughness ?? 0)), 0);
+      if (victim > best) best = victim;
+    }
+    return 0.5 * best;
+  };
+
+  /**
    * M407 (uwaga z gry — Shiva/Mesmerize, 2026-09-22): wycena celu daru
    * „Target creature can't be blocked this turn" (deskryptor `cant_be_blocked`,
    * ADR 0002 — klasa, nie nazwa karty: Shiva I/II, Enter the Enigma, Coralhelm
@@ -11004,6 +11039,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // atakujący, martwy atak = nigdy (cantBeBlockedTargetValue).
           if (effect.type === 'cant_be_blocked') {
             score += cantBeBlockedTargetValue(view, target);
+          }
+          // PMSSB-60/F2 (Zombie Boa, batch 65): „wybierz kolor — stwory tego
+          // koloru blokujące w tej turze zostaną zniszczone". POMIAR PRZED:
+          // dokładnie 0.0, bo typ efektu nie miał tu gałęzi. Wycena w helperze
+          // (bramka ataku × najlepsza ofiara × likelihood-0,5).
+          if (effect.type === 'choose_color_grant_block_destroy') {
+            score += blockDestroyColorValue(view, source);
           }
           // M202/L (uwaga właściciela, Wishful Merfolk): „{1}{U}: This creature
           // loses defender and becomes a Human until end of turn” ma wartość
