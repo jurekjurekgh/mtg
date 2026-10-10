@@ -16308,3 +16308,50 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   (zapas 80) — ta pułapka NIE dostała wpisu w `docs/LESSONS.md`, bo wymagałoby
   to skrócenia istniejących wpisów. Udokumentowana tutaj, w komentarzu przy
   fixie i w nagłówku testu; dopisanie do LESSONS to osobne zadanie.
+
+## 2026-10-10 — czerwone CI: czar wstrzymany blokującą decyzją zostawał na stosie na zawsze
+
+- **Objaw**: CI (nie zgłoszenie właściciela) — pełne B0
+  `node tools/run-tests.mjs all` padało na `test/audyt-bot-walka-remisy.test.js`
+  i `test/bot-benchmark.test.js` niezmiennikiem „Pending spell odwołuje się do
+  nieistniejącego czaru spell-28”. Usterka istniała PRZED zgłoszeniem A: CI
+  było czerwone już na `d6beaca`/`cb1c5a3`/`e6d2d0e` (sprawdzone przez
+  `check-runs` API + worktree na `e6d2d0e`, gdzie pada identyczny komunikat).
+  `npm test` tego nie łapał — audyt remisów jest poza szybkim zestawem, więc
+  batch 65 domknięto przy zielonym `npm test` i czerwonym CI.
+- **Namierzenie**: `spell-28` z LKI to **Impulse** (B65/348), ostatnie zdarzenia
+  to `look_top_resolved`; `pendingSpell = { stackId: 'spell-28', effects: [] }`,
+  stos pusty. Deterministycznie: para talii `dominaria-wu | worek-mroczny`,
+  seed 4012 (`.arena/repro-invariant.mjs` iteruje `AUDIT_PAIRS`).
+- **Przyczyna** (klasa): czar, którego OSTATNI lub jedyny efekt kolejkuje
+  blokującą decyzję, zostawia `state.pendingSpell` z pustym sufiksem efektów.
+  Handler decyzji sprząta własne `pending*`, ale wstrzymany czar wznawia tylko
+  część handlerów (scry/surveil/index/manifest_dread); reszta — w tym
+  `resolve_look_top_choice` i `resolve_satyr_look` — kończy na `accepted()`.
+  Skrypt policzył **35** handlerów decyzji bez wznowienia; dziś osiągalny
+  z listy efektów czaru jest tylko `pendingLookTopN` (`pendingSatyrLook`
+  kolejkują wyłącznie zdolności ETB/aktywowane: Satyr Wayfinder, Blanchwood
+  Prowler, Brightwood Tracker), ale lista to pułapka na kolejne karty.
+- **Fix** (klasa, nie objaw): hook w `accepted()` (game-state.js) — jeśli czar
+  wciąż jest na stosie i `firstPendingDecision(state)` nic nie zwraca, czyli nikt
+  go już nigdy nie wznowi, dokańczamy go przez `resumeSuspendedSpell`. Strażnik
+  sprawia, że normalna ścieżka (decyzja w środku listy efektów) jest nietknięta:
+  hook odpala TYLKO w stanie porzucenia. Wzorzec i strażnik identyczne jak
+  istniejąca w tej samej funkcji promocja kolejki madness. Zagnieżdżoną decyzję
+  po wznowieniu łapie `accepted()` następnej komendy.
+- **Dlaczego test Impulse tego nie złapał** (lekcja warta zapamiętania):
+  asertował `handIds.length === 1` z komentarzem „impulse poszedł do grobu”,
+  ale ta własność jest prawdziwa TAKŻE przy utkniętym na stosie czarze. Test
+  sprawdzał słabszą rzecz, niż obiecywał jego własny komentarz — asercja musi
+  pokrywać się z twierdzeniem komentarza, nie z jego intonacją. Dopisane wprost:
+  `pendingSpell === null`, stos pusty, Impulse w grobie.
+- Testy: `test/wstrzymany-czar-decyzja-look-top.test.js` (5) + wzmocniony
+  B65/348. RED→GREEN: z hookiem 5/5 i 3/3, po zdjęciu hooka 3/5 i 2/3 (padają
+  wyłącznie regresje; obie kontrole — hook nie odpala przy otwartej decyzji
+  oraz ścieżka jednej karty L144 — przechodzą zawsze).
+- Bramy: pełne B0 **8269/8269** (przed: 8258 pass / 2 fail), build **73 moduły
+  / 5000,5 kB**, cr-numery OK (520/519/5672).
+- **Wniosek procesowy**: „zielone `npm test`” NIE oznacza zielonego CI — CI
+  uruchamia `node tools/run-tests.mjs all`. Przed pushem warto sprawdzić
+  `check-runs` poprzedniego commitu: trzy ostatnie commity batcha 65 były
+  czerwone i nikt tego nie zauważył, bo lokalnie odpalano tylko szybki zestaw.
