@@ -2316,6 +2316,19 @@ const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: '
  * same co `choiceSourceTitle` (+ exile, bo stamtąd też rzuca się modalne czary
  * plotem/impulsem).
  */
+/**
+ * N (M355 + uzupełnienie audytu PR #161, F-2): obietnica daru nie zmienia
+ * kosztu many, ale zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi
+ * to nazwać dla KAŻDEGO typu rzutu, bo dwa identyczne przyciski o różnych
+ * skutkach to klasa M101/B (jak kicker M223, surge, phyrexian M265).
+ * Jeden wyróżnik dla obu lejków etykiet (L41): wiersze `commandLabel`
+ * i tytuły grup `choiceSourceTitle`. ADR 0002 — po polu komendy `gifted`.
+ */
+function giftPartOf(cmd, card) {
+  if (!cmd?.gifted) return '';
+  return ` · dar dla przeciwnika: ${(card?.gift?.effect?.name ?? 'dar')}`;
+}
+
 function findViewObject(objectId, view) {
   if (objectId == null) return null;
   for (const zone of ['hand', 'battlefield', 'stack', 'graveyard', 'library', 'exile']) {
@@ -2394,6 +2407,20 @@ function abilityCostSuffix(session, cmd) {
   if (!ability) return '';
   const cost = abilityCostHtmlOf(ability);
   return cost ? ` (koszt ${cost})` : '';
+}
+
+
+/**
+ * Etykieta komendy z wyróżnikiem obietnicy daru (F-2, uzup. audytu PR #161):
+ * `gifted` zmienia skutek rzutu NIEZALEŻNIE od typu komendy — wyróżnik
+ * doklejany w jednym miejscu (L41) po etykiecie bazowej, żeby rodzina
+ * cast_* (spell/permanent/cleave/flashback/escape/adventure) i przyszłe
+ * typy nie musiały pamiętać o kopii w każdej gałęzi switcha.
+ */
+export function commandLabel(cmd, session, view) {
+  const label = commandLabelBase(cmd, session, view);
+  if (!label || !cmd?.gifted) return label;
+  return `${label}${giftPartOf(cmd, findViewObject(cmd.objectId, view))}`;
 }
 
 function choiceSourceTitle(cmd, session, view) {
@@ -2576,7 +2603,7 @@ function choiceSourceTitle(cmd, session, view) {
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId)
     + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
-    + (cmd.type === 'cast_spell' && cmd.gifted ? ' (dar)' : '')
+    + (cmd.gifted ? ' (dar)' : '')
     + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
@@ -3098,7 +3125,7 @@ function declineLabelForTriggerTarget(view, sourcePrefix) {
   return `${sourcePrefix}bez celu (odmowa — „up to one"/„you may")`;
 }
 
-export function commandLabel(cmd, session, view) {
+function commandLabelBase(cmd, session, view) {
   // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
   // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
   // celu nie znajdowała ich w strefach i pokazywała „?". Ich tożsamość jedzie
@@ -3412,12 +3439,9 @@ export function commandLabel(cmd, session, view) {
           ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
           : manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
-      // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
-      // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,
-      // bo dwa identyczne przyciski o różnym skutku to klasa M101/B.
-      const giftPart = cmd.gifted
-        ? ` · dar dla przeciwnika: ${(cardForMode?.gift?.effect?.name ?? 'dar')}`
-        : '';
+      // Wyróżnik daru dokleja wspólny wrapper `commandLabel` (F-2, L41) —
+      // tu historia: M355 zaczął od cast_spell, audyt PR #161 rozciągnął
+      // wyróżnik na całą rodzinę rzutów.
       // Audyt PR #94 / K2 (M91/uwaga D, klasa przed tym PR przy rzucie z ręki):
       // tryb „… put a stun counter on ONE OF THEM” mnoży warianty per cel pod
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
@@ -3443,7 +3467,7 @@ export function commandLabel(cmd, session, view) {
       const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
         ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
         : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
