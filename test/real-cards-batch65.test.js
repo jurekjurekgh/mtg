@@ -660,6 +660,44 @@ test('B65/340: Ambulatory Edifice — odmowa zaplaty: zycie nietkniete, bez -1/-
   assert.equal(effectiveToughness(t, st), tough0);
 });
 
+test('B65/340: refleks „When you do” działa z LKI po odejściu Edifice', () => {
+  // RED audytu PR #162/F-12: źródło może zniknąć w odpowiedzi na macierzysty
+  // ETB. Po zapłacie powstaje NOWY refleksyjny trigger, niezależny od źródła.
+  const st = game();
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield', { power: 3, toughness: 3 });
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+
+  let source = null;
+  for (let i = 0; i < 20; i++) {
+    source = find(st, 'ambulatory-edifice', 'battlefield');
+    const etbOnStack = source && st.zones.stack
+      .map((id) => st.objects.get(id))
+      .some((o) => o?.kind === 'trigger' && o.triggerEntry?.sourceId === source.id);
+    if (etbOnStack) break;
+    const pass = commands(st).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'dojście do ETB na stosie ma pass');
+    run(st, pass);
+  }
+  assert.ok(source, 'Edifice weszło, a jego ETB czeka na stosie');
+  moveObjectDirectly(st, source.id, 'graveyard', 'edifice-gone');
+  assert.ok(resolveUntilDecision(st, optionalPayOpen), 'ETB z LKI nadal pyta o zapłatę');
+
+  const pay = commands(st).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
+  assert.ok(pay, 'płatność nadal jest legalna po odejściu źródła');
+  assert.equal(pay.reflexiveTargetCount, 1, 'LKI refleksu widzi wrogiego kandydata');
+  run(st, pay);
+  const target = commands(st).find((c) => c.type === 'resolve_trigger_target'
+    && c.targetId === 'theirs');
+  assert.ok(target, 'po zapłacie nowy refleksyjny trigger prosi o cel');
+  run(st, target);
+  settle(st);
+  const theirs = st.objects.get('theirs');
+  assert.equal(effectivePower(theirs, st), 2);
+  assert.equal(effectiveToughness(theirs, st), 2);
+});
+
 function decyzjaBotaEdifice({ life = 20, enemyTarget = false } = {}) {
   const st = game();
   st.players.find((p) => p.id === 'p1').life = life;

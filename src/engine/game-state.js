@@ -665,6 +665,30 @@ function closingCombatPassBlocked(state, playerId) {
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
 
 /**
+ * Zdolność potomna tworzona przez „When you do” po opcjonalnej płatności.
+ * Rodzic (ETB/attack) już się rozstrzyga; potomny trigger jest NOWYM
+ * refleksyjnym zdarzeniem, więc nie dziedziczy eventu ani kosztu rodzica.
+ * Efekty kosztu filtrujemy tu raz dla playerView i execute (L41).
+ */
+function optionalPayFollowupAbility(pending) {
+  const ability = pending?.ability ?? {};
+  const rawEffects = Array.isArray(ability.effect)
+    ? ability.effect
+    : [ability.effect].filter(Boolean);
+  const effects = rawEffects.filter((effect) => !['pay_mana', 'pay_life'].includes(effect?.type));
+  return Object.freeze({
+    ...ability,
+    ...(pending?.requiresTargetDecision ? {
+      trigger: Object.freeze({
+        event: 'reflexive_pay',
+        ...(ability.trigger?.requiresTarget ? { requiresTarget: ability.trigger.requiresTarget } : {}),
+      }),
+    } : {}),
+    effect: effects.length === 1 ? effects[0] : Object.freeze(effects),
+  });
+}
+
+/**
  * Dobranie karty w kroku dobierania — CR 504.1 („First, the active player
  * draws a card"). Wspólny kod dla AKCJI TUROWEJ (drawStepTurnBasedAction,
  * ścieżka normalna) i starej komendy `draw_card` (zgodność replayów).
@@ -4117,14 +4141,9 @@ export function execute(state, input) {
       const payColors = (pending.ability?.trigger?.payColors ?? []).map((color) => [color]);
       const payMana = pending.ability?.trigger?.payMana ?? 0;
       const payLife = pending.ability?.trigger?.payLife ?? 0;
-      // Płatność wykonujemy RAZ (tutaj). Definicje triggerów (Zoraline) mogą
-      // dodatkowo nieść efekty pay_mana/pay_life — filtrujemy je przed
-      // odpaleniem, żeby nie płacić drugi raz.
-      const rawEffects = Array.isArray(pending.ability?.effect)
-        ? pending.ability.effect
-        : [pending.ability?.effect].filter(Boolean);
-      const effects = rawEffects.filter((e) => e?.type !== 'pay_mana' && e?.type !== 'pay_life');
-      const abilityToFire = { ...pending.ability, effect: effects.length === 1 ? effects[0] : effects };
+      // Płatność wykonujemy RAZ (tutaj). Potomną zdolność refleksyjną oraz
+      // efekty bez pay_mana/pay_life buduje wspólny helper playerView/execute.
+      const abilityToFire = optionalPayFollowupAbility(pending);
       if (payMana > 0) spendMana(state, pending.playerId, payMana, payColors);
       if (payLife > 0) changeLife(state, pending.playerId, -payLife);
       // „You may remove a [X] counter from it. When you do, ..." (Kappa
@@ -4139,15 +4158,21 @@ export function execute(state, input) {
         if (pending.requiresTargetDecision) {
           // Zoraline (Temat 2): PO zapłacie kontroler wybiera CEL reanimacji
           // (resolve_trigger_target) — „When you do, return target ...".
-          const spec = abilityToFire.trigger?.requiresTarget;
           const candidates = legalTriggerTargetCandidates(state, {
-            sourceId: pending.sourceId, ability: abilityToFire, extra: pending.extra ?? {},
+            sourceId: pending.sourceId,
+            sourceLki: pending.source ?? null,
+            ability: abilityToFire,
+            extra: pending.extra ?? {},
           });
           if (candidates.length > 0) {
             state.pendingTriggerTargets.push({
               playerId: pending.playerId,
               sourceId: pending.sourceId,
               cardId: source.cardId,
+              // Audyt PR #162/F-12: źródło rodzica mogło opuścić pole przed
+              // jego rozstrzygnięciem. Potomny refleks zachowuje LKI aż do
+              // wyboru celu i kolejki własnego wpisu stosu.
+              sourceLki: pending.source ?? source,
               ability: Object.freeze({ ...abilityToFire }),
               candidates: [...candidates],
               allowNone: false,
@@ -7754,6 +7779,7 @@ export function playerView(state, playerId) {
     // M101/B: jw. — koszt many/życia i źródło w komendzie, żeby gracz wiedział,
     // za co płaci, zanim kliknie (zgłoszenie: dwie identyczne opcje).
     const optionalPayTrigger = state.pendingOptionalPay.ability?.trigger ?? {};
+    const optionalPayFollowup = optionalPayFollowupAbility(state.pendingOptionalPay);
     // Audyt PR #162/F-2 (ADR 0017): sama LICZBA celów refleksu nie wystarcza
     // do świadomej decyzji bota. Ambulatory Edifice zawsze widzi co najmniej
     // siebie, lecz zapłata 2 życia tylko po to, by dać własnemu stworowi −1/−1,
@@ -7762,15 +7788,15 @@ export function playerView(state, playerId) {
     const reflexiveTargetIds = state.pendingOptionalPay.requiresTargetDecision
       ? legalTriggerTargetCandidates(state, {
           sourceId: state.pendingOptionalPay.sourceId,
-          ability: state.pendingOptionalPay.ability,
+          sourceLki: state.pendingOptionalPay.source ?? null,
+          ability: optionalPayFollowup,
           extra: state.pendingOptionalPay.extra ?? {},
         })
       : [];
-    const rawOptionalPayEffects = Array.isArray(state.pendingOptionalPay.ability?.effect)
-      ? state.pendingOptionalPay.ability.effect
-      : [state.pendingOptionalPay.ability?.effect].filter(Boolean);
-    const reflexiveEffects = rawOptionalPayEffects
-      .filter((effect) => !['pay_mana', 'pay_life'].includes(effect?.type))
+    const rawReflexiveEffects = Array.isArray(optionalPayFollowup.effect)
+      ? optionalPayFollowup.effect
+      : [optionalPayFollowup.effect].filter(Boolean);
+    const reflexiveEffects = rawReflexiveEffects
       .map((effect) => Object.freeze({ ...effect }));
     const optionalPayInfo = {
       cost: optionalPayTrigger.payMana ?? null,

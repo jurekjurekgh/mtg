@@ -2049,13 +2049,14 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   if (source.zone === 'battlefield') return true;
   // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
-  // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
-  // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
+  // Refleks „When you do" (Audyt Batch53/A1; PR #162/F-12: opcjonalna
+  // płatność) to dziecko rozstrzygniętej już zdolności — jest niezależny od
+  // strefy źródła (ruling LCI 2023-11-10).
   // Batch 58/B6: refleks po przeszukaniu biblioteki (Prishe's Wanderings) —
   // źródłem jest CZAR, który w chwili rozstrzygnięcia triggera jest już
   // w grobie (ruling FIN 2025-06-06), więc strefa 'none' jest legalna.
   return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice',
-    'reflexive_discard', 'reflexive_search'].includes(triggerEvent);
+    'reflexive_discard', 'reflexive_search', 'reflexive_pay'].includes(triggerEvent);
 }
 
 /**
