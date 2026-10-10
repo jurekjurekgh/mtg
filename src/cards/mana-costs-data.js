@@ -604,4 +604,7 @@ export const MANA_COSTS = {
   "narsets-rebuke": "{4}{R}",
   "brave-kin-duo": "{W}",
   "bog-hoodlums": "{5}{B}",
+  // Batch65: Blinding Drone (OGW) — devoid 1/3; {C} siedzi w koszcie
+  // ZDOLNOŚCI (cost.colors: ['C']), nie w koszcie many karty.
+  "blinding-drone": "{1}{U}",
 };

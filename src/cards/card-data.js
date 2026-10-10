@@ -13290,6 +13290,30 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['cantBlock: stal flaga karty (jak Goreclaw), nie deskryptor', 'clash z nagrodą licznikiem (CR 701.30) - licznik kładzie sie po decyzjach obu graczy, gdy źródło wciąż na polu bitwy'],
   }),
+  // =============================================================================
+  // Dwudziesty piąty batch realnych kart (kolekcja 329–350). Roadmapa:
+  // docs/plans/PLAN_2026-10-10-batch65-kolekcja-329-350.md. L184: każda karta
+  // osobnym commitem (reset sandboxa zjadł niezacommitowaną próbę batcha).
+  // =============================================================================
+  defineCard({
+    id: 'blinding-drone', name: 'Blinding Drone', set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 1, toughness: 3, manaCost: 2, keywords: ['devoid'],
+    oracleText: 'Devoid (This card has no color.)\n{C}, {T}: Tap target creature. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4eb60957-0811-40c3-a92b-cce3e6a94745.jpg?1783937921',
+    abilities: [
+      // {C}, {T}: Tap target creature. Pip bezbarwny w koszcie ZDOLNOŚCI
+      // (cost.colors: ['C'], CR 107.4c) — wzorzec Kozilek's Shrieker.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['C'], tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'tap_permanent' },
+      }),
+    ],
+    artId: 329, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

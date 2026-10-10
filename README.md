@@ -151,7 +151,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
-| `zendikar` | Zendikar | WUBRG | 39 | 13 | 26 |
+| `zendikar` | Zendikar | WUBRG | 41 | 14 | 27 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 

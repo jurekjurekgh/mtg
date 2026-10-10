@@ -101,8 +101,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 63 (T1: 255 APC; T2: 239 SOS, 241 SPM, 244 BFZ, 250 MRD; T3: 247 ORI): +6 → 549.
   // Dokończenie Batch 63: 212, 254, 259, 260 → 553 wiersze.
   // Batch 64 (2026-10-08): +10 pozycji (261, 263, 266, 269, 280, 323, 324,
-  // 325, 327, 328) → 563 wiersze.
-  assert.equal(data.length, 563, 'pełna lista kolekcji po Batchu 64 (563 pozycje, bez STO)');
+  // 325, 327, 328) → 563 wiersze; Batch 65 (+329) → 564.
+  assert.equal(data.length, 564, 'pełna lista kolekcji po Batchu 65 (564 pozycje, bez STO)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -169,8 +169,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 nazw → 540.
   // Batch 63 (transze T1–T3): +6 unikalnych nazw → 546.
   // Dokończenie Batch 63: +4 nazwy → 550; druki liczone osobno niżej.
-  // Batch 64 (2026-10-08): +10 nazw (każda karta ma w kolekcji jeden druk) → 560.
-  assert.equal(dict.size, 560, 'słownik kolekcji po zamknięciu Batcha 64: 560 unikalnych nazw');
+  // Batch 64 (2026-10-08): +10 nazw (każda karta ma w kolekcji jeden druk) → 560;
+  // Batch 65 (2026-10-10): +1 → 561.
+  assert.equal(dict.size, 561, 'słownik kolekcji po zamknięciu Batcha 65: 561 unikalnych nazw');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -214,7 +215,7 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 62 (transza T6: 210 2X2): +1 → 541.
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
   // Batch 63 (transze T1–T3): +6 kart z artId → 549.
-  assert.equal(withArt.length, 563, 'wszystkie realne karty i tyły DFC mają artId (zamknięty Batch 64)');
+  assert.equal(withArt.length, 564, 'wszystkie realne karty i tyły DFC mają artId (zamknięty Batch 65)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];
