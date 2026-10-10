@@ -2332,3 +2332,19 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 **Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js` (mK1–mK10).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L183)
+
+# L184 (2026-10-10) — Commituj i pushuj KAŻDĄ zmianę natychmiast; praca niezacommitowana ginie z resetem sandboxa
+
+Poprzedni agent zrobił cały batch 10 kart i NIE zdążył ich zacommitować —
+przyszedł reset sandboxa i zjadł dwugodzinną robotę. Ocalał wyłącznie eksport
+`.patch`, który zawierał już-zmergowaną treść, nie pracę kartową.
+
+**Reguła:** każda zmiana (nawet jedna karta z batcha) ląduje w commicie
+i pushu w momencie powstania — nie „pod koniec, gdy wszystko będzie gotowe”.
+Commity są tanie, odtwarzanie utraconej pracy — drogie. Ta sama zasada co
+„zielony krok = osobny commit pushnięty natychmiast” (ADR 0020 C/D), tylko
+wymuszona na NAJDROBNEJSZYM kroku: jedna karta = jeden commit = jeden push.
+
+Warianty: nowy snapshot Scryfall + definicja + testy jednej karty to już
+osobny commit; poprawka po nim to kolejny. Nie kumuluj „jeszcze dwóch
+linijek” do następnego — następny krok może się nie wydarzyć.
