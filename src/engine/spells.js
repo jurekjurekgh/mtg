@@ -2946,7 +2946,9 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
         purpose: 'protection',
         sourceCardId: object.cardId,
       };
-      state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId }));
+      // M273 (Batch65): objectId/cardId — ten sam ładunek co pozostali emiterzy
+      // color_choice_required (log stołu nimi operuje — kontrakt zdarzeń).
+      state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId, objectId: newId, cardId: object.cardId ?? null }));
     }
   } else {
     // Cel nielegalny w momencie rozstrzygnięcia: karta bestow wchodzi jako

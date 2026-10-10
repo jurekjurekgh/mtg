@@ -1565,6 +1565,11 @@ export function clearStatModifiers(state) {
     if (object.attacksAsThoughNoDefenderUntilEOT) {
       replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
     }
+    // Batch65 (Zombie Boa): znaczniki „choose a color … this turn" (aktywacje
+    // z tej tury) wygasają w cleanup razem z resztą efektów do końca tury.
+    if ((object.blockDestroyColorsThisTurn ?? []).length > 0) {
+      replaceObject(state, state.objects.get(object.id), { blockDestroyColorsThisTurn: Object.freeze([]) });
+    }
     const animated = state.objects.get(object.id);
     const animationEffects = animationEffectsOf(animated);
     if (animated.originalBeforeAnimation && animationEffects) {

@@ -3821,6 +3821,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     }));
     return;
   }
+  // Batch65 (Zombie Boa): „{1}{B}: Choose a color. Whenever this creature
+  // becomes blocked by a creature of that color this turn, destroy that
+  // creature." — aktywowany wybór koloru przez WSPÓLNY mechanizm
+  // pendingColorChoice (Manor Gate/Benevolent Blessing); znacznik „na tę
+  // turę" dokłada handler resolve_color_choice (game-state.js, pole
+  // grantBlockDestroy) — jeden zapis wyboru, jedno źródło (L41).
+  if (effect.type === 'choose_color_grant_block_destroy') {
+    const targetId = sourceObject.id;
+    if (!state.objects.get(targetId)) return;
+    state.pendingColorChoice = {
+      playerId: sourceObject.controllerId,
+      objectId: targetId,
+      purpose: 'blockDestroy',
+      grantBlockDestroy: true,
+      sourceCardId: sourceObject.cardId ?? null,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('color_choice_required', {
+      playerId: sourceObject.controllerId, objectId: targetId, cardId: sourceObject.cardId ?? null,
+    }));
+    return;
+  }
   if (effect.type === 'exile_if_dies_this_turn') {
     // M177/A (Agate Assault): „If that creature would die this turn, exile it
     // instead” — znacznik na id celu, konsumowany przez deathZoneFor we

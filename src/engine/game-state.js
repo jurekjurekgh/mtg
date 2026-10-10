@@ -2617,6 +2617,18 @@ export function execute(state, input) {
         : Object.freeze({ ...chosenOn, chosenColor: cmd.color });
       state.objects.set(targetId, updated);
     }
+    // Batch65 (Zombie Boa): aktywacja „choose a color" dokłada znacznik
+    // blokowego zniszczenia NA TĘ TURĘ — lista, bo każda aktywacja to osobny
+    // „grant" (jak osobne zdolności opóźnione w oryginalnych zasadach).
+    if (pending.grantBlockDestroy) {
+      const withMark = state.objects.get(targetId);
+      if (withMark) {
+        state.objects.set(targetId, Object.freeze({
+          ...withMark,
+          blockDestroyColorsThisTurn: Object.freeze([...(withMark.blockDestroyColorsThisTurn ?? []), cmd.color]),
+        }));
+      }
+    }
     state.events.push(event('color_choice_resolved', {
       playerId: pending.playerId, color: cmd.color, auraId: pending.auraId ?? null,
       objectId: targetId, cardId: chosenOn?.cardId ?? null,

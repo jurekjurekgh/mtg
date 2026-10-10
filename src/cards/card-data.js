@@ -13373,6 +13373,34 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     support: { status: 'supported', limitations: [] },
   }),
+  // 5. Zombie Boa (APC #54) {4}{B} — 3/3 Zombie Snake. „{1}{B}: Choose a
+  // color. Whenever this creature becomes blocked by a creature of that color
+  // this turn, destroy that creature. Activate only as a sorcery."
+  // Aktywacja: wybór koloru (pendingColorChoice) + znacznik na turę
+  // (choose_color_grant_block_destroy); trigger per para bloku jak Wooden
+  // Stake („becomes blocked by a Vampire"), cel = bloker („that creature").
+  defineCard({
+    id: 'zombie-boa', name: 'Zombie Boa', set: 'APC',
+    types: ['Creature'], subtypes: ['Zombie', 'Snake'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: '{1}{B}: Choose a color. Whenever this creature becomes blocked by a creature of that color this turn, destroy that creature. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/f/1fb8c277-3154-47c9-835f-327cac297a5e.jpg?1783945346',
+    artId: 336, plan: 'Amonkhet',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 2, colors: ['B'] },
+        effect: { type: 'choose_color_grant_block_destroy' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'becomes_blocked_by_color' },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

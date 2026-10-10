@@ -610,4 +610,5 @@ export const MANA_COSTS = {
   'blitz-of-the-thunder-raptor': '{1}{R}',
   'bring-to-trial': '{2}{W}',
   'skyscythe-engulfer': '{5}{G}',
+  'zombie-boa': '{4}{B}',
 };

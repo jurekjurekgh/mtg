@@ -1178,6 +1178,8 @@ function describeEffect(e, ctx = {}) {
     // Ten sam helper co buff_* (`ptPair`), liczby bez zmian (D3).
     pump: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
     exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
+    // Batch65 (Zombie Boa): wybór koloru + zniszczenie blokujących go stworów.
+    choose_color_grant_block_destroy: () => 'wybierz kolor — stwory tego koloru blokujące w tej turze zostaną zniszczone',
     // Batch 55 (Embalm, Tah-Crop Skirmisher): zdolność z grobu tworzy kopię
     // WYGNANEJ karty — panel mówi wprost, że to kopia, nie zwykły token.
     create_token_copy_of_source: () => 'stwórz token-kopię tej karty (Embalm)',

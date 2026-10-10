@@ -362,3 +362,107 @@ test('B65/334: Skyscythe Engulfer — reach u blokera nie znosi restrykcji (licz
   assert.equal(pairOffered65(st, 'atk', 'flyreach'), false, 'flying+reach NIE blokuje');
   assert.equal(pairVerdict65(st, 'atk', 'flyreach').ok, false);
 });
+
+// ---- B65/336: Zombie Boa (APC #54, plan Amonkhet) ----------------------------
+
+/** Aktywacja „choose a color" do końca (wzorzec pendingColorChoice).
+ * Niemana aktywacja idzie NA STOS (queueActivatedAbilityToStack) — najpierw
+ * rozstrzygamy zdolność, POTEM wisi decyzja wyboru koloru. */
+function wybierzKolor(st, objectId, color, playerId = 'p1') {
+  const act = commands(st, playerId).find((c) => c.type === 'activate_ability' && c.objectId === objectId);
+  assert.ok(act, 'aktywacja zdolności jest oferowana');
+  run(st, act);
+  for (let i = 0; i < 20; i++) {
+    if (commands(st, playerId).some((c) => c.type === 'resolve_color_choice')) break;
+    const p = st.turn.priorityPlayerId;
+    const cmds = commands(st, p);
+    const roz = cmds.find((c) => c.type.startsWith('resolve_') && c.type !== 'resolve_color_choice');
+    if (roz) { run(st, roz); continue; }
+    const pass = cmds.find((c) => c.type === 'pass_priority');
+    if (pass && st.zones.stack.length) { run(st, pass); continue; }
+    break;
+  }
+  const wybor = commands(st, playerId).find((c) => c.type === 'resolve_color_choice');
+  assert.ok(wybor, 'po rozstrzygnięciu zdolności wisi decyzja wyboru koloru');
+  run(st, { type: 'resolve_color_choice', playerId, color });
+  return st;
+}
+
+test('B65/336: Zombie Boa — dane Oracle: 3/3 za {4}{B}, „choose a color" + destroy przy bloku tego koloru', () => {
+  const def = sanity('zombie-boa', { set: 'APC', plan: 'Amonkhet', artId: 336 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Zombie', 'Snake']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 3);
+  assert.equal(def.manaCost, 5);
+  assert.equal(def.abilities.length, 2);
+  const act = def.abilities[0];
+  assert.equal(act.type, 'activated');
+  assert.equal(act.timing, 'sorcery', '„Activate only as a sorcery"');
+  assert.deepEqual(act.cost, { mana: 2, colors: ['B'] }, '{1}{B}');
+  assert.deepEqual(act.effect, { type: 'choose_color_grant_block_destroy' });
+  const trg = def.abilities[1];
+  assert.equal(trg.type, 'triggered');
+  assert.deepEqual(trg.trigger, { event: 'becomes_blocked_by_color' });
+  assert.deepEqual(trg.effect, [{ type: 'destroy_permanent' }], 'cel = bloker („that creature”)');
+  const snap = snapshotOf('zombie-boa');
+  assert.deepEqual(snap.rulings, [], 'rulingi pobrane 2026-10-10 — brak orzeczeń (ADR 0028)');
+});
+
+test('B65/336: Zombie Boa — wybrany kolor: bloker tego koloru jest NISZCZONY przy bloku', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R'); // aktywacja TYLKO jako sorcery — więc w main
+  assert.deepEqual(st.objects.get('boa').blockDestroyColorsThisTurn, ['R'], 'znacznik na turę zapisany');
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa']);
+  assert.equal(pairOffered65(st, 'boa', 'blok'), true, 'blok jest legalny — trigger zniszczy blokera');
+  assert.equal(pairVerdict65(st, 'boa', 'blok').ok, true);
+  // Tym razem ZAPISUJEMY deklarację w stanie bazowym, żeby trigger się rozstrzygnął.
+  const decl = execute(st, { type: 'declare_blockers', playerId: 'p2', assignments: { boa: ['blok'] } });
+  assert.ok(decl.ok);
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'graveyard'), 'bloker koloru R zniszczony („destroy that creature”)');
+});
+
+test('B65/336: Zombie Boa — filtr koloru: bloker innego koloru przeżywa; bez aktywacji też', () => {
+  // (a) wybrany R, bloker U — przeżywa.
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, colors: ['U'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa']);
+  const decl = execute(st, { type: 'declare_blockers', playerId: 'p2', assignments: { boa: ['blok'] } });
+  assert.ok(decl.ok);
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'battlefield'), 'bloker koloru U przeżywa (filtr koloru)');
+  // (b) bez aktywacji (brak znacznika) — czerwony bloker też przeżywa.
+  const st2 = combatState65();
+  put(st2, 'boa2', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st2, 'blok2', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, colors: ['R'] });
+  enterBlocks65(st2, ['boa2']);
+  const decl2 = execute(st2, { type: 'declare_blockers', playerId: 'p2', assignments: { boa2: ['blok2'] } });
+  assert.ok(decl2.ok);
+  settle(st2);
+  assert.ok(find(st2, 'rustvine-cultivator', 'battlefield'), 'bez aktywacji trigger nie działa („this turn”)');
+});
+
+test('B65/336: Zombie Boa — aktywacja tylko jako sorcery (brak oferty poza główną fazą)', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  assert.ok(commands(st).some((c) => c.type === 'activate_ability' && c.objectId === 'boa'),
+    'w głównej fazie aktywacja jest oferowana');
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = 'p1';
+  st.turn.priorityPlayerId = 'p1';
+  assert.ok(!commands(st).some((c) => c.type === 'activate_ability' && c.objectId === 'boa'),
+    'poza główną fazą brak oferty (timing: sorcery)');
+});

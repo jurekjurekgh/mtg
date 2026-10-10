@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Zombie+Boa&set=APC&format=json",
+  "print": "apc",
+  "name": "Zombie Boa",
+  "mana_cost": "{4}{B}",
+  "cmc": 5,
+  "type_line": "Creature — Zombie Snake",
+  "oracle_text": "{1}{B}: Choose a color. Whenever this creature becomes blocked by a creature of that color this turn, destroy that creature. Activate only as a sorcery.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "54",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/1/f/1fb8c277-3154-47c9-835f-327cac297a5e.jpg?1783945346"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/apc/54/rulings",
+  "rulingsPobrano": "2026-10-10"
+}
