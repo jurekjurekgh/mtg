@@ -36,7 +36,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
-| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (22 piny: 7 fala A + 3 fala B + 3 fala C + 3 fala D + 3 fala E + 3 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E); 0 nowych pokręteł |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (25 pinów: 7 fala A + 3 fala B + 3 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3129,13 +3129,57 @@ NIEZNANEGO daje dokładnie te same 96,0. Czyli +51 to ucieczka od resetu
 Dopisanie premii za typ byłoby podwójnym liczeniem — kod nietknięty,
 zamiast tego pinezka A7 zabezpieczająca pomiar.
 
-**Testy (fale C/E/F):** 10 nowych pinów (C1–C3, E1–E3, F1–F3) plus A7 —
-razem 22. RED→GREEN per fala: C — 3/3 → 1/3 (C2 kotwica 0,0 z założenia);
-E — 3/3 → 2/3 (E2/E3 kontrole ujemne z założenia); F — 3/3 → 1/3
-(F3 kontrola znaku z założenia).
+### Audyt zasięgu zmian (fale C/E/F dotknęły współdzielonego kodu)
 
-**Bramki końcowe:** `npm test` 8027/8027, build 73 moduły / 5009,8 kB,
-`cr-numery --cr` OK. 0 nowych pokręteł.
+„Testy przechodzą" znaczy tylko, że żadna pinezka nie pękła — nie że każda
+dotknięta karta zachowuje się poprawnie. Dlatego zasięg każdej zmiany
+zmierzono skanem całego rejestru (`REG.all()`), a nie grepem:
+
+| Fala | Zmienione miejsce | Zasięg w card-data | Dowód |
+|---|---|---|---|
+| C | nowa gałąź efektu | **1 karta** (`choose_color_grant_block_destroy` = tylko Zombie Boa) | grep + pinezki C1–C3 |
+| E | `hostEvadesBlockers` | **1 karta** (`cantBeBlockedByKeywords` = tylko Skyscythe) | grep + pinezki E1–E3 |
+| F | wpis `pump` w `ETB_EFFECT_BONUS` | **2 karty** z ujemnym pump w triggerze: `ambulatory-edifice` i `silumgar-butcher` | skan + pin F4 |
+
+Silumgar Butcher **nie** przechodzi przez `ETB_EFFECT_BONUS`: exploit
+wycenia `anticipatedSacValue` własnym modelem (`exploitDebuff` + `killValue`),
+a użytkownicy tabeli filtrują event na `enter_battlefield`/`dies`/`attacks`
+i explicite `continue` przy `exploits` (heuristic-bot.js:2508). Zmierzono oba
+warianty: **71,1027 z falą F i 71,1027 po jej cofnięciu** — pin F4 blokuje
+przypadkowe rozszerzenie zasięgu.
+
+### Model kosztu `trigger.payLife` (domknięcie forwarda)
+
+Forward „pay-trigger-net-model", zapisany przy `anticipatedDiesValue` i
+świadomie zostawiony poza zakresem fali F, został domknięty. Skan rejestru:
+`trigger.payLife` noszą **dokładnie dwie karty** — `zoraline` (ETB + attacks)
+i `ambulatory-edifice` (ETB), obie `payLife=2`. Tabela ETB nie zna typu
+`pay_life`, więc `trigger.payLife` jest jedynym autorytatywnym polem kosztu
+i naliczane jest raz.
+
+`etbEnterBonusValue`: suma zdolności idzie do `sub`, a przy `trigger.payLife`
+wynik = `max(0, sub − selfLifeLossPenalty(view, N))`. Podłoga 0 wynika z tego,
+że płatność jest **opcjonalna** („you may pay") — gracz zapłaci tylko, gdy
+efekt to przewyższa. Jednostka: wspólna drabina `selfLifeLossPenalty` (L48).
+
+Pomiar (`selfLifeLossPenalty(view, 2)` = 4 przy zdrowym życiu, ×0,9
+skalowania = 3,6):
+
+| Przypadek | Efekt | Wartość | Zachowanie |
+|---|---|---|---|
+| Edifice, −1/−1 we wroga | 6 − 4 > 0 | brutto 75,6036 → netto **72,0036** (delta +1,8) | płaci |
+| Edifice, wariant +1/+1 | 3 − 4 < 0 | 72,9036 → **70,2036** = kontrfaktyk | **nie płaci** |
+| Zoraline (return z grobu) | 10 − 4 > 0 | 81,9036 → **78,3036** | płaci, decyzja o rzucie bez zmian |
+
+**Testy (fale C/E/F + model kosztu):** 13 nowych pinów (C1–C3, E1–E3,
+F1–F6) plus A7 — razem **25**. RED→GREEN per fala: C — 3/3 → 1/3 (C2 kotwica
+0,0 z założenia); E — 3/3 → 2/3 (E2/E3 kontrole ujemne z założenia); F — po
+cofnięciu naprawy kierunku F1/F2 czerwone, F3 zielona; po cofnięciu modelu
+kosztu F1/F5/F6 czerwone, F2/F3/F4 zielone (izolowane od płatności).
+
+**Bramki końcowe:** pełne B0 `run-tests.mjs all` **8291/8291**, `npm test`
+8030/8030, build 73 moduły / 5010,6 kB, `cr-numery --cr` OK.
+0 nowych pokręteł.
 
 Dowody, wartości PRZED→PO i pełna macierz:
 [plan PMSSB-60](plans/PLAN_2026-10-10c-pmssb60-batch65.md),

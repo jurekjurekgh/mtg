@@ -16446,3 +16446,29 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   OK, CI zielone. 22 piny w `test/audyt-pmssb60-batch65.test.js`, każdy
   z dowodem mutacyjnym RED→GREEN. Commity fal: `01ffc94` (E), `5bbd324` (F),
   `498b917` (C), `56f546a` (A7).
+
+- **Audyt zasięgu + domknięcie forwarda (dalszy ciąg tego samego dnia)**:
+  "testy przechodzą" znaczy tylko, że żadna pinezka nie pękła, więc zasięg
+  każdej zmiany zmierzono skanem całego rejestru (`REG.all()` — uwaga:
+  `createCardRegistry()` NIE jest Mapą, ma `get/has/all/supported`).
+  Fale C i E mają zasięg jednej karty każda. Fala F (wpis `pump` w
+  `ETB_EFFECT_BONUS`) — dwóch: `ambulatory-edifice` i `silumgar-butcher`;
+  Butcher nie przechodzi przez tę tabelę (exploit wycenia
+  `anticipatedSacValue` własnym modelem, a użytkownicy tabeli robią
+  `continue` przy `exploits`, l.2508). Zmierzono 71,1027 z falą F i 71,1027
+  po jej cofnięciu — pin F4.
+- **pay-trigger-net-model domknięty**: `trigger.payLife` noszą dokładnie dwie
+  karty (zoraline, ambulatory-edifice), tabela ETB nie zna typu `pay_life`,
+  więc koszt naliczany raz jako `max(0, efekt − selfLifeLossPenalty)` —
+  podłoga 0, bo płatność jest opcjonalna. Edifice: brutto 75,6036 → netto
+  72,0036; wariant +1/+1 (3 − 4 < 0) → nie płaci, delta 0; Zoraline
+  81,9036 → 78,3036 (różnica dokładnie 3,6, decyzja o rzucie bez zmian).
+- **Lekcja o budżecie LESSONS.md**: lektura startowa (AGENTS.md + ADR-y +
+  LESSONS.md + ENVIRONMENT.md) to 279 772 znaków = **99 918 tokenów** przy
+  limicie 100 000 (przelicznik 2,8 znaku/token) — zostało ~82 tokeny.
+  Lekcja o kontrfaktyku bez rejestru została więc w `docs/PMSSB.md` (poza
+  budżetem), nie w LESSONS.md: dopisanie jej wymagałoby wyrzucenia innej
+  lekcji, a test wprost zabrania podnosić próg.
+- **Commity**: `6a62018` (audyt zasięgu, pin F4), `69b3483`
+  (pay-trigger-net-model, piny F5/F6). Bramki: pełne B0 8291/8291,
+  `npm test` 8030/8030, build 73 / 5010,6 kB, cr-numery OK, CI zielone.
