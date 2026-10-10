@@ -6932,14 +6932,15 @@ export function playerView(state, playerId) {
             if (a?.type !== 'static') continue;
             if (Array.isArray(a.cantBeBlockedExceptByColors)) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
-              break;
             }
             // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera
             // („can't be blocked by creatures with flying") — publiczny
             // deskryptor z CR 509.1a, ten sam kształt co wyżej (ADR 0017/0002).
+            // Audyt PR #162/F-11: nie kończymy skanu po pierwszej rodzinie —
+            // niezależne restrykcje mogą działać jednocześnie i obie muszą
+            // trafić do widoku (np. except-by-color + not-by-flying).
             if (Array.isArray(a.cantBeBlockedByKeywords)) {
               entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
-              break;
             }
           }
         }

@@ -64,6 +64,24 @@ test('widok pola bitwy niesie każdą cechę publiczną, którą ma permanent', 
   }
 });
 
+test('F-11 audytu PR #162: widok akumuluje niezależne restrykcje blokowania', () => {
+  // RED: `break` po pierwszym trafieniu gubił drugi publiczny skutek. Jeden
+  // permanent może mieć równocześnie np. „except by black” oraz „not by flying”.
+  const state = stanZPermanentem('skyscythe-engulfer');
+  const object = state.objects.get('b1');
+  state.objects.set('b1', Object.freeze({
+    ...object,
+    abilities: Object.freeze([
+      Object.freeze({ type: 'static', cantBeBlockedExceptByColors: Object.freeze(['B']) }),
+      Object.freeze({ type: 'static', cantBeBlockedByKeywords: Object.freeze(['flying']) }),
+    ]),
+  }));
+  const entry = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'b1');
+  assert.deepEqual(entry.cantBeBlockedExceptByColors, ['B']);
+  assert.deepEqual(entry.cantBeBlockedByKeywords, ['flying'],
+    'druga niezależna restrykcja nie może zniknąć przez break po pierwszej');
+});
+
 test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   // Odpowiednik skanu z M274, ale dla warstwy renderu. Lista pól, które
   // `cardInfo` czyta z wpisu, musi mieścić się w tym, co widok potrafi
