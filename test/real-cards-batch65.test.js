@@ -693,3 +693,63 @@ test('B65/348: Impulse — nielegalny wybór i zła kolejność odrzucone', () =
   const r3 = execute(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: pick, bottomOrder: rest });
   assert.ok(r3.ok, 'poprawna decyzja przechodzi');
 });
+
+// ---- B65/350: Temple of Abandon (BLC #338, plan Kamigawa) --------------------
+
+test('B65/350: Temple of Abandon — dane Oracle: land tapowany, scry 1, {T}: {R} lub {G}', () => {
+  const def = sanity('temple-of-abandon', { set: 'BLC', plan: 'Kamigawa', artId: 350 });
+  assert.deepEqual(def.types, ['Land']);
+  assert.deepEqual(def.colors, []);
+  assert.equal(def.entersTapped, true, 'wchodzi tapnięty');
+  assert.equal(def.abilities.length, 2);
+  const [trg, mana] = def.abilities;
+  assert.equal(trg.type, 'triggered');
+  assert.equal(trg.trigger.event, 'enter_battlefield');
+  assert.deepEqual(trg.effect, [{ type: 'scry', amount: 1 }]);
+  assert.equal(mana.type, 'activated');
+  assert.deepEqual(mana.cost, { tap: true });
+  assert.deepEqual(mana.effect, { type: 'add_mana', amount: 1, colors: ['R', 'G'] }, 'Add {R} or {G}');
+  const snap = snapshotOf('temple-of-abandon');
+  assert.equal(snap.rulings.length, 4, 'generyczne rulingi scry WotC 2013-09-15');
+  assert.ok(snap.rulings.every((r) => /scry|library|card/i.test(r.comment)), 'rulingi o scry');
+});
+
+test('B65/350: Temple of Abandon — wejście tapnięte, scry 1 działa, {T} daje manę {R}/{G}', () => {
+  const st = game();
+  put(st, 'temple', 'temple-of-abandon', 'p1', 'hand');
+  run(st, commands(st).find((c) => c.type === 'play_land' && c.objectId === 'temple'));
+  const temple = find(st, 'temple-of-abandon', 'battlefield');
+  assert.ok(temple, 'land na polu bitwy');
+  assert.equal(temple.tapped, true, 'wchodzi tapnięty');
+  for (let i = 0; i < 12 && !st.pendingScry; i++) run(st, commands(st).find((c) => c.type === 'pass_priority'));
+  assert.ok(st.pendingScry, 'ETB scry 1 otwarty');
+  assert.equal(st.pendingScry.objectIds.length, 1);
+  const top1 = st.pendingScry.objectIds[0];
+  run(st, { type: 'resolve_scry', playerId: 'p1', bottomIds: [top1] });
+  const libP1 = st.zones.library.filter((id) => st.objects.get(id)?.controllerId === 'p1');
+  assert.equal(libP1.slice(-1)[0], top1, 'scry: karta na spodzie biblioteki');
+  st.objects.set(temple.id, Object.freeze({ ...temple, tapped: false }));
+  const player = st.players.find((p) => p.id === 'p1');
+  const mana0 = player.mana;
+  const offer = commands(st).find((c) => c.type === 'activate_ability' && c.objectId === temple.id);
+  assert.ok(offer, 'oferta {T}: Add {R} or {G}');
+  run(st, offer);
+  assert.equal(player.mana, mana0 + 1, 'jedna mana w puli');
+  const klucz = Object.keys(player.manaPool).find((k) => (player.manaPool[k] ?? 0) > 0);
+  assert.ok(klucz.includes('R') && klucz.includes('G'), 'jednostka wielokolorowa {R}/{G} (M67)');
+});
+
+test('B65/350: Temple of Abandon — nielegalny scry odrzucony; tapnięty land bez oferty many', () => {
+  const st = game();
+  put(st, 'temple', 'temple-of-abandon', 'p1', 'hand');
+  run(st, commands(st).find((c) => c.type === 'play_land' && c.objectId === 'temple'));
+  for (let i = 0; i < 12 && !st.pendingScry; i++) run(st, commands(st).find((c) => c.type === 'pass_priority'));
+  assert.ok(st.pendingScry);
+  const obca = st.zones.library.find((id) => st.objects.get(id)?.controllerId === 'p1' && !st.pendingScry.objectIds.includes(id));
+  const zla = execute(st, { type: 'resolve_scry', playerId: 'p1', bottomIds: [obca] });
+  assert.equal(zla.ok, false, 'karta spoza scry odrzucona (illegal_scry_choice)');
+  run(st, { type: 'resolve_scry', playerId: 'p1', bottomIds: [] });
+  const temple2 = find(st, 'temple-of-abandon', 'battlefield');
+  assert.ok(!commands(st).some((c) => c.type === 'activate_ability' && c.objectId === temple2.id),
+    'tapnięty land nie oferuje {T}: Add (brak oferty)');
+});

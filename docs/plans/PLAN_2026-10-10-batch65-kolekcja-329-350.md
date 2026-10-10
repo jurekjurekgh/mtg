@@ -65,5 +65,5 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 - [x] 340 Ambulatory Edifice (ONE, Mirrodin)
 - [x] 341 Pacifism (DTK, Tarkir)
 - [x] 348 Impulse (DMU, Dominaria)
-- [ ] 350 Temple of Abandon (BLC, Kamigawa)
+- [x] 350 Temple of Abandon (BLC, Kamigawa)
 - [ ] Domknięcie: milestone + historia + opis PR.

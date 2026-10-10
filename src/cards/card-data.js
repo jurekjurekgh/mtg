@@ -13482,6 +13482,33 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['ruling 2004-10-04: to NIE jest dobieranie (brak zdarzeń card_drawn) i nie tasujesz biblioteki (reszta na spód w kolejności bottomOrder)'],
   }),
+
+  // 10. Temple of Abandon (BLC #338) — Land: wchodzi tapnięty, ETB scry 1,
+  //     {T}: Add {R} or {G}. Wzorzec Dismal Backwater (dual + ETB trigger).
+  //     Rulingi WotC 2013-09-15: generyczne scry (kolejność akcji, wybór
+  //     top/bottom, kolejność kart, scry z nielegalnymi celami).
+  defineCard({
+    id: 'temple-of-abandon', name: 'Temple of Abandon', set: 'BLC',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {R} or {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/9/59866586-8a4c-464e-8273-2ec06f29d28e.jpg?1783910629',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'scry', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['R', 'G'] },
+      }),
+    ],
+    artId: 350,
+    plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wchodzi tapnięty (land materialize entersTapped); scry 1 przy wejściu (pendingScry, resolve_scry); {T}: Add {R} or {G} — jednostka wielokolorowa (M67)'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,
