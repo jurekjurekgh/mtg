@@ -8270,21 +8270,23 @@ warunek **`affinityToEnchantments`** w `conditionalCostReduction`
 2020-01-24); zdarzenie **`becomes_blocked_by_color`** (per-pair gałąź w
 blockers_declared, wzorzec Wooden Stake; M273 — pola `objectId`/`cardId`
 identyczne we wszystkich emiterach) + efekt
-**`choose_color_grant_block_destroy`** (wybór koloru → niszczy stwory
-blokujące tym kolorem w tej turze; `blockDestroyColorsThisTurn` czyszczone
-w `clearStatModifiers`). Rejestracje: TRIGGER_EVENT_LABELS,
+**`choose_color_grant_block_destroy`** (wybór koloru tworzy niezależny delayed
+trigger w `turnAbilityGrants`; cleanup kończy go z turą, a zmiana strefy
+źródła usuwa grant starego obiektu). Rejestracje: TRIGGER_EVENT_LABELS,
 ABILITY_EFFECT_LABELS (M255/C1 — mapa LOG, nie tylko panel rendera),
 render `generic`, STACKING_ACTIVATED_EFFECTS, batch25 supported events.
 
-Reszta batcha na gotowych ścieżkach: Devoid (Blinding Drone, Blitz of the
-Thunder-Raptor — CR 702.114), optionalPay/Etap F z celem PO zapłacie
-(Ambulatory Edifice, wzorzec Zoraline; ruling 2023-02-04 o refleksie),
+Reszta batcha: Devoid dotyczy wyłącznie Blinding Drone (CR 702.114;
+Blitz of the Thunder-Raptor **nie ma** Devoid), optionalPay/Etap F z celem PO
+zapłacie (Ambulatory Edifice, wzorzec Zoraline; ruling 2023-02-04 o refleksie),
 `aura.cantAttack/cantBlock` (Pacifism, wzorzec Hobble — audyt F-1/S9
 rozszerzony do czterech aur), `look_top_put_one_hand_rest_bottom`
 (Impulse, M177/E — rulingi „not a draw”/„no shuffle” testowane zdarzeniowo),
 `scry` + `add_mana colors ['R','G']` (Temple of Abandon, wzorzec Dismal
-Backwater; jednostka wielokolorowa M67), Bring to Trial i Skyscythe
-Engulfer bez zmian silnika.
+Backwater; jednostka wielokolorowa M67) oraz Bring to Trial na gotowej
+ścieżce. Skyscythe Engulfer wymagał natomiast generycznego deskryptora
+`cantBeBlockedByKeywords` w kilku warstwach: walidacji combatu, `PlayerView`,
+renderze i — w PMSSB-60 — heurystyce bota.
 
 Talie z generatora (M203 README w tych samych commitach): mirrodin-brg
 35/12/23, tarkir-wur 35/12/23, dominaria-wu 29/10/19, theros 29/10/19,

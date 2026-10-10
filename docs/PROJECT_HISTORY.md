@@ -16235,17 +16235,19 @@ niezacommitowany batch).
 
 **Silnik:** Affinity for enchantments (Brine Giant — `affinityToEnchantments`
 w `conditionalCostReduction`; rabat tylko część generyczną, ruling WotC
-2020-01-24), Devoid (Drone, Thunder-Raptor), choose a color + niszczenie
-blokujących tym kolorem (Zombie Boa — `becomes_blocked_by_color` per para
-bloku + `blockDestroyColorsThisTurn` czyszczone w `clearStatModifiers`),
-refleks „you may pay 2 life. When you do” (Ambulatory Edifice —
-optionalPay/Etap F, cel PO zapłacie wg rulingu 2023-02-04), aura
-cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech aurach), look 4/
-jedna do ręki (Impulse — `look_top_put_one_hand_rest_bottom`, rulingi „not
-a draw” i „no shuffle” testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}`
-(Temple of Abandon — wzorzec Dismal Backwater, jednostka wielokolorowa M67).
-Bez zmian silnika: Bring to Trial (exile mocy 4+) i Skyscythe Engulfer
-(reach/trample/can’t be blocked by flying).
+2020-01-24), Devoid (**tylko** Blinding Drone; Thunder-Raptor nie ma tej
+zdolności), choose a color + niszczenie blokujących tym kolorem (Zombie Boa —
+`becomes_blocked_by_color` per para bloku; po audycie #162 niezależny delayed
+trigger w `turnAbilityGrants`), refleks „you may pay 2 life. When you do”
+(Ambulatory Edifice — optionalPay/Etap F, cel PO zapłacie wg rulingu
+2023-02-04), aura cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech
+aurach), look 4/jedna do ręki (Impulse —
+`look_top_put_one_hand_rest_bottom`, rulingi „not a draw” i „no shuffle”
+testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}` (Temple of Abandon —
+wzorzec Dismal Backwater, jednostka wielokolorowa M67). Bring to Trial używa
+gotowej ścieżki exile mocy 4+. Skyscythe Engulfer wymagał zmian
+wielowarstwowych: deskryptora `cantBeBlockedByKeywords` w walidacji combatu,
+`PlayerView`, renderze oraz później w heurystyce PMSSB-60.
 
 **Pułapki:** nowe zdarzenie + efekt zapalają osiem strażników rejestracji
 (TRIGGER_EVENT_LABELS, ABILITY_EFFECT_LABELS jako mapa LOG M255/C1, render
