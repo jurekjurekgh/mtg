@@ -188,6 +188,15 @@ export function conditionalCostReduction(state, object) {
       .filter((c) => c.kind === 'artifact' || (c.types ?? []).includes('Artifact')).length;
     return artifacts * amount;
   }
+  // Batch65 (Brine Giant): Affinity for ENCHANTMENTS (CR 702.41 wariant) —
+  // „This spell costs {1} less to cast for each enchantment you control."
+  // Bliźniak affinityToArtifacts: obniżka per enchantment (także enchantment
+  // creatures — typ Enchantment w types).
+  if (condition.affinityToEnchantments) {
+    const enchantments = controlled()
+      .filter((c) => c.kind === 'enchantment' || (c.types ?? []).includes('Enchantment')).length;
+    return enchantments * amount;
+  }
   if (condition.controlsSubtype != null) {
     const has = controlled().some((c) => hasCreatureType(c, condition.controlsSubtype, state));
     return has ? amount : 0;

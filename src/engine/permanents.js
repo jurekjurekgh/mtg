@@ -32,6 +32,33 @@ export function basicLandTypeCount(battlefield, controllerId) {
   return found.size;
 }
 
+/**
+ * PMSSB-60/F1 (Blitz of the Thunder-Raptor, batch 65): liczba kart instant
+ * i sorcery w grobie JEDNEGO kontrolera — kwota dla `damage` z deskryptorem
+ * `amount: 'instants_and_sorceries_in_your_graveyard'`.
+ *
+ * JEDNO źródło prawdy dla silnika i bota (L41): `effects.js` liczy to przy
+ * rozstrzyganiu (CR 608.2h), `heuristic-bot.js` przy wycenie rzutu — wcześniej
+ * silnik liczył inline, a heurystyka wcale (0 trafień deskryptora), więc bot
+ * wyceniał Blitz na −30 niezależnie od grobu i nigdy go nie rzucał, mimo że
+ * rozstrzygnięcie zadawało pełne obrażenia.
+ *
+ * Wejście to DOWOLNY iterowalny zbiór obiektów (silnik podaje wszystkie
+ * obiekty i sam filtruje strefę, bot ma już gotową tablicę `zones.graveyard`
+ * z widoku) — wybór strefy zostaje po stronie wywołującego, bo każda strona
+ * ma naturalny sposób na grób. Ruling WotC 2020-04-17: sam Blitz jest jeszcze
+ * na stosie, więc strefa grobu go nie zawiera i nie policzy się do kwoty.
+ */
+export function instantSorceryGraveyardCount(objects, controllerId) {
+  let count = 0;
+  for (const object of objects ?? []) {
+    if (!object || object.controllerId !== controllerId) continue;
+    const types = object.types ?? [];
+    if (types.includes('Instant') || types.includes('Sorcery')) count += 1;
+  }
+  return count;
+}
+
 /** Prewencja licznika shield, wspólna dla pipeline i markDamage. */
 export function preventDamageWithShieldCounter(state, objectId, amount) {
   const object = state.objects.get(objectId);
@@ -1565,6 +1592,11 @@ export function clearStatModifiers(state) {
     if (object.attacksAsThoughNoDefenderUntilEOT) {
       replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
     }
+    // Batch65 (Zombie Boa): znaczniki „choose a color … this turn" (aktywacje
+    // z tej tury) wygasają w cleanup razem z resztą efektów do końca tury.
+    if ((object.blockDestroyColorsThisTurn ?? []).length > 0) {
+      replaceObject(state, state.objects.get(object.id), { blockDestroyColorsThisTurn: Object.freeze([]) });
+    }
     const animated = state.objects.get(object.id);
     const animationEffects = animationEffectsOf(animated);
     if (animated.originalBeforeAnimation && animationEffects) {
@@ -1806,8 +1838,22 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
  * zestaw pól do rozłożenia w nowym obiekcie.
  */
+/**
+ * Rodzaj obiektu gry z linii typu (CR 205.2a): stwór ma `kind` `creature`.
+ * Jeden wspólny odczyt dla dwóch miejsc, które ODBUDOWUJĄ cechy obiektu po
+ * tym, jak inna operacja nadała mu cechy cudzej strony karty (L41 — reguła
+ * w jednym miejscu): druga strona DFC (`transformedCharacteristics`) oraz
+ * strona-stwór karty z przygodą (`castAdventureCreature`, CR 715.3).
+ * `null` = linia typu nie rozstrzyga rodzaju — wywołujący zostaje przy
+ * dotychczasowym `kind`.
+ */
+export function kindFromTypes(types, fallback = null) {
+  if ((types ?? []).includes('Creature')) return 'creature';
+  return fallback;
+}
+
 export function transformedCharacteristics(back, previous = null) {
-  const kind = back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : previous?.kind);
+  const kind = back.kind ?? kindFromTypes(back.types, previous?.kind);
   return {
     cardId: back.cardId,
     cardName: back.cardName ?? previous?.cardName ?? null,

@@ -19,6 +19,47 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-10 — audyt PR #161 i naprawy F-1/F-2 (PR #162)
+
+**Zadanie właściciela:** kontynuacja projektu — przeczytać dokumentację,
+zaudytować ostatni scalony PR (ADR 0020 B), naprawić znaleziska, zatrzymać
+się (bez pętli jakości).
+
+**Audyt PR #161** (audyt #160 + naprawy Z-1/O-1/L/M/N/J; 20 plików,
++1218/−44): werdykt **PASS WITH FINDINGS** — raport
+`docs/audits/AUDYT_PR161_2026-10-10.md`. Naprawy PR zweryfikowane kodowo
+i mutacyjnie (7 mutacji, wszystkie piny gasną przy rewersie — tabela
+w raporcie); piny pmssb5/6/18/32/36 i bot-params arytmetycznie spójne;
+regeneracja snapshota świadoma (scoreSum −51, decyzje 263→263); cytaty CR
+(400.7, 702.174a–b, 707.2) werbatim wobec przypiętego cr-raw.txt
+(SHA-256 identyczny z pinem audytu #160).
+
+**Znaleziska F-1/F-2 (rodzina N, L72) — naprawione RED→GREEN, osobne
+commity:**
+
+- **F-1 (`ea04f66`):** `chooseOneOrBothPlanOf` — szósty plan składający
+  warianty — nie miał guardu `uniformGiftOf` (pięć miało). Mapa
+  `bySelection` (klucz = same gniazda `a|b`) nadpisywała wariant z darem
+  wariantem bez daru — wybór obietnicy cicho przepadał. Hipotetyczna karta
+  (L52): fix generyczny + piny F-1/1–2 RED→GREEN, F-1/3–5 kontrole.
+- **F-2 (`ccb81c3`):** wyróżnik daru w etykietach („· dar dla przeciwnika:
+  …”, „(dar)”) tylko dla `cast_spell` — fallback `buttonsPlanOf` rodziny N
+  dawał nierozróżnialne wiersze dla cast_permanent/cleave/flashback/
+  escape/adventure (M101/B). Fix u root cause (L41): jeden helper
+  `giftPartOf` w lejkach `commandLabel` (wrapper; ciało →
+  `commandLabelBase`) i `choiceSourceTitle`; strażnik A3 (m163) skanuje
+  teraz ciało `commandLabelBase`. Piny F-2/1/2/4 RED→GREEN, F-2/3
+  obustronnie zielona.
+
+Obserwacje O-1–O-5 w raporcie (bez działań): m.in. `targetIds` = wyłącznie
+decyzje resolve_* (dar tam niedostępny — CR 702.174a), drugie wymiary
+poza darem (stun) łapie wzorzec A2, martwy `stopped?.power`, siatka
+numerowania etykiet, inwariant bramki Z-1.
+
+**Bramki HEAD:** `npm test` 7960/7960, `npm run build` 73/4976,1 kB,
+`test/bot-benchmark.test.js` 10/10 (decyzje stabilne mimo zmian L/M/J).
+`test:all` nie uruchamiany (zgodnie z zadaniem).
+
 ## 2026-10-09e — zgłoszenie N: Crumb and Get It, brak wyboru daru (PR #161)
 
 **Zgłoszenie właściciela (uwaga z gry):** rzucając Crumb and Get It („Gift a
@@ -16180,3 +16221,254 @@ werdyktach kontrolnych, build 73 moduły / 4959,4 kB. Benchmark B0 na TEJ SAMEJ
 talii (deki zmieniły się w batchcie 64, więc porównanie z PMSSB-58 byłoby
 nieporównywalne): 603/672 (89,7%) vs 604/672 (89,9%) baseline — bez zmiany w
 granicach szumu, vs aggio identycznie 80,7%.
+
+## 2026-10-10 — batch65: kolekcja 329–350, 10 kart (PR #162, M442)
+
+Dziesięć kart z listy właściciela: 329 Blinding Drone (OGW), 332 Blitz of
+the Thunder-Raptor (IKO), 333 Bring to Trial (RNA), 334 Skyscythe Engulfer
+(ONE), 336 Zombie Boa (APC), 338 Brine Giant (THB), 340 Ambulatory Edifice
+(ONE), 341 Pacifism (DTK), 348 Impulse (DMU), 350 Temple of Abandon (BLC).
+Kolumna Plan listy właściciela wiążąca i przepisana 1:1 (np. Zombie Boa →
+Amonkhet, Skyscythe → Mirrodin). Karta po karcie z natychmiastowym commitem
+i pushem (L184 — reset sandboxa zabrał poprzedniemu agentowi cały
+niezacommitowany batch).
+
+**Silnik:** Affinity for enchantments (Brine Giant — `affinityToEnchantments`
+w `conditionalCostReduction`; rabat tylko część generyczną, ruling WotC
+2020-01-24), Devoid (Drone, Thunder-Raptor), choose a color + niszczenie
+blokujących tym kolorem (Zombie Boa — `becomes_blocked_by_color` per para
+bloku + `blockDestroyColorsThisTurn` czyszczone w `clearStatModifiers`),
+refleks „you may pay 2 life. When you do” (Ambulatory Edifice —
+optionalPay/Etap F, cel PO zapłacie wg rulingu 2023-02-04), aura
+cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech aurach), look 4/
+jedna do ręki (Impulse — `look_top_put_one_hand_rest_bottom`, rulingi „not
+a draw” i „no shuffle” testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}`
+(Temple of Abandon — wzorzec Dismal Backwater, jednostka wielokolorowa M67).
+Bez zmian silnika: Bring to Trial (exile mocy 4+) i Skyscythe Engulfer
+(reach/trample/can’t be blocked by flying).
+
+**Pułapki:** nowe zdarzenie + efekt zapalają osiem strażników rejestracji
+(TRIGGER_EVENT_LABELS, ABILITY_EFFECT_LABELS jako mapa LOG M255/C1, render
+`generic`, STACKING_ACTIVATED_EFFECTS, batch25, M273 zgodność pól emiterów);
+`play_land`/ruchy między strefami nadają nowy objectId — asercje po `id`
+z `find()`, nie po id sprzed ruchu; `git commit -m` z cudzysłowem ASCII w
+wiadomości tnie komunikat — wiadomości tylko przez `git commit -F`.
+
+**Domknięcie:** talie z generatora (mirrodin-brg 35/12/23, tarkir-wur
+35/12/23, dominaria-wu 29/10/19, theros 29/10/19, worek-basni 27/9/18;
+README w tych samych commitach — M203). Bramki: all **7994/7994** (34 testy
+B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
+
+## 2026-10-10 — zgłoszenie A: Gray Slaad z przygody nie był stworem dla silnika
+
+- **Zgłoszenie**: „Nie pokazuje mi się oferta w Twoje działania na rzucenie
+  tego czaru [Diplomatic Relations], tak jakby nie było legalnych celów. Ani
+  moja ani przeciwnika kreatura nie ma czegoś takiego jak »can't be target of
+  spells or abilities«.” + A1: „Gunmaker [Warmaker] Gunship ETB też nie może go
+  targetować” + A2: „Bot ma tylko Gray Slaad na stole. I nie blokuje. Wchodzę
+  wszystkim. Bot przegrywa.” Log partii (seed 919670) potwierdzał wszystkie
+  trzy: tura 3 „rzuca Gray Slaad (przygoda)”, tura 14 „Warmaker Gunship —
+  trigger bez efektu (brak legalnych celów)”, tura 10 blok innymi stworami.
+- **Przyczyna** (jedna, wspólna dla A/A1/A2): `castAdventure` nadpisuje na
+  obiekcie `kind: 'spell'` — poprawnie, bo CR 715.3b: „While on the stack as an
+  Adventure, the spell has only its alternative characteristics”. Ale ten stan
+  PRZETRWAŁ zmianę strefy do exile (CR 715.3d), a `castAdventureCreature`
+  czyścił tylko deskryptor `spell`, nie `kind` — więc permanent wchodził na
+  pole bitwy z `kind: 'spell'`. Tymczasem CR 715.4: „In every zone except the
+  stack, and while on the stack not as an Adventure, an adventurer card has
+  only its normal characteristics.” Filtry celów i bloków wymagają w silniku
+  `kind === 'creature'` (np. `spec.type === 'creature'` w triggers.js), więc
+  karta była niewidzialna jako stwór: niecelowalna, bez oferty bloku, a LKI
+  w grobie też niosła `formerKind: 'spell'` (liczone z `kind` przy ruchu).
+  Zasięg: wyłącznie karty z przygodą — `castAdventure` to jedyne miejsce
+  nadpisujące `kind` obiektu (katalog: gray-slaad, ettercap).
+- **Fix** (u źródła, L41): `castAdventureCreature` odbudowuje `kind` z linii
+  typu karty (CR 205.2a) przez nowy wspólny odczyt `kindFromTypes` w
+  permanents.js — ten sam, z którego korzysta druga strona DFC
+  (`transformedCharacteristics`, zachowanie 1:1). `formerKind` naprawia się
+  sam, bo jest liczony z `kind` przy każdej zmianie strefy (objects.js).
+- **Efekt** (E2E, repro z logu partii): diff permanentu „zwykły rzut vs
+  przygoda” przed fixem — `kind: creature/spell`, `formerKind: creature/spell`;
+  po fixie obie różnice zniknęły (zostały tylko zamierzone `adventure`,
+  `adventureDone`, `manaColorsSpent` i `id`). A: Diplomatic Relations oferuje
+  rzut `["sentinel","permanent-7"]` i zadaje obrażenia. A1: ETB Warmakera →
+  `trigger_target_resolved {targetId: permanent-7}`, `damage_dealt 1` (1
+  artefakt), `creature_destroyed` (4/1 ginie od 1 obrażenia — poprawnie), brak
+  wpisu `no_targets`. A2: oferta bloku istnieje i deklaracja przechodzi.
+- Testy `test/zgloszenie-a-gray-slaad-przygoda-kind.test.js` (A/1, A/1b, A/2,
+  A/3, A/4 + kontrola A/5 anty-prze-naprawy: zwykły rzut i Ettercap z przygody).
+  Dowód RED→GREEN: z fixem **6/6**, po zdjęciu jednej linii `kind:` **1/6**
+  (pada A/1–A/4, kontrola przechodzi — tak ma być).
+- CR 715.3b i 715.4 dopisane do tabeli numerów procedurą `cr-numery.mjs
+  --zapisz` (oba zweryfikowane przy źródle; sha256 `8d860e451f20…` zgodny
+  z pinem ADR 0030) — tabela 518 → **520** numerów.
+- Bramy: all **8000/8000**, build **73 moduły / 4998,7 kB**, `cr-numery --cr`
+  **OK** (520/519/5672). Bez pełnego B0 (ADR 0018).
+- **Uwaga budżetowa (L66)**: lektura startowa ma ~99 920/100 000 tokenów
+  (zapas 80) — ta pułapka NIE dostała wpisu w `docs/LESSONS.md`, bo wymagałoby
+  to skrócenia istniejących wpisów. Udokumentowana tutaj, w komentarzu przy
+  fixie i w nagłówku testu; dopisanie do LESSONS to osobne zadanie.
+
+## 2026-10-10 — czerwone CI: czar wstrzymany blokującą decyzją zostawał na stosie na zawsze
+
+- **Objaw**: CI (nie zgłoszenie właściciela) — pełne B0
+  `node tools/run-tests.mjs all` padało na `test/audyt-bot-walka-remisy.test.js`
+  i `test/bot-benchmark.test.js` niezmiennikiem „Pending spell odwołuje się do
+  nieistniejącego czaru spell-28”. Usterka istniała PRZED zgłoszeniem A: CI
+  było czerwone już na `d6beaca`/`cb1c5a3`/`e6d2d0e` (sprawdzone przez
+  `check-runs` API + worktree na `e6d2d0e`, gdzie pada identyczny komunikat).
+  `npm test` tego nie łapał — audyt remisów jest poza szybkim zestawem, więc
+  batch 65 domknięto przy zielonym `npm test` i czerwonym CI.
+- **Namierzenie**: `spell-28` z LKI to **Impulse** (B65/348), ostatnie zdarzenia
+  to `look_top_resolved`; `pendingSpell = { stackId: 'spell-28', effects: [] }`,
+  stos pusty. Deterministycznie: para talii `dominaria-wu | worek-mroczny`,
+  seed 4012 (`.arena/repro-invariant.mjs` iteruje `AUDIT_PAIRS`).
+- **Przyczyna** (klasa): czar, którego OSTATNI lub jedyny efekt kolejkuje
+  blokującą decyzję, zostawia `state.pendingSpell` z pustym sufiksem efektów.
+  Handler decyzji sprząta własne `pending*`, ale wstrzymany czar wznawia tylko
+  część handlerów (scry/surveil/index/manifest_dread); reszta — w tym
+  `resolve_look_top_choice` i `resolve_satyr_look` — kończy na `accepted()`.
+  Skrypt policzył **35** handlerów decyzji bez wznowienia; dziś osiągalny
+  z listy efektów czaru jest tylko `pendingLookTopN` (`pendingSatyrLook`
+  kolejkują wyłącznie zdolności ETB/aktywowane: Satyr Wayfinder, Blanchwood
+  Prowler, Brightwood Tracker), ale lista to pułapka na kolejne karty.
+- **Fix** (klasa, nie objaw): hook w `accepted()` (game-state.js) — jeśli czar
+  wciąż jest na stosie i `firstPendingDecision(state)` nic nie zwraca, czyli nikt
+  go już nigdy nie wznowi, dokańczamy go przez `resumeSuspendedSpell`. Strażnik
+  sprawia, że normalna ścieżka (decyzja w środku listy efektów) jest nietknięta:
+  hook odpala TYLKO w stanie porzucenia. Wzorzec i strażnik identyczne jak
+  istniejąca w tej samej funkcji promocja kolejki madness. Zagnieżdżoną decyzję
+  po wznowieniu łapie `accepted()` następnej komendy.
+- **Dlaczego test Impulse tego nie złapał** (lekcja warta zapamiętania):
+  asertował `handIds.length === 1` z komentarzem „impulse poszedł do grobu”,
+  ale ta własność jest prawdziwa TAKŻE przy utkniętym na stosie czarze. Test
+  sprawdzał słabszą rzecz, niż obiecywał jego własny komentarz — asercja musi
+  pokrywać się z twierdzeniem komentarza, nie z jego intonacją. Dopisane wprost:
+  `pendingSpell === null`, stos pusty, Impulse w grobie.
+- Testy: `test/wstrzymany-czar-decyzja-look-top.test.js` (5) + wzmocniony
+  B65/348. RED→GREEN: z hookiem 5/5 i 3/3, po zdjęciu hooka 3/5 i 2/3 (padają
+  wyłącznie regresje; obie kontrole — hook nie odpala przy otwartej decyzji
+  oraz ścieżka jednej karty L144 — przechodzą zawsze).
+- Bramy: pełne B0 **8269/8269** (przed: 8258 pass / 2 fail), build **73 moduły
+  / 5000,5 kB**, cr-numery OK (520/519/5672).
+- **Wniosek procesowy**: „zielone `npm test`” NIE oznacza zielonego CI — CI
+  uruchamia `node tools/run-tests.mjs all`. Przed pushem warto sprawdzić
+  `check-runs` poprzedniego commitu: trzy ostatnie commity batcha 65 były
+  czerwone i nikt tego nie zauważył, bo lokalnie odpalano tylko szybki zestaw.
+
+## 2026-10-10 — PMSSB-60: pętla jakości scoringu dla batcha 65
+
+- **Zlecenie**: „Uruchom pełne PMSSB dla B65". Wcześniejsze sprawdzenie pokazało,
+  że batch 65 nie miał ŻADNEJ pętli: `grep "batch 65|batch65|B65" docs/PMSSB.md`
+  = 0 trafień, ostatni plan `pmssb59-batch64`, ostatni test
+  `audyt-pmssb59-batch64.test.js`. Rejestr kończył się na batchu 64.
+- **Pomiar PRZED** (`3b63c79`, sonda `tools/pmssb60-batch65-sonda.mjs`, bot
+  w konfiguracji produkcyjnej `randomness: 0`/`lookahead: 0`, kontrfaktyki
+  z rejestru złożonego z `REAL_CARDS` + `VIRTUAL_BASIC_LANDS` — karty batcha 65
+  siedzą w tej drugiej liście, pułapka PMSSB-59 potwierdzona): **6 findingów
+  i 4 kontrole dodatnie**.
+- **Domknięte (fale A, B, D)**:
+  - **F1** Blitz of the Thunder-Raptor — deskryptor
+    `instants_and_sorceries_in_your_graveyard` miał 0 trafień w heurystyce, więc
+    `amount` spadał na 0 i efekt ciągnął score w dół (delta **−80** wobec
+    kontrfaktyku). Silnik działał poprawnie (`damage_dealt amount:6` →
+    `creature_destroyed toZone:'exile'`), więc bot po prostu nigdy nie rzucał tej
+    karty. Fix L41 u źródła: wspólny licznik `instantSorceryGraveyardCount`
+    w `engine/permanents.js` podpięty po obu stronach. PO: grób 4/6 → 96,0.
+  - **F3** Impulse — `look_top_put_one_hand_rest_bottom` wyceniane w sadze,
+    w exploicie i w aktywacji (Dockhand), ale nie w `cast_spell`; delta 0,
+    płasko 50,0. Fix: ten sam `impulseLookValue` w ścieżce czaru. PO: 59,0 przy
+    zdrowej bibliotece, 33,0 przy pustej.
+  - **F6** Brine Giant — `costReduction` z affinity miało 0 trafień; 70,2072
+    płasko dla 0/3/6 enchantmentów (naruszenie kontroli S11). Fix:
+    `cardCostReductionForView`. PO: 70,2072 → 72,9 → 75,6.
+- **OTWARTE (fale C, E, F)** — zmierzone, nie naprawione: **F2** Zombie Boa
+  (aktywacja dokładnie 0,0 — brak modelu `choose_color_grant_block_destroy`),
+  **F7** Skyscythe Engulfer (delta 0 — `cantBeBlockedByKeywords: ['flying']`
+  niewyceniane), **F8** Ambulatory Edifice (delta 0 — trigger ETB
+  `requiresTarget` + `payLife` → `pump -1/-1` niewyceniany). Rejestr rodzin
+  oznacza batch 65 jako CZĘŚCIOWO, żeby nikt go nie uznał za przejrzany.
+- **Dwie własne tezy obalone pomiarem** (zapisane w hubie, żeby nie wracały):
+  F9 Temple of Abandon (aktywacja −4,0 to poprawna redundancja — rzut 6G jest
+  oferowany bez aktywacji, mana nietapniętego lądu już policzona, B54/s4008)
+  i F10 Blinding Drone (brak oferty przy manie kolorowej poprawny — koszt `{C}`,
+  CR 107.4c; z bezbarwną +20,0).
+- **Testy**: `test/audyt-pmssb60-batch65.test.js` — 12 pinów. RED→GREEN: fale A/B
+  9/9 → 3/9 po zdjęciu gałęzi bota; fala D 12/12 → 11/12 po zdjęciu redukcji.
+  Wartość bazowa 70,2072 zmierzona przez faktyczne zdjęcie zmiany — pierwsza
+  wersja pinu miała 70,2 z `.toFixed(1)` i słusznie padła (lekcja: pin bierz
+  z pomiaru, nie z wyświetlenia sondy).
+- Bramki: `npm test` **8017/8017**, build 73 moduły / 5004,9 kB, cr-numery OK.
+  0 nowych pokręteł.
+- **Uwaga środowiskowa**: w trakcie pętli sandbox został odtworzony ze świeżego
+  klona — lokalne commity sesji zniknęły, a cała praca wróciła jako
+  niezacommitowane pliki. Zdalna gałąź miała ostatni push (`3b63c79`), więc
+  odzyskanie przez `git fetch` + `git reset FETCH_HEAD` (mieszany — drzewo
+  robocze nietknięte) przywróciło historię bez straty plików. Reflog miał wtedy
+  2 wpisy (clone + checkout) — to sygnał rozpoznawczy takiej sytuacji.
+  Przy okazji: `.arena/` nie ma w `.gitignore`, ignorowanie szło przez
+  `.git/info/exclude`, który świeży klon gubi — scratch trafił do commitu
+  i został z niego wyjęty przez `git rm --cached` + amend.
+
+- **Domknięte (fale C, E, F — dokończenie tego samego dnia)**:
+  - **F2** Zombie Boa — typ efektu `choose_color_grant_block_destroy` istniał
+    tylko w zbiorze efektów kumulujących się na stosie i nie miał gałęzi
+    w wycenie aktywacji (pomiar PRZED: dokładnie 0,0). Nowy helper
+    `blockDestroyColorValue`: bramka ataku × najlepsza ofiara danego koloru
+    (maksimum, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za warunkowość.
+    PO: 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; pusty stół wroga = 0,0 (anty-over-fix).
+  - **F7** Skyscythe Engulfer — `hostEvadesBlockers` bez gałęzi
+    `cantBeBlockedByKeywords` (komentarz przy `cantBeBlockedByPower` obiecuje
+    parzystość z `combat.js`, L41/L48) + premia w `cast_permanent` z bramką
+    `withKeyword > 0`. PO: 78,309 vs 75,609 (+2,700), warianty bez zakazanego
+    keywordu równe kontrfaktykowi.
+  - **F8** Ambulatory Edifice — wpis `pump` w `ETB_EFFECT_BONUS` liczył
+    P×2+T×1 bez względu na CZYJE ciało rośnie, więc −1/−1 we wroga dawało −3.
+    PO naprawie ujemny pump z wymaganiem celu idzie po kierunku, na skali
+    wpisu `damage` (3/punkt, sufit 15). PO: 75,6036 vs 70,2036 (+5,4),
+    pusty stół wroga delta 0, kontrola znaku (+1/+1 = +2,7 starym wzorem).
+- **Poprawka metody, która unieważniła część pierwszego pomiaru**: kontrfaktyki
+  tworzyły bota BEZ rejestru sceny, więc `cardDef()` czytał prawdziwe definicje
+  i kontrfaktyk działał tylko na obiekcie w widoku — reguły czytane z `def`
+  widziały kartę pełną. Dowód: przy prowizorycznym `score += 1000` wariant
+  „pełny" i „bez statyki" dały identyczne 975,6. Werdykty F1/F3/F6 się nie
+  zmieniły (tam decydowały efekty z obiektu), ale F7 i F8 tak — oba „delta 0"
+  były artefaktem. `scene()`/`punkty()` zapisują teraz rejestr na stanie, a
+  `scoreOf`/`punkty` przekazują go do `createHeuristicBot`.
+- **Punkt M2 planu zamknięty pomiarem, nie kodem**: plan zakładał dopłatę za
+  rider `exile_if_dies_this_turn`. Pomiar: pełny czar 96,0 vs 45,0 bez ridera
+  (+51), ale rider zastąpiony typem NIEZNANYM daje te same 96,0 — czyli +51 to
+  ucieczka od resetu `if (isDamageOnly) score = -1;` (heuristic-bot.js:9226),
+  nie wartość typu. Premia za typ byłaby podwójnym liczeniem, więc kod
+  nietknięty; zamiast tego pinezka A7 zabezpieczająca pomiar.
+- **Bramki końcowe**: `npm test` 8027/8027 (pełne B0 `run-tests.mjs all`
+  na `3027ed0` dało 8281/8281), build 73 moduły / 5009,8 kB, `cr-numery --cr`
+  OK, CI zielone. 22 piny w `test/audyt-pmssb60-batch65.test.js`, każdy
+  z dowodem mutacyjnym RED→GREEN. Commity fal: `01ffc94` (E), `5bbd324` (F),
+  `498b917` (C), `56f546a` (A7).
+
+- **Audyt zasięgu + domknięcie forwarda (dalszy ciąg tego samego dnia)**:
+  "testy przechodzą" znaczy tylko, że żadna pinezka nie pękła, więc zasięg
+  każdej zmiany zmierzono skanem całego rejestru (`REG.all()` — uwaga:
+  `createCardRegistry()` NIE jest Mapą, ma `get/has/all/supported`).
+  Fale C i E mają zasięg jednej karty każda. Fala F (wpis `pump` w
+  `ETB_EFFECT_BONUS`) — dwóch: `ambulatory-edifice` i `silumgar-butcher`;
+  Butcher nie przechodzi przez tę tabelę (exploit wycenia
+  `anticipatedSacValue` własnym modelem, a użytkownicy tabeli robią
+  `continue` przy `exploits`, l.2508). Zmierzono 71,1027 z falą F i 71,1027
+  po jej cofnięciu — pin F4.
+- **pay-trigger-net-model domknięty**: `trigger.payLife` noszą dokładnie dwie
+  karty (zoraline, ambulatory-edifice), tabela ETB nie zna typu `pay_life`,
+  więc koszt naliczany raz jako `max(0, efekt − selfLifeLossPenalty)` —
+  podłoga 0, bo płatność jest opcjonalna. Edifice: brutto 75,6036 → netto
+  72,0036; wariant +1/+1 (3 − 4 < 0) → nie płaci, delta 0; Zoraline
+  81,9036 → 78,3036 (różnica dokładnie 3,6, decyzja o rzucie bez zmian).
+- **Lekcja o budżecie LESSONS.md**: lektura startowa (AGENTS.md + ADR-y +
+  LESSONS.md + ENVIRONMENT.md) to 279 772 znaków = **99 918 tokenów** przy
+  limicie 100 000 (przelicznik 2,8 znaku/token) — zostało ~82 tokeny.
+  Lekcja o kontrfaktyku bez rejestru została więc w `docs/PMSSB.md` (poza
+  budżetem), nie w LESSONS.md: dopisanie jej wymagałoby wyrzucenia innej
+  lekcji, a test wprost zabrania podnosić próg.
+- **Commity**: `6a62018` (audyt zasięgu, pin F4), `69b3483`
+  (pay-trigger-net-model, piny F5/F6). Bramki: pełne B0 8291/8291,
+  `npm test` 8030/8030, build 73 / 5010,6 kB, cr-numery OK, CI zielone.

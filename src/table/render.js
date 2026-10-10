@@ -171,6 +171,8 @@ export function stepLabel(turn) {
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel', player_or_planeswalker: 'gracz lub planeswalker',
+  // Batch65 (Blitz of the Thunder-Raptor) — „target creature or planeswalker”.
+  creature_or_planeswalker: 'stwór lub planeswalker',
   // M166/B (Cacophodon — untap target permanent).
   permanent: 'permanent', battle: 'bitwa',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',
@@ -1176,6 +1178,8 @@ function describeEffect(e, ctx = {}) {
     // Ten sam helper co buff_* (`ptPair`), liczby bez zmian (D3).
     pump: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury${e.upgradeIfCreatures ? ` (${signed(e.upgradeIfCreatures.power ?? 0)}/${signed(e.upgradeIfCreatures.toughness ?? 0)} przy ${e.upgradeIfCreatures.min}+ stworach)` : ''}`,
     exile_if_dies_this_turn: () => 'jeśli miałby umrzeć w tej turze, wygnaj go zamiast tego',
+    // Batch65 (Zombie Boa): wybór koloru + zniszczenie blokujących go stworów.
+    choose_color_grant_block_destroy: () => 'wybierz kolor — stwory tego koloru blokujące w tej turze zostaną zniszczone',
     // Batch 55 (Embalm, Tah-Crop Skirmisher): zdolność z grobu tworzy kopię
     // WYGNANEJ karty — panel mówi wprost, że to kopia, nie zwykły token.
     create_token_copy_of_source: () => 'stwórz token-kopię tej karty (Embalm)',
@@ -1664,6 +1668,9 @@ function describeStatic(ability) {
   // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
   // creatures with power 2 or less") nie miała reprezentacji na kaflu.
   if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
+  if (Array.isArray(ability.cantBeBlockedByKeywords) && ability.cantBeBlockedByKeywords.length) {
+    parts.push(`nie może być blokowany przez stwory z ${ability.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`);
+  }
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
   return parts.join(' · ');
@@ -2316,6 +2323,19 @@ const SEARCH_DESTINATION_LABELS = Object.freeze({ hand: 'do ręki', graveyard: '
  * same co `choiceSourceTitle` (+ exile, bo stamtąd też rzuca się modalne czary
  * plotem/impulsem).
  */
+/**
+ * N (M355 + uzupełnienie audytu PR #161, F-2): obietnica daru nie zmienia
+ * kosztu many, ale zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi
+ * to nazwać dla KAŻDEGO typu rzutu, bo dwa identyczne przyciski o różnych
+ * skutkach to klasa M101/B (jak kicker M223, surge, phyrexian M265).
+ * Jeden wyróżnik dla obu lejków etykiet (L41): wiersze `commandLabel`
+ * i tytuły grup `choiceSourceTitle`. ADR 0002 — po polu komendy `gifted`.
+ */
+function giftPartOf(cmd, card) {
+  if (!cmd?.gifted) return '';
+  return ` · dar dla przeciwnika: ${(card?.gift?.effect?.name ?? 'dar')}`;
+}
+
 function findViewObject(objectId, view) {
   if (objectId == null) return null;
   for (const zone of ['hand', 'battlefield', 'stack', 'graveyard', 'library', 'exile']) {
@@ -2394,6 +2414,20 @@ function abilityCostSuffix(session, cmd) {
   if (!ability) return '';
   const cost = abilityCostHtmlOf(ability);
   return cost ? ` (koszt ${cost})` : '';
+}
+
+
+/**
+ * Etykieta komendy z wyróżnikiem obietnicy daru (F-2, uzup. audytu PR #161):
+ * `gifted` zmienia skutek rzutu NIEZALEŻNIE od typu komendy — wyróżnik
+ * doklejany w jednym miejscu (L41) po etykiecie bazowej, żeby rodzina
+ * cast_* (spell/permanent/cleave/flashback/escape/adventure) i przyszłe
+ * typy nie musiały pamiętać o kopii w każdej gałęzi switcha.
+ */
+export function commandLabel(cmd, session, view) {
+  const label = commandLabelBase(cmd, session, view);
+  if (!label || !cmd?.gifted) return label;
+  return `${label}${giftPartOf(cmd, findViewObject(cmd.objectId, view))}`;
 }
 
 function choiceSourceTitle(cmd, session, view) {
@@ -2576,7 +2610,7 @@ function choiceSourceTitle(cmd, session, view) {
   // modala — escapeHtml dawał „Hunter&#39;s Blowgun" w oknie wyboru.
   const name = session.nameOf(object.cardId)
     + (cmd.type === 'cast_spell' && cmd.kicked ? ' (kicker)' : '')
-    + (cmd.type === 'cast_spell' && cmd.gifted ? ' (dar)' : '')
+    + (cmd.gifted ? ' (dar)' : '')
     + (cmd.surgeCast ? ' (surge)' : '');
   // M202/D+M (zgłoszenie właściciela, Ruthless Invasion i Porcelain Legionnaire):
   // warianty zapłaty many phyrexian ({W/P} — mana ALBO 2 życia) grupują się po
@@ -3098,7 +3132,7 @@ function declineLabelForTriggerTarget(view, sourcePrefix) {
   return `${sourcePrefix}bez celu (odmowa — „up to one"/„you may")`;
 }
 
-export function commandLabel(cmd, session, view) {
+function commandLabelBase(cmd, session, view) {
   // M223 (audyt Batch 50): karty ujawnione decydentowi przez blokującą decyzję
   // (scry / look_top / manifest dread) są w BIBLIOTECE (ukrytej), więc etykieta
   // celu nie znajdowała ich w strefach i pokazywała „?". Ich tożsamość jedzie
@@ -3412,12 +3446,9 @@ export function commandLabel(cmd, session, view) {
           ? `zwrot lądu: ${cmd.kickerLandId ? nameOfObjectId(cmd.kickerLandId) : 'ląd'}`
           : manaCostHtml(costSymbols(kickerDef.cost, kickerDef.colors))}`
         : '';
-      // Gift (CR 702.174, M355): obietnica daru nie zmienia kosztu many, ale
-      // zmienia SKUTEK (przeciwnik dostaje dar) — etykieta musi to nazwać,
-      // bo dwa identyczne przyciski o różnym skutku to klasa M101/B.
-      const giftPart = cmd.gifted
-        ? ` · dar dla przeciwnika: ${(cardForMode?.gift?.effect?.name ?? 'dar')}`
-        : '';
+      // Wyróżnik daru dokleja wspólny wrapper `commandLabel` (F-2, L41) —
+      // tu historia: M355 zaczął od cast_spell, audyt PR #161 rozciągnął
+      // wyróżnik na całą rodzinę rzutów.
       // Audyt PR #94 / K2 (M91/uwaga D, klasa przed tym PR przy rzucie z ręki):
       // tryb „… put a stun counter on ONE OF THEM” mnoży warianty per cel pod
       // stun (legalModeCasts) — bez nazwy tego celu przyciski o różnych
@@ -3443,7 +3474,7 @@ export function commandLabel(cmd, session, view) {
       const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
         ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
         : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${giftPart}${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
@@ -4475,6 +4506,8 @@ export function cardInfo(session, object, combat = null) {
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera.
+    cantBeBlockedByKeywords: faceDown ? null : (object.cantBeBlockedByKeywords ?? null),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
@@ -4885,6 +4918,9 @@ export function buildStateOverlay(visual, info) {
     })) flags.push(['kw', badge]);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    if (Array.isArray(info.cantBeBlockedByKeywords) && info.cantBeBlockedByKeywords.length) {
+      flags.push(['kw', `nie do zablokowania przez stwory z ${info.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`]);
+    }
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
     // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:
     // <aura>". Etykieta po deskryptorze jakości (CR 702.16), bez nazw kart.

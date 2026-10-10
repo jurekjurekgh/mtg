@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Pacifism&set=dtk&format=json",
+  "print": "dtk",
+  "name": "Pacifism",
+  "mana_cost": "{1}{W}",
+  "cmc": 2.0,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature\nEnchanted creature can't attack or block.",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Enchant"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "29",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/f/7/f7939502-d6aa-4bde-b42f-67ed433f95f1.jpg?1783938615",
+    "normal": "https://cards.scryfall.io/normal/front/f/7/f7939502-d6aa-4bde-b42f-67ed433f95f1.jpg?1783938615",
+    "large": "https://cards.scryfall.io/large/front/f/7/f7939502-d6aa-4bde-b42f-67ed433f95f1.jpg?1783938615"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/f7939502-d6aa-4bde-b42f-67ed433f95f1/rulings",
+  "rulingsPobrano": "2026-10-10"
+}

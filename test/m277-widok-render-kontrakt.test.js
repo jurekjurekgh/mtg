@@ -91,7 +91,11 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   // (`...(warunek ? { pole } : {})`), więc skan po tekście dawał fałszywe
   // braki dla pól, które w widoku są (counters, damage, toughness).
   const wysylane = new Set();
-  for (const cardId of ['gorehorn-minotaurs', 'servant-of-the-scale', 'kappa-tech-wrecker']) {
+  // Batch65 (Skyscythe Engulfer): próbka rozszerzona kartą z ewazją
+  // `cantBeBlockedByKeywords` („can't be blocked by creatures with flying") —
+  // pole warunkowe, ale JAWNE w próbce (precedens Battle wyżej: rozszerzamy
+  // próbkę zamiast wyłączać pole z guardu).
+  for (const cardId of ['gorehorn-minotaurs', 'servant-of-the-scale', 'kappa-tech-wrecker', 'skyscythe-engulfer']) {
     for (const liczniki of [0, 2]) {
       const state = stanZPermanentem(cardId, { liczniki });
       for (const strefa of ['battlefield', 'graveyard', 'exile', 'hand', 'stack']) {

@@ -268,12 +268,12 @@ test('F-1/S8: token z drukowanym zakazem jako pierwowzór token-kopii (Moonlit)'
 // permanentu z aurą Hobble/Clawing Torment/Bonds of Faith blokuje normalnie,
 // a sam gospodarz nie. W odróżnieniu od pierwotnego S9 fixture używa deskryptora
 // karty i prawdziwego attachAuraToCreature/attachedTo; każda iteracja asertuje.
-test('F-1/S9: zakaz z załącznika nie jest kopiowalny — wszystkie trzy aury są przypięte', () => {
+test('F-1/S9: zakaz z załącznika nie jest kopiowalny — wszystkie cztery aury są przypięte', () => {
   const aury = registry.all().filter((d) => d.aura && d.aura.cantBlock !== undefined
     && d.aura.cantBlock !== false);
   assert.deepEqual(aury.map((d) => d.id).sort(),
-    ['bonds-of-faith', 'clawing-torment', 'hobble'],
-    'pokrycie katalogu: Hobble, Clawing Torment i Bonds of Faith');
+    ['bonds-of-faith', 'clawing-torment', 'hobble', 'pacifism'],
+    'pokrycie katalogu: Hobble, Clawing Torment, Bonds of Faith i Pacifism');
   for (const aura of aury) {
     const s = state();
     const host = put(s, 'host', 'rotting-legion'); // czarny, nie-Human — spełnia wszystkie trzy warunki

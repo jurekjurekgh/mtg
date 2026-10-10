@@ -15,7 +15,7 @@ import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
 // grobów i dozwolone typy w `render.js` czytają tę samą listę.
-import { CARD_TYPES, effectiveAbilities, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
+import { CARD_TYPES, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
 
@@ -3738,6 +3738,31 @@ function processTriggersScan(state, recentEvents) {
         for (const ability of effectiveAbilities(attacker)) {
           if (ability?.trigger?.event === 'becomes_blocked') {
             tryFire(state, ability, attacker, [], events);
+          }
+        }
+      }
+      // Batch65 (Zombie Boa): „Whenever this creature becomes blocked by a
+      // creature of that color this turn, destroy that creature." Para
+      // (atakujący × bloker) jak Wooden Stake („becomes blocked by a Vampire"),
+      // filtr = KOLOR blokera ze ZZNACZNIKÓW aktywacji „choose a color"
+      // (blockDestroyColorsThisTurn — po jednym znaczniku na aktywację;
+      // wygasają w cleanup). Kolor blokera EFEKTYWNY (CR 613). Cel znany
+      // z zdarzenia („that creature" = bloker) — queueTriggerToStack wprost
+      // z [blockerId], jak wzorzec Wooden Stake (tryFire zsyła []).
+      for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
+        const attacker = state.objects.get(attackerId);
+        if (!attacker || attacker.zone !== 'battlefield') continue;
+        const marks = attacker.blockDestroyColorsThisTurn ?? [];
+        if (marks.length === 0) continue;
+        for (const ability of effectiveAbilities(attacker)) {
+          if (ability?.trigger?.event !== 'becomes_blocked_by_color') continue;
+          for (const blockerId of blockerIds ?? []) {
+            const blocker = state.objects.get(blockerId);
+            if (!blocker || blocker.zone !== 'battlefield') continue;
+            for (const color of marks) {
+              if (!effectiveColors(blocker).includes(color)) continue;
+              queueTriggerToStack(state, ability, attacker, [blockerId], events);
+            }
           }
         }
       }

@@ -326,6 +326,8 @@ function defaultBotFactory(seed, ctx) {
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
     cant_block: 'docelowy stwór nie może blokować do końca tury',
+    // Batch65 (Zombie Boa): „{1}{B}: Choose a color … destroy that creature.”
+    choose_color_grant_block_destroy: 'wybór koloru — zniszczenie stwora tego koloru blokującego w tej turze',
     craft_transform: 'craft — przemiana artefaktu',
     damage: 'obrażenia w cel',
     discover: 'discover',
@@ -732,6 +734,8 @@ export function rejectionReasonLabel(reason) {
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
+  // Batch65 (Zombie Boa): „becomes blocked by a creature of that color".
+  becomes_blocked_by_color: 'zablokowanie przez stwora wybranego koloru',
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
   cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',

@@ -6,7 +6,7 @@ import { optionalEffectVariants, triggerTargetEffectFriendly } from './effect-in
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
-import { hasCreatureType, matchesSubtypeQualifier, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn } from './permanents.js';
+import { hasCreatureType, matchesSubtypeQualifier, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn, kindFromTypes } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
 import { attachAuraToCreature, isLegalAuraHost, attachEquipmentToCreature } from './attachments.js';
@@ -273,6 +273,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
     if (spec?.type === 'player_or_planeswalker') {
       if (state.players.some(player => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
       if (object?.zone === 'battlefield' && isPlaneswalker(object)) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
+    // stwór albo planeswalker WYŁĄCZNIE (gracz nie jest legalny, w odróżnieniu
+    // od szerszego any_target). Spójnie z ofertą w targetCandidatesBySpec
+    // (pułapka M82: oferta ≠ walidacja kończy się odrzuceniem komendy).
+    if (spec?.type === 'creature_or_planeswalker') {
+      if (object?.zone === 'battlefield' && (object.kind === 'creature' || isPlaneswalker(object))) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     if (spec?.type === 'any_target') {
@@ -1499,6 +1507,12 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
       });
     }
     case 'player_or_planeswalker': return [...players, ...state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+    })];
+    // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
+    // stwór albo planeswalker (gracz spoza zakresu). Spójnie z validateTargets.
+    case 'creature_or_planeswalker': return [...battlefieldCreatures, ...state.zones.battlefield.filter(id => {
       const object = state.objects.get(id);
       return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
     })];
@@ -2932,7 +2946,9 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
         purpose: 'protection',
         sourceCardId: object.cardId,
       };
-      state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId }));
+      // M273 (Batch65): objectId/cardId — ten sam ładunek co pozostali emiterzy
+      // color_choice_required (log stołu nimi operuje — kontrakt zdarzeń).
+      state.events.push(event('color_choice_required', { playerId: object.controllerId, auraId: newId, objectId: newId, cardId: object.cardId ?? null }));
     }
   } else {
     // Cel nielegalny w momencie rozstrzygnięcia: karta bestow wchodzi jako
@@ -4431,9 +4447,22 @@ export function castAdventureCreature(state, playerId, objectId) {
   // (root cause: bez tego czar przygody rozstrzygał się DRUGI raz).
   const stackId = `spell-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, 'stack', stackId);
+  // Zgłoszenie właściciela (2026-10-10, Gray Slaad): przygoda nadpisała
+  // `kind` na 'spell' (castAdventure — CR 715.3b: „While on the stack as an
+  // Adventure, the spell has only its alternative characteristics”) i ten
+  // STAN przetrwał do exile (CR 715.3d), a stamtąd na pole bitwy. Permanent
+  // z `kind: 'spell'` nie jest stworem dla silnika: nie da się go wziąć za
+  // cel („target creature an opponent controls” — Diplomatic Relations, ETB
+  // Warmaker Gunship: „brak legalnych celów”) i nie może blokować.
+  // CR 715.4: „In every zone except the stack, and while on the stack not as
+  // an Adventure, an adventurer card has only its normal characteristics” —
+  // więc w tym rzucie obowiązują cechy NORMALNE i rodzaj odbudowujemy z
+  // linii typu karty (CR 205.2a); linia typu jest nienaruszona. Ten sam
+  // odczyt co druga strona DFC (kindFromTypes, L41 — reguła w jednym miejscu).
   const stacked = Object.freeze({
     ...moved,
     spell: null,
+    kind: kindFromTypes(moved.types, moved.kind),
     summoningSickness: true, tapped: false, wasCast: true, adventureDone: true,
     chosenTargets: [],
   });

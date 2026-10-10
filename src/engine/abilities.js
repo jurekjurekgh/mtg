@@ -159,7 +159,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -215,6 +215,10 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // podtypach. Zdarza się w `equipment.grantedAbilities`, więc trafia do
     // combat przez attachmentsAttachedTo.
     cantBeBlockedBySubtypes: cantBeBlockedBySubtypes ? Object.freeze([...cantBeBlockedBySubtypes]) : null,
+    // „can't be blocked by creatures with flying" (Skyscythe Engulfer):  // statyczna restrykcja blokowania po KEYWORDZIE efektywnym blokera — canBlock
+    // odrzuca blokerów z którymś z tych keywordów (bliźniak podtypowego
+    // cantBeBlockedBySubtypes, Blazing Torch). CR 509.1b.
+    cantBeBlockedByKeywords: cantBeBlockedByKeywords ? Object.freeze([...cantBeBlockedByKeywords]) : null,
     // „can't be blocked by creatures with power 2 or less" (Rust-Shield
     // Rampager, CR 702.x?): statyczny próg MOCY blokera — canBlock odrzuca
     // blokerów o efektywnej mocy <= wartość. Sprawdzane przed wykonaniem bloku.

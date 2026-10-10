@@ -58,8 +58,8 @@ test('AUD-E1: każdy typ efektu w katalogu ma rozgałęzienie w silniku', () => 
 });
 
 test('AUD-E2: kotwice liczności (L13) — zbiory rosną z batchami kart i mechanik', () => {
-  // Batch 63 domknięty: +adjust_battle_defense → 185 używanych typów.
-  assert.equal(UZYTE.size, 185, 'tyle typów efektów używa katalog (Batch 63)');
+  // Batch 63 domknięty: +adjust_battle_defense → 186 używanych typów.
+  assert.equal(UZYTE.size, 186, 'tyle typów efektów używa katalog (Batch 63)');
   assert.ok(ZNANE.size >= 200, `silnik zna co najmniej 200 typów efektów (jest ${ZNANE.size})`);
 });
 

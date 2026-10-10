@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bring+to+Trial&set=RNA&format=json",
+  "print": "rna",
+  "name": "Bring to Trial",
+  "mana_cost": "{2}{W}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Exile target creature with power 4 or greater.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "5",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/3/63d566fc-0936-4035-96fd-f8b0c4eadbf5.jpg?1783933724"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/rna/5/rulings",
+  "rulingsPobrano": "2026-10-10"
+}

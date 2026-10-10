@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { addMana } from '../src/engine/resources.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { createRegistry } from '../src/cards/registry.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { triggerTargetPowerPumpOf } from '../src/engine/effect-intent.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
@@ -145,4 +147,67 @@ test('B/6: cudza tura — pump siły wspiera BLOK, wraca stara polityka (najwię
   const chosen = botPick(state);
   assert.equal(chosen.targetId, 'brute',
     `w cudzej turze chory 5/5 blokuje najlepiej: ${JSON.stringify(chosen)}`);
+});
+
+// ============================================================================
+// Strażnik fałszywego alarmu (audyt zasięgu PMSSB-60, 2026-10-10).
+//
+// Podczas skanu rejestru pod kątem wpisu `pump` w `ETB_EFFECT_BONUS` wyszło,
+// że Shaman dostaje +1,8 za trigger IDENTYCZNIE przy 0, 1 i 3 własnych
+// stworach. Wyglądało to na brak bramki „mam komu dać buffa" (wpis
+// `buff_creature_until_end_of_turn` taką bramkę ma) — i powstał fix, który
+// ją dokładał. Fix był BŁĘDNY i cofnięty:
+//
+//   • Battle-Rattle Shaman to stworzenie 2/2, a jego trigger ma
+//     `requiresTarget: {type:'creature'}` BEZ wykluczenia źródła (brak
+//     „other"/„creature you control other than ~"), więc MOŻE wzmocnić
+//     SAM SIEBIE — przy pustym polu wejdzie jako 2/2 i spumpuje się do 4/2;
+//   • bramka liczyłaby `myCreatures` w chwili RZUTU (karta jeszcze w ręce),
+//     a trigger rozstrzyga się po wejściu źródła — czyli w złym momencie.
+//
+// Płaskie +1,8 jest więc POPRAWNE i jest celowo przypięte już w
+// `test/pmssb10-ogon-wave-b2.test.js` („may-pump +1.8 (65.70)"), które ten
+// fix wywalał. Ta pinezka domyka przypadki 1 i 3 stworów i zapisuje powód,
+// żeby nikt nie „naprawił" tego ponownie.
+// ============================================================================
+
+const SHAMAN_BEZ_TRIGGERA = createRegistry(REGISTRY.all().map((c) => (
+  c.id === 'battle-rattle-shaman'
+    ? { ...c, abilities: (c.abilities ?? []).filter((a) => a.type !== 'triggered') }
+    : c)));
+
+/** Shaman w ręce + `innych` własnych stworów 2/2; `rejestr` = wariant karty. */
+function shamanCastScene(innych, rejestr) {
+  const state = createGameState({ seed: 1209, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = 'p1'; state.turn.priorityPlayerId = 'p1';
+  addMana(state, 'p1', 14);
+  for (let i = 0; i < 30; i++) addObject(state, { id: `lb${i}`, instanceId: `i-lb${i}`, cardId: 'x',
+    controllerId: 'p1', zone: 'library', kind: 'sorcery', power: 0, toughness: 0, manaCost: 2,
+    abilities: [], keywords: [], subtypes: [], types: ['Sorcery'], colors: [], cardName: 'lb' });
+  for (let i = 0; i < innych; i++) addObject(state, { id: `v${i}`, instanceId: `i-v${i}`, cardId: 'x',
+    controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2,
+    manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['R'], cardName: 'v' });
+  addObject(state, { id: 'c1', instanceId: 'i-c1', cardId: 'battle-rattle-shaman', controllerId: 'p1',
+    ownerId: 'p1', zone: 'hand', ...gameObjectDataOf(rejestr.get('battle-rattle-shaman')) });
+  return state;
+}
+
+function shamanCastScore(innych, rejestr) {
+  const bot = createHeuristicBot({ seed: 1210, registry: rejestr });
+  bot.chooseCommand(playerView(shamanCastScene(innych, rejestr), 'p1'));
+  const traf = (bot.trace().at(-1)?.options ?? []).filter((o) => o.cmd.includes('(c1'));
+  assert.ok(traf.length, 'oferta rzutu Shamana istnieje');
+  return traf[0].score;
+}
+
+test('Shaman: +1,8 za trigger niezależnie od INNYCH własnych stworów — może celować w siebie', () => {
+  for (const innych of [0, 1, 3]) {
+    const delta = shamanCastScore(innych, REGISTRY) - shamanCastScore(innych, SHAMAN_BEZ_TRIGGERA);
+    assert.ok(Math.abs(delta - 1.8) < 1e-9,
+      `inne własne stwory=${innych}: delta ${delta}, oczekiwano 1,8 (trigger może wzmocnić samego Shamana)`);
+  }
+  // Wartość bezwzględna przy pustym polu — spójna z PMSSB10-B2 (65,70).
+  assert.ok(Math.abs(shamanCastScore(0, REGISTRY) - 65.7009) < 1e-9,
+    `oczekiwano 65.7009, jest ${shamanCastScore(0, REGISTRY)}`);
 });

@@ -316,6 +316,9 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   'you_cast_instant_or_sorcery_spell',
   // Batch 63: handler blockers_declared + effectiveKeywords; piny ENG i Snarespinner.
   'blocks',
+  // Batch 65 (Zombie Boa): becomes blocked by [color] — gałąź pary bloku
+  // w blockers_declared (triggers.js), jak Wooden Stake.
+  'becomes_blocked_by_color',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

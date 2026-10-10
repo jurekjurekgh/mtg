@@ -1,7 +1,7 @@
 import { countedEffectValue, countedEffectSign, isCountedEffectValue } from '../engine/effect-values.js';
 import { battleDefenseDelta, isBattle } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
-import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
+import { basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
@@ -1203,6 +1203,9 @@ export const STACKING_ACTIVATED_EFFECTS = new Set([
   // Batch 58/B5 (Resurrected Cultist): powrót z grobu — jak unearth.
   'return_source_from_graveyard',
   'attach_equipment_to_source', 'craft_transform', 'gain_life',
+  // Batch65 (Zombie Boa): każda aktywacja dokłada ZNACZNIK koloru na turę
+  // (lista blockDestroyColorsThisTurn) — dublowanie na stosie kumuluje.
+  'choose_color_grant_block_destroy',
   // Batch 58/B4 (Scroll of Avacyn): `conditional` to OPAKOWANIE efektów, więc
   // o kumulacji decydują gałęzie — w katalogu są to dobranie kart i zysk
   // życia, czyli skutki KUMULUJĄCE. Klasyfikacja zachowawcza (M179/B1):
@@ -1504,6 +1507,29 @@ export const WARD_TAXED_TYPES = new Set([
 export const LIBRARY_DRAIN_CAST_TYPES = new Set(
   COMMAND_TYPES.filter((type) => type.startsWith('cast_') || type.endsWith('_cast')),
 );
+
+/**
+ * PMSSB-60/F6 (Brine Giant, batch 65): obniżka kosztu z `costReduction` karty,
+ * liczona z WIDOKU bota.
+ *
+ * Silnik liczy koszt efektywny przez `effectiveSpellManaCost` na pełnym stanie
+ * (CR 601.2f); bot działa na widoku, więc ten sam warunek affinity liczymy na
+ * `zones.battlefield`. Obsługujemy wyłącznie warunek `affinityToEnchantments`
+ * (jedyny w katalogu) — nieznany warunek zwraca 0, czyli zachowanie sprzed fali
+ * (anty-over-fix M429: nic nie zgadujemy).
+ *
+ * Redukcja dotyczy części GENERYCZNEJ kosztu, więc wywołujący obcina ją do
+ * `manaCost` (pipy kolorowe zostają).
+ */
+function cardCostReductionForView(view, def) {
+  const reduction = def?.costReduction;
+  if (!reduction || !Number.isInteger(reduction.amount) || reduction.amount <= 0) return 0;
+  if (!reduction.condition?.affinityToEnchantments) return 0;
+  const count = (view.zones.battlefield ?? []).filter((object) => object
+    && object.controllerId === view.playerId
+    && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
+  return reduction.amount * count;
+}
 
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
@@ -2059,7 +2085,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     exalted_pump: () => 2,
     // PMSSB-10/F-O (Wave-A): wpisy dla anticipacji-ogona.
     // pump = ciało (lustro 5395/9867: P×2+T×1 — L41!).
-    pump: (e) => (e.power ?? 0) * 2 + (e.toughness ?? 0),
+    // PMSSB-60/F8 (Ambulatory Edifice, batch 65): KIERUNEK pumpa. Tabela
+    // liczyła P×2+T×1 bez względu na to, CZYJE ciało rośnie, więc trigger
+    // „target creature gets −1/−1" dawał (−1)×2+(−1) = −3 i bot wyceniał
+    // osłabienie WROGA jako stratę własnego ciała. Pomiar PRZED: płaskie
+    // 67,5 dla wroga 1/1 (który od tego ginie!), 5/5 i dla pustego stołu.
+    // Ujemny pump z wymaganiem celu wyceniamy po KIERUNKU: wróg z legalnym
+    // celem = zysk na skali `damage` (3 za punkt, sufit 15 — ta sama tabela,
+    // L41, bez nowej skali); brak legalnego celu wroga = 0, bo zdolność nic
+    // wtedy nie daje (a przy płatności opcjonalnej po prostu się jej nie
+    // opłaca). Bez wymagania celu pump dotyczy własnych ciał — stare
+    // zachowanie co do joty (anty-over-fix).
+    pump: (e, view, req) => {
+      const p = e.power ?? 0;
+      const t = e.toughness ?? 0;
+      if ((p < 0 || t < 0) && req) {
+        return etbEnemyHasTarget(view, req) ? Math.min(3 * (-p - t), 15) : 0;
+      }
+      return p * 2 + t;
+    },
     // cant_block = usunięcie blokera z przyszłej walki (+2: połowa untapu-4
     // (jednorazowe-vs-trwałe); konserwatywnie, pin na kształcie jestera!).
     cant_block: () => 2,
@@ -2133,6 +2177,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // PMSSB-3/F-envoy: rozwijanie conditional w ETB (lustro selfDamageOfEffects,
       // L41; Envoy bral 0 w obu galeziach).
       const effs = unwrapConditionals(view, Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+      // PMSSB-60 (forward „pay-trigger-net-model" z anticipatedDiesValue):
+      // koszt opcjonalnej platnosci zyciem. Skan rejestru: `trigger.payLife`
+      // nosza DOKLADNIE dwie karty — zoraline (ETB + attacks) i
+      // ambulatory-edifice (ETB), obie payLife=2. Tabela ETB nie zna typu
+      // `pay_life`, wiec `trigger.payLife` jest jedynym autorytatywnym polem
+      // kosztu i naliczam go raz (bez podwojnego liczenia z efektem).
+      // Platnosc jest OPCJONALNA („you may pay"), wiec gracz zaplaci tylko,
+      // gdy efekt to przewyzsza — stad podloga 0 na sumie zdolnosci.
+      // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
+      let sub = 0;
       for (const e of effs) {
         if (e?.type === 'cant_be_blocked' && req) {
           const blockers = untappedEnemyBlockers(view);
@@ -2140,13 +2194,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
           const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
             .map(o => cantBeBlockedTargetValue(view, o)));
-          total += P.evasionEtbValueWeight * best;
+          sub += P.evasionEtbValueWeight * best;
           continue;
         }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
-        total += fn(e, view, req, def);
+        sub += fn(e, view, req, def);
       }
+      const zaplata = ability.trigger.payLife ?? 0;
+      if (zaplata > 0) sub = Math.max(0, sub - selfLifeLossPenalty(view, zaplata));
+      total += sub;
     }
     return total;
   };
@@ -3580,6 +3637,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const threshold = host.cantBeBlockedByPower;
       if (blockers.every((b) => (b.power ?? 0) <= threshold)) return true;
     }
+    // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): „can't be blocked by
+    // creatures with [keyword]". Reguła lustrzana do combat.js
+    // blockRestrictionError (L41/L48 — ten komentarz obiecuje parzystość,
+    // a tej gałęzi brakowało): bloker NIE może blokować, gdy ma KTÓRYKOLWIEK
+    // z wymienionych keywordów, więc atakujący omija wszystkich dopiero, gdy
+    // KAŻDY potencjalny bloker taki keyword ma. Pole z PlayerView
+    // (game-state.js:6928), jak cantBeBlockedByPower.
+    if (Array.isArray(host.cantBeBlockedByKeywords) && host.cantBeBlockedByKeywords.length > 0) {
+      const banned = host.cantBeBlockedByKeywords;
+      if (blockers.every((b) => banned.some((kw) => hasKeyword(b, kw)))) return true;
+    }
     return false;
   };
 
@@ -4242,6 +4310,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // EFEKTYWNEJ, czyli z aurami: 1/1 z +2/+2 liczy się jak 3/3), a nie to,
     // czy akurat stoi odkręcony.
     return base + (locking ? Math.max(0, timing) + 4 - alreadyTappedDiscount : timing);
+  };
+
+  /**
+   * PMSSB-60/F2 (Zombie Boa, batch 65): „{1}{B}: Choose a color. Whenever
+   * this creature becomes blocked by a creature of that color this turn,
+   * destroy that creature." POMIAR PRZED: `activate_ability` = dokładnie
+   * 0.0 — typ efektu `choose_color_grant_block_destroy` nie miał gałęzi
+   * w wycenie aktywacji, więc bot oferował ją bez żadnej wartości i nigdy
+   * nie wybierał koloru sensownie.
+   *
+   * Model (bez nazw kart, ADR 0002):
+   *   • bramka ataku — źródło musi móc atakować w tym oknie, inaczej trigger
+   *     nigdy nie odpali (martwy atak = 0, ta sama zasada co M407);
+   *   • wybór koloru = NAJLEPSZA ofiara spośród wrogich blokerów tego koloru
+   *     (gracz wybiera kolor, więc liczymy maksimum po kolorach, CR 601.2f —
+   *     wybór należy do kontrolera);
+   *   • ciało ofiary w skali P×2+T×1 — ta sama skala co ciało/`pump` (L41),
+   *     nie nowa;
+   *   • ×0,5 za warunkowość — trigger wymaga, by źródło zaatakowało I zostało
+   *     zablokowane; to ta sama asumpcja likelihood-0,5 co w
+   *     `anticipatedDiesValue`/`anticipatedAttacksValue` (połowa stworów
+   *     wchodzi w walkę w typowej grze), bez nowego parametru.
+   *   • wróg bez stworów = 0 (anty-over-fix: nie ma kogo zniszczyć).
+   */
+  const blockDestroyColorValue = (view, source) => {
+    if (!source || source.tapped || !canAttackNow(source)) return 0;
+    const blockers = untappedEnemyBlockers(view);
+    if (blockers.length === 0) return 0;
+    let best = 0;
+    for (const color of ['W', 'U', 'B', 'R', 'G']) {
+      const victim = blockers.filter((o) => (o.colors ?? []).includes(color))
+        .reduce((max, o) => Math.max(max, (o.power ?? 0) * 2 + (o.toughness ?? 0)), 0);
+      if (victim > best) best = victim;
+    }
+    return 0.5 * best;
   };
 
   /**
@@ -8751,8 +8854,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie wydaje. Warp z wygnania (CR 702.185a) płaci pełny koszt, więc
         // zostaje na ścieżce ogólnej.
         if (!castsWithoutPayingMana(card)) {
+          // PMSSB-60/F6 (Brine Giant): affinity for enchantments obniża koszt
+          // generyczny o 1 za każdy enchantment pod moją kontrolą (CR 601.2f).
+          // Pomiar PRZED: 70,2 płasko dla 0 / 3 / 6 enchantmentów — bot nie
+          // wiedział, że czar kosztuje 7 / 4 / 1 many, czyli naruszenie
+          // kontroli (b) procedury (S11: różne koszty nie mogą remisować).
+          const costReduction = cardCostReductionForView(view, def);
           score -= P.creatureManaCostWeight
-            * ((card?.manaCost ?? 0) + coloredPipsOf(card?.cardId ?? '').length);
+            * (Math.max(0, (card?.manaCost ?? 0) - costReduction)
+              + coloredPipsOf(card?.cardId ?? '').length);
         }
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
@@ -8856,6 +8966,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Evasion (flying) realnie zwiększa szanse zadania obrażeń.
         if (hasKeyword(def, 'flying')) score += 3;
+        // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): selektywna ewazja
+        // „can't be blocked by creatures with [keyword]". Pomiar PRZED: delta
+        // 0 wobec kontrfaktyku (72,0 = 72,0), czyli statyka nie wchodziła
+        // do wyceny rzutu wcale. Premia TYLKO gdy wróg ma blokera z tym
+        // keywordem — bez takiego blokera ewazja nic nie zmienia, więc
+        // najsłabszy realny wariant zostaje na dawnej wartości (anty-over-fix
+        // M429). Jednostka ta sama co flying (+3), nie nowa skala; częściowe
+        // pokrycie (tylko część blokerów) dostaje połowę.
+        const bannedKeywords = (def?.abilities ?? [])
+          .filter((a) => a?.type === 'static' && Array.isArray(a.cantBeBlockedByKeywords))
+          .flatMap((a) => a.cantBeBlockedByKeywords);
+        if (bannedKeywords.length > 0) {
+          const enemyBlockers = untappedEnemyBlockers(view);
+          const withKeyword = enemyBlockers
+            .filter((b) => bannedKeywords.some((kw) => hasKeyword(b, kw))).length;
+          if (withKeyword > 0) {
+            score += (withKeyword === enemyBlockers.length) ? 3 : 1.5;
+          }
+        }
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
         if (myCreatures(view).length < enemyCreatures(view).length) score += 4;
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory
@@ -9699,7 +9828,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
             let amount = effect.amount === 'basic_land_types_you_control'
               ? basicLandTypeCount(view.zones.battlefield ?? [], view.playerId)
-              : Number.isInteger(effect.amount) ? effect.amount : 0;
+              // PMSSB-60/F1 (Blitz of the Thunder-Raptor): kwota z GROBU —
+              // ten sam licznik co silnik przy rozstrzyganiu (effects.js,
+              // CR 608.2h), więc wycena i skutek nie mogą się rozjechać (L41).
+              // Wcześniej deskryptor nie miał tu gałęzi: amount spadał na 0,
+              // a efekt ciągnął score w dół (delta −80 wobec kontrfaktyku),
+              // więc bot nigdy nie rzucał Blitza mimo pełnych obrażeń w silniku.
+              : effect.amount === 'instants_and_sorceries_in_your_graveyard'
+                ? instantSorceryGraveyardCount(view.zones.graveyard ?? [], view.playerId)
+                : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
@@ -9935,6 +10072,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             } else {
               score -= P.drawCardValue * drawAmount;
             }
+          }
+          // PMSSB-60/F3 (Impulse, batch 65) — L41: `look_top_put_one_hand_*`
+          // było wyceniane w rozdziałach sagi (`anticipatedSagaValue`),
+          // w exploicie i w zdolności aktywowanej (Merchant's Dockhand), ale
+          // NIE w ścieżce rzucania czaru. Impulse dostawał więc generyczną
+          // bazę: delta 0 wobec kontrfaktyku bez efektu i płaskie 50,0 dla
+          // biblioteki 0/1/4/30 (gdyby helper działał, pusta biblioteka by
+          // go obniżyła). Ten sam helper co tamte trzy miejsca — jedna skala,
+          // nie kopia; `amount` z danych karty, nie z X (czar nie ma X).
+          if (effect.type === 'look_top_put_one_hand_rest_bottom'
+            || effect.type === 'look_top_put_one_hand_rest_grave') {
+            const lookX = Number.isInteger(effect.amount) ? effect.amount : 0;
+            score += impulseLookValue(view, lookX);
           }
           // PMSSB-3/F5 (Force Away): rider ferocious-loot — oczekiwana wartosc
           // decyzji-loot (lustro M67) gdy ferocious spelnione (P>=4, lustro
@@ -10902,6 +11052,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // atakujący, martwy atak = nigdy (cantBeBlockedTargetValue).
           if (effect.type === 'cant_be_blocked') {
             score += cantBeBlockedTargetValue(view, target);
+          }
+          // PMSSB-60/F2 (Zombie Boa, batch 65): „wybierz kolor — stwory tego
+          // koloru blokujące w tej turze zostaną zniszczone". POMIAR PRZED:
+          // dokładnie 0.0, bo typ efektu nie miał tu gałęzi. Wycena w helperze
+          // (bramka ataku × najlepsza ofiara × likelihood-0,5).
+          if (effect.type === 'choose_color_grant_block_destroy') {
+            score += blockDestroyColorValue(view, source);
           }
           // M202/L (uwaga właściciela, Wishful Merfolk): „{1}{U}: This creature
           // loses defender and becomes a Human until end of turn” ma wartość
