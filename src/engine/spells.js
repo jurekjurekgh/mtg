@@ -1512,10 +1512,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     })];
     // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
     // stwór albo planeswalker (gracz spoza zakresu). Spójnie z validateTargets.
-    case 'creature_or_planeswalker': return [...battlefieldCreatures, ...state.zones.battlefield.filter(id => {
-      const object = state.objects.get(id);
-      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
-    })];
+    // Audyt PR #162/F-3: obiekt będący jednocześnie Creature i Planeswalkerem
+    // należy do sumy zbiorów RAZ; bez Set generator kandydatów zwracał dwa id
+    // i dopiero globalny dedup gotowych komend maskował błąd (oraz koszt pracy).
+    case 'creature_or_planeswalker': return [...new Set([
+      ...battlefieldCreatures,
+      ...state.zones.battlefield.filter(id => {
+        const object = state.objects.get(id);
+        return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+      }),
+    ])];
     case 'any_target': return [...new Set([...players, ...battlefieldCreatures,
       ...targetCandidatesBySpec(state, playerId, { type: 'player_or_planeswalker' })])];
     case 'player': {

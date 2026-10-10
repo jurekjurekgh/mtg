@@ -21,6 +21,7 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { legalTargetCandidates } from '../src/engine/spells.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
@@ -245,6 +246,24 @@ test('B65/332: Blitz — gracz NIE jest legalnym celem („creature or planeswal
   assert.ok(commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'shk'
     && c.targets?.length === 1 && state.players.some((p) => p.id === c.targets[0])),
     'kontrola: Shock (any_target) w tej samej sytuacji celuje w gracza');
+});
+
+test('B65/332: Blitz — Creature Planeswalker jest jednym celem, nie dwiema ofertami', () => {
+  // RED audytu PR #162: sklejanie dwóch list dublowało obiekt spełniający oba
+  // człony „creature or planeswalker”, a generator wariantów mnożył komendy.
+  const state = game();
+  put(state, 'hybryda', 'rustvine-cultivator', 'p2', 'battlefield', {
+    kind: 'creature', types: ['Creature', 'Planeswalker'],
+  });
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const candidates = legalTargetCandidates(state, 'p1', { type: 'creature_or_planeswalker' });
+  assert.deepEqual(candidates, ['hybryda'],
+    `generator kandydatów nie może polegać na końcowym dedupie komend: ${JSON.stringify(candidates)}`);
+  const variants = commands(state).filter((c) => c.type === 'cast_spell'
+    && c.objectId === 'blitz' && c.targets?.[0] === 'hybryda');
+  assert.equal(variants.length, 1,
+    `ten sam legalny cel powinien dać jedną ofertę: ${JSON.stringify(variants)}`);
 });
 
 // ---- B65/333: Bring to Trial (RNA #5, plan New Capenna) -----------------------
