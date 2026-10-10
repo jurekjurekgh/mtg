@@ -131,7 +131,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 38 | 13 | 25 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 32 | 11 | 21 |
-| `dominaria-wu` | Dominaria (WU) | WU | 27 | 9 | 18 |
+| `dominaria-wu` | Dominaria (WU) | WU | 29 | 10 | 19 |
 | `eldraine` | Eldraine | WUBRG | 23 | 8 | 15 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 39 | 13 | 26 |

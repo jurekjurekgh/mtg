@@ -637,3 +637,59 @@ test('B65/341: Pacifism — zaczarowany stwor nie blokuje (brak oferty, deklarac
   const r = execute(st, { type: 'declare_blockers', playerId: 'p1', assignments: { theirs: ['mine'] } });
   assert.equal(r.ok, false, 'deklaracja bloku odrzucona (cantBlock)');
 });
+
+// ---- B65/348: Impulse (DMU #55, plan Dominaria) ------------------------------
+
+test('B65/348: Impulse — dane Oracle: {1}{U} instant, look 4, jedna do reki, reszta na spod', () => {
+  const def = sanity('impulse', { set: 'DMU', plan: 'Dominaria', artId: 348 });
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['U']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.spell.timing, 'instant');
+  assert.deepEqual(def.spell.effects, [{ type: 'look_top_put_one_hand_rest_bottom', amount: 4 }]);
+  const snap = snapshotOf('impulse');
+  assert.equal(snap.rulings.length, 2, 'rulingi WotC 2004-10-04');
+  assert.ok(snap.rulings.some((r) => /not a draw/.test(r.comment)), 'to nie jest dobieranie');
+  assert.ok(snap.rulings.some((r) => /no longer shuffle/.test(r.comment)), 'bez tasowania po erracie');
+});
+
+test('B65/348: Impulse — look 4: wybrana do reki, reszta na spod wg bottomOrder, bez card_drawn', () => {
+  const st = game();
+  put(st, 'imp', 'impulse', 'p1', 'hand');
+  addMana(st, 'p1', 2, { colors: ['U'] });
+  run(st, commands(st).find((c) => c.type === 'cast_spell' && c.objectId === 'imp'));
+  for (let i = 0; i < 12 && !st.pendingLookTopN; i++) run(st, commands(st).find((c) => c.type === 'pass_priority'));
+  assert.ok(st.pendingLookTopN, 'decyzja look_top otwarta');
+  assert.equal(st.pendingLookTopN.objectIds.length, 4, 'cztery karty odsłonięte');
+  const looked = [...st.pendingLookTopN.objectIds];
+  const pick = looked[1];
+  const rest = [looked[3], looked[2], looked[0]];
+  run(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: pick, bottomOrder: rest });
+  const handIds = st.zones.hand.filter((id) => st.objects.get(id)?.controllerId === 'p1');
+  assert.equal(handIds.length, 1, 'w ręce tylko wybrana karta (impulse poszedł do grobu)');
+  assert.ok(st.events.some((e) => e.type === 'object_moved' && e.fromId === pick && e.toZone === 'hand'),
+    'wybrana karta w ręce (object_moved z looked)');
+  const libP1 = st.zones.library.filter((id) => st.objects.get(id)?.controllerId === 'p1');
+  assert.deepEqual(libP1.slice(-3), rest, 'reszta na spodzie w kolejności bottomOrder');
+  assert.deepEqual(libP1.slice(0, 2), ['lib-p1-4', 'lib-p1-5'], 'brak tasowania — wierzch zachowany');
+  assert.ok(!st.events.some((e) => e.type === 'card_drawn'), 'ruling: to nie jest dobieranie');
+});
+
+test('B65/348: Impulse — nielegalny wybór i zła kolejność odrzucone', () => {
+  const st = game();
+  put(st, 'imp', 'impulse', 'p1', 'hand');
+  addMana(st, 'p1', 2, { colors: ['U'] });
+  run(st, commands(st).find((c) => c.type === 'cast_spell' && c.objectId === 'imp'));
+  for (let i = 0; i < 12 && !st.pendingLookTopN; i++) run(st, commands(st).find((c) => c.type === 'pass_priority'));
+  assert.ok(st.pendingLookTopN);
+  const looked = [...st.pendingLookTopN.objectIds];
+  const pick = looked[0];
+  const rest = looked.slice(1);
+  const poza = st.zones.library.find((id) => st.objects.get(id)?.controllerId === 'p1' && !looked.includes(id));
+  const r1 = execute(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: poza });
+  assert.equal(r1.ok, false, 'karta spoza odsłoniętych odrzucona (illegal_look_top_choice)');
+  const r2 = execute(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: pick, bottomOrder: [...rest, poza] });
+  assert.equal(r2.ok, false, 'bottomOrder z obcą kartą odrzucony');
+  const r3 = execute(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: pick, bottomOrder: rest });
+  assert.ok(r3.ok, 'poprawna decyzja przechodzi');
+});

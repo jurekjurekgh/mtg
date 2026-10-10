@@ -64,6 +64,6 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 - [x] 338 Brine Giant (THB, Theros)
 - [x] 340 Ambulatory Edifice (ONE, Mirrodin)
 - [x] 341 Pacifism (DTK, Tarkir)
-- [ ] 348 Impulse (DMU, Dominaria)
+- [x] 348 Impulse (DMU, Dominaria)
 - [ ] 350 Temple of Abandon (BLC, Kamigawa)
 - [ ] Domknięcie: milestone + historia + opis PR.

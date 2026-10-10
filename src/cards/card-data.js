@@ -13461,6 +13461,27 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['aura CR 303.4 (wzorzec Hobble): cantAttack + cantBlock na gospodarzu; ruchy ofensywne/blokujące odrzucane przez walidację combatu'],
   }),
+
+  // 9. Impulse (DMU #55) {1}{U} — Instant. „Look at the top four cards of your
+  //    library. Put one of them into your hand and the rest on the bottom of
+  //    your library in any order." — look_top_put_one_hand_rest_bottom
+  //    (M177/E, Merchant's Dockhand). Rulingi WotC 2004-10-04: „This is not a
+  //    draw” (brak card_drawn) i po erracie BEZ tasowania (kolejność reszty
+  //    = bottomOrder).
+  defineCard({
+    id: 'impulse', name: 'Impulse', set: 'DMU',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Look at the top four cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5aec2b2c-0764-4869-814d-aad921122af9.jpg?1783921349',
+    spell: {
+      timing: 'instant',
+      effects: [{ type: 'look_top_put_one_hand_rest_bottom', amount: 4 }],
+    },
+    artId: 348,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ruling 2004-10-04: to NIE jest dobieranie (brak zdarzeń card_drawn) i nie tasujesz biblioteki (reszta na spód w kolejności bottomOrder)'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

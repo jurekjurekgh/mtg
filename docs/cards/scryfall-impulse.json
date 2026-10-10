@@ -1,0 +1,40 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Impulse&set=dmu&format=json",
+  "print": "dmu",
+  "name": "Impulse",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Look at the top four cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "55",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/5/a/5aec2b2c-0764-4869-814d-aad921122af9.jpg?1783921349",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5aec2b2c-0764-4869-814d-aad921122af9.jpg?1783921349",
+    "large": "https://cards.scryfall.io/large/front/5/a/5aec2b2c-0764-4869-814d-aad921122af9.jpg?1783921349"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "This is not a draw."
+    },
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "Due to errata, you no longer shuffle your library."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/5aec2b2c-0764-4869-814d-aad921122af9/rulings",
+  "rulingsPobrano": "2026-10-10"
+}
