@@ -91,7 +91,7 @@ test('Regresja: po decyzji look_top czar SCHODZI ze stosu, a pendingSpell jest w
   assert.equal(st.pendingSpell, null, 'pendingSpell wyczyszczone po dokończeniu czaru');
   assert.equal(st.zones.stack.length, 0, 'stos pusty — czar nie utknął');
   assert.equal(st.objects.has(stackId), false, 'obiekt czaru zdjęty ze stosu');
-  assert.ok(find(st, 'impulse', 'graveyard'), 'Impulse w grobie (CR 704.3 / instant po rozstrzygnięciu)');
+  assert.ok(find(st, 'impulse', 'graveyard'), 'Impulse w grobie po rozstrzygnięciu instanta');
   assert.ok(st.events.some((e) => e.type === 'spell_resolved' && e.cardId === 'impulse'),
     'zdarzenie spell_resolved dla Impulse');
 });

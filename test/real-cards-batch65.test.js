@@ -138,18 +138,20 @@ test('B65/329: Blinding Drone — {C} nie opłaca się maną kolorową (CR 107.4
     'brak oferty: pip bezbarwny wymaga many bezbarwnej');
 });
 
-test('B65/329: Blinding Drone — bez many / bez stworów na stole NIE MA oferty', () => {
+test('B65/329: Blinding Drone — bez many / przy samym self-target no-op NIE MA oferty', () => {
   const state = game();
   put(state, 'drone', 'blinding-drone', 'p1', 'battlefield', { tapped: false });
   put(state, 'cel', 'rustvine-cultivator', 'p2', 'battlefield', { tapped: false });
   assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'drone'),
     'brak many = brak oferty (L48: oferta = walidacja)');
   addMana(state, 'p1', 1, { colors: [] });
-  // Zdejmijmy cel — brak legalnego celu = brak okazji (CR 601.2c w ofercie).
+  // Zdejmijmy obcy cel. Sam Drone pozostaje rules-legalnym celem, ale koszt
+  // {T} tapuje go przed efektem, więc „tapnij siebie” jest czystym no-opem;
+  // generator celowo nie oferuje jałowego wariantu (to NIE „brak celu”).
   state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'cel');
   state.objects.delete('cel');
   assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'drone'),
-    'brak legalnego celu = brak oferty');
+    'jedyny wariant to legalny self-target no-op — świadomie bez oferty');
   // Stan tapnięty też zamyka ofertę ({T} w koszcie).
   const st = game();
   put(st, 'drone2', 'blinding-drone', 'p1', 'battlefield', { tapped: true });
@@ -254,8 +256,11 @@ test('B65/332: Blitz — Creature Planeswalker jest jednym celem, nie dwiema ofe
   // człony „creature or planeswalker”, a generator wariantów mnożył komendy.
   const state = game();
   put(state, 'hybryda', 'rustvine-cultivator', 'p2', 'battlefield', {
-    kind: 'creature', types: ['Creature', 'Planeswalker'],
+    kind: 'creature', types: ['Creature', 'Planeswalker'], power: 1, toughness: 5,
+    counters: { loyalty: 5 },
   });
+  put(state, 'gy-i', 'negate', 'p1', 'graveyard');
+  put(state, 'gy-s', 'act-of-treason', 'p1', 'graveyard');
   put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
   addMana(state, 'p1', 2, { colors: ['R'] });
   const candidates = legalTargetCandidates(state, 'p1', { type: 'creature_or_planeswalker' });
@@ -265,6 +270,10 @@ test('B65/332: Blitz — Creature Planeswalker jest jednym celem, nie dwiema ofe
     && c.objectId === 'blitz' && c.targets?.[0] === 'hybryda');
   assert.equal(variants.length, 1,
     `ten sam legalny cel powinien dać jedną ofertę: ${JSON.stringify(variants)}`);
+  run(state, variants[0]);
+  settle(state);
+  assert.equal(state.objects.get('hybryda')?.counters?.loyalty, 3,
+    'Blitz naprawdę zadaje 2 obrażenia Creature Planeswalkerowi (nie tylko oferuje cel)');
 });
 
 // ---- B65/333: Bring to Trial (RNA #5, plan New Capenna) -----------------------
