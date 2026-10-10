@@ -1,7 +1,7 @@
 import { countedEffectValue, countedEffectSign, isCountedEffectValue } from '../engine/effect-values.js';
 import { battleDefenseDelta, isBattle } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
-import { basicLandTypeCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
+import { basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, CARD_TYPES } from '../engine/permanents.js';
 import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
@@ -9702,7 +9702,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
             let amount = effect.amount === 'basic_land_types_you_control'
               ? basicLandTypeCount(view.zones.battlefield ?? [], view.playerId)
-              : Number.isInteger(effect.amount) ? effect.amount : 0;
+              // PMSSB-60/F1 (Blitz of the Thunder-Raptor): kwota z GROBU —
+              // ten sam licznik co silnik przy rozstrzyganiu (effects.js,
+              // CR 608.2h), więc wycena i skutek nie mogą się rozjechać (L41).
+              // Wcześniej deskryptor nie miał tu gałęzi: amount spadał na 0,
+              // a efekt ciągnął score w dół (delta −80 wobec kontrfaktyku),
+              // więc bot nigdy nie rzucał Blitza mimo pełnych obrażeń w silniku.
+              : effect.amount === 'instants_and_sorceries_in_your_graveyard'
+                ? instantSorceryGraveyardCount(view.zones.graveyard ?? [], view.playerId)
+                : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
@@ -9938,6 +9946,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             } else {
               score -= P.drawCardValue * drawAmount;
             }
+          }
+          // PMSSB-60/F3 (Impulse, batch 65) — L41: `look_top_put_one_hand_*`
+          // było wyceniane w rozdziałach sagi (`anticipatedSagaValue`),
+          // w exploicie i w zdolności aktywowanej (Merchant's Dockhand), ale
+          // NIE w ścieżce rzucania czaru. Impulse dostawał więc generyczną
+          // bazę: delta 0 wobec kontrfaktyku bez efektu i płaskie 50,0 dla
+          // biblioteki 0/1/4/30 (gdyby helper działał, pusta biblioteka by
+          // go obniżyła). Ten sam helper co tamte trzy miejsca — jedna skala,
+          // nie kopia; `amount` z danych karty, nie z X (czar nie ma X).
+          if (effect.type === 'look_top_put_one_hand_rest_bottom'
+            || effect.type === 'look_top_put_one_hand_rest_grave') {
+            const lookX = Number.isInteger(effect.amount) ? effect.amount : 0;
+            score += impulseLookValue(view, lookX);
           }
           // PMSSB-3/F5 (Force Away): rider ferocious-loot — oczekiwana wartosc
           // decyzji-loot (lustro M67) gdy ferocious spelnione (P>=4, lustro

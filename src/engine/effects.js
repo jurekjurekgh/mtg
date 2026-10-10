@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -466,9 +466,12 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
   // przy ROZSTRZYGANIU (CR 608.2h). Ruling WotC 2020-04-17: sam Blitz jest
   // jeszcze na stosie i nie liczy się do tej liczby (strefa grobu go nie ma).
   if (amount === 'instants_and_sorceries_in_your_graveyard') {
-    amount = [...state.objects.values()].filter((object) => object.zone === 'graveyard'
-      && object.controllerId === sourceObject?.controllerId
-      && ((object.types ?? []).includes('Instant') || (object.types ?? []).includes('Sorcery'))).length;
+    // PMSSB-60/F1: wspólny licznik z heurystyką bota (L41 — jedna reguła
+    // liczenia, dwie strony: rozstrzyganie i wycena).
+    amount = instantSorceryGraveyardCount(
+      [...state.objects.values()].filter((object) => object.zone === 'graveyard'),
+      sourceObject?.controllerId,
+    );
   }
   // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
   // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU

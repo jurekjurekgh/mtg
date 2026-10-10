@@ -32,6 +32,33 @@ export function basicLandTypeCount(battlefield, controllerId) {
   return found.size;
 }
 
+/**
+ * PMSSB-60/F1 (Blitz of the Thunder-Raptor, batch 65): liczba kart instant
+ * i sorcery w grobie JEDNEGO kontrolera — kwota dla `damage` z deskryptorem
+ * `amount: 'instants_and_sorceries_in_your_graveyard'`.
+ *
+ * JEDNO źródło prawdy dla silnika i bota (L41): `effects.js` liczy to przy
+ * rozstrzyganiu (CR 608.2h), `heuristic-bot.js` przy wycenie rzutu — wcześniej
+ * silnik liczył inline, a heurystyka wcale (0 trafień deskryptora), więc bot
+ * wyceniał Blitz na −30 niezależnie od grobu i nigdy go nie rzucał, mimo że
+ * rozstrzygnięcie zadawało pełne obrażenia.
+ *
+ * Wejście to DOWOLNY iterowalny zbiór obiektów (silnik podaje wszystkie
+ * obiekty i sam filtruje strefę, bot ma już gotową tablicę `zones.graveyard`
+ * z widoku) — wybór strefy zostaje po stronie wywołującego, bo każda strona
+ * ma naturalny sposób na grób. Ruling WotC 2020-04-17: sam Blitz jest jeszcze
+ * na stosie, więc strefa grobu go nie zawiera i nie policzy się do kwoty.
+ */
+export function instantSorceryGraveyardCount(objects, controllerId) {
+  let count = 0;
+  for (const object of objects ?? []) {
+    if (!object || object.controllerId !== controllerId) continue;
+    const types = object.types ?? [];
+    if (types.includes('Instant') || types.includes('Sorcery')) count += 1;
+  }
+  return count;
+}
+
 /** Prewencja licznika shield, wspólna dla pipeline i markDamage. */
 export function preventDamageWithShieldCounter(state, objectId, amount) {
   const object = state.objects.get(objectId);
