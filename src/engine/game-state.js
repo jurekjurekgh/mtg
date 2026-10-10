@@ -1980,6 +1980,29 @@ function promoteNextMadness(state) {
 }
 
 function accepted(state, cmd, result) {
+  // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
+  // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
+  // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
+  // `state.pendingSpell = { stackId, effects: [] }`. Handler decyzji sprząta
+  // własne `pending*`, ale wznowienie wstrzymanego czaru robi tylko część
+  // handlerów (scry/surveil/index/manifest_dread…) — reszta (m.in.
+  // `resolve_look_top_choice`, `resolve_satyr_look`) kończy na `accepted()`.
+  // Efekt: `pendingSpell` wisi na zawsze, a pierwszy późniejszy ruch obiektu
+  // wywala niezmiennik „Pending spell odwołuje się do nieistniejącego czaru”.
+  // Naprawa KLASY w jednym miejscu zamiast łatania ~35 handlerów z osobna
+  // (łatwo któryś pominąć): jeśli czar wciąż jest na stosie i NIC już nie
+  // czeka na decyzję — czyli nikt go nigdy nie wznowi — dokańczamy go tutaj.
+  // Strażnik `firstPendingDecision` gwarantuje, że normalna ścieżka (decyzja
+  // w środku listy efektów) nietknięta: hook odpala TYLKO w stanie, w którym
+  // czar byłby porzucony. Wzorzec i strażnik ten sam co promocja madness niżej.
+  const stuckSpell = state.pendingSpell;
+  if (stuckSpell && !firstPendingDecision(state)
+    && state.objects.get(stuckSpell.stackId)?.zone === 'stack') {
+    state.pendingSpell = null;
+    // resumeSuspendedSpell może znów zawiesić czar na zagnieżdżonej decyzji —
+    // wtedy złapie go accepted() następnej komendy (i firstPendingDecision).
+    result.events = [...(result.events ?? []), ...resumeSuspendedSpell(state, stuckSpell)];
+  }
   // Znalezisko A: auto-discard całości (bez decyzji) zostawia madness
   // w KOLEJCE — promocja następuje tu, po domknięciu komendy, o ile nic nie
   // czeka (lustro synchronicznej promocji w resolverze; kolejność „najpierw

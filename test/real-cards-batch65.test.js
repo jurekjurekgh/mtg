@@ -667,6 +667,15 @@ test('B65/348: Impulse — look 4: wybrana do reki, reszta na spod wg bottomOrde
   run(st, { type: 'resolve_look_top_choice', playerId: 'p1', cardId: pick, bottomOrder: rest });
   const handIds = st.zones.hand.filter((id) => st.objects.get(id)?.controllerId === 'p1');
   assert.equal(handIds.length, 1, 'w ręce tylko wybrana karta (impulse poszedł do grobu)');
+  // Regresja 2026-10-10: asercja WYŻEJ jest prawdziwa także, gdy Impulse
+  // utknie na stosie — sprawdzała słabszą własność, niż twierdził jej
+  // komentarz, i dlatego przepuściła wiszące `pendingSpell` (patrz
+  // test/wstrzymany-czar-decyzja-look-top.test.js). Dopisujemy wprost to,
+  // co komentarz obiecywał.
+  assert.equal(st.pendingSpell, null, 'wstrzymany czar dokończony — pendingSpell wyczyszczone');
+  assert.equal(st.zones.stack.length, 0, 'Impulse zszedł ze stosu');
+  assert.ok([...st.objects.values()].some((o) => o.cardId === 'impulse' && o.zone === 'graveyard'),
+    'Impulse faktycznie w grobie');
   assert.ok(st.events.some((e) => e.type === 'object_moved' && e.fromId === pick && e.toZone === 'hand'),
     'wybrana karta w ręce (object_moved z looked)');
   const libP1 = st.zones.library.filter((id) => st.objects.get(id)?.controllerId === 'p1');
