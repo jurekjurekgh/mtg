@@ -12918,10 +12918,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
       // decyzja otwiera się tylko gdy opłacalna (canPayTrigger) — efekt
       // jest sensem karty, zapłata niemal zawsze na plusie.
-      // Etap F (CR 603.5 + 603.12): wyjątek — refleksyjna zdolność z celem
-      // (Zoraline, Kappa), gdy celu brak: zapłata to czysta strata.
+      // Etap F (CR 603.5 + 603.12): wyjątek — refleksyjna zdolność z celem,
+      // gdy celu brak albo każdy legalny cel jest szkodliwy: zapłata to strata.
       case 'resolve_optional_pay_choice': {
         if (cmd.pay && cmd.reflexiveTargetCount === 0) return finish(-10);
+        let reflexiveBenefit = 0;
+        if (cmd.pay && Array.isArray(cmd.reflexiveEffects) && cmd.reflexiveEffects.length > 0) {
+          const source = objectOnBoard(view, cmd.sourceId);
+          const pumpEffects = cmd.reflexiveEffects
+            .map((effect) => ({ effect, delta: temporaryPumpOf(effect, view, source) }));
+          // Audyt PR #162/F-2: liczba celów nie opisuje ich POLARYZACJI.
+          // Dla refleksyjnej pompy/debuffu liczymy legalnych kandydatów ze
+          // stanu: ujemna pompa jest użyteczna na wrogu, dodatnia na swoim.
+          // Reguła jest po deskryptorze efektu, bez wiedzy o nazwie karty.
+          if (pumpEffects.every(({ delta }) => delta != null)) {
+            const targetValues = (cmd.reflexiveTargetIds ?? [])
+              .map((id) => objectOnBoard(view, id))
+              .filter(Boolean)
+              .map((target) => {
+                let direction = 0;
+                for (const { effect } of pumpEffects) {
+                  const useful = isNegativePump(effect)
+                    ? target.controllerId !== view.playerId
+                    : target.controllerId === view.playerId;
+                  direction += useful ? 1 : -60;
+                }
+                return direction + modalModeValue(view, { effects: cmd.reflexiveEffects }, target.id, source);
+              });
+            reflexiveBenefit = targetValues.length > 0 ? Math.max(...targetValues) : 0;
+            if (reflexiveBenefit <= 0) return finish(-10);
+          }
+        }
         // PMSSB-37/C: zapłata {N} nie może zabrać many lepszemu rzutowi tej
         // tury. Zysk triggera z tej samej tabeli co rzut nosiciela/payoffu
         // (`anticipatedPayValue`: ETB_EFFECT_BONUS + licznik na źródle).
@@ -12938,7 +12965,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           if (benefit > 0 && payBlocksBetterCast(view, cmd.cost, ownOpenMana(view), benefit)) return finish(10);
         }
-        return finish(cmd.pay ? 75 : 15);
+        // Audyt PR #162/F-2: koszt życia obowiązuje także na ETAPIE decyzji,
+        // nie tylko w antycypacji rzutu nosiciela. Wspólna drabina PMSSB-36
+        // daje 1000 za samobójczą płatność (np. 2 życia przy stanie 2).
+        const lifePenalty = cmd.pay ? selfLifeLossPenalty(view, cmd.lifeCost ?? 0) : 0;
+        return finish(cmd.pay ? 75 + Math.min(15, reflexiveBenefit) - lifePenalty : 15);
       }
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.

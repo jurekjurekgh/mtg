@@ -7741,6 +7741,24 @@ export function playerView(state, playerId) {
     // M101/B: jw. — koszt many/życia i źródło w komendzie, żeby gracz wiedział,
     // za co płaci, zanim kliknie (zgłoszenie: dwie identyczne opcje).
     const optionalPayTrigger = state.pendingOptionalPay.ability?.trigger ?? {};
+    // Audyt PR #162/F-2 (ADR 0017): sama LICZBA celów refleksu nie wystarcza
+    // do świadomej decyzji bota. Ambulatory Edifice zawsze widzi co najmniej
+    // siebie, lecz zapłata 2 życia tylko po to, by dać własnemu stworowi −1/−1,
+    // jest stratą. Komenda niesie więc publiczne id legalnych kandydatów oraz
+    // dokładne efekty „When you do”; wycena nie zgaduje ich z nazwy karty.
+    const reflexiveTargetIds = state.pendingOptionalPay.requiresTargetDecision
+      ? legalTriggerTargetCandidates(state, {
+          sourceId: state.pendingOptionalPay.sourceId,
+          ability: state.pendingOptionalPay.ability,
+          extra: state.pendingOptionalPay.extra ?? {},
+        })
+      : [];
+    const rawOptionalPayEffects = Array.isArray(state.pendingOptionalPay.ability?.effect)
+      ? state.pendingOptionalPay.ability.effect
+      : [state.pendingOptionalPay.ability?.effect].filter(Boolean);
+    const reflexiveEffects = rawOptionalPayEffects
+      .filter((effect) => !['pay_mana', 'pay_life'].includes(effect?.type))
+      .map((effect) => Object.freeze({ ...effect }));
     const optionalPayInfo = {
       cost: optionalPayTrigger.payMana ?? null,
       costColors: optionalPayTrigger.payColors ?? null,
@@ -7749,14 +7767,11 @@ export function playerView(state, playerId) {
       sourceId: state.pendingOptionalPay.sourceId ?? null,
       // Etap F (CR 603.5 + 603.12): „When you do, [efekt z celem]" — płatność
       // pada przy rozstrzyganiu, zanim wybiera się cel refleksyjnej zdolności.
-      // Liczba legalnych celów TERAZ mówi graczowi i botowi, czy zapłata
-      // w ogóle może coś dać (CR pozwala zapłacić także bez celu).
+      // Kandydaci i efekt pozwalają odróżnić cel korzystny od szkodliwego.
       ...(state.pendingOptionalPay.requiresTargetDecision ? {
-        reflexiveTargetCount: legalTriggerTargetCandidates(state, {
-          sourceId: state.pendingOptionalPay.sourceId,
-          ability: state.pendingOptionalPay.ability,
-          extra: state.pendingOptionalPay.extra ?? {},
-        }).length,
+        reflexiveTargetCount: reflexiveTargetIds.length,
+        reflexiveTargetIds: Object.freeze([...reflexiveTargetIds]),
+        reflexiveEffects: Object.freeze(reflexiveEffects),
       } : {}),
     };
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));

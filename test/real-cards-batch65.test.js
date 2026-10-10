@@ -22,6 +22,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 
 const registry = createCardRegistry();
@@ -580,6 +581,36 @@ test('B65/340: Ambulatory Edifice — odmowa zaplaty: zycie nietkniete, bez -1/-
   const t = st.objects.get('theirs');
   assert.equal(effectivePower(t, st), pow0, 'bez -1/-1');
   assert.equal(effectiveToughness(t, st), tough0);
+});
+
+function decyzjaBotaEdifice({ life = 20, enemyTarget = false } = {}) {
+  const st = game();
+  st.players.find((p) => p.id === 'p1').life = life;
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  if (enemyTarget) put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield');
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+  assert.ok(resolveUntilDecision(st, optionalPayOpen), 'decyzja zapłaty otwarta');
+  const bot = createHeuristicBot({ seed: 650340, randomness: 0, lookahead: 0, registry });
+  return { state: st, choice: bot.chooseCommand(playerView(st, 'p1')), trace: bot.trace().at(-1) };
+}
+
+test('B65/340 BOT: nie płaci życia wyłącznie po to, by osłabić własnego stwora', () => {
+  // RED audytu PR #162: Edifice samo jest legalnym „target creature”, więc
+  // samo reflexiveTargetCount>0 nie znaczy, że płatność ma korzystny cel.
+  const { choice, trace } = decyzjaBotaEdifice({ life: 20, enemyTarget: false });
+  assert.equal(choice.type, 'resolve_optional_pay_choice', JSON.stringify(trace));
+  assert.equal(choice.pay, false, `jedyny cel jest własny — odmów: ${JSON.stringify(choice)}`);
+});
+
+test('B65/340 BOT: nie płaci śmiertelnych 2 życia; przy zdrowiu i wrogim celu płaci', () => {
+  const lethal = decyzjaBotaEdifice({ life: 2, enemyTarget: true });
+  assert.equal(lethal.choice.pay, false,
+    `zapłata sprowadzi życie do 0 — odmów: ${JSON.stringify(lethal.choice)}`);
+
+  const healthy = decyzjaBotaEdifice({ life: 20, enemyTarget: true });
+  assert.equal(healthy.choice.pay, true,
+    `zdrowe życie + wrogi cel −1/−1 — zapłać: ${JSON.stringify(healthy.choice)}`);
 });
 
 // ---- B65/341: Pacifism (DTK #29, plan Tarkir) -------------------------------
