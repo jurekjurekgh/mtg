@@ -91,10 +91,15 @@ function scoreOf(state, filtr, playerId = 'p1') {
 // ============================================================ FALA A — F1
 
 /** Blitz w ręce, `grob` instantów, wrogi cel `pt`. `kontra` = bez efektów. */
-function blitzScene(grob, pt = [4, 4], kontra = false) {
-  const registry = kontra
-    ? registryKontra('blitz-of-the-thunder-raptor', (d) => ({ ...d, spell: { ...d.spell, effects: [] } }))
-    : REGISTRY;
+/** `wariant`: false = karta pełna, true = bez efektów (kontrfaktyk A1-A6),
+ * 'bez-ridera' = sam `damage`, 'rider-noop' = rider zastąpiony typem nieznanym. */
+function blitzScene(grob, pt = [4, 4], wariant = false) {
+  const mut = wariant === 'bez-ridera'
+    ? (d) => ({ ...d, spell: { ...d.spell, effects: d.spell.effects.filter((e) => e.type !== 'exile_if_dies_this_turn') } })
+    : wariant === 'rider-noop'
+      ? (d) => ({ ...d, spell: { ...d.spell, effects: d.spell.effects.map((e) => (e.type === 'exile_if_dies_this_turn' ? { type: 'zzz_noop' } : e)) } })
+      : (d) => ({ ...d, spell: { ...d.spell, effects: [] } });
+  const registry = wariant === false ? REGISTRY : registryKontra('blitz-of-the-thunder-raptor', mut);
   return scene({ registry, setup: (st, r) => {
     foe(st, 'f1', pt[0], pt[1]);
     instants(st, grob);
@@ -374,4 +379,20 @@ test('PMSSB-60/C3: wybierany jest JEDEN kolor, więc dwa kolory się nie sumują
   assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), boa([[3, 3, 'R']])),
     `maksimum, nie suma: ${boa([[3, 3, 'R'], [3, 3, 'G']])} vs ${boa([[3, 3, 'R']])}`);
   assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), 4.5));
+});
+
+test('PMSSB-60/A7: rider Blitza wnosi wartość, ale NIE przez swój typ (zamknięcie M2)', () => {
+  const pelny = blitz(6, [4, 4]);
+  const bezRidera = blitz(6, [4, 4], 'bez-ridera');
+  const riderNoop = blitz(6, [4, 4], 'rider-noop');
+  // Plan (M2) zakładał, że `exile_if_dies_this_turn` jako rider czaru nie jest
+  // wyceniany. POMIAR temu przeczy: pełny czar 96,0 wobec 45,0 bez ridera,
+  // czyli rider wnosi +51. Podstawienie za rider typu NIEZNANEGO daje jednak
+  // dokładnie te same 96,0 — więc +51 to ucieczka od resetu
+  // `if (isDamageOnly) score = -1;` (heuristic-bot.js:9226), a nie wartość
+  // typu `exile_if_dies_this_turn`. Wniosek: premia za typ byłaby podwójnym
+  // liczeniem, dlatego ta fala NIE dodaje kodu — tylko zabezpiecza pomiar.
+  assert.ok(pelny > bezRidera, `rider wnosi wartość: ${pelny} vs ${bezRidera}`);
+  assert.ok(blisko(pelny, riderNoop),
+    `+51 nie zależy od typu ridera: pełny ${pelny} vs noop ${riderNoop}`);
 });

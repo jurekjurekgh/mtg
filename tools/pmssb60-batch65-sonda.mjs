@@ -78,10 +78,19 @@ const fmt = (r) => (r ? r.map((o) => `${o.cmd.slice(0, 42)}=${o.score.toFixed(1)
 
 // ============================================================ F1 — Blitz
 console.log('\n=== F1 Blitz of the Thunder-Raptor — damage = #instant/sorcery w grobie');
-function blitz(grób, foePT = [4, 4], kontra = false) {
-  const reg = kontra ? registryKontra('blitz-of-the-thunder-raptor', (d) => ({
-    ...d, spell: { ...d.spell, effects: [] },
-  })) : REG;
+/** `kontra`: 'nic' = karta pełna, 'efekty' = bez obu efektów, 'rider' = sam
+ * `damage` bez `exile_if_dies_this_turn` (pomiar dopłaty za rider, M2/Fala A). */
+function blitz(grób, foePT = [4, 4], kontra = 'nic') {
+  const reg = kontra === 'nic' ? REG : registryKontra('blitz-of-the-thunder-raptor', (d) => ({
+    ...d,
+    spell: kontra === 'efekty'
+      ? { ...d.spell, effects: [] }
+      : kontra === 'rider'
+        ? { ...d.spell, effects: d.spell.effects.filter((e) => e.type !== 'exile_if_dies_this_turn') }
+        // 'noop': rider zastąpiony typem nieznanym — dowód, że +51 bierze się
+        // z DRUGIEGO efektu (ucieczka od `isDamageOnly`), nie z typu ridera.
+        : { ...d.spell, effects: d.spell.effects.map((e) => (e.type === 'exile_if_dies_this_turn' ? { type: 'zzz_noop' } : e)) },
+  }));
   const s = scene({ registry: reg, setup: (st, r) => {
     foe(st, 'f1', foePT[0], foePT[1]);
     for (let i = 0; i < grób; i++) addObject(st, { id: `g${i}`, instanceId: `i-g${i}`, cardId: 'x',
@@ -94,7 +103,11 @@ function blitz(grób, foePT = [4, 4], kontra = false) {
 for (const g of [0, 2, 4, 6]) console.log(`   grób ${g}, wrogi 4/4:      ${blitz(g)}`);
 console.log(`   grób 6, wrogi 2/2:      ${blitz(6, [2, 2])}`);
 console.log(`   grób 6, wrogi 8/8:      ${blitz(6, [8, 8])}`);
-console.log(`   KONTRFAKTYK (bez efektu): ${blitz(6, [4, 4], true)}`);
+console.log(`   KONTRFAKTYK (bez efektów): ${blitz(6, [4, 4], 'efekty')}`);
+console.log(`   bez ridera (sam damage): ${blitz(6, [4, 4], 'rider')}`);
+console.log(`   rider -> typ nieznany:   ${blitz(6, [4, 4], 'noop')}  ← tyle samo co pełny:`);
+console.log('     +51 to ucieczka od resetu `isDamageOnly` (l.9226), NIE wartość typu');
+console.log('     `exile_if_dies_this_turn` — premia za typ byłaby podwójnym liczeniem.');
 
 // ==================================================== F2 — Zombie Boa
 console.log('\n=== F2 Zombie Boa — {1}{B} choose color → becomes_blocked_by_color → destroy');
