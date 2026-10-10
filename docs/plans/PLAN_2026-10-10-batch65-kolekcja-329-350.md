@@ -62,7 +62,7 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 - [x] 334 Skyscythe Engulfer (ONE, Mirrodin)
 - [x] 336 Zombie Boa (APC, Amonkhet)
 - [x] 338 Brine Giant (THB, Theros)
-- [ ] 340 Ambulatory Edifice (ONE, Mirrodin)
+- [x] 340 Ambulatory Edifice (ONE, Mirrodin)
 - [ ] 341 Pacifism (DTK, Tarkir)
 - [ ] 348 Impulse (DMU, Dominaria)
 - [ ] 350 Temple of Abandon (BLC, Kamigawa)

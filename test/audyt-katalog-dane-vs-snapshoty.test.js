@@ -211,11 +211,11 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
     .sort();
   const osierocone = idsSnapshotow.filter((id) => !idsDefinicji.has(id));
 
-  assert.equal(registry.all().length, 622, 'liczba definicji wymaga przeglądu po zmianie katalogu');
-  assert.equal(idsSnapshotow.length, 568, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  assert.equal(registry.all().length, 623, 'liczba definicji wymaga przeglądu po zmianie katalogu');
+  assert.equal(idsSnapshotow.length, 569, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
-  assert.equal(idsSnapshotow.length - osierocone.length, 567,
+  assert.equal(idsSnapshotow.length - osierocone.length, 568,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });
 
@@ -343,11 +343,11 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
     }
   }
 
-  assert.equal(porownano, 567, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
+  assert.equal(porownano, 568, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
   assert.equal(bezSnapshotu, 55, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 11, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 567, `typy/podtypy nie porównano dla ${561 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 567, `Oracle frontu nie porównano dla ${561 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 568, `typy/podtypy nie porównano dla ${561 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 568, `Oracle frontu nie porównano dla ${561 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 9, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 9, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 12, `pusty oracle_text: oczekiwano 12, jest ${oracleTopEmpty}`);

@@ -612,4 +612,5 @@ export const MANA_COSTS = {
   'skyscythe-engulfer': '{5}{G}',
   'zombie-boa': '{4}{B}',
   'brine-giant': '{6}{U}',
+  'ambulatory-edifice': '{2}{B}',
 };

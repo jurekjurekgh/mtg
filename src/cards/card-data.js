@@ -13416,6 +13416,35 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 338, plan: 'Theros',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // 7. Ambulatory Edifice (ONE #79) {2}{B} 3/2 Artifact Creature — Phyrexian
+  //    Construct. „When this creature enters, you may pay 2 life. When you do,
+  //    target creature gets -1/-1 until end of turn." — trigger refleksywny
+  //    (Scryfall ruling 2023-02-04): rodzic BEZ celu, cel wybierany PO
+  //    zapłacie (Zoraline/Etap F, CR 603.5/603.12).
+  defineCard({
+    id: 'ambulatory-edifice', name: 'Ambulatory Edifice', set: 'ONE',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Construct'],
+    colors: ['B'], power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may pay 2 life. When you do, target creature gets -1/-1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/43c9005c-0574-4b75-8dbf-0a6641c3ae33.jpg?1783918052',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Etap F: requiresTarget + payLife („you may pay") → pendingOptionalPay
+        // z requiresTargetDecision; resolve_trigger_target PO zapłacie (zanim
+        // efekt). Koszt życia płaci maszyniera optionalPay (bez pay_life
+        // w efektach — Zoraline double-pay filter). Cel = dowolny stwor
+        // („target creature", CR 115.1 — źródło też).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' }, payLife: 2 },
+        effect: { type: 'pump', power: -1, toughness: -1 },
+      }),
+    ],
+    artId: 340,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['enter_battlefield + payLife 2 (optionalPay, Etap F): cel refleksu „When you do” wybierany po zapłacie (ruling 2023-02-04); -1/-1 do końca tury (pump, cleanup)'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

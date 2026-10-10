@@ -21,6 +21,8 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 
 const registry = createCardRegistry();
 
@@ -69,6 +71,7 @@ function settle(s, max = 60) {
 
 const find = (s, cardId, zone = 'battlefield') => [...s.objects.values()].find((o) => o.cardId === cardId && o.zone === zone);
 const snapshotOf = (slug) => JSON.parse(fs.readFileSync(`docs/cards/scryfall-${slug}.json`, 'utf8'));
+const lifeOf = (s, id) => s.players.find((p) => p.id === id).life;
 
 function sanity(id, { set, plan, artId, snapshot = id }) {
   const def = registry.get(id);
@@ -508,4 +511,73 @@ test('B65/338: Brine Giant — bez enchantmentów pełny koszt 7 many (5+{U} nie
   put(st, 'e1', 'curse-of-the-pierced-heart', 'p1', 'battlefield');
   assert.ok(commands(st).some((c) => c.type === 'cast_permanent' && c.objectId === 'giant'),
     'po jednym enchantmencie koszt 6 → oferta jest (CR 702.41)');
+});
+
+// ---- B65/340: Ambulatory Edifice (ONE #79, plan Mirrodin) -------------------
+
+test('B65/340: Ambulatory Edifice — dane Oracle: 3/2 Artifact Creature, ETB you may pay 2 life, reflex -1/-1', () => {
+  const def = sanity('ambulatory-edifice', { set: 'ONE', plan: 'Mirrodin', artId: 340 });
+  assert.deepEqual(def.types, ['Artifact', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Phyrexian', 'Construct']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.power, 3);
+  assert.equal(def.toughness, 2);
+  assert.equal(def.abilities.length, 1);
+  const ab = def.abilities[0];
+  assert.equal(ab.type, 'triggered');
+  assert.equal(ab.trigger.event, 'enter_battlefield');
+  assert.equal(ab.trigger.payLife, 2, 'you may pay 2 life (optionalPay, Etap F)');
+  assert.deepEqual(ab.trigger.requiresTarget, { type: 'creature' }, 'cel refleksu: dowolny stwor');
+  assert.deepEqual(ab.effect, { type: 'pump', power: -1, toughness: -1 }, '-1/-1 do konca tury');
+  const snap = snapshotOf('ambulatory-edifice');
+  assert.equal(snap.rulings.length, 1, 'ruling WotC 2023-02-04');
+  assert.ok(/reflexive/.test(snap.rulings[0].comment), 'cel wybierany przy wejsciu refleksu na stos');
+  assert.ok(/don't choose a target/.test(snap.rulings[0].comment), 'rodzic bez celu w chwili wyzwolenia');
+});
+
+test('B65/340: Ambulatory Edifice — zaplac 2 zycia, cel PO zaplacie: stwor -1/-1 do konca tury', () => {
+  const st = game();
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield');
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+  assert.ok(resolveUntilDecision(st, optionalPayOpen), 'Etap F: decyzja you may pay przy rozstrzyganiu');
+  const life0 = lifeOf(st, 'p1');
+  const t0 = st.objects.get('theirs');
+  const pow0 = effectivePower(t0, st);
+  const tough0 = effectiveToughness(t0, st);
+  const pay = commands(st).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
+  assert.ok(pay, 'oferta zaplaty 2 zycia');
+  assert.equal(pay.lifeCost, 2);
+  assert.equal(pay.reflexiveTargetCount >= 1, true, 'przed zaplata wiadomo ile celow (CR 603.12)');
+  run(st, pay);
+  assert.equal(lifeOf(st, 'p1'), life0 - 2, 'zaplcone 2 zycia');
+  const trg = commands(st).find((c) => c.type === 'resolve_trigger_target');
+  assert.ok(trg, 'cel refleksu wybierany PO zaplacie (ruling 2023-02-04)');
+  run(st, { ...trg, targetId: 'theirs' });
+  settle(st);
+  const t = st.objects.get('theirs');
+  assert.equal(effectivePower(t, st), pow0 - 1, 'moc -1');
+  assert.equal(effectiveToughness(t, st), tough0 - 1, 'wytrzymalosc -1 do konca tury');
+});
+
+test('B65/340: Ambulatory Edifice — odmowa zaplaty: zycie nietkniete, bez -1/-1', () => {
+  const st = game();
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield');
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+  assert.ok(resolveUntilDecision(st, optionalPayOpen));
+  const life0 = lifeOf(st, 'p1');
+  const t0 = st.objects.get('theirs');
+  const pow0 = effectivePower(t0, st);
+  const tough0 = effectiveToughness(t0, st);
+  const decline = commands(st).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === false);
+  assert.ok(decline, 'oferta odmowy (you may)');
+  run(st, decline);
+  settle(st);
+  assert.equal(lifeOf(st, 'p1'), life0, 'zycie nietkniete');
+  const t = st.objects.get('theirs');
+  assert.equal(effectivePower(t, st), pow0, 'bez -1/-1');
+  assert.equal(effectiveToughness(t, st), tough0);
 });
