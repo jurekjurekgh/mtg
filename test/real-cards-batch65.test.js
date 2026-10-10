@@ -152,3 +152,93 @@ test('B65/329: Blinding Drone — bez many / bez stworów na stole NIE MA oferty
   assert.ok(!commands(st).some((c) => c.type === 'activate_ability' && c.objectId === 'drone2'),
     'tapnięte źródło nie aktywuje zdolności z kosztem {T}');
 });
+
+// ---- B65/332: Blitz of the Thunder-Raptor (IKO #109, plan Thunder Junction) ----
+
+test('B65/332: Blitz of the Thunder-Raptor — dane Oracle: {1}{R} instant, damage = inst/sorc w grobie + exile zamiast śmierci', () => {
+  const def = sanity('blitz-of-the-thunder-raptor', { set: 'IKO', plan: 'Thunder Junction', artId: 332 });
+  assert.deepEqual(def.types, ['Instant']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.spell.timing, 'instant');
+  assert.deepEqual(def.spell.targets, [{ type: 'creature_or_planeswalker' }],
+    'cel: stwór LUB planeswalker — gracz NIE jest legalny (węższy od any_target)');
+  assert.deepEqual(def.spell.effects.map((e) => e.type), ['damage', 'exile_if_dies_this_turn'],
+    'obrażenia + znacznik „gdyby zginął w tej turze, wygnaj zamiast tego” (M177/A)');
+  assert.equal(def.spell.effects[0].amount, 'instants_and_sorceries_in_your_graveyard');
+  const snap = snapshotOf('blitz-of-the-thunder-raptor');
+  assert.equal(snap.rulings.length, 2, '2 rulingi WotC 2020-04-17 (timing kwoty + zasięg efektu zastępczego)');
+  assert.match(snap.rulings[0].comment, /still on the stack/, 'ruling 1: Blitz nie liczy się do własnej kwoty');
+  assert.match(snap.rulings[1].comment, /deals no damage to it/, 'ruling 2: znacznik działa także przy 0 obrażeniach');
+});
+
+test('B65/332: Blitz — obrażenia = 3 (2 inst + 1 sorc; land NIE liczy się), zabity idzie na wygnanie', () => {
+  // Kierunek „>= 3”: ofiara 3/3 ginie od Blitz przy 3 kartach w grobie.
+  const state = game();
+  put(state, 'gy-i1', 'negate', 'p1', 'graveyard');        // Instant
+  put(state, 'gy-i2', 'negate', 'p1', 'graveyard');        // Instant
+  put(state, 'gy-s1', 'act-of-treason', 'p1', 'graveyard'); // Sorcery
+  put(state, 'gy-land', 'basic-swamp', 'p1', 'graveyard');  // Land — nie liczy się
+  put(state, 'cel', 'rustvine-cultivator', 'p2', 'battlefield', { power: 1, toughness: 3 });
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'blitz');
+  assert.ok(cast, 'rzut za {1}{R} jest oferowany');
+  assert.deepEqual(cast.targets, ['cel'], 'cel: stwór przeciwnika');
+  run(state, cast);
+  settle(state);
+  assert.ok(find(state, 'rustvine-cultivator', 'exile'), 'ofiara śmiertelnie trafiona — wygnana zamiast grobu');
+  assert.ok(!find(state, 'rustvine-cultivator', 'graveyard'), 'grób pusty — efekt zastępczy zadziałał');
+});
+
+test('B65/332: Blitz — przy 4 kartach ofiara 3/3 też ginie, ale 4/4 przeżywa (kwota = dokładnie 3)', () => {
+  // Kierunek „<= 3”: land w grobie NIE podbija kwoty (gdyby liczył — 4/4 padłaby),
+  // a sam Blitz na stosie się nie liczy (ruling 2020-04-17 — gdyby liczył, 4/4 też).
+  const state = game();
+  put(state, 'gy-i1', 'negate', 'p1', 'graveyard');
+  put(state, 'gy-i2', 'negate', 'p1', 'graveyard');
+  put(state, 'gy-s1', 'act-of-treason', 'p1', 'graveyard');
+  put(state, 'gy-land', 'basic-swamp', 'p1', 'graveyard');
+  put(state, 'cel', 'rustvine-cultivator', 'p2', 'battlefield', { power: 1, toughness: 4 });
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'blitz');
+  run(state, cast);
+  settle(state);
+  assert.ok(find(state, 'rustvine-cultivator', 'battlefield'), '4/4 przeżyła dokładnie 3 obrażenia');
+  assert.ok(!find(state, 'rustvine-cultivator', 'graveyard'), 'ofiara żyje — bez grobu');
+});
+
+test('B65/332: Blitz — pusty grób: 0 obrażeń, ale znacznik wygnania działa i przy 0 (ruling 2)', () => {
+  const state = game();
+  put(state, 'cel', 'rustvine-cultivator', 'p2', 'battlefield', { power: 1, toughness: 1 });
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'blitz');
+  run(state, cast);
+  settle(state);
+  assert.ok(find(state, 'rustvine-cultivator', 'battlefield'), '0 obrażeń (pusty grób — Blitz na stosie się nie liczy)');
+  // Ofiara ginie w tej samej turze z INNEGO powodu (Shock) — mimo 0 obrażeń z Blitza idzie na wygnanie.
+  put(state, 'shk', 'shock', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['R'] });
+  const cast2 = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'shk'
+    && c.targets?.[0] === 'cel');
+  assert.ok(cast2, 'Shock z celem na ranną ofiarę jest oferowany (wariant cel=cel)');
+  run(state, cast2);
+  settle(state);
+  assert.ok(find(state, 'rustvine-cultivator', 'exile'),
+    'śmierć z innego źródła w tej turze → wygnanie (znacznik z Blitza, ruling 2)');
+  assert.ok(!find(state, 'rustvine-cultivator', 'graveyard'), 'grób pusty');
+});
+
+test('B65/332: Blitz — gracz NIE jest legalnym celem („creature or planeswalker” ≠ any_target)', () => {
+  const state = game();
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  put(state, 'shk', 'shock', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['R'] });
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'blitz'),
+    'brak oferty Blitza: jedynym potencjalnym celem jest gracz (nielegalny)');
+  assert.ok(commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'shk'
+    && c.targets?.length === 1 && state.players.some((p) => p.id === c.targets[0])),
+    'kontrola: Shock (any_target) w tej samej sytuacji celuje w gracza');
+});

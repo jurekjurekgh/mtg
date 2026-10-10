@@ -461,6 +461,15 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
       sourceObject?.controllerId,
     );
   }
+  // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
+  // number of instant and sorcery cards in your graveyard" — kwota liczona
+  // przy ROZSTRZYGANIU (CR 608.2h). Ruling WotC 2020-04-17: sam Blitz jest
+  // jeszcze na stosie i nie liczy się do tej liczby (strefa grobu go nie ma).
+  if (amount === 'instants_and_sorceries_in_your_graveyard') {
+    amount = [...state.objects.values()].filter((object) => object.zone === 'graveyard'
+      && object.controllerId === sourceObject?.controllerId
+      && ((object.types ?? []).includes('Instant') || (object.types ?? []).includes('Sorcery'))).length;
+  }
   // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
   // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
   // (CR 608.2) — licznik dołożony w oknie odpowiedzi podbija kwotę.

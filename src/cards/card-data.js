@@ -13314,6 +13314,27 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 329, plan: 'Zendikar',
     support: { status: 'supported', limitations: [] },
   }),
+  // 2. Blitz of the Thunder-Raptor (IKO) {1}{R} — instant. „Target creature or
+  // planeswalker" — damage = liczba instantów i sorcery w moim grobie (liczona
+  // przy rozstrzyganiu; ruling WotC 2020-04-17: sam Blitz jeszcze na stosie się
+  // nie liczy). „If that creature or planeswalker would die this turn, exile it
+  // instead" — efekt zastępczy (M177/A Agate Assault: exile_if_dies_this_turn).
+  defineCard({
+    id: 'blitz-of-the-thunder-raptor', name: 'Blitz of the Thunder-Raptor', set: 'IKO',
+    types: ['Instant'], colors: ['R'], manaCost: 2,
+    oracleText: 'Blitz of the Thunder-Raptor deals damage to target creature or planeswalker equal to the number of instant and sorcery cards in your graveyard. If that creature or planeswalker would die this turn, exile it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/0/a0174556-9f9b-4756-84ca-d14a5a60720c.jpg?1783931053',
+    artId: 332, plan: 'Thunder Junction',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_or_planeswalker' }],
+      effects: [
+        { type: 'damage', amount: 'instants_and_sorceries_in_your_graveyard' },
+        { type: 'exile_if_dies_this_turn' },
+      ],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

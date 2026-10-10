@@ -171,6 +171,8 @@ export function stepLabel(turn) {
 /** M73d (B): polskie nazwy typów celów (koniec surowych slugów w opisach). */
 const TARGET_TYPE_LABELS = Object.freeze({
   creature: 'stwór', player: 'gracz', any_target: 'dowolny cel', player_or_planeswalker: 'gracz lub planeswalker',
+  // Batch65 (Blitz of the Thunder-Raptor) — „target creature or planeswalker”.
+  creature_or_planeswalker: 'stwór lub planeswalker',
   // M166/B (Cacophodon — untap target permanent).
   permanent: 'permanent', battle: 'bitwa',
   artifact: 'artefakt', artifact_or_creature: 'artefakt lub stwór',

@@ -275,6 +275,14 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       if (object?.zone === 'battlefield' && isPlaneswalker(object)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
+    // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
+    // stwór albo planeswalker WYŁĄCZNIE (gracz nie jest legalny, w odróżnieniu
+    // od szerszego any_target). Spójnie z ofertą w targetCandidatesBySpec
+    // (pułapka M82: oferta ≠ walidacja kończy się odrzuceniem komendy).
+    if (spec?.type === 'creature_or_planeswalker') {
+      if (object?.zone === 'battlefield' && (object.kind === 'creature' || isPlaneswalker(object))) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
     if (spec?.type === 'any_target') {
       if (state.players.some((player) => player.id === targetId)) return { id: targetId, kind: 'player', controllerId: targetId };
       if (object?.zone === 'battlefield' && (object.kind === 'creature' || isPlaneswalker(object))) return object;
@@ -1499,6 +1507,12 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
       });
     }
     case 'player_or_planeswalker': return [...players, ...state.zones.battlefield.filter(id => {
+      const object = state.objects.get(id);
+      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+    })];
+    // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
+    // stwór albo planeswalker (gracz spoza zakresu). Spójnie z validateTargets.
+    case 'creature_or_planeswalker': return [...battlefieldCreatures, ...state.zones.battlefield.filter(id => {
       const object = state.objects.get(id);
       return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
     })];

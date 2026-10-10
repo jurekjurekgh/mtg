@@ -1,0 +1,40 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Blitz+of+the+Thunder-Raptor&set=IKO&format=json",
+  "print": "iko",
+  "name": "Blitz of the Thunder-Raptor",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Blitz of the Thunder-Raptor deals damage to target creature or planeswalker equal to the number of instant and sorcery cards in your graveyard. If that creature or planeswalker would die this turn, exile it instead.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "iko",
+  "set_name": "Ikoria: Lair of Behemoths",
+  "collector_number": "109",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/0/a0174556-9f9b-4756-84ca-d14a5a60720c.jpg?1783931053"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Blitz of the Thunder-Raptor is still on the stack while you determine how much damage is dealt. It isn’t in your graveyard to contribute to that amount of damage."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Blitz of the Thunder-Raptor’s replacement effect will exile the target creature or planeswalker if it would die this turn for any reason, not just due to lethal damage. It applies to the target creature or planeswalker even if Blitz of the Thunder-Raptor deals no damage to it (most likely because you have no instant or sorcery cards in your graveyard)."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/iko/109/rulings",
+  "rulingsPobrano": "2026-10-10"
+}
