@@ -609,4 +609,5 @@ export const MANA_COSTS = {
   "blinding-drone": "{1}{U}",
   'blitz-of-the-thunder-raptor': '{1}{R}',
   'bring-to-trial': '{2}{W}',
+  'skyscythe-engulfer': '{5}{G}',
 };

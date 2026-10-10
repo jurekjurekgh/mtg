@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Skyscythe+Engulfer&set=ONE&format=json",
+  "print": "one",
+  "name": "Skyscythe Engulfer",
+  "mana_cost": "{5}{G}",
+  "cmc": 6,
+  "type_line": "Creature — Phyrexian Beast",
+  "oracle_text": "Reach, trample\nThis creature can't be blocked by creatures with flying.",
+  "power": "6",
+  "toughness": "5",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Reach",
+    "Trample"
+  ],
+  "set": "one",
+  "set_name": "Phyrexia: All Will Be One",
+  "collector_number": "183",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/7/d7898399-3c52-402c-9cd7-baad2cb7f00e.jpg?1783918010"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/one/183/rulings",
+  "rulingsPobrano": "2026-10-10"
+}

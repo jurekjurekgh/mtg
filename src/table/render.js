@@ -1666,6 +1666,9 @@ function describeStatic(ability) {
   // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
   // creatures with power 2 or less") nie miała reprezentacji na kaflu.
   if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
+  if (Array.isArray(ability.cantBeBlockedByKeywords) && ability.cantBeBlockedByKeywords.length) {
+    parts.push(`nie może być blokowany przez stwory z ${ability.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`);
+  }
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
   return parts.join(' · ');
@@ -4501,6 +4504,8 @@ export function cardInfo(session, object, combat = null) {
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
+    // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera.
+    cantBeBlockedByKeywords: faceDown ? null : (object.cantBeBlockedByKeywords ?? null),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
@@ -4911,6 +4916,9 @@ export function buildStateOverlay(visual, info) {
     })) flags.push(['kw', badge]);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    if (Array.isArray(info.cantBeBlockedByKeywords) && info.cantBeBlockedByKeywords.length) {
+      flags.push(['kw', `nie do zablokowania przez stwory z ${info.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`]);
+    }
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona jako
     // WŁASNY badge — kolor/jakość wprost na kaflu, nie schowane w „zaczarowany:
     // <aura>". Etykieta po deskryptorze jakości (CR 702.16), bez nazw kart.

@@ -1638,6 +1638,26 @@ function attackerBlockSubtypeRestriction(state, attacker) {
   return null;
 }
 
+/** Keywordy, którymi dany stwór NIE MOŻE być blokowany (Skyscythe Engulfer:
+ * „This creature can't be blocked by creatures with flying") — ze zdolności
+ * statycznych (własnych lub nadanych przypiętym sprzętem), po keywordach
+ * EFEKTYWNYCH blokera. Zwraca listę keywordów albo null. */
+function attackerBlockKeywordRestriction(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedByKeywords)) {
+      return ability.cantBeBlockedByKeywords;
+    }
+  }
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    for (const ability of attachment.equipment?.grantedAbilities ?? []) {
+      if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedByKeywords)) {
+        return ability.cantBeBlockedByKeywords;
+      }
+    }
+  }
+  return null;
+}
+
 /** Maksymalna moc blokera („can't be blocked by creatures with power 2 or
  * less" — Rust-Shield Rampager), z własnej zdolności lub nadanej sprzętem.
  * Eksportowane dla PlayerView (bot czyta próg ewazji — audyt Batch53/C). */
@@ -1692,6 +1712,13 @@ function blockRestrictionError(state, attacker, blocker) {
   const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
   if (blockSubtypes && blockSubtypes.some((sub) => hasCreatureType(blocker, sub, state))) {
     return 'Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu';
+  }
+  // Skyscythe Engulfer (ONE): „can't be blocked by creatures with flying" —
+  // bloker z zakazanym KEYWORDEM (efektywnym) nie może blokować. Nowe
+  // restrykcje dopisują się TYLKO tutaj (M380: jedno źródło prawdy).
+  const blockKeywords = attackerBlockKeywordRestriction(state, attacker);
+  if (blockKeywords && blockKeywords.some((kw) => hasKeyword(state, blocker, kw))) {
+    return 'Stwora z „can\'t be blocked by creatures with [keyword]" nie może blokować stwór z tym keywordem';
   }
   // Rust-Shield Rampager: bloker o efektywnej mocy <= próg nie może blokować
   // (moc po pumpach/licznikach — CR 509.1b; już wykonany blok zostaje,

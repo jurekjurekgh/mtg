@@ -13352,6 +13352,27 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     support: { status: 'supported', limitations: [] },
   }),
+  // 4. Skyscythe Engulfer (ONE #183) {5}{G} — 6/5 Phyrexian Beast.
+  // Reach, trample + „This creature can't be blocked by creatures with flying."
+  // — statyczna restrykcja blokowania po KEYWORDZIE blokera (nowe
+  // cantBeBlockedByKeywords — bliźniak cantBeBlockedBySubtypes z Blazing Torch;
+  // egzekucja w blockRestrictionError, CR 509.1b).
+  defineCard({
+    id: 'skyscythe-engulfer', name: 'Skyscythe Engulfer', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Beast'], colors: ['G'],
+    power: 6, toughness: 5, manaCost: 6,
+    keywords: ['reach', 'trample'],
+    oracleText: 'Reach, trample\nThis creature can\'t be blocked by creatures with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/7/d7898399-3c52-402c-9cd7-baad2cb7f00e.jpg?1783918010',
+    artId: 334, plan: 'Mirrodin',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantBeBlockedByKeywords: ['flying'],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

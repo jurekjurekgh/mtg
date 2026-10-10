@@ -285,3 +285,80 @@ test('B65/333: Bring to Trial — stwór mocy < 4 nie jest legalnym celem (brak 
   assert.ok(commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'trial'
     && c.targets?.[0] === 'maly'), 'po podbiciu mocy do 4 ten sam cel jest oferowany');
 });
+
+// ---- B65/334: Skyscythe Engulfer (ONE #183, plan Mirrodin) --------------------
+
+/** Stan tuż przed deklaracją bloków (wzorzec m380): p1 atakuje, p2 blokuje. */
+function combatState65() {
+  const st = game();
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = 'p1';
+  st.turn.priorityPlayerId = 'p1';
+  st.pendingMulligans = [];
+  return st;
+}
+
+function pairOffered65(st, attackerId, blockerId) {
+  const wanted = JSON.stringify({ [attackerId]: [blockerId] });
+  return commands(st, 'p2').some((c) => c.type === 'declare_blockers'
+    && JSON.stringify(c.assignments) === wanted);
+}
+
+function pairVerdict65(base, attackerId, blockerId) {
+  const clone = structuredClone(base);
+  return execute(clone, { type: 'declare_blockers', playerId: 'p2', assignments: { [attackerId]: [blockerId] } });
+}
+
+function enterBlocks65(st, attackerIds) {
+  const declared = execute(st, { type: 'declare_attackers', playerId: 'p1', attackerIds });
+  assert.ok(declared.ok, `deklaracja atakujących: ${JSON.stringify(declared.events ?? declared.reason ?? null)}`);
+  st.turn = jumpToStep(st.turn, 'declare_blockers', 'p2');
+  st.turn.activePlayerId = 'p1';
+  st.turn.priorityPlayerId = 'p2';
+  return st;
+}
+
+test('B65/334: Skyscythe Engulfer — dane Oracle: 6/5 reach+trample, „can\'t be blocked by creatures with flying\"', () => {
+  const def = sanity('skyscythe-engulfer', { set: 'ONE', plan: 'Mirrodin', artId: 334 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Phyrexian', 'Beast']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.deepEqual(def.keywords, ['reach', 'trample']);
+  assert.equal(def.power, 6);
+  assert.equal(def.toughness, 5);
+  assert.equal(def.manaCost, 6);
+  assert.equal(def.abilities.length, 1);
+  const ab = def.abilities[0];
+  assert.equal(ab.type, 'static');
+  assert.deepEqual(ab.cantBeBlockedByKeywords, ['flying'],
+    'restrykcja blokowania po keywordzie blokera (CR 509.1b)');
+  const snap = snapshotOf('skyscythe-engulfer');
+  assert.deepEqual(snap.rulings, [], 'rulingi pobrane 2026-10-10 — brak orzeczeń (ADR 0028)');
+});
+
+test('B65/334: Skyscythe Engulfer — stwory z lataniem NIE blokują; naziemny blokuje (oferta = walidacja)', () => {
+  const st = combatState65();
+  put(st, 'atk', 'skyscythe-engulfer', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'fly', 'skyscythe-engulfer', 'p2', 'battlefield', { summoningSickness: false, power: 1, toughness: 1, keywords: ['flying'] });
+  put(st, 'ground', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, power: 2, toughness: 2 });
+  enterBlocks65(st, ['atk']);
+  // Bloker Z lataniem: brak oferty i odrzucenie komendy (CR 509.1b).
+  assert.equal(pairOffered65(st, 'atk', 'fly'), false, 'bloker z lataniem nie jest oferowany');
+  const zly = pairVerdict65(st, 'atk', 'fly');
+  assert.equal(zly.ok, false, 'komenda z blokerem-lataniem odrzucona');
+  assert.match(String(zly.reason ?? zly.events?.[0]?.reason ?? ''), /illegal_blockers/);
+  // Bloker bez latania: oferta i przyjęcie.
+  assert.equal(pairOffered65(st, 'atk', 'ground'), true, 'naziemny bloker jest oferowany');
+  assert.equal(pairVerdict65(st, 'atk', 'ground').ok, true, 'naziemny bloker przyjęty');
+});
+
+test('B65/334: Skyscythe Engulfer — reach u blokera nie znosi restrykcji (liczy się sam keyword latania)', () => {
+  const st = combatState65();
+  put(st, 'atk', 'skyscythe-engulfer', 'p1', 'battlefield', { summoningSickness: false });
+  // Bloker z lataniem I zasięgiem — restrykcja mówi „creatures with flying",
+  // reach nie ma tu znaczenia (w odróżnieniu od bloku latającego atakującego).
+  put(st, 'flyreach', 'skyscythe-engulfer', 'p2', 'battlefield', { summoningSickness: false, power: 1, toughness: 1, keywords: ['flying', 'reach'] });
+  enterBlocks65(st, ['atk']);
+  assert.equal(pairOffered65(st, 'atk', 'flyreach'), false, 'flying+reach NIE blokuje');
+  assert.equal(pairVerdict65(st, 'atk', 'flyreach').ok, false);
+});

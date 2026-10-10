@@ -6887,6 +6887,13 @@ export function playerView(state, playerId) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
               break;
             }
+            // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera
+            // („can't be blocked by creatures with flying") — publiczny
+            // deskryptor z CR 509.1a, ten sam kształt co wyżej (ADR 0017/0002).
+            if (Array.isArray(a.cantBeBlockedByKeywords)) {
+              entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
+              break;
+            }
           }
         }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH
