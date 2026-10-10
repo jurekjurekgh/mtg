@@ -98,7 +98,7 @@ batcha; znaleziony błąd ma root-cause fix i strażnika.
 - [x] `node tools/cr-numery.mjs --cr` po zmianach regułowych/cytatach.
 - [x] Zaktualizować plan (checkboxy + podsumowanie), raport audytu,
   `docs/PROJECT_HISTORY.md`, nowy handoff sesji i opis PR.
-- [ ] Potwierdzić czyste drzewo, zgodność lokalnego HEAD ze zdalną gałęzią i
+- [x] Potwierdzić czyste drzewo, zgodność lokalnego HEAD ze zdalną gałęzią i
   zielone checki GitHub.
 
 **Ostatni commit:** dokumentacja stanu i handoff po wszystkich zielonych
