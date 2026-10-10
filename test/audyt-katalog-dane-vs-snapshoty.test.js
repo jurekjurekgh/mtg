@@ -346,8 +346,8 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
   assert.equal(porownano, 571, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
   assert.equal(bezSnapshotu, 55, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 11, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 571, `typy/podtypy nie porównano dla ${561 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 571, `Oracle frontu nie porównano dla ${561 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 571, `typy/podtypy nie porównano dla ${571 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 571, `Oracle frontu nie porównano dla ${571 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 9, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 9, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 12, `pusty oracle_text: oczekiwano 12, jest ${oracleTopEmpty}`);

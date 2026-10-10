@@ -102,7 +102,7 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Dokończenie Batch 63: 212, 254, 259, 260 → 553 wiersze.
   // Batch 64 (2026-10-08): +10 pozycji (261, 263, 266, 269, 280, 323, 324,
   // 325, 327, 328) → 563 wiersze; Batch 65 (+329, +332, +333, +334, +336, +338, +340, +341, +348, +350) → 573.
-  assert.equal(data.length, 573, 'pełna lista kolekcji po Batchu 65 (569 pozycji, bez STO)');
+  assert.equal(data.length, 573, 'pełna lista kolekcji po Batchu 65 (573 pozycje, bez STO)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
