@@ -16258,3 +16258,53 @@ wiadomości tnie komunikat — wiadomości tylko przez `git commit -F`.
 35/12/23, dominaria-wu 29/10/19, theros 29/10/19, worek-basni 27/9/18;
 README w tych samych commitach — M203). Bramki: all **7994/7994** (34 testy
 B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
+
+## 2026-10-10 — zgłoszenie A: Gray Slaad z przygody nie był stworem dla silnika
+
+- **Zgłoszenie**: „Nie pokazuje mi się oferta w Twoje działania na rzucenie
+  tego czaru [Diplomatic Relations], tak jakby nie było legalnych celów. Ani
+  moja ani przeciwnika kreatura nie ma czegoś takiego jak »can't be target of
+  spells or abilities«.” + A1: „Gunmaker [Warmaker] Gunship ETB też nie może go
+  targetować” + A2: „Bot ma tylko Gray Slaad na stole. I nie blokuje. Wchodzę
+  wszystkim. Bot przegrywa.” Log partii (seed 919670) potwierdzał wszystkie
+  trzy: tura 3 „rzuca Gray Slaad (przygoda)”, tura 14 „Warmaker Gunship —
+  trigger bez efektu (brak legalnych celów)”, tura 10 blok innymi stworami.
+- **Przyczyna** (jedna, wspólna dla A/A1/A2): `castAdventure` nadpisuje na
+  obiekcie `kind: 'spell'` — poprawnie, bo CR 715.3b: „While on the stack as an
+  Adventure, the spell has only its alternative characteristics”. Ale ten stan
+  PRZETRWAŁ zmianę strefy do exile (CR 715.3d), a `castAdventureCreature`
+  czyścił tylko deskryptor `spell`, nie `kind` — więc permanent wchodził na
+  pole bitwy z `kind: 'spell'`. Tymczasem CR 715.4: „In every zone except the
+  stack, and while on the stack not as an Adventure, an adventurer card has
+  only its normal characteristics.” Filtry celów i bloków wymagają w silniku
+  `kind === 'creature'` (np. `spec.type === 'creature'` w triggers.js), więc
+  karta była niewidzialna jako stwór: niecelowalna, bez oferty bloku, a LKI
+  w grobie też niosła `formerKind: 'spell'` (liczone z `kind` przy ruchu).
+  Zasięg: wyłącznie karty z przygodą — `castAdventure` to jedyne miejsce
+  nadpisujące `kind` obiektu (katalog: gray-slaad, ettercap).
+- **Fix** (u źródła, L41): `castAdventureCreature` odbudowuje `kind` z linii
+  typu karty (CR 205.2a) przez nowy wspólny odczyt `kindFromTypes` w
+  permanents.js — ten sam, z którego korzysta druga strona DFC
+  (`transformedCharacteristics`, zachowanie 1:1). `formerKind` naprawia się
+  sam, bo jest liczony z `kind` przy każdej zmianie strefy (objects.js).
+- **Efekt** (E2E, repro z logu partii): diff permanentu „zwykły rzut vs
+  przygoda” przed fixem — `kind: creature/spell`, `formerKind: creature/spell`;
+  po fixie obie różnice zniknęły (zostały tylko zamierzone `adventure`,
+  `adventureDone`, `manaColorsSpent` i `id`). A: Diplomatic Relations oferuje
+  rzut `["sentinel","permanent-7"]` i zadaje obrażenia. A1: ETB Warmakera →
+  `trigger_target_resolved {targetId: permanent-7}`, `damage_dealt 1` (1
+  artefakt), `creature_destroyed` (4/1 ginie od 1 obrażenia — poprawnie), brak
+  wpisu `no_targets`. A2: oferta bloku istnieje i deklaracja przechodzi.
+- Testy `test/zgloszenie-a-gray-slaad-przygoda-kind.test.js` (A/1, A/1b, A/2,
+  A/3, A/4 + kontrola A/5 anty-prze-naprawy: zwykły rzut i Ettercap z przygody).
+  Dowód RED→GREEN: z fixem **6/6**, po zdjęciu jednej linii `kind:` **1/6**
+  (pada A/1–A/4, kontrola przechodzi — tak ma być).
+- CR 715.3b i 715.4 dopisane do tabeli numerów procedurą `cr-numery.mjs
+  --zapisz` (oba zweryfikowane przy źródle; sha256 `8d860e451f20…` zgodny
+  z pinem ADR 0030) — tabela 518 → **520** numerów.
+- Bramy: all **8000/8000**, build **73 moduły / 4998,7 kB**, `cr-numery --cr`
+  **OK** (520/519/5672). Bez pełnego B0 (ADR 0018).
+- **Uwaga budżetowa (L66)**: lektura startowa ma ~99 920/100 000 tokenów
+  (zapas 80) — ta pułapka NIE dostała wpisu w `docs/LESSONS.md`, bo wymagałoby
+  to skrócenia istniejących wpisów. Udokumentowana tutaj, w komentarzu przy
+  fixie i w nagłówku testu; dopisanie do LESSONS to osobne zadanie.

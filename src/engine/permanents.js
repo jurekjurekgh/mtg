@@ -1811,8 +1811,22 @@ export function grantKeywordsUntilEndOfTurn(state, objectId, keywords, options =
  * `back` to deskryptor drugiej strony (obiekt `transformTo`). Zwracany jest
  * zestaw pól do rozłożenia w nowym obiekcie.
  */
+/**
+ * Rodzaj obiektu gry z linii typu (CR 205.2a): stwór ma `kind` `creature`.
+ * Jeden wspólny odczyt dla dwóch miejsc, które ODBUDOWUJĄ cechy obiektu po
+ * tym, jak inna operacja nadała mu cechy cudzej strony karty (L41 — reguła
+ * w jednym miejscu): druga strona DFC (`transformedCharacteristics`) oraz
+ * strona-stwór karty z przygodą (`castAdventureCreature`, CR 715.3).
+ * `null` = linia typu nie rozstrzyga rodzaju — wywołujący zostaje przy
+ * dotychczasowym `kind`.
+ */
+export function kindFromTypes(types, fallback = null) {
+  if ((types ?? []).includes('Creature')) return 'creature';
+  return fallback;
+}
+
 export function transformedCharacteristics(back, previous = null) {
-  const kind = back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : previous?.kind);
+  const kind = back.kind ?? kindFromTypes(back.types, previous?.kind);
   return {
     cardId: back.cardId,
     cardName: back.cardName ?? previous?.cardName ?? null,
