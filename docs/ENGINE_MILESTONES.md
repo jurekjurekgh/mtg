@@ -8253,3 +8253,43 @@ Referencja quick 585/672 — spadek jednej wygranej ujawniony, nie zamaskowany
 strojeniem/progiem. Nie uruchamiano pełnego B0. Granice modeli i dowody:
 [raport](audits/PMSSB58_BATCH63_2026-10-05.md),
 [hub PMSSB](PMSSB.md#pmssb-58--jakościowe-domknięcie-batcha-63-2026-10-05-pr-155).
+
+
+## M442 — batch65: kolekcja 329–350, 10 kart (2026-10-10, PR #162)
+
+Dziesięć kart z listy właściciela (329 OGW, 332 IKO, 333 RNA, 334 ONE,
+336 APC, 338 THB, 340 ONE, 341 DTK, 348 DMU, 350 BLC), wszystkie 100%
+obsługiwane (ADR 0022), snapshoty i rulingi ze Scryfall (ADR 0010 §2a).
+Karta po karcie — commit + push po każdej (L184: poprzedni agent stracił
+niezacommitowany batch w resetcie sandboxa).
+
+Nowe elementy silnika są generyczne (ADR 0002 — bez nazw kart):
+warunek **`affinityToEnchantments`** w `conditionalCostReduction`
+(mana-cost.js; Affinity per enchantment, CR 702.41 — bliźniak
+`affinityToArtifacts`, rabat tylko część generyczną wg rulingu WotC
+2020-01-24); zdarzenie **`becomes_blocked_by_color`** (per-pair gałąź w
+blockers_declared, wzorzec Wooden Stake; M273 — pola `objectId`/`cardId`
+identyczne we wszystkich emiterach) + efekt
+**`choose_color_grant_block_destroy`** (wybór koloru → niszczy stwory
+blokujące tym kolorem w tej turze; `blockDestroyColorsThisTurn` czyszczone
+w `clearStatModifiers`). Rejestracje: TRIGGER_EVENT_LABELS,
+ABILITY_EFFECT_LABELS (M255/C1 — mapa LOG, nie tylko panel rendera),
+render `generic`, STACKING_ACTIVATED_EFFECTS, batch25 supported events.
+
+Reszta batcha na gotowych ścieżkach: Devoid (Blinding Drone, Blitz of the
+Thunder-Raptor — CR 702.114), optionalPay/Etap F z celem PO zapłacie
+(Ambulatory Edifice, wzorzec Zoraline; ruling 2023-02-04 o refleksie),
+`aura.cantAttack/cantBlock` (Pacifism, wzorzec Hobble — audyt F-1/S9
+rozszerzony do czterech aur), `look_top_put_one_hand_rest_bottom`
+(Impulse, M177/E — rulingi „not a draw”/„no shuffle” testowane zdarzeniowo),
+`scry` + `add_mana colors ['R','G']` (Temple of Abandon, wzorzec Dismal
+Backwater; jednostka wielokolorowa M67), Bring to Trial i Skyscythe
+Engulfer bez zmian silnika.
+
+Talie z generatora (M203 README w tych samych commitach): mirrodin-brg
+35/12/23, tarkir-wur 35/12/23, dominaria-wu 29/10/19, theros 29/10/19,
+worek-basni 27/9/18. Bramki końcowe: all **7994/7994** (34 testy w
+`real-cards-batch65.test.js`), build **73 moduły / 4997,5 kB**,
+`cr-numery --cr` **OK (518/517/5662; CR 3165)**. Bez pełnego B0 (ADR
+0018). Dowody:
+[plan + realizacja](plans/PLAN_2026-10-10-batch65-kolekcja-329-350.md).

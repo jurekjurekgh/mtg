@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -458,6 +458,18 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
   if (amount === 'basic_land_types_you_control') {
     amount = basicLandTypeCount(
       state.zones.battlefield.map((id) => state.objects.get(id)),
+      sourceObject?.controllerId,
+    );
+  }
+  // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
+  // number of instant and sorcery cards in your graveyard" — kwota liczona
+  // przy ROZSTRZYGANIU (CR 608.2h). Ruling WotC 2020-04-17: sam Blitz jest
+  // jeszcze na stosie i nie liczy się do tej liczby (strefa grobu go nie ma).
+  if (amount === 'instants_and_sorceries_in_your_graveyard') {
+    // PMSSB-60/F1: wspólny licznik z heurystyką bota (L41 — jedna reguła
+    // liczenia, dwie strony: rozstrzyganie i wycena).
+    amount = instantSorceryGraveyardCount(
+      [...state.objects.values()].filter((object) => object.zone === 'graveyard'),
       sourceObject?.controllerId,
     );
   }
@@ -3809,6 +3821,28 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('gain_life_if_dies_marked', {
       objectId: targetId, cardId: marked.cardId,
       playerId: sourceObject.controllerId, amount: effect.amount ?? 1,
+    }));
+    return;
+  }
+  // Batch65 (Zombie Boa): „{1}{B}: Choose a color. Whenever this creature
+  // becomes blocked by a creature of that color this turn, destroy that
+  // creature." — aktywowany wybór koloru przez WSPÓLNY mechanizm
+  // pendingColorChoice (Manor Gate/Benevolent Blessing); znacznik „na tę
+  // turę" dokłada handler resolve_color_choice (game-state.js, pole
+  // grantBlockDestroy) — jeden zapis wyboru, jedno źródło (L41).
+  if (effect.type === 'choose_color_grant_block_destroy') {
+    const targetId = sourceObject.id;
+    if (!state.objects.get(targetId)) return;
+    state.pendingColorChoice = {
+      playerId: sourceObject.controllerId,
+      objectId: targetId,
+      purpose: 'blockDestroy',
+      grantBlockDestroy: true,
+      sourceCardId: sourceObject.cardId ?? null,
+    };
+    state.turn.priorityPlayerId = sourceObject.controllerId;
+    state.events.push(event('color_choice_required', {
+      playerId: sourceObject.controllerId, objectId: targetId, cardId: sourceObject.cardId ?? null,
     }));
     return;
   }

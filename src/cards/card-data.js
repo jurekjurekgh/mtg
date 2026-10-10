@@ -13290,6 +13290,225 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['cantBlock: stal flaga karty (jak Goreclaw), nie deskryptor', 'clash z nagrodą licznikiem (CR 701.30) - licznik kładzie sie po decyzjach obu graczy, gdy źródło wciąż na polu bitwy'],
   }),
+  // =============================================================================
+  // Dwudziesty piąty batch realnych kart (kolekcja 329–350). Roadmapa:
+  // docs/plans/PLAN_2026-10-10-batch65-kolekcja-329-350.md. L184: każda karta
+  // osobnym commitem (reset sandboxa zjadł niezacommitowaną próbę batcha).
+  // =============================================================================
+  defineCard({
+    id: 'blinding-drone', name: 'Blinding Drone', set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    power: 1, toughness: 3, manaCost: 2, keywords: ['devoid'],
+    oracleText: 'Devoid (This card has no color.)\n{C}, {T}: Tap target creature. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/4/e/4eb60957-0811-40c3-a92b-cce3e6a94745.jpg?1783937921',
+    abilities: [
+      // {C}, {T}: Tap target creature. Pip bezbarwny w koszcie ZDOLNOŚCI
+      // (cost.colors: ['C'], CR 107.4c) — wzorzec Kozilek's Shrieker.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, colors: ['C'], tap: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'tap_permanent' },
+      }),
+    ],
+    artId: 329, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 2. Blitz of the Thunder-Raptor (IKO) {1}{R} — instant. „Target creature or
+  // planeswalker" — damage = liczba instantów i sorcery w moim grobie (liczona
+  // przy rozstrzyganiu; ruling WotC 2020-04-17: sam Blitz jeszcze na stosie się
+  // nie liczy). „If that creature or planeswalker would die this turn, exile it
+  // instead" — efekt zastępczy (M177/A Agate Assault: exile_if_dies_this_turn).
+  defineCard({
+    id: 'blitz-of-the-thunder-raptor', name: 'Blitz of the Thunder-Raptor', set: 'IKO',
+    types: ['Instant'], colors: ['R'], manaCost: 2,
+    oracleText: 'Blitz of the Thunder-Raptor deals damage to target creature or planeswalker equal to the number of instant and sorcery cards in your graveyard. If that creature or planeswalker would die this turn, exile it instead.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/0/a0174556-9f9b-4756-84ca-d14a5a60720c.jpg?1783931053',
+    artId: 332, plan: 'Thunder Junction',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_or_planeswalker' }],
+      effects: [
+        { type: 'damage', amount: 'instants_and_sorceries_in_your_graveyard' },
+        { type: 'exile_if_dies_this_turn' },
+      ],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 3. Bring to Trial (RNA #5) {2}{W} — sorcery. „Exile target creature with
+  // power 4 or greater." — cel: creature_with_power_at_least min: 4 (jak tryb
+  // Wygnanie Selesnya Charm), efekt: exile_permanent. Moc EFEKTYWNA liczona
+  // przy rozstrzyganiu (CR 608.2b/613).
+  defineCard({
+    id: 'bring-to-trial', name: 'Bring to Trial', set: 'RNA',
+    types: ['Sorcery'], colors: ['W'], manaCost: 3,
+    oracleText: 'Exile target creature with power 4 or greater.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63d566fc-0936-4035-96fd-f8b0c4eadbf5.jpg?1783933724',
+    artId: 333, plan: 'New Capenna',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_with_power_at_least', min: 4 }],
+      effects: [{ type: 'exile_permanent' }],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 4. Skyscythe Engulfer (ONE #183) {5}{G} — 6/5 Phyrexian Beast.
+  // Reach, trample + „This creature can't be blocked by creatures with flying."
+  // — statyczna restrykcja blokowania po KEYWORDZIE blokera (nowe
+  // cantBeBlockedByKeywords — bliźniak cantBeBlockedBySubtypes z Blazing Torch;
+  // egzekucja w blockRestrictionError, CR 509.1b).
+  defineCard({
+    id: 'skyscythe-engulfer', name: 'Skyscythe Engulfer', set: 'ONE',
+    types: ['Creature'], subtypes: ['Phyrexian', 'Beast'], colors: ['G'],
+    power: 6, toughness: 5, manaCost: 6,
+    keywords: ['reach', 'trample'],
+    oracleText: 'Reach, trample\nThis creature can\'t be blocked by creatures with flying.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/7/d7898399-3c52-402c-9cd7-baad2cb7f00e.jpg?1783918010',
+    artId: 334, plan: 'Mirrodin',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.static,
+        cantBeBlockedByKeywords: ['flying'],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 5. Zombie Boa (APC #54) {4}{B} — 3/3 Zombie Snake. „{1}{B}: Choose a
+  // color. Whenever this creature becomes blocked by a creature of that color
+  // this turn, destroy that creature. Activate only as a sorcery."
+  // Aktywacja: wybór koloru (pendingColorChoice) + znacznik na turę
+  // (choose_color_grant_block_destroy); trigger per para bloku jak Wooden
+  // Stake („becomes blocked by a Vampire"), cel = bloker („that creature").
+  defineCard({
+    id: 'zombie-boa', name: 'Zombie Boa', set: 'APC',
+    types: ['Creature'], subtypes: ['Zombie', 'Snake'], colors: ['B'],
+    power: 3, toughness: 3, manaCost: 5,
+    oracleText: '{1}{B}: Choose a color. Whenever this creature becomes blocked by a creature of that color this turn, destroy that creature. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/f/1fb8c277-3154-47c9-835f-327cac297a5e.jpg?1783945346',
+    artId: 336, plan: 'Amonkhet',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 2, colors: ['B'] },
+        effect: { type: 'choose_color_grant_block_destroy' },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'becomes_blocked_by_color' },
+        effect: [{ type: 'destroy_permanent' }],
+      }),
+    ],
+    support: { status: 'supported', limitations: [] },
+  }),
+  // 6. Brine Giant (THB #44) {6}{U} — 5/6 Giant. „Affinity for enchantments
+  // (This spell costs {1} less to cast for each enchantment you control.)"
+  // — CR 702.41 wariant: obniżka per enchantment (bliźniak Steelfin Whale /
+  // affinityToArtifacts; mana-cost.conditionalCostReduction). Ruling WotC
+  // 2020-01-24: rabat tylko część generyczną, mana value bez zmian.
+  defineCard({
+    id: 'brine-giant', name: 'Brine Giant', set: 'THB',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['U'],
+    power: 5, toughness: 6, manaCost: 7,
+    oracleText: 'Affinity for enchantments (This spell costs {1} less to cast for each enchantment you control.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/8/6811a9dc-e521-4c9e-accb-1efb8346c1db.jpg?1783931586',
+    costReduction: { amount: 1, condition: { affinityToEnchantments: true } },
+    artId: 338, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 7. Ambulatory Edifice (ONE #79) {2}{B} 3/2 Artifact Creature — Phyrexian
+  //    Construct. „When this creature enters, you may pay 2 life. When you do,
+  //    target creature gets -1/-1 until end of turn." — trigger refleksywny
+  //    (Scryfall ruling 2023-02-04): rodzic BEZ celu, cel wybierany PO
+  //    zapłacie (Zoraline/Etap F, CR 603.5/603.12).
+  defineCard({
+    id: 'ambulatory-edifice', name: 'Ambulatory Edifice', set: 'ONE',
+    types: ['Artifact', 'Creature'], subtypes: ['Phyrexian', 'Construct'],
+    colors: ['B'], power: 3, toughness: 2, manaCost: 3,
+    oracleText: 'When this creature enters, you may pay 2 life. When you do, target creature gets -1/-1 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/3/43c9005c-0574-4b75-8dbf-0a6641c3ae33.jpg?1783918052',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Etap F: requiresTarget + payLife („you may pay") → pendingOptionalPay
+        // z requiresTargetDecision; resolve_trigger_target PO zapłacie (zanim
+        // efekt). Koszt życia płaci maszyniera optionalPay (bez pay_life
+        // w efektach — Zoraline double-pay filter). Cel = dowolny stwor
+        // („target creature", CR 115.1 — źródło też).
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' }, payLife: 2 },
+        effect: { type: 'pump', power: -1, toughness: -1 },
+      }),
+    ],
+    artId: 340,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: ['enter_battlefield + payLife 2 (optionalPay, Etap F): cel refleksu „When you do” wybierany po zapłacie (ruling 2023-02-04); -1/-1 do końca tury (pump, cleanup)'],
+  }),
+
+  // 8. Pacifism (DTK #29) {1}{W} — Enchantment — Aura. „Enchant creature.
+  //    Enchanted creature can't attack or block." — czysta aura (CR 303.4,
+  //    Hobble): restrykcje gospodarza egzekwuje combat przez
+  //    permanents.attachmentRestrictions (cantAttack + cantBlock).
+  defineCard({
+    id: 'pacifism', name: 'Pacifism', set: 'DTK',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
+    aura: { cantAttack: true, cantBlock: true },
+    oracleText: "Enchant creature\nEnchanted creature can't attack or block.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f7939502-d6aa-4bde-b42f-67ed433f95f1.jpg?1783938615',
+    artId: 341,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['aura CR 303.4 (wzorzec Hobble): cantAttack + cantBlock na gospodarzu; ruchy ofensywne/blokujące odrzucane przez walidację combatu'],
+  }),
+
+  // 9. Impulse (DMU #55) {1}{U} — Instant. „Look at the top four cards of your
+  //    library. Put one of them into your hand and the rest on the bottom of
+  //    your library in any order." — look_top_put_one_hand_rest_bottom
+  //    (M177/E, Merchant's Dockhand). Rulingi WotC 2004-10-04: „This is not a
+  //    draw” (brak card_drawn) i po erracie BEZ tasowania (kolejność reszty
+  //    = bottomOrder).
+  defineCard({
+    id: 'impulse', name: 'Impulse', set: 'DMU',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Look at the top four cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5aec2b2c-0764-4869-814d-aad921122af9.jpg?1783921349',
+    spell: {
+      timing: 'instant',
+      effects: [{ type: 'look_top_put_one_hand_rest_bottom', amount: 4 }],
+    },
+    artId: 348,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ruling 2004-10-04: to NIE jest dobieranie (brak zdarzeń card_drawn) i nie tasujesz biblioteki (reszta na spód w kolejności bottomOrder)'],
+  }),
+
+  // 10. Temple of Abandon (BLC #338) — Land: wchodzi tapnięty, ETB scry 1,
+  //     {T}: Add {R} or {G}. Wzorzec Dismal Backwater (dual + ETB trigger).
+  //     Rulingi WotC 2013-09-15: generyczne scry (kolejność akcji, wybór
+  //     top/bottom, kolejność kart, scry z nielegalnymi celami).
+  defineCard({
+    id: 'temple-of-abandon', name: 'Temple of Abandon', set: 'BLC',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\nWhen this land enters, scry 1. (Look at the top card of your library. You may put that card on the bottom.)\n{T}: Add {R} or {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/9/59866586-8a4c-464e-8273-2ec06f29d28e.jpg?1783910629',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'scry', amount: 1 }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['R', 'G'] },
+      }),
+    ],
+    artId: 350,
+    plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: ['wchodzi tapnięty (land materialize entersTapped); scry 1 przy wejściu (pendingScry, resolve_scry); {T}: Add {R} or {G} — jednostka wielokolorowa (M67)'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

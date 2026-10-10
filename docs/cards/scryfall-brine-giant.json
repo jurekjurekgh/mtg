@@ -1,0 +1,47 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Brine+Giant&set=THB&format=json",
+  "print": "thb",
+  "name": "Brine Giant",
+  "mana_cost": "{6}{U}",
+  "cmc": 7,
+  "type_line": "Creature — Giant",
+  "oracle_text": "Affinity for enchantments (This spell costs {1} less to cast for each enchantment you control.)",
+  "power": "5",
+  "toughness": "6",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Affinity"
+  ],
+  "set": "thb",
+  "set_name": "Theros Beyond Death",
+  "collector_number": "44",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/6/8/6811a9dc-e521-4c9e-accb-1efb8346c1db.jpg?1783931586"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "To determine the total cost of a spell, start with the mana cost or alternative cost you're paying, add any cost increases, then apply any cost reductions (such as that of Brine Giant). The mana value of the spell remains unchanged, no matter what the total cost to cast it was."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "The cost reduction ability reduces only the generic mana in Brine Giant's cost. The colored mana must still be paid."
+    },
+    {
+      "date": "2020-01-24",
+      "source": "wotc",
+      "comment": "Once you announce that you're casting a spell, no player may take actions until the spell has been paid for. Notably, opponents can't try to change by how much Brine Giant's cost is reduced."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/thb/44/rulings",
+  "rulingsPobrano": "2026-10-10"
+}

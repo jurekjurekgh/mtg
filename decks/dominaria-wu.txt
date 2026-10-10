@@ -5,6 +5,7 @@
 1x Timely Interference
 1x Enduring Sliver
 1x Evangel of Synthesis
+1x Impulse
 1x Willbender
 1x Wormfang Newt
 1x Alaborn Trooper
@@ -19,5 +20,5 @@
 1x Dragon Arch
 1x Koilos Roc
 5x Plains
-3x Island
+4x Island
 1x Swamp

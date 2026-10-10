@@ -821,6 +821,15 @@ export function chooseOneOrBothPlanOf(commands) {
   if (options.length < 2) return null;
   if (!options.every((cmd) => cmd?.type === 'cast_spell' && cmd.modeIndex != null
     && Array.isArray(cmd.targets) && cmd.targets.length > 0)) return null;
+  // N (uzupełnienie audytu PR #161): niejednolity dar (tryb × obietnica,
+  // CR 702.174a) — jedyny plan składający warianty BEZ guardu `uniformGiftOf`
+  // (L72: pięć planów go miało, temu brakowało). Mapa `bySelection` jest
+  // kluczowana samymi gniazdami (`a|b`) i nie zna `gifted` — wariant z darem
+  // nadpisywałby wpis wariantu bez daru przy tym samym zestawie wyborów
+  // (cicha utrata obietnicy). Kontrakt K trzyma warianty daru w jednej
+  // grupie modalnej, więc plan musi je rozdzielać przez fallback
+  // `buttonsPlanOf` (wiersz na wariant).
+  if (!uniformGiftOf(options)) return null;
   const objectId = options[0].objectId;
   if (!options.every((cmd) => cmd.objectId === objectId)) return null;
   const byMode = new Map();

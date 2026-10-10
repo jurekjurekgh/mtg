@@ -1,26 +1,24 @@
 # Lekcje projektowe (trwały rejestr)
 
-Rejestr niesie REGUŁĘ i STRAŻNIKA (lekcja powtarzalna, nie decyzja —
-te → ADR). Narracja (Objaw/Przyczyna) mieszka w `docs/LESSONS_PRZYPADKI.md`
-i NIE jest lekturą startową; wpisy jednorazowe — `docs/LESSONS_ARCHIWUM.md`.
-Szukać grepem po numerze `LN` (cytowany w kodzie). Lekcji nie kasujemy:
-nieaktualną oznaczamy odsyłaczem do nowszej.
+Rejestr niesie REGUŁĘ i STRAŻNIKA (lekcja powtarzalna; decyzje → ADR).
+Narracja (Objaw/Przyczyna) — `docs/LESSONS_PRZYPADKI.md` (poza lekturą
+startową); wpisy jednorazowe — `docs/LESSONS_ARCHIWUM.md`. Szukać grepem po
+numerze `LN` (cytowany w kodzie). Lekcji nie kasujemy: nieaktualną oznaczamy
+odsyłaczem do nowszej.
 
-**Wzorzec wpisu (obowiązkowy):** `## LN (YYYY-MM-DD) — reguła w jednym
-zdaniu` / **Przypadek:** JEDNO zdanie z konkretami (karta, test, numer CR) /
-**Reguła:** 1–4 punkty, imperatyw / **Strażnik:** `plik/funkcja` — co
-czerwienieje po cofnięciu naprawy / `→ narracja: docs/LESSONS_PRZYPADKI.md (LN)`.
+**Wzorzec wpisu:** `## LN (YYYY-MM-DD) — reguła w jednym zdaniu` /
+**Przypadek:** jedno zdanie z konkretami (karta, test, CR) / **Reguła:** 1–4
+punkty, imperatyw / **Strażnik:** `plik/funkcja` — co czerwienieje po cofnięciu
+naprawy / `→ narracja: docs/LESSONS_PRZYPADKI.md (LN)`. Pól **Objaw**/**Przyczyna** nie ma — proza idzie do PRZYPADKI (LN).
 
-Pól **Objaw**/**Przyczyna** nie ma — proza idzie do archiwum pod tym samym
-numerem, a wpis niesie FAKTY (pliki, testy, karty, numery CR) i regułę.
-Rejestr to największa pozycja budżetu lektury (próg 100k): nowy wpis płaci się
-skróceniem innego, progu NIE podnosimy. L15–L19: daty z kamieni milowych
-(M102/M103 = 2026-08-16), oryginalne zaginęły przy migracji M208.
+Budżet (próg 100k): nowy wpis płaci SKRÓCENIEM innego (powtórzona reguła →
+odsyłacz); progu nie podnosimy. L15–L19: daty z kamieni milowych
+(M102/M103 = 2026-08-16); oryginały zaginęły w migracji M208.
 
 ## Wpisy zbiorcze (mapa klas)
 
-M275: lekcje jednej klasy mają **wpis zbiorczy** (reguła w jednym miejscu),
-reszta numerów to **kotwice**. Numery są cytowane w kodzie — **żaden nie znika**.
+M275: klasa lekcji ma **wpis zbiorczy** (reguła w jednym miejscu); pozostałe
+numery to **kotwice** — żaden nie znika (cytowany w kodzie).
 
 | Klasa | Wpis główny | Kotwice |
 |---|---|---|
@@ -31,16 +29,14 @@ reszta numerów to **kotwice**. Numery są cytowane w kodzie — **żaden nie zn
 | Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
 | Choke point istnieje, ale ścieżka go omija | **L107** | L109, L110, L112, L113 |
 
-**Zasada scalania:** łączymy wpisy JEDNEJ klasy — nigdy dlatego, że są stare.
-Lekcji nie kasujemy ani nie skracamy o fakty (karta, test, CR); usuwamy tylko
-powtórzoną regułę, wstawiając odsyłacz.
+**Zasada scalania:** łączymy wpisy JEDNEJ klasy, nigdy za wiek.
 
 ## Wpisy przeniesione do archiwum (poza lekturą startową)
 
 Wpisy jednorazowe, których reguła żyje w innym wpisie rejestru (albo
 w `AGENTS.md`/`ENVIRONMENT.md`): **L3, L7, L8, L9, L10, L23, L35, L62, L122**
-(pełna treść, powód i narracja: `docs/LESSONS_ARCHIWUM.md`; numery zostają —
-są cytowane w kodzie i testach).
+(treść, powód i narracja: `docs/LESSONS_ARCHIWUM.md`; numery zostają —
+cytowane w kodzie i testach).
 
 ---
 
@@ -849,21 +845,19 @@ przyjęta. Operacje „na wszelki wypadek przed" zostawiają niespójność na k
 **Wpis zbiorczy** (kotwice: L26, L31, L44, L83).
 
 **Reguła:**
-1. Strażnik wydobywa fakty z KONSTRUKTÓW (literał tablicy, odczyt `state.pole`),
-   a komentarze usuwa PRZED skanem (`stripComments`). Wzmianka pola nie jest
-   pokryciem z definicji.
-2. Każda klauzula „nie mam danych, więc przepuszczam" wymaga DRUGIEGO testu na
-   OBECNOŚĆ tych danych. Pytanie: „co się stanie, gdy dane wejściowe znikną?" —
-   „test przejdzie" oznacza brak bramki.
-3. Dla mapy „identyfikator → tekst" potrzeba DWÓCH niezmienników: słownik
-   pokrywa wartości z danych **oraz** kod nie wstawia surowego identyfikatora
-   z pominięciem słownika (test czytający źródło).
+1. Strażnik wydobywa fakty z KONSTRUKTÓW (literał, odczyt `state.pole`);
+   komentarze usuwa PRZED skanem (`stripComments`). Wzmianka ≠ pokrycie.
+2. Klauzula „nie mam danych, więc przepuszczam" wymaga DRUGIEGO testu na
+   OBECNOŚĆ danych: gdy wejściowe znikną, a test przejdzie — brak bramki.
+3. Mapa „identyfikator → tekst" ma DWÓCH niezmienników: słownik pokrywa
+   wartości z danych **oraz** kod nie wstawia surowego id obok słownika
+   (test czyta źródło).
 4. Pin ma DWIE nogi (L67): (a) kompozycja nie liczy zakomentowanego odczytu;
-   (b) ścieżka produkcyjna idzie przez tę kompozycję. Bez (b) obejście funkcji
-   zostawia pin zielony.
-5. Pytanie kontrolne do każdego strażnika: **czy da się przejść tę kontrolę bez
-   zmiany kodu?** (`repo-artefakty-audytu`, `.gitignore` przez `includes`) —
-   obowiązuje też wobec strażników, które sam piszesz, w dniu ich powstania.
+   (b) ścieżka produkcyjna idzie przez kompozycję — bez (b) obejście zostawia
+   pin zielony.
+5. Pytanie kontrolne: **czy da się przejść tę kontrolę bez zmiany kodu?**
+   (`repo-artefakty-audytu`, `.gitignore` przez `includes`) — też wobec własnych
+   strażników, w dniu powstania.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L5)
 
@@ -2332,3 +2326,8 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 **Strażnik:** `test/zgloszenie-k-flash-combat-trick.test.js` (mK1–mK10).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L183)
+
+## L184 (2026-10-10) — Każda zmiana = commit + push natychmiast; niezacommitowana ginie z resetem sandboxa
+
+Poprzedni agent stracił batch 10 kart — nie zdążył zacommitować przed
+resetem sandboxa. Krok (karta batcha, poprawka) = commit + push od razu (ADR 0020 C/D).

@@ -1980,6 +1980,29 @@ function promoteNextMadness(state) {
 }
 
 function accepted(state, cmd, result) {
+  // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
+  // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
+  // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
+  // `state.pendingSpell = { stackId, effects: [] }`. Handler decyzji sprząta
+  // własne `pending*`, ale wznowienie wstrzymanego czaru robi tylko część
+  // handlerów (scry/surveil/index/manifest_dread…) — reszta (m.in.
+  // `resolve_look_top_choice`, `resolve_satyr_look`) kończy na `accepted()`.
+  // Efekt: `pendingSpell` wisi na zawsze, a pierwszy późniejszy ruch obiektu
+  // wywala niezmiennik „Pending spell odwołuje się do nieistniejącego czaru”.
+  // Naprawa KLASY w jednym miejscu zamiast łatania ~35 handlerów z osobna
+  // (łatwo któryś pominąć): jeśli czar wciąż jest na stosie i NIC już nie
+  // czeka na decyzję — czyli nikt go nigdy nie wznowi — dokańczamy go tutaj.
+  // Strażnik `firstPendingDecision` gwarantuje, że normalna ścieżka (decyzja
+  // w środku listy efektów) nietknięta: hook odpala TYLKO w stanie, w którym
+  // czar byłby porzucony. Wzorzec i strażnik ten sam co promocja madness niżej.
+  const stuckSpell = state.pendingSpell;
+  if (stuckSpell && !firstPendingDecision(state)
+    && state.objects.get(stuckSpell.stackId)?.zone === 'stack') {
+    state.pendingSpell = null;
+    // resumeSuspendedSpell może znów zawiesić czar na zagnieżdżonej decyzji —
+    // wtedy złapie go accepted() następnej komendy (i firstPendingDecision).
+    result.events = [...(result.events ?? []), ...resumeSuspendedSpell(state, stuckSpell)];
+  }
   // Znalezisko A: auto-discard całości (bez decyzji) zostawia madness
   // w KOLEJCE — promocja następuje tu, po domknięciu komendy, o ile nic nie
   // czeka (lustro synchronicznej promocji w resolverze; kolejność „najpierw
@@ -2616,6 +2639,18 @@ export function execute(state, input) {
         ? Object.freeze({ ...chosenOn, aura: { ...chosenOn.aura, chosenColor: cmd.color } })
         : Object.freeze({ ...chosenOn, chosenColor: cmd.color });
       state.objects.set(targetId, updated);
+    }
+    // Batch65 (Zombie Boa): aktywacja „choose a color" dokłada znacznik
+    // blokowego zniszczenia NA TĘ TURĘ — lista, bo każda aktywacja to osobny
+    // „grant" (jak osobne zdolności opóźnione w oryginalnych zasadach).
+    if (pending.grantBlockDestroy) {
+      const withMark = state.objects.get(targetId);
+      if (withMark) {
+        state.objects.set(targetId, Object.freeze({
+          ...withMark,
+          blockDestroyColorsThisTurn: Object.freeze([...(withMark.blockDestroyColorsThisTurn ?? []), cmd.color]),
+        }));
+      }
     }
     state.events.push(event('color_choice_resolved', {
       playerId: pending.playerId, color: cmd.color, auraId: pending.auraId ?? null,
@@ -6885,6 +6920,13 @@ export function playerView(state, playerId) {
             if (a?.type !== 'static') continue;
             if (Array.isArray(a.cantBeBlockedExceptByColors)) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
+              break;
+            }
+            // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera
+            // („can't be blocked by creatures with flying") — publiczny
+            // deskryptor z CR 509.1a, ten sam kształt co wyżej (ADR 0017/0002).
+            if (Array.isArray(a.cantBeBlockedByKeywords)) {
+              entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
               break;
             }
           }

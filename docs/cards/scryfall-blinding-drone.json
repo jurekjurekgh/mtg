@@ -1,0 +1,29 @@
+{
+ "source": "https://api.scryfall.com/cards/named?exact=Blinding+Drone&set=OGW&format=json",
+ "print": "ogw",
+ "name": "Blinding Drone",
+ "mana_cost": "{1}{U}",
+ "cmc": 2,
+ "type_line": "Creature — Eldrazi Drone",
+ "oracle_text": "Devoid (This card has no color.)\n{C}, {T}: Tap target creature. ({C} represents colorless mana.)",
+ "power": "1",
+ "toughness": "3",
+ "colors": [],
+ "color_identity": [
+  "U"
+ ],
+ "keywords": [
+  "Devoid"
+ ],
+ "set": "ogw",
+ "set_name": "Oath of the Gatewatch",
+ "collector_number": "41",
+ "rarity": "common",
+ "image_uris": {
+  "large": "https://cards.scryfall.io/large/front/4/e/4eb60957-0811-40c3-a92b-cce3e6a94745.jpg?1783937921"
+ },
+ "pobrano": "2026-10-10",
+ "rulings": [],
+ "rulingsSource": "https://api.scryfall.com/cards/ogw/41/rulings",
+ "rulingsPobrano": "2026-10-10"
+}

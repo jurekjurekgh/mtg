@@ -151,7 +151,9 @@ test('A3: strażnik etykiet i grupowania — każda komenda ma etykietę, każda
   // MUSI trafić do commandLabel (albo świadomie na allowlist) i — dla
   // decyzji resolve_* — mieć klucz grupowania (albo świadomie na allowlist).
   const renderSrc = readFileSync(fileURLToPath(new URL('../src/table/render.js', import.meta.url)), 'utf8');
-  const labelSrc = /export function commandLabel[\s\S]*?\n\}/.exec(renderSrc)[0];
+  // F-2 (audyt PR #161): `commandLabel` to cienki wrapper (wyróżnik daru) —
+  // skanujemy CIAŁO etykiet `commandLabelBase` (case'y typów, L41).
+  const labelSrc = /function commandLabelBase[\s\S]*?\n\}/.exec(renderSrc)[0];
   const groupSrc = /function choiceRequestGroupKey[\s\S]*?\n\}/.exec(renderSrc)[0];
 
   // Typy ŚWIADOMIE poza commandLabel (uzasadnienie w komentarzu przy liście):

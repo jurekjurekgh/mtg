@@ -1,0 +1,37 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Ambulatory+Edifice&set=one&format=json",
+  "print": "one",
+  "name": "Ambulatory Edifice",
+  "mana_cost": "{2}{B}",
+  "cmc": 3.0,
+  "type_line": "Artifact Creature — Phyrexian Construct",
+  "oracle_text": "When this creature enters, you may pay 2 life. When you do, target creature gets -1/-1 until end of turn.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "one",
+  "set_name": "Phyrexia: All Will Be One",
+  "collector_number": "79",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/4/3/43c9005c-0574-4b75-8dbf-0a6641c3ae33.jpg?1783918052",
+    "normal": "https://cards.scryfall.io/normal/front/4/3/43c9005c-0574-4b75-8dbf-0a6641c3ae33.jpg?1783918052",
+    "large": "https://cards.scryfall.io/large/front/4/3/43c9005c-0574-4b75-8dbf-0a6641c3ae33.jpg?1783918052"
+  },
+  "pobrano": "2026-10-10",
+  "rulings": [
+    {
+      "date": "2023-02-04",
+      "source": "wotc",
+      "comment": "You don't choose a target for Ambulatory Edifice's last ability at the time it triggers. Rather, a second \"reflexive\" ability triggers when you pay 2 life this way. You choose a target for that ability as it goes on the stack. Each player may respond to this triggered ability as normal."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/43c9005c-0574-4b75-8dbf-0a6641c3ae33/rulings",
+  "rulingsPobrano": "2026-10-10"
+}
