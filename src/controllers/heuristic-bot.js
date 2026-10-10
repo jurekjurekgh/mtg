@@ -4334,16 +4334,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *     wchodzi w walkę w typowej grze), bez nowego parametru.
    *   • wróg bez stworów = 0 (anty-over-fix: nie ma kogo zniszczyć).
    */
+  // Audyt PR #162/F-1 (L41): wspólna miara NAJLEPSZEJ wrogiej ofiary
+  // wybranego koloru. Używa jej zarówno wycena aktywacji Zombie Boa, jak i
+  // późniejsza decyzja `resolve_color_choice`. Przed audytem aktywacja znała
+  // wartość blokera, ale decyzja koloru wpadała do generycznej heurystyki
+  // mana/protection i remisowała 1/1 z 6/6 — bot brał pierwszy kolor.
+  const blockDestroyVictimValue = (view, color) => untappedEnemyBlockers(view)
+    .filter((o) => (o.colors ?? []).includes(color))
+    .reduce((max, o) => Math.max(max, (o.power ?? 0) * 2 + (o.toughness ?? 0)), 0);
+
   const blockDestroyColorValue = (view, source) => {
     if (!source || source.tapped || !canAttackNow(source)) return 0;
-    const blockers = untappedEnemyBlockers(view);
-    if (blockers.length === 0) return 0;
-    let best = 0;
-    for (const color of ['W', 'U', 'B', 'R', 'G']) {
-      const victim = blockers.filter((o) => (o.colors ?? []).includes(color))
-        .reduce((max, o) => Math.max(max, (o.power ?? 0) * 2 + (o.toughness ?? 0)), 0);
-      if (victim > best) best = victim;
-    }
+    const best = Math.max(0, ...['W', 'U', 'B', 'R', 'G']
+      .map((color) => blockDestroyVictimValue(view, color)));
     return 0.5 * best;
   };
 
@@ -13860,6 +13863,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const purpose = view.pendingColorChoice?.purpose;
         if (purpose === 'protection') return finish(5 + enemyInColor * P.colorProtectionPerCreature);
         if (purpose === 'mana') return finish(5 + needScore * P.colorManaNeedPerCard);
+        // Audyt PR #162/F-1: Zombie Boa wybiera kolor najcenniejszego
+        // potencjalnego blokera, tą samą miarą co wycena aktywacji (L41).
+        // `enemyInColor` rozróżniało tylko LICZBĘ stworów, więc 1/1 i 6/6
+        // remisowały; kolejność ofert wybierała pierwszy kolor.
+        if (purpose === 'blockDestroy') return finish(5 + 0.5 * blockDestroyVictimValue(view, color));
         return finish(5 + needScore * 6 + enemyInColor);
       }
       // M131 (pętla jakości 2026-09-05): kolejne typy decyzji, które dotąd
