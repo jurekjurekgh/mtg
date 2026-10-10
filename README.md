@@ -160,7 +160,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `worek-basni` | Worek: Baśni | WUBRG | 26 | 9 | 17 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
 | `worek-legend` | Worek: Legendy | WUBRG | 32 | 11 | 21 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 27 | 9 | 18 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 29 | 10 | 19 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

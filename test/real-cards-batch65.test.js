@@ -242,3 +242,46 @@ test('B65/332: Blitz — gracz NIE jest legalnym celem („creature or planeswal
     && c.targets?.length === 1 && state.players.some((p) => p.id === c.targets[0])),
     'kontrola: Shock (any_target) w tej samej sytuacji celuje w gracza');
 });
+
+// ---- B65/333: Bring to Trial (RNA #5, plan New Capenna) -----------------------
+
+test('B65/333: Bring to Trial — dane Oracle: {2}{W} sorcery, exile stwora mocy 4+', () => {
+  const def = sanity('bring-to-trial', { set: 'RNA', plan: 'New Capenna', artId: 333 });
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.manaCost, 3);
+  assert.equal(def.spell.timing, 'sorcery');
+  assert.deepEqual(def.spell.targets, [{ type: 'creature_with_power_at_least', min: 4 }],
+    'cel: stwór z mocą efektywną ≥ 4 (CR 613; jak tryb Wygnanie Selesnya Charm)');
+  assert.deepEqual(def.spell.effects, [{ type: 'exile_permanent' }]);
+  const snap = snapshotOf('bring-to-trial');
+  assert.deepEqual(snap.rulings, [], 'rulingi pobrane 2026-10-10 — brak orzeczeń (ADR 0028)');
+  assert.equal(snap.rulingsSource, 'https://api.scryfall.com/cards/rna/5/rulings');
+});
+
+test('B65/333: Bring to Trial — wygania stwora mocy 4+ (bez grobu)', () => {
+  const state = game();
+  put(state, 'duzy', 'rustvine-cultivator', 'p2', 'battlefield', { power: 4, toughness: 4 });
+  put(state, 'trial', 'bring-to-trial', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'trial');
+  assert.ok(cast, 'rzut za {2}{W} jest oferowany');
+  assert.deepEqual(cast.targets, ['duzy'], 'cel: duży stwór przeciwnika');
+  run(state, cast);
+  settle(state);
+  assert.ok(find(state, 'rustvine-cultivator', 'exile'), 'stwór mocy 4 wygnany');
+  assert.ok(!find(state, 'rustvine-cultivator', 'graveyard'), 'nie zginął — poszedł prosto na wygnanie');
+});
+
+test('B65/333: Bring to Trial — stwór mocy < 4 nie jest legalnym celem (brak oferty)', () => {
+  const state = game();
+  put(state, 'maly', 'rustvine-cultivator', 'p2', 'battlefield', { power: 3, toughness: 3 });
+  put(state, 'trial', 'bring-to-trial', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  assert.ok(!commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'trial'),
+    'moc 3 < 4 — brak oferty (CR 601.2c)');
+  // Kontrola: ten sam stwór z buforem do 4 mocy wchodzi w zakres (moc efektywna).
+  state.objects.set('maly', Object.freeze({ ...state.objects.get('maly'), power: 4 }));
+  assert.ok(commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'trial'
+    && c.targets?.[0] === 'maly'), 'po podbiciu mocy do 4 ten sam cel jest oferowany');
+});

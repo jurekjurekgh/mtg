@@ -56,9 +56,9 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 ## 3. Realizacja
 
 - [x] Plan + L184 + usunięcie pliku transportowego patcha (commit zerowy).
-- [ ] 329 Blinding Drone (OGW, Zendikar)
-- [ ] 332 Blitz of the Thunder-Raptor (IKO, Thunder Junction)
-- [ ] 333 Bring to Trial (RNA, New Capenna)
+- [x] 329 Blinding Drone (OGW, Zendikar) — commit 57c6158
+- [x] 332 Blitz of the Thunder-Raptor (IKO, Thunder Junction) — commit 439f672
+- [x] 333 Bring to Trial (RNA, New Capenna)
 - [ ] 334 Skyscythe Engulfer (ONE, Mirrodin)
 - [ ] 336 Zombie Boa (APC, Amonkhet)
 - [ ] 338 Brine Giant (THB, Theros)

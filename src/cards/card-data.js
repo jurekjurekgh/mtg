@@ -13335,6 +13335,23 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     },
     support: { status: 'supported', limitations: [] },
   }),
+  // 3. Bring to Trial (RNA #5) {2}{W} — sorcery. „Exile target creature with
+  // power 4 or greater." — cel: creature_with_power_at_least min: 4 (jak tryb
+  // Wygnanie Selesnya Charm), efekt: exile_permanent. Moc EFEKTYWNA liczona
+  // przy rozstrzyganiu (CR 608.2b/613).
+  defineCard({
+    id: 'bring-to-trial', name: 'Bring to Trial', set: 'RNA',
+    types: ['Sorcery'], colors: ['W'], manaCost: 3,
+    oracleText: 'Exile target creature with power 4 or greater.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/3/63d566fc-0936-4035-96fd-f8b0c4eadbf5.jpg?1783933724',
+    artId: 333, plan: 'New Capenna',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature_with_power_at_least', min: 4 }],
+      effects: [{ type: 'exile_permanent' }],
+    },
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

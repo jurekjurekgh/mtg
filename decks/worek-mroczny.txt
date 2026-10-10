@@ -6,6 +6,7 @@
 1x Supernatural Stamina
 1x Manifest Dread
 1x Tah-Crop Skirmisher
+1x Bring to Trial
 1x Crew Captain
 1x Lotusguard Disciple
 1x Mobile Garrison
@@ -22,4 +23,4 @@
 2x Island
 1x Swamp
 2x Mountain
-2x Forest
+3x Forest
