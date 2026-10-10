@@ -63,7 +63,7 @@ opis PR #162 uzupełniony. Bez pełnego B0 (ADR 0018).
 - [x] 336 Zombie Boa (APC, Amonkhet)
 - [x] 338 Brine Giant (THB, Theros)
 - [x] 340 Ambulatory Edifice (ONE, Mirrodin)
-- [ ] 341 Pacifism (DTK, Tarkir)
+- [x] 341 Pacifism (DTK, Tarkir)
 - [ ] 348 Impulse (DMU, Dominaria)
 - [ ] 350 Temple of Abandon (BLC, Kamigawa)
 - [ ] Domknięcie: milestone + historia + opis PR.

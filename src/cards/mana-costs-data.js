@@ -613,4 +613,5 @@ export const MANA_COSTS = {
   'zombie-boa': '{4}{B}',
   'brine-giant': '{6}{U}',
   'ambulatory-edifice': '{2}{B}',
+  'pacifism': '{1}{W}',
 };

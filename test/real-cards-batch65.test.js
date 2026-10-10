@@ -581,3 +581,59 @@ test('B65/340: Ambulatory Edifice — odmowa zaplaty: zycie nietkniete, bez -1/-
   assert.equal(effectivePower(t, st), pow0, 'bez -1/-1');
   assert.equal(effectiveToughness(t, st), tough0);
 });
+
+// ---- B65/341: Pacifism (DTK #29, plan Tarkir) -------------------------------
+
+test('B65/341: Pacifism — dane Oracle: aura za {1}{W}, zaczarowany stwor nie atakuje ani nie blokuje', () => {
+  const def = sanity('pacifism', { set: 'DTK', plan: 'Tarkir', artId: 341 });
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.subtypes, ['Aura']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.manaCost, 2);
+  assert.equal(def.aura.cantAttack, true, 'attachmentRestrictions: cantAttack');
+  assert.equal(def.aura.cantBlock, true, 'attachmentRestrictions: cantBlock');
+  assert.equal(def.aura.pump, null, 'bez modyfikacji P/T');
+  assert.equal(def.abilities.length, 0, 'czysta aura bez zdolnosci wlasnych');
+  const snap = snapshotOf('pacifism');
+  assert.deepEqual(snap.rulings, [], 'brak rulingow — pusta lista (ADR 0028)');
+});
+
+test('B65/341: Pacifism — zaczarowany stwor nie atakuje (brak oferty, deklaracja odrzucona)', () => {
+  const st = game();
+  put(st, 'mine', 'highland-game', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'pac', 'pacifism', 'p1', 'hand');
+  addMana(st, 'p1', 2, { colors: ['W'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'pac' && (c.targets ?? [])[0] === 'mine'));
+  settle(st);
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = 'p1';
+  st.turn.priorityPlayerId = 'p1';
+  st.pendingMulligans = [];
+  assert.ok(!commands(st).some((c) => c.type === 'declare_attackers' && (c.attackerIds ?? []).includes('mine')),
+    'brak oferty ataku zaczarowanym stworem');
+  const r = execute(st, { type: 'declare_attackers', playerId: 'p1', attackerIds: ['mine'] });
+  assert.equal(r.ok, false, 'deklaracja ataku odrzucona (cantAttack)');
+});
+
+test('B65/341: Pacifism — zaczarowany stwor nie blokuje (brak oferty, deklaracja odrzucona)', () => {
+  const st = game();
+  put(st, 'mine', 'highland-game', 'p1', 'battlefield');
+  put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield', { summoningSickness: false });
+  put(st, 'pac', 'pacifism', 'p1', 'hand');
+  addMana(st, 'p1', 2, { colors: ['W'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'pac' && (c.targets ?? [])[0] === 'mine'));
+  settle(st);
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p2');
+  st.turn.activePlayerId = 'p2';
+  st.turn.priorityPlayerId = 'p2';
+  st.pendingMulligans = [];
+  run(st, commands(st, 'p2').find((c) => c.type === 'declare_attackers' && (c.attackerIds ?? []).includes('theirs')));
+  st.turn = jumpToStep(st.turn, 'declare_blockers', 'p1');
+  st.turn.activePlayerId = 'p2';
+  st.turn.priorityPlayerId = 'p1';
+  const wanted = JSON.stringify({ theirs: ['mine'] });
+  assert.ok(!commands(st, 'p1').some((c) => c.type === 'declare_blockers' && JSON.stringify(c.assignments) === wanted),
+    'brak oferty bloku zaczarowanym stworem');
+  const r = execute(st, { type: 'declare_blockers', playerId: 'p1', assignments: { theirs: ['mine'] } });
+  assert.equal(r.ok, false, 'deklaracja bloku odrzucona (cantBlock)');
+});

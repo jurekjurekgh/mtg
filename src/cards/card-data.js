@@ -13445,6 +13445,22 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['enter_battlefield + payLife 2 (optionalPay, Etap F): cel refleksu „When you do” wybierany po zapłacie (ruling 2023-02-04); -1/-1 do końca tury (pump, cleanup)'],
   }),
+
+  // 8. Pacifism (DTK #29) {1}{W} — Enchantment — Aura. „Enchant creature.
+  //    Enchanted creature can't attack or block." — czysta aura (CR 303.4,
+  //    Hobble): restrykcje gospodarza egzekwuje combat przez
+  //    permanents.attachmentRestrictions (cantAttack + cantBlock).
+  defineCard({
+    id: 'pacifism', name: 'Pacifism', set: 'DTK',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['W'], manaCost: 2,
+    aura: { cantAttack: true, cantBlock: true },
+    oracleText: "Enchant creature\nEnchanted creature can't attack or block.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/7/f7939502-d6aa-4bde-b42f-67ed433f95f1.jpg?1783938615',
+    artId: 341,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['aura CR 303.4 (wzorzec Hobble): cantAttack + cantBlock na gospodarzu; ruchy ofensywne/blokujące odrzucane przez walidację combatu'],
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

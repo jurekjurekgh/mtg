@@ -144,7 +144,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `ravnica` | Ravnica | WUBRG | 44 | 15 | 29 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 33 | 11 | 22 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 35 | 12 | 23 |
 | `the-edge` | The Edge | WUBRG | 23 | 8 | 15 |
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
