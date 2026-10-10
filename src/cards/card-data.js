@@ -13401,6 +13401,21 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     support: { status: 'supported', limitations: [] },
   }),
+  // 6. Brine Giant (THB #44) {6}{U} — 5/6 Giant. „Affinity for enchantments
+  // (This spell costs {1} less to cast for each enchantment you control.)"
+  // — CR 702.41 wariant: obniżka per enchantment (bliźniak Steelfin Whale /
+  // affinityToArtifacts; mana-cost.conditionalCostReduction). Ruling WotC
+  // 2020-01-24: rabat tylko część generyczną, mana value bez zmian.
+  defineCard({
+    id: 'brine-giant', name: 'Brine Giant', set: 'THB',
+    types: ['Creature'], subtypes: ['Giant'], colors: ['U'],
+    power: 5, toughness: 6, manaCost: 7,
+    oracleText: 'Affinity for enchantments (This spell costs {1} less to cast for each enchantment you control.)',
+    imageUri: 'https://cards.scryfall.io/large/front/6/8/6811a9dc-e521-4c9e-accb-1efb8346c1db.jpg?1783931586',
+    costReduction: { amount: 1, condition: { affinityToEnchantments: true } },
+    artId: 338, plan: 'Theros',
+    support: { status: 'supported', limitations: [] },
+  }),
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

@@ -466,3 +466,46 @@ test('B65/336: Zombie Boa — aktywacja tylko jako sorcery (brak oferty poza gł
   assert.ok(!commands(st).some((c) => c.type === 'activate_ability' && c.objectId === 'boa'),
     'poza główną fazą brak oferty (timing: sorcery)');
 });
+
+// ---- B65/338: Brine Giant (THB #44, plan Theros) -----------------------------
+
+test('B65/338: Brine Giant — dane Oracle: 5/6 za {6}{U}, Affinity for enchantments', () => {
+  const def = sanity('brine-giant', { set: 'THB', plan: 'Theros', artId: 338 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Giant']);
+  assert.deepEqual(def.colors, ['U']);
+  assert.equal(def.power, 5);
+  assert.equal(def.toughness, 6);
+  assert.equal(def.manaCost, 7);
+  assert.deepEqual(def.costReduction, { amount: 1, condition: { affinityToEnchantments: true } },
+    'CR 702.41 wariant: obniżka {1} za KAŻDY enchantment (bliźniak Steelfin Whale)');
+  const snap = snapshotOf('brine-giant');
+  assert.equal(snap.rulings.length, 3, '3 rulingi WotC 2020-01-24 (kolejność kosztów, tylko generic, brak okna odpowiedzi)');
+  assert.match(snap.rulings[1].comment, /only the generic mana/, 'ruling 2: rabat tylko część generyczną');
+});
+
+test('B65/338: Brine Giant — affinity: koszt spada o liczbę enchantmentów (także enchantment creatures)', () => {
+  const st = game();
+  // 2 enchantmenty: zwykły + enchantment creature (typ Enchantment w types).
+  put(st, 'e1', 'curse-of-the-pierced-heart', 'p1', 'battlefield');
+  put(st, 'e2', 'rustvine-cultivator', 'p1', 'battlefield', { types: ['Creature', 'Enchantment'] });
+  put(st, 'giant', 'brine-giant', 'p1', 'hand');
+  // Koszt {6}{U} = 7; affinity −2 → 5 many z {U} wystarczy (colored pips zostają).
+  addMana(st, 'p1', 5, { colors: ['U'] });
+  const cast = commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'giant');
+  assert.ok(cast, `rzut przy 5 manach z 2 enchantmentami oferowany (koszt 7−2=5)`);
+  run(st, cast);
+  settle(st);
+  assert.ok(find(st, 'brine-giant', 'battlefield'), 'giant wszedł za 5 many');
+});
+
+test('B65/338: Brine Giant — bez enchantmentów pełny koszt 7 many (5+{U} nie wystarcza)', () => {
+  const st = game();
+  put(st, 'giant', 'brine-giant', 'p1', 'hand');
+  addMana(st, 'p1', 6, { colors: ['U'] });
+  assert.ok(!commands(st).some((c) => c.type === 'cast_permanent' && c.objectId === 'giant'),
+    '6 many < 7 — bez affinity brak oferty');
+  put(st, 'e1', 'curse-of-the-pierced-heart', 'p1', 'battlefield');
+  assert.ok(commands(st).some((c) => c.type === 'cast_permanent' && c.objectId === 'giant'),
+    'po jednym enchantmencie koszt 6 → oferta jest (CR 702.41)');
+});

@@ -611,4 +611,5 @@ export const MANA_COSTS = {
   'bring-to-trial': '{2}{W}',
   'skyscythe-engulfer': '{5}{G}',
   'zombie-boa': '{4}{B}',
+  'brine-giant': '{6}{U}',
 };

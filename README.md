@@ -146,7 +146,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 33 | 11 | 22 |
 | `the-edge` | The Edge | WUBRG | 23 | 8 | 15 |
-| `theros` | Theros | WUBRG | 27 | 9 | 18 |
+| `theros` | Theros | WUBRG | 29 | 10 | 19 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 29 | 10 | 19 |
