@@ -3606,6 +3606,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const threshold = host.cantBeBlockedByPower;
       if (blockers.every((b) => (b.power ?? 0) <= threshold)) return true;
     }
+    // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): „can't be blocked by
+    // creatures with [keyword]". Reguła lustrzana do combat.js
+    // blockRestrictionError (L41/L48 — ten komentarz obiecuje parzystość,
+    // a tej gałęzi brakowało): bloker NIE może blokować, gdy ma KTÓRYKOLWIEK
+    // z wymienionych keywordów, więc atakujący omija wszystkich dopiero, gdy
+    // KAŻDY potencjalny bloker taki keyword ma. Pole z PlayerView
+    // (game-state.js:6928), jak cantBeBlockedByPower.
+    if (Array.isArray(host.cantBeBlockedByKeywords) && host.cantBeBlockedByKeywords.length > 0) {
+      const banned = host.cantBeBlockedByKeywords;
+      if (blockers.every((b) => banned.some((kw) => hasKeyword(b, kw)))) return true;
+    }
     return false;
   };
 
@@ -8889,6 +8900,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Evasion (flying) realnie zwiększa szanse zadania obrażeń.
         if (hasKeyword(def, 'flying')) score += 3;
+        // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): selektywna ewazja
+        // „can't be blocked by creatures with [keyword]". Pomiar PRZED: delta
+        // 0 wobec kontrfaktyku (72,0 = 72,0), czyli statyka nie wchodziła
+        // do wyceny rzutu wcale. Premia TYLKO gdy wróg ma blokera z tym
+        // keywordem — bez takiego blokera ewazja nic nie zmienia, więc
+        // najsłabszy realny wariant zostaje na dawnej wartości (anty-over-fix
+        // M429). Jednostka ta sama co flying (+3), nie nowa skala; częściowe
+        // pokrycie (tylko część blokerów) dostaje połowę.
+        const bannedKeywords = (def?.abilities ?? [])
+          .filter((a) => a?.type === 'static' && Array.isArray(a.cantBeBlockedByKeywords))
+          .flatMap((a) => a.cantBeBlockedByKeywords);
+        if (bannedKeywords.length > 0) {
+          const enemyBlockers = untappedEnemyBlockers(view);
+          const withKeyword = enemyBlockers
+            .filter((b) => bannedKeywords.some((kw) => hasKeyword(b, kw))).length;
+          if (withKeyword > 0) {
+            score += (withKeyword === enemyBlockers.length) ? 3 : 1.5;
+          }
+        }
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
         if (myCreatures(view).length < enemyCreatures(view).length) score += 4;
         // Zagranie kolejnego permanentu poświęci własnego demona (Illusory

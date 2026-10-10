@@ -59,6 +59,7 @@ function scene({ registry = REGISTRY, many = 14, lib = 30, setup = () => {} } = 
     controllerId: 'p1', zone: 'library', kind: 'sorcery', power: 0, toughness: 0, manaCost: 2,
     abilities: [], keywords: [], subtypes: [], types: ['Sorcery'], colors: [], cardName: 'lb' });
   setup(state, registry);
+  state.__registry = registry; // patrz `scoreOf` — bot musi czytać TEN sam rejestr
   return state;
 }
 
@@ -74,8 +75,14 @@ const instants = (state, n) => {
 };
 
 /** Score bota dla pierwszej opcji pasującej do filtru; null = brak oferty. */
+/**
+ * UWAGA (poprawka metody, PMSSB-60): bot musi dostać rejestr sceny. Bez tego
+ * używa rejestru domyślnego i `cardDef()` czyta PRAWDZIWE definicje, więc
+ * kontrfaktyk działa tylko na obiekcie w widoku, a reguły czytane z `def`
+ * (np. `def.abilities` u F7) widzą kartę pełną.
+ */
 function scoreOf(state, filtr, playerId = 'p1') {
-  const bot = createHeuristicBot({ seed: SEED + 1 });
+  const bot = createHeuristicBot({ seed: SEED + 1, registry: state.__registry ?? REGISTRY });
   bot.chooseCommand(playerView(state, playerId));
   const traf = (bot.trace().at(-1)?.options ?? []).filter(filtr);
   return traf.length ? traf[0].score : null;
@@ -226,4 +233,54 @@ test('PMSSB-60/D3: enchantmenty PRZECIWNIKA nie obniżają mojego kosztu', () =>
   } });
   assert.equal(scoreOf(state, (o) => o.cmd.includes('(c1')), GIANT_PRZED,
     'affinity liczy wyłącznie enchantmenty pod MOJĄ kontrolą (CR 601.2f)');
+});
+
+// ============================================================ FALA E — F7
+
+/**
+ * Skyscythe Engulfer w ręce + opcjonalny wrogi bloker. `foeKeywords === null`
+ * oznacza scenę bez wrogich stworów wcale. `kontra` wycina statykę
+ * `cantBeBlockedByKeywords` z definicji — kontrfaktyk musi dostać TEN rejestr
+ * zarówno w scenie, jak i w bocie (patrz `scoreOf`).
+ */
+function skyScene(foeKeywords, kontra = false) {
+  const registry = kontra
+    ? registryKontra('skyscythe-engulfer', (d) => ({ ...d, abilities: [] }))
+    : REGISTRY;
+  return scene({ registry, setup: (st, r) => {
+    if (foeKeywords !== null) {
+      foe(st, 'f1', 2, 2, ['U']);
+      const f1 = st.objects.get('f1');
+      st.objects.set('f1', Object.freeze({ ...f1, keywords: foeKeywords }));
+    }
+    put(st, 'c1', 'skyscythe-engulfer', 'p1', 'hand', r);
+  } });
+}
+const sky = (foeKeywords, kontra = false) => scoreOf(skyScene(foeKeywords, kontra), (o) => o.cmd.includes('(c1'));
+
+/** Porównanie z tolerancją — wyceny bota to łańcuch operacji FP. */
+const blisko = (a, b) => Math.abs(a - b) < 1e-9;
+
+/** Zmierzono na `3027ed0`+fala E (harness tego pliku, nie sonda). */
+const SKY_FLYER = 78.309;      // wróg z flying: statyka wchodzi do wyceny
+const SKY_BAZA = 75.609;       // wróg bez zakazanego keywordu = kontrfaktyk
+const SKY_BEZ_WROGA = 72.009;  // brak wrogich stworów = kontrfaktyk
+
+test('PMSSB-60/E1: cantBeBlockedBy(flying) podnosi wycenę rzutu wobec wrogiego flyera', () => {
+  const pelny = sky(['flying']);
+  const kontra = sky(['flying'], true);
+  assert.ok(blisko(pelny, SKY_FLYER), `oczekiwano ${SKY_FLYER}, jest ${pelny}`);
+  assert.ok(blisko(kontra, SKY_BAZA), `oczekiwano ${SKY_BAZA}, jest ${kontra}`);
+  // POMIAR PRZED: delta 0 (72,0 = 72,0) — statyka nie wchodziła do wyceny.
+  assert.ok(pelny - kontra > 2.5, `oczekiwano delty > 2.5, jest ${pelny - kontra}`);
+});
+
+test('PMSSB-60/E2: anty-over-fix — bloker bez zakazanego keywordu nie daje premii', () => {
+  assert.ok(blisko(sky([]), SKY_BAZA), `oczekiwano ${SKY_BAZA}, jest ${sky([])}`);
+  assert.ok(blisko(sky([]), sky([], true)), `over-fix: ${sky([])} vs ${sky([], true)}`);
+});
+
+test('PMSSB-60/E3: bez wrogich stworów nie ma czego wyeważować — dawna wartość', () => {
+  assert.ok(blisko(sky(null), SKY_BEZ_WROGA), `oczekiwano ${SKY_BEZ_WROGA}, jest ${sky(null)}`);
+  assert.ok(blisko(sky(null), sky(null, true)), `over-fix: ${sky(null)} vs ${sky(null, true)}`);
 });

@@ -39,6 +39,7 @@ function scene({ registry = REG, many = 14, step = 'main', active = 'p1', lib = 
     controllerId: active, zone: 'library', kind: 'sorcery', power: 0, toughness: 0, manaCost: 2,
     abilities: [], keywords: [], subtypes: [], types: ['Sorcery'], colors: [], cardName: 'lb' });
   setup(s, registry);
+  s.__registry = registry; // patrz `punkty` — bot musi czytać TEN sam rejestr
   return s;
 }
 
@@ -57,9 +58,17 @@ const foe = (s, id, p = 4, t = 4, colors = ['R']) => addObject(s, { id, instance
   power: p, toughness: t, manaCost: p, abilities: [], keywords: [], subtypes: [],
   types: ['Creature'], colors, cardName: 'foe' });
 
-/** Punkty bota dla opcji pasujących do `filtr`; null = brak oferty. */
+/** Punkty bota dla opcji pasujących do `filtr`; null = brak oferty.
+ *
+ * UWAGA (poprawka metody, PMSSB-60): bot MUSI dostać ten sam rejestr co scena.
+ * Bez tego `createHeuristicBot` używa rejestru domyślnego i `cardDef()` czyta
+ * PRAWDZIWE definicje kart — kontrfaktyk działałby wyłącznie na obiekcie
+ * w widoku, a każda reguła czytana z `def` (np. `def.abilities`) widziałaby
+ * kartę pełną. Zmierzono: premia za ewazję odpalała identycznie w wariancie
+ * „bez statyki" (975,6 = 975,6 przy prowizorycznym +1000).
+ */
 function punkty(s, filtr, playerId = 'p1') {
-  const b = createHeuristicBot({ seed: SEED + 1 });
+  const b = createHeuristicBot({ seed: SEED + 1, registry: s.__registry ?? REG });
   b.chooseCommand(playerView(s, playerId));
   const opts = b.trace().at(-1)?.options ?? [];
   const traf = opts.filter(filtr);
@@ -171,8 +180,23 @@ function sky(kontra) {
   const s = scene({ registry: reg, setup: (st, r) => { put(st, 'c1', 'skyscythe-engulfer', 'p1', 'hand', r); } });
   return fmt(punkty(s, (o) => o.cmd.includes('(c1')));
 }
-console.log(`   pełny:                  ${sky(false)}`);
+// Ewazja selektywna ma wartość TYLKO wobec blokera z danym keywordem, więc
+// pomiar musi mieć wrogiego blokera: z flying (ewazja działa) i bez (nie działa).
+function skyZBlokerem(kontra, keyword) {
+  const reg = kontra ? registryKontra('skyscythe-engulfer', (d) => ({ ...d, abilities: [] })) : REG;
+  const s = scene({ registry: reg, setup: (st, r) => {
+    foe(st, 'f1', 2, 2, ['U']);
+    const f1 = st.objects.get('f1');
+    st.objects.set('f1', Object.freeze({ ...f1, keywords: keyword ? [keyword] : [] }));
+    put(st, 'c1', 'skyscythe-engulfer', 'p1', 'hand', r);
+  } });
+  return fmt(punkty(s, (o) => o.cmd.includes('(c1')));
+}
+console.log(`   bez wrogich stworów:    ${sky(false)}`);
 console.log(`   KONTRFAKTYK (bez statyki): ${sky(true)}`);
+console.log(`   wróg z FLYING:          ${skyZBlokerem(false, 'flying')}`);
+console.log(`   wróg z flying, BEZ statyki: ${skyZBlokerem(true, 'flying')}`);
+console.log(`   wróg BEZ keywordów:     ${skyZBlokerem(false, null)}`);
 
 // ==================================================== F8 — Ambulatory Edifice
 console.log('\n=== F8 Ambulatory Edifice — ETB optionalPay 2 życia → pump -1/-1');
