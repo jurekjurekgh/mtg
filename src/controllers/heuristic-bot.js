@@ -5102,35 +5102,174 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const enemyBoardPower = (view) => enemyCreatures(view).reduce((sum, o) => sum + combatPower(o), 0);
   /**
-   * E (zgłoszenie właściciela 2026-09-20): moc, którą wróg może zadać nam
-   * w NASTĘPNEJ turze (crackback) — stwory wroga zdolne do ataku
-   * (`cantAttackStatic` z widoku, M243/E; ADR 0002 — deskryptor, nie nazwa).
-   * Tapnięcie nie dyskwalifikuje: w swojej turze stwór się odkręci.
+   * D (uwaga z gry 2026-10-11): jednostki many, które przeciwnik będzie miał
+   * po swoim najbliższym untapie. Pula z bieżącego kroku wyparuje (CR 500.5),
+   * więc liczymy publiczne trwałe źródła lądowe przez `manaSourceOfView` — ten
+   * sam rozstrzygnięty profil kolorów/ilości, który publikuje silnik. Tapnięty
+   * ląd wraca, chyba że ma publiczną trwałą blokadę odtapnięcia; już odtapnięty
+   * pozostaje dostępny nawet przy takim znaczniku.
    */
-  const enemyCrackbackPower = (view) => enemyCreatures(view)
-    .filter((o) => o.cantAttackStatic !== true)
-    .reduce((sum, o) => sum + combatPower(o), 0);
+  const futureLandManaUnits = (view, playerId) => {
+    const units = [];
+    for (const object of view.zones?.battlefield ?? []) {
+      if (!object || object.controllerId !== playerId) continue;
+      if (object.kind !== 'land' && !(object.types ?? []).includes('Land')) continue;
+      if (object.tapped && (object.untapLockedBy?.length ?? 0) > 0) continue;
+      const source = manaSourceOfView(object);
+      if (!source) continue;
+      for (let i = 0; i < (source.amount ?? 1); i += 1) units.push([...(source.colors ?? [])]);
+    }
+    return units;
+  };
+
+  /** Czy publiczny koszt zdolności będzie płatny po najbliższym untapie. */
+  const futureAbilityIsPayable = (view, playerId, ability) => {
+    if (ability?.type !== 'activated') return false;
+    const cost = ability.cost ?? {};
+    // Zdolność tapująca albo poświęcająca własne źródło nie może uczynić TEGO
+    // stworzenia atakującym. Koszt X bez wybranej wartości nie jest dowodem.
+    if (cost.tap === true || cost.sacrificeSelf === true || cost.manaX === true) return false;
+    const mana = cost.mana ?? cost.generic ?? 0;
+    if (!Number.isInteger(mana) || mana < 0) return false;
+    const units = futureLandManaUnits(view, playerId);
+    if (units.length < mana) return false;
+    const requirements = (cost.colors ?? []).map((color) => [color]);
+    return matchColorRequirements(units, requirements);
+  };
+
   /**
-   * J (zgłoszenie z testów 2026-09-22): „Mam na stole kreaturę 5/5 z Infect.
-   * Bot ma 6 znaczników trucizny i 20 życia. Mimo że zaraz zginie od trucizny,
-   * atakuje mnie wszystkimi kreaturami i zostaje odkryty na mój wjazd
-   * z Infect. Ginie od 11 poison counterów. Widocznie patrzy tylko na życie,
-   * a w ogóle nie ocenia ryzyka trucizny.”
-   *
-   * Bot ma DWA zegary śmierci (CR 104.3b życie, CR 104.3c/704.5c dziesięć
-   * liczników trucizny), ale cała ocena obrony liczyła tylko obrażenia
-   * w życie. Stwór z infect nie zadaje graczowi obrażeń — daje liczniki
-   * (CR 702.90b) — więc jego moc NIE zwiększała `enemyCrackbackPower`… a
-   * raczej zwiększała ją w złej walucie: 5 mocy infect przy 20 życiach wygląda
-   * niegroźnie, choć przy 6 licznikach zabija.
-   *
-   * Te dwie funkcje liczą ryzyko w walucie TRUCIZNY, symetrycznie do modelu
-   * życia (garda = suma wytrzymałości obrońców zostających w domu).
+   * Czy dzisiejsze statyczne ograniczenie ataku może zniknąć przed następnym
+   * atakiem przeciwnika. Reguła jest wyłącznie po publicznych deskryptorach:
+   * defender + efekt `losesKeywords: defender` albo „attack as though…”, bez
+   * nazwy/cardId Krotiqa (ADR 0002). Obecne tapnięcie i summoning sickness nie
+   * dyskwalifikują — najbliższa własna tura zaczyna się untapem i od początku
+   * tej tury stworzenie jest już kontrolowane.
    */
+  const canAttackOnNextTurn = (view, object) => {
+    if (!object || object.kind !== 'creature') return false;
+    // Efekt „do końca tury” aktywny DZISIAJ wygaśnie przed następnym atakiem;
+    // nie może sam dowodzić przyszłej legalności. To samo dotyczy tymczasowej
+    // utraty defendera (PlayerView publikuje lostKeywordsUntilEOT).
+    const temporaryDefenderBypass = object.attacksAsThoughNoDefenderUntilEOT === true
+      || (object.lostKeywordsUntilEOT ?? []).includes('defender');
+    if (object.cantAttackStatic !== true && !temporaryDefenderBypass) return true;
+    const hasUnderlyingDefender = hasKeyword(object, 'defender') || temporaryDefenderBypass;
+    if (!hasUnderlyingDefender || object.detained === true) return false;
+    return (object.activatableAbilities ?? []).some((ability) => {
+      const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+      const bypassesDefender = effects.some((effect) =>
+        effect?.type === 'attack_as_though_no_defender_until_end_of_turn'
+        || (effect?.losesKeywords ?? []).includes('defender'));
+      return bypassesDefender && futureAbilityIsPayable(view, object.controllerId, ability);
+    });
+  };
+
+  /**
+   * Czy `blocker` może legalnie wejść przed `attacker`, pomijając wyłącznie
+   * wymóg DWÓCH stworów menace (ten sprawdza wybierana niżej grupa). Bazowy
+   * predykat obsługuje flying/reach i próg mocy; dopinamy pozostałe publiczne
+   * restrykcje używane już przez scoring gospodarza: landwalk, kolor, keyword
+   * blokera i protection atakującego.
+   */
+  const canIndividuallyBlockCrackback = (view, attacker, blocker) => {
+    const withoutMenace = hasKeyword(attacker, 'menace')
+      ? { ...attacker, keywords: (attacker.keywords ?? []).filter((kw) => kw !== 'menace') }
+      : attacker;
+    if (!attackerCanBeBlocked(withoutMenace, [blocker])) return false;
+    if (typeof attacker.landwalk === 'string'
+      && controlsLandOfSubtype(view, blocker.controllerId, attacker.landwalk)) return false;
+    if (Array.isArray(attacker.cantBeBlockedExceptByColors)
+      && attacker.cantBeBlockedExceptByColors.length > 0
+      && !(blocker.colors ?? []).some((color) => attacker.cantBeBlockedExceptByColors.includes(color))) return false;
+    if ((attacker.cantBeBlockedByKeywords ?? []).some((kw) => hasKeyword(blocker, kw))) return false;
+    if ((attacker.protection ?? []).some((quality) => sourceHasProtectionQuality(quality, blocker))) return false;
+    return true;
+  };
+
+  /** Obrażenia w gracza po przypisaniu lethal wybranej grupie blokerów. */
+  const crackbackFaceDamage = (attacker, assignedBlockers) => {
+    const full = Math.max(0, faceDamageOf(attacker));
+    if (assignedBlockers.length === 0) return full;
+    // CR 509.1h + 510.1b: raz legalnie zablokowany atakujący bez trample nie
+    // przypisuje NIC graczowi, niezależnie od mocy i toughness blokera.
+    if (!hasKeyword(attacker, 'trample')) return 0;
+    // CR 702.19b: dopiero trample pozwala przypisać nadmiar po lethal. Już
+    // oznaczone obrażenia obniżają lethal; deathtouch sprowadza go do 1.
+    const deathtouch = hasKeyword(attacker, 'deathtouch');
+    const lethal = assignedBlockers.reduce((sum, blocker) => {
+      const left = Math.max(0, (blocker.toughness ?? 0) - (blocker.damage ?? 0));
+      return sum + (deathtouch && left > 0 ? 1 : left);
+    }, 0);
+    return Math.max(0, full - lethal);
+  };
+
+  /**
+   * Czy istnieje legalny przydział RÓŻNYCH blokerów, po którym bot przeżywa
+   * oba zegary: życie i poison. DFS wybiera też gang-block; jest potrzebny dla
+   * menace i dla redukcji trample. Najpierw próbuje bloki o największej
+   * absorpcji, więc typowy stan kończy się przed pełnym przeglądem podzbiorów.
+   */
+  const survivesProjectedCrackback = (view, attackers, blockers) => {
+    const lifeHeadroom = myLife(view);
+    const poisonHeadroom = POISON_LOSS_LIMIT - myPoison(view);
+    const memo = new Set();
+    const walk = (index, usedMask, lifeDamage, poisonDamage) => {
+      if (lifeDamage >= lifeHeadroom || poisonDamage >= poisonHeadroom) return false;
+      if (index >= attackers.length) return true;
+      const key = `${index}|${usedMask}|${lifeDamage}|${poisonDamage}`;
+      if (memo.has(key)) return false;
+      memo.add(key);
+      const attacker = attackers[index];
+      const eligible = [];
+      for (let i = 0; i < blockers.length; i += 1) {
+        if ((usedMask & (1n << BigInt(i))) !== 0n) continue;
+        if (canIndividuallyBlockCrackback(view, attacker, blockers[i])) eligible.push(i);
+      }
+      const minBlockers = hasKeyword(attacker, 'menace') ? 2 : 1;
+      const groups = [];
+      const pick = (at, mask, ids) => {
+        if (ids.length >= minBlockers) {
+          groups.push({ mask, ids: [...ids] });
+          // Bez trample dodatkowy bloker nie zmniejsza już obrażeń gracza;
+          // zachowujemy go dla kolejnego atakującego. Przy trample gang może
+          // pochłonąć dalszy nadmiar, więc enumeracja idzie dalej.
+          if (!hasKeyword(attacker, 'trample')) return;
+        }
+        for (let pos = at; pos < eligible.length; pos += 1) {
+          const idx = eligible[pos];
+          ids.push(idx);
+          pick(pos + 1, mask | (1n << BigInt(idx)), ids);
+          ids.pop();
+        }
+      };
+      pick(0, 0n, []);
+      groups.sort((a, b) => {
+        const absorbedA = crackbackFaceDamage(attacker, [])
+          - crackbackFaceDamage(attacker, a.ids.map((i) => blockers[i]));
+        const absorbedB = crackbackFaceDamage(attacker, [])
+          - crackbackFaceDamage(attacker, b.ids.map((i) => blockers[i]));
+        return absorbedB - absorbedA;
+      });
+      for (const group of groups) {
+        const damage = crackbackFaceDamage(attacker, group.ids.map((i) => blockers[i]));
+        const nextLife = lifeDamage + (hasKeyword(attacker, 'infect') ? 0 : damage);
+        const nextPoison = poisonDamage + (hasKeyword(attacker, 'infect') ? damage : 0);
+        if (walk(index + 1, usedMask | group.mask, nextLife, nextPoison)) return true;
+      }
+      const unblocked = crackbackFaceDamage(attacker, []);
+      return walk(index + 1, usedMask,
+        lifeDamage + (hasKeyword(attacker, 'infect') ? 0 : unblocked),
+        poisonDamage + (hasKeyword(attacker, 'infect') ? unblocked : 0));
+    };
+    return walk(0, 0n, 0, 0);
+  };
+
+  /** Lista stworów, które realnie mogą zaatakować w następnej turze wroga. */
+  const enemyCrackbackAttackers = (view) => enemyCreatures(view)
+    .filter((object) => canAttackOnNextTurn(view, object));
+
+  /** Infect — drugi zegar przegranej (CR 702.90b, 704.5c). */
   const myPoison = (view) => view.players.find((p) => p.id === view.playerId)?.poison ?? 0;
-  const enemyInfectCrackbackPower = (view) => enemyCreatures(view)
-    .filter((o) => o.cantAttackStatic !== true && hasKeyword(o, 'infect'))
-    .reduce((sum, o) => sum + combatPower(o), 0);
   // M91 (A2): moc stworów przeciwnika, które JUŻ atakują — miara realnego
   // zagrożenia w tej turze (fog ratuje życie tylko wtedy, gdy coś nadlatuje).
   // M92 (audyt PlayerView): publiczne efekty prewencji/regeneracji z widoku.
@@ -12466,53 +12605,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (winsByPoison) score += 1000;
         const winsNow = attackers.length > 0
           && (penetratingPower >= enemyLife || winsByPoison);
-        // E (zgłoszenie właściciela 2026-09-20, „bot atakuje przy 2 życiach
-        // i ginie kontratakiem"): ODDANA GARDA — atak tapnięciem stwora,
-        // który był potrzebny do przeżycia następnej tury. Model gardy (ten
-        // sam co przy blokowaniu): suma wytrzymałości MOICH stworów
-        // zostających w domu (nietapnięte, mogą blokować — deskryptory
-        // cantBlock/detained z widoku) odejmowana od mocy wroga zdolnej
-        // wrócić (`enemyCrackbackPower`). Kara tylko wtedy, gdy PRZED atakiem
-        // garda wystarczała do przeżycia, a po deklaracji już nie — inaczej
-        // nie ma czego oddawać (all-in przy nieuniknionej przegranej zostaje,
-        // a atak wygrywający grę ma +1000 wyżej i nie jest karany).
-        const guardToughness = (declared) => myCreatures(view)
+        // E + D (uwagi z gry 2026-09-20 / 2026-10-11): ODDANA GARDA —
+        // atak tapnięciem stwora potrzebnego do przeżycia następnej walki.
+        // Dawny model odejmował SUMĘ toughness od SUMY mocy. To łamie CR
+        // 509.1h/510.1b: zwykły legalny blok pochłania cały atak bez trample,
+        // nawet 1/1 przed 8/8. Teraz zachowujemy faktycznych blokerów i pytamy,
+        // czy istnieje legalny przydział chroniący życie ORAZ poison.
+        const guardBlockers = (declared) => myCreatures(view)
           .filter((o) => !declared.includes(o.id) && !o.tapped
-            && o.cantBlock !== true && o.detained !== true)
-          .reduce((sum, o) => sum + (o.toughness ?? 0), 0);
-        // Wróg, którego nasz atak BEZ BLOKÓW zabija, MUSI blokować — a blok
-        // zabiera mu blokerów na następną turę. Model deterministyczny: musi
-        // zaabsorbować brakujące obrażenia (totalPower − (życie − 1)),
-        // przyjmujemy najtańszych blokerów (rosnąca wytrzymałość), a ci,
-        // których wytrzymałość nie wytrzymuje mocy najsilniejszego atakującego,
-        // giną i nie wrócą. Bez tej korekty bot uznawałby „wróg na 2 życia
-        // z 2/2 blokerem" za oddanie gardy, choć po wymianie 1:1 nie ma czym
-        // wrócić (anty-over-fix, zgłoszenie E).
+            && o.cantBlock !== true && o.detained !== true);
+        // Wróg, którego nasz atak BEZ BLOKÓW zabija, MUSI blokować — a bloker,
+        // który zginie, nie wróci w następnej turze. Zachowujemy dotychczasowy
+        // deterministyczny model najtańszych wymuszonych bloków, ale wynik jest
+        // zbiorem OBIEKTÓW, nie skalarem odejmowanym błędnie od życia i poison.
         const unblockedLethal = attackers.length > 0 && totalPower >= enemyLife;
         const strongestAttackerPower = attackers
           .reduce((max, id) => Math.max(max, combatPower(objectOnBoard(view, id))), 0);
-        let forcedBlockLoss = 0;
+        const forcedBlockLossIds = new Set();
         if (unblockedLethal) {
           const absorbNeeded = Math.max(0, totalPower - (enemyLife - 1));
           let absorbed = 0;
           for (const blocker of [...blockers].sort((x, y) => (x.toughness ?? 0) - (y.toughness ?? 0))) {
             if (absorbed >= absorbNeeded) break;
             absorbed += blocker.toughness ?? 0;
-            if ((blocker.toughness ?? 0) <= strongestAttackerPower) forcedBlockLoss += combatPower(blocker);
+            if ((blocker.toughness ?? 0) <= strongestAttackerPower) forcedBlockLossIds.add(blocker.id);
           }
         }
-        const crackbackPower = Math.max(0, enemyCrackbackPower(view) - forcedBlockLoss);
-        // J (2026-09-22): drugi zegar — TRUCIZNA. Kontratak stworem z infect
-        // nie zdejmuje życia, tylko dokłada liczniki (CR 702.90b), a przegraną
-        // orzeka SBA przy dziesięciu (CR 704.5c). Ten sam model gardy, inna
-        // waluta: brakujące liczniki zamiast życia.
-        const infectCrackback = Math.max(0, enemyInfectCrackbackPower(view) - forcedBlockLoss);
-        const poisonHeadroom = POISON_LOSS_LIMIT - myPoison(view);
-        const survivedBefore = crackbackPower - guardToughness([]) < myLife(view)
-          && infectCrackback - guardToughness([]) < poisonHeadroom;
-        const survivesAfter = crackbackPower - guardToughness(attackers) < myLife(view)
-          && infectCrackback - guardToughness(attackers) < poisonHeadroom;
-        const throwsGuard = !winsNow && (crackbackPower > 0 || infectCrackback > 0)
+        const crackbackAttackers = enemyCrackbackAttackers(view)
+          .filter((object) => !forcedBlockLossIds.has(object.id));
+        const survivedBefore = survivesProjectedCrackback(view, crackbackAttackers, guardBlockers([]));
+        const survivesAfter = survivesProjectedCrackback(view, crackbackAttackers, guardBlockers(attackers));
+        const throwsGuard = !winsNow && crackbackAttackers.length > 0
           && attackers.length > 0
           && survivedBefore && !survivesAfter;
         // Zegar (B1): gramy o czas, gdy wróg jest blisko śmierci, może nas
