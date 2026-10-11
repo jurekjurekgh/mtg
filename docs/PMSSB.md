@@ -1131,7 +1131,8 @@ Regresja produkcyjnej decyzji bota: **9/9** (dokładny stół z trzema dużymi
 stworami, 6/6 i 12/12 jako ratunkowy chump, latacz, zdrowe życie, nie-stwór
 artefakt, 4/4, 3/3 oraz pokrętło ×0). Fast **8051/8051**, golden master
 **4/4 bez zmiany fixture**, pełne **8315/8315**, benchmark **10/10**, build
-**73 moduły / 5025,4 kB**. Commit `c85b175`.
+**73 moduły / 5025,4 kB**. Commit `c85b175`; GitHub CI **SUCCESS** — run
+`38173232995`.
 
 ## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
 

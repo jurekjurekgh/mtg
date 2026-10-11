@@ -16554,4 +16554,4 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
 - **Dowody:** produkcyjna decyzja bota **9/9**, powiązane animacje **67/67**,
   fast **8051/8051**, pełne **8315/8315**, golden master **4/4 bez
   regeneracji**, benchmark **10/10**, build **73 moduły / 5025,4 kB**. Commit
-  `c85b175`.
+  `c85b175`; GitHub CI **SUCCESS** — run `38173232995`.

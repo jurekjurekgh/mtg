@@ -150,4 +150,4 @@ PMSSB-60 było wykonane, ale dostało brakujący pin C4 decyzji koloru; razem
 - [x] Wyjątek tylko wtedy, gdy nowe ciało zmienia lethal kontrataku w przeżycie.
 - [x] Targeted 9/9 i animacje 67/67; fast 8051/8051; golden 4/4 bez regeneracji; benchmark 10/10; build 73 / 5025,4 kB.
 - [x] Końcowe `test:all` 8315/8315 i dokumentacja.
-- [ ] Zielone CI dla finalnego drzewa.
+- [x] GitHub CI **SUCCESS** — run `38173232995`.
