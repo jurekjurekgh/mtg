@@ -161,9 +161,24 @@ function pickActionButton(actions) {
     // M292: wiersz źródła buduje `picker.js` (`kind: 'button'`), więc tekst
     // mieszka w zagnieżdżonym spanie, a akcja na wierszu — selektor po klasie
     // rodzinnej (dokładnie na nią patrzy Żywy Tester: `$$('#mana-wizard .mana-wizard-source')`).
+    const confirm = wiz.find((el) => /(^| )mana-wizard-confirm( |$)/.test(String(el.className))
+      && !el.disabled && (el.listeners.click ?? []).length > 0);
+    if (confirm) return confirm;
     const source = wiz.find((el) => /(^| )mana-wizard-source( |$)/.test(String(el.className))
       && (el.listeners.click ?? []).length > 0);
     if (source) return source;
+    // C/C2: jeśli same źródła nie domykają płatności, wybierz jedną kartę
+    // Delve. Zmiana rerenderuje modal; zwracamy stary input jako bezpieczny
+    // no-op dla zewnętrznego sterownika (`button.click()`), a kolejny obieg
+    // zobaczy świeży postęp / confirm. Nie wybieramy dalszych kart, gdy confirm
+    // jest już aktywny (gałąź wyżej), więc nie przekraczamy limitu.
+    const delve = wiz.find((el) => /(^| )mana-wizard-delve-toggle( |$)/.test(String(el.className))
+      && !el.checked && !el.disabled);
+    if (delve) {
+      delve.checked = true;
+      delve.emit('change');
+      return delve;
+    }
     return wiz.find((el) => /Anuluj płatność/.test(el.text ?? '')) ?? null;
   }
   const choicePanel = dom.get('choice-request');
@@ -232,6 +247,10 @@ globalThis.REPO_DECKS = {
   // nietapniętych podstawowych lądach (Wyspa, Góra, Las, Bagno) — dokładnie
   // układ ze zgłoszenia („kreator kazał tapnąć 4 lądy do czaru za 2”).
   'g-canonized': '# Talia G\n\n4x Island\n4x Mountain\n4x Forest\n4x Swamp\n24x Canonized in Blood (LCI)\n',
+  // C/C2 (uwaga z gry 2026-10-11): tura 1 Tome Scour w siebie daje
+  // sześć kart materiału (5 zmielonych + czar), tura 2 Forest + Island nie
+  // opłacają samodzielnie Hooting Mandrills {5}{G}, ale mana + Delve już tak.
+  'delve-wizard': '# Talia Delve wizard\n\n10x Island\n10x Forest\n10x Tome Scour\n10x Hooting Mandrills\n',
 };
 // 15f: przełączniki belki startują z pamięci — harness click-through wpina
 // hi-gfx OFF PRZED bootem (warstwa pauzuje grę czekając na zamknięcie;
@@ -588,6 +607,17 @@ function wizardSourceButtons() {
     .filter((el) => (el.listeners.click ?? []).length > 0);
 }
 
+/** Elementy całego poddrzewa Mini-DOM (C/C2: ptaszki i confirm Delve). */
+function wizardDescendants() {
+  const walk = (el, acc = []) => { for (const c of el.children ?? []) { acc.push(c); walk(c, acc); } return acc; };
+  return walk(dom.get('mana-wizard-body'));
+}
+
+function wizardDelveToggles() {
+  return wizardDescendants()
+    .filter((el) => /(^| )mana-wizard-delve-toggle( |$)/.test(String(el.className)));
+}
+
 test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źródła tapowane po jednym, rzut sam się dokłada', () => {
   dom.get('seed').value = '1';
   dom.get('deck-human').value = 'many-wizard';
@@ -619,6 +649,131 @@ test('kreator many (E.3a): dwukolorowa płatność Curate otwiera wizard, źród
   assert.equal(dom.get('mana-wizard').className, 'modal', 'po zebraniu sumy kreator ma się zamknąć');
   assert.match(textOf(dom.get('stack-zone')), /Curate/, 'Curate po zebraniu many nie trafił na stos');
   assert.doesNotMatch(dom.get('notice').className, /active/);
+});
+
+test('C2 RED: Hooting Mandrills jest oferowany i płaci maną + Delve w jednym Mana Wizardzie', () => {
+  dom.get('seed').value = '2';
+  dom.get('deck-human').value = 'delve-wizard';
+  dom.get('deck-bot').value = 'delve-wizard';
+  dom.get('new-game').click();
+
+  let islandPlayed = false;
+  let tomeRequested = false;
+  let forestPlayed = false;
+  let mandrillsOffer = null;
+  for (let i = 0; i < 500 && !mandrillsOffer; i += 1) {
+    if (dom.get('bot-move').className === 'modal active') {
+      dom.get('bot-move-ok').click();
+      continue;
+    }
+    if (dom.get('choice-request').className === 'modal active') {
+      const tree = (function walk(el, acc = []) {
+        for (const child of el.children ?? []) { acc.push(child); walk(child, acc); }
+        return acc;
+      })(dom.get('choice-request-body'));
+      // Wspólny picker reprezentuje część wyborów ptaszkiem/radiem + osobnym
+      // Zatwierdź (mulligan, cel czaru). Wybieramy jawnie „Zachowaj”, a przy
+      // Tome Scour — własnego gracza („Gracz”/„Ty”), bez polegania na kolejności.
+      const rows = tree.filter((el) => el.tagName === 'label');
+      const desiredRow = rows.find((el) => /Zachowaj/.test(textOf(el)))
+        ?? rows.find((el) => /Gracz|\bTy\b/.test(textOf(el)));
+      const toggle = desiredRow?.children?.find((el) => el.tagName === 'input')
+        ?? tree.find((el) => el.tagName === 'input' && !el.checked);
+      if (toggle) {
+        toggle.checked = true;
+        toggle.emit('change');
+        const confirm = tree.find((el) => el.tagName === 'button'
+          && /Zatwierdź|Zachowaj/.test(textOf(el)) && !el.disabled);
+        assert.ok(confirm, `wybór bez aktywnego Zatwierdź: ${textOf(dom.get('choice-request-body'))}`);
+        confirm.click();
+        continue;
+      }
+      const options = tree.filter((el) => el.tagName === 'button'
+        && (el.listeners.click ?? []).length > 0 && !el.disabled);
+      const self = options.find((el) => /Gracz|\bTy\b/.test(textOf(el)));
+      const option = self ?? options[0];
+      assert.ok(option, `pusty modal wyboru: ${textOf(dom.get('choice-request-body'))}`);
+      option.click();
+      continue;
+    }
+    const actions = dom.get('actions').children
+      .filter((el) => (el.listeners.click ?? []).length > 0);
+    const mulligan = actions.find((el) => /Mulligan/.test(textOf(el)));
+    if (mulligan) {
+      mulligan.click();
+      continue;
+    }
+    if (!islandPlayed) {
+      const island = actions.find((el) => /^Zagraj ląd/.test(textOf(el)) && /Island/.test(textOf(el)));
+      assert.ok(island, `brak Island w otwarciu seeda 2; akcje=${textOf(dom.get('actions'))}; ręka=${textOf(dom.get('hand'))}`);
+      island.click();
+      islandPlayed = true;
+      continue;
+    }
+    if (!tomeRequested) {
+      const tome = actions.find((el) => /Tome Scour/.test(textOf(el)));
+      assert.ok(tome, `brak oferty Tome Scour po Island: ${textOf(dom.get('actions'))}`);
+      tome.click();
+      tomeRequested = true;
+      continue;
+    }
+    const ownGraveReady = /Tome Scour/.test(textOf(dom.get('grave-own')))
+      && dom.get('grave-own').children.length >= 5;
+    if (ownGraveReady && !forestPlayed) {
+      const forest = actions.find((el) => /^Zagraj ląd/.test(textOf(el)) && /Forest/.test(textOf(el)));
+      if (forest) {
+        forest.click();
+        forestPlayed = true;
+        continue;
+      }
+    }
+    if (forestPlayed) {
+      mandrillsOffer = actions.find((el) => /Hooting Mandrills/.test(textOf(el))) ?? null;
+      if (mandrillsOffer) break;
+    }
+    // Nie rzucamy innych kart z talii testowej; tylko przepuszczamy priorytet,
+    // przyjmujemy brak bloków i przechodzimy do tury 2.
+    const advance = actions.find((el) => /Dalej \(pass\)|Bez bloków|Bez ataku/.test(textOf(el)));
+    assert.ok(advance, `brak bezpiecznego przejścia w kroku ${i}: ${textOf(dom.get('actions'))}`);
+    advance.click();
+  }
+
+  assert.ok(forestPlayed, `nie dotarto do Forestu w turze 2; tura=${textOf(dom.get('turn-indicator'))}; grób=${textOf(dom.get('grave-own'))}; akcje=${textOf(dom.get('actions'))}`);
+  assert.ok(mandrillsOffer,
+    `oferta Delve musi istnieć mimo że dwa lądy nie płacą {5}{G}: ${textOf(dom.get('actions'))}`);
+  const handBefore = dom.get('hand').children.length;
+  mandrillsOffer.click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active',
+    'klik Delve ma otworzyć wspólny Mana Wizard, nie osobny wybór po pełnej manie');
+  assert.doesNotMatch(dom.get('choice-request').className, /active/,
+    'stary osobny wizard resolve_delve_exile nie może otworzyć się przed płatnością');
+  assert.match(textOf(dom.get('mana-wizard-body')), /Delve/);
+
+  // Zachowujemy Island: pięć kart pokrywa {5}, a Forest — jedyny kolorowy pip.
+  for (let picked = 0; picked < 5; picked += 1) {
+    const toggle = wizardDelveToggles().find((el) => !el.checked);
+    assert.ok(toggle, `brak kandydata Delve nr ${picked + 1}`);
+    toggle.checked = true;
+    toggle.emit('change');
+  }
+  const forestSource = wizardSourceButtons().find((el) => /Forest/.test(textOf(el)));
+  assert.ok(forestSource, `po Delve kreator musi nadal wymagać prawdziwego {G}: ${textOf(dom.get('mana-wizard-body'))}`);
+  forestSource.click();
+  assert.equal(dom.get('mana-wizard').className, 'modal active',
+    'Delve wymaga jawnego zatwierdzenia po wybraniu kart i zebraniu many');
+  const confirm = wizardDescendants()
+    .find((el) => /(^| )mana-wizard-confirm( |$)/.test(String(el.className)));
+  assert.ok(confirm && !confirm.disabled, 'pełna wspólna płatność odblokowuje Zatwierdź');
+  confirm.click();
+
+  assert.equal(dom.get('mana-wizard').className, 'modal', 'rzut zamyka Mana Wizard');
+  assert.doesNotMatch(dom.get('choice-request').className, /active/,
+    'gotowe delveExileIds omijają drugi modal Delve');
+  assert.equal(dom.get('hand').children.length, handBefore - 1, 'Mandrills schodzi z ręki po płatności');
+  assert.match(`${textOf(dom.get('stack-zone'))} ${textOf(dom.get('bf-own'))}`, /Hooting Mandrills/,
+    'Mandrills trafia na stos albo zdąża rozstrzygnąć się na pole bitwy');
+  assert.ok(dom.get('exile-zone').children.length >= 5, 'pięć wskazanych kart zostało wygnanych jako koszt Delve');
+  assert.doesNotMatch(dom.get('notice').className, /active/, textOf(dom.get('notice-body')));
 });
 
 test('kreator many (zgłoszenie G): {1}{B} przy czterech lądach domyka się w DWÓCH tapnięciach', () => {

@@ -4,6 +4,7 @@ import { escapeHtml, manaSymbolsHtml, xCostSymbols } from './mana-icons.js';
 import { parseManaCost, totalManaNeeded, unitCoversRequirement } from '../engine/mana-cost.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
+import { polishPluralCount } from './polish-plural.js';
 
 /**
  * Sekwencyjny kreator płatności many (E.3a, zgłoszenie właściciela 2026-08-06):
@@ -625,7 +626,18 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  * main.js do postaci testowalnej — zachowanie bez zmian, ale teraz przypięte
  * testami (wcześniej reguła była inline i nie miała żadnego testu).
  */
-export function shouldOpenManaWizard({ sources, poolMana, totalNeeded, requirements, poolUnits = [] }) {
+export function shouldOpenManaWizard({
+  sources, poolMana, totalNeeded, requirements, poolUnits = [],
+  delveCandidates = [], maxDelve = 0,
+}) {
+  // C/C2 (uwaga z gry 2026-10-11): karta grobu jest RÓWNIEŻ wyborem płatności,
+  // ale nie źródłem many — pokrywa wyłącznie {1} części generycznej (CR
+  // 702.66a–b). Choć zwykły solver źródeł zwróci 0, gdy same lądy nie starczą,
+  // legalna oferta silnika może istnieć dzięki mana + Delve. Każdy kandydat
+  // ma własną tożsamość i wartość w grobie, więc nawet jeden legalny kandydat
+  // jest decyzją gracza i otwiera wspólny wizard. Legalność całego rzutu nadal
+  // pochodzi z `legalCommands`; ta bramka wyłącznie wybiera sposób obsługi UI.
+  if (maxDelve > 0 && Array.isArray(delveCandidates) && delveCandidates.length > 0) return true;
   // `countPaymentVariants` liczy RÓŻNE KSZTAŁTY płatności (deduplikacja po
   // profilu źródła „rodzaj:kolory#ilość#koszt”), więc dwa identyczne lasy to
   // JEDEN kształt. `poolUnits` (jednostki kolorowej puli, te same co czyta
@@ -694,19 +706,44 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   const player = (view.players ?? []).find((p) => p.id === playerId);
   const pool = player?.mana ?? 0;
   const offeredRaw = Array.isArray(sources) ? sources : untappedLandSourcesOf(view, playerId);
-  const remainingTotal = Math.max(0, descriptor.totalNeeded - pool);
+  const requirements = descriptor.requirements ?? [];
+
+  // C/C2 (uwaga z gry 2026-10-11): Delve jest częścią TEJ SAMEJ płatności.
+  // Zaznaczona karta nie produkuje many i nie może pokryć pipa koloru; każda
+  // legalna karta zastępuje dokładnie {1} części generycznej (CR 702.66a–b).
+  // Deskryptor przechowuje Set między odświeżeniami modala, ale czysta funkcja
+  // akceptuje też tablicę (testy / serializowalny model renderu).
+  const delveCandidates = Array.isArray(descriptor.delveCandidates)
+    ? descriptor.delveCandidates : [];
+  const hasDelve = delveCandidates.length > 0 && Number.isInteger(descriptor.maxDelve);
+  const selectedRaw = descriptor.selectedDelveIds instanceof Set
+    ? [...descriptor.selectedDelveIds]
+    : (Array.isArray(descriptor.selectedDelveIds) ? descriptor.selectedDelveIds : []);
+  const selectedDelveIds = [...new Set(selectedRaw)];
+  const candidateIds = new Set(delveCandidates.map((candidate) => candidate.id));
+  const maxDelve = hasDelve ? Math.max(0, descriptor.maxDelve) : 0;
+  const delveSelectionValid = !hasDelve || (selectedDelveIds.length <= maxDelve
+    && selectedDelveIds.every((id) => candidateIds.has(id)));
+  // Nawet dla nielegalnego nadmiaru postęp wizualny nie może zejść poniżej
+  // legalnego minimum; `done` i tak pozostaje false przez selectionValid.
+  const selectedDelveCount = hasDelve
+    ? Math.min(selectedDelveIds.length, maxDelve)
+    : 0;
+  const manaNeeded = Math.max(requirements.length, descriptor.totalNeeded - selectedDelveCount);
+  const remainingTotal = Math.max(0, manaNeeded - pool);
+
   // KOLOROWA PULA (cz. 8): pokrycie kolorow z jednostek many W PULI (poolUnits
   // z expandManaPool(player.manaPool) - main.js czyta z sesji). Pula odzwierciedla
   // KOLORY tapnietych zrodel (MtG: tapniecie Wyspy dodaje {U}), wiec check jest
   // poprawny BEZ recznego sledzenia co-Gracz-tapnal (usuniety bandaz committed).
   // Castability (untapped) sprawdza engine w hasColor PRZED tapnieciem.
-  const coveredIndexes = coveredRequirementIndexes(poolUnits.map((colors) => ({ colors })), descriptor.requirements);
+  const coveredIndexes = coveredRequirementIndexes(poolUnits.map((colors) => ({ colors })), requirements);
   const covered = coveredIndexes.size;
   // A/G (zgłoszenie właściciela): kreator prowadzi płatność — kolejność
   // „najpierw brakujące kolory" + filtr źródeł, które nic już nie wnoszą.
   // Brakujące KOLORY czytamy z indeksów pokrytych grup (nie z `slice(covered)`
   // — patrz `coveredRequirementIndexes`).
-  const missingColors = descriptor.requirements
+  const missingColors = requirements
     .filter((_, index) => !coveredIndexes.has(index))
     .flatMap((colors) => colors ?? []);
   // Część BEZBARWNA kosztu = suma − liczba grup pipów (każdy pip zużywa jedną
@@ -717,21 +754,29 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   // przy {1}{W}{U} po tapnięciu Wyspy pula {U} „zamykała" {1}, choć
   // pokrywała pip {U}, i kreator zostawiał tylko W-landy). Świadkowie:
   // `zgloszenie-f-mana-wizard-filtr-po-pipie.test.js` (F1–F5).
-  const genericNeeded = Math.max(0, descriptor.totalNeeded - descriptor.requirements.length);
-  const genericMet = (pool - covered) >= genericNeeded;
+  // C/C2: legalne Delve zmniejsza WYŁĄCZNIE tę wartość, nigdy requirements.
+  const genericNeeded = Math.max(0, descriptor.totalNeeded - requirements.length);
+  const genericAfterDelve = Math.max(0, genericNeeded - selectedDelveCount);
+  const genericMet = (pool - covered) >= genericAfterDelve;
   const offered = guideManaSources(offeredRaw, missingColors, genericMet)
     .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
   return {
     pool,
+    manaNeeded,
     remainingTotal,
-    requirements: descriptor.requirements.map((colors, index) => ({ colors, covered: coveredIndexes.has(index) })),
+    requirements: requirements.map((colors, index) => ({ colors, covered: coveredIndexes.has(index) })),
     coveredCount: covered,
     missingColors,
+    delveCandidates,
+    selectedDelveIds,
+    selectedDelveCount,
+    maxDelve,
+    delveSelectionValid,
     // Ile nietapniętych źródeł było PRZED filtrem — komunikat pustej listy
     // odróżnia „nie ma czym tapnąć" od „nic nie daje brakującego koloru".
     availableCount: offeredRaw.length,
     untappedSources: offered,
-    done: remainingTotal <= 0 && covered >= descriptor.requirements.length,
+    done: delveSelectionValid && remainingTotal <= 0 && covered >= requirements.length,
   };
 }
 
@@ -755,19 +800,26 @@ export function wizardSourceName(source, session) {
  * które kolory są jeszcze niepokryte), przyciski PO JEDNEMU źródle oraz
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
-export function renderManaWizard(host, model, { onTapSource, onCancel, session = null }) {
+export function renderManaWizard(host, model, {
+  onTapSource, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
+}) {
   host.textContent = '';
+  const hasDelve = Array.isArray(model.delveCandidates) && model.delveCandidates.length > 0;
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';
-  intro.innerHTML = `Płatność ${manaSymbolsHtml(model.costStr)} — tapuj źródła po jednym`;
+  intro.innerHTML = `Płatność ${manaSymbolsHtml(model.costStr)} — `
+    + (hasDelve ? 'tapuj źródła i zaznacz karty Delve' : 'tapuj źródła po jednym');
   host.appendChild(intro);
   const progress = document.createElement('div');
   progress.className = 'mana-wizard-progress';
-  const pending = model.requirements.filter((r) => !r.covered).map((r) => r.colors.map((c) => `{${c}}`).join('/'));
+  const pending = (model.requirements ?? []).filter((r) => !r.covered)
+    .map((r) => r.colors.map((c) => `{${c}}`).join('/'));
   const parts = [];
   if (model.remainingTotal > 0) parts.push(`pozostało ${model.remainingTotal} many`);
   if (pending.length > 0) parts.push(`kolory do pokrycia: ${manaSymbolsHtml(pending.join(', '))}`);
-  progress.innerHTML = parts.length > 0 ? parts.join(' · ') : 'Mana zebrana — rzucam…';
+  progress.innerHTML = parts.length > 0
+    ? parts.join(' · ')
+    : (hasDelve ? 'Płatność gotowa — zatwierdź rzut.' : 'Mana zebrana — rzucam…');
   host.appendChild(progress);
   // G (zgłoszenie właściciela 2026-09-20): źródło DOMYKAJĄCE brakujący kolor
   // jest wypisane wprost („— pokrywa {B}”), a wiersze z pustą listą źródeł
@@ -814,6 +866,51 @@ export function renderManaWizard(host, model, { onTapSource, onCancel, session =
     list.appendChild(empty);
   }
   host.appendChild(list);
+
+  // C/C2: jedna powierzchnia decyzji dla całego kosztu. Karty grobu są
+  // ptaszkami wspólnego pickera (tak jak osobny historyczny wizard Delve), ale
+  // pozostają w Mana Wizardzie obok źródeł. `checked` pochodzi z deskryptora,
+  // więc wybór przeżywa każdy rerender po tapnięciu lądu.
+  if (hasDelve) {
+    const delveIntro = document.createElement('div');
+    delveIntro.className = 'picker-section mana-wizard-delve-intro';
+    delveIntro.textContent = `Delve — wybrano ${model.selectedDelveCount ?? 0} z maks. ${model.maxDelve ?? 0}; każda karta pokrywa {1} części generycznej.`;
+    host.appendChild(delveIntro);
+    const selected = new Set(model.selectedDelveIds ?? []);
+    const delveList = document.createElement('div');
+    delveList.className = 'mana-wizard-delve-list picker-list';
+    for (const candidate of model.delveCandidates) {
+      renderPickerRow(delveList, {
+        id: candidate.id,
+        openCardId: candidate.cardId ?? candidate.id,
+        label: candidate.name ?? candidate.cardId ?? candidate.id,
+        checked: selected.has(candidate.id),
+        rowClassName: 'mana-wizard-delve-row',
+        toggleClassName: 'mana-wizard-delve-toggle',
+        nameClassName: 'mana-wizard-delve-name',
+        onToggle: (on, id) => onToggleDelve?.(id, on),
+        onOpenCard: typeof onOpenCard === 'function' ? onOpenCard : null,
+      });
+    }
+    host.appendChild(delveList);
+    if (model.delveSelectionValid === false) {
+      const invalid = document.createElement('div');
+      invalid.className = 'picker-status mana-wizard-delve-error is-problem';
+      const max = model.maxDelve ?? 0;
+      invalid.textContent = `Możesz wygnać najwyżej ${max} ${polishPluralCount(max, 'kartę', 'karty', 'kart')} — odznacz nadmiar.`;
+      host.appendChild(invalid);
+    }
+    const confirm = document.createElement('button');
+    confirm.className = 'primary-btn mana-wizard-confirm';
+    confirm.type = 'button';
+    confirm.textContent = 'Zatwierdź płatność i rzuć';
+    confirm.disabled = model.paymentReady !== true;
+    confirm.addEventListener('click', () => {
+      if (!confirm.disabled) onConfirm?.();
+    });
+    host.appendChild(confirm);
+  }
+
   const cancel = document.createElement('button');
   cancel.className = 'ghost-btn mana-wizard-cancel';
   cancel.type = 'button';

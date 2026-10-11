@@ -36,7 +36,7 @@ import { installPressActivation, installSwipeGesture, installTapGesture } from '
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
   wizardSourceName,
 } from './mana-wizard.js';
-import { effectiveSpellManaCost } from '../engine/spells.js';
+import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
@@ -2625,8 +2625,38 @@ function bootstrapTable() {
       const turnUpCost = stateObject?.cloakTurnUpCost ?? stateObject?.manifestTurnUpCost;
       if (Number.isInteger(turnUpCost)) opts.turnUpCost = turnUpCost;
     }
-    const descriptor = paymentDescriptorOf(cmd, view, opts);
+    let descriptor = paymentDescriptorOf(cmd, view, opts);
     if (!descriptor) return null;
+    // C/C2 (uwaga z gry 2026-10-11): Delve jest składnikiem TEJ SAMEJ
+    // płatności, co mana. Kandydatów i limit bierzemy z pełnego stanu, dokładnie
+    // z tej samej reguły co walidacja silnika (`delveExileLimit`); widok służy
+    // tylko do publicznej nazwy/karty w wierszu. Set wyboru zostaje w
+    // deskryptorze między rerenderami po tapnięciu źródła.
+    const isDelveCast = (cmd.type === 'cast_permanent' || cmd.type === 'cast_spell')
+      && stateObject?.delve === true && cmd.delveExileIds == null;
+    if (isDelveCast) {
+      const maxDelve = delveExileLimit(session.state, HUMAN_ID, stateObject);
+      if (maxDelve > 0) {
+        const visibleGrave = new Map((view.zones?.graveyard ?? []).map((o) => [o.id, o]));
+        const delveCandidates = (session.state?.zones?.graveyard ?? [])
+          .filter((id) => id !== stateObject.id
+            && session.state?.objects?.get(id)?.controllerId === HUMAN_ID)
+          .map((id) => {
+            const object = visibleGrave.get(id) ?? session.state.objects.get(id);
+            return {
+              id,
+              cardId: object?.cardId ?? null,
+              name: session.nameOfObject?.(id) ?? session.nameOf(object?.cardId) ?? id,
+            };
+          });
+        descriptor = {
+          ...descriptor,
+          delveCandidates,
+          maxDelve,
+          selectedDelveIds: new Set(),
+        };
+      }
+    }
     // D (Powerstone) + F2: pula i źródła filtrowane WG KONTRAKTU SILNIKA
     // (restrictedManaBlocked — blokada tylko dla rzutu czaru nie-artefaktu).
     const restrictedBlocked = restrictedSpellBlockedFor(cmd, descriptor);
@@ -2651,6 +2681,8 @@ function bootstrapTable() {
     if (!shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
+      delveCandidates: descriptor.delveCandidates,
+      maxDelve: descriptor.maxDelve,
     })) return null;
     return { ...descriptor, cmd, _restrictedBlocked: restrictedBlocked };
   }
@@ -2705,14 +2737,26 @@ function bootstrapTable() {
       ? poolUnitsUnrestricted
       : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
     const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
-    if (progress.done) {
+    const hasDelve = (manaWizardDescriptor.delveCandidates?.length ?? 0) > 0;
+    const finishPayment = () => {
       const pending = manaWizardDescriptor;
-      const stillLegal = (view.legalCommands ?? []).some((c) => c.type === pending.cmd.type
+      if (!pending) return;
+      const current = session.view();
+      const stillLegal = (current.legalCommands ?? []).some((c) => c.type === pending.cmd.type
         && c.objectId === pending.cmd.objectId
         && JSON.stringify(c.targets ?? null) === JSON.stringify(pending.cmd.targets ?? null));
+      const paidCommand = hasDelve
+        ? { ...pending.cmd, delveExileIds: [...(pending.selectedDelveIds ?? [])].sort() }
+        : pending.cmd;
       closeManaWizard();
-      if (stillLegal) playDirect(pending.cmd);
+      if (stillLegal) playDirect(paidCommand);
       else showNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+    };
+    // Zwykła płatność zachowuje dotychczasowe auto-domknięcie. Delve MUSI
+    // zostać na ekranie do jawnego zatwierdzenia: nawet gdy pula już płaci
+    // całość, gracz może wybrać wygnanie kart zamiast wydawania tej many.
+    if (progress.done && !hasDelve) {
+      finishPayment();
       return;
     }
     renderManaWizard(els.manaWizardBody, {
@@ -2728,6 +2772,15 @@ function bootstrapTable() {
       // koloru" od „nie ma czym tapnąć".
       availableCount: progress.availableCount,
       untappedSources: progress.untappedSources.map((src) => ({ ...src, name: wizardSourceName(src, session) })),
+      // C/C2: ten sam model renderu dostaje publiczne karty grobu i postęp
+      // wyboru. `paymentReady` nie jest drugą regułą — to dokładnie `done`
+      // wyliczone wyżej przez wspólny wizardProgress.
+      delveCandidates: progress.delveCandidates,
+      selectedDelveIds: progress.selectedDelveIds,
+      selectedDelveCount: progress.selectedDelveCount,
+      maxDelve: progress.maxDelve,
+      delveSelectionValid: progress.delveSelectionValid,
+      paymentReady: progress.done,
     }, {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
       // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
@@ -2740,6 +2793,21 @@ function bootstrapTable() {
         playDirect(command, { holdPriority: true });
         refreshManaWizard();
       },
+      onToggleDelve: (objectId, on) => {
+        const selected = manaWizardDescriptor?.selectedDelveIds;
+        if (!(selected instanceof Set)) return;
+        if (on) selected.add(objectId); else selected.delete(objectId);
+        refreshManaWizard();
+      },
+      onConfirm: () => {
+        // Handler powstaje wyłącznie z bieżącego renderu. Mimo to ponownie
+        // sprawdzamy model po kliknięciu (fail-closed na stary węzeł DOM).
+        const latest = wizardProgress(session.view(), HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
+        if (latest.done) finishPayment();
+      },
+      onOpenCard: typeof openCardFullscreenByCardId === 'function'
+        ? openCardFullscreenByCardId : null,
+      session,
       onCancel: () => closeManaWizard(),
     });
   }
