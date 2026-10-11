@@ -1953,6 +1953,111 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const n = Number.isInteger(e?.amount) ? e.amount : 2;
     return Math.max(0, 10 * n - 2 * P.creatureManaCostWeight);
   };
+
+  // Uwaga z gry B (2026-10-11): linked animation jest PAYOFFEM, nie ozdobnym
+  // riderem ciała. Cała rodzina jest rozpoznawana po deskryptorze efektu
+  // `animate_linked`, nigdy po id/nazwie Skilled Animatora (ADR 0002).
+  const linkedAnimationEffectsOf = (def) => (def?.abilities ?? [])
+    .filter((a) => a?.type === 'triggered' && a.trigger?.event === 'enter_battlefield')
+    .flatMap((a) => Array.isArray(a.effect) ? a.effect : [a.effect])
+    .filter((e) => e?.type === 'animate_linked');
+
+  /** Czy własny artefakt realnie zyskuje na ustawieniu wskazanej bazy P/T. */
+  const linkedAnimationHasUsefulTarget = (view, effect) => {
+    const targetPower = Number.isFinite(effect?.power) ? effect.power : 0;
+    const targetToughness = Number.isFinite(effect?.toughness) ? effect.toughness : 0;
+    return (view.zones.battlefield ?? []).some((o) => {
+      if (o.controllerId !== view.playerId) return false;
+      const artifact = o.kind === 'artifact' || (o.types ?? []).includes('Artifact');
+      if (!artifact) return false;
+      const creature = o.kind === 'creature' || (o.types ?? []).includes('Creature');
+      // Nie-stwór zyskuje cały korpus i zawsze jest godnym celem.
+      if (!creature) return true;
+      const power = o.power ?? 0;       // PlayerView niesie wartości efektywne (Z-1)
+      const toughness = o.toughness ?? 0;
+      const weightedGain = (targetPower - power) * P.creaturePowerWeight
+        + (targetToughness - toughness) * P.creatureToughnessWeight;
+      // 4/4 → 5/5 (ogólniej: oba wymiary najwyżej o 1 od nowej bazy) to za
+      // mały zysk, by zużyć główny potencjał karty. Ciało asymetryczne 5/2
+      // nadal może być godnym celem, jeśli całkowity wynik naprawdę rośnie.
+      const alreadyLarge = power >= targetPower - 1 && toughness >= targetToughness - 1;
+      return !alreadyLarge && weightedGain > 0;
+    });
+  };
+
+  /** Czy pojedynczy bloker może stanąć przed napastnikiem (menace osobno). */
+  const canSingleBlockNextCombat = (attacker, blocker) => {
+    const withoutMenace = {
+      ...attacker,
+      keywords: (attacker?.keywords ?? []).filter((kw) => kw !== 'menace'),
+    };
+    return attackerCanBeBlocked(withoutMenace, [blocker]);
+  };
+
+  /**
+   * Przybliżenie obrażeń w twarz w najbliższym kontrataku po optymalnych
+   * chump-blockach. To tylko scoring; legalność nadal należy do combat.js.
+   * Blokerzy idą najpierw w największe zagrożenia, a mniej elastyczny bloker
+   * jest zużywany przed latającym/reach, żeby nie marnować pokrycia ewazji.
+   */
+  const projectedNextCombatDamage = (view, candidateBlockers) => {
+    const attackers = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId !== view.playerId && o.kind === 'creature'
+        && o.cantAttackStatic !== true && !hasKeyword(o, 'infect') && combatPower(o) > 0)
+      .sort((a, b) => combatPower(b) - combatPower(a));
+    const available = candidateBlockers
+      .filter((o) => o && o.kind === 'creature' && !o.tapped
+        && o.cantBlock !== true && o.detained !== true);
+    let face = 0;
+    for (const attacker of attackers) {
+      const compatible = available.filter((b) => canSingleBlockNextCombat(attacker, b));
+      const need = hasKeyword(attacker, 'menace') ? 2 : 1;
+      if (compatible.length < need) {
+        face += combatPower(attacker);
+        continue;
+      }
+      const flexibility = (blocker) => attackers
+        .filter((other) => canSingleBlockNextCombat(other, blocker)).length;
+      compatible.sort((a, b) => flexibility(a) - flexibility(b)
+        || (b.toughness ?? 0) - (a.toughness ?? 0));
+      const chosen = compatible.slice(0, need);
+      for (const blocker of chosen) available.splice(available.indexOf(blocker), 1);
+      if (hasKeyword(attacker, 'trample')) {
+        const absorbed = hasKeyword(attacker, 'deathtouch')
+          ? chosen.length
+          : chosen.reduce((sum, b) => sum + Math.max(1, (b.toughness ?? 0) - (b.damage ?? 0)), 0);
+        face += Math.max(0, combatPower(attacker) - absorbed);
+      }
+    }
+    return face;
+  };
+
+  /** Wyjątek właściciela: samo ciało może wejść bez payoffu, jeśli ratuje życie. */
+  const linkedAnimationEmergencyBlockerSavesLife = (view, def) => {
+    if (!(def?.types ?? []).includes('Creature')) return false;
+    const life = myLife(view);
+    if (life <= 0) return false;
+    const blockers = (view.zones.battlefield ?? [])
+      .filter((o) => o.controllerId === view.playerId && o.kind === 'creature');
+    const before = projectedNextCombatDamage(view, blockers);
+    if (before < life) return false; // nie ma niskiego życia pod lethalnym zegarem
+    const entering = {
+      id: 'linked-animation-emergency-blocker', controllerId: view.playerId,
+      kind: 'creature', types: def.types ?? ['Creature'], keywords: def.keywords ?? [],
+      power: def.power ?? 0, toughness: def.toughness ?? 0,
+      tapped: false, cantBlock: false, detained: false,
+    };
+    return projectedNextCombatDamage(view, [...blockers, entering]) < life;
+  };
+
+  const linkedAnimationCastPenalty = (view, def) => {
+    const effects = linkedAnimationEffectsOf(def);
+    if (effects.length === 0) return 0;
+    if (effects.some((e) => linkedAnimationHasUsefulTarget(view, e))) return 0;
+    if (linkedAnimationEmergencyBlockerSavesLife(view, def)) return 0;
+    return P.linkedAnimationFutilePenalty;
+  };
+
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -2061,7 +2166,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wyłącznie tam, gdzie odkręcony stwór od razu zyskuje akcję — szczegół w
     // `untapAllCreaturesValue` (L50/L131: wartość bez wymiaru).
     untap_all_creatures_you_control: (e, view) => untapAllCreaturesValue(view),
-    animate_linked: (e, view) => ((view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId && (o.kind === 'artifact' || (o.types ?? []).includes('Artifact'))) ? 10 : 0),
+    // Uwaga B: premia tylko za GODNY cel (nie za dowolne duże artifact
+    // creature, któremu ustawienie bazy 5/5 daje symboliczne +1/+1).
+    animate_linked: (e, view) => linkedAnimationHasUsefulTarget(view, e) ? 10 : 0,
     // PMSSB-15/F4: ETB-prewencji (Shieldmage) — okno wartości liczone dla
     // moich pasujących stworów, które realnie oberżą (walka/burn na stosie);
     // dawniej płaskie 3 niezależnie od sytuacji (inverse: bezsensowny main-phase
@@ -8891,6 +8998,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             * (Math.max(0, (card?.manaCost ?? 0) - costReduction)
               + coloredPipsOf(card?.cardId ?? '').length);
         }
+        // Uwaga z gry B: permanent z głównym ETB `animate_linked` bez godnego
+        // artefaktu traci potencjał. Kara znika wyłącznie, gdy samo ciało jako
+        // nowy bloker zmienia najbliższy lethal w przeżycie rundy.
+        score -= linkedAnimationCastPenalty(view, def);
         // M258/A (uwaga właściciela, Squire's Lightblade): wartość equipmentu
         // żyje na NOSICIELU. Rzut przy braku własnych kreatur to marnowanie:
         // ETB „attach za darmo" fizzluje (CR 608.2b), a karta czeka na stole
