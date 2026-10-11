@@ -914,6 +914,15 @@ z podpowiedzią raz na pole; `MTG_STRICT_ADD_OBJECT=1` zamienia je w wyjątek.
 Twardy rzut wywalił 141 testów (pola wchodzą przez `...spread` w 46 plikach),
 stąd tryb ostrzegawczy — wzorzec L38.
 
+
+**Powrót klasy 2026-10-11 (Withstand/B4):** test odpowiedzi na Shock wkładał
+wpis na stos przez `addObject(..., { targets })`. `targets` nie należy do
+kontraktu fabryki, więc cel ginął; pin był zielony tylko dlatego, że bot i tak
+rzucał Withstand dla ridera draw. Po naprawie fixture'a na produkcyjne
+`playerView` + `execute` + przekazanie priorytetu test zaczerwienił właściwą
+regułę. Wniosek jest szerszy niż dane karty: obiekt runtime ze znaczeniem
+regułowym powstaje tą samą komendą co w grze, nie przez podobny kształt JSON.
+
 **Strażnicy:** `test/m258-zywy-tester-deskryptory.test.js` (D1–D3, realna
 ścieżka talii) · `test/m265-hand-view-alt-cost-descriptors.test.js` (6, pierwszy
 enumeruje katalog). Mutacje: usunięcie pola z `installDeck` → D1–D3; usunięcie

@@ -129,3 +129,14 @@ Batcha 65: semantykę self-target no-op Drone, faktyczne obrażenia Blitza
 Creature Planeswalkerowi i poprawną podstawę zejścia Impulse ze stosu.
 PMSSB-60 było wykonane, ale dostało brakujący pin C4 decyzji koloru; razem
 26 pinów. Raport: `docs/audits/AUDYT_PR162_2026-10-10.md`.
+
+## Dopisek 2026-10-11 — uwaga z gry A
+
+- [x] RED: Withstand rzucony w upkeepie bez zagrożenia mimo że draw jest tylko riderem.
+- [x] Root-cause fix w `preventShieldValue`, wspólna kara przedwczesnej prewencji.
+- [x] Rozdzielenie lethalu i nielethalnego pinga na stosie.
+- [x] Produkcyjny fixture Shocka (`playerView` + `execute` + priorytet).
+- [x] Targeted 32/32, fast 8042/8042, benchmark 10/10.
+- [x] Golden master zbadany (pierwszy rozjazd = naprawiany upkeep) i świadomie odnowiony.
+- [x] Końcowe `test:all` 8306/8306, build 73 moduły / 5019,3 kB i dokumentacja.
+- [ ] Zielone GitHub CI po finalnym pushu.

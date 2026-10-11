@@ -55,7 +55,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
-| fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
+| fog/prewencja | 4 | DONE (2026-09-28; korekta Withstand 2026-10-11) | §PMSSB-15 niżej; `test/audyt-pmssb15-prewencja.test.js` (19) + `test/zgloszenie-b-withstand-cel-bota.test.js` (7); `fogWindowValue`, `preventDamageThisTurnValue`, `preventShieldValue` (6 pokręteł `fogWindow*`/`preventEtb*`, bez nowego dla korekty) |
 | walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
 | kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
 | proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
@@ -1063,9 +1063,10 @@ POMIAR PRZED: `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
 ### Znane granice / forwardy
 - DEBT (CR 615.4, cyt. dosłowne): prewencja nie odrabia zadanych
   obrażeń — „po rozdaniu" to zawsze strata (wasted −75).
-- `prevent_next_damage` (Withstand) = strona CELÓW fixu B
-  (`preventShieldValue`/`preventShieldTargetValue`) — nietknięta (granica
-  rodzin); cantrip Withstandu (draw) = PMSSB-3, nietknięty.
+- `prevent_next_damage` (Withstand) korzysta z
+  `preventShieldValue`/`preventShieldTargetValue`. Korekta właściciela
+  2026-10-11 zamknęła dawną granicę: `draw_cards` pozostaje wycenione przez
+  PMSSB-3, lecz nie może samo uzasadnić zużycia tarczy poza oknem obrażeń.
 - Scry-rider Inspire Awe karany −12 (M218/4, rodzina scry) — świadome;
   F5/S11: MV4 vs MV3 w tym samym oknie = 93 vs 105 (bez remisu).
 - Burn-na-stosie w oknie Shieldmage: lekki sygnał `pendingEffects`
@@ -1085,6 +1086,29 @@ POMIAR PRZED: `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
   Żywy Tester PO: 3 partie (theros × mirrodin-wu — enchantmenty i
   artefakty) — **0 zgłoszeń detektorów, 0 niewycenionych**.
 - Prewencja/fog PRZEJRZANA (M91/M236 → PMSSB-15); commit `4f6a583`.
+
+
+### Addendum 2026-10-11 — Withstand jest combat trickiem, nie cantripem
+
+Uwaga z gry A: bot rzucał Withstand zaraz po odtapowaniu lądów. Dawny werdykt
+Q1b świadomie pozwalał zużyć kartę dla samego `draw_cards`; pomiar potwierdził
+score **61/60** dla jałowej tarczy własnego stwora/gracza, więc oferta
+wygrywała z passem. Właściciel odwrócił ten werdykt: draw jest riderem, a nie
+powodem rzutu.
+
+`preventShieldValue` używa teraz istniejącego `fogWindowWastedValue = -75`,
+gdy nie ma nadchodzących obrażeń albo tarcza nie ratuje stworzenia. Dzięki
+L41 reguła działa tak samo dla płatnego i darmowego rzutu, bez nazwy karty i
+bez nowego pokrętła. Pomiar PO: pusty stos/upkeep **−19 < pass 0**; lethalny
+Shock w 1/1 **77 > pass**; nielethalny Shock w 2/3 znów przegrywa z passem.
+Dodatkowo B4 przepisano na produkcyjne `execute`: stary fixture przekazywał
+`targets` do `addObject`, więc cel był odrzucany i test był fałszywie zielony
+wyłącznie przez dawny bonus cantripu. RED→GREEN: B5/Q1b 2/2 RED przed fixem,
+B4b RED po oddzieleniu dowolnego pinga od lethalu; końcowa macierz prewencji
+**32/32**, fast **8042/8042**, pełne **8306/8306**, benchmark **10/10**,
+build **73 moduły / 5019,3 kB**. Golden master zmienił dokładnie jedną z sześciu
+partii: pierwszy rozjazd decyzji to zamierzony upkeep `cast Withstand` → pass;
+fixture świadomie odnowiony. Commit `ca34cfe`.
 
 ## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
 

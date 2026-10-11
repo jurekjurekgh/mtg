@@ -16503,3 +16503,32 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   608.2d (`3cfb05e`). `cr-numery --cr` pozostaje zielone.
 - Pełna brama końcowa i dokładne wyniki są zapisane w raporcie audytu oraz
   `docs/setup/HANDOFF_2026-10-10.md`.
+
+## 2026-10-11 — uwaga z gry A: Withstand czeka na obrażenia
+
+- **Objaw:** bot rzucał Withstand zaraz po odtapowaniu lądów. Wycena
+  `preventShieldValue` świadomie dawała dotąd mały plus za jałową tarczę na
+  własnej stronie (`2+N` dla stwora, `1+N` dla gracza), więc baza czaru i
+  `draw_cards` dawały **61/60 > pass 0**. Sam cantrip zużywał combat trick.
+- **RED:** scenariusz dokładnie z uwagi (upkeep po odtapowaniu, brak
+  nadchodzących obrażeń) wybierał `cast_spell(w->mine)`; oba własne warianty
+  miały 61/60. Dawny pin Q1b wymagał tego błędnego zachowania i został
+  świadomie odwrócony. Osobny pin ujawnił, że sam nielethalny Shock w 2/3 też
+  wystarczał do rzutu.
+- **Fix generyczny:** jałowe `prevent_next_damage` korzysta z istniejącej kary
+  przedwczesnego foga `fogWindowWastedValue = -75`. Rider draw nadal ma swoją
+  normalną wartość, ale nie przebija straty głównego efektu. Dla stworzenia
+  damage ze stosu musi być lethalny (albo mieć deathtouch), a tarcza musi
+  realnie zmienić wynik. Bez nazwy karty i bez nowego pokrętła.
+- **Wzmocnienie testu B4:** stary fixture wkładał Shock bezpośrednio na stos i
+  przekazywał `targets` do `addObject`; kontrakt odrzucał to pole, więc test
+  „odpowiedź na lethal” był zielony tylko dzięki cantripowi. Teraz Shock jest
+  rzucany przez `playerView` + `execute`, rzucający oddaje priorytet, a bot
+  faktycznie odpowiada Withstandem.
+- **PO:** pusty upkeep/stos = **−19 < pass**, lethalny Shock w 1/1 = **77** i
+  Withstand w odpowiedzi, nielethalny Shock w 2/3 = pass; walka ratująca
+  blokera i obrażenia w gracza pozostają dodatnie. Macierz prewencji 32/32,
+  fast **8042/8042**, pełne **8306/8306**, benchmark bota 10/10, golden master
+  4/4, build 73 moduły / 5019,3 kB. Golden master zmienił jedną partię; pierwszy
+  zmieniony wybór to dokładnie naprawiany upkeep (`cast Withstand` → pass), więc
+  fixture został świadomie odnowiony. Commit `ca34cfe`.

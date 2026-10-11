@@ -998,18 +998,16 @@ oferty panelu.)
 
 ## L21 (2026-08-16) — JAWNA LISTA PÓL gubi dane po cichu — w każdej z czterech warstw
 
-**Reguła:** (1) Dodając pole mechaniki do `defineCard`, przejdź **wszystkie
-cztery warstwy** (nie tylko tę, w której zgłoszono błąd; grep „M146"
-w `deck.js`) — kierunek docelowy: transportować deskryptory ZBIORCZO (spread
-listy pól), żeby lista była jedna. (2) Stan spoza kontraktu fabryki ustawiaj
-JAWNIE po dodaniu obiektu (`state.objects.set(id, Object.freeze({ ...obj,
-tapped: true }))`) i sprawdź, czy asercja odróżnia stan POCZĄTKOWY od skutku.
-(3) Pin idzie przez **realną ścieżkę** (`setupCardMatch`: registry →
-createCardDeck → installDeck → obiekt), nigdy przez własny helper. (4) Strażnik
-jest KLASOWY: enumeruje `REGISTRY.all()`, buduje obiekt realną drogą i porównuje
-pola wejścia z polami wyjścia. (6) „Silnik liczy dobrze" nie zamyka zgłoszenia:
-`legalCommands` czyta z OBIEKTU, `commandLabel` z WIDOKU — dwa różne źródła.
-Pełne przykłady per warstwa: archiwum.
+**Reguła:** (1) Pole mechaniki przeprowadź przez WSZYSTKIE warstwy; docelowo
+transportuj deskryptory zbiorczo, z jednej listy. (2) Stan testowy spoza
+kontraktu fabryki ustaw jawnie po utworzeniu obiektu i odróżnij w asercji stan
+początkowy od skutku. (3) Pin idzie realną ścieżką (`setupCardMatch`: registry
+→ deck → obiekt), nigdy własnym helperem. Dotyczy to też runtime: wpis stosu z
+`targets` twórz legalną komendą `playerView` + `execute` i przejdź przekazanie
+priorytetu, nie udawaj go przez `addObject`. (4) Strażnik klasowy enumeruje
+katalog i porównuje wejście z obiektem zbudowanym drogą produkcyjną. (5)
+„Silnik liczy dobrze" nie zamyka zgłoszenia: oferta i etykieta mogą czytać z
+obiektu oraz widoku — dwóch różnych źródeł.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L21)
 
 ## L22 (2026-08-16) — Akcja, która PRZEWIJA grę, musi kończyć się ponownym renderem
