@@ -5902,7 +5902,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    się zmienia), albo fog na własną twarz, gdy kreatury przeciwnika
    *    w nią uderzą;
    *  — odpowiedź na dmg-spell ze stosem z lethalem na kreaturę bota;
-   *  — reszta własnej strony = skromny cantrip-ok (Q1b).
+   *  — uwaga właściciela A (2026-10-11): rider „draw a card” NIE uzasadnia
+   *    zużycia tricku bez nadchodzących obrażeń. Jałowa tarcza dostaje tę samą
+   *    karę co przedwczesny fog (`fogWindowWastedValue`, L41), więc baza czaru
+   *    i cantrip nie przebijają passu. Bez nowego pokrętła i bez nazwy karty.
    */
   function preventShieldValue(view, slot, amount) {
     if (slot == null) return 0;
@@ -5914,14 +5917,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }
     if (victim) {
       const stackDamage = incomingDamageOnStack(view, victim.id);
-      const threatened = isCreatureThreatened(view, victim) || stackDamage > 0;
-      if (!threatened) return 2 + n;
+      const threatened = isCreatureThreatened(view, victim)
+        || incomingDamageOnStackIsLethal(view, victim);
+      if (!threatened) return P.fogWindowWastedValue;
       const covers = preventCovers(view, victim, n, stackDamage);
-      return covers ? 18 + (victim.power ?? 0) * 2 + (victim.toughness ?? 0) : 3 + n;
+      return covers
+        ? 18 + (victim.power ?? 0) * 2 + (victim.toughness ?? 0)
+        : P.fogWindowWastedValue;
     }
     // Własny gracz — „albo u siebie jeśli któryś z kreatur przeciwnika go zrani”.
     const incoming = faceDamageIncoming(view) + incomingDamageOnStack(view, meId);
-    return incoming > 0 ? 8 + Math.min(n, incoming) : 1 + n;
+    return incoming > 0 ? 8 + Math.min(n, incoming) : P.fogWindowWastedValue;
   }
 
   /** Czy tarcza N realnie ratuje stwora (pokrywa nadmiar obrażeń ponad P). */
@@ -5948,6 +5954,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
     return total;
+  }
+
+  /** Czy obrażenia już na stosie byłyby śmiertelne bez tarczy (uwaga A).
+   * Sam fakt pinga nie wystarcza: Withstand ma ratować stworzenie, nie
+   * zamieniać każdy nielethalny damage w pretekst do dobrania karty. */
+  function incomingDamageOnStackIsLethal(view, victim) {
+    const amount = incomingDamageOnStack(view, victim.id);
+    if (amount <= 0) return false;
+    if ((victim.damage ?? 0) + amount >= (victim.toughness ?? 0)) return true;
+    // Deathtouch działa także dla obrażeń niebojowych. Źródłem zdolności może
+    // być permanent na stole; dla czaru fallbackiem jest sam wpis stosu.
+    return (view.zones.stack ?? []).some((entry) => {
+      if (!(entry.targets ?? []).includes(victim.id)) return false;
+      const dealsDamage = stackEntryEffects(entry)
+        .some((effect) => effect?.type === 'damage' && (effect.amount ?? 0) > 0);
+      const source = objectOnBoard(view, entry.sourceId) ?? entry;
+      return dealsDamage && hasKeyword(source, 'deathtouch');
+    });
   }
 
   /** Obrażenia z ZADEKLAROWANEJ walki, które spadną na własnego gracza (B3). */

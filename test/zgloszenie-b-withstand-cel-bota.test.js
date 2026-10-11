@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -132,33 +132,64 @@ test('B3: wróg atakuje nieblokowany — Withstand na siebie (fog), nie na wroga
 });
 
 // --- B4: odpowiedź na dmg-spell z lethalem na kreaturę bota ---
-test('B4: Shock na stosie w kreaturę bota (lethal) — Withstand w odpowiedzi na nią', () => {
+function shockWindow(toughness) {
   const state = botTurn();
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
   putSpell(state, 'w', 'withstand', 'p2', 'hand');
-  putCreature(state, 'mine', 'p2', 2, 1);
-  putSpell(state, 'shock', 'shock', 'p1', 'stack', { targets: ['mine'] });
-  state.zones.stack.push('shock');
-  state.turn.priorityPlayerId = 'p2';
-  const choice = choose(state);
+  putCreature(state, 'mine', 'p2', 2, toughness);
+  putSpell(state, 'shock', 'shock', 'p1', 'hand');
+  addMana(state, 'p1', 1, { colors: ['R'] });
+
+  // Produkcyjny rzut jest częścią regresji. Dawny fixture przekazywał
+  // `targets` do addObject, które zgodnie z kontraktem je odrzucało; test był
+  // zielony tylko dlatego, że jałowy Withstand i tak wygrywał samym cantripem.
+  const shock = playerView(state, 'p1').legalCommands.find((c) =>
+    c.type === 'cast_spell' && c.objectId === 'shock' && c.targets?.[0] === 'mine');
+  assert.ok(shock, 'Shock może legalnie wejść na stos z celem mine');
+  assert.ok(execute(state, shock).ok, 'Shock rzucony produkcyjną komendą');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'po rzucie priorytet nadal ma rzucający');
+  const pass = playerView(state, 'p1').legalCommands.find((c) => c.type === 'pass_priority');
+  assert.ok(pass && execute(state, pass).ok, 'rzucający oddaje priorytet produkcyjną komendą');
+  assert.equal(state.turn.priorityPlayerId, 'p2', 'priorytet na odpowiedź dostaje bot');
+  return state;
+}
+
+test('B4: Shock na stosie w kreaturę bota (lethal) — Withstand w odpowiedzi na nią', () => {
+  const choice = choose(shockWindow(1));
   assert.equal(choice.type, 'cast_spell', `ratunek przed burnem > pass: ${JSON.stringify(choice)}`);
   assert.equal(choice.objectId, 'w');
   assert.equal(choice.targets?.[0], 'mine',
     `tarcza idzie w cel burna z lethalem: ${JSON.stringify(choice)}`);
 });
 
-// --- B5: anty-over-fix — cantrip na własnej stronie bez zagrożenia zostaje dozwolony ---
-test('B5: bez zagrożenia Withstand na własną stronę jest OK (cantrip, Q1b) — nigdy na wroga', () => {
+test('B4b/A: Shock nielethalny dla 2/3 — draw nadal nie uzasadnia Withstand', () => {
+  const choice = choose(shockWindow(3));
+  assert.equal(choice.type, 'pass_priority',
+    `stwór przeżywa Shock bez tarczy, więc bot zachowuje trick: ${JSON.stringify(choice)}`);
+});
+
+// --- B5/A (uwaga właściciela 2026-10-11): cantrip NIE uzasadnia tricku ---
+test('B5/A: zaraz po odtapowaniu, bez zagrożenia, Withstand czeka — draw nie uzasadnia rzutu', () => {
   const state = botTurn();
+  state.turn = jumpToStep(state.turn, 'upkeep', 'p2');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
   putSpell(state, 'w', 'withstand', 'p2', 'hand');
   putCreature(state, 'mine', 'p2', 2, 1);
   putCreature(state, 'foe', 'p1', 3, 3);
-  const choice = choose(state);
-  if (choice.type === 'cast_spell' && choice.objectId === 'w') {
-    assert.ok(['mine', 'p2'].includes(choice.targets?.[0]),
-      `cel po własnej stronie: ${JSON.stringify(choice)}`);
-  } else {
-    assert.equal(choice.type, 'pass', `albo pass, albo własny cel: ${JSON.stringify(choice)}`);
-  }
+
+  const bot = createHeuristicBot({ seed: 156 });
+  const choice = bot.chooseCommand(playerView(state, 'p2'), {});
+  const options = bot.trace().at(-1)?.options ?? [];
+  const pass = options.find((o) => o.cmd === 'pass_priority')?.score ?? 0;
+  const ownShieldOffers = options.filter((o) =>
+    o.cmd === 'cast_spell(w->mine)' || o.cmd === 'cast_spell(w->p2)');
+
+  assert.ok(ownShieldOffers.length === 2, `obie własne oferty istnieją: ${JSON.stringify(options)}`);
+  assert.ok(ownShieldOffers.every((o) => o.score < pass),
+    `jałowa prewencja musi przegrać z passem mimo draw: ${JSON.stringify(ownShieldOffers)}`);
+  assert.equal(choice.type, 'pass_priority',
+    `Withstand ma czekać na realne obrażenia, nie być cantripem w upkeepie: ${JSON.stringify(choice)}`);
 });
 
 // --- B6: U1 z audytu PR #145 — kara za osłonę WROGA jest nośna na PŁATNEJ ścieżce ---
@@ -185,22 +216,18 @@ test('B6: PŁATNY Withstand — osłona PRZECIWNIKA kosztuje tyle co wpis w FRIE
     assert.ok(found, `brak oferty dla ${id}: ${options.map((o) => o.cmd).join(' | ')}`);
     return found.score;
   };
-  // Kotwice pomiarowe (sonda PRZED/PO). Różnica własny gracz ↔ gracz wroga
-  // to DOKŁADNIE kara z mapy: `prevent_next_damage` 40 + power beneficjenta
-  // (gracz nie ma power → 40). Usunięcie wpisu albo gałęzi celu-gracza
-  // zjeżdża do remisu 60/−24 i ten assert pada (mutacje B-M, B2-M).
-  assert.equal(scoreOf('p2'), 60, 'osłona SIEBIE bez kary');
-  assert.equal(scoreOf('p1'), -64, 'osłona PRZECIWNIKA z karą 40 (U1)');
-  assert.equal(scoreOf('p2') - scoreOf('p1'), 124,
-    'przepaść między osłoną swoją a wroga = 60 (brak wartości prewencji u wroga) + 40 (wpis) + 24');
-  // Cel-stwór wroga: wpis + power (40 + 3) — dowód, że mapa jest nośna
-  // także dla obiektów na polu bitwy (próba 40 → 4000 dawała −4027).
-  assert.equal(scoreOf('foe'), -67);
-  // Anty-over-fix: naprawa NIE karze własnej strony (60 / 61 jak przed nią).
-  assert.equal(scoreOf('mine'), 61);
-  // Zachowanie: taktyka właściciela — nigdy cel we wroga.
-  assert.equal(choice.type, 'cast_spell');
-  assert.ok(['mine', 'p2'].includes(choice.targets?.[0]),
-    `tarcza idzie po własnej stronie: ${JSON.stringify(choice)}`);
+  // Kotwice pomiarowe po uwadze A 2026-10-11. Każdy wariant jest jałowy,
+  // więc własna strona dostaje `fogWindowWastedValue` i przegrywa z passem.
+  // Wróg pozostaje dodatkowo obciążony mapą FRIENDLY_TARGET_EFFECTS: 40 dla
+  // gracza i 40+power dla stwora. Usunięcie wpisu lub gałęzi celu-gracza
+  // podnosi p1 z −64 do −24 i te asercje czerwienieją (mutacje B-M/B2-M).
+  assert.equal(scoreOf('p2'), -19, 'jałowa osłona siebie nie jest cantripem');
+  assert.equal(scoreOf('p1'), -64, 'osłona PRZECIWNIKA z dodatkową karą 40 (U1)');
+  assert.equal(scoreOf('p2') - scoreOf('p1'), 45,
+    'wróg: 40 kary kierunku + 5 różnicy twardych kar jałowości/osłony wroga');
+  assert.equal(scoreOf('foe'), -67, 'stwór wroga: kara 40 + power 3');
+  assert.equal(scoreOf('mine'), -19, 'jałowa tarcza własnego stwora też czeka');
+  assert.equal(choice.type, 'pass_priority',
+    `bez nadchodzących obrażeń każdy wariant Withstand przegrywa z passem: ${JSON.stringify(choice)}`);
 });
 
