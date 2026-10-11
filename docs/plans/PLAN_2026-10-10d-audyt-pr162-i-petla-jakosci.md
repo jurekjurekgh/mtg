@@ -140,3 +140,14 @@ PMSSB-60 było wykonane, ale dostało brakujący pin C4 decyzji koloru; razem
 - [x] Golden master zbadany (pierwszy rozjazd = naprawiany upkeep) i świadomie odnowiony.
 - [x] Końcowe `test:all` 8306/8306, build 73 moduły / 5019,3 kB i dokumentacja.
 - [x] GitHub CI **SUCCESS** — run `38165106753`.
+
+## Dopisek 2026-10-11 — uwaga z gry B / Skilled Animator
+
+- [x] RED: trzy duże własne kreatury i zero artefaktów → błędny rzut 1/3, score 63,9009.
+- [x] RED: samo duże 4/4 artifact creature błędnie liczone jako pełny payoff, score 72,9009.
+- [x] Fix po `animate_linked`, bez id/nazwy karty; mierzenie realnego zysku celu.
+- [x] Kara `linkedAnimationFutilePenalty` z dowodem pokrętła ×0.
+- [x] Wyjątek tylko wtedy, gdy nowe ciało zmienia lethal kontrataku w przeżycie.
+- [x] Targeted 9/9 i animacje 67/67; fast 8051/8051; golden 4/4 bez regeneracji; benchmark 10/10; build 73 / 5025,4 kB.
+- [x] Końcowe `test:all` 8315/8315 i dokumentacja.
+- [ ] Zielone CI dla finalnego drzewa.

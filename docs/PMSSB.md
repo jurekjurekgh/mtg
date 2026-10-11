@@ -1110,6 +1110,29 @@ build **73 moduły / 5019,3 kB**. Golden master zmienił dokładnie jedną z sze
 partii: pierwszy rozjazd decyzji to zamierzony upkeep `cast Withstand` → pass;
 fixture świadomie odnowiony. Commit `ca34cfe`.
 
+### Addendum 2026-10-11 — Skilled Animator czeka na godny artefakt
+
+Uwaga z gry B: bot rzucał Skilled Animatora jako zwykłe 1/3 za {2}{U}, mimo
+trzech dużych własnych stworów i zera artefaktów. Pomiar RED: oferta miała
+**63,9009 > pass 0**. Sama tabela ETB dawała `animate_linked` płaskie +10 za
+DOWOLNY artefakt, lecz brak artefaktu był zerem zamiast stratą głównego
+payoffu; nawet 4/4 artifact creature dawało **72,9009**.
+
+Naprawa jest po deskryptorze `animate_linked`, bez nazwy karty. Nie-stwór
+artefakt jest pełnym celem; artifact creature liczy się tylko wtedy, gdy baza
+5/5 daje istotny dodatni zysk — samo 4/4 → 5/5 nie wystarcza, małe 3/3 tak.
+Brak godnego celu nakłada `linkedAnimationFutilePenalty = 90`, więc karta
+przegrywa z passem. Jedyny wyjątek odtwarza kryterium właściciela: projekcja
+najbliższego kontrataku przed i po dodaniu ciała sprawdza bloki, flying,
+menace oraz trample i zwalnia karę tylko wtedy, gdy nowe 1/3 zmienia lethal w
+przeżycie. Lethalny latacz poza zasięgiem nie uruchamia wyjątku.
+
+Regresja produkcyjnej decyzji bota: **9/9** (dokładny stół z trzema dużymi
+stworami, 6/6 i 12/12 jako ratunkowy chump, latacz, zdrowe życie, nie-stwór
+artefakt, 4/4, 3/3 oraz pokrętło ×0). Fast **8051/8051**, golden master
+**4/4 bez zmiany fixture**, pełne **8315/8315**, benchmark **10/10**, build
+**73 moduły / 5025,4 kB**. Commit `c85b175`.
+
 ## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
 
 

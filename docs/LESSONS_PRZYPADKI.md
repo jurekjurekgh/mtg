@@ -718,6 +718,14 @@ warhammer-wg`, tura 16). Wspólny mianownik potrzebuje jeszcze
 ZAWSZE. Reprezentant = własny atakujący z `view.combat` (ADR 0017). Test
 anty-over-fix (M255/E2) pilnuje, że bot nadal UŻYWA zdolności w walce.
 
+**Powrót klasy 2026-10-11 (Skilled Animator):** `animate_linked` miało nawet
+wpis w tabeli ETB, ale tylko płaskie `+10`, gdy na stole był dowolny artefakt.
+Brak artefaktu dawał zero zamiast straty głównego payoffu, więc baza ciała 1/3
+za {2}{U} nadal wygrywała z passem; duże 4/4 artifact creature błędnie liczyło
+się jako pełny cel. Naprawa mierzy realny przyrost bazy 5/5 i penalizuje rzut
+bez godnego celu. Wyjątek nie pyta tylko o „niski life”: symuluje najbliższe
+bloki i zwalnia karę wyłącznie, gdy nowe ciało zmienia lethal w przeżycie.
+
 ## L1 (2026-08-14) — przypadek
 
 **Objaw (trzykrotny):** bot pompował liczniki Station bez końca (M84), celował

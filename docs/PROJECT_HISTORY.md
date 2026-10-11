@@ -16533,3 +16533,25 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   zmieniony wybór to dokładnie naprawiany upkeep (`cast Withstand` → pass), więc
   fixture został świadomie odnowiony. Commit `ca34cfe`; GitHub CI
   **SUCCESS** — run `38165106753`.
+
+## 2026-10-11 — uwaga z gry B: Skilled Animator zachowuje główny payoff
+
+- **Objaw/RED:** przy trzech dużych własnych stworach i zerze artefaktów bot
+  rzucał Skilled Animatora jako zwykłe 1/3 za {2}{U}; score **63,9009 > pass
+  0**. Brak celu dawał w tabeli ETB zero, więc nic nie przebijało bazowej
+  wyceny ciała. Dowolny artefakt dawał płaskie +10 — także duże 4/4 artifact
+  creature, dla którego 5/5 jest tylko symbolicznym zyskiem (score 72,9009).
+- **Fix generyczny:** rodzina jest rozpoznawana po efekcie `animate_linked`, nie
+  po nazwie karty. Nie-stwór artefakt jest godnym celem; artifact creature musi
+  dostać istotny dodatni przyrost od nowej bazy P/T. Brak takiego celu nakłada
+  `linkedAnimationFutilePenalty = 90`, z kontrolą ×0 odtwarzającą stare
+  zachowanie.
+- **Ścisły wyjątek ratunkowy:** scoring projektuje najbliższy kontratak i
+  przydziela blokujących z uwzględnieniem flying, menace i trample. Kara znika
+  tylko wtedy, gdy nowe ciało naprawdę zmienia lethal w przeżycie. Dlatego
+  1/3 może wejść przy 5 życiach naprzeciw 6/6 lub 12/12, ale nie przeciw
+  nieblokowalnemu dla niego lataczowi i nie przy bezpiecznych 20 życiach.
+- **Dowody:** produkcyjna decyzja bota **9/9**, powiązane animacje **67/67**,
+  fast **8051/8051**, pełne **8315/8315**, golden master **4/4 bez
+  regeneracji**, benchmark **10/10**, build **73 moduły / 5025,4 kB**. Commit
+  `c85b175`.

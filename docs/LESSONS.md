@@ -797,12 +797,12 @@ dowiedź testem, że decyzja naprawdę się zmieniła (wariant klasy z archiwum:
 
 ## L50 (2026-08-18) — Nowy typ efektu w karcie batcha wymaga WYCENY w heuristic-bocie
 
-**Przypadek:** — dwie karty Batch 35 weszły z martwą wyceną: bot aktywował Basilisk Gate ({2},{T}: +X/+X) na stwora PRZECIWNIKA, a Twiddle…
+**Przypadek:** bot źle wyceniał nowe typy efektów (Basilisk Gate, Twiddle).
 
-**Reguła:** przy nowym typie efektu sprawdź wycenę w OBU ścieżkach
-(`cast_spell`, `activate_ability`); sonda: grep typu w
-`src/controllers/heuristic-bot.js` przed merge. Audyt Żywym Testerem po batchu
-z nowymi mechanikami obejmuje partie, gdzie BOT ma te karty.
+**Reguła:** sprawdź typ w obu ścieżkach (`cast_spell`, `activate_ability`) i w
+partii, gdzie BOT ma kartę. Nosiciel głównego payoffu wycenia REALNY zysk celu,
+nie samą legalność; brak lub śladowy zysk schodzi pod pass, chyba że samo ciało
+zmienia lethal w przeżycie. Pin: brak celu / cel godny / wyjątek ratunkowy.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L50)
 
