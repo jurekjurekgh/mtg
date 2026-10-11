@@ -139,4 +139,4 @@ PMSSB-60 było wykonane, ale dostało brakujący pin C4 decyzji koloru; razem
 - [x] Targeted 32/32, fast 8042/8042, benchmark 10/10.
 - [x] Golden master zbadany (pierwszy rozjazd = naprawiany upkeep) i świadomie odnowiony.
 - [x] Końcowe `test:all` 8306/8306, build 73 moduły / 5019,3 kB i dokumentacja.
-- [ ] Zielone GitHub CI po finalnym pushu.
+- [x] GitHub CI **SUCCESS** — run `38165106753`.

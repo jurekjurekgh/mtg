@@ -16531,4 +16531,5 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   fast **8042/8042**, pełne **8306/8306**, benchmark bota 10/10, golden master
   4/4, build 73 moduły / 5019,3 kB. Golden master zmienił jedną partię; pierwszy
   zmieniony wybór to dokładnie naprawiany upkeep (`cast Withstand` → pass), więc
-  fixture został świadomie odnowiony. Commit `ca34cfe`.
+  fixture został świadomie odnowiony. Commit `ca34cfe`; GitHub CI
+  **SUCCESS** — run `38165106753`.
