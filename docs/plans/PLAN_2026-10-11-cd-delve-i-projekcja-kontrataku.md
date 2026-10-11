@@ -35,34 +35,34 @@ małych zielonych commitach, pushowanych przyrostowo bez force-pusha.
 
 ### C1. RED modułu Mana Wizarda
 
-- [ ] Przypiąć deskryptor/postęp dla kosztu z pipem kolorowym i generykiem:
+- [x] Przypiąć deskryptor/postęp dla kosztu z pipem kolorowym i generykiem:
   wybrane karty grobu zmniejszają tylko brakującą część generyczną; nie
   pokrywają pipa koloru.
-- [ ] Przypiąć płatność mieszaną: część kosztu z puli/źródeł, reszta przez
+- [x] Przypiąć płatność mieszaną: część kosztu z puli/źródeł, reszta przez
   zaznaczone karty własnego grobu.
-- [ ] Przypiąć limit wygnania do efektywnego generyku po obniżkach oraz stan
+- [x] Przypiąć limit wygnania do efektywnego generyku po obniżkach oraz stan
   nielegalny po przekroczeniu limitu.
-- [ ] Przypiąć render jednego modala: źródła many i zaznaczalne karty Delve,
+- [x] Przypiąć render jednego modala: źródła many i zaznaczalne karty Delve,
   bieżący koszt/postęp, zatwierdzenie dopiero po pokryciu sumy i kolorów.
-- [ ] Mutacja RED: przywrócić pełne `totalNeeded` mimo zaznaczonego Delve albo
+- [x] Mutacja RED: przywrócić pełne `totalNeeded` mimo zaznaczonego Delve albo
   pozwolić Delve pokryć kolor; oba właściwe piny muszą upaść.
 
 ### C2. GREEN i produkcyjny pin stołu
 
-- [ ] Do deskryptora rzutu Delve dołączyć kandydatów z własnego cmentarza,
+- [x] Do deskryptora rzutu Delve dołączyć kandydatów z własnego cmentarza,
   dokładny limit generyczny i trwały w obrębie modala wybór identyfikatorów.
-- [ ] Mana Wizard ma otwierać się także wtedy, gdy sama mana nie wystarcza,
+- [x] Mana Wizard ma otwierać się także wtedy, gdy sama mana nie wystarcza,
   lecz legalna wspólna płatność istnieje. Każdy wybór karty ma odświeżać ten
   sam postęp co tapnięcie źródła.
-- [ ] Końcowa komenda ma nieść `delveExileIds` od razu; silnik ma wykonać
+- [x] Końcowa komenda ma nieść `delveExileIds` od razu; silnik ma wykonać
   atomowy rzut bez `pendingDelveExile` i bez drugiego modala.
-- [ ] Gdy już zebrana pula sama wystarcza, nie rzucać automatycznie przed
+- [x] Gdy już zebrana pula sama wystarcza, nie rzucać automatycznie przed
   daniem graczowi wyboru Delve; dla rzutu Delve wymagać jawnego zatwierdzenia.
-- [ ] Test produkcyjny UI: przy niewystarczających samych lądach, ale
+- [x] Test produkcyjny UI: przy niewystarczających samych lądach, ale
   wystarczających lądach + grobie, oferta jest widoczna; po kliknięciu jeden
   Mana Wizard pozwala zaznaczyć karty, dobrać kolor z lądu i rzuca bez
   pośredniej decyzji `resolve_delve_exile`.
-- [ ] Zachować i przypiąć zwykły przebieg bez Delve oraz dotychczasową
+- [x] Zachować i przypiąć zwykły przebieg bez Delve oraz dotychczasową
   atomową walidację silnika.
 
 **Oczekiwany commit C:** `fix(ui): połącz płatność many i Delve` — dopiero po
@@ -72,38 +72,38 @@ celowanych testach C, mutacji i pełnym `npm test` + build.
 
 ### D1. Produkcyjny RED decyzji bota
 
-- [ ] Zbudować stan z prawdziwego `krotiq-nestguard`: człowiek 9 życia,
+- [x] Zbudować stan z prawdziwego `krotiq-nestguard`: człowiek 9 życia,
   tapnięty Krotiq o efektywnych statystykach 8/8, trzy Foresty wystarczające na
   `{2}{G}`; bot 3 życia i nietapnięte stworzenia 1/3, 1/3, 2/3.
-- [ ] Wejść produkcyjnie przez `playerView` i `createHeuristicBot`, a wybraną
+- [x] Wejść produkcyjnie przez `playerView` i `createHeuristicBot`, a wybraną
   komendę sprawdzić przez `execute`.
-- [ ] RED ma wykazać, że obecny scoring deklaruje wszystkich trzech; właściwy
+- [x] RED ma wykazać, że obecny scoring deklaruje wszystkich trzech; właściwy
   wynik zostawia co najmniej jednego legalnego blokera.
 
 ### D2. GREEN generycznej projekcji
 
-- [ ] Rozpoznać przyszłego atakującego po publicznym deskryptorze aktywowanej
+- [x] Rozpoznać przyszłego atakującego po publicznym deskryptorze aktywowanej
   zdolności (`losesKeywords: defender` albo
   `attack_as_though_no_defender_until_end_of_turn`), nigdy po nazwie/cardId.
-- [ ] Sprawdzić przyszłą opłacalność zdolności z publicznych źródeł many,
+- [x] Sprawdzić przyszłą opłacalność zdolności z publicznych źródeł many,
   pełnej liczby jednostek i dopasowania kolorowych pipów; tapnięte zwykłe
   źródła uwzględniać po nadchodzącym untapie, z zachowawczym wykluczeniem
   trwałych blokad odtapnięcia.
-- [ ] Zastąpić `moc − suma wytrzymałości gardy` projekcją legalnych bloków:
+- [x] Zastąpić `moc − suma wytrzymałości gardy` projekcją legalnych bloków:
   atakujący bez trample zadaje graczowi 0 po legalnym bloku; trample przechodzi
   dopiero ponad lethal; respektować ewazję i menace przez wspólny
   `attackerCanBeBlocked`.
-- [ ] Ustalić, czy istnieje przydział różnych blokerów pozwalający przetrwać
+- [x] Ustalić, czy istnieje przydział różnych blokerów pozwalający przetrwać
   oba zegary (życie i poison), zamiast odejmować tę samą gardę niezależnie od
   obu walut.
-- [ ] Zachować korektę stworów przeciwnika, które muszą blokować obecny lethal
+- [x] Zachować korektę stworów przeciwnika, które muszą blokować obecny lethal
   i zginą przed kontratakiem.
-- [ ] Doprecyzować anty-over-fix istniejącego testu „garda i tak nie
+- [x] Doprecyzować anty-over-fix istniejącego testu „garda i tak nie
   wystarcza”: taki przebijający 5/5 musi mieć trample; bez trample pojedynczy
   legalny blok rzeczywiście chroni gracza w tej walce.
-- [ ] Piny: brak many/koloru nie odblokowuje defendera; trample może sprawić,
+- [x] Piny: brak many/koloru nie odblokowuje defendera; trample może sprawić,
   że mały bloker nie ratuje; zwykły atakujący zostaje całkowicie zatrzymany.
-- [ ] Mutacja RED: wyłączyć wykrywanie przyszłej aktywacji oraz osobno
+- [x] Mutacja RED: wyłączyć wykrywanie przyszłej aktywacji oraz osobno
   przywrócić odejmowanie toughness; dokładny scenariusz ma upaść w obu
   kierunkach.
 
@@ -123,14 +123,14 @@ Po każdym samodzielnym przyroście:
 
 Po C i D łącznie:
 
-- [ ] pełne `npm run test:all`;
-- [ ] `node --test test/bot-golden-master.test.js` (bez regeneracji, chyba że
+- [x] pełne `npm run test:all`;
+- [x] `node --test test/bot-scoring-snapshot.test.js` (bez regeneracji, chyba że
   pierwszy świadomy rozjazd zostanie zbadany i udokumentowany);
-- [ ] `node --test test/bot-benchmark.test.js`;
-- [ ] końcowe `npm test` i build na zamrożonym drzewie;
-- [ ] aktualizacja tego planu, `docs/PROJECT_HISTORY.md`, handoffu i opisu PR
+- [x] `node --test test/bot-benchmark.test.js`;
+- [x] końcowe `npm test` i build na zamrożonym drzewie;
+- [x] aktualizacja tego planu, `docs/PROJECT_HISTORY.md`, handoffu i opisu PR
   #163 z dokładnymi wynikami;
-- [ ] push dokumentacji jako osobny zielony commit i potwierdzenie GitHub CI.
+- [x] push dokumentacji jako osobny zielony commit i potwierdzenie GitHub CI.
 
 ## Ryzyka i strażniki
 
@@ -146,3 +146,28 @@ Po C i D łącznie:
   trample; bez trample cały atak pozostaje zablokowany (CR 509.1h/510.1b).
 - Test dokładnego D nie może ręcznie dopisać do widoku zdolności Krotiqa:
   musi przejść przez materializację prawdziwej karty i `playerView`.
+
+
+## Podsumowanie realizacji
+
+- Plan: `2ecbb68`; C: `5ae96ae`; D: `74f7b60`. Każdy przyrost został
+  wypchnięty osobno po zielonym fast + build.
+- **C/C2:** Hooting Mandrills jest produkcyjnie oferowany przy dwóch lądach i
+  sześciu kartach grobu. Jeden Mana Wizard pozwala wybrać pięć kart, tapnąć
+  wyłącznie Forest na {G} i wysyła gotowe `delveExileIds`; nie powstaje
+  `pendingDelveExile`. Zwykłe płatności zachowują auto-domknięcie, Delve ma
+  jawne zatwierdzenie. Mutacje „ignoruj wkład Delve” i „pozwól ominąć kolor”
+  zostały zabite przez C/1.
+- **D:** produkcyjny widok prawdziwego Krotiqa 8/8 publikuje defender i
+  aktywację `{2}{G}`. Trzy tapnięte Foresty są poprawnie liczone po przyszłym
+  untapie; dwa Foresty ani trzy Island nie wystarczają. Projekcja legalnych
+  bloków rozdziela życie i poison, respektuje menace/ewazję/protection oraz
+  przepuszcza nadmiar dopiero przy trample. W dokładnej scenie bot atakuje
+  dwoma stworami i zostawia jedno. Obie niezależne mutacje — pominięcie
+  przyszłej aktywacji i przywrócenie „moc minus toughness” — zostały zabite.
+- Bramki finalnego kodu: C-targeted **37/37**, produkcyjne UI C2 **1/1**,
+  rodzina gardy D **11/11**, `npm test` **8060/8060**,
+  `npm run test:all` **8325/8325**, golden master **4/4 bez regeneracji**,
+  benchmark **10/10**, build **73 moduły / 5039,4 kB**.
+- GitHub CI dla commitów kodu: **SUCCESS**, run
+  [`38176394735`](https://github.com/jurekjurekgh/mtg/actions/runs/38176394735).

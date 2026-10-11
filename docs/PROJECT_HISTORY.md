@@ -16555,3 +16555,37 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   fast **8051/8051**, pełne **8315/8315**, golden master **4/4 bez
   regeneracji**, benchmark **10/10**, build **73 moduły / 5025,4 kB**. Commit
   `c85b175`; GitHub CI **SUCCESS** — run `38173232995`.
+
+## 2026-10-11 — uwagi z gry C–D: wspólne Delve i bezpieczna garda
+
+- **C/C2 — objaw:** legalny rzut Hooting Mandrills z niewystarczającymi samymi
+  lądami był oferowany przez silnik, ale stół nie otwierał Mana Wizarda. Po
+  komendzie powstawał osobny `pendingDelveExile`, więc UI najpierw próbowało
+  zebrać pełny koszt many, a dopiero potem pytało o grób.
+- **C/C2 — fix `5ae96ae`:** Mana Wizard dostał kandydatów własnego grobu,
+  dokładny limit efektywnego generyku i trwały wybór kart. Postęp odejmuje
+  Delve wyłącznie od generyku, niezależnie pilnuje pipów kolorowych i wysyła
+  atomową komendę z `delveExileIds`. Rzut Delve ma jawne zatwierdzenie; zwykłe
+  płatności nadal auto-domykają się po zebraniu many. Produkcyjny test UI gra
+  Tome Scour w siebie, po czym płaci za `{5}{G}` pięcioma kartami i Forestem w
+  jednym modalu, bez drugiej decyzji.
+- **D — objaw:** bot na 3 życia atakował wszystkimi 1/3, 1/3 i 2/3, choć
+  człowiek miał tapniętego Krotiqa 8/8, 9 życia i trzy Foresty na `{2}{G}`.
+  `cantAttackStatic` usuwało Krotiqa z prognozy, a garda była liczona błędnym
+  wzorem `moc − suma toughness`, jak gdyby zwykły blok przepuszczał nadmiar.
+- **D — fix `74f7b60`:** przyszły atak rozpoznaje publiczny efekt aktywowany
+  uchylający defender, płatność po untapie oraz rzeczywiste pipy kolorów, bez
+  nazwy/cardId. Projekcja szuka legalnego przydziału blokerów dla życia i
+  poison. Bez trample legalny blok zatrzymuje cały atak (CR 509.1h/510.1b), z
+  trample przechodzi tylko nadmiar ponad lethal (CR 702.19b); uwzględniane są
+  też menace, ewazje, protection, double strike i infect. Produkcyjny pin
+  materializuje prawdziwego Krotiqa przez `playerView`, a decyzję weryfikuje
+  `execute`: bot atakuje dwoma i zostawia jednego blokera.
+- **Dowody mutacyjne:** C — ignorowanie wkładu Delve oraz pominięcie pipa
+  koloru; D — pominięcie przyszłej aktywacji oraz przywrócenie odejmowania
+  toughness. Każda z czterech mutacji czerwienieje na właściwym pinie.
+- **Bramy:** C-targeted **37/37**, UI C2 **1/1**, garda D **11/11**,
+  `npm test` **8060/8060**, pełne **8325/8325**, golden master **4/4 bez
+  regeneracji**, benchmark **10/10**, build **73 moduły / 5039,4 kB**. Plan:
+  `docs/plans/PLAN_2026-10-11-cd-delve-i-projekcja-kontrataku.md`. GitHub CI
+  kodu **SUCCESS** — run `38176394735`.
