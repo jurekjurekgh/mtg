@@ -16589,3 +16589,36 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   regeneracji**, benchmark **10/10**, build **73 moduły / 5039,4 kB**. Plan:
   `docs/plans/PLAN_2026-10-11-cd-delve-i-projekcja-kontrataku.md`. GitHub CI
   kodu **SUCCESS** — run `38176394735`.
+
+## 2026-10-12 — uwaga E: bot wykorzystuje Angelic Benediction
+
+- **Objaw:** przy dwóch własnych 2/2, Angelic Benediction i jednym wrogim 5/4
+  bot wybierał brak ataku. Sonda produkcyjnego `playerView` pokazała
+  `attack[] = 0`, każdy samotny atak `−10`, atak oboma `−20`.
+- **Root cause:** `declare_attackers` oceniał każdy wariant z niezmienną listą
+  `untappedEnemyBlockers(view)`. Nie projektował publicznych triggerów
+  `attacks_alone`, choć po deklaracji rozstrzygają się przed blokami: pomijał
+  zarówno tapnięcie blokera, jak i automatyczny pump exalted.
+- **Fix `f55d97e`:** generyczna projekcja skanuje aktywne zdolności
+  kontrolowanych permanentów po `trigger.event`, bez nazwy/cardId. Przy
+  dokładnie jednym atakującym sumuje `exalted_pump` i zgodne pompy przez
+  `pumpDelta`; każdy trigger `tap_permanent` może usunąć najwyżej jeden
+  nietapnięty bloker będący legalnym celem i zdolny blokować atakującego.
+  Publiczna legalność respektuje shroud/hexproof/protection i ward; permanent
+  face-down albo po utracie zdolności nie dostarcza triggera. Projektowane P/T
+  i blokery są używane dalej przy wymianie, lethal, poison oraz ryzyku.
+- **Produkcja:** prawdziwa Angelic Benediction + dwa 2/2 vs 5/4. Bot deklaruje
+  dokładnie jednego, komenda przechodzi przez `execute`, ten sam bot wskazuje
+  5/4, wybiera „you may”, tapuje cel przed blokami, a exalted daje 3/3.
+  Anty-over-fixy obejmują brak Benediction, dwa blokery, hexproof, utratę
+  zdolności i atak wieloma; Akrasan Squire pinuje samą projekcję exalted.
+- **Dowody:** E **6/6**, rodzina Angelic/exalted/guard + golden **163/163**,
+  `npm test` **8066/8066**, pełne **8331/8331**, golden **4/4 bez
+  regeneracji**, build **73 moduły / 5043,7 kB**. Szybki benchmark: **672
+  mecze**, 0 niedokończonych, heuristic **86,0%** vs aggro i **98,5%** vs
+  random. Dwie mutacje (bez tap projection / bez pump projection) czerwienieją.
+- **Żywy Tester:** `dominaria-brg` vs bot `alara`, seed 42, defensive. Bot
+  wielokrotnie deklaruje samotny atak z Benediction, wybiera Disę, korzysta z
+  efektu, dostaje exalted i wygrywa; **0 detektorów**, 0 niewycenionych decyzji.
+  GitHub CI kodu **SUCCESS** — run `38280661610`. Plan:
+  `docs/plans/PLAN_2026-10-12-e-angelic-benediction-bot.md`.

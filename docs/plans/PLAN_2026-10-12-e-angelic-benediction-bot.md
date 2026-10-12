@@ -58,50 +58,59 @@ Nienegocjowalne granice:
 
 ### E1 — produkcyjne RED-y decyzji i wykonania
 
-- [ ] Dodać test z prawdziwą Angelic Benediction, dwoma gotowymi 2/2 i
+- [x] Dodać test z prawdziwą Angelic Benediction, dwoma gotowymi 2/2 i
   nietapniętym wrogim 5/4; bot ma zadeklarować **dokładnie jednego** atakującego.
-- [ ] Wykonać wybraną komendę przez `execute`, pozwolić temu samemu botowi
+- [x] Wykonać wybraną komendę przez `execute`, pozwolić temu samemu botowi
   wybrać wrogie 5/4 jako cel i doprowadzić stos do rozstrzygnięcia.
-- [ ] Przed deklaracją blokujących potwierdzić: 5/4 jest tapnięte, samotny
+- [x] Przed deklaracją blokujących potwierdzić: 5/4 jest tapnięte, samotny
   atakujący dostał +1/+1, a przeciwnik nie może go zablokować tym stworzeniem.
-- [ ] Dodać kotwice anty-over-fix:
+- [x] Dodać kotwice anty-over-fix:
   1. identyczna plansza bez triggera tapującego nadal nie uzasadnia samobójczego
      ataku 2/2 w 5/4;
   2. dwa wrogie 5/4 i tylko jeden trigger pozostawiają legalnego blokera;
-  3. nietargetowalny 5/4 (co najmniej hexproof/shroud) nie jest pozornie
-     usuwany z projekcji;
-  4. wariant z dwoma atakującymi nie korzysta z `attacks_alone`.
-- [ ] Uruchomić plik osobno i zachować czerwony wynik głównego pinu.
+  3. nietargetowalny 5/4 (hexproof) nie jest pozornie usuwany z projekcji;
+  4. wariant z dwoma atakującymi nie korzysta z `attacks_alone`;
+  5. permanent po utracie zdolności nie dostarcza wydrukowanych triggerów.
+- [x] Uruchomić plik osobno i zachować czerwony wynik głównego pinu (**4/5**
+  przed fixem: tylko E/1 czerwony; po dodaniu pinu exalted pakiet ma **6/6**).
 
 ### E2 — generyczna projekcja `attacks_alone`
 
-- [ ] Wydzielić mały helper projekcji samotnego ataku, który skanuje aktywne,
+- [x] Wydzielić mały helper projekcji samotnego ataku, który skanuje aktywne,
   kontrolowane źródła na polu bitwy po `trigger.event === 'attacks_alone'`.
-- [ ] Zsumować automatyczne pompy samotnego atakującego (`exalted_pump` i
+- [x] Zsumować automatyczne pompy samotnego atakującego (`exalted_pump` i
   zgodne deskryptorowe pompy do końca tury) przez wspólny `pumpDelta`.
-- [ ] Dla opcjonalnych `tap_permanent` wybrać legalne wrogie blokery przez ten
+- [x] Dla opcjonalnych `tap_permanent` wybrać legalne wrogie blokery przez ten
   sam publiczny filtr celu co inne antycypowane efekty i usunąć najwyżej jeden
   różny bloker na trigger.
-- [ ] Użyć projektowanego atakującego i listy blokerów konsekwentnie w całej
+- [x] Użyć projektowanego atakującego i listy blokerów konsekwentnie w całej
   wycenie wariantu: wymiana, obrażenia, lethal/poison i wartość presji.
-- [ ] Nie mutować `PlayerView` ani stanu gry.
-- [ ] GREEN wszystkich pinów E.
-- [ ] Dowód mutacyjny: wyłączenie projekcji tapnięcia musi czerwienić dokładny
-  scenariusz właściciela.
+- [x] Nie mutować `PlayerView` ani stanu gry.
+- [x] GREEN wszystkich pinów E (**6/6**).
+- [x] Dowody mutacyjne: wyłączenie projekcji tapnięcia czerwieni E/1, a
+  wyłączenie automatycznej pompy exalted czerwieni E/6.
 
 ### E3 — bramy i domknięcie
 
-- [ ] Test celowany E wraz z istniejącymi testami Angelic Benediction.
-- [ ] `npm test` (cichy log).
-- [ ] Golden master `test/bot-scoring-snapshot.test.js` bez regeneracji; każdą
-  zmianę snapshotu traktować jako finding, nie akceptować automatycznie.
-- [ ] Szybki benchmark bota (`node tools/benchmark.mjs`, bez `--full`).
-- [ ] `npm run build`.
-- [ ] `npm run test:all` (cichy log).
-- [ ] `git diff --check`.
-- [ ] Osobny commit kodu/testów i push.
-- [ ] Uzupełnić ten plan, `docs/PROJECT_HISTORY.md`, handoff sesji i opis PR #163.
-- [ ] Osobny commit dokumentacji, push oraz końcowe zielone GitHub CI.
+- [x] Test celowany E wraz z istniejącymi testami Angelic Benediction:
+  **163/163**.
+- [x] `npm test`: **8066/8066**.
+- [x] Golden master `test/bot-scoring-snapshot.test.js`: **4/4**, bez
+  regeneracji.
+- [x] Szybki benchmark bota (`node tools/benchmark.mjs`, bez `--full`):
+  **672 mecze**, 0 niedokończonych; heuristic **86,0%** vs aggro i **98,5%**
+  vs random.
+- [x] `npm run build`: **73 moduły / 5043,7 kB**.
+- [x] `npm run test:all`: **8331/8331**.
+- [x] `git diff --check`.
+- [x] Osobny commit kodu/testów `f55d97e` i push.
+- [x] Żywy Tester: `dominaria-brg` vs bot `alara`, seed 42, profil defensive;
+  bot wielokrotnie atakuje samotnie, wybiera Disę jako cel, korzysta z
+  „you may”, dostaje exalted i wygrywa; **0 zgłoszeń detektorów**, brak
+  niewycenionych decyzji.
+- [x] GitHub CI kodu: **SUCCESS**, run `38280661610`.
+- [x] Uzupełnić ten plan, `docs/PROJECT_HISTORY.md`, handoff sesji i opis PR #163.
+- [x] Osobny commit dokumentacji, push oraz końcowe zielone GitHub CI.
 
 ## Ryzyka i strażniki
 
@@ -120,4 +129,16 @@ Nienegocjowalne granice:
 
 ## Wynik końcowy
 
-_Do uzupełnienia po wdrożeniu._
+Commit `f55d97e` naprawia scoring bez specjalnego przypadku karty. Dla
+pojedynczego atakującego bot projektuje aktywne, publiczne triggery
+`attacks_alone`: automatyczny pump trafia do wszystkich dalszych obliczeń
+walki, a każdy legalny `tap_permanent` usuwa najwyżej jednego rzeczywistego
+blokera. W dokładnym scenariuszu właściciela bot wybiera jedno z dwóch 2/2,
+wykonuje legalną deklarację, celuje Benediction w 5/4, korzysta z opcjonalnego
+efektu, tapuje je przed blokami i atakuje jako 3/3.
+
+Kotwice zachowują pass bez Benediction, przy drugim 5/4, hexproofie oraz
+utracie zdolności; atak dwoma stworami nie pożycza premii samotnego ataku.
+Osobny pin Akrasan Squire dowodzi, że sama projekcja exalted jest częścią
+wyniku, a nie martwą dokumentacją. Dwie mutacje root cause są zabijane.
+Golden master pozostał bez zmian, a szybki benchmark nie wykazał regresji.
