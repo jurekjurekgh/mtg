@@ -103,13 +103,21 @@ test('F-A1: consume-spirit X w twarz skaluje gain (tiers(X))', () => {
   assert.deepEqual(faces, [-7, -8, -8, -9, -70], `consume w twarz X=4..0 (bylo -10x4,-70): ${JSON.stringify(faces)}`);
 });
 
-test('F-A1: severed-strands liczy gain-T (TMC + tiers(T))', () => {
-  for (const [t, want] of [[1, 87], [4, 88], [7, 85]]) {
+test('F-A1: severed-strands liczy gain-T dla dozwolonej 1/1; nie oferuje ofiary >1/1', () => {
+  for (const t of [1, 4, 7]) {
     const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['B'], 4);
     handCard(s, 'ss', 'severed-strands');
     fieldCreature(s, 'cel', 'p2', 2, 2);
     fieldCreature(s, 'fod', 'p1', 1, t, { manaCost: 1 });
-    assert.equal(scoreOf(s, 'cast_spell(ss'), want, `severed T${t} (bylo 86/85/82)`);
+    if (t === 1) {
+      assert.equal(scoreOf(s, 'cast_spell(ss'), 87, 'severed T1 (bylo 86)');
+      continue;
+    }
+    const view = playerView(s, 'p1');
+    const bot = createHeuristicBot({ seed: 9 });
+    bot.chooseCommand(view);
+    assert.equal(bot.trace().at(-1).options.some((o) => o.cmd.includes('cast_spell(ss')), false,
+      `Severed Strands nie może poświęcić 1/${t}`);
   }
 });
 

@@ -1531,6 +1531,26 @@ function cardCostReductionForView(view, def) {
   return reduction.amount * count;
 }
 
+/**
+ * Uwaga właściciela (Village Rites, 2026-10-12): twarda polityka dodatkowego
+ * kosztu RZUTU „poświęć stwora”. Bot może oddać wyłącznie własne stworzenie o
+ * bieżących EFEKTYWNYCH statystykach dokładnie 1/1 — token albo zwykłą kartę.
+ *
+ * `sacrificeTargetId` jest wspólnym polem wszystkich ścieżek rzutu
+ * (cast_spell, discover/rebound/suspend/Epic, okna ręki/grobu/wygnania), więc
+ * reguła nie rozpoznaje nazwy komendy ani karty (ADR 0002). Exploit, Devour,
+ * wymuszone poświęcenia i koszty zdolności używają innych pól i nie trafiają
+ * tutaj. Brak pola = komenda spoza tej polityki i pozostaje dozwolona.
+ */
+export function botMayPayCreatureSacrificeCost(view, cmd) {
+  if (cmd?.sacrificeTargetId == null) return true;
+  const victim = (view?.zones?.battlefield ?? [])
+    .find((object) => object?.id === cmd.sacrificeTargetId);
+  if (!victim || victim.controllerId !== view?.playerId) return false;
+  const creature = victim.kind === 'creature' || (victim.types ?? []).includes('Creature');
+  return creature && victim.power === 1 && victim.toughness === 1;
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -1604,7 +1624,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const LOOKAHEAD_EVAL_THRESHOLD = 1;
   const LOOKAHEAD_TYPES = ['play_land', 'cast_permanent', 'cast_spell', 'cast_cleave', 'activate_ability', 'declare_attackers'];
 
-  const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
+  /**
+   * Jedyny zbiór komend, z którego polityka bota może wybierać. Engine i widok
+   * nadal wystawiają człowiekowi wszystkie legalne ofiary; odrzucamy tu tylko
+   * warianty strategicznie zabronione właścicielowi bota. Ta sama pula zasila
+   * wybór główny, lookahead i polityki symulacji — losowość nie może przywrócić
+   * usuniętego wariantu.
+   */
+  function botCommandCandidates(view) {
+    const legal = view?.legalCommands ?? [];
+    const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd));
+    // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
+    // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
+    // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.
+    if (legal.length > 0 && candidates.length === 0) {
+      throw new Error('Brak komendy bota zgodnej z polityką kosztu poświęcenia 1/1');
+    }
+    return candidates;
+  }
+
+  const byType = (view, type) => botCommandCandidates(view).filter((cmd) => cmd.type === type);
   const objectOnBoard = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId);
   /**
    * Batch60-followup/2 (2026-09-27, ograniczenie 2: JAKOŚĆ bloku): wartość
@@ -2769,7 +2808,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const hasLandInHand = (view.zones.hand ?? []).some((o) => o.kind === 'land' || (o.types ?? []).includes('Land'));
     if (!hasLandInHand) return 0;
     // Czy w ręce jest rzucalny stwór z landfall gain?
-    const legalCasts = new Set((view.legalCommands ?? []).filter((c) => c.type === 'cast_permanent' || c.type === 'cast_spell').map((c) => c.objectId));
+    const legalCasts = new Set(botCommandCandidates(view)
+      .filter((c) => c.type === 'cast_permanent' || c.type === 'cast_spell')
+      .map((c) => c.objectId));
     if (legalCasts.size === 0) return 0;
     let maxGain = 0;
     let bestLandfallScore = -Infinity;
@@ -4885,11 +4926,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * prawdziwej decyzji jako „bez wyceny" (E1 telemetria).
    */
   /**
+   * Village Rites: syntetyczne sondy „czy mana odblokuje kartę" powstają ZANIM
+   * engine wystawi pełną komendę kosztu. Nie mogą zgubić twardej polityki
+   * ofiary tylko dlatego, że syntetyk nie ma jeszcze `sacrificeTargetId`.
+   */
+  const additionalCostOfCard = (card) => (card?.spell ?? registry.get(card?.cardId)?.spell)?.additionalCost ?? null;
+  const botSacrificeFodderIds = (view) => (view.zones?.battlefield ?? [])
+    .filter((object) => botMayPayCreatureSacrificeCost(view, {
+      type: 'cast_spell', sacrificeTargetId: object.id,
+    }))
+    .map((object) => object.id);
+  const botCanPayCastAdditionalCost = (view, card) => {
+    const cost = additionalCostOfCard(card);
+    if (!cost?.sacrificeCreature) return true;
+    // „Sacrifice a creature OR pay {N}" może być finansowane maną bez ofiary.
+    return botSacrificeFodderIds(view).length > 0 || cost.orPayMana != null;
+  };
+
+  /**
    * PMSSB-32/A2 (L48): czy silnik ma JUŻ ofertę rzutu tej karty? Wspólna lista
    * typów komend z `castScoreForUnlock` (jedno źródło prawdy, L41) — używane
    * przy odblokowaniu: oferta = auto-płatność = aktywacja nic nie wnosi.
    */
-  const castOfferedNow = (view, card) => (view.legalCommands ?? [])
+  const castOfferedNow = (view, card) => botCommandCandidates(view)
     .some((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
 
   /**
@@ -4911,16 +4970,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   ];
 
   const castScoreForUnlock = (view, card) => {
-    const offered = (view.legalCommands ?? [])
+    const offered = botCommandCandidates(view)
       .filter((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
     const synthetic = ((isInstantSpeedCard(card) || card.kind === 'sorcery'
       || (card.types ?? []).includes('Sorcery'))
       ? { type: 'cast_spell', playerId: view.playerId, objectId: card.id }
       : { type: 'cast_permanent', playerId: view.playerId, objectId: card.id });
+    const additionalCost = additionalCostOfCard(card);
+    let syntheticVariants = [synthetic];
+    if (additionalCost?.sacrificeCreature) {
+      syntheticVariants = botSacrificeFodderIds(view)
+        .map((sacrificeTargetId) => ({ ...synthetic, sacrificeTargetId }));
+      if (additionalCost.orPayMana != null) syntheticVariants.push({ ...synthetic, payAltCost: true });
+    }
     const saved = lastUnvaluedType;
     let best = null;
     try {
-      const commands = offered.length > 0 ? [...offered] : [synthetic];
+      const commands = offered.length > 0 ? [...offered] : [...syntheticVariants];
       // PMSSB-32/A3 (F6): bramka „chcę to rzucić" dla Skarbów/filtrów pytała
       // komendę BEZ CELÓW, więc KAŻDY czar z celem wypadał ujemnie (Shock bez
       // celu −10) i Skarb nigdy nie finansował removal/burna. Gdy brak oferty
@@ -4929,7 +4995,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // funkcja wyceny, ten sam kształt komendy).
       if (offered.length === 0 && spellNeedsTarget(card)) {
         for (const targetId of targetCandidatesOf(view)) {
-          commands.push({ ...synthetic, targets: [targetId] });
+          for (const variant of syntheticVariants) commands.push({ ...variant, targets: [targetId] });
         }
       }
       for (const cmd of commands) {
@@ -4940,11 +5006,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     } finally {
       lastUnvaluedType = saved;
     }
-    return best == null ? 1 : best;
+    if (best != null) return best;
+    return additionalCost?.sacrificeCreature && syntheticVariants.length === 0 ? NEVER : 1;
   };
 
   const manaUnlockCandidates = (view) => (view.zones.hand ?? []).filter((o) => {
     if (!o || o.kind === 'land' || (o.manaCost ?? 0) <= 0) return false;
+    if (!botCanPayCastAdditionalCost(view, o)) return false;
     if (isInstantSpeedCard(o)) return true;
     // Kroki główne silnika nazywają się main1/main2 (turn.js; „main" to
     // alias skoku) — akceptujemy oba plus alias dla widoków syntetycznych.
@@ -4994,7 +5062,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * aktywacji rzut nadal jest dostępny, więc nic nie gubimy.
    */
   const treasureRefundLead = (view) => {
-    const refundCasts = (view.legalCommands ?? []).filter((cmd) => UNLOCK_CAST_TYPES.has(cmd.type)
+    const refundCasts = botCommandCandidates(view).filter((cmd) => UNLOCK_CAST_TYPES.has(cmd.type)
       && refundsTreasureManaOnCast((view.zones.hand ?? []).find((o) => o.id === cmd.objectId)?.cardId));
     if (refundCasts.length === 0) return null;
     const saved = lastUnvaluedType;
@@ -5008,7 +5076,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       lastUnvaluedType = saved;
     }
     if (best == null) return null;
-    const activation = (view.legalCommands ?? []).find((cmd) => cmd.type === 'activate_ability'
+    const activation = botCommandCandidates(view).find((cmd) => cmd.type === 'activate_ability'
       && activationProducesTreasureMana(view, cmd));
     if (!activation) return null;
     return { cmd: activation, score: best + 10 };
@@ -8534,6 +8602,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   function scoreCommand(view, cmd) {
+    // Village Rites (uwaga właściciela 2026-10-12): obrona w głąb dla
+    // syntetycznych wycen i przyszłych konsumentów scoreCommand. Główny wybór
+    // usuwa te warianty już w `botCommandCandidates`, lecz komendy sondowe
+    // (np. odblokowanie many) również nie mogą uznać ofiary >1/1 za plan.
+    if (!botMayPayCreatureSacrificeCost(view, cmd)) return weightedScore(cmd.type, NEVER);
     // M320/NA2: ward (CR 702.21) — dopłata za celowanie we wrogi permanent
     // z ward. Odejmowana od WYNIKU każdego wariantu (finish), więc warianty
     // różnią się kosztem ward jak każdym innym; brak many na dopłatę →
@@ -14363,7 +14436,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** Czysty, zachłanny wybór (bez side effectów) — używany też jako polityka symulacji B2. */
   function greedyChoice(view) {
-    const scored = view.legalCommands.map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    const scored = botCommandCandidates(view).map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
     scored.sort((a, b) => b.score - a.score);
     return scored[0].cmd;
   }
@@ -14371,7 +14444,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // blocks if can kill attacker, otherwise passes. More realistic than
   // full greedy (which blocks optimally and makes attacks look bad).
   function simpleChoice(view) {
-    const ofType = (type) => view.legalCommands.filter((c) => c.type === type);
+    const commands = botCommandCandidates(view);
+    const ofType = (type) => commands.filter((c) => c.type === type);
     const first = (type) => ofType(type)[0] ?? null;
     // Always play land if available
     const land = first('play_land');
@@ -14395,7 +14469,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const resolve = first('resolve_combat');
     if (resolve) return resolve;
     // Resolve pending decisions (take first option)
-    const resolveAny = view.legalCommands.find((c) => c.type.startsWith('resolve_'));
+    const resolveAny = commands.find((c) => c.type.startsWith('resolve_'));
     if (resolveAny) return resolveAny;
     // Pass
     return first('pass_priority');
@@ -14473,7 +14547,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Deterministyczne: klon + polityka greedyChoice, zero losowości.
    */
   function scoredWithLookahead(view, simulate) {
-    const scored = view.legalCommands.map((cmd) => scoreTracked(view, cmd));
+    const scored = botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd));
     scored.sort((a, b) => b.score - a.score);
     const base = evalView(view);
     // W wyścigu (mała biblioteka / bliski lethal wroga) atak jest presją, nie
@@ -15028,11 +15102,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       const scored = enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
-        : view.legalCommands.map((cmd) => scoreTracked(view, cmd));
+        : botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd));
       scored.sort((a, b) => b.score - a.score);
-      let pick = scored[0];
-      if (randomness > 0 && scored.length > 1 && rng() < randomness) {
-        const pool = scored.slice(0, Math.min(3, scored.length));
+      // `NEVER` oznacza prawdziwy zakaz (m.in. concede), nie „bardzo słabą
+      // trzecią opcję”. Profil z randomness losował dotąd z top 3 także
+      // -Infinity i potrafił po nowym filtrze zamiast passa losowo się poddać.
+      // Losowość działa wyłącznie wśród skończenie wycenionych komend.
+      const finite = scored.filter((entry) => Number.isFinite(entry.score));
+      let pick = finite[0] ?? scored[0];
+      if (randomness > 0 && finite.length > 1 && rng() < randomness) {
+        const pool = finite.slice(0, Math.min(3, finite.length));
         pick = pool[Math.floor(rng() * pool.length)];
       }
       // E1: wybrany wariant policzony gałęzią default — zapis w telemetrii
