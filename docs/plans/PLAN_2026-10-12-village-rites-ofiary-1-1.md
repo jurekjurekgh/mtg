@@ -76,49 +76,49 @@ Nie zmienia:
 
 ### V1 — RED: polityka i produkcyjny scenariusz
 
-- [ ] Dodać produkcyjny test: prawdziwy Segmented Krotiq jako Morph 2/2,
+- [x] Dodać produkcyjny test: prawdziwy Segmented Krotiq jako Morph 2/2,
   prawdziwe Village Rites i sześć many; engine nadal oferuje legalny wariant,
   ale bot wybiera pass.
-- [ ] Dodać 1/1 obok Morpha: bot rzuca Village Rites wyłącznie z ofiarą 1/1,
+- [x] Dodać 1/1 obok Morpha: bot rzuca Village Rites wyłącznie z ofiarą 1/1,
   komenda przechodzi przez `execute`, 1/1 ginie, Morph zostaje, a bot dobiera.
-- [ ] Przypiąć, że zwykła karta-stwór 1/1 oraz token 1/1 są dozwolone.
-- [ ] Przypiąć zakaz dla 1/2, 2/1, 2/2 i większych stworzeń.
-- [ ] Przypiąć co najmniej jedno okno darmowego/warunkowego rzutu z możliwością
+- [x] Przypiąć, że zwykła karta-stwór 1/1 oraz token 1/1 są dozwolone.
+- [x] Przypiąć zakaz dla 1/2, 2/1, 2/2 i większych stworzeń.
+- [x] Przypiąć co najmniej jedno okno darmowego/warunkowego rzutu z możliwością
   rezygnacji, żeby polityka nie żyła wyłącznie w `cast_spell`.
-- [ ] Przypiąć profil z `randomness: 1`, aby zakaz nie wrócił przez losowanie
+- [x] Przypiąć profil z `randomness: 1`, aby zakaz nie wrócił przez losowanie
   z trzech najwyższych ofert.
-- [ ] Przypiąć anty-over-fix: engine i UI człowieka nadal widzą wszystkie
+- [x] Przypiąć anty-over-fix: engine i UI człowieka nadal widzą wszystkie
   legalne ofiary.
-- [ ] Uruchomić nowy plik i zachować RED przed implementacją.
+- [x] Uruchomić nowy plik i zachować RED przed implementacją.
 
 ### V2 — jedna twarda bramka komend bota
 
-- [ ] Dodać czysty predykat: brak `sacrificeTargetId` = komenda neutralna;
+- [x] Dodać czysty predykat: brak `sacrificeTargetId` = komenda neutralna;
   koszt poświęcenia = tylko własne stworzenie o efektywnym P/T 1/1.
-- [ ] Użyć predykatu w jednym wspólnym zbiorze kandydatów bota, z którego
+- [x] Użyć predykatu w jednym wspólnym zbiorze kandydatów bota, z którego
   korzystają normalny wybór, zachłanna polityka symulacji i lookahead.
-- [ ] Zabezpieczyć także pomocnicze sondy sekwencjonowania many, żeby bot nie
+- [x] Zabezpieczyć także pomocnicze sondy sekwencjonowania many, żeby bot nie
   produkował many pod rzut, którego potem zgodnie z polityką nie wykona.
-- [ ] Zachować obronę w `scoreCommand` (`NEVER`) dla wywołań syntetycznych i
+- [x] Zachować obronę w `scoreCommand` (`NEVER`) dla wywołań syntetycznych i
   przyszłych konsumentów, bez kopiowania warunku 1/1.
-- [ ] Nie dodawać parametru tunera: jest to wiążący zakaz właściciela, nie
+- [x] Nie dodawać parametru tunera: jest to wiążący zakaz właściciela, nie
   miękka preferencja strategii.
-- [ ] GREEN wszystkich pinów V i istniejącej rodziny.
-- [ ] Dowód mutacyjny: pominięcie bramki musi przywracać poświęcenie Morpha.
+- [x] GREEN wszystkich pinów V i istniejącej rodziny.
+- [x] Dowód mutacyjny: pominięcie bramki musi przywracać poświęcenie Morpha.
 
 ### V3 — bramy i domknięcie
 
-- [ ] Celowane testy V oraz powiązane testy kosztów dodatkowych/Morph/bota.
-- [ ] Golden master bez automatycznej regeneracji; każdą zmianę potraktować
+- [x] Celowane testy V oraz powiązane testy kosztów dodatkowych/Morph/bota.
+- [x] Golden master bez automatycznej regeneracji; każdą zmianę potraktować
   jako finding i wyjaśnić.
-- [ ] `npm test` z pełnym stdout/stderr w `.arena/*.log`.
-- [ ] Szybki benchmark bota, ponieważ zmienia się przestrzeń jego decyzji.
-- [ ] `npm run build` z pełnym stdout/stderr w `.arena/*.log`.
-- [ ] `npm run test:all` uruchomić raz po domknięciu kodu, również do logu.
-- [ ] `git diff --check`.
-- [ ] Osobny commit kodu/testów i push.
-- [ ] Uzupełnić plan, historię projektu, handoff i PR #163.
-- [ ] Osobny commit dokumentacji, push i końcowy zielony GitHub CI.
+- [x] `npm test` z pełnym stdout/stderr w `.arena/*.log`.
+- [x] Szybki benchmark bota, ponieważ zmienia się przestrzeń jego decyzji.
+- [x] `npm run build` z pełnym stdout/stderr w `.arena/*.log`.
+- [x] `npm run test:all` uruchomić raz po domknięciu kodu, również do logu.
+- [x] `git diff --check`.
+- [x] Osobny commit kodu/testów i push.
+- [x] Uzupełnić plan, historię projektu, handoff i PR #163.
+- [x] Osobny commit dokumentacji, push i końcowy zielony GitHub CI.
 
 ## Ryzyka i strażniki
 
@@ -138,4 +138,43 @@ Nie zmienia:
 
 ## Wynik końcowy
 
-_Do uzupełnienia po wdrożeniu._
+Wdrożono w commicie kodu/testów `98d6f8f`:
+
+- `botMayPayCreatureSacrificeCost` rozpoznaje semantyczne pole
+  `sacrificeTargetId` i dopuszcza wyłącznie własne stworzenie o efektywnym
+  P/T dokładnie 1/1;
+- `botCommandCandidates` jest wspólną pulą normalnego rankingu, lookahead,
+  zachłannej i prostej polityki symulacji oraz sond pomocniczych;
+- zakaz ma drugą linię obrony `NEVER` w `scoreCommand`, a losowość wybiera
+  wyłącznie spośród komend o skończonym wyniku — nie zamienia odfiltrowanego
+  rzutu w losowe `concede`;
+- sondy odblokowania many znają koszt poświęcenia: bot nie spala Skarbu pod
+  Village Rites, którego potem nie może zgodnie z polityką rzucić; wariant
+  „albo zapłać {N}” pozostaje dostępny;
+- engine oraz oferty człowieka nie zostały zmienione.
+
+Dowody RED→GREEN i mutacyjne:
+
+- pierwszy RED nowego pliku: **0/6**;
+- osobny RED sondy Skarbu: **6/7**, jedyną porażką było niepotrzebne
+  poświęcenie Skarbu na manę;
+- końcowy plik V: **7/7**;
+- mutacja usuwająca warunek 1/1: **2/7 PASS, 5/7 FAIL**, więc piny naprawdę
+  zależą od bramki;
+- stary pin Severed Strands został uzgodniony z wiążącą polityką: zachowuje
+  wycenę dozwolonej ofiary 1/1 i jawnie odrzuca 1/4 oraz 1/7.
+
+Bramy końcowe:
+
+- rodzina celowana: **123/123**;
+- golden master: **4/4**, bez regeneracji;
+- `npm test`: **8079/8079**;
+- `npm run test:all`: **8344/8344**;
+- benchmark: **672 mecze**, heuristic **92,0%** wszystkich zwycięstw;
+- build: **73 moduły / 5053,1 kB**;
+- `git diff --check`: czysto;
+- GitHub CI commitu kodu: **SUCCESS**, run `38290364410`.
+
+Wszystkie długie testy, benchmark i watcher CI zapisały pełny stdout/stderr w
+ignorowanych `.arena/*.log`; na terminal trafiły wyłącznie krótkie statusy i
+końcowe podsumowania.

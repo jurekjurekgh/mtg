@@ -16653,3 +16653,36 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   **227/227**; `npm test` **8072/8072**; pełne **8337/8337**; build
   **73 moduły / 5048,8 kB**. Plan:
   `docs/plans/PLAN_2026-10-12-f-impulse-kolejnosc-spodu.md`.
+
+## 2026-10-12c — uwaga G: Village Rites poświęca tylko 1/1
+
+- **Objaw:** bot z sześcioma z siedmiu many potrzebnych do Megamorph rzucał
+  Village Rites i poświęcał zakrytego Segmented Krotiqa 2/2. Po obróceniu byłby
+  on 6/5 z licznikiem +1/+1, lecz scoring widział bieżące ciało 2/2 i dawał
+  rzutowi **5 > pass 0**.
+- **Wiążąca polityka:** dodatkowy koszt rzutu „poświęć stwora” bot może zapłacić
+  tylko własnym stworzeniem o bieżącym efektywnym P/T dokładnie 1/1. Token i
+  nietoken są równoważne; 1/2, 2/1, Morph 2/2 i każde inne P/T są zabronione.
+  To polityka bota, nie legalność engine ani ograniczenie człowieka.
+- **Fix `98d6f8f`:** eksportowany predykat działa po wspólnym polu komendy
+  `sacrificeTargetId`, bez nazw i `cardId`. `botCommandCandidates` filtruje
+  jeden zbiór używany przez ranking główny, lookahead oraz obie polityki
+  symulacji; `scoreCommand` ma obronę `NEVER`. Losowość wybiera tylko komendy o
+  skończonym wyniku, więc po odrzuceniu rzutu nie może wylosować `concede`.
+- **Sekwencjonowanie many:** syntetyczne sondy odblokowania rzutu również
+  materializują wyłącznie ofiary 1/1. Bot nie spala Skarbu pod Village Rites,
+  którego i tak nie wykona; prawdziwa alternatywa „albo zapłać {N}” pozostaje
+  kandydatem.
+- **Produkcja i granice:** test naprawdę rzuca Segmented Krotiqa jako Morph,
+  sprawdza drukowane 6/5 w pełnym stanie i efektywne 2/2 w `PlayerView`.
+  Engine nadal oferuje człowiekowi ofiarę Morpha. Bez 1/1 bot pasuje; obok
+  Soldiera 1/1 wybiera tylko token, `execute` płaci koszt, zachowuje Morpha i
+  Village Rites dobiera dwie. Osobny pin obejmuje darmowy rzut z możliwością
+  odmowy, macierz P/T, obcego/niestwora i `randomness: 1`.
+- **Dowody:** RED **0/6**; osobny RED sondy Skarbu **6/7**; GREEN **7/7**.
+  Mutacja usuwająca bramkę daje **2/7 PASS, 5/7 FAIL**. Rodzina celowana
+  **123/123**, golden master **4/4 bez regeneracji**, fast **8079/8079**,
+  pełne **8344/8344**, build **73 moduły / 5053,1 kB**. Benchmark: **672
+  mecze**, heuristic **92,0%** wszystkich zwycięstw. GitHub CI kodu
+  **SUCCESS**, run `38290364410`.
+- Plan: `docs/plans/PLAN_2026-10-12-village-rites-ofiary-1-1.md`.
