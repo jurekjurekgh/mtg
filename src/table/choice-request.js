@@ -204,10 +204,10 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
 // =============================================================================
 
 /**
- * Czy żądanie wyboru to komplet wariantów scry/surveil dla TEGO gracza — wtedy
- * zamiast listy wszystkich kombinacji pokazujemy wizard krok po kroku.
- * Zwraca 'scry' | 'surveil' | null. Bez zmiany protokołu: warstwa UI i tak
- * wysyła jedną pełną komendę resolve_* — składa ją dopiero na końcu kroków.
+ * Czy żądanie wyboru to komplet wariantów przeglądania kart dla TEGO gracza —
+ * wtedy zamiast płaskiej listy albo wszystkich kombinacji pokazujemy wizard
+ * krok po kroku. Bez zmiany protokołu: warstwa UI wysyła jedną pełną komendę
+ * resolve_* dopiero na końcu kroków.
  */
 export function lookWizardKindOf(request, view) {
   const options = request?.options ?? [];
@@ -233,6 +233,19 @@ export function lookWizardKindOf(request, view) {
       return null;
     }
     return 'peek-pick';
+  }
+  // Uwaga F właściciela (Impulse): wybór jednej karty jest dopiero pierwszym
+  // krokiem. Gdy reszta idzie na spód „in any order”, lokalny wizard zbiera
+  // kolejność po jednej karcie — legalCommands nadal zawiera tylko N wyborów
+  // karty, nigdy N×(N-1)! permutacji. Wariant do grobu (Gurmag Drowner) nie
+  // potrzebuje sortera i zostaje zwykłą listą.
+  if (type === 'resolve_look_top_choice') {
+    const pending = view?.pendingLookTopN;
+    if (!pending || pending.playerId !== view?.playerId || pending.restTo !== 'library_bottom'
+      || !Array.isArray(pending.cards) || pending.cards.length === 0) {
+      return null;
+    }
+    return 'pick-one-rest-bottom';
   }
   if (type !== 'resolve_surveil' && type !== 'resolve_scry') return null;
   const pending = type === 'resolve_surveil' ? view?.pendingSurveil : view?.pendingScry;
@@ -267,7 +280,7 @@ export function lookWizardKindOf(request, view) {
  *   gate {intro, lookLabel, declineLabel}   krok „czy w ogóle zaglądam?"
  *   flow 'decide'|'pick'|'order-only'       środek decyzji
  *   decide {toBad, toGood, current(card, view)}      decyzja per karta
- *   pick {intro, eligible:Set, labelFor, noneLabel}  wybór JEDNEJ karty
+ *   pick {intro, eligible:Set, labelFor, noneLabel?} wybór JEDNEJ karty; brak noneLabel = obowiązkowy
  *   order {intro, pool(view), ask(view, len), itemLabel(pos, name), chipsAfter}
  *   markOf(card, view) / badgeOf(card, view)         dopisek i znacznik chipa
  *   payload(view, list)      co dostaje onComplete ORAZ probeKeyFor
@@ -423,11 +436,14 @@ function renderPeekWizard(host, spec) {
         key: pickKey(card.id),
         onClick: () => { state.chosenId = card.id; state.ordered = []; stepOrderOrFinish(); },
       })),
-      {
+      // Nie każda rodzina mówi „you may”. Fertile Thicket ma legalne „bez
+      // landa”, natomiast Impulse/Clone Shell wymagają wybrania dokładnie jednej
+      // karty. Brak etykiety oznacza brak pozornej opcji odmowy.
+      ...(spec.pick.noneLabel == null ? [] : [{
         label: spec.pick.noneLabel,
         key: pickKey(null),
         onClick: () => { state.chosenId = null; state.ordered = []; stepOrderOrFinish(); },
-      },
+      }]),
     ],
   });
 
@@ -615,6 +631,67 @@ export function renderPeekPickOrderWizard(host, {
     payload: (v) => (v.skipped
       ? { skip: true }
       : { chosenCardId: v.chosenId ?? null, bottomOrder: [...v.ordered] }),
+    header: null,
+    onOpenCard,
+    onCancel,
+    onComplete,
+    probeKeyFor,
+  });
+}
+
+/**
+ * Uwaga F właściciela (Impulse): obowiązkowo wybierz jedną z obejrzanych kart,
+ * a pozostałe ułóż na spodzie po jednej — OD SAMEGO DNA. To cienki adapter
+ * tego samego `renderPeekWizard`, nie drugi rysownik i nie lista permutacji.
+ *
+ * Kontrakt engine ma `bottomOrder` w kierunku od najbliższej wierzchu do dna,
+ * bo tablica biblioteki ma wierzch na początku. UI celowo zbiera odwrotnie:
+ * pierwszy klik oznacza samo dno, dlatego payload odwraca `ordered`.
+ *
+ * `pickTo` parametryzuje wariant rodziny: zwykle wybrana karta idzie do ręki,
+ * Clone Shell wygania ją zakrytą i linkuje ze źródłem. Żadnych nazw/cardId.
+ */
+export function renderPickOneRestBottomWizard(host, {
+  cards, pickTo = 'hand', sourceName = null, onComplete, onCancel,
+  onOpenCard = null, probeKeyFor = null,
+} = {}) {
+  const list = Array.isArray(cards) ? cards.slice() : [];
+  const allIds = new Set(list.map((card) => card.id));
+  const exileFaceDown = pickTo === 'exile_face_down_linked';
+  const pickedName = (id) => list.find((card) => card.id === id)?.name ?? 'Wybrana karta';
+  const sourcePrefix = sourceName ? `${sourceName} — ` : '';
+  return renderPeekWizard(host, {
+    cards: list,
+    flow: 'pick',
+    pick: {
+      intro: () => exileFaceDown
+        ? `${sourcePrefix}obejrzane karty (wybierz jedną, którą wygnasz zakrytą):`
+        : `${sourcePrefix}obejrzane karty (wybierz jedną do ręki):`,
+      eligible: allIds,
+      labelFor: (card) => exileFaceDown
+        ? `${card.name} — wygnaj zakrytą`
+        : `${card.name} do ręki`,
+      // Oba warianty mówią „one” bez „may” — brak opcji odmowy.
+      noneLabel: null,
+    },
+    order: {
+      intro: (v) => `${pickedName(v.chosenId)} ${exileFaceDown ? 'wygnana zakryta' : 'do ręki'}. `
+        + 'Odłóż pozostałe na spód — wybieraj od samego dołu '
+        + '(pierwsza wybrana karta będzie na samym dole):',
+      pool: (v) => list.map((card) => card.id).filter((id) => id !== v.chosenId),
+      ask: (v, len) => len >= 2,
+      itemLabel: (pos, name) => `${pos}. od dołu: ${name}`,
+      chipsAfter: true,
+    },
+    markOf: (card, v) => {
+      if (v.chosenId === card.id) return exileFaceDown ? ' → wygnanie (zakryta)' : ' → ręka';
+      const bottomIndex = v.ordered.indexOf(card.id);
+      return bottomIndex >= 0 ? ` → spód (${bottomIndex + 1}. od dołu)` : '';
+    },
+    payload: (v) => ({
+      cardId: v.chosenId,
+      bottomOrder: [...v.ordered].reverse(),
+    }),
     header: null,
     onOpenCard,
     onCancel,

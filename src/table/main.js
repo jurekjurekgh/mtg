@@ -50,7 +50,7 @@ import { detectImageMode } from './card-images.js';
 // deck-builder.js zostaje; ADR 0012 bez zmian).
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderSearchBatchWizard } from './choice-request.js';
+import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
@@ -1090,6 +1090,32 @@ function bootstrapTable() {
         onComplete: (built) => {
           hideModal('choice-request');
           play({ type: 'resolve_fertile_thicket', playerId: choiceView.playerId, ...built });
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // Uwaga F właściciela (Impulse): po obowiązkowym wyborze jednej karty
+    // zbieramy kolejność reszty po jednym kliknięciu od samego dna. Adapter
+    // odwraca ją do engine'owego bottomOrder i dopiero wtedy wysyła JEDNĄ
+    // komendę; legalCommands nie enumeruje żadnych permutacji.
+    if (lookKind === 'pick-one-rest-bottom') {
+      const pending = choiceView.pendingLookTopN;
+      renderPickOneRestBottomWizard(els.choiceRequestBody, {
+        cards: pending.cards.map((card) => ({ id: card.id, cardId: card.cardId, name: session.nameOf(card.cardId) })),
+        pickTo: pending.pickTo,
+        sourceName: pending.sourceCardId ? session.nameOf(pending.sourceCardId) : null,
+        onOpenCard: (cardId) => openCardFullscreenByCardId(cardId),
+        // Sonda działa na kanonicznej legalnej ofercie wyboru karty. Dodanie
+        // bottomOrder do klucza wymagałoby wygenerowania wszystkich permutacji
+        // w legalCommands — dokładnie tego, czego ta interakcja ma unikać.
+        probeKeyFor: (built) => commandOptionKey({
+          type: 'resolve_look_top_choice', playerId: choiceView.playerId, cardId: built.cardId,
+        }),
+        onComplete: (built) => {
+          hideModal('choice-request');
+          play({ type: 'resolve_look_top_choice', playerId: choiceView.playerId, ...built });
         },
         onCancel: () => hideModal('choice-request'),
       });

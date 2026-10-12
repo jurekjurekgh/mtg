@@ -9222,6 +9222,11 @@ export function playerView(state, playerId) {
     // decyzji, nie tożsamość kart) — UI i bot rozgałęziają po niej etykiety
     // i wycenę (ADR 0002 — bez nazw kart w warstwie opisu).
     pickTo: state.pendingLookTopN.pickTo ?? 'hand',
+    // Uwaga F właściciela (Impulse): UI musi odróżnić „reszta do grobu" od
+    // „reszta na spód w dowolnej kolejności", żeby tylko drugi wariant dostał
+    // sekwencyjny sorter. Miejsce publicznego efektu nie ujawnia kart (FoW);
+    // same `cards` niżej nadal widzi wyłącznie decydent.
+    restTo: state.pendingLookTopN.restTo ?? 'graveyard',
     cards: state.pendingLookTopN.playerId === playerId
       ? state.pendingLookTopN.objectIds.map((id) => {
         const object = state.objects.get(id);
