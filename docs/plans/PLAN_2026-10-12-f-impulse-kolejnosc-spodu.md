@@ -78,43 +78,46 @@ Naprawa ma działać po typie decyzji, nie po nazwie ani `cardId` Impulse:
 
 ### F1 — RED: pełny przepływ i strażniki rodziny
 
-- [ ] Dodać test produkcyjnego przepływu: rzut prawdziwego Impulse, cztery
+- [x] Dodać test produkcyjnego przepływu: rzut prawdziwego Impulse, cztery
   obejrzane karty, wybór jednej do ręki, następnie trzy kliknięcia od samego
   dołu i wykonanie jednej kompletnej komendy.
-- [ ] Przypiąć, że fizyczny spód biblioteki odpowiada kolejno pierwszemu,
+- [x] Przypiąć, że fizyczny spód biblioteki odpowiada kolejno pierwszemu,
   drugiemu i trzeciemu kliknięciu, mimo odwrotnej reprezentacji `bottomOrder`.
-- [ ] Przypiąć liniową liczbę opcji na każdym kroku i brak jakiejkolwiek
+- [x] Przypiąć liniową liczbę opcji na każdym kroku i brak jakiejkolwiek
   enumeracji 3! wariantów.
-- [ ] Przypiąć routing wyłącznie dla `restTo: 'library_bottom'`, właściwego
+- [x] Przypiąć routing wyłącznie dla `restTo: 'library_bottom'`, właściwego
   gracza i jawnej listy kart; Gurmag Drowner ma pozostać poza sorterem.
-- [ ] Przypiąć wariant Clone Shell oraz przypadek jednej karty pozostałej.
-- [ ] Uruchomić nowy plik i zachować czerwony wynik przed implementacją.
+- [x] Przypiąć wariant Clone Shell oraz przypadek jednej karty pozostałej.
+- [x] Uruchomić nowy plik i zachować czerwony wynik przed implementacją:
+  **0/5**, wszystkie pięć pinów czerwonych.
 
 ### F2 — wspólny sekwencyjny wizard
 
-- [ ] Rozszerzyć `pendingLookTopNView` o publiczne `restTo`, bez rozszerzenia
+- [x] Rozszerzyć `pendingLookTopNView` o publiczne `restTo`, bez rozszerzenia
   widoczności kart.
-- [ ] Rozpoznać rodzaj czynności w `lookWizardKindOf`, bez nazwy karty.
-- [ ] Dodać cienki adapter wspólnego `renderPeekWizard`: obowiązkowy wybór
+- [x] Rozpoznać rodzaj czynności w `lookWizardKindOf`, bez nazwy karty.
+- [x] Dodać cienki adapter wspólnego `renderPeekWizard`: obowiązkowy wybór
   jednej karty oraz sorter reszty od samego dołu.
-- [ ] Uogólnić krok `pick` tylko o możliwość braku opcji „żadna”; istniejący
+- [x] Uogólnić krok `pick` tylko o możliwość braku opcji „żadna”; istniejący
   kreator Fertile Thicket zachowuje własny wariant opcjonalnego wyboru.
-- [ ] Na końcu zbudować jedną komendę `resolve_look_top_choice` z `cardId` i
+- [x] Na końcu zbudować jedną komendę `resolve_look_top_choice` z `cardId` i
   odwróconym `bottomOrder`.
-- [ ] Zachować `legalCommands` jako N wyborów kart — zero permutacji.
-- [ ] GREEN testów F oraz powiązanych regresji UI/engine/FoW/bota.
+- [x] Zachować `legalCommands` jako N wyborów kart — zero permutacji.
+- [x] GREEN testów F (**6/6**) oraz powiązanych regresji
+  UI/engine/FoW/bota (**227/227**).
 
 ### F3 — bramy i domknięcie
 
-- [ ] Celowane testy F i całej rodziny `pendingLookTopN`.
-- [ ] `npm test` z pełnym stdout/stderr w `.arena/*.log`.
-- [ ] `npm run build` z pełnym stdout/stderr w `.arena/*.log`.
-- [ ] `npm run test:all` tylko jeśli zakres lub wcześniejsza brama tego wymaga;
-  bez niepotrzebnego ponownego uruchamiania.
-- [ ] `git diff --check`.
-- [ ] Osobny commit kodu/testów i push.
-- [ ] Uzupełnić plan, historię projektu, handoff i opis PR #163.
-- [ ] Osobny commit dokumentacji, push oraz końcowy zielony GitHub CI.
+- [x] Celowane testy F i całej rodziny `pendingLookTopN`.
+- [x] `npm test` z pełnym stdout/stderr w `.arena/*.log`: **8072/8072**.
+- [x] `npm run build` z pełnym stdout/stderr w `.arena/*.log`:
+  **73 moduły / 5048,8 kB**.
+- [x] `npm run test:all` uruchomione raz po domknięciu kodu, z pełnym
+  stdout/stderr w `.arena/*.log`: **8337/8337**.
+- [x] `git diff --check`.
+- [x] Osobny commit kodu/testów `f22b243` i push.
+- [x] Uzupełnić plan, historię projektu, handoff i opis PR #163.
+- [x] Osobny commit dokumentacji, push oraz końcowy zielony GitHub CI.
 
 ## Ryzyka i strażniki
 
@@ -136,4 +139,19 @@ Naprawa ma działać po typie decyzji, nie po nazwie ani `cardId` Impulse:
 
 ## Wynik końcowy
 
-_Do uzupełnienia po wdrożeniu._
+Zaimplementowano generyczny, sekwencyjny przebieg dla całej gałęzi
+`pendingLookTopN` odkładającej resztę na spód. Impulse pokazuje cztery liniowe
+opcje wyboru karty, a następnie 3→2→1 opcji kolejności. Pierwszy klik sortera
+jest kartą na samym dole; adapter odwraca zebrane kliknięcia dopiero przy
+budowie jednej komendy zgodnej z engine'owym `bottomOrder`.
+
+Nie powstał generator permutacji: `legalCommands` nadal zawiera dokładnie N
+komend wyboru karty, a sonda Żywego Testera używa odpowiadającej im
+kanonicznej komendy bez kolejności. Wariant Clone Shell ma etykiety wygnania
+zakrytego i ten sam sorter; Gurmag Drowner (reszta do grobu) zachowuje dawny
+przebieg. FoW ujawnia przeciwnikowi tylko publiczny rodzaj efektu, nigdy nazwy
+obejrzanych kart.
+
+RED **0/5** przeszedł w GREEN **6/6**. Powiązane regresje: **227/227**;
+`npm test`: **8072/8072**; `npm run test:all`: **8337/8337**; build:
+**73 moduły / 5048,8 kB**. Kod i testy są w `f22b243`.

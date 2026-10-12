@@ -16622,3 +16622,34 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   efektu, dostaje exalted i wygrywa; **0 detektorów**, 0 niewycenionych decyzji.
   GitHub CI kodu **SUCCESS** — run `38280661610`. Plan:
   `docs/plans/PLAN_2026-10-12-e-angelic-benediction-bot.md`.
+
+## 2026-10-12b — uwaga F: Impulse układa resztę na spodzie
+
+- **Objaw:** po rozstrzygnięciu Impulse gracz mógł wskazać jedną z czterech
+  kart do ręki, lecz modal natychmiast wysyłał `resolve_look_top_choice` bez
+  `bottomOrder`. Silnik zachowywał domyślną kolejność, więc Oracle „the rest on
+  the bottom of your library in any order” nie dawał rzeczywistego wyboru.
+- **Root cause:** engine już atomowo walidował dowolną permutację reszty, lecz
+  `legalCommands` świadomie oferował tylko N wyborów karty, a routing stołu nie
+  miał adaptera składającego kolejność lokalnie. Widok nie niósł też
+  publicznego `restTo`, więc UI nie odróżniał tej rodziny od Gurmag Drownera.
+- **Fix `f22b243`:** `pendingLookTopNView` udostępnia `restTo` bez naruszenia
+  FoW, `lookWizardKindOf` rozpoznaje gałąź `library_bottom`, a cienki
+  `renderPickOneRestBottomWizard` parametryzuje istniejący `renderPeekWizard`.
+  Najpierw wymusza wybór jednej karty, potem pokazuje liniowo 3→2→1 pozostałych
+  kart. Kliknięcia idą od samego dna; adapter odwraca je do engine'owego
+  `bottomOrder` dopiero w jednej końcowej komendzie.
+- **Brak permutacji:** generator legalnych komend nadal tworzy dokładnie N
+  ofert wyboru karty (dla Impulse 4, nie 24). Sonda używa kanonicznego klucza
+  tej oferty; UI nigdy nie materializuje 3! wariantów.
+- **Rodzina i strażniki:** Clone Shell korzysta z tego samego sortera z
+  etykietami wygnania zakrytego; Gurmag Drowner (reszta do grobu) zostaje poza
+  nim; jedna pozostała karta domyka się bez pozornej decyzji. Przeciwnik widzi
+  publiczny rodzaj efektu, ale `cards: null`. Produkcyjny pin rzuca prawdziwy
+  Impulse, klika Forest jako samo dno, Plains jako drugą i Swamp jako trzecią
+  od dołu, wykonuje komendę i sprawdza fizyczny stan biblioteki, rękę oraz
+  zejście Impulse do grobu.
+- **Dowody:** RED **0/5** → GREEN **6/6**; powiązane UI/engine/FoW/bot
+  **227/227**; `npm test` **8072/8072**; pełne **8337/8337**; build
+  **73 moduły / 5048,8 kB**. Plan:
+  `docs/plans/PLAN_2026-10-12-f-impulse-kolejnosc-spodu.md`.
