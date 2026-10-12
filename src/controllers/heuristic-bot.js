@@ -2936,6 +2936,86 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     .filter((o) => !o.tapped && o.cantBlock !== true && o.detained !== true);
 
   /**
+   * E (uwaga właściciela 2026-10-12, Angelic Benediction): projekcja
+   * PUBLICZNYCH triggerów „whenever a creature you control attacks alone”.
+   *
+   * Engine odpala je po zadeklarowaniu dokładnie jednego atakującego, a stos
+   * rozstrzyga się jeszcze przed deklaracją blokujących. Dawna wycena ataku
+   * przez cały wariant widziała surowe `untappedEnemyBlockers(view)`, więc
+   * oceniała 2/2 jako ginące w 5/4, mimo że kontrolowany permanent pewnie
+   * tapował ten jedyny legalny cel; pomijała też automatyczny pump exalted.
+   *
+   * Reguła jest wyłącznie po deskryptorach (ADR 0002): aktywne zdolności
+   * kontrolowanych permanentów, `trigger.event === 'attacks_alone'`, typ
+   * efektu i publiczna legalność celu. Nie mutuje widoku ani stanu. Zwraca
+   * projektowanego atakującego oraz blokery, które pozostaną odkręcone.
+   */
+  const attacksAloneCombatProjection = (view, attackerIds, rawBlockers) => {
+    if ((attackerIds ?? []).length !== 1) {
+      return { attacker: null, blockers: rawBlockers };
+    }
+    const original = objectOnBoard(view, attackerIds[0]);
+    if (!original) return { attacker: null, blockers: rawBlockers };
+
+    let power = 0;
+    let toughness = 0;
+    const tapTriggers = [];
+    for (const source of view.zones.battlefield ?? []) {
+      if (source.controllerId !== view.playerId || source.faceDown || source.abilitiesStripped) continue;
+      const abilities = cardDef(source.cardId)?.abilities ?? [];
+      for (const ability of abilities) {
+        if (ability?.type !== 'triggered' || ability.trigger?.event !== 'attacks_alone') continue;
+        // Warunku, którego nie umiemy dowieść z tego deskryptora, nie
+        // antycypujemy. Obecna rodzina katalogu nie ma warunkowych triggerów
+        // attacks_alone, ale strażnik chroni przyszłe karty przed over-fixem.
+        if (ability.trigger.condition || ability.condition) continue;
+        const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+        for (const effect of effects) {
+          if (!effect) continue;
+          if (!ability.trigger.requiresTarget
+            && ['exalted_pump', 'buff_creature_until_end_of_turn'].includes(effect.type)) {
+            const delta = pumpDelta(view, effect, source);
+            power += delta.power;
+            toughness += delta.toughness;
+          }
+          if (effect.type === 'tap_permanent' && ability.trigger.requiresTarget) {
+            tapTriggers.push({ source, spec: ability.trigger.requiresTarget });
+          }
+        }
+      }
+    }
+
+    const attacker = (power !== 0 || toughness !== 0)
+      ? { ...original, power: (original.power ?? 0) + power,
+          toughness: (original.toughness ?? 0) + toughness }
+      : original;
+    let blockers = [...rawBlockers];
+    // Menace ocenia parę blokerów, lecz każdy z nich jest osobnym legalnym
+    // celem tapnięcia. Przy wyborze celu sprawdzamy więc indywidualną ewazję
+    // bez globalnego wymogu „co najmniej dwóch”; po usunięciu celu właściwy
+    // `attackerCanBeBlocked(attacker, blockers)` znów policzy menace normalnie.
+    const individualAttacker = hasKeyword(attacker, 'menace')
+      ? { ...attacker, keywords: (attacker.keywords ?? []).filter((keyword) => keyword !== 'menace') }
+      : attacker;
+    for (const trigger of tapTriggers) {
+      const legal = new Set(publicEtbTargets(view, trigger.spec, trigger.source));
+      const candidates = blockers.filter((blocker) => legal.has(blocker.id)
+        && attackerCanBeBlocked(individualAttacker, [blocker])
+        && wardTargetTax(view, [blocker.id]) < 200);
+      // Ta sama podstawowa miara celu co `resolve_trigger_target`: 2×P + T.
+      // Stabilny reduce zachowuje kolejność pola przy remisie, tak jak oferty.
+      const chosen = candidates.reduce((best, candidate) => {
+        if (!best) return candidate;
+        const value = (candidate.power ?? 0) * 2 + (candidate.toughness ?? 0);
+        const bestValue = (best.power ?? 0) * 2 + (best.toughness ?? 0);
+        return value > bestValue ? candidate : best;
+      }, null);
+      if (chosen) blockers = blockers.filter((blocker) => blocker.id !== chosen.id);
+    }
+    return { attacker, blockers };
+  };
+
+  /**
    * PMSSB-41/A-uzup. (zgłoszenie właściciela: gospodarz „wart wzmocnienia” to
    * np. stwór z flying, menace albo LANDWALKIEM): czy gracz kontroluje ląd
    * o podanym podtypie — warunek landwalka (CR 702.14). Liczone z WIDOKU
@@ -12287,7 +12367,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       case 'declare_attackers': {
         const attackers = cmd.attackerIds;
-        const blockers = untappedEnemyBlockers(view);
+        const soloProjection = attacksAloneCombatProjection(
+          view, attackers, untappedEnemyBlockers(view));
+        const blockers = soloProjection.blockers;
+        const projectedAttackerOf = (id) => soloProjection.attacker?.id === id
+          ? soloProjection.attacker
+          : objectOnBoard(view, id);
         // Trigger „attacks" z drenażem (Delta Bloodflies): bezwarunkowe
         // obrażenia poza walką, o ile spełniony jest warunek deskryptora.
         const drainOnAttack = (id) => {
@@ -12354,7 +12439,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // zabije blokera. Taki atak tylko tapuje własnego stwora.
         let futileAttackers = 0;
         for (const id of attackers) {
-          const object = objectOnBoard(view, id);
+          const object = projectedAttackerOf(id);
           if (!object) continue;
           const candidates = blockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
           const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
@@ -12579,7 +12664,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
-        const totalPower = attackers.reduce((sum, id) => sum + faceDamageOf(objectOnBoard(view, id)), 0);
+        const totalPower = attackers.reduce((sum, id) => sum + faceDamageOf(projectedAttackerOf(id)), 0);
         // M169/J+L (uwaga właściciela): lethal musi przejść PRZEZ blokerów.
         // Surowy totalPower premiował atak 6/7 w samotnego 7/10 (+100 za
         // „lethal") i odwrotnie — karzełki chowane za blokery nie dopinały
@@ -12596,7 +12681,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // liczników = lethal jak życiowy (+1000), nawet przy pełnym życiu.
         const enemyPoison = enemy(view)?.poison ?? 0;
         const infectTotalPower = attackers.reduce((sum, id) => {
-          const o = objectOnBoard(view, id);
+          const o = projectedAttackerOf(id);
           return sum + (hasKeyword(o, 'infect') ? combatPower(o) : 0);
         }, 0);
         const penetratingInfect = Math.max(0, infectTotalPower - blockerAbsorb);
@@ -12620,7 +12705,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // zbiorem OBIEKTÓW, nie skalarem odejmowanym błędnie od życia i poison.
         const unblockedLethal = attackers.length > 0 && totalPower >= enemyLife;
         const strongestAttackerPower = attackers
-          .reduce((max, id) => Math.max(max, combatPower(objectOnBoard(view, id))), 0);
+          .reduce((max, id) => Math.max(max, combatPower(projectedAttackerOf(id))), 0);
         const forcedBlockLossIds = new Set();
         if (unblockedLethal) {
           const absorbNeeded = Math.max(0, totalPower - (enemyLife - 1));
@@ -12678,7 +12763,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // prawdopodobieństwo nie powinno gasić presji (lekcja B2).
           if (removalProb > 0.45) {
             for (const id of attackers) {
-              const object = objectOnBoard(view, id);
+              const object = projectedAttackerOf(id);
               if (!object) continue;
               // M257-r5b/C: stwór pożyczony (tempControlUntilEOT) — jego
               // zniszczenie to strata WŁAŚCICIELA, nie koszt bota.
@@ -12709,7 +12794,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const dtProb = Math.max(trickProb > 0.15 ? trickProb : 0, activatorReady ? 1 : 0);
           if (dtProb > 0) {
             for (const id of attackers) {
-              const object = objectOnBoard(view, id);
+              const object = projectedAttackerOf(id);
               if (!object || object.tempControlUntilEOT) continue;
               if (!attackerCanBeBlocked(object, blockers)) continue;
               if (damageFullyPrevented(view, object)) continue;
