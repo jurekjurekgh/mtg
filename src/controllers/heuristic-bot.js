@@ -4999,9 +4999,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
 
+    // Audyt PR #164 (A-2): filtr czyta WYŁĄCZNIE pola, które `PlayerView`
+    // naprawdę wysyła dla wygnania (game-state.js, blok `waiting`): pozwolenie
+    // linkowane (`linkedExileCastPermission`), plot (`plotted`), okno impulsu
+    // (`playableUntilTurn`/`playableWithoutPaying`), madness/rebound/warp
+    // (`*Ready`) i przygodę (`exiledBy === 'adventure'`). Poprzednia lista
+    // (`playableFromExile`, `onAdventure`, `warpedAtTurn`) nie istnieje
+    // w kontrakcie widoku (poza tą linią nie ma tych pól w całym repo), więc
+    // filtr gubił realnie rzucalne karty z wygnania (klasa L41/L48).
     const castableExile = (view.zones.exile ?? []).filter((card) =>
-      Boolean(card?.linkedExileCastPermission || card?.playableFromExile
-        || card?.plotted || card?.warpedAtTurn != null || card?.onAdventure));
+      Boolean(card?.linkedExileCastPermission || card?.plotted
+        || card?.playableUntilTurn != null || card?.playableWithoutPaying === true
+        || card?.madnessReady || card?.reboundReady || card?.warpReady
+        || card?.exiledBy === 'adventure'));
     let bestCardGain = 0;
     for (const card of [...(view.zones.hand ?? []), ...castableExile]) {
       if (card.controllerId !== view.playerId || (card.manaCost ?? 0) <= 0

@@ -507,6 +507,30 @@ test('Audyt PR #163 F-6: linkedManaGrantValue filtruje exile, scoredWithLookahea
   assert.equal(scoreWithDeadExile, scoreWithoutDeadExile,
     'karta w exile bez prawa rzutu nie może zmieniać wyceny linkedManaGrantValue');
 
+  // F-6b kontrola negatywna wyżej; audyt PR #164 A-2 (strona DODATNIA): karta
+  // w exile z realnym stemplem rzutu z PlayerView (`playableUntilTurn` — okno
+  // impulsu, CR 701.18) MUSI wejść do wyceny grantu. Filtr `castableExile`
+  // czytał pola widoku, których nie ma (`playableFromExile`, `onAdventure`,
+  // `warpedAtTurn`), więc gubił impuls/madness/rebound/warp/przygodę.
+  // Scena: same Swampy (grant R/G/W domyka dokładnie jeden pip Rakisha, więc
+  // własna karta w ręce nie wysyca `bestCardGain`) + biała karta w exile, dla
+  // której nadany biały pip jest JEDYNYM źródłem koloru (impuls ⇒ +8 za unlock).
+  const buildImpulseScene = (patch, { withCard = true } = {}) => scene({ registry: rakishFree, mana: 2, manaColors: [], setup: (state, reg) => {
+    put(state, 'swamp', 'basic-swamp', 'p1', 'battlefield', reg);
+    put(state, 'swamp2', 'basic-swamp', 'p1', 'battlefield', reg);
+    put(state, 'swamp3', 'basic-swamp', 'p1', 'battlefield', reg);
+    put(state, 'foe-land', 'basic-mountain', 'p2', 'battlefield', reg);
+    put(state, 'rakish', 'rakish-revelers', 'p1', 'hand', reg);
+    if (withCard) put(state, 'impulse-exile', 'midnight-guard', 'p1', 'exile', reg, patch);
+  } });
+  const noCardScore = activationScore(scored(buildImpulseScene({}, { withCard: false })), 'swamp');
+  const deadStampScore = activationScore(scored(buildImpulseScene({})), 'swamp');
+  const impulseScore = activationScore(scored(buildImpulseScene({ playableUntilTurn: 9 })), 'swamp');
+  assert.equal(deadStampScore, noCardScore,
+    'karta w exile bez prawa rzutu nie może zmieniać wyceny linkedManaGrantValue');
+  assert.ok(impulseScore > noCardScore,
+    `karta z oknem impulsu (playableUntilTurn) jest rzucalna z wygnania i musi podnieść wycenę grantu: bez stempla=${noCardScore}, ze stemplem=${impulseScore}`);
+
   // F-6a: scoredWithLookahead musi stosować breakCastSpellManaTies PRZED ucięciem do LOOKAHEAD_TOP_K,
   // żeby tańszy czar z remisu wchodził do okna symulacji przed droższym.
   const tieSpellsState = scene({ setup: (state) => {
