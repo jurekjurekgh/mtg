@@ -2153,18 +2153,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }),
     create_offspring_token: () => 12,
     living_weapon: () => 12,
-    // Batch 66 (Scythe Tiger): koszt ETB „poświęć źródło, chyba że
-    // poświęcisz [typ]”. Bez kwalifikowanego własnego permanenta źródło
-    // natychmiast znika — rzut jest marnowaniem karty, więc kara przebija
-    // bazę akcji. Z landem liczymy konserwatywną cenę jednego land dropu;
-    // engine i tak daje botowi wybór najtańszej ofiary w osobnym modalu.
-    sacrifice_source_unless_sacrifice: (e, view) => {
+    // PMSSB-61/F10 (Scythe Tiger): antycypujemy TEN SAM wybór, który bot
+    // dostanie po ETB. Jeżeli najtańszy kwalifikowany permanent jest co
+    // najmniej tak cenny jak wchodzące źródło, racjonalna decyzja poświęci
+    // źródło — rzut nie zbuduje planszy i ma przegrać z passem. Dopiero przy
+    // realnie tańszej ofierze naliczamy jej koszt (kotwica: zwykły trzeci ląd
+    // zachowuje historyczne −12).
+    sacrifice_source_unless_sacrifice: (e, view, req, def) => {
       const wanted = e.qualifier?.types ?? [];
-      const canPay = (view.zones.battlefield ?? []).some((o) =>
-        o.controllerId === view.playerId
-        && wanted.every((type) => o.kind === type.toLowerCase()
-          || (o.types ?? []).includes(type)));
-      return canPay ? -12 : -120;
+      const candidates = (view.zones.battlefield ?? []).filter((object) =>
+        object.controllerId === view.playerId
+        && wanted.every((type) => object.kind === type.toLowerCase()
+          || (object.types ?? []).includes(type)));
+      const sourceLoss = 2 * (def?.power ?? 0) + (def?.toughness ?? 0);
+      const cheapest = candidates.length > 0
+        ? Math.min(...candidates.map((object) => sacrificePermanentLoss(view, object)))
+        : Number.POSITIVE_INFINITY;
+      if (cheapest >= sourceLoss) return -120;
+      return -Math.max(12, 2 * cheapest);
     },
     destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
@@ -5944,6 +5950,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const def = cardDef(o.cardId);
     const zdolnosc = (def?.abilities ?? []).some((a) => a?.type === 'activated' && !manaOnlyAbility(a)) ? 2 : 0;
     return Math.min(16, strata * 4 + zdolnosc);
+  }
+
+  /**
+   * PMSSB-61/F10: wspólna cena permanentu dla decyzji „co poświęcić” i jej
+   * antycypacji przy rzucie. Stwory/artefakty zachowują dotychczasową skalę;
+   * ląd dostaje dwa brakujące dotąd wymiary:
+   *  - trwała wartość land dropu (6, skala jednej dobranej karty),
+   *  - niedobór poniżej trzech lądów (+4 za każdy brakujący),
+   * plus istniejący `landLossValue` za jedyny potrzebny kolor/zdolność.
+   * Dzięki temu ostatni land jest droższy od Tigera 3/2, ale przy trzech
+   * landach zbędny Swamp/Plains jest tańszy i Tiger zostaje.
+   */
+  function sacrificePermanentLoss(view, target) {
+    if (!target) return 0;
+    const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
+    if (isLand) {
+      const lands = (view.zones.battlefield ?? []).filter((object) =>
+        object.controllerId === view.playerId
+        && (object.kind === 'land' || (object.types ?? []).includes('Land')));
+      const scarcity = Math.max(0, 3 - lands.length) * 4;
+      return 6 + scarcity + landLossValue(view, target.id);
+    }
+    if (target.kind === 'creature' || (target.types ?? []).includes('Creature')) {
+      return (target.power ?? 0) * 2 + (target.toughness ?? 0);
+    }
+    return (target.manaCost ?? 0) * 2;
   }
 
   function landPlayDelta(view, objectId) {
@@ -13527,12 +13559,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.skip === true) return finish(cmd.reflexReady === false ? 40 : 0);
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) return finish(0);
-        // C-R3b: artefakty/nie-stwory wyceniane po KOSZCIE (wzorzec
-        // craft_exile), nie jako 0 — cenny artefakt przestaje być „darmową
-        // ofiarą" przed tokenem 1/1.
-        const value = target.kind === 'creature' || (target.types ?? []).includes('Creature')
-          ? (target.power ?? 0) * 2 + (target.toughness ?? 0)
-          : (target.manaCost ?? 0) * 2;
+        // C-R3b + PMSSB-61/F10: artefakty/nie-stwory po koszcie, stwory po
+        // ciele, a landy po trwałej wartości + niedoborze + utracie koloru.
+        // To ta sama funkcja, której używa antycypacja kastru (L41).
+        const value = sacrificePermanentLoss(view, target);
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
       case 'resolve_food_choice': {
@@ -15233,6 +15263,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wyceny w teście trzeba było zgadywać.
     if (cmd.type === 'resolve_food_choice') {
       return `resolve_food_choice(${cmd.sacrifice ? 'sacrifice' : 'keep'})`;
+    }
+    // PMSSB-61/F10 (L34/L40): różne ofiary muszą być rozróżnialne w śladzie
+    // i audycie remisów; dawniej wszystkie streszczały się do samego typu.
+    if (cmd.type === 'resolve_sacrifice_choice') {
+      return `resolve_sacrifice_choice(${cmd.skip ? 'skip' : (cmd.targetId ?? '?')})`;
     }
     // H (zgłoszenie właściciela 2026-10-08, Krumar Initiate): tryby endure
     // (liczniki na źródle albo token Spirit) mają RÓŻNE noty zależne od N,
