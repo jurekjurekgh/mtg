@@ -98,6 +98,12 @@ commit i natychmiastowy `git push origin arena/aadcf997-mtg`.
       („Shroud (całun — niecelowalny dla nikogo)”), odznaka „animowany przez
       Skilled Animator” z bazowym 5/5, modal celu triggera z odmową dla
       „you may” (Reclusive Artificer) — zgodne z Oracle.
+- [x] Przemiał KLASY znaleziska A-2 (pola-widma kontraktu `PlayerView`):
+      narzędzie `tools/probe-phantom-view.mjs` + przebieg szeroki (28 partii,
+      wszystkie talie) + triage kandydatów → 1 realny martwy odczyt
+      (`descriptor.locksUntap` w `auraIsHostile`), naprawiony, z klasowym
+      strażnikiem `test/audyt-pr164-pola-widm.test.js` i nową osią audytu
+      („Oś 7”) w `docs/setup/TESTER_STOLU.md`.
 - [x] Nie dodawać nowych kart do katalogu (ADR 0029).
 
 ### E. Brama końcowa i dokumentacja
@@ -125,8 +131,8 @@ commit i natychmiastowy `git push origin arena/aadcf997-mtg`.
 
 ## Wynik bram końcowych (etap E)
 
-- `npm test` — **8131/8131**; `npm run test:all` — **8397/8397** (12 suite'ów,
-  0 fail); `npm run build` — **74 moduły / 5108,1 kB**;
+- `npm test` — **8133/8133**; `npm run test:all` — **8399/8399** (12 suite'ów,
+  0 fail); `npm run build` — **74 moduły / 5108,5 kB**;
   `node --test test/bot-benchmark.test.js` — **10/10**.
 - `node tools/cr-numery.mjs --cr /tmp/cr.txt` — **OK**: 523 numery w tabeli,
   522 unikalne w 5719 cytatach, 3165 numerów w pliku CR; sha256 pliku CR

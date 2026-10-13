@@ -16862,8 +16862,18 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   - **O-1/O-2:** kolejność etykiet w `waitingCastLabel` (impuls przed
     `linkedExileCastPermission`) i brak `suspendReady`/`warpedAtTurn`
     w `PlayerView` — świadomie bez zmian w kodzie (opis w raporcie audytu).
-- **Bramy:** `npm test` **8131/8131**, `npm run test:all` **8397/8397**
-  (12 suite'ów, 0 fail), `npm run build` **74 moduły / 5108,1 kB**,
+- **Pętla jakości (kontynuacja sesji):** sonda `tools/probe-phantom-view.mjs`
+  (Proxy na widokach botów; 28 partii na wszystkich 27 taliach) wykryła martwy
+  odczyt `descriptor.locksUntap` w `auraIsHostile` (prawdziwe pole:
+  `doesntUntap`; klasa A-2 — pole nieistniejące w żadnym innym pliku repo).
+  Naprawa usunęła disjunct, a strażnik `test/audyt-pr164-pola-widm.test.js`
+  pilnuje klasy: każde `descriptor.X` w kodzie bota musi należeć do słownika
+  pól normalizowanych przez `registry.js` i `identity.js` (obie warstwy zgodne —
+  L21). Metoda trafiła do `docs/setup/TESTER_STOLU.md` jako „Oś 7 — pola-widma
+  kontraktu `PlayerView`”.
+- **Bramy:** `npm test` **8133/8133** (8131 po A-1..A-3 + 2 strażnika),
+  `npm run test:all` **8399/8399**
+  (12 suite'ów, 0 fail), `npm run build` **74 moduły / 5108,5 kB**,
   `test/bot-benchmark.test.js` **10/10**, `cr-numery.mjs --cr /tmp/cr.txt`
   **OK** (523 numery, 522 unikalne w 5719 cytatach; sha256 pliku CR zgodny
   z tabelą), `event-contract-audit.mjs` **0 naruszeń**, 4 partie Żywym
