@@ -19,6 +19,58 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-13 — batch66: kolekcja 351–368, 10 kart (PR #163, M443)
+
+**Zadanie właściciela:** dodać dokładne druki 351 ELD, 353 OGW, 356 OTC,
+357 MM2, 359 M19, 361 ZEN, 363 THS, 364 KTK, 365 SNC i 368 ZEN wraz z
+planami świata, grafikami, testami negatywnymi, kolekcją oraz pełnymi bramami.
+Snapshoty Scryfalla i rulingi zapisano przed kodem, następnie osobno plan i
+RED 33 scenariuszy. Fale były commitowane i wypychane na bieżąco, ponieważ
+wcześniejsze resety sandboxa pokazały, że niezatwierdzony batch nie jest
+bezpiecznym checkpointem.
+
+**Implementacja 10/10.** Prosta fala użyła gotowych mechanik reach,
+vigilance, bezbarwnej many, tapped duala, prewencji, opcjonalnego ETB i
+Naturalize. Cazur dodał generyczne Partner with wybranego gracza i kontekst
+konkretnego źródła combat damage. Lorescale dodał zdarzenie `you_draw_card`,
+którego nie emituje search-to-hand ani mulligan. Scythe Tiger dodał shroud
+oraz generyczne `sacrifice_source_unless_sacrifice` z wyborem przy resolution.
+Rakish Revelers dodał `fromHand`, atomowy koszt wygnania, trwały grant
+zdolności landu, osobne pozwolenie rzutu konkretnego obiektu z exile i Citizen
+1/1 G/W bez Human. Rzut Rakish zawsze kosztuje pełne `{2}{R}{G}{W}`; `{2}`
+jest wyłącznie kosztem aktywacji z ręki.
+
+**Najważniejsza granica lifetime Rakish.** `linked-exile-cast.js` jest jednym
+właścicielem stempla permission, czasu grantu i konsumpcji. Grant na landzie
+przeżywa cleanup oraz zwykłe opuszczenie exile przez źródło. Permission znika
+przy zmianie strefy, a grant kończy wyłącznie zaakceptowany rzut dokładnie
+linkowanego obiektu exile→stack. Nieudany rzut nie konsumuje grantu. Solver
+many scala podstawową zdolność landu z nadanym wyborem R/G/W, dlatego nadany
+land może opłacić samego Revelers.
+
+**Znalezisko bramki all.** Dodanie Scythe Tigera do wygenerowanej talii
+Wiedźmina ujawniło stary rozjazd oferta=walidacja: wyspecjalizowane własne
+sloty celu (`creature_you_control`, analogicznie `land_you_control`) omijały
+filtr, bo własny hexproof jest legalny, ale shroud nie jest. Centralna bramka
+`legalTargetCandidates` filtruje teraz shroud/hexproof dla każdego typu celu.
+Pin Time to Feed na własnego Tigera był RED przed poprawką i GREEN po niej;
+audyt siedmiu par talii przestał wybierać nielegalne komendy. Po zmianie
+składu Forgotten Realms przelosowano udokumentowanym hunterem wyłącznie seedy
+obserwacyjnych testów modala — bez zmiany ich asercji.
+
+**Kolekcja i dowody.** Dodano 10 wierszy CSV; generator odświeżył 27 talii i
+README, a drugi przebieg był idempotentny. Katalog ma 637 definicji, 49 tokenów,
+kolekcja 583 wiersze / 580 nazw. `check-card-printings`: zero do pobrania,
+jeden dawny udokumentowany rozjazd. CR effective 2026-09-25 pobrano z mirroru
+`nwgarne/mtg-data` commit `3257633`; tabela ma 523 zweryfikowane numery i
+potwierdza wszystkie 522 unikalne numery w 5705 cytatach.
+
+**Bramki końcowe:** batch 33/33; fast **8112/8112**; all **8377/8377**;
+build **74 moduły / 5084,7 kB**; generator, printings i `git diff --check`
+zielone. Pełnego B0 nie uruchamiano (ADR 0018 i jawny zakres właściciela).
+Plan i macierz lifetime:
+`docs/plans/PLAN_2026-10-13-batch66-kolekcja-351-368.md`.
+
 ## 2026-10-10 — audyt PR #161 i naprawy F-1/F-2 (PR #162)
 
 **Zadanie właściciela:** kontynuacja projektu — przeczytać dokumentację,

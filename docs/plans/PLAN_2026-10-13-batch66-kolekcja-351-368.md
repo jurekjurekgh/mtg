@@ -209,8 +209,18 @@ Baseline przed kodem: `npm test` **8079/8079**, build **rc 0**.
 - [x] dokładne snapshoty Scryfalla + rulingi zapisane i wypchnięte;
 - [x] baseline fast/build zielony;
 - [x] plan zapisany przed kodem;
-- [ ] testy RED;
-- [ ] 10 kart + Citizen i mechaniki GREEN;
-- [ ] CSV + wygenerowane talie;
-- [ ] M443 + historia + realizacja planu;
-- [ ] końcowe bramy jakości i aktualizacja PR #163.
+- [x] testy RED;
+- [x] 10 kart + Citizen i mechaniki GREEN;
+- [x] CSV + wygenerowane talie;
+- [x] M443 + historia + realizacja planu;
+- [x] końcowe bramy jakości i aktualizacja PR #163.
+
+### Wynik końcowy
+
+Batch zamknięto 10/10 oraz osobnym `token_citizen`. Test batcha ma 33/33,
+`npm test` 8112/8112, `npm run test:all` 8377/8377, a build tworzy 74 moduły
+(5084,7 kB). Generator 27 talii jest idempotentny; README i liczniki katalogu
+odpowiadają wygenerowanym plikom. `check-card-printings` nie ma nic do pobrania,
+a strażnik numerów CR potwierdza wszystkie 522 unikalne cytaty wobec CR
+obowiązujących od 2026-09-25. Pełnego benchmarku B0 nie uruchamiano zgodnie
+z ADR 0018 i zakresem zadania.
