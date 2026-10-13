@@ -22,15 +22,16 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const WORKFLOWS = ['ci.yml', 'pages.yml'];
 
-// 2026-10-13c: agent NIE MOŻE wypchnąć `.github/workflows/*` (push odbija się
-// z „refusing to allow a GitHub App to create or update workflow … without
-// `workflows` permission" — potwierdzone ponownie przy naprawie publikacji na
-// Pages). Zmiany w workflowach powstają więc we wzorcu w `docs/setup/workflows/`
-// i czekają na RĘCZNE wgranie przez właściciela. Żeby to oczekiwanie było jawne
-// (a nie „cicha różnica"), fragmenty czekające na wgranie oznaczamy w pliku
-// znacznikami `# >>> PENDING-UPLOAD (X)` … `# <<< PENDING-UPLOAD (X)`;
-// strażnik zgodności ignoruje WYŁĄCZNIE takie regiony — każda inna różnica
-// między wzorcem a żywym workflowem to błąd (ręczne wgranie cofnęłoby zmiany).
+// Kontekst (2026-10-13c): push `.github/workflows/*` był odmawiany przez
+// GitHuba („refusing to allow a GitHub App to create or update workflow …
+// without `workflows` permission"), więc zmiany powstawały we wzorcu
+// w `docs/setup/workflows/` i czekały na ręczne wgranie. Właściciel przyznał
+// Appce uprawnienie `workflows` i od tego czasu agent wnosi je sam, ale
+// mechanizm zostaje jako bezpiecznik na wypadek powrotu ograniczenia: fragment
+// czekający na wgranie oznacza się znacznikami
+// `# >>> PENDING-UPLOAD (X)` … `# <<< PENDING-UPLOAD (X)`, a strażnik zgodności
+// ignoruje WYŁĄCZNIE takie regiony. Każda inna różnica między wzorcem a żywym
+// workflowem to błąd (np. ręczne cofnięcie protezy).
 const PENDING_UPLOAD = /^[ \t]*# >>> PENDING-UPLOAD[^\n]*\n[\s\S]*?^[ \t]*# <<< PENDING-UPLOAD[^\n]*\n/gm;
 const bezOczekujacejWgrywki = (text) => text.replace(PENDING_UPLOAD, '');
 
@@ -71,28 +72,20 @@ test('M104: runner testów zna tryby fast/slow/all', () => {
 
 test('2026-10-13c: publikacja na Pages jest odporna na re-run (artefakty `github-pages`)', () => {
   // Awaria runu 38424779872 (push 7bd1fcf) nie była regresją workflow: próba 1
-  // padła na flake'u GitHuba (świeży artefakt `github-pages` nie był jeszcze
-  // widoczny w API, gdy `deploy-pages` pytał o metadane), a próby 2–4 na
-  // kumulacji — każdy re-run dokłada kolejny artefakt o tej samej nazwie,
-  // a `deploy-pages` wymaga DOKŁADNIE jednego. Proteza (sprzątanie przed
-  // uploadem + czekanie na widoczność świeżego artefaktu) czeka na ręczne
-  // wgranie w `docs/setup/workflows/pages.yml`, oznaczone znacznikami.
-  const wzorzec = fs.readFileSync(path.join(root, 'docs', 'setup', 'workflows', 'pages.yml'), 'utf8');
-  const znaczniki = wzorzec.match(/# >>> PENDING-UPLOAD/g) ?? [];
-  const zamkniecia = wzorzec.match(/# <<< PENDING-UPLOAD/g) ?? [];
-  assert.equal(znaczniki.length, 3,
-    'proteza to trzy regiony PENDING-UPLOAD: (A) uprawnienie `actions: write`, '
-    + '(B) sprzątanie przed uploadem, (C) czekanie na widoczność po uploadzie '
-    + '(regiony nie mogą objąć wspólnych kroków, np. upload-pages-artifact)');
-  assert.equal(zamkniecia.length, znaczniki.length, 'każdy region PENDING-UPLOAD musi mieć zamknięcie');
-  assert.match(wzorzec, /^ {2}actions: write$/m,
-    'wzorzec musi nieść `actions: write` — bez niego krok sprzątający dostanie 403');
-  assert.match(wzorzec, /gh api --method DELETE "repos\/\$repo\/actions\/artifacts\/\$id"/,
+  // padła na wyścigu (świeży artefakt `github-pages` nie był jeszcze widoczny
+  // w API, gdy `deploy-pages` pytał o metadane), a próby 2–4 na kumulacji —
+  // każdy re-run dokłada kolejny artefakt o tej samej nazwie, a `deploy-pages`
+  // wymaga DOKŁADNIE jednego. Proteza: sprzątanie przed uploadem + czekanie na
+  // widoczność świeżego artefaktu między uploadem a publikacją.
+  const live = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
+  assert.match(live, /^ {2}actions: write$/m,
+    'żywy workflow musi mieć `actions: write`, inaczej krok sprzątający dostanie 403 i publikacja padnie');
+  assert.match(live, /gh api --method DELETE "repos\/\$repo\/actions\/artifacts\/\$id"/,
     'sprzątanie musi realnie kasować artefakty (DELETE na API), nie tylko je liczyć');
-  const sprzatanie = wzorzec.indexOf('Usuń artefakty `github-pages` z poprzednich prób tego runu');
-  const upload = wzorzec.indexOf('actions/upload-pages-artifact@');
-  const czekanie = wzorzec.indexOf('Poczekaj, aż świeży artefakt `github-pages` będzie widoczny dla API');
-  const deploy = wzorzec.indexOf('actions/deploy-pages@');
+  const sprzatanie = live.indexOf('Usuń artefakty `github-pages` z poprzednich prób tego runu');
+  const upload = live.indexOf('actions/upload-pages-artifact@');
+  const czekanie = live.indexOf('Poczekaj, aż świeży artefakt `github-pages` będzie widoczny dla API');
+  const deploy = live.indexOf('actions/deploy-pages@');
   assert.ok(sprzatanie > 0, 'brak kroku sprzątania artefaktów poprzednich prób');
   assert.ok(upload > 0 && czekanie > 0 && deploy > 0, 'brak kroków publikacji (upload/czekanie/deploy)');
   assert.ok(sprzatanie < upload,
@@ -100,13 +93,16 @@ test('2026-10-13c: publikacja na Pages jest odporna na re-run (artefakty `github
   assert.ok(upload < czekanie && czekanie < deploy,
     'oczekiwanie na widoczność artefaktu MUSI być między uploadem a publikacją');
 
-  // Żywy workflow albo jeszcze nie ma protezy (czeka na wgranie), albo ma ją
-  // CAŁĄ (wgranie nie może wprowadzić połowy protezy: samych kroków bez
-  // uprawnienia — sprzątanie padłoby wtedy na 403 i publikacja by się nie
-  // odbyła). Połowiczny stan jest błędem.
-  const live = fs.readFileSync(path.join(root, '.github', 'workflows', 'pages.yml'), 'utf8');
+  // Znaczniki PENDING-UPLOAD (jeśli są użyte) muszą być domknięte, a żywy
+  // workflow nie może mieć „połowicznej" protezy: kroków sprzątania bez
+  // uprawnienia `actions: write` (sprzątanie padłoby na 403).
+  const wzorzec = fs.readFileSync(path.join(root, 'docs', 'setup', 'workflows', 'pages.yml'), 'utf8');
+  const otwarte = wzorzec.match(/# >>> PENDING-UPLOAD/g) ?? [];
+  const zamkniete = wzorzec.match(/# <<< PENDING-UPLOAD/g) ?? [];
+  assert.equal(zamkniete.length, otwarte.length,
+    'każdy region PENDING-UPLOAD w wzorcu musi mieć zamknięcie');
   const liveMaKroki = live.includes('Usuń artefakty `github-pages` z poprzednich prób tego runu');
   const liveMaUprawnienie = /^ {2}actions: write$/m.test(live);
   assert.ok(!liveMaKroki || liveMaUprawnienie,
-    'żywy workflow ma kroki sprzątania bez `actions: write` — połowiczne wgranie protezy');
+    'żywy workflow ma kroki sprzątania bez `actions: write` — połowiczna proteza');
 });

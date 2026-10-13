@@ -7,11 +7,9 @@ on:
 
 permissions:
   contents: read
-  # >>> PENDING-UPLOAD (A): wymagane przez krok „Usuń artefakty…" z regionu (B).
-  #     Wgraj regiony (A), (B) i (C) RAZEM — bez tego uprawnienia sprzątanie
-  #     dostanie 403 i publikacja padnie.
+  # Potrzebne krojkowi „Usuń artefakty…" niżej: kasuje artefakty `github-pages`
+  # z poprzednich prób TEGO runu (re-runy). Bez tego uprawnienia krok dostaje 403.
   actions: write
-  # <<< PENDING-UPLOAD (A)
   pages: write
   id-token: write
 
@@ -35,18 +33,17 @@ jobs:
       - name: Build
         run: node tools/build.mjs --out dist/index.html
       - uses: actions/configure-pages@v5
-      # >>> PENDING-UPLOAD (B): sprzątanie artefaktów poprzednich prób.
-      #     Run 38424779872 (push 7bd1fcf) padł, choć workflow nie zmieniał się
-      #     od miesięcy — najpierw FLAKE GitHuba, potem kumulacja po re-runach:
-      #       1) próba 1: upload skończył się 15:50:09, `deploy-pages` ruszył
-      #          15:50:09 i zaraz zgłosił „No artifacts named \"github-pages\"
-      #          were found" — świeżo wgrany artefakt nie był jeszcze widoczny
-      #          w API (artefakt tej próby istnieje, created_at 15:50:09);
-      #       2) próby 2–4: każdy RE-RUN dokłada kolejny artefakt `github-pages`
-      #          w TYM SAMYM runie, a `deploy-pages` wymaga DOKŁADNIE jednego
-      #          („Multiple artifacts named \"github-pages\" … count is 4").
-      #     Sprzątanie MUSI być PRZED uploadem — inaczej skasowałoby też świeży
-      #     artefakt tej próby.
+      # Run 38424779872 (push 7bd1fcf) padł, choć workflow nie zmieniał się od
+      # miesięcy — najpierw FLAKE GitHuba, potem kumulacja po re-runach:
+      #   1) próba 1: upload skończył się 15:50:09, `deploy-pages` ruszył
+      #      15:50:09 i zaraz zgłosił „No artifacts named \"github-pages\" were
+      #      found" — świeżo wgrany artefakt nie był jeszcze widoczny w API
+      #      (artefakt tej próby istnieje, created_at 15:50:09);
+      #   2) próby 2–4: każdy RE-RUN dokłada kolejny artefakt `github-pages`
+      #      w TYM SAMYM runie, a `deploy-pages` wymaga DOKŁADNIE jednego
+      #      („Multiple artifacts named \"github-pages\" … count is 4").
+      # Sprzątanie MUSI być PRZED uploadem — inaczej skasowałoby też świeży
+      # artefakt tej próby.
       - name: Usuń artefakty `github-pages` z poprzednich prób tego runu
         env:
           GH_TOKEN: ${{ github.token }}
@@ -64,14 +61,12 @@ jobs:
               gh api --method DELETE "repos/$repo/actions/artifacts/$id" > /dev/null
             done
           fi
-      # <<< PENDING-UPLOAD (B)
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
-      # >>> PENDING-UPLOAD (C): czekanie na widoczność świeżego artefaktu.
-      #     Artefakt po uploadzie bywa chwilę niewidoczny w API (próba 1 wyżej);
-      #     `deploy-pages` nie ponawia tego odczytu, więc czekamy na TEJ SAMEJ
-      #     liście, którą on czyta — maks. 20 × 3 s.
+      # Artefakt po uploadzie bywa chwilę niewidoczny w API (próba 1 wyżej);
+      # `deploy-pages` nie ponawia tego odczytu, więc czekamy na TEJ SAMEJ
+      # liście, którą on czyta — maks. 20 × 3 s.
       - name: Poczekaj, aż świeży artefakt `github-pages` będzie widoczny dla API
         env:
           GH_TOKEN: ${{ github.token }}
@@ -91,6 +86,5 @@ jobs:
           done
           echo "::error::Świeży artefakt github-pages nie pojawił się w API w ciągu 60 s"
           exit 1
-      # <<< PENDING-UPLOAD (C)
       - id: deployment
         uses: actions/deploy-pages@v4

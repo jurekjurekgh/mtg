@@ -1,13 +1,14 @@
 # Wzorce workflowów — dlaczego istnieją i jak je wgrywać
 
 Ten katalog trzyma **kopie** plików z `.github/workflows/`. Nie są to zwykłe
-duplikaty — to jedyna droga, jaką agent może przygotować zmianę w workflowie.
+duplikaty — to bezpiecznik na wypadek, gdyby agent nie mógł wypchnąć zmiany
+w workflowie (tak było do 2026-10-13c).
 
-## Dlaczego
+## Dlaczego (historia i bezpiecznik)
 
-Token, którym pracuje agent w sesji Arena, **nie ma uprawnienia `workflows`**.
+Token, którym pracuje agent w sesji Arena, **nie miał uprawnienia `workflows`**.
 Każdy `git push` gałęzi zawierającej jakikolwiek plik `.github/workflows/*`
-kończy się odmową GitHuba:
+kończył się odmową GitHuba:
 
 ```
 ! [remote rejected] ... (refusing to allow a GitHub App to create or update
@@ -16,8 +17,14 @@ workflow `.github/workflows/<plik>` without `workflows` permission)
 
 Gałąź `main` jest dodatkowo chroniona (ADR 0007): nie da się w niej zapisać
 niczego poza scaleniem Pull Requesta — dotyczy to również właściciela.
-Efekt: zmiana workflowu musi powstać **we wzorcu**, a potem zostać **ręcznie
-wgrana** przez właściciela jako osobny PR.
+Efekt: zmiana workflowu musiała powstać **we wzorcu**, a potem zostać
+**ręcznie wgrana** przez właściciela jako osobny PR.
+
+**Stan obecny (2026-10-13c):** właściciel przyznał Appce uprawnienie
+`workflows` — agent wnosi zmiany w `.github/workflows/*` sam, zwykłą drogą PR
+(nie trzeba nic kopiować ręcznie). Wzorce zostają w repo, bo są tanie i nadal
+pełnią rolę bezpiecznika (gdyby uprawnienie zniknęło), a strażnik pilnuje ich
+zgodności z żywymi plikami.
 
 ## Jak wgrać wzorzec (właściciel, przez stronę GitHuba)
 
@@ -62,4 +69,4 @@ Litera to identyfikator regionu; regionów może być kilka. Reguły:
 | Wzorzec | Status |
 |---|---|
 | `ci.yml` | zgodny z żywym workflowem (bez regionów oczekujących) |
-| `pages.yml` | **czeka na wgranie**: regiony `(A)`–`(C)` — ochrona publikacji na Pages przed re-runami (patrz `docs/setup/HANDOFF_2026-10-13c.md`) |
+| `pages.yml` | zgodny z żywym workflowem — ochrona publikacji na Pages (sprzątanie artefaktów poprzednich prób + czekanie na widoczność) jest już wgrana |
