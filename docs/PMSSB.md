@@ -37,6 +37,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
 | batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
+| batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3239,3 +3240,61 @@ wykonuje obie komendy i wymaga właściwego koloru. Zestaw PMSSB-60 ma odtąd
 Dowody, wartości PRZED→PO i pełna macierz:
 [plan PMSSB-60](plans/PLAN_2026-10-10c-pmssb60-batch65.md),
 sonda `tools/pmssb60-batch65-sonda.mjs`.
+
+## PMSSB-61 — jakościowe domknięcie batcha 66 (2026-10-13, PR #163)
+
+Pełna pętla objęła 10/10 kart. Cztery mechaniki były już zamknięte przez
+istniejące rodziny i dostały kontrole dodatnie: Sporecap Spider (reach), Foul
+Orchard (tapped dual), Wild Celebrants (opcjonalny ETB removal) oraz Naturalize
+(removal i kierunek celu). Sześć fal naprawiło siedem findingów na pozostałych
+kartach; wszystkie reguły są generyczne po deskryptorach i stanie, bez nazw ani
+`cardId` w heurystyce.
+
+- **A — Warden/vigilance:** vigilant attacker pozostaje w prognozie gardy na
+  crackback. PO: atak **21**; bez vigilance brak ataku **0 > −1**. Ręczna mana
+  pozostaje poniżej auto-rzutu (**−4 vs 76**).
+- **B — Cazur:** nazwany Partner ma wartość tylko, gdy znana własna talia może
+  jeszcze zawierać cel; brak wiedzy zachowuje konserwatywną dawną wartość.
+  Boardowy `any_combat_damage_to_player → add_counter` jest wyceniany na
+  faktycznym źródle pewnych obrażeń. Talia bez Ukkimy **68,8536 vs 76,9536** z
+  celem; atak `[Cazur,a]` **61 vs 19** bez triggera.
+- **C — Lorescale/L41:** jeden `drawTriggeredCounterValue` obsługuje spell,
+  ability, ETB, modal i optional trigger. Agreguje liczniki bez powtórzenia bazy
+  M429 i odrzuca draw przeciwnika. Inspiration **33 vs 11**, Scholar
+  **22 vs 4**, Rager **84,6018 vs 68,4018**.
+- **D — Noble:** aktywowane `prevent_next_damage` używa tej samej
+  `preventShieldValue` co czar. Bez zagrożenia **−73 < pass**, przy incoming
+  damage **+11**, cel przeciwnika **−118**.
+- **E — Rakish:** zdolność z ręki nie wpada już automatycznie do Cycling.
+  Linkowany grant rozszerza profil jednej jednostki many i mierzy marginalne
+  pokrycie pipów / odblokowany rzut, zamiast płaskiego +12. Swamp **17** >
+  Forest/Plains **4** > cel wroga **−40**; wariant kosztu `{0}` jest dokładnie
+  o 2 wyżej (**19/6/−38**), więc S11 liczy realny koszt raz.
+- **F — Scythe Tiger:** wspólny `sacrificePermanentLoss` zasila anticipację
+  castu i późniejszy wybór. Land płaci bazę 6, niedobór poniżej trzech źródeł i
+  utratę potrzebnego koloru. 0/1/2 landy: **−39,5946** i pass; 3/5:
+  **57,6054** i cast. Przy jednym landzie Tiger **32 > 26** land; przy trzech
+  zbędny Swamp/Plains **34 > 32** Tiger **> 30** potrzebny Forest.
+
+**Tie-audit:** projekcja `resolve_sacrifice_choice` niesie rodzaj i tę samą
+wartość ofiary co scoring. Końcowe `--gry=40`: 480 partii, 262 368 decyzji;
+dla ofiar 27 decyzji rozstrzygniętych + 74 remisy równoważne, **0
+rozróżnialnych i 0 bez danych**. Pełna brama ujawniła też remis Awaken the Bear
+z Coat with Venom przy wyniku 63 i koszcie 3 vs 1. Relacyjny tie-break między
+różnymi kartami obniża tylko droższy dokładnie remisujący czar, nie daje premii
+wariantowi słabszemu (M429), zachowuje cross-kind tie oraz historyczne tiery X
+tej samej karty. Grzechotka remisów 3/3.
+
+**Piny i bramy:** `test/audyt-pmssb61-batch66.test.js` **11/11**; fast
+**8123/8123**; all **8388/8388**; batch 66 + dotknięte rodziny **95/95**; build
+**74 moduły / 5102,4 kB**; kontrakty zdarzeń 0 naruszeń; generator 27 talii
+idempotentny; druki 0 do pobrania; CR 522 unikalne numery / 5707 cytatów —
+wszystkie istnieją. Snapshot bez dryfu: SHA-256 fixture i wyniku
+`bedd4066bf87477c5e8aff4b24ff4a341f869a6114b34db6d903f41e2bd8ef9c`,
+`overallHash` `1a891600236e83c301b3ebd267f3dbebc24b138112d51a22e27dd3a9c4ee5e32`.
+Pełnego benchmarku B0 nie uruchamiano.
+
+Pełne wartości PRZED→PO, zakres L41/S11/M429 i jawne granice:
+[raport PMSSB-61](audits/PMSSB61_BATCH66_2026-10-13.md),
+[plan](plans/PLAN_2026-10-13-pmssb61-batch66.md),
+sonda `tools/pmssb61-batch66-sonda.mjs`.

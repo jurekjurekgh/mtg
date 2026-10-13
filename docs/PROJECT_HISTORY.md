@@ -16738,3 +16738,49 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   mecze**, heuristic **92,0%** wszystkich zwycięstw. GitHub CI kodu
   **SUCCESS**, run `38290364410`.
 - Plan: `docs/plans/PLAN_2026-10-12-village-rites-ofiary-1-1.md`.
+
+## 2026-10-13 — PMSSB-61: jakościowe domknięcie batcha 66
+
+- Osobna pętla PMSSB objęła wszystkie 10 kart batcha 66. Baseline pomiaru:
+  `13703cf`; plan przed kodem `2605974`; test i powtarzalna sonda przed
+  implementacją `6e2fffe`; fale A–E `9cd4984`; fala F `df535bc`; domknięcie
+  audytu remisów `4719214`. Pełny raport:
+  `docs/audits/PMSSB61_BATCH66_2026-10-13.md`.
+- **Kontrole dodatnie:** Sporecap Spider (reach), Foul Orchard (tapped dual),
+  Wild Celebrants (opcjonalny ETB removal) i Naturalize (removal/kierunek celu)
+  zachowują istniejące rodziny. Nie dopisywano sztucznych premii.
+- **Warden:** vigilance zachowuje realnego blokera w prognozie crackbacku.
+  Atak **21**, bez vigilance brak ataku **0 > −1**; ręczna mana nadal
+  **−4** wobec auto-rzutu **76**.
+- **Cazur:** named Partner sprawdza pozostały cel w znanej własnej talii
+  (**68,8536** bez Ukkimy, **76,9536** z nią), a planszowy trigger combat
+  damage wycenia licznik na faktycznym źródle. Atak dwóch łączących stworów
+  **61 vs 19** bez triggera; zablokowany wariant nie dostaje premii.
+- **Lorescale / L41:** jeden helper liczy własne zdarzenia draw w spell,
+  ability, ETB, modalu i optional triggerze, agregując liczniki bez powtórzenia
+  bazy M429. Inspiration **33 vs 11**, Scholar **22 vs 4**, Rager
+  **84,6018 vs 68,4018**; draw przeciwnika bez synergii.
+- **Noble Vestige:** aktywowana prewencja używa wspólnego
+  `preventShieldValue`: bez obrażeń **−73 < pass**, przy incoming damage
+  **+11**, cel przeciwnika **−118**.
+- **Rakish Revelers:** zdolność z ręki nie jest już fałszywie Cyclingiem.
+  Marginalny model grantu traktuje land jako jedną tapowaną jednostkę i mierzy
+  pipy/odblokowany rzut z exile: potrzebny Swamp **17** > Forest/Plains **4** >
+  cel wroga **−40**. Kontrfaktyczny koszt `{0}` podnosi dokładnie o 2, więc S11
+  liczy rzeczywiste `{2}` raz; redundantny grant pozostaje pod passem (M429).
+- **Scythe Tiger:** wspólny `sacrificePermanentLoss` zasila anticipację castu
+  i wybór ofiary. 0/1/2 landy: **−39,5946** i pass; 3/5: **57,6054** i cast.
+  Przy jednym landzie Tiger **32 > 26** land; przy trzech zbędny land
+  **34 > 32** Tiger **> 30** potrzebny Forest.
+- **Audyt remisów:** projekcja wyboru ofiary zlikwidowała kategorię „bez
+  danych”: końcowe 74 remisy są równoważne, 0 rozróżnialnych i 0 bez danych.
+  Próba `--gry=40`: 480 partii / 262 368 decyzji. Pełna brama znalazła jeszcze
+  remis Awaken the Bear vs Coat with Venom (score 63, koszt 3 vs 1); relacyjny
+  tie-break S11 obniża tylko droższą różną kartę w dokładnym remisie i nie
+  narusza remisu wariantów X samego Consume Spirit. Grzechotka 3/3.
+- **Bramy:** audyt PMSSB-61 **11/11**, fast **8123/8123**, all
+  **8388/8388**, batch 66 + rodziny **95/95**, build **74 moduły / 5102,4 kB**,
+  snapshot bitowo bez dryfu (SHA-256 `bedd4066…`), kontrakty zdarzeń 0 naruszeń,
+  generator 27 talii idempotentny, druki 0 do pobrania, cytaty CR 522/522
+  poprawne. Pełnego benchmarku B0 nie uruchamiano zgodnie z poleceniem
+  właściciela.

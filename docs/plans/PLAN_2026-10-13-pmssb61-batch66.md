@@ -182,13 +182,37 @@ do `.arena/*.log`; na ekran wychodzi krótkie podsumowanie.
 
 ## 7. Realizacja
 
-- [ ] checkpoint planu przed kodem;
-- [ ] commitowana sonda i pomiar PRZED;
-- [ ] fala A — Warden/vigilance;
-- [ ] fala B — Cazur/Partner + combat counters;
-- [ ] fala C — Lorescale/draw L41;
-- [ ] fala D — Noble/prewencja L41;
-- [ ] fala E — Rakish/from-hand + fixing + S11;
-- [ ] fala F — Scythe Tiger/land sacrifice + timing;
-- [ ] snapshot, tie-audit, fast/all/build i dokumentacja końcowa;
-- [ ] push oraz zielony GitHub CI na PR #163.
+- [x] checkpoint planu przed kodem (`2605974`);
+- [x] commitowana sonda, test i pomiar PRZED (`6e2fffe`);
+- [x] fala A — Warden/vigilance;
+- [x] fala B — Cazur/Partner + combat counters;
+- [x] fala C — Lorescale/draw L41;
+- [x] fala D — Noble/prewencja L41;
+- [x] fala E — Rakish/from-hand + fixing + S11;
+- [x] fala F — Scythe Tiger/land sacrifice + timing;
+- [x] snapshot, tie-audit, fast/all/build i dokumentacja końcowa;
+- [ ] push oraz zielony GitHub CI na PR #163 — push i obserwacja CI są ostatnim
+  krokiem po commitcie dokumentacji.
+
+### Wynik końcowy
+
+Fale A–E zapisano w `9cd4984`, falę F w `df535bc`, a domknięcie projekcji
+ofiary i grzechotki kosztu czaru w `4719214`. Dedykowany audyt ma **11/11**,
+fast **8123/8123**, pełny `run-tests.mjs all` **8388/8388**, a build kończy
+exit 0 (**74 moduły / 5102,4 kB**). Snapshot scoringu jest bitowo identyczny z
+fixture (SHA-256 `bedd4066bf87477c5e8aff4b24ff4a341f869a6114b34db6d903f41e2bd8ef9c`).
+
+Końcowy tie-audit (`--gry=40`) rozegrał 480 partii i 262 368 decyzji. Dla
+`resolve_sacrifice_choice` wszystkie **74** remisy są odtąd sklasyfikowane jako
+równoważne: **0 rozróżnialnych, 0 bez danych**. Pierwsza pełna brama ujawniła
+jeszcze remis dwóch różnych combat tricków przy różnym realnym koszcie; domknął
+go relacyjny tie-break S11, który nie premiuje najsłabszego wariantu (M429) i
+nie narusza historycznych tierów X tej samej karty.
+
+Walidacja batcha i dotkniętych rodzin ma **95/95**, generator 27 talii jest
+idempotentny, `check-card-printings` ma 0 kart do pobrania, audyt kontraktów
+zdarzeń 0 naruszeń, a 522 unikalne numery cytowane w kodzie istnieją w CR
+obowiązujących od 2026-09-25. Pełnego benchmarku B0 nie uruchamiano zgodnie z
+ograniczeniem właściciela.
+
+Pełny raport: [`PMSSB61_BATCH66_2026-10-13.md`](../audits/PMSSB61_BATCH66_2026-10-13.md).
