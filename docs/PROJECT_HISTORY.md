@@ -16914,3 +16914,37 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
 - **Bramy:** `npm test` 8134/8134, `npm run build` 74 moduły / 5108,5 kB;
   YAML + oba skrypty `run:` zweryfikowane lokalnie, kwerendy `jq` uruchomione
   na żywym runie.
+
+### 2026-10-13c (ciąg dalszy) — zgłoszenie F: czyj grób obowiązuje przy zmianie celu czaru
+
+- **Zgłoszenie:** po przekierowaniu Willbenderem celu czaru Unbreakable Bond
+  („Return target creature card from **your** graveyard…") stół pokazał karty
+  z grobu przeciwnika; wątpliwość: „czy nie powinienem wybierać z własnego grobu?".
+- **Rozstrzygnięcie (przepisy pobrane literalnie, ADR 0030):** CR 109.5 —
+  „you"/„your" na obiekcie należą do jego kontrolera, więc „your graveyard"
+  to grób kontrolera CZARU (przeciwnika); CR 115.7a — cel wolno zmienić tylko
+  na INNY legalny cel, a gdy takiego nie ma, oryginalny cel zostaje bez zmian.
+  Silnik realizował regułę poprawnie w ofercie i walidacji
+  (`legalTargetCandidates(state, pending.spellControllerId, pending.spec)`);
+  błędna była podpowiedź z AI, że legalność ocenia się z perspektywy gracza
+  przekierowującego.
+- **Bug znaleziony sondą i naprawiony:** gdy w grobie kontrolera czaru nie było
+  innej karty, silnik otwierał decyzję bez żadnej legalnej opcji (w ofercie
+  zostawało „concede", `pass_priority` odrzucany „redirect_unresolved") —
+  partia stała w miejscu. Fix w `accepted()` (wzorzec devour): decyzja bez
+  alternatyw domyka się sama ze zdarzeniem `redirect_choice_resolved`
+  {`toTarget: null`, `auto: true`, `unchangedReason: 'no_other_legal_target'`};
+  kandydatów liczy ten sam predykat co oferta i walidacja. Bez importu
+  `legalTargetCandidates` w efekcie — cykl importów pilnuje
+  `test/module-graph.test.js` (ADR 0011).
+- **Myląca warstwa UI/log:** log mówił tylko „Możesz zmienić cel czaru X", a
+  tytuł decyzji brzmiał „Przekierowanie obrażeń" (pozostałość po innym
+  mechanizmie). Teraz log nazywa kontrolera czaru i regułę, domknięcie bez
+  zmiany mówi o braku innego legalnego celu, a etykieta brzmi „Zmiana celu
+  czaru (Willbender)".
+- **Testy i dowody:** `test/zgloszenie-f-willbender-cel-z-grobu-kontrolera.test.js`
+  (4 testy: strażnik CR 109.5, regresja CR 115.7a, teksty logu i tytułu grupy);
+  6 mutacji czerwonych (w tym pierwsza próba wadliwa — `str.replace` trafiał oba
+  pola `spellControllerId`, powtórzona precyzyjnie). Tabela CR zregenerowana
+  z tego samego wydania (sha256 8d860e45…, CR 2026-09-25) — doszedł tylko
+  numer `115.7a`. Bramy: `npm test` 8138/8138, `npm run build` 74 mod / 5111,2 kB.
