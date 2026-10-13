@@ -7261,7 +7261,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return false;
       }
       if (descriptor.cantAttack || descriptor.cantBlock) return true;
-      if (descriptor.locksUntap || descriptor.doesntUntap) return true;
+      // Audyt PR #164 (pętla jakości, klasa A-2): pole to `doesntUntap` —
+      // jedyna nazwa normalizowana przez `registry.js` / `identity.js`.
+      // Wcześniejszy disjunct `descriptor.locksUntap` nie istnieje w żadnym
+      // innym pliku repo (sonda `tools/probe-phantom-view.mjs`: 223 odczyty
+      // pola, które nigdy nie trafiło do obiektu ani widoku), więc był martwy
+      // i sugerował obsługę, której nie było. Strażnik nazw:
+      // `test/audyt-pr164-pola-widm.test.js`.
+      if (descriptor.doesntUntap) return true;
       const pump = descriptor.pump;
       if (pump && ((pump.power ?? 0) < 0 || (pump.toughness ?? 0) < 0)) return true;
       if ((descriptor.losesKeywords ?? []).length > 0) return true;
