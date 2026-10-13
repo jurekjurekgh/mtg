@@ -16782,5 +16782,6 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   **8388/8388**, batch 66 + rodziny **95/95**, build **74 moduły / 5102,4 kB**,
   snapshot bitowo bez dryfu (SHA-256 `bedd4066…`), kontrakty zdarzeń 0 naruszeń,
   generator 27 talii idempotentny, druki 0 do pobrania, cytaty CR 522/522
-  poprawne. Pełnego benchmarku B0 nie uruchamiano zgodnie z poleceniem
-  właściciela.
+  poprawne. GitHub CI PR #163 **PASS** — run `38394514667`, job
+  `115286210287`, 6m6s. Pełnego benchmarku B0 nie uruchamiano zgodnie z
+  poleceniem właściciela.

@@ -191,8 +191,8 @@ do `.arena/*.log`; na ekran wychodzi krótkie podsumowanie.
 - [x] fala E — Rakish/from-hand + fixing + S11;
 - [x] fala F — Scythe Tiger/land sacrifice + timing;
 - [x] snapshot, tie-audit, fast/all/build i dokumentacja końcowa;
-- [ ] push oraz zielony GitHub CI na PR #163 — push i obserwacja CI są ostatnim
-  krokiem po commitcie dokumentacji.
+- [x] push oraz zielony GitHub CI na PR #163 — run `38394514667`, job
+  `115286210287`, **PASS** w 6m6s.
 
 ### Wynik końcowy
 
