@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Sporecap%20Spider&set=eld&format=json",
+  "print": "eld",
+  "name": "Sporecap Spider",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Creature — Spider",
+  "oracle_text": "Reach",
+  "power": "1",
+  "toughness": "5",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Reach"
+  ],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "176",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/b/7bc33252-145f-45c0-bb70-23183c698f66.jpg?1783932603",
+    "normal": "https://cards.scryfall.io/normal/front/7/b/7bc33252-145f-45c0-bb70-23183c698f66.jpg?1783932603",
+    "large": "https://cards.scryfall.io/large/front/7/b/7bc33252-145f-45c0-bb70-23183c698f66.jpg?1783932603"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/7bc33252-145f-45c0-bb70-23183c698f66/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

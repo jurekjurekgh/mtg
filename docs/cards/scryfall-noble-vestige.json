@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Noble%20Vestige&set=zen&format=json",
+  "print": "zen",
+  "name": "Noble Vestige",
+  "mana_cost": "{2}{W}",
+  "cmc": 3.0,
+  "type_line": "Creature — Spirit",
+  "oracle_text": "Flying\n{T}: Prevent the next 1 damage that would be dealt to target player or planeswalker this turn.",
+  "power": "1",
+  "toughness": "2",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Flying"
+  ],
+  "set": "zen",
+  "set_name": "Zendikar",
+  "collector_number": "29",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/d/a/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c.jpg?1783942170",
+    "normal": "https://cards.scryfall.io/normal/front/d/a/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c.jpg?1783942170",
+    "large": "https://cards.scryfall.io/large/front/d/a/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c.jpg?1783942170"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

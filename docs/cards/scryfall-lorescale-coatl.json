@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Lorescale%20Coatl&set=mm2&format=json",
+  "print": "mm2",
+  "name": "Lorescale Coatl",
+  "mana_cost": "{1}{G}{U}",
+  "cmc": 3.0,
+  "type_line": "Creature — Snake",
+  "oracle_text": "Whenever you draw a card, put a +1/+1 counter on this creature.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "G",
+    "U"
+  ],
+  "color_identity": [
+    "G",
+    "U"
+  ],
+  "keywords": [],
+  "set": "mm2",
+  "set_name": "Modern Masters 2015",
+  "collector_number": "179",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/5/a/5a752d05-cd6f-4754-85fd-16f1308ac1ea.jpg?1783938391",
+    "normal": "https://cards.scryfall.io/normal/front/5/a/5a752d05-cd6f-4754-85fd-16f1308ac1ea.jpg?1783938391",
+    "large": "https://cards.scryfall.io/large/front/5/a/5a752d05-cd6f-4754-85fd-16f1308ac1ea.jpg?1783938391"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [
+    {
+      "date": "2020-06-23",
+      "source": "wotc",
+      "comment": "If a spell or ability causes you to put a card into your hand without specifically using the word \"draw,\" it's not a card drawn."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/5a752d05-cd6f-4754-85fd-16f1308ac1ea/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

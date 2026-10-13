@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Naturalize&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Naturalize",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target artifact or enchantment.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "142",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/b/1/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd.jpg?1783939065",
+    "normal": "https://cards.scryfall.io/normal/front/b/1/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd.jpg?1783939065",
+    "large": "https://cards.scryfall.io/large/front/b/1/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd.jpg?1783939065"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

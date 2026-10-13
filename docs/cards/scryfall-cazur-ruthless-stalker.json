@@ -1,0 +1,75 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cazur%2C%20Ruthless%20Stalker&set=otc&format=json",
+  "print": "otc",
+  "name": "Cazur, Ruthless Stalker",
+  "mana_cost": "{3}{G}",
+  "cmc": 4.0,
+  "type_line": "Legendary Creature — Human Warrior",
+  "oracle_text": "Partner with Ukkima, Stalking Shadow (When this creature enters, target player may put Ukkima into their hand from their library, then shuffle.)\nWhenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Partner with",
+    "Partner"
+  ],
+  "set": "otc",
+  "set_name": "Outlaws of Thunder Junction Commander",
+  "collector_number": "188",
+  "rarity": "mythic",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/6/e/6ee4fda8-07cd-4091-8850-a6925080b464.jpg?1783911912",
+    "normal": "https://cards.scryfall.io/normal/front/6/e/6ee4fda8-07cd-4091-8850-a6925080b464.jpg?1783911912",
+    "large": "https://cards.scryfall.io/large/front/6/e/6ee4fda8-07cd-4091-8850-a6925080b464.jpg?1783911912"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "\"Partner with [name]\" represents two abilities. The first is a triggered ability: \"When this permanent enters the battlefield, target player may search their library for a card named [name], reveal it, put it into their hand, then shuffle their library.\""
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Note that the target player searches their library (which may be affected by effects such as that of Stranglehold) and that the card they find is revealed, even though these words aren't included in the ability's reminder text."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "The second ability represented by the \"partner with [name]\" keyword modifies the rules for deck construction in the Commander variant and has no function outside of that variant. If a legendary creature card with \"partner with [name]\" is designated as your commander, the named legendary creature card can also be designated as your commander."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "If your Commander deck has two commanders, you can only include cards whose own color identities are also found in your commanders' combined color identities. If Haldan and Pako are your commanders, your deck may contain cards with blue, red, and/or green in their color identity, but not cards with white or black."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Both commanders start in the command zone, and the remaining 98 cards of your deck are shuffled to become your library."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "A creature with a \"partner with\" ability can't partner with any creature other than its designated partner. Losing a partner ability during the game doesn't cause either to cease to be your commander."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "Once the game begins, your two commanders are tracked separately. If you cast one, you won't have to pay an additional {2} the first time you cast the other. A player loses the game after having been dealt 21 damage from one of them, not from both of them combined. Command Beacon's effect puts one into your hand from the command zone, not both."
+    },
+    {
+      "date": "2020-04-17",
+      "source": "wotc",
+      "comment": "The triggered ability of the \"partner with\" keyword still triggers in a Commander game. If your other commander has somehow ended up in your library, you can find it. You can also target another player who might have that card in their library."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/6ee4fda8-07cd-4091-8850-a6925080b464/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

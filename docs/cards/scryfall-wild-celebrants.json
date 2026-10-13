@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wild%20Celebrants&set=ths&format=json",
+  "print": "ths",
+  "name": "Wild Celebrants",
+  "mana_cost": "{3}{R}{R}",
+  "cmc": 5.0,
+  "type_line": "Creature — Satyr",
+  "oracle_text": "When this creature enters, you may destroy target artifact.",
+  "power": "5",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "147",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/e/7/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1.jpg?1783939751",
+    "normal": "https://cards.scryfall.io/normal/front/e/7/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1.jpg?1783939751",
+    "large": "https://cards.scryfall.io/large/front/e/7/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1.jpg?1783939751"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1/rulings",
+  "rulingsPobrano": "2026-10-13"
+}
