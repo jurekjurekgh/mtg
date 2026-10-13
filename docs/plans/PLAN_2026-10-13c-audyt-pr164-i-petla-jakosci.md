@@ -33,26 +33,26 @@ Gałąź sesji: `arena/aadcf997-mtg`; jeden PR tej sesji do `main`.
 
 ### A. Plan i PR sesji (ADR 0020 A)
 
-- [ ] Zapisać ten plan w `docs/plans/PLAN_2026-10-13c-audyt-pr164-i-petla-jakosci.md`.
-- [ ] Potwierdzić zielony `npm test` i `npm run build` (cicho do `.arena/`).
-- [ ] Zacommitować plan, wypchnąć gałąź `arena/aadcf997-mtg` i otworzyć PR do
+- [x] Zapisać ten plan w `docs/plans/PLAN_2026-10-13c-audyt-pr164-i-petla-jakosci.md`.
+- [x] Potwierdzić zielony `npm test` i `npm run build` (cicho do `.arena/`).
+- [x] Zacommitować plan, wypchnąć gałąź `arena/aadcf997-mtg` i otworzyć PR do
       `main` przed jakimkolwiek kodowaniem.
 
 ### B. Audyt pełnego diffu PR #164 (ADR 0020 B / ADR 0016)
 
-- [ ] Przejrzeć **każdy z 22 zmienionych plików** i ująć go w tabeli rejestru
+- [x] Przejrzeć **każdy z 22 zmienionych plików** i ująć go w tabeli rejestru
       raportu `docs/audits/AUDYT_PR164_2026-10-13.md` (docs / silnik / stół /
       bot / testy).
-- [ ] Zweryfikować wobec kodu wszystkie twierdzenia napraw F-1..F-7 z
+- [x] Zweryfikować wobec kodu wszystkie twierdzenia napraw F-1..F-7 z
       `docs/audits/AUDYT_PR163_2026-10-13.md` (predykaty i ich call-site'y,
       kontrakty wiążące ofertę z walidacją, etykiety, projekcje odcisku).
-- [ ] Zweryfikować zgodność deklarowanych liczb (testy, moduły build, CR) ze
+- [x] Zweryfikować zgodność deklarowanych liczb (testy, moduły build, CR) ze
       stanem faktycznym.
-- [ ] Odtworzyć produkcyjnymi ścieżkami (`playerView` + `execute` + widok
+- [x] Odtworzyć produkcyjnymi ścieżkami (`playerView` + `execute` + widok
       sesji) punkty brzegowe napraw: zdolności nadane przez statyk
       (`grantedActivatedAbilities`), eksport kart z wygnania w wycenie bota,
       pola stempli okien w `PlayerView`.
-- [ ] Spisać raport z findingami, dowodami i werdyktem; znaleziska naprawić
+- [x] Spisać raport z findingami, dowodami i werdyktem; znaleziska naprawić
       u źródła.
 
 ### C. Naprawy findingów audytu
@@ -62,15 +62,19 @@ chirurgiczna naprawa u root cause (ADR 0002, ADR 0016) → GREEN (+ weryfikacja
 mutacyjna, L13) → `npm test` + `npm run build` (cicho do `.arena/`) → osobny
 commit i natychmiastowy `git push origin arena/aadcf997-mtg`.
 
-- [ ] A-1: `src/table/session.js` — auto-pass (`isManaOnly`) nie przekazuje
+- [x] A-1: `src/table/session.js` — auto-pass (`isManaOnly`) nie przekazuje
       `state` do `isPureManaAbilityCommand`, przez co panel i auto-pass czytają
       różne listy zdolności (L41); rozjazd utajony dla zdolności nadanych
       statykiem (`scope.grantsAbilities`).
-- [ ] A-2: `src/controllers/heuristic-bot.js` — filtr „karty rzucalne
+- [x] A-2: `src/controllers/heuristic-bot.js` — filtr „karty rzucalne
       z wygnania” w `linkedManaGrantValue` opiera się na polach, których
       `PlayerView` nie wysyła (`playableFromExile`, `onAdventure`,
       `warpedAtTurn`), więc gubi realne stemple (impuls, madness, rebound,
       warp, adventure).
+- [x] A-3 (znalezisko z przeglądu F-3): `src/engine/triggers.js` — gałąź
+      `artifact_you_control` bez bramki `shroud` (`hexproofBlocked`), inaczej
+      niż bliźniacze `creature_you_control` / `land_you_control` (CR 702.18,
+      L52); luka utajona (żadna karta katalogu nie ma artefaktu ze `shroud`).
 
 ### D. Domyślna kontynuacja po audycie (ADR 0021)
 

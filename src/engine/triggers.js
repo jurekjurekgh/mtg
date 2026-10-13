@@ -662,12 +662,20 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'artifact_you_control') {
+    // Audyt PR #164 (A-3): bramka `hexproofBlocked` obejmuje `shroud`
+    // (CR 702.18 — permanent ze shroud nie może być celem czarów ani
+    // zdolności, także własnych),
+    // tak samo jak bliźniacze gałęzie `creature_you_control` (529) i
+    // `land_you_control` (793) po naprawie F-3. Dla własnego celu `hexproof`
+    // nie blokuje (kontroler celu = kontroler źródła), więc zostaje sam
+    // `shroud` — dokładnie ta reguła, której brakowało (L52).
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
         && object.id !== sourceObject.id
+        && !hexproofBlocked(object)
         && !protectedBlocked(object);
     });
   }
