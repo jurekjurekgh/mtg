@@ -45,11 +45,44 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { commandLabel, isManaAbilityCommand } from '../src/table/render.js';
 import { hasMeaningfulDecisionOf } from '../src/table/session.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
+import { createRegistry, defineCard } from '../src/cards/registry.js';
+import { ABILITY_TYPE, createAbility } from '../src/engine/abilities.js';
+import { activatableAbilities } from '../src/engine/permanents.js';
 
 const REGISTRY = createCardRegistry();
 
-function put(state, id, cardId, controllerId, zone = 'battlefield') {
-  const def = REGISTRY.get(cardId);
+// Audyt PR #164 (A-1): karty syntetyczne dla zdolności NADANEJ statykiem
+// (`scope.grantsAbilities`) — dokładnie ten grant, którego nie widzi
+// `activatableAbilities` bez `state`. Katalog ma tylko jednego użytkownika
+// `grantsAbilities` (Enduring Sliver — outlast, nie mana), więc scenariusz
+// „czysta zdolność many nadana statykiem" wymaga karty testowej (ADR 0029).
+const synGrantedManaAbility = createAbility({
+  type: ABILITY_TYPE.activated,
+  cost: { tap: true },
+  effect: { type: 'add_mana', amount: 1 },
+});
+const synGranter = defineCard({
+  id: 'syn-sliver-lord', name: 'Syn Sliver Lord', types: ['Creature'], subtypes: ['Sliver'],
+  colors: ['G'], power: 2, toughness: 2, manaCost: 2,
+  abilities: [createAbility({
+    type: ABILITY_TYPE.static,
+    scope: {
+      affects: 'creatures_with_subtype',
+      subtype: 'Sliver',
+      grantsAbilities: [synGrantedManaAbility],
+    },
+  })],
+  support: { status: 'supported' },
+});
+const synVanillaSliver = defineCard({
+  id: 'syn-sliver', name: 'Syn Sliver', types: ['Creature'], subtypes: ['Sliver'],
+  colors: ['G'], power: 1, toughness: 1, manaCost: 1,
+  support: { status: 'supported' },
+});
+const GRANT_REGISTRY = createRegistry([...REGISTRY.all(), synGranter, synVanillaSliver]);
+
+function put(state, id, cardId, controllerId, zone = 'battlefield', registry = REGISTRY) {
+  const def = registry.get(cardId);
   assert.ok(def, `karta ${cardId} w rejestrze`);
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
@@ -99,7 +132,10 @@ const abilitiesOf = (cardId) => REGISTRY.get(cardId)?.abilities ?? [];
 
 const isManaOnlyFor = (state) => (cmd) => {
   const object = state.objects.get(cmd.objectId);
-  return isPureManaAbilityCommand(cmd, object, object?.cardId ? abilitiesOf(object.cardId) : null);
+  // Audyt PR #164 (A-1): predykat czyta zdolności przez `activatableAbilities`,
+  // więc dostaje `state` — ta sama ścieżka co panel (render.js:941). Bez tego
+  // gubił zdolności nadane statykiem (klasa L41: jedno źródło predykatu).
+  return isPureManaAbilityCommand(cmd, object, object?.cardId ? abilitiesOf(object.cardId) : null, state);
 };
 
 // ---------------------------------------------------------------------------
@@ -360,10 +396,37 @@ test('J/4: sesja wpięta w predykat silnika (wiring, nie kopia reguły)', () => 
   const sessionSource = fs.readFileSync(new URL('../src/table/session.js', import.meta.url), 'utf8');
   assert.ok(sessionSource.includes("import { isPureManaAbilityCommand } from '../engine/mana-sources.js';"),
     'sesja importuje predykat silnika');
-  assert.match(sessionSource, /isManaOnly: \(cmd\) => \{[\s\S]*?isPureManaAbilityCommand\(cmd, object, fallback\)/,
-    'auto-pass karmi regułę predykatem silnika (jedno źródło z panelem)');
+  // Audyt PR #164 (A-1): auto-pass musi podawać `state` — bez niego predykat nie
+  // widzi zdolności nadanych statykiem (`grantedActivatedAbilities`), więc panel
+  // (render.js — z `state`) i auto-pass czytają różne listy (L41).
+  assert.match(sessionSource, /isManaOnly: \(cmd\) => \{[\s\S]*?isPureManaAbilityCommand\(\s*cmd,\s*object,\s*fallback,\s*state\s*\)/,
+    'auto-pass karmi regułę predykatem silnika z pełnym `state` (jedno źródło z panelem)');
   assert.match(sessionSource, /hasMeaningfulDecisionOf\(view, \{\s*isIgnored:/,
     'reguła jest modułową funkcją (ADR 0011 — testowalna bez sesji)');
+});
+
+test('J/5: czysta zdolność many nadana statykiem wymaga `state` (grant `scope.grantsAbilities`)', () => {
+  const state = game();
+  put(state, 'lord', 'syn-sliver-lord', 'p1', 'battlefield', GRANT_REGISTRY);
+  put(state, 'sliver', 'syn-sliver', 'p1', 'battlefield', GRANT_REGISTRY);
+  const sliver = state.objects.get('sliver');
+  const activatable = activatableAbilities(state, sliver);
+  assert.equal(activatable.length, 1, 'statyk nadaje Sliverowi zdolność many');
+  assert.equal((sliver.abilities ?? []).length, 0, 'obiekt celu nie ma zdolności wydrukowanej');
+  const cmd = { type: 'activate_ability', objectId: 'sliver', abilityIndex: 0 };
+  assert.equal(isPureManaAbilityCommand(cmd, sliver, null, state), true,
+    'predykat ze `state` widzi nadaną czystą zdolność many');
+  assert.equal(isPureManaAbilityCommand(cmd, sliver, null), false,
+    'kontrola: bez `state` lista `grantedActivatedAbilities` jest pusta');
+  const view = playerView(state, 'p1');
+  assert.ok(view.legalCommands.some((command) => command.type === 'activate_ability'
+    && command.objectId === 'sliver' && command.abilityIndex === 0),
+  'silnik oferuje aktywację nadanej zdolności');
+  assert.equal(hasMeaningfulDecisionOf(view, { isManaOnly: isManaOnlyFor(state) }), false,
+    'okno z samą nadaną czystą zdolnością many nie jest decyzją');
+  assert.equal(hasMeaningfulDecisionOf(view, {
+    isManaOnly: (c) => isPureManaAbilityCommand(c, state.objects.get(c.objectId), null),
+  }), true, 'kontrola negatywna: ścieżka bez `state` zatrzymywałaby auto-pass (objaw J na grantach)');
 });
 
 // ---------------------------------------------------------------------------

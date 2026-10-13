@@ -3801,7 +3801,14 @@ export function createSession(config) {
         // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
         // danych, którego używa panel (render.js → session.abilitiesOf).
         const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
-        return isPureManaAbilityCommand(cmd, object, fallback);
+        // Audyt PR #164 (A-1): `state` jest OBOWIĄZKOWYM argumentem — predykat
+        // czyta zdolność przez `activatableAbilities(state, obj)`, które bez
+        // stanu nie widzi warstwy `grantedActivatedAbilities` (statyki nadające
+        // zdolności, `scope.grantsAbilities`). Panel przekazuje `session.state`
+        // (render.js:941), więc auto-pass musi tak samo, inaczej oba czytają
+        // różne listy zdolności (L41) i gracz widzi zatrzymany auto-pass bez
+        // żadnego przycisku w panelu.
+        return isPureManaAbilityCommand(cmd, object, fallback, state);
       },
     });
   }
