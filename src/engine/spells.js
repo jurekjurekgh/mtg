@@ -17,6 +17,7 @@ import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
+import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
 function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
@@ -79,6 +80,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
   const impulse = canPlayByImpulseFromExile(object, state);
+  const linkedExileCast = canCastByLinkedExilePermission(object, playerId);
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   // Audyt PR #92: `abilityWindowCast` to osobne uprawnienie do rzutu z exile —
   // „karta leży w exile, bo właśnie wygnała ją zdolność, która wciąż jest na
@@ -87,7 +89,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   // skorzystać „później w turze" (ruling WotC dla Vaana, 2025-02-10).
   // Nazwa jest celowo bezimienna (ADR 0002) — to mechanika, nie karta.
   if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell'
-    || (object.zone === 'exile' && !plotted && !impulse && !abilityWindowCast)) {
+    || (object.zone === 'exile' && !plotted && !impulse && !linkedExileCast && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
@@ -1189,8 +1191,9 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
   const object = state.objects.get(objectId);
   // Patrz `castXCostSpell`: to samo uprawnienie okna zdolności (audyt PR #93).
   const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  const fromLinkedExile = canCastByLinkedExilePermission(object, playerId);
   if (!object || object.controllerId !== playerId
-    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || (object.zone !== 'hand' && !fromAbilityWindow && !fromLinkedExile)
     || object.kind !== 'spell' || !object.spell?.fireball) {
     throw new Error('To nie jest rzucalny czar X z dowolną liczbą celów z ręki');
   }
@@ -1258,8 +1261,9 @@ function castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindo
   // pyta „you may cast it”, jest rzucalny z exile (CR 107.3a: X wybiera gracz
   // w chwili rzutu). Mirror `requireSpell`/`castModalSpell`.
   const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  const fromLinkedExile = canCastByLinkedExilePermission(object, playerId);
   if (!object || object.controllerId !== playerId
-    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || (object.zone !== 'hand' && !fromAbilityWindow && !fromLinkedExile)
     || object.kind !== 'spell' || !object.spell?.xCost) {
     throw new Error('To nie jest rzucalny X-cost czar z ręki');
   }
@@ -3311,7 +3315,8 @@ export function legalSpellCasts(state, playerId) {
       // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
       // gracz nie mial jej w „Twoje dzialania" (klasa L48).
       const impulseLive = isImpulseWindowLive(obj, state);
-      return obj?.plotted || obj?.suspendReady || impulseLive;
+      return obj?.plotted || obj?.suspendReady || impulseLive
+        || canCastByLinkedExilePermission(obj, playerId);
     }),
   ];
   for (const id of ids) {
@@ -3840,10 +3845,11 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // ukończonym lochu), a execute je odrzucał — rozjazd oferty i wykonania
   // (L48/L41). Mirror gałęzi z requireSpell.
   const impulse = canPlayByImpulseFromExile(object, state);
+  const linkedExileCast = canCastByLinkedExilePermission(object, playerId);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
     || object.kind !== 'spell'
-    || (object.zone === 'exile' && !plottedLike && !impulse && !abilityWindowCast)) {
+    || (object.zone === 'exile' && !plottedLike && !impulse && !linkedExileCast && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');

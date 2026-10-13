@@ -37,6 +37,7 @@ import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { nextTimestamp } from './timestamps.js';
 import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached, canPlayByImpulseFromExile } from './impulse-window.js';
+import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -7168,6 +7169,12 @@ export function playerView(state, playerId) {
         // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
         if (object.warpReady) waiting.warpReady = true;
         if (object.warp) waiting.warp = object.warp;
+        // Publiczny skutek rozstrzygniętej zdolności: ten konkretny obiekt
+        // można rzucić z exile. UI/bot nie muszą wnioskować wyłącznie z listy
+        // komend, a ponowne wygnanie nowego obiektu pola nie odziedziczy.
+        if (canCastByLinkedExilePermission(object, object.linkedExileCastPermission?.playerId)) {
+          waiting.linkedExileCastPermission = { ...object.linkedExileCastPermission };
+        }
         // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
         // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
         // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.
@@ -8649,7 +8656,11 @@ export function playerView(state, playerId) {
     }
     // Flash (CR 702.8): permanenty z flash można zagrać z priorytetem w każdej
     // fazie (jak instanty), nie tylko w main phase. Dodajemy je tuż po czarach.
-    for (const id of state.zones.hand) {
+    const instantPermanentIds = [
+      ...state.zones.hand,
+      ...state.zones.exile.filter((id) => canCastByLinkedExilePermission(state.objects.get(id), playerId)),
+    ];
+    for (const id of instantPermanentIds) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId) continue;
       // Aura z flash — osobna enumeracja niżej (CR 601.2c: aura wymaga celu
@@ -8847,7 +8858,11 @@ export function playerView(state, playerId) {
       }
       return out;
     };
-    for (const id of state.zones.hand) {
+    const mainPermanentIds = [
+      ...state.zones.hand,
+      ...state.zones.exile.filter((id) => canCastByLinkedExilePermission(state.objects.get(id), playerId)),
+    ];
+    for (const id of mainPermanentIds) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;

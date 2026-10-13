@@ -7,6 +7,7 @@ import { registerMover } from './mover.js';
 import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 import { clearImpulseWindowStamp } from './impulse-window.js';
+import { clearLinkedExileCastPermission, consumeGrantsLinkedToExileCast } from './linked-exile-cast.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -259,6 +260,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // Para pól okna impulsu ma właściciela (impulse-window.js) — zapis idzie
     // przez helper, nie przez literał w tym pliku (guard family-audit).
     ...clearImpulseWindowStamp(object),
+    // Pozwolenie „for as long as it remains exiled” również nie przechodzi
+    // na nowy obiekt (CR 400.7); helper jest wspólny z ofertą rzutu.
+    ...clearLinkedExileCastPermission(object),
   } : null;
   const moved = Object.freeze({
     ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
@@ -339,6 +343,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
+  // Linkowany czas trwania kończy się przy RZUCENIU dokładnie tego obiektu z
+  // exile, nie przy samym opuszczeniu exile. Choke point ruchu exile→stack
+  // obejmuje permanenty i instanty/sorcery oraz wykonuje się dopiero po
+  // udanej walidacji i płatności, więc odrzucony cast nie konsumuje grantu.
+  if (object.zone === 'exile' && toZone === 'stack'
+    && object.linkedExileCastPermission != null) {
+    consumeGrantsLinkedToExileCast(state, object.id);
+  }
   // M201/M (zgłoszenie właściciela, CR 603.10 — last known information):
   // stary identyfikator znika ze `state.objects`, a odwołania do niego ŻYJĄ
   // dalej: cele czaru na stosie (Frightful Delusion kontruje cel PRZY

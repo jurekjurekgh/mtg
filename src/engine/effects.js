@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -17,6 +17,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { nextTimestamp } from './timestamps.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
+import { LINKED_EXILE_CAST_DURATION, linkedExileCastPermission } from './linked-exile-cast.js';
 import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
 
 /**
@@ -3271,12 +3272,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'grant_abilities') {
-    // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
-    // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
+    // Deskryptor rozróżnia dwa generyczne czasy trwania:
+    //  - domyślny „do końca tury” (Fake Your Own Death; tylko creature),
+    //  - „until source is cast from exile” (linkowany obiekt; dowolny
+    //    permanent, np. land). Rdzeń nie zna nazwy karty (ADR 0002).
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu,
+    // w tym brak pozwolenia rzutu (zdolność z jedynym celem fizzluje wcześniej,
+    // a ten guard chroni bezpośrednie wywołania applyEffect).
     const grantTarget = state.objects.get(targetId);
-    if (!grantTarget || grantTarget.zone !== 'battlefield' || grantTarget.kind !== 'creature') return;
+    if (!grantTarget || grantTarget.zone !== 'battlefield') return;
+    if (effect.duration === LINKED_EXILE_CAST_DURATION) {
+      grantAbilitiesUntilSourceCastFromExile(
+        state, targetId, effect.abilities ?? [], sourceObject.id,
+      );
+      // Pozwolenie jest przywiązane do tego konkretnego obiektu w exile.
+      // Jeżeli źródło opuściło exile w odpowiedzi, land nadal dostaje grant
+      // (ruling), lecz nie istnieje obiekt, któremu można nadać permission.
+      const liveSource = state.objects.get(sourceObject.id);
+      if (liveSource?.zone === 'exile') {
+        state.objects.set(liveSource.id, Object.freeze({
+          ...liveSource,
+          linkedExileCastPermission: linkedExileCastPermission(sourceObject.controllerId),
+        }));
+      }
+      return;
+    }
+    if (grantTarget.kind !== 'creature') return;
     grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
     return;
   }

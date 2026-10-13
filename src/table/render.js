@@ -1320,7 +1320,9 @@ function describeEffect(e, ctx = {}) {
     destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
-    grant_abilities: () => 'nadaj zdolność do końca tury',
+    grant_abilities: () => e.duration === 'until_source_cast_from_exile'
+      ? 'nadaj zdolność aż do rzucenia tej karty z wygnania; możesz ją rzucić z wygnania'
+      : 'nadaj zdolność do końca tury',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -1373,7 +1375,9 @@ function describeEffect(e, ctx = {}) {
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
-    grant_abilities: () => 'nadaj zdolności do końca tury',
+    grant_abilities: () => e.duration === 'until_source_cast_from_exile'
+      ? 'nadaj zdolność aż do rzucenia tej karty z wygnania; możesz ją rzucić z wygnania'
+      : 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     // Batch 47 (Sequestered Stash): JEDNA karta wskazanego rodzaju, wybor
     // opcjonalny („you may") — opis czyta filtr z deskryptora.
@@ -1568,6 +1572,7 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
+  ['exileSelfFromHand', 'wygnaj tę kartę z ręki'],
   ['payLifeX', 'zapłać X życia'],
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],

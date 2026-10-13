@@ -13669,6 +13669,59 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 365 SNC — ETB tworzy Citizen 1/1 G/W. Druga zdolność działa wyłącznie z
+  // ręki: {2} + wygnanie źródła jest kosztem, a przy rozstrzygnięciu target
+  // land dostaje nową zdolność many aż do rzucenia dokładnie tego obiektu z
+  // exile. Pozwolenie rzutu trwa przez ten sam pobyt w exile (CR 400.7).
+  defineCard({
+    id: 'rakish-revelers', name: 'Rakish Revelers', set: 'SNC',
+    types: ['Creature'], subtypes: ['Elf', 'Druid', 'Rogue'], colors: ['G', 'R', 'W'],
+    power: 5, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature enters, create a 1/1 green and white Citizen creature token.\n{2}, Exile this card from your hand: Target land gains "{T}: Add {R}, {G}, or {W}" until this card is cast from exile. You may cast this card for as long as it remains exiled.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c74197a-367c-40a4-9eb5-6943490bba09.jpg?1783923073',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_citizen', name: 'Citizen',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'],
+          types: ['Creature'], subtypes: ['Citizen'],
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromHand: true,
+        cost: { mana: 2, exileSelfFromHand: true },
+        targets: [{ type: 'land' }],
+        effect: {
+          type: 'grant_abilities',
+          duration: 'until_source_cast_from_exile',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['R', 'G', 'W'] },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 365, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ruling 2022-04-29: grant na landzie trwa po opuszczeniu exile i kończy się tylko przy rzuceniu linkowanego obiektu; ponowne wygnanie tworzy nowy obiekt bez permission'],
+  }),
+
+  // Token Citizen 1/1 zielono-biały (TSNC #12), bez podtypu Human.
+  defineCard({
+    id: 'token_citizen', name: 'Citizen', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Citizen'], colors: ['G', 'W'], manaCost: 0,
+    power: 1, toughness: 1,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/3/f/3f03e9fe-cb71-498e-bf16-5af6af37a192.jpg?1783922960',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Rakish Revelers'] },
+  }),
+
   // 368 ZEN — shroud nie przeszkadza w nietargetowanym sacrifice. Człon
   // „unless” jest rozpatrywany przy resolution przez generyczny kwalifikator
   // permanenta (tu Land), z jawnym wariantem poświęcenia źródła.

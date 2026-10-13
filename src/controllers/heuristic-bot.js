@@ -6087,6 +6087,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // (`temporaryPumpOf`), żeby kolejny typ efektu o tym samym kształcie nie
     // potrzebował dopisku w trzech miejscach (zlecenie właściciela, L28).
     ['pump_by_gates', 50], ['grant_keywords_until_end_of_turn', 40],
+    // Nadanie aktywowanej zdolności (także linkowanej z kartą w exile) jest
+    // korzyścią kontrolera celu — nie wolno obdarowywać nią landu przeciwnika.
+    ['grant_abilities', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
     // B (zgłoszenie właściciela 2026-09-28e, Withstand): bliźniak powyższego —
     // tarcza „prevent the next N damage” to efekt PRZYJAZNY celowi; bez wpisu
@@ -11187,6 +11190,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
         }
         for (const effect of effects) {
+          // Linkowany grant z karty w ręce zachowuje samą kartę jako przyszły
+          // rzut z exile i poprawia źródło many. Premiujemy własny permanent;
+          // cel przeciwnika jest już karany centralnie przez
+          // friendlyMisaimPenalty (ADR 0002 — po deskryptorze efektu).
+          if (effect.type === 'grant_abilities'
+            && effect.duration === 'until_source_cast_from_exile') {
+            if (target?.controllerId === view.playerId) score += 12;
+            else score -= 12;
+          }
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {

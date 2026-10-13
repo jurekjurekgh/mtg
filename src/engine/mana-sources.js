@@ -331,14 +331,11 @@ export function getSourceForObject(gameObject, state = null) {
   // Kolory z PODTYPÓW podstawowych lądu (efektywne — honorują typeGrant):
   // Plains/Island/Swamp/Mountain/Forest → W/U/B/R/G. To reguła CR 305.6,
   // a nie mapa kart — land zmieniony na Forest (Unstable Frontier) produkuje {G}.
+  const subtypeColors = [];
   if (isLand && !gameObject.abilitiesStripped) {
-    const subtypeColors = [];
     for (const subtype of effectiveSubtypes(gameObject)) {
       const color = BASIC_SUBTYPE_COLORS[subtype];
       if (color && !subtypeColors.includes(color)) subtypeColors.push(color);
-    }
-    if (subtypeColors.length > 0) {
-      return { id: gameObject.id, cardId, colors: subtypeColors, amount: 1 };
     }
   }
   // M193/A: DESKRYPTOR zdolnosci karty ma pierwszenstwo przed reczna mapa —
@@ -347,13 +344,17 @@ export function getSourceForObject(gameObject, state = null) {
   // basicki, Great Furnace „{T}: Add {R}" jako caly tekst karty) oraz dla
   // przypadkow, ktorych deskryptor nie wyraza (tron Urzy, Holdout Settlement).
   const abilityColors = manaAbilityColors(gameObject, state);
-  if (abilityColors) {
-    const amount = manaAbilityAmount(gameObject) ?? 1;
-    // Kolor wybrany przy wejsciu (Manor Gate: „or one mana of the chosen
-    // color") dokladamy tak samo jak w galezi mapy.
-    const colors = gameObject.chosenColor
-      ? [...new Set([...abilityColors, gameObject.chosenColor])]
-      : abilityColors;
+  // Ląd może mieć kilka niezależnych zdolności many. W szczególności typ
+  // podstawowy daje zdolność z CR 305.6, a rozstrzygnięty efekt może nadać
+  // następną („{T}: Add {R}, {G}, or {W}"). Solver auto-tapu potrzebuje UNII
+  // wyborów; wcześniejszy early-return po podtypie Forest gubił cały grant.
+  if (abilityColors || subtypeColors.length > 0) {
+    const amount = abilityColors ? (manaAbilityAmount(gameObject) ?? 1) : 1;
+    const colors = [...new Set([
+      ...subtypeColors,
+      ...(abilityColors ?? []),
+      ...(gameObject.chosenColor ? [gameObject.chosenColor] : []),
+    ])];
     return { id: gameObject.id, cardId, colors, amount };
   }
   // Zdolność skarbowa (patrz `treasureManaAbilityOf` wyżej): źródło, które
