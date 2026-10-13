@@ -16882,7 +16882,7 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   mutacja, osobny commit i push (ADR 0020 C). Pełnego B0 nie uruchamiano
   (ADR 0018 — brak zlecenia właściciela).
 
-### 2026-10-13c — publikacja na GitHub Pages: flake + kumulacja artefaktów po re-runach
+### 2026-10-13c — publikacja na GitHub Pages: wyścig + kumulacja artefaktów po re-runach
 
 - **Objaw (zgłoszenie właściciela):** run 38424779872 (push `7bd1fcf`) padał na
   `deploy-pages`: „Multiple artifacts named \"github-pages\" … Artifact count is 4".
@@ -16893,23 +16893,24 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   Każdy kolejny RE-RUN dokładał artefakt o tej samej nazwie w tym samym runie,
   a `deploy-pages` wymaga dokładnie jednego — po trzech re-runach awaria stała
   się samopodtrzymująca (`run_attempt: 4`).
-- **Naprawa (wzorzec czekający na ręczne wgranie):** `docs/setup/workflows/pages.yml`
-  dostaje `actions: write` + krok kasujący artefakty `github-pages` z poprzednich
-  prób tego runu (przed uploadem) + krok czekający na widoczność świeżego
-  artefaktu w API (między uploadem a publikacją, maks. 60 s). Regiony oznaczone
-  znacznikami `# >>> PENDING-UPLOAD (A)–(C)`.
-- **Blokada:** push `.github/workflows/pages.yml` odrzucony przez GitHuba
+- **Naprawa (w `.github/workflows/pages.yml`):** `actions: write` + sprzątanie
+  artefaktów `github-pages` z poprzednich prób tego runu (przed uploadem) +
+  czekanie na widoczność świeżego artefaktu w API (między uploadem a publikacją,
+  maks. 60 s) + `deploy-pages@v4 → v5` (oficjalny pin szablonu GitHub Pages;
+  v5.0.1 ma backoff/jitter w pollingu). Pozostałe piny zgodne z oficjalnym
+  szablonem (`actions/starter-workflows/pages/static.yml`, pobrany przez API).
+- **Blokada i jej rozwiązanie:** pierwszy push z poprawką został odrzucony
   („refusing to allow a GitHub App to create or update workflow … without
-  `workflows` permission"), a `main` jest chroniona — agent fizycznie nie może
-  wnieść zmiany w workflowie. Wprowadzono więc jawną konwencję wzorca
-  (`docs/setup/workflows/README.md`): wzorzec + znaczniki oczekującej wgrywki,
-  procedura ręcznego wgrania dla właściciela.
-- **Strażnik:** `test/ci-workflow-tiers.test.js` porównuje wzorzec z żywym
-  workflowem po usunięciu regionów `PENDING-UPLOAD` (każda inna różnica = błąd),
-  pilnuje kolejności kroków (sprzątanie < upload < czekanie < deploy), realnego
-  `DELETE` na API i braku „połowicznej" protezy w żywym workflowie.
-  Mutacje: brak `actions: write`, kroki bez uprawnienia, odwrócona kolejność —
-  wszystkie czerwienieją.
-- **Bramy:** `npm test` (licznik w komentarzu PR), `npm run build` bez zmian;
+  `workflows` permission"), więc powstała jawna konwencja wzorca z regionami
+  `PENDING-UPLOAD` (`docs/setup/workflows/README.md`). Właściciel przyznał Appce
+  uprawnienie `workflows` — naprawa weszła zwykłą drogą PR, a konwencja wzorca
+  została w repo jako bezpiecznik (strażnik nadal porównuje wzorzec z żywym
+  plikiem).
+- **Strażnik:** `test/ci-workflow-tiers.test.js` pilnuje żywego workflowu
+  (obecność `actions: write`, realny `DELETE` na API, kolejność sprzątanie <
+  upload < czekanie < deploy, brak połowicznej protezy). Mutacje: brak
+  `actions: write`, kroki bez uprawnienia, odwrócona kolejność — wszystkie
+  czerwienieją.
+- **Bramy:** `npm test` 8134/8134, `npm run build` 74 moduły / 5108,5 kB;
   YAML + oba skrypty `run:` zweryfikowane lokalnie, kwerendy `jq` uruchomione
   na żywym runie.
