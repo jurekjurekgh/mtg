@@ -87,4 +87,4 @@ jobs:
           echo "::error::Świeży artefakt github-pages nie pojawił się w API w ciągu 60 s"
           exit 1
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
