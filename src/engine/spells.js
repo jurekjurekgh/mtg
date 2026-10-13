@@ -1396,7 +1396,15 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
   targetOrderPreference = null, chosenPrefix = null) {
   const resolved = resolveSlotDependency(state, spec, chosenPrefix);
   if (resolved === null) return [];
-  const candidates = targetCandidatesBySpec(state, playerId, resolved, targetOrderPreference);
+  const candidates = targetCandidatesBySpec(state, playerId, resolved, targetOrderPreference)
+    // Wspólna bramka WSZYSTKICH typów celu. Historycznie wyspecjalizowane
+    // pule `creature_you_control` / `land_you_control` pomijały predykat,
+    // bo własny hexproof nie chroni — lecz shroud chroni także przed własnym
+    // źródłem. Walidacja już sprawdza to centralnie; oferta musi być lustrzana.
+    .filter((targetId) => {
+      const target = state.objects.get(targetId);
+      return !target || !hasHexproofAgainst(state, target, playerId);
+    });
   if (!sourceObject) return candidates;
   return candidates.filter((targetId) => {
     // CZAR NIE MOŻE OBRAĆ SAM SIEBIE (ruling ISD 2011-09-22 dla Memory's

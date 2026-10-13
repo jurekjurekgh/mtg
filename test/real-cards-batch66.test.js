@@ -685,6 +685,16 @@ test('B66/368: bez własnego landu Tiger automatycznie poświęca siebie; obcy l
 test('B66/368: shroud blokuje celowanie, ale nie bezcelowe poświęcenie z unless', () => {
   const state = game();
   put(state, 'tiger', 'scythe-tiger', 'p1', 'battlefield');
+  // Shroud działa również przeciw WŁASNEMU czarowi. Ta ścieżka celu
+  // `creature_you_control` nie może polegać na semantyce hexproof (która
+  // własne źródło przepuszcza) — wykryte przez pełną symulację talii.
+  put(state, 'enemy', 'highland-game', 'p2', 'battlefield');
+  put(state, 'feed', 'time-to-feed', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['G'] });
+  assert.ok(!commands(state, 'p1').some((command) => command.type === 'cast_spell'
+    && command.objectId === 'feed' && command.targets?.[1] === 'tiger'),
+  'shroud usuwa Tiger także z własnego slotu creature_you_control');
+
   put(state, 'shock', 'shock', 'p2', 'hand');
   state.turn.activePlayerId = state.turn.priorityPlayerId = 'p2';
   addMana(state, 'p2', 1, { colors: ['R'] });
