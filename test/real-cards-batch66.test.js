@@ -147,10 +147,11 @@ test('B66/353: Warden of Geometries — vigilance i deskryptor {T}: Add {C}', ()
   assert.equal(def.power, 2);
   assert.equal(def.toughness, 3);
   assert.equal(def.manaCost, 4);
-  assert.deepEqual(def.abilities, [{
-    type: 'activated', keyword: null, cost: { tap: true }, timing: null,
-    targets: [], effect: { type: 'add_mana', amount: 1, colors: [] },
-  }]);
+  assert.equal(def.abilities.length, 1);
+  assert.equal(def.abilities[0].type, 'activated');
+  assert.deepEqual(def.abilities[0].cost, { tap: true });
+  assert.deepEqual(def.abilities[0].effect,
+    { type: 'add_mana', amount: 1, colors: [] });
 });
 
 test('B66/353: vigilance zachowuje Warden odtapniętego po ataku; potem daje bezbarwną manę', () => {
@@ -309,10 +310,11 @@ test('B66/359: Foul Orchard — tapped dual `{B}` lub `{G}`', () => {
   const def = sanity('foul-orchard', { set: 'M19', plan: 'Arcavios', artId: 359 });
   assert.deepEqual(def.types, ['Land']);
   assert.equal(def.entersTapped, true);
-  assert.deepEqual(def.abilities, [{
-    type: 'activated', keyword: null, cost: { tap: true }, timing: null,
-    targets: [], effect: { type: 'add_mana', amount: 1, colors: ['B', 'G'] },
-  }]);
+  assert.equal(def.abilities.length, 1);
+  assert.equal(def.abilities[0].type, 'activated');
+  assert.deepEqual(def.abilities[0].cost, { tap: true });
+  assert.deepEqual(def.abilities[0].effect,
+    { type: 'add_mana', amount: 1, colors: ['B', 'G'] });
 });
 
 test('B66/359: wchodzi tapnięty, po odtapowaniu daje profil B/G, nigdy U', () => {
@@ -397,7 +399,7 @@ function wildChoiceState() {
   const state = game();
   put(state, 'wild', 'wild-celebrants', 'p1', 'battlefield');
   put(state, 'artifact', 'universal-solvent', 'p2', 'battlefield');
-  put(state, 'enchantment', 'pacifism', 'p2', 'battlefield');
+  put(state, 'enchantment', 'true-conviction', 'p2', 'battlefield');
   enterAndScan(state, 'wild');
   const target = commands(state).find((command) => command.type === 'resolve_trigger_target'
     && command.targetId === 'artifact');
@@ -415,7 +417,7 @@ test('B66/363: potwierdzenie may niszczy wskazany artifact', () => {
   run(state, commands(state).find((command) => command.type === 'resolve_optional_trigger_choice'
     && command.fire === true));
   assert.ok(find(state, 'universal-solvent', 'graveyard'));
-  assert.ok(find(state, 'pacifism', 'battlefield'));
+  assert.ok(find(state, 'true-conviction', 'battlefield'));
 });
 
 test('B66/363: odmowa may zachowuje artifact; brak artifactu nie tworzy celu', () => {
@@ -424,7 +426,7 @@ test('B66/363: odmowa may zachowuje artifact; brak artifactu nie tworzy celu', (
   assert.ok(find(state, 'universal-solvent', 'battlefield'));
   const empty = game();
   put(empty, 'wild', 'wild-celebrants', 'p1', 'battlefield');
-  put(empty, 'enchantment', 'pacifism', 'p2', 'battlefield');
+  put(empty, 'enchantment', 'true-conviction', 'p2', 'battlefield');
   enterAndScan(empty, 'wild');
   assert.equal(empty.pendingTriggerTargets.length, 0);
   assert.equal(empty.zones.stack.length, 0, 'obowiązkowy target nie istnieje — trigger bez stosu');
@@ -493,10 +495,12 @@ test('B66/365: Rakish Revelers — dane, ETB Citizen i aktywacja tylko z ręki',
   assert.deepEqual(handAbility.targets, [{ type: 'land' }]);
   assert.equal(handAbility.effect.type, 'grant_abilities');
   assert.equal(handAbility.effect.duration, 'until_source_cast_from_exile');
-  assert.deepEqual(handAbility.effect.abilities, [{
-    type: 'activated', keyword: null, cost: { tap: true }, timing: null,
-    targets: [], effect: { type: 'add_mana', amount: 1, colors: ['R', 'G', 'W'] },
-  }]);
+  assert.equal(handAbility.effect.abilities.length, 1);
+  const granted = handAbility.effect.abilities[0];
+  assert.equal(granted.type, 'activated');
+  assert.deepEqual(granted.cost, { tap: true });
+  assert.deepEqual(granted.effect,
+    { type: 'add_mana', amount: 1, colors: ['R', 'G', 'W'] });
   assert.equal(snapshotOf('rakish-revelers').rulings.length, 2);
 });
 

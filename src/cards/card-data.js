@@ -13512,6 +13512,111 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['wchodzi tapnięty (land materialize entersTapped); scry 1 przy wejściu (pendingScry, resolve_scry); {T}: Add {R} or {G} — jednostka wielokolorowa (M67)'],
   }),
+  // Batch 66 (2026-10-13) — kolekcja właściciela 351–368.
+  // Snapshoty dokładnych druków i rulingów: docs/cards/scryfall-*.json.
+
+  // 351 ELD — Reach jest gotowym keywordem warstwy combatu.
+  defineCard({
+    id: 'sporecap-spider', name: 'Sporecap Spider', set: 'ELD',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    keywords: ['reach'], power: 1, toughness: 5, manaCost: 3,
+    oracleText: 'Reach',
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7bc33252-145f-45c0-bb70-23183c698f66.jpg?1783932603',
+    artId: 351, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 353 OGW — kolorless Eldrazi Drone; mana pochodzi z deskryptora karty,
+  // nie z MANA_SOURCE_MAP (ten sam generyczny tor co Druid of the Cowl).
+  defineCard({
+    id: 'warden-of-geometries', name: 'Warden of Geometries', set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    keywords: ['vigilance'], power: 2, toughness: 3, manaCost: 4,
+    oracleText: 'Vigilance\n{T}: Add {C}. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: [] },
+      }),
+    ],
+    artId: 353, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 359 M19 — tapped dual. Profil ['B','G'] oznacza jedną jednostkę many,
+  // którą solwer może wydać jako B albo G (nie dwie jednostki).
+  defineCard({
+    id: 'foul-orchard', name: 'Foul Orchard', set: 'M19',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {B} or {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6b28e1e1-0813-4e4a-a7a7-058b7787272c.jpg?1783934509',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['B', 'G'] },
+      }),
+    ],
+    artId: 359, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 361 ZEN — gotowa rodzina tarcz prevent_next_damage (Withstand), lecz
+  // cel jest węższy: gracz lub planeswalker, nigdy creature.
+  defineCard({
+    id: 'noble-vestige', name: 'Noble Vestige', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 2, manaCost: 3,
+    oracleText: 'Flying\n{T}: Prevent the next 1 damage that would be dealt to target player or planeswalker this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c.jpg?1783942170',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'player_or_planeswalker' }],
+        effect: { type: 'prevent_next_damage', amount: 1 },
+      }),
+    ],
+    artId: 361, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 363 THS — CR 603.5: target wybierany przy położeniu triggera na stos;
+  // decyzja „may” dopiero przy resolution (trigger.mayFire).
+  defineCard({
+    id: 'wild-celebrants', name: 'Wild Celebrants', set: 'THS',
+    types: ['Creature'], subtypes: ['Satyr'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature enters, you may destroy target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1.jpg?1783939751',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact' }, mayFire: true },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 363, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 364 KTK — generyczny destroy artifact or enchantment.
+  defineCard({
+    id: 'naturalize', name: 'Naturalize', set: 'KTK',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd.jpg?1783939065',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact_or_enchantment' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 364, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

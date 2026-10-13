@@ -623,6 +623,21 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       return true;
     });
   }
+  // Batch 66 (Wild Celebrants): „target artifact" w triggerze. Dotychczas
+  // ten typ celu istniał tylko dla czarów (spells.js); triggery miały sumy
+  // artifact_or_enchantment, lecz nie sam artefakt. Jedna lista napędza
+  // ofertę i ponowną walidację celu (L48), z hexproof/protection jak inne
+  // permanentowe cele triggerów. Źródło może być celem, o ile tekst nie ma
+  // „another" (`notSelf`).
+  if (spec.type === 'artifact') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      if (object.kind !== 'artifact' && !(object.types ?? []).includes('Artifact')) return false;
+      if (spec.notSelf && object.id === sourceObject.id) return false;
+      return !hexproofBlocked(object) && !protectedBlocked(object);
+    });
+  }
   // Batch 53 (Acidic Slime, M3C): „destroy target artifact, enchantment,
   // or land" — suma trzech rodzin permanentów na polu bitwy (generycznie,
   // ADR 0002). Walidacja celu po stronie triggera = wybór z tej listy.
