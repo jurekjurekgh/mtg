@@ -90,7 +90,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Kolejność kart na wierzchu',
   resolve_modal_choice: 'Tryb czaru („choose one")',
-  resolve_redirect_choice: 'Zmiana celu czaru (Willbender)',
+  resolve_redirect_choice: 'Zmiana celu czaru',
   resolve_proliferate: 'Proliferate (licznik)',
   resolve_hand_top_choice: 'Karta z ręki na wierzch',
   // M166/D (Inferno Titan).
@@ -2269,7 +2269,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_aura_host: 'Aura z grobu — kogo zaczaruje?',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
-  resolve_redirect_choice: 'Zmiana celu czaru (Willbender)',
+  resolve_redirect_choice: 'Zmiana celu czaru',
   resolve_proliferate: 'Proliferate — cel licznika',
   resolve_discard_choice: 'Karta do odrzucenia',
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
