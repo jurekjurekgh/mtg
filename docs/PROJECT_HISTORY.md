@@ -16941,7 +16941,7 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   tytuł decyzji brzmiał „Przekierowanie obrażeń" (pozostałość po innym
   mechanizmie). Teraz log nazywa kontrolera czaru i regułę, domknięcie bez
   zmiany mówi o braku innego legalnego celu, a etykieta brzmi „Zmiana celu
-  czaru (Willbender)".
+  czaru” (bez nazwy karty — M212/ADR 0002).
 - **Testy i dowody:** `test/zgloszenie-f-willbender-cel-z-grobu-kontrolera.test.js`
   (4 testy: strażnik CR 109.5, regresja CR 115.7a, teksty logu i tytułu grupy);
   6 mutacji czerwonych (w tym pierwsza próba wadliwa — `str.replace` trafiał oba
