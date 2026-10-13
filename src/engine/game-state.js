@@ -2130,6 +2130,40 @@ function accepted(state, cmd, result) {
     const sagaTriggerEvents = processTriggers(state, sagaEvents);
     if (sagaTriggerEvents.length > 0) result.events = [...result.events, ...sagaTriggerEvents];
   }
+  // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
+  // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
+  // („If a target can’t be changed to another legal target, the original
+  // target is unchanged”). Taka decyzja nie ma żadnej legalnej opcji, więc nie
+  // może czekać: w ofercie zostałoby samo „concede”, a bot nie miałby czym
+  // zagrać (partia stałaby w miejscu). Domykamy ją w tym samym przebiegu,
+  // w którym powstała — jak devour po poświęceniu ostatniego kandydata.
+  // Kandydatów liczy TEN SAM predykat co ofertę i walidację (L41/M82).
+  if (state.pendingRedirectChoice) {
+    const pending = state.pendingRedirectChoice;
+    const spell = state.objects.get(pending.stackId);
+    const alternatywy = spell && spell.zone === 'stack'
+      ? legalTargetCandidates(state, pending.spellControllerId, pending.spec)
+        .filter((id) => id !== pending.currentTargetId)
+      : [];
+    if (alternatywy.length === 0) {
+      state.pendingRedirectChoice = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      const unchanged = event('redirect_choice_resolved', {
+        playerId: pending.playerId,
+        stackId: pending.stackId,
+        fromTarget: pending.currentTargetId,
+        toTarget: null,
+        cardId: pending.spellCardId ?? null,
+        spellControllerId: pending.spellControllerId ?? null,
+        auto: true,
+        unchangedReason: 'no_other_legal_target',
+      });
+      state.events.push(unchanged);
+      result.events = [...result.events, unchanged];
+    }
+  }
   // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
   // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).
   // Ze skanem wieloprzebiegowym decyzje różnych typów mogą powstać w jednej
