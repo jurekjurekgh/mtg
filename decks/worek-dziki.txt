@@ -6,6 +6,7 @@
 1x Fake Your Own Death
 1x Infectious Bloodlust
 1x Invasion of the Giants
+1x Naturalize
 1x Sterling Keykeeper
 1x Trained Arynx
 1x Tumbleweed Rising
@@ -16,6 +17,7 @@
 1x Savage Hunger
 1x Scouting Hawk
 1x Slithering Cryptid
+1x Cazur, Ruthless Stalker
 1x Etched Host Doombringer
 1x Spinewoods Paladin
 1x Volcanic Submersion
@@ -24,4 +26,4 @@
 1x Island
 2x Swamp
 3x Mountain
-2x Forest
+3x Forest

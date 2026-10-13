@@ -8270,21 +8270,23 @@ warunek **`affinityToEnchantments`** w `conditionalCostReduction`
 2020-01-24); zdarzenie **`becomes_blocked_by_color`** (per-pair gałąź w
 blockers_declared, wzorzec Wooden Stake; M273 — pola `objectId`/`cardId`
 identyczne we wszystkich emiterach) + efekt
-**`choose_color_grant_block_destroy`** (wybór koloru → niszczy stwory
-blokujące tym kolorem w tej turze; `blockDestroyColorsThisTurn` czyszczone
-w `clearStatModifiers`). Rejestracje: TRIGGER_EVENT_LABELS,
+**`choose_color_grant_block_destroy`** (wybór koloru tworzy niezależny delayed
+trigger w `turnAbilityGrants`; cleanup kończy go z turą, a zmiana strefy
+źródła usuwa grant starego obiektu). Rejestracje: TRIGGER_EVENT_LABELS,
 ABILITY_EFFECT_LABELS (M255/C1 — mapa LOG, nie tylko panel rendera),
 render `generic`, STACKING_ACTIVATED_EFFECTS, batch25 supported events.
 
-Reszta batcha na gotowych ścieżkach: Devoid (Blinding Drone, Blitz of the
-Thunder-Raptor — CR 702.114), optionalPay/Etap F z celem PO zapłacie
-(Ambulatory Edifice, wzorzec Zoraline; ruling 2023-02-04 o refleksie),
+Reszta batcha: Devoid dotyczy wyłącznie Blinding Drone (CR 702.114;
+Blitz of the Thunder-Raptor **nie ma** Devoid), optionalPay/Etap F z celem PO
+zapłacie (Ambulatory Edifice, wzorzec Zoraline; ruling 2023-02-04 o refleksie),
 `aura.cantAttack/cantBlock` (Pacifism, wzorzec Hobble — audyt F-1/S9
 rozszerzony do czterech aur), `look_top_put_one_hand_rest_bottom`
 (Impulse, M177/E — rulingi „not a draw”/„no shuffle” testowane zdarzeniowo),
 `scry` + `add_mana colors ['R','G']` (Temple of Abandon, wzorzec Dismal
-Backwater; jednostka wielokolorowa M67), Bring to Trial i Skyscythe
-Engulfer bez zmian silnika.
+Backwater; jednostka wielokolorowa M67) oraz Bring to Trial na gotowej
+ścieżce. Skyscythe Engulfer wymagał natomiast generycznego deskryptora
+`cantBeBlockedByKeywords` w kilku warstwach: walidacji combatu, `PlayerView`,
+renderze i — w PMSSB-60 — heurystyce bota.
 
 Talie z generatora (M203 README w tych samych commitach): mirrodin-brg
 35/12/23, tarkir-wur 35/12/23, dominaria-wu 29/10/19, theros 29/10/19,
@@ -8293,3 +8295,56 @@ worek-basni 27/9/18. Bramki końcowe: all **7994/7994** (34 testy w
 `cr-numery --cr` **OK (518/517/5662; CR 3165)**. Bez pełnego B0 (ADR
 0018). Dowody:
 [plan + realizacja](plans/PLAN_2026-10-10-batch65-kolekcja-329-350.md).
+
+
+## M443 — batch66: kolekcja 351–368, 10 kart (2026-10-13, PR #163)
+
+Dziesięć wskazanych druków właściciela — Sporecap Spider, Warden of
+Geometries, Cazur, Ruthless Stalker, Lorescale Coatl, Foul Orchard, Noble
+Vestige, Wild Celebrants, Naturalize, Rakish Revelers i Scythe Tiger — ma
+status `supported` bez ograniczeń. Dane, koszty, plany i obrazy są przypięte
+do dokładnych druków snapshotami Scryfalla; Rakish tworzy osobny zielono-biały
+`token_citizen` 1/1 bez podtypu Human.
+
+Nowe mechaniki są generyczne (ADR 0002):
+
+1. **Partner with i Cazur.** Target-player search jawnie wybiera bibliotekę
+   wykonawcy, a zdarzenie combat damage niesie id konkretnego źródła. Każdy
+   własny stwór zadający combat damage graczowi tworzy osobny trigger i licznik
+   na właściwym obiekcie; zniknięcie źródła daje poprawny no-op.
+2. **Draw trigger Lorescale.** `you_draw_card` powstaje wyłącznie z prawdziwego
+   `card_drawn`, osobno dla każdej karty. Search-to-hand, mulligan i dobieranie
+   przeciwnika nie uruchamiają zdolności.
+3. **Scythe Tiger.** `sacrifice_source_unless_sacrifice` obsługuje wybór
+   kwalifikowanego permanenta przy resolution i ponownie sprawdza strefę,
+   kontrolera oraz typ. Shroud trafił do legalności celowania czarów,
+   aktywacji i triggerów; pełna bramka ujawniła oraz zamknęła rozjazd oferty dla
+   własnych slotów `creature_you_control`/`land_you_control`.
+4. **Rakish Revelers.** Zdolność `fromHand` płaci atomowo `{2}` i wygania
+   źródło jako koszt. Moduł `linked-exile-cast.js` jest właścicielem osobnego
+   pozwolenia rzutu, czasu `until_source_cast_from_exile` i konsumpcji grantów.
+   Grant przeżywa cleanup i zwykłe opuszczenie exile przez źródło, ale znika
+   po zaakceptowanym rzucie dokładnie linkowanego obiektu; permission nie
+   przechodzi przez zmianę strefy. Oferta, walidacja i wykonanie zachowują pełny
+   koszt `{2}{R}{G}{W}`. Solver źródeł many scala zdolność typu podstawowego
+   landu z nadanym wyborem `{R}/{G}/{W}`, więc ten land może opłacić Revelers.
+5. **Pozostałe karty.** Reach, vigilance i `{C}`, tapped dual `{B}/{G}`,
+   tarcza następnego 1 damage, opcjonalne ETB niszczące artefakt oraz
+   artifact-or-enchantment removal korzystają ze wspólnych, istniejących
+   ścieżek silnika i mają legalne oraz negatywne piny.
+
+Kolekcja ma 583 wiersze i 580 unikalnych nazw; katalog 637 definicji, w tym
+49 tokenów. Generator odświeżył 27 talii oraz ich liczności w README i jest
+idempotentny. `check-card-printings` zgłasza zero braków do pobrania oraz tylko
+historyczny, udokumentowany rozjazd Ethersworn Shieldmage.
+
+**Bramki końcowe.** Batch **33/33**, fast **8112/8112**, all **8377/8377**,
+build **74 moduły / 5084,7 kB**. Tabela CR: 523 zweryfikowane numery; wszystkie
+522 unikalne numery użyte w 5705 cytatach istnieją w CR skutecznych od
+2026-09-25. Rodziny zdolności, many, snapshotów, statusów, UI/logu i audyty
+symulacyjne są zielone; `git diff --check` przechodzi. Pełnego B0 nie
+uruchamiano (ADR 0018).
+
+Dowody:
+[plan + realizacja](plans/PLAN_2026-10-13-batch66-kolekcja-351-368.md),
+[testy kart](../test/real-cards-batch66.test.js).

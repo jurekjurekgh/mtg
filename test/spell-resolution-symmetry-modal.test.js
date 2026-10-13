@@ -94,7 +94,9 @@ test('M100/E2: rozstrzygnięcie czaru CZŁOWIEKA trafia do modala „Rozgrywka" 
 test('M100/E2: czar modalny CZŁOWIEKA pokazuje tryb także przy rozstrzygnięciu w modalu', () => {
   let checkedModal = 0;
   // M178: seedy przelosowane hunterem (FR vs dominaria).
-  for (const seed of [1, 2, 5, 9, 12]) {
+  // Batch 66 (+Wild Celebrants w FR, przeliczone landy): hunter 1–29;
+  // modalny czar człowieka rozstrzygają seedy 6, 17, 20, 21, 28 i 29.
+  for (const seed of [6, 17, 20, 21, 28]) {
     const session = makeSession(seed);
     const { modalTexts, log } = playCollectingModals(session);
     for (const line of log.filter((t) => /^Rzucasz .+ — tryb: .+/.test(t))) {

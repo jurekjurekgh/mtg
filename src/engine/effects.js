@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
@@ -17,6 +17,7 @@ import { effectiveProtectionFromColors } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { nextTimestamp } from './timestamps.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
+import { LINKED_EXILE_CAST_DURATION, linkedExileCastPermission } from './linked-exile-cast.js';
 import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
 
 /**
@@ -867,8 +868,17 @@ export function emitReflexiveSearch(state, pending, { found }) {
   return ev;
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false, reflexiveEvent = null, reflexiveAbility = null }) {
-  const ownerId = sourceObject.controllerId;
+export function queueSearchChoice(state, sourceObject, {
+  qualifier, destination, entersTapped, destinations = null, chain = null,
+  emitter = null, mandatory = false, reflexiveEvent = null,
+  reflexiveAbility = null, playerId = null,
+}) {
+  // Batch 66 (Cazur / Partner with): efektem może przeszukiwać TARGET PLAYER,
+  // nie kontroler źródła. Jawny playerId jest generycznym właścicielem strefy
+  // i decyzji; brak zachowuje wszystkie dotychczasowe „search your library”.
+  // To pole napędza kandydatów, tasowanie, pending i ponowną walidację (L48).
+  const ownerId = playerId ?? sourceObject.controllerId;
+  if (!state.players.some((player) => player.id === ownerId)) return;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
   if (candidateIds.length === 0) {
@@ -2979,10 +2989,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „You may search your library for a card with qualifier, reveal it, put
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
     // Entrance; Temat 6). Wybór karty należy do gracza.
+    // Batch 66 (Cazur / Partner with): target PLAYER przeszukuje SWOJĄ
+    // bibliotekę. Cel wybrano przy położeniu triggera na stos; gdy zniknie
+    // (gracz nie znika w aktywnej grze), brak id daje bezpieczny no-op.
+    const searchPlayerId = effect.playerFromTarget
+      ? targets[effect.targetIndex ?? 0]
+      : null;
+    if (effect.playerFromTarget && !state.players.some((player) => player.id === searchPlayerId)) return;
     return queueSearchChoice(state, sourceObject, {
       qualifier: resolveSearchQualifier(effect.qualifier, sourceObject),
       destination: 'hand',
       entersTapped: false,
+      playerId: searchPlayerId,
     });
   }
   // M174/E (Halo Forager, MOM): „you may pay {X}. When you do, you may cast
@@ -3254,12 +3272,33 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     return;
   }
   if (effect.type === 'grant_abilities') {
-    // Nadanie zdolności „do końca tury" (Fake Your Own Death). Deskryptory
-    // zdolności są generyczne — engine ich nie interpretuje po nazwie karty.
+    // Deskryptor rozróżnia dwa generyczne czasy trwania:
+    //  - domyślny „do końca tury” (Fake Your Own Death; tylko creature),
+    //  - „until source is cast from exile” (linkowany obiekt; dowolny
+    //    permanent, np. land). Rdzeń nie zna nazwy karty (ADR 0002).
     const targetId = targets[0] ?? sourceObject.id;
-    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu.
+    // CR 608.2b: cel zniknął z pola bitwy przed rozstrzygnięciem — brak efektu,
+    // w tym brak pozwolenia rzutu (zdolność z jedynym celem fizzluje wcześniej,
+    // a ten guard chroni bezpośrednie wywołania applyEffect).
     const grantTarget = state.objects.get(targetId);
-    if (!grantTarget || grantTarget.zone !== 'battlefield' || grantTarget.kind !== 'creature') return;
+    if (!grantTarget || grantTarget.zone !== 'battlefield') return;
+    if (effect.duration === LINKED_EXILE_CAST_DURATION) {
+      grantAbilitiesUntilSourceCastFromExile(
+        state, targetId, effect.abilities ?? [], sourceObject.id,
+      );
+      // Pozwolenie jest przywiązane do tego konkretnego obiektu w exile.
+      // Jeżeli źródło opuściło exile w odpowiedzi, land nadal dostaje grant
+      // (ruling), lecz nie istnieje obiekt, któremu można nadać permission.
+      const liveSource = state.objects.get(sourceObject.id);
+      if (liveSource?.zone === 'exile') {
+        state.objects.set(liveSource.id, Object.freeze({
+          ...liveSource,
+          linkedExileCastPermission: linkedExileCastPermission(sourceObject.controllerId),
+        }));
+      }
+      return;
+    }
+    if (grantTarget.kind !== 'creature') return;
     grantAbilitiesUntilEndOfTurn(state, targetId, effect.abilities ?? []);
     return;
   }
@@ -3421,7 +3460,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „put a +1/+1 counter on target creature you control". `targetIndex`
     // wskazuje inną pozycję na liście celów (Greatsword of Tyr: cel 0 =
     // nosiciel-atakujący).
-    const targetId = targets[effect.targetIndex ?? 0] ?? sourceObject.id;
+    // Batch 66 (Cazur): efekt może wskazać obiekt z kontekstu zdarzenia
+    // zamiast formalnego celu triggera („that creature” = źródło combat
+    // damage). To NIE target w rozumieniu CR 115; id zostaje zamrożone w
+    // `triggerEntry.extra` przy odpaleniu. Brak kontekstu nie może po cichu
+    // przerzucić licznika na źródło zdolności.
+    const targetId = effect.targetFromContext
+      ? context?.[effect.targetFromContext]
+      : (targets[effect.targetIndex ?? 0] ?? sourceObject.id);
+    if (!targetId) return;
     // CR 608.2b: cel, który zniknął z pola bitwy przed rozstrzygnięciem
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);
@@ -3827,9 +3874,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Batch65 (Zombie Boa): „{1}{B}: Choose a color. Whenever this creature
   // becomes blocked by a creature of that color this turn, destroy that
   // creature." — aktywowany wybór koloru przez WSPÓLNY mechanizm
-  // pendingColorChoice (Manor Gate/Benevolent Blessing); znacznik „na tę
-  // turę" dokłada handler resolve_color_choice (game-state.js, pole
-  // grantBlockDestroy) — jeden zapis wyboru, jedno źródło (L41).
+  // pendingColorChoice (Manor Gate/Benevolent Blessing).
+  //
+  // Audyt PR #162/F-5..F-7: deskryptor zdolności opóźnionej podróżuje ze
+  // zdolnością aktywowaną na stosie. Nie wolno później ponownie szukać
+  // „wydrukowanego triggera" na Boa: aktywowana zdolność jest niezależna od
+  // źródła (CR 113.7a), a utworzony delayed trigger działa mimo utraty
+  // abilities i zachowuje kontrolera z chwili utworzenia (CR 603.7).
   if (effect.type === 'choose_color_grant_block_destroy') {
     const targetId = sourceObject.id;
     if (!state.objects.get(targetId)) return;
@@ -3839,6 +3890,8 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       purpose: 'blockDestroy',
       grantBlockDestroy: true,
       sourceCardId: sourceObject.cardId ?? null,
+      delayedAbility: effect.delayedAbility ?? null,
+      sourceLki: sourceObject,
     };
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('color_choice_required', {
@@ -4995,6 +5048,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSacrifice = {
       playerId: targetId,
       candidateIds: [...candidates],
+      candidateTypes: ['Creature'],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = targetId;
@@ -6222,6 +6276,57 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return;
   }
+  // Batch 66 (Scythe Tiger): „sacrifice [source] unless you sacrifice a
+  // [qualified permanent]”. CR 603.5 — człon unless rozpatrujemy dopiero przy
+  // resolution. Efekt jest generyczny: kwalifikator opisuje typ permanenta,
+  // źródło jest alternatywą odmowy. To sacrifice, nie destroy (CR 701.21a).
+  if (effect.type === 'sacrifice_source_unless_sacrifice') {
+    const liveSource = state.objects.get(sourceObject.id);
+    if (!liveSource || liveSource.zone !== 'battlefield') return;
+    const controllerId = liveSource.controllerId;
+    const qualifier = effect.qualifier ?? {};
+    const wantedTypes = qualifier.types ?? [];
+    const matches = (object) => object?.zone === 'battlefield'
+      && object.controllerId === controllerId
+      && wantedTypes.every((type) => object.kind === type.toLowerCase()
+        || (object.types ?? []).includes(type));
+    const candidates = state.zones.battlefield
+      .map((objectId) => state.objects.get(objectId))
+      .filter(matches)
+      .map((object) => object.id);
+    if (candidates.length === 0) {
+      // Brak sposobu zapłaty „unless” — automatycznie poświęć źródło.
+      const toZone = deathZoneFor(state, liveSource);
+      const moved = moveObjectDirectly(state, liveSource.id, toZone,
+        `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
+        cardId: moved.cardId, sacrificeUnless: true, toZone,
+      }));
+      return;
+    }
+    // Kandydaci kwalifikatora są pierwsi (proste boty naturalnie płacą), a
+    // źródło na końcu jest jawnym wynikiem „nie poświęcam landu”. Nie używamy
+    // `skip`: każda oferta nazywa permanent, który faktycznie opuści stół.
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateTypes: [...wantedTypes],
+      alternativeSourceId: liveSource.id,
+      sourceId: liveSource.id,
+      cardId: liveSource.cardId ?? null,
+      optional: false,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: controllerId,
+      candidates: [...state.pendingSacrifice.candidateIds],
+      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      sacrificeUnless: true,
+    }));
+    return true;
+  }
   // Batch 53 (Glorifier of Suffering, LCI): ETB „you may sacrifice another
   // creature or artifact. When you do, [reflexive ability]". Generyczny efekt
   // `reflexive_sacrifice` — najpierw blokująca decyzja „poświęć albo nie"
@@ -6251,6 +6356,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSacrifice = {
       playerId: controllerId,
       candidateIds: [...candidates],
+      candidateTypes: [...wantedTypes],
       optional: true,
       sourceId: sourceObject.id,
       cardId: sourceObject?.cardId ?? null,

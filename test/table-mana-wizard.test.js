@@ -6,6 +6,7 @@ import {
   manaSourcesOf,
   paymentDescriptorOf,
   renderManaWizard,
+  shouldOpenManaWizard,
   sourceColorsLabel,
   untappedLandSourcesOf,
   wizardProgress,
@@ -397,6 +398,117 @@ test('kreator many: render — przyciski po jednym źródle i Anuluj', () => {
     assert.deepEqual(taps, ['l1']);
     clickables[2].click();
     assert.equal(cancelled, 1);
+  } finally {
+    globalThis.document = previousDocument;
+  }
+});
+
+// --- C/C2 (uwaga z gry 2026-10-11): Delve jest częścią Mana Wizarda -----
+
+const delveCards = (n) => Array.from({ length: n }, (_, i) => ({
+  id: `g${i + 1}`, cardId: i === 0 ? 'tome-scour' : 'curate', name: `Karta grobu ${i + 1}`,
+}));
+
+function delveDescriptor(selectedDelveIds, { maxDelve = 5 } = {}) {
+  return {
+    totalNeeded: 6,
+    effectiveGeneric: 5,
+    requirements: [['G']],
+    costStr: '{5}{G}',
+    delveCandidates: delveCards(6),
+    maxDelve,
+    selectedDelveIds,
+  };
+}
+
+test('C/1 RED: postęp Mana Wizarda łączy manę i Delve, ale Delve nie pokrywa pipa koloru', () => {
+  const greenPool = fakeView({ mana: 1 });
+  const four = wizardProgress(greenPool, 'p1', delveDescriptor(['g1', 'g2', 'g3', 'g4']), [], [['G']]);
+  assert.equal(four.selectedDelveCount, 4);
+  assert.equal(four.remainingTotal, 1, '4 karty + {G} pokrywają dopiero 5 z 6 jednostek kosztu');
+  assert.equal(four.done, false);
+
+  const five = wizardProgress(greenPool, 'p1', delveDescriptor(['g1', 'g2', 'g3', 'g4', 'g5']), [], [['G']]);
+  assert.equal(five.remainingTotal, 0, '5 kart Delve pokrywa {5}, rzeczywista mana pokrywa {G}');
+  assert.equal(five.delveSelectionValid, true);
+  assert.equal(five.done, true, 'wspólna płatność ma być gotowa bez sześciu lądów');
+
+  const colorless = wizardProgress(greenPool, 'p1', delveDescriptor(['g1', 'g2', 'g3', 'g4', 'g5']), [], [[]]);
+  assert.equal(colorless.remainingTotal, 0, 'suma liczbowo zebrana');
+  assert.equal(colorless.done, false, 'Delve nie może zastąpić brakującego pipa {G}');
+  assert.deepEqual(colorless.missingColors, ['G']);
+});
+
+test('C/2 RED: liczba wygnanych kart nie może przekroczyć efektywnej części generycznej', () => {
+  const descriptor = {
+    ...delveDescriptor(['g1', 'g2', 'g3'], { maxDelve: 2 }),
+    totalNeeded: 3,
+    effectiveGeneric: 2,
+  };
+  const progress = wizardProgress(fakeView({ mana: 1 }), 'p1', descriptor, [], [['G']]);
+  assert.equal(progress.delveSelectionValid, false, 'obniżony generyk {2} ogranicza Delve do dwóch kart');
+  assert.equal(progress.done, false, 'nadmiarowego wygnania nie wolno zatwierdzić');
+});
+
+test('C/3 RED: obecność legalnych kart Delve sama otwiera Mana Wizard nawet bez pełnej many', () => {
+  const params = {
+    sources: [forest('f1')], poolMana: 0, totalNeeded: 6, requirements: [['G']], poolUnits: [],
+  };
+  assert.equal(shouldOpenManaWizard(params), false, 'bez Delve sama jedna mana nie opłaca kosztu {5}{G}');
+  assert.equal(shouldOpenManaWizard({ ...params, delveCandidates: delveCards(5), maxDelve: 5 }), true,
+    'wybór kart grobu jest pełnoprawnym wariantem płatności w Mana Wizardzie');
+});
+
+test('C/4 RED: render Mana Wizarda pokazuje źródła i ptaszki Delve w jednym modalu', () => {
+  class MiniEl {
+    constructor(tag) {
+      this.tagName = tag; this.children = []; this.listeners = {}; this.className = '';
+      this.textContentValue = ''; this.dataset = {}; this.checked = false; this.disabled = false;
+    }
+    set textContent(v) { this.textContentValue = String(v); this.children = []; }
+    get textContent() { return this.textContentValue + this.children.map((c) => c.textContent).join(''); }
+    set innerHTML(v) { this.textContentValue = String(v); this.children = []; }
+    get innerHTML() { return this.textContentValue + this.children.map((c) => c.innerHTML).join(''); }
+    appendChild(child) { this.children.push(child); return child; }
+    addEventListener(type, fn) { (this.listeners[type] ??= []).push(fn); }
+    click() { for (const fn of this.listeners.click ?? []) fn({}); }
+    emit(type) { for (const fn of this.listeners[type] ?? []) fn({}); }
+  }
+  const previousDocument = globalThis.document;
+  globalThis.document = { createElement: (tag) => new MiniEl(tag) };
+  try {
+    const host = new MiniEl('div');
+    const toggles = [];
+    let confirmed = 0;
+    renderManaWizard(host, {
+      costStr: '{5}{G}', remainingTotal: 1, requirements: [{ colors: ['G'], covered: true }],
+      missingColors: [], availableCount: 1,
+      untappedSources: [{ id: 'f1', name: 'Forest', colors: ['G'], amount: 1 }],
+      delveCandidates: delveCards(2), selectedDelveIds: ['g1'], selectedDelveCount: 1,
+      maxDelve: 5, delveSelectionValid: true, paymentReady: false,
+    }, {
+      onTapSource: () => {},
+      onToggleDelve: (id, on) => toggles.push([id, on]),
+      onConfirm: () => { confirmed += 1; },
+      onCancel: () => {},
+    });
+    const all = (function walk(el, acc = []) {
+      for (const child of el.children ?? []) { acc.push(child); walk(child, acc); }
+      return acc;
+    })(host);
+    const graveToggles = all.filter((el) => /(^| )mana-wizard-delve-toggle( |$)/.test(String(el.className)));
+    assert.equal(graveToggles.length, 2, 'dwie karty grobu jako ptaszki w tym samym modalu');
+    assert.equal(graveToggles[0].checked, true, 'wybór Delve przeżywa odświeżenie wizarda');
+    graveToggles[1].checked = true;
+    graveToggles[1].emit('change');
+    assert.deepEqual(toggles, [['g2', true]]);
+    assert.match(host.textContent, /Delve/);
+    assert.match(host.textContent, /Karta grobu 1/);
+    const confirm = all.find((el) => /(^| )mana-wizard-confirm( |$)/.test(String(el.className)));
+    assert.ok(confirm, 'jawne zatwierdzenie wspólnej płatności Delve');
+    assert.equal(confirm.disabled, true, 'niepełnej płatności nie wolno zatwierdzić');
+    confirm.click();
+    assert.equal(confirmed, 0, 'disabled Zatwierdź nie wysyła rzutu');
   } finally {
     globalThis.document = previousDocument;
   }

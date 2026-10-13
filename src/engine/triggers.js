@@ -362,11 +362,15 @@ function targetValue(object) {
  */
 export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (!spec) return [];
-  // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
-  // będący permanentem przeciwnika z hexproof nie jest legalny.
-  const hexproofBlocked = (object) => object && object.zone === 'battlefield'
-    && object.controllerId !== sourceObject.controllerId
-    && (effectiveKeywords(object, state).includes('hexproof'));
+  // Shroud (CR 702.18) blokuje celowanie KAŻDEGO gracza; hexproof (702.11)
+  // tylko źródła przeciwnika. Triggery też są zdolnościami, więc używają tej
+  // samej semantyki co czary/zdolności aktywowane (spells.js).
+  const hexproofBlocked = (object) => {
+    if (!object || object.zone !== 'battlefield') return false;
+    const keywords = effectiveKeywords(object, state);
+    if (keywords.includes('shroud')) return true;
+    return object.controllerId !== sourceObject.controllerId && keywords.includes('hexproof');
+  };
   // Protection (CR 702.16b, dosłownie CR 2026-08-07 „The Hobbit": „A
   // permanent or player with protection can't be targeted by spells or
   // abilities..." — od źródła o chronionej jakości): dotyczy także celów
@@ -621,6 +625,21 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       if (Array.isArray(spec.notColors) && spec.notColors.some((color) => (object.colors ?? []).includes(color))) return false;
       if (hexproofBlocked(object) || protectedBlocked(object)) return false;
       return true;
+    });
+  }
+  // Batch 66 (Wild Celebrants): „target artifact" w triggerze. Dotychczas
+  // ten typ celu istniał tylko dla czarów (spells.js); triggery miały sumy
+  // artifact_or_enchantment, lecz nie sam artefakt. Jedna lista napędza
+  // ofertę i ponowną walidację celu (L48), z hexproof/protection jak inne
+  // permanentowe cele triggerów. Źródło może być celem, o ile tekst nie ma
+  // „another" (`notSelf`).
+  if (spec.type === 'artifact') {
+    return state.zones.battlefield.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'battlefield') return false;
+      if (object.kind !== 'artifact' && !(object.types ?? []).includes('Artifact')) return false;
+      if (spec.notSelf && object.id === sourceObject.id) return false;
+      return !hexproofBlocked(object) && !protectedBlocked(object);
     });
   }
   // Batch 53 (Acidic Slime, M3C): „destroy target artifact, enchantment,
@@ -2049,13 +2068,14 @@ function triggerSourceZoneLegal(source, triggerEvent) {
   if (source.zone === 'battlefield') return true;
   // Triggery śmierci/odejścia działają z ostatniej znanej informacji —
   // źródło jest w grobie/exile (Selhoff, Servant of the Scale).
-  // Refleks „When you do" (Audyt Batch53/A1): dziecko rozstrzygniętej już
-  // zdolności — niezależne od strefy źródła (ruling LCI 2023-11-10).
+  // Refleks „When you do" (Audyt Batch53/A1; PR #162/F-12: opcjonalna
+  // płatność) to dziecko rozstrzygniętej już zdolności — jest niezależny od
+  // strefy źródła (ruling LCI 2023-11-10).
   // Batch 58/B6: refleks po przeszukaniu biblioteki (Prishe's Wanderings) —
   // źródłem jest CZAR, który w chwili rozstrzygnięcia triggera jest już
   // w grobie (ruling FIN 2025-06-06), więc strefa 'none' jest legalna.
   return ['dies', 'any_creature_dies', 'leaves_battlefield', 'reflexive_sacrifice',
-    'reflexive_discard', 'reflexive_search'].includes(triggerEvent);
+    'reflexive_discard', 'reflexive_search', 'reflexive_pay'].includes(triggerEvent);
 }
 
 /**
@@ -3151,7 +3171,15 @@ function processTriggersScan(state, recentEvents) {
             if (!mayFireGrouped(ability, {
               subject: candidate.id, abilityIndex, filter, groupSubject: ev.target ?? null,
             })) continue;
-            tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
+            // Batch 66 (Cazur): kontekst niesie dokładne źródło tego
+            // zdarzenia obrażeń. Przy braku groupPer każdy stwór tworzy osobny
+            // trigger; efekt `targetFromContext` wzmacnia właśnie ten obiekt.
+            // Id zostaje stare przy zmianie strefy, więc resolution robi no-op
+            // zamiast wzmacniać nowy obiekt (CR 400.7/608.2b).
+            tryFire(state, ability, candidate, [], events, {
+              damagedPlayerId: ev.target,
+              damageSourceId: ev.source ?? source.id,
+            });
           }
         }
       }
@@ -3628,6 +3656,23 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Batch 66 (Lorescale Coatl): każde PRAWDZIWE dobranie przez kontrolera
+    // źródła tworzy osobny trigger. `drawNumberThisTurn !== null` odróżnia
+    // draw (CR 121.1/121.2) od technicznego wzięcia kart po mulliganie
+    // (CR 103.5); search/move-to-hand w ogóle nie emituje `card_drawn`.
+    if (ev.type === 'card_drawn' && ev.playerId != null && ev.drawNumberThisTurn != null) {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'you_draw_card') {
+            tryFire(state, ability, source, [], events, {
+              drawNumberThisTurn: ev.drawNumberThisTurn,
+              drawnObjectId: ev.object?.id ?? null,
+            });
+          }
+        }
+      }
+    }
     // „Whenever you draw your second card each turn" (Jolrael, Mwonvuli
     // Recluse): odpala PRZY ZDARZENIU dobrania, które jest drugie w turze —
     // porządek niesie zdarzenie (`drawNumberThisTurn`, choke point
@@ -3743,26 +3788,39 @@ function processTriggersScan(state, recentEvents) {
       }
       // Batch65 (Zombie Boa): „Whenever this creature becomes blocked by a
       // creature of that color this turn, destroy that creature." Para
-      // (atakujący × bloker) jak Wooden Stake („becomes blocked by a Vampire"),
-      // filtr = KOLOR blokera ze ZZNACZNIKÓW aktywacji „choose a color"
-      // (blockDestroyColorsThisTurn — po jednym znaczniku na aktywację;
-      // wygasają w cleanup). Kolor blokera EFEKTYWNY (CR 613). Cel znany
-      // z zdarzenia („that creature" = bloker) — queueTriggerToStack wprost
-      // z [blockerId], jak wzorzec Wooden Stake (tryFire zsyła []).
+      // (atakujący × bloker) jak Wooden Stake („becomes blocked by a Vampire").
+      //
+      // Audyt PR #162/F-5..F-7: źródłem prawdy jest UTWORZONA zdolność
+      // opóźniona z `turnAbilityGrants`, nie bieżące `effectiveAbilities(Boa)`.
+      // Wpis zachowuje wybrany kolor, deskryptor efektu i kontrolera z chwili
+      // utworzenia; utrata zdolności albo późniejsza zmiana kontroli Boa nie
+      // zmieniają kontrolera delayed triggera (CR 603.7). Zmiana strefy usuwa
+      // wpis w jedynym choke poincie `moveObjectDirectly` (CR 400.7).
       for (const [attackerId, blockerIds] of Object.entries(assignments ?? {})) {
         const attacker = state.objects.get(attackerId);
         if (!attacker || attacker.zone !== 'battlefield') continue;
-        const marks = attacker.blockDestroyColorsThisTurn ?? [];
-        if (marks.length === 0) continue;
-        for (const ability of effectiveAbilities(attacker)) {
-          if (ability?.trigger?.event !== 'becomes_blocked_by_color') continue;
-          for (const blockerId of blockerIds ?? []) {
-            const blocker = state.objects.get(blockerId);
-            if (!blocker || blocker.zone !== 'battlefield') continue;
-            for (const color of marks) {
-              if (!effectiveColors(blocker).includes(color)) continue;
-              queueTriggerToStack(state, ability, attacker, [blockerId], events);
-            }
+        const grants = (state.turnAbilityGrants ?? []).filter((grant) =>
+          grant.kind === 'block_destroy_delayed'
+          && grant.sourceId === attackerId
+          && grant.armedOnTurn === state.turn.number
+          && grant.trigger?.event === 'becomes_blocked_by_color');
+        if (grants.length === 0) continue;
+        for (const blockerId of blockerIds ?? []) {
+          const blocker = state.objects.get(blockerId);
+          if (!blocker || blocker.zone !== 'battlefield') continue;
+          const blockerColors = effectiveColors(blocker);
+          for (const grant of grants) {
+            if (!blockerColors.includes(grant.color)) continue;
+            // Kolejkowanie używa bieżącej LKI ciała, lecz kontroler zdolności
+            // pochodzi z chwili jej utworzenia, nie z aktualnego permanentu.
+            const grantSource = Object.freeze({
+              ...attacker,
+              cardId: grant.cardId ?? attacker.cardId,
+              controllerId: grant.controllerId,
+            });
+            queueTriggerToStack(state, {
+              type: 'triggered', trigger: grant.trigger, effect: grant.effect,
+            }, grantSource, [blockerId], events);
           }
         }
       }

@@ -6,6 +6,7 @@ import { nextTimestamp, timestampOf, attachmentTimestampOf } from './timestamps.
 // (`graveyard-types.js`) — triggers.js importuje permanents, więc branie tej
 // reguły stamtąd robiłoby cykl, a build odmawia cykli (ADR 0011; L171).
 import { countGraveyardCardTypes } from './graveyard-types.js';
+import { LINKED_EXILE_CAST_DURATION, isLinkedExileCastGrant } from './linked-exile-cast.js';
 import { attachmentGrant, attachmentsAttachedTo, effectiveColors, effectiveProtectionFromColors, effectiveProtectionQualities, isProtectedFromSource, isTargetingBlockedByProtection, sourceHasProtectionQuality } from './attachments.js';
 // M110: helpery ochrony przed JAKOŚCIĄ mieszkają w attachments.js (razem
 // z ochroną kolorową); permanents.js re-eksportuje je, bo stamtąd biorą je
@@ -1569,8 +1570,8 @@ export function clearStatModifiers(state) {
   state.untilEndOfTurnBuffs = [];
   // M109: ochrona „do końca tury" (Spare from Evil) kończy się w cleanup.
   state.untilEndOfTurnProtections = [];
-  // Zgłoszenie właściciela B1: opóźnione zdolności „this turn" (rozdział III
-  // Sagi) wygasają razem z resztą efektów do końca tury.
+  // Opóźnione zdolności „this turn" (rozdział III Sagi, Zombie Boa) wygasają
+  // razem z resztą efektów do końca tury.
   state.turnAbilityGrants = [];
   // Batch 48 (Cherished Hatchling): flash nadany podtypowi „this turn".
   state.subtypeFlashThisTurn = [];
@@ -1591,11 +1592,6 @@ export function clearStatModifiers(state) {
     // defender” — flaga reguły ataku wygasa w cleanup.
     if (object.attacksAsThoughNoDefenderUntilEOT) {
       replaceObject(state, state.objects.get(object.id), { attacksAsThoughNoDefenderUntilEOT: false });
-    }
-    // Batch65 (Zombie Boa): znaczniki „choose a color … this turn" (aktywacje
-    // z tej tury) wygasają w cleanup razem z resztą efektów do końca tury.
-    if ((object.blockDestroyColorsThisTurn ?? []).length > 0) {
-      replaceObject(state, state.objects.get(object.id), { blockDestroyColorsThisTurn: Object.freeze([]) });
     }
     const animated = state.objects.get(object.id);
     const animationEffects = animationEffectsOf(animated);
@@ -1647,9 +1643,13 @@ export function clearStatModifiers(state) {
     if (current.saddled || current.tempBasePT || current.damagedThisTurn) {
       replaceObject(state, current, { saddled: false, tempBasePT: null, damagedThisTurn: false, abilityResolvedThisTurn: 0 });
     }
+    // Grant linkowany z obiektem w exile nie ma terminu „this turn” i musi
+    // przeżyć cleanup. Brudem tej fazy są wyłącznie pozostałe abilityGrants.
+    const persistentAbilityGrants = (current.abilityGrants ?? []).filter(isLinkedExileCastGrant);
+    const temporaryAbilityGrantCount = (current.abilityGrants ?? []).length - persistentAbilityGrants.length;
     const dirty = current.powerModifier !== 0 || current.toughnessModifier !== 0
       || (current.keywordGrants ?? []).length > 0
-      || (current.abilityGrants ?? []).length > 0
+      || temporaryAbilityGrantCount > 0
       || current.typeGrant != null
       // Wydrukowane „can't block\" (token) nie jest brudem do sprzątnięcia —
       // bez tego wyłączenia cleanup przepisywałby token w każdej turze.
@@ -1663,7 +1663,7 @@ export function clearStatModifiers(state) {
     if (dirty) {
       replaceObject(state, current, {
         powerModifier: 0, toughnessModifier: 0, keywordGrants: [], keywordGrantTs: null,
-        abilityGrants: [], typeGrant: null,
+        abilityGrants: Object.freeze(persistentAbilityGrants), typeGrant: null,
         // „Can't block this turn" (Panic Spellbomb) — cleanup zdejmuje EFEKT
         // (CR 514.2), nawet gdy współistnieje z drukiem na tokenie.
         // `cantBlock` pozostaje lustrzanym polem dla starego widoku, a osobny
@@ -1715,6 +1715,36 @@ export function grantAbilitiesUntilEndOfTurn(state, objectId, abilities) {
   if (!Array.isArray(abilities) || abilities.length === 0) throw new TypeError('Lista nadawanych zdolności nie może być pusta');
   const grantedAt = nextTimestamp(state);
   const grants = [...(object.abilityGrants ?? []), ...abilities.map((ability) => Object.freeze({ ...ability, grantedAt }))];
+  return replaceObject(state, object, { abilityGrants: Object.freeze(grants) });
+}
+
+/**
+ * Grant z czasem „until [linked card] is cast from exile”. Może dotyczyć
+ * dowolnego permanenta (np. lądu), przeżywa cleanup i jest związany z id
+ * konkretnego obiektu w exile. Opuszczenie celu nadal czyści grant zwykłą
+ * regułą CR 400.7 w moveObjectDirectly.
+ */
+export function grantAbilitiesUntilSourceCastFromExile(state, objectId, abilities, linkedSourceId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield') {
+    throw new Error('Linkowane zdolności można nadać tylko permanentowi na polu bitwy');
+  }
+  if (!Array.isArray(abilities) || abilities.length === 0) {
+    throw new TypeError('Lista nadawanych zdolności nie może być pusta');
+  }
+  if (typeof linkedSourceId !== 'string' || linkedSourceId.length === 0) {
+    throw new TypeError('Linkowany grant wymaga id źródła w exile');
+  }
+  const grantedAt = nextTimestamp(state);
+  const grants = [
+    ...(object.abilityGrants ?? []),
+    ...abilities.map((ability) => Object.freeze({
+      ...ability,
+      grantedAt,
+      grantDuration: LINKED_EXILE_CAST_DURATION,
+      linkedSourceId,
+    })),
+  ];
   return replaceObject(state, object, { abilityGrants: Object.freeze(grants) });
 }
 

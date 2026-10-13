@@ -105,7 +105,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
   resolve_discard_choice: 'Odrzucenie karty',
-  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
   // identyfikator „resolve_exploit_choice" w panelu akcji (Silumgar Butcher —
   // Exploit). Teraz czytelny polski opis.
@@ -1320,7 +1320,9 @@ function describeEffect(e, ctx = {}) {
     destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
-    grant_abilities: () => 'nadaj zdolność do końca tury',
+    grant_abilities: () => e.duration === 'until_source_cast_from_exile'
+      ? 'nadaj zdolność aż do rzucenia tej karty z wygnania; możesz ją rzucić z wygnania'
+      : 'nadaj zdolność do końca tury',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -1373,7 +1375,9 @@ function describeEffect(e, ctx = {}) {
     ferocious_draw_discard: () => 'ferocious: dobierz, potem odrzuć',
     fertile_thicket_reveal: () => 'odsłoń wierzch biblioteki',
     goad: () => 'goad (musi atakować)',
-    grant_abilities: () => 'nadaj zdolności do końca tury',
+    grant_abilities: () => e.duration === 'until_source_cast_from_exile'
+      ? 'nadaj zdolność aż do rzucenia tej karty z wygnania; możesz ją rzucić z wygnania'
+      : 'nadaj zdolności do końca tury',
     graveyard_creatures_to_library_top_choice: () => 'karty z grobu na wierzch biblioteki',
     // Batch 47 (Sequestered Stash): JEDNA karta wskazanego rodzaju, wybor
     // opcjonalny („you may") — opis czyta filtr z deskryptora.
@@ -1448,6 +1452,10 @@ function describeEffect(e, ctx = {}) {
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
+    sacrifice_source_unless_sacrifice: () => {
+      const types = e.qualifier?.types ?? ['permanent'];
+      return `poświęć źródło, chyba że poświęcisz: ${types.join('/')}`;
+    },
     prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
     prevent_next_damage: () => `prewencja kolejnych ${e.amount ?? 1} obrażeń`,
     proliferate: () => 'proliferate',
@@ -1564,6 +1572,7 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['tapCreature', 'tapnij swojego stwora'],
   ['tapOtherCreature', 'tapnij innego swojego stwora'],
   ['exileFromGraveyard', 'wygnaj tę kartę z grobu'],
+  ['exileSelfFromHand', 'wygnaj tę kartę z ręki'],
   ['payLifeX', 'zapłać X życia'],
   // M177/E (Merchant's Dockhand): koszt „Tap X untapped artifacts you control”.
   ['tapXArtifacts', 'tapnij X swoich nietapniętych artefaktów'],
@@ -1949,6 +1958,7 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   if (trigger.event === 'permanents_you_control_leave_battlefield') return `Gdy ${ownPermanent} opuszcza pole bitwy: ${parts}.`;
   if (trigger.event === 'enchanted_creature_damage_to_opponent') return `Gdy zaczarowany stwór zada obrażenia przeciwnikowi: ${parts}.`;
   if (trigger.event === 'any_combat_damage_to_player') return `Gdy ${mine ? 'jeden z twoich stworów' : 'stwór kontrolera'} zada obrażenia bojowe graczowi: ${parts}.`;
+  if (trigger.event === 'you_draw_card') return `Ilekroć ${mine ? 'dobierzesz kartę' : 'kontroler dobierze kartę'}: ${parts}.`;
   if (trigger.event === 'card_put_into_graveyard_from_nonbattlefield') return `Gdy karta trafia do grobu spoza pola bitwy: ${parts}.`;
   if (trigger.event === 'cards_exiled_from_your_graveyard') return `Ilekroć karty trafiają na wygnanie z twojego grobu: ${parts}.`;
   if (trigger.event === 'spell_targets_this_creature') return `Gdy czar celuje w tę kartę: ${parts}.`;
@@ -2260,7 +2270,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
   resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
-  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // Zgłoszenie B (2026-09-19): decyzja przeciwnika o celu nie może być gołym
   // „Wybierz: Cel” — deskryptor mówi, KTO wybiera (a tytuł dokłada nazwę karty,
   // gdy widok niesie źródło decyzji).
@@ -2586,13 +2596,15 @@ function choiceSourceTitle(cmd, session, view) {
   // „Kolor (np. ochrona)" zgadywał CEL wyboru po pierwszym użyciu deskryptora
   // (aura), więc ląd z chooseColor proponował „ochronę", choć wybiera kolor
   // PRODUKOWANEJ many. Cel niesie pending z engine (purpose: 'mana' lądu /
-  // 'protection' aury), a źródło idzie z sourceCardId (M240/K) — panel i
-  // modal mówią to, co log „Rozgrywki": „Manor Gate — wybór koloru (produkcja
-  // many)". Bez pendingu w widoku zostaje goły deskryptor „Kolor".
+  // 'protection' aury / 'blockDestroy' Zombie Boa), a źródło idzie z
+  // sourceCardId (M240/K) — panel i modal mówią to, co log „Rozgrywki":
+  // „Manor Gate — wybór koloru (produkcja many)". Bez pendingu w widoku
+  // zostaje goły deskryptor „Kolor".
   if (cmd?.type === 'resolve_color_choice' && view?.pendingColorChoice) {
     const pcc = view.pendingColorChoice;
     const purpose = pcc.purpose === 'mana' ? 'produkcja many'
-      : (pcc.purpose === 'protection' ? 'ochrona przed nim' : null);
+      : (pcc.purpose === 'protection' ? 'ochrona przed nim'
+        : (pcc.purpose === 'blockDestroy' ? 'niszczenie blokera tego koloru' : null));
     const src = pcc.sourceCardId ? session.nameOf(pcc.sourceCardId) : null;
     const tail = purpose ? ` (${purpose})` : '';
     if (src) return `${src} — wybór koloru${tail}`;

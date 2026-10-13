@@ -177,6 +177,10 @@ export function triggerTargetEffectFriendly(ability) {
     (e?.type === 'pump' && (e.power ?? 0) >= 0 && (e.toughness ?? 0) >= 0
       && (e.power ?? 0) + (e.toughness ?? 0) > 0)
     || (e?.type === 'add_counter' && typeof e.counter === 'string' && e.counter.startsWith('+'))
+    // Batch 66 (Cazur / Partner with): docelowy gracz przeszukuje WŁASNĄ
+    // bibliotekę i bierze kartę do ręki — efekt jest przyjazny właśnie dla
+    // celu. Jawne `playerFromTarget` odróżnia go od zwykłego „search your”.
+    || (e?.type === 'search_library_to_hand' && e.playerFromTarget === true)
     // M156/F1 (Lotusguard Disciple): nadanie keywordów do końca tury jest
     // przyjazne dla obdarowanego (lifelink, indestructible, flying...) — bez
     // tej gałęzi friendly=false i bot obdarowywał NAJLEPSZEGO stwora wroga.

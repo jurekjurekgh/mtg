@@ -161,8 +161,12 @@ test('I: wariant z blokerem, który nic nie wnosi, jest ODRZUCANY, nie tylko kar
 test('J: trucizna jest drugim zegarem przegranej w ocenie obrony', () => {
   const src = readFileSync(new URL('../src/controllers/heuristic-bot.js', import.meta.url), 'utf8');
   // Garda musi być liczona także w walucie liczników (CR 704.5c), nie tylko życia.
-  assert.ok(src.includes('enemyInfectCrackbackPower'),
-    'model gardy musi znać kontratak infect');
+  // D/2026-10-11 zastąpiło dwie sumy mocy wspólną projekcją legalnych bloków;
+  // strażnik pinuje nowy punkt zbierający i jawny routing obrażeń infect.
+  assert.ok(src.includes('survivesProjectedCrackback'),
+    'model gardy musi projektować legalne bloki kontrataku');
+  assert.match(src, /hasKeyword\(attacker, 'infect'\) \? damage : 0/,
+    'obrażenia infect muszą trafiać do waluty poison, nie życia');
   assert.ok(/poisonHeadroom/.test(src), 'zapas do dziesięciu liczników musi być policzony');
   assert.ok(/infectThreat/.test(src),
     'lethalThreat przy blokowaniu musi uwzględniać atak infect');

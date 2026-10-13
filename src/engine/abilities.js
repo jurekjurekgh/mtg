@@ -7,7 +7,7 @@ import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife, payEnergyCounters } from './players.js';
 import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
-import { validateTargets, hasHexproofAgainst, legalTargetCandidates } from './spells.js';
+import { validateTargets, hasHexproofAgainst, legalTargetCandidates, legalTargetCombos } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { addRegenerationShield } from './state-based.js';
@@ -159,7 +159,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -269,6 +269,11 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // your hand: [efekt]. Activate only during your upkeep and only once each
     // turn." Zdolność aktywowana z RĘKI; karta zostaje w ręce (ujawniona).
     forecast: Boolean(forecast),
+    // Generyczna zdolność aktywowana karty w ręce (CR 113.6m). Mechaniki,
+    // które mają własny przebieg (cycling/channel/reinforce/bloodrush), nadal
+    // używają swoich deskryptorów; fromHand obsługuje zwykły koszt i wspólny
+    // stos zdolności, w tym koszt „exile this card from your hand”.
+    fromHand: Boolean(fromHand),
     fromGraveyard: Boolean(fromGraveyard),
     // Veiled Ascension (MKC): „Face-down creatures you control enter with a
     // flying counter on them." — statyczna zdolność, która modyfikuje wejście
@@ -587,7 +592,7 @@ export function legalActivatedAbilities(state, playerId) {
       // Zdolność „z grobu" (Goldmeadow Nomad: „Exile this card from your
       // graveyard") działa WYŁĄCZNIE z grobu — na polu bitwy nie jest oferowana
       // (oferta z grobu jest niżej; spójność oferty i walidacji).
-      if (ability.fromGraveyard) continue;
+      if (ability.fromGraveyard || ability.fromHand) continue;
       // Detain (CR 701.35, M177/E): zdolności aktywowane zatrzymanego
       // permanentu nie mogą być aktywowane (oferta i walidacja — L48).
       if (object.detained) continue;
@@ -1098,6 +1103,32 @@ export function legalActivatedAbilities(state, playerId) {
       }
     }
   }
+  // Generyczne zdolności aktywowane Z RĘKI (CR 113.6m). W odróżnieniu od
+  // cycling/channel/reinforce/bloodrush nie mają osobnego przebiegu: wybierają
+  // cele, płacą zwykły koszt i trafiają na wspólny stos zdolności. Pole
+  // `fromHand` jest częścią deskryptora, więc rdzeń nie rozpoznaje nazw kart.
+  for (const id of state.zones.hand) {
+    const object = state.objects.get(id);
+    if (object?.controllerId !== playerId) continue;
+    const activatable = activatableAbilities(state, object);
+    for (let index = 0; index < activatable.length; index += 1) {
+      const ability = activatable[index];
+      if (ability?.type !== ABILITY_TYPE.activated || !ability.fromHand) continue;
+      if (ability.timing === 'sorcery' && !sorcerySpeed) continue;
+      if (abilityConditionFailure(state, playerId, ability, object) !== null) continue;
+      const mana = manaForActivation(state, playerId, object, ability);
+      if (effectiveAbilityManaCost(state, playerId, ability, object) > mana) continue;
+      if (!canPayColoredCost(state, playerId, colorRequirementsOf(ability.cost))) continue;
+      const targetSpec = ability.targets ?? [];
+      if (targetSpec.length === 0) {
+        out.push({ objectId: id, abilityIndex: index, ability });
+        continue;
+      }
+      for (const targets of legalTargetCombos(state, playerId, targetSpec, object)) {
+        out.push({ objectId: id, abilityIndex: index, ability, targets });
+      }
+    }
+  }
   // Cycling (CR 702.29) — zdolność aktywowana karty w RĘCE z szybkością
   // instanta (dostępna z priorytetem, niezależnie od fazy). Koszt: mana;
   // odrzucenie karty jest częścią kosztu rozpatrywaną przy aktywacji.
@@ -1321,7 +1352,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // na polu bitwy taka zdolność nie istnieje (CR 113.6: zdolność karty działa
   // w strefie, z której jej tekst to przewiduje). Zwykłe zdolności aktywowane
   // wymagają permanenta na polu bitwy.
-  if (ability.fromGraveyard) {
+  if (ability.fromHand) {
+    if (object.zone !== 'hand') throw new Error('Zdolność z ręki wymaga źródła w ręce');
+  } else if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
@@ -1336,6 +1369,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     throw new Error('Karta nie leży twarzą w dół');
   }
   const cost = ability.cost ?? {};
+  if (cost.exileSelfFromHand && (!ability.fromHand || object.zone !== 'hand')) {
+    throw new Error('Wygnanie źródła z ręki wymaga zdolności działającej z ręki');
+  }
   // Specyfikacja celu „land you control" niesie kontrolera dopiero w chwili
   // aktywacji (deskryptor karty nie zna graczy — ADR 0002).
   const targetSpec = (ability.targets ?? []).map((spec) => (spec.type === 'land_you_control'
@@ -1474,7 +1510,9 @@ export function performActivation(state, ctx) {
     // się odrzuceniem legalnej komendy: „Nieznana zdolność aktywowana".
     : activatableAbilities(state, object)[abilityIndex];
   if (!ability || ability.type !== ABILITY_TYPE.activated) throw new Error('Nieznana zdolność aktywowana');
-  if (ability.fromGraveyard) {
+  if (ability.fromHand) {
+    if (object.zone !== 'hand') throw new Error('Zdolność z ręki wymaga źródła w ręce');
+  } else if (ability.fromGraveyard) {
     if (object.zone !== 'graveyard') throw new Error('Zdolność z grobu wymaga źródła w grobie');
   } else if (object.zone !== 'battlefield') {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
@@ -1681,6 +1719,24 @@ export function performActivation(state, ctx) {
   // jest częścią kosztu, więc następuje PRZED efektem (mana wpada do puli
   // mimo że permanent już jest w grobie — CR 601.2h).
   let effectSource = object;
+  // CR 113.6m / 601.2h: koszt „Exile this card from your hand”. Ruch dzieje
+  // się po wszystkich bramkach legalności i płatności many, ale przed
+  // położeniem zdolności na stosie. Nowy obiekt w exile jest źródłem LKI i
+  // dokładnie jego id wiąże późniejsze pozwolenie rzutu oraz czas grantu.
+  if (cost.exileSelfFromHand) {
+    if (!ability.fromHand || object.zone !== 'hand') {
+      throw new Error('Wygnanie źródła z ręki wymaga zdolności działającej z ręki');
+    }
+    const exileId = `exile-${state.objectSequence++}`;
+    const exiled = moveObjectDirectly(state, object.id, 'exile', exileId, {
+      exiledBy: object.cardId ?? 'ability_cost',
+    });
+    state.events.push(event('object_exiled', {
+      fromId: object.id, objectId: exileId, object: exiled,
+      cardId: exiled.cardId, playerId, additionalCost: true,
+    }));
+    effectSource = exiled;
+  }
   if (cost.sacrificeSelf) {
     const sacrificeMarker = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
@@ -1772,7 +1828,7 @@ export function performActivation(state, ctx) {
   if (ability.keyword === 'regenerate') {
     addRegenerationShield(state, objectId);
   }
-  let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [objectId]);
+  let effectTargets = chosenTargets.length > 0 ? chosenTargets : (cost.sacrificeSelf ? [] : [effectSource.id]);
   if (otherCreatureToTap) effectTargets = [ctx.tapOtherCreatureId ?? otherCreatureToTap];
   const effectList = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
   // „Activate only once each turn\" (Snarling Wolf): zapisujemy aktywację,

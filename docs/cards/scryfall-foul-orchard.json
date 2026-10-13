@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Foul%20Orchard&set=m19&format=json",
+  "print": "m19",
+  "name": "Foul Orchard",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\n{T}: Add {B} or {G}.",
+  "colors": [],
+  "color_identity": [
+    "B",
+    "G"
+  ],
+  "keywords": [],
+  "produced_mana": [
+    "B",
+    "G"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "251",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/6/b/6b28e1e1-0813-4e4a-a7a7-058b7787272c.jpg?1783934509",
+    "normal": "https://cards.scryfall.io/normal/front/6/b/6b28e1e1-0813-4e4a-a7a7-058b7787272c.jpg?1783934509",
+    "large": "https://cards.scryfall.io/large/front/6/b/6b28e1e1-0813-4e4a-a7a7-058b7787272c.jpg?1783934509"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/6b28e1e1-0813-4e4a-a7a7-058b7787272c/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

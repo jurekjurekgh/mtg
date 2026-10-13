@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Scythe%20Tiger&set=zen&format=json",
+  "print": "zen",
+  "name": "Scythe Tiger",
+  "mana_cost": "{G}",
+  "cmc": 1.0,
+  "type_line": "Creature — Cat",
+  "oracle_text": "Shroud (This creature can't be the target of spells or abilities.)\nWhen this creature enters, sacrifice it unless you sacrifice a land.",
+  "power": "3",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Shroud"
+  ],
+  "set": "zen",
+  "set_name": "Zendikar",
+  "collector_number": "183",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/d/9d289043-edb5-4a7e-801b-4881709edb32.jpg?1783942131",
+    "normal": "https://cards.scryfall.io/normal/front/9/d/9d289043-edb5-4a7e-801b-4881709edb32.jpg?1783942131",
+    "large": "https://cards.scryfall.io/large/front/9/d/9d289043-edb5-4a7e-801b-4881709edb32.jpg?1783942131"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/9d289043-edb5-4a7e-801b-4881709edb32/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

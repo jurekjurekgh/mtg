@@ -37,6 +37,7 @@ import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { nextTimestamp } from './timestamps.js';
 import { carryImpulseWindow, hasFreeCastStamp, isImpulseWindowLive, warpTurnReached, canPlayByImpulseFromExile } from './impulse-window.js';
+import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
 /**
  * Limit ofert „odłóż N kart na spód” przy mulliganie londyńskim (M119/Z3).
@@ -663,6 +664,30 @@ function closingCombatPassBlocked(state, playerId) {
 }
 
 function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
+
+/**
+ * Zdolność potomna tworzona przez „When you do” po opcjonalnej płatności.
+ * Rodzic (ETB/attack) już się rozstrzyga; potomny trigger jest NOWYM
+ * refleksyjnym zdarzeniem, więc nie dziedziczy eventu ani kosztu rodzica.
+ * Efekty kosztu filtrujemy tu raz dla playerView i execute (L41).
+ */
+function optionalPayFollowupAbility(pending) {
+  const ability = pending?.ability ?? {};
+  const rawEffects = Array.isArray(ability.effect)
+    ? ability.effect
+    : [ability.effect].filter(Boolean);
+  const effects = rawEffects.filter((effect) => !['pay_mana', 'pay_life'].includes(effect?.type));
+  return Object.freeze({
+    ...ability,
+    ...(pending?.requiresTargetDecision ? {
+      trigger: Object.freeze({
+        event: 'reflexive_pay',
+        ...(ability.trigger?.requiresTarget ? { requiresTarget: ability.trigger.requiresTarget } : {}),
+      }),
+    } : {}),
+    effect: effects.length === 1 ? effects[0] : Object.freeze(effects),
+  });
+}
 
 /**
  * Dobranie karty w kroku dobierania — CR 504.1 („First, the active player
@@ -2640,16 +2665,28 @@ export function execute(state, input) {
         : Object.freeze({ ...chosenOn, chosenColor: cmd.color });
       state.objects.set(targetId, updated);
     }
-    // Batch65 (Zombie Boa): aktywacja „choose a color" dokłada znacznik
-    // blokowego zniszczenia NA TĘ TURĘ — lista, bo każda aktywacja to osobny
-    // „grant" (jak osobne zdolności opóźnione w oryginalnych zasadach).
+    // Batch65 (Zombie Boa): aktywacja „choose a color" TWORZY zdolność
+    // opóźnioną na tę turę. Rejestr stanowy jest tym samym mechanizmem co
+    // delayed trigger rozdziału Sagi: wpis żyje niezależnie od późniejszej
+    // utraty wydrukowanych zdolności, lecz wskazuje konkretny obiekt Boa.
+    // Każda aktywacja dokłada osobny grant (kolory mogą się powtarzać).
     if (pending.grantBlockDestroy) {
-      const withMark = state.objects.get(targetId);
-      if (withMark) {
-        state.objects.set(targetId, Object.freeze({
-          ...withMark,
-          blockDestroyColorsThisTurn: Object.freeze([...(withMark.blockDestroyColorsThisTurn ?? []), cmd.color]),
-        }));
+      const source = state.objects.get(targetId);
+      if (source?.zone === 'battlefield' && pending.delayedAbility?.trigger) {
+        state.turnAbilityGrants = [...(state.turnAbilityGrants ?? []), Object.freeze({
+          kind: 'block_destroy_delayed',
+          cardId: pending.sourceCardId ?? source.cardId ?? null,
+          sourceId: targetId,
+          controllerId: pending.playerId,
+          armedOnTurn: state.turn.number,
+          expiresWhenSourceChangesZone: true,
+          color: cmd.color,
+          trigger: Object.freeze({ ...pending.delayedAbility.trigger }),
+          effect: Object.freeze((Array.isArray(pending.delayedAbility.effect)
+            ? pending.delayedAbility.effect : [pending.delayedAbility.effect].filter(Boolean))
+            .map((effect) => Object.freeze({ ...effect }))),
+          sourceLki: pending.sourceLki ?? source,
+        })];
       }
     }
     state.events.push(event('color_choice_resolved', {
@@ -4105,14 +4142,9 @@ export function execute(state, input) {
       const payColors = (pending.ability?.trigger?.payColors ?? []).map((color) => [color]);
       const payMana = pending.ability?.trigger?.payMana ?? 0;
       const payLife = pending.ability?.trigger?.payLife ?? 0;
-      // Płatność wykonujemy RAZ (tutaj). Definicje triggerów (Zoraline) mogą
-      // dodatkowo nieść efekty pay_mana/pay_life — filtrujemy je przed
-      // odpaleniem, żeby nie płacić drugi raz.
-      const rawEffects = Array.isArray(pending.ability?.effect)
-        ? pending.ability.effect
-        : [pending.ability?.effect].filter(Boolean);
-      const effects = rawEffects.filter((e) => e?.type !== 'pay_mana' && e?.type !== 'pay_life');
-      const abilityToFire = { ...pending.ability, effect: effects.length === 1 ? effects[0] : effects };
+      // Płatność wykonujemy RAZ (tutaj). Potomną zdolność refleksyjną oraz
+      // efekty bez pay_mana/pay_life buduje wspólny helper playerView/execute.
+      const abilityToFire = optionalPayFollowupAbility(pending);
       if (payMana > 0) spendMana(state, pending.playerId, payMana, payColors);
       if (payLife > 0) changeLife(state, pending.playerId, -payLife);
       // „You may remove a [X] counter from it. When you do, ..." (Kappa
@@ -4127,15 +4159,21 @@ export function execute(state, input) {
         if (pending.requiresTargetDecision) {
           // Zoraline (Temat 2): PO zapłacie kontroler wybiera CEL reanimacji
           // (resolve_trigger_target) — „When you do, return target ...".
-          const spec = abilityToFire.trigger?.requiresTarget;
           const candidates = legalTriggerTargetCandidates(state, {
-            sourceId: pending.sourceId, ability: abilityToFire, extra: pending.extra ?? {},
+            sourceId: pending.sourceId,
+            sourceLki: pending.source ?? null,
+            ability: abilityToFire,
+            extra: pending.extra ?? {},
           });
           if (candidates.length > 0) {
             state.pendingTriggerTargets.push({
               playerId: pending.playerId,
               sourceId: pending.sourceId,
               cardId: source.cardId,
+              // Audyt PR #162/F-12: źródło rodzica mogło opuścić pole przed
+              // jego rozstrzygnięciem. Potomny refleks zachowuje LKI aż do
+              // wyboru celu i kolejki własnego wpisu stosu.
+              sourceLki: pending.source ?? source,
               ability: Object.freeze({ ...abilityToFire }),
               candidates: [...candidates],
               allowNone: false,
@@ -5092,9 +5130,17 @@ export function execute(state, input) {
     }
     if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
     const target = state.objects.get(cmd.targetId);
-    if (!target || target.zone !== 'battlefield') return reject('illegal_sacrifice_target');
-    if (target.kind !== 'creature' && target.kind !== 'artifact'
-      && !(target.types ?? []).some((type) => ['Creature', 'Artifact'].includes(type))) {
+    if (!target || target.zone !== 'battlefield'
+      || target.controllerId !== pending.playerId) return reject('illegal_sacrifice_target');
+    // Batch 66 (Scythe Tiger): pending niesie generyczne typy kwalifikatora
+    // (Land dziś; Creature/Artifact w istniejących ścieżkach). Źródło z
+    // `alternativeSourceId` jest legalne niezależnie od typu — reprezentuje
+    // niespełnienie „unless”. Brak pola zachowuje zgodność replayów/testów.
+    const candidateTypes = pending.candidateTypes ?? ['Creature', 'Artifact'];
+    const isSourceAlternative = target.id === pending.alternativeSourceId;
+    const matchesCandidateType = candidateTypes.some((type) =>
+      target.kind === type.toLowerCase() || (target.types ?? []).includes(type));
+    if (!isSourceAlternative && !matchesCandidateType) {
       return reject('illegal_sacrifice_target');
     }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
@@ -6920,14 +6966,15 @@ export function playerView(state, playerId) {
             if (a?.type !== 'static') continue;
             if (Array.isArray(a.cantBeBlockedExceptByColors)) {
               entry.cantBeBlockedExceptByColors = [...a.cantBeBlockedExceptByColors];
-              break;
             }
             // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera
             // („can't be blocked by creatures with flying") — publiczny
             // deskryptor z CR 509.1a, ten sam kształt co wyżej (ADR 0017/0002).
+            // Audyt PR #162/F-11: nie kończymy skanu po pierwszej rodzinie —
+            // niezależne restrykcje mogą działać jednocześnie i obie muszą
+            // trafić do widoku (np. except-by-color + not-by-flying).
             if (Array.isArray(a.cantBeBlockedByKeywords)) {
               entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
-              break;
             }
           }
         }
@@ -7122,6 +7169,12 @@ export function playerView(state, playerId) {
         // Wygnanie jest jawne (CR 406.3), koszt to publiczny Oracle.
         if (object.warpReady) waiting.warpReady = true;
         if (object.warp) waiting.warp = object.warp;
+        // Publiczny skutek rozstrzygniętej zdolności: ten konkretny obiekt
+        // można rzucić z exile. UI/bot nie muszą wnioskować wyłącznie z listy
+        // komend, a ponowne wygnanie nowego obiektu pola nie odziedziczy.
+        if (canCastByLinkedExilePermission(object, object.linkedExileCastPermission?.playerId)) {
+          waiting.linkedExileCastPermission = { ...object.linkedExileCastPermission };
+        }
         // M254/D (zgłoszenie właściciela, Wormfang Newt): wygnanie TYMCZASOWE
         // z linkiem powrotu — badge mówi, przez kogo karta została wygnana.
         // Wygnanie jest strefą jawną (CR 406.3), więc znacznik widzą obaj.
@@ -7741,6 +7794,25 @@ export function playerView(state, playerId) {
     // M101/B: jw. — koszt many/życia i źródło w komendzie, żeby gracz wiedział,
     // za co płaci, zanim kliknie (zgłoszenie: dwie identyczne opcje).
     const optionalPayTrigger = state.pendingOptionalPay.ability?.trigger ?? {};
+    const optionalPayFollowup = optionalPayFollowupAbility(state.pendingOptionalPay);
+    // Audyt PR #162/F-2 (ADR 0017): sama LICZBA celów refleksu nie wystarcza
+    // do świadomej decyzji bota. Ambulatory Edifice zawsze widzi co najmniej
+    // siebie, lecz zapłata 2 życia tylko po to, by dać własnemu stworowi −1/−1,
+    // jest stratą. Komenda niesie więc publiczne id legalnych kandydatów oraz
+    // dokładne efekty „When you do”; wycena nie zgaduje ich z nazwy karty.
+    const reflexiveTargetIds = state.pendingOptionalPay.requiresTargetDecision
+      ? legalTriggerTargetCandidates(state, {
+          sourceId: state.pendingOptionalPay.sourceId,
+          sourceLki: state.pendingOptionalPay.source ?? null,
+          ability: optionalPayFollowup,
+          extra: state.pendingOptionalPay.extra ?? {},
+        })
+      : [];
+    const rawReflexiveEffects = Array.isArray(optionalPayFollowup.effect)
+      ? optionalPayFollowup.effect
+      : [optionalPayFollowup.effect].filter(Boolean);
+    const reflexiveEffects = rawReflexiveEffects
+      .map((effect) => Object.freeze({ ...effect }));
     const optionalPayInfo = {
       cost: optionalPayTrigger.payMana ?? null,
       costColors: optionalPayTrigger.payColors ?? null,
@@ -7749,14 +7821,11 @@ export function playerView(state, playerId) {
       sourceId: state.pendingOptionalPay.sourceId ?? null,
       // Etap F (CR 603.5 + 603.12): „When you do, [efekt z celem]" — płatność
       // pada przy rozstrzyganiu, zanim wybiera się cel refleksyjnej zdolności.
-      // Liczba legalnych celów TERAZ mówi graczowi i botowi, czy zapłata
-      // w ogóle może coś dać (CR pozwala zapłacić także bez celu).
+      // Kandydaci i efekt pozwalają odróżnić cel korzystny od szkodliwego.
       ...(state.pendingOptionalPay.requiresTargetDecision ? {
-        reflexiveTargetCount: legalTriggerTargetCandidates(state, {
-          sourceId: state.pendingOptionalPay.sourceId,
-          ability: state.pendingOptionalPay.ability,
-          extra: state.pendingOptionalPay.extra ?? {},
-        }).length,
+        reflexiveTargetCount: reflexiveTargetIds.length,
+        reflexiveTargetIds: Object.freeze([...reflexiveTargetIds]),
+        reflexiveEffects: Object.freeze(reflexiveEffects),
       } : {}),
     };
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
@@ -8587,7 +8656,11 @@ export function playerView(state, playerId) {
     }
     // Flash (CR 702.8): permanenty z flash można zagrać z priorytetem w każdej
     // fazie (jak instanty), nie tylko w main phase. Dodajemy je tuż po czarach.
-    for (const id of state.zones.hand) {
+    const instantPermanentIds = [
+      ...state.zones.hand,
+      ...state.zones.exile.filter((id) => canCastByLinkedExilePermission(state.objects.get(id), playerId)),
+    ];
+    for (const id of instantPermanentIds) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId) continue;
       // Aura z flash — osobna enumeracja niżej (CR 601.2c: aura wymaga celu
@@ -8785,7 +8858,11 @@ export function playerView(state, playerId) {
       }
       return out;
     };
-    for (const id of state.zones.hand) {
+    const mainPermanentIds = [
+      ...state.zones.hand,
+      ...state.zones.exile.filter((id) => canCastByLinkedExilePermission(state.objects.get(id), playerId)),
+    ];
+    for (const id of mainPermanentIds) {
       const object = state.objects.get(id);
       if (object?.controllerId !== playerId || object.aura) continue;
       if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') continue;
@@ -9168,6 +9245,11 @@ export function playerView(state, playerId) {
     // decyzji, nie tożsamość kart) — UI i bot rozgałęziają po niej etykiety
     // i wycenę (ADR 0002 — bez nazw kart w warstwie opisu).
     pickTo: state.pendingLookTopN.pickTo ?? 'hand',
+    // Uwaga F właściciela (Impulse): UI musi odróżnić „reszta do grobu" od
+    // „reszta na spód w dowolnej kolejności", żeby tylko drugi wariant dostał
+    // sekwencyjny sorter. Miejsce publicznego efektu nie ujawnia kart (FoW);
+    // same `cards` niżej nadal widzi wyłącznie decydent.
+    restTo: state.pendingLookTopN.restTo ?? 'graveyard',
     cards: state.pendingLookTopN.playerId === playerId
       ? state.pendingLookTopN.objectIds.map((id) => {
         const object = state.objects.get(id);

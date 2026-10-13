@@ -36,7 +36,8 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
-| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (25 pinów: 7 fala A + 3 fala B + 3 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
+| batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -55,7 +56,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
-| fog/prewencja | 4 | DONE (2026-09-28) | §PMSSB-15 niżej; re-audyt POKRYTEJ z NOWYM dowodem (zgłoszenie B + luka L41 free-castów); `test/audyt-pmssb15-prewencja.test.js` (16); `fogWindowValue` + `preventDamageThisTurnValue` (6 pokręteł `fogWindow*`/`preventEtb*`) |
+| fog/prewencja | 4 | DONE (2026-09-28; korekta Withstand 2026-10-11) | §PMSSB-15 niżej; `test/audyt-pmssb15-prewencja.test.js` (19) + `test/zgloszenie-b-withstand-cel-bota.test.js` (7); `fogWindowValue`, `preventDamageThisTurnValue`, `preventShieldValue` (6 pokręteł `fogWindow*`/`preventEtb*`, bez nowego dla korekty) |
 | walka (`fight`/bite) | 2 | DONE (2026-09-28) | §PMSSB-16 niżej; `test/audyt-pmssb16-walka.test.js` (10); drabina wymiany w `fightExchangeValue` (L41: DT/deathtouch/lifelink/reclaim liczników; 8 pokręteł `fightBite*`/`fightKill*`/`fightMiss*`/`fightTrade*`) |
 | kradzież do końca tury (`gain_control_until_end_of_turn`) | 3 | DONE (2026-09-28) | §PMSSB-17 niżej; `test/audyt-pmssb17-kradziez.test.js` (13); `gainControlValue` (L41: double-count M257+M157 skasowany; R3 = ZERO osi obronnej — CR 514.2; 6 pokręteł `gainControl*`) |
 | proliferate (rider czaru) | 3 | DONE (2026-09-28) | §PMSSB-18 niżej; `test/audyt-pmssb18-proliferate.test.js` (9); `proliferateTargetValue`/`proliferateBestValue` (L41: rider = 0 pkt → wspólna skala z resolve_proliferate; R3 = wygrana 9→10 warta 1000, wyścig trucizn nieliniowy; 0 pokręteł) |
@@ -1063,9 +1064,10 @@ POMIAR PRZED: `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
 ### Znane granice / forwardy
 - DEBT (CR 615.4, cyt. dosłowne): prewencja nie odrabia zadanych
   obrażeń — „po rozdaniu" to zawsze strata (wasted −75).
-- `prevent_next_damage` (Withstand) = strona CELÓW fixu B
-  (`preventShieldValue`/`preventShieldTargetValue`) — nietknięta (granica
-  rodzin); cantrip Withstandu (draw) = PMSSB-3, nietknięty.
+- `prevent_next_damage` (Withstand) korzysta z
+  `preventShieldValue`/`preventShieldTargetValue`. Korekta właściciela
+  2026-10-11 zamknęła dawną granicę: `draw_cards` pozostaje wycenione przez
+  PMSSB-3, lecz nie może samo uzasadnić zużycia tarczy poza oknem obrażeń.
 - Scry-rider Inspire Awe karany −12 (M218/4, rodzina scry) — świadome;
   F5/S11: MV4 vs MV3 w tym samym oknie = 93 vs 105 (bez remisu).
 - Burn-na-stosie w oknie Shieldmage: lekki sygnał `pendingEffects`
@@ -1085,6 +1087,53 @@ POMIAR PRZED: `/tmp/pmssb15-prewencja-przed.mjs` (S01–S11).
   Żywy Tester PO: 3 partie (theros × mirrodin-wu — enchantmenty i
   artefakty) — **0 zgłoszeń detektorów, 0 niewycenionych**.
 - Prewencja/fog PRZEJRZANA (M91/M236 → PMSSB-15); commit `4f6a583`.
+
+
+### Addendum 2026-10-11 — Withstand jest combat trickiem, nie cantripem
+
+Uwaga z gry A: bot rzucał Withstand zaraz po odtapowaniu lądów. Dawny werdykt
+Q1b świadomie pozwalał zużyć kartę dla samego `draw_cards`; pomiar potwierdził
+score **61/60** dla jałowej tarczy własnego stwora/gracza, więc oferta
+wygrywała z passem. Właściciel odwrócił ten werdykt: draw jest riderem, a nie
+powodem rzutu.
+
+`preventShieldValue` używa teraz istniejącego `fogWindowWastedValue = -75`,
+gdy nie ma nadchodzących obrażeń albo tarcza nie ratuje stworzenia. Dzięki
+L41 reguła działa tak samo dla płatnego i darmowego rzutu, bez nazwy karty i
+bez nowego pokrętła. Pomiar PO: pusty stos/upkeep **−19 < pass 0**; lethalny
+Shock w 1/1 **77 > pass**; nielethalny Shock w 2/3 znów przegrywa z passem.
+Dodatkowo B4 przepisano na produkcyjne `execute`: stary fixture przekazywał
+`targets` do `addObject`, więc cel był odrzucany i test był fałszywie zielony
+wyłącznie przez dawny bonus cantripu. RED→GREEN: B5/Q1b 2/2 RED przed fixem,
+B4b RED po oddzieleniu dowolnego pinga od lethalu; końcowa macierz prewencji
+**32/32**, fast **8042/8042**, pełne **8306/8306**, benchmark **10/10**,
+build **73 moduły / 5019,3 kB**. Golden master zmienił dokładnie jedną z sześciu
+partii: pierwszy rozjazd decyzji to zamierzony upkeep `cast Withstand` → pass;
+fixture świadomie odnowiony. Commit `ca34cfe`.
+
+### Addendum 2026-10-11 — Skilled Animator czeka na godny artefakt
+
+Uwaga z gry B: bot rzucał Skilled Animatora jako zwykłe 1/3 za {2}{U}, mimo
+trzech dużych własnych stworów i zera artefaktów. Pomiar RED: oferta miała
+**63,9009 > pass 0**. Sama tabela ETB dawała `animate_linked` płaskie +10 za
+DOWOLNY artefakt, lecz brak artefaktu był zerem zamiast stratą głównego
+payoffu; nawet 4/4 artifact creature dawało **72,9009**.
+
+Naprawa jest po deskryptorze `animate_linked`, bez nazwy karty. Nie-stwór
+artefakt jest pełnym celem; artifact creature liczy się tylko wtedy, gdy baza
+5/5 daje istotny dodatni zysk — samo 4/4 → 5/5 nie wystarcza, małe 3/3 tak.
+Brak godnego celu nakłada `linkedAnimationFutilePenalty = 90`, więc karta
+przegrywa z passem. Jedyny wyjątek odtwarza kryterium właściciela: projekcja
+najbliższego kontrataku przed i po dodaniu ciała sprawdza bloki, flying,
+menace oraz trample i zwalnia karę tylko wtedy, gdy nowe 1/3 zmienia lethal w
+przeżycie. Lethalny latacz poza zasięgiem nie uruchamia wyjątku.
+
+Regresja produkcyjnej decyzji bota: **9/9** (dokładny stół z trzema dużymi
+stworami, 6/6 i 12/12 jako ratunkowy chump, latacz, zdrowe życie, nie-stwór
+artefakt, 4/4, 3/3 oraz pokrętło ×0). Fast **8051/8051**, golden master
+**4/4 bez zmiany fixture**, pełne **8315/8315**, benchmark **10/10**, build
+**73 moduły / 5025,4 kB**. Commit `c85b175`; GitHub CI **SUCCESS** — run
+`38173232995`.
 
 ## PMSSB-14 — impulse-unification + saga-chapters (2026-09-26)
 
@@ -3002,10 +3051,10 @@ Dowody, wartości PRZED→PO i werdykty per karta:
 
 ## PMSSB-60 — jakościowe domknięcie batcha 65 (2026-10-10, PR #162)
 
-Zlecenie właściciela: „Uruchom pełne PMSSB dla B65". Pętla **nie jest zamknięta**:
-z 6 findingów domknięte są 3 (fale A, B, D), a 3 (fale C, E, F) pozostają
-otwarte z pełnym pomiarem PRZED w planie. Rejestr rodzin oznacza to wprost, żeby
-kolejny agent nie uznał batcha 65 za przejrzany.
+Zlecenie właściciela: „Uruchom pełne PMSSB dla B65". Pętla jest
+**zamknięta**: sześć findingów naprawiono w falach A–F. Tabela niżej zachowuje
+pomiary PRZED, ale jej kolumna stanu opisuje wynik końcowy; audyt PR #162 dodał
+jeszcze pin wykonania wyboru koloru Zombie Boa (C4).
 
 **Pomiar PRZED** (`3b63c79`, sonda `tools/pmssb60-batch65-sonda.mjs`, bot
 w konfiguracji produkcyjnej, kontrfaktyki izolujące efekt od ciała): 6 findingów
@@ -3018,9 +3067,9 @@ składamy z obu list.
 | **F1** Blitz — `damage` z `amount: 'instants_and_sorceries_in_your_graveyard'` | −30,0 płasko dla grobu 0/2/4/6 i celu 2/2–8/8; kontrfaktyk bez efektów +50,0 (**delta −80**) | **DONE (fala A)** — grób 4/6 → 96,0; cel 2/2 → 84,0; grób 0 bez zmian |
 | **F3** Impulse — `look_top_put_one_hand_rest_bottom` jako czar | delta **0** wobec kontrfaktyku; płasko 50,0 dla biblioteki 0/1/4/30 | **DONE (fala B)** — biblioteka 30 → 59,0, biblioteka 0 → 33,0 |
 | **F6** Brine Giant — affinity for enchantments | 70,2072 płasko dla 0 / 3 / 6 enchantmentów (i dla 4 wrogich) | **DONE (fala D)** — 70,2072 → 72,9 → 75,6 |
-| **F2** Zombie Boa — `choose_color_grant_block_destroy` | aktywacja **dokładnie 0,0**; jedyne trafienie w kodzie to lista kumulacji | **OTWARTY (fala C)** |
-| **F7** Skyscythe Engulfer — `cantBeBlockedByKeywords: ['flying']` | delta **0** wobec kontrfaktyku (72,0 = 72,0) | **OTWARTY (fala E)** |
-| **F8** Ambulatory Edifice — ETB `requiresTarget` + `payLife` → `pump -1/-1` | delta **0** wobec kontrfaktyku (67,5 = 67,5) | **OTWARTY (fala F)** |
+| **F2** Zombie Boa — `choose_color_grant_block_destroy` | aktywacja **dokładnie 0,0**; jedyne trafienie w kodzie to lista kumulacji | **DONE (fala C + audyt #162)** — wartość 1,5/4,5/9,0; decyzja wybiera faktycznie najlepszy kolor |
+| **F7** Skyscythe Engulfer — `cantBeBlockedByKeywords: ['flying']` | delta **0** wobec kontrfaktyku (72,0 = 72,0) | **DONE (fala E)** — 78,309 vs 75,609 (+2,700) przy blokerze z flying |
+| **F8** Ambulatory Edifice — ETB `requiresTarget` + `payLife` → `pump -1/-1` | delta **0** wobec kontrfaktyku (67,5 = 67,5) | **DONE (fala F + audyt #162)** — kierunek i koszt życia wycenione; bot nie płaci za szkodliwy wariant |
 
 **Kontrole dodatnie (bez zmian, celowo):** F4 Bring to Trial (96,0 dla 4/4,
 120,0 dla 8/8, cel 2/2 filtrowany), F5 Pacifism (76,5 wróg / −68,4 własny),
@@ -3113,7 +3162,7 @@ w zbiorze efektów kumulujących się na stosie (l.1208) i nie miał gałęzi
 w wycenie aktywacji — POMIAR PRZED: dokładnie 0,0 dla każdego układu
 wroga. Nowy helper `blockDestroyColorValue`: bramka ataku (martwy atak
 = 0, zasada M407) × NAJLEPSZA ofiara wśród wrogich blokerów danego koloru
-(maksimum po kolorach, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za
+(maksimum po kolorach, nie suma — wybór przy rozstrzyganiu, CR 608.2d) × ciało P×2+T×1 × 0,5 za
 warunkowość (ta sama asumpcja likelihood-0,5 co `anticipatedDiesValue`).
 
 POMIAR PO: wróg 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; 3/3 R + 3/3 G = 4,5
@@ -3181,6 +3230,71 @@ kosztu F1/F5/F6 czerwone, F2/F3/F4 zielone (izolowane od płatności).
 8030/8030, build 73 moduły / 5010,6 kB, `cr-numery --cr` OK.
 0 nowych pokręteł.
 
+**Addendum — audyt PR #162.** Pin C1–C3 mierzył wartość samej aktywacji, ale
+nie sprawdzał późniejszej komendy `resolve_color_choice`: bot wybierał pierwszy
+kolor z listy zamiast koloru najcenniejszego blokera. Naprawa F-1 audytu
+(`80de4c8`) współdzieli funkcję wartości z wyceną aktywacji, a nowy pin C4
+wykonuje obie komendy i wymaga właściwego koloru. Zestaw PMSSB-60 ma odtąd
+**26 pinów** (A 7 + B 3 + C 4 + D 3 + E 3 + F 6).
+
 Dowody, wartości PRZED→PO i pełna macierz:
 [plan PMSSB-60](plans/PLAN_2026-10-10c-pmssb60-batch65.md),
 sonda `tools/pmssb60-batch65-sonda.mjs`.
+
+## PMSSB-61 — jakościowe domknięcie batcha 66 (2026-10-13, PR #163)
+
+Pełna pętla objęła 10/10 kart. Cztery mechaniki były już zamknięte przez
+istniejące rodziny i dostały kontrole dodatnie: Sporecap Spider (reach), Foul
+Orchard (tapped dual), Wild Celebrants (opcjonalny ETB removal) oraz Naturalize
+(removal i kierunek celu). Sześć fal naprawiło siedem findingów na pozostałych
+kartach; wszystkie reguły są generyczne po deskryptorach i stanie, bez nazw ani
+`cardId` w heurystyce.
+
+- **A — Warden/vigilance:** vigilant attacker pozostaje w prognozie gardy na
+  crackback. PO: atak **21**; bez vigilance brak ataku **0 > −1**. Ręczna mana
+  pozostaje poniżej auto-rzutu (**−4 vs 76**).
+- **B — Cazur:** nazwany Partner ma wartość tylko, gdy znana własna talia może
+  jeszcze zawierać cel; brak wiedzy zachowuje konserwatywną dawną wartość.
+  Boardowy `any_combat_damage_to_player → add_counter` jest wyceniany na
+  faktycznym źródle pewnych obrażeń. Talia bez Ukkimy **68,8536 vs 76,9536** z
+  celem; atak `[Cazur,a]` **61 vs 19** bez triggera.
+- **C — Lorescale/L41:** jeden `drawTriggeredCounterValue` obsługuje spell,
+  ability, ETB, modal i optional trigger. Agreguje liczniki bez powtórzenia bazy
+  M429 i odrzuca draw przeciwnika. Inspiration **33 vs 11**, Scholar
+  **22 vs 4**, Rager **84,6018 vs 68,4018**.
+- **D — Noble:** aktywowane `prevent_next_damage` używa tej samej
+  `preventShieldValue` co czar. Bez zagrożenia **−73 < pass**, przy incoming
+  damage **+11**, cel przeciwnika **−118**.
+- **E — Rakish:** zdolność z ręki nie wpada już automatycznie do Cycling.
+  Linkowany grant rozszerza profil jednej jednostki many i mierzy marginalne
+  pokrycie pipów / odblokowany rzut, zamiast płaskiego +12. Swamp **17** >
+  Forest/Plains **4** > cel wroga **−40**; wariant kosztu `{0}` jest dokładnie
+  o 2 wyżej (**19/6/−38**), więc S11 liczy realny koszt raz.
+- **F — Scythe Tiger:** wspólny `sacrificePermanentLoss` zasila anticipację
+  castu i późniejszy wybór. Land płaci bazę 6, niedobór poniżej trzech źródeł i
+  utratę potrzebnego koloru. 0/1/2 landy: **−39,5946** i pass; 3/5:
+  **57,6054** i cast. Przy jednym landzie Tiger **32 > 26** land; przy trzech
+  zbędny Swamp/Plains **34 > 32** Tiger **> 30** potrzebny Forest.
+
+**Tie-audit:** projekcja `resolve_sacrifice_choice` niesie rodzaj i tę samą
+wartość ofiary co scoring. Końcowe `--gry=40`: 480 partii, 262 368 decyzji;
+dla ofiar 27 decyzji rozstrzygniętych + 74 remisy równoważne, **0
+rozróżnialnych i 0 bez danych**. Pełna brama ujawniła też remis Awaken the Bear
+z Coat with Venom przy wyniku 63 i koszcie 3 vs 1. Relacyjny tie-break między
+różnymi kartami obniża tylko droższy dokładnie remisujący czar, nie daje premii
+wariantowi słabszemu (M429), zachowuje cross-kind tie oraz historyczne tiery X
+tej samej karty. Grzechotka remisów 3/3.
+
+**Piny i bramy:** `test/audyt-pmssb61-batch66.test.js` **11/11**; fast
+**8123/8123**; all **8388/8388**; batch 66 + dotknięte rodziny **95/95**; build
+**74 moduły / 5102,4 kB**; kontrakty zdarzeń 0 naruszeń; generator 27 talii
+idempotentny; druki 0 do pobrania; CR 522 unikalne numery / 5707 cytatów —
+wszystkie istnieją. Snapshot bez dryfu: SHA-256 fixture i wyniku
+`bedd4066bf87477c5e8aff4b24ff4a341f869a6114b34db6d903f41e2bd8ef9c`,
+`overallHash` `1a891600236e83c301b3ebd267f3dbebc24b138112d51a22e27dd3a9c4ee5e32`.
+Pełnego benchmarku B0 nie uruchamiano.
+
+Pełne wartości PRZED→PO, zakres L41/S11/M429 i jawne granice:
+[raport PMSSB-61](audits/PMSSB61_BATCH66_2026-10-13.md),
+[plan](plans/PLAN_2026-10-13-pmssb61-batch66.md),
+sonda `tools/pmssb61-batch66-sonda.mjs`.

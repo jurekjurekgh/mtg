@@ -282,6 +282,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Idyllic Grange, ląd z ETB „+1/+1 na target creature you control"): kara,
   // gdy permanent z takim triggerem wchodzi BEZ legalnego celu (ETB przepada).
   'castFutileEtbPenalty',        // kara za wejście permanentu, którego ETB z celem nie ma celu
+  // Uwaga z gry B (2026-10-11): trwała animacja artefaktu jest głównym
+  // payoffem nosiciela; ciało bez godnego celu czeka, poza ratunkiem od lethalu.
+  'linkedAnimationFutilePenalty', // kara za rzut bez artefaktu wartego animacji
   // PMSSB-56 (pomiar storm × ward i storm × kontra): kara za zapłatę ratującą
   // KOPIĘ czaru, której efekt nie kumuluje się na tym samym celu (na stosie
   // wisi inna instancja tej samej karty z tymi samymi celami) — dotyczy wardu
@@ -778,6 +781,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // wyklucza samego land dropu (ląd 90 − 40 = 50 > pass 0). ×0 = stan sprzed
   // PMSSB-51 (M429 anty-over-fix).
   castFutileEtbPenalty: 40,
+  // Uwaga B: 1/3 za {2}{U} ma dawną wycenę surowego ciała ~71. Kara 90
+  // sprowadza zmarnowany główny payoff poniżej passu także przy premii za
+  // nierówną liczbę stworów; ×0 odtwarza zachowanie sprzed poprawki.
+  linkedAnimationFutilePenalty: 90,
   // PMSSB-56: kara za zapłatę ratującą kopię czaru bez nowej wartości.
   // Wynik zapłaty to 80 − kara (ward) albo 85 − kara (kontra); progi odmowy
   // to 20/10, więc 120 daje zapas (−40 / −35), a ×0 = stan sprzed PMSSB-56

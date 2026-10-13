@@ -10,6 +10,7 @@ import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceG
 import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
 import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
+import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
 /** Idempotentna inicjalizacja zasobów; createGameState wykonuje ją automatycznie. */
 export function initializeResources(state) {
@@ -1606,11 +1607,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // impulsem jest grywalny z exile do konca wskazanej tury (CR 601.2b).
   // Bez tej bramki oferta pokazywala ruch, ktorego walidacja nie przyjmowala.
   const impulseLive = canPlayByImpulseFromExile(object, state);
+  // Linkowane pozwolenie trwa bez limitu tur, ale wyłącznie podczas tego
+  // konkretnego pobytu obiektu w exile (CR 400.7 / 611.2).
+  const linkedExileCast = canCastByLinkedExilePermission(object, playerId);
   // Audyt PR #92: rzut w oknie nierozstrzygniętej zdolności (patrz
   // `requireSpell` w spells.js) jest samodzielnym uprawnieniem do wzięcia
   // karty z exile — bez stempla `playableUntilTurn` na obiekcie, bo oknem
   // jest decyzja, a nie efekt trwający do końca tury.
-  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive && !abilityWindowCast)) throw new Error('Nielegalny permanent');
+  if (!player || !object || object.controllerId !== playerId || (object.zone !== 'hand' && !plotted && !warpReady && !madnessLive && !impulseLive && !linkedExileCast && !abilityWindowCast)) throw new Error('Nielegalny permanent');
   if (object.kind !== 'creature' && object.kind !== 'artifact' && object.kind !== 'enchantment') throw new Error('Ten obiekt nie jest zagrywalnym permanentem');
   // Flash (CR 702.8): permanent z flash można zagrać w każdej fazie (jak instant);
   // bez flash — tylko w swojej main phase (plot też rzuca się jako sorcery).

@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Warden%20of%20Geometries&set=ogw&format=json",
+  "print": "ogw",
+  "name": "Warden of Geometries",
+  "mana_cost": "{4}",
+  "cmc": 4.0,
+  "type_line": "Creature — Eldrazi Drone",
+  "oracle_text": "Vigilance\n{T}: Add {C}. ({C} represents colorless mana.)",
+  "power": "2",
+  "toughness": "3",
+  "colors": [],
+  "color_identity": [],
+  "keywords": [
+    "Vigilance"
+  ],
+  "produced_mana": [
+    "C"
+  ],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "11",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928",
+    "normal": "https://cards.scryfall.io/normal/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928",
+    "large": "https://cards.scryfall.io/large/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/c7f517b9-ac10-4710-8ef1-ced1253d5ecf/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

@@ -398,11 +398,38 @@ test('PMSSB-60/C2: anty-over-fix — bez wrogich stworów nie ma kogo zniszczyć
 });
 
 test('PMSSB-60/C3: wybierany jest JEDEN kolor, więc dwa kolory się nie sumują', () => {
-  // CR 601.2f — wybór koloru należy do kontrolera, więc liczy się NAJLEPSZA
-  // ofiara, nie suma. Gdyby helper sumował kolory, 3/3 R + 3/3 G dałoby 9.
+  // Wybór koloru zapada przy rozstrzyganiu (CR 608.2d), więc kontroler wybiera
+  // NAJLEPSZĄ ofiarę, a aktywacja nie może z góry sumować różnych kolorów.
+  // Gdyby helper sumował kolory, 3/3 R + 3/3 G dałoby 9.
   assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), boa([[3, 3, 'R']])),
     `maksimum, nie suma: ${boa([[3, 3, 'R'], [3, 3, 'G']])} vs ${boa([[3, 3, 'R']])}`);
   assert.ok(blisko(boa([[3, 3, 'R'], [3, 3, 'G']]), 4.5));
+});
+
+function boaColorDecision(foes) {
+  const state = boaScene(foes);
+  state.pendingColorChoice = {
+    playerId: 'p1', objectId: 'boa', purpose: 'blockDestroy',
+    grantBlockDestroy: true, sourceCardId: 'zombie-boa',
+  };
+  state.turn.priorityPlayerId = 'p1';
+  const bot = createHeuristicBot({ seed: SEED + 1, registry: REGISTRY });
+  const chosen = bot.chooseCommand(playerView(state, 'p1'));
+  const options = (bot.trace().at(-1)?.options ?? [])
+    .filter((o) => o.cmd.startsWith('resolve_color_choice('));
+  return { chosen, byColor: new Map(options.map((o) => [o.cmd.match(/\((.)\)/)?.[1], o.score])) };
+}
+
+test('PMSSB-60/C4: decyzja koloru Boa wybiera najcenniejszego blokera, nie pierwszy remis', () => {
+  // RED audytu PR #162: aktywacja znała `blockDestroyColorValue`, lecz sama
+  // decyzja resolve_color_choice nie rozpoznawała purpose='blockDestroy'.
+  // Przy jednym czerwonym 1/1 i jednym zielonym 6/6 oba kolory dostawały remis,
+  // więc stabilna kolejność W/U/B/R/G wybierała R zamiast wartościowego G.
+  const { chosen, byColor } = boaColorDecision([[1, 1, 'R'], [6, 6, 'G']]);
+  assert.ok(byColor.get('G') > byColor.get('R'),
+    `G (6/6=${byColor.get('G')}) musi być warte więcej niż R (1/1=${byColor.get('R')})`);
+  assert.equal(chosen.type, 'resolve_color_choice');
+  assert.equal(chosen.color, 'G', `bot powinien wybrać kolor 6/6: ${JSON.stringify(chosen)}`);
 });
 
 test('PMSSB-60/A7: rider Blitza wnosi wartość, ale NIE przez swój typ (zamknięcie M2)', () => {

@@ -167,7 +167,9 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // 35 daje OBA warunki naraz (kolejny: 41).
   // Batch 59 G1.5 (forgotten-realms +Waveskimmer Aven, landy przeliczone):
   // hunter po 60 seedach — 33 daje OBA warunki naraz (kolejny: 51).
-  for (const seed of [33]) {
+  // Batch 66 (+Wild Celebrants i ponowne przeliczenie landów): hunter 1–90;
+  // seed 29 daje oba warunki i końcówkę (kolejne: 45, 90).
+  for (const seed of [29]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;
@@ -191,7 +193,8 @@ test('E4 (modal): linie manipulacji w ogóle docierają (surveil/scry rozstrzygn
   // 25, 26, 29, 34, 35, 37 (konwencja L25).
   // Batch 59 G1.5 (forgotten-realms +Waveskimmer Aven) — hunter po 60 seedach:
   // 3, 11, 23, 27, 32, 33, 36, 40 dają końcówkę surveil w modalu.
-  for (const seed of [3, 11, 23, 33]) {
+  // Batch 66: po regeneracji talii końcówkę dają m.in. 12, 18, 20 i 29.
+  for (const seed of [12, 18, 20, 29]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     const surveilEnd = modalTexts.filter((t) => /kończ(ysz|y) surveil/.test(t ?? ''));
     checked += surveilEnd.length;

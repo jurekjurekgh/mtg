@@ -434,8 +434,10 @@ test('Audyt #144/F2: ping AKTYWOWANEJ zdolności na stosie waży tyle, co czar (
   })(), 'mine');
   const abilityScore = optionScore(decide(ability).options, 'cast_spell(w->mine)');
 
-  // 61 = baza; +16 dopłaty ratunkowej, gdy damage realnie leci w 1/1.
-  assert.equal(base, 61, 'pusty stos');
+  // Uwaga A 2026-10-11: pusty stos to −19 (baza + draw − kara jałowej
+  // prewencji), nie dawny cantrip-ok 61. Realny lethal nadal daje 77 zarówno
+  // dla czaru, jak i zdolności — wspólny czytnik stosu (L41).
+  assert.equal(base, -19, 'pusty stos: Withstand czeka');
   assert.equal(spellScore, 77, 'czar z damage na stosie (bez dryfu)');
   assert.equal(abilityScore, 77, 'zdolność z damage na stosie — ten sam czytnik (było 61)');
 });

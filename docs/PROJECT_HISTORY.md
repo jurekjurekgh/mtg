@@ -19,6 +19,58 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-13 — batch66: kolekcja 351–368, 10 kart (PR #163, M443)
+
+**Zadanie właściciela:** dodać dokładne druki 351 ELD, 353 OGW, 356 OTC,
+357 MM2, 359 M19, 361 ZEN, 363 THS, 364 KTK, 365 SNC i 368 ZEN wraz z
+planami świata, grafikami, testami negatywnymi, kolekcją oraz pełnymi bramami.
+Snapshoty Scryfalla i rulingi zapisano przed kodem, następnie osobno plan i
+RED 33 scenariuszy. Fale były commitowane i wypychane na bieżąco, ponieważ
+wcześniejsze resety sandboxa pokazały, że niezatwierdzony batch nie jest
+bezpiecznym checkpointem.
+
+**Implementacja 10/10.** Prosta fala użyła gotowych mechanik reach,
+vigilance, bezbarwnej many, tapped duala, prewencji, opcjonalnego ETB i
+Naturalize. Cazur dodał generyczne Partner with wybranego gracza i kontekst
+konkretnego źródła combat damage. Lorescale dodał zdarzenie `you_draw_card`,
+którego nie emituje search-to-hand ani mulligan. Scythe Tiger dodał shroud
+oraz generyczne `sacrifice_source_unless_sacrifice` z wyborem przy resolution.
+Rakish Revelers dodał `fromHand`, atomowy koszt wygnania, trwały grant
+zdolności landu, osobne pozwolenie rzutu konkretnego obiektu z exile i Citizen
+1/1 G/W bez Human. Rzut Rakish zawsze kosztuje pełne `{2}{R}{G}{W}`; `{2}`
+jest wyłącznie kosztem aktywacji z ręki.
+
+**Najważniejsza granica lifetime Rakish.** `linked-exile-cast.js` jest jednym
+właścicielem stempla permission, czasu grantu i konsumpcji. Grant na landzie
+przeżywa cleanup oraz zwykłe opuszczenie exile przez źródło. Permission znika
+przy zmianie strefy, a grant kończy wyłącznie zaakceptowany rzut dokładnie
+linkowanego obiektu exile→stack. Nieudany rzut nie konsumuje grantu. Solver
+many scala podstawową zdolność landu z nadanym wyborem R/G/W, dlatego nadany
+land może opłacić samego Revelers.
+
+**Znalezisko bramki all.** Dodanie Scythe Tigera do wygenerowanej talii
+Wiedźmina ujawniło stary rozjazd oferta=walidacja: wyspecjalizowane własne
+sloty celu (`creature_you_control`, analogicznie `land_you_control`) omijały
+filtr, bo własny hexproof jest legalny, ale shroud nie jest. Centralna bramka
+`legalTargetCandidates` filtruje teraz shroud/hexproof dla każdego typu celu.
+Pin Time to Feed na własnego Tigera był RED przed poprawką i GREEN po niej;
+audyt siedmiu par talii przestał wybierać nielegalne komendy. Po zmianie
+składu Forgotten Realms przelosowano udokumentowanym hunterem wyłącznie seedy
+obserwacyjnych testów modala — bez zmiany ich asercji.
+
+**Kolekcja i dowody.** Dodano 10 wierszy CSV; generator odświeżył 27 talii i
+README, a drugi przebieg był idempotentny. Katalog ma 637 definicji, 49 tokenów,
+kolekcja 583 wiersze / 580 nazw. `check-card-printings`: zero do pobrania,
+jeden dawny udokumentowany rozjazd. CR effective 2026-09-25 pobrano z mirroru
+`nwgarne/mtg-data` commit `3257633`; tabela ma 523 zweryfikowane numery i
+potwierdza wszystkie 522 unikalne numery w 5705 cytatach.
+
+**Bramki końcowe:** batch 33/33; fast **8112/8112**; all **8377/8377**;
+build **74 moduły / 5084,7 kB**; generator, printings i `git diff --check`
+zielone. Pełnego B0 nie uruchamiano (ADR 0018 i jawny zakres właściciela).
+Plan i macierz lifetime:
+`docs/plans/PLAN_2026-10-13-batch66-kolekcja-351-368.md`.
+
 ## 2026-10-10 — audyt PR #161 i naprawy F-1/F-2 (PR #162)
 
 **Zadanie właściciela:** kontynuacja projektu — przeczytać dokumentację,
@@ -16235,17 +16287,19 @@ niezacommitowany batch).
 
 **Silnik:** Affinity for enchantments (Brine Giant — `affinityToEnchantments`
 w `conditionalCostReduction`; rabat tylko część generyczną, ruling WotC
-2020-01-24), Devoid (Drone, Thunder-Raptor), choose a color + niszczenie
-blokujących tym kolorem (Zombie Boa — `becomes_blocked_by_color` per para
-bloku + `blockDestroyColorsThisTurn` czyszczone w `clearStatModifiers`),
-refleks „you may pay 2 life. When you do” (Ambulatory Edifice —
-optionalPay/Etap F, cel PO zapłacie wg rulingu 2023-02-04), aura
-cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech aurach), look 4/
-jedna do ręki (Impulse — `look_top_put_one_hand_rest_bottom`, rulingi „not
-a draw” i „no shuffle” testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}`
-(Temple of Abandon — wzorzec Dismal Backwater, jednostka wielokolorowa M67).
-Bez zmian silnika: Bring to Trial (exile mocy 4+) i Skyscythe Engulfer
-(reach/trample/can’t be blocked by flying).
+2020-01-24), Devoid (**tylko** Blinding Drone; Thunder-Raptor nie ma tej
+zdolności), choose a color + niszczenie blokujących tym kolorem (Zombie Boa —
+`becomes_blocked_by_color` per para bloku; po audycie #162 niezależny delayed
+trigger w `turnAbilityGrants`), refleks „you may pay 2 life. When you do”
+(Ambulatory Edifice — optionalPay/Etap F, cel PO zapłacie wg rulingu
+2023-02-04), aura cantAttack+cantBlock (Pacifism — audyt F-1/S9 na czterech
+aurach), look 4/jedna do ręki (Impulse —
+`look_top_put_one_hand_rest_bottom`, rulingi „not a draw” i „no shuffle”
+testowane zdarzeniowo), scry 1 + `{T}: {R} or {G}` (Temple of Abandon —
+wzorzec Dismal Backwater, jednostka wielokolorowa M67). Bring to Trial używa
+gotowej ścieżki exile mocy 4+. Skyscythe Engulfer wymagał zmian
+wielowarstwowych: deskryptora `cantBeBlockedByKeywords` w walidacji combatu,
+`PlayerView`, renderze oraz później w heurystyce PMSSB-60.
 
 **Pułapki:** nowe zdarzenie + efekt zapalają osiem strażników rejestracji
 (TRIGGER_EVENT_LABELS, ABILITY_EFFECT_LABELS jako mapa LOG M255/C1, render
@@ -16415,7 +16469,8 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
     tylko w zbiorze efektów kumulujących się na stosie i nie miał gałęzi
     w wycenie aktywacji (pomiar PRZED: dokładnie 0,0). Nowy helper
     `blockDestroyColorValue`: bramka ataku × najlepsza ofiara danego koloru
-    (maksimum, nie suma — CR 601.2f) × ciało P×2+T×1 × 0,5 za warunkowość.
+    (maksimum, nie suma — wybór przy rozstrzyganiu, CR 608.2d) × ciało
+    P×2+T×1 × 0,5 za warunkowość.
     PO: 1/1 = 1,5; 3/3 = 4,5; 6/6 = 9,0; pusty stół wroga = 0,0 (anty-over-fix).
   - **F7** Skyscythe Engulfer — `hostEvadesBlockers` bez gałęzi
     `cantBeBlockedByKeywords` (komentarz przy `cantBeBlockedByPower` obiecuje
@@ -16472,3 +16527,261 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
 - **Commity**: `6a62018` (audyt zasięgu, pin F4), `69b3483`
   (pay-trigger-net-model, piny F5/F6). Bramki: pełne B0 8291/8291,
   `npm test` 8030/8030, build 73 / 5010,6 kB, cr-numery OK, CI zielone.
+
+## 2026-10-10 — audyt PR #162: batch 65, delayed triggery i LKI refleksu
+
+- Audyt pełnego net-diffu PR #162: **59 plików, +4309/−92**, baza
+  `1732c3d`, merge `dab1488`. Raport z jawnym rejestrem każdego pliku:
+  `docs/audits/AUDYT_PR162_2026-10-10.md`. Werdykt **PASS WITH FINDINGS**;
+  12 findingów kodu/kontraktu/UX/dokumentacji i 3 luki jakości testów, wszystkie zamknięte.
+- Bot: Zombie Boa wybiera teraz kolor najcenniejszego blokera tą samą miarą,
+  którą wycenia aktywację (`80de4c8`, pin PMSSB C4). Ambulatory Edifice nie
+  płaci 2 życia przy samym szkodliwym celu ani śmiertelnym stanie życia, lecz
+  płaci przy zdrowiu i wrogim celu (`b9fae79`).
+- Silnik: `creature_or_planeswalker` deduplikuje obiekt hybrydowy u źródła
+  (`97bf51a`). Zombie Boa tworzy prawdziwy delayed trigger w
+  `turnAbilityGrants`: działa po utracie abilities, nie przeżywa zmiany strefy
+  starego obiektu i zachowuje kontrolera z chwili utworzenia (`acb241c`, CR
+  113.7a/400.7/603.7). Refleks Edifice niesie LKI źródła po jego odejściu z
+  battlefield i nadal wybiera cel (`4dca386`, `reflexive_pay`).
+- Kontrakt/UI: `PlayerView` akumuluje równoczesne niezależne restrykcje
+  blokowania (`e90ca2a`); tytuł wyboru Boa nazywa niszczenie blokera
+  (`19577e4`). Diagnostyka ratchetów Batcha 65 i trzy mylące tezy testów
+  zostały sprostowane (`acd7d2c`, `0d8574f`). Test Blitza wykonuje teraz
+  obrażenia Creature Planeswalkerowi, zamiast sprawdzać wyłącznie ofertę.
+- Dokumentacja: Blitz nie ma Devoid; Skyscythe wymagał zmian w combat/view/UI/
+  heurystyce; PMSSB-60 jest zamknięte i ma **26 pinów**. Błędną podstawę
+  „maksimum kolorów” CR 601.2f zastąpiono wyborem przy rozstrzyganiu — CR
+  608.2d (`3cfb05e`). `cr-numery --cr` pozostaje zielone.
+- Pełna brama końcowa i dokładne wyniki są zapisane w raporcie audytu oraz
+  `docs/setup/HANDOFF_2026-10-10.md`.
+
+## 2026-10-11 — uwaga z gry A: Withstand czeka na obrażenia
+
+- **Objaw:** bot rzucał Withstand zaraz po odtapowaniu lądów. Wycena
+  `preventShieldValue` świadomie dawała dotąd mały plus za jałową tarczę na
+  własnej stronie (`2+N` dla stwora, `1+N` dla gracza), więc baza czaru i
+  `draw_cards` dawały **61/60 > pass 0**. Sam cantrip zużywał combat trick.
+- **RED:** scenariusz dokładnie z uwagi (upkeep po odtapowaniu, brak
+  nadchodzących obrażeń) wybierał `cast_spell(w->mine)`; oba własne warianty
+  miały 61/60. Dawny pin Q1b wymagał tego błędnego zachowania i został
+  świadomie odwrócony. Osobny pin ujawnił, że sam nielethalny Shock w 2/3 też
+  wystarczał do rzutu.
+- **Fix generyczny:** jałowe `prevent_next_damage` korzysta z istniejącej kary
+  przedwczesnego foga `fogWindowWastedValue = -75`. Rider draw nadal ma swoją
+  normalną wartość, ale nie przebija straty głównego efektu. Dla stworzenia
+  damage ze stosu musi być lethalny (albo mieć deathtouch), a tarcza musi
+  realnie zmienić wynik. Bez nazwy karty i bez nowego pokrętła.
+- **Wzmocnienie testu B4:** stary fixture wkładał Shock bezpośrednio na stos i
+  przekazywał `targets` do `addObject`; kontrakt odrzucał to pole, więc test
+  „odpowiedź na lethal” był zielony tylko dzięki cantripowi. Teraz Shock jest
+  rzucany przez `playerView` + `execute`, rzucający oddaje priorytet, a bot
+  faktycznie odpowiada Withstandem.
+- **PO:** pusty upkeep/stos = **−19 < pass**, lethalny Shock w 1/1 = **77** i
+  Withstand w odpowiedzi, nielethalny Shock w 2/3 = pass; walka ratująca
+  blokera i obrażenia w gracza pozostają dodatnie. Macierz prewencji 32/32,
+  fast **8042/8042**, pełne **8306/8306**, benchmark bota 10/10, golden master
+  4/4, build 73 moduły / 5019,3 kB. Golden master zmienił jedną partię; pierwszy
+  zmieniony wybór to dokładnie naprawiany upkeep (`cast Withstand` → pass), więc
+  fixture został świadomie odnowiony. Commit `ca34cfe`; GitHub CI
+  **SUCCESS** — run `38165106753`.
+
+## 2026-10-11 — uwaga z gry B: Skilled Animator zachowuje główny payoff
+
+- **Objaw/RED:** przy trzech dużych własnych stworach i zerze artefaktów bot
+  rzucał Skilled Animatora jako zwykłe 1/3 za {2}{U}; score **63,9009 > pass
+  0**. Brak celu dawał w tabeli ETB zero, więc nic nie przebijało bazowej
+  wyceny ciała. Dowolny artefakt dawał płaskie +10 — także duże 4/4 artifact
+  creature, dla którego 5/5 jest tylko symbolicznym zyskiem (score 72,9009).
+- **Fix generyczny:** rodzina jest rozpoznawana po efekcie `animate_linked`, nie
+  po nazwie karty. Nie-stwór artefakt jest godnym celem; artifact creature musi
+  dostać istotny dodatni przyrost od nowej bazy P/T. Brak takiego celu nakłada
+  `linkedAnimationFutilePenalty = 90`, z kontrolą ×0 odtwarzającą stare
+  zachowanie.
+- **Ścisły wyjątek ratunkowy:** scoring projektuje najbliższy kontratak i
+  przydziela blokujących z uwzględnieniem flying, menace i trample. Kara znika
+  tylko wtedy, gdy nowe ciało naprawdę zmienia lethal w przeżycie. Dlatego
+  1/3 może wejść przy 5 życiach naprzeciw 6/6 lub 12/12, ale nie przeciw
+  nieblokowalnemu dla niego lataczowi i nie przy bezpiecznych 20 życiach.
+- **Dowody:** produkcyjna decyzja bota **9/9**, powiązane animacje **67/67**,
+  fast **8051/8051**, pełne **8315/8315**, golden master **4/4 bez
+  regeneracji**, benchmark **10/10**, build **73 moduły / 5025,4 kB**. Commit
+  `c85b175`; GitHub CI **SUCCESS** — run `38173232995`.
+
+## 2026-10-11 — uwagi z gry C–D: wspólne Delve i bezpieczna garda
+
+- **C/C2 — objaw:** legalny rzut Hooting Mandrills z niewystarczającymi samymi
+  lądami był oferowany przez silnik, ale stół nie otwierał Mana Wizarda. Po
+  komendzie powstawał osobny `pendingDelveExile`, więc UI najpierw próbowało
+  zebrać pełny koszt many, a dopiero potem pytało o grób.
+- **C/C2 — fix `5ae96ae`:** Mana Wizard dostał kandydatów własnego grobu,
+  dokładny limit efektywnego generyku i trwały wybór kart. Postęp odejmuje
+  Delve wyłącznie od generyku, niezależnie pilnuje pipów kolorowych i wysyła
+  atomową komendę z `delveExileIds`. Rzut Delve ma jawne zatwierdzenie; zwykłe
+  płatności nadal auto-domykają się po zebraniu many. Produkcyjny test UI gra
+  Tome Scour w siebie, po czym płaci za `{5}{G}` pięcioma kartami i Forestem w
+  jednym modalu, bez drugiej decyzji.
+- **D — objaw:** bot na 3 życia atakował wszystkimi 1/3, 1/3 i 2/3, choć
+  człowiek miał tapniętego Krotiqa 8/8, 9 życia i trzy Foresty na `{2}{G}`.
+  `cantAttackStatic` usuwało Krotiqa z prognozy, a garda była liczona błędnym
+  wzorem `moc − suma toughness`, jak gdyby zwykły blok przepuszczał nadmiar.
+- **D — fix `74f7b60`:** przyszły atak rozpoznaje publiczny efekt aktywowany
+  uchylający defender, płatność po untapie oraz rzeczywiste pipy kolorów, bez
+  nazwy/cardId. Projekcja szuka legalnego przydziału blokerów dla życia i
+  poison. Bez trample legalny blok zatrzymuje cały atak (CR 509.1h/510.1b), z
+  trample przechodzi tylko nadmiar ponad lethal (CR 702.19b); uwzględniane są
+  też menace, ewazje, protection, double strike i infect. Produkcyjny pin
+  materializuje prawdziwego Krotiqa przez `playerView`, a decyzję weryfikuje
+  `execute`: bot atakuje dwoma i zostawia jednego blokera.
+- **Dowody mutacyjne:** C — ignorowanie wkładu Delve oraz pominięcie pipa
+  koloru; D — pominięcie przyszłej aktywacji oraz przywrócenie odejmowania
+  toughness. Każda z czterech mutacji czerwienieje na właściwym pinie.
+- **Bramy:** C-targeted **37/37**, UI C2 **1/1**, garda D **11/11**,
+  `npm test` **8060/8060**, pełne **8325/8325**, golden master **4/4 bez
+  regeneracji**, benchmark **10/10**, build **73 moduły / 5039,4 kB**. Plan:
+  `docs/plans/PLAN_2026-10-11-cd-delve-i-projekcja-kontrataku.md`. GitHub CI
+  kodu **SUCCESS** — run `38176394735`.
+
+## 2026-10-12 — uwaga E: bot wykorzystuje Angelic Benediction
+
+- **Objaw:** przy dwóch własnych 2/2, Angelic Benediction i jednym wrogim 5/4
+  bot wybierał brak ataku. Sonda produkcyjnego `playerView` pokazała
+  `attack[] = 0`, każdy samotny atak `−10`, atak oboma `−20`.
+- **Root cause:** `declare_attackers` oceniał każdy wariant z niezmienną listą
+  `untappedEnemyBlockers(view)`. Nie projektował publicznych triggerów
+  `attacks_alone`, choć po deklaracji rozstrzygają się przed blokami: pomijał
+  zarówno tapnięcie blokera, jak i automatyczny pump exalted.
+- **Fix `f55d97e`:** generyczna projekcja skanuje aktywne zdolności
+  kontrolowanych permanentów po `trigger.event`, bez nazwy/cardId. Przy
+  dokładnie jednym atakującym sumuje `exalted_pump` i zgodne pompy przez
+  `pumpDelta`; każdy trigger `tap_permanent` może usunąć najwyżej jeden
+  nietapnięty bloker będący legalnym celem i zdolny blokować atakującego.
+  Publiczna legalność respektuje shroud/hexproof/protection i ward; permanent
+  face-down albo po utracie zdolności nie dostarcza triggera. Projektowane P/T
+  i blokery są używane dalej przy wymianie, lethal, poison oraz ryzyku.
+- **Produkcja:** prawdziwa Angelic Benediction + dwa 2/2 vs 5/4. Bot deklaruje
+  dokładnie jednego, komenda przechodzi przez `execute`, ten sam bot wskazuje
+  5/4, wybiera „you may”, tapuje cel przed blokami, a exalted daje 3/3.
+  Anty-over-fixy obejmują brak Benediction, dwa blokery, hexproof, utratę
+  zdolności i atak wieloma; Akrasan Squire pinuje samą projekcję exalted.
+- **Dowody:** E **6/6**, rodzina Angelic/exalted/guard + golden **163/163**,
+  `npm test` **8066/8066**, pełne **8331/8331**, golden **4/4 bez
+  regeneracji**, build **73 moduły / 5043,7 kB**. Szybki benchmark: **672
+  mecze**, 0 niedokończonych, heuristic **86,0%** vs aggro i **98,5%** vs
+  random. Dwie mutacje (bez tap projection / bez pump projection) czerwienieją.
+- **Żywy Tester:** `dominaria-brg` vs bot `alara`, seed 42, defensive. Bot
+  wielokrotnie deklaruje samotny atak z Benediction, wybiera Disę, korzysta z
+  efektu, dostaje exalted i wygrywa; **0 detektorów**, 0 niewycenionych decyzji.
+  GitHub CI kodu **SUCCESS** — run `38280661610`. Plan:
+  `docs/plans/PLAN_2026-10-12-e-angelic-benediction-bot.md`.
+
+## 2026-10-12b — uwaga F: Impulse układa resztę na spodzie
+
+- **Objaw:** po rozstrzygnięciu Impulse gracz mógł wskazać jedną z czterech
+  kart do ręki, lecz modal natychmiast wysyłał `resolve_look_top_choice` bez
+  `bottomOrder`. Silnik zachowywał domyślną kolejność, więc Oracle „the rest on
+  the bottom of your library in any order” nie dawał rzeczywistego wyboru.
+- **Root cause:** engine już atomowo walidował dowolną permutację reszty, lecz
+  `legalCommands` świadomie oferował tylko N wyborów karty, a routing stołu nie
+  miał adaptera składającego kolejność lokalnie. Widok nie niósł też
+  publicznego `restTo`, więc UI nie odróżniał tej rodziny od Gurmag Drownera.
+- **Fix `f22b243`:** `pendingLookTopNView` udostępnia `restTo` bez naruszenia
+  FoW, `lookWizardKindOf` rozpoznaje gałąź `library_bottom`, a cienki
+  `renderPickOneRestBottomWizard` parametryzuje istniejący `renderPeekWizard`.
+  Najpierw wymusza wybór jednej karty, potem pokazuje liniowo 3→2→1 pozostałych
+  kart. Kliknięcia idą od samego dna; adapter odwraca je do engine'owego
+  `bottomOrder` dopiero w jednej końcowej komendzie.
+- **Brak permutacji:** generator legalnych komend nadal tworzy dokładnie N
+  ofert wyboru karty (dla Impulse 4, nie 24). Sonda używa kanonicznego klucza
+  tej oferty; UI nigdy nie materializuje 3! wariantów.
+- **Rodzina i strażniki:** Clone Shell korzysta z tego samego sortera z
+  etykietami wygnania zakrytego; Gurmag Drowner (reszta do grobu) zostaje poza
+  nim; jedna pozostała karta domyka się bez pozornej decyzji. Przeciwnik widzi
+  publiczny rodzaj efektu, ale `cards: null`. Produkcyjny pin rzuca prawdziwy
+  Impulse, klika Forest jako samo dno, Plains jako drugą i Swamp jako trzecią
+  od dołu, wykonuje komendę i sprawdza fizyczny stan biblioteki, rękę oraz
+  zejście Impulse do grobu.
+- **Dowody:** RED **0/5** → GREEN **6/6**; powiązane UI/engine/FoW/bot
+  **227/227**; `npm test` **8072/8072**; pełne **8337/8337**; build
+  **73 moduły / 5048,8 kB**. Plan:
+  `docs/plans/PLAN_2026-10-12-f-impulse-kolejnosc-spodu.md`.
+
+## 2026-10-12c — uwaga G: Village Rites poświęca tylko 1/1
+
+- **Objaw:** bot z sześcioma z siedmiu many potrzebnych do Megamorph rzucał
+  Village Rites i poświęcał zakrytego Segmented Krotiqa 2/2. Po obróceniu byłby
+  on 6/5 z licznikiem +1/+1, lecz scoring widział bieżące ciało 2/2 i dawał
+  rzutowi **5 > pass 0**.
+- **Wiążąca polityka:** dodatkowy koszt rzutu „poświęć stwora” bot może zapłacić
+  tylko własnym stworzeniem o bieżącym efektywnym P/T dokładnie 1/1. Token i
+  nietoken są równoważne; 1/2, 2/1, Morph 2/2 i każde inne P/T są zabronione.
+  To polityka bota, nie legalność engine ani ograniczenie człowieka.
+- **Fix `98d6f8f`:** eksportowany predykat działa po wspólnym polu komendy
+  `sacrificeTargetId`, bez nazw i `cardId`. `botCommandCandidates` filtruje
+  jeden zbiór używany przez ranking główny, lookahead oraz obie polityki
+  symulacji; `scoreCommand` ma obronę `NEVER`. Losowość wybiera tylko komendy o
+  skończonym wyniku, więc po odrzuceniu rzutu nie może wylosować `concede`.
+- **Sekwencjonowanie many:** syntetyczne sondy odblokowania rzutu również
+  materializują wyłącznie ofiary 1/1. Bot nie spala Skarbu pod Village Rites,
+  którego i tak nie wykona; prawdziwa alternatywa „albo zapłać {N}” pozostaje
+  kandydatem.
+- **Produkcja i granice:** test naprawdę rzuca Segmented Krotiqa jako Morph,
+  sprawdza drukowane 6/5 w pełnym stanie i efektywne 2/2 w `PlayerView`.
+  Engine nadal oferuje człowiekowi ofiarę Morpha. Bez 1/1 bot pasuje; obok
+  Soldiera 1/1 wybiera tylko token, `execute` płaci koszt, zachowuje Morpha i
+  Village Rites dobiera dwie. Osobny pin obejmuje darmowy rzut z możliwością
+  odmowy, macierz P/T, obcego/niestwora i `randomness: 1`.
+- **Dowody:** RED **0/6**; osobny RED sondy Skarbu **6/7**; GREEN **7/7**.
+  Mutacja usuwająca bramkę daje **2/7 PASS, 5/7 FAIL**. Rodzina celowana
+  **123/123**, golden master **4/4 bez regeneracji**, fast **8079/8079**,
+  pełne **8344/8344**, build **73 moduły / 5053,1 kB**. Benchmark: **672
+  mecze**, heuristic **92,0%** wszystkich zwycięstw. GitHub CI kodu
+  **SUCCESS**, run `38290364410`.
+- Plan: `docs/plans/PLAN_2026-10-12-village-rites-ofiary-1-1.md`.
+
+## 2026-10-13 — PMSSB-61: jakościowe domknięcie batcha 66
+
+- Osobna pętla PMSSB objęła wszystkie 10 kart batcha 66. Baseline pomiaru:
+  `13703cf`; plan przed kodem `2605974`; test i powtarzalna sonda przed
+  implementacją `6e2fffe`; fale A–E `9cd4984`; fala F `df535bc`; domknięcie
+  audytu remisów `4719214`. Pełny raport:
+  `docs/audits/PMSSB61_BATCH66_2026-10-13.md`.
+- **Kontrole dodatnie:** Sporecap Spider (reach), Foul Orchard (tapped dual),
+  Wild Celebrants (opcjonalny ETB removal) i Naturalize (removal/kierunek celu)
+  zachowują istniejące rodziny. Nie dopisywano sztucznych premii.
+- **Warden:** vigilance zachowuje realnego blokera w prognozie crackbacku.
+  Atak **21**, bez vigilance brak ataku **0 > −1**; ręczna mana nadal
+  **−4** wobec auto-rzutu **76**.
+- **Cazur:** named Partner sprawdza pozostały cel w znanej własnej talii
+  (**68,8536** bez Ukkimy, **76,9536** z nią), a planszowy trigger combat
+  damage wycenia licznik na faktycznym źródle. Atak dwóch łączących stworów
+  **61 vs 19** bez triggera; zablokowany wariant nie dostaje premii.
+- **Lorescale / L41:** jeden helper liczy własne zdarzenia draw w spell,
+  ability, ETB, modalu i optional triggerze, agregując liczniki bez powtórzenia
+  bazy M429. Inspiration **33 vs 11**, Scholar **22 vs 4**, Rager
+  **84,6018 vs 68,4018**; draw przeciwnika bez synergii.
+- **Noble Vestige:** aktywowana prewencja używa wspólnego
+  `preventShieldValue`: bez obrażeń **−73 < pass**, przy incoming damage
+  **+11**, cel przeciwnika **−118**.
+- **Rakish Revelers:** zdolność z ręki nie jest już fałszywie Cyclingiem.
+  Marginalny model grantu traktuje land jako jedną tapowaną jednostkę i mierzy
+  pipy/odblokowany rzut z exile: potrzebny Swamp **17** > Forest/Plains **4** >
+  cel wroga **−40**. Kontrfaktyczny koszt `{0}` podnosi dokładnie o 2, więc S11
+  liczy rzeczywiste `{2}` raz; redundantny grant pozostaje pod passem (M429).
+- **Scythe Tiger:** wspólny `sacrificePermanentLoss` zasila anticipację castu
+  i wybór ofiary. 0/1/2 landy: **−39,5946** i pass; 3/5: **57,6054** i cast.
+  Przy jednym landzie Tiger **32 > 26** land; przy trzech zbędny land
+  **34 > 32** Tiger **> 30** potrzebny Forest.
+- **Audyt remisów:** projekcja wyboru ofiary zlikwidowała kategorię „bez
+  danych”: końcowe 74 remisy są równoważne, 0 rozróżnialnych i 0 bez danych.
+  Próba `--gry=40`: 480 partii / 262 368 decyzji. Pełna brama znalazła jeszcze
+  remis Awaken the Bear vs Coat with Venom (score 63, koszt 3 vs 1); relacyjny
+  tie-break S11 obniża tylko droższą różną kartę w dokładnym remisie i nie
+  narusza remisu wariantów X samego Consume Spirit. Grzechotka 3/3.
+- **Bramy:** audyt PMSSB-61 **11/11**, fast **8123/8123**, all
+  **8388/8388**, batch 66 + rodziny **95/95**, build **74 moduły / 5102,4 kB**,
+  snapshot bitowo bez dryfu (SHA-256 `bedd4066…`), kontrakty zdarzeń 0 naruszeń,
+  generator 27 talii idempotentny, druki 0 do pobrania, cytaty CR 522/522
+  poprawne. GitHub CI PR #163 **PASS** — run `38394514667`, job
+  `115286210287`, 6m6s. Pełnego benchmarku B0 nie uruchamiano zgodnie z
+  poleceniem właściciela.

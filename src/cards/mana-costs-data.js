@@ -616,4 +616,16 @@ export const MANA_COSTS = {
   'pacifism': '{1}{W}',
   'impulse': '{1}{U}',
   "temple-of-abandon": "",
+  // Batch66: kolekcja 351–368. Foul Orchard jest lądem bez kosztu;
+  // aktywacja Revelers z ręki ma osobny koszt {2} w deskryptorze zdolności.
+  "sporecap-spider": "{2}{G}",
+  "warden-of-geometries": "{4}",
+  "cazur-ruthless-stalker": "{3}{G}",
+  "lorescale-coatl": "{1}{G}{U}",
+  "foul-orchard": "",
+  "noble-vestige": "{2}{W}",
+  "wild-celebrants": "{3}{R}{R}",
+  "naturalize": "{1}{G}",
+  "rakish-revelers": "{2}{R}{G}{W}",
+  "scythe-tiger": "{G}",
 };

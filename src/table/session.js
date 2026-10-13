@@ -335,6 +335,7 @@ function defaultBotFactory(seed, ctx) {
     exile_return_transformed: 'wygnanie i powrót przemieniony',
     explore: 'explore (odsłonięcie wierzchu biblioteki)',
     gain_life: 'zdobycie życia',
+    grant_abilities: 'nadanie zdolności wskazanemu permanentowi',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     // M431 (uwaga właściciela, Entrancing Lyre): blokada z `lock_untap` NIE
     // jest „na następny krok" — trwa, dopóki tapnięte źródło jest na polu
@@ -351,6 +352,7 @@ function defaultBotFactory(seed, ctx) {
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
     attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
     sacrifice_self_if_counters_then_treasure: 'poświęcenie po osiągnięciu progu liczników — w zamian Skarb',
+    sacrifice_source_unless_sacrifice: 'poświęcenie źródła, chyba że poświęcisz wskazany permanent',
     subtype_spells_gain_flash_and_etb_fight_this_turn: 'czary wskazanego podtypu zyskują flash i walkę po wejściu (w tej turze)',
     your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
@@ -363,6 +365,7 @@ function defaultBotFactory(seed, ctx) {
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
+    prevent_next_damage: 'zapobieżenie następnym obrażeniom wybranego gracza lub planeswalkera',
     pump: 'zmiana statystyk celu',
     scry: 'scry na wierzchu biblioteki',
     search_library_to_battlefield: 'szukanie karty w bibliotece na pole bitwy',
@@ -833,6 +836,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
   you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
   you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
+  // Batch 66 (Lorescale Coatl): każde prawdziwe dobranie kontrolera.
+  you_draw_card: 'dobranie karty',
   you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
   // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
   // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).
@@ -1121,7 +1126,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'Wszystkie stwory nie mogą blokować do końca tury';
       }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
-      case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+      case 'sacrifice_choice_required': return e.sacrificeUnless
+        ? `${whoN(e.playerId)} wskazuje permanent do poświęcenia albo poświęca źródło`
+        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       // Batch 53 (Glorifier of Suffering): opcjonalne poświęcenie innego
       // stwora/artefaktu + refleks „when you do".
       case 'reflexive_sacrifice_required':

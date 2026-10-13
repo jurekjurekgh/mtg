@@ -64,20 +64,18 @@ test('Q1: bot NIE rzuca Withstand w stwora/gracza przeciwnika', () => {
   }
 });
 
-test('Q1b: Withstand na własnej stronie jest dozwolonym wyborem (cantrip)', () => {
+test('Q1b/A: bez nadchodzących obrażeń Withstand czeka — cantrip nie wystarcza', () => {
   const state = botTurn();
   putCard(state, 'w', 'withstand', 'p2', 'hand');
   putCard(state, 'mine', 'highland-game', 'p2', 'battlefield');
   putCard(state, 'foe', 'thornhide-wolves', 'p1', 'battlefield');
-  // C (znalezisko testera): cantrip dobiera — biblioteka musi istnieć, żeby
-  // guard deck-outu nie wetował (setup wcześniej miał 0 kart).
+  // Uwaga właściciela 2026-10-11 odwraca dawny werdykt Q1b: dobranie karty
+  // jest riderem, nie powodem do zmarnowania prewencji poza oknem obrażeń.
   for (let i = 0; i < 10; i++) putCard(state, `lib${i}`, 'highland-game', 'p2', 'library');
 
   const choice = createHeuristicBot({ seed: 156 }).chooseCommand(playerView(state, 'p2'), {});
-  assert.equal(choice.type, 'cast_spell',
-    `cantrip za {1}{W} z tarczą na własnym stworze > pass: ${JSON.stringify(choice)}`);
-  assert.ok(choice.targets?.[0] === 'mine' || choice.targets?.[0] === 'p2',
-    `cel prewencji po własnej stronie: ${JSON.stringify(choice)}`);
+  assert.equal(choice.type, 'pass_priority',
+    `bez zagrożenia bot zachowuje combat trick: ${JSON.stringify(choice)}`);
 });
 
 // --- Q2: liczniki ze zmarłego Slugi trafiają do najcenniejszego własnego stwora ---

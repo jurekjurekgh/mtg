@@ -49,8 +49,9 @@ test('każda regularna karta ma plan; bez planu tylko wyjątki z AGENTS.md', () 
   // registry oraz dwie specjalne karty spoza registry są przykładami polityki.
   assert.equal(kategorie.basic.length, 5,
     `oczekiwano 5 basic landów bez planu, jest ${kategorie.basic.length}`);
-  assert.equal(kategorie.token.length, 48,
-    `oczekiwano 48 tokenów bez planu, jest ${kategorie.token.length}`);
+  // Batch 66: +token_citizen (Rakish Revelers) → 49.
+  assert.equal(kategorie.token.length, 49,
+    `oczekiwano 49 tokenów bez planu, jest ${kategorie.token.length}`);
   assert.deepEqual(kategorie.special.sort(), ['day-night', 'undercity'],
     'specjalne wpisy Day/Night i Undercity mogą nie mieć planu');
 

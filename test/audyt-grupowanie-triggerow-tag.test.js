@@ -97,9 +97,14 @@ test('katalog: każda zdolność grupowa sama deklaruje sposób grupowania', () 
   // Pin anty-vacuous (L48): bez prób strażnik nic nie pilnuje.
   assert.ok(triggers.length >= 4,
     `oczekiwałem >= 4 wyzwalaczy grupowych w katalogu, znaleziono ${triggers.length} — zmienił się wzorzec?`);
-  const wrong = triggers.filter((t) => t.trigger.groupPer !== AGGREGATE_EVENTS[t.trigger.event]);
+  // Batch 66 (Cazur): ten sam hook obrażeń obsługuje też literalne
+  // „Whenever A creature ...” — nie jest to „one or more”. `perEvent: true`
+  // deklaruje ten wyjątek W DANYCH (bez nazwy karty w rdzeniu); brak obu
+  // deklaracji nadal jest błędem.
+  const wrong = triggers.filter((t) => t.trigger.perEvent !== true
+    && t.trigger.groupPer !== AGGREGATE_EVENTS[t.trigger.event]);
   assert.deepEqual(wrong.map((t) => `${t.cardId}:${t.trigger.event}`), [],
-    'zdolność grupowa bez tagu (albo z błędnym) — rdzeń nie ma prawa zgadywać po nazwie karty');
+    'zdolność musi jawnie deklarować groupPer albo perEvent — rdzeń nie zgaduje po nazwie karty');
 });
 
 test('CR 603.3: dwie kopie tej samej zdolności grupowej wyzwala DWUKROTNIE', () => {

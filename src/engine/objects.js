@@ -7,6 +7,7 @@ import { registerMover } from './mover.js';
 import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 import { clearImpulseWindowStamp } from './impulse-window.js';
+import { clearLinkedExileCastPermission, consumeGrantsLinkedToExileCast } from './linked-exile-cast.js';
 
 /**
  * Rejestr LKI nazw (CR 603.10): identyfikator → ostatnia znana tożsamość
@@ -115,6 +116,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   if (object.zone === 'stack' && object.flashedBack && toZone !== 'exile') {
     toZone = 'exile';
   }
+  // Audyt PR #162/F-6 (CR 400.7): opóźniony grant wskazujący „this creature"
+  // należy do konkretnego obiektu pola bitwy. Po każdej zmianie strefy stary
+  // obiekt przestaje istnieć, więc jego grant nie może przykleić się do karty
+  // wracającej pod nowym id. Flaga zakresu chroni granty, które z definicji
+  // przeżywają odejście źródła (np. rozdział III Rediscover the Way).
+  if ((state.turnAbilityGrants ?? []).some((grant) =>
+    grant.expiresWhenSourceChangesZone && grant.sourceId === object.id)) {
+    state.turnAbilityGrants = state.turnAbilityGrants.filter((grant) =>
+      !(grant.expiresWhenSourceChangesZone && grant.sourceId === object.id));
+  }
   // Obiekt może opuścić pole bitwy przez koszt/efekt w oknie combat (np.
   // sacrifice aktywowanego permanenta). Combat nie może zachować wiszącego
   // odwołania do starego obiektu — usuwamy go z atakujących i bloków przed
@@ -216,6 +227,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     ...(hasTemporaryCantBlock(object)
       ? { cantBlock: Boolean(object.cantBlockPrinted), cantBlockUntilCleanup: false }
       : {}),
+    // Migracja zapisu Batch65: stare replaye mogły nosić ten znacznik na
+    // obiekcie. Nie wolno mu przeżyć zmiany strefy (CR 400.7); nowy silnik
+    // trzyma delayed trigger w `state.turnAbilityGrants`.
+    ...(object.blockDestroyColorsThisTurn
+      ? { blockDestroyColorsThisTurn: Object.freeze([]) }
+      : {}),
     lostKeywordsUntilEOT: Object.freeze([]), attacksAsThoughNoDefenderUntilEOT: false,
   };
   // PMSSB-35/E (CR 400.7 + 702.170d/702.185a/b + glosariusz „Plotted"):
@@ -243,6 +260,9 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // Para pól okna impulsu ma właściciela (impulse-window.js) — zapis idzie
     // przez helper, nie przez literał w tym pliku (guard family-audit).
     ...clearImpulseWindowStamp(object),
+    // Pozwolenie „for as long as it remains exiled” również nie przechodzi
+    // na nowy obiekt (CR 400.7); helper jest wspólny z ofertą rzutu.
+    ...clearLinkedExileCastPermission(object),
   } : null;
   const moved = Object.freeze({
     ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
@@ -323,6 +343,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     baseKind: null,
   });
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
+  // Linkowany czas trwania kończy się przy RZUCENIU dokładnie tego obiektu z
+  // exile, nie przy samym opuszczeniu exile. Choke point ruchu exile→stack
+  // obejmuje permanenty i instanty/sorcery oraz wykonuje się dopiero po
+  // udanej walidacji i płatności, więc odrzucony cast nie konsumuje grantu.
+  if (object.zone === 'exile' && toZone === 'stack'
+    && object.linkedExileCastPermission != null) {
+    consumeGrantsLinkedToExileCast(state, object.id);
+  }
   // M201/M (zgłoszenie właściciela, CR 603.10 — last known information):
   // stary identyfikator znika ze `state.objects`, a odwołania do niego ŻYJĄ
   // dalej: cele czaru na stosie (Frightful Delusion kontruje cel PRZY

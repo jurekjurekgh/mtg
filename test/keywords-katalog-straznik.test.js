@@ -61,6 +61,9 @@ const CZYTA_SILNIK = Object.freeze({
   morph: 'src/engine/abilities.js',
   nightbound: 'src/engine/effects.js',
   reach: 'src/engine/combat.js',
+  // Batch 66 (Scythe Tiger): predykat legalności celu czaru odrzuca
+  // permanenty ze shroud; bliźniacza walidacja triggerów żyje w triggers.js.
+  shroud: 'src/engine/spells.js',
   trample: 'src/engine/combat.js',
   transform: 'src/engine/abilities.js',
   vigilance: 'src/engine/combat.js',

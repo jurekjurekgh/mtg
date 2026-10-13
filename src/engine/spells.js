@@ -17,6 +17,7 @@ import { changeLife, recordCardDrawn } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana } from './mana-cost.js';
 import { allControlledManaSources } from './mana-sources.js';
+import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
 function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
   const costStr = MANA_COSTS[cardId];
@@ -79,6 +80,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
   const impulse = canPlayByImpulseFromExile(object, state);
+  const linkedExileCast = canCastByLinkedExilePermission(object, playerId);
   const plotted = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   // Audyt PR #92: `abilityWindowCast` to osobne uprawnienie do rzutu z exile —
   // „karta leży w exile, bo właśnie wygnała ją zdolność, która wciąż jest na
@@ -87,7 +89,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   // skorzystać „później w turze" (ruling WotC dla Vaana, 2025-02-10).
   // Nazwa jest celowo bezimienna (ADR 0002) — to mechanika, nie karta.
   if (!object || object.controllerId !== playerId || (!['hand', 'exile'].includes(object.zone)) || object.kind !== 'spell'
-    || (object.zone === 'exile' && !plotted && !impulse && !abilityWindowCast)) {
+    || (object.zone === 'exile' && !plotted && !impulse && !linkedExileCast && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki, zaplotowany albo gotowy z suspendu z exile');
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
@@ -115,14 +117,21 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
 }
 
 /**
- * Hexproof (CR 702.11): permanent kontrolowany przez INNEGO gracza nie może
- * być celem czarów ani zdolności (także triggerowanych). Efektywne keywordy
- * obejmują tymczasowy hexproofUntilTurn (Throne of the Dead Three).
+ * Ograniczenia celowania z keywordów:
+ * - Shroud (CR 702.18): permanent nie może być celem NICZYICH czarów ani
+ *   zdolności;
+ * - Hexproof (CR 702.11): chroni tylko przed źródłami przeciwnika.
+ *
+ * Historyczna nazwa eksportu zostaje dla kompatybilności call-site'ów, ale
+ * predykat jest jednym choke pointem obu keywordów. Efektywne keywordy
+ * obejmują też tymczasowy hexproofUntilTurn.
  */
 export function hasHexproofAgainst(state, object, casterId) {
   if (!object || object.zone !== 'battlefield') return false;
+  const keywords = effectiveKeywords(object, state);
+  if (keywords.includes('shroud')) return true;
   if (object.controllerId === casterId) return false; // hexproof nie chroni przed własnymi czarami
-  return effectiveKeywords(object, state).includes('hexproof');
+  return keywords.includes('hexproof');
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
@@ -1182,8 +1191,9 @@ function castFireball(state, playerId, objectId, targets, xValue, abilityWindowC
   const object = state.objects.get(objectId);
   // Patrz `castXCostSpell`: to samo uprawnienie okna zdolności (audyt PR #93).
   const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  const fromLinkedExile = canCastByLinkedExilePermission(object, playerId);
   if (!object || object.controllerId !== playerId
-    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || (object.zone !== 'hand' && !fromAbilityWindow && !fromLinkedExile)
     || object.kind !== 'spell' || !object.spell?.fireball) {
     throw new Error('To nie jest rzucalny czar X z dowolną liczbą celów z ręki');
   }
@@ -1251,8 +1261,9 @@ function castXCostSpell(state, playerId, objectId, targets, xValue, abilityWindo
   // pyta „you may cast it”, jest rzucalny z exile (CR 107.3a: X wybiera gracz
   // w chwili rzutu). Mirror `requireSpell`/`castModalSpell`.
   const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  const fromLinkedExile = canCastByLinkedExilePermission(object, playerId);
   if (!object || object.controllerId !== playerId
-    || (object.zone !== 'hand' && !fromAbilityWindow)
+    || (object.zone !== 'hand' && !fromAbilityWindow && !fromLinkedExile)
     || object.kind !== 'spell' || !object.spell?.xCost) {
     throw new Error('To nie jest rzucalny X-cost czar z ręki');
   }
@@ -1385,7 +1396,15 @@ export function legalTargetCandidates(state, playerId, spec, sourceObject = null
   targetOrderPreference = null, chosenPrefix = null) {
   const resolved = resolveSlotDependency(state, spec, chosenPrefix);
   if (resolved === null) return [];
-  const candidates = targetCandidatesBySpec(state, playerId, resolved, targetOrderPreference);
+  const candidates = targetCandidatesBySpec(state, playerId, resolved, targetOrderPreference)
+    // Wspólna bramka WSZYSTKICH typów celu. Historycznie wyspecjalizowane
+    // pule `creature_you_control` / `land_you_control` pomijały predykat,
+    // bo własny hexproof nie chroni — lecz shroud chroni także przed własnym
+    // źródłem. Walidacja już sprawdza to centralnie; oferta musi być lustrzana.
+    .filter((targetId) => {
+      const target = state.objects.get(targetId);
+      return !target || !hasHexproofAgainst(state, target, playerId);
+    });
   if (!sourceObject) return candidates;
   return candidates.filter((targetId) => {
     // CZAR NIE MOŻE OBRAĆ SAM SIEBIE (ruling ISD 2011-09-22 dla Memory's
@@ -1512,10 +1531,16 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
     })];
     // Batch65 (Blitz of the Thunder-Raptor): „target creature or planeswalker" —
     // stwór albo planeswalker (gracz spoza zakresu). Spójnie z validateTargets.
-    case 'creature_or_planeswalker': return [...battlefieldCreatures, ...state.zones.battlefield.filter(id => {
-      const object = state.objects.get(id);
-      return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
-    })];
+    // Audyt PR #162/F-3: obiekt będący jednocześnie Creature i Planeswalkerem
+    // należy do sumy zbiorów RAZ; bez Set generator kandydatów zwracał dwa id
+    // i dopiero globalny dedup gotowych komend maskował błąd (oraz koszt pracy).
+    case 'creature_or_planeswalker': return [...new Set([
+      ...battlefieldCreatures,
+      ...state.zones.battlefield.filter(id => {
+        const object = state.objects.get(id);
+        return object?.zone === 'battlefield' && isPlaneswalker(object) && !hasHexproofAgainst(state, object, playerId);
+      }),
+    ])];
     case 'any_target': return [...new Set([...players, ...battlefieldCreatures,
       ...targetCandidatesBySpec(state, playerId, { type: 'player_or_planeswalker' })])];
     case 'player': {
@@ -3298,7 +3323,8 @@ export function legalSpellCasts(state, playerId) {
       // requireSpell ja przyjmowal, ale OFERTA jej nie enumerowala, wiec
       // gracz nie mial jej w „Twoje dzialania" (klasa L48).
       const impulseLive = isImpulseWindowLive(obj, state);
-      return obj?.plotted || obj?.suspendReady || impulseLive;
+      return obj?.plotted || obj?.suspendReady || impulseLive
+        || canCastByLinkedExilePermission(obj, playerId);
     }),
   ];
   for (const id of ids) {
@@ -3827,10 +3853,11 @@ function castModalSpell(state, playerId, objectId, modeIndex, targets, stunTarge
   // ukończonym lochu), a execute je odrzucał — rozjazd oferty i wykonania
   // (L48/L41). Mirror gałęzi z requireSpell.
   const impulse = canPlayByImpulseFromExile(object, state);
+  const linkedExileCast = canCastByLinkedExilePermission(object, playerId);
   const plottedLike = object?.zone === 'exile' && (object.plotted || object.suspendReady);
   if (!object || object.controllerId !== playerId || !['hand', 'exile'].includes(object.zone)
     || object.kind !== 'spell'
-    || (object.zone === 'exile' && !plottedLike && !impulse && !abilityWindowCast)) {
+    || (object.zone === 'exile' && !plottedLike && !impulse && !linkedExileCast && !abilityWindowCast)) {
     throw new Error('To nie jest rzucalny czar z ręki albo zaplotowany z exile');
   }
   if (!object.spell?.modes) throw new Error('Ten czar nie jest modalny');

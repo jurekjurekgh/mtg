@@ -15,13 +15,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView, moveObjectDirectly } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { legalTargetCandidates } from '../src/engine/spells.js';
+import { processTriggers } from '../src/engine/triggers.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { resolveUntilDecision, optionalPayOpen } from './helpers/deferred-trigger.js';
 
 const registry = createCardRegistry();
@@ -135,18 +138,20 @@ test('B65/329: Blinding Drone — {C} nie opłaca się maną kolorową (CR 107.4
     'brak oferty: pip bezbarwny wymaga many bezbarwnej');
 });
 
-test('B65/329: Blinding Drone — bez many / bez stworów na stole NIE MA oferty', () => {
+test('B65/329: Blinding Drone — bez many / przy samym self-target no-op NIE MA oferty', () => {
   const state = game();
   put(state, 'drone', 'blinding-drone', 'p1', 'battlefield', { tapped: false });
   put(state, 'cel', 'rustvine-cultivator', 'p2', 'battlefield', { tapped: false });
   assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'drone'),
     'brak many = brak oferty (L48: oferta = walidacja)');
   addMana(state, 'p1', 1, { colors: [] });
-  // Zdejmijmy cel — brak legalnego celu = brak okazji (CR 601.2c w ofercie).
+  // Zdejmijmy obcy cel. Sam Drone pozostaje rules-legalnym celem, ale koszt
+  // {T} tapuje go przed efektem, więc „tapnij siebie” jest czystym no-opem;
+  // generator celowo nie oferuje jałowego wariantu (to NIE „brak celu”).
   state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'cel');
   state.objects.delete('cel');
   assert.ok(!commands(state).some((c) => c.type === 'activate_ability' && c.objectId === 'drone'),
-    'brak legalnego celu = brak oferty');
+    'jedyny wariant to legalny self-target no-op — świadomie bez oferty');
   // Stan tapnięty też zamyka ofertę ({T} w koszcie).
   const st = game();
   put(st, 'drone2', 'blinding-drone', 'p1', 'battlefield', { tapped: true });
@@ -244,6 +249,31 @@ test('B65/332: Blitz — gracz NIE jest legalnym celem („creature or planeswal
   assert.ok(commands(state).some((c) => c.type === 'cast_spell' && c.objectId === 'shk'
     && c.targets?.length === 1 && state.players.some((p) => p.id === c.targets[0])),
     'kontrola: Shock (any_target) w tej samej sytuacji celuje w gracza');
+});
+
+test('B65/332: Blitz — Creature Planeswalker jest jednym celem, nie dwiema ofertami', () => {
+  // RED audytu PR #162: sklejanie dwóch list dublowało obiekt spełniający oba
+  // człony „creature or planeswalker”, a generator wariantów mnożył komendy.
+  const state = game();
+  put(state, 'hybryda', 'rustvine-cultivator', 'p2', 'battlefield', {
+    kind: 'creature', types: ['Creature', 'Planeswalker'], power: 1, toughness: 5,
+    counters: { loyalty: 5 },
+  });
+  put(state, 'gy-i', 'negate', 'p1', 'graveyard');
+  put(state, 'gy-s', 'act-of-treason', 'p1', 'graveyard');
+  put(state, 'blitz', 'blitz-of-the-thunder-raptor', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const candidates = legalTargetCandidates(state, 'p1', { type: 'creature_or_planeswalker' });
+  assert.deepEqual(candidates, ['hybryda'],
+    `generator kandydatów nie może polegać na końcowym dedupie komend: ${JSON.stringify(candidates)}`);
+  const variants = commands(state).filter((c) => c.type === 'cast_spell'
+    && c.objectId === 'blitz' && c.targets?.[0] === 'hybryda');
+  assert.equal(variants.length, 1,
+    `ten sam legalny cel powinien dać jedną ofertę: ${JSON.stringify(variants)}`);
+  run(state, variants[0]);
+  settle(state);
+  assert.equal(state.objects.get('hybryda')?.counters?.loyalty, 3,
+    'Blitz naprawdę zadaje 2 obrażenia Creature Planeswalkerowi (nie tylko oferuje cel)');
 });
 
 // ---- B65/333: Bring to Trial (RNA #5, plan New Capenna) -----------------------
@@ -399,13 +429,13 @@ test('B65/336: Zombie Boa — dane Oracle: 3/3 za {4}{B}, „choose a color" + d
   assert.equal(def.power, 3);
   assert.equal(def.toughness, 3);
   assert.equal(def.manaCost, 5);
-  assert.equal(def.abilities.length, 2);
+  assert.equal(def.abilities.length, 1, 'Oracle ma jedną zdolność aktywowaną tworzącą delayed trigger');
   const act = def.abilities[0];
   assert.equal(act.type, 'activated');
   assert.equal(act.timing, 'sorcery', '„Activate only as a sorcery"');
   assert.deepEqual(act.cost, { mana: 2, colors: ['B'] }, '{1}{B}');
-  assert.deepEqual(act.effect, { type: 'choose_color_grant_block_destroy' });
-  const trg = def.abilities[1];
+  assert.equal(act.effect.type, 'choose_color_grant_block_destroy');
+  const trg = act.effect.delayedAbility;
   assert.equal(trg.type, 'triggered');
   assert.deepEqual(trg.trigger, { event: 'becomes_blocked_by_color' });
   assert.deepEqual(trg.effect, [{ type: 'destroy_permanent' }], 'cel = bloker („that creature”)');
@@ -419,7 +449,8 @@ test('B65/336: Zombie Boa — wybrany kolor: bloker tego koloru jest NISZCZONY p
   put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { summoningSickness: false, colors: ['R'] });
   addMana(st, 'p1', 2, { colors: ['B'] });
   wybierzKolor(st, 'boa', 'R'); // aktywacja TYLKO jako sorcery — więc w main
-  assert.deepEqual(st.objects.get('boa').blockDestroyColorsThisTurn, ['R'], 'znacznik na turę zapisany');
+  assert.deepEqual(st.turnAbilityGrants.map((grant) => grant.color), ['R'],
+    'niezależny delayed trigger na tę turę zapisany w rejestrze stanu');
   st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
   st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
   enterBlocks65(st, ['boa']);
@@ -455,6 +486,62 @@ test('B65/336: Zombie Boa — filtr koloru: bloker innego koloru przeżywa; bez 
   assert.ok(decl2.ok);
   settle(st2);
   assert.ok(find(st2, 'rustvine-cultivator', 'battlefield'), 'bez aktywacji trigger nie działa („this turn”)');
+});
+
+test('B65/336: Zombie Boa — delayed trigger działa po utracie wydrukowanych zdolności', () => {
+  // RED audytu PR #162: aktywacja tworzy niezależną zdolność opóźnioną.
+  // Jej istnienie nie może być ponownie wyprowadzane z abilities Boa w chwili bloku.
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  const boa = st.objects.get('boa');
+  st.objects.set('boa', Object.freeze({
+    ...boa, abilitiesStripped: true, abilitiesStrippedAt: (boa.timestamp ?? 0) + 1,
+  }));
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa']);
+  run(st, { type: 'declare_blockers', playerId: 'p2', assignments: { boa: ['blok'] } });
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'graveyard'),
+    'utworzony delayed trigger niszczy blokera mimo późniejszej utraty abilities');
+});
+
+test('B65/336: Zombie Boa — zmiana strefy kasuje grant starego obiektu (CR 400.7)', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  moveObjectDirectly(st, 'boa', 'hand', 'boa-hand');
+  assert.equal(st.turnAbilityGrants.some((grant) => grant.sourceId === 'boa'), false,
+    'choke point zmiany strefy usuwa wpis starego obiektu od razu');
+  moveObjectDirectly(st, 'boa-hand', 'battlefield', 'boa-return');
+  st.objects.set('boa-return', Object.freeze({ ...st.objects.get('boa-return'), summoningSickness: false }));
+  st.turn = jumpToStep(st.turn, 'declare_attackers', 'p1');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p1';
+  enterBlocks65(st, ['boa-return']);
+  run(st, { type: 'declare_blockers', playerId: 'p2', assignments: { 'boa-return': ['blok'] } });
+  settle(st);
+  assert.ok(find(st, 'rustvine-cultivator', 'battlefield'),
+    'powracająca Boa jest nowym obiektem i nie dziedziczy wyboru koloru');
+});
+
+test('B65/336: Zombie Boa — delayed trigger zachowuje kontrolera z chwili utworzenia', () => {
+  const st = game();
+  put(st, 'boa', 'zombie-boa', 'p1', 'battlefield', { summoningSickness: false });
+  put(st, 'blok', 'rustvine-cultivator', 'p2', 'battlefield', { colors: ['R'] });
+  addMana(st, 'p1', 2, { colors: ['B'] });
+  wybierzKolor(st, 'boa', 'R');
+  st.objects.set('boa', Object.freeze({ ...st.objects.get('boa'), controllerId: 'p2' }));
+  processTriggers(st, [{ type: 'blockers_declared', assignments: { boa: ['blok'] } }]);
+  const queued = st.zones.stack.map((id) => st.objects.get(id))
+    .find((o) => o?.kind === 'trigger' && o.triggerEntry?.targets?.[0] === 'blok');
+  assert.ok(queued, 'blok koloru R kolejkuje wcześniej utworzony delayed trigger');
+  assert.equal(queued.controllerId, 'p1',
+    'kontroler delayed triggera jest utrwalony przy utworzeniu, nie odczytany z Boa po zmianie kontroli');
 });
 
 test('B65/336: Zombie Boa — aktywacja tylko jako sorcery (brak oferty poza główną fazą)', () => {
@@ -580,6 +667,74 @@ test('B65/340: Ambulatory Edifice — odmowa zaplaty: zycie nietkniete, bez -1/-
   const t = st.objects.get('theirs');
   assert.equal(effectivePower(t, st), pow0, 'bez -1/-1');
   assert.equal(effectiveToughness(t, st), tough0);
+});
+
+test('B65/340: refleks „When you do” działa z LKI po odejściu Edifice', () => {
+  // RED audytu PR #162/F-12: źródło może zniknąć w odpowiedzi na macierzysty
+  // ETB. Po zapłacie powstaje NOWY refleksyjny trigger, niezależny od źródła.
+  const st = game();
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield', { power: 3, toughness: 3 });
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+
+  let source = null;
+  for (let i = 0; i < 20; i++) {
+    source = find(st, 'ambulatory-edifice', 'battlefield');
+    const etbOnStack = source && st.zones.stack
+      .map((id) => st.objects.get(id))
+      .some((o) => o?.kind === 'trigger' && o.triggerEntry?.sourceId === source.id);
+    if (etbOnStack) break;
+    const pass = commands(st).find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'dojście do ETB na stosie ma pass');
+    run(st, pass);
+  }
+  assert.ok(source, 'Edifice weszło, a jego ETB czeka na stosie');
+  moveObjectDirectly(st, source.id, 'graveyard', 'edifice-gone');
+  assert.ok(resolveUntilDecision(st, optionalPayOpen), 'ETB z LKI nadal pyta o zapłatę');
+
+  const pay = commands(st).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true);
+  assert.ok(pay, 'płatność nadal jest legalna po odejściu źródła');
+  assert.equal(pay.reflexiveTargetCount, 1, 'LKI refleksu widzi wrogiego kandydata');
+  run(st, pay);
+  const target = commands(st).find((c) => c.type === 'resolve_trigger_target'
+    && c.targetId === 'theirs');
+  assert.ok(target, 'po zapłacie nowy refleksyjny trigger prosi o cel');
+  run(st, target);
+  settle(st);
+  const theirs = st.objects.get('theirs');
+  assert.equal(effectivePower(theirs, st), 2);
+  assert.equal(effectiveToughness(theirs, st), 2);
+});
+
+function decyzjaBotaEdifice({ life = 20, enemyTarget = false } = {}) {
+  const st = game();
+  st.players.find((p) => p.id === 'p1').life = life;
+  put(st, 'edifice', 'ambulatory-edifice', 'p1', 'hand');
+  if (enemyTarget) put(st, 'theirs', 'alaborn-trooper', 'p2', 'battlefield');
+  addMana(st, 'p1', 3, { colors: ['B'] });
+  run(st, commands(st).find((c) => c.type === 'cast_permanent' && c.objectId === 'edifice'));
+  assert.ok(resolveUntilDecision(st, optionalPayOpen), 'decyzja zapłaty otwarta');
+  const bot = createHeuristicBot({ seed: 650340, randomness: 0, lookahead: 0, registry });
+  return { state: st, choice: bot.chooseCommand(playerView(st, 'p1')), trace: bot.trace().at(-1) };
+}
+
+test('B65/340 BOT: nie płaci życia wyłącznie po to, by osłabić własnego stwora', () => {
+  // RED audytu PR #162: Edifice samo jest legalnym „target creature”, więc
+  // samo reflexiveTargetCount>0 nie znaczy, że płatność ma korzystny cel.
+  const { choice, trace } = decyzjaBotaEdifice({ life: 20, enemyTarget: false });
+  assert.equal(choice.type, 'resolve_optional_pay_choice', JSON.stringify(trace));
+  assert.equal(choice.pay, false, `jedyny cel jest własny — odmów: ${JSON.stringify(choice)}`);
+});
+
+test('B65/340 BOT: nie płaci śmiertelnych 2 życia; przy zdrowiu i wrogim celu płaci', () => {
+  const lethal = decyzjaBotaEdifice({ life: 2, enemyTarget: true });
+  assert.equal(lethal.choice.pay, false,
+    `zapłata sprowadzi życie do 0 — odmów: ${JSON.stringify(lethal.choice)}`);
+
+  const healthy = decyzjaBotaEdifice({ life: 20, enemyTarget: true });
+  assert.equal(healthy.choice.pay, true,
+    `zdrowe życie + wrogi cel −1/−1 — zapłać: ${JSON.stringify(healthy.choice)}`);
 });
 
 // ---- B65/341: Pacifism (DTK #29, plan Tarkir) -------------------------------

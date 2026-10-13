@@ -13376,9 +13376,10 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   // 5. Zombie Boa (APC #54) {4}{B} — 3/3 Zombie Snake. „{1}{B}: Choose a
   // color. Whenever this creature becomes blocked by a creature of that color
   // this turn, destroy that creature. Activate only as a sorcery."
-  // Aktywacja: wybór koloru (pendingColorChoice) + znacznik na turę
-  // (choose_color_grant_block_destroy); trigger per para bloku jak Wooden
-  // Stake („becomes blocked by a Vampire"), cel = bloker („that creature").
+  // Aktywacja: wybór koloru (pendingColorChoice) TWORZY niezależną zdolność
+  // opóźnioną na tę turę. Deskryptor siedzi w samym efekcie aktywowanym — Boa
+  // nie ma osobnej, stale wydrukowanej zdolności triggerowanej. Dzięki temu
+  // delayed trigger działa po utracie zdolności i pamięta swego kontrolera.
   defineCard({
     id: 'zombie-boa', name: 'Zombie Boa', set: 'APC',
     types: ['Creature'], subtypes: ['Zombie', 'Snake'], colors: ['B'],
@@ -13391,12 +13392,14 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
         type: ABILITY_TYPE.activated,
         timing: 'sorcery',
         cost: { mana: 2, colors: ['B'] },
-        effect: { type: 'choose_color_grant_block_destroy' },
-      }),
-      createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: { event: 'becomes_blocked_by_color' },
-        effect: [{ type: 'destroy_permanent' }],
+        effect: {
+          type: 'choose_color_grant_block_destroy',
+          delayedAbility: {
+            type: ABILITY_TYPE.triggered,
+            trigger: { event: 'becomes_blocked_by_color' },
+            effect: [{ type: 'destroy_permanent' }],
+          },
+        },
       }),
     ],
     support: { status: 'supported', limitations: [] },
@@ -13509,6 +13512,239 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
     notes: ['wchodzi tapnięty (land materialize entersTapped); scry 1 przy wejściu (pendingScry, resolve_scry); {T}: Add {R} or {G} — jednostka wielokolorowa (M67)'],
   }),
+  // Batch 66 (2026-10-13) — kolekcja właściciela 351–368.
+  // Snapshoty dokładnych druków i rulingów: docs/cards/scryfall-*.json.
+
+  // 351 ELD — Reach jest gotowym keywordem warstwy combatu.
+  defineCard({
+    id: 'sporecap-spider', name: 'Sporecap Spider', set: 'ELD',
+    types: ['Creature'], subtypes: ['Spider'], colors: ['G'],
+    keywords: ['reach'], power: 1, toughness: 5, manaCost: 3,
+    oracleText: 'Reach',
+    imageUri: 'https://cards.scryfall.io/large/front/7/b/7bc33252-145f-45c0-bb70-23183c698f66.jpg?1783932603',
+    artId: 351, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 353 OGW — kolorless Eldrazi Drone; mana pochodzi z deskryptora karty,
+  // nie z MANA_SOURCE_MAP (ten sam generyczny tor co Druid of the Cowl).
+  defineCard({
+    id: 'warden-of-geometries', name: 'Warden of Geometries', set: 'OGW',
+    types: ['Creature'], subtypes: ['Eldrazi', 'Drone'], colors: [],
+    keywords: ['vigilance'], power: 2, toughness: 3, manaCost: 4,
+    oracleText: 'Vigilance\n{T}: Add {C}. ({C} represents colorless mana.)',
+    imageUri: 'https://cards.scryfall.io/large/front/c/7/c7f517b9-ac10-4710-8ef1-ced1253d5ecf.jpg?1783937928',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: [] },
+      }),
+    ],
+    artId: 353, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 356 OTC — Partner with: target player wybiera we własnej bibliotece;
+  // drugi trigger pozostaje niegrupowany, więc każde stworzenie zadające
+  // combat damage tworzy własny wpis stosu i wzmacnia właśnie siebie.
+  defineCard({
+    id: 'cazur-ruthless-stalker', name: 'Cazur, Ruthless Stalker', set: 'OTC',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'Partner with Ukkima, Stalking Shadow (When this creature enters, target player may put Ukkima into their hand from their library, then shuffle.)\nWhenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/e/6ee4fda8-07cd-4091-8850-a6925080b464.jpg?1783911912',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'player' } },
+        effect: {
+          type: 'search_library_to_hand',
+          qualifier: { name: 'Ukkima, Stalking Shadow' },
+          playerFromTarget: true,
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'any_combat_damage_to_player', perEvent: true },
+        effect: {
+          type: 'add_counter', counter: '+1/+1', amount: 1,
+          targetFromContext: 'damageSourceId',
+        },
+      }),
+    ],
+    artId: 356, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Partner with używa target player jako właściciela decyzji search; combat trigger per źródło, bez groupPer'],
+  }),
+
+  // 357 MM2 — każde prawdziwe zdarzenie draw ma osobny trigger. Techniczne
+  // dobieranie mulliganu ma drawNumberThisTurn=null i nie spełnia zdarzenia.
+  defineCard({
+    id: 'lorescale-coatl', name: 'Lorescale Coatl', set: 'MM2',
+    types: ['Creature'], subtypes: ['Snake'], colors: ['G', 'U'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever you draw a card, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a752d05-cd6f-4754-85fd-16f1308ac1ea.jpg?1783938391',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_draw_card' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 357, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 359 M19 — tapped dual. Profil ['B','G'] oznacza jedną jednostkę many,
+  // którą solwer może wydać jako B albo G (nie dwie jednostki).
+  defineCard({
+    id: 'foul-orchard', name: 'Foul Orchard', set: 'M19',
+    types: ['Land'], colors: [], entersTapped: true,
+    oracleText: 'This land enters tapped.\n{T}: Add {B} or {G}.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6b28e1e1-0813-4e4a-a7a7-058b7787272c.jpg?1783934509',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['B', 'G'] },
+      }),
+    ],
+    artId: 359, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 361 ZEN — gotowa rodzina tarcz prevent_next_damage (Withstand), lecz
+  // cel jest węższy: gracz lub planeswalker, nigdy creature.
+  defineCard({
+    id: 'noble-vestige', name: 'Noble Vestige', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 2, manaCost: 3,
+    oracleText: 'Flying\n{T}: Prevent the next 1 damage that would be dealt to target player or planeswalker this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/a/dae1e55c-bdf2-4327-9f97-032c2c3c7d0c.jpg?1783942170',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        targets: [{ type: 'player_or_planeswalker' }],
+        effect: { type: 'prevent_next_damage', amount: 1 },
+      }),
+    ],
+    artId: 361, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 363 THS — CR 603.5: target wybierany przy położeniu triggera na stos;
+  // decyzja „may” dopiero przy resolution (trigger.mayFire).
+  defineCard({
+    id: 'wild-celebrants', name: 'Wild Celebrants', set: 'THS',
+    types: ['Creature'], subtypes: ['Satyr'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature enters, you may destroy target artifact.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/7/e7ab4e29-44c7-431a-ba11-b2f4f9c75ab1.jpg?1783939751',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'artifact' }, mayFire: true },
+        effect: { type: 'destroy_permanent' },
+      }),
+    ],
+    artId: 363, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 364 KTK — generyczny destroy artifact or enchantment.
+  defineCard({
+    id: 'naturalize', name: 'Naturalize', set: 'KTK',
+    types: ['Instant'], colors: ['G'], manaCost: 2,
+    oracleText: 'Destroy target artifact or enchantment.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b129b44e-a1ce-41f2-a0cf-b6c879c7cbbd.jpg?1783939065',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'artifact_or_enchantment' }],
+      effects: [{ type: 'destroy_permanent' }],
+    },
+    artId: 364, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 365 SNC — ETB tworzy Citizen 1/1 G/W. Druga zdolność działa wyłącznie z
+  // ręki: {2} + wygnanie źródła jest kosztem, a przy rozstrzygnięciu target
+  // land dostaje nową zdolność many aż do rzucenia dokładnie tego obiektu z
+  // exile. Pozwolenie rzutu trwa przez ten sam pobyt w exile (CR 400.7).
+  defineCard({
+    id: 'rakish-revelers', name: 'Rakish Revelers', set: 'SNC',
+    types: ['Creature'], subtypes: ['Elf', 'Druid', 'Rogue'], colors: ['G', 'R', 'W'],
+    power: 5, toughness: 3, manaCost: 5,
+    oracleText: 'When this creature enters, create a 1/1 green and white Citizen creature token.\n{2}, Exile this card from your hand: Target land gains "{T}: Add {R}, {G}, or {W}" until this card is cast from exile. You may cast this card for as long as it remains exiled.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/c/9c74197a-367c-40a4-9eb5-6943490bba09.jpg?1783923073',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'create_token', cardId: 'token_citizen', name: 'Citizen',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G', 'W'],
+          types: ['Creature'], subtypes: ['Citizen'],
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        fromHand: true,
+        cost: { mana: 2, exileSelfFromHand: true },
+        targets: [{ type: 'land' }],
+        effect: {
+          type: 'grant_abilities',
+          duration: 'until_source_cast_from_exile',
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['R', 'G', 'W'] },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 365, plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+    notes: ['ruling 2022-04-29: grant na landzie trwa po opuszczeniu exile i kończy się tylko przy rzuceniu linkowanego obiektu; ponowne wygnanie tworzy nowy obiekt bez permission'],
+  }),
+
+  // Token Citizen 1/1 zielono-biały (TSNC #12), bez podtypu Human.
+  defineCard({
+    id: 'token_citizen', name: 'Citizen', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Citizen'], colors: ['G', 'W'], manaCost: 0,
+    power: 1, toughness: 1,
+    oracleText: '',
+    imageUri: 'https://cards.scryfall.io/large/front/3/f/3f03e9fe-cb71-498e-bf16-5af6af37a192.jpg?1783922960',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Rakish Revelers'] },
+  }),
+
+  // 368 ZEN — shroud nie przeszkadza w nietargetowanym sacrifice. Człon
+  // „unless” jest rozpatrywany przy resolution przez generyczny kwalifikator
+  // permanenta (tu Land), z jawnym wariantem poświęcenia źródła.
+  defineCard({
+    id: 'scythe-tiger', name: 'Scythe Tiger', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Cat'], colors: ['G'],
+    keywords: ['shroud'], power: 3, toughness: 2, manaCost: 1,
+    oracleText: "Shroud (This creature can't be the target of spells or abilities.)\nWhen this creature enters, sacrifice it unless you sacrifice a land.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d289043-edb5-4a7e-801b-4881709edb32.jpg?1783942131',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'sacrifice_source_unless_sacrifice',
+          qualifier: { types: ['Land'] },
+        },
+      }),
+    ],
+    artId: 368, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

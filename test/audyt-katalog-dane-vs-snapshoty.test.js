@@ -24,7 +24,7 @@ const KORZEN = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const KATALOG_SNAPSHOTOW = path.join(KORZEN, 'docs', 'cards');
 const registry = createCardRegistry();
 
-// Właściciel dopuszcza brak snapshotu dla tych 55 wpisów; każdy nowy wyjątek
+// Właściciel dopuszcza brak snapshotu dla tych 56 wpisów; każdy nowy wyjątek
 // wymaga jawnej aktualizacji tej listy albo dodania snapshotu do repo.
 const BEZ_SNAPSHOTU = Object.freeze([
   'balamb-garden-airborne',
@@ -42,6 +42,7 @@ const BEZ_SNAPSHOTU = Object.freeze([
   'token_bird_chocobo',
   'token_bird_soldier',
   'token_cat',
+  'token_citizen',
   'token_clone',
   'token_clue',
   'token_dinosaur',
@@ -94,8 +95,8 @@ const ABILITY_WORDS = new Set(['clash', 'delirium', 'delve', 'keen_sight', 'land
 const MODELOWANE_KEYWORD_ABILITIES = new Set([
   'changeling', 'daybound', 'deathtouch', 'defender', 'double_strike', 'echo',
   'exalted', 'first_strike', 'flash', 'flying', 'haste', 'infect', 'level_up',
-  'lifelink', 'menace', 'nightbound', 'outlast', 'persist', 'reach', 'toxic',
-  'training', 'trample', 'vigilance',
+  'lifelink', 'menace', 'nightbound', 'outlast', 'persist', 'reach', 'shroud',
+  'toxic', 'training', 'trample', 'vigilance',
 ]);
 const ODDZIELNE_REPREZENTACJE_KEYWORDOW = Object.freeze({
   morph: (def) => Boolean(def.morph),
@@ -211,11 +212,13 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
     .sort();
   const osierocone = idsSnapshotow.filter((id) => !idsDefinicji.has(id));
 
-  assert.equal(registry.all().length, 626, 'liczba definicji wymaga przeglądu po zmianie katalogu');
-  assert.equal(idsSnapshotow.length, 572, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  // Batch 66: +10 kart i +Citizen = 637 definicji; snapshoty dotyczą 10
+  // regularnych kart, token ma jawny wyjątek i własny kanoniczny imageUri.
+  assert.equal(registry.all().length, 637, 'liczba definicji wymaga przeglądu po zmianie katalogu');
+  assert.equal(idsSnapshotow.length, 582, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
-  assert.equal(idsSnapshotow.length - osierocone.length, 571,
+  assert.equal(idsSnapshotow.length - osierocone.length, 581,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });
 
@@ -343,11 +346,11 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
     }
   }
 
-  assert.equal(porownano, 571, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
-  assert.equal(bezSnapshotu, 55, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
+  assert.equal(porownano, 581, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
+  assert.equal(bezSnapshotu, 56, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 11, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 571, `typy/podtypy nie porównano dla ${561 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 571, `Oracle frontu nie porównano dla ${561 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 581, `typy/podtypy nie porównano dla ${581 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 581, `Oracle frontu nie porównano dla ${581 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 9, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 9, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 12, `pusty oracle_text: oczekiwano 12, jest ${oracleTopEmpty}`);

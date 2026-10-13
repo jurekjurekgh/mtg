@@ -1,0 +1,58 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Rakish%20Revelers&set=snc&format=json",
+  "print": "snc",
+  "name": "Rakish Revelers",
+  "mana_cost": "{2}{R}{G}{W}",
+  "cmc": 5.0,
+  "type_line": "Creature — Elf Druid Rogue",
+  "oracle_text": "When this creature enters, create a 1/1 green and white Citizen creature token.\n{2}, Exile this card from your hand: Target land gains \"{T}: Add {R}, {G}, or {W}\" until this card is cast from exile. You may cast this card for as long as it remains exiled.",
+  "power": "5",
+  "toughness": "3",
+  "colors": [
+    "G",
+    "R",
+    "W"
+  ],
+  "color_identity": [
+    "G",
+    "R",
+    "W"
+  ],
+  "keywords": [],
+  "produced_mana": [
+    "G",
+    "R",
+    "W"
+  ],
+  "set": "snc",
+  "set_name": "Streets of New Capenna",
+  "collector_number": "214",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/c/9c74197a-367c-40a4-9eb5-6943490bba09.jpg?1783923073",
+    "normal": "https://cards.scryfall.io/normal/front/9/c/9c74197a-367c-40a4-9eb5-6943490bba09.jpg?1783923073",
+    "large": "https://cards.scryfall.io/large/front/9/c/9c74197a-367c-40a4-9eb5-6943490bba09.jpg?1783923073"
+  },
+  "related_token": {
+    "source": "https://api.scryfall.com/cards/3f03e9fe-cb71-498e-bf16-5af6af37a192",
+    "name": "Citizen",
+    "set": "tsnc",
+    "collector_number": "12",
+    "image_uri": "https://cards.scryfall.io/large/front/3/f/3f03e9fe-cb71-498e-bf16-5af6af37a192.jpg?1783922960"
+  },
+  "pobrano": "2026-10-13",
+  "rulings": [
+    {
+      "date": "2022-04-29",
+      "source": "wotc",
+      "comment": "You may use the mana ability Rakish Revelers grants to the land while casting Rakish Revelers from exile."
+    },
+    {
+      "date": "2022-04-29",
+      "source": "wotc",
+      "comment": "If Rakish Revelers is removed from exile without being cast, the land will continue to have this ability."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/9c74197a-367c-40a4-9eb5-6943490bba09/rulings",
+  "rulingsPobrano": "2026-10-13"
+}

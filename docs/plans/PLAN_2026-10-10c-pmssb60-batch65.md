@@ -117,3 +117,19 @@ w falach A, D, F — najsłabszy realny wariant = dawna wartość.
 
 `npm test`, `node tools/run-tests.mjs all`, `npm run build`, `cr-numery --cr`.
 Push po każdym kroku (ADR 0020); jedna fala = jeden commit (L184).
+
+## 7. Realizacja (stan końcowy po audycie PR #162)
+
+- [x] Fala A — dynamiczne obrażenia Blitza + kontrola ridera (7 pinów).
+- [x] Fala B — `impulseLookValue` na ścieżce `cast_spell` (3 piny).
+- [x] Fala C — wycena Zombie Boa; audyt #162 dodatkowo naprawił wykonanie
+  `resolve_color_choice`, aby wybrany kolor zgadzał się z wyceną (4 piny).
+- [x] Fala D — koszt efektywny affinity Brine Giant (3 piny).
+- [x] Fala E — selektywna ewazja Skyscythe Engulfer (3 piny).
+- [x] Fala F — kierunek ujemnego pumpa i koszt `payLife` Edifice (6 pinów).
+- [x] Kontrfaktyki przekazują właściwy rejestr sceny; pomiary F7/F8
+  skorygowane po wykryciu błędu metody.
+- [x] Końcowy zestaw po audycie: **26/26 pinów**, bez nowego pokrętła.
+
+Szczegółowe wartości PRZED→PO i wyjaśnienie obalonych tez M2/F9/F10:
+`docs/PMSSB.md#pmssb-60--jakościowe-domknięcie-batcha-65-2026-10-10-pr-162`.
