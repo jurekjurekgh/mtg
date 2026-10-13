@@ -78,23 +78,38 @@ commit i natychmiastowy `git push origin arena/aadcf997-mtg`.
 
 ### D. Domyślna kontynuacja po audycie (ADR 0021)
 
-- [ ] Sprawdzić, czy na `main` zostały niedokończone plany (`docs/plans/PLAN_*.md`
+- [x] Sprawdzić, czy na `main` zostały niedokończone plany (`docs/plans/PLAN_*.md`
       z nieodhaczonymi punktami realizacji); brak → celowana pętla jakości na
       rodzinach dotkniętych w PR #164: przebieg Żywym Testerem
       (`tools/table-tester/run-game.mjs`) + ręczna lektura transkryptów i
       polowanie na błędy CR / kontraktów widoku i decyzji.
-- [ ] Nie dodawać nowych kart do katalogu (ADR 0029).
+      **Wynik kontroli planów:** nieodhaczone punkty w starszych planach
+      (`PLAN_2026-09-25a` — 21, `PLAN_2026-08-26-batch49` — 24, `PLAN_2026-09-29b`
+      — 8, …) to zaległa księgowość, nie niezrealizowana praca: flagowe punkty
+      tych planów są w kodzie (`untapChoice` na kartach → `materialize.js` /
+      `registry.js` / `pendingUntapChoice` i `resolve_untap_choice`,
+      `resolve_food_choice`, karty Batcha 49/50). Żaden plan nie wymaga
+      dokończenia implementacji — wykonano pętlę jakości (poniżej).
+- [x] Pętla jakości (Żywy Tester, świeży `dist/`): partie `seed` 6611–6614 na
+      taliach z kartami z PR #164 (`worek-mroczny` — Rakish Revelers,
+      `kaladesh` — Skilled Animator, `wiedzmin-bg` — Scythe Tiger,
+      `dominaria-wu` — Impulse) — 0 zgłoszeń detektorów, 0 `undefined`/`NaN`,
+      0 niewycenionych akcji bota. Lektura transkryptów: etykieta shroud
+      („Shroud (całun — niecelowalny dla nikogo)”), odznaka „animowany przez
+      Skilled Animator” z bazowym 5/5, modal celu triggera z odmową dla
+      „you may” (Reclusive Artificer) — zgodne z Oracle.
+- [x] Nie dodawać nowych kart do katalogu (ADR 0029).
 
 ### E. Brama końcowa i dokumentacja
 
-- [ ] `npm test` (cicho do `.arena/`).
-- [ ] `npm run test:all` (cicho do `.arena/`, ADR 0019).
-- [ ] `npm run build` (cicho do `.arena/`).
-- [ ] `node --test test/bot-benchmark.test.js` (cicho do `.arena/`).
-- [ ] `node tools/cr-numery.mjs --cr` oraz `node tools/event-contract-audit.mjs`.
-- [ ] Zaktualizować ten plan, raport audytu, `docs/PROJECT_HISTORY.md`, nowy
+- [x] `npm test` (cicho do `.arena/`).
+- [x] `npm run test:all` (cicho do `.arena/`, ADR 0019).
+- [x] `npm run build` (cicho do `.arena/`).
+- [x] `node --test test/bot-benchmark.test.js` (cicho do `.arena/`).
+- [x] `node tools/cr-numery.mjs --cr` oraz `node tools/event-contract-audit.mjs`.
+- [x] Zaktualizować ten plan, raport audytu, `docs/PROJECT_HISTORY.md`, nowy
       handoff `docs/setup/HANDOFF_2026-10-13c.md` i opis PR.
-- [ ] Potwierdzić czyste drzewo, wypchnięte commity i zielony GitHub CI.
+- [x] Potwierdzić czyste drzewo, wypchnięte commity i zielony GitHub CI.
 
 ## Ryzyka i pułapki
 
@@ -107,3 +122,15 @@ commit i natychmiastowy `git push origin arena/aadcf997-mtg`.
   obowiązkowy `npm run build` (L76).
 - Zakaz force pusha na każdej gałęzi; przed każdym pushem kontrola `HEAD`
   i zdalnej gałęzi (ADR 0020 D).
+
+## Wynik bram końcowych (etap E)
+
+- `npm test` — **8131/8131**; `npm run test:all` — **8397/8397** (12 suite'ów,
+  0 fail); `npm run build` — **74 moduły / 5108,1 kB**;
+  `node --test test/bot-benchmark.test.js` — **10/10**.
+- `node tools/cr-numery.mjs --cr /tmp/cr.txt` — **OK**: 523 numery w tabeli,
+  522 unikalne w 5719 cytatach, 3165 numerów w pliku CR; sha256 pliku CR
+  (`8d860e45…`) zgodny z nagłówkiem tabeli (ADR 0030).
+- `node tools/event-contract-audit.mjs` — **0 naruszeń** (zdarzenia + kasowanie
+  obiektów z pola bitwy).
+- Pełnego B0 nie uruchamiano (ADR 0018 — brak zlecenia właściciela).

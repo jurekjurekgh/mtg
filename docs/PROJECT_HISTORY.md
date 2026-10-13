@@ -16833,3 +16833,41 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   `npm run build` **74 moduły / 5106,4 kB**, `cr-numery.mjs --cr` **522/522 OK**,
   `event-contract-audit.mjs` **0 naruszeń**, 5 partii `tools/table-tester/run-game.mjs`
   (`seed` 6601–6605) — **0 zgłoszeń detektorów i 0 niewycenionych akcji bota**.
+
+## 2026-10-13c — Audyt PR #164 i domknięcie ustaleń A-1..A-3 (PR #165)
+
+- **Audyt PR #164 (`9ba2fde..7bd1fcf`, 22 pliki / 3 commity):** pełny przegląd
+  każdego zmienionego pliku (rejestr w raporcie `docs/audits/AUDYT_PR164_2026-10-13.md`)
+  potwierdził wykonanie napraw F-1..F-7 i ujawnił **3 ustalenia (A-1..A-3)**
+  oraz **2 obserwacje (O-1, O-2)**:
+  - **A-1:** `src/table/session.js` — auto-pass (`isManaOnly`) wołał
+    `isPureManaAbilityCommand` bez `state`, więc panel i auto-pass czytały różne
+    listy zdolności (bez stanu znikała warstwa `grantedActivatedAbilities`;
+    L41). Naprawa: 4-argumentowe wywołanie (`fallback, state`) + strażnik J/4
+    (literał) i nowy test J/5 (zachowanie, karty syntetyczne — ADR 0029).
+  - **A-2:** `src/controllers/heuristic-bot.js` — filtr `castableExile`
+    w `linkedManaGrantValue` czytał pola spoza kontraktu `PlayerView`
+    (`playableFromExile`, `onAdventure`, `warpedAtTurn`), gubiąc realne stemple
+    rzutu z wygnania (impuls/plot/madness/rebound/warp/przygoda). Naprawa:
+    filtr po polach rzeczywistej projekcji `waiting` (`playableUntilTurn`,
+    `playableWithoutPaying`, `plotted`, `madnessReady`, `reboundReady`,
+    `warpReady`, `linkedExileCastPermission`, `exiledBy === 'adventure'`) oraz
+    test strony dodatniej (karta w oknie impulsu podnosi wycenę grantu).
+  - **A-3:** `src/engine/triggers.js` — gałąź `artifact_you_control`
+    w `triggerTargetCandidates` bez bramki `hexproofBlocked`, inaczej niż
+    bliźniacze `creature_you_control` / `land_you_control` (CR 702.18: shroud
+    blokuje także zdolności kontrolera; L52, luka utajona). Test z modalem
+    otwartym dwoma legalnymi artefaktami i artefaktem ze shroud (M242:
+    przy jednym kandydacie silnik wybiera automatycznie).
+  - **O-1/O-2:** kolejność etykiet w `waitingCastLabel` (impuls przed
+    `linkedExileCastPermission`) i brak `suspendReady`/`warpedAtTurn`
+    w `PlayerView` — świadomie bez zmian w kodzie (opis w raporcie audytu).
+- **Bramy:** `npm test` **8131/8131**, `npm run test:all` **8397/8397**
+  (12 suite'ów, 0 fail), `npm run build` **74 moduły / 5108,1 kB**,
+  `test/bot-benchmark.test.js` **10/10**, `cr-numery.mjs --cr /tmp/cr.txt`
+  **OK** (523 numery, 522 unikalne w 5719 cytatach; sha256 pliku CR zgodny
+  z tabelą), `event-contract-audit.mjs` **0 naruszeń**, 4 partie Żywym
+  Testerem (`seed` 6611–6614 na taliach z kartami z PR #164) — **0 zgłoszeń
+  detektorów, 0 niewycenionych akcji bota**. Każda naprawa: RED → GREEN,
+  mutacja, osobny commit i push (ADR 0020 C). Pełnego B0 nie uruchamiano
+  (ADR 0018 — brak zlecenia właściciela).
