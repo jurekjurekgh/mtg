@@ -335,6 +335,7 @@ function defaultBotFactory(seed, ctx) {
     exile_return_transformed: 'wygnanie i powrót przemieniony',
     explore: 'explore (odsłonięcie wierzchu biblioteki)',
     gain_life: 'zdobycie życia',
+    grant_abilities: 'nadanie zdolności wskazanemu permanentowi',
     grant_keywords_until_end_of_turn: 'nadanie słów kluczowych do końca tury',
     // M431 (uwaga właściciela, Entrancing Lyre): blokada z `lock_untap` NIE
     // jest „na następny krok" — trwa, dopóki tapnięte źródło jest na polu
@@ -364,6 +365,7 @@ function defaultBotFactory(seed, ctx) {
     lose_life: 'cel traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
+    prevent_next_damage: 'zapobieżenie następnym obrażeniom wybranego gracza lub planeswalkera',
     pump: 'zmiana statystyk celu',
     scry: 'scry na wierzchu biblioteki',
     search_library_to_battlefield: 'szukanie karty w bibliotece na pole bitwy',

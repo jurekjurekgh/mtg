@@ -614,6 +614,19 @@ test('B66/365: brak many/celu i źródło poza ręką nie oferują hand ability;
   assert.ok(!commands(noLand).some((command) => command.type === 'activate_ability'
     && command.objectId === 'rakish'), 'brak target land');
 
+  const wrongZone = game();
+  put(wrongZone, 'land', 'basic-forest', 'p1', 'battlefield');
+  put(wrongZone, 'rakish', 'rakish-revelers', 'p1', 'hand');
+  addMana(wrongZone, 'p1', 2, { colors: [] });
+  const fieldRakish = moveObjectDirectly(wrongZone, 'rakish', 'battlefield', 'rakish-field');
+  const illegal = execute(wrongZone, {
+    type: 'activate_ability', playerId: 'p1', objectId: fieldRakish.id,
+    abilityIndex: 1, targets: ['land'],
+  });
+  assert.equal(illegal.ok, false, 'fromHand nie daje się aktywować z battlefield');
+  assert.equal(find(wrongZone, 'rakish-revelers', 'battlefield')?.id, fieldRakish.id,
+    'odrzucona aktywacja nie wygania źródła ani nie płaci kosztu');
+
   const state = game();
   activateRakish(state);
   assert.ok(rakishGrant(state));

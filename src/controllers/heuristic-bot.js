@@ -1158,6 +1158,10 @@ export const IDEMPOTENT_EOT_EFFECTS = new Set([
   'attack_as_though_no_defender_until_end_of_turn',
   'lock_untap', 'dont_untap_next_untap_step', 'tap_permanent', 'untap_permanent',
   'set_saddled',
+  // Batch 66 (Rakish Revelers): dwukrotne nadanie tej samej tap-zdolności
+  // many temu samemu landowi nie daje dodatkowej produkcji (land może być
+  // tapnięty tylko raz); czas linkowany nie zmienia idempotencji grantu.
+  'grant_abilities',
   // Batch 52 (Jolrael): bazowe X/X do końca tury — ponowna aktywacja nie
   // kumuluje (set, nie suma), więc idempotentne.
   'set_base_pt_creatures_you_control',

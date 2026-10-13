@@ -182,7 +182,7 @@ test('Sherlock 1e: Benevolent Blessing ma prawdziwy flash — oferta rzutu w tur
 // ---------------------------------------------------------------------------
 const KNOWN_KEYWORDS = new Set([
   'flying', 'trample', 'vigilance', 'haste', 'first_strike', 'double_strike', 'daybound', 'nightbound', 'saddle',
-  'lifelink', 'deathtouch', 'menace', 'hexproof', 'indestructible', 'reach',
+  'lifelink', 'deathtouch', 'menace', 'hexproof', 'shroud', 'indestructible', 'reach',
   'defender', 'flash', 'persist', 'infect', 'changeling', 'morph', 'transform',
   'level_up', 'exalted', 'station', 'devoid', 'toxic',
   // Batch 46: echo (CR 702.30) i fabricate (CR 702.123).
