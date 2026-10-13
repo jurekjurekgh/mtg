@@ -13669,6 +13669,29 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 368 ZEN — shroud nie przeszkadza w nietargetowanym sacrifice. Człon
+  // „unless” jest rozpatrywany przy resolution przez generyczny kwalifikator
+  // permanenta (tu Land), z jawnym wariantem poświęcenia źródła.
+  defineCard({
+    id: 'scythe-tiger', name: 'Scythe Tiger', set: 'ZEN',
+    types: ['Creature'], subtypes: ['Cat'], colors: ['G'],
+    keywords: ['shroud'], power: 3, toughness: 2, manaCost: 1,
+    oracleText: "Shroud (This creature can't be the target of spells or abilities.)\nWhen this creature enters, sacrifice it unless you sacrifice a land.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/d/9d289043-edb5-4a7e-801b-4881709edb32.jpg?1783942131',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: {
+          type: 'sacrifice_source_unless_sacrifice',
+          qualifier: { types: ['Land'] },
+        },
+      }),
+    ],
+    artId: 368, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   defineCard({
     id: 'token_blood', name: "Blood", set: null,
     types: ['Artifact', 'Token'], subtypes: ["Blood"], colors: [], manaCost: 0,

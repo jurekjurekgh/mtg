@@ -2145,6 +2145,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     }),
     create_offspring_token: () => 12,
     living_weapon: () => 12,
+    // Batch 66 (Scythe Tiger): koszt ETB „poświęć źródło, chyba że
+    // poświęcisz [typ]”. Bez kwalifikowanego własnego permanenta źródło
+    // natychmiast znika — rzut jest marnowaniem karty, więc kara przebija
+    // bazę akcji. Z landem liczymy konserwatywną cenę jednego land dropu;
+    // engine i tak daje botowi wybór najtańszej ofiary w osobnym modalu.
+    sacrifice_source_unless_sacrifice: (e, view) => {
+      const wanted = e.qualifier?.types ?? [];
+      const canPay = (view.zones.battlefield ?? []).some((o) =>
+        o.controllerId === view.playerId
+        && wanted.every((type) => o.kind === type.toLowerCase()
+          || (o.types ?? []).includes(type)));
+      return canPay ? -12 : -120;
+    },
     destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),

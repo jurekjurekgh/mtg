@@ -351,6 +351,7 @@ function defaultBotFactory(seed, ctx) {
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
     attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
     sacrifice_self_if_counters_then_treasure: 'poświęcenie po osiągnięciu progu liczników — w zamian Skarb',
+    sacrifice_source_unless_sacrifice: 'poświęcenie źródła, chyba że poświęcisz wskazany permanent',
     subtype_spells_gain_flash_and_etb_fight_this_turn: 'czary wskazanego podtypu zyskują flash i walkę po wejściu (w tej turze)',
     your_creatures_gain_keywords_until_end_of_turn: 'nadanie słów kluczowych twoim stworom do końca tury',
     each_player_exiles_top_face_down: 'wygnanie wierzchu biblioteki każdego gracza (zakryte)',
@@ -1123,7 +1124,9 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'Wszystkie stwory nie mogą blokować do końca tury';
       }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
-      case 'sacrifice_choice_required': return `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+      case 'sacrifice_choice_required': return e.sacrificeUnless
+        ? `${whoN(e.playerId)} wskazuje permanent do poświęcenia albo poświęca źródło`
+        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
       // Batch 53 (Glorifier of Suffering): opcjonalne poświęcenie innego
       // stwora/artefaktu + refleks „when you do".
       case 'reflexive_sacrifice_required':

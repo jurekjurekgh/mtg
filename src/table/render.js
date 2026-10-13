@@ -105,7 +105,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
   resolve_discard_choice: 'Odrzucenie karty',
-  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
   // identyfikator „resolve_exploit_choice" w panelu akcji (Silumgar Butcher —
   // Exploit). Teraz czytelny polski opis.
@@ -1448,6 +1448,10 @@ function describeEffect(e, ctx = {}) {
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
+    sacrifice_source_unless_sacrifice: () => {
+      const types = e.qualifier?.types ?? ['permanent'];
+      return `poświęć źródło, chyba że poświęcisz: ${types.join('/')}`;
+    },
     prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
     prevent_next_damage: () => `prewencja kolejnych ${e.amount ?? 1} obrażeń`,
     proliferate: () => 'proliferate',
@@ -2261,7 +2265,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
   resolve_damage_division: 'Podział obrażeń między cele',
   resolve_damage_target: 'Cel obrażeń',
-  resolve_sacrifice_choice: 'Poświęcenie stwora',
+  resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // Zgłoszenie B (2026-09-19): decyzja przeciwnika o celu nie może być gołym
   // „Wybierz: Cel” — deskryptor mówi, KTO wybiera (a tytuł dokłada nazwę karty,
   // gdy widok niesie źródło decyzji).

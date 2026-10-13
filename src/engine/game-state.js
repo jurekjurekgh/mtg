@@ -5129,9 +5129,17 @@ export function execute(state, input) {
     }
     if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
     const target = state.objects.get(cmd.targetId);
-    if (!target || target.zone !== 'battlefield') return reject('illegal_sacrifice_target');
-    if (target.kind !== 'creature' && target.kind !== 'artifact'
-      && !(target.types ?? []).some((type) => ['Creature', 'Artifact'].includes(type))) {
+    if (!target || target.zone !== 'battlefield'
+      || target.controllerId !== pending.playerId) return reject('illegal_sacrifice_target');
+    // Batch 66 (Scythe Tiger): pending niesie generyczne typy kwalifikatora
+    // (Land dziś; Creature/Artifact w istniejących ścieżkach). Źródło z
+    // `alternativeSourceId` jest legalne niezależnie od typu — reprezentuje
+    // niespełnienie „unless”. Brak pola zachowuje zgodność replayów/testów.
+    const candidateTypes = pending.candidateTypes ?? ['Creature', 'Artifact'];
+    const isSourceAlternative = target.id === pending.alternativeSourceId;
+    const matchesCandidateType = candidateTypes.some((type) =>
+      target.kind === type.toLowerCase() || (target.types ?? []).includes(type));
+    if (!isSourceAlternative && !matchesCandidateType) {
       return reject('illegal_sacrifice_target');
     }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest

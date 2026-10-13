@@ -642,10 +642,15 @@ test('B66/368: przy własnym landzie gracz poświęca land i zachowuje Tiger', (
   const state = game();
   put(state, 'tiger', 'scythe-tiger', 'p1', 'battlefield');
   put(state, 'land', 'basic-forest', 'p1', 'battlefield');
+  put(state, 'foreign-land', 'basic-forest', 'p2', 'battlefield');
   enterAndScan(state, 'tiger');
   assert.equal(resolveUntilDecision(state, (s) => Boolean(s.pendingSacrifice)), true);
   const choices = commands(state).filter((command) => command.type === 'resolve_sacrifice_choice');
   assert.ok(choices.some((command) => command.targetId === 'land'));
+  assert.ok(!choices.some((command) => command.targetId === 'foreign-land'));
+  assert.equal(execute(state, {
+    type: 'resolve_sacrifice_choice', playerId: 'p1', targetId: 'foreign-land',
+  }).ok, false, 'ręczna próba poświęcenia obcego landu odrzucona');
   assert.ok(choices.some((command) => command.targetId === 'tiger'),
     'źródło jest jawnym wariantem niezapłacenia unless');
   run(state, choices.find((command) => command.targetId === 'land'));

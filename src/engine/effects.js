@@ -5026,6 +5026,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSacrifice = {
       playerId: targetId,
       candidateIds: [...candidates],
+      candidateTypes: ['Creature'],
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = targetId;
@@ -6253,6 +6254,57 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }));
     return;
   }
+  // Batch 66 (Scythe Tiger): „sacrifice [source] unless you sacrifice a
+  // [qualified permanent]”. CR 603.5 — człon unless rozpatrujemy dopiero przy
+  // resolution. Efekt jest generyczny: kwalifikator opisuje typ permanenta,
+  // źródło jest alternatywą odmowy. To sacrifice, nie destroy (CR 701.21a).
+  if (effect.type === 'sacrifice_source_unless_sacrifice') {
+    const liveSource = state.objects.get(sourceObject.id);
+    if (!liveSource || liveSource.zone !== 'battlefield') return;
+    const controllerId = liveSource.controllerId;
+    const qualifier = effect.qualifier ?? {};
+    const wantedTypes = qualifier.types ?? [];
+    const matches = (object) => object?.zone === 'battlefield'
+      && object.controllerId === controllerId
+      && wantedTypes.every((type) => object.kind === type.toLowerCase()
+        || (object.types ?? []).includes(type));
+    const candidates = state.zones.battlefield
+      .map((objectId) => state.objects.get(objectId))
+      .filter(matches)
+      .map((object) => object.id);
+    if (candidates.length === 0) {
+      // Brak sposobu zapłaty „unless” — automatycznie poświęć źródło.
+      const toZone = deathZoneFor(state, liveSource);
+      const moved = moveObjectDirectly(state, liveSource.id, toZone,
+        `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
+        cardId: moved.cardId, sacrificeUnless: true, toZone,
+      }));
+      return;
+    }
+    // Kandydaci kwalifikatora są pierwsi (proste boty naturalnie płacą), a
+    // źródło na końcu jest jawnym wynikiem „nie poświęcam landu”. Nie używamy
+    // `skip`: każda oferta nazywa permanent, który faktycznie opuści stół.
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateTypes: [...wantedTypes],
+      alternativeSourceId: liveSource.id,
+      sourceId: liveSource.id,
+      cardId: liveSource.cardId ?? null,
+      optional: false,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: controllerId,
+      candidates: [...state.pendingSacrifice.candidateIds],
+      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      sacrificeUnless: true,
+    }));
+    return true;
+  }
   // Batch 53 (Glorifier of Suffering, LCI): ETB „you may sacrifice another
   // creature or artifact. When you do, [reflexive ability]". Generyczny efekt
   // `reflexive_sacrifice` — najpierw blokująca decyzja „poświęć albo nie"
@@ -6282,6 +6334,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.pendingSacrifice = {
       playerId: controllerId,
       candidateIds: [...candidates],
+      candidateTypes: [...wantedTypes],
       optional: true,
       sourceId: sourceObject.id,
       cardId: sourceObject?.cardId ?? null,

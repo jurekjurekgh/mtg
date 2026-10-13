@@ -362,11 +362,15 @@ function targetValue(object) {
  */
 export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
   if (!spec) return [];
-  // Hexproof (CR 702.11): zdolności triggerowane też są zdolnościami — cel
-  // będący permanentem przeciwnika z hexproof nie jest legalny.
-  const hexproofBlocked = (object) => object && object.zone === 'battlefield'
-    && object.controllerId !== sourceObject.controllerId
-    && (effectiveKeywords(object, state).includes('hexproof'));
+  // Shroud (CR 702.18) blokuje celowanie KAŻDEGO gracza; hexproof (702.11)
+  // tylko źródła przeciwnika. Triggery też są zdolnościami, więc używają tej
+  // samej semantyki co czary/zdolności aktywowane (spells.js).
+  const hexproofBlocked = (object) => {
+    if (!object || object.zone !== 'battlefield') return false;
+    const keywords = effectiveKeywords(object, state);
+    if (keywords.includes('shroud')) return true;
+    return object.controllerId !== sourceObject.controllerId && keywords.includes('hexproof');
+  };
   // Protection (CR 702.16b, dosłownie CR 2026-08-07 „The Hobbit": „A
   // permanent or player with protection can't be targeted by spells or
   // abilities..." — od źródła o chronionej jakości): dotyczy także celów

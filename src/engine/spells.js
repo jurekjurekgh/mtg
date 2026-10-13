@@ -115,14 +115,21 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
 }
 
 /**
- * Hexproof (CR 702.11): permanent kontrolowany przez INNEGO gracza nie może
- * być celem czarów ani zdolności (także triggerowanych). Efektywne keywordy
- * obejmują tymczasowy hexproofUntilTurn (Throne of the Dead Three).
+ * Ograniczenia celowania z keywordów:
+ * - Shroud (CR 702.18): permanent nie może być celem NICZYICH czarów ani
+ *   zdolności;
+ * - Hexproof (CR 702.11): chroni tylko przed źródłami przeciwnika.
+ *
+ * Historyczna nazwa eksportu zostaje dla kompatybilności call-site'ów, ale
+ * predykat jest jednym choke pointem obu keywordów. Efektywne keywordy
+ * obejmują też tymczasowy hexproofUntilTurn.
  */
 export function hasHexproofAgainst(state, object, casterId) {
   if (!object || object.zone !== 'battlefield') return false;
+  const keywords = effectiveKeywords(object, state);
+  if (keywords.includes('shroud')) return true;
   if (object.controllerId === casterId) return false; // hexproof nie chroni przed własnymi czarami
-  return effectiveKeywords(object, state).includes('hexproof');
+  return keywords.includes('hexproof');
 }
 
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
