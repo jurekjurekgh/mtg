@@ -39,6 +39,29 @@ test('M101/C: tura przeciwnika zostaje w 3. osobie', () => {
   assert.equal(text, 'Nieprzyjaciel dobiera kartę');
 });
 
+test('Stage D (pętla jakości 2026-10-13): odmienNaDrugaOsobe odmienia też drugi czasownik współrzędny i czasownik „musi"', () => {
+  assert.equal(
+    describeGameEvent({ type: 'sacrifice_choice_required', playerId: HUMAN_ID, sacrificeUnless: true }, helpers),
+    'Wskazujesz permanent do poświęcenia albo poświęcasz źródło',
+  );
+  assert.equal(
+    describeGameEvent({ type: 'sacrifice_choice_required', playerId: BOT_ID, sacrificeUnless: true }, helpers),
+    'Nieprzyjaciel wskazuje permanent do poświęcenia albo poświęca źródło',
+  );
+  assert.equal(
+    describeGameEvent({ type: 'springbloom_choice_required', controllerId: HUMAN_ID, mandatory: true }, helpers),
+    'Musisz poświęcić ląd',
+  );
+  assert.equal(
+    describeGameEvent({ type: 'search_choice_resolved', playerId: HUMAN_ID, chosenId: null }, helpers),
+    'Rezygnujesz z szukania i tasujesz bibliotekę',
+  );
+  assert.equal(
+    describeGameEvent({ type: 'search_choice_resolved', playerId: BOT_ID, chosenId: null }, helpers),
+    'Nieprzyjaciel rezygnuje z szukania i tasuje bibliotekę',
+  );
+});
+
 /**
  * Skan całej partii: żaden komunikat pokazany graczowi nie może zawierać
  * podmiotu „Ty" sklejonego z czasownikiem w 3. osobie. Lista końcówek pokrywa

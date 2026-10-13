@@ -302,6 +302,10 @@ export function stateFingerprint(state) {
     pendingSacrifice: state.pendingSacrifice ? {
       playerId: state.pendingSacrifice.playerId,
       candidateIds: [...state.pendingSacrifice.candidateIds],
+      candidateTypes: state.pendingSacrifice.candidateTypes
+        ? [...state.pendingSacrifice.candidateTypes]
+        : null,
+      alternativeSourceId: state.pendingSacrifice.alternativeSourceId ?? null,
       optional: Boolean(state.pendingSacrifice.optional),
       sourceId: state.pendingSacrifice.sourceId ?? null,
       reflexiveEvent: state.pendingSacrifice.reflexiveEvent ?? null,

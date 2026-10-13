@@ -16,7 +16,8 @@ export function linkedExileCastPermission(playerId) {
 }
 
 export function canCastByLinkedExilePermission(object, playerId) {
-  return Boolean(object
+  return Boolean(playerId
+    && object
     && object.zone === 'exile'
     && object.linkedExileCastPermission?.playerId === playerId);
 }

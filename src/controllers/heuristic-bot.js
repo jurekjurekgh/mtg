@@ -4999,8 +4999,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
 
+    const castableExile = (view.zones.exile ?? []).filter((card) =>
+      Boolean(card?.linkedExileCastPermission || card?.playableFromExile
+        || card?.plotted || card?.warpedAtTurn != null || card?.onAdventure));
     let bestCardGain = 0;
-    for (const card of [...(view.zones.hand ?? []), ...(view.zones.exile ?? [])]) {
+    for (const card of [...(view.zones.hand ?? []), ...castableExile]) {
       if (card.controllerId !== view.playerId || (card.manaCost ?? 0) <= 0
         || card.kind === 'land' || !card.cardId) continue;
       const requirements = coloredPipsOf(card.cardId);
@@ -14753,7 +14756,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** Czysty, zachłanny wybór (bez side effectów) — używany też jako polityka symulacji B2. */
   function greedyChoice(view) {
-    const scored = botCommandCandidates(view).map((cmd) => ({ cmd, score: scoreCommand(view, cmd) }));
+    const scored = breakCastSpellManaTies(view,
+      botCommandCandidates(view).map((cmd) => ({ cmd, score: scoreCommand(view, cmd) })));
     scored.sort((a, b) => b.score - a.score);
     return scored[0].cmd;
   }
@@ -14864,7 +14868,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Deterministyczne: klon + polityka greedyChoice, zero losowości.
    */
   function scoredWithLookahead(view, simulate) {
-    const scored = botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd));
+    const scored = breakCastSpellManaTies(view,
+      botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd)));
     scored.sort((a, b) => b.score - a.score);
     const base = evalView(view);
     // W wyścigu (mała biblioteka / bliski lethal wroga) atak jest presją, nie
@@ -15010,8 +15015,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Aktywacja zdolności: czy płacimy maną/tapnięciem, ile ma celów i czy to
       // w ogóle zdolność nie-manowa (mana to osobna komenda `tap_for_mana`).
       const o = (view.zones.battlefield ?? []).find((x) => x.id === cmd.objectId)
-        ?? handCard(view, cmd.objectId);
-      const zdolnosc = o?.abilities?.[cmd.abilityIndex ?? 0] ?? cardDef(o?.cardId)?.abilities?.[cmd.abilityIndex ?? 0];
+        ?? handCard(view, cmd.objectId)
+        ?? zoneCard(view, cmd.objectId);
+      const def = o ? cardDef(o.cardId) : undefined;
+      const zdolnosc = cmd.grantedFromEquipment
+        ? (def?.equipment?.grantedAbilities ?? [])[cmd.abilityIndex ?? 0]
+        : (o?.activatableAbilities ?? o?.abilities ?? def?.abilities ?? [])[cmd.abilityIndex ?? 0];
       if (!zdolnosc) return null;
       return {
         tap: zdolnosc.cost?.tap ? 1 : 0,

@@ -39,6 +39,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWi
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
+import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createCardSoundPlayer } from './card-sound-player.js';
@@ -2513,7 +2514,7 @@ function bootstrapTable() {
           spendOnly: landSpendOnly,
         };
       }
-      const ability = obj.abilities?.[abilityIndex];
+      const ability = activatableAbilities(session.state, obj)?.[abilityIndex] ?? obj.abilities?.[abilityIndex];
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       if (!effects.some((e) => e?.type === 'add_mana')) return null;
       // M405/B (uwaga z gry — Jeskai Devotee): produkcję TEJ zdolności czytamy
@@ -2522,8 +2523,8 @@ function bootstrapTable() {
       // {T}”, która celowo pomija zdolności z kosztem many (M193/A). Konwerter
       // walut {1}: Add {U},{R},{W} wypadał z solwera wariantów (amount 0) i
       // kreator many nie miał wyboru — auto-tap pierwszego lepszego źródła.
-      const production = manaAbilityProductionOf(obj, ability);
-      const src = getSourceForObject(obj);
+      const production = manaAbilityProductionOf(obj, ability, session.state);
+      const src = getSourceForObject(obj, session.state);
       // D (Powerstone): deskryptor many niesie ograniczenie spendOnly
       // (CR 106.3, token_powerstone — „only to cast artifact spells”).
       const spendOnly = effects.find((e) => e?.type === 'add_mana')?.spendOnly ?? null;
@@ -2556,7 +2557,8 @@ function bootstrapTable() {
   function selfTapExclusionFor(cmd) {
     if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
     const source = session.state?.objects?.get(cmd.objectId);
-    const ability = source?.abilities?.[cmd.abilityIndex];
+    const ability = (source ? activatableAbilities(session.state, source)?.[cmd.abilityIndex] : null)
+      ?? source?.abilities?.[cmd.abilityIndex];
     return ability?.cost?.tap ? cmd.objectId : null;
   }
 
@@ -2570,7 +2572,8 @@ function bootstrapTable() {
    */
   function crewPlanFor(cmd) {
     const source = session.state?.objects?.get(cmd?.objectId);
-    const ability = source?.abilities?.[cmd?.abilityIndex];
+    const ability = (source ? activatableAbilities(session.state, source)?.[cmd?.abilityIndex] : null)
+      ?? source?.abilities?.[cmd?.abilityIndex];
     const saddle = ability?.cost?.saddlePower != null;
     // Próg N z deskryptora w pełnym stanie (widok go nie niesie);
     // kandydatów i moce bierze czysty moduł z widoku pola bitwy.
@@ -2612,7 +2615,8 @@ function bootstrapTable() {
     // effectiveGeneric wyżej. Dalej wspólna ścieżka (warianty ≥2).
     if (cmd.type === 'activate_ability' && Number.isInteger(cmd.abilityIndex)) {
       const src = session.state?.objects?.get(cmd.objectId);
-      const ability = src?.abilities?.[cmd.abilityIndex];
+      const ability = (src ? activatableAbilities(session.state, src)?.[cmd.abilityIndex] : null)
+        ?? src?.abilities?.[cmd.abilityIndex];
       if (ability?.cost && Number.isInteger(ability.cost.mana)) opts.ability = ability;
       else return null; // zdolność bez kosztu many — bez kreatora
     }

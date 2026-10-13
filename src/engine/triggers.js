@@ -537,7 +537,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
       // M154 (Batch 38, Talion's Messenger): cel może być zawężony do podtypu
       // („target Faerie you control") — dane, nie warunek na nazwę karty.
       if (spec.subtype && !(object.subtypes ?? []).includes(spec.subtype)) return false;
-      return !protectedBlocked(object);
+      return !hexproofBlocked(object) && !protectedBlocked(object);
     });
   }
   if (spec.type === 'ally_creature_on_battlefield') {
@@ -797,6 +797,7 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'land' || (object.types ?? []).includes('Land'))
         && object.id !== sourceObject.id
+        && !hexproofBlocked(object)
         && !protectedBlocked(object);
     });
   }

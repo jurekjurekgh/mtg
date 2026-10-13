@@ -50,7 +50,7 @@ function isUntappedLandSource(object, playerId) {
   if (!object || object.controllerId !== playerId || object.tapped) return false;
   const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
   if (!isLand) return false;
-  const src = getSourceForObject(object);
+  const src = object.manaSource ?? getSourceForObject(object);
   return !!src && (src.amount ?? 1) > 0;
 }
 
@@ -59,7 +59,7 @@ export function untappedLandSourcesOf(view, playerId) {
   const out = [];
   for (const object of view?.zones?.battlefield ?? []) {
     if (!isUntappedLandSource(object, playerId)) continue;
-    const src = getSourceForObject(object);
+    const src = object.manaSource ?? getSourceForObject(object);
     out.push({ id: object.id, cardId: object.cardId, colors: src.colors ?? [], amount: src.amount ?? 1 });
   }
   return out;
@@ -120,17 +120,13 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     // dostarcza kolory z index null = produkcja „za samo {T}”. Lądy
     // rzeczywiście bezbarwne (Basilisk Gate) zostają bezbarwne — pełny
     // stan też im kolorów nie przypisze.
-    if (colors.length === 0 && typeof abilityInfo === 'function') {
-      const full = abilityInfo(s.id, null);
-      if (full && (full.colors?.length ?? 0) > 0) {
-        colors = [...full.colors];
-        amount = full.amount ?? amount;
-      }
-    }
-    // D (Powerstone): lądowe źródła mogą mieć spendOnly z pełnego stanu.
     let spendOnly = null;
     if (typeof abilityInfo === 'function') {
       const full = abilityInfo(s.id, null);
+      if (full && (full.colors?.length ?? 0) > 0) {
+        colors = [...new Set([...colors, ...full.colors])];
+        amount = full.amount ?? amount;
+      }
       if (full?.spendOnly) spendOnly = full.spendOnly;
     }
     return {

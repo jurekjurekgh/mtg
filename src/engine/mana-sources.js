@@ -1,4 +1,4 @@
-import { effectiveAbilities, effectiveSubtypes } from './permanents.js';
+import { activatableAbilities, effectiveAbilities, effectiveSubtypes } from './permanents.js';
 
 /**
  * Mapowanie źródeł many -> jakie kolory mogą wyprodukować.
@@ -344,14 +344,20 @@ export function getSourceForObject(gameObject, state = null) {
   // basicki, Great Furnace „{T}: Add {R}" jako caly tekst karty) oraz dla
   // przypadkow, ktorych deskryptor nie wyraza (tron Urzy, Holdout Settlement).
   const abilityColors = manaAbilityColors(gameObject, state);
+  const mapInfo = (!gameObject.abilitiesStripped && !gameObject.typeGrant)
+    ? getManaSourceInfo(cardId)
+    : null;
   // Ląd może mieć kilka niezależnych zdolności many. W szczególności typ
-  // podstawowy daje zdolność z CR 305.6, a rozstrzygnięty efekt może nadać
-  // następną („{T}: Add {R}, {G}, or {W}"). Solver auto-tapu potrzebuje UNII
-  // wyborów; wcześniejszy early-return po podtypie Forest gubił cały grant.
+  // podstawowy daje zdolność z CR 305.6, mapa opisuje implikowane kolory
+  // druku (np. Prismari Campus), a rozstrzygnięty efekt może nadać następną
+  // („{T}: Add {R}, {G}, or {W}” — CR 611.2c: nadanie nie odbiera dotychczasowych).
+  // Solver auto-tapu potrzebuje UNII wyborów; wcześniejszy early-return gubił
+  // bądź grant, bądź kolory z MANA_SOURCE_MAP.
   if (abilityColors || subtypeColors.length > 0) {
     const amount = abilityColors ? (manaAbilityAmount(gameObject) ?? 1) : 1;
     const colors = [...new Set([
       ...subtypeColors,
+      ...(mapInfo && (mapInfo.amount ?? 1) > 0 ? (mapInfo.colors ?? []) : []),
       ...(abilityColors ?? []),
       ...(gameObject.chosenColor ? [gameObject.chosenColor] : []),
     ])];
@@ -530,13 +536,14 @@ export const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
  * `object` to obiekt stanu gry; `fallbackAbilities` to deskryptory z rejestru
  * (widok nie niesie abilities dla tokenów/obiektów spoza stanu).
  */
-export function isPureManaAbilityCommand(command, object, fallbackAbilities = null) {
+export function isPureManaAbilityCommand(command, object, fallbackAbilities = null, state = null) {
   if (command?.type !== 'activate_ability') return false;
   for (const key of MANA_ABILITY_PAYLOAD_KEYS) {
     const value = command[key];
     if (Array.isArray(value) ? value.length > 0 : value != null) return false;
   }
-  const ability = object?.abilities?.[command.abilityIndex]
+  const ability = (object ? activatableAbilities(state, object)?.[command.abilityIndex] : null)
+    ?? object?.abilities?.[command.abilityIndex]
     ?? fallbackAbilities?.[command.abilityIndex]
     ?? null;
   // F (2026-09-22): wyciszamy wyłącznie zdolności BEZ skutku ubocznego —

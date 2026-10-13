@@ -8347,4 +8347,29 @@ uruchamiano (ADR 0018).
 
 Dowody:
 [plan + realizacja](plans/PLAN_2026-10-13-batch66-kolekcja-351-368.md),
-[testy kart](../test/real-cards-batch66.test.js).
+[testy kart](../test/real-cards-batch66.test.js),
+[audyt PR #163](audits/AUDYT_PR163_2026-10-13.md).
+
+---
+
+## Audyt PR #163 i domknięcie kontraktów Batcha 66 (2026-10-13b, PR #164)
+
+1. **Mana Wizard i źródła many dla zdolności nadanych lądowi (F-1, F-2).**
+   `mana-wizard.js` uwzględnia `object.manaSource` z `PlayerView` i scala kolory
+   z `abilityInfo`, a `getSourceForObject` zachowuje drukowane kolory `MANA_SOURCE_MAP`
+   obok nadanych `abilityGrants` (CR 611.2c). `main.js`, `render.js`, `noop-probe.js`
+   i `isPureManaAbilityCommand` indeksują zdolności aktywowane przez
+   `activatableAbilities`.
+2. **Pozwolenie rzutu z wygnania i `shroud` dla Aur / triggerów (F-3).**
+   `canCastByLinkedExilePermission` wymaga niepustego `playerId`, `castAuraSpell` /
+   `resolveAuraSpell` oraz triggery `creature_you_control` / `land_you_control`
+   respektują `shroud` (CR 702.18 + 303.4a), a strefa wygnania w UI wyświetla
+   odznakę i etykietę dla `linkedExileCastPermission`.
+3. **Spójność `pendingSacrifice`, bota i polskich etykiet (F-4..F-7).**
+   `fingerprint.js` i `game-state.js` współdzielą pełną projekcję i walidację
+   `isValidPendingSacrificeTarget` (`candidateTypes`, `alternativeSourceId`),
+   `heuristic-bot.js` stosuje `breakCastSpellManaTies` także w `greedyChoice` i
+   przed sortowaniem `scoredWithLookahead`, `KEYWORD_LABELS` zawiera polskie
+   etykiety wszystkich wydrukowanych keywordów (`shroud`, `outlast`, `saddle` +
+   strażnik `A2a-printed`), a `odmienNaDrugaOsobe` odmienia także współrzędne
+   orzeczenia po `i` / `albo`.
