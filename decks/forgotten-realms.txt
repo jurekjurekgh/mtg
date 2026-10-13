@@ -25,9 +25,10 @@
 1x Ettercap
 1x Underdark Explorer
 1x Waveskimmer Aven
+1x Wild Celebrants
 1x Marut
-3x Plains
+2x Plains
 1x Island
 3x Swamp
-2x Mountain
+4x Mountain
 4x Forest
