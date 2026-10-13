@@ -14889,6 +14889,40 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
+   * PMSSB-61/F11 (S11, grzechotka remisów): dwie różne karty-czary o tej
+   * samej końcowej wycenie nie mogą być wybierane kolejnością oferty, gdy jedna
+   * realnie zajmuje więcej many. To jest RELACYJNY tie-break, nie stały podatek:
+   * działa wyłącznie wewnątrz dokładnego remisu `cast_spell`, a najtańszemu
+   * wariantowi nie dopisuje żadnej premii (M429). Dzięki temu nie przesuwa
+   * zwykłych wycen ani świadomego remisu land-vs-spell; obniża jedynie droższe
+   * czary względem najtańszego czaru z tej samej półki. Kopie za ten sam koszt
+   * nadal uczciwie remisują. `reservedManaOf` niesie koszt faktycznie płacony
+   * (surge/bez płacenia/X), więc L41 i S11 patrzą na tę samą arytmetykę co ward.
+   */
+  function breakCastSpellManaTies(view, scored) {
+    const groups = new Map();
+    for (const entry of scored) {
+      if (entry.cmd?.type !== 'cast_spell' || !Number.isFinite(entry.score)) continue;
+      const key = entry.score;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(entry);
+    }
+    for (const group of groups.values()) {
+      if (group.length < 2 || new Set(group.map(({ cmd }) => cmd.objectId)).size < 2) continue;
+      // Warianty X/kicker TEJ SAMEJ karty mogą świadomie wpadać w ten sam
+      // tier efektu (np. Consume Spirit); ich koszt jest już częścią skutku,
+      // a historyczne piny wymagają uczciwego remisu w obrębie obiektu.
+      const priced = group.map((entry) => ({ entry, cost: reservedManaOf(view, entry.cmd) }));
+      const cheapest = Math.min(...priced.map(({ cost }) => cost));
+      if (!priced.some(({ cost }) => cost > cheapest)) continue;
+      for (const { entry, cost } of priced) {
+        if (cost > cheapest) entry.score -= 0.001 * (cost - cheapest);
+      }
+    }
+    return scored;
+  }
+
+  /**
    * Projekcja DANYCH, na których bot oparł decyzję — wyłącznie dla audytu
    * (`tools/bot-tie-audit.mjs`). Same punkty nie odpowiadaja na pytanie, czy ex
    * aequo bylo uczciwe: 93 = 93 moze znac „dwa lasy, nic do rozstrzygniecia"
@@ -15062,6 +15096,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return {
         value: t ? (t.power ?? 0) * 2 + (t.toughness ?? 0) + (t.keywords?.length ?? 0) : 0,
       };
+    }
+    // PMSSB-61/F10 (L34/L40): projekcja dokładnie tych wymiarów, które
+    // różnicują wspólną wycenę ofiary. Dwa równoważne landy mogą uczciwie
+    // remisować; ostatni land, unikatowy kolor i ciało źródła już nie wyglądają
+    // w audycie jak „remis bez danych”.
+    if (cmd?.type === 'resolve_sacrifice_choice') {
+      if (cmd.skip === true) return { skip: 1, reflexReady: cmd.reflexReady ?? null };
+      const target = objectOnBoard(view, cmd.targetId);
+      return target ? {
+        kind: target.kind,
+        value: sacrificePermanentLoss(view, target),
+      } : { target: null };
     }
     if (cmd?.type === 'resolve_opponent_target') {
       const t = objectOnBoard(view, cmd.targetId);
@@ -15422,9 +15468,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         });
         return refundLead.cmd;
       }
-      const scored = enabled && helpers?.simulate
+      const scored = breakCastSpellManaTies(view, enabled && helpers?.simulate
         ? scoredWithLookahead(view, helpers.simulate)
-        : botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd));
+        : botCommandCandidates(view).map((cmd) => scoreTracked(view, cmd)));
       scored.sort((a, b) => b.score - a.score);
       // `NEVER` oznacza prawdziwy zakaz (m.in. concede), nie „bardzo słabą
       // trzecią opcję”. Profil z randomness losował dotąd z top 3 także
