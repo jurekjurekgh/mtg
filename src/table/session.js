@@ -833,6 +833,8 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 52 (Vaan, Merfolk Falconer, Jolrael).
   you_cast_spell_you_dont_own: 'rzucenie czaru, którego nie posiadasz',
   you_cast_kicked_spell: 'rzucenie czaru z opłaconym kickerem',
+  // Batch 66 (Lorescale Coatl): każde prawdziwe dobranie kontrolera.
+  you_draw_card: 'dobranie karty',
   you_draw_second_card_each_turn: 'dobranie drugiej karty w turze',
   // Batch 57/B6a (Baral and Kari Zev): „your first instant or sorcery spell
   // each turn" — zdarzenie silnika (licznik per gracz w triggers.js).

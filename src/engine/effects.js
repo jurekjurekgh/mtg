@@ -867,8 +867,17 @@ export function emitReflexiveSearch(state, pending, { found }) {
   return ev;
 }
 
-export function queueSearchChoice(state, sourceObject, { qualifier, destination, entersTapped, destinations = null, chain = null, emitter = null, mandatory = false, reflexiveEvent = null, reflexiveAbility = null }) {
-  const ownerId = sourceObject.controllerId;
+export function queueSearchChoice(state, sourceObject, {
+  qualifier, destination, entersTapped, destinations = null, chain = null,
+  emitter = null, mandatory = false, reflexiveEvent = null,
+  reflexiveAbility = null, playerId = null,
+}) {
+  // Batch 66 (Cazur / Partner with): efektem może przeszukiwać TARGET PLAYER,
+  // nie kontroler źródła. Jawny playerId jest generycznym właścicielem strefy
+  // i decyzji; brak zachowuje wszystkie dotychczasowe „search your library”.
+  // To pole napędza kandydatów, tasowanie, pending i ponowną walidację (L48).
+  const ownerId = playerId ?? sourceObject.controllerId;
+  if (!state.players.some((player) => player.id === ownerId)) return;
   const matches = (object) => librarySearchMatches(object, qualifier, ownerId);
   const candidateIds = state.zones.library.filter((id) => matches(state.objects.get(id)));
   if (candidateIds.length === 0) {
@@ -2979,10 +2988,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „You may search your library for a card with qualifier, reveal it, put
     // it into your hand, then shuffle" (Pilgrim's Eye; loch — Secret
     // Entrance; Temat 6). Wybór karty należy do gracza.
+    // Batch 66 (Cazur / Partner with): target PLAYER przeszukuje SWOJĄ
+    // bibliotekę. Cel wybrano przy położeniu triggera na stos; gdy zniknie
+    // (gracz nie znika w aktywnej grze), brak id daje bezpieczny no-op.
+    const searchPlayerId = effect.playerFromTarget
+      ? targets[effect.targetIndex ?? 0]
+      : null;
+    if (effect.playerFromTarget && !state.players.some((player) => player.id === searchPlayerId)) return;
     return queueSearchChoice(state, sourceObject, {
       qualifier: resolveSearchQualifier(effect.qualifier, sourceObject),
       destination: 'hand',
       entersTapped: false,
+      playerId: searchPlayerId,
     });
   }
   // M174/E (Halo Forager, MOM): „you may pay {X}. When you do, you may cast
@@ -3421,7 +3438,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // „put a +1/+1 counter on target creature you control". `targetIndex`
     // wskazuje inną pozycję na liście celów (Greatsword of Tyr: cel 0 =
     // nosiciel-atakujący).
-    const targetId = targets[effect.targetIndex ?? 0] ?? sourceObject.id;
+    // Batch 66 (Cazur): efekt może wskazać obiekt z kontekstu zdarzenia
+    // zamiast formalnego celu triggera („that creature” = źródło combat
+    // damage). To NIE target w rozumieniu CR 115; id zostaje zamrożone w
+    // `triggerEntry.extra` przy odpaleniu. Brak kontekstu nie może po cichu
+    // przerzucić licznika na źródło zdolności.
+    const targetId = effect.targetFromContext
+      ? context?.[effect.targetFromContext]
+      : (targets[effect.targetIndex ?? 0] ?? sourceObject.id);
+    if (!targetId) return;
     // CR 608.2b: cel, który zniknął z pola bitwy przed rozstrzygnięciem
     // (T6 — okno odpowiedzi), sprawia, że efekt nic nie robi.
     const targetObj = state.objects.get(targetId);

@@ -193,12 +193,16 @@ test('B66/356: Cazur — dane, Partner with i per-source combat trigger', () => 
   });
   const damage = def.abilities[1];
   assert.equal(damage.trigger.event, 'any_combat_damage_to_player');
-  assert.equal(damage.trigger.groupPer, undefined, 'osobny trigger za każde źródło');
+  assert.equal(damage.trigger.groupPer, undefined, 'bez grupowania „one or more”');
+  assert.equal(damage.trigger.perEvent, true, 'jawna deklaracja pojedynczego zdarzenia');
   assert.deepEqual(damage.effect, {
     type: 'add_counter', counter: '+1/+1', amount: 1,
     targetFromContext: 'damageSourceId',
   });
-  assert.equal(snapshotOf('cazur-ruthless-stalker').rulings.length, 2);
+  const rulings = snapshotOf('cazur-ruthless-stalker').rulings;
+  assert.equal(rulings.length, 8);
+  assert.ok(rulings.some((ruling) => /target another player who might have that card/i.test(ruling.comment)),
+    'ruling target-player Partner with zapisany');
 });
 
 test('B66/356: Partner — wybrany przeciwnik szuka we WŁASNEJ bibliotece i może znaleźć Ukkimę', () => {

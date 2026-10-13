@@ -2616,6 +2616,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (ev === 'when_you_cast_spell' || ev === 'you_cast_noncreature_spell'
         || ev === 'you_cast_instant_or_sorcery_spell') like = 0.5;
       else if (ev === 'you_cast_second_spell_each_turn') like = 0.25;
+      // Batch 66 (Lorescale Coatl): co najmniej draw-step w każdej własnej
+      // turze, a każdy dodatkowy draw tworzy kolejny +1/+1. Konserwatywnie
+      // wyceniamy jeden gwarantowany trigger na cykl, bez zgadywania kart.
+      else if (ev === 'you_draw_card') like = 1.0;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
       else continue;

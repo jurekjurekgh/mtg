@@ -13545,6 +13545,58 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // 356 OTC — Partner with: target player wybiera we własnej bibliotece;
+  // drugi trigger pozostaje niegrupowany, więc każde stworzenie zadające
+  // combat damage tworzy własny wpis stosu i wzmacnia właśnie siebie.
+  defineCard({
+    id: 'cazur-ruthless-stalker', name: 'Cazur, Ruthless Stalker', set: 'OTC',
+    types: ['Legendary', 'Creature'], subtypes: ['Human', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'Partner with Ukkima, Stalking Shadow (When this creature enters, target player may put Ukkima into their hand from their library, then shuffle.)\nWhenever a creature you control deals combat damage to a player, put a +1/+1 counter on that creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/e/6ee4fda8-07cd-4091-8850-a6925080b464.jpg?1783911912',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'player' } },
+        effect: {
+          type: 'search_library_to_hand',
+          qualifier: { name: 'Ukkima, Stalking Shadow' },
+          playerFromTarget: true,
+        },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'any_combat_damage_to_player', perEvent: true },
+        effect: {
+          type: 'add_counter', counter: '+1/+1', amount: 1,
+          targetFromContext: 'damageSourceId',
+        },
+      }),
+    ],
+    artId: 356, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Partner with używa target player jako właściciela decyzji search; combat trigger per źródło, bez groupPer'],
+  }),
+
+  // 357 MM2 — każde prawdziwe zdarzenie draw ma osobny trigger. Techniczne
+  // dobieranie mulliganu ma drawNumberThisTurn=null i nie spełnia zdarzenia.
+  defineCard({
+    id: 'lorescale-coatl', name: 'Lorescale Coatl', set: 'MM2',
+    types: ['Creature'], subtypes: ['Snake'], colors: ['G', 'U'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Whenever you draw a card, put a +1/+1 counter on this creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/a/5a752d05-cd6f-4754-85fd-16f1308ac1ea.jpg?1783938391',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_draw_card' },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 357, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+  }),
+
   // 359 M19 — tapped dual. Profil ['B','G'] oznacza jedną jednostkę many,
   // którą solwer może wydać jako B albo G (nie dwie jednostki).
   defineCard({

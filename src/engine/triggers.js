@@ -3167,7 +3167,15 @@ function processTriggersScan(state, recentEvents) {
             if (!mayFireGrouped(ability, {
               subject: candidate.id, abilityIndex, filter, groupSubject: ev.target ?? null,
             })) continue;
-            tryFire(state, ability, candidate, [], events, { damagedPlayerId: ev.target });
+            // Batch 66 (Cazur): kontekst niesie dokładne źródło tego
+            // zdarzenia obrażeń. Przy braku groupPer każdy stwór tworzy osobny
+            // trigger; efekt `targetFromContext` wzmacnia właśnie ten obiekt.
+            // Id zostaje stare przy zmianie strefy, więc resolution robi no-op
+            // zamiast wzmacniać nowy obiekt (CR 400.7/608.2b).
+            tryFire(state, ability, candidate, [], events, {
+              damagedPlayerId: ev.target,
+              damageSourceId: ev.source ?? source.id,
+            });
           }
         }
       }
@@ -3640,6 +3648,23 @@ function processTriggersScan(state, recentEvents) {
             // Heroic: trigger z requiresTarget (tap creature opponent controls) —
             // cel wybiera kontroler przez queueTargetDecision (tryFire).
             tryFire(state, ability, targetedCreature, [], events, { spellCardId: ev.cardId ?? null });
+          }
+        }
+      }
+    }
+    // Batch 66 (Lorescale Coatl): każde PRAWDZIWE dobranie przez kontrolera
+    // źródła tworzy osobny trigger. `drawNumberThisTurn !== null` odróżnia
+    // draw (CR 121.1/121.2) od technicznego wzięcia kart po mulliganie
+    // (CR 103.5); search/move-to-hand w ogóle nie emituje `card_drawn`.
+    if (ev.type === 'card_drawn' && ev.playerId != null && ev.drawNumberThisTurn != null) {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.trigger?.event === 'you_draw_card') {
+            tryFire(state, ability, source, [], events, {
+              drawNumberThisTurn: ev.drawNumberThisTurn,
+              drawnObjectId: ev.object?.id ?? null,
+            });
           }
         }
       }
