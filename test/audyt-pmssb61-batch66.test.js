@@ -490,3 +490,65 @@ test('PMSSB-61/kontrole dodatnie: Sporecap, Wild, Foul Orchard i Naturalize zach
   assert.ok(big > small && small > own && big > 0,
     'Naturalize ma nadal wybierać najcenniejszy legalny permanent wroga');
 });
+
+test('Audyt PR #163 F-6: linkedManaGrantValue filtruje exile, scoredWithLookahead łamie remisy many, tieProjection widzi activatableAbilities', () => {
+  // F-6b: zwykła karta wygnana bez uprawnienia rzutu (np. przez removal) NIE może
+  // sztucznie zawyżać wyceny grantu many Rakish Revelers.
+  const withoutExile = rakishScene();
+  const withDeadExile = rakishScene();
+  // Dodajemy na stół Mountain, żeby sam Rakish w ręce miał już wszystkie kolory (R/G/W),
+  // a w wygnaniu kładziemy kartę wymagającą podwójnego białego pipa (np. Griffin Guide / Day of Judgment)
+  // bez uprawnienia do rzutu z exile.
+  put(withoutExile, 'mtn', 'basic-mountain', 'p1', 'battlefield');
+  put(withDeadExile, 'mtn', 'basic-mountain', 'p1', 'battlefield');
+  put(withDeadExile, 'dead-exile', 'ballista-watcher', 'p1', 'exile');
+  const scoreWithoutDeadExile = activationScore(scored(withoutExile), 'swamp');
+  const scoreWithDeadExile = activationScore(scored(withDeadExile), 'swamp');
+  assert.equal(scoreWithDeadExile, scoreWithoutDeadExile,
+    'karta w exile bez prawa rzutu nie może zmieniać wyceny linkedManaGrantValue');
+
+  // F-6a: scoredWithLookahead musi stosować breakCastSpellManaTies PRZED ucięciem do LOOKAHEAD_TOP_K,
+  // żeby tańszy czar z remisu wchodził do okna symulacji przed droższym.
+  const tieSpellsState = scene({ setup: (state) => {
+    put(state, 'art1', 'universal-solvent', 'p2', 'battlefield');
+    // Dwa czary niszczące ten sam artefakt: droższy i tańszy (ustawiamy identyczny bazowy score przed tie-breakiem).
+    put(state, 'expensive-nat', 'naturalize', 'p1', 'hand', REG, { manaCost: 4 });
+    put(state, 'cheap-nat', 'naturalize', 'p1', 'hand', REG, { manaCost: 2 });
+  } });
+  const simulatedCmds = [];
+  const botWithLookahead = createHeuristicBot({ seed: SEED + 1, randomness: 0, lookahead: 1, registry: REG });
+  botWithLookahead.chooseCommand(playerView(tieSpellsState, 'p1'), {
+    simulate: (cmd) => {
+      simulatedCmds.push(cmd);
+      return { rejected: true };
+    },
+  });
+  const firstSimulatedSpell = simulatedCmds.find((cmd) => cmd.type === 'cast_spell');
+  assert.equal(firstSimulatedSpell?.objectId, 'cheap-nat',
+    'scoredWithLookahead musi szeregować tańszy czar przed droższym przed wyborem kandydatów lookahead');
+
+  // F-6c: tieProjection dla activate_ability musi widzieć nadaną zdolność w activatableAbilities
+  // (a nie zwracać null przez brak wpisu w def.abilities).
+  const grantedAbility = Object.freeze({
+    type: 'activated',
+    cost: Object.freeze({ mana: 1, tap: true }),
+    effect: Object.freeze([{ type: 'gain_life', amount: 1 }]),
+  });
+  const grantedTieState = scene({ setup: (state) => {
+    put(state, 'swamp-a', 'basic-swamp', 'p1', 'battlefield', REG, {
+      abilityGrants: [grantedAbility],
+    });
+    put(state, 'swamp-b', 'basic-swamp', 'p1', 'battlefield', REG, {
+      abilityGrants: [grantedAbility],
+    });
+  } });
+  const tieBot = createHeuristicBot({ seed: SEED + 1, randomness: 0, lookahead: 0, registry: REG });
+  const baseView = playerView(grantedTieState, 'p1');
+  const onlyGranted = baseView.legalCommands.filter((cmd) => cmd.type === 'activate_ability');
+  assert.equal(onlyGranted.length, 2, 'dwie nadane zdolności aktywowane na dwóch Swampach');
+  tieBot.chooseCommand(Object.freeze({ ...baseView, legalCommands: onlyGranted }));
+  const traceEntry = tieBot.trace().at(-1);
+  assert.ok(traceEntry.tie && traceEntry.tie.every((entry) => entry.proj !== null),
+    'tieProjection dla nadanej zdolności w activatableAbilities nie może zwracać null');
+});
+

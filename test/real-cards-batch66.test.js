@@ -20,6 +20,13 @@ import { processTriggers } from '../src/engine/triggers.js';
 import {
   clearStatModifiers, effectiveAbilities,
 } from '../src/engine/permanents.js';
+import { getSourceForObject, isPureManaAbilityCommand } from '../src/engine/mana-sources.js';
+import { linkedExileCastPermission } from '../src/engine/linked-exile-cast.js';
+import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { manaSourcesOf, untappedLandSourcesOf } from '../src/table/mana-wizard.js';
+import {
+  cardInfo, commandLabel, isManaAbilityCommand, rulesText, waitingExileStatus,
+} from '../src/table/render.js';
 import { drawPlayerCards, dealNonCombatDamage } from '../src/engine/effects.js';
 import { legalBlockerOptions } from '../src/engine/combat.js';
 import {
@@ -636,6 +643,92 @@ test('B66/365: brak many/celu i źródło poza ręką nie oferują hand ability;
     && (ability.effect.colors ?? []).includes('R')), 'nowy obiekt landu nie dziedziczy grantu');
 });
 
+test('Audyt PR #163 F-1/F-2: Mana Wizard, getSourceForObject i isPureManaAbilityCommand widzą nadany grant many', () => {
+  const state = game();
+  activateRakish(state);
+  const view = playerView(state, 'p1');
+  const untapped = untappedLandSourcesOf(view, 'p1');
+  assert.equal(untapped.length, 1);
+  assert.deepEqual([...untapped[0].colors].sort(), ['G', 'R', 'W'],
+    'untappedLandSourcesOf musi uwzględniać manaSource z playerView (grant R/G/W)');
+  const wizardSources = manaSourcesOf(view, 'p1');
+  assert.deepEqual([...wizardSources[0].colors].sort(), ['G', 'R', 'W'],
+    'manaSourcesOf musi widzieć nadane kolory R/G/W na kolorowym lądzie');
+
+  // F-1b: ląd z kolorami w MANA_SOURCE_MAP (Prismari Campus {U}/{R}) po nadaniu
+  // zdolności {T}: Add {R},{G},{W} zachowuje drukowane {U} (CR 611.2c).
+  const campusState = game();
+  put(campusState, 'campus', 'prismari-campus', 'p1', 'battlefield', { tapped: false });
+  put(campusState, 'rakish', 'rakish-revelers', 'p1', 'hand');
+  addMana(campusState, 'p1', 2, { colors: [] });
+  run(campusState, commands(campusState).find((command) => command.type === 'activate_ability'
+    && command.objectId === 'rakish' && command.targets?.[0] === 'campus'));
+  settle(campusState);
+  const campusSource = getSourceForObject(campusState.objects.get('campus'), campusState);
+  assert.deepEqual([...campusSource.colors].sort(), ['G', 'R', 'U', 'W'],
+    'Prismari Campus po grancie R/G/W nie może stracić drukowanego {U} z MANA_SOURCE_MAP');
+
+  // F-2: czysta zdolność many nadana lądowi przez state.abilityGrants jest
+  // rozpoznawana przez isPureManaAbilityCommand i filtrowana przez isManaAbilityCommand.
+  const grantedCmd = view.legalCommands.find((command) => command.type === 'activate_ability'
+    && command.objectId === 'land');
+  assert.ok(grantedCmd, 'silnik generuje activate_ability dla nadanej zdolności many');
+  assert.equal(
+    isPureManaAbilityCommand(grantedCmd, state.objects.get('land'), [], state),
+    true,
+    'isPureManaAbilityCommand musi widzieć nadaną zdolność many przez effectiveAbilities(object, state)',
+  );
+  const fakeSession = {
+    state,
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+  };
+  assert.equal(isManaAbilityCommand(grantedCmd, fakeSession), true,
+    'panel akcji i auto-pass muszą rozpoznać nadaną czystą zdolność many na lądzie');
+});
+
+test('Audyt PR #163 F-3: linkedExileCastPermission ma odznakę w wygnaniu, etykietę rzutu i działa dla Aur', () => {
+  const state = game();
+  const exiled = activateRakish(state);
+  put(state, 'plain-exile', 'druid-of-the-cowl', 'p1', 'exile');
+  addMana(state, 'p1', 5, { colors: ['R', 'G', 'W'] });
+  const view = playerView(state, 'p1');
+  const exileEntry = view.zones.exile.find((entry) => entry.id === exiled.id);
+  const plainExileEntry = view.zones.exile.find((entry) => entry.id === 'plain-exile');
+  assert.equal(plainExileEntry.linkedExileCastPermission, undefined,
+    'zwykła karta w exile bez uprawnienia nie może dostawać pustego linkedExileCastPermission: {}');
+  assert.equal(waitingExileStatus(plainExileEntry), '',
+    'zwykła karta w exile bez uprawnienia nie może mieć odznaki rzucalności');
+  assert.ok(exileEntry, 'Rakish Revelers widoczny w strefie exile');
+  assert.match(waitingExileStatus(exileEntry), /Zagrywalna z wygnania/,
+    'waitingExileStatus musi opisywać uprawnienie linkedExileCastPermission');
+  const castCmd = view.legalCommands.find((command) => command.type === 'cast_permanent'
+    && command.objectId === exiled.id);
+  assert.ok(castCmd, 'oferta rzutu z wygnania istnieje');
+  const fakeSession = {
+    state,
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+  };
+  assert.match(commandLabel(castCmd, fakeSession, view), /^Zagraj z wygnania: Rakish Revelers/,
+    'przycisk rzutu z linkedExileCastPermission musi mówić „Zagraj z wygnania”');
+
+  // F-3b: Aura w exile z linkedExileCastPermission jest oferowana i rzucalna.
+  const auraState = game();
+  put(auraState, 'host', 'druid-of-the-cowl', 'p1', 'battlefield');
+  put(auraState, 'aura-exile', 'benevolent-blessing', 'p1', 'exile', {
+    linkedExileCastPermission: linkedExileCastPermission('p1'),
+  });
+  addMana(auraState, 'p1', 2, { colors: ['W'] });
+  const auraCast = commands(auraState, 'p1').find((command) => command.type === 'cast_permanent'
+    && command.objectId === 'aura-exile' && command.targets?.[0] === 'host');
+  assert.ok(auraCast, 'legalAuraCasts musi uwzględniać kartę Aury z linkedExileCastPermission');
+  run(auraState, auraCast);
+  assert.ok(find(auraState, 'benevolent-blessing', 'stack'), 'Aura rzucona z wygnania trafia na stos');
+});
+
 // ---- B66/368: Scythe Tiger --------------------------------------------------
 
 test('B66/368: Scythe Tiger — 3/2 shroud i generyczne unless-sacrifice Land', () => {
@@ -706,6 +799,84 @@ test('B66/368: shroud blokuje celowanie, ale nie bezcelowe poświęcenie z unles
   settle(state);
   assert.ok(find(state, 'scythe-tiger', 'graveyard'),
     'shroud nie chroni przed nietargetowanym sacrifice');
+});
+
+test('Audyt PR #163 F-3/F-4: shroud blokuje Aury i triggery creature_you_control; opis unless-sacrifice po polsku', () => {
+  const state = game();
+  put(state, 'tiger', 'scythe-tiger', 'p1', 'battlefield');
+  put(state, 'aura', 'benevolent-blessing', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  assert.ok(!commands(state, 'p1').some((command) => command.type === 'cast_permanent'
+    && command.objectId === 'aura' && command.targets?.[0] === 'tiger'),
+  'shroud blokuje rzucenie własnej Aury na Scythe Tiger (CR 702.18 + 303.4a)');
+  assert.equal(execute(state, {
+    type: 'cast_permanent', playerId: 'p1', objectId: 'aura', targets: ['tiger'],
+  }).ok, false, 'castAuraSpell odrzuca cel ze shroud');
+
+  // Jeśli cel zyska shroud po rzuceniu Aury, Aura przy rozstrzyganiu nie może
+  // się do niego przyczepić (CR 303.4a / 608.2b).
+  put(state, 'host2', 'druid-of-the-cowl', 'p1', 'battlefield');
+  run(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'aura', targets: ['host2'] });
+  state.objects.set('host2', { ...state.objects.get('host2'), keywords: ['shroud'] });
+  settle(state);
+  assert.ok(find(state, 'benevolent-blessing', 'graveyard'),
+    'resolveAuraSpell odrzuca cel, który zyskał shroud przed rozstrzygnięciem');
+
+  // Trigger z requiresTarget: { type: 'creature_you_control' } (Breaching Hippocamp)
+  // nie może obrać Scythe Tiger ze shroud.
+  put(state, 'hippo', 'breaching-hippocamp', 'p1', 'battlefield');
+  enterAndScan(state, 'hippo');
+  assert.ok(!commands(state, 'p1').some((command) => command.type === 'resolve_trigger_target'
+    && command.targetId === 'tiger'),
+  'trigger creature_you_control nie może celować własnego stwora ze shroud');
+
+  // F-4: opis zdolności Scythe Tiger w UI używa polskiego „ląd”, nie angielskiego „Land”.
+  const view = playerView(state, 'p1');
+  const fakeSession = {
+    state,
+    view: () => view,
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    keywordsOf: (cardId) => registry.get(cardId)?.keywords ?? [],
+    subtypesOf: (cardId) => registry.get(cardId)?.subtypes ?? [],
+    typesOf: (cardId) => registry.get(cardId)?.types ?? [],
+    statsOf: (cardId) => ({ power: registry.get(cardId)?.power, toughness: registry.get(cardId)?.toughness }),
+  };
+  const tigerEntry = view.zones.battlefield.find((entry) => entry.id === 'tiger');
+  const info = cardInfo(fakeSession, tigerEntry);
+  assert.match(rulesText(info), /poświęć źródło, chyba że poświęcisz: ląd/,
+    'describeEffect dla sacrifice_source_unless_sacrifice musi tłumaczyć Land -> ląd');
+});
+
+test('Audyt PR #163 F-5: pendingSacrifice w stateFingerprint, buildLegalCommands i execute waliduje candidateTypes (L65)', () => {
+  const state = game();
+  put(state, 'tiger', 'scythe-tiger', 'p1', 'battlefield');
+  put(state, 'land', 'basic-forest', 'p1', 'battlefield');
+  put(state, 'other-creature', 'druid-of-the-cowl', 'p1', 'battlefield');
+  enterAndScan(state, 'tiger');
+  assert.equal(resolveUntilDecision(state, (s) => Boolean(s.pendingSacrifice)), true);
+
+  // stateFingerprint musi rozróżniać candidateTypes i alternativeSourceId.
+  const fpLand = stateFingerprint(state);
+  const mutated = {
+    ...state,
+    pendingSacrifice: { ...state.pendingSacrifice, candidateTypes: ['Creature'], alternativeSourceId: null },
+  };
+  assert.notEqual(fpLand, stateFingerprint(mutated),
+    'stateFingerprint musi uwzględniać candidateTypes i alternativeSourceId w pendingSacrifice');
+
+  // L65: wstrzykujemy other-creature (nie-Land, ale w candidateIds), żeby ominąć
+  // pierwszą straż `!pending.candidateIds.includes(...)` i przetestować straż candidateTypes
+  // zarówno w buildLegalCommands, jak i w execute.
+  state.pendingSacrifice.candidateIds.push('other-creature');
+  const choices = commands(state).filter((command) => command.type === 'resolve_sacrifice_choice');
+  assert.ok(!choices.some((command) => command.targetId === 'other-creature'),
+    'buildLegalCommands odfiltrowuje kandydata niespełniającego candidateTypes');
+  assert.equal(execute(state, {
+    type: 'resolve_sacrifice_choice', playerId: 'p1', targetId: 'other-creature',
+  }).ok, false, 'execute odrzuca kandydata z candidateIds niespełniającego candidateTypes');
 });
 
 // ---- Integracja kolekcji ----------------------------------------------------

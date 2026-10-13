@@ -17,6 +17,7 @@
  */
 import { execute, playerView } from '../engine/game-state.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
+import { activatableAbilities } from '../engine/permanents.js';
 
 /** Bezpiecznik: tyle komend pass-pętli symulacji rozstrzygania. */
 const MAX_PROBE_COMMANDS = 200;
@@ -80,7 +81,9 @@ function costSignatureOf(state, cmd) {
   if (!cmd) return {};
   if (cmd.type === 'activate_ability') {
     const obj = state.objects.get(cmd.objectId);
-    const ability = Number.isInteger(cmd.abilityIndex) ? obj?.abilities?.[cmd.abilityIndex] : null;
+    const ability = Number.isInteger(cmd.abilityIndex) && obj
+      ? (activatableAbilities(state, obj)?.[cmd.abilityIndex] ?? obj?.abilities?.[cmd.abilityIndex])
+      : null;
     const cost = ability?.cost ?? {};
     const sig = {
       mana: (cost.mana ?? 0) > 0,

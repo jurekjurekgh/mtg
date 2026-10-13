@@ -2026,8 +2026,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
  * legalne (hexproof nie chroni przed własnymi czarami).
  */
 function auraTargetHexproof(state, host, casterId) {
-  if (!host || host.zone !== 'battlefield' || host.controllerId === casterId) return false;
-  return effectiveKeywords(host, state).includes('hexproof');
+  if (!host || host.zone !== 'battlefield') return false;
+  const keywords = effectiveKeywords(host, state);
+  if (keywords.includes('shroud')) return true;
+  return host.controllerId !== casterId && keywords.includes('hexproof');
 }
 
 /**
@@ -2065,8 +2067,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   // w exile, a rzut następuje w trakcie rozstrzygania zdolności, więc timing
   // czaru (CR 601.2b) nie obowiązuje (ruling WotC 2025-02-10).
   const fromAbilityWindow = abilityWindowCast && object?.zone === 'exile';
+  const fromLinkedExile = canCastByLinkedExilePermission(object, playerId);
   if (!player || !object || object.controllerId !== playerId
-    || (object.zone !== 'hand' && !fromAbilityWindow)) throw new Error('Nielegalna karta aury');
+    || (object.zone !== 'hand' && !fromAbilityWindow && !fromLinkedExile)) throw new Error('Nielegalna karta aury');
   if (bestow && !object.bestow) throw new Error('Ta karta nie ma mechaniki bestow');
   if (!bestow && !object.aura) throw new Error('Tę kartę można rzucić jako aurę tylko za koszt bestow');
   // Flash (CR 702.8): aura z flash rzucana jest jak instant — jak permanent
@@ -2337,7 +2340,11 @@ export function legalAuraCasts(state, playerId) {
   const out = [];
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return out;
-  for (const id of state.zones.hand) {
+  const auraSourceIds = [
+    ...state.zones.hand,
+    ...state.zones.exile.filter((id) => canCastByLinkedExilePermission(state.objects.get(id), playerId)),
+  ];
+  for (const id of auraSourceIds) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
     out.push(...legalAuraCastsForObject(state, playerId, object));

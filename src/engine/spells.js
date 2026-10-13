@@ -2934,9 +2934,13 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
   // celu). Czysta aura fizzluje (CR 608.2b — grób), bestow wchodzi jako stwór
   // (CR 702.103e — cel nielegalny przy rozstrzyganiu kończy bycie bestowed,
   // „It continues resolving as a creature spell. See rule 608.3b.").
-  const hostProtected = host && effectiveProtectionFromColors(state, host)
-    && (object.colors ?? []).some((c) => effectiveProtectionFromColors(state, host).includes(c));
-  const legalNow = hostLegal && !hostProtected;
+  const hostUntargetable = host && hasHexproofAgainst(state, host, object.controllerId);
+  const hostProtected = host && (
+    isTargetingBlockedByProtection(state, host, object)
+    || (effectiveProtectionFromColors(state, host)
+      && (object.colors ?? []).some((c) => effectiveProtectionFromColors(state, host).includes(c)))
+  );
+  const legalNow = hostLegal && !hostProtected && !hostUntargetable;
   if (!legalNow && !object.bestow) {
     // Czysta aura przy nielegalnym celu NIE wchodzi na pole bitwy — trafia
     // wprost do grobu (jak czar „fizzle", CR 608.2b + 704.5m).

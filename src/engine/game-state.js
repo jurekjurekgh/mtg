@@ -2195,6 +2195,22 @@ export function graveFreeCastEligibleXValues(state, playerId) {
   return [...xs].sort((a, b) => a - b);
 }
 
+function isValidPendingSacrificeTarget(state, pending, targetId) {
+  if (!pending || !pending.candidateIds?.includes(targetId)) return false;
+  const target = state.objects.get(targetId);
+  if (!target || target.zone !== 'battlefield'
+    || target.controllerId !== pending.playerId) return false;
+  // Batch 66 (Scythe Tiger): pending niesie generyczne typy kwalifikatora
+  // (Land dziś; Creature/Artifact w istniejących ścieżkach). Źródło z
+  // `alternativeSourceId` jest legalne niezależnie od typu — reprezentuje
+  // niespełnienie „unless”. Brak pola zachowuje zgodność replayów/testów.
+  const candidateTypes = pending.candidateTypes ?? ['Creature', 'Artifact'];
+  const isSourceAlternative = target.id === pending.alternativeSourceId;
+  const matchesCandidateType = candidateTypes.some((type) =>
+    target.kind === type.toLowerCase() || (target.types ?? []).includes(type));
+  return isSourceAlternative || matchesCandidateType;
+}
+
 export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
@@ -5128,21 +5144,10 @@ export function execute(state, input) {
       }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
-    if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_sacrifice_target');
-    const target = state.objects.get(cmd.targetId);
-    if (!target || target.zone !== 'battlefield'
-      || target.controllerId !== pending.playerId) return reject('illegal_sacrifice_target');
-    // Batch 66 (Scythe Tiger): pending niesie generyczne typy kwalifikatora
-    // (Land dziś; Creature/Artifact w istniejących ścieżkach). Źródło z
-    // `alternativeSourceId` jest legalne niezależnie od typu — reprezentuje
-    // niespełnienie „unless”. Brak pola zachowuje zgodność replayów/testów.
-    const candidateTypes = pending.candidateTypes ?? ['Creature', 'Artifact'];
-    const isSourceAlternative = target.id === pending.alternativeSourceId;
-    const matchesCandidateType = candidateTypes.some((type) =>
-      target.kind === type.toLowerCase() || (target.types ?? []).includes(type));
-    if (!isSourceAlternative && !matchesCandidateType) {
+    if (!isValidPendingSacrificeTarget(state, pending, cmd.targetId)) {
       return reject('illegal_sacrifice_target');
     }
+    const target = state.objects.get(cmd.targetId);
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
     // śmiercią (CR 700.4 + 701.21a) — ta sama wspólna strefa docelowa.
     // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
@@ -8134,6 +8139,7 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_sacrifice_choice', playerId, { skip: true, ...(reflexReady === undefined ? {} : { reflexReady }) }));
     }
     for (const targetId of state.pendingSacrifice.candidateIds) {
+      if (!isValidPendingSacrificeTarget(state, state.pendingSacrifice, targetId)) continue;
       legalCommands.push(command('resolve_sacrifice_choice', playerId, { targetId, ...(reflexReady === undefined ? {} : { reflexReady }) }));
     }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeAmassChoice) {

@@ -7,7 +7,7 @@ import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
-import { CARD_TYPES } from '../engine/permanents.js';
+import { activatableAbilities, CARD_TYPES } from '../engine/permanents.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
 import {
@@ -938,7 +938,7 @@ export function isManaAbilityCommand(command, session) {
   // obiektów, których nie ma w stanie (deskryptory z rejestru).
   const object = session?.state?.objects?.get(command?.objectId);
   const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
-  return isPureManaAbilityCommand(command, object, fallback);
+  return isPureManaAbilityCommand(command, object, fallback, session?.state ?? null);
 }
 
 export function buildActionEntries(commands, session, view) {
@@ -1319,10 +1319,6 @@ function describeEffect(e, ctx = {}) {
     destroy_permanent: () => 'zniszcz cel',
     destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
-    mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
-    grant_abilities: () => e.duration === 'until_source_cast_from_exile'
-      ? 'nadaj zdolność aż do rzucenia tej karty z wygnania; możesz ją rzucić z wygnania'
-      : 'nadaj zdolność do końca tury',
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     discard_each_opponent: () => 'każdy przeciwnik odrzuca kartę',
     discover: () => 'discover (odsłoń i rzuć za darmo)',
@@ -1453,7 +1449,8 @@ function describeEffect(e, ctx = {}) {
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
     sacrifice_source_unless_sacrifice: () => {
-      const types = e.qualifier?.types ?? ['permanent'];
+      const types = (e.qualifier?.types ?? ['permanent'])
+        .map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? String(t).toLowerCase());
       return `poświęć źródło, chyba że poświęcisz: ${types.join('/')}`;
     },
     prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
@@ -2420,7 +2417,9 @@ function abilityCostHtmlOf(ability) {
 
 /** „ (koszt …)" zdolności komendy `activate_ability` — puste, gdy brak kosztu. */
 function abilityCostSuffix(session, cmd) {
-  const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
+  const stateObj = session?.state?.objects?.get(cmd.objectId);
+  const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[cmd.abilityIndex] : null)
+    ?? stateObj?.abilities?.[cmd.abilityIndex];
   if (!ability) return '';
   const cost = abilityCostHtmlOf(ability);
   return cost ? ` (koszt ${cost})` : '';
@@ -2711,7 +2710,9 @@ function choiceSourceTitle(cmd, session, view) {
     return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd)}`;
   }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
-    const ability = session.state?.objects?.get(cmd.objectId)?.abilities?.[cmd.abilityIndex];
+    const stateObj = session.state?.objects?.get(cmd.objectId);
+    const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[cmd.abilityIndex] : null)
+      ?? stateObj?.abilities?.[cmd.abilityIndex];
     if (ability?.keyword === 'equip') return `Wyposaż: ${name}`;
     // C (uwaga właściciela 2026-09-23c, Piercing Rays): oferta zdolności
     // z CELEM nazywała się „Cel zdolności: <karta>" — bez mechaniki i bez
@@ -2768,7 +2769,10 @@ const X_ABILITY_DESCRIPTIONS = Object.freeze({
 });
 
 function abilityXDescription(session, object, command) {
-  const ability = object?.abilities?.[command.abilityIndex]
+  const stateObj = session?.state?.objects?.get(command.objectId);
+  const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[command.abilityIndex] : null)
+    ?? object?.activatableAbilities?.[command.abilityIndex]
+    ?? object?.abilities?.[command.abilityIndex]
     ?? (object?.cardId ? session.abilitiesOf?.(object.cardId)?.[command.abilityIndex] : null);
   const effect = Array.isArray(ability?.effect) ? ability.effect[0] : ability?.effect;
   return X_ABILITY_DESCRIPTIONS[effect?.type] ?? 'zdolność z wyborem X';
@@ -3259,6 +3263,9 @@ function commandLabelBase(cmd, session, view) {
         ? `${verb} z wygnania (Impuls): ${who} — bez kosztu many, do końca tury ${card.playableUntilTurn}`
         : `${verb} z wygnania (Impuls): ${who} (koszt ${costOfCard(card)}) — do końca tury ${card.playableUntilTurn}`;
     }
+    if (card.linkedExileCastPermission) {
+      return `${verb} z wygnania: ${who} (koszt ${costOfCard(card)})`;
+    }
     return null;
   };
   // Koszt zdolności aktywowanej → ikony: {T} + {X}/{N} + pipy kolorów.
@@ -3556,7 +3563,10 @@ function commandLabelBase(cmd, session, view) {
     }
     case 'activate_ability': {
       const object = obj(cmd.objectId);
-      const ability = (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
+      const stateObj = session?.state?.objects?.get(cmd.objectId);
+      const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[cmd.abilityIndex] : null)
+        ?? object?.activatableAbilities?.[cmd.abilityIndex]
+        ?? (object && object.cardId ? session.abilitiesOf(object.cardId) : [])[cmd.abilityIndex];
       if (ability?.keyword === 'ninjutsu') {
         const attacker = cmd.attackerId ? view.zones.battlefield.find((o) => o.id === cmd.attackerId) : null;
         return `Ninjutsu: ${nameOfObjectId(cmd.objectId)} (koszt ${abilityCostHtml(ability)}, wróć ${attacker ? escapeHtml(session.nameOf(attacker.cardId)) : cmd.attackerId})`;
@@ -6331,6 +6341,9 @@ export function waitingExileStatus(object) {
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
   if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  if (object.linkedExileCastPermission) {
+    parts.push('Zagrywalna z wygnania · za pełny koszt');
+  }
   // M260/B1 (Pyxis of Pandemonium): zakryte wygnanie — status mówi, że karta
   // jest odwrócona i że odkryje ją druga zdolność źródła (permanenty wejdą
   // wtedy na pole bitwy, właścicielem pozostaje dotychczasowy właściciel).
