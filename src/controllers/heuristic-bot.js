@@ -2107,10 +2107,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // za samobójstwo). Ta sama drabina co cast_spell (klasy D/C).
     // PMSSB-3/F1: unifikacja L41 — ETB-draw liczy parametr P.drawCardValue jak
     // cast/ability (koniec magicznej 9; dostarczane 5.4 = 6 x 0.9 dyskont-permanent).
-    draw_cards: (e, view) => P.drawCardValue * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
+    draw_cards: (e, view) => P.drawCardValue * (e.amount ?? 1)
+      + drawDeckingPenalty(view, e.amount ?? 1)
+      + drawTriggeredCounterValue(view, [e]),
     // PMSSB-8/F-L1: combined-loot = wartość SIECIOWA (parytet-cyclingu),
     // nie pełny draw (split [draw,discard] = +2 już wcześniej — zbieg!).
-    draw_then_discard: (e, view) => LOOT_NET_VALUE * (e.amount ?? 1) + drawDeckingPenalty(view, e.amount ?? 1),
+    draw_then_discard: (e, view) => LOOT_NET_VALUE * (e.amount ?? 1)
+      + drawDeckingPenalty(view, e.amount ?? 1)
+      + drawTriggeredCounterValue(view, [e]),
     discard_cards: (e) => -4 * (e.amount ?? 1),
     scry: () => 4,
     discover: () => 10,
@@ -2965,14 +2969,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    *    wszystkie podane typy.
    * `null` = brak wiedzy o własnej talii → brak kary (zachowanie jak dotąd).
    */
+  const searchNameKey = (value) => String(value ?? '')
+    .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   const matchesSearchCriteria = (cardId, criteria) => {
     const def = registry.get(cardId);
-    if (!def) return false;
     const subtypes = criteria.subtypes ?? [];
     const types = criteria.allTypes ?? [];
-    if (subtypes.length === 0 && types.length === 0) return false;
+    const wantedName = criteria.name ?? null;
+    const wantedCardId = criteria.cardId ?? null;
+    if (subtypes.length === 0 && types.length === 0 && !wantedName && !wantedCardId) return false;
+    // Partner with and other named searches carry a printed name rather than
+    // type criteria. The card may not yet have a registry definition (a deck
+    // list can still use its canonical slug), so compare both registry name
+    // and normalized id. Type/subtype searches still require a definition.
+    if (wantedCardId && cardId !== wantedCardId) return false;
+    if (wantedName && def?.name !== wantedName
+      && searchNameKey(cardId) !== searchNameKey(wantedName)) return false;
+    if (!def && (subtypes.length > 0 || types.length > 0)) return false;
     const hasAll = (list, values) => list.every((v) => (values ?? []).includes(v));
-    return hasAll(subtypes, def.subtypes) && hasAll(types, def.types);
+    return hasAll(subtypes, def?.subtypes) && hasAll(types, def?.types);
   };
   const searchTargetsRemaining = (view, criteria) => {
     if (!knownOwnDeck) return null;
@@ -3846,6 +3862,62 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (myTurn(view) && ['postcombat_main', 'ending'].includes(view.turn.phase)) {
           value -= P.counterLateWindowPenalty;
         }
+      }
+    }
+    return value;
+  };
+
+  /**
+   * PMSSB-61/F4 (L41 + M429): marginalna wartość triggerów „whenever you
+   * draw a card” dla konkretnego zdarzenia doboru. Każda dobrana karta jest
+   * osobnym zdarzeniem (CR 121.2), lecz liczniki na TYM SAMYM gospodarzu
+   * agregujemy przed wywołaniem `counterHostValue`: dwa drawy dają dwa
+   * liczniki, ale nie naliczają dwa razy stałej bazy gospodarza M429.
+   *
+   * Helper rozpoznaje też celowany draw (Inspiration): synergia należy się
+   * wyłącznie wtedy, gdy kartę dobiera bot, nie przeciwnik. Jedno źródło dla
+   * cast_spell, activate_ability, ETB, modali i decyzji „may”.
+   */
+  const drawTriggeredCounterValue = (view, rawEffects, {
+    cmd = null, sourceControllerId = view.playerId,
+  } = {}) => {
+    const effects = unwrapConditionals(view, Array.isArray(rawEffects) ? rawEffects : [rawEffects]);
+    let draws = 0;
+    for (const effect of effects) {
+      if (!effect) continue;
+      const amount = Number.isInteger(effect.amount) ? Math.max(0, effect.amount) : 1;
+      if (effect.type === 'draw_cards_both_players') {
+        draws += amount;
+        continue;
+      }
+      if (effect.type !== 'draw_cards' && effect.type !== 'draw_then_discard') continue;
+      let recipientId = sourceControllerId;
+      if (effect.applyTo === 'target' || effect.scope === 'target') {
+        recipientId = (cmd?.targets ?? [])[effect.targetIndex ?? 0] ?? cmd?.targetId ?? null;
+      } else if (effect.scope === 'opponent' || effect.scope === 'each_opponent') {
+        recipientId = sourceControllerId === view.playerId ? enemy(view)?.id : view.playerId;
+      }
+      if (recipientId === view.playerId) draws += amount;
+    }
+    if (draws <= 0) return 0;
+
+    let value = 0;
+    for (const host of view.zones.battlefield ?? []) {
+      if (host.controllerId !== view.playerId || host.abilitiesStripped || host.faceDown) continue;
+      const totals = new Map();
+      for (const ability of cardDef(host.cardId)?.abilities ?? []) {
+        if (ability?.trigger?.event !== 'you_draw_card') continue;
+        const triggerEffects = unwrapConditionals(view,
+          Array.isArray(ability.effect) ? ability.effect : [ability.effect]);
+        for (const effect of triggerEffects) {
+          if (effect?.type !== 'add_counter') continue;
+          const counter = effect.counter ?? '+1/+1';
+          const amount = Math.max(1, effect.amount ?? 1) * draws;
+          totals.set(counter, (totals.get(counter) ?? 0) + amount);
+        }
+      }
+      for (const [counter, amount] of totals) {
+        value += counterHostValue(view, host, counter, amount);
       }
     }
     return value;
@@ -4851,6 +4923,90 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (needed <= 0) return false;
     if (units.length < needed) return false;
     return matchColorRequirements(units, coloredPipsOf(card.cardId));
+  };
+
+  /** Maksymalna liczba osobnych pipów pokryta przez osobne jednostki many. */
+  const coveredColoredPips = (units, requirements) => {
+    const unitForRequirement = Array(units.length).fill(-1);
+    const assign = (requirementIndex, seen) => {
+      for (let unitIndex = 0; unitIndex < units.length; unitIndex += 1) {
+        if (seen.has(unitIndex)
+          || !unitCoversRequirement(units[unitIndex], requirements[requirementIndex])) continue;
+        seen.add(unitIndex);
+        if (unitForRequirement[unitIndex] < 0
+          || assign(unitForRequirement[unitIndex], seen)) {
+          unitForRequirement[unitIndex] = requirementIndex;
+          return true;
+        }
+      }
+      return false;
+    };
+    let covered = 0;
+    for (let requirementIndex = 0; requirementIndex < requirements.length; requirementIndex += 1) {
+      if (assign(requirementIndex, new Set())) covered += 1;
+    }
+    return covered;
+  };
+
+  /**
+   * PMSSB-61/F9: marginalna wartość linkowanego grantu zdolności many.
+   * Permanent nadal tapuje się tylko RAZ: profil celu po grancie jest jedną
+   * jednostką mogącą wybrać kolor z unii starej i nowej zdolności, nigdy
+   * dodatkową jednostką. Dzięki dopasowaniu bipartytowemu osobnych pipów
+   * Forest [G→R/G/W] nie może jednocześnie opłacić {R} i {G}; w układzie
+   * Forest+Plains+Swamp tylko grant na Swampie domyka {R}{G}{W}.
+   */
+  const linkedManaGrantValue = (view, effect, target) => {
+    if (!target || target.controllerId !== view.playerId) return 0;
+    const manaAbilities = (effect?.abilities ?? []).filter((ability) => {
+      if (ability?.cost?.tap !== true) return false;
+      const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      return legs.some((leg) => leg?.type === 'add_mana' && (leg.amount ?? 1) === 1);
+    });
+    const grantedColors = [...new Set(manaAbilities.flatMap((ability) => {
+      const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      return legs.filter((leg) => leg?.type === 'add_mana' && (leg.amount ?? 1) === 1)
+        .flatMap((leg) => leg.colors ?? []);
+    }))];
+    if (grantedColors.length === 0) return -1;
+
+    const original = manaSourceOfView(target);
+    // Ten model celowo nie udaje, że zdolność „tap: add 1” rozszerza źródło
+    // dodające kilka jednostek naraz. W katalogu linkowana rodzina używa
+    // zwykłych lądów amount=1; inne profile zostają konserwatywnie bez premii.
+    if ((original?.amount ?? 1) !== 1) return -1;
+    const originalColors = [...(original?.colors ?? [])];
+    const combinedColors = [...new Set([...originalColors, ...grantedColors])];
+    const freshColors = combinedColors.filter((color) => !originalColors.includes(color));
+
+    const before = [];
+    const after = [];
+    for (const land of view.zones.battlefield ?? []) {
+      if (land.controllerId !== view.playerId
+        || (land.kind !== 'land' && !(land.types ?? []).includes('Land'))) continue;
+      const source = manaSourceOfView(land);
+      const amount = source?.amount ?? 1;
+      const colors = source?.colors ?? [];
+      for (let index = 0; index < amount; index += 1) {
+        before.push([...colors]);
+        after.push(land.id === target.id && index === 0 ? [...combinedColors] : [...colors]);
+      }
+    }
+
+    let bestCardGain = 0;
+    for (const card of [...(view.zones.hand ?? []), ...(view.zones.exile ?? [])]) {
+      if (card.controllerId !== view.playerId || (card.manaCost ?? 0) <= 0
+        || card.kind === 'land' || !card.cardId) continue;
+      const requirements = coloredPipsOf(card.cardId);
+      const coverageGain = Math.max(0,
+        coveredColoredPips(after, requirements) - coveredColoredPips(before, requirements));
+      const unlocks = !canCastWithUnits(before, card) && canCastWithUnits(after, card);
+      bestCardGain = Math.max(bestCardGain, 3 * coverageGain + (unlocks ? 8 : 0));
+    }
+    const value = 2 * freshColors.length + bestCardGain;
+    // Redundantny grant: kosztuje realną manę, niczego nie zmienia i nie może
+    // dostać sztucznej premii M429 ani remisować z passem.
+    return value > 0 ? value : -1;
   };
 
   /**
@@ -6847,6 +7003,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   function searchRiderValue(view, effect) {
     const type = effect?.type;
+    // PMSSB-61: named searches (notably Partner with) are worth a card only
+    // while that exact card can still be in our library. `null` means the bot
+    // was not given its deck list, so preserve the conservative old value;
+    // a known zero removes the fictitious tutor payoff entirely.
+    const namedQualifier = effect?.qualifier?.name || effect?.qualifier?.cardId
+      ? { name: effect.qualifier.name, cardId: effect.qualifier.cardId }
+      : null;
+    if (namedQualifier && searchTargetsRemaining(view, namedQualifier) === 0) return 0;
     if (type === 'search_library_two_cards_hand_and_grave') {
       return P.searchTwoCardsValue; // 9 (ręka) + 7 (grób = setup reanimacji)
     }
@@ -7811,6 +7975,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
       else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
     }
+    value += drawTriggeredCounterValue(view, effects, {
+      cmd, sourceControllerId: source?.controllerId ?? view.playerId,
+    });
     const old = legacyModalEffectsValue(view, effects, targetId);
     return old + P.modalEffectModelWeight * (value - old)
       - selfHarmPenalty(view, effects, cmd, target) - friendlyMisaimPenalty(view, effects, cmd, target);
@@ -10877,6 +11044,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += searchRiderValue(view, effect);
           }
         }
+        // PMSSB-61/F4 (L41): dobór kontrolera czaru wyzwala istniejące
+        // boardowe `you_draw_card`; helper agreguje wielokrotny draw i sam
+        // odrzuca wariant celujący doborem w przeciwnika.
+        score += drawTriggeredCounterValue(view, scoredEffects, {
+          cmd, sourceControllerId: card?.controllerId ?? view.playerId,
+        });
         score -= landRampActionPenalty(view, scoredEffects, spell.timing);
         // PMSSB-58: cena rodziny raz na CZAR, nie na nogę/slot. Przy
         // połączeniu kilku rodzin nie można zapłacić dwa razy tej samej many.
@@ -11095,6 +11268,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         score -= selfHarmPenalty(view, effects, cmd, target);
         // M179/E: symetria — efekt przyjazny wycelowany we wroga.
         score -= friendlyMisaimPenalty(view, effects, cmd, target);
+        // PMSSB-61/F4 (L41): ten sam marginalny payoff draw-triggerów co dla
+        // czaru i ETB; koszt aktywacji pozostaje w osobnej wspólnej gałęzi S11.
+        score += drawTriggeredCounterValue(view, effects, {
+          cmd, sourceControllerId: abilityObject?.controllerId ?? view.playerId,
+        });
         // M211/A1 (zgłoszenie właściciela, Seer's Lantern): zdolność, której
         // CAŁY efekt to „ułóż wierzch własnej biblioteki” (scry/surveil/
         // look_top_n/explore), zmienia tylko to, co dobierzemy w NAJBLIŻSZYM
@@ -11195,13 +11373,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         for (const effect of effects) {
           // Linkowany grant z karty w ręce zachowuje samą kartę jako przyszły
-          // rzut z exile i poprawia źródło many. Premiujemy własny permanent;
-          // cel przeciwnika jest już karany centralnie przez
-          // friendlyMisaimPenalty (ADR 0002 — po deskryptorze efektu).
+          // rzut z exile i poprawia profil źródła many. PMSSB-61: wartość jest
+          // MARGINALNA (kolory/pipy/rzeczywiste odblokowanie), nie płaskie +12;
+          // cel przeciwnika karze centralnie friendlyMisaimPenalty.
           if (effect.type === 'grant_abilities'
             && effect.duration === 'until_source_cast_from_exile') {
-            if (target?.controllerId === view.playerId) score += 12;
-            else score -= 12;
+            score += linkedManaGrantValue(view, effect, target);
           }
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
@@ -11661,6 +11838,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += playerTarget === view.playerId
               ? selfMillValue(view, effect.amount ?? 1, { targeted: true })
               : foeMillValue(view, effect.amount ?? 1);
+          }
+          // PMSSB-61/F6 (L41): aktywowana tarcza używa dokładnie tej samej
+          // miary zagrożenia co czar/free-cast. Bez obrażeń jest jałowa i ma
+          // przegrać z passem; przy incoming damage chroni właściwy slot.
+          if (effect.type === 'prevent_next_damage') {
+            const slot = cmd.targets?.[effect.targetIndex ?? 0] ?? cmd.targetId ?? null;
+            score += preventShieldValue(view, slot, effect.amount ?? 1);
           }
           // M237/3+4 (Blazing Torch + model właściciela): obrażenia/utrata życia
           // z AKTYWOWANEJ zdolności — ta sama wycena co czary (damageTargetValue):
@@ -12451,7 +12635,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wkrótce wyrzucić (koszt > landy+1). Tanie cyklowanie karty, którą
         // za turę-dwie można rzucić, dewastuje grę — z taką wolimy poczekać.
         const cycled = handCard(view, cmd.objectId);
-        if (cycled) {
+        // PMSSB-61/F9: zdolność z ręki nie staje się Cyclingiem tylko dlatego,
+        // że źródło leży w hand. Channel, Reinforce i linkowane exile-granty
+        // mają własną treść; polityka odrzucania taniej karty dotyczy wyłącznie
+        // deskryptora `ability.cycling`.
+        if (cycled && ability?.cycling) {
           // Zwykły cycling landa (np. Secluded Steppe) jest generyczną
           // zamianą niepotrzebnego land dropu na kartę — nie stosujemy do niego
           // kary „tanią kartę da się rzucić", bo land nie jest czarem.
@@ -12515,6 +12703,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               const controller = e.controllerFromEvent === 'damagedPlayerId' ? enemy(view)?.id : view.playerId;
               value += tokenBodyValue(view, e, { tokenControllerId: controller ?? view.playerId });
             }
+          }
+          return value;
+        };
+        // PMSSB-61/F3: boardowy payoff „gdy (dowolny) własny stwór zada
+        // obrażenia bojowe graczowi — połóż licznik na źródle obrażeń”. Stara
+        // wycena deklaracji widziała tokeny/drenaż, lecz ten sam trigger z
+        // add_counter miał wartość 0. Skanujemy deskryptory WSZYSTKICH własnych
+        // permanentów; `combat_damage_to_player` dotyczy samego źródła,
+        // `any_*` może dotyczyć atakującego z kontekstu. Liczniki tego samego
+        // rodzaju agregujemy i wołamy counterHostValue RAZ na gospodarza —
+        // druga kopia triggera dodaje licznik, ale nie drugą bazę M429.
+        const countersOnCombatDamage = (attackerId) => {
+          const attacker = projectedAttackerOf(attackerId);
+          if (!attacker) return 0;
+          const totals = new Map();
+          for (const source of view.zones.battlefield ?? []) {
+            if (source.controllerId !== view.playerId || source.abilitiesStripped || source.faceDown) continue;
+            const def = cardDef(source.cardId);
+            for (const ability of def?.abilities ?? []) {
+              const trigger = ability?.trigger ?? {};
+              if (!['combat_damage_to_player', 'any_combat_damage_to_player'].includes(trigger.event)) continue;
+              if (trigger.event === 'combat_damage_to_player' && source.id !== attackerId) continue;
+              if ((trigger.subtypes ?? []).length > 0
+                && !(trigger.subtypes ?? []).some((subtype) => (attacker.subtypes ?? []).includes(subtype))) continue;
+              const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+              for (const effect of effects) {
+                if (effect?.type !== 'add_counter') continue;
+                const pointsAtDamageSource = effect.targetFromContext === 'damageSourceId';
+                const pointsAtSelf = trigger.event === 'combat_damage_to_player'
+                  && effect.targetFromContext == null;
+                if (!pointsAtDamageSource && !pointsAtSelf) continue;
+                const counter = effect.counter ?? '+1/+1';
+                totals.set(counter, (totals.get(counter) ?? 0) + Math.max(1, effect.amount ?? 1));
+              }
+            }
+          }
+          let value = 0;
+          for (const [counter, amount] of totals) {
+            value += counterHostValue(view, attacker, counter, amount);
           }
           return value;
         };
@@ -12765,8 +12992,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (hasKeyword(object, 'flying') && blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'))) score += P.attackEvasionBonus;
           // Drenaż z triggera ataku przechodzi niezależnie od bloków.
           score += 3 * drainOnAttack(id);
-          // PMSSB-2/C (F5): trigger combat-damage→token tylko przy połączeniu.
-          if (blockers.length === 0 || !canBeBlocked) score += tokenOnCombatDamage(id);
+          // PMSSB-2/C / PMSSB-61: triggery combat-damage tylko przy
+          // konserwatywnie pewnym połączeniu (otwarty stół albo ewazja).
+          // Nadwyżki trample nadal tu nie zgadujemy — wspólna granica modelu.
+          if (blockers.length === 0 || !canBeBlocked) {
+            score += tokenOnCombatDamage(id);
+            score += countersOnCombatDamage(id);
+          }
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
@@ -12803,8 +13035,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nawet 1/1 przed 8/8. Teraz zachowujemy faktycznych blokerów i pytamy,
         // czy istnieje legalny przydział chroniący życie ORAZ poison.
         const guardBlockers = (declared) => myCreatures(view)
-          .filter((o) => !declared.includes(o.id) && !o.tapped
-            && o.cantBlock !== true && o.detained !== true);
+          // Vigilance (CR 702.20b) means declaring the creature as an attacker
+          // does not tap it. It therefore remains a real blocker for the
+          // projected crackback; non-vigilant attackers still leave the guard.
+          .filter((o) => (!declared.includes(o.id) || hasKeyword(o, 'vigilance'))
+            && !o.tapped && o.cantBlock !== true && o.detained !== true);
         // Wróg, którego nasz atak BEZ BLOKÓW zabija, MUSI blokować — a bloker,
         // który zginie, nie wróci w następnej turze. Zachowujemy dotychczasowy
         // deterministyczny model najtańszych wymuszonych bloków, ale wynik jest
@@ -12857,7 +13092,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // być liczona razem z premią; +8/+20 przebijałoby każdą drobną karę),
         // a mimo to atak musi wyjść PONIŻEJ passu, bo następna tura bez
         // blokerów to przegrana, nie wymiana.
-        if (throwsGuard) score -= P.crackbackPenalty;
+        if (throwsGuard) {
+          // L3: oddanie jedynej gardy na oczywisty lethal ma bezwarunkowo
+          // przegrać z pustą deklaracją (pass = 0). Sama stała 12 nie zawsze
+          // przebijała premię otwartego ataku 13 (np. Warden bez vigilance),
+          // mimo że komentarz i kontrakt rodziny wymagały wyniku < 0.
+          score = Math.min(-1, score - P.crackbackPenalty);
+        }
         // B3 — EV ataku: gdy przeciwnik może mieć removal (instant z damage)
         // i ma otwartą manę, atak wartościowym stworem traci na wartości —
         // kara proporcjonalna do prawdopodobieństwa i wartości stwora.
@@ -12912,9 +13153,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // M325 (audyt PR #102, F2): to samo źródło co wyżej — przy
               // WIDOCZNYM pumpe bloker może przeżyć pierwsze uderzenie i wtedy
               // trik z deathtouchem nadal zabija atakującego (klasa L48: jeden
-              // model w całej rodzinie gałęzi).
-              if (attackerStrikesFirst(object, blockers)
-                && combatPower(object) >= effBlockerToughness) continue;
+              // model w całej rodzinie gałęzi). PMSSB-61: statystyka musi być
+              // wyliczona DLA TEGO atakującego; poprzednio odwoływała się do
+              // `effBlockerToughness` z zakończonej pętli i wywracała długie
+              // gry ReferenceErrorem.
+              const riskCandidates = blockers.map((blocker) => afterBlockTriggers(view, blocker, [object]));
+              const riskTrick = enemyDefensivePumpBonus(view);
+              const riskBlockerToughness = riskCandidates
+                .reduce((max, blocker) => Math.max(max, blocker.toughness ?? 0), 0)
+                + riskTrick.toughness;
+              if (attackerStrikesFirst(object, riskCandidates)
+                && combatPower(object) >= riskBlockerToughness) continue;
               score -= dtProb * (10 + 2 * (object.power ?? 0) + (object.toughness ?? 0));
             }
           }
@@ -13808,7 +14057,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           return finish(-100);
         }
         // „You may" bez celu (Angel's Feather — +1 życie): „tak" jak dotąd.
-        return finish(cmd.fire ? 50 : 0);
+        // PMSSB-61/F4: opcjonalny draw widzi ten sam marginalny payoff
+        // boardowego `you_draw_card` co cast/ability/modal (L41).
+        const drawPayoff = cmd.fire
+          ? drawTriggeredCounterValue(view, pendingOptionalEffects(view))
+          : 0;
+        return finish(cmd.fire ? 50 + drawPayoff : 0);
       }
       case 'resolve_mulligan_choice': {
         // Mulligan londyński (CR 103.4). 2026-09-14f (zgłoszenie właściciela:

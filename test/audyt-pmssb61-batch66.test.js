@@ -320,17 +320,10 @@ function rakishScene(registry = REG, { redundant = false } = {}) {
   return scene({ registry, mana: 2, manaColors: [], setup: (state, reg) => {
     put(state, 'forest', 'basic-forest', 'p1', 'battlefield', reg);
     put(state, 'plains', 'basic-plains', 'p1', 'battlefield', reg);
-    put(state, 'swamp', 'basic-swamp', 'p1', 'battlefield', reg);
+    put(state, 'swamp', redundant ? 'rupture-spire' : 'basic-swamp', 'p1', 'battlefield', reg);
     put(state, 'swamp2', 'basic-swamp', 'p1', 'battlefield', reg);
     put(state, 'swamp3', 'basic-swamp', 'p1', 'battlefield', reg);
     put(state, 'foe-land', 'basic-mountain', 'p2', 'battlefield', reg);
-    if (redundant) {
-      const land = state.objects.get('swamp');
-      state.objects.set('swamp', Object.freeze({
-        ...land,
-        manaSource: { amount: 1, colors: ['R', 'G', 'W'] },
-      }));
-    }
     put(state, 'rakish', 'rakish-revelers', 'p1', 'hand', reg);
   } });
 }
