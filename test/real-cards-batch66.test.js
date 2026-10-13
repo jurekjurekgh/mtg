@@ -846,8 +846,16 @@ test('Audyt PR #163 F-3/F-4: shroud blokuje Aury i triggery creature_you_control
   };
   const tigerEntry = view.zones.battlefield.find((entry) => entry.id === 'tiger');
   const info = cardInfo(fakeSession, tigerEntry);
+  assert.match(rulesText(info), /Shroud \(całun — niecelowalny dla nikogo\)/,
+    'keywordLine dla Scythe Tiger musi tłumaczyć shroud z KEYWORD_LABELS, a nie drukować surowego „shroud”');
   assert.match(rulesText(info), /poświęć źródło, chyba że poświęcisz: ląd/,
     'describeEffect dla sacrifice_source_unless_sacrifice musi tłumaczyć Land -> ląd');
+
+  const cazurText = rulesText(registry.get('cazur-ruthless-stalker'));
+  assert.match(cazurText, /szukaj w bibliotece karty Ukkima, Stalking Shadow do ręki/,
+    'Partner with na Cazurze musi pokazywać nazwę partnera z qualifier.name');
+  assert.match(cazurText, /połóż licznik \+1\/\+1 na tym stworze/,
+    'add_counter z targetFromContext=damageSourceId musi wskazywać „na tym stworze”');
 });
 
 test('Audyt PR #163 F-5: pendingSacrifice w stateFingerprint, buildLegalCommands i execute waliduje candidateTypes (L65)', () => {

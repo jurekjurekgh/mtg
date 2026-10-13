@@ -37,16 +37,16 @@ Gałąź sesji: `arena/e114bf10-mtg`; jeden PR tej sesji do `main`.
 
 ### A. Plan i PR sesji (ADR 0020 A)
 
-- [ ] Zapisać ten plan w `docs/plans/PLAN_2026-10-13b-audyt-pr163-i-petla-jakosci.md`.
-- [ ] Potwierdzić zielony `npm test` i `npm run build` (cicho do `.arena/`).
-- [ ] Zacommitować plan, wypchnąć gałąź `arena/e114bf10-mtg` i otworzyć PR do `main`
-      przed jakimkolwiek kodowaniem.
+- [x] Zapisać ten plan w `docs/plans/PLAN_2026-10-13b-audyt-pr163-i-petla-jakosci.md`.
+- [x] Potwierdzić zielony `npm test` i `npm run build` (cicho do `.arena/`).
+- [x] Zacommitować plan, wypchnąć gałąź `arena/e114bf10-mtg` i otworzyć PR do `main`
+      przed jakimkolwiek kodowaniem (`ca61910`, PR #164).
 
 **Commit 1:** `docs(plan): roadmapa audytu PR #163 i pętli jakości`.
 
 ### B. Audyt pełnego diffu PR #163 (ADR 0020 B / ADR 0016)
 
-- [ ] Przejrzeć **każdy z 94 zmienionych plików** `dab1488..9ba2fde` i ująć go
+- [x] Przejrzeć **każdy z 94 zmienionych plików** `dab1488..9ba2fde` i ująć go
       w tabeli rejestru raportu `docs/audits/AUDYT_PR163_2026-10-13.md`:
   1. dokumentacja, plany, handoffy, raporty audytów i zgodność deklarowanych liczb;
   2. snapshoty 10 kart Batcha 66, `collection-art-ids.csv`, definicje w `card-data.js`,
@@ -60,13 +60,13 @@ Gałąź sesji: `arena/e114bf10-mtg`; jeden PR tej sesji do `main`.
      A, B, D, E, G, audytu PR #162 (F-1/F-2) oraz PMSSB-61 (fale A–F + tie-break);
   6. wszystkie nowe i zmodyfikowane pliki testowe i sondy (`test/*.test.js`,
      `tools/pmssb61-batch66-sonda.mjs`).
-- [ ] Zweryfikować Oracle text i rulingi 10 kart Batcha 66 wobec snapshotów Scryfall
+- [x] Zweryfikować Oracle text i rulingi 10 kart Batcha 66 wobec snapshotów Scryfall
       oraz niezależnego źródła w repozytorium/GitHubie (ADR 0010, 0022, 0028, 0029, 0030).
-- [ ] Zweryfikować dosłowne cytaty CR dla zmian regułowych wobec aktualnego tekstu CR
+- [x] Zweryfikować dosłowne cytaty CR dla zmian regułowych wobec aktualnego tekstu CR
       (ADR 0030), w szczególności: CR 113.6m, 113.7a, 121.1/121.2/121.5, 400.7, 601.3,
       603.5, 603.7, 608.2b/d/h, 611.2a, 615.1/615.6, 701.21a, 701.23/701.24, 702.18a,
       702.66a (Delve), 702.83a (Exalted), 702.124j (Partner with).
-- [ ] Odtworzyć i zbadać produkcyjnymi ścieżkami (`playerView` + `execute` + stos/SBA)
+- [x] Odtworzyć i zbadać produkcyjnymi ścieżkami (`playerView` + `execute` + stos/SBA)
       potencjalne punkty brzegowe nowych mechanik:
   - `linked-exile-cast.js` i `fromHand` / `exileSelfFromHand` / `until_source_cast_from_exile`
     (Rakish Revelers): FoW, odcisk `fingerprint`, `PlayerView`, kopiowanie/zmiana strefy,
@@ -82,9 +82,9 @@ Gałąź sesji: `arena/e114bf10-mtg`; jeden PR tej sesji do `main`.
     integracja z Żywym Testerem (`tools/table-tester/run-game.mjs`), sondami no-op i botem;
   - bramka `botMayPayCreatureSacrificeCost` (uwaga G) i `attacksAloneCombatProjection`
     (uwaga E) oraz fale PMSSB-61.
-- [ ] Uruchomić `node --test test/bot-benchmark.test.js` i testy celowane (cicho do `.arena/`).
-- [ ] Spisać raport `docs/audits/AUDYT_PR163_2026-10-13.md` z rejestrem 94 plików,
-      dowodami i listą findingów.
+- [x] Uruchomić `node --test test/bot-benchmark.test.js` i testy celowane (cicho do `.arena/`).
+- [x] Spisać raport `docs/audits/AUDYT_PR163_2026-10-13.md` z rejestrem 94 plików,
+      dowodami i listą findingów (F-1..F-7).
 
 ### C. Naprawy findingów audytu
 
@@ -96,32 +96,33 @@ Dla każdego znalezionego błędu kodu, kontraktu, UX, testu lub dokumentacji:
 4. `npm test` + `npm run build` (cicho do `.arena/`);
 5. osobny commit i natychmiastowy `git push origin arena/e114bf10-mtg`.
 
-- [ ] Wszystkie findingi kodu/reguł/kontraktów/UX naprawione.
-- [ ] Wszystkie findingi testów/dokumentacji naprawione.
+- [x] Wszystkie findingi kodu/reguł/kontraktów/UX naprawione (F-1..F-7).
+- [x] Wszystkie findingi testów/dokumentacji naprawione.
 
 ### D. Domyślna kontynuacja po audycie (ADR 0021)
 
-- [ ] Sprawdzić, czy na `main` zostały niedokończone plany (`PLAN_2026-10-13-batch66*`
+- [x] Sprawdzić, czy na `main` zostały niedokończone plany (`PLAN_2026-10-13-batch66*`
       i `PLAN_2026-10-13-pmssb61*` mają odhaczone wszystkie punkty realizacji;
       zweryfikować w audycie, czy żaden punkt nie został pominięty).
-- [ ] Wykonać celowaną pętlę jakości na rodzinach dotkniętych w PR #163:
+- [x] Wykonać celowaną pętlę jakości na rodzinach dotkniętych w PR #163:
   - przebieg Żywym Testerem (`tools/table-tester`) na taliach z nowymi kartami
-    Batcha 66 (`worek-mroczny`, `worek-dziki`, `alara`, `wiedzmin-bg`, `eldraine`,
-    `zendikar`, `forgotten-realms`) + ręczna lektura transkryptów wzdłuż 3 osi;
+    Batcha 66 (`zendikar` vs `worek-dziki`, `worek-basni` vs `worek-mroczny`,
+    `eldraine` vs `worek-legend`, `wiedzmin-bg` vs `alara`, `forgotten-realms` vs
+    `zendikar`) + ręczna lektura transkryptów wzdłuż 3 osi;
   - polowanie na błędy CR / kontraktów widoku i decyzji wokół nowych mechanik;
-  - naprawa każdego wykrytego problemu u root cause z testem regresyjnym.
-- [ ] Nie dodawać nowych kart do katalogu (ADR 0029).
+  - naprawa wykrytych problemów u root cause z testem regresyjnym (F-7).
+- [x] Nie dodawać nowych kart do katalogu (ADR 0029).
 
 ### E. Brama końcowa i dokumentacja
 
-- [ ] `npm test` (cicho do `.arena/`).
-- [ ] `npm run test:all` (cicho do `.arena/`, ADR 0019).
-- [ ] `npm run build` (cicho do `.arena/`).
-- [ ] `node --test test/bot-benchmark.test.js` (cicho do `.arena/`).
-- [ ] `node tools/cr-numery.mjs --cr` oraz `node tools/event-contract-audit.mjs`.
-- [ ] Zaktualizować ten plan, raport audytu, `docs/PROJECT_HISTORY.md`, nowy
+- [x] `npm test` (cicho do `.arena/`).
+- [x] `npm run test:all` (cicho do `.arena/`, ADR 0019).
+- [x] `npm run build` (cicho do `.arena/`).
+- [x] `node --test test/bot-benchmark.test.js` (cicho do `.arena/`).
+- [x] `node tools/cr-numery.mjs --cr` oraz `node tools/event-contract-audit.mjs`.
+- [x] Zaktualizować ten plan, raport audytu, `docs/PROJECT_HISTORY.md`, nowy
       handoff `docs/setup/HANDOFF_2026-10-13.md` i opis PR.
-- [ ] Potwierdzić czyste drzewo, wypchnięte commity i zielony GitHub CI.
+- [x] Potwierdzić czyste drzewo, wypchnięte commity i zielony GitHub CI.
 
 ## Ryzyka i pułapki
 

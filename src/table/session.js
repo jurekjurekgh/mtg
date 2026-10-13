@@ -949,8 +949,8 @@ const DRUGA_OSOBA = Object.freeze({
   dzieli: 'dzielisz', manifestuje: 'manifestujesz',
   // Fix A/Twiddle: log decyzji may czaru.
   decyduje: 'decydujesz', stosuje: 'stosujesz',
-  mulliganuje: 'mulliganujesz', może: 'możesz', niszczy: 'niszczysz',
-  obejmuje: 'obejmujesz', odkłada: 'odkładasz', odrzuca: 'odrzucasz',
+  mulliganuje: 'mulliganujesz', może: 'możesz', musi: 'musisz', niszczy: 'niszczysz',
+  obejmuje: 'obejmujesz', odkłada: 'odkładasz', odpala: 'odpalasz', odrzuca: 'odrzucasz',
   odsłania: 'odsłaniasz', ogląda: 'oglądasz', otrzymuje: 'otrzymujesz',
   patrzy: 'patrzysz', plotuje: 'plotujesz', poddaje: 'poddajesz',
   poświęca: 'poświęcasz', przegrywa: 'przegrywasz', przeszukuje: 'przeszukujesz',
@@ -968,7 +968,7 @@ const DRUGA_OSOBA = Object.freeze({
   ustala: 'ustalasz',
   wzmacnia: 'wzmacniasz', zagłębia: 'zagłębiasz', zagrywa: 'zagrywasz',
   zatrzymuje: 'zatrzymujesz', zawiesza: 'zawieszasz', zdejmuje: 'zdejmujesz',
-  znajduje: 'znajdujesz', zostawia: 'zostawiasz',
+  zdobywa: 'zdobywasz', znajduje: 'znajdujesz', zostawia: 'zostawiasz',
   // Batch 49 (Time to Feed): „…gdy zginie w tej turze, Ty zyska 3 życia”.
   zyska: 'zyskasz',
   zwiększa: 'zwiększasz',
@@ -980,14 +980,24 @@ const wielkaLitera = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 export function odmienNaDrugaOsobe(text, humanName = PLAYER_NAMES[HUMAN_ID]) {
   if (typeof text !== 'string' || !text.includes(humanName)) return text;
   const wzorzec = new RegExp(`(^|[^\\p{L}])${humanName} (nie )?(\\p{L}+)`, 'u');
-  return text.replace(wzorzec, (dopasowanie, przed, negacja, czasownik) => {
+  let odmienionoPodmiot = false;
+  const poPierwszym = text.replace(wzorzec, (dopasowanie, przed, negacja, czasownik) => {
     const odmieniony = DRUGA_OSOBA[czasownik];
     if (!odmieniony) return dopasowanie;
+    odmienionoPodmiot = true;
     // Podmiot znika; jeśli zdanie zaczynało się od „Ty", czasownik (albo
     // „nie") przejmuje wielką literę.
     const naPoczatku = przed === '';
     const reszta = negacja ? `${negacja}${odmieniony}` : odmieniony;
     return `${przed}${naPoczatku ? wielkaLitera(reszta) : reszta}`;
+  });
+  if (!odmienionoPodmiot) return poPierwszym;
+  // Stage D (pętla jakości 2026-10-13): jeśli podmiotem zdania jest gracz
+  // („Ty wskazuje … albo poświęca źródło", „Ty rezygnuje z szukania i tasuje
+  // bibliotekę"), odmieniamy też współrzędne orzeczenia po spójniku („i", „albo").
+  return poPierwszym.replace(/\b(i|albo) (nie )?(\p{L}+)/gu, (m, spojnik, neg, cz) => {
+    const odm = DRUGA_OSOBA[cz];
+    return odm ? `${spojnik} ${neg ?? ''}${odm}` : m;
   });
 }
 

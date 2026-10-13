@@ -197,6 +197,15 @@ test('A2a (strażnik): każdy grantowalny keyword katalogu ma etykietę badge (K
   assert.deepEqual(missing, [], `keywordy bez etykiety badge (kafel pokaże surowy slug): ${missing.join(', ')}`);
 });
 
+test('A2a-printed (strażnik): każdy wydrukowany keyword karty (c.keywords) ma etykietę w KEYWORD_LABELS', () => {
+  const printed = new Set();
+  for (const c of REGISTRY.all()) {
+    for (const kw of c.keywords ?? []) printed.add(kw);
+  }
+  const missing = [...printed].sort().filter((kw) => !KEYWORD_LABELS[kw]);
+  assert.deepEqual(missing, [], `wydrukowane keywordy bez KEYWORD_LABELS (keywordLine pokaże surowy slug): ${missing.join(', ')}`);
+});
+
 test('A2b (strażnik): każdy grantowalny keyword katalogu ma etykietę logu (KEYWORD_EVENT_LABELS)', () => {
   const missing = grantableKeywords().filter((kw) => !KEYWORD_EVENT_LABELS[kw]);
   assert.deepEqual(missing, [], `keywordy bez etykiety logu („zyskuje: surowy_slug”): ${missing.join(', ')}`);

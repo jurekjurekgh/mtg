@@ -16785,3 +16785,51 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   poprawne. GitHub CI PR #163 **PASS** — run `38394514667`, job
   `115286210287`, 6m6s. Pełnego benchmarku B0 nie uruchamiano zgodnie z
   poleceniem właściciela.
+
+## 2026-10-13b — Audyt PR #163 i celowana pętla jakości (PR #164)
+
+- **Audyt PR #163 (`dab1488..9ba2fde`, 94 pliki / 51 commitów):** pełny przegląd
+  linia po linii ujawnił **6 usterek (F-1..F-6)**, a celowana pętla jakości
+  Żywym Testerem (`tools/table-tester/run-game.mjs`, 5 partii na taliach z
+  kartami Batch 66) wykryła **F-7** (łącznie **7 usterek F-1..F-7**, raport:
+  `docs/audits/AUDYT_PR163_2026-10-13.md`):
+  - **F-1:** `src/table/mana-wizard.js` (`isUntappedLandSource`, `untappedLandSourcesOf`,
+    `manaSourcesOf`) respektuje teraz `object.manaSource` z `PlayerView` i scala
+    kolory z `abilityInfo`, a `getSourceForObject` w `src/engine/mana-sources.js`
+    zachowuje drukowane kolory `MANA_SOURCE_MAP` (gdy brak `abilitiesStripped` i
+    `typeGrant`), dzięki czemu ląd z nadanym grantem `Rakish Revelers` pokazuje
+    w Mana Wizardzie zarówno drukowane, jak i nadane kolory many (CR 611.2c).
+  - **F-2:** `src/table/main.js`, `src/table/render.js`, `src/table/noop-probe.js`
+    oraz `isPureManaAbilityCommand` w `src/engine/mana-sources.js` indeksują
+    zdolności aktywowane przez `obj.activatableAbilities ?? obj.abilities` /
+    `activatableAbilities`, zapobiegając zgubieniu nadanych zdolności aktywowanych
+    (`abilityGrants`) poza zakresem `obj.abilities`.
+  - **F-3:** `canCastByLinkedExilePermission` w `src/engine/linked-exile-cast.js`
+    wymaga `Boolean(playerId)` (wcześniej `undefined === undefined` ustawiało
+    `linkedExileCastPermission` na każdej odkrytej karcie w wygnaniu w `playerView`);
+    dodano obsługę rzucania Aur z wygnania przez `linkedExileCastPermission`,
+    odznakę/etykietę w `src/table/render.js` oraz blokadę `shroud` dla własnych
+    Aur (`castAuraSpell` / `resolveAuraSpell`, CR 702.18 + 303.4a) i triggerów
+    `creature_you_control` / `land_you_control`.
+  - **F-4:** w `src/table/render.js` (`describeEffect`) `sacrifice_source_unless_sacrifice`
+    tłumaczy typy kwalifikatora przez `TARGET_TYPE_LABELS` (`Land` → `ląd`), a
+    zduplikowane klucze `mill_from_bottom` i `grant_abilities` zostały usunięte.
+  - **F-5:** `src/engine/fingerprint.js` uwzględnia `candidateTypes` i
+    `alternativeSourceId` w `pendingSacrifice`, a `src/engine/game-state.js`
+    współdzieli walidację `isValidPendingSacrificeTarget` między `playerView` i
+    `execute` (L48); dopisano test walidacji `candidateTypes` po mutacji `candidateIds` (L65).
+  - **F-6:** w `src/controllers/heuristic-bot.js` `breakCastSpellManaTies` działa
+    również w `greedyChoice` i przed sortowaniem `scoredWithLookahead` (L41),
+    `linkedManaGrantValue` filtruje karty wygnane do faktycznie grywalnych z
+    wygnania, a `tieProjection` dla `activate_ability` czyta `activatableAbilities`.
+  - **F-7 (Stage D — Żywy Tester):** uzupełniono `KEYWORD_LABELS` w `src/table/render.js`
+    o brakujące wydrukowane keywordy `shroud`, `outlast` i `saddle` (wraz ze
+    strażnikiem `A2a-printed` w `test/m179-inwentaryzacja.test.js`), doprecyzowano
+    opis `Cazur, Ruthless Stalker` na kaflu (`search_library_to_hand` z nazwą
+    partnera `qualifier.name` oraz `add_counter` z `targetFromContext: 'damageSourceId'`),
+    a w `src/table/session.js` uzupełniono `DRUGA_OSOBA` (`musi`, `odpala`,
+    `zdobywa`) i odmianę współrzędnych czasowników po `i` / `albo` w `odmienNaDrugaOsobe`.
+- **Bramy:** `npm test` **8129/8129**, `test/bot-benchmark.test.js` **10/10**,
+  `npm run build` **74 moduły / 5106,4 kB**, `cr-numery.mjs --cr` **522/522 OK**,
+  `event-contract-audit.mjs` **0 naruszeń**, 5 partii `tools/table-tester/run-game.mjs`
+  (`seed` 6601–6605) — **0 zgłoszeń detektorów i 0 niewycenionych akcji bota**.

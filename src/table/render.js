@@ -1024,6 +1024,12 @@ export const KEYWORD_LABELS = Object.freeze({
   // Batch 61 (Gryffwing Cavalry): Trening (CR 702.149) — bez etykiety linia
   // keywordów pokazywałaby surowy slug „training" (pułapka M127/L29).
   training: 'Trening (atakuje z silniejszym → +1/+1)',
+  // Stage D (audyt PR #163 / pętla jakości 2026-10-13): brakujące wydrukowane
+  // keywordy z c.keywords (Scythe Tiger — shroud CR 702.18, Enduring Sliver —
+  // outlast CR 702.107, Gila Courser — saddle CR 702.171).
+  shroud: 'Shroud (całun — niecelowalny dla nikogo)',
+  outlast: 'Outlast (wytrwaj)',
+  saddle: 'Saddle (osiodłaj)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
@@ -1207,7 +1213,7 @@ function describeEffect(e, ctx = {}) {
     // panelu akcji i kafla (M122/#5 nie przepuszcza typu bez opisu).
     get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
     remove_counter: () => `usuń licznik ${e.counter}`,
-    add_counter: () => `połóż licznik ${e.counter}`,
+    add_counter: () => `połóż licznik ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`,
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
@@ -1507,7 +1513,9 @@ function describeEffect(e, ctx = {}) {
       const subtypes = (e.qualifier?.subtypes ?? []).join('/');
       return `szukaj w bibliotece karty${basicLand ? ' podstawowego lądu' : ''}${subtypes ? ` typu ${subtypes}` : ''} na pole bitwy${e.entersTapped ? ' (tapniętej)' : ''}, potem potasuj`;
     },
-    search_library_to_hand: () => 'szukaj w bibliotece do ręki',
+    search_library_to_hand: () => (e.qualifier?.name
+      ? `szukaj w bibliotece karty ${e.qualifier.name} do ręki`
+      : 'szukaj w bibliotece do ręki'),
     springbloom_sacrifice_search: () => 'poświęć ląd, szukaj 2 basic landów',
     start_engines: () => 'start your engines!',
     station_counters: () => `połóż liczniki charge (station)`,
