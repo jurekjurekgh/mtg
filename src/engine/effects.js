@@ -4488,6 +4488,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.turn.priorityPlayerId = sourceObject.controllerId;
     state.events.push(event('redirect_choice_required', {
       playerId: sourceObject.controllerId,
+      // Zgłoszenie F (CR 109.5): log musi móc nazwać KONTROLERA czaru —
+      // ograniczenia celu („your graveyard") liczy się z jego perspektywy,
+      // a nie gracza, który przekierowuje (lista kandydatów wygląda wtedy
+      // „na cudzą”, i tak też wyglądała właścicielowi).
+      spellControllerId: spell.controllerId,
       stackId, cardId: spell.cardId ?? null,
       currentTargetId: single.targetId, entryKind: single.kind,
     }));

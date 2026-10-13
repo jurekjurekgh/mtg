@@ -2401,9 +2401,21 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'proliferate_target_resolved': return e.count === 0
         ? `${whoN(e.playerId)} kończy proliferate bez celów`
         : null; // opisuje linia „proliferated"
-      case 'redirect_choice_required': return `${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`;
+      // Zgłoszenie F (2026-10-13, CR 109.5): „your graveyard" w tekście czaru
+      // to grób JEGO KONTROLERA, a nie gracza, który przekierowuje cel —
+      // bez tej informacji lista kandydatów wygląda „na cudzą" i rodzi
+      // wątpliwość, czy to błąd (tak było przy Unbreakable Bond + Willbender).
+      case 'redirect_choice_required': {
+        const kontroler = e.spellControllerId ? whoN(e.spellControllerId) : null;
+        return `${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`
+          + ' — nowy cel musi być innym legalnym celem'
+          + (kontroler
+            ? `; ograniczenia czaru (np. „your graveyard”) ocenia się z perspektywy jego kontrolera: ${kontroler}`
+            : '');
+      }
       case 'redirect_choice_resolved': return e.toTarget == null
         ? `Cel czaru ${nameOf(e.cardId)} zostaje bez zmian`
+          + (e.unchangedReason === 'no_other_legal_target' ? ' — brak innego legalnego celu (CR 115.7a)' : '')
         : `Cel czaru ${nameOf(e.cardId)} zmienia się na ${isPlayer(e.toTarget) ? whoN(e.toTarget) : nameOfObject(e.toTarget)}`;
       case 'reveal_started': {
         const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');

@@ -29,6 +29,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { legalActivatedAbilities } from '../src/engine/abilities.js';
 import { effectiveKeywords } from '../src/engine/permanents.js';
+import { describeGameEvent } from '../src/table/session.js';
+import { choiceGroupTitle } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -111,6 +113,10 @@ test('Zgłoszenie F: „your graveyard" należy do KONTROLERA czaru — kandydac
   const { state, idsGrobP2 } = scenaZgloszeniaF(['seismic-monstrosaur', 'skymarch-bloodletter']);
   assert.ok(state.pendingRedirectChoice, 'decyzja o nowym celu czeka');
 
+  const required = state.events.filter((e) => e.type === 'redirect_choice_required').at(-1);
+  assert.equal(required?.spellControllerId, 'p2',
+    'zdarzenie nazywa kontrolera czaru — log tłumaczy z jego perspektywy (CR 109.5)');
+
   const offers = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'resolve_redirect_choice');
   assert.deepEqual(offers.map((o) => o.targetId), ['altP2-1'],
@@ -169,4 +175,42 @@ test('Zgłoszenie F (bug): bez INNEGO legalnego celu decyzja zamyka się sama, c
   const wrocil = [...state.objects.values()].find((o) => o.cardId === 'seismic-monstrosaur' && o.zone === 'battlefield');
   assert.ok(wrocil, 'pierwotny cel wrócił na pole bitwy (efekt nie zmienił celu)');
   assert.equal(wrocil.controllerId, 'p2', 'pod kontrolą p2');
+});
+
+test('Zgłoszenie F: log tłumaczy, CZYJ grób obowiązuje przy nowym celu (CR 109.5)', () => {
+  const helpers = { nameOf: () => 'Unbreakable Bond', nameOfObject: () => 'Seismic Monstrosaur' };
+  const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
+  const required = describeGameEvent({
+    type: 'redirect_choice_required', playerId: 'p1', spellControllerId: 'p2',
+    cardId: 'unbreakable-bond', currentTargetId: 'celP2',
+  }, helpers, names);
+  assert.match(required, /Możesz zmienić cel czaru Unbreakable Bond/, required);
+  assert.match(required, /nowy cel musi być innym legalnym celem/, required);
+  assert.match(required, /kontrolera: Nieprzyjaciel/, `log nazywa kontrolera czaru: ${required}`);
+
+  const bezZmian = describeGameEvent({
+    type: 'redirect_choice_resolved', playerId: 'p1', cardId: 'unbreakable-bond',
+    fromTarget: 'celP2', toTarget: null, auto: true, unchangedReason: 'no_other_legal_target',
+  }, helpers, names);
+  assert.match(bezZmian, /zostaje bez zmian — brak innego legalnego celu \(CR 115\.7a\)/, bezZmian);
+
+  // Zwykłe przekierowanie (jest nowy cel) nie dostaje dopisku o braku celu.
+  const zmiana = describeGameEvent({
+    type: 'redirect_choice_resolved', playerId: 'p1', cardId: 'unbreakable-bond',
+    fromTarget: 'celP2', toTarget: 'altP2-1',
+  }, { ...helpers, nameOfObject: () => 'Skymarch Bloodletter' }, names);
+  assert.match(zmiana, /zmienia się na Skymarch Bloodletter/, zmiana);
+  assert.doesNotMatch(zmiana, /brak innego legalnego celu/, zmiana);
+});
+
+test('Zgłoszenie F: decyzja nie jest już opisana jako „Przekierowanie obrażeń”', () => {
+  const request = {
+    type: 'command',
+    options: [{ type: 'resolve_redirect_choice', targetId: 'altP2-1' }],
+  };
+  const view = { zones: { battlefield: [], hand: [], graveyard: [], stack: [], library: [], exile: [] }, players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }], pendingRedirectChoice: { stackId: 'spell-2', spellCardId: 'unbreakable-bond', playerId: 'p1', currentTargetId: 'celP2' } };
+  const session = { nameOf: () => 'Unbreakable Bond', nameOfObject: () => 'Skymarch Bloodletter' };
+  const title = choiceGroupTitle(request, session, view);
+  assert.match(title, /Zmiana celu czaru/, `tytuł grupy opisuje CZYNNOŚĆ: ${title}`);
+  assert.doesNotMatch(title, /obrażeń/, `stara etykieta wprowadzała w błąd (obrażenia vs cel czaru): ${title}`);
 });
