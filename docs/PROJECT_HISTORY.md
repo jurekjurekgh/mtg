@@ -17059,3 +17059,49 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   Plan i raport talii:
   `docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md`; testy kart:
   `test/real-cards-batch67.test.js`.
+
+## 2026-10-15 — PMSSB-62: jakościowe domknięcie batcha 67 (PR #165)
+
+Zlecenie właściciela: pełna pętla M429 dla mechanik 10 kart batcha 67, z ręcznym
+strojeniem scoringu bota — rodziny już zamknięte dostały kontrole dodatnie
+(Cancel, Artful Maneuver, Intrepid Tenderfoot, Render Speechless, Spellkeeper
+Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja).
+
+- **Fala B (energia, `86a34ae`).** Licznik `{E}` miał trzy różne liczby
+  w trzech miejscach: koszt w `activate_ability` (3, PMSSB-56), zysk
+  `get_energy` (0 — świadomy wyjątek E8) i opcjonalna opłata triggera
+  (`{E}{E}{E}` = ZERO wymiaru: 75,0000 identycznie dla wariantu płatnego
+  i darmowego). Teraz jedna stała `P.energyCounterValue = 3` obsługuje koszt,
+  zysk i opłatę, `energyAmountFromView` liczy kwotę dynamiczną
+  (`creatures_attacking_you`) z widoku, a bramka „w puli ≥ koszt" (ruling PIP
+  2024-11-08) nie pozwala triggerowi udawać darmowego. Opłata: 75,0000 →
+  **66,0000**; antycypacja rzutu przy 4 własnych stworach: 72,9027 → 77,6277.
+- **Fala C (obniżki, `dbdb77d`).** Bot płacił pełny koszt z definicji: Butcher
+  „{5}" mimo {2} albo {0} z silnika, Sentry Bot „{4}{W}" przy czterech
+  atakujących. `cardCostReductionForView` zna teraz `perCreatureAttackingYou`,
+  a `abilityManaCostForView` liczy koszt aktywowanej zdolności jak silnik
+  (CR 602.2b → 601.2f, podłoga = pipy; token nie jest kartą, CR 108.2b).
+  Butcher 0/3/5 kart: −3,0000 → **5,0000/8,0000/10,0000**; Sentry Bot 0/2/4
+  atakujących: **65,7027/76,5027/83,7027** (przy 3 manach oferta istnieje
+  wyłącznie z obniżką). „Each opponent loses N life" czytane po ZAKRESIE
+  (`scope: 'each_opponent'`), nie po typie (M255/E5).
+- **Fala D (payoffy, `d6ed409`).** Trigger drugiej karty w turze
+  (`you_draw_second_card_each_turn`) wchodzi do wyceny, ale tylko przy DOWODZIE
+  drugiego dobrania w widoku (M429: bez dowodu dawna wartość 59,3964; z dowodem
+  65,2464). Rider śmierci tokena (Boar → Food) używa tej samej miary co ścieżka
+  stwora, a Food dostał bank życia — pod presją życia 81,4400 vs 79,9400
+  w kontrfakcie, przy pełnym życiu różnicy nie ma i to jest jawne ograniczenie.
+  F7 awansowało z kontroli dodatniej na finding: battle cry (CR 702.91a) nie
+  wchodził do decyzji ATAKU; `teamAttackPump` + `pumpedObject` dają sondzie
+  rozstrzygającej −3,00 → **9,00** (2/2 zostaje 3/2 i zabija blokera 3/3).
+- **Lekcja o kontrfaktach.** Dwa kontrfakty fali A mutowały ZŁE pole (obniżka
+  Butchera siedzi na `abilities[0]`, a rider tokena w deskryptorze
+  `create_token` czaru) i „udowadniały" brak różnicy, którego nie było —
+  po naprawie oba findingi mają dowód. Zasada na przyszłość: przed mutacją
+  sprawdź, GDZIE pole faktycznie leży.
+- **Dowody i bramy.** `test/audyt-pmssb62-batch67.test.js` **12/12** (RED na
+  kodzie sprzed fali: 3/12); fast **8199/8199** po każdej fali; golden-master:
+  dryf jednej partii (`dominaria-brg|mirrodin-wu@1000`, −3,0000, decyzje
+  315→314) — atrybucja wyłącznikami wskazała wyłącznie F1, fixture
+  zregenerowany świadomie. Plan: `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`;
+  raport: `docs/audits/PMSSB62_BATCH67_2026-10-15.md`; rejestr: `§PMSSB-62`.
