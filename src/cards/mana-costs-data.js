@@ -634,5 +634,6 @@ export const MANA_COSTS = {
   "cancel": "{1}{U}{U}",
   "render-speechless": "{2}{W}{B}",
   "improbable-alliance": "{U}{R}",
+  "wolfs-quarry": "{4}{G}{G}",
   "intrepid-tenderfoot": "{1}{G}",
 };

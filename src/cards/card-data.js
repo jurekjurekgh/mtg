@@ -63,6 +63,18 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
  * many jest kolorowa (resources.js). Ograniczeń gry nie ma (ADR 0022:
  * pełny Oracle albo `unsupported`).
  */
+/**
+ * Batch 67 (Wolf's Quarry): zdolność drukowanego tokenu Food — „{2}, {T},
+ * Sacrifice this artifact: You gain 3 life." Ta sama zdolność stoi w wpisie
+ * katalogu `token_food` i w deskryptorze `create_token` (M121 porównuje je
+ * semantycznie), więc obie strony czytają JEDNĄ stałą (L41).
+ */
+const BATCH67_FOOD_ABILITY = createAbility({
+  type: ABILITY_TYPE.activated,
+  cost: { mana: 2, tap: true, sacrificeSelf: true },
+  effect: { type: 'gain_life', amount: 3 },
+});
+
 export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'highland-game', name: 'Highland Game', set: 'KTK',
@@ -864,6 +876,29 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Flying',
     imageUri: 'https://cards.scryfall.io/large/front/b/c/bcd82cb0-ff4b-4f4d-b3d0-3ac53883b099.jpg?1783932483',
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Improbable Alliance'] },
+  }),
+  // Batch 67 (Wolf's Quarry, ELD): drukowany token 1/1 G Boar z triggerem
+  // śmierci tworzącym Food (teld 9). Zdolność jest ZDUBLOWANA w deskryptorze
+  // `create_token` i tutaj — spójności pilnuje M121 (etykieta panelu czyta
+  // rejestr), a grafiki pilnuje M369.
+  defineCard({
+    id: 'token_boar', name: 'Boar', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Boar'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'When this creature dies, create a Food token.',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: {
+          type: 'create_token', cardId: 'token_food', name: 'Food',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+          abilities: [BATCH67_FOOD_ABILITY],
+        },
+      }),
+    ],
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/365b2234-c29d-42db-a8e0-80685a4b6434.jpg?1783932482',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Wolf\'s Quarry'] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -13914,6 +13949,39 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       'ruling: jeśli permanentu NIE BYŁO na polu bitwy w chwili dobrania drugiej karty, zdolność nie odpala w tej turze wcale (m.in. wejście po fakcie)',
       '„put into hand” bez słowa „draw” nie liczy się jako dobranie (ruling 2019-10-04, CR 121.5)',
       'zdolność aktywowana to loot: dobranie, potem odrzucenie — wybór odrzucanej karty należy do rzucającego',
+    ],
+  }),
+
+  // 391 Wolf's Quarry (ELD #184) {4}{G}{G} Sorcery — „Create three 1/1 green
+  // Boar creature tokens with "When this token dies, create a Food token.""
+  defineCard({
+    id: 'wolfs-quarry', name: 'Wolf\'s Quarry', set: 'ELD',
+    types: ['Sorcery'], colors: ['G'], manaCost: 6,
+    oracleText: 'Create three 1/1 green Boar creature tokens with "When this token dies, create a Food token." (A Food token is an artifact with "{2}, {T}, Sacrifice this token: You gain 3 life.")',
+    imageUri: 'https://cards.scryfall.io/large/front/5/d/5d21c15f-378e-4abf-992f-9743aa6ab6b8.jpg?1783932600',
+    spell: {
+      timing: 'sorcery',
+      effects: [{
+        type: 'create_token', cardId: 'token_boar', name: 'Boar',
+        kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+        types: ['Creature'], subtypes: ['Boar'], amount: 3,
+        abilities: [createAbility({
+          type: ABILITY_TYPE.triggered,
+          trigger: { event: 'dies' },
+          effect: {
+            type: 'create_token', cardId: 'token_food', name: 'Food',
+            kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+            abilities: [BATCH67_FOOD_ABILITY],
+          },
+        })],
+      }],
+    },
+    artId: 391, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trzy tokeny 1/1 G Boar; każdy ma WŁASNY trigger śmierci → osobny Food za każdego (ruling 2019-10-04 nr 3: jednym Foodem nie zapłacisz dwóch kosztów, ale każdy Boar tworzy SWÓJ Food)',
+      'Food to typ ARTEFAKTU, nigdy typ stworzenia (ruling 1) — token nie jest stworzeniem i nie można go „zjeść” dwa razy',
+      'zwykły czar bez celów: przy pustym stole i tak tworzy trzy Boary (brak „jeśli” / brak wyboru celu)',
     ],
   }),
 ]);

@@ -38,6 +38,9 @@ const SLOWNIK_REGUL = new Set([
   // PÓKI nie było wpisu katalogowego, silnik i render nie były zgłaszane;
   // wpis token_servo (grafika Scryfalla) tylko ujawnił ten zastany dług.
   'Servo',
+  // Batch 67 (Wolf's Quarry): 'Boar' to nazwa tokenu (teld 9) ORAZ podtyp
+  // stworów (CR 205.3m) — jak Faerie/Servo wyżej.
+  'Boar',
   // Batch 67 (Improbable Alliance): 'Faerie' to nazwa tokenu (teld 5, wpis
   // `token_faerie`) ORAZ podtyp stworów (CR 205.3m) — jak Servo/Mutagen wyżej:
   // zastane odwołania w kodzie (talia Talion's Messenger `faerie_attacks`,

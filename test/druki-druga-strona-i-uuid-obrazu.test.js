@@ -193,7 +193,6 @@ const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
   'battlefield-butcher',
   'kuldotha-ringleader',
   'sentry-bot',
-  'wolfs-quarry',
 ]);
 
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {

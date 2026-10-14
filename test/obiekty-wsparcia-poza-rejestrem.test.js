@@ -142,7 +142,6 @@ const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
   'battlefield-butcher',
   'kuldotha-ringleader',
   'sentry-bot',
-  'wolfs-quarry',
 ]);
 
 test('OW/6 w docs/cards NIE ma sierot: każdy snapshot to karta rejestru albo obiekt wsparcia', () => {

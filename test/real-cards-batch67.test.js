@@ -1,7 +1,10 @@
 // Batch 67 (2026-10-14) — fala A: 371 WAR, 380 DTK, 394 ALA, 397 SOS, 398 EOE;
 // fala B: 369 ELD Improbable Alliance (token 1/1 U Faerie z lataniem + loot,
 // mechaniki istniejące: trigger `you_draw_second_card_each_turn` i
-// `draw_then_discard`; nowy jest wyłącznie wpis tokena `token_faerie`).
+// `draw_then_discard`; nowy jest wyłącznie wpis tokena `token_faerie`);
+// fala C: 391 ELD Wolf's Quarry (trzy tokeny 1/1 G Boar, każdy z triggerem
+// śmierci tworzącym Food — token z ZDOLNOŚCIĄ, zdublowaną w deskryptorze
+// i wpisie katalogu, M121).
 // Plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
 // Dane Oracle i rulingi: docs/cards/scryfall-*.json (dokładny druk `set=`,
 // pobrane 2026-10-14). Każda karta ma sanity + scenariusz legalny i nielegalny.
@@ -24,6 +27,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { drawPlayerCards } from '../src/engine/effects.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { destroyPermanents } from '../src/engine/destruction.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 
 const registry = createCardRegistry();
@@ -469,4 +473,85 @@ test('B67/369 nielegalny: wejście PO dobraniu drugiej karty nie łapie triggera
   processTriggers(state, state.events.slice(before));
   settle(state);
   assert.equal(faerieCount(state), 0, 'trzecia karta to nie „druga” — brak tokena');
+});
+
+// ---- B67/391: Wolf's Quarry ------------------------------------------------
+
+const boarCount = (state, playerId = 'p1') => [...state.objects.values()]
+  .filter((o) => o.cardId === 'token_boar' && o.zone === 'battlefield' && o.controllerId === playerId)
+  .length;
+
+test('B67/391: Wolf\'s Quarry — dane Oracle ELD i trzy Boary z triggerem śmierci', () => {
+  const def = sanity('wolfs-quarry', { set: 'ELD', plan: 'Eldraine', artId: 391 });
+  assert.deepEqual(def.types, ['Sorcery']);
+  assert.deepEqual(def.colors, ['G']);
+  assert.equal(def.manaCost, 6);
+  assert.deepEqual(def.spell.effects[0].amount, 3, 'trzy tokeny');
+  assert.equal(def.spell.effects[0].cardId, 'token_boar');
+  const dies = def.spell.effects[0].abilities[0];
+  assert.equal(dies.trigger.event, 'dies');
+  assert.equal(dies.effect.cardId, 'token_food');
+  assert.deepEqual(dies.effect.subtypes, ['Food']);
+  // Token Boar ma wpis w katalogu z grafiką i tą SAMĄ zdolnością (M121).
+  const boar = registry.get('token_boar');
+  assert.equal(boar.support.status, 'token');
+  assert.match(boar.imageUri ?? '', /^https:\/\/cards\.scryfall\.io\/large\//);
+  assert.deepEqual(boar.abilities[0].trigger, dies.trigger);
+  assert.deepEqual(boar.abilities[0].effect.cardId, dies.effect.cardId);
+  assert.deepEqual(boar.colors, ['G']);
+  assert.equal(boar.power, 1);
+  assert.equal(boar.toughness, 1);
+});
+
+test('B67/391: rzut tworzy trzy Boary, a śmierć jednego daje Food', () => {
+  const state = game();
+  put(state, 'quarry', 'wolfs-quarry', 'p1', 'hand');
+  addMana(state, 'p1', 7, { colors: ['G', 'G'] });
+  const rzut = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'quarry');
+  assert.ok(rzut, 'oferta rzutu za {4}{G}{G}');
+  run(state, rzut);
+  settle(state);
+  assert.equal(boarCount(state), 3, 'trzy tokeny Boar');
+  for (const boar of [...state.objects.values()].filter((o) => o.cardId === 'token_boar')) {
+    assert.equal(effectivePower(boar, state), 1);
+    assert.equal(effectiveToughness(boar, state), 1);
+    assert.deepEqual(boar.colors, ['G']);
+  }
+  // Śmierć JEDNEGO Boara → jeden Food (trigger tokenu, nie czaru).
+  const jeden = [...state.objects.values()].find((o) => o.cardId === 'token_boar');
+  const przed = state.events.length;
+  destroyPermanents(state, [jeden.id]); // „dies” idzie przez pipeline zniszczenia
+  processTriggers(state, state.events.slice(przed));
+  settle(state);
+  const food = [...state.objects.values()].filter((o) => o.cardId === 'token_food' && o.zone === 'battlefield');
+  assert.equal(food.length, 1, 'martwy Boar tworzy Food');
+  assert.equal(boarCount(state), 2, 'dwa Boary zostały na stole');
+  assert.deepEqual(food[0].types.includes('Creature'), false, 'Food to artefakt, nie stworzenie (ruling 1)');
+  assert.deepEqual(food[0].subtypes, ['Food']);
+  // Food ma własną zdolność z katalogu (M121: etykieta panelu czyta rejestr).
+  const foodAbility = registry.get('token_food').abilities[0];
+  assert.deepEqual(foodAbility.cost, { mana: 2, tap: true, sacrificeSelf: true });
+  assert.deepEqual(foodAbility.effect, { type: 'gain_life', amount: 3 });
+});
+
+test('B67/391 nielegalny: bez siedmiu many nie ma oferty rzutu', () => {
+  const state = game();
+  put(state, 'quarry', 'wolfs-quarry', 'p1', 'hand');
+  addMana(state, 'p1', 5, { colors: ['G'] });
+  assert.equal(commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'quarry').length, 0,
+    'za mało many na {4}{G}{G} (6 many, są 5) — brak oferty');
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  assert.equal(commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'quarry').length, 1,
+    'szósta mana odblokowuje rzut');
+});
+
+test('B67/391 nielegalny: sorcery nie rzucisz w turze przeciwnika', () => {
+  const state = game();
+  put(state, 'quarry', 'wolfs-quarry', 'p1', 'hand');
+  addMana(state, 'p1', 7, { colors: ['G', 'G'] });
+  state.turn.activePlayerId = 'p2';
+  state.turn.priorityPlayerId = 'p2';
+  drawPlayerCards(state, 'p2', 1, 'effect');
+  const ofertaP2 = commands(state, 'p2').filter((c) => c.type === 'cast_spell' && c.objectId === 'quarry');
+  assert.equal(ofertaP2.length, 0, 'sorcery tylko w swojej fazie głównej');
 });
