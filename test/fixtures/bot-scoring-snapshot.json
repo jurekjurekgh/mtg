@@ -1,35 +1,35 @@
 {
   "version": 1,
-  "overallHash": "1a891600236e83c301b3ebd267f3dbebc24b138112d51a22e27dd3a9c4ee5e32",
+  "overallHash": "3489020caa48f07f0cec05e979d10128133586c6110a296864d0ce9dd14e06bf",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "1577fd2c9527e3df71bfa56bb6deda04a76468167a2387859b40ef2ec6de791a",
-      "decisions": 263,
-      "scoreSum": 2949.8944,
+      "hash": "47d7968fb88babea55cf1e8957d4c23eb283f163457483efdf322d87b5828e80",
+      "decisions": 395,
+      "scoreSum": 3524.5818,
       "chosenKinds": {
         "activate_ability": 1,
-        "attack": 6,
-        "block": 9,
-        "cast_permanent": 4,
-        "cast_spell": 3,
-        "pass_priority": 215,
+        "attack": 12,
+        "block": 13,
+        "cast_permanent": 6,
+        "cast_spell": 5,
+        "pass_priority": 327,
         "play_land": 6,
-        "resolve_combat": 10,
+        "resolve_combat": 15,
         "resolve_counter_pay_choice": 1,
-        "resolve_discard_choice": 1,
-        "resolve_mentor_target": 1,
+        "resolve_discard_choice": 2,
         "resolve_mulligan_choice": 1,
-        "resolve_trigger_target": 5
+        "resolve_optional_trigger_choice": 2,
+        "resolve_trigger_target": 4
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "ea89b5030f3546d328e6c7f0f8c5ed3e0af50ade94bedbded00eb9ee25d0898a",
+      "hash": "f0178f60c97531d09751db4df452fb9a8fb3bffb78a047faea1c2d0ec30a4429",
       "decisions": 343,
-      "scoreSum": 2100.8908,
+      "scoreSum": 2090.9818,
       "chosenKinds": {
         "attack": 9,
         "block": 10,
@@ -106,9 +106,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "2817f0d33829a798aeccd0cd91eec49cc8f193f8e2fc2a0c000ece18bf7ebfde",
+      "hash": "5d54dadd7a0d54e4a212152a02dcb3a8df55269e4ce8d90a9803108bb4b2305c",
       "decisions": 159,
-      "scoreSum": 2512.9189,
+      "scoreSum": 2506.6099,
       "chosenKinds": {
         "attack": 5,
         "block": 6,

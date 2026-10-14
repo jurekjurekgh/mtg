@@ -47,6 +47,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // (crackback). Kara (nie premia), bo tylko ona niweluje dodatnią wycenę
   // ataku; premia wyścigu jest przy takim ataku POMIJANA (L3).
   'crackbackPenalty',
+  // Rodzina „morph" (zgłoszenie G, 2026-10-14, Willbender): zakryty stwór to
+  // 2/2 bez tekstu (CR 708.2), a rzut twarzą do góry karty z payoffem obrotu
+  // wypala cały ambush. Właściciel: „rzucał go tylko w formie morph, chyba że
+  // to sam początek gry i ma tylko 2 lądy". Parametry strategii, nie reguły.
+  'morphAmbushPremium',        // premia za ukrycie+obrót przy rzucie twarzą w dół
+  'morphFaceUpHoldPenalty',    // kara za rzut twarzą do góry, gdy morph możliwy/później
+  'morphFaceUpHoldMaxLands',   // ile własnych lądów to jeszcze „wczesna gra" z wyjątkiem
+  'morphFlipPayoffBonus',      // premia za obrót twarzą do góry z payoffem na stosie
+  'morphFlipNoPayoffPenalty',  // kara za obrót „dla samego obrotu" (bez celu na stosie)
   // A (uwaga właściciela 2026-09-23c, Somberwald Spider): karta z deskryptorem
   // `entersWithCountersIf: { morbid: true }` liczy liczniki W CHWILI WEJŚCIA
   // (CR 614.1c) — we własnej Głównej 1 zwykle jeszcze nic nie umarło, więc
@@ -541,6 +550,17 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   reflectedDamageLifeRatio: 0.25,
   reflectedDamageDeterrent: 25,
   crackbackPenalty: 12,
+  // Zgłoszenie G: ciało zakrytego stwora (2/2) bywa GORSZE od awersu
+  // (Willbender 1/2), więc sam obrót bez payoffu to strata — stąd kara
+  // przebijająca pas. Premia za ambush (8) jest mniejsza od różnicy ciała
+  // typowego morpha, ale wystarcza, by rzut twarzą w dół wygrał z awersem
+  // przy tym samym koszcie. 90 = tyle, ile kara Morbida w Głównej 1: rzut
+  // twarzą do góry schodzi pod pass i bot czeka z obrotem na okno reakcji.
+  morphAmbushPremium: 8,
+  morphFaceUpHoldPenalty: 90,
+  morphFaceUpHoldMaxLands: 2,
+  morphFlipPayoffBonus: 25,
+  morphFlipNoPayoffPenalty: 40,
   removalEnemyBase: 22,
   removalWorthWeight: 2,
   // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): kontra groźnego

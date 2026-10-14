@@ -6562,6 +6562,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return n >= toughness;
   }
 
+  /** Zgłoszenie G/(b): okno ambushu dla karty z morphem — czar/zdolność
+   * WROGA na stosie z DOKŁADNIE jednym celem. Tylko taki wpis da się
+   * przekierować (CR 115.7a: nowy cel musi być innym legalnym celem tego
+   * samego czaru); przy dwóch celach podmiana jednego z nich nie ratuje
+   * sytuacji w sposób, który bot potrafi wycenić, więc okna nie otwieramy.
+   * Zwraca wpis stosu (albo null) — wycenę robi `retargetValue` przy
+   * rozstrzyganiu przekierowania (jedno źródło prawdy, L41). */
+  function enemySingleTargetSpellOnStack(view) {
+    for (const entry of view.zones.stack ?? []) {
+      if (entry.controllerId === view.playerId) continue;
+      if ((entry.targets ?? []).length !== 1) continue;
+      return entry;
+    }
+    return null;
+  }
+
   /** Suma obrażeń ze STOSU, które trafią w dany cel (burn celowany — B4). */
   function incomingDamageOnStack(view, targetId) {
     let total = 0;
@@ -9161,14 +9177,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const retargetEffects = spell?.spell?.effects ?? [];
         const dmgEffect = retargetEffects.find((e) => e?.type === 'damage');
         const hasHostilePerm = retargetEffects.some((e) => HOSTILE_PERMANENT_EFFECTS.has(e?.type));
+        // Zgłoszenie G/(b), część o WYBORZE celu: `attach_aura` nie ma wpisu
+        // w HOSTILE_PERMANENT_EFFECTS (tam są efekty typu „zniszcz/wygnaj/
+        // odrzuć”), więc wroga aura („Pacifism”: enchanted creature can't
+        // attack or block) nie dawała ŻADNEGO sygnału — a wszystkie warianty
+        // bez obrażeń remisowały i wygrywał pierwsza oferta. Pomiar PRZED:
+        // Pacifism wroga przekierowany na WŁASNEGO nosiciela morpha, czyli
+        // samobójstwo (kara -80 w tabeli wrogości niżej nie działa, bo nie
+        // było czego policzyć). Wrogość liczymy TYM SAMYM deskryptorem co
+        // przy rzucie aury (L41: `auraIsHostile`, względem KANDYDATA na
+        // gospodarza — aura warunkowa bywa kajdanami albo prezentem zależnie
+        // od celu), a nie po nazwie karty (ADR 0002).
+        const attachAura = retargetEffects.find((e) => e?.type === 'attach_aura');
+        const auraDef = attachAura && spell ? cardDef(spell.cardId) : undefined;
         const retargetValue = (id) => {
           if (dmgEffect) return damageTargetValue(view, id, dmgEffect.amount ?? 0);
           const t = objectOnBoard(view, id);
           const pseudo = { targets: [id] };
           let s = -(selfHarmPenalty(view, retargetEffects, pseudo, t)
             + friendlyMisaimPenalty(view, retargetEffects, pseudo, t));
-          if (t && t.controllerId !== view.playerId && hasHostilePerm) {
+          const wrogi = Boolean(t && t.controllerId !== view.playerId);
+          if (attachAura) {
+            // Wroga aura: na wroga = miękki removal (wartość skaluje się ciałem
+            // gospodarza), na własnego = katastrofa (przebija każdy zysk).
+            // Aura nie-wroga: zdjęta z wroga i podana nam to podwójny zysk
+            // (wróg traci, my zyskujemy), oddana wrogowi — strata.
+            if (auraIsHostile(auraDef?.aura, auraDef, t)) {
+              s += wrogi ? 55 + (t?.power ?? 0) + (t?.toughness ?? 0) : -80;
+            } else {
+              s += wrogi ? -40 : 30;
+            }
+            return s;
+          }
+          if (t && wrogi && hasHostilePerm) {
             s += 12 + (t.power ?? 0) + (t.toughness ?? 0);
+          }
+          // Przyjazny efekt (buff/pompa/ochrona) skierowany na NASZĄ stronę to
+          // realna korzyść — dotąd 0 pkt, więc remisował z oddaniem go wrogowi
+          // i rozstrzygała kolejność ofert (pomiar: wroga „Brute Force” na
+          // swoim stworze — kandydaci remisowali). Wartość bierzemy z tabeli
+          // efektów przyjaznych (jedno źródło prawdy) i skalujemy ciałem
+          // gospodarza, bo pompka na 1/1 i na 5/5 to nie ta sama mana.
+          if (t && !wrogi) {
+            const przyjazne = retargetEffects
+              .reduce((sum, e) => sum + (FRIENDLY_TARGET_EFFECTS.get(e?.type) ?? 0), 0);
+            if (przyjazne > 0) s += przyjazne + (t.power ?? 0) + (t.toughness ?? 0);
           }
           return s;
         };
@@ -9507,6 +9560,58 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
+        // niż jej awers. CR 702.37a (dosłownie): „You may cast this card as a
+        // 2/2 face-down creature with no text, no name, no subtypes, and no
+        // mana cost by paying {3} rather than paying its mana cost”; permanent
+        // wchodzący zakryty ma te same cechy (CR 708.2a). Koszt czytamy więc
+        // z deskryptora morpha, nie z kosztu karty. Dotąd wycena czytała CIAŁO AWERSU i KOSZT AWERSU dla
+        // obu wariantów, więc „morph” i „twarz” remisowały co do punktu,
+        // a wybór rozstrzygała KOLEJNOŚĆ ofert (pomiar: bot rzucał Willbendera
+        // jako 1/2 także wtedy, gdy morph był oferowany).
+        const morphDef = def?.morph ?? null;
+        // Payoff obrotu = zdolność triggerowana „when this creature is turned
+        // face up” — rozpoznana po deskryptorze (ADR 0002), bez nazw kart.
+        const maPayoffObrotu = (d) => (d?.abilities ?? []).some(
+          (a) => a?.type === 'triggered' && a.trigger?.event === 'turned_face_up',
+        );
+        if (cmd.faceDown && morphDef) {
+          // Rzut twarzą w dół: ciało 2/2 za sam koszt morpha — płatność
+          // {3} dowolną maną, bez pipów kolorów (CR 702.37a). Awers wchodzi w grę dopiero przy
+          // obrocie, więc jego ETB/penalties NIE dotyczą tego rzutu — stąd
+          // osobne rozliczenie zamiast wspólnej ścieżki.
+          let wynik = P.creatureBase
+            + 2 * P.creaturePowerWeight + 2 * P.creatureToughnessWeight;
+          wynik -= P.creatureManaCostWeight * (morphDef.cost ?? 3);
+          if (maPayoffObrotu(def)) wynik += P.morphAmbushPremium;
+          // Anticipacja OGONA liczy się także dla wariantu zakrytego: obrót
+          // należy do planu („ambush”), więc payoff po obrocie (m.in.
+          // `turned_face_up` = przekierowanie celu, waga 0.3 w
+          // `anticipatedTailValue`) jest realny — bez tego rzut twarzą w dół
+          // gubił go względem rzutu twarzą do góry (pin PMSSB10-B2).
+          wynik += anticipatedTailValue(view, def, cmd);
+          return finish(wynik);
+        }
+        if (morphDef && maPayoffObrotu(def)) {
+          // „Tylko w formie morph” (zgłoszenie G): rzut twarzą do góry karty
+          // z payoffem obrotu wypala cały ambush tej karty. Wariant twarzą do
+          // góry jest zdominowany, gdy morph jest oferowany; gdy morphu nie
+          // stać, karta CZEKA — wyjątkiem jest wczesna gra, gdzie 1/2 do
+          // chipowania bije trzymanie karty (właściciel: „chyba że to sam
+          // początek gry i ma tylko 2 lądy”).
+          const morphOferowany = (view.legalCommands ?? []).some(
+            (c) => c.type === 'cast_permanent' && c.objectId === cmd.objectId && c.faceDown,
+          );
+          // Predykat landu jak w `landKeepValue` (L41): widok nie niesie
+          // `types` dla lądów podstawowych — rozpoznajemy je po `kind`.
+          const mojeLądy = (view.zones.battlefield ?? []).filter(
+            (o) => o.controllerId === view.playerId
+              && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land')),
+          ).length;
+          if (morphOferowany || mojeLądy > P.morphFaceUpHoldMaxLands) {
+            score -= P.morphFaceUpHoldPenalty;
+          }
+        }
         // AUDYT REMISÓW (tura 6, `tools/bot-tie-audit.mjs`): gałąź wyceniała
         // CIAŁO, ale nie CENĘ — stwór 2/2 za {2} i ten sam 2/2 za {6} miały
         // identyczny wynik, więc przy dwóch stworach w ręce wybór zapadał
@@ -11301,6 +11406,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const abilityManaCost = (ability?.cost?.mana ?? 0) + (ability?.cost?.generic ?? 0);
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
+        }
+        // Zgłoszenie G/(b) (2026-10-14, Willbender): obrót twarzą do góry to
+        // AKCJA OKIENNA, nie rozwój planszy. Karta z morphem czeka zakryta —
+        // dopóki wróg nie rzuci czaru z JEDNYM celem (wtedy obrót + przekierowanie
+        // to ambush), dopóty obrót oddaje zaskoczenie za nic: zakryty stwór to
+        // 2/2 bez tekstu (CR 702.37a), a awers bywa MNIEJSZY (Willbender
+        // 1/2), więc obrót „dla samego obrotu” to strata. Pomiar PRZED:
+        // 1 z 3 realnych obrotów padł przy PUSTYM stosie (morph spalony),
+        // 0 przy stosie z jednym celem — czyli okno ambushu nie było w ogóle
+        // modelowane. Wartość okna = najlepsze przekierowanie (G-2b:
+        // `retargetValue`), więc tu tylko sygnał „okno otwarte/zamknięte”.
+        const isMorphFlip = Boolean(abilityObject?.faceDown)
+          && (ability?.keyword === 'morph' || abilityEffectTypes.includes('turn_face_up'));
+        if (isMorphFlip) {
+          if (enemySingleTargetSpellOnStack(view)) score += P.morphFlipPayoffBonus;
+          else score -= P.morphFlipNoPayoffPenalty;
         }
         const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
         const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;

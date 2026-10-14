@@ -46,8 +46,18 @@ test('PMSSB10-B2: selhoff-occultist any_dies-mill +14.49 (80.19)', () => {
 test('PMSSB10-B2: battle-rattle-shaman may-pump +1.8 (65.70)', () => {
   assert.equal(castScore('battle-rattle-shaman'), '65.70');
 });
-test('PMSSB10-B2: willbender redirect +2.16 (66.06)', () => {
-  assert.equal(castScore('willbender'), '66.06');
+// Zgłoszenie G (2026-10-14): wynik to teraz wariant ZAKRYTY (morph) — oferta
+// „twarzą w dół” jest pierwsza, a od zmiany polityki morpha warianty mają
+// OSOBNĄ arytmetykę: ciało 2/2 (CR 708.2), koszt morpha bezbarwny {3}
+// (CR 702.37a) i premia za ambush; trafienie przekierowania po obrocie liczy
+// `anticipatedTailValue` (+2.16) — jak przed zmianą. Wariant twarzą do góry
+// schodzi pod zero karą `morphFaceUpHoldPenalty` (morph jest oferowany).
+// 75.06 = 0.9 × 83.4, gdzie 83.4 = 70 (baza ciała) + 2×2 (siła 2/2) + 2×1
+// (wytrzymałość 2/2) − 3 (koszt morpha) + 8 (premia ambush) + 2.4 (ogon
+// przekierowania; po wadze rodziny komend 0.9 daje +2.16 — tyle, ile pinował
+// tytuł testu). Waga 0.9 to `scoreWeights` rodziny `cast_permanent`.
+test('PMSSB10-B2: willbender redirect +2.16 (75.06 — wariant zakryty/morph)', () => {
+  assert.equal(castScore('willbender'), '75.06');
 });
 test('PMSSB10-B2: wavecrash-triton heroic-tap gate: empty-SAME, foe +1.62', () => {
   assert.equal(castScore('wavecrash-triton'), '64.80');
