@@ -91,7 +91,6 @@ const BEZ_SNAPSHOTU = Object.freeze([
 // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md). Wpisy schodzą
 // z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
 const OSIEROCONE_SNAPSHOTY = Object.freeze([
-  'battlefield-butcher',
   'sentry-bot',
   'undercity',
 ]);
@@ -226,13 +225,13 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // regularnych kart, token ma jawny wyjątek i własny kanoniczny imageUri.
   // Batch 67 (fala A, 2026-10-14): 637 + 5 kart (Spellkeeper Weird, Artful
   // Maneuver, Cancel, Render Speechless, Intrepid Tenderfoot).
-  assert.equal(registry.all().length, 647, 'liczba definicji wymaga przeglądu po zmianie katalogu');
+  assert.equal(registry.all().length, 648, 'liczba definicji wymaga przeglądu po zmianie katalogu');
   // Batch 67: 582 + 10 snapshotów nowego batcha (definicje wchodzą falami, E1–E6).
   assert.equal(idsSnapshotow.length, 592, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   // Batch 67: 581 + 5 snapshotów fali A (pary snapshot↔definicja już istnieją).
-  assert.equal(idsSnapshotow.length - osierocone.length, 589,
+  assert.equal(idsSnapshotow.length - osierocone.length, 590,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });
 
@@ -360,11 +359,11 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
     }
   }
 
-  assert.equal(porownano, 589, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
+  assert.equal(porownano, 590, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
   assert.equal(bezSnapshotu, 58, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 11, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 589, `typy/podtypy nie porównano dla ${586 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 589, `Oracle frontu nie porównano dla ${586 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 590, `typy/podtypy nie porównano dla ${586 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 590, `Oracle frontu nie porównano dla ${586 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 9, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 9, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 12, `pusty oracle_text: oczekiwano 12, jest ${oracleTopEmpty}`);

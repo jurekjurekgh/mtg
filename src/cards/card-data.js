@@ -14014,6 +14014,35 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       '„attacks each combat if able" to wymóg ataku (CR 508.1d), nie goad: nie nadaje pośpiechu ani nie zmusza do ataku w turze, w której stwór nie może atakować',
     ],
   }),
+
+  // 390 Battlefield Butcher (BRO #86) {2}{B} 1/4 Human Soldier — „{5}, {T}:
+  // Each opponent loses 2 life. This ability costs {1} less to activate for
+  // each creature card in your graveyard."
+  defineCard({
+    id: 'battlefield-butcher', name: 'Battlefield Butcher', set: 'BRO',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['B'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: '{5}, {T}: Each opponent loses 2 life. This ability costs {1} less to activate for each creature card in your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/0/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb.jpg?1783920096',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, tap: true },
+        // Redukcja czyta GRÓB KONTROLERA (nie „twoje stwory na stole") i liczy
+        // KARTY-stwory: token nie jest kartą (CR 108.2b), więc leżący w grobie
+        // token Boar kosztu nie obniża (B67/391 × B67/390).
+        costReduction: { perCreatureCardInGraveyard: true, amount: 1 },
+        effect: { type: 'lose_life', amount: 2, scope: 'each_opponent' },
+      }),
+    ],
+    artId: 390, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'utrata życia to NIE obrażenia (CR 118.2/120.3): nie da się jej zapobiec ani przekierować, nie odpala triggerów obrażeń',
+      'koszt zdolności ma analog 601.2f przez CR 602.2b — redukcja schodzi wyłącznie z części generycznej i może zejść do {0} (brak pipów kolorowych)',
+      'redukcja liczy KARTY-stwory w grobie kontrolera (CR 108.2b: token nie jest kartą), więc token Boar z Wolf\'s Quarry w grobie nic nie obniża',
+    ],
+  }),
 ]);
 
 /**

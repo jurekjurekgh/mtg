@@ -366,6 +366,10 @@ function defaultBotFactory(seed, ctx) {
     // żeby kolejny typ efektu nie wszedł bez opisu (klasa L84).
     conditional: 'efekt warunkowy (zależny od stanu gry)',
     lose_life: 'cel traci życie',
+  // Batch 67 (Battlefield Butcher): „Each opponent loses 2 life." — domyślny
+  // zakres utraty życia to wszyscy przeciwnicy, więc etykieta musi mówić
+  // „każdy przeciwnik", nie „cel" (zdolność nie ma celów).
+  lose_life_each_opponent: 'każdy przeciwnik traci życie',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
     prevent_next_damage: 'zapobieżenie następnym obrażeniom wybranego gracza lub planeswalkera',

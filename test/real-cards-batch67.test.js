@@ -7,7 +7,10 @@
 // i wpisie katalogu, M121);
 // fala D: 392 MBS Kuldotha Ringleader (battle cry — opcja `excludeSource`
 // w `buff_attacking_creatures`, bo CR 702.91a mówi „each OTHER attacking
-// creature" — plus statyczny wymóg ataku, CR 508.1d).
+// creature" — plus statyczny wymóg ataku, CR 508.1d);
+// fala E: 390 BRO Battlefield Butcher (redukcja kosztu AKTYWOWANEJ
+// zdolności za każdą kartę-stwora w grobie — `perCreatureCardInGraveyard`
+// w `effectiveAbilityManaCost`, analog 601.2f przez CR 602.2b).
 // Plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
 // Dane Oracle i rulingi: docs/cards/scryfall-*.json (dokładny druk `set=`,
 // pobrane 2026-10-14). Każda karta ma sanity + scenariusz legalny i nielegalny.
@@ -645,4 +648,96 @@ test('B67/392 nielegalny: tapnięty Ringleader nie może atakować (wymóg go ni
   assert.ok(oferta, 'oferta deklaracji istnieje');
   assert.equal((oferta.attackerIds ?? []).includes('ring'), false,
     'tapnięty stwór nie jest w ofercie — wymóg ataku nie tworzy nielegalnego ataku');
+});
+
+// ---- B67/390: Battlefield Butcher ------------------------------------------
+
+/** Wkłada kartę-stwora do grobu kontrolera (przez pełny pipeline ruchu). */
+function doGrobu(state, id, cardId, playerId = 'p1') {
+  const obj = put(state, id, cardId, playerId, 'battlefield', { summoningSickness: false });
+  moveObjectDirectly(state, obj.id, 'graveyard', `grobowy-${id}`);
+  return state.objects.get(`grobowy-${id}`);
+}
+
+test('B67/390: Battlefield Butcher — dane Oracle BRO i redukcja kosztu za grób', () => {
+  const def = sanity('battlefield-butcher', { set: 'BRO', plan: 'Wiedźmin', artId: 390 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Human', 'Soldier']);
+  assert.deepEqual(def.colors, ['B']);
+  assert.equal(def.power, 1);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 3);
+  const ability = def.abilities.find((a) => a.type === 'activated');
+  assert.deepEqual(ability.cost, { mana: 5, tap: true });
+  assert.deepEqual(ability.costReduction, { perCreatureCardInGraveyard: true, amount: 1 });
+  assert.deepEqual(ability.effect, { type: 'lose_life', amount: 2, scope: 'each_opponent' });
+});
+
+test('B67/390: każda karta-stwór w grobie obniża koszt o {1} (aż do {0})', () => {
+  const state = game();
+  const rzeznik = put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield',
+    { summoningSickness: false });
+  const obiezy = () => commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id);
+  // Pusty grób: pełne {5} — przy czterech manach nie ma oferty.
+  addMana(state, 'p1', 4, { colors: [] });
+  assert.equal(obiezy(), undefined, 'bez kart-stworów w grobie trzeba pełnych {5}');
+  addMana(state, 'p1', 1, { colors: [] });
+  assert.ok(obiezy(), 'piąta mana wystarcza przy pustym grobie');
+  // Trzy karty-stwory w grobie → koszt {2}.
+  doGrobu(state, 'g1', 'cancel'); // Instant — NIE liczy się
+  doGrobu(state, 'g2', 'intrepid-tenderfoot');
+  doGrobu(state, 'g3', 'spellkeeper-weird');
+  doGrobu(state, 'g4', 'kuldotha-ringleader');
+  assert.equal([...state.objects.values()]
+    .filter((o) => o.zone === 'graveyard' && (o.types ?? []).includes('Creature')).length, 3,
+    'w grobie leżą trzy KARTY-stwory (Instant nie liczy się)');
+  // Obniżka dotyczy CZĘŚCI GENERYCZNEJ: {5} − {3} = {2}; zostały 2 many w puli.
+  const oferta = obiezy();
+  assert.ok(oferta, 'koszt zredukowany do {2} — oferta przy dwóch manach w puli');
+});
+
+test('B67/390: aktywacja — każdy przeciwnik traci 2 życia, kontroler nie traci nic', () => {
+  const state = game();
+  const rzeznik = put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield',
+    { summoningSickness: false });
+  doGrobu(state, 'g1', 'cancel');
+  for (let i = 1; i <= 5; i += 1) doGrobu(state, `g${i + 1}`, 'intrepid-tenderfoot');
+  addMana(state, 'p1', 2, { colors: [] }); // {5} − {5} = {0}
+  const zycie = (id) => state.players.find((p) => p.id === id).life;
+  const przed = { p1: zycie('p1'), p2: zycie('p2') };
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id));
+  settle(state);
+  assert.equal(zycie('p1'), przed.p1, 'kontroler NIE traci życia („each opponent”)');
+  assert.equal(zycie('p2'), przed.p2 - 2, 'przeciwnik traci 2 życia');
+  const aktywacja = state.events.filter((e) => e.type === 'ability_activated').pop();
+  assert.deepEqual(aktywacja.effectTypes, ['lose_life_each_opponent'],
+    'log niesie zakres („każdy przeciwnik”), nie gołe „cel traci życie” (M255/C1)');
+});
+
+test('B67/390: token w grobie NIE obniża kosztu (token nie jest kartą, CR 108.2b)', () => {
+  const state = game();
+  const rzeznik = put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield',
+    { summoningSickness: false });
+  // Token Boar z Wolf's Quarry (B67/391) leży w grobie — typ Creature, ale brak karty.
+  // Tokeny tworzy silnik z flagą `isToken: true` (tokens.createBattlefieldToken);
+  // w tym teście stawiamy go ręcznie, bo interesuje nas sam predykat redukcji.
+  const boar = put(state, 'boar', 'token_boar', 'p1', 'battlefield', { isToken: true });
+  moveObjectDirectly(state, boar.id, 'graveyard', 'boar-w-grobie');
+  assert.equal(state.objects.get('boar-w-grobie').isToken, true, 'to token, nie karta');
+  addMana(state, 'p1', 4, { colors: [] });
+  assert.equal(commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id),
+    undefined, 'token w grobie nie daje obniżki — nadal trzeba {5}');
+  addMana(state, 'p1', 1, { colors: [] });
+  assert.ok(commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id),
+    'pełne {5} odblokowuje zdolność');
+});
+
+test('B67/390 nielegalny: tapnięty Butcher nie aktywuje zdolności z kosztem {T}', () => {
+  const state = game();
+  const rzeznik = put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield',
+    { summoningSickness: false });
+  state.objects.set(rzeznik.id, Object.freeze({ ...state.objects.get(rzeznik.id), tapped: true }));
+  addMana(state, 'p1', 9, { colors: [] });
+  assert.equal(commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id),
+    undefined, 'koszt {T} wymaga odkręconego źródła');
 });

@@ -151,7 +151,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 30 | 10 | 20 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WUBRG | 42 | 14 | 28 |
 

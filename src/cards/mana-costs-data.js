@@ -636,5 +636,6 @@ export const MANA_COSTS = {
   "improbable-alliance": "{U}{R}",
   "wolfs-quarry": "{4}{G}{G}",
   "kuldotha-ringleader": "{4}{R}",
+  "battlefield-butcher": "{2}{B}",
   "intrepid-tenderfoot": "{1}{G}",
 };
