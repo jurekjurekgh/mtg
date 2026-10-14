@@ -5606,7 +5606,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId);
       const label = spell.trigger
-        ? `Trigger: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
+        // Pętla jakości 2026-10-14 (Żywy Tester, a3/b6): stos mówił
+        // „Trigger: …" po angielsku, choć reszta panelu jest po polsku i sam
+        // skaner testera oznacza ten napis jako podejrzaną etykietę
+        // (`tools/table-tester/scan.mjs`). M202/C: bez zapożyczenia „Trigger".
+        ? `Zdolność: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
         : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
