@@ -1843,6 +1843,18 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // LICZNIKAMI ENERGII (CR 122.1) jest ceną warunkującą skutek — kafel bez
   // tego ukrywał „{E}{E}{E}" i obiecywał darmowy licznik na każdym stworze.
   if (trigger.payEnergy > 0) costs.push(`{E}×${trigger.payEnergy} energii`);
+  // Batch 67 / pętla jakości E8 (klasa znaleziska Sentry Bota, uogólniona na
+  // cały katalog): koszt LICZNIKA — Kappa Tech-Wrecker „you may remove a
+  // deathtouch counter from it. When you do, …". Kafel obiecywał darmowe
+  // wygnanie artefaktu/zaklęcia, bo lista kosztów znała tylko `payMana`
+  // i `payLife`; oferta/`canPayTrigger`/widok i log licznika znają go od
+  // dawna (regresję pinuje `test/kafel-cena-triggera.test.js`, L29/L31).
+  if (trigger.payCounter?.counter) {
+    const liczba = trigger.payCounter.amount ?? 1;
+    costs.push(`usunięciem ${liczba > 1 ? `${liczba} ` : ''}`
+      + `${polishPluralCount(liczba, 'znacznika', 'znaczników', 'znaczników')} `
+      + trigger.payCounter.counter);
+  }
   const paidEffect = (description) => costs.length > 0 && !trigger.sacrificeIfUnpaid
     ? `${mine ? 'możesz' : 'kontroler może'} zapłacić ${costs.join(' i ')}; jeśli tak, ${description}`
     : description;
