@@ -1550,6 +1550,23 @@ function cardCostReductionForView(view, def) {
  * wymuszone poświęcenia i koszty zdolności używają innych pól i nie trafiają
  * tutaj. Brak pola = komenda spoza tej polityki i pozostaje dozwolona.
  */
+/**
+ * PMSSB-62/F5 (Sentry Bot, batch 67): KWOTA energii z deskryptora, liczona
+ * z WIDOKU bota. `amountFrom: 'creatures_attacking_you'` (ruling PIP
+ * 2024-11-08: liczba brana przy ROZSTRZYGNIĘCIU) — widok niesie
+ * `combat.attackers` i `combat.defendingPlayerId`, więc bot liczy to samo co
+ * silnik (`attackersAgainstPlayer`). Nieznane źródło kwoty = 0 (anty-over-fix
+ * M429: nie zgadujemy premii).
+ */
+export function energyAmountFromView(view, effect) {
+  if (effect?.amountFrom === 'creatures_attacking_you') {
+    const combat = view?.combat ?? null;
+    if (!combat || combat.defendingPlayerId !== view.playerId) return 0;
+    return (combat.attackers ?? []).length;
+  }
+  return Number.isInteger(effect?.amount) ? Math.max(0, effect.amount) : 1;
+}
+
 export function botMayPayCreatureSacrificeCost(view, cmd) {
   if (cmd?.sacrificeTargetId == null) return true;
   const victim = (view?.zones?.battlefield ?? [])
@@ -2128,6 +2145,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
     // slepe na zycie — bufor x3 vs M236, H5).
     gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
+    // PMSSB-62/F5 (promocja świadomego wyjątku z E8): licznik {E} jest
+    // zasobem trwałym (CR 122.1) i ma zamodelowaną wartość w koszcie zdolności
+    // (PMSSB-56 → `P.energyCounterValue`), więc zysk musi liczyć się tą samą
+    // stałą. Kwota może być DYNAMICZNA (`amountFrom: 'creatures_attacking_you'`
+    // — Sentry Bot); `energyAmountFromView` czyta ją z widoku, a nieznane
+    // źródło zwraca 0 (bez zawyżki).
+    get_energy: (e, view) => energyGainValue(view, e),
+    // PMSSB-62/F4b (L41): payoff opłaty `{E}{E}{E}` Sentry Bota to licznik na
+    // KAŻDYM własnym stworze — ta sama funkcja co w ścieżkach czaru i
+    // aktywacji (`counterSpreadValue`, PMSSB-23/F3). Bez wpisu w tabeli
+    // antycypacja rzutu nosiciela nie widziała nagrody, więc opłata energii
+    // mogła tylko odejmować (pomiar: 65,7027 z energią i bez energii równo).
+    add_counter_to_creatures_you_control: (e, view, req) =>
+      counterSpreadValue(view, e, null),
     // PMSSB-4/F-A2b: ETB-drain WROGA (Skymarch: wczesniej tabela-miss = 0,
     // H11; lustro modala +4x i damage_each_opponent +4). Self-scope = 0
     // (wlasciwe M169/K); nieznany kierunek = 0 (konserwatywnie).
@@ -2499,7 +2530,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered') continue;
       const pay = ability.trigger?.payMana ?? 0;
-      if (pay <= 0) continue;
+      // PMSSB-62/F4 (CR 122.1): opcjonalna opłata LICZNIKAMI ENERGII
+      // (Sentry Bot: „At the beginning of combat on your turn, you may pay
+      // {E}{E}{E}") — ten sam model netto co payMana (PMSSB-12), tylko koszt
+      // liczony wspólną stałą `energyCounterValue`. Bramka: bez trzech
+      // liczników w puli opłata jest NIEDOSTĘPNA (ruling: nie można zapłacić
+      // więcej, niż się ma), więc trigger nie dodaje wartości.
+      const payEnergy = ability.trigger?.payEnergy ?? 0;
+      if (pay <= 0 && payEnergy <= 0) continue;
+      if (payEnergy > 0) {
+        const myEnergy = (view.players ?? []).find((p) => p.id === view.playerId)?.energy ?? 0;
+        if (myEnergy < payEnergy) continue;
+      }
       if (ability.trigger?.sacrificeIfUnpaid) continue;
       const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
       if (legs.some((e) => e?.type === 'return_source_from_graveyard_to_hand')) continue;
@@ -2522,8 +2564,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const blocked = foes.length > 0 && !kws.includes('unblockable')
           && !(kws.includes('flying') && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
         like = 0.5 * (blocked ? 0.5 : 1.0);
+      } else if (ability.trigger?.event === 'beginning_of_combat') {
+        // Początek walki własnej tury wypada raz na turę, o ile nosiciel
+        // przeżyje — asumpcja 0,75 (konserwatywnie niżej niż atak 1,0;
+        // pin na kształcie: 3 pkt różnicy przy +1/+1 na dwóch stworach).
+        like = 0.75;
       } else continue;
-      total += Math.max(0, like * (benefit - pay * P.creatureManaCostWeight));
+      total += Math.max(0, like * (benefit
+        - pay * P.creatureManaCostWeight
+        - payEnergy * P.energyCounterValue));
     }
     return total;
   };
@@ -4728,6 +4777,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   // Wspólna wycena tej samej instrukcji na czarze i aktywacji (Batch 54).
   // Dotychczasowe wartości M155, bez strojenia parametrów.
+  /**
+   * PMSSB-62/F5 (L41): zysk liczników {E} wyceniany TĄ SAMĄ stałą co ich
+   * koszt (`P.energyCounterValue`) — bez tego „otrzymaj {E}×N" było warte 2
+   * punkty za licznik w jednej ścieżce i 0 w drugiej, a opłata `{E}` kosztowała
+   * 3 (trzy różne liczby dla tego samego zasobu).
+   */
+  const energyGainValue = (view, effect) =>
+    P.energyCounterValue * energyAmountFromView(view, effect);
+
   const opponentLifeEffectValue = (view, effect) => {
     const amount = effect.amount ?? 1;
     const foe = enemy(view);
@@ -11390,7 +11448,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // samego efektu i bot spamowałby nią do zera liczników (L3: kara musi
         // przebijać bazowe +2). Wycena po KOSZCIE z deskryptora, nie po nazwie
         // karty (ADR 0002).
-        if (ability?.cost?.energy) score -= 3 * ability.cost.energy;
+        // PMSSB-62 (L41): TEN SAM parametr co koszt opłaty triggera i zysk
+        // `get_energy` — wartość licznika {E} jest jedna dla całego bota.
+        if (ability?.cost?.energy) score -= P.energyCounterValue * ability.cost.energy;
         // PMSSB-34/B — obowiązkowa kontrola procedury: wymiar KOSZTU (b).
         //
         // „5 vs 2 many nie mogą remisować bez uzasadnienia" — tymczasem koszt
@@ -13842,7 +13902,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie tylko w antycypacji rzutu nosiciela. Wspólna drabina PMSSB-36
         // daje 1000 za samobójczą płatność (np. 2 życia przy stanie 2).
         const lifePenalty = cmd.pay ? selfLifeLossPenalty(view, cmd.lifeCost ?? 0) : 0;
-        return finish(cmd.pay ? 75 + Math.min(15, reflexiveBenefit) - lifePenalty : 15);
+        // PMSSB-62/F4 (CR 122.1): opłata LICZNIKAMI ENERGII to realny koszt
+        // (zasób trwały — nie znika z końcem tury), a dotąd nie miała żadnego
+        // wymiaru: pomiar PRZED dał 75,0000 vs 15,0000 TAK SAMO dla opłaty
+        // {E}{E}{E} i dla wariantu DARMOWEGO (kontrfakt). Kara liczona z tej
+        // samej stałej co `activate_ability` i zysk `get_energy` (L41).
+        const energyPenalty = cmd.pay
+          ? P.energyCounterValue * (cmd.energyCost ?? 0)
+          : 0;
+        return finish(cmd.pay ? 75 + Math.min(15, reflexiveBenefit) - lifePenalty - energyPenalty : 15);
       }
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.

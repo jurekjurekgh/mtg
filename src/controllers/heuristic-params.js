@@ -520,6 +520,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
   // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
   'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
+  // PMSSB-62 (batch 67, energia CR 122.1): wartość JEDNEGO licznika {E} —
+  // wspólna dla kosztu (zdolność, opcjonalna opłata triggera) i zysku
+  // (`get_energy`), żeby 3 liczniki nie remisowały z zerem (S11). Dawna stała
+  // `3` z gałęzi `activate_ability` (PMSSB-56) zachowuje wartość domyślną.
+  'energyCounterValue',          // punkty za 1 licznik energii (koszt i zysk)
   'equipPumpBonusPerPoint',      // waga ciała dokładanego przez sprzęt przy pierwszym założeniu
   // PMSSB-35 — odroczenie zagrania (`plot_card`/`suspend_card`/`warp_card` +
   // rzut karty czekającej z wygnania). Dwa wymiary po pomiarze PRZED
@@ -946,6 +951,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
   // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
   abilityManaCostPenalty: 1,
+  // PMSSB-62: 1 licznik {E} = 3 pkt (dawna kara `-3 * ability.cost.energy`
+  // z PMSSB-56, teraz wspólna dla wszystkich ścieżek płatności i zysku).
+  energyCounterValue: 3,
   // Ciało sprzętu liczone tą samą funkcją co przy przeniesieniu
   // (`equipValuation.bodyValue`), wagą 1 — dopłata, nie zamiana bazy
   // „10 + 2 × moc nosiciela" (anty-over-fix M429).
