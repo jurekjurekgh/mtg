@@ -84,7 +84,23 @@ const BEZ_SNAPSHOTU = Object.freeze([
   'token_zombie_army',
   'wing-shredder',
 ]);
-const OSIEROCONE_SNAPSHOTY = Object.freeze(['undercity']);
+// Batch 67 (2026-10-14): snapshoty 10 kart leżą w repo PRZED definicjami
+// (procedura `HOW_TO_ADD_CARD.md` krok 1 — pobór ze Scryfall jest pierwszy;
+// plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md). Wpisy schodzą
+// z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
+const OSIEROCONE_SNAPSHOTY = Object.freeze([
+  'artful-maneuver',
+  'battlefield-butcher',
+  'cancel',
+  'improbable-alliance',
+  'intrepid-tenderfoot',
+  'kuldotha-ringleader',
+  'render-speechless',
+  'sentry-bot',
+  'spellkeeper-weird',
+  'undercity',
+  'wolfs-quarry',
+]);
 
 // Słowa-umowne (ability words, CR 207.2c) — same nie są zdolnościami.
 const ABILITY_WORDS = new Set(['clash', 'delirium', 'delve', 'keen_sight', 'landwalk', 'radiance']);
@@ -215,7 +231,8 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // Batch 66: +10 kart i +Citizen = 637 definicji; snapshoty dotyczą 10
   // regularnych kart, token ma jawny wyjątek i własny kanoniczny imageUri.
   assert.equal(registry.all().length, 637, 'liczba definicji wymaga przeglądu po zmianie katalogu');
-  assert.equal(idsSnapshotow.length, 582, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  // Batch 67: 582 + 10 snapshotów nowego batcha (definicje wchodzą falami, E1–E6).
+  assert.equal(idsSnapshotow.length, 592, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   assert.equal(idsSnapshotow.length - osierocone.length, 581,
