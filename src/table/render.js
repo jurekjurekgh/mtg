@@ -1223,7 +1223,13 @@ function describeEffect(e, ctx = {}) {
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     // Batch 56 (energia, CR 122.1): „you get {E}{E}{E}{E}" — etykieta PL dla
     // panelu akcji i kafla (M122/#5 nie przepuszcza typu bez opisu).
-    get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
+    // Batch 67 / E8 (znalezisko Żywego Testera): kwota z `amountFrom` jest
+    // dynamiczna (liczba stworów atakujących gracza znana dopiero przy
+    // rozstrzygnięciu — ruling PIP 2024-11-08), więc kafel nie może drukować
+    // stałego „×1" (kłamałby przy każdym ataku na nas).
+    get_energy: () => (e.amountFrom === 'creatures_attacking_you'
+      ? 'otrzymaj {E} za każde stworzenie atakujące ciebie'
+      : `otrzymaj {E}×${e.amount ?? 1} energii`),
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`,
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
@@ -1833,6 +1839,10 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   const costs = [];
   if (trigger.payMana > 0) costs.push(costSymbols(trigger.payMana, trigger.payColors));
   if (trigger.payLife > 0) costs.push(`${trigger.payLife} życia`);
+  // Batch 67 / E8 (znalezisko Żywego Testera, Sentry Bot): opcjonalna opłata
+  // LICZNIKAMI ENERGII (CR 122.1) jest ceną warunkującą skutek — kafel bez
+  // tego ukrywał „{E}{E}{E}" i obiecywał darmowy licznik na każdym stworze.
+  if (trigger.payEnergy > 0) costs.push(`{E}×${trigger.payEnergy} energii`);
   const paidEffect = (description) => costs.length > 0 && !trigger.sacrificeIfUnpaid
     ? `${mine ? 'możesz' : 'kontroler może'} zapłacić ${costs.join(' i ')}; jeśli tak, ${description}`
     : description;

@@ -144,5 +144,10 @@ najbliższym motywem dla droidów, energii i artefaktów.
 - E5 — fala E (Battlefield Butcher): **zamknięte** (`58922b3`).
 - E6 — fala F (Sentry Bot): **zamknięte** (`674c26d`).
 - E7 — raport talii: **zamknięte** (ten rozdział).
-- E8 — dokumentacja i bramy końcowe: **w toku** (ENGINE_MILESTONES,
-  PROJECT_HISTORY, bramy końcowe).
+- E8 — dokumentacja i pętla jakości + bramy końcowe: **zamknięte**
+  (`ENGINE_MILESTONES.md` M444, `PROJECT_HISTORY.md` 2026-10-14; 15 partii
+  Żywym Testerem bez zgłoszeń detektorów, naprawione dwa kłamstwa kafelka —
+  cena `{E}×3` i dynamiczna kwota energii; bramy końcowe: batch 67 42/42,
+  fast 8192/8192, all 8458/8458, build 74 moduły / 5146,1 kB,
+  `check-card-printings` rc=0, `git diff --check` czysty, benchmark szybki
+  90,6%).

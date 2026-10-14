@@ -8373,3 +8373,106 @@ Dowody:
    etykiety wszystkich wydrukowanych keywordów (`shroud`, `outlast`, `saddle` +
    strażnik `A2a-printed`), a `odmienNaDrugaOsobe` odmienia także współrzędne
    orzeczenia po `i` / `albo`.
+
+---
+
+## M444 — batch67: kolekcja 369–398, 10 kart (2026-10-14, PR #165)
+
+Dziesięć wskazanych druków właściciela — Improbable Alliance (ELD #193),
+Spellkeeper Weird (WAR #69), Sentry Bot (PIP #24), Artful Maneuver (DTK #4),
+Battlefield Butcher (BRO #86), Wolf's Quarry (ELD #184), Kuldotha Ringleader
+(MBS #70), Cancel (ALA #33), Render Speechless (SOS #220) i Intrepid Tenderfoot
+(EOE #193) — ma status `supported` bez ograniczeń. Kolumna „Plan" właściciela
+jest przepisana 1:1 (Eldraine, Ravnica, Star Wars, Tarkir, Wiedźmin, Eldraine,
+Mirrodin, Amonkhet, Arcavios, The Edge) i **wiąże generator talii**; nowy plan
+„Star Wars" (jedna karta) trafił do worka według ADR 0023 §4 (motyw + najmniejsza
+talia), a nie według uznania autora karty.
+
+Nowe mechaniki są generyczne (ADR 0002) — żadna nie zna nazwy karty:
+
+1. **Cel „instant or sorcery card from your graveyard" (Spellkeeper Weird).**
+   Wspólny predykat `isInstantOrSorceryCardInGraveyard` w liściu
+   `graveyard-types.js` czyta go oferta i walidacja celu czaru oraz cel triggera
+   (L41/L48 — jedno źródło frazy dla dwóch konsumentów). Token nie jest kartą
+   (CR 108.2b), więc predykat stoi na `isCardObject`. Rebound Artful Maneuver
+   korzysta z istniejącej ścieżki: po rozstrzygnięciu karta idzie do exile
+   z gotowym drugim rzutem, a oferta drugiego rzutu pojawia się w kolejnej fazie.
+2. **Tokeny i „second card each turn" (Improbable Alliance).** `token_faerie`
+   (teld #5, 1/1 U latający) plus istniejące zdarzenie drugiej karty w turze —
+   karta wchodząca PO dobraniu drugiej karty nie łapie triggera tej tury (pin
+   negatywny), a wywołanie lootu `{4}{U}{R}` dobiera i odrzuca w jednej decyzji.
+   `draw_then_discard` dopisany do `STACKING_ACTIVATED_EFFECTS` bota — loot
+   kumuluje się na stosie (druga aktywacja dobiera KOLEJNĄ kartę, L29).
+3. **Token Boar z triggerem śmierci → Food (Wolf's Quarry).** `token_boar`
+   (teld #9) niesie `create_token` Food współdzielony deskryptorem z kartą
+   (`BATCH67_FOOD_ABILITY`) — strażnik M121 porównuje zdolności tokenu
+   z katalogiem, więc treść nie jest duplikowana. Food to typ ARTEFAKTU, nie
+   stworzenia (pin na typach), a trzy Boary to trzy OSOBNE triggery śmierci.
+4. **Battle cry (Kuldotha Ringleader, CR 702.91a).** „Each OTHER attacking
+   creature" obsługuje generyczny deskryptor `excludeSource` w
+   `buff_attacking_creatures` (źródło nie buffuje samo siebie); keyword dostał
+   polską etykietę w `KEYWORD_LABELS`. Przymus ataku (`mustAttack`) blokuje
+   deklarację pustego ataku, gdy Ringleader jest odkręcony, ale NIE zmusza
+   tapniętego stwora do ataku (pin negatywny).
+5. **Obniżka kosztu AKTYWOWANEJ zdolności za karty-stwory w grobie
+   (Battlefield Butcher).** `costReduction.condition.perCreatureCardInGraveyard`
+   jest liczone w `effectiveAbilityManaCost` (analog CR 602.2b do 601.2f),
+   a predykat „to karta-stwór" stoi na `isCardObject` — token w grobie nie
+   daje obniżki (CR 108.2b; pierwotna wersja liczyła tokeny i czerwieniła pin
+   regresyjny, naprawione u źródła). Efekt `lose_life_each_opponent` ma własną
+   etykietę w logu (zakres „każdy przeciwnik", nie „cel").
+6. **Sentry Bot (flash, energia, opcjonalna opłata).** Trzy niezależne
+   mechanizmy: (a) obniżka kosztu CZARU `condition.perCreatureAttackingYou`
+   licząca created atakujące gracza (`attackersAgainstPlayer` w `combat.js` —
+   jedno źródło dla obniżki i energii), bez zmiany mana value (ruling PIP);
+   (b) `get_energy` z `amountFrom: 'creatures_attacking_you'` — liczba liczona
+   przy ROZSTRZYGNIĘCIU wpisu na stosie; (c) opcjonalna opłata energii
+   `payEnergy` w triggerze początku walki (CR 122.1): bez trzech liczników
+   decyzja się nie otwiera („you can't pay more energy counters than you
+   have"), a przycisk i log nazywają koszt symbolami `{E}{E}{E}`.
+7. **UI i log.** Obie ścieżki logowania typów efektów (aktywacja bez stosu
+   i rozstrzygnięcie ze stosem) korzystają z jednego `effectTypeLabelsForLog()`
+   w `abilities.js` — pierwsza próba łatania tylko jednej z nich zostawiła
+   drugą na starym typie efektu (czerwony pin M255/C1); brakujące etykiety
+   `get_energy` i `add_counter_to_creatures_you_control` domknięte.
+
+**Zgłoszenia strażników w tym batchu (naprawione u źródła).** Strażnik cytatów
+CR złapał numer nieistniejący w wydaniu („508.4" — poprawna para to CR 508.2
+i 117.3d; tabela urosła do 530 numerów), a strażnik pokrycia ETB (L29/L31)
+wymusił jawną decyzję o `get_energy` w triggerze wejścia: świadomy wyjątek
+(kwota bywa dynamiczna, wycena wymaga pomiaru B0 — ADR 0018), bez zmiany
+punktacji bota.
+
+**Pętla jakości Żywym Testerem (ADR 0021, 15 partii na `dist/mtg-table.html`).**
+Partie talii z nowymi mechanikami (`worek-basni`, `eldraine`, `mirrodin-brg`,
+`wiedzmin-bg`, `ravnica`, `the-edge`; obie strony stołu, seedy 421–456) przeszły
+bez zgłoszeń detektorów, bez `[STOP]` i bez niewycenionych ruchów bota; w partii
+seed 454 na żywo zadziałały battle cry (Kuldotha Ringleader ×21) oraz łańcuch
+Boar → Food (28 tokenów Boar, 18 Food), a bota zagrywającego Sentry Bota
+widziano w seedzie 452. Żywy Tester wykrył PRZY TYM dwa kłamstwa kafelka,
+naprawione u źródła i przypięte testami:
+(a) kafel triggera początku walki Sentry Bota obiecywał darmowy licznik, bo lista
+kosztów w `describeTriggered` znała `payMana`/`payLife`, a nie `payEnergy`
+(CR 122.1) — teraz drukuje „możesz zapłacić {E}×3 energii; jeśli tak, …";
+(b) opis efektu `get_energy` drukował stałe „×1" także przy dynamicznym
+`amountFrom` — teraz `creatures_attacking_you` daje „otrzymaj {E} za każde
+stworzenie atakujące ciebie", a stałe kwoty (Shipwreck Moray ×4) zostają bez
+zmian (rozróżnienie po deskryptorze, ADR 0002 — strona odwrotna też ma pin).
+
+Kolekcja ma 593 wiersze i 590 unikalnych nazw; katalog 649 definicji, w tym
+51 tokenów. Generator odświeżył 27 talii oraz ich liczności w README (worek-baśni
+29→30) i jest idempotentny. `check-card-printings` zgłasza zero braków do
+pobrania oraz tylko historyczny, udokumentowany rozjazd Ethersworn Shieldmage.
+
+**Bramki końcowe.** Batch 67 **42/42**, fast **8192/8192**, all **8458/8458**,
+build **74 moduły / 5146,1 kB**. Tabela CR: 530 zweryfikowanych numerów; wszystkie
+529 unikalnych numerów użytych w 5792 cytatach istnieje w CR skutecznych od
+2026-09-25. `git diff --check` przechodzi. Pełnego B0 nie uruchamiano (ADR 0018);
+szybki benchmark po zmianie bota (wpis kumulacji lootu, bez strojenia) daje
+heuristic **90,6%** (609/672) — 96,7% vs random i 84,5% vs aggro, oba progi
+`bot-benchmark` zielone.
+
+Dowody:
+[plan + raport talii](plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md),
+[testy kart](../test/real-cards-batch67.test.js),
+[audyt PR #164](audits/AUDYT_PR164_2026-10-13.md).

@@ -39,6 +39,7 @@ import { drawPlayerCards } from '../src/engine/effects.js';
 import { processTriggers } from '../src/engine/triggers.js';
 import { destroyPermanents } from '../src/engine/destruction.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
+import { rulesText } from '../src/table/render.js';
 
 const registry = createCardRegistry();
 
@@ -896,4 +897,32 @@ test('B67/378 nielegalny: obniżka nie działa bez atakujących (pełne {4}{W})'
   addMana(state, 'p1', 1, { colors: [] });
   assert.ok(commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'),
     'pełne {4}{W} odblokowuje rzut');
+});
+
+// ---- B67/E8: tekst kafelka (znaleziska Żywego Testera) ---------------------
+
+/** Kafel karty z prawdziwego rejestru (ten sam `rulesText`, co na stole). */
+function kafel(cardId) {
+  const def = registry.get(cardId);
+  assert.ok(def, `${cardId} w rejestrze`);
+  return rulesText({ cardId, controllerId: 'p1', abilities: def.abilities, keywords: [] });
+}
+
+test('B67/E8: kafel Sentry Bota pokazuje CENĘ {E}{E}{E} i dynamiczną kwotę energii', () => {
+  // Żywy Tester (partie 2026-10-14, seeds 452/456) pokazał dwa kłamstwa:
+  // kafel obiecywał darmowy „licznik +1/+1 na twoich stworach" (bez ceny)
+  // i drukował „otrzymaj {E}×1 energii" przy dynamicznym `amountFrom`.
+  const line = kafel('sentry-bot');
+  assert.ok(line.includes('możesz zapłacić {E}×3 energii'), line);
+  assert.ok(line.includes('jeśli tak'), 'płatność jest warunkiem skutku, nie riderem');
+  assert.ok(line.includes('otrzymaj {E} za każde stworzenie atakujące ciebie'), line);
+  assert.ok(!line.includes('{E}×1'), 'kwota dynamiczna nie może udawać stałej ×1');
+});
+
+test('B67/E8: strona odwrotna — stała kwota energii dalej drukuje „×N"', () => {
+  // Fix jest po DESKRYPTORZE (`amountFrom`), nie po nazwie karty (ADR 0002):
+  // Shipwreck Moray ma stałe 4 liczniki i zachowuje dotychczasowy opis.
+  const line = kafel('shipwreck-moray');
+  assert.ok(line.includes('otrzymaj {E}×4 energii'), line);
+  assert.ok(!line.includes('za każde'), 'brak dynamicznej frazy przy stałej kwocie');
 });

@@ -1,4 +1,11 @@
-# Handoff batch 67 — kolekcja 369–398 (stan po etapach E0–E0c)
+# Handoff batch 67 — kolekcja 369–398 (stan po etapach E0–E8)
+
+**DOMKNIĘTE (2026-10-14).** Wszystkie etapy E0–E8 są zamknięte i wypchnięte na
+`arena/aadcf997-mtg` (PR #165 czeka na scalenie przez właściciela): E1 `9b271a8`,
+E2 `d805c56`, E3 `71c73a6`, E4 `1db9819`, E5 `58922b3`, E6 `674c26d`, E7 `6bd447a`,
+E8 (ten commit). Bramy: batch 67 42/42, fast 8192/8192, all 8458/8458, build
+74 moduły / 5146,1 kB. Raport talii: rozdział „Raport talii (E7)" w planie.
+Poniższe sekcje opisują stan historyczny po E0–E0c — kontekst, nie zadania.
 
 Plan: `docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md` (etapy E0–E8,
 polityka zatrzymania: commit + push po każdym etapie).

@@ -17010,3 +17010,52 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   pola `spellControllerId`, powtórzona precyzyjnie). Tabela CR zregenerowana
   z tego samego wydania (sha256 8d860e45…, CR 2026-09-25) — doszedł tylko
   numer `115.7a`. Bramy: `npm test` 8138/8138, `npm run build` 74 mod / 5111,2 kB.
+
+## 2026-10-14 — Batch 67: kolekcja 369–398, 10 kart (PR #165)
+
+- **Zakres i etapy.** Dziesięć druków z arkusza właściciela (Improbable
+  Alliance ELD, Spellkeeper Weird WAR, Sentry Bot PIP, Artful Maneuver DTK,
+  Battlefield Butcher BRO, Wolf's Quarry ELD, Kuldotha Ringleader MBS, Cancel
+  ALA, Render Speechless SOS, Intrepid Tenderfoot EOE) weszło falami E1–E6;
+  E0 to snapshoty Scryfalla z rulingami, E7 raport talii, E8 dokumentacja
+  i bramy końcowe. Jeden etap = jeden zielony commit + push (ADR 0020).
+- **Mechaniki dodane generycznie (ADR 0002).** Wspólny predykat „instant or
+  sorcery card from your graveyard" (`graveyard-types.js`) dla oferty, walidacji
+  i celów triggerów; tokeny Faerie (1/1 U flying) i Boar (1/1 G) z triggerem
+  śmierci tworzącym Food; battle cry z deskryptorem `excludeSource` (CR 702.91a);
+  obniżka kosztu aktywowanej zdolności za karty-stwory w grobie; obniżka kosztu
+  czaru za każde atakujące nas stworzenie (`attackersAgainstPlayer`); energia —
+  `get_energy` z `amountFrom`, opcjonalna opłata `payEnergy` w triggerze
+  początku walki (CR 122.1) wraz z etykietą przycisku i logiem.
+- **Bugi złapane i naprawione u źródła.** (1) Obniżka Battlefield Buchera
+  liczyła tokeny w grobie — predykat przełączony na `isCardObject`
+  (CR 108.2b). (2) Lista etykiet typów efektów istniała w DWÓCH miejscach
+  (aktywacja bez stosu i ze stosem) — pierwsza próba naprawy jednego z nich
+  zostawiła drugie na starym typie; obie korzystają teraz ze wspólnego
+  `effectTypeLabelsForLog()`. (3) Strażnik cytatów CR wskazał numer nieistniejący
+  w wydaniu („508.4"); poprawna para to CR 508.2 + 117.3d, tabela urosła do 530
+  numerów. (4) Strażnik pokrycia ETB wymusił jawną decyzję o `get_energy`
+  w triggerze wejścia (świadomy wyjątek — wycena wymaga B0, ADR 0018).
+- **Talie.** Generator rozstawił karty planem właściciela: Improbable Alliance
+  i Wolf's Quarry → `eldraine`, Spellkeeper Weird → `ravnica`, Artful Maneuver →
+  `tarkir-wur`, Intrepid Tenderfoot → `the-edge`, Render Speechless →
+  `worek-legend`, Cancel → `worek-mroczny`, Kuldotha Ringleader → `mirrodin-brg`,
+  Battlefield Butcher → `wiedzmin-bg` (30→32), a Sentry Bot — nowy plan
+  „Star Wars" — do `worek-basni` (29→30) wg ADR 0023 §4 (motyw + najmniejsza
+  talia). README i golden-master odświeżone przy każdej fali; pełny raport
+  w planie batcha.
+- **Pętla jakości (ADR 0021).** 15 partii Żywym Testerem na artefakcie
+  `dist/mtg-table.html` (talie z nowymi mechanikami, obie strony stołu, seedy
+  421–456, w tym worek-baśni jako talia bota) — zero zgłoszeń detektorów, zero
+  `[STOP]`, zero niewycenionych ruchów bota; na żywo zadziałały battle cry
+  (Kuldotha Ringleader, 21 wystąpień) i łańcuch Boar → Food (28/18). Tester
+  wykrył dwa kłamstwa kafelka, naprawione u źródła: brak ceny `{E}×3` w opisie
+  triggera Sentry Bota (`describeTriggered` nie znał `payEnergy`) oraz stałe
+  „otrzymaj {E}×1" przy dynamicznym `amountFrom` — oba mają piny (także stronę
+  odwrotną: Shipwreck Moray dalej „×4").
+- **Dowody i bramy.** Batch 67 42/42, fast 8192/8192, all 8458/8458, build
+  74 moduły / 5146,1 kB, `check-card-printings` bez braków (jeden udokumentowany
+  rozjazd), `git diff --check` czysty; szybki benchmark bota 90,6% (609/672).
+  Plan i raport talii:
+  `docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md`; testy kart:
+  `test/real-cards-batch67.test.js`.
