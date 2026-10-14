@@ -58,9 +58,13 @@ commit `3257633`, CR 2026-09-25).
   albo nowy typ efektu — rozpoznanie na wejściu etapu).
 - **E6 — fala F: Sentry Bot.** Energia + redukcja kosztu rzutu + opcjonalna
   opłata `{E}{E}{E}` na początku walki.
-- **E7 — kolekcja i talie.** 10 wierszy `tools/collection-art-ids.csv`
-  (Plan 1:1), generator `tools/generate-plan-decks.mjs`, README; **raport:
+- **E7 — talie.** Generator `tools/generate-plan-decks.mjs`, README; **raport:
   do jakich talii trafiła każda karta** (odpowiedź dla właściciela).
+- **CSV idzie RAZEM z każdą falą** (nie w E7): strażnik
+  `test/proweniencja-katalogu.test.js` (ADR 0029 §4) wymaga, by każda
+  taliowalna karta katalogu miała `artId` z `tools/collection-art-ids.csv`
+  oraz zgodną nazwę i plan — więc wiersz kolekcji i definicja muszą wejść
+  w tym samym etapie (inaczej brama jest czerwona).
 - **E8 — dokumentacja i bramy końcowe.** `ENGINE_MILESTONES.md`,
   `PROJECT_HISTORY.md`, status tego planu; bramy: batch 67, `npm test`,
   `run-tests.mjs all`, build, `check-card-printings`, `git diff --check`;

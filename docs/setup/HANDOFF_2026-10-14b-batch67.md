@@ -37,6 +37,11 @@ Intrepid Tenderfoot (`{3}`: +1/+1, tylko sorcery), Artful Maneuver
 → discard" — wzorce przy `card-data.js:6400/8210/9601` + dwa +1/+1 na
 „up to one target").
 
+**CSV razem z falą:** każda fala dopisuje swoje wiersze do
+`tools/collection-art-ids.csv` (artId + nazwa + plan 1:1) — strażnik
+`test/proweniencja-katalogu.test.js` nie przepuści definicji bez wiersza
+kolekcji (ADR 0029 §4). E7 to już tylko generator talii + raport.
+
 Zasady bez zmian: definicje + `test/real-cards-batch67.test.js` (RED → GREEN),
 scenariusz legalny i nielegalny na kartę, brak nazw kart w kodzie silnika
 (ADR 0002), kolekcja rośnie tylko z tego batcha (ADR 0029). Bramy po fali:
