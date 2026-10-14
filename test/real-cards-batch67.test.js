@@ -926,3 +926,53 @@ test('B67/E8: strona odwrotna — stała kwota energii dalej drukuje „×N"', (
   assert.ok(line.includes('otrzymaj {E}×4 energii'), line);
   assert.ok(!line.includes('za każde'), 'brak dynamicznej frazy przy stałej kwocie');
 });
+
+// ---- B67/601.2f: obniżki nie zjadają kolorowych pipów -----------------------
+
+test('B67/378+390: obniżka nie schodzi poniżej {0} i nie zjada kolorowego pipa', () => {
+  // CR 601.2f (dosłownie, wydanie 2026-09-25): „If the mana component of the
+  // total cost is reduced to nothing by cost reduction effects, it is
+  // considered to be {0}. It can’t be reduced to less than {0}." — obniżka
+  // {1}/stwór przy {4}{W} i sześciu atakujących może zjeść WYŁĄCZNIE część
+  // generyczną: koszt to {W}, a nie {0}; pip W nadal trzeba zapłacić.
+  const state = game();
+  const ids = [];
+  for (let i = 1; i <= 6; i += 1) {
+    ids.push(put(state, `a${i}`, 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false }).id);
+  }
+  atakNaP1(state, ids);
+  put(state, 'bot', 'sentry-bot', 'p1', 'hand');
+  const oferta = () => commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot');
+  // (a) sama biała mana wystarcza: {4}{W} − min(6, 4) = {W}.
+  addMana(state, 'p1', 1, { colors: ['W'] });
+  assert.ok(oferta(), 'przy {W} i sześciu atakujących rzut musi być możliwy (koszt {W})');
+  // (b) bez źródła białej many rzut NIE jest oferowany — obniżka nie płaci pipa.
+  state.players.find((p) => p.id === 'p1').manaPool = {};
+  addMana(state, 'p1', 4, { colors: [] });
+  assert.equal(oferta(), undefined, 'cztery bezbarwne many nie zastąpią białego pipa');
+});
+
+test('B67/390: pięć kart-stworów w grobie → aktywacja za {0} (obniżka do zera)', () => {
+  // Ten sam CR 601.2f przez CR 602.2b (koszt aktywacji = analog kosztu czaru):
+  // pięć kart-stworów w grobie zjada całe {5}, więc aktywacja jest DARMOWA,
+  // a efekt nadal się rozstrzyga (przeciwnik traci 2 życia).
+  const state = game();
+  put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield', { summoningSickness: false });
+  for (let i = 1; i <= 5; i += 1) put(state, `gr${i}`, 'intrepid-tenderfoot', 'p1', 'graveyard');
+  const aktywacja = commands(state).find((c) => c.type === 'activate_ability');
+  assert.ok(aktywacja, 'aktywacja za {0} bez many musi być oferowana');
+  run(state, aktywacja);
+  settle(state);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'każdy przeciwnik traci 2 życia');
+  assert.equal(state.players.find((p) => p.id === 'p1').mana, 0, 'za darmo — żadnej many nie wydano');
+});
+
+test('B67/390: cztery karty-stwory w grobie → aktywacja za {1}, nie za darmo', () => {
+  const state = game();
+  put(state, 'butcher', 'battlefield-butcher', 'p1', 'battlefield', { summoningSickness: false });
+  for (let i = 1; i <= 4; i += 1) put(state, `g${i}`, 'intrepid-tenderfoot', 'p1', 'graveyard');
+  assert.equal(commands(state).find((c) => c.type === 'activate_ability'), undefined,
+    'bez many przy czterech kartach trzeba {1} — brak oferty');
+  addMana(state, 'p1', 1, { colors: [] });
+  assert.ok(commands(state).find((c) => c.type === 'activate_ability'), 'jedna mana odblokowuje aktywację');
+});
