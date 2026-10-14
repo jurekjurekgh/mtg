@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Cancel&set=ala&format=json",
+  "print": "ala",
+  "name": "Cancel",
+  "mana_cost": "{1}{U}{U}",
+  "cmc": 3.0,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "33",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/4/7/479f56c2-8256-4325-909a-bf460505dbc5.jpg?1783942576",
+    "normal": "https://cards.scryfall.io/normal/front/4/7/479f56c2-8256-4325-909a-bf460505dbc5.jpg?1783942576",
+    "large": "https://cards.scryfall.io/large/front/4/7/479f56c2-8256-4325-909a-bf460505dbc5.jpg?1783942576"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/479f56c2-8256-4325-909a-bf460505dbc5/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

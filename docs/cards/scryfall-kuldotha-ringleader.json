@@ -1,0 +1,33 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kuldotha%20Ringleader&set=mbs&format=json",
+  "print": "mbs",
+  "name": "Kuldotha Ringleader",
+  "mana_cost": "{4}{R}",
+  "cmc": 5.0,
+  "type_line": "Creature — Giant Berserker",
+  "oracle_text": "Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)\nThis creature attacks each combat if able.",
+  "power": "4",
+  "toughness": "4",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Battle Cry"
+  ],
+  "set": "mbs",
+  "set_name": "Mirrodin Besieged",
+  "collector_number": "70",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/3/c/3cda5434-c0a5-4551-8e30-b1923f0001b8.jpg?1783941378",
+    "normal": "https://cards.scryfall.io/normal/front/3/c/3cda5434-c0a5-4551-8e30-b1923f0001b8.jpg?1783941378",
+    "large": "https://cards.scryfall.io/large/front/3/c/3cda5434-c0a5-4551-8e30-b1923f0001b8.jpg?1783941378"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/3cda5434-c0a5-4551-8e30-b1923f0001b8/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

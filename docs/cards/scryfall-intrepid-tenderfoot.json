@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Intrepid%20Tenderfoot&set=eoe&format=json",
+  "print": "eoe",
+  "name": "Intrepid Tenderfoot",
+  "mana_cost": "{1}{G}",
+  "cmc": 2.0,
+  "type_line": "Creature — Insect Citizen",
+  "oracle_text": "{3}: Put a +1/+1 counter on this creature. Activate only as a sorcery.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "eoe",
+  "set_name": "Edge of Eternities",
+  "collector_number": "193",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/8/0/809df0ea-deff-47b9-83df-cc1f360d377e.jpg?1783905935",
+    "normal": "https://cards.scryfall.io/normal/front/8/0/809df0ea-deff-47b9-83df-cc1f360d377e.jpg?1783905935",
+    "large": "https://cards.scryfall.io/large/front/8/0/809df0ea-deff-47b9-83df-cc1f360d377e.jpg?1783905935"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/809df0ea-deff-47b9-83df-cc1f360d377e/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

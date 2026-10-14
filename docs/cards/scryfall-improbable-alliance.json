@@ -1,0 +1,47 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Improbable%20Alliance&set=eld&format=json",
+  "print": "eld",
+  "name": "Improbable Alliance",
+  "mana_cost": "{U}{R}",
+  "cmc": 2.0,
+  "type_line": "Enchantment",
+  "oracle_text": "Whenever you draw your second card each turn, create a 1/1 blue Faerie creature token with flying.\n{4}{U}{R}: Draw a card, then discard a card.",
+  "colors": [
+    "R",
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "keywords": [],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "193",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/0/4/0461867b-ec35-4d37-a398-5247e06c4afe.jpg?1783932596",
+    "normal": "https://cards.scryfall.io/normal/front/0/4/0461867b-ec35-4d37-a398-5247e06c4afe.jpg?1783932596",
+    "large": "https://cards.scryfall.io/large/front/0/4/0461867b-ec35-4d37-a398-5247e06c4afe.jpg?1783932596"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [
+    {
+      "date": "2019-10-04",
+      "source": "wotc",
+      "comment": "The triggered ability can trigger only once each turn. It doesn't matter whether the permanent with that ability was on the battlefield when the first card was drawn. If it's not on the battlefield when the second card is drawn, the ability can't trigger at all that turn. It won't trigger when the third or fourth card is drawn."
+    },
+    {
+      "date": "2019-10-04",
+      "source": "wotc",
+      "comment": "If an effect instructs you to draw multiple cards, the ability triggers after you draw whichever is the second one for the turn. You choose a target (if any) for the ability after you've drawn and looked at all of the cards and finished resolving the spell or ability that caused you to draw them."
+    },
+    {
+      "date": "2019-10-04",
+      "source": "wotc",
+      "comment": "If a spell or ability causes you to put cards into your hand without specifically using the word \"draw,\" it's not a card drawn."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/0461867b-ec35-4d37-a398-5247e06c4afe/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

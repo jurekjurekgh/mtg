@@ -1,0 +1,72 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Artful%20Maneuver&set=dtk&format=json",
+  "print": "dtk",
+  "name": "Artful Maneuver",
+  "mana_cost": "{1}{W}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +2/+2 until end of turn.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)",
+  "colors": [
+    "W"
+  ],
+  "color_identity": [
+    "W"
+  ],
+  "keywords": [
+    "Rebound"
+  ],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "4",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/f/7fcaf67e-ba97-4af9-8c47-dbca703cba35.jpg?1783938620",
+    "normal": "https://cards.scryfall.io/normal/front/7/f/7fcaf67e-ba97-4af9-8c47-dbca703cba35.jpg?1783938620",
+    "large": "https://cards.scryfall.io/large/front/7/f/7fcaf67e-ba97-4af9-8c47-dbca703cba35.jpg?1783938620"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "Casting the card again due to the delayed triggered ability is optional. If you choose not to cast the card, or if you can't (perhaps because there are no legal targets available), the card will stay exiled. You won't get another chance to cast it on a future turn."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If a spell with rebound that you cast from your hand doesn't resolve for any reason (either because another spell or ability counters it or because all its targets are illegal as it tries to resolve), none of its effects will happen, including rebound. The spell will be put into its owner's graveyard and you won't get to cast it again on your next turn."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "At the beginning of your upkeep, all delayed triggered abilities created by rebound effects trigger. You may handle them in any order. If you want to cast a card this way, you do so as part of the resolution of its delayed triggered ability. Timing restrictions based on the card's type (if it's a sorcery) are ignored. Other restrictions, such as \"Cast [this spell] only during combat,\" must be followed."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "As long as you cast a spell with rebound from your hand, rebound will work regardless of whether you paid its mana cost or an alternative cost you were permitted to pay."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If you cast a spell with rebound from any zone other than your hand (including your opponent's hand), rebound will have no effect."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If a replacement effect (such as the one created by Rest in Peace) would cause a spell with rebound that you cast from your hand to be put somewhere other than into your graveyard as it resolves, you can choose whether to apply the rebound effect or the other effect as the spell resolves."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "Rebound will have no effect on copies of spells because you don't cast them from your hand."
+    },
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If you cast a card from exile this way, it will go to its owner's graveyard when it resolves, fails to resolve, or is countered. It won't go back to exile."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/7fcaf67e-ba97-4af9-8c47-dbca703cba35/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

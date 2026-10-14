@@ -1,0 +1,47 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Wolf%27s%20Quarry&set=eld&format=json",
+  "print": "eld",
+  "name": "Wolf's Quarry",
+  "mana_cost": "{4}{G}{G}",
+  "cmc": 6.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Create three 1/1 green Boar creature tokens with \"When this token dies, create a Food token.\" (A Food token is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Food"
+  ],
+  "set": "eld",
+  "set_name": "Throne of Eldraine",
+  "collector_number": "184",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/5/d/5d21c15f-378e-4abf-992f-9743aa6ab6b8.jpg?1783932600",
+    "normal": "https://cards.scryfall.io/normal/front/5/d/5d21c15f-378e-4abf-992f-9743aa6ab6b8.jpg?1783932600",
+    "large": "https://cards.scryfall.io/large/front/5/d/5d21c15f-378e-4abf-992f-9743aa6ab6b8.jpg?1783932600"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "Food is an artifact type. Even though it appears on some creatures, it's never a creature type."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "You can't sacrifice a Food to pay multiple costs. For example, you can't sacrifice a Food token to activate its own ability and also to activate Maraleaf Rider's ability."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "Whatever you do, don't eat the delicious cards."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/5d21c15f-378e-4abf-992f-9743aa6ab6b8/rulings",
+  "rulingsPobrano": "2026-10-14"
+}
