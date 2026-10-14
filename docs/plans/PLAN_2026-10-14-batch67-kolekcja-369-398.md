@@ -106,3 +106,43 @@ Następna sesja kontynuuje od pierwszego niezamkniętego etapu.
   (ADR 0029 pkt 2) — tokeny Faerie/Boar bez `artId`.
 - Karty dodajemy wyłącznie z tego batcha; brak nośnika mechaniki w kolekcji
   = karta synteretyczna w teście (ADR 0029 pkt 3).
+
+## Raport talii (E7, 2026-10-14) — do jakich talii trafiła każda karta
+
+Wynik generatora `tools/generate-plan-decks.mjs` (plan jest wiążący; przy
+nowych planach „Star Wars" i „The Edge" to generator rozstrzyga talię,
+a nie autor karty — plan nie był korygowany). Sprawdzone skryptem
+`.arena/raport-talii-b67.mjs` (odczyt `decks/*.txt` po nazwie karty):
+
+| artId | karta (druk) | Plan (właściciel) | Talia docelowa | Zmiana liczności |
+|---:|---|---|---|---|
+| 369 | Improbable Alliance (ELD) | Eldraine | `eldraine.txt` | +1 |
+| 371 | Spellkeeper Weird (WAR) | Ravnica | `ravnica.txt` | +1 |
+| 378 | Sentry Bot (PIP) | Star Wars | `worek-basni.txt` (Worek: Baśnie) | 29→30 kart (10 basic-lądów, 20 pozostałych) |
+| 380 | Artful Maneuver (DTK) | Tarkir | `tarkir-wur.txt` (Tarkir WUR) | +1 (Plains 4→5, Island 4→3) |
+| 390 | Battlefield Butcher (BRO) | Wiedźmin | `wiedzmin-bg.txt` (Wiedźmin BG) | 30→32 (11 lądów, 21 pozostałych; Swamp 6, Forest 5) |
+| 391 | Wolf's Quarry (ELD) | Eldraine | `eldraine.txt` | 26→27 (9 lądów, 18 pozostałych) |
+| 392 | Kuldotha Ringleader (MBS) | Mirrodin | `mirrodin-brg.txt` (Mirrodin BRG) | 35→36 (12 lądów, 24 pozostałe) |
+| 394 | Cancel (ALA) | Amonkhet | `worek-mroczny.txt` (Worek: Mroczne Światy) | +1 (Plains 3→2, Mountain 2→3) |
+| 397 | Render Speechless (SOS) | Arcavios | `worek-legend.txt` (Worek: Legendy) | +1 (Plains 2→3) |
+| 398 | Intrepid Tenderfoot (EOE) | The Edge | `the-edge.txt` | +1 (Island 1→2, Mountain 3→2) |
+
+Nowy plan „Star Wars" (jedna karta, próg awansu 15 daleko) dostał worek
+według ADR 0023 §4 — motyw + najmniejsza talia: `worek-basni` (19 kart
+nie-basic przed dodaniem) z cyberpunkową Kamigawą („Neon Dynasty") jako
+najbliższym motywem dla droidów, energii i artefaktów.
+
+## Status etapów
+
+- E0 — snapshoty Scryfall + rulingi: **zamknięte** (`f14706d`).
+- E0b — plan: **zamknięte**.
+- E1 — fala A (Cancel, Artful Maneuver, Intrepid Tenderfoot, Spellkeeper
+  Weird, Render Speechless): **zamknięte** (`9b271a8`).
+- E2 — fala B (Improbable Alliance): **zamknięte** (`d805c56`).
+- E3 — fala C (Wolf's Quarry): **zamknięte** (`71c73a6`).
+- E4 — fala D (Kuldotha Ringleader): **zamknięte** (`1db9819`).
+- E5 — fala E (Battlefield Butcher): **zamknięte** (`58922b3`).
+- E6 — fala F (Sentry Bot): **zamknięte** (`674c26d`).
+- E7 — raport talii: **zamknięte** (ten rozdział).
+- E8 — dokumentacja i bramy końcowe: **w toku** (ENGINE_MILESTONES,
+  PROJECT_HISTORY, bramy końcowe).
