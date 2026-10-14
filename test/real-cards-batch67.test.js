@@ -1,4 +1,7 @@
-// Batch 67 (2026-10-14) — fala A: 371 WAR, 380 DTK, 394 ALA, 397 SOS, 398 EOE.
+// Batch 67 (2026-10-14) — fala A: 371 WAR, 380 DTK, 394 ALA, 397 SOS, 398 EOE;
+// fala B: 369 ELD Improbable Alliance (token 1/1 U Faerie z lataniem + loot,
+// mechaniki istniejące: trigger `you_draw_second_card_each_turn` i
+// `draw_then_discard`; nowy jest wyłącznie wpis tokena `token_faerie`).
 // Plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
 // Dane Oracle i rulingi: docs/cards/scryfall-*.json (dokładny druk `set=`,
 // pobrane 2026-10-14). Każda karta ma sanity + scenariusz legalny i nielegalny.
@@ -19,6 +22,8 @@ import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
+import { drawPlayerCards } from '../src/engine/effects.js';
+import { processTriggers } from '../src/engine/triggers.js';
 import { effectivePower, effectiveToughness } from '../src/engine/permanents.js';
 
 const registry = createCardRegistry();
@@ -337,4 +342,131 @@ test('B67/371+380: ruch kart między strefami nie tworzy drugiego celu (spójno�
   assert.ok(oferta, 'instant w grobie jest celem zdolności');
   assert.equal(oferta.targets[0], state.objects.get('grave-manewr').id,
     'cel wskazuje DOKŁADNIE obiekt w grobie (po przeniesieniu ma nowe id)');
+});
+
+// ---- B67/369: Improbable Alliance -----------------------------------------
+
+test('B67/369: Improbable Alliance — dane Oracle ELD, trigger drugiej karty i loot', () => {
+  const def = sanity('improbable-alliance', { set: 'ELD', plan: 'Eldraine', artId: 369 });
+  assert.deepEqual(def.types, ['Enchantment']);
+  assert.deepEqual(def.colors, ['U', 'R']);
+  assert.equal(def.manaCost, 2);
+  const trigger = def.abilities.find((a) => a.trigger?.event === 'you_draw_second_card_each_turn');
+  assert.ok(trigger, 'trigger „drugiej karty w turze”');
+  assert.deepEqual(trigger.effect[0].keywords, ['flying'], 'token 1/1 U Faerie z lataniem');
+  assert.deepEqual(trigger.effect[0].colors, ['U']);
+  assert.equal(trigger.effect[0].cardId, 'token_faerie');
+  const activated = def.abilities.find((a) => a.type === 'activated');
+  assert.deepEqual(activated.cost, { mana: 6, colors: ['U', 'R'] });
+  assert.deepEqual(activated.effect, { type: 'draw_then_discard', amount: 1 });
+  // Token z deskryptora ma wpis w katalogu z grafiką Scryfalla (M369).
+  const token = registry.get('token_faerie');
+  assert.equal(token.support.status, 'token');
+  assert.match(token.imageUri ?? '', /^https:\/\/cards\.scryfall\.io\/large\//);
+  assert.deepEqual(token.keywords, ['flying']);
+});
+
+const faerieCount = (state, playerId = 'p1') => [...state.objects.values()]
+  .filter((o) => o.cardId === 'token_faerie' && o.zone === 'battlefield' && o.controllerId === playerId)
+  .length;
+
+test('B67/369: druga karta w turze tworzy JEDNEGO 1/1 U Faerie z lataniem', () => {
+  const state = game();
+  put(state, 'alliance', 'improbable-alliance', 'p1', 'battlefield');
+  for (const id of ['l1', 'l2', 'l3']) put(state, id, 'basic-island', 'p1', 'library');
+  // Pierwsza karta w turze — trigger jeszcze nie odpala (CR 121.6).
+  let before = state.events.length;
+  drawPlayerCards(state, 'p1', 1, 'effect');
+  processTriggers(state, state.events.slice(before));
+  settle(state);
+  assert.equal(faerieCount(state), 0, 'pierwsza karta nie tworzy tokena');
+  // Druga karta — dokładnie jeden token.
+  before = state.events.length;
+  drawPlayerCards(state, 'p1', 1, 'effect');
+  processTriggers(state, state.events.slice(before));
+  settle(state);
+  assert.equal(faerieCount(state), 1, 'druga karta tworzy jednego Faerie');
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_faerie');
+  assert.deepEqual(token.colors, ['U']);
+  assert.deepEqual(token.keywords, ['flying']);
+  assert.equal(token.power, 1);
+  assert.equal(token.toughness, 1);
+  assert.equal(effectivePower(token, state), 1, 'token 1/1 (bazowa moc z definicji tokena)');
+  // Trzecia karta nie tworzy kolejnego (ruling 2019-10-04).
+  before = state.events.length;
+  drawPlayerCards(state, 'p1', 1, 'effect');
+  processTriggers(state, state.events.slice(before));
+  settle(state);
+  assert.equal(faerieCount(state), 1, 'trzecia karta w turze nie tworzy drugiego tokena');
+});
+
+test('B67/369: {4}{U}{R} — dobranie, potem odrzucenie (wybór rzucającego)', () => {
+  const state = game();
+  put(state, 'alliance', 'improbable-alliance', 'p1', 'battlefield');
+  put(state, 'c1', 'cancel', 'p1', 'hand');
+  put(state, 'c2', 'cancel', 'p1', 'hand');
+  addMana(state, 'p1', 6, { colors: ['U', 'R'] });
+  const activation = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'alliance');
+  run(state, activation);
+  assert.equal(state.cardsDrawnThisTurn.p1 ?? 0, 0,
+    'zdolność aktywowana czeka na rozstrzygnięcie ze stosu — dobranie jeszcze nie zaszło');
+  // Rozstrzygamy stos, ale NIE decyzji o odrzuceniu (patrz test B67/397).
+  for (let i = 0; i < 12 && !state.pendingDiscardChoice; i += 1) {
+    const ch = commands(state);
+    const stosowy = ch.find((c) => c.type.startsWith('resolve_') && c.type !== 'resolve_discard_choice');
+    if (stosowy) { run(state, stosowy); continue; }
+    if (state.zones.stack.length === 0) break;
+    run(state, ch.find((c) => c.type === 'pass_priority'));
+  }
+  assert.ok(state.pendingDiscardChoice, 'loot otwiera decyzję o odrzuceniu po dobraniu');
+  // Ścieżka `draw_then_discard` trzyma odrzucającego w `playerId` (kontroler
+  // źródła); `chooserId` należy do `reveal_hand_choose_discard` (B67/397).
+  assert.equal(state.pendingDiscardChoice.playerId, 'p1', 'odrzuca kontroler źródła (loot)');
+  assert.equal(state.cardsDrawnThisTurn.p1, 1, 'zdolność dobrała dokładnie jedną kartę');
+  const wRece = [...state.objects.values()].filter((o) => o.zone === 'hand').map((o) => o.id).sort();
+  assert.deepEqual([...state.pendingDiscardChoice.handIds].sort(), wRece,
+    '„then discard a card”: kandydatem jest DOWOLNA karta z ręki po dobraniu (loot, nie wybór nie-lądu)');
+  run(state, commands(state, 'p1').find((c) => c.type === 'resolve_discard_choice'));
+  settle(state);
+  const grob = [...state.objects.values()].filter((o) => o.zone === 'graveyard');
+  assert.equal(grob.length, 1, 'odrzucona dokładnie jedna karta');
+  assert.equal(grob[0].controllerId, 'p1', 'karta odrzucona przez rzucającego idzie do JEGO grobu');
+  // Ręka: 2 karty wyjściowe + 1 dobrana − 1 odrzucona. Która karta poleciała do
+  // grobu zależy od wyboru gracza (loot pozwala odrzucić także ląd) — test
+  // pilnuje LICZB, nie tożsamości karty (tożsamość wybiera człowiek/bot).
+  assert.equal([...state.objects.values()].filter((o) => o.zone === 'hand').length, 2,
+    'w ręce zostały dwie karty');
+});
+
+test('B67/369 nielegalny: bez many {4}{U}{R} zdolność nie jest oferowana', () => {
+  const state = game();
+  put(state, 'alliance', 'improbable-alliance', 'p1', 'battlefield');
+  for (const id of ['l1', 'l2']) put(state, id, 'basic-island', 'p1', 'library');
+  addMana(state, 'p1', 5, { colors: ['U', 'R'] });
+  assert.equal(commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'alliance').length, 0,
+    'o jedno mana za mało — brak oferty (koszt liczony z pipami {U}{R})');
+  addMana(state, 'p1', 1, { colors: [] });
+  assert.equal(commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'alliance').length, 1,
+    'dokładnie szósta mana odblokowuje ofertę');
+});
+
+test('B67/369 nielegalny: wejście PO dobraniu drugiej karty nie łapie triggera tej tury', () => {
+  const state = game();
+  // Enchantment leży poza polem bitwy (w ręce) — ruling 2019-10-04: brak
+  // permanentu w chwili dobrania drugiej karty = zdolność nie odpala wcale.
+  put(state, 'alliance', 'improbable-alliance', 'p1', 'hand');
+  for (const id of ['l1', 'l2', 'l3']) put(state, id, 'basic-island', 'p1', 'library');
+  let before = state.events.length;
+  drawPlayerCards(state, 'p1', 2, 'effect');
+  processTriggers(state, state.events.slice(before));
+  settle(state);
+  assert.equal(state.cardsDrawnThisTurn.p1, 2, 'dwie karty dobrane');
+  // Wejście na stół PO drugim dobraniu nie nadrabia triggera…
+  const wRece = state.objects.get('alliance');
+  moveObjectDirectly(state, wRece.id, 'battlefield', 'alliance-na-stole');
+  before = state.events.length;
+  drawPlayerCards(state, 'p1', 1, 'effect');
+  processTriggers(state, state.events.slice(before));
+  settle(state);
+  assert.equal(faerieCount(state), 0, 'trzecia karta to nie „druga” — brak tokena');
 });

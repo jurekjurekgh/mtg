@@ -191,7 +191,6 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
 const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
   'battlefield-butcher',
-  'improbable-alliance',
   'kuldotha-ringleader',
   'sentry-bot',
   'wolfs-quarry',

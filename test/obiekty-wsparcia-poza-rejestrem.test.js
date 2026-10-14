@@ -140,7 +140,6 @@ test('OW/5 brak snapshotu dla Day // Night jest ODNOTOWANY, nie cichy', () => {
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
 const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
   'battlefield-butcher',
-  'improbable-alliance',
   'kuldotha-ringleader',
   'sentry-bot',
   'wolfs-quarry',

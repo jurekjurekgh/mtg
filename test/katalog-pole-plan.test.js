@@ -50,8 +50,9 @@ test('każda regularna karta ma plan; bez planu tylko wyjątki z AGENTS.md', () 
   assert.equal(kategorie.basic.length, 5,
     `oczekiwano 5 basic landów bez planu, jest ${kategorie.basic.length}`);
   // Batch 66: +token_citizen (Rakish Revelers) → 49.
-  assert.equal(kategorie.token.length, 49,
-    `oczekiwano 49 tokenów bez planu, jest ${kategorie.token.length}`);
+  // Batch 67: +token_faerie (Improbable Alliance) → 50.
+  assert.equal(kategorie.token.length, 50,
+    `oczekiwano 50 tokenów bez planu, jest ${kategorie.token.length}`);
   assert.deepEqual(kategorie.special.sort(), ['day-night', 'undercity'],
     'specjalne wpisy Day/Night i Undercity mogą nie mieć planu');
 

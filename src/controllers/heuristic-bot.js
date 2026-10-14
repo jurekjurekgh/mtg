@@ -1194,6 +1194,10 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  // Batch 67 (Improbable Alliance): loot ({4}{U}{R} — dobierz, potem odrzuć)
+  // kumuluje jak `draw_cards`/`discard_cards` osobno: druga aktywacja na
+  // stosie dobiera i odrzuca KOLEJNĄ kartę (nie jest idempotentna do końca tury).
+  'draw_then_discard',
   'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
   'station_counters', 'scry', 'regenerate',
   // Batch 59 (Charismatic Vanguard): „Creatures you control get +1/+1 until

@@ -48,6 +48,7 @@ const BEZ_SNAPSHOTU = Object.freeze([
   'token_dinosaur',
   'token_eldrazi_scion',
   'token_elemental',
+  'token_faerie',
   'token_food',
   'token_forest_dryad',
   'token_germ',
@@ -90,7 +91,6 @@ const BEZ_SNAPSHOTU = Object.freeze([
 // z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
 const OSIEROCONE_SNAPSHOTY = Object.freeze([
   'battlefield-butcher',
-  'improbable-alliance',
   'kuldotha-ringleader',
   'sentry-bot',
   'undercity',
@@ -227,13 +227,13 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // regularnych kart, token ma jawny wyjątek i własny kanoniczny imageUri.
   // Batch 67 (fala A, 2026-10-14): 637 + 5 kart (Spellkeeper Weird, Artful
   // Maneuver, Cancel, Render Speechless, Intrepid Tenderfoot).
-  assert.equal(registry.all().length, 642, 'liczba definicji wymaga przeglądu po zmianie katalogu');
+  assert.equal(registry.all().length, 644, 'liczba definicji wymaga przeglądu po zmianie katalogu');
   // Batch 67: 582 + 10 snapshotów nowego batcha (definicje wchodzą falami, E1–E6).
   assert.equal(idsSnapshotow.length, 592, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   // Batch 67: 581 + 5 snapshotów fali A (pary snapshot↔definicja już istnieją).
-  assert.equal(idsSnapshotow.length - osierocone.length, 586,
+  assert.equal(idsSnapshotow.length - osierocone.length, 587,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });
 
@@ -361,11 +361,11 @@ test('dane katalogu zgodne ze snapshotami Oracle (front face, coverage, keywords
     }
   }
 
-  assert.equal(porownano, 586, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
-  assert.equal(bezSnapshotu, 56, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
+  assert.equal(porownano, 587, `zmieniła się liczba dopasowanych snapshotów: ${porownano}`);
+  assert.equal(bezSnapshotu, 57, `zmieniła się liczba brakujących snapshotów: ${bezSnapshotu}`);
   assert.equal(wielostronnych, 11, `zmieniła się liczba kart wielostronnych: ${wielostronnych}`);
-  assert.equal(frontTypePorownano, 586, `typy/podtypy nie porównano dla ${586 - frontTypePorownano} snapshotów`);
-  assert.equal(frontOraclePorownano, 586, `Oracle frontu nie porównano dla ${586 - frontOraclePorownano} snapshotów`);
+  assert.equal(frontTypePorownano, 587, `typy/podtypy nie porównano dla ${586 - frontTypePorownano} snapshotów`);
+  assert.equal(frontOraclePorownano, 587, `Oracle frontu nie porównano dla ${586 - frontOraclePorownano} snapshotów`);
   assert.equal(oracleTopNull, 9, `oracle_text null/brak: oczekiwano 9, jest ${oracleTopNull}`);
   assert.equal(oracleTopNullMultiface, 9, `oracle_text null/brak na DFC: oczekiwano 9, jest ${oracleTopNullMultiface}`);
   assert.equal(oracleTopEmpty, 12, `pusty oracle_text: oczekiwano 12, jest ${oracleTopEmpty}`);

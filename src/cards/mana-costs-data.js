@@ -633,5 +633,6 @@ export const MANA_COSTS = {
   "artful-maneuver": "{1}{W}",
   "cancel": "{1}{U}{U}",
   "render-speechless": "{2}{W}{B}",
+  "improbable-alliance": "{U}{R}",
   "intrepid-tenderfoot": "{1}{G}",
 };

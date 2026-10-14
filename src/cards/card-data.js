@@ -853,6 +853,18 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/b/9/b9d38c75-c69f-45cd-a745-03ac7513491b.jpg?1783903566',  // tsoc
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
   }),
+  // Batch 67 (Improbable Alliance, ELD): drukowany token 1/1 U Faerie z lataniem
+  // (teld 5, `api.scryfall.com/cards/named?exact=Faerie&set=teld`). Reguła
+  // pozostaje inline w efekcie `create_token` (ADR 0002), wpis katalogowy niesie
+  // grafikę Scryfalla (M369 pilnuje, żeby każdy tworzony token miał obraz).
+  defineCard({
+    id: 'token_faerie', name: 'Faerie', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Faerie'], colors: ['U'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bcd82cb0-ff4b-4f4d-b3d0-3ac53883b099.jpg?1783932483',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Improbable Alliance'] },
+  }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
     types: ['Land'], colors: [],
@@ -13869,6 +13881,40 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     artId: 398, plan: 'The Edge',
     support: { status: 'supported', limitations: [] },
     notes: ['„Activate only as a sorcery" = okno własnej fazy głównej (timing: sorcery na zdolności)'],
+  }),
+
+  // 369 Improbable Alliance (ELD #193) {U}{R} Enchantment — „Whenever you draw
+  // your second card each turn, create a 1/1 blue Faerie creature token with
+  // flying." + „{4}{U}{R}: Draw a card, then discard a card."
+  defineCard({
+    id: 'improbable-alliance', name: 'Improbable Alliance', set: 'ELD',
+    types: ['Enchantment'], colors: ['U', 'R'], manaCost: 2,
+    oracleText: 'Whenever you draw your second card each turn, create a 1/1 blue Faerie creature token with flying.\n{4}{U}{R}: Draw a card, then discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/4/0461867b-ec35-4d37-a398-5247e06c4afe.jpg?1783932596',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_draw_second_card_each_turn' },
+        effect: [{
+          type: 'create_token', cardId: 'token_faerie', name: 'Faerie',
+          kind: 'creature', power: 1, toughness: 1, colors: ['U'],
+          types: ['Creature'], subtypes: ['Faerie'], keywords: ['flying'], amount: 1,
+        }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 6, colors: ['U', 'R'] },
+        effect: { type: 'draw_then_discard', amount: 1 },
+      }),
+    ],
+    artId: 369, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trigger „drugiej karty w turze” odpala się RAZ na turę (ruling 2019-10-04: nie przy trzeciej/czwartej karcie; dobranie kilku kart jedną komendą też daje jeden wyzwalacz — porządek niesie zdarzenie `card_drawn`)',
+      'ruling: jeśli permanentu NIE BYŁO na polu bitwy w chwili dobrania drugiej karty, zdolność nie odpala w tej turze wcale (m.in. wejście po fakcie)',
+      '„put into hand” bez słowa „draw” nie liczy się jako dobranie (ruling 2019-10-04, CR 121.5)',
+      'zdolność aktywowana to loot: dobranie, potem odrzucenie — wybór odrzucanej karty należy do rzucającego',
+    ],
   }),
 ]);
 
