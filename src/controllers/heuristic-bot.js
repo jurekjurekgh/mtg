@@ -1930,6 +1930,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (effect?.power ?? tokenDef?.power ?? 0) <= 0 && granted.length > 0
       && granted.every((fx) => fx?.type === 'add_mana');
   };
+  /**
+   * PMSSB-62/F6 (Wolf's Quarry): token, który poświęca się za życie (Food:
+   * „{2}, {T}, Poświęć: zyskaj 3 życia"), jest BANKIEM ŻYCIA — ta sama
+   * konstrukcja co `tokenDrawBankValue` (PMSSB-58/F1): wartość z istniejącej
+   * drabiny życia (`gainLifeValue`, L41 — żadnej nowej premii), minus koszt
+   * many aktywacji (`abilityManaCostPenalty`), × waga banku
+   * (`tokenDrawBankWeight`). Przy pełnym życiu drabina zwraca ≤3, więc koszt
+   * {2} sprowadza bank do zera — celowo (anty-over-fix M429: Food przy 20
+   * życia nie jest wart premii; wartość rośnie pod presją życia).
+   */
+  const tokenLifeBankValue = (view, effect) => {
+    const abilities = effect?.abilities ?? (effect?.cardId ? cardDef(effect.cardId)?.abilities : null) ?? [];
+    let best = 0;
+    for (const ability of abilities) {
+      if (ability?.type !== 'activated') continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      const life = effects.filter((e) => e?.type === 'gain_life')
+        .reduce((sum, e) => sum + (Number.isInteger(e.amount) ? e.amount : 0), 0);
+      if (!(life > 0)) continue;
+      const value = gainLifeValue(view, life)
+        - P.abilityManaCostPenalty * ((ability.cost?.mana ?? 0) + (ability.cost?.generic ?? 0));
+      best = Math.max(best, value);
+    }
+    return P.tokenDrawBankWeight * best;
+  };
+
   // PMSSB-58/F1: token z aktywacją doboru jest BANKIEM OPCJI. Przyszłej
   // odrzucanej karty nie znamy; używamy istniejącej miary lootu, odliczamy
   // koszt many i dyskontujemy zwłokę. Aktywacja niżej płaci rzeczywisty discard.
@@ -2034,7 +2060,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // znak go nie dotyczy.
     const controller = tokenControllerId ?? view.playerId;
     const sign = controller === view.playerId ? 1 : -1;
-    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect))
+    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect),
+      tokenLifeBankValue(view, effect))
       + tokenRiderDamage(view, effect, controller));
   };
   // PMSSB-2/C (F5): RIDERZY bezwarunkowe — token, który sam zadaje obrażenia
@@ -2066,6 +2093,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             ? damageTargetValue(view, foeId, amt)
             : damageTargetValue(view, view.playerId, amt);
         }
+      } else if (a.trigger?.event === 'dies') {
+        // PMSSB-62/F6 (Wolf's Quarry, Boar → Food): token, który przy śmierci
+        // COŚ zostawia, jest wart tyle, ile zostawia — JEDNA miara ze ścieżką
+        // stwora (L41: `anticipatedDiesValue`, likelihood 0.5 w środku).
+        rider += anticipatedDiesValue(view, { abilities: [a] });
       }
     }
     return rider;
@@ -2713,6 +2745,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // AURY-host (curiosity/flooding!): gospodarz z cmd.targets (bramka-evasion
   // gospodarza!); hostless = 0. pain-for-all SKIP (amountFrom-damage
   // nieczytelne!). flooding-mill = 0.7 × (20+3n) (tap-co-turę!).
+  /**
+   * PMSSB-62/F1 (Improbable Alliance, Jolrael): czy leg zdolności DOBIERA MI
+   * kartę. Cudzy/„target"-draw dowodem nie jest (konserwatywnie — cel może
+   * wskazać wroga), a `draw_cards_both_players` jest (dobieram też).
+   */
+  const ownDrawEffect = (effect) => {
+    if (!effect?.type) return false;
+    if (effect.type === 'draw_cards_both_players') return true;
+    if (effect.type !== 'draw_cards' && effect.type !== 'draw_then_discard') return false;
+    if (effect.applyTo === 'target' || effect.scope === 'target') return false;
+    return effect.scope !== 'opponent' && effect.scope !== 'each_opponent';
+  };
+  const abilityDrawsForMe = (ability) => {
+    const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    return effs.some(ownDrawEffect);
+  };
+  /**
+   * PMSSB-62/F1: DOWÓD drugiej karty w turze dla triggera
+   * `you_draw_second_card_each_turn`. Trigger pali się tylko wtedy, gdy widok
+   * pokazuje źródło DRUGIEGO dobrania: (1) sam nosiciel (Improbable Alliance
+   * ma „{4}{U}{R}: dobierz kartę, potem odrzuć"), (2) rzucalna karta w ręce,
+   * (3) inny mój permanent na stole. Brak dowodu = 0 — anty-over-fix M429
+   * (karta bez źródła dobrania nie dostaje premii).
+   */
+  const secondDrawEvidence = (view, def) => {
+    if ((def?.abilities ?? []).some(abilityDrawsForMe)) return true;
+    const hand = (view.zones.hand ?? []).filter((o) => o.kind !== 'land');
+    if (hand.some((o) => (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe))) return true;
+    return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      && !o.abilitiesStripped && !o.faceDown
+      && (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe));
+  };
+
   const anticipatedTailValue = (view, def, cmd = null) => {
     if (!def) return 0;
     const foes = enemyCreatures(view);
@@ -2770,6 +2835,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // turze, a każdy dodatkowy draw tworzy kolejny +1/+1. Konserwatywnie
       // wyceniamy jeden gwarantowany trigger na cykl, bez zgadywania kart.
       else if (ev === 'you_draw_card') like = 1.0;
+      // PMSSB-62/F1 (Improbable Alliance/Jolrael): „druga karta w turze" pali
+      // się TYLKO, gdy widok dowodzi źródła drugiego dobrania (sam nosiciel,
+      // ręka, stół) — inaczej 0 (anty-over-fix M429). Likelihood 0.5: źródło
+      // jest, ale nie co turę (mana i rytm dobierania).
+      else if (ev === 'you_draw_second_card_each_turn') like = secondDrawEvidence(view, def) ? 0.5 : 0;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
       else continue;
@@ -13103,6 +13173,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
+        // PMSSB-62/F7 (battle cry, L41/PMSSB-43): atak jest ZBIOROWY —
+        // trigger „attacks" NASZYCH atakujących, który pomuje zbiór atakujących
+        // (`buff_attacking_creatures`, np. battle cry CR 702.91a), podnosi
+        // staty tego atakującego w projekcji. Dotąd wycena deklaracji widziała
+        // te legi jako 0, więc dołożenie drugiego atakującego do zestawu nie
+        // dostawało nagrody. Bramki: trigger z `condition`/płatnością pomijamy
+        // (niemodelowane), `excludeSource` wyklucza sam nosiciel (CR 702.91a).
+        const teamAttackPump = (selfId) => {
+          let power = 0;
+          let toughness = 0;
+          for (const sourceId of attackers) {
+            const object = objectOnBoard(view, sourceId);
+            if (!object) continue;
+            const def = cardDef(object.cardId);
+            for (const ability of def?.abilities ?? []) {
+              if (ability?.trigger?.event !== 'attacks') continue;
+              if (ability.trigger.condition != null) continue;
+              if (ability.trigger.payMana != null || (ability.trigger.payColors?.length ?? 0) > 0) continue;
+              const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+              for (const leg of legs) {
+                if (leg?.type !== 'buff_attacking_creatures') continue;
+                if (leg.condition != null) continue;
+                if (leg.excludeSource === true && sourceId === selfId) continue;
+                power += leg.power ?? 0;
+                toughness += leg.toughness ?? 0;
+              }
+            }
+          }
+          return { power, toughness };
+        };
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -13133,8 +13233,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
             ? Number.POSITIVE_INFINITY
             : weakestBlockerToughness + trick.toughness;
-          const power = combatPower(object);
-          const toughness = object.toughness ?? 0;
+          // PMSSB-62/F7: staty atakującego Z DODATKIEM pomp zbiorowych
+          // deklarowanego zestawu (battle cry) — inaczej blotka nie zyskuje
+          // „awansu" na zabójcę blokera i dołożenie jej do ataku wygląda na stratę.
+          const teamPump = teamAttackPump(id);
+          const power = combatPower(object) + teamPump.power;
+          const toughness = (object.toughness ?? 0) + teamPump.toughness;
+          // Obiekt atakującego Z pompą zbiorową: dalsze gałęzie czytają staty
+          // przez `combatObject`, więc porównania (m.in. `lethalDamageOf`)
+          // muszą dostać ten sam, podniesiony obiekt — inaczej pompa znika.
+          const pumpedObject = (teamPump.power !== 0 || teamPump.toughness !== 0)
+            ? { ...object, power, toughness } : object;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
           // strata stwora. Wymiana (power ≥ wytrzymałość blockerów) to
           // realny zysk — bez tego bot nigdy nie atakuje w równą planszę
@@ -13162,7 +13271,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             ? { power: power + (object.combatDamageByToughness ? bbPump.toughness : bbPump.power), toughness: toughness + bbPump.toughness }
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
-            ? object : { ...object, power: blockedStats.power, toughness: blockedStats.toughness };
+            ? pumpedObject : { ...pumpedObject, power: blockedStats.power, toughness: blockedStats.toughness };
           // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
           // z ochroną od koloru atakującego (np. token 1/1 z protection from
           // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —

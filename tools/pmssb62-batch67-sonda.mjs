@@ -106,8 +106,14 @@ const iaBezTriggera = registryKontra('improbable-alliance', (d) => ({
 function iaCast(registry = REG) {
   return scene({ registry, setup: (st, r) => put(st, 'ia', 'improbable-alliance', 'p1', 'hand', r) });
 }
+// F1 BRAMKA (anty-over-fix M429): ten sam trigger, ale BEZ źródła drugiego
+// dobrania w widoku (karta traci własną aktywację doboru) → dowód znika.
+const iaBezDobierania = registryKontra('improbable-alliance', (d) => ({
+  ...d, abilities: (d.abilities ?? []).filter((a) => a.type !== 'activated'),
+}));
 show('F1 Improbable Alliance — rzut (pełna)', iaCast(), includes('(ia'));
 show('F1 KONTRA bez triggera drugiej karty — rzut', iaCast(iaBezTriggera), includes('(ia'));
+show('F1 BRAMKA trigger bez źródła dobrania — rzut', iaCast(iaBezDobierania), includes('(ia'));
 
 // F2 Battlefield Butcher: aktywacja {5},{T} z obniżką za karty-stwory w grobie.
 function butcherScene(licznikGrobow) {
@@ -188,14 +194,16 @@ function sentryPay(energia, atakujacych = 2, ownDeck = null) {
     (o) => o.cmd.startsWith('resolve_optional_pay_choice'));
 }
 {
-  // Antycypacja: rzut Sentry Bota z energią w puli vs bez energii.
-  const bez = scene({ setup: (st) => put(st, 'bot', 'sentry-bot', 'p1', 'hand') });
-  show('F4 Antycypacja rzutu — 0 energii w puli', bez, includes('(bot'));
-  const z = scene({ setup: (st) => {
+  // Antycypacja: rzut Sentry Bota z energią w puli vs bez energii — na stole
+  // cztery własne stwory, bo payoff opłaty („+1/+1 na każdym") rośnie z pulpą.
+  const plansza = (st) => {
     put(st, 'bot', 'sentry-bot', 'p1', 'hand');
-    st.players.find((p) => p.id === 'p1').energy = 3;
-  }});
-  show('F4 Antycypacja rzutu — 3 liczniki energii w puli', z, includes('(bot'));
+    for (let i = 1; i <= 4; i += 1) creature(st, `moj${i}`, 'p1', 3, 3);
+  };
+  const bez = scene({ setup: plansza });
+  show('F4 Antycypacja rzutu — 0 energii, 4 własne stwory', bez, includes('(bot'));
+  const z = scene({ setup: (st) => { plansza(st); st.players.find((p) => p.id === 'p1').energy = 3; } });
+  show('F4 Antycypacja rzutu — 3 liczniki, 4 własne stwory', z, includes('(bot'));
 }
 
 // F5 Energia: wartość `get_energy` (stała vs dynamiczna) przy konsumencie w talii.
@@ -209,12 +217,29 @@ function morayScene() {
 show('F5 Shipwreck Moray — aktywacja {E} (konsument energii, cel: własny stwór)', morayScene(), starts('activate_ability'));
 
 // F6 Wolf's Quarry: rider `dies` → Food na tokenie Boara.
-const boarBezFood = registryKontra('token_boar', (d) => ({ ...d, abilities: [] }));
+// KONTRA musi ciąć deskryptor `create_token` CZARU (nie definicję tokena!):
+// `tokenRiderDamage`/`tokenGrantedEffects` czytają `effect.abilities` z legu
+// i dopiero w drugiej kolejności definicję tokena — mutacja samej definicji
+// nie zmienia więc wyceny (lekcja z fali A: kontrfakt był bezskuteczny).
+const boarBezFood = registryKontra('wolfs-quarry', (d) => ({
+  ...d,
+  spell: { ...d.spell, effects: (d.spell?.effects ?? []).map((e) => (e?.type === 'create_token' ? { ...e, abilities: [] } : e)) },
+}));
 function wqCast(registry = REG) {
   return scene({ registry, many: 7, setup: (st, r) => put(st, 'wq', 'wolfs-quarry', 'p1', 'hand', r) });
 }
 show('F6 Wolf\'s Quarry — rzut (3× Boar, każdy z dies → Food)', wqCast(), includes('(wq'));
 show('F6 KONTRA — token Boar bez triggera śmierci', wqCast(boarBezFood), includes('(wq'));
+// F6 pod presją życia: bank życia Fooda ({2}, Poświęć: +3 życia) przebija
+// drabinę dopiero, gdy życie jest niskie — tam rider ma widoczną wartość.
+function wqCastLowLife(registry = REG) {
+  return scene({ registry, many: 7, setup: (st, r) => {
+    put(st, 'wq', 'wolfs-quarry', 'p1', 'hand', r);
+    st.players.find((p) => p.id === 'p1').life = 8;
+  }});
+}
+show('F6 WQ przy 8 życia — rzut (dies → Food)', wqCastLowLife(), includes('(wq'));
+show('F6 WQ przy 8 życia KONTRA bez triggera śmierci', wqCastLowLife(boarBezFood), includes('(wq'));
 
 // F7 kontrola dodatnia: battle cry w decyzji ataku (Kuldotha Ringleader).
 const ringBezBattleCry = registryKontra('kuldotha-ringleader', (d) => ({
@@ -230,6 +255,19 @@ function ringAttack(registry = REG) {
 }
 show('F7 Kuldotha z battle cry — decyzja ataku', ringAttack(), starts('declare_attackers'));
 show('F7 KONTRA bez battle cry — decyzja ataku', ringAttack(ringBezBattleCry), starts('declare_attackers'));
+// F7 sonda ROZSTRZYGAJĄCA: 2/2 atakujący kontra 3/3 bloker to bez battle cry
+// wymiana stratna (2/2 ginie, bloker przeżywa), a Z battle cry (+1/+0 od
+// Ringleadera) — 3/2 zabija blokera i ginie (realny zysk). Wybór zestawu
+// atakujących MUSI się różnić, jeśli bot widzi nagrodę.
+function ringDiscriminating(registry = REG) {
+  return scene({ registry, many: 0, step: 'declare_attackers', active: 'p1', priority: 'p1', setup: (st, r) => {
+    put(st, 'ring', 'kuldotha-ringleader', 'p1', 'battlefield', r);
+    creature(st, 'other', 'p1', 2, 2);
+    creature(st, 'blocker', 'p2', 3, 3);
+  }});
+}
+show('F7 ROZSTRZYGAJĄCA z battle cry — 2/2 vs bloker 3/3', ringDiscriminating(), starts('declare_attackers'));
+show('F7 ROZSTRZYGAJĄCA KONTRA bez battle cry', ringDiscriminating(ringBezBattleCry), starts('declare_attackers'));
 
 // F8 kontrola dodatnia: Cancel (kontra) — cel czar na stosie.
 {

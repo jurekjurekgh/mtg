@@ -67,20 +67,65 @@ Wstępne findingi do zmierzenia sondą (z rozpoznania kodu, 2026-10-15):
 | K2 | Spellkeeper — zwrot instantu z grobu | 0,0000 i wybrana | kontrola dodatnia ✓ (najniższa wartość, ale > pass) |
 | K3 | Shipwreck Moray — aktywacja {E} | −25,0000 | kontrola: kara za {E} działa w `activate_ability` |
 
+## Pomiar PO (ta sama macierz, seed 2067, 2026-10-15)
+
+| # | scenariusz | PRZED | PO | werdykt |
+|---|---|---|---|---|
+| F1 | Improbable Alliance — rzut (pełna) | 59,3964 | **65,2464** | trigger drugiej karty widoczny |
+| F1k | kontrfakt bez triggera drugiej karty | 59,3964 | 59,3964 | baza bez zmian ✓ |
+| F1b | BRAMKA: trigger bez źródła dobrania | — | 59,3964 | brak dowodu = brak premii (M429) ✓ |
+| F2 | Butcher, 0 kart w grobie (koszt {5}) | −3,0000 | **5,0000** | aktywacja wreszcie widzi koszt |
+| F2 | Butcher, 3 karty w grobie (koszt {2}) | −3,0000 | **8,0000** | wymiar kosztu działa |
+| F2 | Butcher, 5 kart w grobie (koszt {0}) | −3,0000 | **10,0000** | darmowa aktywacja widoczna |
+| F2k | kontrfakt bez obniżki (naprawiony: mutacja `abilities[0]`) | −3,0000 | 5,0000 | dowód: obniżka, nie baza |
+| F3 | Sentry Bot, 0 / 2 / 4 atakujących | 65,7027 / 69,3027 / 69,3027 | **65,7027 / 76,5027 / 83,7027** | obniżka czaru widoczna (S11) |
+| F3k | kontrfakt bez obniżki, 2 atakujących | 69,3027 | 74,7027 | dowód: {2}{W} vs {4}{W} |
+| F3m | 2 atakujących i DOKŁADNIE 3 many | — | oferta jest (76,5027) | bez obniżki oferta znika (BRAK) |
+| F4 | decyzja o opłacie {E}{E}{E} | 75,0000 vs 15,0000 | **66,0000** vs 15,0000 | koszt energii ma wymiar |
+| F4k | ta sama decyzja bez kosztu | 75,0000 | 75,0000 | darmowa ≠ płatna ✓ |
+| F4 | antycypacja rzutu: 0 energii / 3 liczniki (4 własne stwory) | 65,7027 / 65,7027 | **72,9027 / 77,6277** | payoff opłaty widoczny (+4,73) |
+| F5 | Shipwreck Moray — aktywacja {E} | −25,0000 | −25,0000 | kontrola bez zmian ✓ |
+| F6 | Wolf's Quarry, 20 życia | 79,9400 | 79,9400 | bank życia Fooda = 0 przy pełnym życiu (świadoma granica) |
+| F6 | Wolf's Quarry, 8 życia | 81,4400 | **81,4400 vs 79,9400** | rider `dies` → Food widoczny pod presją życia (+1,50) |
+| F6k | kontrfakt (deskryptor czaru bez triggera śmierci) | — | 79,9400 | dowód: różnica pochodzi z ridera |
+| F7 | Kuldotha — `attack[ring]` vs `attack[ring,other]` | 7,00 / 7,00 | **7,00 / 8,00** | battle cry wchodzi do decyzji ataku |
+| F7r | ROZSTRZYGAJĄCA: 2/2 vs bloker 3/3 | −3,00 | **9,00** (kontrfakt −3,00) | bójka awansuje na zabójcę blokera |
+| K1 | Cancel na czarze o wysokim wpływie | 108,0000 | 108,0000 | kontrola dodatnia ✓ |
+| K2 | Spellkeeper — zwrot instantu z grobu | 0,0000 i wybrana | bez zmian | kontrola dodatnia ✓ |
+
+Kontrfakty: F1 (bez triggera / bez źródła dobrania), F2 (bez obniżki zdolności),
+F3 (bez obniżki czaru), F4 (opłata darmowa), F6 (deskryptor `create_token` bez
+`abilities`) — dwa z nich były w fali A BEZSKUTECZNE (F2: obniżka siedzi na
+`abilities[0]`, nie na karcie; F6: `tokenRiderDamage` czyta `effect.abilities`
+deskryptora, więc mutacja definicji tokena nic nie zmieniała). Po naprawie oba
+pokazują różnicę.
+
+### Golden-master (`bot-scoring-snapshot`)
+
+Dryf JEDNEJ partii: `dominaria-brg|mirrodin-wu@1000` — decyzje 315 → 314,
+`scoreSum` 3350,5225 → 3347,5225 (`activate_ability` 7 → 6). Atrybucja przez
+chwilowe wyłączniki: z zablokowanym `secondDrawEvidence` (F1) fixture jest
+ZIELONY; z wyłączonym samym F6 — nadal drgał ⇒ dryf pochodzi WYŁĄCZNIE z F1
+(wycena `you_draw_second_card_each_turn`), nie z F2/F3/F6/F7. Decyzja: fixture
+zregenerowany świadomie (`--write`) — to tuning scoringu PMSSB (cel pętli), nie
+refaktor; skala zmiany ograniczona do jednej partii i jednej decyzji.
+
 ## Fale (każda = osobny commit)
 
 - **Fala A — pomiar PRZED:** `tools/pmssb62-batch67-sonda.mjs` + tabela w tym
   planie (scenariusze: 6 findingów + 4 kontrole dodatnie).
-- **Fala B — energia:** wspólny model kosztu liczników (L41: `activate_ability`
-  ↔ `resolve_optional_pay_choice` ↔ antycypacja rzutu) + wartość `get_energy`
-  z dynamiczną kwotą liczona z widoku, ale TYLKO gdy własna talia ma konsumenta
-  energii (`ownDeck`, wzorzec Rakish z PMSSB-61/B).
-- **Fala C — obniżki widoczne dla bota:** `cardCostReductionForView` rozszerzone
-  o `perCreatureAttackingYou`; koszt zdolności aktywowanej liczony na widoku
-  (`perCreatureCardInGraveyard`).
-- **Fala D — payoffy triggerów:** `you_draw_second_card_each_turn` → token
-  (jedna ścieżka wyceny: `boardCastPayoffValue`/payoff rzutu), rider `dies` →
-  Food na tokenie.
+- **Fala B — energia: ZROBIONA** (commit `86a34ae`). Wspólny model kosztu
+  liczników (L41: `activate_ability` ↔ `resolve_optional_pay_choice` ↔
+  antycypacja rzutu) + `get_energy` z dynamiczną kwotą liczona z widoku.
+- **Fala C — obniżki widoczne dla bota: ZROBIONA** (commit `dbdb77d`).
+  `cardCostReductionForView` rozszerzone o `perCreatureAttackingYou`; koszt
+  zdolności aktywowanej liczony na widoku (`perCreatureCardInGraveyard`).
+- **Fala D — payoffy triggerów: ZROBIONA.** `you_draw_second_card_each_turn`
+  → token (jedna ścieżka wyceny: tabela triggerów-ogona, bramkowana DOWODEM
+  drugiego dobrania w widoku), rider `dies` → Food na tokenie (`tokenLifeBankValue`
+  + ta sama miara `anticipatedDiesValue` co dla stwora), plus **F7** awansowane
+  z „kontroli" na finding: battle cry (`buff_attacking_creatures`) wchodzi do
+  wyceny DEKLARACJI ATAKU (sonda rozstrzygająca: −3,00 → 9,00, kontrfakt −3,00).
 - **Fala E — domknięcie:** testy `test/audyt-pmssb62-batch67.test.js` (RED→GREEN
   + mutacje), piny kontrolek, wpis do rejestru `docs/PMSSB.md`, raport
   `docs/audits/PMSSB62_BATCH67_2026-10-15.md`, `PROJECT_HISTORY.md`, bramy.
