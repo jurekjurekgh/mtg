@@ -1039,6 +1039,9 @@ export const KEYWORD_LABELS = Object.freeze({
   shroud: 'Shroud (całun — niecelowalny dla nikogo)',
   outlast: 'Outlast (wytrwaj)',
   saddle: 'Saddle (osiodłaj)',
+  // Batch 67 (Kuldotha Ringleader, CR 702.91): battle cry to trigger ataku —
+  // bez etykiety linia keywordów pokazywałaby surowy slug „battle_cry" (M127/L29).
+  battle_cry: 'Battle cry (atak: inne atakujące stwory +1/+0 do końca tury)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;

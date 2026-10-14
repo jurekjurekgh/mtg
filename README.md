@@ -141,7 +141,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `innistrad-wu` | Innistrad (WU) | WU | 32 | 11 | 21 |
 | `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
-| `mirrodin-brg` | Mirrodin (BRG) | BRG | 35 | 12 | 23 |
+| `mirrodin-brg` | Mirrodin (BRG) | BRG | 36 | 12 | 24 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 29 | 10 | 19 |
 | `ravnica` | Ravnica | WUBRG | 45 | 15 | 30 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |

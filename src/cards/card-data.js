@@ -13984,6 +13984,36 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       'zwykły czar bez celów: przy pustym stole i tak tworzy trzy Boary (brak „jeśli” / brak wyboru celu)',
     ],
   }),
+
+  // 392 Kuldotha Ringleader (MBS #70) {4}{R} 4/4 Giant Berserker — battle cry
+  // (CR 702.91: „Whenever this creature attacks, each OTHER attacking creature
+  // gets +1/+0 until end of turn.") + „This creature attacks each combat if
+  // able." (CR 508.1d — statyczny wymóg ataku, jak Ramroller).
+  defineCard({
+    id: 'kuldotha-ringleader', name: 'Kuldotha Ringleader', set: 'MBS',
+    types: ['Creature'], subtypes: ['Giant', 'Berserker'], colors: ['R'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['battle_cry'],
+    oracleText: 'Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)\nThis creature attacks each combat if able.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/c/3cda5434-c0a5-4551-8e30-b1923f0001b8.jpg?1783941378',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        keyword: 'battle_cry',
+        trigger: { event: 'attacks' },
+        // `excludeSource` = „each OTHER": CR 702.91a wyłącza sam atakujący.
+        effect: { type: 'buff_attacking_creatures', power: 1, toughness: 0, excludeSource: true },
+      }),
+      // CR 508.1d: wymóg ataku — statyczny deskryptor czytany przez ofertę,
+      // walidację i auto-deklarację (wzorzec Ramroller, `combat.mandatoryAttackerIds`).
+      createAbility({ type: ABILITY_TYPE.static, mustAttack: true }),
+    ],
+    artId: 392, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'battle cry buffuje INNE atakujące stwory (nie siebie) — CR 702.91a; wiele instancji battle cry odpala się osobno (702.91b)',
+      '„attacks each combat if able" to wymóg ataku (CR 508.1d), nie goad: nie nadaje pośpiechu ani nie zmusza do ataku w turze, w której stwór nie może atakować',
+    ],
+  }),
 ]);
 
 /**

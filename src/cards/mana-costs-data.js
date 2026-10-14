@@ -635,5 +635,6 @@ export const MANA_COSTS = {
   "render-speechless": "{2}{W}{B}",
   "improbable-alliance": "{U}{R}",
   "wolfs-quarry": "{4}{G}{G}",
+  "kuldotha-ringleader": "{4}{R}",
   "intrepid-tenderfoot": "{1}{G}",
 };

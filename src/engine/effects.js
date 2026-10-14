@@ -2778,6 +2778,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Poza walką `state.combat` jest pusty — efekt legalnie nic nie robi.
     const attackerIds = state.combat?.attackers ?? [];
     const buffIds = attackerIds.filter((objectId) => {
+      // CR 702.91a (battle cry): „each OTHER attacking creature" — źródło
+      // samego siebie nie buffuje, więc deskryptor niesie `excludeSource`.
+      // Opcja jest generyczna (ADR 0002): silnik nie zna nazwy karty.
+      if (effect.excludeSource === true && objectId === sourceObject.id) return false;
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield' && object.kind === 'creature';
     });

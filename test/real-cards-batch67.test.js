@@ -4,7 +4,10 @@
 // `draw_then_discard`; nowy jest wyłącznie wpis tokena `token_faerie`);
 // fala C: 391 ELD Wolf's Quarry (trzy tokeny 1/1 G Boar, każdy z triggerem
 // śmierci tworzącym Food — token z ZDOLNOŚCIĄ, zdublowaną w deskryptorze
-// i wpisie katalogu, M121).
+// i wpisie katalogu, M121);
+// fala D: 392 MBS Kuldotha Ringleader (battle cry — opcja `excludeSource`
+// w `buff_attacking_creatures`, bo CR 702.91a mówi „each OTHER attacking
+// creature" — plus statyczny wymóg ataku, CR 508.1d).
 // Plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
 // Dane Oracle i rulingi: docs/cards/scryfall-*.json (dokładny druk `set=`,
 // pobrane 2026-10-14). Każda karta ma sanity + scenariusz legalny i nielegalny.
@@ -554,4 +557,92 @@ test('B67/391 nielegalny: sorcery nie rzucisz w turze przeciwnika', () => {
   drawPlayerCards(state, 'p2', 1, 'effect');
   const ofertaP2 = commands(state, 'p2').filter((c) => c.type === 'cast_spell' && c.objectId === 'quarry');
   assert.equal(ofertaP2.length, 0, 'sorcery tylko w swojej fazie głównej');
+});
+
+// ---- B67/392: Kuldotha Ringleader ------------------------------------------
+
+/**
+ * Wchodzi w krok deklaracji atakujących i deklaruje podany zestaw (bez walki —
+ * sprawdzamy tylko premie battle cry). `jumpToStep` przyjmuje nazwę KROKU.
+ */
+function atakuj(state, attackerIds) {
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const oferta = commands(state).find((c) => c.type === 'declare_attackers'
+    && attackerIds.every((id) => (c.attackerIds ?? []).includes(id)));
+  assert.ok(oferta, `oferta deklaracji ataku: ${attackerIds.join(', ')}`);
+  run(state, oferta);
+  settle(state);
+}
+
+test('B67/392: Kuldotha Ringleader — dane Oracle MBS, battle cry i wymóg ataku', () => {
+  const def = sanity('kuldotha-ringleader', { set: 'MBS', plan: 'Mirrodin', artId: 392 });
+  assert.deepEqual(def.types, ['Creature']);
+  assert.deepEqual(def.subtypes, ['Giant', 'Berserker']);
+  assert.deepEqual(def.colors, ['R']);
+  assert.equal(def.power, 4);
+  assert.equal(def.toughness, 4);
+  assert.equal(def.manaCost, 5);
+  assert.deepEqual(def.keywords, ['battle_cry']);
+  const battleCry = def.abilities.find((a) => a.keyword === 'battle_cry');
+  assert.ok(battleCry, 'zdolność battle cry');
+  assert.equal(battleCry.trigger.event, 'attacks');
+  assert.deepEqual(battleCry.effect,
+    { type: 'buff_attacking_creatures', power: 1, toughness: 0, excludeSource: true });
+  const staticzna = def.abilities.find((a) => a.type === 'static');
+  assert.equal(staticzna.mustAttack, true, '„attacks each combat if able” (CR 508.1d)');
+});
+
+test('B67/392: battle cry daje +1/+0 INNYM atakującym, ale nie samemu sobie', () => {
+  const state = game();
+  const ringleader = put(state, 'ring', 'kuldotha-ringleader', 'p1', 'battlefield',
+    { summoningSickness: false });
+  const towarzysz = put(state, 'tow', 'intrepid-tenderfoot', 'p1', 'battlefield',
+    { summoningSickness: false });
+  assert.equal(effectivePower(state.objects.get(towarzysz.id), state), 2, 'baza 2/2');
+  atakuj(state, [ringleader.id, towarzysz.id]);
+  const po = state.objects.get(towarzysz.id);
+  assert.equal(effectivePower(po, state), 3, 'inny atakujący dostał +1/+0 (CR 702.91a)');
+  assert.equal(effectiveToughness(po, state), 2, 'battle cry nie dodaje wytrzymałości');
+  assert.equal(effectivePower(state.objects.get(ringleader.id), state), 4,
+    'ŹRÓDŁO nie buffuje samo siebie („each OTHER attacking creature”)');
+});
+
+test('B67/392: samotny atak nie daje premii nikomu (nie ma „innego” atakującego)', () => {
+  const state = game();
+  const ringleader = put(state, 'ring', 'kuldotha-ringleader', 'p1', 'battlefield',
+    { summoningSickness: false });
+  put(state, 'tow', 'intrepid-tenderfoot', 'p1', 'battlefield', { summoningSickness: false });
+  atakuj(state, [ringleader.id]);
+  assert.equal(effectivePower(state.objects.get(ringleader.id), state), 4,
+    'atak w pojedynkę: premii nie ma kto dostać, źródło jej nie dostaje');
+});
+
+test('B67/392: wymóg ataku — gracz NIE MOŻE zadeklarować pustego ataku, gdy Ringleader jest odkręcony', () => {
+  const state = game();
+  put(state, 'ring', 'kuldotha-ringleader', 'p1', 'battlefield', { summoningSickness: false });
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const pusty = commands(state).find((c) => c.type === 'declare_attackers'
+    && (c.attackerIds ?? []).length === 0);
+  assert.equal(pusty, undefined, 'CR 508.1d: „attacks each combat if able” wymusza deklarację');
+  const zRingiem = commands(state).find((c) => c.type === 'declare_attackers'
+    && (c.attackerIds ?? []).includes('ring'));
+  assert.ok(zRingiem, 'oferta z Ringleaderem w ataku');
+});
+
+test('B67/392 nielegalny: tapnięty Ringleader nie może atakować (wymóg go nie łamie)', () => {
+  const state = game();
+  const ringleader = put(state, 'ring', 'kuldotha-ringleader', 'p1', 'battlefield',
+    { summoningSickness: false });
+  state.objects.set(ringleader.id, Object.freeze({ ...state.objects.get(ringleader.id), tapped: true }));
+  state.turn = jumpToStep(state.turn, 'declare_attackers', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+  const oferta = commands(state).find((c) => c.type === 'declare_attackers');
+  assert.ok(oferta, 'oferta deklaracji istnieje');
+  assert.equal((oferta.attackerIds ?? []).includes('ring'), false,
+    'tapnięty stwór nie jest w ofercie — wymóg ataku nie tworzy nielegalnego ataku');
 });

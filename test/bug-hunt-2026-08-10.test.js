@@ -192,6 +192,10 @@ const KNOWN_KEYWORDS = new Set([
   // Batch 61: training (CR 702.149, Gryffwing Cavalry) — trigger ataku
   // „z innym stworzem o większej sile" → licznik +1/+1 na sobie.
   'training',
+  // Batch 67 (Kuldotha Ringleader): battle cry (CR 702.91) — trigger ataku
+  // „each OTHER attacking creature gets +1/+0" (efekt `buff_attacking_creatures`
+  // z opcją `excludeSource`).
+  'battle_cry',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

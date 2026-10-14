@@ -92,6 +92,9 @@ const ETYKIETA = Object.freeze({
   saddle: { mechanika: 'abilities' },
   // Trigger treningu (CR 702.149) w deskryptorze zdolności karty.
   training: { mechanika: 'abilities' },
+  // Trigger battle cry (CR 702.91) w deskryptorze zdolności karty: atak →
+  // `buff_attacking_creatures` z `excludeSource` („each OTHER attacking creature").
+  battle_cry: { mechanika: 'abilities' },
   // Mechanika w POLU obiektu (`toxic`, CR 702.164): combat.js dokłada truciznę
   // z `source.toxic`, a keyword jest tylko etykietą dla UI/reguł.
   toxic: { mechanika: 'pole', pole: 'toxic' },
