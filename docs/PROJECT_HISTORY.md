@@ -60,6 +60,25 @@ zaktualizowane: pin PMSSB10-B2 (`66.06 → 75.06`, wariant zakryty), M257A1
 morph/disguise). Bramy: fast 8147/8147, slow, all **8413/8413**, build
 74 moduły / 5119,8 kB. Źródło CR: mirror `nwgarne/mtg-data`, wydanie
 2026-09-25 (sha256 `8d860e451f20…`); tabela numerów urosła o `116.2b`.
+
+**Pętla jakości (ADR 0021, commit `36f1e25`) — okno ambushu nad realnymi
+partiami.** 45 partii, pary talii z morphem (dominaria-wu/tarkir-wur,
+tarkir-bg/wiedzmin-bg, ravnica/dominaria-wu; seedy 201–215): w 12 decyzjach
+z wrogim wpisem stosu o dokładnie jednym celu i z LEGALNĄ ofertą obrotu bot
+obrócił kartę 7 razy (przekierowanie tam, gdzie cel dało się zmienić),
+a 0 obrotów padło bez okna. Pozostałe 5 passów sprawdzono na klonie stanu:
+przyczyną była kara biblioteczna (okno +25 pkt, a tapnięcie krainy
+zaczarowanej wrogą aurą mielącą −180 pkt przy 14-kartowej bibliotece) —
+pass jest realizacją reguły właściciela z 2026-09-23c („nie tapować przy
+bibliotece < ~30 kart”), nie regresją. Sonda z helperami `simulate` (jak
+`runSimulation`) daje identyczną wycenę, więc lookahead nie jest sprawcą.
+Detektor: 3 nowe testy w `zgloszenie-g-willbender-flip` (okno + płatność
+mieląca cienką bibliotekę → pass; bez aury → obrót; gruba biblioteka →
+obrót), mutacje RED: usunięcie polityki morph, `libraryTapSafeMargin` 30 → 0,
+pominięcie aury mielącej w `tapLibraryLoss`. Uczciwa nota o pokryciu:
+`morphFlipPayoffBonus` nie ma pinu jednostkowego — jest mierzony (bonus 0
+→ 6/12 okien obróconych zamiast 7/12). Bramy: fast 8150/8150, all
+**8416/8416**, M212 3/3.
 Handoff: `docs/setup/HANDOFF_2026-10-14.md`.
 
 ## 2026-10-13 — batch66: kolekcja 351–368, 10 kart (PR #163, M443)
