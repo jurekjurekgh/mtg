@@ -19,6 +19,49 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-14 — zgłoszenie G: bot i karta z morphem (PR #165, commit 6f8857b)
+
+**Zadanie właściciela:** bot gra kartą z morphem „jak zwykłym stworzeniem”;
+zgłoszenie prosiło, by (a) rzucał ją tylko w formie morph — z wyjątkiem
+samego początku gry (2 lądy), gdzie może użyć jej jako wczesnego 1/2 — oraz
+(b) trzymał ją zakrytą i czekał z obrotem na celowany czar przeciwnika,
+a potem przekierowywał cel na cel możliwie najgorszy dla przeciwnika.
+
+**Pomiar PRZED (10 seedów, bot vs bot):** teza „twarzą do góry jak tylko ma
+manę” nie potwierdziła się (przy 3+ manach bot wybiera morph), natomiast:
+1 z 3 obrotów padł przy PUSTYM stosie, 0 przy stosie z jednym celem wroga,
+a przekierowań nie było wcale (0). Korzenie: warianty rzutu remisowały co do
+punktu (ciało i koszt awersu dla rzutu twarzą w dół → decydowała kolejność
+ofert), brak polityki okna obrotu, a wycena celu przekierowania nie znała aur
+(`attach_aura` poza `HOSTILE_PERMANENT_EFFECTS`) ani przejęcia przyjaznego
+efektu (wszystkie przyjazne kandydatury = 0 pkt).
+
+**Implementacja (`src/controllers/heuristic-bot.js`, `heuristic-params.js`).**
+Rzut twarzą w dół ma własną wycenę (2/2, płatność {3}, CR 702.37a/708.2a) i
+anticipację ogona; karta z payoffem obrotu czeka na okno, gdy morphu nie
+stać (wyjątek ≤2 lądy); obrót twarzą do góry to akcja okienna (CR 116.2b) —
+kara bez wrogiego czaru z jednym celem (CR 115.7a), premia przy otwartym
+oknie; wycena celu przekierowania liczy wrogość aury deskryptorem (L41) oraz
+wartość przejętego efektu (jedno źródło prawdy: `FRIENDLY_TARGET_EFFECTS`).
+Nowe parametry strategii: `morphAmbushPremium`, `morphFaceUpHoldPenalty`,
+`morphFaceUpHoldMaxLands`, `morphFlipPayoffBonus`, `morphFlipNoPayoffPenalty`.
+
+**Pomiar PO (te same 10 seedów):** morph 4 / twarzą do góry 3 (wszystkie przy
+2 lądach), obroty 2/2 przy stosie z jednym celem i 0 przy pustym, przekierowań
+1 (wrogi buff przejęty na własne stworzenie). Benchmark szybki bez zmian co do
+znaku w każdej parze (ADR 0018).
+
+**Testy i piny.** Nowe: `zgloszenie-g-willbender-morph` (4) i
+`zgloszenie-g-willbender-flip` (5); sześć mutacji czerwonych. Świadomie
+zaktualizowane: pin PMSSB10-B2 (`66.06 → 75.06`, wariant zakryty), M257A1
+(kontrakt płytki `onCast` zamiast pinu przepływu — L181; role talii zamienione,
+żeby rzut morphem szedł ze skryptu, nie z polityki bota) oraz golden-master
+(`bot-scoring-snapshot.json`; zmieniły się wyłącznie partie z kartami
+morph/disguise). Bramy: fast 8147/8147, slow, all **8413/8413**, build
+74 moduły / 5119,8 kB. Źródło CR: mirror `nwgarne/mtg-data`, wydanie
+2026-09-25 (sha256 `8d860e451f20…`); tabela numerów urosła o `116.2b`.
+Handoff: `docs/setup/HANDOFF_2026-10-14.md`.
+
 ## 2026-10-13 — batch66: kolekcja 351–368, 10 kart (PR #163, M443)
 
 **Zadanie właściciela:** dodać dokładne druki 351 ELD, 353 OGW, 356 OTC,
