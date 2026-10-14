@@ -1305,7 +1305,14 @@ function describeEffect(e, ctx = {}) {
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
     // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
     // turn." — bez wpisu panel pokazywałby surowy slug (strażnik M122).
-    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla atakujących stworów do końca tury`,
+    // PMSSB-62/F7 (żywy tester, Kuldotha Ringleader): battle cry (CR 702.91a)
+    // buffuje „each OTHER attacking creature" — deskryptor niesie
+    // `excludeSource: true`, więc opis MUSI mówić „innym", inaczej kafelek
+    // obiecuje premię także samemu atakującemu (kłamstwo kafelka, naprawa
+    // u źródła: Thunderstaff bez `excludeSource` zachowuje dawny tekst).
+    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla `
+      + (e.excludeSource === true ? 'innych atakujących stworów' : 'atakujących stworów')
+      + ' do końca tury',
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
     // B7: „stwory-lądy" jak w logu mass buffa (było surowe „land creatures").
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów-lądów do końca tury`,

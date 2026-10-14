@@ -24,3 +24,18 @@ test('ptPair: Jyoti z source_power dla obu pokazuje "moc źródła" raz', () => 
   const matches = text.match(/moc źródła/g);
   assert.equal(matches?.length ?? 0, 1, `dublet: "${text}"`);
 });
+
+// PMSSB-62/F7 (żywy tester): battle cry (CR 702.91a) daje +1/+0 INNYM
+// atakującym — kafelek musi to powiedzieć, bo inaczej obiecuje premię samemu
+// atakującemu (Thunderstaff bez `excludeSource` zachowuje dawny opis).
+test('battle cry: excludeSource mówi „innym atakującym", bez flagi zostaje ogólnie', () => {
+  const battleCry = describeSpellEffects({
+    effects: [{ type: 'buff_attacking_creatures', power: 1, toughness: 0, excludeSource: true }],
+  });
+  assert.ok(battleCry.includes('innych atakujących'), `bład: "${battleCry}"`);
+  const thunderstaff = describeSpellEffects({
+    effects: [{ type: 'buff_attacking_creatures', power: 1, toughness: 0 }],
+  });
+  assert.ok(thunderstaff.includes('dla atakujących stworów') && !thunderstaff.includes('innych'),
+    `bład: "${thunderstaff}"`);
+});
