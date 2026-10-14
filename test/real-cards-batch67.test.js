@@ -10,7 +10,11 @@
 // creature" — plus statyczny wymóg ataku, CR 508.1d);
 // fala E: 390 BRO Battlefield Butcher (redukcja kosztu AKTYWOWANEJ
 // zdolności za każdą kartę-stwora w grobie — `perCreatureCardInGraveyard`
-// w `effectiveAbilityManaCost`, analog 601.2f przez CR 602.2b).
+// w `effectiveAbilityManaCost`, analog 601.2f przez CR 602.2b);
+// fala F: 378 PIP Sentry Bot (obniżka kosztu CZARU za każdego atakującego
+// ciebie — `perCreatureAttackingYou` w `conditionalCostReduction`; energia
+// z `get_energy` + `amountFrom`; opcjonalna opłata `{E}{E}{E}` w triggerze
+// — `payEnergy`).
 // Plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
 // Dane Oracle i rulingi: docs/cards/scryfall-*.json (dokładny druk `set=`,
 // pobrane 2026-10-14). Każda karta ma sanity + scenariusz legalny i nielegalny.
@@ -740,4 +744,156 @@ test('B67/390 nielegalny: tapnięty Butcher nie aktywuje zdolności z kosztem {T
   addMana(state, 'p1', 9, { colors: [] });
   assert.equal(commands(state).find((c) => c.type === 'activate_ability' && c.objectId === rzeznik.id),
     undefined, 'koszt {T} wymaga odkręconego źródła');
+});
+
+// ---- B67/378: Sentry Bot ---------------------------------------------------
+
+/**
+ * Deklaruje atak p2 na p1 i oddaje priorytet OBROŃCY. Po zadeklarowaniu
+ * atakujących priorytet dostaje gracz aktywny (CR 508.2), więc okno obrońcy
+ * otwiera się dopiero po jego passie (CR 117.3d — „the next player in turn
+ * order receives priority") i to tam widać ofertę czarów z flash; krok
+ * deklaracji blokujących jest akcją turową i oferty czarów nie niesie.
+ */
+function oknoObroncy(state) {
+  assert.equal(state.turn.step, 'declare_attackers', 'okno obrońcy jest w kroku deklaracji atakujących');
+  assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet ma obrońca');
+}
+
+/** Wchodzi w walkę: p2 deklaruje atak na p1 (obrońca = p1). */
+function atakNaP1(state, attackerIds, attackerId = 'p2') {
+  state.turn = jumpToStep(state.turn, 'declare_attackers', attackerId);
+  state.turn.activePlayerId = attackerId;
+  state.turn.priorityPlayerId = attackerId;
+  const oferta = commands(state, attackerId).find((c) => c.type === 'declare_attackers'
+    && attackerIds.every((id) => (c.attackerIds ?? []).includes(id)));
+  assert.ok(oferta, `oferta ataku ${attackerId}: ${attackerIds.join(', ')}`);
+  run(state, oferta);
+  // Pass atakującego → priorytet obrońcy (bez settle: settle przeszedłby
+  // kroki walki i zamknął `state.combat`).
+  run(state, commands(state, attackerId).find((c) => c.type === 'pass_priority'));
+  oknoObroncy(state);
+}
+
+test('B67/378: Sentry Bot — dane Oracle PIP, flash i trzy zdolności', () => {
+  const def = sanity('sentry-bot', { set: 'PIP', plan: 'Star Wars', artId: 378 });
+  assert.deepEqual(def.types, ['Artifact', 'Creature']);
+  assert.deepEqual(def.subtypes, ['Robot']);
+  assert.deepEqual(def.colors, ['W']);
+  assert.equal(def.power, 2);
+  assert.equal(def.toughness, 5);
+  assert.equal(def.manaCost, 5);
+  assert.deepEqual(def.keywords, ['flash']);
+  assert.deepEqual(def.costReduction, { amount: 1, condition: { perCreatureAttackingYou: true } });
+  const etb = def.abilities.find((a) => a.trigger?.event === 'enter_battlefield');
+  assert.deepEqual(etb.effect, [{ type: 'get_energy', amountFrom: 'creatures_attacking_you' }]);
+  const walka = def.abilities.find((a) => a.trigger?.event === 'beginning_of_combat');
+  assert.equal(walka.trigger.payEnergy, 3, 'opcjonalna opłata {E}{E}{E}');
+  assert.deepEqual(walka.effect,
+    { type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1 });
+});
+
+test('B67/378: obniżka — {1} mniej za każdego stwora atakującego ciebie', () => {
+  const state = game();
+  const a1 = put(state, 'a1', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  const a2 = put(state, 'a2', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  atakNaP1(state, [a1.id, a2.id]);
+  put(state, 'bot', 'sentry-bot', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['W'] });
+  assert.equal(commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'),
+    undefined, 'dwie many to o jedną za mało na {4}{W} − {2} = {2}{W} (3 many)');
+  addMana(state, 'p1', 1, { colors: ['W'] });
+  assert.ok(commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'),
+    'przy dwóch atakujących wystarczy {2}{W} (baza {4}{W} − {2})');
+  // Kontrola: bez atakujących ten sam zestaw man nie wystarcza.
+  const stan2 = game();
+  put(stan2, 'bot2', 'sentry-bot', 'p1', 'hand');
+  addMana(stan2, 'p1', 3, { colors: ['W'] });
+  assert.equal(commands(stan2).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot2'),
+    undefined, 'bez atakujących obniżka nie działa — trzeba pełnych 5 many');
+});
+
+test('B67/378: ETB daje {E} za każdego atakującego (liczba z rozstrzygnięcia)', () => {
+  const state = game();
+  const a1 = put(state, 'a1', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  const a2 = put(state, 'a2', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  atakNaP1(state, [a1.id, a2.id]);
+  put(state, 'bot', 'sentry-bot', 'p1', 'hand');
+  addMana(state, 'p1', 3, { colors: ['W'] });
+  run(state, commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'));
+  settle(state); // tylko stos — walka zostaje otwarta (atakujący nadal atakują)
+  assert.equal(state.combat?.attackers?.length, 2, 'walka wciąż otwarta w chwili rozstrzygnięcia triggera');
+  const p1 = state.players.find((p) => p.id === 'p1');
+  assert.equal(p1.energy, 2, 'dwóch atakujących = dwa liczniki energii');
+  const zdarzenia = state.events.filter((e) => e.type === 'energy_counters_added');
+  assert.equal(zdarzenia.length, 1, 'jedno zdarzenie na całą pulę (ruling AER)');
+  assert.equal(zdarzenia[0].amount, 2);
+});
+
+test('B67/378: początek walki — opłata {E}{E}{E} daje +1/+1 każdemu twojemu stworowi', () => {
+  const state = game();
+  put(state, 'bot', 'sentry-bot', 'p1', 'battlefield', { summoningSickness: false });
+  const moj = put(state, 'moj', 'intrepid-tenderfoot', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'wrogi', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  const p1 = state.players.find((p) => p.id === 'p1');
+  p1.energy = 3;
+  // Wejście w początek walki tury p1.
+  // Wejście w początek walki PASSAMI (jumpToStep nie emituje `step_advanced`,
+  // więc trigger by się nie odpalił) — kolejność: krok, wpis na stos, decyzja.
+  while (state.turn.step !== 'beginning_of_combat') {
+    run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  }
+  assert.equal(state.zones.stack.length, 1, 'trigger opłaty poszedł na stos (Etap F, CR 603.5)');
+  // Rozstrzygnięcie wpisu: obaj gracze pasują (passy, nie settle — settle
+  // przeszedłby kroki walki).
+  for (let i = 0; i < 2 && !state.pendingOptionalPay; i += 1) {
+    run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  }
+  const oferta = commands(state).find((c) => c.type === 'resolve_optional_pay_choice');
+  assert.ok(oferta, 'otwarta decyzja o opcjonalnej opłacie energii');
+  assert.equal(oferta.energyCost, 3, 'decyzja niesie koszt {E}{E}{E}');
+  assert.equal(oferta.cost ?? 0, 0, 'koszt nie jest many');
+  run(state, commands(state).find((c) => c.type === 'resolve_optional_pay_choice' && c.pay === true));
+  settle(state);
+  assert.equal(state.players.find((p) => p.id === 'p1').energy, 0, 'zapłacono trzy liczniki');
+  const licznik = (id) => find(state, id, 'battlefield')?.counters?.['+1/+1'] ?? 0;
+  assert.equal(licznik('intrepid-tenderfoot'), 1, 'mój stwór dostał +1/+1');
+  assert.equal(licznik('sentry-bot'), 1, 'sam Sentry Bot też („each creature you control”)');
+  const wrogi = find(state, 'intrepid-tenderfoot', 'battlefield');
+  // Wrogiego stwora nie ruszamy — sprawdzamy przez właściciela.
+  const wrogie = [...state.objects.values()].filter((o) => o.cardId === 'intrepid-tenderfoot'
+    && o.controllerId === 'p2');
+  assert.equal(wrogie[0].counters?.['+1/+1'] ?? 0, 0, 'stwór przeciwnika bez licznika');
+  assert.ok(wrogi, 'sanity');
+});
+
+test('B67/378 nielegalny: bez trzech liczników energii nie ma oferty opłaty (odmowa = brak efektu)', () => {
+  const state = game();
+  put(state, 'bot', 'sentry-bot', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'moj', 'intrepid-tenderfoot', 'p1', 'battlefield', { summoningSickness: false });
+  state.players.find((p) => p.id === 'p1').energy = 2; // o jeden za mało
+  while (state.turn.step !== 'beginning_of_combat') {
+    run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  }
+  for (let i = 0; i < 2 && !state.pendingOptionalPay; i += 1) {
+    run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  }
+  assert.equal(commands(state).find((c) => c.type === 'resolve_optional_pay_choice'), undefined,
+    'dwa liczniki = brak oferty („You can\'t pay more energy counters than you have”)');
+  settle(state);
+  assert.equal(find(state, 'intrepid-tenderfoot', 'battlefield')?.counters?.['+1/+1'] ?? 0, 0,
+    'żaden stwór nie dostał licznika');
+  assert.equal(state.players.find((p) => p.id === 'p1').energy, 2, 'liczniki energii nietknięte');
+});
+
+test('B67/378 nielegalny: obniżka nie działa bez atakujących (pełne {4}{W})', () => {
+  const state = game();
+  put(state, 'a1', 'intrepid-tenderfoot', 'p2', 'battlefield', { summoningSickness: false });
+  put(state, 'bot', 'sentry-bot', 'p1', 'hand');
+  addMana(state, 'p1', 4, { colors: ['W'] });
+  assert.equal(commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'),
+    undefined, 'bez deklaracji ataku obniżka nie działa — trzeba {4}{W} (5 many)');
+  addMana(state, 'p1', 1, { colors: [] });
+  assert.ok(commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'bot'),
+    'pełne {4}{W} odblokowuje rzut');
 });

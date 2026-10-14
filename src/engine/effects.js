@@ -19,6 +19,7 @@ import { nextTimestamp } from './timestamps.js';
 import { createGameObject, copyManaValueOf } from './identity.js';
 import { LINKED_EXILE_CAST_DURATION, linkedExileCastPermission } from './linked-exile-cast.js';
 import { attachAuraToCreature, attachAuraToPlayer, attachEquipmentToCreature, detachAttachmentsFromHost, isLegalAuraHost, legalAuraHosts } from './attachments.js';
+import { attackersAgainstPlayer } from './combat.js';
 
 /**
  * Loch „Undercity" (komponent inicjatywy, CR 725; karta „Undercity //
@@ -2586,7 +2587,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       ? (state.objects.get(targets[effect.targetIndex])?.controllerId ?? sourceObject.controllerId)
       : sourceObject.controllerId;
     if (!state.players.some((entry) => entry.id === targetPlayerId)) return;
-    addEnergyCounters(state, targetPlayerId, effect.amount ?? 1);
+    // Batch 67 (Sentry Bot): „you get {E} for each creature attacking you" —
+    // liczba z chwili ROZSTRZYGNIĘCIA zdolności (ruling PIP 2024-11-08:
+    // „Use the number of creatures attacking you as … ability resolves").
+    const amount = effect.amountFrom === 'creatures_attacking_you'
+      ? attackersAgainstPlayer(state, sourceObject.controllerId)
+      : (effect.amount ?? 1);
+    if (amount <= 0) return; // 0 energii = brak zdarzenia (spójnie z addEnergyCounters)
+    addEnergyCounters(state, targetPlayerId, amount);
     return;
   }
 

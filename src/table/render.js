@@ -3859,6 +3859,8 @@ function commandLabelBase(cmd, session, view) {
         parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      // Batch 67 (Sentry Bot): koszt energii w licznikach {E} (CR 122.1).
+      if (cmd.energyCost != null && cmd.energyCost > 0) parts.push('{E}'.repeat(cmd.energyCost));
       if (cmd.counterCost?.counter) parts.push(`usunięciem znacznika ${cmd.counterCost.counter}`);
       const price = parts.join(' + ');
       if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;

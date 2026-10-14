@@ -58,6 +58,14 @@ const INTENTIONAL_EXCEPTIONS = {
   // wymaga pomiaru B0 (Krok 7 procedury), więc zostaje świadomym wyjątkiem.
   tap_enchanted_permanent: 'aura-kotwica: wartość niesie statyka doesntUntap (auraIsHostile), nie sam ETB',
   job_select: 'lagodne uporzadkowanie biblioteki (2 karty) — poza progiem wartosci',
+  // Batch 67 / fala F (Sentry Bot + Shipwreck Moray — prog >=2 kart): licznik
+  // energii (CR 122.1) jest wartosciowy TYLKO przy konsumencie {E} w tej samej
+  // talii (shipwreck-moray: koszt aktywacji, sentry-bot: oplata {E}{E}{E}).
+  // ETB sentry-bota ma kwote DYNAMICZNA (`amountFrom: creatures_attacking_you`),
+  // wiec stala premia zawyzalaby karty bez atakujacych, a promocja do tabeli
+  // wymaga pomiaru B0 (Krok 7; ADR 0018 — B0 tylko na zlecenie wlasciciela).
+  // Swiadomy wyjatek: brak bonusu = zachowanie sprzed batcha (L29/L31).
+  get_energy: 'licznik {E} dziala tylko z konsumentem w talii, a kwota bywa dynamiczna (amountFrom) — promocja wymaga B0 (Krok 7)',
 };
 
 const MIN_CARDS = 2;

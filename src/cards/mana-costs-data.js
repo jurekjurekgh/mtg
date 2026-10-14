@@ -637,5 +637,6 @@ export const MANA_COSTS = {
   "wolfs-quarry": "{4}{G}{G}",
   "kuldotha-ringleader": "{4}{R}",
   "battlefield-butcher": "{2}{B}",
+  "sentry-bot": "{4}{W}",
   "intrepid-tenderfoot": "{1}{G}",
 };

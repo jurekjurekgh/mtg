@@ -190,7 +190,6 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
 // Do czasu implementacji fal E1–E6 te nazwy są sierotami; lista schodzi do
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
 const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
-  'sentry-bot',
 ]);
 
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {

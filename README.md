@@ -159,7 +159,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 29 | 10 | 19 |
+| `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 33 | 11 | 22 |
 | `worek-legend` | Worek: Legendy | WUBRG | 35 | 12 | 23 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 33 | 11 | 22 |

@@ -342,6 +342,10 @@ function canPayTrigger(state, controllerId, trigger, source = null) {
   if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
+  // Batch 67 (Sentry Bot, CR 122.1): „you may pay {E}{E}{E}" — opcjonalna
+  // płatność ENERGII; „You can't pay more energy counters than you have"
+  // (ruling PIP 2024-11-08), więc brak liczników = brak oferty.
+  if ((trigger?.payEnergy ?? 0) > (player.energy ?? 0)) return false;
   return true;
 }
 
@@ -1271,6 +1275,9 @@ function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
       payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
       payColors: trigger.payColors ?? [],
       payCounter: trigger.payCounter ?? null,
+      // Batch 67 (Sentry Bot): koszt energii w zdarzeniu — log i modal stołu
+      // piszą „{E}{E}{E}", nie „0 many".
+      payEnergy: trigger.payEnergy ?? 0,
     }));
     return;
   }
@@ -1970,7 +1977,8 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
 
 /** Czy trigger ma opcjonalny koszt (mana/życie) — poza sacrificeIfUnpaid. */
 function hasPayCost(trigger) {
-  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0 || Boolean(trigger.payCounter))
+  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0
+    || (trigger.payEnergy ?? 0) > 0 || Boolean(trigger.payCounter))
     && !trigger.sacrificeIfUnpaid;
 }
 

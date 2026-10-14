@@ -14043,6 +14043,47 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       'redukcja liczy KARTY-stwory w grobie kontrolera (CR 108.2b: token nie jest kartą), więc token Boar z Wolf\'s Quarry w grobie nic nie obniża',
     ],
   }),
+
+  // 378 Sentry Bot (PIP #24) {4}{W} 2/5 rare Artifact Creature — Robot.
+  // Flash; „This spell costs {1} less to cast for each creature attacking you.";
+  // ETB: „you get {E} for each creature attacking you"; początek walki (twoja
+  // tura): „you may pay {E}{E}{E}. If you do, put a +1/+1 counter on each
+  // creature you control."
+  defineCard({
+    id: 'sentry-bot', name: 'Sentry Bot', set: 'PIP',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot'], colors: ['W'],
+    power: 2, toughness: 5, manaCost: 5, keywords: ['flash'],
+    oracleText: 'Flash\nThis spell costs {1} less to cast for each creature attacking you.\nWhen this creature enters, you get {E} for each creature attacking you.\nAt the beginning of combat on your turn, you may pay {E}{E}{E}. If you do, put a +1/+1 counter on each creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b16b0143-3511-4f79-bdb1-1ff7af55f051.jpg?1783912415',
+    // Obniżka kosztu CZARU (ruling PIP 2024-11-08: nie zmienia many ani mana
+    // value — zawsze 5; zmienia tylko kwotę do zapłacenia).
+    costReduction: { amount: 1, condition: { perCreatureAttackingYou: true } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // Liczbę bierze się przy ROZSTRZYGNIĘCIU (ruling PIP 2024-11-08).
+        effect: [{ type: 'get_energy', amountFrom: 'creatures_attacking_you' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Opcjonalna płatność energii (CR 122.1) — „you may pay {E}{E}{E}":
+        // brak trzech liczników = brak oferty (ruling: nie można zapłacić
+        // więcej, niż się ma). Efekt odpala tylko po zapłacie („If you do").
+        trigger: { event: 'beginning_of_combat', payEnergy: 3 },
+        effect: {
+          type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1,
+        },
+      }),
+    ],
+    artId: 378, plan: 'Star Wars',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'obniżka kosztu nie zmienia mana value (ruling PIP 2024-11-08) — karta zawsze ma MV 5 dla efektów liczących koszt',
+      'liczbę atakujących bierze się raz: dla obniżki przy rzucaniu (po ogłoszeniu rzutu nikt nie może zmienić kosztu), dla energii przy rozstrzygnięciu triggera',
+      'płatność {E}{E}{E} jest opcjonalna i nie da się jej „nadpłacić" (jedna decyzja = jeden zestaw liczników)',
+    ],
+  }),
 ]);
 
 /**

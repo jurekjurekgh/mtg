@@ -366,10 +366,13 @@ function defaultBotFactory(seed, ctx) {
     // żeby kolejny typ efektu nie wszedł bez opisu (klasa L84).
     conditional: 'efekt warunkowy (zależny od stanu gry)',
     lose_life: 'cel traci życie',
-  // Batch 67 (Battlefield Butcher): „Each opponent loses 2 life." — domyślny
-  // zakres utraty życia to wszyscy przeciwnicy, więc etykieta musi mówić
-  // „każdy przeciwnik", nie „cel" (zdolność nie ma celów).
-  lose_life_each_opponent: 'każdy przeciwnik traci życie',
+    // Batch 67 (Battlefield Butcher): „Each opponent loses 2 life." — domyślny
+    // zakres utraty życia to wszyscy przeciwnicy, więc etykieta musi mówić
+    // „każdy przeciwnik", nie „cel" (zdolność nie ma celów).
+    lose_life_each_opponent: 'każdy przeciwnik traci życie',
+    // Batch 67 (Sentry Bot): energia i liczniki na wszystkich własnych stworach.
+    get_energy: 'zdobycie liczników energii',
+    add_counter_to_creatures_you_control: 'licznik na każdym twoim stworze',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
     prevent_next_damage: 'zapobieżenie następnym obrażeniom wybranego gracza lub planeswalkera',
@@ -2148,6 +2151,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // składanka co w rendererze przycisku (`resolve_optional_pay_choice`),
           // żeby log i decyzja mówiły o jednym koszcie ({W}{B}, nie {2}).
           parts.push(costSymbols(e.payMana, e.payColors));
+          // Batch 67 (Sentry Bot): koszt energii w logu („{E}{E}{E}").
+          if (e.payEnergy > 0) parts.push('{E}'.repeat(e.payEnergy));
         }
         if (e.payLife) parts.push(`${e.payLife} życia`);
         if (e.payCounter?.counter) parts.push(`usunięciem znacznika ${e.payCounter.counter}`);
