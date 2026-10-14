@@ -119,7 +119,12 @@ function butcherScene(licznikGrobow) {
 show('F2 Butcher — 0 kart w grobie (koszt {5})', butcherScene(0), starts('activate_ability'));
 show('F2 Butcher — 3 karty w grobie (koszt {2})', butcherScene(3), starts('activate_ability'));
 show('F2 Butcher — 5 kart w grobie (koszt {0})', butcherScene(5), starts('activate_ability'));
-const butcherBezObnizki = registryKontra('battlefield-butcher', (d) => ({ ...d, costReduction: undefined }));
+// Kontrfakt MUSI ciąć obniżkę tam, gdzie ona JEST: u Butchera siedzi na
+// zdolności AKTYWOWANEJ (`abilities[0].costReduction`), nie na karcie —
+// stara wersja (fala A) była bezskuteczna (oba warianty dawały tę samą liczbę).
+const butcherBezObnizki = registryKontra('battlefield-butcher', (d) => ({
+  ...d, abilities: (d.abilities ?? []).map((a) => ({ ...a, costReduction: undefined })),
+}));
 function butcherKontra(reg) {
   return scene({ registry: reg, many: 8, setup: (st, r) => {
     put(st, 'butcher', 'battlefield-butcher', 'p1', 'battlefield', r);

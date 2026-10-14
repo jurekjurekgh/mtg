@@ -1532,11 +1532,81 @@ export const LIBRARY_DRAIN_CAST_TYPES = new Set(
 function cardCostReductionForView(view, def) {
   const reduction = def?.costReduction;
   if (!reduction || !Number.isInteger(reduction.amount) || reduction.amount <= 0) return 0;
-  if (!reduction.condition?.affinityToEnchantments) return 0;
-  const count = (view.zones.battlefield ?? []).filter((object) => object
-    && object.controllerId === view.playerId
-    && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
-  return reduction.amount * count;
+  if (reduction.condition?.affinityToEnchantments) {
+    const count = (view.zones.battlefield ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
+    return reduction.amount * count;
+  }
+  // PMSSB-62/F3 (Sentry Bot, batch 67): „This spell costs {1} less to cast for
+  // each creature attacking you." — silnik liczy to przez
+  // `attackersAgainstPlayer` (CR 601.2f, kwota ustalona przy rzucie), więc
+  // wycena bota musi czytać to samo z WIDOKU (`combat.attackers` +
+  // `defendingPlayerId`, oba pola są jawne — inaczej oferta i wycena liczyły
+  // DWA różne koszty, S11/L41).
+  if (reduction.condition?.perCreatureAttackingYou) {
+    const combat = view.combat ?? null;
+    if (!combat || combat.defendingPlayerId !== view.playerId) return 0;
+    const attackers = (combat.attackers ?? []).filter((id) => {
+      const object = (view.zones.battlefield ?? []).find((entry) => entry.id === id);
+      return object ? object.controllerId !== view.playerId : true;
+    }).length;
+    return reduction.amount * attackers;
+  }
+  return 0;
+}
+
+/**
+ * PMSSB-62/F2 (Battlefield Butcher, batch 67): efektywny koszt many zdolności
+ * AKTYWOWANEJ liczony z WIDOKU bota — odpowiednik silnikowego
+ * `effectiveAbilityManaCost` (CR 602.2b → 601.2f: koszt aktywacji ma analog
+ * kosztu czaru, a obniżka nie schodzi poniżej liczby kolorowych pipów).
+ *
+ * Pomiar PRZED (sonda PMSSB-62): aktywacja Butchera miała −3,0000 przy 0, 3
+ * i 5 kartach-stworach w grobie ORAZ w kontrfakcie bez `costReduction` — bot
+ * karał pełnym `{5}`, gdy silnik pobierał `{5}`, `{2}` albo `{0}` (aktywacja
+ * darmowa była nie do odróżnienia). To ta sama klasa co PMSSB-60/F6 dla
+ * CZARÓW (`cardCostReductionForView`), tylko na ścieżce zdolności.
+ *
+ * Obsługujemy warunki obecne w katalogu; nieznany warunek zwraca koszt bazowy
+ * (anty-over-fix M429: nic nie zgadujemy).
+ */
+function abilityManaCostForView(view, def, ability, sourceObject) {
+  const base = ability?.cost?.mana ?? 0;
+  const reduction = ability?.costReduction;
+  const colored = (ability?.cost?.colors ?? []).length;
+  if (!reduction) return base;
+  const step = Number.isInteger(reduction.amount) && reduction.amount > 0 ? reduction.amount : 1;
+  // „...for each creature card in your graveyard" (Battlefield Butcher) —
+  // „karta” wyklucza tokeny (CR 108.2b); paginacja grobu w widoku jest
+  // pełna (grób jest strefą publiczną).
+  if (reduction.perCreatureCardInGraveyard) {
+    const count = (view.zones.graveyard ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && !object.isToken
+      && (object.types ?? []).includes('Creature')).length;
+    return Math.max(colored, base - step * count);
+  }
+  // „...for each other Town you control" (Balamb Garden itd.) — samo źródło
+  // się nie liczy; podtyp czytamy z widoku pola bitwy.
+  if (reduction.perOtherSubtype) {
+    const count = (view.zones.battlefield ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && object.id !== sourceObject?.id
+      && (object.subtypes ?? []).includes(reduction.perOtherSubtype)).length;
+    return Math.max(colored, base - step * count);
+  }
+  // „...for each +1/+1 counter on creatures you control" (Deepwood Denizen).
+  if (reduction.perCounter === '+1/+1') {
+    let counters = 0;
+    for (const object of view.zones.battlefield ?? []) {
+      if (!object || object.controllerId !== view.playerId) continue;
+      if (object.kind !== 'creature' && !(object.types ?? []).includes('Creature')) continue;
+      counters += object.counters?.['+1/+1'] ?? 0;
+    }
+    return Math.max(colored, base - step * counters);
+  }
+  return base;
 }
 
 /**
@@ -11031,11 +11101,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
+          // PMSSB-62/F2b (L41): „Each opponent loses N life" niesie katalog
+          // jako `lose_life` + `scope: 'each_opponent'` (typ
+          // `lose_life_each_opponent` istnieje wyłącznie jako etykieta logu —
+          // M255/E5), więc obie ścieżki wyceny muszą rozpoznać ZAKRES, nie
+          // tylko typ. Pomiar PRZED: aktywacja Battlefield Buchera za {0}
+          // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
+          // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
+          // wyceny presji na życie obie rodziny mają tę samą skalę.
+          else if (effect.type === 'lose_life'
+            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            score += opponentLifeEffectValue(view, effect);
+          }
           // Batch 56 (energia, CR 122.1): „you get {E}×N" w zdolności
           // AKTYWOWANEJ (np. przyszłe karty Aether) — licznik jest trwałym
           // zasobem, więc ma dodatnią wartość; bez wpisu aktywacja zostałaby
           // na gołej bazie (L50: „akcja bez wyceny").
-          if (effect.type === 'get_energy') score += 2 * (effect.amount ?? 1);
+          // PMSSB-62/F5 (L41): zysk liczników {E} wyceniany tą samą stałą co
+          // ich koszt; kwota DYNAMICZNA (`amountFrom`) liczona z widoku —
+          // `creatures_attacking_you` = atakujący gracza (Sentry Bot).
+          if (effect.type === 'get_energy') score += energyGainValue(view, effect);
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
           // atakującym; dana stworowi PRZECIWNIKA to realna strata (wróg
@@ -11467,7 +11552,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // liczą koszt w swoim `net` (PMSSB-32/A, M128) — druga kara byłaby
         // podwójnym liczeniem tego samego wymiaru. Kontrola D pinu: Apprentice
         // Wizard zostaje na −4.
-        const abilityManaCost = (ability?.cost?.mana ?? 0) + (ability?.cost?.generic ?? 0);
+        // PMSSB-62/F2: koszt z obniżką (CR 602.2b → 601.2f) — jedno źródło
+        // prawdy z silnikiem (`effectiveAbilityManaCost`); PMSSB-34 wymiar
+        // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
+        const abilityManaCost = abilityManaCostForView(view, abilityObject?.cardId ? cardDef(abilityObject.cardId) : undefined, ability, abilityObject)
+          + (ability?.cost?.generic ?? 0);
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
         }
@@ -11620,6 +11709,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
+            score += opponentLifeEffectValue(view, effect);
+          }
+          // PMSSB-62/F2b (L41): „Each opponent loses N life" niesie katalog
+          // jako `lose_life` + `scope: 'each_opponent'` (typ
+          // `lose_life_each_opponent` istnieje wyłącznie jako etykieta logu —
+          // M255/E5), więc obie ścieżki wyceny muszą rozpoznać ZAKRES, nie
+          // tylko typ. Pomiar PRZED: aktywacja Battlefield Buchera za {0}
+          // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
+          // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
+          // wyceny presji na życie obie rodziny mają tę samą skalę.
+          else if (effect.type === 'lose_life'
+            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
             score += opponentLifeEffectValue(view, effect);
           }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
