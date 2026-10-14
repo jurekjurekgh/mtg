@@ -40,7 +40,7 @@ Intrepid Tenderfoot (`{3}`: +1/+1, tylko sorcery), Artful Maneuver
 **CSV razem z falą:** każda fala dopisuje swoje wiersze do
 `tools/collection-art-ids.csv` (artId + nazwa + plan 1:1) — strażnik
 `test/proweniencja-katalogu.test.js` nie przepuści definicji bez wiersza
-kolekcji (ADR 0029 §4). E7 to już tylko generator talii + raport.
+kolekcji (ADR 0029 §4). E7 to już tylko **raport talii** — generator, README i golden-master idą z każdą falą (nota E1 w planie).
 
 Zasady bez zmian: definicje + `test/real-cards-batch67.test.js` (RED → GREEN),
 scenariusz legalny i nielegalny na kartę, brak nazw kart w kodzie silnika

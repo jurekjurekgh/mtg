@@ -248,6 +248,15 @@ export const targetTypeLabel = (spec) => {
   // Batch 45 (Assert Perfection): „up to one target creature an opponent
   // controls" — pozycja opcjonalna (jawnie: 'creature_opponent_controls').
   if (type === 'creature_opponent_controls' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  // Batch 67 (Render Speechless): „Put two +1/+1 counters on up to one target
+  // creature" — opcjonalna pozycja jednego stwora (bez ograniczenia kontroli).
+  if (type === 'creature' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  // Batch 67 (Spellkeeper Weird): „target instant or sorcery card from YOUR
+  // graveyard" — parametr `controlledBy: 'controller'` mówi CZYJ grób
+  // (ten sam parametr co Mystic Sanctuary w triggerach).
+  if (type === 'instant_or_sorcery_card_in_graveyard' && spec.controlledBy === 'controller') {
+    return `${base} (twój grób)`;
+  }
   if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };

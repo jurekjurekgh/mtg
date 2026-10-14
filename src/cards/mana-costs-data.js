@@ -628,4 +628,10 @@ export const MANA_COSTS = {
   "naturalize": "{1}{G}",
   "rakish-revelers": "{2}{R}{G}{W}",
   "scythe-tiger": "{G}",
+  // Batch67 (fala A): kolekcja 369–398, dokładne druki ze snapshotów Scryfalla.
+  "spellkeeper-weird": "{2}{U}",
+  "artful-maneuver": "{1}{W}",
+  "cancel": "{1}{U}{U}",
+  "render-speechless": "{2}{W}{B}",
+  "intrepid-tenderfoot": "{1}{G}",
 };

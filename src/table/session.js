@@ -326,6 +326,9 @@ function defaultBotFactory(seed, ctx) {
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
     cant_block: 'docelowy stwór nie może blokować do końca tury',
+    // Batch67 (Spellkeeper Weird): „{2}, {T}, Sacrifice this creature: Return
+    // target instant or sorcery card from your graveyard to your hand."
+    return_card_from_graveyard_to_hand: 'zwrot karty z grobu na rękę',
     // Batch65 (Zombie Boa): „{1}{B}: Choose a color … destroy that creature.”
     choose_color_grant_block_destroy: 'wybór koloru — zniszczenie stwora tego koloru blokującego w tej turze',
     craft_transform: 'craft — przemiana artefaktu',

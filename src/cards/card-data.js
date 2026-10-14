@@ -13760,6 +13760,116 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     abilities: [SPAWN_TOKEN_ABILITY],
     support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
   }),
+
+  // =========================================================================
+  // Batch 67 (10 kart, lista właściciela 2026-10-14) — fala A: istniejące
+  // mechaniki. Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a);
+  // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
+  // =========================================================================
+
+  // 371 Spellkeeper Weird (WAR #69) {2}{U} 1/4 Weird — {2}, {T}, Poświęć:
+  // zwróć wybrany instant/sorcery z WŁASNEGO grobu do ręki. Cel
+  // `instant_or_sorcery_card_in_graveyard` (Batch 67: wspólny predykat
+  // `graveyard-types.isInstantOrSorceryCardInGraveyard` dla oferty, walidacji
+  // i triggerów — do tej pory typ istniał wyłącznie w ścieżce triggerów).
+  defineCard({
+    id: 'spellkeeper-weird', name: 'Spellkeeper Weird', set: 'WAR',
+    types: ['Creature'], subtypes: ['Weird'], colors: ['U'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: '{2}, {T}, Sacrifice this creature: Return target instant or sorcery card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/74e42dad-5958-443f-a196-12b3f3e44213.jpg?1783933456',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        targets: [{ type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' }],
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 371, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Brak legalnego celu (pusty grób / same stwory) = zdolności nie da się aktywować — oferta i walidacja liczą ten sam predykat'],
+  }),
+
+  // 380 Artful Maneuver (DTK #4) {1}{W} Instant — +2/+2 do końca tury;
+  // Rebound (CR 702.88). Rebound istniał (Ojutai's Breath) — dane tylko.
+  defineCard({
+    id: 'artful-maneuver', name: 'Artful Maneuver', set: 'DTK',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Target creature gets +2/+2 until end of turn.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/f/7fcaf67e-ba97-4af9-8c47-dbca703cba35.jpg?1783938620',
+    spell: {
+      timing: 'instant',
+      rebound: true,
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump', power: 2, toughness: 2 }],
+    },
+    artId: 380, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Rebound działa wyłącznie dla rzutu Z RĘKI (ruling 2015-02-25); rzut z exile po odbiciu już nie odbija — druga karta nie wraca do exile, tylko do grobu'],
+  }),
+
+  // 394 Cancel (ALA #33) {1}{U}{U} Instant — kontr cel czar (CR 701.6; 701.6a:
+  // skontrowany czar idzie do grobu właściciela).
+  defineCard({
+    id: 'cancel', name: 'Cancel', set: 'ALA',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Counter target spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/479f56c2-8256-4325-909a-bf460505dbc5.jpg?1783942576',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+    },
+    artId: 394, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Cel „dowolny czar na stosie" (także czar-stwór/bestow oraz czar aury), ale nie zdolność triggerowana'],
+  }),
+
+  // 397 Render Speechless (SOS #220) {2}{W}{B} Sorcery — wróg odsłania rękę,
+  // WYBIERAJĄCY wskazuje nie-lądu (wybór obowiązkowy, bez „you may" — inaczej
+  // niż Nightsnare), a potem dwa +1/+1 na „up to one target creature".
+  defineCard({
+    id: 'render-speechless', name: 'Render Speechless', set: 'SOS',
+    types: ['Sorcery'], colors: ['B', 'W'], manaCost: 4,
+    oracleText: 'Target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nPut two +1/+1 counters on up to one target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/5/25bbb1c7-14e8-444f-ab98-e95f50927460.jpg?1783903633',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'opponent' },
+        { type: 'creature', optional: true },
+      ],
+      effects: [
+        { type: 'reveal_hand_choose_discard', mandatory: true },
+        { type: 'add_counter', counter: '+1/+1', amount: 2, targetIndex: 1 },
+      ],
+    },
+    artId: 397, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Wybór nie-lądu jest OBOWIĄZKOWY (brak „you may"); przy pustej ręce lub braku nie-lądów nikt nic nie odrzuca — bez kary „if you don\'t"'],
+  }),
+
+  // 398 Intrepid Tenderfoot (EOE #193) {1}{G} 2/2 Insect Citizen —
+  // {3}: +1/+1 na sobie, tylko jak sorcery (CR 605.1a odpowiednio: timing).
+  defineCard({
+    id: 'intrepid-tenderfoot', name: 'Intrepid Tenderfoot', set: 'EOE',
+    types: ['Creature'], subtypes: ['Insect', 'Citizen'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{3}: Put a +1/+1 counter on this creature. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/809df0ea-deff-47b9-83df-cc1f360d377e.jpg?1783905935',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 3 },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 398, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Activate only as a sorcery" = okno własnej fazy głównej (timing: sorcery na zdolności)'],
+  }),
 ]);
 
 /**

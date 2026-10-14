@@ -10,7 +10,7 @@ import {
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
-import { countGraveyardCardTypes } from './graveyard-types.js';
+import { countGraveyardCardTypes, isInstantOrSorceryCardInGraveyard } from './graveyard-types.js';
 import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
@@ -467,13 +467,10 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     // Batch 24 (Mystic Sanctuary): „you may put target instant or sorcery
     // card from your graveyard on top of your library" — karty własnego
     // grobu o typach Instant/Sorcery.
-    return state.zones.graveyard.filter((objectId) => {
-      const object = state.objects.get(objectId);
-      if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (!isCardObject(object)) return false; // tokeny nie są kartami (CR 108.2b)
-      const types = object.types ?? [];
-      return types.includes('Instant') || types.includes('Sorcery');
-    });
+    // Batch 67: predykat przeniesiony do liścia `graveyard-types.js` — tę samą
+    // frazę czyta teraz oferta i walidacja celu w `spells.js` (L41).
+    return state.zones.graveyard.filter((objectId) =>
+      isInstantOrSorceryCardInGraveyard(state.objects.get(objectId), sourceObject.controllerId));
   }
   if (spec.type === 'aura_or_equipment_card_in_graveyard' && spec.controlledBy === 'controller') {
     // Batch 53 (Ironclad Slayer, EMN): „return target Aura or Equipment card

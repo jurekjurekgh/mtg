@@ -29,3 +29,17 @@ export function countGraveyardCardTypes(state, playerId, cardTypes) {
   }
   return present.size;
 }
+
+/**
+ * Czy obiekt to KARTA instant albo sorcery we własnym grobie gracza `playerId`
+ * („an instant or sorcery card from your graveyard", np. Spellkeeper Weird).
+ * JEDNO źródło frazy dla dwóch konsumentów (L41/L48):
+ *   • oferta i walidacja celu czaru/zdolności aktywowanej (`spells.js`),
+ *   • cel triggera z `requiresTarget` (`triggers.js`).
+ * Token nie jest kartą (CR 108.2b) — stąd `isCardObject`.
+ */
+export function isInstantOrSorceryCardInGraveyard(object, playerId) {
+  if (!isCardObject(object) || object.controllerId !== playerId) return false;
+  const types = object.types ?? [];
+  return types.includes('Instant') || types.includes('Sorcery');
+}

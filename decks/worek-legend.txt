@@ -19,10 +19,11 @@
 1x Ulna Alley Shopkeep
 1x Brightwood Tracker
 1x Capture Sphere
+1x Render Speechless
 1x Tackle Artist
 1x Puppeteer Clique
 1x Bog Hoodlums
-2x Plains
+3x Plains
 2x Island
 3x Swamp
 3x Mountain

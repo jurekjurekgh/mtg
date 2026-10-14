@@ -139,15 +139,10 @@ test('OW/5 brak snapshotu dla Day // Night jest ODNOTOWANY, nie cichy', () => {
 // Do czasu implementacji fal E1–E6 te nazwy są sierotami; lista schodzi do
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
 const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
-  'artful-maneuver',
   'battlefield-butcher',
-  'cancel',
   'improbable-alliance',
-  'intrepid-tenderfoot',
   'kuldotha-ringleader',
-  'render-speechless',
   'sentry-bot',
-  'spellkeeper-weird',
   'wolfs-quarry',
 ]);
 

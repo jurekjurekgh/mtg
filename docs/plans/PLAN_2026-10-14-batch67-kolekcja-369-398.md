@@ -58,13 +58,33 @@ commit `3257633`, CR 2026-09-25).
   albo nowy typ efektu — rozpoznanie na wejściu etapu).
 - **E6 — fala F: Sentry Bot.** Energia + redukcja kosztu rzutu + opcjonalna
   opłata `{E}{E}{E}` na początku walki.
-- **E7 — talie.** Generator `tools/generate-plan-decks.mjs`, README; **raport:
-  do jakich talii trafiła każda karta** (odpowiedź dla właściciela).
+- **E7 — raport talii.** Generator i README idą już z KAŻDĄ falą (patrz nota
+  E1 niżej), więc E7 = **raport: do jakich talii trafiła każda karta**
+  (odpowiedź dla właściciela) + domknięcie opisów.
 - **CSV idzie RAZEM z każdą falą** (nie w E7): strażnik
   `test/proweniencja-katalogu.test.js` (ADR 0029 §4) wymaga, by każda
   taliowalna karta katalogu miała `artId` z `tools/collection-art-ids.csv`
   oraz zgodną nazwę i plan — więc wiersz kolekcji i definicja muszą wejść
   w tym samym etapie (inaczej brama jest czerwona).
+- **NOTA E1 (2026-10-14) — czego plan nie przewidział (bramy `all`):** fala,
+  która dokłada WSPIERANE karty, rusza pięć strażników poza zestawem „dane
+  katalogu”, więc każda fala musi domknąć je w swoim commicie:
+  1. `test/repo-decks.test.js` (M178 + M33+): karta musi być w talii ⇒
+     `node tools/generate-plan-decks.mjs` **w każdej fali** (generator sam
+     przelicza też podstawowe lądy pod pipy — nie korygować ręcznie);
+  2. `test/m203-talie-testera-i-dokumentacji.test.js` (M203/7): liczności
+     talii w `README.md` muszą zgadzać się z `decks/*.txt` — po generatorze
+     policzyć i podmienić tylko zmienione wiersze;
+  3. `test/bot-scoring-snapshot.test.js` (golden-master): zmiana zawartości
+     talii zmienia ślady partii ⇒ `node tools/bot-scoring-snapshot.mjs --write`
+     (dowód przed zapisem: ze starą talią fixture odtwarza się bit w bit);
+  4. `test/art-ids-tool.test.js`: piny liczby pozycji słownika
+     (583→588, 580→585) i liczby kart z `artId`;
+  5. `test/m138-audyt-stolu.test.js` (Z5) + `test/m255-petla-jakosci.test.js`
+     (C1) + `test/cr-numery-istnienie-straznik.test.js`: nowa specyfikacja celu
+     z parametrem wymaga gałęzi w `targetTypeLabel`, nowy typ efektu zdolności
+     aktywowanej — wpisu w `ABILITY_EFFECT_LABELS`, a cytat CR musi istnieć
+     w zweryfikowanej tabeli (kontr to **701.6/701.6a**, nie 701.5 = Cast).
 - **E8 — dokumentacja i bramy końcowe.** `ENGINE_MILESTONES.md`,
   `PROJECT_HISTORY.md`, status tego planu; bramy: batch 67, `npm test`,
   `run-tests.mjs all`, build, `check-card-printings`, `git diff --check`;

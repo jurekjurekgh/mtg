@@ -1,48 +1,45 @@
 {
   "version": 1,
-  "overallHash": "3489020caa48f07f0cec05e979d10128133586c6110a296864d0ce9dd14e06bf",
+  "overallHash": "6b25f26b64a281c20439958ff3b794ef5bdba7130eae314e32081d87eb193493",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "47d7968fb88babea55cf1e8957d4c23eb283f163457483efdf322d87b5828e80",
-      "decisions": 395,
-      "scoreSum": 3524.5818,
+      "hash": "15843f4cbaaf561f07d5564df88142ec89e7c21670d8295a57f32793ad1be988",
+      "decisions": 150,
+      "scoreSum": 1406.8782,
       "chosenKinds": {
-        "activate_ability": 1,
-        "attack": 12,
-        "block": 13,
-        "cast_permanent": 6,
-        "cast_spell": 5,
-        "pass_priority": 327,
+        "activate_ability": 2,
+        "attack": 4,
+        "block": 6,
+        "cast_permanent": 3,
+        "cast_spell": 1,
+        "pass_priority": 119,
         "play_land": 6,
-        "resolve_combat": 15,
-        "resolve_counter_pay_choice": 1,
-        "resolve_discard_choice": 2,
+        "resolve_combat": 6,
         "resolve_mulligan_choice": 1,
-        "resolve_optional_trigger_choice": 2,
-        "resolve_trigger_target": 4
+        "resolve_optional_trigger_choice": 2
       }
     },
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "f0178f60c97531d09751db4df452fb9a8fb3bffb78a047faea1c2d0ec30a4429",
-      "decisions": 343,
-      "scoreSum": 2090.9818,
+      "hash": "d3d68719ae34cede8419248bd77438723a47780807d00f927f8b9b2f857a2fbf",
+      "decisions": 189,
+      "scoreSum": 2696.3982,
       "chosenKinds": {
-        "attack": 9,
-        "block": 10,
-        "cast_permanent": 3,
-        "cast_spell": 6,
-        "pass_priority": 288,
+        "attack": 5,
+        "block": 7,
+        "cast_permanent": 2,
+        "cast_spell": 1,
+        "pass_priority": 150,
         "play_land": 7,
-        "resolve_combat": 13,
+        "resolve_combat": 8,
         "resolve_damage_assignment": 1,
         "resolve_mulligan_choice": 1,
+        "resolve_optional_trigger_choice": 4,
         "resolve_proliferate": 1,
-        "resolve_scry": 1,
-        "resolve_trigger_target": 3
+        "resolve_trigger_target": 2
       }
     },
     {
