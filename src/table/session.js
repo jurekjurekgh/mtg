@@ -894,6 +894,24 @@ export function triggerEventLabel(event, sourceController) {
  */
 export const HIDDEN_ZONES = Object.freeze(new Set(['hand', 'library']));
 
+/**
+ * Czy wpis ruchu bota (modal „Rozgrywka") ma nazwać kartę (M192/Z1 + pętla
+ * jakości 2026-10-15c). Przeciwnikowi NIE nazywamy karty, która:
+ *   • przesuwa się MIĘDZY strefami ukrytymi (ręka/biblioteka, CR 400.2), albo
+ *   • wchodzi na pole bitwy lub na wygnanie ZAKRYTA (manifest, morph, cloak —
+ *     CR 701.40a / 708.2 / 406.3): tożsamość zakrytego obiektu nie jest jawna,
+ *     dopóki nie zostanie odsłonięta (`revealed`).
+ * Własne ruchy gracza i ruchy do stref jawnych (grób) zawsze są nazwane.
+ * Brak kontrolera → nazwa zostaje (jak dotąd).
+ */
+export function czyNazwacKarteRuchu(e, state, humanId = HUMAN_ID) {
+  const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
+  if (movedController == null || movedController === humanId || e.revealed === true) return true;
+  if (HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)) return false;
+  const zakryta = e.object?.faceDown === true && (e.toZone === 'battlefield' || e.toZone === 'exile');
+  return !zakryta;
+}
+
 export const ZONE_LABELS = Object.freeze({
   battlefield: 'pole bitwy',
   hand: 'ręka',
@@ -3468,12 +3486,10 @@ export function createSession(config) {
       // jawnej (pole bitwy, grob, wygnanie) nazywamy dalej — tam informacja
       // jest publiczna. Jawne odsloniecie (`revealed`) tez nazywamy.
       const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
-      const hidden = movedController != null && movedController !== HUMAN_ID
-        && HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)
-        && e.revealed !== true;
-      const movedName = hidden
-        ? 'karta'
-        : nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
+      // Reguła nazewnictwa w `czyNazwacKarteRuchu` (ukryte strefy + zakryte wejście).
+      const movedName = czyNazwacKarteRuchu(e, state, HUMAN_ID)
+        ? nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId)
+        : 'karta';
       text = `${who(movedController)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
     } else {
       text = describeEvent(e);
