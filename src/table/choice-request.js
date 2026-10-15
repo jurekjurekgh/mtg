@@ -1632,7 +1632,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
     if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
     // H: warstwa 1 ma własny nagłówek — wybór celów przed warstwą stuna.
-    if (stunKey) renderPickerSection(list, `Cele (zaznacz ${range}):`, { className: 'multi-target-slot-label' });
+    if (stunKey) renderPickerSection(list, `${plan.targetsLabel ?? 'Cele'} (zaznacz ${range}):`, { className: 'multi-target-slot-label' });
     for (const id of plan.targets) addRow(id, null);
   }
 

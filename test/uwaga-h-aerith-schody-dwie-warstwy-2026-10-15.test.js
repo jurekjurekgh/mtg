@@ -202,3 +202,13 @@ test('H/UI kreator: odznaczenie celu, który dostał stun, zdejmuje stun z wybor
     assert.deepEqual([done.targets, done.stunTargetId], [['rager'], 'rager']);
   });
 });
+
+test('H/UI kreator: tryb z stunAmongTargets nazywa warstwę 1 „Cele do tapnięcia”, warstwa 2 zostaje osobna', () => {
+  withMiniDom((host) => {
+    const plan = { ...multiTargetPlanOf(CMDS), targetsLabel: 'Cele do tapnięcia' };
+    renderMultiTargetWizard(host, { view: VIEW, session: SESSION, plan, commands: CMDS, onComplete: () => {} });
+    const labels = host.findAll((n) => String(n.className).includes('multi-target-slot-label')).map((n) => n.textContent);
+    assert.ok(labels.some((l) => l.startsWith('Cele do tapnięcia (zaznacz 0–3):')), `warstwa 1 (${JSON.stringify(labels)})`);
+    assert.ok(labels.some((l) => l.startsWith('Stun counter')), `warstwa 2 (${JSON.stringify(labels)})`);
+  });
+});

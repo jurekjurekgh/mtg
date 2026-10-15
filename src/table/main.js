@@ -908,6 +908,13 @@ function bootstrapTable() {
     }
     const multiPlan = multiTargetPlanOf(request.options ?? []);
     if (multiPlan) {
+      // H (zgłoszenie 2026-10-15, Aerith „Schody”): tryb z `stunAmongTargets` to
+      // „tapnij do N celów, jeden z nich dostaje stun”. Warstwa 1 nazywa to
+      // tapnięciem, warstwa 2 (stun) dostaje osobny nagłówek z kreatora.
+      if (multiPlan.stunKey) {
+        const stunMode = session.state?.objects?.get(multiPlan.objectId)?.spell?.modes?.[multiPlan.modeIndex];
+        if (stunMode?.stunAmongTargets) multiPlan.targetsLabel = 'Cele do tapnięcia';
+      }
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === multiPlan.objectId);
