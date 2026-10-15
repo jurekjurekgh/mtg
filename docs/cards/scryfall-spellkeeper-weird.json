@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Spellkeeper%20Weird&set=war&format=json",
+  "print": "war",
+  "name": "Spellkeeper Weird",
+  "mana_cost": "{2}{U}",
+  "cmc": 3.0,
+  "type_line": "Creature — Weird",
+  "oracle_text": "{2}, {T}, Sacrifice this creature: Return target instant or sorcery card from your graveyard to your hand.",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "war",
+  "set_name": "War of the Spark",
+  "collector_number": "69",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/4/74e42dad-5958-443f-a196-12b3f3e44213.jpg?1783933456",
+    "normal": "https://cards.scryfall.io/normal/front/7/4/74e42dad-5958-443f-a196-12b3f3e44213.jpg?1783933456",
+    "large": "https://cards.scryfall.io/large/front/7/4/74e42dad-5958-443f-a196-12b3f3e44213.jpg?1783933456"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/74e42dad-5958-443f-a196-12b3f3e44213/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

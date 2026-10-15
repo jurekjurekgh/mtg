@@ -2,6 +2,7 @@ import { isBattle } from './battles.js';
 import { holdReplacementResolution } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardInOpponentGraveyard, isOnAdventure } from './zones.js';
+import { isInstantOrSorceryCardInGraveyard } from './graveyard-types.js';
 import { optionalEffectVariants, triggerTargetEffectFriendly } from './effect-intent.js';
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
@@ -379,6 +380,13 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       }
       if (object && object.zone === 'graveyard' && object.kind === 'creature'
         && object.controllerId === casterId) return object;
+      throw new Error(`Nielegalny cel: ${targetId}`);
+    }
+    // Cel „instant or sorcery card from your graveyard" (Spellkeeper Weird) —
+    // karta o typie Instant/Sorcery we własnym grobie rzucającego. Ten sam
+    // predykat co oferta (L48/M82).
+    if (spec?.type === 'instant_or_sorcery_card_in_graveyard') {
+      if (isInstantOrSorceryCardInGraveyard(object, casterId)) return object;
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „card from your graveyard" (Barkform Harvester) — dowolna karta
@@ -1568,6 +1576,13 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
         if (spec?.maxManaValue != null && (object?.manaCost ?? 0) > spec.maxManaValue) return false;
         return object?.zone === 'graveyard' && object.kind === 'creature' && object.controllerId === playerId;
       });
+    }
+    case 'instant_or_sorcery_card_in_graveyard': {
+      // Batch 67 (Spellkeeper Weird): „target instant or sorcery card from
+      // your graveyard" — predykat wspólny z triggerami (`graveyard-types.js`,
+      // jedno źródło frazy) i identyczny w OFERCIE i WALIDACJI (M82/L48).
+      return state.zones.graveyard.filter((objectId) =>
+        isInstantOrSorceryCardInGraveyard(state.objects.get(objectId), playerId));
     }
     case 'card_in_graveyard': {
       // `graveyardOwnerId` (Batch 59, Memory's Journey): karty z grobu

@@ -3,6 +3,7 @@
 1x Crumbling Vestige
 1x Emissary Escort
 1x Illvoi Operative
+1x Intrepid Tenderfoot
 1x Oreplate Pangolin
 1x Diplomatic Relations
 1x Frontline War-Rager
@@ -16,7 +17,7 @@
 1x Clone Shell
 1x Weftblade Enhancer
 1x Plains
-1x Island
+2x Island
 2x Swamp
-3x Mountain
+2x Mountain
 1x Forest

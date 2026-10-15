@@ -18,6 +18,7 @@
 1x Cautious Survivor
 1x Downwind Ambusher
 1x Rust-Shield Rampager
+1x Sentry Bot
 1x Greater Tanuki
 3x Plains
 1x Island

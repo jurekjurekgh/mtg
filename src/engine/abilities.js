@@ -11,6 +11,7 @@ import { validateTargets, hasHexproofAgainst, legalTargetCandidates, legalTarget
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
 import { addRegenerationShield } from './state-based.js';
+import { isCardObject } from './zones.js';
 
 /**
  * Framework activated / triggered / static abilities.
@@ -64,6 +65,21 @@ function collectManaAmount(effects) {
  * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
  * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
  */
+/**
+ * M255/C1: etykiety efektów dla logu stołu. `lose_life` bez zakresu znaczy
+ * „każdy przeciwnik" (CR 119.3), a etykieta bazowa mówi „cel traci życie" —
+ * więc zdarzenie niesie klucz `lose_life_each_opponent`, rozwiązany TU, gdzie
+ * zakres jest znany z deskryptora (bez sięgania po nazwę karty, ADR 0002).
+ */
+function effectTypeLabelsForLog(effects) {
+  return (effects ?? []).map((e) => {
+    if (e?.type === 'lose_life' && (e.scope ?? 'each_opponent') === 'each_opponent') {
+      return 'lose_life_each_opponent';
+    }
+    return e?.type;
+  }).filter(Boolean);
+}
+
 function collectGrantKeywords(effects) {
   const keywords = [];
   for (const effect of effects ?? []) {
@@ -144,6 +160,22 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
     }
     const colored = (ability.cost?.colors ?? []).length;
     return Math.max(colored, base - count * (reduction.amount ?? 1));
+  }
+  // Batch 67 (Battlefield Butcher): „This ability costs {1} less to activate
+  // for each creature card in your graveyard." — redukcja PER karta-stwór
+  // w grobie kontrolera (koszt zdolności ma analog 601.2f przez CR 602.2b, więc
+  // redukujemy wyłącznie część generyczną; przy zerze pipów kolorowych koszt
+  // może zejść do {0}).
+  if (reduction.perCreatureCardInGraveyard) {
+    const creatureCards = state.zones.graveyard.filter((objectId) => {
+      const object = state.objects.get(objectId);
+      // „Card" = obiekt bez flagi `isToken` (CR 108.2b — jedno źródło
+      // predykatu: `zones.isCardObject`).
+      return isCardObject(object) && object.controllerId === playerId
+        && (object.types ?? []).includes('Creature');
+    }).length;
+    const colored = (ability.cost?.colors ?? []).length;
+    return Math.max(colored, base - creatureCards * (reduction.amount ?? 1));
   }
   if (reduction.perCounter === '+1/+1') {
     let counters = 0;
@@ -1880,7 +1912,7 @@ export function performActivation(state, ctx) {
     // Megamorph) — bez tego log mówił tylko „aktywuje zdolność: Woolly
     // Loxodon", nie mówiąc JAKĄ zdolność.
     keyword: ability.keyword ?? null,
-    effectTypes: effectList.map((e) => e?.type).filter(Boolean),
+    effectTypes: effectTypeLabelsForLog(effectList),
     // M150/C2: kolory wyprodukowanej many (Jeskai Devotee) w logu.
     ...(manaColors.length ? { manaColors, manaAmount: collectManaAmount(effectList) } : {}),
     // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.
@@ -1955,7 +1987,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
     // obiektu stosu; objectId to źródło zdolności, nie wpis).
     stackEntryId: id,
     keyword: ability.keyword ?? null,
-    effectTypes: stackEffectList.map((e) => e?.type).filter(Boolean),
+    effectTypes: effectTypeLabelsForLog(stackEffectList),
     // M150/C2: kolory wyprodukowanej many w logu.
     ...(stackManaColors.length ? { manaColors: stackManaColors } : {}),
     // M175/A1: konkretne keywordy grantu — log nazywa je po polsku.

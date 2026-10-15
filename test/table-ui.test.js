@@ -1875,3 +1875,47 @@ test('M112: kafle pokazują walkę z sekcji combat (atakuje / blokuje / niezablo
   assert.match(own, /niezablokowany/, 'niezablokowany atakujący ma być oznaczony (to on zada obrażenia graczowi)');
   assert.match(enemy, /blokuje/, `kafel blokującego bez znacznika: ${enemy}`);
 });
+
+test('pętla jakości 2026-10-14: stos mówi PO POLSKU („Zdolność:", nie „Trigger:")', () => {
+  // Żywy Tester (partie a3/b6, 2026-10-14) pokazał na stosie „Trigger: Disa the
+  // Restless (obrażenia bojowe zadane graczowi)" — angielskie zapożyczenie
+  // w polskim panelu, które sam skaner testera (`tools/table-tester/scan.mjs`)
+  // oznacza jako podejrzaną etykietę. M202/C: kafel zdolności nie używa
+  // „Trigger"; stos ma mówić to samo po polsku.
+  const registry = createCardRegistry();
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [
+      { id: 'p1', name: 'Ty', life: 20, mana: 0 },
+      { id: 'p2', name: 'Nieprzyjaciel', life: 20, mana: 0 },
+    ],
+    zones: {
+      stack: [{
+        id: 'stack-trigger', cardId: 'grizzled-outcasts', controllerId: 'p1',
+        trigger: true, triggerEvent: 'combat_damage_to_player', targets: [],
+      }],
+      hand: [], battlefield: [], graveyard: [], exile: [], library: [],
+    },
+    turn: { number: 1, activePlayerId: 'p1', phase: 'combat', step: 'combat_damage' },
+    legalCommands: [],
+  };
+  const session = {
+    view: () => view,
+    log: [], reasoning: [], state: { seed: 67 },
+    nameOf: (cardId) => registry.get(cardId)?.name ?? cardId,
+    nameOfObject: (objectId) => objectId,
+    cardDetails: (cardId) => registry.get(cardId) ?? null,
+    colorsOf: (cardId) => registry.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => registry.get(cardId)?.abilities ?? [],
+  };
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  renderTableView({ els, session, play: () => {}, onCardClick: () => {} });
+  const item = els.stackZone.children.find((c) => (c.className ?? '').includes('stack-item'));
+  assert.ok(item, 'stos nie wyrenderował zdolności');
+  assert.match(item.text, /^Zdolność: /, `etykieta stosu: ${item.text}`);
+  assert.ok(!item.text.includes('Trigger:'), `angielska etykieta wróciła: ${item.text}`);
+  assert.match(item.text, /obrażenia bojowe graczowi/, 'brak polskiej nazwy zdarzenia');
+});

@@ -346,6 +346,24 @@ ptaszka **nie** dostają i to jest poprawne.
 **Test mechaniczny:** wyrenderować panel akcji dla każdego typu komendy
 z `OPTION_IGNORABLE_TYPES` i sprawdzić obecność `label.action-ignore`.
 
+### Oś 7 (2026-10-13c, klasa A-2) — pola-widma kontraktu `PlayerView`
+
+Czy konsument widoku (bot, render, sesja) czyta pole, którego `PlayerView`
+**nigdy nie wysyła**? Taki warunek jest martwy, a kod wygląda na obsługujący
+przypadek, którego nie obsługuje (L41: producent i konsument mają różne
+słowniki pól). Znalezisko A-2 z audytu PR #164 (`playableFromExile`,
+`onAdventure`, `warpedAtTurn` w filtrze bota) było dokładnie tej klasy.
+
+**Narzędzie:** `node tools/probe-phantom-view.mjs [--games N] [--steps N]
+[--decks a,b] [--seed-base N]` — opakowuje widoki przekazywane botom w Proxy,
+rejestruje odczyty pól nieobecnych i (po skrzyżowaniu z nazwami nieistniejącymi
+nigdzie w repo) wypisuje kandydatów. Uwaga: warstwa widoku wysyła część pól
+**warunkowo** (np. `detained`, `combatDamageByToughness` tylko gdy zachodzą),
+więc kandydat wymaga triage'u: sprawdź, czy pole ma w ogóle projekcję
+w `src/engine/game-state.js`. Przebieg szeroki (wszystkie talie) redukuje
+fałszywe trafienia. Strażnik statyczny tej samej klasy dla deskryptorów aury:
+`test/audyt-pr164-pola-widm.test.js`.
+
 ### Oś 4 (M103, L15) — oferty bez skutku (kategoria detektora `noop`)
 
 Czy panel oferuje akcję, która **nic nie zmienia albo jest pewną stratą**?

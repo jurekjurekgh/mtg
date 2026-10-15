@@ -858,6 +858,27 @@ test('Audyt PR #163 F-3/F-4: shroud blokuje Aury i triggery creature_you_control
     'add_counter z targetFromContext=damageSourceId musi wskazywać „na tym stworze”');
 });
 
+test('Audyt PR #164 A-3: trigger artifact_you_control nie celuje artefaktu ze shroud (CR 702.18)', () => {
+  // CR 702.18 (shroud): „A permanent … with shroud can't be the target of spells
+  // or abilities" — także zdolności KONTROLERA. Naprawa F-3 dodała bramkę shroud
+  // do `creature_you_control` i `land_you_control`; bliźniacza
+  // `artifact_you_control` (Skilled Animator) została bez niej.
+  // Dwaj legalni kandydaci (bez shroud) trzymają decyzję otwartą — przy
+  // jednym kandydacie silnik wybiera cel automatycznie (M242) i modal
+  // nie powstałby, więc usterka nie miałaby jak się ujawnić (L52).
+  const state = game();
+  put(state, 'plain-art', 'universal-solvent', 'p1', 'battlefield');
+  put(state, 'plain-art2', 'cloak-of-the-bat', 'p1', 'battlefield');
+  put(state, 'shroud-art', 'universal-solvent', 'p1', 'battlefield', { keywords: ['shroud'] });
+  put(state, 'animator', 'skilled-animator', 'p1', 'battlefield');
+  enterAndScan(state, 'animator');
+  const targets = commands(state, 'p1')
+    .filter((command) => command.type === 'resolve_trigger_target')
+    .map((command) => command.targetId);
+  assert.deepEqual([...targets].sort(), ['plain-art', 'plain-art2'],
+    'modal triggera pokazuje dokładnie legalne artefakty — bez artefaktu ze shroud (CR 702.18)');
+});
+
 test('Audyt PR #163 F-5: pendingSacrifice w stateFingerprint, buildLegalCommands i execute waliduje candidateTypes (L65)', () => {
   const state = game();
   put(state, 'tiger', 'scythe-tiger', 'p1', 'battlefield');

@@ -205,6 +205,12 @@ export const WOREK_DECKS = Object.freeze({
   // z TMNT („ulice poza prawem”), więc worek-dziki. Worek ma 15 kart
   // nielandowych, +1 nie narusza minimum walidatora (ADR 0023 §4).
   Marvel: 'worek-dziki',
+  // Batch 67 / fala F (2026-10-14): nowy plan właściciela „Star Wars”
+  // (karta 378 Sentry Bot, set PIP) — droidy, energia i artefakty, motyw
+  // spójny z cyberpunkową Kamigawą („Neon Dynasty”) w worku-baśni, który
+  // jest też NAJMNIEJSZYM workiem (19 kart nie-basic; ADR 0023 §4: motyw
+  // + najmniejsza talia). Jedna karta — próg awansu (15) daleko.
+  'Star Wars': 'worek-basni',
 });
 
 export const WOREK_NAMES = Object.freeze({

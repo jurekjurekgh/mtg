@@ -2,6 +2,7 @@
 
 1x Descendant of Storms
 1x Erase
+1x Artful Maneuver
 1x Dromoka Warrior
 1x Force Away
 1x Furious Forebear
@@ -23,6 +24,6 @@
 1x Sarkhan's Rage
 1x Vandalize
 1x Ainok Tracker
-4x Plains
-4x Island
+5x Plains
+3x Island
 4x Mountain

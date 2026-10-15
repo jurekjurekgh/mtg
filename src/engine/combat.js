@@ -166,6 +166,24 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
 }
 
 /**
+ * Batch 67 (Sentry Bot): ile stworów atakuje WSKAZANEGO gracza. „Creatures
+ * attacking you" to stwory zadeklarowane w BIEŻĄCEJ walce przeciw temu
+ * graczowi (`state.combat.attackers` + atakujący), a nie wszystkie, które
+ * w tej turze atakowały (ruling PIP 2024-11-08: liczy się stan w chwili
+ * rozstrzygnięcia efektu). Jedno źródło dla redukcji kosztu czaru i dla
+ * liczby zdobytych liczników energii (L41).
+ */
+export function attackersAgainstPlayer(state, playerId) {
+  const combat = state?.combat;
+  if (!combat || !Array.isArray(combat.attackers) || combat.attackers.length === 0) return 0;
+  if (combat.attackingPlayerId === playerId) return 0; // sam atakujący nie atakuje siebie
+  return combat.attackers.filter((objectId) => {
+    const object = state.objects.get(objectId);
+    return object && object.zone === 'battlefield' && object.kind === 'creature';
+  }).length;
+}
+
+/**
  * „This creature attacks each combat if able\" (Ramroller, Juggernaut,
  * CR 508.1d): statyczny wymóg ataku — traktowany jak goad bez daty ważności,
  * czytany ze zdolności statycznych obiektu (deskryptor mustAttack).

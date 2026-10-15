@@ -32,7 +32,7 @@ import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
 import { queueSearchChoice, emitReflexiveSearch, dealNonCombatDamage, librarySearchMatches, revealTopGainLife, enterChosenUndercityRoom, resolveCraftExileOutcome, returnPermanentFromGraveyardOutcome, resolveDamageAmount } from './effects.js';
-import { changeLife, recordCardDrawn } from './players.js';
+import { changeLife, recordCardDrawn, payEnergyCounters } from './players.js';
 import { shuffle } from './shuffle.js';
 import { applyRoomTargetChoice, applyEffect, applyEnterCounters, drawPlayerCards, manifestCardFaceDown, counterStackObject, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { nextTimestamp } from './timestamps.js';
@@ -2130,6 +2130,40 @@ function accepted(state, cmd, result) {
     const sagaTriggerEvents = processTriggers(state, sagaEvents);
     if (sagaTriggerEvents.length > 0) result.events = [...result.events, ...sagaTriggerEvents];
   }
+  // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
+  // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
+  // („If a target can’t be changed to another legal target, the original
+  // target is unchanged”). Taka decyzja nie ma żadnej legalnej opcji, więc nie
+  // może czekać: w ofercie zostałoby samo „concede”, a bot nie miałby czym
+  // zagrać (partia stałaby w miejscu). Domykamy ją w tym samym przebiegu,
+  // w którym powstała — jak devour po poświęceniu ostatniego kandydata.
+  // Kandydatów liczy TEN SAM predykat co ofertę i walidację (L41/M82).
+  if (state.pendingRedirectChoice) {
+    const pending = state.pendingRedirectChoice;
+    const spell = state.objects.get(pending.stackId);
+    const alternatywy = spell && spell.zone === 'stack'
+      ? legalTargetCandidates(state, pending.spellControllerId, pending.spec)
+        .filter((id) => id !== pending.currentTargetId)
+      : [];
+    if (alternatywy.length === 0) {
+      state.pendingRedirectChoice = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      const unchanged = event('redirect_choice_resolved', {
+        playerId: pending.playerId,
+        stackId: pending.stackId,
+        fromTarget: pending.currentTargetId,
+        toTarget: null,
+        cardId: pending.spellCardId ?? null,
+        spellControllerId: pending.spellControllerId ?? null,
+        auto: true,
+        unchangedReason: 'no_other_legal_target',
+      });
+      state.events.push(unchanged);
+      result.events = [...result.events, unchanged];
+    }
+  }
   // Inwariant planowania decyzji: gdy po komendzie czeka blokująca decyzja,
   // priorytet należy do JEJ decydenta (pierwszej w porządku bramek execute).
   // Ze skanem wieloprzebiegowym decyzje różnych typów mogą powstać w jednej
@@ -4158,11 +4192,15 @@ export function execute(state, input) {
       const payColors = (pending.ability?.trigger?.payColors ?? []).map((color) => [color]);
       const payMana = pending.ability?.trigger?.payMana ?? 0;
       const payLife = pending.ability?.trigger?.payLife ?? 0;
+      // Batch 67 (Sentry Bot, CR 122.1): opcjonalna płatność ENERGII
+      // („you may pay {E}{E}{E}") — liczniki schodzą z gracza, nie z permanentu.
+      const payEnergy = pending.ability?.trigger?.payEnergy ?? 0;
       // Płatność wykonujemy RAZ (tutaj). Potomną zdolność refleksyjną oraz
       // efekty bez pay_mana/pay_life buduje wspólny helper playerView/execute.
       const abilityToFire = optionalPayFollowupAbility(pending);
       if (payMana > 0) spendMana(state, pending.playerId, payMana, payColors);
       if (payLife > 0) changeLife(state, pending.playerId, -payLife);
+      if (payEnergy > 0) payEnergyCounters(state, pending.playerId, payEnergy);
       // „You may remove a [X] counter from it. When you do, ..." (Kappa
       // Tech-Wrecker): koszt = znacznik z ŻYWEGO źródła (resolveDeferredChoice
       // otworzył decyzję tylko, gdy źródło nadal jest na polu bitwy i go ma).
@@ -7823,6 +7861,9 @@ export function playerView(state, playerId) {
       costColors: optionalPayTrigger.payColors ?? null,
       lifeCost: optionalPayTrigger.payLife ?? null,
       counterCost: optionalPayTrigger.payCounter ?? null,
+      // Batch 67 (Sentry Bot): koszt w licznikach energii — panel i log
+      // pokazują „{E}{E}{E}", nie „0 many".
+      energyCost: optionalPayTrigger.payEnergy ?? null,
       sourceId: state.pendingOptionalPay.sourceId ?? null,
       // Etap F (CR 603.5 + 603.12): „When you do, [efekt z celem]" — płatność
       // pada przy rozstrzyganiu, zanim wybiera się cel refleksyjnej zdolności.

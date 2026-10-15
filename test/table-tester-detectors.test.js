@@ -1316,7 +1316,7 @@ test('detectTileRawSlug: zwykłe kafle (w tym z myślnikami i kosztem) ciche', (
     '  RĘKA: Maritime Guard · 2 · Creature — Merfolk Soldier · 1/3 | Island · Basic Land — Island · T: dodaj 1 manę ×3',
     '  MOJE POLA: Squirrel · 1/1 (token) | Plains · Basic Land — Plains',
     '  POLA WROGA: Morph 2/2',
-    '  STOS: Trigger: Rigging Runner — dash (atakuje: tkacz)',
+    '  STOS: Zdolność: Rigging Runner — dash (atakuje: tkacz)',
   ]);
   assert.deepEqual(found, [], `fałszywy alarm: ${JSON.stringify(found)}`);
 });

@@ -58,6 +58,12 @@ const INTENTIONAL_EXCEPTIONS = {
   // wymaga pomiaru B0 (Krok 7 procedury), więc zostaje świadomym wyjątkiem.
   tap_enchanted_permanent: 'aura-kotwica: wartość niesie statyka doesntUntap (auraIsHostile), nie sam ETB',
   job_select: 'lagodne uporzadkowanie biblioteki (2 karty) — poza progiem wartosci',
+  // PMSSB-62/F5 (2026-10-15): `get_energy` PRZESZEDL z wyjatku do tabeli
+  // ETB_EFFECT_BONUS — licznik {E} ma jedna wartosc dla kosztu i zysku
+  // (`P.energyCounterValue`, PMSSB-56/62), a kwota dynamiczna
+  // (`amountFrom: 'creatures_attacking_you'`) jest liczona z widoku
+  // (`energyAmountFromView`). Wyjatek usuniety swiadomie: pętla PMSSB-62
+  // przypiela nowa wycene testami na karcie realnej (sentry-bot).
 };
 
 const MIN_CARDS = 2;

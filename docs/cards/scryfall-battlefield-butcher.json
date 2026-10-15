@@ -1,0 +1,31 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Battlefield%20Butcher&set=bro&format=json",
+  "print": "bro",
+  "name": "Battlefield Butcher",
+  "mana_cost": "{2}{B}",
+  "cmc": 3.0,
+  "type_line": "Creature — Human Soldier",
+  "oracle_text": "{5}, {T}: Each opponent loses 2 life. This ability costs {1} less to activate for each creature card in your graveyard.",
+  "power": "1",
+  "toughness": "4",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "86",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/9/0/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb.jpg?1783920096",
+    "normal": "https://cards.scryfall.io/normal/front/9/0/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb.jpg?1783920096",
+    "large": "https://cards.scryfall.io/large/front/9/0/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb.jpg?1783920096"
+  },
+  "pobrano": "2026-10-14",
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb/rulings",
+  "rulingsPobrano": "2026-10-14"
+}

@@ -1194,6 +1194,10 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  // Batch 67 (Improbable Alliance): loot ({4}{U}{R} — dobierz, potem odrzuć)
+  // kumuluje jak `draw_cards`/`discard_cards` osobno: druga aktywacja na
+  // stosie dobiera i odrzuca KOLEJNĄ kartę (nie jest idempotentna do końca tury).
+  'draw_then_discard',
   'create_copy_token', 'create_token_copy_of_source', 'reveal_top_pick_card_rest_bottom',
   'station_counters', 'scry', 'regenerate',
   // Batch 59 (Charismatic Vanguard): „Creatures you control get +1/+1 until
@@ -1528,11 +1532,81 @@ export const LIBRARY_DRAIN_CAST_TYPES = new Set(
 function cardCostReductionForView(view, def) {
   const reduction = def?.costReduction;
   if (!reduction || !Number.isInteger(reduction.amount) || reduction.amount <= 0) return 0;
-  if (!reduction.condition?.affinityToEnchantments) return 0;
-  const count = (view.zones.battlefield ?? []).filter((object) => object
-    && object.controllerId === view.playerId
-    && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
-  return reduction.amount * count;
+  if (reduction.condition?.affinityToEnchantments) {
+    const count = (view.zones.battlefield ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && (object.kind === 'enchantment' || (object.types ?? []).includes('Enchantment'))).length;
+    return reduction.amount * count;
+  }
+  // PMSSB-62/F3 (Sentry Bot, batch 67): „This spell costs {1} less to cast for
+  // each creature attacking you." — silnik liczy to przez
+  // `attackersAgainstPlayer` (CR 601.2f, kwota ustalona przy rzucie), więc
+  // wycena bota musi czytać to samo z WIDOKU (`combat.attackers` +
+  // `defendingPlayerId`, oba pola są jawne — inaczej oferta i wycena liczyły
+  // DWA różne koszty, S11/L41).
+  if (reduction.condition?.perCreatureAttackingYou) {
+    const combat = view.combat ?? null;
+    if (!combat || combat.defendingPlayerId !== view.playerId) return 0;
+    const attackers = (combat.attackers ?? []).filter((id) => {
+      const object = (view.zones.battlefield ?? []).find((entry) => entry.id === id);
+      return object ? object.controllerId !== view.playerId : true;
+    }).length;
+    return reduction.amount * attackers;
+  }
+  return 0;
+}
+
+/**
+ * PMSSB-62/F2 (Battlefield Butcher, batch 67): efektywny koszt many zdolności
+ * AKTYWOWANEJ liczony z WIDOKU bota — odpowiednik silnikowego
+ * `effectiveAbilityManaCost` (CR 602.2b → 601.2f: koszt aktywacji ma analog
+ * kosztu czaru, a obniżka nie schodzi poniżej liczby kolorowych pipów).
+ *
+ * Pomiar PRZED (sonda PMSSB-62): aktywacja Butchera miała −3,0000 przy 0, 3
+ * i 5 kartach-stworach w grobie ORAZ w kontrfakcie bez `costReduction` — bot
+ * karał pełnym `{5}`, gdy silnik pobierał `{5}`, `{2}` albo `{0}` (aktywacja
+ * darmowa była nie do odróżnienia). To ta sama klasa co PMSSB-60/F6 dla
+ * CZARÓW (`cardCostReductionForView`), tylko na ścieżce zdolności.
+ *
+ * Obsługujemy warunki obecne w katalogu; nieznany warunek zwraca koszt bazowy
+ * (anty-over-fix M429: nic nie zgadujemy).
+ */
+function abilityManaCostForView(view, def, ability, sourceObject) {
+  const base = ability?.cost?.mana ?? 0;
+  const reduction = ability?.costReduction;
+  const colored = (ability?.cost?.colors ?? []).length;
+  if (!reduction) return base;
+  const step = Number.isInteger(reduction.amount) && reduction.amount > 0 ? reduction.amount : 1;
+  // „...for each creature card in your graveyard" (Battlefield Butcher) —
+  // „karta” wyklucza tokeny (CR 108.2b); paginacja grobu w widoku jest
+  // pełna (grób jest strefą publiczną).
+  if (reduction.perCreatureCardInGraveyard) {
+    const count = (view.zones.graveyard ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && !object.isToken
+      && (object.types ?? []).includes('Creature')).length;
+    return Math.max(colored, base - step * count);
+  }
+  // „...for each other Town you control" (Balamb Garden itd.) — samo źródło
+  // się nie liczy; podtyp czytamy z widoku pola bitwy.
+  if (reduction.perOtherSubtype) {
+    const count = (view.zones.battlefield ?? []).filter((object) => object
+      && object.controllerId === view.playerId
+      && object.id !== sourceObject?.id
+      && (object.subtypes ?? []).includes(reduction.perOtherSubtype)).length;
+    return Math.max(colored, base - step * count);
+  }
+  // „...for each +1/+1 counter on creatures you control" (Deepwood Denizen).
+  if (reduction.perCounter === '+1/+1') {
+    let counters = 0;
+    for (const object of view.zones.battlefield ?? []) {
+      if (!object || object.controllerId !== view.playerId) continue;
+      if (object.kind !== 'creature' && !(object.types ?? []).includes('Creature')) continue;
+      counters += object.counters?.['+1/+1'] ?? 0;
+    }
+    return Math.max(colored, base - step * counters);
+  }
+  return base;
 }
 
 /**
@@ -1546,6 +1620,23 @@ function cardCostReductionForView(view, def) {
  * wymuszone poświęcenia i koszty zdolności używają innych pól i nie trafiają
  * tutaj. Brak pola = komenda spoza tej polityki i pozostaje dozwolona.
  */
+/**
+ * PMSSB-62/F5 (Sentry Bot, batch 67): KWOTA energii z deskryptora, liczona
+ * z WIDOKU bota. `amountFrom: 'creatures_attacking_you'` (ruling PIP
+ * 2024-11-08: liczba brana przy ROZSTRZYGNIĘCIU) — widok niesie
+ * `combat.attackers` i `combat.defendingPlayerId`, więc bot liczy to samo co
+ * silnik (`attackersAgainstPlayer`). Nieznane źródło kwoty = 0 (anty-over-fix
+ * M429: nie zgadujemy premii).
+ */
+export function energyAmountFromView(view, effect) {
+  if (effect?.amountFrom === 'creatures_attacking_you') {
+    const combat = view?.combat ?? null;
+    if (!combat || combat.defendingPlayerId !== view.playerId) return 0;
+    return (combat.attackers ?? []).length;
+  }
+  return Number.isInteger(effect?.amount) ? Math.max(0, effect.amount) : 1;
+}
+
 export function botMayPayCreatureSacrificeCost(view, cmd) {
   if (cmd?.sacrificeTargetId == null) return true;
   const victim = (view?.zones?.battlefield ?? [])
@@ -1839,6 +1930,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (effect?.power ?? tokenDef?.power ?? 0) <= 0 && granted.length > 0
       && granted.every((fx) => fx?.type === 'add_mana');
   };
+  /**
+   * PMSSB-62/F6 (Wolf's Quarry): token, który poświęca się za życie (Food:
+   * „{2}, {T}, Poświęć: zyskaj 3 życia"), jest BANKIEM ŻYCIA — ta sama
+   * konstrukcja co `tokenDrawBankValue` (PMSSB-58/F1): wartość z istniejącej
+   * drabiny życia (`gainLifeValue`, L41 — żadnej nowej premii), minus koszt
+   * many aktywacji (`abilityManaCostPenalty`), × waga banku
+   * (`tokenDrawBankWeight`). Przy pełnym życiu drabina zwraca ≤3, więc koszt
+   * {2} sprowadza bank do zera — celowo (anty-over-fix M429: Food przy 20
+   * życia nie jest wart premii; wartość rośnie pod presją życia).
+   */
+  const tokenLifeBankValue = (view, effect) => {
+    const abilities = effect?.abilities ?? (effect?.cardId ? cardDef(effect.cardId)?.abilities : null) ?? [];
+    let best = 0;
+    for (const ability of abilities) {
+      if (ability?.type !== 'activated') continue;
+      const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      const life = effects.filter((e) => e?.type === 'gain_life')
+        .reduce((sum, e) => sum + (Number.isInteger(e.amount) ? e.amount : 0), 0);
+      if (!(life > 0)) continue;
+      const value = gainLifeValue(view, life)
+        - P.abilityManaCostPenalty * ((ability.cost?.mana ?? 0) + (ability.cost?.generic ?? 0));
+      best = Math.max(best, value);
+    }
+    return P.tokenDrawBankWeight * best;
+  };
+
   // PMSSB-58/F1: token z aktywacją doboru jest BANKIEM OPCJI. Przyszłej
   // odrzucanej karty nie znamy; używamy istniejącej miary lootu, odliczamy
   // koszt many i dyskontujemy zwłokę. Aktywacja niżej płaci rzeczywisty discard.
@@ -1943,7 +2060,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // znak go nie dotyczy.
     const controller = tokenControllerId ?? view.playerId;
     const sign = controller === view.playerId ? 1 : -1;
-    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect))
+    return count * (sign * Math.max(bodyWorth, manaWorth, counterWorth, tokenDrawBankValue(view, effect),
+      tokenLifeBankValue(view, effect))
       + tokenRiderDamage(view, effect, controller));
   };
   // PMSSB-2/C (F5): RIDERZY bezwarunkowe — token, który sam zadaje obrażenia
@@ -1975,6 +2093,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             ? damageTargetValue(view, foeId, amt)
             : damageTargetValue(view, view.playerId, amt);
         }
+      } else if (a.trigger?.event === 'dies') {
+        // PMSSB-62/F6 (Wolf's Quarry, Boar → Food): token, który przy śmierci
+        // COŚ zostawia, jest wart tyle, ile zostawia — JEDNA miara ze ścieżką
+        // stwora (L41: `anticipatedDiesValue`, likelihood 0.5 w środku).
+        rider += anticipatedDiesValue(view, { abilities: [a] });
       }
     }
     return rider;
@@ -2124,6 +2247,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-4/F-A2: ETB-gain przez wspolna drabine (wczesniej min(2x,8)
     // slepe na zycie — bufor x3 vs M236, H5).
     gain_life: (e, view) => gainLifeValue(view, e.amount ?? 1),
+    // PMSSB-62/F5 (promocja świadomego wyjątku z E8): licznik {E} jest
+    // zasobem trwałym (CR 122.1) i ma zamodelowaną wartość w koszcie zdolności
+    // (PMSSB-56 → `P.energyCounterValue`), więc zysk musi liczyć się tą samą
+    // stałą. Kwota może być DYNAMICZNA (`amountFrom: 'creatures_attacking_you'`
+    // — Sentry Bot); `energyAmountFromView` czyta ją z widoku, a nieznane
+    // źródło zwraca 0 (bez zawyżki).
+    get_energy: (e, view) => energyGainValue(view, e),
+    // PMSSB-62/F4b (L41): payoff opłaty `{E}{E}{E}` Sentry Bota to licznik na
+    // KAŻDYM własnym stworze — ta sama funkcja co w ścieżkach czaru i
+    // aktywacji (`counterSpreadValue`, PMSSB-23/F3). Bez wpisu w tabeli
+    // antycypacja rzutu nosiciela nie widziała nagrody, więc opłata energii
+    // mogła tylko odejmować (pomiar: 65,7027 z energią i bez energii równo).
+    add_counter_to_creatures_you_control: (e, view, req) =>
+      counterSpreadValue(view, e, null),
     // PMSSB-4/F-A2b: ETB-drain WROGA (Skymarch: wczesniej tabela-miss = 0,
     // H11; lustro modala +4x i damage_each_opponent +4). Self-scope = 0
     // (wlasciwe M169/K); nieznany kierunek = 0 (konserwatywnie).
@@ -2495,7 +2632,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered') continue;
       const pay = ability.trigger?.payMana ?? 0;
-      if (pay <= 0) continue;
+      // PMSSB-62/F4 (CR 122.1): opcjonalna opłata LICZNIKAMI ENERGII
+      // (Sentry Bot: „At the beginning of combat on your turn, you may pay
+      // {E}{E}{E}") — ten sam model netto co payMana (PMSSB-12), tylko koszt
+      // liczony wspólną stałą `energyCounterValue`. Bramka: bez trzech
+      // liczników w puli opłata jest NIEDOSTĘPNA (ruling: nie można zapłacić
+      // więcej, niż się ma), więc trigger nie dodaje wartości.
+      const payEnergy = ability.trigger?.payEnergy ?? 0;
+      if (pay <= 0 && payEnergy <= 0) continue;
+      if (payEnergy > 0) {
+        const myEnergy = (view.players ?? []).find((p) => p.id === view.playerId)?.energy ?? 0;
+        if (myEnergy < payEnergy) continue;
+      }
       if (ability.trigger?.sacrificeIfUnpaid) continue;
       const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
       if (legs.some((e) => e?.type === 'return_source_from_graveyard_to_hand')) continue;
@@ -2518,8 +2666,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const blocked = foes.length > 0 && !kws.includes('unblockable')
           && !(kws.includes('flying') && foes.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach')));
         like = 0.5 * (blocked ? 0.5 : 1.0);
+      } else if (ability.trigger?.event === 'beginning_of_combat') {
+        // Początek walki własnej tury wypada raz na turę, o ile nosiciel
+        // przeżyje — asumpcja 0,75 (konserwatywnie niżej niż atak 1,0;
+        // pin na kształcie: 3 pkt różnicy przy +1/+1 na dwóch stworach).
+        like = 0.75;
       } else continue;
-      total += Math.max(0, like * (benefit - pay * P.creatureManaCostWeight));
+      total += Math.max(0, like * (benefit
+        - pay * P.creatureManaCostWeight
+        - payEnergy * P.energyCounterValue));
     }
     return total;
   };
@@ -2590,6 +2745,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // AURY-host (curiosity/flooding!): gospodarz z cmd.targets (bramka-evasion
   // gospodarza!); hostless = 0. pain-for-all SKIP (amountFrom-damage
   // nieczytelne!). flooding-mill = 0.7 × (20+3n) (tap-co-turę!).
+  /**
+   * PMSSB-62/F1 (Improbable Alliance, Jolrael): czy leg zdolności DOBIERA MI
+   * kartę. Cudzy/„target"-draw dowodem nie jest (konserwatywnie — cel może
+   * wskazać wroga), a `draw_cards_both_players` jest (dobieram też).
+   */
+  const ownDrawEffect = (effect) => {
+    if (!effect?.type) return false;
+    if (effect.type === 'draw_cards_both_players') return true;
+    if (effect.type !== 'draw_cards' && effect.type !== 'draw_then_discard') return false;
+    if (effect.applyTo === 'target' || effect.scope === 'target') return false;
+    return effect.scope !== 'opponent' && effect.scope !== 'each_opponent';
+  };
+  const abilityDrawsForMe = (ability) => {
+    const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    return effs.some(ownDrawEffect);
+  };
+  /**
+   * PMSSB-62/F1: DOWÓD drugiej karty w turze dla triggera
+   * `you_draw_second_card_each_turn`. Trigger pali się tylko wtedy, gdy widok
+   * pokazuje źródło DRUGIEGO dobrania: (1) sam nosiciel (Improbable Alliance
+   * ma „{4}{U}{R}: dobierz kartę, potem odrzuć"), (2) rzucalna karta w ręce,
+   * (3) inny mój permanent na stole. Brak dowodu = 0 — anty-over-fix M429
+   * (karta bez źródła dobrania nie dostaje premii).
+   */
+  const secondDrawEvidence = (view, def) => {
+    if ((def?.abilities ?? []).some(abilityDrawsForMe)) return true;
+    const hand = (view.zones.hand ?? []).filter((o) => o.kind !== 'land');
+    if (hand.some((o) => (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe))) return true;
+    return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      && !o.abilitiesStripped && !o.faceDown
+      && (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe));
+  };
+
   const anticipatedTailValue = (view, def, cmd = null) => {
     if (!def) return 0;
     const foes = enemyCreatures(view);
@@ -2647,6 +2835,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // turze, a każdy dodatkowy draw tworzy kolejny +1/+1. Konserwatywnie
       // wyceniamy jeden gwarantowany trigger na cykl, bez zgadywania kart.
       else if (ev === 'you_draw_card') like = 1.0;
+      // PMSSB-62/F1 (Improbable Alliance/Jolrael): „druga karta w turze" pali
+      // się TYLKO, gdy widok dowodzi źródła drugiego dobrania (sam nosiciel,
+      // ręka, stół) — inaczej 0 (anty-over-fix M429). Likelihood 0.5: źródło
+      // jest, ale nie co turę (mana i rytm dobierania).
+      else if (ev === 'you_draw_second_card_each_turn') like = secondDrawEvidence(view, def) ? 0.5 : 0;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
       else continue;
@@ -4724,6 +4917,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   // Wspólna wycena tej samej instrukcji na czarze i aktywacji (Batch 54).
   // Dotychczasowe wartości M155, bez strojenia parametrów.
+  /**
+   * PMSSB-62/F5 (L41): zysk liczników {E} wyceniany TĄ SAMĄ stałą co ich
+   * koszt (`P.energyCounterValue`) — bez tego „otrzymaj {E}×N" było warte 2
+   * punkty za licznik w jednej ścieżce i 0 w drugiej, a opłata `{E}` kosztowała
+   * 3 (trzy różne liczby dla tego samego zasobu).
+   */
+  const energyGainValue = (view, effect) =>
+    P.energyCounterValue * energyAmountFromView(view, effect);
+
   const opponentLifeEffectValue = (view, effect) => {
     const amount = effect.amount ?? 1;
     const foe = enemy(view);
@@ -4999,9 +5201,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
     }
 
+    // Audyt PR #164 (A-2): filtr czyta WYŁĄCZNIE pola, które `PlayerView`
+    // naprawdę wysyła dla wygnania (game-state.js, blok `waiting`): pozwolenie
+    // linkowane (`linkedExileCastPermission`), plot (`plotted`), okno impulsu
+    // (`playableUntilTurn`/`playableWithoutPaying`), madness/rebound/warp
+    // (`*Ready`) i przygodę (`exiledBy === 'adventure'`). Poprzednia lista
+    // (`playableFromExile`, `onAdventure`, `warpedAtTurn`) nie istnieje
+    // w kontrakcie widoku (poza tą linią nie ma tych pól w całym repo), więc
+    // filtr gubił realnie rzucalne karty z wygnania (klasa L41/L48).
     const castableExile = (view.zones.exile ?? []).filter((card) =>
-      Boolean(card?.linkedExileCastPermission || card?.playableFromExile
-        || card?.plotted || card?.warpedAtTurn != null || card?.onAdventure));
+      Boolean(card?.linkedExileCastPermission || card?.plotted
+        || card?.playableUntilTurn != null || card?.playableWithoutPaying === true
+        || card?.madnessReady || card?.reboundReady || card?.warpReady
+        || card?.exiledBy === 'adventure'));
     let bestCardGain = 0;
     for (const card of [...(view.zones.hand ?? []), ...castableExile]) {
       if (card.controllerId !== view.playerId || (card.manaCost ?? 0) <= 0
@@ -6552,6 +6764,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return n >= toughness;
   }
 
+  /** Zgłoszenie G/(b): okno ambushu dla karty z morphem — czar/zdolność
+   * WROGA na stosie z DOKŁADNIE jednym celem. Tylko taki wpis da się
+   * przekierować (CR 115.7a: nowy cel musi być innym legalnym celem tego
+   * samego czaru); przy dwóch celach podmiana jednego z nich nie ratuje
+   * sytuacji w sposób, który bot potrafi wycenić, więc okna nie otwieramy.
+   * Zwraca wpis stosu (albo null) — wycenę robi `retargetValue` przy
+   * rozstrzyganiu przekierowania (jedno źródło prawdy, L41). */
+  function enemySingleTargetSpellOnStack(view) {
+    for (const entry of view.zones.stack ?? []) {
+      if (entry.controllerId === view.playerId) continue;
+      if ((entry.targets ?? []).length !== 1) continue;
+      return entry;
+    }
+    return null;
+  }
+
   /** Suma obrażeń ze STOSU, które trafią w dany cel (burn celowany — B4). */
   function incomingDamageOnStack(view, targetId) {
     let total = 0;
@@ -7251,7 +7479,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return false;
       }
       if (descriptor.cantAttack || descriptor.cantBlock) return true;
-      if (descriptor.locksUntap || descriptor.doesntUntap) return true;
+      // Audyt PR #164 (pętla jakości, klasa A-2): pole to `doesntUntap` —
+      // jedyna nazwa normalizowana przez `registry.js` / `identity.js`.
+      // Wcześniejszy disjunct `descriptor.locksUntap` nie istnieje w żadnym
+      // innym pliku repo (sonda `tools/probe-phantom-view.mjs`: 223 odczyty
+      // pola, które nigdy nie trafiło do obiektu ani widoku), więc był martwy
+      // i sugerował obsługę, której nie było. Strażnik nazw:
+      // `test/audyt-pr164-pola-widm.test.js`.
+      if (descriptor.doesntUntap) return true;
       const pump = descriptor.pump;
       if (pump && ((pump.power ?? 0) < 0 || (pump.toughness ?? 0) < 0)) return true;
       if ((descriptor.losesKeywords ?? []).length > 0) return true;
@@ -9144,14 +9379,51 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const retargetEffects = spell?.spell?.effects ?? [];
         const dmgEffect = retargetEffects.find((e) => e?.type === 'damage');
         const hasHostilePerm = retargetEffects.some((e) => HOSTILE_PERMANENT_EFFECTS.has(e?.type));
+        // Zgłoszenie G/(b), część o WYBORZE celu: `attach_aura` nie ma wpisu
+        // w HOSTILE_PERMANENT_EFFECTS (tam są efekty typu „zniszcz/wygnaj/
+        // odrzuć”), więc wroga aura („Pacifism”: enchanted creature can't
+        // attack or block) nie dawała ŻADNEGO sygnału — a wszystkie warianty
+        // bez obrażeń remisowały i wygrywał pierwsza oferta. Pomiar PRZED:
+        // Pacifism wroga przekierowany na WŁASNEGO nosiciela morpha, czyli
+        // samobójstwo (kara -80 w tabeli wrogości niżej nie działa, bo nie
+        // było czego policzyć). Wrogość liczymy TYM SAMYM deskryptorem co
+        // przy rzucie aury (L41: `auraIsHostile`, względem KANDYDATA na
+        // gospodarza — aura warunkowa bywa kajdanami albo prezentem zależnie
+        // od celu), a nie po nazwie karty (ADR 0002).
+        const attachAura = retargetEffects.find((e) => e?.type === 'attach_aura');
+        const auraDef = attachAura && spell ? cardDef(spell.cardId) : undefined;
         const retargetValue = (id) => {
           if (dmgEffect) return damageTargetValue(view, id, dmgEffect.amount ?? 0);
           const t = objectOnBoard(view, id);
           const pseudo = { targets: [id] };
           let s = -(selfHarmPenalty(view, retargetEffects, pseudo, t)
             + friendlyMisaimPenalty(view, retargetEffects, pseudo, t));
-          if (t && t.controllerId !== view.playerId && hasHostilePerm) {
+          const wrogi = Boolean(t && t.controllerId !== view.playerId);
+          if (attachAura) {
+            // Wroga aura: na wroga = miękki removal (wartość skaluje się ciałem
+            // gospodarza), na własnego = katastrofa (przebija każdy zysk).
+            // Aura nie-wroga: zdjęta z wroga i podana nam to podwójny zysk
+            // (wróg traci, my zyskujemy), oddana wrogowi — strata.
+            if (auraIsHostile(auraDef?.aura, auraDef, t)) {
+              s += wrogi ? 55 + (t?.power ?? 0) + (t?.toughness ?? 0) : -80;
+            } else {
+              s += wrogi ? -40 : 30;
+            }
+            return s;
+          }
+          if (t && wrogi && hasHostilePerm) {
             s += 12 + (t.power ?? 0) + (t.toughness ?? 0);
+          }
+          // Przyjazny efekt (buff/pompa/ochrona) skierowany na NASZĄ stronę to
+          // realna korzyść — dotąd 0 pkt, więc remisował z oddaniem go wrogowi
+          // i rozstrzygała kolejność ofert (pomiar: wroga „Brute Force” na
+          // swoim stworze — kandydaci remisowali). Wartość bierzemy z tabeli
+          // efektów przyjaznych (jedno źródło prawdy) i skalujemy ciałem
+          // gospodarza, bo pompka na 1/1 i na 5/5 to nie ta sama mana.
+          if (t && !wrogi) {
+            const przyjazne = retargetEffects
+              .reduce((sum, e) => sum + (FRIENDLY_TARGET_EFFECTS.get(e?.type) ?? 0), 0);
+            if (przyjazne > 0) s += przyjazne + (t.power ?? 0) + (t.toughness ?? 0);
           }
           return s;
         };
@@ -9490,6 +9762,58 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
+        // niż jej awers. CR 702.37a (dosłownie): „You may cast this card as a
+        // 2/2 face-down creature with no text, no name, no subtypes, and no
+        // mana cost by paying {3} rather than paying its mana cost”; permanent
+        // wchodzący zakryty ma te same cechy (CR 708.2a). Koszt czytamy więc
+        // z deskryptora morpha, nie z kosztu karty. Dotąd wycena czytała CIAŁO AWERSU i KOSZT AWERSU dla
+        // obu wariantów, więc „morph” i „twarz” remisowały co do punktu,
+        // a wybór rozstrzygała KOLEJNOŚĆ ofert (pomiar: bot rzucał Willbendera
+        // jako 1/2 także wtedy, gdy morph był oferowany).
+        const morphDef = def?.morph ?? null;
+        // Payoff obrotu = zdolność triggerowana „when this creature is turned
+        // face up” — rozpoznana po deskryptorze (ADR 0002), bez nazw kart.
+        const maPayoffObrotu = (d) => (d?.abilities ?? []).some(
+          (a) => a?.type === 'triggered' && a.trigger?.event === 'turned_face_up',
+        );
+        if (cmd.faceDown && morphDef) {
+          // Rzut twarzą w dół: ciało 2/2 za sam koszt morpha — płatność
+          // {3} dowolną maną, bez pipów kolorów (CR 702.37a). Awers wchodzi w grę dopiero przy
+          // obrocie, więc jego ETB/penalties NIE dotyczą tego rzutu — stąd
+          // osobne rozliczenie zamiast wspólnej ścieżki.
+          let wynik = P.creatureBase
+            + 2 * P.creaturePowerWeight + 2 * P.creatureToughnessWeight;
+          wynik -= P.creatureManaCostWeight * (morphDef.cost ?? 3);
+          if (maPayoffObrotu(def)) wynik += P.morphAmbushPremium;
+          // Anticipacja OGONA liczy się także dla wariantu zakrytego: obrót
+          // należy do planu („ambush”), więc payoff po obrocie (m.in.
+          // `turned_face_up` = przekierowanie celu, waga 0.3 w
+          // `anticipatedTailValue`) jest realny — bez tego rzut twarzą w dół
+          // gubił go względem rzutu twarzą do góry (pin PMSSB10-B2).
+          wynik += anticipatedTailValue(view, def, cmd);
+          return finish(wynik);
+        }
+        if (morphDef && maPayoffObrotu(def)) {
+          // „Tylko w formie morph” (zgłoszenie G): rzut twarzą do góry karty
+          // z payoffem obrotu wypala cały ambush tej karty. Wariant twarzą do
+          // góry jest zdominowany, gdy morph jest oferowany; gdy morphu nie
+          // stać, karta CZEKA — wyjątkiem jest wczesna gra, gdzie 1/2 do
+          // chipowania bije trzymanie karty (właściciel: „chyba że to sam
+          // początek gry i ma tylko 2 lądy”).
+          const morphOferowany = (view.legalCommands ?? []).some(
+            (c) => c.type === 'cast_permanent' && c.objectId === cmd.objectId && c.faceDown,
+          );
+          // Predykat landu jak w `landKeepValue` (L41): widok nie niesie
+          // `types` dla lądów podstawowych — rozpoznajemy je po `kind`.
+          const mojeLądy = (view.zones.battlefield ?? []).filter(
+            (o) => o.controllerId === view.playerId
+              && ((o.kind ?? '') === 'land' || (o.types ?? []).includes('Land')),
+          ).length;
+          if (morphOferowany || mojeLądy > P.morphFaceUpHoldMaxLands) {
+            score -= P.morphFaceUpHoldPenalty;
+          }
+        }
         // AUDYT REMISÓW (tura 6, `tools/bot-tie-audit.mjs`): gałąź wyceniała
         // CIAŁO, ale nie CENĘ — stwór 2/2 za {2} i ten sam 2/2 za {6} miały
         // identyczny wynik, więc przy dwóch stworach w ręce wybór zapadał
@@ -10847,11 +11171,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
+          // PMSSB-62/F2b (L41): „Each opponent loses N life" niesie katalog
+          // jako `lose_life` + `scope: 'each_opponent'` (typ
+          // `lose_life_each_opponent` istnieje wyłącznie jako etykieta logu —
+          // M255/E5), więc obie ścieżki wyceny muszą rozpoznać ZAKRES, nie
+          // tylko typ. Pomiar PRZED: aktywacja Battlefield Buchera za {0}
+          // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
+          // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
+          // wyceny presji na życie obie rodziny mają tę samą skalę.
+          else if (effect.type === 'lose_life'
+            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            score += opponentLifeEffectValue(view, effect);
+          }
           // Batch 56 (energia, CR 122.1): „you get {E}×N" w zdolności
           // AKTYWOWANEJ (np. przyszłe karty Aether) — licznik jest trwałym
           // zasobem, więc ma dodatnią wartość; bez wpisu aktywacja zostałaby
           // na gołej bazie (L50: „akcja bez wyceny").
-          if (effect.type === 'get_energy') score += 2 * (effect.amount ?? 1);
+          // PMSSB-62/F5 (L41): zysk liczników {E} wyceniany tą samą stałą co
+          // ich koszt; kwota DYNAMICZNA (`amountFrom`) liczona z widoku —
+          // `creatures_attacking_you` = atakujący gracza (Sentry Bot).
+          if (effect.type === 'get_energy') score += energyGainValue(view, effect);
           // M103/B (zgłoszenie właściciela): „cel nie może być blokowany"
           // (Enter the Enigma) — ewazja ma wartość WYŁĄCZNIE na własnym
           // atakującym; dana stworowi PRZECIWNIKA to realna strata (wróg
@@ -11264,7 +11603,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // samego efektu i bot spamowałby nią do zera liczników (L3: kara musi
         // przebijać bazowe +2). Wycena po KOSZCIE z deskryptora, nie po nazwie
         // karty (ADR 0002).
-        if (ability?.cost?.energy) score -= 3 * ability.cost.energy;
+        // PMSSB-62 (L41): TEN SAM parametr co koszt opłaty triggera i zysk
+        // `get_energy` — wartość licznika {E} jest jedna dla całego bota.
+        if (ability?.cost?.energy) score -= P.energyCounterValue * ability.cost.energy;
         // PMSSB-34/B — obowiązkowa kontrola procedury: wymiar KOSZTU (b).
         //
         // „5 vs 2 many nie mogą remisować bez uzasadnienia" — tymczasem koszt
@@ -11281,9 +11622,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // liczą koszt w swoim `net` (PMSSB-32/A, M128) — druga kara byłaby
         // podwójnym liczeniem tego samego wymiaru. Kontrola D pinu: Apprentice
         // Wizard zostaje na −4.
-        const abilityManaCost = (ability?.cost?.mana ?? 0) + (ability?.cost?.generic ?? 0);
+        // PMSSB-62/F2: koszt z obniżką (CR 602.2b → 601.2f) — jedno źródło
+        // prawdy z silnikiem (`effectiveAbilityManaCost`); PMSSB-34 wymiar
+        // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
+        const abilityManaCost = abilityManaCostForView(view, abilityObject?.cardId ? cardDef(abilityObject.cardId) : undefined, ability, abilityObject)
+          + (ability?.cost?.generic ?? 0);
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
+        }
+        // Zgłoszenie G/(b) (2026-10-14, Willbender): obrót twarzą do góry to
+        // AKCJA OKIENNA, nie rozwój planszy. Karta z morphem czeka zakryta —
+        // dopóki wróg nie rzuci czaru z JEDNYM celem (wtedy obrót + przekierowanie
+        // to ambush), dopóty obrót oddaje zaskoczenie za nic: zakryty stwór to
+        // 2/2 bez tekstu (CR 702.37a), a awers bywa MNIEJSZY (Willbender
+        // 1/2), więc obrót „dla samego obrotu” to strata. Pomiar PRZED:
+        // 1 z 3 realnych obrotów padł przy PUSTYM stosie (morph spalony),
+        // 0 przy stosie z jednym celem — czyli okno ambushu nie było w ogóle
+        // modelowane. Wartość okna = najlepsze przekierowanie (G-2b:
+        // `retargetValue`), więc tu tylko sygnał „okno otwarte/zamknięte”.
+        const isMorphFlip = Boolean(abilityObject?.faceDown)
+          && (ability?.keyword === 'morph' || abilityEffectTypes.includes('turn_face_up'));
+        if (isMorphFlip) {
+          if (enemySingleTargetSpellOnStack(view)) score += P.morphFlipPayoffBonus;
+          else score -= P.morphFlipNoPayoffPenalty;
         }
         const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
         const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;
@@ -11418,6 +11779,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // B54/s4008: ta rodzina miała wycenę tylko w czarach, aktywacja
           // zostawała na bazie 2 nawet gdy zabijała przeciwnika.
           if (effect.type === 'damage_each_opponent' || effect.type === 'lose_life_each_opponent') {
+            score += opponentLifeEffectValue(view, effect);
+          }
+          // PMSSB-62/F2b (L41): „Each opponent loses N life" niesie katalog
+          // jako `lose_life` + `scope: 'each_opponent'` (typ
+          // `lose_life_each_opponent` istnieje wyłącznie jako etykieta logu —
+          // M255/E5), więc obie ścieżki wyceny muszą rozpoznać ZAKRES, nie
+          // tylko typ. Pomiar PRZED: aktywacja Battlefield Buchera za {0}
+          // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
+          // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
+          // wyceny presji na życie obie rodziny mają tę samą skalę.
+          else if (effect.type === 'lose_life'
+            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
             score += opponentLifeEffectValue(view, effect);
           }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
@@ -12800,6 +13173,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           });
           if (!damageGetsThrough) return finish(-100);
         }
+        // PMSSB-62/F7 (battle cry, L41/PMSSB-43): atak jest ZBIOROWY —
+        // trigger „attacks" NASZYCH atakujących, który pomuje zbiór atakujących
+        // (`buff_attacking_creatures`, np. battle cry CR 702.91a), podnosi
+        // staty tego atakującego w projekcji. Dotąd wycena deklaracji widziała
+        // te legi jako 0, więc dołożenie drugiego atakującego do zestawu nie
+        // dostawało nagrody. Bramki: trigger z `condition`/płatnością pomijamy
+        // (niemodelowane), `excludeSource` wyklucza sam nosiciel (CR 702.91a).
+        const teamAttackPump = (selfId) => {
+          let power = 0;
+          let toughness = 0;
+          for (const sourceId of attackers) {
+            const object = objectOnBoard(view, sourceId);
+            if (!object) continue;
+            const def = cardDef(object.cardId);
+            for (const ability of def?.abilities ?? []) {
+              if (ability?.trigger?.event !== 'attacks') continue;
+              if (ability.trigger.condition != null) continue;
+              if (ability.trigger.payMana != null || (ability.trigger.payColors?.length ?? 0) > 0) continue;
+              const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+              for (const leg of legs) {
+                if (leg?.type !== 'buff_attacking_creatures') continue;
+                if (leg.condition != null) continue;
+                if (leg.excludeSource === true && sourceId === selfId) continue;
+                power += leg.power ?? 0;
+                toughness += leg.toughness ?? 0;
+              }
+            }
+          }
+          return { power, toughness };
+        };
         const enemyLife = enemy(view)?.life ?? 0;
         let score = 0;
         // M188/C (uwaga właściciela): ilu atakujących nie osiąga NICZEGO —
@@ -12830,8 +13233,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const effWeakestBlockerToughness = weakestBlockerToughness === Number.POSITIVE_INFINITY
             ? Number.POSITIVE_INFINITY
             : weakestBlockerToughness + trick.toughness;
-          const power = combatPower(object);
-          const toughness = object.toughness ?? 0;
+          // PMSSB-62/F7: staty atakującego Z DODATKIEM pomp zbiorowych
+          // deklarowanego zestawu (battle cry) — inaczej blotka nie zyskuje
+          // „awansu" na zabójcę blokera i dołożenie jej do ataku wygląda na stratę.
+          const teamPump = teamAttackPump(id);
+          const power = combatPower(object) + teamPump.power;
+          const toughness = (object.toughness ?? 0) + teamPump.toughness;
+          // Obiekt atakującego Z pompą zbiorową: dalsze gałęzie czytają staty
+          // przez `combatObject`, więc porównania (m.in. `lethalDamageOf`)
+          // muszą dostać ten sam, podniesiony obiekt — inaczej pompa znika.
+          const pumpedObject = (teamPump.power !== 0 || teamPump.toughness !== 0)
+            ? { ...object, power, toughness } : object;
           // Wartość ataku jednym stworem: obrażenia, które przejdą, minus
           // strata stwora. Wymiana (power ≥ wytrzymałość blockerów) to
           // realny zysk — bez tego bot nigdy nie atakuje w równą planszę
@@ -12859,7 +13271,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             ? { power: power + (object.combatDamageByToughness ? bbPump.toughness : bbPump.power), toughness: toughness + bbPump.toughness }
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
-            ? object : { ...object, power: blockedStats.power, toughness: blockedStats.toughness };
+            ? pumpedObject : { ...pumpedObject, power: blockedStats.power, toughness: blockedStats.toughness };
           // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
           // z ochroną od koloru atakującego (np. token 1/1 z protection from
           // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —
@@ -13700,7 +14112,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie tylko w antycypacji rzutu nosiciela. Wspólna drabina PMSSB-36
         // daje 1000 za samobójczą płatność (np. 2 życia przy stanie 2).
         const lifePenalty = cmd.pay ? selfLifeLossPenalty(view, cmd.lifeCost ?? 0) : 0;
-        return finish(cmd.pay ? 75 + Math.min(15, reflexiveBenefit) - lifePenalty : 15);
+        // PMSSB-62/F4 (CR 122.1): opłata LICZNIKAMI ENERGII to realny koszt
+        // (zasób trwały — nie znika z końcem tury), a dotąd nie miała żadnego
+        // wymiaru: pomiar PRZED dał 75,0000 vs 15,0000 TAK SAMO dla opłaty
+        // {E}{E}{E} i dla wariantu DARMOWEGO (kontrfakt). Kara liczona z tej
+        // samej stałej co `activate_ability` i zysk `get_energy` (L41).
+        const energyPenalty = cmd.pay
+          ? P.energyCounterValue * (cmd.energyCost ?? 0)
+          : 0;
+        return finish(cmd.pay ? 75 + Math.min(15, reflexiveBenefit) - lifePenalty - energyPenalty : 15);
       }
       case 'resolve_discover_choice': {
         // Geological Appraiser: rzuć bez kosztu albo weź do ręki.

@@ -134,24 +134,24 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `alara` | Alara | WUBRG | 39 | 13 | 26 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 32 | 11 | 21 |
 | `dominaria-wu` | Dominaria (WU) | WU | 29 | 10 | 19 |
-| `eldraine` | Eldraine | WUBRG | 24 | 8 | 16 |
+| `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 41 | 14 | 27 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 30 | 10 | 20 |
 | `innistrad-wu` | Innistrad (WU) | WU | 32 | 11 | 21 |
 | `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
-| `mirrodin-brg` | Mirrodin (BRG) | BRG | 35 | 12 | 23 |
+| `mirrodin-brg` | Mirrodin (BRG) | BRG | 36 | 12 | 24 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 29 | 10 | 19 |
-| `ravnica` | Ravnica | WUBRG | 44 | 15 | 29 |
+| `ravnica` | Ravnica | WUBRG | 45 | 15 | 30 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 35 | 12 | 23 |
-| `the-edge` | The Edge | WUBRG | 23 | 8 | 15 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 36 | 12 | 24 |
+| `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
 | `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 36 | 12 | 24 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
-| `wiedzmin-bg` | Wiedźmin (BG) | BG | 30 | 10 | 20 |
+| `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
 | `zendikar` | Zendikar | WUBRG | 42 | 14 | 28 |
 
@@ -159,10 +159,10 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 29 | 10 | 19 |
+| `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 33 | 11 | 22 |
-| `worek-legend` | Worek: Legendy | WUBRG | 33 | 11 | 22 |
-| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 32 | 11 | 21 |
+| `worek-legend` | Worek: Legendy | WUBRG | 35 | 12 | 23 |
+| `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 33 | 11 | 22 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
 

@@ -10,7 +10,7 @@ import {
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
 import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
-import { countGraveyardCardTypes } from './graveyard-types.js';
+import { countGraveyardCardTypes, isInstantOrSorceryCardInGraveyard } from './graveyard-types.js';
 import { changeLife, setPlayerSpeed } from './players.js';
 // CARD_TYPES (O-2 audytu PR #134, L41): zamknięta lista typów kart (CR 205.2a)
 // ma JEDNO źródło w `permanents.js` — delirium (CR 207.2c), licznik wszystkich
@@ -342,6 +342,10 @@ function canPayTrigger(state, controllerId, trigger, source = null) {
   if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
+  // Batch 67 (Sentry Bot, CR 122.1): „you may pay {E}{E}{E}" — opcjonalna
+  // płatność ENERGII; „You can't pay more energy counters than you have"
+  // (ruling PIP 2024-11-08), więc brak liczników = brak oferty.
+  if ((trigger?.payEnergy ?? 0) > (player.energy ?? 0)) return false;
   return true;
 }
 
@@ -467,13 +471,10 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     // Batch 24 (Mystic Sanctuary): „you may put target instant or sorcery
     // card from your graveyard on top of your library" — karty własnego
     // grobu o typach Instant/Sorcery.
-    return state.zones.graveyard.filter((objectId) => {
-      const object = state.objects.get(objectId);
-      if (!object || object.controllerId !== sourceObject.controllerId) return false;
-      if (!isCardObject(object)) return false; // tokeny nie są kartami (CR 108.2b)
-      const types = object.types ?? [];
-      return types.includes('Instant') || types.includes('Sorcery');
-    });
+    // Batch 67: predykat przeniesiony do liścia `graveyard-types.js` — tę samą
+    // frazę czyta teraz oferta i walidacja celu w `spells.js` (L41).
+    return state.zones.graveyard.filter((objectId) =>
+      isInstantOrSorceryCardInGraveyard(state.objects.get(objectId), sourceObject.controllerId));
   }
   if (spec.type === 'aura_or_equipment_card_in_graveyard' && spec.controlledBy === 'controller') {
     // Batch 53 (Ironclad Slayer, EMN): „return target Aura or Equipment card
@@ -662,12 +663,20 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
     });
   }
   if (spec.type === 'artifact_you_control') {
+    // Audyt PR #164 (A-3): bramka `hexproofBlocked` obejmuje `shroud`
+    // (CR 702.18 — permanent ze shroud nie może być celem czarów ani
+    // zdolności, także własnych),
+    // tak samo jak bliźniacze gałęzie `creature_you_control` (529) i
+    // `land_you_control` (793) po naprawie F-3. Dla własnego celu `hexproof`
+    // nie blokuje (kontroler celu = kontroler źródła), więc zostaje sam
+    // `shroud` — dokładnie ta reguła, której brakowało (L52).
     return state.zones.battlefield.filter((objectId) => {
       const object = state.objects.get(objectId);
       return object && object.zone === 'battlefield'
         && object.controllerId === sourceObject.controllerId
         && (object.kind === 'artifact' || (object.types ?? []).includes('Artifact'))
         && object.id !== sourceObject.id
+        && !hexproofBlocked(object)
         && !protectedBlocked(object);
     });
   }
@@ -1266,6 +1275,9 @@ function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
       payMana: trigger.payMana ?? 0, payLife: trigger.payLife ?? 0,
       payColors: trigger.payColors ?? [],
       payCounter: trigger.payCounter ?? null,
+      // Batch 67 (Sentry Bot): koszt energii w zdarzeniu — log i modal stołu
+      // piszą „{E}{E}{E}", nie „0 many".
+      payEnergy: trigger.payEnergy ?? 0,
     }));
     return;
   }
@@ -1965,7 +1977,8 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
 
 /** Czy trigger ma opcjonalny koszt (mana/życie) — poza sacrificeIfUnpaid. */
 function hasPayCost(trigger) {
-  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0 || Boolean(trigger.payCounter))
+  return ((trigger.payMana ?? 0) > 0 || (trigger.payLife ?? 0) > 0
+    || (trigger.payEnergy ?? 0) > 0 || Boolean(trigger.payCounter))
     && !trigger.sacrificeIfUnpaid;
 }
 

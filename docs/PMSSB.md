@@ -38,6 +38,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
 | batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
+| batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3298,3 +3299,56 @@ Pełne wartości PRZED→PO, zakres L41/S11/M429 i jawne granice:
 [raport PMSSB-61](audits/PMSSB61_BATCH66_2026-10-13.md),
 [plan](plans/PLAN_2026-10-13-pmssb61-batch66.md),
 sonda `tools/pmssb61-batch66-sonda.mjs`.
+
+## PMSSB-62 — jakościowe domknięcie batcha 67 (2026-10-15)
+
+Pełna pętla M429 dla mechanik 10 kart batcha 67. Rodziny już zamknięte dostały
+kontrole dodatnie: Cancel (kontry, PMSSB-5), Artful Maneuver + rebound
+(pump/grant, M96/M173), Intrepid Tenderfoot (liczniki, PMSSB-23), Render
+Speechless (odrzut PMSSB-6 + liczniki PMSSB-23), Spellkeeper Weird (zwroty
+z grobu, PMSSB-36/58 — zmierzony i **przyjęty** jako PMSSB-36: zwrot instantu
+z własnego grobu = 0,0000 i wybrana akcja, powyżej pass). Siedem findingów
+naprawiono w trzech falach kodu; każdy ma pomiar PRZED→PO i pin.
+
+- **B — energia (F4/F5):** jedna wartość licznika {E} dla całego bota
+  (`P.energyCounterValue = 3`, dawna stała z PMSSB-56). Opcjonalna opłata
+  `{E}{E}{E}` w `resolve_optional_pay_choice` dostała realny koszt — PRZED
+  75,0000 vs 15,0000 IDENTYCZNIE dla wariantu płatnego i darmowego (kontrfakt);
+  PO **66,0000** (darmowa nadal 75,0000). Bramka: w puli musi być ≥ koszt
+  (ruling PIP 2024-11-08), więc trigger bez zasobu nie udaje darmowego.
+  `get_energy` z `amountFrom: 'creatures_attacking_you'` liczone z widoku
+  (`combat.attackers` + `defendingPlayerId`) tą samą stałą, także w tabeli ETB
+  (dawny świadomy wyjątek E8 zdjęty). Antycypacja rzutu: 4 własne stwory,
+  0 → 3 liczniki **72,9027 → 77,6277**.
+- **C — obniżki (F2/F3):** `cardCostReductionForView` rozszerzone
+  o `perCreatureAttackingYou`; `abilityManaCostForView` liczy koszt aktywowanej
+  zdolności tak samo jak silnik (`effectiveAbilityManaCost`, wzorzec CR
+  602.2b → 601.2f). Butcher 0/3/5 kart w grobie: **−3,0000 → 5,0000/8,0000/
+  10,0000** (kontrfakt bez obniżki 5,0000 — dowód, że liczy się obniżka, nie
+  baza); Sentry Bot 0/2/4 atakujących: **65,7027/76,5027/83,7027** (kontrfakt
+  74,7027; przy dokładnie 3 manach oferta istnieje WYŁĄCZNIE z obniżką).
+  „Each opponent loses N life" rozpoznawane po ZAKRESIE (`lose_life` +
+  `scope: 'each_opponent'`), nie po typie — typ to tylko etykieta logu (M255/E5).
+- **D — payoffy triggerów (F1/F6/F7):** `you_draw_second_card_each_turn`
+  wyceniany tabelą triggerów-ogona, ale TYLKO przy DOWODZIE drugiego dobrania
+  w widoku (sam nosiciel / rzucalna karta w ręce / własny permanent na stole) —
+  bez dowodu wartość zostaje stara (**59,3964**), z dowodem **65,2464**.
+  Rider `dies` → Food na tokenie Boara używa tej samej miary co ścieżka stwora
+  (`anticipatedDiesValue`), a Food dostał bank życia (`tokenLifeBankValue`:
+  drabina `gainLifeValue` minus koszt {2}); pod presją życia (8) **81,4400 vs
+  79,9400** w kontrfakcie, przy pełnym życiu różnicy NIE MA — i to jest celowe
+  (anty-over-fix). F7 awansowało z „kontroli dodatniej" na finding: battle cry
+  (`buff_attacking_creatures`, CR 702.91a) wchodzi do wyceny DEKLARACJI ataku
+  (`teamAttackPump` + `pumpedObject`); sonda rozstrzygająca (2/2 vs bloker 3/3)
+  **−3,00 → 9,00**, kontrfakt bez battle cry −3,00.
+
+**Piny i bramy:** `test/audyt-pmssb62-batch67.test.js` **12/12** (na kodzie
+sprzed fali: **3/12** — dowód RED→GREEN); fast **8199/8199**; all **8458+**;
+build; kontrakty zdarzeń 0 naruszeń; batch 67 kart 45/45. Golden-master:
+dryf JEDNEJ partii (`dominaria-brg|mirrodin-wu@1000`, `scoreSum` −3,0000,
+decyzje 315→314) — atrybucja wyłącznikami wskazała wyłącznie F1; fixture
+zregenerowany świadomie jako tuning scoringu (nie refaktor), uzasadnienie
+w planie. Pełne wartości i granice:
+[raport PMSSB-62](audits/PMSSB62_BATCH67_2026-10-15.md),
+[plan](plans/PLAN_2026-10-15-pmssb62-batch67.md),
+sonda `tools/pmssb62-batch67-sonda.mjs`.

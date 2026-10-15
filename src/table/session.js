@@ -326,6 +326,9 @@ function defaultBotFactory(seed, ctx) {
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
     cant_block: 'docelowy stwór nie może blokować do końca tury',
+    // Batch67 (Spellkeeper Weird): „{2}, {T}, Sacrifice this creature: Return
+    // target instant or sorcery card from your graveyard to your hand."
+    return_card_from_graveyard_to_hand: 'zwrot karty z grobu na rękę',
     // Batch65 (Zombie Boa): „{1}{B}: Choose a color … destroy that creature.”
     choose_color_grant_block_destroy: 'wybór koloru — zniszczenie stwora tego koloru blokującego w tej turze',
     craft_transform: 'craft — przemiana artefaktu',
@@ -363,6 +366,13 @@ function defaultBotFactory(seed, ctx) {
     // żeby kolejny typ efektu nie wszedł bez opisu (klasa L84).
     conditional: 'efekt warunkowy (zależny od stanu gry)',
     lose_life: 'cel traci życie',
+    // Batch 67 (Battlefield Butcher): „Each opponent loses 2 life." — domyślny
+    // zakres utraty życia to wszyscy przeciwnicy, więc etykieta musi mówić
+    // „każdy przeciwnik", nie „cel" (zdolność nie ma celów).
+    lose_life_each_opponent: 'każdy przeciwnik traci życie',
+    // Batch 67 (Sentry Bot): energia i liczniki na wszystkich własnych stworach.
+    get_energy: 'zdobycie liczników energii',
+    add_counter_to_creatures_you_control: 'licznik na każdym twoim stworze',
     mill_cards: 'mielenie kart do grobu',
     prevent_damage_this_turn: 'niwelowanie obrażeń do końca tury',
     prevent_next_damage: 'zapobieżenie następnym obrażeniom wybranego gracza lub planeswalkera',
@@ -2141,6 +2151,8 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           // składanka co w rendererze przycisku (`resolve_optional_pay_choice`),
           // żeby log i decyzja mówiły o jednym koszcie ({W}{B}, nie {2}).
           parts.push(costSymbols(e.payMana, e.payColors));
+          // Batch 67 (Sentry Bot): koszt energii w logu („{E}{E}{E}").
+          if (e.payEnergy > 0) parts.push('{E}'.repeat(e.payEnergy));
         }
         if (e.payLife) parts.push(`${e.payLife} życia`);
         if (e.payCounter?.counter) parts.push(`usunięciem znacznika ${e.payCounter.counter}`);
@@ -2401,9 +2413,21 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       case 'proliferate_target_resolved': return e.count === 0
         ? `${whoN(e.playerId)} kończy proliferate bez celów`
         : null; // opisuje linia „proliferated"
-      case 'redirect_choice_required': return `${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`;
+      // Zgłoszenie F (2026-10-13, CR 109.5): „your graveyard" w tekście czaru
+      // to grób JEGO KONTROLERA, a nie gracza, który przekierowuje cel —
+      // bez tej informacji lista kandydatów wygląda „na cudzą" i rodzi
+      // wątpliwość, czy to błąd (tak było przy Unbreakable Bond + Willbender).
+      case 'redirect_choice_required': {
+        const kontroler = e.spellControllerId ? whoN(e.spellControllerId) : null;
+        return `${whoN(e.playerId)} może zmienić cel czaru ${nameOf(e.cardId)}`
+          + ' — nowy cel musi być innym legalnym celem'
+          + (kontroler
+            ? `; ograniczenia czaru (np. „your graveyard”) ocenia się z perspektywy jego kontrolera: ${kontroler}`
+            : '');
+      }
       case 'redirect_choice_resolved': return e.toTarget == null
         ? `Cel czaru ${nameOf(e.cardId)} zostaje bez zmian`
+          + (e.unchangedReason === 'no_other_legal_target' ? ' — brak innego legalnego celu (CR 115.7a)' : '')
         : `Cel czaru ${nameOf(e.cardId)} zmienia się na ${isPlayer(e.toTarget) ? whoN(e.toTarget) : nameOfObject(e.toTarget)}`;
       case 'reveal_started': {
         const names = (e.cardIds ?? []).filter(Boolean).map((cid) => nameOf(cid)).join(', ');
@@ -3801,7 +3825,14 @@ export function createSession(config) {
         // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
         // danych, którego używa panel (render.js → session.abilitiesOf).
         const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
-        return isPureManaAbilityCommand(cmd, object, fallback);
+        // Audyt PR #164 (A-1): `state` jest OBOWIĄZKOWYM argumentem — predykat
+        // czyta zdolność przez `activatableAbilities(state, obj)`, które bez
+        // stanu nie widzi warstwy `grantedActivatedAbilities` (statyki nadające
+        // zdolności, `scope.grantsAbilities`). Panel przekazuje `session.state`
+        // (render.js:941), więc auto-pass musi tak samo, inaczej oba czytają
+        // różne listy zdolności (L41) i gracz widzi zatrzymany auto-pass bez
+        // żadnego przycisku w panelu.
+        return isPureManaAbilityCommand(cmd, object, fallback, state);
       },
     });
   }

@@ -184,6 +184,14 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
   assert.ok(w.obrazPotwierdzony >= 458, `potwierdzonych offline co najmniej 458 (zmierzono ${w.obrazPotwierdzony})`);
 });
 
+// Batch 67 (2026-10-14): snapshoty 10 kart nowego batcha są w repo PRZED
+// definicjami (procedura `HOW_TO_ADD_CARD.md` krok 1 — pobór ze Scryfall jest
+// pierwszy; plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md).
+// Do czasu implementacji fal E1–E6 te nazwy są sierotami; lista schodzi do
+// zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
+const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
+]);
+
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {
   const pliki = fs.readdirSync('docs/cards')
     .filter((f) => f.startsWith('scryfall-') && f.endsWith('.json'))
@@ -196,8 +204,9 @@ test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () 
   // (`undercity-dungeon` vs `undercity`). Po przeniesieniu na `scryfall-undercity.json`
   // sierot nie ma; kategorię i cross-checki (set/numer z adresu panelu, UUID, Oracle
   // obu twarzy vs `UNDERCITY_ROOMS`) pilnuje test/obiekty-wsparcia-poza-rejestrem.test.js.
-  assert.deepEqual(pliki.filter((id) => !idy.has(id)), ['undercity'],
-    'poza rejestrem jest wyłącznie snapshot obiektu wsparcia (reszta nazw = id kart, inaczej narzędzie ich nie czyta)');
+  assert.deepEqual(pliki.filter((id) => !idy.has(id)).sort(),
+    [...SNAPSHOTY_BATCH67_W_TOKU, 'undercity'].sort(),
+    'poza rejestrem są wyłącznie snapshot obiektu wsparcia i snapshoty batcha 67 w toku (reszta nazw = id kart, inaczej narzędzie ich nie czyta)');
   assert.ok(snapshot('undercity'), 'plik lochu nazywa się zgodnie z id obiektu wsparcia');
   // Regresja po rename: token Tarmogoyf był zapisany jako `token-tarmogoyf` (myślnik) i przez to
   // niewidoczny dla przeglądu — teraz id i nazwa pliku są zgodne.

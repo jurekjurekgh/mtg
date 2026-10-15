@@ -103,8 +103,9 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // Batch 64 (2026-10-08): +10 pozycji (261, 263, 266, 269, 280, 323, 324,
   // 325, 327, 328) → 563 wiersze; Batch 65 (+329, +332, +333, +334, +336, +338, +340, +341, +348, +350) → 573.
   // Batch 66 (2026-10-13): +10 pozycji (351, 353, 356, 357, 359, 361,
-  // 363, 364, 365, 368) → 583.
-  assert.equal(data.length, 583, 'pełna lista kolekcji po Batchu 66 (583 pozycje, bez STO)');
+  // 363, 364, 365, 368) → 583; Batch 67 fala A (371, 380, 394, 397, 398) → 588;
+  // fala B (369 Improbable Alliance) → 589.
+  assert.equal(data.length, 593, 'pełna lista kolekcji po Batchu 67 (593 pozycji, bez STO)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -174,7 +175,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 64 (2026-10-08): +10 nazw (każda karta ma w kolekcji jeden druk) → 560;
   // Batch 65 (2026-10-10): +10 → 570.
   // Batch 66 (2026-10-13): +10 nowych nazw → 580.
-  assert.equal(dict.size, 580, 'słownik kolekcji po zamknięciu Batcha 66: 580 unikalnych nazw');
+  // Batch 67 fala A (2026-10-14): +5 nazw → 585; fala B (369) → 586.
+  assert.equal(dict.size, 590, 'słownik kolekcji po zamknięciu Batcha 67 fali F: 590 unikalnych nazw');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -218,8 +220,9 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 62 (transza T6: 210 2X2): +1 → 541.
   // Batch 62 (transza T2: 178 EOE, 192 OGW): +2 → 543.
   // Batch 63 (transze T1–T3): +6 kart z artId → 549.
-  // Batch 64 +10 → 563; Batch 65 +10 → 573; Batch 66 +10 → 583.
-  assert.equal(withArt.length, 583, 'wszystkie realne karty i tyły DFC mają artId (zamknięty Batch 66)');
+  // Batch 64 +10 → 563; Batch 65 +10 → 573; Batch 66 +10 → 583;
+  // Batch 67 fala A +5 (371, 380, 394, 397, 398) → 588; fala B +1 (369) → 589.
+  assert.equal(withArt.length, 593, 'wszystkie realne karty i tyły DFC mają artId (Batch 67 fala F)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

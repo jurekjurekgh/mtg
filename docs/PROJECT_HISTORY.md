@@ -19,6 +19,68 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-14 — zgłoszenie G: bot i karta z morphem (PR #165, commit 6f8857b)
+
+**Zadanie właściciela:** bot gra kartą z morphem „jak zwykłym stworzeniem”;
+zgłoszenie prosiło, by (a) rzucał ją tylko w formie morph — z wyjątkiem
+samego początku gry (2 lądy), gdzie może użyć jej jako wczesnego 1/2 — oraz
+(b) trzymał ją zakrytą i czekał z obrotem na celowany czar przeciwnika,
+a potem przekierowywał cel na cel możliwie najgorszy dla przeciwnika.
+
+**Pomiar PRZED (10 seedów, bot vs bot):** teza „twarzą do góry jak tylko ma
+manę” nie potwierdziła się (przy 3+ manach bot wybiera morph), natomiast:
+1 z 3 obrotów padł przy PUSTYM stosie, 0 przy stosie z jednym celem wroga,
+a przekierowań nie było wcale (0). Korzenie: warianty rzutu remisowały co do
+punktu (ciało i koszt awersu dla rzutu twarzą w dół → decydowała kolejność
+ofert), brak polityki okna obrotu, a wycena celu przekierowania nie znała aur
+(`attach_aura` poza `HOSTILE_PERMANENT_EFFECTS`) ani przejęcia przyjaznego
+efektu (wszystkie przyjazne kandydatury = 0 pkt).
+
+**Implementacja (`src/controllers/heuristic-bot.js`, `heuristic-params.js`).**
+Rzut twarzą w dół ma własną wycenę (2/2, płatność {3}, CR 702.37a/708.2a) i
+anticipację ogona; karta z payoffem obrotu czeka na okno, gdy morphu nie
+stać (wyjątek ≤2 lądy); obrót twarzą do góry to akcja okienna (CR 116.2b) —
+kara bez wrogiego czaru z jednym celem (CR 115.7a), premia przy otwartym
+oknie; wycena celu przekierowania liczy wrogość aury deskryptorem (L41) oraz
+wartość przejętego efektu (jedno źródło prawdy: `FRIENDLY_TARGET_EFFECTS`).
+Nowe parametry strategii: `morphAmbushPremium`, `morphFaceUpHoldPenalty`,
+`morphFaceUpHoldMaxLands`, `morphFlipPayoffBonus`, `morphFlipNoPayoffPenalty`.
+
+**Pomiar PO (te same 10 seedów):** morph 4 / twarzą do góry 3 (wszystkie przy
+2 lądach), obroty 2/2 przy stosie z jednym celem i 0 przy pustym, przekierowań
+1 (wrogi buff przejęty na własne stworzenie). Benchmark szybki bez zmian co do
+znaku w każdej parze (ADR 0018).
+
+**Testy i piny.** Nowe: `zgloszenie-g-willbender-morph` (4) i
+`zgloszenie-g-willbender-flip` (5); sześć mutacji czerwonych. Świadomie
+zaktualizowane: pin PMSSB10-B2 (`66.06 → 75.06`, wariant zakryty), M257A1
+(kontrakt płytki `onCast` zamiast pinu przepływu — L181; role talii zamienione,
+żeby rzut morphem szedł ze skryptu, nie z polityki bota) oraz golden-master
+(`bot-scoring-snapshot.json`; zmieniły się wyłącznie partie z kartami
+morph/disguise). Bramy: fast 8147/8147, slow, all **8413/8413**, build
+74 moduły / 5119,8 kB. Źródło CR: mirror `nwgarne/mtg-data`, wydanie
+2026-09-25 (sha256 `8d860e451f20…`); tabela numerów urosła o `116.2b`.
+
+**Pętla jakości (ADR 0021, commit `36f1e25`) — okno ambushu nad realnymi
+partiami.** 45 partii, pary talii z morphem (dominaria-wu/tarkir-wur,
+tarkir-bg/wiedzmin-bg, ravnica/dominaria-wu; seedy 201–215): w 12 decyzjach
+z wrogim wpisem stosu o dokładnie jednym celu i z LEGALNĄ ofertą obrotu bot
+obrócił kartę 7 razy (przekierowanie tam, gdzie cel dało się zmienić),
+a 0 obrotów padło bez okna. Pozostałe 5 passów sprawdzono na klonie stanu:
+przyczyną była kara biblioteczna (okno +25 pkt, a tapnięcie krainy
+zaczarowanej wrogą aurą mielącą −180 pkt przy 14-kartowej bibliotece) —
+pass jest realizacją reguły właściciela z 2026-09-23c („nie tapować przy
+bibliotece < ~30 kart”), nie regresją. Sonda z helperami `simulate` (jak
+`runSimulation`) daje identyczną wycenę, więc lookahead nie jest sprawcą.
+Detektor: 3 nowe testy w `zgloszenie-g-willbender-flip` (okno + płatność
+mieląca cienką bibliotekę → pass; bez aury → obrót; gruba biblioteka →
+obrót), mutacje RED: usunięcie polityki morph, `libraryTapSafeMargin` 30 → 0,
+pominięcie aury mielącej w `tapLibraryLoss`. Uczciwa nota o pokryciu:
+`morphFlipPayoffBonus` nie ma pinu jednostkowego — jest mierzony (bonus 0
+→ 6/12 okien obróconych zamiast 7/12). Bramy: fast 8150/8150, all
+**8416/8416**, M212 3/3.
+Handoff: `docs/setup/HANDOFF_2026-10-14.md`.
+
 ## 2026-10-13 — batch66: kolekcja 351–368, 10 kart (PR #163, M443)
 
 **Zadanie właściciela:** dodać dokładne druki 351 ELD, 353 OGW, 356 OTC,
@@ -16833,3 +16895,213 @@ B65), build **73 moduły / 4997,5 kB**, `cr-numery --cr` OK (518/517/5662).
   `npm run build` **74 moduły / 5106,4 kB**, `cr-numery.mjs --cr` **522/522 OK**,
   `event-contract-audit.mjs` **0 naruszeń**, 5 partii `tools/table-tester/run-game.mjs`
   (`seed` 6601–6605) — **0 zgłoszeń detektorów i 0 niewycenionych akcji bota**.
+
+## 2026-10-13c — Audyt PR #164 i domknięcie ustaleń A-1..A-3 (PR #165)
+
+- **Audyt PR #164 (`9ba2fde..7bd1fcf`, 22 pliki / 3 commity):** pełny przegląd
+  każdego zmienionego pliku (rejestr w raporcie `docs/audits/AUDYT_PR164_2026-10-13.md`)
+  potwierdził wykonanie napraw F-1..F-7 i ujawnił **3 ustalenia (A-1..A-3)**
+  oraz **2 obserwacje (O-1, O-2)**:
+  - **A-1:** `src/table/session.js` — auto-pass (`isManaOnly`) wołał
+    `isPureManaAbilityCommand` bez `state`, więc panel i auto-pass czytały różne
+    listy zdolności (bez stanu znikała warstwa `grantedActivatedAbilities`;
+    L41). Naprawa: 4-argumentowe wywołanie (`fallback, state`) + strażnik J/4
+    (literał) i nowy test J/5 (zachowanie, karty syntetyczne — ADR 0029).
+  - **A-2:** `src/controllers/heuristic-bot.js` — filtr `castableExile`
+    w `linkedManaGrantValue` czytał pola spoza kontraktu `PlayerView`
+    (`playableFromExile`, `onAdventure`, `warpedAtTurn`), gubiąc realne stemple
+    rzutu z wygnania (impuls/plot/madness/rebound/warp/przygoda). Naprawa:
+    filtr po polach rzeczywistej projekcji `waiting` (`playableUntilTurn`,
+    `playableWithoutPaying`, `plotted`, `madnessReady`, `reboundReady`,
+    `warpReady`, `linkedExileCastPermission`, `exiledBy === 'adventure'`) oraz
+    test strony dodatniej (karta w oknie impulsu podnosi wycenę grantu).
+  - **A-3:** `src/engine/triggers.js` — gałąź `artifact_you_control`
+    w `triggerTargetCandidates` bez bramki `hexproofBlocked`, inaczej niż
+    bliźniacze `creature_you_control` / `land_you_control` (CR 702.18: shroud
+    blokuje także zdolności kontrolera; L52, luka utajona). Test z modalem
+    otwartym dwoma legalnymi artefaktami i artefaktem ze shroud (M242:
+    przy jednym kandydacie silnik wybiera automatycznie).
+  - **O-1/O-2:** kolejność etykiet w `waitingCastLabel` (impuls przed
+    `linkedExileCastPermission`) i brak `suspendReady`/`warpedAtTurn`
+    w `PlayerView` — świadomie bez zmian w kodzie (opis w raporcie audytu).
+- **Pętla jakości (kontynuacja sesji):** sonda `tools/probe-phantom-view.mjs`
+  (Proxy na widokach botów; 28 partii na wszystkich 27 taliach) wykryła martwy
+  odczyt `descriptor.locksUntap` w `auraIsHostile` (prawdziwe pole:
+  `doesntUntap`; klasa A-2 — pole nieistniejące w żadnym innym pliku repo).
+  Naprawa usunęła disjunct, a strażnik `test/audyt-pr164-pola-widm.test.js`
+  pilnuje klasy: każde `descriptor.X` w kodzie bota musi należeć do słownika
+  pól normalizowanych przez `registry.js` i `identity.js` (obie warstwy zgodne —
+  L21). Metoda trafiła do `docs/setup/TESTER_STOLU.md` jako „Oś 7 — pola-widma
+  kontraktu `PlayerView`”.
+- **Bramy:** `npm test` **8133/8133** (8131 po A-1..A-3 + 2 strażnika),
+  `npm run test:all` **8399/8399**
+  (12 suite'ów, 0 fail), `npm run build` **74 moduły / 5108,5 kB**,
+  `test/bot-benchmark.test.js` **10/10**, `cr-numery.mjs --cr /tmp/cr.txt`
+  **OK** (523 numery, 522 unikalne w 5719 cytatach; sha256 pliku CR zgodny
+  z tabelą), `event-contract-audit.mjs` **0 naruszeń**, 4 partie Żywym
+  Testerem (`seed` 6611–6614 na taliach z kartami z PR #164) — **0 zgłoszeń
+  detektorów, 0 niewycenionych akcji bota**. Każda naprawa: RED → GREEN,
+  mutacja, osobny commit i push (ADR 0020 C). Pełnego B0 nie uruchamiano
+  (ADR 0018 — brak zlecenia właściciela).
+
+### 2026-10-13c — publikacja na GitHub Pages: wyścig + kumulacja artefaktów po re-runach
+
+- **Objaw (zgłoszenie właściciela):** run 38424779872 (push `7bd1fcf`) padał na
+  `deploy-pages`: „Multiple artifacts named \"github-pages\" … Artifact count is 4".
+- **Diagnoza:** workflow bez zmian od miesięcy, 10 wcześniejszych runów zielonych
+  za pierwszym razem — to nie regresja w repo. Próba 1 padła na wyścigu:
+  `upload-pages-artifact` skończył o 15:50:09, `deploy-pages` startujący
+  15:50:09 nie zobaczył jeszcze świeżego artefaktu w API („No artifacts named …").
+  Każdy kolejny RE-RUN dokładał artefakt o tej samej nazwie w tym samym runie,
+  a `deploy-pages` wymaga dokładnie jednego — po trzech re-runach awaria stała
+  się samopodtrzymująca (`run_attempt: 4`).
+- **Naprawa (w `.github/workflows/pages.yml`):** `actions: write` + sprzątanie
+  artefaktów `github-pages` z poprzednich prób tego runu (przed uploadem) +
+  czekanie na widoczność świeżego artefaktu w API (między uploadem a publikacją,
+  maks. 60 s) + `deploy-pages@v4 → v5` (oficjalny pin szablonu GitHub Pages;
+  v5.0.1 ma backoff/jitter w pollingu). Pozostałe piny zgodne z oficjalnym
+  szablonem (`actions/starter-workflows/pages/static.yml`, pobrany przez API).
+- **Blokada i jej rozwiązanie:** pierwszy push z poprawką został odrzucony
+  („refusing to allow a GitHub App to create or update workflow … without
+  `workflows` permission"), więc powstała jawna konwencja wzorca z regionami
+  `PENDING-UPLOAD` (`docs/setup/workflows/README.md`). Właściciel przyznał Appce
+  uprawnienie `workflows` — naprawa weszła zwykłą drogą PR, a konwencja wzorca
+  została w repo jako bezpiecznik (strażnik nadal porównuje wzorzec z żywym
+  plikiem).
+- **Strażnik:** `test/ci-workflow-tiers.test.js` pilnuje żywego workflowu
+  (obecność `actions: write`, realny `DELETE` na API, kolejność sprzątanie <
+  upload < czekanie < deploy, brak połowicznej protezy). Mutacje: brak
+  `actions: write`, kroki bez uprawnienia, odwrócona kolejność — wszystkie
+  czerwienieją.
+- **Bramy:** `npm test` 8134/8134, `npm run build` 74 moduły / 5108,5 kB;
+  YAML + oba skrypty `run:` zweryfikowane lokalnie, kwerendy `jq` uruchomione
+  na żywym runie.
+
+### 2026-10-13c (ciąg dalszy) — zgłoszenie F: czyj grób obowiązuje przy zmianie celu czaru
+
+- **Zgłoszenie:** po przekierowaniu Willbenderem celu czaru Unbreakable Bond
+  („Return target creature card from **your** graveyard…") stół pokazał karty
+  z grobu przeciwnika; wątpliwość: „czy nie powinienem wybierać z własnego grobu?".
+- **Rozstrzygnięcie (przepisy pobrane literalnie, ADR 0030):** CR 109.5 —
+  „you"/„your" na obiekcie należą do jego kontrolera, więc „your graveyard"
+  to grób kontrolera CZARU (przeciwnika); CR 115.7a — cel wolno zmienić tylko
+  na INNY legalny cel, a gdy takiego nie ma, oryginalny cel zostaje bez zmian.
+  Silnik realizował regułę poprawnie w ofercie i walidacji
+  (`legalTargetCandidates(state, pending.spellControllerId, pending.spec)`);
+  błędna była podpowiedź z AI, że legalność ocenia się z perspektywy gracza
+  przekierowującego.
+- **Bug znaleziony sondą i naprawiony:** gdy w grobie kontrolera czaru nie było
+  innej karty, silnik otwierał decyzję bez żadnej legalnej opcji (w ofercie
+  zostawało „concede", `pass_priority` odrzucany „redirect_unresolved") —
+  partia stała w miejscu. Fix w `accepted()` (wzorzec devour): decyzja bez
+  alternatyw domyka się sama ze zdarzeniem `redirect_choice_resolved`
+  {`toTarget: null`, `auto: true`, `unchangedReason: 'no_other_legal_target'`};
+  kandydatów liczy ten sam predykat co oferta i walidacja. Bez importu
+  `legalTargetCandidates` w efekcie — cykl importów pilnuje
+  `test/module-graph.test.js` (ADR 0011).
+- **Myląca warstwa UI/log:** log mówił tylko „Możesz zmienić cel czaru X", a
+  tytuł decyzji brzmiał „Przekierowanie obrażeń" (pozostałość po innym
+  mechanizmie). Teraz log nazywa kontrolera czaru i regułę, domknięcie bez
+  zmiany mówi o braku innego legalnego celu, a etykieta brzmi „Zmiana celu
+  czaru” (bez nazwy karty — M212/ADR 0002).
+- **Testy i dowody:** `test/zgloszenie-f-willbender-cel-z-grobu-kontrolera.test.js`
+  (4 testy: strażnik CR 109.5, regresja CR 115.7a, teksty logu i tytułu grupy);
+  6 mutacji czerwonych (w tym pierwsza próba wadliwa — `str.replace` trafiał oba
+  pola `spellControllerId`, powtórzona precyzyjnie). Tabela CR zregenerowana
+  z tego samego wydania (sha256 8d860e45…, CR 2026-09-25) — doszedł tylko
+  numer `115.7a`. Bramy: `npm test` 8138/8138, `npm run build` 74 mod / 5111,2 kB.
+
+## 2026-10-14 — Batch 67: kolekcja 369–398, 10 kart (PR #165)
+
+- **Zakres i etapy.** Dziesięć druków z arkusza właściciela (Improbable
+  Alliance ELD, Spellkeeper Weird WAR, Sentry Bot PIP, Artful Maneuver DTK,
+  Battlefield Butcher BRO, Wolf's Quarry ELD, Kuldotha Ringleader MBS, Cancel
+  ALA, Render Speechless SOS, Intrepid Tenderfoot EOE) weszło falami E1–E6;
+  E0 to snapshoty Scryfalla z rulingami, E7 raport talii, E8 dokumentacja
+  i bramy końcowe. Jeden etap = jeden zielony commit + push (ADR 0020).
+- **Mechaniki dodane generycznie (ADR 0002).** Wspólny predykat „instant or
+  sorcery card from your graveyard" (`graveyard-types.js`) dla oferty, walidacji
+  i celów triggerów; tokeny Faerie (1/1 U flying) i Boar (1/1 G) z triggerem
+  śmierci tworzącym Food; battle cry z deskryptorem `excludeSource` (CR 702.91a);
+  obniżka kosztu aktywowanej zdolności za karty-stwory w grobie; obniżka kosztu
+  czaru za każde atakujące nas stworzenie (`attackersAgainstPlayer`); energia —
+  `get_energy` z `amountFrom`, opcjonalna opłata `payEnergy` w triggerze
+  początku walki (CR 122.1) wraz z etykietą przycisku i logiem.
+- **Bugi złapane i naprawione u źródła.** (1) Obniżka Battlefield Buchera
+  liczyła tokeny w grobie — predykat przełączony na `isCardObject`
+  (CR 108.2b). (2) Lista etykiet typów efektów istniała w DWÓCH miejscach
+  (aktywacja bez stosu i ze stosem) — pierwsza próba naprawy jednego z nich
+  zostawiła drugie na starym typie; obie korzystają teraz ze wspólnego
+  `effectTypeLabelsForLog()`. (3) Strażnik cytatów CR wskazał numer nieistniejący
+  w wydaniu („508.4"); poprawna para to CR 508.2 + 117.3d, tabela urosła do 530
+  numerów. (4) Strażnik pokrycia ETB wymusił jawną decyzję o `get_energy`
+  w triggerze wejścia (świadomy wyjątek — wycena wymaga B0, ADR 0018).
+- **Talie.** Generator rozstawił karty planem właściciela: Improbable Alliance
+  i Wolf's Quarry → `eldraine`, Spellkeeper Weird → `ravnica`, Artful Maneuver →
+  `tarkir-wur`, Intrepid Tenderfoot → `the-edge`, Render Speechless →
+  `worek-legend`, Cancel → `worek-mroczny`, Kuldotha Ringleader → `mirrodin-brg`,
+  Battlefield Butcher → `wiedzmin-bg` (30→32), a Sentry Bot — nowy plan
+  „Star Wars" — do `worek-basni` (29→30) wg ADR 0023 §4 (motyw + najmniejsza
+  talia). README i golden-master odświeżone przy każdej fali; pełny raport
+  w planie batcha.
+- **Pętla jakości (ADR 0021).** 15 partii Żywym Testerem na artefakcie
+  `dist/mtg-table.html` (talie z nowymi mechanikami, obie strony stołu, seedy
+  421–456, w tym worek-baśni jako talia bota) — zero zgłoszeń detektorów, zero
+  `[STOP]`, zero niewycenionych ruchów bota; na żywo zadziałały battle cry
+  (Kuldotha Ringleader, 21 wystąpień) i łańcuch Boar → Food (28/18). Tester
+  wykrył dwa kłamstwa kafelka, naprawione u źródła: brak ceny `{E}×3` w opisie
+  triggera Sentry Bota (`describeTriggered` nie znał `payEnergy`) oraz stałe
+  „otrzymaj {E}×1" przy dynamicznym `amountFrom` — oba mają piny (także stronę
+  odwrotną: Shipwreck Moray dalej „×4").
+- **Dowody i bramy.** Batch 67 42/42, fast 8192/8192, all 8458/8458, build
+  74 moduły / 5146,1 kB, `check-card-printings` bez braków (jeden udokumentowany
+  rozjazd), `git diff --check` czysty; szybki benchmark bota 90,6% (609/672).
+  Plan i raport talii:
+  `docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md`; testy kart:
+  `test/real-cards-batch67.test.js`.
+
+## 2026-10-15 — PMSSB-62: jakościowe domknięcie batcha 67 (PR #165)
+
+Zlecenie właściciela: pełna pętla M429 dla mechanik 10 kart batcha 67, z ręcznym
+strojeniem scoringu bota — rodziny już zamknięte dostały kontrole dodatnie
+(Cancel, Artful Maneuver, Intrepid Tenderfoot, Render Speechless, Spellkeeper
+Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja).
+
+- **Fala B (energia, `86a34ae`).** Licznik `{E}` miał trzy różne liczby
+  w trzech miejscach: koszt w `activate_ability` (3, PMSSB-56), zysk
+  `get_energy` (0 — świadomy wyjątek E8) i opcjonalna opłata triggera
+  (`{E}{E}{E}` = ZERO wymiaru: 75,0000 identycznie dla wariantu płatnego
+  i darmowego). Teraz jedna stała `P.energyCounterValue = 3` obsługuje koszt,
+  zysk i opłatę, `energyAmountFromView` liczy kwotę dynamiczną
+  (`creatures_attacking_you`) z widoku, a bramka „w puli ≥ koszt" (ruling PIP
+  2024-11-08) nie pozwala triggerowi udawać darmowego. Opłata: 75,0000 →
+  **66,0000**; antycypacja rzutu przy 4 własnych stworach: 72,9027 → 77,6277.
+- **Fala C (obniżki, `dbdb77d`).** Bot płacił pełny koszt z definicji: Butcher
+  „{5}" mimo {2} albo {0} z silnika, Sentry Bot „{4}{W}" przy czterech
+  atakujących. `cardCostReductionForView` zna teraz `perCreatureAttackingYou`,
+  a `abilityManaCostForView` liczy koszt aktywowanej zdolności jak silnik
+  (CR 602.2b → 601.2f, podłoga = pipy; token nie jest kartą, CR 108.2b).
+  Butcher 0/3/5 kart: −3,0000 → **5,0000/8,0000/10,0000**; Sentry Bot 0/2/4
+  atakujących: **65,7027/76,5027/83,7027** (przy 3 manach oferta istnieje
+  wyłącznie z obniżką). „Each opponent loses N life" czytane po ZAKRESIE
+  (`scope: 'each_opponent'`), nie po typie (M255/E5).
+- **Fala D (payoffy, `d6ed409`).** Trigger drugiej karty w turze
+  (`you_draw_second_card_each_turn`) wchodzi do wyceny, ale tylko przy DOWODZIE
+  drugiego dobrania w widoku (M429: bez dowodu dawna wartość 59,3964; z dowodem
+  65,2464). Rider śmierci tokena (Boar → Food) używa tej samej miary co ścieżka
+  stwora, a Food dostał bank życia — pod presją życia 81,4400 vs 79,9400
+  w kontrfakcie, przy pełnym życiu różnicy nie ma i to jest jawne ograniczenie.
+  F7 awansowało z kontroli dodatniej na finding: battle cry (CR 702.91a) nie
+  wchodził do decyzji ATAKU; `teamAttackPump` + `pumpedObject` dają sondzie
+  rozstrzygającej −3,00 → **9,00** (2/2 zostaje 3/2 i zabija blokera 3/3).
+- **Lekcja o kontrfaktach.** Dwa kontrfakty fali A mutowały ZŁE pole (obniżka
+  Butchera siedzi na `abilities[0]`, a rider tokena w deskryptorze
+  `create_token` czaru) i „udowadniały" brak różnicy, którego nie było —
+  po naprawie oba findingi mają dowód. Zasada na przyszłość: przed mutacją
+  sprawdź, GDZIE pole faktycznie leży.
+- **Dowody i bramy.** `test/audyt-pmssb62-batch67.test.js` **12/12** (RED na
+  kodzie sprzed fali: 3/12); fast **8199/8199** po każdej fali; golden-master:
+  dryf jednej partii (`dominaria-brg|mirrodin-wu@1000`, −3,0000, decyzje
+  315→314) — atrybucja wyłącznikami wskazała wyłącznie F1, fixture
+  zregenerowany świadomie. Plan: `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`;
+  raport: `docs/audits/PMSSB62_BATCH67_2026-10-15.md`; rejestr: `§PMSSB-62`.

@@ -35,6 +35,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 // CR 702.73a — rabat „następny czar [podtyp]" czyta typy stworów przez
 // wspólny predykat (changeling jest każdym typem stworów, także w ręce).
 import { hasCreatureType, effectiveAbilities } from './permanents.js';
+import { attackersAgainstPlayer } from './combat.js';
 
 export function parseManaCost(manaCostStr) {
   if (!manaCostStr) return { generic: 0, colored: [], hybrid: [], phyrexian: [] };
@@ -196,6 +197,13 @@ export function conditionalCostReduction(state, object) {
     const enchantments = controlled()
       .filter((c) => c.kind === 'enchantment' || (c.types ?? []).includes('Enchantment')).length;
     return enchantments * amount;
+  }
+  // Batch 67 (Sentry Bot): „This spell costs {1} less to cast for each creature
+  // attacking you." — obniżka PER stwór atakujący kontrolera czaru, liczona
+  // w chwili rzucania (ruling PIP 2024-11-08: po ogłoszeniu rzutu nikt nie
+  // może zmienić kosztu — dlatego czytamy stan przy kalkulacji, nie później).
+  if (condition.perCreatureAttackingYou) {
+    return attackersAgainstPlayer(state, object.controllerId) * amount;
   }
   if (condition.controlsSubtype != null) {
     const has = controlled().some((c) => hasCreatureType(c, condition.controlsSubtype, state));

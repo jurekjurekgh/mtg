@@ -240,11 +240,16 @@ test('M257B3: sort panelu — pass na górze, Przygoda nadal w grupie czarów', 
 
 function morphGameSession(onCast, { seed = 1 } = {}) {
   const registry = createCardRegistry();
-  // Bot (p2) = tarkir-bg (m.in. Woolly Loxodon, Morph {3}, artId 518 —
-  // karta, którą właściciel zobaczył na warstwie); gracz = warhammer-ubr.
+  // Gracz = tarkir-bg (m.in. Woolly Loxodon, Morph {3}, artId 518 — karta,
+  // którą właściciel zobaczył na warstwie); bot (p2) = warhammer-ubr.
+  // Role zamienione (zgłoszenie G, 2026-10-14): ten test pinuje PŁYTKĘ
+  // `onCast`, więc rzut morphem musi pochodzić od strony sterowanej SKRYPTEM
+  // (pętla zna komendę i jej `faceDown`), a nie od bota — wybór „morph czy
+  // twarzą do góry” jest POLITYKĄ strategii (zmienił się przy okazji
+  // zgłoszenia G) i pin nie może od niej zależeć (L181).
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/warhammer-ubr.txt', 'utf8'), registry).cardIds],
   ]);
   return { registry, session: createSession({ seed, registry, decks, onCast }) };
 }
@@ -257,6 +262,12 @@ test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypł
   // do planu Tarkir, więc tarkir-bg ma kartę więcej i seed 1 przestał rzucać
   // morpha w limicie 400 kroków; L25: „przelosowany po zmianie X”).
   const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 3 });
+  // Oczekiwania per płytka: dla komend zagranych przez skrypt wiemy, czy
+  // rzut był deklarowany twarzą w dół — to jest właściwy kontrakt tej
+  // warstwy („payload zgodny z komendą”), niezależny od tego, JAK gra
+  // potoczyła się dalej (L181: pin przepływu cementował założenie „każdy
+  // rzut karty z morphem jest zakryty”, a to nie jest reguła gry).
+  const oczekiwania = new Map();
   for (let i = 0; i < 400 && session.state.status === 'active'; i += 1) {
     if (session.botPausePending) { session.continueBotPlay(); continue; }
     if (session.artPausePending) { session.continueArtPlay(); continue; }
@@ -264,17 +275,34 @@ test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypł
     const meaningful = view.legalCommands.filter(
       (c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type),
     );
-    const cmd = meaningful[0]
+    // Preferuj wariant twarzą w dół, gdy oba są legalne — dzięki temu partia
+    // faktycznie przechodzi przez rzut morphem (płytka ma co raportować),
+    // a nie przez politykę „morph czy twarz” (ta zmienia się wraz z wyceną).
+    const zakryty = meaningful.find((c) => c.faceDown === true);
+    const cmd = zakryty ?? meaningful[0]
       ?? view.legalCommands.find((c) => c.type === 'pass_priority')
       ?? view.legalCommands.find((c) => c.type !== 'concede');
     if (!cmd) break;
-    if (!session.apply(cmd).ok) break;
+    const przed = calls.length;
+    const wynik = session.apply(cmd);
+    const nowe = calls.slice(przed);
+    if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && nowe.length === 1) {
+      oczekiwania.set(nowe[0], cmd.faceDown === true);
+    }
+    if (!wynik.ok) break;
   }
   const morphCalls = calls.filter((c) => MORPH_IDS.has(c.cardId));
   assert.ok(morphCalls.length > 0, 'w partii rzut morpha się wydarzył (test nie pusty)');
-  for (const call of morphCalls) {
-    assert.equal(call.faceDown, true, `rzut ${call.cardId} twarzą w dół = faceDown:true w payloaddzie onCast`);
+  // Kontrakt warstwy: płytka `onCast` niesie faceDown DOKŁADNIE wtedy, gdy
+  // rzut był deklarowany twarzą w dół.
+  for (const [call, oczekiwane] of oczekiwania) {
+    assert.equal(call.faceDown, oczekiwane,
+      `${call.cardId}: payload faceDown (${call.faceDown}) musi zgadzać się z komendą (${oczekiwane})`);
   }
+  // W partii faktycznie wydarzył się rzut morphem twarzą w dół (test nie jest
+  // pusty — bez tego „wszystkie zgodne” przechodziłoby na samej jawnej grze).
+  assert.ok(morphCalls.some((c) => c.faceDown === true),
+    `w partii jest rzut morphem twarzą w dół (płytki: ${JSON.stringify(morphCalls.map((c) => [c.cardId, c.faceDown]))})`);
   // Reszta (jawne czary/permanenty) — flaga fałszywa, warstwa działa jak dotąd.
   const openCalls = calls.filter((c) => !MORPH_IDS.has(c.cardId));
   assert.ok(openCalls.length > 0, 'jawne rzuty też w payloaddzie (anti-overfix: warstwa nie umarła)');

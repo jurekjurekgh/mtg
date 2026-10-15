@@ -63,6 +63,18 @@ const BATCH9_RELIQUARY_DRAGON_ETB = createAbility({
  * many jest kolorowa (resources.js). Ograniczeń gry nie ma (ADR 0022:
  * pełny Oracle albo `unsupported`).
  */
+/**
+ * Batch 67 (Wolf's Quarry): zdolność drukowanego tokenu Food — „{2}, {T},
+ * Sacrifice this artifact: You gain 3 life." Ta sama zdolność stoi w wpisie
+ * katalogu `token_food` i w deskryptorze `create_token` (M121 porównuje je
+ * semantycznie), więc obie strony czytają JEDNĄ stałą (L41).
+ */
+const BATCH67_FOOD_ABILITY = createAbility({
+  type: ABILITY_TYPE.activated,
+  cost: { mana: 2, tap: true, sacrificeSelf: true },
+  effect: { type: 'gain_life', amount: 3 },
+});
+
 export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'highland-game', name: 'Highland Game', set: 'KTK',
@@ -852,6 +864,41 @@ export const REAL_CARDS = Object.freeze([
     oracleText: 'Flying',
     imageUri: 'https://cards.scryfall.io/large/front/b/9/b9d38c75-c69f-45cd-a745-03ac7513491b.jpg?1783903566',  // tsoc
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Ghirapur Gearcrafter'] },
+  }),
+  // Batch 67 (Improbable Alliance, ELD): drukowany token 1/1 U Faerie z lataniem
+  // (teld 5, `api.scryfall.com/cards/named?exact=Faerie&set=teld`). Reguła
+  // pozostaje inline w efekcie `create_token` (ADR 0002), wpis katalogowy niesie
+  // grafikę Scryfalla (M369 pilnuje, żeby każdy tworzony token miał obraz).
+  defineCard({
+    id: 'token_faerie', name: 'Faerie', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Faerie'], colors: ['U'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/b/c/bcd82cb0-ff4b-4f4d-b3d0-3ac53883b099.jpg?1783932483',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Improbable Alliance'] },
+  }),
+  // Batch 67 (Wolf's Quarry, ELD): drukowany token 1/1 G Boar z triggerem
+  // śmierci tworzącym Food (teld 9). Zdolność jest ZDUBLOWANA w deskryptorze
+  // `create_token` i tutaj — spójności pilnuje M121 (etykieta panelu czyta
+  // rejestr), a grafiki pilnuje M369.
+  defineCard({
+    id: 'token_boar', name: 'Boar', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Boar'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'When this creature dies, create a Food token.',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'dies' },
+        effect: {
+          type: 'create_token', cardId: 'token_food', name: 'Food',
+          kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+          abilities: [BATCH67_FOOD_ABILITY],
+        },
+      }),
+    ],
+    imageUri: 'https://cards.scryfall.io/large/front/3/6/365b2234-c29d-42db-a8e0-80685a4b6434.jpg?1783932482',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Wolf\'s Quarry'] },
   }),
   defineCard({
     id: 'unstable-frontier', name: 'Unstable Frontier', set: 'CON',
@@ -13759,6 +13806,283 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     oracleText: "Sacrifice this creature: Add {C}.", imageUri: "https://cards.scryfall.io/large/front/0/6/06e3f3c1-866c-4214-82e0-dcca2d1aba1e.jpg?1783930237",
     abilities: [SPAWN_TOKEN_ABILITY],
     support: { status: 'token', limitations: ['token — nie można umieścić w talii'] },
+  }),
+
+  // =========================================================================
+  // Batch 67 (10 kart, lista właściciela 2026-10-14) — fala A: istniejące
+  // mechaniki. Dane Scryfall: docs/cards/scryfall-*.json (ADR 0010 §2a);
+  // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md.
+  // =========================================================================
+
+  // 371 Spellkeeper Weird (WAR #69) {2}{U} 1/4 Weird — {2}, {T}, Poświęć:
+  // zwróć wybrany instant/sorcery z WŁASNEGO grobu do ręki. Cel
+  // `instant_or_sorcery_card_in_graveyard` (Batch 67: wspólny predykat
+  // `graveyard-types.isInstantOrSorceryCardInGraveyard` dla oferty, walidacji
+  // i triggerów — do tej pory typ istniał wyłącznie w ścieżce triggerów).
+  defineCard({
+    id: 'spellkeeper-weird', name: 'Spellkeeper Weird', set: 'WAR',
+    types: ['Creature'], subtypes: ['Weird'], colors: ['U'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: '{2}, {T}, Sacrifice this creature: Return target instant or sorcery card from your graveyard to your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/74e42dad-5958-443f-a196-12b3f3e44213.jpg?1783933456',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, sacrificeSelf: true },
+        targets: [{ type: 'instant_or_sorcery_card_in_graveyard', controlledBy: 'controller' }],
+        effect: { type: 'return_card_from_graveyard_to_hand' },
+      }),
+    ],
+    artId: 371, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Brak legalnego celu (pusty grób / same stwory) = zdolności nie da się aktywować — oferta i walidacja liczą ten sam predykat'],
+  }),
+
+  // 380 Artful Maneuver (DTK #4) {1}{W} Instant — +2/+2 do końca tury;
+  // Rebound (CR 702.88). Rebound istniał (Ojutai's Breath) — dane tylko.
+  defineCard({
+    id: 'artful-maneuver', name: 'Artful Maneuver', set: 'DTK',
+    types: ['Instant'], colors: ['W'], manaCost: 2,
+    oracleText: 'Target creature gets +2/+2 until end of turn.\nRebound (If you cast this spell from your hand, exile it as it resolves. At the beginning of your next upkeep, you may cast this card from exile without paying its mana cost.)',
+    imageUri: 'https://cards.scryfall.io/large/front/7/f/7fcaf67e-ba97-4af9-8c47-dbca703cba35.jpg?1783938620',
+    spell: {
+      timing: 'instant',
+      rebound: true,
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'pump', power: 2, toughness: 2 }],
+    },
+    artId: 380, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Rebound działa wyłącznie dla rzutu Z RĘKI (ruling 2015-02-25); rzut z exile po odbiciu już nie odbija — druga karta nie wraca do exile, tylko do grobu'],
+  }),
+
+  // 394 Cancel (ALA #33) {1}{U}{U} Instant — kontr cel czar (CR 701.6; 701.6a:
+  // skontrowany czar idzie do grobu właściciela).
+  defineCard({
+    id: 'cancel', name: 'Cancel', set: 'ALA',
+    types: ['Instant'], colors: ['U'], manaCost: 3,
+    oracleText: 'Counter target spell.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/7/479f56c2-8256-4325-909a-bf460505dbc5.jpg?1783942576',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [{ type: 'counter_spell' }],
+    },
+    artId: 394, plan: 'Amonkhet',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Cel „dowolny czar na stosie" (także czar-stwór/bestow oraz czar aury), ale nie zdolność triggerowana'],
+  }),
+
+  // 397 Render Speechless (SOS #220) {2}{W}{B} Sorcery — wróg odsłania rękę,
+  // WYBIERAJĄCY wskazuje nie-lądu (wybór obowiązkowy, bez „you may" — inaczej
+  // niż Nightsnare), a potem dwa +1/+1 na „up to one target creature".
+  defineCard({
+    id: 'render-speechless', name: 'Render Speechless', set: 'SOS',
+    types: ['Sorcery'], colors: ['B', 'W'], manaCost: 4,
+    oracleText: 'Target opponent reveals their hand. You choose a nonland card from it. That player discards that card.\nPut two +1/+1 counters on up to one target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/5/25bbb1c7-14e8-444f-ab98-e95f50927460.jpg?1783903633',
+    spell: {
+      timing: 'sorcery',
+      targets: [
+        { type: 'opponent' },
+        { type: 'creature', optional: true },
+      ],
+      effects: [
+        { type: 'reveal_hand_choose_discard', mandatory: true },
+        { type: 'add_counter', counter: '+1/+1', amount: 2, targetIndex: 1 },
+      ],
+    },
+    artId: 397, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: ['Wybór nie-lądu jest OBOWIĄZKOWY (brak „you may"); przy pustej ręce lub braku nie-lądów nikt nic nie odrzuca — bez kary „if you don\'t"'],
+  }),
+
+  // 398 Intrepid Tenderfoot (EOE #193) {1}{G} 2/2 Insect Citizen —
+  // {3}: +1/+1 na sobie, tylko jak sorcery (CR 605.1a odpowiednio: timing).
+  defineCard({
+    id: 'intrepid-tenderfoot', name: 'Intrepid Tenderfoot', set: 'EOE',
+    types: ['Creature'], subtypes: ['Insect', 'Citizen'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 2,
+    oracleText: '{3}: Put a +1/+1 counter on this creature. Activate only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/0/809df0ea-deff-47b9-83df-cc1f360d377e.jpg?1783905935',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        timing: 'sorcery',
+        cost: { mana: 3 },
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 398, plan: 'The Edge',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„Activate only as a sorcery" = okno własnej fazy głównej (timing: sorcery na zdolności)'],
+  }),
+
+  // 369 Improbable Alliance (ELD #193) {U}{R} Enchantment — „Whenever you draw
+  // your second card each turn, create a 1/1 blue Faerie creature token with
+  // flying." + „{4}{U}{R}: Draw a card, then discard a card."
+  defineCard({
+    id: 'improbable-alliance', name: 'Improbable Alliance', set: 'ELD',
+    types: ['Enchantment'], colors: ['U', 'R'], manaCost: 2,
+    oracleText: 'Whenever you draw your second card each turn, create a 1/1 blue Faerie creature token with flying.\n{4}{U}{R}: Draw a card, then discard a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/0/4/0461867b-ec35-4d37-a398-5247e06c4afe.jpg?1783932596',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_draw_second_card_each_turn' },
+        effect: [{
+          type: 'create_token', cardId: 'token_faerie', name: 'Faerie',
+          kind: 'creature', power: 1, toughness: 1, colors: ['U'],
+          types: ['Creature'], subtypes: ['Faerie'], keywords: ['flying'], amount: 1,
+        }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 6, colors: ['U', 'R'] },
+        effect: { type: 'draw_then_discard', amount: 1 },
+      }),
+    ],
+    artId: 369, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trigger „drugiej karty w turze” odpala się RAZ na turę (ruling 2019-10-04: nie przy trzeciej/czwartej karcie; dobranie kilku kart jedną komendą też daje jeden wyzwalacz — porządek niesie zdarzenie `card_drawn`)',
+      'ruling: jeśli permanentu NIE BYŁO na polu bitwy w chwili dobrania drugiej karty, zdolność nie odpala w tej turze wcale (m.in. wejście po fakcie)',
+      '„put into hand” bez słowa „draw” nie liczy się jako dobranie (ruling 2019-10-04, CR 121.5)',
+      'zdolność aktywowana to loot: dobranie, potem odrzucenie — wybór odrzucanej karty należy do rzucającego',
+    ],
+  }),
+
+  // 391 Wolf's Quarry (ELD #184) {4}{G}{G} Sorcery — „Create three 1/1 green
+  // Boar creature tokens with "When this token dies, create a Food token.""
+  defineCard({
+    id: 'wolfs-quarry', name: 'Wolf\'s Quarry', set: 'ELD',
+    types: ['Sorcery'], colors: ['G'], manaCost: 6,
+    oracleText: 'Create three 1/1 green Boar creature tokens with "When this token dies, create a Food token." (A Food token is an artifact with "{2}, {T}, Sacrifice this token: You gain 3 life.")',
+    imageUri: 'https://cards.scryfall.io/large/front/5/d/5d21c15f-378e-4abf-992f-9743aa6ab6b8.jpg?1783932600',
+    spell: {
+      timing: 'sorcery',
+      effects: [{
+        type: 'create_token', cardId: 'token_boar', name: 'Boar',
+        kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+        types: ['Creature'], subtypes: ['Boar'], amount: 3,
+        abilities: [createAbility({
+          type: ABILITY_TYPE.triggered,
+          trigger: { event: 'dies' },
+          effect: {
+            type: 'create_token', cardId: 'token_food', name: 'Food',
+            kind: 'artifact', colors: [], types: ['Artifact'], subtypes: ['Food'],
+            abilities: [BATCH67_FOOD_ABILITY],
+          },
+        })],
+      }],
+    },
+    artId: 391, plan: 'Eldraine',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trzy tokeny 1/1 G Boar; każdy ma WŁASNY trigger śmierci → osobny Food za każdego (ruling 2019-10-04 nr 3: jednym Foodem nie zapłacisz dwóch kosztów, ale każdy Boar tworzy SWÓJ Food)',
+      'Food to typ ARTEFAKTU, nigdy typ stworzenia (ruling 1) — token nie jest stworzeniem i nie można go „zjeść” dwa razy',
+      'zwykły czar bez celów: przy pustym stole i tak tworzy trzy Boary (brak „jeśli” / brak wyboru celu)',
+    ],
+  }),
+
+  // 392 Kuldotha Ringleader (MBS #70) {4}{R} 4/4 Giant Berserker — battle cry
+  // (CR 702.91: „Whenever this creature attacks, each OTHER attacking creature
+  // gets +1/+0 until end of turn.") + „This creature attacks each combat if
+  // able." (CR 508.1d — statyczny wymóg ataku, jak Ramroller).
+  defineCard({
+    id: 'kuldotha-ringleader', name: 'Kuldotha Ringleader', set: 'MBS',
+    types: ['Creature'], subtypes: ['Giant', 'Berserker'], colors: ['R'],
+    power: 4, toughness: 4, manaCost: 5, keywords: ['battle_cry'],
+    oracleText: 'Battle cry (Whenever this creature attacks, each other attacking creature gets +1/+0 until end of turn.)\nThis creature attacks each combat if able.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/c/3cda5434-c0a5-4551-8e30-b1923f0001b8.jpg?1783941378',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        keyword: 'battle_cry',
+        trigger: { event: 'attacks' },
+        // `excludeSource` = „each OTHER": CR 702.91a wyłącza sam atakujący.
+        effect: { type: 'buff_attacking_creatures', power: 1, toughness: 0, excludeSource: true },
+      }),
+      // CR 508.1d: wymóg ataku — statyczny deskryptor czytany przez ofertę,
+      // walidację i auto-deklarację (wzorzec Ramroller, `combat.mandatoryAttackerIds`).
+      createAbility({ type: ABILITY_TYPE.static, mustAttack: true }),
+    ],
+    artId: 392, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'battle cry buffuje INNE atakujące stwory (nie siebie) — CR 702.91a; wiele instancji battle cry odpala się osobno (702.91b)',
+      '„attacks each combat if able" to wymóg ataku (CR 508.1d), nie goad: nie nadaje pośpiechu ani nie zmusza do ataku w turze, w której stwór nie może atakować',
+    ],
+  }),
+
+  // 390 Battlefield Butcher (BRO #86) {2}{B} 1/4 Human Soldier — „{5}, {T}:
+  // Each opponent loses 2 life. This ability costs {1} less to activate for
+  // each creature card in your graveyard."
+  defineCard({
+    id: 'battlefield-butcher', name: 'Battlefield Butcher', set: 'BRO',
+    types: ['Creature'], subtypes: ['Human', 'Soldier'], colors: ['B'],
+    power: 1, toughness: 4, manaCost: 3,
+    oracleText: '{5}, {T}: Each opponent loses 2 life. This ability costs {1} less to activate for each creature card in your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/9/0/90c47e31-d4f6-46f3-94b7-1726c4a4a8eb.jpg?1783920096',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 5, tap: true },
+        // Redukcja czyta GRÓB KONTROLERA (nie „twoje stwory na stole") i liczy
+        // KARTY-stwory: token nie jest kartą (CR 108.2b), więc leżący w grobie
+        // token Boar kosztu nie obniża (B67/391 × B67/390).
+        costReduction: { perCreatureCardInGraveyard: true, amount: 1 },
+        effect: { type: 'lose_life', amount: 2, scope: 'each_opponent' },
+      }),
+    ],
+    artId: 390, plan: 'Wiedźmin',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'utrata życia to NIE obrażenia (CR 118.2/120.3): nie da się jej zapobiec ani przekierować, nie odpala triggerów obrażeń',
+      'koszt zdolności ma analog 601.2f przez CR 602.2b — redukcja schodzi wyłącznie z części generycznej i może zejść do {0} (brak pipów kolorowych)',
+      'redukcja liczy KARTY-stwory w grobie kontrolera (CR 108.2b: token nie jest kartą), więc token Boar z Wolf\'s Quarry w grobie nic nie obniża',
+    ],
+  }),
+
+  // 378 Sentry Bot (PIP #24) {4}{W} 2/5 rare Artifact Creature — Robot.
+  // Flash; „This spell costs {1} less to cast for each creature attacking you.";
+  // ETB: „you get {E} for each creature attacking you"; początek walki (twoja
+  // tura): „you may pay {E}{E}{E}. If you do, put a +1/+1 counter on each
+  // creature you control."
+  defineCard({
+    id: 'sentry-bot', name: 'Sentry Bot', set: 'PIP',
+    types: ['Artifact', 'Creature'], subtypes: ['Robot'], colors: ['W'],
+    power: 2, toughness: 5, manaCost: 5, keywords: ['flash'],
+    oracleText: 'Flash\nThis spell costs {1} less to cast for each creature attacking you.\nWhen this creature enters, you get {E} for each creature attacking you.\nAt the beginning of combat on your turn, you may pay {E}{E}{E}. If you do, put a +1/+1 counter on each creature you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/1/b16b0143-3511-4f79-bdb1-1ff7af55f051.jpg?1783912415',
+    // Obniżka kosztu CZARU (ruling PIP 2024-11-08: nie zmienia many ani mana
+    // value — zawsze 5; zmienia tylko kwotę do zapłacenia).
+    costReduction: { amount: 1, condition: { perCreatureAttackingYou: true } },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        // Liczbę bierze się przy ROZSTRZYGNIĘCIU (ruling PIP 2024-11-08).
+        effect: [{ type: 'get_energy', amountFrom: 'creatures_attacking_you' }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        // Opcjonalna płatność energii (CR 122.1) — „you may pay {E}{E}{E}":
+        // brak trzech liczników = brak oferty (ruling: nie można zapłacić
+        // więcej, niż się ma). Efekt odpala tylko po zapłacie („If you do").
+        trigger: { event: 'beginning_of_combat', payEnergy: 3 },
+        effect: {
+          type: 'add_counter_to_creatures_you_control', counter: '+1/+1', amount: 1,
+        },
+      }),
+    ],
+    artId: 378, plan: 'Star Wars',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'obniżka kosztu nie zmienia mana value (ruling PIP 2024-11-08) — karta zawsze ma MV 5 dla efektów liczących koszt',
+      'liczbę atakujących bierze się raz: dla obniżki przy rzucaniu (po ogłoszeniu rzutu nikt nie może zmienić kosztu), dla energii przy rozstrzygnięciu triggera',
+      'płatność {E}{E}{E} jest opcjonalna i nie da się jej „nadpłacić" (jedna decyzja = jeden zestaw liczników)',
+    ],
   }),
 ]);
 

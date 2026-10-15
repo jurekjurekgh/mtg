@@ -90,7 +90,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Kolejność kart na wierzchu',
   resolve_modal_choice: 'Tryb czaru („choose one")',
-  resolve_redirect_choice: 'Przekierowanie obrażeń',
+  resolve_redirect_choice: 'Zmiana celu czaru',
   resolve_proliferate: 'Proliferate (licznik)',
   resolve_hand_top_choice: 'Karta z ręki na wierzch',
   // M166/D (Inferno Titan).
@@ -248,6 +248,15 @@ export const targetTypeLabel = (spec) => {
   // Batch 45 (Assert Perfection): „up to one target creature an opponent
   // controls" — pozycja opcjonalna (jawnie: 'creature_opponent_controls').
   if (type === 'creature_opponent_controls' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  // Batch 67 (Render Speechless): „Put two +1/+1 counters on up to one target
+  // creature" — opcjonalna pozycja jednego stwora (bez ograniczenia kontroli).
+  if (type === 'creature' && spec.optional) return `${base} (do jednego, opcjonalnie)`;
+  // Batch 67 (Spellkeeper Weird): „target instant or sorcery card from YOUR
+  // graveyard" — parametr `controlledBy: 'controller'` mówi CZYJ grób
+  // (ten sam parametr co Mystic Sanctuary w triggerach).
+  if (type === 'instant_or_sorcery_card_in_graveyard' && spec.controlledBy === 'controller') {
+    return `${base} (twój grób)`;
+  }
   if (spec.optional) return `${base} (opcjonalnie)`;
   return base;
 };
@@ -1030,6 +1039,9 @@ export const KEYWORD_LABELS = Object.freeze({
   shroud: 'Shroud (całun — niecelowalny dla nikogo)',
   outlast: 'Outlast (wytrwaj)',
   saddle: 'Saddle (osiodłaj)',
+  // Batch 67 (Kuldotha Ringleader, CR 702.91): battle cry to trigger ataku —
+  // bez etykiety linia keywordów pokazywałaby surowy slug „battle_cry" (M127/L29).
+  battle_cry: 'Battle cry (atak: inne atakujące stwory +1/+0 do końca tury)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
@@ -1211,7 +1223,13 @@ function describeEffect(e, ctx = {}) {
     gain_life_target: () => `cel zyskuje ${lifeCount(e.amount)}`,
     // Batch 56 (energia, CR 122.1): „you get {E}{E}{E}{E}" — etykieta PL dla
     // panelu akcji i kafla (M122/#5 nie przepuszcza typu bez opisu).
-    get_energy: () => `otrzymaj {E}×${e.amount ?? 1} energii`,
+    // Batch 67 / E8 (znalezisko Żywego Testera): kwota z `amountFrom` jest
+    // dynamiczna (liczba stworów atakujących gracza znana dopiero przy
+    // rozstrzygnięciu — ruling PIP 2024-11-08), więc kafel nie może drukować
+    // stałego „×1" (kłamałby przy każdym ataku na nas).
+    get_energy: () => (e.amountFrom === 'creatures_attacking_you'
+      ? 'otrzymaj {E} za każde stworzenie atakujące ciebie'
+      : `otrzymaj {E}×${e.amount ?? 1} energii`),
     remove_counter: () => `usuń licznik ${e.counter}`,
     add_counter: () => `połóż licznik ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`,
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
@@ -1287,7 +1305,14 @@ function describeEffect(e, ctx = {}) {
     buff_creatures_you_control: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla twoich stworów do końca tury`,
     // Batch 51 (Thunderstaff): „Attacking creatures get +1/+0 until end of
     // turn." — bez wpisu panel pokazywałby surowy slug (strażnik M122).
-    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla atakujących stworów do końca tury`,
+    // PMSSB-62/F7 (żywy tester, Kuldotha Ringleader): battle cry (CR 702.91a)
+    // buffuje „each OTHER attacking creature" — deskryptor niesie
+    // `excludeSource: true`, więc opis MUSI mówić „innym", inaczej kafelek
+    // obiecuje premię także samemu atakującemu (kłamstwo kafelka, naprawa
+    // u źródła: Thunderstaff bez `excludeSource` zachowuje dawny tekst).
+    buff_attacking_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla `
+      + (e.excludeSource === true ? 'innych atakujących stworów' : 'atakujących stworów')
+      + ' do końca tury',
     buff_creature_until_end_of_turn: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} do końca tury`,
     // B7: „stwory-lądy" jak w logu mass buffa (było surowe „land creatures").
     buff_land_creatures: () => `${ptPair(e.power ?? 0, e.toughness ?? 0)} dla stworów-lądów do końca tury`,
@@ -1821,6 +1846,22 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   const costs = [];
   if (trigger.payMana > 0) costs.push(costSymbols(trigger.payMana, trigger.payColors));
   if (trigger.payLife > 0) costs.push(`${trigger.payLife} życia`);
+  // Batch 67 / E8 (znalezisko Żywego Testera, Sentry Bot): opcjonalna opłata
+  // LICZNIKAMI ENERGII (CR 122.1) jest ceną warunkującą skutek — kafel bez
+  // tego ukrywał „{E}{E}{E}" i obiecywał darmowy licznik na każdym stworze.
+  if (trigger.payEnergy > 0) costs.push(`{E}×${trigger.payEnergy} energii`);
+  // Batch 67 / pętla jakości E8 (klasa znaleziska Sentry Bota, uogólniona na
+  // cały katalog): koszt LICZNIKA — Kappa Tech-Wrecker „you may remove a
+  // deathtouch counter from it. When you do, …". Kafel obiecywał darmowe
+  // wygnanie artefaktu/zaklęcia, bo lista kosztów znała tylko `payMana`
+  // i `payLife`; oferta/`canPayTrigger`/widok i log licznika znają go od
+  // dawna (regresję pinuje `test/kafel-cena-triggera.test.js`, L29/L31).
+  if (trigger.payCounter?.counter) {
+    const liczba = trigger.payCounter.amount ?? 1;
+    costs.push(`usunięciem ${liczba > 1 ? `${liczba} ` : ''}`
+      + `${polishPluralCount(liczba, 'znacznika', 'znaczników', 'znaczników')} `
+      + trigger.payCounter.counter);
+  }
   const paidEffect = (description) => costs.length > 0 && !trigger.sacrificeIfUnpaid
     ? `${mine ? 'możesz' : 'kontroler może'} zapłacić ${costs.join(' i ')}; jeśli tak, ${description}`
     : description;
@@ -2269,7 +2310,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_aura_host: 'Aura z grobu — kogo zaczaruje?',
   resolve_hand_creature: 'Stwór do położenia obok kosztu',
   resolve_legend_choice: 'Prawo legend — który zostaje?',
-  resolve_redirect_choice: 'Przekierowanie obrażeń',
+  resolve_redirect_choice: 'Zmiana celu czaru',
   resolve_proliferate: 'Proliferate — cel licznika',
   resolve_discard_choice: 'Karta do odrzucenia',
   resolve_hand_top_choice: 'Karta z ręki na wierzch biblioteki',
@@ -3847,6 +3888,8 @@ function commandLabelBase(cmd, session, view) {
         parts.push(manaCostHtml(costSymbols(cmd.cost, cmd.costColors)));
       }
       if (cmd.lifeCost != null && cmd.lifeCost > 0) parts.push(`${cmd.lifeCost} życia`);
+      // Batch 67 (Sentry Bot): koszt energii w licznikach {E} (CR 122.1).
+      if (cmd.energyCost != null && cmd.energyCost > 0) parts.push('{E}'.repeat(cmd.energyCost));
       if (cmd.counterCost?.counter) parts.push(`usunięciem znacznika ${cmd.counterCost.counter}`);
       const price = parts.join(' + ');
       if (!cmd.pay) return `Nie płać${source ? ` (${source} — efekt nie odpali)` : ' — efekt nie odpali'}`;
@@ -5570,7 +5613,11 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // przeciwnikiem — zamiast „?" (sugerującego błąd) pokazujemy „morph".
       const spellName = spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId);
       const label = spell.trigger
-        ? `Trigger: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
+        // Pętla jakości 2026-10-14 (Żywy Tester, a3/b6): stos mówił
+        // „Trigger: …" po angielsku, choć reszta panelu jest po polsku i sam
+        // skaner testera oznacza ten napis jako podejrzaną etykietę
+        // (`tools/table-tester/scan.mjs`). M202/C: bez zapożyczenia „Trigger".
+        ? `Zdolność: ${spell.faceDown ? FACE_DOWN_LABEL : session.nameOf(spell.cardId)} (${TRIGGER_EVENT_LABELS[spell.triggerEvent] ?? spell.triggerEvent ?? 'zdolność'})`
         : `${spellName} (rzuca: ${caster?.name})${targets ? ` → cel: ${targets}` : ''}`;
       const item = div(els.stackZone, 'stack-item', label);
       // Zgłoszenie 2026-08-06 (bug C): karty na stosie są klikalne — tapnięcie
