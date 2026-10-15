@@ -11179,8 +11179,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
           // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
           // wyceny presji na życie obie rodziny mają tę samą skalę.
+          // Audyt PR #165 (B-1, L41): brak `scope` = każdy przeciwnik — tak jak
+          // w silniku (effects.js, `lose_life`) i w etykiecie logu.
           else if (effect.type === 'lose_life'
-            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            && (effect.scope ?? 'each_opponent') === 'each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
           // Batch 56 (energia, CR 122.1): „you get {E}×N" w zdolności
@@ -11789,8 +11791,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
           // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
           // wyceny presji na życie obie rodziny mają tę samą skalę.
+          // Audyt PR #165 (B-1, L41): brak `scope` = każdy przeciwnik — tak jak
+          // w silniku (effects.js, `lose_life`) i w etykiecie logu.
           else if (effect.type === 'lose_life'
-            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            && (effect.scope ?? 'each_opponent') === 'each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
