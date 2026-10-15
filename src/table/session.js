@@ -895,6 +895,16 @@ export function triggerEventLabel(event, sourceController) {
 export const HIDDEN_ZONES = Object.freeze(new Set(['hand', 'library']));
 
 /**
+ * Trasa ruchu karty w tekście wpisu (pętla jakości 2026-10-15c, Clone Shell
+ * „reszta na spód”): biblioteka → biblioteka z `toBottom` to ODŁOŻENIE NA SPÓD,
+ * a nie przesunięcie — napis „biblioteka → biblioteka” był dla gracza bez sensu.
+ */
+export function trasaRuchuStref(e) {
+  if (e.fromZone === 'library' && e.toZone === 'library' && e.toBottom) return 'na spód biblioteki';
+  return `${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+}
+
+/**
  * Czy wpis ruchu bota (modal „Rozgrywka") ma nazwać kartę (M192/Z1 + pętla
  * jakości 2026-10-15c). Przeciwnikowi NIE nazywamy karty, która:
  *   • przesuwa się MIĘDZY strefami ukrytymi (ręka/biblioteka, CR 400.2), albo
@@ -3490,7 +3500,7 @@ export function createSession(config) {
       const movedName = czyNazwacKarteRuchu(e, state, HUMAN_ID)
         ? nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId)
         : 'karta';
-      text = `${who(movedController)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+      text = `${who(movedController)}: ${movedName} — ${trasaRuchuStref(e)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;

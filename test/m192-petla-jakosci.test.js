@@ -89,7 +89,8 @@ function collectMovesAcrossDecks() {
 // ---------------------------------------------------------------------------
 
 test('M192/Z1: modal nie nazywa kart bota przenoszonych MIEDZY strefami ukrytymi', () => {
-  const HIDDEN = /biblioteka → ręka|biblioteka → biblioteka|ręka → biblioteka/;
+  // „na spód biblioteki" (pętla 2026-10-15c) to ten sam ruch biblioteka → biblioteka.
+  const HIDDEN = /biblioteka → ręka|biblioteka → biblioteka|ręka → biblioteka|na spód biblioteki/;
   const leaks = [];
   for (const move of collectBotMoves()) {
     if (!HIDDEN.test(move.text ?? '')) continue;
@@ -124,7 +125,7 @@ test('M192/Z1 (anty-over-fix): WLASNE ruchy gracza miedzy strefami ukrytymi sa n
   // dotyczy wylacznie przeciwnika. Gdyby bramka patrzyla na same strefy
   // (bez kontrolera), gracz przestalby widziec WLASNE karty.
   const moves = collectMovesAcrossDecks().filter((m) => /^Ty: /.test(m.text ?? ''));
-  const ownHidden = moves.filter((m) => /(biblioteka → ręka|ręka → biblioteka|biblioteka → biblioteka)/.test(m.text));
+  const ownHidden = moves.filter((m) => /(biblioteka → ręka|ręka → biblioteka|biblioteka → biblioteka|na spód biblioteki)/.test(m.text));
   assert.ok(ownHidden.length > 0, 'proba musi zawierac wlasne ruchy w strefach ukrytych');
   const anonymous = ownHidden.filter((m) => /: karta —/.test(m.text));
   assert.deepEqual(anonymous.slice(0, 3).map((m) => m.text), [],

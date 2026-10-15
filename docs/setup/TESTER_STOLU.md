@@ -531,7 +531,7 @@ NASTĘPNY wpis; inny trigger wchodzi między nie innymi zdarzeniami.
 
 ### Pętla jakości 2026-10-15c — trzy klasy z partii batcha 67
 
-Partie: talie z kartami batcha 67 (`dec6389`) spoza próbki benchmarku, plus
+Partie: talie z kartami batcha 67 (commit dec63896) spoza próbki benchmarku, plus
 worek-basni (Sentry Bot). Zgłoszenia detektorów były ZERO, a ręczna lektura
 transkryptów znalazła trzy klasy (L27 — ręczna klasa kończy się detektorem):
 
