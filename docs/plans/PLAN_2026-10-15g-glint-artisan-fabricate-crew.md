@@ -68,3 +68,28 @@ Zgłoszenia właściciela (tura 12):
 - [x] GREEN K, potem GREEN L (osobne commity).
 - [x] Testy powiązane, `npm test` rc=0, build rc=0, benchmark bez zmiany.
 - [ ] Push i opis PR #166 przez REST. Bez scalania.
+
+## Korekta L (tura 13 właściciela) — dokładna wartość Crew
+
+Uwaga właściciela: „nie ma sensu tapować stworzenia 5/5, żeby dać crew do Vehicle
+tej samej wielkości lub mniejszemu; jeśli jest kilka możliwości, ma tapować tak,
+żeby w sumie uzyskać dokładną wartość Crew (a nie większą)”.
+
+Poprzednia wersja (malejąco do progu) brała 5/5 sama przy Crew 3. Nowa reguła
+`defaultCrewSubset` (kolejność ważności):
+
+1. Pula: stwory o mocy MNIEJSZEJ niż pojazd (wierzchowiec dla saddle), jeśli same
+   dają wymaganą sumę; inaczej wszystkie kandydaty.
+2. Wybór: najmniejsza nadwyżka ponad N (suma − N), przy remisie najmniej stworów.
+   Liczone DP po sumie mocy (0/1 plecak), deterministycznie.
+3. Wyjście: od najmocniejszych.
+
+Testy: `test/uwaga-k-l-fabricate-crew-2026-10-15.test.js` (L/3–L/8, właściwość
+brute force na 40 zestawach). Przywrócone oczekiwania E2 (2+1 zamiast 5/5;
+Saddle 2 Arynx → 2/2). Mutacja usuwająca regułę puli złapana przez L/8.
+
+Zmierzone: `npm test` 8271/8271 rc=0; build rc=0; `test/bot-benchmark.test.js` 10/10;
+`tools/benchmark.mjs` heurystyka 90,6% (609/672), bez zmiany.
+
+Znana granica: reguła „nie większy niż pojazd” rozstrzyga remisy dokładnych sum;
+przy Bomacie (Crew 3, 5/5) sama dokładna suma już wyklucza 5/5 (nadwyżka 2).
