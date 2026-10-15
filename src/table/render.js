@@ -2445,6 +2445,24 @@ function cardCostHtml(card, cmd = null) {
  * Wyniesione z `commandLabel` (H): ta sama etykieta kosztu obsługuje teraz
  * także tytuły grup zdolności („Piercing Rays: Forecast (koszt {2}{W})").
  */
+/**
+ * I (zgłoszenie testera 2026-10-15, Vampire's Bite): koszt RZUTU z kickerem to
+ * baza + kicker (CR 702.33a; Oracle {B} + kicker {2}{B} = 2BB). Tytuł grupy
+ * czytał sam wydruk („koszt B”), a etykieta pojedynczej opcji już niosła
+ * „koszt B + kicker 2B”. Jedno źródło dla obu: definicja kickera z obiektu
+ * stanu (awaryjnie z katalogu), format jak w `commandLabel`. Bez kickera —
+ * zwykły koszt wydruku.
+ */
+function castCostWithKickerHtml(object, cmd, session) {
+  const base = cardCostHtml(object);
+  if (!cmd?.kicked) return base;
+  const kicker = session?.state?.objects?.get?.(cmd.objectId)?.kicker
+    ?? session?.cardDetails?.(object?.cardId)?.kicker ?? null;
+  if (!kicker) return base;
+  const dodatek = kicker.returnLand ? 'zwrot lądu' : manaCostHtml(costSymbols(kicker.cost, kicker.colors));
+  return `${base} + kicker ${dodatek}`;
+}
+
 function abilityCostHtmlOf(ability) {
   const cost = ability?.cost ?? {};
   const mana = [];
@@ -2727,7 +2745,7 @@ function choiceSourceTitle(cmd, session, view) {
     // Koszt doklejamy tylko wtedy, gdy jest znany (MANA_COSTS/karta) — stuby
     // testowe bez kosztu zachowują dotychczasowe brzmienie.
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    const withCost = kosztZnany ? ` (koszt ${cardCostHtml(object)})` : '';
+    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session)})` : '';
     // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
     // decyzją jest sam TRYB czaru.
     if (!cmd.targets?.length) {
