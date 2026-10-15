@@ -172,6 +172,12 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
  * w tej turze atakowały (ruling PIP 2024-11-08: liczy się stan w chwili
  * rozstrzygnięcia efektu). Jedno źródło dla redukcji kosztu czaru i dla
  * liczby zdobytych liczników energii (L41).
+ *
+ * Granica modelu (audyt PR #165, D-1): walka ma jednego obrońcę (`defendingPlayer`
+ * = „drugi gracz”, `state.combat.defendingPlayerId` wyprowadzany w 1v1, zob.
+ * `combat.js` przy deklaracji). Funkcja NIE filtruje po obrońcy — w grze
+ * wieloosobowej, gdzie atakujący celuje w innego gracza, zwróciłaby za dużo.
+ * Silnik gra dziś wyłącznie 1v1; rozszerzenie wymaga per-atakującego defendera.
  */
 export function attackersAgainstPlayer(state, playerId) {
   const combat = state?.combat;

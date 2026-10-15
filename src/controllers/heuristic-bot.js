@@ -1571,7 +1571,7 @@ function cardCostReductionForView(view, def) {
  * Obsługujemy warunki obecne w katalogu; nieznany warunek zwraca koszt bazowy
  * (anty-over-fix M429: nic nie zgadujemy).
  */
-function abilityManaCostForView(view, def, ability, sourceObject) {
+function abilityManaCostForView(view, ability, sourceObject) {
   const base = ability?.cost?.mana ?? 0;
   const reduction = ability?.costReduction;
   const colored = (ability?.cost?.colors ?? []).length;
@@ -11625,7 +11625,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // PMSSB-62/F2: koszt z obniżką (CR 602.2b → 601.2f) — jedno źródło
         // prawdy z silnikiem (`effectiveAbilityManaCost`); PMSSB-34 wymiar
         // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
-        const abilityManaCost = abilityManaCostForView(view, abilityObject?.cardId ? cardDef(abilityObject.cardId) : undefined, ability, abilityObject)
+        const abilityManaCost = abilityManaCostForView(view, ability, abilityObject)
           + (ability?.cost?.generic ?? 0);
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;

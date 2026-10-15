@@ -61,11 +61,6 @@ function collectManaAmount(effects) {
 }
 
 /**
- * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
- * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
- * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
- */
-/**
  * M255/C1: etykiety efektów dla logu stołu. `lose_life` bez zakresu znaczy
  * „każdy przeciwnik" (CR 119.3), a etykieta bazowa mówi „cel traci życie" —
  * więc zdarzenie niesie klucz `lose_life_each_opponent`, rozwiązany TU, gdzie
@@ -80,6 +75,11 @@ function effectTypeLabelsForLog(effects) {
   }).filter(Boolean);
 }
 
+/**
+ * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
+ * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
+ * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
+ */
 function collectGrantKeywords(effects) {
   const keywords = [];
   for (const effect of effects ?? []) {
