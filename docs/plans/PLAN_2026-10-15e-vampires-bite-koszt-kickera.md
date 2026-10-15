@@ -32,3 +32,10 @@ Data: 2026-10-15. Gałąź: `arena/3a534672-mtg`. PR: #166.
 - Mutacja (helper bez kickera) → test 1 pada.
 - Powiązane (kicker/tytuły grup): 916/916. `npm test`: 8252/8252 rc=0. Build OK.
 - Nie zmieniano gałęzi grup wielotrybowych (`choiceGroupTitle`, „Rzuć: … (koszt)”): żadna karta z kickerem nie ma w niej trybów; przy takiej karcie ta gałąź wymaga osobnego zgłoszenia.
+
+## Korekta (tura 2 zgłoszenia I)
+
+- Gałąź grupy wielotrybowej (`choiceGroupTitle`) naprawiona: kickerCostSuffixOf dla grupy, w której każda opcja jest z kickerem. Test 4/4.
+- Gałęzie Cleave i kosztu X: nie dolicza kickera. Sprawdzone na rejestrze: 4 karty z kickerem, żadna z Cleave, kosztem X ani wieloma trybami. Komentarze w kodzie przy obu gałęziach.
+- Mieszana grupa (kicker i zwykła) zostaje przy wydruku; etykiety opcji rozróżniają warianty.
+- `npm test` 8253/8253 rc=0; powiązane 1067/1067; build OK.
