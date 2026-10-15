@@ -529,6 +529,26 @@ Ascension „zerowy wynik” + osobny pump Akrasan Squire) i produkowało fałsz
 alarmy. Legalny przypadek L24 (efekt mutuje stan bez zdarzenia) ma skutek jako
 NASTĘPNY wpis; inny trigger wchodzi między nie innymi zdarzeniami.
 
+### Pętla jakości 2026-10-15c — trzy klasy z partii batcha 67
+
+Partie: talie z kartami batcha 67 (`dec6389`) spoza próbki benchmarku, plus
+worek-basni (Sentry Bot). Zgłoszenia detektorów były ZERO, a ręczna lektura
+transkryptów znalazła trzy klasy (L27 — ręczna klasa kończy się detektorem):
+
+1. **Slug zdarzenia w modalu** (`reflexive_pay`, Ambulatory Edifice). Etykieta
+   brakowała, a strażnik M122 nie widział literału wieloliniowego
+   (`trigger: Object.freeze({⏎ event:`). Strażnik ma `\s*` między tokenami.
+2. **Zakryta karta przeciwnika nazwana w logu** (manifest Dread → `Cancel —
+   biblioteka → pole bitwy`). Klasa M192/Z1 rozszerzona: zakryte wejście na pole
+   bitwy / wygnanie jest bezimienne (`czyNazwacKarteRuchu`). Grób i odsłonięte
+   karty zostają nazwane.
+3. **Detektor milczał przy slugu z JEDNYM podkreślnikiem** — dodana reguła w
+   `detectRawText` dla linii gracza (poza „Ruch odrzucony”, gdzie kod w nawiasie
+   jest świadomy). Po 12 transkryptach: 2 zgłoszenia, oba realnym przeciekiem.
+
+Kosmetyka odnotowana, nie naprawiona: „Ty: Island — biblioteka → biblioteka” przy
+„reszta na spód” (Clone Shell) — lepiej „na spód biblioteki”.
+
 ## Ograniczenia (ważne)
 
 - **jsdom nie renderuje obrazów ani layoutu** — audyt dotyczy treści DOM

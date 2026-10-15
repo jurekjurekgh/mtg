@@ -19,6 +19,33 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-15c — Pętla jakości: Żywy Tester na taliach batcha 67 (PR #166)
+
+Zlecenie „kontynuuj” → ADR 0021 (domyślna pętla jakości). Plan:
+`docs/plans/PLAN_2026-10-15c-petla-jakosci-zywy-tester.md`.
+
+- **Partie:** 12 (8 na taliach batcha 67 spoza próbki benchmarku + 4 celowane na
+  worek-basni / Sentry Bot). Detektory: 0 zgłoszeń → ręczna lektura (L27).
+- **F-A — `reflexive_pay` w modalu (`99e57cf`).** Ambulatory Edifice pokazał
+  „trigger (reflexive_pay)”. Strażnik M122 nie widział wieloliniowego literału
+  (`trigger: Object.freeze({⏎ event:`). Naprawa: etykieta + regex z `\s*`.
+- **F-B — zakryty manifest/morph przeciwnika nazwany w logu (`39cafe4`).**
+  „Nieprzyjaciel: Cancel — biblioteka → pole bitwy” przy Manifest Dread (partia
+  67008; też 67004 „Supernatural Stamina”). Bramka M192/Z1 działała tylko między
+  strefami ukrytymi. Naprawa: `czyNazwacKarteRuchu` (zakryte wejście na pole
+  bitwy / wygnanie → bezimienne; odsłonięte, grób, własne — nazwane). RED: 3/3
+  po cofnięciu reguły.
+- **F-C — detektor milczał przy slugu z jednym podkreślnikiem (`8936102`).**
+  `SNAKE_CASE_EVENT` wymagał `{2,}`. Nowa reguła: jeden podkreślnik w linii
+  gracza, poza „Ruch odrzucony” (kod w nawiasie jest świadomy, L6) i tokenami.
+  Przebieg po 12 transkryptach: 2 zgłoszenia, oba realnym F-A, zero fałszywych.
+- **Handoff „lose_life bez scope”:** jedna karta (Nightshade Harvester,
+  `applyTo: 'event_player'`) — bez zmiany kodu.
+- **Odnotowane, nie naprawiono:** kosmetyka „biblioteka → biblioteka” przy
+  „reszta na spód” (Clone Shell); energia/Sentry Bot nie wylosowana w grze żywej.
+
+Bramy: `npm test` 8231/8231 (rc=0) po F-C; dokładne wyniki w handoffie.
+
 ## 2026-10-15b — Audyt PR #165 i naprawy A-2 / B-1 (PR #166)
 
 Zlecenie właściciela: „Kontynuujemy projekt.” Zgodnie z ADR 0020 PR #166 otwarty
