@@ -145,12 +145,106 @@ test('L/2: Crew 3, stwory 2/2 i 3/3 → domyślnie sam 3/3 (największy pierwszy
   assert.deepEqual(crewOffers(state, 'barge')[0].crewCreatureIds, ['b']);
 });
 
-test('L/3: Saddle 2 (Trained Arynx), stwory 2/2 i 3/3 → domyślnie sam 3/3 (ta sama kolejność)', () => {
+test('L/3: Saddle 2 (Trained Arynx 3/1), stwory 2/2 i 3/3 → domyślnie 2/2 (nie tapuje stwora tej samej wielkości co mount)', () => {
   const state = game();
   putCard(state, 'ax', 'trained-arynx', 'p1', 'battlefield');
   addCreature(state, 's1', 'p1', 2, 2);
   addCreature(state, 's2', 'p1', 3, 3);
   const offers = playerView(state, 'p1').legalCommands.filter((c) => c.type === 'activate_ability'
     && c.objectId === 'ax' && Array.isArray(c.crewCreatureIds));
-  assert.deepEqual(offers[0].crewCreatureIds, ['s2']);
+  assert.deepEqual(offers[0].crewCreatureIds, ['s1']);
+});
+
+// Reguła właściciela (2026-10-15, tura 13): nie tapuj stwora o mocy RÓWNEJ LUB
+// WIĘKSZEJ niż pojazd, jeśli są inne możliwości; wybierz dokładną wartość Crew,
+// nie większą.
+test('L/4: Bomat 5/5 (Crew 3) — NIE tapuje stwora 5/5, gdy 2/1 + 1/1 dają dokładnie 3', () => {
+  const state = game();
+  putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  addCreature(state, 'big', 'p1', 5, 5);
+  addCreature(state, 'mid', 'p1', 2, 1);
+  addCreature(state, 'small', 'p1', 1, 1);
+  assert.deepEqual(crewOffers(state, 'barge')[0].crewCreatureIds, ['mid', 'small']);
+});
+
+test('L/5: Bomat (Crew 3) — dokładna wartość 1+1+1 = 3 przed nadwyżką 4/4 (4 ≠ 3)', () => {
+  const state = game();
+  putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  addCreature(state, 'four', 'p1', 4, 4);
+  addCreature(state, 'a', 'p1', 1, 1);
+  addCreature(state, 'b', 'p1', 1, 1);
+  addCreature(state, 'c', 'p1', 1, 1);
+  const chosen = crewOffers(state, 'barge')[0].crewCreatureIds;
+  assert.equal(chosen.reduce((sum, id) => sum + state.objects.get(id).power, 0), 3,
+    `suma dokładnie 3 (Crew 3), nie większa: ${chosen}`);
+  assert.ok(!chosen.includes('four'), 'stwór 4/4 nie tapowany dla samej nadwyżki');
+});
+
+test('L/6: Bomat (Crew 3) — jedyna możliwość 5/5 (reszta za mała) → 5/5 nadal domyślna', () => {
+  const state = game();
+  putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  addCreature(state, 'big', 'p1', 5, 5);
+  addCreature(state, 'tiny', 'p1', 2, 2);
+  assert.deepEqual(crewOffers(state, 'barge')[0].crewCreatureIds, ['big'], 'bez alternatywy duże stwory są dostępne');
+});
+
+test('L/7: Bomat (Crew 3) — 3/3 + 2/2 + 2/2: dokładne 3 (sama 3/3), nie 2+2=4', () => {
+  const state = game();
+  putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  addCreature(state, 'x', 'p1', 2, 2);
+  addCreature(state, 'y', 'p1', 2, 2);
+  addCreature(state, 'z', 'p1', 3, 3);
+  assert.deepEqual(crewOffers(state, 'barge')[0].crewCreatureIds, ['z']);
+});
+
+// L (właściwość): dla losowych zestawów stworów domyślna załoga Bomata (Crew 3,
+// pojazd 5/5) ma NAJMNIEJSZĄ nadwyżkę ponad 3 i — przy tej samej nadwyżce —
+// NAJMNIEJ stworów, licząc po wszystkich podzbiorach puli (brute force).
+// Pula: stwory mniejsze niż pojazd, jeśli same dają 3; inaczej wszystkie.
+test('L/prop: domyślna załoga = brute force (nadwyżka, potem liczba stworów), 40 zestawów', () => {
+  let seed = 4613;
+  const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };
+  for (let round = 0; round < 40; round += 1) {
+    const state = game(4700 + round);
+    putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+    const count = 2 + rnd(5);
+    const ids = [];
+    for (let i = 0; i < count; i += 1) {
+      const id = `r${i}`;
+      addCreature(state, id, 'p1', 1 + rnd(5), 2);
+      ids.push(id);
+    }
+    const power = (id) => state.objects.get(id).power;
+    const sum = (list) => list.reduce((acc, id) => acc + power(id), 0);
+    const smaller = ids.filter((id) => power(id) < 5);
+    const pool = sum(smaller) >= 3 ? smaller : ids;
+    let best = null;
+    for (let mask = 1; mask < (1 << pool.length); mask += 1) {
+      const subset = pool.filter((_, i) => (mask >> i) & 1);
+      const total = sum(subset);
+      if (total < 3) continue;
+      const key = [total - 3, subset.length];
+      if (!best || key[0] < best[0] || (key[0] === best[0] && key[1] < best[1])) best = key;
+    }
+    const offers = crewOffers(state, 'barge');
+    if (!best) { assert.equal(offers.length, 0, `round ${round}: brak sumy, brak oferty`); continue; }
+    assert.equal(offers.length, 1, `round ${round}: jedna oferta`);
+    const chosen = offers[0].crewCreatureIds;
+    const got = [sum(chosen) - 3, chosen.length];
+    assert.deepEqual(got, best, `round ${round}: moce ${ids.map(power)} → wybór ${chosen}`);
+  }
+});
+
+// L/8: reguła „nie tapuj stwora równego lub większego od pojazdu” rozstrzyga
+// REMIS dokładnych sum (overshoot 0 obu). Pojazd o mocy 3 (syntetycznie: moc
+// obiektu ustawiona na 3, koszt Crew 3 z karty bez zmian): 3/3 sama i 2/2 + 1/1
+// dają dokładnie 3 — właściciel: nie tapuj stwora tej samej wielkości co pojazd.
+test('L/8: pojazd 3/3 (Crew 3) — remis dokładnych sum: 2+1 zamiast 3/3 tej samej wielkości', () => {
+  const state = game();
+  putCard(state, 'barge', 'bomat-bazaar-barge', 'p1', 'battlefield');
+  state.objects.set('barge', Object.freeze({ ...state.objects.get('barge'), power: 3 }));
+  addCreature(state, 'peer', 'p1', 3, 3);
+  addCreature(state, 'two', 'p1', 2, 2);
+  addCreature(state, 'one', 'p1', 1, 1);
+  assert.deepEqual(crewOffers(state, 'barge')[0].crewCreatureIds, ['two', 'one']);
 });
