@@ -517,13 +517,15 @@ export function upToTargetsPlanOf(commands) {
   const sizes = list.map((cmd) => cmd.targetIds.length);
   const minTargets = Math.min(...sizes);
   const maxTargets = Math.max(...sizes);
-  // Max 1 to zwykły wybór pojedynczego celu (inny kształt komendy) — nie ten plan.
-  if (maxTargets <= 1) return null;
   const targets = [];
   for (const cmd of list) {
     for (const id of cmd.targetIds) if (!targets.includes(id)) targets.push(id);
   }
-  if (targets.length <= maxTargets) return null; // wszyscy kandydaci naraz = brak wyboru
+  // J (uwaga właściciela 2026-10-15, Azorius Justiciar z dwoma przeciwnikami):
+  // NIE wolno tu zwrócić `null`, gdy kandydatów jest ≤ maxTargets albo gdy
+  // największy wariant ma 1 cel. „Up to” daje realny wybór (0, 1 albo 2 z
+  // kandydatów), więc zwrot `null` wrzucał panel w listę podzbiorów — modal
+  // ze wszystkimi permutacjami. Jedyny brak wyboru to pojedyncza opcja.
   return {
     type: list[0].type,
     targets,
