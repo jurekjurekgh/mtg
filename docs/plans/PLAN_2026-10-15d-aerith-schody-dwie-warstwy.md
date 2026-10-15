@@ -34,7 +34,7 @@ enumeruje. Właściciel zlecił dwie warstwy wprost (zgłoszenie H, tura 2).
 3. [x] **Mutacje** — wyłączyć sekcję stun / filtr stuna; testy muszą paść.
 4. [x] **Pełny zestaw** — `npm test > log 2>&1`, powiązane testy kreatora, benchmark
    `node tools/benchmark.mjs` (bez pełnego B0).
-5. [ ] **Dokumentacja** — wpis w opisie PR #166 (wiersz H).
+5. [x] **Dokumentacja** (wiersz H w opisie PR #166) — wpis w opisie PR #166 (wiersz H).
 
 ## Ryzyka
 
