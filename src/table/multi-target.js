@@ -97,6 +97,10 @@ export function multiTargetPlanOf(commands) {
   // dostaje osobną sekcję z lądami; bez niej zatwierdzenie brałoby pierwszy
   // pasujący wariant, czyli ląd wybrany „za gracza".
   const cost = costDimensionOf(list);
+  // H (zgłoszenie testera, Aerith Rescue Mission „Schody”): warstwa 2 —
+  // który z WYBRANYCH celów dostaje stun counter. Wymiar z komend (cele ×
+  // stun), nie z karty (ADR 0002).
+  const stun = stunDimensionOf(list);
 
   // Bez żadnego z dwóch wymiarów to zwykła lista celów (Shock: jedna komenda
   // na cel) — panel pokazuje ją od dawna poprawnie, nie ma czego zastępować.
@@ -135,6 +139,8 @@ export function multiTargetPlanOf(commands) {
     slots,
     // Wymiar kosztu (`costKey`/`costs`/`costLabel`) albo brak pól.
     ...(cost ?? {}),
+    // H: warstwa stuna (`stunKey`/`stunIds`/`stunLabel`) albo brak pól.
+    ...(stun ?? {}),
     // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
     // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
     // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
@@ -209,15 +215,52 @@ function costDimensionOf(list) {
 }
 
 /**
+ * H (zgłoszenie testera 2026-10-15, Aerith Rescue Mission, tryb „Schody”):
+ * wymiar STUNA w grupie wariantów jednego rzutu — `stunTargetId` (CR 701 stun
+ * counter — dokładanie licznika na jednym z wybranych celów). Silnik
+ * enumeruje pary (zbiór celów × stun), a kreator dostaje drugą warstwę
+ * wyboru: najpierw cele (tap), potem jeden z nich dostaje stun. Zwraca
+ * `{ stunKey, stunIds, stunLabel }` albo null, gdy stun nie różnicuje wariantów
+ * (brak pola albo jeden możliwy stun — nie ma czego wybierać).
+ */
+function stunDimensionOf(list) {
+  const stunIds = [];
+  for (const cmd of list) {
+    if (cmd.stunTargetId != null && !stunIds.includes(cmd.stunTargetId)) stunIds.push(cmd.stunTargetId);
+  }
+  if (stunIds.length < 2) return null;
+  return { stunKey: 'stunTargetId', stunIds, stunLabel: 'Stun counter' };
+}
+
+/**
+ * H: kandydaci stuna dla KONKRETNEGO zbioru celów — stuny wariantów o dokładnie
+ * tym zbiorze (kolejność nieistotna, jak w `targetKey`). Pusty zbiór = brak
+ * stuna (pusty wybór nie niesie licznika). Źródło: legalCommands silnika.
+ */
+export function stunCandidatesFor(commands, targets) {
+  const key = targetKey(targets);
+  const out = [];
+  for (const cmd of commands ?? []) {
+    if (!cmd || !Array.isArray(cmd.targets) || cmd.stunTargetId == null) continue;
+    if (targetKey(cmd.targets) !== key) continue;
+    if (!out.includes(cmd.stunTargetId)) out.push(cmd.stunTargetId);
+  }
+  return out;
+}
+
+/**
  * Komenda odpowiadająca zaznaczeniu gracza albo null, gdy taki wybór nie jest
  * legalny. Nie budujemy komendy „z palca" — szukamy jej wśród wariantów, które
  * silnik już uznał za legalne (dlatego nielegalny wybór po prostu jej nie ma).
  */
-export function commandForSelection(commands, { targets = [], xValue = null } = {}) {
+export function commandForSelection(commands, { targets = [], xValue = null, stunTargetId = undefined } = {}) {
   const key = targetKey(targets);
   return (commands ?? []).find((cmd) => {
     if (!cmd || !Array.isArray(cmd.targets)) return false;
     if (targetKey(cmd.targets) !== key) return false;
+    // H: `stunTargetId` podany = wybór stuna z kreatora (null = brak legalnego
+    // stuna dla zbioru → brak komendy). Nie podany = dawne zachowanie.
+    if (stunTargetId !== undefined && (cmd.stunTargetId ?? null) !== stunTargetId) return false;
     if (xValue == null) return true;
     return cmd.xValue === xValue;
   }) ?? null;
