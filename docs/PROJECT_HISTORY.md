@@ -19,6 +19,43 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-15b — Audyt PR #165 i naprawy A-2 / B-1 (PR #166)
+
+Zlecenie właściciela: „Kontynuujemy projekt.” Zgodnie z ADR 0020 PR #166 otwarty
+przed kodowaniem (plan `docs/plans/PLAN_2026-10-15b-audyt-pr165-i-petla-jakosci.md`),
+potem pełny audyt scalonego PR #165 (squash `dec63896`, 81 plików, +6573/−135) —
+raport `docs/audits/AUDYT_PR165_2026-10-15.md`.
+
+- **A-2 (silnik, latentne) — `0754b1b`.** Płatność energią bez pokrycia rzucała
+  wyjątek PO zdjęciu `pendingOptionalPay`, a oferta „zapłać” nie sprawdzała
+  liczników. Teraz: oferta tylko przy pokryciu, komenda bez pokrycia odrzucana
+  PRZED mutacją (`energy_insufficient`). Ścieżka nieosiągalna w zwykłej grze
+  (ponowny `canPayTrigger` w `triggers.js:1251`, bramka decyzji blokuje wydawanie
+  energii) — stąd test wymusza stan. RED 2/3 → GREEN 3/3.
+- **B-1 (bot, latentne) — `1ba3d94`.** `lose_life` bez `scope` był wyceniany na 0
+  (bot czytał tylko jawny zakres), a silnik i log czytają brak zakresu jako
+  `each_opponent`. Martwa gałąź `'opponent'` (nie jest zakresem silnika) usunięta.
+  Katalog: 11/11 użyć ma jawny zakres. RED −3 vs 5 → GREEN równe.
+- **A-1 / C-1 / D-1 (porządek, bez zmiany zachowania) — `486baec`.** Docblock M175
+  wraca do `collectGrantKeywords`; nieużywany parametr `def` usunięty z
+  `abilityManaCostForView`; `attackersAgainstPlayer` dostał zapis granicy 1v1.
+- **Zweryfikowane bez znaleziska:** dane 10/10 kart batcha 67 zgodne z
+  `docs/cards/scryfall-*.json`; redirect Zgłoszenia F (CR 115.7a) i jego
+  auto-zamknięcie; trigger „druga karta w turze” (`drawNumberThisTurn === 2`);
+  obniżki kosztu czaru i zdolności liczone tak samo w silniku i w bocie (token nie
+  jest kartą, CR 108.2b); battle cry `excludeSource` spójny w trzech miejscach;
+  `actions/deploy-pages@v5` istnieje (tag zweryfikowany w API).
+- **Obserwacje (bez zmiany):** E-1 `get_energy` w aktywacjach waży teraz 3 za
+  licznik (L41, dawniej 2) — dryf golden-mastera ograniczony do jednej partii;
+  F-1 `actions: write` na całym jobie Pages (zakres kasowania ograniczony do
+  artefaktów tego runu).
+- **Bramy:** `npm test` **8217/8217**; `node tools/run-tests.mjs all` **8484/8484**
+  (ciche, rc=0); `test/bot-benchmark.test.js` **10/10**; `npm run build`
+  **74 moduły / 5164,8 kB**; `cr-numery --cr` OK; `event-contract-audit` 0 naruszeń.
+  Pełnej macierzy B0 nie uruchamiano (ADR 0018).
+- **Lekcja:** L185 (płatność atomowa: pokrycie przed mutacją; domyślny zakres
+  czytany tak samo wszędzie).
+
 ## 2026-10-14 — zgłoszenie G: bot i karta z morphem (PR #165, commit 6f8857b)
 
 **Zadanie właściciela:** bot gra kartą z morphem „jak zwykłym stworzeniem”;

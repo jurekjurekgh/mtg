@@ -77,7 +77,17 @@ Grupy według ryzyka (przeczytane w całości przed werdyktem):
 
 ## Postęp
 
-- [ ] 1. Plan + PR otwarte
-- [ ] 2. Raport audytu PR #165
-- [ ] 3. Znaleziska (wg raportu)
-- [ ] 4. Bramy końcowe + PROJECT_HISTORY + handoff
+- [x] 1. Plan + PR otwarte (PR #166, `1ef8bba`)
+- [x] 2. Raport audytu PR #165 (`61059d5`)
+- [x] 3. Znaleziska: A-1/C-1/D-1 (`486baec`), A-2 (`0754b1b`), B-1 (`1ba3d94`);
+      E-1/F-1 przyjęte jako obserwacje
+- [x] 4. Bramy końcowe: `npm test` 8217/8217, `run-tests all` 8484/8484,
+      bot-benchmark 10/10, build 74 moduły; PROJECT_HISTORY 2026-10-15b; L185;
+      handoff `HANDOFF_2026-10-15b.md`
+
+## Podsumowanie wykonania
+
+Audyt PR #165 zamknięty werdyktem APPROVE po naprawach. Trzy znaleziska z wagą
+(A-2 defensywna, B-1 latentna, A-1 dokumentacyjna) naprawione osobnymi commitami
+z testami RED→GREEN; cztery pozostałe (C-1, D-1, E-1, F-1) — porządkowe lub
+obserwacje. Następny krok: pętla jakości wg ADR 0021 albo zlecenie właściciela.

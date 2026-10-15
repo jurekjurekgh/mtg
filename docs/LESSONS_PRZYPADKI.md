@@ -3350,3 +3350,51 @@ cast (68,4; z tapniętym 3/3 = 77,4 = ETB 8+2×3); `declare_blockers` → poniż
 passu; `main2` wroga bez ataku → cast. E2E: bot trzyma kartę w main1, rzuca w
 `declare_attackers` i BLOKUJE nią 2/4 — 0 obrażeń w bota. Dowód mutacyjny
 mK1–mK10: każda mutacja wyłącza konkretne testy.
+
+## L185 (2026-10-15) — narracja: audyt PR #165 (A-2, B-1)
+
+- **A-2 (silnik):** `resolve_optional_pay_choice` z `pay: true` przy `energy < payEnergy`
+  rzucał „Niewystarczająca energia” PO `state.pendingOptionalPay = null`; oferta
+  „zapłać” nie sprawdzała liczników. Ścieżka nieosiągalna w zwykłej grze
+  (`canPayTrigger` przy rozstrzyganiu, `triggers.js:1251`; bramka decyzji blokuje
+  wydawanie energii), więc test wymusza stan. Naprawa `0754b1b`.
+- **B-1 (bot):** `lose_life` bez `scope` był wyceniany na 0 (bot czytał tylko jawny
+  zakres), a silnik i log czytają brak zakresu jako `each_opponent`. Martwa gałąź
+  `'opponent'` usunięta. Naprawa `1ba3d94`.
+- Raport: `docs/audits/AUDYT_PR165_2026-10-15.md`.
+
+## L184 (2026-10-10) — narracja: utrata batcha przy resecie sandboxa
+
+Poprzedni agent stracił batch 10 kart — nie zdążył zacommitować przed resetem
+sandboxa. Krok (karta batcha, poprawka) = commit + push od razu (ADR 0020 C/D).
+
+### L73 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+`detectBotSelfHarmOnOwnPermanents` ustalał właściciela celu, parsując snapshoty „MOJE POLA:” / „POLA WROGA:”, a audyt biega z `--quiet`, gdzie w całym pliku jest JEDEN snapshot — detektor był martwy w jedynym trybie, w którym go używano.
+
+### L25 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+— po dołożeniu jednej karty do `decks/green.txt` (dziś nie ma takiej talii — podział kolorów ADR 0023/0024) posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu…
+
+### L37 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+dosypanie lądów ujawniło crash `Error: Nieprawidłowy cel obrażeń` w benchmarku — cel zdolności opuścił pole przed rozstrzygnięciem (CR 608.2b: fizzle); wyszedł dopiero przy `--seeds 16`.
+
+### L159 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+(a) N17 — podmiana bloku `auraCard` dała „WZORZEC NIEZNALEZIONY", a wynik wyglądał jak zielony; (b) N18 — usunięcie `resolve_aura_host` z komend aggro-bota przeszło ZIELONO, bo przy domyślnych wagach wpis był no-opem (nie dlatego, że droga jest osłonowa).
+
+### L160 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+E6/6 (`test/e6-pula-blokerow-ponad-cap.test.js`) czytał regexem
+kształt pola widoku (`buildBlockCandidatesView(...)`); po refaktorze z F14
+(nowy `buildBlockerView` → `{pool, slots}`) pin padł — nie dlatego, że reguła
+się zepsuła, tylko dlatego, że zmienił się literał implementacji.
+
+### L183 — pełny tekst „Przypadek” (przeniesiony z LESSONS.md, 2026-10-15)
+
+Village Bell-Ringer (flash, ETB „untap all creatures you
+control”) był rzucany w KAŻDYM kroku — w Głównej 1 bota i po deklaracji
+blokujących przeciwnika, gdzie wchodzące ciało nie jest już blokerem (CR 509.1a);
+ETB było płaskie 3 (L50/L131 + L48).
+
