@@ -3724,6 +3724,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * G (uwagi właściciela 2026-10-15, Pyxis of Pandemonium): zdolność, która
+   * SYMETRYCZNIE wyjmuje kartę z bibliotek OBU graczy — wygnanie wierzchu
+   * (`each_player_exiles_top_face_down`) i mielenie „each player mills\"
+   * (`mill_both_players`, Ghoulcaller's Bell). Właściciel: każda z dwóch
+   * przesłanek MA BLOKOWAĆ użycie: (a) mamy mniej kart w bibliotece niż
+   * przeciwnik, (b) mamy poniżej 10 kart. Oba prowadzą wprost do śmierci z
+   * braku kart (CR 121.4, 704.5b), więc to TWARDE weto, a nie kara wagowa —
+   * wycena wyścigu z M162/B zostaje jako dodatkowa warstwa powyżej progu.
+   * Klasa po typie efektu (ADR 0002), nie po nazwie karty. Zwraca true = weto.
+   */
+  const SYMMETRIC_DRAIN_EFFECTS = new Set(['each_player_exiles_top_face_down', 'mill_both_players']);
+  const SYMMETRIC_DRAIN_MIN_LIBRARY = 10;
+  const symmetricDrainVeto = (view, cmd) => {
+    if (cmd?.type !== 'activate_ability') return false;
+    const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const abilities = object?.activatableAbilities
+      ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+    const ability = abilities[cmd.abilityIndex ?? 0];
+    const effects = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    if (!effects.some((eff) => SYMMETRIC_DRAIN_EFFECTS.has(eff?.type))) return false;
+    const mojaBiblioteka = myLibraryCount(view);
+    const bibliotekaPrzeciwnika = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+    return mojaBiblioteka < bibliotekaPrzeciwnika || mojaBiblioteka < SYMMETRIC_DRAIN_MIN_LIBRARY;
+  };
+
+  /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
@@ -9097,6 +9123,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // `libraryDrainTax`), a kara należy się wariantowi niezależnie od ścieżki.
     const libraryTax = libraryDrainTax(view, cmd);
     const finish = (score) => weightedScore(cmd.type, score - wardTax - libraryTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
+    // G (uwagi właściciela 2026-10-15): weto symetrycznego drenażu bibliotek —
+    // Pyxis / Ghoulcaller's Bell przy mniejszej bibliotece niż przeciwnik lub <10 kartach.
+    if (symmetricDrainVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
