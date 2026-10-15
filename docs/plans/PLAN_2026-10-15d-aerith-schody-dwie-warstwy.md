@@ -22,19 +22,19 @@ enumeruje. Właściciel zlecił dwie warstwy wprost (zgłoszenie H, tura 2).
 
 ## Etapy
 
-1. **RED** — `test/uwaga-h-aerith-schody-dwie-warstwy-2026-10-15.test.js`:
+1. [x] **RED** — `test/uwaga-h-aerith-schody-dwie-warstwy-2026-10-15.test.js`:
    - plan niesie `stunKey`, `stunIds`; `stunCandidatesFor(commands, targets)`
      zwraca stuny dla zbioru celów;
    - `commandForSelection(..., { targets, stunTargetId })` wybiera wariant ze stunem;
    - kreator (mini-DOM): warstwa 1 = cele (ptaszki), warstwa 2 = radio stunów, wiersze
      poza wybranymi celami wyłączone; `Zatwierdź` gaśnie bez stuna; zatwierdzenie
      oddaje komendę z wybranym stunem.
-2. **GREEN** — `multi-target.js` (`stunKey`, `stunCandidatesFor`, `commandForSelection`
+2. [x] **GREEN** — `multi-target.js` (`stunKey`, `stunCandidatesFor`, `commandForSelection`
    z `stunTargetId`), `choice-request.js` (sekcja stun, `setDisabled`, status).
-3. **Mutacje** — wyłączyć sekcję stun / filtr stuna; testy muszą paść.
-4. **Pełny zestaw** — `npm test > log 2>&1`, powiązane testy kreatora, benchmark
+3. [x] **Mutacje** — wyłączyć sekcję stun / filtr stuna; testy muszą paść.
+4. [x] **Pełny zestaw** — `npm test > log 2>&1`, powiązane testy kreatora, benchmark
    `node tools/benchmark.mjs` (bez pełnego B0).
-5. **Dokumentacja** — wpis w opisie PR #166 (wiersz H).
+5. [ ] **Dokumentacja** — wpis w opisie PR #166 (wiersz H).
 
 ## Ryzyka
 
@@ -43,3 +43,11 @@ enumeruje. Właściciel zlecił dwie warstwy wprost (zgłoszenie H, tura 2).
 - Pusty wybór celów (0) to legalny wariant bez stuna — warstwa 2 nie blokuje go.
 - Wiersze stun muszą mieć stabilne `id` (obiekty), a status nie może mylić warstw.
 - Nie podnosić progu budżetu LESSONS; wpis lekcji tylko, jeśli zmieni się reguła.
+
+## Wykonanie (2026-10-15)
+
+- RED: 5/7 testów pada (`.arena/red-h.log`); 2 strażniki (plan bez stuna, jeden kandydat) przechodzą od początku.
+- GREEN: 7/7 (`.arena/green-h.log`). Zmiany: `src/table/multi-target.js` (`stunDimensionOf`, `stunCandidatesFor`, `commandForSelection({stunTargetId})`), `src/table/choice-request.js` (warstwa stuna, wyłączanie wierszy, status, nagłówki).
+- Mutacje m1–m4 (plan, dopasowanie, komenda, wyłączanie): każda łapie test (`.arena/mut-h.log`).
+- Powiązane kreatora: 571/571 (`.arena/related-h.log`). `npm test`: 8248/8248 rc=0 (`.arena/tests-fast-h.log`).
+- Silnik bez zmian. Nagłówek warstwy 1 jest neutralny („Cele (zaznacz 0–3)”): kod generyczny nie zna efektu tapowania; efekt opisuje tekst karty w intro.
