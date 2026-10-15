@@ -24,7 +24,7 @@ numery to **kotwice** — żaden nie znika (cytowany w kodzie).
 |---|---|---|
 | Jawna lista pól gubi dane (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
 | Weryfikacja mutacyjna: dowód, że test/detektor działa | **L13** | L61, L70, L114 |
-| Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83 |
+| Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83, L186 |
 | Zero zgłoszeń detektorów to pomiar narzędzia | **L27** | L40, L73, L75 |
 | Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
 | Choke point istnieje, ale ścieżka go omija | **L107** | L109, L110, L112, L113 |
@@ -1291,10 +1291,8 @@ bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość k
 (blokowałaby wcześniejszą decyzję). Predykat blokady jest jeden i wołają go OBIE
 strony. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28), a martwy
 wartownik (mutacja nie czerwieni) idzie do usunięcia, nie do „dokumentacji
-zamiaru" (L5). Nowy `pending*` ma SIEDEM bramek do zmutowania: oferta po
-wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole
-w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja
-przy wykonaniu (CR 608.2b) — pin ścieżki „szczęśliwej" zostawia pięć żywych.
+zamiaru" (L5). Nowy `pending*` ma SIEDEM bramek do zmutowania (lista: narracja, pkt 8);
+pin ścieżki „szczęśliwej" zostawia pięć żywych.
 
 **Strażnik:** `test/audyt-pr130-gospodarz-aury.test.js` + piny trzech miejsc oferty/walidacji.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L48)
@@ -2333,3 +2331,11 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 **Strażnik:** `test/audyt-pr165-energia-zaplata-atomowa.test.js`, `test/audyt-pr165-zakres-utraty-zycia.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L185)
+
+## L186 (2026-10-15) — Strażnik mierzy regułę, nie tekst: regexy tolerują białe znaki i jeden podkreślnik
+
+**Przypadek:** etykieta `reflexive_pay` brakowała w logu; wieloliniowy literał (`Object.freeze({⏎ event:`) ominął strażnik M122; slug z jednym podkreślnikiem przeszedł detektor.
+**Reguła:** regexy strażników i skanerów literałów mają `\s*` między tokenami i łapią slug z jednym podkreślnikiem (`SNAKE_CASE_ONE`). → Klasa i reguła: [L5].
+**Strażnik:** `test/card-sources-guard.test.js` (M122), `tools/table-tester/detectors.mjs` (`SNAKE_CASE_ONE`).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L186)

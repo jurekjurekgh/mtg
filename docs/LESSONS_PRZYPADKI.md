@@ -3351,6 +3351,23 @@ passu; `main2` wroga bez ataku → cast. E2E: bot trzyma kartę w main1, rzuca w
 `declare_attackers` i BLOKUJE nią 2/4 — 0 obrażeń w bota. Dowód mutacyjny
 mK1–mK10: każda mutacja wyłącza konkretne testy.
 
+## L186 (2026-10-15) — narracja: pętla jakości, partia 67006
+
+- **Objaw (Żywy Tester, partia 67006, the-edge × mirrodin-brg):** modal Ambulatory
+  Edifice pokazał graczowi „trigger (reflexive_pay)” — surowy slug zdarzenia.
+  Detektor Osi 2 milczał (ZERO zgłoszeń, L27).
+- **Przyczyna 1 (strażnik):** test M122 (`card-sources-guard`) skanował literały
+  `trigger: { event: '…'` tylko w jednej linii. Literał w `game-state.js` jest
+  wieloliniowy (`trigger: Object.freeze({⏎ event: …`), więc strażnik go nie widział,
+  mimo komentarza o skanowaniu całego `src/engine`. Naprawa: regex z `\s*` między
+  tokenami, etykieta „refleks po zapłacie (when you do)” (CR 603.12). Commit `99e57cf`.
+- **Przyczyna 2 (detektor):** `SNAKE_CASE_EVENT` wymagał dwóch podkreśliników, więc
+  `reflexive_pay` i `illegal_land` przechodziły. Nowa reguła `SNAKE_CASE_ONE`
+  obejmuje jednopodkreślnikowe slugi w liniach LOG/ROZGRYWKA, poza „Ruch odrzucony”
+  (tam kod w nawiasie jest świadomy, L6). Commit `8936102`.
+- **Wniosek:** literał pisany wieloliniowo i slug z jednym podkreślnikiem to dwie
+  luki tej samej klasy co L5 (strażnik mierzy tekst, nie regułę).
+
 ## L185 (2026-10-15) — narracja: audyt PR #165 (A-2, B-1)
 
 - **A-2 (silnik):** `resolve_optional_pay_choice` z `pay: true` przy `energy < payEnergy`
