@@ -557,8 +557,14 @@ function abilityEffectIsNoOp(state, source, ability, target) {
  * creatures you control with total power N or greater: This permanent
  * becomes saddled until end of turn. Activate only as a sorcery."
  *
- * Default = zachłannie najsłabsze (rosnąco po mocy, remis po kolejności pola
- * bitwy): tapuje chaff, zostawia atakujących. Deterministyczny (ADR 0005).
+ * Default = zachłannie NAJMOCNIEJSZE (malejąco po mocy, remis po kolejności
+ * pola bitwy), aż do progu. Zgłoszenie właściciela (2026-10-15, Bomat Bazaar
+ * Barge, Crew 3): przy 1/1, 1/1, 2/1 startowe rosnąco brało trzy stwory
+ * (moc 4), a właściwe 2/1 + 1/1 (moc 3) to dwa — najmniej stworów tapowanych
+ * na załogę. Zachłanność malejąca daje najmniejszą liczbę stworów (suma
+ * k największych jest maksymalna dla każdego k). Konsekwencja: przy 5/5 i
+ * małych stworach domyślnie tapowana jest sama 5/5; wybór ręczny w kreatorze
+ * zostaje. Deterministyczny (ADR 0005).
  * Stwory o mocy 0 POMIJANE — dokładają tap za nic (A3: „tapnij Wizard
  * (0 power), Hero" — Wizard był czystą stratą; każdy legalny podzbiór z zerem
  * jest legalny i bez niego, więc pominięcie nigdy nie gubi oferty).
@@ -572,7 +578,7 @@ function defaultCrewSubset(state, crewableIds, neededPower) {
   const powerOf = (id) => effectivePower(state.objects.get(id), state) ?? 0;
   const ordered = [...crewableIds]
     .filter((id) => powerOf(id) > 0)
-    .sort((a, b) => powerOf(a) - powerOf(b));
+    .sort((a, b) => powerOf(b) - powerOf(a));
   const totalPower = ordered.reduce((sum, id) => sum + powerOf(id), 0);
   if (totalPower < neededPower) return null;
   const out = [];

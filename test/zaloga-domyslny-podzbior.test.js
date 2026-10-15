@@ -77,7 +77,12 @@ function crewOffers(state, playerId, objectId) {
     && c.objectId === objectId && Array.isArray(c.crewCreatureIds));
 }
 
-test('E2/1: Irontread Crusher (Crew 3) — JEDNA oferta, default najsłabszy minimalny', () => {
+// L (zgłoszenie właściciela 2026-10-15, Bomat): domyślna załoga startuje od
+// NAJMOCNIEJSZYCH (malejąco), nie od najsłabszych — stąd zmienione oczekiwania
+// E2/1, E2/7, E2/8, E2/9 (dawniej: „chaff, nie bomba 5/5”). Intencja testów
+// (jedna oferta, zero mocy poza, własne źródło poza załogą, walidacja wyboru
+// ręcznego) zostaje bez zmian.
+test('E2/1: Irontread Crusher (Crew 3) — JEDNA oferta, default od najmocniejszych (5/5 sama)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'crusher', 'irontread-crusher', 'p1', 'battlefield');
   addCreature(state, 'c1', 'p1', 1, 1);
@@ -85,7 +90,7 @@ test('E2/1: Irontread Crusher (Crew 3) — JEDNA oferta, default najsłabszy min
   addCreature(state, 'c3', 'p1', 5, 5);
   const offers = crewOffers(state, 'p1', 'crusher');
   assert.equal(offers.length, 1, `ofert crew: ${offers.length}, oczekiwano 1 (A2)`);
-  assert.deepEqual(offers[0].crewCreatureIds, ['c1', 'c2'], 'default = 1+2 (chaff, nie bomba 5/5)');
+  assert.deepEqual(offers[0].crewCreatureIds, ['c3'], 'default = 5/5 sama (najmocniejszy pierwszy, jedna karta)');
 });
 
 test('E2/2 (A3): Balamb (Crew 1) — stwór o mocy 0 NIE wchodzi do defaultu', () => {
@@ -146,7 +151,7 @@ test('E2/7 (CR 702.122a „other"): obsadzony pojazd nie tapuje SAM SIEBIE', () 
   addCreature(state, 'c2', 'p1', 2, 2);
   addCreature(state, 'c3', 'p1', 3, 3);
   const first = crewOffers(state, 'p1', 'crusher')[0];
-  assert.deepEqual(first.crewCreatureIds, ['c1', 'c2']);
+  assert.deepEqual(first.crewCreatureIds, ['c3'], 'default: najmocniejszy (L)');
   assert.ok(execute(state, first).ok);
   assert.ok(resolveStack(state), 'stos pusty po crew');
   const animated = state.objects.get('crusher');
@@ -154,7 +159,7 @@ test('E2/7 (CR 702.122a „other"): obsadzony pojazd nie tapuje SAM SIEBIE', () 
   // Druga aktywacja (re-crew): źródło-stwór nie może wejść do własnej załogi.
   const again = crewOffers(state, 'p1', 'crusher')[0];
   assert.ok(again, 're-crew w ofercie (legalny, choć bez sensu)');
-  assert.deepEqual(again.crewCreatureIds, ['c3'], 'default = nietapnięty c3, nie źródło');
+  assert.deepEqual(again.crewCreatureIds, ['c1', 'c2'], 'default = nietapnięte c1+c2 (2+2), nie źródło');
   const illegal = execute(state, { ...again, crewCreatureIds: ['crusher'] });
   assert.equal(illegal.ok, false, 'walidacja odrzuca własne źródło w załodze');
 });
@@ -166,23 +171,23 @@ test('E2/8: walidacja przyjmuje dowolny legalny podzbiór (ścieżka kreatora UI
   addCreature(state, 'c2', 'p1', 2, 2);
   addCreature(state, 'c3', 'p1', 5, 5);
   const offer = crewOffers(state, 'p1', 'crusher')[0];
-  assert.deepEqual(offer.crewCreatureIds, ['c1', 'c2']);
-  // Gracz w kreatorze wybiera inaczej (sama bomba) — silnik ma przyjąć.
-  const custom = execute(state, { ...offer, crewCreatureIds: ['c3'] });
+  assert.deepEqual(offer.crewCreatureIds, ['c3']);
+  // Gracz w kreatorze wybiera inaczej (dwa mniejsze zamiast bomby) — silnik ma przyjąć.
+  const custom = execute(state, { ...offer, crewCreatureIds: ['c1', 'c2'] });
   assert.ok(custom.ok, `nie-defaultowy legalny wybór odrzucony: ${custom.reason ?? ''}`);
   assert.ok(resolveStack(state));
-  assert.equal(state.objects.get('c3').tapped, true, 'tapnięty wybrany, nie default');
-  assert.equal(state.objects.get('c1').tapped, false);
+  assert.equal(state.objects.get('c1').tapped, true, 'tapnięty wybrany (c1), nie default');
+  assert.equal(state.objects.get('c3').tapped, false, 'default (c3) nietapnięty');
 });
 
-test('E2/9: Saddle — jedna oferta z domyślnym minimalnym (Trained Arynx, Saddle 2)', () => {
+test('E2/9: Saddle — jedna oferta z domyślnym od najmocniejszego (Trained Arynx, Saddle 2)', () => {
   const state = mainPhase(game());
   addRealCard(state, 'ax', 'trained-arynx', 'p1', 'battlefield');
   addCreature(state, 's1', 'p1', 2, 2);
   addCreature(state, 's2', 'p1', 3, 3);
   const offers = crewOffers(state, 'p1', 'ax');
   assert.equal(offers.length, 1, `ofert saddle: ${offers.length}`);
-  assert.deepEqual(offers[0].crewCreatureIds, ['s1'], 'default = sam 2/2');
+  assert.deepEqual(offers[0].crewCreatureIds, ['s2'], 'default = sam 3/3 (najmocniejszy, L)');
   assert.ok(execute(state, offers[0]).ok);
   assert.ok(resolveStack(state));
   assert.equal(state.objects.get('ax').saddled, true);
