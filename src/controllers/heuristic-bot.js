@@ -6009,6 +6009,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
   /**
+   * K (zgłoszenie właściciela 2026-10-15, Glint-Sleeve Artisan): czy bot ma
+   * SYNERGIĘ z ofiarą kreatury, dla której token 1/1 jest wart więcej niż
+   * +1/+1 na stworze. Dwa źródła, oba z definicji karty (ADR 0002 — klasa,
+   * nie nazwa):
+   *  • karta NA RĘCE z kosztem dodatkowym „ofiara kreatury”
+   *    (`spell.additionalCost.sacrificeCreature`, np. Village Rites);
+   *  • WŁASNA permanentna z zdolnością „ofiara kreatury” w koszcie
+   *    (`abilities[].cost.sacrificeCreature`, np. Angel's Herald).
+   * Przeciwnika karty nie liczą — jego ręki bot nie zna, a jego wyrzutnia
+   * nie jest dla bota synergią.
+   */
+  function sacrificeSynergyOf(view) {
+    // `sacrificeCreaturesByColors` (np. Angel's Herald: zielony + biały +
+    // niebieski stwór) to też ofiara kreatury — inny kształt zapisu tego samego kosztu.
+    const sacrificesCreature = (cost) => Boolean(cost?.sacrificeCreature)
+      || Boolean(cost?.sacrificeCreaturesByColors);
+    const needsCreatureSacrifice = (def) => sacrificesCreature(def?.spell?.additionalCost)
+      || (def?.abilities ?? []).some((ability) => sacrificesCreature(ability?.cost));
+    const inHand = (view.zones.hand ?? []).some((o) => o.controllerId === view.playerId
+      && needsCreatureSacrifice(cardDef(o.cardId)));
+    if (inHand) return true;
+    return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      && needsCreatureSacrifice(cardDef(o.cardId)));
+  }
+
+  /**
    * Który ląd z ręki zagrać, gdy jest ich więcej niż jeden (audyt bota, PR #93 t. 5).
    *
    * Przed tą zmianą `play_land` miał wycenę PŁASKĄ 90, więc przy dwóch ziemiach
@@ -15099,9 +15125,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
       // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną
       // + synergia z anthem/trample/evasion; counter lepszy, gdy stwór już atakuje.
+      // K (zgłoszenie właściciela 2026-10-15, Glint-Sleeve Artisan): dotąd
+      // tokeny 15 i liczniki 10 NA STAŁE, więc bot ZAWSZE brał Servo — a
+      // komentarz wyżej obiecywał preferencję tokenów przy mniejszej liczbie
+      // stworów, czego kod nie robił. Właściciel: +1/+1 na stworze to domyślny
+      // wybór zwykłej gry; token ma sens dopiero przy synergii z ofiarą
+      // kreatury (`sacrificeSynergyOf`: karta na ręce albo własna wyrzutnia).
       case 'resolve_fabricate': {
-        if (cmd.mode === 'tokens') return finish(15);
-        if (cmd.mode === 'counters') return finish(10);
+        if (cmd.mode === 'tokens') return finish(sacrificeSynergyOf(view) ? 20 : 8);
+        if (cmd.mode === 'counters') return finish(15);
         return finish(0);
       }
       // Manifest Dread (M251, Batch 46): z dwóch wierzchnich kart wybierz jedną
