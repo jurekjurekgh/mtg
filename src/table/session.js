@@ -774,6 +774,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 58/B6 (Prishe's Wanderings): reflexive „when you search your library
   // this way" — zdolność na stosie po przeszukaniu (ruling FIN 2025-06-06).
   reflexive_search: 'refleks po przeszukaniu biblioteki („when you search this way")',
+  // Audyt pętli jakości (2026-10-15c, Żywy Tester partia 67006 the-edge×mirrodin-brg):
+  // Ambulatory Edifice — „you may pay 2 life. When you do, …" (refleks po zapłacie,
+  // game-state.js optionalPayFollowupAbility). Slug `reflexive_pay` wyciekał do logu.
+  reflexive_pay: 'refleks po zapłacie („when you do")',
   // PR #98 (Żywy Tester, innistrad-brg×worek-dziki seed 11): pseudo-zdolność
   // storm rodzi się w spells.js (spells.js:702), poza zasięgiem strażnika
   // M122 — w modalu wyciekał surowy slug „trigger (storm)".

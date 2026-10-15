@@ -212,12 +212,16 @@ test('M122: każdy event triggera z bazy kart ma polską etykietę', async () =>
   // PR #98 (Żywy Tester, „trigger (storm)"): pseudo-zdolności triggerowe rodzą
   // się też POZA triggers.js (storm w spells.js) i w innej składni
   // (`trigger: Object.freeze({ event: … })`). Zasięg skanu = zasięg KLASY
+  // (L113). Literał bywa WIELOLINIOWY (`trigger: Object.freeze({⏎ event: …`,
+  // refleks „when you do" po zapłacie w game-state.js) — dopasowanie bez
+  // białych znaków wpuściło `reflexive_pay` do logu gracza (audyt pętli, 2026-10-15c).
+  // Zasięg skanu = zasięg KLASY
   // (L113), nie plik z pierwszym przypadkiem — skanujemy CAŁY src/engine.
   const engineFiles = fs.readdirSync('src/engine')
     .filter((f) => f.endsWith('.js')).map((f) => `src/engine/${f}`);
   for (const file of engineFiles) {
     const source = fs.readFileSync(file, 'utf8');
-    for (const match of source.matchAll(/trigger: (?:Object\.freeze\()?\{ event: '([a-z0-9_]+)'/g)) {
+    for (const match of source.matchAll(/trigger: (?:Object\.freeze\()?\{\s*event: '([a-z0-9_]+)'/g)) {
       const event = match[1];
       if (TRIGGER_EVENT_LABELS[event]) continue;
       if (!missing.has(event)) missing.set(event, []);
