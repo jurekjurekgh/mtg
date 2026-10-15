@@ -53,3 +53,21 @@ test('I: etykieta pojedynczej opcji z kickerem jest poprawna (strażnik, nie zmi
   const kicked = offers.find((c) => c.kicked);
   assert.match(plain(commandLabel(kicked, session, view)), /koszt B \+ kicker 2B/);
 });
+
+// Gałąź grupy WIELOTRYBOWEJ (`choiceGroupTitle`, „Rzuć: <karta> (koszt …)”) czytała
+// koszt z wydruku także dla grupy z kickerem. W rejestrze nie ma dziś karty z kickerem
+// i wieloma trybami, więc obiekt widoku składamy syntetycznie (tylko kształt, nie dane).
+test('I: grupa wielotrybowa z kickerem (wszystkie opcje kicked) niesie koszt łączny w tytule', () => {
+  const object = { id: 'vb', cardId: 'vampires-bite', zone: 'hand', spell: { modes: [{ name: 'A' }, { name: 'B' }] } };
+  const view = { players: [{ id: 'p1' }, { id: 'p2' }], zones: { hand: [object], battlefield: [] } };
+  const session = {
+    nameOf: () => "Vampire's Bite", nameOfObject: (id) => id, abilitiesOf: () => [],
+    cardDetails: () => ({ kicker: { cost: 3, colors: ['B'] } }),
+  };
+  const kickedOptions = [0, 1].map((modeIndex) => ({ type: 'cast_spell', playerId: 'p1', objectId: 'vb', targets: ['p2'], modeIndex, kicked: true }));
+  const title = plain(choiceGroupTitle({ options: kickedOptions }, session, view));
+  assert.match(title, /koszt \{B\} \+ kicker \{2\}\{B\}/, `tytuł wielotrybowy z kickerem (${title})`);
+  const plainTitle = plain(choiceGroupTitle({ options: kickedOptions.map((o) => ({ ...o, kicked: false })) }, session, view));
+  assert.match(plainTitle, /\(koszt \{B\}\)/, `bez kickera bez zmian (${plainTitle})`);
+  assert.doesNotMatch(plainTitle, /kicker/, plainTitle);
+});

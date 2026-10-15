@@ -2453,14 +2453,18 @@ function cardCostHtml(card, cmd = null) {
  * stanu (awaryjnie z katalogu), format jak w `commandLabel`. Bez kickera —
  * zwykły koszt wydruku.
  */
-function castCostWithKickerHtml(object, cmd, session) {
-  const base = cardCostHtml(object);
-  if (!cmd?.kicked) return base;
+function kickerCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
+  if (!cmd?.kicked) return '';
   const kicker = session?.state?.objects?.get?.(cmd.objectId)?.kicker
     ?? session?.cardDetails?.(object?.cardId)?.kicker ?? null;
-  if (!kicker) return base;
-  const dodatek = kicker.returnLand ? 'zwrot lądu' : manaCostHtml(costSymbols(kicker.cost, kicker.colors));
-  return `${base} + kicker ${dodatek}`;
+  if (!kicker) return '';
+  if (kicker.returnLand) return ' + kicker zwrot lądu';
+  const symbols = costSymbols(kicker.cost, kicker.colors);
+  return ` + kicker ${manaHtml ? manaCostHtml(symbols) : symbols}`;
+}
+
+function castCostWithKickerHtml(object, cmd, session) {
+  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}`;
 }
 
 function abilityCostHtmlOf(ability) {
@@ -2753,6 +2757,9 @@ function choiceSourceTitle(cmd, session, view) {
     }
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}${withCost}` : `Cel czaru: ${name}${withCost}`;
   }
+  // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu. Dziś żadna
+  // karta z kickerem nie ma Cleave (sprawdzone na rejestrze). Gdy się pojawi —
+  // dopisać `kickerCostSuffixOf(cmd, object, session)` jak w gałęzi „Cel czaru”.
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
@@ -2883,9 +2890,19 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       // koszt ma być ikonami many (A, zgłoszenie właściciela 2026-09-21).
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+      // I (zgłoszenie 2026-10-15, Vampire's Bite): grupa, w której KAŻDA opcja
+      // jest z kickerem, niesie koszt łączny (baza + kicker), nie sam wydruk.
+      // Grupa mieszana (kicker i zwykła) zostaje przy wydruku — jej tytuł nie
+      // rozstrzyga o koszcie, a warianty rozróżniają etykiety opcji.
+      const kickerPart = options.every((o) => o?.kicked)
+        ? kickerCostSuffixOf(options[0], groupObject, session, { manaHtml })
+        : '';
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost}${kickerPart})` : ''}`;
     }
   }
+  // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu X. Dziś żadna
+  // karta z kickerem nie ma kosztu {X} (sprawdzone na rejestrze). Gdy się pojawi —
+  // dopisać `kickerCostSuffixOf(options[0], xObject, session, { manaHtml })`.
   // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa wariantów {X}
   // jednego czaru to JEDEN rzut — tytuł nazywa czynność i koszt z symbolem X
   // („Rzuć: Epic Experiment (koszt XUR)"), zamiast nazwy wariantu X=0.
