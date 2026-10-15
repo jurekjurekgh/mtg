@@ -47,11 +47,24 @@ Zgłoszenia właściciela (tura 12):
    przypiętych testów w `zaloga-domyslny-podzbior.test.js` z opisem zmiany.
 4. `npm test > .arena/tests-fast-k-l.log 2>&1` z kodem wyjścia; `npm run build`.
 
+## Wynik (wykonanie)
+
+- K: `d8c6148` (wycena fabricate + `sacrificeSynergyOf`). RED 3/5 → GREEN 5/5.
+  K/3 i K/4 przechodziły już przed zmianą (bot brał zawsze token): strażniki
+  przed nadpoprawką. Poprawka K/4: koszt wyrzutni Angel's Herald zapisany jako
+  `sacrificeCreaturesByColors`, nie `sacrificeCreature` — helper czyta oba.
+- L: `548ae41` (`defaultCrewSubset` malejąco + komentarz). RED 3/3 → GREEN.
+  Przypięte testy E2/1, E2/7, E2/8, E2/9 zaktualizowane (intencja zachowana).
+- Audyt: `npm test` 8265/8265 rc=0 (`.arena/tests-fast-k-l.log`); `npm run build` rc=0;
+  `node --test test/bot-benchmark.test.js` 10/10; `node tools/benchmark.mjs`:
+  heurystyka 90,6% (609/672), identycznie jak baza `255fbe8` (benchmark nie
+  zawiera tych kart).
+
 ## Mini-roadmapa
 
 - [x] Rozpoznanie obu kart i kodu (wyżej).
-- [ ] Commit planu (ten plik).
-- [ ] RED testów K i L (log `.arena/red-k-l.log`).
-- [ ] GREEN K, potem GREEN L (osobne commity).
-- [ ] Testy powiązane, `npm test` rc=0, build rc=0.
-- [ ] Push (bez force), opis PR #166 przez REST, bez scalania.
+- [x] Commit planu.
+- [x] RED testów K i L (`.arena/red-k-l.log`).
+- [x] GREEN K, potem GREEN L (osobne commity).
+- [x] Testy powiązane, `npm test` rc=0, build rc=0, benchmark bez zmiany.
+- [ ] Push i opis PR #166 przez REST. Bez scalania.
