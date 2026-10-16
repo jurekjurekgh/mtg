@@ -21,7 +21,13 @@ Zgłoszenie właściciela (tura 15, rozszerzenie M):
 - (b) PRZYCZYNA POTWIERDZONA: buyback ustawia `state.pendingSpellReturnToHand`
   (`spells.js` ≈2451–2452, ≈2883), a `spell_resolved` niesie tylko `returnToHand`.
   Opis w `src/table/session.js` ≈1326 dopisywał clash dla każdego `returnToHand`.
-- (a) NIE ODTWORZONE. Sprawdzone ścieżki: (1) talia z `createCardDeck` + `installDeck`
+- (a) PRZYCZYNA (doprecyzowana przez właściciela 2026-10-16): token na stole pokazywał
+  OBRAZ KARTY Lab Rats, a nie tokena Rat. `token_rat` (`card-data.js` ≈4716) miał
+  `imageUri` skopiowany z karty Lab Rats (Scryfall 3132c128-…). Kafel bierze obraz
+  z definicji po `cardId` tokena, więc pokazywał kartę. Mechanika była poprawna.
+  Wcześniejsze sprawdzenia silnika (talia, rzut, legalne komendy) potwierdziły, że
+  token powstaje poprawnie; błąd był w danych obrazu.
+- (a) Wcześniejsze sprawdzenia silnika: (1) talia z `createCardDeck` + `installDeck`
   + dobranie; (2) `execute` cast_spell (zwykły i buyback); (3) `playerView` i lista
   legalnych komend. Wynik: karta w ręce to `kind:'spell'`, `types:['Sorcery']`;
   rzut daje `token_created` (Rat 1/1) i `permanent_entered_battlefield` tylko dla
@@ -56,7 +62,10 @@ Zgłoszenie właściciela (tura 15, rozszerzenie M):
 - [x] RED M/2, M/4 (etykieta, klucz) oraz M/5 (log buyback).
 - [x] GREEN (etykieta + klucz grupy): M/1–M/4 zielone.
 - [x] GREEN (b): log buyback bez clash, `returnedByBuyback`; M/5, M/6 zielone.
-- [x] Próby (a) na silniku, talii, UI: nie odtworzone (patrz Rozpoznanie).
+- [x] (a) Przyczyna: `imageUri` tokena `token_rat` skopiowany z Lab Rats. RED M/7, M/8;
+      GREEN: druk tokena Rat (Scryfall 3b69ac36-…, komponent `token` przy Lab Rats).
+      D/6 (`test/druki-druga-strona-i-uuid-obrazu.test.js`): przypadek przepisany
+      syntetycznie (token z UUID karty), reguła bez zmian.
 - [x] Testy powiązane (54 pliki, 903/903), `npm test` 8277/8277 rc=0, build rc=0.
 - [ ] Commit, push bez force, opis PR #166 (wiersz M).
 - [ ] Odpowiedź właścicielowi: (a) poprosić o kroki/log, (b) naprawione.
