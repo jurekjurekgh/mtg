@@ -1323,11 +1323,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
           return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
-        const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
+        // Uwaga M (tura 15, b): zwrot z buyback (CR 702.27a) to NIE clash —
+        // osobny tekst; clash tylko gdy zdarzenie nie niesie returnedByBuyback.
+        const buybackReturn = e.returnedByBuyback ? ' — buyback: czar wraca do ręki właściciela' : '';
+        const clashReturn = e.returnToHand && !e.returnedByBuyback ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
         // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.
         const modeName = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
+        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${buybackReturn}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');

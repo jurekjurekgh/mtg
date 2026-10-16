@@ -8,12 +8,13 @@
 // a klucz grupy rozdziela warianty tak samo jak kicker.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
+import { addObject, createGameState, execute, playerView } from '../src/engine/game-state.js';
 import { addMana } from '../src/engine/resources.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { buildActionEntries, choiceRequestGroupKey, commandLabel } from '../src/table/render.js';
+import { describeGameEvent } from '../src/table/session.js';
 
 const REGISTRY = createCardRegistry();
 const plain = (html) => String(html ?? '').replace(/<[^>]*>/g, '');
@@ -77,4 +78,37 @@ test('M/4: klucz grupy rozdziela warianty z buyback od zwykłego rzutu (jak kick
   const withBuyback = { ...base, buyback: true };
   assert.notEqual(choiceRequestGroupKey(base), choiceRequestGroupKey(withBuyback),
     'buyback nie może wpaść do tej samej grupy co zwykły rzut celowany');
+});
+
+// Uwaga M (tura 15, b): log rozstrzygnięcia buyback mówił „wygrany clash zwraca
+// czar do ręki właściciela”. Przyczyna: buyback i clash dzielą flagę
+// `returnToHand` na `spell_resolved`, a opis w sesji czytał tylko ją.
+// Kontrakt: zdarzenie niesie `returnedByBuyback`; log buyback mówi o buyback,
+// a prawdziwy clash (bez buyback) zachowuje swój tekst.
+test('M/5: rozstrzygnięcie z buyback nie mówi o clash; zdarzenie niesie returnedByBuyback', () => {
+  const { state, view } = stol();
+  const cast = ratsCasts(view).find((c) => c.buyback === true);
+  assert.ok(cast, 'oferta buyback jest w legalCommands');
+  execute(state, cast);
+  let guard = 0;
+  while (state.zones.stack.length && guard++ < 20) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  const resolved = state.events.filter((e) => e.type === 'spell_resolved' && e.cardId === 'lab-rats').at(-1);
+  assert.ok(resolved, 'jest spell_resolved dla Lab Rats');
+  assert.equal(resolved.returnedByBuyback, true, 'zdarzenie oznacza zwrot przez buyback');
+  const names = { p1: 'Ty', p2: 'Nieprzyjaciel' };
+  const helpers = { nameOf: (id) => REGISTRY.get(id)?.name ?? id, nameOfObject: () => 'Lab Rats' };
+  const text = describeGameEvent(resolved, helpers, names);
+  assert.doesNotMatch(text, /clash/i, `log buyback nie może mówić o clash: ${text}`);
+  assert.match(text, /buyback/i, `log buyback wspomina buyback: ${text}`);
+});
+
+test('M/6: prawdziwy clash (bez buyback) nadal opisuje się jako clash', () => {
+  const text = describeGameEvent(
+    { type: 'spell_resolved', fromId: 's', toId: 'h', cardId: 'release-the-ants', controllerId: 'p1', fizzled: false, returnToHand: true },
+    { nameOf: () => 'Release the Ants', nameOfObject: () => 'Release the Ants' },
+    { p1: 'Ty', p2: 'Nieprzyjaciel' },
+  );
+  assert.match(text, /clash/, text);
 });

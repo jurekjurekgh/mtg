@@ -459,7 +459,9 @@ export function choiceRequestGroupKey(command) {
     // opcje są rozróżnialne. M87 (Steel Sabotage) zostaje spełnione inaczej:
     // grupa modalna jest TYTUŁOWANA rzutem („Rzuć: <karta>”), nie generycznym
     // „Cel czaru”.
-    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}`;
+    // M (Lab Rats): buyback to wariant rzutu (CR 702.27a), więc ma własną grupę
+    // — jak kicker. Inaczej warianty z dopłatą wpadłyby do grupy zwykłego rzutu.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
@@ -2463,8 +2465,26 @@ function kickerCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
   return ` + kicker ${manaHtml ? manaCostHtml(symbols) : symbols}`;
 }
 
+/**
+ * M (zgłoszenie testera 2026-10-15, Lab Rats): buyback to DODATKOWY koszt płacony
+ * przy rzucaniu (CR 702.27a „as you cast this spell”), jak kicker — więc wariant
+ * z buyback dostaje dopłatę w etykiecie („+ buyback {4}”), inaczej dwie oferty
+ * rzutu wyglądają identycznie. Koszt bierzemy z definicji czaru (stan, a w razie
+ * braku katalog); bez znanego kosztu zostaje sama nazwa dodatku.
+ */
+function buybackCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
+  if (!cmd?.buyback) return '';
+  const cost = session?.state?.objects?.get?.(cmd.objectId)?.spell?.buyback?.cost
+    ?? object?.spell?.buyback?.cost
+    ?? session?.cardDetails?.(object?.cardId)?.spell?.buyback?.cost
+    ?? null;
+  if (!(cost > 0)) return ' + buyback';
+  const symbols = costSymbols(cost, []);
+  return ` + buyback ${manaHtml ? manaCostHtml(symbols) : symbols}`;
+}
+
 function castCostWithKickerHtml(object, cmd, session) {
-  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}`;
+  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
 }
 
 function abilityCostHtmlOf(ability) {
@@ -3577,7 +3597,10 @@ function commandLabelBase(cmd, session, view) {
       const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
         ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
         : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // M (Lab Rats): dopłata buyback (CR 702.27a) — wariant rzutu z buyback
+      // musi być rozróżnialny od zwykłego rzutu w panelu „Twoje działania”.
+      const buybackPart = buybackCostSuffixOf(cmd, obj(cmd.objectId), session);
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${buybackPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');
