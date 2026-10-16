@@ -11622,6 +11622,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []));
           if (alreadyShielded || pendingTwin) return finish(-30);
         }
+        // N (uwagi z testów 2026-10-16, Enduring Sliver): klasa „outlast" —
+        // zdolność sorcery-speed z kosztem {T} NA SAMYM źródle, której cały efekt
+        // to dołożenie licznika na siebie (CR 702.107a). Taka aktywacja tapuje
+        // stwora, więc w głównej 1 zabiera mu atak, a licznik można dołożyć
+        // równie dobrze w głównej 2 (tam stwór, który nie atakował, jest już
+        // odtapowany, a mana wiadomo, że wolna). Klasyfikacja po efekcie
+        // (ADR 0002), nie po nazwie. Dopóki stwór może atakować, pas w głównej 1
+        // wygrywa — walka go obsłuży albo wraca tu w głównej 2. Stwór z chorobą
+        // przywołania i już tapnięty nie wchodzi tu: `canAttackNow` zwraca false.
+        const onlySelfCounter = effects.length > 0 && effects.every((e) => e?.type === 'add_counter')
+          && !(cmd.targets ?? []).length;
+        if (taps && onlySelfCounter && source && ability?.timing === 'sorcery' && myTurn(view)
+          && view.turn.phase === 'precombat_main' && canAttackNow(source)) {
+          return finish(-40);
+        }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
