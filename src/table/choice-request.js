@@ -4,7 +4,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForFreeTargets, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1341,13 +1341,19 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
                 : null)
               : (costKey && costChoice == null)
                 ? null
-                : commandForSelection((commands ?? []).filter(costMatches), {
+                : commandForChosen((commands ?? []).filter(costMatches), {
                   targets: [...chosen],
                   xValue: plan.hasX ? xValue : null,
                   // H: bez wybranego celu nie podajemy stuna (wariant pusty);
                   // z celami — stun z warstwy 2 (null = brak komendy).
                   ...(stunKey && chosen.size > 0 ? { stunTargetId: effectiveStun() } : {}),
                 }));
+
+  // O (Wrap in Flames, „up to three”): gdy oferta silnika jest ucięta limitem
+  // (`plan.freeTargets`), zaznaczenie bez dopasowania składa komendę z szablonu
+  // i wybranych celów — silnik waliduje ją przy wykonaniu (spells.js).
+  const commandForChosen = (cmds, opts) => commandForSelection(cmds, opts)
+    ?? (plan.freeTargets ? commandForFreeTargets(cmds, [...chosen]) : null);
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
