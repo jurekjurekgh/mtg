@@ -102,6 +102,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'rampNeedWeight', 'rampSaturationPenalty', 'rampManaFloor',
   'tappedRampWaitPenalty', 'rampCastManaWeight',
   'modalEtbValueWeight',
+  // Batch 68 (Austere Command): masowe zniszczenie bez celu — patrz DEFAULT_HEURISTIC_PARAMS.
+  'massDestroyFoeFlat', 'massDestroyOwnFlat',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
   'battleDefeatBonus',
@@ -605,6 +607,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
   regenerationModelWeight: 1,
   evasionEtbValueWeight: 1,
+  // Batch 68 (Austere Command): masowe zniszczenie bez celu — płaska wartość
+  // na permanent: wróg (klasa removalu, jak HOSTILE 90 zawęża się do 75) i własny
+  // (mocniej, jak selfHarmPenalty). Strata dodawana przez sacrificePermanentLoss.
+  massDestroyFoeFlat: 75,
+  massDestroyOwnFlat: 90,
   counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
   rampNeedWeight: 1,
   rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem

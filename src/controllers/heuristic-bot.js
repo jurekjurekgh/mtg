@@ -2325,6 +2325,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (cheapest >= sourceLoss) return -120;
       return -Math.max(12, 2 * cheapest);
     },
+    // Batch 68 (Neurok Invisimancer, Subterranean Scout): ETB „target creature can't be
+    // blocked this turn" z celem — najlepszy NIEBLOKOWALNY kandydat z publicznych celów
+    // (cantBeBlockedTargetValue × evasionEtbValueWeight); bez celu/bez kandydata = 0.
+    cant_be_blocked: (e, view, req, def) => {
+      if (!req) return 0;
+      const blockers = untappedEnemyBlockers(view);
+      const source = { ...def, cardId: def.id, controllerId: view.playerId };
+      const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
+      const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
+        .map(o => cantBeBlockedTargetValue(view, o)));
+      return P.evasionEtbValueWeight * best;
+    },
     destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
@@ -2514,15 +2526,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
       let sub = 0;
       for (const e of effs) {
-        if (e?.type === 'cant_be_blocked' && req) {
-          const blockers = untappedEnemyBlockers(view);
-          const source = { ...def, cardId: def.id, controllerId: view.playerId };
-          const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
-          const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
-            .map(o => cantBeBlockedTargetValue(view, o)));
-          sub += P.evasionEtbValueWeight * best;
-          continue;
-        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         sub += fn(e, view, req, def);
@@ -6245,6 +6248,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Dzięki temu ostatni land jest droższy od Tigera 3/2, ale przy trzech
    * landach zbędny Swamp/Plains jest tańszy i Tiger zostaje.
    */
+  /**
+   * Batch 68 (Austere Command — „Destroy all …" bez celu): wartość masowego
+   * zniszczenia = strata WROGICH permanentów pasujących do filtra minus strata
+   * WŁASNYCH. Miara straty to `sacrificePermanentLoss` (jedna skala z ofiarą), a
+   * płaski składnik to klasa removalu: P.massDestroyFoeFlat (wróg) i
+   * P.massDestroyOwnFlat (własny, mocniej — jak selfHarmPenalty). Nieniszczalne
+   * (indestructible) nie wchodzą do wyceny. Zero dopasowań = pusty efekt.
+   */
+  function massDestroyStats(view, effect) {
+    const filter = effect?.filter ?? {};
+    const types = filter.types ?? [];
+    const stats = { count: 0, foe: 0, own: 0 };
+    for (const object of view.zones.battlefield ?? []) {
+      const typeOk = types.every((type) => object.kind === type.toLowerCase()
+        || (object.types ?? []).includes(type));
+      if (!typeOk) continue;
+      const mv = object.manaCost ?? 0;
+      if (filter.manaValueAtMost != null && mv > filter.manaValueAtMost) continue;
+      if (filter.manaValueAtLeast != null && mv < filter.manaValueAtLeast) continue;
+      if ((object.keywords ?? []).includes('indestructible')) continue;
+      const loss = sacrificePermanentLoss(view, object);
+      stats.count += 1;
+      if (object.controllerId === view.playerId) stats.own += P.massDestroyOwnFlat + loss;
+      else stats.foe += P.massDestroyFoeFlat + loss;
+    }
+    return stats;
+  }
   function sacrificePermanentLoss(view, target) {
     if (!target) return 0;
     const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
@@ -10205,6 +10235,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
         let score = P.spellBase;
+        // Batch 68 (Austere Command): masowe zniszczenie wyceniamy netto (wrogowie
+        // minus własne permanenty). Filtr, który nie trafia w nic — czar pusty → −70.
+        {
+          const massEffects = effects.filter((e) => e?.type === 'destroy_all');
+          if (massEffects.length > 0) {
+            const massStats = massEffects.map((e) => massDestroyStats(view, e));
+            if (massStats.every((st) => st.count === 0)) return finish(-70);
+            score += massStats.reduce((sum, st) => sum + st.foe - st.own, 0);
+          }
+        }
         // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
         // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
         // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
@@ -10360,6 +10400,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
             return (payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1);
           })();
+          // Batch 68 (Raze to the Ground — „can't be countered"): kontra czaru z tą
+          // flagą nie ma skutku (counterStackObject → brak zmiany), więc bot jej nie
+          // wydaje — trzyma kontrę na inny cel. Dotyczy tylko celów BEZ możliwości kontry.
+          const everyTargetUncounterable = targets.length > 0 && targets.every((id) => {
+            const entry = stack.find((item) => item.id === id);
+            return entry?.spell?.cantBeCountered === true;
+          });
+          if (everyTargetUncounterable) return finish(-90);
           if (ownTarget && !foeTarget) return finish(-90);
           if (ownTarget) score -= 60;
           // M237/2 (audyt Żywym Testerem): kontrujemy WROGI czar, ale wartość
@@ -10967,6 +11015,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
+          // Batch 68 (Raze to the Ground): „jeśli MV celu ≤N, dobierz kartę" — dobranie
+          // liczy się, gdy warunek spełnia cel rozpoznany na planszy w chwili rzutu.
+          if (effect.drawIfManaValueAtMost != null && target
+            && (target.manaCost ?? 0) <= effect.drawIfManaValueAtMost) {
+            score += P.drawCardValue;
+          }
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
             // hour + ciało/rola w środku).
@@ -10974,7 +11028,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // martwy kod — count-0 łapie wcześniej allEffectsInertNow → −70
             // (S01/S02: flurry/howl = −70), a token bezwartościowy przy
             // count>0 nie ma nosicieli w katalogu (skan 0/0 czysty).
-            const tokenValue = tokenBodyValue(view, effect);
+            // Batch 68 (Secure the Scene): token dostaje KONTROLER celu (nie rzucający).
+            // Cel wroga → token wrogi (ujemna rola, ZNAK tokenControllerId) — dar, nie zysk.
+            const captureTarget = effect.controllerFromCapture
+              ? objectOnBoard(view, cmd.targets?.[0] ?? null) : null;
+            const tokenValue = effect.controllerFromCapture
+              ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
+              : tokenBodyValue(view, effect);
             score += tokenValue;
             if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
             spellMakesTokens = true;
