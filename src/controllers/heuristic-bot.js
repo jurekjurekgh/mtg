@@ -4028,26 +4028,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Czytamy WYŁĄCZNIE PlayerView (ADR 0017): combat + stos z celami; zero nazw
   // kart (ADR 0002). NIE używamy spekulacji „removal w ręce" (B3) — to za mało
   // pewne, by uznać permanent za skazany.
+  // Czary/zdolności usuwające lub wygnające permanent (licznik go nie ocali).
+  const REMOVE_ON_STACK_EFFECTS = new Set(['destroy_permanent', 'exile_permanent', 'exile_target_creature',
+    'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value']);
+
   const permanentDoomedThisTurn = (view, obj) => {
     if (!obj) return false;
     // (a) bloker ginący w walce
     const outcome = combatOutcome(view, obj);
     if (outcome && (outcome.deadBlockers ?? []).includes(obj.id) && !outcome.attackerDies) return true;
     // (b) cel wrogiego czaru/zdolności usuwającej na stosie
-    const REMOVE_ON_STACK = new Set(['destroy_permanent', 'exile_permanent', 'exile_target_creature',
-      'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value']);
     for (const entry of (view.zones.stack ?? [])) {
       if (entry.controllerId === view.playerId) continue;
       const targets = entry.targets ?? [];
       if (!targets.includes(obj.id)) continue;
       const effs = stackEntryEffects(entry);
-      if (effs.some((e) => REMOVE_ON_STACK.has(e?.type))) return true;
+      if (effs.some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type))) return true;
       // obrażenia śmiertelne z czaru na stosie
       const dmg = effs.find((e) => e?.type === 'damage');
       if (dmg && Number.isInteger(dmg.amount)
         && dmg.amount >= ((obj.toughness ?? 0) - (obj.damage ?? 0))) return true;
     }
     return false;
+  };
+
+  /**
+   * Ad 2 (właściciel 2026-10-17): czy licznik ZWIĘKSZAJĄCY wytrzymałość (generycznie: każda delta
+   * z dodatnią wytrzymałością, nie tylko +1/+1) RATUJE nasz stwór przed śmiertelnym uszkodzeniem.
+   * (a) walka: stwór jest blokerem, który bez licznika ginie, a z nim przeżywa (symulacja z deltą);
+   * (b) stos: śmiertelne obrażenia czarem przeciwnika, które przestają być śmiertelne po licznik.
+   * Usunięcie/wygnanie na stosie nie jest ratowalne licznikiem.
+   */
+  const counterSavesHost = (view, host, delta) => {
+    if (!host || host.controllerId !== view.playerId || !((delta?.toughness ?? 0) > 0)) return false;
+    const before = combatOutcome(view, host, {});
+    const after = combatOutcome(view, host, delta);
+    if ((before?.deadBlockers ?? []).includes(host.id) && !(after?.deadBlockers ?? []).includes(host.id)) return true;
+    const removal = (view.zones.stack ?? []).some((entry) => entry.controllerId !== view.playerId
+      && (entry.targets ?? []).includes(host.id)
+      && stackEntryEffects(entry).some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type)));
+    if (removal) return false;
+    const marked = host.damage ?? 0;
+    const incoming = incomingDamageOnStack(view, host.id);
+    const toughness = host.toughness ?? 0;
+    return incoming > 0 && marked + incoming >= toughness && marked + incoming < toughness + delta.toughness;
+  };
+
+  /**
+   * Ad 2: skutek licznika ŚMIERTELNY dla celu wykonujemy ASAP (bez odroczenia do okna many):
+   *  • licznik zmniejszający wytrzymałość WROGIEGO stwora, który go ZABIJA (toughness − obrażenia ≤ ubytek);
+   *  • licznik zwiększający wytrzymałość NASZEGO stwora, który go RATUJE (`counterSavesHost`).
+   * Generycznie po deltach licznika (`−1/−1`, `−0/−1`, `+1/+1`, `+0/+1`…), nie po nazwie.
+   */
+  const lethalCounterNow = (view, target, counterName, amount = 1) => {
+    if (!target || !(target.kind === 'creature' || (target.types ?? []).includes('Creature'))) return false;
+    const m = /^([+-]\d+)\/([+-]\d+)$/.exec(String(counterName ?? ''));
+    if (!m) return false;
+    const dP = Number(m[1]) * amount;
+    const dT = Number(m[2]) * amount;
+    if (counterIsHostile(counterName)) {
+      if (target.controllerId === view.playerId || dT >= 0) return false;
+      return (target.toughness ?? 0) - (target.damage ?? 0) <= -dT;
+    }
+    return dT > 0 && counterSavesHost(view, target, { power: dP, toughness: dT });
   };
 
   /** Delta P/T licznika statystyk (CR 122.1) — `null` dla liczników bez modelu
@@ -4181,7 +4224,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
       // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
       // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
-      else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+      else if (permanentDoomedThisTurn(view, host) && !counterSavesHost(view, host, delta)) value = -P.counterDoomedHostPenalty;
       else {
         // PMSSB-23/F4: gospodarz, którego ataku przeciwnik NIE DOSIĘGNIE —
         // licznik zamieni się w obrażenia, a nie w wymianę (różnicuje wybór
@@ -11984,6 +12027,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Pokrętło `lastingManaWindowOn` (0 = mechanizm wyłączony, pomiar ×0).
         const lastingMana = P.lastingManaWindowOn > 0 && isLastingManaAbility(ability, abilityManaCost);
         const freeWindow = lastingMana && freeManaWindowNow(view, ability, abilityManaCost);
+        // Ad 2: licznik śmiertelny (zabija wroga / ratuje nasz stwór) — wykonać ASAP, bez odroczenia.
+        let lethalNow = false;
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana') && !freeWindow) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
         }
@@ -12744,6 +12789,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
             score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
               Math.max(1, effect.amount ?? 1), { source, manaProducer: lastingMana });
+            if (lethalCounterNow(view, tgt, effect.counter ?? '+1/+1', Math.max(1, effect.amount ?? 1))) lethalNow = true;
           }
           // PMSSB-23/F3 (L41): rider rozlania także w ścieżce zdolności.
           if (effect.type === 'add_counter_to_creatures_you_control') {
@@ -13434,7 +13480,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
         // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
         // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
-        if (lastingMana && !freeWindow && !COMBAT_STEPS.has(view.turn.step)) {
+        if (lastingMana && !freeWindow && !COMBAT_STEPS.has(view.turn.step) && !lethalNow) {
           score = Math.min(score, -P.abilityManaCostPenalty * abilityManaCost);
         }
         return finish(score);

@@ -63,5 +63,32 @@ stwora — to samo okno.
 
 ## Ryzyka (z pomiaru)
 
-- Lustro na taliach z mechaniką: wynik neutralny; przy zakresie 3000 symulacja przerywa się na
-  luce planera płatności (patrz raport, sekcja „Otwarte”).
+- Lustro na taliach z mechaniką: wynik neutralny. Luka planera płatności (crash seed 3035) — ZAMKNIĘTA
+  (sekcja „Dopisek 2” niżej).
+
+## Dopisek 1 (2026-10-17): crash `Brak kolorowej many` — usunięty
+
+Zlecenie właściciela: usunąć w 100%. Procedura: pomiar (odtworzenie seeda 3035, ślad `spendMana`) → przyczyna
+(dwie: purpose nie płynął do planu kolorów; `firstUncoveredPipColor` liczył per kolor) → poprawka
+(`resources.js`, `spells.js`, `game-state.js`) → test (`test/audyt-pmssb66-brak-kolorowej-many.test.js`, 2;
+oba padały przed poprawką) → bramki → commit `d4241da`.
+Odrzucony wariant: bramka kosztu i koloru w ofercie plota (plot = rzut bez kosztu i bez kolorów).
+
+## Dopisek 2 (2026-10-17): Ad 2 — skutki licznikowe śmiertelne ASAP
+
+Zasada właściciela: licznik ze skutkiem śmiertelnym TERAZ nie jest odraczany (zabójcze −1/−1 wroga; +1/+1
+ratujące nasz stwór przed śmiertelnym uszkodzeniem). Generycznie po deltach licznika.
+
+0. Plan: ten dopisek — spisany PO pomiarze PRZED (punkt 1 zmierzony przed zmianą kodu). Kolejność kroku 0 złamana, przyznane.
+1. Pomiar PRZED: `tools/pmssb66-smiertelne-countery-sonda.mjs` (K1–K7), na kodzie sprzed zmiany:
+   K1 −1,00 (pass), K3 −19,00 (pass), K6 +27,00, reszta kontrol bez zmian.
+2. Audyt: przyczyna dwuczęściowa — (a) odroczenie nie znało skutku śmiertelnego; (b) `counterHostValue`
+   zerował licznik na stworze „skazanym" przez śmiertelny Shock na stosie (`permanentDoomedThisTurn`), nawet gdy
+   ten licznik go ratuje.
+3. Implementacja (`heuristic-bot.js`): `counterSavesHost` (walka przez `combatOutcome` z deltą + stos),
+   `lethalCounterNow` (zabójcze −1/−1 wroga, ratunek), wspólna `REMOVE_ON_STACK_EFFECTS`; wycena
+   `counterHostValue` nie zeruje licznika ratującego; `lethalNow` znosi odroczenie.
+4. Testy: `test/audyt-pmssb66-smiertelne-countery.test.js` (7 scenariuszy + dodatni wynik K1).
+5. Ewaluacja: golden master (`npm test`), lustro 3000/5000/9000, `test:all`, build, `cr-numery`.
+6. Dokumentacja: raport (sekcja „Ad 2"), `docs/PMSSB.md`, `docs/PROJECT_HISTORY.md`.
+7. Bramki przed commitem; commit i push po fragmencie.

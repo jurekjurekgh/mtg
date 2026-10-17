@@ -17269,3 +17269,13 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Crash `Brak kolorowej many` (worek-mroczny seed 3035) USUNIĘTY (zlecenie właściciela, 100%): (1) purpose płynie od bramki oferty przez `planGrantManaColors` do `spendMana`; (2) `firstUncoveredPipColor` wybiera kolor po dopasowaniu (`maxPipsCovered`), nie licznikiem per kolor — Skarb nie idzie już na W zamiast R/G. Test `test/audyt-pmssb66-brak-kolorowej-many.test.js` (2; padały przed poprawką). Odrzucone: bramka plota (plot = rzut bez kosztu i bez kolorów).
 - Lustro po naprawie (finalny kod): 3000 → 159:161; 5000 → 162:158; 9000 → 163:157; nieukończone 0 (960 partii).
 - Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md`. Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (spisany po pierwszej wersji — kolejność procedury 0 złamana, przyznane).
+
+## 2026-10-17 — PMSSB-66 Ad 2: skutki licznikowe śmiertelne ASAP (batch 68)
+
+- Zasada właściciela: licznik ze skutkiem śmiertelnym nie czeka na okno many. Zabójcze −1/−1 wroga (generycznie: licznik zmniejszający wytrzymałość) i ratunek naszego stwora przed śmiertelnym uszkodzeniem (+1/+1, walka lub czar na stosie).
+- Przyczyna: odroczenie nie znało skutku śmiertelnego, a `counterHostValue` zerował licznik na stworze „skazanym" przez śmiertelny Shock na stosie, nawet gdy licznik go ratował.
+- Pomiar PRZED/PO (`tools/pmssb66-smiertelne-countery-sonda.mjs`): zabójcze −1/−1 −1,00 → +33,00; ratunek przed Shockiem −19,00 → +15,00; kontrole (niezabójcze, za mało, walka) bez zmian.
+- Piny: `test/audyt-pmssb66-smiertelne-countery.test.js` (8).
+- Bramki: `npm test` 8451/8451; `test:all` 8718/8718; build 0; `cr-numery --sprawdz` OK. Lustro: 3000 159:161; 5000 162:158; 9000 163:157 (nieukończone 0).
+- Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md` (sekcja „Ad 2"). Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (dopiski 1–2).
+

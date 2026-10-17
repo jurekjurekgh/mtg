@@ -3386,6 +3386,9 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
   plan [PLAN_2026-10-17g](plans/PLAN_2026-10-17g-pmssb66-okno-many.md). Zasada właściciela: mana w end step przeciwnika jest darmowa;
   generycznie dla `create_token` i `add_counter`. Crash `Brak kolorowej many` (seed 3035) USUNIĘTY: purpose w planerze kolorów + wybór
   koloru Skarbu/grantu po dopasowaniu. Lustro 3000: 159:161, 5000: 162:158, 9000: 163:157 (nieukończone 0).
+  Ad 2 (właściciel): skutki licznikowe ŚMIERTELNE ASAP — zabójcze −1/−1 wroga (K1 −1 → +33) i ratunek +1/+1 przed
+  śmiertelnym uszkodzeniem na stosie (K3 −19 → +15); wycena „skazanego" stwora nie zeruje licznika, który go ocala.
+  Raport: sekcja „Ad 2" w [raporcie PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md); piny `audyt-pmssb66-smiertelne-countery.test.js`.
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).
