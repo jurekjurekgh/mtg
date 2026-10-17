@@ -214,24 +214,37 @@ listę PRZED pierwszym uruchomieniem pełnego testu:
 Warunki triggera czytaj też WŁAŚCIWE dane: `eventData.manaCost` przy rzucie to
 mana WYDATKOWANA (po obniżkach), nie mana value karty (L85).
 
-## Krok 5 — dopisz karty do istniejących talii singleton
+## Krok 5 — przydział do talii przez generator (NIE ręcznie)
 
-Od M32 **nie tworzymy osobnych talii batchowych** (`decks/real-batchN.txt`)
-— obowiązuje paradygmat singleton: max 1 kopia karty (lądy podstawowe bez
-limitu) i min. 15 kart nielandowych. Nowe karty z batcha **dopisujemy do
-istniejących talii** w `decks/` (`green`, `black`, `red`, `innistrad`,
-`azorius`, `wiedzmin`), każdą do talii pasującej kolorystycznie/tematycznie:
+Talii w `decks/*.txt` **nie edytujesz ręcznie**. Przydział kart do talii robi wyłącznie
+generator `tools/generate-plan-decks.mjs` (ADR 0023 §1, L122). Generator nadpisuje
+`decks/*.txt` i czyta pole `plan` z definicji karty (`src/cards/card-data.js`) oraz
+mapę worków w samym generatorze.
 
-```txt
-1x NazwaKarty        # dopisek przed blokiem lądów
-9x Swamp             # licznik lądów podstawowych rośnie o 1–2 na batch,
-                     # żeby proporcja landów nie spadała
-```
+Procedura:
 
-Każdy dopisek musi przechodzić `test/repo-decks.test.js` (walidacja singleton
-+ round-trip tekstu) — jeśli test zszywa liczność talii (np. czerwonej),
-zaktualizuj tam liczby. Nowe karty wymagają statusu `supported` — talie nie
-mogą odwoływać się do kart `limited` (test to pilnuje).
+1. Ustaw pole `plan` nowej karty dokładnie tak, jak w liście właściciela (wiążące,
+   patrz sekcja „Zanim zaczniesz"). Nie zmieniaj go, nawet gdy wygląda na pomyłkę.
+2. Dodaj kartę do katalogu i wpis do `src/cards/mana-costs-data.js` (Krok 3).
+3. Uruchom `node tools/generate-plan-decks.mjs`. Generator sam:
+   - dopisuje kartę do talii jej planu, jeśli plan ma ≥15 kart wspieranych
+     (własna talia jednoplanowa, ADR 0023 §2);
+   - albo przydziela ją do jednego z czterech „worków" dla małych planów; awans
+     worka do własnej talii też jest automatyczny (M181);
+   - przelicza landy (`ceil(nielandów/2)`, kolory wg pipów) i zachowuje singleton.
+4. Zobacz, co zmieniło się w `decks/` (`git diff decks/`), i potwierdź, że zmiany
+   wynikają tylko z nowych kart i ich planu. Jeśli generator zmienia talie, których
+   batch nie dotyczy, zatrzymaj się i zgłoś to właścicielowi.
+5. `test/repo-decks.test.js` pilnuje zgodności plików z generatorem, singletonu,
+   pokrycia katalogu 1:1 i proporcji lądów. Zaktualizuj zszyte liczności tylko wtedy,
+   gdy zmiana jest zamierzona (np. karta w planie >18 przestawia podział, M228).
+
+Nowych talii batchowych (`decks/real-batchN.txt`) nie tworzymy (paradygmat singleton
+od M32). Nazwy plików talii też nie są już stałym zbiorem; aktualna lista jest
+w `decks/` i w `tools/generate-plan-decks.mjs`.
+
+Walidację talii pilnuje `validateDeck` (`src/cards/deck-validation.js`): singleton
+poza basic landami, min. 15 nielandów, tylko karty `supported` (ADR 0022).
 
 ## Krok 6 — napisz testy `test/real-cards-batchN.test.js`
 
@@ -287,9 +300,10 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
 - [ ] definicje w `REAL_CARDS` (`src/cards/card-data.js`) — pełne mechaniki,
       `support.limitations` pusty
 - [ ] `artId` ze słownika (lub świadomy brak z powodu spoza kolekcji)
-- [ ] karty dopisane do istniejących talii singleton (`decks/*.txt`) +
-      walidacja/round-trip (`test/repo-decks.test.js`, aktualizacja zszytych
-      liczności, jeśli trzeba)
+- [ ] przydział do talii przez `node tools/generate-plan-decks.mjs` (NIE ręcznie,
+      L122 / ADR 0023); `git diff decks/` pokazuje tylko zmiany z batcha;
+      `test/repo-decks.test.js` zielony (aktualizacja zszytych liczności, jeśli
+      zamierzona)
 - [ ] testy `test/real-cards-batchN.test.js` (legalny + nielegalny + sanity danych)
 - [ ] generyczne mechaniki w engine (jeśli nowe), bez warunków na nazwę
 - [ ] nowy deskryptor ma 4 dowiązania: EVENT_TYPES + opis zdarzenia, etykieta
