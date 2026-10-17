@@ -103,7 +103,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'tappedRampWaitPenalty', 'rampCastManaWeight',
   'modalEtbValueWeight',
   // Batch 68 (Austere Command): masowe zniszczenie bez celu — patrz DEFAULT_HEURISTIC_PARAMS.
-  'massDestroyFoeFlat', 'massDestroyOwnFlat',
+  'massDestroyCardValue', 'massDestroyOwnMultiplier', 'massDestroyEvasionBonus',
+  'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
   'battleDefeatBonus',
@@ -607,11 +608,32 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
   regenerationModelWeight: 1,
   evasionEtbValueWeight: 1,
-  // Batch 68 (Austere Command): masowe zniszczenie bez celu — płaska wartość
-  // na permanent: wróg (klasa removalu, jak HOSTILE 90 zawęża się do 75) i własny
-  // (mocniej, jak selfHarmPenalty). Strata dodawana przez sacrificePermanentLoss.
-  massDestroyFoeFlat: 75,
-  massDestroyOwnFlat: 90,
+  // PMSSB-63 (batch 68, Austere Command): masowe zniszczenie wyceniane z MODELU
+  // STOŁU, nie z płaskiej stałej na sztukę (stara wersja: 75/90 za permanent →
+  // 3× 1/1 wroga liczyło się wyżej niż 2× 3/3 moich, choć materiał szedł na minus).
+  // Składniki (`massDestroyValue` w heuristic-bot.js):
+  //  - massDestroyCardValue: wartość JEDNEJ karty (= drawCardValue). Wrogi permanent
+  //    to karta mniej u przeciwnika; własny — karta mniej u mnie.
+  //  - materiał: permanentMaterialValue (2×moc + wytrzymałość + MV) — CO stracę/zabiję
+  //    (kto ma silniejsze i wyższe TMC), plus massDestroyEvasionBonus za latanie/zasięg/
+  //    deathtouch/lifelink (stwór blokujący i ewazyjny kosztuje więcej).
+  //  - massDestroyOwnMultiplier: własne straty mocniej (1.2 — proporcja dawnych 90/75).
+  //  - massDestroyThreatWeight: ile punktów warte jest zabrane zagrożenie życia
+  //    (nieblokowany atak wroga po blokach MOICH OCALAŁYCH stworów, ÷ moje życie,
+  //    capped 1). Dzięki temu życie i blokery są w modelu, nie w stałej.
+  //  - massDestroyRebuildDiscount: strata własna maleje za każdego stwora-kartę w mojej
+  //    ręce (cap 3): mam czym odbudować stół po wrathcie.
+  //  - massDestroyCastCost: KOSZT (odejmowany) samej zagranej karty przy czystym masowym
+  //    zniszczeniu — wydaję kartę, więc start wyceny to −6, nie +6.
+  //    Zastępuje spellBase (50): spellBase to premia za zwykły czar, a wrath nie jest
+  //    „zagraniem z bonusem” — jego wartość to netto stołu. Bez tego równa wymiana
+  //    3/3 za 3/3 przy życiu 20 dawała +35 zamiast −9 i bot rzucał Austere zawsze.
+  massDestroyCardValue: 6,
+  massDestroyOwnMultiplier: 1.2,
+  massDestroyEvasionBonus: 4,
+  massDestroyThreatWeight: 20,
+  massDestroyRebuildDiscount: 0.1,
+  massDestroyCastCost: 6,
   counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
   rampNeedWeight: 1,
   rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem

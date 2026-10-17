@@ -4,7 +4,7 @@
 // Secure the Scene w swoje permanenty, nie kontruje czaru „can't be countered\",
 // a kontruje zwykły ciężki czar (kontrola dodatnia).
 //
-// Wagi: src/controllers/heuristic-params.js (massDestroyFoeFlat 75, massDestroyOwnFlat 90).
+// Wagi: src/controllers/heuristic-params.js (massDestroy* — PMSSB-63, model stołu).
 // Kolejność par Austere: 0 art+ench, 1 art+MV≤3, 2 art+MV≥4, 3 ench+MV≤3,
 // 4 ench+MV≥4, 5 MV≤3+MV≥4 (chooseTwoModes, pary i<j).
 import { test } from 'node:test';
@@ -43,7 +43,11 @@ function botTurn() {
 
 const choose = (state) => createHeuristicBot({ seed: 68 }).chooseCommand(playerView(state, 'p2'), {});
 
-test('B68/G6 Austere: bot wybiera parę o największym zysku netto (artefakt wroga + stwór wroga MV≥4 = 177 > 172)', () => {
+test('B68/G6 Austere: bot wybiera parę o największej wartości netto wg modelu stołu (PMSSB-63: dwa stwory 6/5 + lifelink 2/1 = 54 > artefakt MV5 + 6/5 = 46)', () => {
+  // PMSSB-63 ZMIANA OCZEKIWANIA (świadoma): stara wycena (płaskie 75/90 na sztukę) dawała parę 2
+  // (artefakt + MV≥4). Model stołu: para 5 (MV≤3 + MV≥4) zabija 6/5 ORAZ lifelinka 2/1 (ewazja +4,
+  // zagrożenie −8 życia), a artefakt-kamień many (MV5, wartość 11) jest mniej wart niż ten
+  // lifelink (wartość 17 + zagrożenie). Liczby: test/audyt-pmssb63-batch68.test.js.
   const state = botTurn();
   addMana(state, 'p2', 6, { colors: ['W'] });
   putCard(state, 'aus', 'austere-command', 'p2', 'hand');
@@ -53,7 +57,7 @@ test('B68/G6 Austere: bot wybiera parę o największym zysku netto (artefakt wro
   const choice = choose(state);
   assert.equal(choice.type, 'cast_spell', `bot rzuca Austere: ${JSON.stringify(choice)}`);
   assert.equal(choice.objectId, 'aus');
-  assert.equal(choice.modeIndex, 2, 'para (artefakty + MV≥4) — najwyższa wartość netto');
+  assert.equal(choice.modeIndex, 5, 'para (MV≤3 + MV≥4) — dwa stwory wroga, wyższa wartość netto niż artefakt + 6/5');
 });
 
 test('B68/G6 Austere: nie rzuca, gdy zniszczyłby tylko WŁASNE permanenty', () => {

@@ -6249,31 +6249,81 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * landach zbędny Swamp/Plains jest tańszy i Tiger zostaje.
    */
   /**
-   * Batch 68 (Austere Command — „Destroy all …" bez celu): wartość masowego
-   * zniszczenia = strata WROGICH permanentów pasujących do filtra minus strata
-   * WŁASNYCH. Miara straty to `sacrificePermanentLoss` (jedna skala z ofiarą), a
-   * płaski składnik to klasa removalu: P.massDestroyFoeFlat (wróg) i
-   * P.massDestroyOwnFlat (własny, mocniej — jak selfHarmPenalty). Nieniszczalne
-   * (indestructible) nie wchodzą do wyceny. Zero dopasowań = pusty efekt.
+   * PMSSB-63 (batch 68, Austere Command — „Destroy all …" bez celu): wycena
+   * masowego zniszczenia z MODELU STOLU, nie z plaskich stalych na sztuke.
+   * Dla kazdego trafionego permanentu: wartosc karty (massDestroyCardValue) +
+   * materiał (permanentMaterialValue: moc/wytrzymałość/MV + ewazja). Wrogi
+   * permanent = moj zysk, wlasny = moj koszt (x massDestroyOwnMultiplier, pomniejszony
+   * o odbudowe z reki). Do tego zagrozenie zycia: ile nieblokowanego ataku wroga
+   * zabieram (po blokach moich OCALALYCH stworow) w stosunku do mojego zycia.
+   * Ta sama para trybow (chooseTwoModes) jest wyceniana osobno, wiec bot wybiera
+   * pare o najwyzszej wartosci netto. Nieniszczalne nie wchodza; pusty filtr → 0.
    */
-  function massDestroyStats(view, effect) {
-    const filter = effect?.filter ?? {};
-    const types = filter.types ?? [];
-    const stats = { count: 0, foe: 0, own: 0 };
-    for (const object of view.zones.battlefield ?? []) {
-      const typeOk = types.every((type) => object.kind === type.toLowerCase()
-        || (object.types ?? []).includes(type));
-      if (!typeOk) continue;
-      const mv = object.manaCost ?? 0;
-      if (filter.manaValueAtMost != null && mv > filter.manaValueAtMost) continue;
-      if (filter.manaValueAtLeast != null && mv < filter.manaValueAtLeast) continue;
-      if ((object.keywords ?? []).includes('indestructible')) continue;
-      const loss = sacrificePermanentLoss(view, object);
-      stats.count += 1;
-      if (object.controllerId === view.playerId) stats.own += P.massDestroyOwnFlat + loss;
-      else stats.foe += P.massDestroyFoeFlat + loss;
+  const MASS_EVASION_KEYWORDS = ['flying', 'reach', 'deathtouch', 'lifelink', 'first strike', 'double strike'];
+  function massDestroyAffected(view, effects) {
+    const seen = new Set();
+    const hit = [];
+    for (const effect of effects) {
+      if (effect?.type !== 'destroy_all') continue;
+      const filter = effect.filter ?? {};
+      const types = filter.types ?? [];
+      for (const object of view.zones.battlefield ?? []) {
+        if (seen.has(object.id)) continue;
+        const typeOk = types.every((type) => object.kind === type.toLowerCase()
+          || (object.types ?? []).includes(type));
+        if (!typeOk) continue;
+        const mv = object.manaCost ?? 0;
+        if (filter.manaValueAtMost != null && mv > filter.manaValueAtMost) continue;
+        if (filter.manaValueAtLeast != null && mv < filter.manaValueAtLeast) continue;
+        if ((object.keywords ?? []).includes('indestructible')) continue;
+        seen.add(object.id);
+        hit.push(object);
+      }
     }
-    return stats;
+    return hit;
+  }
+  /** Materiał permanentu w skali karty (PMSSB-63): stwor = 2xmoc + wytrzymałość + MV
+   *  (permanentMaterialValue) + ewazja; nie-stwor = MV (TMC); land = skala straty landu. */
+  function massDestroyWorth(view, object) {
+    const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+    if (isLand) return sacrificePermanentLoss(view, object);
+    let worth = permanentMaterialValue(object);
+    if ((object.keywords ?? []).some((kw) => MASS_EVASION_KEYWORDS.includes(kw))) {
+      worth += P.massDestroyEvasionBonus;
+    }
+    return worth;
+  }
+  /** Nieblokowana sila ataku: najmocniejsze ataki dostaja blok po jednym blokerze. */
+  function unblockedAttackPower(attackers, blockers) {
+    const powers = attackers.map((o) => combatPower(o)).sort((a, b) => b - a);
+    let blocks = blockers.length;
+    let total = 0;
+    for (const power of powers) {
+      if (blocks > 0) { blocks -= 1; continue; }
+      total += power;
+    }
+    return total;
+  }
+  function massDestroyValue(view, effects) {
+    const hit = massDestroyAffected(view, effects);
+    const hitIds = new Set(hit.map((o) => o.id));
+    const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
+    const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
+    let value = 0;
+    for (const object of hit) {
+      const unit = P.massDestroyCardValue + massDestroyWorth(view, object);
+      if (object.controllerId === view.playerId) value -= unit * P.massDestroyOwnMultiplier * rebuild;
+      else value += unit;
+    }
+    // Zagrozenie zycia: zabrany nieblokowany atak wroga / moje zycie (capped 1).
+    const foeAll = enemyCreatures(view);
+    const myAll = myCreatures(view);
+    const foeLeft = foeAll.filter((o) => !hitIds.has(o.id));
+    const myLeft = myAll.filter((o) => !hitIds.has(o.id));
+    const removed = unblockedAttackPower(foeAll, myAll) - unblockedAttackPower(foeLeft, myLeft);
+    const life = Math.max(1, myLife(view));
+    if (removed > 0) value += Math.min(1, removed / life) * P.massDestroyThreatWeight;
+    return { count: hit.length, value };
   }
   function sacrificePermanentLoss(view, target) {
     if (!target) return 0;
@@ -10234,15 +10284,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
-        let score = P.spellBase;
-        // Batch 68 (Austere Command): masowe zniszczenie wyceniamy netto (wrogowie
-        // minus własne permanenty). Filtr, który nie trafia w nic — czar pusty → −70.
+        // PMSSB-63: czysty masowy czar (same destroy_all) startuje od kosztu karty,
+        // nie od premii spellBase — jego wartosc to netto stolu (massDestroyValue).
+        const pureMassSpell = effects.length > 0 && effects.every((e) => e?.type === 'destroy_all');
+        let score = pureMassSpell ? -P.massDestroyCastCost : P.spellBase;
+        // PMSSB-63 (Austere Command): masowe zniszczenie wyceniamy z modelu stolu.
+        // Filtr, ktory nie trafia w nic — czar pusty → −70.
         {
           const massEffects = effects.filter((e) => e?.type === 'destroy_all');
           if (massEffects.length > 0) {
-            const massStats = massEffects.map((e) => massDestroyStats(view, e));
-            if (massStats.every((st) => st.count === 0)) return finish(-70);
-            score += massStats.reduce((sum, st) => sum + st.foe - st.own, 0);
+            const mass = massDestroyValue(view, effects);
+            if (mass.count === 0) return finish(-70);
+            score += mass.value;
           }
         }
         // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
