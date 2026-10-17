@@ -17279,3 +17279,11 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Bramki: `npm test` 8451/8451; `test:all` 8718/8718; build 0; `cr-numery --sprawdz` OK. Lustro: 3000 159:161; 5000 162:158; 9000 163:157 (nieukończone 0).
 - Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md` (sekcja „Ad 2"). Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (dopiski 1–2).
 
+## 2026-10-17 — PMSSB-67: caveaty PMSSB-64 (batch 68)
+
+- Cztery punkty z PMSSB-64 przeszły pełną pętlę PMSSB (zgoda właściciela: „Wszystkie 4 punkty z pełną pętlą PMSSB"). Commity: F1 `8cf0042` (pin, bez zmiany kodu), F2 `26cd540` (liczniki wejścia, Necrosquito 62.55 → 70.05), F3 `493c30d` (przetrwanie lifelinku), F4 `21a5568` (płaskie wagi 9 słów → `floorShare`).
+- F4: 16 pinów przepiętych z przyczyną w komentarzu (formuła i stan stołu). Nie osłabiono asercji.
+- Błąd procesu, wykryty przy F4: `npm test` to `run-tests.mjs fast`, który pomija zestaw `slow`, czyli golden master. Dwa wcześniejsze zdania „npm test zielony" (F2, F3) nie obejmowały golden mastera. Wykryło to dopiero `test:all` (2 padnięcia). Od tej pory zamknięcie kroku = `test:all` zielony, a nie `npm test`.
+- Golden master: dump diff 1221 decyzji (baza `7338ff2`): F2 0 zmian; F3 1 zmiana wyniku (−0.9); F4 7 zmian wyniku (−0.9 do −2.4), 0 zmian wyboru. Fixture zregenerowany (`90aa7806…` → `2fe4b347…`).
+- Bramy na `21a5568`: `test:all` 8749/8749; build 0; `cr-numery --sprawdz` OK; lustro 3000 157:163, 5000 162:158, 9000 163:157 (nierozegrane 0). Zmiana 159:161 → 157:163 w jednym zakresie to 2 wygrane z 320, w granicach szumu.
+- Otwarte: próg latania dla ciała o mocy 0 (decyzja właściciela; rekomendacja: zostawić 3). Raport: `docs/audits/PMSSB67_KW_CAVEATY_2026-10-17.md`.

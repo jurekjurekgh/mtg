@@ -3389,6 +3389,14 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
   Ad 2 (właściciel): skutki licznikowe ŚMIERTELNE ASAP — zabójcze −1/−1 wroga (K1 −1 → +33) i ratunek +1/+1 przed
   śmiertelnym uszkodzeniem na stosie (K3 −19 → +15); wycena „skazanego" stwora nie zeruje licznika, który go ocala.
   Raport: sekcja „Ad 2" w [raporcie PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md); piny `audyt-pmssb66-smiertelne-countery.test.js`.
+- **PMSSB-67 — caveaty PMSSB-64 (F1–F4): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-67](audits/PMSSB67_KW_CAVEATY_2026-10-17.md),
+  plan [PLAN_2026-10-17h](plans/PLAN_2026-10-17h-pmssb67-kw-caveaty.md). Cztery punkty z pełną pętlą:
+  F1 masowe zaklęcia (`MASS_EVASION_KEYWORDS`): tylko pin, bez zmiany kodu (pomiar PRZED poprawny), `8cf0042`;
+  F2 liczniki wejścia w wycenie rzutu (Necrosquito 62.55 → 70.05), `26cd540`;
+  F3 przetrwanie lifelinku przy zabójcach na stole (`creatureKwLifelinkSurvivalFloor` 0.5), `493c30d`;
+  F4 płaskie wagi 9 słów kluczowych → udział stanu (`floorShare`, `creatureKwStateFloor` 0.5), `21a5568`.
+  Bramy na `21a5568`: `test:all` 8749/8749; build 0; `cr-numery` OK; lustro 3000 157:163, 5000 162:158, 9000 163:157 (nierozegrane 0).
+  Golden master: fixture zregenerowany po dump diff (0 zmian wyboru). Otwarte: próg latania dla ciała o mocy 0 (rekomendacja: zostawić 3), w raporcie.
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).

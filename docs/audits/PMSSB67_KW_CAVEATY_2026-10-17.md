@@ -193,4 +193,12 @@ czyli w granicach szumu. Nie uznaję jej za sygnał ani za poprawę. Pomiar wpł
 
 ## Otwarte w PMSSB-67
 
-- F4: otwarte po wdrożeniu — dowód bram (test:all, build, cr-numery) przed domknięciem.
+- **Próg latania dla ciała o mocy 0 (decyzja właściciela).** Sprawa: `creatureKwFlyingFloor = 3` (PMSSB-64) daje latającemu
+  ciału o mocy 0 wartość 3 (`max(3, 8·moc/3)`). Necrosquito (`card-data.js` ~5754) ma moc 0 w definicji i rośnie
+  o oil, więc przy wejściu jest 2/2. Wynik 70.05 vs syntetyczny latający 69.60: różnica 0.45 pochodzi z
+  wzrostu oil, którego sonda nie mierzy. Nie zmieniam progu bez dowodu taktycznego.
+  **Rekomendacja:** zostawić 3. Latające ciało z mocą 0 nadal blokuje latające i zasłania, więc 0 byłoby
+  zaniżeniem. Gdyby właściciel chciał skalować próg do mocy, potrzebny jest pomiar z oil (sonda rozszerzona o licznik).
+- **Rejestr PMSSB** (`docs/PMSSB.md`, `docs/PROJECT_HISTORY.md`): wpisane w tym samym commicie co ten raport.
+- **F2 i F3 w bramach:** `test:all` przeszedł dla stanu ze wszystkimi F2–F4 (`21a5568`, 8749/8749). Osobnego `test:all`
+  dla samego F2 czy F3 nie uruchamiano; dump diff pokazuje F2 = 0 zmian, F3 = 1 zmiana wyniku.
