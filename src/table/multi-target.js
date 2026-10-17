@@ -77,9 +77,14 @@ function subsetOfferTruncated(offered, n, lo, hi) {
  * gracza. Nie jest to „budowanie z palca”: silnik waliduje komendę przy
  * wykonaniu (liczba celów w [min,max], legalność każdego celu, L48).
  */
-export function commandForFreeTargets(commands, targets) {
+export function commandForFreeTargets(commands, targets, { min = 0, max = Infinity } = {}) {
   const template = (commands ?? []).find((cmd) => cmd && Array.isArray(cmd.targets));
   if (!template) return null;
+  // O-1 (audyt PR #166, 2026-10-17): kreator nie składa komendy ponad limit
+  // („up to three” → 4 cele) ani poniżej minimum — silnik i tak odrzuca, a
+  // „Zatwierdź” nie może się włączać na wybór, którego nie da się wykonać.
+  const n = (targets ?? []).length;
+  if (n < min || n > max) return null;
   return { ...template, targets: [...(targets ?? [])] };
 }
 

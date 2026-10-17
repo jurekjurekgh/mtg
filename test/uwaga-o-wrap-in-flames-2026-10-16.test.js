@@ -167,3 +167,12 @@ test('O/10: 7 stworów — plan ma tryb wolnych celów', () => {
   const commands = playerView(state, 'p1').legalCommands.filter((c) => c.objectId === 'wrap');
   assert.equal(multiTargetPlanOf(commands).freeTargets, true);
 });
+
+test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź” wyłączone, komenda nie powstaje', () => {
+  // Tryb wolnych celów składa komendę z dowolnego zaznaczenia; bez strażnika
+  // limitu kreator pozwalał zatwierdzić 4 cele, a silnik odrzucał to dopiero
+  // przy wykonaniu (zmierzone: confirmDisabled=false, illegal_spell:liczba celów).
+  const r = zatwierdz([0, 1, 2, 3], 7);
+  assert.equal(r.confirmDisabled, true, 'kreator nie zatwierdza ponad maxTargets');
+  assert.equal(r.submitted, null);
+});

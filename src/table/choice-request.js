@@ -1353,7 +1353,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // (`plan.freeTargets`), zaznaczenie bez dopasowania składa komendę z szablonu
   // i wybranych celów — silnik waliduje ją przy wykonaniu (spells.js).
   const commandForChosen = (cmds, opts) => commandForSelection(cmds, opts)
-    ?? (plan.freeTargets ? commandForFreeTargets(cmds, [...chosen]) : null);
+    ?? (plan.freeTargets ? commandForFreeTargets(cmds, [...chosen], { min: plan.minTargets, max: plan.maxTargets }) : null);
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
