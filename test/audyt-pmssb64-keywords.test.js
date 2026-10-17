@@ -71,10 +71,15 @@ const FLAT_KEYWORDS = [
   ['indestructible', 'creatureKwIndestructible'], ['hexproof', 'creatureKwHexproof'],
 ];
 
+// PMSSB-67/F4: słowa płaskie zastąpione udziałem stanu (floorShare). Pusty stół = brak sygnału →
+// creatureKwStateFloor × waga; wyjątki z pełnym sygnałem przy braku wrogów: double strike (nic nie
+// blokuje → pełne obrażenia) i menace (zero blokerów → nieblokowalny). Pin sprawdza dokładny wzór.
+const FULL_ON_EMPTY_BOARD = new Set(['double_strike', 'menace']);
 for (const [kw, knob] of FLAT_KEYWORDS) {
-  test(`PMSSB-64/pokrycie ${kw}: Δ = ${knob} × 0.9`, () => {
+  const share = FULL_ON_EMPTY_BOARD.has(kw) ? 1 : DEFAULT_HEURISTIC_PARAMS.creatureKwStateFloor;
+  test(`PMSSB-64/pokrycie ${kw}: Δ = ${knob} × 0.9 × udział stanu (pusty stół ${share})`, () => {
     const d = castScore({ keywords: [kw] })[0] - castScore({ keywords: [] })[0];
-    assert.ok(Math.abs(d - DEFAULT_HEURISTIC_PARAMS[knob] * 0.9) < 0.01, `Δ=${d} != ${DEFAULT_HEURISTIC_PARAMS[knob] * 0.9}`);
+    assert.ok(Math.abs(d - DEFAULT_HEURISTIC_PARAMS[knob] * 0.9 * share) < 0.01, `Δ=${d} != ${DEFAULT_HEURISTIC_PARAMS[knob] * 0.9 * share}`);
   });
 }
 

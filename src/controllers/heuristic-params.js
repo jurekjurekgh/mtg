@@ -107,7 +107,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
   // PMSSB-64 — słowa kluczowe stworzenia rzucanego z ręki (wycena ciała, L41).
   'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwRefPower', 'creatureKwHaste',
-  'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwDeathtouch',
+  'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwStateFloor', 'creatureKwRefThreat', 'creatureKwDeathtouch',
   'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
@@ -664,6 +664,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a
   // zabójca kasuje dalsze zyski w horyzoncie dwóch tur. Pokrętło 1 = dawne zachowanie (bez stanu).
   creatureKwLifelinkSurvivalFloor: 0.5,
+  // PMSSB-67 F4: słowa płaskie → udział stanu. creatureKwStateFloor 0.5: przy neutralnym stole
+  // (brak sygnału) słowo daje połowę wagi, przy pełnym sygnale całą wagę. Pokrętło 1 = dawne płaskie
+  // wartości. creatureKwRefThreat 3: normalizator liczby zagrożeń (karty w ręce wroga, zabójcy, wrodzy
+  // „nie-do-pokonania") — 3 zagrożenia = pełny sygnał.
+  creatureKwStateFloor: 0.5,
+  creatureKwRefThreat: 3,
   creatureKwDeathtouch: 4,
   creatureKwVigilance: 4,
   creatureKwFirstStrike: 3,

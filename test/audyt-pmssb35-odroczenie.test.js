@@ -111,7 +111,7 @@ test('A1: zaplotowana karta w exile liczy CIAŁO, nie puste 0/0 (PRZED: wszystki
   // więc ciało to 1/1 w tym scenariuszu; stara wartość liczyła 0/0 — ta sama klasa defektu co Necrosquito.
   blisko(wynik(sheriff, 'cast_permanent(sh)'), 65.6964, 'Sheriff 1/1 (licznik wejścia 1 + inne stworzenia = 1; PMSSB-67/F2)');
   blisko(wynik(giant, 'cast_permanent(hg)'), 71.104, 'Hill Giant 3/3 — ciało wchodzi do wyceny');
-  blisko(wynik(paladin, 'cast_permanent(sp)'), 79.2072, 'Paladin 5/4 — największe ciało, najwyższy wynik (PMSSB-64 trample +1.8)');
+  blisko(wynik(paladin, 'cast_permanent(sp)'), 78.9072, 'Paladin 5/4 — największe ciało (PMSSB-67/F4: trample ×moc 5/3 ×próg 0.5 = −0.3 względem PMSSB-64 +1.8)');
   assert.ok(wynik(paladin, 'cast_permanent(sp)') > 63, 'PRZED wszystkie trzy karty miały 63,000 (ślepota)');
 });
 

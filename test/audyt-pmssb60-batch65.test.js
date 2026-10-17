@@ -267,15 +267,18 @@ const sky = (foeKeywords, kontra = false) => scoreOf(skyScene(foeKeywords, kontr
 const blisko = (a, b) => Math.abs(a - b) < 1e-9;
 
 /** Zmierzono na `3027ed0`+fala E (harness tego pliku, nie sonda). */
-const SKY_FLYER = 81.909;      // wróg z flying: statyka wchodzi do wyceny (PMSSB-64: +3.6 = reach+trample Engulfera)
-const SKY_BAZA = 79.209;       // wróg bez zakazanego keywordu = kontrfaktyk (PMSSB-64 +3.6)
-const SKY_BEZ_WROGA = 75.609;  // brak wrogich stworów = kontrfaktyk (PMSSB-64 +3.6)
+const SKY_FLYER = 83.109;      // wróg z flying: statyka wchodzi do wyceny (PMSSB-67/F4: reach 2×1 + trample 2×(6/3)×(0.5+0.5·4/6); było 81.909)
+const SKY_BAZA = 79.509;       // wróg bez zakazanego keywordu = kontrfaktyk (PMSSB-67/F4: reach 2×0.5 + trample ×(6/3); było 79.209)
+// Kontrfaktyk Z latającym wrogiem (bez zakazanej zdolności): reach jest w pełnej wartości (wróg-latający), więc to INNY
+// stan niż SKY_BAZA. Przed PMSSB-67 reach był płaski i oba stany dawały tę samą wartość (79.209).
+const SKY_KONTRA_FLYER = 80.409;
+const SKY_BEZ_WROGA = 74.709;  // brak wrogich stworów = kontrfaktyk (PMSSB-67/F4: reach 2×0.5; było 75.609)
 
 test('PMSSB-60/E1: cantBeBlockedBy(flying) podnosi wycenę rzutu wobec wrogiego flyera', () => {
   const pelny = sky(['flying']);
   const kontra = sky(['flying'], true);
   assert.ok(blisko(pelny, SKY_FLYER), `oczekiwano ${SKY_FLYER}, jest ${pelny}`);
-  assert.ok(blisko(kontra, SKY_BAZA), `oczekiwano ${SKY_BAZA}, jest ${kontra}`);
+  assert.ok(blisko(kontra, SKY_KONTRA_FLYER), `oczekiwano ${SKY_KONTRA_FLYER}, jest ${kontra}`);
   // POMIAR PRZED: delta 0 (72,0 = 72,0) — statyka nie wchodziła do wyceny.
   assert.ok(pelny - kontra > 2.5, `oczekiwano delty > 2.5, jest ${pelny - kontra}`);
 });
@@ -481,6 +484,6 @@ test('PMSSB-60/F6: model kosztu dosięga obu kart z trigger.payLife — Zoraline
       keywords: [], subtypes: [], types: ['Creature'], colors: ['B'], cardName: 'gy' });
     put(st, 'c1', 'zoraline', 'p1', 'hand');
   } });
-  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 86.4036),
-    `oczekiwano 86.4036 (PMSSB-64 +8.1: latanie+czujność), jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
+  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 84.8736),
+    `oczekiwano 84.8736 (PMSSB-67/F4: czujność × presja 3/20 = 0.575; było 86.4036), jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
 });

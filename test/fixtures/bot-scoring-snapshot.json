@@ -1,13 +1,13 @@
 {
   "version": 1,
-  "overallHash": "90aa78061b487f8a00673628d7ff440cc83ab77195347ca821ab0339bf9334cd",
+  "overallHash": "2fe4b347f1828d00c22dfa909168a7a790f4d41cbe24a6f0a9ab31da98356fb7",
   "matches": [
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1000,
-      "hash": "9bb0097051613051da300b2e540e82512e70c763b012862a5b17ee4844af5348",
+      "hash": "81f07cdb7da45700e7dd28dc0903a0e4a5543d70cb2085fa15ae83f4e17d3970",
       "decisions": 298,
-      "scoreSum": 3231.7917,
+      "scoreSum": 3228.4917,
       "chosenKinds": {
         "activate_ability": 3,
         "attack": 7,
@@ -27,9 +27,9 @@
     {
       "pair": "ravnica|innistrad-wu",
       "seed": 1001,
-      "hash": "a039c2e955f842645867824b777ca8a665843119a6cfe8c7f9a5a435f40cf52f",
+      "hash": "94889477973e90c8c03ddd87d8b9c84b6aafab3073a4fc2ba6cf03f19f5d0229",
       "decisions": 166,
-      "scoreSum": 2760.8072,
+      "scoreSum": 2758.4072,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 5,
@@ -68,9 +68,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "9197ebc65aa212b0fba623d54e22e35b2f6563fe6a5c9bb17fdd34a7655af8ec",
+      "hash": "a5c37f7ec245a9f79cdf1f827d7c3cc5aa911e2557f1764c76a42082a6805c0e",
       "decisions": 261,
-      "scoreSum": 3007.9854,
+      "scoreSum": 3006.1854,
       "chosenKinds": {
         "attack": 8,
         "block": 5,
@@ -89,9 +89,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1000,
-      "hash": "0fc6d4477821dd859778325b57ded79c307653e0571d16eabd7e9eec370e2064",
+      "hash": "c973cd274e95032931d184633fa7cea5f5b652e6e6926c527c339c5a68408dae",
       "decisions": 152,
-      "scoreSum": 2362.3099,
+      "scoreSum": 2361.4099,
       "chosenKinds": {
         "attack": 4,
         "block": 6,
@@ -106,9 +106,9 @@
     {
       "pair": "tarkir-bg|warhammer-ubr",
       "seed": 1001,
-      "hash": "4ce1641f6337d274d511445eaca0758f1e3317d667febc477de9c7b2f468f9f4",
+      "hash": "6328bed3aba09b0374f43ee1d13f1783e4b67c7e3c9a8d55fc0dc29d192f6bcf",
       "decisions": 160,
-      "scoreSum": 2519.2099,
+      "scoreSum": 2517.4099,
       "chosenKinds": {
         "attack": 5,
         "block": 6,

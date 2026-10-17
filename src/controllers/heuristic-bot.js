@@ -3071,9 +3071,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // obniża wartość do progu creatureKwLifelinkSurvivalFloor (pierwszy cios zawsze zarabia).
     const bodyToughness = (card?.toughness ?? def?.toughness ?? 0) + entryCounterStats(view, def).dToughness;
     const enemyList = enemyCreatures(view);
-    const killers = enemyList.filter((o) => combatPower(o) >= bodyToughness).length;
-    const killShare = enemyList.length > 0 ? killers / enemyList.length : 0;
+    const enemyKillers = enemyList.filter((o) => combatPower(o) >= bodyToughness).length;
+    const killShare = enemyList.length > 0 ? enemyKillers / enemyList.length : 0;
     const lifelinkSurvival = 1 - (1 - P.creatureKwLifelinkSurvivalFloor) * killShare;
+    // PMSSB-67 F4: słowa płaskie (dawniej stałe 4/3/6/2 niezależnie od stołu) → udział stanu.
+    // floorShare(x) = próg + (1 − próg)·x, x ∈ [0,1]: przy neutralnym stole wartość = próg × waga,
+    // przy pełnym sygnale = waga. Każdy x ma definicję stanu poniżej (stół, ręka wroga, moc).
+    const floorShare = (x) => P.creatureKwStateFloor + (1 - P.creatureKwStateFloor) * Math.max(0, Math.min(1, x));
+    const bigThreats = enemyList.filter((o) => (o.toughness ?? 0) > power).length;
+    const beatable = enemyList.filter((o) => (o.toughness ?? 0) <= power).length;
+    const convertible = enemyList.filter((o) => combatPower(o) >= bodyToughness && (o.toughness ?? 0) <= power).length;
+    const enemyFlyers = enemyList.filter((o) => hasKeyword(o, 'flying')).length;
+    const oppHand = (view.zones.hand ?? []).filter((o) => o.controllerId !== view.playerId).length;
+    const blockersNow = untappedEnemyBlockers(view);
+    const maxBlockerToughness = blockersNow.reduce((m, o) => Math.max(m, o.toughness ?? 0), 0);
+    const ref = Math.max(1, P.creatureKwRefThreat);
     let value = 0;
     for (const k of kw) {
       // Latanie: bez latającego blokera wroga = ewazja (skala mocą), ale nie poniżej dolnej granicy
@@ -3084,15 +3096,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         : P.creatureKwFlyingFloor;
       else if (k === 'haste') value += P.creatureKwHaste * powerScale;
       else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power) * lifelinkSurvival;
-      else if (k === 'deathtouch') value += P.creatureKwDeathtouch;
-      else if (k === 'vigilance') value += P.creatureKwVigilance;
-      else if (k === 'first_strike') value += P.creatureKwFirstStrike;
-      else if (k === 'double_strike') value += P.creatureKwDoubleStrike;
-      else if (k === 'menace') value += P.creatureKwMenace;
-      else if (k === 'trample') value += P.creatureKwTrample;
-      else if (k === 'reach') value += P.creatureKwReach;
-      else if (k === 'indestructible') value += P.creatureKwIndestructible;
-      else if (k === 'hexproof') value += P.creatureKwHexproof;
+      // deathtouch: zabija każdego blokera/atakującego; wartość rośnie z liczbą wrogów, których nie pokonujemy.
+      else if (k === 'deathtouch') value += P.creatureKwDeathtouch * floorShare(bigThreats / ref);
+      // vigilance: atak bez utraty obrony; wartość rośnie z presją wroga względem naszego życia.
+      else if (k === 'vigilance') value += P.creatureKwVigilance * powerScale * floorShare(enemyAttackPower(view) / Math.max(1, myLife(view)));
+      // first strike: wygrywa wymianę, którą bez niego przegrywamy (wróg zabija, my go nie — a my go zabijamy pierwsi).
+      else if (k === 'first_strike') value += P.creatureKwFirstStrike * powerScale * floorShare(convertible / Math.max(1, enemyList.length));
+      // double strike: dwa razy obrażenia (moc) i pierwszy cios; bez wrogich stworzeń pełna wartość (nic nie blokuje).
+      else if (k === 'double_strike') value += P.creatureKwDoubleStrike * powerScale * floorShare(enemyList.length === 0 ? 1 : beatable / enemyList.length);
+      // menace: wymaga dwóch blokerów; z jednym blokerem wroga jest nieblokowalny (pełna wartość).
+      else if (k === 'menace') value += P.creatureKwMenace * powerScale * floorShare(1 / Math.max(1, blockersNow.length));
+      // trample: przebija nadwyżką mocy ponad wytrzymałość najlepszego blokera; bez blokerów brak nadwyżki.
+      else if (k === 'trample') value += P.creatureKwTrample * powerScale * floorShare(blockersNow.length === 0 || power <= 0 ? 0 : Math.max(0, power - maxBlockerToughness) / power);
+      // reach: blokuje latające; bez wrogich latających wartość obrony jest w progu.
+      else if (k === 'reach') value += P.creatureKwReach * floorShare(enemyFlyers > 0 ? 1 : 0);
+      // indestructible: przeżywa walkę i zniszczenie; zagrożenie = karty w ręce wroga (usunięcie) + zabójcy w walce.
+      else if (k === 'indestructible') value += P.creatureKwIndestructible * powerScale * floorShare((oppHand + enemyKillers) / ref);
+      // hexproof: chroni przed celowanym usunięciem; zagrożenie = karty w ręce wroga.
+      else if (k === 'hexproof') value += P.creatureKwHexproof * powerScale * floorShare(oppHand / ref);
     }
     return value;
   };

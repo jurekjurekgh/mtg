@@ -44,13 +44,13 @@ describe('PMSSB-9 Wave-B: anticipacja-attacks', () => {
     const s = mk(); fillLib(s); put(s, 'gc', 'gila-courser');
     assert.equal(disp(decide(s), 'cast_permanent(gc'), 69.8);
   });
-  it('F-T2: caves = 78.8 (PMSSB-64 trample +1.8; było 77.0)', () => {
+  it('F-T2: caves = 78.5 (PMSSB-67/F4 trample ×moc 5/3 ×próg 0.5 = −0.3; PMSSB-64 było 78.8; przed 77.0)', () => {
     const s = mk(); fillLib(s); put(s, 'cc', 'caves-of-chaos-adventurer');
-    assert.equal(disp(decide(s), 'cast_permanent(cc'), 78.8);
+    assert.equal(disp(decide(s), 'cast_permanent(cc'), 78.5);
   });
-  it('F-T2: veteran/thistledown = 72.0/70.2 (PMSSB-64 vigilance +3.6; untap +2.7)', () => {
+  it('F-T2: veteran = 69.6 (PMSSB-67/F4 czujność moc 2 ×0.5 = −2.4; PMSSB-64 było 72.0)', () => {
     const a = mk(); fillLib(a); put(a, 'td', 'tenth-district-veteran');
-    assert.equal(disp(decide(a), 'cast_permanent(td'), 72.0);
+    assert.equal(disp(decide(a), 'cast_permanent(td'), 69.6);
     const b = mk(); fillLib(b); put(b, 'tp', 'thistledown-players');
     assert.equal(disp(decide(b), 'cast_permanent(tp'), 70.2);
   });
@@ -60,9 +60,9 @@ describe('PMSSB-9 Wave-B: anticipacja-attacks', () => {
     const b = mk(); fillLib(b); put(b, 'ab', 'angelic-benediction');
     assert.equal(disp(decide(b), 'cast_permanent(ab'), 58.9);
   });
-  it('F-T2: zoraline = 77.4 (PMSSB-64 latanie 3-mocy +4.5 + czujność +3.6; pay-SKIP + bat-imminent-0)', () => {
+  it('F-T2: zoraline = 75.6 (PMSSB-67/F4 czujność na pustym stole +1.8 zamiast +3.6; latanie 3-mocy +4.5; pay-SKIP + bat-imminent-0)', () => {
     const s = mk(); fillLib(s); put(s, 'zo', 'zoraline');
-    assert.equal(disp(decide(s), 'cast_permanent(zo'), 77.4);
+    assert.equal(disp(decide(s), 'cast_permanent(zo'), 75.6);
   });
   it('F-T2: bramka-evasion (fly-blok 71.1 vs plain 72.0, delta-0.9!)', () => {
     const a = mk(); fillLib(a); put(a, 'bf', 'delta-bloodflies'); foe(a, 'f1', ['flying']);
@@ -70,8 +70,8 @@ describe('PMSSB-9 Wave-B: anticipacja-attacks', () => {
     const b = mk(); fillLib(b); put(b, 'bf', 'delta-bloodflies'); foe(b, 'f1');
     assert.equal(disp(decide(b), 'cast_permanent(bf'), 72.0);
   });
-  it('guard: prowler = 71.1 (F-T1 nietknięty; PMSSB-64 deathtouch +3.6)', () => {
+  it('guard: prowler = 69.3 (F-T1 nietknięty; PMSSB-67/F4 deathtouch na pustym stole +1.8)', () => {
     const s = mk(); fillLib(s); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 71.1);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 69.3);
   });
 });

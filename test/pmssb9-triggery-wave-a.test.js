@@ -31,9 +31,9 @@ const decide = (s) => {
 const disp = (opts, frag) => Number(opts.find((o) => o.cmd.includes(frag))?.score.toFixed(1));
 
 describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
-  it('F-T1: prowler = 71.1 (PMSSB-64 deathtouch +3.6; było 64.8 przed anticypacją)', () => {
+  it('F-T1: prowler = 69.3 (PMSSB-67/F4 deathtouch na pustym stole +1.8; PMSSB-64 było 71.1; przed anticypacją 64.8)', () => {
     const s = mk(); fillLib(s); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 71.1);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 69.3);
   });
   it('F-T1: piker-twin = 64.8 BEZ ZMIAN (różnica izoluje anticipację)', () => {
     const s = mk(); fillLib(s); put(s, 'pk', 'goblin-piker');
@@ -59,9 +59,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'so', 'selhoff-occultist');
     assert.equal(disp(decide(s), 'cast_permanent(so'), 80.2);
   });
-  it('F-T1: prowler-lib0 = 14.4 (PMSSB-64 deathtouch +3.6; drabina deck-outu żyje w anticipacji!)', () => {
+  it('F-T1: prowler-lib0 = 12.6 (PMSSB-67/F4 deathtouch +1.8; PMSSB-64 było 14.4; drabina deck-outu żyje w anticipacji!)', () => {
     const s = mk(); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 14.4);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 12.6);
   });
   it('guard: bloodflies = 68.4 (Wave-B/F-T2 wylądowała: +1.8)', () => {
     const s = mk(); fillLib(s); put(s, 'bf', 'delta-bloodflies');

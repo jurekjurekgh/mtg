@@ -25,6 +25,7 @@ export const BOARDS = {
     putSynthCreature(s, 'a2', 'p1', { power: 5, toughness: 5, mv: 5 });
   },
   rekaP1: (s) => addHand(s, 'p1', 3),
+  trojka: (s) => putSynthCreature(s, 'e3', 'p1', { power: 3, toughness: 3, mv: 3 }),
 };
 
 /** Karty w ręce przeciwnika (p1): sygnał zagrożenia usunięciem (hexproof, indestructible). */
@@ -54,7 +55,7 @@ const score = (opts) => castScore(opts)[0];
 
 // --- F4: płaskie wagi słów ----------------------------------------------------------
 const FLAT = ['deathtouch', 'vigilance', 'first_strike', 'double_strike', 'menace', 'trample', 'reach', 'indestructible', 'hexproof'];
-export const F4_BOARDS = ['pusty', 'blokerDuzy', 'blokerMaly', 'dwaBlokery', 'latajacy', 'atakDuzy', 'rekaP1'];
+export const F4_BOARDS = ['pusty', 'blokerDuzy', 'blokerMaly', 'dwaBlokery', 'latajacy', 'atakDuzy', 'rekaP1', 'trojka'];
 
 // --- F3: lifelink -------------------------------------------------------------------
 export const F3_BOARDS = ['pusty', 'blokerDuzy', 'blokerMaly', 'atakDuzy'];

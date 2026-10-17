@@ -88,11 +88,11 @@ test('F-C2: feather +tiers(1) tylko z bialym czarem do zagrania teraz', () => {
 test('F-C3: zoraline +tiers(1) tylko z gotowym Nietoperzem', () => {
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['W', 'B'], 5);
   handCard(s, 'k', 'zoraline');
-  approx(scoreOf(s, 'cast_permanent(k'), 77.4036, 'zoraline bez bata: +0 (PMSSB-64 latanie+czujność +8.1; bylo 69.3036)');
+  approx(scoreOf(s, 'cast_permanent(k'), 75.6036, 'zoraline bez bata: +0 (PMSSB-67/F4 czujność na pustym stole −1.8; PMSSB-64 było 77.4036)');
   const t = newState(); fillLibrary(t); setLife(t, 20); addBasics(t, ['W', 'B'], 5);
   handCard(t, 'k', 'zoraline');
   fieldCreature(t, 'bt', 'p1', 2, 2, { subtypes: ['Bat'] });
-  approx(scoreOf(t, 'cast_permanent(k'), 78.3036, 'zoraline z gotowym batem: +1 x0.9 (PMSSB-64 +8.1)');
+  approx(scoreOf(t, 'cast_permanent(k'), 76.5036, 'zoraline z gotowym batem: +1 ×0.9 (PMSSB-67/F4 czujność −1.8; PMSSB-64 było 78.3036)');
 });
 
 test('F-T1: highland-game dies-gain +0.9 (PMSSB-9: anticipacja-dies 0.5×2×0.9)', () => {

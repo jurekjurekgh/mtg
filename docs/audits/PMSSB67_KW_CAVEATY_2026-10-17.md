@@ -92,6 +92,105 @@ zabójcy padają; przywrócenie `cmp` bajt w bajt, 6/6.
 **Granice:** zabójca liczony po mocy i wytrzymałości, nie po sile walki (bez first strike/deathtouch atakującego).
 Blokujący zabójca nie jest odróżniany od atakującego — to ta sama wartość ryzyka.
 
+## F4 — płaskie wagi 9 słów kluczowych (PO)
+
+| Słowo (waga W) | pusty | bloker 4/5 | bloker 1/1 | dwa blokery 2/2 | latający wróg | dwa ataki 5/5 | 3 karty w ręce wroga | wróg 3/3 |
+|---|---|---|---|---|---|---|---|---|
+| deathtouch (4) | 1.8 (3.6) | 2.4 (3.6) | 1.8 (3.6) | 1.8 (3.6) | 1.8 (3.6) | 3.0 (3.6) | 1.8 (3.6) | 1.8 |
+| vigilance (4) | 1.8 (3.6) | 2.16 (3.6) | 1.89 (3.6) | 2.16 (3.6) | 1.98 (3.6) | 2.7 (3.6) | 1.8 (3.6) | 2.07 |
+| first_strike (3) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 2.7 |
+| double_strike (6) | 5.4 (5.4) | 2.7 (5.4) | 5.4 (5.4) | 5.4 (5.4) | 5.4 (5.4) | 2.7 (5.4) | 5.4 (5.4) | 5.4 |
+| menace (3) | 2.7 (2.7) | 2.7 (2.7) | 2.7 (2.7) | 2.02 (2.7) | 2.7 (2.7) | 2.02 (2.7) | 2.7 (2.7) | 2.7 |
+| trample (2) | 0.9 (1.8) | 0.9 (1.8) | 1.5 (1.8) | 1.2 (1.8) | 1.2 (1.8) | 0.9 (1.8) | 0.9 (1.8) | 0.9 |
+| reach (2) | 0.9 (1.8) | 0.9 (1.8) | 0.9 (1.8) | 0.9 (1.8) | 1.8 (1.8) | 0.9 (1.8) | 0.9 (1.8) | 0.9 |
+| indestructible (6) | 2.7 (5.4) | 3.6 (5.4) | 2.7 (5.4) | 2.7 (5.4) | 2.7 (5.4) | 4.5 (5.4) | 5.4 (5.4) | 3.6 |
+| hexproof (3) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 1.35 (2.7) | 2.7 (2.7) | 1.35 |
+
+Wartości to Δ rzutu ciała 3/3 (moc 3) z danym słowem, ×0.9 wagi rodziny. W nawiasie PRZED (płasko). Kolumna
+„wróg 3/3" nie była mierzona PRZED — dodana po pomiarze, żeby sprawdzić pierwszy cios.
+
+**Model:** `floorShare(x) = creatureKwStateFloor + (1 − creatureKwStateFloor)·x`, x ∈ [0,1]. Próg 0.5, normalizator
+`creatureKwRefThreat = 3`. Per słowo (`creatureKeywordValue`, heuristic-bot.js):
+
+- deathtouch: `W × floorShare(wrogowie, których nie pokonujemy (wytrzymałość > nasza moc) / 3)`
+- vigilance: `W × moc/3 × floorShare(presja wroga / życie)` (presja = `enemyAttackPower`)
+- first_strike: `W × moc/3 × floorShare(wrogowie, którzy nas zabiją, a których my zabijemy pierwsi / liczba wrogów)`
+- double_strike: `W × moc/3 × floorShare(wszyscy wrogowie, których pokonujemy / liczba wrogów; bez wrogów = 1)`
+- menace: `W × moc/3 × floorShare(1 / liczba untapped blokerów)`
+- trample: `W × moc/3 × floorShare(nadwyżka (moc − najlepszy bloker) / moc; bez blokerów 0)`
+- reach: `W × floorShare(1 jeśli wróg ma latającego, inaczej 0)` (bez skali mocą: blok, nie zadane obrażenia)
+- indestructible: `W × moc/3 × floorShare((karty w ręce wroga + zabójcy) / 3)`
+- hexproof: `W × moc/3 × floorShare(karty w ręce wroga / 3)`
+
+Karty w ręce wroga: widok ukrywa je jako obiekty z `controllerId` wroga (ta sama reguła co `handSizeOf`).
+
+**Odstępstwo (świadome):** słowa z `powerScale` (double strike, trample, vigilance, first strike, menace,
+indestructible, hexproof) dla mocy 1 są wyraźnie niższe niż dawne płaskie wartości (np. vigilance 0.6 zamiast 3.6).
+Wzorzec jest ten sam co latanie i tempo (PMSSB-64, `creatureKwRefPower`): zadane obrażenia skalują się mocą.
+Dawna wartość płaska dla ciała 1/1 była zawyżona. Guard M429(c) (brak inwersji) jest spełniony: wartości rosną
+z mocą i ze stanem, a żadne słowo nie daje wyższej wartości słabszemu ciału.
+
+**Pokrętła:** `creatureKwStateFloor = 1` przywraca płaskie wartości (test). `creatureKwRefThreat` steruje normalizacją liczby zagrożeń.
+
+**Testy:**
+- `test/audyt-pmssb67-flat.test.js` (10): stosunek Δ(stół)/Δ(pusty) dla każdego słowa; pokrętło ×1.
+  **Mutacja** (`floorShare = 1`, czyli płasko): 8 z 10 pada; przywrócenie `cmp` bajt w bajt, 10/10.
+- `test/audyt-pmssb64-keywords.test.js` (20): pin „pokrycie" przepięty z `Δ = waga × 0.9` na `× 0.9 × udział`
+  (pusty stół = próg; wyjątki double strike i menace = pełna wartość przy braku wrogów). Dokładny wzór, nie osłabienie.
+
+**Re-pin (świadomy, z przyczyną; każda wartość zgodna z formułą, rozpisana w komentarzu):**
+
+| Plik | Pin | PRZED | PO | Przyczyna |
+|---|---|---|---|---|
+| audyt-batch53 CR1 | Acidic Slime deathtouch | 3.6 | 1.8 | pusty stół, próg |
+| audyt-pmssb35 A1 | Paladin 5/4 | 79.2072 | 78.9072 | trample ×5/3 ×0.5 |
+| audyt-pmssb60 E1 | Engulfer, wróg latający | 81.909 | 83.109 | trample ×6/3 przy 2/2 blokerze |
+| audyt-pmssb60 E2 | Engulfer, wróg bez latania | 79.209 | 79.509 | reach ×0.5, trample jw. |
+| audyt-pmssb60 E3 | Engulfer, bez wrogów | 75.609 | 74.709 | reach ×0.5 |
+| audyt-pmssb60 E1 (kontrfaktyk) | Engulfer, wróg latający, bez zakazanej zdolności | 79.209 | 80.409 | reach w pełnej wartości (wróg-latający); pin w tym samym stanie co E1 |
+| audyt-pmssb60 F6 | Zoraline, wróg 3/3 | 86.4036 | 84.8736 | czujność × presja 3/20 |
+| pmssb4 wave-a F-A2 | Paladin@20 | 73.8072 | 73.5072 | trample jw. |
+| pmssb4 wave-c F-C3 | Zoraline bez bata | 77.4036 | 75.6036 | czujność, pusty stół |
+| pmssb4 wave-c F-C3 | Zoraline z batem | 78.3036 | 76.5036 | czujność, pusty stół |
+| pmssb9 wave-a F-T1 | prowler (deathtouch) | 71.1 | 69.3 | pusty stół |
+| pmssb9 wave-a F-T1 | prowler-lib0 | 14.4 | 12.6 | pusty stół |
+| pmssb9 wave-b F-T2 | caves (trample) | 78.8 | 78.5 | trample jw. |
+| pmssb9 wave-b F-T2 | veteran (czujność, moc 2) | 72.0 | 69.6 | czujność ×2/3 |
+| pmssb9 wave-b F-T2 | zoraline | 77.4 | 75.6 | czujność, pusty stół |
+| pmssb9 wave-b guard | prowler | 71.1 | 69.3 | pusty stół |
+
+Uwaga do E1-kontrfaktyka: pierwotnie `kontra` (wróg z latającym) był porównywany do `SKY_BAZA` (wróg bez latania).
+To były dwa różne stany. Przed F4 reach był płaski, więc wartości się zgadzały (79.209). Teraz nie, i pin mówi to wprost.
+
+**Golden master (poprawka).** `npm test` = `run-tests.mjs fast`, który POMIJA pliki z zestawu `slow`
+(w tym `bot-scoring-snapshot.test.js`). Pełną bramą jest `npm run test:all`. Moje wcześniejsze zdanie „npm test zielony"
+dla F2 i F3 nie obejmowało więc golden mastera. Zostało to wykryte w `test:all` (2 padnięcia: `2318`, `2319`).
+
+Dump diff (`tools/bot-scoring-snapshot.mjs --dump`, baza = `7338ff2` przed PMSSB-67; porównanie własnym `cmpdump`,
+1221 decyzji w 6 partiach):
+
+| Krok (skumulowany względem 7338ff2) | Zmiana wyboru | Zmiana wyniku wybranej | Zmiana innych opcji | Maks. Δ |
+|---|---|---|---|---|
+| F2 `26cd540` | 0 | 0 | 0 | 0 |
+| F3 `493c30d` | 0 | 1 | 1 | 0.9 |
+| F4 (bieżący) | 0 | 7 | 2 | 2.4 |
+
+Szczegóły zmian (wszystkie `cast_permanent` ciał z dotkniętym słowem; wybór pozostał ten sam):
+- F3: `tarkir-bg|warhammer-ubr` seed 1000 T8, `p1-opening-0` 65.70 → 64.80 (−0.9; zmiana z kroku F3 `lifelinkSurvival`; karty nie zidentyfikowano w zapisie, więc przypisanie do lifelinku jest hipotezą). Ta sama zmiana utrzymuje się w F4.
+- F4 (nowe względem F3): `ravnica|innistrad-wu` s1000 T22 (drawn-28, 65.70 → 64.80); s1000 T24 (drawn-101, 72.00 → 69.60, −2.4);
+  s1001 T13 (drawn-49, 71.10 → 68.70, −2.4); `dominaria-brg|mirrodin-wu` s1001 T9 (drawn-20, 67.50 → 66.60, −0.9)
+  i T13 (drawn-49, 66.60 → 65.70, −0.9); `tarkir-bg|warhammer-ubr` s1001 T3 (drawn-3, 67.50 → 65.70, −1.8).
+Razem F4 dotyka 6 decyzji (7 pozycji z tabeli minus 1 zmiana F3).
+
+Kierunek (w dół) i skala (−0.9 … −2.4) są zgodne z tym, że F4 obniża płaskie wagi słów na małych ciałach lub przy słabym stole. Nie zweryfikowano każdej delty do pełnej formuły karty; to jest krok do zrobienia w razie wątpliwości.
+**Decyzja:** fixture zregenerowany (`--write`, `overallHash` 90aa7806… → 2fe4b347…). Podstawa: 0 zmian wyboru, a zmiany
+wyniku tylko tam, gdzie formuła F4 je przewiduje. Wąska próbka (6 partii), więc to NIE jest dowód na brak wpływu na grę.
+Wpływ na grę mierzy lustro (niżej).
+
+**Lustro (`tools/pmssb66-mirror.mjs 40`):** 3000 → **157:163** (PRZED 159:161), 5000 → 162:158 (bez zmian),
+9000 → 163:157 (bez zmian); nierozegrane 0 we wszystkich (960 partii). Zmiana w jednym zakresie to 2 wygrane z 320,
+czyli w granicach szumu. Nie uznaję jej za sygnał ani za poprawę. Pomiar wpływu na grę wymagałby większej próby.
+
 ## Otwarte w PMSSB-67
 
-- F4 (płaskie wagi 9 słów kluczowych) — w toku.
+- F4: otwarte po wdrożeniu — dowód bram (test:all, build, cr-numery) przed domknięciem.
