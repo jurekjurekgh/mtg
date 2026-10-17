@@ -40,11 +40,18 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     const s = mk('end', 'p2'); fillLib(s); put(s, 'sc', 'civilized-scholar', 'p1', 'battlefield');
     assert.equal(scoreOf(decide(s).opts, 'activate_ability(sc'), 14);
   });
-  it('F-L1: cycle {2} = 2 (efekt ≡ scholar, ale płatny — PMSSB-34/B)', () => {
-    // PRZED PMSSB-34 oba remisowały na 4, choć cycling kosztuje {2}, a scholar
-    // tylko tapnięcie — koszt many nie był wtedy wyceniany w żadnej gałęzi.
+  it('F-L1: cycle {2} z 0 lądami = 33 (typecycling = wymiana karty na ląd, PMSSB-63/K)', () => {
+    // ZMIANA ŚWIADOMA (PMSSB-63/K, L41): dawny pin „= 2” zakładał parytet z loot dla
+    // każdego cyklingu. Swampcycling to wymiana karty na ląd — ta sama miara co
+    // basic landcycling Kulratha: landKeepValue(znaleziony ląd) − cardKeepValue(oddany
+    // 7-drop poza zasięgiem) = 30 − (−3) = 33 przy 0 lądach na stole.
     const s = mk(); fillLib(s, 10); put(s, 'gm', 'gloomfang-mauler');
-    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 2);
+    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 33);
+  });
+  it('F-L1: cycle {2} przy 6 lądach = BRAK landcyklingu (bramka −5: ziem wystarczy, 7-drop zagra)', () => {
+    const s = mk(); fillLib(s, 10); put(s, 'gm', 'gloomfang-mauler');
+    for (let i = 0; i < 6; i++) put(s, `ld${i}`, 'basic-forest', 'p1', 'battlefield');
+    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), -5);
   });
   it('F-L1: fisher-cast = 71.1 (noga −4 ×0.9, było 74.7)', () => {
     const s = mk(); fillLib(s); put(s, 'fi', 'quicksilver-fisher');
