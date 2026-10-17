@@ -17,7 +17,9 @@ Wynik rzutu ciała z ręki (`cast_permanent`) minus ten sam rzut bez słowa, na 
 - **F2 (Necrosquito):** prawdziwa karta 62.55; syntetyczny latający 2/2 MV4 69.60; vanilla 2/2 MV4 64.80.
   Karta, która wchodzi jako 2/2 z latającym, wyceniona niżej niż vanilla 2/2. Przyczyna: wycena czytała
   moc z karty (0) i pomijała liczniki wejścia (2 oil → +2/+2 przez pompę `oil_counters`).
-- **F1 (pin MASS_EVASION):** brak pinu. Patrz sekcja F1 (po wdrożeniu).
+- **F1 (pin MASS_EVASION):** kod poprawny, brak pinu. Maksimum wyniku Austere Command (foe 2/2 MV2 z
+  danym słowem) minus vanilla: flying, reach, deathtouch, lifelink, first_strike, double_strike → Δ 4.00
+  (= `massDestroyEvasionBonus`); vigilance, haste, trample, menace, hexproof → 0.
 
 ## F2 — liczniki wejścia w wycenie rzutu (PO)
 
@@ -58,6 +60,13 @@ nie zmieniła wyboru); `npm run build` EXIT 0; `cr-numery --sprawdz` OK.
 `other_creatures_you_control_plus_one` do liczby → NaN w teście A2 (`darmowy rzut = płatny + koszt`). Naprawiono
 przez rozwiązanie formuły tak jak w silniku, nie przez wyjątek dla Sheriffa.
 
+## F1 — pin na MASS_EVASION_KEYWORDS (PO)
+
+Zmiana w kodzie: brak (pomiar PRZED pokazał poprawne zachowanie). Dodany pin:
+`test/audyt-pmssb67-masowe.test.js` (11): 6 słów z listy → Δ = `massDestroyEvasionBonus`; 5 spoza listy → Δ 0
+(anty-over-fix). **Dowód czułości:** wariant z literówką `'first strike'` (regresja PMSSB-63) → test
+`first_strike` pada (1 z 11); po przywróceniu 11/11. Plik przywrócony bajt w bajt (`cmp`).
+
 ## Otwarte w PMSSB-67
 
-- F1 (pin MASS_EVASION), F3 (lifelink), F4 (płaskie wagi) — w toku, patrz sekcje poniżej po wdrożeniu.
+- F3 (lifelink) i F4 (płaskie wagi) — w toku.

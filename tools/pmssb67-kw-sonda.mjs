@@ -97,3 +97,27 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     for (const [k, v] of Object.entries(r.f4)) console.log('F4', k.padEnd(40), v);
   }
 }
+
+// --- F1: masowe zniszczenie — lista MASS_EVASION_KEYWORDS (heuristic-bot.js) ----------------
+// Pomiar: najwyższy wynik rzutu Austere Command (max po opcjach cast_spell) przy foe 2/2 MV2 z
+// danym słowem, minus ta sama wartość przy vanilli. Słowa z listy → stała Δ (massDestroyEvasionBonus);
+// słowa spoza listy → 0 (anty-over-fix: nie każde słowo to ewazja/zabójstwo).
+export const F1_KEYWORDS = ['flying', 'reach', 'deathtouch', 'lifelink', 'first_strike', 'double_strike', 'vigilance', 'haste', 'trample', 'menace', 'hexproof'];
+
+export function austereMax(keywords = []) {
+  const s = botTurn({ life: 20 });
+  addMana(s, 'p2', 6, { colors: ['W'] });
+  putCard(s, 'aus', 'austere-command', 'p2', 'hand');
+  if (keywords.length >= 0 && keywords !== null) putSynthCreature(s, 'ef', 'p1', { power: 2, toughness: 2, mv: 2, keywords });
+  const bot = createHeuristicBot({ seed: 68 });
+  bot.chooseCommand(playerView(s, 'p2'), {});
+  const e = bot.trace().at(-1);
+  return Math.max(...(e?.options ?? []).filter((o) => o?.cmd?.startsWith('cast_spell(aus')).map((o) => o.score));
+}
+
+export function measureF1() {
+  const van = austereMax([]);
+  const out = { vanilla: +van.toFixed(3) };
+  for (const kw of F1_KEYWORDS) out[kw] = +(austereMax([kw]) - van).toFixed(3);
+  return out;
+}
