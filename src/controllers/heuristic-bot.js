@@ -3066,6 +3066,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // Ewazja i tempo to ZADANE obrażenia — skalują się z mocą (2/1 latający przepuszcza 2, nie 3).
     // Kotwica (8 / 6) dotyczy mocy referencyjnej creatureKwRefPower; korpus z mocą 3 dostaje ją w całości.
     const powerScale = Math.max(0, power) / P.creatureKwRefPower;
+    // PMSSB-67 F3: lifelink zarabia tylko, dopóki ciało żyje. Zabójcy = wrogowie, którzy zabijają ciało
+    // w bloku lub walce (moc ≥ wytrzymałość ciała, wytrzymałość z licznikami wejścia). Udział zabójców
+    // obniża wartość do progu creatureKwLifelinkSurvivalFloor (pierwszy cios zawsze zarabia).
+    const bodyToughness = (card?.toughness ?? def?.toughness ?? 0) + entryCounterStats(view, def).dToughness;
+    const enemyList = enemyCreatures(view);
+    const killers = enemyList.filter((o) => combatPower(o) >= bodyToughness).length;
+    const killShare = enemyList.length > 0 ? killers / enemyList.length : 0;
+    const lifelinkSurvival = 1 - (1 - P.creatureKwLifelinkSurvivalFloor) * killShare;
     let value = 0;
     for (const k of kw) {
       // Latanie: bez latającego blokera wroga = ewazja (skala mocą), ale nie poniżej dolnej granicy
@@ -3075,7 +3083,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         ? Math.max(P.creatureKwFlyingFloor, P.creatureKwFlying * powerScale)
         : P.creatureKwFlyingFloor;
       else if (k === 'haste') value += P.creatureKwHaste * powerScale;
-      else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power);
+      else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power) * lifelinkSurvival;
       else if (k === 'deathtouch') value += P.creatureKwDeathtouch;
       else if (k === 'vigilance') value += P.creatureKwVigilance;
       else if (k === 'first_strike') value += P.creatureKwFirstStrike;

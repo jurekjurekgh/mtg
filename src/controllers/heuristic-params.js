@@ -107,7 +107,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
   // PMSSB-64 — słowa kluczowe stworzenia rzucanego z ręki (wycena ciała, L41).
   'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwRefPower', 'creatureKwHaste',
-  'creatureKwLifelinkWeight', 'creatureKwDeathtouch',
+  'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwDeathtouch',
   'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
@@ -660,6 +660,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   creatureKwFlyingFloor: 3, // dolna granica latania = dawny płaski +3; przy latającym blokerze wroga to cała wartość latania
   creatureKwHaste: 6,
   creatureKwLifelinkWeight: 1,
+  // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do
+  // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a
+  // zabójca kasuje dalsze zyski w horyzoncie dwóch tur. Pokrętło 1 = dawne zachowanie (bez stanu).
+  creatureKwLifelinkSurvivalFloor: 0.5,
   creatureKwDeathtouch: 4,
   creatureKwVigilance: 4,
   creatureKwFirstStrike: 3,

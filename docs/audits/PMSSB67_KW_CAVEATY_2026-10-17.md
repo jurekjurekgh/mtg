@@ -67,6 +67,31 @@ Zmiana w kodzie: brak (pomiar PRZED pokazał poprawne zachowanie). Dodany pin:
 (anty-over-fix). **Dowód czułości:** wariant z literówką `'first strike'` (regresja PMSSB-63) → test
 `first_strike` pada (1 z 11); po przywróceniu 11/11. Plik przywrócony bajt w bajt (`cmp`).
 
+## F3 — lifelink a zabójcy na stole (PO)
+
+Zmiana: `creatureKeywordValue` (heuristic-bot.js): `lifelinkSurvival = 1 − (1 − creatureKwLifelinkSurvivalFloor) × udział zabójców`.
+Zabójca = wrogie stworzenie o mocy (`combatPower`) ≥ wytrzymałość ciała (z licznikami wejścia, spójnie z F2).
+Parametr `creatureKwLifelinkSurvivalFloor = 0.5` (`heuristic-params.js`, klucz na liście, komentarz z uzasadnieniem).
+
+| Stół (Δ lifelinku, ciało 3/3) | PRZED | PO |
+|---|---|---|
+| pusty, życie 20 | 1.80 | 1.80 |
+| bloker 4/5 (zabija 3/3, sam przeżywa) | 1.80 | 0.90 |
+| bloker 1/1 (nie zabija) | 1.80 | 1.80 |
+| dwa atakujące 5/5 (zabójcy 2/2) | 1.80 | 0.90 |
+| życie 4, pusty / bloker 4/5 | 4.50 / 4.50 | 4.50 / 2.25 |
+
+Mieszany stół (1 zabójca + 1 nie-zabójca) → 0.75 × pusty (test). Pokrętło 1 → dawne zachowanie (test).
+
+**Testy:** `test/audyt-pmssb67-lifelink.test.js` (6). **Dowód czułości:** wyłączenie mnożnika w kodzie → 3 testy
+zabójcy padają; przywrócenie `cmp` bajt w bajt, 6/6.
+
+**Bramy (F3):** `npm test` 8472/8472 EXIT 0 (golden master bez regeneracji). Lustro (`pmssb66-mirror.mjs 40`):
+3000 → 159:161, 5000 → 162:158, 9000 → 163:157, nierozegrane 0 (bez zmiany względem Ad 2).
+
+**Granice:** zabójca liczony po mocy i wytrzymałości, nie po sile walki (bez first strike/deathtouch atakującego).
+Blokujący zabójca nie jest odróżniany od atakującego — to ta sama wartość ryzyka.
+
 ## Otwarte w PMSSB-67
 
-- F3 (lifelink) i F4 (płaskie wagi) — w toku.
+- F4 (płaskie wagi 9 słów kluczowych) — w toku.
