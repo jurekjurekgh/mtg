@@ -46,18 +46,19 @@ Zlecenie: **wszystkie karty w 100%** (`supported`), brakujące mechaniki dokodow
 - [x] **G0 — plan + słownik kolekcji** (ten commit): 10 wierszy w `tools/collection-art-ids.csv`.
 - [x] **G1 — pobranie danych**: snapshoty Scryfall (`set=`) + rulingi (ADR 0028) — w `.arena/batch68/`
       (katalog roboczy, poza repo; wchodzą do repo razem z definicjami).
-- [x] **G2 — mechaniki silnika** (M1–M6 zrobione; M7 — zweryfikowane testami na istniejącym kodzie, bez nowego silnika) (po jednym commicie na mechanikę, każda z testem RED→GREEN
+- [x] **G2 — mechaniki silnika** (M1–M6 zrobione; M7 — landcycling, zdolność z cmentarza za koszt many, Skarb i mana dowolnego koloru — pilnowane asercjami kształtu w `real-cards-batch68` (commit `5e75a41`), bez nowego silnika) (po jednym commicie na mechanikę, każda z testem RED→GREEN
       na kartach SYNTETYCZNYCH w pliku testu, ADR 0029).
 - [x] **G3 — definicje 10 kart** + snapshoty + `artId` + generator talii (`node tools/generate-plan-decks.mjs`).
 - [x] **G4 — testy** `test/real-cards-batch68.test.js` (legalny, nielegalny, sanity danych).
 - [x] **G5 — 4 dowiązania nowych deskryptorów** (EVENT_TYPES, etykieta PL, wycena bota, gameObjectDataOf/installDeck).
 - [x] **G6 — bot**: wycena nowych mechanik (ręczne strojenie, PMSSB-style) + pomiar.
-- [x] **G7 — bramy**: `npm test`, `npm run build`, `cr-numery`; dokumentacja (PROJECT_HISTORY, ENGINE_MILESTONES, HANDOFF).
+- [x] **G7 — bramy**: `npm run test:all` 8615/8615 na `8d9fcc3`; `npm run build`; `cr-numery`. Dokumentacja (PROJECT_HISTORY, ENGINE_MILESTONES, HANDOFF) — w osobnych commitach po tym punkcie.
 
 ## Stan końcowy i odstępstwa od planu (2026-10-17)
 
 Wszystkie 10 kart `supported` z pustym `limitations`. Dowody (`.arena/batch68/`):
-- `npm test` (fast): **8341/8341**, `npm run test:all` — patrz log `npm-test-all.log`.
+- `npm run test:all` na `8d9fcc3`: **8615/8615**, EXIT=0 (log `test-all-final.log`, poza repo).
+  Wcześniejsze przebiegi: `npm test` (fast) 8341/8341; `test:all` 8605/8608 przed poprawkami F3/golden-master.
 - `npm run build`: 74 moduły. `node tools/cr-numery.mjs`: OK (530 numerów, 5845 cytatów).
 - `test/real-cards-batch68.test.js` 24/24, `test/batch68-mechaniki.test.js` (ADR 0029),
   `test/bot-quality-batch68.test.js` 7/7 (zachowanie bota, G6).
@@ -92,7 +93,18 @@ Odstępstwa — świadome, każde z uzasadnieniem:
    pochodzi z nowych kart w taliach. Fixture: `test/fixtures/bot-scoring-snapshot.json`.
 8. **F3 `session-bot-pausa` — seedy [31,34,37] → [34,41,50]** (konwencja L25), patrz sekcja
    „Otwarte ustalenie" niżej. Asercje bez zmian.
-9. **Cytaty CR.** Z tej partii zostają tylko numery, co do których reguła jest pewna
+10. **Wycena bota — 10 kart, nie 4.** Zachowanie rzutów wszystkich 10 kart pinuje
+   `test/bot-quality-batch68-karty.test.js` (commit `ce2d350`): Kulrath, Bloodfire, Meteorite,
+   Child of Night, Neurok, Halo Scarab. Pierwsze pięć rzutów wychodzi bez zmiany wag.
+   **Halo Scarab — bankowanie many za koszt z cmentarza poniżej passa (świadomie).** Bot nie
+   wygina Scarab, gdy nie ma czego rzucić: to ta sama reguła co Heap Gate (M243/C, zgłoszenie
+   właściciela, pin w `audyt-pmssb2-tokeny`). Zmiana tej reguły dla jednej karty byłaby cichym
+   odwróceniem decyzji właściciela, więc nie została zrobiona. Do rozstrzygnięcia przez właściciela.
+11. **O-2 — test regresji 100 stworów usunięty; lekka wersja.** Zlecenie właściciela: nie trzymać
+   w suite testu, który liczy 166751 ofert (~21 s decyzji bota). Zostaje O/13 na 30 stworach
+   (4526 ofert, ms): pilnuje kompletności i braku błędu. Czysty stack overflow pojawia się dopiero
+   przy ~10^5 elementach, więc lekki test to test poprawności, nie stosu.
+12. **Cytaty CR.** Z tej partii zostają tylko numery, co do których reguła jest pewna
    (700.2 wybór trybów, 701.8 zniszczenie, 509.1b blokowanie). Odwołania do 608.2c zastąpione
    rulingami Scryfall (Secure 2020, Raze 2022-10-14), bo nie mogę zweryfikować ich offline.
 
