@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Child+of+Night&set=m19&format=json",
+  "print": "m19",
+  "name": "Child of Night",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Creature — Vampire",
+  "oracle_text": "Lifelink",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "B"
+  ],
+  "set": "m19",
+  "set_name": "Core Set 2019",
+  "collector_number": "89",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/8/3867704d-d2ef-4185-b53d-84eba6a6776f.jpg?1783934576",
+    "normal": "https://cards.scryfall.io/normal/front/3/8/3867704d-d2ef-4185-b53d-84eba6a6776f.jpg?1783934576"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/m19/89/rulings"
+}

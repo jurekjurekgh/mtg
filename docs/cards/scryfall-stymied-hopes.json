@@ -1,0 +1,50 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Stymied+Hopes&set=ths&format=json",
+  "print": "ths",
+  "name": "Stymied Hopes",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell unless its controller pays {1}. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)",
+  "colors": [
+    "U"
+  ],
+  "set": "ths",
+  "set_name": "Theros",
+  "collector_number": "64",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/7/5702b757-5be5-4a48-bc73-a87ec4f3193b.jpg?1783939790",
+    "normal": "https://cards.scryfall.io/normal/front/5/7/5702b757-5be5-4a48-bc73-a87ec4f3193b.jpg?1783939790"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2013-09-15",
+      "source": "wotc",
+      "comment": "If Stymied Hopes resolves, you'll scry whether the controller of the target spell pays {1} or not."
+    },
+    {
+      "date": "2013-09-15",
+      "source": "wotc",
+      "comment": "When you scry, you may put all the cards you look at back on top of your library, you may put all of those cards on the bottom of your library, or you may put some of those cards on top and the rest of them on the bottom."
+    },
+    {
+      "date": "2013-09-15",
+      "source": "wotc",
+      "comment": "You choose how to order cards returned to your library after scrying no matter where you put them."
+    },
+    {
+      "date": "2013-09-15",
+      "source": "wotc",
+      "comment": "You perform the actions stated on a card in sequence. For some spells and abilities, that means you'll scry last. For others, that means you'll scry and then perform other actions."
+    },
+    {
+      "date": "2013-09-15",
+      "source": "wotc",
+      "comment": "Scry appears on some spells and abilities with one or more targets. If all of the spell or ability's targets are illegal when it tries to resolve, it won't resolve and none of its effects will happen. You won't scry."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/ths/64/rulings"
+}

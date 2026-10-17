@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Secure+the+Scene&set=m21&format=json",
+  "print": "m21",
+  "name": "Secure the Scene",
+  "mana_cost": "{4}{W}",
+  "cmc": 5,
+  "type_line": "Sorcery",
+  "oracle_text": "Exile target nonland permanent. Its controller creates a 1/1 white Soldier creature token.",
+  "colors": [
+    "W"
+  ],
+  "set": "m21",
+  "set_name": "Core Set 2021",
+  "collector_number": "35",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/d/6/d6467d96-e43a-4b1e-b6ce-578d991077b5.jpg?1783930734",
+    "normal": "https://cards.scryfall.io/normal/front/d/6/d6467d96-e43a-4b1e-b6ce-578d991077b5.jpg?1783930734"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2020-06-23",
+      "source": "wotc",
+      "comment": "If the target nonland permanent is an illegal target by the time Secure the Scene tries to resolve, the spell won't resolve. No player will create a Soldier token."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/m21/35/rulings"
+}
