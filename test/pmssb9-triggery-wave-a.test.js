@@ -31,9 +31,9 @@ const decide = (s) => {
 const disp = (opts, frag) => Number(opts.find((o) => o.cmd.includes(frag))?.score.toFixed(1));
 
 describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
-  it('F-T1: prowler = 67.5 (było 64.8: +2.7 = 0.5×6×0.9)', () => {
+  it('F-T1: prowler = 71.1 (PMSSB-64 deathtouch +3.6; było 64.8 przed anticypacją)', () => {
     const s = mk(); fillLib(s); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 67.5);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 71.1);
   });
   it('F-T1: piker-twin = 64.8 BEZ ZMIAN (różnica izoluje anticipację)', () => {
     const s = mk(); fillLib(s); put(s, 'pk', 'goblin-piker');
@@ -47,9 +47,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'dd', 'doomed-dissenter');
     assert.equal(disp(decide(s), 'cast_permanent(dd'), 72.0);
   });
-  it('F-T1: clique = 70.2 (PMSSB-13 OVERRIDE: persist-model 0.5xbody, nie flat-5!)', () => {
+  it('F-T1: clique = 74.7 (PMSSB-64 latanie 3-mocy +4.5; PMSSB-13 OVERRIDE: persist-model 0.5xbody)', () => {
     const s = mk(); fillLib(s); put(s, 'pc', 'puppeteer-clique');
-    assert.equal(disp(decide(s), 'cast_permanent(pc'), 70.2);
+    assert.equal(disp(decide(s), 'cast_permanent(pc'), 74.7);
   });
   it('F-T1: spellbomb = 62.1 (pay-gated-dies SKIP, konserwatywnie 0)', () => {
     const s = mk(); fillLib(s); put(s, 'sb', 'panic-spellbomb');
@@ -59,9 +59,9 @@ describe('PMSSB-9 Wave-A: anticipacja-dies', () => {
     const s = mk(); fillLib(s); put(s, 'so', 'selhoff-occultist');
     assert.equal(disp(decide(s), 'cast_permanent(so'), 80.2);
   });
-  it('F-T1: prowler-lib0 = 10.8 (drabina deck-outu żyje w anticipacji!)', () => {
+  it('F-T1: prowler-lib0 = 14.4 (PMSSB-64 deathtouch +3.6; drabina deck-outu żyje w anticipacji!)', () => {
     const s = mk(); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 10.8);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 14.4);
   });
   it('guard: bloodflies = 68.4 (Wave-B/F-T2 wylądowała: +1.8)', () => {
     const s = mk(); fillLib(s); put(s, 'bf', 'delta-bloodflies');

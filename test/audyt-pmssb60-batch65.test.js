@@ -267,9 +267,9 @@ const sky = (foeKeywords, kontra = false) => scoreOf(skyScene(foeKeywords, kontr
 const blisko = (a, b) => Math.abs(a - b) < 1e-9;
 
 /** Zmierzono na `3027ed0`+fala E (harness tego pliku, nie sonda). */
-const SKY_FLYER = 78.309;      // wróg z flying: statyka wchodzi do wyceny
-const SKY_BAZA = 75.609;       // wróg bez zakazanego keywordu = kontrfaktyk
-const SKY_BEZ_WROGA = 72.009;  // brak wrogich stworów = kontrfaktyk
+const SKY_FLYER = 81.909;      // wróg z flying: statyka wchodzi do wyceny (PMSSB-64: +3.6 = reach+trample Engulfera)
+const SKY_BAZA = 79.209;       // wróg bez zakazanego keywordu = kontrfaktyk (PMSSB-64 +3.6)
+const SKY_BEZ_WROGA = 75.609;  // brak wrogich stworów = kontrfaktyk (PMSSB-64 +3.6)
 
 test('PMSSB-60/E1: cantBeBlockedBy(flying) podnosi wycenę rzutu wobec wrogiego flyera', () => {
   const pelny = sky(['flying']);
@@ -481,6 +481,6 @@ test('PMSSB-60/F6: model kosztu dosięga obu kart z trigger.payLife — Zoraline
       keywords: [], subtypes: [], types: ['Creature'], colors: ['B'], cardName: 'gy' });
     put(st, 'c1', 'zoraline', 'p1', 'hand');
   } });
-  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 78.3036),
-    `oczekiwano 78.3036, jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
+  assert.ok(blisko(scoreOf(scen(), (o) => o.cmd.includes('(c1')), 86.4036),
+    `oczekiwano 86.4036 (PMSSB-64 +8.1: latanie+czujność), jest ${scoreOf(scen(), (o) => o.cmd.includes('(c1'))}`);
 });

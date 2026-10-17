@@ -53,9 +53,9 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     for (let i = 0; i < 6; i++) put(s, `ld${i}`, 'basic-forest', 'p1', 'battlefield');
     assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), -5);
   });
-  it('F-L1: fisher-cast = 71.1 (noga −4 ×0.9, było 74.7)', () => {
+  it('F-L1: fisher-cast = 78.0 (PMSSB-64 latanie 4-mocy +6.9; noga −4 ×0.9)', () => {
     const s = mk(); fillLib(s); put(s, 'fi', 'quicksilver-fisher');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(fi'), 71.1);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(fi'), 78.0);
   });
   it('F-L1: evangel-cast = 67.5 BEZ ZMIAN (split +2 już dobry)', () => {
     const s = mk(); fillLib(s); put(s, 'ev', 'evangel-of-synthesis');
@@ -73,9 +73,9 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     addObject(s, { id: 'foe', instanceId: 'i-foe', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
     assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 82);
   });
-  it('guard: crows-lib30 = 71.5 (PMSSB-10-B2: any_dies-loot +1.3!)', () => {
+  it('guard: crows-lib30 = 78.4 (PMSSB-64 latanie 4-mocy +6.9; PMSSB-10-B2: any_dies-loot +1.3!)', () => {
     const s = mk(); fillLib(s); put(s, 'cr', 'murder-of-crows');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 71.5);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 78.4);
   });
   it('guard: talions-lib30 = 66.6 (future-trigger bez anticipacji)', () => {
     const s = mk(); fillLib(s); put(s, 'tm', 'talions-messenger');

@@ -109,7 +109,7 @@ test('A1: zaplotowana karta w exile liczy CIAŁO, nie puste 0/0 (PRZED: wszystki
   const paladin = (() => { const s = game(); wExile(s, 'sp', 'spinewoods-paladin', { plotted: true, plottedAtTurn: 3 }); return s; })();
   blisko(wynik(sheriff, 'cast_permanent(sh)'), 62.996, 'Sheriff 0/0 (wchodzi z licznikami — ciało bazowe 0)');
   blisko(wynik(giant, 'cast_permanent(hg)'), 71.104, 'Hill Giant 3/3 — ciało wchodzi do wyceny');
-  blisko(wynik(paladin, 'cast_permanent(sp)'), 77.407, 'Paladin 5/4 — największe ciało, najwyższy wynik');
+  blisko(wynik(paladin, 'cast_permanent(sp)'), 79.2072, 'Paladin 5/4 — największe ciało, najwyższy wynik (PMSSB-64 trample +1.8)');
   assert.ok(wynik(paladin, 'cast_permanent(sp)') > 63, 'PRZED wszystkie trzy karty miały 63,000 (ślepota)');
 });
 

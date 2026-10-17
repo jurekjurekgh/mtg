@@ -37,8 +37,8 @@ function foeVanilla(s, id) {
 
 // PMSSB-10 Wave-B2 (F-O3): end-conditional + singletons-conditional.
 // FIRES:
-test('PMSSB10-B2: nefarious-imp leaves-scry +1.08 (67.68)', () => {
-  assert.equal(castScore('nefarious-imp'), '67.68');
+test('PMSSB10-B2: nefarious-imp leaves-scry +1.08 (69.78; PMSSB-64 latanie 2-mocy +2.1)', () => {
+  assert.equal(castScore('nefarious-imp'), '69.78');
 });
 test('PMSSB10-B2: selhoff-occultist any_dies-mill +14.49 (80.19)', () => {
   assert.equal(castScore('selhoff-occultist'), '80.19');

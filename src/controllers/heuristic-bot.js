@@ -2962,6 +2962,44 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
     return Math.min(1 + Math.floor(x / 2), 3);
   };
+  /**
+   * PMSSB-64 (L41): wartość słów kluczowych CIAŁA stworzenia — jedna funkcja dla rzutu z ręki,
+   * warpu, adventure i szacunków planowania. Słowa z karty (`card.keywords` z widoku, awaryjnie
+   * z definicji). Latanie tylko przy braku nietapniętego latającego/zasięgowego blokera wroga;
+   * lifelink przez `gainLifeValue` (stan gry). Rzut zakryty (morph) nie niesie słów (CR 708.2a) — wołający
+   * to pomija. Wagi: `creatureKw*` w heuristic-params.js.
+   */
+  const creatureKeywordValue = (view, card, def) => {
+    const kw = card?.keywords ?? def?.keywords ?? [];
+    if (kw.length === 0) return 0;
+    const blockers = untappedEnemyBlockers(view);
+    const noFlyingBlockers = blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+    const power = card?.power ?? def?.power ?? 0;
+    // Ewazja i tempo to ZADANE obrażenia — skalują się z mocą (2/1 latający przepuszcza 2, nie 3).
+    // Kotwica (8 / 6) dotyczy mocy referencyjnej creatureKwRefPower; korpus z mocą 3 dostaje ją w całości.
+    const powerScale = Math.max(0, power) / P.creatureKwRefPower;
+    let value = 0;
+    for (const k of kw) {
+      // Latanie: bez latającego blokera wroga = ewazja (skala mocą), ale nie poniżej dolnej granicy
+      // (dawny płaski +3 = wartość obrony latającym). Anty-over-fix (M429 c): najsłabszy realny
+      // wariant (moc ≤1) zostaje na dawnej wartości; inwersji „przepuszczony < zablokowany” nie ma.
+      if (k === 'flying') value += noFlyingBlockers
+        ? Math.max(P.creatureKwFlyingFloor, P.creatureKwFlying * powerScale)
+        : P.creatureKwFlyingFloor;
+      else if (k === 'haste') value += P.creatureKwHaste * powerScale;
+      else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power);
+      else if (k === 'deathtouch') value += P.creatureKwDeathtouch;
+      else if (k === 'vigilance') value += P.creatureKwVigilance;
+      else if (k === 'first_strike') value += P.creatureKwFirstStrike;
+      else if (k === 'double_strike') value += P.creatureKwDoubleStrike;
+      else if (k === 'menace') value += P.creatureKwMenace;
+      else if (k === 'trample') value += P.creatureKwTrample;
+      else if (k === 'reach') value += P.creatureKwReach;
+      else if (k === 'indestructible') value += P.creatureKwIndestructible;
+      else if (k === 'hexproof') value += P.creatureKwHexproof;
+    }
+    return value;
+  };
   // PMSSB-36 (L41/L48): JEDNA drabina kosztu SAMOUSZKODZENIA (utrata życia
   // kontrolera) dla wszystkich kanałów — rzut czaru, wejście permanentu
   // i trigger exploita. Zwraca koszt DODATNI (do odjęcia): 1000 = samobójstwo
@@ -6259,7 +6297,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Ta sama para trybow (chooseTwoModes) jest wyceniana osobno, wiec bot wybiera
    * pare o najwyzszej wartosci netto. Nieniszczalne nie wchodza; pusty filtr → 0.
    */
-  const MASS_EVASION_KEYWORDS = ['flying', 'reach', 'deathtouch', 'lifelink', 'first strike', 'double strike'];
+  const MASS_EVASION_KEYWORDS = ['flying', 'reach', 'deathtouch', 'lifelink', 'first_strike', 'double_strike'];
   function massDestroyAffected(view, effects) {
     const seen = new Set();
     const hit = [];
@@ -9913,6 +9951,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         }
         const def = card ? cardDef(card.cardId) : undefined;
         let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
+        if (!cmd.faceDown) score += creatureKeywordValue(view, card, def);
         // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
         // niż jej awers. CR 702.37a (dosłownie): „You may cast this card as a
         // 2/2 face-down creature with no text, no name, no subtypes, and no
@@ -10095,8 +10135,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             .reduce((max, o) => Math.max(max, (o.power ?? 0)), 0);
           score += 2 * bestInFoeGraveyard;
         }
-        // Evasion (flying) realnie zwiększa szanse zadania obrażeń.
-        if (hasKeyword(def, 'flying')) score += 3;
+        // PMSSB-64: latanie wyceniane w creatureKeywordValue (8 gdy wróg nie ma latającego
+        // blokera, 3 gdy ma). Dawny płaski +3 tutaj dublował ten człon — usunięty.
         // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): selektywna ewazja
         // „can't be blocked by creatures with [keyword]". Pomiar PRZED: delta
         // 0 wobec kontrfaktyku (72,0 = 72,0), czyli statyka nie wchodziła

@@ -105,6 +105,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Batch 68 (Austere Command): masowe zniszczenie bez celu — patrz DEFAULT_HEURISTIC_PARAMS.
   'massDestroyCardValue', 'massDestroyOwnMultiplier', 'massDestroyEvasionBonus',
   'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
+  // PMSSB-64 — słowa kluczowe stworzenia rzucanego z ręki (wycena ciała, L41).
+  'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwRefPower', 'creatureKwHaste',
+  'creatureKwLifelinkWeight', 'creatureKwDeathtouch',
+  'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
+  'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
   'battleDefeatBonus',
@@ -634,6 +639,32 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   massDestroyThreatWeight: 20,
   massDestroyRebuildDiscount: 0.1,
   massDestroyCastCost: 6,
+  // PMSSB-64 — wartość słów kluczowych stworzenia rzucanego z ręki. Dawniej rzut czytał
+  // tylko P/T i koszt: lifelink, latanie, deathtouch, haste dawały identyczny wynik (pomiar PRZED:
+  // tools/pmssb64-keywords-sonda.mjs, Δ = 0). Kotwice, żeby skala była jedna w całym bocie:
+  //  - creatureKwFlying 8: TA SAMA wartość ewazji co `auraKeywordValue` i `equipValuation.ofensywne`,
+  //    tylko gdy wróg nie ma nietapniętego latającego/zasięgowego blokera.
+  //  - creatureKwHaste 6: tempo ataku w turze rzutu = `equipValuation` hasteAdds.
+  //  - creatureKwLifelinkWeight 1 × gainLifeValue(moc): lifelink zależy od stanu (życie, presja),
+  //    tak jak `fightLifelinkWeight` w walce — nie stała.
+  //  - deathtouch 4, vigilance 4: jak `massDestroyEvasionBonus` i grant vigilance w aurze.
+  //  - first_strike 3, double_strike 6, menace 3, trample 2, reach 2, indestructible 6, hexproof 3:
+  //    ręcznie strojone wartości PŁASKIE (bez skali mocą i bez stanu gry). Przyznane otwarcie: to
+  //    najsłabsze miejsce modelu — brak osobnego pomiaru każdego z nich; pokryte testem Δ = pokrętło × 0.9.
+  creatureKwRefPower: 3, // moc, przy której kotwice latania (8) i tempa (6) są pełne; zadane obrażenia = moc × tury, więc skala liniowa
+  creatureKwFlying: 8,
+  creatureKwFlyingFloor: 3, // dolna granica latania = dawny płaski +3; przy latającym blokerze wroga to cała wartość latania
+  creatureKwHaste: 6,
+  creatureKwLifelinkWeight: 1,
+  creatureKwDeathtouch: 4,
+  creatureKwVigilance: 4,
+  creatureKwFirstStrike: 3,
+  creatureKwDoubleStrike: 6,
+  creatureKwMenace: 3,
+  creatureKwTrample: 2,
+  creatureKwReach: 2,
+  creatureKwIndestructible: 6,
+  creatureKwHexproof: 3,
   counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
   rampNeedWeight: 1,
   rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem
