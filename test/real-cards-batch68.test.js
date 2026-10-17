@@ -212,9 +212,13 @@ test('B68/404: Meteorite — ETB 2 obrażeń w wybrany cel; {T}: jedna mana (dow
   run(state, castCmd(state, 'met'));
   settle(state, { choose: 'p2' });
   assert.equal(state.players.find((p) => p.id === 'p2').life, lifeBefore - 2, 'ETB: 2 obrażenia celowi');
-  const manaBefore = state.players.find((p) => p.id === 'p1').mana;
+  const p1 = () => state.players.find((p) => p.id === 'p1');
+  const manaBefore = p1().mana;
+  const poolBefore = p1().manaPool?.WUBRG ?? 0;
   run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === find(state, 'meteorite').id));
-  assert.equal(state.players.find((p) => p.id === 'p1').mana, manaBefore + 1, 'tap: jedna mana');
+  assert.equal(p1().mana, manaBefore + 1, 'tap: jedna mana');
+  // „dowolny kolor”: jednostka trafia do puli z pełnym profilem WUBRG (nie do jednego koloru)
+  assert.equal((p1().manaPool?.WUBRG ?? 0) - poolBefore, 1, 'tap: jednostka dowolnego koloru (WUBRG)');
 });
 
 test('B68/405: Raze to the Ground — nie da się skontrować (także Stymied Hopes z opcją zapłaty)', () => {
@@ -312,6 +316,13 @@ test('B68/408: Halo Scarab — z cmentarza {2}, wygnij: Treasure dla kontrolera'
   assert.equal(find(state, 'halo-scarab', 'graveyard'), undefined, 'wygnana z cmentarza');
   const skarby = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.cardId === 'token_treasure' && o.controllerId === 'p1');
   assert.equal(skarby.length, 1, 'Treasure dla p1');
+  // Skarb daje jedną manę dowolnego koloru jako manę skarbową (kształt tokena, nie tylko jego istnienie)
+  const treasure = skarby[0];
+  run(state, commands(state).find((c) => c.type === 'activate_ability' && c.objectId === treasure.id));
+  settle(state);
+  const player = state.players.find((p) => p.id === 'p1');
+  assert.equal(player.treasureMana, 1, 'Skarb: mana oznaczona jako skarbowa');
+  assert.equal(player.manaPool?.WUBRG ?? 0, 1, 'Skarb: jednostka dowolnego koloru (WUBRG)');
 });
 
 test('B68/409: Child of Night — lifelink (efektywna zdolność na polu)', () => {
