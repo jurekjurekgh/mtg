@@ -17266,5 +17266,6 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Bramki (`dd89af1`): `npm test` 8441/8441; `test:all` 8708/8708; build 0; `cr-numery` OK.
 - Golden master: 0 zmian w 1221 decyzjach, ale zrzut ma 4 aktywacje — brak dowodu.
 - Lustro (talie z mechaniką): 5000 → 162:158 (n=320); 3000 przerwane przez lukę planera płatności.
-- OTWARTE: `planGrantManaColors` nie zna ograniczenia wydawania many z efektu → `Brak kolorowej many` (worek-mroczny seed 3035). Na `00b620e` 0 crashów w 80 seedach×2. Decyzja właściciela: naprawa planera osobną pętlą czy tymczasowa akceptacja.
+- Crash `Brak kolorowej many` (worek-mroczny seed 3035) USUNIĘTY (zlecenie właściciela, 100%): (1) purpose płynie od bramki oferty przez `planGrantManaColors` do `spendMana`; (2) `firstUncoveredPipColor` wybiera kolor po dopasowaniu (`maxPipsCovered`), nie licznikiem per kolor — Skarb nie idzie już na W zamiast R/G. Test `test/audyt-pmssb66-brak-kolorowej-many.test.js` (2; padały przed poprawką). Odrzucone: bramka plota (plot = rzut bez kosztu i bez kolorów).
+- Lustro po naprawie (finalny kod): 3000 → 159:161; 5000 → 162:158; 9000 → 163:157; nieukończone 0 (960 partii).
 - Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md`. Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (spisany po pierwszej wersji — kolejność procedury 0 złamana, przyznane).

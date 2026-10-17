@@ -20,7 +20,7 @@ import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceG
 import { allControlledManaSources } from './mana-sources.js';
 import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
-function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
+function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0, purpose = {}) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true;
   const parsed = parseManaCost(costStr);
@@ -28,13 +28,16 @@ function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   // Pipy phyrexian opłacone życiem (CR 118.9) nie wymagają kolorowego źródła.
-  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
+  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay), null, purpose);
 }
 
+// Bramka kolorów RZUTU czaru: purpose = ten czar (mana ograniczona drukiem, np. Powerstone, nie płaci
+// nie-artefaktu). Oferta i płatność muszą liczyć z tym samym purpose (L48) — inaczej oferta przechodzi,
+// a `spendMana` odrzuca (crash symulacji: worek-mroczny seed 3035).
 function hasColorForObject(state, playerId, object, phyrexianPay = 0) {
   if (!object) return true;
   if (object.kind === 'land') return true;
-  return hasColorForSpell(state, playerId, object.cardId, phyrexianPay);
+  return hasColorForSpell(state, playerId, object.cardId, phyrexianPay, spellManaPurpose(object));
 }
 
 /**
@@ -804,7 +807,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       : coloredPipsOf(object.cardId, lifePaid);
   if (!manaCostWaived) {
     const colorGateOk = surge
-      ? (basePips.length === 0 || canPayColoredCost(state, playerId, basePips))
+      ? (basePips.length === 0 || canPayColoredCost(state, playerId, basePips, null, spellManaPurpose(object)))
       : hasColorForObject(state, playerId, object, lifePaid);
     if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
   }
@@ -3372,7 +3375,7 @@ export function legalSpellCasts(state, playerId) {
         // odbierała rzut przy pustym grobie, choć wygnanie jest opcjonalne).
         if (object.delve) return affordableDelveCounts(state, playerId, object).length > 0 ? [null] : [];
         const payable = effectiveSpellManaCost(state, object) <= manaAvailable(object, coloredPipsOf(object.cardId, 0));
-        return (payable && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
+        return (payable && hasColorForSpell(state, playerId, object.cardId, 0, spellManaPurpose(object))) ? [null] : [];
       }
       const base = effectiveSpellManaCost(state, object);
       const out = [];
@@ -3382,7 +3385,7 @@ export function legalSpellCasts(state, playerId) {
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
         if (base - k > manaAvailable(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
-        if (!hasColorForSpell(state, playerId, object.cardId, k)) continue;
+        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object))) continue;
         out.push(k);
       }
       return out;

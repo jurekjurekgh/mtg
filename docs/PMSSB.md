@@ -3382,9 +3382,10 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
 - **PMSSB-65 — Bloodfire Expert (prowess): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-65](audits/PMSSB65_BATCH68_2026-10-17.md),
   plan [PLAN_2026-10-17f](plans/PLAN_2026-10-17f-pmssb65-prowess.md). Pomiar obalił wcześniejszą notatkę „67.05 z i bez”:
   płaska stała 1.35 niezależnie od ręki; teraz ze stanu (czary zagrywalne w następnej turze, lądy, bloki).
-- **PMSSB-66 — okno many (end step przeciwnika): DONE z otwartą luką silnika (2026-10-17)** — [raport PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md),
+- **PMSSB-66 — okno many (end step przeciwnika): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md),
   plan [PLAN_2026-10-17g](plans/PLAN_2026-10-17g-pmssb66-okno-many.md). Zasada właściciela: mana w end step przeciwnika jest darmowa;
-  generycznie dla `create_token` i `add_counter`. Lustro 5000: 162:158 (n=320). Lustro 3000 przerwane przez lukę planera płatności — decyzja właściciela.
+  generycznie dla `create_token` i `add_counter`. Crash `Brak kolorowej many` (seed 3035) USUNIĘTY: purpose w planerze kolorów + wybór
+  koloru Skarbu/grantu po dopasowaniu. Lustro 3000: 159:161, 5000: 162:158, 9000: 163:157 (nieukończone 0).
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).
@@ -3432,10 +3433,9 @@ Pomiar PO: Halo end-opp +5; +1/+1 nasza główna −1; oil-stwór end-opp +10; w
 Testy: `test/audyt-pmssb66-okno.test.js` (15). Golden master: 0 zmian w 1221 decyzjach — ale zrzut ma tylko 4 aktywacje
 (brak dowodu). Bramki (`dd89af1`): `npm test` 8441/8441, `test:all` 8708/8708, build 0, `cr-numery` OK.
 
-**Otwarte (decyzja właściciela):** luka planera płatności (`planGrantManaColors` nie zna ograniczenia wydawania many
-z efektu) → `Brak kolorowej many` w symulacji: `worek-mroczny` seed 3035. Na `00b620e` 0 crashów w 80 seedach×2 nogi;
-po PMSSB-66 1 seed/40 (zakres 3000). Lustro 3000 nie przechodzi. Szczegóły i trzy otwarte pytania (odroczenie przed
-atakiem, zakres zdjęcia kary M243/C, rezerwa bez sprawdzania celu) w raporcie.
+**Crash `Brak kolorowej many` (worek-mroczny, seed 3035) — USUNIĘTY.** Dwie przyczyny w planerze płatności (purpose
+nie płynął do planu kolorów; wybór koloru Skarbu liczył per kolor zamiast po dopasowaniu). Test:
+`test/audyt-pmssb66-brak-kolorowej-many.test.js` (2, oba padały przed poprawką). Szczegóły w raporcie.
 
 Narzędzia: `tools/pmssb66-okno-many-sonda.mjs` (W1–W12), `tools/pmssb66-mirror.mjs` (okno vs off).
 
