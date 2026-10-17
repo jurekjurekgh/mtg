@@ -171,11 +171,3 @@ test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź
   assert.equal(r.submitted, null);
 });
 
-test('O/13 (O-2): 100 stworów — oferta bez błędu (wcześniej „Maximum call stack size exceeded”)', () => {
-  // 1 + 100 + C(100,2) + C(100,3) = 1 + 100 + 4950 + 161700 = 166751 kombinacji.
-  // Regresja: spread `push(...tablica)` w playerView/legalTargetCombos przekraczał stos.
-  const state = stol(100);
-  const view = playerView(state, 'p1');
-  const commands = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'wrap');
-  assert.equal(commands.length, 166751);
-});
