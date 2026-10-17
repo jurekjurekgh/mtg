@@ -39,7 +39,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
-| batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
+| batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3382,6 +3382,9 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
 - **PMSSB-65 — Bloodfire Expert (prowess): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-65](audits/PMSSB65_BATCH68_2026-10-17.md),
   plan [PLAN_2026-10-17f](plans/PLAN_2026-10-17f-pmssb65-prowess.md). Pomiar obalił wcześniejszą notatkę „67.05 z i bez”:
   płaska stała 1.35 niezależnie od ręki; teraz ze stanu (czary zagrywalne w następnej turze, lądy, bloki).
+- **PMSSB-66 — okno many (end step przeciwnika): DONE z otwartą luką silnika (2026-10-17)** — [raport PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md),
+  plan [PLAN_2026-10-17g](plans/PLAN_2026-10-17g-pmssb66-okno-many.md). Zasada właściciela: mana w end step przeciwnika jest darmowa;
+  generycznie dla `create_token` i `add_counter`. Lustro 5000: 162:158 (n=320). Lustro 3000 przerwane przez lukę planera płatności — decyzja właściciela.
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).
@@ -3415,4 +3418,24 @@ uruchomiony (żadna talia benchmarku nie ma karty; jest w `decks/tarkir-wur.txt`
 nie zawiera karty, więc 0 zmian nie dowodzi poprawki.
 Raport: [PMSSB-65](audits/PMSSB65_BATCH68_2026-10-17.md). Testy: `test/audyt-pmssb65-prowess.test.js` (6).
 Sonda: `tools/pmssb65-prowess-sonda.mjs`.
+
+## PMSSB-66 — okno many: zdolność za manę o trwałym skutku w end step przeciwnika (2026-10-17) — DONE z luką
+
+Zasada właściciela: mana wydana w end step PRZECIWNIKA jest darmowa (nasze lądy odtapowują się w naszym kroku),
+więc zdolność za manę o trwałym skutku (`create_token`, `add_counter`: +1/+1, −1/−1, stun, oil) jest płacona w tym
+oknie. Poza oknem i poza walką — odroczona (`score ≤ −koszt`). Rezerwa pod instant z ręki: najdroższy, który mieści
+się w manie (`dd89af1`). Pokrętło `lastingManaWindowOn` (1/0).
+
+Pomiar PRZED (sonda): Halo end-opp −11 pass (ma być aktywacja); +1/+1 w NASZEJ głównej +25 activate (błąd — ma być pass).
+Pomiar PO: Halo end-opp +5; +1/+1 nasza główna −1; oil-stwór end-opp +10; walka przeciwnika bez odroczenia (+25).
+
+Testy: `test/audyt-pmssb66-okno.test.js` (15). Golden master: 0 zmian w 1221 decyzjach — ale zrzut ma tylko 4 aktywacje
+(brak dowodu). Bramki (`dd89af1`): `npm test` 8441/8441, `test:all` 8708/8708, build 0, `cr-numery` OK.
+
+**Otwarte (decyzja właściciela):** luka planera płatności (`planGrantManaColors` nie zna ograniczenia wydawania many
+z efektu) → `Brak kolorowej many` w symulacji: `worek-mroczny` seed 3035. Na `00b620e` 0 crashów w 80 seedach×2 nogi;
+po PMSSB-66 1 seed/40 (zakres 3000). Lustro 3000 nie przechodzi. Szczegóły i trzy otwarte pytania (odroczenie przed
+atakiem, zakres zdjęcia kary M243/C, rezerwa bez sprawdzania celu) w raporcie.
+
+Narzędzia: `tools/pmssb66-okno-many-sonda.mjs` (W1–W12), `tools/pmssb66-mirror.mjs` (okno vs off).
 

@@ -17256,3 +17256,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Golden master: 0 zmian, ale 6 partii nie zawiera karty (brak dowodu). Mirror nie uruchomiony.
 - Raport: `docs/audits/PMSSB65_BATCH68_2026-10-17.md`.
 
+
+## 2026-10-17 — PMSSB-66: okno many (end step przeciwnika, batch 68)
+
+- Zasada właściciela: mana wydana w end step przeciwnika jest darmowa (nasze lądy odtapowują się). Generycznie dla `create_token` i `add_counter`; poza oknem odroczenie (`score ≤ −koszt`), walka wyłączona z odroczenia.
+- Pomiar PRZED: Halo end-opp −11 pass; +1/+1 w naszej głównej +25 activate (błąd). PO: Halo end-opp +5; +1/+1 nasza główna −1; oil-stwór end-opp +10.
+- Poprawka po przeglądzie (`dd89af1`): rezerwa pod instant = najdroższy mieszczący się (nie najtańszy); W11/W12.
+- Pokrętło `lastingManaWindowOn` (1/0); test ×0 w `test/audyt-pmssb66-okno.test.js` (15 pinów).
+- Bramki (`dd89af1`): `npm test` 8441/8441; `test:all` 8708/8708; build 0; `cr-numery` OK.
+- Golden master: 0 zmian w 1221 decyzjach, ale zrzut ma 4 aktywacje — brak dowodu.
+- Lustro (talie z mechaniką): 5000 → 162:158 (n=320); 3000 przerwane przez lukę planera płatności.
+- OTWARTE: `planGrantManaColors` nie zna ograniczenia wydawania many z efektu → `Brak kolorowej many` (worek-mroczny seed 3035). Na `00b620e` 0 crashów w 80 seedach×2. Decyzja właściciela: naprawa planera osobną pętlą czy tymczasowa akceptacja.
+- Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md`. Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (spisany po pierwszej wersji — kolejność procedury 0 złamana, przyznane).
