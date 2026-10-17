@@ -202,19 +202,19 @@ function castScore(state) {
   return { choice, score: optionScore(options, 'cast_permanent(k)') };
 }
 
-test('PMSSB-59/kontrola F-B: Hawk przy zdrowej bibliotece (50) = 77.4', () => {
+test('PMSSB-59/kontrola F-B: Hawk przy zdrowej bibliotece (50) = 77.1 (PMSSB-67/F5 (próg latania skalowany mocą): lot 1-mocowy odblokowany 8·1/3·0.9 = 2.4; było 77.4)', () => {
   const { choice, score } = castScore(hawkScene(50));
   assert.deepEqual(choice, { type: 'cast_permanent', playerId: 'p2', objectId: 'k' });
-  approx(score, 77.3991, 'hawk biblio 50');
+  approx(score, 77.0991, 'hawk biblio 50 (F5: było 77.3991)');
 });
 
-test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 19 = 12.6 (drabinka cienkiej biblioteki — by design)', () => {
-  approx(castScore(hawkScene(19)).score, 12.6, 'hawk biblio 19');
+test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 19 = 12.3 (drabinka cienkiej biblioteki — by design; PMSSB-67/F5 (próg latania skalowany mocą): było 12.6)', () => {
+  approx(castScore(hawkScene(19)).score, 12.3, 'hawk biblio 19 (F5: było 12.6)');
 });
 
 test('PMSSB-59/kontrola F-B: Hawk przy bibliotece 4 = -68.4 i pass (ten sam pin co Pilgrim\'s Eye C/5)', () => {
   const { choice, score } = castScore(hawkScene(4));
-  approx(score, -68.4, 'hawk biblio 4');
+  approx(score, -68.7, 'hawk biblio 4 (F5: było -68.4)');
   assert.deepEqual(choice, { type: 'pass_priority', playerId: 'p2' });
 });
 

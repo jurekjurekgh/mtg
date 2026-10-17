@@ -191,7 +191,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -260,6 +260,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // graczowi (hasEnduringStory w permanents.js), gdy >=3 kwalifikowane
     // permanenty (artefakty/legendy/Sagi, raz na permanent).
     storied: Boolean(storied),
+    // Batch 68 (Neurok Invisimancer, CR 509.1b — „This creature can't be blocked"):
+    // STAŁA zdolność statyczna; czyta ją combat.js blockRestrictionError.
+    cantBeBlocked: Boolean(cantBeBlocked),
     // Landwalk (CR 702.14, Emerald Oryx — forestwalk): „This creature can't be
     // blocked as long as defending player controls a [podtyp]". { subtype } —
     // generyczny (inne landwalki w przyszłości). Sprawdzane w canBlock.

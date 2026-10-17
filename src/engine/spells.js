@@ -20,7 +20,7 @@ import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceG
 import { allControlledManaSources } from './mana-sources.js';
 import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
 
-function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
+function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0, purpose = {}) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true;
   const parsed = parseManaCost(costStr);
@@ -28,13 +28,16 @@ function hasColorForSpell(state, playerId, cardId, phyrexianPay = 0) {
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
   // Pipy phyrexian opłacone życiem (CR 118.9) nie wymagają kolorowego źródła.
-  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay));
+  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay), null, purpose);
 }
 
+// Bramka kolorów RZUTU czaru: purpose = ten czar (mana ograniczona drukiem, np. Powerstone, nie płaci
+// nie-artefaktu). Oferta i płatność muszą liczyć z tym samym purpose (L48) — inaczej oferta przechodzi,
+// a `spendMana` odrzuca (crash symulacji: worek-mroczny seed 3035).
 function hasColorForObject(state, playerId, object, phyrexianPay = 0) {
   if (!object) return true;
   if (object.kind === 'land') return true;
-  return hasColorForSpell(state, playerId, object.cardId, phyrexianPay);
+  return hasColorForSpell(state, playerId, object.cardId, phyrexianPay, spellManaPurpose(object));
 }
 
 /**
@@ -804,7 +807,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
       : coloredPipsOf(object.cardId, lifePaid);
   if (!manaCostWaived) {
     const colorGateOk = surge
-      ? (basePips.length === 0 || canPayColoredCost(state, playerId, basePips))
+      ? (basePips.length === 0 || canPayColoredCost(state, playerId, basePips, null, spellManaPurpose(object)))
       : hasColorForObject(state, playerId, object, lifePaid);
     if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
   }
@@ -1850,12 +1853,11 @@ function targetCandidatesBySpec(state, playerId, spec, targetOrderPreference = n
  * pustym slocie (`optional`) kolejne sloty grupy też są puste. Zbiór celów jest
  * zbiorem, więc [null, karta] i [karta, null] to ten sam wybór gracza — oferta
  * niesie jedną, kanoniczną postać (mniej wariantów w panelu, zero duplikatów).
- * Grupę większą niż `cap` przycinamy jak `variableTargets`
- * (`trimVariableTargetCombos`): zostają skrajne wybory (zero, po jednym,
- * maksimum), a środek mieści się w limicie panelu.
+ * Oferta jest KOMPLETNA (O-2, 2026-10-17): bez przycinania — wybory z grupy
+ * „up to N” wyliczamy wszystkie; przy szerokim stole liczy się dłużej.
  */
 export function legalTargetCombos(state, playerId, targetSpec, sourceObject = null,
-  targetOrderPreference = null, cap = VARIABLE_TARGET_OPTION_CAP) {
+  targetOrderPreference = null) {
   const tags = targetSpec.map((spec, index) => spec?.targetWord ?? index);
   // Pule pozycji BEZ zależności liczymy raz (jak dawny `cartesian`); pozycja
   // zależna (`graveyardOfSlot`) pyta o pulę dopiero po ustaleniu prefiksu.
@@ -1912,14 +1914,8 @@ export function legalTargetCombos(state, playerId, targetSpec, sourceObject = nu
       }
     };
     step(index, [], false, 0);
-    const groupSize = groupEnd - index + 1;
-    // Przycinamy WYŁĄCZNIE grupy wieloslotowe („up to three target …"):
-    // pojedyncza pozycja to zwykła pula kandydatów — cięcie jej i tak dałoby
-    // duplikaty (ten sam wariant trafia do dwóch kubełków trimu).
-    const trimmed = groupSize > 1 && variants.length > cap
-      ? trimVariableTargetCombos(variants, cap, groupSize) : variants;
     const out = [];
-    for (const variant of trimmed) {
+    for (const variant of variants) {
       for (const tail of walk(groupEnd + 1, [...prefix, ...variant])) out.push(tail);
     }
     return out;
@@ -3379,7 +3375,7 @@ export function legalSpellCasts(state, playerId) {
         // odbierała rzut przy pustym grobie, choć wygnanie jest opcjonalne).
         if (object.delve) return affordableDelveCounts(state, playerId, object).length > 0 ? [null] : [];
         const payable = effectiveSpellManaCost(state, object) <= manaAvailable(object, coloredPipsOf(object.cardId, 0));
-        return (payable && hasColorForSpell(state, playerId, object.cardId, 0)) ? [null] : [];
+        return (payable && hasColorForSpell(state, playerId, object.cardId, 0, spellManaPurpose(object))) ? [null] : [];
       }
       const base = effectiveSpellManaCost(state, object);
       const out = [];
@@ -3389,7 +3385,7 @@ export function legalSpellCasts(state, playerId) {
       for (let k = 0; k <= phyrexianSymbols; k += 1) {
         if (base - k > manaAvailable(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
-        if (!hasColorForSpell(state, playerId, object.cardId, k)) continue;
+        if (!hasColorForSpell(state, playerId, object.cardId, k, spellManaPurpose(object))) continue;
         out.push(k);
       }
       return out;
@@ -3726,33 +3722,6 @@ export function legalXCostCasts(state, playerId, objectId, object, manaAvailable
  * z ręki i wg Oracle grywalna (L74: jedna implementacja; L48: oferta = wykonanie).
  */
 /**
- * Limit wariantów oferty dla trybu z celami zmiennymi („up to N targets").
- * Kombinacji jest 2^n, więc przy szerokim stole panel akcji puchnie
- * wykładniczo (zmierzone: 8 stworów → 93 warianty). Projekt ma ten sam
- * kompromis w walce (`COMBAT_OPTION_CAP`): OFERTA jest ograniczona,
- * a WALIDACJA w `execute` pozostaje pełna (bot nadal może zagrać legalny
- * wariant, którego nie ma w panelu) — audyt PR #93, znalezisko H.
- */
-export const VARIABLE_TARGET_OPTION_CAP = 32;
-
-/** Wybór wariantów do oferty, gdy kombinacji jest więcej niż limit. */
-function trimVariableTargetCombos(combos, cap, maxSize) {
-  if (combos.length <= cap) return combos;
-  // Długość wariantu to liczba WYBRANYCH celów: pozycje opcjonalne mogą nieść
-  // `null` („up to N" — bez luk, patrz legalTargetCombos), a dla dawnych
-  // wywołań (variableTargets) nulli nie ma, więc liczba się nie zmienia.
-  const size = (combo) => combo.filter((entry) => entry != null).length;
-  const empty = combos.filter((combo) => size(combo) === 0);
-  const singles = combos.filter((combo) => size(combo) === 1);
-  const fullest = combos.filter((combo) => size(combo) === maxSize);
-  const middle = combos.filter((combo) => size(combo) !== 0 && size(combo) !== 1 && size(combo) !== maxSize);
-  // Kolejność deterministyczna (ADR 0005): „nic”, „po jednym”, „ilu się da”,
-  // a na końcu warianty pośrednie — gracz zachowuje skrajne wybory, a panel
-  // mieści się na telefonie.
-  return [...empty, ...singles, ...fullest, ...middle].slice(0, cap);
-}
-
-/**
  * Walidacja celów trybu z `variableTargets` (CR 601.2c): każdy cel musi być
  * legalny, liczba celów mieścić się w [min, max], a ten sam cel nie może być
  * wybrany dwa razy. PEŁNA i niezależna od (ograniczonej) oferty — wspólna dla
@@ -3784,7 +3753,7 @@ export function validateVariableTargets(state, playerId, mode, chosen, object, s
   return chosen.slice();
 }
 
-export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap = VARIABLE_TARGET_OPTION_CAP) {
+export function legalModeCasts(state, playerId, objectId, modeIndex, mode) {
   const casts = [];
   if (mode.variableTargets) {
     // Batch 43 (Sea God's Scorn): „up to three target creatures and/or
@@ -3800,18 +3769,29 @@ export function legalModeCasts(state, playerId, objectId, modeIndex, mode, cap =
       });
     const min = mode.variableTargets.min ?? 1;
     const max = Math.min(mode.variableTargets.max ?? creatures.length, creatures.length);
-    const subsets = (arr, k) => {
-      if (k === 0) return [[]];
-      if (arr.length < k) return [];
-      const [head, ...rest] = arr;
-      const withHead = subsets(rest, k - 1).map((s) => [head, ...s]);
-      return [...withHead, ...subsets(rest, k)];
-    };
+    // O-2 (2026-10-17): kombinacje generujemy indeksami, w porządku leksykograficznym
+    // (ten sam, co dawna rekurencja). Bez `push(...tablica)` (przy ~10^5 kombinacji
+    // wywołanie przekraczało stos — „Maximum call stack size exceeded” przy 100 stworach)
+    // i bez kopiowania reszty tablicy na każdym poziomie rekurencji.
     const combos = [];
-    for (let k = min; k <= max; k += 1) combos.push(...subsets(creatures, k));
-    // Audyt PR #93 (znalezisko H): kombinacji jest 2^n — ofertę przycinamy do
-    // `cap` (walidacja w `execute` zostaje pełna, patrz wyżej).
-    for (const combo of trimVariableTargetCombos(combos, cap, max)) {
+    for (let k = min; k <= max && k <= creatures.length; k += 1) {
+      if (k === 0) { combos.push([]); continue; }
+      const idx = Array.from({ length: k }, (_, i) => i);
+      for (;;) {
+        const combo = new Array(k);
+        for (let i = 0; i < k; i += 1) combo[i] = creatures[idx[i]];
+        combos.push(combo);
+        let p = k - 1;
+        while (p >= 0 && idx[p] === creatures.length - k + p) p -= 1;
+        if (p < 0) break;
+        idx[p] += 1;
+        for (let q = p + 1; q < k; q += 1) idx[q] = idx[q - 1] + 1;
+      }
+    }
+    // O-2 (zlecenie właściciela, 2026-10-17): oferta jest KOMPLETNA — bez
+    // limitu celów (kombinacji jest tyle, ile wyliczenie daje; przy szerokim
+    // stole dłużej się liczy, ale nie ma błędu). Walidacja w `execute` zostaje.
+    for (const combo of combos) {
       // M105/B4 (CR 601.2c): „up to N target creatures" pozwala wybrać ZERO
       // celów. Wariant pusty istnieje także dla trybu z dodatkowym celem
       // („Put a stun counter on ONE OF THEM") — bez tej gałęzi pętla po

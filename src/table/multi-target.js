@@ -57,33 +57,6 @@ function uniformGiftOf(list) {
 }
 
 /**
- * O: ile podzbiorów o rozmiarze lo..hi ma zbiór n elementów (suma dwumianów).
- * Porównanie z liczbą ofert pokazuje, czy silnik ucinał warianty limitem.
- */
-function subsetOfferTruncated(offered, n, lo, hi) {
-  if (!(n >= 0) || !(lo >= 0) || hi < lo) return false;
-  let total = 0;
-  for (let k = lo; k <= Math.min(hi, n); k += 1) {
-    let c = 1;
-    for (let i = 1; i <= k; i += 1) c = (c * (n - k + i)) / i;
-    total += Math.round(c);
-  }
-  return offered < total;
-}
-
-/**
- * O: komenda dla dowolnego zaznaczenia celów grupy `freeTargets` — szablon to
- * dowolna komenda grupy (ta sama karta, tryb, koszt), a `targets` to wybór
- * gracza. Nie jest to „budowanie z palca”: silnik waliduje komendę przy
- * wykonaniu (liczba celów w [min,max], legalność każdego celu, L48).
- */
-export function commandForFreeTargets(commands, targets) {
-  const template = (commands ?? []).find((cmd) => cmd && Array.isArray(cmd.targets));
-  if (!template) return null;
-  return { ...template, targets: [...(targets ?? [])] };
-}
-
-/**
  * Plan wyboru dla grupy wariantów tego samego rzutu albo null, gdy grupa nie
  * jest „wielowymiarowa" (zwykły czar celowany radzi sobie listą celów).
  *
@@ -150,20 +123,7 @@ export function multiTargetPlanOf(commands) {
     ? [...slots.keys()].map((i) => list.some((cmd) => cmd.targets[i] == null))
     : null;
 
-  // O (zgłoszenie właściciela 2026-10-16, Wrap in Flames „up to three target
-  // creatures”): silnik oferuje warianty celów z limitem VARIABLE_TARGET_OPTION_CAP
-  // (32), a przy szerszym stole limit USUWA całe rozmiary (7 stworów → zero
-  // kombinacji po dwa cele). Kreator wybierał zaznaczenie i szukał pasującej
-  // komendy — brak dopasowania = „Zatwierdź” nie działa. Gdy oferta jest ucięta,
-  // plan niesie `freeTargets`: kreator składa komendę z szablonu i wybranych
-  // celów, a SILNIK waliduje wynik (pełna walidacja liczby i legalności,
-  // spells.js). Tylko zwykła lista celów — bez pozycji, X, kosztu i stuna.
-  const freeTargets = !slots && !hasX && !cost && !stun
-    && subsetOfferTruncated(list.length, targets.length,
-      Math.min(...realSizes), Math.max(...realSizes));
-
   return {
-    freeTargets,
     targets,
     minTargets: Math.min(...realSizes),
     maxTargets: Math.max(...realSizes),

@@ -61,7 +61,7 @@ test('AUD-E2: kotwice liczności (L13) — zbiory rosną z batchami kart i mecha
   // Batch 63 domknięty: +adjust_battle_defense → 186 używanych typów;
   // Batche 64–65 nie dodały nowego typu efektu. Batch 66 dodaje generyczne
   // sacrifice_source_unless_sacrifice → 187.
-  assert.equal(UZYTE.size, 187, 'tyle typów efektów używa katalog (stan po Batchu 66)');
+  assert.equal(UZYTE.size, 188, 'tyle typów efektów używa katalog (Batch 68: +destroy_all)');
   assert.ok(ZNANE.size >= 200, `silnik zna co najmniej 200 typów efektów (jest ${ZNANE.size})`);
 });
 

@@ -1646,6 +1646,22 @@ export function botMayPayCreatureSacrificeCost(view, cmd) {
   return creature && victim.power === 1 && victim.toughness === 1;
 }
 
+/**
+ * O-4 (audyt PR #166, 2026-10-17): klasa „outlast” (N) — efekt, którego CAŁA
+ * treść to licznik na SOBIE. Silnik kładzie licznik na źródle tylko wtedy, gdy
+ * efekt nie wskazuje innego obiektu (effects.js, gałąź add_counter). Dlatego
+ * klasa jest wąska: każdy dodatkowy klucz (`targetFromContext`, `applyTo`,
+ * `targetIndex`, `amountFromContext`, `condition`) to licznik na czymś innym
+ * albo warunkowy — taki efekt NIE jest „dołóż licznik na siebie”.
+ * Zwraca true tylko dla niepustej listy samych `add_counter` z kluczami
+ * `type`/`counter`/`amount`. Cele zdolności i sorcery/{T} sprawdza wywołujący.
+ */
+export function isSelfCounterEffects(effects) {
+  if (!Array.isArray(effects) || effects.length === 0) return false;
+  return effects.every((e) => e?.type === 'add_counter'
+    && Object.keys(e).every((key) => key === 'type' || key === 'counter' || key === 'amount'));
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -2309,6 +2325,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (cheapest >= sourceLoss) return -120;
       return -Math.max(12, 2 * cheapest);
     },
+    // Batch 68 (Neurok Invisimancer, Subterranean Scout): ETB „target creature can't be
+    // blocked this turn" z celem — najlepszy NIEBLOKOWALNY kandydat z publicznych celów
+    // (cantBeBlockedTargetValue × evasionEtbValueWeight); bez celu/bez kandydata = 0.
+    cant_be_blocked: (e, view, req, def) => {
+      if (!req) return 0;
+      const blockers = untappedEnemyBlockers(view);
+      const source = { ...def, cardId: def.id, controllerId: view.playerId };
+      const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
+      const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
+        .map(o => cantBeBlockedTargetValue(view, o)));
+      return P.evasionEtbValueWeight * best;
+    },
     destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
@@ -2498,15 +2526,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Jednostka: wspolna drabina selfLifeLossPenalty (L48), bez nowej skali.
       let sub = 0;
       for (const e of effs) {
-        if (e?.type === 'cant_be_blocked' && req) {
-          const blockers = untappedEnemyBlockers(view);
-          const source = { ...def, cardId: def.id, controllerId: view.playerId };
-          const candidates = publicEtbTargets(view, req, source).map(id => objectOnBoard(view, id));
-          const best = Math.max(0, ...candidates.filter(o => o && attackerCanBeBlocked(o, blockers))
-            .map(o => cantBeBlockedTargetValue(view, o)));
-          sub += P.evasionEtbValueWeight * best;
-          continue;
-        }
         const fn = e?.type ? ETB_EFFECT_BONUS[e.type] : null;
         if (!fn) continue;
         sub += fn(e, view, req, def);
@@ -2778,6 +2797,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe));
   };
 
+  /**
+   * PMSSB-65 (L41): prowess / „po rzucie czaru nie-stworzenia +P/+T do końca tury\" na CIELE rzucanym.
+   * Płaska wycena (`like` 0.5 × p·2+t z tabeli ETB) nie zależała od stanu: ręka bez czarów dawała
+   * tyle samo co ręka pełna (pomiar PR2/PR3, `tools/pmssb65-prowess-sonda.mjs`). Tutaj ta sama
+   * ścieżka co payoff przy rzucie czaru (`temporaryPumpPayoff` × `boardPayoffWeight`, pętla
+   * payoffów rzutu), sumowana po czarach nie-stworzeniach, które da się zagrać w następnej głównej
+   * fazie (budżet many = lądy pod kontrolą, najtańsze najpierw). Nosiciel symulowany jako gotowy do
+   * ataku (summoning sickness minie w następnej turze) z bieżącymi blokerami wroga.
+   */
+  const selfTempPumpLegs = (ability) => {
+    if (ability.trigger?.requiresTarget != null || ability.trigger?.payMana != null
+      || (ability.trigger?.payColors?.length ?? 0) > 0 || ability.trigger?.condition != null) return null;
+    const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    const ok = legs.length > 0 && legs.every((l) => l?.type === 'pump' && l.targetIndex == null
+      && l.condition == null && (l.power ?? 0) >= 0 && (l.toughness ?? 0) >= 0
+      && ((l.power ?? 0) > 0 || (l.toughness ?? 0) > 0));
+    return ok ? legs : null;
+  };
+  const prowessCastValue = (view, def, cmd, legs) => {
+    const isCreatureDef = (d) => (d?.types ?? []).includes('Creature');
+    const lands = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+    const costs = (view.zones.hand ?? [])
+      .filter((o) => o.id !== cmd?.objectId && o.kind !== 'land' && !isCreatureDef(cardDef(o.cardId)))
+      .map((o) => o.manaCost ?? cardDef(o.cardId)?.manaCost ?? 0)
+      .sort((a, b) => a - b);
+    let budget = lands;
+    let spells = 0;
+    for (const c of costs) {
+      if (c > budget) break;
+      budget -= c;
+      spells += 1;
+    }
+    if (spells === 0) return 0;
+    const host = {
+      id: '__prowess-host__', cardId: def.id, controllerId: view.playerId, ownerId: view.playerId,
+      zone: 'battlefield', kind: 'creature', types: ['Creature'], subtypes: def.subtypes ?? [],
+      power: def.power ?? 0, toughness: def.toughness ?? 0, keywords: [...(def.keywords ?? [])],
+      abilities: [], tapped: false, summoningSickness: false, faceDown: false, abilitiesStripped: false,
+    };
+    const viewReady = {
+      ...view,
+      turn: { ...view.turn, activePlayerId: view.playerId, phase: 'precombat_main' },
+      zones: { ...view.zones, battlefield: [...(view.zones.battlefield ?? []), host] },
+    };
+    let per = 0;
+    for (const leg of legs) per += temporaryPumpPayoff(viewReady, host, leg);
+    return P.boardPayoffWeight * spells * per;
+  };
   const anticipatedTailValue = (view, def, cmd = null) => {
     if (!def) return 0;
     const foes = enemyCreatures(view);
@@ -2791,6 +2858,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered') continue;
       const ev = ability.trigger?.event;
+      // PMSSB-65: prowess na ciele rzucanym — stan (ręka, lądy, bloki), nie płaska stała.
+      const prowessLegs = ev === 'you_cast_noncreature_spell' ? selfTempPumpLegs(ability) : null;
+      if (prowessLegs) { total += prowessCastValue(view, def, cmd, prowessLegs); continue; }
       let like = 0;
       if (ev === 'combat_damage_to_player' || ev === 'any_combat_damage_to_player') like = 0.5 * gate;
       else if (ev === 'enchanted_creature_damage_to_opponent') {
@@ -2942,6 +3012,113 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (life <= 5) return 2 + x;
     if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
     return Math.min(1 + Math.floor(x / 2), 3);
+  };
+  /**
+   * PMSSB-67 F2: przyrost P/T od liczników WEJŚCIA (`entersWithCounters`), które pompa statyczna
+   * przelicza na P/T. Deskryptor `<nazwa>_counters` (np. Necrosquito: `oil_counters`) = +1/+1 za
+   * każdy licznik `<nazwa>`; licznik `+1/+1` z wejścia dodaje się wprost. Zwraca tylko przyrost, więc
+   * karta bez takich liczników nie zmienia wyceny. Dawniej rzut czytał 0/0 i wyceniał 2/2 jak 0/0.
+   */
+  const entryCounterStats = (view, def) => {
+    const enters = def?.entersWithCounters ?? null;
+    let dPower = 0;
+    let dToughness = 0;
+    if (!enters) return { dPower, dToughness };
+    // Kwota jako w silniku (effects.js, entersWithCounters): liczba albo formuła stołu
+    // `other_creatures_you_control_plus_one` = 1 + inne stworzenia kontrolera w chwili wejścia.
+    // Rzut z ręki: karta nie leży na stole, więc liczą się stworzenia kontrolera na stole.
+    const amountOf = (raw) => {
+      if (typeof raw === 'number') return raw;
+      if (raw === 'other_creatures_you_control_plus_one') {
+        return 1 + (view?.zones?.battlefield ?? [])
+          .filter((o) => o.controllerId === view?.playerId && o.kind === 'creature').length;
+      }
+      return 0;
+    };
+    if (enters['+1/+1']) {
+      const n = amountOf(enters['+1/+1']);
+      dPower += n;
+      dToughness += n;
+    }
+    const counterOf = (d) => (typeof d === 'string' && d.endsWith('_counters') ? d.slice(0, -'_counters'.length) : null);
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'static' || !ability.pump) continue;
+      const pc = counterOf(ability.pump.power);
+      const tc = counterOf(ability.pump.toughness);
+      if (pc && enters[pc] != null) dPower += amountOf(enters[pc]);
+      if (tc && enters[tc] != null) dToughness += amountOf(enters[tc]);
+    }
+    return { dPower, dToughness };
+  };
+  /**
+   * PMSSB-64 (L41): wartość słów kluczowych CIAŁA stworzenia — jedna funkcja dla rzutu z ręki,
+   * warpu, adventure i szacunków planowania. Słowa z karty (`card.keywords` z widoku, awaryjnie
+   * z definicji). Latanie tylko przy braku nietapniętego latającego/zasięgowego blokera wroga;
+   * lifelink przez `gainLifeValue` (stan gry). Rzut zakryty (morph) nie niesie słów (CR 708.2a) — wołający
+   * to pomija. Wagi: `creatureKw*` w heuristic-params.js.
+   */
+  const creatureKeywordValue = (view, card, def) => {
+    const kw = card?.keywords ?? def?.keywords ?? [];
+    if (kw.length === 0) return 0;
+    const blockers = untappedEnemyBlockers(view);
+    const noFlyingBlockers = blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
+    const power = (card?.power ?? def?.power ?? 0) + entryCounterStats(view, def).dPower;
+    // Ewazja i tempo to ZADANE obrażenia — skalują się z mocą (2/1 latający przepuszcza 2, nie 3).
+    // Kotwica (8 / 6) dotyczy mocy referencyjnej creatureKwRefPower; korpus z mocą 3 dostaje ją w całości.
+    const powerScale = Math.max(0, power) / P.creatureKwRefPower;
+    // PMSSB-67 F3: lifelink zarabia tylko, dopóki ciało żyje. Zabójcy = wrogowie, którzy zabijają ciało
+    // w bloku lub walce (moc ≥ wytrzymałość ciała, wytrzymałość z licznikami wejścia). Udział zabójców
+    // obniża wartość do progu creatureKwLifelinkSurvivalFloor (pierwszy cios zawsze zarabia).
+    const bodyToughness = (card?.toughness ?? def?.toughness ?? 0) + entryCounterStats(view, def).dToughness;
+    const enemyList = enemyCreatures(view);
+    const enemyKillers = enemyList.filter((o) => combatPower(o) >= bodyToughness).length;
+    const killShare = enemyList.length > 0 ? enemyKillers / enemyList.length : 0;
+    const lifelinkSurvival = 1 - (1 - P.creatureKwLifelinkSurvivalFloor) * killShare;
+    // PMSSB-67 F4: słowa płaskie (dawniej stałe 4/3/6/2 niezależnie od stołu) → udział stanu.
+    // floorShare(x) = próg + (1 − próg)·x, x ∈ [0,1]: przy neutralnym stole wartość = próg × waga,
+    // przy pełnym sygnale = waga. Każdy x ma definicję stanu poniżej (stół, ręka wroga, moc).
+    const floorShare = (x) => P.creatureKwStateFloor + (1 - P.creatureKwStateFloor) * Math.max(0, Math.min(1, x));
+    const bigThreats = enemyList.filter((o) => (o.toughness ?? 0) > power).length;
+    const beatable = enemyList.filter((o) => (o.toughness ?? 0) <= power).length;
+    const convertible = enemyList.filter((o) => combatPower(o) >= bodyToughness && (o.toughness ?? 0) <= power).length;
+    const enemyFlyers = enemyList.filter((o) => hasKeyword(o, 'flying')).length;
+    const oppHand = (view.zones.hand ?? []).filter((o) => o.controllerId !== view.playerId).length;
+    const blockersNow = untappedEnemyBlockers(view);
+    const maxBlockerToughness = blockersNow.reduce((m, o) => Math.max(m, o.toughness ?? 0), 0);
+    const ref = Math.max(1, P.creatureKwRefThreat);
+    // PMSSB-67/F5: dolna granica latania skalowana mocą (moc 0 → 0, moc = ref → pełne 3).
+    const flyingFloor = P.creatureKwFlyingFloorScaled > 0 ? P.creatureKwFlyingFloor * powerScale : P.creatureKwFlyingFloor;
+    let value = 0;
+    for (const k of kw) {
+      // Latanie: bez latającego blokera wroga = ewazja (skala mocą), nie poniżej dolnej granicy (skalowanej
+      // mocą, F5). Zablokowany lot = sama dolna granica. Inwersji „przepuszczony < zablokowany” nie ma
+      // (test F5 anty-inwersja). Dawny zapis „moc ≤1 zostaje na +3" wycofany w F5: 0-mocowy lot nie zadaje obrażeń.
+      // PMSSB-67/F5: próg skalowany mocą (pokrętło creatureKwFlyingFloorScaled, 0 = płasko 3 jak PRZED).
+      if (k === 'flying') value += noFlyingBlockers
+        ? Math.max(flyingFloor, P.creatureKwFlying * powerScale)
+        : flyingFloor;
+      else if (k === 'haste') value += P.creatureKwHaste * powerScale;
+      else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power) * lifelinkSurvival;
+      // deathtouch: zabija każdego blokera/atakującego; wartość rośnie z liczbą wrogów, których nie pokonujemy.
+      else if (k === 'deathtouch') value += P.creatureKwDeathtouch * floorShare(bigThreats / ref);
+      // vigilance: atak bez utraty obrony; wartość rośnie z presją wroga względem naszego życia.
+      else if (k === 'vigilance') value += P.creatureKwVigilance * powerScale * floorShare(enemyAttackPower(view) / Math.max(1, myLife(view)));
+      // first strike: wygrywa wymianę, którą bez niego przegrywamy (wróg zabija, my go nie — a my go zabijamy pierwsi).
+      else if (k === 'first_strike') value += P.creatureKwFirstStrike * powerScale * floorShare(convertible / Math.max(1, enemyList.length));
+      // double strike: dwa razy obrażenia (moc) i pierwszy cios; bez wrogich stworzeń pełna wartość (nic nie blokuje).
+      else if (k === 'double_strike') value += P.creatureKwDoubleStrike * powerScale * floorShare(enemyList.length === 0 ? 1 : beatable / enemyList.length);
+      // menace: wymaga dwóch blokerów; z jednym blokerem wroga jest nieblokowalny (pełna wartość).
+      else if (k === 'menace') value += P.creatureKwMenace * powerScale * floorShare(1 / Math.max(1, blockersNow.length));
+      // trample: przebija nadwyżką mocy ponad wytrzymałość najlepszego blokera; bez blokerów brak nadwyżki.
+      else if (k === 'trample') value += P.creatureKwTrample * powerScale * floorShare(blockersNow.length === 0 || power <= 0 ? 0 : Math.max(0, power - maxBlockerToughness) / power);
+      // reach: blokuje latające; bez wrogich latających wartość obrony jest w progu.
+      else if (k === 'reach') value += P.creatureKwReach * floorShare(enemyFlyers > 0 ? 1 : 0);
+      // indestructible: przeżywa walkę i zniszczenie; zagrożenie = karty w ręce wroga (usunięcie) + zabójcy w walce.
+      else if (k === 'indestructible') value += P.creatureKwIndestructible * powerScale * floorShare((oppHand + enemyKillers) / ref);
+      // hexproof: chroni przed celowanym usunięciem; zagrożenie = karty w ręce wroga.
+      else if (k === 'hexproof') value += P.creatureKwHexproof * powerScale * floorShare(oppHand / ref);
+    }
+    return value;
   };
   // PMSSB-36 (L41/L48): JEDNA drabina kosztu SAMOUSZKODZENIA (utrata życia
   // kontrolera) dla wszystkich kanałów — rzut czaru, wejście permanentu
@@ -3920,26 +4097,69 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // Czytamy WYŁĄCZNIE PlayerView (ADR 0017): combat + stos z celami; zero nazw
   // kart (ADR 0002). NIE używamy spekulacji „removal w ręce" (B3) — to za mało
   // pewne, by uznać permanent za skazany.
+  // Czary/zdolności usuwające lub wygnające permanent (licznik go nie ocali).
+  const REMOVE_ON_STACK_EFFECTS = new Set(['destroy_permanent', 'exile_permanent', 'exile_target_creature',
+    'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value']);
+
   const permanentDoomedThisTurn = (view, obj) => {
     if (!obj) return false;
     // (a) bloker ginący w walce
     const outcome = combatOutcome(view, obj);
     if (outcome && (outcome.deadBlockers ?? []).includes(obj.id) && !outcome.attackerDies) return true;
     // (b) cel wrogiego czaru/zdolności usuwającej na stosie
-    const REMOVE_ON_STACK = new Set(['destroy_permanent', 'exile_permanent', 'exile_target_creature',
-      'destroy_if_least_power', 'destroy_artifact_gain_life_mana_value']);
     for (const entry of (view.zones.stack ?? [])) {
       if (entry.controllerId === view.playerId) continue;
       const targets = entry.targets ?? [];
       if (!targets.includes(obj.id)) continue;
       const effs = stackEntryEffects(entry);
-      if (effs.some((e) => REMOVE_ON_STACK.has(e?.type))) return true;
+      if (effs.some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type))) return true;
       // obrażenia śmiertelne z czaru na stosie
       const dmg = effs.find((e) => e?.type === 'damage');
       if (dmg && Number.isInteger(dmg.amount)
         && dmg.amount >= ((obj.toughness ?? 0) - (obj.damage ?? 0))) return true;
     }
     return false;
+  };
+
+  /**
+   * Ad 2 (właściciel 2026-10-17): czy licznik ZWIĘKSZAJĄCY wytrzymałość (generycznie: każda delta
+   * z dodatnią wytrzymałością, nie tylko +1/+1) RATUJE nasz stwór przed śmiertelnym uszkodzeniem.
+   * (a) walka: stwór jest blokerem, który bez licznika ginie, a z nim przeżywa (symulacja z deltą);
+   * (b) stos: śmiertelne obrażenia czarem przeciwnika, które przestają być śmiertelne po licznik.
+   * Usunięcie/wygnanie na stosie nie jest ratowalne licznikiem.
+   */
+  const counterSavesHost = (view, host, delta) => {
+    if (!host || host.controllerId !== view.playerId || !((delta?.toughness ?? 0) > 0)) return false;
+    const before = combatOutcome(view, host, {});
+    const after = combatOutcome(view, host, delta);
+    if ((before?.deadBlockers ?? []).includes(host.id) && !(after?.deadBlockers ?? []).includes(host.id)) return true;
+    const removal = (view.zones.stack ?? []).some((entry) => entry.controllerId !== view.playerId
+      && (entry.targets ?? []).includes(host.id)
+      && stackEntryEffects(entry).some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type)));
+    if (removal) return false;
+    const marked = host.damage ?? 0;
+    const incoming = incomingDamageOnStack(view, host.id);
+    const toughness = host.toughness ?? 0;
+    return incoming > 0 && marked + incoming >= toughness && marked + incoming < toughness + delta.toughness;
+  };
+
+  /**
+   * Ad 2: skutek licznika ŚMIERTELNY dla celu wykonujemy ASAP (bez odroczenia do okna many):
+   *  • licznik zmniejszający wytrzymałość WROGIEGO stwora, który go ZABIJA (toughness − obrażenia ≤ ubytek);
+   *  • licznik zwiększający wytrzymałość NASZEGO stwora, który go RATUJE (`counterSavesHost`).
+   * Generycznie po deltach licznika (`−1/−1`, `−0/−1`, `+1/+1`, `+0/+1`…), nie po nazwie.
+   */
+  const lethalCounterNow = (view, target, counterName, amount = 1) => {
+    if (!target || !(target.kind === 'creature' || (target.types ?? []).includes('Creature'))) return false;
+    const m = /^([+-]\d+)\/([+-]\d+)$/.exec(String(counterName ?? ''));
+    if (!m) return false;
+    const dP = Number(m[1]) * amount;
+    const dT = Number(m[2]) * amount;
+    if (counterIsHostile(counterName)) {
+      if (target.controllerId === view.playerId || dT >= 0) return false;
+      return (target.toughness ?? 0) - (target.damage ?? 0) <= -dT;
+    }
+    return dT > 0 && counterSavesHost(view, target, { power: dP, toughness: dT });
   };
 
   /** Delta P/T licznika statystyk (CR 122.1) — `null` dla liczników bez modelu
@@ -4073,7 +4293,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Gospodarz skazany: licznik ginie razem z nim, więc NIE KUPUJE NIC
       // (wartość zerowana, nie zmniejszana) — aktywacja schodzi pod pass
       // niezależnie od wielkości ciała, bo „wielki, ale martwy" to nadal zero.
-      else if (permanentDoomedThisTurn(view, host)) value = -P.counterDoomedHostPenalty;
+      else if (permanentDoomedThisTurn(view, host) && !counterSavesHost(view, host, delta)) value = -P.counterDoomedHostPenalty;
       else {
         // PMSSB-23/F4: gospodarz, którego ataku przeciwnik NIE DOSIĘGNIE —
         // licznik zamieni się w obrażenia, a nie w wymianę (różnicuje wybór
@@ -4247,14 +4467,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
-   * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
-   * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
-   * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
-   * Stall Out na tapniętym 6/6 = 38, czyli 3 liczniki stun wnosiły tyle co nic).
-   * `target` rozwiązuje wywołujący (zdolność bez celu = źródło).
-   * Wartości bez zmian względem gałęzi zdolności (kotwica anty-over-fix M429:
-   * najsłabszy realny wariant zostaje tam, gdzie był).
+   * PMSSB-66 (zasada właściciela 2026-10-17): zdolność płacona MANĄ (bez tapnięcia) o TRWAŁYM skutku
+   * (token, licznik). Mana wydana w end step PRZECIWNIKA jest darmowa: lądy i tak odtapowują się w
+   * naszym kroku odnowienia. W innych momentach bot tej zdolności nie wybiera — odracza ją do okna.
+   * Sorcery-speed wyłączone (w end step przeciwnika nie da się ich użyć).
    */
+  const LASTING_MANA_EFFECTS = new Set(['create_token', 'add_counter']);
+  const COMBAT_STEPS = new Set(['declare_attackers', 'declare_blockers', 'combat_damage', 'end_of_combat']);
+  const isLastingManaAbility = (ability, manaCost) => {
+    if (!(manaCost > 0) || ability?.cost?.tap || ability?.timing === 'sorcery') return false;
+    const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    return effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type));
+  };
+  // Rezerwa many pod instant/flash, który ZAGRAMY w tym oknie: najdroższy z tych, które mieszczą się
+  // w dostępnej manie (instant, którego nie stać, i tak nie zostanie zagrany — nie blokuje okna).
+  const reservedInstantMana = (view, available) => {
+    let best = 0;
+    for (const o of view.zones.hand ?? []) {
+      const def = cardDef(o.cardId);
+      const types = def?.types ?? o.types ?? [];
+      if (!types.includes('Instant') && !(def?.keywords ?? []).includes('flash')) continue;
+      const cost = o.manaCost ?? def?.manaCost ?? 0;
+      if (cost <= available && cost > best) best = cost;
+    }
+    return best;
+  };
+  // Okno darmowej many: END STEP PRZECIWNIKA, a koszt zostawia rezerwę pod instant z tego okna.
+  const freeManaWindowNow = (view, ability, manaCost) => {
+    if (!(view.turn.activePlayerId !== view.playerId && view.turn.step === 'end')) return false;
+    if (ability?.timing === 'sorcery') return false;
+    const available = manaAvailableNow(view);
+    return manaCost <= available - reservedInstantMana(view, available);
+  };
+
   const counterEffectValue = (view, target, counterName, amount = 1, ctx = {}) => {
     if (!target) return 0;
     const mine = target.controllerId === view.playerId;
@@ -4292,7 +4537,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
       : 0;
     const current = (target.counters ?? {})[counterName] ?? 0;
-    if (need === 0 || current >= need) return -25; // nikt nie konsumuje / zapas pełny
+    if (need === 0) return -25; // nikt nie konsumuje
+    // PMSSB-66: producent za MANĘ — licznik ma wartość tego, co konsument zrobi (ta sama tabela
+    // ETB co tap_permanent, L41), gdy zapas jest poniżej potrzeby. Pora nie ma znaczenia: o tym,
+    // KIEDY płacimy manę, decyduje okno end step przeciwnika, nie wartość licznika.
+    if (ctx.manaProducer) {
+      if (current >= need) return 0;
+      const consumer = consumers[0];
+      const req = consumer?.targets?.[0] ?? null;
+      const effs = Array.isArray(consumer?.effect) ? consumer.effect : [consumer?.effect];
+      return effs.reduce((sum, e) => sum + (ETB_EFFECT_BONUS[e?.type] ? ETB_EFFECT_BONUS[e.type](e, view, req, null) : 0), 0);
+    }
+    if (current >= need) return -25; // zapas pełny
     const ownPostcombat = view.turn.activePlayerId === view.playerId
       && view.turn.phase === 'postcombat_main';
     return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
@@ -6229,6 +6485,83 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Dzięki temu ostatni land jest droższy od Tigera 3/2, ale przy trzech
    * landach zbędny Swamp/Plains jest tańszy i Tiger zostaje.
    */
+  /**
+   * PMSSB-63 (batch 68, Austere Command — „Destroy all …" bez celu): wycena
+   * masowego zniszczenia z MODELU STOLU, nie z plaskich stalych na sztuke.
+   * Dla kazdego trafionego permanentu: wartosc karty (massDestroyCardValue) +
+   * materiał (permanentMaterialValue: moc/wytrzymałość/MV + ewazja). Wrogi
+   * permanent = moj zysk, wlasny = moj koszt (x massDestroyOwnMultiplier, pomniejszony
+   * o odbudowe z reki). Do tego zagrozenie zycia: ile nieblokowanego ataku wroga
+   * zabieram (po blokach moich OCALALYCH stworow) w stosunku do mojego zycia.
+   * Ta sama para trybow (chooseTwoModes) jest wyceniana osobno, wiec bot wybiera
+   * pare o najwyzszej wartosci netto. Nieniszczalne nie wchodza; pusty filtr → 0.
+   */
+  const MASS_EVASION_KEYWORDS = ['flying', 'reach', 'deathtouch', 'lifelink', 'first_strike', 'double_strike'];
+  function massDestroyAffected(view, effects) {
+    const seen = new Set();
+    const hit = [];
+    for (const effect of effects) {
+      if (effect?.type !== 'destroy_all') continue;
+      const filter = effect.filter ?? {};
+      const types = filter.types ?? [];
+      for (const object of view.zones.battlefield ?? []) {
+        if (seen.has(object.id)) continue;
+        const typeOk = types.every((type) => object.kind === type.toLowerCase()
+          || (object.types ?? []).includes(type));
+        if (!typeOk) continue;
+        const mv = object.manaCost ?? 0;
+        if (filter.manaValueAtMost != null && mv > filter.manaValueAtMost) continue;
+        if (filter.manaValueAtLeast != null && mv < filter.manaValueAtLeast) continue;
+        if ((object.keywords ?? []).includes('indestructible')) continue;
+        seen.add(object.id);
+        hit.push(object);
+      }
+    }
+    return hit;
+  }
+  /** Materiał permanentu w skali karty (PMSSB-63): stwor = 2xmoc + wytrzymałość + MV
+   *  (permanentMaterialValue) + ewazja; nie-stwor = MV (TMC); land = skala straty landu. */
+  function massDestroyWorth(view, object) {
+    const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
+    if (isLand) return sacrificePermanentLoss(view, object);
+    let worth = permanentMaterialValue(object);
+    if ((object.keywords ?? []).some((kw) => MASS_EVASION_KEYWORDS.includes(kw))) {
+      worth += P.massDestroyEvasionBonus;
+    }
+    return worth;
+  }
+  /** Nieblokowana sila ataku: najmocniejsze ataki dostaja blok po jednym blokerze. */
+  function unblockedAttackPower(attackers, blockers) {
+    const powers = attackers.map((o) => combatPower(o)).sort((a, b) => b - a);
+    let blocks = blockers.length;
+    let total = 0;
+    for (const power of powers) {
+      if (blocks > 0) { blocks -= 1; continue; }
+      total += power;
+    }
+    return total;
+  }
+  function massDestroyValue(view, effects) {
+    const hit = massDestroyAffected(view, effects);
+    const hitIds = new Set(hit.map((o) => o.id));
+    const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
+    const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
+    let value = 0;
+    for (const object of hit) {
+      const unit = P.massDestroyCardValue + massDestroyWorth(view, object);
+      if (object.controllerId === view.playerId) value -= unit * P.massDestroyOwnMultiplier * rebuild;
+      else value += unit;
+    }
+    // Zagrozenie zycia: zabrany nieblokowany atak wroga / moje zycie (capped 1).
+    const foeAll = enemyCreatures(view);
+    const myAll = myCreatures(view);
+    const foeLeft = foeAll.filter((o) => !hitIds.has(o.id));
+    const myLeft = myAll.filter((o) => !hitIds.has(o.id));
+    const removed = unblockedAttackPower(foeAll, myAll) - unblockedAttackPower(foeLeft, myLeft);
+    const life = Math.max(1, myLife(view));
+    if (removed > 0) value += Math.min(1, removed / life) * P.massDestroyThreatWeight;
+    return { count: hit.length, value };
+  }
   function sacrificePermanentLoss(view, target) {
     if (!target) return 0;
     const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
@@ -9561,7 +9894,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         const def = card ? cardDef(card.cardId) : undefined;
         if (!card?.warp) return finish(-20);
-        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
+        const entryStats = entryCounterStats(view, def);
+        let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
+          + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
         // Wygnanie w końcowym kroku to realna wada (stracimy stwora zaraz
         // potem) — kara za tymczasowość, niższa od zysku z wejścia (ETB).
         score -= 15;
@@ -9816,7 +10152,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
         const def = card ? cardDef(card.cardId) : undefined;
-        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
+        const entryStats = entryCounterStats(view, def);
+        let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
+          + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
+        // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
+        if (!cmd.faceDown) score += creatureKeywordValue(view, card, def);
         // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
         // niż jej awers. CR 702.37a (dosłownie): „You may cast this card as a
         // 2/2 face-down creature with no text, no name, no subtypes, and no
@@ -9999,8 +10340,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             .reduce((max, o) => Math.max(max, (o.power ?? 0)), 0);
           score += 2 * bestInFoeGraveyard;
         }
-        // Evasion (flying) realnie zwiększa szanse zadania obrażeń.
-        if (hasKeyword(def, 'flying')) score += 3;
+        // PMSSB-64: latanie wyceniane w creatureKeywordValue (8 gdy wróg nie ma latającego
+        // blokera, 3 gdy ma). Dawny płaski +3 tutaj dublował ten człon — usunięty.
         // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): selektywna ewazja
         // „can't be blocked by creatures with [keyword]". Pomiar PRZED: delta
         // 0 wobec kontrfaktyku (72,0 = 72,0), czyli statyka nie wchodziła
@@ -10188,7 +10529,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // M106/Z2b: czar, którego CAŁA treść jest teraz pusta (0 tokenów, brak
         // stworów do osłabienia, pusty grób), to wyrzucona karta — nie rzucamy.
         if (allEffectsInertNow(view, effects, cmd)) return finish(-70);
-        let score = P.spellBase;
+        // PMSSB-63: czysty masowy czar (same destroy_all) startuje od kosztu karty,
+        // nie od premii spellBase — jego wartosc to netto stolu (massDestroyValue).
+        const pureMassSpell = effects.length > 0 && effects.every((e) => e?.type === 'destroy_all');
+        // PMSSB-63/S (Secure the Scene): WYMIANA CIAŁ — wygnanie celu + token dla
+        // kontrolera celu. Wartość = karta wroga i jej ciało minus ciało tokena
+        // (ta sama jednostka co Austere), a koszt MOJEJ karty i many liczymy tą
+        // samą arytmetyką co stworzenia (L41: `creatureManaCostWeight`, S11 —
+        // dotąd 5 i 2 many wyceniały się identycznie: 67.95 vs 67.98). Start to
+        // więc −(koszt karty + many), NIE bazowe 50 (inaczej każda wymiana
+        // 1-za-1 wychodzi na plus, także na 1/1 za token 1/1).
+        const exileSwap = effects.some((e) => e?.captureControllerAs)
+          && effects.some((e) => e?.type === 'create_token' && e?.controllerFromCapture);
+        let score = pureMassSpell ? -P.massDestroyCastCost : P.spellBase;
+        if (exileSwap) score = -(P.massDestroyCastCost + P.creatureManaCostWeight * (card?.manaCost ?? 0));
+        // PMSSB-63 (Austere Command): masowe zniszczenie wyceniamy z modelu stolu.
+        // Filtr, ktory nie trafia w nic — czar pusty → −70.
+        {
+          const massEffects = effects.filter((e) => e?.type === 'destroy_all');
+          if (massEffects.length > 0) {
+            const mass = massDestroyValue(view, effects);
+            if (mass.count === 0) return finish(-70);
+            score += mass.value;
+          }
+        }
         // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
         // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
         // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
@@ -10344,6 +10708,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (o.kind === 'land' || (o.types ?? []).includes('Land')) && !o.tapped).length;
             return (payer.mana ?? 0) + fromLands >= (unlessPays.amount ?? 1);
           })();
+          // Batch 68 (Raze to the Ground — „can't be countered"): kontra czaru z tą
+          // flagą nie ma skutku (counterStackObject → brak zmiany), więc bot jej nie
+          // wydaje — trzyma kontrę na inny cel. Dotyczy tylko celów BEZ możliwości kontry.
+          const everyTargetUncounterable = targets.length > 0 && targets.every((id) => {
+            const entry = stack.find((item) => item.id === id);
+            return entry?.spell?.cantBeCountered === true;
+          });
+          if (everyTargetUncounterable) return finish(-90);
           if (ownTarget && !foeTarget) return finish(-90);
           if (ownTarget) score -= 60;
           // M237/2 (audyt Żywym Testerem): kontrujemy WROGI czar, ale wartość
@@ -10569,7 +10941,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= P.removalPureLandPenalty;
               } else {
                 const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
-                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                // PMSSB-63/S: w wymianie ciał (exileSwap) wygnanie wartościowe jak
+                // Austere: karta wroga + jego ciało; baza removalu nie dotyczy, bo
+                // token zastępuje ciało (inaczej 1/1 za token 1/1 = +22).
+                if (exileSwap) score += P.massDestroyCardValue + massDestroyWorth(view, victim);
+                else score += P.removalEnemyBase + P.removalWorthWeight * worth;
                 // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
                 // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
                 score += enemyRemovalTargetBonus(view, victim);
@@ -10951,6 +11327,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             }
           }
           if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
+          // Batch 68 (Raze to the Ground): „jeśli MV celu ≤N, dobierz kartę" — dobranie
+          // liczy się, gdy warunek spełnia cel rozpoznany na planszy w chwili rzutu.
+          // PMSSB-63/R (Raze to the Ground): dobranie z kartą = ta sama skala co
+          // `draw_cards` (D, Deepwood Denizen): wartość karty + kara deck-outu
+          // po liczbie kart w bibliotece. Dawniej stałe +drawCardValue bez
+          // sprawdzenia biblioteki — bot dobierał z pustej talii (80 > pass).
+          if (effect.drawIfManaValueAtMost != null && target
+            && (target.manaCost ?? 0) <= effect.drawIfManaValueAtMost) {
+            score += P.drawCardValue + drawDeckingPenalty(view, 1);
+          }
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
             // hour + ciało/rola w środku).
@@ -10958,7 +11344,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // martwy kod — count-0 łapie wcześniej allEffectsInertNow → −70
             // (S01/S02: flurry/howl = −70), a token bezwartościowy przy
             // count>0 nie ma nosicieli w katalogu (skan 0/0 czysty).
-            const tokenValue = tokenBodyValue(view, effect);
+            // Batch 68 (Secure the Scene): token dostaje KONTROLER celu (nie rzucający).
+            // Cel wroga → token wrogi (ujemna rola, ZNAK tokenControllerId) — dar, nie zysk.
+            const captureTarget = effect.controllerFromCapture
+              ? objectOnBoard(view, cmd.targets?.[0] ?? null) : null;
+            // PMSSB-63/S: w wymianie ciał token liczy się jednostką ciała (2·moc+wytrzymałość,
+            // jak massDestroyWorth bez MV), ze znakiem kontrolera celu: swój = +, wroga = −.
+            const tokenValue = effect.controllerFromCapture && exileSwap
+              ? ((captureTarget?.controllerId ?? view.playerId) === view.playerId ? 1 : -1)
+                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0))
+              : effect.controllerFromCapture
+                ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
+                : tokenBodyValue(view, effect);
             score += tokenValue;
             if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
             spellMakesTokens = true;
@@ -11631,8 +12028,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (ADR 0002), nie po nazwie. Dopóki stwór może atakować, pas w głównej 1
         // wygrywa — walka go obsłuży albo wraca tu w głównej 2. Stwór z chorobą
         // przywołania i już tapnięty nie wchodzi tu: `canAttackNow` zwraca false.
-        const onlySelfCounter = effects.length > 0 && effects.every((e) => e?.type === 'add_counter')
-          && !(cmd.targets ?? []).length;
+        // O-4 (audyt PR #166): wąski kształt efektu (`isSelfCounterEffects`) +
+        // brak celów w poleceniu i w definicji zdolności (token z celem poza klasą).
+        const onlySelfCounter = isSelfCounterEffects(effects)
+          && !(cmd.targets ?? []).length && !(ability?.targets ?? []).length;
         if (taps && onlySelfCounter && source && ability?.timing === 'sorcery' && myTurn(view)
           && view.turn.phase === 'precombat_main' && canAttackNow(source)) {
           return finish(-40);
@@ -11699,7 +12098,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
         const abilityManaCost = abilityManaCostForView(view, ability, abilityObject)
           + (ability?.cost?.generic ?? 0);
-        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
+        // PMSSB-66: zdolność za manę o trwałym skutku w oknie end step przeciwnika — mana darmowa.
+        // Pokrętło `lastingManaWindowOn` (0 = mechanizm wyłączony, pomiar ×0).
+        const lastingMana = P.lastingManaWindowOn > 0 && isLastingManaAbility(ability, abilityManaCost);
+        const freeWindow = lastingMana && freeManaWindowNow(view, ability, abilityManaCost);
+        // Ad 2: licznik śmiertelny (zabija wroga / ratuje nasz stwór) — wykonać ASAP, bez odroczenia.
+        let lethalNow = false;
+        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana') && !freeWindow) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
         }
         // Zgłoszenie G/(b) (2026-10-14, Willbender): obrót twarzą do góry to
@@ -12458,7 +12863,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Cel bez jawnego wskazania = źródło (outlast na sobie).
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
             score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
-              Math.max(1, effect.amount ?? 1), { source });
+              Math.max(1, effect.amount ?? 1), { source, manaProducer: lastingMana });
+            if (lethalCounterNow(view, tgt, effect.counter ?? '+1/+1', Math.max(1, effect.amount ?? 1))) lethalNow = true;
           }
           // PMSSB-23/F3 (L41): rider rozlania także w ścieżce zdolności.
           if (effect.type === 'add_counter_to_creatures_you_control') {
@@ -12851,7 +13257,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // przenosić wariant PONIŻEJ passa).
             // PMSSB-2/A: detekcja banku przez wspólny czytnik (wynik M243/C
             // BEZ ZMIAN — kara 13/14 stoi, pin w teście keeps).
-            if (tokenOnlyManaBank(effect)) {
+            if (tokenOnlyManaBank(effect) && !freeWindow) {
               const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
               score -= hasPlayable ? 13 : 14;
             }
@@ -13136,8 +13542,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Kara poniżej passu (L3: musi przebić premię +2).
             const remaining = searchTargetsRemaining(view, ability.cycling ?? {});
             if (remaining === 0) return finish(-12);
-            score += 2;
+            // PMSSB-63/K (Kulrath Zealot, basic landcycling): wymiana karty na ląd
+            // to ta sama miara co szukanie (L41, PMSSB-29/30): wartość znalezionego
+            // landu (`landKeepValue` — drabina land) minus wartość oddanej karty
+            // (`cardKeepValue`). Dawniej flat +2: przy 0 lądach 6-drop, który nie
+            // wyjdzie przez kilka tur, był warty tyle co nic (KUL2/KUL3: best 2).
+            // Bramki −5 (ziem wystarczy) i −12 (nie ma czego szukać) zostają.
+            const fetchedLand = { kind: 'land', types: ['Land'], id: '__landcycle__', controllerId: view.playerId };
+            score += cardKeepValue(view, fetchedLand) - cardKeepValue(view, cycled);
           }
+        }
+        // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
+        // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
+        // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
+        if (lastingMana && !freeWindow && !COMBAT_STEPS.has(view.turn.step) && !lethalNow) {
+          score = Math.min(score, -P.abilityManaCostPenalty * abilityManaCost);
         }
         return finish(score);
       }

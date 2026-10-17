@@ -1,0 +1,24 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Halo+Scarab&set=snc&format=json",
+  "print": "snc",
+  "name": "Halo Scarab",
+  "mana_cost": "{2}",
+  "cmc": 2,
+  "type_line": "Artifact Creature — Insect",
+  "oracle_text": "{2}, Exile this card from your graveyard: Create a Treasure token. (It's an artifact with \"{T}, Sacrifice this token: Add one mana of any color.\")",
+  "power": "2",
+  "toughness": "1",
+  "colors": [],
+  "set": "snc",
+  "set_name": "Streets of New Capenna",
+  "collector_number": "239",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/e/2eead159-b9a1-4c64-affe-c77b0a9e4775.jpg?1783923062",
+    "normal": "https://cards.scryfall.io/normal/front/2/e/2eead159-b9a1-4c64-affe-c77b0a9e4775.jpg?1783923062"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/snc/239/rulings"
+}

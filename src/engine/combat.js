@@ -1761,6 +1761,12 @@ function blockRestrictionError(state, attacker, blocker) {
     return 'Stwora z cantBeBlocked nie można blokować';
   }
   if (cantBeBlockedFromEquipment(state, attacker)) return 'Nosiciel equipmentu z progiem mocy nie może być blokowany';
+  // Batch 68 (Neurok Invisimancer): STAŁA zdolność „This creature can't be blocked.\"
+  // — statyczny znacznik na permanencie (zaklęcie „can't be blocked this turn\"
+  // to osobny znacznik `cantBeBlockedUntilTurn`, wyżej).
+  if (effectiveAbilities(attacker).some((ability) => ability?.type === 'static' && ability.cantBeBlocked === true)) {
+    return 'Stwora, który nie może być blokowany, nie można blokować';
+  }
   // Intimidate (CR 702.13, M174/D — Predator's Gambit): atakujący może być
   // blokowany wyłącznie przez ARTEFAKTOWE stwory i/lub stwory dzielące
   // z nim kolor.

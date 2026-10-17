@@ -174,7 +174,10 @@ test('CM/2 inwentarz katalogu: każdy czar modalny = klasa A/B/C (strażnik „p
   // Batch 61/174: Izzet Charm = kontra warunkowa (1 cel) + obrażenia (1 cel)
   // + „Dobierz 2, odrzuć 2" (0 celów) — mieszanka 1-celowych z 0-celowym,
   // więc kaskada jak dla Selesnya Charm (krok 1 = nazwy trybów).
-  const KLASA_C = ['aerith-rescue-mission', 'fortify', 'izzet-charm', 'ruinous-rampage',
+  // Batch 68/410 (CLB 687 Austere Command): „choose two" — dwa tryby 0-celowe
+  // (Destroy all …), więc klasa C (mieszane/0-celowe), a wybór pary = chooseTwoModes
+  // (piny w test/real-cards-batch68.test.js, B68/410).
+  const KLASA_C = ['aerith-rescue-mission', 'austere-command', 'fortify', 'izzet-charm', 'ruinous-rampage',
     'selesnya-charm', 'your-temple-is-under-attack', 'youre-confronted-by-robbers'];
   const foundA = [];
   const foundB = [];

@@ -40,15 +40,22 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     const s = mk('end', 'p2'); fillLib(s); put(s, 'sc', 'civilized-scholar', 'p1', 'battlefield');
     assert.equal(scoreOf(decide(s).opts, 'activate_ability(sc'), 14);
   });
-  it('F-L1: cycle {2} = 2 (efekt ≡ scholar, ale płatny — PMSSB-34/B)', () => {
-    // PRZED PMSSB-34 oba remisowały na 4, choć cycling kosztuje {2}, a scholar
-    // tylko tapnięcie — koszt many nie był wtedy wyceniany w żadnej gałęzi.
+  it('F-L1: cycle {2} z 0 lądami = 33 (typecycling = wymiana karty na ląd, PMSSB-63/K)', () => {
+    // ZMIANA ŚWIADOMA (PMSSB-63/K, L41): dawny pin „= 2” zakładał parytet z loot dla
+    // każdego cyklingu. Swampcycling to wymiana karty na ląd — ta sama miara co
+    // basic landcycling Kulratha: landKeepValue(znaleziony ląd) − cardKeepValue(oddany
+    // 7-drop poza zasięgiem) = 30 − (−3) = 33 przy 0 lądach na stole.
     const s = mk(); fillLib(s, 10); put(s, 'gm', 'gloomfang-mauler');
-    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 2);
+    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), 33);
   });
-  it('F-L1: fisher-cast = 71.1 (noga −4 ×0.9, było 74.7)', () => {
+  it('F-L1: cycle {2} przy 6 lądach = BRAK landcyklingu (bramka −5: ziem wystarczy, 7-drop zagra)', () => {
+    const s = mk(); fillLib(s, 10); put(s, 'gm', 'gloomfang-mauler');
+    for (let i = 0; i < 6; i++) put(s, `ld${i}`, 'basic-forest', 'p1', 'battlefield');
+    assert.equal(scoreOf(decide(s).opts, 'activate_ability(gm'), -5);
+  });
+  it('F-L1: fisher-cast = 78.0 (PMSSB-64 latanie 4-mocy +6.9; noga −4 ×0.9)', () => {
     const s = mk(); fillLib(s); put(s, 'fi', 'quicksilver-fisher');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(fi'), 71.1);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(fi'), 78.0);
   });
   it('F-L1: evangel-cast = 67.5 BEZ ZMIAN (split +2 już dobry)', () => {
     const s = mk(); fillLib(s); put(s, 'ev', 'evangel-of-synthesis');
@@ -66,13 +73,13 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     addObject(s, { id: 'foe', instanceId: 'i-foe', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
     assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 82);
   });
-  it('guard: crows-lib30 = 71.5 (PMSSB-10-B2: any_dies-loot +1.3!)', () => {
+  it('guard: crows-lib30 = 78.4 (PMSSB-64 latanie 4-mocy +6.9; PMSSB-10-B2: any_dies-loot +1.3!)', () => {
     const s = mk(); fillLib(s); put(s, 'cr', 'murder-of-crows');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 71.5);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 78.4);
   });
-  it('guard: talions-lib30 = 66.6 (future-trigger bez anticipacji)', () => {
+  it('guard: talions-lib30 = 66.3 (future-trigger bez anticipacji; PMSSB-67/F5 (próg latania skalowany mocą): lot 1-mocowy −0.3)', () => {
     const s = mk(); fillLib(s); put(s, 'tm', 'talions-messenger');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(tm'), 66.6);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(tm'), 66.3);
   });
   it('guard: scholar ignoruje rękę (pusta / 1 karta = 4)', () => {
     const a = mk(); fillLib(a); put(a, 'sc', 'civilized-scholar', 'p1', 'battlefield');

@@ -32,9 +32,9 @@ const decide = (s) => {
 const disp = (opts, frag) => Number(opts.find((o) => o.cmd.includes(frag))?.score.toFixed(1));
 
 describe('PMSSB-9 Wave-B: anticipacja-attacks', () => {
-  it('F-T2: bloodflies = 68.4 (było 66.6: +1.8 = 0.5×4×0.9)', () => {
+  it('F-T2: bloodflies = 68.1 (było 68.4 przed F5; PMSSB-67/F5 (próg latania skalowany mocą): lot 1-mocowy odblokowany −0.3)', () => {
     const s = mk(); fillLib(s); put(s, 'bf', 'delta-bloodflies');
-    assert.equal(disp(decide(s), 'cast_permanent(bf'), 68.4);
+    assert.equal(disp(decide(s), 'cast_permanent(bf'), 68.1);
   });
   it('F-T2: horror = 67.5 (było 63.9: +3.6 = 0.5×8×0.9)', () => {
     const s = mk(); fillLib(s); put(s, 'ih', 'infectious-horror');
@@ -44,34 +44,34 @@ describe('PMSSB-9 Wave-B: anticipacja-attacks', () => {
     const s = mk(); fillLib(s); put(s, 'gc', 'gila-courser');
     assert.equal(disp(decide(s), 'cast_permanent(gc'), 69.8);
   });
-  it('F-T2: caves = 77.0 (było 75.6: +1.35 na nodze-ataku)', () => {
+  it('F-T2: caves = 78.5 (PMSSB-67/F4 trample ×moc 5/3 ×próg 0.5 = −0.3; PMSSB-64 było 78.8; przed 77.0)', () => {
     const s = mk(); fillLib(s); put(s, 'cc', 'caves-of-chaos-adventurer');
-    assert.equal(disp(decide(s), 'cast_permanent(cc'), 77.0);
+    assert.equal(disp(decide(s), 'cast_permanent(cc'), 78.5);
   });
-  it('F-T2: veteran/thistledown = 68.4/70.2 (untap +2.7)', () => {
+  it('F-T2: veteran = 69.6 (PMSSB-67/F4 czujność moc 2 ×0.5 = −2.4; PMSSB-64 było 72.0)', () => {
     const a = mk(); fillLib(a); put(a, 'td', 'tenth-district-veteran');
-    assert.equal(disp(decide(a), 'cast_permanent(td'), 68.4);
+    assert.equal(disp(decide(a), 'cast_permanent(td'), 69.6);
     const b = mk(); fillLib(b); put(b, 'tp', 'thistledown-players');
     assert.equal(disp(decide(b), 'cast_permanent(tp'), 70.2);
   });
-  it('F-T2: waveskimmer/benediction = 66.2/58.9 (exalted-solo +0.45; float!)', () => {
+  it('F-T2: waveskimmer/benediction = 68.3/58.9 (PMSSB-64 latanie 2-mocy +2.1; exalted-solo +0.45)', () => {
     const a = mk(); fillLib(a); put(a, 'wa', 'waveskimmer-aven');
-    assert.equal(disp(decide(a), 'cast_permanent(wa'), 66.2);
+    assert.equal(disp(decide(a), 'cast_permanent(wa'), 68.3);
     const b = mk(); fillLib(b); put(b, 'ab', 'angelic-benediction');
     assert.equal(disp(decide(b), 'cast_permanent(ab'), 58.9);
   });
-  it('F-T2: zoraline = 69.3 BEZ ZMIAN (pay-SKIP + bat-imminent-0)', () => {
+  it('F-T2: zoraline = 75.6 (PMSSB-67/F4 czujność na pustym stole +1.8 zamiast +3.6; latanie 3-mocy +4.5; pay-SKIP + bat-imminent-0)', () => {
     const s = mk(); fillLib(s); put(s, 'zo', 'zoraline');
-    assert.equal(disp(decide(s), 'cast_permanent(zo'), 69.3);
+    assert.equal(disp(decide(s), 'cast_permanent(zo'), 75.6);
   });
-  it('F-T2: bramka-evasion (fly-blok 71.1 vs plain 72.0, delta-0.9!)', () => {
+  it('F-T2: bramka-evasion (fly-blok 69.3 vs plain 71.7; PMSSB-67/F5 (próg latania skalowany mocą): zablokowany lot 1-mocowy = 0.9, odblokowany 2.4)', () => {
     const a = mk(); fillLib(a); put(a, 'bf', 'delta-bloodflies'); foe(a, 'f1', ['flying']);
-    assert.equal(disp(decide(a), 'cast_permanent(bf'), 71.1);
+    assert.equal(disp(decide(a), 'cast_permanent(bf'), 69.3);
     const b = mk(); fillLib(b); put(b, 'bf', 'delta-bloodflies'); foe(b, 'f1');
-    assert.equal(disp(decide(b), 'cast_permanent(bf'), 72.0);
+    assert.equal(disp(decide(b), 'cast_permanent(bf'), 71.7);
   });
-  it('guard: prowler = 67.5 (F-T1 nietknięty)', () => {
+  it('guard: prowler = 69.3 (F-T1 nietknięty; PMSSB-67/F4 deathtouch na pustym stole +1.8)', () => {
     const s = mk(); fillLib(s); put(s, 'pr', 'guildsworn-prowler');
-    assert.equal(disp(decide(s), 'cast_permanent(pr'), 67.5);
+    assert.equal(disp(decide(s), 'cast_permanent(pr'), 69.3);
   });
 });

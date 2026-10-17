@@ -1,0 +1,40 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Austere+Command&set=clb&format=json",
+  "print": "clb",
+  "name": "Austere Command",
+  "mana_cost": "{4}{W}{W}",
+  "cmc": 6,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose two —\n• Destroy all artifacts.\n• Destroy all enchantments.\n• Destroy all creatures with mana value 3 or less.\n• Destroy all creatures with mana value 4 or greater.",
+  "colors": [
+    "W"
+  ],
+  "set": "clb",
+  "set_name": "Commander Legends: Battle for Baldur's Gate",
+  "collector_number": "687",
+  "rarity": "rare",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/d/3d24036e-075f-4991-a740-a9d943722ad2.jpg?1783922495",
+    "normal": "https://cards.scryfall.io/normal/front/3/d/3d24036e-075f-4991-a740-a9d943722ad2.jpg?1783922495"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "If a card is exiled \"until\" another permanent leaves the battlefield, the exiled card returns to the battlefield immediately after that permanent leaves the battlefield during Austere Command's resolution, and it may be destroyed by a later mode."
+    },
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "Each of the chosen modes happens sequentially. If a permanent has an ability that triggers whenever it or another permanent is destroyed, it will see permanents destroyed at the same time as it or before it, but not permanents destroyed by later modes."
+    },
+    {
+      "date": "2020-11-10",
+      "source": "wotc",
+      "comment": "If the first and last modes are chosen, an artifact creature with mana value 4 or greater will have to be regenerated twice to survive. This is because the modes happen sequentially, and the regeneration \"shield\" is used up by the first one. The same is true with any other combination of modes that covers one permanent twice."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/clb/687/rulings"
+}

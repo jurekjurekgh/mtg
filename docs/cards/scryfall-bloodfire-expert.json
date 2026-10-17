@@ -1,0 +1,42 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bloodfire+Expert&set=ktk&format=json",
+  "print": "ktk",
+  "name": "Bloodfire Expert",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Creature — Efreet Monk",
+  "oracle_text": "Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+  "power": "3",
+  "toughness": "1",
+  "colors": [
+    "R"
+  ],
+  "set": "ktk",
+  "set_name": "Khans of Tarkir",
+  "collector_number": "101",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/0/7/0742564e-f7a7-4107-b9ed-63703ca4702c.jpg?1783939075",
+    "normal": "https://cards.scryfall.io/normal/front/0/7/0742564e-f7a7-4107-b9ed-63703ca4702c.jpg?1783939075"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Any spell you cast that doesn't have the type creature will cause prowess to trigger. If a spell has multiple types, and one of those types is creature (such as an artifact creature), casting it won't cause prowess to trigger. Playing a land also won't cause prowess to trigger."
+    },
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Prowess goes on the stack on top of the spell that caused it to trigger. It will resolve before that spell."
+    },
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Once it triggers, prowess isn't connected to the spell that caused it to trigger. If that spell is countered, prowess will still resolve."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/ktk/101/rulings"
+}

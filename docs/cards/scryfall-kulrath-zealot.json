@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kulrath+Zealot&set=ecl&format=json",
+  "print": "ecl",
+  "name": "Kulrath Zealot",
+  "mana_cost": "{5}{R}",
+  "cmc": 6,
+  "type_line": "Creature — Elemental Warrior",
+  "oracle_text": "When this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card.\nBasic landcycling {1}{R} ({1}{R}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)",
+  "power": "6",
+  "toughness": "5",
+  "colors": [
+    "R"
+  ],
+  "set": "ecl",
+  "set_name": "Lorwyn Eclipsed",
+  "collector_number": "148",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/5/3502685d-4e57-4c5c-94c6-ae69048cdfbf.jpg?1783904441",
+    "normal": "https://cards.scryfall.io/normal/front/3/5/3502685d-4e57-4c5c-94c6-ae69048cdfbf.jpg?1783904441"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2025-11-17",
+      "source": "wotc",
+      "comment": "You pay all costs and follow all timing rules for cards played this way. For example, if the exiled card is a land card, you may play it only during your main phase while the stack is empty."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/ecl/148/rulings"
+}

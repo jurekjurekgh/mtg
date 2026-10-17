@@ -1206,7 +1206,9 @@ function describeEffect(e, ctx = {}) {
     create_token: () => {
       const count = Number.isFinite(e.amount) && e.amount > 1 ? `×${e.amount} ` : '';
       const dynamicNote = typeof e.amount === 'string' ? ` (${dynamicAmount(e.amount)})` : '';
-      return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}`;
+      // Batch 68 (Secure the Scene): token dla kontrolera celu — etykieta mówi kto go dostaje.
+      const controllerNote = e.controllerFromCapture ? ' (kontroler celu)' : '';
+      return `stwórz ${count}token ${e.name ?? ''}${dynamicNote}${controllerNote}`;
     },
     damage: () => {
       const amt = e.amount;
@@ -1349,7 +1351,18 @@ function describeEffect(e, ctx = {}) {
     damage_enchanted_player: () => `${damageCount(e.amount)} zaczarowanemu graczowi`,
     damage_to_controller: () => `${damageCount(e.amount)} kontrolerowi`,
     destroy_if_least_power: () => 'zniszcz, jeśli cel ma najmniejszą moc na polu bitwy (lub remisuje)',
-    destroy_permanent: () => 'zniszcz cel',
+    // Batch 68 (Raze to the Ground): „jeśli jego MV była ≤N, dobierz kartę" — dopisek do etykiety.
+    destroy_permanent: () => (e.drawIfManaValueAtMost != null
+      ? `zniszcz cel; jeśli jego MV była ≤${e.drawIfManaValueAtMost}, dobierz kartę`
+      : 'zniszcz cel'),
+    // Batch 68 (Austere Command): masowe zniszczenie z filtrem typ + MV.
+    destroy_all: () => {
+      const plTypes = { Artifact: 'artefakty', Enchantment: 'zaklęcia', Creature: 'stwory', Land: 'lądy', Planeswalker: 'planeswalkery' };
+      const types = (e.filter?.types ?? []).map((t) => plTypes[t] ?? t.toLowerCase()).join(' ') || 'permanenty';
+      const mv = e.filter?.manaValueAtMost != null ? ` o MV ≤${e.filter.manaValueAtMost}`
+        : (e.filter?.manaValueAtLeast != null ? ` o MV ≥${e.filter.manaValueAtLeast}` : '');
+      return `zniszcz wszystkie ${types}${mv}`;
+    },
     destroy_artifact_gain_life_mana_value: () => 'zniszcz artefakt; zyskujesz życie równe jego kosztowi many',
     set_base_pt_until_end_of_turn: () => `bazowe P/T ${e.power}/${e.toughness} do końca tury`,
     discard_cards: () => `odrzuć ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,

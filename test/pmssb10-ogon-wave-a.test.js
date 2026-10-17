@@ -42,9 +42,9 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const b = mk(); fillLib(b); put(b, 'kw', 'kappa-tech-wrecker'); dude(b, 'foe', 'p2');
     assert.equal(disp(decide(b), 'cast_permanent(kw'), 68.4);
   });
-  it('F-O: robber = 66.9 (foe-token-NET +2.1: ciało-ujemne + upkeep-wroga!)', () => {
+  it('F-O: robber = 70.5 (PMSSB-64 haste 2-mocy +3.6; foe-token-NET +2.1: ciało-ujemne + upkeep-wroga!)', () => {
     const s = mk(); fillLib(s); put(s, 'rr', 'relic-robber');
-    assert.equal(disp(decide(s), 'cast_permanent(rr'), 66.9);
+    assert.equal(disp(decide(s), 'cast_permanent(rr'), 70.5);
   });
   it('F-O: disa = 70.2 BEZ ZMIAN (goyf-0/0 nieczytelny, konserwatywnie 0)', () => {
     const s = mk(); fillLib(s); put(s, 'di', 'disa-the-restless');
@@ -65,9 +65,9 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const s = mk(); fillLib(s); put(s, 'gj', 'goblin-battle-jester');
     assert.equal(disp(decide(s), 'cast_permanent(gj'), 64.8);
   });
-  it('F-O: demon = 64.8 (było 71.1: sac-NEGATYW −6.3!)', () => {
+  it('F-O: demon = 71.7 (PMSSB-64 latanie 4-mocy: (8·4/3−3)·0.9 = +6.9; było 64.8)', () => {
     const s = mk(); fillLib(s); put(s, 'id', 'illusory-demon');
-    assert.equal(disp(decide(s), 'cast_permanent(id'), 64.8);
+    assert.equal(disp(decide(s), 'cast_permanent(id'), 71.7);
   });
   it('F-O: tellah = 69.3 (token +4.5; nogi-manaSpent SKIP!)', () => {
     const s = mk(); fillLib(s); put(s, 'tg', 'tellah-great-sage');
@@ -77,11 +77,13 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const s = mk(); fillLib(s); put(s, 'nh', 'nightshade-harvester');
     assert.equal(disp(decide(s), 'cast_permanent(nh'), 69.6);
   });
-  it('F-O: guard/windscout/devotee = 69.3/68.0/66.4', () => {
+  it('F-O: guard/windscout/devotee = 69.3/68.7/66.4 (windscout latanie 2-mocy: +2.1; PMSSB-65: prowess bez czaru w ręce = 0, było płaskie 1.35 → 70.1)', () => {
     const a = mk(); fillLib(a); put(a, 'mg', 'midnight-guard');
     assert.equal(disp(decide(a), 'cast_permanent(mg'), 69.3);
     const b = mk(); fillLib(b); put(b, 'jw', 'jeskai-windscout');
-    assert.equal(disp(decide(b), 'cast_permanent(jw'), 68.0);
+    // PMSSB-65: prowess windscouta to pump +1/+1 za czar nie-stworzenia; ręka pusta → 0 pumpów
+    // w oknie następnej tury. Płaska wartość 1.35 (70.1) była stałą bez stanu — usunięta.
+    assert.equal(disp(decide(b), 'cast_permanent(jw'), 68.7);
     const c = mk(); fillLib(c); put(c, 'jd', 'jeskai-devotee');
     assert.equal(disp(decide(c), 'cast_permanent(jd'), 66.4);
   });

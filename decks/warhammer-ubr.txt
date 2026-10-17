@@ -8,6 +8,7 @@
 1x Shock
 1x Tome Scour
 1x Unearth
+1x Child of Night
 1x Goblin Piker
 1x Negate (M15)
 1x Omenspeaker
@@ -25,5 +26,5 @@
 1x Minotaur Abomination
 1x Revolutionist
 3x Island
-4x Swamp
+5x Swamp
 5x Mountain
