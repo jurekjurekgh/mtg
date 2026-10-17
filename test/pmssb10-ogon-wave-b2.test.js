@@ -66,8 +66,10 @@ test('PMSSB10-B2: wavecrash-triton heroic-tap gate: empty-SAME, foe +1.62', () =
 test('PMSSB10-B2: veiled-ascension cloak +4.5 (63.00)', () => {
   assert.equal(castScore('veiled-ascension'), '63.00');
 });
-test('PMSSB10-B2: necrosquito dies-growth +1.35 (62.55)', () => {
-  assert.equal(castScore('necrosquito'), '62.55');
+// PMSSB-67/F2: re-pin 62.55 → 70.05. Stara wartość liczyła ciało 0/0; Necrosquito wchodzi z 2 oil
+// (= +2/+2 jak w karcie). Pin kodował defekt, nie tor wzrostu. Patrz test/audyt-pmssb67-necrosquito.test.js.
+test('PMSSB10-B2: necrosquito 2 oil (PMSSB-67/F2: 70.05, było 62.55 przy 0/0)', () => {
+  assert.equal(castScore('necrosquito'), '70.05');
 });
 test('PMSSB10-B2: frontline-war-rager tapped-gate: empty-SAME, 2tap +2.25', () => {
   assert.equal(castScore('frontline-war-rager'), '65.70');

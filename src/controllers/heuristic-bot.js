@@ -3014,6 +3014,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return Math.min(1 + Math.floor(x / 2), 3);
   };
   /**
+   * PMSSB-67 F2: przyrost P/T od liczników WEJŚCIA (`entersWithCounters`), które pompa statyczna
+   * przelicza na P/T. Deskryptor `<nazwa>_counters` (np. Necrosquito: `oil_counters`) = +1/+1 za
+   * każdy licznik `<nazwa>`; licznik `+1/+1` z wejścia dodaje się wprost. Zwraca tylko przyrost, więc
+   * karta bez takich liczników nie zmienia wyceny. Dawniej rzut czytał 0/0 i wyceniał 2/2 jak 0/0.
+   */
+  const entryCounterStats = (view, def) => {
+    const enters = def?.entersWithCounters ?? null;
+    let dPower = 0;
+    let dToughness = 0;
+    if (!enters) return { dPower, dToughness };
+    // Kwota jako w silniku (effects.js, entersWithCounters): liczba albo formuła stołu
+    // `other_creatures_you_control_plus_one` = 1 + inne stworzenia kontrolera w chwili wejścia.
+    // Rzut z ręki: karta nie leży na stole, więc liczą się stworzenia kontrolera na stole.
+    const amountOf = (raw) => {
+      if (typeof raw === 'number') return raw;
+      if (raw === 'other_creatures_you_control_plus_one') {
+        return 1 + (view?.zones?.battlefield ?? [])
+          .filter((o) => o.controllerId === view?.playerId && o.kind === 'creature').length;
+      }
+      return 0;
+    };
+    if (enters['+1/+1']) {
+      const n = amountOf(enters['+1/+1']);
+      dPower += n;
+      dToughness += n;
+    }
+    const counterOf = (d) => (typeof d === 'string' && d.endsWith('_counters') ? d.slice(0, -'_counters'.length) : null);
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'static' || !ability.pump) continue;
+      const pc = counterOf(ability.pump.power);
+      const tc = counterOf(ability.pump.toughness);
+      if (pc && enters[pc] != null) dPower += amountOf(enters[pc]);
+      if (tc && enters[tc] != null) dToughness += amountOf(enters[tc]);
+    }
+    return { dPower, dToughness };
+  };
+  /**
    * PMSSB-64 (L41): wartość słów kluczowych CIAŁA stworzenia — jedna funkcja dla rzutu z ręki,
    * warpu, adventure i szacunków planowania. Słowa z karty (`card.keywords` z widoku, awaryjnie
    * z definicji). Latanie tylko przy braku nietapniętego latającego/zasięgowego blokera wroga;
@@ -3025,7 +3062,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (kw.length === 0) return 0;
     const blockers = untappedEnemyBlockers(view);
     const noFlyingBlockers = blockers.every((o) => !hasKeyword(o, 'flying') && !hasKeyword(o, 'reach'));
-    const power = card?.power ?? def?.power ?? 0;
+    const power = (card?.power ?? def?.power ?? 0) + entryCounterStats(view, def).dPower;
     // Ewazja i tempo to ZADANE obrażenia — skalują się z mocą (2/1 latający przepuszcza 2, nie 3).
     // Kotwica (8 / 6) dotyczy mocy referencyjnej creatureKwRefPower; korpus z mocą 3 dostaje ją w całości.
     const powerScale = Math.max(0, power) / P.creatureKwRefPower;
@@ -9825,7 +9862,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
         const def = card ? cardDef(card.cardId) : undefined;
         if (!card?.warp) return finish(-20);
-        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
+        const entryStats = entryCounterStats(view, def);
+        let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
+          + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
         // Wygnanie w końcowym kroku to realna wada (stracimy stwora zaraz
         // potem) — kara za tymczasowość, niższa od zysku z wejścia (ETB).
         score -= 15;
@@ -10080,7 +10120,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
         const def = card ? cardDef(card.cardId) : undefined;
-        let score = P.creatureBase + (card?.power ?? 0) * P.creaturePowerWeight + (card?.toughness ?? 0) * P.creatureToughnessWeight;
+        // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
+        const entryStats = entryCounterStats(view, def);
+        let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
+          + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
         // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
         if (!cmd.faceDown) score += creatureKeywordValue(view, card, def);
         // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
