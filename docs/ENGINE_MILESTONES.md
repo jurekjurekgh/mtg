@@ -8496,13 +8496,34 @@ Nowe mechaniki (generyczne, ADR 0002):
 5. **`destroy_all` z filtrem typu i MV (M5)** — wycena w bocie: `massDestroyValue` (heuristic-bot.js), model stołu PMSSB-63 (commit `e48caff`).
 6. **Wybór dwóch trybów (M6)** — `chooseTwoModes([...])` w `card-data.js` spłaszcza 6 par do listy
    trybów (efekty w kolejności drukowanej, CR 700.2). Bez zmian w silniku oferty; tryby z celami
-   rzucają błąd definicji. Odstępstwo świadome: tani wariant zamiast wieloetapowego modala (O-2).
+   rzucają błąd definicji. Wieloetapowy modal NIE został wdrożony: zlecenie O-2 (bez limitu celów,
+   wolniejsze obliczenia dopuszczalne) jest spełnione, a Austere Command nie wymagał więcej.
 7. **M7 (Skarb, landcycling, zdolność z cmentarza za koszt many)** — istniejący silnik; asercje kształtu
    (`fromTreasure`, `treasureMana`, pula `WUBRG`) w `real-cards-batch68`.
 
 Wycena bota: Secure — token dla kontrolera celu; Raze — bonus za dobranie; counter −90 przy
-`cantBeCountered`; wagi `massDestroyFoeFlat` 75 / `massDestroyOwnFlat` 90. Pin: `bot-quality-batch68`
-(7) i `bot-quality-batch68-karty` (7).
+`cantBeCountered`; masowe zniszczenie (`massDestroyValue`) to model stanowy (stół, ręka, MV, mocy,
+latania, tempa), a nie płaskie wagi — parametry `massDestroy*` w `heuristic-params.js`. Pin:
+`bot-quality-batch68` (7) i `bot-quality-batch68-karty` (7).
 
 Dowody: [plan](plans/PLAN_2026-10-17c-batch68-kart.md), [testy kart](../test/real-cards-batch68.test.js),
 [mechaniki](../test/batch68-mechaniki.test.js), [zachowanie bota](../test/bot-quality-batch68-karty.test.js).
+
+## M446 — PMSSB-66: płatność kolorów z purpose i wybór koloru Skarbu po dopasowaniu (2026-10-17)
+
+Silnik, nie bot. Crash symulacji `Brak kolorowej many` (`worek-mroczny`, seed 3035), L48 (oferta = płatność).
+
+1. **Purpose w planerze kolorów.** `planGrantManaColors`, `canPayColoredCost`, `hasColorRequirements`,
+   `hasColorManaForCard/Object`, `hasColorForSpell/Object`, `hasColorForCardId` i `freshManaUnits` przyjmują
+   `purpose` (ten sam, co `spendMana`). Bramki rzutu czaru (`spells.js`, `game-state.js`: warp, surge, kicker,
+   offspring, impuls, phyrexian) liczą z `spellManaPurpose(obiekt)`. Zdolności (`purpose = {}`) zostają przy
+   dawnym `castingSpell: true` w planie kosztów źródeł kosztowych (`costedPurposeOf`).
+2. **Wybór koloru grantu/Skarbu po dopasowaniu.** `firstUncoveredPipColor` nie liczy kolorów per kolor;
+   wybiera pierwszy kolor pipa, który podnosi maksymalne pokrycie puli (`maxPipsCovered`, augmenting path).
+   Dawny licznik maskował deficyt R/G przy jednostce wyboru `[W,U,R,G]` i Skarb szedł na W.
+3. **Odrzucone:** bramka kosztu i koloru w ofercie rzutu z plota. Plot to rzut bez kosztu many i bez
+   wymagań kolorowych (`castPermanent`: koszt 0, `requirements = []`).
+
+Testy: `test/audyt-pmssb66-brak-kolorowej-many.test.js` (2; oba padały przed zmianą). Lustro: 960 partii
+(3000, 5000, 9000), 0 crashów. Commit `d4241da`. Dowód: [raport PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md).
+
