@@ -17244,3 +17244,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Lustro (finalny model vs baseline bez wag słów): 543:417 (56.6 %, n = 960, dwa zbiory seedów).
 - Przepięte 23 asercje w 13 plikach, każda z przyczyną (Δ słowa). Raport: `docs/audits/PMSSB64_BATCH68_2026-10-17.md`.
 - Korekta: wynik lustra 236:244 w opisie `e4ce466` pochodził z modelu pośredniego; miarodajny wynik to 543:417.
+
+## 2026-10-17 — PMSSB-65: prowess Bloodfire Experta w rzucie (batch 68)
+
+- Pomiar PRZED: wyzwalacz `you_cast_noncreature_spell` wyceniany płasko (1.35) niezależnie od ręki.
+  Wcześniejsza notatka „67.05 z i bez” była błędna (bez zdolności 65.70).
+- Wdrożenie: `prowessCastValue` — payoff pumpu jak na stole (`temporaryPumpPayoff` × `boardPayoffWeight`),
+  po czarach nie-stworzeniach zagrywalnych w następnej turze (budżet many = lądy).
+- Testy: `test/audyt-pmssb65-prowess.test.js` (6); pin Windscouta 70.1 → 68.7 (pusta ręka).
+- Bramki (`00b620e`): `npm test` 8426/8426, build 0, `cr-numery` 0, `test:all` 8693/8693.
+- Golden master: 0 zmian, ale 6 partii nie zawiera karty (brak dowodu). Mirror nie uruchomiony.
+- Raport: `docs/audits/PMSSB65_BATCH68_2026-10-17.md`.
+
