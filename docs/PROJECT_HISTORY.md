@@ -17232,3 +17232,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - **Otwarte.** Okno stosu modali w `session.js` (test F3, luka sprzed partii) — decyzja właściciela.
   Pełny benchmark B0 (ADR 0018) nie uruchomiony.
   Plan: `docs/plans/PLAN_2026-10-17c-batch68-kart.md`.
+
+## 2026-10-17 — PMSSB-64: słowa kluczowe ciała w wycenie rzutu (batch 68)
+
+- Pomiar PRZED: lifelink, haste, deathtouch Δ = 0 w `cast_permanent`; latanie płaskie +3 niezależnie od blokerów.
+- Wdrożenie: `creatureKeywordValue` (jedna funkcja dla rzutu, warpu, adventure i planowania), 14 kluczy
+  `creatureKw*`, skala mocą dla latania i tempa, dolna granica latania 3, morph bez słów (CR 708.2a).
+- Poprawki wykryte testami: podwójne liczenie (płaski +3), inwersja latania bez blokera, brak skali
+  mocą (Krotiq vs latający Imp), literówka `'first strike'` → `'first_strike'` (PMSSB-63).
+- Golden master: 11/1221 decyzji zmienia wynik, 0 zmienia wybór; fixture regenerowany świadomie.
+- Lustro (finalny model vs baseline bez wag słów): 543:417 (56.6 %, n = 960, dwa zbiory seedów).
+- Przepięte 23 asercje w 13 plikach, każda z przyczyną (Δ słowa). Raport: `docs/audits/PMSSB64_BATCH68_2026-10-17.md`.
+- Korekta: wynik lustra 236:244 w opisie `e4ce466` pochodził z modelu pośredniego; miarodajny wynik to 543:417.

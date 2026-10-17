@@ -39,7 +39,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
-| batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **W TOKU (2026-10-17)** — pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
+| batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **W TOKU (2026-10-17)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; pozostaje PMSSB-65 (prowess); pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3377,10 +3377,26 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
 - Halo Scarab: bank many z cmentarza pass (M243/C) — reguła właściciela, do potwierdzenia.
 
 **OTWARTE — osobne sesje, batch 68 NIE jest zamknięty:**
-- **PMSSB-64 — Child of Night (lifelink):** wynik rzutu stworzenia z ręki nie zależy od słów kluczowych
-  (lifelink = latanie = deathtouch = 64.80, `tools/pmssb63-kw-sonda.mjs`). Dotyczy wszystkich stworzeń; zmieni golden-master.
+- **PMSSB-64 — Child of Night (lifelink): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-64](audits/PMSSB64_BATCH68_2026-10-17.md),
+  plan [PLAN_2026-10-17e](plans/PLAN_2026-10-17e-pmssb64-kw.md). Child 64.80 → 66.60; lifelink/latanie/deathtouch/haste liczone.
 - **PMSSB-65 — Bloodfire Expert (prowess):** zdolność wyzwalana nie jest wyceniana w rzucie (67.05 z i bez).
   Ta sama klasa co PMSSB-64 (wyzwalacze/słowa kluczowe w wycenie rzutu), osobny pomiar.
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).
+
+## PMSSB-64 — słowa kluczowe ciała w wycenie rzutu stworzenia (2026-10-17) — DONE
+
+Pomiar PRZED (lifelink, haste, deathtouch Δ = 0; latanie płaskie +3 niezależnie od blokerów) i
+audyt L41 (rzut, warp, adventure, planowanie). Wdrożenie: jedna funkcja `creatureKeywordValue`
+(`heuristic-bot.js`), 14 kluczy `creatureKw*` (`heuristic-params.js`), skala mocą dla latania i
+tempa, dolna granica latania 3 (bez inwersji), morph bez słów (CR 708.2a). Naprawa literówki
+`'first strike'` → `'first_strike'` w `MASS_EVASION_KEYWORDS` (PMSSB-63).
+
+Wyniki: golden master 11/1221 decyzji zmienia wynik, 0 zmienia wybór; lustro 543:417 (56.6 %,
+n = 960, dwa zbiory seedów). Przepięte 23 asercje w 13 plikach, każda z przyczyną (Δ słowa).
+Raport: [PMSSB64](audits/PMSSB64_BATCH68_2026-10-17.md). Ograniczenia (płaskie wagi, lifelink bez
+blokerów, Necrosquito 0/0 z dolną granicą, brak pinu na MASS_EVASION) są w raporcie.
+Testy: `test/audyt-pmssb64-keywords.test.js` (20). Sondy: `tools/pmssb64-keywords-sonda.mjs`,
+lustro: `tools/pmssb64-mirror.mjs`.
+
