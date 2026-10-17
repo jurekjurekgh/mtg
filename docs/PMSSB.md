@@ -39,6 +39,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
+| batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **W TOKU (2026-10-17)** — Austere (model stołu) i Raze (dobranie + deck-out) zrobione; Secure 1/1, Stymied, Kulrath, Bloodfire, Meteorite, Child, Neurok — OTWARTE; §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3352,3 +3353,29 @@ w planie. Pełne wartości i granice:
 [raport PMSSB-62](audits/PMSSB62_BATCH67_2026-10-15.md),
 [plan](plans/PLAN_2026-10-15-pmssb62-batch67.md),
 sonda `tools/pmssb62-batch67-sonda.mjs`.
+
+## PMSSB-63 — jakościowe domknięcie batcha 68 (2026-10-17) — W TOKU
+
+Właściciel odrzucił wcześniejsze „zrobione” (płaska wycena, testy bez modelu stołu).
+Pełna pętla M429 dla każdej mechaniki; numer PMSSB-63 (rejestr kończy się na PMSSB-62).
+Stan i liczby: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md), plan
+[PLAN_2026-10-17d](plans/PLAN_2026-10-17d-pmssb63-batch68.md). Sondy:
+`tools/pmssb63-batch68-sonda.mjs` (Austere), `tools/pmssb63-batch68-karty-sonda.mjs` (Raze, Secure).
+
+- **Austere Command — ZROBIONE** (`e48caff`): model stołu zamiast płaskich 75/90 (`massDestroyValue`).
+  PRZED 6/9 → PO 9/9 scenariuszy; pin liczbowy 28.4 i 34.88; pokrętła ×0 (zagrożenie −20, koszt −6,
+  mnożnik własny −3.6, odbudowa z ręki). Zmiana oczekiwania (świadoma): najwyższa wartość netto to teraz
+  para 5 (dwa stwory, lifelink), 54 > 46.
+- **Raze to the Ground — ZROBIONE** (`95fc359`): dobranie wyceniane jak `draw_cards` (kara deck-outu).
+  PRZED: R2 (biblioteka 0) = cast 80 (błąd); PO: pass −46. Arytmetyka: strefa krytyczna 126 = −(120+6).
+- **Secure the Scene na 1/1 — OTWARTE** (S2): bot rzuca (67.95) przy zerowym efekcie netto. Rozbiór:
+  spellBase 50 + removalEnemyBase 22 + waga 4 − token wroga 8. Brak kosztu many czaru w wycenie usuwania —
+  to decyzja rodziny usuwania, nie lokalna poprawka. Wymaga osobnego PMSSB.
+- **Stymied Hopes, Kulrath Zealot, Bloodfire Expert, Meteorite, Child of Night, Neurok Invisimancer — OTWARTE**
+  (audyt jeszcze nie wykonany). Stymied: kontekst kontry (`counterUnlessPaidOff`, M237/2) już istnieje — do zmierzenia.
+- **Halo Scarab — ZAMKNIĘTE warunkowo:** bankowanie many (M243/C) pinowane; do potwierdzenia przez właściciela.
+
+Testy: `test/audyt-pmssb63-batch68.test.js` (18), `test/audyt-pmssb63-karty.test.js` (5);
+`test/bot-quality-batch68*.test.js` zaktualizowane (pin G6 → para 5). Golden-master bez dryfu (żaden ślad
+nie zawiera Austere/Raze). Bramki `test:all` / build — do uruchomienia przed zamknięciem PMSSB-63.
+
