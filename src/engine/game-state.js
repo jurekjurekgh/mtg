@@ -663,7 +663,9 @@ function closingCombatPassBlocked(state, playerId) {
     && state.turn.activePlayerId === playerId;
 }
 
-function reject(reason) { return { ok: false, events: [event('command_rejected', { reason })] }; }
+// O-3 (audyt PR #166): powód jest też na wyniku (`result.reason`), nie tylko w
+// zdarzeniu — wywołujący czytający wynik nie muszą szukać w `events`.
+function reject(reason) { return { ok: false, reason, events: [event('command_rejected', { reason })] }; }
 
 /**
  * Zdolność potomna tworzona przez „When you do” po opcjonalnej płatności.
