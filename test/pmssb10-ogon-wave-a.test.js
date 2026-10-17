@@ -77,11 +77,13 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const s = mk(); fillLib(s); put(s, 'nh', 'nightshade-harvester');
     assert.equal(disp(decide(s), 'cast_permanent(nh'), 69.6);
   });
-  it('F-O: guard/windscout/devotee = 69.3/70.1/66.4 (windscout latanie 2-mocy: +2.1)', () => {
+  it('F-O: guard/windscout/devotee = 69.3/68.7/66.4 (windscout latanie 2-mocy: +2.1; PMSSB-65: prowess bez czaru w ręce = 0, było płaskie 1.35 → 70.1)', () => {
     const a = mk(); fillLib(a); put(a, 'mg', 'midnight-guard');
     assert.equal(disp(decide(a), 'cast_permanent(mg'), 69.3);
     const b = mk(); fillLib(b); put(b, 'jw', 'jeskai-windscout');
-    assert.equal(disp(decide(b), 'cast_permanent(jw'), 70.1);
+    // PMSSB-65: prowess windscouta to pump +1/+1 za czar nie-stworzenia; ręka pusta → 0 pumpów
+    // w oknie następnej tury. Płaska wartość 1.35 (70.1) była stałą bez stanu — usunięta.
+    assert.equal(disp(decide(b), 'cast_permanent(jw'), 68.7);
     const c = mk(); fillLib(c); put(c, 'jd', 'jeskai-devotee');
     assert.equal(disp(decide(c), 'cast_permanent(jd'), 66.4);
   });

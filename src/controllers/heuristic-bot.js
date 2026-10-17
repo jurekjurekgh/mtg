@@ -2797,6 +2797,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && (cardDef(o.cardId)?.abilities ?? []).some(abilityDrawsForMe));
   };
 
+  /**
+   * PMSSB-65 (L41): prowess / „po rzucie czaru nie-stworzenia +P/+T do końca tury\" na CIELE rzucanym.
+   * Płaska wycena (`like` 0.5 × p·2+t z tabeli ETB) nie zależała od stanu: ręka bez czarów dawała
+   * tyle samo co ręka pełna (pomiar PR2/PR3, `tools/pmssb65-prowess-sonda.mjs`). Tutaj ta sama
+   * ścieżka co payoff przy rzucie czaru (`temporaryPumpPayoff` × `boardPayoffWeight`, pętla
+   * payoffów rzutu), sumowana po czarach nie-stworzeniach, które da się zagrać w następnej głównej
+   * fazie (budżet many = lądy pod kontrolą, najtańsze najpierw). Nosiciel symulowany jako gotowy do
+   * ataku (summoning sickness minie w następnej turze) z bieżącymi blokerami wroga.
+   */
+  const selfTempPumpLegs = (ability) => {
+    if (ability.trigger?.requiresTarget != null || ability.trigger?.payMana != null
+      || (ability.trigger?.payColors?.length ?? 0) > 0 || ability.trigger?.condition != null) return null;
+    const legs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    const ok = legs.length > 0 && legs.every((l) => l?.type === 'pump' && l.targetIndex == null
+      && l.condition == null && (l.power ?? 0) >= 0 && (l.toughness ?? 0) >= 0
+      && ((l.power ?? 0) > 0 || (l.toughness ?? 0) > 0));
+    return ok ? legs : null;
+  };
+  const prowessCastValue = (view, def, cmd, legs) => {
+    const isCreatureDef = (d) => (d?.types ?? []).includes('Creature');
+    const lands = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId && o.kind === 'land').length;
+    const costs = (view.zones.hand ?? [])
+      .filter((o) => o.id !== cmd?.objectId && o.kind !== 'land' && !isCreatureDef(cardDef(o.cardId)))
+      .map((o) => o.manaCost ?? cardDef(o.cardId)?.manaCost ?? 0)
+      .sort((a, b) => a - b);
+    let budget = lands;
+    let spells = 0;
+    for (const c of costs) {
+      if (c > budget) break;
+      budget -= c;
+      spells += 1;
+    }
+    if (spells === 0) return 0;
+    const host = {
+      id: '__prowess-host__', cardId: def.id, controllerId: view.playerId, ownerId: view.playerId,
+      zone: 'battlefield', kind: 'creature', types: ['Creature'], subtypes: def.subtypes ?? [],
+      power: def.power ?? 0, toughness: def.toughness ?? 0, keywords: [...(def.keywords ?? [])],
+      abilities: [], tapped: false, summoningSickness: false, faceDown: false, abilitiesStripped: false,
+    };
+    const viewReady = {
+      ...view,
+      turn: { ...view.turn, activePlayerId: view.playerId, phase: 'precombat_main' },
+      zones: { ...view.zones, battlefield: [...(view.zones.battlefield ?? []), host] },
+    };
+    let per = 0;
+    for (const leg of legs) per += temporaryPumpPayoff(viewReady, host, leg);
+    return P.boardPayoffWeight * spells * per;
+  };
   const anticipatedTailValue = (view, def, cmd = null) => {
     if (!def) return 0;
     const foes = enemyCreatures(view);
@@ -2810,6 +2858,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered') continue;
       const ev = ability.trigger?.event;
+      // PMSSB-65: prowess na ciele rzucanym — stan (ręka, lądy, bloki), nie płaska stała.
+      const prowessLegs = ev === 'you_cast_noncreature_spell' ? selfTempPumpLegs(ability) : null;
+      if (prowessLegs) { total += prowessCastValue(view, def, cmd, prowessLegs); continue; }
       let like = 0;
       if (ev === 'combat_damage_to_player' || ev === 'any_combat_damage_to_player') like = 0.5 * gate;
       else if (ev === 'enchanted_creature_damage_to_opponent') {
