@@ -4367,35 +4367,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
     return effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type));
   };
-  // Najtańszy instant/flash w ręce — jego mana jest zarezerwowana (można go zagrać w tym samym oknie).
-  const cheapestInstantInHand = (view) => {
-    let best = null;
+  // Rezerwa many pod instant/flash, który ZAGRAMY w tym oknie: najdroższy z tych, które mieszczą się
+  // w dostępnej manie (instant, którego nie stać, i tak nie zostanie zagrany — nie blokuje okna).
+  const reservedInstantMana = (view, available) => {
+    let best = 0;
     for (const o of view.zones.hand ?? []) {
       const def = cardDef(o.cardId);
       const types = def?.types ?? o.types ?? [];
       if (!types.includes('Instant') && !(def?.keywords ?? []).includes('flash')) continue;
       const cost = o.manaCost ?? def?.manaCost ?? 0;
-      if (best === null || cost < best) best = cost;
+      if (cost <= available && cost > best) best = cost;
     }
     return best;
   };
-  // Okno darmowej many: END STEP PRZECIWNIKA, a koszt mieści się w nadwyżce ponad zarezerwowany instant.
+  // Okno darmowej many: END STEP PRZECIWNIKA, a koszt zostawia rezerwę pod instant z tego okna.
   const freeManaWindowNow = (view, ability, manaCost) => {
     if (!(view.turn.activePlayerId !== view.playerId && view.turn.step === 'end')) return false;
     if (ability?.timing === 'sorcery') return false;
-    const reserved = cheapestInstantInHand(view) ?? 0;
-    return manaCost <= manaAvailableNow(view) - reserved;
+    const available = manaAvailableNow(view);
+    return manaCost <= available - reservedInstantMana(view, available);
   };
 
-  /**
-   * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
-   * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
-   * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
-   * Stall Out na tapniętym 6/6 = 38, czyli 3 liczniki stun wnosiły tyle co nic).
-   * `target` rozwiązuje wywołujący (zdolność bez celu = źródło).
-   * Wartości bez zmian względem gałęzi zdolności (kotwica anty-over-fix M429:
-   * najsłabszy realny wariant zostaje tam, gdzie był).
-   */
   const counterEffectValue = (view, target, counterName, amount = 1, ctx = {}) => {
     if (!target) return 0;
     const mine = target.controllerId === view.playerId;
