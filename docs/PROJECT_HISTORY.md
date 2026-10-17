@@ -30,16 +30,22 @@ Zlecenie „Kontynuujemy projekt.” bez tematu → pętla domyślna. Plan:
   Sondy w `.arena/` (nie w repo) potwierdziły dwa ustalenia:
   - **O-1 — naprawione (`334c799`):** tryb wolnych celów (Wrap in Flames) pozwalał zatwierdzić
     4 cele przy „up to three”; silnik odrzucał to dopiero przy wykonaniu. Test RED/GREEN `O/11`.
-  - **O-2 — otwarte (decyzja właściciela):** przy ~40 kandydatach kreator pokazuje 31 celów
-    i nie włącza trybu wolnych celów. Przyczyna: limit 32 ofert + detekcja obcięcia liczona
-    na już obciętej liście. Dziewięć kreatur jest niewybieralnych bez sygnału dla gracza.
+  - **O-2 — naprawione (`106b49f`, zlecenie właściciela):** przy ~40 kandydatach kreator
+    pokazywał 31 celów i nie włączał trybu wolnych celów (limit 32 ofert). Limit zdjęto:
+    oferta jest kompletna. Przy 100 stworach znaleziono i naprawiono błąd stosu (`push(...)`).
+    Koszt zmierzony: 40 stworów — 10 701 ofert (bot 0,8 s); 100 — 166 751 (bot 21 s).
+  - **O-3 — naprawione (`055fd03`):** `reason` odrzucenia na wyniku `execute`.
+  - **O-4 — naprawione (`acf1643`):** klasa outlast wymaga czystego licznika na sobie; strażnik katalogu.
 - **Bramy:** `npm test` 8293/8293 (baza) → 8294/8294 po O-1, rc=0; `npm run build` rc=0
   (74 moduły); `tools/cr-numery.mjs` OK (5834 cytatów). Pełny benchmark nie był zlecony.
 - **Stare plany:** odhaczono pozycje domknięte scaleniem PR #166 (16a, 15h, 15f, 15g, 15c 8–9).
   Pozostały tylko pozycje wymagające właściciela.
 - **README:** wskaźnik handoffu (był 2026-10-11, przestarzały) zaktualizowany na 2026-10-15c.
-- **Nie zrobiono:** krok 5 pętli (Żywy Tester, polowanie na rozbieżności CR) — przeniesiony
-  do następnej sesji, bo audyt i naprawa zajęły bieżącą sesję.
+- **Nie zrobiono:** krok 5 pętli (Żywy Tester, polowanie na rozbieżności CR) — ANULOWANY dla
+  tej sesji (decyzja właściciela 2026-10-17).
+- **Druga runda (zlecenie właściciela):** plan `docs/plans/PLAN_2026-10-17b-audyt-pr166-o2-o3-o4.md`.
+  Bramy po ostatnim commicie: `npm test` 8303/8303 rc=0; build rc=0; cr-numery OK.
+  Korekta opisu commita `106b49f` (RED nie był wykonany tak, jak napisano): audyt §6.
 
 ## 2026-10-15c — Pętla jakości: Żywy Tester na taliach batcha 67 (PR #166)
 
