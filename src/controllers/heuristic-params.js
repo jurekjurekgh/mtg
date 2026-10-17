@@ -528,6 +528,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
   // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
   'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
+  // PMSSB-66 (zasada właściciela 2026-10-17): okno end step przeciwnika. 1 = zdolność za manę
+  // o trwałym skutku (token/licznik) płacona tam jest darmowa i poza nią odroczona (wynik ≤ −koszt);
+  // 0 = wyłączone (pomiar ×0 i porównanie z dawnym zachowaniem). Walka wyłączona z odroczenia.
+  'lastingManaWindowOn',
   // PMSSB-62 (batch 67, energia CR 122.1): wartość JEDNEGO licznika {E} —
   // wspólna dla kosztu (zdolność, opcjonalna opłata triggera) i zysku
   // (`get_energy`), żeby 3 liczniki nie remisowały z zerem (S11). Dawna stała
@@ -1011,6 +1015,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
   // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
   abilityManaCostPenalty: 1,
+  lastingManaWindowOn: 1,
   // PMSSB-62: 1 licznik {E} = 3 pkt (dawna kara `-3 * ability.cost.energy`
   // z PMSSB-56, teraz wspólna dla wszystkich ścieżek płatności i zysku).
   energyCounterValue: 3,

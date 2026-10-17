@@ -4355,6 +4355,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * PMSSB-66 (zasada właściciela 2026-10-17): zdolność płacona MANĄ (bez tapnięcia) o TRWAŁYM skutku
+   * (token, licznik). Mana wydana w end step PRZECIWNIKA jest darmowa: lądy i tak odtapowują się w
+   * naszym kroku odnowienia. W innych momentach bot tej zdolności nie wybiera — odracza ją do okna.
+   * Sorcery-speed wyłączone (w end step przeciwnika nie da się ich użyć).
+   */
+  const LASTING_MANA_EFFECTS = new Set(['create_token', 'add_counter']);
+  const COMBAT_STEPS = new Set(['declare_attackers', 'declare_blockers', 'combat_damage', 'end_of_combat']);
+  const isLastingManaAbility = (ability, manaCost) => {
+    if (!(manaCost > 0) || ability?.cost?.tap || ability?.timing === 'sorcery') return false;
+    const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    return effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type));
+  };
+  // Najtańszy instant/flash w ręce — jego mana jest zarezerwowana (można go zagrać w tym samym oknie).
+  const cheapestInstantInHand = (view) => {
+    let best = null;
+    for (const o of view.zones.hand ?? []) {
+      const def = cardDef(o.cardId);
+      const types = def?.types ?? o.types ?? [];
+      if (!types.includes('Instant') && !(def?.keywords ?? []).includes('flash')) continue;
+      const cost = o.manaCost ?? def?.manaCost ?? 0;
+      if (best === null || cost < best) best = cost;
+    }
+    return best;
+  };
+  // Okno darmowej many: END STEP PRZECIWNIKA, a koszt mieści się w nadwyżce ponad zarezerwowany instant.
+  const freeManaWindowNow = (view, ability, manaCost) => {
+    if (!(view.turn.activePlayerId !== view.playerId && view.turn.step === 'end')) return false;
+    if (ability?.timing === 'sorcery') return false;
+    const reserved = cheapestInstantInHand(view) ?? 0;
+    return manaCost <= manaAvailableNow(view) - reserved;
+  };
+
+  /**
    * PMSSB-23/F1 (L41): JEDNA wycena położenia licznika — ta sama liczba
    * w `cast_spell` i w `activate_ability` (dotąd czar ze `stun`/`-1/-1`
    * dostawał 0, a ta sama instrukcja ze zdolności 10 + 4·amount; pomiar PRZED:
@@ -4400,7 +4433,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ? Math.max(...consumers.map((a) => a.cost.removeCounter.amount ?? 1))
       : 0;
     const current = (target.counters ?? {})[counterName] ?? 0;
-    if (need === 0 || current >= need) return -25; // nikt nie konsumuje / zapas pełny
+    if (need === 0) return -25; // nikt nie konsumuje
+    // PMSSB-66: producent za MANĘ — licznik ma wartość tego, co konsument zrobi (ta sama tabela
+    // ETB co tap_permanent, L41), gdy zapas jest poniżej potrzeby. Pora nie ma znaczenia: o tym,
+    // KIEDY płacimy manę, decyduje okno end step przeciwnika, nie wartość licznika.
+    if (ctx.manaProducer) {
+      if (current >= need) return 0;
+      const consumer = consumers[0];
+      const req = consumer?.targets?.[0] ?? null;
+      const effs = Array.isArray(consumer?.effect) ? consumer.effect : [consumer?.effect];
+      return effs.reduce((sum, e) => sum + (ETB_EFFECT_BONUS[e?.type] ? ETB_EFFECT_BONUS[e.type](e, view, req, null) : 0), 0);
+    }
+    if (current >= need) return -25; // zapas pełny
     const ownPostcombat = view.turn.activePlayerId === view.playerId
       && view.turn.phase === 'postcombat_main';
     return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
@@ -11944,7 +11988,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
         const abilityManaCost = abilityManaCostForView(view, ability, abilityObject)
           + (ability?.cost?.generic ?? 0);
-        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
+        // PMSSB-66: zdolność za manę o trwałym skutku w oknie end step przeciwnika — mana darmowa.
+        // Pokrętło `lastingManaWindowOn` (0 = mechanizm wyłączony, pomiar ×0).
+        const lastingMana = P.lastingManaWindowOn > 0 && isLastingManaAbility(ability, abilityManaCost);
+        const freeWindow = lastingMana && freeManaWindowNow(view, ability, abilityManaCost);
+        if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana') && !freeWindow) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
         }
         // Zgłoszenie G/(b) (2026-10-14, Willbender): obrót twarzą do góry to
@@ -12703,7 +12751,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Cel bez jawnego wskazania = źródło (outlast na sobie).
             const tgt = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : source;
             score += counterEffectValue(view, tgt, effect.counter ?? '+1/+1',
-              Math.max(1, effect.amount ?? 1), { source });
+              Math.max(1, effect.amount ?? 1), { source, manaProducer: lastingMana });
           }
           // PMSSB-23/F3 (L41): rider rozlania także w ścieżce zdolności.
           if (effect.type === 'add_counter_to_creatures_you_control') {
@@ -13096,7 +13144,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // przenosić wariant PONIŻEJ passa).
             // PMSSB-2/A: detekcja banku przez wspólny czytnik (wynik M243/C
             // BEZ ZMIAN — kara 13/14 stoi, pin w teście keeps).
-            if (tokenOnlyManaBank(effect)) {
+            if (tokenOnlyManaBank(effect) && !freeWindow) {
               const hasPlayable = view.zones.hand.some((o) => (o.manaCost ?? 0) > 0 && o.kind !== 'land');
               score -= hasPlayable ? 13 : 14;
             }
@@ -13390,6 +13438,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const fetchedLand = { kind: 'land', types: ['Land'], id: '__landcycle__', controllerId: view.playerId };
             score += cardKeepValue(view, fetchedLand) - cardKeepValue(view, cycled);
           }
+        }
+        // PMSSB-66: ODROCZENIE. Poza oknem end step przeciwnika (i poza walką) zdolność za manę o
+        // trwałym skutku nie jest grywalna teraz — tę samą manę zapłacimy za darmo w oknie. Wynik ≤ −koszt,
+        // więc pass wygrywa. Walka wyłączona: licznik +1/+1 może zmienić blok/atak w tym samym kroku.
+        if (lastingMana && !freeWindow && !COMBAT_STEPS.has(view.turn.step)) {
+          score = Math.min(score, -P.abilityManaCostPenalty * abilityManaCost);
         }
         return finish(score);
       }
