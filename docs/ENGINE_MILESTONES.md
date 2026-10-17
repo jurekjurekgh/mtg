@@ -8476,3 +8476,33 @@ Dowody:
 [plan + raport talii](plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md),
 [testy kart](../test/real-cards-batch67.test.js),
 [audyt PR #164](audits/AUDYT_PR164_2026-10-13.md).
+
+## M445 — batch68: kolekcja 400–411, 10 kart (2026-10-17, PR #167)
+
+Dziesięć druków właściciela — Kulrath Zealot (ECL #148), Bloodfire Expert (KTK #101),
+Meteorite (DMU #235), Raze to the Ground (BRO #149), Stymied Hopes (THS #64), Secure the Scene
+(M21 #35), Halo Scarab (SNC #239), Child of Night (M19 #89), Austere Command (CLB #687) i Neurok
+Invisimancer (SOM #37) — ma status `supported` bez ograniczeń. Kolumna „Plan" przepisana 1:1 i wiąże
+generator talii.
+
+Nowe mechaniki (generyczne, ADR 0002):
+
+1. **„Can't be blocked” (M1)** — blokowanie odrzucane przez `blockRestrictionError` w `combat.js`.
+2. **„Can't be countered” (M2)** — `counterStackObject` w `effects.js` pomija czar z flagą; flaga
+   przeżywa `freezeSpell` (whitelist w `registry.js`).
+3. **Destroy + dobranie gdy MV celu ≤ N (M3)** — `destroy_permanent` z `drawIfManaValueAtMost`.
+4. **Wygnanie + token dla przechwyconego kontrolera (M4)** — `exile_permanent.captureControllerAs`,
+   `create_token.controllerFromCapture`, `state.spellCaptures` (nie czyszczone; id stosu monotoniczne).
+5. **`destroy_all` z filtrem typu i MV (M5)** — `massDestroyStats` w bocie.
+6. **Wybór dwóch trybów (M6)** — `chooseTwoModes([...])` w `card-data.js` spłaszcza 6 par do listy
+   trybów (efekty w kolejności drukowanej, CR 700.2). Bez zmian w silniku oferty; tryby z celami
+   rzucają błąd definicji. Odstępstwo świadome: tani wariant zamiast wieloetapowego modala (O-2).
+7. **M7 (Skarb, landcycling, zdolność z cmentarza za koszt many)** — istniejący silnik; asercje kształtu
+   (`fromTreasure`, `treasureMana`, pula `WUBRG`) w `real-cards-batch68`.
+
+Wycena bota: Secure — token dla kontrolera celu; Raze — bonus za dobranie; counter −90 przy
+`cantBeCountered`; wagi `massDestroyFoeFlat` 75 / `massDestroyOwnFlat` 90. Pin: `bot-quality-batch68`
+(7) i `bot-quality-batch68-karty` (7).
+
+Dowody: [plan](plans/PLAN_2026-10-17c-batch68-kart.md), [testy kart](../test/real-cards-batch68.test.js),
+[mechaniki](../test/batch68-mechaniki.test.js), [zachowanie bota](../test/bot-quality-batch68-karty.test.js).

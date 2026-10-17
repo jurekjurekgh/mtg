@@ -17197,3 +17197,30 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   315→314) — atrybucja wyłącznikami wskazała wyłącznie F1, fixture
   zregenerowany świadomie. Plan: `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`;
   raport: `docs/audits/PMSSB62_BATCH67_2026-10-15.md`; rejestr: `§PMSSB-62`.
+
+## 2026-10-17 — Batch 68: kolekcja 400–411, 10 kart (PR #167)
+
+- **Zakres.** Dziesięć druków z arkusza właściciela (Kulrath Zealot ECL, Bloodfire Expert KTK,
+  Meteorite DMU, Raze to the Ground BRO, Stymied Hopes THS, Secure the Scene M21, Halo Scarab SNC,
+  Child of Night M19, Austere Command CLB, Neurok Invisimancer SOM). Wszystkie `supported` (100% Oracle),
+  bez `limitations`. Kolumna „Plan" przepisana 1:1 i wiąże generator talii.
+- **Mechaniki (generycznie, ADR 0002).** M1 „can't be blocked" (blokowanie), M2 „can't be countered"
+  (kontra), M3 destroy + dobranie gdy MV celu ≤ N, M4 wygnanie + token dla kontrolera przechwyconego
+  przed wygnaniem (`state.spellCaptures`), M5 `destroy_all` z filtrem typu i MV, M6 wybór dwóch trybów
+  (`chooseTwoModes`, 6 par w kolejności drukowanej). M7 (landcycling, zdolność z cmentarza za koszt many,
+  Skarb i mana dowolnego koloru) — bez nowego silnika, pilnowane asercjami kształtu.
+- **Bot (G6, ręcznie).** Licznik zniszczony przez `cantBeCountered` −90; wartość tokena Secure dla
+  kontrolera celu; bonus za dobranie w Raze; wagi `massDestroyFoeFlat` 75 / `massDestroyOwnFlat` 90.
+  Zachowanie sześciu rzutów pinowane w `test/bot-quality-batch68-karty.test.js`. Halo Scarab
+  (bankowanie many za koszt poniżej passa) zgodnie z regułą M243/C — do potwierdzenia przez właściciela.
+- **Talie.** Wyłącznie `tools/generate-plan-decks.mjs` (ADR 0023 §1). Nowa talia Lorwyn; Kaldheim →
+  `worek-legend`, Duskmourn → `worek-dziki` (przetasowanie worka, ADR 0023 §4). 28 talii.
+- **O-2 w tej partii.** Oferta celów bez limitu (commit `106b49f`) zostaje. Test 100 stworów usunięty z
+  suite (zlecenie właściciela); lekka wersja O/13 na 30 stworach.
+- **Bramy.** `npm run test:all` 8615/8615 na `8d9fcc3`, `npm run build` 74 moduły, `cr-numery` OK.
+  CI zielone na `9a15957` i `f546d31`. Czerwień CI `106b49f`–`41d77c6` — przyczyna nieznana (logi
+  niedostępne z sandboxa), nie zidentyfikowana.
+- **Commity:** `27bbc79`, `ef8ff20`, `9a15957`, `41d77c6`, `5e75a41`, `ce2d350`, `f546d31`, `8d9fcc3`, `2d40ff3`.
+- **Otwarte.** Okno stosu modali w `session.js` (test F3, luka sprzed partii) — decyzja właściciela.
+  Pełny benchmark B0 (ADR 0018) nie uruchomiony.
+  Plan: `docs/plans/PLAN_2026-10-17c-batch68-kart.md`.
