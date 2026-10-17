@@ -17287,3 +17287,12 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Golden master: dump diff 1221 decyzji (baza `7338ff2`): F2 0 zmian; F3 1 zmiana wyniku (−0.9); F4 7 zmian wyniku (−0.9 do −2.4), 0 zmian wyboru. Fixture zregenerowany (`90aa7806…` → `2fe4b347…`).
 - Bramy na `21a5568`: `test:all` 8749/8749; build 0; `cr-numery --sprawdz` OK; lustro 3000 157:163, 5000 162:158, 9000 163:157 (nierozegrane 0). Zmiana 159:161 → 157:163 w jednym zakresie to 2 wygrane z 320, w granicach szumu.
 - Otwarte: próg latania dla ciała o mocy 0 (decyzja właściciela; rekomendacja: zostawić 3). Raport: `docs/audits/PMSSB67_KW_CAVEATY_2026-10-17.md`.
+
+## 2026-10-18 — PMSSB-67/F5: próg latania skalowany mocą; zamknięcie Ad 3 i L48
+
+- Decyzja właściciela: „Powinniśmy skalować próg do mocy". Próg latania = `creatureKwFlyingFloor · moc/3`; zablokowany lot = próg, odblokowany = max(próg, 8·moc/3). Moc 0 → 0 (bez obrażeń), moc 3 bez zmian. Pokrętło `creatureKwFlyingFloorScaled` (0 = dawne płaskie 3).
+- Pomiar: `tools/pmssb67-prog-latania-sonda.mjs` (PRZED/PO w `docs/audits/PMSSB67_KW_CAVEATY_2026-10-17.md`, sekcja F5). Pin: `test/audyt-pmssb67-prog-latania.test.js` (4; RED→GREEN; mutacja płaskiego progu: 2 padają).
+- Re-piny 16 w 5 plikach (Hawk, bloodflies, talions, bramka-evasion, anty-over-fix). Anty-over-fix z PMSSB-64 zmieniony z „równość" na „przepuszczony ≥ zablokowany" (niezmiennik zostaje).
+- Golden master: dump diff 0 zmian wyboru, 1 zmiana wyniku (−0.3). Fixture `2fe4b347…` → `0db85647…`.
+- Ad 3 (Halo Scarab, M243/C): właściciel potwierdził wariant A. Wdrożony już w PMSSB-66; dodany pin warunku „wolne lądy" (`test/audyt-pmssb67-okno-wolne-lady.test.js`, 3). Wcześniej błędnie przedstawiony jako otwarty.
+- L48 (atomowość płatności): zamknięte przez właściciela. Pin nieudanej płatności kolorowej: `test/audyt-pmssb67-atomowosc-platnosci.test.js` (3).

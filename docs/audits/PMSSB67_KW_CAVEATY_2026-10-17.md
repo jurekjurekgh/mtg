@@ -191,14 +191,71 @@ Wpływ na grę mierzy lustro (niżej).
 9000 → 163:157 (bez zmian); nierozegrane 0 we wszystkich (960 partii). Zmiana w jednym zakresie to 2 wygrane z 320,
 czyli w granicach szumu. Nie uznaję jej za sygnał ani za poprawę. Pomiar wpływu na grę wymagałby większej próby.
 
+## F5 — próg latania skalowany mocą (2026-10-18, decyzja właściciela)
+
+Decyzja właściciela (2026-10-18): „Powinniśmy skalować próg do mocy." Plan: `docs/plans/PLAN_2026-10-18a-pmssb67-prog-latania.md`.
+
+**Problem PRZED.** Gałąź odblokowana: `max(próg, 8·moc/3)`; od mocy 2 wygrywa kotwica, więc próg był martwy.
+Gałąź zablokowana (wróg z flying): płaskie 3 dla każdej mocy, czyli próg był jedyną wartością.
+
+**Zmiana.** `flyingFloor = creatureKwFlyingFloor · moc/creatureKwRefPower` (ref = 3). Zablokowany lot = `flyingFloor`;
+odblokowany = `max(flyingFloor, creatureKwFlying · moc/ref)`. Pokrętło `creatureKwFlyingFloorScaled` (1 = skala, 0 = płasko 3 jak PRZED).
+Kod: `src/controllers/heuristic-bot.js` (gałąź `flying` w `creatureKeywordValue`), `heuristic-params.js`.
+
+**Świadome odstępstwo od komentarza F-PMSSB-64.** Zapis „moc ≤1 zostaje na dawnej wartości (anty-over-fix)" został
+wycofany. Dla 0-mocowego lotu zadawane obrażenia są zerowe, więc wartość 0 jest poprawna. Inwersji (przepuszczony < zablokowany)
+nadal nie ma: pilnuje ją test anty-inwersja.
+
+**Pomiar** (`tools/pmssb67-prog-latania-sonda.mjs`, Δ = lot − vanilla na tym samym stole, MV 4, weight ×0.9):
+
+| moc | pusty PRZED → PO | latający wróg PRZED → PO | bloker 4/5 PRZED → PO | dwa 5/5 PRZED → PO |
+|---|---|---|---|---|
+| 0 | 2.7 → 0 | 2.7 → 0 | 2.7 → 0 | 2.7 → 0 |
+| 1 | 2.7 → 2.4 | 2.7 → 0.9 | 2.7 → 2.4 | 2.7 → 2.4 |
+| 2 | 4.8 → 4.8 | 2.7 → 1.8 | 4.8 → 4.8 | 4.8 → 4.8 |
+| 3 | 7.2 → 7.2 | 2.7 → 2.7 | 7.2 → 7.2 | 7.2 → 7.2 |
+| 4 | 9.6 → 9.6 | 2.7 → 3.6 | 9.6 → 9.6 | 9.6 → 9.6 |
+| 5 | 12 → 12 | 2.7 → 4.5 | 12 → 12 | 12 → 12 |
+
+Dane: `/home/user/prog-latania-przed.json`, `/home/user/prog-latania-po.json`.
+
+**Testy.** `test/audyt-pmssb67-prog-latania.test.js` (4): RED przed zmianą (3 z 4 padają); GREEN po.
+Pokrętło ×0 przywraca PRZED (2.7 dla wszystkich mocy zablokowanych). **Mutacja** (płaski próg w kodzie): 2 z 4 padają;
+przywrócenie `cmp` OK, 4/4.
+Nowy pin okna właściciela `test/audyt-pmssb67-okno-wolne-lady.test.js` (3): patrz pkt „Ad 3" niżej.
+
+**Re-piny (16 w 5 plikach, każdy z formułą w komentarzu):**
+- `audyt-pmssb59-batch64` Hawk (1/1 lot, odblokowany): 77.4 → 77.1, 12.6 → 12.3, −68.4 → −68.7 (−0.3 każdy).
+- `audyt-pmssb64-keywords` anty-over-fix (latanie 1-mocy): równość przepuszczony = zablokowany była artefaktem płaskiego progu.
+  Pin zmieniony na niezmiennik „przepuszczony ≥ zablokowany" (nie osłabiony: nadal pada przy inwersji).
+- `pmssb8-loot-wave-a` talions-lib30 66.6 → 66.3 (lot 1-mocowy odblokowany −0.3).
+- `pmssb9-triggery-wave-a` bloodflies 68.4 → 68.1 (−0.3).
+- `pmssb9-triggery-wave-b` bloodflies 68.4 → 68.1 (−0.3); bramka-evasion: fly-blok 71.1 → 69.3 (zablokowany 1-mocowy
+  lot = 0.9, było 2.7), plain 72.0 → 71.7 (−0.3).
+
+**Golden master.** Dump diff (`dump-f4` → `dump-f5`, 1221 decyzji): **0 zmian wyboru**, 1 zmiana wyniku wybranej
+(`tarkir-bg|warhammer-ubr` s1000 T4, `p1-opening-2`, 68.40 → 68.10, −0.3). Fixture zregenerowany: `2fe4b347…` → `0db85647…`.
+
+**Lustro** (`tools/pmssb66-mirror.mjs 40`): 3000 → 157:163 (bez zmiany vs F4), 5000 → 162:158 (bez zmiany vs F4),
+9000 → 163:157 (bez zmiany vs F4). Nierozegrane 0. Brak zmiany w lustrze nie dowodzi braku wpływu: próba 320 partii na zakres wykrywa tylko różnice rzędu kilku punktów procentowych. Pomiar wpływu to dump diff (0 zmian wyboru) i sonda.
+
+## Ad 3 — M243/C (rozstrzygnięte przez właściciela, 2026-10-18)
+
+Właściciel: „Przecież już to zmienialiśmy. Tylko w end stepie przeciwnika, jeśli ma wolne lądy do zatapowania."
+To jest wariant A (obecny): kara M243/C (`tokenOnlyManaBank`) i odroczenie many są zdjęte WYŁĄCZNIE w oknie
+(`freeManaWindowNow`: end step przeciwnika ∧ koszt ≤ `manaAvailableNow` − rezerwa). `manaAvailableNow` = pula + NIETAPNIĘTE lądy bota.
+Wariantu „zdjęcie globalne" nie wdrażamy. Wcześniejsze pytanie (PMSSB-66 pkt 2) było błędnie przedstawione jako otwarte; stan kodu był już ten.
+Brakowało pinu na warunek „wolne lądy" — dodany: `test/audyt-pmssb67-okno-wolne-lady.test.js` (0 i 1 wolny ląd → brak aktywacji; 2 → aktywacja).
+
+## L48 atomowość płatności — zamknięte przez właściciela (2026-10-18)
+
+Właściciel: „Atomiczność L48 — zamykamy temat." Stan: nieudana płatność kolorowa nie zmienia stanu (pin
+`test/audyt-pmssb67-atomowosc-platnosci.test.js`, 3). Końcowy `throw` po pętli tapnięć (`resources.js` ~536) nadal istnieje;
+jego nieosiągalność NIE jest dowiedziona. Temat zamknięty bez dalszej pracy, zgodnie z decyzją właściciela.
+
 ## Otwarte w PMSSB-67
 
-- **Próg latania dla ciała o mocy 0 (decyzja właściciela).** Sprawa: `creatureKwFlyingFloor = 3` (PMSSB-64) daje latającemu
-  ciału o mocy 0 wartość 3 (`max(3, 8·moc/3)`). Necrosquito (`card-data.js` ~5754) ma moc 0 w definicji i rośnie
-  o oil, więc przy wejściu jest 2/2. Wynik 70.05 vs syntetyczny latający 69.60: różnica 0.45 pochodzi z
-  wzrostu oil, którego sonda nie mierzy. Nie zmieniam progu bez dowodu taktycznego.
-  **Rekomendacja:** zostawić 3. Latające ciało z mocą 0 nadal blokuje latające i zasłania, więc 0 byłoby
-  zaniżeniem. Gdyby właściciel chciał skalować próg do mocy, potrzebny jest pomiar z oil (sonda rozszerzona o licznik).
+- **Próg latania** — ZAMKNIĘTE w F5 (decyzja właściciela 2026-10-18: skalować do mocy). Patrz „F5".
 - **Rejestr PMSSB** (`docs/PMSSB.md`, `docs/PROJECT_HISTORY.md`): wpisane w tym samym commicie co ten raport.
 - **F2 i F3 w bramach:** `test:all` przeszedł dla stanu ze wszystkimi F2–F4 (`21a5568`, 8749/8749). Osobnego `test:all`
   dla samego F2 czy F3 nie uruchamiano; dump diff pokazuje F2 = 0 zmian, F3 = 1 zmiana wyniku.

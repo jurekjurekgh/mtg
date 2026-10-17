@@ -3374,7 +3374,7 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
 - Stymied Hopes: kontra zależy od many wroga (`counterUnlessPaidOff`); tani czar wroga nie jest kontrowany.
 - Neurok Invisimancer: ETB nie wybiera wrogiego stwora (wartość 0); ewazja liczy się przeciw blokerom.
 - Meteorite: kill 2/1 w ETB +9; 2 obrażenia w twarz bez groźby ≈ 0 (akceptacja).
-- Halo Scarab: bank many z cmentarza pass (M243/C) — reguła właściciela, do potwierdzenia.
+- Halo Scarab: bank many z cmentarza pass (M243/C) — potwierdzone przez właściciela 2026-10-18 (wariant A: zdjęte tylko w oknie end step przeciwnika, gdy wolne lądy pokrywają koszt).
 
 **OTWARTE — osobne sesje, batch 68 NIE jest zamknięty:**
 - **PMSSB-64 — Child of Night (lifelink): ZAMKNIĘTE (2026-10-17)** — [raport PMSSB-64](audits/PMSSB64_BATCH68_2026-10-17.md),
@@ -3397,6 +3397,14 @@ Raport: [raport PMSSB-63](audits/PMSSB63_BATCH68_2026-10-17.md). Plan:
   F4 płaskie wagi 9 słów kluczowych → udział stanu (`floorShare`, `creatureKwStateFloor` 0.5), `21a5568`.
   Bramy na `21a5568`: `test:all` 8749/8749; build 0; `cr-numery` OK; lustro 3000 157:163, 5000 162:158, 9000 163:157 (nierozegrane 0).
   Golden master: fixture zregenerowany po dump diff (0 zmian wyboru). Otwarte: próg latania dla ciała o mocy 0 (rekomendacja: zostawić 3), w raporcie.
+  **F5 (2026-10-18, decyzja właściciela „skalować próg do mocy"): ZAMKNIĘTE** — [raport F5](audits/PMSSB67_KW_CAVEATY_2026-10-17.md#f5--próg-latania-skalowany-mocą-2026-10-18-decyzja-właściciela),
+  plan [PLAN_2026-10-18a](plans/PLAN_2026-10-18a-pmssb67-prog-latania.md). Próg latania = `creatureKwFlyingFloor · moc/3`
+  (zablokowany lot = próg; odblokowany = max(próg, 8·moc/3)). Moc 0 → 0, moc 3 → bez zmian. Pokrętło `creatureKwFlyingFloorScaled`.
+  Dump diff: 0 zmian wyboru. Lustro bez zmian (157:163 / 162:158 / 163:157).
+- **Ad 3 (M243/C) — ROZSTRZYGNIĘTE (2026-10-18):** wariant A, już wdrożony. Kara zdjęta tylko w end stepie przeciwnika,
+  gdy wolne lądy bota pokrywają koszt. Pin warunku: `test/audyt-pmssb67-okno-wolne-lady.test.js`.
+- **L48 (atomowość płatności) — ZAMKNIĘTE przez właściciela (2026-10-18).** Pin nieudanej płatności kolorowej:
+  `test/audyt-pmssb67-atomowosc-platnosci.test.js`. Końcowy `throw` po tapnięciach nie jest dowiedziony jako nieosiągalny; temat zamknięty.
 
 Testy: `test/audyt-pmssb63-batch68.test.js` (18), `-karty` (5), `-secure` (8), `-kulrath` (7), `-reszta` (13).
 Golden-master: bez dryfu. Bramki całego repo: patrz raport (`docs/audits/PMSSB63_BATCH68_2026-10-17.md`).
