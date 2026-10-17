@@ -28,9 +28,10 @@
 1x Duskmantle Seer
 1x Ivy Lane Denizen
 1x Veiled Ascension
+1x Secure the Scene
 1x Trostani Discordant
 1x Riftburst Hellion
-5x Plains
+6x Plains
 2x Island
 2x Swamp
 3x Mountain

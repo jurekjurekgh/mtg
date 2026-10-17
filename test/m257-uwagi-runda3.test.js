@@ -258,10 +258,12 @@ const MORPH_IDS = new Set(['segmented-krotiq', 'woolly-loxodon', 'ainok-tracker'
 
 test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypływ FoW zamknięty u źródła)', () => {
   const calls = [];
-  // Seed 3 (przelosowany po zmianie talii — Batch 64: Sultai Scavenger doszedł
-  // do planu Tarkir, więc tarkir-bg ma kartę więcej i seed 1 przestał rzucać
-  // morpha w limicie 400 kroków; L25: „przelosowany po zmianie X”).
-  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 3 });
+  // Seed 2 (przelosowany po zmianie talii — Batch 64: Sultai Scavenger doszedł
+  // do planu Tarkir, więc seed 1 przestał rzucać morpha w limicie 400 kroków;
+  // Batch 68: podział talii warhammer-ubr (Child of Night, Meteorite) przesunął
+  // przebieg, seed 3 nie rzuca już morpha — skan 1..30: pierwszy seed z rzutem
+  // morpha to 2; L25: „przelosowany po zmianie X”).
+  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 2 });
   // Oczekiwania per płytka: dla komend zagranych przez skrypt wiemy, czy
   // rzut był deklarowany twarzą w dół — to jest właściwy kontrakt tej
   // warstwy („payload zgodny z komendą”), niezależny od tego, JAK gra
