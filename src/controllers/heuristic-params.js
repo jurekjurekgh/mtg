@@ -106,7 +106,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'massDestroyCardValue', 'massDestroyOwnMultiplier', 'massDestroyEvasionBonus',
   'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
   // PMSSB-64 — słowa kluczowe stworzenia rzucanego z ręki (wycena ciała, L41).
-  'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwRefPower', 'creatureKwHaste',
+  'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwFlyingFloorScaled', 'creatureKwRefPower', 'creatureKwHaste',
   'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwStateFloor', 'creatureKwRefThreat', 'creatureKwDeathtouch',
   'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
@@ -657,7 +657,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //    najsłabsze miejsce modelu — brak osobnego pomiaru każdego z nich; pokryte testem Δ = pokrętło × 0.9.
   creatureKwRefPower: 3, // moc, przy której kotwice latania (8) i tempa (6) są pełne; zadane obrażenia = moc × tury, więc skala liniowa
   creatureKwFlying: 8,
-  creatureKwFlyingFloor: 3, // dolna granica latania = dawny płaski +3; przy latającym blokerze wroga to cała wartość latania
+  // PMSSB-67/F5 (decyzja właściciela 2026-10-18): dolna granica latania = creatureKwFlyingFloor PRZY MOCY
+  // REFERENCYJNEJ (creatureKwRefPower), skalowana mocą ciała. Zablokowany lot (wróg z flying) = próg · moc/ref;
+  // odblokowany = max(próg, kotwica · moc/ref). Moc 0 → 0 (nie zadaje obrażeń), moc 3 → 3 (bez zmian).
+  creatureKwFlyingFloor: 3,
+  // Pokrętło F5: 1 = próg skalowany mocą (domyślne), 0 = dawne płaskie 3 (PRZED; pomiar tools/pmssb67-prog-latania-sonda.mjs).
+  creatureKwFlyingFloorScaled: 1,
   creatureKwHaste: 6,
   creatureKwLifelinkWeight: 1,
   // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do

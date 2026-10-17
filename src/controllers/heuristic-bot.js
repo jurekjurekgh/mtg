@@ -3086,14 +3086,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const blockersNow = untappedEnemyBlockers(view);
     const maxBlockerToughness = blockersNow.reduce((m, o) => Math.max(m, o.toughness ?? 0), 0);
     const ref = Math.max(1, P.creatureKwRefThreat);
+    // PMSSB-67/F5: dolna granica latania skalowana mocą (moc 0 → 0, moc = ref → pełne 3).
+    const flyingFloor = P.creatureKwFlyingFloorScaled > 0 ? P.creatureKwFlyingFloor * powerScale : P.creatureKwFlyingFloor;
     let value = 0;
     for (const k of kw) {
-      // Latanie: bez latającego blokera wroga = ewazja (skala mocą), ale nie poniżej dolnej granicy
-      // (dawny płaski +3 = wartość obrony latającym). Anty-over-fix (M429 c): najsłabszy realny
-      // wariant (moc ≤1) zostaje na dawnej wartości; inwersji „przepuszczony < zablokowany” nie ma.
+      // Latanie: bez latającego blokera wroga = ewazja (skala mocą), nie poniżej dolnej granicy (skalowanej
+      // mocą, F5). Zablokowany lot = sama dolna granica. Inwersji „przepuszczony < zablokowany” nie ma
+      // (test F5 anty-inwersja). Dawny zapis „moc ≤1 zostaje na +3" wycofany w F5: 0-mocowy lot nie zadaje obrażeń.
+      // PMSSB-67/F5: próg skalowany mocą (pokrętło creatureKwFlyingFloorScaled, 0 = płasko 3 jak PRZED).
       if (k === 'flying') value += noFlyingBlockers
-        ? Math.max(P.creatureKwFlyingFloor, P.creatureKwFlying * powerScale)
-        : P.creatureKwFlyingFloor;
+        ? Math.max(flyingFloor, P.creatureKwFlying * powerScale)
+        : flyingFloor;
       else if (k === 'haste') value += P.creatureKwHaste * powerScale;
       else if (k === 'lifelink') value += P.creatureKwLifelinkWeight * gainLifeValue(view, power) * lifelinkSurvival;
       // deathtouch: zabija każdego blokera/atakującego; wartość rośnie z liczbą wrogów, których nie pokonujemy.

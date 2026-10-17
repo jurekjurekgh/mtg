@@ -77,9 +77,9 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     const s = mk(); fillLib(s); put(s, 'cr', 'murder-of-crows');
     assert.equal(disp(decide(s).opts, 'cast_permanent(cr'), 78.4);
   });
-  it('guard: talions-lib30 = 66.6 (future-trigger bez anticipacji)', () => {
+  it('guard: talions-lib30 = 66.3 (future-trigger bez anticipacji; PMSSB-67/F5 (próg latania skalowany mocą): lot 1-mocowy −0.3)', () => {
     const s = mk(); fillLib(s); put(s, 'tm', 'talions-messenger');
-    assert.equal(disp(decide(s).opts, 'cast_permanent(tm'), 66.6);
+    assert.equal(disp(decide(s).opts, 'cast_permanent(tm'), 66.3);
   });
   it('guard: scholar ignoruje rękę (pusta / 1 karta = 4)', () => {
     const a = mk(); fillLib(a); put(a, 'sc', 'civilized-scholar', 'p1', 'battlefield');

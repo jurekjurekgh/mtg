@@ -95,11 +95,13 @@ test('PMSSB-64/pokrętło sterują: creatureKwLifelinkWeight = 0 → lifelink ni
   assert.ok(Math.abs(d) < 0.01, `Δ=${d}`);
 });
 
-test('PMSSB-64/anty-over-fix: latanie 1-mocy — przepuszczony = zablokowany (dolna granica 3, bez inwersji)', () => {
+test('PMSSB-64/anty-over-fix: latanie 1-mocy — przepuszczony ≥ zablokowany (bez inwersji; PMSSB-67/F5 (próg latania skalowany mocą): równość była artefaktem płaskiego progu 3)', () => {
   // Ten sam stół, ten sam wróg-ciało; różni się TYLKO to, czy wróg lata (blokuje latanie).
   // Porównanie na tym samym stole, bo samo dodanie wroga zmienia inne człony wyceny.
   const body = { power: 1, toughness: 1, mv: 3 };
   const bez = castScore({ keywords: ['flying'], body, board: (s) => putSynthCreature(s, 'ev', 'p1', { power: 2, toughness: 2, mv: 2 }) })[0];
   const zab = castScore({ keywords: ['flying'], body, board: (s) => putSynthCreature(s, 'ef', 'p1', { power: 2, toughness: 2, mv: 2, keywords: ['flying'] }) })[0];
-  assert.ok(Math.abs(bez - zab) < 0.01, `przepuszczony ${bez} != zablokowany ${zab} — inwersja lub zmiana dawnej wartości`);
+  // F5: próg skalowany mocą → zablokowany 1-mocowy lot = 0.9, przepuszczony = 2.4. Równość z PMSSB-64 była
+  // skutkiem płaskiego progu 3, nie wymogiem. Niezmiennik zostaje: przepuszczony nie może być niższy.
+  assert.ok(bez + 0.01 >= zab, `przepuszczony ${bez} < zablokowany ${zab} — inwersja`);
 });
