@@ -1646,6 +1646,22 @@ export function botMayPayCreatureSacrificeCost(view, cmd) {
   return creature && victim.power === 1 && victim.toughness === 1;
 }
 
+/**
+ * O-4 (audyt PR #166, 2026-10-17): klasa „outlast” (N) — efekt, którego CAŁA
+ * treść to licznik na SOBIE. Silnik kładzie licznik na źródle tylko wtedy, gdy
+ * efekt nie wskazuje innego obiektu (effects.js, gałąź add_counter). Dlatego
+ * klasa jest wąska: każdy dodatkowy klucz (`targetFromContext`, `applyTo`,
+ * `targetIndex`, `amountFromContext`, `condition`) to licznik na czymś innym
+ * albo warunkowy — taki efekt NIE jest „dołóż licznik na siebie”.
+ * Zwraca true tylko dla niepustej listy samych `add_counter` z kluczami
+ * `type`/`counter`/`amount`. Cele zdolności i sorcery/{T} sprawdza wywołujący.
+ */
+export function isSelfCounterEffects(effects) {
+  if (!Array.isArray(effects) || effects.length === 0) return false;
+  return effects.every((e) => e?.type === 'add_counter'
+    && Object.keys(e).every((key) => key === 'type' || key === 'counter' || key === 'amount'));
+}
+
 export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, opponentDeck = null, ownDeck = null, weights = undefined, params = undefined, registry: registryOverride = undefined }) {
   if (!Number.isInteger(seed)) throw new TypeError('Bot wymaga całkowitego seeda');
   if (typeof randomness !== 'number' || randomness < 0 || randomness > 1) throw new RangeError('randomness ma być w [0, 1]');
@@ -11631,8 +11647,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // (ADR 0002), nie po nazwie. Dopóki stwór może atakować, pas w głównej 1
         // wygrywa — walka go obsłuży albo wraca tu w głównej 2. Stwór z chorobą
         // przywołania i już tapnięty nie wchodzi tu: `canAttackNow` zwraca false.
-        const onlySelfCounter = effects.length > 0 && effects.every((e) => e?.type === 'add_counter')
-          && !(cmd.targets ?? []).length;
+        // O-4 (audyt PR #166): wąski kształt efektu (`isSelfCounterEffects`) +
+        // brak celów w poleceniu i w definicji zdolności (token z celem poza klasą).
+        const onlySelfCounter = isSelfCounterEffects(effects)
+          && !(cmd.targets ?? []).length && !(ability?.targets ?? []).length;
         if (taps && onlySelfCounter && source && ability?.timing === 'sorcery' && myTurn(view)
           && view.turn.phase === 'precombat_main' && canAttackNow(source)) {
           return finish(-40);
