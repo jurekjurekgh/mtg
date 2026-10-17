@@ -17209,10 +17209,18 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   przed wygnaniem (`state.spellCaptures`), M5 `destroy_all` z filtrem typu i MV, M6 wybór dwóch trybów
   (`chooseTwoModes`, 6 par w kolejności drukowanej). M7 (landcycling, zdolność z cmentarza za koszt many,
   Skarb i mana dowolnego koloru) — bez nowego silnika, pilnowane asercjami kształtu.
-- **Bot (G6, ręcznie).** Licznik zniszczony przez `cantBeCountered` −90; wartość tokena Secure dla
-  kontrolera celu; bonus za dobranie w Raze; wagi `massDestroyFoeFlat` 75 / `massDestroyOwnFlat` 90.
-  Zachowanie sześciu rzutów pinowane w `test/bot-quality-batch68-karty.test.js`. Halo Scarab
-  (bankowanie many za koszt poniżej passa) zgodnie z regułą M243/C — do potwierdzenia przez właściciela.
+- **Bot — STATUS: W TOKU, nie „zrobione”.** Właściciel odrzucił wcześniejsze domknięcie wyceny
+  (2026-10-17: płaski scoring, testy bez modelu stołu). Każda mechanika idzie pełną pętlą PMSSB
+  (`docs/PMSSB.md`, procedura 0–7), numer raportu **PMSSB-63**.
+  - Austere Command: model stołu (`massDestroyValue`, commit `e48caff`); pomiar PRZED/PO 9 scenariuszy
+    (PRZED 6/9 → PO 9/9), pin liczbowy składowych, pokrętła ×0.
+  - Raze to the Ground: dobranie wyceniane jak `draw_cards` z karą deck-outu (commit `95fc359`).
+  - OTWARTE: Secure the Scene na 1/1 (wymiana zerowa, bot rzuca: 67.95) — wymaga wyceny kosztu many
+    czaru usuwania (rodzina usuwania), nie rozwiązane lokalnie. Stymied Hopes, Kulrath, Bloodfire, Meteorite,
+    Child of Night, Neurok: audyt jeszcze nie wykonany.
+  - Zachowanie sześciu rzutów z `test/bot-quality-batch68-karty.test.js` to tylko piny zgodności; nie są dowodem
+    taktycznej jakości. Halo Scarab (bankowanie many za koszt poniżej passa) zgodnie z regułą M243/C —
+    do potwierdzenia przez właściciela.
 - **Talie.** Wyłącznie `tools/generate-plan-decks.mjs` (ADR 0023 §1). Nowa talia Lorwyn; Kaldheim →
   `worek-legend`, Duskmourn → `worek-dziki` (przetasowanie worka, ADR 0023 §4). 28 talii.
 - **O-2 w tej partii.** Oferta celów bez limitu (commit `106b49f`) zostaje. Test 100 stworów usunięty z

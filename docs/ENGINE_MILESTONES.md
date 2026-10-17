@@ -8493,7 +8493,7 @@ Nowe mechaniki (generyczne, ADR 0002):
 3. **Destroy + dobranie gdy MV celu ≤ N (M3)** — `destroy_permanent` z `drawIfManaValueAtMost`.
 4. **Wygnanie + token dla przechwyconego kontrolera (M4)** — `exile_permanent.captureControllerAs`,
    `create_token.controllerFromCapture`, `state.spellCaptures` (nie czyszczone; id stosu monotoniczne).
-5. **`destroy_all` z filtrem typu i MV (M5)** — `massDestroyStats` w bocie.
+5. **`destroy_all` z filtrem typu i MV (M5)** — wycena w bocie: `massDestroyValue` (heuristic-bot.js), model stołu PMSSB-63 (commit `e48caff`).
 6. **Wybór dwóch trybów (M6)** — `chooseTwoModes([...])` w `card-data.js` spłaszcza 6 par do listy
    trybów (efekty w kolejności drukowanej, CR 700.2). Bez zmian w silniku oferty; tryby z celami
    rzucają błąd definicji. Odstępstwo świadome: tani wariant zamiast wieloetapowego modala (O-2).
