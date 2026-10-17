@@ -11070,9 +11070,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'incubate') score += incubateValue(effect); // PMSSB-38
           // Batch 68 (Raze to the Ground): „jeśli MV celu ≤N, dobierz kartę" — dobranie
           // liczy się, gdy warunek spełnia cel rozpoznany na planszy w chwili rzutu.
+          // PMSSB-63/R (Raze to the Ground): dobranie z kartą = ta sama skala co
+          // `draw_cards` (D, Deepwood Denizen): wartość karty + kara deck-outu
+          // po liczbie kart w bibliotece. Dawniej stałe +drawCardValue bez
+          // sprawdzenia biblioteki — bot dobierał z pustej talii (80 > pass).
           if (effect.drawIfManaValueAtMost != null && target
             && (target.manaCost ?? 0) <= effect.drawIfManaValueAtMost) {
-            score += P.drawCardValue;
+            score += P.drawCardValue + drawDeckingPenalty(view, 1);
           }
           if (effect.type === 'create_token') {
             // PMSSB-2/A (F3): wspólny tokenBodyValue (ilość z Z6 + fateful
