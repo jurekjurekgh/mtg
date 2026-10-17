@@ -171,3 +171,15 @@ test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź
   assert.equal(r.submitted, null);
 });
 
+
+test('O/13 (O-2, lekki): 30 stworów — oferta kompletna i bez błędu (1 + 30 + C(30,2) + C(30,3) = 4526)', () => {
+  // Lekka wersja regresji O-2 (zlecenie właściciela 2026-10-17: test ma być lekki).
+  // Pełne 100 stworów (166751 ofert, ~21 s decyzji bota) NIE wchodzi do suite. Ten test
+  // pilnuje tego, co realnie może się zepsuć: kompletności wyliczenia i braku błędu przy
+  // szerokim stole. Przy `push(...tablica)` wyjątek „Maximum call stack size exceeded”
+  // pojawia się dopiero przy ~10^5 elementach, więc tu jest to test poprawności, nie stosu.
+  const state = stol(30);
+  const view = playerView(state, 'p1');
+  const commands = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'wrap');
+  assert.equal(commands.length, 4526);
+});
