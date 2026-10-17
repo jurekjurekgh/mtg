@@ -904,7 +904,16 @@ export async function runTableGame({
       // (Fireball, Wrap in Flames, Grave Exchange) ani mulligan z odłożeniem
       // kart nie były nigdy testowane — a to jest właśnie ta klasa modali,
       // którą właściciel kazał sprawdzić.
-      const rows = $$('#choice-request .multi-target-toggle').filter((b) => !b.disabled);
+      // H (zgłoszenie 2026-10-15, Aerith „Schody”): kreator ma WARSTWĘ STUNA —
+      // najpierw cele (ptaszki), potem JEDEN stun (radio `name=multi-target-stun`,
+      // aktywne tylko dla wybranych celów). Tester liczy wtedy ptaszki celów, a
+      // po zebraniu celów wybiera jedno radio stuna; bez tego traktował radia
+      // jako cele i kończył na jednym celu.
+      const stunRadiosNow = $$('#choice-request input[name="multi-target-stun"]');
+      const hasStun = stunRadiosNow.length > 0;
+      const rows = (hasStun
+        ? $$('#choice-request input.multi-target-toggle[type="checkbox"]')
+        : $$('#choice-request .multi-target-toggle')).filter((b) => !b.disabled);
       // Ile pozycji trzeba zaznaczyć: „zaznacz cele (2)", „zaznacz cele (1–3)"
       // albo „Mulligan: zaznacz 2 karty…". Bierzemy pierwszą liczbę z intro,
       // a przy zakresie „N–M" wystarczy minimum.
@@ -934,17 +943,23 @@ export async function runTableGame({
       const order = profile === 'random' ? shuffleForPolicy(rows) : rows;
       for (const row of order) {
         const checkedNow = rows.filter(isChecked).length;
-        if (checkedNow >= want && !multiConfirm.disabled) break;
+        if (checkedNow >= want && (hasStun || !multiConfirm.disabled)) break;
         if (isChecked(row)) continue;
         row.click();
         await sleep(20);
         // Zaznaczenie ponad limit silnika cofa legalność (Zatwierdź gaśnie) —
         // wtedy odznacz z powrotem i przestań dokładać.
-        if (multiConfirm.disabled && rows.filter(isChecked).length > (needed || 1)) {
+        if (!hasStun && multiConfirm.disabled && rows.filter(isChecked).length > (needed || 1)) {
           row.click();
           await sleep(20);
           break;
         }
+      }
+      // H: warstwa stuna — po zaznaczeniu celów wybierz JEDEN stun z aktywnych radiów.
+      if (hasStun && rows.some(isChecked)) {
+        const aktywne = stunRadiosNow.filter((r) => !r.disabled);
+        const wybrany = (profile === 'random' ? shuffleForPolicy(aktywne) : aktywne)[0];
+        if (wybrany) { wybrany.click(); await sleep(20); }
       }
       const confirmNow = $$('#choice-request button').find((b) => /multi-target-confirm/.test(String(b.className)));
       if (confirmNow && !confirmNow.disabled) {

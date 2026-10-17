@@ -24,7 +24,7 @@ numery to **kotwice** — żaden nie znika (cytowany w kodzie).
 |---|---|---|
 | Jawna lista pól gubi dane (fabryka → generator → transport → widok) | **L21** | L93, L94, L101 |
 | Weryfikacja mutacyjna: dowód, że test/detektor działa | **L13** | L61, L70, L114 |
-| Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83 |
+| Strażnik mierzy regułę, nie tekst źródła | **L5** | L26, L31, L44, L83, L186 |
 | Zero zgłoszeń detektorów to pomiar narzędzia | **L27** | L40, L73, L75 |
 | Oferta i walidacja: jeden filtr, porządek i rejestr | **L48** | L90 |
 | Choke point istnieje, ale ścieżka go omija | **L107** | L109, L110, L112, L113 |
@@ -531,7 +531,7 @@ helpera. Każda gałąź ma WŁASNĄ mutację i test: mutacja bliźniaczej gał�
 
 → Pełna klasa: [L27].
 
-**Przypadek:** `detectBotSelfHarmOnOwnPermanents` ustalał właściciela celu, parsując snapshoty „MOJE POLA:” / „POLA WROGA:”, a audyt biega z `--quiet`, gdzie w całym pliku jest JEDEN snapshot — detektor był martwy w jedynym trybie, w którym go używano.
+**Przypadek:** detektor właściciela celu parsował snapshoty; w trybie `--quiet` jest ich jeden, więc był martwy w jedynym używanym trybie. (pełny opis: narracja)
 
 **Reguła:** detektor czyta dane STRUKTURALNE ze sterownika, nie tekst transkryptu; **zero z martwego detektora wygląda jak zero z czystej gry** (M212: trzy partie po naprawie dały 0 zgłoszeń fałszywie).
 
@@ -1036,7 +1036,7 @@ którejś karty ta klasa nie jest CAŁĄ treścią.
 
 ## L25 (2026-08-17) — Test scenariuszowy nie może zależeć od tego, KTO wykonał akcję
 
-**Przypadek:** — po dołożeniu jednej karty do `decks/green.txt` (dziś nie ma takiej talii — podział kolorów ADR 0023/0024) posypało się pięć testów niezwiązanych z nowymi kartami („log nie opisuje tworzenia tokenu…
+**Przypadek:** dołożenie jednej karty do talii rozwaliło pięć testów niezwiązanych z tą kartą. (pełny opis: narracja)
 
 **Reguła:** asercja na TREŚĆ logu opisuje zdarzenie, nie osobę — dopuszczaj
 obie formy (`/tworzy(sz)? token/`) albo sprawdzaj zdarzenie w
@@ -1165,7 +1165,7 @@ wykrycia.
 
 ## L37 (2026-08-17) — Zmiana danych wejściowych to darmowy fuzzing silnika
 
-**Przypadek:** dosypanie lądów ujawniło crash `Error: Nieprawidłowy cel obrażeń` w benchmarku — cel zdolności opuścił pole przed rozstrzygnięciem (CR 608.2b: fizzle); wyszedł dopiero przy `--seeds 16`.
+**Przypadek:** dosypanie lądów ujawniło crash „Nieprawidłowy cel obrażeń” (cel opuścił pole przed rozstrzygnięciem, CR 608.2b); wyszedł dopiero przy `--seeds 16`. (pełny opis: narracja)
 
 **Reguła:** gdy zmiana DANYCH wywala coś w silniku, to prawie nigdy wina danych — to nowa ścieżka wykonania. Traktuj crash jak znalezisko fuzzingu: napraw REGUŁĘ, nie dane. Przy zmianie danych puść szerszą próbkę niż domyślna.
 
@@ -1291,10 +1291,8 @@ bramka „coś czeka" warunkuje na WŁAŚCICIELA i RODZAJ, nie na niepustość k
 (blokowałaby wcześniejszą decyzję). Predykat blokady jest jeden i wołają go OBIE
 strony. Przy N-tej powtórce szukaj WSPÓLNEGO MIANOWNIKA (L28), a martwy
 wartownik (mutacja nie czerwieni) idzie do usunięcia, nie do „dokumentacji
-zamiaru" (L5). Nowy `pending*` ma SIEDEM bramek do zmutowania: oferta po
-wariancie, cudzy decydent odrzucony, właściciel bez passa (M337), pole
-w odcisku (B2), etykieta + grupowanie (m163/m201), wycena bota, re-walidacja
-przy wykonaniu (CR 608.2b) — pin ścieżki „szczęśliwej" zostawia pięć żywych.
+zamiaru" (L5). Nowy `pending*` ma SIEDEM bramek do zmutowania (lista: narracja, pkt 8);
+pin ścieżki „szczęśliwej" zostawia pięć żywych.
 
 **Strażnik:** `test/audyt-pr130-gospodarz-aury.test.js` + piny trzech miejsc oferty/walidacji.
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L48)
@@ -2017,7 +2015,7 @@ produkcja po M300/1) — pinuj funkcje, które woła gracz.
 
 ## L159 (2026-09-20) — Mutacja, która nie zaszła, i mutacja, która zaszła w no-op, kłamią tak samo
 
-**Przypadek:** (a) N17 — podmiana bloku `auraCard` dała „WZORZEC NIEZNALEZIONY", a wynik wyglądał jak zielony; (b) N18 — usunięcie `resolve_aura_host` z komend aggro-bota przeszło ZIELONO, bo przy domyślnych wagach wpis był no-opem (nie dlatego, że droga jest osłonowa).
+**Przypadek:** usunięcie `resolve_aura_host` przeszło ZIELONO, bo wpis był no-opem przy domyślnych wagach. (pełny opis: narracja)
 
 **Reguła:**
 1. Mutuj DOKŁADNY blok: przed podmianą `sed -n`/`grep -n`, wymiana konkretnych
@@ -2035,10 +2033,7 @@ produkcja po M300/1) — pinuj funkcje, które woła gracz.
 
 ## L160 (2026-09-20) — Strażnik ŹRÓDŁA (regex na kształcie kodu) idzie w jednym commicie z refaktorem, ale mierzy NIEZMIENNIK
 
-**Przypadek:** E6/6 (`test/e6-pula-blokerow-ponad-cap.test.js`) czytał regexem
-kształt pola widoku (`buildBlockCandidatesView(...)`); po refaktorze z F14
-(nowy `buildBlockerView` → `{pool, slots}`) pin padł — nie dlatego, że reguła
-się zepsuła, tylko dlatego, że zmienił się literał implementacji.
+**Przypadek:** test E6 czytał regexem kształt pola widoku; refaktor złamał pin, choć reguła była cała. (pełny opis: narracja)
 
 **Reguła:**
 1. Gdy pin czyta kształt implementacji, refaktor i pin idą w JEDNYM commicie:
@@ -2308,10 +2303,7 @@ być KARĄ, nie zerem (L3). Reguła po treści efektu i stanie z `PlayerView`
 
 ## L183 (2026-10-08) — Sztuczka bojowa (flash) ma WYMIAŃ OKNA: kara wyzerowuje wycenę, nie „przebija” bazę stałą
 
-**Przypadek:** Village Bell-Ringer (flash, ETB „untap all creatures you
-control”) był rzucany w KAŻDYM kroku — w Głównej 1 bota i po deklaracji
-blokujących przeciwnika, gdzie wchodzące ciało nie jest już blokerem (CR 509.1a);
-ETB było płaskie 3 (L50/L131 + L48).
+**Przypadek:** Village Bell-Ringer (flash, ETB „untap all creatures you control”) był rzucany także po deklaracji blokujących (CR 509.1a). (pełny opis: narracja)
 
 **Reguła:** gdy wartość karty zależy od OKNA, wycenę (ciało + ETB + parytet)
 wyzeruj i obniż o margines — NIE odejmuj stałej od noty, bo silne ETB wróci ponad
@@ -2327,5 +2319,23 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 
 ## L184 (2026-10-10) — Każda zmiana = commit + push natychmiast; niezacommitowana ginie z resetem sandboxa
 
-Poprzedni agent stracił batch 10 kart — nie zdążył zacommitować przed
-resetem sandboxa. Krok (karta batcha, poprawka) = commit + push od razu (ADR 0020 C/D).
+**Przypadek:** batch 10 kart przepadł przy resecie sandboxa, bo nie był zacommitowany.
+**Reguła:** krok = commit + push od razu (ADR 0020 C/D).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L184)
+
+## L185 (2026-10-15) — Płatność atomowa: pokrycie przed mutacją; domyślny zakres wszędzie tak samo
+
+**Przypadek:** opłata energią rzucała po zdjęciu decyzji; `lose_life` bez `scope` = 0 pkt.
+**Reguła:** pokrycie sprawdzać przed mutacją (`reject`); domyślny deskryptor = jedna reguła (L41).
+**Strażnik:** `test/audyt-pr165-energia-zaplata-atomowa.test.js`, `test/audyt-pr165-zakres-utraty-zycia.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L185)
+
+## L186 (2026-10-15) — Strażnik mierzy regułę, nie tekst: regexy tolerują białe znaki i jeden podkreślnik
+
+**Przypadek:** etykieta `reflexive_pay` brakowała w logu; wieloliniowy literał (`Object.freeze({⏎ event:`) ominął strażnik M122; slug z jednym podkreślnikiem przeszedł detektor.
+**Reguła:** regexy strażników i skanerów literałów mają `\s*` między tokenami i łapią slug z jednym podkreślnikiem (`SNAKE_CASE_ONE`). → Klasa i reguła: [L5].
+**Strażnik:** `test/card-sources-guard.test.js` (M122), `tools/table-tester/detectors.mjs` (`SNAKE_CASE_ONE`).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L186)

@@ -4716,7 +4716,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     id: 'token_rat', name: 'Rat', set: null,
     types: ['Creature', 'Token'], subtypes: ['Rat'], colors: ['B'],
     power: 1, toughness: 1, manaCost: 0,
-    imageUri: 'https://cards.scryfall.io/large/front/3/1/3132c128-e0bd-4524-9526-914b3c7181fc.jpg?1783946562',
+    // Druk tokena Rat (Scryfall 3b69ac36-…, komponent `token` przy Lab Rats),
+    // NIE obraz karty Lab Rats (uwaga M, 2026-10-16).
+    imageUri: 'https://cards.scryfall.io/large/front/3/b/3b69ac36-617d-4e55-a625-0e6f0d0dfbd3.jpg?1783904004',
     support: { status: 'token', limitations: [] },
     notes: ['token'],
   }),

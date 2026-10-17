@@ -84,7 +84,8 @@ test('M96/3: modal ruchu bota nie pokazuje angielskich nazw stref', async () => 
   const body = nextFn > 0 ? rest.slice(0, nextFn) : rest;
   assert.doesNotMatch(body, /\$\{e\.fromZone \?\? '\?'\} → \$\{e\.toZone \?\? '\?'\}/,
     'modal ruchu bota nie może sklejać surowych identyfikatorów stref');
-  assert.match(body, /ZONE_LABELS|zoneLabel/,
+  // Pętla 2026-10-15c: etykieta trasy (`trasaRuchuStref`) woła `zoneLabel`, czyli słownik.
+  assert.match(body, /ZONE_LABELS|zoneLabel|trasaRuchuStref/,
     'nazwy stref muszą przechodzić przez słownik polskich etykiet');
 });
 

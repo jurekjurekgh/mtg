@@ -22,6 +22,8 @@ import { IGNORABLE_LABEL_REGEX } from './actions.mjs';
 /** Surowe identyfikatory, które nigdy nie powinny trafić do oczu gracza. */
 const RAW_IDENTIFIER = /\b(battlefield|graveyard|library|exile|stack|hand)\s*→|→\s*(battlefield|graveyard|library|exile|stack|hand)\b/;
 const SNAKE_CASE_EVENT = /\b[a-z]+(_[a-z]+){2,}\b/;
+// Pętla jakości 2026-10-15c: pojedynczy podkreślnik (reflexive_pay, illegal_land).
+const SNAKE_CASE_ONE = /\b[a-z]+_[a-z]+\b/;
 // M189 (transkrypt audyt-m187/g6): identyfikatory TOKENÓW mają tylko jedno
 // podkreślenie („token_wizard", „token_squirrel"), więc przechodziły przez
 // regułę wyżej — log pokazywał je graczowi, a detektory milczały (L27/L40).
@@ -62,6 +64,16 @@ export function detectRawText(lines) {
     const m = line.match(SNAKE_CASE_EVENT);
     if (m && !/http|\.mjs|\.js\b/.test(line)) {
       push(found, 'info', `Surowy identyfikator „${m[0]}" w tekście dla gracza`, line);
+    }
+    // Pętla jakości 2026-10-15c (partia 67006): slug z JEDNYM podkreślnikiem
+    // („trigger (reflexive_pay)") przechodził — SNAKE_CASE_EVENT wymaga dwóch.
+    // Linie „Ruch odrzucony: …" pomijamy: tam kod techniczny w nawiasie jest
+    // ŚWIADOMY (rejectionReasonLabel, L6 — kod dla zgłoszeń błędów). Tokeny
+    // (token_*) łapie RAW_TOKEN_ID niżej — tam nie dublujemy.
+    if (!SNAKE_CASE_EVENT.test(line) && !RAW_TOKEN_ID.test(line)
+        && !/Ruch odrzucony/.test(line) && !/http|\.mjs|\.js\b/.test(line)) {
+      const jeden = line.match(SNAKE_CASE_ONE);
+      if (jeden) push(found, 'info', `Surowy identyfikator „${jeden[0]}\" w tekście dla gracza`, line);
     }
     const token = line.match(RAW_TOKEN_ID);
     if (token && !/http|\.mjs|\.js\b/.test(line)) {

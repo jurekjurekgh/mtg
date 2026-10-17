@@ -908,6 +908,13 @@ function bootstrapTable() {
     }
     const multiPlan = multiTargetPlanOf(request.options ?? []);
     if (multiPlan) {
+      // H (zgłoszenie 2026-10-15, Aerith „Schody”): tryb z `stunAmongTargets` to
+      // „tapnij do N celów, jeden z nich dostaje stun”. Warstwa 1 nazywa to
+      // tapnięciem, warstwa 2 (stun) dostaje osobny nagłówek z kreatora.
+      if (multiPlan.stunKey) {
+        const stunMode = session.state?.objects?.get(multiPlan.objectId)?.spell?.modes?.[multiPlan.modeIndex];
+        if (stunMode?.stunAmongTargets) multiPlan.targetsLabel = 'Cele do tapnięcia';
+      }
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === multiPlan.objectId);
@@ -1816,7 +1823,7 @@ function bootstrapTable() {
     // Klucz grupowania (UI) – deleguje do choiceRequestGroupKey z render.js, reszta lokalnie
     const groupKey = (cmd) => {
       // Batch 54: wspólny klucz rozdziela także CELOWANY czar z kickerem.
-      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;
+      if (cmd.type === 'cast_spell') return choiceRequestGroupKey(cmd) ?? `spell:${cmd.objectId}:${Boolean(cmd.kicked)}${cmd.buyback ? ':buyback' : ''}${cmd.gifted ? `:gift:${cmd.giftRecipientId ?? '?'}` : ''}`;
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;

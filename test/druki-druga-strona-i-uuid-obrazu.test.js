@@ -13,8 +13,8 @@
 //     obiekt karty — snapshot przedniej twarzy zawiera obie twarze.
 //
 // Test pilnuje obu napraw na PRAWDZIWYCH danych repozytorium i ma przypadki
-// ujemne z rzeczywistych danych (`token_rat` dzieli UUID z `lab-rats`, ale twarzą tej karty
-// NIE jest — samo współdzielenie UUID nie może wystarczać) oraz syntetyczną
+// ujemne (token z UUID karty `lab-rats` NIE jest twarzą tej karty — samo
+// współdzielenie UUID nie może wystarczać) oraz syntetyczną
 // mutację (snapshot „brata” bez `card_faces` → pokrycie musi odpaść).
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -95,11 +95,13 @@ test('D/5 pokrycieDrugiejStrony: wszystkie 7 drugich twarzy wskazuje snapshot pr
   }
 });
 
-test('D/6 pokrycieDrugiejStrony: samo współdzielenie UUID NIE wystarcza (token_rat vs lab-rats)', () => {
-  const d = def('token_rat');
-  assert.ok(d, 'token_rat jest w katalogu');
+test('D/6 pokrycieDrugiejStrony: samo współdzielenie UUID NIE wystarcza (token z UUID lab-rats)', () => {
+  // Syntetyczny przypadek: token_rat ma już własny druk tokena (uwaga M, 2026-10-16),
+  // więc regułę „samo UUID nie wystarcza” sprawdzamy na tokenie z UUID karty.
+  const d = { ...def('token_rat'), imageUri: def('lab-rats').imageUri };
+  assert.ok(d.types.includes('Token'), 'przypadek: token');
   assert.equal(uuidOf(d.imageUri), uuidOf(def('lab-rats').imageUri),
-    'założenie pomiaru: token dzieli UUID obrazu z kartą, która ma snapshot');
+    'założenie testu: token dzieli UUID obrazu z kartą, która ma snapshot');
   const wynik = pokrycieDrugiejStrony(d, { registry: REGISTRY, snapshotOf: snapshot });
   assert.equal(wynik.covered, false, 'token NIE jest twarzą karty — nie wolno go uznać za pokryty');
   assert.match(wynik.powod, /nie jest twarzą/, 'powód odmowy mówi o twarzy, nie o UUID');

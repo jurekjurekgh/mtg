@@ -4,7 +4,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForFreeTargets, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1252,6 +1252,19 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const costKey = plan.costKey ?? null;
   let costChoice = null;
   const costMatches = (cmd) => !costKey || cmd[costKey] === costChoice;
+  // H (zgłoszenie testera, Aerith „Schody”): warstwa 2 — stun counter na jednym
+  // z WYBRANYCH celów. Kandydaci to stuny wariantów o dokładnie tym zbiorze celów
+  // (z legalCommands). Jeden kandydat = wybór jednoznaczny (auto), więcej —
+  // gracz wskazuje radiem. Bez wybranego celu stun nie istnieje.
+  const stunKey = plan.stunKey ?? null;
+  let stunChoice = null;
+  const stunCandidates = () => (stunKey ? stunCandidatesFor(commands, [...chosen]) : []);
+  const effectiveStun = () => {
+    if (!stunKey || chosen.size === 0) return null;
+    const candidates = stunCandidates();
+    if (candidates.length === 1) return candidates[0];
+    return candidates.includes(stunChoice) ? stunChoice : null;
+  };
   // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | numer pozycji | null).
   // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
   // i celem czaru, i kosztem), więc nie mogą współdzielić zbioru `chosen`.
@@ -1328,7 +1341,19 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
                 : null)
               : (costKey && costChoice == null)
                 ? null
-                : commandForSelection((commands ?? []).filter(costMatches), { targets: [...chosen], xValue: plan.hasX ? xValue : null }));
+                : commandForChosen((commands ?? []).filter(costMatches), {
+                  targets: [...chosen],
+                  xValue: plan.hasX ? xValue : null,
+                  // H: bez wybranego celu nie podajemy stuna (wariant pusty);
+                  // z celami — stun z warstwy 2 (null = brak komendy).
+                  ...(stunKey && chosen.size > 0 ? { stunTargetId: effectiveStun() } : {}),
+                }));
+
+  // O (Wrap in Flames, „up to three”): gdy oferta silnika jest ucięta limitem
+  // (`plan.freeTargets`), zaznaczenie bez dopasowania składa komendę z szablonu
+  // i wybranych celów — silnik waliduje ją przy wykonaniu (spells.js).
+  const commandForChosen = (cmds, opts) => commandForSelection(cmds, opts)
+    ?? (plan.freeTargets ? commandForFreeTargets(cmds, [...chosen]) : null);
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
@@ -1336,7 +1361,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       ? id === sacrificeChoice
       : slot === 'cost'
         ? id === costChoice
-        : slotChoice[slot] === id);
+        : slot === 'stun'
+          ? id === effectiveStun()
+          : slotChoice[slot] === id);
 
   /**
    * B (zgłoszenie właściciela z żywej gry, 2026-09-21, Toll of the Invasion):
@@ -1389,7 +1416,12 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   };
 
   const syncRows = () => {
-    for (const row of rows) row.handle.setChecked(pickOf(row));
+    // H: wiersz stuna jest dostępny tylko dla kandydata (cel wybrany).
+    const candidates = stunKey ? stunCandidates() : [];
+    for (const row of rows) {
+      if (row.slot === 'stun') row.handle.setDisabled(!candidates.includes(row.id));
+      row.handle.setChecked(pickOf(row));
+    }
   };
 
   const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null, nameSuffix = '' } = {}) => {
@@ -1397,9 +1429,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     // JEDNOWYBOROWE — radio w grupie, a model (`chosen`) czyści się przy
     // każdym nowym zaznaczeniu.
     const exclusive = singleMode || keepMode || castWindowMode || buttonsMode;
-    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || slot === 'cost' || exclusive) ? 'radio' : 'checkbox');
+    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || slot === 'cost' || slot === 'stun' || exclusive) ? 'radio' : 'checkbox');
     const group = groupOverride !== undefined ? groupOverride
-      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : slot === 'cost' ? 'multi-target-cost' : (exclusive ? 'multi-target-single' : null)));
+      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : slot === 'cost' ? 'multi-target-cost' : slot === 'stun' ? 'multi-target-stun' : (exclusive ? 'multi-target-single' : null)));
     // B (2026-09-21): wiersz z jawnym cardId (okna rzutu, tryb przyciskowy) ma
     // go od wywołującego; wiersz-obiekt z zakrytej strefy dostaje kartę
     // z `hiddenObjectCardId` — inaczej klik w nazwę milczał (szczegóły przy
@@ -1447,6 +1479,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         } else if (slot === 'cost') {
           if (on) costChoice = id;
           else if (costChoice === id) costChoice = null;
+        } else if (slot === 'stun') {
+          if (on) stunChoice = id;
+          else if (stunChoice === id) stunChoice = null;
         } else {
           if (on) slotChoice[slot] = id;
           else if (slotChoice[slot] === id) slotChoice[slot] = null;
@@ -1477,6 +1512,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   };
 
   const refresh = () => {
+    // H: wybór stuna wygasa, gdy jego cel przestał być zaznaczony.
+    if (stunKey && stunChoice != null && !stunCandidates().includes(stunChoice)) stunChoice = null;
     syncRows();
     if (xCounter) xCounter.textContent = String(xValue ?? '');
     const cmd = currentCommand();
@@ -1537,13 +1574,18 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       setStatus(`X = ${xValue}${costPart}`, !cmd);
     } else if (costKey && costChoice == null) {
       setStatus(`Brakuje: ${plan.costLabel ?? 'koszt'}`, true);
+    } else if (stunKey && chosen.size > 0 && !cmd) {
+      // H: cele są, stun nie — status nazywa brakującą warstwę (nie samo „niedozwolony”).
+      setStatus(`Brakuje: ${plan.stunLabel ?? 'stun'} (wskaż jeden z zaznaczonych celów)`, true);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
       // pierwszy) na żywo w statusie, żeby gracz widział, ile many będzie
       // zapłacone, zanim kliknie „Zatwierdź wybór".
       const costPart = Number.isInteger(cmd.cost) ? ` · koszt: ${cmd.cost} many` : '';
-      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}${costPart}`, false);
+      const stunId = stunKey ? effectiveStun() : null;
+      const stunPart = stunId != null ? ` · ${plan.stunLabel ?? 'stun'}: ${objectOrPlayerName(view, session, stunId)}` : '';
+      setStatus(`Wybrano ${itemWord}: ${chosen.size}${plan.hasX ? ` · X = ${xValue}` : ''}${costPart}${stunPart}`, false);
     } else {
       setStatus(`Wybór niedozwolony (${itemWord}: ${chosen.size}${plan.hasX ? `, X = ${xValue}` : ''})`, true);
     }
@@ -1595,6 +1637,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   } else {
     // M257-r5/C: tryb poświęcenia dostaje NAGŁÓWKI sekcji (cele / ofiara).
     if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
+    // H: warstwa 1 ma własny nagłówek — wybór celów przed warstwą stuna.
+    if (stunKey) renderPickerSection(list, `${plan.targetsLabel ?? 'Cele'} (zaznacz ${range}):`, { className: 'multi-target-slot-label' });
     for (const id of plan.targets) addRow(id, null);
   }
 
@@ -1611,6 +1655,14 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   if (costKey) {
     renderPickerSection(list, `${plan.costLabel ?? 'Koszt'}:`, { className: 'multi-target-slot-label' });
     for (const id of plan.costs) addRow(id, 'cost');
+  }
+
+  // H: WARSTWA 2 — stun counter na jednym z wybranych celów. Wiersze są
+  // dostępne tylko dla kandydatów (patrz syncRows), więc gracz widzi, który
+  // cel dostanie licznik, dopiero po zaznaczeniu go w warstwie 1.
+  if (stunKey) {
+    renderPickerSection(list, `${plan.stunLabel ?? 'Stun counter'} — jeden z zaznaczonych celów:`, { className: 'multi-target-slot-label' });
+    for (const id of plan.stunIds) addRow(id, 'stun');
   }
 
   // A2-rewizja (decyzja właściciela 2026-09-12): kreator załogi startuje

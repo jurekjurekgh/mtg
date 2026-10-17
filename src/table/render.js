@@ -459,7 +459,9 @@ export function choiceRequestGroupKey(command) {
     // opcje są rozróżnialne. M87 (Steel Sabotage) zostaje spełnione inaczej:
     // grupa modalna jest TYTUŁOWANA rzutem („Rzuć: <karta>”), nie generycznym
     // „Cel czaru”.
-    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}`;
+    // M (Lab Rats): buyback to wariant rzutu (CR 702.27a), więc ma własną grupę
+    // — jak kicker. Inaczej warianty z dopłatą wpadłyby do grupy zwykłego rzutu.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
@@ -2445,6 +2447,46 @@ function cardCostHtml(card, cmd = null) {
  * Wyniesione z `commandLabel` (H): ta sama etykieta kosztu obsługuje teraz
  * także tytuły grup zdolności („Piercing Rays: Forecast (koszt {2}{W})").
  */
+/**
+ * I (zgłoszenie testera 2026-10-15, Vampire's Bite): koszt RZUTU z kickerem to
+ * baza + kicker (CR 702.33a; Oracle {B} + kicker {2}{B} = 2BB). Tytuł grupy
+ * czytał sam wydruk („koszt B”), a etykieta pojedynczej opcji już niosła
+ * „koszt B + kicker 2B”. Jedno źródło dla obu: definicja kickera z obiektu
+ * stanu (awaryjnie z katalogu), format jak w `commandLabel`. Bez kickera —
+ * zwykły koszt wydruku.
+ */
+function kickerCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
+  if (!cmd?.kicked) return '';
+  const kicker = session?.state?.objects?.get?.(cmd.objectId)?.kicker
+    ?? session?.cardDetails?.(object?.cardId)?.kicker ?? null;
+  if (!kicker) return '';
+  if (kicker.returnLand) return ' + kicker zwrot lądu';
+  const symbols = costSymbols(kicker.cost, kicker.colors);
+  return ` + kicker ${manaHtml ? manaCostHtml(symbols) : symbols}`;
+}
+
+/**
+ * M (zgłoszenie testera 2026-10-15, Lab Rats): buyback to DODATKOWY koszt płacony
+ * przy rzucaniu (CR 702.27a „as you cast this spell”), jak kicker — więc wariant
+ * z buyback dostaje dopłatę w etykiecie („+ buyback {4}”), inaczej dwie oferty
+ * rzutu wyglądają identycznie. Koszt bierzemy z definicji czaru (stan, a w razie
+ * braku katalog); bez znanego kosztu zostaje sama nazwa dodatku.
+ */
+function buybackCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
+  if (!cmd?.buyback) return '';
+  const cost = session?.state?.objects?.get?.(cmd.objectId)?.spell?.buyback?.cost
+    ?? object?.spell?.buyback?.cost
+    ?? session?.cardDetails?.(object?.cardId)?.spell?.buyback?.cost
+    ?? null;
+  if (!(cost > 0)) return ' + buyback';
+  const symbols = costSymbols(cost, []);
+  return ` + buyback ${manaHtml ? manaCostHtml(symbols) : symbols}`;
+}
+
+function castCostWithKickerHtml(object, cmd, session) {
+  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
+}
+
 function abilityCostHtmlOf(ability) {
   const cost = ability?.cost ?? {};
   const mana = [];
@@ -2727,7 +2769,7 @@ function choiceSourceTitle(cmd, session, view) {
     // Koszt doklejamy tylko wtedy, gdy jest znany (MANA_COSTS/karta) — stuby
     // testowe bez kosztu zachowują dotychczasowe brzmienie.
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    const withCost = kosztZnany ? ` (koszt ${cardCostHtml(object)})` : '';
+    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session)})` : '';
     // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
     // decyzją jest sam TRYB czaru.
     if (!cmd.targets?.length) {
@@ -2735,6 +2777,9 @@ function choiceSourceTitle(cmd, session, view) {
     }
     return mode?.name ? `Cel czaru: ${name} — ${mode.name}${withCost}` : `Cel czaru: ${name}${withCost}`;
   }
+  // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu. Dziś żadna
+  // karta z kickerem nie ma Cleave (sprawdzone na rejestrze). Gdy się pojawi —
+  // dopisać `kickerCostSuffixOf(cmd, object, session)` jak w gałęzi „Cel czaru”.
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
     return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
@@ -2865,9 +2910,19 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       // koszt ma być ikonami many (A, zgłoszenie właściciela 2026-09-21).
       const rawCost = MANA_COSTS[groupObject.cardId];
       const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost})` : ''}`;
+      // I (zgłoszenie 2026-10-15, Vampire's Bite): grupa, w której KAŻDA opcja
+      // jest z kickerem, niesie koszt łączny (baza + kicker), nie sam wydruk.
+      // Grupa mieszana (kicker i zwykła) zostaje przy wydruku — jej tytuł nie
+      // rozstrzyga o koszcie, a warianty rozróżniają etykiety opcji.
+      const kickerPart = options.every((o) => o?.kicked)
+        ? kickerCostSuffixOf(options[0], groupObject, session, { manaHtml })
+        : '';
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost}${kickerPart})` : ''}`;
     }
   }
+  // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu X. Dziś żadna
+  // karta z kickerem nie ma kosztu {X} (sprawdzone na rejestrze). Gdy się pojawi —
+  // dopisać `kickerCostSuffixOf(options[0], xObject, session, { manaHtml })`.
   // J (uwaga właściciela 2026-09-23c, Epic Experiment): grupa wariantów {X}
   // jednego czaru to JEDEN rzut — tytuł nazywa czynność i koszt z symbolem X
   // („Rzuć: Epic Experiment (koszt XUR)"), zamiast nazwy wariantu X=0.
@@ -3542,7 +3597,10 @@ function commandLabelBase(cmd, session, view) {
       const divisionPart = Array.isArray(cmd.damageDivision) && cmd.damageDivision.length > 0
         ? ` · obrażenia: ${cmd.damageDivision.map((d) => `${d.amount} → ${nameOfObjectId(d.id)}`).join(', ')}`
         : '';
-      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
+      // M (Lab Rats): dopłata buyback (CR 702.27a) — wariant rzutu z buyback
+      // musi być rozróżnialny od zwykłego rzutu w panelu „Twoje działania”.
+      const buybackPart = buybackCostSuffixOf(cmd, obj(cmd.objectId), session);
+      return `Rzuć: ${nameOfObjectId(cmd.objectId)}${modeName} (koszt ${costHtml}${xPart}${kickerPart}${buybackPart}${phy})${targets ? ` → cel: ${targets}` : ''}${divisionPart}${stunPart}${sac}${alt}${selfFizzle}${condLeastPowerFizzle}`;
     }
     case 'cast_cleave': {
       const targets = (cmd.targets ?? []).map((id) => nameOfObjectId(id)).join(', ');

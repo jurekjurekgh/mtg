@@ -4186,6 +4186,12 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_optional_pay_choice') return reject('optional_pay_unresolved');
     if (cmd.playerId !== state.pendingOptionalPay.playerId) return reject('optional_pay_not_your_decision');
     const pending = state.pendingOptionalPay;
+    // Audyt PR #165 (A-2): płatność energią jest atomowa (CR 601.2h). Brak
+    // pokrycia odrzucamy PRZED mutacją — decyzja zostaje u gracza, a ścieżka
+    // nie rzuca wyjątkiem (ruling PIP: nie można zapłacić więcej, niż się ma).
+    const energyDue = pending.ability?.trigger?.payEnergy ?? 0;
+    const energyHeld = state.players.find((player) => player.id === pending.playerId)?.energy ?? 0;
+    if (cmd.pay && energyDue > energyHeld) return reject('energy_insufficient');
     const before = state.events.length;
     state.pendingOptionalPay = null;
     if (cmd.pay) {
@@ -7874,7 +7880,12 @@ export function playerView(state, playerId) {
         reflexiveEffects: Object.freeze(reflexiveEffects),
       } : {}),
     };
-    legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
+    // Audyt PR #165 (A-2): „zapłać” tylko przy pokryciu energią (jak oferta
+    // kontr-płatności `producibleMana`); „nie płać” zawsze dostępne.
+    const energyForPayer = state.players.find((player) => player.id === state.pendingOptionalPay.playerId)?.energy ?? 0;
+    if ((optionalPayTrigger.payEnergy ?? 0) <= energyForPayer) {
+      legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
+    }
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSuspendCast) {
     // Suspend (CR 702.62a): jednorazowa decyzja — rzuć zawieszony czar za

@@ -774,6 +774,10 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   // Batch 58/B6 (Prishe's Wanderings): reflexive „when you search your library
   // this way" — zdolność na stosie po przeszukaniu (ruling FIN 2025-06-06).
   reflexive_search: 'refleks po przeszukaniu biblioteki („when you search this way")',
+  // Audyt pętli jakości (2026-10-15c, Żywy Tester partia 67006 the-edge×mirrodin-brg):
+  // Ambulatory Edifice — „you may pay 2 life. When you do, …" (refleks po zapłacie,
+  // game-state.js optionalPayFollowupAbility). Slug `reflexive_pay` wyciekał do logu.
+  reflexive_pay: 'refleks po zapłacie („when you do")',
   // PR #98 (Żywy Tester, innistrad-brg×worek-dziki seed 11): pseudo-zdolność
   // storm rodzi się w spells.js (spells.js:702), poza zasięgiem strażnika
   // M122 — w modalu wyciekał surowy slug „trigger (storm)".
@@ -889,6 +893,34 @@ export function triggerEventLabel(event, sourceController) {
  * nie co. Grob, wygnanie i pole bitwy sa jawne, wiec ich nie ma na liscie.
  */
 export const HIDDEN_ZONES = Object.freeze(new Set(['hand', 'library']));
+
+/**
+ * Trasa ruchu karty w tekście wpisu (pętla jakości 2026-10-15c, Clone Shell
+ * „reszta na spód”): biblioteka → biblioteka z `toBottom` to ODŁOŻENIE NA SPÓD,
+ * a nie przesunięcie — napis „biblioteka → biblioteka” był dla gracza bez sensu.
+ */
+export function trasaRuchuStref(e) {
+  if (e.fromZone === 'library' && e.toZone === 'library' && e.toBottom) return 'na spód biblioteki';
+  return `${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+}
+
+/**
+ * Czy wpis ruchu bota (modal „Rozgrywka") ma nazwać kartę (M192/Z1 + pętla
+ * jakości 2026-10-15c). Przeciwnikowi NIE nazywamy karty, która:
+ *   • przesuwa się MIĘDZY strefami ukrytymi (ręka/biblioteka, CR 400.2), albo
+ *   • wchodzi na pole bitwy lub na wygnanie ZAKRYTA (manifest, morph, cloak —
+ *     CR 701.40a / 708.2 / 406.3): tożsamość zakrytego obiektu nie jest jawna,
+ *     dopóki nie zostanie odsłonięta (`revealed`).
+ * Własne ruchy gracza i ruchy do stref jawnych (grób) zawsze są nazwane.
+ * Brak kontrolera → nazwa zostaje (jak dotąd).
+ */
+export function czyNazwacKarteRuchu(e, state, humanId = HUMAN_ID) {
+  const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
+  if (movedController == null || movedController === humanId || e.revealed === true) return true;
+  if (HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)) return false;
+  const zakryta = e.object?.faceDown === true && (e.toZone === 'battlefield' || e.toZone === 'exile');
+  return !zakryta;
+}
 
 export const ZONE_LABELS = Object.freeze({
   battlefield: 'pole bitwy',
@@ -1291,11 +1323,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           const shown = own ? nameOf(e.cardId) : FACE_DOWN_LABEL;
           return `${shown} zostaje rozstrzygnięty (twarzą w dół)`;
         }
-        const clashReturn = e.returnToHand ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
+        // Uwaga M (tura 15, b): zwrot z buyback (CR 702.27a) to NIE clash —
+        // osobny tekst; clash tylko gdy zdarzenie nie niesie returnedByBuyback.
+        const buybackReturn = e.returnedByBuyback ? ' — buyback: czar wraca do ręki właściciela' : '';
+        const clashReturn = e.returnToHand && !e.returnedByBuyback ? ' — wygrany clash zwraca czar do ręki właściciela' : '';
         const adventureReturn = e.adventure ? ' — przygoda rozstrzygnięta, karta czeka w exile (można rzucić stwora)' : '';
         // M91 (uwaga D): rozstrzygnięcie czaru modalnego nazywa wybrany tryb.
         const modeName = e.modeName ? ` — tryb: ${e.modeName}` : '';
-        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${clashReturn}${adventureReturn}`;
+        return `${nameOf(e.cardId)}${modeName} zostaje rozstrzygnięty${e.fizzled ? ' (cel nielegalny — bez efektu)' : ''}${buybackReturn}${clashReturn}${adventureReturn}`;
       }
       case 'aura_spell_cast': {
         const targets = (e.targets ?? []).map((id) => (isPlayer(id) ? whoN(id) : nameOfObject(id))).join(', ');
@@ -3464,13 +3499,11 @@ export function createSession(config) {
       // jawnej (pole bitwy, grob, wygnanie) nazywamy dalej — tam informacja
       // jest publiczna. Jawne odsloniecie (`revealed`) tez nazywamy.
       const movedController = e.object?.controllerId ?? state.objects.get(e.fromId)?.controllerId;
-      const hidden = movedController != null && movedController !== HUMAN_ID
-        && HIDDEN_ZONES.has(e.fromZone) && HIDDEN_ZONES.has(e.toZone)
-        && e.revealed !== true;
-      const movedName = hidden
-        ? 'karta'
-        : nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId);
-      text = `${who(movedController)}: ${movedName} — ${zoneLabel(e.fromZone)} → ${zoneLabel(e.toZone)}`;
+      // Reguła nazewnictwa w `czyNazwacKarteRuchu` (ukryte strefy + zakryte wejście).
+      const movedName = czyNazwacKarteRuchu(e, state, HUMAN_ID)
+        ? nameOf(e.object?.cardId ?? state.objects.get(e.fromId)?.cardId)
+        : 'karta';
+      text = `${who(movedController)}: ${movedName} — ${trasaRuchuStref(e)}`;
     } else {
       text = describeEvent(e);
       if (!text) return;

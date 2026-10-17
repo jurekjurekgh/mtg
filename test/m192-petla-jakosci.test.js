@@ -89,7 +89,8 @@ function collectMovesAcrossDecks() {
 // ---------------------------------------------------------------------------
 
 test('M192/Z1: modal nie nazywa kart bota przenoszonych MIEDZY strefami ukrytymi', () => {
-  const HIDDEN = /biblioteka → ręka|biblioteka → biblioteka|ręka → biblioteka/;
+  // „na spód biblioteki" (pętla 2026-10-15c) to ten sam ruch biblioteka → biblioteka.
+  const HIDDEN = /biblioteka → ręka|biblioteka → biblioteka|ręka → biblioteka|na spód biblioteki/;
   const leaks = [];
   for (const move of collectBotMoves()) {
     if (!HIDDEN.test(move.text ?? '')) continue;
@@ -109,9 +110,14 @@ test('M192/Z1 (anty-over-fix): ruchy dotykajace strefy JAWNEJ nadal nazywaja kar
   const publicMoves = moves.filter((m) => /(cmentarz|pole bitwy|wygnanie)/.test(m.text ?? '')
     && /—\s*[^→]+→/.test(m.text ?? ''));
   assert.ok(publicMoves.length > 0, 'proba musi zawierac ruchy dotykajace stref jawnych');
-  const anonymous = publicMoves.filter((m) => /: karta —/.test(m.text));
+  // Wyjatek (pętla jakości 2026-10-15c): WEJŚCIE NA POLE BITWY ZAKRYTE
+  // (manifest / morph) jest bezimienne — tożsamość zakrytego permanentu nie jest
+  // jawna (CR 701.40a, 708.2). Regułę pinuje test/tester-2026-10-15c-zakryta-karta-w-logu.test.js.
+  // Tu pilnujemy reszty: grób i wygnanie muszą nazywać kartę.
+  const anonymous = publicMoves.filter((m) => /: karta —/.test(m.text)
+    && !/→ pole bitwy$/.test(m.text));
   assert.deepEqual(anonymous.slice(0, 3).map((m) => m.text), [],
-    'karta w ruchu dotykajacym strefy jawnej musi byc nazwana');
+    'karta w ruchu dotykajacym strefy jawnej musi byc nazwana (poza zakrytym wejściem na pole bitwy)');
 });
 
 test('M192/Z1 (anty-over-fix): WLASNE ruchy gracza miedzy strefami ukrytymi sa nazwane', () => {
@@ -119,7 +125,7 @@ test('M192/Z1 (anty-over-fix): WLASNE ruchy gracza miedzy strefami ukrytymi sa n
   // dotyczy wylacznie przeciwnika. Gdyby bramka patrzyla na same strefy
   // (bez kontrolera), gracz przestalby widziec WLASNE karty.
   const moves = collectMovesAcrossDecks().filter((m) => /^Ty: /.test(m.text ?? ''));
-  const ownHidden = moves.filter((m) => /(biblioteka → ręka|ręka → biblioteka|biblioteka → biblioteka)/.test(m.text));
+  const ownHidden = moves.filter((m) => /(biblioteka → ręka|ręka → biblioteka|biblioteka → biblioteka|na spód biblioteki)/.test(m.text));
   assert.ok(ownHidden.length > 0, 'proba musi zawierac wlasne ruchy w strefach ukrytych');
   const anonymous = ownHidden.filter((m) => /: karta —/.test(m.text));
   assert.deepEqual(anonymous.slice(0, 3).map((m) => m.text), [],

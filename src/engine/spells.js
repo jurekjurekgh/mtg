@@ -2459,7 +2459,7 @@ export function resolveTopOfStack(state) {
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, stackId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
-    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled, returnToHand: true });
+    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled, returnToHand: true, returnedByBuyback: Boolean(object.wasBuyback) });
     state.events.push(resolved);
     return state.events.slice(before);
   }
@@ -2887,7 +2887,7 @@ export function finishPendingSpell(state, stackId, remainingEffects) {
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, stackId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: stackId, object: moved, fromZone: 'stack', toZone: 'hand', returnedByClash: true }));
-    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, returnToHand: true });
+    const resolved = event('spell_resolved', { fromId: stackId, toId: handId, cardId: object.cardId, controllerId: object.controllerId, fizzled: false, returnToHand: true, returnedByBuyback: Boolean(object.wasBuyback) });
     state.events.push(resolved);
     return state.events.slice(before);
   }

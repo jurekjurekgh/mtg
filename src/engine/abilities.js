@@ -61,11 +61,6 @@ function collectManaAmount(effects) {
 }
 
 /**
- * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
- * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
- * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
- */
-/**
  * M255/C1: etykiety efektów dla logu stołu. `lose_life` bez zakresu znaczy
  * „każdy przeciwnik" (CR 119.3), a etykieta bazowa mówi „cel traci życie" —
  * więc zdarzenie niesie klucz `lose_life_each_opponent`, rozwiązany TU, gdzie
@@ -80,6 +75,11 @@ function effectTypeLabelsForLog(effects) {
   }).filter(Boolean);
 }
 
+/**
+ * M175/A1 (uwaga wlasciciela, Death-Hood Cobra): keywordy nadawane przez
+ * zdolnosc — do zdarzenia `ability_activated`, zeby log stolu nazwal KONKRET
+ * („nadanie do konca tury: zasieg"), a nie ogolnik „nadanie slow kluczowych".
+ */
 function collectGrantKeywords(effects) {
   const keywords = [];
   for (const effect of effects ?? []) {
@@ -544,45 +544,70 @@ function abilityEffectIsNoOp(state, source, ability, target) {
 }
 
 /**
- * DOMYŚLNY podzbiór stworów do kosztu crew/saddle (JEDYNA oferta silnika —
- * A2/A3, znaleziska właściciela 2026-09-12: enumeracja podzbiorów dawała
- * modal ze ścianą kombinacji, a przy >6 stworach cap ucinał wszystko poza
- * pierwszym wariantem, więc silnik „sam dobierał załogę").
+ * Domyślny podzbiór załogi/siodła (A2/A3, L, tura 13 właściciela).
  *
- * CR 702.122a (Crew; CR efektywny 2026-08-07, pobrane 2026-09-12):
- * „Crew N" means "Tap any number of other untapped creatures you control
- * with total power N or greater: This permanent becomes an artifact
- * creature until end of turn."
- * CR 702.171a (Saddle): „Saddle N" means "Tap any number of other untapped
- * creatures you control with total power N or greater: This permanent
- * becomes saddled until end of turn. Activate only as a sorcery."
+ * Reguły w kolejności ważności:
+ *  1. Stwory o mocy MNIEJSZEJ niż pojazd (dla saddle: wierzchowiec) są
+ *     preferowane. Stwór o mocy RÓWNEJ LUB WIĘKSZEJ niż pojazd tapuje się tylko
+ *     wtedy, gdy same mniejsze stwory nie dają wymaganej sumy — tapowanie
+ *     5/5, żeby zasilić Bomata 5/5, nie ma sensu, skoro atakuje ten sam rozmiar.
+ *  2. Z puli wybierany jest podzbiór o NAJMNIEJSZEJ NADWYŻCE ponad wymaganą
+ *     moc (suma − N = 0 jest najlepsza), a przy remisie — NAJMNIEJ stworów.
+ *     Dokładna wartość Crew wygrywa z „większą" (np. 2+1 zamiast 2+2 przy N=3).
+ *  3. Porządek wyjścia: od najmocniejszych (deterministycznie, ADR 0005).
  *
- * Default = zachłannie najsłabsze (rosnąco po mocy, remis po kolejności pola
- * bitwy): tapuje chaff, zostawia atakujących. Deterministyczny (ADR 0005).
- * Stwory o mocy 0 POMIJANE — dokładają tap za nic (A3: „tapnij Wizard
- * (0 power), Hero" — Wizard był czystą stratą; każdy legalny podzbiór z zerem
- * jest legalny i bez niego, więc pominięcie nigdy nie gubi oferty).
- * Choroba przywołania NIE wyklucza (tapanie cudzym kosztem, CR 302.6 dotyczy
- * własnych {T} i ataku) — jak dotąd, kandydatów filtruje wywołujący.
- * Człowiek zmienia wybór w kreatorze załogi (UI), bot bierze default.
- * Zwraca null, gdy mocy nie starcza (brak oferty).
+ * Wybór liczony programowaniem dynamicznym po sumie mocy (najmniej stworów
+ * do osiągnięcia dokładnej sumy s; najmniejsze s ≥ N daje najmniejszą nadwyżkę).
+ * Stwory o mocy 0 POMIJANE (A3: tap za nic). Choroba przywołania NIE wyklucza
+ * (CR 302.6 — tapanie cudzym kosztem). Człowiek zmienia wybór w kreatorze
+ * załogi (UI); bot bierze default. Zwraca null, gdy mocy nie starcza.
  */
-function defaultCrewSubset(state, crewableIds, neededPower) {
+function defaultCrewSubset(state, crewableIds, neededPower, vehiclePower = null) {
   if (!(neededPower > 0) || crewableIds.length === 0) return null;
   const powerOf = (id) => effectivePower(state.objects.get(id), state) ?? 0;
-  const ordered = [...crewableIds]
-    .filter((id) => powerOf(id) > 0)
-    .sort((a, b) => powerOf(a) - powerOf(b));
-  const totalPower = ordered.reduce((sum, id) => sum + powerOf(id), 0);
-  if (totalPower < neededPower) return null;
-  const out = [];
-  let acc = 0;
-  for (const id of ordered) {
-    if (acc >= neededPower) break;
-    out.push(id);
-    acc += powerOf(id);
+  const sumOf = (ids) => ids.reduce((sum, id) => sum + powerOf(id), 0);
+  const usable = crewableIds.filter((id) => powerOf(id) > 0);
+  // Reguła 1: pula mniejszych stworów, jeśli sama wystarcza na załogę.
+  const smaller = vehiclePower == null ? usable : usable.filter((id) => powerOf(id) < vehiclePower);
+  const pool = sumOf(smaller) >= neededPower ? smaller : usable;
+  if (sumOf(pool) < neededPower) return null;
+  // Porządek: od najmocniejszych, remis = kolejność pola bitwy (stabilny sort).
+  const ordered = [...pool].sort((a, b) => powerOf(b) - powerOf(a));
+  const total = sumOf(ordered);
+  // Reguła 2: minCount[s] = najmniej stworów o sumie dokładnie s (0/1-plecak).
+  const minCount = new Array(total + 1).fill(Infinity);
+  minCount[0] = 0;
+  const took = ordered.map(() => new Array(total + 1).fill(false));
+  ordered.forEach((id, index) => {
+    const p = powerOf(id);
+    for (let s = total; s >= p; s -= 1) {
+      if (minCount[s - p] + 1 < minCount[s]) {
+        minCount[s] = minCount[s - p] + 1;
+        took[index][s] = true;
+      }
+    }
+  });
+  let target = -1;
+  for (let s = neededPower; s <= total; s += 1) {
+    if (minCount[s] !== Infinity) { target = s; break; }
   }
-  return acc >= neededPower ? out : null;
+  if (target < 0) return null;
+  const out = [];
+  let s = target;
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    if (s > 0 && took[index][s]) {
+      out.push(ordered[index]);
+      s -= powerOf(ordered[index]);
+    }
+  }
+  return out.reverse();
+}
+
+/** Moc pojazdu/wierzchowca do reguły „nie tapuj większych” (drukowana, gdy nie animowany). */
+function crewVehiclePowerOf(state, id) {
+  const object = state.objects.get(id);
+  if (!object) return null;
+  return effectivePower(object, state) ?? object.power ?? null;
 }
 
 // CR 602.1a: poświęcenie stwora to koszt, NIE cel zdolności. „Another”
@@ -902,7 +927,7 @@ export function legalActivatedAbilities(state, playerId) {
           return candidate && candidate.id !== id && candidate.controllerId === playerId
             && candidate.kind === 'creature' && !candidate.tapped;
         });
-        const subset = defaultCrewSubset(state, crewables, ability.cost.crewPower);
+        const subset = defaultCrewSubset(state, crewables, ability.cost.crewPower, crewVehiclePowerOf(state, id));
         if (subset) out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
         continue;
       }
@@ -913,7 +938,7 @@ export function legalActivatedAbilities(state, playerId) {
           return candidate && candidate.id !== id && candidate.controllerId === playerId
             && candidate.kind === 'creature' && !candidate.tapped;
         });
-        const subset = defaultCrewSubset(state, saddlers, ability.cost.saddlePower);
+        const subset = defaultCrewSubset(state, saddlers, ability.cost.saddlePower, crewVehiclePowerOf(state, id));
         if (subset) out.push({ objectId: id, abilityIndex: index, ability, crewCreatureIds: subset });
         continue;
       }

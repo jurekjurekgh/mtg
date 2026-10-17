@@ -1571,7 +1571,7 @@ function cardCostReductionForView(view, def) {
  * Obsługujemy warunki obecne w katalogu; nieznany warunek zwraca koszt bazowy
  * (anty-over-fix M429: nic nie zgadujemy).
  */
-function abilityManaCostForView(view, def, ability, sourceObject) {
+function abilityManaCostForView(view, ability, sourceObject) {
   const base = ability?.cost?.mana ?? 0;
   const reduction = ability?.costReduction;
   const colored = (ability?.cost?.colors ?? []).length;
@@ -3721,6 +3721,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       razem += amount(eff);
     }
     return razem;
+  };
+
+  /**
+   * G (uwagi właściciela 2026-10-15, Pyxis of Pandemonium): zdolność, która
+   * SYMETRYCZNIE wyjmuje kartę z bibliotek OBU graczy — wygnanie wierzchu
+   * (`each_player_exiles_top_face_down`) i mielenie „each player mills\"
+   * (`mill_both_players`, Ghoulcaller's Bell). Właściciel: każda z dwóch
+   * przesłanek MA BLOKOWAĆ użycie: (a) mamy mniej kart w bibliotece niż
+   * przeciwnik, (b) mamy poniżej 10 kart. Oba prowadzą wprost do śmierci z
+   * braku kart (CR 121.4, 704.5b), więc to TWARDE weto, a nie kara wagowa —
+   * wycena wyścigu z M162/B zostaje jako dodatkowa warstwa powyżej progu.
+   * Klasa po typie efektu (ADR 0002), nie po nazwie karty. Zwraca true = weto.
+   */
+  const SYMMETRIC_DRAIN_EFFECTS = new Set(['each_player_exiles_top_face_down', 'mill_both_players']);
+  const SYMMETRIC_DRAIN_MIN_LIBRARY = 10;
+  const symmetricDrainVeto = (view, cmd) => {
+    if (cmd?.type !== 'activate_ability') return false;
+    const object = objectOnBoard(view, cmd.objectId) ?? handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const abilities = object?.activatableAbilities
+      ?? (object?.cardId ? cardDef(object.cardId)?.abilities : undefined) ?? [];
+    const ability = abilities[cmd.abilityIndex ?? 0];
+    const effects = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+    if (!effects.some((eff) => SYMMETRIC_DRAIN_EFFECTS.has(eff?.type))) return false;
+    const mojaBiblioteka = myLibraryCount(view);
+    const bibliotekaPrzeciwnika = view.zones.library.filter((o) => o.controllerId !== view.playerId).length;
+    return mojaBiblioteka < bibliotekaPrzeciwnika || mojaBiblioteka < SYMMETRIC_DRAIN_MIN_LIBRARY;
   };
 
   /**
@@ -5981,6 +6007,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       .reduce((sum, o) => sum + combatPower(o), 0);
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
+
+  /**
+   * K (zgłoszenie właściciela 2026-10-15, Glint-Sleeve Artisan): czy bot ma
+   * SYNERGIĘ z ofiarą kreatury, dla której token 1/1 jest wart więcej niż
+   * +1/+1 na stworze. Dwa źródła, oba z definicji karty (ADR 0002 — klasa,
+   * nie nazwa):
+   *  • karta NA RĘCE z kosztem dodatkowym „ofiara kreatury”
+   *    (`spell.additionalCost.sacrificeCreature`, np. Village Rites);
+   *  • WŁASNA permanentna z zdolnością „ofiara kreatury” w koszcie
+   *    (`abilities[].cost.sacrificeCreature`, np. Angel's Herald).
+   * Przeciwnika karty nie liczą — jego ręki bot nie zna, a jego wyrzutnia
+   * nie jest dla bota synergią.
+   */
+  function sacrificeSynergyOf(view) {
+    // `sacrificeCreaturesByColors` (np. Angel's Herald: zielony + biały +
+    // niebieski stwór) to też ofiara kreatury — inny kształt zapisu tego samego kosztu.
+    const sacrificesCreature = (cost) => Boolean(cost?.sacrificeCreature)
+      || Boolean(cost?.sacrificeCreaturesByColors);
+    const needsCreatureSacrifice = (def) => sacrificesCreature(def?.spell?.additionalCost)
+      || (def?.abilities ?? []).some((ability) => sacrificesCreature(ability?.cost));
+    const inHand = (view.zones.hand ?? []).some((o) => o.controllerId === view.playerId
+      && needsCreatureSacrifice(cardDef(o.cardId)));
+    if (inHand) return true;
+    return (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+      && needsCreatureSacrifice(cardDef(o.cardId)));
+  }
 
   /**
    * Który ląd z ręki zagrać, gdy jest ich więcej niż jeden (audyt bota, PR #93 t. 5).
@@ -9097,6 +9149,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // `libraryDrainTax`), a kara należy się wariantowi niezależnie od ścieżki.
     const libraryTax = libraryDrainTax(view, cmd);
     const finish = (score) => weightedScore(cmd.type, score - wardTax - libraryTax + (score > 0 ? surgeSaving * P.creatureManaCostWeight : 0));
+    // G (uwagi właściciela 2026-10-15): weto symetrycznego drenażu bibliotek —
+    // Pyxis / Ghoulcaller's Bell przy mniejszej bibliotece niż przeciwnik lub <10 kartach.
+    if (symmetricDrainVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -11179,8 +11234,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
           // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
           // wyceny presji na życie obie rodziny mają tę samą skalę.
+          // Audyt PR #165 (B-1, L41): brak `scope` = każdy przeciwnik — tak jak
+          // w silniku (effects.js, `lose_life`) i w etykiecie logu.
           else if (effect.type === 'lose_life'
-            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            && (effect.scope ?? 'each_opponent') === 'each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
           // Batch 56 (energia, CR 122.1): „you get {E}×N" w zdolności
@@ -11565,6 +11622,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && JSON.stringify(entry.targets ?? []) === JSON.stringify(cmd.targets ?? []));
           if (alreadyShielded || pendingTwin) return finish(-30);
         }
+        // N (uwagi z testów 2026-10-16, Enduring Sliver): klasa „outlast" —
+        // zdolność sorcery-speed z kosztem {T} NA SAMYM źródle, której cały efekt
+        // to dołożenie licznika na siebie (CR 702.107a). Taka aktywacja tapuje
+        // stwora, więc w głównej 1 zabiera mu atak, a licznik można dołożyć
+        // równie dobrze w głównej 2 (tam stwór, który nie atakował, jest już
+        // odtapowany, a mana wiadomo, że wolna). Klasyfikacja po efekcie
+        // (ADR 0002), nie po nazwie. Dopóki stwór może atakować, pas w głównej 1
+        // wygrywa — walka go obsłuży albo wraca tu w głównej 2. Stwór z chorobą
+        // przywołania i już tapnięty nie wchodzi tu: `canAttackNow` zwraca false.
+        const onlySelfCounter = effects.length > 0 && effects.every((e) => e?.type === 'add_counter')
+          && !(cmd.targets ?? []).length;
+        if (taps && onlySelfCounter && source && ability?.timing === 'sorcery' && myTurn(view)
+          && view.turn.phase === 'precombat_main' && canAttackNow(source)) {
+          return finish(-40);
+        }
         // Patologia B1: aktywacja kosztem tapu we własnym untap zostawiłaby
         // stwora tapowanego całą turę (bot stał w miejscu i deck-outował).
         if (wastefulStep(view)) return finish(taps || tapsCreature ? -30 : -5);
@@ -11625,7 +11697,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // PMSSB-62/F2: koszt z obniżką (CR 602.2b → 601.2f) — jedno źródło
         // prawdy z silnikiem (`effectiveAbilityManaCost`); PMSSB-34 wymiar
         // kosztu zostaje, ale na kwocie FAKTYCZNIE płaconej.
-        const abilityManaCost = abilityManaCostForView(view, abilityObject?.cardId ? cardDef(abilityObject.cardId) : undefined, ability, abilityObject)
+        const abilityManaCost = abilityManaCostForView(view, ability, abilityObject)
           + (ability?.cost?.generic ?? 0);
         if (abilityManaCost > 0 && !abilityEffectTypes.includes('add_mana')) {
           score -= P.abilityManaCostPenalty * abilityManaCost;
@@ -11789,8 +11861,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // dawała +2,0000 (samą bazę) — efekt „każdy przeciwnik traci 2
           // życia" był wart 0 pkt. CR 119.3: utrata życia ≠ obrażenia, ale dla
           // wyceny presji na życie obie rodziny mają tę samą skalę.
+          // Audyt PR #165 (B-1, L41): brak `scope` = każdy przeciwnik — tak jak
+          // w silniku (effects.js, `lose_life`) i w etykiecie logu.
           else if (effect.type === 'lose_life'
-            && (effect.scope === 'each_opponent' || effect.scope === 'opponent')) {
+            && (effect.scope ?? 'each_opponent') === 'each_opponent') {
             score += opponentLifeEffectValue(view, effect);
           }
           // M221/A (zgłoszenie właściciela, Panic Spellbomb): „{T}, poświęć:
@@ -15066,9 +15140,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // na stole jest mniej własnych stworów (rozlewają board); w innym wypadku
       // pompuj istniejące. Generycznie (ADR 0002): tokeny mają przewagę liczebną
       // + synergia z anthem/trample/evasion; counter lepszy, gdy stwór już atakuje.
+      // K (zgłoszenie właściciela 2026-10-15, Glint-Sleeve Artisan): dotąd
+      // tokeny 15 i liczniki 10 NA STAŁE, więc bot ZAWSZE brał Servo — a
+      // komentarz wyżej obiecywał preferencję tokenów przy mniejszej liczbie
+      // stworów, czego kod nie robił. Właściciel: +1/+1 na stworze to domyślny
+      // wybór zwykłej gry; token ma sens dopiero przy synergii z ofiarą
+      // kreatury (`sacrificeSynergyOf`: karta na ręce albo własna wyrzutnia).
       case 'resolve_fabricate': {
-        if (cmd.mode === 'tokens') return finish(15);
-        if (cmd.mode === 'counters') return finish(10);
+        if (cmd.mode === 'tokens') return finish(sacrificeSynergyOf(view) ? 20 : 8);
+        if (cmd.mode === 'counters') return finish(15);
         return finish(0);
       }
       // Manifest Dread (M251, Batch 46): z dwóch wierzchnich kart wybierz jedną
