@@ -10287,7 +10287,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // PMSSB-63: czysty masowy czar (same destroy_all) startuje od kosztu karty,
         // nie od premii spellBase — jego wartosc to netto stolu (massDestroyValue).
         const pureMassSpell = effects.length > 0 && effects.every((e) => e?.type === 'destroy_all');
+        // PMSSB-63/S (Secure the Scene): WYMIANA CIAŁ — wygnanie celu + token dla
+        // kontrolera celu. Wartość = karta wroga i jej ciało minus ciało tokena
+        // (ta sama jednostka co Austere), a koszt MOJEJ karty i many liczymy tą
+        // samą arytmetyką co stworzenia (L41: `creatureManaCostWeight`, S11 —
+        // dotąd 5 i 2 many wyceniały się identycznie: 67.95 vs 67.98). Start to
+        // więc −(koszt karty + many), NIE bazowe 50 (inaczej każda wymiana
+        // 1-za-1 wychodzi na plus, także na 1/1 za token 1/1).
+        const exileSwap = effects.some((e) => e?.captureControllerAs)
+          && effects.some((e) => e?.type === 'create_token' && e?.controllerFromCapture);
         let score = pureMassSpell ? -P.massDestroyCastCost : P.spellBase;
+        if (exileSwap) score = -(P.massDestroyCastCost + P.creatureManaCostWeight * (card?.manaCost ?? 0));
         // PMSSB-63 (Austere Command): masowe zniszczenie wyceniamy z modelu stolu.
         // Filtr, ktory nie trafia w nic — czar pusty → −70.
         {
@@ -10686,7 +10696,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 score -= P.removalPureLandPenalty;
               } else {
                 const worth = (victim.power ?? 0) + (victim.toughness ?? 0);
-                score += P.removalEnemyBase + P.removalWorthWeight * worth;
+                // PMSSB-63/S: w wymianie ciał (exileSwap) wygnanie wartościowe jak
+                // Austere: karta wroga + jego ciało; baza removalu nie dotyczy, bo
+                // token zastępuje ciało (inaczej 1/1 za token 1/1 = +22).
+                if (exileSwap) score += P.massDestroyCardValue + massDestroyWorth(view, victim);
+                else score += P.removalEnemyBase + P.removalWorthWeight * worth;
                 // M234 — efektywność removalu: TMC (proxy zdolności) + cele „nie
                 // do przejścia" w walce (deathtouch, protekcja od mojego koloru).
                 score += enemyRemovalTargetBonus(view, victim);
@@ -11089,9 +11103,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Cel wroga → token wrogi (ujemna rola, ZNAK tokenControllerId) — dar, nie zysk.
             const captureTarget = effect.controllerFromCapture
               ? objectOnBoard(view, cmd.targets?.[0] ?? null) : null;
-            const tokenValue = effect.controllerFromCapture
-              ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
-              : tokenBodyValue(view, effect);
+            // PMSSB-63/S: w wymianie ciał token liczy się jednostką ciała (2·moc+wytrzymałość,
+            // jak massDestroyWorth bez MV), ze znakiem kontrolera celu: swój = +, wroga = −.
+            const tokenValue = effect.controllerFromCapture && exileSwap
+              ? ((captureTarget?.controllerId ?? view.playerId) === view.playerId ? 1 : -1)
+                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0))
+              : effect.controllerFromCapture
+                ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
+                : tokenBodyValue(view, effect);
             score += tokenValue;
             if (isCreatureTokenEffect(effect)) tokenCastHadCreatureEffect = true;
             spellMakesTokens = true;
@@ -13271,7 +13290,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // Kara poniżej passu (L3: musi przebić premię +2).
             const remaining = searchTargetsRemaining(view, ability.cycling ?? {});
             if (remaining === 0) return finish(-12);
-            score += 2;
+            // PMSSB-63/K (Kulrath Zealot, basic landcycling): wymiana karty na ląd
+            // to ta sama miara co szukanie (L41, PMSSB-29/30): wartość znalezionego
+            // landu (`landKeepValue` — drabina land) minus wartość oddanej karty
+            // (`cardKeepValue`). Dawniej flat +2: przy 0 lądach 6-drop, który nie
+            // wyjdzie przez kilka tur, był warty tyle co nic (KUL2/KUL3: best 2).
+            // Bramki −5 (ziem wystarczy) i −12 (nie ma czego szukać) zostają.
+            const fetchedLand = { kind: 'land', types: ['Land'], id: '__landcycle__', controllerId: view.playerId };
+            score += cardKeepValue(view, fetchedLand) - cardKeepValue(view, cycled);
           }
         }
         return finish(score);
