@@ -2347,7 +2347,7 @@ export function legalAuraCasts(state, playerId) {
   for (const id of auraSourceIds) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
-    out.push(...legalAuraCastsForObject(state, playerId, object));
+    for (const cast of legalAuraCastsForObject(state, playerId, object)) out.push(cast);
   }
   return out;
 }

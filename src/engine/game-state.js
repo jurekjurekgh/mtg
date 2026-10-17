@@ -9374,7 +9374,9 @@ export function playerView(state, playerId) {
   // odzwierciedlać liczbę RÓŻNYCH decyzji (ta sama zasada co dedup wariantów
   // mulligana w M119/Z3 i ofert szukania w M122/#2). Identyczna komenda
   // dwa razy to zawsze błąd prezentacji, niezależnie od tego, kto ją dodał.
-  legalCommands.push(...trailingCommands);
+  // O-2 (2026-10-17): pętla zamiast `push(...tablica)` — przy dużej ofercie
+  // celów spread przekracza stos (100 stworów → „Maximum call stack size exceeded”).
+  for (const cmd of trailingCommands) legalCommands.push(cmd);
 
   {
     const seenCommandKeys = new Set();
@@ -9386,7 +9388,7 @@ export function playerView(state, playerId) {
       unique.push(cmd);
     }
     legalCommands.length = 0;
-    legalCommands.push(...unique);
+    for (const cmd of unique) legalCommands.push(cmd);
   }
   // Batch 57/B6b (Baral and Kari Zev): widok decyzji darmowego rzutu z ręki
   // dla JEJ właściciela. `alternative` mówi, że rezygnacja ma własny skutek

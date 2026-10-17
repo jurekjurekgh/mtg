@@ -126,28 +126,19 @@ test('O/5: można zatwierdzić 3 cele', () => {
 
 // Oferta ucięta limitem (7 stworów → zero kombinacji po dwa cele). Kreator musi
 // dać wybrać dowolny zestaw, a silnik waliduje wynik.
-test('O/6: 7 stworów — można zatwierdzić 2 cele (oferta nie zawiera tej kombinacji)', () => {
+test('O/6: 7 stworów — 2 cele zatwierdzalne (oferta KOMPLETNA, O-2 zlecenie 2026-10-17)', () => {
   const r = zatwierdz([0, 2], 7);
   assert.ok(r.submitted && r.submitted.targets.length === 2, `2 cele: ${JSON.stringify(r.submitted)}`);
-  assert.equal(r.commands.filter((c) => c.targets.length === 2).length, 0, 'kontrola: oferta nie ma dwuelementowych');
+  // C(7,2) = 21 dwuelementowych kombinacji — wszystkie w ofercie, bez limitu.
+  assert.equal(r.commands.filter((c) => c.targets.length === 2).length, 21, 'kontrola: pełna oferta par');
 });
 
-test('O/7: 7 stworów — można zatwierdzić 3 cele spoza oferty i wykonać je w silniku', () => {
-  // Szukamy trójki, której oferta NIE zawiera (limit 32 ucina część trójek).
-  const probe = zatwierdz([], 7);
-  const ids = probe.state.objects ? [...probe.state.objects.keys()].filter((k) => /^c\d+$/.test(k)).sort() : [];
-  const offered = new Set(probe.commands.filter((c) => c.targets.length === 3).map((c) => [...c.targets].sort().join()));
-  let pick = null;
-  for (let a = 0; a < 7 && !pick; a += 1) for (let b = a + 1; b < 7 && !pick; b += 1) for (let c = b + 1; c < 7 && !pick; c += 1) {
-    const key = [ids[a], ids[b], ids[c]].sort().join();
-    if (!offered.has(key)) pick = [a, b, c];
-  }
-  assert.ok(pick, 'kontrola: istnieje trójka spoza oferty');
-  const r = zatwierdz(pick, 7);
+test('O/7: 7 stworów — dowolna trójka jest w ofercie i wykonuje się w silniku', () => {
+  const r = zatwierdz([0, 3, 6], 7);
   assert.ok(r.submitted && r.submitted.targets.length === 3, `3 cele: ${JSON.stringify(r.submitted)}`);
-  assert.ok(!offered.has([...r.submitted.targets].sort().join()), 'zatwierdzony zestaw spoza oferty silnika');
+  assert.ok(r.commands.some((c) => c.targets.length === 3), 'kontrola: trójki są w ofercie');
   const res = execute(r.state, r.submitted);
-  assert.equal(res.ok, true, `silnik przyjmuje komendę z wybranymi celami: ${res.reason ?? ''}`);
+  assert.equal(res.ok, true, `silnik przyjmuje komendę z wybranymi celami: ${res.events?.[0]?.reason ?? ''}`);
 });
 
 test('O/8: 7 stworów — 0 celów zatwierdzalne', () => {
@@ -156,16 +147,19 @@ test('O/8: 7 stworów — 0 celów zatwierdzalne', () => {
   assert.ok(r.submitted && r.submitted.targets.length === 0);
 });
 
-test('O/9: 3 stwory (oferta pełna) — plan nie jest w trybie wolnych celów (bez zmiany zachowania)', () => {
+test('O/9: 3 stwory — oferta jest kompletna (C(3,0..3) = 1+3+3+1 = 8 kombinacji)', () => {
   const state = stol(3);
   const commands = playerView(state, 'p1').legalCommands.filter((c) => c.objectId === 'wrap');
-  assert.equal(multiTargetPlanOf(commands).freeTargets, false);
+  assert.equal(commands.length, 8);
 });
 
-test('O/10: 7 stworów — plan ma tryb wolnych celów', () => {
-  const state = stol(7);
-  const commands = playerView(state, 'p1').legalCommands.filter((c) => c.objectId === 'wrap');
-  assert.equal(multiTargetPlanOf(commands).freeTargets, true);
+test('O/10: 40 stworów — oferta obejmuje KAŻDĄ parę i trójkę (bez limitu), a 3 cele z końca stołu działają', () => {
+  const r = zatwierdz([37, 38, 39], 40);
+  assert.ok(r.submitted && r.submitted.targets.length === 3, `3 cele z końca: ${JSON.stringify(r.submitted)}`);
+  // 1 + 40 + C(40,2) + C(40,3) = 1 + 40 + 780 + 9880 = 10701 kombinacji.
+  assert.equal(r.commands.length, 10701);
+  const res = execute(r.state, r.submitted);
+  assert.equal(res.ok, true, `silnik przyjmuje trójkę z końca stołu: ${res.events?.[0]?.reason ?? ''}`);
 });
 
 test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź” wyłączone, komenda nie powstaje', () => {
@@ -175,4 +169,13 @@ test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź
   const r = zatwierdz([0, 1, 2, 3], 7);
   assert.equal(r.confirmDisabled, true, 'kreator nie zatwierdza ponad maxTargets');
   assert.equal(r.submitted, null);
+});
+
+test('O/13 (O-2): 100 stworów — oferta bez błędu (wcześniej „Maximum call stack size exceeded”)', () => {
+  // 1 + 100 + C(100,2) + C(100,3) = 1 + 100 + 4950 + 161700 = 166751 kombinacji.
+  // Regresja: spread `push(...tablica)` w playerView/legalTargetCombos przekraczał stos.
+  const state = stol(100);
+  const view = playerView(state, 'p1');
+  const commands = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'wrap');
+  assert.equal(commands.length, 166751);
 });
