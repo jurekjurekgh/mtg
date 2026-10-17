@@ -65,5 +65,5 @@ atakować) zostają nietknięte, bo `canAttackNow` wtedy zwraca false.
       zmieniona para: dominaria-wu vs forgotten-realms, 16/16 → 15/16 (talia z Enduring Sliver).
       Pomiar 16 seedów = jedna partia; decyzja właściciela z gry.
 - [x] build rc=0.
-- [ ] Commit, push bez force, opis PR #166 (wiersz N).
-- [ ] Odpowiedź właścicielowi.
+- [x] Commit, push bez force, opis PR #166 (wiersz N). — domknięte scaleniem PR #166 (squash `24ff1a5`); odhaczone w sesji 2026-10-17.
+- [ ] Odpowiedź właścicielowi. — (pozostaje otwarte: wymaga potwierdzenia właściciela; agent nie odhacza go sam).

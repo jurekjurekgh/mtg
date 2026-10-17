@@ -19,6 +19,28 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-17 — Sesja domyślna (ADR 0021): PR sesji, audyt PR #166 (PR #167)
+
+Zlecenie „Kontynuujemy projekt.” bez tematu → pętla domyślna. Plan:
+`docs/plans/PLAN_2026-10-17-domyslna-petla-audyt-pr166.md`. Audyt:
+`docs/audits/AUDYT_PR166_2026-10-17.md`.
+
+- **PR #167** (ADR 0020 A), gałąź `arena/4fcdc89b-mtg`, base `main`. Bez scalania (ADR 0007).
+- **Audyt PR #166 (B):** 13 plików kodu (+463/−77), 19 plików testów, 16 dokumentów.
+  Sondy w `.arena/` (nie w repo) potwierdziły dwa ustalenia:
+  - **O-1 — naprawione (`334c799`):** tryb wolnych celów (Wrap in Flames) pozwalał zatwierdzić
+    4 cele przy „up to three”; silnik odrzucał to dopiero przy wykonaniu. Test RED/GREEN `O/11`.
+  - **O-2 — otwarte (decyzja właściciela):** przy ~40 kandydatach kreator pokazuje 31 celów
+    i nie włącza trybu wolnych celów. Przyczyna: limit 32 ofert + detekcja obcięcia liczona
+    na już obciętej liście. Dziewięć kreatur jest niewybieralnych bez sygnału dla gracza.
+- **Bramy:** `npm test` 8293/8293 (baza) → 8294/8294 po O-1, rc=0; `npm run build` rc=0
+  (74 moduły); `tools/cr-numery.mjs` OK (5834 cytatów). Pełny benchmark nie był zlecony.
+- **Stare plany:** odhaczono pozycje domknięte scaleniem PR #166 (16a, 15h, 15f, 15g, 15c 8–9).
+  Pozostały tylko pozycje wymagające właściciela.
+- **README:** wskaźnik handoffu (był 2026-10-11, przestarzały) zaktualizowany na 2026-10-15c.
+- **Nie zrobiono:** krok 5 pętli (Żywy Tester, polowanie na rozbieżności CR) — przeniesiony
+  do następnej sesji, bo audyt i naprawa zajęły bieżącą sesję.
+
 ## 2026-10-15c — Pętla jakości: Żywy Tester na taliach batcha 67 (PR #166)
 
 Zlecenie „kontynuuj” → ADR 0021 (domyślna pętla jakości). Plan:
