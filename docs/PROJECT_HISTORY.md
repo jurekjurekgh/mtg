@@ -19,6 +19,14 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18b — Uwagi z testów: Release the Ants, podgląd w decyzji clash (O)
+
+- Zgłoszenie właściciela: po Clash modal „wierzch czy spód” nie pozwalał podejrzeć odsłoniętej karty
+  (brak 🔍, nazwa nie otwierała pełnego ekranu). Przyczyna: komenda `resolve_clash_choice` nie niesie
+  karty, a `previewCardIdOfOption` nie czytał jej z `pendingClash.cards`. Ten sam wzorzec co H (Explore).
+- Naprawa: gałąź clash w `src/table/choice-request.js`; test `test/zgloszenie-o-clash-podglad-karty.test.js`
+  (4 testy, najpierw czerwone). `npm test` 8496/8496, build rc=0.
+
 ## 2026-10-18 — Sesja domyślna (ADR 0021): PR #168, audyt PR #167, pętla jakości
 
 - **PR #168** (ADR 0020 A) z planem `docs/plans/PLAN_2026-10-18-domyslna-petla-audyt-pr167.md`

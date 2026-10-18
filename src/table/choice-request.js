@@ -90,6 +90,13 @@ export function previewCardIdOfOption(option, resolveCardId, view = null) {
     const revealed = view.pendingExplore?.cardId;
     return typeof revealed === 'string' && revealed ? revealed : null;
   }
+  // O (testy właściciela 2026-10-18, Release the Ants): Clash — wierzch albo spód
+  // — komenda nie niesie karty, a odsłoniętą kartę decydenta ma widok decyzji
+  // (`pendingClash.cards`, jawne: obie karty są odsłonięte). Ten sam wzorzec co H.
+  if (view && option.type === 'resolve_clash_choice') {
+    const revealed = view.pendingClash?.cards?.[option.playerId ?? view.playerId];
+    return typeof revealed === 'string' && revealed ? revealed : null;
+  }
   return null;
 }
 
