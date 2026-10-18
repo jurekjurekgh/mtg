@@ -19,6 +19,20 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18d — Modal clash: nazwa karty wywołującej na początku, bez ikonek (O2)
+
+- Odpowiedź właściciela na pytania z O: żadnych infantylnych ikonek (bez 🔍); podgląd = klikalna nazwa jak w każdym
+  modalu z uniwersalnego kreatora (bez osobnego modala). Nazwa karty wywołującej clash (Release the Ants) ma stać
+  na początku nagłówka i być klikalna.
+- Ustalenie przy wdrożeniu: prawdziwy modal clash (2 opcje) idzie przez tryb przyciskowy `renderMultiTargetWizard`,
+  nie przez `renderChoiceRequest` — wiersze już miały klikalne nazwy. Brakowało źródła w stanie decyzji: `pendingClash`
+  nie niósł karty wywołującej. Dodano `sourceCardId` (jawne, jak odsłonięte karty) w silniku i widoku.
+- Ogólny kreator: `renderPeekButton` rysuje nazwę karty zamiast 🔍 (`cardNameOfOption` z main.js). Pin M303/1 przepięty z
+  `ghost-btn` na `picker-name` (zamierzona zmiana wyglądu, klasa `choice-request-peek` i klik bez zmian).
+- Opis grupy clash: „Clash: wierzch czy spód?” (nazwa karty idzie przed nim: „Release the Ants — Clash: wierzch czy spód?”).
+- Test: `test/zgloszenie-o2-clash-nazwa-zrodla.test.js` (7). Bramy: `npm test` 8506/8506; `test:all` 8773/8773 rc=0; build rc=0.
+- Commit `7b367f1`.
+
 ## 2026-10-18c — Wycena blokowania bota: 3/3 first strike vs {3/3, 1/1} (P)
 
 - Zgłoszenie właściciela: atakujący 3/3 first strike, bot dokłada 3/3 do bloku 1/1. Zabijamy 3/3 w kroku
