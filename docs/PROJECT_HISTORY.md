@@ -19,6 +19,21 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18c — Wycena blokowania bota: 3/3 first strike vs {3/3, 1/1} (P)
+
+- Zgłoszenie właściciela: atakujący 3/3 first strike, bot dokłada 3/3 do bloku 1/1. Zabijamy 3/3 w kroku
+  first strike, a 1/1 nie zrobi krzywdy, więc 3/3 nic nie wnosi.
+- Przyczyna: `blockExchangeOf` i `blockKillsAttacker` liczyły podział obrażeń atakującego zachłannie
+  (najtańsze ciała najpierw). Dla tej sytuacji zabijało 1/1, zostawiało 3/3 do zadania 3 obrażeń i
+  mylnie ustawiało `attackerDies = true` (premia +9). Wariant z 3/3 nie był odrzucany przez `wastedBlockers`.
+- Naprawa `2226193`: `planAttackerDamage` w `src/controllers/heuristic-bot.js` wybiera najlepszy dla atakującego
+  podział (wykonalny: suma wytrzymałości zabitych ≤ moc). Jedno źródło dla `blockKillsAttacker` i `blockExchangeOf`.
+  Powyżej 12 zabijalnych blokerów zostaje zachłanny fallback.
+- Test: `test/zgloszenie-p-blok-first-strike-zbedny-bloker.test.js` (3, czerwone przed: bot wybierał
+  `block[fs<bl3+tok0]` z wynikiem 10 przy passie 0). Piny I (`uwagi-z-gry-2026-09-22-ghij`) przechodzą bez zmian.
+- Bramy: `npm test` 8499/8499 rc=0 (`.arena/p-test.log`); `npm run test:all` 8766/8766 rc=0 (`.arena/test-all-p.log`);
+  `npm run build` rc=0 (`.arena/build.log`).
+
 ## 2026-10-18b — Uwagi z testów: Release the Ants, podgląd w decyzji clash (O)
 
 - Zgłoszenie właściciela: po Clash modal „wierzch czy spód” nie pozwalał podejrzeć odsłoniętej karty
