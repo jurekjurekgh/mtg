@@ -1,0 +1,22 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Meteorite&set=dmu&format=json",
+  "print": "dmu",
+  "name": "Meteorite",
+  "mana_cost": "{5}",
+  "cmc": 5,
+  "type_line": "Artifact",
+  "oracle_text": "When this artifact enters, it deals 2 damage to any target.\n{T}: Add one mana of any color.",
+  "colors": [],
+  "set": "dmu",
+  "set_name": "Dominaria United",
+  "collector_number": "235",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/3/3/33eb2032-50af-4fd6-bdc7-7cae2211956c.jpg?1783921269",
+    "normal": "https://cards.scryfall.io/normal/front/3/3/33eb2032-50af-4fd6-bdc7-7cae2211956c.jpg?1783921269"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/dmu/235/rulings"
+}

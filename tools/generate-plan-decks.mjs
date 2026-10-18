@@ -178,7 +178,14 @@ export const WOREK_DECKS = Object.freeze({
   // Duskmourn (5 — pełzający dom grozy, przetrwanie w dziczy) i Arcavios (2
   // — dzika magia Snarls poza murami Strixhaven). Bilans po B6: baśnie 21,
   // legendy 15, dzikie 15, mroczny 27.
-  Kaldheim: 'worek-dziki',
+  // Batch 68 (2026-10-17): plan „Lorwyn” (karta 400 Kulrath Zealot) dobił do 15
+  // kart nielandowych i AWANSUJE do własnej talii „lorwyn” (M181) — worek-legend
+  // spadł do 6 kart (sam Arcavios), poniżej minimum walidatora. Przetasowanie
+  // (ADR 0023 §4), nielandowych po komplecie kart B68: Kaldheim → legendy (sagi
+  // i legendarne opowieści nordyckie: legend 6+11 = 17), Duskmourn → dzikie
+  // (przetrwanie w dziczy, jak w batchu 6: dzikie 12+6 = 18, mroczny 21−6 = 15).
+  // Baśnie 18 bez zmian. Wpisy Lorwyn/Theros/Śródziemie/The Edge są martwe po awansie.
+  Kaldheim: 'worek-legend',
   'Final Fantasy': 'worek-mroczny',
   'New Capenna': 'worek-mroczny',
   // Batch 56 (2026-09-17): nowy plan właściciela „Teenage Mutant Ninja Turtles”
@@ -198,7 +205,7 @@ export const WOREK_DECKS = Object.freeze({
   // pogranicze, Północ i ulice poza prawem). Wpisy Eldraine/Kaladesh/Ixalan/
   // Theros/Śródziemie/Final Fantasy/The Edge są martwe po awansach.
   Lorwyn: 'worek-legend', Arcavios: 'worek-legend',
-  Duskmourn: 'worek-mroczny', Amonkhet: 'worek-mroczny',
+  Duskmourn: 'worek-dziki', Amonkhet: 'worek-mroczny',
   'Teenage Mutant Ninja Turtles': 'worek-dziki',
   // Batch 63/T2 (2026-10-04): nowy plan właściciela „Marvel” (karta 241 News
   // Helicopter, set SPM) — miejskie ulice i superbohaterowie, motyw spójny

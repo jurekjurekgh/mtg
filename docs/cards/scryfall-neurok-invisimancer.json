@@ -1,0 +1,26 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Neurok+Invisimancer&set=som&format=json",
+  "print": "som",
+  "name": "Neurok Invisimancer",
+  "mana_cost": "{1}{U}{U}",
+  "cmc": 3,
+  "type_line": "Creature — Human Wizard",
+  "oracle_text": "This creature can't be blocked.\nWhen this creature enters, target creature can't be blocked this turn.",
+  "power": "2",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "37",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/e/8/e88f78f4-77d8-4c3e-a5bf-a9dd902aaae1.jpg?1783941738",
+    "normal": "https://cards.scryfall.io/normal/front/e/8/e88f78f4-77d8-4c3e-a5bf-a9dd902aaae1.jpg?1783941738"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/som/37/rulings"
+}

@@ -40,7 +40,7 @@ jest wybór wielu i zatwierdzenie!!!!! Natychmiast to napraw.”
 - [x] Test RED (przepływ silnika, 1–4 przeciwników).
 - [x] Poprawka `upToTargetsPlanOf`, GREEN, testy powiązane.
 - [x] `npm test` rc=0, build rc=0.
-- [ ] Commit + push (bez force), aktualizacja opisu PR #166 przez REST. Bez scalania.
-- [ ] Weryfikacja przez właściciela w żywej grze (Justicier z dwoma przeciwnikami).
+- [x] Commit + push (bez force), aktualizacja opisu PR #166 przez REST. Bez scalania. — domknięte scaleniem PR #166 (`24ff1a5`).
+- [ ] Weryfikacja przez właściciela w żywej grze (Justicier z dwoma przeciwnikami). — (pozostaje otwarte: weryfikacja właściciela).
 
 Uwaga: plan spisano po poprawce (błąd wykryto w sesji tury 11, kod powstał przed planem).

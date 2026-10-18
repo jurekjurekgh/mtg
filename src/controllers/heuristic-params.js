@@ -102,6 +102,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'rampNeedWeight', 'rampSaturationPenalty', 'rampManaFloor',
   'tappedRampWaitPenalty', 'rampCastManaWeight',
   'modalEtbValueWeight',
+  // Batch 68 (Austere Command): masowe zniszczenie bez celu — patrz DEFAULT_HEURISTIC_PARAMS.
+  'massDestroyCardValue', 'massDestroyOwnMultiplier', 'massDestroyEvasionBonus',
+  'massDestroyThreatWeight', 'massDestroyRebuildDiscount', 'massDestroyCastCost',
+  // PMSSB-64 — słowa kluczowe stworzenia rzucanego z ręki (wycena ciała, L41).
+  'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwFlyingFloorScaled', 'creatureKwRefPower', 'creatureKwHaste',
+  'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwStateFloor', 'creatureKwRefThreat', 'creatureKwDeathtouch',
+  'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
+  'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
   'battleDefeatBonus',
@@ -520,6 +528,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // PMSSB-34 — zdolności aktywowane (`activate_ability`). Obowiązkowa kontrola
   // procedury (b): wymiar KOSZTU; oraz treść sprzętu (L41 z gałęzią przeniesienia).
   'abilityManaCostPenalty',      // kara za punkt many kosztu aktywacji (skala jak creatureManaCostWeight)
+  // PMSSB-66 (zasada właściciela 2026-10-17): okno end step przeciwnika. 1 = zdolność za manę
+  // o trwałym skutku (token/licznik) płacona tam jest darmowa i poza nią odroczona (wynik ≤ −koszt);
+  // 0 = wyłączone (pomiar ×0 i porównanie z dawnym zachowaniem). Walka wyłączona z odroczenia.
+  'lastingManaWindowOn',
   // PMSSB-62 (batch 67, energia CR 122.1): wartość JEDNEGO licznika {E} —
   // wspólna dla kosztu (zdolność, opcjonalna opłata triggera) i zysku
   // (`get_energy`), żeby 3 liczniki nie remisowały z zerem (S11). Dawna stała
@@ -605,6 +617,73 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Modale: tylko najlepsza legalna wypłata; 0 = stary brak/dawna tabela.
   regenerationModelWeight: 1,
   evasionEtbValueWeight: 1,
+  // PMSSB-63 (batch 68, Austere Command): masowe zniszczenie wyceniane z MODELU
+  // STOŁU, nie z płaskiej stałej na sztukę (stara wersja: 75/90 za permanent →
+  // 3× 1/1 wroga liczyło się wyżej niż 2× 3/3 moich, choć materiał szedł na minus).
+  // Składniki (`massDestroyValue` w heuristic-bot.js):
+  //  - massDestroyCardValue: wartość JEDNEJ karty (= drawCardValue). Wrogi permanent
+  //    to karta mniej u przeciwnika; własny — karta mniej u mnie.
+  //  - materiał: permanentMaterialValue (2×moc + wytrzymałość + MV) — CO stracę/zabiję
+  //    (kto ma silniejsze i wyższe TMC), plus massDestroyEvasionBonus za latanie/zasięg/
+  //    deathtouch/lifelink (stwór blokujący i ewazyjny kosztuje więcej).
+  //  - massDestroyOwnMultiplier: własne straty mocniej (1.2 — proporcja dawnych 90/75).
+  //  - massDestroyThreatWeight: ile punktów warte jest zabrane zagrożenie życia
+  //    (nieblokowany atak wroga po blokach MOICH OCALAŁYCH stworów, ÷ moje życie,
+  //    capped 1). Dzięki temu życie i blokery są w modelu, nie w stałej.
+  //  - massDestroyRebuildDiscount: strata własna maleje za każdego stwora-kartę w mojej
+  //    ręce (cap 3): mam czym odbudować stół po wrathcie.
+  //  - massDestroyCastCost: KOSZT (odejmowany) samej zagranej karty przy czystym masowym
+  //    zniszczeniu — wydaję kartę, więc start wyceny to −6, nie +6.
+  //    Zastępuje spellBase (50): spellBase to premia za zwykły czar, a wrath nie jest
+  //    „zagraniem z bonusem” — jego wartość to netto stołu. Bez tego równa wymiana
+  //    3/3 za 3/3 przy życiu 20 dawała +35 zamiast −9 i bot rzucał Austere zawsze.
+  massDestroyCardValue: 6,
+  massDestroyOwnMultiplier: 1.2,
+  massDestroyEvasionBonus: 4,
+  massDestroyThreatWeight: 20,
+  massDestroyRebuildDiscount: 0.1,
+  massDestroyCastCost: 6,
+  // PMSSB-64 — wartość słów kluczowych stworzenia rzucanego z ręki. Dawniej rzut czytał
+  // tylko P/T i koszt: lifelink, latanie, deathtouch, haste dawały identyczny wynik (pomiar PRZED:
+  // tools/pmssb64-keywords-sonda.mjs, Δ = 0). Kotwice, żeby skala była jedna w całym bocie:
+  //  - creatureKwFlying 8: TA SAMA wartość ewazji co `auraKeywordValue` i `equipValuation.ofensywne`,
+  //    tylko gdy wróg nie ma nietapniętego latającego/zasięgowego blokera.
+  //  - creatureKwHaste 6: tempo ataku w turze rzutu = `equipValuation` hasteAdds.
+  //  - creatureKwLifelinkWeight 1 × gainLifeValue(moc): lifelink zależy od stanu (życie, presja),
+  //    tak jak `fightLifelinkWeight` w walce — nie stała.
+  //  - deathtouch 4, vigilance 4: jak `massDestroyEvasionBonus` i grant vigilance w aurze.
+  //  - first_strike 3, double_strike 6, menace 3, trample 2, reach 2, indestructible 6, hexproof 3:
+  //    ręcznie strojone wartości PŁASKIE (bez skali mocą i bez stanu gry). Przyznane otwarcie: to
+  //    najsłabsze miejsce modelu — brak osobnego pomiaru każdego z nich; pokryte testem Δ = pokrętło × 0.9.
+  creatureKwRefPower: 3, // moc, przy której kotwice latania (8) i tempa (6) są pełne; zadane obrażenia = moc × tury, więc skala liniowa
+  creatureKwFlying: 8,
+  // PMSSB-67/F5 (decyzja właściciela 2026-10-18): dolna granica latania = creatureKwFlyingFloor PRZY MOCY
+  // REFERENCYJNEJ (creatureKwRefPower), skalowana mocą ciała. Zablokowany lot (wróg z flying) = próg · moc/ref;
+  // odblokowany = max(próg, kotwica · moc/ref). Moc 0 → 0 (nie zadaje obrażeń), moc 3 → 3 (bez zmian).
+  creatureKwFlyingFloor: 3,
+  // Pokrętło F5: 1 = próg skalowany mocą (domyślne), 0 = dawne płaskie 3 (PRZED; pomiar tools/pmssb67-prog-latania-sonda.mjs).
+  creatureKwFlyingFloorScaled: 1,
+  creatureKwHaste: 6,
+  creatureKwLifelinkWeight: 1,
+  // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do
+  // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a
+  // zabójca kasuje dalsze zyski w horyzoncie dwóch tur. Pokrętło 1 = dawne zachowanie (bez stanu).
+  creatureKwLifelinkSurvivalFloor: 0.5,
+  // PMSSB-67 F4: słowa płaskie → udział stanu. creatureKwStateFloor 0.5: przy neutralnym stole
+  // (brak sygnału) słowo daje połowę wagi, przy pełnym sygnale całą wagę. Pokrętło 1 = dawne płaskie
+  // wartości. creatureKwRefThreat 3: normalizator liczby zagrożeń (karty w ręce wroga, zabójcy, wrodzy
+  // „nie-do-pokonania") — 3 zagrożenia = pełny sygnał.
+  creatureKwStateFloor: 0.5,
+  creatureKwRefThreat: 3,
+  creatureKwDeathtouch: 4,
+  creatureKwVigilance: 4,
+  creatureKwFirstStrike: 3,
+  creatureKwDoubleStrike: 6,
+  creatureKwMenace: 3,
+  creatureKwTrample: 2,
+  creatureKwReach: 2,
+  creatureKwIndestructible: 6,
+  creatureKwHexproof: 3,
   counterCastManaWeight: 1, // raz na czar, także flashback; nie za każdy licznik
   rampNeedWeight: 1,
   rampSaturationPenalty: 60, // przebija bazę czaru 50, nie karze ETB z ciałem
@@ -951,6 +1030,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // rzucie stwora (L41/L48: jedna arytmetyka kosztu, nie druga). Wyjątkiem są
   // zdolności z `add_mana` (koszt policzony w `net`, PMSSB-32/A).
   abilityManaCostPenalty: 1,
+  lastingManaWindowOn: 1,
   // PMSSB-62: 1 licznik {E} = 3 pkt (dawna kara `-3 * ability.cost.energy`
   // z PMSSB-56, teraz wspólna dla wszystkich ścieżek płatności i zysku).
   energyCounterValue: 3,

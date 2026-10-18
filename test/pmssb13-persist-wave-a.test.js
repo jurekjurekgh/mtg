@@ -27,9 +27,9 @@ function castScore(cardId, grave) {
 }
 
 // PMSSB-13 Wave-A (F-R1): persist = 0.5 x return-body (nie flat-5)!
-test('PMSSB13-A: clique persist-model 70.20/75.60 (bylo 71.10/76.50: -0.9!)', () => {
-  assert.deepEqual(castScore('puppeteer-clique', false), ['70.20']);
-  assert.deepEqual(castScore('puppeteer-clique', true), ['75.60']);
+test('PMSSB13-A: clique persist-model 74.70/80.10 (PMSSB-64 latanie 3-mocy +4.5; bylo 70.20/75.60)', () => {
+  assert.deepEqual(castScore('puppeteer-clique', false), ['74.70']);
+  assert.deepEqual(castScore('puppeteer-clique', true), ['80.10']);
 });
 test('PMSSB13-A: SAME-guards (cultist/forebear, delirium/grave-SKIP)', () => {
   assert.deepEqual(castScore('resurrected-cultist', false), ['67.50']);

@@ -1,14 +1,13 @@
-// Audyt PR #93 (2026-09-03), znalezisko H — cena naprawy F: „up to N targets”
-// enumeruje WSZYSTKIE kombinacje, więc przy szerokim stole panel akcji puchnie
-// wykładniczo (zmierzone: 8 stworów wroga → 93 warianty rzutu Wrap in Flames;
-// 2^n rośnie dalej). Właściciel gra na telefonie, a projekt ma już ten sam
-// kompromis w walkie (`COMBAT_OPTION_CAP`, M245): oferta jest OGRANICZONA,
-// a walidacja w `execute` pozostaje PEŁNA — bot i tak może zagrać dowolny
-// legalny wariant, którego nie ma w panelu.
+// Audyt PR #93 (2026-09-03), znalezisko H: „up to N targets” enumeruje WSZYSTKIE
+// kombinacje (8 stworów → 93 warianty). PR #93 wprowadził wtedy przycinanie
+// oferty do 32. Zlecenie właściciela (2026-10-17, O-2): NIE limitujemy celów —
+// oferta jest KOMPLETNA; przy szerokim stole liczy się dłużej, ale bez błędu.
+// Panel nie puchnie, bo grupa celów to jeden kreator wielocelowy (checkboxy
+// celów, a nie lista kombinacji). Walidacja w `execute` pozostaje pełna.
 //
 // Reguła: CR 601.2c — „up to three target creatures” pozwala wybrać dowolną
-// liczbę celów od 0 do 3; oferta nie może być jedynym źródłem prawdy o tym,
-// co legalne (L48 w wersji projektu: oferta = wycinek, walidacja = pełna).
+// liczbę celów od 0 do 3; oferta obejmuje każdy taki wybór (L48: oferta =
+// walidacja, obie liczą z tej samej listy kombinacji).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
@@ -16,12 +15,6 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
-import { VARIABLE_TARGET_OPTION_CAP } from '../src/engine/spells.js';
-
-// Limit wpisany LITERĄ (nie importowaną stałą): inaczej test porównywałby
-// ofertę z tą samą liczbą, którą mutacja właśnie zmieniła (tautologia —
-// wykryte mutacją H1 przy audycie PR #93).
-const MAX_WARIANTOW_W_PANELU = 32;
 
 const REGISTRY = createCardRegistry();
 const VARIABLE_TARGETS = 'wrap-in-flames'; // „up to three target creatures”, MV 4
@@ -75,42 +68,30 @@ const graveCasts = (state) => playerView(state, 'p1').legalCommands
 test('A93/H: mały stół — oferta jest KOMPLETNA (żadnego przycinania)', () => {
   const state = graveState(3);
   const offers = graveCasts(state);
-  assert.equal(VARIABLE_TARGET_OPTION_CAP, MAX_WARIANTOW_W_PANELU, 'limit w silniku bez zmian');
-  assert.ok(offers.length <= MAX_WARIANTOW_W_PANELU, 'mały stół mieści się w limicie');
   assert.equal(offers.length, 8, '3 stwory: 1 (zero celów) + 3 + 3 + 1 = 8 kombinacji');
   assert.ok(offers.some((o) => (o.targets ?? []).length === 3), 'wariant na pełne 3 cele jest w ofercie');
 });
 
-test('A93/H: szeroki stół — liczba wariantów jest OGRANICZONA (panel na telefonie)', () => {
+test('A93/H: szeroki stół — oferta KOMPLETNA (O-2, zlecenie 2026-10-17): 8 stworów → 93 warianty', () => {
   const state = graveState(8);
   const offers = graveCasts(state);
-  assert.ok(offers.length <= MAX_WARIANTOW_W_PANELU,
-    `8 stworów dawało 93 warianty; po limicie ≤ ${MAX_WARIANTOW_W_PANELU} (jest ${offers.length})`);
-  assert.ok(offers.length >= 8, 'limit nie może ogołocić oferty');
-  assert.ok(offers.some((o) => (o.targets ?? []).length === 3),
-    'najsilniejszy wariant (tylu celów, ilu pozwala czar) zostaje w ofercie');
-  assert.ok(offers.some((o) => (o.targets ?? []).length === 1), 'wariant na jeden cel zostaje w ofercie');
+  // C(8,0)+C(8,1)+C(8,2)+C(8,3) = 1+8+28+56 = 93 — każda kombinacja, bez limitu.
+  assert.equal(offers.length, 93, `oferta ma wszystkie kombinacje do trzech celów (jest ${offers.length})`);
+  assert.ok(offers.some((o) => (o.targets ?? []).length === 3), 'wariant na 3 cele zostaje');
+  assert.ok(offers.some((o) => (o.targets ?? []).length === 1), 'wariant na jeden cel zostaje');
 });
 
-test('A93/H: L48 — walidacja jest PEŁNA: legalny wariant spoza oferty wykonuje się', () => {
+test('A93/H: L48 — każda legalna para jest w ofercie i wykonuje się (oferta = walidacja)', () => {
   const state = graveState(8);
   const offers = graveCasts(state);
   const offered = new Set(offers.map((o) => [...(o.targets ?? [])].sort().join('|')));
-  // Szukamy legalnej pary, której nie ma w przyciętej ofercie (CR 601.2c:
-  // „up to three” obejmuje także dwa cele).
-  let pair = null;
-  for (let i = 0; i < 8 && !pair; i += 1) {
-    for (let j = i + 1; j < 8 && !pair; j += 1) {
-      const key = [`f${i}`, `f${j}`].sort().join('|');
-      if (!offered.has(key)) pair = [`f${i}`, `f${j}`];
-    }
-  }
-  assert.ok(pair, 'przycięta oferta pomija jakąś parę (założenie testu)');
+  const key = ['f1', 'f6'].sort().join('|');
+  assert.ok(offered.has(key), 'para spoza dawnego przycięcia jest w ofercie');
   const r = execute(state, {
     type: 'resolve_grave_free_cast', playerId: 'p1', objectId: 'grave',
-    cardId: VARIABLE_TARGETS, xValue: 4, modeIndex: 0, targets: pair,
+    cardId: VARIABLE_TARGETS, xValue: 4, modeIndex: 0, targets: ['f1', 'f6'],
   });
-  assert.ok(r.ok, `wariant legalny per CR przechodzi, choć nie ma go w panelu (${r.events[0]?.reason ?? ''})`);
+  assert.ok(r.ok, `legalny wariant wykonuje się (${r.events[0]?.reason ?? ''})`);
 });
 
 test('A93/H: walidacja wciąż odrzuca to, co nielegalne (liczba celów i cel)', () => {
@@ -145,6 +126,5 @@ test('A93/H: ręka — ten sam limit obowiązuje rzut z ręki (jeden generator)'
   const casts = playerView(state, 'p1').legalCommands
     .filter((c) => c.type === 'cast_spell' && c.objectId === 'w');
   assert.ok(casts.length > 0, 'czar z ręki jest rzucalny');
-  assert.ok(casts.length <= MAX_WARIANTOW_W_PANELU,
-    `rzut z ręki: ${casts.length} wariantów (limit ${MAX_WARIANTOW_W_PANELU})`);
+  assert.equal(casts.length, 93, `rzut z ręki: ${casts.length} wariantów (wszystkie kombinacje)`);
 });

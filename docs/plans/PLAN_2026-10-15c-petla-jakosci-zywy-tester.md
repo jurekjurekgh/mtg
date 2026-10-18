@@ -25,10 +25,10 @@ Każde znalezisko: RED → GREEN, jeden commit na przyrost, push od razu (ADR 00
 - [x] 7. Pytanie z handoffu: `lose_life` bez `scope` w katalogu — 1 karta
       (Nightshade Harvester, `applyTo: 'event_player'`); bot liczy ją jako
       „each_opponent” zgodnie z 1v1. Bez zmiany kodu.
-- [ ] 8. Bramy końcowe: `npm test` (8231/8231 po F-C), `npm run build`,
+- [x] 8. Bramy końcowe (domknięte: `cr-numery` OK 2026-10-17, 5834 cytatów; `npm test` i build zielone w PR #166 i w sesji 2026-10-17): `npm test` (8231/8231 po F-C), `npm run build`,
       `node --test test/bot-benchmark.test.js` (przy zmianie kodu bota: nie
       dotyczy — B-1 już zbadany), `node tools/cr-numery.mjs` (weryfikacja cytatów).
-- [ ] 9. Historia (`PROJECT_HISTORY.md`), `TESTER_STOLU.md` (nowe klasy),
+- [x] 9. Historia (`PROJECT_HISTORY.md`), `TESTER_STOLU.md` (nowe klasy),
       handoff `HANDOFF_2026-10-15c.md`, opis PR #166.
 
 ## Poza zakresem tej sesji (odnotowane)

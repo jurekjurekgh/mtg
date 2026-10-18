@@ -162,7 +162,43 @@ function poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveReqs) {
  * w finansowanie bierze TEN kolor (bramka i tapCostedManaSource liczą go tak
  * samo, więc wybór jest identyczny).
  */
+/**
+ * Maksymalna liczba pipów, które jednostki puli pokrywają W DOPASOWANIU (każdy
+ * pip dostaje osobną jednostkę, augmenting path). Miara dla wyboru koloru.
+ */
+function maxPipsCovered(units, pipReqs) {
+  const owner = new Array(units.length).fill(-1);
+  const augment = (r, seen) => {
+    for (let u = 0; u < units.length; u += 1) {
+      if (seen[u] || !unitCoversRequirement(units[u], pipReqs[r])) continue;
+      seen[u] = true;
+      if (owner[u] === -1 || augment(owner[u], seen)) {
+        owner[u] = r;
+        return true;
+      }
+    }
+    return false;
+  };
+  let count = 0;
+  for (let r = 0; r < pipReqs.length; r += 1) {
+    if (augment(r, new Array(units.length).fill(false))) count += 1;
+  }
+  return count;
+}
+
 function firstUncoveredPipColor(poolUnits, pipReqs) {
+  // L48 (seed 3035, crash `Brak kolorowej many`): wybór koloru musi patrzeć na DOPASOWANIE, nie na
+  // licznik per kolor. Jednostka wyboru [W,U,R,G] (wyspa z zewnętrznym grantem) liczyła się jako
+  // pokrywająca W, R i G naraz — licznik nie widział deficytu R/G, zwracał null, a Skarb szedł na
+  // pierwszy kolor (W). Płatność rzucała PO tapnięciu źródeł. Teraz: pierwszy kolor pipa, który
+  // podnosi maksymalne pokrycie puli.
+  const base = maxPipsCovered(poolUnits, pipReqs);
+  for (const req of pipReqs) {
+    for (const c of req) {
+      if (!['W', 'U', 'B', 'R', 'G'].includes(c)) continue;
+      if (maxPipsCovered([...poolUnits, [c]], pipReqs) > base) return c;
+    }
+  }
   for (const req of pipReqs) {
     for (const c of req) {
       // Grant lądu produkuje manę KOLOROWĄ (backtracking po WUBRG w
@@ -315,12 +351,18 @@ function freshManaSum(state, playerId, purpose = {}) {
 }
 
 /** A: jednostki ŚWIEŻEJ bazy dla lookaheadu (lądy (grant→[]) + wolne, cel {} jak gałąź pipów). */
-function freshManaUnits(state, playerId) {
+/** Purpose planu źródeł kosztowych: rzut czaru przekazuje swój purpose; zdolność (purpose {}) zostaje
+ *  przy dawnym `castingSpell: true` (konserwatywnie — jak w planie kolorów od zawsze). */
+function costedPurposeOf(purpose) {
+  return purpose?.castingSpell === true ? purpose : { castingSpell: true, artifactSpell: false };
+}
+
+function freshManaUnits(state, playerId, purpose = {}) {
   const units = [];
   for (const land of untappedLandManaSources(state, playerId)) {
     units.push(grantManaOnLand(state, land.id) > 0 ? [] : (getSourceForObject(land, state)?.colors ?? []));
   }
-  for (const entry of untappedFreeManaSources(state, playerId)) units.push([...entry.colors]);
+  for (const entry of untappedFreeManaSources(state, playerId, null, purpose)) units.push([...entry.colors]);
   return units;
 }
 
@@ -370,7 +412,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     // Atomiczność (CR 601.2h): pokrycie pipów sprawdzamy PRZED tapnięciem
     // (canPayColoredCost = pula + NIETAPNIĘTE źródła, zero mutacji) — nieudana
     // płatność nie może zostawić tapniętych źródeł.
-    const grantPlan = planGrantManaColors(state, playerId, requirements);
+    const grantPlan = planGrantManaColors(state, playerId, requirements, null, purpose);
     if (!grantPlan) throw new Error('Brak kolorowej many');
     const grantColorById = new Map(grantPlan.map((row) => [row.id, row.color]));
     const pipSources = untappedLandManaSources(state, playerId).slice();
@@ -423,7 +465,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       // tapujemy zawsze (plan = dowód oferty, idziemy za nim).
       if (plannedGrant == null) {
         const freshCovers = matchColorRequirements(
-          [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId)], requirements);
+          [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId, purpose)], requirements);
         if (!freshCovers) {
           const grantHere = grantManaOnLand(state, source.id);
           const freshAfter = freshManaSum(state, playerId) - (grantHere > 0 ? grantHere : 1);
@@ -436,13 +478,13 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     // M179/D: pipy niedomknięte landami pokrywają nielandowe źródła
     // czystej many (kolor efektu, np. Scorned Villager → {G}).
     if (!covered) {
-      for (const entry of untappedFreeManaSources(state, playerId)) {
+      for (const entry of untappedFreeManaSources(state, playerId, null, purpose)) {
         if (covered) break;
         // Wspólny predykat: bezbarwne źródło (colors []) też domyka pip {C}.
         if (!unitCoversAnyRequirement(entry.colors, requirements)) continue;
         // A: rezerwa jak lądy wyżej (wolne tapnięcie też zjada świeżą bazę).
         const freshCovers = matchColorRequirements(
-          [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId)], requirements);
+          [...expandManaPool(player.manaPool), ...freshManaUnits(state, playerId, purpose)], requirements);
         if (!freshCovers
           && freshManaSum(state, playerId) - entry.amount < untappedCostedTotal(state, playerId)) continue;
         tapFreeManaSource(state, playerId, entry);
@@ -471,13 +513,13 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       // A: tap w kolejności AKCEPTACJI bramki (migawka — późniejsze źródła
       // mogą jeść produkcję wcześniejszych (łańcuch B→A); w kolejności pola
       // bitwy re-bramka późniejszego padałaby (produkcji jeszcze nie ma)).
-      const costedOrder = fundableCostedSources(state, playerId, requirements, null, {});
+      const costedOrder = fundableCostedSources(state, playerId, requirements, null, costedPurposeOf(purpose));
       for (const entry of costedOrder) {
         if (covered) break;
         // A: tylko przechodzące re-bramkę (rezerwa trzyma świeżą bazę, a
         // tapnięcia konserwują jednostki w stronę puli, więc bramka z oferty
         // przechodzi; pominięcie = obrona w głąb).
-        const passing = fundableCostedSources(state, playerId, requirements, null, {});
+        const passing = fundableCostedSources(state, playerId, requirements, null, costedPurposeOf(purpose));
         if (!passing.some((row) => row.object.id === entry.object.id)) continue;
         // A: domknięcie łańcucha — tapane to, co produkuje kolor wymagań
         // LUB kolor potrzebny kosztom przechodzących źródeł (ogniwo B→A).
@@ -1405,11 +1447,11 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   // A: plan kosztowych Z GÓRY (granty zużyte finansowaniem wypadają z grantLands).
-  const costedPlan = fundableCostedPlan(state, playerId, requirements, excludeSourceId, { castingSpell: true, artifactSpell: false });
+  const costedPlan = fundableCostedPlan(state, playerId, requirements, excludeSourceId, costedPurposeOf(purpose));
   const units = expandManaPool(player.manaPool);
   // Wykluczenia (M174/B + once-per-turn): id własne + klucze id:indeks
   // (te drugie nie matchują lądów — celowo, tylko lister kosztowych).
@@ -1430,7 +1472,7 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
     }
   }
   // M179/D: jednostki z nielandowych źródeł czystej many (kolor efektu).
-  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId)) {
+  for (const entry of untappedFreeManaSources(state, playerId, excludeSourceId, purpose)) {
     for (let i = 0; i < entry.amount; i += 1) units.push([...entry.colors]);
   }
   // A: jednostki źródeł kosztowych (bramka-symulacja — koszty płaci baza;
@@ -1475,7 +1517,7 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
   return grantLands.map((g, i) => ({ id: g.id, color: assignment[i], grant: g.grant }));
 }
 
-export function canPayColoredCost(state, playerId, requirements, excludeSourceId = null) {
+export function canPayColoredCost(state, playerId, requirements, excludeSourceId = null, purpose = {}) {
   // MtG-castability KOLORÓW: czy pip(y) kolorowe da się dopasować do dostępnych
   // jednostek many (kolorowa pula + NIETAPNIĘTE źródła — da się tapnąć). Sprawd-
   // zane PRZED tapnięciem (do rzutu trzeba źródeł, których można UŻYĆ). AMOUNT
@@ -1483,29 +1525,30 @@ export function canPayColoredCost(state, playerId, requirements, excludeSourceId
   // rzutów — tu rozłączamy kolor od sumy (m.in. Metalcraft/Sculptor redukują
   // generic, więc nie liczymy go tu). excludeSourceId — patrz producibleMana
   // (koszt z {T} własnego źródła many, M174/B).
-  return planGrantManaColors(state, playerId, requirements, excludeSourceId) !== null;
+  return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose) !== null;
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
-function hasColorRequirements(state, playerId, requirements) {
+function hasColorRequirements(state, playerId, requirements, purpose = {}) {
   if (requirements.length === 0) return true;
-  return canPayColoredCost(state, playerId, requirements);
+  return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
 
-function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0) {
+function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0, purpose = {}) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true; // brak danych (landy) – nie walidujemy
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   const requirements = coloredPipsOf(cardId, phyrexianPayWithLife);
-  return hasColorRequirements(state, playerId, requirements);
+  return hasColorRequirements(state, playerId, requirements, purpose);
 }
 
 function hasColorManaForObject(state, playerId, object, phyrexianPayWithLife = 0) {
   if (!object) return true;
   if (object.kind === 'land') return true;
-  return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife);
+  // Bramka kolorów RZUTU czaru: purpose = ten czar (mana ograniczona drukiem nie płaci nie-artefaktu).
+  return hasColorManaForCard(state, playerId, object.cardId, phyrexianPayWithLife, spellManaPurpose(object));
 }
 
 /**
@@ -1569,7 +1612,7 @@ export function canPayMadnessCost(state, playerId, object) {
   // doliczania phyrexian (dotąd podwójnie liczyło symbol przy rzucie).
   const requirements = (object.madness.colors ?? []).map((color) => [color]);
   if (producibleMana(state, playerId, null, spellManaPurpose(object), requirements) < cost) return false;
-  return hasColorRequirements(state, playerId, requirements);
+  return hasColorRequirements(state, playerId, requirements, spellManaPurpose(object));
 }
 
 export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null } = {}) {
@@ -1717,7 +1760,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
         : null;
   if (!plotted && !freeImpulse && !faceDown && !treasureAltCost) {
     const colorGateOk = altCostColors
-      ? hasColorRequirements(state, playerId, altCostColors)
+      ? hasColorRequirements(state, playerId, altCostColors, spellManaPurpose(object))
       : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
     if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
   }
@@ -1822,7 +1865,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
 
-  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements)) {
+  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements, spellManaPurpose(object))) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -2347,7 +2390,7 @@ export function legalAuraCasts(state, playerId) {
   for (const id of auraSourceIds) {
     const object = state.objects.get(id);
     if (object?.controllerId !== playerId) continue;
-    out.push(...legalAuraCastsForObject(state, playerId, object));
+    for (const cast of legalAuraCastsForObject(state, playerId, object)) out.push(cast);
   }
   return out;
 }

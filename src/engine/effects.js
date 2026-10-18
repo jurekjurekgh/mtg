@@ -1047,6 +1047,10 @@ export function creaturesNotControlledByOwner(state) {
 export function counterStackObject(state, stackId, { counteredBy = null, counteredByCardId = null, byWard = false } = {}) {
   const object = state.objects.get(stackId);
   if (!object || object.zone !== 'stack') return null;
+  // Batch 68 (Raze to the Ground): „This spell can't be countered\"
+  // — flaga na czarze wyłącza KAŻDĄ kontrę, także ward (ruling: „even by the
+  // ward keyword ability\"). Kontra bez skutku: czar zostaje na stosie.
+  if (object.spell?.cantBeCountered) return null;
   if (object.activatedEntry || object.triggerEntry) {
     state.zones.stack = state.zones.stack.filter((id) => id !== stackId);
     state.objects.delete(stackId);
@@ -2651,9 +2655,17 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // M69 (Relic Robber): token tworzy GRACZ-CEL, nie kontroler źródła —
     // „that player creates a token" (combat_damage_to_player niesie
     // damagedPlayerId w context triggera).
-    const tokenController = effect.controllerFromEvent
+    // Batch 68 (Secure the Scene): kontroler przechwycony w tym samym czarze
+    // (exile_permanent.captureControllerAs). Brak przechwycenia przy deklarowanym
+    // controllerFromCapture = cel zniknął → efekt nic nie robi (ruling: „no token").
+    let tokenController = effect.controllerFromEvent
       ? (context[effect.controllerFromEvent] ?? sourceObject.controllerId)
       : sourceObject.controllerId;
+    if (effect.controllerFromCapture) {
+      const captured = state.spellCaptures?.[sourceObject.id]?.[effect.controllerFromCapture];
+      if (captured == null) return;
+      tokenController = captured;
+    }
     const createdTokenIds = [];
     for (let i = 0; i < amount; i += 1) {
       createdTokenIds.push(createBattlefieldToken(state, tokenController, {
@@ -3828,6 +3840,27 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     state.events.push(event('object_transformed', { objectId: sourceObject.id, fromCardId: sourceObject.cardId, cardId: target.cardId, controllerId: sourceObject.controllerId }));
     return;
   }
+  if (effect.type === 'destroy_all') {
+    // Batch 68 (Austere Command, CR 701.8): „Destroy all creatures with mana
+    // value 3 or less" — masowe zniszczenie WYBRANYCH w chwili rozstrzygania
+    // (lista zamrożona przed niszczeniem, jak w exile_all). Filtr: typy (każdy
+    // musi być na obiekcie) + manaValueAtMost / manaValueAtLeast. Niszczenie
+    // przez destroyPermanents respektuje indestructible, tarcze i regenerację.
+    const filterTypes = effect.filter?.types ?? [];
+    const mvAtMost = effect.filter?.manaValueAtMost ?? null;
+    const mvAtLeast = effect.filter?.manaValueAtLeast ?? null;
+    const victims = [...state.zones.battlefield].filter((objectId) => {
+      const object = state.objects.get(objectId);
+      if (!object) return false;
+      if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) return false;
+      const mv = object.manaCost ?? 0;
+      if (mvAtMost != null && mv > mvAtMost) return false;
+      if (mvAtLeast != null && mv < mvAtLeast) return false;
+      return true;
+    });
+    if (victims.length > 0) destroyPermanents(state, victims);
+    return Boolean(state.pendingReplacementChoice);
+  }
   if (effect.type === 'exile_all') {
     // Bezcelowe wygnanie WSZYSTKICH permanentów spełniających filtr
     // (Ruinous Rampage: „Exile all artifacts with mana value 3 or less").
@@ -3935,6 +3968,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (targetId == null) return;
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'battlefield') return;
+    // Batch 68 (Secure the Scene, ruling 2020): „its controller creates a token" —
+    // kontroler celu zapisany PRZED exile (po przeniesieniu obiekt ma nowe id
+    // i kontrolera właściciela); czytany przez create_token.controllerFromCapture.
+    if (effect.captureControllerAs) {
+      state.spellCaptures ??= {};
+      (state.spellCaptures[sourceObject.id] ??= {})[effect.captureControllerAs] = object.controllerId;
+    }
     const exileId = `exile-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'exile', exileId, { exiledBy: sourceObject.cardId });
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'battlefield', toZone: 'exile' }));
@@ -4105,7 +4145,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // już w state-based actions, tu chroni przed efektem „destroy").
     // M272 (błąd #19): pełna sekwencja destroy (indestructible → shield →
     // regeneracja → strefa śmierci) mieszka we WSPÓLNYM helperze.
+    // Batch 68 (Raze to the Ground, ruling 2022-10-14): „If its mana value was 1 or less,
+    // draw a card.\" — wartość MANA zapisana PRZED zniszczeniem („was\"); warunek
+    // nie zależy od tego, czy zniszczenie się udało (np. indestructible).
+    const manaValueAtResolution = object.manaCost ?? 0;
     destroyPermanentByEffect(state, targetId);
+    if (effect.drawIfManaValueAtMost != null && manaValueAtResolution <= effect.drawIfManaValueAtMost) {
+      drawPlayerCards(state, sourceObject?.controllerId ?? object.controllerId, 1, 'effect');
+    }
     return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'sacrifice_permanent') {

@@ -75,6 +75,34 @@ const BATCH67_FOOD_ABILITY = createAbility({
   effect: { type: 'gain_life', amount: 3 },
 });
 
+/**
+ * Batch 68 (Austere Command, CR 700.2): „Choose two —\" to wybór DWÓCH RÓŻNYCH
+ * trybów. Silnik rozstrzyga jeden wybrany tryb (`modeIndex`), więc każda para
+ * trybów staje się jednym wpisem listy: efekty obu, w kolejności drukowanej
+ * (CR 700.2), bez zmian w rzucie, ofercie i rozstrzyganiu (ADR 0002 — deskryptor
+ * danych). Pary (i<j) w kolejności leksykograficznej; `pairs.length` = C(n,2).
+ * Tryby z celami nie są tu składane (brak przydziału celów per tryb) — rzut
+ * przerywa się wyraźnym błędem definicji, nie cichym błędem rozgrywki.
+ */
+export const chooseTwoModes = (modes) => {
+  const pairs = [];
+  for (let i = 0; i < modes.length; i += 1) {
+    for (let j = i + 1; j < modes.length; j += 1) {
+      const first = modes[i];
+      const second = modes[j];
+      if ((first.targets ?? []).length > 0 || (second.targets ?? []).length > 0
+        || first.variableTargets || second.variableTargets) {
+        throw new Error('chooseTwoModes: tryby z celami wymagają przydziału celów per tryb');
+      }
+      pairs.push({
+        name: `${first.name} + ${second.name}`,
+        effects: [...(first.effects ?? []), ...(second.effects ?? [])],
+      });
+    }
+  }
+  return Object.freeze(pairs);
+};
+
 export const REAL_CARDS = Object.freeze([
   defineCard({
     id: 'highland-game', name: 'Highland Game', set: 'KTK',
@@ -4344,6 +4372,222 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'back', limitations: ['tylna strona daybound/nightbound — nie można umieścić w talii'] },
   }),
 
+  // ===== Batch 68 (kolekcja 400–411, zlecenie właściciela 2026-10-17) =====
+  // Dane Oracle: docs/cards/scryfall-<slug>.json. Wszystkie `supported` (100%).
+
+  // 400. Kulrath Zealot (ECL 148) — ETB: exile top card, play until end of next turn; basic landcycling {1}{R}
+  defineCard({
+    id: 'kulrath-zealot', name: 'Kulrath Zealot', set: 'ECL',
+    types: ['Creature'], subtypes: ['Elemental', 'Warrior'], colors: ['R'],
+    power: 6, toughness: 5, manaCost: 6,
+    oracleText: 'When this creature enters, exile the top card of your library. Until the end of your next turn, you may play that card.\nBasic landcycling {1}{R} ({1}{R}, Discard this card: Search your library for a basic land card, reveal it, put it into your hand, then shuffle.)',
+    imageUri: 'https://cards.scryfall.io/large/front/3/5/3502685d-4e57-4c5c-94c6-ae69048cdfbf.jpg?1783904441',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'exile_top_playable_until_next_turn' }],
+      }),
+      // Basic landcycling {1}{R} — jak Fiery Fall: szuka karty z typami Basic+Land.
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'cycling',
+        cycling: { allTypes: ['Basic', 'Land'] },
+        cost: { mana: 2, colors: ['R'] },
+        effect: [],
+      }),
+    ],
+    artId: 400,
+    plan: 'Lorwyn',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 402. Bloodfire Expert (KTK 101) — prowess (trigger „cast noncreature spell\", jak Jeskai Windscout)
+  defineCard({
+    id: 'bloodfire-expert', name: 'Bloodfire Expert', set: 'KTK',
+    types: ['Creature'], subtypes: ['Efreet', 'Monk'], colors: ['R'],
+    power: 3, toughness: 1, manaCost: 3,
+    oracleText: 'Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)',
+    imageUri: 'https://cards.scryfall.io/large/front/0/7/0742564e-f7a7-4107-b9ed-63703ca4702c.jpg?1783939075',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'you_cast_noncreature_spell' },
+        effect: { type: 'pump', power: 1, toughness: 1 },
+      }),
+    ],
+    artId: 402,
+    plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 404. Meteorite (DMU 235) — ETB: 2 damage to any target; {T}: one mana of any color
+  defineCard({
+    id: 'meteorite', name: 'Meteorite', set: 'DMU',
+    types: ['Artifact'], colors: [], manaCost: 5,
+    oracleText: 'When this artifact enters, it deals 2 damage to any target.\n{T}: Add one mana of any color.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/3/33eb2032-50af-4fd6-bdc7-7cae2211956c.jpg?1783921269',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'any_target', prefer: 'opponent' } },
+        effect: { type: 'damage', amount: 2 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { tap: true },
+        effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] },
+      }),
+    ],
+    artId: 404,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 405. Raze to the Ground (BRO 149) — can't be countered; destroy target artifact; if its MV ≤1, draw
+  defineCard({
+    id: 'raze-to-the-ground', name: 'Raze to the Ground', set: 'BRO',
+    types: ['Sorcery'], colors: ['R'], manaCost: 3,
+    oracleText: 'This spell can\'t be countered.\nDestroy target artifact. If its mana value was 1 or less, draw a card.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/3/838b25d2-7615-4375-a5e6-3d762c9072a5.jpg?1783920061',
+    spell: {
+      timing: 'sorcery',
+      // Flaga „can't be countered\" — counterStackObject nie działa, także ward.
+      cantBeCountered: true,
+      targets: [{ type: 'artifact' }],
+      effects: [{ type: 'destroy_permanent', drawIfManaValueAtMost: 1 }],
+    },
+    artId: 405,
+    plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 406. Stymied Hopes (THS 64) — counter unless its controller pays {1}; scry 1
+  defineCard({
+    id: 'stymied-hopes', name: 'Stymied Hopes', set: 'THS',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Counter target spell unless its controller pays {1}. Scry 1. (Look at the top card of your library. You may put that card on the bottom.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/7/5702b757-5be5-4a48-bc73-a87ec4f3193b.jpg?1783939790',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'spell_on_stack' }],
+      effects: [
+        { type: 'counter_spell_unless_pays', amount: 1 },
+        { type: 'scry', amount: 1 },
+      ],
+    },
+    artId: 406,
+    plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 407. Secure the Scene (M21 35) — exile target nonland permanent; ITS CONTROLLER creates a 1/1 Soldier
+  defineCard({
+    id: 'secure-the-scene', name: 'Secure the Scene', set: 'M21',
+    types: ['Sorcery'], colors: ['W'], manaCost: 5,
+    oracleText: 'Exile target nonland permanent. Its controller creates a 1/1 white Soldier creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/d/6/d6467d96-e43a-4b1e-b6ce-578d991077b5.jpg?1783930734',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'nonland_permanent' }],
+      effects: [
+        // Kontroler celu zapisany PRZED wygnaniem (ruling Secure the Scene 2020); cel zniknął → brak tokena.
+        { type: 'exile_permanent', captureControllerAs: 'targetController' },
+        {
+          type: 'create_token', controllerFromCapture: 'targetController',
+          cardId: 'token_soldier', name: 'Soldier', kind: 'creature',
+          power: 1, toughness: 1, colors: ['W'], types: ['Creature'], subtypes: ['Soldier'],
+        },
+      ],
+    },
+    artId: 407,
+    plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 408. Halo Scarab (SNC 239) — {2}, exile from graveyard: create a Treasure
+  defineCard({
+    id: 'halo-scarab', name: 'Halo Scarab', set: 'SNC',
+    types: ['Artifact', 'Creature'], subtypes: ['Insect'], colors: [],
+    power: 2, toughness: 1, manaCost: 2,
+    oracleText: '{2}, Exile this card from your graveyard: Create a Treasure token. (It\'s an artifact with "{T}, Sacrifice this token: Add one mana of any color.")',
+    imageUri: 'https://cards.scryfall.io/large/front/2/e/2eead159-b9a1-4c64-affe-c77b0a9e4775.jpg?1783923062',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, exileFromGraveyard: true },
+        fromGraveyard: true,
+        effect: {
+          type: 'create_token', cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
+          colors: [], types: ['Artifact'], subtypes: ['Treasure'],
+          abilities: [
+            createAbility({
+              type: ABILITY_TYPE.activated,
+              cost: { tap: true, sacrificeSelf: true },
+              effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true },
+            }),
+          ],
+        },
+      }),
+    ],
+    artId: 408,
+    plan: 'New Capenna',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 409. Child of Night (M19 89) — lifelink
+  defineCard({
+    id: 'child-of-night', name: 'Child of Night', set: 'M19',
+    types: ['Creature'], subtypes: ['Vampire'], colors: ['B'],
+    keywords: ['lifelink'], power: 2, toughness: 1, manaCost: 2,
+    oracleText: 'Lifelink',
+    imageUri: 'https://cards.scryfall.io/large/front/3/8/3867704d-d2ef-4185-b53d-84eba6a6776f.jpg?1783934576',
+    artId: 409,
+    plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 410. Austere Command (CLB 687) — choose two (CR 700.2): zniszcz artefakty / zaklęcia / stwory MV ≤3 / MV ≥4
+  defineCard({
+    id: 'austere-command', name: 'Austere Command', set: 'CLB',
+    types: ['Sorcery'], colors: ['W'], manaCost: 6,
+    oracleText: 'Choose two —\n• Destroy all artifacts.\n• Destroy all enchantments.\n• Destroy all creatures with mana value 3 or less.\n• Destroy all creatures with mana value 4 or greater.',
+    imageUri: 'https://cards.scryfall.io/large/front/3/d/3d24036e-075f-4991-a740-a9d943722ad2.jpg?1783922495',
+    spell: {
+      timing: 'sorcery',
+      // „Choose two\" = 6 par różnych trybów (chooseTwoModes; efekty w kolejności drukowanej).
+      modes: chooseTwoModes([
+        { name: 'Zniszcz wszystkie artefakty', effects: [{ type: 'destroy_all', filter: { types: ['Artifact'] } }] },
+        { name: 'Zniszcz wszystkie zaklęcia', effects: [{ type: 'destroy_all', filter: { types: ['Enchantment'] } }] },
+        { name: 'Zniszcz stwory o MV ≤3', effects: [{ type: 'destroy_all', filter: { types: ['Creature'], manaValueAtMost: 3 } }] },
+        { name: 'Zniszcz stwory o MV ≥4', effects: [{ type: 'destroy_all', filter: { types: ['Creature'], manaValueAtLeast: 4 } }] },
+      ]),
+    },
+    artId: 410,
+    plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 411. Neurok Invisimancer (SOM 37) — stałe „can't be blocked\"; ETB: target creature can't be blocked this turn
+  defineCard({
+    id: 'neurok-invisimancer', name: 'Neurok Invisimancer', set: 'SOM',
+    types: ['Creature'], subtypes: ['Human', 'Wizard'], colors: ['U'],
+    power: 2, toughness: 1, manaCost: 3,
+    oracleText: 'This creature can\'t be blocked.\nWhen this creature enters, target creature can\'t be blocked this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/e/8/e88f78f4-77d8-4c3e-a5bf-a9dd902aaae1.jpg?1783941738',
+    abilities: [
+      // Stała zdolność (statyczna) — combat.js blockRestrictionError.
+      createAbility({ type: ABILITY_TYPE.static, cantBeBlocked: true }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield', requiresTarget: { type: 'creature' } },
+        effect: { type: 'cant_be_blocked' },
+      }),
+    ],
+    artId: 411,
+    plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
 ]);
 
 

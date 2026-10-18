@@ -12,6 +12,7 @@
 1x Pacifism
 1x Palace Familiar
 1x Act of Treason
+1x Bloodfire Expert
 1x Jeskai Windscout
 1x Kill Shot
 1x Monastery Flock
@@ -26,4 +27,4 @@
 1x Ainok Tracker
 5x Plains
 3x Island
-4x Mountain
+5x Mountain

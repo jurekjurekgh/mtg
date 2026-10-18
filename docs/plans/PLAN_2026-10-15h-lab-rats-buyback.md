@@ -67,5 +67,5 @@ Zgłoszenie właściciela (tura 15, rozszerzenie M):
       D/6 (`test/druki-druga-strona-i-uuid-obrazu.test.js`): przypadek przepisany
       syntetycznie (token z UUID karty), reguła bez zmian.
 - [x] Testy powiązane (54 pliki, 903/903), `npm test` 8277/8277 rc=0, build rc=0.
-- [ ] Commit, push bez force, opis PR #166 (wiersz M).
-- [ ] Odpowiedź właścicielowi: (a) poprosić o kroki/log, (b) naprawione.
+- [x] Commit, push bez force, opis PR #166 (wiersz M). — domknięte scaleniem PR #166 (`24ff1a5`); odhaczone w sesji 2026-10-17.
+- [ ] Odpowiedź właścicielowi: (a) poprosić o kroki/log, (b) naprawione. — (pozostaje otwarte: wymaga kontaktu z właścicielem).

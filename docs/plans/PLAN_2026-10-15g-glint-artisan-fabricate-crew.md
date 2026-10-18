@@ -67,7 +67,7 @@ Zgłoszenia właściciela (tura 12):
 - [x] RED testów K i L (`.arena/red-k-l.log`).
 - [x] GREEN K, potem GREEN L (osobne commity).
 - [x] Testy powiązane, `npm test` rc=0, build rc=0, benchmark bez zmiany.
-- [ ] Push i opis PR #166 przez REST. Bez scalania.
+- [x] Push i opis PR #166 przez REST. Bez scalania. — domknięte scaleniem PR #166 (`24ff1a5`).
 
 ## Korekta L (tura 13 właściciela) — dokładna wartość Crew
 

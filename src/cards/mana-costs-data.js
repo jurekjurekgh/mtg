@@ -639,4 +639,15 @@ export const MANA_COSTS = {
   "battlefield-butcher": "{2}{B}",
   "sentry-bot": "{4}{W}",
   "intrepid-tenderfoot": "{1}{G}",
+  // Batch 68 (2026-10-17) — koszty wprost z Oracle (docs/cards/scryfall-*.json).
+  "kulrath-zealot": "{5}{R}",
+  "bloodfire-expert": "{2}{R}",
+  "meteorite": "{5}",
+  "raze-to-the-ground": "{2}{R}",
+  "stymied-hopes": "{1}{U}",
+  "secure-the-scene": "{4}{W}",
+  "halo-scarab": "{2}",
+  "child-of-night": "{1}{B}",
+  "austere-command": "{4}{W}{W}",
+  "neurok-invisimancer": "{1}{U}{U}",
 };

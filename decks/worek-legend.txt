@@ -1,30 +1,28 @@
 # Worek: Legendy
 
 1x Foul Orchard
+1x Immersturm Skullcairn
 1x Prismari Campus
 1x Quandrix Campus
-1x Cenn's Tactician
 1x Dig Site Inventory
-1x Goldmeadow Nomad
-1x Mosquito Guard
-1x Assert Perfection
-1x Creakwood Safewright
+1x Golem-Skin Gauntlets
 1x Curate (STX)
-1x Release the Ants
-1x Soulbright Flamekin
-1x Subterranean Scout
-1x Consign to Dream
-1x Kulrath Mystic
-1x Stomping Slabs
+1x Infectious Bloodlust
+1x Invasion of the Giants
+1x Naturalize
+1x Stymied Hopes
+1x Fiery Justice
+1x Savage Hunger
+1x Scouting Hawk
 1x Ulna Alley Shopkeep
-1x Brightwood Tracker
 1x Capture Sphere
 1x Render Speechless
 1x Tackle Artist
-1x Puppeteer Clique
-1x Bog Hoodlums
+1x Etched Host Doombringer
+1x Volcanic Submersion
+1x Austere Command
 3x Plains
 2x Island
-3x Swamp
+2x Swamp
 3x Mountain
 1x Forest

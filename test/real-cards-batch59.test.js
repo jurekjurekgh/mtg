@@ -666,7 +666,7 @@ test('B59/G1.8: flashback {G} — karta nie może obrać SIEBIE i idzie na wygna
   assert.ok(find(state, 'shock', 'graveyard'), 'niewskazana karta drugiego gracza zostaje');
 });
 
-test('B59/G1.8: przy dużym grobie oferta jest przycięta, ale trzyma skrajne wybory', () => {
+test('B59/G1.8: przy dużym grobie oferta jest KOMPLETNA (O-2: bez limitu celów)', () => {
   const state = game();
   put(state, 'mj', 'memory-s-journey', 'p1');
   const grave = ['savage-hunger', 'shock', 'razorfoot-griffin', 'basic-swamp', 'basic-island', 'basic-mountain'];
@@ -674,7 +674,8 @@ test('B59/G1.8: przy dużym grobie oferta jest przycięta, ale trzyma skrajne wy
   addMana(state, 'p1', 2, { colors: ['U'] });
   const offers = commands(state).filter((c) => c.type === 'cast_spell' && c.objectId === 'mj'
     && c.targets[0] === 'p2');
-  assert.ok(offers.length <= 32, `oferta przycięta do limitu panelu (jest ${offers.length})`);
+  // C(6,0)+C(6,1)+C(6,2)+C(6,3) = 1+6+15+20 = 42 — każda kombinacja do trzech kart.
+  assert.equal(offers.length, 42, `oferta ma wszystkie kombinacje (jest ${offers.length})`);
   assert.ok(offers.some((c) => c.targets.slice(1).every((t) => t == null)), 'wariant „zero kart" zostaje');
   assert.ok(offers.some((c) => c.targets.slice(1).filter((t) => t != null).length === 3),
     'wariant „trzy karty" (maksimum) zostaje');

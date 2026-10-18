@@ -239,7 +239,12 @@ test('F/5 klasa (ADR 0002): inwentarz descriptorowy cant_be_blocked + Enter the 
   // Batch 63/T3 (247 ORI Subterranean Scout): nowy dawca daru ewazji — dar
   // na cel o sile ≤ 2; wycena celu idzie tą samą polityką klasy (F/5), piny
   // scenariuszowe w test/real-cards-batch63.test.js (B63/247).
-  const KNOWN = new Set(['shiva-warden-of-ice', 'enter-the-enigma', 'coralhelm-guide', 'subterranean-scout']);
+  // Batch 68/411 (SOM 37 Neurok Invisimancer): ETB „target creature can't be blocked
+  // this turn" (efekt `cant_be_blocked` z `requiresTarget`) — ta sama polityka celu
+  // co Enter the Enigma (F/5 b). Jej statyczna zdolność „can't be blocked" to
+  // `cantBeBlocked` na permanencie (combat.js), NIE efekt — nie wchodzi tu.
+  const KNOWN = new Set(['shiva-warden-of-ice', 'enter-the-enigma', 'coralhelm-guide', 'subterranean-scout',
+    'neurok-invisimancer']);
   const found = new Set();
   for (const card of REGISTRY.all()) {
     const hits = [];
@@ -254,7 +259,7 @@ test('F/5 klasa (ADR 0002): inwentarz descriptorowy cant_be_blocked + Enter the 
     if (hits.some((e) => e?.type === 'cant_be_blocked')) found.add(card.id);
   }
   assert.deepEqual([...found].sort(), [...KNOWN].sort(),
-    'inwentarz klas cant_be_blocked: shiva-warden-of-ice (I/II), enter-the-enigma, coralhelm-guide — nowa karta wymaga klasyfikacji i pinów');
+    'inwentarz klas cant_be_blocked: shiva-warden-of-ice (I/II), enter-the-enigma, coralhelm-guide, subterranean-scout, neurok-invisimancer — nowa karta wymaga klasyfikacji i pinów');
   // (b) Zachowanie cast_spell (ta sama wycena celu — L41): Enter the Enigma
   // celuje NAJWIĘKSZYM żywym atakującym, nigdy tapniętym pod blokadą.
   const state = game({ active: 'p2' });

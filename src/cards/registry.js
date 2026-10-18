@@ -421,6 +421,9 @@ function freezeSpell(spell) {
   if (!isModal && (!Array.isArray(spell.effects) || spell.effects.length === 0)) throw new TypeError('Czar wymaga niepustej listy efektów');
   return Object.freeze({
     timing: spell.timing,
+    // Batch 68 (Raze to the Ground): „This spell can't be countered" —
+    // flaga czytana przez counterStackObject (także wobec warda).
+    ...(spell.cantBeCountered ? { cantBeCountered: true } : {}),
     targets: Object.freeze((spell.targets ?? []).map((spec) => Object.freeze({ ...spec }))),
     // Czar modalny niesie efekty w `modes`; nadrzędna lista jest wtedy pusta.
     effects: Object.freeze((isModal ? [] : (spell.effects ?? [])).map((effect) => Object.freeze({ ...effect }))),

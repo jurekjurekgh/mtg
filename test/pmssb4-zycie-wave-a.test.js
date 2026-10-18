@@ -153,14 +153,14 @@ test('F-A2: ETB-gain przez tiers i wrazliwe na zycie (healer/paladin)', () => {
   }
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['G'], 7);
   handCard(s, 'k', 'spinewoods-paladin');
-  approx(scoreOf(s, 'cast_permanent(k'), 72.0072, 'paladin@20 (bylo 75.6072)');
+  approx(scoreOf(s, 'cast_permanent(k'), 73.5072, 'paladin@20 (PMSSB-67/F4 trample ×moc×próg −0.3; PMSSB-64 było 73.8072, przed 75.6072)');
 });
 
 test('F-A2b: skymarch ETB-drain: gain-tiers + foe-lose +4', () => {
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['B'], 5);
   handCard(s, 'sk', 'skymarch-bloodletter');
   fieldCreature(s, 'wrog', 'p2', 2, 2);
-  approx(scoreOf(s, 'cast_permanent(sk'), 75.6018, 'skymarch (bylo 72.9018: lose-miss 0)');
+  approx(scoreOf(s, 'cast_permanent(sk'), 77.7018, 'skymarch (PMSSB-64 latanie 2-mocy +2.1; bylo 75.6018)');
 });
 
 test('F-A3: talisman = soulmender (dedup M155: 6->3, 8->5)', () => {

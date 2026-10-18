@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Raze+to+the+Ground&set=bro&format=json",
+  "print": "bro",
+  "name": "Raze to the Ground",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "This spell can't be countered.\nDestroy target artifact. If its mana value was 1 or less, draw a card.",
+  "colors": [
+    "R"
+  ],
+  "set": "bro",
+  "set_name": "The Brothers' War",
+  "collector_number": "149",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/3/838b25d2-7615-4375-a5e6-3d762c9072a5.jpg?1783920061",
+    "normal": "https://cards.scryfall.io/normal/front/8/3/838b25d2-7615-4375-a5e6-3d762c9072a5.jpg?1783920061"
+  },
+  "pobrano": "2026-10-17",
+  "rulings": [
+    {
+      "date": "2022-10-14",
+      "source": "wotc",
+      "comment": "\"This spell can't be countered\" means it can't be countered even by the ward keyword ability. The spell's controller may still pay the ward cost if it targets an artifact with ward, but Raze to the Ground won't be countered if they don't."
+    }
+  ],
+  "rulingsPobrano": "2026-10-17",
+  "rulingsSource": "https://api.scryfall.com/cards/bro/149/rulings"
+}

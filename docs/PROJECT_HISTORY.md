@@ -19,6 +19,34 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-17 — Sesja domyślna (ADR 0021): PR sesji, audyt PR #166 (PR #167)
+
+Zlecenie „Kontynuujemy projekt.” bez tematu → pętla domyślna. Plan:
+`docs/plans/PLAN_2026-10-17-domyslna-petla-audyt-pr166.md`. Audyt:
+`docs/audits/AUDYT_PR166_2026-10-17.md`.
+
+- **PR #167** (ADR 0020 A), gałąź `arena/4fcdc89b-mtg`, base `main`. Bez scalania (ADR 0007).
+- **Audyt PR #166 (B):** 13 plików kodu (+463/−77), 19 plików testów, 16 dokumentów.
+  Sondy w `.arena/` (nie w repo) potwierdziły dwa ustalenia:
+  - **O-1 — naprawione (`334c799`):** tryb wolnych celów (Wrap in Flames) pozwalał zatwierdzić
+    4 cele przy „up to three”; silnik odrzucał to dopiero przy wykonaniu. Test RED/GREEN `O/11`.
+  - **O-2 — naprawione (`106b49f`, zlecenie właściciela):** przy ~40 kandydatach kreator
+    pokazywał 31 celów i nie włączał trybu wolnych celów (limit 32 ofert). Limit zdjęto:
+    oferta jest kompletna. Przy 100 stworach znaleziono i naprawiono błąd stosu (`push(...)`).
+    Koszt zmierzony: 40 stworów — 10 701 ofert (bot 0,8 s); 100 — 166 751 (bot 21 s).
+  - **O-3 — naprawione (`055fd03`):** `reason` odrzucenia na wyniku `execute`.
+  - **O-4 — naprawione (`acf1643`):** klasa outlast wymaga czystego licznika na sobie; strażnik katalogu.
+- **Bramy:** `npm test` 8293/8293 (baza) → 8294/8294 po O-1, rc=0; `npm run build` rc=0
+  (74 moduły); `tools/cr-numery.mjs` OK (5834 cytatów). Pełny benchmark nie był zlecony.
+- **Stare plany:** odhaczono pozycje domknięte scaleniem PR #166 (16a, 15h, 15f, 15g, 15c 8–9).
+  Pozostały tylko pozycje wymagające właściciela.
+- **README:** wskaźnik handoffu (był 2026-10-11, przestarzały) zaktualizowany na 2026-10-15c.
+- **Nie zrobiono:** krok 5 pętli (Żywy Tester, polowanie na rozbieżności CR) — ANULOWANY dla
+  tej sesji (decyzja właściciela 2026-10-17).
+- **Druga runda (zlecenie właściciela):** plan `docs/plans/PLAN_2026-10-17b-audyt-pr166-o2-o3-o4.md`.
+  Bramy po ostatnim commicie: `npm test` 8303/8303 rc=0; build rc=0; cr-numery OK.
+  Korekta opisu commita `106b49f` (RED nie był wykonany tak, jak napisano): audyt §6.
+
 ## 2026-10-15c — Pętla jakości: Żywy Tester na taliach batcha 67 (PR #166)
 
 Zlecenie „kontynuuj” → ADR 0021 (domyślna pętla jakości). Plan:
@@ -17169,3 +17197,102 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   315→314) — atrybucja wyłącznikami wskazała wyłącznie F1, fixture
   zregenerowany świadomie. Plan: `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`;
   raport: `docs/audits/PMSSB62_BATCH67_2026-10-15.md`; rejestr: `§PMSSB-62`.
+
+## 2026-10-17 — Batch 68: kolekcja 400–411, 10 kart (PR #167)
+
+- **Zakres.** Dziesięć druków z arkusza właściciela (Kulrath Zealot ECL, Bloodfire Expert KTK,
+  Meteorite DMU, Raze to the Ground BRO, Stymied Hopes THS, Secure the Scene M21, Halo Scarab SNC,
+  Child of Night M19, Austere Command CLB, Neurok Invisimancer SOM). Wszystkie `supported` (100% Oracle),
+  bez `limitations`. Kolumna „Plan" przepisana 1:1 i wiąże generator talii.
+- **Mechaniki (generycznie, ADR 0002).** M1 „can't be blocked" (blokowanie), M2 „can't be countered"
+  (kontra), M3 destroy + dobranie gdy MV celu ≤ N, M4 wygnanie + token dla kontrolera przechwyconego
+  przed wygnaniem (`state.spellCaptures`), M5 `destroy_all` z filtrem typu i MV, M6 wybór dwóch trybów
+  (`chooseTwoModes`, 6 par w kolejności drukowanej). M7 (landcycling, zdolność z cmentarza za koszt many,
+  Skarb i mana dowolnego koloru) — bez nowego silnika, pilnowane asercjami kształtu.
+- **Bot — STATUS: W TOKU, nie „zrobione”.** Właściciel odrzucił wcześniejsze domknięcie wyceny
+  (2026-10-17: płaski scoring, testy bez modelu stołu). Każda mechanika idzie pełną pętlą PMSSB
+  (`docs/PMSSB.md`, procedura 0–7), numer raportu **PMSSB-63**.
+  - Austere Command: model stołu (`massDestroyValue`, commit `e48caff`); pomiar PRZED/PO 9 scenariuszy
+    (PRZED 6/9 → PO 9/9), pin liczbowy składowych, pokrętła ×0.
+  - Raze to the Ground: dobranie wyceniane jak `draw_cards` z karą deck-outu (commit `95fc359`).
+  - OTWARTE: Secure the Scene na 1/1 (wymiana zerowa, bot rzuca: 67.95) — wymaga wyceny kosztu many
+    czaru usuwania (rodzina usuwania), nie rozwiązane lokalnie. Stymied Hopes, Kulrath, Bloodfire, Meteorite,
+    Child of Night, Neurok: audyt jeszcze nie wykonany.
+  - Zachowanie sześciu rzutów z `test/bot-quality-batch68-karty.test.js` to tylko piny zgodności; nie są dowodem
+    taktycznej jakości. Halo Scarab (bankowanie many za koszt poniżej passa) zgodnie z regułą M243/C —
+    do potwierdzenia przez właściciela.
+- **Talie.** Wyłącznie `tools/generate-plan-decks.mjs` (ADR 0023 §1). Nowa talia Lorwyn; Kaldheim →
+  `worek-legend`, Duskmourn → `worek-dziki` (przetasowanie worka, ADR 0023 §4). 28 talii.
+- **O-2 w tej partii.** Oferta celów bez limitu (commit `106b49f`) zostaje. Test 100 stworów usunięty z
+  suite (zlecenie właściciela); lekka wersja O/13 na 30 stworach.
+- **Bramy.** `npm run test:all` 8615/8615 na `8d9fcc3`, `npm run build` 74 moduły, `cr-numery` OK.
+  CI zielone na `9a15957` i `f546d31`. Czerwień CI `106b49f`–`41d77c6` — przyczyna nieznana (logi
+  niedostępne z sandboxa), nie zidentyfikowana.
+- **Commity:** `27bbc79`, `ef8ff20`, `9a15957`, `41d77c6`, `5e75a41`, `ce2d350`, `f546d31`, `8d9fcc3`, `2d40ff3`.
+- **Otwarte.** Okno stosu modali w `session.js` (test F3, luka sprzed partii) — decyzja właściciela.
+  Pełny benchmark B0 (ADR 0018) nie uruchomiony.
+  Plan: `docs/plans/PLAN_2026-10-17c-batch68-kart.md`.
+
+## 2026-10-17 — PMSSB-64: słowa kluczowe ciała w wycenie rzutu (batch 68)
+
+- Pomiar PRZED: lifelink, haste, deathtouch Δ = 0 w `cast_permanent`; latanie płaskie +3 niezależnie od blokerów.
+- Wdrożenie: `creatureKeywordValue` (jedna funkcja dla rzutu, warpu, adventure i planowania), 14 kluczy
+  `creatureKw*`, skala mocą dla latania i tempa, dolna granica latania 3, morph bez słów (CR 708.2a).
+- Poprawki wykryte testami: podwójne liczenie (płaski +3), inwersja latania bez blokera, brak skali
+  mocą (Krotiq vs latający Imp), literówka `'first strike'` → `'first_strike'` (PMSSB-63).
+- Golden master: 11/1221 decyzji zmienia wynik, 0 zmienia wybór; fixture regenerowany świadomie.
+- Lustro (finalny model vs baseline bez wag słów): 543:417 (56.6 %, n = 960, dwa zbiory seedów).
+- Przepięte 23 asercje w 13 plikach, każda z przyczyną (Δ słowa). Raport: `docs/audits/PMSSB64_BATCH68_2026-10-17.md`.
+- Korekta: wynik lustra 236:244 w opisie `e4ce466` pochodził z modelu pośredniego; miarodajny wynik to 543:417.
+
+## 2026-10-17 — PMSSB-65: prowess Bloodfire Experta w rzucie (batch 68)
+
+- Pomiar PRZED: wyzwalacz `you_cast_noncreature_spell` wyceniany płasko (1.35) niezależnie od ręki.
+  Wcześniejsza notatka „67.05 z i bez” była błędna (bez zdolności 65.70).
+- Wdrożenie: `prowessCastValue` — payoff pumpu jak na stole (`temporaryPumpPayoff` × `boardPayoffWeight`),
+  po czarach nie-stworzeniach zagrywalnych w następnej turze (budżet many = lądy).
+- Testy: `test/audyt-pmssb65-prowess.test.js` (6); pin Windscouta 70.1 → 68.7 (pusta ręka).
+- Bramki (`00b620e`): `npm test` 8426/8426, build 0, `cr-numery` 0, `test:all` 8693/8693.
+- Golden master: 0 zmian, ale 6 partii nie zawiera karty (brak dowodu). Mirror nie uruchomiony.
+- Raport: `docs/audits/PMSSB65_BATCH68_2026-10-17.md`.
+
+
+## 2026-10-17 — PMSSB-66: okno many (end step przeciwnika, batch 68)
+
+- Zasada właściciela: mana wydana w end step przeciwnika jest darmowa (nasze lądy odtapowują się). Generycznie dla `create_token` i `add_counter`; poza oknem odroczenie (`score ≤ −koszt`), walka wyłączona z odroczenia.
+- Pomiar PRZED: Halo end-opp −11 pass; +1/+1 w naszej głównej +25 activate (błąd). PO: Halo end-opp +5; +1/+1 nasza główna −1; oil-stwór end-opp +10.
+- Poprawka po przeglądzie (`dd89af1`): rezerwa pod instant = najdroższy mieszczący się (nie najtańszy); W11/W12.
+- Pokrętło `lastingManaWindowOn` (1/0); test ×0 w `test/audyt-pmssb66-okno.test.js` (15 pinów).
+- Bramki (`dd89af1`): `npm test` 8441/8441; `test:all` 8708/8708; build 0; `cr-numery` OK.
+- Golden master: 0 zmian w 1221 decyzjach, ale zrzut ma 4 aktywacje — brak dowodu.
+- Lustro (talie z mechaniką): 5000 → 162:158 (n=320); 3000 przerwane przez lukę planera płatności.
+- Crash `Brak kolorowej many` (worek-mroczny seed 3035) USUNIĘTY (zlecenie właściciela, 100%): (1) purpose płynie od bramki oferty przez `planGrantManaColors` do `spendMana`; (2) `firstUncoveredPipColor` wybiera kolor po dopasowaniu (`maxPipsCovered`), nie licznikiem per kolor — Skarb nie idzie już na W zamiast R/G. Test `test/audyt-pmssb66-brak-kolorowej-many.test.js` (2; padały przed poprawką). Odrzucone: bramka plota (plot = rzut bez kosztu i bez kolorów).
+- Lustro po naprawie (finalny kod): 3000 → 159:161; 5000 → 162:158; 9000 → 163:157; nieukończone 0 (960 partii).
+- Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md`. Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (spisany po pierwszej wersji — kolejność procedury 0 złamana, przyznane).
+
+## 2026-10-17 — PMSSB-66 Ad 2: skutki licznikowe śmiertelne ASAP (batch 68)
+
+- Zasada właściciela: licznik ze skutkiem śmiertelnym nie czeka na okno many. Zabójcze −1/−1 wroga (generycznie: licznik zmniejszający wytrzymałość) i ratunek naszego stwora przed śmiertelnym uszkodzeniem (+1/+1, walka lub czar na stosie).
+- Przyczyna: odroczenie nie znało skutku śmiertelnego, a `counterHostValue` zerował licznik na stworze „skazanym" przez śmiertelny Shock na stosie, nawet gdy licznik go ratował.
+- Pomiar PRZED/PO (`tools/pmssb66-smiertelne-countery-sonda.mjs`): zabójcze −1/−1 −1,00 → +33,00; ratunek przed Shockiem −19,00 → +15,00; kontrole (niezabójcze, za mało, walka) bez zmian.
+- Piny: `test/audyt-pmssb66-smiertelne-countery.test.js` (8).
+- Bramki: `npm test` 8451/8451; `test:all` 8718/8718; build 0; `cr-numery --sprawdz` OK. Lustro: 3000 159:161; 5000 162:158; 9000 163:157 (nieukończone 0).
+- Raport: `docs/audits/PMSSB66_BATCH68_2026-10-17.md` (sekcja „Ad 2"). Plan: `docs/plans/PLAN_2026-10-17g-pmssb66-okno-many.md` (dopiski 1–2).
+
+## 2026-10-17 — PMSSB-67: caveaty PMSSB-64 (batch 68)
+
+- Cztery punkty z PMSSB-64 przeszły pełną pętlę PMSSB (zgoda właściciela: „Wszystkie 4 punkty z pełną pętlą PMSSB"). Commity: F1 `8cf0042` (pin, bez zmiany kodu), F2 `26cd540` (liczniki wejścia, Necrosquito 62.55 → 70.05), F3 `493c30d` (przetrwanie lifelinku), F4 `21a5568` (płaskie wagi 9 słów → `floorShare`).
+- F4: 16 pinów przepiętych z przyczyną w komentarzu (formuła i stan stołu). Nie osłabiono asercji.
+- Błąd procesu, wykryty przy F4: `npm test` to `run-tests.mjs fast`, który pomija zestaw `slow`, czyli golden master. Dwa wcześniejsze zdania „npm test zielony" (F2, F3) nie obejmowały golden mastera. Wykryło to dopiero `test:all` (2 padnięcia). Od tej pory zamknięcie kroku = `test:all` zielony, a nie `npm test`.
+- Golden master: dump diff 1221 decyzji (baza `7338ff2`): F2 0 zmian; F3 1 zmiana wyniku (−0.9); F4 7 zmian wyniku (−0.9 do −2.4), 0 zmian wyboru. Fixture zregenerowany (`90aa7806…` → `2fe4b347…`).
+- Bramy na `21a5568`: `test:all` 8749/8749; build 0; `cr-numery --sprawdz` OK; lustro 3000 157:163, 5000 162:158, 9000 163:157 (nierozegrane 0). Zmiana 159:161 → 157:163 w jednym zakresie to 2 wygrane z 320, w granicach szumu.
+- Otwarte: próg latania dla ciała o mocy 0 (decyzja właściciela; rekomendacja: zostawić 3). Raport: `docs/audits/PMSSB67_KW_CAVEATY_2026-10-17.md`.
+
+## 2026-10-18 — PMSSB-67/F5: próg latania skalowany mocą; zamknięcie Ad 3 i L48
+
+- Decyzja właściciela: „Powinniśmy skalować próg do mocy". Próg latania = `creatureKwFlyingFloor · moc/3`; zablokowany lot = próg, odblokowany = max(próg, 8·moc/3). Moc 0 → 0 (bez obrażeń), moc 3 bez zmian. Pokrętło `creatureKwFlyingFloorScaled` (0 = dawne płaskie 3).
+- Pomiar: `tools/pmssb67-prog-latania-sonda.mjs` (PRZED/PO w `docs/audits/PMSSB67_KW_CAVEATY_2026-10-17.md`, sekcja F5). Pin: `test/audyt-pmssb67-prog-latania.test.js` (4; RED→GREEN; mutacja płaskiego progu: 2 padają).
+- Re-piny 16 w 5 plikach (Hawk, bloodflies, talions, bramka-evasion, anty-over-fix). Anty-over-fix z PMSSB-64 zmieniony z „równość" na „przepuszczony ≥ zablokowany" (niezmiennik zostaje).
+- Golden master: dump diff 0 zmian wyboru, 1 zmiana wyniku (−0.3). Fixture `2fe4b347…` → `0db85647…`.
+- Ad 3 (Halo Scarab, M243/C): właściciel potwierdził wariant A. Wdrożony już w PMSSB-66; dodany pin warunku „wolne lądy" (`test/audyt-pmssb67-okno-wolne-lady.test.js`, 3). Wcześniej błędnie przedstawiony jako otwarty.
+- L48 (atomowość płatności): zamknięte przez właściciela. Pin nieudanej płatności kolorowej: `test/audyt-pmssb67-atomowosc-platnosci.test.js` (3).

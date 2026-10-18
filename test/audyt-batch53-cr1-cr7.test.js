@@ -111,8 +111,10 @@ test('CR1: ETB destroy bez celu wroga ≈ zwykłe ciało (premia tylko przy celu
   addTwin(plain, 'twin', 'acidic-slime', 'p1');
   const s2 = castScore(plain).score;
 
-  // bez celu ETB nie dokłada premii (deathtouch/ewaluacja ciała bez zmian)
-  assert.ok(Math.abs(s1 - s2) <= 1, `bez celu wroga premii nie ma: ${s1} vs ${s2}`);
+  // PMSSB-64: bliźniak nie niesie słów (widok ręki nie ma keywords; bot czyta definicję), a Acidic Slime
+  // ma deathtouch. ETB bez celu dokłada 0, więc CAŁA różnica to deathtouch = creatureKwDeathtouch(4) × 0.9 × creatureKwStateFloor(0.5) = 1.8
+  // (PMSSB-67/F4: pusty stół = brak sygnału → próg; PRZED płasko 3.6).
+  assert.ok(Math.abs((s1 - s2) - 1.8) <= 0.01, `ETB bez celu = 0, różnica = deathtouch: ${s1} vs ${s2}`);
 });
 
 test('CR1: Phyrexian Rager (ETB draw 1, lose 1) > bliźniak bez ETB', () => {
