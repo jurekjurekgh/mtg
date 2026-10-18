@@ -19,6 +19,23 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18f — Bot nie atakuje mimo przewagi: pochłanianie blokerów liczone mocą, nie wytrzymałością (R)
+
+- Uwaga z testów: bot z 7 stworami (siła 13) i 1 kartą w bibliotece nie atakuje; ja mam 5 życia, 3 stwory,
+  9 kart w bibliotece. Przyczyna: `penetratingPower` odejmował od mocy atakujących SUMĘ WYTRZYMAŁOŚCI blokerów
+  (4+4+5 = 13 przy sile 13), więc lethal nie wchodził i wygrywała pusta deklaracja. Blokujący zatrzymuje moc
+  atakującego, którego blokuje (CR 509.1h, 510.1); przy trample tylko obrażenia śmiertelne (CR 702.19b).
+- Poprawka: `blockersAbsorbedDamageOf` (zachłanny przydział blokerów; dla ataków bez trample dokładny, pin
+  brute force na 300 układach). Użyta w `blockerAbsorb` (lethal) i w `forcedBlockLossIds` (wymuszony blok).
+  Rachunek właściciela (4 obrażenia) był niedoszacowany: przy optymalnych blokach przechodzi 6 ≥ 5.
+- Golden master (B6, `test/fixtures/bot-scoring-snapshot.json`) zregenerowany ŚWIADOMIE: 4 z 6 partii zmieniły
+  ślad. Liczba i typy decyzji bez zmian; zmienia się wycena `declare_attackers` (−1000 tam, gdzie stary model
+  uznawał zestaw za śmiertelny, a nowy nie). Zrzut różnic: `.arena/gm-cmp.mjs` (poza repo, w `.arena/`).
+- Test: `test/zgloszenie-r-bot-nie-atakuje-wyscig.test.js` (6; przed poprawką czerwony). Bramy: `npm test`
+  8519/8519 rc=0; `test:all` 8786/8786 rc=0; build rc=0; `cr-numery --sprawdz` rc=0. Commit `d5c026d`.
+- Otwarte przy R: w scenariuszu bot wybiera 6 z 7 stworów (1/2 zostaje w domu). Oba warianty są śmiertelne
+  (6 i 7 stworów), więc to rozstrzygnięcie remisu wyceny, nie błąd lethal.
+
 ## 2026-10-18e — Log clash: remis to „nie wygrywa”, nie „przegrywa” (Q)
 
 - Uwaga z gry: „Clash: Nieprzyjaciel przegrywa (wartość many 4 vs 4)”. Remis to nie przegrana. CR 701.30: wygrywa
