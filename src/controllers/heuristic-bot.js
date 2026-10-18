@@ -217,31 +217,86 @@ function diesToDeathtouchBlocker(attacker, blockers) {
  * musi przeliczyć wynik BEZ niego (L41 — jedno źródło reguły).
  */
 function blockKillsAttacker(attacker, blockers) {
+  if ((attacker?.keywords ?? []).includes('indestructible')) return false;
+  return planAttackerDamage(attacker, (blockers ?? []).filter(Boolean)).attackerDies;
+}
+
+/**
+ * P (zgłoszenie właściciela 2026-10-18, „3/3 first strike vs 3/3 + 1/1”):
+ * PODZIAŁ OBRAŻEŃ atakującego. CR 510.1c — rozdziela go gracz atakujący, a nie
+ * obrońca, więc bot musi zakładać podział NAJLEPSZY DLA ATAKUJĄCEGO. Poprzedni
+ * model brał zachłanny podział („zabij najtańszych po kolei”): dla 3/3 FS vs
+ * {3/3, 1/1} zabijał 1/1 i zostawiał 3/3 do zadania 3 obrażeń, więc bot widział
+ * „zabijemy atakującego” i dokładał zbędne 3/3. Realnie 3 obrażenia w 3/3
+ * zabijają je, zanim zada cios (CR 702.7b), a 1/1 zada 1 — atakujący przeżywa.
+ *
+ * Wybór podziału: atakujący woli przeżyć (koszt własnej śmierci = jego wartość)
+ * i zabić cenniejsze ciała (wartość = moc + wytrzymałość, jak w `blockerValueLost`).
+ * Podział wykonalny: suma wytrzymałości zabitych ≤ moc atakującego (CR 510.1c).
+ * Zwraca { killed, dealsDamage, effectivePower, attackerDies } dla wybranego
+ * podziału. Jedno źródło prawdy dla `blockKillsAttacker` i `blockExchangeOf` (L41).
+ *
+ * Dla dużych zestawów (>12 zabijalnych blokerów) wraca do zachłannego podziału,
+ * żeby nie wykładniczyć — w grze tyle blokerów nie zdarza się realnie.
+ */
+function strikesFirst(b) {
+  const bk = b.keywords ?? [];
+  return bk.includes('first_strike') || bk.includes('double_strike');
+}
+
+function planAttackerDamage(attacker, list) {
   const kw = attacker?.keywords ?? [];
-  if (kw.includes('indestructible')) return false;
   const attackerPower = combatPower(attacker);
   const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
+  const attackerValue = (attacker?.power ?? 0) + (attacker?.toughness ?? 0);
   const attackerFirst = kw.includes('first_strike') || kw.includes('double_strike');
   const attackerDeathtouch = kw.includes('deathtouch');
-  const list = (blockers ?? []).filter(Boolean);
+  const attackerIndestructible = kw.includes('indestructible');
   const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
-  const strikesFirst = (b) => {
-    const bkw = b.keywords ?? [];
-    return bkw.includes('first_strike') || bkw.includes('double_strike');
+  const need = (b) => (attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b));
+  const killable = list.filter((b) => !(b.keywords ?? []).includes('indestructible') && need(b) > 0);
+
+  // Kroki obrażeń przy danym zbiorze zabitych w kroku first strike (CR 510.4, 702.7b).
+  const evaluate = (killedIds) => {
+    const dealsDamage = (b) => !attackerFirst || strikesFirst(b) || !killedIds.has(b.id);
+    const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
+    const deathtouchKill = list.some((b) => (b.keywords ?? []).includes('deathtouch')
+      && combatPower(b) > 0 && dealsDamage(b));
+    const attackerDies = !attackerIndestructible
+      && (deathtouchKill || effectivePower >= attackerToughness);
+    return { killed: killedIds, dealsDamage, effectivePower, attackerDies };
   };
-  const killed = new Set();
-  let budget = attackerPower;
-  for (const b of [...list].sort((x, y) => effToughness(x) - effToughness(y))) {
-    if ((b.keywords ?? []).includes('indestructible')) continue;
-    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
-    if (need <= 0) continue;
-    if (budget >= need) { budget -= need; killed.add(b.id); }
+
+  if (killable.length > 12) {
+    // Zachłanny fallback (rzadki, duży zestaw) — dotychczasowa kolejność.
+    let budget = attackerPower;
+    const ids = new Set();
+    for (const b of [...killable].sort((x, y) => effToughness(x) - effToughness(y))) {
+      if (budget >= need(b)) { budget -= need(b); ids.add(b.id); }
+    }
+    return evaluate(ids);
   }
-  const dealsDamage = (b) => !attackerFirst || strikesFirst(b) || !killed.has(b.id);
-  if (list.some((b) => (b.keywords ?? []).includes('deathtouch')
-    && combatPower(b) > 0 && dealsDamage(b))) return true;
-  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
-  return effectivePower >= attackerToughness;
+
+  let best = null;
+  for (let mask = 0; mask < (1 << killable.length); mask += 1) {
+    let budget = attackerPower;
+    let killedValue = 0;
+    const ids = new Set();
+    let feasible = true;
+    for (let i = 0; i < killable.length; i += 1) {
+      if (!(mask & (1 << i))) continue;
+      const b = killable[i];
+      budget -= need(b);
+      if (budget < 0) { feasible = false; break; }
+      ids.add(b.id);
+      killedValue += (b.power ?? 0) + (b.toughness ?? 0);
+    }
+    if (!feasible) continue;
+    const plan = evaluate(ids);
+    const utility = killedValue - (plan.attackerDies ? attackerValue : 0);
+    if (best === null || utility > best.utility) best = { ...plan, utility };
+  }
+  return best;
 }
 
 /**
@@ -269,49 +324,19 @@ export function blockAbsorbedDamageOf(attacker, blockers) {
 
 export function blockExchangeOf(attacker, blockers) {
   const attackerKw = attacker?.keywords ?? [];
-  const attackerPower = combatPower(attacker);
   const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
   const attackerFirst = attackerKw.includes('first_strike') || attackerKw.includes('double_strike');
-  const attackerDeathtouch = attackerKw.includes('deathtouch');
   const attackerTrample = attackerKw.includes('trample');
   const list = (blockers ?? []).filter(Boolean);
 
-  const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
-  const strikesFirst = (b) => {
-    const kw = b.keywords ?? [];
-    return kw.includes('first_strike') || kw.includes('double_strike');
-  };
-  // Obrażenia atakującego rozdziela ATAKUJĄCY (CR 510.1c) — zakładamy grę
-  // obrońcy przeciw nam: zabija tylu blokerów, ilu może (dokładnie to opisał
-  // właściciel: „rozdzielam tak obrażenia, żeby zabić jak najwięcej”).
-  // Kolejność: najtańsi w obrażeniach najpierw (rosnąca wytrzymałość).
-  const killOrder = [...list].sort((x, y) => effToughness(x) - effToughness(y));
-  const killedByAttacker = new Set();
-  let budget = attackerPower;
-  for (const b of killOrder) {
-    if ((b.keywords ?? []).includes('indestructible')) continue;
-    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
-    if (need <= 0) continue;
-    if (budget >= need) {
-      budget -= need;
-      killedByAttacker.add(b.id);
-    }
-  }
-
-  // Krok 1 (first strike): kto zdąży zadać obrażenia, zanim padnie.
-  // Bloker bez first strike, zabity przez atakującego z first strike, NIE
-  // zadaje obrażeń (CR 702.7b) — to jest sedno zgłoszenia.
-  const dealsDamage = (b) => {
-    if (!attackerFirst) return true;          // równoczesny krok — zawsze zadaje
-    if (strikesFirst(b)) return true;          // sam bije w pierwszym kroku
-    return !killedByAttacker.has(b.id);        // przeżył pierwszy krok
-  };
-  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
-  const deathtouchKill = list.some((b) => (b.keywords ?? []).includes('deathtouch')
-    && combatPower(b) > 0 && dealsDamage(b))
-    && !attackerKw.includes('indestructible');
-  const attackerDies = deathtouchKill
-    || (!attackerKw.includes('indestructible') && effectivePower >= attackerToughness);
+  // Podział obrażeń atakującego (P): najlepszy dla niego, nie zachłanny.
+  // Krok 1 (first strike, CR 510.4): kto zdąży zadać obrażenia, zanim padnie
+  // (CR 702.7b — bloker zabity w pierwszym kroku nie zadaje obrażeń).
+  const plan = planAttackerDamage(attacker, list);
+  const killedByAttacker = plan.killed;
+  const dealsDamage = plan.dealsDamage;
+  const effectivePower = plan.effectivePower;
+  const attackerDies = plan.attackerDies;
 
   // Blokerzy giną, jeśli dostali śmiertelne obrażenia — chyba że ZABILI
   // atakującego w kroku first strike, zanim zdążył cokolwiek zadać
