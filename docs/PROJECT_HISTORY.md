@@ -19,6 +19,18 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18e — Log clash: remis to „nie wygrywa”, nie „przegrywa” (Q)
+
+- Uwaga z gry: „Clash: Nieprzyjaciel przegrywa (wartość many 4 vs 4)”. Remis to nie przegrana. CR 701.30: wygrywa
+  gracz z wyższą mana value niż wszystkie pozostałe odsłonięte karty; przy równej wartości nikt nie wygrywa.
+- Efekt był poprawny (czar nie wraca przy remisie). Błędny był tekst: `session.js` pisał „przegrywa” dla każdej
+  przegranej, a silnik nie rozróżniał remisu. Dodano `tie` w zdarzeniu `clash_resolved` (`effects.js`). Log: wygrana
+  „wygrywa”, remis „nie wygrywa”, niższa wartość „przegrywa”.
+- Test: `test/zgloszenie-q-clash-remis-nie-wygrywa.test.js` (7; przed poprawką 4 czerwone). Bramy: `npm test`
+  8513/8513; `test:all` 8780/8780 rc=0; build rc=0. Commit `31409ed`.
+- Przy okazji: lokalny klon był zacofany względem `origin` (HEAD `34e8676`, zmiany w drzewie = dokładnie treść
+  `origin`). Ustawiono branch na `origin/arena/3ce2ec34-mtg` przez `reset --mixed`, bez zmiany treści plików.
+
 ## 2026-10-18d — Modal clash: nazwa karty wywołującej na początku, bez ikonek (O2)
 
 - Odpowiedź właściciela na pytania z O: żadnych infantylnych ikonek (bez 🔍); podgląd = klikalna nazwa jak w każdym
