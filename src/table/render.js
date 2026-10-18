@@ -2275,7 +2275,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
   index: 'Kolejność kart na wierzchu biblioteki',
-  clash: 'Clash — wierzch czy spód?',
+  clash: 'Clash: wierzch czy spód?',
   sacrifice: 'Poświęcenie',
   value: 'Wartość X',
   phyrexian: 'Zapłata: mana czy życie?',

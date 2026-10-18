@@ -4353,6 +4353,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
         [opponentId]: theirs ? theirs.id : null,
       },
       won,
+      // Karta, która wywołała clash (czar na stosie albo stwór z ETB). Jawna dla
+      // obu graczy: UI pokazuje jej nazwę na początku modala decyzji (klikalną).
+      sourceCardId: sourceObject.cardId ?? null,
       returnToHandOnWin: Boolean(effect.returnToHandOnWin),
       // Nagroda licznikiem (Bog Hoodlums) — niesie cel (źródło) i nazwę
       // licznika; rozstrzyga się w resolve_clash_choice po ostatniej decyzji.

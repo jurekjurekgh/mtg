@@ -51,7 +51,7 @@ import { detectImageMode } from './card-images.js';
 // deck-builder.js zostaje; ADR 0012 bez zmian).
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
-import { lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
+import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
@@ -1333,6 +1333,8 @@ function bootstrapTable() {
         plan: buttonsPlan,
         commands: request.options,
         intro: choiceGroupTitle(request, session, choiceView),
+        // O2: clash — nazwa karty wywołującej na początku nagłówka (klikalna).
+        introCard: introCardForRequest(request, choiceView),
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
@@ -1367,6 +1369,10 @@ function bootstrapTable() {
       // cardId kart z ręki przeciwnika — FoW), dokładnie jak commandLabel.
       onOpenCard: openCardFullscreenByCardId,
       cardIdOfOption: (option) => cardIdForChoiceOption(option),
+      cardNameOfOption: (option) => {
+        const cardId = cardIdForChoiceOption(option);
+        return cardId && session ? (session.cardDetails(cardId)?.name ?? null) : null;
+      },
       onResponse: (response) => {
         hideModal('choice-request');
         play(response.value);
@@ -1614,6 +1620,13 @@ function bootstrapTable() {
     // H (zgłoszenie właściciela 2026-09-20): decyzje bez karty w komendzie
     // (Explore) biorą kartę z oczekującej decyzji w widoku.
     session.view());
+  }
+
+  /** O2: karta wywołująca clash → nagłówek modala (nazwa z pełnego stanu sesji). */
+  function introCardForRequest(request, view) {
+    const cardId = clashSourceCardIdOf(request, view);
+    if (!cardId || !session) return null;
+    return { cardId, name: session.cardDetails(cardId)?.name ?? null };
   }
 
   function openCardFullscreenByCardId(cardId) {

@@ -55,7 +55,9 @@ test('M303/1: renderPeekButton — jeden komponent podglądu (klasa, cardId, kli
   const peek = renderPeekButton(host, { cardId: 'k-x', onOpen: (id) => opened.push(id) });
   assert.ok(peek, 'komponent zwraca przycisk');
   assert.ok(String(peek.className).includes('choice-request-peek'), 'wspólna klasa podglądu');
-  assert.ok(String(peek.className).includes('ghost-btn'), 'wspólna rodzina przycisków');
+  // O2 (uwaga właściciela 2026-10-18): podgląd to klikalna NAZWA karty (wspólna
+  // rodzina `picker-name`), bez ikonki i bez wyglądu przycisku `ghost-btn`.
+  assert.ok(String(peek.className).includes('picker-name'), 'wspólna rodzina nazw kart (picker-name)');
   assert.equal(peek.dataset.previewCardId, 'k-x', 'cardId dla mostka debug/sond');
   peek.click();
   assert.deepEqual(opened, ['k-x'], 'klik otwiera podgląd karty');

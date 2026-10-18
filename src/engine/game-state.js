@@ -9192,6 +9192,8 @@ export function playerView(state, playerId) {
     playerId: state.pendingClash.choices[0],
     count: state.pendingClash.choices.length,
     won: state.pendingClash.won,
+    // Karta wywołująca clash (jawna): nagłówek modala decyzji nosi jej nazwę.
+    sourceCardId: state.pendingClash.sourceCardId ?? null,
     // Karty odsłonięte (clash) są jawne — niosą cardId, nie objectId
     // (audyt diamentowy: modal pokazywał surowe „p1-library-N").
     cards: Object.fromEntries(
