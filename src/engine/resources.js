@@ -158,11 +158,6 @@ function poolPaysFreelyFor(prePool, pipReqs, costTotal, preserveReqs) {
 }
 
 /**
- * Pierwszy kolor pipa z deficytem w puli (kolejność wymagań) — grant tapany
- * w finansowanie bierze TEN kolor (bramka i tapCostedManaSource liczą go tak
- * samo, więc wybór jest identyczny).
- */
-/**
  * Maksymalna liczba pipów, które jednostki puli pokrywają W DOPASOWANIU (każdy
  * pip dostaje osobną jednostkę, augmenting path). Miara dla wyboru koloru.
  */
@@ -186,6 +181,11 @@ function maxPipsCovered(units, pipReqs) {
   return count;
 }
 
+/**
+ * Pierwszy kolor pipa z deficytem w puli (kolejność wymagań) — grant tapany
+ * w finansowanie bierze TEN kolor (bramka i tapCostedManaSource liczą go tak
+ * samo, więc wybór jest identyczny).
+ */
 function firstUncoveredPipColor(poolUnits, pipReqs) {
   // L48 (seed 3035, crash `Brak kolorowej many`): wybór koloru musi patrzeć na DOPASOWANIE, nie na
   // licznik per kolor. Jednostka wyboru [W,U,R,G] (wyspa z zewnętrznym grantem) liczyła się jako
@@ -350,13 +350,13 @@ function freshManaSum(state, playerId, purpose = {}) {
   return sum;
 }
 
-/** A: jednostki ŚWIEŻEJ bazy dla lookaheadu (lądy (grant→[]) + wolne, cel {} jak gałąź pipów). */
 /** Purpose planu źródeł kosztowych: rzut czaru przekazuje swój purpose; zdolność (purpose {}) zostaje
  *  przy dawnym `castingSpell: true` (konserwatywnie — jak w planie kolorów od zawsze). */
 function costedPurposeOf(purpose) {
   return purpose?.castingSpell === true ? purpose : { castingSpell: true, artifactSpell: false };
 }
 
+/** A: jednostki ŚWIEŻEJ bazy dla lookaheadu (lądy (grant→[]) + wolne, cel {} jak gałąź pipów). */
 function freshManaUnits(state, playerId, purpose = {}) {
   const units = [];
   for (const land of untappedLandManaSources(state, playerId)) {
