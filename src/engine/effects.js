@@ -4124,6 +4124,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'destroy_permanent') {
+    // A-4 (audyt PR #167, 2026-10-18) — DO ZROBIENIA przy pierwszej karcie z tym połączeniem:
+    // ta gałąź (wielocelowe niszczenie) NIE obsługuje `drawIfManaValueAtMost` — wraca przed
+    // logiką dobrania z gałęzi poniżej. Żadna karta dziś tego nie łączy, więc brak skutku w grze.
+    // Gdy pojawi się karta „zniszcz … jeśli MV było ≤N, dobierz kartę” z wieloma celami:
+    // najpierw ustalić semantykę z Oracle/rulingu (per cel czy łącznie), dopisać test,
+    // dopiero potem dodać obsługę TUTAJ (nie łatać po cichu).
     if (effect.targetIndices) {
       destroyPermanents(state,effect.targetIndices.map(i=>targets[i]).filter(Boolean));
       return Boolean(state.pendingReplacementChoice);
