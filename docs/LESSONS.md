@@ -99,7 +99,7 @@ karty.
 
 ## L103 (2026-08-31) — Skrót „na 1v1" w modelu karty zmienia REGUŁY: brak słowa „target" w Oracle ⇒ brak `targets`, zakres należy do efektu
 
-**Przypadek:** log pisał „Nieprzyjaciel rzuca Liliana's Triumph → cel: Ty", a Oracle: „Each opponent sacrifices a creature of their choice".
+**Przypadek:** log pisał „cel: Ty” przy Liliana's Triumph, a Oracle nie ma celu (each opponent sacrifices).
 
 **Reguła:**
 1. `targets` w definicji karty deklaruje wyłącznie to, co Oracle nazywa
@@ -120,7 +120,7 @@ karty.
 
 ## L102 (2026-08-31) — Rodzina ofert dzieli WYCENĘ i WIDOK: nowy członek bez pinu odziedziczy stary błąd; skutek niewidoczny w odcisku to fałszywy no-op
 
-**Przypadek:** — `theros` vs `worek-basni` seed 332 — bot rzucił Sleep of the Dead (tap + „doesn't untap") we WŁASNEGO Blade-Blizzard Kitsune, który mia…
+**Przypadek:** bot rzucił Sleep of the Dead na WŁASNEGO stwora (seed 332).
 
 **Reguła:**
 1. Naprawiając wycenę/widok dla JEDNEJ komendy, wypisz całą jej rodzinę
@@ -149,7 +149,7 @@ karty.
 
 ## L100 (2026-08-31) — Ten sam koszt renderowany w dwóch warstwach: zdarzenie musi nieść WSZYSTKIE składniki ceny, inaczej log kłamie obok poprawnego przycisku
 
-**Przypadek:** modal „Rozgrywka" pisał „Zoraline, Cosmos Caller — zapłacić {2} i 2 życia?", a przycisk pod nim „Zapłać {W}{B} + 2 życia".
+**Przypadek:** modal „Rozgrywka” pisał inny koszt niż przycisk pod nim.
 
 **Reguła:**
 1. Zdarzenie opisujące DECYZJĘ o koszcie musi nieść komplet składników ceny
@@ -186,7 +186,7 @@ Mutacja: `hiddenLive` bez `e.sourceId` → RED.
 
 ## L98 (2026-08-31) — Buforowane „dopisywanie" zamyka paczkę na granicy domenowej; promocję zatrzymanej połowy robią punkty WZNOWIENIA, nie wspólna pętla gry
 
-**Przypadek:** modal „Rozgrywka" doklejał „Tura N — Ty" + „Dobierasz…" do ogona tury bota (rozstrzygnięty Divest, discardy z cleanup, obrażenia z walki)…
+**Przypadek:** modal „Rozgrywka” doklejał zdarzenia tury bota do złego ogona.
 
 **Reguła:**
 1. „Dopisywanie" staje na granicy OSOBNEJ paczki (tu: tura). Sygnał
@@ -207,7 +207,7 @@ seedów) + pauza (`botPauseAtTurnBoundary`, ogon bez „istotnych").
 
 ## L97 (2026-08-31) — Warstwa prezentacji potrafi skłamać przy w 100% poprawnym silniku; decyzja „you may look” nie może wyciekać treści przed wyborem
 
-**Przypadek:** — trzy zgłoszenia do Fertile Thicket, przy których SILNIK był bezbłędny (skip/`chosenCardId:null`/ `bottomOrder` — pełny Oracle, walidacj…
+**Przypadek:** trzy zgłoszenia do Fertile Thicket — silnik był bezbłędny, błąd w warstwie prezentacji.
 
 **Reguła:**
 1. Etykieta opcji opisuje skutek WŁASNEJ komendy — fallback tekstowy
@@ -308,7 +308,7 @@ o dwóch nogach (kompozycja + ścieżka produkcyjna przez nią przechodzi).
 
 ## L88 (2026-08-29) — Błąd bez adresu: narzędzie długiego biegu musi powiedzieć GDZIE (i jedna reguła = jedna funkcja dla oferty i walidacji)
 
-**Przypadek:** — `node tools/benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu mimo legalnych komend" — bez meczu, bez stanu.
+**Przypadek:** `benchmark.mjs --full` kończył się „Kontroler nie znalazł ruchu”, bez meczu.
 
 **Reguła:**
 1. Narzędzie liczące godzinę musi nieść ADRES błędu (mecz/seed/stan) —
@@ -411,7 +411,7 @@ copy); naprawa żargonu „lethal-first" w wizardzie i `commandLabel`.
 
 ## L81 (2026-08-28) — Zastępując ręczną kopię „wspólną funkcją prawdy", porównaj FILTRY obu stron, nie tylko listę przedmiotów
 
-**Przypadek:** — bramka oferty `pass_priority` dostała `firstDecisionOwner == null` (dokończenie unifikacji z Batch 47).
+**Przypadek:** bramka `pass_priority` dostała `firstDecisionOwner == null` po unifikacji (Batch 47).
 
 **Reguła:**
 1. Przy zamianie kopii na wspólną funkcję zrób tabelę „co kopia sprawdza" ×
@@ -734,7 +734,7 @@ piny „utwierdzające dobre zachowanie" z poprzedniej sesji to sonda.
 
 ## L55 (2026-08-22) — Jedno pole na „cechę trwałą" i „efekt do końca tury" to bomba zegarowa; badge liczony z pola technicznego kłamie
 
-**Przypadek:** — **M187/N1**: token Phyrexian Mite („This token can't block") blokował po pierwszym cleanupie — `cantBlock` niosło EFEKT…
+**Przypadek:** token Phyrexian Mite („can't block”) blokował po cleanupie — `cantBlock` niosło efekt.
 
 **Reguła:**
 1. Pole opisujące stan trwały i wygasający rozdziel (`cantBlockPrinted` vs
@@ -982,6 +982,8 @@ dostaje LIMIT w dniu narodzin (`COMBAT_OPTION_CAP`, `CREW_OPTION_CAP`,
 nie wybierze gorszego" nie jest argumentem: wycena punktuje KAŻDY wariant.
 Kanarek eksplozji: czas próbki (~140 s / 1248 meczów).
 
+**Wyjątek (O-2, zlecenie właściciela 2026-10-17):** oferta celów „up to N” bez limitu; 100 stworów = 166 751 ofert, bot ~21 s, otwarte u właściciela — `docs/audits/AUDYT_PR167_2026-10-18.md` A-5.
+
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L19)
 
 ## L20 (2026-08-16) — Detektor mierzy tylko to, co narzędzie KLIKNIE — skanuj całe okno
@@ -1059,7 +1061,7 @@ testu — a zielony wynik sugerował coś odwrotnego.
 
 ## L27 (2026-08-17) — ZERO ZGŁOSZEŃ detektorów to pomiar NARZĘDZIA, nie produktu
 
-**Przypadek:** — Dwukrotnie ten sam wynik: 12 partii (L27) i 22 partie (L40) z pustą sekcją `== DETEKTORY ==`, a ręczna lektura TYCH SAMYCH transkryptów…
+**Przypadek:** 12 i 22 partie z pustą sekcją `== DETEKTORY ==`, a ręczna lektura transkryptów pokazała błędy.
 
 **Wpis zbiorczy** (kotwice: L40, L73, L75).
 
@@ -1349,7 +1351,7 @@ nie w pytaniu do właściciela.
 
 ## L89 (2026-08-29) — Przebieg, którego nikt nie dograł: długi bieg loguje postęp, a rozmiar macierzy wyznacza budżet, nie liczba kombinacji
 
-**Przypadek:** — `node tools/benchmark.mjs --full` liczył się 63 minuty CPU bez jednej linii logu (raport powstaje po ostatnim meczu) — nie dało się odr…
+**Przypadek:** `benchmark.mjs --full` liczył 63 min CPU bez jednej linii logu.
 
 **Reguła:**
 1. Przebieg dłuższy niż ~1 minutę loguje postęp PRZYROSTOWO: done/total,
