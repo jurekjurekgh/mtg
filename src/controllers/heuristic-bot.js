@@ -322,6 +322,51 @@ export function blockAbsorbedDamageOf(attacker, blockers) {
   return Math.min(attackerPower, lethal);
 }
 
+/**
+ * R (zgłoszenie z testów, 2026-10-18): ile obrażeń WSZYSTKICH atakujących
+ * zatrzymują blokerzy przy najlepszym przydziale obrońcy (CR 509.1h, 510.1).
+ * Blokujący zatrzymuje moc atakującego, którego blokuje — nie swoją wytrzymałość.
+ * Wycena ataku odejmowała od mocy SUMĘ WYTRZYMAŁOŚCI blokerów (4+4+5 = 13 od
+ * mocy 13), więc lethal nie wchodził i bot nie atakował, mimo że trzech blokerów
+ * zatrzymuje najwyżej 3+2+2 = 7 z 13.
+ *
+ * Przydział zachłanny: blokerzy od najtwardszego, każdy do atakującego z
+ * największym przyrostem zatrzymanych obrażeń. Bez trample przyrost to cała moc,
+ * pierwszy bloker na atakującego; z trample (CR 702.19b) — tylko jego
+ * obrażenia śmiertelne (`blockAbsorbedDamageOf`), sumowane i ucinane mocą.
+ * Dla ataków bez trample wynik jest dokładny (top-N mocy).
+ */
+export function blockersAbsorbedDamageOf(attackers, blockers) {
+  const atk = (attackers ?? []).filter(Boolean);
+  const list = (blockers ?? []).filter(Boolean);
+  if (atk.length === 0 || list.length === 0) return 0;
+  const state = new Map(atk.map((a) => [a.id, { lethal: 0, blocked: false }]));
+  const ordered = [...list].sort((x, y) => (y.toughness ?? 0) - (x.toughness ?? 0));
+  let absorbed = 0;
+  for (const blocker of ordered) {
+    let best = null;
+    let bestGain = 0;
+    for (const attacker of atk) {
+      const st = state.get(attacker.id);
+      const power = combatPower(attacker);
+      let gain = 0;
+      if ((attacker.keywords ?? []).includes('trample')) {
+        const lethalHere = blockAbsorbedDamageOf(attacker, [blocker]);
+        gain = Math.min(power, st.lethal + lethalHere) - Math.min(power, st.lethal);
+      } else if (!st.blocked) {
+        gain = power;
+      }
+      if (gain > bestGain) { bestGain = gain; best = attacker; }
+    }
+    if (!best) continue;
+    const st = state.get(best.id);
+    st.blocked = true;
+    st.lethal += blockAbsorbedDamageOf(best, [blocker]);
+    absorbed += bestGain;
+  }
+  return absorbed;
+}
+
 export function blockExchangeOf(attacker, blockers) {
   const attackerKw = attacker?.keywords ?? [];
   const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
@@ -13974,7 +14019,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // all-in. Blokerzy wchłaniają co najwyżej tyle obrażeń, ile wynosi
         // suma ich wytrzymałości (każdy blokuje jednego atakującego);
         // jeśli PO absorpcji zostaje >= życia wroga — atak wygrywa grę.
-        const blockerAbsorb = blockers.reduce((sum, o) => sum + (o.toughness ?? 0), 0);
+        // R: pochłanianie = moc zatrzymanych ataków (nie wytrzymałość blokerów).
+        const blockerAbsorb = blockersAbsorbedDamageOf(attackers.map(projectedAttackerOf), blockers);
         const penetratingPower = Math.max(0, totalPower - blockerAbsorb);
         if (attackers.length > 0 && penetratingPower >= enemyLife) score += 1000;
         else if (totalPower >= enemyLife && blockers.length === 0) score += 100;
@@ -14015,10 +14061,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const forcedBlockLossIds = new Set();
         if (unblockedLethal) {
           const absorbNeeded = Math.max(0, totalPower - (enemyLife - 1));
-          let absorbed = 0;
+          // R: wymuszony blok = najmniejszy zestaw blokerów, który zatrzymuje
+          // dość obrażeń (liczone przez moc zatrzymanych ataków, nie wytrzymałość).
+          const attackerObjects = attackers.map(projectedAttackerOf);
+          const chosen = [];
           for (const blocker of [...blockers].sort((x, y) => (x.toughness ?? 0) - (y.toughness ?? 0))) {
-            if (absorbed >= absorbNeeded) break;
-            absorbed += blocker.toughness ?? 0;
+            if (blockersAbsorbedDamageOf(attackerObjects, chosen) >= absorbNeeded) break;
+            chosen.push(blocker);
             if ((blocker.toughness ?? 0) <= strongestAttackerPower) forcedBlockLossIds.add(blocker.id);
           }
         }
