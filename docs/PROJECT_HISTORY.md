@@ -19,6 +19,26 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18 — Sesja domyślna (ADR 0021): PR #168, audyt PR #167, pętla jakości
+
+- **PR #168** (ADR 0020 A) z planem `docs/plans/PLAN_2026-10-18-domyslna-petla-audyt-pr167.md`
+  (commit `b3d0ad9`, przed kodowaniem). Bez scalania (ADR 0007).
+- **Audyt PR #167 (B)**: `docs/audits/AUDYT_PR167_2026-10-18.md`. 49 commitów, 8864 linii diffu.
+  Usunięcie `freeTargets` to zlecenie właściciela O-2 (nie błąd). 10 kart batcha 68 zgodnych z Oracle,
+  zero warunków po nazwie karty (ADR 0002), bot czyta tylko widok (FoW).
+- **Naprawy (osobne commity):** A-1 `6aee102` — JSDoc w `resources.js` przypięte do właściwych funkcji;
+  A-2 `1f2843c` — komentarz O/11 bez opisu usuniętego trybu; A-3 `ac059cf` — L19 z wyjątkiem dla
+  ofert celów (O-2).
+- **Otwarte:** A-4 — latentne ignorowanie `drawIfManaValueAtMost` w gałęzi `targetIndices` (brak karty);
+  A-5 — kreator celów bez limitu, 100 stworów ~21 s (decyzja właściciela).
+- **Pętla jakości (ADR 0021 pkt 4):** Żywy Tester, 6 partii na `dist/`, 6/6 do końca, 0 `[STOP]`,
+  0 zgłoszeń detektorów. Polowanie na CR ograniczone do `destroy_all`, suspend, escape (zgodne).
+- **Budżet lektury:** test przeszedł na ~99,8k (próg 100k nie podniesiony). Wpis L19 zapłacony
+  skróceniem dziesięciu wpisów LESSONS (reguły zachowane). Margines mały — następna sesja odchudza
+  lekturę przed innymi zmianami.
+- **Bramy:** `npm test` 8492/8492 rc=0; `npm run build` rc=0; `test:all` i `cr-numery` — patrz handoff.
+- Handoff: `docs/setup/HANDOFF_2026-10-18.md`.
+
 ## 2026-10-17 — Sesja domyślna (ADR 0021): PR sesji, audyt PR #166 (PR #167)
 
 Zlecenie „Kontynuujemy projekt.” bez tematu → pętla domyślna. Plan:

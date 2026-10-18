@@ -23,17 +23,17 @@ HANDOFF_2026-10-17.md.
 
 0. [x] Bazowe bramy: `npm test` 8492/8492 rc=0, `npm run build` rc=0. Lokalny `.arena/` dopisany do
    `.git/info/exclude` (nie do `.gitignore`).
-1. [ ] Ten plan + PR sesji (ADR 0020 A): commit planu, `git push -u origin arena/3ce2ec34-mtg`, `gh pr create` do `main`.
-2. [ ] **Audyt PR #167** → `docs/audits/AUDYT_PR167_2026-10-18.md` (ADR 0020 B / ADR 0016).
+1. [x] Ten plan + PR sesji (ADR 0020 A): commit planu, `git push -u origin arena/3ce2ec34-mtg`, `gh pr create` do `main`.
+2. [x] **Audyt PR #167** → `docs/audits/AUDYT_PR167_2026-10-18.md` (ADR 0020 B / ADR 0016).
    Zakres: pliki `src/` i `tools/` (silnik, bot, zasoby, UI), reguły CR w zmianach silnika (ADR 0030:
    cytaty z dostępnego źródła, nie z pamięci), generyczność (ADR 0002: brak warunków po nazwie karty),
    RED→GREEN testów (mutacje tam, gdzie to tanie). Wynik także w opisie PR.
-3. [ ] Naprawy znalezisk audytu u root cause (osobny commit na każde, testy + build przed commitem).
-4. [ ] **Pętla jakości** (ADR 0021 pkt 4): (a) partia Żywego Testera na zbudowanym artefakcie
+3. [x] Naprawy znalezisk audytu u root cause (osobny commit na każde, testy + build przed commitem).
+4. [x] **Pętla jakości** (ADR 0021 pkt 4): (a) partia Żywego Testera na zbudowanym artefakcie
    z perspektywy gracza, transkrypt przeglądany ręcznie (ADR/TESTER_STOLU), naprawy u root cause;
    (b) polowanie na rozbieżności CR w obszarze NIEodwiedzonym przez PR #166/#167 (ADR 0030).
    Bez nowych kart (ADR 0029).
-5. [ ] Dokumentacja: `docs/PROJECT_HISTORY.md` (wpis 2026-10-18), `docs/setup/HANDOFF_2026-10-18.md`,
+5. [x] Dokumentacja: `docs/PROJECT_HISTORY.md` (wpis 2026-10-18), `docs/setup/HANDOFF_2026-10-18.md`,
    wskaźnik w `README.md`, podsumowanie wykonania w tym planie.
 6. [ ] Bramy końcowe: `npm run test:all` (pełna brama PR, ADR 0019; log do `.arena/`, tylko ogon),
    `npm run build`, `node tools/cr-numery.mjs --sprawdz`. Push po każdym kroku, bez force push (ADR 0020 D).
@@ -49,4 +49,12 @@ HANDOFF_2026-10-17.md.
 
 ## Podsumowanie wykonania
 
-*(uzupełniane na końcu sesji)*
+- Krok 1 `b3d0ad9` (plan), PR #168 otwarty do `main`.
+- Krok 2 audyt PR #167 → `docs/audits/AUDYT_PR167_2026-10-18.md`: A-1..A-3 naprawione, A-4 (latentne) i A-5 (decyzja właściciela) otwarte.
+- Krok 3 naprawy: `6aee102` (A-1), `1f2843c` (A-2), `ac059cf` (A-3 + audyt + L19 + budżet lektury).
+  Budżet lektury (test `dokumentacja-budzet-lektury`) pękł o ~0,2k przez wpis L19 — zapłacono skróceniem
+  dziesięciu wpisów LESSONS; próg 100k bez zmian; suma ~99,8k (margines mały → handoff, punkt 1).
+- Krok 4 pętla jakości: Żywy Tester 6 partii na `dist/`, 6/6 do końca, 0 `[STOP]`, 0 zgłoszeń detektorów;
+  polowanie na CR ograniczone do `destroy_all`, suspend, escape (zgodne). Zakres do rozszerzenia w kolejnej pętli.
+- Krok 5 dokumentacja: wpis w `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-10-18.md`, wskaźnik w `README.md`.
+- Krok 6 bramy końcowe: patrz handoff („Bramy”).
