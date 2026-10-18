@@ -4307,8 +4307,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Clash (CR 701.30, Release the Ants): obaj gracze odsłaniają wierzchnią
     // kartę swojej biblioteki i każdy kładzie ją na WIERZCH ALBO SPÓD — to
     // realny wybór gracza (blokująca decyzja resolve_clash_choice, jak
-    // scry/surveil). Wygrywa wyższa mana value; remis i brak karty (pusta
-    // biblioteka) to przegrana tej strony. „If you win, return the spell to
+    // scry/surveil). Wygrywa wyższa mana value; brak karty (pusta biblioteka)
+    // to przegrana tej strony, a remis nie jest wygraną żadnej ze stron (CR 701.30,
+    // Q: log pisze wtedy „nie wygrywa”). „If you win, return the spell to
     // its owner's hand" rozstrzyga się po decyzjach — pendingSpellReturnToHand.
     // Bog Hoodlums (LRW): „If you win, put a +1/+1 counter on this creature" —
     // deskryptor `counterOnWin` niesie nazwę licznika, a `sourceId` cel
@@ -4332,11 +4333,16 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const myValue = mine ? (mine.manaCost ?? 0) : -1;
     const opponentValue = theirs ? (theirs.manaCost ?? 0) : -1;
     const won = myValue > opponentValue;
+    // Q (uwagi z gry, 2026-10-18): remis to NIE wygrana, ale i nie przegrana —
+    // CR 701.30: wygrywa tylko gracz z wyższą wartością, przy równej nikt.
+    // Pole `tie` pozwala logowi napisać „nie wygrywa” zamiast „przegrywa”.
+    const tie = myValue === opponentValue;
     state.events.push(event('clash_resolved', {
       playerId, opponentId,
       myManaValue: mine ? myValue : null,
       opponentManaValue: theirs ? opponentValue : null,
       won,
+      tie,
       pendingChoices: Boolean(mine || theirs),
     }));
     if (!mine && !theirs) {
