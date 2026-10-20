@@ -178,7 +178,12 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
   // `smiertelny: 0`, czyli bez presji śmiertelnej — p1 tury 6, 8, 14 i p2
   // tura 7, seed 4008). Żadna nie jest nową klasą przeoczenia ani zmianą wag,
   // więc próg idzie do 7 ŚWIADOMIE (sufit, nie pin).
-  assert.ok(atak.rozroznialne <= 7, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
+  // Sufit 9 po PMSSB-68 (amass): Armia/Dunland zmieniła trajektorię pary
+  // srodziemie|theros (seed 4010) — CZTERY nowe pozycje ataku, wszystkie przejrzane co do klasy:
+  // t16 („+1 atak, +1 trafienie, +1 ginie" = klasa „+1 trafienie i +1 ginie" z nagłówka),
+  // t18/t20/t22 (wymiana 1 za 1 ex aequo z attack[] = klasa B). Reszta pozycji bez zmian
+  // (HEAD przed PMSSB-68: 5 pozycji w tej próbie, pomiar audytRemisow na tych samych parach). Sufit podniesiony ŚWIADOMIE.
+  assert.ok(atak.rozroznialne <= 9, `attack groźb: ${atak.rozroznialne}\n${opis.join('\n')}`);
   // Sufit 6 po reaudycie 2026-09-06 (patrz nagłówek): 3 → 6 po zmianie składu
   // talii `wiedzmin`, cztery nowe pozycje przejrzane i zakwalifikowane do klas A/B.
   // Sufit 7 po E7/C (2026-09-07): Shock przeniesiony kaladesh → warhammer-ubr

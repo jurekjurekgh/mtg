@@ -2460,7 +2460,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-6/F-A1: ETB-rip wspólnym modelem (cap-na-liczniku zamiast flat-3).
     discard_each_opponent: (e, view) => foeRipValue(view, e, null),
     take_initiative: () => 6,
-    amass: () => 6,
+    // PMSSB-68: amass wg `amassValueOf` (armia + N), nie stała 6.
+    amass: (e, view) => amassValueOf(view, e),
     fabricate: () => 8,
     // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): wartość
     // odkręcenia liczymy PO KREATURZE (a nie płasko), bo odkręcenie ma sens
@@ -4622,6 +4623,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const ownPostcombat = view.turn.activePlayerId === view.playerId
       && view.turn.phase === 'postcombat_main';
     return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
+  };
+
+  // PMSSB-68 (amass, CR 701.47): jedna miara dla ETB, czaru i zdolności (L41).
+  // Z armią na polu: N liczników na najlepszej armii = licznik na gospodarzu
+  // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
+  // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
+  // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
+  const amassValueOf = (view, effect) => {
+    const amount = Number.isInteger(effect?.amount) ? effect.amount : 1;
+    if (!(amount > 0)) return 0;
+    const armies = myCreatures(view).filter((o) => (o.subtypes ?? []).includes('Army'));
+    if (armies.length > 0) {
+      return Math.max(...armies.map((army) => counterHostValue(view, army, '+1/+1', amount)));
+    }
+    return tokenBodyValue(view, {
+      type: 'create_token', amount: 1, power: amount, toughness: amount,
+      kind: 'creature', types: ['Creature'], subtypes: ['Army'],
+    });
   };
 
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
@@ -11491,8 +11510,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
           // Armię niezależnie od celu czaru — stały zysk (token/licznik).
+          // PMSSB-68: wspólna miara z ETB (`amassValueOf`), nie 6+3N.
           if (effect.type === 'amass') {
-            score += 6 + 3 * (effect.amount ?? 1);
+            score += amassValueOf(view, effect);
           }
           // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
           // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi

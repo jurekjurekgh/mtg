@@ -43,7 +43,8 @@ function scores(state, match) {
 }
 
 // F-A1: model — 5 czarow vs reka-3 (PRZED: 50/50/50/50/59).
-for (const [id, want] of [['divest', 58], ['dreams-of-steel-and-oil', 58], ['mindstab', 62], ['nightsnare', 66], ['toll-of-the-invasion', 67]]) {
+// PMSSB-68: Toll 67 → 68 — amass 1 bez armii = token 1/1 (tokenBodyValue 10) zamiast flat 9.
+for (const [id, want] of [['divest', 58], ['dreams-of-steel-and-oil', 58], ['mindstab', 62], ['nightsnare', 66], ['toll-of-the-invasion', 68]]) {
   test(`F-A1: ${id} vs reka-3 = ${want}`, () => {
     const s = newState(); handCard(s, 'rip', id); foeHand(s, ['shock', 'twiddle', 'fireball']);
     const { chosen, options } = scores(s, 'cast_spell(rip->p2');
@@ -52,13 +53,13 @@ for (const [id, want] of [['divest', 58], ['dreams-of-steel-and-oil', 58], ['min
     assert.equal(chosen.type, 'cast_spell');
   });
 }
-// F-A2: strazniki — rip w pustke = -70 (toll ratuje amass: 59).
-for (const [id, want] of [['divest', -70], ['dreams-of-steel-and-oil', -70], ['mindstab', -70], ['nightsnare', -70], ['toll-of-the-invasion', 59]]) {
+// F-A2: strazniki — rip w pustke = -70 (toll ratuje amass: 59 → 60 po PMSSB-68, token 1/1 = 10 zamiast 9).
+for (const [id, want] of [['divest', -70], ['dreams-of-steel-and-oil', -70], ['mindstab', -70], ['nightsnare', -70], ['toll-of-the-invasion', 60]]) {
   test(`F-A2: ${id} vs pusta reka = ${want}`, () => {
     const s = newState(); handCard(s, 'rip', id);
     const { chosen, options } = scores(s, `cast_spell(rip->p2`);
     assert.equal(options[0].score, want);
-    if (want === 59) assert.equal(chosen.type, 'cast_spell');
+    if (want === 60) assert.equal(chosen.type, 'cast_spell');
     else assert.notEqual(chosen.type, 'cast_spell');
   });
 }
