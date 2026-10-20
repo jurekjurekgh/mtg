@@ -17392,3 +17392,14 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Korekta w trakcie: oczekiwanie Dunland z planu (87.5) pominęło wagę ×0.9 `cast_permanent`; poprawna wartość 86.1. Hipoteza „licznik < ciało” obalona pomiarem.
 - Bramy: `npm test` 8525/8525; `npm run test:all` 8792/8792; build 0; `cr-numery --sprawdz` OK.
 - Raport: `docs/PMSSB.md` §PMSSB-68; plan `docs/plans/PLAN_2026-10-20-pmssb68-amass.md`.
+
+## 2026-10-20 — PMSSB-69: inicjatywa (take_initiative) w wycenie bota
+
+- Rodzina z listy odrzuconej w PMSSB-68: trzy karty z ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer). Wycena była stałą 6, niezależną od stanu.
+- Pomiar PRZED (`tools/pmssb69-initiative-sonda.mjs`): wynik nie reaguje na posiadacza inicjatywy ani na stwory wroga. Silnik nie daje zysku, gdy inicjatywę już mam, a bot liczył 6.
+- Wdrożenie: `initiativeTakeValue` (F1: 0 gdy już mam; F2: dopłata 6 gdy posiada wróg; F3: kara 2 za atakujący stwór wroga, limit 6). Anty-over-fix: nikt nie ma inicjatywy, wróg bez stworów = dawne 6.
+- Testy: `test/audyt-pmssb69-initiative.test.js` (RED 7/8 → GREEN 8/8; mutacje 2/3/2). Pierwsza wersja asercji pominęła wagę ×0.9 `cast_permanent` — poprawiona na podstawie pomiaru.
+- Ewaluacja: A/B `forgotten-realms` 11/40 rozbieżnych partii, kontrola `srodziemie` 0/40, wygrane 41:39 bez zmian; tie-audit bez nowych remisów (GROZY identyczne); Żywy Tester 3/3 bez `[STOP]`; golden master 0 (bez sygnału dla tej rodziny — talie bez kart z inicjatywą).
+- Bramy: `npm test` 8533/8533; `npm run test:all` 8800/8800; build 0; `cr-numery` OK.
+- Otwarte: F2 w walce (kradzież przy obrażeniach nie jest planowana w ataku); wartość venture stała na turę.
+- Raport: `docs/PMSSB.md` §PMSSB-69; plan `docs/plans/PLAN_2026-10-20b-pmssb69-initiative.md`.

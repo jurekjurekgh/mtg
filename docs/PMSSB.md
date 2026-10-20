@@ -41,6 +41,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
 | batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
 | amass (`amass`) — ETB Dunland Crebain i rzut Toll of the Invasion, wspólna miara z tokenem/licznikiem | 2 | DONE (2026-10-20) | §PMSSB-68 niżej; `test/audyt-pmssb68-amass.test.js` (6); przepięte piny `pmssb6-discard-wave-a` (Toll 68 / 60) i sufit `audyt-bot-walka-remisy` (attack 9); `tools/pmssb68-amass-ab.mjs` |
+| take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3501,3 +3502,50 @@ Korekta oczekiwań: plan podawał Dunland 87.4991 bez wagi ×0.9 `cast_permanent
 **Bramy na `0f7b668`.** `npm test` 8525/8525 (po przepięciu pinów, przed podniesieniem sufitu remisów); po podniesieniu sufitu `npm run test:all` 8792/8792 (`.arena/pmssb68-test-all.log`); `npm run build` 0; `node tools/cr-numery.mjs --sprawdz` OK. Golden master bez dryfu.
 
 **Stan i otwarte.** Pętla zamknięta dowodem (sonda PRZED/PO, RED→GREEN, mutacje, Żywy Tester, A/B 0/80 kontroli). Otwarte, poza zakresem: skala licznika `counterHostValue` (PMSSB-23) bez zmian; ewentualna cena rzutu Toll przy dużych armiach nie była badana w tej pętli.
+
+## PMSSB-69 — inicjatywa (`take_initiative`) w wycenie bota (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20b-pmssb69-initiative](plans/PLAN_2026-10-20b-pmssb69-initiative.md). Rodzina z listy odrzuconej w PMSSB-68.
+Karty: Underdark Explorer (5/3 menace, koszt 5), Stirring Bard (0/4 defender, koszt 4), Caves of Chaos Adventurer (5/3 trample, koszt 4) — ETB „you take the initiative”; wszystkie w talii `forgotten-realms`.
+
+**Problem (PRZED).** Wycena ETB = stała **6** (`take_initiative: () => 6`), niezależnie od stanu. Pomiar `tools/pmssb69-initiative-sonda.mjs` (`.arena/pmssb69-przed.txt`): wynik nie zmienia się, gdy inicjatywę ma ja, wróg albo nikt, ani gdy wróg ma 0 czy 2 stwory (poza wspólną wyceną ciała stołu). Trzy konkretne błędy:
+- **F1:** już mam inicjatywę → silnik (`effects.js`, `take_initiative`) nie uruchamia venture (`changedHands === false`), czyli zysk = 0, a bot liczy 6.
+- **F2:** wróg ma inicjatywę → objęcie zabiera mu postęp i daje mój venture; bot nie widzi różnicy.
+- **F3:** wróg ma atakujące stwory → zagrożenie odbiorem inicjatywy w jego turze; bot tego nie wycenia.
+
+**Wdrożenie.** Helper `initiativeTakeValue(view, effect)` w `src/controllers/heuristic-bot.js` (obok `amassValueOf`), wpięty w tabelę ETB (`take_initiative: (e, view) => initiativeTakeValue(view, e)`). Pokrętła w `heuristic-params.js` (domyślne z uzasadnieniem):
+- `initiativeStealBonus` = **6** (= `drawCardValue`: jedna venture ≈ jedna dobrana karta; dopłata za objęcie od wroga),
+- `initiativeExposurePenalty` = **2** za każdy stwór wroga bez defendera z mocą > 0 (≈ 1/3 venture na atakującego),
+- `initiativeExposureCap` = **6** (kara nie schodzi poniżej 0 składnika ETB).
+
+Składnik ETB: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·pen))`, gdzie `steal` = 6 tylko gdy posiada wróg. Cena many nie zmieniona (wymiar kosztu, kontrola (b)).
+
+**Pomiar PO (`.arena/pmssb69-po.txt`), wynik w skali `cast_permanent` (waga ×0.9):**
+
+| Karta | nikt, wróg 0 | nikt, wróg 2 | ja, wróg 0 | wróg inic., wróg 0 | wróg inic., wróg 2 |
+|---|---|---|---|---|---|
+| Underdark Explorer | 79.2063 (=) | 81.6813 → 78.0813 | 79.2063 → 73.8063 | 79.2063 → 84.6063 | 81.6813 → 83.4813 |
+| Stirring Bard | 67.4991 (=) | 71.0991 → 67.4991 | 67.4991 → 62.0991 | 67.4991 → 72.8991 | 71.0991 → 72.8991 |
+| Caves of Chaos Adv. | 78.4572 (=) | 82.2822 → 78.6822 | 78.4572 → 73.0572 | 78.4572 → 83.8572 | 82.2822 → 84.0822 |
+
+Wszystkie zmiany wynikają z trzech składników (F1: −6·0.9; F2: +6·0.9; F3: −min(6, 2n)·0.9); wycena ciała stołu (wspólna dla wszystkich wariantów) nie zmieniona.
+
+**Audyt (L41 i anty-over-fix).**
+- (a) L41: ETB `take_initiative` ma jedno miejsce wyceny (tabela ETB); ścieżka czaru z ETB korzysta z tej samej funkcji. Piny F1–F3 na wszystkich trzech kartach (delta „ja − nikt” = −5.4 dla każdej).
+- (b) Wymiar kosztu: koszt many karty bez zmian; zmienia się tylko składnik inicjatywy.
+- (c) Anty-over-fix: najsłabszy realny wariant (nikt nie ma inicjatywy, wróg bez stworów) = **dawne 6** (pin: 79.2063 bez zmiany). Kara i dopłata to wyłącznie dodatki/kary w wariantach z realnym ryzykiem lub zyskiem.
+
+**Testy.** `test/audyt-pmssb69-initiative.test.js` — 8 testów. RED przed wdrożeniem: 1/8 zielony (kotwica anty-over-fix), 7 czerwonych (`.arena/pmssb69-red.log`). GREEN: 8/8 (`.arena/pmssb69-green.log`). Mutacje: usunięcie F1 → 2 czerwone; zerowa kara (F3) → 3 czerwone; zerowa dopłata (F2) → 2 czerwone. Pokrętła ×0 przywracają wycenę sprzed zmiany. Asercje używają wagi 0.9 (ta sama korekta co PMSSB-68; pierwsza wersja testów pominęła ją i została poprawiona na podstawie pomiaru, nie wyniku bota).
+
+**Ewaluacja.**
+- Golden master (`tools/bot-scoring-snapshot.mjs --dump`, 6 meczów, seedy 1000/1001): 0 różnic. Uwaga: żadna z talii tego zestawu nie ma kart z inicjatywą, więc golden master nie jest dowodem dla tej rodziny; dowodem jest A/B.
+- Sparowany A/B (`tools/pmssb69-initiative-ab.mjs`, HEAD `ce691b5` vs robocze, 40 seedów na talię): `forgotten-realms` — **11/40 partii z inną sekwencją decyzji**; kontrola `srodziemie` (bez `take_initiative`) — **0/40**. Wygrane identyczne w obu drzewach (p1 41 / p2 39). Kontrola robocze vs robocze: 0/80.
+- Tie-audit (`tools/bot-tie-audit.mjs --gry=12 --top=5`): decyzje z alternatywami 14072 → 14074 (+2: `activate_ability` +1, `cast_permanent` +1); remisy 3928 → 3928; lista GROZY identyczna (`.arena/pmssb69-tie-{przed,po}.log`).
+- Żywy Tester (`tools/table-tester`, build po zmianie, `forgotten-realms` vs `srodziemie`, seedy 11–13, 400 kroków): 3/3 zakończone, 0 `[STOP]`, 0 zgłoszeń detektorów. Inicjatywa w grze po obu stronach (objęcie przez gracza i przez przeciwnika, wejście do Podziemi).
+
+**Bramy na `d340c73`.** `npm test` 8533/8533; `npm run test:all` 8800/8800 (`.arena/pmssb69-test-all.log`); build 0; `cr-numery --sprawdz` OK.
+
+**Otwarte (poza zakresem tej pętli).**
+- F2 w walce: bot nie planuje ataku, by odebrać inicjatywę (kradzież przy obrażeniach, `triggers.js` ~3122). Kandydat na osobną pętlę, bez pomiaru.
+- Wartość venture jest stałą na turę (nie modelujemy konkretnych pokoi Podziemi).
+- Ryzyko F3 nie uwzględnia moich blokerów (konserwatywnie: każdy atakujący liczy się w pełni); pokrętło `initiativeExposurePenalty` pozwala to skorygować po przeglądzie.
