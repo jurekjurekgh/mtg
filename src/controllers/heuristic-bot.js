@@ -13816,6 +13816,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie zada obrażeń (obrońca ma czym zablokować bez straty) i nie
         // zabije blokera. Taki atak tylko tapuje własnego stwora.
         let futileAttackers = 0;
+        // PMSSB-70: ilu atakujących zabija blokera ZANIM ten odpowie (przeżyje
+        // i zabija), oraz wartości wymian (stwór ginie, zabija blokera). Po pętli
+        // wymiany ponad wolne sloty dostają karę (patrz niżej).
+        let survivorKillers = 0;
+        const tradeValues = [];
         for (const id of attackers) {
           const object = projectedAttackerOf(id);
           if (!object) continue;
@@ -13975,8 +13980,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
+            survivorKillers += 1;
           } else if (blockedStats.toughness > effBlockerPower && lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
+            survivorKillers += 1;
           } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
@@ -14001,6 +14008,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             futileAttackers += 1;
           } else if (lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
+            tradeValues.push(perAttacker);
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
             // w wyścigu (racing) to strata — atak nie zada obrażeń i nie
@@ -14053,6 +14061,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += tokenOnCombatDamage(id);
             score += countersOnCombatDamage(id);
           }
+        }
+        // PMSSB-70 (remis s4011 t26): wolne sloty = blokery minus te, które już
+        // zabijają przeżywający atakujący. Wymiany ponad wolne sloty nic nie
+        // dokładają (blokera zabija ktoś inny) — płacą `unpaidTradeLoss` zamiast
+        // swojej wartości. Najcenniejsze wymiany zostają opłacone pierwsze.
+        // Kara dotyczy wyłącznie wymian PO przeżywającym zabójcy (`survivorKillers
+        // ≥ 1`): dwie wymiany bez przeżywającego wobec jednego blokera to osobny
+        // mechanizm (blokujący zablokuje jedną, druga przejdzie w twarz), a jego
+        // reguła nie należy do tej poprawki (PMSSB-59 duo, rewizja w planie).
+        if (P.unpaidTradeEnabled === 1 && survivorKillers > 0 && tradeValues.length > 0) {
+          const wolneSloty = Math.max(0, blockers.length - survivorKillers);
+          const posortowane = [...tradeValues].sort((a, b) => b - a);
+          for (const value of posortowane.slice(wolneSloty)) score += -P.unpaidTradeLoss - value;
         }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;

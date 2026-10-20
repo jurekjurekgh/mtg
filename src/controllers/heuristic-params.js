@@ -33,6 +33,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
   'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
   'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
+  // PMSSB-70 (2026-10-20, remis s4011 t26): wymiana (stwór ginie, zabija blokera)
+  // PONAD wolne sloty — czyli gdy przeżywający atakujący już zabijają wszystkich
+  // blokerów — nie zabija nikogo nowego. Taka wymiana dostaje karę
+  // `unpaidTradeLoss` zamiast swojej wartości. `unpaidTradeEnabled = 0` przywraca
+  // dawną wycenę (`power − 1` bez kary).
+  'unpaidTradeEnabled',
+  'unpaidTradeLoss',
   // Zgłoszenie D1 właściciela (2026-10-07, Pain for All): bloker z aurą
   // odbijającą („Whenever enchanted creature is dealt damage, it deals that
   // much damage to each opponent") — zablokowany atakujący zadaje obrażenia
@@ -563,6 +570,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
   attackEvasionBonus: 3,
+  unpaidTradeEnabled: 1,
+  unpaidTradeLoss: 2,
   // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25
   // przebija premię wyścigu i typowe zyski ataku (power+3/+8), a zostaje
   // poniżej samobójstwa 1000 z drabiny PMSSB-36.
