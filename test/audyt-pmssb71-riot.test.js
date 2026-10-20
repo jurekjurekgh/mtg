@@ -142,3 +142,24 @@ test('PMSSB-71 anti-over-fix: bloker 4/4 wroga nie zmienia wyboru riotu bez leta
   const { chosen } = riotDecision({ foeLife: 20, mate: true, foeBlocker: [4, 4] });
   assert.equal(chosen.modeIndex, 1, 'tempo haste nadal wygrywa w pomiarze PMSSB-71 (14 > 13)');
 });
+
+test('PMSSB-71 F0 (RED): rzut Beastmastera ma skończoną wycenę — pompa source_power nie daje NaN', () => {
+  // Pomiar PRZED: cast_permanent(gruul)=NaN, bo ETB_EFFECT_BONUS.pump czytał tekst 'source_power' jak liczbę
+  // (przez anticipatedAttacksValue — trigger ataku Beastmastera). NaN zrywa wycenę rzutu: bot nie rzucał karty.
+  const state = game();
+  put(state, 'gruul', 'gruul-beastmaster');
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  const bot = createHeuristicBot({ seed: 7 });
+  bot.chooseCommand(playerView(state, 'p1'), {});
+  const cast = (bot.trace().at(-1)?.options ?? []).find((o) => o.cmd.startsWith('cast_permanent'));
+  assert.ok(cast, 'rzut Beastmastera jest w ofercie');
+  assert.ok(Number.isFinite(cast.score), `wycena rzutu ma być skończona, jest ${cast.score}`);
+});
+
+test('PMSSB-71 F0 (RED): bot WYBIERA rzut Beastmastera z ręki przy pustym stole (wycena > pass 0)', () => {
+  const state = game();
+  put(state, 'gruul', 'gruul-beastmaster');
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  const chosen = createHeuristicBot({ seed: 7 }).chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(chosen.type, 'cast_permanent', `bot ma rzucić Beastmastera, wybrał ${chosen.type}`);
+});
