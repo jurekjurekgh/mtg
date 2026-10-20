@@ -17478,3 +17478,9 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Test: `test/audyt-pmssb75-controls-type.test.js` (3). Otwarte: wycena tokenów bez presji życia — wspólna miara, osobna pętla.
 - Plan: `docs/plans/PLAN_2026-10-20k-pmssb75-controls-type.md`. Rejestr: `docs/PMSSB.md` §PMSSB-75.
 
+## 2026-10-20 — PMSSB-76: warunkowa redukcja kosztu (Gnoll War Band) — zamknięte bez zmiany kodu
+
+- Silnik i bot czytają ten sam stan obrażeń w turze. Rzut za 5 po obrażeniach przeciwnikowi jest oferowany i wybierany przed tańszym czarem; bez obrażeń nie jest oferowany.
+- Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny). Mutacja redukcji łapie 2.
+- Rejestr: `docs/PMSSB.md` §PMSSB-76.
+

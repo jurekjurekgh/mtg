@@ -48,6 +48,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
+| warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3685,4 +3686,11 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 - Test: `test/audyt-pmssb75-controls-type.test.js` (3). Mutacja wyłączenia bramki łapie test 1.
 - Otwarte POZA ZAKRESEM tego PMSSB: wycena tworzenia tokenów (`create_token`) nie zna presji życia (18 przy życiu 5 = 18 przy życiu 20 z tymi samymi wrogami). To wspólna miara tokenów dla wielu kart — osobna pętla, bez wyjątku po nazwie karty.
 - Nie wykonano: tie-audit, mirror (zmiana kodu nie była potrzebna).
+
+## PMSSB-76 — warunkowa redukcja kosztu: Gnoll War Band (2026-10-20) — ZAMKNIĘTE BEZ ZMIANY KODU
+
+- Pomiar (`.arena/probe-costred.mjs`): bez obrażeń w turze rzut za 5 many nie jest oferowany; po obrażeniach przeciwnikowi jest oferowany i bot wybiera go (74,7) przed Frontline War-Rager (65,7). Wycena rzutu 5 po obrażeniach = 6 bez obrażeń (oba zużywają całą manę).
+- Audyt: (a) L41 — silnik (`mana-cost.js`) i bot czytają `damageTakenByPlayerThisTurn`; (b) wymiar kosztu — zgodny z CR 601.2f; (c) anty-over-fix — brak defektu w wyborze.
+- Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny; wszystkie przechodzą na obecnym kodzie). Mutacja zerująca redukcję łapie 2 testy.
+- Otwarte: brak wrażliwości wyceny na pozostałą manę poza konkurencją czarów (nie ma czego rozstrzygać w tej rodzinie).
 
