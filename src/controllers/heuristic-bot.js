@@ -8713,6 +8713,39 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   }
 
+  /** PMSSB-71 v2 (riot Beastmastera): pośpiech wart jest TYLKO atak tej tury.
+   * Okno: moja tura, przed deklaracją atakujących (main1 / beginning_of_combat).
+   * Po walce albo na cudzej turze pośpiech nie daje ataku (CR 302.6) → 0.
+   * Obrażenia = waga × moc × udział niezablokowany. Blokery wroga dzielą atak
+   * (CR 509.1a), ale każdy MÓJ inny świeży stwór przyjmuje część blokerów na siebie.
+   * Letal (wróg ma życie ≤ moc, bez blokerów) = bonus.
+   */
+  function riotHasteValue(view, body) {
+    const preCombat = view.turn.activePlayerId === view.playerId
+      && (view.turn.step === 'main1' || view.turn.step === 'beginning_of_combat');
+    const power = Math.max(0, body?.power ?? 0);
+    if (!body || !preCombat || power <= 0) return 0;
+    const mates = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+      && o.kind === 'creature' && !o.tapped && !o.summoningSickness && o.id !== body.id).length;
+    const blockers = untappedEnemyBlockers(view).filter((o) => attackerCanBeBlocked(body, [o])).length;
+    const blockersOnMe = Math.max(0, blockers - mates);
+    const share = 1 / (1 + blockersOnMe);
+    const foe = enemy(view);
+    let value = P.riotHasteDamageWeight * power * share;
+    if (blockers === 0 && foe && power >= foe.life) value += P.riotHasteLethalBonus;
+    return value;
+  }
+
+  /** PMSSB-71 v2 (riot, licznik +1/+1): wartość ciała plus PRESJA — siła ataku wroga
+   * podzielona przez moje życie, ograniczona do 1. Pod presją trwała wytrzymałość
+   * i moc są warte więcej; przy zerowym zagrożeniu zostaje dawna wartość ciała.
+   */
+  function riotCounterValue(view, amount) {
+    const pressure = Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view)));
+    return amount * (P.creaturePowerWeight + P.creatureToughnessWeight)
+      + P.riotCounterPressureWeight * pressure;
+  }
+
   /** Jedna miara wybranego skutku: rzut modalnego nosiciela i decyzja trybu.
    * Nie dolicza bazy decyzji ani podatku ward (wołający zna koszt rzutu).
    */
@@ -8749,13 +8782,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // (`creatureKeywordValue`: creatureKwHaste · moc/ref). Dawniej brak wpisu w ETB_EFFECT_BONUS = 0,
       // więc bot nigdy nie wybierał pośpiechu, nawet przy letalu z atakiem tej tury.
       else if (effect.type === 'grant_keyword_permanent') {
+        // PMSSB-71 v2: pośpiech kontekstowy (tura, faza, blokery, letal), nie stała.
         const body = target ?? source;
-        value += creatureKeywordValue(view, { keywords: [effect.keyword], power: body?.power ?? 0 }, body);
+        value += effect.keyword === 'haste'
+          ? riotHasteValue(view, body)
+          : creatureKeywordValue(view, { keywords: [effect.keyword], power: body?.power ?? 0 }, body);
       }
       // PMSSB-71 (L41): licznik +1/+1 na SAMYM sobie w trybie modalnym = wartość ciała (+1 moc +1 wytrzymałość
       // w tej samej skali co `creatureBase`/wycena P/T), a nie stała 5 z ETB_EFFECT_BONUS (ścieżka bez trybów).
       else if (effect.type === 'add_counter' && effect.counter === '+1/+1' && !(mode.targets?.length)) {
-        value += amount * (P.creaturePowerWeight + P.creatureToughnessWeight);
+        value += riotCounterValue(view, amount);
       }
       else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
     }

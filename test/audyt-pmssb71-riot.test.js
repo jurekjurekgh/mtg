@@ -123,19 +123,18 @@ test('PMSSB-71: LETAL — pośpiech Beastmastera (atak 2 + pompa +2 = 6) bije li
   assert.equal(chosen.modeIndex, 1, `przy letalu z pośpiechem bot ma wybrać haste, wybrał ${chosen.modeIndex}`);
 });
 
-test('PMSSB-71 L41: wycena trybów riot = ta sama miara co słowa i ciała (haste = creatureKwHaste·moc/3; +1/+1 = 2+1)', () => {
-  // Pomiar PRZED (docs/plans/PLAN_2026-10-20e): haste 10 (tryb 0 dostawał 0), licznik 15 (stała 5).
-  // Po wdrożeniu: haste = 10 + 6·(2/3) = 14; licznik = 10 + (creaturePowerWeight + creatureToughnessWeight) = 13.
+test('PMSSB-71 v2 L41: pośpiech = atak tej tury (main1, pusty stół, moje świeże stwory nie blokują): haste − licznik = 2·4 − 3 = 5', () => {
+  // Wartość kontekstowa: obrażenia = riotHasteDamageWeight(4) × moc(2) × udział(1) = 8; licznik = ciało 3 + presja 0.
+  // Stała część trybów (10) jest wspólna i się skraca w różnicy.
   const { scores } = riotDecision({ mate: true });
-  assert.equal(scores['resolve_modal_choice(1)'], 14, 'haste = 10 + kotwica słowa przy mocy 2');
-  assert.equal(scores['resolve_modal_choice(0)'], 13, 'licznik = 10 + wartość ciała +1/+1');
+  assert.equal(scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'], 5, 'różnica = 8 − 3');
 });
 
-test('PMSSB-71 pokrętło: creatureKwHaste = 0 zdejmuje wartość trybu haste i bot wraca do licznika', () => {
-  const params = normalizeHeuristicParams({ creatureKwHaste: 0 });
-  const { chosen, scores } = riotDecision({ foeLife: 4, mate: true, params });
-  assert.equal(scores['resolve_modal_choice(1)'], 10, 'bez kotwicy słowa haste wartość trybu = 0');
-  assert.equal(chosen.modeIndex, 0, 'bez wartości haste wygrywa licznik');
+test('PMSSB-71 v2 pokrętło: riotHasteDamageWeight = 0 → pośpiech nie daje nic, wygrywa licznik', () => {
+  const params = normalizeHeuristicParams({ riotHasteDamageWeight: 0 });
+  const { chosen, scores } = riotDecision({ mate: false, params });
+  assert.equal(scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'], -3, 'różnica = 0 − 3');
+  assert.equal(chosen.modeIndex, 0, 'bez wagi obrażeń wygrywa licznik');
 });
 
 test('PMSSB-71 anti-over-fix: bloker 4/4 wroga nie zmienia wyboru riotu bez letalu (pomiar 13 vs 14)', () => {
@@ -162,4 +161,50 @@ test('PMSSB-71 F0 (RED): bot WYBIERA rzut Beastmastera z ręki przy pustym stole
   addMana(state, 'p1', 4, { colors: ['G'] });
   const chosen = createHeuristicBot({ seed: 7 }).chooseCommand(playerView(state, 'p1'), {});
   assert.equal(chosen.type, 'cast_permanent', `bot ma rzucić Beastmastera, wybrał ${chosen.type}`);
+});
+
+// PMSSB-71 v2 (2026-10-20): wybór riotu zależy od kontekstu stołu (faza, życie, blokery, presja).
+// Pomiar PRZED: `.arena/pmssb71v2-pre.txt` — 64 sytuacje, wynik zawsze pośpiech 14 vs licznik 13.
+function riotCtx({ step = 'main1', myLife = 20, foeBlockers = 0, mate = 0, foeAttackPower = 0 } = {}) {
+  const state = game();
+  if (step === 'main2') state.turn = jumpToStep(state.turn, 'main2', 'p1');
+  state.players.find((p) => p.id === 'p1').life = myLife;
+  for (let i = 0; i < foeBlockers; i += 1) blank(state, `fb${i}`, 'p2', 2, 2);
+  for (let i = 0; i < mate; i += 1) blank(state, `mt${i}`, 'p1', 2, 2);
+  if (foeAttackPower > 0) blank(state, 'fa', 'p2', foeAttackPower, 3);
+  put(state, 'gruul', 'gruul-beastmaster');
+  addMana(state, 'p1', 4, { colors: ['G'] });
+  run(state, castCmd(state, 'gruul'));
+  for (let i = 0; i < 40 && !state.pendingModalTrigger; i += 1) run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  assert.ok(state.pendingModalTrigger, 'trigger riot oczekuje');
+  const bot = createHeuristicBot({ seed: 7 });
+  const chosen = bot.chooseCommand(playerView(state, 'p1'), {});
+  const scores = Object.fromEntries((bot.trace().at(-1)?.options ?? [])
+    .filter((o) => o.cmd.startsWith('resolve_modal_choice')).map((o) => [o.cmd, o.score]));
+  return { chosen, scores, diff: scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'] };
+}
+
+test('PMSSB-71 v2 RED: po walce (main2) pośpiech nie atakuje → licznik, nawet przy pustym stole', () => {
+  const { chosen } = riotCtx({ step: 'main2' });
+  assert.equal(chosen.modeIndex, 0, 'po walce wygrywa licznik');
+});
+
+test('PMSSB-71 v2 RED: presja (życie 5 wobec ataku wroga 6) → licznik, nie pośpiech', () => {
+  const { chosen, diff } = riotCtx({ myLife: 5, foeAttackPower: 6 });
+  assert.equal(chosen.modeIndex, 0, `pod presją licznik (różnica ${diff})`);
+});
+
+test('PMSSB-71 v2 RED: dwóch blokerów wroga bez moich stworów → licznik (pośpiech dzieli atak)', () => {
+  const { chosen } = riotCtx({ foeBlockers: 2 });
+  assert.equal(chosen.modeIndex, 0, 'blokery zabierają atak nowemu stworowi');
+});
+
+test('PMSSB-71 v2 anti-over-fix: dwóch blokerów wroga, ale dwa moje stwory je pochłaniają → pośpiech', () => {
+  const { chosen } = riotCtx({ foeBlockers: 2, mate: 2 });
+  assert.equal(chosen.modeIndex, 1, 'moje stwory biorą blokerów na siebie');
+});
+
+test('PMSSB-71 v2 anti-over-fix: pusty stół, moja tura przed walką, bez presji → pośpiech', () => {
+  const { chosen } = riotCtx({ step: 'main1' });
+  assert.equal(chosen.modeIndex, 1, 'pośpiech daje atak tej tury');
 });

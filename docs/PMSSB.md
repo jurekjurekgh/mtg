@@ -3602,8 +3602,8 @@ Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). K
 
 **Otwarte (poza zakresem; do decyzji właściciela, nie zmieniane tutaj).**
 
-- Wybór: po naprawie bot wybiera tryb haste we WSZYSTKICH scenach riot (14 wobec 13). Wartość haste to pokrętło `creatureKwHaste = 6` (tempo), licznik to wartość ciała. Pokrętło do strojenia, jeśli właściciel woli licznik w grze długiej.
-- Globalna stała `add_counter` bez celu = 5 w ścieżce ETB bez trybów (zostaje). Rozmiar tej rodziny to osobny pomiar.
+- ~~Wybór: bot wybiera tryb haste we WSZYSTKICH scenach riot (14 wobec 13)…~~ **ZAMKNIĘTE w PMSSB-71 v2 (`docs/plans/PLAN_2026-10-20g-pmssb71-v2-riot-kontekst.md`):** wybór zależy od kontekstu (faza, blokery, moje stwory, presja, letal), nie od stałej.
+- Globalna stała `add_counter` bez celu = 5 w ścieżce ETB bez trybów: **do ustalenia w osobnej pętli PMSSB** (ta sama stała dotyka wielu kart; decyzja kontekstowa, nie pojedyncza wartość).
 - Brak pinu „pompa liczbowa daje nadal 2p+t” jako osobnego testu; pokrywa to pośrednio test F0 (dwa testy RED) i wycena trybu (parytet).
 - Ogólny strażnik NaN w `scored` nie został dodany; wybór filtruje tylko `Number.isFinite` przy pick, a sort nadal widzi NaN. Warto rozważyć ogólny bezpiecznik (osobna decyzja).
 
@@ -3622,3 +3622,14 @@ Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md` (uwaga o kolejności: kod
 - Remis wariantów: płaska kara dawała 9 identycznych opcji (`cast_permanent(drawn-79)` 57,6); po zmianie wycena różnicuje stwory. Pozostały remis to warianty tego samego stwora z innym kolorem pipa — wycena bota jest celowo ślepa na kolor pipów (jak dotąd).
 - Golden: hash `7510ba436292c802…` → `9017a46b8bf6298d…`. Przegląd przed regeneracją (`--dump`): 1437 decyzji w 6 partiach, **0 zmienionych wyborów i wyników**; zmiana to tylko dopisane opcje convoke w zapisie. Regeneracja `tools/bot-scoring-snapshot.mjs --write`: zmienione 3 linie fixture (hash ogólny + 2 partie). Progi i seedy testu NIE zmienione.
 - Bramy: `test:all` 8848/8848, exit 0; build 0.
+
+## PMSSB-71 v2 — riot kontekstowy (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20g-pmssb71-v2-riot-kontekst](plans/PLAN_2026-10-20g-pmssb71-v2-riot-kontekst.md).
+
+- Pomiar PRZED (`.arena/probe-riot-ctx.mjs`, `.arena/pmssb71v2-pre.txt`): 64 sytuacje, zawsze pośpiech 14 vs licznik 13.
+- Wdrożenie: pośpiech = atak tej tury (moja tura, `main1`/`beginning_of_combat`), udział niezablokowany z blokerami wroga pomniejszonymi o moje świeże stwory, bonus za letal; licznik = ciało + presja (siła ataku wroga / moje życie).
+- Wynik: wybór zależy od kontekstu. Po walce → licznik. Pod presją → licznik. Dwóch blokerów bez moich stworów → licznik. Pusty stół przed walką → pośpiech.
+- RED: 3 piny kontekstowe padają na kodzie sprzed zmiany; anti-over-fix przechodzą przed i po.
+- Bramy: `npm test` 8586/8586; `test:all` 8853/8853 (golden bez zmian).
+- A/B (talie `ravnica-rg` vs `ravnica-wub`, 40 seedów, 80 partii): 23 partie z rozjechanymi decyzjami; zwycięzcy bez zmian (p1 36/44). Nie dowodzi poprawy siły. Do potwierdzenia większą próbą.

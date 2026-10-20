@@ -118,6 +118,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwFlyingFloorScaled', 'creatureKwRefPower', 'creatureKwHaste',
   'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwStateFloor', 'creatureKwRefThreat', 'creatureKwDeathtouch',
   'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
+  // PMSSB-71 v2 (riot): wybór pośpiech/licznik zależy od kontekstu stołu, nie od stałej.
+  'riotHasteDamageWeight', 'riotHasteLethalBonus', 'riotCounterPressureWeight',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -680,6 +682,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Pokrętło F5: 1 = próg skalowany mocą (domyślne), 0 = dawne płaskie 3 (PRZED; pomiar tools/pmssb67-prog-latania-sonda.mjs).
   creatureKwFlyingFloorScaled: 1,
   creatureKwHaste: 6,
+  // PMSSB-71 v2 (riot, pośpiech): wartość = waga × moc × udział niezablokowany (1/(1 + blokery wroga minus moje
+  // inne świeże stwory)). Waga 4 = ta sama skala co utrata życia wroga (4/pkt). Letal bez blokerów = bonus jak w lose_life.
+  riotHasteDamageWeight: 4,
+  riotHasteLethalBonus: 80,
+  // PMSSB-71 v2 (riot, licznik): + waga × presja (siła ataku wroga / moje życie, ≤ 1). Presja 0 = dawna wartość ciała.
+  riotCounterPressureWeight: 6,
   creatureKwLifelinkWeight: 1,
   // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do
   // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a

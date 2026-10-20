@@ -17438,3 +17438,11 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Golden: hash zmieniony (`7510…` → `9017…`) po przeglądzie: 1437 decyzji, 0 zmienionych wyborów i wyników; fixture zregenerowany (3 linie). `test:all` 8848/8848.
 - Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md`. Rejestr: `docs/PMSSB.md` §PMSSB-72.
 - Incydent: lokalny HEAD wrócił do `34e8676` (drzewo robocze zgodne z origin); przywrócono `git reset` (bez `--hard`) po weryfikacji 36 plików względem origin.
+
+## 2026-10-20 — PMSSB-71 v2: riot kontekstowy (pośpiech albo licznik)
+
+- Poprzednio wybór riotu był stały (pośpiech 14 vs licznik 13 w 64 sytuacjach). Poprawka: wybór zależy od kontekstu — faza (atak tej tury), blokery wroga pomniejszone o moje świeże stwory, letal, presja (siła ataku wroga / moje życie).
+- Testy: `test/audyt-pmssb71-riot.test.js` (11). Piny RED na kodzie sprzed zmiany: 3 kontekstowe.
+- Bramy: `npm test` 8586/8586; `test:all` 8853/8853; golden bez zmian.
+- A/B 80 partii (`ravnica-rg` vs `ravnica-wub`): 23 rozjechane decyzje, zwycięzcy bez zmian. Poprawy siły NIE stwierdzono.
+- Plan: `docs/plans/PLAN_2026-10-20g-pmssb71-v2-riot-kontekst.md`.
