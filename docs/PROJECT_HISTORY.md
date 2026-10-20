@@ -17472,3 +17472,9 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - A/B 80 partii: 9 rozjechanych decyzji, zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
 - Plan: `docs/plans/PLAN_2026-10-20j-pmssb74-bloodfire.md`. Rejestr: `docs/PMSSB.md` §PMSSB-74.
 
+## 2026-10-20 — PMSSB-75: controlsType (Heron-Blessed Geist) — zamknięte bez zmiany kodu
+
+- Bramka „activate only if you control an enchantment” działa spójnie (oferta i walidacja). Wycena aktywacji z cmentarza kieruje się stołem (wrogie stwory obniżają), ale nie życiem.
+- Test: `test/audyt-pmssb75-controls-type.test.js` (3). Otwarte: wycena tokenów bez presji życia — wspólna miara, osobna pętla.
+- Plan: `docs/plans/PLAN_2026-10-20k-pmssb75-controls-type.md`. Rejestr: `docs/PMSSB.md` §PMSSB-75.
+

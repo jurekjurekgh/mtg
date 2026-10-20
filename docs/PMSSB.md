@@ -47,6 +47,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
 | myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
+| `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3674,4 +3675,14 @@ Plan: [PLAN_2026-10-20j-pmssb74-bloodfire](plans/PLAN_2026-10-20j-pmssb74-bloodf
 - A/B 80 partii (`warhammer-ubr` vs `dominaria-brg`, 40 seedów, baza HEAD `7505bb5`): 9 rozjechanych decyzji; wygrane p1 45 → 46, p2 35 → 34. Nie stwierdzono poprawy siły. Rozjechane decyzje dotyczą wyłącznie Bloodfire z konstrukcji zmiany (jedyna zmieniona gałąź to ten typ efektu); nie mapowano identyfikatorów na karty.
 - Tie-audit i mirror nie wykonane dla tej zmiany (tie-audit benchmarku nie zawiera talii z Bloodfire; mirror porównuje parametry, nie kod).
 - Otwarte: warunek zysku nie uwzględnia letalu wroga (obrażenia dotyczą wyłącznie stworów); wycena nie patrzy na aurę jako kartę w grze poza kosztem gospodarza.
+
+## PMSSB-75 — controlsType: Heron-Blessed Geist (2026-10-20) — ZAMKNIĘTE BEZ ZMIANY KODU
+
+Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-controls-type.md).
+
+- Pomiar (`.arena/probe-controls.mjs`): bez enchantmentu aktywacja z cmentarza NIE jest oferowana (ani botowi, ani w `legalCommands`). Z enchantmentem wycena 24 na pustym stole, 18 z dwoma wrogimi stworami, 18 przy moim życiu 5 (z dwoma wrogami) — życie nie zmienia wyceny.
+- Audyt: (a) L41 — bramka czytana z `condition.controlsType` w jednym miejscu (`abilities.js`), oferta i walidacja wspólne; (b) koszt — 4 + W z cmentarza, bez wymiaru do zmiany; (c) anty-over-fix — brak defektu w bramce, więc brak zmiany.
+- Test: `test/audyt-pmssb75-controls-type.test.js` (3). Mutacja wyłączenia bramki łapie test 1.
+- Otwarte POZA ZAKRESEM tego PMSSB: wycena tworzenia tokenów (`create_token`) nie zna presji życia (18 przy życiu 5 = 18 przy życiu 20 z tymi samymi wrogami). To wspólna miara tokenów dla wielu kart — osobna pętla, bez wyjątku po nazwie karty.
+- Nie wykonano: tie-audit, mirror (zmiana kodu nie była potrzebna).
 
