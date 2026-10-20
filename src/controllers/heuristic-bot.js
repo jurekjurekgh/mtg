@@ -2459,7 +2459,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     opponent_hand_card_to_top: () => 3,
     // PMSSB-6/F-A1: ETB-rip wspólnym modelem (cap-na-liczniku zamiast flat-3).
     discard_each_opponent: (e, view) => foeRipValue(view, e, null),
-    take_initiative: () => 6,
+    // PMSSB-69: inicjatywa wg `initiativeTakeValue` (stan posiadacza + stół wroga), nie stała 6.
+    take_initiative: (e, view) => initiativeTakeValue(view, e),
     // PMSSB-68: amass wg `amassValueOf` (armia + N), nie stała 6.
     amass: (e, view) => amassValueOf(view, e),
     fabricate: () => 8,
@@ -4630,6 +4631,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
   // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
   // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
+  // PMSSB-69 (inicjatywa, CR 725; L41 — jedna miara dla ETB i czaru). Silnik (effects.js, take_initiative):
+  // objęcie inicjatywy, którą gracz JUŻ ma, nie uruchamia venture — zysk 0 (F1). Gdy posiada wróg, objęcie
+  // zabiera mu postęp i daje mój venture — dopłata P.initiativeStealBonus (F2). Gdy zmienia się posiadacz,
+  // każdy atakujący stwór wroga (bez defendera, moc > 0) zagraża odbiorem inicjatywy w jego turze — kara
+  // P.initiativeExposurePenalty za stwór, z limitem P.initiativeExposureCap (F3). Najsłabszy realny wariant
+  // (nikt nie ma inicjatywy, wróg bez stworów) = dawne 6 (anty-over-fix M429 c).
+  const INITIATIVE_TAKE_BASE = 6;
+  const initiativeTakeValue = (view, effect) => {
+    const holder = view.initiativePlayerId ?? null;
+    if (holder === view.playerId) return 0;
+    const steal = holder != null ? P.initiativeStealBonus : 0;
+    const attackers = (view.zones?.battlefield ?? []).filter((o) => o.controllerId !== view.playerId
+      && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+      && !(o.keywords ?? []).includes('defender') && (o.power ?? 0) > 0).length;
+    const exposure = Math.min(P.initiativeExposureCap, attackers * P.initiativeExposurePenalty);
+    return Math.max(0, INITIATIVE_TAKE_BASE + steal - exposure);
+  };
   const amassValueOf = (view, effect) => {
     const amount = Number.isInteger(effect?.amount) ? effect.amount : 1;
     if (!(amount > 0)) return 0;

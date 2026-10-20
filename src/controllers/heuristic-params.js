@@ -545,6 +545,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'plotRedundantPenalty',        // surcharge, gdy plot nie oszczędza many wobec rzutu dostępnego TERAZ
   'plotDelayPenalty',            // surcharge za turę zwłoki, gdy rzut jest dostępny teraz
   'suspendWaitPenalty',          // surcharge za każdy licznik czasu zawieszenia
+  // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
+  'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -1061,6 +1063,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
   //   nieopłacalny” nadal zostaje nad passem).
   suspendWaitPenalty: 1,
+  // PMSSB-69 (inicjatywa, CR 725). Składnik ETB = 6 (dawna stała) + dopłata, gdy posiada wróg,
+  // − kara za atakujące stwory wroga (gdy zmienia się posiadacz). Gdy już posiadam — 0 (silnik nie robi venture).
+  // initiativeStealBonus 6 = jedna venture ≈ jedna dobrana karta (drawCardValue): objęcie zabiera wrogowi postęp.
+  initiativeStealBonus: 6,
+  // initiativeExposurePenalty 2 za każdy stwór wroga bez defendera z mocą > 0: 1/3 venture na atakującego
+  // (ryzyko, że zada obrażenia w swojej turze i odbierze inicjatywę). Modelu bloków własnych nie ma (konserwatywnie).
+  initiativeExposurePenalty: 2,
+  // initiativeExposureCap 6 = jedna venture: kara nie zjada więcej niż dawny składnik ETB (wynik ≥ 0).
+  initiativeExposureCap: 6,
 });
 
 /**

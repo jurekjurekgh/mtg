@@ -29,9 +29,9 @@ export function table({ card, holder = null, foes = 0 }) {
 }
 
 /** Wynik kandydata na czar (cast_permanent) przy danym stole. */
-export function probe({ card, holder = null, foes = 0 }) {
+export function probe({ card, holder = null, foes = 0, params = undefined }) {
   const state = table({ card, holder, foes });
-  const bot = createHeuristicBot({ seed: 69 });
+  const bot = createHeuristicBot({ seed: 69, params });
   bot.chooseCommand(playerView(state, 'p2'), {});
   return scoreOf(bot, 'cast_permanent(x');
 }
