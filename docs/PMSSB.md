@@ -42,6 +42,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
 | amass (`amass`) — ETB Dunland Crebain i rzut Toll of the Invasion, wspólna miara z tokenem/licznikiem | 2 | DONE (2026-10-20) | §PMSSB-68 niżej; `test/audyt-pmssb68-amass.test.js` (6); przepięte piny `pmssb6-discard-wave-a` (Toll 68 / 60) i sufit `audyt-bot-walka-remisy` (attack 9); `tools/pmssb68-amass-ab.mjs` |
 | take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
+| nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3549,3 +3550,28 @@ Wszystkie zmiany wynikają z trzech składników (F1: −6·0.9; F2: +6·0.9; F3
 - F2 w walce: bot nie planuje ataku, by odebrać inicjatywę (kradzież przy obrażeniach, `triggers.js` ~3122). Kandydat na osobną pętlę, bez pomiaru.
 - Wartość venture jest stałą na turę (nie modelujemy konkretnych pokoi Podziemi).
 - Ryzyko F3 nie uwzględnia moich blokerów (konserwatywnie: każdy atakujący liczy się w pełni); pokrętło `initiativeExposurePenalty` pozwala to skorygować po przeglądzie.
+
+## PMSSB-70 — nieopłacona wymiana w deklaracji ataku (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana](plans/PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana.md). Źródło: zgłoszenie właściciela z audytu remisów PR #168 (`ravnica-wub|innistrad-wu` s4011 t26): remis ex aequo 1033 = 1033 między `attack[81,91,108]` (A) i tym samym zestawem z tokenem (B). Właściciel: bot ma wybierać A; wybór B kosztuje stwora i nic nie daje.
+
+**Problem (PRZED, `.arena/pmssb70-przed-probe.log`).** Wycena ataku sumuje wartości per atakujący, a każdy zakłada zabicie TEGO SAMEGO jedynego blokera. Trzy atakujące „przeżywają i zabijają” blokera (81 = 5, 91 = 4, 108 = 4). Token 1/1 idzie w gałąź wymiany (`power − 1` = 0): w projekcji zestawu ginie, zabici nie rośnie. Wycena dokłada więc 0 za stwora, który nic nie daje.
+
+**Wdrożenie.** `src/controllers/heuristic-bot.js`, `case 'declare_attackers'`: licznik `survivorKillers` (gałęzie „przeżyje i zabija” oraz `killsBeforeBlockerStrikes`) i lista `tradeValues` (gałąź wymiany). Po pętli: wolne sloty = `max(0, blokery − survivorKillers)`; wymiany ponad wolne sloty (od najcenniejszej) dostają `−unpaidTradeLoss` zamiast swojej wartości. **Kara tylko gdy `survivorKillers ≥ 1`** (rewizja, niżej). Pokrętła w `heuristic-params.js`: `unpaidTradeEnabled` (1; 0 = dawna wycena), `unpaidTradeLoss` (2 — jak kara jałowego ataku).
+
+**Rewizja zakresu (z dowodem).** Wersja bez warunku `survivorKillers ≥ 1` złamała pin PMSSB-59/B-kontrola: pompa Duo wyszła +3 zamiast −1. Sonda: zestaw `[duo, mine]` — dwie wymiany wobec jednego blokera bez przeżywającego — spadał z 2 do 0, a bramka `attackIntendsCreature` przełączała się i zmieniała wycenę pompy. To inny mechanizm (blokujący zablokuje jedną wymianę, druga przejdzie w twarz), więc zakres zawężono do przypadku właściciela. Pin F7 (battle cry) przeniesiono na scenę z dwoma blokerami, bo z jednym Ringleader zabija blokera sam i drugi atakujący jest zbędny — to ta sama klasa co s4011.
+
+**Testy.** `test/audyt-pmssb70-nieoplacona-wymiana.test.js` — 5 testów: A (RED: przed wdrożeniem A = B = 33; po: A ściśle wyżej), K1 (wymiana w wolnym slocie bez kary: 5), K2 (kontrola PMSSB-33/A1: 1/1 za 1/1 = 0), P (pokrętło `unpaidTradeEnabled = 0` przywraca remis), G (granica: dwie wymiany bez przeżywającego = dawna suma). Pin F7 przeniesiony (scena z dwoma blokerami). GREEN: 5/5 (`.arena/pmssb70-green5.log`).
+
+**Ewaluacja.**
+- Golden master: 2 z 6 partii zmienione (`ravnica-wub|innistrad-wu` s1000 t16 `[54,75]` → `[54]`; `dominaria-brg|mirrodin-wu` s1001 t15 `[26,token-61]` → `[26]`). Oba przypadki: wymiana po przeżywającym, projekcja bez nowego zabójstwa. Fixture **zregenerowany po przeglądzie** (`.arena/pmssb70-golden-write.log`); przełącznik 0 odtwarza stary hash bit w bit.
+- Tie-audit (`--gry=1`, baseline = przełącznik 0): `attack` akcyjne 14 → 11; `block` 10 → 9; `cast_spell` 6 → 7 (remis identycznych tokenów w zmienionej trajektorii, nie kara). Łącznie 114 → 111. s4011 t26 zniknął z remisów.
+- Mirror-eval (24 seedy, 288 partii, kandydat domyślny vs `unpaidTradeEnabled: 0`): **143 : 145, win-rate 0,4965** — neutralnie (wersja bez zawężenia 142 : 146). Nie ma dowodu poprawy siły w lustrze; jest dowód braku regresji.
+- Żywy Tester (`tools/table-tester`, build po zmianie): ravnica-wub vs innistrad-wu i dominaria-brg vs mirrodin-wu, seedy 11–13, 400 kroków: 6/6 do końca partii, rc 0, 0 `[STOP]`, 0 zgłoszeń detektorów.
+
+**Bramy.** `npm test` 8566/8566 (`.arena/pmssb70-npmtest2.log`); build exit 0; `test:all` 8833/8833 (`.arena/pmssb70-testall.log`).
+
+**Otwarte (poza zakresem).**
+- Dwie wymiany wobec jednego blokera BEZ przeżywającego (PMSSB-59 duo): dawna wycena; osobna rodzina, wymaga pomiaru po stronie blokera.
+- Pożyczony stwór (`tempControlUntilEOT`) zabijający najsilniejszego blokera nie jest liczony jako przeżywający zabójca (gałąź wartości dla właściciela).
+

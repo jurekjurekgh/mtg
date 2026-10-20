@@ -55,3 +55,34 @@ płaci za „wymianę”, która w projekcji zestawu nie daje ŻADNEGO dodatkowe
 ## Bramy
 
 `npm test`, `npm run build`, `npm run test:all`. Push po każdym kroku.
+
+## Wynik (2026-10-20)
+
+**RED.** `test/audyt-pmssb70-nieoplacona-wymiana.test.js`: na pozycji s4011 w postaci minimalnej (życie wroga 4, 2/2 + 1/4 + 1/4 + token 1/1 kontra 1/1) A = B = 33 — test czerwony na „A ściśle wyżej niż B” (`.arena/pmssb70-red2.log`).
+
+**GREEN** po wdrożeniu (`.arena/pmssb70-green5.log`): 5/5 testów pliku (A, K1, K2, P, G).
+
+**Rewizja zakresu (decyzja w trakcie pętli, z dowodem).** Pierwsza wersja liczyła wolne sloty jak w planie (`blokery − przeżywające zabójstwa`) i karała każdą wymianę ponad nie — także gdy NIE było przeżywającego. Wynik: pin PMSSB-59/B-kontrola (pompa w pustą planszę ma być nieopłacalna) przestał przechodzić: pompa Duo dawała +3 zamiast −1. Sonda (`.arena/probe59b.mjs`): zestaw `[duo, mine]` (dwie wymiany wobec jednego blokera, bez przeżywającego) spadał z 2 do 0, a bramka `attackIntendsCreature` przełączała się i zmieniała wycenę pompy. Dwie wymiany bez przeżywającego to **inny mechanizm** (blokujący zablokuje jedną, druga przechodzi w twarz), którego ta poprawka nie modeluje. Kara została zawężona do `survivorKillers ≥ 1` — tylko wymiany PO przeżywającym zabójcy, czyli przypadek s4011 i opis właściciela. Test G pinuje tę granicę.
+
+**Skutek na pin PMSSB-62/F7 (battle cry).** Scena z jednym blokującym: Ringleader przeżywa i zabija blokera, więc drugi atakujący-wymiana jest zbędny i dostaje karę (`razem` 5 zamiast 7). To ten sam przypadek co s4011, więc pin nie jest błędem reguły. Scenę domyślną przeniesiono na **dwóch** blokujących (wolny slot), gdzie battle cry ma co dołożyć; kontrfakt bez battle cry bez zmian; kotwica dyskryminująca bez zmian.
+
+**Golden master.** Przed regeneracją: 2 z 6 partii różne (`ravnica-wub|innistrad-wu` s1000, `dominaria-brg|mirrodin-wu` s1001). Przegląd przykładów (tie-projekcja, `.arena/pmssb70-dump-off.json`):
+- ravnica s1000 t16: `[54,75]` 6 → 3; 54 przeżywa i zabija jedynego blokera (wartość 5), 75 to wymiana, która nic nie dokłada → wybór `[54]`.
+- dominaria s1001 t15: `[26,token-61]` 8 → 5; projekcja `ginie 1, zabici 1` — token ginie bez nowego zabójstwa → wybór `[26]`.
+Obie zmiany to ta sama klasa co s4011. Regeneracja: `node tools/bot-scoring-snapshot.mjs --write` (`.arena/pmssb70-golden-write.log`). Przełącznik `unpaidTradeEnabled = 0` odtwarza fixture bit w bit (`.arena/pmssb70-golden-off.json`, hash = fixture sprzed zmiany).
+
+**Tie-audit** (`tools/bot-tie-audit.mjs --gry=1`; baseline = ten sam przebieg z przełącznikiem 0, `.arena/pmssb70-tie-audit-off.json`):
+- `attack`: akcyjne 14 → 11, tie_top 71 → 65; pozycja s4011 t26 zniknęła z remisów.
+- `block`: akcyjne 10 → 9.
+- `cast_spell`: akcyjne 6 → 7 — remis dwóch identycznych tokenów jako celu (ta sama wartość 25), w trajektorii zmienionej partii; nie kara wymiany.
+- Łącznie akcyjne 114 → 111. Sufit `attack` w `audyt-bot-walka-remisy` (12) nie wymaga zmiany.
+
+**Mirror-eval** (`tools/mirror-eval.mjs`, kandydat = domyślne, baseline = `unpaidTradeEnabled: 0`, 24 seedy × 6 talii × 2 strony): **143 : 145, win-rate 0,4965** (288 partii, `.arena/pmssb70-mirror24-final.log`). Neutralnie — zmiana nie poprawia siły w lustrze i nie pogarsza jej. Wcześniejsza wersja bez zawężenia: 142 : 146 (0,493).
+
+**Żywy Tester** (`tools/table-tester`, build po zmianie): ravnica-wub vs innistrad-wu i dominaria-brg vs mirrodin-wu, seedy 11–13, 400 kroków: 6/6 zakończone („KONIEC PARTII”), rc 0, 0 `[STOP]`, 0 zgłoszeń detektorów (`.arena/pmssb70-tester-*.log`).
+
+**Bramy.** `npm test` 8566/8566 (`.arena/pmssb70-npmtest2.log`); build exit 0 (`.arena/pmssb70-build.log`); `test:all` 8833/8833 (`.arena/pmssb70-testall.log`).
+
+**Otwarte (poza zakresem tej pętli).**
+- Dwie wymiany wobec jednego blokera BEZ przeżywającego (PMSSB-59 duo): drugi atakujący dostaje dawną wartość; w świecie gry drugi atakujący może przejść w twarz. Osobna rodzina, bez pomiaru po stronie blokera.
+- Pożyczony stwór (`tempControlUntilEOT`), który zabija najsilniejszego blokera, nie jest liczony jako przeżywający zabójca (wartość dla właściciela, odrębna gałąź).
