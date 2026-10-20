@@ -17382,3 +17382,13 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Golden master: dump diff 0 zmian wyboru, 1 zmiana wyniku (−0.3). Fixture `2fe4b347…` → `0db85647…`.
 - Ad 3 (Halo Scarab, M243/C): właściciel potwierdził wariant A. Wdrożony już w PMSSB-66; dodany pin warunku „wolne lądy" (`test/audyt-pmssb67-okno-wolne-lady.test.js`, 3). Wcześniej błędnie przedstawiony jako otwarty.
 - L48 (atomowość płatności): zamknięte przez właściciela. Pin nieudanej płatności kolorowej: `test/audyt-pmssb67-atomowosc-platnosci.test.js` (3).
+
+## 2026-10-20 — PMSSB-68: amass w wycenie ETB i rzutu (batch 68 — pętla ręcznego strojenia)
+
+- Mechanika spoza rejestru: `amass` (Dunland Crebain ETB 2, Toll of the Invasion rzut 1). Płaska wycena (ETB 6, rzut 6+3N) nie odpowiadała ani tokenowi Army N/N, ani licznikowi na armii. Wdrożony wspólny helper `amassValueOf` (ETB i ścieżka czaru), bez zmiany skali licznika i bez zmiany silnika.
+- Pomiar (sonda PRZED/PO): Dunland bez armii 73.5 → 86.1, armia 1/1 69.9 → 78.9, armia 3/3 69.9 → 89.7; Toll bez armii 59 → 60, armia 1/1 59 → 62, armia 3/3 59 → 74.
+- Testy: `test/audyt-pmssb68-amass.test.js` (RED 2/6 → GREEN 6/6; mutacje 4 i 2 czerwone). Przepięte piny: `pmssb6-discard-wave-a` (Toll +1) i sufit remisów `attack` 7 → 9 po przeglądzie czterech nowych pozycji (`srodziemie|theros` s4010, klasy z nagłówka audytu).
+- Ewaluacja: golden master 0 różnic decyzji (6 meczów); sparowany A/B 80 partii — 5 rozbieżnych, wygrane 42/38 bez zmian; kontrola 0/80; tie-audit decyzje 14025 → 14072; Żywy Tester 3/3 bez `[STOP]`, amass w grze w 2 partiach.
+- Korekta w trakcie: oczekiwanie Dunland z planu (87.5) pominęło wagę ×0.9 `cast_permanent`; poprawna wartość 86.1. Hipoteza „licznik < ciało” obalona pomiarem.
+- Bramy: `npm test` 8525/8525; `npm run test:all` 8792/8792; build 0; `cr-numery --sprawdz` OK.
+- Raport: `docs/PMSSB.md` §PMSSB-68; plan `docs/plans/PLAN_2026-10-20-pmssb68-amass.md`.

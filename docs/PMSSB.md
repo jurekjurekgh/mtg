@@ -40,6 +40,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
 | batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
+| amass (`amass`) — ETB Dunland Crebain i rzut Toll of the Invasion, wspólna miara z tokenem/licznikiem | 2 | DONE (2026-10-20) | §PMSSB-68 niżej; `test/audyt-pmssb68-amass.test.js` (6); przepięte piny `pmssb6-discard-wave-a` (Toll 68 / 60) i sufit `audyt-bot-walka-remisy` (attack 9); `tools/pmssb68-amass-ab.mjs` |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3458,3 +3459,45 @@ nie płynął do planu kolorów; wybór koloru Skarbu liczył per kolor zamiast 
 
 Narzędzia: `tools/pmssb66-okno-many-sonda.mjs` (W1–W12), `tools/pmssb66-mirror.mjs` (okno vs off).
 
+## PMSSB-68 — amass w wycenie ETB i rzutu (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20-pmssb68-amass](plans/PLAN_2026-10-20-pmssb68-amass.md). Pętla „kolejne pętle PMSSB" (ręczne strojenie scoringu, wybór mechaniki spoza rejestru). Rodzina: `amass` (2 karty w talii danych: Dunland Crebain — ETB `amass 2`; Toll of the Invasion — czar z `amass 1`; inwentarz `inv2`: 188 typów, 659 kart).
+
+**Problem (PRZED).** Wycena `amass` była płaska i nie zależała od tego, czy jest armia: ETB = 6 (tabela ETB), rzut = 6+3N. Bez armii nowe ciało Army N/N jest warte `tokenBodyValue` = 10·N, a z armią licznik jest wyceniany jak `add_counter` (`counterHostValue`, PMSSB-23). Płaska wartość nie odpowiadała żadnemu z tych przypadków (L41: wspólna miara dla ETB i czaru).
+
+**Wdrożenie.** Helper `amassValueOf(view, effect)` obok `counterEffectValue` w `src/controllers/heuristic-bot.js`: bez armii = ciało Army N/N (`tokenBodyValue`), z armią = licznik jak `add_counter`. Jedno miejsce wyceny dla tabeli ETB (`amass: (e, view) => amassValueOf(view, e)`) i ścieżki czaru (`score += amassValueOf(view, effect)`). Skali licznika nie zmieniano. Silnik i `heuristic-params.js` bez zmian (waga `cast_permanent` ×0.9 działa jak dotąd).
+
+**Pomiar (sonda `tools/pmssb68-amass-sonda.mjs`, wyniki w `.arena/pmssb68-{przed,po}.txt`):**
+
+| Karta / wariant | PRZED | PO |
+|---|---|---|
+| Dunland, ETB amass 2, bez armii | 73.4991 | 86.0991 |
+| Dunland, armia 1/1 | 69.8991 | 78.8991 |
+| Dunland, armia 3/3 | 69.8991 | 89.6991 |
+| Toll, cast amass 1, bez armii | 59.0 | 60.0 |
+| Toll, armia 1/1 | 59.0 | 62.0 |
+| Toll, armia 3/3 | 59.0 | 74.0 |
+
+Korekta oczekiwań: plan podawał Dunland 87.4991 bez wagi ×0.9 `cast_permanent`; poprawna wartość to 86.0991 (73.4991 − 5.4 + 18). Hipoteza „licznik na armii < nowe ciało” obalona pomiarem (armia 3/3 = 89.7 > bez armii 86.1; Toll armia 3/3 = 74 > 60) — nie powtarzać.
+
+**Audyt (L41 i anty-over-fix).**
+- (a) Wspólna miara: ETB i ścieżka czaru liczą przez `amassValueOf`; mutacja cofająca obie miejsca daje 4 czerwone testy, a ignorowanie armii 2 (`.arena/pmssb68-mut{1,2}.log`).
+- (b) Wymiar kosztu czaru: koszt many nie był modyfikowany; zmienia się tylko wartość amass w ocenie rzutu.
+- (c) Anty-over-fix: Dunland bez armii = flat 6 · 0.9 = 5.4 zastąpiony tokenem 2/2 (20) · 0.9 = 18. Nie jest to wzrost ponad uzasadnienie, bo odpowiada wycenie tokenu z L41. Toll bez armii: 9 → 10 (token 1/1), wzrost o 1.
+
+**Testy.** `test/audyt-pmssb68-amass.test.js`, 6 testów F1–F4 + strażniki. RED przed wdrożeniem: 2 zielone / 4 czerwone (`.arena/pmssb68-red.log`); GREEN: 6/6 (`.arena/pmssb68-green.log`). Piny idą przez `chooseCommand`/`trace`, bo helper jest domknięciem `createHeuristicBot` (nie da się go importować).
+
+**Przepięte asercje istniejących testów (zamierzona zmiana wartości, z przyczyną w komentarzu):**
+- `test/pmssb6-discard-wave-a.test.js`: Toll vs reka-3 67 → 68 (F-A1); Toll vs pusta reka 59 → 60 (F-A2, „toll ratuje amass"). Różnica +1 = token 1/1 (10) zamiast flat 9. Zmierzone, nie zgadnięte.
+- `test/audyt-bot-walka-remisy.test.js`: sufit remisów `attack` 7 → 9 ŚWIADOMIE. Porównanie `audytRemisow` na tych samych parach HEAD vs robocze: cztery nowe pozycje, wszystkie w `srodziemie|theros` seed 4010: t16 („+1 atak, +1 trafienie, +1 ginie" — klasa „+1 trafienie i +1 ginie"), t18/t20/t22 (wymiana 1 za 1 ex aequo z `attack[]` — klasa B). Żadna nowa klasa przeoczenia; przejrzane co do klasy zgodnie z nagłówkiem testu.
+
+**Ewaluacja.**
+- Golden master (`tools/bot-scoring-snapshot.mjs --dump`, 6 meczów, seedy 1000/1001): 0 różnic decyzji. Fixture nie regenerowana (cel procedury).
+- Sparowany A/B (`tools/pmssb68-amass-ab.mjs`, HEAD vs robocze, talie srodziemie i ravnica, seedy 3000+, 80 partii): 5 partii z inną sekwencją decyzji obu stron, wygrane identyczne (p1 42 / p2 38 w obu drzewach). Kontrola robocze vs robocze: 0/80. Narzędzie zapisuje ślady obu graczy; pozycja pierwszej różnicy w logu jest orientacyjna (łączenie śladów nie jest chronologiczne), liczy się fakt rozbieżności.
+- Mirror-eval (`tools/mirror-eval.mjs`) porównuje zestawy parametrów, nie kod; zmiana kodu wymaga A/B, więc mirror-eval nie był właściwym dowodem dla tej pętli.
+- Tie-audit (`tools/bot-tie-audit.mjs --gry=12 --top=5`, PRZED → PO, `.arena/pmssb68-tie-{przed,po}.log`): decyzje z alternatywami 14025 → 14072 (+47, zmiana przebiegu w 5 partiach); remisy 3912 → 3928; GROZY `attack` 68 → 72 (ten sam powód; helper nie wycenia ataku, zmienia tylko obecność armii na stole). Bez nowych klas `block`/`cast_*`.
+- Żywy Tester (`tools/table-tester`, `dist/mtg-table.html` po buildzie, człowiek srodziemie vs bot ravnica, seedy 11–13, 400 kroków): 3/3 zakończone, 0 `[STOP]`, 0 zgłoszeń detektorów. Amass wystąpił w grze w dwóch partiach (seedy 12 i 13: token „Zombie Army" 0/0 z licznikiem, walka i śmierć tokenu zgodne z zasadami tokenów).
+
+**Bramy na `0f7b668`.** `npm test` 8525/8525 (po przepięciu pinów, przed podniesieniem sufitu remisów); po podniesieniu sufitu `npm run test:all` 8792/8792 (`.arena/pmssb68-test-all.log`); `npm run build` 0; `node tools/cr-numery.mjs --sprawdz` OK. Golden master bez dryfu.
+
+**Stan i otwarte.** Pętla zamknięta dowodem (sonda PRZED/PO, RED→GREEN, mutacje, Żywy Tester, A/B 0/80 kontroli). Otwarte, poza zakresem: skala licznika `counterHostValue` (PMSSB-23) bez zmian; ewentualna cena rzutu Toll przy dużych armiach nie była badana w tej pętli.
