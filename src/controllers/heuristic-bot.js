@@ -2509,9 +2509,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wtedy nie daje (a przy płatności opcjonalnej po prostu się jej nie
     // opłaca). Bez wymagania celu pump dotyczy własnych ciał — stare
     // zachowanie co do joty (anty-over-fix).
-    pump: (e, view, req) => {
-      const p = e.power ?? 0;
-      const t = e.toughness ?? 0;
+    // PMSSB-71/F0: deskryptor P/T `source_power` (trigger ataku Beastmastera) to TEKST, nie liczba.
+    // Dawniej `'source_power' * 2` = NaN, a NaN zrywał całą wycenę rzutu (karta nigdy nie była rzucana).
+    // Rozwiązujemy go względem źródła (`def`, jak `resolveDynamic`); nierozpoznany deskryptor = 0.
+    pump: (e, view, req, def) => {
+      const dyn = (v) => (typeof v === 'number' ? v : (v === 'source_power' ? (def?.power ?? 0) : 0));
+      const p = dyn(e.power ?? 0);
+      const t = dyn(e.toughness ?? 0);
       if ((p < 0 || t < 0) && req) {
         return etbEnemyHasTarget(view, req) ? Math.min(3 * (-p - t), 15) : 0;
       }
