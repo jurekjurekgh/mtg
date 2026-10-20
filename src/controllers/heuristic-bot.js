@@ -8741,6 +8741,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (target && !hasKeyword(target, 'indestructible')) value += P.drawCardValue + bodyWorth(target);
       } else if (effect.type === 'damage') value += damageTargetValue(view, targetId, amount);
       else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      // PMSSB-71 (L41): tryb riot „haste” wyceniany jak słowo `haste` na ciele rzucanym z ręki
+      // (`creatureKeywordValue`: creatureKwHaste · moc/ref). Dawniej brak wpisu w ETB_EFFECT_BONUS = 0,
+      // więc bot nigdy nie wybierał pośpiechu, nawet przy letalu z atakiem tej tury.
+      else if (effect.type === 'grant_keyword_permanent') {
+        const body = target ?? source;
+        value += creatureKeywordValue(view, { keywords: [effect.keyword], power: body?.power ?? 0 }, body);
+      }
+      // PMSSB-71 (L41): licznik +1/+1 na SAMYM sobie w trybie modalnym = wartość ciała (+1 moc +1 wytrzymałość
+      // w tej samej skali co `creatureBase`/wycena P/T), a nie stała 5 z ETB_EFFECT_BONUS (ścieżka bez trybów).
+      else if (effect.type === 'add_counter' && effect.counter === '+1/+1' && !(mode.targets?.length)) {
+        value += amount * (P.creaturePowerWeight + P.creatureToughnessWeight);
+      }
       else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
     }
     value += drawTriggeredCounterValue(view, effects, {
