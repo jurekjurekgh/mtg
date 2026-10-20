@@ -75,3 +75,7 @@ Audyt F0: (a) L41 — wszystkie wyzwalacze `attacks`/ETB z pompą P/T przechodz�
 
 Golden master (cel: bez regeneracji), tie-audit, mirror-eval min. 24 seedy (sparowane A/B),
 Żywy Tester. Wynik zanotować w `PROJECT_HISTORY.md` i w hubie PMSSB.
+
+## Wynik
+
+Zamknięte 2026-10-20: F0 (NaN `source_power`), F1 (haste = słowo), F2 (licznik = ciało). Pełne wyniki i otwarte punkty: `docs/PMSSB.md` §PMSSB-71. Bramy: `test:all` 8839/8839, build 0, golden bez zmian, tie-audit bez zmian, A/B 480 partii (rg vs inna talia 93 → 130; McNemar χ² = 23,6), Żywy Tester 3/3 bez zgłoszeń.

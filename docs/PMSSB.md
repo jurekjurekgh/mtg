@@ -43,6 +43,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | amass (`amass`) — ETB Dunland Crebain i rzut Toll of the Invasion, wspólna miara z tokenem/licznikiem | 2 | DONE (2026-10-20) | §PMSSB-68 niżej; `test/audyt-pmssb68-amass.test.js` (6); przepięte piny `pmssb6-discard-wave-a` (Toll 68 / 60) i sufit `audyt-bot-walka-remisy` (attack 9); `tools/pmssb68-amass-ab.mjs` |
 | take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
+| riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3575,3 +3576,32 @@ Plan: [PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana](plans/PLAN_2026-10-20d-pmss
 - Dwie wymiany wobec jednego blokera BEZ przeżywającego (PMSSB-59 duo): dawna wycena; osobna rodzina, wymaga pomiaru po stronie blokera.
 - Pożyczony stwór (`tempControlUntilEOT`) zabijający najsilniejszego blokera nie jest liczony jako przeżywający zabójca (gałąź wartości dla właściciela).
 
+## PMSSB-71 — riot i NaN w wycenie rzutu (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). Kolejność z `docs/PMSSB.md`: plan → pomiar PRZED → audyt → RED → GREEN → ewaluacja → dokumentacja.
+
+**Pomiar PRZED (sonda `.arena/probe-riot.mjs`, `.arena/pmssb71-legal.mjs`, `.arena/pmssb71-score.mjs`, prawdziwy silnik).** Gruul Beastmaster był legalny do rzutu w 87 krokach gry, a bot NIGDY go nie zagrał (0 z 480 partii lustrzanych). Wycena rzutu wynosiła `NaN`. Dwa niezależne defekty:
+
+- **F0 — NaN (przyczyna główna).** Wpis `ETB_EFFECT_BONUS.pump` czytał `e.power` jako liczbę. Trigger ataku Beastmastera ma pompę `power: 'source_power'` (tekst), więc `'source_power' * 2 = NaN`. NaN wchodził przez `anticipatedAttacksValue` do `score`, a sortowanie `scored.sort((a, b) => b.score - a.score)` przy NaN daje niespójny komparator. Pomiar na bazie (`.arena/pmssb71-nan-mech.mjs`): w 258 krokach z NaN w ofertach bot wybrał coś innego niż najlepsza skończona oferta w 15 przypadkach. Po F0: 0 kroków z NaN, 0 złych wyborów.
+- **F1 — tryb haste wyceniany 0.** `grant_keyword_permanent` nie miał wpisu w `ETB_EFFECT_BONUS`. Poprawka: tryb haste wycenia `creatureKeywordValue` dla słowa `haste` i mocy ciała (ta sama funkcja co rzut stworzenia z tym słowem; L41). Dla mocy 2: `creatureKwHaste · 2/3 = 4`.
+- **F2 — licznik +1/+1 stałą 5.** Tryb licznika na SAMYM sobie wyceniany jest wartością ciała: `creaturePowerWeight + creatureToughnessWeight = 3`. Zmiana tylko w gałęzi `modalModeValue` (tryby modalne). Globalna stała `add_counter` = 5 dla ścieżki ETB bez trybów zostaje — współdzielona przez wiele kart, poza zakresem (patrz „Otwarte”).
+
+**Wdrożenie.** `src/controllers/heuristic-bot.js`: `pump` (F0, rozwiązanie `source_power` względem `def`; nierozpoznany deskryptor = 0), `modalModeValue` (F1, F2). `heuristic-params.js` bez zmian (używa `creatureKwHaste`, `creaturePowerWeight`, `creatureToughnessWeight`).
+
+**Testy.** `test/audyt-pmssb71-riot.test.js` — 6 testów: letal → haste (RED→GREEN); parytet L41 (`haste = 10 + 4`, `licznik = 10 + 3`); pokrętło `creatureKwHaste = 0` → licznik; bloker 4/4 nie odwraca wyboru bez letalu; F0 RED: wycena rzutu skończona; F0 RED: bot wybiera rzut z ręki. **Mutacje** (każda wykryta): haste = 0 → 3 porażki; licznik = 5 → 3 porażki; bez F0 → 2 porażki.
+
+**Ewaluacja.**
+
+- Golden master (`tools/bot-scoring-snapshot.mjs`): hash `7510ba436292c802…` BEZ zmian, bez regeneracji (partie snapshotu nie zawierają Beastmastera).
+- Tie-audit (`--gry=40`, 480 partii): tabela per rodzaj i suma (`tie_top 12767`) IDENTYCZNE przed i po. Zastrzeżenie: zestaw benchmarku nie zawiera talii `ravnica-rg`, więc riot nie wchodzi do tego pomiaru.
+- Sparowany A/B kodu (`.arena/pmssb71-ab.mjs`, baza `a1c0576` vs bieżący, te same seedy i talie, 120 seedów × 4 pary = 480 partii): **380 partii się różni**, riot wystąpił w 378 (baza: 0). Lustro `ravnica-rg|ravnica-rg`: 67 → 66 wygranych p1 (neutralnie). Pary rg vs inna talia (360 partii, rg po stronie z Beastmasterem): wygrane rg **93 → 130**; McNemar: **46 zysków, 9 strat, χ² = 23,6**. To NIE jest neutralny wynik lustra: to skutek naprawy defektu (karta zaczęła być grana i ustały złe wybory przez NaN). Nie traktować jako dowodu „siły” Beastmastera — jest to pomiar wpływu naprawy.
+- Żywy Tester (`tools/table-tester`, build po zmianie, `--human ravnica-rg --bot ravnica-wub`, seedy 11–13, 400 kroków): 3/3 rc 0, 0 `[STOP]`, `zgłoszeń detektorów: 0`. W seedach 12 i 13 modal „wybierz tryb: Riot: +1/+1 counter / Riot: haste” pojawił się w UI, a Beastmaster wszedł na pole.
+
+**Bramy.** `test:all` 8839/8839 exit 0 (`.arena/pmssb71-testall-final.log`); build exit 0 (74 moduły, 5271,8 kB); `npm test` w ramach `test:all`.
+
+**Otwarte (poza zakresem; do decyzji właściciela, nie zmieniane tutaj).**
+
+- Wybór: po naprawie bot wybiera tryb haste we WSZYSTKICH scenach riot (14 wobec 13). Wartość haste to pokrętło `creatureKwHaste = 6` (tempo), licznik to wartość ciała. Pokrętło do strojenia, jeśli właściciel woli licznik w grze długiej.
+- Globalna stała `add_counter` bez celu = 5 w ścieżce ETB bez trybów (zostaje). Rozmiar tej rodziny to osobny pomiar.
+- Brak pinu „pompa liczbowa daje nadal 2p+t” jako osobnego testu; pokrywa to pośrednio test F0 (dwa testy RED) i wycena trybu (parytet).
+- Ogólny strażnik NaN w `scored` nie został dodany; wybór filtruje tylko `Number.isFinite` przy pick, a sort nadal widzi NaN. Warto rozważyć ogólny bezpiecznik (osobna decyzja).
