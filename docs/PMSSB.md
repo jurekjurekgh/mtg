@@ -44,7 +44,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
 | riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
-| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **WDROŻONE (2026-10-20), bramka golden OTWARTA** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → nowy; wybory bota bez zmian (2 partie, 3 decyzje z nowymi opcjami), fixture NIE zregenerowany — czeka na decyzję właściciela. |
+| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3611,7 +3611,7 @@ Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). K
 
 Luka była w silniku gry, nie w dokumentacji: `legalCommands` nie tworzyło wariantów convoke, więc Kavu z 2 manami i dwoma stworami miał 0 ofert (sonda `.arena/probe-convoke.mjs`), a test batcha 69 wołał `execute` ręcznie. Naprawa: §PMSSB-72.
 
-## PMSSB-72 — convoke (2026-10-20) — WDROŻONE, bramka golden OTWARTA
+## PMSSB-72 — convoke (2026-10-20) — DONE
 
 Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md` (uwaga o kolejności: kod powstał przed planem).
 
@@ -3620,4 +3620,5 @@ Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md` (uwaga o kolejności: kod
 - Wdrożenie: `resources.js` (`convokePaymentVariants`), `game-state.js` (oferty, także kicked), `heuristic-params.js` (pokrętło), `heuristic-bot.js` (wycena), `render.js`/`main.js` (grupa i etykieta), `mana-wizard.js` (reszta many).
 - RED→GREEN: na kodzie sprzed zmiany 5 z 8 testów czerwonych (oferty, kicked, kreator, bot); pin „najmniejsze ciało” wykrywa mutację płaskiej kary (czerwony przy `body = 4`).
 - Remis wariantów: płaska kara dawała 9 identycznych opcji (`cast_permanent(drawn-79)` 57,6); po zmianie wycena różnicuje stwory. Pozostały remis to warianty tego samego stwora z innym kolorem pipa — wycena bota jest celowo ślepa na kolor pipów (jak dotąd).
-- Golden: `npm test` zielony (8580/8580); `test:all` — jedyny błąd to hash golden (`7510ba436292c802…` → `62bda00e…`). Diagnostyka (`--dump`): 2 partie (dominaria-brg|mirrodin-wu seed 1000 i 1001), 3 decyzje z nowymi opcjami convoke, **0 zmienionych wyborów**, reszta śladu identyczna. Fixture NIE zregenerowany — wymaga decyzji właściciela (procedura: zatrzymać przy zmianie hasha).
+- Golden: hash `7510ba436292c802…` → `9017a46b8bf6298d…`. Przegląd przed regeneracją (`--dump`): 1437 decyzji w 6 partiach, **0 zmienionych wyborów i wyników**; zmiana to tylko dopisane opcje convoke w zapisie. Regeneracja `tools/bot-scoring-snapshot.mjs --write`: zmienione 3 linie fixture (hash ogólny + 2 partie). Progi i seedy testu NIE zmienione.
+- Bramy: `test:all` 8848/8848, exit 0; build 0.

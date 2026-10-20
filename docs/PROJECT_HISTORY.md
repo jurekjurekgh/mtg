@@ -17435,6 +17435,6 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Luka z batcha 69 NAPRAWIONA: `legalCommands` oferuje warianty convoke (minimalne, także kicked); UI grupuje je w panel wyboru stworów (decyzja gracza); kreator many płaci resztę.
 - Bot: wycena z wymiarem kosztu (mana − stwory) i karą za tapnięcie zależną od wartości ciała (`convokeTapPenalty`, pokrętło). Płaska kara dawała 9 identycznych opcji (remis).
 - Testy: `test/audyt-pmssb72-convoke.test.js` (9; 5 czerwonych na kodzie sprzed zmiany). `npm test` 8580/8580.
-- Golden: hash zmieniony (2 partie, 3 decyzje z nowymi opcjami, 0 zmienionych wyborów). Fixture NIE zregenerowany — czeka na decyzję właściciela.
+- Golden: hash zmieniony (`7510…` → `9017…`) po przeglądzie: 1437 decyzji, 0 zmienionych wyborów i wyników; fixture zregenerowany (3 linie). `test:all` 8848/8848.
 - Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md`. Rejestr: `docs/PMSSB.md` §PMSSB-72.
 - Incydent: lokalny HEAD wrócił do `34e8676` (drzewo robocze zgodne z origin); przywrócono `git reset` (bez `--hard`) po weryfikacji 36 plików względem origin.
