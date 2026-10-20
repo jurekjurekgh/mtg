@@ -17428,3 +17428,4 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Naprawy: pompa rozwiązuje `source_power` względem źródła (F0); tryb riot „haste” wyceniany słowem `haste` (F1); tryb licznika wartością ciała +1/+1 (F2).
 - Testy: `test/audyt-pmssb71-riot.test.js` (6); `test:all` 8839/8839; golden master bez zmian; tie-audit bez zmian; sparowany A/B 480 partii: rg vs inna talia 93 → 130 wygranych (McNemar χ² = 23,6), lustro 67 → 66; Żywy Tester 3/3, 0 zgłoszeń.
 - Szczegóły i otwarte punkty: `docs/PMSSB.md` §PMSSB-71; plan `docs/plans/PLAN_2026-10-20e-pmssb71-riot.md`.
+- Luka znaleziona przy pętli convoke (batch 69): Kavu Primarch nie ma żadnej oferty rzutu z convoke w `legalCommands`; UI i bot nie mogą go użyć. OTWARTE, opis w `docs/PMSSB.md` („Luka convoke”).
