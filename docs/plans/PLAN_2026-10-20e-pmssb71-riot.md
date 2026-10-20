@@ -26,6 +26,24 @@ bot i tak wybiera licznik, który w tej turze nic nie daje. Ta sama karta rzucon
 (zwykłe słowo `haste`) dostaje z `creatureKeywordValue` `creatureKwHaste × moc/ref` = 6 × 2/3 = 4.
 Tryb riot wycenia to samo słowo na 0: wycena niezgodna z L41.
 
+## Pomiar PRZED — odkrycie w trakcie (F0: NaN zrywa wycenę rzutu)
+
+Sonda `.arena/pmssb71-legal.mjs` i `.arena/pmssb71-score.mjs` (sym. gra, `ravnica-rg` vs `ravnica-wub`,
+seedy 5000+): Beastmaster jest w ręce i LEGALNY do rzutu w 87 krokach (przy ≥4 lądach), a bot nigdy go
+nie wybiera. Wycena rzutu: `cast_permanent(gruul)=NaN` — także na bazie `a1c0576` (pre-existing).
+
+Przyczyna (bisekcja w kopii `/tmp/dbg`, nie w drzewie): `anticipatedAttacksValue` → ETB_EFFECT_BONUS.`pump`
+czyta `e.power ?? 0` — dla triggera ataku Beastmastera to tekst `'source_power'` → `'source_power' * 2 = NaN`.
+NaN przechodzi przez `score +=` i zrywa całą wycenę rzutu. Zasięg: jedyny wyzwalacz z pompą dynamiczną
+w katalogu (grep `source_power` w `card-data.js`: 523 buff_land_creatures, 4798 Beastmaster, typ inny).
+
+Dlatego pomiar z trybami riot (tabela wyżej) NIE pokazywał wpływu na wybór rzutu: wybór trybu jest
+poprawny, ale do wyboru trybu bot nigdy nie dochodzi. Kolejność prac: F0 (NaN) → F1 (haste) → F2 (licznik).
+
+Audyt F0: (a) L41 — wszystkie wyzwalacze `attacks`/ETB z pompą P/T przechodzą tę samą drabinę `pump`
+    (liczba i deskryptor); (b) bez zmian kosztu; (c) anty-over-fix: pompy LICZBOWE dają tę samą wartość
+    (pin), tylko deskryptor `source_power` zyskuje wartość źródła; nierozpoznany deskryptor = 0 (nie NaN).
+
 ## Audyt (kontrole obowiązkowe)
 
 (a) L41 — wspólna miara: tryb haste = `creatureKeywordValue(view, {keywords:['haste'], power}, source)`,
