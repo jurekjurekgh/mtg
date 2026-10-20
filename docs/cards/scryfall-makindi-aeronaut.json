@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Makindi+Aeronaut&set=ogw&format=json",
+  "print": "ogw",
+  "name": "Makindi Aeronaut",
+  "mana_cost": "{1}{W}",
+  "cmc": 2,
+  "type_line": "Creature — Kor Scout Ally",
+  "oracle_text": "Flying",
+  "power": "1",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "set": "ogw",
+  "set_name": "Oath of the Gatewatch",
+  "collector_number": "27",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/3/a35d3113-6cb7-4b74-94a3-8160d9ac1b89.jpg?1783937924"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/a35d3113-6cb7-4b74-94a3-8160d9ac1b89/rulings"
+}

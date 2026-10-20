@@ -1,0 +1,86 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kavu+Primarch&set=dmr&format=json",
+  "print": "dmr",
+  "name": "Kavu Primarch",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Kavu",
+  "oracle_text": "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nConvoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nIf this creature was kicked, it enters with four +1/+1 counters on it.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "set": "dmr",
+  "set_name": "Dominaria Remastered",
+  "collector_number": "167",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/f/5/f53cbda8-805f-42a4-aba4-9939b08e37ca.jpg?1783918441"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "To determine a spell's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases (such as kicker), then apply any cost reductions. The spell's mana value remains unchanged, no matter what the total cost to cast it was."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "The kicker ability doesn't let you pay a kicker cost more than once."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you put a permanent with a kicker ability onto the battlefield without casting it, you can't kick it."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you copy a kicked spell on the stack, the copy is also kicked. If the copied spell is a permanent spell, the token the copy of that spell becomes when it enters is also kicked."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a card or token enters as a copy of a permanent, the new permanent isn't kicked, even if the original was."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "You can tap any untapped creature you control to convoke a spell, even one you haven't controlled continuously since the beginning of your most recent turn."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "Tapping an untapped creature that's attacking or blocking to convoke a spell won't cause that creature to stop attacking or blocking."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "When calculating a spell's total cost, include any alternative costs, additional costs, or anything else that increases or reduces the cost to cast the spell. Convoke applies after the total cost is calculated. Convoke doesn't change a spell's mana cost or mana value."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "If a creature you control has a mana ability with {T} in the cost, activating that ability while casting a spell with convoke will result in the creature being tapped before you pay the spell's costs. You won't be able to tap it again for convoke. Similarly, if you sacrifice a creature to activate a mana ability while casting a spell with convoke, that creature won't be on the battlefield when you pay the spell's costs, so you won't be able to tap it for convoke."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "Because convoke isn't an alternative cost, it can be used in conjunction with alternative costs."
+    },
+    {
+      "date": "2024-01-12",
+      "source": "wotc",
+      "comment": "Tapping a multicolored creature using convoke will pay for {1} or one mana of your choice of any of that creature's colors."
+    }
+  ],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/f53cbda8-805f-42a4-aba4-9939b08e37ca/rulings"
+}

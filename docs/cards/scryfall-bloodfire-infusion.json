@@ -1,0 +1,29 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Bloodfire+Infusion&set=apc&format=json",
+  "print": "apc",
+  "name": "Bloodfire Infusion",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura",
+  "oracle_text": "Enchant creature you control\n{R}, Sacrifice enchanted creature: This Aura deals damage equal to the sacrificed creature's power to each creature.",
+  "colors": [
+    "R"
+  ],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "57",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/6/2639e9b7-ed8c-48fd-a8b7-b99d8dad4bc0.jpg?1783945345"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [
+    {
+      "date": "2004-10-04",
+      "source": "wotc",
+      "comment": "If this card is ever on a creature you don't control, it is put into the graveyard as a State-Based Action."
+    }
+  ],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/2639e9b7-ed8c-48fd-a8b7-b99d8dad4bc0/rulings"
+}

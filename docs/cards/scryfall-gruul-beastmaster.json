@@ -1,0 +1,56 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Gruul+Beastmaster&set=rna&format=json",
+  "print": "rna",
+  "name": "Gruul Beastmaster",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Human Shaman",
+  "oracle_text": "Riot (This creature enters with your choice of a +1/+1 counter or haste.)\nWhenever this creature attacks, another target creature you control gets +X/+0 until end of turn, where X is this creature's power.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "G"
+  ],
+  "set": "rna",
+  "set_name": "Ravnica Allegiance",
+  "collector_number": "129",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/2/b/2b0aaded-515f-4ac9-a72f-6948b4d4df51.jpg?1783933671"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "The value of X is determined only as Gruul Beastmaster's triggered ability resolves. Once that happens, the value of X won't change later in the turn even if Gruul Beastmaster's power changes."
+    },
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "If Gruul Beastmaster leaves the battlefield before its triggered ability resolves, use its power as it last existed on the battlefield to determine the value of X."
+    },
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "If Gruul Beastmaster's power is negative as its triggered ability resolves, X is considered to be 0. In other words, that ability can't cause the creature to lose power."
+    },
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "Riot is a replacement effect. Players can't respond to your choice of +1/+1 counter or haste, and they can't take actions while the creature is on the battlefield without one or the other."
+    },
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "If a creature entering the battlefield has riot but can't have a +1/+1 counter put onto it, it gains haste."
+    },
+    {
+      "date": "2019-01-25",
+      "source": "wotc",
+      "comment": "If you choose for the creature to gain haste, it gains haste indefinitely. It won't lose it as the turn ends or as another player gains control of it."
+    }
+  ],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/2b0aaded-515f-4ac9-a72f-6948b4d4df51/rulings"
+}
