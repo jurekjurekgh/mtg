@@ -132,29 +132,31 @@ zgodnie z konwencją generatora i strażnika liczności.
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 39 | 13 | 26 |
-| `dominaria-brg` | Dominaria (BRG) | BRG | 33 | 11 | 22 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 35 | 12 | 23 |
 | `dominaria-wu` | Dominaria (WU) | WU | 30 | 10 | 20 |
 | `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
-| `forgotten-realms` | Forgotten Realms | WUBRG | 41 | 14 | 27 |
-| `innistrad-brg` | Innistrad (BRG) | BRG | 30 | 10 | 20 |
+| `forgotten-realms` | Forgotten Realms | WUBRG | 44 | 15 | 29 |
+| `innistrad-brg` | Innistrad (BRG) | BRG | 32 | 11 | 21 |
 | `innistrad-wu` | Innistrad (WU) | WU | 32 | 11 | 21 |
 | `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 36 | 12 | 24 |
-| `mirrodin-wu` | Mirrodin (WU) | WU | 30 | 10 | 20 |
-| `ravnica` | Ravnica | WUBRG | 47 | 16 | 31 |
+| `mirrodin-wu` | Mirrodin (WU) | WU | 32 | 11 | 21 |
+| `ravnica-rg` | Ravnica (RG) | RG | 23 | 8 | 15 |
+| `ravnica-wub` | Ravnica (WUB) | WUB | 26 | 9 | 17 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 38 | 13 | 25 |
 | `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 38 | 13 | 25 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 39 | 13 | 26 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
-| `zendikar` | Zendikar | WUBRG | 42 | 14 | 28 |
+| `zendikar-rg` | Zendikar (RG) | RG | 23 | 8 | 15 |
+| `zendikar-wu` | Zendikar (WU) | WU | 23 | 8 | 15 |
 
 ### Worki (małe plany — przejściowe, ADR 0023)
 
@@ -162,7 +164,7 @@ zgodnie z konwencją generatora i strażnika liczności.
 |---|---|---|---:|---:|---:|
 | `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
 | `worek-dziki` | Worek: Dzikie Światy | WUBRG | 29 | 10 | 19 |
-| `worek-legend` | Worek: Legendy | WUBRG | 32 | 11 | 21 |
+| `worek-legend` | Worek: Legendy | WUBRG | 33 | 11 | 22 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 24 | 8 | 16 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

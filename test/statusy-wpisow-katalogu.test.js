@@ -48,7 +48,8 @@ test('M419/B: każdy wpis katalogu ma status supported, token albo back', () => 
   // Dokończenie Batch 63: Blood + Eldrazi Spawn → 48.
   // Batch 66 (Rakish Revelers): +Citizen bez podtypu Human → 49.
   // Batch 67 (Improbable Alliance): +Faerie (teld 5) → 50; (Wolf's Quarry): +Boar (teld 9) → 51.
-  assert.equal(tokeny, 51, 'tyle tokenów zna katalog (stan po Batchu 67 fali B)');
+  // Batch 69 (Heron-Blessed Geist): +token_heron_spirit (1/1 Spirit z flying) → 52.
+  assert.equal(tokeny, 52, 'tyle tokenów zna katalog (stan po Batchu 69)');
   // Batch 59 (Bird Admirer // Wing Shredder): +wing-shredder (127 MID) → 9.
   assert.equal(tyly, 9, 'tyle tylnych stron DFC zna katalog (stan po M419 + Batch 59)');
   assert.equal(karty + tokeny + tyly, ALL.length, 'każdy wpis policzony dokładnie raz');

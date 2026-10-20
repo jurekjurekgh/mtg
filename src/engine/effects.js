@@ -1147,7 +1147,11 @@ export function applyEnterCounters(state, objectId) {
   // rzucania `manaColorsSpent` jest puste, więc warunek po prostu nie zachodzi.
   const rule = object.entersWithCountersIf;
   if (rule) {
-    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    // Batch 69 (Kavu Primarch, CR 702.33d): „If this creature was kicked, it
+    // enters with four +1/+1 counters on it\". Flaga `wasKicked` niesie permanent
+    // z rzutu kicked (castPermanent). Bez rzutu (np. ze zdolności) — nie zachodzi.
+    let holds = rule.kicked ? Boolean(object.wasKicked) : false;
+    if (!holds && rule.morbid) holds = Boolean(state.creatureDiedThisTurn);
     if (!holds && rule.adamant) {
       // Wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem; wildcard
       // (>1 znaku — jednostka wielokolorowa, CR 106.7) gdy zawiera kolor.
@@ -1641,6 +1645,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const multiplier = effect.kickedMultiplier && sourceObject?.wasKicked ? effect.kickedMultiplier : 1;
     const amount = Math.max(0, effectivePower(dealer, state) ?? 0) * multiplier;
     dealNonCombatDamage(state, dealer, victimId, amount);
+    return;
+  }
+  if (effect.type === 'grant_keyword_permanent') {
+    // Batch 69 (Riot, CR 702.136a / ruling 2019-01-25): nadanie słowa kluczowego
+    // BEZTERMINOWO (haste nie znika w cleanup ani przy zmianie kontrolera).
+    // Zapis w `keywordGrants` + znacznik warstwy (CR 613.7b), jak przy kradzieży.
+    const targetId = targets[0] ?? sourceObject.id;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield') return;
+    const keyword = effect.keyword;
+    state.objects.set(targetId, Object.freeze({
+      ...target,
+      keywordGrants: [...(target.keywordGrants ?? []), keyword],
+      keywordGrantTs: Object.freeze({ ...(target.keywordGrantTs ?? {}), [keyword]: nextTimestamp(state) }),
+    }));
+    return;
+  }
+  if (effect.type === 'damage_each_creature_sacrificed_power') {
+    // Batch 69 (Bloodfire Infusion): „This Aura deals damage equal to the
+    // sacrificed creature's power to each creature.\" Moc = LKI z kosztu
+    // (sacrificedPower, zapisany przed zmianą strefy). Źródłem jest aura.
+    // Zero/ujemna moc nie zadaje obrażeń. Dotyczy KAŻDEGO stworu na polu.
+    const amount = Math.max(0, sourceObject?.sacrificedPower ?? 0);
+    if (amount <= 0) return;
+    for (const creatureId of [...state.zones.battlefield]) {
+      const creature = state.objects.get(creatureId);
+      if (!creature || creature.zone !== 'battlefield' || creature.kind !== 'creature') continue;
+      dealNonCombatDamage(state, sourceObject, creatureId, amount);
+    }
     return;
   }
   if (effect.type === 'damage_from_enchanted_power') {
@@ -5732,6 +5765,20 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
       filterDescription: effect.description ?? null,
+    }));
+    return;
+  }
+  if (effect.type === 'prevent_combat_damage_to_target_this_turn') {
+    // Batch 69 (Fleeting Flight): „Prevent all combat damage that would be dealt
+    // to it this turn\" — filtr celowy na obiekcie (targets[0]), tylko obrażenia
+    // bojowe. Filtr czyści cleanup (state.preventDamageThisTurn).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const filter = Object.freeze({ objectId: targetId, combatOnly: true });
+    state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+      filterDescription: 'combat damage to target creature',
     }));
     return;
   }

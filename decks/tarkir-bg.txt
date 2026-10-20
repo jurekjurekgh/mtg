@@ -27,6 +27,8 @@
 1x Hooting Mandrills
 1x Sultai Scavenger
 1x Woolly Loxodon
+1x Plains
 1x Island
-5x Swamp
+3x Swamp
+1x Mountain
 8x Forest

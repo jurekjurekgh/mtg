@@ -95,6 +95,10 @@ const ETYKIETA = Object.freeze({
   // Trigger battle cry (CR 702.91) w deskryptorze zdolności karty: atak →
   // `buff_attacking_creatures` z `excludeSource` („each OTHER attacking creature").
   battle_cry: { mechanika: 'abilities' },
+  // Batch 69 (CR 702.116): trigger ataku z warunkiem `anotherOpponentExists` w deskryptorze.
+  myriad: { mechanika: 'abilities' },
+  // Batch 69 (CR 702.136a): trigger przy wejściu z `modes` (grant_keyword_permanent / licznik).
+  riot: { mechanika: 'abilities' },
   // Mechanika w POLU obiektu (`toxic`, CR 702.164): combat.js dokłada truciznę
   // z `source.toxic`, a keyword jest tylko etykietą dla UI/reguł.
   toxic: { mechanika: 'pole', pole: 'toxic' },

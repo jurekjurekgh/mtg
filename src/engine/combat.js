@@ -1378,7 +1378,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     const blockerDamage = assignedById.has(attackerId) ? assignedById.get(attackerId) : amount;
     const inspireBlocked = isCombatDamagePreventedByInspire(state, blocker) ? blockerDamage : 0;
     const fogBlocked = state.preventAllCombatDamage ? blockerDamage : 0;
-    const attackerFilterPrevented = (isDamagePrevented(state, attacker) ? blockerDamage : 0) + inspireBlocked + fogBlocked;
+    const attackerFilterPrevented = (isDamagePrevented(state, attacker, { combat: true }) ? blockerDamage : 0) + inspireBlocked + fogBlocked;
     if (attackerFilterPrevented > 0) {
       const filterEvent = event('damage_prevented', { objectId: attackerId, amount: attackerFilterPrevented, cardId: attacker.cardId, inspireAwe: inspireBlocked > 0, combatFog: fogBlocked > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
@@ -1422,7 +1422,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     // atakującego niezależnie od wytrzymałości. Prewencja kasuje
     // obrażenia przed oznaczeniem (jak wyżej — CR 702.2b).
     const attackerNow = state.objects.get(attackerId);
-    if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow)) {
+    if (hasKeyword(state, blocker, 'deathtouch') && blockerDealt > 0 && !isDamagePrevented(state, attackerNow, { combat: true })) {
       const updated = state.objects.get(attackerId);
       if (updated) state.objects.set(attackerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
     }
@@ -1458,7 +1458,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     // kasuje CAŁOŚĆ przydzieloną (jak dealNonCombatDamage).
     const inspireAssigned = isCombatDamagePreventedByInspire(state, attacker) ? assigned : 0;
     const fogAssigned = state.preventAllCombatDamage ? assigned : 0;
-    const filterPrevented = (isDamagePrevented(state, blocker) ? assigned : 0) + inspireAssigned + fogAssigned;
+    const filterPrevented = (isDamagePrevented(state, blocker, { combat: true }) ? assigned : 0) + inspireAssigned + fogAssigned;
     if (filterPrevented > 0) {
       const filterEvent = event('damage_prevented', { objectId: blockerId, amount: filterPrevented, cardId: blocker.cardId, inspireAwe: inspireAssigned > 0, combatFog: fogAssigned > 0 });
       state.events.push(filterEvent); events.push(filterEvent);
@@ -1503,7 +1503,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     // niezależnie od wytrzymałości. Prewencja kasuje obrażenia przed
     // oznaczeniem — znacznik deathtouch nie ma czego „zabić" (CR 702.2b).
     const blockerNow = state.objects.get(blockerId);
-    if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow)) {
+    if (hasKeyword(state, attacker, 'deathtouch') && dealt > 0 && !isDamagePrevented(state, blockerNow, { combat: true })) {
       const updated = state.objects.get(blockerId);
       if (updated) state.objects.set(blockerId, Object.freeze({ ...updated, damagedByDeathtouch: true }));
     }

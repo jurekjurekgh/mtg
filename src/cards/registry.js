@@ -128,6 +128,8 @@ export function defineCard(data) {
     // M108 (Somberwald Spider): liczniki wejścia WARUNKOWE (morbid, CR 614.1c).
     entersWithCountersIf: data.entersWithCountersIf ? Object.freeze({
       morbid: Boolean(data.entersWithCountersIf.morbid),
+      // Batch 69 (Kavu Primarch, CR 702.33d): „if it was kicked\".
+      kicked: Boolean(data.entersWithCountersIf.kicked),
       // M166/C (Adamant, ELD — Locthwain Paladin): warunek kolorow many
       // wydanej na rzut (breakdown z spendMana).
       adamant: data.entersWithCountersIf.adamant ? Object.freeze({
@@ -145,6 +147,8 @@ export function defineCard(data) {
     // z własnego grobu pokrywa część generyczną. Deskryptor jest FLAGĄ (jak
     // `morph`), bo reguła jest jedna dla wszystkich kart (ADR 0002).
     delve: Boolean(data.delve),
+    // Batch 69 (Convoke, CR 702.51): deskryptor płatności stworami.
+    convoke: Boolean(data.convoke),
     // Kicker (CR 702.33): { cost, colors } — opcjonalny dodatkowy koszt rzutu
     // (Kor Sanctifiers: „Kicker {W}" = { cost: 1, colors: ['W'] }). Wariant
     // `kicked: true` komendy cast_permanent; flaga wasKicked ląduje na

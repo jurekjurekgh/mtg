@@ -46,7 +46,8 @@ test('M228 (ADR 0024): Innistrad po podziale kolorystycznym — dwie talie ≥15
   assert.ok(wu.spells >= 15, `innistrad-wu ma ${wu.spells} nielandów (>=15)`);
   assert.ok(brg.spells >= 15, `innistrad-brg ma ${brg.spells} nielandów (>=15)`);
   // Batch 63: +Bloodtithe Harvester → 41; Scroll of Avacyn wraca do WU.
-  assert.equal(wu.spells + brg.spells, 41, 'suma nielandów obu połówek = 41 (po Batchu 63)');
+  // Batch 69 (Heron-Blessed Geist, plan Innistrad): +1 → 42.
+  assert.equal(wu.spells + brg.spells, 42, 'suma nielandów obu połówek = 42 (po Batchu 69)');
   assert.equal(wu.lands, Math.ceil(wu.spells / 2), 'wu: landy = ceil(nielandów/2)');
   assert.equal(brg.lands, Math.ceil(brg.spells / 2), 'brg: landy = ceil(nielandów/2)');
 });

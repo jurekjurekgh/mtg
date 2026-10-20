@@ -1,13 +1,13 @@
 import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor } from './zones.js';
-import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant } from './permanents.js';
+import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant, tapObject } from './permanents.js';
 import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana, unitCoversRequirement, unitCoversAnyRequirement, singleColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA, isActivatedManaAbility } from './mana-sources.js';
 import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
@@ -1529,6 +1529,17 @@ export function canPayColoredCost(state, playerId, requirements, excludeSourceId
 }
 
 /** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
+/** Batch 69 (Convoke): odejmuje jeden pip za każdy kolor opłacony stworem. */
+function withoutConvokePips(requirements, convokeColors) {
+  const left = [...requirements];
+  for (const color of convokeColors) {
+    if (color === 'generic') continue;
+    const index = left.findIndex((pip) => pip.includes(color));
+    if (index >= 0) left.splice(index, 1);
+  }
+  return left;
+}
+
 function hasColorRequirements(state, playerId, requirements, purpose = {}) {
   if (requirements.length === 0) return true;
   return canPayColoredCost(state, playerId, requirements, null, purpose);
@@ -1615,7 +1626,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements, spellManaPurpose(object));
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null, convokePayments = null } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -1759,9 +1770,16 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
         ? (object.surge?.colors ?? []).map((color) => [color])
         : null;
   if (!plotted && !freeImpulse && !faceDown && !treasureAltCost) {
+    // Batch 69 (Convoke): pipy opłacone stworami nie wymagają źródła many z landów;
+    // kolory z `convokePayments` są tu tylko do bramki — pełna walidacja niżej.
+    const earlyConvokeColors = Array.isArray(convokePayments)
+      ? convokePayments.map((payment) => payment?.color ?? 'generic').filter((color) => color !== 'generic')
+      : [];
     const colorGateOk = altCostColors
       ? hasColorRequirements(state, playerId, altCostColors, spellManaPurpose(object))
-      : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
+      : earlyConvokeColors.length > 0
+        ? hasColorRequirements(state, playerId, withoutConvokePips(coloredPipsOf(object.cardId, phyrexianPayWithLife), earlyConvokeColors), spellManaPurpose(object))
+        : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
     if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
   }
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
@@ -1834,7 +1852,45 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips, ...offspringRequirements];
-  if (!treasureAltCost && producibleMana(state, playerId, null, manaPurpose, requirements) < totalMana) throw new Error('Niewystarczająca mana');
+  // Batch 69 (Convoke, CR 702.51a): koszt CAŁKOWITY (po kickerze i obniżkach)
+  // opłacasz także tapując własne stwory — każdy płaci {1} albo jedną manę
+  // swojego koloru. Gracz wybiera stwory i kolor każdego (`convokePayments`);
+  // silnik waliduje tu (przed jakąkolwiek mutacją), a tapowanie i dołożenie many
+  // do puli robi tuż przed spendMana (pula schodzi przed landami). Stwór z własną
+  // manową zdolnością odrzucany — jego mana już liczy się w producibleMana.
+  // Convoke nie jest kosztem alternatywnym (ruling 2024-01-12), więc łączy się z nimi.
+  const convokeUnits = [];
+  if (convokePayments != null) {
+    if (!object.convoke) throw new Error('Ta karta nie ma mechaniki convoke');
+    if (!Array.isArray(convokePayments) || convokePayments.length === 0) throw new Error('Nieprawidłowy koszt convoke');
+    const seenCreatures = new Set();
+    for (const payment of convokePayments) {
+      const creature = state.objects.get(payment?.creatureId);
+      if (!creature || seenCreatures.has(creature.id) || creature.zone !== 'battlefield' || creature.kind !== 'creature'
+        || creature.controllerId !== playerId || creature.tapped) {
+        throw new Error('Nielegalny stwór do convoke');
+      }
+      seenCreatures.add(creature.id);
+      if (effectiveAbilities(creature).some((ability) => isActivatedManaAbility(ability))) {
+        throw new Error('Stwór z manową zdolnością nie może płacić convoke');
+      }
+      const color = payment.color ?? 'generic';
+      if (color !== 'generic' && !(creature.colors ?? []).includes(color)) throw new Error('Convoke: kolor stwora nie pasuje');
+      convokeUnits.push(color);
+    }
+    if (convokeUnits.length > totalMana) throw new Error('Convoke: więcej stworów niż część kosztu');
+    // Kolor i część generyczna muszą mieścić się w wymaganiach kosztu, inaczej
+    // dołożona mana zostałaby w puli (CR 106.4 — pula znika po kroku).
+    const genericSlots = Math.max(0, totalMana - requirements.length);
+    if (convokeUnits.filter((c) => c === 'generic').length > genericSlots) throw new Error('Convoke: część generyczna już opłacona');
+    for (const color of new Set(convokeUnits.filter((c) => c !== 'generic'))) {
+      const paid = convokeUnits.filter((c) => c === color).length;
+      if (paid > requirements.filter((pip) => pip.includes(color)).length) throw new Error('Convoke: kolor nie jest potrzebny w koszcie');
+    }
+  }
+  if (!treasureAltCost && producibleMana(state, playerId, null, manaPurpose, requirements) + convokeUnits.length < totalMana) {
+    throw new Error('Niewystarczająca mana');
+  }
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
   // Kolorowa walidacja many: czy kontrolujesz źródła zdolne wyprodukować wymagane kolory?
   // Np. Sweet Oblivion {1}{U} nie może być rzucone z samych Plains (W).
@@ -1865,7 +1921,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
 
-  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, requirements, spellManaPurpose(object))) {
+  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, withoutConvokePips(requirements, convokeUnits), spellManaPurpose(object))) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -1899,6 +1955,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     state.events.push(event('object_moved', {
       fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
     }));
+  }
+  // Batch 69 (Convoke): tapowanie stworów i dołożenie ich many do puli — dopiero
+  // po wszystkich walidacjach (atomowość, CR 601.2h). Pula schodzi przed landami.
+  if (convokePayments != null) {
+    for (const payment of convokePayments) {
+      const color = payment.color ?? 'generic';
+      tapObject(state, payment.creatureId, playerId);
+      addMana(state, playerId, 1, { colors: color === 'generic' ? [] : [color] });
+    }
   }
   spendMana(state, playerId, totalMana, requirements, manaPurpose);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);

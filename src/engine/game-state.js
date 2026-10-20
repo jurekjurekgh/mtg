@@ -561,7 +561,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
-  'delve', 'protectorId', 'cantBlockPrinted',
+  'delve', 'convoke', 'protectorId', 'cantBlockPrinted',
 ]);
 
 const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
@@ -622,12 +622,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false, cantBlockPrinted = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, convoke = false, untapChoice = false, cantBlockPrinted = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, cantBlockPrinted });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, convoke, cantBlockPrinted });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -6241,6 +6241,8 @@ export function execute(state, input) {
         treasureAlt: Boolean(cmd.treasureAlt),
         surgeCast: Boolean(cmd.surgeCast),
         delveExileIds: cmd.delveExileIds ?? null,
+        // Batch 69 (Convoke): wybór stworów i kolorów płatności niesie komenda.
+        convokePayments: cmd.convokePayments ?? null,
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).

@@ -169,7 +169,9 @@ test('E4 (modal): własny surveil z Curate — nazwy w modalu; surveil bota — 
   // hunter po 60 seedach — 33 daje OBA warunki naraz (kolejny: 51).
   // Batch 66 (+Wild Celebrants i ponowne przeliczenie landów): hunter 1–90;
   // seed 29 daje oba warunki i końcówkę (kolejne: 45, 90).
-  for (const seed of [29]) {
+  // Batch 69 (Heron-Blessed Geist / Gnoll War Band w forgotten-realms, landy
+  // przeliczone wg reguły pipów zdolności): hunter 1–60 — 3 i 45 daje OBA warunki naraz.
+  for (const seed of [3, 45]) {
     const { modalTexts } = playCollectingModals(makeSession(seed));
     for (const line of modalTexts.filter((t) => /^Wykonujesz surveil/.test(t ?? ''))) {
       checkedMine += 1;

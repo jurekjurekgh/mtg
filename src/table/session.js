@@ -151,6 +151,7 @@ export function commandOptionKey(cmd) {
     'exileIds',
     // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
     'delveExileIds',
+    'convokePayments',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
@@ -322,6 +323,8 @@ function defaultBotFactory(seed, ctx) {
    */
   const ABILITY_EFFECT_LABELS = Object.freeze({
     add_counter: 'licznik na celu',
+    // Batch 69 (Bloodfire Infusion): obrażenia równe mocy poświęconego stwora.
+    damage_each_creature_sacrificed_power: 'obrażenia każdemu stworowi równe mocy poświęconego',
     adjust_battle_defense: 'zmiana liczników obrony bitwy',
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',

@@ -4,6 +4,7 @@
 1x Gond Gate
 1x Heap Gate
 1x Manor Gate
+1x Fleeting Flight
 1x Scorch Spitter
 1x Circle of the Land Druid
 1x Cloak of the Bat
@@ -26,8 +27,9 @@
 1x Underdark Explorer
 1x Waveskimmer Aven
 1x Wild Celebrants
+1x Gnoll War Band
 1x Marut
-2x Plains
+3x Plains
 1x Island
 3x Swamp
 4x Mountain

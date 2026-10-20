@@ -55,7 +55,7 @@ test('B1/4 (E2E): rzut bota za X ląduje z wartością X w logu sesji', () => {
   const registry = createCardRegistry();
   const decks = new Map([
     [HUMAN_ID, parseDeckText(fs.readFileSync('decks/tarkir-bg.txt', 'utf8'), registry).cardIds],
-    [BOT_ID, parseDeckText(fs.readFileSync('decks/ravnica.txt', 'utf8'), registry).cardIds],
+    [BOT_ID, parseDeckText(fs.readFileSync('decks/ravnica-wub.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed: 31, registry, decks });
   // Domknij decyzje mulliganu obu graczy (sesja zatrzymuje na nich grę).

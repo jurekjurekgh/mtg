@@ -15,6 +15,7 @@
 1x Simian Simulacrum
 1x Faceless Butcher
 1x Giant Spider
+1x Kavu Primarch
 1x Shiv's Embrace
 1x Undead Servant
 1x Dead Ringers
@@ -22,6 +23,7 @@
 1x Final Parting
 1x Urborg Uprising
 1x Mindstab
+1x Plains
 5x Swamp
 3x Mountain
 3x Forest

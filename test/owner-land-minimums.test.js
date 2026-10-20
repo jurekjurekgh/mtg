@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { landSplit, coloredPips } from '../tools/generate-plan-decks.mjs';
+import { landSplit, coloredPips, abilityCostColorsOf } from '../tools/generate-plan-decks.mjs';
 
 /**
  * 15g/C (zlecenie właściciela): minima basic-landów z koncentracji pipów.
@@ -28,8 +28,21 @@ test('minimum: karta z {R}{R} wymusza 2 Góry (nie 1 z proporcji)', () => {
   assert.equal(lands.R, 2, `2 Góry na {R}{R}, dostałem ${JSON.stringify(lands)}`);
 });
 
+// Batch 69 (zasada właściciela): karta z pipem zdolności (np. Dragonbroods'
+// Relic WUBRG) wymusza minimum 1 lądu tego koloru — to osobna reguła, testowana
+// niżej. Tu sprawdzamy 15g/C na samych pipach kosztu, więc fixture bez pipów zdolności.
+const czystyG = (n) => REGISTRY.all()
+  .filter((c) => c.support?.status === 'supported' && pipsEq(c, { G: 1 }) && abilityCostColorsOf(c).length === 0)
+  .slice(0, n);
+
+test('pip zdolności: każdy kolor zdolności dostaje co najmniej 1 ląd (batch 69)', () => {
+  const deck = [byId('dragonbroods-relic'), ...czystyG(9)];
+  const lands = landSplit(deck);
+  for (const c of ['W', 'U', 'B', 'R', 'G']) assert.ok(lands[c] >= 1, `${c}: ${JSON.stringify(lands)}`);
+});
+
 test('dobór kosztem innego koloru: suma landów stała (ceil(n/2))', () => {
-  const deck = [byId('ballista-watcher'), ...firstWithPips({ G: 1 }, 9)];
+  const deck = [byId('ballista-watcher'), ...czystyG(9)];
   const lands = landSplit(deck);
   const sum = Object.values(lands).reduce((a, b) => a + b, 0);
   assert.equal(sum, 5, `suma 5, dostałem ${JSON.stringify(lands)}`);

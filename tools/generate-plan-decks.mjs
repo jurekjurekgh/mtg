@@ -274,14 +274,20 @@ export function landSplit(cards) {
   let total = Math.ceil(cards.length / 2);
   const pips = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   const minNeed = { W: 0, U: 0, B: 0, R: 0, G: 0 };
+  // Batch 69 (zasada właściciela): kolor pipa ZDOLNOŚCI (aktywowanej, wyzwalacza
+  // z „you may pay", alternatywnego kosztu) też wymaga źródła w talii — nawet
+  // gdy koszt czaru go nie zawiera. Ten zbiór wchodzi do „używanych” kolorów,
+  // więc dostaje co najmniej jeden ląd (minimum per kolor, bez zmiany sumy).
+  const abilityColors = new Set();
   for (const card of cards) {
     const p = coloredPips(card);
     for (const c of COLOR_ORDER) {
       pips[c] += p[c];
       if (p[c] > minNeed[c]) minNeed[c] = p[c];
     }
+    for (const c of abilityCostColorsOf(card)) abilityColors.add(c);
   }
-  const used = COLOR_ORDER.filter((c) => pips[c] > 0);
+  const used = COLOR_ORDER.filter((c) => pips[c] > 0 || abilityColors.has(c));
   // O1 (audyt PR #123): talia w całości bezkolorowa → JAWNY błąd zamiast
   // NaN-crashu (`remainders[i % 0]` → TypeError głęboko w pętli doboru).
   // Kontrakt narzędzia: basic landy dobieramy pod KOLOROWE pipy — plan bez

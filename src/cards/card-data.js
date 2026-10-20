@@ -4588,6 +4588,251 @@ export const REAL_CARDS = Object.freeze([
     plan: 'Mirrodin',
     support: { status: 'supported', limitations: [] },
   }),
+
+  // =========================================================================
+  // Batch 69 (2026-10-20) — kolekcja artId 412–425, 10 kart (lista właściciela).
+  // Plan: docs/plans/PLAN_2026-10-20c-batch69-kolekcja-412-425.md. Dane Oracle
+  // i rulingi: docs/cards/scryfall-<slug>.json (pobrane 2026-10-20).
+  // Mechaniki generyczne (bez nazw kart, ADR 0002): convoke (Kavu Primarch),
+  // riot (Gruul Beastmaster — modalny trigger przy wejściu), myriad (Gnoll War
+  // Band — model 1:1, ADR 0022), koszt „sacrifice enchanted creature\"
+  // (Bloodfire Infusion), redukcja „za każdego przeciwnika z obrażeniami\"
+  // (Gnoll), licznik „if kicked\" (Kavu), trample dla stworów z licznikiem
+  // (Tuskguard), prewencja obrażeń bojowych celu (Fleeting Flight), aktywacja
+  // z cmentarza przy „kontrolujesz enchantment\" (Heron-Blessed Geist).
+  // =========================================================================
+
+  // 412. Makindi Aeronaut (OGW 27) — Flying.
+  defineCard({
+    id: 'makindi-aeronaut', name: 'Makindi Aeronaut', set: 'OGW',
+    types: ['Creature'], subtypes: ['Kor', 'Scout', 'Ally'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 3, manaCost: 2,
+    oracleText: 'Flying',
+    imageUri: 'https://cards.scryfall.io/large/front/a/3/a35d3113-6cb7-4b74-94a3-8160d9ac1b89.jpg?1783937924',
+    abilities: [],
+    artId: 412, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 413. Bloodfire Infusion (APC 57) — Aura „Enchant creature you control\";
+  // {R}, Sacrifice enchanted creature: damage = jej moc każdemu stworowi.
+  defineCard({
+    id: 'bloodfire-infusion', name: 'Bloodfire Infusion', set: 'APC',
+    types: ['Enchantment'], subtypes: ['Aura'], colors: ['R'], manaCost: 3,
+    oracleText: "Enchant creature you control\n{R}, Sacrifice enchanted creature: This Aura deals damage equal to the sacrificed creature's power to each creature.",
+    imageUri: 'https://cards.scryfall.io/large/front/2/6/2639e9b7-ed8c-48fd-a8b7-b99d8dad4bc0.jpg?1783945345',
+    aura: { enchantType: 'creature_you_control' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 0, colors: ['R'], sacrificeEnchantedHost: true },
+        effect: { type: 'damage_each_creature_sacrificed_power' },
+      }),
+    ],
+    artId: 413, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 414. Tuskguard Captain (2X2 163) — Outlast {G}; stwory z licznikiem +1/+1
+  // mają trample.
+  defineCard({
+    id: 'tuskguard-captain', name: 'Tuskguard Captain', set: '2X2',
+    types: ['Creature'], subtypes: ['Human', 'Warrior'], colors: ['G'],
+    keywords: ['outlast'], power: 2, toughness: 3, manaCost: 3,
+    oracleText: 'Outlast {G} ({G}, {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery.)\nEach creature you control with a +1/+1 counter on it has trample.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/4/a4a4eab4-a2e6-4cb0-b32a-700aac59fc40.jpg?1783921862',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        keyword: 'outlast',
+        cost: { mana: 0, colors: ['G'], tap: true },
+        timing: 'sorcery',
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+      // CR 611.3a: nadanie działa na STWORY z licznikiem (filtr `withCounter`).
+      createAbility({
+        type: ABILITY_TYPE.static,
+        scope: { affects: 'all_creatures_you_control', withCounter: '+1/+1' },
+        keywords: ['trample'],
+      }),
+    ],
+    artId: 414, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 415. Kavu Primarch (DMR 167) — Kicker {4}; Convoke; kicked → cztery +1/+1.
+  defineCard({
+    id: 'kavu-primarch', name: 'Kavu Primarch', set: 'DMR',
+    types: ['Creature'], subtypes: ['Kavu'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 4,
+    kicker: { cost: 4, colors: [] },
+    convoke: true,
+    entersWithCountersIf: { kicked: true, counters: { '+1/+1': 4 } },
+    oracleText: "Kicker {4} (You may pay an additional {4} as you cast this spell.)\nConvoke (Your creatures can help cast this spell. Each creature you tap while casting this spell pays for {1} or one mana of that creature's color.)\nIf this creature was kicked, it enters with four +1/+1 counters on it.",
+    imageUri: 'https://cards.scryfall.io/large/front/f/5/f53cbda8-805f-42a4-aba4-9939b08e37ca.jpg?1783918441',
+    abilities: [],
+    artId: 415, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 416. Fleeting Flight (FDN 13) — +1/+1 counter, flying do końca tury,
+  // zapobiegnij obrażeniom bojowym temu stworowi w tej turze.
+  defineCard({
+    id: 'fleeting-flight', name: 'Fleeting Flight', set: 'FDN',
+    types: ['Instant'], colors: ['W'], manaCost: 1,
+    oracleText: 'Put a +1/+1 counter on target creature. It gains flying until end of turn. Prevent all combat damage that would be dealt to it this turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/5/55139100-9342-41fd-b10a-8e9932e605d4.jpg?1783909127',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'add_counter', counter: '+1/+1', amount: 1 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['flying'] },
+        { type: 'prevent_combat_damage_to_target_this_turn' },
+      ],
+    },
+    artId: 416, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 417. Heron-Blessed Geist (VOW 19) — Flying; {3}{W}, exile z cmentarza:
+  // dwa 1/1 Spirit z przelotką; tylko gdy kontrolujesz enchantment; sorcery.
+  defineCard({
+    id: 'heron-blessed-geist', name: 'Heron-Blessed Geist', set: 'VOW',
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    keywords: ['flying'], power: 3, toughness: 3, manaCost: 5,
+    oracleText: 'Flying\n{3}{W}, Exile this card from your graveyard: Create two 1/1 white Spirit creature tokens with flying. Activate only if you control an enchantment and only as a sorcery.',
+    imageUri: 'https://cards.scryfall.io/large/front/8/3/83bacf4a-4e99-4008-97e4-3a82dddd4e45.jpg?1783924918',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 4, colors: ['W'], exileFromGraveyard: true },
+        timing: 'sorcery',
+        fromGraveyard: true,
+        condition: { controlsType: 'Enchantment' },
+        effect: {
+          type: 'create_token', cardId: 'token_heron_spirit', name: 'Spirit', kind: 'creature',
+          power: 1, toughness: 1, colors: ['W'], types: ['Creature'], subtypes: ['Spirit'],
+          keywords: ['flying'], amount: 2,
+        },
+      }),
+    ],
+    artId: 417, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 418. Ior Ruin Expedition (ZEN 49) — Landfall: quest counter (MOŻESZ);
+  // usuń trzy quest i poświęć: dobierz dwie karty.
+  defineCard({
+    id: 'ior-ruin-expedition', name: 'Ior Ruin Expedition', set: 'ZEN',
+    types: ['Enchantment'], colors: ['U'], manaCost: 2,
+    oracleText: 'Landfall — Whenever a land you control enters, you may put a quest counter on this enchantment.\nRemove three quest counters from this enchantment and sacrifice it: Draw two cards.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/a/2acdba29-3a09-42d4-bce2-ce615c36bb3c.jpg?1783942163',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'land_entered_under_your_control', mayFire: true },
+        effect: { type: 'add_counter', counter: 'quest', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { removeCounter: { name: 'quest', amount: 3 }, sacrificeSelf: true },
+        effect: { type: 'draw_cards', amount: 2 },
+      }),
+    ],
+    artId: 418, plan: 'Zendikar',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 423. Gnoll War Band (CLB 178) — {1} taniej za każdego przeciwnika, któremu
+  // zadano obrażenia w tej turze; Menace; Myriad. Myriad w 1:1 nie tworzy
+  // tokenów (ruling: „If the defending player is your only opponent, no tokens
+  // are put onto the battlefield\"). Przy wielu przeciwnikach trzeba zakodować
+  // efekt: tokeny-kopie tapped and attacking dla każdego innego przeciwnika
+  // (ADR 0022: warunek „anotherOpponentExists\" jest martwy w 1v1).
+  defineCard({
+    id: 'gnoll-war-band', name: 'Gnoll War Band', set: 'CLB',
+    types: ['Creature'], subtypes: ['Gnoll'], colors: ['R'],
+    keywords: ['menace', 'myriad'], power: 5, toughness: 5, manaCost: 6,
+    costReduction: { amount: 1, condition: { perOpponentDealtDamageThisTurn: true } },
+    oracleText: "This spell costs {1} less to cast for each opponent who was dealt damage this turn.\nMenace\nMyriad (Whenever this creature attacks, for each opponent other than defending player, you may create a token copy that's tapped and attacking that player or a planeswalker they control. Exile the tokens at end of combat.)",
+    imageUri: 'https://cards.scryfall.io/large/front/a/c/acfecffd-33af-43a9-b26c-f1ff193c6323.jpg?1783922738',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks', condition: { anotherOpponentExists: true } },
+        effect: [],
+      }),
+    ],
+    artId: 423, plan: 'Forgotten Realms',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 424. Gruul Beastmaster (RNA 129) — Riot; atak: inny cel +X/+0, X = jego moc.
+  // Riot = modalny trigger przy wejściu (+1/+1 albo haste), wybór gracza
+  // (jak w silniku przy „as enters\" z decyzją kontrolera).
+  defineCard({
+    id: 'gruul-beastmaster', name: 'Gruul Beastmaster', set: 'RNA',
+    types: ['Creature'], subtypes: ['Human', 'Shaman'], colors: ['G'],
+    keywords: ['riot'], power: 2, toughness: 2, manaCost: 4,
+    oracleText: "Riot (This creature enters with your choice of a +1/+1 counter or haste.)\nWhenever this creature attacks, another target creature you control gets +X/+0 until end of turn, where X is this creature's power.",
+    imageUri: 'https://cards.scryfall.io/large/front/2/b/2b0aaded-515f-4ac9-a72f-6948b4d4df51.jpg?1783933671',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'enter_battlefield',
+          modes: [
+            { name: 'Riot: +1/+1 counter', targets: [],
+              effects: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }] },
+            { name: 'Riot: haste', targets: [],
+              effects: [{ type: 'grant_keyword_permanent', keyword: 'haste' }] },
+          ],
+        },
+        effect: [],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'attacks' },
+        targets: [{ type: 'creature_you_control', notSelf: true }],
+        effect: { type: 'pump', power: 'source_power', toughness: 0 },
+      }),
+    ],
+    artId: 424, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 425. Myr Scrapling (MH2 230) — Sacrifice this creature: +1/+1 counter na cel.
+  defineCard({
+    id: 'myr-scrapling', name: 'Myr Scrapling', set: 'MH2',
+    types: ['Artifact', 'Creature'], subtypes: ['Myr'], colors: [],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: 'Sacrifice this creature: Put a +1/+1 counter on target creature.',
+    imageUri: 'https://cards.scryfall.io/large/front/5/b/5b9072a5-bd7f-4007-a34a-ebe251c95356.jpg?1783926803',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { sacrificeSelf: true },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
+      }),
+    ],
+    artId: 425, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // Token Spirit 1/1 z przelotką (Heron-Blessed Geist). Druk tokena: bez obrazu
+  // w TOKEN_IMAGES — brak potwierdzonego adresu Scryfall (L26).
+  defineCard({
+    id: 'token_heron_spirit', name: 'Spirit', set: null,
+    types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
+    keywords: ['flying'], power: 1, toughness: 1, manaCost: 0,
+    oracleText: 'Flying',
+    // Batch 69: grafika tokenu Scryfall (tvow, 1/1 Spirit z przelotką, id 6bee4081-…).
+    imageUri: 'https://cards.scryfall.io/large/front/6/b/6bee4081-5d74-4cc2-ba2f-887bc8799513.jpg?1783924700',
+    abilities: [],
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Heron-Blessed Geist'] },
+  }),
 ]);
 
 

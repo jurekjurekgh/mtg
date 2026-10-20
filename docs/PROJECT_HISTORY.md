@@ -17403,3 +17403,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Bramy: `npm test` 8533/8533; `npm run test:all` 8800/8800; build 0; `cr-numery` OK.
 - Otwarte: F2 w walce (kradzież przy obrażeniach nie jest planowana w ataku); wartość venture stała na turę.
 - Raport: `docs/PMSSB.md` §PMSSB-69; plan `docs/plans/PLAN_2026-10-20b-pmssb69-initiative.md`.
+
+## 2026-10-20 — Batch 69: pip zdolności wymaga źródła w talii (D/5)
+
+- Decyzja właściciela (2026-10-20, zamiast wyjątku dla `boros-challenger`): każdy kolor, który karta w talii wymaga — koszt wielokolorowy albo pip zdolności (`abilityCostColorsOf`) — dostaje w połówce co najmniej jeden podstawowy ląd.
+- Kod: `landSplit` w `tools/generate-plan-decks.mjs` liczy kolory pipów zdolności jako „używane” (minimum 1 lądu). Suma `ceil(n/2)` bez zmian; gdy suma minimów przekracza total, total rośnie (jak dotąd).
+- Efekt w taliach: `ravnica-rg` ma 1× Plains (Boros Challenger), `dominaria-brg` ma 1× Plains (pip W Mournful Zombie), `tarkir-bg` ma po 1× Plains/Island/Mountain (Dragonbroods' Relic, WUBRG w zdolności).
+- Test D/5 (`test/zgloszenie-d-pipy-zdolnosci-podzial.test.js`) sprawdza `talieMaZrodlo` (basic danego koloru), nie sufiks nazwy. Oba wyjątki (`mournful-zombie`, `dragonbroods-relic`) padły na ratchecie; mapa wyjątków = 0.
+- `test/owner-land-minimums.test.js`: test 15g/C (suma stała) używa talii bez pipów zdolności; nowy test pokrywa regułę pipów zdolności (Relic → W/U/B/R/G ≥ 1).
+- ADR 0024: krótki addendum (lektura startowa 100k: dopisek nie może rosnąć).
+- Skutki uboczne zmiany talii (kaskada, wszystko przeliczone i zarejestrowane): golden master zregenerowany (`tools/bot-scoring-snapshot.mjs --write`, świadoma zmiana składu talii — ADR 0024); sufit `attack` w audycie remisów 9 → 12 po przeglądzie (9 pozycji w klasach zaakceptowanych; 1 otwarta: ravnica-wub|innistrad-wu s4011 t26, strata bez zysku — do decyzji właściciela); seedy modalu `library-manipulation-modal` [29] → [3, 45] (hunter 1–60); seedy F3 `session-bot-pausa` [34, 41, 50] → [1, 25, 38] (hunter 1–40).
+- OTWARTE (nie regresja batcha, znana luka z batcha 68): przy 7 z 40 seedów F3 nagłówek tury człowieka pojawia się, zanim modal pokaże zdarzenia bota (seedy 3, 6, 16, 17, 26, 31, 40). Okna modalu w `session.js` (M90/M252/M261) — osobne zadanie.
+- Bramy: `npm test` 8561/8561; `npm run test:all` 8828/8828; build 0.

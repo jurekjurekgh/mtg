@@ -1264,6 +1264,9 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  // Batch 69 (Bloodfire Infusion): każda aktywacja poświęca KOLEJNEGO stwora
+  // i zadaje obrażenia równe jego mocy — dublowanie na stosie kumuluje.
+  'damage_each_creature_sacrificed_power',
   // Batch 67 (Improbable Alliance): loot ({4}{U}{R} — dobierz, potem odrzuć)
   // kumuluje jak `draw_cards`/`discard_cards` osobno: druga aktywacja na
   // stosie dobiera i odrzuca KOLEJNĄ kartę (nie jest idempotentna do końca tury).
@@ -6990,6 +6993,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // korzyścią kontrolera celu — nie wolno obdarowywać nią landu przeciwnika.
     ['grant_abilities', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
+    // Batch 69 (Fleeting Flight): prewencja OBRAŻEŃ BOJOWYCH celu — korzyść
+    // kontrolera celu (bliźniak prevent_damage_this_turn, tylko combat).
+    ['prevent_combat_damage_to_target_this_turn', 40],
     // B (zgłoszenie właściciela 2026-09-28e, Withstand): bliźniak powyższego —
     // tarcza „prevent the next N damage” to efekt PRZYJAZNY celowi; bez wpisu
     // (i bez obsługi celu-gracza w friendlyMisaimPenalty) darmowe rzuty

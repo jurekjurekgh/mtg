@@ -96,6 +96,7 @@ export function gameObjectDataOf(card) {
     // obiekt gry top-level, jak kicker/offspring (L21 — gałąź stworów kopiuje
     // pola ręcznie, więc pominięcie = mechanika martwa w prawdziwej talii).
     if (card.delve) data.delve = true;
+    if (card.convoke) data.convoke = true;
     // Gift (CR 702.174, M355): dar jest mechaniką CZARU (instant/sorcery),
     // więc gałąź spell kopiuje pola ręcznie — klasa Z5/L21 (deskryptor ginie
     // po cichu). Gałąź permanentu też go dostaje: gdy katalog dostanie
@@ -180,6 +181,7 @@ export function gameObjectDataOf(card) {
     // gałąź instanta/sorcery też musi nieść deskryptor (gotowość na przyszłe
     // karty; dziś jedyną kartą z delve jest stwór).
     if (card.delve) data.delve = true;
+    if (card.convoke) data.convoke = true;
     // Batch 58/B1 (Boulder Salvo): surge na INSTANCIE/SORCERY — gałąź spell
     // kopiuje pola ręcznie (klasa Z5/L21), więc bez tego wpisu oferta kosztu
     // alternatywnego i walidacja komendy nie miałyby czego czytać.

@@ -49,7 +49,7 @@ test('mapowanie: wszystkie parametry w DESCRIPTOR_PARAMS istnieją w kontrakcie'
 
 test('zawężenie talii: dimir-guildgate jest w ravnice', () => {
   const decks = decksContainingCard('dimir-guildgate');
-  assert.ok(decks.includes('ravnica'), `oczekiwano ravnica w ${JSON.stringify(decks)}`);
+  assert.ok(decks.includes('ravnica-wub'), `oczekiwano ravnica-wub w ${JSON.stringify(decks)}`);
 });
 
 test('hillClimbParams: deterministyczny, poprawia funkcję celu', () => {

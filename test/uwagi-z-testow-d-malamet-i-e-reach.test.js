@@ -34,7 +34,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 function sesja(seed = 7) {
   const registry = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica.txt', 'utf8'), registry).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica-wub.txt', 'utf8'), registry).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/ixalan.txt', 'utf8'), registry).cardIds],
   ]);
   const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });

@@ -32,6 +32,7 @@ const DECYZJA = Object.freeze({
   'oil': false, // zasobowy (Proliferate)
   'level': false, // zasobowy (Level Up, CR 702.87)
   'point': false, // zasobowy (Contested Game Ball)
+  'quest': false, // zasobowy: płaci koszt własnej zdolności (Ior Ruin Expedition, batch 69)
   '-1/-1': true, // minusowy: obniża statystyki
   'stun': true, // zastępuje odkręcenie (CR 122.1d/614.6)
 });

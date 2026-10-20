@@ -91,3 +91,10 @@ taliach). Zmiana składu próbki = jednorazowa rekalibracja progów regułą
   undercity/fabricate oraz rzut modala impulsem z exile).
 - Koszt: każdy podział talii z próbki wymusza rekalibrację progów i regenerację
   golden-mastera — akceptowany świadomie.
+
+
+## Addendum (batch 69, 2026-10-20)
+
+Pip zdolności wymaga źródła w talii: `landSplit` daje kolorowi minimum 1 lądu,
+jak kolorom kosztu (suma `ceil(n/2)` bez zmian). Test D/5 sprawdza źródło, nie sufiks; wyjątków 0.
+Szczegóły: `docs/PROJECT_HISTORY.md`.

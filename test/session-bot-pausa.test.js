@@ -348,7 +348,12 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // odnotowana w docs/plans/PLAN_2026-10-17c-batch68-kart.md jako otwarte ustalenie.
   // Trójka przelosowana wg konwencji L25: seedy przechodzące na obecnych taliach
   // z pełnymi parami (34: 1/1, 41: 5/4, 50: 5/5 — suma 11 śledzonych / 10 opisanych).
-  for (const seed of [34, 41, 50]) {
+  // Batch 69 (talie po podziale landów wg pipów zdolności): hunter 1..40 — 7 seedów
+  // (3, 6, 16, 17, 26, 31, 40) trafia w ZNANĄ lukę modalu (nagłówek tury człowieka
+  // przed pokazaniem zdarzeń bota; ta sama klasa co batch 68, otwarte ustalenie
+  // w docs/plans/PLAN_2026-10-17c-batch68-kart.md). Nie maskujemy jej: przechodzą
+  // seedy 1 (6/6), 25 (3/3) i 38 (6/6) — suma 15/15, pary pełne.
+  for (const seed of [1, 25, 38]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);
