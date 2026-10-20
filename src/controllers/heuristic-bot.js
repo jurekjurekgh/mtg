@@ -6659,6 +6659,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   function massDestroyValue(view, effects) {
     const hit = massDestroyAffected(view, effects);
+    return { count: hit.length, value: sweepHitsValue(view, hit) };
+  }
+  /** PMSSB-74 (L41): wspólna miara zamiatania — wartość trafionych stworów (wrogie +, moje − z mnożnikiem
+   *  odbudowy) plus składnik zagrożenia życia. Używana przez zniszczenie masowe (PMSSB-63) i przez obrażenia
+   *  „każdemu stworowi równe mocy poświęconego” (Bloodfire Infusion). Bez zmiany liczb dla zniszczenia masowego. */
+  function sweepHitsValue(view, hit) {
     const hitIds = new Set(hit.map((o) => o.id));
     const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
     const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
@@ -6676,7 +6682,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const removed = unblockedAttackPower(foeAll, myAll) - unblockedAttackPower(foeLeft, myLeft);
     const life = Math.max(1, myLife(view));
     if (removed > 0) value += Math.min(1, removed / life) * P.massDestroyThreatWeight;
-    return { count: hit.length, value };
+    return value;
+  }
+  /** PMSSB-74 (Bloodfire Infusion; obrażenia niebojowe): {R}, poświęć zaczepionego stwora —
+   *  obrażenia = jego moc każdemu stworowi. Zysk = zamiatanie stworów z wytrzymałością (pozostałą) ≤ mocy
+   *  poświęconego, bez niezniszczalnych; koszt = poświęcenie gospodarza (ta sama miara co inne poświęcenia). */
+  function damageEachSacrificedValue(view, aura) {
+    const host = aura?.attachedTo != null ? objectOnBoard(view, aura.attachedTo) : null;
+    if (!host || host.controllerId !== view.playerId) return 0;
+    const amount = Math.max(0, host.power ?? 0);
+    // Koszt = ta sama miara co własna strata w zamiataniu (L41): jednostka × mnożnik własnej straty × odbudowa.
+    const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
+    const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
+    const cost = (P.massDestroyCardValue + massDestroyWorth(view, host)) * P.massDestroyOwnMultiplier * rebuild;
+    if (amount <= 0) return -cost;
+    const hit = (view.zones.battlefield ?? []).filter((o) => o.id !== host.id
+      && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+      && !(o.keywords ?? []).includes('indestructible')
+      && Math.max(0, (o.toughness ?? 0) - (o.damage ?? 0)) <= amount);
+    return sweepHitsValue(view, hit) - cost;
   }
   function sacrificePermanentLoss(view, target) {
     if (!target) return 0;
@@ -12428,6 +12452,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (neededToBlock || plausibleThreat) score -= lifeValue + 8; // trzymaj bloker
             }
         }
+        // PMSSB-74: Bloodfire Infusion — obrażenia równe mocy poświęconego każdemu stworowi.
+        if (abilityEffectTypes.includes('damage_each_creature_sacrificed_power')) score += damageEachSacrificedValue(view, source);
         for (const effect of effects) {
           // Linkowany grant z karty w ręce zachowuje samą kartę jako przyszły
           // rzut z exile i poprawia profil źródła many. PMSSB-61: wartość jest

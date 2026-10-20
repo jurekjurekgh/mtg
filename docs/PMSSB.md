@@ -46,6 +46,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
 | licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
 | myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
+| `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3659,4 +3660,18 @@ Plan: [PLAN_2026-10-20i-pmssb73-myriad](plans/PLAN_2026-10-20i-pmssb73-myriad.md
 - Test: `test/audyt-pmssb73-myriad.test.js` (3): wycena ataku z i bez triggera równa; atak bez tokenów i bez zmiany życia wroga; pin treści triggera (`effect: []`, warunek wieloosobowy). Mutacja efektu na `lose_life` łapie tylko pin 3 — to mutant równoważny w 1v1, bo trigger nie trafia na stos.
 - Bramy: `npm test` 8593/8593 (`.arena/pmssb73-npmtest.log`). Bez zmiany kodu produkcyjnego `test:all` nie uruchamiano; golden i tie-audit bez zmian z definicji.
 - Zakres: format 1v1. Gdyby projekt wszedł w multiplayer, efekt myriad (tokeny za innych przeciwników) byłby do zaimplementowania — dziś to nie jest luka wobec 1v1, zapisane jako otwarte poza zakresem.
+
+## PMSSB-74 — Bloodfire Infusion: obrażenia równe mocy poświęconego (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20j-pmssb74-bloodfire](plans/PLAN_2026-10-20j-pmssb74-bloodfire.md).
+
+- Pomiar PRZED (`.arena/probe-bloodfire.mjs`): aktywacja wyceniona płasko 2 w każdej scenie (także bez wrogich stworów), więc bot poświęcał własnego stwora 2/3 z aurą za nic i wymieniał 2/3 na 1/1. Przyczyna: pętla kosztów znała `sacrificeSelf` i `sacrificeCreature`, a Bloodfire ma `sacrificeEnchantedHost`.
+- Audyt: (a) L41 — zamiatanie dostaje wspólną miarę `sweepHitsValue` (wyciągniętą z `massDestroyValue` bez zmiany liczb); (b) koszt poświęcenia — ta sama jednostka co własna strata w zamiataniu (`massDestroyCardValue + worth`) × `massDestroyOwnMultiplier` × odbudowa; (c) anty-over-fix — gałąź dotyczy tylko tego typu efektu.
+- Wdrożenie: `damageEachSacrificedValue(view, aura)` w `heuristic-bot.js`; wywołane w `case 'activate_ability'` przed pętlą efektów. Brak nowych pokręteł; składnik presji idzie przez istniejące `massDestroyThreatWeight`.
+- Wynik: bez wrogów −17 → pass; jeden wróg 1/1 −7 → pass; dwóch wrogów 1/1 +4 → aktywacja; pod presją (życie 5) +7; moje stwory giną → wartość ujemna.
+- RED: testy 1, 2, 4 czerwone na HEAD; 5 (własna strata) też; 3 i 6 to piny zachowania. Pokrętło `massDestroyThreatWeight = 0` wyłącza presję (test 6).
+- Bramy: `npm test` 8599/8599; `test:all` 8866/8866 (`.arena/pmssb74-testall.log`); golden 4/4 bez zmiany hasha (`bot-scoring-snapshot`); strażnik CR naprawiony (usunięty niezweryfikowany cytat).
+- A/B 80 partii (`warhammer-ubr` vs `dominaria-brg`, 40 seedów, baza HEAD `7505bb5`): 9 rozjechanych decyzji; wygrane p1 45 → 46, p2 35 → 34. Nie stwierdzono poprawy siły. Rozjechane decyzje dotyczą wyłącznie Bloodfire z konstrukcji zmiany (jedyna zmieniona gałąź to ten typ efektu); nie mapowano identyfikatorów na karty.
+- Tie-audit i mirror nie wykonane dla tej zmiany (tie-audit benchmarku nie zawiera talii z Bloodfire; mirror porównuje parametry, nie kod).
+- Otwarte: warunek zysku nie uwzględnia letalu wroga (obrażenia dotyczą wyłącznie stworów); wycena nie patrzy na aurę jako kartę w grze poza kosztem gospodarza.
 

@@ -17464,3 +17464,11 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Bramy: `npm test` 8593/8593. Nie uruchamiano `test:all` (zmiana wyłącznie w testach).
 - Plan: `docs/plans/PLAN_2026-10-20i-pmssb73-myriad.md`. Rejestr: `docs/PMSSB.md` §PMSSB-73.
 
+## 2026-10-20 — PMSSB-74: Bloodfire Infusion (obrażenia równe mocy poświęconego)
+
+- Bot wyceniał aktywację płasko (2) i poświęcał własnego stwora bez zysku; koszt poświęcenia gospodarza nie był w pętli kosztów.
+- Poprawka: wycena z tą samą miarą zamiatania co zniszczenie masowe (`sweepHitsValue`, wyciągnięte bez zmiany liczb) minus koszt poświęcenia w jednostkach własnej straty.
+- Testy: `test/audyt-pmssb74-bloodfire.test.js` (6; 3 RED na HEAD). Bramy: `npm test` 8599/8599; `test:all` 8866/8866; golden bez zmiany hasha.
+- A/B 80 partii: 9 rozjechanych decyzji, zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
+- Plan: `docs/plans/PLAN_2026-10-20j-pmssb74-bloodfire.md`. Rejestr: `docs/PMSSB.md` §PMSSB-74.
+
