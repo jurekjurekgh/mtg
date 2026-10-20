@@ -45,6 +45,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
 | riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
 | licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
+| myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3648,4 +3649,14 @@ Plan: [PLAN_2026-10-20h-pmssb71-v3-licznik](plans/PLAN_2026-10-20h-pmssb71-v3-li
 - A/B 80 partii (`wiedzmin-bg` i `the-edge`, 40 seedów): 10 rozjechanych decyzji; zwycięzcy p1 36 → 37, p2 44 → 43. Nie stwierdzono poprawy siły.
 - Nie zrobiono: osobny Żywy Tester (A/B obejmuje partie z kartami); mirror-eval (nie dotyczy kodu).
 - Otwarte: faza tury dla tych wyzwalaczy (obecnie bez wpływu); liczniki bez celu inne niż +1/+1 (quest, stun) zostają przy 5.
+
+## PMSSB-73 — myriad (Gnoll War Band) (2026-10-20) — ZAMKNIĘTE BEZ ZMIANY
+
+Plan: [PLAN_2026-10-20i-pmssb73-myriad](plans/PLAN_2026-10-20i-pmssb73-myriad.md).
+
+- Pomiar (`.arena/probe-myriad.mjs`): atak Gnolla w 1v1 — wycena `attack[g]` 16 z myriad i 16 bez triggera; obiekty na polu 1 → 1 (brak tokenów); stos pusty. Warunek triggera `anotherOpponentExists` = `players.length > 2` (`src/engine/triggers.js`), a format to 1v1 (ADR 0022, `docs/PRODUCT.md`).
+- Audyt: (a) L41 — bot nie ma wpisu dla myriad i nie musi (efekt w 1v1 nie istnieje); (b) wymiar kosztu — brak; (c) anty-over-fix — nie ma czego poprawiać, zmiana kodu byłaby sztuczna.
+- Test: `test/audyt-pmssb73-myriad.test.js` (3): wycena ataku z i bez triggera równa; atak bez tokenów i bez zmiany życia wroga; pin treści triggera (`effect: []`, warunek wieloosobowy). Mutacja efektu na `lose_life` łapie tylko pin 3 — to mutant równoważny w 1v1, bo trigger nie trafia na stos.
+- Bramy: `npm test` 8593/8593 (`.arena/pmssb73-npmtest.log`). Bez zmiany kodu produkcyjnego `test:all` nie uruchamiano; golden i tie-audit bez zmian z definicji.
+- Zakres: format 1v1. Gdyby projekt wszedł w multiplayer, efekt myriad (tokeny za innych przeciwników) byłby do zaimplementowania — dziś to nie jest luka wobec 1v1, zapisane jako otwarte poza zakresem.
 

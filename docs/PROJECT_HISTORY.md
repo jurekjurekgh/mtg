@@ -17456,3 +17456,11 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Tie-audit (480 partii): `tie_top` 12758 → 12755. A/B 80 partii: 10 rozjechanych decyzji; zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
 - Pozostaje: inne liczniki bez celu (quest, stun) przy 5; faza tury bez wpływu na te wyzwalacze.
 - Plan: `docs/plans/PLAN_2026-10-20h-pmssb71-v3-licznik.md`. Rejestr: `docs/PMSSB.md` §PMSSB-71 v3.
+
+## 2026-10-20 — PMSSB-73: myriad (Gnoll War Band) — zamknięte bez zmiany kodu
+
+- Myriad w 1v1 nie ma efektu: trigger ataku ma warunek „another opponent exists” (fałszywy przy dwóch graczach), więc nie trafia na stos i nie tworzy tokenów. Bot nie wycenia tego triggera; wycena ataku Gnolla jest taka sama z myriad i bez niego (16/16).
+- Dowód: `test/audyt-pmssb73-myriad.test.js` (3 piny). Mutacja efektu łapie tylko pin treści — to mutant równoważny w 1v1.
+- Bramy: `npm test` 8593/8593. Nie uruchamiano `test:all` (zmiana wyłącznie w testach).
+- Plan: `docs/plans/PLAN_2026-10-20i-pmssb73-myriad.md`. Rejestr: `docs/PMSSB.md` §PMSSB-73.
+
