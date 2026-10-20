@@ -44,6 +44,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
 | riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
+| licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3633,3 +3634,18 @@ Plan: [PLAN_2026-10-20g-pmssb71-v2-riot-kontekst](plans/PLAN_2026-10-20g-pmssb71
 - RED: 3 piny kontekstowe padają na kodzie sprzed zmiany; anti-over-fix przechodzą przed i po.
 - Bramy: `npm test` 8586/8586; `test:all` 8853/8853 (golden bez zmian).
 - A/B (talie `ravnica-rg` vs `ravnica-wub`, 40 seedów, 80 partii): 23 partie z rozjechanymi decyzjami; zwycięzcy bez zmian (p1 36/44). Nie dowodzi poprawy siły. Do potwierdzenia większą próbą.
+
+## PMSSB-71 v3 — licznik +1/+1 na sobie zamiast stałej 5 (2026-10-20) — DONE
+
+Plan: [PLAN_2026-10-20h-pmssb71-v3-licznik](plans/PLAN_2026-10-20h-pmssb71-v3-licznik.md).
+
+- Pomiar PRZED (`.arena/probe-counter-nsh.mjs`, `.arena/pmssb71v3-pre.txt`): Nightshade Harvester wyceniany stale 69,57 przy każdym życiu i każdej fazie. Karta testowa to Nightshade, bo Oreplate Pangolin ma `another` (nie reaguje na własny rzut).
+- Wdrożenie: licznik +1/+1 bez celu na sobie wyceniany przez wspólną funkcję `counterValue` (riot i ETB/wyzwalacze): ciało 3 za licznik + `counterPressureWeight` (6) × presja + `counterBoardWeight` (2) × przewaga liczebna wroga. Pokrętła w `heuristic-params.js`; `riotCounterPressureWeight` przemianowane na `counterPressureWeight`.
+- Wynik: presja i przewaga wroga są widoczne w wycenie (życie 5 vs 20 przy wrogu 3×4: 76,95 vs 75,44). Neutralny stół: 69,57 → 68,31 (licznik 3 zamiast 5). Faza nie zmienia tych wyzwalaczy.
+- Testy: 4 w `test/audyt-pmssb71v3-licznik.test.js` (presja: RED na HEAD; przewaga: pin, nie RED; neutralny: pin; pokrętła = 0 wyłączają kontekst). Trzy stare piny przepisane z powodem: `pmssb10-ogon-wave-a` (69,6 → 68,3), `pmssb10-ogon-wave-b2` (+2,25 → +1,35), `pmssb3-draw-wave-b` (72,9054 → 71,1054).
+- Bramy: `npm test` 8589/8589; `test:all` 8856/8856; golden bez zmian hasha (zastrzeżenie: talie golden nie zawierają tych kart w ścieżce).
+- Tie-audit (`--gry=40`, 480 partii, baza HEAD `c8f3a96`): `tie_top` 12758 → 12755; akcyjne 3460 → 3459. Zestaw benchmarku nie zawiera talii z tymi kartami.
+- A/B 80 partii (`wiedzmin-bg` i `the-edge`, 40 seedów): 10 rozjechanych decyzji; zwycięzcy p1 36 → 37, p2 44 → 43. Nie stwierdzono poprawy siły.
+- Nie zrobiono: osobny Żywy Tester (A/B obejmuje partie z kartami); mirror-eval (nie dotyczy kodu).
+- Otwarte: faza tury dla tych wyzwalaczy (obecnie bez wpływu); liczniki bez celu inne niż +1/+1 (quest, stun) zostają przy 5.
+

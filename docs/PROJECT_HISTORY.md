@@ -17446,3 +17446,13 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Bramy: `npm test` 8586/8586; `test:all` 8853/8853; golden bez zmian.
 - A/B 80 partii (`ravnica-rg` vs `ravnica-wub`): 23 rozjechane decyzje, zwycięzcy bez zmian. Poprawy siły NIE stwierdzono.
 - Plan: `docs/plans/PLAN_2026-10-20g-pmssb71-v2-riot-kontekst.md`.
+
+## 2026-10-20 — PMSSB-71 v3: licznik +1/+1 na sobie zamiast stałej 5
+
+- Stała 5 dla licznika +1/+1 bez celu (wyzwalacze ETB z warunkiem, „umiera”, lądy, end step, opłaty) była wartością niezależną od stołu. Zastąpiona wartością kontekstową: ciało 3 + presja (siła ataku wroga / moje życie) + przewaga liczebna wroga. Riot i ETB liczą licznik tą samą funkcją (`counterValue`).
+- Pomiar PRZED: Nightshade Harvester stale 69,57 przy każdym życiu. PO: presja i przewaga wroga widoczne; neutralny stół 69,57 → 68,31.
+- Testy: `test/audyt-pmssb71v3-licznik.test.js` (4). Trzy stare piny przepisane z powodem (harvester, frontline-war-rager, trade-route-envoy).
+- Bramy: `npm test` 8589/8589; `test:all` 8856/8856; golden bez zmian hasha (zastrzeżenie: talie golden nie zawierają tej ścieżki w zmierzonych partiach).
+- Tie-audit (480 partii): `tie_top` 12758 → 12755. A/B 80 partii: 10 rozjechanych decyzji; zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
+- Pozostaje: inne liczniki bez celu (quest, stun) przy 5; faza tury bez wpływu na te wyzwalacze.
+- Plan: `docs/plans/PLAN_2026-10-20h-pmssb71-v3-licznik.md`. Rejestr: `docs/PMSSB.md` §PMSSB-71 v3.

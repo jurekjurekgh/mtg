@@ -2434,9 +2434,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-36/B: licznik z ETB na SWOIM stworze (Jade Bearer, Moogle) — bramka
     // dostępności celu po stronie WŁASNEJ (dawniej `etbEnemyHasTarget` pytał o
     // wrogie permanenty, więc wartość zależała od wroga, nie od celu).
+    // PMSSB-71 v3: bez celu licznik +1/+1 idzie na SAMEGO siebie — wartość kontekstowa (counterValue),
+    // nie stałe 5. Inne liczniki (quest, stun…) zostają przy 5 do osobnej pętli.
     add_counter: (e, view, req, def) => (req
       ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
-      : 5),
+      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, e?.amount ?? 1) : 5)),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
     search_library_to_hand: (e, view) => searchRiderValue(view, e),
@@ -8736,14 +8738,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   }
 
-  /** PMSSB-71 v2 (riot, licznik +1/+1): wartość ciała plus PRESJA — siła ataku wroga
-   * podzielona przez moje życie, ograniczona do 1. Pod presją trwała wytrzymałość
-   * i moc są warte więcej; przy zerowym zagrożeniu zostaje dawna wartość ciała.
+  /** PMSSB-71 v3: licznik +1/+1 na SOBIE (riot i ETB/wyzwalacze bez celu). Wartość = ciało
+   * (3 za licznik) + presja (siła ataku wroga / moje życie, ≤ 1) + przewaga liczebna wroga
+   * (gdy wróg ma więcej stworów). Przy neutralnym stole zostaje sama wartość ciała.
    */
-  function riotCounterValue(view, amount) {
+  function counterValue(view, amount) {
     const pressure = Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view)));
+    const mine = myCreatures(view).length;
+    const theirs = enemyCreatures(view).length;
+    const behind = Math.max(0, theirs - mine) / Math.max(1, theirs + mine);
     return amount * (P.creaturePowerWeight + P.creatureToughnessWeight)
-      + P.riotCounterPressureWeight * pressure;
+      + P.counterPressureWeight * pressure
+      + P.counterBoardWeight * behind;
   }
 
   /** Jedna miara wybranego skutku: rzut modalnego nosiciela i decyzja trybu.
@@ -8791,7 +8797,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // PMSSB-71 (L41): licznik +1/+1 na SAMYM sobie w trybie modalnym = wartość ciała (+1 moc +1 wytrzymałość
       // w tej samej skali co `creatureBase`/wycena P/T), a nie stała 5 z ETB_EFFECT_BONUS (ścieżka bez trybów).
       else if (effect.type === 'add_counter' && effect.counter === '+1/+1' && !(mode.targets?.length)) {
-        value += riotCounterValue(view, amount);
+        value += counterValue(view, amount);
       }
       else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
     }

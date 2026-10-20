@@ -73,9 +73,10 @@ describe('PMSSB-10 Wave-A: anticipacja-ogona', () => {
     const s = mk(); fillLib(s); put(s, 'tg', 'tellah-great-sage');
     assert.equal(disp(decide(s), 'cast_permanent(tg'), 69.3);
   });
-  it('F-O: harvester = 69.6 (drain+counter ×0.7: +5.7!)', () => {
+  // PMSSB-71 v3: licznik na sobie bez celu = wartość kontekstowa (neutralnie ciało 3, nie stała 5): 69,6 → 68,3.
+  it('F-O: harvester = 68.3 (drain+counter ×0.7: +5.7!; v3: licznik 5→3 neutralnie)', () => {
     const s = mk(); fillLib(s); put(s, 'nh', 'nightshade-harvester');
-    assert.equal(disp(decide(s), 'cast_permanent(nh'), 69.6);
+    assert.equal(disp(decide(s), 'cast_permanent(nh'), 68.3);
   });
   it('F-O: guard/windscout/devotee = 69.3/68.7/66.4 (windscout latanie 2-mocy: +2.1; PMSSB-65: prowess bez czaru w ręce = 0, było płaskie 1.35 → 70.1)', () => {
     const a = mk(); fillLib(a); put(a, 'mg', 'midnight-guard');

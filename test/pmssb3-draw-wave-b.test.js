@@ -128,7 +128,8 @@ test('F-envoy: unwrap ETB (bez-counter 72.9054, z-counter 73.8054)', () => {
     if (ctr) addCounter(s, 'kolega', '+1/+1', 1);
     return s;
   };
-  assert.ok(Math.abs(scoreOf(mk(false), 'cast_permanent(env)') - 72.9054) < 0.001);
+  // PMSSB-71 v3: bez licznika u kolegi Envoy daje licznik na sobie (wartość kontekstowa, neutralnie 3): 72.9054 → 71.1054.
+  assert.ok(Math.abs(scoreOf(mk(false), 'cast_permanent(env)') - 71.1054) < 0.001);
   assert.ok(Math.abs(scoreOf(mk(true), 'cast_permanent(env)') - 73.8054) < 0.001);
 });
 
