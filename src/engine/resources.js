@@ -1540,6 +1540,55 @@ function withoutConvokePips(requirements, convokeColors) {
   return left;
 }
 
+/**
+ * PMSSB-72 (Convoke, CR 702.51a): MINIMALNE warianty płatności stworami dla rzutu, którego
+ * sama mana nie pokrywa. Ta sama reguła co walidacja `convokePayments` w `castPermanent`
+ * (L41): ten sam podział jednostek (`generic` / kolor stwora), ten sam limit części
+ * generycznej, ta sama bramka kolorów po odjęciu pipów opłaconych stworami i ta sama suma
+ * (pula + landy + stwory). Wariant jest minimalny, gdy usunięcie dowolnego stwora czyni go
+ * nielegalnym — dzięki temu przy wystarczającej manie nie powstaje żaden wariant convoke.
+ * Gracz wybiera wariant (decyzja w UI); silnik niczego nie tapuje sam.
+ */
+export function convokePaymentVariants(state, playerId, object, totalMana, requirements, purpose = {}) {
+  if (!object?.convoke || !Number.isInteger(totalMana) || totalMana <= 0) return [];
+  const needed = new Set(requirements.flat());
+  const eligible = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.controllerId === playerId
+    && o.kind === 'creature' && !o.tapped && !effectiveAbilities(o).some((ability) => isActivatedManaAbility(ability)));
+  if (eligible.length === 0) return [];
+  const producible = producibleMana(state, playerId, null, purpose, requirements);
+  const castable = (units) => {
+    if (units.length > totalMana) return false;
+    const genericSlots = Math.max(0, totalMana - requirements.length);
+    if (units.filter((c) => c === 'generic').length > genericSlots) return false;
+    for (const color of new Set(units.filter((c) => c !== 'generic'))) {
+      if (units.filter((c) => c === color).length > requirements.filter((pip) => pip.includes(color)).length) return false;
+    }
+    if (producible + units.length < totalMana) return false;
+    return hasColorRequirements(state, playerId, withoutConvokePips(requirements, units), purpose);
+  };
+  // Opcje dla każdego stwora: brak / {1} / kolor, który jest w koszcie i na stworze.
+  const options = eligible.map((creature) => [null, 'generic',
+    ...(creature.colors ?? []).filter((color) => needed.has(color))]);
+  const found = [];
+  const walk = (index, picks) => {
+    if (found.length >= 64) return;
+    if (picks.length > totalMana) return;
+    if (index === eligible.length) {
+      if (picks.length > 0 && castable(picks.map((p) => p.color))) found.push([...picks]);
+      return;
+    }
+    walk(index + 1, picks);
+    for (const color of options[index]) {
+      if (color === null) continue;
+      walk(index + 1, [...picks, { creatureId: eligible[index].id, color }]);
+    }
+  };
+  walk(0, []);
+  return found.filter((payments) => payments.every((_, i) => !castable(
+    payments.filter((_, j) => j !== i).map((p) => p.color),
+  )));
+}
+
 function hasColorRequirements(state, playerId, requirements, purpose = {}) {
   if (requirements.length === 0) return true;
   return canPayColoredCost(state, playerId, requirements, null, purpose);

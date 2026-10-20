@@ -7,7 +7,7 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
@@ -9000,6 +9000,15 @@ export function playerView(state, playerId) {
       {
         const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
         const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
+        // PMSSB-72 (Convoke, CR 702.51a): warianty płatności stworami — tylko minimalne
+        // (bez many nie ma żadnego wariantu, więc zwykła oferta nie zmienia się). Gracz
+        // wybiera wariant (UI grupuje je w panel); silnik nie tapuje nikogo sam.
+        if (object.convoke && !(object.phyrexianManaCost ?? 0)) {
+          const convokeReqs = [...coloredPipsOf(object.cardId, 0)];
+          for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object), convokeReqs, spellManaPurpose(object))) {
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, convokePayments: payments }));
+          }
+        }
         if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object, coloredPipsOf(object.cardId, lifePips))) continue;
       }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
@@ -9021,6 +9030,12 @@ export function playerView(state, playerId) {
       if (object.kicker && !object.kicker.returnLand) {
         const kickerCost = object.kicker.cost ?? 0;
         const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        // PMSSB-72 (Convoke + kicker): koszt całkowity z kickerem, warianty stworami (jak wyżej).
+        if (object.convoke && !(object.phyrexianManaCost ?? 0)) {
+          for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object) + kickerCost, kickerReqs, spellManaPurpose(object))) {
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true, convokePayments: payments }));
+          }
+        }
         if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
           if (canPayColoredCost(state, playerId, kickerReqs, null, spellManaPurpose(object))) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));

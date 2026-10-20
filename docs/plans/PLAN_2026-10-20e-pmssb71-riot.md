@@ -78,4 +78,4 @@ Golden master (cel: bez regeneracji), tie-audit, mirror-eval min. 24 seedy (spar
 
 ## Wynik
 
-Zamknięte 2026-10-20: F0 (NaN `source_power`), F1 (haste = słowo), F2 (licznik = ciało). Pełne wyniki i otwarte punkty: `docs/PMSSB.md` §PMSSB-71. Bramy: `test:all` 8839/8839, build 0, golden bez zmian, tie-audit bez zmian, A/B 480 partii (rg vs inna talia 93 → 130; McNemar χ² = 23,6), Żywy Tester 3/3 bez zgłoszeń.
+Zamknięte 2026-10-20: F0 (NaN `source_power`), F1 (haste = słowo), F2 (licznik = ciało). Pełne wyniki i otwarte punkty: `docs/PMSSB.md` §PMSSB-71. Bramy: `test:all` 8839/8839, build 0, golden bez zmian, tie-audit bez zmian, A/B 480 partii (rg vs inna talia 93 → 130; McNemar chi² = 23,6), Żywy Tester 3/3 bez zgłoszeń.

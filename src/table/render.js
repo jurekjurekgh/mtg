@@ -507,6 +507,10 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
   if (command.type === 'resolve_delve_exile') return 'resolve_delve_exile';
+  // PMSSB-72 (Convoke): warianty wyboru stworów jednej karty grupują się w jeden panel.
+  if (command.type === 'cast_permanent' && command.convokePayments) {
+    return `permanent-convoke:${command.objectId}:${Boolean(command.kicked)}`;
+  }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -3439,6 +3443,15 @@ function commandLabelBase(cmd, session, view) {
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
+      // PMSSB-72 (Convoke, CR 702.51a): wariant z wyborem stworów do tapnięcia — nazwy stworów
+      // w etykiecie, żeby gracz widział, CO się tapuje (decyzja gracza, nie automat).
+      if (cmd.convokePayments?.length) {
+        const tapped = cmd.convokePayments.map((payment) => {
+          const name = nameOfObjectId(payment.creatureId);
+          return payment.color && payment.color !== 'generic' ? `${name} (${payment.color})` : `${name} (1)`;
+        }).join(', ');
+        return `Zagraj tapując na convoke: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
+      }
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
         // M268: Bestow bywa kolorowy (Leafcrown Dryad „Bestow {3}{G}") —

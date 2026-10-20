@@ -10364,6 +10364,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           score -= P.creatureManaCostWeight
             * (Math.max(0, (card?.manaCost ?? 0) - costReduction)
               + coloredPipsOf(card?.cardId ?? '').length);
+          // PMSSB-72 (L41/b, Convoke): stwory płacące convoke zastępują manę — każdy ratuje
+          // creatureManaCostWeight, ale się tapuje (kara convokeTapPenalty). Bez convoke: 0.
+          // Kara rośnie z WARTOŚCIĄ CIAŁA tapowanego stwora (moc + wytrzymałość, jak
+          // `attackerValue`): utracony atak/blok. Płaska kara dawała remisy między wariantami.
+          const convokePayments = cmd.convokePayments ?? [];
+          let convokeTapCost = 0;
+          for (const payment of convokePayments) {
+            const creature = zoneCard(view, payment.creatureId);
+            const body = Math.max(1, (creature?.power ?? 0) + (creature?.toughness ?? 0));
+            convokeTapCost += P.convokeTapPenalty * body / 4;
+          }
+          score += P.creatureManaCostWeight * convokePayments.length - convokeTapCost;
         }
         // Uwaga z gry B: permanent z głównym ETB `animate_linked` bez godnego
         // artefaktu traci potencjał. Kara znika wyłącznie, gdy samo ciało jako

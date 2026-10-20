@@ -17426,6 +17426,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 
 - Odkrycie: Gruul Beastmaster nigdy nie był rzucany przez bota (0/480 partii lustrzanych). Przyczyna główna: wycena pompy `source_power` (tekst) dawała `NaN`, a NaN zrywał sortowanie ofert — w 258 krokach bot wybrał gorszą ofertę w 15 przypadkach.
 - Naprawy: pompa rozwiązuje `source_power` względem źródła (F0); tryb riot „haste” wyceniany słowem `haste` (F1); tryb licznika wartością ciała +1/+1 (F2).
-- Testy: `test/audyt-pmssb71-riot.test.js` (6); `test:all` 8839/8839; golden master bez zmian; tie-audit bez zmian; sparowany A/B 480 partii: rg vs inna talia 93 → 130 wygranych (McNemar χ² = 23,6), lustro 67 → 66; Żywy Tester 3/3, 0 zgłoszeń.
+- Testy: `test/audyt-pmssb71-riot.test.js` (6); `test:all` 8839/8839; golden master bez zmian; tie-audit bez zmian; sparowany A/B 480 partii: rg vs inna talia 93 → 130 wygranych (McNemar chi² = 23,6), lustro 67 → 66; Żywy Tester 3/3, 0 zgłoszeń.
 - Szczegóły i otwarte punkty: `docs/PMSSB.md` §PMSSB-71; plan `docs/plans/PLAN_2026-10-20e-pmssb71-riot.md`.
-- Luka znaleziona przy pętli convoke (batch 69): Kavu Primarch nie ma żadnej oferty rzutu z convoke w `legalCommands`; UI i bot nie mogą go użyć. OTWARTE, opis w `docs/PMSSB.md` („Luka convoke”).
+- Luka znaleziona przy pętli convoke (batch 69): Kavu Primarch nie ma żadnej oferty rzutu z convoke w `legalCommands`; UI i bot nie mogą go użyć. NAPRAWIONA w PMSSB-72 (wpis niżej), opis w `docs/PMSSB.md` („Luka convoke”).
+
+## 2026-10-20 — PMSSB-72: convoke w grze (Kavu Primarch)
+
+- Luka z batcha 69 NAPRAWIONA: `legalCommands` oferuje warianty convoke (minimalne, także kicked); UI grupuje je w panel wyboru stworów (decyzja gracza); kreator many płaci resztę.
+- Bot: wycena z wymiarem kosztu (mana − stwory) i karą za tapnięcie zależną od wartości ciała (`convokeTapPenalty`, pokrętło). Płaska kara dawała 9 identycznych opcji (remis).
+- Testy: `test/audyt-pmssb72-convoke.test.js` (9; 5 czerwonych na kodzie sprzed zmiany). `npm test` 8580/8580.
+- Golden: hash zmieniony (2 partie, 3 decyzje z nowymi opcjami, 0 zmienionych wyborów). Fixture NIE zregenerowany — czeka na decyzję właściciela.
+- Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md`. Rejestr: `docs/PMSSB.md` §PMSSB-72.
+- Incydent: lokalny HEAD wrócił do `34e8676` (drzewo robocze zgodne z origin); przywrócono `git reset` (bez `--hard`) po weryfikacji 36 plików względem origin.
