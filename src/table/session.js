@@ -1358,9 +1358,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
         // M102/U2: job select („stwórz token 1/1 Hero i przypnij ten
-        // ekwipunek") to NIE bestow — gałąź domyślna kłamała o mechanice.
+        // ekwipunek") to NIE bestow. Q-1 (Żywy Tester): living weapon też
+        // wpadał w dawną gałąź domyślną i nazywał przypięcie Strandwalker
+        // do Germ „bestow”. Mechanikę opisujemy po `via`, a nie po karcie;
+        // nieznany wariant dostaje neutralny opis, nie fałszywe bestow.
         if (e.via === 'job_select') return `${nameOf(e.cardId)} wyposaża ${hostName} (job select)`;
-        return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
+        if (e.via === 'living_weapon') return `${nameOf(e.cardId)} wyposaża ${hostName} (living weapon)`;
+        if (e.via === 'bestow') return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
+        return `${nameOf(e.cardId)} zostaje załączony do ${hostName}`;
       }
       case 'object_detached': return e.becameKind === 'creature'
         ? `${nameOf(e.cardId)} odłącza się i znów jest stworem`
