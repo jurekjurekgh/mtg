@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "overallHash": "2bf25d5bea4ed1896a1cf2e9282ccdfb3bb1ff191b4b538fe22ab9aa56e8fd08",
+  "overallHash": "2f00a7f5d083118229765da451cecf2debab87bd598a148b32477c53ec33a041",
   "matches": [
     {
       "pair": "ravnica-wub|innistrad-wu",
@@ -26,9 +26,9 @@
     {
       "pair": "ravnica-wub|innistrad-wu",
       "seed": 1001,
-      "hash": "9c8c72e395c1d741606f763939adcf410e5184b5f7be529e15ea051caa31f7fb",
+      "hash": "e44c7d6258326250bde3df05c0aad805df14655471ac279457dbc46c0e07fd89",
       "decisions": 356,
-      "scoreSum": 2443.3856,
+      "scoreSum": 2442.7427,
       "chosenKinds": {
         "activate_ability": 1,
         "attack": 9,

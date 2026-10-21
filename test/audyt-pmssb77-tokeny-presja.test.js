@@ -74,3 +74,34 @@ test('PMSSB-77 pokrętło: tokenPressureWeight 0 wyłącza presję (życie 5 = �
   const spokoj = tokenScore({ card: 'geist', myLife: 20, foes: FOES }, params);
   assert.equal(pod, spokoj);
 });
+
+// PMSSB-77 (domknięcie): presja działa SYMETRYCZNIE. Token oddany wrogowi (Secure the Scene:
+// „Its controller creates a 1/1”) to ciało dla przeciwnika — przy moim niskim życiu jest gorsze.
+// Znak roli (sign) mnoży już całe ciało, więc presja wchodzi z tym samym znakiem.
+function secureScore(life, params = undefined) {
+  const st = createGameState({ seed: 69, players: [{ id: 'p1' }, { id: 'p2' }] });
+  st.turn = jumpToStep(st.turn, 'main1', 'p2');
+  st.turn.activePlayerId = st.turn.priorityPlayerId = 'p2';
+  for (const pid of ['p1', 'p2']) for (let i = 0; i < 8; i += 1) put(st, `lib-${pid}-${i}`, 'basic-swamp', pid, 'library');
+  put(st, 'sec', 'secure-the-scene', 'p2', 'hand');
+  put(st, 'foe', 'kulrath-zealot', 'p1', 'battlefield');
+  put(st, 'foe2', 'kulrath-zealot', 'p1', 'battlefield');
+  st.players.find((p) => p.id === 'p2').life = life;
+  addMana(st, 'p2', 5, { colors: ['W'] });
+  const bot = createHeuristicBot({ seed: 7, params });
+  bot.chooseCommand(playerView(st, 'p2'), {});
+  const o = (bot.trace().at(-1)?.options ?? []).filter(Boolean).find((x) => x.cmd === 'cast_spell(sec->foe)');
+  assert.ok(o, 'opcja Secure the Scene na wrogim stworze');
+  return o.score;
+}
+
+test('PMSSB-77 RED: token oddany wrogowi przy moim niskim życiu jest gorszy (presja symetryczna)', () => {
+  const pod = secureScore(5);
+  const spokoj = secureScore(20);
+  assert.ok(pod < spokoj, `Secure: życie 5 ${pod} < życie 20 ${spokoj}`);
+});
+
+test('PMSSB-77 symetria pokrętłem: tokenPressureWeight 0 — Secure bez wpływu życia', () => {
+  const params = normalizeHeuristicParams({ tokenPressureWeight: 0 });
+  assert.equal(secureScore(5, params), secureScore(20, params));
+});

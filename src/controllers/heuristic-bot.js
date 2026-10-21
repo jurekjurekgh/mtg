@@ -2127,10 +2127,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       if (kw.includes('lifelink')) keywordWorth += 4;
     }
-    // PMSSB-77: presja życia na ciało WŁASNEGO tokenu-stwora (L41: ta sama miara co counterValue —
-    // siła ataku wroga / moje życie, ≤ 1). Token wrogi nie dostaje presji (znak roli).
-    const ownBody = (tokenControllerId ?? view.playerId) === view.playerId;
-    const tokenPressure = isCreatureTokenEffect(effect) && ownBody
+    // PMSSB-77: presja życia na ciało tokenu-stwora (L41: ta sama miara co counterValue —
+    // siła ataku wroga / moje życie, ≤ 1). Symetria: token wrogi (znak roli w `sign` niżej)
+    // dostaje presję z tym samym znakiem — oddanie ciała wrogowi przy moim niskim życiu jest gorsze.
+    const tokenPressure = isCreatureTokenEffect(effect)
       ? P.tokenPressureWeight * Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view))) : 0;
     const bodyWorth = isCreatureTokenEffect(effect)
       ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth + tokenPressure : 0;
@@ -11562,9 +11562,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               ? objectOnBoard(view, cmd.targets?.[0] ?? null) : null;
             // PMSSB-63/S: w wymianie ciał token liczy się jednostką ciała (2·moc+wytrzymałość,
             // jak massDestroyWorth bez MV), ze znakiem kontrolera celu: swój = +, wroga = −.
+            // PMSSB-77 (domknięcie): presja życia też w tej gałęzi — ciało tokenu-stwora
+            // przeliczone na jednostkę 2·moc+wytrzymałość (wagę ciała 10/3 → 3/10), ze znakiem.
+            const swapPressure = isCreatureTokenEffect(effect)
+              ? (3 / 10) * P.tokenPressureWeight * Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view))) : 0;
             const tokenValue = effect.controllerFromCapture && exileSwap
               ? ((captureTarget?.controllerId ?? view.playerId) === view.playerId ? 1 : -1)
-                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0))
+                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0) + swapPressure)
               : effect.controllerFromCapture
                 ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
                 : tokenBodyValue(view, effect);

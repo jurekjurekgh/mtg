@@ -3678,6 +3678,11 @@ Plan: [PLAN_2026-10-20j-pmssb74-bloodfire](plans/PLAN_2026-10-20j-pmssb74-bloodf
 - Tie-audit i mirror nie wykonane dla tej zmiany (tie-audit benchmarku nie zawiera talii z Bloodfire; mirror porównuje parametry, nie kod).
 - Otwarte: warunek zysku nie uwzględnia letalu wroga (obrażenia dotyczą wyłącznie stworów); wycena nie patrzy na aurę jako kartę w grze poza kosztem gospodarza.
 
+- Domknięcie otwartych punktów (2026-10-21):
+  - Tie-audit PMSSB-74 (`7505bb5` przed, HEAD po): `tie_top` 700 → 700, akcyjne 197 → 197. Bez zmiany.
+  - Mirror PMSSB-74 — lustro dwóch WERSJI bota na tym samym silniku (diff `7505bb5..9a716ce` dotyka tylko `heuristic-bot.js`). Standardowy benchmark nie zawiera Bloodfire (jest tylko w `warhammer-ubr`), więc lustro na tej talii: 150 seedów (3000–3149) + 250 seedów (5000–5249) = 800 partii: kandydat 431 : baseline 369, win-rate 0,539, z ≈ 2,19, dwustronne p ≈ 0,03 (bez korekty na wielokrotne porównania; jedna talia). Wynik kierunkowy, nie dowód dużego efektu.
+  - Letal wroga w wycenie Bloodfire: nie dotyczy karty. Bloodfire Infusion zadaje obrażenia tylko stworom („to each creature”), nie graczowi.
+
 ## PMSSB-75 — controlsType: Heron-Blessed Geist (2026-10-20) — ZAMKNIĘTE BEZ ZMIANY KODU
 
 Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-controls-type.md).
@@ -3695,7 +3700,7 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 - Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny; wszystkie przechodzą na obecnym kodzie). Mutacja zerująca redukcję łapie 2 testy.
 - Otwarte: brak wrażliwości wyceny na pozostałą manę poza konkurencją czarów (nie ma czego rozstrzygać w tej rodzinie).
 
-## PMSSB-77 — presja życia w wycenie tokenów-stworów własnych (2026-10-20) — DONE
+## PMSSB-77 — presja życia w wycenie tokenów-stworów własnych (2026-10-20/21) — DONE
 
 Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md).
 
@@ -3708,4 +3713,8 @@ Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-to
 - Golden (`--dump`, `.arena/pmssb77-golden-diff.txt`): 1437 decyzji, 0 zmienionych wyborów; 3 wyniki wybranych opcji i 17 wycen opcji (maks. Δ 1,5). Hash `9017a46b8bf6298d…` → `2bf25d5bea4ed189…`. Właściciel zaakceptował zmianę wycen (decyzja 2026-10-21); fixture zregenerowany `--write` i sprawdzony (`test/bot-scoring-snapshot.test.js` 4/4).
 - Tie-audit (`.arena/pmssb77-tie-{pre,post}.json`): `tie_top` 700 → 674; akcyjne 197 → 196; `attack` 97 → 81; `block` 435 → 427. Liczba decyzji w audycie zmieniła się (13672 → 13375), bo audyt gra pełne partie i zmienione wybory zmieniają przebieg.
 - Mirror 24 seedy (`.arena/pmssb77-mirror.json`): kandydat (domyślne, `tokenPressureWeight` 6) vs baseline (`tokenPressureWeight` 0): 144:144, win-rate 0.5. Brak dowodu poprawy siły.
-- Otwarte: presja w wycenie tokenów WROGICH nie jest zmieniana (znak roli). `enemyAttackPower` sumuje wszystkie wrogie stwory, nie tylko atakujące — ta sama przybliżona miara co licznik PMSSB-71 v3.
+- Domknięcie (ta sama seria, 2026-10-21): presja była tylko dla WŁASNYCH tokenów, a token oddany wrogowi (Secure the Scene: „its controller creates a 1/1”) miał zero. To była luka, nie decyzja: presja działa teraz symetrycznie (znak roli mnoży całe ciało). Gałąź `exileSwap` (PMSSB-63/S) liczy ciało jako 2·moc+wytrzymałość, więc presja dodana tam z czynnikiem 3/10 (ta sama waga, inna jednostka).
+- Wynik domknięcia: Secure the Scene na dwóch Kulrath (moc 6) — życie 20: 26,95 → 25,87; życie 5: 25,15. Pin PMSSB-63/S2 zmieniony z −2,05 na −2,14 (presja wroga 1/1 przy życiu 20 = 1/20 × 6 × 3/10 = −0,09).
+- Golden po domknięciu: 1437 decyzji, 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64). Hash `2bf25d5b…` → `2f00a7f5…`. Decyzja właściciela (2026-10-21): akceptuj; fixture odnowiony.
+- Tie-audit po domknięciu bez zmian (674, akcyjne 196). Mirror 24 seedy (tokenPressureWeight 6 vs 0): 144:144.
+- Otwarte: `enemyAttackPower` sumuje wszystkie wrogie stwory, nie tylko atakujące — ta sama przybliżona miara co licznik PMSSB-71 v3 (świadoma przybliżona miara, nie luka).

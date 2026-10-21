@@ -95,7 +95,7 @@
 - **Naprawy (osobne commity):** A-1 `6aee102` — JSDoc w `resources.js` przypięte do właściwych funkcji;
   A-2 `1f2843c` — komentarz O/11 bez opisu usuniętego trybu; A-3 `ac059cf` — L19 z wyjątkiem dla
   ofert celów (O-2).
-- **Otwarte:** A-4 — latentne ignorowanie `drawIfManaValueAtMost` w gałęzi `targetIndices` (brak karty);
+- **Otwarte:** A-4 — udokumentowane w kodzie (komentarz „DO ZROBIENIA” przy gałęzi `targetIndices`, `effects.js`); naprawa przy pierwszej karcie z tym połączeniem (brak takiej karty, bez skutku w grze);
   A-5 — kreator celów bez limitu, 100 stworów ~21 s (decyzja właściciela).
 - **Pętla jakości (ADR 0021 pkt 4):** Żywy Tester, 6 partii na `dist/`, 6/6 do końca, 0 `[STOP]`,
   0 zgłoszeń detektorów. Polowanie na CR ograniczone do `destroy_all`, suspend, escape (zgodne).
@@ -17489,4 +17489,6 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Własny token-stwór dostaje presję (siła ataku wroga / moje życie, ≤ 1) × `tokenPressureWeight` (6) do ciała. Pusty stół bez zmian; pokrętło 0 = dawne zachowanie.
 - Test: `test/audyt-pmssb77-tokeny-presja.test.js` (4). Piny starych testów przepisane z deltami.
 - Golden: 0 zmienionych wyborów, 20 zmienionych wycen; właściciel zaakceptował, fixture odnowiony (hash `2bf25d5b…`). Mirror 144:144 (brak dowodu poprawy siły).
+- Domknięcie (2026-10-21): presja działa symetrycznie — token oddany wrogowi (Secure the Scene) też dostaje presję (gałąź `exileSwap` z czynnikiem 3/10). Golden: 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64); właściciel zaakceptował, hash `2f00a7f5…`. Tie-audit bez zmian (674). Mirror 144:144.
+- PMSSB-74 domknięcie: tie-audit bez zmian (700); lustro wersji bota na talii `warhammer-ubr` (Bloodfire), 800 partii: 431:369, win-rate 0,539, p ≈ 0,03 — wynik kierunkowy.
 - Plan: `docs/plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md`. Rejestr: `docs/PMSSB.md` §PMSSB-77.
