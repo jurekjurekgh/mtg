@@ -30,7 +30,7 @@ sesję PR #169 — z zastrzeżeniami z tamtej pętli, fakty sprawdzać w repo).
 0. [x] **Plan i PR:** ten dokument jako osobny commit, push,
    `gh pr create --base main --head arena/3ff39ec9-mtg`; PR istnieje przed
    jakimkolwiek kodowaniem (ADR 0020 A).
-1. [ ] **Audyt techniczny PR #169:** przejść KAŻDĄ z 56 ścieżek diffu.
+1. [x] **Audyt techniczny PR #169:** przejść KAŻDĄ z 56 ścieżek diffu.
    W grupach: (a) silnik — convoke (`resources.js`), riot (`riot.js`,
    `spells.js`, `card-data.js`), inicjatywa (`effects.js`), tokeny, triggery,
    fingerprint, protokół; (b) bot — wycena trample/blockers, params, golden
@@ -42,15 +42,36 @@ sesję PR #169 — z zastrzeżeniami z tamtej pętli, fakty sprawdzać w repo).
    CR 726) — weryfikacja dosłownym CR online przed uznaniem/uzgodnieniem
    (ADR 0030); brak źródła = brak zmiany regułowej. Ustalenia, dowody i status
    każdej ścieżki do `docs/audits/AUDYT_PR169_2026-10-21.md`; opis PR uzupełnić.
-2. [ ] **Każdy wykryty błąd:** osobny mały krok: repro/test RED → naprawa u
+   **Wykonane 2026-10-21:** 56/56 ścieżek, raport `AUDYT_PR169_2026-10-21.md`
+   (commit `1124842`). CR 702.51a/b, 702.136a/b, 726.2/726.5 potwierdzone
+   dosłownie (wydanie 2026-09-25); mutacje A-1/A-2/A-3/A-4/A-8/Q-1 wszystkie
+   RED (piny skuteczne); bramki: `npm test` 8663/8663, build 75 modułów,
+   próbka regresji bota 10/10, budżet 2/2, `cr-numery --sprawdz` OK.
+   Jedyny finding B-1 (nieaktualny punkt zaczepienia README) — do domknięcia
+   sesji. Golden fixture: 3 hashe odnowione świadomie (komentarz w #169).
+2. [x] **Każdy wykryty błąd:** osobny mały krok: repro/test RED → naprawa u
    root cause (bez wyjątków po nazwie karty) → GREEN + mutacja/anty-over-fix
    → `npm test` + build → commit i push. Nie mieszać niezależnych fixów.
-3. [ ] **Pętla jakości:** Żywy Tester na świeżym `dist/` (build + `npm i`
+   **Wykonane 2026-10-21 (znalezisko pętli jakości, patrz etap 3):**
+   duplikat `damage_dealt` w strumieniu komendy przy częściowo zapobiegniętych
+   obrażeniach na gracza — test RED 2/2 → fix `slice(before, -1)` w
+   `dealCombatDamageToPlayer` → GREEN 2/2 → `npm test` 8665/8665 → lekcja
+   L187 (kotwica klasy L130) + tabela CR +`702.15b`.
+3. [x] **Pętla jakości:** Żywy Tester na świeżym `dist/` (build + `npm i`
    w `tools/table-tester`), przeczytać transkrypty ręcznie w trzech osiach
    (bot, log/modal, auto-pass); poprawki u root cause + detektor dla nowej
    klasy błędu. Polowanie na niezgodności CR inną ścieżką niż #168/#169
    (tam: convoke, riot, inicjatywa, clash, CR 122.1d stun) — z repro i
    cytatem źródła. Oddzielne zielone commity.
+   **Wykonane 2026-10-21:** Żywy Tester — 4 partie (ravnica-rg×wiedzmin-bg,
+   innistrad-wu×ravnica-rg, worek-legend×warhammer-ubr, warhammer-ubr×
+   tarkir-wur; talie z kartami batcha 69, 4 spoza próbki benchmarku):
+   0 zgłoszeń detektorów, 0 duplikatów linii logu, logi spójne; botowy riot
+   (Gruul Beastmaster) w dobrej kolejności (wybór PRZED wejściem, pośpiech na
+   stole, modal widoczny dla gracza). Polowanie CR 702.15 Lifelink —
+   dosłowne teksty 702.15a–f pobrane; mechanika czysta poza znaleziskiem
+   z etapu 2 (duplikat zdarzenia); deathtouch (702.2b/c/f) sprawdzony
+   wstępnie — pokryty wyczerpująco w silniku (obszar przeczesany wcześniej).
 4. [ ] **Domknięcie:** `npm run test:all` cicho do ignorowanego logu,
    `npm run build`, `node tools/cr-numery.mjs --sprawdz`, strażnik budżetu
    lektury, `git diff --check`, zgodność z `origin/main`; uaktualnić

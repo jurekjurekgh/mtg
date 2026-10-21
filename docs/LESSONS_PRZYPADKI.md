@@ -3690,3 +3690,27 @@ control”) był rzucany w KAŻDYM kroku — w Głównej 1 bota i po deklaracji
 blokujących przeciwnika, gdzie wchodzące ciało nie jest już blokerem (CR 509.1a);
 ETB było płaskie 3 (L50/L131 + L48).
 
+
+## L187 (2026-10-21) — narracja: pętla jakości, polowanie CR 702.15 Lifelink
+
+- **Objaw (sonda headless, nie Żywy Tester):** atakujący 5/5 z lifelink,
+  tarcza „prevent the next 3" na obrońcy — wynik `resolve_combat` niósł
+  `damage_dealt {target: p2, amount: 2}` DWUKROTNIE; `state.events` raz.
+  Życia i triggery poprawne — czysto strumieniowo-logowa klasa (dlatego
+  detektory stołu milczą; wymaga partial prevention na graczu, w partiach
+  g1–g4 się nie zdarzyło).
+- **Ścieżka do znalezienia:** polowanie CR 702.15 (Lifelink — świeża ścieżka
+  po convoke/riot/inicjatywie/clash/stun). Lifelink wyszedł czysty
+  (702.15b kwota po prewencji, 702.15f redundancja — `includes` boolean,
+  702.15e osobne zdarzenia `changeLife` per źródło); przy czytaniu pipeline'u
+  prewencji w `combat.js` wyszedł rozjazd strumienia. Lekcja: czytaj CAŁĄ
+  funkcję transportu zdarzeń, nie tylko gałąź badanej mechaniki.
+- **Przyczyna:** komentarz „Zdarzenia tarcz dołączamy do strumienia komendy"
+  sugerował przeniesienie SAMYCH tarcz, ale `before` stał na starcie funkcii
+  (przed pushem statycznej prewencji i `damage_dealt`), więc `slice(before)`
+  łapał też `damage_dealt`, wypychany zaraz potem przez łańcuch if/else.
+  Fix: `slice(before, -1)` (zdarzenia tarcz bez ostatniego elementu).
+- **Weryfikacja:** test RED→GREEN (2/2), rekreacja mutacyjna odwrócona
+  (`slice(before)` z powrotem → 2/2 RED), pełne `npm test` 8665/8665,
+  build 75 modułów; tabela CR +`702.15b` (SHA niezmienny: mirror
+  nwgarne/mtg-data, wydanie 2026-09-25). Commit sesji PR #170.

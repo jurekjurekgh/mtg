@@ -2211,3 +2211,21 @@ kreaturze tylko tam, gdzie daje NOWĄ akcję (CR 502.3).
 **Strażnik:** `test/card-sources-guard.test.js` (M122), `tools/table-tester/detectors.mjs` (`SNAKE_CASE_ONE`).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L186)
+
+## L187 (2026-10-21) — Spread `slice(checkpoint)` w ŚRODKU funkcji nie może obejmować zdarzeń wypychanych jeszcze raz
+
+**Przypadek:** przy częściowo zapobiegniętych obrażeniach bojowych na gracza
+`dealCombatDamageToPlayer` robiła `events.push(...state.events.slice(before))`
+z checkpointem z STARTU funkcji — ciosem tarcz i `damage_dealt` — po czym
+łańcuch if/else wypychał `damage_dealt` drugi raz: podwójna linia logu stołu
+(stan gry i triggery — `state.events` — poprawne). Ścieżka blokera i renown
+mają checkpoint TUŻ przed helperem i były czyste.
+**Reguła:** kontrakt L130 ma drugą stronę: NIE dublować. Checkpoint do
+spreadu w środku funkcji stawiaj bezpośrednio przed helperem, którego
+zdarzenia przenosisz; zdarzenie wypychane jawnie po spreadzie (`damage_dealt`)
+nie może wejść w zakres `slice` — `slice(before, -1)` albo jawny push
+`damage_prevented` jak w `assignDamageToAttackers`. → Klasa: [L130].
+**Strażnik:** `test/audyt-pr170-duplikat-damage-dealt-2026-10-21.test.js`
+(rekreacja: `slice(before, -1)` → `slice(before)` czerwieni oba testy).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L187)
