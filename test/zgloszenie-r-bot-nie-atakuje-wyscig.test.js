@@ -88,9 +88,10 @@ test('R: ten sam wynik przy dłuższej bibliotece bota — lethal nie zależy od
   assert.ok(cmd.attackerIds.length >= 4, `za mało atakujących: ${cmd.attackerIds.length}`);
 });
 
-// Pin wzorcowy: zachłanny przydział `blockersAbsorbedDamageOf` ma być dokładny.
-// Porównanie z brute force (każdy bloker: nie blokuje albo jeden z atakujących)
-// na ustalonym ziarnie losowym — bez `Math.random`, deterministycznie (ADR 0005).
+// Pin wzorcowy A-4: przydział `blockersAbsorbedDamageOf` na małych planszach
+// jest dokładny także dla trample (nie wystarcza zachłanny). Porównanie z
+// brute force (bloker nie blokuje albo blokuje jednego atakującego) na stałym
+// ziarnie — bez `Math.random`, deterministycznie (ADR 0005).
 test('R: pochłanianie blokerów = optymalny przydział (brute force, ziarno stałe)', () => {
   let seed = 7;
   const rnd = (n) => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed % n; };

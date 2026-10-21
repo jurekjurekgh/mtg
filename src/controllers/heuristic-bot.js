@@ -331,41 +331,96 @@ export function blockAbsorbedDamageOf(attacker, blockers) {
  * mocy 13), więc lethal nie wchodził i bot nie atakował, mimo że trzech blokerów
  * zatrzymuje najwyżej 3+2+2 = 7 z 13.
  *
- * Przydział zachłanny: blokerzy od najtwardszego, każdy do atakującego z
- * największym przyrostem zatrzymanych obrażeń. Bez trample przyrost to cała moc,
- * pierwszy bloker na atakującego; z trample (CR 702.19b) — tylko jego
- * obrażenia śmiertelne (`blockAbsorbedDamageOf`), sumowane i ucinane mocą.
- * Dla ataków bez trample wynik jest dokładny (top-N mocy).
+ * Bez trample wynik jest dokładny i liniowo-logarytmiczny (top-N mocy).
+ * Z trample przydział blokerów jest problemem upakowania: zachłanny może
+ * ZANIŻYĆ absorpcję i ogłosić fałszywy lethal. Dla małych plansz używamy
+ * pamięciowanego przeszukiwania przydziałów (każdy bloker najwyżej raz).
+ * Przy przekroczeniu budżetu bota zwracamy BEZPIECZNĄ górną granicę absorpcji,
+ * nie zachłanny dolny wynik: bot może wtedy przeoczyć lethal, lecz nie ogłosi
+ * zwycięstwa, któremu obrońca jest w stanie zapobiec.
  */
 export function blockersAbsorbedDamageOf(attackers, blockers) {
-  const atk = (attackers ?? []).filter(Boolean);
+  const atk = (attackers ?? []).filter(Boolean).map((object) => ({
+    power: combatPower(object),
+    trample: (object.keywords ?? []).includes('trample'),
+    deathtouch: (object.keywords ?? []).includes('deathtouch'),
+  })).filter((a) => a.power > 0);
   const list = (blockers ?? []).filter(Boolean);
   if (atk.length === 0 || list.length === 0) return 0;
-  const state = new Map(atk.map((a) => [a.id, { lethal: 0, blocked: false }]));
-  const ordered = [...list].sort((x, y) => (y.toughness ?? 0) - (x.toughness ?? 0));
-  let absorbed = 0;
-  for (const blocker of ordered) {
-    let best = null;
-    let bestGain = 0;
-    for (const attacker of atk) {
-      const st = state.get(attacker.id);
-      const power = combatPower(attacker);
-      let gain = 0;
-      if ((attacker.keywords ?? []).includes('trample')) {
-        const lethalHere = blockAbsorbedDamageOf(attacker, [blocker]);
-        gain = Math.min(power, st.lethal + lethalHere) - Math.min(power, st.lethal);
-      } else if (!st.blocked) {
-        gain = power;
-      }
-      if (gain > bestGain) { bestGain = gain; best = attacker; }
-    }
-    if (!best) continue;
-    const st = state.get(best.id);
-    st.blocked = true;
-    st.lethal += blockAbsorbedDamageOf(best, [blocker]);
-    absorbed += bestGain;
+
+  const normalPowers = atk.filter((a) => !a.trample).map((a) => a.power).sort((a, b) => b - a);
+  const topNormal = [0];
+  for (const power of normalPowers) topNormal.push(topNormal.at(-1) + power);
+  if (normalPowers.length === atk.length) return topNormal[Math.min(list.length, normalPowers.length)];
+
+  const trample = atk.filter((a) => a.trample);
+  const tramplePower = trample.reduce((sum, a) => sum + a.power, 0);
+  const needs = (a, b) => {
+    const left = Math.max(0, (b.toughness ?? 0) - (b.damage ?? 0));
+    return a.deathtouch ? Math.min(1, left) : left;
+  };
+  // Relaksacja: każdemu blokerowi przypisujemy NAJWIĘKSZY możliwy wkład w
+  // dowolnego tramplera, bez limitów indywidualnych. Dla k blokerów na
+  // zwykłych atakujących bierzemy k najsłabszych dla trample; suma jest więc
+  // >= każdego wykonalnego przydziału (także przy deathtouch i ranach).
+  const contribution = list.map((b) => Math.max(...trample.map((a) => needs(a, b))))
+    .sort((a, b) => b - a);
+  const topContribution = [0];
+  for (const n of contribution) topContribution.push(topContribution.at(-1) + n);
+  let upperBound = 0;
+  for (let k = 0; k <= Math.min(list.length, normalPowers.length); k += 1) {
+    upperBound = Math.max(upperBound,
+      topNormal[k] + Math.min(tramplePower, topContribution[list.length - k]));
   }
-  return absorbed;
+
+  // Jeden poprawny przydział daje DOLNĄ granicę. Gdy osiągnie relaksację,
+  // dokładność jest dowiedziona bez DFS — ważne dla dużych plansz.
+  const assigned = atk.map(() => 0);
+  let greedy = 0;
+  for (const b of [...list].sort((a, c) => (c.toughness ?? 0) - (a.toughness ?? 0))) {
+    let bestIndex = -1;
+    let bestGain = 0;
+    for (let i = 0; i < atk.length; i += 1) {
+      const a = atk[i];
+      const gain = a.trample ? Math.min(a.power - assigned[i], needs(a, b))
+        : (assigned[i] === 0 ? a.power : 0);
+      if (gain > bestGain) { bestGain = gain; bestIndex = i; }
+    }
+    if (bestIndex >= 0) { assigned[bestIndex] += bestGain; greedy += bestGain; }
+  }
+  if (greedy === upperBound) return greedy;
+
+  // Ograniczony koszt wyceny: wiele razy oceniana jest każda kombinacja
+  // atakujących. Przy przekroczeniu progu nie zwracać `greedy` (zaniża!),
+  // lecz `upperBound` (zawyża, więc nie generuje fałszywego lethal).
+  const STATE_LIMIT = 12000;
+  if (atk.length > 10 || list.length > 10) return upperBound;
+  const used = atk.map(() => 0);
+  const memo = new Map();
+  const overBudget = Symbol('block-allocation-budget');
+  function solve(blockerIndex) {
+    if (blockerIndex === list.length) return 0;
+    const key = `${blockerIndex}:${used.join(',')}`;
+    if (memo.has(key)) return memo.get(key);
+    if (memo.size >= STATE_LIMIT) throw overBudget;
+    const b = list[blockerIndex];
+    let best = solve(blockerIndex + 1); // może nie blokować
+    for (let i = 0; i < atk.length; i += 1) {
+      const a = atk[i];
+      const gain = a.trample ? Math.min(a.power - used[i], needs(a, b))
+        : (used[i] === 0 ? a.power : 0);
+      if (gain <= 0) continue;
+      used[i] += gain;
+      best = Math.max(best, gain + solve(blockerIndex + 1));
+      used[i] -= gain;
+    }
+    memo.set(key, best);
+    return best;
+  }
+  try { return solve(0); } catch (error) {
+    if (error !== overBudget) throw error;
+    return upperBound;
+  }
 }
 
 export function blockExchangeOf(attacker, blockers) {
