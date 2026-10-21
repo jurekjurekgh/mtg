@@ -61,11 +61,13 @@ test('T/A ⭐ RED: playerView stwora detained MUSI mieć cantBlockNow: true (bad
   detainUntilYourNextTurn(s, victim.id, 'p1');
   // zamroź obiekt — playerView czyta ze state.objects
   const v = playerView(s, 'p2').zones.battlefield.find((o) => o.id === 'v1');
-  console.log('  view entries:', JSON.stringify({ cantBlockNow: v.cantBlockNow, cantBlock: v.cantBlock, detained: v.detained, cantAttackExternal: v.cantAttackExternal, cantActivateAbilities: v.cantActivateAbilities ?? null }));
+  console.log('  view entries:', JSON.stringify({ cantBlock: v.cantBlock, cantBlock: v.cantBlock, detained: v.detained, cantAttackExternal: v.cantAttackExternal, cantActivateAbilities: v.cantActivateAbilities ?? null }));
   assert.equal(v.detained, true, 'detained=true przechodzi z engine do view');
-  assert.equal(v.cantBlockNow, true,
-    'PO FIXIE: stwór detained MUSI mieć cantBlockNow=true (CR 701.35: nie może blokować). '
-    + 'Obecnie: false (silnik blokadę zna, ale view nie ma flagi).');
+  assert.equal(v.cantBlock, true,
+    'PO FIXIE: stwór detained MUSI mieć playerView.entry.cantBlock=true '
+    + '(CR 701.35: nie może blokować). Render czyta tego potem przez '
+    + 'cantBlockNow Boolean(cantBlock || cantBlockPrinted || detained) '
+    + '— źródło badge "nie może blokować".');
 });
 
 test('T/B ⭐ RED: playerView stwora detained MUSI mieć pole mówiące UI o zablokowanych zdolnościach aktywowanych', () => {

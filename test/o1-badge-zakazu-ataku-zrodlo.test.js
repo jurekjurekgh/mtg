@@ -127,7 +127,13 @@ test('O1/4: detain na natywnym Obrońcy i na zwykłym stworze — badge w obu', 
   for (const id of ['bard', 'satyr']) {
     const { entry, badges } = tileOf(state, id);
     assert.equal(entry.cantAttackExternal, true, `${id}: detain to efekt z zewnątrz`);
-    assert.deepEqual(badges, ['nie może atakować'], id);
+    // PR #171/T (2026-10-21d): detain blokuje ATAK i BLOK (CR 701.35: do
+    // następnej tury cel nie atakuje, nie blokuje, nie aktywuje zdolności).
+    // Badge musi odzwierciedlać OBA ograniczenia w jednym zdaniu —
+    // combatRestrictionBadges łączy atak+blok w „nie może atakować ani
+    // blokować" gdy oba są aktywne. PRZED fixem T było tu samo "nie może
+    // atakować", bo render nie czytał `detained` do cantBlockNow.
+    assert.deepEqual(badges, ['nie może atakować ani blokować'], id);
   }
 });
 

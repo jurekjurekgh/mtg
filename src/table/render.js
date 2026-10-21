@@ -4679,13 +4679,29 @@ export function cardInfo(session, object, combat = null) {
     // W-8 (Krotiq Nestguard): atak „as though it didn't have defender” do
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
-    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
+    // PR #171/T (2026-10-21d, Azorius Justiciar): detain (CR 701.35) NIE
+    // ustawia wydrukowanych `cantBlock` ani `cantBlockPrinted`, ale stan
+    // jest globalnie widoczny (`object.detained === true`). czytamy go
+    // tutaj, żeby badge „nie może blokować" pojawiał się na kaflu obok
+    // "nie może atakować" (oba zakazy = jedno zdanie "nie może atakować
+    // ani blokować", jak w Bonds of Faith).
+    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted || object.detained === true),
+    // PR #171/T (jw.): zablokowane zdolności aktywowane — publiczny skutek
+    // detainu. Render dodaje badge „nie może używać zdolności aktywowanych".
+    // JEDNO źródło: playerView ustawia `cantActivateAbilities` zawsze gdy
+    // `object.detained === true` — niezależnie od innych efektów (aury
+    // „can't activate", leniwa kość itp. — w katalogu dziś brak).
+    cantActivateAbilitiesNow: faceDown ? false : Boolean(object.cantActivateAbilities),
     // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
     // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
     // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.
     // O1 (decyzja właściciela 2026-10-01): badge tylko dla zakazu nałożonego
     // przez INNY permanent/czar (`cantAttackExternal`); natywny Obrońca ma już
     // słowo kluczowe na kaflu, więc `cantAttackStatic` sam badge'a nie daje.
+    // `cantAttackExternal` już obejmuje detained (ustawiane w game-state.js
+    // 7048: `if (object.detained) mark(true)` w staticAttackPreventionOf),
+    // więc czytamy bez dodatkowego OR — anty-regressa O1/4 (stwór z samym
+    // detainer badge "nie może atakować" — z pustym effector `cantBlockNow`).
     cantAttackNow: Boolean(object.cantAttackExternal),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
@@ -5125,6 +5141,13 @@ export function buildStateOverlay(visual, info) {
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
+    // PR #171/T (2026-10-21d, Azorius Justiciar): badge „nie może używać
+    // zdolności aktywowanych" na stworach detained (CR 701.35). Spójny
+    // z badge'ami „nie może atakować/ani blokować" — wszystkie trzy
+    // efekty są częścią detainu, ale render rozbija je na osobne
+    // etykiety (1:1 ze zjawiskiem, L100), a combatRestrictionBadges
+    // łączy atak+blok w jedno zdanie gdy oba zachodzą.
+    if (info.cantActivateAbilitiesNow) flags.push(['kw', 'nie może używać zdolności aktywowanych']);
     // PMSSB-48/C (2026-10-03i): rzut za Warp — stwór zostanie wygnany na
     // najbliższy krok końcowy (CR — mechanika własna karty). Badge musi być
     // jawny, żeby gracz wiedział, że permanent jest „tymczasowy" (zgłoszenie

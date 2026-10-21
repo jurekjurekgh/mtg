@@ -208,6 +208,14 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // konstrukcyjnie test/pmssb48-warp-indication.test.js (W2+W3) — ta
     // lista pilnuje tylko literówki w nazwie pola (L113).
     'enteredViaWarp',
+    // PR #171/T (2026-10-21d, Azorius Justiciar): detain (CR 701.35) — widok
+    // ustawia playerView.entry.cantActivateAbilities=true na stworach
+    // detained (silnik realnie blokuje zdolności aktywowane, abilities.js:1444).
+    // Badge „nie może używać zdolności aktywowanych" wymaga tego pola. Pole
+    // jest warunkowe (tylko stwory z aktywnym detainerem), więc nie wchodzi
+    // w próbkę widoku (gorehorn/servant/kappa/skyscythe — żaden nie ma
+    // znacznika detainowanego). Lista konstrukcyjna pilnuje literówki (L113).
+    'cantActivateAbilities',
   ]);
 
   const poza = [...czytane]

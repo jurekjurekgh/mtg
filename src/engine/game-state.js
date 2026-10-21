@@ -7023,7 +7023,25 @@ export function playerView(state, playerId) {
         // flage na obiekcie — kafel milczal, choc stwor realnie nie mogl
         // blokowac (klasa L1/ADR 0017: skutek widoczny w grze musi byc
         // widoczny na stole).
-        if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
+        // PR #171/T (2026-10-21d, zgłoszenie właściciela Azorius Justiciar):
+        // detain (CR 701.35) blokuje blok, ale `creatureCantBlock` tego nie
+        // czyta — walka to respektuje (combat.js:316 `if (object.detained)
+        // return false` w `legalBlockerOptions`). Widok musi propagować ten
+        // sam fakt (L1/ADR 0017). Dociągamy jawnie `detained` do
+        // `entry.cantBlock` — JEDNO źródło dla badge'a "nie może blokować".
+        const cantBlockNow = creatureCantBlock(object, state)
+          || attachmentRestrictions(state, object).cantBlock
+          || object.detained === true;
+        if (cantBlockNow) entry.cantBlock = true;
+        // PR #171/T (jw.): badge "nie może używać zdolności aktywowanych".
+        // Silnik rzuca "Zatrzymany (detain) permanent nie aktywuje zdolności"
+        // (abilities.js:1444), ale render nie miał skąd odczytać tego faktu.
+        // Nowe pole publiczne w playerView — ustawiane przy detained, bo:
+        //   jest to informacja publiczna (CR/liczący się skutek),
+        //   jest to jedyne źródło blokady zdolności, które render musi czytać.
+        // Nazwa `cantActivateAbilities` (spójna z `cantAttackExternal`,
+        // `cantBeBlocked` itp.).
+        if (object.detained === true) entry.cantActivateAbilities = true;
         // M243/F (zgłoszenie właściciela, Lurking Green Dragon): statyczna
         // NIEMOŻNOŚĆ ataku (defender/detain/„unless defender has flying/
         // poisoned") to informacja publiczna (CR/liczący się skutek) — bot
