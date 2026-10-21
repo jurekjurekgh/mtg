@@ -1095,8 +1095,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
   //   nieopłacalny” nadal zostaje nad passem).
   suspendWaitPenalty: 1,
-  // PMSSB-69 (inicjatywa, CR 725). Składnik ETB = 6 (dawna stała) + dopłata, gdy posiada wróg,
-  // − kara za atakujące stwory wroga (gdy zmienia się posiadacz). Gdy już posiadam — 0 (silnik nie robi venture).
+  // PMSSB-69 + audyt #168/A-3 (CR 726): składnik ETB = 6 za venture także
+  // u obecnego posiadacza, + dopłata za kradzież, − kara ekspozycji dla nowego posiadacza.
   // initiativeStealBonus 6 = jedna venture ≈ jedna dobrana karta (drawCardValue): objęcie zabiera wrogowi postęp.
   initiativeStealBonus: 6,
   // initiativeExposurePenalty 2 za każdy stwór wroga bez defendera z mocą > 0: 1/3 venture na atakującego

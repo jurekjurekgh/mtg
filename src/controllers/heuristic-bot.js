@@ -4645,16 +4645,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
   // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
   // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
-  // PMSSB-69 (inicjatywa, CR 725; L41 — jedna miara dla ETB i czaru). Silnik (effects.js, take_initiative):
-  // objęcie inicjatywy, którą gracz JUŻ ma, nie uruchamia venture — zysk 0 (F1). Gdy posiada wróg, objęcie
-  // zabiera mu postęp i daje mój venture — dopłata P.initiativeStealBonus (F2). Gdy zmienia się posiadacz,
-  // każdy atakujący stwór wroga (bez defendera, moc > 0) zagraża odbiorem inicjatywy w jego turze — kara
-  // P.initiativeExposurePenalty za stwór, z limitem P.initiativeExposureCap (F3). Najsłabszy realny wariant
-  // (nikt nie ma inicjatywy, wróg bez stworów) = dawne 6 (anty-over-fix M429 c).
+  // PMSSB-69 + audyt PR #168/A-3 (CR 726.2 i CR 726.5; L41): każde objęcie,
+  // także przez obecnego posiadacza, uruchamia venture (bazowe 6). Kradzież
+  // wrogowi daje dodatkową korzyść P.initiativeStealBonus. Kara ekspozycji
+  // dotyczy tylko NOWEGO posiadacza — ponowne objęcie nie zwiększa ryzyka,
+  // które już ponosił. Bez wroga i bez inicjatywy wartość pozostaje 6.
   const INITIATIVE_TAKE_BASE = 6;
   const initiativeTakeValue = (view, effect) => {
     const holder = view.initiativePlayerId ?? null;
-    if (holder === view.playerId) return 0;
+    if (holder === view.playerId) return INITIATIVE_TAKE_BASE;
     const steal = holder != null ? P.initiativeStealBonus : 0;
     const attackers = (view.zones?.battlefield ?? []).filter((o) => o.controllerId !== view.playerId
       && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))

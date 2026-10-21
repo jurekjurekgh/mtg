@@ -4313,22 +4313,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
-    // Inicjatywa (CR 725, Underdark Explorer): gracz obejmuje inicjatywę.
-    // „Take the initiative" zawsze zagłębia w Podziemia (wejście do pokoju 1
-    // albo awans do następnego pokoju — CR 725.4); nic się nie dzieje tylko
-    // wtedy, gdy gracz JUŻ ją posiada (wtedy to nie jest objęcie).
+    // Audyt PR #168/A-3 (CR 726.2 i CR 726.5): także OBECNY posiadacz może
+    // ponownie „take the initiative" i za każdym razem venture'uje. Nie
+    // powstaje drugie oznaczenie; zmienia się tylko postęp w lochu.
     const playerId = effect.playerId ?? sourceObject.controllerId;
     const previous = state.initiativePlayerId ?? null;
     state.initiativePlayerId = playerId;
-    const changedHands = previous !== playerId;
-    // M163/B (uwaga właściciela): „po raz pierwszy" w komunikacie UI oznacza
-    // WEJŚCIE do Podziemi (gracz nie jest jeszcze w lochu), a NIE zmianę
-    // posiadacza — po utracie i odzyskaniu inicjatywy gracz nadal jest
-    // w lochu (venture awansuje pokój), więc komunikat nie może mówić
-    // „po raz pierwszy i zagłębia się w Podziemia".
-    const firstTime = changedHands && (state.undercityProgress[playerId] ?? 0) === 0;
+    // M163/B: „po raz pierwszy" dotyczy WEJŚCIA do lochu, a nie zmiany
+    // posiadacza (po odzyskaniu istniejący postęp może dalej trwać).
+    const firstTime = (state.undercityProgress[playerId] ?? 0) === 0;
     state.events.push(event('initiative_taken', { playerId, previousPlayerId: previous, firstTime }));
-    if (changedHands) ventureIntoUndercity(state, playerId);
+    ventureIntoUndercity(state, playerId);
     return;
   }
   if (effect.type === 'venture_into_undercity') {

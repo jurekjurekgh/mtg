@@ -20,16 +20,16 @@ test('PMSSB-69 anty-over-fix: nikt nie ma inicjatywy, wróg bez stworów = dawne
   near(probe({ card: EXPLORER, holder: null, foes: 0 }), BASE_0, 'nikt-wrog-0');
 });
 
-test('PMSSB-69/F1: już mam inicjatywę → objęcie nic nie daje (składnik ETB = 0, nie 6)', () => {
-  near(probe({ card: EXPLORER, holder: 'p2', foes: 0 }), BASE_0 - 6 * W, 'ja-wrog-0');
-  near(probe({ card: EXPLORER, holder: 'p2', foes: 2 }), BASE_2 - 6 * W, 'ja-wrog-2');
+test('PMSSB-69/F1, A-3: obecny posiadacz też venture’uje, bez nowej kary ekspozycji', () => {
+  near(probe({ card: EXPLORER, holder: 'p2', foes: 0 }), BASE_0, 'ja-wrog-0 = neutral');
+  near(probe({ card: EXPLORER, holder: 'p2', foes: 2 }), BASE_2, 'ja-wrog-2 = neutral mimo wroga');
 });
 
-test('PMSSB-69/F1 na wszystkich trzech kartach: delta „ja posiadam” = −6', () => {
+test('PMSSB-69/F1 na trzech kartach: delta „ja posiadam” = 0, nie −6', () => {
   for (const card of CARDS) {
     const nikt = probe({ card: card.id, holder: null, foes: 0 });
     const ja = probe({ card: card.id, holder: 'p2', foes: 0 });
-    near(ja - nikt, -6 * W, `${card.id} ja − nikt`);
+    near(ja - nikt, 0, `${card.id} ja − nikt`);
   }
 });
 
