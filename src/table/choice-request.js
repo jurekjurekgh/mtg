@@ -123,7 +123,10 @@ export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
   // O2 (uwaga właściciela 2026-10-18): żadnych ikonek w modalach. Podgląd to
   // KLIKALNA NAZWA karty — ten sam wzorzec co `picker-name` w kreatorach
   // (podkreślona nazwa, klik = pełny ekran, bez zaznaczania wiersza).
-  const peek = choiceNode(parent, 'span', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  // Natywny button jest fokusowalny i działa przez Enter/Space; sam span
+  // reagował wyłącznie na mysz. CSS usuwa wygląd przycisku, nie semantykę.
+  const peek = choiceNode(parent, 'button', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  peek.type = 'button';
   if (peek.dataset) {
     peek.dataset.previewCardId = String(cardId ?? '');
     peek.dataset.cardId = String(cardId ?? '');
