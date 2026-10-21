@@ -2127,8 +2127,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       if (kw.includes('lifelink')) keywordWorth += 4;
     }
+    // PMSSB-77: presja życia na ciało WŁASNEGO tokenu-stwora (L41: ta sama miara co counterValue —
+    // siła ataku wroga / moje życie, ≤ 1). Token wrogi nie dostaje presji (znak roli).
+    const ownBody = (tokenControllerId ?? view.playerId) === view.playerId;
+    const tokenPressure = isCreatureTokenEffect(effect) && ownBody
+      ? P.tokenPressureWeight * Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view))) : 0;
     const bodyWorth = isCreatureTokenEffect(effect)
-      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth : 0;
+      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth + tokenPressure : 0;
     const manaWorth = tokenGrantedMana(effect) > 0
       ? P.tokenManaBankWeight * tokenGrantedMana(effect) : 0;
     let counterWorth = 0;

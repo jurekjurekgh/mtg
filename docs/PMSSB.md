@@ -45,6 +45,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
 | riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
 | licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
+| wycena tokenów-stworów własnych bez presji życia (Geist, Raise the Alarm): ciało tokenu nie znało zagrożenia | 1 | DONE (2026-10-20) | §PMSSB-77 niżej; `test/audyt-pmssb77-tokeny-presja.test.js` (4); pokrętło `tokenPressureWeight` (0 = dawne zachowanie) |
 | myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
@@ -3684,7 +3685,7 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 - Pomiar (`.arena/probe-controls.mjs`): bez enchantmentu aktywacja z cmentarza NIE jest oferowana (ani botowi, ani w `legalCommands`). Z enchantmentem wycena 24 na pustym stole, 18 z dwoma wrogimi stworami, 18 przy moim życiu 5 (z dwoma wrogami) — życie nie zmienia wyceny.
 - Audyt: (a) L41 — bramka czytana z `condition.controlsType` w jednym miejscu (`abilities.js`), oferta i walidacja wspólne; (b) koszt — 4 + W z cmentarza, bez wymiaru do zmiany; (c) anty-over-fix — brak defektu w bramce, więc brak zmiany.
 - Test: `test/audyt-pmssb75-controls-type.test.js` (3). Mutacja wyłączenia bramki łapie test 1.
-- Otwarte POZA ZAKRESEM tego PMSSB: wycena tworzenia tokenów (`create_token`) nie zna presji życia (18 przy życiu 5 = 18 przy życiu 20 z tymi samymi wrogami). To wspólna miara tokenów dla wielu kart — osobna pętla, bez wyjątku po nazwie karty.
+- Otwarte POZA ZAKRESEM tego PMSSB (DOMKNIĘTE w PMSSB-77): wycena tworzenia tokenów (`create_token`) nie znała presji życia. Spadek 24 → 18 przy wrogach w tym PMSSB to bramka latania, nie presja.
 - Nie wykonano: tie-audit, mirror (zmiana kodu nie była potrzebna).
 
 ## PMSSB-76 — warunkowa redukcja kosztu: Gnoll War Band (2026-10-20) — ZAMKNIĘTE BEZ ZMIANY KODU
@@ -3694,3 +3695,17 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 - Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny; wszystkie przechodzą na obecnym kodzie). Mutacja zerująca redukcję łapie 2 testy.
 - Otwarte: brak wrażliwości wyceny na pozostałą manę poza konkurencją czarów (nie ma czego rozstrzygać w tej rodzinie).
 
+## PMSSB-77 — presja życia w wycenie tokenów-stworów własnych (2026-10-20) — W TOKU (golden czeka na decyzję)
+
+Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md).
+
+- Pomiar PRZED (`.arena/probe-tokeny-presja.mjs`, `.arena/pmssb77-pre.txt`): Geist 24 na pustym stole; z dwoma wrogimi Makindi 18 przy życiu 20 i 18 przy życiu 5. Spadek 24 → 18 to bramka latania (`enemyHasUntappedFlyingOrReachBlocker`), NIE presja. Raise the Alarm 69,98 we wszystkich scenach — brak reakcji na presję.
+- Audyt: (a) L41 — wspólna miara `enemyAttackPower / myLife` (≤ 1), ta sama co `counterValue`; (b) brak wymiaru do zmiany; (c) anty-over-fix — presja tylko dla WŁASNEGO tokenu-stwora, pusty stół bez zmian.
+- Wdrożenie: pokrętło `tokenPressureWeight` = 6 w `heuristic-params.js`; składnik w `tokenBodyValue` (`heuristic-bot.js`) dodany do ciała tokenu-stwora. Pokrętło 0 = dawne zachowanie bit w bit.
+- Wynik (`.arena/pmssb77-post.txt`): Geist przy dwóch wrogach 19,2 (życie 20) → 22,8 (życie 5); Raise the Alarm 71,18 → 74,78.
+- Testy: `test/audyt-pmssb77-tokeny-presja.test.js` (4; RED na HEAD: 1, 2, 4; pin pustego stołu 3). Mutacja składnika na 0 łapie 2 testy.
+- Piny starych testów zaktualizowane o zmierzone delty (z komentarzem `PMSSB-77`), nie na progi: `audyt-pmssb2-tokeny` (chump 77,98 → 79,78; okno po blokach 61,98 → 63,78; sokół 79,97 → 80,87; Dissenter 19 → 19,6; różnica unik 9 → 8,1; tapnięty sokół 88,97 → 89,87), `audyt-pmssb68-amass` (Dunland 86,0991 → 86,6391; Toll 60,0 → 60,6).
+- Golden (`--dump`, `.arena/pmssb77-golden-diff.txt`): 1437 decyzji, 0 zmienionych wyborów; 3 wyniki wybranych opcji i 17 wycen opcji (maks. Δ 1,5). Hash `9017a46b8bf6298d…` → `2bf25d5bea4ed189…`. Fixture NIE zregenerowany: zmiana hasha wymaga decyzji właściciela.
+- Tie-audit (`.arena/pmssb77-tie-{pre,post}.json`): `tie_top` 700 → 674; akcyjne 197 → 196; `attack` 97 → 81; `block` 435 → 427. Liczba decyzji w audycie zmieniła się (13672 → 13375), bo audyt gra pełne partie i zmienione wybory zmieniają przebieg.
+- Mirror 24 seedy (`.arena/pmssb77-mirror.json`): kandydat (domyślne, `tokenPressureWeight` 6) vs baseline (`tokenPressureWeight` 0): 144:144, win-rate 0.5. Brak dowodu poprawy siły.
+- Otwarte: presja w wycenie tokenów WROGICH nie jest zmieniana (znak roli). `enemyAttackPower` sumuje wszystkie wrogie stwory, nie tylko atakujące — ta sama przybliżona miara co licznik PMSSB-71 v3.

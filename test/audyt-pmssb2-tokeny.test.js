@@ -206,8 +206,9 @@ test('PMSSB-2/B/F1: reakcja na atak (78) vs po blokach (62) — okno chumpa', ()
   };
   const reactive = tokenScoreAt('declare_attackers', 'p2', 'p1', 'raise-the-alarm', mk())['cast_spell(tk->)'];
   const tooLate = tokenScoreAt('declare_blockers', 'p2', 'p1', 'raise-the-alarm', mk())['cast_spell(tk->)'];
-  assert.ok(Math.abs(reactive - 77.98) < 1e-9, `chump − grosz F7: ${reactive}`);
-  assert.ok(Math.abs(tooLate - 61.98) < 1e-9, `za późno − grosz F7: ${tooLate}`);
+  // PMSSB-77: presja (wróg 3/3, życie 20 → 0.15 × 6 = 0.9 na token × 2 tokeny) +1.80 w obu oknach; różnica okna 16 bez zmian.
+  assert.ok(Math.abs(reactive - 79.78) < 1e-9, `chump − grosz F7 + presja: ${reactive}`);
+  assert.ok(Math.abs(tooLate - 63.78) < 1e-9, `za późno − grosz F7 + presja: ${tooLate}`);
 });
 
 test('PMSSB-2/B/F1-ability: Canonized (instant-ACT) — reakcja +8 / po blokach −8 (L41 jak czar)', () => {
@@ -312,9 +313,12 @@ test('PMSSB-2/C/F4: Flurry — latanie +3/ciało tylko bez odpowiedzi w powietrz
   const airAnswer = scoreFlurry('open'); // 80 + 0 − 0.03
   const tappedAir = scoreFlurry('tapped');
   assert.ok(Math.abs(noAir - 88.97) < 1e-9, `3×1/1 lataczy bez odpowiedzi: ${noAir}`);
-  assert.ok(Math.abs(airAnswer - 79.97) < 1e-9, `sokół odpowiada — premii brak: ${airAnswer}`);
-  assert.equal(noAir - airAnswer, 9, `czysta premia ewazji: ${noAir} vs ${airAnswer}`);
-  assert.ok(Math.abs(tappedAir - 88.97) < 1e-9, `tapnięty sokół nie odpowiada (untapped!): ${tappedAir}`);
+  // PMSSB-77: wróg 3/2 (sokół) w stole → presja 0.15 × 6 = +0.90 za 1 token Flurry; bez wroga (noAir) bez zmian.
+  assert.ok(Math.abs(airAnswer - 80.87) < 1e-9, `sokół odpowiada — premii brak + presja: ${airAnswer}`);
+  // PMSSB-77: różnica = premia za unik (9) minus presja sokoła, która podnosi airAnswer (0.9) = 8.1.
+  assert.ok(Math.abs(noAir - airAnswer - (9 - 0.9)) < 1e-9, `czysta premia ewazji: ${noAir} vs ${airAnswer}`);
+  // PMSSB-77: tapnięty sokół nadal jest wrogim stworem → presja 0.9 (bez premii za unik).
+  assert.ok(Math.abs(tappedAir - 89.87) < 1e-9, `tapnięty sokół nie odpowiada (untapped!): ${tappedAir}`);
 });
 
 test('PMSSB-2/C/F4+F5-kompozycja: Relic Dragon 41 → 63 → 55 (koszt {8}, PMSSB-34/B)', () => {
@@ -397,7 +401,8 @@ test('PMSSB-2/C/F8: Dissenter blokuje 2/2 — −1 + Zombie 20 = +19 (ubezpiecze
   put(st, 'blk', 'doomed-dissenter', 'p1');
   st.combat = { attackers: ['atk'], attackingPlayerId: 'p2', blockers: new Map() };
   const v = decide(st).scores['block[atk<blk]'];
-  assert.equal(v, 19, `chump z Zombie na stole: ${v}`);
+  // PMSSB-77: presja wroga 2/2 przy życiu 20 = 0.1 × 6 = +0.6 na Zombie (ubezpieczenie 19 → 19.6).
+  assert.ok(Math.abs(v - 19.6) < 1e-9, `chump z Zombie na stole: ${v}`);
 });
 
 test('PMSSB-2/C/F8 guard: Dissenter PRZEŻYWA (blok 0/2) — bez ubezpieczenia (−1 stoi)', () => {

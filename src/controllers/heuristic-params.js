@@ -122,6 +122,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'riotHasteDamageWeight', 'riotHasteLethalBonus',
   // PMSSB-71 v3 (licznik +1/+1 na sobie, wszystkie ścieżki bez celu): presja i przewaga liczebna wroga.
   'counterPressureWeight', 'counterBoardWeight',
+  // PMSSB-77 (tokeny-stwory własne): presja życia na wycenę ciała tokenu.
+  'tokenPressureWeight',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -693,6 +695,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Neutralny stół (brak presji, brak przewagi wroga) = sama wartość ciała, jak w riot.
   counterPressureWeight: 6,
   counterBoardWeight: 2,
+  // PMSSB-77: własny token-stwór dostaje + waga × presja (siła ataku wroga / moje życie, ≤ 1) do ciała.
+  // Presja 0 = dawna wartość ciała (zerowa zmiana przy pustym zagrożeniu).
+  tokenPressureWeight: 6,
   creatureKwLifelinkWeight: 1,
   // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do
   // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a

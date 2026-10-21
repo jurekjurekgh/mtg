@@ -52,7 +52,8 @@ test('F1: obecność armii zmienia wycenę Tolla; licznik na 3/3 = miara add_cou
   // Pomiar PRZED: 59 / 59 / 59 (armia ignorowana). PO: brak 60.0, armia 3/3 74.0.
   const brak = scoreFor({ ...TOLL, army: null });
   const armia = scoreFor({ ...TOLL, army: { power: 3, toughness: 3 } });
-  assert.ok(Math.abs(brak - 60.0) < 1e-3, `brak=${brak}`);
+  // PMSSB-77: presja wroga 2/2 przy życiu 20 = +0.6 na token 1/1 (brak armii).
+  assert.ok(Math.abs(brak - 60.6) < 1e-3, `brak=${brak}`);
   assert.ok(Math.abs(armia - 74.0) < 1e-3, `armia=${armia}`);
   assert.notEqual(brak, armia);
 });
@@ -67,13 +68,15 @@ test('F3/F4 (L41): Dunland bez armii = token 2/2 (tokenBodyValue 20) zamiast fla
   // Pomiar PRZED: 73.4991 = 68.0991 (reszta karty) + 5.4 (flat 6 × 0.9).
   // PO: reszta bez zmian + 18 (20 × 0.9) = 86.0991.
   const wynik = scoreFor({ ...DUN, army: null });
-  assert.ok(Math.abs(wynik - 86.0991) < 1e-3, `wynik=${wynik}`);
+  // PMSSB-77: + presja 0.6 × 0.9 (cast_permanent) = 86.6391.
+  assert.ok(Math.abs(wynik - 86.6391) < 1e-3, `wynik=${wynik}`);
 });
 
 test('F3/F4 (L41): Toll bez armii = token 1/1 (10·3/3 = 10), prawie jak dawne 9 (anty-over-fix)', () => {
   // Pomiar PRZED: 59.0 = 50.0 + 9 (6+3·1). PO: 50.0 + 10 = 60.0.
   const wynik = scoreFor({ ...TOLL, army: null });
-  assert.ok(Math.abs(wynik - 60.0) < 1e-3, `wynik=${wynik}`);
+  // PMSSB-77: + presja 0.6 (wróg 2/2, życie 20).
+  assert.ok(Math.abs(wynik - 60.6) < 1e-3, `wynik=${wynik}`);
   assert.ok(wynik >= 59, 'najsłabszy realny wariant nie może spaść poniżej dawnej wartości');
 });
 
