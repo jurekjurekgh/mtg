@@ -634,6 +634,13 @@ function sacrificeCreatureCandidates(state, playerId, source, cost) {
   });
 }
 
+/** A-6: jeden predykat gospodarza dla oferty, walidacji i płatności (L41/L48). */
+function sacrificableEnchantedHost(state, playerId, aura) {
+  const host = aura?.attachedTo ? state.objects.get(aura.attachedTo) : null;
+  return host?.zone === 'battlefield' && host.kind === 'creature' && host.controllerId === playerId
+    ? host : null;
+}
+
 export function legalActivatedAbilities(state, playerId) {
   const out = [];
   // CR 502.4: w kroku odkręcania nikt nie dostaje priorytetu, więc ŻADNEJ
@@ -804,13 +811,9 @@ export function legalActivatedAbilities(state, playerId) {
         }
         continue;
       }
-      // Batch 69 (Bloodfire Infusion, CR 602.1a): koszt „Sacrifice enchanted
-      // creature\" — oferta tylko, gdy aura jest przypięta do stworu kontrolera.
-      // Wybór celu nie istnieje (gospodarz jest jedyny), więc oferta = walidacja.
-      if (ability.cost?.sacrificeEnchantedHost) {
-        const host = state.objects.get(object.attachedTo);
-        if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) continue;
-      }
+      // CR 602.1a: gospodarz to KOSZT (nie cel); oferta i obie walidacje
+      // używają tego samego predykatu — nie oferuj niewykonalnej aktywacji.
+      if (ability.cost?.sacrificeEnchantedHost && !sacrificableEnchantedHost(state, playerId, object)) continue;
       if (ability.cost?.tap && object.tapped) continue;
       // Choroba przywołania (CR 302.6): stwór bez haste nie aktywuje {T}
       // w turze wejścia — oferta i walidacja spójne.
@@ -1447,6 +1450,11 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
     throw new Error('Karta nie leży twarzą w dół');
   }
   const cost = ability.cost ?? {};
+  // Audyt PR #168/A-6: weryfikuj WSZYSTKIE części kosztu przed tapem i
+  // spendMana (CR 602.2/601.2h). Bezpośrednia komenda omija filtr oferty.
+  if (cost.sacrificeEnchantedHost && !sacrificableEnchantedHost(state, playerId, object)) {
+    throw new Error('Brak zaczepionego stworu do poświęcenia (koszt)');
+  }
   if (cost.exileSelfFromHand && (!ability.fromHand || object.zone !== 'hand')) {
     throw new Error('Wygnanie źródła z ręki wymaga zdolności działającej z ręki');
   }
@@ -1596,6 +1604,14 @@ export function performActivation(state, ctx) {
     throw new Error('Zdolność wymaga permanenta na polu bitwy');
   }
   const cost = ability.cost ?? {};
+  // Wznowienie po decyzji discard/opponent target czyta stan ŚWIEŻO. Także
+  // gdy aktywacja przeszła wcześniej przez activateAbility, gospodarz mógł
+  // odejść — odmowa musi nastąpić przed wydaniem jakiegokolwiek kosztu.
+  const enchantedHostToSacrifice = cost.sacrificeEnchantedHost
+    ? sacrificableEnchantedHost(state, playerId, object) : null;
+  if (cost.sacrificeEnchantedHost && !enchantedHostToSacrifice) {
+    throw new Error('Brak zaczepionego stworu do poświęcenia (koszt)');
+  }
   // Sprawdzenie PRZED tapem/maną — odmowa nie może zabrać żadnego kosztu.
   if (cost.sacrificeCreature && !sacrificeCreatureCandidates(state, playerId, object, cost).includes(ctx.sacrificeCreatureId)) {
     throw new Error('Nielegalny stwór do poświęcenia (koszt)');
@@ -1849,10 +1865,7 @@ export function performActivation(state, ctx) {
   // creature\" — gospodarz aury to koszt, nie cel. Moc i wytrzymałość zapisujemy
   // PRZED zmianą strefy (LKI), potem stwór idzie do grobu jak przy sacrificeCreature.
   if (cost.sacrificeEnchantedHost) {
-    const host = state.objects.get(object.attachedTo);
-    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) {
-      throw new Error('Brak zaczepionego stworu do poświęcenia (koszt)');
-    }
+    const host = enchantedHostToSacrifice; // zweryfikowany PRZED mana/tap
     sacrificedPower = effectivePower(host, state);
     sacrificedToughness = effectiveToughness(host, state);
     const toZone = deathZoneFor(state, host);
