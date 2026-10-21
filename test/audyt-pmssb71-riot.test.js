@@ -1,4 +1,5 @@
-// PMSSB-71 (2026-10-20) — riot Gruul Beastmaster: wycena trybów modalnych przy wejściu.
+// PMSSB-71 (2026-10-20) — riot Gruul Beastmaster: wycena wyboru PRZED wejściem
+// (audyt PR #168/A-2: nie jest to zdolność modalna triggerowana na stosie).
 // Plan: docs/plans/PLAN_2026-10-20c-batch69-kolekcja-412-425.md. Dane Oracle i rulingi:
 // docs/cards/scryfall-<slug>.json (pobrane 2026-10-20).
 // Mechaniki generyczne (ADR 0002) testowane na prawdziwych kartach i prawdziwym silniku:
@@ -58,12 +59,12 @@ function run(state, command) {
   return result;
 }
 
-/** Rozstrzyga stos i pytania triggerów; [choose] wybiera cel, [mode] tryb modalny. */
+/** Rozstrzyga stos i wybory; [choose] wybiera cel, [mode] wybór riot przed wejściem. */
 function settle(state, { choose = null, mode = null, max = 120 } = {}) {
   for (let i = 0; i < max; i += 1) {
     const list = commands(state);
-    if (state.pendingModalTrigger && mode != null) {
-      const pick = list.find((c) => c.type === 'resolve_modal_choice' && c.modeIndex === mode);
+    if (state.pendingRiotChoice && mode != null) {
+      const pick = list.find((c) => c.type === 'resolve_riot_choice' && c.modeIndex === mode);
       assert.ok(pick, 'wybór trybu dostępny');
       run(state, pick);
       continue;
@@ -99,7 +100,7 @@ function blank(state, id, controllerId, power, toughness) {
   state.objects.set(id, Object.freeze({ ...state.objects.get(id), summoningSickness: false }));
 }
 
-/** Rzut Beastmastera z ręki do chwili oczekującego triggera riot; zwraca widok i wycenę trybów. */
+/** Rzut Beastmastera z ręki do chwili oczekującego wyboru riot; zwraca widok i wycenę trybów. */
 function riotDecision({ foeLife = 20, mate = false, foeBlocker = null, params = undefined } = {}) {
   const state = game();
   if (foeLife !== 20) state.players.find((p) => p.id === 'p2').life = foeLife;
@@ -108,12 +109,12 @@ function riotDecision({ foeLife = 20, mate = false, foeBlocker = null, params = 
   put(state, 'gruul', 'gruul-beastmaster');
   addMana(state, 'p1', 4, { colors: ['G'] });
   run(state, castCmd(state, 'gruul'));
-  for (let i = 0; i < 40 && !state.pendingModalTrigger; i += 1) run(state, commands(state).find((c) => c.type === 'pass_priority'));
-  assert.ok(state.pendingModalTrigger, 'trigger riot oczekuje na wybór');
+  for (let i = 0; i < 40 && !state.pendingRiotChoice; i += 1) run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  assert.ok(state.pendingRiotChoice, 'wybór riot przed wejściem oczekuje na wybór');
   const bot = createHeuristicBot({ seed: 7, params });
   const chosen = bot.chooseCommand(playerView(state, 'p1'), {});
   const scores = Object.fromEntries((bot.trace().at(-1)?.options ?? [])
-    .filter((o) => o.cmd.startsWith('resolve_modal_choice'))
+    .filter((o) => o.cmd.startsWith('resolve_riot_choice'))
     .map((o) => [o.cmd, o.score]));
   return { chosen, scores };
 }
@@ -127,13 +128,13 @@ test('PMSSB-71 v2 L41: pośpiech = atak tej tury (main1, pusty stół, moje świ
   // Wartość kontekstowa: obrażenia = riotHasteDamageWeight(4) × moc(2) × udział(1) = 8; licznik = ciało 3 + presja 0.
   // Stała część trybów (10) jest wspólna i się skraca w różnicy.
   const { scores } = riotDecision({ mate: true });
-  assert.equal(scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'], 5, 'różnica = 8 − 3');
+  assert.equal(scores['resolve_riot_choice(1)'] - scores['resolve_riot_choice(0)'], 5, 'różnica = 8 − 3');
 });
 
 test('PMSSB-71 v2 pokrętło: riotHasteDamageWeight = 0 → pośpiech nie daje nic, wygrywa licznik', () => {
   const params = normalizeHeuristicParams({ riotHasteDamageWeight: 0 });
   const { chosen, scores } = riotDecision({ mate: false, params });
-  assert.equal(scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'], -3, 'różnica = 0 − 3');
+  assert.equal(scores['resolve_riot_choice(1)'] - scores['resolve_riot_choice(0)'], -3, 'różnica = 0 − 3');
   assert.equal(chosen.modeIndex, 0, 'bez wagi obrażeń wygrywa licznik');
 });
 
@@ -175,13 +176,13 @@ function riotCtx({ step = 'main1', myLife = 20, foeBlockers = 0, mate = 0, foeAt
   put(state, 'gruul', 'gruul-beastmaster');
   addMana(state, 'p1', 4, { colors: ['G'] });
   run(state, castCmd(state, 'gruul'));
-  for (let i = 0; i < 40 && !state.pendingModalTrigger; i += 1) run(state, commands(state).find((c) => c.type === 'pass_priority'));
-  assert.ok(state.pendingModalTrigger, 'trigger riot oczekuje');
+  for (let i = 0; i < 40 && !state.pendingRiotChoice; i += 1) run(state, commands(state).find((c) => c.type === 'pass_priority'));
+  assert.ok(state.pendingRiotChoice, 'wybór riot przed wejściem oczekuje');
   const bot = createHeuristicBot({ seed: 7 });
   const chosen = bot.chooseCommand(playerView(state, 'p1'), {});
   const scores = Object.fromEntries((bot.trace().at(-1)?.options ?? [])
-    .filter((o) => o.cmd.startsWith('resolve_modal_choice')).map((o) => [o.cmd, o.score]));
-  return { chosen, scores, diff: scores['resolve_modal_choice(1)'] - scores['resolve_modal_choice(0)'] };
+    .filter((o) => o.cmd.startsWith('resolve_riot_choice')).map((o) => [o.cmd, o.score]));
+  return { chosen, scores, diff: scores['resolve_riot_choice(1)'] - scores['resolve_riot_choice(0)'] };
 }
 
 test('PMSSB-71 v2 RED: po walce (main2) pośpiech nie atakuje → licznik, nawet przy pustym stole', () => {

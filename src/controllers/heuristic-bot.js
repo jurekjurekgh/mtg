@@ -6,6 +6,7 @@ import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { castsWithoutPayingMana } from '../engine/impulse-window.js';
+import { RIOT_MODES } from '../engine/riot.js';
 
 /**
  * O-3 (audyt PR #134): źródło many obiektu Z WIDOKU. Widok niesie
@@ -2587,6 +2588,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
+    // Riot (CR 702.136a) nie jest triggerem. Ta sama miara co przy wyborze
+    // trybu na stosie; zachowujemy premię rzutu PMSSB-71 bez fałszywego ETB.
+    const riotCount = (def.keywords ?? []).filter((keyword) => keyword === 'riot').length;
+    if (riotCount > 0) {
+      total += riotCount * P.modalEtbValueWeight * modalEnterBonusValue(view, def, RIOT_MODES, reservedMana);
+    }
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
       const cond = ability.trigger.condition ?? {};
@@ -9003,7 +9010,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_optional_spell_effect' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_riot_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_optional_spell_effect' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -9704,6 +9711,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return finish(10 + modalModeValue(view, mode, cmd.targetId, source));
     }
     switch (cmd.type) {
+      case 'resolve_riot_choice': {
+        // Audyt #168/A-2: statyczny wybór riot zapada przed wejściem (bez
+        // triggera). Projektujemy wchodzące ciało na planszę TYLKO do wyceny;
+        // ta sama miara trybu co PMSSB-71, bez zmiany osi czasu gry.
+        const pending = view.pendingRiotChoice;
+        const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
+        if (!def || !RIOT_MODES[cmd.modeIndex]) return finish(0);
+        const source = { ...def, id: pending.sourceId, cardId: pending.cardId,
+          controllerId: view.playerId, kind: 'creature', zone: 'battlefield', summoningSickness: true };
+        const projected = { ...view, zones: { ...view.zones,
+          battlefield: [...view.zones.battlefield, source] } };
+        return finish(10 + modalModeValue(projected, RIOT_MODES[cmd.modeIndex], null, source));
+      }
       case 'concede': return finish(NEVER);
       // M315/M321 + M334 (CR 701.58b, 701.40b, 702.37e): rodzina OBROTÓW
       // twarzą do góry — cloak i manifest to TA SAMA decyzja („zapłać koszt
@@ -16287,7 +16307,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd?.type === 'resolve_color_choice') {
       return { color: cmd.color ?? null };
     }
-    if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+    if ((cmd?.type === 'resolve_modal_choice' || cmd?.type === 'resolve_riot_choice') && cmd.modeIndex != null) {
       return { mode: cmd.modeIndex };
     }
     if (cmd?.type === 'resolve_optional_spell_effect') {
@@ -16541,6 +16561,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_modal_choice') return cmd.skip
       ? 'resolve_modal_choice(skip)'
       : `resolve_modal_choice(${cmd.modeIndex}${cmd.targetId != null ? '->' + cmd.targetId : ''})`;
+    if (cmd.type === 'resolve_riot_choice') return `resolve_riot_choice(${cmd.modeIndex})`;
     if (cmd.type === 'cast_flashback') return `cast_flashback(${cmd.objectId}->${(cmd.targets ?? []).join('+')})`;
     if (cmd.type === 'resolve_discard_choice') {
       return cmd.cardId == null

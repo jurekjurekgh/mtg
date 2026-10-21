@@ -42,6 +42,9 @@ export const PENDING_DECISION_FIELDS = Object.freeze([
   'pendingExplore', 'pendingFertileThicket', 'pendingFoodChoice',
   'pendingHandCreature', 'pendingHandTopChoice', 'pendingIndex',
   'pendingLandTypeChoice', 'pendingLibraryPlacement', 'pendingLookTopN', 'pendingSatyrLook', 'pendingRevealChoice', 'pendingMadnessCast', 'pendingModalTrigger',
+  // Audyt #168/A-2: wstrzymane rozstrzygnięcie CZARU na stosie, jeszcze
+  // przed wejściem z wybranym licznikiem/pośpiechem (CR 702.136a).
+  'pendingRiotChoice',
   'pendingMoonlitChoice', 'pendingMulliganBottom', 'pendingMulligans', 'pendingReplacementChoice', 'pendingUntapChoice',
   'pendingOptionalDraw', 'pendingOptionalPay', 'pendingCounterPay', 'pendingOptionalTrigger',
   // Fix A/Twiddle: generyczny may efektu czaru (blokuje jak inne pendingi).

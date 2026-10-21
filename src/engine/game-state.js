@@ -9,6 +9,7 @@ import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
 import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
+import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 
@@ -22,12 +23,12 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
   return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay), null, purpose);
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
-import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
+import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -186,6 +187,9 @@ export function createGameState({ seed, players }) {
     // Wpis: { playerId, sourceId, sourceCardId, ability, modes,
     // extra, restorePriorityTo }.
     pendingModalTrigger: null,
+    // Audyt #168/A-2: statyczny wybór riot podczas rozstrzygnięcia czaru,
+    // zanim ten wejdzie na pole bitwy (NIE trigger ETB ani nowe okno odpowiedzi).
+    pendingRiotChoice: null,
     pendingLookTopN: null,
     // Manifest Dread (DSK): blokująca decyzja — którą z 2 kart z wierzchu
     // zmanifestować (druga do grobu). resolve_manifest_dread.
@@ -1753,6 +1757,7 @@ function firstPendingDecision(state) {
   // `execute` siedzi przed resztą, więc oferta, priorytet i walidacja muszą
   // wskazywać ten sam wpis (klasa L48, zmierzona w Batch 47).
   if (state.pendingUntapChoice) return { playerId: state.pendingUntapChoice.playerId, kind: 'untapChoice' };
+  if (state.pendingRiotChoice) return { playerId: state.pendingRiotChoice.playerId, kind: 'riotChoice' };
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
   if (state.pendingScry) return { playerId: state.pendingScry.playerId, kind: 'scry' };
@@ -2247,6 +2252,48 @@ function isValidPendingSacrificeTarget(state, pending, targetId) {
   return isSourceAlternative || matchesCandidateType;
 }
 
+// Moonlit Meditation: jeden zestaw cech kopiowalnych dla wejścia zwykłego
+// i po wszystkich wyborach riot (CR 707.2, L41).
+function createMoonlitTokenCopy(state, ctrl, enchanted, riotChoices = null) {
+  return createBattlefieldToken(state, ctrl, {
+    cardId: 'token_clone', name: enchanted.cardName ?? 'Clone', riotChoices,
+    kind: enchanted.kind === 'creature' ? 'creature' : 'artifact',
+    power: enchanted.power, toughness: enchanted.toughness,
+    colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
+    subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
+    abilities: [...(enchanted.abilities ?? [])].filter((a) => {
+      const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
+      return !effs.some((e) => e?.type === 'transform');
+    }),
+    // CR 707.3 + 202.3b (M258): token będący kopią dziedziczy MV
+    // pierwowzoru (kopia tylnej twarzy → 0) — jak pozostałe
+    // ścieżki kopiowania.
+    manaCost: copyManaValueOf(enchanted),
+    // Audyt PR #158/F-1 (CR 707.2): drukowany zakaz blokowania
+    // pierwowzoru przechodzi na token-kopię (CR 509.1b).
+    ...(enchanted.cantBlockPrinted ? { cantBlock: true } : {}),
+  });
+}
+
+// Dragon Arch: zarówno zwykły wybór stwora, jak i domknięcie riot prowadzą
+// przez TĘ SAMĄ ścieżkę wejścia (L41). Nigdy nie emitujemy ETB bez riot.
+function enterChosenHandCreature(state, targetId, pending, riotChoices = null) {
+  const bfId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, targetId, 'battlefield', bfId);
+  state.objects.set(bfId, Object.freeze({ ...moved, summoningSickness: true }));
+  applyRiotOnEntry(state, bfId, riotChoices, targetId);
+  applyEnterCounters(state, bfId);
+  const entered = state.objects.get(bfId);
+  state.events.push(event('permanent_entered_battlefield', {
+    fromId: targetId, objectId: bfId, object: entered, cardId: entered.cardId,
+    controllerId: pending.playerId, putFromHand: true,
+  }));
+  state.events.push(event('hand_creature_choice_resolved', {
+    playerId: pending.playerId, putCreature: true, cardId: entered.cardId,
+    sourceCardId: pending.sourceCardId ?? null,
+  }));
+}
+
 export function execute(state, input) {
   let cmd;
   try { cmd = command(input.type, input.playerId, input); } catch { return reject('invalid_command'); }
@@ -2284,6 +2331,87 @@ export function execute(state, input) {
     const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
+  }
+  // Audyt PR #168/A-2 (CR 702.136a): wybór zastępuje wejście. Wykonujemy
+  // go w TEJ SAMEJ rozdzielanej akcji, bez nowego passu/okna odpowiedzi.
+  // Także ręcznie wysłana obca komenda musi zostać odrzucona przed mutacją.
+  if (state.pendingRiotChoice) {
+    if (cmd.type !== 'resolve_riot_choice') return reject('riot_choice_unresolved');
+    const pending = state.pendingRiotChoice;
+    if (cmd.playerId !== pending.playerId) return reject('riot_choice_not_your_decision');
+    if (!Number.isInteger(cmd.modeIndex) || cmd.modeIndex < 0 || cmd.modeIndex >= RIOT_MODES.length) {
+      return reject('illegal_riot_choice');
+    }
+    const sourceId = pending.stackId ?? pending.sourceId;
+    const object = state.objects.get(sourceId);
+    const sourceZone = pending.fromZone ?? (pending.entryKind === 'spell' ? 'stack'
+      : (pending.entryKind === 'hand_creature' ? 'hand' : 'graveyard'));
+    if (!object || object.zone !== sourceZone
+      || (sourceZone === 'stack' && state.zones.stack.at(-1) !== sourceId)) {
+      return reject('riot_source_missing');
+    }
+    const chosen = [...pending.choices, cmd.modeIndex];
+    if (chosen.length < pending.count) {
+      state.pendingRiotChoice = { ...pending, choices: chosen };
+      return accepted(state, cmd, { ok: true, events: [] });
+    }
+    if (pending.entryKind === 'moonlit_copy'
+      && (pending.tokenChoices?.length ?? 0) + 1 < pending.tokenCount) {
+      state.pendingRiotChoice = { ...pending, choices: [], tokenChoices: [...pending.tokenChoices, chosen] };
+      return accepted(state, cmd, { ok: true, events: [] });
+    }
+    if (pending.entryKind === 'pyxis_batch'
+      && (pending.selectedModes?.length ?? 0) + 1 < pending.riotIds.length) {
+      const selectedModes = [...pending.selectedModes, { sourceId, choices: chosen }];
+      const nextId = pending.riotIds[selectedModes.length];
+      const next = state.objects.get(nextId);
+      if (!next || next.zone !== 'exile' || riotCountOf(next) < 1) return reject('riot_source_missing');
+      const nextPlayerId = next.ownerId ?? next.controllerId;
+      state.pendingRiotChoice = { ...pending, selectedModes, choices: [],
+        sourceId: nextId, cardId: next.cardId, playerId: nextPlayerId, count: riotCountOf(next) };
+      state.turn.priorityPlayerId = nextPlayerId;
+      const required = event('riot_choice_required', {
+        playerId: nextPlayerId, sourceId: nextId, cardId: next.cardId, count: riotCountOf(next),
+      });
+      state.events.push(required);
+      return accepted(state, cmd, { ok: true, events: [required] });
+    }
+    const before = state.events.length;
+    state.pendingRiotChoice = null;
+    state.turn.priorityPlayerId = pending.restorePriorityTo ?? pending.playerId;
+    if (pending.entryKind === 'return_from_graveyard') {
+      returnPermanentFromGraveyardOutcome(state, sourceId, pending.effect, pending.auraHostId, chosen);
+    } else if (pending.entryKind === 'effect') {
+      applyEffect(state, pending.effect, pending.sourceObject, pending.targets,
+        { ...pending.context, riotChoice: { sourceId, choices: chosen } });
+    } else if (pending.entryKind === 'hand_creature') {
+      enterChosenHandCreature(state, sourceId, pending.handCreaturePending, chosen);
+    } else if (pending.entryKind === 'room_target') {
+      applyRoomTargetChoice(state, pending.roomTargetPending, sourceId, chosen);
+      if (state.pendingRoomTargets.length > 0) {
+        state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
+      }
+    } else if (pending.entryKind === 'moonlit_copy') {
+      for (const modes of [...(pending.tokenChoices ?? []), chosen]) {
+        createMoonlitTokenCopy(state, pending.playerId, object, modes);
+      }
+      state.events.push(event('moonlit_choice_resolved', { playerId: pending.playerId, replaced: true }));
+    } else if (pending.entryKind === 'delayed_reanimate') {
+      resolveDelayedReanimate(state, pending.delayedPending, chosen);
+    } else if (pending.entryKind === 'pyxis_batch') {
+      applyEffect(state, pending.effect, pending.sourceObject, pending.targets, {
+        ...pending.context,
+        riotBatchChoices: [...pending.selectedModes, { sourceId, choices: chosen }],
+      });
+    } else {
+      resolveRiotEntry(state, pending.stackId, chosen);
+    }
+    if (pending.entryKind !== 'spell' && state.pendingSpell && !state.pendingRiotChoice) {
+      const spellPending = state.pendingSpell;
+      state.pendingSpell = null;
+      resumeSuspendedSpell(state, spellPending);
+    }
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
   // Odłożenie N kart na spód po mulliganie (CR 103.4).
   if (state.pendingMulliganBottom) {
@@ -3905,6 +4033,7 @@ export function execute(state, input) {
     }
     state.pendingRoomTargets.shift();
     const events = state.events.slice(before);
+    if (state.pendingRiotChoice) return accepted(state, cmd, { ok: true, events });
     if (state.pendingRoomTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -4799,25 +4928,16 @@ export function execute(state, input) {
       if (enchanted && enchanted.zone === 'battlefield') {
         let amount = pending.effect.amount ?? 1;
         if (pending.effect.amount === 'commander_casts') amount = 0;
+        // Jedna decyzja riot na KAŻDĄ kopię. Akumulujemy wszystkie wybory
+        // przed utworzeniem któregokolwiek tokenu — żadnych SBA/triggerów
+        // w połowie tworzenia N tokenów w jednym rozstrzygnięciu.
+        if (amount > 0 && queueRiotEntry(state, enchanted, {
+          entryKind: 'moonlit_copy', fromZone: 'battlefield', playerId: ctrl,
+          moonlitPending: pending, tokenCount: amount, tokenChoices: [],
+          restorePriorityTo: pending.restorePriorityTo,
+        })) return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
         for (let i = 0; i < amount; i += 1) {
-          createBattlefieldToken(state, ctrl, {
-            cardId: 'token_clone', name: enchanted.cardName ?? 'Clone',
-            kind: enchanted.kind === 'creature' ? 'creature' : 'artifact',
-            power: enchanted.power, toughness: enchanted.toughness,
-            colors: [...(enchanted.colors ?? [])], types: [...(enchanted.types ?? [])],
-            subtypes: [...(enchanted.subtypes ?? [])], keywords: [...(enchanted.keywords ?? [])],
-            abilities: [...(enchanted.abilities ?? [])].filter((a) => {
-              const effs = Array.isArray(a.effect) ? a.effect : [a.effect];
-              return !effs.some((e) => e?.type === 'transform');
-            }),
-            // CR 707.3 + 202.3b (M258): token będący kopią dziedziczy MV
-            // pierwowzoru (kopia tylnej twarzy → 0) — jak pozostałe
-            // ścieżki kopiowania.
-            manaCost: copyManaValueOf(enchanted),
-            // Audyt PR #158/F-1 (CR 707.2): drukowany zakaz blokowania
-            // pierwowzoru przechodzi na token-kopię (CR 509.1b).
-            ...(enchanted.cantBlockPrinted ? { cantBlock: true } : {}),
-          });
+          createMoonlitTokenCopy(state, ctrl, enchanted);
         }
       }
       state.events.push(event('moonlit_choice_resolved', { playerId: ctrl, replaced: true }));
@@ -5506,18 +5626,12 @@ export function execute(state, input) {
       if (!pending.candidateIds.includes(cmd.targetId)) return reject('illegal_hand_creature_target');
       const card = state.objects.get(cmd.targetId);
       if (!card || card.zone !== 'hand' || card.controllerId !== pending.playerId) return reject('illegal_hand_creature_target');
-      const bfId = `permanent-${state.objectSequence++}`;
-      const moved = moveObjectDirectly(state, cmd.targetId, 'battlefield', bfId);
-      const permanent = Object.freeze({ ...moved, summoningSickness: true });
-      state.objects.set(bfId, permanent);
-      // M274 (#24, CR 122.6): wprowadzenie stwora z RĘKI na pole bitwy
-      // (Dragon Arch) to wejście jak każde inne — liczniki wejścia obowiązują.
-      applyEnterCounters(state, bfId);
-      state.events.push(event('permanent_entered_battlefield', {
-        fromId: cmd.targetId, objectId: bfId, object: permanent, cardId: permanent.cardId,
-        controllerId: pending.playerId, putFromHand: true,
-      }));
-      state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: true, cardId: permanent.cardId, sourceCardId: pending.sourceCardId ?? null }));
+      if (queueRiotEntry(state, card, { entryKind: 'hand_creature', handCreaturePending: pending,
+        restorePriorityTo: pending.restorePriorityTo })) {
+        state.pendingHandCreature = null;
+        return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+      }
+      enterChosenHandCreature(state, cmd.targetId, pending);
     } else {
       state.events.push(event('hand_creature_choice_resolved', { playerId: pending.playerId, putCreature: false, sourceCardId: pending.sourceCardId ?? null }));
     }
@@ -5841,7 +5955,7 @@ export function execute(state, input) {
         // Właściciel decyzji przejął już priorytet w efekcie; nadpisanie go
         // aktywnym graczem zablokowałoby grę (posiadacz priorytetu nie miałby
         // żadnej legalnej komendy).
-        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingOptionalSpellEffect && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
+        if (!state.pendingScry && !state.pendingSurveil && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !state.pendingTriggerTargets.some((p) => triggerTargetDecisionPending(state, p)) && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingColorChoice && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !state.pendingGraveyardToTop && state.pendingBackups.length === 0 && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && state.pendingDeliriumTargets.length === 0 && state.pendingMentorTargets.length === 0 && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingOptionalSpellEffect && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingReplacementChoice) {
           state.turn.priorityPlayerId = state.turn.activePlayerId;
         }
       } else if (state.turn.step === 'combat_damage' && state.combat && state.combat.attackers.length > 0) {
@@ -7506,6 +7620,11 @@ export function playerView(state, playerId) {
     for (const variant of untapChoiceOffers(state, playerId)) {
       legalCommands.push(command('resolve_untap_choice', playerId, variant));
     }
+  } else if (state.status === 'active' && !blockedByOthersDecision
+    && state.pendingRiotChoice?.playerId === playerId) {
+    for (let modeIndex = 0; modeIndex < RIOT_MODES.length; modeIndex += 1) {
+      legalCommands.push(command('resolve_riot_choice', playerId, { modeIndex }));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && state.pendingMulligans.length > 0
     && !state.pendingMulliganBottom && state.pendingMulligans[0] === playerId) {
     // M203/2: przy konwencji „prezentacja = enumeracja" keep idzie PIERWSZY
@@ -8690,7 +8809,7 @@ export function playerView(state, playerId) {
   // zaleglaa decyzje, zamiast dopisywania kazdego nowego pendingu do dwoch
   // kopii lancucha (klasa L41/L48).
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile && cleanupPriorityOpen(state)) {
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile && cleanupPriorityOpen(state)) {
     // M359 (CR 514.3, L48): w zamkniętym cleanupie brak ofert rzutów
     // i aktywacji (ten sam predykat co bramka w execute).
     for (const cast of legalSpellCasts(state, playerId)) {
@@ -8883,7 +9002,7 @@ export function playerView(state, playerId) {
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && state.turn.activePlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && state.turn.activePlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0) {
     // Czary aur (bestow CR 702.103 + czyste aury CR 303.4): alternatywna
@@ -9056,7 +9175,7 @@ export function playerView(state, playerId) {
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && state.turn.activePlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && state.turn.activePlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision
     && ['precombat_main', 'postcombat_main'].includes(state.turn.phase)
     && state.zones.stack.length === 0 && (player.landPlays ?? 0) > 0) {
     for (const id of state.zones.hand) {
@@ -9073,7 +9192,7 @@ export function playerView(state, playerId) {
     }
   }
   if (state.status === 'active' && firstDecisionOwner == null && state.pendingMulligans.length === 0 && !state.pendingMulliganBottom && !state.pendingScry && !state.pendingSurveil
-      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile) {
+      && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile) {
     // D (CR 508.2): deklaracja raz na combat — po deklaracji (state.combat)
     // krok trwa dalej jako okno odpowiedzi, bez oferty re-deklaracji.
     if (state.turn.step === 'declare_attackers' && state.turn.activePlayerId === playerId && !state.combat
@@ -9235,6 +9354,15 @@ export function playerView(state, playerId) {
   // Batch 22/23 — oczekujące decyzje reveal/proliferate/damage/modal (publiczne
   // dane dla UI: nazwy trybów, kandydaci). Wcześniej widok ich NIE wystawiał
   // i nie oferował resolve_* — gra (człowiek i bot) soft-lockowała.
+  // Riot na publicznym czarze; nie pokazujemy częściowych wyborów
+  // przeciwnikowi, dopóki permanent nie wejdzie (brak okna odpowiedzi).
+  const pendingRiotChoiceView = state.pendingRiotChoice ? {
+    playerId: state.pendingRiotChoice.playerId,
+    sourceId: state.pendingRiotChoice.stackId ?? state.pendingRiotChoice.sourceId,
+    cardId: state.pendingRiotChoice.cardId,
+    remaining: state.pendingRiotChoice.count - state.pendingRiotChoice.choices.length,
+    ...(state.pendingRiotChoice.playerId === playerId ? { choices: [...state.pendingRiotChoice.choices] } : {}),
+  } : null;
   const pendingModalTriggerView = state.pendingModalTrigger
     ? {
         playerId: state.pendingModalTrigger.playerId,
@@ -9454,7 +9582,8 @@ export function playerView(state, playerId) {
     pendingLookTopN: pendingLookTopNView,
     pendingManifestDread: pendingManifestDreadView,
     pendingEpicExperiment: pendingEpicExperimentView,
-    pendingModalTrigger: pendingModalTriggerView, pendingProliferate: pendingProliferateView,
+    pendingModalTrigger: pendingModalTriggerView, pendingRiotChoice: pendingRiotChoiceView,
+    pendingProliferate: pendingProliferateView,
     // M162/C (uwaga właściciela): Chittering Rats — tytuł modala
     // resolve_hand_top_choice nazywa ŹRÓDŁO decyzji. sourceCardId to karta
     // na polu bitwy (informacja publiczna); wystawiamy TYLKO właścicielowi

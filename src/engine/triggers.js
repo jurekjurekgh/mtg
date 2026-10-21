@@ -9,6 +9,7 @@ import {
   counterStackObject,
 } from './effects.js';
 import { addCounter, hasCounter } from './counters.js';
+import { queueRiotEntry, applyRiotOnEntry, riotCountOf, validRiotChoices } from './riot.js';
 import { deathZoneFor, isCardInOpponentGraveyard, isCardObject } from './zones.js';
 import { countGraveyardCardTypes, isInstantOrSorceryCardInGraveyard } from './graveyard-types.js';
 import { changeLife, setPlayerSpeed } from './players.js';
@@ -1166,6 +1167,38 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
  * wpis niesie delayedType i dane z chwili zakolejkowania. Zwraca true, gdy
  * efekt zadziałał (obiekt wciąż istniał we właściwej strefie).
  */
+/** Wspólne wejście z opóźnionej reanimacji, także po wyborze riot. */
+export function resolveDelayedReanimate(state, pending, riotChoices = null, events = []) {
+  const object = state.objects.get(pending?.objectId);
+  if (!object || object.zone !== 'graveyard') return false;
+  if (riotCountOf(object) > 0 && riotChoices === null) {
+    queueRiotEntry(state, object, {
+      entryKind: 'delayed_reanimate', fromZone: 'graveyard', playerId: pending.playerId,
+      delayedPending: pending,
+    });
+    return true;
+  }
+  if (riotCountOf(object) > 0 && !validRiotChoices(object, riotChoices)) {
+    throw new Error('Nieprawidłowy wybór riot przy opóźnionej reanimacji');
+  }
+  const newId = `permanent-${state.objectSequence++}`;
+  const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
+  const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
+  state.objects.set(newId, permanent);
+  applyRiotOnEntry(state, newId, riotChoices, pending.objectId);
+  applyEnterCounters(state, newId);
+  const movedEvent = event('object_moved', {
+    fromId: pending.objectId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+  });
+  state.events.push(movedEvent); events.push(movedEvent);
+  const controlEvent = event('control_changed', {
+    objectId: newId, cardId: permanent.cardId,
+    controllerId: pending.playerId, fromControllerId: moved.controllerId,
+  });
+  state.events.push(controlEvent); events.push(controlEvent);
+  return true;
+}
+
 function resolveDelayedTrigger(state, payload, events) {
   const pending = payload.delayed;
   if (!pending) return false;
@@ -1197,26 +1230,7 @@ function resolveDelayedTrigger(state, payload, events) {
     return true;
   }
   if (payload.delayedType === 'reanimate_under_target_control') {
-    const object = state.objects.get(pending.objectId);
-    // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
-    if (!object || object.zone !== 'graveyard') return false;
-    const newId = `permanent-${state.objectSequence++}`;
-    const moved = moveObjectDirectly(state, pending.objectId, 'battlefield', newId);
-    const permanent = Object.freeze({ ...moved, controllerId: pending.playerId, summoningSickness: true });
-    state.objects.set(newId, permanent);
-    // M274 (#24, CR 122.6): opóźniony powrót na pole bitwy to też WEJŚCIE —
-    // liczniki wejścia obowiązują jak przy każdej innej ścieżce ETB.
-    applyEnterCounters(state, newId);
-    const movedEvent = event('object_moved', {
-      fromId: pending.objectId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
-    });
-    state.events.push(movedEvent); events.push(movedEvent);
-    const controlEvent = event('control_changed', {
-      objectId: newId, cardId: permanent.cardId,
-      controllerId: pending.playerId, fromControllerId: moved.controllerId,
-    });
-    state.events.push(controlEvent); events.push(controlEvent);
-    return true;
+    return resolveDelayedReanimate(state, pending, null, events);
   }
   return false;
 }

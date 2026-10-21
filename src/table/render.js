@@ -90,6 +90,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_color_choice: 'Wybór koloru',
   resolve_index_choice: 'Kolejność kart na wierzchu',
   resolve_modal_choice: 'Tryb czaru („choose one")',
+  resolve_riot_choice: 'Riot — jak stwór wchodzi na pole?',
   resolve_redirect_choice: 'Zmiana celu czaru',
   resolve_proliferate: 'Proliferate (licznik)',
   resolve_hand_top_choice: 'Karta z ręki na wierzch',
@@ -567,6 +568,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_redirect_choice') return 'resolve_redirect_choice';
   if (command.type === 'resolve_proliferate') return 'resolve_proliferate';
   if (command.type === 'resolve_modal_choice') return 'resolve_modal_choice';
+  if (command.type === 'resolve_riot_choice') return 'resolve_riot_choice';
   if (command.type === 'resolve_optional_trigger_choice') return 'resolve_optional_trigger_choice';
   if (command.type === 'resolve_enter_as_copy') return 'resolve_enter_as_copy';
   if (command.type === 'resolve_destroy_equipment_choice') return 'resolve_destroy_equipment_choice';
@@ -654,7 +656,7 @@ export function choiceRequestType(commands) {
   if (first.type === 'resolve_legend_choice') return 'target';
   if (first.type === 'resolve_redirect_choice') return 'target';
   if (first.type === 'resolve_proliferate') return 'target';
-  if (first.type === 'resolve_modal_choice') return 'command';
+  if (first.type === 'resolve_modal_choice' || first.type === 'resolve_riot_choice') return 'command';
   if (first.type === 'resolve_optional_trigger_choice') return 'command';
   if (first.type === 'resolve_enter_as_copy') return 'target';
   if (first.type === 'resolve_destroy_equipment_choice') return 'command';
@@ -2356,6 +2358,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   resolve_food_choice: 'Food — poświęcić za wzmocnienie?',
   resolve_amass_choice: 'Amass — która Armia dostaje liczniki?',
   resolve_modal_choice: 'Tryb czaru („choose one")',
+  resolve_riot_choice: 'Riot — licznik +1/+1 albo pośpiech?',
   resolve_discover_choice: 'Discover — rzucić czy wziąć do ręki?',
   resolve_endure_choice: 'Endure — liczniki czy token?',
   resolve_explore_choice: 'Explore — co z odsłoniętą kartą?',
@@ -2590,6 +2593,9 @@ function choiceSourceTitle(cmd, session, view) {
   }
   if (cmd?.type === 'resolve_modal_choice' && view?.pendingModalTrigger?.cardId) {
     return `${session.nameOf(view.pendingModalTrigger.cardId)} — wybór trybu`;
+  }
+  if (cmd?.type === 'resolve_riot_choice' && view?.pendingRiotChoice?.cardId) {
+    return `${session.nameOf(view.pendingRiotChoice.cardId)} — riot (wybór przed wejściem)`;
   }
   // M162/C (uwaga właściciela): Chittering Rats — źródło decyzji „karta z
   // ręki na wierzch biblioteki" w tytule modala (sourceCardId z pendingu,
@@ -4383,6 +4389,15 @@ function commandLabelBase(cmd, session, view) {
     case 'resolve_damage_target': {
       // Stomping Slabs — obrażenia 7 do wybranego celu.
       return `Obrażenia w ${nameOfObjectId(cmd.targetId)}`;
+    }
+    case 'resolve_riot_choice': {
+      // Statyczny wybór PRZED wejściem; karta nadal w dotychczasowej strefie
+      // (stos, grób, ręka, biblioteka lub wygnanie — CR 702.136a).
+      const name = view.pendingRiotChoice?.cardId
+        ? `${escapeHtml(session.nameOf(view.pendingRiotChoice.cardId))} — ` : '';
+      return cmd.modeIndex === 0
+        ? `${name}wejdź z licznikiem +1/+1`
+        : `${name}wejdź z pośpiechem (haste)`;
     }
     case 'resolve_modal_choice': {
       // Modalny trigger upkeep (Etherwrought Page) — wybór trybu.
