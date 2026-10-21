@@ -19,6 +19,62 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-21 — audyt PR #168 (130/130), A-1…A-13 i Q-1 z pętli jakości (PR #169)
+
+- Sesja domyślna (ADR 0020/0021), branch `arena/4129dd32-mtg` od
+  `main` @ `0ef7be9`, plan `docs/plans/PLAN_2026-10-21-audyt-pr168-petla-jakosci.md`
+  i otwarty PR #169 **przed kodowaniem**. Poprzedni PR #168 obejmował 130
+  plików (+5485/−359): wszystkie 130 przejrzano w grupach źródła, bot, UI,
+  10 kart/Oracle, 12 talii, narzędzia, 54 testy i dokumentacja. Raport z
+  dowodami RED→GREEN: `docs/audits/AUDYT_PR168_2026-10-21.md`.
+- **Reguły/engine A-1…A-3:** convoke nie może dwa razy liczyć zdolności
+  manowej tego samego stwora; riot jest replacement przed wejściem, nie
+  triggerem po wejściu (CR 702.136a); ponowne objęcie inicjatywy przez
+  posiadacza zawsze venture'uje (CR 726.2/726.5). Piny PMSSB-69 i riot
+  zostały poprawione na podstawie CR, nie „zazielenione” przez poluzowanie.
+- **Bot i opłaty A-4…A-10:** optymalizacja pochłaniania blockerów trample
+  (4+3 vs 2/2/3: 7, nie 6); awaryjny rozkład lądów dla pipów tylko w
+  zdolnościach (`landSplit` bez NaN, 30/30 talii bez zmian); Bloodfire i
+  Tuskguard płacą całe pipy (`cost.mana: 1`); nielegalna aktywacja Bloodfire
+  zachowuje manę, stół i eventy; klikalne nazwy podglądu i nagłówek Clash
+  są natywnymi przyciskami z fokusem klawiatury; convoke z niemożliwym
+  zielonym pipem i 27 Myrami nie zawiesza widoku; strażnik riot testuje
+  właściwą cechę, nie niepowiązany trigger ataku. Każde znalezisko ma
+  osobny zielony commit/test i build.
+- **A-11…A-13 i PMSSB-77:** historyczne teksty PMSSB-69 (inicjatywa),
+  PMSSB-71 (riot), PMSSB-72 (minimalne convoke) oraz plan PMSSB-77 (token
+  oddany wrogowi) otrzymały jawne erraty. A-12: CR 702.51a pozwala
+  dobrowolnie konwokować mimo 4 dostępnych man, aby zachować je na drugi
+  czar. Oferta gracza dopuszcza pojedyncze i pełne convoke; nie zniknął
+  zwykły rzut. Deterministyczny limit 64 wariantów pozostaje; przy dużej
+  planszy ukrywa część legalnych kombinacji (otwarta granica, L19).
+  Golden A-12: w 2 partiach 5 zapisów decyzji zmieniło wyłącznie opcje
+  (+8/+23), **0** wybranych ruchów/ocen; świadomie odnowiono 3 hashe fixture.
+- **Budżet i pętla jakości:** 13 długich wpisów LESSONS skrócono z zachowaniem
+  reguł i kotwic L, pełny poprzedni tekst przeniesiono pod te same numery
+  do `LESSONS_PRZYPADKI.md`; pomiar 98 466/100 000 tokenów, próg bez zmian.
+  Żywy Tester na `dist/`: cztery ukończone gry (Ravnica/Zendikar,
+  Warhammer/Dominaria, Forgotten Realms/Innistrad, Dominaria/Mirrodin),
+  0 detektorów, 0 niewycenionych ruchów bota. Przeczytano pełne transkrypty
+  w osiach bot, log/modal i auto-pass; „Wskaż jeden wiers” to 160-znakowe
+  cięcie transkryptu, nie tekst UI. **Q-1:** ręcznie znaleziono fałszywe
+  „(bestow)” przy sprzęcie Strandwalker/żywej broni. `object_attached`
+  niosło `via: 'living_weapon'`, lecz czytelnik logu domyślnie nazywał
+  wszystko bestow. RED 1/3 → GREEN 3/3, `npm test` 8663/8663,
+  build OK; commit `d8e324e`. Powtórna partia z nowego `dist/` potwierdziła
+  „wyposaża Germ (living weapon)”, zero detektorów. Partie Dominaria/Mirrodin
+  nie wylosowały Kavu — A-12 dowodzą piny ofert/wykonania. Osobny łów CR
+  122.1d/rulings (stun podczas odkręcania) nie znalazł rozbieżności;
+  celowane piny 46/46.
+- Bramy: baseline `npm test` 8611/8611; po A-12 `npm run test:all`
+  8925/8925 i build; po A-13 `npm test` 8660/8660 i build; po Q-1
+  `npm test` 8663/8663 i build. Finalnie po handoffie `npm run test:all`
+  **8930/8930**, build **75 modułów / 5308,1 kB**; strażnik budżetu
+  lektury **2/2** (~98 466/100 000), `cr-numery --sprawdz` **OK**
+  (538 unikalnych cytowanych numerów, tabela 539), `git diff --check` OK.
+  Nowy handoff: `docs/setup/HANDOFF_2026-10-21.md`, wskaźnik w README.
+  Pełne B0 nieuruchomione (ADR 0018); PR #169 **pozostaje otwarty, bez merge**.
+
 ## 2026-10-18f — Bot nie atakuje mimo przewagi: pochłanianie blokerów liczone mocą, nie wytrzymałością (R)
 
 - Uwaga z testów: bot z 7 stworami (siła 13) i 1 kartą w bibliotece nie atakuje; ja mam 5 życia, 3 stwory,
