@@ -3514,11 +3514,19 @@ Korekta oczekiwań: plan podawał Dunland 87.4991 bez wagi ×0.9 `cast_permanent
 
 ## PMSSB-69 — inicjatywa (`take_initiative`) w wycenie bota (2026-10-20) — DONE
 
+**Korekta 2026-10-21 (audyt PR #168/A-3):** F1 poniżej opisuje historyczny błąd
+silnika i wyceny, nie regułę. CR 726.2 i 726.5 (2026-09-25): ponowne objęcie
+inicjatywy przez jej posiadacza także uruchamia venture. W PR #169 naprawiono
+silnik i bota; **obecnie bazowe 6 dostaje także posiadacz** (bez premii kradzieży
+ani nowej kary ekspozycji). Tabela PRZED/PO i poniższe delty to historyczny
+pomiar PMSSB-69 przed A-3, nie bieżące wyniki sondy. Aktualne piny:
+`test/audyt-pr168-initiative.test.js` i `test/audyt-pmssb69-initiative.test.js`.
+
 Plan: [PLAN_2026-10-20b-pmssb69-initiative](plans/PLAN_2026-10-20b-pmssb69-initiative.md). Rodzina z listy odrzuconej w PMSSB-68.
 Karty: Underdark Explorer (5/3 menace, koszt 5), Stirring Bard (0/4 defender, koszt 4), Caves of Chaos Adventurer (5/3 trample, koszt 4) — ETB „you take the initiative”; wszystkie w talii `forgotten-realms`.
 
 **Problem (PRZED).** Wycena ETB = stała **6** (`take_initiative: () => 6`), niezależnie od stanu. Pomiar `tools/pmssb69-initiative-sonda.mjs` (`.arena/pmssb69-przed.txt`): wynik nie zmienia się, gdy inicjatywę ma ja, wróg albo nikt, ani gdy wróg ma 0 czy 2 stwory (poza wspólną wyceną ciała stołu). Trzy konkretne błędy:
-- **F1:** już mam inicjatywę → silnik (`effects.js`, `take_initiative`) nie uruchamia venture (`changedHands === false`), czyli zysk = 0, a bot liczy 6.
+- **F1 (historyczny błąd, poprawiony A-3):** stary silnik nie uruchamiał venture u posiadacza (`changedHands === false`), a stary bot liczył 6. To niezgodne z CR; aktualny silnik venture'uje za każdym razem.
 - **F2:** wróg ma inicjatywę → objęcie zabiera mu postęp i daje mój venture; bot nie widzi różnicy.
 - **F3:** wróg ma atakujące stwory → zagrożenie odbiorem inicjatywy w jego turze; bot tego nie wycenia.
 
@@ -3527,7 +3535,7 @@ Karty: Underdark Explorer (5/3 menace, koszt 5), Stirring Bard (0/4 defender, ko
 - `initiativeExposurePenalty` = **2** za każdy stwór wroga bez defendera z mocą > 0 (≈ 1/3 venture na atakującego),
 - `initiativeExposureCap` = **6** (kara nie schodzi poniżej 0 składnika ETB).
 
-Składnik ETB: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·pen))`, gdzie `steal` = 6 tylko gdy posiada wróg. Cena many nie zmieniona (wymiar kosztu, kontrola (b)).
+Historyczny składnik ETB PMSSB-69: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·pen))`, gdzie `steal` = 6 tylko gdy posiada wróg. **Obecnie: 6 dla aktualnego posiadacza** (venture bez nowej ekspozycji), w innych stanach ta sama formuła. Cena many bez zmian (wymiar kosztu, kontrola (b)).
 
 **Pomiar PO (`.arena/pmssb69-po.txt`), wynik w skali `cast_permanent` (waga ×0.9):**
 
@@ -3537,14 +3545,14 @@ Składnik ETB: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·
 | Stirring Bard | 67.4991 (=) | 71.0991 → 67.4991 | 67.4991 → 62.0991 | 67.4991 → 72.8991 | 71.0991 → 72.8991 |
 | Caves of Chaos Adv. | 78.4572 (=) | 82.2822 → 78.6822 | 78.4572 → 73.0572 | 78.4572 → 83.8572 | 82.2822 → 84.0822 |
 
-Wszystkie zmiany wynikają z trzech składników (F1: −6·0.9; F2: +6·0.9; F3: −min(6, 2n)·0.9); wycena ciała stołu (wspólna dla wszystkich wariantów) nie zmieniona.
+Historyczne delty PMSSB-69 wynikają z trzech składników (F1: −6·0.9 — obalone i poprawione w A-3; F2: +6·0.9; F3: −min(6, 2n)·0.9); wycena ciała stołu (wspólna dla wszystkich wariantów) nie zmieniona.
 
 **Audyt (L41 i anty-over-fix).**
-- (a) L41: ETB `take_initiative` ma jedno miejsce wyceny (tabela ETB); ścieżka czaru z ETB korzysta z tej samej funkcji. Piny F1–F3 na wszystkich trzech kartach (delta „ja − nikt” = −5.4 dla każdej).
+- (a) L41: ETB `take_initiative` ma jedno miejsce wyceny (tabela ETB); ścieżka czaru z ETB korzysta z tej samej funkcji. Historyczny pin F1 dawał deltę „ja − nikt” = −5.4; po A-3 aktualny pin wymaga **0** dla wszystkich trzech kart (bez nowej ekspozycji).
 - (b) Wymiar kosztu: koszt many karty bez zmian; zmienia się tylko składnik inicjatywy.
 - (c) Anty-over-fix: najsłabszy realny wariant (nikt nie ma inicjatywy, wróg bez stworów) = **dawne 6** (pin: 79.2063 bez zmiany). Kara i dopłata to wyłącznie dodatki/kary w wariantach z realnym ryzykiem lub zyskiem.
 
-**Testy.** `test/audyt-pmssb69-initiative.test.js` — 8 testów. RED przed wdrożeniem: 1/8 zielony (kotwica anty-over-fix), 7 czerwonych (`.arena/pmssb69-red.log`). GREEN: 8/8 (`.arena/pmssb69-green.log`). Mutacje: usunięcie F1 → 2 czerwone; zerowa kara (F3) → 3 czerwone; zerowa dopłata (F2) → 2 czerwone. Pokrętła ×0 przywracają wycenę sprzed zmiany. Asercje używają wagi 0.9 (ta sama korekta co PMSSB-68; pierwsza wersja testów pominęła ją i została poprawiona na podstawie pomiaru, nie wyniku bota).
+**Testy historycznej pętli.** `test/audyt-pmssb69-initiative.test.js` — 8 testów. RED przed wdrożeniem: 1/8 zielony (kotwica anty-over-fix), 7 czerwonych (`.arena/pmssb69-red.log`). GREEN wtedy: 8/8 (`.arena/pmssb69-green.log`). Mutacje wtedy: usunięcie F1 → 2 czerwone; zerowa kara (F3) → 3 czerwone; zerowa dopłata (F2) → 2 czerwone. Po A-3 dwa piny F1 zostały skorygowane według CR, bo pierwotne oczekiwanie −5.4 było błędne. Pokrętła ×0 przywracają wycenę sprzed PMSSB-69. Asercje używają wagi 0.9 (jak PMSSB-68; pierwsza wersja testów pominęła ją i została poprawiona na podstawie pomiaru, nie wyniku bota).
 
 **Ewaluacja.**
 - Golden master (`tools/bot-scoring-snapshot.mjs --dump`, 6 meczów, seedy 1000/1001): 0 różnic. Uwaga: żadna z talii tego zestawu nie ma kart z inicjatywą, więc golden master nie jest dowodem dla tej rodziny; dowodem jest A/B.
