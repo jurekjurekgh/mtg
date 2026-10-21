@@ -4625,7 +4625,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 0, colors: ['R'], sacrificeEnchantedHost: true },
+        cost: { mana: 1, colors: ['R'], sacrificeEnchantedHost: true },
         effect: { type: 'damage_each_creature_sacrificed_power' },
       }),
     ],
@@ -4645,7 +4645,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'outlast',
-        cost: { mana: 0, colors: ['G'], tap: true },
+        cost: { mana: 1, colors: ['G'], tap: true },
         timing: 'sorcery',
         effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
