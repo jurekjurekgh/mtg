@@ -120,6 +120,11 @@ test('O2/nagłówek: nazwa karty wywołującej clash stoi NA POCZĄTKU nagłówk
   const intro = host.byClass('choice-request-intro')[0];
   assert.ok(intro, 'nagłówek modala istnieje');
   const name = intro.children[0];
+  // Audyt PR #168/A-7 cd.: także nazwa ŹRÓDŁA clash musi mieć Tab/Enter/Space;
+  // klikalny span przechodził test myszy, ale nie działał z klawiatury.
+  assert.equal(name.tagName, 'button', 'natywnie fokusowalna, nie click-only span');
+  assert.equal(name.type, 'button', 'bez przypadkowego submit w formularzu');
+  assert.equal(name.listeners.keydown?.length ?? 0, 0, 'bez dublowania natywnego Enter/Space');
   assert.equal(name.textContent, 'Release the Ants', 'pierwszy element nagłówka to nazwa karty');
   assert.equal(name.dataset.cardId, 'release-the-ants');
   assert.ok(String(name.className).includes('log-card'), 'ta sama klasa co nazwy w kreatorze (klik → pełny ekran)');

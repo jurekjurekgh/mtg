@@ -114,8 +114,9 @@ export function clashSourceCardIdOf(request, view) {
 }
 
 /**
- * M303: JEDEN komponent przycisku podglądu 🔍 (wcześniej lepiony ręcznie w
- * dwóch miejscach). Zmiana ikony/etykiety/zachowania podglądu = jedna linia.
+ * M303/O2/A-7: JEDEN komponent klikalnej nazwy karty bez ikony (wcześniej
+ * lepiony ręcznie w dwóch miejscach). Podgląd w opcji i w nagłówku clash
+ * działa tak samo myszą i klawiaturą (natywny przycisk).
  * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
  * (rodzic może mieć własny `click` na wierszu przyciskowym).
  */
@@ -1269,12 +1270,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // (pełny ekran po cardId). Bez `introCard` tekst jak dotąd.
   const introNode = choiceNode(host, 'div', 'choice-request-intro');
   if (introCard?.cardId && introCard.name && typeof onOpenCardByCardId === 'function') {
-    const nameEl = choiceNode(introNode, 'span', 'picker-name is-openable log-card', introCard.name);
-    if (nameEl.dataset) nameEl.dataset.cardId = String(introCard.cardId);
-    nameEl.addEventListener('click', (event) => {
-      event?.preventDefault?.();
-      event?.stopPropagation?.();
-      onOpenCardByCardId(introCard.cardId);
+    // A-7: także źródło clash używa wspólnej, klawiaturowej nazwy karty;
+    // oddzielny span z click handlerem ponownie gubił Tab/Enter/Spację.
+    renderPeekButton(introNode, {
+      cardId: introCard.cardId, label: introCard.name, onOpen: onOpenCardByCardId,
     });
     choiceNode(introNode, 'span', null, ` — ${introText}`);
   } else {
