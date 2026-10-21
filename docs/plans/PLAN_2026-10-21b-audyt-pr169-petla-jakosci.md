@@ -98,4 +98,31 @@ sesję PR #169 — z zastrzeżeniami z tamtej pętli, fakty sprawdzać w repo).
 
 ## Podsumowanie wykonania
 
-(do uzupełnienia przy domknięciu sesji)
+Sesja domknięta 2026-10-21. Wykonane etapy 0–3 w całości; etap 4 (domknięcie)
+wykonany z wyjątkiem scalenia PR (zakaz dla agenta).
+
+- **Etap 1 — audyt PR #169:** 56/56 ścieżek, raport
+  `docs/audits/AUDYT_PR169_2026-10-21.md` (commit `1124842`). Weryfikacja CR
+  online (702.51a/b, 702.136a/b, 726.2/726.5 — wydanie 2026-09-25), mutacje
+  pinów A-1/A-2/A-3/A-4/A-8/Q-1 wszystkie RED, testy nieosłabione, erraty
+  zachowują historię. Zero błędów regułowych; jedyny finding B-1
+  (README — „PR #169 otwarty" po scaleniu) naprawiony w etapie 4.
+- **Etap 2 — fix z pętli jakości:** duplikat `damage_dealt` w strumieniu
+  komendy `resolve_combat` przy częściowo zapobiegniętych obrażeniach na
+  gracza (CR 119.3): test RED 2/2 → `slice(before, -1)` w
+  `dealCombatDamageToPlayer` → GREEN 2/2 → `npm test` 8665/8665 → lekcja
+  L187 + tabela CR +`702.15b` (commit `18702e8`).
+- **Etap 3 — pętla jakości:** 4 partie Żywego Testera (talie batcha 69,
+  spoza benchmarku): 0 detektorów, logi spójne, riot w dobrej kolejności na
+  stole. Polowanie CR 702.15 Lifelink (702.15a–f dosłownie) — czysty poza
+  znaleziskiem etapu 2; deathtouch 702.2b/c/f zweryfikowany wstępnie
+  (pokryty wyczerpująco w silniku).
+- **Etap 4 — domknięcie:** `npm run test:all` 8932/8932, `npm run build`
+  75 modułów / 5308,5 kB, `cr-numery --sprawdz` OK (tabela 540 numerów),
+  budżet lektury 2/2 GREEN, `git diff --check` czysto. Zaktualizowano:
+  README (nowy punkt zaczepienia), PROJECT_HISTORY (wpis 2026-10-21b),
+  handoff `HANDOFF_2026-10-21b.md`, ten plan, opis PR #170.
+- **Bramy na domknięciu:** fast 8665/8665 (136 s); próbka regresji bota
+  10/10 (219 s); full patrz wyżej. Pełne B0 niewykonane (ADR 0018).
+- PR #170 (https://github.com/jurekjurekgh/mtg/pull/170) czeka na decyzję
+  właściciela — NIE scalać (ADR 0020 D).
