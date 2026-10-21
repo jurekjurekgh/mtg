@@ -19,6 +19,40 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-21c — audyt PR #170 (11/11): fix potwierdzony, C-1 — podstawa „zapobiegnięte ≠ zadane" to 615.6, nie 119.3 (PR #171)
+
+- Sesja domyślna (ADR 0020/0021), branch `arena/5d252dbf-mtg` od `main` @
+  `9b25142` (PR #170 scalony). Plan:
+  `docs/plans/PLAN_2026-10-21c-audyt-pr170-petla-jakosci.md`.
+- **Audyt PR #170 (11/11 plików):** raport
+  `docs/audits/AUDYT_PR170_2026-10-21.md`. Jedyna zmiana kodu to
+  `combat.js` `slice(before)` → `slice(before, -1)`. **Fix poprawny** —
+  `damage_dealt` zawsze ostatni w oknie `before`; potwierdzone sondą na 5
+  wariantach nietestowanych przez PR (dwie tarcze 2+2 i 1+1, tarcza
+  nadmiarowa, tarcza na atakującym, mgła+tarcza). Strażnik realny: mutacja
+  czerwieni 2/2. **Klasa L130/L187 poza fixem nie występuje** — wszystkie 13
+  miejsc `slice(checkpoint)` w `src/` ma checkpoint przed helperem bez
+  explicit pusha po spreadzie.
+- **CR u źródła (ADR 0030):** `rules/cr-raw.txt` z `codeload` (mirror
+  `nwgarne/mtg-data`), SHA-256 `8d860e45…` zgodny z tabelą, wydanie 2026-09-25.
+  Odczytane dosłownie 702.15a–f, 615.6, 615.7, 702.164a–c, 704.5a.
+- **C-1 (naprawione):** rodzina „zapobiegnięte obrażenia NIE są zadane" —
+  **32 cytaty CR 119.3 w 11 plikach** — uzasadniała się numerem dotyczącym
+  **życia** (119.3 = „gain life or lose life"), nie prewencji. Podstawa to
+  **615.6** + **615.7**. 27 podmian w komentarzach i nazwach testów (**kod bez
+  zmian**), 5 legalnych cytatów `119.3` zostaje, `615.7` w tabeli istnienia
+  (541 numerów), **nowa para** w `cr-numery-mechanik-straznik` z mutacją
+  czerwieniącą. Luka: żaden strażnik nie pilnował, że numer *znaczy* to, co
+  komentarz twierdzi.
+- **Pętla jakości:** 4 partie Żywego Testera na taliach z kartami ścieżki
+  obrażeń (innistrad-wu×srodziemie, tarkir-bg×alara, mirrodin-wu×warhammer-wg,
+  forgotten-realms×ixalan) — wszystkie do końca, **0 zgłoszeń detektorów**,
+  „NIEWYCENIONE: brak". Ścieżka prewencji nie zagrała się (0
+  `damage_prevented`) — pokrywa ją sonda audytu, nie tester.
+- **Bramy:** baza `npm test` 8665/8665; po C-1 `npm test` 8665/8665, build 75
+  modułów / 5308,5 kB; `npm run test:all` **8933/8933**; `cr-numery --sprawdz`
+  OK (541 numerów); budżet lektury 2/2. Pełne B0 nieuruchamiany (ADR 0018).
+
 ## 2026-10-21b — audyt PR #169 (56/56) i pętla jakości: fix duplikatu damage_dealt (PR #170)
 
 - Sesja domyślna (ADR 0020/0021), branch `arena/3ff39ec9-mtg` od `main` @

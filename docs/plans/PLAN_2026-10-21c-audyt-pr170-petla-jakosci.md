@@ -83,13 +83,25 @@ prawidłowość komentarza i testu-pinu. Kod bez zmian.
    przed kodowaniem (ADR 0020 A).
 1. [x] **Audyt PR #170** (11/11 plików) — wynik powyżej; sprawozdanie
    `docs/audits/AUDYT_PR170_2026-10-21.md`.
-2. [ ] **C-1 — naprawa podstawy regułowej:** korekta 119.3 → 615.6/615.7
-   w całej rodzinie „zapobiegnięte ≠ zadane" + para w strażniku numerów CR +
-   test mutacyjny RED→GREEN. Kod silnika BEZ zmian.
-3. [ ] **Pętla jakości** (ADR 0021): 4 partie Żywego Testera na taliach spoza
-   próbki benchmarku (rotacja, L179) + polowanie CR ścieżką inną niż poprzednia
-   sesja (poprzednia: 702.15 lifelink / 119.3). kandydaci: 702.164b/615.7
-   (toxic + tarcza), 510.1c (przydział po prewencji), 120.4b.
+2. [x] **C-1 — naprawa podstawy regułowej** (commit `07a5e6b`): 27 podmian
+   `119.3` → `615.6` w komentarzach i nazwach testów (KOD BEZ ZMIAN), 5 legalnych
+   cytatów `119.3` zostaje, `615.7` w tabeli istnienia (541 numerów,
+   `cr-numery --sprawdz` OK), nowa para w `cr-numery-mechanik-straznik`
+   (34/34 GREEN; mutacja `615.6`→`119.3` czerwieni parę). `npm test` 8665/8665.
+3. [x] **Pętla jakości** (ADR 0021): 4 partie Żywego Testera na taliach
+   z kartami ścieżki obrażeń — `innistrad-wu`×`srodziemie` (seed 10),
+   `tarkir-bg`×`alara` (17), `mirrodin-wu`×`warhammer-wg` (24),
+   `forgotten-realms`×`ixalan` (31). Wszystkie do końca, **0 zgłoszeń
+   detektorów**, „NIEWYCENIONE: brak", brak duplikatów linii logu; ujemne
+   życie na koniec partii to poprawne CR 704.5a (`life <= 0`,
+   `state-based.js:171`). Ręczna lektura (L27): „trigger bez efektu (brak
+   legalnych celów)" przy `Servant of the Scale` to PRAWDA — w chwili śmierci
+   gracz nie miał innego stwora (potwierdzone stanem stołu w transkrypcie).
+   **Uczciwe ograniczenie pomiaru (L179):** ścieżka PREWENCJI nie zagrała się
+   w żadnej z 4 partii (0 zdarzeń damage_prevented) — talie nie trafiły w tarcze
+   Withstand. Pokrycie tej ścieżki daje sonda deterministyczna w audycie
+   (5 wariantów), nie tester. CR 702.164c (toxic) i 704.5a odczytane dosłownie
+   przy okazji — potwierdzenie `actual > 0` w rodzinie wyników obrażeń.
 4. [ ] **Domknięcie:** `npm run test:all`, `cr-numery --sprawdz`, budżet lektury,
    build, README/PROJECT_HISTORY/handoff/PR.
 
@@ -99,3 +111,15 @@ prawidłowość komentarza i testu-pinu. Kod bez zmian.
 - Mutacje: kopia w `.arena/`, `git status --short` pusty po każdej.
 - `.arena/` jest poza repo (nie commitować); `tools/table-tester/*.txt`
   ignorowane.
+
+## Uczciwe ograniczenia tej sesji
+
+- Pętla jakości NIE objęła ścieżki prewencji (etap 3) — brak zdarzeń w grach.
+  Klasa L130/L187 ma strażnika jednostkowego i skan źródeł, ale **nie** detektor
+  stołu (wymaga tarczy na graczu w walce); świadome ograniczenie pomiaru, nie
+  luka w fixie.
+- C-1 to korekta podstawy regułowej w 27 miejscach jednej rodziny. Pełna cenzura
+  semantyczna cytatów poza 702.x (czy numer ZNACZY to, co komentarz twierdzi)
+  pozostaje osobnym zadaniem — wymaga mapy „numer → temat" i uzasadnionych
+  wyjątków; żaden istniejący strażnik tego nie obejmuje (ta sama luka, która
+  przepuściła 119.3).
