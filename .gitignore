@@ -47,3 +47,6 @@ tmp-audyt-*/
 # Transkrypty-PLIKI (nie katalogi) — r5: tmp-audyt-r5-bench-przed.txt wdarł
 # się do git mimo reguły katalogowej (git add wprost).
 tmp-audyt-*
+
+# Lokalne notatki / reprodukcje agenta w trakcie sesji — nigdy w commicie
+.arena/
