@@ -1577,13 +1577,31 @@ export function convokePaymentVariants(state, playerId, object, totalMana, requi
     return hasColorRequirements(state, playerId, remaining.requirements, purpose, excludedIds);
   };
   if (castable([])) return [];
+  // A-9 (audyt #168): zanim zaczniemy wykładnicze warianty, odetnij
+  // obowiązkowy pip, którego NIE pokryje żadna dostępna mana ani żaden
+  // pozostający stwór. To tylko warunek konieczny (pipy sprawdzamy też łącznie
+  // w castable), więc nie odrzuca legalnych podziałów ani hybryd.
+  const pipsNeedingCreature = requirements.filter((pip) =>
+    !hasColorRequirements(state, playerId, [pip], purpose));
+  const colorsAfter = Array(eligible.length + 1);
+  colorsAfter[eligible.length] = new Set();
+  for (let i = eligible.length - 1; i >= 0; i -= 1) {
+    colorsAfter[i] = new Set([...colorsAfter[i + 1], ...(eligible[i].colors ?? [])]);
+  }
+  const canStillCoverPips = (index, picks) => {
+    if (pipsNeedingCreature.length === 0) return true;
+    const unpaid = withoutConvokePips(requirements, picks.map((p) => p.color));
+    return unpaid.every((pip) => !pipsNeedingCreature.includes(pip)
+      || pip.some((color) => colorsAfter[index].has(color)));
+  };
+  if (!canStillCoverPips(0, [])) return [];
   // Opcje dla każdego stwora: brak / {1} / kolor, który jest w koszcie i na stworze.
   const options = eligible.map((creature) => [null, 'generic',
     ...(creature.colors ?? []).filter((color) => needed.has(color))]);
   const found = [];
   const walk = (index, picks) => {
     if (found.length >= 64) return;
-    if (picks.length > totalMana) return;
+    if (picks.length > totalMana || !canStillCoverPips(index, picks)) return;
     if (index === eligible.length) {
       if (picks.length > 0 && castable(picks)
         && picks.every((_, i) => !castable(picks.filter((_, j) => j !== i)))) {
