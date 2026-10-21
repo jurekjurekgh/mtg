@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Tuskguard+Captain&set=2x2&format=json",
+  "print": "2x2",
+  "name": "Tuskguard Captain",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature — Human Warrior",
+  "oracle_text": "Outlast {G} ({G}, {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery.)\nEach creature you control with a +1/+1 counter on it has trample.",
+  "power": "2",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "set": "2x2",
+  "set_name": "Double Masters 2022",
+  "collector_number": "163",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/4/a4a4eab4-a2e6-4cb0-b32a-700aac59fc40.jpg?1783921862"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "The cost to activate a creature's outlast ability includes the tap symbol ({T}). A creature's outlast ability can't be activated unless that creature has been under your control continuously since the beginning of your turn."
+    },
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Several creatures with outlast also grant an ability to creatures you control with +1/+1 counters on them, including themselves. These counters could come from an outlast ability, but any +1/+1 counter on the creature will count."
+    }
+  ],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/a4a4eab4-a2e6-4cb0-b32a-700aac59fc40/rulings"
+}

@@ -24,11 +24,13 @@ test('PMSSB-63/S4 tylko mój stwór na stole: pass (cel tylko wrogi, nie wygnani
   assert.equal(runAudyt(sc('SEC4')).ok, true);
 });
 
-test('PMSSB-63/S-pin S2: wynik = −2.05 (składowe modelu, nie przypadek)', () => {
+test('PMSSB-63/S-pin S2: wynik = −2.14 (składowe modelu, nie przypadek)', () => {
+  // PMSSB-77 (domknięcie): token oddany wrogowi dostaje presję życia z tym samym znakiem:
+  // wróg 1/1 przy moim życiu 20 → 1/20 × 6 × 3/10 = −0.09 (dawniej −2.05).
   const state = buildAudyt(sc('SEC2'));
   const { bot } = decideWith(state);
   const best = bestOf(bot, 'cast_spell(kar');
-  assert.ok(Math.abs(best - (-2.05)) < 0.01, `wynik ${best}`);
+  assert.ok(Math.abs(best - (-2.14)) < 0.01, `wynik ${best}`);
 });
 
 test('PMSSB-63/S-pokrętło: creatureManaCostWeight ×0 zdejmuje karę za many → S2 rzuca (mana steruje wynikiem)', () => {

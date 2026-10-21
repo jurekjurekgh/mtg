@@ -90,7 +90,27 @@ export function previewCardIdOfOption(option, resolveCardId, view = null) {
     const revealed = view.pendingExplore?.cardId;
     return typeof revealed === 'string' && revealed ? revealed : null;
   }
+  // O (testy właściciela 2026-10-18, Release the Ants): Clash — wierzch albo spód
+  // — komenda nie niesie karty, a odsłoniętą kartę decydenta ma widok decyzji
+  // (`pendingClash.cards`, jawne: obie karty są odsłonięte). Ten sam wzorzec co H.
+  if (view && option.type === 'resolve_clash_choice') {
+    const revealed = view.pendingClash?.cards?.[option.playerId ?? view.playerId];
+    return typeof revealed === 'string' && revealed ? revealed : null;
+  }
   return null;
+}
+
+/**
+ * O2 (uwaga właściciela 2026-10-18, Release the Ants): nagłówek modala clash
+ * ma zaczynać się od nazwy KARTY, która wywołała clash — klikalnej, żeby ją
+ * można było podejrzeć. Komenda `resolve_clash_choice` jej nie niesie, więc
+ * źródło bierzemy z widoku decyzji (`pendingClash.sourceCardId`, jawne).
+ * Zwraca cardId albo null (nie clash / brak źródła).
+ */
+export function clashSourceCardIdOf(request, view) {
+  if (request?.options?.[0]?.type !== 'resolve_clash_choice') return null;
+  const id = view?.pendingClash?.sourceCardId;
+  return typeof id === 'string' && id ? id : null;
 }
 
 /**
@@ -99,10 +119,15 @@ export function previewCardIdOfOption(option, resolveCardId, view = null) {
  * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
  * (rodzic może mieć własny `click` na wierszu przyciskowym).
  */
-export function renderPeekButton(parent, { cardId, onOpen }) {
-  const peek = choiceNode(parent, 'button', 'ghost-btn choice-request-peek', '🔍 Podgląd karty');
-  peek.type = 'button';
-  if (peek.dataset) peek.dataset.previewCardId = String(cardId ?? '');
+export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
+  // O2 (uwaga właściciela 2026-10-18): żadnych ikonek w modalach. Podgląd to
+  // KLIKALNA NAZWA karty — ten sam wzorzec co `picker-name` w kreatorach
+  // (podkreślona nazwa, klik = pełny ekran, bez zaznaczania wiersza).
+  const peek = choiceNode(parent, 'span', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  if (peek.dataset) {
+    peek.dataset.previewCardId = String(cardId ?? '');
+    peek.dataset.cardId = String(cardId ?? '');
+  }
   peek.addEventListener('click', (event) => {
     event?.preventDefault?.();
     event?.stopPropagation?.();
@@ -118,7 +143,7 @@ export function renderPeekButton(parent, { cardId, onOpen }) {
  * (np. wybór celu na pusty stos — jedyna legalna komenda, brak listy) oraz
  * wszystko, co przyszłe typy zgłoszeń przyniosą, zanim dostaną własny tryb.
  */
-export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null }) {
+export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null, cardNameOfOption = null }) {
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
   // bez niego fallback na mapę typów.
@@ -192,7 +217,9 @@ export function renderChoiceRequest(host, request, { labelForOption, onResponse,
     // M201/C2: podgląd karty przy opcji (osobny przycisk — klik w samą opcję
     // ma nadal ZATWIERDZAĆ wybór, a nie otwierać obrazek).
     const previewCardId = onOpenCard && cardIdOfOption ? cardIdOfOption(option) : null;
-    if (previewCardId) renderPeekButton(options, { cardId: previewCardId, onOpen: onOpenCard });
+    if (previewCardId) {
+      renderPeekButton(options, { cardId: previewCardId, onOpen: onOpenCard, label: cardNameOfOption?.(option) ?? null });
+    }
   }
   if (request.options.length === 0) {
     choiceNode(host, 'div', 'zone-empty', 'Brak dostępnych wariantów.');
@@ -1184,7 +1211,7 @@ function labelLooksLikeHtml(label) {
   return label.includes('<') || /&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/.test(label);
 }
 
-export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
+export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, introCard = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
   // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
@@ -1223,8 +1250,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // M257-r5/C: w trybie poświęcenia etykiety = nazwy SEKCJI („stwor" +
   // „Poświęcenie (koszt)"), nie pozycji celu.
   const slotLabels = slots || sacMode ? (slotLabels_ ?? []) : [];
-  choiceNode(host, 'div', 'choice-request-intro',
-    intro ?? (xOnly
+  const introText = intro ?? (xOnly
       ? `${sourceName ? `${sourceName} — ` : ''}wybierz X (${plan.xMin}–${plan.xMax}):\n`
       : slots
       ? `${sourceName ? `${sourceName} — ` : ''}wskaż po jednym celu dla każdej pozycji:\n`
@@ -1234,7 +1260,23 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
           ? `${sourceName ? `${sourceName} — ` : ''}wskaż ${itemWord} (${range})${xLabel}:\n`
           : keepMode
             ? `${sourceName ? `${sourceName} — ` : ''}wybierz:\n`
-            : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`));
+            : `${sourceName ? `${sourceName} — ` : ''}zaznacz ${itemWord} (${range})${xLabel}:\n`);
+  // O2 (uwaga właściciela 2026-10-18): gdy nagłówek ma kartę źródłową (clash),
+  // zaczyna się KLIKALNĄ nazwą tej karty — ten sam klik co nazwy wierszy
+  // (pełny ekran po cardId). Bez `introCard` tekst jak dotąd.
+  const introNode = choiceNode(host, 'div', 'choice-request-intro');
+  if (introCard?.cardId && introCard.name && typeof onOpenCardByCardId === 'function') {
+    const nameEl = choiceNode(introNode, 'span', 'picker-name is-openable log-card', introCard.name);
+    if (nameEl.dataset) nameEl.dataset.cardId = String(introCard.cardId);
+    nameEl.addEventListener('click', (event) => {
+      event?.preventDefault?.();
+      event?.stopPropagation?.();
+      onOpenCardByCardId(introCard.cardId);
+    });
+    choiceNode(introNode, 'span', null, ` — ${introText}`);
+  } else {
+    introNode.textContent = introText;
+  }
 
   // =====================================================================
   // M288/A (uwaga właściciela z żywej gry): wiersze wyboru NIE są już własną

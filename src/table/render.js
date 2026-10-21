@@ -239,6 +239,8 @@ export const targetTypeLabel = (spec) => {
   if (type === 'creature_with_subtypes' && spec.subtypes?.length) return `stwór z podtypem ${spec.subtypes.join(' lub ')}`;
   if (type === 'creature_with_power_at_least' && spec.min != null) return `stwór o sile ≥ ${spec.min}`;
   if (type === 'creature_with_power_at_most' && spec.max != null) return `stwór o sile ≤ ${spec.max}`;
+  // Batch 69 (Gruul Beastmaster, riot): „another target creature you control" — `notSelf`.
+  if (type === 'creature_you_control' && spec.notSelf) return `inny ${base}`;
   if (type === 'creature_with_keyword' && spec.keyword) return `stwór ze słowem kluczowym ${KEYWORD_LABELS[spec.keyword] ?? spec.keyword}`;
   // Batch 59 (Memory's Journey): karty z grobu GRACZA wskazanego w innej
   // pozycji („target cards from their graveyard").
@@ -505,6 +507,10 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_escape_exile') return 'resolve_escape_exile';
   // Batch 57/B4: koszt Delve to JEDNA decyzja (wizard multiselect) — jak escape.
   if (command.type === 'resolve_delve_exile') return 'resolve_delve_exile';
+  // PMSSB-72 (Convoke): warianty wyboru stworów jednej karty grupują się w jeden panel.
+  if (command.type === 'cast_permanent' && command.convokePayments) {
+    return `permanent-convoke:${command.objectId}:${Boolean(command.kicked)}`;
+  }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -1044,6 +1050,10 @@ export const KEYWORD_LABELS = Object.freeze({
   // Batch 67 (Kuldotha Ringleader, CR 702.91): battle cry to trigger ataku —
   // bez etykiety linia keywordów pokazywałaby surowy slug „battle_cry" (M127/L29).
   battle_cry: 'Battle cry (atak: inne atakujące stwory +1/+0 do końca tury)',
+  // Batch 69 (Gnoll War Band, CR 702.116): myriad — trigger ataku; w 1v1 bez efektu.
+  myriad: 'Myriad (atak: token-kopia za każdego innego przeciwnika)',
+  // Batch 69 (Gruul Beastmaster, CR 702.136a): riot — wybór przy wejściu.
+  riot: 'Riot (przy wejściu: licznik +1/+1 albo pośpiech)',
 });
 
 // B7: COUNTER_LABELS mieszka we wspólnym ./counter-labels.js (log też go używa;
@@ -1501,6 +1511,10 @@ function describeEffect(e, ctx = {}) {
     },
     prevent_damage_this_turn: () => 'prewencja obrażeń do końca tury',
     prevent_next_damage: () => `prewencja kolejnych ${e.amount ?? 1} obrażeń`,
+    // Batch 69 (Fleeting Flight, CR 615.1): prewencja tylko obrażeń BOJOWYCH celu.
+    prevent_combat_damage_to_target_this_turn: () => 'prewencja obrażeń bojowych celu do końca tury',
+    // Batch 69 (Bloodfire Infusion): obrażenia równe mocy poświęconego stwora, każdemu stworowi.
+    damage_each_creature_sacrificed_power: () => 'obrażenia każdemu stworowi równe mocy poświęconego stwora',
     proliferate: () => 'proliferate',
     pump_by_creature_count: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} za każdego stwora`,
     pump_by_gates: () => '+X/+X, X = liczba kontrolowanych bram (Gate)',
@@ -1612,6 +1626,8 @@ const NON_MANA_COST_LABELS = Object.freeze([
   ['discardCard', 'odrzuć kartę'],
   ['discardCards', (n) => `odrzuć ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')}`],
   ['sacrificeSelf', 'poświęć'],
+  // Batch 69 (Bloodfire Infusion): „Sacrifice enchanted creature" — koszt aury.
+  ['sacrificeEnchantedHost', 'poświęć dołączonego stwora'],
   ['sacrificeLand', 'poświęć ląd'],
   ['sacrificeCreature', (rule) => rule.another ? 'poświęć innego stwora' : 'poświęć stwora'],
   ['tapCreature', 'tapnij swojego stwora'],
@@ -2275,7 +2291,7 @@ const CHOICE_GROUP_TYPE_DESCRIPTORS = Object.freeze({
   scry: 'Scry — co odłożyć na spód?',
   surveil: 'Surveil — karty do grobu',
   index: 'Kolejność kart na wierzchu biblioteki',
-  clash: 'Clash — wierzch czy spód?',
+  clash: 'Clash: wierzch czy spód?',
   sacrifice: 'Poświęcenie',
   value: 'Wartość X',
   phyrexian: 'Zapłata: mana czy życie?',
@@ -3427,6 +3443,15 @@ function commandLabelBase(cmd, session, view) {
     }
     case 'cast_permanent': {
       const card = obj(cmd.objectId);
+      // PMSSB-72 (Convoke, CR 702.51a): wariant z wyborem stworów do tapnięcia — nazwy stworów
+      // w etykiecie, żeby gracz widział, CO się tapuje (decyzja gracza, nie automat).
+      if (cmd.convokePayments?.length) {
+        const tapped = cmd.convokePayments.map((payment) => {
+          const name = nameOfObjectId(payment.creatureId);
+          return payment.color && payment.color !== 'generic' ? `${name} (${payment.color})` : `${name} (1)`;
+        }).join(', ');
+        return `Zagraj tapując na convoke: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
+      }
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
         // M268: Bestow bywa kolorowy (Leafcrown Dryad „Bestow {3}{G}") —

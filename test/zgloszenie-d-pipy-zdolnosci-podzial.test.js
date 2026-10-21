@@ -134,33 +134,12 @@ test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pok
 // siostrzana płaci brakujące pipy, ale NIE pokrywa kolorów karty (przeniesienie
 // byłoby stratą większą), a pipy zdolności są zgodne z rejestrem.
 const WYJATKI_PIPY_KART_KOLOROWYCH = new Map([
-  ['mournful-zombie', {
-    talia: 'dominaria-brg.txt',
-    pipyPozaSufiksem: 'w',
-    pipyZdolnosci: 'W',
-    powod: 'stwór B 2/1 za {2}{B} ze zdolnością „{W}, {T}: Target player gains '
-      + '1 life". Migracja Batch 64 (Man-o\'War, U, doszedł do planu Dominaria i '
-      + 'przerzucił podział na WU/BRG) postawiła kartę po stronie BRG: czarny jest '
-      + 'w sufiksie, więc ciało rzuca się i atakuje, a pip {W} zdolności pozostaje '
-      + 'nieopłacalny — po stronie WU karta byłaby nierzuca w ogóle. Mniejsza strata: '
-      + 'zdolność opcjonalna (CR 602.2), nie sama karta.',
-  }],
-  ['dragonbroods-relic', {
-    talia: 'tarkir-bg.txt',
-    pipyPozaSufiksem: 'wur',
-    pipyZdolnosci: 'WUBRG',
-    powod: 'artefakt G za {1}{G}: „{T}, Tap an untapped creature you control: '
-      + 'Add one mana of any color" + „{3}{W}{U}{B}{R}{G}, Sacrifice this '
-      + 'artifact: create 4/4 Reliquary Dragon". Druga zdolność wymaga '
-      + 'WSZYSTKICH pięciu kolorów (color_identity WUBRG — '
-      + 'docs/cards/scryfall-dragonbroods-relic.json), więc NIE PŁACI jej '
-      + 'żadna talia dzielona (2–3 kolory): w BG brakuje W/U/R, w WUR brakuje '
-      + 'B/G (i karty nie da się rzucić, bo koszt to {1}{G}). Podział wg '
-      + 'tożsamości karty (G → BG) jest więc jedyny sensowny, a pierwsza '
-      + 'zdolność (mana dowolnego koloru) działa w każdej talii — w BG nawet '
-      + 'łata brak W/U/R.',
-  }],
 ]);
+
+const BASIC_ZRODLA = Object.freeze({ W: 'basic-plains', U: 'basic-island', B: 'basic-swamp', R: 'basic-mountain', G: 'basic-forest' });
+function talieMaZrodlo(cardIds, color) {
+  return cardIds.includes(BASIC_ZRODLA[color.toUpperCase()]);
+}
 
 function sufiksTalii(plik) {
   const suffix = plik.replace(/\.txt$/, '').split('-').pop() ?? '';
@@ -187,8 +166,9 @@ test('D/5: niezmiennik talii dzielonych — kolorowa karta z pipami zdolności p
       const card = registry.get(cardId);
       // D/4 pilnuje kart BEZKOLOROWYCH — tu domykamy kolorowe (ta sama klasa).
       if (!card || !(card.colors ?? []).some((color) => 'WUBRG'.includes(color))) continue;
+      // Batch 69 (zasada właściciela): pip zdolności wymaga ŹRÓDŁA w talii — co\n      // najmniej jednego podstawowego lądu tego koloru (generator dokłada go\n      // przy rozkładzie landów), a nie samego sufiksu nazwy talii.
       const missing = abilityCostColorsOf(card)
-        .filter((color) => !suffix.includes(color.toLowerCase()));
+        .filter((color) => !talieMaZrodlo(cardIds, color));
       if (missing.length > 0) {
         naruszenia.push({
           plik, cardId,
@@ -219,9 +199,13 @@ test('D/5: niezmiennik talii dzielonych — kolorowa karta z pipami zdolności p
       `wyjątek ${cardId} jest martwy — naruszenie zniknęło (karta przeniesiona albo zmieniona), usuń wpis`);
   }
   // (b) ratchet w górę: liczba wyjątków jest przypięta do pomiaru.
-  assert.equal(WYJATKI_PIPY_KART_KOLOROWYCH.size, 2,
-    `nazwanych wyjątków „kolorowa karta z niepłacalnym pipem zdolności" jest `
-    + `${WYJATKI_PIPY_KART_KOLOROWYCH.size}, a pomiar 2026-09-20c po 25 taliach dał 2`);
+  // Batch 69 (2026-10-20, decyzja właściciela): pip zdolności poza sufiksem nie
+  // jest już wyjątkiem — generator daje talii źródło brakującego koloru (jeden
+  // podstawowy ląd, `landSplit`). Oba dawne wpisy (mournful-zombie,
+  // dragonbroods-relic) padły na ratchecie, więc mapa jest pusta.
+  assert.equal(WYJATKI_PIPY_KART_KOLOROWYCH.size, 0,
+    `nazwanych wyjątków „kolorowa karta z niepłacalnym pipem zdolności\" jest `
+    + `${WYJATKI_PIPY_KART_KOLOROWYCH.size}, po zasadzie źródła w talii ma być 0`);
 
   // (c) usprawiedliwienie mechaniczne (nie „bo tak"): rzucalność tu, strata tam.
   for (const [cardId, w] of WYJATKI_PIPY_KART_KOLOROWYCH) {

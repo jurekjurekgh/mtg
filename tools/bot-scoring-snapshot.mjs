@@ -46,7 +46,7 @@ import { setupCardMatch } from '../src/cards/materialize.js';
  */
 export const SNAPSHOT_CONFIG = Object.freeze({
   pairs: Object.freeze([
-    Object.freeze(['ravnica', 'innistrad-wu']),
+    Object.freeze(['ravnica-wub', 'innistrad-wu']),
     Object.freeze(['dominaria-brg', 'mirrodin-wu']),
     Object.freeze(['tarkir-bg', 'warhammer-ubr']),
   ]),

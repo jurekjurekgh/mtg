@@ -1,6 +1,7 @@
 # Mirrodin (WU)
 
 1x Crawling Chorus
+1x Myr Scrapling
 1x Steel Sabotage
 1x Divine Offering
 1x Ichorclaw Myr
@@ -20,5 +21,5 @@
 1x Loxodon Mender
 1x Steelfin Whale
 1x True Conviction
-4x Plains
+5x Plains
 6x Island

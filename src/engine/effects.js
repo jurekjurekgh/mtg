@@ -1147,7 +1147,11 @@ export function applyEnterCounters(state, objectId) {
   // rzucania `manaColorsSpent` jest puste, więc warunek po prostu nie zachodzi.
   const rule = object.entersWithCountersIf;
   if (rule) {
-    let holds = rule.morbid ? Boolean(state.creatureDiedThisTurn) : false;
+    // Batch 69 (Kavu Primarch, CR 702.33d): „If this creature was kicked, it
+    // enters with four +1/+1 counters on it\". Flaga `wasKicked` niesie permanent
+    // z rzutu kicked (castPermanent). Bez rzutu (np. ze zdolności) — nie zachodzi.
+    let holds = rule.kicked ? Boolean(object.wasKicked) : false;
+    if (!holds && rule.morbid) holds = Boolean(state.creatureDiedThisTurn);
     if (!holds && rule.adamant) {
       // Wpis jednoznaczny (1 znak) liczy się, gdy jest tym kolorem; wildcard
       // (>1 znaku — jednostka wielokolorowa, CR 106.7) gdy zawiera kolor.
@@ -1641,6 +1645,35 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const multiplier = effect.kickedMultiplier && sourceObject?.wasKicked ? effect.kickedMultiplier : 1;
     const amount = Math.max(0, effectivePower(dealer, state) ?? 0) * multiplier;
     dealNonCombatDamage(state, dealer, victimId, amount);
+    return;
+  }
+  if (effect.type === 'grant_keyword_permanent') {
+    // Batch 69 (Riot, CR 702.136a / ruling 2019-01-25): nadanie słowa kluczowego
+    // BEZTERMINOWO (haste nie znika w cleanup ani przy zmianie kontrolera).
+    // Zapis w `keywordGrants` + znacznik warstwy (CR 613.7b), jak przy kradzieży.
+    const targetId = targets[0] ?? sourceObject.id;
+    const target = state.objects.get(targetId);
+    if (!target || target.zone !== 'battlefield') return;
+    const keyword = effect.keyword;
+    state.objects.set(targetId, Object.freeze({
+      ...target,
+      keywordGrants: [...(target.keywordGrants ?? []), keyword],
+      keywordGrantTs: Object.freeze({ ...(target.keywordGrantTs ?? {}), [keyword]: nextTimestamp(state) }),
+    }));
+    return;
+  }
+  if (effect.type === 'damage_each_creature_sacrificed_power') {
+    // Batch 69 (Bloodfire Infusion): „This Aura deals damage equal to the
+    // sacrificed creature's power to each creature.\" Moc = LKI z kosztu
+    // (sacrificedPower, zapisany przed zmianą strefy). Źródłem jest aura.
+    // Zero/ujemna moc nie zadaje obrażeń. Dotyczy KAŻDEGO stworu na polu.
+    const amount = Math.max(0, sourceObject?.sacrificedPower ?? 0);
+    if (amount <= 0) return;
+    for (const creatureId of [...state.zones.battlefield]) {
+      const creature = state.objects.get(creatureId);
+      if (!creature || creature.zone !== 'battlefield' || creature.kind !== 'creature') continue;
+      dealNonCombatDamage(state, sourceObject, creatureId, amount);
+    }
     return;
   }
   if (effect.type === 'damage_from_enchanted_power') {
@@ -4124,6 +4157,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return Boolean(state.pendingReplacementChoice);
   }
   if (effect.type === 'destroy_permanent') {
+    // A-4 (audyt PR #167, 2026-10-18) — DO ZROBIENIA przy pierwszej karcie z tym połączeniem:
+    // ta gałąź (wielocelowe niszczenie) NIE obsługuje `drawIfManaValueAtMost` — wraca przed
+    // logiką dobrania z gałęzi poniżej. Żadna karta dziś tego nie łączy, więc brak skutku w grze.
+    // Gdy pojawi się karta „zniszcz … jeśli MV było ≤N, dobierz kartę” z wieloma celami:
+    // najpierw ustalić semantykę z Oracle/rulingu (per cel czy łącznie), dopisać test,
+    // dopiero potem dodać obsługę TUTAJ (nie łatać po cichu).
     if (effect.targetIndices) {
       destroyPermanents(state,effect.targetIndices.map(i=>targets[i]).filter(Boolean));
       return Boolean(state.pendingReplacementChoice);
@@ -4301,8 +4340,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // Clash (CR 701.30, Release the Ants): obaj gracze odsłaniają wierzchnią
     // kartę swojej biblioteki i każdy kładzie ją na WIERZCH ALBO SPÓD — to
     // realny wybór gracza (blokująca decyzja resolve_clash_choice, jak
-    // scry/surveil). Wygrywa wyższa mana value; remis i brak karty (pusta
-    // biblioteka) to przegrana tej strony. „If you win, return the spell to
+    // scry/surveil). Wygrywa wyższa mana value; brak karty (pusta biblioteka)
+    // to przegrana tej strony, a remis nie jest wygraną żadnej ze stron (CR 701.30,
+    // Q: log pisze wtedy „nie wygrywa”). „If you win, return the spell to
     // its owner's hand" rozstrzyga się po decyzjach — pendingSpellReturnToHand.
     // Bog Hoodlums (LRW): „If you win, put a +1/+1 counter on this creature" —
     // deskryptor `counterOnWin` niesie nazwę licznika, a `sourceId` cel
@@ -4326,11 +4366,16 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const myValue = mine ? (mine.manaCost ?? 0) : -1;
     const opponentValue = theirs ? (theirs.manaCost ?? 0) : -1;
     const won = myValue > opponentValue;
+    // Q (uwagi z gry, 2026-10-18): remis to NIE wygrana, ale i nie przegrana —
+    // CR 701.30: wygrywa tylko gracz z wyższą wartością, przy równej nikt.
+    // Pole `tie` pozwala logowi napisać „nie wygrywa” zamiast „przegrywa”.
+    const tie = myValue === opponentValue;
     state.events.push(event('clash_resolved', {
       playerId, opponentId,
       myManaValue: mine ? myValue : null,
       opponentManaValue: theirs ? opponentValue : null,
       won,
+      tie,
       pendingChoices: Boolean(mine || theirs),
     }));
     if (!mine && !theirs) {
@@ -4347,6 +4392,9 @@ function markTemporaryExile(state, exileId, sourceObject) {
         [opponentId]: theirs ? theirs.id : null,
       },
       won,
+      // Karta, która wywołała clash (czar na stosie albo stwór z ETB). Jawna dla
+      // obu graczy: UI pokazuje jej nazwę na początku modala decyzji (klikalną).
+      sourceCardId: sourceObject.cardId ?? null,
       returnToHandOnWin: Boolean(effect.returnToHandOnWin),
       // Nagroda licznikiem (Bog Hoodlums) — niesie cel (źródło) i nazwę
       // licznika; rozstrzyga się w resolve_clash_choice po ostatniej decyzji.
@@ -5717,6 +5765,20 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('damage_prevention_started', {
       sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
       filterDescription: effect.description ?? null,
+    }));
+    return;
+  }
+  if (effect.type === 'prevent_combat_damage_to_target_this_turn') {
+    // Batch 69 (Fleeting Flight): „Prevent all combat damage that would be dealt
+    // to it this turn\" — filtr celowy na obiekcie (targets[0]), tylko obrażenia
+    // bojowe. Filtr czyści cleanup (state.preventDamageThisTurn).
+    const targetId = targets[0];
+    if (targetId == null) return;
+    const filter = Object.freeze({ objectId: targetId, combatOnly: true });
+    state.preventDamageThisTurn = [...(state.preventDamageThisTurn ?? []), filter];
+    state.events.push(event('damage_prevention_started', {
+      sourceId: sourceObject.id, cardId: sourceObject.cardId, filter,
+      filterDescription: 'combat damage to target creature',
     }));
     return;
   }

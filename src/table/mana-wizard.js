@@ -401,6 +401,26 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
   }
+  if (cmd.type === 'cast_permanent' && cmd.convokePayments?.length) {
+    // PMSSB-72 (Convoke, CR 702.51a): każdy stwór płaci jednostkę kosztu — kolorową
+    // (pip zdejmuje wymóg koloru) albo generyczną. Kreator pyta tylko o resztę many.
+    const rest = paymentDescriptorOf({ ...cmd, convokePayments: undefined }, view, opts);
+    if (!rest) return null;
+    const requirements = rest.requirements.map((allowed) => [...allowed]);
+    for (const payment of cmd.convokePayments) {
+      if (payment.color === 'generic') continue;
+      const index = requirements.findIndex((allowed) => allowed.includes(payment.color));
+      if (index >= 0) requirements.splice(index, 1);
+    }
+    const totalNeeded = rest.totalNeeded - cmd.convokePayments.length;
+    return buildDescriptor(
+      { id: rest.objectId, cardId: rest.cardId },
+      totalNeeded,
+      requirements,
+      `${rest.costStr} − convoke (${cmd.convokePayments.length})`,
+      totalNeeded - requirements.length,
+    );
+  }
   if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && cmd.kicked) {
     // Kicker (CR 702.33): zwykły koszt + dodatkowy koszt kickera (liczba
     // bez obniżek), pipy kickera dokładają się do wymagań kolorów.

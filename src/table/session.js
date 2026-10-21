@@ -151,6 +151,7 @@ export function commandOptionKey(cmd) {
     'exileIds',
     // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
     'delveExileIds',
+    'convokePayments',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
@@ -322,6 +323,8 @@ function defaultBotFactory(seed, ctx) {
    */
   const ABILITY_EFFECT_LABELS = Object.freeze({
     add_counter: 'licznik na celu',
+    // Batch 69 (Bloodfire Infusion): obrażenia równe mocy poświęconego stwora.
+    damage_each_creature_sacrificed_power: 'obrażenia każdemu stworowi równe mocy poświęconego',
     adjust_battle_defense: 'zmiana liczników obrony bitwy',
     add_mana: 'dodanie many do puli',
     bounce_permanent: 'zerzucenie permanentu na rękę',
@@ -2047,7 +2050,10 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         const theirs = e.opponentManaValue ?? '—';
         // B5 (audyt stołu 2026-09-09, G1): „mana value" to żargon reguł —
         // gracz czyta „wartość many" (jak „koszt many" w glosach).
-        return `Clash: ${whoN(e.playerId)} ${e.won ? 'wygrywa' : 'przegrywa'} (wartość many ${mine} vs ${theirs})`;
+        // Q (uwagi z gry, 2026-10-18): remis to nie przegrana — CR 701.30, przy równej
+        // wartości nikt nie wygrywa. Zdarzenie niesie `tie` z silnika.
+        const wynik = e.won ? 'wygrywa' : (e.tie ? 'nie wygrywa' : 'przegrywa');
+        return `Clash: ${whoN(e.playerId)} ${wynik} (wartość many ${mine} vs ${theirs})`;
       }
       case 'clash_choice_resolved': return `${whoN(e.playerId)} ${e.putOnBottom ? 'odkłada odsłoniętą kartę na spód' : 'zostawia odsłoniętą kartę na wierzchu'} biblioteki`;
       case 'object_goaded': return `${nameOfObject(e.objectId)} jest sprowokowany (goad) — musi atakować do końca tury`;

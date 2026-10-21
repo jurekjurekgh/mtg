@@ -50,7 +50,7 @@ export function parseArgs(argv) {
     // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
     // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
     human: 'dominaria-brg',
-    bot: 'ravnica',
+    bot: 'ravnica-wub',
     seed: 42,
     steps: 300,
     out: 'transcript.txt',
@@ -109,7 +109,7 @@ Użycie:
 
 Opcje:
   --human <talia>        talia gracza (nazwa pliku decks/*.txt bez .txt) [dominaria-brg]
-  --bot <talia>          talia bota                                              [ravnica]
+  --bot <talia>          talia bota                                              [ravnica-wub]
   --seed <n>             seed partii                                            [42]
   --steps <n>            limit kroków gry                                      [300]
   --out <plik>           plik transkryptu                              [transcript.txt]

@@ -348,7 +348,16 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
   // odnotowana w docs/plans/PLAN_2026-10-17c-batch68-kart.md jako otwarte ustalenie.
   // Trójka przelosowana wg konwencji L25: seedy przechodzące na obecnych taliach
   // z pełnymi parami (34: 1/1, 41: 5/4, 50: 5/5 — suma 11 śledzonych / 10 opisanych).
-  for (const seed of [34, 41, 50]) {
+  // PMSSB-70 (2026-10-20): „znana luka modalu F3" z batcha 69 była BŁĘDEM TESTU,
+  // nie modala. (1) `turn_started` niesie `playerId`, a test czytał `activePlayerId`,
+  // więc ruchy CZŁOWIEKA z jego tury przypisywał do tury bota (fałszywy brak);
+  // (2) test odczytywał bufor tylko w pauzie, a UI pokazuje go po każdej komendzie
+  // (main.js showBotMoves) — wpisy z ciągu po wznowieniu były czyszczone przez
+  // następną komendę. Dowód: skan 1..60 na HEAD 60/60 OK; mutacja (ukryte
+  // creature_destroyed człowieka) jest wykrywana. Kryterium: zmianę strefy
+  // potwierdza WYŁĄCZNIE wpis z opisem strefy (OPIS_STREFY), nie sama wzmianka.
+  // Seedy 16, 17, 26, 28, 47, 58 — dawne fałszywe braki — przypięte jako regresja.
+  for (const seed of [1, 16, 17, 25, 26, 28, 38, 47, 58]) {
     const session = createSession({ seed, registry, decks, pauseOnBotMoves: true });
     const nazwa = (object) => (object
       ? (registry.get(object.cardId)?.name ?? object.name ?? object.cardId) : null);
@@ -362,7 +371,10 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
       for (const e of session.state.events) {
         if (obejrzane.has(e)) continue;
         obejrzane.add(e);
-        if (e.type === 'turn_started') { tura = e.activePlayerId ?? tura; continue; }
+        // Silnik niesie aktywnego gracza w polu `playerId` (resources.js: turn_started),
+        // nie w `activePlayerId` — czytanie samego `activePlayerId` zostawiało `tura`
+        // na turze bota i przypisywało ruchy CZŁOWIEKA do okna bota (fałszywy brak).
+        if (e.type === 'turn_started') { tura = e.playerId ?? e.activePlayerId ?? tura; continue; }
         if (tura !== BOT_ID || !ZMIANY_STREFY.has(e.type)) continue;
         const object = e.object ?? session.state.objects.get(e.objectId ?? e.fromId);
         if (object?.ownerId !== HUMAN_ID) continue;
@@ -371,33 +383,45 @@ test('F3: zmiana strefy permanentu CZŁOWIEKA w turze bota dociera w modalu prze
       }
     };
 
+    // Modal (UI: main.js showBotMoves) pokazuje bufor po KAŻDEJ przyjętej
+    // komendzie człowieka i po wznowieniu (continueAfterBotPause), nie tylko
+    // w pauzie. Test robi to samo: odczyt bufora, sprawdzenie, potem „pokazany".
+    // Wcześniej odczyt był tylko w pauzie, więc wpisy z ciągu po wznowieniu
+    // (skutek czaru, śmierć, deklaracja) były czyszczone przez następną komendę
+    // i test widział fałszywy brak (seedy 16/17/26/28/47/58).
+    const pokaz = () => {
+      przejrzZdarzenia();
+      const teksty = session.botMoves.map((m) => m.text ?? '');
+      for (const czekajaca of [...oczekujace]) {
+        // Ten SAMY wpis ma nieść nazwę i opis zmiany strefy („Typhoid Rats
+        // ginie") — sama wzmianka przy obrażeniach („Shock zadaje 2
+        // obrażenia (Typhoid Rats)") nie mówi, że permanent zniknął, więc
+        // NIE kasuje oczekiwania (inaczej brak „ginie” maskował się obrażeniami).
+        const opisy = teksty.filter((t) => t.includes(czekajaca) && OPIS_STREFY.test(t));
+        if (opisy.length === 0) continue;
+        opisane += 1;
+        oczekujace.delete(czekajaca);
+      }
+      // Nagłówek tury człowieka zamyka turę bota (M261: paczka z granicy
+      // tury) — wtedy nic z tury bota nie może być jeszcze „niepokazane".
+      if (teksty.some((t) => /^Tura /.test(t)) && session.state.turn.activePlayerId === HUMAN_ID) {
+        assert.deepEqual([...oczekujace], [],
+          `seed ${seed}: nagłówek tury człowieka, a modal nie pokazał: ${[...oczekujace].join(', ')}`);
+      }
+      session.clearBotMoves();
+    };
+
     for (let i = 0; i < 3000 && session.state.status === 'active'; i += 1) {
       if (session.botPausePending) {
-        przejrzZdarzenia();
-        const teksty = session.botMoves.map((m) => m.text ?? '');
-        for (const czekajaca of [...oczekujace]) {
-          const wzmianki = teksty.filter((t) => t.includes(czekajaca));
-          if (wzmianki.length === 0) continue;
-          // Ten SAMY wpis ma nieść nazwę i opis zmiany strefy („Typhoid Rats
-          // ginie") — sama wzmianka przy obrażeniach („Shock zadaje 2
-          // obrażenia (Typhoid Rats)") nie mówi, że permanent zniknął.
-          if (wzmianki.some((t) => OPIS_STREFY.test(t))) opisane += 1;
-          oczekujace.delete(czekajaca);
-        }
-        // Nagłówek tury człowieka zamyka turę bota (M261: paczka z granicy
-        // tury) — wtedy nic z tury bota nie może być jeszcze „niepokazane".
-        if (teksty.some((t) => /^Tura /.test(t)) && session.state.turn.activePlayerId === HUMAN_ID) {
-          assert.deepEqual([...oczekujace], [],
-            `seed ${seed}: nagłówek tury człowieka, a modal nie pokazał: ${[...oczekujace].join(', ')}`);
-        }
-        session.clearBotMoves();
+        pokaz();
         session.continueBotPlay();
+        pokaz();
         continue;
       }
       const view = session.view();
       const result = session.apply(humanCommand(view));
       assert.ok(result.ok, `seed ${seed}: komenda odrzucona: ${result.reason}`);
-      przejrzZdarzenia();
+      pokaz();
     }
     assert.deepEqual([...oczekujace], [], `seed ${seed}: na koniec partii zostało coś niepokazanego`);
     razemSledzone += sledzone;

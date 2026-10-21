@@ -73,7 +73,8 @@ test('PMSSB10-B2: necrosquito 2 oil (PMSSB-67/F2: 70.05, było 62.55 przy 0/0)',
 });
 test('PMSSB10-B2: frontline-war-rager tapped-gate: empty-SAME, 2tap +2.25', () => {
   assert.equal(castScore('frontline-war-rager'), '65.70');
-  assert.equal(castScore('frontline-war-rager', (s) => { tapAlly(s, 't1'); tapAlly(s, 't2'); }), '67.95');
+  // PMSSB-71 v3: licznik na sobie w end_step bez celu = wartość kontekstowa (neutralnie 3): +2.25 → +1.35.
+  assert.equal(castScore('frontline-war-rager', (s) => { tapAlly(s, 't1'); tapAlly(s, 't2'); }), '67.05');
 });
 test('PMSSB10-B2: plague-reaver wrath: empty-SAME, foe3 +13.5', () => {
   assert.equal(castScore('plague-reaver'), '74.71');

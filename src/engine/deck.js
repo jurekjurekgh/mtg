@@ -143,6 +143,8 @@ export function installDeck(state, deck, { seed }) {
       // mechaniki, a testy budujące obiekt przez `...gameObjectDataOf`
       // byłyby zielone (klasa L21).
       delve: card.delve ?? false,
+      // Batch 69 (Convoke, CR 702.51): deskryptor — rzut może płacić stworami.
+      convoke: card.convoke ?? false,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
       warp: card.warp ?? null,

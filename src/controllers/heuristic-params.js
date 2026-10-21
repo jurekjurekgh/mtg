@@ -33,6 +33,15 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'attackThroughBonus',      // premia, gdy atakujący bezpiecznie zadaje moc (dawniej +3 w power+3)
   'attackOpenBoardBonus',    // premia za atak w pustą planszę przeciwnika (dawniej +8)
   'attackEvasionBonus',      // premia za ewazję latania omijającą blokerów (dawniej +3)
+  // PMSSB-70 (2026-10-20, remis s4011 t26): wymiana (stwór ginie, zabija blokera)
+  // PONAD wolne sloty — czyli gdy przeżywający atakujący już zabijają wszystkich
+  // blokerów — nie zabija nikogo nowego. Taka wymiana dostaje karę
+  // `unpaidTradeLoss` zamiast swojej wartości. `unpaidTradeEnabled = 0` przywraca
+  // dawną wycenę (`power − 1` bez kary).
+  'unpaidTradeEnabled',
+  'unpaidTradeLoss',
+  // PMSSB-72 (Convoke): kara za stwór tapnięty na convoke (nie atakuje i nie blokuje w tej turze), rośnie z wartością ciała.
+  'convokeTapPenalty',
   // Zgłoszenie D1 właściciela (2026-10-07, Pain for All): bloker z aurą
   // odbijającą („Whenever enchanted creature is dealt damage, it deals that
   // much damage to each opponent") — zablokowany atakujący zadaje obrażenia
@@ -109,6 +118,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'creatureKwFlying', 'creatureKwFlyingFloor', 'creatureKwFlyingFloorScaled', 'creatureKwRefPower', 'creatureKwHaste',
   'creatureKwLifelinkWeight', 'creatureKwLifelinkSurvivalFloor', 'creatureKwStateFloor', 'creatureKwRefThreat', 'creatureKwDeathtouch',
   'creatureKwVigilance', 'creatureKwFirstStrike', 'creatureKwDoubleStrike', 'creatureKwMenace',
+  // PMSSB-71 v2 (riot): wybór pośpiech/licznik zależy od kontekstu stołu, nie od stałej.
+  'riotHasteDamageWeight', 'riotHasteLethalBonus',
+  // PMSSB-71 v3 (licznik +1/+1 na sobie, wszystkie ścieżki bez celu): presja i przewaga liczebna wroga.
+  'counterPressureWeight', 'counterBoardWeight',
+  // PMSSB-77 (tokeny-stwory własne): presja życia na wycenę ciała tokenu.
+  'tokenPressureWeight',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -545,6 +560,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'plotRedundantPenalty',        // surcharge, gdy plot nie oszczędza many wobec rzutu dostępnego TERAZ
   'plotDelayPenalty',            // surcharge za turę zwłoki, gdy rzut jest dostępny teraz
   'suspendWaitPenalty',          // surcharge za każdy licznik czasu zawieszenia
+  // PMSSB-69 (inicjatywa, take_initiative): dopłata za kradzież, kara za ryzyko, limit kary.
+  'initiativeStealBonus', 'initiativeExposurePenalty', 'initiativeExposureCap',
 ]);
 
 export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
@@ -561,6 +578,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   attackThroughBonus: 3,
   attackOpenBoardBonus: 8,
   attackEvasionBonus: 3,
+  unpaidTradeEnabled: 1,
+  unpaidTradeLoss: 2,
+  // PMSSB-72 (Convoke, CR 702.51a): każdy stwór płacący convoke ratuje {1} many (creatureManaCostWeight),
+  // ale się tapuje: kara = convokeTapPenalty · (moc + wytrzymałość)/4 (utracona tura: atak/blok). 4 = stwór 2/2.
+  convokeTapPenalty: 4,
   // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25
   // przebija premię wyścigu i typowe zyski ataku (power+3/+8), a zostaje
   // poniżej samobójstwa 1000 z drabiny PMSSB-36.
@@ -664,6 +686,18 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Pokrętło F5: 1 = próg skalowany mocą (domyślne), 0 = dawne płaskie 3 (PRZED; pomiar tools/pmssb67-prog-latania-sonda.mjs).
   creatureKwFlyingFloorScaled: 1,
   creatureKwHaste: 6,
+  // PMSSB-71 v2 (riot, pośpiech): wartość = waga × moc × udział niezablokowany (1/(1 + blokery wroga minus moje
+  // inne świeże stwory)). Waga 4 = ta sama skala co utrata życia wroga (4/pkt). Letal bez blokerów = bonus jak w lose_life.
+  riotHasteDamageWeight: 4,
+  riotHasteLethalBonus: 80,
+  // PMSSB-71 v3 (licznik +1/+1 na sobie): wartość = ciało (3 za licznik) + waga presji × presja
+  // (siła ataku wroga / moje życie, ≤ 1) + waga przewagi × (wrogie − moje stwory) / (wszystkie), gdy wróg prowadzi.
+  // Neutralny stół (brak presji, brak przewagi wroga) = sama wartość ciała, jak w riot.
+  counterPressureWeight: 6,
+  counterBoardWeight: 2,
+  // PMSSB-77: własny token-stwór dostaje + waga × presja (siła ataku wroga / moje życie, ≤ 1) do ciała.
+  // Presja 0 = dawna wartość ciała (zerowa zmiana przy pustym zagrożeniu).
+  tokenPressureWeight: 6,
   creatureKwLifelinkWeight: 1,
   // PMSSB-67 F3: udział zabójców wśród wrogich stworzeń (moc ≥ wytrzymałość ciała) obniża lifelink do
   // tego progu przy udziale 100 %. 0.5: pierwszy cios zawsze zarabia (wartość nie spada do zera), a
@@ -1061,6 +1095,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
   //   nieopłacalny” nadal zostaje nad passem).
   suspendWaitPenalty: 1,
+  // PMSSB-69 (inicjatywa, CR 725). Składnik ETB = 6 (dawna stała) + dopłata, gdy posiada wróg,
+  // − kara za atakujące stwory wroga (gdy zmienia się posiadacz). Gdy już posiadam — 0 (silnik nie robi venture).
+  // initiativeStealBonus 6 = jedna venture ≈ jedna dobrana karta (drawCardValue): objęcie zabiera wrogowi postęp.
+  initiativeStealBonus: 6,
+  // initiativeExposurePenalty 2 za każdy stwór wroga bez defendera z mocą > 0: 1/3 venture na atakującego
+  // (ryzyko, że zada obrażenia w swojej turze i odbierze inicjatywę). Modelu bloków własnych nie ma (konserwatywnie).
+  initiativeExposurePenalty: 2,
+  // initiativeExposureCap 6 = jedna venture: kara nie zjada więcej niż dawny składnik ETB (wynik ≥ 0).
+  initiativeExposureCap: 6,
 });
 
 /**

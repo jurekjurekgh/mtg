@@ -108,7 +108,7 @@ test('M318/D: pula {U} + bramka → {1}{B} oferowany (pula pokrywa {1}, bramka p
 function sessionWithSS({ tappedOthers = false, ownCreature = true, foeCreature = true } = {}) {
   const REG = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica.txt', 'utf8'), REG).cardIds],
+    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica-wub.txt', 'utf8'), REG).cardIds],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/srodziemie.txt', 'utf8'), REG).cardIds],
   ]);
   const session = createSession({ seed: 5, registry: REG, decks });

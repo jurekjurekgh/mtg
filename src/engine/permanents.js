@@ -597,6 +597,10 @@ function anthemBonuses(state, object) {
         || ability.scope.affects === 'all_creatures_you_control';
       if (!creatureAffects && !subtypeScope) continue;
       if (subtypeScope && !hasCreatureType(object, ability.scope.subtype, state)) continue;
+      // Batch 69 (Tuskguard Captain, CR 611.3a): „Each creature you control with a
+      // +1/+1 counter on it has trample\" — filtr na STWÓR, który dostaje nadanie
+      // (nie na źródło). Stwór bez takiego licznika nie dostaje słowa kluczowego.
+      if (ability.scope.withCounter && !((object.counters ?? {})[ability.scope.withCounter] > 0)) continue;
       // 'other_creatures_you_control' excludes the source itself; 'all_creatures_you_control' includes it.
       if (ability.scope.affects === 'other_creatures_you_control' && source.id === object.id) continue;
       if (source.controllerId !== object.controllerId) continue;
@@ -1439,9 +1443,17 @@ export function modifyStats(state, objectId, { power = 0, toughness = 0 }) {
  * celu generycznie ({ typesInclude, isCreature }); czyszczone w cleanup.
  * Zwraca true, gdy AKtywna prewencja skasowałaby obrażenia dla obiektu.
  */
-export function isDamagePrevented(state, object) {
+export function isDamagePrevented(state, object, { combat = false } = {}) {
   if (!object || object.zone !== 'battlefield') return false;
   for (const filter of state.preventDamageThisTurn ?? []) {
+    // Batch 69 (Fleeting Flight, CR 615.1): „Prevent all combat damage that would
+    // be dealt to it this turn\" — filtr celowy (objectId) i tylko-bojowy
+    // (combatOnly). Obrażenia niebojowe nie są objęte, gdy `combat` jest fałszem.
+    if (filter.combatOnly && !combat) continue;
+    if (filter.objectId != null) {
+      if (filter.objectId === object.id) return true;
+      continue;
+    }
     const typesOk = (filter.typesInclude ?? []).every((type) => (object.types ?? []).includes(type));
     const kindOk = !filter.isCreature || object.kind === 'creature' || (object.types ?? []).includes('Creature');
     if (typesOk && kindOk) return true;

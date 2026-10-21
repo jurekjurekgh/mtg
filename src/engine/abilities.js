@@ -119,6 +119,17 @@ function abilityConditionFailure(state, playerId, ability, sourceObject = null) 
   // tego podtypu nie produkuje koloru (CR 605: nie ma czego wybrać). Warunek
   // czytany z DANYCH efektu (`colorsFrom`) — oferta i walidacja tą samą
   // bramką (L48), a źródło wyklucza samo siebie (Gond Gate ≠ własne {C}).
+  // Batch 69 (Heron-Blessed Geist, CR 602.5b): „Activate only if you control an
+  // enchantment\" — generyczny warunek typu (czytany z `condition.controlsType`):
+  // gracz musi kontrolować permanent o tym typie (źródło też się liczy, jeśli
+  // ma ten typ). Oferta i walidacja tą samą bramką.
+  const requiredType = ability?.condition?.controlsType;
+  if (requiredType != null && !state.zones.battlefield.some((id) => {
+    const candidate = state.objects.get(id);
+    return candidate?.controllerId === playerId && (candidate.types ?? []).includes(requiredType);
+  })) {
+    return `Zdolność wymaga kontrolowanego permanentu typu ${requiredType}`;
+  }
   const goal = collectColorsFromGoal(ability);
   if (goal) {
     const available = colorsProducibleBySubtype(state, playerId, goal.controlledSubtype,
@@ -530,7 +541,7 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
 function costHasOwnValue(cost) {
   if (!cost) return false;
   return Boolean(cost.sacrificeSelf || cost.sacrificeLand || cost.discardCard
-    || cost.discardCards || cost.exileFromGraveyard);
+    || cost.discardCards || cost.exileFromGraveyard || cost.sacrificeEnchantedHost);
 }
 
 function abilityEffectIsNoOp(state, source, ability, target) {
@@ -792,6 +803,13 @@ export function legalActivatedAbilities(state, playerId) {
           }
         }
         continue;
+      }
+      // Batch 69 (Bloodfire Infusion, CR 602.1a): koszt „Sacrifice enchanted
+      // creature\" — oferta tylko, gdy aura jest przypięta do stworu kontrolera.
+      // Wybór celu nie istnieje (gospodarz jest jedyny), więc oferta = walidacja.
+      if (ability.cost?.sacrificeEnchantedHost) {
+        const host = state.objects.get(object.attachedTo);
+        if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) continue;
       }
       if (ability.cost?.tap && object.tapped) continue;
       // Choroba przywołania (CR 302.6): stwór bez haste nie aktywuje {T}
@@ -1583,6 +1601,9 @@ export function performActivation(state, ctx) {
     throw new Error('Nielegalny stwór do poświęcenia (koszt)');
   }
   let sacrificedToughness;
+  // Batch 69 (Bloodfire Infusion): moc poświęconego gospodarza (LKI) — efekt
+  // „deals damage equal to the sacrificed creature's power\" czyta ją z obiektu stosu.
+  let sacrificedPower;
   // M360/B4 (EOE Release Notes, mtg.wiki/Station 2026-09-16): snapshot mocy
   // stwora tapowanego kosztem station — LKI na wypadek usunięcia w odpowiedzi.
   let stationTappedPower;
@@ -1797,6 +1818,12 @@ export function performActivation(state, ctx) {
     }));
     effectSource = exiled;
   }
+  // Batch 69 (Ior Ruin Expedition, CR 118.3 / 602.2b): koszt „Remove three quest
+  // counters from this enchantment and sacrifice it\" — liczniki zdejmujemy PRZED
+  // poświęceniem, bo po zmianie strefy obiekt to nowy byt bez liczników (CR 400.7).
+  if (cost.removeCounter) {
+    removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
+  }
   if (cost.sacrificeSelf) {
     const sacrificeMarker = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, object, []);
@@ -1816,6 +1843,23 @@ export function performActivation(state, ctx) {
     const moved = moveObjectDirectly(state, victim.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
       fromId: victim.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+    }));
+  }
+  // Batch 69 (Bloodfire Infusion, CR 602.1a/608.2h): koszt „Sacrifice enchanted
+  // creature\" — gospodarz aury to koszt, nie cel. Moc i wytrzymałość zapisujemy
+  // PRZED zmianą strefy (LKI), potem stwór idzie do grobu jak przy sacrificeCreature.
+  if (cost.sacrificeEnchantedHost) {
+    const host = state.objects.get(object.attachedTo);
+    if (!host || host.zone !== 'battlefield' || host.kind !== 'creature' || host.controllerId !== playerId) {
+      throw new Error('Brak zaczepionego stworu do poświęcenia (koszt)');
+    }
+    sacrificedPower = effectivePower(host, state);
+    sacrificedToughness = effectiveToughness(host, state);
+    const toZone = deathZoneFor(state, host);
+    const destId = `${toZone}-${state.objectSequence++}`;
+    const moved = moveObjectDirectly(state, host.id, toZone, destId);
+    state.events.push(event('permanent_sacrificed', {
+      fromId: host.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Koszt „Sacrifice a land" (Seismic Monstrosaur): poświęcenie własnego
@@ -1874,9 +1918,6 @@ export function performActivation(state, ctx) {
   }
   // Koszt „Remove a counter" (Trigon of Corruption): zdjęcie licznika jest
   // częścią kosztu, następuje PRZED efektem.
-  if (cost.removeCounter) {
-    removeCounter(state, objectId, cost.removeCounter.name, cost.removeCounter.amount ?? 1);
-  }
   // Koszt discard (Goblin Picker / Plague Reaver) został już opłacony przez
   // resolve_discard_choice (Temat 4) — tutaj nie ma już nic do odrzucenia.
   // Po poświęceniu źródła (koszt) efekt nie może wskazywać nieistniejącego już
@@ -1913,7 +1954,7 @@ export function performActivation(state, ctx) {
     return queueActivatedAbilityToStack(state, {
       playerId, objectId, abilityIndex, ability,
       effectSourceId: effectSource.id,
-      effectTargets, sacrificedToughness, stationTappedPower,
+      effectTargets, sacrificedToughness, sacrificedPower, stationTappedPower,
       // M115: X to WARTOŚĆ WYBRANA przez gracza, nie łączna zapłacona mana —
       // przy koszcie {X}{B} te liczby się różnią (X=2 → 3 many).
       xValue: (cost.manaX || cost.tapXArtifacts) ? (xValue ?? 0) : undefined,
@@ -1975,7 +2016,7 @@ export function legalManaAbilities(state, playerId) {
  * się od razu. Tutaj: koszty są już zapłacone, kolejkujemy wpis na stos z LKI
  * źródła (CR 603.10), a efekty zastosuje resolveTopOfStack.
  */
-export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, stationTappedPower, eventExtra = {} }) {
+export function queueActivatedAbilityToStack(state, { playerId, objectId, abilityIndex, ability, effectSourceId, effectTargets, xValue, crewCreatureIds, stationTappedCreatureId = null, sacrificedToughness, sacrificedPower, stationTappedPower, eventExtra = {} }) {
   const source = state.objects.get(effectSourceId) ?? state.objects.get(objectId) ?? {
     id: effectSourceId, controllerId: playerId, cardId: null, zone: 'none', kind: null,
   };
@@ -1999,6 +2040,7 @@ export function queueActivatedAbilityToStack(state, { playerId, objectId, abilit
       crewCreatureIds: crewCreatureIds ? [...crewCreatureIds] : undefined,
       sourceLki,
       ...(sacrificedToughness != null ? { sacrificedToughness } : {}),
+      ...(sacrificedPower != null ? { sacrificedPower } : {}),
       // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
       ...(stationTappedPower != null ? { stationTappedPower } : {}),
     }),

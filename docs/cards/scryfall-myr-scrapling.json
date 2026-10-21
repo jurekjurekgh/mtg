@@ -1,0 +1,23 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Myr+Scrapling&set=mh2&format=json",
+  "print": "mh2",
+  "name": "Myr Scrapling",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact Creature — Myr",
+  "oracle_text": "Sacrifice this creature: Put a +1/+1 counter on target creature.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [],
+  "set": "mh2",
+  "set_name": "Modern Horizons 2",
+  "collector_number": "230",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/5/b/5b9072a5-bd7f-4007-a34a-ebe251c95356.jpg?1783926803"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/5b9072a5-bd7f-4007-a34a-ebe251c95356/rulings"
+}

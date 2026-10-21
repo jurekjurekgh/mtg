@@ -19,6 +19,92 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-18f — Bot nie atakuje mimo przewagi: pochłanianie blokerów liczone mocą, nie wytrzymałością (R)
+
+- Uwaga z testów: bot z 7 stworami (siła 13) i 1 kartą w bibliotece nie atakuje; ja mam 5 życia, 3 stwory,
+  9 kart w bibliotece. Przyczyna: `penetratingPower` odejmował od mocy atakujących SUMĘ WYTRZYMAŁOŚCI blokerów
+  (4+4+5 = 13 przy sile 13), więc lethal nie wchodził i wygrywała pusta deklaracja. Blokujący zatrzymuje moc
+  atakującego, którego blokuje (CR 509.1h, 510.1); przy trample tylko obrażenia śmiertelne (CR 702.19b).
+- Poprawka: `blockersAbsorbedDamageOf` (zachłanny przydział blokerów; dla ataków bez trample dokładny, pin
+  brute force na 300 układach). Użyta w `blockerAbsorb` (lethal) i w `forcedBlockLossIds` (wymuszony blok).
+  Rachunek właściciela (4 obrażenia) był niedoszacowany: przy optymalnych blokach przechodzi 6 ≥ 5.
+- Golden master (B6, `test/fixtures/bot-scoring-snapshot.json`) zregenerowany ŚWIADOMIE: 4 z 6 partii zmieniły
+  ślad. Liczba i typy decyzji bez zmian; zmienia się wycena `declare_attackers` (−1000 tam, gdzie stary model
+  uznawał zestaw za śmiertelny, a nowy nie). Zrzut różnic: `.arena/gm-cmp.mjs` (poza repo, w `.arena/`).
+- Test: `test/zgloszenie-r-bot-nie-atakuje-wyscig.test.js` (6; przed poprawką czerwony). Bramy: `npm test`
+  8519/8519 rc=0; `test:all` 8786/8786 rc=0; build rc=0; `cr-numery --sprawdz` rc=0. Commit `d5c026d`.
+- Otwarte przy R: w scenariuszu bot wybiera 6 z 7 stworów (1/2 zostaje w domu). Oba warianty są śmiertelne
+  (6 i 7 stworów), więc to rozstrzygnięcie remisu wyceny, nie błąd lethal.
+
+## 2026-10-18e — Log clash: remis to „nie wygrywa”, nie „przegrywa” (Q)
+
+- Uwaga z gry: „Clash: Nieprzyjaciel przegrywa (wartość many 4 vs 4)”. Remis to nie przegrana. CR 701.30: wygrywa
+  gracz z wyższą mana value niż wszystkie pozostałe odsłonięte karty; przy równej wartości nikt nie wygrywa.
+- Efekt był poprawny (czar nie wraca przy remisie). Błędny był tekst: `session.js` pisał „przegrywa” dla każdej
+  przegranej, a silnik nie rozróżniał remisu. Dodano `tie` w zdarzeniu `clash_resolved` (`effects.js`). Log: wygrana
+  „wygrywa”, remis „nie wygrywa”, niższa wartość „przegrywa”.
+- Test: `test/zgloszenie-q-clash-remis-nie-wygrywa.test.js` (7; przed poprawką 4 czerwone). Bramy: `npm test`
+  8513/8513; `test:all` 8780/8780 rc=0; build rc=0. Commit `31409ed`.
+- Przy okazji: lokalny klon był zacofany względem `origin` (HEAD `34e8676`, zmiany w drzewie = dokładnie treść
+  `origin`). Ustawiono branch na `origin/arena/3ce2ec34-mtg` przez `reset --mixed`, bez zmiany treści plików.
+
+## 2026-10-18d — Modal clash: nazwa karty wywołującej na początku, bez ikonek (O2)
+
+- Odpowiedź właściciela na pytania z O: żadnych infantylnych ikonek (bez 🔍); podgląd = klikalna nazwa jak w każdym
+  modalu z uniwersalnego kreatora (bez osobnego modala). Nazwa karty wywołującej clash (Release the Ants) ma stać
+  na początku nagłówka i być klikalna.
+- Ustalenie przy wdrożeniu: prawdziwy modal clash (2 opcje) idzie przez tryb przyciskowy `renderMultiTargetWizard`,
+  nie przez `renderChoiceRequest` — wiersze już miały klikalne nazwy. Brakowało źródła w stanie decyzji: `pendingClash`
+  nie niósł karty wywołującej. Dodano `sourceCardId` (jawne, jak odsłonięte karty) w silniku i widoku.
+- Ogólny kreator: `renderPeekButton` rysuje nazwę karty zamiast 🔍 (`cardNameOfOption` z main.js). Pin M303/1 przepięty z
+  `ghost-btn` na `picker-name` (zamierzona zmiana wyglądu, klasa `choice-request-peek` i klik bez zmian).
+- Opis grupy clash: „Clash: wierzch czy spód?” (nazwa karty idzie przed nim: „Release the Ants — Clash: wierzch czy spód?”).
+- Test: `test/zgloszenie-o2-clash-nazwa-zrodla.test.js` (7). Bramy: `npm test` 8506/8506; `test:all` 8773/8773 rc=0; build rc=0.
+- Commit `7b367f1`.
+
+## 2026-10-18c — Wycena blokowania bota: 3/3 first strike vs {3/3, 1/1} (P)
+
+- Zgłoszenie właściciela: atakujący 3/3 first strike, bot dokłada 3/3 do bloku 1/1. Zabijamy 3/3 w kroku
+  first strike, a 1/1 nie zrobi krzywdy, więc 3/3 nic nie wnosi.
+- Przyczyna: `blockExchangeOf` i `blockKillsAttacker` liczyły podział obrażeń atakującego zachłannie
+  (najtańsze ciała najpierw). Dla tej sytuacji zabijało 1/1, zostawiało 3/3 do zadania 3 obrażeń i
+  mylnie ustawiało `attackerDies = true` (premia +9). Wariant z 3/3 nie był odrzucany przez `wastedBlockers`.
+- Naprawa `2226193`: `planAttackerDamage` w `src/controllers/heuristic-bot.js` wybiera najlepszy dla atakującego
+  podział (wykonalny: suma wytrzymałości zabitych ≤ moc). Jedno źródło dla `blockKillsAttacker` i `blockExchangeOf`.
+  Powyżej 12 zabijalnych blokerów zostaje zachłanny fallback.
+- Test: `test/zgloszenie-p-blok-first-strike-zbedny-bloker.test.js` (3, czerwone przed: bot wybierał
+  `block[fs<bl3+tok0]` z wynikiem 10 przy passie 0). Piny I (`uwagi-z-gry-2026-09-22-ghij`) przechodzą bez zmian.
+- Bramy: `npm test` 8499/8499 rc=0 (`.arena/p-test.log`); `npm run test:all` 8766/8766 rc=0 (`.arena/test-all-p.log`);
+  `npm run build` rc=0 (`.arena/build.log`).
+
+## 2026-10-18b — Uwagi z testów: Release the Ants, podgląd w decyzji clash (O)
+
+- Zgłoszenie właściciela: po Clash modal „wierzch czy spód” nie pozwalał podejrzeć odsłoniętej karty
+  (brak 🔍, nazwa nie otwierała pełnego ekranu). Przyczyna: komenda `resolve_clash_choice` nie niesie
+  karty, a `previewCardIdOfOption` nie czytał jej z `pendingClash.cards`. Ten sam wzorzec co H (Explore).
+- Naprawa: gałąź clash w `src/table/choice-request.js`; test `test/zgloszenie-o-clash-podglad-karty.test.js`
+  (4 testy, najpierw czerwone). `npm test` 8496/8496, build rc=0.
+
+## 2026-10-18 — Sesja domyślna (ADR 0021): PR #168, audyt PR #167, pętla jakości
+
+- **PR #168** (ADR 0020 A) z planem `docs/plans/PLAN_2026-10-18-domyslna-petla-audyt-pr167.md`
+  (commit `b3d0ad9`, przed kodowaniem). Bez scalania (ADR 0007).
+- **Audyt PR #167 (B)**: `docs/audits/AUDYT_PR167_2026-10-18.md`. 49 commitów, 8864 linii diffu.
+  Usunięcie `freeTargets` to zlecenie właściciela O-2 (nie błąd). 10 kart batcha 68 zgodnych z Oracle,
+  zero warunków po nazwie karty (ADR 0002), bot czyta tylko widok (FoW).
+- **Naprawy (osobne commity):** A-1 `6aee102` — JSDoc w `resources.js` przypięte do właściwych funkcji;
+  A-2 `1f2843c` — komentarz O/11 bez opisu usuniętego trybu; A-3 `ac059cf` — L19 z wyjątkiem dla
+  ofert celów (O-2).
+- **Otwarte:** A-4 — udokumentowane w kodzie (komentarz „DO ZROBIENIA” przy gałęzi `targetIndices`, `effects.js`); naprawa przy pierwszej karcie z tym połączeniem (brak takiej karty, bez skutku w grze);
+  A-5 — kreator celów bez limitu, 100 stworów ~21 s (decyzja właściciela).
+- **Pętla jakości (ADR 0021 pkt 4):** Żywy Tester, 6 partii na `dist/`, 6/6 do końca, 0 `[STOP]`,
+  0 zgłoszeń detektorów. Polowanie na CR ograniczone do `destroy_all`, suspend, escape (zgodne).
+- **Budżet lektury:** test przeszedł na ~99,8k (próg 100k nie podniesiony). Wpis L19 zapłacony
+  skróceniem dziesięciu wpisów LESSONS (reguły zachowane). Margines mały — następna sesja odchudza
+  lekturę przed innymi zmianami.
+- **Bramy:** `npm test` 8492/8492 rc=0; `npm run build` rc=0; `test:all` i `cr-numery` — patrz handoff.
+- Handoff: `docs/setup/HANDOFF_2026-10-18.md`.
+
 ## 2026-10-17 — Sesja domyślna (ADR 0021): PR sesji, audyt PR #166 (PR #167)
 
 Zlecenie „Kontynuujemy projekt.” bez tematu → pętla domyślna. Plan:
@@ -17296,3 +17382,113 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Golden master: dump diff 0 zmian wyboru, 1 zmiana wyniku (−0.3). Fixture `2fe4b347…` → `0db85647…`.
 - Ad 3 (Halo Scarab, M243/C): właściciel potwierdził wariant A. Wdrożony już w PMSSB-66; dodany pin warunku „wolne lądy" (`test/audyt-pmssb67-okno-wolne-lady.test.js`, 3). Wcześniej błędnie przedstawiony jako otwarty.
 - L48 (atomowość płatności): zamknięte przez właściciela. Pin nieudanej płatności kolorowej: `test/audyt-pmssb67-atomowosc-platnosci.test.js` (3).
+
+## 2026-10-20 — PMSSB-68: amass w wycenie ETB i rzutu (batch 68 — pętla ręcznego strojenia)
+
+- Mechanika spoza rejestru: `amass` (Dunland Crebain ETB 2, Toll of the Invasion rzut 1). Płaska wycena (ETB 6, rzut 6+3N) nie odpowiadała ani tokenowi Army N/N, ani licznikowi na armii. Wdrożony wspólny helper `amassValueOf` (ETB i ścieżka czaru), bez zmiany skali licznika i bez zmiany silnika.
+- Pomiar (sonda PRZED/PO): Dunland bez armii 73.5 → 86.1, armia 1/1 69.9 → 78.9, armia 3/3 69.9 → 89.7; Toll bez armii 59 → 60, armia 1/1 59 → 62, armia 3/3 59 → 74.
+- Testy: `test/audyt-pmssb68-amass.test.js` (RED 2/6 → GREEN 6/6; mutacje 4 i 2 czerwone). Przepięte piny: `pmssb6-discard-wave-a` (Toll +1) i sufit remisów `attack` 7 → 9 po przeglądzie czterech nowych pozycji (`srodziemie|theros` s4010, klasy z nagłówka audytu).
+- Ewaluacja: golden master 0 różnic decyzji (6 meczów); sparowany A/B 80 partii — 5 rozbieżnych, wygrane 42/38 bez zmian; kontrola 0/80; tie-audit decyzje 14025 → 14072; Żywy Tester 3/3 bez `[STOP]`, amass w grze w 2 partiach.
+- Korekta w trakcie: oczekiwanie Dunland z planu (87.5) pominęło wagę ×0.9 `cast_permanent`; poprawna wartość 86.1. Hipoteza „licznik < ciało” obalona pomiarem.
+- Bramy: `npm test` 8525/8525; `npm run test:all` 8792/8792; build 0; `cr-numery --sprawdz` OK.
+- Raport: `docs/PMSSB.md` §PMSSB-68; plan `docs/plans/PLAN_2026-10-20-pmssb68-amass.md`.
+
+## 2026-10-20 — PMSSB-69: inicjatywa (take_initiative) w wycenie bota
+
+- Rodzina z listy odrzuconej w PMSSB-68: trzy karty z ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer). Wycena była stałą 6, niezależną od stanu.
+- Pomiar PRZED (`tools/pmssb69-initiative-sonda.mjs`): wynik nie reaguje na posiadacza inicjatywy ani na stwory wroga. Silnik nie daje zysku, gdy inicjatywę już mam, a bot liczył 6.
+- Wdrożenie: `initiativeTakeValue` (F1: 0 gdy już mam; F2: dopłata 6 gdy posiada wróg; F3: kara 2 za atakujący stwór wroga, limit 6). Anty-over-fix: nikt nie ma inicjatywy, wróg bez stworów = dawne 6.
+- Testy: `test/audyt-pmssb69-initiative.test.js` (RED 7/8 → GREEN 8/8; mutacje 2/3/2). Pierwsza wersja asercji pominęła wagę ×0.9 `cast_permanent` — poprawiona na podstawie pomiaru.
+- Ewaluacja: A/B `forgotten-realms` 11/40 rozbieżnych partii, kontrola `srodziemie` 0/40, wygrane 41:39 bez zmian; tie-audit bez nowych remisów (GROZY identyczne); Żywy Tester 3/3 bez `[STOP]`; golden master 0 (bez sygnału dla tej rodziny — talie bez kart z inicjatywą).
+- Bramy: `npm test` 8533/8533; `npm run test:all` 8800/8800; build 0; `cr-numery` OK.
+- Otwarte: F2 w walce (kradzież przy obrażeniach nie jest planowana w ataku); wartość venture stała na turę.
+- Raport: `docs/PMSSB.md` §PMSSB-69; plan `docs/plans/PLAN_2026-10-20b-pmssb69-initiative.md`.
+
+## 2026-10-20 — Batch 69: pip zdolności wymaga źródła w talii (D/5)
+
+- Decyzja właściciela (2026-10-20, zamiast wyjątku dla `boros-challenger`): każdy kolor, który karta w talii wymaga — koszt wielokolorowy albo pip zdolności (`abilityCostColorsOf`) — dostaje w połówce co najmniej jeden podstawowy ląd.
+- Kod: `landSplit` w `tools/generate-plan-decks.mjs` liczy kolory pipów zdolności jako „używane” (minimum 1 lądu). Suma `ceil(n/2)` bez zmian; gdy suma minimów przekracza total, total rośnie (jak dotąd).
+- Efekt w taliach: `ravnica-rg` ma 1× Plains (Boros Challenger), `dominaria-brg` ma 1× Plains (pip W Mournful Zombie), `tarkir-bg` ma po 1× Plains/Island/Mountain (Dragonbroods' Relic, WUBRG w zdolności).
+- Test D/5 (`test/zgloszenie-d-pipy-zdolnosci-podzial.test.js`) sprawdza `talieMaZrodlo` (basic danego koloru), nie sufiks nazwy. Oba wyjątki (`mournful-zombie`, `dragonbroods-relic`) padły na ratchecie; mapa wyjątków = 0.
+- `test/owner-land-minimums.test.js`: test 15g/C (suma stała) używa talii bez pipów zdolności; nowy test pokrywa regułę pipów zdolności (Relic → W/U/B/R/G ≥ 1).
+- ADR 0024: krótki addendum (lektura startowa 100k: dopisek nie może rosnąć).
+- Skutki uboczne zmiany talii (kaskada, wszystko przeliczone i zarejestrowane): golden master zregenerowany (`tools/bot-scoring-snapshot.mjs --write`, świadoma zmiana składu talii — ADR 0024); sufit `attack` w audycie remisów 9 → 12 po przeglądzie (9 pozycji w klasach zaakceptowanych; 1 otwarta: ravnica-wub|innistrad-wu s4011 t26, strata bez zysku — do decyzji właściciela); seedy modalu `library-manipulation-modal` [29] → [3, 45] (hunter 1–60); seedy F3 `session-bot-pausa` [34, 41, 50] → [1, 25, 38] (hunter 1–40).
+- OTWARTE (nie regresja batcha, znana luka z batcha 68): przy 7 z 40 seedów F3 nagłówek tury człowieka pojawia się, zanim modal pokaże zdarzenia bota (seedy 3, 6, 16, 17, 26, 31, 40). Okna modalu w `session.js` (M90/M252/M261) — osobne zadanie.
+- Bramy: `npm test` 8561/8561; `npm run test:all` 8828/8828; build 0.
+
+## 2026-10-20 — poprawki po batchu 69 (PMSSB-70)
+
+- **Punkt 2, „luka modalu F3" — błąd testu, nie modala.** Test `session-bot-pausa` miał dwa błędy: (1) `turn_started` niesie `playerId`, a test czytał `activePlayerId`, więc po pierwszej turze ruchy CZŁOWIEKA były przypisywane do tury bota (fałszywy brak); (2) test czytał bufor modala tylko w pauzie, a UI pokazuje go po każdej komendzie (`main.js` `showBotMoves`), więc wpisy z ciągu po wznowieniu były czyszczone przez następną komendę. Hipoteza „bramka `isMainLogEvent` gubi zdarzenia” była błędna (sprawdzona: wersja HEAD przechodzi 60/60 seedów po naprawie testu). Poprawka: `4c4b492` (tylko test). Test pinuje seedy 1, 16, 17, 25, 26, 28, 38, 47, 58; mutacja (ukryte `creature_destroyed` człowieka) jest wykrywana. Kryterium: zmianę strefy potwierdza wpis z opisem strefy, nie sama wzmianka.
+- **Punkt 1, remis s4011 t26 — PMSSB-70.** Wycena ataku: wymiana po przeżywającym zabójcy nie dokłada zabicia blokera, więc płaci `unpaidTradeLoss` (2) zamiast wartości. Pokrętła `unpaidTradeEnabled` (0 = dawna wycena) i `unpaidTradeLoss`. Zawężono do `survivorKillers ≥ 1` (pin PMSSB-59 duo). Pin F7 przeniesiony na scenę z dwoma blokerami (wolny slot). Fixture golden zregenerowany po przeglądzie 2 partii (ta sama klasa). Mirror 288 partii 143:145 (neutralnie). Tie-audit: `attack` akcyjne 14 → 11. Żywy Tester 6/6 bez `[STOP]`. Szczegóły: `docs/PMSSB.md` §PMSSB-70, `docs/plans/PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana.md`.
+- Bramy: `npm test` 8566/8566; build 0; `test:all` 8833/8833 (`.arena/pmssb70-testall.log`).
+
+## 2026-10-20 — PMSSB-71: riot i NaN w wycenie rzutu (Gruul Beastmaster)
+
+- Odkrycie: Gruul Beastmaster nigdy nie był rzucany przez bota (0/480 partii lustrzanych). Przyczyna główna: wycena pompy `source_power` (tekst) dawała `NaN`, a NaN zrywał sortowanie ofert — w 258 krokach bot wybrał gorszą ofertę w 15 przypadkach.
+- Naprawy: pompa rozwiązuje `source_power` względem źródła (F0); tryb riot „haste” wyceniany słowem `haste` (F1); tryb licznika wartością ciała +1/+1 (F2).
+- Testy: `test/audyt-pmssb71-riot.test.js` (6); `test:all` 8839/8839; golden master bez zmian; tie-audit bez zmian; sparowany A/B 480 partii: rg vs inna talia 93 → 130 wygranych (McNemar chi² = 23,6), lustro 67 → 66; Żywy Tester 3/3, 0 zgłoszeń.
+- Szczegóły i otwarte punkty: `docs/PMSSB.md` §PMSSB-71; plan `docs/plans/PLAN_2026-10-20e-pmssb71-riot.md`.
+- Luka znaleziona przy pętli convoke (batch 69): Kavu Primarch nie ma żadnej oferty rzutu z convoke w `legalCommands`; UI i bot nie mogą go użyć. NAPRAWIONA w PMSSB-72 (wpis niżej), opis w `docs/PMSSB.md` („Luka convoke”).
+
+## 2026-10-20 — PMSSB-72: convoke w grze (Kavu Primarch)
+
+- Luka z batcha 69 NAPRAWIONA: `legalCommands` oferuje warianty convoke (minimalne, także kicked); UI grupuje je w panel wyboru stworów (decyzja gracza); kreator many płaci resztę.
+- Bot: wycena z wymiarem kosztu (mana − stwory) i karą za tapnięcie zależną od wartości ciała (`convokeTapPenalty`, pokrętło). Płaska kara dawała 9 identycznych opcji (remis).
+- Testy: `test/audyt-pmssb72-convoke.test.js` (9; 5 czerwonych na kodzie sprzed zmiany). `npm test` 8580/8580.
+- Golden: hash zmieniony (`7510…` → `9017…`) po przeglądzie: 1437 decyzji, 0 zmienionych wyborów i wyników; fixture zregenerowany (3 linie). `test:all` 8848/8848.
+- Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md`. Rejestr: `docs/PMSSB.md` §PMSSB-72.
+- Incydent: lokalny HEAD wrócił do `34e8676` (drzewo robocze zgodne z origin); przywrócono `git reset` (bez `--hard`) po weryfikacji 36 plików względem origin.
+
+## 2026-10-20 — PMSSB-71 v2: riot kontekstowy (pośpiech albo licznik)
+
+- Poprzednio wybór riotu był stały (pośpiech 14 vs licznik 13 w 64 sytuacjach). Poprawka: wybór zależy od kontekstu — faza (atak tej tury), blokery wroga pomniejszone o moje świeże stwory, letal, presja (siła ataku wroga / moje życie).
+- Testy: `test/audyt-pmssb71-riot.test.js` (11). Piny RED na kodzie sprzed zmiany: 3 kontekstowe.
+- Bramy: `npm test` 8586/8586; `test:all` 8853/8853; golden bez zmian.
+- A/B 80 partii (`ravnica-rg` vs `ravnica-wub`): 23 rozjechane decyzje, zwycięzcy bez zmian. Poprawy siły NIE stwierdzono.
+- Plan: `docs/plans/PLAN_2026-10-20g-pmssb71-v2-riot-kontekst.md`.
+
+## 2026-10-20 — PMSSB-71 v3: licznik +1/+1 na sobie zamiast stałej 5
+
+- Stała 5 dla licznika +1/+1 bez celu (wyzwalacze ETB z warunkiem, „umiera”, lądy, end step, opłaty) była wartością niezależną od stołu. Zastąpiona wartością kontekstową: ciało 3 + presja (siła ataku wroga / moje życie) + przewaga liczebna wroga. Riot i ETB liczą licznik tą samą funkcją (`counterValue`).
+- Pomiar PRZED: Nightshade Harvester stale 69,57 przy każdym życiu. PO: presja i przewaga wroga widoczne; neutralny stół 69,57 → 68,31.
+- Testy: `test/audyt-pmssb71v3-licznik.test.js` (4). Trzy stare piny przepisane z powodem (harvester, frontline-war-rager, trade-route-envoy).
+- Bramy: `npm test` 8589/8589; `test:all` 8856/8856; golden bez zmian hasha (zastrzeżenie: talie golden nie zawierają tej ścieżki w zmierzonych partiach).
+- Tie-audit (480 partii): `tie_top` 12758 → 12755. A/B 80 partii: 10 rozjechanych decyzji; zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
+- Pozostaje: inne liczniki bez celu (quest, stun) przy 5; faza tury bez wpływu na te wyzwalacze.
+- Plan: `docs/plans/PLAN_2026-10-20h-pmssb71-v3-licznik.md`. Rejestr: `docs/PMSSB.md` §PMSSB-71 v3.
+
+## 2026-10-20 — PMSSB-73: myriad (Gnoll War Band) — zamknięte bez zmiany kodu
+
+- Myriad w 1v1 nie ma efektu: trigger ataku ma warunek „another opponent exists” (fałszywy przy dwóch graczach), więc nie trafia na stos i nie tworzy tokenów. Bot nie wycenia tego triggera; wycena ataku Gnolla jest taka sama z myriad i bez niego (16/16).
+- Dowód: `test/audyt-pmssb73-myriad.test.js` (3 piny). Mutacja efektu łapie tylko pin treści — to mutant równoważny w 1v1.
+- Bramy: `npm test` 8593/8593. Nie uruchamiano `test:all` (zmiana wyłącznie w testach).
+- Plan: `docs/plans/PLAN_2026-10-20i-pmssb73-myriad.md`. Rejestr: `docs/PMSSB.md` §PMSSB-73.
+
+## 2026-10-20 — PMSSB-74: Bloodfire Infusion (obrażenia równe mocy poświęconego)
+
+- Bot wyceniał aktywację płasko (2) i poświęcał własnego stwora bez zysku; koszt poświęcenia gospodarza nie był w pętli kosztów.
+- Poprawka: wycena z tą samą miarą zamiatania co zniszczenie masowe (`sweepHitsValue`, wyciągnięte bez zmiany liczb) minus koszt poświęcenia w jednostkach własnej straty.
+- Testy: `test/audyt-pmssb74-bloodfire.test.js` (6; 3 RED na HEAD). Bramy: `npm test` 8599/8599; `test:all` 8866/8866; golden bez zmiany hasha.
+- A/B 80 partii: 9 rozjechanych decyzji, zwycięzcy bez wyraźnej zmiany. Poprawy siły NIE stwierdzono.
+- Plan: `docs/plans/PLAN_2026-10-20j-pmssb74-bloodfire.md`. Rejestr: `docs/PMSSB.md` §PMSSB-74.
+
+## 2026-10-20 — PMSSB-75: controlsType (Heron-Blessed Geist) — zamknięte bez zmiany kodu
+
+- Bramka „activate only if you control an enchantment” działa spójnie (oferta i walidacja). Wycena aktywacji z cmentarza kieruje się stołem (wrogie stwory obniżają), ale nie życiem.
+- Test: `test/audyt-pmssb75-controls-type.test.js` (3). Otwarte: wycena tokenów bez presji życia — wspólna miara, osobna pętla.
+- Plan: `docs/plans/PLAN_2026-10-20k-pmssb75-controls-type.md`. Rejestr: `docs/PMSSB.md` §PMSSB-75.
+
+## 2026-10-20 — PMSSB-76: warunkowa redukcja kosztu (Gnoll War Band) — zamknięte bez zmiany kodu
+
+- Silnik i bot czytają ten sam stan obrażeń w turze. Rzut za 5 po obrażeniach przeciwnikowi jest oferowany i wybierany przed tańszym czarem; bez obrażeń nie jest oferowany.
+- Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny). Mutacja redukcji łapie 2.
+- Rejestr: `docs/PMSSB.md` §PMSSB-76.
+
+## 2026-10-20 — PMSSB-77: presja życia w wycenie tokenów-stworów własnych — DONE
+
+- Własny token-stwór dostaje presję (siła ataku wroga / moje życie, ≤ 1) × `tokenPressureWeight` (6) do ciała. Pusty stół bez zmian; pokrętło 0 = dawne zachowanie.
+- Test: `test/audyt-pmssb77-tokeny-presja.test.js` (4). Piny starych testów przepisane z deltami.
+- Golden: 0 zmienionych wyborów, 20 zmienionych wycen; właściciel zaakceptował, fixture odnowiony (hash `2bf25d5b…`). Mirror 144:144 (brak dowodu poprawy siły).
+- Domknięcie (2026-10-21): presja działa symetrycznie — token oddany wrogowi (Secure the Scene) też dostaje presję (gałąź `exileSwap` z czynnikiem 3/10). Golden: 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64); właściciel zaakceptował, hash `2f00a7f5…`. Tie-audit bez zmian (674). Mirror 144:144.
+- PMSSB-74 domknięcie: tie-audit bez zmian (700); lustro wersji bota na talii `warhammer-ubr` (Bloodfire), 800 partii: 431:369, win-rate 0,539, p ≈ 0,03 — wynik kierunkowy.
+- Plan: `docs/plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md`. Rejestr: `docs/PMSSB.md` §PMSSB-77.

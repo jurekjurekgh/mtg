@@ -14,6 +14,7 @@
 1x Fiery Justice
 1x Savage Hunger
 1x Scouting Hawk
+1x Tuskguard Captain
 1x Ulna Alley Shopkeep
 1x Capture Sphere
 1x Render Speechless
@@ -24,5 +25,5 @@
 3x Plains
 2x Island
 2x Swamp
-3x Mountain
-1x Forest
+2x Mountain
+2x Forest

@@ -205,6 +205,15 @@ export function conditionalCostReduction(state, object) {
   if (condition.perCreatureAttackingYou) {
     return attackersAgainstPlayer(state, object.controllerId) * amount;
   }
+  // Batch 69 (Gnoll War Band, CR 601.2f): „costs {1} less to cast for each
+  // opponent who was dealt damage this turn\". Liczymy przeciwników kontrolera
+  // czaru, którym zadano obrażenia w tej turze (stan `damageTakenByPlayerThisTurn`,
+  // klucz = odbiorca). Opuszczeni gracze (eliminacja) nie są liczeni.
+  if (condition.perOpponentDealtDamageThisTurn) {
+    const damaged = (state?.players ?? []).filter((pl) => pl.id !== object.controllerId
+      && state?.damageTakenByPlayerThisTurn?.[pl.id]).length;
+    return damaged * amount;
+  }
   if (condition.controlsSubtype != null) {
     const has = controlled().some((c) => hasCreatureType(c, condition.controlsSubtype, state));
     return has ? amount : 0;

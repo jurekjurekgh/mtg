@@ -13,6 +13,7 @@
 1x Negate (M15)
 1x Omenspeaker
 1x Reassembling Skeleton
+1x Bloodfire Infusion
 1x Feedback
 1x Fledgling Imp
 1x Frost Lynx

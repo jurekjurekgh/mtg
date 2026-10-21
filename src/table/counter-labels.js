@@ -26,6 +26,8 @@ export const COUNTER_LABELS = Object.freeze({
   // Vermin) — na kaflach świeciło surowe „shield"/„1x shield". Silnikowa
   // (spoza bazy kart), więc strażnik M126 jej nie widzi.
   shield: 'tarcza',
+  // Batch 69 (Ior Ruin Expedition): licznik zadania — płaci koszt zdolności.
+  quest: 'zadanie',
 });
 
 /**
@@ -37,6 +39,7 @@ export const COUNTER_LABELS_GEN = Object.freeze({
   flying: 'Latania', deathtouch: 'Dotyku śmierci', lifelink: 'Więzi życia',
   finality: 'ostateczności', stun: 'ogłuszenia', level: 'poziomu',
   loyalty: 'lojalności', point: 'punktu', defense: 'obrony', shield: 'tarczy',
+  quest: 'zadania',
 });
 
 /** Nazwa licznika w dopełniaczu (log, koszty, warunki, „wchodzi z"). */

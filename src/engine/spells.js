@@ -1982,6 +1982,8 @@ function resolveActivatedAbilityEntry(state, entry) {
   // Źródło pozostaje tym samym obiektem dla cech (np. power/LKI).
   const source = Object.freeze({ ...sourceCharacteristics, controllerId: entry.controllerId,
     ...(payload.sacrificedToughness != null ? { sacrificedToughness: payload.sacrificedToughness } : {}),
+    // Batch 69 (Bloodfire Infusion): LKI mocy poświęconego stworu (koszt zdolności).
+    ...(payload.sacrificedPower != null ? { sacrificedPower: payload.sacrificedPower } : {}),
     // M360/B4: snapshot mocy do LKI station (effects.js station_counters).
     ...(payload.stationTappedPower != null ? { stationTappedPower: payload.stationTappedPower } : {}),
   });

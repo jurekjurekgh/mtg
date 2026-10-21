@@ -217,31 +217,86 @@ function diesToDeathtouchBlocker(attacker, blockers) {
  * musi przeliczyć wynik BEZ niego (L41 — jedno źródło reguły).
  */
 function blockKillsAttacker(attacker, blockers) {
+  if ((attacker?.keywords ?? []).includes('indestructible')) return false;
+  return planAttackerDamage(attacker, (blockers ?? []).filter(Boolean)).attackerDies;
+}
+
+/**
+ * P (zgłoszenie właściciela 2026-10-18, „3/3 first strike vs 3/3 + 1/1”):
+ * PODZIAŁ OBRAŻEŃ atakującego. CR 510.1c — rozdziela go gracz atakujący, a nie
+ * obrońca, więc bot musi zakładać podział NAJLEPSZY DLA ATAKUJĄCEGO. Poprzedni
+ * model brał zachłanny podział („zabij najtańszych po kolei”): dla 3/3 FS vs
+ * {3/3, 1/1} zabijał 1/1 i zostawiał 3/3 do zadania 3 obrażeń, więc bot widział
+ * „zabijemy atakującego” i dokładał zbędne 3/3. Realnie 3 obrażenia w 3/3
+ * zabijają je, zanim zada cios (CR 702.7b), a 1/1 zada 1 — atakujący przeżywa.
+ *
+ * Wybór podziału: atakujący woli przeżyć (koszt własnej śmierci = jego wartość)
+ * i zabić cenniejsze ciała (wartość = moc + wytrzymałość, jak w `blockerValueLost`).
+ * Podział wykonalny: suma wytrzymałości zabitych ≤ moc atakującego (CR 510.1c).
+ * Zwraca { killed, dealsDamage, effectivePower, attackerDies } dla wybranego
+ * podziału. Jedno źródło prawdy dla `blockKillsAttacker` i `blockExchangeOf` (L41).
+ *
+ * Dla dużych zestawów (>12 zabijalnych blokerów) wraca do zachłannego podziału,
+ * żeby nie wykładniczyć — w grze tyle blokerów nie zdarza się realnie.
+ */
+function strikesFirst(b) {
+  const bk = b.keywords ?? [];
+  return bk.includes('first_strike') || bk.includes('double_strike');
+}
+
+function planAttackerDamage(attacker, list) {
   const kw = attacker?.keywords ?? [];
-  if (kw.includes('indestructible')) return false;
   const attackerPower = combatPower(attacker);
   const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
+  const attackerValue = (attacker?.power ?? 0) + (attacker?.toughness ?? 0);
   const attackerFirst = kw.includes('first_strike') || kw.includes('double_strike');
   const attackerDeathtouch = kw.includes('deathtouch');
-  const list = (blockers ?? []).filter(Boolean);
+  const attackerIndestructible = kw.includes('indestructible');
   const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
-  const strikesFirst = (b) => {
-    const bkw = b.keywords ?? [];
-    return bkw.includes('first_strike') || bkw.includes('double_strike');
+  const need = (b) => (attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b));
+  const killable = list.filter((b) => !(b.keywords ?? []).includes('indestructible') && need(b) > 0);
+
+  // Kroki obrażeń przy danym zbiorze zabitych w kroku first strike (CR 510.4, 702.7b).
+  const evaluate = (killedIds) => {
+    const dealsDamage = (b) => !attackerFirst || strikesFirst(b) || !killedIds.has(b.id);
+    const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
+    const deathtouchKill = list.some((b) => (b.keywords ?? []).includes('deathtouch')
+      && combatPower(b) > 0 && dealsDamage(b));
+    const attackerDies = !attackerIndestructible
+      && (deathtouchKill || effectivePower >= attackerToughness);
+    return { killed: killedIds, dealsDamage, effectivePower, attackerDies };
   };
-  const killed = new Set();
-  let budget = attackerPower;
-  for (const b of [...list].sort((x, y) => effToughness(x) - effToughness(y))) {
-    if ((b.keywords ?? []).includes('indestructible')) continue;
-    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
-    if (need <= 0) continue;
-    if (budget >= need) { budget -= need; killed.add(b.id); }
+
+  if (killable.length > 12) {
+    // Zachłanny fallback (rzadki, duży zestaw) — dotychczasowa kolejność.
+    let budget = attackerPower;
+    const ids = new Set();
+    for (const b of [...killable].sort((x, y) => effToughness(x) - effToughness(y))) {
+      if (budget >= need(b)) { budget -= need(b); ids.add(b.id); }
+    }
+    return evaluate(ids);
   }
-  const dealsDamage = (b) => !attackerFirst || strikesFirst(b) || !killed.has(b.id);
-  if (list.some((b) => (b.keywords ?? []).includes('deathtouch')
-    && combatPower(b) > 0 && dealsDamage(b))) return true;
-  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
-  return effectivePower >= attackerToughness;
+
+  let best = null;
+  for (let mask = 0; mask < (1 << killable.length); mask += 1) {
+    let budget = attackerPower;
+    let killedValue = 0;
+    const ids = new Set();
+    let feasible = true;
+    for (let i = 0; i < killable.length; i += 1) {
+      if (!(mask & (1 << i))) continue;
+      const b = killable[i];
+      budget -= need(b);
+      if (budget < 0) { feasible = false; break; }
+      ids.add(b.id);
+      killedValue += (b.power ?? 0) + (b.toughness ?? 0);
+    }
+    if (!feasible) continue;
+    const plan = evaluate(ids);
+    const utility = killedValue - (plan.attackerDies ? attackerValue : 0);
+    if (best === null || utility > best.utility) best = { ...plan, utility };
+  }
+  return best;
 }
 
 /**
@@ -267,51 +322,66 @@ export function blockAbsorbedDamageOf(attacker, blockers) {
   return Math.min(attackerPower, lethal);
 }
 
+/**
+ * R (zgłoszenie z testów, 2026-10-18): ile obrażeń WSZYSTKICH atakujących
+ * zatrzymują blokerzy przy najlepszym przydziale obrońcy (CR 509.1h, 510.1).
+ * Blokujący zatrzymuje moc atakującego, którego blokuje — nie swoją wytrzymałość.
+ * Wycena ataku odejmowała od mocy SUMĘ WYTRZYMAŁOŚCI blokerów (4+4+5 = 13 od
+ * mocy 13), więc lethal nie wchodził i bot nie atakował, mimo że trzech blokerów
+ * zatrzymuje najwyżej 3+2+2 = 7 z 13.
+ *
+ * Przydział zachłanny: blokerzy od najtwardszego, każdy do atakującego z
+ * największym przyrostem zatrzymanych obrażeń. Bez trample przyrost to cała moc,
+ * pierwszy bloker na atakującego; z trample (CR 702.19b) — tylko jego
+ * obrażenia śmiertelne (`blockAbsorbedDamageOf`), sumowane i ucinane mocą.
+ * Dla ataków bez trample wynik jest dokładny (top-N mocy).
+ */
+export function blockersAbsorbedDamageOf(attackers, blockers) {
+  const atk = (attackers ?? []).filter(Boolean);
+  const list = (blockers ?? []).filter(Boolean);
+  if (atk.length === 0 || list.length === 0) return 0;
+  const state = new Map(atk.map((a) => [a.id, { lethal: 0, blocked: false }]));
+  const ordered = [...list].sort((x, y) => (y.toughness ?? 0) - (x.toughness ?? 0));
+  let absorbed = 0;
+  for (const blocker of ordered) {
+    let best = null;
+    let bestGain = 0;
+    for (const attacker of atk) {
+      const st = state.get(attacker.id);
+      const power = combatPower(attacker);
+      let gain = 0;
+      if ((attacker.keywords ?? []).includes('trample')) {
+        const lethalHere = blockAbsorbedDamageOf(attacker, [blocker]);
+        gain = Math.min(power, st.lethal + lethalHere) - Math.min(power, st.lethal);
+      } else if (!st.blocked) {
+        gain = power;
+      }
+      if (gain > bestGain) { bestGain = gain; best = attacker; }
+    }
+    if (!best) continue;
+    const st = state.get(best.id);
+    st.blocked = true;
+    st.lethal += blockAbsorbedDamageOf(best, [blocker]);
+    absorbed += bestGain;
+  }
+  return absorbed;
+}
+
 export function blockExchangeOf(attacker, blockers) {
   const attackerKw = attacker?.keywords ?? [];
-  const attackerPower = combatPower(attacker);
   const attackerToughness = (attacker?.toughness ?? 0) - (attacker?.damage ?? 0);
   const attackerFirst = attackerKw.includes('first_strike') || attackerKw.includes('double_strike');
-  const attackerDeathtouch = attackerKw.includes('deathtouch');
   const attackerTrample = attackerKw.includes('trample');
   const list = (blockers ?? []).filter(Boolean);
 
-  const effToughness = (b) => (b.toughness ?? 0) - (b.damage ?? 0);
-  const strikesFirst = (b) => {
-    const kw = b.keywords ?? [];
-    return kw.includes('first_strike') || kw.includes('double_strike');
-  };
-  // Obrażenia atakującego rozdziela ATAKUJĄCY (CR 510.1c) — zakładamy grę
-  // obrońcy przeciw nam: zabija tylu blokerów, ilu może (dokładnie to opisał
-  // właściciel: „rozdzielam tak obrażenia, żeby zabić jak najwięcej”).
-  // Kolejność: najtańsi w obrażeniach najpierw (rosnąca wytrzymałość).
-  const killOrder = [...list].sort((x, y) => effToughness(x) - effToughness(y));
-  const killedByAttacker = new Set();
-  let budget = attackerPower;
-  for (const b of killOrder) {
-    if ((b.keywords ?? []).includes('indestructible')) continue;
-    const need = attackerDeathtouch ? Math.min(1, effToughness(b)) : effToughness(b);
-    if (need <= 0) continue;
-    if (budget >= need) {
-      budget -= need;
-      killedByAttacker.add(b.id);
-    }
-  }
-
-  // Krok 1 (first strike): kto zdąży zadać obrażenia, zanim padnie.
-  // Bloker bez first strike, zabity przez atakującego z first strike, NIE
-  // zadaje obrażeń (CR 702.7b) — to jest sedno zgłoszenia.
-  const dealsDamage = (b) => {
-    if (!attackerFirst) return true;          // równoczesny krok — zawsze zadaje
-    if (strikesFirst(b)) return true;          // sam bije w pierwszym kroku
-    return !killedByAttacker.has(b.id);        // przeżył pierwszy krok
-  };
-  const effectivePower = list.reduce((sum, b) => sum + (dealsDamage(b) ? combatPower(b) : 0), 0);
-  const deathtouchKill = list.some((b) => (b.keywords ?? []).includes('deathtouch')
-    && combatPower(b) > 0 && dealsDamage(b))
-    && !attackerKw.includes('indestructible');
-  const attackerDies = deathtouchKill
-    || (!attackerKw.includes('indestructible') && effectivePower >= attackerToughness);
+  // Podział obrażeń atakującego (P): najlepszy dla niego, nie zachłanny.
+  // Krok 1 (first strike, CR 510.4): kto zdąży zadać obrażenia, zanim padnie
+  // (CR 702.7b — bloker zabity w pierwszym kroku nie zadaje obrażeń).
+  const plan = planAttackerDamage(attacker, list);
+  const killedByAttacker = plan.killed;
+  const dealsDamage = plan.dealsDamage;
+  const effectivePower = plan.effectivePower;
+  const attackerDies = plan.attackerDies;
 
   // Blokerzy giną, jeśli dostali śmiertelne obrażenia — chyba że ZABILI
   // atakującego w kroku first strike, zanim zdążył cokolwiek zadać
@@ -1194,6 +1264,9 @@ export const DECK_ARRANGING_EFFECTS = new Set([
 export const STACKING_ACTIVATED_EFFECTS = new Set([
   'pump', 'pump_enchanted_creature', 'add_counter', 'add_mana', 'damage',
   'damage_each_opponent', 'draw_cards', 'discard_cards', 'create_token',
+  // Batch 69 (Bloodfire Infusion): każda aktywacja poświęca KOLEJNEGO stwora
+  // i zadaje obrażenia równe jego mocy — dublowanie na stosie kumuluje.
+  'damage_each_creature_sacrificed_power',
   // Batch 67 (Improbable Alliance): loot ({4}{U}{R} — dobierz, potem odrzuć)
   // kumuluje jak `draw_cards`/`discard_cards` osobno: druga aktywacja na
   // stosie dobiera i odrzuca KOLEJNĄ kartę (nie jest idempotentna do końca tury).
@@ -2054,8 +2127,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       }
       if (kw.includes('lifelink')) keywordWorth += 4;
     }
+    // PMSSB-77: presja życia na ciało tokenu-stwora (L41: ta sama miara co counterValue —
+    // siła ataku wroga / moje życie, ≤ 1). Symetria: token wrogi (znak roli w `sign` niżej)
+    // dostaje presję z tym samym znakiem — oddanie ciała wrogowi przy moim niskim życiu jest gorsze.
+    const tokenPressure = isCreatureTokenEffect(effect)
+      ? P.tokenPressureWeight * Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view))) : 0;
     const bodyWorth = isCreatureTokenEffect(effect)
-      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth : 0;
+      ? 10 * (2 * resolveStat(effect.power) + resolveStat(effect.toughness)) / 3 + keywordWorth + tokenPressure : 0;
     const manaWorth = tokenGrantedMana(effect) > 0
       ? P.tokenManaBankWeight * tokenGrantedMana(effect) : 0;
     let counterWorth = 0;
@@ -2361,9 +2439,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-36/B: licznik z ETB na SWOIM stworze (Jade Bearer, Moogle) — bramka
     // dostępności celu po stronie WŁASNEJ (dawniej `etbEnemyHasTarget` pytał o
     // wrogie permanenty, więc wartość zależała od wroga, nie od celu).
+    // PMSSB-71 v3: bez celu licznik +1/+1 idzie na SAMEGO siebie — wartość kontekstowa (counterValue),
+    // nie stałe 5. Inne liczniki (quest, stun…) zostają przy 5 do osobnej pętli.
     add_counter: (e, view, req, def) => (req
       ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
-      : 5),
+      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, e?.amount ?? 1) : 5)),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
     search_library_to_hand: (e, view) => searchRiderValue(view, e),
@@ -2389,8 +2469,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     opponent_hand_card_to_top: () => 3,
     // PMSSB-6/F-A1: ETB-rip wspólnym modelem (cap-na-liczniku zamiast flat-3).
     discard_each_opponent: (e, view) => foeRipValue(view, e, null),
-    take_initiative: () => 6,
-    amass: () => 6,
+    // PMSSB-69: inicjatywa wg `initiativeTakeValue` (stan posiadacza + stół wroga), nie stała 6.
+    take_initiative: (e, view) => initiativeTakeValue(view, e),
+    // PMSSB-68: amass wg `amassValueOf` (armia + N), nie stała 6.
+    amass: (e, view) => amassValueOf(view, e),
     fabricate: () => 8,
     // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): wartość
     // odkręcenia liczymy PO KREATURZE (a nie płasko), bo odkręcenie ma sens
@@ -2434,9 +2516,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wtedy nie daje (a przy płatności opcjonalnej po prostu się jej nie
     // opłaca). Bez wymagania celu pump dotyczy własnych ciał — stare
     // zachowanie co do joty (anty-over-fix).
-    pump: (e, view, req) => {
-      const p = e.power ?? 0;
-      const t = e.toughness ?? 0;
+    // PMSSB-71/F0: deskryptor P/T `source_power` (trigger ataku Beastmastera) to TEKST, nie liczba.
+    // Dawniej `'source_power' * 2` = NaN, a NaN zrywał całą wycenę rzutu (karta nigdy nie była rzucana).
+    // Rozwiązujemy go względem źródła (`def`, jak `resolveDynamic`); nierozpoznany deskryptor = 0.
+    pump: (e, view, req, def) => {
+      const dyn = (v) => (typeof v === 'number' ? v : (v === 'source_power' ? (def?.power ?? 0) : 0));
+      const p = dyn(e.power ?? 0);
+      const t = dyn(e.toughness ?? 0);
       if ((p < 0 || t < 0) && req) {
         return etbEnemyHasTarget(view, req) ? Math.min(3 * (-p - t), 15) : 0;
       }
@@ -4554,6 +4640,41 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return ownPostcombat ? 6 : -8; // uzupełnij zapas PO walce
   };
 
+  // PMSSB-68 (amass, CR 701.47): jedna miara dla ETB, czaru i zdolności (L41).
+  // Z armią na polu: N liczników na najlepszej armii = licznik na gospodarzu
+  // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
+  // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
+  // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
+  // PMSSB-69 (inicjatywa, CR 725; L41 — jedna miara dla ETB i czaru). Silnik (effects.js, take_initiative):
+  // objęcie inicjatywy, którą gracz JUŻ ma, nie uruchamia venture — zysk 0 (F1). Gdy posiada wróg, objęcie
+  // zabiera mu postęp i daje mój venture — dopłata P.initiativeStealBonus (F2). Gdy zmienia się posiadacz,
+  // każdy atakujący stwór wroga (bez defendera, moc > 0) zagraża odbiorem inicjatywy w jego turze — kara
+  // P.initiativeExposurePenalty za stwór, z limitem P.initiativeExposureCap (F3). Najsłabszy realny wariant
+  // (nikt nie ma inicjatywy, wróg bez stworów) = dawne 6 (anty-over-fix M429 c).
+  const INITIATIVE_TAKE_BASE = 6;
+  const initiativeTakeValue = (view, effect) => {
+    const holder = view.initiativePlayerId ?? null;
+    if (holder === view.playerId) return 0;
+    const steal = holder != null ? P.initiativeStealBonus : 0;
+    const attackers = (view.zones?.battlefield ?? []).filter((o) => o.controllerId !== view.playerId
+      && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+      && !(o.keywords ?? []).includes('defender') && (o.power ?? 0) > 0).length;
+    const exposure = Math.min(P.initiativeExposureCap, attackers * P.initiativeExposurePenalty);
+    return Math.max(0, INITIATIVE_TAKE_BASE + steal - exposure);
+  };
+  const amassValueOf = (view, effect) => {
+    const amount = Number.isInteger(effect?.amount) ? effect.amount : 1;
+    if (!(amount > 0)) return 0;
+    const armies = myCreatures(view).filter((o) => (o.subtypes ?? []).includes('Army'));
+    if (armies.length > 0) {
+      return Math.max(...armies.map((army) => counterHostValue(view, army, '+1/+1', amount)));
+    }
+    return tokenBodyValue(view, {
+      type: 'create_token', amount: 1, power: amount, toughness: amount,
+      kind: 'creature', types: ['Creature'], subtypes: ['Army'],
+    });
+  };
+
   // z pola bitwy: potrzebne, by ocenić, czy wrogi stwór ma protekcję od koloru,
   // którym mógłbym w niego uderzyć w walce (wtedy jest „nie do przejścia" i wart
   // zdjęcia czarem nawet przy niskich statystykach). Czytamy wyłącznie widok
@@ -6543,6 +6664,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
   function massDestroyValue(view, effects) {
     const hit = massDestroyAffected(view, effects);
+    return { count: hit.length, value: sweepHitsValue(view, hit) };
+  }
+  /** PMSSB-74 (L41): wspólna miara zamiatania — wartość trafionych stworów (wrogie +, moje − z mnożnikiem
+   *  odbudowy) plus składnik zagrożenia życia. Używana przez zniszczenie masowe (PMSSB-63) i przez obrażenia
+   *  „każdemu stworowi równe mocy poświęconego” (Bloodfire Infusion). Bez zmiany liczb dla zniszczenia masowego. */
+  function sweepHitsValue(view, hit) {
     const hitIds = new Set(hit.map((o) => o.id));
     const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
     const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
@@ -6560,7 +6687,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const removed = unblockedAttackPower(foeAll, myAll) - unblockedAttackPower(foeLeft, myLeft);
     const life = Math.max(1, myLife(view));
     if (removed > 0) value += Math.min(1, removed / life) * P.massDestroyThreatWeight;
-    return { count: hit.length, value };
+    return value;
+  }
+  /** PMSSB-74 (Bloodfire Infusion; obrażenia niebojowe): {R}, poświęć zaczepionego stwora —
+   *  obrażenia = jego moc każdemu stworowi. Zysk = zamiatanie stworów z wytrzymałością (pozostałą) ≤ mocy
+   *  poświęconego, bez niezniszczalnych; koszt = poświęcenie gospodarza (ta sama miara co inne poświęcenia). */
+  function damageEachSacrificedValue(view, aura) {
+    const host = aura?.attachedTo != null ? objectOnBoard(view, aura.attachedTo) : null;
+    if (!host || host.controllerId !== view.playerId) return 0;
+    const amount = Math.max(0, host.power ?? 0);
+    // Koszt = ta sama miara co własna strata w zamiataniu (L41): jednostka × mnożnik własnej straty × odbudowa.
+    const handCreatures = (view.zones.hand ?? []).filter((o) => o.kind === 'creature').length;
+    const rebuild = 1 - Math.min(handCreatures, 3) * P.massDestroyRebuildDiscount;
+    const cost = (P.massDestroyCardValue + massDestroyWorth(view, host)) * P.massDestroyOwnMultiplier * rebuild;
+    if (amount <= 0) return -cost;
+    const hit = (view.zones.battlefield ?? []).filter((o) => o.id !== host.id
+      && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+      && !(o.keywords ?? []).includes('indestructible')
+      && Math.max(0, (o.toughness ?? 0) - (o.damage ?? 0)) <= amount);
+    return sweepHitsValue(view, hit) - cost;
   }
   function sacrificePermanentLoss(view, target) {
     if (!target) return 0;
@@ -6883,6 +7028,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // korzyścią kontrolera celu — nie wolno obdarowywać nią landu przeciwnika.
     ['grant_abilities', 40],
     ['cant_be_blocked', 40], ['regenerate', 40], ['prevent_damage_this_turn', 40],
+    // Batch 69 (Fleeting Flight): prewencja OBRAŻEŃ BOJOWYCH celu — korzyść
+    // kontrolera celu (bliźniak prevent_damage_this_turn, tylko combat).
+    ['prevent_combat_damage_to_target_this_turn', 40],
     // B (zgłoszenie właściciela 2026-09-28e, Withstand): bliźniak powyższego —
     // tarcza „prevent the next N damage” to efekt PRZYJAZNY celowi; bez wpisu
     // (i bez obsługi celu-gracza w friendlyMisaimPenalty) darmowe rzuty
@@ -8596,6 +8744,43 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return value;
   }
 
+  /** PMSSB-71 v2 (riot Beastmastera): pośpiech wart jest TYLKO atak tej tury.
+   * Okno: moja tura, przed deklaracją atakujących (main1 / beginning_of_combat).
+   * Po walce albo na cudzej turze pośpiech nie daje ataku (CR 302.6) → 0.
+   * Obrażenia = waga × moc × udział niezablokowany. Blokery wroga dzielą atak
+   * (CR 509.1a), ale każdy MÓJ inny świeży stwór przyjmuje część blokerów na siebie.
+   * Letal (wróg ma życie ≤ moc, bez blokerów) = bonus.
+   */
+  function riotHasteValue(view, body) {
+    const preCombat = view.turn.activePlayerId === view.playerId
+      && (view.turn.step === 'main1' || view.turn.step === 'beginning_of_combat');
+    const power = Math.max(0, body?.power ?? 0);
+    if (!body || !preCombat || power <= 0) return 0;
+    const mates = (view.zones.battlefield ?? []).filter((o) => o.controllerId === view.playerId
+      && o.kind === 'creature' && !o.tapped && !o.summoningSickness && o.id !== body.id).length;
+    const blockers = untappedEnemyBlockers(view).filter((o) => attackerCanBeBlocked(body, [o])).length;
+    const blockersOnMe = Math.max(0, blockers - mates);
+    const share = 1 / (1 + blockersOnMe);
+    const foe = enemy(view);
+    let value = P.riotHasteDamageWeight * power * share;
+    if (blockers === 0 && foe && power >= foe.life) value += P.riotHasteLethalBonus;
+    return value;
+  }
+
+  /** PMSSB-71 v3: licznik +1/+1 na SOBIE (riot i ETB/wyzwalacze bez celu). Wartość = ciało
+   * (3 za licznik) + presja (siła ataku wroga / moje życie, ≤ 1) + przewaga liczebna wroga
+   * (gdy wróg ma więcej stworów). Przy neutralnym stole zostaje sama wartość ciała.
+   */
+  function counterValue(view, amount) {
+    const pressure = Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view)));
+    const mine = myCreatures(view).length;
+    const theirs = enemyCreatures(view).length;
+    const behind = Math.max(0, theirs - mine) / Math.max(1, theirs + mine);
+    return amount * (P.creaturePowerWeight + P.creatureToughnessWeight)
+      + P.counterPressureWeight * pressure
+      + P.counterBoardWeight * behind;
+  }
+
   /** Jedna miara wybranego skutku: rzut modalnego nosiciela i decyzja trybu.
    * Nie dolicza bazy decyzji ani podatku ward (wołający zna koszt rzutu).
    */
@@ -8628,6 +8813,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (target && !hasKeyword(target, 'indestructible')) value += P.drawCardValue + bodyWorth(target);
       } else if (effect.type === 'damage') value += damageTargetValue(view, targetId, amount);
       else if (effect.type === 'scry' || effect.type === 'surveil') value += 3;
+      // PMSSB-71 (L41): tryb riot „haste” wyceniany jak słowo `haste` na ciele rzucanym z ręki
+      // (`creatureKeywordValue`: creatureKwHaste · moc/ref). Dawniej brak wpisu w ETB_EFFECT_BONUS = 0,
+      // więc bot nigdy nie wybierał pośpiechu, nawet przy letalu z atakiem tej tury.
+      else if (effect.type === 'grant_keyword_permanent') {
+        // PMSSB-71 v2: pośpiech kontekstowy (tura, faza, blokery, letal), nie stała.
+        const body = target ?? source;
+        value += effect.keyword === 'haste'
+          ? riotHasteValue(view, body)
+          : creatureKeywordValue(view, { keywords: [effect.keyword], power: body?.power ?? 0 }, body);
+      }
+      // PMSSB-71 (L41): licznik +1/+1 na SAMYM sobie w trybie modalnym = wartość ciała (+1 moc +1 wytrzymałość
+      // w tej samej skali co `creatureBase`/wycena P/T), a nie stała 5 z ETB_EFFECT_BONUS (ścieżka bez trybów).
+      else if (effect.type === 'add_counter' && effect.counter === '+1/+1' && !(mode.targets?.length)) {
+        value += counterValue(view, amount);
+      }
       else value += ETB_EFFECT_BONUS[effect.type]?.(effect, view, mode.targets?.[0], source) ?? 0;
     }
     value += drawTriggeredCounterValue(view, effects, {
@@ -10235,6 +10435,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           score -= P.creatureManaCostWeight
             * (Math.max(0, (card?.manaCost ?? 0) - costReduction)
               + coloredPipsOf(card?.cardId ?? '').length);
+          // PMSSB-72 (L41/b, Convoke): stwory płacące convoke zastępują manę — każdy ratuje
+          // creatureManaCostWeight, ale się tapuje (kara convokeTapPenalty). Bez convoke: 0.
+          // Kara rośnie z WARTOŚCIĄ CIAŁA tapowanego stwora (moc + wytrzymałość, jak
+          // `attackerValue`): utracony atak/blok. Płaska kara dawała remisy między wariantami.
+          const convokePayments = cmd.convokePayments ?? [];
+          let convokeTapCost = 0;
+          for (const payment of convokePayments) {
+            const creature = zoneCard(view, payment.creatureId);
+            const body = Math.max(1, (creature?.power ?? 0) + (creature?.toughness ?? 0));
+            convokeTapCost += P.convokeTapPenalty * body / 4;
+          }
+          score += P.creatureManaCostWeight * convokePayments.length - convokeTapCost;
         }
         // Uwaga z gry B: permanent z głównym ETB `animate_linked` bez godnego
         // artefaktu traci potencjał. Kara znika wyłącznie, gdy samo ciało jako
@@ -11350,9 +11562,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               ? objectOnBoard(view, cmd.targets?.[0] ?? null) : null;
             // PMSSB-63/S: w wymianie ciał token liczy się jednostką ciała (2·moc+wytrzymałość,
             // jak massDestroyWorth bez MV), ze znakiem kontrolera celu: swój = +, wroga = −.
+            // PMSSB-77 (domknięcie): presja życia też w tej gałęzi — ciało tokenu-stwora
+            // przeliczone na jednostkę 2·moc+wytrzymałość (wagę ciała 10/3 → 3/10), ze znakiem.
+            const swapPressure = isCreatureTokenEffect(effect)
+              ? (3 / 10) * P.tokenPressureWeight * Math.min(1, enemyAttackPower(view) / Math.max(1, myLife(view))) : 0;
             const tokenValue = effect.controllerFromCapture && exileSwap
               ? ((captureTarget?.controllerId ?? view.playerId) === view.playerId ? 1 : -1)
-                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0))
+                * (2 * (effect.power ?? 0) + (effect.toughness ?? 0) + swapPressure)
               : effect.controllerFromCapture
                 ? tokenBodyValue(view, effect, { tokenControllerId: captureTarget?.controllerId ?? view.playerId })
                 : tokenBodyValue(view, effect);
@@ -11421,8 +11637,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
           // Armię niezależnie od celu czaru — stały zysk (token/licznik).
+          // PMSSB-68: wspólna miara z ETB (`amassValueOf`), nie 6+3N.
           if (effect.type === 'amass') {
-            score += 6 + 3 * (effect.amount ?? 1);
+            score += amassValueOf(view, effect);
           }
           // M162/B (uwaga właściciela): symetryczny mill (Ghoulcaller's Bell —
           // „each player mills") — wycena WYŚCIGU bibliotek. Bez tej gałęzi
@@ -12244,6 +12461,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (neededToBlock || plausibleThreat) score -= lifeValue + 8; // trzymaj bloker
             }
         }
+        // PMSSB-74: Bloodfire Infusion — obrażenia równe mocy poświęconego każdemu stworowi.
+        if (abilityEffectTypes.includes('damage_each_creature_sacrificed_power')) score += damageEachSacrificedValue(view, source);
         for (const effect of effects) {
           // Linkowany grant z karty w ręce zachowuje samą kartę jako przyszły
           // rzut z exile i poprawia profil źródła many. PMSSB-61: wartość jest
@@ -13702,6 +13921,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // nie zada obrażeń (obrońca ma czym zablokować bez straty) i nie
         // zabije blokera. Taki atak tylko tapuje własnego stwora.
         let futileAttackers = 0;
+        // PMSSB-70: ilu atakujących zabija blokera ZANIM ten odpowie (przeżyje
+        // i zabija), oraz wartości wymian (stwór ginie, zabija blokera). Po pętli
+        // wymiany ponad wolne sloty dostają karę (patrz niżej).
+        let survivorKillers = 0;
+        const tradeValues = [];
         for (const id of attackers) {
           const object = projectedAttackerOf(id);
           if (!object) continue;
@@ -13861,8 +14085,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // zanim ten odpowie — atakujący PRZEŻYWA, więc to nie wymiana
             // (power - 1), a czysty zysk jak przy ataku w otwartego.
             perAttacker = power + P.attackThroughBonus;
+            survivorKillers += 1;
           } else if (blockedStats.toughness > effBlockerPower && lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
+            survivorKillers += 1;
           } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
@@ -13887,6 +14113,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             futileAttackers += 1;
           } else if (lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = power - 1; // wymiana: obrażenia + usunięcie blockerów
+            tradeValues.push(perAttacker);
           } else {
             // Chump do większego blokera: atakujący ginie, 0 obrażeń. Nawet
             // w wyścigu (racing) to strata — atak nie zada obrażeń i nie
@@ -13940,6 +14167,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += countersOnCombatDamage(id);
           }
         }
+        // PMSSB-70 (remis s4011 t26): wolne sloty = blokery minus te, które już
+        // zabijają przeżywający atakujący. Wymiany ponad wolne sloty nic nie
+        // dokładają (blokera zabija ktoś inny) — płacą `unpaidTradeLoss` zamiast
+        // swojej wartości. Najcenniejsze wymiany zostają opłacone pierwsze.
+        // Kara dotyczy wyłącznie wymian PO przeżywającym zabójcy (`survivorKillers
+        // ≥ 1`): dwie wymiany bez przeżywającego wobec jednego blokera to osobny
+        // mechanizm (blokujący zablokuje jedną, druga przejdzie w twarz), a jego
+        // reguła nie należy do tej poprawki (PMSSB-59 duo, rewizja w planie).
+        if (P.unpaidTradeEnabled === 1 && survivorKillers > 0 && tradeValues.length > 0) {
+          const wolneSloty = Math.max(0, blockers.length - survivorKillers);
+          const posortowane = [...tradeValues].sort((a, b) => b - a);
+          for (const value of posortowane.slice(wolneSloty)) score += -P.unpaidTradeLoss - value;
+        }
         // Presja: atak w otwartego, lethal i przewaga liczebna premiowane.
         if (blockers.length === 0 && attackers.length > 0) score += P.attackOpenBoardBonus;
         const totalPower = attackers.reduce((sum, id) => sum + faceDamageOf(projectedAttackerOf(id)), 0);
@@ -13949,7 +14189,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // all-in. Blokerzy wchłaniają co najwyżej tyle obrażeń, ile wynosi
         // suma ich wytrzymałości (każdy blokuje jednego atakującego);
         // jeśli PO absorpcji zostaje >= życia wroga — atak wygrywa grę.
-        const blockerAbsorb = blockers.reduce((sum, o) => sum + (o.toughness ?? 0), 0);
+        // R: pochłanianie = moc zatrzymanych ataków (nie wytrzymałość blokerów).
+        const blockerAbsorb = blockersAbsorbedDamageOf(attackers.map(projectedAttackerOf), blockers);
         const penetratingPower = Math.max(0, totalPower - blockerAbsorb);
         if (attackers.length > 0 && penetratingPower >= enemyLife) score += 1000;
         else if (totalPower >= enemyLife && blockers.length === 0) score += 100;
@@ -13990,10 +14231,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const forcedBlockLossIds = new Set();
         if (unblockedLethal) {
           const absorbNeeded = Math.max(0, totalPower - (enemyLife - 1));
-          let absorbed = 0;
+          // R: wymuszony blok = najmniejszy zestaw blokerów, który zatrzymuje
+          // dość obrażeń (liczone przez moc zatrzymanych ataków, nie wytrzymałość).
+          const attackerObjects = attackers.map(projectedAttackerOf);
+          const chosen = [];
           for (const blocker of [...blockers].sort((x, y) => (x.toughness ?? 0) - (y.toughness ?? 0))) {
-            if (absorbed >= absorbNeeded) break;
-            absorbed += blocker.toughness ?? 0;
+            if (blockersAbsorbedDamageOf(attackerObjects, chosen) >= absorbNeeded) break;
+            chosen.push(blocker);
             if ((blocker.toughness ?? 0) <= strongestAttackerPower) forcedBlockLossIds.add(blocker.id);
           }
         }

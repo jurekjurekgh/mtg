@@ -306,8 +306,13 @@ function ringAttack({ registry = REG, dyskryminujaca = false } = {}) {
         creature(state, 'other', 'p1', 2, 2);
         creature(state, 'blocker', 'p2', 3, 3);
       } else {
+        // PMSSB-70: drugi blokujący daje WOLNY SLOT. Przy jednym bloku­jącym
+        // Ringleader (przeżywa i zabija go) sam zabija blokera, więc drugi
+        // atakujący-wymiana byłby zbędny i dostaje karę `unpaidTradeLoss`.
+        // Pin battle cry (CR 702.91a) testujemy tam, gdzie dołożenie ma sens.
         creature(state, 'other', 'p1', 1, 1);
         creature(state, 'blocker', 'p2', 1, 1);
+        creature(state, 'blocker2', 'p2', 1, 1);
       }
     } });
 }

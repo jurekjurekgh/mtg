@@ -1,0 +1,25 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Heron-Blessed+Geist&set=vow&format=json",
+  "print": "vow",
+  "name": "Heron-Blessed Geist",
+  "mana_cost": "{4}{W}",
+  "cmc": 5,
+  "type_line": "Creature — Spirit",
+  "oracle_text": "Flying\n{3}{W}, Exile this card from your graveyard: Create two 1/1 white Spirit creature tokens with flying. Activate only if you control an enchantment and only as a sorcery.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "W"
+  ],
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "19",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/8/3/83bacf4a-4e99-4008-97e4-3a82dddd4e45.jpg?1783924918"
+  },
+  "pobrano": "2026-10-20",
+  "rulings": [],
+  "rulingsPobrano": "2026-10-20",
+  "rulingsSource": "https://api.scryfall.com/cards/83bacf4a-4e99-4008-97e4-3a82dddd4e45/rulings"
+}

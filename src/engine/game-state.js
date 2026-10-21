@@ -7,7 +7,7 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
@@ -561,7 +561,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
-  'delve', 'protectorId', 'cantBlockPrinted',
+  'delve', 'convoke', 'protectorId', 'cantBlockPrinted',
 ]);
 
 const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
@@ -622,12 +622,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, untapChoice = false, cantBlockPrinted = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, convoke = false, untapChoice = false, cantBlockPrinted = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, cantBlockPrinted });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, convoke, cantBlockPrinted });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -6241,6 +6241,8 @@ export function execute(state, input) {
         treasureAlt: Boolean(cmd.treasureAlt),
         surgeCast: Boolean(cmd.surgeCast),
         delveExileIds: cmd.delveExileIds ?? null,
+        // Batch 69 (Convoke): wybór stworów i kolorów płatności niesie komenda.
+        convokePayments: cmd.convokePayments ?? null,
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -8998,6 +9000,15 @@ export function playerView(state, playerId) {
       {
         const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
         const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
+        // PMSSB-72 (Convoke, CR 702.51a): warianty płatności stworami — tylko minimalne
+        // (bez many nie ma żadnego wariantu, więc zwykła oferta nie zmienia się). Gracz
+        // wybiera wariant (UI grupuje je w panel); silnik nie tapuje nikogo sam.
+        if (object.convoke && !(object.phyrexianManaCost ?? 0)) {
+          const convokeReqs = [...coloredPipsOf(object.cardId, 0)];
+          for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object), convokeReqs, spellManaPurpose(object))) {
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, convokePayments: payments }));
+          }
+        }
         if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object, coloredPipsOf(object.cardId, lifePips))) continue;
       }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
@@ -9019,6 +9030,12 @@ export function playerView(state, playerId) {
       if (object.kicker && !object.kicker.returnLand) {
         const kickerCost = object.kicker.cost ?? 0;
         const kickerReqs = [...coloredPipsOf(object.cardId, 0), ...(object.kicker.colors ?? []).map((color) => [color])];
+        // PMSSB-72 (Convoke + kicker): koszt całkowity z kickerem, warianty stworami (jak wyżej).
+        if (object.convoke && !(object.phyrexianManaCost ?? 0)) {
+          for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object) + kickerCost, kickerReqs, spellManaPurpose(object))) {
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true, convokePayments: payments }));
+          }
+        }
         if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
           if (canPayColoredCost(state, playerId, kickerReqs, null, spellManaPurpose(object))) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));
@@ -9192,6 +9209,8 @@ export function playerView(state, playerId) {
     playerId: state.pendingClash.choices[0],
     count: state.pendingClash.choices.length,
     won: state.pendingClash.won,
+    // Karta wywołująca clash (jawna): nagłówek modala decyzji nosi jej nazwę.
+    sourceCardId: state.pendingClash.sourceCardId ?? null,
     // Karty odsłonięte (clash) są jawne — niosą cardId, nie objectId
     // (audyt diamentowy: modal pokazywał surowe „p1-library-N").
     cards: Object.fromEntries(

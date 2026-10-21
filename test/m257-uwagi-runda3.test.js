@@ -263,7 +263,10 @@ test('M257A1: paylod onCast — rzut twarzą w dół niesie faceDown:true (wypł
   // Batch 68: podział talii warhammer-ubr (Child of Night, Meteorite) przesunął
   // przebieg, seed 3 nie rzuca już morpha — skan 1..30: pierwszy seed z rzutem
   // morpha to 2; L25: „przelosowany po zmianie X”).
-  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 2 });
+  // Batch 69: podział Ravnicy/Zendikar (ravnica-rg/wub, zendikar-wu/rg) przesunął
+  // przebieg; skan 1..30 (2026-10-20): pierwszy seed z rzutem morpha i zielonym
+  // testem to 6 (seed 2 już nie rzuca morpha).
+  const { registry, session } = morphGameSession((p) => calls.push(p), { seed: 6 });
   // Oczekiwania per płytka: dla komend zagranych przez skrypt wiemy, czy
   // rzut był deklarowany twarzą w dół — to jest właściwy kontrakt tej
   // warstwy („payload zgodny z komendą”), niezależny od tego, JAK gra

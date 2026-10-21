@@ -196,6 +196,9 @@ const KNOWN_KEYWORDS = new Set([
   // „each OTHER attacking creature gets +1/+0" (efekt `buff_attacking_creatures`
   // z opcją `excludeSource`).
   'battle_cry',
+  // Batch 69: myriad (CR 702.116, Gnoll War Band — trigger ataku, 1:1 w 1v1)
+  // i riot (CR 702.136a, Gruul Beastmaster — modalny trigger przy wejściu).
+  'myriad', 'riot',
 ]);
 
 test('Sherlock strażnik: każdy keyword w registry to mały snake_case z listy obsługiwanych', () => {

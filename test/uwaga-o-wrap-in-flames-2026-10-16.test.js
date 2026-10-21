@@ -163,9 +163,10 @@ test('O/10: 40 stworów — oferta obejmuje KAŻDĄ parę i trójkę (bez limitu
 });
 
 test('O/11 (audyt PR #166, O-1): 7 stworów — 4 cele przy max 3: „Zatwierdź” wyłączone, komenda nie powstaje', () => {
-  // Tryb wolnych celów składa komendę z dowolnego zaznaczenia; bez strażnika
-  // limitu kreator pozwalał zatwierdzić 4 cele, a silnik odrzucał to dopiero
-  // przy wykonaniu (zmierzone: confirmDisabled=false, illegal_spell:liczba celów).
+  // Strażnik liczby celów w kreatorze (O-1, audyt PR #166): bez niego kreator
+  // pozwalał zatwierdzić 4 cele przy max 3, a silnik odrzucał to dopiero przy
+  // wykonaniu (zmierzone: confirmDisabled=false, illegal_spell:liczba celów).
+  // Ścieżka „freeTargets” usunięta w O-2 (106b49f); strażnik zostaje dla listy.
   const r = zatwierdz([0, 1, 2, 3], 7);
   assert.equal(r.confirmDisabled, true, 'kreator nie zatwierdza ponad maxTargets');
   assert.equal(r.submitted, null);

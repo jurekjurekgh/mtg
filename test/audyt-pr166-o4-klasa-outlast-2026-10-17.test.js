@@ -40,7 +40,7 @@ test('O-4/4: zdolność z innym efektem obok licznika nie należy do klasy; pust
   assert.equal(isSelfCounterEffects(undefined), false);
 });
 
-test('O-4/5: katalog — w klasie outlast (sorcery, {T} na sobie, bez celów) jest tylko Enduring Sliver', () => {
+test('O-4/5: katalog — w klasie outlast (sorcery, {T} na sobie, bez celów) są Enduring Sliver i Tuskguard Captain (batch 69, ta sama klasyfikacja po efekcie)', () => {
   const reg = createCardRegistry();
   const pasujace = new Set();
   for (const card of reg.all()) {
@@ -55,5 +55,5 @@ test('O-4/5: katalog — w klasie outlast (sorcery, {T} na sobie, bez celów) je
       if (isSelfCounterEffects(effects)) pasujace.add(card.id);
     }
   }
-  assert.deepEqual([...pasujace].sort(), ['enduring-sliver'], `karty w klasie outlast: ${[...pasujace].join(', ')}`);
+  assert.deepEqual([...pasujace].sort(), ['enduring-sliver', 'tuskguard-captain'], `karty w klasie outlast: ${[...pasujace].join(', ')}`);
 });
