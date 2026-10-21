@@ -12,10 +12,16 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-21):** [handoff](docs/setup/HANDOFF_2026-10-21.md)
-i [audyt PR #168](docs/audits/AUDYT_PR168_2026-10-21.md) w otwartym
-[PR #169](https://github.com/jurekjurekgh/mtg/pull/169). Poprawki A-1…A-13
-i Q-1 z pętli jakości są w raporcie; PR czeka na decyzję właściciela.
+**Aktualny punkt zaczepienia (2026-10-21b):** [handoff](docs/setup/HANDOFF_2026-10-21b.md)
+oraz [audyt PR #169](docs/audits/AUDYT_PR169_2026-10-21.md) w otwartym
+[PR #170](https://github.com/jurekjurekgh/mtg/pull/170). Sesja 2026-10-21b:
+audyt scalonego PR #169 (56/56 ścieżek, CR i mutacje zweryfikowane, jedyne
+znalezisko dokumentacyjne) oraz pętla jakości — 4 partie Żywego Testera na
+taliach batcha 69 (0 zgłoszeń detektorów) i polowanie CR 702.15 (Lifelink)
+z fixem duplikatu `damage_dealt` w strumieniu komendy przy częściowo
+zapobiegniętych obrażeniach (lekcja L187). PR czeka na decyzję właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-21](docs/setup/HANDOFF_2026-10-21.md)
+(sesja PR #169 — poprawki A-1…A-13, Q-1; PR #169 scalony jako `c249792`).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,

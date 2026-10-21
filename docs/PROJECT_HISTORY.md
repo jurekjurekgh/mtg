@@ -19,6 +19,48 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+## 2026-10-21b — audyt PR #169 (56/56) i pętla jakości: fix duplikatu damage_dealt (PR #170)
+
+- Sesja domyślna (ADR 0020/0021), branch `arena/3ff39ec9-mtg` od `main` @
+  `c249792` (PR #169 scalony). Plan:
+  `docs/plans/PLAN_2026-10-21b-audyt-pr169-petla-jakosci.md` (PR #170).
+- **Audyt PR #169 (56/56 ścieżek):** raport
+  `docs/audits/AUDYT_PR169_2026-10-21.md` (commit `1124842`). CR 702.51a/b
+  (convoke), 702.136a/b (riot), 726.2/726.5 (inicjatywa) potwierdzone
+  dosłownym tekstem z wydania 2026-09-25 (ADR 0030). Mutacje pinów
+  A-1/A-2/A-3/A-4/A-8/Q-1 (stan sprzed naprawy) — wszystkie RED (odpowiednio
+  2/7, 14/16, 1/2, 4/5, 3/6, 1/3); drzewo przywracane. Testy nieosłabione,
+  erraty dokumentacji zachowują pomiary historyczne. Jedyny finding B-1
+  (nieaktualny „PR #169 otwarty" w README po scaleniu) — naprawiony
+  przy domknięciu tej sesji. Golden fixture: 3 hashe odnowione świadomie.
+- **Pętla jakości — Żywy Tester:** 4 partie na świeżym `dist/` (ravnica-rg ×
+  wiedzmin-bg, innistrad-wu × ravnica-rg, worek-legend × warhammer-ubr,
+  warhammer-ubr × tarkir-wur — talie z kartami batcha 69, pierwsza czwórka
+  spoza próby benchmarku wg priorytetu właściciela): 0 zgłoszeń detektorów,
+  0 duplikatów linii logu, „NIEWYCENIONE: brak". Botowy riot (Gruul
+  Beastmaster) w dobrej kolejności na stole: wybór zalogowany PRZED wejściem
+  (CR 702.136a), pośpiech na kaflu, modal decyzji widoczny dla gracza.
+  Transkrypty robocze w `tools/table-tester/g*.txt` (poza repo).
+- **Polowanie CR 702.15 (Lifelink, świeża ścieżka):** dosłowne 702.15a–f
+  (mtg.wiki, CR 2026-09-25). Lifelink czysty: kwota = obrażenia ZADANE po
+  prewencji (combat.js ×2, effects.js), redundancja instancji (`includes`
+  boolean — 702.15f), osobne zdarzenia zysku per źródło (702.15e),
+  `controllerId` w momencie obrażeń (702.15b). Deathtouch (702.2b/c/f)
+  sprawdzony wstępnie — wyczerpująco pokryty w silniku (obszar przeczesany
+  wcześniej). **Znalezisko:** `dealCombatDamageToPlayer` przy `prevented > 0`
+  przenosiła `state.events.slice(before)` z STARTU funkcji (tarcze ORAZ
+  `damage_dealt`), po czym łańcuch if/else wypychał `damage_dealt` drugi
+  raz — wynik `resolve_combat` niósł duplikat (podwójna linia logu stołu);
+  stan gry, `state.events` i triggery poprawne. Fix: `slice(before, -1)`
+  (commit `18702e8`). Test RED→GREEN 2/2 z rekreatorem mutacyjnym; lekcja
+  **L187** (kotwica klasy L130 — checkpoint spreadu tuż przed helperem);
+  tabela CR +`702.15b` (ten sam plik źródłowy mirroru nwgarne/mtg-data,
+  SHA-256 niezmienny, wydanie 2026-09-25).
+- Bramy sesji: `npm test` 8665/8665; `test:all` — patrz handoff; build
+  75 modułów / 5308,5 kB; próbka regresji bota 10/10; budżet lektury 2/2;
+  `cr-numery --sprawdz` OK; `git diff --check` czysto.
+- PR #170 otwarty, czeka na decyzję właściciela (bez scalania przez agenta).
+
 ## 2026-10-21 — audyt PR #168 (130/130), A-1…A-13 i Q-1 z pętli jakości (PR #169)
 
 - Sesja domyślna (ADR 0020/0021), branch `arena/4129dd32-mtg` od

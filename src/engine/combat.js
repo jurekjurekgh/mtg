@@ -113,8 +113,13 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
     sourceLki: source ?? null,
   });
   state.events.push(damageEvent);
-  // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy.
-  if (prevented > 0) events.push(...state.events.slice(before));
+  // Zdarzenia tarcz (damage_prevented) dołączamy do strumienia komendy —
+  // bez damage_dealt (ostatni element, wypychany raz niżej): slice(before)
+  // zabierał go razem z tarczami i łańcuch if/else dublował zdarzenie,
+  // więc stół rysował dwie linie „X zadaje N (gracz)" przy częściowo
+  // zapobiegniętych obrażeniach na gracza (audyt PR #170, CR 119.3; wzorzec
+  // „state.events raz + events raz" jak w assignDamageToAttackers).
+  if (prevented > 0) events.push(...state.events.slice(before, -1));
   if (hasKeyword(state, source, 'infect')) {
     events.push(damageEvent, ...addPoisonCounters(state, targetPlayerId, actual));
   } else if (actual > 0) {
