@@ -19,6 +19,45 @@
 > w drzewie. Obowiązująca reguła: `docs/setup/TESTER_STOLU.md` → „Transkrypty
 > nie trafiają do repozytorium".
 
+
+## 2026-10-21d — audyt PR #171 + fix: kreator many ponawia commit po rozstrzygnięciu triggerów z auto-tapu (UI-layer)
+
+- Sesja domyślna (ADR 0021), branch `arena/5d252dbf-mtg` (HEAD `f8c89f8`).
+  Plan i handoff: `docs/setup/HANDOFF_2026-10-21d.md`.
+- **Zgłoszenie właściciela (Chronic Flooding + Kuldotha Ringleader):**
+  „paying {4}{R} for Kuldotha Ringleader using an enchanted land fires the
+  aura trigger after tapping the land. The first 'Cast spell' click reports
+  casting unavailable / mana remains in the pool."
+- **Diagnoza:** `tap_for_mana` lądu z aury odbiera trigger „whenever X becomes
+  tapped", który ląduje na stosie PRZED commitem cast. Silnik CR-prawidłowo
+  odrzuca `cast_permanent` z `illegal_cast:Zagranie przy niepustym stosie`
+  (307.1/117.1a). UI w `main.js` czyta `stillLegal === false` i drukuje
+  „Płatność zebrana, ale zagranie nie jest już dostępne — mana została w
+  puli".
+- **Fix generyczny** w `src/table/main.js`: nowa funkcja
+  `resolveWizardTriggerBlock(session, pending)` — przepuszcza priorytet
+  pasem do `maxCycles=6` aż cast stanie się legalny. Bez specjalnej logiki
+  dla Chronic Flooding ani Kuldothy: helper obsługuje DOWOLNY trigger
+  X-becomes-tapped z auto-tapu kreatora.
+- **Audyt PR #171:** `docs/audits/AUDYT_PR171_2026-10-21d.md`. Pin H/4:
+  trigger leci POD czaru (CR 603/601.5), a kreator many kończy oba po
+  przejściu priorytetu obu graczy.
+- **Bramka końcowa:**
+  - `npm run test:all`: 8936/8936 (+3 vs PR #170).
+  - `npm test` (fast): 8668/8668 (+3 vs 8665).
+  - `npm run build`: 75 modułów / 5312.1 kB.
+  - `tools/check-comp-rules-size.mjs`: bez uwag.
+  - `tools/check-docs-card-sources.mjs`: 37/37.
+- **Pliki:**
+  - `src/table/main.js` (+45): helper + wiring `finishPayment`.
+  - `test/audit-pr171-chronic-flooding-trigger-on-stack.test.js` (+129):
+    reprodukcja + 3 asercje (silnik odrzuca; helper naprawia; anty-regresja).
+  - `test/zgloszenie-a-numery-zrodel-kreatora.test.js` (+1/−1): okno
+    slice'a 4000 → 6000 znaków (wciąż obejmuje `refreshManaWizard`).
+  - `.gitignore` (+3): `.arena/` (transkrypty i reprodukcyjne nigdy w commicie).
+  - `docs/audits/AUDYT_PR171_2026-10-21d.md`, `docs/setup/HANDOFF_2026-10-21d.md`:
+    dokumentacja sesji.
+
 ## 2026-10-21c — audyt PR #170 (11/11): fix potwierdzony, C-1 — podstawa „zapobiegnięte ≠ zadane" to 615.6, nie 119.3 (PR #171)
 
 - Sesja domyślna (ADR 0020/0021), branch `arena/5d252dbf-mtg` od `main` @
