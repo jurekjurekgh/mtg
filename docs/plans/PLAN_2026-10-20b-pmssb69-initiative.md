@@ -3,6 +3,16 @@
 **Zlecenie właściciela (2026-10-20):** kolejne pętle PMSSB (ręczne strojenie scoringu). Kolejna rodzina
 z listy odrzuconej w PMSSB-68 (`docs/plans/PLAN_2026-10-20-pmssb68-amass.md`, „Odrzucone w tej fali”).
 
+> **Korekta 2026-10-21 (audyt PR #168/A-3):** opis F1 poniżej to historyczna
+> hipoteza i zapis dawnej implementacji, NIE obowiązująca reguła. CR 726.2 i
+> 726.5 (wydanie 2026-09-25) mówią, że ponowne objęcie inicjatywy przez
+> obecnego posiadacza też uruchamia venture do Undercity. PR #169 poprawił
+> silnik i wycenę: ponowne objęcie jest warte bazowe 6 (bez dopłaty za
+> kradzież i bez ponownej kary ekspozycji), a nie 0. Planowane F1 i pomiary
+> PRZED/PO pozostają poniżej jako zapis historyczny, nie aktualna specyfikacja.
+> Aktualne piny: `test/audyt-pr168-initiative.test.js` i
+> `test/audyt-pmssb69-initiative.test.js`.
+
 ## Wybór rodziny (krok 2 procedury)
 
 - `take_initiative` — 3 karty w katalogu i w talii `forgotten-realms` (inwentarz `inv2`, 188 typów):
@@ -25,8 +35,9 @@ Hipoteza do obalenia: wynik kart nie zależy od stanu inicjatywy ani od stołu w
 ## Cel (model, jedna miara — L41)
 
 `initiativeTakeValue(view, effect)` — jedna funkcja dla ETB/czaru (ta sama ścieżka co `amassValueOf`):
-- **F1 (zysk zerowy, gdy już posiadam):** jeśli `view.initiativePlayerId === me`, objęcie nie daje venture
-  (silnik) — składnik ETB = 0. Poprawka błędu, nie nowa wartość.
+- **F1 (historyczna, błędna hipoteza — patrz korekta na górze):** jeśli `view.initiativePlayerId === me`,
+  ówczesny silnik nie dawał venture (`changedHands === false`), więc plan zakładał ETB = 0.
+  Obecnie CR wymaga venture, a bieżący silnik i bot liczą bazowe 6.
 - **F2 (kradzież, gdy posiada wróg):** jeśli `view.initiativePlayerId` = przeciwnik, objęcie zabiera mu
   postęp i daje mój venture — dopłata `initiativeStealBonus` (pokrętło).
 - **F3 (ryzyko, gdy wróg ma atakujących):** każdy stwór wroga, który może zaatakować (bez defendera,

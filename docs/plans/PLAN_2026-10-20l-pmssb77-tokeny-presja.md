@@ -36,3 +36,16 @@ Status: spisany po pomiarze PRZED (`.arena/pmssb77-pre.txt`), przed wdrożeniem.
 
 - Presja w wycenie tokenów wrogich (znak roli) — nie zmieniana.
 - Miara `enemyAttackPower` sumuje siłę wszystkich wrogich stworów (nie tylko atakujących). Ta sama przybliżona miara co licznik PMSSB-71 v3; okno po blokach dostaje tę samą presję, więc różnica okna chumpa (16) zostaje.
+
+## Errata po PR #168 — audyt 2026-10-21
+
+Powyższa sekcja „Poza zakresem” opisuje **pierwotną iterację**, nie stan
+końcowy PR #168. W późniejszym domknięciu tej samej serii luka została
+usunięta: `tokenBodyValue` dolicza presję również tokenowi oddanemu wrogowi,
+a znak roli zmienia ją w koszt; gałąź `exileSwap` stosuje ten sam składnik
+po przeskalowaniu do `2·moc + wytrzymałość` (×3/10). Pokrętło
+`tokenPressureWeight: 0` przywraca starą wycenę po obu stronach. Piny:
+`test/audyt-pmssb77-tokeny-presja.test.js` (Secure the Scene, 6 testów) i
+`test/audyt-pmssb63-secure.test.js`; wynik i akceptacja fixture golden są w
+`docs/PMSSB.md` §PMSSB-77. Historycznej intencji pierwszej iteracji
+nie przepisujemy, ale **nie wolno traktować jej jako obecnego ograniczenia**.

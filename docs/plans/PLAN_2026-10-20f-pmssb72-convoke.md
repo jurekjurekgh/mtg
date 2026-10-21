@@ -3,6 +3,17 @@
 Data: 2026-10-20. Gałąź: `arena/3ce2ec34-mtg` (PR #168). Procedura: `docs/PMSSB.md`.
 Rejestr: wiersz „convoke” (`docs/PMSSB.md`), luka z batcha 69.
 
+> **Korekta 2026-10-21 (audyt PR #168/A-12):** historyczna polityka
+> „warianty minimalne; gdy mana wystarcza, nie pokazuj convoke” poniżej
+> ograniczała legalną decyzję. CR 702.51a (wydanie 2026-09-25) pozwala
+> tapnąć stwory ZAMIAST zapłacić dowolną część kosztu maną nawet wtedy,
+> gdy mana jest dostępna. Gracz może zachować ją na kolejny czar; zwykły
+> rzut pozostaje. Generator ofert obsługuje dobrowolne podzbiory w swoim
+> dotychczasowym deterministycznym limicie 64 (L19); duża plansza nadal
+> może nie pokazać wszystkich kombinacji. A-12 ma piny na pojedyncze i
+> pełne convoke przy 4 manach, wycenę i watchdog wydajności. Poniższe
+> pomiary, cele i RED-y pozostają historycznym zapisem etapu PMSSB-72.
+
 ## Uwaga o kolejności
 
 Procedura każe commitować plan PRZED kodem. Ten plan powstał po tym, jak

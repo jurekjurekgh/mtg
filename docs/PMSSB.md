@@ -43,14 +43,14 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | amass (`amass`) — ETB Dunland Crebain i rzut Toll of the Invasion, wspólna miara z tokenem/licznikiem | 2 | DONE (2026-10-20) | §PMSSB-68 niżej; `test/audyt-pmssb68-amass.test.js` (6); przepięte piny `pmssb6-discard-wave-a` (Toll 68 / 60) i sufit `audyt-bot-walka-remisy` (attack 9); `tools/pmssb68-amass-ab.mjs` |
 | take_initiative (`take_initiative`) — ETB „you take the initiative” (Underdark Explorer, Stirring Bard, Caves of Chaos Adventurer) | 3 | DONE (2026-10-20) | §PMSSB-69 niżej; `test/audyt-pmssb69-initiative.test.js` (8); `tools/pmssb69-initiative-sonda.mjs`, `tools/pmssb69-initiative-ab.mjs` |
 | nieopłacona wymiana w deklaracji ataku (`declare_attackers`, remis s4011 t26) — wymiana ponad wolne sloty po przeżywającym zabójcy | 1 | DONE (2026-10-20) | §PMSSB-70 niżej; `test/audyt-pmssb70-nieoplacona-wymiana.test.js` (5); pokrętła `unpaidTradeEnabled`, `unpaidTradeLoss`; przepięte: fixture golden (2 partie, po przeglądzie), pin F7 (scena z 2 blokerami) |
-| riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (6); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
+| riot (`riot`, tryby modalne przy wejściu: licznik +1/+1 albo pośpiech) + NaN w wycenie rzutu z pompą `source_power` (Gruul Beastmaster) | 1 | DONE (2026-10-20) | §PMSSB-71 niżej; `test/audyt-pmssb71-riot.test.js` (11 obecnie; 6 w pierwszej iteracji); sonda `.arena/pmssb71-*`; NaN dotykał KAŻDEJ oferty w tej samej turze (sortowanie) |
 | licznik +1/+1 na sobie bez celu (ETB/wyzwalacze z opłatą, „umiera”, lądy, end step): stała 5 → wartość kontekstowa (ciało 3 + presja + przewaga wroga) | 1 | DONE (2026-10-20) | §PMSSB-71 v3 niżej; `test/audyt-pmssb71v3-licznik.test.js` (4); inne liczniki bez celu (quest, stun) zostają przy 5 |
-| wycena tokenów-stworów własnych bez presji życia (Geist, Raise the Alarm): ciało tokenu nie znało zagrożenia | 1 | DONE (2026-10-20) | §PMSSB-77 niżej; `test/audyt-pmssb77-tokeny-presja.test.js` (4); pokrętło `tokenPressureWeight` (0 = dawne zachowanie) |
+| wycena tokenów-stworów bez presji życia (Geist, Raise the Alarm; potem symetrycznie: Secure the Scene) | 1 | DONE (2026-10-20/21) | §PMSSB-77 niżej; `test/audyt-pmssb77-tokeny-presja.test.js` (6); pokrętło `tokenPressureWeight` (0 = dawne zachowanie) |
 | myriad (Gnoll War Band, CR 702.116) — trigger ataku z `anotherOpponentExists` | 1 | ZAMKNIĘTE BEZ ZMIANY (2026-10-20) | §PMSSB-73 niżej; `test/audyt-pmssb73-myriad.test.js` (3); w 1v1 trigger nie trafia na stos, bot nie wycenia go wcale |
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
 | warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
-| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
+| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3514,11 +3514,19 @@ Korekta oczekiwań: plan podawał Dunland 87.4991 bez wagi ×0.9 `cast_permanent
 
 ## PMSSB-69 — inicjatywa (`take_initiative`) w wycenie bota (2026-10-20) — DONE
 
+**Korekta 2026-10-21 (audyt PR #168/A-3):** F1 poniżej opisuje historyczny błąd
+silnika i wyceny, nie regułę. CR 726.2 i 726.5 (2026-09-25): ponowne objęcie
+inicjatywy przez jej posiadacza także uruchamia venture. W PR #169 naprawiono
+silnik i bota; **obecnie bazowe 6 dostaje także posiadacz** (bez premii kradzieży
+ani nowej kary ekspozycji). Tabela PRZED/PO i poniższe delty to historyczny
+pomiar PMSSB-69 przed A-3, nie bieżące wyniki sondy. Aktualne piny:
+`test/audyt-pr168-initiative.test.js` i `test/audyt-pmssb69-initiative.test.js`.
+
 Plan: [PLAN_2026-10-20b-pmssb69-initiative](plans/PLAN_2026-10-20b-pmssb69-initiative.md). Rodzina z listy odrzuconej w PMSSB-68.
 Karty: Underdark Explorer (5/3 menace, koszt 5), Stirring Bard (0/4 defender, koszt 4), Caves of Chaos Adventurer (5/3 trample, koszt 4) — ETB „you take the initiative”; wszystkie w talii `forgotten-realms`.
 
 **Problem (PRZED).** Wycena ETB = stała **6** (`take_initiative: () => 6`), niezależnie od stanu. Pomiar `tools/pmssb69-initiative-sonda.mjs` (`.arena/pmssb69-przed.txt`): wynik nie zmienia się, gdy inicjatywę ma ja, wróg albo nikt, ani gdy wróg ma 0 czy 2 stwory (poza wspólną wyceną ciała stołu). Trzy konkretne błędy:
-- **F1:** już mam inicjatywę → silnik (`effects.js`, `take_initiative`) nie uruchamia venture (`changedHands === false`), czyli zysk = 0, a bot liczy 6.
+- **F1 (historyczny błąd, poprawiony A-3):** stary silnik nie uruchamiał venture u posiadacza (`changedHands === false`), a stary bot liczył 6. To niezgodne z CR; aktualny silnik venture'uje za każdym razem.
 - **F2:** wróg ma inicjatywę → objęcie zabiera mu postęp i daje mój venture; bot nie widzi różnicy.
 - **F3:** wróg ma atakujące stwory → zagrożenie odbiorem inicjatywy w jego turze; bot tego nie wycenia.
 
@@ -3527,7 +3535,7 @@ Karty: Underdark Explorer (5/3 menace, koszt 5), Stirring Bard (0/4 defender, ko
 - `initiativeExposurePenalty` = **2** za każdy stwór wroga bez defendera z mocą > 0 (≈ 1/3 venture na atakującego),
 - `initiativeExposureCap` = **6** (kara nie schodzi poniżej 0 składnika ETB).
 
-Składnik ETB: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·pen))`, gdzie `steal` = 6 tylko gdy posiada wróg. Cena many nie zmieniona (wymiar kosztu, kontrola (b)).
+Historyczny składnik ETB PMSSB-69: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·pen))`, gdzie `steal` = 6 tylko gdy posiada wróg. **Obecnie: 6 dla aktualnego posiadacza** (venture bez nowej ekspozycji), w innych stanach ta sama formuła. Cena many bez zmian (wymiar kosztu, kontrola (b)).
 
 **Pomiar PO (`.arena/pmssb69-po.txt`), wynik w skali `cast_permanent` (waga ×0.9):**
 
@@ -3537,14 +3545,14 @@ Składnik ETB: `0` gdy już posiadam; inaczej `max(0, 6 + steal − min(cap, n·
 | Stirring Bard | 67.4991 (=) | 71.0991 → 67.4991 | 67.4991 → 62.0991 | 67.4991 → 72.8991 | 71.0991 → 72.8991 |
 | Caves of Chaos Adv. | 78.4572 (=) | 82.2822 → 78.6822 | 78.4572 → 73.0572 | 78.4572 → 83.8572 | 82.2822 → 84.0822 |
 
-Wszystkie zmiany wynikają z trzech składników (F1: −6·0.9; F2: +6·0.9; F3: −min(6, 2n)·0.9); wycena ciała stołu (wspólna dla wszystkich wariantów) nie zmieniona.
+Historyczne delty PMSSB-69 wynikają z trzech składników (F1: −6·0.9 — obalone i poprawione w A-3; F2: +6·0.9; F3: −min(6, 2n)·0.9); wycena ciała stołu (wspólna dla wszystkich wariantów) nie zmieniona.
 
 **Audyt (L41 i anty-over-fix).**
-- (a) L41: ETB `take_initiative` ma jedno miejsce wyceny (tabela ETB); ścieżka czaru z ETB korzysta z tej samej funkcji. Piny F1–F3 na wszystkich trzech kartach (delta „ja − nikt” = −5.4 dla każdej).
+- (a) L41: ETB `take_initiative` ma jedno miejsce wyceny (tabela ETB); ścieżka czaru z ETB korzysta z tej samej funkcji. Historyczny pin F1 dawał deltę „ja − nikt” = −5.4; po A-3 aktualny pin wymaga **0** dla wszystkich trzech kart (bez nowej ekspozycji).
 - (b) Wymiar kosztu: koszt many karty bez zmian; zmienia się tylko składnik inicjatywy.
 - (c) Anty-over-fix: najsłabszy realny wariant (nikt nie ma inicjatywy, wróg bez stworów) = **dawne 6** (pin: 79.2063 bez zmiany). Kara i dopłata to wyłącznie dodatki/kary w wariantach z realnym ryzykiem lub zyskiem.
 
-**Testy.** `test/audyt-pmssb69-initiative.test.js` — 8 testów. RED przed wdrożeniem: 1/8 zielony (kotwica anty-over-fix), 7 czerwonych (`.arena/pmssb69-red.log`). GREEN: 8/8 (`.arena/pmssb69-green.log`). Mutacje: usunięcie F1 → 2 czerwone; zerowa kara (F3) → 3 czerwone; zerowa dopłata (F2) → 2 czerwone. Pokrętła ×0 przywracają wycenę sprzed zmiany. Asercje używają wagi 0.9 (ta sama korekta co PMSSB-68; pierwsza wersja testów pominęła ją i została poprawiona na podstawie pomiaru, nie wyniku bota).
+**Testy historycznej pętli.** `test/audyt-pmssb69-initiative.test.js` — 8 testów. RED przed wdrożeniem: 1/8 zielony (kotwica anty-over-fix), 7 czerwonych (`.arena/pmssb69-red.log`). GREEN wtedy: 8/8 (`.arena/pmssb69-green.log`). Mutacje wtedy: usunięcie F1 → 2 czerwone; zerowa kara (F3) → 3 czerwone; zerowa dopłata (F2) → 2 czerwone. Po A-3 dwa piny F1 zostały skorygowane według CR, bo pierwotne oczekiwanie −5.4 było błędne. Pokrętła ×0 przywracają wycenę sprzed PMSSB-69. Asercje używają wagi 0.9 (jak PMSSB-68; pierwsza wersja testów pominęła ją i została poprawiona na podstawie pomiaru, nie wyniku bota).
 
 **Ewaluacja.**
 - Golden master (`tools/bot-scoring-snapshot.mjs --dump`, 6 meczów, seedy 1000/1001): 0 różnic. Uwaga: żadna z talii tego zestawu nie ma kart z inicjatywą, więc golden master nie jest dowodem dla tej rodziny; dowodem jest A/B.
@@ -3585,6 +3593,14 @@ Plan: [PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana](plans/PLAN_2026-10-20d-pmss
 
 ## PMSSB-71 — riot i NaN w wycenie rzutu (2026-10-20) — DONE
 
+**Korekta 2026-10-21 (audyt PR #168/A-2):** CR 702.136a — wybór riot
+przed wejściem jest efektem zastępującym, nie triggerem po wejściu.
+Pierwotne sondy PMSSB-71 i ich wynik scoringowy zakładały błędną ścieżkę
+`resolve_modal_choice`; obecnie `resolve_riot_choice` zatrzymuje wejście
+przed ETB/SBA. Nadal wyceniamy ten sam wybór (haste kontra licznik), lecz
+historyczne wyniki poniżej nie są dowodem poprawnego czasu decyzji.
+Piny: `test/audyt-pr168-riot.test.js`, `test/audyt-pmssb71-riot.test.js`.
+
 Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). Kolejność z `docs/PMSSB.md`: plan → pomiar PRZED → audyt → RED → GREEN → ewaluacja → dokumentacja.
 
 **Pomiar PRZED (sonda `.arena/probe-riot.mjs`, `.arena/pmssb71-legal.mjs`, `.arena/pmssb71-score.mjs`, prawdziwy silnik).** Gruul Beastmaster był legalny do rzutu w 87 krokach gry, a bot NIGDY go nie zagrał (0 z 480 partii lustrzanych). Wycena rzutu wynosiła `NaN`. Dwa niezależne defekty:
@@ -3618,6 +3634,19 @@ Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). K
 Luka była w silniku gry, nie w dokumentacji: `legalCommands` nie tworzyło wariantów convoke, więc Kavu z 2 manami i dwoma stworami miał 0 ofert (sonda `.arena/probe-convoke.mjs`), a test batcha 69 wołał `execute` ręcznie. Naprawa: §PMSSB-72.
 
 ## PMSSB-72 — convoke (2026-10-20) — DONE
+
+**Korekta po audycie #168/A-12 (2026-10-21):** dotychczasowa „minimalność”
+była ograniczeniem UI, nie regułą CR 702.51a. Nawet mając 4 dostępne many,
+gracz może zapłacić np. {G} Kavu tapnięciem stwora i zachować zieloną manę
+na kolejny czar; może też zapłacić cały koszt czterema stworami. Obecnie
+oferta pokazuje te warianty (deterministyczny limit 64 pozostał), a zwykły
+rzut bez convoke wciąż jest dostępny. Stare pomiary i pin „bez wariantu przy
+wystarczającej manie” niżej są historyczne; test PMSSB-72 ma poprawioną
+asercję. Granica: limit 64 na dużym stole nadal pomija niektóre legalne
+podzbiory, nie traktować go jako reguły gry. Golden `--dump` przed/po:
+5 zapisów decyzji z dodatkowymi ofertami (4 + 1), **0 zmian wybranych
+ruchów i ich ocen** (3 linie fixture: hash całości + 2 partie). Fixture
+zregenerowany po przeglądzie, bez zmiany seedów, liczby decyzji i progów.
 
 Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md` (uwaga o kolejności: kod powstał przed planem).
 
@@ -3705,7 +3734,7 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md).
 
 - Pomiar PRZED (`.arena/probe-tokeny-presja.mjs`, `.arena/pmssb77-pre.txt`): Geist 24 na pustym stole; z dwoma wrogimi Makindi 18 przy życiu 20 i 18 przy życiu 5. Spadek 24 → 18 to bramka latania (`enemyHasUntappedFlyingOrReachBlocker`), NIE presja. Raise the Alarm 69,98 we wszystkich scenach — brak reakcji na presję.
-- Audyt: (a) L41 — wspólna miara `enemyAttackPower / myLife` (≤ 1), ta sama co `counterValue`; (b) brak wymiaru do zmiany; (c) anty-over-fix — presja tylko dla WŁASNEGO tokenu-stwora, pusty stół bez zmian.
+- Audyt pierwotnej iteracji: (a) L41 — wspólna miara `enemyAttackPower / myLife` (≤ 1), ta sama co `counterValue`; (b) brak wymiaru do zmiany; (c) wówczas testowano tylko WŁASNEGO tokenu-stwora, pusty stół bez zmian. Finalna symetria poniżej i errata w planie.
 - Wdrożenie: pokrętło `tokenPressureWeight` = 6 w `heuristic-params.js`; składnik w `tokenBodyValue` (`heuristic-bot.js`) dodany do ciała tokenu-stwora. Pokrętło 0 = dawne zachowanie bit w bit.
 - Wynik (`.arena/pmssb77-post.txt`): Geist przy dwóch wrogach 19,2 (życie 20) → 22,8 (życie 5); Raise the Alarm 71,18 → 74,78.
 - Testy: `test/audyt-pmssb77-tokeny-presja.test.js` (4; RED na HEAD: 1, 2, 4; pin pustego stołu 3). Mutacja składnika na 0 łapie 2 testy.

@@ -2,6 +2,7 @@ import { event } from '../protocol/types.js';
 import { createGameObject } from './identity.js';
 import { nextTimestamp } from './timestamps.js';
 import { effectivePower, effectiveToughness } from './permanents.js';
+import { applyRiotOnEntry } from './riot.js';
 
 /**
  * Tokeny (CR 111.1): obiekty gry bez karty, tworzone efektem (np. czaru).
@@ -171,7 +172,7 @@ export function nextFaceDownCopyNumber(state) {
   return max + 1;
 }
 
-export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0, entersWithCounters = null, entersWithCountersIf = null }) {
+export function createBattlefieldToken(state, controllerId, { cardId, name, kind = 'creature', power = 1, toughness = 1, colors = [], types = [], subtypes = [], keywords = [], abilities = [], cantBlock = false, toxic = null, transformTo = null, frontFaceId = null, station = null, saga = null, tapped = false, copyNumber = null, manaCost = 0, entersWithCounters = null, entersWithCountersIf = null, riotChoices = null }) {
   if (!state || !state.players.some((p) => p.id === controllerId)) throw new Error('Nieznany kontroler tokenu');
   if (!cardId || !name) throw new TypeError('Token wymaga cardId i nazwy');
   // Token niebędący stworem (np. Treasure — artefakt) nie ma statystyk:
@@ -237,20 +238,23 @@ export function createBattlefieldToken(state, controllerId, { cardId, name, kind
   });
   state.objects.set(id, token);
   state.zones.battlefield.push(id);
+  // Riot kopiowanego stwora wybierany PRZED utworzeniem tokenu; sam token
+  // wchodzi już z licznikiem/pośpiechem (CR 702.136a/707.2).
+  const entered = applyRiotOnEntry(state, id, riotChoices, id);
   // M100/E10 (P3 — Żywy Tester h04): zdarzenie niesie statystyki EFEKTYWNE
   // (widziane po wejściu na pole bitwy), nie surowe z definicji — CDA jak
   // „Tarmogoyf: typy kart w grobach" działa od razu (CR 613.3, SBA po ETB),
   // a komunikat „tworzysz token Tarmogoyf (0/0)" kłamał (na stole 3/4).
   // Import permanents.js jest bezpieczny (brak cyklu: permanents nie
   // importuje tokens).
-  const effPower = isCreature ? effectivePower(token, state) : null;
-  const effToughness = isCreature ? effectiveToughness(token, state) : null;
+  const effPower = isCreature ? effectivePower(entered, state) : null;
+  const effToughness = isCreature ? effectiveToughness(entered, state) : null;
   state.events.push(event('token_created', { objectId: id, cardId, controllerId, name, power: effPower, toughness: effToughness }));
   // Token wchodzi na pole bitwy natychmiast po utworzeniu; jawne zdarzenie ETB
   // pozwala generycznym zdolnościom tokenu działać tak samo jak zdolnościom
   // zwykłego permanenta (np. Reliquary Dragon z Dragonbroods' Relic).
   state.events.push(event('permanent_entered_battlefield', {
-    objectId: id, object: token, cardId, controllerId, token: true,
+    objectId: id, object: entered, cardId, controllerId, token: true,
   }));
-  return token;
+  return entered;
 }

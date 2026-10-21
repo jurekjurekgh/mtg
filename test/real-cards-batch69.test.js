@@ -62,6 +62,12 @@ function run(state, command) {
 function settle(state, { choose = null, mode = null, max = 120 } = {}) {
   for (let i = 0; i < max; i += 1) {
     const list = commands(state);
+    if (state.pendingRiotChoice && mode != null) {
+      const pick = list.find((c) => c.type === 'resolve_riot_choice' && c.modeIndex === mode);
+      assert.ok(pick, 'wybór riot przed wejściem dostępny');
+      run(state, pick);
+      continue;
+    }
     if (state.pendingModalTrigger && mode != null) {
       const pick = list.find((c) => c.type === 'resolve_modal_choice' && c.modeIndex === mode);
       assert.ok(pick, 'wybór trybu dostępny');

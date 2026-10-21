@@ -1358,9 +1358,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.via === 'equip') return `${nameOf(e.cardId)} wyposaża ${hostName}`;
         if (e.via === 'aura') return `${nameOf(e.cardId)} zaczarowuje ${hostName}`;
         // M102/U2: job select („stwórz token 1/1 Hero i przypnij ten
-        // ekwipunek") to NIE bestow — gałąź domyślna kłamała o mechanice.
+        // ekwipunek") to NIE bestow. Q-1 (Żywy Tester): living weapon też
+        // wpadał w dawną gałąź domyślną i nazywał przypięcie Strandwalker
+        // do Germ „bestow”. Mechanikę opisujemy po `via`, a nie po karcie;
+        // nieznany wariant dostaje neutralny opis, nie fałszywe bestow.
         if (e.via === 'job_select') return `${nameOf(e.cardId)} wyposaża ${hostName} (job select)`;
-        return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
+        if (e.via === 'living_weapon') return `${nameOf(e.cardId)} wyposaża ${hostName} (living weapon)`;
+        if (e.via === 'bestow') return `${nameOf(e.cardId)} zostaje załączony do ${hostName} (bestow)`;
+        return `${nameOf(e.cardId)} zostaje załączony do ${hostName}`;
       }
       case 'object_detached': return e.becameKind === 'creature'
         ? `${nameOf(e.cardId)} odłącza się i znów jest stworem`
@@ -1704,6 +1709,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       // D: modalny trigger (Etherwrought Page — „At the beginning of your
       // upkeep, choose one") — było surowe „modal_trigger_required".
       case 'modal_trigger_required': return `${objectOrLki(e.sourceId, e.cardId)} — wybierz tryb zdolności triggerowanej`;
+      case 'riot_choice_required': return `${nameOf(e.cardId)} — wybierz riot przed wejściem na pole bitwy`;
+      case 'riot_choice_resolved': {
+        const parts = (e.choices ?? []).map((index) => index === 0 ? 'licznik +1/+1' : 'haste');
+        return `${nameOf(e.cardId)} — ${whoN(e.playerId)} wybiera riot: ${parts.join(' i ')}`;
+      }
       case 'modal_trigger_resolved': {
         const source = objectOrLki(e.sourceId, e.cardId);
         if (e.skipped) return `${source} — brak legalnego trybu`;
@@ -2646,7 +2656,7 @@ export const BOT_RESOLUTION_EVENTS = new Set([
   // dotyczy to również triggerów opóźnionych (CR 603.7), które odpalają się
   // w upkeep/cleanup, całkowicie poza jakąkolwiek komendą gracza.
   'ability_triggered', 'trigger_resolved', 'delayed_trigger_armed',
-  'trigger_target_resolved', 'modal_trigger_resolved', 'optional_trigger_resolved',
+  'trigger_target_resolved', 'modal_trigger_resolved', 'riot_choice_resolved', 'optional_trigger_resolved',
   'scry_started', 'scry_resolved', 'surveil_started', 'surveil_resolved',
   'index_started', 'index_resolved', 'look_top_started', 'look_top_resolved',
   'epic_experiment_started', 'epic_experiment_resolved',

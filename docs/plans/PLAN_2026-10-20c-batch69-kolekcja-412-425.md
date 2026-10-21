@@ -43,7 +43,7 @@ Wiersze 419DSK, 420ISD, 421BRO, 422CMR już są w słowniku, ale nie należą do
 | Gruul Beastmaster | Riot; atak: inny cel +X/+0, X = moc | **riot nowe** (wybór gracza); pump X=moc **weryfikacja** |
 | Myr Scrapling | Artifact creature 1/1; sacrifice: +1/+1 counter na cel | istnieje (sacrificeSelf + add_counter) |
 
-Nowe generyczne mechaniki (bez nazw kart): **Convoke** (płatność stworami, CR 702.51), **Riot** (wybór: licznik lub przelotka, CR 702.136), **Myriad** (CR 702.116), **koszt „poświęć dołączonego stwora”**, **warunek redukcji „za każdego przeciwnika z dmg w tej turze”**, **liczniki przy wejściu „if kicked”**.
+Nowe generyczne mechaniki (bez nazw kart): **Convoke** (płatność stworami, CR 702.51), **Riot** (wybór: licznik lub pośpiech, CR 702.136), **Myriad** (CR 702.116), **koszt „poświęć dołączonego stwora”**, **warunek redukcji „za każdego przeciwnika z dmg w tej turze”**, **liczniki przy wejściu „if kicked”**.
 
 ## Kolejność wdrożenia
 

@@ -7,7 +7,7 @@ import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { parseManaCost, costReductionForSpell, conditionalCostReduction, reduceGenericCost, reduceAlternativeCost, matchColorRequirements, coloredPipsOf, consumePendingSpellDiscount, delveGenericMana, unitCoversRequirement, unitCoversAnyRequirement, singleColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA, isActivatedManaAbility } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, manaUnitKey, treasureManaAbilityOf, ANY_COLOR_MANA } from './mana-sources.js';
 import { effectiveSubtypes, entersUntappedOverride } from './permanents.js';
 import { canPlayByImpulseFromExile, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { canCastByLinkedExilePermission } from './linked-exile-cast.js';
@@ -1528,7 +1528,6 @@ export function canPayColoredCost(state, playerId, requirements, excludeSourceId
   return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose) !== null;
 }
 
-/** Czy JAWNA lista pipów kolorów da się pokryć (pula + nietapnięte źródła). */
 /** Batch 69 (Convoke): odejmuje jeden pip za każdy kolor opłacony stworem. */
 function withoutConvokePips(requirements, convokeColors) {
   const left = [...requirements];
@@ -1541,40 +1540,75 @@ function withoutConvokePips(requirements, convokeColors) {
 }
 
 /**
- * PMSSB-72 (Convoke, CR 702.51a): MINIMALNE warianty płatności stworami dla rzutu, którego
- * sama mana nie pokrywa. Ta sama reguła co walidacja `convokePayments` w `castPermanent`
- * (L41): ten sam podział jednostek (`generic` / kolor stwora), ten sam limit części
- * generycznej, ta sama bramka kolorów po odjęciu pipów opłaconych stworami i ta sama suma
- * (pula + landy + stwory). Wariant jest minimalny, gdy usunięcie dowolnego stwora czyni go
- * nielegalnym — dzięki temu przy wystarczającej manie nie powstaje żaden wariant convoke.
- * Gracz wybiera wariant (decyzja w UI); silnik niczego nie tapuje sam.
+ * Audyt PR #168/A-1 (CR 702.51a): convoke ZASTĘPUJE płatność maną, nie
+ * produkuje jej. Wspólny podział kosztu dla oferty i walidacji (L41).
+ * Kolorowe tapnięcie musi pokryć OSOBNY pip (ważne dla hybryd {R/G});
+ * `generic` może pokrywać tylko część generyczną całkowitego kosztu.
+ */
+function convokeRemainingCost(totalMana, requirements, units) {
+  if (units.length > totalMana || !Number.isInteger(totalMana) || totalMana < 0) return null;
+  const colored = units.filter((color) => color !== 'generic');
+  const genericSlots = Math.max(0, totalMana - requirements.length);
+  if (units.length - colored.length > genericSlots) return null;
+  const remainingRequirements = withoutConvokePips(requirements, colored);
+  if (remainingRequirements.length !== requirements.length - colored.length) return null;
+  return { amount: totalMana - units.length, requirements: remainingRequirements };
+}
+
+/**
+ * PMSSB-72 + audyt #168/A-1/A-12 (Convoke, CR 702.51a): opcjonalna płatność
+ * stworami. Gracz MOŻE tapnąć stwora zamiast many również gdy mana wystarcza
+ * (może ją zachować na kolejny czar). Ten sam podział kosztu i źródła co
+ * walidacja `castPermanent` (L41): stwór z manową zdolnością może konwokować,
+ * ale wybrany do convoke nie może jednocześnie płacić brakującej many.
+ * Zachowaj deterministyczny limit ofert z PMSSB-72; brak w nim wszystkich
+ * kombinacji na dużej planszy pozostaje świadomą granicą UI (L19).
  */
 export function convokePaymentVariants(state, playerId, object, totalMana, requirements, purpose = {}) {
   if (!object?.convoke || !Number.isInteger(totalMana) || totalMana <= 0) return [];
   const needed = new Set(requirements.flat());
   const eligible = [...state.objects.values()].filter((o) => o.zone === 'battlefield' && o.controllerId === playerId
-    && o.kind === 'creature' && !o.tapped && !effectiveAbilities(o).some((ability) => isActivatedManaAbility(ability)));
+    && o.kind === 'creature' && !o.tapped);
   if (eligible.length === 0) return [];
-  const producible = producibleMana(state, playerId, null, purpose, requirements);
-  const castable = (units) => {
-    if (units.length > totalMana) return false;
-    const genericSlots = Math.max(0, totalMana - requirements.length);
-    if (units.filter((c) => c === 'generic').length > genericSlots) return false;
-    for (const color of new Set(units.filter((c) => c !== 'generic'))) {
-      if (units.filter((c) => c === color).length > requirements.filter((pip) => pip.includes(color)).length) return false;
-    }
-    if (producible + units.length < totalMana) return false;
-    return hasColorRequirements(state, playerId, withoutConvokePips(requirements, units), purpose);
+  const castable = (payments) => {
+    const remaining = convokeRemainingCost(totalMana, requirements, payments.map((p) => p.color));
+    if (!remaining) return false;
+    const excludedIds = payments.map((p) => p.creatureId);
+    if (producibleMana(state, playerId, excludedIds, purpose, remaining.requirements) < remaining.amount) return false;
+    return hasColorRequirements(state, playerId, remaining.requirements, purpose, excludedIds);
   };
+  // A-12: nie pomijaj convoke, gdy dostępna mana sama wystarcza. CR 702.51a
+  // pozwala zdecydować, których stworów użyć ZAMIAST many, a nie tylko jak
+  // wypełnić niedobór.
+  // A-9 (audyt #168): zanim zaczniemy wykładnicze warianty, odetnij
+  // obowiązkowy pip, którego NIE pokryje żadna dostępna mana ani żaden
+  // pozostający stwór. To tylko warunek konieczny (pipy sprawdzamy też łącznie
+  // w castable), więc nie odrzuca legalnych podziałów ani hybryd.
+  const pipsNeedingCreature = requirements.filter((pip) =>
+    !hasColorRequirements(state, playerId, [pip], purpose));
+  const colorsAfter = Array(eligible.length + 1);
+  colorsAfter[eligible.length] = new Set();
+  for (let i = eligible.length - 1; i >= 0; i -= 1) {
+    colorsAfter[i] = new Set([...colorsAfter[i + 1], ...(eligible[i].colors ?? [])]);
+  }
+  const canStillCoverPips = (index, picks) => {
+    if (pipsNeedingCreature.length === 0) return true;
+    const unpaid = withoutConvokePips(requirements, picks.map((p) => p.color));
+    return unpaid.every((pip) => !pipsNeedingCreature.includes(pip)
+      || pip.some((color) => colorsAfter[index].has(color)));
+  };
+  if (!canStillCoverPips(0, [])) return [];
   // Opcje dla każdego stwora: brak / {1} / kolor, który jest w koszcie i na stworze.
   const options = eligible.map((creature) => [null, 'generic',
     ...(creature.colors ?? []).filter((color) => needed.has(color))]);
   const found = [];
   const walk = (index, picks) => {
     if (found.length >= 64) return;
-    if (picks.length > totalMana) return;
+    if (picks.length > totalMana || !canStillCoverPips(index, picks)) return;
     if (index === eligible.length) {
-      if (picks.length > 0 && castable(picks.map((p) => p.color))) found.push([...picks]);
+      if (picks.length > 0 && castable(picks)) {
+        found.push([...picks]);
+      }
       return;
     }
     walk(index + 1, picks);
@@ -1584,14 +1618,12 @@ export function convokePaymentVariants(state, playerId, object, totalMana, requi
     }
   };
   walk(0, []);
-  return found.filter((payments) => payments.every((_, i) => !castable(
-    payments.filter((_, j) => j !== i).map((p) => p.color),
-  )));
+  return found;
 }
 
-function hasColorRequirements(state, playerId, requirements, purpose = {}) {
+function hasColorRequirements(state, playerId, requirements, purpose = {}, excludeSourceIds = null) {
   if (requirements.length === 0) return true;
-  return canPayColoredCost(state, playerId, requirements, null, purpose);
+  return canPayColoredCost(state, playerId, requirements, excludeSourceIds, purpose);
 }
 
 function hasColorManaForCard(state, playerId, cardId, phyrexianPayWithLife = 0, purpose = {}) {
@@ -1818,17 +1850,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       : surgeCast
         ? (object.surge?.colors ?? []).map((color) => [color])
         : null;
-  if (!plotted && !freeImpulse && !faceDown && !treasureAltCost) {
-    // Batch 69 (Convoke): pipy opłacone stworami nie wymagają źródła many z landów;
-    // kolory z `convokePayments` są tu tylko do bramki — pełna walidacja niżej.
-    const earlyConvokeColors = Array.isArray(convokePayments)
-      ? convokePayments.map((payment) => payment?.color ?? 'generic').filter((color) => color !== 'generic')
-      : [];
+  if (!plotted && !freeImpulse && !faceDown && !treasureAltCost && convokePayments == null) {
+    // Audyt #168/A-1: przy convoke sprawdzamy pipy PO zweryfikowaniu
+    // deklarowanych stworów i po odjęciu ich udziału z kosztu całkowitego
+    // (także dla kosztu alternatywnego warp/madness/surge). Wczesna bramka
+    // wyłącznie dla zwykłej płatności, w której nic nie może pokryć pipów.
     const colorGateOk = altCostColors
       ? hasColorRequirements(state, playerId, altCostColors, spellManaPurpose(object))
-      : earlyConvokeColors.length > 0
-        ? hasColorRequirements(state, playerId, withoutConvokePips(coloredPipsOf(object.cardId, phyrexianPayWithLife), earlyConvokeColors), spellManaPurpose(object))
-        : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
+      : hasColorManaForObject(state, playerId, object, phyrexianPayWithLife);
     if (!colorGateOk) throw new Error('Brak kolorowego źródła many');
   }
   // Phyrexian mana (CR 118.9): każdy symbol {W/P} można opłacić maną ({W})
@@ -1901,14 +1930,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     : treasureAltCost
       ? (treasureAltCost.colors ?? []).map((color) => [color])
       : [...coloredPipsOf(object.cardId, lifePaid), ...kickerPips, ...offspringRequirements];
-  // Batch 69 (Convoke, CR 702.51a): koszt CAŁKOWITY (po kickerze i obniżkach)
-  // opłacasz także tapując własne stwory — każdy płaci {1} albo jedną manę
-  // swojego koloru. Gracz wybiera stwory i kolor każdego (`convokePayments`);
-  // silnik waliduje tu (przed jakąkolwiek mutacją), a tapowanie i dołożenie many
-  // do puli robi tuż przed spendMana (pula schodzi przed landami). Stwór z własną
-  // manową zdolnością odrzucany — jego mana już liczy się w producibleMana.
-  // Convoke nie jest kosztem alternatywnym (ruling 2024-01-12), więc łączy się z nimi.
+  // PMSSB-72 + audyt #168/A-1 (Convoke, CR 702.51a): po ustaleniu kosztu
+  // całkowitego stwory płacą za część pipów ZAMIAST many. Nie wolno doliczyć
+  // ich manowych zdolności do źródeł pozostałej płatności ani udawać, że
+  // wyprodukowały manę. Koszt alternatywny i kicker nadal liczą się do całości.
   const convokeUnits = [];
+  const convokeCreatureIds = [];
   if (convokePayments != null) {
     if (!object.convoke) throw new Error('Ta karta nie ma mechaniki convoke');
     if (!Array.isArray(convokePayments) || convokePayments.length === 0) throw new Error('Nieprawidłowy koszt convoke');
@@ -1920,24 +1947,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
         throw new Error('Nielegalny stwór do convoke');
       }
       seenCreatures.add(creature.id);
-      if (effectiveAbilities(creature).some((ability) => isActivatedManaAbility(ability))) {
-        throw new Error('Stwór z manową zdolnością nie może płacić convoke');
-      }
       const color = payment.color ?? 'generic';
       if (color !== 'generic' && !(creature.colors ?? []).includes(color)) throw new Error('Convoke: kolor stwora nie pasuje');
       convokeUnits.push(color);
-    }
-    if (convokeUnits.length > totalMana) throw new Error('Convoke: więcej stworów niż część kosztu');
-    // Kolor i część generyczna muszą mieścić się w wymaganiach kosztu, inaczej
-    // dołożona mana zostałaby w puli (CR 106.4 — pula znika po kroku).
-    const genericSlots = Math.max(0, totalMana - requirements.length);
-    if (convokeUnits.filter((c) => c === 'generic').length > genericSlots) throw new Error('Convoke: część generyczna już opłacona');
-    for (const color of new Set(convokeUnits.filter((c) => c !== 'generic'))) {
-      const paid = convokeUnits.filter((c) => c === color).length;
-      if (paid > requirements.filter((pip) => pip.includes(color)).length) throw new Error('Convoke: kolor nie jest potrzebny w koszcie');
+      convokeCreatureIds.push(creature.id);
     }
   }
-  if (!treasureAltCost && producibleMana(state, playerId, null, manaPurpose, requirements) + convokeUnits.length < totalMana) {
+  const remainingCost = convokeRemainingCost(totalMana, requirements, convokeUnits);
+  if (!remainingCost) throw new Error('Convoke: płatność nie pasuje do pipów kosztu całkowitego');
+  if (!treasureAltCost && producibleMana(state, playerId, convokeCreatureIds, manaPurpose, remainingCost.requirements) < remainingCost.amount) {
     throw new Error('Niewystarczająca mana');
   }
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
@@ -1970,7 +1988,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // M161/O2: przy madness/warp pipy AKTYWNEGO kosztu alternatywnego
   // (altCostColors — ta sama lista co bramka kolorów wyżej).
 
-  if (!faceDown && !plotted && !freeImpulse && !warpCast && !madnessCast && !treasureAltCost && !hasColorRequirements(state, playerId, withoutConvokePips(requirements, convokeUnits), spellManaPurpose(object))) {
+  if (!faceDown && !plotted && !freeImpulse && !treasureAltCost
+    && (convokePayments != null || (!warpCast && !madnessCast))
+    && !hasColorRequirements(state, playerId, remainingCost.requirements, manaPurpose, convokeCreatureIds)) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -2005,16 +2025,14 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       fromId: exId, object: moved, fromZone: 'graveyard', toZone: 'exile', delve: true,
     }));
   }
-  // Batch 69 (Convoke): tapowanie stworów i dołożenie ich many do puli — dopiero
-  // po wszystkich walidacjach (atomowość, CR 601.2h). Pula schodzi przed landami.
+  // Audyt #168/A-1: tapnięcie stwora jest płatnością zamiast many. Brak
+  // `addMana`: konwokujące stwory NIE wytwarzają jednostek puli/kolorów
+  // Adamant i nie podnoszą `manaSpent` (CR 702.51a). Po walidacji źródła
+  // wskazane do convoke są tapnięte i `spendMana` widzi tylko pozostałe.
   if (convokePayments != null) {
-    for (const payment of convokePayments) {
-      const color = payment.color ?? 'generic';
-      tapObject(state, payment.creatureId, playerId);
-      addMana(state, playerId, 1, { colors: color === 'generic' ? [] : [color] });
-    }
+    for (const payment of convokePayments) tapObject(state, payment.creatureId, playerId);
   }
-  spendMana(state, playerId, totalMana, requirements, manaPurpose);
+  spendMana(state, playerId, remainingCost.amount, remainingCost.requirements, manaPurpose);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
   if (exileCost) {
@@ -2033,7 +2051,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // ta sama, którą emituje escape (spells.js).
     state.events.push(event('object_moved', { fromId: exileTargetId, object: exiled, fromZone: 'graveyard', toZone: 'exile', additionalCost: true }));
   }
-  const manaSpent = totalMana;
+  const manaSpent = remainingCost.amount;
   // Rzut permanenta to rzut CZARU (CR 601): obiekt ląduje na STOSIE, a na
   // pole bitwy wchodzi dopiero przy rozstrzygnięciu (spells.resolveTopOfStack
   // — gałąź bez deskryptora spell). Przeciwnik może odpowiedzieć instanitem
@@ -2101,13 +2119,13 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   // Treasure was spent to cast it"). spendMana zużywa mana Skarbową jako
   // pierwszą; wpis wędruje z obiektem stosu na permanent przy rozstrzygnięciu
   // (LKI wejścia — ETB czyta go przy rozstrzyganiu triggera).
-  const treasureSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+  const treasureSpent = manaSpent > 0 && state.lastManaSpend?.playerId === playerId
     ? (state.lastManaSpend.treasure ?? 0)
     : 0;
   // M166/C (Adamant): breakdown kolorów many wydanej na TEN rzut — idzie
   // z obiektem stosu do permanentu (entersWithCountersIf.adamant czyta go
   // przy wejściu, jak manaFromTreasureSpent dla Maruta).
-  const manaColorsSpent = totalMana > 0 && state.lastManaSpend?.playerId === playerId
+  const manaColorsSpent = manaSpent > 0 && state.lastManaSpend?.playerId === playerId
     ? Object.freeze([...(state.lastManaSpend.colors ?? [])])
     : Object.freeze([]);
   consumePendingSpellDiscount(state, object);

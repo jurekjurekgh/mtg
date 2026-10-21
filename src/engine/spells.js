@@ -7,6 +7,7 @@ import { optionalEffectVariants, triggerTargetEffectFriendly } from './effect-in
 import { producibleMana, spendMana, canPayColoredCost, castPermanent, spellManaPurpose } from './resources.js';
 import { canPlayByImpulseFromExile, isImpulseWindowLive, isFreeImpulseCast, plottedTurnReached, warpTurnReached } from './impulse-window.js';
 import { moveObjectDirectly } from './objects.js';
+import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry } from './riot.js';
 import { hasCreatureType, matchesSubtypeQualifier, isPlaneswalker, deathZoneFor, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, transformedCharacteristics, grantAbilitiesUntilEndOfTurn, kindFromTypes } from './permanents.js';
 import { applyEffect, applyEnterCounters, dealNonCombatDamage, maybeAddFaceDownFlyingCounter, grantGift, shouldAutoDiscard, discardCardsForced } from './effects.js';
 import { resolveTriggerEntry } from './triggers.js';
@@ -3016,7 +3017,20 @@ function resolveAuraSpell(state, stackId, object, chosen, before) {
  * pól przy zmianie strefy (CR 400.7 — nowy obiekt), więc pola wejścia
  * przywracamy z obiektu stosu.
  */
-function resolvePermanentSpell(state, stackId, object, before) {
+function resolvePermanentSpell(state, stackId, object, before, riotChoices = null) {
+  // Audyt PR #168/A-2 (CR 702.136a): riot jest efektem zastępującym wejście.
+  // Po oknie odpowiedzi na CZAR, ale PRZED wejściem, zatrzymujemy samo
+  // rozstrzygnięcie i pytamy kontrolera. Czar nadal leży na stosie; żadna
+  // nowa runda priorytetu nie zaczyna się po wyborze. Każda instancja riot
+  // daje osobny wybór, zanim obiekt w ogóle wejdzie na pole bitwy.
+  const riotCount = riotCountOf(object);
+  if (riotCount > 0 && riotChoices === null) {
+    queueRiotEntry(state, object, { entryKind: 'spell', stackId });
+    return state.events.slice(before);
+  }
+  if (riotCount > 0 && !validRiotChoices(object, riotChoices)) {
+    throw new Error('Nieprawidłowy wybór riot');
+  }
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, stackId, 'battlefield', newId);
   const permanent = Object.freeze({
@@ -3069,7 +3083,10 @@ function resolvePermanentSpell(state, stackId, object, before) {
     // „Rozgrywka" po kontrolerze (isHumanHeadline, M257/K4).
     state.events.push(event('object_transformed', { objectId: newId, fromCardId: permanent.cardId, cardId: target.cardId, enteredNightbound: true, controllerId: nightbound.controllerId }));
   }
-  const enteredNow = state.objects.get(newId);
+  // Liczniki riot leżą na stworze W CHWILI wejścia (CR 702.136a/614.1c).
+  // Event ETB musi nieść migawkę już z nimi; nie można dodać ich dopiero po
+  // zdarzeniu ani jako rozstrzygnięcie zdolności triggerowanej na stosie.
+  const enteredNow = applyRiotOnEntry(state, newId, riotChoices, stackId);
   // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
   // opóźniony trigger wygnania w najbliższym kroku końcowym („at the
   // beginning of the NEXT end step" — także w turze przeciwnika). Po wygnaniu
@@ -3138,6 +3155,14 @@ function resolvePermanentSpell(state, stackId, object, before) {
   });
   state.events.push(resolved);
   return state.events.slice(before);
+}
+
+/** Domknięcie wstrzymanego rozstrzygnięcia PO wyborze riot, bez nowego passu. */
+export function resolveRiotEntry(state, stackId, choices) {
+  const object = state.objects.get(stackId);
+  if (!object || object.zone !== 'stack' || state.zones.stack.at(-1) !== stackId
+    || riotCountOf(object) !== choices?.length) throw new Error('Brak czaru z oczekującym riot na stosie');
+  return resolvePermanentSpell(state, stackId, object, state.events.length, choices);
 }
 
 /**

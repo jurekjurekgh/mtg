@@ -114,8 +114,9 @@ export function clashSourceCardIdOf(request, view) {
 }
 
 /**
- * M303: JEDEN komponent przycisku podglądu 🔍 (wcześniej lepiony ręcznie w
- * dwóch miejscach). Zmiana ikony/etykiety/zachowania podglądu = jedna linia.
+ * M303/O2/A-7: JEDEN komponent klikalnej nazwy karty bez ikony (wcześniej
+ * lepiony ręcznie w dwóch miejscach). Podgląd w opcji i w nagłówku clash
+ * działa tak samo myszą i klawiaturą (natywny przycisk).
  * `stopPropagation`: podgląd to podgląd — klik nie zatwierdza wyboru
  * (rodzic może mieć własny `click` na wierszu przyciskowym).
  */
@@ -123,7 +124,10 @@ export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
   // O2 (uwaga właściciela 2026-10-18): żadnych ikonek w modalach. Podgląd to
   // KLIKALNA NAZWA karty — ten sam wzorzec co `picker-name` w kreatorach
   // (podkreślona nazwa, klik = pełny ekran, bez zaznaczania wiersza).
-  const peek = choiceNode(parent, 'span', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  // Natywny button jest fokusowalny i działa przez Enter/Space; sam span
+  // reagował wyłącznie na mysz. CSS usuwa wygląd przycisku, nie semantykę.
+  const peek = choiceNode(parent, 'button', 'choice-request-peek picker-name is-openable log-card', label ?? 'Podgląd karty');
+  peek.type = 'button';
   if (peek.dataset) {
     peek.dataset.previewCardId = String(cardId ?? '');
     peek.dataset.cardId = String(cardId ?? '');
@@ -1266,12 +1270,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // (pełny ekran po cardId). Bez `introCard` tekst jak dotąd.
   const introNode = choiceNode(host, 'div', 'choice-request-intro');
   if (introCard?.cardId && introCard.name && typeof onOpenCardByCardId === 'function') {
-    const nameEl = choiceNode(introNode, 'span', 'picker-name is-openable log-card', introCard.name);
-    if (nameEl.dataset) nameEl.dataset.cardId = String(introCard.cardId);
-    nameEl.addEventListener('click', (event) => {
-      event?.preventDefault?.();
-      event?.stopPropagation?.();
-      onOpenCardByCardId(introCard.cardId);
+    // A-7: także źródło clash używa wspólnej, klawiaturowej nazwy karty;
+    // oddzielny span z click handlerem ponownie gubił Tab/Enter/Spację.
+    renderPeekButton(introNode, {
+      cardId: introCard.cardId, label: introCard.name, onOpen: onOpenCardByCardId,
     });
     choiceNode(introNode, 'span', null, ` — ${introText}`);
   } else {

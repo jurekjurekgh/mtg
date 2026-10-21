@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { createCardRegistry } from '../src/cards/card-data.js';
+import { RIOT_MODES } from '../src/engine/riot.js';
 
 const registry = createCardRegistry();
 
@@ -61,7 +62,12 @@ test('AUD-E2: kotwice liczności (L13) — zbiory rosną z batchami kart i mecha
   // Batch 63 domknięty: +adjust_battle_defense → 186 używanych typów;
   // Batche 64–65 nie dodały nowego typu efektu. Batch 66 dodaje generyczne
   // sacrifice_source_unless_sacrifice → 187.
-  assert.equal(UZYTE.size, 191, 'tyle typów efektów używa katalog (Batch 69: +prevent_combat_damage_to_target_this_turn, +damage_each_creature_sacrificed_power, +grant_keyword_permanent)');
+  // Audyt #168/A-2: riot nie jest modalnym TRIGGEREM w katalogu kart;
+  // jego +1/+1 / haste to tryby mechaniki statycznej, przed wejściem.
+  // Jeden typ opuścił katalog, ale musi pozostać w trybach i w silniku.
+  assert.equal(UZYTE.size, 190, 'katalog bez fałszywego ETB riot: grant_keyword_permanent jest w RIOT_MODES');
+  assert.ok(RIOT_MODES.some((mode) => mode.effects.some((e) => e.type === 'grant_keyword_permanent')));
+  assert.ok(ZNANE.has('grant_keyword_permanent'), 'silnik obsługuje nadal grant z mechanicznym riot');
   assert.ok(ZNANE.size >= 200, `silnik zna co najmniej 200 typów efektów (jest ${ZNANE.size})`);
 });
 

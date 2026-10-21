@@ -5,6 +5,7 @@ import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
 import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
+import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
@@ -110,7 +111,7 @@ function shuffleOwnLibrary(state, ownerId) {
 }
 
 /** Położenie wybranego stwora Throne: pole bitwy + liczniki + hexproof + tasowanie. */
-function thronePutChosenCreature(state, pending, targetId) {
+function thronePutChosenCreature(state, pending, targetId, riotChoices = null) {
   const ownerId = pending.playerId;
   const object = state.objects.get(targetId);
   if (!object || object.zone !== 'library' || object.controllerId !== ownerId) {
@@ -126,15 +127,16 @@ function thronePutChosenCreature(state, pending, targetId) {
     hexproofUntilTurn: state.turn.number + 2,
   });
   state.objects.set(newId, permanent);
-  // M273 (błąd #24): liczniki WEJŚCIA karty (CR 122.6) są niezależne od
-  // liczników nadawanych przez sam efekt — obie porcje się sumują.
+  applyRiotOnEntry(state, newId, riotChoices, targetId);
+  // Liczniki z wyboru riot, druku i samego pokoju już są częścią WEJŚCIA.
   applyEnterCounters(state, newId);
-  state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'library', toZone: 'battlefield' }));
+  addCounter(state, newId, pending.params.counters ?? '+1/+1', pending.params.countersAmount ?? 3);
+  const entered = state.objects.get(newId);
+  state.events.push(event('object_moved', { fromId: targetId, object: entered, fromZone: 'library', toZone: 'battlefield' }));
   state.events.push(event('permanent_entered_battlefield', {
-    fromId: targetId, objectId: newId, object: permanent, cardId: permanent.cardId,
+    fromId: targetId, objectId: newId, object: entered, cardId: permanent.cardId,
     controllerId: ownerId, revealedTop: true,
   }));
-  addCounter(state, newId, pending.params.counters ?? '+1/+1', pending.params.countersAmount ?? 3);
   state.events.push(event('hexproof_granted', {
     objectId: newId, cardId: permanent.cardId, untilTurn: state.turn.number + 2,
   }));
@@ -224,7 +226,13 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
  * Wykonuje WYBRANY cel pokoju (komenda resolve_room_target, game-state.js).
  * Zwraca zdarzenia zakończonego wyboru (dopisane do state.events).
  */
-export function applyRoomTargetChoice(state, pending, targetId) {
+export function applyRoomTargetChoice(state, pending, targetId, riotChoices = null) {
+  const chosenCardId = pending.kind === 'revealed_creature' ? state.objects.get(targetId)?.cardId ?? null : null;
+  if (pending.kind === 'revealed_creature' && riotChoices === null
+    && queueRiotEntry(state, state.objects.get(targetId), {
+      entryKind: 'room_target', fromZone: 'library', playerId: pending.playerId,
+      roomTargetPending: pending, restorePriorityTo: pending.restorePriorityTo,
+    })) return null;
   if (pending.kind === 'player') {
     changeLife(state, targetId, -(pending.params.amount ?? 5));
   } else if (pending.kind === 'creature') {
@@ -235,7 +243,7 @@ export function applyRoomTargetChoice(state, pending, targetId) {
       applyEffect(state, { type: 'add_counter', counter: '+1/+1', amount: pending.params.amount ?? 2 }, source, [targetId]);
     }
   } else if (pending.kind === 'revealed_creature') {
-    thronePutChosenCreature(state, pending, targetId);
+    thronePutChosenCreature(state, pending, targetId, riotChoices);
   } else {
     throw new Error(`Nieznany rodzaj celu pokoju: ${pending.kind}`);
   }
@@ -243,7 +251,7 @@ export function applyRoomTargetChoice(state, pending, targetId) {
     playerId: pending.playerId, room: pending.room, roomName: pending.roomName,
     targetId, kind: pending.kind,
     // Dla odsłoniętych kart lochu (Throne) niesiemy cardId — log/UI pokaże nazwę.
-    cardId: pending.kind === 'revealed_creature' ? state.objects.get(targetId)?.cardId ?? null : null,
+    cardId: chosenCardId,
   });
   state.events.push(resolved);
   return resolved;
@@ -1301,7 +1309,19 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
  *
  * @returns {string} id nowego obiektu na polu bitwy
  */
-export function returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId = null) {
+export function returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId = null, riotChoices = null) {
+  const entering = state.objects.get(targetId);
+  // CR 702.136a: reanimacja jest także WEJŚCIEM. Wybór odbywa się zanim
+  // karta opuści grób, a nie w kolejce ETB. `stripAbilities` (Xu-Ifit)
+  // usuwa zdolności już W TRAKCIE wejścia — wtedy riot nie istnieje.
+  const riotCount = effect?.stripAbilities ? 0 : riotCountOf(entering);
+  if (riotCount > 0 && riotChoices === null) {
+    queueRiotEntry(state, entering, { entryKind: 'return_from_graveyard', effect, auraHostId });
+    return null;
+  }
+  if (riotCount > 0 && !validRiotChoices(entering, riotChoices)) {
+    throw new Error('Nieprawidłowy wybór riot przy reanimacji');
+  }
   const newId = `permanent-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
   // Ruling Annie Flash (OTJ 2024-04-12): wraca TAPNIĘTA (deskryptor
@@ -1335,6 +1355,7 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
       tapped: enterTapped,
     }));
   }
+  applyRiotOnEntry(state, newId, riotChoices, targetId);
   // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
   // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
   // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
@@ -1354,7 +1375,7 @@ export function returnPermanentFromGraveyardOutcome(state, targetId, effect, aur
   for (const [name, amount] of Object.entries(effect?.counters ?? {})) {
     addCounter(state, newId, name, amount);
   }
-  state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+  state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
   return newId;
 }
 
@@ -3397,15 +3418,18 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // Obiekt mógł już wrócić na pole bitwy (dwa nadane triggery „dies" na tym
     // samym stworze — drugi widzi już nowy obiekt, CR 400.7): efekt nic nie robi.
     if (!object || object.zone !== 'graveyard') return;
+    const riot = riotForEffectEntry(state, object, effect, sourceObject, targets, context);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const permanent = Object.freeze({ ...moved, tapped: true, summoningSickness: true });
     state.objects.set(newId, permanent);
+    applyRiotOnEntry(state, newId, riot.choices, targetId);
     // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
-    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+    state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
     return;
   }
   if (effect.type === 'gain_life') {
@@ -3802,7 +3826,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       auraHostId = hosts.objectIds[0] ?? hosts.playerIds[0];
     }
     returnPermanentFromGraveyardOutcome(state, targetId, effect, auraHostId);
-    return;
+    // Tak jak scry/may: jeśli trzeba wybrać riot, czar na stosie i jego
+    // pozostałe efekty czekają na domknięcie wejścia (bez passu graczy).
+    return Boolean(state.pendingRiotChoice);
   }
   if (effect.type === 'transform') {
     // Batch 59/G1.10 (Bird Admirer // Wing Shredder; ruling MID 2021-09-24):
@@ -4219,9 +4245,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const object = state.objects.get(targetId);
     // Jak wyżej (CR 400.7): karta zdążyła zmienić strefę — persist wygasa.
     if (!object || object.zone !== 'graveyard') return;
+    const riot = riotForEffectEntry(state, object, effect, sourceObject, targets, context);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     state.objects.set(newId, Object.freeze({ ...moved, summoningSickness: true }));
+    applyRiotOnEntry(state, newId, riot.choices, targetId);
     // M273 (błąd #24): najpierw liczniki WEJŚCIA karty (CR 122.6), potem
     // licznik nadawany przez efekt („return with a -1/-1 counter on it").
     applyEnterCounters(state, newId);
@@ -4240,16 +4269,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const object = state.objects.get(targetId);
     if (!object || object.zone !== 'graveyard' || object.kind !== 'creature') return;
     const controllerId = sourceObject.controllerId;
+    const riot = riotForEffectEntry(state, object, effect, sourceObject, targets, context, controllerId);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'battlefield', newId);
     const keywords = [...new Set([...(moved.keywords ?? []), ...(effect.grantKeywords ?? [])])];
     const permanent = Object.freeze({ ...moved, controllerId, keywords: Object.freeze(keywords), summoningSickness: true });
     state.objects.set(newId, permanent);
+    applyRiotOnEntry(state, newId, riot.choices, targetId);
     // M273 (błąd #24, CR 122.6 + 614.1c): liczniki WEJŚCIA obowiązują przy
     // każdym wejściu na pole bitwy, także przy reanimacji — bez nich
     // Servant of the Scale wraca jako 0/0 i ginie od razu (CR 704.5f).
     applyEnterCounters(state, newId);
-    state.events.push(event('object_moved', { fromId: targetId, object: permanent, fromZone: 'graveyard', toZone: 'battlefield' }));
+    state.events.push(event('object_moved', { fromId: targetId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield' }));
     state.events.push(event('control_changed', { objectId: newId, cardId: permanent.cardId, controllerId, fromControllerId: moved.controllerId }));
     if (effect.exileAtNextEndStep) {
       state.delayedTriggers.push({
@@ -4313,22 +4345,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return seen.length > 0;
   }
   if (effect.type === 'take_initiative') {
-    // Inicjatywa (CR 725, Underdark Explorer): gracz obejmuje inicjatywę.
-    // „Take the initiative" zawsze zagłębia w Podziemia (wejście do pokoju 1
-    // albo awans do następnego pokoju — CR 725.4); nic się nie dzieje tylko
-    // wtedy, gdy gracz JUŻ ją posiada (wtedy to nie jest objęcie).
+    // Audyt PR #168/A-3 (CR 726.2 i CR 726.5): także OBECNY posiadacz może
+    // ponownie „take the initiative" i za każdym razem venture'uje. Nie
+    // powstaje drugie oznaczenie; zmienia się tylko postęp w lochu.
     const playerId = effect.playerId ?? sourceObject.controllerId;
     const previous = state.initiativePlayerId ?? null;
     state.initiativePlayerId = playerId;
-    const changedHands = previous !== playerId;
-    // M163/B (uwaga właściciela): „po raz pierwszy" w komunikacie UI oznacza
-    // WEJŚCIE do Podziemi (gracz nie jest jeszcze w lochu), a NIE zmianę
-    // posiadacza — po utracie i odzyskaniu inicjatywy gracz nadal jest
-    // w lochu (venture awansuje pokój), więc komunikat nie może mówić
-    // „po raz pierwszy i zagłębia się w Podziemia".
-    const firstTime = changedHands && (state.undercityProgress[playerId] ?? 0) === 0;
+    // M163/B: „po raz pierwszy" dotyczy WEJŚCIA do lochu, a nie zmiany
+    // posiadacza (po odzyskaniu istniejący postęp może dalej trwać).
+    const firstTime = (state.undercityProgress[playerId] ?? 0) === 0;
     state.events.push(event('initiative_taken', { playerId, previousPlayerId: previous, firstTime }));
-    if (changedHands) ventureIntoUndercity(state, playerId);
+    ventureIntoUndercity(state, playerId);
     return;
   }
   if (effect.type === 'venture_into_undercity') {
@@ -5251,28 +5278,38 @@ function markTemporaryExile(state, exileId, sourceObject) {
     return;
   }
   if (effect.type === 'turn_up_exiled_and_put_permanents') {
-    // Batch 47 (Pyxis of Pandemonium): „{7}, {T}, Sacrifice this artifact:
-    // Each player turns face up all cards they own exiled with this artifact,
-    // then puts all permanent cards among them onto the battlefield."
-    // Zrodlo jest juz poswiecone (koszt), wiec liste wygnanych czytamy z LKI
-    // obiektu przekazanego jako sourceObject.
+    // Pyxis of Pandemonium: wszystkie powiązane karty odkrywamy PRZED
+    // jednoczesnym wejściem permanentów. Riot każdej odkrytej karty-stwora
+    // jest wybierany przez jej właściciela (APNAP w wieloosobowej grze;
+    // format stołu 1v1), zanim JAKIKOLWIEK obiekt wejdzie. Bez okna passów.
     const linked = [...(state.objects.get(sourceObject.id)?.exiledCardIds ?? sourceObject.exiledCardIds ?? [])];
     if (linked.length === 0) return;
-    const NONPERMANENT = ['Instant', 'Sorcery'];
-    for (const exileId of linked) {
+    const batch = linked.filter((id) => state.objects.get(id)?.zone === 'exile');
+    for (const exileId of batch) {
       const card = state.objects.get(exileId);
-      if (!card || card.zone !== 'exile') continue;
-      // Odkrycie: karta przestaje byc zakryta niezaleznie od tego, czy jest
-      // permanentem (Oracle: „turns face up ALL cards they own").
+      if (!card.faceDown) continue; // po wznowieniu nie ujawniamy ponownie
       state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
       state.events.push(event('card_revealed', {
         playerId: card.ownerId ?? card.controllerId, objectId: exileId, cardId: card.cardId ?? null,
       }));
-      const types = card.types ?? [];
-      const isPermanent = types.length > 0 && !types.some((type) => NONPERMANENT.includes(type));
-      if (!isPermanent) continue; // instant/sorcery zostaje w wygnaniu
-      // „puts … onto the battlefield" — pod kontrole WLASCICIELA karty
-      // (Oracle: „all cards THEY OWN"), nie kontrolera artefaktu.
+    }
+    const isPermanent = (card) => (card?.types ?? []).length > 0
+      && !(card.types ?? []).some((type) => ['Instant', 'Sorcery'].includes(type));
+    const riotIds = batch.filter((id) => isPermanent(state.objects.get(id))
+      && riotCountOf(state.objects.get(id)) > 0);
+    if (riotIds.length && !context.riotBatchChoices) {
+      const first = state.objects.get(riotIds[0]);
+      queueRiotEntry(state, first, {
+        entryKind: 'pyxis_batch', fromZone: 'exile',
+        playerId: first.ownerId ?? first.controllerId,
+        riotIds, selectedModes: [], effect, sourceObject, targets: [...(targets ?? [])], context,
+      });
+      return true;
+    }
+    const modesById = new Map((context.riotBatchChoices ?? []).map((item) => [item.sourceId, item.choices]));
+    for (const exileId of batch) {
+      const card = state.objects.get(exileId);
+      if (!isPermanent(card)) continue;
       const ownerId = card.ownerId ?? card.controllerId;
       const battlefieldId = `permanent-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
@@ -5280,9 +5317,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         ...moved, controllerId: ownerId, faceDown: false,
         summoningSickness: (moved.types ?? []).includes('Creature'),
       }));
-      // M274 (#24, CR 122.6): wprowadzenie permanentu z wygnania to WEJŚCIE —
-      // liczniki wejścia obowiązują. Karta jest tu już odkryta (faceDown:
-      // false ustawione wyżej), więc helper nadaje liczniki.
+      applyRiotOnEntry(state, battlefieldId, modesById.get(exileId) ?? null, exileId);
       applyEnterCounters(state, battlefieldId);
       state.events.push(event('permanent_entered_battlefield', {
         objectId: battlefieldId, object: state.objects.get(battlefieldId),
@@ -5301,22 +5336,27 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const exileId = linked.find((id) => state.objects.get(id)?.zone === 'exile');
     if (!exileId) return;
     const card = state.objects.get(exileId);
-    // Odkrycie ZAWSZE (ruling WotC 2020-08-07: nie-stwór zostaje w wygnaniu
-    // odkryty) — jawne, publiczne (card_revealed z cardId).
-    state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+    // Odkrycie ZAWSZE (ruling WotC 2020-08-07), tylko RAZ nawet jeśli
+    // rozstrzygnięcie zostanie zawieszone przed wejściem przez wybór riot.
     const controllerId = sourceObject.controllerId;
-    state.events.push(event('card_revealed', {
-      playerId: controllerId, objectId: exileId, cardId: card.cardId ?? null,
-    }));
-    const types = card.types ?? [];
-    if (!types.includes('Creature')) return; // nie-stwór zostaje w wygnaniu
+    if (card.faceDown) {
+      state.objects.set(exileId, Object.freeze({ ...card, faceDown: false }));
+      state.events.push(event('card_revealed', {
+        playerId: controllerId, objectId: exileId, cardId: card.cardId ?? null,
+      }));
+    }
+    const revealed = state.objects.get(exileId);
+    if (!(revealed.types ?? []).includes('Creature')) return;
     // Stwór wchodzi pod kontrolę KONTROLERA triggera (= kontroler Shella
     // w chwili śmierci z LKI, CR 603.10a — ruling WotC 2020-08-07 o przejęciu).
+    const riot = riotForEffectEntry(state, revealed, effect, sourceObject, targets, context, controllerId);
+    if (riot.pending) return true;
     const battlefieldId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, exileId, 'battlefield', battlefieldId);
     state.objects.set(battlefieldId, Object.freeze({
       ...moved, controllerId, faceDown: false, summoningSickness: true,
     }));
+    applyRiotOnEntry(state, battlefieldId, riot.choices, exileId);
     // M274 (jak Pyxis): wejście z wygnania nadaje liczniki wejścia.
     applyEnterCounters(state, battlefieldId);
     state.events.push(event('permanent_entered_battlefield', {
@@ -6298,10 +6338,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
     if (!exiledCardId) return;
     const obj = state.objects.get(exiledCardId);
     if (!obj || obj.zone !== 'exile') return;
+    // Kontroler = właściciel (NIE kontroler źródła efektu) również dla
+    // wyboru „as enters" — zanim obiekt opuści wygnanie.
+    const ownerId = obj.ownerId ?? obj.controllerId;
+    const riot = riotForEffectEntry(state, obj, effect, sourceObject, targets, context, ownerId);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, exiledCardId, 'battlefield', newId);
-    // Kontroler = właściciel (NIE kontroler źródła efektu).
-    const ownerId = obj.ownerId ?? moved.controllerId;
     // M254/D: powrót czyści znacznik — karta wraca na stół jako zwykły
     // permanent, a nie „wygnana tymczasowo" (bez tego badge wisiałby na
     // obiekcie na polu bitwy, choć strefa wygnania już go nie dotyczy).
@@ -6309,11 +6352,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
       ...moved, controllerId: ownerId, summoningSickness: true, temporaryExile: null,
     });
     state.objects.set(newId, permanent);
+    applyRiotOnEntry(state, newId, riot.choices, exiledCardId);
     // M273 (błąd #24): powrót z wygnania to też WEJŚCIE na pole bitwy
     // (CR 122.6) — liczniki wejścia obowiązują.
     applyEnterCounters(state, newId);
     state.events.push(event('object_moved', {
-      fromId: exiledCardId, object: permanent, fromZone: 'exile', toZone: 'battlefield',
+      fromId: exiledCardId, object: state.objects.get(newId), fromZone: 'exile', toZone: 'battlefield',
       returnToOwner: true,
     }));
     state.events.push(event('control_changed', {
@@ -6920,6 +6964,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'graveyard' || sourceObj.kind !== 'creature') return;
     const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const riot = riotForEffectEntry(state, sourceObj, effect, sourceObject, targets, context, ownerId);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
     const keywords = [...new Set([...(moved.keywords ?? []), 'haste'])];
@@ -6928,9 +6974,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
       summoningSickness: true, unearthExile: true,
     });
     state.objects.set(newId, permanent);
+    applyRiotOnEntry(state, newId, riot.choices, sourceObject.id);
     // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
     applyEnterCounters(state, newId);
-    state.events.push(event('object_moved', { fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
+    state.events.push(event('object_moved', { fromId: sourceObject.id, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield', unearth: true }));
     state.delayedTriggers.push({
       type: 'exile_object', objectId: newId, playerId: ownerId,
       // Unearth (CR 702.84a): „Exile it at the beginning of THE NEXT end
@@ -6950,17 +6997,20 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const sourceObj = state.objects.get(sourceObject.id);
     if (!sourceObj || sourceObj.zone !== 'graveyard') return;
     const ownerId = sourceObj.ownerId ?? sourceObj.controllerId;
+    const riot = riotForEffectEntry(state, sourceObj, effect, sourceObject, targets, context, ownerId);
+    if (riot.pending) return true;
     const newId = `permanent-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sourceObject.id, 'battlefield', newId);
     const permanent = Object.freeze({
       ...moved, controllerId: ownerId, summoningSickness: true,
     });
     state.objects.set(newId, permanent);
+    applyRiotOnEntry(state, newId, riot.choices, sourceObject.id);
     // M273 (błąd #24): liczniki wejścia — ta sama reguła co przy rzucie.
     applyEnterCounters(state, newId);
     if (effect.finalityCounter) addCounter(state, newId, 'finality', 1);
     state.events.push(event('object_moved', {
-      fromId: sourceObject.id, object: permanent, fromZone: 'graveyard', toZone: 'battlefield',
+      fromId: sourceObject.id, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield',
     }));
     return;
   }

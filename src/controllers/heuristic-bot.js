@@ -6,6 +6,7 @@ import { createRng } from '../engine/rng.js';
 import { sourceHasProtectionQuality } from '../engine/attachments.js';
 import { getSourceForObject, manaSourceOfCardDefinition } from '../engine/mana-sources.js';
 import { castsWithoutPayingMana } from '../engine/impulse-window.js';
+import { RIOT_MODES } from '../engine/riot.js';
 
 /**
  * O-3 (audyt PR #134): źródło many obiektu Z WIDOKU. Widok niesie
@@ -330,41 +331,96 @@ export function blockAbsorbedDamageOf(attacker, blockers) {
  * mocy 13), więc lethal nie wchodził i bot nie atakował, mimo że trzech blokerów
  * zatrzymuje najwyżej 3+2+2 = 7 z 13.
  *
- * Przydział zachłanny: blokerzy od najtwardszego, każdy do atakującego z
- * największym przyrostem zatrzymanych obrażeń. Bez trample przyrost to cała moc,
- * pierwszy bloker na atakującego; z trample (CR 702.19b) — tylko jego
- * obrażenia śmiertelne (`blockAbsorbedDamageOf`), sumowane i ucinane mocą.
- * Dla ataków bez trample wynik jest dokładny (top-N mocy).
+ * Bez trample wynik jest dokładny i liniowo-logarytmiczny (top-N mocy).
+ * Z trample przydział blokerów jest problemem upakowania: zachłanny może
+ * ZANIŻYĆ absorpcję i ogłosić fałszywy lethal. Dla małych plansz używamy
+ * pamięciowanego przeszukiwania przydziałów (każdy bloker najwyżej raz).
+ * Przy przekroczeniu budżetu bota zwracamy BEZPIECZNĄ górną granicę absorpcji,
+ * nie zachłanny dolny wynik: bot może wtedy przeoczyć lethal, lecz nie ogłosi
+ * zwycięstwa, któremu obrońca jest w stanie zapobiec.
  */
 export function blockersAbsorbedDamageOf(attackers, blockers) {
-  const atk = (attackers ?? []).filter(Boolean);
+  const atk = (attackers ?? []).filter(Boolean).map((object) => ({
+    power: combatPower(object),
+    trample: (object.keywords ?? []).includes('trample'),
+    deathtouch: (object.keywords ?? []).includes('deathtouch'),
+  })).filter((a) => a.power > 0);
   const list = (blockers ?? []).filter(Boolean);
   if (atk.length === 0 || list.length === 0) return 0;
-  const state = new Map(atk.map((a) => [a.id, { lethal: 0, blocked: false }]));
-  const ordered = [...list].sort((x, y) => (y.toughness ?? 0) - (x.toughness ?? 0));
-  let absorbed = 0;
-  for (const blocker of ordered) {
-    let best = null;
-    let bestGain = 0;
-    for (const attacker of atk) {
-      const st = state.get(attacker.id);
-      const power = combatPower(attacker);
-      let gain = 0;
-      if ((attacker.keywords ?? []).includes('trample')) {
-        const lethalHere = blockAbsorbedDamageOf(attacker, [blocker]);
-        gain = Math.min(power, st.lethal + lethalHere) - Math.min(power, st.lethal);
-      } else if (!st.blocked) {
-        gain = power;
-      }
-      if (gain > bestGain) { bestGain = gain; best = attacker; }
-    }
-    if (!best) continue;
-    const st = state.get(best.id);
-    st.blocked = true;
-    st.lethal += blockAbsorbedDamageOf(best, [blocker]);
-    absorbed += bestGain;
+
+  const normalPowers = atk.filter((a) => !a.trample).map((a) => a.power).sort((a, b) => b - a);
+  const topNormal = [0];
+  for (const power of normalPowers) topNormal.push(topNormal.at(-1) + power);
+  if (normalPowers.length === atk.length) return topNormal[Math.min(list.length, normalPowers.length)];
+
+  const trample = atk.filter((a) => a.trample);
+  const tramplePower = trample.reduce((sum, a) => sum + a.power, 0);
+  const needs = (a, b) => {
+    const left = Math.max(0, (b.toughness ?? 0) - (b.damage ?? 0));
+    return a.deathtouch ? Math.min(1, left) : left;
+  };
+  // Relaksacja: każdemu blokerowi przypisujemy NAJWIĘKSZY możliwy wkład w
+  // dowolnego tramplera, bez limitów indywidualnych. Dla k blokerów na
+  // zwykłych atakujących bierzemy k najsłabszych dla trample; suma jest więc
+  // >= każdego wykonalnego przydziału (także przy deathtouch i ranach).
+  const contribution = list.map((b) => Math.max(...trample.map((a) => needs(a, b))))
+    .sort((a, b) => b - a);
+  const topContribution = [0];
+  for (const n of contribution) topContribution.push(topContribution.at(-1) + n);
+  let upperBound = 0;
+  for (let k = 0; k <= Math.min(list.length, normalPowers.length); k += 1) {
+    upperBound = Math.max(upperBound,
+      topNormal[k] + Math.min(tramplePower, topContribution[list.length - k]));
   }
-  return absorbed;
+
+  // Jeden poprawny przydział daje DOLNĄ granicę. Gdy osiągnie relaksację,
+  // dokładność jest dowiedziona bez DFS — ważne dla dużych plansz.
+  const assigned = atk.map(() => 0);
+  let greedy = 0;
+  for (const b of [...list].sort((a, c) => (c.toughness ?? 0) - (a.toughness ?? 0))) {
+    let bestIndex = -1;
+    let bestGain = 0;
+    for (let i = 0; i < atk.length; i += 1) {
+      const a = atk[i];
+      const gain = a.trample ? Math.min(a.power - assigned[i], needs(a, b))
+        : (assigned[i] === 0 ? a.power : 0);
+      if (gain > bestGain) { bestGain = gain; bestIndex = i; }
+    }
+    if (bestIndex >= 0) { assigned[bestIndex] += bestGain; greedy += bestGain; }
+  }
+  if (greedy === upperBound) return greedy;
+
+  // Ograniczony koszt wyceny: wiele razy oceniana jest każda kombinacja
+  // atakujących. Przy przekroczeniu progu nie zwracać `greedy` (zaniża!),
+  // lecz `upperBound` (zawyża, więc nie generuje fałszywego lethal).
+  const STATE_LIMIT = 12000;
+  if (atk.length > 10 || list.length > 10) return upperBound;
+  const used = atk.map(() => 0);
+  const memo = new Map();
+  const overBudget = Symbol('block-allocation-budget');
+  function solve(blockerIndex) {
+    if (blockerIndex === list.length) return 0;
+    const key = `${blockerIndex}:${used.join(',')}`;
+    if (memo.has(key)) return memo.get(key);
+    if (memo.size >= STATE_LIMIT) throw overBudget;
+    const b = list[blockerIndex];
+    let best = solve(blockerIndex + 1); // może nie blokować
+    for (let i = 0; i < atk.length; i += 1) {
+      const a = atk[i];
+      const gain = a.trample ? Math.min(a.power - used[i], needs(a, b))
+        : (used[i] === 0 ? a.power : 0);
+      if (gain <= 0) continue;
+      used[i] += gain;
+      best = Math.max(best, gain + solve(blockerIndex + 1));
+      used[i] -= gain;
+    }
+    memo.set(key, best);
+    return best;
+  }
+  try { return solve(0); } catch (error) {
+    if (error !== overBudget) throw error;
+    return upperBound;
+  }
 }
 
 export function blockExchangeOf(attacker, blockers) {
@@ -2587,6 +2643,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   const etbEnterBonusValue = (view, def, { kicked = false, offspring = false, reservedMana = 0 } = {}) => {
     if (!def) return 0;
     let total = 0;
+    // Riot (CR 702.136a) nie jest triggerem. Ta sama miara co przy wyborze
+    // trybu na stosie; zachowujemy premię rzutu PMSSB-71 bez fałszywego ETB.
+    const riotCount = (def.keywords ?? []).filter((keyword) => keyword === 'riot').length;
+    if (riotCount > 0) {
+      total += riotCount * P.modalEtbValueWeight * modalEnterBonusValue(view, def, RIOT_MODES, reservedMana);
+    }
     for (const ability of def.abilities ?? []) {
       if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
       const cond = ability.trigger.condition ?? {};
@@ -4645,16 +4707,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (ta sama miara co add_counter). Bez armii: nowa 0/0 Army z N licznikami =
   // ciało N/N (ta sama miara co create_token, tokenBodyValue). Dawna stała 6
   // (ETB) i 6+3N (czar) nie zależały od armii, a ETB nie znała N.
-  // PMSSB-69 (inicjatywa, CR 725; L41 — jedna miara dla ETB i czaru). Silnik (effects.js, take_initiative):
-  // objęcie inicjatywy, którą gracz JUŻ ma, nie uruchamia venture — zysk 0 (F1). Gdy posiada wróg, objęcie
-  // zabiera mu postęp i daje mój venture — dopłata P.initiativeStealBonus (F2). Gdy zmienia się posiadacz,
-  // każdy atakujący stwór wroga (bez defendera, moc > 0) zagraża odbiorem inicjatywy w jego turze — kara
-  // P.initiativeExposurePenalty za stwór, z limitem P.initiativeExposureCap (F3). Najsłabszy realny wariant
-  // (nikt nie ma inicjatywy, wróg bez stworów) = dawne 6 (anty-over-fix M429 c).
+  // PMSSB-69 + audyt PR #168/A-3 (CR 726.2 i CR 726.5; L41): każde objęcie,
+  // także przez obecnego posiadacza, uruchamia venture (bazowe 6). Kradzież
+  // wrogowi daje dodatkową korzyść P.initiativeStealBonus. Kara ekspozycji
+  // dotyczy tylko NOWEGO posiadacza — ponowne objęcie nie zwiększa ryzyka,
+  // które już ponosił. Bez wroga i bez inicjatywy wartość pozostaje 6.
   const INITIATIVE_TAKE_BASE = 6;
   const initiativeTakeValue = (view, effect) => {
     const holder = view.initiativePlayerId ?? null;
-    if (holder === view.playerId) return 0;
+    if (holder === view.playerId) return INITIATIVE_TAKE_BASE;
     const steal = holder != null ? P.initiativeStealBonus : 0;
     const attackers = (view.zones?.battlefield ?? []).filter((o) => o.controllerId !== view.playerId
       && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
@@ -9004,7 +9065,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (type === 'tap_for_mana') return 'mana';
     if (type === 'cast_permanent' || type === 'cast_adventure_creature') return 'permanent';
     if (type === 'cast_spell' || type === 'cast_cleave' || type === 'cast_adventure' || type === 'plot_card' || type === 'suspend_card' || type === 'warp_card' || type === 'draw_card') return 'spell';
-    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_optional_spell_effect' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
+    if (type === 'activate_ability' || type === 'resolve_backup' || type === 'resolve_scry' || type === 'resolve_surveil' || type === 'resolve_clash_choice' || type === 'resolve_room_target' || type === 'resolve_undercity_route' || type === 'resolve_fabricate' || type === 'resolve_sacrifice_choice' || type === 'resolve_food_choice' || type === 'resolve_discover_choice' || type === 'resolve_explore_choice' || type === 'resolve_craft_exile' || type === 'resolve_hand_creature' || type === 'resolve_devour_choice' || type === 'resolve_endure_choice' || type === 'resolve_delirium_target' || type === 'resolve_mentor_target' || type === 'resolve_graveyard_top_choice' || type === 'resolve_legend_choice' || type === 'resolve_reveal_order' || type === 'resolve_proliferate' || type === 'resolve_damage_target' || type === 'resolve_modal_choice' || type === 'resolve_riot_choice' || type === 'resolve_redirect_choice' || type === 'resolve_discard_choice' || type === 'resolve_hand_top_choice' || type === 'resolve_land_type_choice' || type === 'resolve_library_placement' || type === 'resolve_search_choice' || type === 'resolve_fertile_thicket' || type === 'resolve_springbloom' || type === 'resolve_pay_or_sacrifice' || type === 'resolve_optional_pay_choice' || type === 'resolve_counter_pay_choice' || type === 'resolve_ward_pay_choice' || type === 'resolve_trigger_target' || type === 'resolve_optional_trigger_choice' || type === 'resolve_moonlit_choice' || type === 'resolve_mulligan_choice' || type === 'resolve_mulligan_bottom_choice' || type === 'resolve_damage_assignment' || type === 'resolve_optional_draw' || type === 'resolve_exploit_choice' || type === 'resolve_reveal_exile_hand' || type === 'resolve_reveal_exile_grave' || type === 'resolve_look_top_choice' || type === 'resolve_satyr_look_choice' || type === 'resolve_epic_choice' || type === 'resolve_suspend_cast' || type === 'resolve_rebound_cast' || type === 'resolve_enter_as_copy' || type === 'resolve_destroy_equipment_choice' || type === 'resolve_optional_spell_effect' || type === 'resolve_replacement_choice' || type === 'resolve_copy_targets' || type === 'resolve_opponent_target' || type === 'resolve_damage_division' || type === 'resolve_grave_free_cast' || type === 'resolve_hand_free_cast' || type === 'resolve_aura_host' || type === 'resolve_exile_cast' || type === 'resolve_untap_choice') return 'ability';
     if (type === 'declare_attackers' || type === 'resolve_combat') return 'attack';
     if (type === 'declare_blockers') return 'block';
     return null;
@@ -9705,6 +9766,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return finish(10 + modalModeValue(view, mode, cmd.targetId, source));
     }
     switch (cmd.type) {
+      case 'resolve_riot_choice': {
+        // Audyt #168/A-2: statyczny wybór riot zapada przed wejściem (bez
+        // triggera). Projektujemy wchodzące ciało na planszę TYLKO do wyceny;
+        // ta sama miara trybu co PMSSB-71, bez zmiany osi czasu gry.
+        const pending = view.pendingRiotChoice;
+        const def = pending?.cardId ? cardDef(pending.cardId) : undefined;
+        if (!def || !RIOT_MODES[cmd.modeIndex]) return finish(0);
+        const source = { ...def, id: pending.sourceId, cardId: pending.cardId,
+          controllerId: view.playerId, kind: 'creature', zone: 'battlefield', summoningSickness: true };
+        const projected = { ...view, zones: { ...view.zones,
+          battlefield: [...view.zones.battlefield, source] } };
+        return finish(10 + modalModeValue(projected, RIOT_MODES[cmd.modeIndex], null, source));
+      }
       case 'concede': return finish(NEVER);
       // M315/M321 + M334 (CR 701.58b, 701.40b, 702.37e): rodzina OBROTÓW
       // twarzą do góry — cloak i manifest to TA SAMA decyzja („zapłać koszt
@@ -16288,7 +16362,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd?.type === 'resolve_color_choice') {
       return { color: cmd.color ?? null };
     }
-    if (cmd?.type === 'resolve_modal_choice' && cmd.modeIndex != null) {
+    if ((cmd?.type === 'resolve_modal_choice' || cmd?.type === 'resolve_riot_choice') && cmd.modeIndex != null) {
       return { mode: cmd.modeIndex };
     }
     if (cmd?.type === 'resolve_optional_spell_effect') {
@@ -16542,6 +16616,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (cmd.type === 'resolve_modal_choice') return cmd.skip
       ? 'resolve_modal_choice(skip)'
       : `resolve_modal_choice(${cmd.modeIndex}${cmd.targetId != null ? '->' + cmd.targetId : ''})`;
+    if (cmd.type === 'resolve_riot_choice') return `resolve_riot_choice(${cmd.modeIndex})`;
     if (cmd.type === 'cast_flashback') return `cast_flashback(${cmd.objectId}->${(cmd.targets ?? []).join('+')})`;
     if (cmd.type === 'resolve_discard_choice') {
       return cmd.cardId == null

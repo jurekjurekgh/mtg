@@ -122,7 +122,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'riotHasteDamageWeight', 'riotHasteLethalBonus',
   // PMSSB-71 v3 (licznik +1/+1 na sobie, wszystkie ścieżki bez celu): presja i przewaga liczebna wroga.
   'counterPressureWeight', 'counterBoardWeight',
-  // PMSSB-77 (tokeny-stwory własne): presja życia na wycenę ciała tokenu.
+  // PMSSB-77: presja na ciało tokenu-stwora po obu stronach (znak roli dla wroga).
   'tokenPressureWeight',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
@@ -695,7 +695,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Neutralny stół (brak presji, brak przewagi wroga) = sama wartość ciała, jak w riot.
   counterPressureWeight: 6,
   counterBoardWeight: 2,
-  // PMSSB-77: własny token-stwór dostaje + waga × presja (siła ataku wroga / moje życie, ≤ 1) do ciała.
+  // PMSSB-77: token-stwór dostaje wagę × presję (siła wroga / moje życie, ≤ 1) do ciała; wrogi z przeciwnym znakiem.
   // Presja 0 = dawna wartość ciała (zerowa zmiana przy pustym zagrożeniu).
   tokenPressureWeight: 6,
   creatureKwLifelinkWeight: 1,
@@ -1095,8 +1095,8 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   //   nie znikając przy tym z gry (wariant „czar chwilowo jałowy, rzut
   //   nieopłacalny” nadal zostaje nad passem).
   suspendWaitPenalty: 1,
-  // PMSSB-69 (inicjatywa, CR 725). Składnik ETB = 6 (dawna stała) + dopłata, gdy posiada wróg,
-  // − kara za atakujące stwory wroga (gdy zmienia się posiadacz). Gdy już posiadam — 0 (silnik nie robi venture).
+  // PMSSB-69 + audyt #168/A-3 (CR 726): składnik ETB = 6 za venture także
+  // u obecnego posiadacza, + dopłata za kradzież, − kara ekspozycji dla nowego posiadacza.
   // initiativeStealBonus 6 = jedna venture ≈ jedna dobrana karta (drawCardValue): objęcie zabiera wrogowi postęp.
   initiativeStealBonus: 6,
   // initiativeExposurePenalty 2 za każdy stwór wroga bez defendera z mocą > 0: 1/3 venture na atakującego

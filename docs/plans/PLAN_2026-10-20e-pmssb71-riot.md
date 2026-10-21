@@ -1,7 +1,17 @@
 # PLAN 2026-10-20e — PMSSB-71: riot (tryb modalny przy wejściu)
 
-Mechanika: Riot („wchodzi z +1/+1 albo z haste — wybór gracza”). W silniku to modalny
-trigger `enter_battlefield` z dwoma trybami: `add_counter +1/+1` i `grant_keyword_permanent haste`.
+> **Korekta 2026-10-21 (audyt PR #168/A-2):** CR 702.136a — wybór riot
+> przed wejściem jest efektem zastępującym, a nie zdolnością na stosie;
+> „modalny trigger” był historyczną błędną implementacją użytą w poniższej
+> sondzie. W PR #169 wybór `resolve_riot_choice` zapada przed ETB i SBA,
+> także dla kopii / powrotu z innych stref. Historyczne wartości punktowe
+> i pomiary pozostają zapisem dawnego scoringu, nie wskazówką co do czasu
+> zdarzenia. Piny: `test/audyt-pr168-riot.test.js` i
+> `test/audyt-pmssb71-riot.test.js`.
+
+Mechanika: Riot („wchodzi z +1/+1 albo z haste — wybór gracza”). W ówczesnym,
+niepoprawnym silniku był to modalny trigger `enter_battlefield` z dwoma trybami:
+`add_counter +1/+1` i `grant_keyword_permanent haste` (patrz korekta powyżej).
 Karta w danych: Gruul Beastmaster (`gruul-beastmaster`, batch 69). Jedyna karta z trybami riot.
 
 ## Pomiar PRZED (`.arena/probe-riot.mjs`, prawdziwy silnik, `resolve_modal_choice`)

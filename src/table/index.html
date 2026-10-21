@@ -822,6 +822,15 @@
   .choice-request-intro { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
   .choice-request-options { display: flex; flex-direction: column; gap: 8px; }
   .choice-request-option { width: 100%; text-align: left; }
+  /* A-7: podgląd jest semantycznym buttonem (Tab/Enter/Spacja), ale ma
+     wyglądać jak klikalna NAZWA karty, nie jak przycisk akcji ani ikonka. */
+  button.choice-request-peek {
+    align-self: flex-start; flex: 0 0 auto; max-width: 100%; min-height: 0;
+    padding: 6px 2px; border: 0; border-radius: 0; background: transparent;
+    color: inherit; font-family: inherit; font-weight: 600; text-align: left;
+    overflow-wrap: anywhere;
+  }
+  button.choice-request-peek:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 3px; }
 
   /* Hover (desktop) */
   /* --- Karta na pełnym ekranie (dwuklik na kaflu) ------------------- */

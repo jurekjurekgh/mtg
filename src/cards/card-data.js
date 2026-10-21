@@ -4594,7 +4594,7 @@ export const REAL_CARDS = Object.freeze([
   // Plan: docs/plans/PLAN_2026-10-20c-batch69-kolekcja-412-425.md. Dane Oracle
   // i rulingi: docs/cards/scryfall-<slug>.json (pobrane 2026-10-20).
   // Mechaniki generyczne (bez nazw kart, ADR 0002): convoke (Kavu Primarch),
-  // riot (Gruul Beastmaster — modalny trigger przy wejściu), myriad (Gnoll War
+  // riot (Gruul Beastmaster — statyczny wybór PRZED wejściem), myriad (Gnoll War
   // Band — model 1:1, ADR 0022), koszt „sacrifice enchanted creature\"
   // (Bloodfire Infusion), redukcja „za każdego przeciwnika z obrażeniami\"
   // (Gnoll), licznik „if kicked\" (Kavu), trample dla stworów z licznikiem
@@ -4625,7 +4625,7 @@ export const REAL_CARDS = Object.freeze([
     abilities: [
       createAbility({
         type: ABILITY_TYPE.activated,
-        cost: { mana: 0, colors: ['R'], sacrificeEnchantedHost: true },
+        cost: { mana: 1, colors: ['R'], sacrificeEnchantedHost: true },
         effect: { type: 'damage_each_creature_sacrificed_power' },
       }),
     ],
@@ -4645,7 +4645,7 @@ export const REAL_CARDS = Object.freeze([
       createAbility({
         type: ABILITY_TYPE.activated,
         keyword: 'outlast',
-        cost: { mana: 0, colors: ['G'], tap: true },
+        cost: { mana: 1, colors: ['G'], tap: true },
         timing: 'sorcery',
         effect: { type: 'add_counter', counter: '+1/+1', amount: 1 },
       }),
@@ -4769,8 +4769,8 @@ export const REAL_CARDS = Object.freeze([
   }),
 
   // 424. Gruul Beastmaster (RNA 129) — Riot; atak: inny cel +X/+0, X = jego moc.
-  // Riot = modalny trigger przy wejściu (+1/+1 albo haste), wybór gracza
-  // (jak w silniku przy „as enters\" z decyzją kontrolera).
+  // Riot = statyczny efekt zastępujący wejście (CR 702.136a), wybór kontrolera
+  // podczas rozstrzygnięcia, bez oddzielnej zdolności na stosie.
   defineCard({
     id: 'gruul-beastmaster', name: 'Gruul Beastmaster', set: 'RNA',
     types: ['Creature'], subtypes: ['Human', 'Shaman'], colors: ['G'],
@@ -4778,19 +4778,6 @@ export const REAL_CARDS = Object.freeze([
     oracleText: "Riot (This creature enters with your choice of a +1/+1 counter or haste.)\nWhenever this creature attacks, another target creature you control gets +X/+0 until end of turn, where X is this creature's power.",
     imageUri: 'https://cards.scryfall.io/large/front/2/b/2b0aaded-515f-4ac9-a72f-6948b4d4df51.jpg?1783933671',
     abilities: [
-      createAbility({
-        type: ABILITY_TYPE.triggered,
-        trigger: {
-          event: 'enter_battlefield',
-          modes: [
-            { name: 'Riot: +1/+1 counter', targets: [],
-              effects: [{ type: 'add_counter', counter: '+1/+1', amount: 1 }] },
-            { name: 'Riot: haste', targets: [],
-              effects: [{ type: 'grant_keyword_permanent', keyword: 'haste' }] },
-          ],
-        },
-        effect: [],
-      }),
       createAbility({
         type: ABILITY_TYPE.triggered,
         trigger: { event: 'attacks' },
@@ -4821,8 +4808,8 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // Token Spirit 1/1 z przelotką (Heron-Blessed Geist). Druk tokena: bez obrazu
-  // w TOKEN_IMAGES — brak potwierdzonego adresu Scryfall (L26).
+  // Token Spirit 1/1 z lataniem (Heron-Blessed Geist). Potwierdzony obraz
+  // Scryfall tvow jest w `imageUri` poniżej; to nie regularna karta do talii.
   defineCard({
     id: 'token_heron_spirit', name: 'Spirit', set: null,
     types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
