@@ -9119,9 +9119,10 @@ export function playerView(state, playerId) {
       {
         const phyrexianSymbols0 = object.phyrexianManaCost ?? 0;
         const lifePips = Math.min(phyrexianSymbols0, Math.floor((player.life ?? 0) / 2));
-        // PMSSB-72 (Convoke, CR 702.51a): warianty płatności stworami — tylko minimalne
-        // (bez many nie ma żadnego wariantu, więc zwykła oferta nie zmienia się). Gracz
-        // wybiera wariant (UI grupuje je w panel); silnik nie tapuje nikogo sam.
+        // PMSSB-72 + audyt #168/A-12 (CR 702.51a): gracz może konwokować
+        // także przy wystarczającej manie, żeby zachować ją na następny czar.
+        // Generator ogranicza liczbę wariantów do 64 (L19), UI je grupuje;
+        // wariant bez convoke nadal jest osobną ofertą, gdy mana wystarcza.
         if (object.convoke && !(object.phyrexianManaCost ?? 0)) {
           const convokeReqs = [...coloredPipsOf(object.cardId, 0)];
           for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object), convokeReqs, spellManaPurpose(object))) {

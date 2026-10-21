@@ -50,7 +50,7 @@ tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
 | warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
-| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (minimalne, także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
+| convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
 | dobieranie (`draw_cards*`, `draw_then_discard`) | 45 | DONE (2026-09-26) | §PMSSB-3 niżej; `test/pmssb3-draw-wave-a+b.test.js` (15); `instantDrawFoeEndBonus`, `ferociousLootExpected` (2) |
@@ -3626,6 +3626,19 @@ Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). K
 Luka była w silniku gry, nie w dokumentacji: `legalCommands` nie tworzyło wariantów convoke, więc Kavu z 2 manami i dwoma stworami miał 0 ofert (sonda `.arena/probe-convoke.mjs`), a test batcha 69 wołał `execute` ręcznie. Naprawa: §PMSSB-72.
 
 ## PMSSB-72 — convoke (2026-10-20) — DONE
+
+**Korekta po audycie #168/A-12 (2026-10-21):** dotychczasowa „minimalność”
+była ograniczeniem UI, nie regułą CR 702.51a. Nawet mając 4 dostępne many,
+gracz może zapłacić np. {G} Kavu tapnięciem stwora i zachować zieloną manę
+na kolejny czar; może też zapłacić cały koszt czterema stworami. Obecnie
+oferta pokazuje te warianty (deterministyczny limit 64 pozostał), a zwykły
+rzut bez convoke wciąż jest dostępny. Stare pomiary i pin „bez wariantu przy
+wystarczającej manie” niżej są historyczne; test PMSSB-72 ma poprawioną
+asercję. Granica: limit 64 na dużym stole nadal pomija niektóre legalne
+podzbiory, nie traktować go jako reguły gry. Golden `--dump` przed/po:
+5 zapisów decyzji z dodatkowymi ofertami (4 + 1), **0 zmian wybranych
+ruchów i ich ocen** (3 linie fixture: hash całości + 2 partie). Fixture
+zregenerowany po przeglądzie, bez zmiany seedów, liczby decyzji i progów.
 
 Plan: `docs/plans/PLAN_2026-10-20f-pmssb72-convoke.md` (uwaga o kolejności: kod powstał przed planem).
 

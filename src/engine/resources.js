@@ -1556,12 +1556,13 @@ function convokeRemainingCost(totalMana, requirements, units) {
 }
 
 /**
- * PMSSB-72 + audyt #168/A-1 (Convoke, CR 702.51a): minimalne warianty
- * płatności stworami. Ten sam podział kosztu i te same źródła co walidacja
- * `castPermanent` (L41): stwór z manową zdolnością MOŻE konwokować, ale jeśli
- * został wybrany do convoke, nie może jednocześnie płacić brakującej many.
- * Usunięcie dowolnego stwora z wariantu musi uczynić go niewykonalnym;
- * gdy sama mana wystarcza, UI nie pokazuje zbędnych tapnięć.
+ * PMSSB-72 + audyt #168/A-1/A-12 (Convoke, CR 702.51a): opcjonalna płatność
+ * stworami. Gracz MOŻE tapnąć stwora zamiast many również gdy mana wystarcza
+ * (może ją zachować na kolejny czar). Ten sam podział kosztu i źródła co
+ * walidacja `castPermanent` (L41): stwór z manową zdolnością może konwokować,
+ * ale wybrany do convoke nie może jednocześnie płacić brakującej many.
+ * Zachowaj deterministyczny limit ofert z PMSSB-72; brak w nim wszystkich
+ * kombinacji na dużej planszy pozostaje świadomą granicą UI (L19).
  */
 export function convokePaymentVariants(state, playerId, object, totalMana, requirements, purpose = {}) {
   if (!object?.convoke || !Number.isInteger(totalMana) || totalMana <= 0) return [];
@@ -1576,7 +1577,9 @@ export function convokePaymentVariants(state, playerId, object, totalMana, requi
     if (producibleMana(state, playerId, excludedIds, purpose, remaining.requirements) < remaining.amount) return false;
     return hasColorRequirements(state, playerId, remaining.requirements, purpose, excludedIds);
   };
-  if (castable([])) return [];
+  // A-12: nie pomijaj convoke, gdy dostępna mana sama wystarcza. CR 702.51a
+  // pozwala zdecydować, których stworów użyć ZAMIAST many, a nie tylko jak
+  // wypełnić niedobór.
   // A-9 (audyt #168): zanim zaczniemy wykładnicze warianty, odetnij
   // obowiązkowy pip, którego NIE pokryje żadna dostępna mana ani żaden
   // pozostający stwór. To tylko warunek konieczny (pipy sprawdzamy też łącznie
@@ -1603,8 +1606,7 @@ export function convokePaymentVariants(state, playerId, object, totalMana, requi
     if (found.length >= 64) return;
     if (picks.length > totalMana || !canStillCoverPips(index, picks)) return;
     if (index === eligible.length) {
-      if (picks.length > 0 && castable(picks)
-        && picks.every((_, i) => !castable(picks.filter((_, j) => j !== i)))) {
+      if (picks.length > 0 && castable(picks)) {
         found.push([...picks]);
       }
       return;

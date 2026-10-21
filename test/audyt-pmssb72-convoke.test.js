@@ -98,12 +98,15 @@ test('PMSSB-72: wariant kicked liczy koszt kickera i jest oferowany, gdy stwory 
   assert.ok(result.ok, `kicked convoke odrzucone: ${result.reason ?? ''}`);
 });
 
-test('PMSSB-72 anty-over-fix: 6 many wystarcza → brak wariantów convoke (zwykły rzut zostaje)', () => {
+test('PMSSB-72/A-12: 6 many wystarcza → zwykły rzut i dobrowolne convoke są obie legalne', () => {
   const state = scene({ mana: 6, g: 1, creatures: ['tusk', 'mak', 'myr'] });
   const plain = castOffers(state).filter((c) => !c.kicked && !c.convokePayments);
-  assert.equal(plain.length, 1, 'zwykły rzut dostępny');
-  assert.equal(convokeOffers(state).filter((c) => !c.kicked).length, 0,
-    'stwory nie tapują się bez potrzeby (minimalność)');
+  assert.equal(plain.length, 1, 'zwykły rzut za manę pozostaje dostępny');
+  const optional = convokeOffers(state).filter((c) => !c.kicked);
+  assert.ok(optional.some((c) => c.convokePayments.length === 1),
+    'CR 702.51a: możesz zachować część many, tapując jednego stwora');
+  assert.ok(optional.every((c) => c.convokePayments.length <= 4),
+    'nie wolno tapnąć więcej stworów niż jednostek całkowitego kosztu {3}{G}');
 });
 
 test('PMSSB-72: bez stworów i bez many nie ma ofert convoke', () => {

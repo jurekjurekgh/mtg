@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { createGameState, addObject } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { convokePaymentVariants } from '../src/engine/resources.js';
+import { addMana, convokePaymentVariants } from '../src/engine/resources.js';
 
 function scene(myrs, green) {
   const registry = createCardRegistry();
@@ -25,11 +25,13 @@ function scene(myrs, green) {
   return state;
 }
 
-if (process.argv[2] === 'probe') {
+if (process.argv[2] === 'probe' || process.argv[2] === 'probe-optional') {
+  const optional = process.argv[2] === 'probe-optional';
   const state = scene(27, false);
+  if (optional) addMana(state, 'p1', 8, { colors: ['G'] });
   const variants = convokePaymentVariants(state, 'p1', state.objects.get('kavu'), 8, [['G']], {});
-  assert.equal(variants.length, 0);
-  console.log('A-9: 0 wariantów; brak zielonego pipa');
+  assert.equal(variants.length, optional ? 64 : 0);
+  console.log(optional ? 'A-12: 64 ofert dobrowolnych' : 'A-9: 0 wariantów; brak zielonego pipa');
 } else {
   test('A-9: niewykonalny zielony pip odcina enumerację dla 27 stworów i kickera', () => {
     const probe = spawnSync(process.execPath, [fileURLToPath(import.meta.url), 'probe'],
@@ -37,6 +39,14 @@ if (process.argv[2] === 'probe') {
     assert.equal(probe.error?.code, undefined, `widok convoke nie może wisieć >2s: ${probe.error?.message}`);
     assert.equal(probe.status, 0, `sonda zakończona błędem: ${probe.stderr}`);
     assert.match(probe.stdout, /A-9: 0 wariantów/);
+  });
+
+  test('A-12: przy dużej planszy i wystarczającej manie dobrowolne warianty nadal mają limit 64 i watchdog', () => {
+    const probe = spawnSync(process.execPath, [fileURLToPath(import.meta.url), 'probe-optional'],
+      { encoding: 'utf8', timeout: 2000 });
+    assert.equal(probe.error?.code, undefined, `widok nie może wisieć >2s: ${probe.error?.message}`);
+    assert.equal(probe.status, 0, `sonda zakończona błędem: ${probe.stderr}`);
+    assert.match(probe.stdout, /A-12: 64 ofert dobrowolnych/);
   });
 
   test('A-9 anty-over-fix: zielony stwór na początku listy dalej może zapłacić obowiązkowy pip', () => {

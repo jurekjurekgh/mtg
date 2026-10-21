@@ -115,3 +115,33 @@ test('A-1: cztery stwory płacą pełne {3}{G}; manaSpent=0 i brak sztucznej man
     'convoke nie jest zdolnością many');
   assert.equal(state.players[0].mana, 0);
 });
+
+// Audyt #168/A-12 (CR 702.51a): „may tap ... rather than pay” jest decyzją gracza
+// TAKŻE gdy mana już wystarcza. Dla Kavu gracz może zostawić {G} na drugi czar.
+test('A-12 RED: przy dostępnych 4 manach gracz może wybrać 1 stwora na convoke', () => {
+  const state = scene({ generic: 3 });
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const offers = playerView(state, 'p1').legalCommands;
+  assert.ok(offers.some((c) => c.type === 'cast_permanent' && c.objectId === 'kavu' && !c.convokePayments),
+    'zwykły rzut za manę pozostaje dostępny');
+  const option = payments(state).find((c) => c.convokePayments.length === 1
+    && c.convokePayments[0].creatureId === 'villager' && c.convokePayments[0].color === 'G');
+  assert.ok(option, 'opcjonalna płatność G stworzeniem ma być ofertą, choć dostępne są 4 many');
+  const result = execute(state, option);
+  assert.ok(result.ok, `oferta przechodzi walidację: ${result.reason}`);
+  assert.equal(permanentCast(result)?.manaSpent, 3);
+  assert.equal(state.players[0].mana, 1, 'zielona mana zachowana na kolejny czar');
+  assert.equal(state.objects.get('villager').tapped, true);
+});
+
+test('A-12 RED: 4 many w puli nie wykluczają pełnego convoke 4 stworami', () => {
+  const state = scene({ generic: 3, myrs: 3 });
+  addMana(state, 'p1', 1, { colors: ['G'] });
+  const option = payments(state).find((c) => c.convokePayments.length === 4
+    && c.convokePayments.some((p) => p.creatureId === 'villager' && p.color === 'G'));
+  assert.ok(option, 'gracz może zamiast dowolnych czterech man tapnąć cztery stwory');
+  const result = execute(state, option);
+  assert.ok(result.ok, `oferta full convoke legalna: ${result.reason}`);
+  assert.equal(permanentCast(result)?.manaSpent, 0);
+  assert.equal(state.players[0].mana, 4, 'mana pozostaje na następny czar');
+});
