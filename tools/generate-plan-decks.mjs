@@ -279,13 +279,17 @@ export function landSplit(cards) {
   // gdy koszt czaru go nie zawiera. Ten zbiór wchodzi do „używanych” kolorów,
   // więc dostaje co najmniej jeden ląd (minimum per kolor, bez zmiany sumy).
   const abilityColors = new Set();
+  const abilityWeight = { W: 0, U: 0, B: 0, R: 0, G: 0 };
   for (const card of cards) {
     const p = coloredPips(card);
     for (const c of COLOR_ORDER) {
       pips[c] += p[c];
       if (p[c] > minNeed[c]) minNeed[c] = p[c];
     }
-    for (const c of abilityCostColorsOf(card)) abilityColors.add(c);
+    for (const c of abilityCostColorsOf(card)) {
+      abilityColors.add(c);
+      abilityWeight[c] += 1; // liczba kart wymagających koloru w zdolności
+    }
   }
   const used = COLOR_ORDER.filter((c) => pips[c] > 0 || abilityColors.has(c));
   // O1 (audyt PR #123): talia w całości bezkolorowa → JAWNY błąd zamiast
@@ -299,12 +303,19 @@ export function landSplit(cards) {
   for (const c of used) if (minNeed[c] < 1) minNeed[c] = 1;
   const minSum = used.reduce((acc, c) => acc + minNeed[c], 0);
   if (minSum > total) total = minSum;
-  const sum = used.reduce((acc, c) => acc + pips[c], 0);
+  // Audyt PR #168/A-5: po dodaniu pipów zdolności do `used` plan może NIE
+  // mieć żadnego pipa drukowanego (np. same Secluded Steppe + cycling {W}).
+  // Samo minimum nie wystarcza: `0 / sum(pips)=0/0` dałoby NaN. W TYM JEDNYM
+  // przypadku używamy wag zdolności; dla planów z drukowanym pipem wynik
+  // musi zostać identyczny z dotychczasowym (zdolność nadal daje min. 1).
+  const printedSum = used.reduce((acc, c) => acc + pips[c], 0);
+  const weights = printedSum > 0 ? pips : abilityWeight;
+  const sum = used.reduce((acc, c) => acc + weights[c], 0);
   const out = {};
   let assigned = 0;
   const remainders = [];
   for (const c of used) {
-    const exact = (pips[c] / sum) * total;
+    const exact = (weights[c] / sum) * total;
     const base = Math.max(minNeed[c], Math.floor(exact));
     out[c] = base;
     assigned += base;
