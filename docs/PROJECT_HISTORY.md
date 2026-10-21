@@ -17484,9 +17484,9 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny). Mutacja redukcji łapie 2.
 - Rejestr: `docs/PMSSB.md` §PMSSB-76.
 
-## 2026-10-20 — PMSSB-77: presja życia w wycenie tokenów-stworów własnych — W TOKU
+## 2026-10-20 — PMSSB-77: presja życia w wycenie tokenów-stworów własnych — DONE
 
 - Własny token-stwór dostaje presję (siła ataku wroga / moje życie, ≤ 1) × `tokenPressureWeight` (6) do ciała. Pusty stół bez zmian; pokrętło 0 = dawne zachowanie.
 - Test: `test/audyt-pmssb77-tokeny-presja.test.js` (4). Piny starych testów przepisane z deltami.
-- Golden: 0 zmienionych wyborów, hash zmieniony; fixture czeka na decyzję właściciela. Mirror 144:144 (brak dowodu poprawy siły).
+- Golden: 0 zmienionych wyborów, 20 zmienionych wycen; właściciel zaakceptował, fixture odnowiony (hash `2bf25d5b…`). Mirror 144:144 (brak dowodu poprawy siły).
 - Plan: `docs/plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md`. Rejestr: `docs/PMSSB.md` §PMSSB-77.

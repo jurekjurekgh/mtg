@@ -3695,7 +3695,7 @@ Plan: [PLAN_2026-10-20k-pmssb75-controls-type](plans/PLAN_2026-10-20k-pmssb75-co
 - Test: `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny; wszystkie przechodzą na obecnym kodzie). Mutacja zerująca redukcję łapie 2 testy.
 - Otwarte: brak wrażliwości wyceny na pozostałą manę poza konkurencją czarów (nie ma czego rozstrzygać w tej rodzinie).
 
-## PMSSB-77 — presja życia w wycenie tokenów-stworów własnych (2026-10-20) — W TOKU (golden czeka na decyzję)
+## PMSSB-77 — presja życia w wycenie tokenów-stworów własnych (2026-10-20) — DONE
 
 Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md).
 
@@ -3705,7 +3705,7 @@ Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-to
 - Wynik (`.arena/pmssb77-post.txt`): Geist przy dwóch wrogach 19,2 (życie 20) → 22,8 (życie 5); Raise the Alarm 71,18 → 74,78.
 - Testy: `test/audyt-pmssb77-tokeny-presja.test.js` (4; RED na HEAD: 1, 2, 4; pin pustego stołu 3). Mutacja składnika na 0 łapie 2 testy.
 - Piny starych testów zaktualizowane o zmierzone delty (z komentarzem `PMSSB-77`), nie na progi: `audyt-pmssb2-tokeny` (chump 77,98 → 79,78; okno po blokach 61,98 → 63,78; sokół 79,97 → 80,87; Dissenter 19 → 19,6; różnica unik 9 → 8,1; tapnięty sokół 88,97 → 89,87), `audyt-pmssb68-amass` (Dunland 86,0991 → 86,6391; Toll 60,0 → 60,6).
-- Golden (`--dump`, `.arena/pmssb77-golden-diff.txt`): 1437 decyzji, 0 zmienionych wyborów; 3 wyniki wybranych opcji i 17 wycen opcji (maks. Δ 1,5). Hash `9017a46b8bf6298d…` → `2bf25d5bea4ed189…`. Fixture NIE zregenerowany: zmiana hasha wymaga decyzji właściciela.
+- Golden (`--dump`, `.arena/pmssb77-golden-diff.txt`): 1437 decyzji, 0 zmienionych wyborów; 3 wyniki wybranych opcji i 17 wycen opcji (maks. Δ 1,5). Hash `9017a46b8bf6298d…` → `2bf25d5bea4ed189…`. Właściciel zaakceptował zmianę wycen (decyzja 2026-10-21); fixture zregenerowany `--write` i sprawdzony (`test/bot-scoring-snapshot.test.js` 4/4).
 - Tie-audit (`.arena/pmssb77-tie-{pre,post}.json`): `tie_top` 700 → 674; akcyjne 197 → 196; `attack` 97 → 81; `block` 435 → 427. Liczba decyzji w audycie zmieniła się (13672 → 13375), bo audyt gra pełne partie i zmienione wybory zmieniają przebieg.
 - Mirror 24 seedy (`.arena/pmssb77-mirror.json`): kandydat (domyślne, `tokenPressureWeight` 6) vs baseline (`tokenPressureWeight` 0): 144:144, win-rate 0.5. Brak dowodu poprawy siły.
 - Otwarte: presja w wycenie tokenów WROGICH nie jest zmieniana (znak roli). `enemyAttackPower` sumuje wszystkie wrogie stwory, nie tylko atakujące — ta sama przybliżona miara co licznik PMSSB-71 v3.
