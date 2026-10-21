@@ -61,6 +61,9 @@ const CZYTA_SILNIK = Object.freeze({
   morph: 'src/engine/abilities.js',
   nightbound: 'src/engine/effects.js',
   reach: 'src/engine/combat.js',
+  // Audyt #168/A-10: riot to statyczny efekt zastępujący wejście, czytany z keywordu;
+  // wcześniejsza etykieta `abilities` myliła go z niezależnym triggerem ataku Beastmastera.
+  riot: 'src/engine/riot.js',
   // Batch 66 (Scythe Tiger): predykat legalności celu czaru odrzuca
   // permanenty ze shroud; bliźniacza walidacja triggerów żyje w triggers.js.
   shroud: 'src/engine/spells.js',
@@ -97,8 +100,6 @@ const ETYKIETA = Object.freeze({
   battle_cry: { mechanika: 'abilities' },
   // Batch 69 (CR 702.116): trigger ataku z warunkiem `anotherOpponentExists` w deskryptorze.
   myriad: { mechanika: 'abilities' },
-  // Batch 69 (CR 702.136a): trigger przy wejściu z `modes` (grant_keyword_permanent / licznik).
-  riot: { mechanika: 'abilities' },
   // Mechanika w POLU obiektu (`toxic`, CR 702.164): combat.js dokłada truciznę
   // z `source.toxic`, a keyword jest tylko etykietą dla UI/reguł.
   toxic: { mechanika: 'pole', pole: 'toxic' },
@@ -116,6 +117,14 @@ test('U2/2: klasyfikacja jest świeża — żaden wpis nie opisuje keywordu spoz
   const martwe = [...klasy()].filter((kw) => !W_KATALOGU.has(kw)).sort();
   assert.deepEqual(martwe, [],
     `wpis bez karty w katalogu (stęchła klasyfikacja): ${martwe.join(', ')}`);
+});
+
+test('A-10/audyt #168: riot należy do reguły wejścia, nie etykiet abilities (atak Beastmastera to inna zdolność)', () => {
+  assert.equal(CZYTA_SILNIK.riot, 'src/engine/riot.js', 'wskazujemy kod efektu zastępującego');
+  assert.equal(ETYKIETA.riot, undefined, 'trigger ataku nie może pozorować implementacji riot');
+  const beastmaster = REGISTRY.get('gruul-beastmaster');
+  assert.ok(beastmaster?.abilities?.every((ability) => ability.trigger?.event !== 'enter_battlefield'),
+    'riot nie jest osobną zdolnością wyzwalaną po wejściu');
 });
 
 test('U2/3: „czyta silnik” jest dowodem — literal keywordu w zadeklarowanym pliku', () => {

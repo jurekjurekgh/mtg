@@ -197,7 +197,7 @@ const KNOWN_KEYWORDS = new Set([
   // z opcją `excludeSource`).
   'battle_cry',
   // Batch 69: myriad (CR 702.116, Gnoll War Band — trigger ataku, 1:1 w 1v1)
-  // i riot (CR 702.136a, Gruul Beastmaster — modalny trigger przy wejściu).
+  // i riot (CR 702.136a, Gruul Beastmaster — statyczny wybór przed wejściem, bez triggera).
   'myriad', 'riot',
 ]);
 
