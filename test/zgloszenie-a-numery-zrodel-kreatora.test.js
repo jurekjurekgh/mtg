@@ -75,7 +75,7 @@ test('A/render: wiersz „Tapnij: …” pokazuje numer — dwa Plainsy rozróż
 test('A/wiring (L5): main.js buduje nazwy modelu przez wizardSourceName z sesją', () => {
   const main = fs.readFileSync('src/table/main.js', 'utf8');
   const start = main.indexOf('function refreshManaWizard');
-  const slice = main.slice(start, start + 4000);
+  const slice = main.slice(start, start + 6000);
   assert.ok(slice.includes('name: wizardSourceName(src, session)'),
     'model kreatora many niesie nazwę z ordynałem (wizardSourceName)');
   assert.ok(main.includes('wizardSourceName'), 'main importuje wizardSourceName');
