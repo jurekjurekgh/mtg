@@ -166,7 +166,9 @@ test('D/5: niezmiennik talii dzielonych — kolorowa karta z pipami zdolności p
       const card = registry.get(cardId);
       // D/4 pilnuje kart BEZKOLOROWYCH — tu domykamy kolorowe (ta sama klasa).
       if (!card || !(card.colors ?? []).some((color) => 'WUBRG'.includes(color))) continue;
-      // Batch 69 (zasada właściciela): pip zdolności wymaga ŹRÓDŁA w talii — co\n      // najmniej jednego podstawowego lądu tego koloru (generator dokłada go\n      // przy rozkładzie landów), a nie samego sufiksu nazwy talii.
+      // Batch 69 (zasada właściciela): pip zdolności wymaga ŹRÓDŁA w talii — co
+      // najmniej jednego podstawowego lądu tego koloru (generator dokłada go
+      // przy rozkładzie landów), a nie samego sufiksu nazwy talii.
       const missing = abilityCostColorsOf(card)
         .filter((color) => !talieMaZrodlo(cardIds, color));
       if (missing.length > 0) {

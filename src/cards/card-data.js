@@ -4808,8 +4808,8 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
-  // Token Spirit 1/1 z przelotką (Heron-Blessed Geist). Druk tokena: bez obrazu
-  // w TOKEN_IMAGES — brak potwierdzonego adresu Scryfall (L26).
+  // Token Spirit 1/1 z lataniem (Heron-Blessed Geist). Potwierdzony obraz
+  // Scryfall tvow jest w `imageUri` poniżej; to nie regularna karta do talii.
   defineCard({
     id: 'token_heron_spirit', name: 'Spirit', set: null,
     types: ['Creature'], subtypes: ['Spirit'], colors: ['W'],
