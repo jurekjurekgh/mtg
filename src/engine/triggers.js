@@ -3038,7 +3038,7 @@ function processTriggersScan(state, recentEvents) {
     }
     // M166/B (Enrage, RIX — Cacophodon): „Whenever this creature is dealt
     // damage" — dowolne obrażenia STWORA (combat i niecombat; amount > 0,
-    // CR 119.3 — w pełni zapobiegnięte nie odpala). Obiekt po id ze
+    // CR 615.6 — w pełni zapobiegnięte nie odpala). Obiekt po id ze
     // zdarzenia ALBO targetLki (CR 603.10 looks-back — stwór zginął w SBA
     // tej samej komendy); komentarz zaktualizowany w M171 (audyt PR #68,
     // U1 — kod niżej CZYTA ev.targetLki, stara wersja notki temu przeczyła).
@@ -3094,7 +3094,7 @@ function processTriggersScan(state, recentEvents) {
     }
     // Curiosity (ISD): „Whenever enchanted creature deals damage to an
     // opponent, you may draw a card." — KAŻDE obrażenia (combat i niecombat,
-    // CR 119.3: tylko faktycznie zadane, amount > 0) zaczarowanego stwora do
+    // CR 615.6: tylko faktycznie zadane, amount > 0) zaczarowanego stwora do
     // gracza-PRZECIWNIKA kontrolera aury. Trigger siedzi na aurze; extra niesie
     // damagedPlayerId i sourceCreatureId (LKI jeśli stwór zginął w tej samej
     // komendzie — źródło aury). Audyt PR #41 (B3): wcześniej tylko combat.
@@ -3114,7 +3114,7 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
-    // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 119.3) —
+    // ev.amount > 0: w pełni zapobiegnięte obrażenia NIE są zadane (CR 615.6) —
     // triggery „deals combat damage" nie odpalają się przy 0 zadanych.
     if (ev.type === 'damage_dealt' && ev.combat !== false && isPlayerId(state, ev.target) && ev.amount > 0) {
       // M201 (znalezisko #2, CR 603.10/603.10a): dotąd stała tu bramka

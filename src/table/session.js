@@ -1439,7 +1439,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           ? whoN(e.target)
           : objectOrLki(e.target, e.targetCardId);
         const sourceName = objectOrLki(e.source, e.sourceCardId);
-        // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
+        // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 615.6) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
         return `${sourceName} zadaje ${dmgCount(e.amount)} (${targetName})`;

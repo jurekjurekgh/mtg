@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { addObject, createGameState, execute } from '../src/engine/game-state.js';
 import { initialTurn, jumpToStep } from '../src/engine/turn.js';
 
-// Audyt PR #170 (2026-10-21, polowanie CR 702.15 Lifelink / 119.3): zdarzenie
+// Audyt PR #170 (2026-10-21, polowanie CR 702.15 Lifelink / 615.6): zdarzenie
 // `damage_dealt` przy CZĘŚCIOWO zapobiegniętych obrażeniach bojowych na GRACZA
 // trafiało do strumienia komendy DWUKROTNIE (state.events raz — log i triggery
 // w porządku, ale wynik `resolve_combat` niósł duplikat, więc stół rysował
@@ -41,7 +41,7 @@ function enterCombat() {
   return state;
 }
 
-test('A: częściowo zapobiegnięte obrażenia na gracza — damage_dealt w strumieniu komendy RAZ (CR 119.3)', () => {
+test('A: częściowo zapobiegnięte obrażenia na gracza — damage_dealt w strumieniu komendy RAZ (CR 615.6)', () => {
   const state = enterCombat();
   // Tarcza Withstand „prevent the next 3 damage" na graczu p2.
   state.damageShields = [{ targetId: 'p2', remaining: 3, sourceCardId: 'withstand' }];
@@ -52,7 +52,7 @@ test('A: częściowo zapobiegnięte obrażenia na gracza — damage_dealt w stru
   assert.equal(state.players.find((p) => p.id === 'p2').life, 18);
   assert.equal(state.players.find((p) => p.id === 'p1').life, 22);
 
-  // Strumień komendy: damage_dealt dokładnie raz, z kwotą zadaną (CR 119.3).
+  // Strumień komendy: damage_dealt dokładnie raz, z kwotą zadaną (CR 615.6).
   const dealt = r.events.filter((e) => e.type === 'damage_dealt' && e.target === 'p2');
   assert.equal(dealt.length, 1, `damage_dealt w wyniku komendy: ${dealt.length}×`);
   assert.equal(dealt[0].amount, 2);

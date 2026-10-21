@@ -2082,7 +2082,7 @@ function accepted(state, cmd, result) {
     // — także samouszkodzenie przeciwnika się liczy); jego odczyt był zresztą
     // zawodny: po rozstrzygnięciu czaru obiekt źródła znika ze `state.objects`,
     // więc przy zwykłym Shocku w przeciwnika znacznik nie powstawał wcale.
-    // Zapobieżone obrażenia nie są zadane (CR 119.3) — obie ścieżki obrażeń
+    // Zapobieżone obrażenia nie są zadane (CR 615.6) — obe ścieżki obrażeń
     // (combat i niecombat) niosą w evencie kwotę FAKTYCZNIE zadaną, więc
     // amount 0 nie liczy się.
     if (e.type === 'damage_dealt' && e.amount > 0 && state.players.some((pl) => pl.id === e.target)) {

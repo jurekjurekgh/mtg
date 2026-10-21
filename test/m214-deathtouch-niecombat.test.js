@@ -67,5 +67,5 @@ test('M214: prewencja (shield) kasuje obrażenia — deathtouch nie zabija', () 
   state.damageShields = [{ targetId: 'b', remaining: 1 }];
   dealNonCombatDamage(state, state.objects.get('a'), 'b', 1);
   runStateBasedActions(state);
-  assert.equal(state.objects.get('b').zone, 'battlefield', 'zapobiegnięte obrażenia nie są zadane (CR 119.3)');
+  assert.equal(state.objects.get('b').zone, 'battlefield', 'zapobiegnięte obrażenia nie są zadane (CR 615.6)');
 });

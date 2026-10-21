@@ -13,7 +13,7 @@ import { addMana } from '../src/engine/resources.js';
 // zasady MtG znalezionych w przeglądzie istniejących kart i mechanik:
 //   1. CR 514.1 — limit ręki w cleanup dotyczył OBU graczy zamiast tylko
 //      aktywnego (nieaktywny był zmuszany do odrzucania do 7).
-//   2. CR 119.3 — combat damage_dealt niósł kwotę PRZED prewencją; triggery
+//   2. CR 615.6 — combat damage_dealt niósł kwotę PRZED prewencją; triggery
 //      „deals combat damage" odpalały się przy w pełni zapobiegniętych
 //      obrażeniach (0 zadanych).
 //   3. CR 611.2c — buffy „do końca tury" (Hysterical Blindness -4/-0, Turn
@@ -114,7 +114,7 @@ test('B1: limit ręki w cleanup dotyczy TYLKO aktywnego gracza (CR 514.1)', () =
   assert.equal(p2hand, 9, `nieaktywny ZACHOWUJE rękę (p2=${p2hand}) — CR 514.1`);
 });
 
-// ---------------------------------------------------------------- 2. CR 119.3
+// ---------------------------------------------------------------- 2. CR 615.6
 
 test('B2: combat damage_dealt niesie kwotę PO prewencji; brak triggera przy 0 zadanych', () => {
   const state = newState();
@@ -162,7 +162,7 @@ test('B2: combat damage_dealt niesie kwotę PO prewencji; brak triggera przy 0 z
   execute(st2, { type: 'resolve_combat', playerId: st2.turn.priorityPlayerId, defendingPlayerId: 'p2' });
   const kappaFired = st2.pendingTriggerTargets.length > 0
     || st2.zones.stack.some((id) => st2.objects.get(id)?.cardId === 'kappa-tech-wrecker');
-  assert.equal(kappaFired, false, '0 zadanych obrażeń = brak triggera (CR 119.3)');
+  assert.equal(kappaFired, false, '0 zadanych obrażeń = brak triggera (CR 615.6)');
 });
 
 // ---------------------------------------------------------------- 3. CR 611.2c

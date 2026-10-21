@@ -73,7 +73,8 @@ function staticCombatDamagePrevention(state, defenderId) {
 
 function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amount) {
   const source = state.objects.get(sourceId);
-  // CR 119.3: zapobiegnięte obrażenia NIE są zadane — zdarzenie damage_dealt
+  // CR 615.6: zapobiegnięte obrażenia NIE są zadane („if damage that would be
+  // dealt is prevented, it never happens") — zdarzenie damage_dealt
   // niesie kwotę FAKTYCZNIE zadaną (po prewencji tarcz Withstand itp.).
   // Poprzednio event niósł kwotę sprzed prewencji — log i triggery („deals
   // combat damage") widziały 4 obrażenia, gdy gracz tracił 1; przy w pełni
@@ -117,7 +118,7 @@ function dealCombatDamageToPlayer(state, events, sourceId, targetPlayerId, amoun
   // bez damage_dealt (ostatni element, wypychany raz niżej): slice(before)
   // zabierał go razem z tarczami i łańcuch if/else dublował zdarzenie,
   // więc stół rysował dwie linie „X zadaje N (gracz)" przy częściowo
-  // zapobiegniętych obrażeniach na gracza (audyt PR #170, CR 119.3; wzorzec
+  // zapobiegniętych obrażeniach na gracza (audyt PR #170, CR 615.6; wzorzec
   // „state.events raz + events raz" jak w assignDamageToAttackers).
   if (prevented > 0) events.push(...state.events.slice(before, -1));
   if (hasKeyword(state, source, 'infect')) {
@@ -1391,7 +1392,7 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     const shieldBefore = state.events.length;
     const blockedPrevented = preventDamageTo(state, attackerId, blockerDamage - attackerFilterPrevented);
     if (blockedPrevented > 0) events.push(...state.events.slice(shieldBefore));
-    // CR 119.3: event niesie kwotę faktycznie zadaną (po prewencji).
+    // CR 615.6: event niesie kwotę faktycznie zadaną (po prewencji).
     let blockerDealt = blockerDamage - attackerFilterPrevented - blockedPrevented;
     // BUG 2026-08-11 (CR 702.16e + 702.15): protection zapobiega obrażeniom
     // od źródła chronionego koloru w CAŁOŚCI — lifelink/deathtouch/infect
@@ -1475,7 +1476,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     const shieldBefore = state.events.length;
     const shieldPrevented = preventDamageTo(state, blockerId, assigned - filterPrevented);
     if (shieldPrevented > 0) events.push(...state.events.slice(shieldBefore));
-    // CR 119.3: event damage_dealt niesie kwotę FAKTYCZNIE zadaną (po prewencji).
+    // CR 615.6: event damage_dealt niesie kwotę FAKTYCZNIE zadaną (po prewencji).
     let dealt = assigned - filterPrevented - shieldPrevented;
     // BUG 2026-08-11 (CR 702.16e + 702.15): protection blokera od koloru
     // atakującego zapobiega obrażeniom w całości — lifelink/deathtouch/infect
