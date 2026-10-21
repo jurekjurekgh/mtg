@@ -41,7 +41,7 @@ test('U/C RED DEBUG: paymentDescriptorOf dla Consume Spirit xValue=1 — czy X-p
   const view = playerView(s, 'p1');
   // komenda wejściowa jak z `legalSpellCasts` (xValue=1)
   const cmd = { type: 'cast_spell', playerId: 'p1', objectId: 'cs', xValue: 1, targets: [] };
-  const desc = paymentDescriptorOf(cmd, view);
+  const desc = paymentDescriptorOf(cmd, view, { xBlack: true });
   console.log('  desc.requirements:', JSON.stringify(desc?.requirements, null, 0));
   console.log('  desc.totalNeeded:', desc?.totalNeeded);
   console.log('  desc.costStr:', desc?.costStr);

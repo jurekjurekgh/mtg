@@ -2712,6 +2712,16 @@ function bootstrapTable() {
       const cleave = stateObject.spell.cleave;
       opts.alternativeCost = reduceAlternativeCost(session.state, stateObject, cleave.manaCost, cleave.colors ?? []);
     }
+    // PR #171/U (2026-10-21d, Consume Spirit): widok playerView NIE niesie
+    // pełnego deskryptora `spell` obiektu (m188/pin L41). Kreator many
+    // dostaje więc `xCost.black` przez opts — jedno źródło prawdy dla
+    // "Spend only black mana on X" (CR 601.2f/606). Bez tego kreator
+    // traktował X jako część generyczną i gracz mógł płacić X generyczną
+    // maną z puli, kreator zamykał `progress.done=true`, dopiero silnik
+    // odrzucał z "Brak kolorowej many" (komunikat ginął w kreatorze).
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent') {
+      if (stateObject?.spell?.xCost?.black === true) opts.xBlack = true;
+    }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
     // 701.40b manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
     // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
