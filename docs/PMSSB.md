@@ -3593,6 +3593,14 @@ Plan: [PLAN_2026-10-20d-pmssb70-nieoplacona-wymiana](plans/PLAN_2026-10-20d-pmss
 
 ## PMSSB-71 — riot i NaN w wycenie rzutu (2026-10-20) — DONE
 
+**Korekta 2026-10-21 (audyt PR #168/A-2):** CR 702.136a — wybór riot
+przed wejściem jest efektem zastępującym, nie triggerem po wejściu.
+Pierwotne sondy PMSSB-71 i ich wynik scoringowy zakładały błędną ścieżkę
+`resolve_modal_choice`; obecnie `resolve_riot_choice` zatrzymuje wejście
+przed ETB/SBA. Nadal wyceniamy ten sam wybór (haste kontra licznik), lecz
+historyczne wyniki poniżej nie są dowodem poprawnego czasu decyzji.
+Piny: `test/audyt-pr168-riot.test.js`, `test/audyt-pmssb71-riot.test.js`.
+
 Plan: [PLAN_2026-10-20e-pmssb71-riot](plans/PLAN_2026-10-20e-pmssb71-riot.md). Kolejność z `docs/PMSSB.md`: plan → pomiar PRZED → audyt → RED → GREEN → ewaluacja → dokumentacja.
 
 **Pomiar PRZED (sonda `.arena/probe-riot.mjs`, `.arena/pmssb71-legal.mjs`, `.arena/pmssb71-score.mjs`, prawdziwy silnik).** Gruul Beastmaster był legalny do rzutu w 87 krokach gry, a bot NIGDY go nie zagrał (0 z 480 partii lustrzanych). Wycena rzutu wynosiła `NaN`. Dwa niezależne defekty:

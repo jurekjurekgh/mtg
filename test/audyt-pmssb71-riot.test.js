@@ -1,13 +1,8 @@
-// PMSSB-71 (2026-10-20) — riot Gruul Beastmaster: wycena wyboru PRZED wejściem
-// (audyt PR #168/A-2: nie jest to zdolność modalna triggerowana na stosie).
-// Plan: docs/plans/PLAN_2026-10-20c-batch69-kolekcja-412-425.md. Dane Oracle i rulingi:
-// docs/cards/scryfall-<slug>.json (pobrane 2026-10-20).
-// Mechaniki generyczne (ADR 0002) testowane na prawdziwych kartach i prawdziwym silniku:
-// convoke (Kavu Primarch), riot (Gruul Beastmaster), kicker z licznikiem „if kicked\",
-// koszt „sacrifice enchanted creature\" (Bloodfire Infusion), prewencja obrażeń bojowych
-// celu (Fleeting Flight), trample dla stworów z licznikiem (Tuskguard Captain),
-// aktywacja z cmentarza przy „control an enchantment\" (Heron-Blessed Geist),
-// redukcja kosztu za przeciwników z obrażeniami (Gnoll War Band).
+// PMSSB-71 (2026-10-20) — Gruul Beastmaster: wycena riot i pompy
+// `source_power`; audyt PR #168/A-2: wybór riot to replacement PRZED wejściem,
+// nie modalny trigger na stosie. Plan historyczny: docs/plans/PLAN_2026-10-20e-pmssb71-riot.md;
+// Oracle: docs/cards/scryfall-gruul-beastmaster.json. Testy używają
+// `resolve_riot_choice` na prawdziwej karcie i prawdziwym stanie silnika.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
