@@ -62,16 +62,15 @@ function sideSuffix(assignedColors, sideCards, colorsOf) {
  *     kolorów; remis → strona A, gdy ma <=2 przypisane kolory (preferuj mniejszą
  *     tożsamość), inaczej B — deterministycznie.
  *  3. Karty bezkolorowe (artefakty, Eldrazi) to „wypełniacz" — dosypywane do
- *     mniejszej strony, żeby zbalansować liczności. WYJĄTEK (zgłoszenie D
- *     właściciela, 2026-09-20): karta bezkolorowa, której ZDOLNOŚĆ wymaga
- *     kolorowych pipów (`paymentColorsOf`, np. Simian Simulacrum z unearth
- *     {2}{G}{G}), idzie na stronę, która TE PIPY MOŻE ZAPŁACIĆ — karta
- *     bezkolorowa działa w każdej talii, ale jej zdolność nie; brak takiej
- *     strony (obie albo żadna) → zwykły balans liczności. Preferencja nie
- *     zmienia WYBORU podziału (maski): balans w pętli szukającej liczy
- *     wypełniacz jak dotąd, bo karta bezkolorowa jest grywalna po obu stronach
- *     (świadomy zakres — pełne wejście pipów w funkcję celu przenosi CAŁY
- *     podział planu, patrz komentarz w `generate-plan-decks.mjs`).
+ *     mniejszej strony, żeby zbalansować liczności. Gdy koszt rzucenia lub
+ *     zdolności zawiera kolorowe pipy (`paymentColorsOf`, np. Scion Summoner
+ *     {2}{G} albo Simian Simulacrum z unearth {2}{G}{G}), karta jest
+ *     preferowana po stronie przypisanej do tych kolorów. To nie nadaje karcie
+ *     koloru ani nie zmienia maski podziału; brak jednoznacznie pasującej
+ *     strony (obie albo żadna) → zwykły balans liczności. Wypełniacz nadal
+ *     wchodzi do bilansu tak jak dotąd; pełne wejście pipów w funkcję celu
+ *     przenosiłoby CAŁY podział planu (patrz komentarz w
+ *     `generate-plan-decks.mjs`).
  *  4. Wynik ważny tylko, gdy OBIE strony mają >= MIN_NONLAND.
  *  5. Funkcja celu: minimalizuj „leak" (karty rozdarte między strony — psują
  *     czystość kolorystyczną) ×10 + |różnica liczności|. Remis → mniejsza maska.
@@ -154,8 +153,9 @@ export function splitPlanByColors(nonlandCards, colorsOf = defaultColorsOf, paym
  * Rozdział kart BEZKOLOROWYCH na strony wybranego podziału (L41: jedno źródło
  * dla wyboru strony i dla liczności raportowanych przez generator).
  *
- * 1. Karta z pipami zdolności (`paymentColorsOf`) → strona, która ma WSZYSTKIE
- *    te kolory (jeśli tylko jedna taka strona; obie/żadna = brak preferencji).
+ * 1. Karta z pipami kosztu rzucenia lub zdolności (`paymentColorsOf`) → strona,
+ *    która ma WSZYSTKIE te kolory (jeśli tylko jedna taka strona; obie/żadna =
+ *    brak preferencji).
  * 2. Reszta → mniejsza strona naprzemiennie (deterministycznie, stała
  *    kolejność wejściowa) — jak przed zgłoszeniem D.
  */
