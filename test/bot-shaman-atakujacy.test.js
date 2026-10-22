@@ -211,3 +211,55 @@ test('Shaman: +1,8 za trigger niezależnie od INNYCH własnych stworów — moż
   assert.ok(Math.abs(shamanCastScore(0, REGISTRY) - 65.7009) < 1e-9,
     `oczekiwano 65.7009, jest ${shamanCastScore(0, REGISTRY)}`);
 });
+
+// ---------------------------------------------------------------------------
+// A (zgłoszenie właściciela 2026-10-21e, Battle-Rattle Shaman):
+// bot buffuje stwora, którym NIE zamierza atakować.
+//
+// Log właściciela (początek walki):
+//   Battle-Rattle Shaman — trigger (początek walki)
+//   Battle-Rattle Shaman — cel: Kozilek's Shrieker
+//   Kozilek's Shrieker dostaje +2/+0
+//   Atak: Warden of Geometries
+//
+// ISTNIEJĄCY fix B (bot-shaman-atakujacy B/3–B/6) rozwiązał wariant
+// „choroba przywołania": premiuje stwora ZDOLNEGO do ataku. To za
+// słabe, gdy WSZYSTKIE stwory są zdolne do ataku — wtedy zostaje czysta
+// wartość 2P+T i bot wybiera największego, a deklaruje atak innym.
+// +2/+0 wygasa z końcem tury bez skutku (CR 514.2), więc buff na
+// nie-atakującym to zmarnowana decyzja.
+//
+// Reguła generyczna (ADR 0002, pin H/4): przy dodatnim pumpie siły na
+// WŁASNEJ turze bot ma pytać POLITYKĄ ATAKU (`attackIntendsCreature` —
+// ta sama funkcja, którą zastosuje w `declare_attackers`), nie tylko
+// „czy stwór może atakować". To nie jest spec-case dla Shamana: ten sam
+// predykat obsługuje każdy „you may have target creature get +N/+M".
+// ---------------------------------------------------------------------------
+
+test('A/1 ⭐ RED: bot buffuje stwora, którym NIE zamierza atakować (sedno zgłoszenia)', () => {
+  // Krok 1: intencja ataku — stan BEZ pendingu, krok deklaracji ataków.
+  const probe = newState('declare_attackers', 'p1');
+  put(probe, 'shaman', 'battle-rattle-shaman', 'p2', { power: 2, toughness: 2 });
+  put(probe, 'shrieker', 'kozileks-shrieker', 'p1', { power: 3, toughness: 2 });
+  put(probe, 'warden', 'warden-of-geometries', 'p1', { power: 2, toughness: 3 });
+  const atkCmd = createHeuristicBot({ seed: 1209 }).chooseCommand(playerView(probe, 'p1'));
+  const attacks = atkCmd.type === 'declare_attackers' ? (atkCmd.attackerIds ?? []) : [];
+  console.log('  intencja ataku bota:', atkCmd.type, JSON.stringify(attacks));
+
+  // Krok 2: ta sama plansza, ale w POCZĄTKU WALKI z pending triggeriem Shaman.
+  const state = newState('beginning_of_combat', 'p1');
+  put(state, 'shaman', 'battle-rattle-shaman', 'p2', { power: 2, toughness: 2 });
+  put(state, 'shrieker', 'kozileks-shrieker', 'p1', { power: 3, toughness: 2 });
+  put(state, 'warden', 'warden-of-geometries', 'p1', { power: 2, toughness: 3 });
+  pendShaman(state, ['shrieker', 'warden']);
+  const chosen = createHeuristicBot({ seed: 1209 }).chooseCommand(playerView(state, 'p1'));
+  console.log('  cel bufora:', chosen.type, chosen.targetId);
+
+  assert.equal(chosen.type, 'resolve_trigger_target');
+  assert.equal(atkCmd.type, 'declare_attackers',
+    `sanity: w deklaracji ataków bot musi mieć komendę ataku (${atkCmd.type})`);
+  assert.ok(attacks.includes('warden') && !attacks.includes('shrieker'),
+    `sanity: bot zamierza atakować WARDENA, nie Shrikera (zamiar: ${JSON.stringify(attacks)})`);
+  assert.equal(chosen.targetId, 'warden',
+    `+2/+0 ma iść na stwora, którym bot ATakuJE, nie na największego: ${JSON.stringify(chosen)}`);
+});
