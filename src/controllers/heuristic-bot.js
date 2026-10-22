@@ -7666,12 +7666,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   }
 
   /**
-   * Wynik wymiany fight/bite (dopłata do bazy czaru; anty-over-fix: bazy
-   * bite 8+2·p / fight kill 25+2·p / miss 5 = wartości historyczne).
+   * Wartość many w załącznikach widocznych publicznie na celu. Aura i
+   * Equipment nie zawsze trafiają do grobu razem ze stworzeniem, ale oba
+   * reprezentują zainwestowany materiał przy wyborze, które zagrożenie zdjąć.
+   */
+  function attachedRemovalManaValue(view, victim) {
+    if (!victim) return 0;
+    return (view.zones?.battlefield ?? [])
+      .filter((object) => object?.attachedTo === victim.id
+        && (object.kind === 'aura' || object.aura || object.equipment
+          || (object.subtypes ?? []).includes('Aura') || (object.subtypes ?? []).includes('Equipment')))
+      .reduce((sum, object) => sum + (object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0), 0);
+  }
+
+  function biteVictimSelectionValue(view, victim) {
+    return lethalEnemyCreatureValue(view, victim) - P.removalEnemyBase
+      + P.removalTmcWeight * attachedRemovalManaValue(view, victim);
+  }
+
+  function biteVictimSelectionBonus(view, cmd, sourceTargetIndex, targetIndex, victim) {
+    if (!victim) return 0;
+    const sourceId = cmd.targets?.[sourceTargetIndex];
+    const options = new Map();
+    for (const candidate of view.legalCommands ?? []) {
+      if (candidate.type !== cmd.type || candidate.objectId !== cmd.objectId
+        || Boolean(candidate.kicked) !== Boolean(cmd.kicked)
+        || (candidate.modeIndex ?? null) !== (cmd.modeIndex ?? null)
+        || candidate.targets?.[sourceTargetIndex] !== sourceId) continue;
+      const targetId = candidate.targets?.[targetIndex];
+      const target = targetId == null ? null : objectOnBoard(view, targetId);
+      if (!target || target.controllerId === view.playerId) continue;
+      options.set(target.id, biteVictimSelectionValue(view, target));
+    }
+    if (options.size < 2) return 0;
+    let baseline = Infinity;
+    for (const value of options.values()) baseline = Math.min(baseline, value);
+    return Math.max(0, biteVictimSelectionValue(view, victim) - baseline);
+  }
+
+  /**
+   * Wynik wymiany fight/bite (dopłata do bazy czaru; wybór celu ma osobną
+   * relacyjną premię, więc pojedynczy bite zachowuje dotychczasową skalę).
    * `oneSided` = bite (tylko ofiara dostaje damage); w fight giną obie
    * strony wg progów DT (R2).
    */
-  function fightExchangeValue(view, dealer, victim, { oneSided = false, buffs = null, damageMultiplier = 1 } = {}) {
+  function fightExchangeValue(view, dealer, victim, {
+    oneSided = false, buffs = null, damageMultiplier = 1, victimSelectionBonus = 0,
+  } = {}) {
     if (!dealer || !victim) return -40;
     // R5: ofiara po NASZEj stronie = samookaleczenie (kara > baza).
     if (victim.controllerId === view.playerId) return -60;
@@ -7679,12 +7720,33 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const dealerKw = [...(dealer.keywords ?? []), ...b.keywords];
     // Batch 62 (Chocobo Kick): „twice that much damage" — mnożnik dotyczy
     // obrażeń (nie mocy), a wytrzymałość dealera zostaje bez zmian.
-    const dPow = Math.max(0, (dealer.power ?? 0) + b.power) * damageMultiplier;
+    const baseDPow = Math.max(0, (dealer.power ?? 0) + b.power);
+    const dPow = baseDPow * damageMultiplier;
     const dToughLeft = Math.max(0, (dealer.toughness ?? 0) + b.toughness - (dealer.damage ?? 0));
     const vPow = Math.max(0, victim.power ?? 0);
     const vToughLeft = Math.max(0, (victim.toughness ?? 0) - (victim.damage ?? 0));
     // R2: deathtouch (Fight CR 701.14d — damage nie-bojowe, SBA 704.5h).
-    const kills = dPow > 0 && (dPow >= vToughLeft || dealerKw.includes('deathtouch'));
+    // Bite musi też uwzględniać niezniszczalność, prewencję i tarcze obrażeń;
+    // „lethal” z samego P/T nie znaczy, że cel faktycznie zginie.
+    const biteDamageKills = (amount) => {
+      if (amount <= 0 || !victim || hasKeyword(victim, 'indestructible')
+        || damageFullyPrevented(view, victim)) return false;
+      const dealtAfterShields = Math.max(0, amount - shieldedAmount(view, victim.id));
+      return dealtAfterShields > 0
+        && (dealtAfterShields >= vToughLeft || dealerKw.includes('deathtouch'));
+    };
+    const kills = oneSided
+      ? biteDamageKills(dPow)
+      : dPow > 0 && (dPow >= vToughLeft || dealerKw.includes('deathtouch'));
+    const normalKills = oneSided
+      ? biteDamageKills(baseDPow)
+      : baseDPow > 0 && (baseDPow >= vToughLeft || dealerKw.includes('deathtouch'));
+    // Nadmiar obrażeń z mnożnika nie jest dodatkową wartością bite: kick ma
+    // znaczenie tylko wtedy, gdy właśnie podwojenie zmienia nieletalny cios w
+    // zabójstwo. Dzięki temu wolny do odtworzenia land drop nie powoduje
+    // niepotrzebnego kickera na małym celu ani kicka w cel, którego nadal nie zabije.
+    const scoredDPow = oneSided && damageMultiplier > 1 && (normalKills || !kills)
+      ? baseDPow : dPow;
     const dies = !oneSided && vPow > 0 && (vPow >= dToughLeft || (victim.keywords ?? []).includes('deathtouch'));
     const dealerWorth = bodyWorth({
       power: (dealer.power ?? 0) + b.power,
@@ -7692,11 +7754,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       manaCost: dealer.manaCost,
     });
     const victimWorth = bodyWorth(victim);
-    // Drabina wartości (PMSSB-16; anty-over-fix: kill-only i bite = dawne
-    // Batch 45): kill-only > wymiana w górę > wymiana równa > wymiana w dół.
+    // Drabina wartości (PMSSB-16): kill-only > wymiana w górę > wymiana równa > wymiana w dół.
     let value;
     if (oneSided) {
-      value = P.fightBiteChipBase + P.fightBitePowerWeight * dPow + (kills ? P.fightBiteLethalBonus : 0);
+      value = P.fightBiteChipBase + P.fightBitePowerWeight * scoredDPow
+        + (kills ? P.fightBiteLethalBonus + victimSelectionBonus : 0);
       // PMSSB-37/A (L41a: bite = damage): nieletalny cios w stwora POZA oknem
       // walki to czysta strata — `damageTargetValue` daje tu −80 (Shock na
       // 9 wytrzymałości −30/−80), a bite dostawał dodatni „chip" i Chocobo
@@ -10990,14 +11052,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             score += mass.value;
           }
         }
-        // Batch 62 (Chocobo Kick): kicker o koszcie NIEMANOWYM — zwrot lądu
-        // na rękę kosztuje tempo (ląd trzeba zagrać ponownie). Kara przebija
-        // drobny zysk (podwojenie obrażeń bez nowego zabicia), ale nie
-        // zabójstwo, którego zwykły rzut by nie dał. Drobny tie-break: ląd
-        // już tapnięty oddajemy chętniej niż świeży (−0.2).
+        // Kicker ze zwrotem lądu (CR 702.33a): zachowaj karę tempa, chyba że
+        // ląd wróci do ręki NASZEGO właściciela i aktualny land drop pozwoli
+        // go zagrać ponownie po rozstrzygnięciu czaru (CR 305.2/601.2h). Wtedy
+        // koszt jest praktycznie neutralny; sorcery i tak rzucamy w main przy
+        // pustym stosie. Token ani przejęty ląd nie daje nam karty do odtworzenia.
         if (cmd.kickerLandId) {
-          score -= P.kickerReturnLandPenalty;
-          if (objectOnBoard(view, cmd.kickerLandId)?.tapped !== true) score -= 0.2;
+          const returnedLand = objectOnBoard(view, cmd.kickerLandId);
+          const landOwner = returnedLand?.ownerId ?? returnedLand?.controllerId;
+          const remainingLandPlays = view.players.find((p) => p.id === view.playerId)?.landPlays ?? 0;
+          const canReplayReturnedLand = returnedLand
+            && (returnedLand.kind === 'land' || (returnedLand.types ?? []).includes('Land'))
+            && returnedLand.isToken !== true
+            && landOwner === view.playerId
+            && remainingLandPlays > 0
+            && myTurn(view)
+            && ['precombat_main', 'postcombat_main'].includes(view.turn.phase);
+          if (!canReplayReturnedLand) score -= P.kickerReturnLandPenalty;
+          // Tie-break: ląd tapnięty oddajemy chętniej niż świeży (−0.2).
+          if (returnedLand?.tapped !== true) score -= 0.2;
         }
         // C (Sarkhan's Rage): samouszkodzenie czaru (także warunkowe —
         // selfDamageOfEffects rozwija `conditional`) — te same twarde progi
@@ -11592,14 +11665,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'damage_from_target_power') {
             // PMSSB-16: wynik bite = wspólny fightExchangeValue (L41 z fight):
             // R1 ridery (pump+add_counter) w mocy dealera, R2 DT, R3 lifelink,
-            // R5 guard kierunku, R6 okno walki. Stare 8+2p+(lethal 15) jako
-            // bazy anty-over-fix.
-            const dealer = objectOnBoard(view, cmd.targets?.[effect.sourceTargetIndex ?? 0]);
-            const victim = objectOnBoard(view, cmd.targets?.[effect.targetIndex ?? 1]);
+            // R5 guard kierunku, R6 okno walki. Wśród kilku celów dodajemy
+            // tylko RELATYWNĄ wartość zainwestowanych kart (TMC celu + załączniki),
+            // żeby zachować bazę dawnej wyceny, gdy alternatywy nie ma.
+            const sourceTargetIndex = effect.sourceTargetIndex ?? 0;
+            const targetIndex = effect.targetIndex ?? 1;
+            const dealer = objectOnBoard(view, cmd.targets?.[sourceTargetIndex]);
+            const victim = objectOnBoard(view, cmd.targets?.[targetIndex]);
             score += fightExchangeValue(view, dealer, victim, {
               oneSided: true,
               damageMultiplier: (cmd.kicked === true && effect.kickedMultiplier) ? effect.kickedMultiplier : 1,
-              buffs: fightRiderBuffs(scoredEffects, effect.sourceTargetIndex ?? 0),
+              victimSelectionBonus: biteVictimSelectionBonus(view, cmd, sourceTargetIndex, targetIndex, victim),
+              buffs: fightRiderBuffs(scoredEffects, sourceTargetIndex),
             });
           }
           // Batch 45 → PMSSB-16 (CR 701.14 — dawniej mylnie 701.12): fight to

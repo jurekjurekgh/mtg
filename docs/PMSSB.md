@@ -3747,3 +3747,40 @@ Plan: [PLAN_2026-10-20l-pmssb77-tokeny-presja](plans/PLAN_2026-10-20l-pmssb77-to
 - Golden po domknięciu: 1437 decyzji, 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64). Hash `2bf25d5b…` → `2f00a7f5…`. Decyzja właściciela (2026-10-21): akceptuj; fixture odnowiony.
 - Tie-audit po domknięciu bez zmian (674, akcyjne 196). Mirror 24 seedy (tokenPressureWeight 6 vs 0): 144:144.
 - Otwarte: `enemyAttackPower` sumuje wszystkie wrogie stwory, nie tylko atakujące — ta sama przybliżona miara co licznik PMSSB-71 v3 (świadoma przybliżona miara, nie luka).
+
+## PMSSB-78 — Chocobo Kick: wartość celu i odtwarzalny land drop (2026-10-22) — DONE
+
+Wejście: follow-up do PMSSB-16/36/37. Wcześniejsze piny sprawdzały, czy kicker
+zmienia nieletalny bite w zabójstwo, ale nie rozstrzygały wielu legalnych celów:
+bot mógł zabić mały cel zwykłym rzutem, zamiast zapłacić kickerem i zdjąć
+cenniejszy stwór.
+
+**Audyt CR (oficjalny Wizards, wersja skuteczna 2026-09-25):**
+[Magic Comprehensive Rules](https://media.wizards.com/2026/downloads/MagicCompRules%2020260925.txt)
+— 702.33a,d (kicker to dodatkowy koszt ogłaszany przy rzucaniu; „kicked” zależy
+od zapłacenia kosztu), 601.2b,h (wybór kickera i zapłata kosztu w procesie
+rzucania), 305.1–305.2 (land można zagrać w swojej main phase przy pustym stosie,
+o ile pozostał land drop). Po rozstrzygnięciu sorcery land drop nadal można
+wykorzystać.
+
+**Naprawa (generyczna, bez nazwy karty):** cel bite jest wyceniany względnie
+wśród legalnych alternatyw tego samego źródła: istniejąca wartość stworzenia
+(P/T i mana value) plus mana value dołączonych Aur i Equipment. Premia za
+wartość celu działa tylko przy zabiciu i tylko wtedy, gdy istnieje alternatywa,
+więc historyczna skala pojedynczego bite z PMSSB-16 zostaje zachowana. Kicked
+obrażenia wpływają na rdzeń wyceny tylko wtedy, gdy normalna moc nie zabija, a
+podwojona zabija; gdy nawet ×2 nie wystarcza, bot wraca do zwykłej oceny i może
+wybrać mniejszy cel. Lethal uwzględnia indestructible, pełną prewencję i tarcze
+obrażeń. Kara zwrotu lądu znika tylko dla nie-tokenowego lądu należącego do bota,
+przy niewykorzystanym land dropie w jego main phase; przejęty land nie jest
+traktowany jako możliwy do odtworzenia. PlayerView ujawnia właściciela tylko
+przejętego lądu, gdy różni się od kontrolera.
+
+**Regresje:** siedem pinów w `test/real-cards-batch62.test.js`: wybór i odtworzenie
+lądu; priorytet mana value; brak darmowego kickera po wykorzystaniu land dropu
+lub zwrocie cudzego lądu; Aura; Equipment; fallback, gdy nawet ×2 nie zabije.
+PMSSB-16/37 pozostają zielone, w tym dawne zachowanie dla pojedynczego celu i
+kara za bite bez zabicia.
+
+**Bramy:** `node --test test/real-cards-batch62.test.js test/audyt-pmssb16-walka.test.js test/audyt-pmssb37-trzy-granice.test.js test/player-view.test.js` — **97/97**;
+`npm run build` — 75 modułów; `git diff --check` — czysto. Pełnego B0 nie uruchamiano.

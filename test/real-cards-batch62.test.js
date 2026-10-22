@@ -668,6 +668,143 @@ test('B62/176: Chocobo Kick — bot kopie (zwraca ląd) tylko gdy podwojenie daj
   assert.equal(pick({ toughness: 6 }).cmd.kicked, undefined, 'nawet ×2 nie zabija 1/6 — bez zwrotu lądu');
 });
 
+test('B62/176: Chocobo Kick — wybiera cenniejszy cel przez kicker i odtwarza zwrócony ląd', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'small', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'valuable', 'tuskguard-captain', 'p2', 'battlefield');
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  assert.equal(playerView(state, 'p1').players.find((p) => p.id === 'p1').landPlays, 1,
+    'normalny land drop jest jeszcze dostępny, choć nie ma lądu w ręce');
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.type, 'cast_spell');
+  assert.equal(cmd.kicked, true, 'podwojenie zabija cenniejszy cel — koszt lądu da się odtworzyć');
+  assert.deepEqual(cmd.targets, ['mine', 'valuable'], 'nie zabija mniejszego celu zwykłym rzutem');
+
+  run(state, cmd);
+  settle(state);
+  assert.ok(find(state, 'chocobo-kick', 'graveyard'));
+  assert.ok([...state.objects.values()].some((o) => o.cardId === 'basic-forest' && o.zone === 'hand'),
+    'opłacony ląd wrócił na rękę');
+  assert.equal(player(state, 'p1').landPlays, 1, 'rzut czaru nie zużył land dropu');
+
+  const replay = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(replay.type, 'play_land', 'po rozstrzygnięciu bot zagra odtworzony ląd');
+  run(state, replay);
+  assert.equal(player(state, 'p1').landPlays, 0);
+  assert.equal([...state.objects.values()].filter((o) => o.kind === 'land'
+    && o.zone === 'battlefield' && o.controllerId === 'p1').length, 3, 'wrócił do pierwotnej liczby lądów');
+});
+
+test('B62/176: Chocobo Kick — wyżej wycenia cel o większym koszcie many', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'cheap', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'expensive', 'mournful-zombie', 'p2', 'battlefield');
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  assert.equal(state.objects.get('cheap').manaCost, 2);
+  assert.equal(state.objects.get('expensive').manaCost, 3);
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.kicked, undefined, 'zwykła moc zabija oba cele');
+  assert.deepEqual(cmd.targets, ['mine', 'expensive'], 'TMC wyższy o jeden punkt rozstrzyga równy remis P/T');
+});
+
+test('B62/176: Chocobo Kick — zachowuje koszt tempa, jeśli land dropu nie da się już użyć', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'small', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'valuable', 'tuskguard-captain', 'p2', 'battlefield');
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+  player(state, 'p1').landPlays = 0;
+
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.kicked, undefined, 'zwrócony ląd nie może zostać zagrany w tej turze');
+  assert.deepEqual(cmd.targets, ['mine', 'small'], 'bez kickera usuwa mniejszy cel');
+});
+
+test('B62/176: Chocobo Kick — nie uznaje przejętego lądu za możliwy do odtworzenia', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'small', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'valuable', 'tuskguard-captain', 'p2', 'battlefield');
+  for (let i = 0; i < 3; i++) {
+    put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield', { ownerId: 'p2' });
+  }
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  const view = playerView(state, 'p1');
+  assert.equal(view.zones.battlefield.find((o) => o.id === 'land0').ownerId, 'p2',
+    'właściciel przejętego lądu jest jawny dla wyceny kosztu');
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(view, {});
+  assert.equal(cmd.kicked, undefined, 'ląd wróci do przeciwnika, więc nie obniża kosztu kickera');
+  assert.deepEqual(cmd.targets, ['mine', 'small']);
+});
+
+test('B62/176: Chocobo Kick — cel z dołączoną Aurą ma większą wartość niż goły odpowiednik', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'plain', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'enchanted', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'aura', 'curiosity', 'p2', 'battlefield', { kind: 'aura', attachedTo: 'enchanted' });
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  assert.equal(state.objects.get('aura').kind, 'aura');
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.kicked, undefined, 'zwykła moc wystarcza na oba cele');
+  assert.deepEqual(cmd.targets, ['mine', 'enchanted'], 'wyżej wycenia cel razem z Aurą');
+});
+
+test('B62/176: Chocobo Kick — cel z dołączonym Equipment ma większą wartość niż goły odpowiednik', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'plain', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'equipped', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'equipment', 'golem-skin-gauntlets', 'p2', 'battlefield', { attachedTo: 'equipped' });
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  assert.ok(state.objects.get('equipment').equipment);
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.kicked, undefined, 'zwykła moc wystarcza na oba cele');
+  assert.deepEqual(cmd.targets, ['mine', 'equipped'], 'wyżej wycenia cel razem z Equipment');
+});
+
+test('B62/176: Chocobo Kick — gdy ×2 nadal nie zabija najlepszego celu, wybiera mniejszy zwykłym rzutem', () => {
+  const state = game();
+  put(state, 'mine', 'goblin-piker', 'p1', 'battlefield', { summoningSickness: false });
+  put(state, 'small', 'goblin-piker', 'p2', 'battlefield');
+  put(state, 'too-large', 'maritime-guard', 'p2', 'battlefield');
+  state.objects.set('too-large', Object.freeze({ ...state.objects.get('too-large'),
+    toughness: 3, manaCost: 8, keywords: ['indestructible'] }));
+  for (let i = 0; i < 3; i++) put(state, `land${i}`, 'basic-forest', 'p1', 'battlefield');
+  put(state, 'kick', 'chocobo-kick', 'p1', 'hand');
+  addMana(state, 'p1', 2, { colors: ['G'] });
+
+  const bot = createHeuristicBot({ seed: 2026 });
+  const cmd = bot.chooseCommand(playerView(state, 'p1'), {});
+  assert.equal(cmd.type, 'cast_spell');
+  assert.equal(cmd.kicked, undefined, 'kicker nie pomaga zabić najlepszego celu');
+  assert.deepEqual(cmd.targets, ['mine', 'small'], 'mniejszy cel jest poprawnym fallbackiem');
+});
+
 // ---- B62/210: Fiery Justice (2X2 #212, plan Kaldheim) -----------------------
 
 const fjVariants = (s) => commands(s).filter((c) => c.type === 'cast_spell' && c.objectId === 'fj');
