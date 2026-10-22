@@ -3562,7 +3562,11 @@ function commandLabelBase(cmd, session, view) {
       // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
       const sac = cmd.sacrificeTargetId ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
-      const alt = cmd.payAltCost ? ' — zapłać zamiast poświęcenia' : '';
+      const altMana = cardForMode?.spell?.additionalCost?.orPayMana;
+      const altCost = Number.isInteger(altMana)
+        ? manaCostHtml(altMana === 0 ? '{0}' : costSymbols(altMana))
+        : (altMana == null ? '' : escapeHtml(String(altMana)));
+      const alt = cmd.payAltCost ? ` — zapłać${altCost ? ` ${altCost}` : ''} zamiast poświęcenia` : '';
       // M102/U8: gdy celem czaru jest stwór poświęcany jako koszt, czar na
       // pewno fizzluje (CR 608.2b) — koszt płaci się po wyborze celów
       // (CR 601.2c/601.2h), więc cel znika, zanim czar się rozstrzygnie.

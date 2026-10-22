@@ -1,8 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderBotMoves, createScryfallHover } from '../src/table/render.js';
+import { renderBotMoves, createScryfallHover, labelChoiceOptions } from '../src/table/render.js';
 import { renderMultiTargetWizard } from '../src/table/choice-request.js';
-import { sacrificeCastPlanOf, commandForSacrificeSelection } from '../src/table/multi-target.js';
+import {
+  sacrificeCastPlanOf, commandForSacrificeSelection, singleTargetPlanOf, buttonsPlanOf,
+} from '../src/table/multi-target.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { createGameState, playerView, addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
@@ -207,6 +209,14 @@ function splintersCommands() {
   ];
 }
 
+function lashCommands() {
+  return [
+    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], sacrificeTargetId: 'cre0' },
+    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], sacrificeTargetId: 'cre1' },
+    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], payAltCost: true },
+  ];
+}
+
 test('r5/C: plan „cel + poświęcenie” dla grupy Bone Splinters', () => {
   const plan = sacrificeCastPlanOf(splintersCommands());
   assert.ok(plan, 'grupa pasuje do kreatora');
@@ -217,14 +227,15 @@ test('r5/C: plan „cel + poświęcenie” dla grupy Bone Splinters', () => {
   assert.equal(plan.maxTargets, 1);
 });
 
-test('r5/C: mieszana grupa payAltCost (Lash of the Balrog) ZOSTAJE listą', () => {
-  const lash = [
-    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], sacrificeTargetId: 'cre0' },
-    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], sacrificeTargetId: 'cre1' },
-    { type: 'cast_spell', objectId: 'lash', targets: ['foe0'], payAltCost: true },
-  ];
+test('r5/C: mieszana grupa payAltCost (Lash of the Balrog) trafia do przycisków', () => {
+  const lash = lashCommands();
   assert.equal(sacrificeCastPlanOf(lash), null,
     'wariant „OR pay {4}" bez sacrificeTargetId nie może zostać ukryty w kreatorze');
+  assert.equal(singleTargetPlanOf(lash), null,
+    'wybór samego celu zgubiłby pole ofiary albo payAltCost (CR 601.2b)');
+  const buttons = buttonsPlanOf(lash);
+  assert.ok(buttons, 'fallback pokazuje każdą pełną komendę silnika osobno');
+  assert.equal(buttons.rows.length, 3, 'dwie ofiary i zapłata {4} są trzema osobnymi opcjami');
 });
 
 test('r5/C: czar bez celu (Village Rites) i pojedyncza ofiara ZOSTAJĄ listą', () => {
@@ -265,6 +276,29 @@ const SAC_SESSION = {
   nameOf: (cardId) => ({ 'hill-giant': 'Gigant', 'bone-splinters': 'Bone Splinters' }[cardId] ?? cardId),
   nameOfObject: (id) => id,
 };
+const LASH_VIEW = {
+  playerId: 'p2',
+  players: SAC_VIEW.players,
+  zones: {
+    battlefield: [
+      { id: 'cre0', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+      { id: 'cre1', cardId: 'hill-giant', controllerId: 'p2', zone: 'battlefield' },
+      { id: 'foe0', cardId: 'hill-giant', controllerId: 'p1', zone: 'battlefield' },
+    ],
+    hand: [{
+      id: 'lash', cardId: 'lash-of-the-balrog', manaCost: 1,
+      spell: { additionalCost: { sacrificeCreature: true, orPayMana: 4 } },
+    }],
+    stack: [], graveyard: [], library: [], exile: [],
+  },
+};
+const LASH_SESSION = {
+  nameOf: (cardId) => ({
+    'hill-giant': 'Hill Giant', 'lash-of-the-balrog': 'Lash of the Balrog',
+  }[cardId] ?? cardId),
+  nameOfObject: (id) => id,
+  nameOrdinalSuffix: (id) => ({ cre0: ' #1', cre1: ' #2', foe0: ' #1' }[id] ?? ''),
+};
 
 function sacWizard(host, plan, commands, onDone) {
   return renderMultiTargetWizard(host, {
@@ -274,6 +308,38 @@ function sacWizard(host, plan, commands, onDone) {
     onComplete: (cmd) => onDone?.(cmd),
   });
 }
+
+test('r5/C: Lash — fallback pozwala wskazać konkretną ofiarę albo zapłacić {4}', () => {
+  const commands = lashCommands();
+  const plan = buttonsPlanOf(commands);
+  const labels = labelChoiceOptions(commands, LASH_SESSION, LASH_VIEW);
+  assert.match(labels[0], /poświęć Hill Giant #1/, 'pierwsza kopia ma własną etykietę');
+  assert.match(labels[1], /poświęć Hill Giant #2/, 'druga kopia ma własną etykietę');
+  assert.match(labels[2], /zapłać[\s\S]*4[\s\S]*zamiast poświęcenia/,
+    'wariant payAltCost nazywa zapłatę {4}');
+  plan.rows = plan.rows.map((row, i) => ({ ...row, label: labels[i] }));
+
+  // CR 601.2b: to trzy decyzje kosztu/celu przy rzucaniu; CR 601.2h:
+  // potwierdzenie przekazuje wybraną, pełną komendę do opłacenia.
+  for (let selected = 0; selected < commands.length; selected += 1) {
+    let submitted = null;
+    withMiniDom((host) => {
+      renderMultiTargetWizard(host, {
+        view: LASH_VIEW, session: LASH_SESSION, plan, commands,
+        intro: 'Lash of the Balrog — wybierz wariant rzutu:',
+        onComplete: (command) => { submitted = command; },
+      });
+      const rows = host.findAll((node) => String(node.className).includes('multi-target-toggle'));
+      assert.equal(rows.length, 3, 'każdy legalny koszt ma osobny wiersz radiowy');
+      const confirm = host.find((node) => String(node.className).includes('multi-target-confirm'));
+      assert.ok(confirm.disabled, 'przed wyborem nie zatwierdza się domyślnego wariantu');
+      rows[selected].click();
+      assert.ok(!confirm.disabled, 'wybrany wariant można zatwierdzić');
+      confirm.click();
+    });
+    assert.equal(submitted, commands[selected], `wiersz opt-${selected} zwraca dokładnie tę komendę`);
+  }
+});
 
 test('r5/C: kreator ma DWA osobne wybory ptaszkiem i oddaje komendę z legalCommands', () => {
   withMiniDom((host) => {

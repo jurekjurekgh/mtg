@@ -11,6 +11,9 @@ import { processTriggers } from '../src/engine/triggers.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
+import {
+  sacrificeCastPlanOf, singleTargetPlanOf, buttonsPlanOf, commandForButtonsSelection,
+} from '../src/table/multi-target.js';
 
 /**
  * Batch 29 — 10 kart (2026-08-11): Mournful Zombie, Necrosquito, Curiosity,
@@ -264,9 +267,17 @@ test('Lash of the Balrog: zapłata {4} zamiast poświęcenia — niszczy cel, ni
   addMana(state, 'p1', 5, { colors: ['B'] });
   const view = playerView(state, 'p1');
   const casts = view.legalCommands.filter((c) => c.type === 'cast_spell' && c.objectId === 'lash');
-  const payAlt = casts.find((c) => c.payAltCost);
+  const payAlt = casts.find((c) => c.payAltCost && c.targets[0] === 'target');
   assert.ok(payAlt, 'oferta zawiera wariant zapłaty {4} (payAltCost)');
-  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'lash', targets: ['target'], payAltCost: true });
+  assert.equal(sacrificeCastPlanOf(casts), null, 'mieszana grupa nie pasuje do kreatora „cel + ofiara”');
+  assert.equal(singleTargetPlanOf(casts), null,
+    'kreator samego celu nie może ukryć wyboru payAltCost za pierwszą ofiarą');
+  const fallback = buttonsPlanOf(casts);
+  assert.ok(fallback, 'grupa trafia do ogólnego planu przyciskowego');
+  assert.equal(fallback.rows.length, casts.length, 'każdy wariant z legalCommands ma własny przycisk');
+  const selected = commandForButtonsSelection(casts, `opt-${casts.indexOf(payAlt)}`);
+  assert.equal(selected, payAlt, 'wiersz {4} zachowuje dokładną komendę payAltCost');
+  const r = execute(state, selected);
   assert.ok(r.ok, 'rzut z zapłatą: ' + (r.events?.[0]?.reason ?? ''));
   assert.equal(state.objects.get('sac').zone, 'battlefield', 'stwór NIE został poświęcony (zapłacono maną)');
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
@@ -275,16 +286,31 @@ test('Lash of the Balrog: zapłata {4} zamiast poświęcenia — niszczy cel, ni
   assert.ok(targetGone, 'cel zniszczony');
 });
 
-test('Lash of the Balrog: wariant poświęcenia stwora zamiast many', () => {
+test('Lash of the Balrog: wybór drugiej ofiary pozostaje dostępny przy opcji {4}', () => {
   const state = mainPhase(game());
   addRealCard(state, 'lash', 'lash-of-the-balrog', 'p1', 'hand');
-  addRealCard(state, 'sac', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'sac1', 'highland-game', 'p1', 'battlefield');
+  addRealCard(state, 'sac2', 'highland-game', 'p1', 'battlefield');
   addRealCard(state, 'target', 'highland-game', 'p2', 'battlefield');
-  addMana(state, 'p1', 1, { colors: ['B'] });
-  const r = execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'lash', targets: ['target'], sacrificeTargetId: 'sac' });
-  assert.ok(r.ok, 'rzut z poświęceniem: ' + (r.events?.[0]?.reason ?? ''));
-  const sacGone = state.objects.get('sac')?.zone !== 'battlefield';
-  assert.ok(sacGone, 'stwór poświęcony');
+  addMana(state, 'p1', 5, { colors: ['B'] });
+
+  const casts = playerView(state, 'p1').legalCommands
+    .filter((c) => c.type === 'cast_spell' && c.objectId === 'lash');
+  const secondSacrifice = casts.find((c) => c.targets[0] === 'target' && c.sacrificeTargetId === 'sac2');
+  assert.ok(secondSacrifice, 'legalCommands zawiera wariant z drugą ofiarą');
+  assert.ok(casts.some((c) => c.targets[0] === 'target' && c.payAltCost), 'ta sama grupa zawiera też zapłatę {4}');
+  assert.equal(sacrificeCastPlanOf(casts), null, 'mieszana grupa omija kreator sacrifice-only');
+  assert.equal(singleTargetPlanOf(casts), null, 'plan jednego celu nie może zgubić wyboru kosztu');
+  const fallback = buttonsPlanOf(casts);
+  assert.ok(fallback);
+  assert.equal(fallback.rows.length, casts.length, 'fallback zachowuje wszystkie kombinacje target × koszt');
+  const selected = commandForButtonsSelection(casts, `opt-${casts.indexOf(secondSacrifice)}`);
+  assert.equal(selected, secondSacrifice, 'wiersz drugiej ofiary zwraca komendę silnika bez zmian');
+
+  const r = execute(state, selected);
+  assert.ok(r.ok, 'rzut z wybraną ofiarą: ' + (r.events?.[0]?.reason ?? ''));
+  assert.equal(state.objects.get('sac1').zone, 'battlefield', 'pierwsza ofiara pozostała na polu bitwy');
+  assert.notEqual(state.objects.get('sac2')?.zone, 'battlefield', 'wybrana druga ofiara została poświęcona');
   assert.ok(resolveStack(state), 'stos rozstrzygnięty');
 });
 

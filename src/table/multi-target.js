@@ -632,6 +632,18 @@ function itemLabelOf(field) {
  * Wykluczenia: pojedyncza opcja (zwykła lista wystarczy), różne `xValue`
  * (licznik X musi zostać — obsługuje go multiTargetPlanOf).
  */
+function singleTargetVariantKey(command) {
+  // Ten kreator może wybrać wyłącznie `targets[0]`; każde inne pole komendy
+  // musi więc być wspólne dla grupy. W przeciwnym razie (np. sacrificeTargetId,
+  // payAltCost, kicker, dar, stuna) wybór celu wskazałby `.find()` pierwszy
+  // wariant i po cichu zgubił drugą decyzję. Znormalizowane, serializowalne
+  // pola zachowują się jak klucz bez zależności od kolejności właściwości.
+  return JSON.stringify(Object.keys(command ?? {})
+    .filter((key) => key !== 'targets')
+    .sort()
+    .map((key) => [key, command[key]]));
+}
+
 export function singleTargetPlanOf(commands) {
   const options = commands ?? [];
   if (options.length < 2) return null;
@@ -650,6 +662,11 @@ export function singleTargetPlanOf(commands) {
     if (!uniformGiftOf(spells)) return null;
     if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
       && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;
+    // A single-target wizard only represents the target choice. If the same
+    // target group also varies by any other legal-command field, preserve every
+    // option for the generic button fallback rather than selecting the first
+    // command that matches the target (CR 601.2b/601.2h: cost choice/payment).
+    if (new Set(spells.map(singleTargetVariantKey)).size > 1) return null;
     const targets = [];
     for (const cmd of spells) if (!targets.includes(cmd.targets[0])) targets.push(cmd.targets[0]);
     return {
