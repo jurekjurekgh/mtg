@@ -4588,11 +4588,17 @@ export function execute(state, input) {
             // nazwą celu + dostaje kolejny numer wśród żywych kopii tej nazwy
             // — DOKŁADNIE jak token-kopia (effects.js, M172/D; jedna reguła,
             // dwie ścieżki, wspólny helper, L48). Stół pokazuje „X (kopia N)"
-            // istniejącą ścieżką M172/D (render.js) — bez nowych badge'ów.
+            // istniejącą ścieżką M172/D (render.js); badge źródła efektu jest
+            // osobnym metadanym prezentacji i nie zmienia fizycznego cardId.
             // Prawo legend (state-based.js) czyta cardName w pierwszej
             // kolejności, więc ta zmiana go nie rusza.
             name: target.cardName ?? target.cardId,
             copyNumber: nextCopyNumber(state, target.cardName ?? target.cardId),
+            // Metadane prezentacji kopii — NIE zastępują fizycznego `cardId`
+            // karty źródłowej. Widok ujawnia je tylko dla jawnego permanentu
+            // na polu bitwy, aby UI użyło druku Ally i podpisało efekt kopii.
+            copiedFromCardId: target.copiedFromCardId ?? target.cardId,
+            copiedByCardId: src.cardId,
             // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
             // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
             // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
@@ -6899,7 +6905,20 @@ export function playerView(state, playerId) {
         // BEZBARWNY dla przeciwnika (CR 708.2), wiec kolory ida wylacznie do
         // widza, ktory kartę zna — tak samo jak manaCost/subtypes/types wyzej.
         // ADR 0017: skutek widoczny w grze musi byc widoczny w widoku.
-        if (!hiddenFromViewer && (object.colors ?? []).length) entry.colors = [...object.colors];
+        // Kopia może być BEZBARWNA; wysyłamy wtedy także pustą listę, żeby
+        // renderer nie wrócił do kolorów fizycznej karty Jwari.
+        if (!hiddenFromViewer && ((object.colors ?? []).length || object.copiedFromCardId)) {
+          entry.colors = [...(object.colors ?? [])];
+        }
+        // Dane prezentacji CR 707.2 — osobne od `cardId`, który nadal wskazuje
+        // fizyczną kartę (np. Jwari Shapeshifter) dla logiki i stref. Publiczne
+        // tylko gdy kopia nie jest zakryta; `copiedAbilities` zapewnia Oracle
+        // również dla kopii tokenów spoza rejestru kart.
+        if (!hiddenFromViewer && object.copiedFromCardId) {
+          entry.copiedFromCardId = object.copiedFromCardId;
+          if (object.copiedByCardId) entry.copiedByCardId = object.copiedByCardId;
+          entry.copiedAbilities = [...(object.abilities ?? [])];
+        }
         // O-3 (audyt PR #134): opis ŹRÓDŁA MANY jest informacją publiczną
         // (zdolności many odsłoniętego permanentu, CR 605 + 113.6), a bot nie
         // ma stanu: wołał `getSourceForObject(o, null)` i dla Gond Gate

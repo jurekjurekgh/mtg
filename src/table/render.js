@@ -4577,6 +4577,10 @@ function combatRoleOf(object, combat, session) {
 export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // Karta-fizyczna (np. Jwari) zachowuje swoje `cardId`; na polu bitwy
+  // wyłącznie dane PREZENTACJI pobieramy z druku skopiowanego permanentu.
+  const copyDisplay = !faceDown && object.zone === 'battlefield' && Boolean(object.copiedFromCardId);
+  const displayCardId = copyDisplay ? object.copiedFromCardId : cardId;
   // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
   // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
   // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
@@ -4587,14 +4591,16 @@ export function cardInfo(session, object, combat = null) {
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
-  const details = faceDown ? {} : (session.cardDetails(cardId) || {});
+  const details = faceDown ? {} : (session.cardDetails(displayCardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
   // (CR 708.5 — tożsamość nie jest informacją ukrytą dla niego), więc
   // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
   // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
   // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
   const ownFaceDownDetails = ownFaceDown ? (session.cardDetails(cardId) || {}) : null;
-  const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
+  const colors = faceDown ? [] : (copyDisplay
+    ? (object.colors ?? session.colorsOf(displayCardId) ?? details.colors ?? [])
+    : (session.colorsOf(cardId) || details.colors || object.colors || []));
   const kind = inferKind(object, details);
   // Załączona aura to na polu bitwy „Enchantment — Aura", a nie stwór;
   // załączony equipment pozostaje „Artifact — Equipment".
@@ -4618,6 +4624,9 @@ export function cardInfo(session, object, combat = null) {
   const copyOrdinal = !faceDown && object.zone === 'battlefield' && !object.copyNumber
     && typeof session?.nameOrdinalSuffix === 'function'
     ? session.nameOrdinalSuffix(object.id) : '';
+  const copyBadge = copyDisplay && object.copiedByCardId
+    ? `skopiowane przez ${session.nameOf?.(object.copiedByCardId) ?? object.copiedByCardId}`
+    : null;
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -4629,7 +4638,7 @@ export function cardInfo(session, object, combat = null) {
         ? 'Wygnana zakryta'
         : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
-      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId))) + copyOrdinal,
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(displayCardId))) + copyOrdinal,
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
@@ -4641,6 +4650,7 @@ export function cardInfo(session, object, combat = null) {
     // morphie, a ruling WotC 2024-02-02 wymaga rozróżnialności PRZEZ
     // WSZYSTKICH graczy (patrz komentarz w effects.js przy `faceDownCause`).
     morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${faceDownCauseTag(object)})` : faceDownCauseTag(object))) : null,
+    copyBadge,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -4775,7 +4785,8 @@ export function cardInfo(session, object, combat = null) {
     // gdzie indziej kafel ufa wyłącznie rejestrowi (aury go nie mają —
     // ich semantyka siedzi w linii aury).
     spell: details.spell ?? ((object.zone === 'stack' || object.zone === 'exile') ? object.spell : null),
-    abilities: faceDown ? [] : (details.abilities || []),
+    abilities: faceDown ? [] : (Array.isArray(object.copiedAbilities)
+      ? object.copiedAbilities : (details.abilities || [])),
     morph: details.morph || null,
     plot: details.plot || null,
     // E4 (audyt PR #130, Żywy Tester — oś narracji): Delve jest deskryptorem
@@ -4818,7 +4829,9 @@ export function cardInfo(session, object, combat = null) {
     // (ADR 0002), nie nazwa karty (M212).
     altarX: (!faceDown && object.zone === 'battlefield' && (() => {
       try {
-        const def = session.cardDetails(cardId);
+        const def = Array.isArray(object.copiedAbilities)
+          ? { abilities: object.copiedAbilities }
+          : session.cardDetails(displayCardId);
         return (def?.abilities ?? []).some((ab) => {
           const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
           return effs.some((e) => e?.power === 'card_types_in_all_graveyards' || e?.toughness === 'card_types_in_all_graveyards');
@@ -4978,6 +4991,7 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     // czyli dokładnie to, przed czym miał chronić. Znacznik bywa null —
     // wtedy nie ma żadnego znacznika, i tak ma być.
     if (info.morphBadge) flags.push(info.morphBadge);
+    if (info.copyBadge) flags.push(info.copyBadge);
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -5005,7 +5019,8 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     if (flags.length) {
       const badges = div(face, 'fbadges');
       for (const f of flags) {
-        const cls = f.startsWith('obrażenia') ? ' dmg' : (f.includes('×') ? ' counter' : ' sick');
+        const cls = f === info.copyBadge ? ' copy'
+          : (f.startsWith('obrażenia') ? ' dmg' : (f.includes('×') ? ' counter' : ' sick'));
         div(badges, 'fbadge' + cls, f);
       }
     }
@@ -5070,6 +5085,7 @@ function tile(parent, info, opts) {
 export function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
+    if (info.copyBadge) flags.push(['copy', info.copyBadge]);
     // M102/U7: przypięcie aury/equipmentu MUSI być na nakładce. Wcześniejszy
     // komentarz („pokazuje buildFace — tu nie dublujemy") był nieprawdziwy dla
     // kafli stołu: `tile()` i `renderCardInto` wołają buildCardVisual ze

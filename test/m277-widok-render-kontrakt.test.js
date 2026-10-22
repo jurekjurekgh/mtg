@@ -10,7 +10,7 @@ import { addCounter } from '../src/engine/counters.js';
  * M277 (kierunek 3 z handoffu M276) — kontrakt widok ↔ WARSTWA RENDERU.
  *
  * M274 (błąd #27) domknął kontrakt widok ↔ BOT dla grobu. Ten strażnik
- * zamyka drugą stronę: `cardInfo` w `src/table/render.js` czyta 43 pola
+ * zamyka drugą stronę: `cardInfo` w `src/table/render.js` czyta pola
  * z wpisu widoku, a `playerView` część z nich dokłada WARUNKOWO (tylko gdy
  * cecha istnieje na obiekcie). Dopóki warunki po obu stronach są zgodne,
  * kafla nie da się odróżnić od poprawnego — luka ujawnia się dopiero na
@@ -139,7 +139,10 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   // literowej w NOWYM polu (L113: wyjątek z powodu, nie ciche wyciszenie).
   const WARUNKOWE_SPOZA_PROBKI = new Set([
     'attachedTo', 'aura', 'equipment', 'bestow', 'saga', 'spell', 'name',
-    'copyNumber', 'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
+    // Jwari / enter-as-copy: druki i opis Oracle są obecne tylko dla
+    // permanentów-kopii na polu bitwy; same fizyczne cardId pozostaje nietknięte.
+    'copyNumber', 'copiedFromCardId', 'copiedByCardId', 'copiedAbilities',
+    'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
     // Batch60 (Timely Interference): widok dokłada `blocksIfAble` tylko po
     // rozstrzygnięciu wymogu bloku (jak `goaded`) — konstrukcyjnie:
     // test/real-cards-batch60 (G1.7: flaga, oferty, auto-deklaracja).

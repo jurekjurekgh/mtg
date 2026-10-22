@@ -70,12 +70,17 @@ const STATE_EXCLUSIONS = new Map(Object.entries(STATE_FINGERPRINT_EXCLUSIONS));
 test('B2/1: strażnik — każde pole obiektu jest w odcisku albo jawnie wykluczone', () => {
   const state = newState();
   const object = state.objects.get('o1');
-  // Uniwersum pól = fabryka ∪ token: `createBattlefieldToken` dokłada pole
-  // spoza `createGameObject` (copyNumber — effects.js:1426/1943), więc sama
-  // fabryka nie jest pełnym kształtem obiektu. Bez tokena strażnik uznałby
-  // wykluczenie copyNumber za martwe.
+  // Kopia niosąca prezentacyjne ID druku / źródła efektu; te dwa pola są
+  // wykluczone z fingerprint tak samo jak copyNumber.
+  const copiedObject = Object.freeze({
+    ...object, copiedFromCardId: 'copied-card', copiedByCardId: 'copy-effect-card',
+  });
+  state.objects.set(object.id, copiedObject);
+  // Uniwersum pól = fabryka ∪ kopia ∪ token: `createBattlefieldToken` dokłada
+  // pole spoza `createGameObject` (copyNumber), a enter-as-copy dodaje dwa
+  // pola prezentacyjne — żadna z tych ścieżek nie jest samą fabryką.
   const token = createBattlefieldToken(state, 'p1', { cardId: 'probe-token', name: 'Probe Token', copyNumber: 2 });
-  const universe = new Set([...Object.keys(object), ...Object.keys(token)]);
+  const universe = new Set([...Object.keys(copiedObject), ...Object.keys(token)]);
   const { object: projected } = fingerprintKeys(state);
   const missing = [...universe].filter((key) => !projected.has(key) && !OBJECT_EXCLUSIONS.has(key));
   assert.deepEqual(missing, [], `odcisk nie pokazuje pól obiektu: ${missing.join(', ')}`);
@@ -150,6 +155,10 @@ test('B2/7: pin wykluczeń — etykiety NIE zmieniają odcisku (granica M323/D w
   const object = state.objects.get('o1');
   state.objects.set('o1', Object.freeze({ ...object, copyNumber: 7 }));
   assert.equal(stateFingerprint(state), before, 'copyNumber (etykieta) zmienił odcisk — granica M323/D przesunięta');
+  state.objects.set('o1', Object.freeze({ ...object, copiedFromCardId: 'other-print' }));
+  assert.equal(stateFingerprint(state), before, 'display lookup copiedFromCardId zmienił odcisk');
+  state.objects.set('o1', Object.freeze({ ...object, copiedByCardId: 'other-copier' }));
+  assert.equal(stateFingerprint(state), before, 'etykieta copiedByCardId zmieniła odcisk');
   state.objectSequence += 5;
   assert.equal(stateFingerprint(state), before, 'objectSequence (generator id) zmienił odcisk — szum w sondzie no-op');
 });

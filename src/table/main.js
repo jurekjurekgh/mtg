@@ -31,7 +31,7 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
   wizardSourceName,
@@ -1769,32 +1769,11 @@ function bootstrapTable() {
     return 'spell';
   }
 
-  /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
+  /** Jedno źródło pól karty dla kafla, podglądu i pełnego ekranu. */
   function cardInfoForFullscreen(object) {
-    // CR 708.2: kontroler może w każdej chwili podejrzeć SWOJE karty twarzą
-    // w dół (morph) — pełny ekran odsłania je właścicielowi; cudze zostają
-    // zakryte (widok gracza niesie cardId tylko dla własnych face-down).
-    const isOwnFaceDown = object.faceDown && object.controllerId === HUMAN_ID;
-    const details = object.faceDown && !isOwnFaceDown ? null : session.cardDetails(object.cardId);
-    return {
-      name: isOwnFaceDown ? (details?.name ?? session.nameOf(object.cardId)) : (object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId))),
-      colors: details?.colors ?? [],
-      kind: object.kind ?? 'creature',
-      types: details?.types ?? [],
-      subtypes: details?.subtypes ?? [],
-      keywords: details?.keywords ?? [],
-      manaCost: details?.manaCost ?? null,
-      power: details?.power, toughness: details?.toughness,
-      livePower: object.power ?? details?.power,
-      liveToughness: object.toughness ?? details?.toughness,
-      spell: details?.spell ?? null,
-      abilities: details?.abilities ?? [],
-      morph: details?.morph ?? null,
-      set: details?.set ?? null,
-      imageUri: object.faceDown && !isOwnFaceDown ? null : (details?.imageUri ?? null),
-      artId: object.faceDown && !isOwnFaceDown ? null : (details?.artId ?? null),
-      faceDown: Boolean(object.faceDown && !isOwnFaceDown),
-    };
+    // cardInfo zachowuje fizyczny cardId, respektuje mgłę wojny dla face-down
+    // i wybiera druk skopiowanej karty wyłącznie dla bieżącego permanentu.
+    return cardInfo(session, object);
   }
 
   function onCardClick(objectId, cardId) {

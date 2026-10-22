@@ -101,6 +101,9 @@ const STATE_COUNTER_FIELDS = Object.freeze([
 export const OBJECT_FINGERPRINT_EXCLUSIONS = Object.freeze({
   // M323/D: numer kopii/zakrycia nie zmienia żadnej legalnej komendy.
   copyNumber: 'etykieta kopii (pin M323/D — „sam numer kopii nie jest faktem gry")',
+  // Tylko prezentacja aktywnej kopii w UI — nie zmienia reguł ani legalności.
+  copiedFromCardId: 'druk używany wyłącznie do wyświetlenia kopii na polu bitwy',
+  copiedByCardId: 'etykieta źródła efektu kopii w UI',
 });
 
 export const STATE_FINGERPRINT_EXCLUSIONS = Object.freeze({
