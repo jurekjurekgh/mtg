@@ -237,29 +237,41 @@ test('Shaman: +1,8 za trigger niezależnie od INNYCH własnych stworów — moż
 // ---------------------------------------------------------------------------
 
 test('A/1 ⭐ RED: bot buffuje stwora, którym NIE zamierza atakować (sedno zgłoszenia)', () => {
-  // Krok 1: intencja ataku — stan BEZ pendingu, krok deklaracji ataków.
-  const probe = newState('declare_attackers', 'p1');
-  put(probe, 'shaman', 'battle-rattle-shaman', 'p2', { power: 2, toughness: 2 });
-  put(probe, 'shrieker', 'kozileks-shrieker', 'p1', { power: 3, toughness: 2 });
-  put(probe, 'warden', 'warden-of-geometries', 'p1', { power: 2, toughness: 3 });
-  const atkCmd = createHeuristicBot({ seed: 1209 }).chooseCommand(playerView(probe, 'p1'));
-  const attacks = atkCmd.type === 'declare_attackers' ? (atkCmd.attackerIds ?? []) : [];
-  console.log('  intencja ataku bota:', atkCmd.type, JSON.stringify(attacks));
+  // Odtworzenie logu właściciela 1:1:
+  //   Kozilek's Shrieker 3/2, Warden of Geometries 2/3, wróg 2/2.
+  // Bot zamierza atakować WARDENA (2/3 wytrzymuje blok, 3/2 ginie),
+  // a +2/+0 daje KOZILEKOWI — największemu wg 2P+T (8 vs 7).
+  // Policzone z tej samej planszy, więc to nie heurystyka testu, tylko
+  // realna polityka ataku bota.
+  const plansza = (step) => {
+    const s = newState(step, 'p1');
+    put(s, 'shrieker', 'kozileks-shrieker', 'p1');   // 3/2 — 2P+T = 8
+    put(s, 'warden', 'warden-of-geometries', 'p1');   // 2/3 — 2P+T = 7
+    put(s, 'foe', 'highland-game', 'p2', { power: 2, toughness: 2 });
+    return s;
+  };
 
-  // Krok 2: ta sama plansza, ale w POCZĄTKU WALKI z pending triggeriem Shaman.
-  const state = newState('beginning_of_combat', 'p1');
+  // 1) Intencja ataku bota (krok deklaracji, bez pendingu).
+  const atakCmd = createHeuristicBot({ seed: 1209 })
+    .chooseCommand(playerView(plansza('declare_attackers'), 'p1'));
+  assert.equal(atakCmd.type, 'declare_attackers', `sanity: ${atakCmd.type}`);
+  const attacks = atakCmd.attackerIds ?? [];
+  console.log('  intencja ataku bota:', JSON.stringify(attacks));
+  assert.ok(attacks.includes('warden') && !attacks.includes('shrieker'),
+    `sanity: bot zamierza atakować WARDENA, nie Shrikera (${JSON.stringify(attacks)})`);
+
+  // 2) Ta sama plansza na początku walki, z oczekującym triggerem Shaman.
+  const state = plansza('beginning_of_combat');
   put(state, 'shaman', 'battle-rattle-shaman', 'p2', { power: 2, toughness: 2 });
-  put(state, 'shrieker', 'kozileks-shrieker', 'p1', { power: 3, toughness: 2 });
-  put(state, 'warden', 'warden-of-geometries', 'p1', { power: 2, toughness: 3 });
   pendShaman(state, ['shrieker', 'warden']);
-  const chosen = createHeuristicBot({ seed: 1209 }).chooseCommand(playerView(state, 'p1'));
-  console.log('  cel bufora:', chosen.type, chosen.targetId);
+  const chosen = createHeuristicBot({ seed: 1209 })
+    .chooseCommand(playerView(state, 'p1'));
+  console.log('  cel bufora:', chosen.targetId);
 
   assert.equal(chosen.type, 'resolve_trigger_target');
-  assert.equal(atkCmd.type, 'declare_attackers',
-    `sanity: w deklaracji ataków bot musi mieć komendę ataku (${atkCmd.type})`);
-  assert.ok(attacks.includes('warden') && !attacks.includes('shrieker'),
-    `sanity: bot zamierza atakować WARDENA, nie Shrikera (zamiar: ${JSON.stringify(attacks)})`);
+  // +2/+0 wygasa z końcem tury (CR 514.2) — buff na nie-atakującym to
+  // zmarnowana decyzja. Powinien iść na stwora, którym bot naprawdę atakuje.
   assert.equal(chosen.targetId, 'warden',
-    `+2/+0 ma iść na stwora, którym bot ATakuJE, nie na największego: ${JSON.stringify(chosen)}`);
+    `+2/+0 ma iść na stwora, którym bot ATakuje, nie na największego 2P+T: `
+    + `${JSON.stringify(chosen)}`);
 });
