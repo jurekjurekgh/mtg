@@ -29,6 +29,7 @@ function koloryZrodlaWidoku(object) {
 import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '../engine/mana-cost.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
+import { TURN_STEPS } from '../engine/turn.js';
 import { COMMAND_TYPES } from '../protocol/types.js';
 import { createCardRegistry } from '../cards/card-data.js';
 import { probAtLeastOne } from '../engine/hypergeom.js';
@@ -9668,30 +9669,138 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return face(blockers) < clock && face(blockers.filter(o => o.id !== source.id)) >= clock;
   }
 
+  /**
+   * A (2026-10-21e): widnik do wyceny ataku, gdy pytanie pada PRZED krokiem
+   * deklaracji (`beginning_of_combat` przy triggerze „na początku walki").
+   * `declare_attackers` nie jest wtedy legalną komendą, więc sonda nie ma na
+   * czym liczyć i zwraca ≤0 dla każdego stwora.
+   *
+   * Trzy rzeczy muszą iść w parze, inaczej skala się rozjeżdża (wszystkie
+   * zmierzone, nie zgadywane):
+   *  - `turn.step` i `turn.stepIndex`: polityka ataku czyta oba
+   *    (`przedDeklaracjaAtaku`); podmiana samego `step` dawała 7 zamiast 5;
+   *  - `legalCommands` trzeba DORZUCYĆ, nie zastąpić — podmiana gubiła
+   *    `pass_priority`/`concede`, czyli punkt odniesienia skali;
+   *  - oczekujące `resolve_trigger_target` trzeba ODRZUCYĆ — z nimi
+   *    `chooseCommand` nie deklaruje ataku w ogóle (wybiera `undefined`), a
+   *    warianty liczą się względem skali, której w prawdziwej deklaracji nie ma.
+   * Po tych trzech korektach sonda widzi dokładnie tę samą skalę co
+   * `declare_attackers` (5 / 3 / 2 w zgłoszeniu) i wskazuje tego samego
+   * atakującego.
+   */
+  function widokDlaWycenyAtaku(view, legal) {
+    const przedDeklaracja = view.turn?.phase === 'combat'
+      && view.turn.step !== 'declare_attackers'
+      && !(view.legalCommands ?? []).some((c) => c.type === 'declare_attackers');
+    if (!przedDeklaracja) return null;
+    return {
+      ...view,
+      turn: { ...view.turn, step: 'declare_attackers', stepIndex: KROK_DECLARATION },
+      legalCommands: [
+        ...(view.legalCommands ?? []).filter((c) => c.type !== 'resolve_trigger_target'),
+        ...ofertaAtakow(view, legal),
+      ],
+    };
+  }
+
   function attackIntendsCreature(view, objectId) {
     if (!objectId || attackIntentEval) return false;
     const legal = myCreatures(view)
       .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
       .map((o) => o.id);
     if (!legal.includes(objectId)) return false;
-    const subsets = [];
-    if (2 ** legal.length <= 32) {
-      for (let mask = 1; mask < 2 ** legal.length; mask += 1) {
-        const set = legal.filter((_, index) => (mask & (2 ** index)) !== 0);
-        if (set.includes(objectId)) subsets.push(set);
-      }
-    } else {
-      subsets.push([objectId], legal.slice());
-      subsets.push(...legal.filter((id) => id !== objectId).map((skip) => legal.filter((id) => id !== skip)));
-    }
+    const krokDoZapytania = widokDlaWycenyAtaku(view, myCreatures(view)
+      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .map((o) => o.id)) ?? view;
+    const subsets = podzbioryAtakujacych(legal).filter((set) => set.includes(objectId));
     attackIntentEval = true;
     try {
-      return subsets.some((attackerIds) => scoreCommand(view, {
+      return subsets.some((attackerIds) => scoreCommand(krokDoZapytania, {
         type: 'declare_attackers', playerId: view.playerId, attackerIds,
       }) > 0);
     } finally {
       attackIntentEval = false;
     }
+  }
+
+  /**
+   * A (2026-10-21e, zgłoszenie właściciela — Battle-Rattle Shaman): czy bot
+   * TEN stwór FAKTYCZNIE zostawia w domu, stojąc w `declare_attackers`?
+   *
+   * `attackIntendsCreature` odpowiada na pytanie „czy istnieje opłacalny
+   * zestaw atakujących Z tym stworem". Do celowania bufora to za mało: gdy
+   * WSZYSTKIE stwory są zdolne do ataku, każdy ma jakiś dodatni podzbiór,
+   * więc „zamierza" znaczyłoby wszystkich i wybór zostawałby na czystej
+   * wartości 2P+T — czyli dokładnie ten błąd, który zgłosił właściciel
+   * (buff na Kozilek's Shrieker, atak Wardenem).
+   *
+   * Tu pytamy ostrzej: czy bot chce tego stwora, gdyby miał ZAPOMNIEĆ o
+   * pozostałych. Porównujemy najlepszy wynik podzbioru Z tym stworem
+   * z najlepszym wynikiem BEZ niego (ta sama polityka, ten sam widnik).
+   * Jeśli rezygnacja z niego nie kosztuje — nie jest w planie ataku.
+   *
+   * Świadomie OSOBNA funkcja, nie zmiana `attackIntendsCreature`: tamta bramka
+   * ma innych konsumentów (vigilance rider, crew, Morbid flash), dla których
+   * istnienie opłacalnego podzbioru jest właściwym pytaniem, a zgłoszenie
+   * dotyczy wyłącznie celowania czasowego bufora „do końca tury".
+   */
+  function zamiarAtakuWybranego(view, objectId) {
+    if (!objectId) return false;
+    const legal = myCreatures(view)
+      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .map((o) => o.id);
+    if (!legal.includes(objectId)) return false;
+    const widok = widokDlaWycenyAtaku(view, legal);
+    if (!widok) return attackIntendsCreature(view, objectId);
+    const zbiorZ = podzbioryAtakujacych(legal).filter((set) => set.includes(objectId));
+    const zbiorBez = podzbioryAtakujacych(legal).filter((set) => !set.includes(objectId));
+    attackIntentEval = true;
+    try {
+      const naj = (zbiory) => zbiory.reduce((m, set) => Math.max(m, scoreCommand(widok, {
+        type: 'declare_attackers', playerId: view.playerId, attackerIds: set,
+      })), -Infinity);
+      const z = naj(zbiorZ);
+      if (z <= 0) return false;
+      return z > naj(zbiorBez);
+    } finally {
+      attackIntentEval = false;
+    }
+  }
+
+  /**
+   * A (2026-10-21e): wszystkie podzbiory stworów zdolnych do ataku. Do 32
+   * podzbiorów liczymy wprost (głębokość do 5 stworów); powyżej tego —
+   * heurystyka: sam, wszyscy, i wszyscy oprócz jednego. Ta sama lista napędza
+   * sondę `declare_attackers` i podszywanie `legalCommands` w widniku
+   * zbudowanym dla pytania o zamiar ataku.
+   */
+  const KROK_DECLARATION = TURN_STEPS.findIndex((e) => e.step === 'declare_attackers');
+
+  function podzbioryAtakujacych(legal) {
+    if (2 ** legal.length <= 32) {
+      const all = [];
+      for (let mask = 1; mask < 2 ** legal.length; mask += 1) {
+        all.push(legal.filter((_, index) => (mask & (2 ** index)) !== 0));
+      }
+      return all;
+    }
+    return [legal.slice(),
+      ...legal.map((skip) => legal.filter((id) => id !== skip))];
+  }
+
+  /**
+   * A (2026-10-21e): pełna oferta `declare_attackers` dla sondy zamiaru ataku —
+   * ŁĄCZNIE Z PUSTYM PODZBIOREM (atakowanie niczym). Bez `[]` wychodziłoby
+   * „nie atakujemy wcale", a `scoreCommand` policzyłoby warianty względem
+   * fałszywej bazy: mierzone `attack[warden]`=5 przy pełnej ofercie vs.
+   * `attack[shrieker,warden]`=7 przy ofercie bez `[]` — bot „zamierzał" atakować
+   * obu, choć sam w deklaracji wybiera Wardena. Ta sama polityka musi dostać
+   * tę samą pulę wariantów, którą widzi przy `declare_attackers`.
+   */
+  function ofertaAtakow(view, legal) {
+    return [[], ...podzbioryAtakujacych(legal)].map((attackerIds) => ({
+      type: 'declare_attackers', playerId: view.playerId, attackerIds,
+    }));
   }
 
   /**
@@ -15152,7 +15261,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             let attackBonus2 = attackingNow2 ? 25 : 0;
             if ((cmd.pump?.power ?? 0) > 0 && !attackingNow2 && myTurn(view)) {
               const canAttack2 = !t2.tapped && (!t2.summoningSickness || hasKeyword(t2, 'haste'));
-              attackBonus2 = canAttack2 ? 15 : -60;
+              // A (zgłoszenie właściciela 2026-10-21e, Battle-Rattle Shaman):
+              // „zdolny do ataku" to za słabe proxy — wystarczy WSZYSTKIE stwory
+              // zdolne, a zostaje czysta wartość 2P+T i bot buffuje największego,
+              // będąc sam zamierzającym zaatakować mniejszego. +2/+0 wygasa z
+              // końcem tury (CR 514.2), więc taki buff jest zmarnowany.
+              // Pytamy TĘ SAMĄ politykę ataku, którą bot zastosuje w
+              // `declare_attackers` (`attackIntendsCreature`, L41/L48) —
+              // bufor i deklaracja czytają jedno źródło prawdy.
+              // `!canAttack2` ma pierwszeństwo: chorego/wyłączonego nadal -60.
+              if (!canAttack2) attackBonus2 = -60;
+              else if (zamiarAtakuWybranego(view, t2.id)) attackBonus2 = 15;
+              else attackBonus2 = 0;
             }
             // C: w gałęzi wrogiej obie strony celu liczą zrywanie aur (L41).
             const aura2 = auraStripDelta(t2);
@@ -15223,11 +15343,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (cmd.friendly) {
           if (target.controllerId === view.playerId) {
             // B (Battle-Rattle Shaman): jak w gałęzi wielocelowej (L41) —
-            // pump siły idzie na stwora, którym bot MOŻE atakować.
+            // pump siły idzie na stwora, którym bot zamierza ATAKOWAĆ.
             let attackBonus = attackingNow ? 25 : 0;
             if ((cmd.pump?.power ?? 0) > 0 && !attackingNow && myTurn(view)) {
+              // A (2026-10-21e): „zdolny do ataku" za słabe — pytamy tę samą
+              // politykę ataku co deklaracja (`attackIntendsCreature`, L41/L48).
+              // Choroby/wyłączenie pierwsze (jak w gałęzi wielocelowej).
               const canAttack = !target.tapped && (!target.summoningSickness || hasKeyword(target, 'haste'));
-              attackBonus = canAttack ? 15 : -60;
+              if (!canAttack) attackBonus = -60;
+              else if (zamiarAtakuWybranego(view, target.id)) attackBonus = 15;
+              else attackBonus = 0;
             }
             return finish(30 + value + attackBonus);
           }

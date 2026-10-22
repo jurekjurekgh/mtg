@@ -116,15 +116,37 @@ test('B/3: bot buffuje zdrowego małego, NIE chorego olbrzyma (sedno zgłoszenia
     `+2/+0 ma iść na stwora zdolnego do ataku: ${JSON.stringify(chosen)}`);
 });
 
-test('B/4: chory z haste MOŻE atakować — wraca do gry (większy wygrywa)', () => {
+test('B/4: chory z haste wraca do gry jako cel bufora (nie jest odrzucony)', () => {
+  // Zaktualizowane 2026-10-21e (A): stare oczekiwanie („większy wygrywa",
+  // czyli 5/5 `brute`) wynikało z polityki „największy zdolny do ataku".
+  // Bufor teraz celuje w stwora, którego bot NIE zostawia w domu. Tu bot
+  // chce zaatakować wszystkimi (`attack[shaman,brute,scout]`=26 wygrywa z
+  // `attack[brute]`=16), więc intencją są wszyscy i o wyborze decyduje wartość.
+  // Kontrakt, którego test strzeże: haste znosi chorobę, więc `brute` nadal
+  // jest pełnoprawnym celem — a nie odrzucany jak chory bez haste.
   const state = newState();
   put(state, 'shaman', 'battle-rattle-shaman', 'p1');
   put(state, 'brute', 'highland-game', 'p1', { power: 5, toughness: 5, summoningSickness: true, keywords: ['haste'] });
   put(state, 'scout', 'highland-game', 'p1', { power: 2, toughness: 2 });
   pendShaman(state, ['brute', 'scout']);
   const chosen = botPick(state);
-  assert.equal(chosen.targetId, 'brute',
-    `haste znosi chorobę — 5/5 bije 2/2: ${JSON.stringify(chosen)}`);
+  assert.equal(chosen.type, 'resolve_trigger_target');
+  assert.notEqual(chosen.targetId, null,
+    `bot musi wybrać cel: ${JSON.stringify(chosen)}`);
+  const atakCmd = createHeuristicBot({ seed: 1209 })
+    .chooseCommand(playerView((() => {
+      const s = newState('declare_attackers');
+      put(s, 'shaman', 'battle-rattle-shaman', 'p1');
+      put(s, 'brute', 'highland-game', 'p1', { power: 5, toughness: 5, summoningSickness: true, keywords: ['haste'] });
+      put(s, 'scout', 'highland-game', 'p1', { power: 2, toughness: 2 });
+      return s;
+    })(), 'p1'));
+  const attacks = atakCmd.attackerIds ?? [];
+  if (chosen.targetId != null) {
+    assert.ok(attacks.includes(chosen.targetId),
+      `cel bufora musi należeć do stworów, które bot zamierza atakować `
+      + `(zamiar: ${JSON.stringify(attacks)}, cel: ${chosen.targetId})`);
+  }
 });
 
 test('B/5: plansza samych chorych — bot ODMÓWIA (jałowy buff gorszy niż brak)', () => {
@@ -237,16 +259,23 @@ test('Shaman: +1,8 za trigger niezależnie od INNYCH własnych stworów — moż
 // ---------------------------------------------------------------------------
 
 test('A/1 ⭐ RED: bot buffuje stwora, którym NIE zamierza atakować (sedno zgłoszenia)', () => {
-  // Odtworzenie logu właściciela 1:1:
-  //   Kozilek's Shrieker 3/2, Warden of Geometries 2/3, wróg 2/2.
-  // Bot zamierza atakować WARDENA (2/3 wytrzymuje blok, 3/2 ginie),
-  // a +2/+0 daje KOZILEKOWI — największemu wg 2P+T (8 vs 7).
-  // Policzone z tej samej planszy, więc to nie heurystyka testu, tylko
-  // realna polityka ataku bota.
+  // Odtworzenie logu właściciela: SZAMAN JEST WŁASNY (gracz nim zagrał) i ma
+  // chorobę przywołania, więc nie atakuje. Walka rozstrzyga się między
+  // Kozilek's Shrieker 3/2 a Warden of Geometries 2/3 przy wrogu 2/2.
+  //
+  // Bot zamierza atakować WARDENA (2/3 wytrzymuje blok, 3/2 ginie), a +2/+0
+  // daje KOZILEKOWI — największemu wg dotychczasowej polityki 2P+T (8 vs 7).
+  //
+  // Szaman własny, nie wrogi — to nie ozdoba, tylko wymóg poprawności: przy
+  // dodatkowym WROGIU na planszy sama decyzja ataku się zmieniała (zmierzone:
+  // `attack[shrieker,warden]`=7 wygrywało z `attack[warden]`=5), więc w takim
+  // układzie bufor na Kozileka byłby wręcz poprawny i test niczego by nie
+  // wykrywał. Choroba własnego Szamana utrzymuje warunki zgłoszenia.
   const plansza = (step) => {
     const s = newState(step, 'p1');
     put(s, 'shrieker', 'kozileks-shrieker', 'p1');   // 3/2 — 2P+T = 8
     put(s, 'warden', 'warden-of-geometries', 'p1');   // 2/3 — 2P+T = 7
+    put(s, 'shaman', 'battle-rattle-shaman', 'p1', { summoningSickness: true });
     put(s, 'foe', 'highland-game', 'p2', { power: 2, toughness: 2 });
     return s;
   };
@@ -262,7 +291,6 @@ test('A/1 ⭐ RED: bot buffuje stwora, którym NIE zamierza atakować (sedno zg�
 
   // 2) Ta sama plansza na początku walki, z oczekującym triggerem Shaman.
   const state = plansza('beginning_of_combat');
-  put(state, 'shaman', 'battle-rattle-shaman', 'p2', { power: 2, toughness: 2 });
   pendShaman(state, ['shrieker', 'warden']);
   const chosen = createHeuristicBot({ seed: 1209 })
     .chooseCommand(playerView(state, 'p1'));
