@@ -4075,6 +4075,45 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return mojaBiblioteka < bibliotekaPrzeciwnika || mojaBiblioteka < SYMMETRIC_DRAIN_MIN_LIBRARY;
   };
 
+  // D (PR #171): gdy rzut permanentu niesie na własnym upkeepie symetryczny
+  // `reveal_top_each_player_lose_life_mana_value`, odrzucamy go poza dwoma
+  // bezpiecznymi stanami życia (bot prowadzi LUB ma >15 życia), a także gdy
+  // biblioteka bota jest jednocześnie mniejsza od przeciwnika i <10.
+  // Rozpoznanie po triggerze i typie efektu (ADR 0002), nie po nazwie karty.
+  const SYMMETRIC_UPKEEP_REVEAL_EFFECT = 'reveal_top_each_player_lose_life_mana_value';
+  const SEER_LIBRARY_PRESSURE_CUTOFF = 10;
+  const isSymmetricUpkeepRevealCard = (def) => (def?.abilities ?? []).some((ability) => {
+    if (ability?.type !== 'triggered' || ability.trigger?.event !== 'upkeep') return false;
+    const effects = Array.isArray(ability.effect) ? ability.effect
+      : (ability.effect ? [ability.effect] : []);
+    return effects.some((effect) => effect?.type === SYMMETRIC_UPKEEP_REVEAL_EFFECT);
+  });
+  const symmetricUpkeepRevealCastVeto = (view, cmd) => {
+    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    const def = card?.cardId ? cardDef(card.cardId) : undefined;
+    if (!isSymmetricUpkeepRevealCard(def)) return false;
+
+    const botLife = myLife(view);
+    const opponentLife = enemy(view)?.life ?? 0;
+    if (!(botLife > opponentLife || botLife > 15)) return true;
+
+    const botLibrary = myLibraryCount(view);
+    const opponent = enemy(view);
+    const opponentLibrary = opponent
+      ? (view.zones.library ?? []).filter((object) => object.controllerId === opponent.id).length
+      : 0;
+    if (botLibrary < opponentLibrary && botLibrary < SEER_LIBRARY_PRESSURE_CUTOFF) return true;
+
+    // Audyt CR 503.1/504.1/121.4–121.5: Seer moves (does not draw) one card
+    // at the controller's upkeep, before that player's normal draw. If both
+    // players have exactly one card, the opponent draws its last card first;
+    // this trigger then moves the bot's last card to hand and the bot loses
+    // on its draw step. The <10 rule above is strategic, not this immediate
+    // draw-step safety check.
+    return botLibrary === 1 && opponentLibrary === 1;
+  };
+
   /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
@@ -9855,6 +9894,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // G (uwagi właściciela 2026-10-15): weto symetrycznego drenażu bibliotek —
     // Pyxis / Ghoulcaller's Bell przy mniejszej bibliotece niż przeciwnik lub <10 kartach.
     if (symmetricDrainVeto(view, cmd)) return finish(NEVER);
+    // D (PR #171): odmowa rzutu permanentu z niekorzystnym triggerem
+    // symetrycznego revealu na upkeepie (Duskmantle Seer i ta sama semantyka).
+    if (symmetricUpkeepRevealCastVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
