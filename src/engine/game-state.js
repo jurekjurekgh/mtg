@@ -7278,6 +7278,9 @@ export function playerView(state, playerId) {
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
       if (zone === 'stack') {
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
+        const xValue = Number.isInteger(object.spellX) ? object.spellX
+          : Number.isInteger(object.fireballX) ? object.fireballX : null;
         return {
           id: object.id,
           // Face-down czar na stosie jest bezimiennym 2/2 (CR 708.2) —
@@ -7285,6 +7288,13 @@ export function playerView(state, playerId) {
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, manaCost: object.manaCost, spell: object.spell,
+          // Zagrany tryb i wartość X są publiczne na stosie (CR 601.2b/107.3a).
+          // Boty muszą oceniać wyłącznie wybrany efekt i rzeczywistą kwotę obrażeń.
+          ...(!hiddenFromViewer && object.chosenMode != null ? { chosenMode: object.chosenMode } : {}),
+          ...(!hiddenFromViewer && xValue != null ? { xValue } : {}),
+          ...(!hiddenFromViewer ? { colors: [...(object.colors ?? [])] } : {}),
+          ...(!hiddenFromViewer && object.castDuringMainPhase === true ? { castDuringMainPhase: true } : {}),
+          ...(!hiddenFromViewer && object.wasKicked === true ? { wasKicked: true } : {}),
           // PMSSB-56 (CR 707.10 + ADR 0017): to, że obiekt na stosie jest KOPIĄ
           // czaru, jest informacją publiczną (kopia nie była rzucana, nie ma
           // śladu w historii rzutów). Bez tej flagi wycena bota nie odróżniała
@@ -7307,6 +7317,8 @@ export function playerView(state, playerId) {
             ?? ((object.activatedEntry?.ability?.targets?.length)
               ? object.activatedEntry.targets
               : undefined),
+          ...(!hiddenFromViewer && Array.isArray(object.damageDivision)
+            ? { damageDivision: object.damageDivision.map((part) => ({ ...part })) } : {}),
           abilityIndex: object.activatedEntry?.abilityIndex,
           // M175/A2 (uwaga właściciela, Death-Hood Cobra): ŹRÓDŁO aktywowanej
           // zdolności jest ogłaszane przy kładzeniu na stos (informacja
@@ -9653,6 +9665,10 @@ export function playerView(state, playerId) {
     pendingColorChoice: activeColorChoice ? {
       purpose: state.pendingColorChoice.purpose ?? null,
       sourceCardId: state.pendingColorChoice.sourceCardId ?? null,
+      // Tożsamość konkretnego permanenta-źródła (Aura albo ląd) rozróżnia
+      // kopie tej samej karty; przy wyborze protection wskazuje zaczarowanego
+      // gospodarza przez battlefield[].attachedTo.
+      objectId: state.pendingColorChoice.auraId ?? state.pendingColorChoice.objectId ?? null,
     } : null,
     // M241: wizard „wygnij N kart” czyta listę decyzji Escape — kandydatów z
     // WŁASNEGO grobu (wiedza decydenta — strefa publiczna) + parametry kosztu.

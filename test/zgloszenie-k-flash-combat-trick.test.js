@@ -408,20 +408,19 @@ test('K/11: vanilla 2/3 bez flash w main1 → cast (reguła nie obejmuje go)', (
     `cast (${castScore(scores)}) > pass (${passScore(scores)})`);
 });
 
-test('K/12: flash-aura ochronna (nie-kreatura) trzyma swoją regułę okna (M235)', () => {
-  // Rodzina aury/bestow ma WŁASNĄ regułę okna (M235: ochrona w main1 z gotowym
-  // atakującym jest dozwolona). Kara kreatur z flash nie może jej dotknąć —
-  // inaczej aura ochronna zszedłaby poniżej passu w oknie, w którym M235
-  // uznała ją zawartą. Scena z M235: gospodarz + wielokolorowy wróg.
+test('K/12: Benevolent Blessing is held in Main 1 without a lethal-damage source (M235)', () => {
+  // Sam fakt, że gospodarz może zaatakować albo że wróg ma kolorowy stwór,
+  // nie jest już oknem do wydania Aury. M235 wymaga konkretnego lethal źródła
+  // w jednym z obsługiwanych okien walki albo na stosie.
   const s = scena({ cardId: 'benevolent-blessing', mana: 10 });
   put(s, 'mine', 'chained-throatseeker', 'p1');
   put(s, 'foe', 'trostani-discordant', 'p2', 'battlefield', { tapped: true });
   const { cmd, scores } = decyzja(s);
   const aura = scores['cast_permanent(h0->mine)'];
-  assert.equal(cmd.type, 'cast_permanent', `aura w main1: ${cmd.type}`);
-  assert.ok(aura > passScore(scores),
-    `aura ochronna (${aura}) > pass (${passScore(scores)}) — reguła kreatur jej nie tyka`);
-  assert.ok(aura > KARA + 0.01, `nota nie jest karą kreatury: ${aura}`);
+  assert.ok(aura < passScore(scores),
+    `bez lethal źródła Aura (${aura}) musi być < pass (${passScore(scores)})`);
+  assert.notEqual(cmd.type === 'cast_permanent' && cmd.objectId === 'h0' ? 'cast' : 'other', 'cast',
+    `bot nie powinien wydawać Blessing w Main 1: ${JSON.stringify(cmd)}`);
 });
 
 test('K/13: flash-artefakt bez celu (nie-kreatura) zachowuje pełną wycenę', () => {

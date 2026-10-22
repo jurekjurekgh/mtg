@@ -597,24 +597,52 @@ function duelStats(object, { power = 0, toughness = 0 } = {}) {
     firstStrike: kw.includes('first_strike'),
     doubleStrike: kw.includes('double_strike'),
     lifelink: kw.includes('lifelink'),
+    colors: [...(object?.colors ?? [])],
   };
 }
 
 /**
  * Symulacja walki atakującego z blokerami (CR 510). Wynik wg kontraktu
- * `combatOutcome` — porównywany przed/po pumpie.
+ * `combatOutcome` — porównywany przed/po pumpie. Opcjonalna ochrona jednego
+ * uczestnika jest używana tylko do porównania, czy nowy kolor ochrony ratuje
+ * konkretne stworzenie przed przypisanymi obrażeniami.
  */
-function simulateCombat(attacker, blockers) {
+function simulateCombat(attacker, blockers, protection = {}) {
   const fighters = (blockers ?? []).map((b) => ({ ...b, damageTaken: 0, hitByDeathtouch: false, alive: true }));
   const a = { ...attacker, damageTaken: 0, hitByDeathtouch: false, alive: true };
   const unblocked = fighters.length === 0;
   let faceDamage = 0;
   let attackerLifeGain = 0;
   let blockerLifeGain = 0;
+  let shieldRemaining = protection.damageShield ?? 0;
+  let shieldCounterRemaining = protection.shieldCounterCount ?? 0;
   // lane 0 = first/double strike, lane 1 = regularny (double strike w obu).
   const inLane = (s, lane) => (lane === 0
     ? (s.firstStrike || s.doubleStrike)
     : (!s.firstStrike || s.doubleStrike));
+  const preventedByProtection = (source, recipient) => {
+    if (recipient?.id !== protection.protectedCreatureId) return false;
+    if ((protection.preventedSourceIds ?? []).includes(source?.id)) return true;
+    return (source?.colors ?? []).some((color) => (protection.protectedColors ?? []).includes(color));
+  };
+  const dealCombatDamage = (source, recipient, amount) => {
+    if (preventedByProtection(source, recipient)) return 0;
+    let dealt = amount;
+    if (recipient?.id === protection.protectedCreatureId && shieldRemaining > 0) {
+      const prevented = Math.min(dealt, shieldRemaining);
+      shieldRemaining -= prevented;
+      dealt -= prevented;
+    }
+    if (recipient?.id === protection.protectedCreatureId && dealt > 0 && shieldCounterRemaining > 0) {
+      shieldCounterRemaining -= 1;
+      dealt = 0;
+    }
+    if (dealt > 0) {
+      recipient.damageTaken += dealt;
+      if (source.deathtouch) recipient.hitByDeathtouch = true;
+    }
+    return dealt;
+  };
   for (const lane of [0, 1]) {
     if (!a.alive) break; // CR 510.2 — martwy nie zadaje w następnym kroku
     const aActive = inLane(a, lane);
@@ -622,34 +650,40 @@ function simulateCombat(attacker, blockers) {
       let remaining = a.power;
       const aliveFighters = fighters.filter((b) => b.alive);
       let dealt = 0;
-      for (const b of aliveFighters) {
-        if (remaining <= 0) break;
-        // Lethal-first (CR 510.1b): deathtouch czyni 1 obrażenie śmiertelnym.
-        const give = Math.min(remaining, a.deathtouch ? 1 : b.toughness);
-        b.damageTaken += give;
-        if (a.deathtouch && give > 0) b.hitByDeathtouch = true;
-        dealt += give;
-        remaining -= give;
-      }
       if (unblocked) {
         faceDamage += a.power;
         dealt += a.power;
-      } else if (a.trample) {
-        // CR 702.19 — nadmiar po przydziale lethal idzie na twarz.
-        faceDamage += Math.max(0, remaining);
-        dealt += Math.max(0, remaining);
-      } else if (aliveFighters.length > 0 && remaining > 0) {
-        // CR 510.1b — bez trample nadmiar wpada w ostatniego blokera (overkill).
-        aliveFighters[aliveFighters.length - 1].damageTaken += remaining;
-        dealt += remaining;
+      } else {
+        const assignments = new Map();
+        for (const b of aliveFighters) {
+          if (remaining <= 0) break;
+          // Lethal-first (CR 510.1b): deathtouch czyni 1 obrażenie śmiertelnym.
+          const give = Math.min(remaining, a.deathtouch ? 1 : b.toughness);
+          assignments.set(b.id, (assignments.get(b.id) ?? 0) + give);
+          remaining -= give;
+        }
+        if (a.trample) {
+          // CR 702.19 — nadmiar po przydziale lethal idzie na twarz.
+          faceDamage += Math.max(0, remaining);
+          dealt += Math.max(0, remaining);
+        } else if (aliveFighters.length > 0 && remaining > 0) {
+          // CR 510.1b — bez trample nadmiar wpada w ostatniego blokera (overkill).
+          const last = aliveFighters[aliveFighters.length - 1];
+          assignments.set(last.id, (assignments.get(last.id) ?? 0) + remaining);
+        }
+        // Damage assignment is fixed before prevention. Chunks assigned to the
+        // same blocker are one damage event; prevented damage is not reassigned.
+        for (const b of aliveFighters) {
+          const amount = assignments.get(b.id) ?? 0;
+          if (amount > 0) dealt += dealCombatDamage(a, b, amount);
+        }
       }
       if (a.lifelink) attackerLifeGain += dealt;
     }
     for (const b of fighters) {
       if (!b.alive || !inLane(b, lane)) continue;
-      a.damageTaken += b.power;
-      if (b.deathtouch && b.power > 0) a.hitByDeathtouch = true;
-      if (b.lifelink) blockerLifeGain += b.power;
+      const dealt = dealCombatDamage(b, a, b.power);
+      if (b.lifelink) blockerLifeGain += dealt;
     }
     // SBA po przebiegu (CR 510.2): śmiertelność wg źródła z deathtouch.
     if (a.damageTaken > 0 && (a.hitByDeathtouch || a.damageTaken >= a.toughness)) a.alive = false;
@@ -670,10 +704,11 @@ function simulateCombat(attacker, blockers) {
  * Wynik walki, w której bierze udział `recipient`, z uwzględnieniem delty
  * (pump/debuff) na tym stworze. Null, gdy stwór nie uczestniczy w walce.
  */
-function combatOutcome(view, recipient, delta = {}) {
+function combatOutcome(view, recipient, delta = {}, protection = {}) {
   const combat = view.combat ?? null;
   const id = recipient?.id;
   if (!combat || !id) return null;
+  const protectionState = { ...protection, protectedCreatureId: protection.protectedCreatureId ?? id };
   const battlefield = view.zones.battlefield ?? [];
   const viewObject = (oid) => battlefield.find((o) => o.id === oid) ?? null;
   const blockersOf = (attackerId) => (combat.blockers ?? {})[attackerId] ?? [];
@@ -686,7 +721,7 @@ function combatOutcome(view, recipient, delta = {}) {
       .filter(Boolean)
       .map((b) => duelStats(b));
     const stats = duelStats(attacker, attackerId === id ? delta : {});
-    return simulateCombat(stats, blockers);
+    return simulateCombat(stats, blockers, protectionState);
   }
   // Bloker: znajdujemy atakującego, dla którego został zadeklarowany.
   const blockedFor = Object.keys(combat.blockers ?? {})
@@ -698,7 +733,7 @@ function combatOutcome(view, recipient, delta = {}) {
     .map((oid) => viewObject(oid))
     .filter(Boolean)
     .map((b) => duelStats(b, b.id === id ? delta : {}));
-  return simulateCombat(duelStats(foe), blockers);
+  return simulateCombat(duelStats(foe), blockers, protectionState);
 }
 
 /**
@@ -6486,6 +6521,250 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
   const cardDef = (cardId) => (cardId ? registry.get(cardId) : undefined);
 
+  const protectionColorsOf = (object) => [...new Set(
+    (object?.protection ?? []).flatMap((quality) => Array.isArray(quality?.colors) ? quality.colors : []),
+  )];
+  const publicSourceColors = (source) => (Array.isArray(source?.colors)
+    ? source.colors : (cardDef(source?.cardId)?.colors ?? []));
+  const damageSourceForPrevention = (source) => source && ({
+    ...source,
+    types: Array.isArray(source.types) ? source.types : (cardDef(source.cardId)?.types ?? []),
+  });
+  const targetProtectionBlocksSource = (target, source) => (target?.protection ?? [])
+    .some((quality) => sourceHasProtectionQuality(quality, damageSourceForPrevention(source)));
+  const selectedStackSpellEffects = (entry) => {
+    const spell = entry?.spell;
+    if (!spell) return [];
+    if (!Array.isArray(spell.modes)) return spell.effects ?? [];
+    if (!Number.isInteger(entry.chosenMode)) return [];
+    const mode = spell.modes[entry.chosenMode];
+    return mode ? [...(spell.effects ?? []), ...(mode.effects ?? [])] : [];
+  };
+  const damageAmountForTarget = (view, effect, entry, target) => {
+    let amount = effect?.amount;
+    if (amount === 'X') amount = entry?.xValue;
+    if (amount === 'basic_land_types_you_control') {
+      amount = basicLandTypeCount(view.zones?.battlefield ?? [], entry?.controllerId);
+    } else if (amount === 'instants_and_sorceries_in_your_graveyard') {
+      amount = instantSorceryGraveyardCount(view.zones?.graveyard ?? [], entry?.controllerId);
+    } else if (amount === 'artifacts_you_control') {
+      amount = (view.zones?.battlefield ?? []).filter((object) => object.controllerId === entry?.controllerId
+        && (object.types ?? cardDef(object.cardId)?.types ?? []).includes('Artifact')).length;
+    }
+    const counterBonus = effect?.amountIfTargetHasCounter;
+    if (counterBonus && (target?.counters?.[counterBonus.counter] ?? 0) > 0) amount = counterBonus.amount;
+    if (effect?.amountIfAddendum != null && entry?.castDuringMainPhase === true) amount = effect.amountIfAddendum;
+    return Number.isInteger(amount) && amount > 0 ? amount : 0;
+  };
+  function directDamageThreatsForTarget(view, target, entry) {
+    const targets = entry?.targets ?? [];
+    if (entry?.spell?.fireball) {
+      const xValue = Number.isInteger(entry.xValue) ? entry.xValue : 0;
+      if (targets.length === 0 || !targets.includes(target.id)) return [];
+      const amount = Math.floor(xValue / targets.length);
+      return amount > 0 ? [{ source: entry, colors: publicSourceColors(entry), amount }] : [];
+    }
+
+    const threats = [];
+    const addThreat = (source, amount) => {
+      if (!source || amount <= 0) return;
+      threats.push({ source, colors: publicSourceColors(source), amount });
+    };
+    for (const effect of selectedStackSpellEffects(entry)) {
+      if (effect?.type === 'damage') {
+        const targetIndex = effect.targetIndex ?? 0;
+        if (targets[targetIndex] !== target.id) continue;
+        addThreat(entry, damageAmountForTarget(view, effect, entry, target));
+      } else if (effect?.type === 'damage_divided_among_targets') {
+        const part = (entry.damageDivision ?? []).find((division) => division.id === target.id);
+        if (part) addThreat(entry, part.amount);
+      } else if (effect?.type === 'apply_to_each_target') {
+        if (!targets.includes(target.id)) continue;
+        for (const subeffect of effect.effects ?? []) {
+          if (subeffect?.type === 'damage') {
+            addThreat(entry, damageAmountForTarget(view, subeffect, entry, target));
+          }
+        }
+      } else if (effect?.type === 'damage_creatures_with_keyword') {
+        const onlyOpponents = effect.opponentsOnly !== false;
+        if ((onlyOpponents && target.controllerId === entry.controllerId)
+          || !hasKeyword(target, effect.keyword)) continue;
+        addThreat(entry, damageAmountForTarget(view, effect, entry, target));
+      } else if (effect?.type === 'damage_from_target_power') {
+        const targetIndex = effect.targetIndex ?? 1;
+        const sourceIndex = effect.sourceTargetIndex ?? 0;
+        if (targets[targetIndex] !== target.id) continue;
+        const source = objectOnBoard(view, targets[sourceIndex]);
+        if (!source || source.kind !== 'creature') continue;
+        const multiplier = effect.kickedMultiplier && entry.wasKicked === true
+          ? effect.kickedMultiplier : 1;
+        addThreat(source, Math.max(0, source.power ?? 0) * multiplier);
+      }
+    }
+    return threats;
+  }
+  function lethalDirectDamageProtectionColors(view, target) {
+    const stack = view.zones?.stack ?? [];
+    const entry = stack.at(-1);
+    if (!entry || entry.kind !== 'spell' || entry.faceDown === true
+      || entry.controllerId === view.playerId) return [];
+    if (!target || target.kind !== 'creature' || target.controllerId !== view.playerId
+      || hasKeyword(target, 'indestructible')) return [];
+
+    const threats = directDamageThreatsForTarget(view, target, entry);
+    if (threats.length === 0) return [];
+    const existingColors = protectionColorsOf(target);
+    const remainingToughness = (target.toughness ?? 0) - (target.damage ?? 0);
+    if (remainingToughness <= 0) return [];
+    const damageAfterProtection = (addedColor = null) => {
+      let amount = 0;
+      let shieldRemaining = shieldedAmount(view, target.id);
+      let shieldCounterRemaining = target.counters?.shield ?? 0;
+      let lethalDeathtouch = false;
+      for (const threat of threats) {
+        if (damageFullyPrevented(view, damageSourceForPrevention(threat.source))
+          || targetProtectionBlocksSource(target, threat.source)) continue;
+        if (threat.colors.some((color) => existingColors.includes(color) || color === addedColor)) continue;
+        let dealt = Math.max(0, threat.amount - shieldRemaining);
+        shieldRemaining = Math.max(0, shieldRemaining - threat.amount);
+        if (dealt > 0 && shieldCounterRemaining > 0) {
+          shieldCounterRemaining -= 1;
+          dealt = 0;
+        }
+        amount += dealt;
+        if (dealt > 0 && hasKeyword(threat.source, 'deathtouch')) lethalDeathtouch = true;
+      }
+      return { amount, lethalDeathtouch };
+    };
+    const isLethalDamage = ({ amount, lethalDeathtouch }) =>
+      lethalDeathtouch || amount >= remainingToughness;
+    if (!isLethalDamage(damageAfterProtection())) return [];
+
+    const candidates = new Set(threats.flatMap((threat) => threat.colors));
+    return [...candidates].filter((color) => !existingColors.includes(color)
+      && !isLethalDamage(damageAfterProtection(color)));
+  }
+  const combatRecipientDies = (outcome, target, isAttacker) => isAttacker
+    ? outcome?.attackerDies === true
+    : (outcome?.deadBlockers ?? []).includes(target?.id);
+  const combatProtectionSimulation = (view, target, protectedColors, participantIds) => {
+    const preventedSourceIds = [...new Set(participantIds)]
+      .map((id) => objectOnBoard(view, id))
+      .filter((source) => source && (damageFullyPrevented(view, damageSourceForPrevention(source))
+        || targetProtectionBlocksSource(target, source)))
+      .map((source) => source.id);
+    return {
+      protectedCreatureId: target.id,
+      protectedColors,
+      preventedSourceIds,
+      damageShield: shieldedAmount(view, target.id),
+      shieldCounterCount: target.counters?.shield ?? 0,
+    };
+  };
+  function lethalAssignedCombatProtectionColors(view, target) {
+    const combat = view.combat;
+    if (!combat || view.turn?.step !== 'combat_damage' || combat.damageAssigned === true
+      || view.pendingDamageAssignment || !target || target.kind !== 'creature'
+      || target.controllerId !== view.playerId || hasKeyword(target, 'indestructible')) return [];
+    const attackers = combat.attackers ?? [];
+    const blockers = combat.blockers ?? {};
+    const isAttacker = attackers.includes(target.id);
+    let sourceIds;
+    let participantIds;
+    if (isAttacker) {
+      sourceIds = blockers[target.id] ?? [];
+      participantIds = [target.id, ...sourceIds];
+    } else {
+      const attackerId = attackers.find((id) => (blockers[id] ?? []).includes(target.id));
+      if (!attackerId) return [];
+      sourceIds = [attackerId];
+      participantIds = [attackerId, ...(blockers[attackerId] ?? [])];
+    }
+    const sources = sourceIds.map((id) => objectOnBoard(view, id))
+      .filter((source) => source && source.controllerId !== target.controllerId);
+    if (sources.length === 0) return [];
+
+    const existingColors = protectionColorsOf(target);
+    const simulation = combatProtectionSimulation(view, target, existingColors, participantIds);
+    const before = combatOutcome(view, target, {}, simulation);
+    if (!combatRecipientDies(before, target, isAttacker)) return [];
+
+    const candidates = new Set(sources.flatMap((source) => publicSourceColors(source)));
+    const lethalColors = [];
+    for (const color of candidates) {
+      if (existingColors.includes(color)) continue;
+      const after = combatOutcome(view, target, {}, {
+        ...simulation,
+        protectedColors: [...existingColors, color],
+      });
+      if (!combatRecipientDies(after, target, isAttacker)) lethalColors.push(color);
+    }
+    return lethalColors;
+  }
+  function lethalPotentialBlockProtectionColors(view, target) {
+    const combat = view.combat;
+    if (!combat || view.turn?.step !== 'declare_blockers'
+      || combat.attackingPlayerId === view.playerId || combat.damageAssigned === true
+      || view.pendingDamageAssignment || !target || target.kind !== 'creature'
+      || target.controllerId !== view.playerId || hasKeyword(target, 'indestructible')) return [];
+
+    const candidates = view.blockCandidates ?? {};
+    const existingColors = protectionColorsOf(target);
+    const lethalColors = new Set();
+    for (const attackerId of combat.attackers ?? []) {
+      const attacker = objectOnBoard(view, attackerId);
+      const legalBlockers = candidates[attackerId] ?? [];
+      if (!attacker || attacker.controllerId === view.playerId || !legalBlockers.includes(target.id)) continue;
+
+      const blockerIds = [target.id];
+      const needsPartner = hasKeyword(attacker, 'menace') || target.cantBlockAlone === true;
+      if (needsPartner) {
+        const partnerId = legalBlockers.find((id) => id !== target.id);
+        if (!partnerId) continue;
+        blockerIds.push(partnerId);
+      }
+      const blockers = blockerIds.map((id) => objectOnBoard(view, id)).filter(Boolean);
+      if (blockers.length !== blockerIds.length) continue;
+      const participantIds = [attackerId, ...blockerIds];
+      const blockerStats = blockers.map((blocker) => duelStats(blocker));
+      const before = simulateCombat(duelStats(attacker), blockerStats,
+        combatProtectionSimulation(view, target, existingColors, participantIds));
+      if (!combatRecipientDies(before, target, false)) continue;
+
+      for (const color of publicSourceColors(attacker)) {
+        if (existingColors.includes(color)) continue;
+        const after = simulateCombat(duelStats(attacker), blockerStats, {
+          ...combatProtectionSimulation(view, target, [...existingColors, color], participantIds),
+        });
+        if (!combatRecipientDies(after, target, false)) lethalColors.add(color);
+      }
+    }
+    return [...lethalColors];
+  }
+  function lethalProtectionThreatColors(view, target) {
+    const colors = new Set([
+      ...lethalDirectDamageProtectionColors(view, target),
+      ...lethalAssignedCombatProtectionColors(view, target),
+      ...lethalPotentialBlockProtectionColors(view, target),
+    ]);
+    return [...colors];
+  }
+  function pendingProtectionAuraHost(view) {
+    const pending = view.pendingColorChoice;
+    if (pending?.purpose !== 'protection') return null;
+    const battlefield = view.zones?.battlefield ?? [];
+    let aura = pending.objectId
+      ? battlefield.find((object) => object.id === pending.objectId) : null;
+    if (!aura && pending.sourceCardId) {
+      const matches = battlefield.filter((object) => object.controllerId === view.playerId
+        && object.cardId === pending.sourceCardId && object.attachedTo != null);
+      if (matches.length === 1) [aura] = matches;
+    }
+    if (!aura || aura.attachedTo == null || aura.controllerId !== view.playerId
+      || aura.aura?.chooseColor !== true) return null;
+    return objectOnBoard(view, aura.attachedTo) ?? null;
+  }
+
   /**
    * K (zgłoszenie właściciela 2026-10-15, Glint-Sleeve Artisan): czy bot ma
    * SYNERGIĘ z ofiarą kreatury, dla której token 1/1 jest wart więcej niż
@@ -10586,12 +10865,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             && !descriptor?.chooseColor
             && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
             && (descriptor?.keywords ?? []).length === 0;
-          // M235 (zlecenie właściciela): aura FLASH, której cała wartość jest
-          // OCHRONNĄ sztuczką bojową — pure-protection (stała jakość) ALBO
-          // chooseColor-protection (Benevolent Blessing, kolor dobierany przy
-          // wejściu) — bez pumpa i keywordów. Taka aura NIC nie robi poza walką
-          // (nikt nie atakuje/blokuje), więc rzucona w upkeepie/kroku bez walki
-          // marnuje elastyczność instanta. Reguła po deskryptorze (ADR 0002).
+          // M235: protection-only flash Auras are evaluated by descriptor,
+          // not card name. Benevolent Blessing's chooseColor branch below has
+          // the stricter lethal-damage gate; fixed-quality protection retains
+          // its existing timing path.
           const cardIsFlash = (cardDef(card?.cardId)?.keywords ?? card?.keywords ?? []).includes('flash');
           // Ochrona pochodzi z jawnej `protection` (stała jakość) ALBO z
           // `chooseColor` (Benevolent Blessing — kolor dobierany przy wejściu).
@@ -10599,13 +10876,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const isProtectionTrick = grantsProtection
             && (pumpDesc.power ?? 0) === 0 && (pumpDesc.toughness ?? 0) === 0
             && (descriptor?.keywords ?? []).length === 0;
-          // Okno użyteczne dla aury-sztuczki ochronnej:
-          //  - walka z udziałem gospodarza (atakuje/blokuje teraz), LUB
-          //  - moja Główna 1 z gospodarzem gotowym do ataku (ustawiam atak).
+          // Existing timing window for protection Auras on the legacy scoring
+          // path: combat with the host, or my precombat main with a ready attacker.
           const protectionTrickHasWindow = combatTrickWindow(view, target)
             || (myTurn(view) && view.turn.phase === 'precombat_main' && canAttackNow(target));
           const offWindowFlashProtectionPenalty = (cardIsFlash && isProtectionTrick && !protectionTrickHasWindow)
             ? P.flashProtectionAuraOffWindowPenalty : 0;
+          // Benevolent Blessing-style protection-from-chosen-color is a true
+          // damage-prevention trick: a combat step or Main 1 alone is not a
+          // reason to spend it. Require a currently lethal damage source and
+          // score only a color that actually prevents that damage.
+          if (cardIsFlash && descriptor?.chooseColor && isProtectionTrick) {
+            const lethalColors = lethalProtectionThreatColors(view, target);
+            if (lethalColors.length === 0) return finish(-P.flashProtectionAuraOffWindowPenalty);
+            return finish(P.auraBase + P.auraProtectionBase
+              + P.auraBuffWorthWeight * ((target.power ?? 0) + (target.toughness ?? 0))
+              + P.colorProtectionPerCreature * lethalColors.length);
+          }
           if (isPureProtection) {
             const known = [
               ...(view.zones.battlefield ?? []),
@@ -10621,12 +10908,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (threats === 0) return finish(-P.auraProtectionNoThreatPenalty);
             // Sa zagrozenia: wartosc rosnie z ich liczba, ale ochrona bez
             // pumpa nie jest tempem — zostaje ponizej zwyklego buffa.
-            // M235: flash-aura ochronna poza oknem walki — kara (trzymaj kartę).
+            // Static-quality protection keeps the existing penalty outside
+            // its combat / precombat-main timing window.
             return finish(P.auraProtectionBase + P.auraProtectionThreatWeight * threats + (target.power ?? 0) - offWindowFlashProtectionPenalty);
           }
           const pump = pumpDesc;
-          // M235: chooseColor-protection (Benevolent Blessing) trafia tu (nie do
-          // isPureProtection) — kara okna dotyczy też jej, gdy jest flash i poza walką.
+          // The lethal-only Benevolent Blessing branch returned above; this
+          // legacy pump scoring remains for protection Auras with added value.
           // M431 (uwaga wlasciciela): do ciala gospodarza
           // dochodzi SWIEZOSC grantow — aura na stworze, ktory ma juz flying,
           // jest realnie slabym celem, a nie tym samym celem (L169: wczesniej
@@ -16128,7 +16416,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Nieznany cel zostaje przy dawnej sumie (kotwica anty-over-fix: nic,
         // czego nie zmierzyliśmy, nie zmienia zachowania).
         const purpose = view.pendingColorChoice?.purpose;
-        if (purpose === 'protection') return finish(5 + enemyInColor * P.colorProtectionPerCreature);
+        if (purpose === 'protection') {
+          const host = pendingProtectionAuraHost(view);
+          const lethalColors = host ? lethalProtectionThreatColors(view, host) : [];
+          if (lethalColors.length > 0) {
+            return finish(lethalColors.includes(color) ? 100 + lethalColors.length : 0);
+          }
+          return finish(5 + enemyInColor * P.colorProtectionPerCreature);
+        }
         if (purpose === 'mana') return finish(5 + needScore * P.colorManaNeedPerCard);
         // Audyt PR #162/F-1: Zombie Boa wybiera kolor najcenniejszego
         // potencjalnego blokera, tą samą miarą co wycena aktywacji (L41).

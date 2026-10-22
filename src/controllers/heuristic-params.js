@@ -225,13 +225,10 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Kara musi PRZEBIĆ bazę czaru (+50) i premię removalu, żeby wariant
   // zszedł poniżej passu (wzec M237/2 — trywialny cel kontry).
   'removalPureLandPenalty',  // kara za removal/odbicie kierowane w czysty ląd przeciwnika
-  // Rodzina „timing aury-sztuczki" (M235, zlecenie właściciela po audycie).
-  // Aura FLASH, której cała wartość jest bojowa (czysta ochrona), to combat
-  // trick — jej wartość zależy od OKNA: sensowna w walce (ochrona atakującego
-  // przed blokerami danego koloru / bezstratny blok w turze przeciwnika), a we
-  // własnym upkeepie/kroku bez walki to zmarnowana elastyczność (lepiej trzymać
-  // kartę do właściwego okna). Deskryptor: flash + pure-protection (ADR 0002).
-  'flashProtectionAuraOffWindowPenalty', // kara za rzut flash-aury ochronnej poza oknem walki
+  // M235: Benevolent Blessing uses this as a hold score when no lethal-damage
+  // threat exists; a Main 1 or combat step alone does not open its window.
+  // Static-quality protection Auras retain the existing timing-penalty path.
+  'flashProtectionAuraOffWindowPenalty', // kara, gdy wybrana ochrona nie zatrzymuje lethal
   // K (zgłoszenie właściciela 2026-10-08, Village Bell-Ringer): kara za rzut
   // kreatury z flash ZA WCZEŚNIE (we własnej turze albo w turze przeciwnika
   // przed deklaracją atakujących) — sztuczka bojowa trzymana do okna zaskoczenia.
@@ -836,12 +833,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
   removalCombatHandledPenalty: 12,
   removalPureLandPenalty: 60,
-  // M235 — aura FLASH o czystej wartości ochronnej rzucona POZA oknem walki
-  // (własny upkeep/draw/end, postcombat, tura przeciwnika przed deklaracją
-  // ataków) marnuje elastyczność instanta. Kara musi przebić bazę takiej aury
-  // (do ~auraBase + auraBuffWorthWeight·moc + wytrzymałość gospodarza), żeby
-  // wariant zszedł PONIŻEJ passu (0) — bot trzyma kartę do właściwego okna.
-  // W oknie walki kara nie działa, więc aura nadal wygrywa.
+  // M235: this also pushes Benevolent Blessing below pass without a lethal
+  // source. Other flash protection Auras retain the legacy off-window penalty;
+  // it must exceed their base value so the bot holds them until that window.
   flashProtectionAuraOffWindowPenalty: 120,
   // K: margines, o który wariant „teraz” schodzi PONIŻEJ passu. Wycena karty
   // (ciało + ETB) jest wyzerowana, a epsilon nadal różnicuje karty z flash —
