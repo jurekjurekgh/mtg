@@ -1,26 +1,27 @@
 {
   "version": 1,
-  "overallHash": "9050ee9dcc801df64f52519eca45177fc07753366b4d5fee73ed95541f935e7a",
+  "overallHash": "fb39ff9760ecb9e2ce3cef1203b3ccfff838033850e41caddbe818931c2d7c7d",
   "matches": [
     {
       "pair": "ravnica-wub|innistrad-wu",
       "seed": 1000,
-      "hash": "3c22600d57d9845dd31112014d01678a1240040b1b3660f9709618d5584d6cea",
-      "decisions": 298,
-      "scoreSum": 1925.5682,
+      "hash": "5c0c0b33f8fd228ccc8434edcbccb097238cabcec83966573bc945f5974634b4",
+      "decisions": 322,
+      "scoreSum": 2207.5682,
       "chosenKinds": {
+        "activate_ability": 6,
         "attack": 9,
-        "block": 10,
+        "block": 9,
         "cast_permanent": 5,
-        "cast_spell": 3,
-        "pass_priority": 245,
-        "play_land": 6,
+        "cast_spell": 5,
+        "pass_priority": 258,
+        "play_land": 7,
         "resolve_combat": 11,
         "resolve_counter_pay_choice": 1,
         "resolve_discard_choice": 1,
         "resolve_mulligan_choice": 1,
         "resolve_optional_trigger_choice": 5,
-        "resolve_trigger_target": 1
+        "resolve_trigger_target": 4
       }
     },
     {
@@ -47,9 +48,9 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1000,
-      "hash": "3beff711722d006fc318238dd209186fffd6eb5e820da0db6a7ed2baf198434a",
+      "hash": "47bceb816296b0b2f0a7131b79df3e2e0647b1b3ac1418e6e530e5c3eb5dd190",
       "decisions": 205,
-      "scoreSum": 2978.4126,
+      "scoreSum": 3030.4126,
       "chosenKinds": {
         "attack": 5,
         "block": 8,
@@ -66,17 +67,17 @@
     {
       "pair": "dominaria-brg|mirrodin-wu",
       "seed": 1001,
-      "hash": "b744e3704391e50805118c02e3d509781be8821af32182d24d310e0f84d03e6d",
-      "decisions": 273,
-      "scoreSum": 3246.7018,
+      "hash": "4b6c544db9224e48d9a42cf665337464963aeed58a7efdabf48d63f032539aa8",
+      "decisions": 246,
+      "scoreSum": 3099.7118,
       "chosenKinds": {
-        "attack": 7,
-        "block": 9,
+        "attack": 6,
+        "block": 8,
         "cast_permanent": 7,
-        "cast_spell": 4,
-        "pass_priority": 225,
+        "cast_spell": 3,
+        "pass_priority": 202,
         "play_land": 6,
-        "resolve_combat": 11,
+        "resolve_combat": 10,
         "resolve_mulligan_choice": 1,
         "resolve_reveal_exile_hand": 1,
         "resolve_suspend_cast": 1,

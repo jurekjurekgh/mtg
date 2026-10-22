@@ -14109,10 +14109,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // wymiany ponad wolne sloty dostają karę (patrz niżej).
         let survivorKillers = 0;
         const tradeValues = [];
+        // B (zgłoszenie właściciela 2026-10-22, sedno sprawy): BLOKER MOŻE
+        // ZABLOKOWAĆ TYLKO JEDNEGO atakującego (CR 509.1a). Pętla niżej wycenia
+        // KAŻDEGO atakującego tak, jakby stał naprzeciwko niemu osobny bloker —
+        // więc przy 4 atakujących przeciw 1 blokerowi trzy dostawały wycenę
+        // „zablokowany / chump", a ich moc NIE wędrowała do twarza. Bot z
+        // 4 stworami przeciw jednemu blokerowi bił jeden 2/3 zamiast wejść za 6.
+        //
+        // Rozdzielamy więc atak na ZABLOKOWALNĄ część i NADMIAR. Obrońca
+        // zablokuje najgroźniejsze `blockers.length` zagrożeń; pozostałe nie mają
+        // blokera i wchodzą w twarz. Wybór „najgroźniejszych" po mocy z widoku
+        // jest tu uproszczony — wystarcza, bo dalsze rozstrzyganie przeżycia
+        // robi już model poniżej.
+        const rankedByThreat = attackers
+          .filter((id) => projectedAttackerOf(id))
+          .sort((a, b) => faceDamageOf(projectedAttackerOf(b)) - faceDamageOf(projectedAttackerOf(a)));
+        const blokowalne = new Set(rankedByThreat.slice(0, blockers.length));
         for (const id of attackers) {
           const object = projectedAttackerOf(id);
           if (!object) continue;
-          const candidates = blockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
+          // Nadmiarowy atakujący NIE MA blokera — nie da się go zatrzymać, więc
+          // wchodzi w twarz. Ocena „zablokowanego" byłaby dla niego kłamstwem.
+          // Używamy WŁASNEGO braku blokera (`[]`), a nie zmiennej `blockers`:
+          // pojemność blokowania jest już rozliczona przez `blokowalne`, więc
+          // nie wolno liczyć tych samych blokerów drugi raz.
+          const effectiveBlockers = blokowalne.has(id) ? blockers : [];
+          const candidates = effectiveBlockers.map(blocker => afterBlockTriggers(view, blocker, [object]));
           const strongestBlockerPower = candidates.reduce((max, o) => Math.max(max, combatPower(o)), 0);
           const strongestBlockerToughness = candidates.reduce((max, o) => Math.max(max, o.toughness ?? 0), 0);
           // M167/I (uwaga właściciela): GANG dwóch blokerów — atakujący 2/4
@@ -14162,12 +14184,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // albo ewazję, która realnie coś zmienia. Reguła generyczna (ADR
           // 0002): 0 mocy = 0 obrażeń bojowych.
           const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
-          const canBeBlocked = attackerCanBeBlocked(object, blockers);
+          const canBeBlocked = attackerCanBeBlocked(object, effectiveBlockers);
           // C-R4: staty EFEKTYWNE w bloku — pump „becomes blocked" jest aktywny
           // tylko, gdy atakujący realnie zostanie zablokowany (są blokerzy i
           // da się zablokować); w otwartym ataku liczy się druk.
           const bbPump = becomesBlockedPump(object);
-          const blockedStats = blockers.length > 0 && canBeBlocked
+          const blockedStats = effectiveBlockers.length > 0 && canBeBlocked
             ? { power: power + (object.combatDamageByToughness ? bbPump.toughness : bbPump.power), toughness: toughness + bbPump.toughness }
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
@@ -14178,7 +14200,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // atakujący zada 0 obrażeń (CR 702.16e; G3), nie zginie, tylko tapnie się.
           // Atak co turę w tego blokera to marnotrawstwo (dokładnie objaw E).
           // Jałowy niezależnie od wyścigu (jak M188/C), więc premia go nie ratuje.
-          const neutralizedByProtection = attackerNeutralizedByProtection(object, blockers);
+          const neutralizedByProtection = attackerNeutralizedByProtection(object, effectiveBlockers);
           // PMSSB-50: próg „zabija, ZANIM bloker odpowie" to JEDNA odsłona —
           // first strike (CR 702.7) albo pierwsza odsłona double strike
           // (CR 702.7b); z deathtouch wystarcza 1 obrażenie (CR 702.2b).
@@ -14196,11 +14218,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const deathtouchUnblockable = hasKeyword(combatObject, 'deathtouch')
             && combatPower(combatObject) > 0
             && blockers.length > 0
-            && blockers.every((b) => (b.power ?? 0) + (b.toughness ?? 0) > power + toughness);
+            && effectiveBlockers.every((b) => (b.power ?? 0) + (b.toughness ?? 0) > power + toughness);
           if (neutralizedByProtection) {
             perAttacker = -2;
             futileAttackers += 1;
-          } else if (!canBeBlocked && blockers.length > 0) {
+          } else if (!canBeBlocked && effectiveBlockers.length > 0) {
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
@@ -14220,7 +14242,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // bota: przeżyje → wraca do właściciela, zginie → WŁAŚCICIEL
             // traci permanent. Właściciel: „jak już przejął to powinien
             // zaatakować właściciela” — gałęzie downside'u go nie dotyczą.
-            if (canBeBlocked && blockers.length > 0) {
+            if (canBeBlocked && effectiveBlockers.length > 0) {
               // M325 (audyt PR #102, F2): Warunek „zabija najsilniejszego
               // blokera" musi czytać staty Z BONUSEM (M317), inaczej bot liczy
               // właścicielowi utratę permanentu, którego atakujący nie zabije.
@@ -14240,9 +14262,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             } else {
               perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty / nie do zablokowania
             }
-          } else if (blockers.length === 0) {
+          } else if (effectiveBlockers.length === 0) {
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus; // otwarty — czysta presja
-          } else if (object.cantBlock && attackers.length > blockers.length) {
+          } else if (object.cantBlock && attackers.length > effectiveBlockers.length) {
             // M221/G (zgłoszenie właściciela, token Phyrexian Mite „can't
             // block"): stwór, który NIE MOŻE blokować, nie ma wartości
             // obronnej — trzymanie go w tyle to zmarnowany potencjał. W ataku
@@ -14272,7 +14294,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           } else if (blockedStats.toughness > effBlockerPower && lethalDamageOf(combatObject) >= effBlockerToughness) {
             perAttacker = blockedStats.power + P.attackThroughBonus; // przeżyje I zabija blokera — realny zysk
             survivorKillers += 1;
-          } else if (blockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
+          } else if (effectiveBlockers.length >= 2 && blockedStats.toughness <= effGangPower && lethalDamageOf(combatObject) < effWeakestBlockerToughness) {
             // M167/I: ginie od GANGU blokerów i nie zabija ŻADNEGO — czysta
             // strata stwora (2/4 w 1/3 + 3/3). Kara ponad wagę wyścigu.
             perAttacker = -(toughness + 8);
