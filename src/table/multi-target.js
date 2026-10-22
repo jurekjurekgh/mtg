@@ -15,10 +15,10 @@
  * („95 kombinacji", zmierzone 232 przy 4 stworach i 8 lądach).
  *
  * Ten moduł NIE zmienia silnika ani protokołu: czyta gotowe komendy
- * i wyprowadza z nich DWA niezależne wymiary decyzji — zbiór celów i wartość
- * X. Po zaznaczeniu wracamy do TEJ SAMEJ komendy z legalCommands, więc
- * walidacja silnika pozostaje jedynym źródłem prawdy o legalności (L48:
- * UI nie wymyśla ruchów, tylko inaczej je pokazuje).
+ * i wyprowadza z nich niezależne wymiary decyzji — cele, X, dodatkowe koszty,
+ * stun i obietnicę daru. Po zaznaczeniu wracamy do TEJ SAMEJ komendy z
+ * legalCommands, więc walidacja silnika pozostaje jedynym źródłem prawdy o
+ * legalności (L48: UI nie wymyśla ruchów, tylko inaczej je pokazuje).
  */
 
 /**
@@ -37,23 +37,41 @@ function targetKey(targets) {
 }
 
 /**
- * N (zgłoszenie właściciela 2026-10-09, Crumb and Get It): czy grupa wariantów
- * jednego rzutu ma JEDNOLITY dar (CR 702.174a — `gifted`/`giftRecipientId`).
- *
- * Kreator celów (`singleTargetPlanOf`/`multiTargetPlanOf`) kończy wybór przez
- * `commandForSelection`, który dopasowuje komendę TYLKO po `targets` (+ `xValue`)
- * — nie zna wymiaru daru. Grupa „cel × obietnica” dawała więc kreator z samymi
- * celami, a zatwierdzenie wybierało pierwszy pasujący wariant (bez daru):
- * użytkownik nie miał żadnego wyboru, czy obiecuje gift (K/2026-09-19b pinował
- * tylko grupowanie panelu, nie ścieżkę kreatora w modalu).
- *
- * Reguła: grupa z NIEJEDNOLITYM giftem nie może iść przez kreator — wraca
- * null i pada na fallback `buttonsPlanOf` (wiersz na opcję, etykieta „(dar)”
- * rozróżnia warianty). Jednolity gift (wszędzie taki sam) nie jest wyborem
- * — plan wolno użyć. Generycznie po polu komendy (ADR 0002), nie po karcie.
+ * Wspólna straż dla planów, które nie mają osobnego wymiaru daru. Gift jest
+ * wyborem rzutu (CR 702.174a), więc te plany nie mogą po cichu spłaszczyć
+ * wariantów `gifted` / `giftRecipientId` do jednej komendy.
  */
 function uniformGiftOf(list) {
   return new Set((list ?? []).map((cmd) => `${Boolean(cmd?.gifted)}:${cmd?.giftRecipientId ?? ''}`)).size <= 1;
+}
+
+/**
+ * Wymiar Gift z legalnych komend. Obietnica (tak/nie) jest niezależna od celu;
+ * w grach wieloosobowych wybór odbiorcy też pozostaje jawny, zamiast
+ * arbitralnie brać pierwszego przeciwnika. `null` odbiorca jest akceptowany,
+ * gdy to jedyna postać w legalnych komendach (silnik sam rozstrzyga 1v1).
+ */
+function giftDimensionOf(list) {
+  const giftValues = [...new Set((list ?? []).map((cmd) => Boolean(cmd?.gifted)))];
+  const giftRecipientIds = [];
+  for (const cmd of list ?? []) {
+    if (!cmd?.gifted) continue;
+    const recipientId = cmd.giftRecipientId ?? null;
+    if (!giftRecipientIds.includes(recipientId)) giftRecipientIds.push(recipientId);
+  }
+  const giftMode = giftValues.length > 1;
+  const recipientMode = giftRecipientIds.length > 1;
+  if (!giftMode && !recipientMode) return null;
+  // Nie ukrywaj wariantu bez jawnego odbiorcy, jeżeli występuje obok innych
+  // odbiorców: nie da się go bezpiecznie przedstawić jako wybór przeciwnika.
+  if (recipientMode && giftRecipientIds.includes(null)) return null;
+  return {
+    giftMode,
+    giftDefault: giftMode ? null : giftValues[0],
+    giftRecipientIds,
+    giftLabel: 'Obietnica daru',
+    giftRecipientLabel: 'Odbiorca daru',
+  };
 }
 
 /**
@@ -63,22 +81,23 @@ function uniformGiftOf(list) {
  * Zwraca:
  *  - `targets`   — pełna lista celów, jakie da się zaznaczyć (suma wariantów),
  *  - `minTargets`/`maxTargets` — ile celów wolno wskazać („up to three"),
- *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie.
+ *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie;
+ *  - `giftMode` / `giftRecipientIds` — obietnica daru (tak/nie) i, gdy
+ *    potrzeba, odbiorca; obie decyzje są oddzielone od wyboru celów.
  */
 export function multiTargetPlanOf(commands) {
   const all = commands ?? [];
   const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
-  // N: niejednolity dar (cel × obietnica) — patrz uniformGiftOf. Bez tego
-  // zatwierdzenie kreatora wybierało wariant bez daru (commandForSelection
-  // nie zna `gifted`).
-  if (!uniformGiftOf(list)) return null;
   // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
   // okno rzutu z odmową (decline/cast:false) i wariantami celowanymi
   // dawało kreator wielocelowy BEZ wiersza odmowy (zmierzone: Vaan + czar
   // z {X}). Jeżeli którakolwiek opcja nie niesie `targets`, ta rodzina ma
   // własny kształt (okna rzutu → castWindowPlanOf, fallback → przyciski).
   if (list.length !== all.length) return null;
+  // Tryb modalny musi już być rozstrzygnięty (castModePlanOf otwiera kolejny
+  // wybór dla wybranego trybu); ten kreator nie dopasowuje `modeIndex`.
+  if (new Set(list.map((cmd) => cmd.modeIndex ?? null)).size > 1) return null;
 
   const xValues = [...new Set(list.map((cmd) => cmd.xValue).filter((x) => Number.isInteger(x)))]
     .sort((a, b) => a - b);
@@ -101,10 +120,13 @@ export function multiTargetPlanOf(commands) {
   // który z WYBRANYCH celów dostaje stun counter. Wymiar z komend (cele ×
   // stun), nie z karty (ADR 0002).
   const stun = stunDimensionOf(list);
+  // Gift (CR 702.174a): osobna decyzja rzutu, niezależna od celu. Planujemy ją
+  // z legalnych komend zamiast generować jeden wiersz na każdą permutację.
+  const gift = giftDimensionOf(list);
 
-  // Bez żadnego z dwóch wymiarów to zwykła lista celów (Shock: jedna komenda
+  // Bez żadnego z tych wymiarów to zwykła lista celów (Shock: jedna komenda
   // na cel) — panel pokazuje ją od dawna poprawnie, nie ma czego zastępować.
-  if (!hasX && !multiTarget && !cost) return null;
+  if (!hasX && !multiTarget && !cost && !gift) return null;
 
   const targets = [];
   for (const cmd of list) {
@@ -141,6 +163,8 @@ export function multiTargetPlanOf(commands) {
     ...(cost ?? {}),
     // H: warstwa stuna (`stunKey`/`stunIds`/`stunLabel`) albo brak pól.
     ...(stun ?? {}),
+    // Gift (CR 702.174a): obietnica tak/nie i osobna pula odbiorców (wieloosobowa).
+    ...(gift ?? {}),
     // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
     // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
     // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
@@ -253,7 +277,10 @@ export function stunCandidatesFor(commands, targets) {
  * legalny. Nie budujemy komendy „z palca" — szukamy jej wśród wariantów, które
  * silnik już uznał za legalne (dlatego nielegalny wybór po prostu jej nie ma).
  */
-export function commandForSelection(commands, { targets = [], xValue = null, stunTargetId = undefined } = {}) {
+export function commandForSelection(commands, {
+  targets = [], xValue = null, stunTargetId = undefined,
+  gifted = undefined, giftRecipientId = undefined,
+} = {}) {
   const key = targetKey(targets);
   return (commands ?? []).find((cmd) => {
     if (!cmd || !Array.isArray(cmd.targets)) return false;
@@ -261,6 +288,10 @@ export function commandForSelection(commands, { targets = [], xValue = null, stu
     // H: `stunTargetId` podany = wybór stuna z kreatora (null = brak legalnego
     // stuna dla zbioru → brak komendy). Nie podany = dawne zachowanie.
     if (stunTargetId !== undefined && (cmd.stunTargetId ?? null) !== stunTargetId) return false;
+    // Gift (CR 702.174a): kiedy wybór jest jawny, nie dopuść do znalezienia
+    // wariantu z inną obietnicą albo innym wskazanym odbiorcą.
+    if (gifted !== undefined && Boolean(cmd.gifted) !== Boolean(gifted)) return false;
+    if (giftRecipientId !== undefined && (cmd.giftRecipientId ?? null) !== giftRecipientId) return false;
     if (xValue == null) return true;
     return cmd.xValue === xValue;
   }) ?? null;
@@ -658,7 +689,8 @@ export function singleTargetPlanOf(commands) {
   if (spells.length === options.length) {
     const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
     if (xValues.size > 1) return null; // grupa z {X} → kreator z licznikiem
-    // N: niejednolity dar (cel × obietnica) — kreator celów zgubiłby wybór.
+    // N: cel-only kreator nie zna Gift; nie łącz wyboru obietnicy tutaj.
+    // Gdy gift jest mieszany, multiTargetPlanOf obsłuży oba wymiary osobno.
     if (!uniformGiftOf(spells)) return null;
     if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
       && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;

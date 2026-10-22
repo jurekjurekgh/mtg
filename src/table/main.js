@@ -918,12 +918,24 @@ function bootstrapTable() {
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === multiPlan.objectId);
+      const hasGiftDimension = multiPlan.giftMode || (multiPlan.giftRecipientIds?.length ?? 0) > 1;
+      const targetPhrase = multiPlan.minTargets === 1 && multiPlan.maxTargets === 1 ? 'cel' : 'cele';
+      const giftPhrase = multiPlan.giftMode
+        ? 'zdecyduj, czy obiecać dar'
+        : 'wybierz odbiorcę daru';
+      const titleRequest = multiPlan.giftMode
+        ? { ...request, options: (request.options ?? []).filter((cmd) => !cmd?.gifted) }
+        : request;
+      const giftIntro = hasGiftDimension
+        ? `${choiceGroupTitle(titleRequest, session, choiceView)} — wybierz ${targetPhrase} i ${giftPhrase}:`
+        : undefined;
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
         session,
         plan: multiPlan,
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        intro: giftIntro,
         // M207: nazwy POZYCJI celu prosto z Oracle karty („twój stwór”,
         // „stwór przeciwnika”, „karta-stwór w grobie”, „gracz”). Kreator sam
         // ich nie wymyśla — bierze deskryptor `spell.targets` (ADR 0002).

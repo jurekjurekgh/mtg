@@ -1309,6 +1309,39 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (candidates.length === 1) return candidates[0];
     return candidates.includes(stunChoice) ? stunChoice : null;
   };
+  // Gift (CR 702.174a): osobne radio tak/nie i — tylko w grze
+  // wieloosobowej — wybór odbiorcy. Każda kombinacja poniżej i tak musi
+  // istnieć w `commands`; te ustawienia nie budują legalnej komendy.
+  const giftMode = Boolean(plan.giftMode);
+  const giftRecipientIds = Array.isArray(plan.giftRecipientIds) ? plan.giftRecipientIds : [];
+  const hasGiftDimension = giftMode || giftRecipientIds.length > 1;
+  let giftChoice = giftMode ? null : (typeof plan.giftDefault === 'boolean' ? plan.giftDefault : null);
+  let giftRecipientChoice = giftRecipientIds.length === 1 ? giftRecipientIds[0] : null;
+  const effectiveGiftChoice = () => (giftMode ? giftChoice : plan.giftDefault);
+  const giftSelectionArgs = () => {
+    if (!hasGiftDimension) return {};
+    const gifted = effectiveGiftChoice();
+    if (gifted == null) return null;
+    if (!gifted) return { gifted: false };
+    if (giftRecipientIds.length > 1 && giftRecipientChoice == null) return null;
+    const giftRecipientId = giftRecipientIds.length > 1
+      ? giftRecipientChoice
+      : (giftRecipientIds[0] ?? null);
+    return { gifted: true, giftRecipientId };
+  };
+  const giftMissingLabel = () => {
+    if (giftMode && giftChoice == null) return 'obietnica daru';
+    if (effectiveGiftChoice() && giftRecipientIds.length > 1 && giftRecipientChoice == null) return 'odbiorca daru';
+    return null;
+  };
+  const giftMatches = (cmd) => {
+    const selection = giftSelectionArgs();
+    if (selection == null) return false;
+    if (selection.gifted !== undefined && Boolean(cmd?.gifted) !== selection.gifted) return false;
+    if (selection.giftRecipientId !== undefined
+      && (cmd?.giftRecipientId ?? null) !== selection.giftRecipientId) return false;
+    return true;
+  };
   // M257-r5/C: klucze toggles są ZAKRESOWE (`slot` = 'sac' | numer pozycji | null).
   // W trybie poświęcenia pule CELU i OFIARY się nakładają (własny stwór jest
   // i celem czaru, i kosztem), więc nie mogą współdzielić zbioru `chosen`.
@@ -1334,10 +1367,25 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     const niekompletne = (id, i) => id == null && !(plan.slotOptional?.[i]);
     if (slotChoice.some(niekompletne)) return null;
     if (costKey && costChoice == null) return null;
+    if (giftSelectionArgs() == null) return null;
     return (commands ?? []).find((cmd) => Array.isArray(cmd.targets)
       && cmd.targets.length === slotChoice.length
       && costMatches(cmd)
+      && giftMatches(cmd)
       && cmd.targets.every((id, i) => id === slotChoice[i])) ?? null;
+  };
+  const commandForTargetSelection = () => {
+    if (costKey && costChoice == null) return null;
+    const giftArgs = giftSelectionArgs();
+    if (giftArgs == null) return null;
+    return commandForSelection((commands ?? []).filter(costMatches), {
+      targets: [...chosen],
+      xValue: plan.hasX ? xValue : null,
+      // H: bez wybranego celu nie podajemy stuna (wariant pusty);
+      // z celami — stun z warstwy 2 (null = brak komendy).
+      ...(stunKey && chosen.size > 0 ? { stunTargetId: effectiveStun() } : {}),
+      ...giftArgs,
+    });
   };
   // M298/A: wybór pojedynczy trzyma dokładnie JEDNO id w `chosen` (radio),
   // a wiersz odmowy („you may") siedzi pod wartownikiem NONE_PICK.
@@ -1383,15 +1431,7 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
               ? (chosen.size > 0
                 ? commandForSingleTargetSelection(commands, { targetId: singlePick(), field: plan.singleField ?? null })
                 : null)
-              : (costKey && costChoice == null)
-                ? null
-                : commandForSelection((commands ?? []).filter(costMatches), {
-                  targets: [...chosen],
-                  xValue: plan.hasX ? xValue : null,
-                  // H: bez wybranego celu nie podajemy stuna (wariant pusty);
-                  // z celami — stun z warstwy 2 (null = brak komendy).
-                  ...(stunKey && chosen.size > 0 ? { stunTargetId: effectiveStun() } : {}),
-                }));
+              : commandForTargetSelection());
 
   const pickOf = ({ id, slot }) => (slot == null
     ? chosen.has(id)
@@ -1401,7 +1441,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         ? id === costChoice
         : slot === 'stun'
           ? id === effectiveStun()
-          : slotChoice[slot] === id);
+          : slot === 'gift'
+            ? (id === 'gift-yes' ? giftChoice === true : id === 'gift-no' ? giftChoice === false : false)
+            : slot === 'gift-recipient'
+              ? id === giftRecipientChoice
+              : slotChoice[slot] === id);
 
   /**
    * B (zgłoszenie właściciela z żywej gry, 2026-09-21, Toll of the Invasion):
@@ -1456,8 +1500,10 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const syncRows = () => {
     // H: wiersz stuna jest dostępny tylko dla kandydata (cel wybrany).
     const candidates = stunKey ? stunCandidates() : [];
+    const giftRecipientsEnabled = effectiveGiftChoice() === true;
     for (const row of rows) {
       if (row.slot === 'stun') row.handle.setDisabled(!candidates.includes(row.id));
+      if (row.slot === 'gift-recipient') row.handle.setDisabled(!giftRecipientsEnabled);
       row.handle.setChecked(pickOf(row));
     }
   };
@@ -1465,11 +1511,20 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   const addRow = (id, slot, { labelOverride = null, forceKind = null, groupOverride = undefined, cardId = null, nameSuffix = '' } = {}) => {
     // M298/A: wybór pojedynczy, mulligan, okna rzutu i tryb przyciskowy są
     // JEDNOWYBOROWE — radio w grupie, a model (`chosen`) czyści się przy
-    // każdym nowym zaznaczeniu.
-    const exclusive = singleMode || keepMode || castWindowMode || buttonsMode;
-    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || slot === 'cost' || slot === 'stun' || exclusive) ? 'radio' : 'checkbox');
+    // każdym nowym zaznaczeniu. Pula z dokładnie jednym wymaganym celem też
+    // jest radio (np. cel czaru × obietnica daru).
+    const exclusive = singleMode || keepMode || castWindowMode || buttonsMode
+      || (slot == null && !slots && plan.minTargets === 1 && plan.maxTargets === 1);
+    const kind = forceKind ?? ((typeof slot === 'number' || slot === 'sac' || slot === 'cost'
+      || slot === 'stun' || slot === 'gift' || slot === 'gift-recipient' || exclusive) ? 'radio' : 'checkbox');
     const group = groupOverride !== undefined ? groupOverride
-      : (typeof slot === 'number' ? `multi-target-slot-${slot}` : (slot === 'sac' ? 'multi-target-sac' : slot === 'cost' ? 'multi-target-cost' : slot === 'stun' ? 'multi-target-stun' : (exclusive ? 'multi-target-single' : null)));
+      : (typeof slot === 'number' ? `multi-target-slot-${slot}`
+        : (slot === 'sac' ? 'multi-target-sac'
+          : slot === 'cost' ? 'multi-target-cost'
+            : slot === 'stun' ? 'multi-target-stun'
+              : slot === 'gift' ? 'multi-target-gift'
+                : slot === 'gift-recipient' ? 'multi-target-gift-recipient'
+                  : (exclusive ? 'multi-target-single' : null)));
     // B (2026-09-21): wiersz z jawnym cardId (okna rzutu, tryb przyciskowy) ma
     // go od wywołującego; wiersz-obiekt z zakrytej strefy dostaje kartę
     // z `hiddenObjectCardId` — inaczej klik w nazwę milczał (szczegóły przy
@@ -1520,6 +1575,11 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         } else if (slot === 'stun') {
           if (on) stunChoice = id;
           else if (stunChoice === id) stunChoice = null;
+        } else if (slot === 'gift') {
+          if (on) giftChoice = id === 'gift-yes';
+        } else if (slot === 'gift-recipient') {
+          if (on) giftRecipientChoice = id;
+          else if (giftRecipientChoice === id) giftRecipientChoice = null;
         } else {
           if (on) slotChoice[slot] = id;
           else if (slotChoice[slot] === id) slotChoice[slot] = null;
@@ -1564,6 +1624,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
         .map((id, i) => (id == null && !plan.slotOptional?.[i] ? (slotLabels[i] ?? `cel ${i + 1}`) : null))
         .filter(Boolean);
       if (costKey && costChoice == null) missing.push(plan.costLabel ?? 'koszt');
+      const missingGift = giftMissingLabel();
+      if (missingGift) missing.push(missingGift);
       if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
       else setStatus(cmd ? 'Wybrano komplet celów' : 'Wybór niedozwolony', !cmd);
     } else if (sacMode) {
@@ -1615,6 +1677,14 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     } else if (stunKey && chosen.size > 0 && !cmd) {
       // H: cele są, stun nie — status nazywa brakującą warstwę (nie samo „niedozwolony”).
       setStatus(`Brakuje: ${plan.stunLabel ?? 'stun'} (wskaż jeden z zaznaczonych celów)`, true);
+    } else if (hasGiftDimension) {
+      const missing = [];
+      if (chosen.size < plan.minTargets) missing.push(plan.minTargets === 1 ? 'cel' : 'cele');
+      const missingGift = giftMissingLabel();
+      if (missingGift) missing.push(missingGift);
+      if (missing.length > 0) setStatus(`Brakuje: ${missing.join(', ')}`, true);
+      else if (cmd) setStatus('Wybrany cel i obietnica daru są legalne', false);
+      else setStatus('Wybrana kombinacja nie jest dozwolona', true);
     } else if (cmd) {
       // C1 (zgłoszenie właściciela 2026-09-10): łączny koszt wariantu
       // (`cmd.cost` z silnika — np. Fireball: X + {R} + {1}/cel ponad
@@ -1677,7 +1747,28 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     if (sacMode) renderPickerSection(list, `${slotLabels[0] ?? 'Cel'}:`, { className: 'multi-target-slot-label' });
     // H: warstwa 1 ma własny nagłówek — wybór celów przed warstwą stuna.
     if (stunKey) renderPickerSection(list, `${plan.targetsLabel ?? 'Cele'} (zaznacz ${range}):`, { className: 'multi-target-slot-label' });
+    if (hasGiftDimension && plan.targets.length > 0) {
+      const targetLabel = plan.targetsLabel
+        ?? (plan.minTargets === 1 && plan.maxTargets === 1 ? 'Cel (wybierz jeden)' : `Cele (zaznacz ${range})`);
+      renderPickerSection(list, `${targetLabel}:`, { className: 'multi-target-slot-label' });
+    }
     for (const id of plan.targets) addRow(id, null);
+  }
+
+  // Gift (CR 702.174a): dwie niezależne opcje obietnicy, nigdy wiersz na
+  // każdą parę celu i daru.
+  if (giftMode) {
+    renderPickerSection(list, `${plan.giftLabel ?? 'Obietnica daru'}:`, { className: 'multi-target-slot-label' });
+    addRow('gift-yes', 'gift', { labelOverride: 'Tak — obiecaj dar' });
+    addRow('gift-no', 'gift', { labelOverride: 'Nie — bez daru' });
+  }
+  // CR 702.174a: jeśli legalCommands oferuje kilku przeciwników, wybór odbiorcy
+  // jest osobny od tak/nie i nie zostaje ukryty ani związany z celem.
+  if (giftRecipientIds.length > 1) {
+    renderPickerSection(list, `${plan.giftRecipientLabel ?? 'Odbiorca daru'} (jeśli obiecasz):`, { className: 'multi-target-slot-label' });
+    for (const id of giftRecipientIds) {
+      addRow(id, 'gift-recipient', { labelOverride: objectOrPlayerName(view, session, id) });
+    }
   }
 
   // M257-r5/C: DRUGA sekcja — ofiara kosztu dodatkowego. Pule celów i ofiar

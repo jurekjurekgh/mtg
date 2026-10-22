@@ -447,10 +447,10 @@ export function choiceRequestGroupKey(command) {
     // w modalu wyboru. Wszystkie czary, które wymagają decyzji podczas rzucania,
     // powinny mieć najpierw ofertę rzucenia w »Twoje działania«, a dopiero potem
     // modal wyboru sposobu rzucenia.”
-    // Dar NIE jest osobnym rzutem, tylko WARIANTEM tego samego rzutu (CR 702.174a:
-    // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
-    // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
-    // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
+    // Dar NIE jest osobnym rzutem, tylko decyzją w trakcie tego samego rzutu
+    // (CR 702.174a: koszt wybierany „as you cast this spell”). Dlatego komendy
+    // z/bez obietnicy należą do jednej grupy; kreator rozdziela cel i dar na
+    // osobne kontrolki, a nie na jeden wiersz na każdą parę.
     //
     // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
     // „Oferta w »Twoje działania« rozdzielona na dwie opcje. Rzucenie czaru
@@ -2455,22 +2455,26 @@ function uncoverCostOf(session, view, objectId, field) {
 }
 
 /**
- * Koszt KARTY w HTML z ikonami many (H, uwaga właściciela 2026-09-23c).
+ * Koszt KARTY we wspólnym formacie (H, uwaga właściciela 2026-09-23c).
  * Wydzielone z `commandLabel` do zasięgu modułu, żeby tytuły GRUP decyzji
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
- * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
+ * jedno źródło kosztu (L41). `manaHtml` wybiera ikonki dla panelu albo
+ * zwykły zapis many dla nagłówka modala (`textContent`).
  */
-function cardCostHtml(card, cmd = null) {
+function cardCostHtml(card, cmd = null, { manaHtml = true } = {}) {
+  const format = (symbols) => (manaHtml ? manaCostHtml(symbols) : symbols);
   // G (zgłoszenie właściciela 2026-09-25, Containment Membrane): tytuł grupy
   // „Aura: … (surge)" pokazywał koszt WYDRUKU (2U), choć rzut pobiera surge
   // (U). Koszt alternatywny liczy ta sama jedna funkcja (H/2) — gałąź wołana
   // z komendą (surgeCast + deskryptor surge z widoku; te same formatery co
   // etykieta oferty M223). Bez komendy — koszt zwykły jak dotąd.
   if (cmd?.surgeCast && card?.surge) {
-    return manaCostHtml(costSymbols(card.surge.cost, card.surge.colors));
+    return format(costSymbols(card.surge.cost, card.surge.colors));
   }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
-  return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
+  return raw ? format(raw) : (card?.manaCost != null
+    ? (manaHtml ? escapeHtml(String(card.manaCost)) : String(card.manaCost))
+    : '?');
 }
 
 /**
@@ -2515,8 +2519,8 @@ function buybackCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
   return ` + buyback ${manaHtml ? manaCostHtml(symbols) : symbols}`;
 }
 
-function castCostWithKickerHtml(object, cmd, session) {
-  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
+function castCostWithKickerHtml(object, cmd, session, { manaHtml = true } = {}) {
+  return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
 }
 
 function abilityCostHtmlOf(ability) {
@@ -2562,7 +2566,7 @@ export function commandLabel(cmd, session, view) {
   return `${label}${giftPartOf(cmd, findViewObject(cmd.objectId, view))}`;
 }
 
-function choiceSourceTitle(cmd, session, view) {
+function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
   // z oczekujących decyzji w widoku (publiczna informacja stołowa).
@@ -2768,8 +2772,8 @@ function choiceSourceTitle(cmd, session, view) {
     // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
     // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
     // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
-    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
-    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
@@ -2804,7 +2808,7 @@ function choiceSourceTitle(cmd, session, view) {
     // Koszt doklejamy tylko wtedy, gdy jest znany (MANA_COSTS/karta) — stuby
     // testowe bez kosztu zachowują dotychczasowe brzmienie.
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session)})` : '';
+    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session, { manaHtml })})` : '';
     // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
     // decyzją jest sam TRYB czaru.
     if (!cmd.targets?.length) {
@@ -2817,7 +2821,7 @@ function choiceSourceTitle(cmd, session, view) {
   // dopisać `kickerCostSuffixOf(cmd, object, session)` jak w gałęzi „Cel czaru”.
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, null, { manaHtml })})` : ''}`;
   }
   // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
   // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
@@ -2994,7 +2998,8 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
-  const titled = choiceSourceTitle(options[0], session, view);
+  // Kanał many jest jawny: modal = tekst, panel akcji (`manaHtml`) = ikonki.
+  const titled = choiceSourceTitle(options[0], session, view, { manaHtml });
   if (titled) return titled;
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
     ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
