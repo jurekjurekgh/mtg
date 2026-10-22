@@ -11919,23 +11919,26 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && (id === view.playerId || id === enemy(view)?.id)) ?? null;
             score += foeRipValue(view, effect, playerTarget);
           }
-          // Uwaga B właściciela z testów (2026-09-18, Epic Experiment):
-          // „Ta karta ma jakikolwiek sens jeśli X>0, im większe X tym lepiej
-          // (chyba że bot ma wyczerpaną talię)”. Bez wyceny wszystkie warianty
-          // X dostawały identyczne P.spellBase — rzut za {U}{R} z X=0 nie robi
-          // NIC, a wygrywał (klasa L50). Wartość: szansa darmowych rzutów
-          // rośnie z X (zawartość biblioteki jest ukryta — FoW, liczymy po
-          // rozmiarze, L132); ryzyko: docięcie własnej biblioteki
-          // (CR 121.4/704.5b — drawDeckingPenalty bije dopiero przy dnie,
-          // więc zdrowa biblioteka nie ogranicza X). amount 'X' jest tu już
-          // rozwiązany do cmd.xValue (M237/1).
+          // Uwaga B (testy, 2026-10-22): Epic Experiment ma wartość dopiero
+          // od X=3; przy X<3 ocena przegrywa z passem. Wartość rośnie z X,
+          // bo prawdopodobieństwo trafienia darmowych czarów rośnie wraz z
+          // liczbą wygnanych kart (zawartość biblioteki jest ukryta — FoW,
+          // liczymy tylko po rozmiarze, L132). Ryzyko deck-outu nadal liczy
+          // drawDeckingPenalty (CR 121.4/704.5b).
+          //
+          // To celowa polityka tempa, nie wymóg CR: choć CR 307.1 dopuszcza
+          // sorcery w obu własnych fazach głównych przy pustym stosie, bot
+          // odkłada ten efekt do Main 2, żeby Main 1 mógł wykorzystać manę na
+          // inne zagrania. Sprawdzamy typ efektu, nie nazwę karty.
           if (effect.type === 'epic_experiment') {
-            const X = Number.isInteger(effect.amount) ? effect.amount : 0;
-            if (X <= 0) {
-              score -= 80; // X=0: czar nie robi nic — gorzej niż pass
-            } else {
-              score += 5 * X + drawDeckingPenalty(view, X);
-            }
+            const X = Number.isInteger(cmd.xValue)
+              ? cmd.xValue
+              : (Number.isInteger(effect.amount) ? effect.amount : 0);
+            const ownMain2 = myTurn(view)
+              && view.turn?.phase === 'postcombat_main'
+              && view.turn?.step === 'main2';
+            if (X < 3 || !ownMain2) return finish(NEVER);
+            score += 5 * X + drawDeckingPenalty(view, X);
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
           // Armię niezależnie od celu czaru — stały zysk (token/licznik).

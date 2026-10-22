@@ -25,6 +25,12 @@
 // Kształt naprawy: wycena skaluje się z X (szansa darmowych rzutów rośnie),
 // a ryzyko deck-outu liczy istniejący drawDeckingPenalty (CR 121.4/704.5b) —
 // „chyba że bot ma wyczerpaną talię” (anty-over-fix B/4).
+//
+// Kolejna uwaga z testów (2026-10-22): nie rzucać, gdy X<3, i odłożyć tę
+// sorcery do własnej Main 2, by Main 1 pozostała na inne sensowne zagrania.
+// CR 307.1 pozwala rzucać sorcery w dowolnej własnej fazie głównej, gdy mamy
+// priorytet i stos jest pusty; Main 2 jest więc polityką bota, nie regułą
+// legalności. Ten próg dotyczy efektu `epic_experiment`, bez sprawdzania nazwy karty.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
@@ -36,9 +42,9 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 
-function stan({ manaUR = 8, kartyBiblioteki = 22 } = {}) {
+function stan({ manaUR = 8, kartyBiblioteki = 22, step = 'main1' } = {}) {
   const state = createGameState({ seed: 23, players: [{ id: 'p1' }, { id: 'p2' }] });
-  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn = jumpToStep(state.turn, step, 'p1');
   state.turn.activePlayerId = 'p1';
   state.turn.priorityPlayerId = 'p1';
   // Biblioteka p1 — wypełniacze (rozmiar jest informacją jawną, ADR 0017).
@@ -78,26 +84,52 @@ test('B/1: oferta niesie warianty X od 0 do maksimum (kontrakt silnika)', () => 
   assert.deepEqual(oferty.map((o) => o.xValue), [0, 1, 2, 3, 4, 5, 6], 'X = 0..maxKoszt');
 });
 
-test('B/2: bot rzuca Epic Experiment z MAKSYMALNYM opłacalnym X (nie X=0)', () => {
-  const state = stan(); // 8 UR → max X=6, biblioteka 22 (bezpieczna)
+test('B/2: w Main 2 bot rzuca Epic Experiment z MAKSYMALNYM opłacalnym X', () => {
+  const state = stan({ step: 'main2' }); // 8 UR → max X=6, biblioteka 22 (bezpieczna)
   const { chosen } = wybierzBota(state);
   assert.equal(chosen?.type, 'cast_spell', 'bot wybiera rzut, nie pass');
   assert.equal(chosen.objectId, 'ee');
   assert.equal(chosen.xValue, 6, 'bot wydaje całą dostępną manę na X');
 });
 
-test('B/3: mana tylko na bazę {U}{R} → bot NIE rzuca za X=0 (pasuje)', () => {
-  const state = stan({ manaUR: 2 }); // oferta: wyłącznie X=0
+test('B/3: Main 2, mana tylko na bazę {U}{R} → bot NIE rzuca za X=0 (pasuje)', () => {
+  const state = stan({ manaUR: 2, step: 'main2' }); // oferta: wyłącznie X=0
   const { chosen, passScore } = wybierzBota(state);
   assert.notEqual(chosen?.type, 'cast_spell',
     `rzut za X=0 jest bezwartościowy — wybrano ${chosen?.type} (pass=${passScore})`);
 });
 
-test('B/4 (anty-over-fix): wyczerpująca się biblioteka → bot nie ryzykuje deck-outu', () => {
-  // 3 karty w bibliotece: każdy sensowny X (≥1) dobija do dna (CR 121.4),
-  // a X=0 to strata karty — bot pasuje.
-  const state = stan({ kartyBiblioteki: 3 });
+test('B/4 (anty-over-fix): Main 2 + wyczerpująca biblioteka → bot nie ryzykuje deck-outu', () => {
+  // 3 karty w bibliotece: każdy X>=3 dobija do dna (CR 121.4),
+  // a X<3 jest poniżej progu użyteczności — bot pasuje.
+  const state = stan({ kartyBiblioteki: 3, step: 'main2' });
   const { chosen } = wybierzBota(state);
   assert.notEqual(chosen?.type, 'cast_spell',
     'przy 3 kartach biblioteki Epic Experiment nie może się opłacać');
+});
+
+test('B/5: w Main 1 bot odkłada Epic Experiment, nawet gdy ma X>=3', () => {
+  const state = stan({ step: 'main1' });
+  const { chosen } = wybierzBota(state);
+  assert.equal(chosen?.type, 'pass_priority',
+    `Main 1 ma zostać na inne zagrania; wybrano ${chosen?.type} (${chosen?.objectId ?? ''})`);
+});
+
+test('B/6: w Main 2 bot nie rzuca Epic Experiment dla X<3', () => {
+  const state = stan({ manaUR: 4, step: 'main2' }); // koszt {U}{R} + X; maksymalnie X=2
+  const { chosen } = wybierzBota(state);
+  assert.equal(chosen?.type, 'pass_priority',
+    `bez X>=3 nie rzucamy; wybrano ${chosen?.type} (${chosen?.objectId ?? ''})`);
+});
+
+test('B/7: Main 1 nadal wykorzystuje manę na inną sensowną kartę', () => {
+  const state = stan({ step: 'main1' });
+  const shock = gameObjectDataOf(REGISTRY.get('shock'));
+  addObject(state, {
+    id: 'shock-card', instanceId: 'i-shock-card', cardId: 'shock',
+    controllerId: 'p1', ownerId: 'p1', zone: 'hand', ...shock,
+  });
+  const { chosen } = wybierzBota(state);
+  assert.equal(chosen?.objectId, 'shock-card',
+    `bot powinien użyć Main 1 na Shock, a nie Epic Experiment (${chosen?.type}/${chosen?.objectId})`);
 });
