@@ -10083,15 +10083,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     };
   }
 
+  function canCreatureAttackNow(o) {
+    return Boolean(o && !o.tapped
+      && (!o.summoningSickness || hasKeyword(o, 'haste'))
+      && o.cantAttackStatic !== true
+      && o.detained !== true);
+  }
+
   function attackIntendsCreature(view, objectId) {
     if (!objectId || attackIntentEval) return false;
     const legal = myCreatures(view)
-      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .filter((o) => canCreatureAttackNow(o) && (o.power ?? 0) > 0)
       .map((o) => o.id);
     if (!legal.includes(objectId)) return false;
-    const krokDoZapytania = widokDlaWycenyAtaku(view, myCreatures(view)
-      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
-      .map((o) => o.id)) ?? view;
+    const krokDoZapytania = widokDlaWycenyAtaku(view, legal) ?? view;
     const subsets = podzbioryAtakujacych(legal).filter((set) => set.includes(objectId));
     attackIntentEval = true;
     try {
@@ -10127,7 +10132,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   function zamiarAtakuWybranego(view, objectId) {
     if (!objectId) return false;
     const legal = myCreatures(view)
-      .filter((o) => !o.tapped && !o.summoningSickness && (o.power ?? 0) > 0)
+      .filter((o) => canCreatureAttackNow(o) && (o.power ?? 0) > 0)
       .map((o) => o.id);
     if (!legal.includes(objectId)) return false;
     const widok = widokDlaWycenyAtaku(view, legal);
@@ -14531,8 +14536,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // blokera i wchodzą w twarz. Wybór „najgroźniejszych" po mocy z widoku
         // jest tu uproszczony — wystarcza, bo dalsze rozstrzyganie przeżycia
         // robi już model poniżej.
+        // Audyt PR #171 F-7a (CR 509.1b): sloty blokerów obrońcy zajmują
+        // wyłącznie atakujący, których dostępni blokerzy REALNIE mogą
+        // zablokować (`attackerCanBeBlocked`). Inaczej nieblokowalny lotnik
+        // „zużywał" naziemnego blokera i bot uznawał naziemnego 2/2 za
+        // nieblokowalnego przed 2/3.
         const rankedByThreat = attackers
-          .filter((id) => projectedAttackerOf(id))
+          .filter((id) => {
+            const proj = projectedAttackerOf(id);
+            return proj && attackerCanBeBlocked(proj, blockers);
+          })
           .sort((a, b) => faceDamageOf(projectedAttackerOf(b)) - faceDamageOf(projectedAttackerOf(a)));
         const blokowalne = new Set(rankedByThreat.slice(0, blockers.length));
         for (const id of attackers) {
@@ -15692,7 +15705,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // decydująca, a przy planszy samych chorych wygrywa odmowa (0).
             let attackBonus2 = attackingNow2 ? 25 : 0;
             if ((cmd.pump?.power ?? 0) > 0 && !attackingNow2 && myTurn(view)) {
-              const canAttack2 = !t2.tapped && (!t2.summoningSickness || hasKeyword(t2, 'haste'));
+              const canAttack2 = canCreatureAttackNow(t2);
               // A (zgłoszenie właściciela 2026-10-21e, Battle-Rattle Shaman):
               // „zdolny do ataku" to za słabe proxy — wystarczy WSZYSTKIE stwory
               // zdolne, a zostaje czysta wartość 2P+T i bot buffuje największego,
@@ -15778,10 +15791,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // pump siły idzie na stwora, którym bot zamierza ATAKOWAĆ.
             let attackBonus = attackingNow ? 25 : 0;
             if ((cmd.pump?.power ?? 0) > 0 && !attackingNow && myTurn(view)) {
-              // A (2026-10-21e): „zdolny do ataku" za słabe — pytamy tę samą
-              // politykę ataku co deklaracja (`attackIntendsCreature`, L41/L48).
-              // Choroby/wyłączenie pierwsze (jak w gałęzi wielocelowej).
-              const canAttack = !target.tapped && (!target.summoningSickness || hasKeyword(target, 'haste'));
+              // A (2026-10-21e) + Audyt PR #171 F-7b (CR 702.10 + CR 508.1):
+              // pytamy tę samą politykę ataku co deklaracja, uwzględniając
+              // Haste oraz zakazy cantAttackStatic/detained.
+              const canAttack = canCreatureAttackNow(target);
               if (!canAttack) attackBonus = -60;
               else if (zamiarAtakuWybranego(view, target.id)) attackBonus = 15;
               else attackBonus = 0;
