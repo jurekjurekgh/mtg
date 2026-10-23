@@ -73,7 +73,10 @@ test('B2/1: strażnik — każde pole obiektu jest w odcisku albo jawnie wyklucz
   // Kopia niosąca prezentacyjne ID druku / źródła efektu; te dwa pola są
   // wykluczone z fingerprint tak samo jak copyNumber.
   const copiedObject = Object.freeze({
-    ...object, copiedFromCardId: 'copied-card', copiedByCardId: 'copy-effect-card',
+    ...object,
+    copiedFromCardId: 'copied-card',
+    copiedByCardId: 'copy-effect-card',
+    originalBeforeCopy: Object.freeze({ cardName: 'Orig' }),
   });
   state.objects.set(object.id, copiedObject);
   // Uniwersum pól = fabryka ∪ kopia ∪ token: `createBattlefieldToken` dokłada

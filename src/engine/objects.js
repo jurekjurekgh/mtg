@@ -264,14 +264,39 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // na nowy obiekt (CR 400.7); helper jest wspólny z ofertą rzutu.
     ...clearLinkedExileCastPermission(object),
   } : null;
-  // Dane identyfikujące druk kopiowany w UI należą do tego permanentu na
-  // polu bitwy. Po zmianie strefy CR 400.7 kończy ten kontekst prezentacji —
-  // fizyczny `cardId` karty (np. Jwari) pozostaje nietknięty.
-  const copyDisplayReset = object.zone === 'battlefield' && toZone !== 'battlefield'
-    && object.copiedFromCardId
-    ? { copiedFromCardId: null, copiedByCardId: null }
-    : {};
-  const moved = Object.freeze({
+  // Audyt PR #171 F-3 (CR 400.7 + CR 707.2): po opuszczeniu pola bitwy kopia
+  // na karcie nietokenowej (np. Jwari Shapeshifter) traci wszystkie skopiowane
+  // cechy i wraca do wydrukowanych wartości własnej karty (w tym enter_as_copy).
+  const leavingBattlefield = object.zone === 'battlefield' && toZone !== 'battlefield';
+  const origCopy = leavingBattlefield ? object.originalBeforeCopy : null;
+  const copyDisplayReset = origCopy
+    ? {
+      power: origCopy.power,
+      toughness: origCopy.toughness,
+      colors: origCopy.colors,
+      types: origCopy.types,
+      subtypes: origCopy.subtypes,
+      keywords: origCopy.keywords,
+      abilities: origCopy.abilities,
+      enterAsCopy: origCopy.enterAsCopy,
+      toxic: origCopy.toxic,
+      kind: origCopy.kind,
+      cardName: origCopy.cardName,
+      name: origCopy.name,
+      manaCost: origCopy.manaCost,
+      station: origCopy.station,
+      saga: origCopy.saga,
+      cantBlockPrinted: origCopy.cantBlockPrinted,
+      cantBlock: Boolean(origCopy.cantBlockPrinted),
+      entersTapped: origCopy.entersTapped,
+      entersTappedCondition: origCopy.entersTappedCondition,
+      copiedFromCardId: null,
+      copiedByCardId: null,
+    }
+    : (leavingBattlefield && object.copiedFromCardId
+      ? { copiedFromCardId: null, copiedByCardId: null }
+      : {});
+  const rawMoved = {
     ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset,
     id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
@@ -347,9 +372,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
     // W-9: po animacji „do końca tury” — rodzaj sprzed animacji (CR 400.7).
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? untilEndOfTurnReset.kind ?? object.kind),
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? copyDisplayReset.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
-  });
+  };
+  if (origCopy) {
+    delete rawMoved.originalBeforeCopy;
+    if (!object.isToken) delete rawMoved.copyNumber;
+  }
+  const moved = Object.freeze(rawMoved);
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
   // Linkowany czas trwania kończy się przy RZUCENIU dokładnie tego obiektu z
   // exile, nie przy samym opuszczeniu exile. Choke point ruchu exile→stack
