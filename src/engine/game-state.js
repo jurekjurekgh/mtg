@@ -6885,10 +6885,11 @@ export function playerView(state, playerId) {
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
           controllerId: object.controllerId, zone: object.zone,
-          // Właściciel przejętego lądu może różnić się od kontrolera. Ten
-          // publiczny fakt pozwala botowi ocenić, czy koszt „zwróć ląd do ręki
-          // właściciela" da mu kartę, którą może ponownie zagrać.
-          ...(object.kind === 'land' && object.ownerId != null && object.ownerId !== object.controllerId
+          // Audyt PR #171 F-4 (CR 108.3): właściciel każdego przejętego
+          // permanentu (także ożywionego lądu lub stwora) jest informacją
+          // publiczną — pozwala botowi i UI odróżnić zwrot do własnej ręki
+          // od oddania karty przeciwnikowi.
+          ...(object.ownerId != null && object.ownerId !== object.controllerId
             ? { ownerId: object.ownerId } : {}),
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
