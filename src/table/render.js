@@ -2533,7 +2533,7 @@ function castCostWithKickerHtml(object, cmd, session, { manaHtml = true } = {}) 
   return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml })}`;
 }
 
-function abilityCostHtmlOf(ability) {
+function abilityCostHtmlOf(ability, { manaHtml = true } = {}) {
   const cost = ability?.cost ?? {};
   const mana = [];
   if (cost.manaX) mana.push('{X}');
@@ -2544,8 +2544,8 @@ function abilityCostHtmlOf(ability) {
   for (const c of colors) mana.push(`{${c}}`);
   for (const group of hybrid) mana.push(`{${group.join('/')}}`);
   const parts = [];
-  if (mana.length) parts.push(manaCostHtml(mana.join('')));
-  if (cost.tap) parts.push(manaCostHtml('{T}'));
+  if (mana.length) parts.push(manaHtml ? manaCostHtml(mana.join('')) : mana.join(''));
+  if (cost.tap) parts.push(manaHtml ? manaCostHtml('{T}') : '{T}');
   for (const [field, label] of NON_MANA_COST_LABELS) {
     if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
   }
@@ -2553,12 +2553,12 @@ function abilityCostHtmlOf(ability) {
 }
 
 /** „ (koszt …)" zdolności komendy `activate_ability` — puste, gdy brak kosztu. */
-function abilityCostSuffix(session, cmd) {
+function abilityCostSuffix(session, cmd, { manaHtml = true } = {}) {
   const stateObj = session?.state?.objects?.get(cmd.objectId);
   const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[cmd.abilityIndex] : null)
     ?? stateObj?.abilities?.[cmd.abilityIndex];
   if (!ability) return '';
-  const cost = abilityCostHtmlOf(ability);
+  const cost = abilityCostHtmlOf(ability, { manaHtml });
   return cost ? ` (koszt ${cost})` : '';
 }
 
@@ -2856,7 +2856,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
   // Tytuł nazywa kartę i czynność deskryptorem efektu z DANYCH karty
   // (ADR 0002), a konkretne X niosą etykiety opcji grupy.
   if (cmd.type === 'activate_ability' && cmd.xValue != null) {
-    return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd)}`;
+    return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
     const stateObj = session.state?.objects?.get(cmd.objectId);
@@ -2871,7 +2871,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
     const abilityName = ability?.forecast ? 'Forecast'
       : (ability?.keyword ? (KEYWORD_LABELS[ability.keyword] ?? ability.keyword) : null);
     const core = abilityName ? `${name}: ${abilityName}` : `Cel zdolności: ${name}`;
-    return `${core}${abilityCostSuffix(session, cmd)}`;
+    return `${core}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
@@ -2881,7 +2881,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
       || cmd.sacrificeLandId != null || cmd.sacrificeCreatureId != null)) {
     // H: grupa wariantów tap/crew/sacrifice też niesie koszt zdolności
     // (dotąd „Aktywuj: <karta>" — jakby aktywacja była darmowa).
-    return `Aktywuj: ${name}${abilityCostSuffix(session, cmd)}`;
+    return `Aktywuj: ${name}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   return null;
 }
