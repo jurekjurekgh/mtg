@@ -52,7 +52,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -666,6 +666,74 @@ function bootstrapTable() {
   function openChoiceRequest(request) {
     if (!session || !els.choiceRequestBody) return;
     const choiceView = session.view();
+
+    // Epic Experiment: najpierw jedna pozycja na każdą legalną kartę z wygnania
+    // (nie na każdą parę karta × cel). Dopiero po potwierdzeniu karty otwieramy
+    // jej dalsze decyzje; warianty celu pozostają komendami legalCommands.
+    const epicCardPlan = epicChoiceCardPlanOf(request.options ?? []);
+    if (epicCardPlan) {
+      const epicCardDefinitionId = (objectId) => {
+        const cardId = session.state?.objects?.get(objectId)?.cardId ?? null;
+        return cardId && session.cardDetails(cardId) ? cardId : null;
+      };
+      const epicCardLabels = epicCardPlan.commands.map((option) => {
+        if (option.done === true) return commandLabel(option, session, choiceView);
+        const cardId = epicCardDefinitionId(option.cardId);
+        const name = session.nameOfObject?.(option.cardId)
+          ?? (cardId ? session.nameOf(cardId) : null)
+          ?? option.cardId;
+        return `Rzuć bez kosztu — ${name}`;
+      });
+      const labelCounts = new Map();
+      for (const label of epicCardLabels) labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+      const labelSeen = new Map();
+      epicCardPlan.rows = epicCardPlan.commands.map((option, i) => {
+        const label = epicCardLabels[i];
+        const count = labelCounts.get(label) ?? 0;
+        const ordinal = (labelSeen.get(label) ?? 0) + 1;
+        labelSeen.set(label, ordinal);
+        return {
+          id: `opt-${i}`,
+          label: count > 1 ? `${label} (${ordinal} z ${count})` : label,
+          cardId: option.done === true ? null : epicCardDefinitionId(option.cardId),
+        };
+      });
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicCardPlan,
+        commands: epicCardPlan.commands,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz kartę:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (selected) => {
+          if (selected?.done === true) {
+            hideModal('choice-request');
+            play(selected);
+            return;
+          }
+          const cardOptions = (request.options ?? []).filter((option) =>
+            option?.type === 'resolve_epic_choice' && option.done !== true
+            && option.cardId === selected?.cardId);
+          const hasTargetChoice = cardOptions.some((option) =>
+            Array.isArray(option.targets) && option.targets.some((id) => id != null));
+          if (cardOptions.length === 1 && !hasTargetChoice) {
+            hideModal('choice-request');
+            play(cardOptions[0]);
+            return;
+          }
+          openChoiceRequest(choiceRequest({
+            id: `${request.id ?? 'epic'}-card-${selected.cardId}`,
+            type: request.type ?? 'command',
+            options: cardOptions,
+          }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
     // Wizard scry/surveil (zgłoszenie 2026-08-06, pkt 4): zamiast listy
     // wszystkich kombinacji — najpierw lista przeglądniętych kart, potem
     // wybory PO KOLEI dla każdej karty osobno; komenda resolve_* składana
@@ -797,9 +865,14 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
-    const castModePlan = castModePlanOf(request.options ?? []);
+    const castModePlan = castModePlanOf(request.options ?? [])
+      ?? epicChoiceModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];
+      const epicModeSource = castModePlan.epicChoiceMode
+        ? session.state?.objects?.get(castModePlan.cardId) ?? null : null;
+      const epicModeCardId = epicModeSource?.cardId
+        && session.cardDetails(epicModeSource.cardId) ? epicModeSource.cardId : null;
       // M406 (uwaga z gry 2026-09-22): wiersz kroku 1 NIGDY nie niesie
       // wpiętego celu „pierwszy z brzegu” („jeden do tapa, jeden do untapa”
       // z etykiet reprezentantów) — etykieta = NAZWA TRYBU z modelu, cele
@@ -808,6 +881,7 @@ function bootstrapTable() {
       castModePlan.rows = castModePlan.rows.map((row, i) => ({
         ...row,
         label: modeNameList[castModePlan.modes[i]]?.name ?? `tryb ${castModePlan.modes[i] + 1}`,
+        ...(castModePlan.epicChoiceMode ? { cardId: epicModeCardId } : {}),
       }));
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
@@ -815,11 +889,17 @@ function bootstrapTable() {
         plan: castModePlan,
         commands: castModePlan.reps,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz tryb:`,
+        introCard: epicModeCardId ? {
+          cardId: epicModeCardId,
+          name: session.cardDetails(epicModeCardId)?.name ?? session.nameOf(epicModeCardId),
+        } : null,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (repCmd) => {
           const subset = modeOptions.filter((cmd) => cmd.modeIndex === repCmd.modeIndex);
-          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          const epicNeedsTarget = repCmd.type === 'resolve_epic_choice' && subset.some((cmd) =>
+            Array.isArray(cmd.targets) && cmd.targets.some((id) => id != null));
+          if (subset.length === 1 && !epicNeedsTarget) { hideModal('choice-request'); play(subset[0]); return; }
           openChoiceRequest(choiceRequest({
             id: `${request.id ?? 'mode'}-tryb-${repCmd.modeIndex}`,
             type: request.type ?? 'command',
@@ -831,6 +911,99 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+
+    // Po wyborze karty Epic Experiment dostaje osobny picker celu — jeden
+    // wiersz na legalny cel, również gdy istnieje tylko jeden kandydat. Jeśli
+    // komenda niesie dalszy wymiar (np. koszt dodatkowy), po wyborze celu
+    // zawężamy legalCommands i otwieramy ten następny wybór osobno.
+    const epicTargetPlan = request.epicChoiceTargetChosen
+      ? null : epicChoiceTargetPlanOf(request.options ?? []);
+    if (epicTargetPlan) {
+      const options = request.options ?? [];
+      const epicObject = session.state?.objects?.get(epicTargetPlan.cardId) ?? null;
+      const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
+        ? epicObject.cardId : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicTargetPlan,
+        commands: options,
+        intro: `${epicTargetPlan.maxTargets === 1 ? 'Wskaż legalny cel' : 'Wskaż legalne cele'}${epicTargetPlan.hasX ? ' i wartość X' : ''}:`,
+        introCard: epicCardId ? {
+          cardId: epicCardId,
+          name: session.cardDetails(epicCardId)?.name ?? session.nameOf(epicCardId),
+        } : null,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (selected) => {
+          const selectedTargets = selected?.targets ?? [];
+          const selectedKey = [...selectedTargets].filter((id) => id != null).sort().join('|');
+          const sameTargetSelection = (option) => {
+            if (!Array.isArray(option?.targets)) return false;
+            if (epicTargetPlan.orderedTargets) {
+              return option.targets.length === selectedTargets.length
+                && option.targets.every((id, i) => id === selectedTargets[i]);
+            }
+            const optionKey = option.targets.filter((id) => id != null).sort().join('|');
+            return optionKey === selectedKey;
+          };
+          const matchesSelectedDimensions = (option) => {
+            if (epicTargetPlan.hasX && option.xValue !== selected?.xValue) return false;
+            if (epicTargetPlan.costKey && option[epicTargetPlan.costKey] !== selected?.[epicTargetPlan.costKey]) return false;
+            if (epicTargetPlan.stunKey
+              && (option[epicTargetPlan.stunKey] ?? null) !== (selected?.[epicTargetPlan.stunKey] ?? null)) return false;
+            if (epicTargetPlan.giftMode && Boolean(option.gifted) !== Boolean(selected?.gifted)) return false;
+            if ((epicTargetPlan.giftRecipientIds?.length ?? 0) > 1
+              && (option.giftRecipientId ?? null) !== (selected?.giftRecipientId ?? null)) return false;
+            return true;
+          };
+          const targetOptions = options.filter((option) =>
+            option?.type === 'resolve_epic_choice'
+            && sameTargetSelection(option)
+            && matchesSelectedDimensions(option));
+          if (targetOptions.length === 1) {
+            hideModal('choice-request');
+            play(targetOptions[0]);
+            return;
+          }
+          const targetLabel = selectedTargets.filter((id) => id != null).join('-') || 'none';
+          const followup = choiceRequest({
+            id: `${request.id ?? 'epic'}-target-${targetLabel}`,
+            type: request.type ?? 'command',
+            options: targetOptions,
+          });
+          openChoiceRequest(Object.freeze({ ...followup, epicChoiceTargetChosen: true }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
+    const epicDiscardPlan = epicChoiceDiscardPlanOf(request.options ?? []);
+    if (epicDiscardPlan) {
+      const epicObject = session.state?.objects?.get(epicDiscardPlan.cardId) ?? null;
+      const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
+        ? epicObject.cardId : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicDiscardPlan,
+        commands: request.options,
+        intro: `Wybierz ${epicDiscardPlan.count} ${polishPluralCount(epicDiscardPlan.count, 'kartę', 'karty', 'kart')} do odrzucenia jako koszt:`,
+        introCard: epicCardId ? {
+          cardId: epicCardId,
+          name: session.cardDetails(epicCardId)?.name ?? session.nameOf(epicCardId),
+        } : null,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
     const castWindowPlan = castWindowPlanOf(request.options ?? []);
     if (castWindowPlan) {
       const opts = request.options ?? [];

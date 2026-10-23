@@ -4,7 +4,7 @@ import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -1404,6 +1404,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
     ? commandForTapXSelection(plan, [...chosen], xValue)
     : plan.crewMode
     ? commandForCrewSelection(plan, [...chosen])
+    : plan.epicChoiceDiscardMode
+    ? commandForEpicDiscardSelection(commands, [...chosen], plan.count)
     : plan.discardMode
     ? commandForDiscardSelection(plan, [...chosen])
     : plan.cardIdsMode

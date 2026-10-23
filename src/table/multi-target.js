@@ -589,7 +589,7 @@ const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'found', '
  * (gospodarz aury, cel equip). Razem z `resolve_trigger_target` i ogólną
  * rodziną pól (SINGLE_PICK_FIELDS) wyczerpują kształt „wskaż cel (1)”.
  */
-const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability'];
+const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability', 'resolve_epic_choice'];
 
 /**
  * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
@@ -870,6 +870,175 @@ export function commandForCastWindowSelection(commands, rowId) {
  */
 export function commandForButtonsSelection(commands, rowId) {
   return commandForOptionRow(commands, rowId);
+}
+
+/**
+ * Epic Experiment — pierwszy krok wyboru: karta, a nie para „karta × cel".
+ * LegalCommands nadal zawiera pełne warianty (dla bota i walidacji), ale UI
+ * dostaje jedną reprezentatywną, legalną komendę na każdą kartę w wygnaniu
+ * oraz legalną opcję zakończenia. Po wybraniu karty wywołujący otwiera
+ * następny krok z pełnym podzbiorem jej wariantów.
+ */
+export function epicChoiceCardPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice')) return null;
+  const finish = options.filter((cmd) => cmd.done === true);
+  if (finish.length !== 1) return null;
+  const byCard = new Map();
+  for (const cmd of options) {
+    if (cmd.done === true) continue;
+    if (typeof cmd.cardId !== 'string' || cmd.cardId.length === 0) return null;
+    if (!byCard.has(cmd.cardId)) byCard.set(cmd.cardId, cmd);
+  }
+  if (byCard.size === 0) return null;
+  // Karty w kolejności legalCommands; „Zakończ” jest na końcu, po kartach.
+  const cardChoices = [...byCard.values()];
+  const cardCommands = [...cardChoices, finish[0]];
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceCardMode: true,
+    buttonsMode: true,
+    targets: [],
+    hasX: false,
+    itemLabel: 'kartę do rzucenia',
+    cardChoices,
+    finishCommand: finish[0],
+    commands: cardCommands,
+    rows: cardCommands.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
+}
+
+/**
+ * Epic Experiment — wybór trybu po wybraniu karty. Reprezentant nie jest
+ * wysyłany do silnika: po potwierdzeniu wywołujący filtruje oryginalne
+ * legalCommands po modeIndex i dopiero wtedy otwiera wybór celu/kosztu.
+ */
+export function epicChoiceModePlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && cmd.modeIndex != null && typeof cmd.cardId === 'string')) return null;
+  const cardId = options[0].cardId;
+  if (!options.every((cmd) => cmd.cardId === cardId)) return null;
+  const modes = [...new Set(options.map((cmd) => cmd.modeIndex))].sort((a, b) => a - b);
+  if (modes.length < 2) return null;
+  const reps = modes.map((modeIndex) => options
+    .filter((cmd) => cmd.modeIndex === modeIndex)
+    .reduce((best, cmd) => ((cmd.targets?.length ?? 0) < (best.targets?.length ?? 0) ? cmd : best)));
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceMode: true,
+    objectId: cardId,
+    cardId,
+    modes,
+    reps,
+    targets: [],
+    hasX: false,
+    itemLabel: 'tryb',
+    castWindowMode: true,
+    rows: reps.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
+}
+
+/**
+ * Epic Experiment — wybór jednego celu po wybraniu karty/trybu. Warianty
+ * innych kosztów (np. „poświęć stwora”) mogą współistnieć z tym samym celem;
+ * dlatego plan służy wyłącznie do wskazania celu, a wywołujący zawęża pełne
+ * legalCommands po zatwierdzeniu i prowadzi ewentualny kolejny krok.
+ *
+ * Obsługuje także pojedynczą legalną komendę: nawet gdy jest tylko jeden
+ * kandydat, cel pozostaje widocznym, potwierdzanym krokiem po wyborze karty.
+ */
+export function epicChoiceTargetPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length === 0 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && typeof cmd.cardId === 'string' && Array.isArray(cmd.targets))) return null;
+  const cardId = options[0].cardId;
+  const modeIndex = options[0].modeIndex ?? null;
+  if (!options.every((cmd) => cmd.cardId === cardId && (cmd.modeIndex ?? null) === modeIndex)) return null;
+
+  // Zachowaj pozostałe wymiary, które wspólny picker potrafi przedstawić
+  // (X, dodatkowy koszt, stun i Gift) obok celów w DRUGIM kroku. Nadal są
+  // planowane z legalCommands, więc nie powstaje lista ich iloczynu z celami.
+  const multi = multiTargetPlanOf(options);
+  if (multi?.targets?.length > 0) {
+    return {
+      ...multi,
+      type: 'resolve_epic_choice',
+      epicChoiceTargetMode: true,
+      cardId,
+      orderedTargets: Boolean(multi.slots),
+      itemLabel: multi.multiTarget ? 'cele' : 'cel',
+    };
+  }
+
+  // Zwykły cel pojedynczy (Shock itp.) — cel jest osobnym krokiem nawet przy
+  // jednym legalnym kandydacie, także gdy silnik zwrócił tylko jedną legalną
+  // komendę. Nierozpoznane dalsze wymiary zostaną zawężone po wyborze celu.
+  if (options.every((cmd) => cmd.targets.length === 1 && cmd.targets[0] != null)) {
+    return {
+      type: 'resolve_epic_choice',
+      epicChoiceTargetMode: true,
+      cardId,
+      targets: [...new Set(options.map((cmd) => cmd.targets[0]))],
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targets',
+      allowNone: false,
+      itemLabel: 'cel',
+    };
+  }
+  return null;
+}
+
+/**
+ * Epic Experiment — choose additional cards to discard after the spell/target
+ * choice. The engine's legal offers may enumerate every discard combination;
+ * the UI must expose the cards as one multi-select step instead.
+ */
+export function epicChoiceDiscardPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && typeof cmd.cardId === 'string' && Array.isArray(cmd.discardCardIds)
+    && cmd.discardCardIds.length > 0 && cmd.discardCardIds.every((id) => typeof id === 'string'))) return null;
+
+  const cardId = options[0].cardId;
+  const count = options[0].discardCardIds.length;
+  if (!options.every((cmd) => cmd.cardId === cardId && cmd.discardCardIds.length === count)) return null;
+
+  // This plan controls only the discard dimension. If any other command field
+  // (mode, target, X, etc.) still varies, leave those choices to their own step.
+  const signatures = new Set(options.map((cmd) => {
+    const { discardCardIds: _discardCardIds, ...rest } = cmd;
+    return JSON.stringify(Object.fromEntries(Object.entries(rest).sort(([a], [b]) => a.localeCompare(b))));
+  }));
+  if (signatures.size !== 1) return null;
+
+  const uniqueChoices = new Set(options.map((cmd) => [...cmd.discardCardIds].sort().join('\u0000')));
+  if (uniqueChoices.size < 2) return null;
+  const targets = [...new Set(options.flatMap((cmd) => cmd.discardCardIds))];
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceDiscardMode: true,
+    discardMode: true,
+    cardId,
+    targets,
+    minTargets: count,
+    maxTargets: count,
+    count,
+    hasX: false,
+    itemLabel: 'karty do odrzucenia',
+  };
+}
+
+export function commandForEpicDiscardSelection(commands, selected, count) {
+  const picked = Array.isArray(selected) ? selected : [];
+  if (picked.length !== count || new Set(picked).size !== count
+    || !picked.every((id) => typeof id === 'string')) return null;
+  const key = [...picked].sort().join('\u0000');
+  return (commands ?? []).find((cmd) => Array.isArray(cmd?.discardCardIds)
+    && cmd.discardCardIds.length === count
+    && [...cmd.discardCardIds].sort().join('\u0000') === key) ?? null;
 }
 
 /**
