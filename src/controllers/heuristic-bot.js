@@ -5517,7 +5517,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       ...(artifactSpell ? expandManaPool(me.restrictedPool ?? {}) : []),
     ];
     for (const o of view.zones?.battlefield ?? []) {
-      if (!o || o.controllerId !== view.playerId || o.tapped) continue;
+      if (!o || o.controllerId !== view.playerId || o.tapped || o.detained || o.cantActivateAbilities) continue;
       if (o.kind !== 'land' && !(o.types ?? []).includes('Land')) continue;
       const zrodlo = manaSourceOfView(o);
       const amount = zrodlo?.amount ?? 1;

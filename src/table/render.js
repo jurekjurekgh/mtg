@@ -4715,12 +4715,10 @@ export function cardInfo(session, object, combat = null) {
     // "nie może atakować" (oba zakazy = jedno zdanie "nie może atakować
     // ani blokować", jak w Bonds of Faith).
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted || object.detained === true),
-    // PR #171/T (jw.): zablokowane zdolności aktywowane — publiczny skutek
-    // detainu. Render dodaje badge „nie może używać zdolności aktywowanych".
-    // JEDNO źródło: playerView ustawia `cantActivateAbilities` zawsze gdy
-    // `object.detained === true` — niezależnie od innych efektów (aury
-    // „can't activate", leniwa kość itp. — w katalogu dziś brak).
-    cantActivateAbilitiesNow: faceDown ? false : Boolean(object.cantActivateAbilities),
+    // PR #171/T + Audyt F-2 (CR 701.35a + CR 708.2): zakaz zdolności
+    // aktywowanych działa także na zakryty permanent pod detain (spójnie z
+    // cantBlockNow, cantAttackNow i detained).
+    cantActivateAbilitiesNow: Boolean(object.cantActivateAbilities),
     // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
     // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
     // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.

@@ -497,8 +497,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
       for (const id of [...state.zones.battlefield]) {
         if (covered) break;
         const object = state.objects.get(id);
-        if (!object || object.controllerId !== playerId || object.tapped) continue;
-        const ability = treasureManaAbilityOf(object);
+        const ability = activatableTreasureAbilityOf(object, playerId);
         if (!ability) continue;
         if (!unitCoversAnyRequirement(ability.colors, singleColorRequirements(new Set(requirements.flat())))) continue;
         const need = firstUncoveredPipColor(expandManaPool(player.manaPool), requirements);
@@ -603,8 +602,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     for (const id of [...state.zones.battlefield]) {
       if (((player.mana ?? 0) - restrictedInPool) >= amount) break;
       const object = state.objects.get(id);
-      if (!object || object.controllerId !== playerId || object.tapped) continue;
-      const ability = treasureManaAbilityOf(object);
+      const ability = activatableTreasureAbilityOf(object, playerId);
       if (!ability) continue;
       const need = requirements.length > 0 ? firstUncoveredPipColor(expandManaPool(player.manaPool), requirements) : null;
       tapTreasureForMana(state, playerId, id, { grantColor: need ?? ability.colors[0] });
@@ -667,8 +665,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
     for (const id of [...state.zones.battlefield]) {
       if (matchColorRequirements(payableUnits(), requirements)) break;
       const object = state.objects.get(id);
-      if (!object || object.controllerId !== playerId || object.tapped) continue;
-      const ability = treasureManaAbilityOf(object);
+      const ability = activatableTreasureAbilityOf(object, playerId);
       if (!ability) continue;
       if (!unitCoversAnyRequirement(ability.colors, reqUnits)) continue;
       const need = firstUncoveredPipColor(expandManaPool(player.manaPool), requirements);
@@ -754,11 +751,25 @@ export function grantManaOnLand(state, objectId) {
   return amount;
 }
 
+/**
+ * CR 701.35a + CR 605.3: Skarb na polu bitwy możliwy do aktywacji za manę —
+ * kontrolowany przez gracza, nietapnięty i niezatrzymany (detain). Jedno źródło
+ * prawdy dla `spendMana`, `producibleMana`, `planGrantManaColors`,
+ * `treasureManaAvailable` i płatności `treasureAltCost` (L41).
+ */
+function activatableTreasureAbilityOf(object, playerId) {
+  if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped || object.detained) return null;
+  return treasureManaAbilityOf(object);
+}
+
 export function tapLandForMana(state, playerId, objectId, { grantColor = null } = {}) {
   const object = state.objects.get(objectId);
   const isLandSource = object?.kind === 'land' || (object?.types ?? []).includes('Land');
   if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || !isLandSource) throw new Error('Nielegalne źródło many');
   if (object.tapped) throw new Error('Land jest już tapped');
+  // CR 701.35a + CR 605.3: zatrzymany (detained) permanent nie aktywuje żadnych
+  // zdolności aktywowanych, w tym zdolności many (CR 305.6).
+  if (object.detained) throw new Error('Zatrzymany (detain) permanent nie aktywuje zdolności');
   // CR 613.1f + 605.1a: bez zdolności (ani grantu) nie ma zdolności many —
   // tapnięcie nie może oddać jednostki MANY (F5b, #142). Bramka PRZED
   // mutacją `tapped` (atomowość, L48).
@@ -858,7 +869,7 @@ export function untappedLandManaSources(state, playerId) {
   const landCreatures = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped || object.detained) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (!isLandSource) continue;
     if (!landCanProduceMana(state, object)) continue;
@@ -906,7 +917,7 @@ export function untappedFreeManaSources(state, playerId, excludeSourceId = null,
   const out = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped || object.detained) continue;
     if (excludedFree != null && excludedFree.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue; // landy liczy untappedLandManaSources
@@ -966,7 +977,7 @@ export function untappedCostedManaSources(state, playerId, excludeSourceId = nul
   const out = [];
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) continue;
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped || object.detained) continue;
     if (excluded != null && excluded.has(object.id)) continue;
     const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
     if (isLandSource) continue;
@@ -1218,7 +1229,7 @@ export function fundableCostedSources(state, playerId, reqsOrNull, excludeSource
 /** M179/D: auto-tap nielandowego źródła czystej many (zdolność many — bez stosu, CR 605.3). */
 export function tapFreeManaSource(state, playerId, entry) {
   const object = state.objects.get(entry.object.id);
-  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  if (!object || object.zone !== 'battlefield' || object.tapped || object.detained) throw new Error('Nielegalne źródło many (auto-tap)');
   state.objects.set(object.id, Object.freeze({ ...object, tapped: true }));
   const tappedEvent = event('object_tapped', { objectId: object.id, playerId, forMana: true });
   state.events.push(tappedEvent);
@@ -1238,7 +1249,7 @@ export function tapFreeManaSource(state, playerId, entry) {
 
 export function tapTreasureForMana(state, playerId, objectId, { grantColor = null } = {}) {
   const object = state.objects.get(objectId);
-  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  if (!object || object.zone !== 'battlefield' || object.tapped || object.detained) throw new Error('Nielegalne źródło many (auto-tap)');
   const ability = treasureManaAbilityOf(object);
   if (!ability) throw new Error('Nielegalne źródło Skarbu (auto-tap)');
   // Koszt {T},Sacrifice — poświęcenie jest częścią kosztu PRZED efektem (CR 601.2h).
@@ -1275,7 +1286,7 @@ export function tapTreasureForMana(state, playerId, objectId, { grantColor = nul
  */
 export function tapCostedManaSource(state, playerId, entry, { preserveColors = [], requirements = [], purpose = {} } = {}) {
   const object = state.objects.get(entry.object.id);
-  if (!object || object.zone !== 'battlefield' || object.tapped) throw new Error('Nielegalne źródło many (auto-tap)');
+  if (!object || object.zone !== 'battlefield' || object.tapped || object.detained) throw new Error('Nielegalne źródło many (auto-tap)');
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) throw new Error('Nieznany gracz');
   // Atomowość: bramka na aktualnym stanie (wcześniejsze tapnięcia tej płatności
@@ -1415,9 +1426,8 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
   let fromTreasureBoard = 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.controllerId !== playerId || object.tapped) continue;
     if (excluded != null && excluded.has(id)) continue;
-    const ability = treasureManaAbilityOf(object);
+    const ability = activatableTreasureAbilityOf(object, playerId);
     if (!ability) continue;
     fromTreasureBoard += ability.amount;
   }
@@ -1490,10 +1500,9 @@ export function planGrantManaColors(state, playerId, requirements, excludeSource
   // Pool (player.manaPool) już w `units`, tu tylko untapped tokeny na stole.
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.controllerId !== playerId || object.tapped) continue;
     if (excludedGrant != null && excludedGrant.has(id)) continue;
     if (costedPlan.grantSpent.has(id)) continue;
-    const ability = treasureManaAbilityOf(object);
+    const ability = activatableTreasureAbilityOf(object, playerId);
     if (!ability) continue;
     for (let i = 0; i < ability.amount; i += 1) units.push([...ability.colors]);
   }
@@ -1659,8 +1668,7 @@ export function treasureManaAvailable(state, playerId) {
   let total = player?.treasureMana ?? 0;
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.controllerId !== playerId || object.tapped) continue;
-    const ability = treasureManaAbilityOf(object);
+    const ability = activatableTreasureAbilityOf(object, playerId);
     if (!ability) continue;
     total += ability.amount;
   }
@@ -1677,8 +1685,7 @@ export function treasureManaColorUnits(state, playerId) {
   const kolory = new Set(player?.treasureManaColors ?? []);
   for (const id of state.zones.battlefield) {
     const object = state.objects.get(id);
-    if (!object || object.controllerId !== playerId) continue;
-    const ability = treasureManaAbilityOf(object);
+    const ability = activatableTreasureAbilityOf(object, playerId);
     if (!ability) continue;
     for (const color of ability.colors) kolory.add(color);
   }
@@ -2008,8 +2015,7 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     for (const id of [...state.zones.battlefield]) {
       if (need <= 0) break;
       const object = state.objects.get(id);
-      if (!object || object.controllerId !== playerId || object.tapped) continue;
-      const ability = treasureManaAbilityOf(object);
+      const ability = activatableTreasureAbilityOf(object, playerId);
       if (!ability) continue;
       const graveId = `grave-${state.objectSequence++}`;
       moveObjectDirectly(state, id, 'graveyard', graveId);

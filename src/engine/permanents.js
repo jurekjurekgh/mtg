@@ -668,7 +668,9 @@ export function hasTemporaryCantBlock(object) {
 }
 
 export function creatureCantBlock(object, state = null) {
-  return Boolean(object?.cantBlockPrinted || object?.cantBlock || turnCantBlockRestricts(state, object));
+  // CR 701.35a: zatrzymany (detained) permanent nie może blokować — wspólne
+  // źródło prawdy dla walidacji, solvera wymogów bloku i widoku (L41).
+  return Boolean(object?.cantBlockPrinted || object?.cantBlock || object?.detained || turnCantBlockRestricts(state, object));
 }
 
 export function attachmentRestrictions(state, object) {

@@ -47,7 +47,8 @@ export function sourceColorsLabel(colors) {
  * (tap_for_mana wymaga typu Land — dokładnie te same kryteria co silnik).
  */
 function isUntappedLandSource(object, playerId) {
-  if (!object || object.controllerId !== playerId || object.tapped) return false;
+  // CR 701.35a + CR 605.3: zatrzymany permanent nie aktywuje zdolności (w tym many).
+  if (!object || object.controllerId !== playerId || object.tapped || object.detained || object.cantActivateAbilities) return false;
   const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
   if (!isLand) return false;
   const src = object.manaSource ?? getSourceForObject(object);
