@@ -446,19 +446,19 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // z tytułem oferty (L41).
   if ((cmd.type === 'cast_spell' || cmd.type === 'cast_permanent')
     && cmd.xValue != null && !cmd.kicked) {
-    const requirements = baseColorRequirements(parsed);
-    // PR #171/U (2026-10-21d, Consume Spirit): deskryptor kreatora many
-    // MUSI odzwierciedlać `xCost.black` z karty. Bez tego gracz widzi
-    // "zapłać 2 many" (X + baza), klika źródło generyczne (R) dla X,
-    // kreator zamyka `progress.done=true`, commit leci i dopiero silnik
-    // odrzuca "Brak kolorowej many" — komunikat ginie w kreatorze, gracz
-    // ma wrażenie "czar zadziałał ale mana została". Wspólnie z `castXCostSpell`
-    // (spells.js:1298, 3722) — JEDNO źródło: dodaj X kolorowych pipów do
-    // requirements, nie do części generycznej.
-    const xBlack = Boolean(opts.xBlack);
+    const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
+    const requirements = baseColorRequirements(parsed, lifePaid);
+    // PR #171/U + Audyt PR #171 F-5 (CR 107.3 + CR 601.2f + L48): deskryptor
+    // kreatora many odzwierciedla `xCost.black` wprost z PlayerView ręki
+    // (`object.spell.xCost.black`) oraz `opts.xBlack` (dla stref bez spell),
+    // a część generyczna respektuje `opts.effectiveGeneric` po obniżkach.
+    const baseGeneric = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+      ? Math.min(parsed.generic, opts.effectiveGeneric)
+      : parsed.generic;
+    const xBlack = Boolean(opts.xBlack || object?.spell?.xCost?.black);
     const X = cmd.xValue;
     for (let i = 0; i < X && xBlack; i += 1) requirements.push(['B']);
-    const xGeneric = parsed.generic + (xBlack ? 0 : X);
+    const xGeneric = baseGeneric + (xBlack ? 0 : X);
     const totalNeeded = xGeneric + requirements.length;
     return buildDescriptor(object, totalNeeded, requirements,
       `${xCostSymbols(costStr)} (X=${cmd.xValue})`, xGeneric);
