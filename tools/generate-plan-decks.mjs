@@ -37,28 +37,23 @@ function isNonBasic(card) {
  *     wypełniacz (balansuje strony, bez tożsamości koloru).
  */
 /**
- * D (zgłoszenie właściciela 2026-09-20, Simian Simulacrum): kolorowa TOŻSAMOŚĆ
- * karty BEZKOLOROWEJ to suma (a) kolorów produkowanej many (jak dotąd) i
- * (b) PIPÓW KOSZTÓW JEJ ZDOLNOŚCI — aktywowanych (`ability.cost.colors`, np.
- * unearth, cycling, equip) oraz alternatywnych/dodatkowych kosztów czaru
- * (bezpośrednie deskryptory `spell.*` niosące kolory: escape, flashback,
- * buyback, cleave). Tak liczy tożsamość koloru sama gra (CR 903.4: symbole
- * many w kosztach zdolności), więc decyzja nie jest arbitralna.
+ * D/G (zgłoszenia właściciela): `abilityCostColorsOf` zbiera kolorowe symbole
+ * z kosztów zdolności i alternatywnych/dodatkowych kosztów czaru — aktywowanych
+ * (`ability.cost.colors`, np. unearth, cycling, equip), opcjonalnej płatności
+ * triggera (`trigger.payColors`) oraz deskryptorów `spell.*` (escape,
+ * flashback, buyback, cleave). Generator używa tych kosztów wyłącznie jako
+ * preferencji płatności dla bezkolorowego wypełniacza, nie zmieniając `colors`
+ * karty ani jej strony w głównym podziale.
  *
  * ŚWIADOMY ZAKRES: NIE czytamy `effects[]` ani `qualifier` — tamte `colors`
- * opisują np. TOKEN albo wybór w efekcie, nie kartę (Call the Mountain
+ * opisują np. TOKEN albo wybór w efekcie, nie koszt karty (Call the Mountain
  * Chocobo tworzy zielonego ptaka, ale sam jest czerwony). Pipy ukryte głębiej
  * niż jedno piętro (np. w `additionalCost.*`) też pomijamy — katalog dziś ich
- * nie ma, a reguła ma zostać czytelna (nowy kształt danych = świadoma decyzja).
+ * nie ma, a nowy kształt danych wymaga świadomej decyzji.
  *
- * G (zgłoszenie z testów 2026-09-22, Panic Spellbomb): „Artefakt bezbarwny
- * z możliwością specjalnej zdolności płaconej czerwoną maną. Powinien trafić
- * do talii z R, a nie WU.” Karta trzymała pip {R} w `trigger.payColors`
- * („When this artifact is put into a graveyard…, you may pay {R}”), a skan
- * czytał wyłącznie `ability.cost` — pip był niewidzialny i Spellbomb wylądował
- * w mirrodin-wu, gdzie jego triggera NIE DA SIĘ opłacić. Płatność opcjonalna
- * w wyzwalaczu to nadal koszt many w kosztach zdolności karty (CR 903.4), więc
- * `trigger.payColors` wchodzi do tożsamości tak samo jak `cost.colors`.
+ * G (2026-09-22, Panic Spellbomb): opcjonalna płatność triggera {R} jest
+ * zapisana w `trigger.payColors` i musi kierować bezkolorowy wypełniacz ku R.
+ * `abilityCostColorsOf` zachowuje ten koszt razem z pozostałymi kosztami.
  */
 export function abilityCostColorsOf(card) {
   const found = new Set();
@@ -96,13 +91,11 @@ export function splitColorsOf(card) {
     types: card.types ?? [], subtypes: card.subtypes ?? [],
     abilities: card.abilities ?? [], colors: [],
   }, null);
-  // D (zgłoszenie 2026-09-20): pipy kosztów zdolności (patrz
-  // `abilityCostColorsOf`) NIE wchodzą do tożsamości sterującej WYBOREM
-  // podziału — pełne wejście do funkcji celu przenosi CAŁY podział planu
-  // (Dominaria: WU|BRG → UB|WRG, czyli rename plików i unieważnienie
-  // fixture'ów) zamiast załatwić zgłoszenie „karta bezkolorowa ma trafić tam,
-  // gdzie da się zapłacić za jej zdolność". Pipy sterują stroną karty
-  // bezkolorowej w `distributeColorless` (trzeci argument splitPlanByColors).
+  // Casting-cost pips (np. Scion Summoner {2}{G}) i ability-cost pips nie
+  // zmieniają koloru karty ani jej strony w WYBORZE podziału: Devoid pozostaje
+  // bezkolorowy (CR 702.114a), choć {G} nadal wymaga zielonej many (CR 107.4a).
+  // Zamiast przenosić cały podział planu, oba rodzaje kosztów kierują wyłącznie
+  // wypełniaczem w `distributeColorless` (trzeci argument splitPlanByColors).
   return src?.colors ?? [];
 }
 
@@ -230,7 +223,7 @@ export const WOREK_NAMES = Object.freeze({
 const BASIC_BY_COLOR = Object.freeze({ W: 'basic-plains', U: 'basic-island', B: 'basic-swamp', R: 'basic-mountain', G: 'basic-forest' });
 const COLOR_ORDER = ['W', 'U', 'B', 'R', 'G'];
 
-/** Pipy kolorowe karty: z MANA_COSTS (np. "{2}{B}{G}{U}"), fallback: colors. */
+/** Kolorowe symbole kosztu many z MANA_COSTS (np. "{2}{B}{G}{U}"), fallback: colors. */
 export function coloredPips(card) {
   const cost = MANA_COSTS[card.id];
   const pips = { W: 0, U: 0, B: 0, R: 0, G: 0 };
@@ -263,6 +256,19 @@ export function coloredPips(card) {
     for (const c of card.colors ?? []) if (pips[c] != null) pips[c] += 1;
   }
   return pips;
+}
+
+/**
+ * Kolory, które karta bezkolorowa może wymagać przy rzuceniu lub użyciu zdolności.
+ * `coloredPips` czyta wydrukowany koszt many; `abilityCostColorsOf` zbiera
+ * pozostałe koszty. To preferencja strony dla bezkolorowego wypełniacza, nie
+ * zmiana `card.colors` ani tożsamości sterującej wyborem podziału.
+ */
+export function paymentColorsOf(card) {
+  const found = new Set(abilityCostColorsOf(card));
+  const castingPips = coloredPips(card);
+  for (const color of COLOR_ORDER) if (castingPips[color] > 0) found.add(color);
+  return COLOR_ORDER.filter((color) => found.has(color));
 }
 
 /** Rozkład landów: ceil(n/2) proporcjonalnie do pipów, min 1 na używany kolor.
@@ -398,7 +404,7 @@ export function buildDecks(registry = createCardRegistry()) {
     if (file.startsWith('worek')) { splitDecks.set(file, entry); continue; }
     const nonBasic = entry.cards.filter(isNonBasic);
     if (!needsSplit(nonBasic.length)) { splitDecks.set(file, entry); continue; }
-    const split = splitPlanByColors(nonBasic, splitColorsOf, abilityCostColorsOf);
+    const split = splitPlanByColors(nonBasic, splitColorsOf, paymentColorsOf);
     if (!split) {
       // Fallback (decyzja właściciela „fill_then_keep"): plan zbyt jednokolorowy,
       // by dać dwie talie >=15 — ZOSTAW jedną talię i ostrzeż. Nie tworzymy

@@ -31,7 +31,7 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
-import { renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
   wizardSourceName,
@@ -52,7 +52,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -666,6 +666,74 @@ function bootstrapTable() {
   function openChoiceRequest(request) {
     if (!session || !els.choiceRequestBody) return;
     const choiceView = session.view();
+
+    // Epic Experiment: najpierw jedna pozycja na każdą legalną kartę z wygnania
+    // (nie na każdą parę karta × cel). Dopiero po potwierdzeniu karty otwieramy
+    // jej dalsze decyzje; warianty celu pozostają komendami legalCommands.
+    const epicCardPlan = epicChoiceCardPlanOf(request.options ?? []);
+    if (epicCardPlan) {
+      const epicCardDefinitionId = (objectId) => {
+        const cardId = session.state?.objects?.get(objectId)?.cardId ?? null;
+        return cardId && session.cardDetails(cardId) ? cardId : null;
+      };
+      const epicCardLabels = epicCardPlan.commands.map((option) => {
+        if (option.done === true) return commandLabel(option, session, choiceView);
+        const cardId = epicCardDefinitionId(option.cardId);
+        const name = session.nameOfObject?.(option.cardId)
+          ?? (cardId ? session.nameOf(cardId) : null)
+          ?? option.cardId;
+        return `Rzuć bez kosztu — ${name}`;
+      });
+      const labelCounts = new Map();
+      for (const label of epicCardLabels) labelCounts.set(label, (labelCounts.get(label) ?? 0) + 1);
+      const labelSeen = new Map();
+      epicCardPlan.rows = epicCardPlan.commands.map((option, i) => {
+        const label = epicCardLabels[i];
+        const count = labelCounts.get(label) ?? 0;
+        const ordinal = (labelSeen.get(label) ?? 0) + 1;
+        labelSeen.set(label, ordinal);
+        return {
+          id: `opt-${i}`,
+          label: count > 1 ? `${label} (${ordinal} z ${count})` : label,
+          cardId: option.done === true ? null : epicCardDefinitionId(option.cardId),
+        };
+      });
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicCardPlan,
+        commands: epicCardPlan.commands,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz kartę:`,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (selected) => {
+          if (selected?.done === true) {
+            hideModal('choice-request');
+            play(selected);
+            return;
+          }
+          const cardOptions = (request.options ?? []).filter((option) =>
+            option?.type === 'resolve_epic_choice' && option.done !== true
+            && option.cardId === selected?.cardId);
+          const hasTargetChoice = cardOptions.some((option) =>
+            Array.isArray(option.targets) && option.targets.some((id) => id != null));
+          if (cardOptions.length === 1 && !hasTargetChoice) {
+            hideModal('choice-request');
+            play(cardOptions[0]);
+            return;
+          }
+          openChoiceRequest(choiceRequest({
+            id: `${request.id ?? 'epic'}-card-${selected.cardId}`,
+            type: request.type ?? 'command',
+            options: cardOptions,
+          }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
     // Wizard scry/surveil (zgłoszenie 2026-08-06, pkt 4): zamiast listy
     // wszystkich kombinacji — najpierw lista przeglądniętych kart, potem
     // wybory PO KOLEI dla każdej karty osobno; komenda resolve_* składana
@@ -797,9 +865,14 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
-    const castModePlan = castModePlanOf(request.options ?? []);
+    const castModePlan = castModePlanOf(request.options ?? [])
+      ?? epicChoiceModePlanOf(request.options ?? []);
     if (castModePlan) {
       const modeOptions = request.options ?? [];
+      const epicModeSource = castModePlan.epicChoiceMode
+        ? session.state?.objects?.get(castModePlan.cardId) ?? null : null;
+      const epicModeCardId = epicModeSource?.cardId
+        && session.cardDetails(epicModeSource.cardId) ? epicModeSource.cardId : null;
       // M406 (uwaga z gry 2026-09-22): wiersz kroku 1 NIGDY nie niesie
       // wpiętego celu „pierwszy z brzegu” („jeden do tapa, jeden do untapa”
       // z etykiet reprezentantów) — etykieta = NAZWA TRYBU z modelu, cele
@@ -808,6 +881,7 @@ function bootstrapTable() {
       castModePlan.rows = castModePlan.rows.map((row, i) => ({
         ...row,
         label: modeNameList[castModePlan.modes[i]]?.name ?? `tryb ${castModePlan.modes[i] + 1}`,
+        ...(castModePlan.epicChoiceMode ? { cardId: epicModeCardId } : {}),
       }));
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
@@ -815,11 +889,17 @@ function bootstrapTable() {
         plan: castModePlan,
         commands: castModePlan.reps,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz tryb:`,
+        introCard: epicModeCardId ? {
+          cardId: epicModeCardId,
+          name: session.cardDetails(epicModeCardId)?.name ?? session.nameOf(epicModeCardId),
+        } : null,
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (repCmd) => {
           const subset = modeOptions.filter((cmd) => cmd.modeIndex === repCmd.modeIndex);
-          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          const epicNeedsTarget = repCmd.type === 'resolve_epic_choice' && subset.some((cmd) =>
+            Array.isArray(cmd.targets) && cmd.targets.some((id) => id != null));
+          if (subset.length === 1 && !epicNeedsTarget) { hideModal('choice-request'); play(subset[0]); return; }
           openChoiceRequest(choiceRequest({
             id: `${request.id ?? 'mode'}-tryb-${repCmd.modeIndex}`,
             type: request.type ?? 'command',
@@ -831,6 +911,99 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+
+    // Po wyborze karty Epic Experiment dostaje osobny picker celu — jeden
+    // wiersz na legalny cel, również gdy istnieje tylko jeden kandydat. Jeśli
+    // komenda niesie dalszy wymiar (np. koszt dodatkowy), po wyborze celu
+    // zawężamy legalCommands i otwieramy ten następny wybór osobno.
+    const epicTargetPlan = request.epicChoiceTargetChosen
+      ? null : epicChoiceTargetPlanOf(request.options ?? []);
+    if (epicTargetPlan) {
+      const options = request.options ?? [];
+      const epicObject = session.state?.objects?.get(epicTargetPlan.cardId) ?? null;
+      const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
+        ? epicObject.cardId : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicTargetPlan,
+        commands: options,
+        intro: `${epicTargetPlan.maxTargets === 1 ? 'Wskaż legalny cel' : 'Wskaż legalne cele'}${epicTargetPlan.hasX ? ' i wartość X' : ''}:`,
+        introCard: epicCardId ? {
+          cardId: epicCardId,
+          name: session.cardDetails(epicCardId)?.name ?? session.nameOf(epicCardId),
+        } : null,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (selected) => {
+          const selectedTargets = selected?.targets ?? [];
+          const selectedKey = [...selectedTargets].filter((id) => id != null).sort().join('|');
+          const sameTargetSelection = (option) => {
+            if (!Array.isArray(option?.targets)) return false;
+            if (epicTargetPlan.orderedTargets) {
+              return option.targets.length === selectedTargets.length
+                && option.targets.every((id, i) => id === selectedTargets[i]);
+            }
+            const optionKey = option.targets.filter((id) => id != null).sort().join('|');
+            return optionKey === selectedKey;
+          };
+          const matchesSelectedDimensions = (option) => {
+            if (epicTargetPlan.hasX && option.xValue !== selected?.xValue) return false;
+            if (epicTargetPlan.costKey && option[epicTargetPlan.costKey] !== selected?.[epicTargetPlan.costKey]) return false;
+            if (epicTargetPlan.stunKey
+              && (option[epicTargetPlan.stunKey] ?? null) !== (selected?.[epicTargetPlan.stunKey] ?? null)) return false;
+            if (epicTargetPlan.giftMode && Boolean(option.gifted) !== Boolean(selected?.gifted)) return false;
+            if ((epicTargetPlan.giftRecipientIds?.length ?? 0) > 1
+              && (option.giftRecipientId ?? null) !== (selected?.giftRecipientId ?? null)) return false;
+            return true;
+          };
+          const targetOptions = options.filter((option) =>
+            option?.type === 'resolve_epic_choice'
+            && sameTargetSelection(option)
+            && matchesSelectedDimensions(option));
+          if (targetOptions.length === 1) {
+            hideModal('choice-request');
+            play(targetOptions[0]);
+            return;
+          }
+          const targetLabel = selectedTargets.filter((id) => id != null).join('-') || 'none';
+          const followup = choiceRequest({
+            id: `${request.id ?? 'epic'}-target-${targetLabel}`,
+            type: request.type ?? 'command',
+            options: targetOptions,
+          });
+          openChoiceRequest(Object.freeze({ ...followup, epicChoiceTargetChosen: true }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
+    const epicDiscardPlan = epicChoiceDiscardPlanOf(request.options ?? []);
+    if (epicDiscardPlan) {
+      const epicObject = session.state?.objects?.get(epicDiscardPlan.cardId) ?? null;
+      const epicCardId = epicObject?.cardId && session.cardDetails(epicObject.cardId)
+        ? epicObject.cardId : null;
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView,
+        session,
+        plan: epicDiscardPlan,
+        commands: request.options,
+        intro: `Wybierz ${epicDiscardPlan.count} ${polishPluralCount(epicDiscardPlan.count, 'kartę', 'karty', 'kart')} do odrzucenia jako koszt:`,
+        introCard: epicCardId ? {
+          cardId: epicCardId,
+          name: session.cardDetails(epicCardId)?.name ?? session.nameOf(epicCardId),
+        } : null,
+        onOpenCard: openCardFullscreen,
+        onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+
     const castWindowPlan = castWindowPlanOf(request.options ?? []);
     if (castWindowPlan) {
       const opts = request.options ?? [];
@@ -918,12 +1091,24 @@ function bootstrapTable() {
       const sourceObject = [...(choiceView.zones?.hand ?? []), ...(choiceView.zones?.battlefield ?? []),
         ...(choiceView.zones?.graveyard ?? []), ...(choiceView.zones?.exile ?? [])]
         .find((o) => o.id === multiPlan.objectId);
+      const hasGiftDimension = multiPlan.giftMode || (multiPlan.giftRecipientIds?.length ?? 0) > 1;
+      const targetPhrase = multiPlan.minTargets === 1 && multiPlan.maxTargets === 1 ? 'cel' : 'cele';
+      const giftPhrase = multiPlan.giftMode
+        ? 'zdecyduj, czy obiecać dar'
+        : 'wybierz odbiorcę daru';
+      const titleRequest = multiPlan.giftMode
+        ? { ...request, options: (request.options ?? []).filter((cmd) => !cmd?.gifted) }
+        : request;
+      const giftIntro = hasGiftDimension
+        ? `${choiceGroupTitle(titleRequest, session, choiceView)} — wybierz ${targetPhrase} i ${giftPhrase}:`
+        : undefined;
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView,
         session,
         plan: multiPlan,
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
+        intro: giftIntro,
         // M207: nazwy POZYCJI celu prosto z Oracle karty („twój stwór”,
         // „stwór przeciwnika”, „karta-stwór w grobie”, „gracz”). Kreator sam
         // ich nie wymyśla — bierze deskryptor `spell.targets` (ADR 0002).
@@ -1757,32 +1942,11 @@ function bootstrapTable() {
     return 'spell';
   }
 
-  /** Kształt danych karty, jakiego oczekuje renderCardFullscreen. */
+  /** Jedno źródło pól karty dla kafla, podglądu i pełnego ekranu. */
   function cardInfoForFullscreen(object) {
-    // CR 708.2: kontroler może w każdej chwili podejrzeć SWOJE karty twarzą
-    // w dół (morph) — pełny ekran odsłania je właścicielowi; cudze zostają
-    // zakryte (widok gracza niesie cardId tylko dla własnych face-down).
-    const isOwnFaceDown = object.faceDown && object.controllerId === HUMAN_ID;
-    const details = object.faceDown && !isOwnFaceDown ? null : session.cardDetails(object.cardId);
-    return {
-      name: isOwnFaceDown ? (details?.name ?? session.nameOf(object.cardId)) : (object.faceDown ? 'Karta zakryta' : (details?.name ?? session.nameOf(object.cardId))),
-      colors: details?.colors ?? [],
-      kind: object.kind ?? 'creature',
-      types: details?.types ?? [],
-      subtypes: details?.subtypes ?? [],
-      keywords: details?.keywords ?? [],
-      manaCost: details?.manaCost ?? null,
-      power: details?.power, toughness: details?.toughness,
-      livePower: object.power ?? details?.power,
-      liveToughness: object.toughness ?? details?.toughness,
-      spell: details?.spell ?? null,
-      abilities: details?.abilities ?? [],
-      morph: details?.morph ?? null,
-      set: details?.set ?? null,
-      imageUri: object.faceDown && !isOwnFaceDown ? null : (details?.imageUri ?? null),
-      artId: object.faceDown && !isOwnFaceDown ? null : (details?.artId ?? null),
-      faceDown: Boolean(object.faceDown && !isOwnFaceDown),
-    };
+    // cardInfo zachowuje fizyczny cardId, respektuje mgłę wojny dla face-down
+    // i wybiera druk skopiowanej karty wyłącznie dla bieżącego permanentu.
+    return cardInfo(session, object);
   }
 
   function onCardClick(objectId, cardId) {
@@ -2419,6 +2583,50 @@ function bootstrapTable() {
     }
   }
 
+  /**
+   * F10 (audyt PR #171, 2026-10-21d): kreator many zablokowany przez stos
+   * (trigger Chronic Flooding i pokrewne — każdy trigger „przy tapnięciu
+   * lądu" z auto-tapu płatności). CR 307.1/117.1a odrzuca `cast_permanent`
+   * z powodu niepustego stosu. Kreator ma obowiązek GENERYCZNIE ponowić
+   * commit po rozstrzygnięciu tych triggerów; wybiera „pass-priority" az
+   * stos opustoszeje lub kreator wraca do `legalCommands`. Zwraca `true`
+   * gdy `cast_*` przeszło, `false` gdy trigger wciąż siedzi po `maxCycles`
+   * pasach (sieć bezpieczeństwa: ui prosi o „mana zostaje w puli").
+   */
+  function resolveWizardTriggerBlock(sess, pending) {
+    if (!sess || !pending?.cmd) return false;
+    const maxCycles = 6; // co najwyżej 12 pojedynczych pasów (6 cykli po 2 gr)
+    for (let i = 0; i < maxCycles; i += 1) {
+      // 1. czy cast jest teraz legalny? Jeśli tak, commit i sukces.
+      const view = sess.view();
+      const cmd = pending.cmd;
+      const nowLegal = (view.legalCommands ?? []).some((c) => c.type === cmd.type
+        && c.objectId === cmd.objectId
+        && JSON.stringify(c.targets ?? null) === JSON.stringify(cmd.targets ?? null));
+      if (nowLegal) {
+        const paid = pending.delveCandidates?.length > 0 && pending.selectedDelveIds instanceof Set
+          ? { ...cmd, delveExileIds: [...pending.selectedDelveIds].sort() }
+          : cmd;
+        sess.apply(paid, { holdPriority: true });
+        return true;
+      }
+      // 2. czy cokolwiek jeszcze siedzi na stosie? Jeśli nie, trzeba
+      // odpuścić — kreator nie ma nic do rozstrzygnięcia, a cast wciąż
+      // nielegalny (np. poza main phase). Zwracamy false → ui drukuje
+      // „mana zostaje w puli", kreator oddaje pulę graczowi.
+      const stackLen = sess.state?.zones?.stack?.length ?? 0;
+      if (stackLen === 0) return false;
+      // 3. przepuść priorytet posiadacza — to rozstrzyga triggery, których
+      // nikt inny nie reaguje. Gdyby engine zgłosił błąd (np. priorytet
+      // nie nasz), przerywamy i każemy graczowi przejąć stery ręcznie.
+      const playerId = sess.state?.turn?.priorityPlayerId;
+      if (!playerId) return false;
+      const passResult = sess.apply({ type: 'pass_priority', playerId }, { holdPriority: true });
+      if (passResult?.ok === false) return false;
+    }
+    return false;
+  }
+
   function playDirect(cmd, options) {
     // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
     // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
@@ -2668,6 +2876,16 @@ function bootstrapTable() {
       const cleave = stateObject.spell.cleave;
       opts.alternativeCost = reduceAlternativeCost(session.state, stateObject, cleave.manaCost, cleave.colors ?? []);
     }
+    // PR #171/U (2026-10-21d, Consume Spirit): widok playerView NIE niesie
+    // pełnego deskryptora `spell` obiektu (m188/pin L41). Kreator many
+    // dostaje więc `xCost.black` przez opts — jedno źródło prawdy dla
+    // "Spend only black mana on X" (CR 601.2f/606). Bez tego kreator
+    // traktował X jako część generyczną i gracz mógł płacić X generyczną
+    // maną z puli, kreator zamykał `progress.done=true`, dopiero silnik
+    // odrzucał z "Brak kolorowej many" (komunikat ginął w kreatorze).
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_permanent') {
+      if (stateObject?.spell?.xCost?.black === true) opts.xBlack = true;
+    }
     // M327 (audyt PR #102, F7): koszt ODSŁONIĘCIA (CR 701.58b cloaka,
     // 701.40b manifestu) nosi tylko pełny stan — zakryty permanent ma w widoku
     // `manaCost: 0`, więc kreator brałby liczbę z kosztu karty i musiał ją
@@ -2789,19 +3007,41 @@ function bootstrapTable() {
       : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
     const progress = wizardProgress(view, HUMAN_ID, manaWizardDescriptor, sources, poolUnits);
     const hasDelve = (manaWizardDescriptor.delveCandidates?.length ?? 0) > 0;
+    // F10 (zgłoszenie właściciela, audyt PR #171, 2026-10-21d): trigger
+    // Chronic Flooding (i każdy trigger „przy tapnięciu lądu") z auto-tapu
+    // kreatora wjeżdża na stos PRZED commitem cast. CR 307.1/117.1a blokuje
+    // sorcery-speed „Zagranie przy niepustym stosie" — kreator by wtedy
+    // zostawiał manę w puli i odpytywał „kliknij ponownie po triggerze".
+    // Kreator ma obowiązek GENERYCZNIE ponowić commit po rozstrzygnięciu
+    // tych triggerów: sczytujemy co kreator sam odpalił (triggery z
+    // tap-niętych źródeł w tej transakcji), przepuszczamy priorytet aż
+    // schodzą ze stosu, i dopiero wtedy ponawiamy `cast_*`. Bez tego gracz
+    // dostaje „Płatność zebrana, ale zagranie nie jest już dostępne" mimo
+    // że cała płatność jest gotowa.
     const finishPayment = () => {
       const pending = manaWizardDescriptor;
       if (!pending) return;
-      const current = session.view();
-      const stillLegal = (current.legalCommands ?? []).some((c) => c.type === pending.cmd.type
+      const stillLegalBefore = (session.view().legalCommands ?? []).some((c) => c.type === pending.cmd.type
         && c.objectId === pending.cmd.objectId
         && JSON.stringify(c.targets ?? null) === JSON.stringify(pending.cmd.targets ?? null));
-      const paidCommand = hasDelve
-        ? { ...pending.cmd, delveExileIds: [...(pending.selectedDelveIds ?? [])].sort() }
-        : pending.cmd;
+      if (stillLegalBefore) {
+        const paidCommand = hasDelve
+          ? { ...pending.cmd, delveExileIds: [...(pending.selectedDelveIds ?? [])].sort() }
+          : pending.cmd;
+        closeManaWizard();
+        playDirect(paidCommand);
+        return;
+      }
+      // Kreator jest zablokowany przez stos; to jest jedyne legalne wyjście.
+      // Ponawiamy, dopóki stos nie opustoszeje (oba priorytety passeowane co
+      // najmniej raz) — uchwyt natychmiast zamyka kreator i zgłasza znanego
+      // gracza „mana w puli" TYLKO gdy trigger wciąż siedzi po rozsądnej
+      // liczbie prób (sieć bezpieczeństwa, normalnie 2-4 pasy).
+      const cleared = resolveWizardTriggerBlock(session, pending);
       closeManaWizard();
-      if (stillLegal) playDirect(paidCommand);
-      else showNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+      if (!cleared) {
+        showNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+      }
     };
     // Zwykła płatność zachowuje dotychczasowe auto-domknięcie. Delve MUSI
     // zostać na ekranie do jawnego zatwierdzenia: nawet gdy pula już płaci

@@ -181,6 +181,19 @@ const PARY = [
   // protects the permanent the next time it would be destroyed this turn”).
   { mechanika: /regener/i, zakazany: /702\.14(?!\d)/, poprawny: '701.19',
     zrodlo: '701.19 Regenerate (keyword action); 702.14 to Landwalk' },
+  // Para dodana w sesji 2026-10-21c (audyt PR #170, C-1). Rodzina „zapobiegnięte
+  // obrażenia NIE są zadane" (combat.js, effects.js, game-state.js, triggers.js,
+  // session.js + testy odznak) cytowała CR 119.3 — a 119.3 w CR 2026-09-25 to
+  // „If an effect causes a player to gain life or lose life …", czyli NIC o
+  // prewencji. Podstawa regułowa to 615.6 + 615.7. Luka strażnika była dwa
+  // wymiary: 119.3 ISTNIEJE, więc strażnik istnienia milczał, a tabela par
+  // pilnowała wyłącznie mechanik 702.x (ten sam kształt co F-1 z PR #136, tylko
+  // „numer z sekcji, ale o innym znaczeniu"). Wykluczenie po 615.6/615.7 chroni
+  // linie cytujące OBA numery świadomie.
+  { mechanika: /zapobiegnięte obrażenia|zapobieżone obrażenia|NIE są zadane|prevented.*(?:not|never) dealt/i,
+    zakazany: /119\.3(?!\d)/, poprawny: '615.6 (+ 615.7 dla tarczy)',
+    wyklucz: /615\.[67]/,
+    zrodlo: '615.6: „If damage that would be dealt is prevented, it never happens"; 615.7: tarcza „prevent the next N"; 119.3 to przyrost/utrata życia (C-1)' },
 ];
 
 /** Rekurencyjna lista plików `.js` w katalogu (bez node_modules). */

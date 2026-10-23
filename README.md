@@ -12,16 +12,19 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-21b):** [handoff](docs/setup/HANDOFF_2026-10-21b.md)
-oraz [audyt PR #169](docs/audits/AUDYT_PR169_2026-10-21.md) w otwartym
-[PR #170](https://github.com/jurekjurekgh/mtg/pull/170). Sesja 2026-10-21b:
-audyt scalonego PR #169 (56/56 ścieżek, CR i mutacje zweryfikowane, jedyne
-znalezisko dokumentacyjne) oraz pętla jakości — 4 partie Żywego Testera na
-taliach batcha 69 (0 zgłoszeń detektorów) i polowanie CR 702.15 (Lifelink)
-z fixem duplikatu `damage_dealt` w strumieniu komendy przy częściowo
-zapobiegniętych obrażeniach (lekcja L187). PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-21](docs/setup/HANDOFF_2026-10-21.md)
-(sesja PR #169 — poprawki A-1…A-13, Q-1; PR #169 scalony jako `c249792`).
+**Aktualny punkt zaczepienia (2026-10-21c):** [handoff](docs/setup/HANDOFF_2026-10-21c.md)
+oraz [audyt PR #170](docs/audits/AUDYT_PR170_2026-10-21.md) w otwartym
+[PR #171](https://github.com/jurekjurekgh/mtg/pull/171). Sesja 2026-10-21c:
+audyt scalonego PR #170 (11/11 plików — fix `slice(before, -1)` potwierdzony
+sondą na 5 wariantach, strażnik zweryfikowany mutacyjnie, klasa L130/L187 poza
+fixem nie występuje) oraz pętla jakości — 4 partie Żywego Testera (0 zgłoszeń
+detektorów) i naprawa znaleziska **C-1**: rodzina „zapobiegnięte obrażenia NIE
+są zadane" (32 cytaty w 11 plikach) uzasadniała się CR 119.3, który w wydaniu
+2026-09-25 dotyczy **życia** — właściwa podstawa to **615.6** (+ 615.7 dla
+tarczy), zweryfikowane dosłownie z `cr-raw.txt` (SHA zgodny). PR czeka na
+decyzję właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-21b](docs/setup/HANDOFF_2026-10-21b.md)
+(sesja PR #170 — audyt PR #169; plan: audyt/plan w `docs/plans/`).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,

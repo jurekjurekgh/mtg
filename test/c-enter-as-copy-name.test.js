@@ -7,7 +7,8 @@
 //
 // Naprawa (lustro L48): enter-as-copy stawia name (nazwa celu, CR 707.2)
 // + copyNumber (nextCopyNumber), widok rzutuje name dla kopii — kafel
-// „Rotting Legion (kopia 1)" istniejącą ścieżką M172/D, bez nowych badge'ów.
+// „Rotting Legion (kopia 1)" istniejącą ścieżką M172/D. Badge źródła kopii
+// testuje `jwari-copy-display.test.js`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';

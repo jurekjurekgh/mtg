@@ -264,8 +264,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // na nowy obiekt (CR 400.7); helper jest wspólny z ofertą rzutu.
     ...clearLinkedExileCastPermission(object),
   } : null;
+  // Dane identyfikujące druk kopiowany w UI należą do tego permanentu na
+  // polu bitwy. Po zmianie strefy CR 400.7 kończy ten kontekst prezentacji —
+  // fizyczny `cardId` karty (np. Jwari) pozostaje nietknięty.
+  const copyDisplayReset = object.zone === 'battlefield' && toZone !== 'battlefield'
+    && object.copiedFromCardId
+    ? { copiedFromCardId: null, copiedByCardId: null }
+    : {};
   const moved = Object.freeze({
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset,
+    id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
     enteredOnTurn: toZone === 'battlefield' ? state.turn.number : null,

@@ -10,11 +10,11 @@
 1x Natural Connection
 1x Relic Robber
 1x Roiling Regrowth
+1x Scion Summoner
 1x Skyclave Geopede
 1x Battle-Rattle Shaman
 1x Kozilek's Predator
-1x Warden of Geometries
 1x Boulder Salvo
 1x Swamp
-4x Mountain
-3x Forest
+3x Mountain
+4x Forest

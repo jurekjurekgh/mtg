@@ -9,12 +9,11 @@
 1x Abstruse Interference
 1x Kor Sanctifiers
 1x Pilgrim's Eye
-1x Scion Summoner
 1x Kabira Vindicator
 1x Kor Cartographer
+1x Warden of Geometries
 1x Jwar Isle Avenger
 1x Merfolk Falconer
 1x Mysteries of the Deep
 2x Plains
-5x Island
-1x Forest
+6x Island

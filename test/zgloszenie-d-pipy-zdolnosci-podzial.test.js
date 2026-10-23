@@ -4,14 +4,16 @@
 // skrypt dzielący karty na talie, żeby przy podziale bezkolorowych kart brał
 // pod uwagę pipy kosztów zdolności lub/i wytwarzaną manę."
 //
-// Reguła (zakres zgłoszenia): karta BEZKOLOROWA z pipami kosztów zdolności
-// (CR 903.4 — symbole many w kosztach zdolności są częścią tożsamości) idzie na
-// stronę, która te pipy MOŻE ZAPŁACIĆ; wybór podziału (maski, nazwy plików)
-// zostaje bez zmian — patrz komentarz w `tools/generate-plan-decks.mjs`.
+// Reguła podziału: bezkolorowa karta pozostaje bezkolorowa (Devoid, CR 702.114a),
+// lecz kolorowe symbole many w jej koszcie rzucenia nadal wymagają właściwego
+// koloru many (CR 107.4a). Koszt rzucenia i koszty zdolności są preferencją strony
+// dla wypełniacza; nie zmieniają `colors[]` ani wyboru masek/sufiksów podziału.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { abilityCostColorsOf, buildDecks, splitColorsOf } from '../tools/generate-plan-decks.mjs';
+import {
+  abilityCostColorsOf, buildDecks, coloredPips, paymentColorsOf, splitColorsOf,
+} from '../tools/generate-plan-decks.mjs';
 import { splitPlanByColors, MIN_NONLAND } from '../tools/split-deck-colors.mjs';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
@@ -80,6 +82,36 @@ test('D/3: realny generator — Simian Simulacrum w Dominaria (BRG), nie w (WU)'
     .filter((cardId) => !cardId.startsWith('basic-')).length;
   assert.ok(nonland(dominariaWu) >= MIN_NONLAND, `dominaria-wu ma ${nonland(dominariaWu)} kart nielandowych`);
   assert.ok(nonland(dominariaBrg) >= MIN_NONLAND, `dominaria-brg ma ${nonland(dominariaBrg)} kart nielandowych`);
+});
+
+test('Scion Summoner: koszt rzucenia {G} kieruje bezkolorowy wypełniacz do Zendikar RG', () => {
+  const scion = registry.get('scion-summoner');
+  assert.ok(scion, 'Scion Summoner jest kartą wspieraną w rejestrze');
+  assert.deepEqual(scion.colors, [], 'Devoid zachowuje bezkolorowość karty (CR 702.114a)');
+  assert.deepEqual(splitColorsOf(scion), [], 'koszt {G} nie zmienia koloru ani tożsamości podziału');
+  assert.deepEqual(abilityCostColorsOf(scion), [], 'zielony symbol nie pochodzi z kosztu zdolności');
+  assert.equal(coloredPips(scion).G, 1, 'koszt {2}{G} wymaga zielonej many (CR 107.4a)');
+  assert.deepEqual(paymentColorsOf(scion), ['G'], 'zielony pip rzucenia służy wyłącznie do preferencji płatności');
+
+  const files = buildDecks(registry);
+  const zendikarWu = files.get('zendikar-wu');
+  const zendikarRg = files.get('zendikar-rg');
+  assert.ok(zendikarWu && zendikarRg, 'Zendikar pozostaje podzielony na WU i RG');
+  assert.match(zendikarRg, /1x Scion Summoner/, 'Scion Summoner trafia do strony zielonej');
+  assert.doesNotMatch(zendikarWu, /Scion Summoner/, 'Scion Summoner nie trafia do WU');
+  assert.match(fs.readFileSync('decks/zendikar-rg.txt', 'utf8'), /1x Scion Summoner/,
+    'wygenerowana talia RG została zapisana z poprawnym przydziałem');
+  assert.doesNotMatch(fs.readFileSync('decks/zendikar-wu.txt', 'utf8'), /Scion Summoner/,
+    'wygenerowana talia WU nie zawiera karty');
+
+  const nonlands = (text) => parseDeckText(text, registry).cardIds
+    .filter((cardId) => !cardId.startsWith('basic-'));
+  const wuIds = nonlands(zendikarWu);
+  const rgIds = nonlands(zendikarRg);
+  assert.ok(wuIds.length >= MIN_NONLAND && rgIds.length >= MIN_NONLAND,
+    `obie strony zachowują minimum ${MIN_NONLAND} kart nielądowych`);
+  assert.equal(wuIds.length + rgIds.length, 30, 'żadna z 30 kart planu nie znika');
+  assert.equal(new Set([...wuIds, ...rgIds]).size, 30, 'każda karta planu pozostaje singletonem');
 });
 
 test('D/4: niezmiennik talii dzielonych — bezkolorowa karta z pipami ma je pokryte sufiksem', () => {

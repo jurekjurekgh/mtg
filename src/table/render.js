@@ -447,10 +447,10 @@ export function choiceRequestGroupKey(command) {
     // w modalu wyboru. Wszystkie czary, które wymagają decyzji podczas rzucania,
     // powinny mieć najpierw ofertę rzucenia w »Twoje działania«, a dopiero potem
     // modal wyboru sposobu rzucenia.”
-    // Dar NIE jest osobnym rzutem, tylko WARIANTEM tego samego rzutu (CR 702.174a:
-    // „as you cast this spell”) — więc obietnica daru należy do tej samej grupy
-    // co rzut bazowy i trafia do modala razem z wariantami celu (etykieta mówi
-    // „· dar dla przeciwnika: …”, więc warianty są rozróżnialne).
+    // Dar NIE jest osobnym rzutem, tylko decyzją w trakcie tego samego rzutu
+    // (CR 702.174a: koszt wybierany „as you cast this spell”). Dlatego komendy
+    // z/bez obietnicy należą do jednej grupy; kreator rozdziela cel i dar na
+    // osobne kontrolki, a nie na jeden wiersz na każdą parę.
     //
     // M (zgłoszenie właściciela 2026-09-19b, You're Confronted by Robbers):
     // „Oferta w »Twoje działania« rozdzielona na dwie opcje. Rzucenie czaru
@@ -464,7 +464,9 @@ export function choiceRequestGroupKey(command) {
     // „Cel czaru”.
     // M (Lab Rats): buyback to wariant rzutu (CR 702.27a), więc ma własną grupę
     // — jak kicker. Inaczej warianty z dopłatą wpadłyby do grupy zwykłego rzutu.
-    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}`;
+    // Surge również zmienia koszt samego rzutu. Rozdzielamy grupy celu,
+    // żeby jeden nagłówek nie opisywał jednocześnie kosztu zwykłego i Surge.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}${command.surgeCast ? ':surge' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
@@ -2455,22 +2457,34 @@ function uncoverCostOf(session, view, objectId, field) {
 }
 
 /**
- * Koszt KARTY w HTML z ikonami many (H, uwaga właściciela 2026-09-23c).
+ * Koszt KARTY we wspólnym formacie (H, uwaga właściciela 2026-09-23c).
  * Wydzielone z `commandLabel` do zasięgu modułu, żeby tytuły GRUP decyzji
  * (np. „Cel czaru: <karta>") niosły ten sam koszt co pojedyncze oferty —
- * jedno źródło formatu kosztu (L41); wcześniej druga kopia bez ikon.
+ * jedno źródło kosztu (L41). `manaHtml` wybiera ikonki dla panelu albo
+ * zwykły zapis many dla nagłówka modala (`textContent`).
  */
-function cardCostHtml(card, cmd = null) {
+function cardCostHtml(card, cmd = null, { manaHtml = true } = {}) {
+  const format = (symbols) => (manaHtml ? manaCostHtml(symbols) : symbols);
   // G (zgłoszenie właściciela 2026-09-25, Containment Membrane): tytuł grupy
   // „Aura: … (surge)" pokazywał koszt WYDRUKU (2U), choć rzut pobiera surge
   // (U). Koszt alternatywny liczy ta sama jedna funkcja (H/2) — gałąź wołana
   // z komendą (surgeCast + deskryptor surge z widoku; te same formatery co
   // etykieta oferty M223). Bez komendy — koszt zwykły jak dotąd.
   if (cmd?.surgeCast && card?.surge) {
-    return manaCostHtml(costSymbols(card.surge.cost, card.surge.colors));
+    return format(costSymbols(card.surge.cost, card.surge.colors));
+  }
+  // Bestow and Cleave are separate cast costs, not additions to the printed
+  // cost. Group titles must use the same descriptors as the individual offer.
+  if (cmd?.bestow && card?.bestow?.cost != null) {
+    return format(costSymbols(card.bestow.cost, card.bestow.colors));
+  }
+  if (cmd?.type === 'cast_cleave' && card?.spell?.cleave?.manaCost != null) {
+    return format(costSymbols(card.spell.cleave.manaCost, card.spell.cleave.colors));
   }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
-  return raw ? manaCostHtml(raw) : (card?.manaCost != null ? escapeHtml(String(card.manaCost)) : '?');
+  return raw ? format(raw) : (card?.manaCost != null
+    ? (manaHtml ? escapeHtml(String(card.manaCost)) : String(card.manaCost))
+    : '?');
 }
 
 /**
@@ -2515,8 +2529,8 @@ function buybackCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
   return ` + buyback ${manaHtml ? manaCostHtml(symbols) : symbols}`;
 }
 
-function castCostWithKickerHtml(object, cmd, session) {
-  return `${cardCostHtml(object)}${kickerCostSuffixOf(cmd, object, session)}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
+function castCostWithKickerHtml(object, cmd, session, { manaHtml = true } = {}) {
+  return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml })}`;
 }
 
 function abilityCostHtmlOf(ability) {
@@ -2562,7 +2576,7 @@ export function commandLabel(cmd, session, view) {
   return `${label}${giftPartOf(cmd, findViewObject(cmd.objectId, view))}`;
 }
 
-function choiceSourceTitle(cmd, session, view) {
+function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
   // Uwaga C właściciela (2026-08-10): modal wyboru ma nazywać kartę, która
   // go wywołała. Komendy resolve_* nie niosą objectId — źródło czytamy
   // z oczekujących decyzji w widoku (publiczna informacja stołowa).
@@ -2763,13 +2777,15 @@ function choiceSourceTitle(cmd, session, view) {
     // bez ceny wyglądała jak oferta darmowa. Bestow ma WŁASNY koszt
     // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    if (cmd.bestow) return `Bestow: ${name}`;
-    // G (jw.): grupa cast_permanent jest jednorodna co do surge (klucz grupy
-    // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
-    // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
-    // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
-    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
-    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd)})` : ''}`;
+    if (cmd.bestow) {
+      const bestowCostKnown = object.bestow?.cost != null;
+      return `Bestow: ${name}${bestowCostKnown ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
+    }
+    // G (jw.): cast_permanent i cast_spell mają jednorodne grupy Surge
+    // (klucz grupy niesie ':surge'), więc nagłówek pokazuje koszt WARIANTU,
+    // a nie wydruk. Dla grupy zwykłego rzutu pozostaje koszt wydrukowany.
+    if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
+    return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
   }
   // C (uwaga właściciela, Makeshift Mauler / Fear of Abduction): tytuł musi
   // pokrywać warunek KLUCZA grupy (klasa L102/1) — warianty kosztu „wygnaj
@@ -2804,7 +2820,7 @@ function choiceSourceTitle(cmd, session, view) {
     // Koszt doklejamy tylko wtedy, gdy jest znany (MANA_COSTS/karta) — stuby
     // testowe bez kosztu zachowują dotychczasowe brzmienie.
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session)})` : '';
+    const withCost = kosztZnany ? ` (koszt ${castCostWithKickerHtml(object, cmd, session, { manaHtml })})` : '';
     // Bez celów w tej ofercie tytuł nie może obiecywać wyboru celu —
     // decyzją jest sam TRYB czaru.
     if (!cmd.targets?.length) {
@@ -2816,15 +2832,19 @@ function choiceSourceTitle(cmd, session, view) {
   // karta z kickerem nie ma Cleave (sprawdzone na rejestrze). Gdy się pojawi —
   // dopisać `kickerCostSuffixOf(cmd, object, session)` jak w gałęzi „Cel czaru”.
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
-    const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object)})` : ''}`;
+    const cleaveCostKnown = object?.spell?.cleave?.manaCost != null;
+    return `Cel czaru (Cleave): ${name}${cleaveCostKnown ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
   }
-  // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
-  // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
-  // karty do wygnania (N opcji)” były nierozróżnialne. Deskryptor
-  // (koszt wygnania) zostaje — decyzja na końcóweczę dotyczy kart.
+  // M240/K (zgłoszenie): rzut przez Escape — tytuł nazywa kartę i czynność.
+  // Dodajemy też koszt alternatywny z Oracle, tak jak w tytule flashbacku;
+  // obiekt w grobie jest jawny i niesie deskryptor spell.escape.
   if (cmd.type === 'cast_escape') {
-    return `${name} — Ucieczka (Escape): karty do wygnania`;
+    const escape = object.spell?.escape ?? session.cardDetails?.(object.cardId)?.spell?.escape;
+    const escapeSymbols = escape?.cost != null ? costSymbols(escape.cost, escape.colors) : null;
+    const escapeCost = escapeSymbols != null
+      ? (manaHtml ? manaCostHtml(escapeSymbols) : escapeSymbols)
+      : null;
+    return `${name} — Ucieczka (Escape): karty do wygnania${escapeCost ? ` (koszt ${escapeCost})` : ''}`;
   }
   // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
@@ -2938,21 +2958,15 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
   if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
     const groupObject = findViewObject(options[0].objectId, view);
     if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
-      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
-      // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
-      // nagłówka modala (M87), więc nie może nieść HTML-a ikon. Wyjątkiem jest
-      // panel akcji (`manaHtml: true`): tam etykieta leci przez innerHTML i
-      // koszt ma być ikonami many (A, zgłoszenie właściciela 2026-09-21).
-      const rawCost = MANA_COSTS[groupObject.cardId];
-      const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
-      // I (zgłoszenie 2026-10-15, Vampire's Bite): grupa, w której KAŻDA opcja
-      // jest z kickerem, niesie koszt łączny (baza + kicker), nie sam wydruk.
-      // Grupa mieszana (kicker i zwykła) zostaje przy wydruku — jej tytuł nie
-      // rozstrzyga o koszcie, a warianty rozróżniają etykiety opcji.
-      const kickerPart = options.every((o) => o?.kicked)
-        ? kickerCostSuffixOf(options[0], groupObject, session, { manaHtml })
-        : '';
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost}${kickerPart})` : ''}`;
+      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)").
+      // Korzystamy z formatera oferty: przy jednorodnej grupie uwzględnia on
+      // także Surge, kicker i buyback; kanał tekst/ikony pozostaje jawny.
+      const costKnown = Boolean(MANA_COSTS[groupObject.cardId] != null || groupObject.manaCost != null);
+      const cost = costKnown
+        ? castCostWithKickerHtml(groupObject, options[0], session, { manaHtml })
+        : null;
+      const surgeVariant = options.every((o) => o?.surgeCast) ? ' (surge)' : '';
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${surgeVariant}${cost ? ` (koszt ${cost})` : ''}`;
     }
   }
   // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu X. Dziś żadna
@@ -2994,7 +3008,8 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
       return `Flashback: ${session.nameOf(fbObject.cardId)}${fbShown ? ` (koszt ${fbShown})` : ''}`;
     }
   }
-  const titled = choiceSourceTitle(options[0], session, view);
+  // Kanał many jest jawny: modal = tekst, panel akcji (`manaHtml`) = ikonki.
+  const titled = choiceSourceTitle(options[0], session, view, { manaHtml });
   if (titled) return titled;
   const descriptor = CHOICE_GROUP_TYPE_DESCRIPTORS[request?.type]
     ?? CHOICE_GROUP_COMMAND_DESCRIPTORS[options[0]?.type]
@@ -3562,7 +3577,11 @@ function commandLabelBase(cmd, session, view) {
       // żeby gracz wiedział, ile manuje decyduje (audyt M83 — „(koszt XR)").
       const xPart = cmd.xValue != null ? `, X=${cmd.xValue}` : '';
       const sac = cmd.sacrificeTargetId ? ` — poświęć ${nameOfObjectId(cmd.sacrificeTargetId)}` : '';
-      const alt = cmd.payAltCost ? ' — zapłać zamiast poświęcenia' : '';
+      const altMana = cardForMode?.spell?.additionalCost?.orPayMana;
+      const altCost = Number.isInteger(altMana)
+        ? manaCostHtml(altMana === 0 ? '{0}' : costSymbols(altMana))
+        : (altMana == null ? '' : escapeHtml(String(altMana)));
+      const alt = cmd.payAltCost ? ` — zapłać${altCost ? ` ${altCost}` : ''} zamiast poświęcenia` : '';
       // M102/U8: gdy celem czaru jest stwór poświęcany jako koszt, czar na
       // pewno fizzluje (CR 608.2b) — koszt płaci się po wyborze celów
       // (CR 601.2c/601.2h), więc cel znika, zanim czar się rozstrzygnie.
@@ -4568,6 +4587,10 @@ function combatRoleOf(object, combat, session) {
 export function cardInfo(session, object, combat = null) {
   const cardId = object.cardId;
   const faceDown = Boolean(object.faceDown);
+  // Karta-fizyczna (np. Jwari) zachowuje swoje `cardId`; na polu bitwy
+  // wyłącznie dane PREZENTACJI pobieramy z druku skopiowanego permanentu.
+  const copyDisplay = !faceDown && object.zone === 'battlefield' && Boolean(object.copiedFromCardId);
+  const displayCardId = copyDisplay ? object.copiedFromCardId : cardId;
   // M260/B1 (zgłoszenie właściciela z PR #89, Pyxis of Pandemonium): karta
   // wygnana ZAKRYTA nie ujawnia tożsamości NIKOMU (CR 406.3) — także
   // właścicielowi. Własny zakryty permanent NA POLU BITWY to co innego
@@ -4578,14 +4601,16 @@ export function cardInfo(session, object, combat = null) {
   // reszta (tekst, staty blueprintu, art) zostaje zamaskowana, żeby kafel
   // nie wyglądał jak pełny stwór — jest „zakryty (morph)", 2/2.
   const ownFaceDown = faceDown && !exiledFaceDown && object.controllerId === HUMAN_ID;
-  const details = faceDown ? {} : (session.cardDetails(cardId) || {});
+  const details = faceDown ? {} : (session.cardDetails(displayCardId) || {});
   // M254/B (zgłoszenie właściciela): właściciel zna swoją kartę zakrytą
   // (CR 708.5 — tożsamość nie jest informacją ukrytą dla niego), więc
   // PODGLĄD (hover / pełny ekran) pokazuje prawdziwą ilustrację. Kafel na
   // stole zostaje zakryty (imageUri/artId niżej są nadal null) — znacznik
   // niesie wyłącznie dane do obrazu, żeby nie odkryć reszty (tekst, staty).
   const ownFaceDownDetails = ownFaceDown ? (session.cardDetails(cardId) || {}) : null;
-  const colors = faceDown ? [] : (session.colorsOf(cardId) || details.colors || []);
+  const colors = faceDown ? [] : (copyDisplay
+    ? (object.colors ?? session.colorsOf(displayCardId) ?? details.colors ?? [])
+    : (session.colorsOf(cardId) || details.colors || object.colors || []));
   const kind = inferKind(object, details);
   // Załączona aura to na polu bitwy „Enchantment — Aura", a nie stwór;
   // załączony equipment pozostaje „Artifact — Equipment".
@@ -4609,6 +4634,9 @@ export function cardInfo(session, object, combat = null) {
   const copyOrdinal = !faceDown && object.zone === 'battlefield' && !object.copyNumber
     && typeof session?.nameOrdinalSuffix === 'function'
     ? session.nameOrdinalSuffix(object.id) : '';
+  const copyBadge = copyDisplay && object.copiedByCardId
+    ? `skopiowane przez ${session.nameOf?.(object.copiedByCardId) ?? object.copiedByCardId}`
+    : null;
   return {
     objectId: object.id,
     cardId: faceDown ? null : cardId,
@@ -4620,7 +4648,7 @@ export function cardInfo(session, object, combat = null) {
         ? 'Wygnana zakryta'
         : (ownFaceDown ? session.nameOf(object.cardId) : 'Face-down creature'))
       // M172/D: kafel kopii pokazuje „Nazwa (kopia N)" — rozróżnialna od oryginału.
-      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(cardId))) + copyOrdinal,
+      : (object.name ? (object.copyNumber ? `${object.name} (kopia ${object.copyNumber})` : object.name) : session.nameOf(displayCardId))) + copyOrdinal,
     // M127 (uwaga A): znacznik z jednego źródła — „zakryty (Morph)" dla
     // własnego permanentu, sama nazwa mechaniki dla cudzego (FoW).
     // M260/B1: zakryte WYGNANIE nie jest morphem — sam znacznik nazwy
@@ -4632,6 +4660,7 @@ export function cardInfo(session, object, combat = null) {
     // morphie, a ruling WotC 2024-02-02 wymaga rozróżnialności PRZEZ
     // WSZYSTKICH graczy (patrz komentarz w effects.js przy `faceDownCause`).
     morphBadge: faceDown ? (exiledFaceDown ? null : (ownFaceDown ? `zakryty (${faceDownCauseTag(object)})` : faceDownCauseTag(object))) : null,
+    copyBadge,
     colors,
     kind,
     // M138/Z6 (audyt Żywym Testerem): typy bierzemy ze STANU GRY, nie z rejestru
@@ -4679,13 +4708,29 @@ export function cardInfo(session, object, combat = null) {
     // W-8 (Krotiq Nestguard): atak „as though it didn't have defender” do
     // końca tury — defender zostaje na kaflu, badge mówi o uchyleniu reguły.
     attacksAsThoughNoDefenderNow: faceDown ? false : Boolean(object.attacksAsThoughNoDefenderUntilEOT),
-    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted),
+    // PR #171/T (2026-10-21d, Azorius Justiciar): detain (CR 701.35) NIE
+    // ustawia wydrukowanych `cantBlock` ani `cantBlockPrinted`, ale stan
+    // jest globalnie widoczny (`object.detained === true`). czytamy go
+    // tutaj, żeby badge „nie może blokować" pojawiał się na kaflu obok
+    // "nie może atakować" (oba zakazy = jedno zdanie "nie może atakować
+    // ani blokować", jak w Bonds of Faith).
+    cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted || object.detained === true),
+    // PR #171/T (jw.): zablokowane zdolności aktywowane — publiczny skutek
+    // detainu. Render dodaje badge „nie może używać zdolności aktywowanych".
+    // JEDNO źródło: playerView ustawia `cantActivateAbilities` zawsze gdy
+    // `object.detained === true` — niezależnie od innych efektów (aury
+    // „can't activate", leniwa kość itp. — w katalogu dziś brak).
+    cantActivateAbilitiesNow: faceDown ? false : Boolean(object.cantActivateAbilities),
     // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
     // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
     // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.
     // O1 (decyzja właściciela 2026-10-01): badge tylko dla zakazu nałożonego
     // przez INNY permanent/czar (`cantAttackExternal`); natywny Obrońca ma już
     // słowo kluczowe na kaflu, więc `cantAttackStatic` sam badge'a nie daje.
+    // `cantAttackExternal` już obejmuje detained (ustawiane w game-state.js
+    // 7048: `if (object.detained) mark(true)` w staticAttackPreventionOf),
+    // więc czytamy bez dodatkowego OR — anty-regressa O1/4 (stwór z samym
+    // detainer badge "nie może atakować" — z pustym effector `cantBlockNow`).
     cantAttackNow: Boolean(object.cantAttackExternal),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
@@ -4750,7 +4795,8 @@ export function cardInfo(session, object, combat = null) {
     // gdzie indziej kafel ufa wyłącznie rejestrowi (aury go nie mają —
     // ich semantyka siedzi w linii aury).
     spell: details.spell ?? ((object.zone === 'stack' || object.zone === 'exile') ? object.spell : null),
-    abilities: faceDown ? [] : (details.abilities || []),
+    abilities: faceDown ? [] : (Array.isArray(object.copiedAbilities)
+      ? object.copiedAbilities : (details.abilities || [])),
     morph: details.morph || null,
     plot: details.plot || null,
     // E4 (audyt PR #130, Żywy Tester — oś narracji): Delve jest deskryptorem
@@ -4793,7 +4839,9 @@ export function cardInfo(session, object, combat = null) {
     // (ADR 0002), nie nazwa karty (M212).
     altarX: (!faceDown && object.zone === 'battlefield' && (() => {
       try {
-        const def = session.cardDetails(cardId);
+        const def = Array.isArray(object.copiedAbilities)
+          ? { abilities: object.copiedAbilities }
+          : session.cardDetails(displayCardId);
         return (def?.abilities ?? []).some((ab) => {
           const effs = Array.isArray(ab.effect) ? ab.effect : [ab.effect];
           return effs.some((e) => e?.power === 'card_types_in_all_graveyards' || e?.toughness === 'card_types_in_all_graveyards');
@@ -4953,6 +5001,7 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     // czyli dokładnie to, przed czym miał chronić. Znacznik bywa null —
     // wtedy nie ma żadnego znacznika, i tak ma być.
     if (info.morphBadge) flags.push(info.morphBadge);
+    if (info.copyBadge) flags.push(info.copyBadge);
     // M73d (J): choroba przywołania dotyczy tylko stworów (CR 302.6) —
     // artefakty/enchantmenty nie dostają badge (audyt żywym testerem).
     if (info.summoningSickness && (info.kind === 'creature' || (info.types ?? []).includes('Creature'))) flags.push('choroba');
@@ -4980,7 +5029,8 @@ export function buildFace(parent, info, { size = '', skipLiveState = false, text
     if (flags.length) {
       const badges = div(face, 'fbadges');
       for (const f of flags) {
-        const cls = f.startsWith('obrażenia') ? ' dmg' : (f.includes('×') ? ' counter' : ' sick');
+        const cls = f === info.copyBadge ? ' copy'
+          : (f.startsWith('obrażenia') ? ' dmg' : (f.includes('×') ? ' counter' : ' sick'));
         div(badges, 'fbadge' + cls, f);
       }
     }
@@ -5045,6 +5095,7 @@ function tile(parent, info, opts) {
 export function buildStateOverlay(visual, info) {
   const flags = [];
   if (info.isBattlefield) {
+    if (info.copyBadge) flags.push(['copy', info.copyBadge]);
     // M102/U7: przypięcie aury/equipmentu MUSI być na nakładce. Wcześniejszy
     // komentarz („pokazuje buildFace — tu nie dublujemy") był nieprawdziwy dla
     // kafli stołu: `tile()` i `renderCardInto` wołają buildCardVisual ze
@@ -5125,6 +5176,13 @@ export function buildStateOverlay(visual, info) {
     if (info.tempControlNow) flags.push(['kw', 'kontrola do końca tury']);
     if (info.linkedAnimationLabel) flags.push(['kw', info.linkedAnimationLabel]);
     if (info.cantRegenerateNow) flags.push(['kw', 'bez regeneracji']);
+    // PR #171/T (2026-10-21d, Azorius Justiciar): badge „nie może używać
+    // zdolności aktywowanych" na stworach detained (CR 701.35). Spójny
+    // z badge'ami „nie może atakować/ani blokować" — wszystkie trzy
+    // efekty są częścią detainu, ale render rozbija je na osobne
+    // etykiety (1:1 ze zjawiskiem, L100), a combatRestrictionBadges
+    // łączy atak+blok w jedno zdanie gdy oba zachodzą.
+    if (info.cantActivateAbilitiesNow) flags.push(['kw', 'nie może używać zdolności aktywowanych']);
     // PMSSB-48/C (2026-10-03i): rzut za Warp — stwór zostanie wygnany na
     // najbliższy krok końcowy (CR — mechanika własna karty). Badge musi być
     // jawny, żeby gracz wiedział, że permanent jest „tymczasowy" (zgłoszenie

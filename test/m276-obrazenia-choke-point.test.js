@@ -89,7 +89,7 @@ test('infect zamienia obrażenia w kontrolera na liczniki trucizny (CR 702.90b)'
   );
 });
 
-test('zdarzenie damage_dealt niesie kwotę FAKTYCZNIE zadaną (CR 119.3)', () => {
+test('zdarzenie damage_dealt niesie kwotę FAKTYCZNIE zadaną (CR 615.6)', () => {
   const state = stanZForgeDevil();
   applyEffect(state, { type: 'damage_to_controller', amount: 3 }, state.objects.get('fd'), []);
   const zdarzenie = state.events.find((e) => e.type === 'damage_dealt');

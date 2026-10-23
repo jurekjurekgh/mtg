@@ -15,7 +15,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 //      damage" zerował lethal. Zasady: przy sprawdzaniu lethal IGNORUJE się
 //      efekty zmieniające faktycznie zadane obrażenia (trample 5/5 vs 3/3
 //      z tarczą 2 przepuszczał 4 na gracza zamiast 2).
-//   2. CR 119.3 — zdarzenia damage_dealt niosły kwotę PRZED prewencją w
+//   2. CR 615.6 — zdarzenia damage_dealt niosły kwotę PRZED prewencją w
 //      ścieżkach combat atakujący→bloker, bloker→atakujący oraz
 //      damage_to_controller (niespójność z konwencją złotej odznaki).
 //   3. CR 701.34 — proliferate nie mógł celować w graczy ze znacznikami
@@ -81,7 +81,7 @@ test('B1: trample przydziela lethal bez uwzględniania tarcz prewencji (CR 510.1
   assert.equal(blocker.zone, 'battlefield', 'bloker przeżywa (1 z 3 wytrzymałości)');
   assert.equal(blocker.damage, 1, 'bloker ma zaznaczone 1 obrażenie (2 zapobiegnięte)');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'trample: 2 obrażenia do gracza');
-  // CR 119.3: event damage_dealt do blokera niesie kwotę ZADANĄ (1, nie 3).
+  // CR 615.6: event damage_dealt do blokera niesie kwotę ZADANĄ (1, nie 3).
   const evBlocker = events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
   assert.equal(evBlocker.amount, 1);
   const evPlayer = events.find((e) => e.type === 'damage_dealt' && e.target === 'p2');
@@ -109,13 +109,13 @@ test('B1b: filtr „prevent all damage" nie zmniejsza wymogu lethal przy trample
   assert.equal(blocker.damage, 0, 'obrażenia w pełni zapobiegnięte');
   assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'trample: 2 do gracza po lethal');
   const evBlocker = events.find((e) => e.type === 'damage_dealt' && e.target === 'blk');
-  assert.equal(evBlocker.amount, 0, '0 zadanych = event z kwotą 0 (CR 119.3)');
+  assert.equal(evBlocker.amount, 0, '0 zadanych = event z kwotą 0 (CR 615.6)');
   assert.ok(events.some((e) => e.type === 'damage_prevented' && e.objectId === 'blk'));
 });
 
-// --------------------------------------------------------------- 2. CR 119.3
+// --------------------------------------------------------------- 2. CR 615.6
 
-test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od zadanych (CR 119.3/702.15)', () => {
+test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od zadanych (CR 615.6/702.15)', () => {
   const state = enterCombat(
     [['att', 'p1', 5, 5]],
     [['blk', 'p2', 4, 4, { keywords: ['lifelink'] }]],
@@ -135,7 +135,7 @@ test('B2: damage_dealt blokera niesie kwotę ZADANĄ (po prewencji), lifelink od
   assert.equal(ev.amount, 1, 'event niesie 1, nie 4 (sprzed prewencji)');
 });
 
-test('B2b: damage_to_controller raportuje kwotę zadaną po prewencji (CR 119.3)', () => {
+test('B2b: damage_to_controller raportuje kwotę zadaną po prewencji (CR 615.6)', () => {
   const state = createGameState({ seed: 3, players: [{ id: 'p1' }, { id: 'p2' }] });
 
   // M257-r5b/B: test niezależny od strony startu — pin aktora (p1).

@@ -10,7 +10,7 @@ import { addCounter } from '../src/engine/counters.js';
  * M277 (kierunek 3 z handoffu M276) — kontrakt widok ↔ WARSTWA RENDERU.
  *
  * M274 (błąd #27) domknął kontrakt widok ↔ BOT dla grobu. Ten strażnik
- * zamyka drugą stronę: `cardInfo` w `src/table/render.js` czyta 43 pola
+ * zamyka drugą stronę: `cardInfo` w `src/table/render.js` czyta pola
  * z wpisu widoku, a `playerView` część z nich dokłada WARUNKOWO (tylko gdy
  * cecha istnieje na obiekcie). Dopóki warunki po obu stronach są zgodne,
  * kafla nie da się odróżnić od poprawnego — luka ujawnia się dopiero na
@@ -139,7 +139,10 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   // literowej w NOWYM polu (L113: wyjątek z powodu, nie ciche wyciszenie).
   const WARUNKOWE_SPOZA_PROBKI = new Set([
     'attachedTo', 'aura', 'equipment', 'bestow', 'saga', 'spell', 'name',
-    'copyNumber', 'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
+    // Jwari / enter-as-copy: druki i opis Oracle są obecne tylko dla
+    // permanentów-kopii na polu bitwy; same fizyczne cardId pozostaje nietknięte.
+    'copyNumber', 'copiedFromCardId', 'copiedByCardId', 'copiedAbilities',
+    'faceDown', 'ward', 'cloakReady', 'protection', 'detained', 'goaded',
     // Batch60 (Timely Interference): widok dokłada `blocksIfAble` tylko po
     // rozstrzygnięciu wymogu bloku (jak `goaded`) — konstrukcyjnie:
     // test/real-cards-batch60 (G1.7: flaga, oferty, auto-deklaracja).
@@ -208,6 +211,14 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
     // konstrukcyjnie test/pmssb48-warp-indication.test.js (W2+W3) — ta
     // lista pilnuje tylko literówki w nazwie pola (L113).
     'enteredViaWarp',
+    // PR #171/T (2026-10-21d, Azorius Justiciar): detain (CR 701.35) — widok
+    // ustawia playerView.entry.cantActivateAbilities=true na stworach
+    // detained (silnik realnie blokuje zdolności aktywowane, abilities.js:1444).
+    // Badge „nie może używać zdolności aktywowanych" wymaga tego pola. Pole
+    // jest warunkowe (tylko stwory z aktywnym detainerem), więc nie wchodzi
+    // w próbkę widoku (gorehorn/servant/kappa/skyscythe — żaden nie ma
+    // znacznika detainowanego). Lista konstrukcyjna pilnuje literówki (L113).
+    'cantActivateAbilities',
   ]);
 
   const poza = [...czytane]

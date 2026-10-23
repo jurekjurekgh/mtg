@@ -585,12 +585,12 @@ export function drawPlayerCards(state, playerId, amount, source = 'effect') {
   }
 }
 
-/** Wspólna ścieżka obrażeń NIEcombat (czary, zdolności, triggery) — CR 119.3,
+/** Wspólna ścieżka obrażeń NIEcombat (czary, zdolności, triggery) — CR 615.6,
  *  614, 615, 702.15, 702.89 w pełnym wymiarze:
  *  - prewencja tarcz (Withstand — damageShields) ORAZ filtr „prevent all damage
  *    to ... this turn" (Ethersworn Shieldmage — filtr typów dla permanentów);
  *  - zdarzenie damage_dealt niesie kwotę FAKTYCZNIE ZADANĄ (po prewencji) —
- *    „zapobiegnięte obrażenia nie są zadane" (CR 119.3); triggery czytające
+ *    „zapobiegnięte obrażenia nie są zadane" (CR 615.6); triggery czytające
  *    ev.amount (delirium Fear of Burning Alive: „deals that much damage")
  *    dostają właściwą kwotę zamiast kwoty sprzed prewencji;
  *  - infect: do gracza → poison, do stwora → -1/-1 (po prewencji — CR 702.90);

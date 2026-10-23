@@ -1,18 +1,10 @@
-// N (zgłoszenie właściciela 2026-10-09, Crumb and Get It): „Rzucając ten czar
-// nie mam żadnego wyboru, a chyba powinienem móc wybrać czy obiecuję gift”.
+// N (zgłoszenie właściciela 2026-10-09, Crumb and Get It): dar (CR 702.174a)
+// musi być osobnym wyborem od celu. `multiTargetPlanOf` składa wybór z
+// wymiarów `targets`, `gifted` i `giftRecipientId`, a potwierdza wyłącznie
+// komendę znajdującą się w ofercie legalnych komend. Zestaw komend może być
+// niepełnym iloczynem — brakująca para cel/dar musi zostać niedostępna.
 //
-// Root cause: grupa wariantów „cel × obietnica daru” (CR 702.174a) łapała
-// `singleTargetPlanOf` — kreator celów — a jego zatwierdzenie szuka komendy
-// przez `commandForSelection`, który dopasowuje TYLKO po `targets` (+ `xValue`)
-// i nie zna `gifted`. Zatwierdzenie wybierało pierwszy pasujący wariant (bez
-// daru) — wybór obietnicy przepadał. K (2026-09-19b) pinował tylko
-// grupowanie panelu (jeden wpis, modal z wariantami), nie ścieżkę kreatora.
-//
-// Fix: strażnik `uniformGiftOf` w planach kreatora (singleTarget /
-// multiTarget / castMode / sacrifice / divided) — grupa z NIEJEDNOLITYM
-// giftem wraca null i pada na fallback `buttonsPlanOf`: osobny przycisk na
-// wariant, etykieta „(dar)” rozróżnia. Kontrakt K trzymany (nadal JEDEN wpis
-// panelu; modal otwiera wybór). ADR 0002 — po polu komendy, nie po karcie.
+// Wymiary wynikają z kształtu komendy (ADR 0002), nie z nazwy Crumb and Get It.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { addObject, createGameState, playerView } from '../src/engine/game-state.js';
@@ -26,6 +18,7 @@ import {
   multiTargetPlanOf,
   castModePlanOf,
   buttonsPlanOf,
+  commandForSelection,
 } from '../src/table/multi-target.js';
 
 const REGISTRY = createCardRegistry();
@@ -69,14 +62,23 @@ test('N/1: singleTargetPlanOf odrzuca grupę z niejednolitym darem (był kreator
     'grupa „cel × obietnica” nie może iść przez kreator celów');
 });
 
-test('N/2: multiTargetPlanOf odrzuca grupę wielocelową z niejednolitym darem', () => {
+test('N/2: cel i gift są niezależnymi wymiarami; para nieobecna w legalCommands jest nielegalna', () => {
   const grupa = [
-    { type: 'cast_spell', objectId: 'o', targets: ['a'] },
-    { type: 'cast_spell', objectId: 'o', targets: ['b'] },
-    { type: 'cast_spell', objectId: 'o', targets: ['a', 'b'] },
+    { type: 'cast_spell', objectId: 'o', targets: ['a'], gifted: false },
+    { type: 'cast_spell', objectId: 'o', targets: ['b'], gifted: false },
     { type: 'cast_spell', objectId: 'o', targets: ['a'], gifted: true, giftRecipientId: 'p2' },
   ];
-  assert.equal(multiTargetPlanOf(grupa), null, 'commandForSelection nie zna gifted');
+  const plan = multiTargetPlanOf(grupa);
+  assert.ok(plan, 'gifted staje się osobnym wymiarem planu');
+  assert.deepEqual(plan.targets, ['a', 'b']);
+  assert.equal(plan.minTargets, 1);
+  assert.equal(plan.maxTargets, 1);
+  assert.equal(plan.giftMode, true, 'wybór tak/nie jest widoczny');
+  assert.deepEqual(plan.giftRecipientIds, ['p2']);
+  assert.equal(commandForSelection(grupa, { targets: ['a'], gifted: true, giftRecipientId: 'p2' }), grupa[2]);
+  assert.equal(commandForSelection(grupa, { targets: ['b'], gifted: false }), grupa[1]);
+  assert.equal(commandForSelection(grupa, { targets: ['b'], gifted: true, giftRecipientId: 'p2' }), null,
+    'nie ma legalnej komendy dla target=b + gift=yes');
 });
 
 test('N/3: castModePlanOf odrzuca grupę modalną z niejednolitym darem', () => {
@@ -86,15 +88,21 @@ test('N/3: castModePlanOf odrzuca grupę modalną z niejednolitym darem', () => 
     { type: 'cast_spell', objectId: 'o', modeIndex: 0, targets: ['a'], gifted: true, giftRecipientId: 'p2' },
   ];
   assert.equal(castModePlanOf(grupa), null, 'reps biorą pierwszy wariant — dar przepadłby');
+  assert.equal(multiTargetPlanOf(grupa), null,
+    'plan celów nie może skleić różnych trybów, których nie dopasowuje');
 });
 
-test('N/4: fallback buttonsPlanOf łapie grupę — osobny przycisk na wariant', () => {
-  const plan = buttonsPlanOf([bazowy, zDarem]);
-  assert.ok(plan, 'fallback istnieje');
-  assert.equal(plan.rows.length, 2, 'dwa wiersze: bez daru i z darem');
+test('N/4: ogólny buttonsPlan nadal obsługuje wybory bez wymiaru celów', () => {
+  const options = [
+    { type: 'resolve_color_choice', color: 'W' },
+    { type: 'resolve_color_choice', color: 'U' },
+  ];
+  const plan = buttonsPlanOf(options);
+  assert.ok(plan, 'plan przyciskowy istnieje dla wyboru enumerowanego');
+  assert.equal(plan.rows.length, 2);
 });
 
-test('N/5: integracja — panel ma JEDEN wpis (kontrakt K), modal nie używa kreatora celów', () => {
+test('N/5: integracja — jeden wpis panelu, modalny plan niesie target i gift', () => {
   const state = giftBoard();
   const view = playerView(state, 'p1');
   const wpisy = buildActionEntries(view.legalCommands, SESSION, view)
@@ -105,7 +113,10 @@ test('N/5: integracja — panel ma JEDEN wpis (kontrakt K), modal nie używa kre
   assert.ok(opcje.some((c) => c.gifted), 'modal niesie wariant z darem (K)');
   assert.ok(opcje.some((c) => !c.gifted), 'modal niesie wariant bez daru (K)');
   assert.equal(singleTargetPlanOf(opcje), null,
-    'modal idzie w przyciski (wybór daru), nie w kreator celów');
+    'stary plan single-target nie spłaszcza decyzji Gift');
+  const plan = multiTargetPlanOf(opcje);
+  assert.ok(plan, 'wspólny plan celów zawiera nowy wymiar Gift');
+  assert.equal(plan.giftMode, true);
 });
 
 test('N/6 kontrola: grupa bez daru nadal idzie przez kreator celów', () => {

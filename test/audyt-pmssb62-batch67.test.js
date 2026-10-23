@@ -305,6 +305,14 @@ function ringAttack({ registry = REG, dyskryminujaca = false } = {}) {
       if (dyskryminujaca) {
         creature(state, 'other', 'p1', 2, 2);
         creature(state, 'blocker', 'p2', 3, 3);
+        // B (2026-10-22, poprawka „bloker bierze tylko jednego"): przy SAMYM
+        // jednym blokerze 3/3 drugi atakujący 2/2 nie jest „wymianą w bloker" —
+        // obrońca może zablokować tylko JEDNEGO (CR 509.1a), więc `other`
+        // przechodzi w twarz i wariant z nim bije wariant bez niego niezależnie
+        // od battle cry. Trzeba DWÓCH blokerów 3/3, żeby `other` faktycznie
+        // stanął naprzeciwko blokera i scenariusz zmierzał to, co ma zmierzyć:
+        // czy battle cry zmienia ODPOWIEDŹ na tę wymianę (3/2 zamiast 2/2).
+        creature(state, 'blocker2', 'p2', 3, 3);
       } else {
         // PMSSB-70: drugi blokujący daje WOLNY SLOT. Przy jednym bloku­jącym
         // Ringleader (przeżywa i zabija go) sam zabija blokera, więc drugi

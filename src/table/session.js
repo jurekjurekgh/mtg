@@ -1439,7 +1439,7 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           ? whoN(e.target)
           : objectOrLki(e.target, e.targetCardId);
         const sourceName = objectOrLki(e.source, e.sourceCardId);
-        // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 119.3) — log nie
+        // M73d (E): 0 obrażeń to NIE zadane obrażenia (CR 615.6) — log nie
         // informuje „zadaje 0 obrażeń" (szum/mylące; audyt żywym testerem).
         if (e.amount <= 0) return null;
         return `${sourceName} zadaje ${dmgCount(e.amount)} (${targetName})`;
@@ -1775,9 +1775,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         return `${whoN(e.playerId)} wybiera: ${objectOrLki(e.targetId, e.cardId)} na wierzch czy spód biblioteki`;
       case 'library_placement_resolved':
         return `${objectOrLki(e.targetId, e.cardId)} trafia na ${e.placement === 'top' ? 'WIERZCH' : 'SPÓD'} biblioteki właściciela`;
-      // M177/E (Azorius Justiciar): detain (CR 701.35).
+      // M177/E (Azorius Justiciar): detain (CR 701.35). `byPlayerId` jest
+      // graczem, który nałożył detain, a podmiotem kolejnego zdania jest
+      // zatrzymany cel — wstawienie „Ty” dawało 2. osobę z orzeczeniem 3. osoby.
       case 'object_detained':
-        return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury ${whoN(e.byPlayerId)} nie atakuje, nie blokuje i nie aktywuje zdolności`;
+        return `${objectOrLki(e.objectId, e.cardId)} zatrzymany (detain): do następnej tury nie atakuje, nie blokuje i nie aktywuje zdolności`;
       case 'exile_if_dies_marked':
         return `${objectOrLki(e.objectId, e.cardId)}: jeśli umrze w tej turze, trafi na wygnanie zamiast do grobu`;
       // Batch 49 (Time to Feed): opóźniony trigger „gdy ten stwór zginie".

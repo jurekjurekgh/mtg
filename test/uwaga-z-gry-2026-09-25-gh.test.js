@@ -17,7 +17,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { validateDamageAssignment } from '../src/engine/combat.js';
-import { choiceGroupTitle } from '../src/table/render.js';
+import { choiceGroupLabel, choiceGroupTitle } from '../src/table/render.js';
 import { costSymbols, manaCostHtml } from '../src/table/mana-icons.js';
 import { MANA_COSTS } from '../src/cards/mana-costs-data.js';
 
@@ -92,17 +92,34 @@ test('G: Aura za surge — tytuł grupy niesie koszt surge (U), nie wydruku (2U)
   assert.ok(oferty.some((c) => !c.surgeCast), 'oferta zwykła istnieje (kontrola)');
   const surge = oferty.filter((c) => c.surgeCast);
   const zwykla = oferty.filter((c) => !c.surgeCast);
-  const tytulSurge = choiceGroupTitle({ options: surge }, sesja(state), view);
-  const tytulZwykly = choiceGroupTitle({ options: zwykla }, sesja(state), view);
-  const kosztSurge = manaCostHtml(costSymbols(1, ['U']));
-  const kosztWydruk = manaCostHtml(MANA_COSTS['containment-membrane']);
-  assert.ok(tytulSurge.includes('(surge)'), `znacznik wariantu: ${tytulSurge}`);
-  assert.ok(tytulSurge.includes(`(koszt ${kosztSurge})`),
-    `tytuł surge z kosztem U: ${tytulSurge}`);
-  assert.ok(!tytulSurge.includes(kosztWydruk),
-    `tytuł surge BEZ kosztu wydruku: ${tytulSurge}`);
-  assert.ok(tytulZwykly.includes(`(koszt ${kosztWydruk})`),
-    `tytuł zwykły ze swoim kosztem (kontrola): ${tytulZwykly}`);
+  const requestSurge = { options: surge };
+  const requestZwykly = { options: zwykla };
+  const session = sesja(state);
+  const modalSurge = choiceGroupTitle(requestSurge, session, view);
+  const modalZwykly = choiceGroupTitle(requestZwykly, session, view);
+  const panelSurge = choiceGroupLabel(requestSurge, session, view);
+  const panelZwykly = choiceGroupLabel(requestZwykly, session, view);
+  const kosztSurgeText = costSymbols(1, ['U']);
+  const kosztWydrukText = MANA_COSTS['containment-membrane'];
+  const kosztSurgeHtml = manaCostHtml(kosztSurgeText);
+  const kosztWydrukHtml = manaCostHtml(kosztWydrukText);
+
+  assert.ok(modalSurge.includes('(surge)'), `modalowy tytuł oznacza wariant: ${modalSurge}`);
+  assert.ok(modalSurge.includes(`(koszt ${kosztSurgeText})`),
+    `modalowy tytuł surge pokazuje koszt U tekstem: ${modalSurge}`);
+  assert.ok(!modalSurge.includes(kosztWydrukText),
+    `modalowy tytuł surge BEZ kosztu wydruku: ${modalSurge}`);
+  assert.doesNotMatch(modalSurge, /<span|ms-/, 'modalowy tytuł nie zawiera markup ikon');
+  assert.ok(modalZwykly.includes(`(koszt ${kosztWydrukText})`),
+    `modalowy tytuł zwykły ze swoim kosztem (kontrola): ${modalZwykly}`);
+
+  assert.ok(panelSurge.includes('(surge)'), `tytuł panelu oznacza wariant: ${panelSurge}`);
+  assert.ok(panelSurge.includes(`(koszt ${kosztSurgeHtml})`),
+    `tytuł panelu surge pokazuje ikonę kosztu U: ${panelSurge}`);
+  assert.ok(!panelSurge.includes(kosztWydrukHtml),
+    `tytuł panelu surge BEZ kosztu wydruku: ${panelSurge}`);
+  assert.ok(panelZwykly.includes(`(koszt ${kosztWydrukHtml})`),
+    `tytuł panelu zwykły ze swoim kosztem (kontrola): ${panelZwykly}`);
 });
 
 // ---------------------------------------------------------------------------

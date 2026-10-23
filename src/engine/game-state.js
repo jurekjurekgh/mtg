@@ -2082,7 +2082,7 @@ function accepted(state, cmd, result) {
     // — także samouszkodzenie przeciwnika się liczy); jego odczyt był zresztą
     // zawodny: po rozstrzygnięciu czaru obiekt źródła znika ze `state.objects`,
     // więc przy zwykłym Shocku w przeciwnika znacznik nie powstawał wcale.
-    // Zapobieżone obrażenia nie są zadane (CR 119.3) — obie ścieżki obrażeń
+    // Zapobieżone obrażenia nie są zadane (CR 615.6) — obe ścieżki obrażeń
     // (combat i niecombat) niosą w evencie kwotę FAKTYCZNIE zadaną, więc
     // amount 0 nie liczy się.
     if (e.type === 'damage_dealt' && e.amount > 0 && state.players.some((pl) => pl.id === e.target)) {
@@ -4588,11 +4588,17 @@ export function execute(state, input) {
             // nazwą celu + dostaje kolejny numer wśród żywych kopii tej nazwy
             // — DOKŁADNIE jak token-kopia (effects.js, M172/D; jedna reguła,
             // dwie ścieżki, wspólny helper, L48). Stół pokazuje „X (kopia N)"
-            // istniejącą ścieżką M172/D (render.js) — bez nowych badge'ów.
+            // istniejącą ścieżką M172/D (render.js); badge źródła efektu jest
+            // osobnym metadanym prezentacji i nie zmienia fizycznego cardId.
             // Prawo legend (state-based.js) czyta cardName w pierwszej
             // kolejności, więc ta zmiana go nie rusza.
             name: target.cardName ?? target.cardId,
             copyNumber: nextCopyNumber(state, target.cardName ?? target.cardId),
+            // Metadane prezentacji kopii — NIE zastępują fizycznego `cardId`
+            // karty źródłowej. Widok ujawnia je tylko dla jawnego permanentu
+            // na polu bitwy, aby UI użyło druku Ally i podpisało efekt kopii.
+            copiedFromCardId: target.copiedFromCardId ?? target.cardId,
+            copiedByCardId: src.cardId,
             // CR 707.2 + 202.3b (M258): koszt many jest wartością kopiowalną
             // — do tej pory kopia „enter as copy" nosiła własny koszt Jwari
             // zamiast kosztu celu. Wspólny helper z token-kopią (L48).
@@ -6850,6 +6856,11 @@ export function playerView(state, playerId) {
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
           controllerId: object.controllerId, zone: object.zone,
+          // Właściciel przejętego lądu może różnić się od kontrolera. Ten
+          // publiczny fakt pozwala botowi ocenić, czy koszt „zwróć ląd do ręki
+          // właściciela" da mu kartę, którą może ponownie zagrać.
+          ...(object.kind === 'land' && object.ownerId != null && object.ownerId !== object.controllerId
+            ? { ownerId: object.ownerId } : {}),
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
           ...(combatDamageByToughness(state, object) ? { combatDamageByToughness: true } : {}),
@@ -6894,7 +6905,20 @@ export function playerView(state, playerId) {
         // BEZBARWNY dla przeciwnika (CR 708.2), wiec kolory ida wylacznie do
         // widza, ktory kartę zna — tak samo jak manaCost/subtypes/types wyzej.
         // ADR 0017: skutek widoczny w grze musi byc widoczny w widoku.
-        if (!hiddenFromViewer && (object.colors ?? []).length) entry.colors = [...object.colors];
+        // Kopia może być BEZBARWNA; wysyłamy wtedy także pustą listę, żeby
+        // renderer nie wrócił do kolorów fizycznej karty Jwari.
+        if (!hiddenFromViewer && ((object.colors ?? []).length || object.copiedFromCardId)) {
+          entry.colors = [...(object.colors ?? [])];
+        }
+        // Dane prezentacji CR 707.2 — osobne od `cardId`, który nadal wskazuje
+        // fizyczną kartę (np. Jwari Shapeshifter) dla logiki i stref. Publiczne
+        // tylko gdy kopia nie jest zakryta; `copiedAbilities` zapewnia Oracle
+        // również dla kopii tokenów spoza rejestru kart.
+        if (!hiddenFromViewer && object.copiedFromCardId) {
+          entry.copiedFromCardId = object.copiedFromCardId;
+          if (object.copiedByCardId) entry.copiedByCardId = object.copiedByCardId;
+          entry.copiedAbilities = [...(object.abilities ?? [])];
+        }
         // O-3 (audyt PR #134): opis ŹRÓDŁA MANY jest informacją publiczną
         // (zdolności many odsłoniętego permanentu, CR 605 + 113.6), a bot nie
         // ma stanu: wołał `getSourceForObject(o, null)` i dla Gond Gate
@@ -7023,7 +7047,25 @@ export function playerView(state, playerId) {
         // flage na obiekcie — kafel milczal, choc stwor realnie nie mogl
         // blokowac (klasa L1/ADR 0017: skutek widoczny w grze musi byc
         // widoczny na stole).
-        if (creatureCantBlock(object, state) || attachmentRestrictions(state, object).cantBlock) entry.cantBlock = true;
+        // PR #171/T (2026-10-21d, zgłoszenie właściciela Azorius Justiciar):
+        // detain (CR 701.35) blokuje blok, ale `creatureCantBlock` tego nie
+        // czyta — walka to respektuje (combat.js:316 `if (object.detained)
+        // return false` w `legalBlockerOptions`). Widok musi propagować ten
+        // sam fakt (L1/ADR 0017). Dociągamy jawnie `detained` do
+        // `entry.cantBlock` — JEDNO źródło dla badge'a "nie może blokować".
+        const cantBlockNow = creatureCantBlock(object, state)
+          || attachmentRestrictions(state, object).cantBlock
+          || object.detained === true;
+        if (cantBlockNow) entry.cantBlock = true;
+        // PR #171/T (jw.): badge "nie może używać zdolności aktywowanych".
+        // Silnik rzuca "Zatrzymany (detain) permanent nie aktywuje zdolności"
+        // (abilities.js:1444), ale render nie miał skąd odczytać tego faktu.
+        // Nowe pole publiczne w playerView — ustawiane przy detained, bo:
+        //   jest to informacja publiczna (CR/liczący się skutek),
+        //   jest to jedyne źródło blokady zdolności, które render musi czytać.
+        // Nazwa `cantActivateAbilities` (spójna z `cantAttackExternal`,
+        // `cantBeBlocked` itp.).
+        if (object.detained === true) entry.cantActivateAbilities = true;
         // M243/F (zgłoszenie właściciela, Lurking Green Dragon): statyczna
         // NIEMOŻNOŚĆ ataku (defender/detain/„unless defender has flying/
         // poisoned") to informacja publiczna (CR/liczący się skutek) — bot
@@ -7236,6 +7278,9 @@ export function playerView(state, playerId) {
       }
       // Stos jest strefą publiczną: wszyscy widzą rzucany czar i jego cele.
       if (zone === 'stack') {
+        const hiddenFromViewer = object.faceDown && object.controllerId !== playerId;
+        const xValue = Number.isInteger(object.spellX) ? object.spellX
+          : Number.isInteger(object.fireballX) ? object.fireballX : null;
         return {
           id: object.id,
           // Face-down czar na stosie jest bezimiennym 2/2 (CR 708.2) —
@@ -7243,6 +7288,13 @@ export function playerView(state, playerId) {
           cardId: object.faceDown && object.controllerId !== playerId ? null : object.cardId,
           controllerId: object.controllerId, zone: object.zone,
           kind: object.kind, manaCost: object.manaCost, spell: object.spell,
+          // Zagrany tryb i wartość X są publiczne na stosie (CR 601.2b/107.3a).
+          // Boty muszą oceniać wyłącznie wybrany efekt i rzeczywistą kwotę obrażeń.
+          ...(!hiddenFromViewer && object.chosenMode != null ? { chosenMode: object.chosenMode } : {}),
+          ...(!hiddenFromViewer && xValue != null ? { xValue } : {}),
+          ...(!hiddenFromViewer ? { colors: [...(object.colors ?? [])] } : {}),
+          ...(!hiddenFromViewer && object.castDuringMainPhase === true ? { castDuringMainPhase: true } : {}),
+          ...(!hiddenFromViewer && object.wasKicked === true ? { wasKicked: true } : {}),
           // PMSSB-56 (CR 707.10 + ADR 0017): to, że obiekt na stosie jest KOPIĄ
           // czaru, jest informacją publiczną (kopia nie była rzucana, nie ma
           // śladu w historii rzutów). Bez tej flagi wycena bota nie odróżniała
@@ -7265,6 +7317,8 @@ export function playerView(state, playerId) {
             ?? ((object.activatedEntry?.ability?.targets?.length)
               ? object.activatedEntry.targets
               : undefined),
+          ...(!hiddenFromViewer && Array.isArray(object.damageDivision)
+            ? { damageDivision: object.damageDivision.map((part) => ({ ...part })) } : {}),
           abilityIndex: object.activatedEntry?.abilityIndex,
           // M175/A2 (uwaga właściciela, Death-Hood Cobra): ŹRÓDŁO aktywowanej
           // zdolności jest ogłaszane przy kładzeniu na stos (informacja
@@ -9611,6 +9665,10 @@ export function playerView(state, playerId) {
     pendingColorChoice: activeColorChoice ? {
       purpose: state.pendingColorChoice.purpose ?? null,
       sourceCardId: state.pendingColorChoice.sourceCardId ?? null,
+      // Tożsamość konkretnego permanenta-źródła (Aura albo ląd) rozróżnia
+      // kopie tej samej karty; przy wyborze protection wskazuje zaczarowanego
+      // gospodarza przez battlefield[].attachedTo.
+      objectId: state.pendingColorChoice.auraId ?? state.pendingColorChoice.objectId ?? null,
     } : null,
     // M241: wizard „wygnij N kart” czyta listę decyzji Escape — kandydatów z
     // WŁASNEGO grobu (wiedza decydenta — strefa publiczna) + parametry kosztu.

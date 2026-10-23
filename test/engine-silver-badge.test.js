@@ -18,7 +18,7 @@ import { applyEffect } from '../src/engine/effects.js';
 //      (damage_each_opponent / damage_defending_player / aury Curse/Feedback).
 //   4. Prewencja (CR 615) — Curse of the Pierced Heart ignorowała tarcze
 //      (damage_enchanted_player bez preventDamageTo).
-//   5. Zdarzenie damage_dealt (CR 119.3) — niosło kwotę PRZED prewencją;
+//   5. Zdarzenie damage_dealt (CR 615.6) — niosło kwotę PRZED prewencją;
 //      delirium (Fear of Burning Alive „deals that much damage") przeszacowywało
 //      obrażenia, gdy część została zapobiegnięta.
 // =============================================================================

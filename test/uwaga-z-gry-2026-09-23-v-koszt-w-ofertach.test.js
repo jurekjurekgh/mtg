@@ -5,16 +5,16 @@
 //       koszt; bez kosztu tylko darmowe" — przegląd całej warstwy etykiet.
 //
 // Wada była klasowa: pojedyncze oferty (`commandLabel`) niosły koszt, ale
-// TYTUŁY GRUP decyzji (`choiceSourceTitle` — „Cel czaru: <karta>",
-// „Cel zdolności: <karta>") nie — a to one są jedynym tekstem widocznym
-// w panelu, gdy oferta grupuje kilka celów.
+// TYTUŁY GRUP decyzji (`choiceGroupLabel` w panelu, oparte o `choiceSourceTitle` —
+// „Cel czaru: <karta>", „Cel zdolności: <karta>") nie — a to one są jedynym
+// tekstem widocznym w panelu, gdy oferta grupuje kilka celów.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { buildActionEntries, commandLabel, choiceGroupTitle } from '../src/table/render.js';
+import { buildActionEntries, commandLabel, choiceGroupLabel, choiceGroupTitle } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -54,7 +54,7 @@ function wpisy({ state, view, session }) {
 }
 
 const labelOf = (entry, session, view) => (entry.request
-  ? choiceGroupTitle(entry.request, session, view)
+  ? choiceGroupLabel(entry.request, session, view)
   : (entry.label ?? commandLabel(entry.command, session, view)));
 
 test('C: oferta Forecast niesie NAZWĘ MECHANIKI i KOSZT (nie „Cel zdolności")', () => {
@@ -90,14 +90,19 @@ test('C/2: pojedyncza oferta Forecast (jeden legalny cel) też niesie koszt', ()
   assert.match(label, /ms-w/, 'ikona {W} w koszcie');
 });
 
-test('H/1: tytuł grupy celów czaru (instanta) niesie koszt karty', () => {
+test('H/1: tytuł panelu grupy celów czaru niesie koszt; modal zachowuje zapis tekstowy', () => {
   const s = stol({ lands: ['basic-mountain'], hand: ['shock'], foeCreatures: 3 });
   const entry = wpisy(s).find((e) => e.request && (e.request.options ?? []).some((c) => c.type === 'cast_spell'));
   assert.ok(entry, 'instant z celami grupuje się w modal');
-  const title = labelOf(entry, s.session, s.view);
-  assert.match(title, /^Cel czaru: Shock/, `tytuł nazywa kartę: ${title}`);
-  assert.match(title, /koszt/, `tytuł musi nieść koszt: ${title}`);
-  assert.match(title, /ms-r/, 'ikona {R} w koszcie');
+
+  const panelTitle = labelOf(entry, s.session, s.view);
+  assert.match(panelTitle, /^Cel czaru: Shock/, `tytuł nazywa kartę: ${panelTitle}`);
+  assert.match(panelTitle, /koszt/, `tytuł musi nieść koszt: ${panelTitle}`);
+  assert.match(panelTitle, /ms-r/, 'ikona {R} w tytule panelu');
+
+  const modalTitle = choiceGroupTitle(entry.request, s.session, s.view);
+  assert.match(modalTitle, /\(koszt \{R\}\)/, `modalowy tytuł pokazuje koszt tekstem: ${modalTitle}`);
+  assert.doesNotMatch(modalTitle, /<span|ms-/, 'modalowy tytuł nie zawiera markup ikon');
 });
 
 test('H/2: oferta aury niesie koszt zaczarowania', () => {

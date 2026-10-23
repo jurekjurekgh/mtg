@@ -8,7 +8,7 @@ import { addObject, createGameState, playerView } from '../src/engine/game-state
 import { jumpToStep } from '../src/engine/turn.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
-import { choiceGroupTitle, commandLabel } from '../src/table/render.js';
+import { choiceGroupLabel, choiceGroupTitle, commandLabel } from '../src/table/render.js';
 
 const REG = createCardRegistry();
 const plain = (s) => String(s).replace(/<[^>]+>/g, '');
@@ -31,21 +31,32 @@ function vampiresBiteOffers() {
   return { view, session, offers };
 }
 
-test('I: tytuł grupy rzutu Z kickerem niesie koszt łączny (baza + kicker)', () => {
+test('I: tytuł panelu grupy rzutu Z kickerem niesie koszt łączny (baza + kicker)', () => {
   const { view, session, offers } = vampiresBiteOffers();
   const kicked = offers.filter((c) => c.kicked);
   assert.equal(kicked.length, 1, 'jedna oferta z kickerem (Rager jako cel)');
-  const title = plain(choiceGroupTitle({ options: kicked }, session, view));
-  assert.match(title, /\(kicker\)/, `tytuł nazywa wariant kicker (${title})`);
-  assert.match(title, /koszt B \+ kicker 2B/, `koszt łączny, nie sam wydruk (${title})`);
+  const request = { options: kicked };
+  const panelTitle = plain(choiceGroupLabel(request, session, view));
+  assert.match(panelTitle, /\(kicker\)/, `tytuł nazywa wariant kicker (${panelTitle})`);
+  assert.match(panelTitle, /koszt B \+ kicker 2B/, `koszt łączny, nie sam wydruk (${panelTitle})`);
+
+  const modalTitle = choiceGroupTitle(request, session, view);
+  assert.match(modalTitle, /koszt \{B\} \+ kicker \{2\}\{B\}/,
+    `modal zachowuje zapis symbolami many (${modalTitle})`);
+  assert.doesNotMatch(modalTitle, /<span|ms-/, 'modalowy tytuł jest zwykłym tekstem');
 });
 
-test('I: tytuł grupy BEZ kickera zostaje przy kosztem wydruku', () => {
+test('I: tytuł panelu BEZ kickera zostaje przy koszcie wydruku', () => {
   const { view, session, offers } = vampiresBiteOffers();
   const plainOffers = offers.filter((c) => !c.kicked);
-  const title = plain(choiceGroupTitle({ options: plainOffers }, session, view));
-  assert.match(title, /\(koszt B\)/, title);
-  assert.doesNotMatch(title, /kicker/, title);
+  const request = { options: plainOffers };
+  const panelTitle = plain(choiceGroupLabel(request, session, view));
+  assert.match(panelTitle, /\(koszt B\)/, panelTitle);
+  assert.doesNotMatch(panelTitle, /kicker/, panelTitle);
+
+  const modalTitle = choiceGroupTitle(request, session, view);
+  assert.match(modalTitle, /\(koszt \{B\}\)/, modalTitle);
+  assert.doesNotMatch(modalTitle, /kicker|<span|ms-/, 'modal pokazuje tekstowy koszt wydruku');
 });
 
 test('I: etykieta pojedynczej opcji z kickerem jest poprawna (strażnik, nie zmieniać)', () => {

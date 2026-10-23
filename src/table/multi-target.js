@@ -15,10 +15,10 @@
  * („95 kombinacji", zmierzone 232 przy 4 stworach i 8 lądach).
  *
  * Ten moduł NIE zmienia silnika ani protokołu: czyta gotowe komendy
- * i wyprowadza z nich DWA niezależne wymiary decyzji — zbiór celów i wartość
- * X. Po zaznaczeniu wracamy do TEJ SAMEJ komendy z legalCommands, więc
- * walidacja silnika pozostaje jedynym źródłem prawdy o legalności (L48:
- * UI nie wymyśla ruchów, tylko inaczej je pokazuje).
+ * i wyprowadza z nich niezależne wymiary decyzji — cele, X, dodatkowe koszty,
+ * stun i obietnicę daru. Po zaznaczeniu wracamy do TEJ SAMEJ komendy z
+ * legalCommands, więc walidacja silnika pozostaje jedynym źródłem prawdy o
+ * legalności (L48: UI nie wymyśla ruchów, tylko inaczej je pokazuje).
  */
 
 /**
@@ -37,23 +37,41 @@ function targetKey(targets) {
 }
 
 /**
- * N (zgłoszenie właściciela 2026-10-09, Crumb and Get It): czy grupa wariantów
- * jednego rzutu ma JEDNOLITY dar (CR 702.174a — `gifted`/`giftRecipientId`).
- *
- * Kreator celów (`singleTargetPlanOf`/`multiTargetPlanOf`) kończy wybór przez
- * `commandForSelection`, który dopasowuje komendę TYLKO po `targets` (+ `xValue`)
- * — nie zna wymiaru daru. Grupa „cel × obietnica” dawała więc kreator z samymi
- * celami, a zatwierdzenie wybierało pierwszy pasujący wariant (bez daru):
- * użytkownik nie miał żadnego wyboru, czy obiecuje gift (K/2026-09-19b pinował
- * tylko grupowanie panelu, nie ścieżkę kreatora w modalu).
- *
- * Reguła: grupa z NIEJEDNOLITYM giftem nie może iść przez kreator — wraca
- * null i pada na fallback `buttonsPlanOf` (wiersz na opcję, etykieta „(dar)”
- * rozróżnia warianty). Jednolity gift (wszędzie taki sam) nie jest wyborem
- * — plan wolno użyć. Generycznie po polu komendy (ADR 0002), nie po karcie.
+ * Wspólna straż dla planów, które nie mają osobnego wymiaru daru. Gift jest
+ * wyborem rzutu (CR 702.174a), więc te plany nie mogą po cichu spłaszczyć
+ * wariantów `gifted` / `giftRecipientId` do jednej komendy.
  */
 function uniformGiftOf(list) {
   return new Set((list ?? []).map((cmd) => `${Boolean(cmd?.gifted)}:${cmd?.giftRecipientId ?? ''}`)).size <= 1;
+}
+
+/**
+ * Wymiar Gift z legalnych komend. Obietnica (tak/nie) jest niezależna od celu;
+ * w grach wieloosobowych wybór odbiorcy też pozostaje jawny, zamiast
+ * arbitralnie brać pierwszego przeciwnika. `null` odbiorca jest akceptowany,
+ * gdy to jedyna postać w legalnych komendach (silnik sam rozstrzyga 1v1).
+ */
+function giftDimensionOf(list) {
+  const giftValues = [...new Set((list ?? []).map((cmd) => Boolean(cmd?.gifted)))];
+  const giftRecipientIds = [];
+  for (const cmd of list ?? []) {
+    if (!cmd?.gifted) continue;
+    const recipientId = cmd.giftRecipientId ?? null;
+    if (!giftRecipientIds.includes(recipientId)) giftRecipientIds.push(recipientId);
+  }
+  const giftMode = giftValues.length > 1;
+  const recipientMode = giftRecipientIds.length > 1;
+  if (!giftMode && !recipientMode) return null;
+  // Nie ukrywaj wariantu bez jawnego odbiorcy, jeżeli występuje obok innych
+  // odbiorców: nie da się go bezpiecznie przedstawić jako wybór przeciwnika.
+  if (recipientMode && giftRecipientIds.includes(null)) return null;
+  return {
+    giftMode,
+    giftDefault: giftMode ? null : giftValues[0],
+    giftRecipientIds,
+    giftLabel: 'Obietnica daru',
+    giftRecipientLabel: 'Odbiorca daru',
+  };
 }
 
 /**
@@ -63,22 +81,23 @@ function uniformGiftOf(list) {
  * Zwraca:
  *  - `targets`   — pełna lista celów, jakie da się zaznaczyć (suma wariantów),
  *  - `minTargets`/`maxTargets` — ile celów wolno wskazać („up to three"),
- *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie.
+ *  - `hasX`, `xMin`, `xMax` — czy jest licznik X i w jakim zakresie;
+ *  - `giftMode` / `giftRecipientIds` — obietnica daru (tak/nie) i, gdy
+ *    potrzeba, odbiorca; obie decyzje są oddzielone od wyboru celów.
  */
 export function multiTargetPlanOf(commands) {
   const all = commands ?? [];
   const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
-  // N: niejednolity dar (cel × obietnica) — patrz uniformGiftOf. Bez tego
-  // zatwierdzenie kreatora wybierało wariant bez daru (commandForSelection
-  // nie zna `gifted`).
-  if (!uniformGiftOf(list)) return null;
   // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
   // okno rzutu z odmową (decline/cast:false) i wariantami celowanymi
   // dawało kreator wielocelowy BEZ wiersza odmowy (zmierzone: Vaan + czar
   // z {X}). Jeżeli którakolwiek opcja nie niesie `targets`, ta rodzina ma
   // własny kształt (okna rzutu → castWindowPlanOf, fallback → przyciski).
   if (list.length !== all.length) return null;
+  // Tryb modalny musi już być rozstrzygnięty (castModePlanOf otwiera kolejny
+  // wybór dla wybranego trybu); ten kreator nie dopasowuje `modeIndex`.
+  if (new Set(list.map((cmd) => cmd.modeIndex ?? null)).size > 1) return null;
 
   const xValues = [...new Set(list.map((cmd) => cmd.xValue).filter((x) => Number.isInteger(x)))]
     .sort((a, b) => a - b);
@@ -101,10 +120,13 @@ export function multiTargetPlanOf(commands) {
   // który z WYBRANYCH celów dostaje stun counter. Wymiar z komend (cele ×
   // stun), nie z karty (ADR 0002).
   const stun = stunDimensionOf(list);
+  // Gift (CR 702.174a): osobna decyzja rzutu, niezależna od celu. Planujemy ją
+  // z legalnych komend zamiast generować jeden wiersz na każdą permutację.
+  const gift = giftDimensionOf(list);
 
-  // Bez żadnego z dwóch wymiarów to zwykła lista celów (Shock: jedna komenda
+  // Bez żadnego z tych wymiarów to zwykła lista celów (Shock: jedna komenda
   // na cel) — panel pokazuje ją od dawna poprawnie, nie ma czego zastępować.
-  if (!hasX && !multiTarget && !cost) return null;
+  if (!hasX && !multiTarget && !cost && !gift) return null;
 
   const targets = [];
   for (const cmd of list) {
@@ -141,6 +163,8 @@ export function multiTargetPlanOf(commands) {
     ...(cost ?? {}),
     // H: warstwa stuna (`stunKey`/`stunIds`/`stunLabel`) albo brak pól.
     ...(stun ?? {}),
+    // Gift (CR 702.174a): obietnica tak/nie i osobna pula odbiorców (wieloosobowa).
+    ...(gift ?? {}),
     // F3 (Żywy Tester, sesja 01a07711): pozycja OPCJONALNA („up to one target",
     // B45/9 — Assert Perfection) bywa w komendach silnika `null` na tej pozycji.
     // Deskryptor czytany z KOMEND (silnik = źródło prawdy), nie z karty —
@@ -253,7 +277,10 @@ export function stunCandidatesFor(commands, targets) {
  * legalny. Nie budujemy komendy „z palca" — szukamy jej wśród wariantów, które
  * silnik już uznał za legalne (dlatego nielegalny wybór po prostu jej nie ma).
  */
-export function commandForSelection(commands, { targets = [], xValue = null, stunTargetId = undefined } = {}) {
+export function commandForSelection(commands, {
+  targets = [], xValue = null, stunTargetId = undefined,
+  gifted = undefined, giftRecipientId = undefined,
+} = {}) {
   const key = targetKey(targets);
   return (commands ?? []).find((cmd) => {
     if (!cmd || !Array.isArray(cmd.targets)) return false;
@@ -261,6 +288,10 @@ export function commandForSelection(commands, { targets = [], xValue = null, stu
     // H: `stunTargetId` podany = wybór stuna z kreatora (null = brak legalnego
     // stuna dla zbioru → brak komendy). Nie podany = dawne zachowanie.
     if (stunTargetId !== undefined && (cmd.stunTargetId ?? null) !== stunTargetId) return false;
+    // Gift (CR 702.174a): kiedy wybór jest jawny, nie dopuść do znalezienia
+    // wariantu z inną obietnicą albo innym wskazanym odbiorcą.
+    if (gifted !== undefined && Boolean(cmd.gifted) !== Boolean(gifted)) return false;
+    if (giftRecipientId !== undefined && (cmd.giftRecipientId ?? null) !== giftRecipientId) return false;
     if (xValue == null) return true;
     return cmd.xValue === xValue;
   }) ?? null;
@@ -558,7 +589,7 @@ const SINGLE_PICK_FIELDS = ['targetId', 'cardId', 'keepId', 'pickId', 'found', '
  * (gospodarz aury, cel equip). Razem z `resolve_trigger_target` i ogólną
  * rodziną pól (SINGLE_PICK_FIELDS) wyczerpują kształt „wskaż cel (1)”.
  */
-const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability'];
+const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_ability', 'resolve_epic_choice'];
 
 /**
  * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
@@ -632,6 +663,18 @@ function itemLabelOf(field) {
  * Wykluczenia: pojedyncza opcja (zwykła lista wystarczy), różne `xValue`
  * (licznik X musi zostać — obsługuje go multiTargetPlanOf).
  */
+function singleTargetVariantKey(command) {
+  // Ten kreator może wybrać wyłącznie `targets[0]`; każde inne pole komendy
+  // musi więc być wspólne dla grupy. W przeciwnym razie (np. sacrificeTargetId,
+  // payAltCost, kicker, dar, stuna) wybór celu wskazałby `.find()` pierwszy
+  // wariant i po cichu zgubił drugą decyzję. Znormalizowane, serializowalne
+  // pola zachowują się jak klucz bez zależności od kolejności właściwości.
+  return JSON.stringify(Object.keys(command ?? {})
+    .filter((key) => key !== 'targets')
+    .sort()
+    .map((key) => [key, command[key]]));
+}
+
 export function singleTargetPlanOf(commands) {
   const options = commands ?? [];
   if (options.length < 2) return null;
@@ -646,10 +689,16 @@ export function singleTargetPlanOf(commands) {
   if (spells.length === options.length) {
     const xValues = new Set(spells.map((cmd) => cmd.xValue ?? null));
     if (xValues.size > 1) return null; // grupa z {X} → kreator z licznikiem
-    // N: niejednolity dar (cel × obietnica) — kreator celów zgubiłby wybór.
+    // N: cel-only kreator nie zna Gift; nie łącz wyboru obietnicy tutaj.
+    // Gdy gift jest mieszany, multiTargetPlanOf obsłuży oba wymiary osobno.
     if (!uniformGiftOf(spells)) return null;
     if (!spells.every((cmd) => cmd.objectId === spells[0].objectId
       && (cmd.modeIndex ?? null) === (spells[0].modeIndex ?? null))) return null;
+    // A single-target wizard only represents the target choice. If the same
+    // target group also varies by any other legal-command field, preserve every
+    // option for the generic button fallback rather than selecting the first
+    // command that matches the target (CR 601.2b/601.2h: cost choice/payment).
+    if (new Set(spells.map(singleTargetVariantKey)).size > 1) return null;
     const targets = [];
     for (const cmd of spells) if (!targets.includes(cmd.targets[0])) targets.push(cmd.targets[0]);
     return {
@@ -821,6 +870,175 @@ export function commandForCastWindowSelection(commands, rowId) {
  */
 export function commandForButtonsSelection(commands, rowId) {
   return commandForOptionRow(commands, rowId);
+}
+
+/**
+ * Epic Experiment — pierwszy krok wyboru: karta, a nie para „karta × cel".
+ * LegalCommands nadal zawiera pełne warianty (dla bota i walidacji), ale UI
+ * dostaje jedną reprezentatywną, legalną komendę na każdą kartę w wygnaniu
+ * oraz legalną opcję zakończenia. Po wybraniu karty wywołujący otwiera
+ * następny krok z pełnym podzbiorem jej wariantów.
+ */
+export function epicChoiceCardPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice')) return null;
+  const finish = options.filter((cmd) => cmd.done === true);
+  if (finish.length !== 1) return null;
+  const byCard = new Map();
+  for (const cmd of options) {
+    if (cmd.done === true) continue;
+    if (typeof cmd.cardId !== 'string' || cmd.cardId.length === 0) return null;
+    if (!byCard.has(cmd.cardId)) byCard.set(cmd.cardId, cmd);
+  }
+  if (byCard.size === 0) return null;
+  // Karty w kolejności legalCommands; „Zakończ” jest na końcu, po kartach.
+  const cardChoices = [...byCard.values()];
+  const cardCommands = [...cardChoices, finish[0]];
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceCardMode: true,
+    buttonsMode: true,
+    targets: [],
+    hasX: false,
+    itemLabel: 'kartę do rzucenia',
+    cardChoices,
+    finishCommand: finish[0],
+    commands: cardCommands,
+    rows: cardCommands.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
+}
+
+/**
+ * Epic Experiment — wybór trybu po wybraniu karty. Reprezentant nie jest
+ * wysyłany do silnika: po potwierdzeniu wywołujący filtruje oryginalne
+ * legalCommands po modeIndex i dopiero wtedy otwiera wybór celu/kosztu.
+ */
+export function epicChoiceModePlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && cmd.modeIndex != null && typeof cmd.cardId === 'string')) return null;
+  const cardId = options[0].cardId;
+  if (!options.every((cmd) => cmd.cardId === cardId)) return null;
+  const modes = [...new Set(options.map((cmd) => cmd.modeIndex))].sort((a, b) => a - b);
+  if (modes.length < 2) return null;
+  const reps = modes.map((modeIndex) => options
+    .filter((cmd) => cmd.modeIndex === modeIndex)
+    .reduce((best, cmd) => ((cmd.targets?.length ?? 0) < (best.targets?.length ?? 0) ? cmd : best)));
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceMode: true,
+    objectId: cardId,
+    cardId,
+    modes,
+    reps,
+    targets: [],
+    hasX: false,
+    itemLabel: 'tryb',
+    castWindowMode: true,
+    rows: reps.map((_, i) => ({ id: `opt-${i}`, label: null, cardId: null })),
+  };
+}
+
+/**
+ * Epic Experiment — wybór jednego celu po wybraniu karty/trybu. Warianty
+ * innych kosztów (np. „poświęć stwora”) mogą współistnieć z tym samym celem;
+ * dlatego plan służy wyłącznie do wskazania celu, a wywołujący zawęża pełne
+ * legalCommands po zatwierdzeniu i prowadzi ewentualny kolejny krok.
+ *
+ * Obsługuje także pojedynczą legalną komendę: nawet gdy jest tylko jeden
+ * kandydat, cel pozostaje widocznym, potwierdzanym krokiem po wyborze karty.
+ */
+export function epicChoiceTargetPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length === 0 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && typeof cmd.cardId === 'string' && Array.isArray(cmd.targets))) return null;
+  const cardId = options[0].cardId;
+  const modeIndex = options[0].modeIndex ?? null;
+  if (!options.every((cmd) => cmd.cardId === cardId && (cmd.modeIndex ?? null) === modeIndex)) return null;
+
+  // Zachowaj pozostałe wymiary, które wspólny picker potrafi przedstawić
+  // (X, dodatkowy koszt, stun i Gift) obok celów w DRUGIM kroku. Nadal są
+  // planowane z legalCommands, więc nie powstaje lista ich iloczynu z celami.
+  const multi = multiTargetPlanOf(options);
+  if (multi?.targets?.length > 0) {
+    return {
+      ...multi,
+      type: 'resolve_epic_choice',
+      epicChoiceTargetMode: true,
+      cardId,
+      orderedTargets: Boolean(multi.slots),
+      itemLabel: multi.multiTarget ? 'cele' : 'cel',
+    };
+  }
+
+  // Zwykły cel pojedynczy (Shock itp.) — cel jest osobnym krokiem nawet przy
+  // jednym legalnym kandydacie, także gdy silnik zwrócił tylko jedną legalną
+  // komendę. Nierozpoznane dalsze wymiary zostaną zawężone po wyborze celu.
+  if (options.every((cmd) => cmd.targets.length === 1 && cmd.targets[0] != null)) {
+    return {
+      type: 'resolve_epic_choice',
+      epicChoiceTargetMode: true,
+      cardId,
+      targets: [...new Set(options.map((cmd) => cmd.targets[0]))],
+      minTargets: 1,
+      maxTargets: 1,
+      hasX: false,
+      singleMode: 'targets',
+      allowNone: false,
+      itemLabel: 'cel',
+    };
+  }
+  return null;
+}
+
+/**
+ * Epic Experiment — choose additional cards to discard after the spell/target
+ * choice. The engine's legal offers may enumerate every discard combination;
+ * the UI must expose the cards as one multi-select step instead.
+ */
+export function epicChoiceDiscardPlanOf(commands) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every((cmd) => cmd?.type === 'resolve_epic_choice'
+    && typeof cmd.cardId === 'string' && Array.isArray(cmd.discardCardIds)
+    && cmd.discardCardIds.length > 0 && cmd.discardCardIds.every((id) => typeof id === 'string'))) return null;
+
+  const cardId = options[0].cardId;
+  const count = options[0].discardCardIds.length;
+  if (!options.every((cmd) => cmd.cardId === cardId && cmd.discardCardIds.length === count)) return null;
+
+  // This plan controls only the discard dimension. If any other command field
+  // (mode, target, X, etc.) still varies, leave those choices to their own step.
+  const signatures = new Set(options.map((cmd) => {
+    const { discardCardIds: _discardCardIds, ...rest } = cmd;
+    return JSON.stringify(Object.fromEntries(Object.entries(rest).sort(([a], [b]) => a.localeCompare(b))));
+  }));
+  if (signatures.size !== 1) return null;
+
+  const uniqueChoices = new Set(options.map((cmd) => [...cmd.discardCardIds].sort().join('\u0000')));
+  if (uniqueChoices.size < 2) return null;
+  const targets = [...new Set(options.flatMap((cmd) => cmd.discardCardIds))];
+  return {
+    type: 'resolve_epic_choice',
+    epicChoiceDiscardMode: true,
+    discardMode: true,
+    cardId,
+    targets,
+    minTargets: count,
+    maxTargets: count,
+    count,
+    hasX: false,
+    itemLabel: 'karty do odrzucenia',
+  };
+}
+
+export function commandForEpicDiscardSelection(commands, selected, count) {
+  const picked = Array.isArray(selected) ? selected : [];
+  if (picked.length !== count || new Set(picked).size !== count
+    || !picked.every((id) => typeof id === 'string')) return null;
+  const key = [...picked].sort().join('\u0000');
+  return (commands ?? []).find((cmd) => Array.isArray(cmd?.discardCardIds)
+    && cmd.discardCardIds.length === count
+    && [...cmd.discardCardIds].sort().join('\u0000') === key) ?? null;
 }
 
 /**
