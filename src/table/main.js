@@ -34,7 +34,7 @@ import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TU
 import { cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
-  wizardSourceName,
+  wizardSourceName, finishWizardPayment,
 } from './mana-wizard.js';
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool } from '../engine/resources.js';
@@ -2583,50 +2583,6 @@ function bootstrapTable() {
     }
   }
 
-  /**
-   * F10 (audyt PR #171, 2026-10-21d): kreator many zablokowany przez stos
-   * (trigger Chronic Flooding i pokrewne — każdy trigger „przy tapnięciu
-   * lądu" z auto-tapu płatności). CR 307.1/117.1a odrzuca `cast_permanent`
-   * z powodu niepustego stosu. Kreator ma obowiązek GENERYCZNIE ponowić
-   * commit po rozstrzygnięciu tych triggerów; wybiera „pass-priority" az
-   * stos opustoszeje lub kreator wraca do `legalCommands`. Zwraca `true`
-   * gdy `cast_*` przeszło, `false` gdy trigger wciąż siedzi po `maxCycles`
-   * pasach (sieć bezpieczeństwa: ui prosi o „mana zostaje w puli").
-   */
-  function resolveWizardTriggerBlock(sess, pending) {
-    if (!sess || !pending?.cmd) return false;
-    const maxCycles = 6; // co najwyżej 12 pojedynczych pasów (6 cykli po 2 gr)
-    for (let i = 0; i < maxCycles; i += 1) {
-      // 1. czy cast jest teraz legalny? Jeśli tak, commit i sukces.
-      const view = sess.view();
-      const cmd = pending.cmd;
-      const nowLegal = (view.legalCommands ?? []).some((c) => c.type === cmd.type
-        && c.objectId === cmd.objectId
-        && JSON.stringify(c.targets ?? null) === JSON.stringify(cmd.targets ?? null));
-      if (nowLegal) {
-        const paid = pending.delveCandidates?.length > 0 && pending.selectedDelveIds instanceof Set
-          ? { ...cmd, delveExileIds: [...pending.selectedDelveIds].sort() }
-          : cmd;
-        sess.apply(paid, { holdPriority: true });
-        return true;
-      }
-      // 2. czy cokolwiek jeszcze siedzi na stosie? Jeśli nie, trzeba
-      // odpuścić — kreator nie ma nic do rozstrzygnięcia, a cast wciąż
-      // nielegalny (np. poza main phase). Zwracamy false → ui drukuje
-      // „mana zostaje w puli", kreator oddaje pulę graczowi.
-      const stackLen = sess.state?.zones?.stack?.length ?? 0;
-      if (stackLen === 0) return false;
-      // 3. przepuść priorytet posiadacza — to rozstrzyga triggery, których
-      // nikt inny nie reaguje. Gdyby engine zgłosił błąd (np. priorytet
-      // nie nasz), przerywamy i każemy graczowi przejąć stery ręcznie.
-      const playerId = sess.state?.turn?.priorityPlayerId;
-      if (!playerId) return false;
-      const passResult = sess.apply({ type: 'pass_priority', playerId }, { holdPriority: true });
-      if (passResult?.ok === false) return false;
-    }
-    return false;
-  }
-
   function playDirect(cmd, options) {
     // M201/N1b (zgłoszenie właściciela): awaria wewnątrz sesji (wyjątek pętli
     // bota) nie może zjeść kliknięcia. Sesja łapie ją i oddaje `internalError`
@@ -3021,27 +2977,16 @@ function bootstrapTable() {
     const finishPayment = () => {
       const pending = manaWizardDescriptor;
       if (!pending) return;
-      const stillLegalBefore = (session.view().legalCommands ?? []).some((c) => c.type === pending.cmd.type
-        && c.objectId === pending.cmd.objectId
-        && JSON.stringify(c.targets ?? null) === JSON.stringify(pending.cmd.targets ?? null));
-      if (stillLegalBefore) {
-        const paidCommand = hasDelve
-          ? { ...pending.cmd, delveExileIds: [...(pending.selectedDelveIds ?? [])].sort() }
-          : pending.cmd;
-        closeManaWizard();
-        playDirect(paidCommand);
-        return;
-      }
-      // Kreator jest zablokowany przez stos; to jest jedyne legalne wyjście.
-      // Ponawiamy, dopóki stos nie opustoszeje (oba priorytety passeowane co
-      // najmniej raz) — uchwyt natychmiast zamyka kreator i zgłasza znanego
-      // gracza „mana w puli" TYLKO gdy trigger wciąż siedzi po rozsądnej
-      // liczbie prób (sieć bezpieczeństwa, normalnie 2-4 pasy).
-      const cleared = resolveWizardTriggerBlock(session, pending);
-      closeManaWizard();
-      if (!cleared) {
-        showNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
-      }
+      finishWizardPayment(session, pending, {
+        runCommand: (cmd, options) => playDirect(cmd, options),
+        onCloseWizard: () => closeManaWizard(),
+        onSyncUi: () => {
+          autosave();
+          rerender();
+          if (!session.artPausePending) showBotMoves();
+        },
+        onNotice: (msg) => showNotice(msg),
+      });
     };
     // Zwykła płatność zachowuje dotychczasowe auto-domknięcie. Delve MUSI
     // zostać na ekranie do jawnego zatwierdzenia: nawet gdy pula już płaci

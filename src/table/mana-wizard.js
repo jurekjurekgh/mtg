@@ -5,6 +5,7 @@ import { parseManaCost, totalManaNeeded, unitCoversRequirement } from '../engine
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
 import { polishPluralCount } from './polish-plural.js';
+import { commandOptionKey, HUMAN_ID } from './session.js';
 
 /**
  * Sekwencyjny kreator płatności many (E.3a, zgłoszenie właściciela 2026-08-06):
@@ -947,3 +948,78 @@ export function renderManaWizard(host, model, {
   host.appendChild(cancel);
   return host;
 }
+
+export function wizardPaidCommandOf(pending) {
+  if (!pending?.cmd) return null;
+  const hasDelve = (pending.delveCandidates?.length ?? 0) > 0;
+  return hasDelve && pending.selectedDelveIds instanceof Set
+    ? { ...pending.cmd, delveExileIds: [...pending.selectedDelveIds].sort() }
+    : pending.cmd;
+}
+
+export function isWizardCommandLegal(view, paidCommand) {
+  if (!view || !paidCommand) return false;
+  const targetKey = commandOptionKey(paidCommand);
+  return (view.legalCommands ?? []).some((c) => commandOptionKey(c) === targetKey);
+}
+
+/**
+ * Audyt PR #171 F-1 (CR 307.1 / CR 117.3d / CR 601.2g-h / ADR 0003):
+ * finalizuje płatność w Mana Wizardzie. Gdy auto-tap źródeł z `{ holdPriority: true }`
+ * wrzucił na stos wyzwalacze lądowe (np. Chronic Flooding / Psychic Venom),
+ * rzut sorcery-speed nie jest jeszcze w `legalCommands`. Helper przepuszcza
+ * wyłącznie priorytet gracza (`HUMAN_ID`) przez normalne `session.apply`,
+ * pozwalając prawdziwemu kontrolerowi bota odpowiedzieć w `advanceGuarded()`,
+ * weryfikuje pełny klucz wariantu (`commandOptionKey`), domyka finalny rzut
+ * przez `runCommand` (`playDirect`) i synchronizuje UI także przy przerwaniu.
+ */
+export function finishWizardPayment(session, pending, {
+  runCommand = (cmd, options) => session.apply(cmd, options),
+  onCloseWizard = () => {},
+  onSyncUi = () => {},
+  onNotice = () => {},
+  maxPasses = 8,
+} = {}) {
+  const paidCommand = wizardPaidCommandOf(pending);
+  if (!session || !paidCommand) return { committed: false, reason: 'invalid' };
+  let mutatedDuringDrain = false;
+  for (let i = 0; i <= maxPasses; i += 1) {
+    const view = session.view();
+    if (isWizardCommandLegal(view, paidCommand)) {
+      onCloseWizard();
+      const res = runCommand(paidCommand);
+      if (res?.ok === false) {
+        onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+        return { committed: false, reason: res.reason ?? 'rejected' };
+      }
+      return { committed: true };
+    }
+    const stackLen = view.zones?.stack?.length ?? 0;
+    if (stackLen === 0 || i === maxPasses || session.artPausePending) break;
+    const canHumanPass = (view.legalCommands ?? []).some((c) => c.type === 'pass_priority');
+    if (!canHumanPass) {
+      onCloseWizard();
+      if (mutatedDuringDrain) onSyncUi();
+      return { committed: false, reason: 'pending_decision' };
+    }
+    const passRes = session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+    if (passRes?.ok === false || passRes?.internalError) {
+      onCloseWizard();
+      if (mutatedDuringDrain) onSyncUi();
+      onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+      return { committed: false, reason: passRes?.internalError ? 'internal_error' : 'pass_rejected' };
+    }
+    mutatedDuringDrain = true;
+    const newStackLen = session.view().zones?.stack?.length ?? 0;
+    if (newStackLen > stackLen) {
+      onCloseWizard();
+      onSyncUi();
+      return { committed: false, reason: 'opponent_response' };
+    }
+  }
+  onCloseWizard();
+  if (mutatedDuringDrain) onSyncUi();
+  onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+  return { committed: false, reason: 'not_legal' };
+}
+

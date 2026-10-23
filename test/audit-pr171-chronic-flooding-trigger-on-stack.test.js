@@ -1,34 +1,13 @@
-// Audyt PR #171 (2026-10-21d) — zgłoszenie właściciela „aura Chronic
-// Flooding psuje rzut czaru w Mana Wizardzie". Test jest GENERYCZNY —
-// nie ma w nim żadnej logiki specyficznej dla Chronic Flooding ani
-// Kuldothy. Każdy trigger \"przy tapnięciu lądu\" z auto-tapu kreatora
-// many zachowuje się tak samo.
-//
-// Scenariusz (RED):
-//   1. Na polu bitwy leży Island z aury Chronic Flooding + karta do
-//      rzucenia (tutaj Kuldotha {4}{R}) w ręce + 5 many R w puli.
-//   2. Kreator many MANUALNIE tapnie Island (kolor U, ale kreator zawsze
-//      oferuje dostępne źródła).
-//   3. Trigger Chronic Flooding „whenever enchanted land becomes tapped"
-//      ląduje na stosie (object_tapped → ability_triggered).
-//   4. Kreator many commit-uje `cast_permanent`.
-//   5. Silnik odrzuca komendę z `illegal_cast:Zagranie przy niepustym stosie`
-//      (reguła CR 307.1/117.1a: sorcery-speed spell wymaga pustego stosu).
-//   6. UI w main.js czyta `stillLegal === false` z `legalCommands` i drukuje
-//      „Płatność zebrana, ale zagranie nie jest już dostępne — mana
-//      została w puli". Gracz musi ponowić klik po rozstrzygnięciu triggera.
-//
-// Po fixie (GREEN): kreator many powinien wykryć, że został zablokowany
-// przez triggery \"z własnego auto-tapu\" i ponowić commit po ich
-// rozstrzygnięciu (pełen cykl pasów obu graczy).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
+import { finishWizardPayment } from '../src/table/mana-wizard.js';
 
 const registry = createCardRegistry();
 
@@ -44,138 +23,173 @@ function game() {
 
 function put(state, id, cardId, zone, patch = {}) {
   const def = registry.get(cardId);
+  const { runtime, ...rest } = patch;
   addObject(state, {
     id, instanceId: `i-${id}`, cardId, controllerId: 'p1', ownerId: 'p1',
     zone, ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes,
-    keywords: def.keywords ?? [], ...patch,
+    keywords: def.keywords ?? [], ...rest,
   });
+  if (runtime) {
+    state.objects.set(id, Object.freeze({ ...state.objects.get(id), ...runtime }));
+  }
   return state.objects.get(id);
 }
 
-function land(state, id, sub) {
+function land(state, id, sub, controllerId = 'p1') {
   return put(state, id, `basic-${sub.toLowerCase()}`, 'battlefield', {
+    controllerId, ownerId: controllerId,
     kind: 'land', types: ['Land'], colors: [],
     abilities: [{ type: 'mana', produces: [sub[0]], text: '{T}: dodaj 1 manę' }],
   });
 }
 
-// KRYTYCZNY test — przepisuję to wersję po fixie. Obecny silnik: cast odrzuca.
-// Po fixie kreator many ma wykryć ten wzorzec (\"trigger na stosie z auto-tapu
-// płatności tego samego czaru\") i ponowić commit. Testujemy kontrakt
-// wysokopoziomowo: trigger Chronic Flooding MUSI być w finalnym stosie (jako
-// część tej samej operacji płatności) i karta MUSI być rzucona poprawnie.
-test('PR171/A ⭐ reprodukcja zgłoszenia: tap Island z aury + commit czaru — oba MUSZĄ być na stosie (po fixie)', () => {
+function makeWizardSession() {
+  const sess = createSession({
+    seed: 67, registry, pauseOnBotMoves: true,
+    decks: new Map([
+      [HUMAN_ID, Array(60).fill('basic-forest')],
+      [BOT_ID, Array(60).fill('basic-island')],
+    ]),
+  });
+  const s = sess.state;
+  s.pendingMulligans = [];
+  s.turn = jumpToStep(s.turn, 'main1', HUMAN_ID);
+  s.turn.activePlayerId = HUMAN_ID;
+  s.turn.priorityPlayerId = HUMAN_ID;
+  return sess;
+}
+
+test('PR171/A (CR 307.1 + CR 117.1a): cast_permanent na niepustym stosie z triggera lądu jest odrzucany przez silnik', () => {
   const s = game();
   put(s, 'kul', 'kuldotha-ringleader', 'hand');
   land(s, 'isl', 'Island');
-  land(s, 'mtn', 'Mountain');
   put(s, 'aura', 'chronic-flooding', 'battlefield');
   attachAuraToCreature(s, 'aura', 'isl');
-  for (let i = 0; i < 12; i += 1) put(s, 'lib' + i, 'basic-forest', 'library');
   addMana(s, 'p1', 5, { colors: ['R', 'R', 'R', 'R', 'R'] });
 
-  // KROK 1: gracz w kreatorze many MANUALNIE tapnie Island (symulujemy \"Zatwierdź wybór lądu")
-  const tap = execute(s, { type: 'tap_for_mana', playerId: 'p1', objectId: 'isl' });
-  assert.equal(tap.ok, true, 'tap Island z aury MUSI przejść (mana ability)');
-  assert.ok(s.zones.stack.some((id) => s.objects.get(id)?.cardId === 'chronic-flooding'),
-    'trigger Chronic Flooding MUSI wylądować na stosie (object_tapped → ability_triggered)');
-  assert.equal(s.players.find((p) => p.id === 'p1').mana, 6,
-    'mana p1 po tap powinna wzrosnąć o {U} do 6 (5R + 1U)');
-
-  // KROK 2: kreator many commit-uje cast_permanent. Tu jest różnica między
-  // OBECNYM a POŻĄDANYM zachowaniem: obecny silnik odrzuca, celem fixu jest
-  // ponowienie commitu tak, by czar i trigger znalazły się w stosie.
-  const r = execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] });
-  console.log('  cast (1. klik po tap) →', { ok: r.ok, reason: r.reason });
-  console.log('  STOS:', s.zones.stack.map((id) => s.objects.get(id)?.cardId).join(','));
-  console.log('  legalCommands „cast_...":', playerView(s, 'p1').legalCommands.filter((c) => String(c.type).startsWith('cast_')).length);
-
-  // DOKUMENTUJEMY OBECNE zachowanie silnika (RED). Fix żyje w UI (main.js
-  // `resolveWizardTriggerBlock`): kreator many wykrywa to odrzucenie
-  // i ponawia commit po rozstrzygnięciu triggera (PR171/F i PR171/G).
-  assert.equal(r.ok, false,
-    'RED (poziom silnika): cast_permanent NIE przejdzie przy niepustym stosie, '
-    + 'nawet jeśli trigger pochodzi z auto-tapu płatności (CR 307.1/117.1a)');
-  assert.equal(r.reason, 'illegal_cast:Zagranie przy niepustym stosie',
-    'silnik odrzuca z powodu niepustego stosu (CR 307.1/117.1a)');
-  assert.ok(s.zones.stack.some((id) => s.objects.get(id)?.cardId === 'chronic-flooding'),
-    'trigger Chronic Flooding siedzi na stosie (object_tapped → ability_triggered)');
-});
-
-// Anty-regresja: BEZ aury kreator many tapnia Island, commit natychmiastowy.
-// NIE chcemy fixu, który łamie ten przypadek.
-
-// Integration test: kreator many (resolveWizardTriggerBlock analog z surowym `execute`)
-test('PR171/F GREEN: kreator many ponawia commit po rozstrzygnięciu triggerów z własnego auto-tapu', () => {
-  const s = game();
-  put(s, 'kul', 'kuldotha-ringleader', 'hand');
-  land(s, 'isl', 'Island');
-  land(s, 'mtn', 'Mountain');
-  put(s, 'aura', 'chronic-flooding', 'battlefield');
-  attachAuraToCreature(s, 'aura', 'isl');
-  for (let i = 0; i < 12; i += 1) put(s, 'lib' + i, 'basic-forest', 'library');
-  addMana(s, 'p1', 5, { colors: ['R', 'R', 'R', 'R', 'R'] });
-
-  // KROK 1: kreator many tapnie Island z aurą (ten sam tap co `onTapSource`)
   const tap = execute(s, { type: 'tap_for_mana', playerId: 'p1', objectId: 'isl' });
   assert.equal(tap.ok, true);
-  assert.equal(s.zones.stack.length, 1, 'trigger Chronic Flooding MUSI siedzieć na stosie');
+  assert.ok(s.zones.stack.some((id) => s.objects.get(id)?.cardId === 'chronic-flooding'));
 
-  // KROK 2: kreator many commit-uje `cast_permanent` — silnik ODRZUCA z
-  // 'illegal_cast:Zagranie przy niepustym stosie'. Kreator to wyłapuje.
-  const cast1 = execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] });
-  assert.equal(cast1.ok, false);
-  assert.equal(cast1.reason, 'illegal_cast:Zagranie przy niepustym stosie');
-
-  // KROK 3: pętla pasów jak w resolveWizardTriggerBlock — obaj gracze pass
-  let cycles = 0;
-  while (s.zones.stack.length > 0 && cycles < 6) {
-    const p1 = execute(s, { type: 'pass_priority', playerId: s.turn.priorityPlayerId });
-    if (!p1.ok) break;
-    cycles += 1;
-  }
-  assert.equal(s.zones.stack.length, 0, 'po cyklu pasów stos musi być pusty');
-
-  // KROK 4: kreator many PONOWI commit — tym razem cast musi przejść.
-  const cast2 = execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] });
-  console.log('  cast#2 →', { ok: cast2.ok, reason: cast2.reason });
-  console.log('  STOS:', s.zones.stack.map((id) => s.objects.get(id)?.cardId).join(','));
-  console.log('  mana:', s.players.find((pl) => pl.id === 'p1').mana);
-  // Po triggerze (stack=0) cast_permanent MUSI przejść. Jedyny warunek,
-  // który może go zatrzymać to poza main phase (bo p2 zdążył przejąć turę).
-  // Tu: oba pas-y przejmują turę w tle, ale `state.turn.step` powinno
-  // pozostać main1 jeśli cykl zmieścił się przed main1 → combat (pass priorytetu
-  // NIE zmienia fazy; tylko gdy obie strony pasują CAŁKOWICIE i step się nie
-  // zamyka). Jeśli z jakiegoś powodu faza się zmieniła, akceptujemy reason
-  // 'illegal_cast:Zagranie poza main phase' jako proxy „cykl poszedł za daleko".
-  if (cast2.ok !== true) {
-    // fallback: zaakceptuj legalność po ponownym wejściu w main phase (to jest realistyczny stan gry)
-    // — tu akceptujemy tylko legal_cast_… powiązane z CR.
-    assert.match(cast2.reason ?? '', /(Zagranie poza main phase|illegal_cast)/,
-      'oczekiwane odrzucenie z powodu przemieszczenia poza main phase, lub sukcesu');
-  } else {
-    const stackIds = s.zones.stack.map((id) => s.objects.get(id)?.cardId);
-    assert.ok(stackIds.includes('kuldotha-ringleader'),
-      'Kuldotha MUSI wylądować na stosie po retry');
-  }
+  const r = execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] });
+  assert.equal(r.ok, false);
+  assert.equal(r.reason, 'illegal_cast:Zagranie przy niepustym stosie');
 });
-test('PR171/B GREEN: bez aury — tap Island, commit cast_permanent — czar natychmiast, triggerów nie ma', () => {
+
+test('PR171/B: bez triggera na stosie commit cast_permanent przechodzi natychmiast', () => {
   const s = game();
   put(s, 'kul', 'kuldotha-ringleader', 'hand');
   land(s, 'isl', 'Island');
-  land(s, 'mtn', 'Mountain');
-  for (let i = 0; i < 12; i += 1) put(s, 'lib' + i, 'basic-forest', 'library');
   addMana(s, 'p1', 5, { colors: ['R', 'R', 'R', 'R', 'R'] });
 
-  // tap manualny (bez aury — czyste Island)
-  const tap = execute(s, { type: 'tap_for_mana', playerId: 'p1', objectId: 'isl' });
-  assert.equal(tap.ok, true, 'tap Island MUSI przejść');
-  assert.equal(s.zones.stack.length, 0, 'bez aury — brak triggera, stos pusty');
+  assert.equal(execute(s, { type: 'tap_for_mana', playerId: 'p1', objectId: 'isl' }).ok, true);
+  assert.equal(s.zones.stack.length, 0);
+  assert.equal(execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] }).ok, true);
+  assert.ok(s.zones.stack.some((id) => s.objects.get(id)?.cardId === 'kuldotha-ringleader'));
+});
 
-  // commit natychmiastowy — czar musi przejść
-  const r = execute(s, { type: 'cast_permanent', playerId: 'p1', objectId: 'kul', targets: [] });
-  assert.equal(r.ok, true, 'bez aury — czar przechodzi (stos pusty)');
-  assert.ok(s.zones.stack.some((id) => s.objects.get(id)?.cardId === 'kuldotha-ringleader'),
-    'Kuldotha MUSI wylądować na stosie');
-  assert.equal(s.zones.stack.length, 1, 'na stosie ma być TYLKO Kuldotha (bez triggera)');
+test('F-1/1 (CR 307.1 + CR 117.3d + ADR 0003): finishWizardPayment drenuje trigger Chronic Flooding bez podszywania pod BOT_ID i domyka rzut przez runCommand', () => {
+  const sess = makeWizardSession();
+  const s = sess.state;
+  put(s, 'kul', 'kuldotha-ringleader', 'hand', { controllerId: HUMAN_ID, ownerId: HUMAN_ID });
+  land(s, 'isl1', 'Island', HUMAN_ID);
+  land(s, 'isl2', 'Island', HUMAN_ID);
+  put(s, 'aura1', 'chronic-flooding', 'battlefield', { controllerId: BOT_ID, ownerId: BOT_ID });
+  put(s, 'aura2', 'chronic-flooding', 'battlefield', { controllerId: BOT_ID, ownerId: BOT_ID });
+  attachAuraToCreature(s, 'aura1', 'isl1');
+  attachAuraToCreature(s, 'aura2', 'isl2');
+  addMana(s, HUMAN_ID, 4, { colors: ['R', 'R', 'R', 'R'] });
+
+  // Dwa tapnięcia z kreatora z { holdPriority: true } kładą DWA triggery wrogiego Chronic Flooding na stos.
+  assert.equal(sess.apply({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: 'isl1' }, { holdPriority: true }).ok, true);
+  assert.equal(sess.apply({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: 'isl2' }, { holdPriority: true }).ok, true);
+  assert.equal(s.zones.stack.length, 2, 'dwa triggery Chronic Flooding siedzą na stosie przed commitem');
+
+  const appliedPlayerIds = [];
+  const origApply = sess.apply.bind(sess);
+  sess.apply = (cmd, opts) => {
+    appliedPlayerIds.push(cmd.playerId);
+    return origApply(cmd, opts);
+  };
+
+  let runCommandCalls = 0;
+  let closed = 0;
+  const notices = [];
+  const res = finishWizardPayment(sess, {
+    cmd: { type: 'cast_permanent', playerId: HUMAN_ID, objectId: 'kul' },
+  }, {
+    runCommand: (cmd, opts) => {
+      runCommandCalls += 1;
+      assert.equal(opts?.holdPriority ?? false, false, 'finalny commit czaru nie może trzymać holdPriority=true');
+      return sess.apply(cmd, opts);
+    },
+    onCloseWizard: () => { closed += 1; },
+    onNotice: (msg) => notices.push(msg),
+  });
+
+  assert.equal(res.committed, true, 'finishWizardPayment musi domknąć rzut po rozstrzygnięciu obu triggerów');
+  assert.equal(runCommandCalls, 1, 'finalny commit czaru musi przejść przez runCommand (playDirect)');
+  assert.equal(closed, 1, 'kreator musi zostać zamknięty');
+  assert.deepEqual(notices, [], 'brak fałszywego komunikatu o niedostępnym zagraniu');
+  assert.equal(appliedPlayerIds.every((id) => id === HUMAN_ID), true,
+    `UI nie może wysyłać komend w imieniu BOT_ID: ${JSON.stringify(appliedPlayerIds)}`);
+  assert.equal(s.zones.battlefield.some((id) => s.objects.get(id)?.cardId === 'kuldotha-ringleader'), true,
+    'Kuldotha Ringleader musi rozstrzygnąć się na pole bitwy (brak zawieszenia na stosie z holdPriority=true)');
+});
+
+test('F-1/2 (L32 + commandOptionKey): finishWizardPayment weryfikuje pełny klucz wariantu (np. kicked + kickerLandId), nie sam (type, objectId, targets)', () => {
+  const sess = makeWizardSession();
+  const s = sess.state;
+  const oppCreature = put(s, 'opp-bear', 'coralhelm-guide', 'battlefield', { controllerId: BOT_ID, ownerId: BOT_ID });
+  const myCreature = put(s, 'my-bear', 'coralhelm-guide', 'battlefield', { controllerId: HUMAN_ID, ownerId: HUMAN_ID });
+  put(s, 'kick-spell', 'chocobo-kick', 'hand', { controllerId: HUMAN_ID, ownerId: HUMAN_ID });
+  land(s, 'isl', 'Island', HUMAN_ID);
+  put(s, 'aura', 'chronic-flooding', 'battlefield', { controllerId: BOT_ID, ownerId: BOT_ID });
+  attachAuraToCreature(s, 'aura', 'isl');
+  addMana(s, HUMAN_ID, 3, { colors: ['G', 'G', 'G'] });
+
+  assert.equal(sess.apply({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: 'isl' }, { holdPriority: true }).ok, true);
+  assert.equal(s.zones.stack.length, 1);
+
+  let synced = 0;
+  const notices = [];
+  // Wariant unkicked jest legalny po opróżnieniu stosu, ale żądany wariant kicked z nieistniejącym lądem NIE jest legalny.
+  const res = finishWizardPayment(sess, {
+    cmd: {
+      type: 'cast_spell', playerId: HUMAN_ID, objectId: 'kick-spell',
+      targets: [myCreature.id, oppCreature.id],
+      kicked: true, kickerLandId: 'missing-land',
+    },
+  }, {
+    onSyncUi: () => { synced += 1; },
+    onNotice: (msg) => notices.push(msg),
+  });
+
+  assert.equal(res.committed, false, 'nielegalny wariant kicked nie może być uznany za skutecznie rzucony');
+  assert.equal(synced, 1, 'po nieudanym commicie UI musi odświeżyć stan (autosave/rerender/showBotMoves)');
+  assert.equal(notices.length, 1, 'użytkownik musi dostać komunikat o pozostawieniu many w puli');
+});
+
+test('F-1/3: gdy trigger opróżni stos a rzut nie jest już legalny, finishWizardPayment woła onSyncUi zamiast zostawiać martwy DOM', () => {
+  const sess = makeWizardSession();
+  const s = sess.state;
+  land(s, 'isl', 'Island', HUMAN_ID);
+  put(s, 'aura', 'chronic-flooding', 'battlefield', { controllerId: BOT_ID, ownerId: BOT_ID });
+  attachAuraToCreature(s, 'aura', 'isl');
+
+  assert.equal(sess.apply({ type: 'tap_for_mana', playerId: HUMAN_ID, objectId: 'isl' }, { holdPriority: true }).ok, true);
+  assert.equal(s.zones.stack.length, 1);
+
+  let synced = 0;
+  let closed = 0;
+  const res = finishWizardPayment(sess, {
+    cmd: { type: 'cast_permanent', playerId: HUMAN_ID, objectId: 'nonexistent-card' },
+  }, {
+    onCloseWizard: () => { closed += 1; },
+    onSyncUi: () => { synced += 1; },
+  });
+
+  assert.equal(res.committed, false);
+  assert.equal(closed, 1);
+  assert.equal(synced, 1, 'UI musi odświeżyć stan stołu po rozstrzygnięciu triggera nawet gdy sam rzut przepadł');
 });
