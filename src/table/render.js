@@ -464,7 +464,9 @@ export function choiceRequestGroupKey(command) {
     // „Cel czaru”.
     // M (Lab Rats): buyback to wariant rzutu (CR 702.27a), więc ma własną grupę
     // — jak kicker. Inaczej warianty z dopłatą wpadłyby do grupy zwykłego rzutu.
-    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}`;
+    // Surge również zmienia koszt samego rzutu. Rozdzielamy grupy celu,
+    // żeby jeden nagłówek nie opisywał jednocześnie kosztu zwykłego i Surge.
+    return `spell:${command.objectId}${command.kicked ? ':kicker' : ''}${command.buyback ? ':buyback' : ''}${command.surgeCast ? ':surge' : ''}`;
   }
   // Phyrexian mana (CR 118.9): warianty płatności pita {R/P} czaru (jak perm-x).
   if (command.type === 'cast_spell' && command.phyrexianPayWithLife != null) {
@@ -2471,6 +2473,14 @@ function cardCostHtml(card, cmd = null, { manaHtml = true } = {}) {
   if (cmd?.surgeCast && card?.surge) {
     return format(costSymbols(card.surge.cost, card.surge.colors));
   }
+  // Bestow and Cleave are separate cast costs, not additions to the printed
+  // cost. Group titles must use the same descriptors as the individual offer.
+  if (cmd?.bestow && card?.bestow?.cost != null) {
+    return format(costSymbols(card.bestow.cost, card.bestow.colors));
+  }
+  if (cmd?.type === 'cast_cleave' && card?.spell?.cleave?.manaCost != null) {
+    return format(costSymbols(card.spell.cleave.manaCost, card.spell.cleave.colors));
+  }
   const raw = card && card.cardId ? MANA_COSTS[card.cardId] : null;
   return raw ? format(raw) : (card?.manaCost != null
     ? (manaHtml ? escapeHtml(String(card.manaCost)) : String(card.manaCost))
@@ -2520,7 +2530,7 @@ function buybackCostSuffixOf(cmd, object, session, { manaHtml = true } = {}) {
 }
 
 function castCostWithKickerHtml(object, cmd, session, { manaHtml = true } = {}) {
-  return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml: false })}`;
+  return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml })}`;
 }
 
 function abilityCostHtmlOf(ability) {
@@ -2767,11 +2777,13 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
     // bez ceny wyglądała jak oferta darmowa. Bestow ma WŁASNY koszt
     // alternatywny (ta sama arytmetyka co etykieta oferty, L41).
     const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    if (cmd.bestow) return `Bestow: ${name}`;
-    // G (jw.): grupa cast_permanent jest jednorodna co do surge (klucz grupy
-    // niesie ':surge'), więc tytuł pokazuje koszt WARIANTU — surge, nie
-    // wydruk. Grupa cast_spell miesza warianty (klucz bez surge), tam koszt
-    // wariantu niosą wiersze etykiet (M223), a tytuł zostaje przy wydruku.
+    if (cmd.bestow) {
+      const bestowCostKnown = object.bestow?.cost != null;
+      return `Bestow: ${name}${bestowCostKnown ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
+    }
+    // G (jw.): cast_permanent i cast_spell mają jednorodne grupy Surge
+    // (klucz grupy niesie ':surge'), więc nagłówek pokazuje koszt WARIANTU,
+    // a nie wydruk. Dla grupy zwykłego rzutu pozostaje koszt wydrukowany.
     if (object.aura) return `Aura: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
     return `Cel dla: ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
   }
@@ -2820,15 +2832,19 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
   // karta z kickerem nie ma Cleave (sprawdzone na rejestrze). Gdy się pojawi —
   // dopisać `kickerCostSuffixOf(cmd, object, session)` jak w gałęzi „Cel czaru”.
   if (cmd.type === 'cast_cleave' && cmd.targets?.length) {
-    const kosztZnany = Boolean(object && (MANA_COSTS[object.cardId] != null || object.manaCost != null));
-    return `Cel czaru (Cleave): ${name}${kosztZnany ? ` (koszt ${cardCostHtml(object, null, { manaHtml })})` : ''}`;
+    const cleaveCostKnown = object?.spell?.cleave?.manaCost != null;
+    return `Cel czaru (Cleave): ${name}${cleaveCostKnown ? ` (koszt ${cardCostHtml(object, cmd, { manaHtml })})` : ''}`;
   }
-  // M240/K (zgłoszenie): rzut przez Escape — tytuł musi nazywać CZAR,
-  // bo przy dwóch kartach z Escape w grobie oba wiersze „Ucieczka —
-  // karty do wygnania (N opcji)” były nierozróżnialne. Deskryptor
-  // (koszt wygnania) zostaje — decyzja na końcóweczę dotyczy kart.
+  // M240/K (zgłoszenie): rzut przez Escape — tytuł nazywa kartę i czynność.
+  // Dodajemy też koszt alternatywny z Oracle, tak jak w tytule flashbacku;
+  // obiekt w grobie jest jawny i niesie deskryptor spell.escape.
   if (cmd.type === 'cast_escape') {
-    return `${name} — Ucieczka (Escape): karty do wygnania`;
+    const escape = object.spell?.escape ?? session.cardDetails?.(object.cardId)?.spell?.escape;
+    const escapeSymbols = escape?.cost != null ? costSymbols(escape.cost, escape.colors) : null;
+    const escapeCost = escapeSymbols != null
+      ? (manaHtml ? manaCostHtml(escapeSymbols) : escapeSymbols)
+      : null;
+    return `${name} — Ucieczka (Escape): karty do wygnania${escapeCost ? ` (koszt ${escapeCost})` : ''}`;
   }
   // M106/Z5 (audyt stołu): equip grupował się jako „Cel zdolności: Sprzęt",
   // a opcje w środku mówiły „Wyposaż: Sprzęt → stwór" — dwie różne nazwy tej
@@ -2942,21 +2958,15 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
   if (options.length > 0 && options.every((o) => o?.type === 'cast_spell' && o.objectId === options[0].objectId)) {
     const groupObject = findViewObject(options[0].objectId, view);
     if (groupObject && (groupObject.spell?.modes ?? []).length > 1 && groupModes.size > 0) {
-      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)"). Notacja
-      // `{3}{W}` jak w logu i regułach — tytuł idzie też do textContent
-      // nagłówka modala (M87), więc nie może nieść HTML-a ikon. Wyjątkiem jest
-      // panel akcji (`manaHtml: true`): tam etykieta leci przez innerHTML i
-      // koszt ma być ikonami many (A, zgłoszenie właściciela 2026-09-21).
-      const rawCost = MANA_COSTS[groupObject.cardId];
-      const cost = rawCost ? (manaHtml ? manaCostHtml(rawCost) : rawCost) : null;
-      // I (zgłoszenie 2026-10-15, Vampire's Bite): grupa, w której KAŻDA opcja
-      // jest z kickerem, niesie koszt łączny (baza + kicker), nie sam wydruk.
-      // Grupa mieszana (kicker i zwykła) zostaje przy wydruku — jej tytuł nie
-      // rozstrzyga o koszcie, a warianty rozróżniają etykiety opcji.
-      const kickerPart = options.every((o) => o?.kicked)
-        ? kickerCostSuffixOf(options[0], groupObject, session, { manaHtml })
-        : '';
-      return `Rzuć: ${session.nameOf(groupObject.cardId)}${cost ? ` (koszt ${cost}${kickerPart})` : ''}`;
+      // Koszt w tytule (zgłoszenie M, krok 1: „Rzuć: <karta> (koszt)").
+      // Korzystamy z formatera oferty: przy jednorodnej grupie uwzględnia on
+      // także Surge, kicker i buyback; kanał tekst/ikony pozostaje jawny.
+      const costKnown = Boolean(MANA_COSTS[groupObject.cardId] != null || groupObject.manaCost != null);
+      const cost = costKnown
+        ? castCostWithKickerHtml(groupObject, options[0], session, { manaHtml })
+        : null;
+      const surgeVariant = options.every((o) => o?.surgeCast) ? ' (surge)' : '';
+      return `Rzuć: ${session.nameOf(groupObject.cardId)}${surgeVariant}${cost ? ` (koszt ${cost})` : ''}`;
     }
   }
   // I (uwaga, 2026-10-15): ta gałąź NIE dolicza kickera do kosztu X. Dziś żadna
