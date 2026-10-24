@@ -82,8 +82,20 @@
   tylko dla widza znającego tożsamość — mimo że efektywne P/T widok drukuje
   publicznie, a baza zakrycia to definicyjne 2/2. Po naprawie badge wraca po
   obu stronach stołu (FoW bez zmian; nazwy mechanik bonusu dalej za bramką).
-- **Bramka końcowa:** `npm test` **8768/8768**, `npm run test:slow` **268/268**
-  (`test:all` **9036/9036**), `npm run build` **75 modułów / 5386,5 kB**.
+- **Zgłoszenia właściciela H/I (po domknięciu sesji):** H (`295f4a5`) — token
+  *First Mate Ragavan* z auto-rezygnacji *Barala and Kari Zev* powstawał bez
+  żadnej informacji w logu i „Rozgrywce”: `pruneDeadPendingDecisions` zwracał
+  ręcznie zbieraną listę zdarzeń, a zdarzeń dopisanych przez `applyEffect`
+  (m.in. `token_created`) nie niósł żaden wynik komendy. Po naprawie prune
+  zwraca cały dopisany plaster `state.events`. I (`1846318`) — bot w oknie
+  Epic Experiment rzucał *Selesnya Charm* trybem +2/+2 we własnego defendera
+  w głównej fazie zamiast stworzyć tokena 2/2: trójka okien flat
+  (suspend/epic/rebound) remisowała tryby na bazie 70. Wspólny
+  `freeCastEffectsScore` wycenia teraz token ciałem, pump oknami walki
+  (`temporaryPumpPayoff` — defender 0), a destroy/exile dodatkowo materiałem
+  celu. Regresja bota: benchmark szybki 672 mecze, heuristic 87,8%.
+- **Bramka końcowa:** `npm test` **8771/8771**, `npm run test:slow` **268/268**
+  (`test:all` **9039/9039**), `npm run build` **75 modułów / 5388,1 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

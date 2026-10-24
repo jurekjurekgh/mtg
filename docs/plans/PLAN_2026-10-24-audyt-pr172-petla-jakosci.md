@@ -199,3 +199,21 @@ widok drukuje, baza zakrycia to 2/2 z definicji), więc badge wraca po obu
 stronach stołu bez naruszania FoW; nazwy mechanik bonusu zostają za bramką
 tożsamości. Bramka po G: `npm test` **8768/8768**, `test:slow` **268/268**
 (`test:all` **9036/9036**), build **75 modułów / 5386,5 kB**.
+
+## Zgłoszenia właściciela H i I (po domknięciu, 2026-10-24)
+
+**H — *Baral and Kari Zev*:** po rzucie pierwszego instanta bez kandydata na
+darmowy rzut silnik auto-domykał decyzję i tworzył *First Mate Ragavana*,
+ale ani log, ani „Rozgrywka" o tym nie mówiły. Przyczyna kontraktowa:
+`pruneDeadPendingDecisions` zwracał ręcznie zbieraną listę zdarzeń, a zdarzeń
+dopisanych przez `applyEffect` (m.in. `token_created`) lista nie niosła —
+powstawały tylko w historii stanu. Naprawa `295f4a5`: prune zwraca cały
+plaster zdarzeń dopisanych podczas przycinania. **I — *Selesnya Charm*
+przez Epic Experiment:** bot wybierał tryb wzmocnienia na własnego defendera
+w głównej fazie zamiast tokena 2/2 (tryby remisowały w wycenie flat 70 okien
+suspend/epic/rebound). Naprawa `1846318`: wspólny `freeCastEffectsScore` —
+token wyceniany ciałem (`tokenBodyValue`), pump oknami walki
+(`temporaryPumpPayoff`, defender = 0), bezwarunkowe usunięcie + materiał celu;
+bot tworzy Knighta, a przy wrogim 6/6 wybiera wygnanie. Bramka po H+I:
+`npm test` **8771/8771**, `test:slow` **268/268** (`test:all` **9039/9039**),
+build **75 modułów / 5388,1 kB**; benchmark szybki 672 mecze (heuristic 87,8%).
