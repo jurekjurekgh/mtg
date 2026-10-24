@@ -53,8 +53,7 @@ import { detectImageMode } from './card-images.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
 import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
-import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel, OPTION_IGNORABLE_TYPES } from './render.js';
-import { renderPickerRow } from './picker.js';
+import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
 function runEngineSmoke() {
@@ -2066,34 +2065,6 @@ function bootstrapTable() {
           hideModal('context-menu');
           play(cmd);
         });
-        // N (2026-10-24): menu kafla to JEDYNE miejsce, gdzie widać czystą
-        // aktywację many (panel jej nie pokazuje — M369/G/K), więc to tu
-        // gracz może ją wyciszyć ptaszkiem dla auto-passu (dyrektywa
-        // właściciela: stop przez osiągalność many „z możliwością
-        // zaptaszkowania”). Ten sam zestaw kluczy co panel (feature
-        // 2026-08-11); ślad notki „wyciszone” jak w panelu (M).
-        if (OPTION_IGNORABLE_TYPES.includes(cmd.type)) {
-          const opKey = commandOptionKey(cmd);
-          const cmdWyciszona = ignoredOptionKeys.has(opKey);
-          renderPickerRow(button, {
-            kind: 'checkbox',
-            variant: 'inline',
-            rowClassName: 'action-ignore',
-            toggleClassName: 'action-ignore-input',
-            label: null,
-            title: 'Zaznacz: ta opcja nie przerywa auto-passu',
-            checked: cmdWyciszona,
-            stopRowPropagation: true,
-            onToggle: () => toggleIgnoredOption(opKey),
-          });
-          if (cmdWyciszona) {
-            const notka = document.createElement('span');
-            notka.className = 'action-ignored-note';
-            notka.textContent = 'wyciszone — auto-pass nie przerywa';
-            button.appendChild(notka);
-            button.className += ' action-is-ignored';
-          }
-        }
         actionsWrap.appendChild(button);
       }
     }

@@ -6,12 +6,11 @@ import { TOKEN_IMAGES, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-
 import { parseReplay, playReplay, replayFromState, serializeReplay } from '../engine/replay.js';
 import { stateFingerprint } from '../engine/fingerprint.js';
 import { createHeuristicBot } from '../controllers/heuristic-bot.js';
-import { effectiveKeywords, activatableAbilities } from '../engine/permanents.js';
+import { effectiveKeywords } from '../engine/permanents.js';
 import { costSymbols } from './mana-icons.js';
 import { counterLabelGen } from './counter-labels.js';
 import { probeCommandEffect } from './noop-probe.js';
 import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
-import { manaAbilityHasManualCost } from '../engine/mana-sources.js';
 import { polishPluralCount } from './polish-plural.js';
 
 /**
@@ -202,56 +201,6 @@ export function hasMeaningfulDecisionOf(view, { isIgnored = () => false, isManaO
     // draw_card) to realna, wykonalna akcja — engine za nią ręczy.
     return true;
   });
-}
-
-/**
- * N (dyrektywa właściciela 2026-10-24 — następstwo zgłoszenia M): czy
- * ręczna aktywacja CZYSTEJ zdolności many (koszt zasobowy, którego
- * auto-tap sam nie wykona — np. poświęcenie Eldrazi Sciona) odblokowuje
- * człowiekowi rzut albo aktywację, której silnik dziś nie oferuje?
- * CR 605.3a: „A player may activate an activated mana ability whenever
- * they have priority…” (cytat verbatim z przypiętego lustra CR, ADR
- * 0030) — okno z samym Scionem JEST oknem decyzyjnym, gdy po poświęceniu
- * czar z ręki staje się osiągalny. Bez tego sprawdzenia auto-pass z J
- * (czysta mana nie przerywa) połyka jedyne legalne okno na taki instant.
- *
- * Miara jest symulacyjna — silnik zostaje jedynym autorytetem reguł
- * (ADR 0002/0004): każdą niewyciszoną, ręczną aktywację many wykonujemy
- * na KLONIE stanu (`makeSimulate`, horyzont zerowy: sama aktywacja) i
- * pytamy, czy w ofertach pojawiło się zagranie, którego teraz nie ma —
- * komenda cast albo nie-manowa aktywacja (poza wyciszonymi ptaszkiem).
- * Żadnego osobnego rachunku many/kolorów w sesji (L41/L48).
- *
- * Czysta funkcja predykatów z sesji (ADR 0011 — jak
- * `hasMeaningfulDecisionOf`): `isIgnored` — ptaszek wyciszenia z feature
- * 2026-08-11 (wyciszona aktywacja NIE odblokowuje — gracz świadomie
- * wyłączył stop; odznaczenie w menu kontekstowym przywraca), `isManaOnly`
- * i `isManualMana` — te same orzeczenia co panel/auto-pass.
- */
-export function manualManaUnlocksPlayOf(state, view, {
-  isIgnored = () => false, isManaOnly = () => false, isManualMana = () => false,
-} = {}) {
-  if (view.status !== 'active') return false;
-  const kandydaci = view.legalCommands.filter((cmd) => cmd.type === 'activate_ability'
-    && isManaOnly(cmd) && isManualMana(cmd) && !isIgnored(cmd));
-  if (kandydaci.length === 0) return false;
-  const klucz = (c) => `${c.type}|${c.objectId ?? ''}|${c.abilityIndex ?? ''}|${c.targets?.join(',') ?? ''}`;
-  const realna = (c) => !isIgnored(c)
-    && (c.type.startsWith('cast') || (c.type === 'activate_ability' && !isManaOnly(c)));
-  const obecne = new Set(view.legalCommands.filter(realna).map(klucz));
-  try {
-    const simulate = makeSimulate(state);
-    for (const cmd of kandydaci) {
-      const wynik = simulate(cmd, { maxCommands: 0 });
-      if (wynik.rejected) continue;
-      if (wynik.view.legalCommands.some((c) => realna(c) && !obecne.has(klucz(c)))) return true;
-    }
-  } catch {
-    // Bezpiecznik: symulacja jest wzmocnieniem stopu, nie jego warunkiem —
-    // jej awaria nie może wywrócić partii (ale nie udajemy wtedy okna).
-    return false;
-  }
-  return false;
 }
 
 /**
@@ -3933,42 +3882,27 @@ export function createSession(config) {
    * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
-    const isIgnored = (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd));
-    // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma
-    // panel (render.js → engine `isPureManaAbilityCommand`). Jedno źródło
-    // predykatu dla panelu i auto-passu (L41); obiekt hooków współdzieli
-    // reguła szybka i sprawdzenie osiągalności many (N).
-    const predykatMany = {
+    return hasMeaningfulDecisionOf(view, {
+      isIgnored: (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd)),
+      // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma
+      // panel (render.js → engine `isPureManaAbilityCommand`). Jedno źródło
+      // predykatu dla panelu i auto-passu (L41).
       isManaOnly: (cmd) => {
-      const object = state.objects.get(cmd.objectId);
-      // Deskryptory z rejestru to fallback dla obiektów, których stan nie
-      // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
-      // danych, którego używa panel (render.js → session.abilitiesOf).
-      const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
-      // Audyt PR #164 (A-1): `state` jest OBOWIĄZKOWYM argumentem — predykat
-      // czyta zdolność przez `activatableAbilities(state, obj)`, które bez
-      // stanu nie widzi warstwy `grantedActivatedAbilities` (statyki nadające
-      // zdolności, `scope.grantsAbilities`). Panel przekazuje `session.state`
-      // (render.js:941), więc auto-pass musi tak samo, inaczej oba czytają
-      // różne listy zdolności (L41) i gracz widzi zatrzymany auto-pass bez
-      // żadnego przycisku w panelu.
-      return isPureManaAbilityCommand(cmd, object, fallback, state);
+        const object = state.objects.get(cmd.objectId);
+        // Deskryptory z rejestru to fallback dla obiektów, których stan nie
+        // niesie zdolności (tokeny tworzone poza katalogiem) — ten sam zestaw
+        // danych, którego używa panel (render.js → session.abilitiesOf).
+        const fallback = object?.cardId ? registry.get(object.cardId)?.abilities ?? null : null;
+        // Audyt PR #164 (A-1): `state` jest OBOWIĄZKOWYM argumentem — predykat
+        // czyta zdolność przez `activatableAbilities(state, obj)`, które bez
+        // stanu nie widzi warstwy `grantedActivatedAbilities` (statyki nadające
+        // zdolności, `scope.grantsAbilities`). Panel przekazuje `session.state`
+        // (render.js:941), więc auto-pass musi tak samo, inaczej oba czytają
+        // różne listy zdolności (L41) i gracz widzi zatrzymany auto-pass bez
+        // żadnego przycisku w panelu.
+        return isPureManaAbilityCommand(cmd, object, fallback, state);
       },
-    };
-    if (hasMeaningfulDecisionOf(view, { isIgnored: isIgnored, isManaOnly: predykatMany.isManaOnly })) return true;
-    // N (CR 605.3a): czysta zdolność many o koszcie ręcznym (poświęcenie
-    // Eldrazi Sciona) sama stopu nie daje (J), ale okno, w którym
-    // odblokowuje rzut/aktywację, JEST decyzją — auto-pass nie może go
-    // przejechać. Symulacja tylko na ścieżce „brak innej decyzji”.
-    const isManualManaCmd = (cmd) => {
-      const object = state.objects.get(cmd.objectId);
-      if (!object) return false;
-      const zdolność = activatableAbilities(state, object)?.[cmd.abilityIndex]
-        ?? object.abilities?.[cmd.abilityIndex]
-        ?? (object.cardId ? registry.get(object.cardId)?.abilities?.[cmd.abilityIndex] : null);
-      return manaAbilityHasManualCost(zdolność);
-    };
-    return manualManaUnlocksPlayOf(state, view, { isIgnored, isManaOnly: predykatMany.isManaOnly, isManualMana: isManualManaCmd });
+    });
   }
 
   sessionLog('system', `Nowa partia (seed ${seed}). Powodzenia!`);
