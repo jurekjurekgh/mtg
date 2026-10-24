@@ -9,14 +9,18 @@
  *        `originalAbilities`, w tym `kind: 'spell'` dla zakrytego instanta),
  *        a jednocześnie zakryty stwór ginący jako zakryty NIE może odpalić
  *        wydrukowanego triggera `dies` (`CR 603.10a`).
- *   CR-2 (`CR 603.10a` + `CR 113.6`): stwór pozbawiony zdolności na polu bitwy
- *        (`abilitiesStripped: true`, Xu-Ifit, Osteoharmonist) ginący w walce lub
- *        od obrażeń NIE odpala wydrukowanego triggera `dies`, mimo że w grobie
- *        karta odzyskuje swoje wydrukowane zdolności (`CR 400.7`).
- *   CR-3 (`CR 603.10a` + `CR 707.2`): nietokenowa kopia stwora (*Jwari Shapeshifter*)
+ *   CR-2 (`CR 603.10a` + `CR 707.2`): nietokenowa kopia stwora (*Jwari Shapeshifter*)
  *        opuszczająca pole bitwy ODPALA skopiowany trigger `dies` /
  *        `leaves_battlefield` z LKI, mimo że sama karta poza polem bitwy wraca
  *        do wydrukowanego *Jwari Shapeshiftera* (`CR 400.7`).
+ *   CR-3 (`CR 603.10a` + `CR 113.6`): stwór pozbawiony zdolności na polu bitwy
+ *        (`abilitiesStripped: true`, Xu-Ifit, Osteoharmonist) ginący w walce lub
+ *        od obrażeń NIE odpala wydrukowanego triggera `dies`, mimo że w grobie
+ *        karta odzyskuje swoje wydrukowane zdolności (`CR 400.7`).
+ *
+ * Numeracja CR-2/CR-3 ujednolicona z opisem PR #172, handoffem i historią
+ * projektu audytem PR #173 (znalezisko F-3: pierwotnie ten plik numerował
+ * oba przypadki odwrotnie niż dokumenty).
  *   CR-4 (`CR 603.10a` + `CR 400.3`): cudzy permanent kontrolowany na polu bitwy
  *        przez `p1` (`ownerId: 'p2', controllerId: 'p1'`) i wygnany przez
  *        `exile_permanent` (`Secure the Scene`) wyzwala trigger „permanents you
@@ -121,7 +125,7 @@ test('CR-1 (CR 708.9 + CR 400.7 + CR 603.10a): zakryty permanent po śmierci odz
   }
 });
 
-test('CR-2 (CR 603.10a + CR 113.6): stwór reanimowany przez Xu-Ifita bez zdolności nie odpala wydrukowanego dies przy śmierci', () => {
+test('CR-3 (CR 603.10a + CR 113.6): stwór reanimowany przez Xu-Ifita bez zdolności nie odpala wydrukowanego dies przy śmierci', () => {
   const state = makeGame();
   put(state, 'xu', 'xu-ifit-osteoharmonist', 'battlefield', 'p1', { summoningSickness: false });
   put(state, 'dead-elk', 'highland-game', 'graveyard', 'p1');
@@ -147,7 +151,7 @@ test('CR-2 (CR 603.10a + CR 113.6): stwór reanimowany przez Xu-Ifita bez zdolno
   assert.equal(backInGrave.abilitiesStripped, false, 'w grobie karta odzyskuje druk (CR 400.7)');
 });
 
-test('CR-3 (CR 603.10a + CR 707.2): Jwari Shapeshifter kopiujący Ally z triggerem dies odpala skopiowany dies mimo powrotu do cech karty w grobie', () => {
+test('CR-2 (CR 603.10a + CR 707.2): Jwari Shapeshifter kopiujący Ally z triggerem dies odpala skopiowany dies mimo powrotu do cech karty w grobie', () => {
   const state = makeGame();
   // Highland Game z nadanym podtypem Ally (np. efekt zmiany podtypu / Changeling) jako wzorzec kopii.
   const allyElk = put(state, 'ally-elk', 'highland-game', 'battlefield', 'p1', { subtypes: Object.freeze(['Elk', 'Ally']) });

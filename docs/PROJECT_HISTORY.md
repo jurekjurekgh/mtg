@@ -66,8 +66,9 @@
 - **Pętla jakości — Polowanie CR (`d6ff380`, `CR-1..CR-4`):**
   - **CR-1 (`CR 708.9`):** odkrycie i przywrócenie cech zakrytych kart/czarów przy
     opuszczeniu `battlefield` lub `stack` (`moveObject`).
-  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** snapshot LKI (`lkiSnapshot`)
-    przed `resetZoneChangeAttributes` zachowuje kopiowane/nadane zdolności odejścia
+  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** migawka LKI
+    `formerEffectiveAbilities` liczona w `moveObjectDirectly` (objects.js)
+    z obiektu PRZED zmianą strefy zachowuje kopiowane/nadane zdolności odejścia
     i blokuje fałszywy wyzwalacz `dies` z tylnej strony zakrytej karty.
   - **CR-3 (`CR 113.6` / `CR 603.10a`):** wyzwalacze odejścia skanują wyłącznie
     `battlefield` oraz opuszczający permanent (LKI), bez kart w `graveyard`/`exile`.
