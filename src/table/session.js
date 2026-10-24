@@ -2580,6 +2580,19 @@ export const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
 // — gracz widział skutek, nie widział transformacji.
 export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 
+// E (zgłoszenie właściciela 2026-10-24, Jwari Shapeshifter): „W boksie
+// Rozgrywka nie ma informacji, kogo kopiuje wprowadzona Jwari. Jest w logu,
+// brakuje w Rozgrywka." Wynik wyboru kopii przy wejściu
+// (`enter_as_copy_resolved`) jest TOŻSAMOŚCIĄ permanentu na polu bitwy —
+// strefie publicznej (CR 400.2; wartości kopiowane CR 707.2) — i zmienia
+// ocenę pozycji tak samo jak transformacja (E6/A2 wyżej), więc jest treścią
+// panelu NIEZALEŻNIE od okna botActing/stosu. Dotąd typ nie należał do
+// żadnego zbioru bramki, więc przy `botActing === false` (własna Jwari
+// człowieka) nigdy nie trafiał do `botMoves`: modal pokazywał wyłącznie
+// generyczne „kopiuje cechy celu" (stats_modified z flagą `copy`), a nazwę
+// kopiowanego stwora niósł tylko opis tego zdarzenia w głównym logu.
+export const COPY_DIGEST_EVENTS = new Set(['enter_as_copy_resolved']);
+
 // UWAGA D (zgłoszenie właściciela 2026-09-25b): „Gdy tę kartę [Geological
 // Appraiser] wystawia bot, w Rozgrywce i w Logu powinny być widoczne karty,
 // które w ten sposób są odsłaniane zdolnością Discover. A nie są." Odsłonięcie
@@ -2730,7 +2743,11 @@ export function isHumanControllerEvent(e, humanId = HUMAN_ID) {
  *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu;
  * - jawne odsłonięcia i bieg discover (UWAGA D, zgłoszenie właściciela
  *   2026-09-25b): `PUBLIC_INFO_EVENTS` — ten sam tryb „niezależnie od okna",
- *   bo CR 701.20 robi z odsłoniętych kart informację publiczną.
+ *   bo CR 701.20 robi z odsłoniętych kart informację publiczną;
+ * - tożsamość kopii przy wejściu (E, zgłoszenie właściciela 2026-10-24,
+ *   Jwari Shapeshifter): `COPY_DIGEST_EVENTS` — ten sam tryb „niezależnie
+ *   od okna", bo pole bitwy jest strefą publiczną (CR 400.2), a to, CZYM
+ *   jest permanent-kopia (CR 707.2), widzi każdy gracz.
  */
 export function isMainLogEvent(e, ctx = {}) {
   const {
@@ -2751,7 +2768,7 @@ export function isMainLogEvent(e, ctx = {}) {
   if (PUBLIC_INFO_EVENTS.has(e?.type)) return true;
   if (HUMAN_DIGEST_EVENTS.has(e?.type) && isHumanControllerEvent(e, humanId)) return true;
   if (e?.type === 'card_drawn' && e?.playerId === humanId) return true;
-  return TRANSFORM_DIGEST_EVENTS.has(e?.type);
+  return TRANSFORM_DIGEST_EVENTS.has(e?.type) || COPY_DIGEST_EVENTS.has(e?.type);
 }
 
 /**
