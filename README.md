@@ -32,9 +32,12 @@ analizator kontraktów zdarzeń czysty, sonda reguły legend (CR 704.5j) wobec k
 **F**: badge „Ward {2}” na kaflu zakrytych disguise/cloak oraz podatek Ward
 dla wielocelowych decyzji bota (`targetIds` — *Azorius Justiciar* nie marnuje
 już Detaina w cel z Ward bez many na dopłatę; niezapłacony Ward jednego celu
-nadal słusznie kontruje całą zdolność, CR 702.21a). Bramki:
-`npm test` **8765/8765**, `npm run test:slow` **268/268** (`test:all` **9033/9033**),
-build **75 modułów / 5385,4 kB**.
+nadal słusznie kontruje całą zdolność, CR 702.21a); zgłoszenie **G**: badge
+„+1/+1” z anthemu *Trostani Discordant* wraca na zakrytym permanencie po obu
+stronach stołu (koniec zerowania nadanego P/T dla zakrytych w `cardInfo`
+i jawne kwoty w widoku — efektywne P/T i tak było publiczne). Bramki:
+`npm test` **8768/8768**, `npm run test:slow` **268/268** (`test:all` **9036/9036**),
+build **75 modułów / 5386,5 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

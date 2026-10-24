@@ -75,8 +75,15 @@
   niezagrożony po kontrze ward to **poprawne** zachowanie silnika — CR 702.21a
   kontruje całą zdolność, w odróżnieniu od nielegalnego celu (CR 608.2b);
   przypięte testem F/4 w `test/zgloszenie-f-disguise-ward.test.js`.
-- **Bramka końcowa:** `npm test` **8765/8765**, `npm run test:slow` **268/268**
-  (`test:all` **9033/9033**), `npm run build` **75 modułów / 5385,4 kB**.
+- **Zgłoszenie właściciela G (`7c60e61`, po domknięciu sesji):** badge „+1/+1”
+  z anthemu *Trostani Discordant* nie pojawiał się na zakrytym stworze
+  (statystyki 3/3 poprawne). Dwa punkty zrzutu prezentacji: `cardInfo`
+  zerował `grantedPower/Toughness` dla zakrytych, a `playerView` liczył je
+  tylko dla widza znającego tożsamość — mimo że efektywne P/T widok drukuje
+  publicznie, a baza zakrycia to definicyjne 2/2. Po naprawie badge wraca po
+  obu stronach stołu (FoW bez zmian; nazwy mechanik bonusu dalej za bramką).
+- **Bramka końcowa:** `npm test` **8768/8768**, `npm run test:slow` **268/268**
+  (`test:all` **9036/9036**), `npm run build` **75 modułów / 5386,5 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

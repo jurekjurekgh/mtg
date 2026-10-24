@@ -186,3 +186,16 @@ kontruje całą zdolność („counter that spell or ability"), w odróżnieniu 
 nielegalnego celu z CR 608.2b; silnik zachowywał się poprawnie (pin F/4).
 Bramka po F: `npm test` **8765/8765**, `test:slow` **268/268** (`test:all`
 **9033/9033**), build **75 modułów / 5385,4 kB**.
+
+## Zgłoszenie właściciela G (po domknięciu, 2026-10-24)
+
+*Trostani Discordant* („Other creatures you control get +1/+1"): badge
+„+1/+1" był na wszystkich stworach poza zakrytym Hellionem, choć statystyki
+liczyły się poprawnie (3/3), a po obrocie badge wracał. Dwa punkty zrzutu
+czystej prezentacji (naprawa `7c60e61`): `cardInfo` zerował
+`grantedPower/Toughness` dla każdego zakrytego, a `playerView` liczył je
+tylko przy `!hiddenFromViewer`. Kwota bonusu jest jawna (efektywne P/T
+widok drukuje, baza zakrycia to 2/2 z definicji), więc badge wraca po obu
+stronach stołu bez naruszania FoW; nazwy mechanik bonusu zostają za bramką
+tożsamości. Bramka po G: `npm test` **8768/8768**, `test:slow` **268/268**
+(`test:all` **9036/9036**), build **75 modułów / 5386,5 kB**.
