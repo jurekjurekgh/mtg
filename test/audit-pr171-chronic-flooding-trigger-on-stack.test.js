@@ -7,7 +7,7 @@ import { attachAuraToCreature } from '../src/engine/attachments.js';
 import { addMana } from '../src/engine/resources.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
-import { finishWizardPayment } from '../src/table/mana-wizard.js';
+import { finishWizardPayment, isWizardCommandLegal } from '../src/table/mana-wizard.js';
 
 const registry = createCardRegistry();
 
@@ -193,3 +193,46 @@ test('F-1/3: gdy trigger opróżni stos a rzut nie jest już legalny, finishWiza
   assert.equal(closed, 1);
   assert.equal(synced, 1, 'UI musi odświeżyć stan stołu po rozstrzygnięciu triggera nawet gdy sam rzut przepadł');
 });
+
+test('Audyt PR #171 F-1 (Delve/Crew): isWizardCommandLegal akceptuje delveExileIds i crewCreatureIds z kreatora, ale odrzuca brak karty w grobie lub inny tryb', () => {
+  const view = {
+    zones: {
+      graveyard: [{ id: 'g1' }, { id: 'g2' }],
+    },
+    legalCommands: [
+      { type: 'cast_permanent', playerId: HUMAN_ID, objectId: 'mandrills' },
+      { type: 'activate_ability', playerId: HUMAN_ID, objectId: 'skiff', abilityIndex: 0, crewCreatureIds: ['c1'] },
+      { type: 'cast_spell', playerId: HUMAN_ID, objectId: 'charm', modeIndex: 0 },
+    ],
+  };
+
+  assert.equal(
+    isWizardCommandLegal(view, {
+      type: 'cast_permanent', playerId: HUMAN_ID, objectId: 'mandrills', delveExileIds: ['g1', 'g2'],
+    }),
+    true,
+    'Delve dokleja delveExileIds ponad reprezentantem z legalCommands, gdy wskazane karty wciąż leżą w grobie',
+  );
+  assert.equal(
+    isWizardCommandLegal(view, {
+      type: 'cast_permanent', playerId: HUMAN_ID, objectId: 'mandrills', delveExileIds: ['g1', 'g-exiled'],
+    }),
+    false,
+    'gdy wyzwalacz wygnał wskazaną kartę z grobu przed commitem, płatność Delve staje się nieaktualna',
+  );
+  assert.equal(
+    isWizardCommandLegal(view, {
+      type: 'activate_ability', playerId: HUMAN_ID, objectId: 'skiff', abilityIndex: 0, crewCreatureIds: ['c2', 'c3'],
+    }),
+    true,
+    'kreator załogi może podmienić domyślne crewCreatureIds bez utraty dopasowania zdolności',
+  );
+  assert.equal(
+    isWizardCommandLegal(view, {
+      type: 'cast_spell', playerId: HUMAN_ID, objectId: 'charm', modeIndex: 1,
+    }),
+    false,
+    'różny modeIndex nadal musi być odrzucony',
+  );
+});
+

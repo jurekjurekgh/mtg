@@ -957,10 +957,29 @@ export function wizardPaidCommandOf(pending) {
     : pending.cmd;
 }
 
+function wizardVariantKeyOf(cmd) {
+  if (!cmd) return '';
+  // Pola doboru składników kosztu (Delve / Crew / Convoke) dokleja kreator UI
+  // ponad reprezentantem z `view.legalCommands`, a silnik re-waliduje je w
+  // `execute()`. Wszystkie pola wariantu (modeIndex, abilityIndex, kicked,
+  // faceDown, targets, xValue, payAltCost, bestow…) pozostają w kluczu jawnie.
+  const {
+    delveExileIds: _delve,
+    crewCreatureIds: _crew,
+    convokePayments: _convoke,
+    ...variantCmd
+  } = cmd;
+  return commandOptionKey(variantCmd);
+}
+
 export function isWizardCommandLegal(view, paidCommand) {
   if (!view || !paidCommand) return false;
-  const targetKey = commandOptionKey(paidCommand);
-  return (view.legalCommands ?? []).some((c) => commandOptionKey(c) === targetKey);
+  if (Array.isArray(paidCommand.delveExileIds) && paidCommand.delveExileIds.length > 0) {
+    const graveIds = new Set((view.zones?.graveyard ?? []).map((o) => o?.id));
+    if (!paidCommand.delveExileIds.every((id) => graveIds.has(id))) return false;
+  }
+  const targetKey = wizardVariantKeyOf(paidCommand);
+  return (view.legalCommands ?? []).some((c) => wizardVariantKeyOf(c) === targetKey);
 }
 
 /**
