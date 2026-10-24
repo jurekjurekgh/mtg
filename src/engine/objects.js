@@ -4,7 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock } from './permanents.js';
+import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock, effectiveAbilities } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 import { clearImpulseWindowStamp } from './impulse-window.js';
 import { clearLinkedExileCastPermission, consumeGrantsLinkedToExileCast } from './linked-exile-cast.js';
@@ -296,8 +296,40 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     : (leavingBattlefield && object.copiedFromCardId
       ? { copiedFromCardId: null, copiedByCardId: null }
       : {});
+  // Pętla jakości CR-1 (CR 708.9 + CR 400.7): zakryty permanent opuszczający
+  // pole bitwy lub zakryty czar opuszczający stos poza pole bitwy odkrywa się
+  // i wraca do pełnych cech wydrukowanej karty z migawki zakrycia.
+  const revealingFaceDown = (object.zone === 'battlefield' || object.zone === 'stack')
+    && toZone !== 'battlefield'
+    && Boolean(object.faceDown);
+  const faceDownRevealReset = revealingFaceDown
+    ? {
+      ...(Array.isArray(object.originalAbilities)
+        ? { abilities: [...object.originalAbilities] }
+        : {}),
+      ...(object.faceDownOriginal
+        ? {
+          ...(object.faceDownOriginal.kind != null ? { kind: object.faceDownOriginal.kind } : {}),
+          colors: [...(object.faceDownOriginal.colors ?? [])],
+          subtypes: [...(object.faceDownOriginal.subtypes ?? [])],
+          types: [...(object.faceDownOriginal.types ?? [])],
+          keywords: [...(object.faceDownOriginal.keywords ?? [])],
+          manaCost: object.faceDownOriginal.manaCost ?? 0,
+          cardName: object.faceDownOriginal.cardName ?? null,
+          ward: object.faceDownOriginal.ward ?? null,
+          power: object.faceDownOriginal.power !== undefined ? object.faceDownOriginal.power : object.power,
+          toughness: object.faceDownOriginal.toughness !== undefined ? object.faceDownOriginal.toughness : object.toughness,
+        }
+        : {}),
+      faceDownCause: null,
+      manifestReady: false,
+      manifestTurnUpCost: null,
+      cloakReady: false,
+      cloakTurnUpCost: null,
+    }
+    : null;
   const rawMoved = {
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset,
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
     id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
@@ -364,6 +396,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // dies" nadany przez czar (Fake Your Own Death) działa z ostatniej znanej
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
     formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
+    // Pętla jakości CR-1..CR-4 (CR 603.10a + CR 707.2 + CR 113.6 + CR 400.3):
+    // LKI efektywnych zdolności i kontrolera z chwili opuszczenia pola bitwy
+    // (przed resetem kopii, DFC, zakrycia, abilitiesStripped i kontroli).
+    formerControllerId: leavingBattlefield ? (object.controllerId ?? null) : null,
+    formerEffectiveAbilities: leavingBattlefield ? Object.freeze([...effectiveAbilities(object)]) : null,
     attachedTo: null,
     // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
     // deriveExiledBy). Poza exile meta znika (CR 400.7).
@@ -372,11 +409,16 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
     // W-9: po animacji „do końca tury” — rodzaj sprzed animacji (CR 400.7).
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? copyDisplayReset.kind ?? untilEndOfTurnReset.kind ?? object.kind),
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? faceDownRevealReset?.kind ?? copyDisplayReset.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
   };
   if (origCopy) {
     delete rawMoved.originalBeforeCopy;
+    if (!object.isToken) delete rawMoved.copyNumber;
+  }
+  if (revealingFaceDown) {
+    delete rawMoved.originalAbilities;
+    delete rawMoved.faceDownOriginal;
     if (!object.isToken) delete rawMoved.copyNumber;
   }
   const moved = Object.freeze(rawMoved);

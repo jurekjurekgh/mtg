@@ -2100,6 +2100,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // karty, a efekty patrzące na podtyp/mana value widziały wartości spod
     // rewersu. Oryginał chowamy obok abilities i przywracamy przy obrocie.
     patch.faceDownOriginal = Object.freeze({
+      kind: object.kind ?? null,
+      power: object.power ?? null,
+      toughness: object.toughness ?? null,
       // M333: migawka niesie TEŻ ward (jak cloak u 701.58a i manifest) —
       // obrót przywraca drukowany ward, a zakryty go nie ma (CR 708.2a).
       ward: object.ward ?? null,
