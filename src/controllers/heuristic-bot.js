@@ -13428,9 +13428,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const przedDeklaracja = myTurn(view)
               && view.turn.phase === 'combat'
               && ['beginning_of_combat', 'declare_attackers'].includes(view.turn.step);
-            const canAttackNow2 = Boolean(self) && !self.tapped && !self.summoningSickness;
-            const intends = canAttackNow2 && przedDeklaracja
-              && attackIntendsCreature(view, self.id);
+            const canAttackAfter = Boolean(self) && !self.tapped
+              && (!self.summoningSickness || hasKeyword(self, 'haste'))
+              && self.detained !== true
+              && self.cantAttackExternal !== true;
+            const widokBezDefendera = canAttackAfter && przedDeklaracja ? {
+              ...view,
+              zones: {
+                ...view.zones,
+                battlefield: (view.zones.battlefield ?? []).map((o) => (o.id === self.id
+                  ? {
+                    ...o,
+                    keywords: (o.keywords ?? []).filter((k) => k !== 'defender'),
+                    cantAttackStatic: false,
+                  }
+                  : o)),
+              },
+            } : null;
+            const intends = Boolean(widokBezDefendera)
+              && attackIntendsCreature(widokBezDefendera, self.id);
             score += intends ? 10 + 2 * (self?.power ?? 0) : -20;
           }
           // M202/J (uwaga właściciela, Merfolk Mesmerist): „{U}, {T}: Target
