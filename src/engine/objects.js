@@ -4,7 +4,7 @@ import { assertStateInvariants } from './invariants.js';
 import { detachAttachmentsFromHost } from './attachments.js';
 import { syncStationKind } from './counters.js';
 import { registerMover } from './mover.js';
-import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock } from './permanents.js';
+import { entersTappedNow, animationEffectsOf, animationFieldsAfter, hasTemporaryCantBlock, effectiveAbilities } from './permanents.js';
 import { nextTimestamp } from './timestamps.js';
 import { clearImpulseWindowStamp } from './impulse-window.js';
 import { clearLinkedExileCastPermission, consumeGrantsLinkedToExileCast } from './linked-exile-cast.js';
@@ -264,15 +264,72 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // na nowy obiekt (CR 400.7); helper jest wspólny z ofertą rzutu.
     ...clearLinkedExileCastPermission(object),
   } : null;
-  // Dane identyfikujące druk kopiowany w UI należą do tego permanentu na
-  // polu bitwy. Po zmianie strefy CR 400.7 kończy ten kontekst prezentacji —
-  // fizyczny `cardId` karty (np. Jwari) pozostaje nietknięty.
-  const copyDisplayReset = object.zone === 'battlefield' && toZone !== 'battlefield'
-    && object.copiedFromCardId
-    ? { copiedFromCardId: null, copiedByCardId: null }
-    : {};
-  const moved = Object.freeze({
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset,
+  // Audyt PR #171 F-3 (CR 400.7 + CR 707.2): po opuszczeniu pola bitwy kopia
+  // na karcie nietokenowej (np. Jwari Shapeshifter) traci wszystkie skopiowane
+  // cechy i wraca do wydrukowanych wartości własnej karty (w tym enter_as_copy).
+  const leavingBattlefield = object.zone === 'battlefield' && toZone !== 'battlefield';
+  const origCopy = leavingBattlefield ? object.originalBeforeCopy : null;
+  const copyDisplayReset = origCopy
+    ? {
+      power: origCopy.power,
+      toughness: origCopy.toughness,
+      colors: origCopy.colors,
+      types: origCopy.types,
+      subtypes: origCopy.subtypes,
+      keywords: origCopy.keywords,
+      abilities: origCopy.abilities,
+      enterAsCopy: origCopy.enterAsCopy,
+      toxic: origCopy.toxic,
+      kind: origCopy.kind,
+      cardName: origCopy.cardName,
+      name: origCopy.name,
+      manaCost: origCopy.manaCost,
+      station: origCopy.station,
+      saga: origCopy.saga,
+      cantBlockPrinted: origCopy.cantBlockPrinted,
+      cantBlock: Boolean(origCopy.cantBlockPrinted),
+      entersTapped: origCopy.entersTapped,
+      entersTappedCondition: origCopy.entersTappedCondition,
+      copiedFromCardId: null,
+      copiedByCardId: null,
+    }
+    : (leavingBattlefield && object.copiedFromCardId
+      ? { copiedFromCardId: null, copiedByCardId: null }
+      : {});
+  // Pętla jakości CR-1 (CR 708.9 + CR 400.7): zakryty permanent opuszczający
+  // pole bitwy lub zakryty czar opuszczający stos poza pole bitwy odkrywa się
+  // i wraca do pełnych cech wydrukowanej karty z migawki zakrycia.
+  const revealingFaceDown = (object.zone === 'battlefield' || object.zone === 'stack')
+    && toZone !== 'battlefield'
+    && Boolean(object.faceDown);
+  const faceDownRevealReset = revealingFaceDown
+    ? {
+      ...(Array.isArray(object.originalAbilities)
+        ? { abilities: [...object.originalAbilities] }
+        : {}),
+      ...(object.faceDownOriginal
+        ? {
+          ...(object.faceDownOriginal.kind != null ? { kind: object.faceDownOriginal.kind } : {}),
+          colors: [...(object.faceDownOriginal.colors ?? [])],
+          subtypes: [...(object.faceDownOriginal.subtypes ?? [])],
+          types: [...(object.faceDownOriginal.types ?? [])],
+          keywords: [...(object.faceDownOriginal.keywords ?? [])],
+          manaCost: object.faceDownOriginal.manaCost ?? 0,
+          cardName: object.faceDownOriginal.cardName ?? null,
+          ward: object.faceDownOriginal.ward ?? null,
+          power: object.faceDownOriginal.power !== undefined ? object.faceDownOriginal.power : object.power,
+          toughness: object.faceDownOriginal.toughness !== undefined ? object.faceDownOriginal.toughness : object.toughness,
+        }
+        : {}),
+      faceDownCause: null,
+      manifestReady: false,
+      manifestTurnUpCost: null,
+      cloakReady: false,
+      cloakTurnUpCost: null,
+    }
+    : null;
+  const rawMoved = {
+    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
     id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).
@@ -339,6 +396,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // dies" nadany przez czar (Fake Your Own Death) działa z ostatniej znanej
     // informacji, choć sam grant nie przechodzi przez zmianę strefy.
     formerAbilityGrants: Object.freeze([...(object.abilityGrants ?? [])]),
+    // Pętla jakości CR-1..CR-4 (CR 603.10a + CR 707.2 + CR 113.6 + CR 400.3):
+    // LKI efektywnych zdolności i kontrolera z chwili opuszczenia pola bitwy
+    // (przed resetem kopii, DFC, zakrycia, abilitiesStripped i kontroli).
+    formerControllerId: leavingBattlefield ? (object.controllerId ?? null) : null,
+    formerEffectiveAbilities: leavingBattlefield ? Object.freeze([...effectiveAbilities(object)]) : null,
     attachedTo: null,
     // M262: stempel źródła wygnania — istnieje wyłącznie w exile (patrz
     // deriveExiledBy). Poza exile meta znika (CR 400.7).
@@ -347,9 +409,19 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     // stwór, przód to artefakt) — reset twarzi (M257/K5) nadaje `kind`
     // przedniej strony, a nie stalej `object.kind` (tylnej).
     // W-9: po animacji „do końca tury” — rodzaj sprzed animacji (CR 400.7).
-    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? untilEndOfTurnReset.kind ?? object.kind),
+    kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? faceDownRevealReset?.kind ?? copyDisplayReset.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
-  });
+  };
+  if (origCopy) {
+    delete rawMoved.originalBeforeCopy;
+    if (!object.isToken) delete rawMoved.copyNumber;
+  }
+  if (revealingFaceDown) {
+    delete rawMoved.originalAbilities;
+    delete rawMoved.faceDownOriginal;
+    if (!object.isToken) delete rawMoved.copyNumber;
+  }
+  const moved = Object.freeze(rawMoved);
   state.objects.delete(object.id); state.objects.set(newObjectId, moved);
   // Linkowany czas trwania kończy się przy RZUCENIU dokładnie tego obiektu z
   // exile, nie przy samym opuszczeniu exile. Choke point ruchu exile→stack

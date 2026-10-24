@@ -1248,8 +1248,20 @@ function describeEffect(e, ctx = {}) {
     get_energy: () => (e.amountFrom === 'creatures_attacking_you'
       ? 'otrzymaj {E} za każde stworzenie atakujące ciebie'
       : `otrzymaj {E}×${e.amount ?? 1} energii`),
-    remove_counter: () => `usuń licznik ${e.counter}`,
-    add_counter: () => `połóż licznik ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`,
+    remove_counter: () => {
+      const n = e.amount ?? 1;
+      const qty = typeof n === 'number' && n > 1
+        ? `${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')}`
+        : 'licznik';
+      return `usuń ${qty} ${e.counter}`;
+    },
+    add_counter: () => {
+      const n = e.amount ?? 1;
+      const qty = typeof n === 'number' && n > 1
+        ? `${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')}`
+        : 'licznik';
+      return `połóż ${qty} ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`;
+    },
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
@@ -1385,7 +1397,13 @@ function describeEffect(e, ctx = {}) {
     draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     draw_then_discard: () => 'dobierz, potem odrzuć',
     exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (egzaltacja)`,
-    exile_all: () => 'wygnij wszystkie (filtr)',
+    exile_all: () => {
+      const plTypes = { Artifact: 'artefakty', Enchantment: 'zaklęcia', Creature: 'stwory', Land: 'lądy', Planeswalker: 'planeswalkery' };
+      const types = (e.filter?.types ?? []).map((t) => plTypes[t] ?? t.toLowerCase()).join(' ') || 'permanenty';
+      const mv = e.filter?.manaValueAtMost != null ? ` o MV ≤${e.filter.manaValueAtMost}`
+        : (e.filter?.manaValueAtLeast != null ? ` o MV ≥${e.filter.manaValueAtLeast}` : '');
+      return `wygnij wszystkie ${types}${mv}`;
+    },
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     // Batch 59 (Scavenging Harpy): wygnanie KARTY z grobu celu (dowolny typ).
     exile_graveyard_card: () => 'wygnij kartę z grobu',
@@ -1611,7 +1629,15 @@ function describeEffect(e, ctx = {}) {
     set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
-  if (fn) return `${e.condition?.wasKicked ? 'jeśli opłacono kicker: ' : ''}${fn()}`;
+  if (fn) {
+    const condParts = [];
+    if (e.condition?.wasKicked) condParts.push('jeśli opłacono kicker');
+    if (e.condition?.wasGifted) condParts.push('jeśli obiecano dar (Gift)');
+    if (e.condition?.manaSpentAtLeast != null) condParts.push(`jeśli wydano ${e.condition.manaSpentAtLeast}+ many`);
+    if (e.condition?.manaSpentBelow != null) condParts.push(`jeśli wydano mniej niż ${e.condition.manaSpentBelow} many`);
+    const prefix = condParts.length > 0 ? `${condParts.join(', ')}: ` : '';
+    return `${prefix}${fn()}`;
+  }
   return `efekt (${e.type})`;
 }
 
@@ -1692,9 +1718,7 @@ function describeStatic(ability) {
   const scope = ability?.scope?.affects;
   const pump = ability?.pump;
   if (pump && (pump.power != null || pump.toughness != null)) {
-    const pt = ptAmount(pump.power ?? 0) === ptAmount(pump.toughness ?? 0)
-      ? ptAmount(pump.power ?? 0)
-      : `${ptAmount(pump.power ?? 0)}/${ptAmount(pump.toughness ?? 0)}`;
+    const pt = ptPair(pump.power ?? 0, pump.toughness ?? 0);
     if (scope === 'other_creatures_you_control') parts.push(`inne twoje stwory: ${pt}`);
     else if (scope === 'all_creatures_you_control') parts.push(`twoje stwory: ${pt}`);
     else parts.push(pt);
@@ -2533,7 +2557,7 @@ function castCostWithKickerHtml(object, cmd, session, { manaHtml = true } = {}) 
   return `${cardCostHtml(object, cmd, { manaHtml })}${kickerCostSuffixOf(cmd, object, session, { manaHtml })}${buybackCostSuffixOf(cmd, object, session, { manaHtml })}`;
 }
 
-function abilityCostHtmlOf(ability) {
+function abilityCostHtmlOf(ability, { manaHtml = true } = {}) {
   const cost = ability?.cost ?? {};
   const mana = [];
   if (cost.manaX) mana.push('{X}');
@@ -2544,8 +2568,8 @@ function abilityCostHtmlOf(ability) {
   for (const c of colors) mana.push(`{${c}}`);
   for (const group of hybrid) mana.push(`{${group.join('/')}}`);
   const parts = [];
-  if (mana.length) parts.push(manaCostHtml(mana.join('')));
-  if (cost.tap) parts.push(manaCostHtml('{T}'));
+  if (mana.length) parts.push(manaHtml ? manaCostHtml(mana.join('')) : mana.join(''));
+  if (cost.tap) parts.push(manaHtml ? manaCostHtml('{T}') : '{T}');
   for (const [field, label] of NON_MANA_COST_LABELS) {
     if (cost[field]) parts.push(typeof label === 'function' ? label(cost[field]) : label);
   }
@@ -2553,12 +2577,12 @@ function abilityCostHtmlOf(ability) {
 }
 
 /** „ (koszt …)" zdolności komendy `activate_ability` — puste, gdy brak kosztu. */
-function abilityCostSuffix(session, cmd) {
+function abilityCostSuffix(session, cmd, { manaHtml = true } = {}) {
   const stateObj = session?.state?.objects?.get(cmd.objectId);
   const ability = (stateObj ? activatableAbilities(session.state, stateObj)?.[cmd.abilityIndex] : null)
     ?? stateObj?.abilities?.[cmd.abilityIndex];
   if (!ability) return '';
-  const cost = abilityCostHtmlOf(ability);
+  const cost = abilityCostHtmlOf(ability, { manaHtml });
   return cost ? ` (koszt ${cost})` : '';
 }
 
@@ -2856,7 +2880,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
   // Tytuł nazywa kartę i czynność deskryptorem efektu z DANYCH karty
   // (ADR 0002), a konkretne X niosą etykiety opcji grupy.
   if (cmd.type === 'activate_ability' && cmd.xValue != null) {
-    return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd)}`;
+    return `${name} — ${abilityXDescription(session, object, cmd)}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   if (cmd.type === 'activate_ability' && cmd.targets?.length) {
     const stateObj = session.state?.objects?.get(cmd.objectId);
@@ -2871,7 +2895,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
     const abilityName = ability?.forecast ? 'Forecast'
       : (ability?.keyword ? (KEYWORD_LABELS[ability.keyword] ?? ability.keyword) : null);
     const core = abilityName ? `${name}: ${abilityName}` : `Cel zdolności: ${name}`;
-    return `${core}${abilityCostSuffix(session, cmd)}`;
+    return `${core}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   // M103/C2 (zgłoszenie właściciela): warianty station/crew/tap-innego-stwora
   // grupują się po obiekcie — bez tej gałęzi tytuł spadał do generycznego
@@ -2881,7 +2905,7 @@ function choiceSourceTitle(cmd, session, view, { manaHtml = true } = {}) {
       || cmd.sacrificeLandId != null || cmd.sacrificeCreatureId != null)) {
     // H: grupa wariantów tap/crew/sacrifice też niesie koszt zdolności
     // (dotąd „Aktywuj: <karta>" — jakby aktywacja była darmowa).
-    return `Aktywuj: ${name}${abilityCostSuffix(session, cmd)}`;
+    return `Aktywuj: ${name}${abilityCostSuffix(session, cmd, { manaHtml })}`;
   }
   return null;
 }
@@ -4715,12 +4739,10 @@ export function cardInfo(session, object, combat = null) {
     // "nie może atakować" (oba zakazy = jedno zdanie "nie może atakować
     // ani blokować", jak w Bonds of Faith).
     cantBlockNow: Boolean(object.cantBlock || object.cantBlockPrinted || object.detained === true),
-    // PR #171/T (jw.): zablokowane zdolności aktywowane — publiczny skutek
-    // detainu. Render dodaje badge „nie może używać zdolności aktywowanych".
-    // JEDNO źródło: playerView ustawia `cantActivateAbilities` zawsze gdy
-    // `object.detained === true` — niezależnie od innych efektów (aury
-    // „can't activate", leniwa kość itp. — w katalogu dziś brak).
-    cantActivateAbilitiesNow: faceDown ? false : Boolean(object.cantActivateAbilities),
+    // PR #171/T + Audyt F-2 (CR 701.35a + CR 708.2): zakaz zdolności
+    // aktywowanych działa także na zakryty permanent pod detain (spójnie z
+    // cantBlockNow, cantAttackNow i detained).
+    cantActivateAbilitiesNow: Boolean(object.cantActivateAbilities),
     // Zgłoszenie właściciela 2026-09-29 (Bonds of Faith): statyczny zakaz
     // ATAKU (defender/detain/aura „can't attack"/warunek podtypu) był w widoku
     // od M243/F, ale bez badge'a — na kaflu widać było tylko zakaz bloku.
@@ -5190,7 +5212,9 @@ export function buildStateOverlay(visual, info) {
     // spójna z frazą logu "(za Warp)" — L41 jedno źródło brzmienia.
     if (info.enteredViaWarp) flags.push(['kw', 'Warp · wygnanie na EOT']);
     {
-      const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+      // Pętla jakości LT-4 + M188/A: zero też z jawnym znakiem („+2/+0", nie „+2/0"),
+      // spójnie z ciągłym bonusem grantedPower/grantedToughness poniżej.
+      const sign = (n) => (n < 0 ? `${n}` : `+${n}`);
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);
       if (pMod !== 0 || tMod !== 0) {

@@ -455,7 +455,7 @@ export function untappedManaSources(state, playerId) {
   const sources = [];
   for (const id of state.zones.battlefield) {
     const obj = state.objects.get(id);
-    if (!obj || obj.controllerId !== playerId || obj.tapped) continue;
+    if (!obj || obj.controllerId !== playerId || obj.tapped || obj.detained) continue;
     const src = getSourceForObject(obj, state);
     if (src && (src.amount ?? 1) > 0) sources.push(src);
   }

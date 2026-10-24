@@ -828,7 +828,8 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   // PRZED jakąkolwiek mutacją (nieudany rzut nie może utracić many ani lądu).
   if (kicker?.returnLand) {
     const land = state.objects.get(kickerLandId);
-    if (!land || land.zone !== 'battlefield' || land.kind !== 'land' || land.controllerId !== playerId) {
+    const isLand = land && (land.kind === 'land' || (land.types ?? []).includes('Land'));
+    if (!isLand || land.zone !== 'battlefield' || land.controllerId !== playerId) {
       throw new Error('Nielegalny ląd do zwrotu (kicker: return a land you control)');
     }
   } else if (kickerLandId != null) {
@@ -3454,11 +3455,29 @@ export function legalSpellCasts(state, playerId) {
       // puchł (L48: oferta = walidacja; walidacja przyjmuje dowolny ląd).
       let landChoices = [null];
       if (object.kicker.returnLand) {
+        const attachedHosts = new Set();
+        for (const obj of state.objects.values()) {
+          if (obj.zone === 'battlefield' && obj.attachedTo) attachedHosts.add(obj.attachedTo);
+        }
         const seen = new Set();
         landChoices = [];
         for (const land of state.objects.values()) {
-          if (land.zone !== 'battlefield' || land.kind !== 'land' || land.controllerId !== playerId) continue;
-          const key = `${land.cardId}|${land.tapped ? 1 : 0}`;
+          const isLand = land.kind === 'land' || (land.types ?? []).includes('Land');
+          if (land.zone !== 'battlefield' || !isLand || land.controllerId !== playerId) continue;
+          const ownerDiffers = (land.ownerId ?? land.controllerId) !== land.controllerId;
+          const hasCounters = Object.values(land.counters ?? {}).some((n) => n > 0);
+          const hasSpecialState = ownerDiffers
+            || attachedHosts.has(land.id)
+            || hasCounters
+            || Boolean(land.originalBeforeAnimation)
+            || land.kind !== 'land'
+            || Boolean(land.typeGrant)
+            || Boolean(land.detained)
+            || (land.untapLockedBy?.length ?? 0) > 0
+            || Boolean(land.dontUntapNextUntapStep);
+          const key = hasSpecialState
+            ? `unique:${land.id}`
+            : `${land.cardId}|${land.tapped ? 1 : 0}|${land.chosenColor ?? ''}`;
           if (seen.has(key)) continue;
           seen.add(key);
           landChoices.push(land.id);

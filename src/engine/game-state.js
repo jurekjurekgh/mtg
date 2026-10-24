@@ -4572,15 +4572,44 @@ export function execute(state, input) {
           // poprawka co w token-kopii (effects.js) — jedna reguła, dwie
           // ścieżki, więc muszą czytać tę samą bazę (L48).
           const copyBase = target.originalBeforeAnimation ?? target;
+          // Audyt PR #171 F-3 (CR 400.7 + CR 707.2): nietokenowa karta
+          // wchodząca jako kopia (np. Jwari Shapeshifter) nadpisuje swoje cechy
+          // tylko na polu bitwy; po opuszczeniu strefy staje się nowym obiektem
+          // o wydrukowanych cechach własnej karty, w tym ze zdolnością
+          // `enter_as_copy`. Snapshot bazuje na wcześniejszym originalBeforeCopy,
+          // gdyby ten sam permanent stał się kopią ponownie bez zmiany strefy.
+          const originalBeforeCopy = !src.isToken ? (src.originalBeforeCopy ?? Object.freeze({
+            power: src.power ?? null,
+            toughness: src.toughness ?? null,
+            colors: Object.freeze([...(src.colors ?? [])]),
+            types: Object.freeze([...(src.types ?? [])]),
+            subtypes: Object.freeze([...(src.subtypes ?? [])]),
+            keywords: Object.freeze([...(src.keywords ?? [])]),
+            abilities: Object.freeze([...(src.abilities ?? [])]),
+            enterAsCopy: src.enterAsCopy ? Object.freeze({ ...src.enterAsCopy }) : null,
+            toxic: src.toxic ?? null,
+            kind: src.kind,
+            cardName: src.cardName ?? null,
+            name: src.name ?? null,
+            manaCost: src.manaCost ?? 0,
+            station: src.station ?? null,
+            saga: src.saga ?? null,
+            cantBlockPrinted: Boolean(src.cantBlockPrinted),
+            entersTapped: Boolean(src.entersTapped),
+            entersTappedCondition: src.entersTappedCondition ?? null,
+          })) : null;
           const updated = Object.freeze({
             ...src,
             enteringAsCopy: undefined,
+            ...(originalBeforeCopy ? { originalBeforeCopy } : {}),
             power: copyBase.power ?? null, toughness: copyBase.toughness ?? null,
             colors: [...(copyBase.colors ?? target.colors ?? [])],
             types: [...(copyBase.types ?? target.types ?? [])],
             subtypes: [...(copyBase.subtypes ?? target.subtypes ?? [])],
             keywords: [...(copyBase.keywords ?? target.keywords ?? [])],
             abilities: [...(copyBase.abilities ?? target.abilities ?? [])],
+            enterAsCopy: copyBase.enterAsCopy ? Object.freeze({ ...copyBase.enterAsCopy }) : null,
+            toxic: copyBase.toxic ?? null,
             kind: copyBase.kind ?? target.kind,
             cardName: target.cardName ?? target.cardId,
             // C (znalezisko właściciela 2026-09-12, Jwari Shapeshifter):
@@ -4605,8 +4634,8 @@ export function execute(state, input) {
             manaCost: copyManaValueOf(copyBase),
             // M141/B (station/saga): kopia traciła deskryptory station/saga
             // (jak token-kopia). CR 707.2 — kopiowalne są WSZYSTKIE cechy.
-            ...(target.station ? { station: target.station } : {}),
-            ...(target.saga ? { saga: target.saga } : {}),
+            station: copyBase.station ?? target.station ?? null,
+            saga: copyBase.saga ?? target.saga ?? null,
             // Audyt PR #159/R-1 + CR 707.2: druk blokowania bierze się z celu,
             // a nie z raw `cantBlock` źródła (token może nim tylko odbijać
             // druk). Niezależny, aktywny efekt do cleanup pozostaje na tym
@@ -4619,8 +4648,8 @@ export function execute(state, input) {
             // permanent_entered_battlefield), więc samo pole go nie tapnie —
             // tapnięcie ustawiamy wprost. To wejście tapnięte, nie „becomes
             // tapped” (CR 701.26 — brak zdarzenia object_tapped jest poprawny).
-            ...(copyBase.entersTapped ? { entersTapped: true } : {}),
-            ...(copyBase.entersTappedCondition ? { entersTappedCondition: copyBase.entersTappedCondition } : {}),
+            entersTapped: Boolean(copyBase.entersTapped),
+            entersTappedCondition: copyBase.entersTappedCondition ?? null,
             // O-1 (audyt PR #134, klasa L101): tapnięcie kopii rozstrzyga
             // wspólny `entersTappedNow` — statyk kontrolera „Gates you control
             // enter untapped” (Batch 58/B7) znosi je także tutaj. Obiekt jest
@@ -6856,10 +6885,11 @@ export function playerView(state, playerId) {
           // „(kopia N)" przy celach, blokach i na kaflu.
           ...(object.copyNumber ? { copyNumber: object.copyNumber } : {}),
           controllerId: object.controllerId, zone: object.zone,
-          // Właściciel przejętego lądu może różnić się od kontrolera. Ten
-          // publiczny fakt pozwala botowi ocenić, czy koszt „zwróć ląd do ręki
-          // właściciela" da mu kartę, którą może ponownie zagrać.
-          ...(object.kind === 'land' && object.ownerId != null && object.ownerId !== object.controllerId
+          // Audyt PR #171 F-4 (CR 108.3): właściciel każdego przejętego
+          // permanentu (także ożywionego lądu lub stwora) jest informacją
+          // publiczną — pozwala botowi i UI odróżnić zwrot do własnej ręki
+          // od oddania karty przeciwnikowi.
+          ...(object.ownerId != null && object.ownerId !== object.controllerId
             ? { ownerId: object.ownerId } : {}),
           kind: object.kind,
           power: effectivePower(object, state), toughness: effectiveToughness(object, state),
@@ -6917,7 +6947,17 @@ export function playerView(state, playerId) {
         if (!hiddenFromViewer && object.copiedFromCardId) {
           entry.copiedFromCardId = object.copiedFromCardId;
           if (object.copiedByCardId) entry.copiedByCardId = object.copiedByCardId;
-          entry.copiedAbilities = [...(object.abilities ?? [])];
+          // Audyt PR #171 F-3 (ADR 0003): głęboka kopia deskryptorów zdolności,
+          // żeby PlayerView nie dzielił referencji do wewnętrznych obiektów
+          // (cost/effect) ze stanem gry i działał także bez structuredClone.
+          const clonePlain = (v) => {
+            if (v === null || typeof v !== 'object') return v;
+            if (Array.isArray(v)) return v.map(clonePlain);
+            const out = {};
+            for (const [k, sub] of Object.entries(v)) out[k] = clonePlain(sub);
+            return out;
+          };
+          entry.copiedAbilities = clonePlain(object.abilities ?? []);
         }
         // O-3 (audyt PR #134): opis ŹRÓDŁA MANY jest informacją publiczną
         // (zdolności many odsłoniętego permanentu, CR 605 + 113.6), a bot nie

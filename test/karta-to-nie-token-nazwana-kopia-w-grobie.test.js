@@ -67,7 +67,11 @@ function diedNamedCopy(state, ownerId = 'p1') {
   const previous = { active: state.turn.activePlayerId, priority: state.turn.priorityPlayerId };
   state.turn.activePlayerId = state.turn.priorityPlayerId = ownerId;
   put(state, `guide-${ownerId}`, 'coralhelm-guide', ownerId);
-  put(state, `jwari-${ownerId}`, 'jwari-shapeshifter', ownerId);
+  // Audyt PR #171 F-3 (CR 400.7): po wyjściu z pola bitwy kopia wraca do cech
+  // własnej karty, więc w grobie nie nosi już nazwy „Coralhelm Guide”. Jawne
+  // `name` na karcie (dopuszczone w identity.js) utrzymuje pin mutacji m1–m4
+  // (`object.name != null` bez `isToken` nadal jest kartą wg CR 108.2b).
+  put(state, `jwari-${ownerId}`, 'jwari-shapeshifter', ownerId, 'battlefield', { name: 'Jwari Shapeshifter' });
   const copy = state.objects.get(`jwari-${ownerId}`);
   // CR 707.2: kopiowana jest NAZWA („name: target.cardName ?? target.cardId").
   state.pendingEnterAsCopy = { playerId: ownerId, sourceId: `jwari-${ownerId}`, candidateIds: [`guide-${ownerId}`], restorePriorityTo: null };
@@ -110,7 +114,7 @@ test('A1: poległa nazwana kopia wnosi typ karty do licznika delirium', () => {
   put(state, 'g2', 'boulder-salvo', 'p1', 'graveyard'); // Sorcery
   put(state, 'g3', 'basic-swamp', 'p1', 'graveyard'); // Land
   const copy = diedNamedCopy(state, 'p1'); // Creature — JEDYNE źródło tego typu
-  assert.equal(copy.name, 'Coralhelm Guide');
+  assert.equal(copy.name, 'Jwari Shapeshifter');
   assert.notEqual(copy.zone, 'battlefield');
   // Mutacja m1: przywrócenie `object.name != null` w graveyardCardTypeCount → 3.
   assert.equal(graveyardCardTypeCount(state, 'p1'), 4,

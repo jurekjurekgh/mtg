@@ -193,6 +193,7 @@ export function manifestCardFaceDown(state, cardObjectId, controllerId) {
     abilities: faceDownAbilities(card),
     originalAbilities: card.abilities ?? [],
     faceDownOriginal: Object.freeze({
+      kind: card.kind ?? null,
       colors: Object.freeze([...(card.colors ?? [])]),
       subtypes: Object.freeze([...(card.subtypes ?? [])]),
       types: Object.freeze([...(card.types ?? [])]),
@@ -2584,6 +2585,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       // (game-state.js). Koszt obrotu = koszt many KARTY (nie zakrycia,
       // które ma mana value 0); tylko karty STWORÓW.
       faceDownOriginal: Object.freeze({
+        kind: topObj.kind ?? null,
         colors: Object.freeze([...(topObj.colors ?? [])]),
         subtypes: Object.freeze([...(topObj.subtypes ?? [])]),
         types: Object.freeze([...(topObj.types ?? [])]),
@@ -3928,11 +3930,13 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // exile), żeby reszta systemu (triggery LKI) widziała zmianę tak samo.
     const filterTypes = effect.filter?.types ?? [];
     const manaValueAtMost = effect.filter?.manaValueAtMost ?? null;
+    const manaValueAtLeast = effect.filter?.manaValueAtLeast ?? null;
     for (const objectId of [...state.zones.battlefield]) {
       const object = state.objects.get(objectId);
       if (!object) continue;
       if (filterTypes.length > 0 && !filterTypes.every((type) => (object.types ?? []).includes(type))) continue;
       if (manaValueAtMost != null && (object.manaCost ?? 0) > manaValueAtMost) continue;
+      if (manaValueAtLeast != null && (object.manaCost ?? 0) < manaValueAtLeast) continue;
       const exileId = `exile-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, objectId, 'exile', exileId, { exiledBy: sourceObject.cardId });
       state.events.push(event('object_moved', {

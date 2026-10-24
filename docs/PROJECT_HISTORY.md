@@ -20,6 +20,82 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/6f1bfb96-mtg` od `main` @ `3fe3638`
+  (squash-merge PR #171). Plan: `docs/plans/PLAN_2026-10-23-audyt-pr171-petla-jakosci.md`,
+  raport audytu: `docs/audits/AUDYT_PR171_2026-10-23.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-24.md`.
+- **Audyt PR #171 (71/71 plików, `ccd70dc`):** pełny przegląd silnika, kontrolera
+  bota, UI stołu, narzędzi talii i testów względem CR `2026-09-25` (`SHA-256`
+  `8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca`, ADR 0030).
+  Pozytywnie zweryfikowano m.in. `paymentColorsOf` w generatorze talii (zgodność
+  z ADR 0024 i CR 702.114a), kroki kreatora *Epic Experiment* i wymiar `gift` w
+  `multi-target.js` oraz strażnik *Duskmantle Seer*. Wykryto i naprawiono 7 usterek
+  technicznych (F-1..F-7) oraz rozjazd dokumentacji (F-8):
+  - **F-2 (`f366660`):** zatrzymanie (*detain*) blokuje także aktywację zdolności
+    manowych i auto-tap (`CR 701.35a` / `CR 605.3`); ujednolicone `creatureCantBlock`
+    oraz parytet `faceDown` w `cantActivateAbilitiesNow`.
+  - **F-3 (`c4543d7`, `a552639`):** obiekt wchodzący jako kopia (`enter_as_copy`,
+    *Jwari Shapeshifter*) zapisuje `originalBeforeCopy` i po opuszczeniu
+    `battlefield` wraca do cech druku karty (`CR 400.7` / `CR 707.2`); `playerView`
+    głęboko klonuje `copiedAbilities`.
+  - **F-1 (`c0e05ea`, `bb7353a`):** `finishWizardPayment` drenuje wyzwalacze lądowe
+    przez `session.apply` wyłącznie dla priorytetu człowieka (bot odpowiada własnym
+    kontrolerem w `advanceGuarded()`), domyka rzut przez `playDirect` i synchronizuje
+    UI przy przerwaniu; `isWizardCommandLegal` używa `wizardVariantKeyOf` (obsługa
+    `delveExileIds`/`crewCreatureIds` i kontrola obecności kart Delve w grobie).
+  - **F-4 (`2bfe95b`):** kicker zwracający ląd (`CR 702.33a` / `CR 400.3` / `CR 108.3`)
+    nie scala lądów o różnym `ownerId`/załącznikach, dopuszcza ożywione lądy i
+    projektuje `ownerId` w `PlayerView`.
+  - **F-5 (`cd6e027`):** `paymentDescriptorOf` czyta `xCost.black` z `PlayerView`
+    i uwzględnia `effectiveGeneric` w gałęzi `{X}` (`CR 107.3` / `CR 601.2f`);
+    usunięto robocze `console.log` z `test/audit-pr171-bug-u-debug-wizard.test.js`.
+  - **F-6 (`fc8d84f`):** `abilityCostSuffix` i `abilityCostHtmlOf` respektują
+    `{ manaHtml: false }` w `choiceGroupTitle` (koniec z surowym `<span class="ms-group">`
+    w nagłówku modala, M87).
+  - **F-7 (`8025afe`, `a552639`):** `blokowalne` filtruje ewazję przed
+    `slice(0, blockers.length)` (`CR 509.1b`), `canCreatureAttackNow` uwzględnia
+    `haste` i `cantAttackStatic` (`CR 702.10` / `CR 508.1`), a `widokBezDefendera`
+    projektuje zdjęcie natywnego `defender` przy `cantAttackExternal !== true`.
+- **Pętla jakości — Żywy Tester (`03164cd`, `LT-1..LT-4`):** 9 partii na zbudowanym
+  `dist/mtg-table.html` (`0` zgłoszeń detektorów w `scan.mjs`) + ręczna lektura
+  transkryptów: poprawiono opisy `exile_all` (`matchingFilter`), progów many/Gift i
+  liczb >1 w `add_counter`, brakujące `ptPair` w `describeStatic` oraz znak `+0/-1`
+  odznaki modyfikatora P/T (`src/table/render.js`).
+- **Pętla jakości — Polowanie CR (`d6ff380`, `CR-1..CR-4`):**
+  - **CR-1 (`CR 708.9`):** odkrycie i przywrócenie cech zakrytych kart/czarów przy
+    opuszczeniu `battlefield` lub `stack` (`moveObject`).
+  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** snapshot LKI (`lkiSnapshot`)
+    przed `resetZoneChangeAttributes` zachowuje kopiowane/nadane zdolności odejścia
+    i blokuje fałszywy wyzwalacz `dies` z tylnej strony zakrytej karty.
+  - **CR-3 (`CR 113.6` / `CR 603.10a`):** wyzwalacze odejścia skanują wyłącznie
+    `battlefield` oraz opuszczający permanent (LKI), bez kart w `graveyard`/`exile`.
+  - **CR-4 (`CR 603.10a` / `CR 400.3`):** kontroler wyzwalacza odejścia pochodzi z
+    LKI pola bitwy także przy powrocie przejętego stwora na rękę właściciela.
+- **Bramka końcowa:**
+  - `npm test` (fast): **8757/8757** (+30 vs `main` @ `3fe3638`).
+  - `npm run test:slow`: **268/268** (`test:all`: **9025/9025**).
+  - `npm run build`: **75 modułów / 5383,3 kB**.
+  - `test/bot-scoring-snapshot.test.js` i `test/bot-proxy-benchmark.test.js` (ADR 0023): pass.
+
+## 2026-10-21e..23 — uzupełnienie dziennika dla końcowych commitów PR #171 (`4fa1b9b..9dd6404`, merge `3fe3638`)
+
+- Końcowa część scalonego PR #171 (`HANDOFF_2026-10-21d2.md`, `HANDOFF_2026-10-21e.md`
+  oraz commity `4fa1b9b..9dd6404` domknięte w `main` @ `3fe3638`, stan `8727` fast /
+  `8995` all / `5372,2 kB`):
+  - **T i U:** odznaki Detain w `PlayerView` oraz obsługa `xCost.black` w kreatorze many.
+  - **A (*Battle-Rattle Shaman*):** `zamiarAtakuWybranego` i `widokDlaWycenyAtaku` dla
+    celowania buffa przed deklaracją atakujących.
+  - **B i D (heurystyka bota):** presja liczbowa (`blokowalne` przy przewadze liczebnej),
+    strażnik życia/biblioteki dla *Duskmantle Seer*, *Epic Experiment* w Main 2 dla
+    `X >= 3`, kara za zwrot skradzionego lądu przy kickerze (*Chocobo Kick*) oraz
+    wycena ochrony przed śmiertelnymi obrażeniami.
+  - **UI stołu i talie:** wieloetapowy kreator *Epic Experiment*, osobne radio `Gift`
+    w `multi-target.js`, wizualizacja kopii *Jwari Shapeshifter*, grupowanie kosztów
+    alternatywnych (Surge/Buyback/Bestow/Cleave) oraz `paymentColorsOf` dla kart Devoid
+    w `tools/generate-plan-decks.mjs` (*PMSSB-11*).
+
 ## 2026-10-21d — audyt PR #171 + fix: kreator many ponawia commit po rozstrzygnięciu triggerów z auto-tapu (UI-layer)
 
 - Sesja domyślna (ADR 0021), branch `arena/5d252dbf-mtg` (HEAD `f8c89f8`).

@@ -325,6 +325,7 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
     // LKI (CR 603.10): wypełniane dopiero przy zmianie strefy (objects.js).
     formerCounters: Object.freeze({}), formerZone: null, formerAbilityGrants: Object.freeze([]),
     formerKind: null, formerTypes: Object.freeze([]),
+    formerControllerId: null, formerEffectiveAbilities: null,
     // CR 111 / CR 111.7: JAWNY znacznik tokenu. Wcześniej token rozpoznawano
     // po `name != null`, ale to heurystyka — kartom też wolno nieść `name`,
     // więc reguła stanu „token poza polem bitwy przestaje istnieć" kasowałaby

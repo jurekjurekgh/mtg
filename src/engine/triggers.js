@@ -833,6 +833,10 @@ function diedAs(object, kind, type) {
 }
 
 function abilitiesOnDeath(object) {
+  if (!object) return [];
+  if (object.formerZone === 'battlefield' && Array.isArray(object.formerEffectiveAbilities)) {
+    return [...object.formerEffectiveAbilities];
+  }
   return [...effectiveAbilities(object), ...(object.formerAbilityGrants ?? [])];
 }
 
@@ -2631,7 +2635,14 @@ function processTriggersScan(state, recentEvents) {
    * właściciel — CR 400.3).
    */
   const eventControllerAtDeath = (ev, moved) =>
-    ev?.controllerId ?? ev?.playerId ?? ev?.object?.controllerId ?? moved?.controllerId ?? null;
+    ev?.controllerId
+    ?? ev?.playerId
+    ?? moved?.formerControllerId
+    ?? ev?.object?.formerControllerId
+    ?? (ev?.fromId != null ? state.lastKnownObjects?.get(ev.fromId)?.controllerId : null)
+    ?? ev?.object?.controllerId
+    ?? moved?.controllerId
+    ?? null;
   /**
    * „You descended this turn" (CR 700.x, Canonized in Blood): gdy PERMANENT
    * CARD (nie token, nie czar) trafia do grobu gracza z dowolnej strefy.

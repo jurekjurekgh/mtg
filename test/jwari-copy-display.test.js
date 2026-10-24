@@ -4,6 +4,7 @@ import { addObject, createGameState, execute, playerView } from '../src/engine/g
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { moveObjectDirectly } from '../src/engine/objects.js';
+import { jumpToStep } from '../src/engine/turn.js';
 import { buildStateOverlay, cardInfo, renderCardFullscreen, renderMiniFace, rulesText } from '../src/table/render.js';
 
 const REGISTRY = createCardRegistry();
@@ -152,4 +153,64 @@ test('Jwari copy display identifiers and abilities stay hidden from an opponent 
   assert.equal(entry.copiedFromCardId, undefined, 'the copy source does not reveal a face-down card');
   assert.equal(entry.copiedByCardId, undefined, 'the copier identity does not reveal a face-down card');
   assert.equal(entry.copiedAbilities, undefined, 'copied abilities do not reveal a face-down card');
+});
+
+test('F-3/1 (CR 400.7 + CR 707.2): Jwari leaving the battlefield reverts all copied characteristics to its printed card', () => {
+  const state = jwariCopyState('makindi-aeronaut');
+  assert.equal(state.objects.get('jwari').enterAsCopy, null,
+    'while copying Makindi Aeronaut on battlefield, enterAsCopy is replaced by target copiable values');
+  const moved = moveObjectDirectly(state, 'jwari', 'hand', 'jwari-hand');
+
+  assert.equal(moved.cardId, 'jwari-shapeshifter');
+  assert.equal(moved.cardName, 'Jwari Shapeshifter');
+  assert.equal(moved.name, null, 'non-token card in hand has no battlefield copy name');
+  assert.equal(moved.copyNumber ?? null, null, 'copyNumber does not leak outside the battlefield');
+  assert.equal(moved.originalBeforeCopy ?? null, null, 'copy snapshot is cleared on zone exit');
+  assert.equal(moved.power, 0);
+  assert.equal(moved.toughness, 0);
+  assert.equal(moved.manaCost, 2);
+  assert.deepEqual(moved.colors, ['U']);
+  assert.deepEqual(moved.types, ['Creature']);
+  assert.deepEqual(moved.subtypes, ['Shapeshifter', 'Ally']);
+  assert.deepEqual(moved.keywords, []);
+  assert.deepEqual(moved.enterAsCopy, { subtype: 'Ally' },
+    'printed enterAsCopy descriptor is restored after leaving the battlefield');
+
+  const handView = playerView(state, 'p1').zones.hand.find((o) => o.id === 'jwari-hand');
+  assert.equal(handView.power, 0);
+  assert.equal(handView.toughness, 0);
+  assert.deepEqual(handView.colors, ['U']);
+});
+
+test('F-3/2 (CR 400.7 + CR 707.2): bounced Jwari recast from hand opens a fresh enter_as_copy choice', () => {
+  const state = jwariCopyState('makindi-aeronaut');
+  moveObjectDirectly(state, 'jwari', 'hand', 'jwari-hand');
+  moveObjectDirectly(state, 'guide', 'graveyard', 'guide-gy');
+  addCard(state, 'ally2', 'coralhelm-guide');
+  addCard(state, 'u1', 'basic-island');
+  addCard(state, 'u2', 'basic-island');
+  state.turn = jumpToStep(state.turn, 'main1', 'p1');
+  state.turn.activePlayerId = 'p1';
+  state.turn.priorityPlayerId = 'p1';
+
+  const castRes = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'jwari-hand' });
+  assert.equal(castRes.ok, true);
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok, true);
+  assert.equal(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok, true);
+
+  assert.ok(state.pendingEnterAsCopy, 'recast Jwari must trigger enter_as_copy on entering battlefield');
+  assert.deepEqual(state.pendingEnterAsCopy.candidateIds, ['ally2']);
+});
+
+test('F-3/3 (ADR 0003): mutating copiedAbilities in PlayerView does not mutate GameState', () => {
+  const state = jwariCopyState('coralhelm-guide');
+  const entry = playerView(state, 'p1').zones.battlefield.find((o) => o.id === 'jwari');
+  assert.ok(entry.copiedAbilities.length > 0);
+  const originalCost = state.objects.get('jwari').abilities[0].cost.mana;
+  entry.copiedAbilities[0].cost = { ...entry.copiedAbilities[0].cost, mana: 999 };
+  if (entry.copiedAbilities[0].effect && typeof entry.copiedAbilities[0].effect === 'object') {
+    try { entry.copiedAbilities[0].effect.mutated = true; } catch { /* frozen is also safe */ }
+  }
+  assert.equal(state.objects.get('jwari').abilities[0].cost.mana, originalCost);
+  assert.equal(state.objects.get('jwari').abilities[0].effect?.mutated, undefined);
 });

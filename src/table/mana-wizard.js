@@ -5,6 +5,7 @@ import { parseManaCost, totalManaNeeded, unitCoversRequirement } from '../engine
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { renderPickerRow } from './picker.js';
 import { polishPluralCount } from './polish-plural.js';
+import { commandOptionKey, HUMAN_ID } from './session.js';
 
 /**
  * Sekwencyjny kreator płatności many (E.3a, zgłoszenie właściciela 2026-08-06):
@@ -47,7 +48,8 @@ export function sourceColorsLabel(colors) {
  * (tap_for_mana wymaga typu Land — dokładnie te same kryteria co silnik).
  */
 function isUntappedLandSource(object, playerId) {
-  if (!object || object.controllerId !== playerId || object.tapped) return false;
+  // CR 701.35a + CR 605.3: zatrzymany permanent nie aktywuje zdolności (w tym many).
+  if (!object || object.controllerId !== playerId || object.tapped || object.detained || object.cantActivateAbilities) return false;
   const isLand = object.kind === 'land' || (object.types ?? []).includes('Land');
   if (!isLand) return false;
   const src = object.manaSource ?? getSourceForObject(object);
@@ -444,19 +446,19 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // z tytułem oferty (L41).
   if ((cmd.type === 'cast_spell' || cmd.type === 'cast_permanent')
     && cmd.xValue != null && !cmd.kicked) {
-    const requirements = baseColorRequirements(parsed);
-    // PR #171/U (2026-10-21d, Consume Spirit): deskryptor kreatora many
-    // MUSI odzwierciedlać `xCost.black` z karty. Bez tego gracz widzi
-    // "zapłać 2 many" (X + baza), klika źródło generyczne (R) dla X,
-    // kreator zamyka `progress.done=true`, commit leci i dopiero silnik
-    // odrzuca "Brak kolorowej many" — komunikat ginie w kreatorze, gracz
-    // ma wrażenie "czar zadziałał ale mana została". Wspólnie z `castXCostSpell`
-    // (spells.js:1298, 3722) — JEDNO źródło: dodaj X kolorowych pipów do
-    // requirements, nie do części generycznej.
-    const xBlack = Boolean(opts.xBlack);
+    const lifePaid = Math.max(0, Math.min(cmd.phyrexianPayWithLife ?? 0, parsed.phyrexian.length));
+    const requirements = baseColorRequirements(parsed, lifePaid);
+    // PR #171/U + Audyt PR #171 F-5 (CR 107.3 + CR 601.2f + L48): deskryptor
+    // kreatora many odzwierciedla `xCost.black` wprost z PlayerView ręki
+    // (`object.spell.xCost.black`) oraz `opts.xBlack` (dla stref bez spell),
+    // a część generyczna respektuje `opts.effectiveGeneric` po obniżkach.
+    const baseGeneric = Number.isInteger(opts.effectiveGeneric) && opts.effectiveGeneric >= 0
+      ? Math.min(parsed.generic, opts.effectiveGeneric)
+      : parsed.generic;
+    const xBlack = Boolean(opts.xBlack || object?.spell?.xCost?.black);
     const X = cmd.xValue;
     for (let i = 0; i < X && xBlack; i += 1) requirements.push(['B']);
-    const xGeneric = parsed.generic + (xBlack ? 0 : X);
+    const xGeneric = baseGeneric + (xBlack ? 0 : X);
     const totalNeeded = xGeneric + requirements.length;
     return buildDescriptor(object, totalNeeded, requirements,
       `${xCostSymbols(costStr)} (X=${cmd.xValue})`, xGeneric);
@@ -946,3 +948,97 @@ export function renderManaWizard(host, model, {
   host.appendChild(cancel);
   return host;
 }
+
+export function wizardPaidCommandOf(pending) {
+  if (!pending?.cmd) return null;
+  const hasDelve = (pending.delveCandidates?.length ?? 0) > 0;
+  return hasDelve && pending.selectedDelveIds instanceof Set
+    ? { ...pending.cmd, delveExileIds: [...pending.selectedDelveIds].sort() }
+    : pending.cmd;
+}
+
+function wizardVariantKeyOf(cmd) {
+  if (!cmd) return '';
+  // Pola doboru składników kosztu (Delve / Crew / Convoke) dokleja kreator UI
+  // ponad reprezentantem z `view.legalCommands`, a silnik re-waliduje je w
+  // `execute()`. Wszystkie pola wariantu (modeIndex, abilityIndex, kicked,
+  // faceDown, targets, xValue, payAltCost, bestow…) pozostają w kluczu jawnie.
+  const {
+    delveExileIds: _delve,
+    crewCreatureIds: _crew,
+    convokePayments: _convoke,
+    ...variantCmd
+  } = cmd;
+  return commandOptionKey(variantCmd);
+}
+
+export function isWizardCommandLegal(view, paidCommand) {
+  if (!view || !paidCommand) return false;
+  if (Array.isArray(paidCommand.delveExileIds) && paidCommand.delveExileIds.length > 0) {
+    const graveIds = new Set((view.zones?.graveyard ?? []).map((o) => o?.id));
+    if (!paidCommand.delveExileIds.every((id) => graveIds.has(id))) return false;
+  }
+  const targetKey = wizardVariantKeyOf(paidCommand);
+  return (view.legalCommands ?? []).some((c) => wizardVariantKeyOf(c) === targetKey);
+}
+
+/**
+ * Audyt PR #171 F-1 (CR 307.1 / CR 117.3d / CR 601.2g-h / ADR 0003):
+ * finalizuje płatność w Mana Wizardzie. Gdy auto-tap źródeł z `{ holdPriority: true }`
+ * wrzucił na stos wyzwalacze lądowe (np. Chronic Flooding / Psychic Venom),
+ * rzut sorcery-speed nie jest jeszcze w `legalCommands`. Helper przepuszcza
+ * wyłącznie priorytet gracza (`HUMAN_ID`) przez normalne `session.apply`,
+ * pozwalając prawdziwemu kontrolerowi bota odpowiedzieć w `advanceGuarded()`,
+ * weryfikuje pełny klucz wariantu (`commandOptionKey`), domyka finalny rzut
+ * przez `runCommand` (`playDirect`) i synchronizuje UI także przy przerwaniu.
+ */
+export function finishWizardPayment(session, pending, {
+  runCommand = (cmd, options) => session.apply(cmd, options),
+  onCloseWizard = () => {},
+  onSyncUi = () => {},
+  onNotice = () => {},
+  maxPasses = 8,
+} = {}) {
+  const paidCommand = wizardPaidCommandOf(pending);
+  if (!session || !paidCommand) return { committed: false, reason: 'invalid' };
+  let mutatedDuringDrain = false;
+  for (let i = 0; i <= maxPasses; i += 1) {
+    const view = session.view();
+    if (isWizardCommandLegal(view, paidCommand)) {
+      onCloseWizard();
+      const res = runCommand(paidCommand);
+      if (res?.ok === false) {
+        onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+        return { committed: false, reason: res.reason ?? 'rejected' };
+      }
+      return { committed: true };
+    }
+    const stackLen = view.zones?.stack?.length ?? 0;
+    if (stackLen === 0 || i === maxPasses || session.artPausePending) break;
+    const canHumanPass = (view.legalCommands ?? []).some((c) => c.type === 'pass_priority');
+    if (!canHumanPass) {
+      onCloseWizard();
+      if (mutatedDuringDrain) onSyncUi();
+      return { committed: false, reason: 'pending_decision' };
+    }
+    const passRes = session.apply({ type: 'pass_priority', playerId: HUMAN_ID });
+    if (passRes?.ok === false || passRes?.internalError) {
+      onCloseWizard();
+      if (mutatedDuringDrain) onSyncUi();
+      onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+      return { committed: false, reason: passRes?.internalError ? 'internal_error' : 'pass_rejected' };
+    }
+    mutatedDuringDrain = true;
+    const newStackLen = session.view().zones?.stack?.length ?? 0;
+    if (newStackLen > stackLen) {
+      onCloseWizard();
+      onSyncUi();
+      return { committed: false, reason: 'opponent_response' };
+    }
+  }
+  onCloseWizard();
+  if (mutatedDuringDrain) onSyncUi();
+  onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+  return { committed: false, reason: 'not_legal' };
+}
+

@@ -61,7 +61,6 @@ test('T/A ⭐ RED: playerView stwora detained MUSI mieć cantBlockNow: true (bad
   detainUntilYourNextTurn(s, victim.id, 'p1');
   // zamroź obiekt — playerView czyta ze state.objects
   const v = playerView(s, 'p2').zones.battlefield.find((o) => o.id === 'v1');
-  console.log('  view entries:', JSON.stringify({ cantBlock: v.cantBlock, cantBlock: v.cantBlock, detained: v.detained, cantAttackExternal: v.cantAttackExternal, cantActivateAbilities: v.cantActivateAbilities ?? null }));
   assert.equal(v.detained, true, 'detained=true przechodzi z engine do view');
   assert.equal(v.cantBlock, true,
     'PO FIXIE: stwór detained MUSI mieć playerView.entry.cantBlock=true '
