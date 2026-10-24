@@ -269,3 +269,23 @@ jak sąsiednie pola tożsamości) + okaz Manor Gate po realnym wyborze
 w próbce strażnika kontraktu M277. Bramka po L: `npm test` **8785/8785**,
 `test:slow` **268/268** (`test:all` **9053/9053**), build **75 modułów /
 5398,4 kB**.
+
+## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: brak buga
+
+**M — *Revealing Wind*:** właściciel miał oferty rzutu tylko we własnych
+fazach main, jak gdyby instant był zakodowany jako sorcery. Dochodzenie
+warstwa po warstwie (definicja → materializacja → oferty silnika →
+auto-pass sesji z `pauseOnBotMoves` → prawdziwy artefakt Żywym Testerem,
+talia `tarkir-bg`) wykazało poprawny instant we wszystkich oknach
+priorytetu tury przeciwnika (CR 117.1a, cytat verbatim z przypiętego
+lustra). Brak ofert poza mainami to bramka many: oferta powstaje tylko,
+gdy {2}{G} pokrywa auto-tap z nietapniętych źródeł — w turach bota lądy
+zwykle stoją tapnięte po zagraniach własnej tury. Kod produkcji bez
+zmian; kontrakt zamyka `test/zgloszenie-m-revealing-wind-okna.test.js`
+(4 piny; mutacja timingu na `sorcery` gasi 4/4). Ślad poboczny do
+backlogu: instant osiągalny tylko przez CZYSTĄ zdolność many o koszcie
+ręcznym (np. poświęcenie Sciona) nie zatrzyma auto-passu w turze
+przeciwnika (decyzja J) — ewentualna miara osiągalności dla zatrzymań
+sesji (analog `paymentReachableMana` z K) to decyzja UX właściciela.
+Bramka po M: `npm test` **8789/8789**, `test:slow` **268/268**
+(`test:all` **9057/9057**), build **75 modułów / 5398,4 kB**.

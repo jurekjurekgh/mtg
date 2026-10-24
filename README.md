@@ -45,8 +45,10 @@ z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
 bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapłaty
 pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
 (poświęcenie Sciona przez kreator many); *Manor Gate* pokazuje na kaflu
-badge wybranego przy wejściu koloru many. Bramki:
-`npm test` **8785/8785**, `npm run test:slow` **268/268** (`test:all` **9053/9053**),
+badge wybranego przy wejściu koloru many; dochodzenie zgłoszenia
+*Revealing Wind* wykazało poprawny instant (brak ofert poza fazami main
+to bramka many, nie timingu). Bramki:
+`npm test` **8789/8789**, `npm run test:slow` **268/268** (`test:all` **9057/9057**),
 build **75 modułów / 5398,4 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
