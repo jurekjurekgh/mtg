@@ -168,3 +168,21 @@ analogicznie do transformacji E6/A2) + test
 i bota; mutacja członu czerwieni piny E/1–E/2). Bramka po E:
 `npm test` **8761/8761**, `test:slow` **268/268** (`test:all` **9029/9029**),
 build **75 modułów / 5384,4 kB**.
+
+## Zgłoszenie właściciela F (po domknięciu, 2026-10-24)
+
+Karty z Disguise mają z definicji Ward {2} (CR 702.168a): (a) brak badge'a
+„Ward {2}" na kaflu zakrytego *Riftburst Helliona*; (b) bot celował Detainem
+*Azorius Justiciara* w zakrytego Helliona bez many na dopłatę ward — zdolność
+kontrowana w całości, przy okazji nie zatrzymał też drugiego legalnego celu
+(Knighta) — co właściciel podejrzewał o błąd. Rozstrzygnięcia (naprawa
+`eb133e5`): (a) chipy nakładki brały się tylko z `grantedKeywords`, a ward
+zakrycia nie jest grantem — jawny flag Ward w `buildStateOverlay`;
+(b) podatek ward bota czytał cele z `targets`/`targetId`, a warianty
+wielocelowe `resolve_trigger_target` niosą `targetIds` — podatek wynosił 0;
+po dopisaniu kształtu bot bez zapasu wybiera sam legalny cel, z zapasem
+dopłaca i zdolność dochodzi. Sprawa Knighta: **nie błąd** — CR 702.21a
+kontruje całą zdolność („counter that spell or ability"), w odróżnieniu od
+nielegalnego celu z CR 608.2b; silnik zachowywał się poprawnie (pin F/4).
+Bramka po F: `npm test` **8765/8765**, `test:slow` **268/268** (`test:all`
+**9033/9033**), build **75 modułów / 5385,4 kB**.

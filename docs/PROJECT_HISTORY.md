@@ -63,8 +63,20 @@
   `isMainLogEvent` — poza oknem `botActing` nigdy nie trafiał do `botMoves`.
   Fix: `COPY_DIGEST_EVENTS` (tożsamość kopii na polu bitwy jest publiczna,
   CR 400.2/707.2) + test `test/zgloszenie-e-jwari-rozgrywka.test.js`.
-- **Bramka końcowa:** `npm test` **8761/8761**, `npm run test:slow` **268/268**
-  (`test:all` **9029/9029**), `npm run build` **75 modułów / 5384,4 kB**.
+- **Zgłoszenie właściciela F (`eb133e5`, po domknięciu sesji):** karty z Disguise
+  (z definicji Ward {2}, CR 702.168a) — (a) brak badge'a „Ward {2}” na kaflu
+  zakrytego *Riftburst Helliona*: chipy nakładki brały się tylko
+  z `grantedKeywords`, a ward zakrycia nie jest grantem (dla zakrytego
+  `granted=[]`) — jawny flag w `buildStateOverlay`; (b) bot celował Detainem
+  *Azorius Justiciara* w zakrytego z ward bez many na dopłatę: podatek ward
+  czytał cele z `targets`/`targetId`, a warianty wielocelowe
+  `resolve_trigger_target` niosą `targetIds` (podatek 0). Po naprawie bot bez
+  zapasu wybiera sam legalny cel, z zapasem dopłaca. Drugi cel (Knight)
+  niezagrożony po kontrze ward to **poprawne** zachowanie silnika — CR 702.21a
+  kontruje całą zdolność, w odróżnieniu od nielegalnego celu (CR 608.2b);
+  przypięte testem F/4 w `test/zgloszenie-f-disguise-ward.test.js`.
+- **Bramka końcowa:** `npm test` **8765/8765**, `npm run test:slow` **268/268**
+  (`test:all` **9033/9033**), `npm run build` **75 modułów / 5385,4 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
