@@ -5141,6 +5141,12 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
     if (info.morphBadge) flags.push(['morph', info.morphBadge]);
+    // F (zgłoszenie właściciela 2026-10-24, Riftburst Hellion): zakryte
+    // disguise/cloak to z definicji „2/2 z ward {2}" (CR 702.168a / 701.58a),
+    // ale ten ward nie jest GRANTEM — pętla `grantedKeywords` niżej go nie
+    // łapała, a cardInfo dla zakrytego zwraca granted=[]. Kwota ward była
+    // więc wyłącznie w linii reguł, bez badge'a na kaflu stołu.
+    if (info.faceDown && info.ward != null) flags.push(['kw', `Ward {${info.ward}}`]);
     if (info.goaded) flags.push(['goad', 'goad']);
     // M177/E (CR 701.35): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);

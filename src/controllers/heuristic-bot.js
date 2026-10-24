@@ -10222,8 +10222,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // celem", nie nazwa komendy. Zmierzone sondą w oknie madness: bot rzucał w
     // ward {2} bez rezerwy i oddawał czar do kontrowania (ten sam objaw, który
     // zgłosił właściciel w cz. 5 / NA2).
+    // F (zgłoszenie właściciela 2026-10-24, Azorius Justiciar): warianty
+    // WIELOCZELOWE resolve_trigger_target niosą cele w `targetIds`
+    // (game-state.js — „up to two target creatures"), nie w `targets` ani
+    // `targetId` — podatek liczył się od pustej listy i bot celował
+    // Detainem w zakrytego Helliona z ward {2} bez many na dopłatę:
+    // ward kontrował CAŁĄ zdolność (CR 702.21a), więc nawet drugi,
+    // legalny cel (Knight) nie został zatrzymany.
     const wardTax = WARD_TAXED_TYPES.has(cmd.type)
-      ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
+      ? wardTargetTax(view, cmd.targets ?? cmd.targetIds ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);
     // Ten sam efekt za surge zużywa mniej many — istniejąca waga kosztu,
