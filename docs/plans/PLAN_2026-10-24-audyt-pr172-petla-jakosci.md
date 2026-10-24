@@ -153,3 +153,18 @@ Bramka końcowa: `npm test` **8758/8758** (+1 nowy pin CR 708.9),
 `npm run build` **75 modułów / 5383,3 kB**, próbka bota 20/20.
 Commity: `b52c971` (plan), `acf9290` (audyt), `3f05912` (F-1), `6223ffe`
 (pin 708.9), `f28be64` (F-2/F-3), domknięcie dokumentacji sesji.
+
+## Zgłoszenie właściciela E (po domknięciu, 2026-10-24)
+
+„W boksie Rozgrywka nie ma informacji, kogo kopiuje wprowadzona Jwari
+(*Jwari Shapeshifter*). Jest w logu, brakuje w Rozgrywka." Diagnoza sesją
+stołu: zdarzenie `enter_as_copy_resolved` nie należało do żadnego zbioru
+bramki `isMainLogEvent`, więc poza oknem `botActing` nie trafiało do
+`botMoves`; własna Jwari człowieka dawała w modalu tylko generyczne
+„kopiuje cechy celu". Naprawa `9676041`: `COPY_DIGEST_EVENTS` w bramce
+(tożsamość permanentu na polu bitwy jest publiczna — CR 400.2/707.2,
+analogicznie do transformacji E6/A2) + test
+`test/zgloszenie-e-jwari-rozgrywka.test.js` (predykat + sesje człowieka
+i bota; mutacja członu czerwieni piny E/1–E/2). Bramka po E:
+`npm test` **8761/8761**, `test:slow` **268/268** (`test:all` **9029/9029**),
+build **75 modułów / 5384,4 kB**.

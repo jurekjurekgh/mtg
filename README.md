@@ -26,8 +26,11 @@ między testem a dokumentami; dopisany stały pin drugiej połowy CR 708.9 (zakr
 czar ze stosu do grobu). Pętla jakości: 4 partie Żywego Testera (talie spoza
 próbki benchmarku, 0 zgłoszeń detektorów, lektura po trzech osiach bez znalezisk),
 analizator kontraktów zdarzeń czysty, sonda reguły legend (CR 704.5j) wobec kopii
-`enter_as_copy` poprawna. Bramki: `npm test` **8758/8758**, `npm run test:slow`
-**268/268** (`test:all` **9026/9026**), build **75 modułów / 5383,3 kB**.
+`enter_as_copy` poprawna. Po domknięciu zgłoszenie właściciela **E**: modal
+„Rozgrywka” nazywa teraz, kogo kopiuje wprowadzona *Jwari Shapeshifter*
+(`COPY_DIGEST_EVENTS` w bramce `isMainLogEvent`, CR 400.2/707.2). Bramki:
+`npm test` **8761/8761**, `npm run test:slow` **268/268** (`test:all` **9029/9029**),
+build **75 modułów / 5384,4 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

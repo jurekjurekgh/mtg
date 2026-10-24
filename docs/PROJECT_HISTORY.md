@@ -57,8 +57,14 @@
   Ally: wybór kolejkowany poprawnie, kopia po zejściu do grobu wraca do druku
   *Jwari Shapeshifter* — obszar zweryfikowany jako poprawny (brak nośnika
   w katalogu: żaden legendarny Ally).
-- **Bramka końcowa:** `npm test` **8758/8758**, `npm run test:slow` **268/268**
-  (`test:all` **9026/9026**), `npm run build` **75 modułów / 5383,3 kB**.
+- **Zgłoszenie właściciela E (`9676041`, po domknięciu sesji):** modal
+  „Rozgrywka” nie nazywał, kogo kopiuje *Jwari Shapeshifter* (w logu linia
+  była). Typ `enter_as_copy_resolved` nie należał do żadnego zbioru bramki
+  `isMainLogEvent` — poza oknem `botActing` nigdy nie trafiał do `botMoves`.
+  Fix: `COPY_DIGEST_EVENTS` (tożsamość kopii na polu bitwy jest publiczna,
+  CR 400.2/707.2) + test `test/zgloszenie-e-jwari-rozgrywka.test.js`.
+- **Bramka końcowa:** `npm test` **8761/8761**, `npm run test:slow` **268/268**
+  (`test:all` **9029/9029**), `npm run build` **75 modułów / 5384,4 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
