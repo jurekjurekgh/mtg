@@ -7611,6 +7611,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return score + freeCastAdditionalCostScore(view, cmd);
   }
 
+  /**
+   * I (zgłoszenie właściciela 2026-10-24, Selesnya Charm w Epic Experiment):
+   * wycena EFEKTÓW wariantu w oknach darmowego rzutu o bazie flat
+   * (suspend/epic/rebound). Dotąd jedyne premie to +15/+5 za kilka typów,
+   * więc tryby czaru modalnego REMISOWAŁY i wygrywał pierwszy wariant z
+   * listy: „Wzmocnienie" (+2/+2 i zadeptywanie do końca tury) na WŁASNYM
+   * DEFENDERZE w głównej fazie zamiast tokena 2/2, który zostaje na stole.
+   * Składowe klasy liczą te same helpery co reszta bota (L41):
+   *  - create_token: `tokenBodyValue` (stałe ciało na stole);
+   *  - pump czasowy: `temporaryPumpPayoff` (okna walki — defender i gra
+   *    poza walką dają 0; właściciel: wzmocnienie+trample ma sens tylko
+   *    jako combat trick);
+   *  - bezwarunkowe usunięcie (destroy/exile): dotychczasowe +15 oraz
+   *    materiał wrogiego celu (`permanentMaterialValue`), żeby zdjęcie
+   *    dużego zagrożenia nie przegrywało z małym tokenem.
+   */
+  function freeCastEffectsScore(view, effects, cmd) {
+    let score = 70;
+    for (const effect of effects ?? []) {
+      const type = effect?.type;
+      if (['damage', 'discard_cards', 'destroy_permanent', 'exile_permanent', 'mill_cards'].includes(type)) score += 15;
+      if (['draw_cards', 'gain_life'].includes(type)) score += 5;
+      if (type === 'destroy_permanent' || type === 'exile_permanent') {
+        const target = objectOnBoard(view, (cmd.targets ?? [])[effect.targetIndex ?? 0]);
+        if (target && target.controllerId !== view.playerId) score += permanentMaterialValue(target);
+      }
+      if (type === 'create_token') score += tokenBodyValue(view, effect);
+      else if (temporaryPumpOf(effect, view)) {
+        const host = objectOnBoard(view, (cmd.targets ?? [])[effect.targetIndex ?? 0]);
+        if (host && host.controllerId === view.playerId) score += temporaryPumpPayoff(view, host, effect);
+      }
+      score += fogWindowValue(view, effect);
+    }
+    return score;
+  }
+
   function freeCastAdditionalCostScore(view, cmd) {
     let score = 0;
     if (cmd.sacrificeTargetId != null) {
@@ -10361,14 +10397,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
@@ -10630,14 +10661,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
@@ -10653,14 +10679,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
