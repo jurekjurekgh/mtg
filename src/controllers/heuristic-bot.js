@@ -12956,6 +12956,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // JEDYNYM efektem zdolności.
         const producesManaOnly = effects.length > 0 && effects.every((e) => e?.type === 'add_mana');
         if (producesManaOnly) {
+          // K (Abstruse Interference): otwarta płatność kontr/ward, której
+          // auto-tap jeszcze nie pokrywa — ta aktywacja ją FINANSUJE
+          // (CR 608.2g), więc idzie przed odmową; zapłata zapadnie w kolejnej
+          // decyzji. Bez tego bot odmawiał, mając w ręku żywe źródło many.
+          const pendingPay = (view.legalCommands ?? []).find((c) =>
+            (c.type === 'resolve_counter_pay_choice' || c.type === 'resolve_ward_pay_choice')
+            && c.pay === true && (c.cost ?? 0) > manaUnitsOfView(view).length);
+          if (pendingPay && !redundantSpellCopyPayment(view, pendingPay)) return finish(84);
           // E6/A1: „zagrawalne" liczone po TIMINGU (manaUnlockCandidates) —
           // sorcery w ręce nie jest zagrawalne w cudzym upkeepie, więc tu
           // działa ta sama kara co przy pustej ręce.
@@ -15512,8 +15520,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       case 'resolve_pay_or_sacrifice':
         return finish(cmd.pay ? 90 : 5);
       // Batch 44 (Frightful Delusion): zapłać {N} i czar zostaje, albo pozwól
-      // skontrować. Silnik oferuje pay:true tylko gdy opłacalne; czar już na
-      // stosie jest niemal zawsze warty więcej niż koszt.
+      // skontrować. Oferta pay:true powstaje przy manie OSIĄGALNEJ (też
+      // ręcznej, K); czar już na stosie jest niemal zawsze warty więcej
+      // niż koszt.
       case 'resolve_counter_pay_choice':
         // PMSSB-56 (ta sama klasa co ward): ratowanie KOPII, która nie wnosi
         // już nic (efekt nie kumuluje się na tym samym celu, a na stosie wisi
@@ -15521,6 +15530,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // mana — odmowa zostawia efekt po stronie instancji na stosie.
         // [pomiar E9: przed naprawą bot płacił {1} za ratowanie kopii storma]
         if (redundantSpellCopyPayment(view, cmd)) return finish(85 - P.redundantCopyPayPenalty);
+        // K: wykonawca płaci tylko z many wyprodukowanej auto-tapem
+        // (jednostki widoku) — przy samej ręcznej (poświęcenie Sciona)
+        // komenda byłaby odrzucona. Najpierw aktywacja źródła (gałąź
+        // activate_ability), zapłata w kolejnej decyzji. Warunek obecności
+        // aktywacji: bez niej oferta pay:true znaczy płatności auto-tapu
+        // (osiągalność = producible), a spreparowane widoki jednostkowe
+        // bez pól many nie udają niedoboru.
+        if (cmd.pay && (cmd.cost ?? 0) > manaUnitsOfView(view).length
+          && (view.legalCommands ?? []).some((c) => c.type === 'activate_ability')) return finish(-50);
         return finish(cmd.pay ? 85 : 10);
       // M258/F3 — ward (CR 702.21): dopłata ratuje czar/zdolność, którą bot
       // właśnie wybrał jako wartą kosztu; rezygnacja to stracona mana.
@@ -15532,6 +15550,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // instancja pozostawiona na stosie). Różnica wyniku jest pokrętłem
         // `redundantCopyPayPenalty` (×0 = stan sprzed PMSSB-56, M429).
         if (redundantSpellCopyPayment(view, cmd)) return finish(80 - P.redundantCopyPayPenalty);
+        // K: jak przy kontr-płatności — bez many auto-tapu najpierw
+        // produkcja źródła, inaczej komenda wraca odrzucona.
+        if (cmd.pay && (cmd.cost ?? 0) > manaUnitsOfView(view).length
+          && (view.legalCommands ?? []).some((c) => c.type === 'activate_ability')) return finish(-50);
         return finish(cmd.pay ? 80 : 20);
       // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline):
       // decyzja otwiera się tylko gdy opłacalna (canPayTrigger) — efekt

@@ -11,7 +11,7 @@ import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePa
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, isActivatedManaAbility, manaAbilityHasManualCost } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}) {
   const costStr = MANA_COSTS[cardId];
@@ -2219,6 +2219,32 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
     return ability != null && isActivatedManaAbility(ability);
   }
   return false;
+}
+
+/**
+ * K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): mana
+ * OSIĄGALNA dla decyzji płatniczej = auto-tap (`producibleMana`) + netto
+ * legalnych zdolności many o ręcznym koszcie (`manaAbilityHasManualCost`
+ * — poświęcenie Sciona/Spawna itd.), których auto-płatność sama nie
+ * odpali. CR 608.2g pozwala je aktywować PRZED zapłatą, a bramka otwarcia
+ * decyzji w `counter_spell_unless_pays` (effects.js, Batch 54) liczyła je
+ * od dawna — sama oferta „zapłać” używała węższego `producibleMana`, więc
+ * gracz z samą ręczną maną widział tylko odmowę (dwie miary, L41). To jest
+ * wyłącznie miara OFERTY: wykonawca płatności nadal wymaga many realnie
+ * wyprodukowanej (kreator stołu / bot aktywują źródła przed komendą
+ * płatności — `manaGeneratingCommandFor`); silnik nigdy nie poświęca sam.
+ */
+function paymentReachableMana(state, playerId) {
+  let razem = producibleMana(state, playerId, null, {}, []);
+  for (const { ability } of legalManaAbilities(state, playerId)) {
+    if (!manaAbilityHasManualCost(ability)) continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    const produkcja = effects.reduce(
+      (suma, e) => suma + (e?.type === 'add_mana' ? (e.amount ?? 1) : 0), 0);
+    const kosztMany = (ability.cost?.mana ?? 0) + (ability.cost?.colors?.length ?? 0);
+    razem += Math.max(0, produkcja - kosztMany);
+  }
+  return razem;
 }
 
 // Audyt PR #156 (O1, klasa L48): JEDEN odczyt eligibilnych X dla OFERTY
@@ -8039,6 +8065,13 @@ export function playerView(state, playerId) {
     };
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
+    // K/CR 608.2g: zdolności many wolno aktywować przed płatnością — jak
+    // przy kontr-płatności (Batch 54); dotąd oferta ich tu nie niosła, choć
+    // wykonawca je przyjmuje (`manaGeneratingCommandFor`), a kreator many
+    // buduje źródła właśnie z tej oferty.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeCounterPay) {
     // Batch 44 (Frightful Delusion): zapłać {N} (czar zostaje) albo nie płać
     // (czar skontrowany). Boty płacą (pierwsza oferta) — czar na stosie jest
@@ -8049,7 +8082,8 @@ export function playerView(state, playerId) {
       targetId: state.pendingCounterPay.targetId ?? null,
     };
   // M203/2: kolejność prezentacji = enumeracja (dawniej odwracał unshift).
-    if ((state.pendingCounterPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
+    // K: osiągalność jak bramka otwarcia decyzji (też ręczne źródła many).
+    if ((state.pendingCounterPay.amount ?? 0) <= paymentReachableMana(state, playerId)) {
       legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: true, ...counterPayInfo }));
     }
     legalCommands.push(command('resolve_counter_pay_choice', playerId, { pay: false, ...counterPayInfo }));
@@ -8068,10 +8102,14 @@ export function playerView(state, playerId) {
       sourceId: state.pendingWardPay.wardSourceId ?? null,
       targetId: state.pendingWardPay.targetingStackId ?? null,
     };
-    if ((state.pendingWardPay.amount ?? 0) <= producibleMana(state, playerId, null, {}, [])) {
+    if ((state.pendingWardPay.amount ?? 0) <= paymentReachableMana(state, playerId)) {
       legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: true, ...wardInfo }));
     }
     legalCommands.push(command('resolve_ward_pay_choice', playerId, { pay: false, ...wardInfo }));
+    // K/CR 608.2g: jak przy kontr-płatności — zdolności many przed dopłatą.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeOptionalPay) {
     // „You may pay ... When you do, ..." (Panic Spellbomb, Zoraline —
     // Temat 8): tak/nie. Boty płacą (pierwsza oferta).
@@ -8122,6 +8160,10 @@ export function playerView(state, playerId) {
       legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
     }
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
+    // K/CR 608.2g: jak przy kontr-płatności — zdolności many przed płatnością.
+    for (const { ability, ...offer } of legalManaAbilities(state, playerId)) {
+      legalCommands.push(command('activate_ability', playerId, offer));
+    }
   } else if (state.status === 'active' && !blockedByOthersDecision && activeSuspendCast) {
     // Suspend (CR 702.62a): jednorazowa decyzja — rzuć zawieszony czar za
     // darmo (ignorując timing) albo zostaw w exile na stałe. Oferta per

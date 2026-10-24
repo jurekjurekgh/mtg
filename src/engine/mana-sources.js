@@ -558,24 +558,21 @@ export function isPureManaAbilityCommand(command, object, fallbackAbilities = nu
 }
 
 /**
- * K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): czy
- * komenda to zdolność many o RĘCZNYM koszcie — takim, którego automatyczna
- * płatność (`spendMana`/`producibleMana`) nigdy nie odpali sama, bo poza
- * tapnięciem źródła i dopłatą many kosztuje zasób: poświęcenie (Eldrazi
- * Scion/Spawn), odrzut karty, życie itd. Przy otwartej decyzji płatniczej
- * CR 608.2g wprost pozwala takie zdolności aktywować PRZED zapłatą
- * („If an effect gives a player the option to pay mana, they may activate
- * mana abilities before taking that action”), więc panel stołu musi je
- * wtedy pokazać — inaczej gracz bez wolnej many widzi tylko odmowę,
- * choć silnik aktywację legalnie oferuje. Klasa po deskryptorze kosztu
- * (ADR 0002), nie po nazwie karty; konsument: `buildActionEntries`.
+ * K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): czy zdolność
+ * many ma RĘCZNY koszt — taki, którego automatyczna płatność
+ * (`spendMana`/`producibleMana`) nigdy nie odpali sama, bo poza tapnięciem
+ * źródła i dopłatą many kosztuje zasób: poświęcenie (Eldrazi Scion/Spawn),
+ * odrzut karty, życie itd. Przy decyzji płatniczej CR 608.2g pozwala takie
+ * zdolności aktywować PRZED zapłatą („If an effect gives a player the
+ * option to pay mana, they may activate mana abilities before taking that
+ * action”), więc oferta „zapłać” musi je znać jako osiągalną manę
+ * (`paymentReachableMana` w game-state) — inaczej gracz bez wolnej many
+ * widzi tylko odmowę, choć zapłacić może. Klasa po deskryptorze kosztu
+ * (ADR 0002), nie po nazwie karty.
  */
 const AUTO_MANA_COST_KEYS = new Set(['tap', 'mana', 'colors']);
-export function isManualManaAbilityCommand(command, object, fallbackAbilities = null, state = null) {
-  if (command?.type !== 'activate_ability') return false;
-  const ability = abilityOfManaCommand(command, object, fallbackAbilities, state);
-  if (!ability || !isActivatedManaAbility(ability)) return false;
-  return Object.entries(ability.cost ?? {}).some(([klucz, wartosc]) =>
+export function manaAbilityHasManualCost(ability) {
+  return Object.entries(ability?.cost ?? {}).some(([klucz, wartosc]) =>
     !AUTO_MANA_COST_KEYS.has(klucz)
     && wartosc != null && wartosc !== false && wartosc !== 0
     && !(Array.isArray(wartosc) && wartosc.length === 0));

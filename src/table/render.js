@@ -6,8 +6,7 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
-import { isManualManaAbilityCommand, isPureManaAbilityCommand } from '../engine/mana-sources.js';
-import { PAYMENT_DECISION_TYPES } from './mana-wizard.js';
+import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
 import { activatableAbilities, CARD_TYPES } from '../engine/permanents.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
@@ -950,13 +949,6 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
  * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
  * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
  */
-/** Argumenty silnikowych predykatów komend many z sesji stołu (jeden odczyt). */
-function manaCommandLookup(command, session) {
-  const object = session?.state?.objects?.get(command?.objectId);
-  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
-  return [object, fallback, session?.state ?? null];
-}
-
 export function isManaAbilityCommand(command, session) {
   // J (zgłoszenie właściciela 2026-09-19b): predykat przeniesiony do SILNIKA
   // (`isPureManaAbilityCommand` + `MANA_ABILITY_PAYLOAD_KEYS`) — tę samą
@@ -965,22 +957,13 @@ export function isManaAbilityCommand(command, session) {
   // Panel zostaje przy swoim wejściu (testy i main.js wołają po `session`),
   // ale decyzję podejmuje silnik; `session.abilitiesOf` to fallback dla
   // obiektów, których nie ma w stanie (deskryptory z rejestru).
-  return isPureManaAbilityCommand(command, ...manaCommandLookup(command, session));
+  const object = session?.state?.objects?.get(command?.objectId);
+  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
+  return isPureManaAbilityCommand(command, object, fallback, session?.state ?? null);
 }
 
 export function buildActionEntries(commands, session, view) {
-  // K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): filtr
-  // M369/G chowa czyste zdolności many, bo płaci za nie auto-tap/kreator —
-  // ale przy OTWARTEJ decyzji płatniczej źródła o ręcznym koszcie
-  // (poświęcenie Eldrazi Sciona) auto-płatność sama nie odpali, a CR 608.2g
-  // pozwala je aktywować przed zapłatą. Bez wyjątku gracz bez wolnej many
-  // widział tylko „Nie płać”, choć silnik aktywację oferował w ofercie.
-  const paymentDecisionOpen = commands.some((cmd) => PAYMENT_DECISION_TYPES.has(cmd.type));
-  const entries = buildChoiceRequestEntries(commands.filter((cmd) => {
-    if (!isManaAbilityCommand(cmd, session)) return true;
-    return paymentDecisionOpen
-      && isManualManaAbilityCommand(cmd, ...manaCommandLookup(cmd, session));
-  }), view);
+  const entries = buildChoiceRequestEntries(commands.filter((cmd) => !isManaAbilityCommand(cmd, session)), view);
   const byKey = new Map();
   const out = [];
   for (const entry of entries) {
