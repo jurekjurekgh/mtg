@@ -27,6 +27,9 @@ function koloryZrodlaWidoku(object) {
   return manaSourceOfView(object)?.colors ?? [];
 }
 import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '../engine/mana-cost.js';
+// N: wspólna miara automatu płatności dla kontrolerów (cast osiągalny tylko
+// po manualnej produkcji many bot pomija, jak przy płatnościach K).
+import { autoManaUnits as autoManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable } from './mana-offer-guards.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
 import { TURN_STEPS } from '../engine/turn.js';
@@ -1909,7 +1912,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   function botCommandCandidates(view) {
     const legal = view?.legalCommands ?? [];
-    const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd));
+    // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
+    const unitsAuto = castFiltersApplicable(view) ? autoManaJednostki(view) : null;
+    const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd)
+      && !(unitsAuto != null && castNieopłacalnyAuto(view, cmd, unitsAuto)));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.

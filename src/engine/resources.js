@@ -1457,12 +1457,17 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}, extraUnits = []) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   // A: plan kosztowych Z GÓRY (granty zużyte finansowaniem wypadają z grantLands).
   const costedPlan = fundableCostedPlan(state, playerId, requirements, excludeSourceId, costedPurposeOf(purpose));
-  const units = expandManaPool(player.manaPool);
+  // N: `extraUnits` = jednostki many osiągalne legalną aktywacją zdolności
+  // many o koszcie ręcznym (manualManaOfferUnits w abilities.js, CR 605.3a)
+  // — TYLKO dla ofert (canPayColoredCostForOffer); płatność liczy je, gdy
+  // realnie trafią do puli. Traktowane jak jednostki puli (aktywacja
+  // poprzedza płatność).
+  const units = [...expandManaPool(player.manaPool), ...(extraUnits ?? []).map((u) => [...u])];
   // Wykluczenia (M174/B + once-per-turn): id własne + klucze id:indeks
   // (te drugie nie matchują lądów — celowo, tylko lister kosztowych).
   const excludedGrant = excludeSourceId == null
@@ -1535,6 +1540,18 @@ export function canPayColoredCost(state, playerId, requirements, excludeSourceId
   // generic, więc nie liczymy go tu). excludeSourceId — patrz producibleMana
   // (koszt z {T} własnego źródła many, M174/B).
   return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose) !== null;
+}
+
+/**
+ * N: wariant OFERTOWY canPayColoredCost — czy pip(y) da się dopasować do many
+ * osiągalnej przy dopuszczaniu legalnych aktywacji many o koszcie ręcznym
+ * (`extraUnits` z manualManaOfferUnits). Dla ofert rzutów wyłącznie; walidacja
+ * i płatność zostają przy canPayColoredCost (granica jak przy płatnościach K:
+ * executor płaci wyłącznie z many wyprodukowanej; kreator many aktywuje źródło
+ * na żądanie człowieka przed samą płatnością).
+ */
+export function canPayColoredCostForOffer(state, playerId, requirements, extraUnits, excludeSourceId = null, purpose = {}) {
+  return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose, extraUnits) !== null;
 }
 
 /** Batch 69 (Convoke): odejmuje jeden pip za każdy kolor opłacony stworem. */

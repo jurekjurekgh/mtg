@@ -5,6 +5,8 @@ import { BOT_ID, HUMAN_ID, createSession } from '../src/table/session.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { autoManaUnits, castBeyondAutoMana } from '../src/controllers/mana-offer-guards.js';
+import { isActivatedManaAbility } from '../src/engine/mana-sources.js';
 
 /**
  * Pauza po każdym istotnym zagraniu bota (decyzja właściciela 2026-08-05):
@@ -43,6 +45,18 @@ function humanCommand(view) {
   const meaningful = view.legalCommands.filter(
     (c) => !['pass_priority', 'concede', 'tap_for_mana', 'resolve_combat'].includes(c.type),
   );
+  // N: cast osiągalny dopiero po ręcznej produkcji many otwieramy jak
+  // KREATOR MANY — najpierw aktywujemy źródło czystej many, potem cast.
+  const najlepsze = meaningful[0];
+  if (najlepsze && castBeyondAutoMana(view, najlepsze, autoManaUnits(view))) {
+    const plansza = new Map((view.zones?.battlefield ?? []).map((o) => [o.id, o]));
+    const zrodlo = view.legalCommands.find((cmd) => {
+      if (cmd.type !== 'activate_ability') return false;
+      const ability = plansza.get(cmd.objectId)?.activatableAbilities?.[cmd.abilityIndex];
+      return ability != null && isActivatedManaAbility(ability);
+    });
+    if (zrodlo) return zrodlo;
+  }
   // Okno z SAMYM obowiązkowym krokiem (np. resolve_combat po deklaracjach):
   // nic „ciekawego" nie ma, ale kliknąć trzeba — bierz pierwszą nie-poddanie.
   return meaningful[0] ?? first('draw_card') ?? first('pass_priority')

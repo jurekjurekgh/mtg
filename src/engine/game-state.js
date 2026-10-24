@@ -7,24 +7,28 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
 import { allControlledManaSources, getSourceForObject, isActivatedManaAbility, manaAbilityHasManualCost } from './mana-sources.js';
 
-function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}) {
+function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}, offerUnits = null) {
   const costStr = MANA_COSTS[cardId];
   if (!costStr) return true;
   const parsed = parseManaCost(costStr);
   if (!parsed) return true;
   if (parsed.colored.length === 0 && parsed.hybrid.length === 0 && parsed.phyrexian.length === 0) return true;
   // Kolorowa pula (cz. 7): MtG-castability z UŻYTECZNYCH źródeł (pula + untapped).
-  return canPayColoredCost(state, playerId, coloredPipsOf(cardId, phyrexianPay), null, purpose);
+  // N: `offerUnits` (manualManaOfferUnits) rozszerza bramkę do many osiągalnej
+  // legalną aktywacją o koszcie ręcznym (CR 605.3a) — TYLKO oferta, nie płatność.
+  const requirements = coloredPipsOf(cardId, phyrexianPay);
+  if (offerUnits != null) return canPayColoredCostForOffer(state, playerId, requirements, offerUnits, null, purpose);
+  return canPayColoredCost(state, playerId, requirements, null, purpose);
 }
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
-import { legalActivatedAbilities, legalManaAbilities, activateAbility, performActivation } from './abilities.js';
+import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
@@ -8955,6 +8959,12 @@ export function playerView(state, playerId) {
   // ograniczona drukiem nie opłaci czaru nie-artefaktowego, ale opłaci
   // artefakt i KAŻDĄ płatność, która nie jest rzutem czaru (L48).
   const manaAvailableFor = (object, reqs = null) => producibleMana(state, playerId, null, spellManaPurpose(object), reqs);
+  // N (korekta właściciela): budżet i kolory OFERTY obejmują także manę
+  // osiągalną legalną aktywacją zdolności many o koszcie ręcznym
+  // (poświęcenie Eldrazi Scion; CR 605.3a) — człowiek produkuje brak
+  // w kreatorze many; płatność (castPermanent/spendMana) bez zmian.
+  const ofertaUnitsUA = manualManaOfferUnits(state, playerId);
+  const manaAvailableForOffer = (object, reqs = null) => manaAvailableFor(object, reqs) + ofertaUnitsUA.amount;
   // Batch 47: te RECZNE lancuchy pendingow pomijaly kilka decyzji (m.in.
   // pendingUndercityRoute z M190/B i pendingFabricate), wiec oferta rzutow
   // pojawiala sie MIMO czekajacej decyzji, a execute odbijal ja bramka
@@ -8966,10 +8976,10 @@ export function playerView(state, playerId) {
       && !state.pendingRevealOrder && !state.pendingProliferate && !state.pendingModalTrigger && !state.pendingRiotChoice && !state.pendingLookTopN && !state.pendingSatyrLook && !state.pendingEpicExperiment && !state.pendingDamageTarget && !state.pendingRedirectChoice && !state.pendingFertileThicket && !state.pendingSpringbloom && !state.pendingIndex && !state.pendingOptionalDraw && !state.pendingDamageAssignment &&  state.pendingExploits.length === 0 && !state.pendingRevealExile && !state.pendingColorChoice && !state.pendingClash && !state.pendingSacrifice && !state.pendingDiscardChoice && !state.pendingHandTopChoice && !state.pendingLandTypeChoice && !state.pendingLibraryPlacement && !state.pendingSearchChoice && !state.pendingPayOrSacrifice && !state.pendingOptionalPay && !state.pendingCounterPay && !state.pendingWardPay && !triggerTargetsBlock && !state.pendingOptionalTrigger && !state.pendingMoonlitChoice && !state.pendingFoodChoice && !state.pendingAmass && !state.pendingDiscover && !state.pendingExplore && !state.pendingCraftExile && !state.pendingAuraHost && !state.pendingHandCreature && !roomTargetBlocks && !pendingBackup && !state.pendingGraveyardToTop && state.pendingDevours.length === 0 && state.pendingEndures.length === 0 && !deliriumBlocks && !mentorBlocks && !state.pendingLegendChoice && !state.pendingEnterAsCopy && !state.pendingDestroyEquipment && !state.pendingCopyTargets && !state.pendingOpponentTarget && !state.pendingSuspendCast && !state.pendingReboundCast && state.turn.priorityPlayerId === playerId && !state.pendingRevealChoice && !state.pendingMadnessCast && !state.pendingGraveFreeCast && !state.pendingExileCast && !state.pendingDamageDivision && !state.pendingEscapeExile && !state.pendingDelveExile && cleanupPriorityOpen(state)) {
     // M359 (CR 514.3, L48): w zamkniętym cleanupie brak ofert rzutów
     // i aktywacji (ten sam predykat co bramka w execute).
-    for (const cast of legalSpellCasts(state, playerId)) {
+    for (const cast of legalSpellCasts(state, playerId, ofertaUnitsUA)) {
       legalCommands.push(command('cast_spell', playerId, cast));
     }
-    for (const cast of legalCleaveCasts(state, playerId)) {
+    for (const cast of legalCleaveCasts(state, playerId, ofertaUnitsUA)) {
       legalCommands.push(command('cast_cleave', playerId, cast));
     }
     // Escape (Sweet Oblivion): czary z grobu rzucane za koszt escape + wygnanie
@@ -9008,8 +9018,8 @@ export function playerView(state, playerId) {
       // używa walidacja (`hasFlashPermission`) — oferta nie może publikować
       // komendy, którą `cast_permanent` odrzuca.
       if (!hasFlashPermission(state, playerId, object)) continue;
-      if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
-      if (!hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object))) continue;
+      if (effectiveSpellManaCost(state, object) > manaAvailableForOffer(object, coloredPipsOf(object.cardId, 0))) continue;
+      if (!hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object), ofertaUnitsUA.units)) continue;
       // M202/N4: koszt dodatkowy na obiekcie obowiązuje także przy rzucie
       // z flash (CR 601.2h) — oferta bez celu wygnania byłaby odrzucana (L48).
       const flashExileCost = exileAdditionalCostCandidates(state, playerId, object);
@@ -9078,8 +9088,8 @@ export function playerView(state, playerId) {
         const ex = state.objects.get(id);
         if (ex?.controllerId !== playerId || !ex.warpReady) continue;
         if (!warpTurnReached(ex, state)) continue;
-        if (effectiveSpellManaCost(state, ex) > manaAvailableFor(ex, coloredPipsOf(ex.cardId, 0))) continue;
-        if (!hasColorForCardId(state, playerId, ex.cardId, 0, spellManaPurpose(ex))) continue;
+        if (effectiveSpellManaCost(state, ex) > manaAvailableForOffer(ex, coloredPipsOf(ex.cardId, 0))) continue;
+        if (!hasColorForCardId(state, playerId, ex.cardId, 0, spellManaPurpose(ex), ofertaUnitsUA.units)) continue;
         legalCommands.push(command('cast_permanent', playerId, { objectId: id }));
       }
     }
@@ -9106,8 +9116,8 @@ export function playerView(state, playerId) {
           && isImpulseWindowLive(object, state)) {
           const freeCast = hasFreeCastStamp(object);
           const affordable = freeCast
-            || (effectiveSpellManaCost(state, object) <= manaAvailableFor(object, coloredPipsOf(object.cardId, 0))
-              && hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object)));
+            || (effectiveSpellManaCost(state, object) <= manaAvailableForOffer(object, coloredPipsOf(object.cardId, 0))
+              && hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object), ofertaUnitsUA.units));
           // M202/N4 (zmierzone): rzut impulsem zwalnia z KOSZTU MANY, nie
           // z kosztów dodatkowych (CR 601.2h/118.5). Bez tego oferta
           // Fear of Abduction / Makeshift Mauler powstawała bez celu
@@ -9187,7 +9197,7 @@ export function playerView(state, playerId) {
       // (A: budżet PER WARIANT (pip(y) po k opłaconych życiem) — joint (iv).)
       for (let k = 0; k <= symbols; k += 1) {
         const manaNeeded = (object.manaCost ?? 0) - k;
-        if (manaNeeded > manaAvailableFor(object, coloredPipsOf(object.cardId, k))) continue;
+        if (manaNeeded > manaAvailableForOffer(object, coloredPipsOf(object.cardId, k))) continue;
         if (2 * k > (player.life ?? 0)) continue;
         out.push(k);
       }
@@ -9209,8 +9219,8 @@ export function playerView(state, playerId) {
       const handExileCost = exileAdditionalCostCandidates(state, playerId, object);
       if (handExileCost) {
         for (const exileId of handExileCost) {
-          if (effectiveSpellManaCost(state, object) > manaAvailableFor(object, coloredPipsOf(object.cardId, 0))) continue;
-          if (!hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object))) continue;
+          if (effectiveSpellManaCost(state, object) > manaAvailableForOffer(object, coloredPipsOf(object.cardId, 0))) continue;
+          if (!hasColorForCardId(state, playerId, object.cardId, 0, spellManaPurpose(object), ofertaUnitsUA.units)) continue;
           legalCommands.push(command('cast_permanent', playerId, { objectId: id, exileTargetId: exileId }));
         }
         continue; // bez opłaconego kosztu dodatkowego czaru nie da się rzucić
@@ -9283,7 +9293,7 @@ export function playerView(state, playerId) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, convokePayments: payments }));
           }
         }
-        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableFor(object, coloredPipsOf(object.cardId, lifePips))) continue;
+        if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableForOffer(object, coloredPipsOf(object.cardId, lifePips))) continue;
       }
       // Kolejność wariantów (M203/2): przy konwencji „prezentacja =
       // enumeracja" iterujemy wprost — wariant manowy (k=null) jest pierwszy
@@ -9292,7 +9302,7 @@ export function playerView(state, playerId) {
       const variants = phyrexianVariants(object);
       for (const k of variants) {
         const payWithLife = k === null ? 0 : k;
-        if (!hasColorForCardId(state, playerId, object.cardId, payWithLife, spellManaPurpose(object))) continue;
+        if (!hasColorForCardId(state, playerId, object.cardId, payWithLife, spellManaPurpose(object), ofertaUnitsUA.units)) continue;
         legalCommands.push(command('cast_permanent', playerId,
           k === null ? { objectId: id } : { objectId: id, phyrexianPayWithLife: k }));
       }
@@ -9310,8 +9320,8 @@ export function playerView(state, playerId) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true, convokePayments: payments }));
           }
         }
-        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableFor(object, kickerReqs)) {
-          if (canPayColoredCost(state, playerId, kickerReqs, null, spellManaPurpose(object))) {
+        if (effectiveSpellManaCost(state, object) + kickerCost <= manaAvailableForOffer(object, kickerReqs)) {
+          if (canPayColoredCostForOffer(state, playerId, kickerReqs, ofertaUnitsUA.units, null, spellManaPurpose(object))) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, kicked: true }));
           }
         }
@@ -9321,8 +9331,8 @@ export function playerView(state, playerId) {
       if (object.offspring) {
         const offspringCost = object.offspring.cost ?? 0;
         const offspringReqs = [...coloredPipsOf(object.cardId, 0), ...(object.offspring.colors ?? []).map((color) => [color])];
-        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableFor(object, offspringReqs)) {
-          if (canPayColoredCost(state, playerId, offspringReqs, null, spellManaPurpose(object))) {
+        if (effectiveSpellManaCost(state, object) + offspringCost <= manaAvailableForOffer(object, offspringReqs)) {
+          if (canPayColoredCostForOffer(state, playerId, offspringReqs, ofertaUnitsUA.units, null, spellManaPurpose(object))) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, offspring: true }));
           }
         }
