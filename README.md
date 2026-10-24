@@ -44,9 +44,10 @@ albo wygnanie dużego celu zamiast pumpa we własnego defendera; czarów
 z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
 bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapłaty
 pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
-(poświęcenie Sciona przez kreator many). Bramki:
-`npm test` **8782/8782**, `npm run test:slow` **268/268** (`test:all` **9050/9050**),
-build **75 modułów / 5397,9 kB**.
+(poświęcenie Sciona przez kreator many); *Manor Gate* pokazuje na kaflu
+badge wybranego przy wejściu koloru many. Bramki:
+`npm test` **8785/8785**, `npm run test:slow` **268/268** (`test:all` **9053/9053**),
+build **75 modułów / 5398,4 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

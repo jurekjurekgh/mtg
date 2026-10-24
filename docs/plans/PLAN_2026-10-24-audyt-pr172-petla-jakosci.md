@@ -255,3 +255,17 @@ wybiera odrzucanej płatności (losowy losuje z wykonywalnych od razu).
 Panel akcji wraca do stanu sprzed `f1b015b`. Bramka po K: `npm test`
 **8782/8782**, `test:slow` **268/268** (`test:all` **9050/9050**), build
 **75 modułów / 5397,9 kB**, benchmark szybki bez regresji (87,8%).
+
+## Zgłoszenie właściciela L (po K, 2026-10-24)
+
+**L — *Manor Gate*:** po wyborze koloru przy wejściu kafel nie pokazywał
+badge'a z wybranym kolorem dodatkowej produkcji. Ogniwa z A2 (2026-09-16)
+istniały osobno — widok niesie `chosenColor`, `chosenColorBadge` daje
+etykietę „Wybrany kolor: …”, `buildStateOverlay` ją wpycha — ale `cardInfo`
+pola nie kopiowało do `info`, więc badge nie powstawał, a linia zdolności
+(A3) milczała o drugim kolorze. Testy A2 pinowały końce łańcucha, nie jego
+ciągłość. Naprawa `08752b2`: jedna linia w `cardInfo` (z bramką zakrycia
+jak sąsiednie pola tożsamości) + okaz Manor Gate po realnym wyborze
+w próbce strażnika kontraktu M277. Bramka po L: `npm test` **8785/8785**,
+`test:slow` **268/268** (`test:all` **9053/9053**), build **75 modułów /
+5398,4 kB**.

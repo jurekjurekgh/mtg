@@ -119,8 +119,16 @@
   (teraz najpierw produkuje manę; bot losowy losuje z wykonywalnych).
   Panel akcji bez zmian względem stanu sprzed K. Test:
   `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6 pinów).
-- **Bramka końcowa:** `npm test` **8782/8782**, `npm run test:slow` **268/268**
-  (`test:all` **9050/9050**), `npm run build` **75 modułów / 5397,9 kB**.
+- **Zgłoszenie właściciela L (`08752b2`, po domknięciu sesji):** *Manor Gate*
+  po wyborze koloru przy wejściu nie pokazywał badge'a z tym kolorem.
+  Łańcuch z A2 (widok → etykieta → nakładka) był przerwany pośrodku:
+  `cardInfo` nie kopiowało `chosenColor` do `info`, więc badge „Wybrany
+  kolor: …” nie powstawał, a linia zdolności kafla nie nazywała drugiego
+  koloru produkcji. Jedna linia w `cardInfo` + okaz w strażniku M277;
+  test domyka łańcuch realnym przepływem
+  (`test/zgloszenie-l-manor-gate-badge.test.js`).
+- **Bramka końcowa:** `npm test` **8785/8785**, `npm run test:slow` **268/268**
+  (`test:all` **9053/9053**), `npm run build` **75 modułów / 5398,4 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
