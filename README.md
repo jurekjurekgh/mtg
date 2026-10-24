@@ -12,19 +12,25 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-21c):** [handoff](docs/setup/HANDOFF_2026-10-21c.md)
-oraz [audyt PR #170](docs/audits/AUDYT_PR170_2026-10-21.md) w otwartym
-[PR #171](https://github.com/jurekjurekgh/mtg/pull/171). Sesja 2026-10-21c:
-audyt scalonego PR #170 (11/11 plików — fix `slice(before, -1)` potwierdzony
-sondą na 5 wariantach, strażnik zweryfikowany mutacyjnie, klasa L130/L187 poza
-fixem nie występuje) oraz pętla jakości — 4 partie Żywego Testera (0 zgłoszeń
-detektorów) i naprawa znaleziska **C-1**: rodzina „zapobiegnięte obrażenia NIE
-są zadane" (32 cytaty w 11 plikach) uzasadniała się CR 119.3, który w wydaniu
-2026-09-25 dotyczy **życia** — właściwa podstawa to **615.6** (+ 615.7 dla
-tarczy), zweryfikowane dosłownie z `cr-raw.txt` (SHA zgodny). PR czeka na
-decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-21b](docs/setup/HANDOFF_2026-10-21b.md)
-(sesja PR #170 — audyt PR #169; plan: audyt/plan w `docs/plans/`).
+**Aktualny punkt zaczepienia (2026-10-24):** [handoff](docs/setup/HANDOFF_2026-10-24.md),
+[plan sesji](docs/plans/PLAN_2026-10-23-audyt-pr171-petla-jakosci.md) oraz
+[audyt PR #171](docs/audits/AUDYT_PR171_2026-10-23.md) w otwartym
+[PR #172](https://github.com/jurekjurekgh/mtg/pull/172). Sesja 2026-10-23..24:
+pełny audyt scalonego PR #171 (71/71 plików zweryfikowanych względem CR `2026-09-25`)
+wraz z naprawami wszystkich znalezisk **F-1..F-8** (drenaż triggerów lądowych w
+`finishWizardPayment` bez podszywania pod bota i z obsługą Delve/Crew, blokada
+zdolności many przy Detain wg CR 701.35a/605.3, powrót cech karty po `enter_as_copy`
+wg CR 400.7/707.2, deduplikacja i ożywione lądy przy koszcie kickera, `effectiveGeneric`
+i `xCost.black` w kreatorze many, czysty tekst kosztu w `choiceGroupTitle`, filtr
+ewazji w `blokowalne` oraz `haste`/`cantAttackStatic`/`widokBezDefendera` w bocie)
+oraz pętla jakości — 9 partii Żywego Testera (`0` zgłoszeń detektorów) z naprawami
+opisów kart i odznak (**LT-1..LT-4**) i polowanie CR przy opuszczaniu pola bitwy/stosu
+(**CR-1..CR-4**: odkrycie cech zakrytych CR 708.9 oraz snapshot LKI zdolności i
+kontroli przy triggerach odejścia CR 603.10a/707.2/113.6/400.3). Bramki: `npm test`
+**8757/8757**, `npm run test:slow` **268/268** (`test:all` **9025/9025**), build
+**75 modułów / 5383,3 kB**. PR czeka na decyzję właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-21e](docs/setup/HANDOFF_2026-10-21e.md)
+(sesja PR #171 — audyt PR #170 + uwagi z gry T, U, A, B, D).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,

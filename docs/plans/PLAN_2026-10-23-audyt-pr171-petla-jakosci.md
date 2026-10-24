@@ -75,22 +75,24 @@ testów RED→GREEN wg L13):
 - [x] **Etap 0 — Plan i otwarcie PR:** zapis niniejszej roadmapy, walidacja
       strażników dokumentacji, commit + push na `arena/6f1bfb96-mtg`, otwarcie PR
       do `main` przed jakimkolwiek kodowaniem (ADR 0020 A).
-- [ ] **Etap 1 — Audyt PR #171 (71/71 plików):** przegląd wszystkich warstw,
+- [x] **Etap 1 — Audyt PR #171 (71/71 plików):** przegląd wszystkich warstw,
       weryfikacja CR u źródła (ADR 0030), sondy graniczne i mutacje kluczowych
-      pinów, raport `docs/audits/AUDYT_PR171_2026-10-23.md`.
-- [ ] **Etap 2 — Naprawy znalezisk audytu PR #171:** każdy potwierdzony błąd
-      naprawiany u root cause osobnym commitem (test RED → fix GREEN → `npm test`
-      + `npm run build` → push). Ewentualne rozbieżności z ADR/regułami wymagające
-      decyzji właściciela — jawnie udokumentowane (L57).
-- [ ] **Etap 3 — Pętla jakości (ADR 0021 pkt 4):** przebiegi Żywego Testera
-      (po `npm run build` — L76) na taliach dotkniętych zmianami PR #171
-      (`zendikar-rg`, `zendikar-wu` i talie z kartami z ostatnich fixów) + ręczna
-      lektura transkryptów wg trzech osi `TESTER_STOLU.md` (L27) + naprawy
-      znalezionych błędów u root cause.
-- [ ] **Etap 4 — Domknięcie i pełna brama:** `npm run test:all`, `npm run build`,
+      pinów, raport `docs/audits/AUDYT_PR171_2026-10-23.md` (`ccd70dc`).
+- [x] **Etap 2 — Naprawy znalezisk audytu PR #171:** wszystkie potwierdzone błędy
+      (F-1..F-7) naprawione u root cause osobnymi zielonymi commitami z testami
+      RED→GREEN (`f366660`, `c4543d7`, `c0e05ea`, `2bfe95b`, `cd6e027`, `fc8d84f`,
+      `8025afe`, `a552639`, `bb7353a`).
+- [x] **Etap 3 — Pętla jakości (ADR 0021 pkt 4):** 9 przebiegów Żywego Testera
+      po `npm run build` (`0` zgłoszeń detektorów w `scan.mjs`) + naprawy 4 usterek
+      opisów kart i odznak z lektury transkryptów (`LT-1..LT-4`, `03164cd`) +
+      polowanie CR z naprawą 4 luk regułowych przy opuszczaniu pola bitwy/stosu
+      (`CR-1..CR-4`, `d6ff380`: `CR 708.9`, `CR 603.10a`, `CR 707.2`, `CR 113.6`,
+      `CR 400.3`).
+- [x] **Etap 4 — Domknięcie i pełna brama:** `npm test` **8757/8757**, `npm run test:slow`
+      **268/268** (`test:all` **9025/9025**), `npm run build` **75 modułów / 5383,3 kB**,
       `node tools/cr-numery.mjs --sprawdz`, strażnik budżetu lektury, uzupełnienie
-      `docs/PROJECT_HISTORY.md`, `README.md`, `docs/setup/HANDOFF_2026-10-23.md`
-      oraz kumulacyjny opis PR (L92).
+      `docs/PROJECT_HISTORY.md`, `README.md`, `docs/setup/HANDOFF_2026-10-24.md`
+      oraz kumulacyjny opis PR #172 (L92).
 
 ## Ryzyka i pułapki
 
