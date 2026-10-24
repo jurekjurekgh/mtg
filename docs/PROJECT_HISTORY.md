@@ -105,18 +105,22 @@
   ≥10 i nie mniejszej od przeciwnika w paśmie 11–20. Test:
   `test/zgloszenie-j-izzet-charm-loot.test.js` (5 pinów; mutacja bez weta
   4/5 RED).
-- **Zgłoszenie właściciela K (`f1b015b`, po domknięciu sesji):** przy kontrze
-  *Abstruse Interference* („unless pays {1}”) panel „Twoje działania” dawał
-  tylko „Nie płać”, choć gracz mógł poświęcić własnego *Eldrazi Sciona* za
-  {C}. Silnik aktywację oferował i wykonywał (CR 608.2g); chował ją filtr
-  M369/G panelu (czyste zdolności many poza panelem — także te o koszcie
-  poświęcenia, których auto-płatność nie odpala). Przy otwartej decyzji
-  płatniczej panel pokazuje teraz aktywacje many o ręcznym koszcie
-  (`isManualManaAbilityCommand`); dotyczy całej rodziny płatności (kontr-
-  płatność, ward, zapłać-albo-poświęć, opcjonalna płatność). Test:
-  `test/zgloszenie-k-abstruse-scion-platnosc.test.js`.
-- **Bramka końcowa:** `npm test` **8780/8780**, `npm run test:slow` **268/268**
-  (`test:all` **9048/9048**), `npm run build` **75 modułów / 5394,3 kB**.
+- **Zgłoszenie właściciela K (`f1b015b` + korekta UX `f767aaa`, po
+  domknięciu sesji):** przy kontrze *Abstruse Interference* („unless pays
+  {1}”) decyzja dawała tylko „Nie płać”, choć gracz mógł poświęcić własnego
+  *Eldrazi Sciona* za {C}. Właściciel odrzucił pierwszą drogę (aktywacja
+  w panelu akcji) — ma być „Zapłać {1}” → kreator many ze wszystkimi
+  źródłami. Brakowało trzech ogniw: oferta `pay:true` liczyła tylko manę
+  auto-tapu (bramka decyzji zna ręczne źródła od Batcha 54, CR 608.2g) —
+  teraz wspólna miara `paymentReachableMana` dla kontr-płatności i wardu,
+  a wszystkie decyzje płatnicze niosą w ofercie aktywacje many; kreator
+  nie otwierał się przy jednym kształcie płatności (teraz otwiera, gdy
+  auto-tap nie pokrywa kosztu); bot-płatnik mógł wybrać odrzucaną płatność
+  (teraz najpierw produkuje manę; bot losowy losuje z wykonywalnych).
+  Panel akcji bez zmian względem stanu sprzed K. Test:
+  `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6 pinów).
+- **Bramka końcowa:** `npm test` **8782/8782**, `npm run test:slow` **268/268**
+  (`test:all` **9050/9050**), `npm run build` **75 modułów / 5397,9 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

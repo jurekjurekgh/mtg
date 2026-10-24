@@ -42,10 +42,11 @@ plaster dopisanych zdarzeń), a bot w darmowych oknach (Epic/Suspend/Rebound)
 wycenia efekty wspólnym `freeCastEffectsScore` — *Selesnya Charm* daje token
 albo wygnanie dużego celu zamiast pumpa we własnego defendera; czarów
 z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
-bibliotece poniżej 10 kart; przy płatności „zapłać albo…” panel stołu
-pokazuje ręczne źródła many (poświęcenie Sciona), nie tylko odmowę. Bramki:
-`npm test` **8780/8780**, `npm run test:slow` **268/268** (`test:all` **9048/9048**),
-build **75 modułów / 5394,3 kB**.
+bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapłaty
+pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
+(poświęcenie Sciona przez kreator many). Bramki:
+`npm test` **8782/8782**, `npm run test:slow` **268/268** (`test:all` **9050/9050**),
+build **75 modułów / 5397,9 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

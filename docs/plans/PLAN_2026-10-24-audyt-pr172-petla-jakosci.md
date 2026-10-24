@@ -241,13 +241,17 @@ benchmark szybki 672 mecze (heuristic 87,8%, bez regresji).
 
 **K — *Abstruse Interference*:** gdy bot kontrował czar gracza („unless its
 controller pays {1}”), w „Twoje działania” była tylko odmowa, choć gracz
-mógł poświęcić własnego *Eldrazi Sciona* za {C}. Silnik był kompletny
-(oferta i wykonawca przepuszczają aktywacje many przy decyzji — CR 608.2g);
-gubił je filtr M369/G w `buildActionEntries`, chowający z panelu wszystkie
-czyste zdolności many, także o koszcie, którego auto-płatność sama nie
-odpali. Naprawa `f1b015b`: przy otwartej decyzji płatniczej (rodzina
-`PAYMENT_DECISION_TYPES` kreatora) panel pokazuje aktywacje o ręcznym
-koszcie (silnikowy `isManualManaAbilityCommand` — składnik kosztu poza
-{T}/maną); zwykłe {T} dalej kryje auto-tap, poza decyzjami bez zmian.
-Bramka po K: `npm test` **8780/8780**, `test:slow` **268/268** (`test:all`
-**9048/9048**), build **75 modułów / 5394,3 kB**.
+mógł poświęcić własnego *Eldrazi Sciona* za {C}. Pierwsza próba (`f1b015b`:
+aktywacja Sciona w panelu) odrzucona przez właściciela — właściwa droga to
+przycisk „Zapłać {1}” i kreator many ze wszystkimi źródłami. Naprawa
+`f767aaa` (CR 608.2g): oferta `pay:true` kontr-płatności i wardu powstaje
+przy manie OSIĄGALNEJ (`paymentReachableMana` = producible + netto ręcznych
+zdolności many, `manaAbilityHasManualCost`) — tej samej, którą bramka
+decyzji liczy od Batcha 54; wszystkie cztery decyzje płatnicze niosą
+w ofercie aktywacje many (kreator buduje z nich źródła); kreator otwiera
+się też przy jednym kształcie płatności, gdy auto-tap nie pokrywa kosztu
+(`autoPayableMana`); bot-płatnik najpierw produkuje manę i nigdy nie
+wybiera odrzucanej płatności (losowy losuje z wykonywalnych od razu).
+Panel akcji wraca do stanu sprzed `f1b015b`. Bramka po K: `npm test`
+**8782/8782**, `test:slow` **268/268** (`test:all` **9050/9050**), build
+**75 modułów / 5397,9 kB**, benchmark szybki bez regresji (87,8%).
