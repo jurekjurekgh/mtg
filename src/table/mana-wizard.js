@@ -191,7 +191,7 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
  * Każda z nich prowadzi do spendMana, więc podlega tej samej regule wyboru
  * źródeł co rzuty — inaczej silnik tapuje „pierwszy lepszy ląd".
  */
-const PAYMENT_DECISION_TYPES = new Set([
+export const PAYMENT_DECISION_TYPES = new Set([
   'resolve_pay_or_sacrifice',
   'resolve_optional_pay_choice',
   'resolve_counter_pay_choice',
