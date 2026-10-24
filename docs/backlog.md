@@ -155,21 +155,9 @@ Następna lista właściciela wchodzi tutaj.)_
   batcha realną kontrę zdolności, `test/audyt-kontrzenie-zdolnosci.test.js`
   wystarczy przepiąć z `SONDA` na wpis rejestru.
 
-- **Zatrzymanie auto-passu pod instant osiągalny tylko przez ręczną zdolność
-  many** (ślad z dochodzenia zgłoszenia M, 2026-10-24; werdykt M: brak buga —
-  *Revealing Wind* jest poprawnym instantem, pin
-  `test/zgloszenie-m-revealing-wind-okna.test.js`). Rozpoznany kształt: gdy
-  koszt instanta domyka dopiero CZYSTA zdolność many o koszcie ręcznym bez
-  wyboru (np. poświęcenie Eldrazi Sciona), sesja nie zatrzymuje się w turze
-  przeciwnika (decyzja J: czyste zdolności many nie przerywają auto-passu i nie
-  wchodzą do panelu), więc takiego instanta nie da się rzucić w cudzej turze —
-  prawda reguł (CR 117.1a) rozmija się z osiągalnością na stole. Kandydatura
-  (decyzja UX właściciela — kompromis częstość stopów vs osiągalność): miara
-  osiągalności dla zatrzymań sesji analogiczna do `paymentReachableMana`
-  z K — auto-pass zatrzymuje się tylko, gdy ręczna aktywacja many realnie
-  odblokowuje rzut/aktywację z ręki. Po zatrzymaniu ścieżka dwukrokowa
-  (aktywuj źródło → oferta rzutu) działa już dziś, bo mana z puli liczy się
-  do osiągalności.
+_(Punkt o osiągalności many dla zatrzymań auto-passu ze zgłoszenia M
+zrealizowano jako zgłoszenie N (2026-10-24, dyrektywa właściciela,
+`manualManaUnlocksPlayOf`) — opis w `docs/PROJECT_HISTORY.md`.)_
 
 ## 3. Bot
 

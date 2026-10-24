@@ -127,16 +127,24 @@
   koloru produkcji. Jedna linia w `cardInfo` + okaz w strażniku M277;
   test domyka łańcuch realnym przepływem
   (`test/zgloszenie-l-manor-gate-badge.test.js`).
-- **Zgłoszenie właściciela M (`40b6e92`, po domknięciu sesji) — werdykt: brak
-  buga:** *Revealing Wind* miała oferty rzutu tylko we własnych fazach main,
-  jak gdyby była sorcery. Dochodzenie (definicja, materializacja, oferty
-  silnika, zatrzymania sesji, Żywy Tester na `tarkir-bg`) wykazało poprawny
-  instant we wszystkich oknach priorytetu tury przeciwnika (CR 117.1a);
-  brak ofert poza mainami to bramka many (oferta tylko przy auto-tapie
-  {2}{G} z nietapniętych źródeł). Kod produkcji bez zmian; kontrakt pina
-  `test/zgloszenie-m-revealing-wind-okna.test.js` (mutacja timingu: 4/4 RED).
-- **Bramka końcowa:** `npm test` **8789/8789**, `npm run test:slow` **268/268**
-  (`test:all` **9057/9057**), `npm run build` **75 modułów / 5398,4 kB**.
+- **Zgłoszenie właściciela M (`40b6e92`, korekta `769a55c`, po domknięciu
+  sesji):** *Revealing Wind* miała oferty rzutu tylko we własnych fazach
+  main, jak gdyby była sorcery. Karta jest wszędzie poprawnym instantem
+  (CR 117.1a — piny okna/materializacji), a po doprecyzowaniu właściciela
+  (6 wolnych lądów, w tym 3 Foresty) i obaleniu hipotezy zakrytych kart
+  obserwację w pełni odtwarza mechanizm ptaszka wyciszenia: wyciszona
+  oferta nie przerywa auto-passu w cudzej turze, ale zostaje widoczna na
+  stopach z innych powodów. Jedyna zmiana produkcji to ŚLAD: dopisek
+  „wyciszone — auto-pass nie przerywa” przy wyciszonej akcji (panel i menu
+  kafla). Kontrakt: `test/zgloszenie-m-revealing-wind-okna.test.js` (6 pinów).
+- **Dyrektywa właściciela N (`b1f8479`, po domknięciu sesji):** instant
+  osiągalny tylko przez poświęcenie Eldrazi Sciona zatrzymuje teraz
+  auto-pass w turze przeciwnika (CR 605.3a). Sesja pyta silnik symulacyjnie
+  (`manualManaUnlocksPlayOf`, klon+porównanie ofert); stop tylko, gdy
+  zagranie realnie się odblokowuje, a ptaszek aktywacji (menu kafla) go
+  wyłącza. Test: `test/zgloszenie-n-scion-stop.test.js` (5 pinów).
+- **Bramka końcowa:** `npm test` **8796/8796**, `npm run test:slow` **268/268**
+  (`test:all` **9064/9064**), `npm run build` **75 modułów / 5404,2 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

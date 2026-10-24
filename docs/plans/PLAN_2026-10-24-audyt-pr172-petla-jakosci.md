@@ -270,7 +270,7 @@ w próbce strażnika kontraktu M277. Bramka po L: `npm test` **8785/8785**,
 `test:slow` **268/268** (`test:all` **9053/9053**), build **75 modułów /
 5398,4 kB**.
 
-## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: brak buga
+## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: karta poprawna; obserwację odtwarza ptaszek wyciszenia
 
 **M — *Revealing Wind*:** właściciel miał oferty rzutu tylko we własnych
 fazach main, jak gdyby instant był zakodowany jako sorcery. Dochodzenie
@@ -278,14 +278,39 @@ warstwa po warstwie (definicja → materializacja → oferty silnika →
 auto-pass sesji z `pauseOnBotMoves` → prawdziwy artefakt Żywym Testerem,
 talia `tarkir-bg`) wykazało poprawny instant we wszystkich oknach
 priorytetu tury przeciwnika (CR 117.1a, cytat verbatim z przypiętego
-lustra). Brak ofert poza mainami to bramka many: oferta powstaje tylko,
-gdy {2}{G} pokrywa auto-tap z nietapniętych źródeł — w turach bota lądy
-zwykle stoją tapnięte po zagraniach własnej tury. Kod produkcji bez
-zmian; kontrakt zamyka `test/zgloszenie-m-revealing-wind-okna.test.js`
-(4 piny; mutacja timingu na `sorcery` gasi 4/4). Ślad poboczny do
-backlogu: instant osiągalny tylko przez CZYSTĄ zdolność many o koszcie
-ręcznym (np. poświęcenie Sciona) nie zatrzyma auto-passu w turze
-przeciwnika (decyzja J) — ewentualna miara osiągalności dla zatrzymań
-sesji (analog `paymentReachableMana` z K) to decyzja UX właściciela.
-Bramka po M: `npm test` **8789/8789**, `test:slow` **268/268**
-(`test:all` **9057/9057**), build **75 modułów / 5398,4 kB**.
+lustra). Pierwsza diagnoza (bramka many) była NIEPEŁNA — właściciel
+doprecyzował: „Miałem z 6 nietapniętych lądów, w tym ze 3 foresty” +
+hipoteza o zakrytych kartach. Dochodzenie wznowione: hipoteza
+face-down obalona wszędzie (oferta bezcelowego czaru nie zna tego
+warunku; sceny z zakrytym atakującym/blokującym, cała walka komenda po
+komendzie, okno po blokach — czyste). Jedyny mechanizm odtwarzający
+raport słowo w słowo przy pełnej manie: **ptaszek wyciszenia oferty**
+(feature 2026-08-11): wyciszony rzut nie przerywa auto-passu w turze
+przeciwnika, ale na stopach z innych powodów (własne mainy, bloki)
+przycisk jest widoczny i działa — „oferty tylko w mainach”. Bramka many
+z pierwszej diagnozy istnieje równolegle i jest regułą ofert.
+Kod produkcji: wyłącznie ŚLAD (`769a55c`) — wyciszona akcja nosi teraz
+dopisek „wyciszone — auto-pass nie przerywa” i przygaszoną etykietę
+(sam checkbox na telefonie był bez śladu — klasa L24). Kontrakt:
+`test/zgloszenie-m-revealing-wind-okna.test.js` (6 pinów: timing, okna,
+bramka many, stop+rzut w declare_attackers bota, kontrakt ptaszka,
+ślad); mutacja timingu gasi piny okna/materializacji.
+Bramka po M (z korektą): `npm test` **8796/8796**, `test:slow`
+**268/268** (`test:all` **9064/9064**), build **75 modułów / 5404,2 kB**.
+
+## Zgłoszenie właściciela N (po M, 2026-10-24) — dyrektywa: osiągalność przez ręczną manę stopuje
+
+**N — Scion a auto-pass:** ze śladu pobocznego M właściciel uczynił
+dyrektywę: instant osiągalny tylko przez czystą zdolność many o koszcie
+ręcznym (poświęcenie Eldrazi Sciona) ma zatrzymywać grę w turze
+przeciwnika — CR 605.3a „A player may activate an activated mana
+ability whenever they have priority…” (verbatim). Wdrożenie `b1f8479`:
+`manualManaUnlocksPlayOf` w sesji — gdy szybka decyzja pusta, symulacja
+aktywacji na klonie (`makeSimulate`) i porównanie ofert; ilość/kolory
+liczy silnik. Stop wyłącznie, gdy zagranie się realnie odblokowuje;
+ptaszek aktywacji (menu kontekstowe kafla — bo panel czystej many nie
+pokazuje, `769a55c`) stop wyłącza. Sam Scion bez osiągalnego zagrania
+nadal nie przerywa (J). Test `test/zgloszenie-n-scion-stop.test.js`
+(5 pinów; mutacja filtra kosztu ręcznego gasi N/1 i N/5). Bramka po N:
+`npm test` **8794/8794** (po M/5–M/6: 8796), `test:slow` **268/268**,
+build **75 modułów / 5401,9 kB** (finalnie 5404,2 kB).
