@@ -1248,8 +1248,20 @@ function describeEffect(e, ctx = {}) {
     get_energy: () => (e.amountFrom === 'creatures_attacking_you'
       ? 'otrzymaj {E} za każde stworzenie atakujące ciebie'
       : `otrzymaj {E}×${e.amount ?? 1} energii`),
-    remove_counter: () => `usuń licznik ${e.counter}`,
-    add_counter: () => `połóż licznik ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`,
+    remove_counter: () => {
+      const n = e.amount ?? 1;
+      const qty = typeof n === 'number' && n > 1
+        ? `${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')}`
+        : 'licznik';
+      return `usuń ${qty} ${e.counter}`;
+    },
+    add_counter: () => {
+      const n = e.amount ?? 1;
+      const qty = typeof n === 'number' && n > 1
+        ? `${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')}`
+        : 'licznik';
+      return `połóż ${qty} ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`;
+    },
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
     // F-A2/1 (audyt PR #107): B54 zjednoczyło stronę untap („odkręć”), ale tu
@@ -1385,7 +1397,13 @@ function describeEffect(e, ctx = {}) {
     draw_cards_both_players: () => `oboje dobierają ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')}`,
     draw_then_discard: () => 'dobierz, potem odrzuć',
     exalted_pump: () => `${signed(e.power ?? 1)}/${signed(e.toughness ?? 1)} do końca tury (egzaltacja)`,
-    exile_all: () => 'wygnij wszystkie (filtr)',
+    exile_all: () => {
+      const plTypes = { Artifact: 'artefakty', Enchantment: 'zaklęcia', Creature: 'stwory', Land: 'lądy', Planeswalker: 'planeswalkery' };
+      const types = (e.filter?.types ?? []).map((t) => plTypes[t] ?? t.toLowerCase()).join(' ') || 'permanenty';
+      const mv = e.filter?.manaValueAtMost != null ? ` o MV ≤${e.filter.manaValueAtMost}`
+        : (e.filter?.manaValueAtLeast != null ? ` o MV ≥${e.filter.manaValueAtLeast}` : '');
+      return `wygnij wszystkie ${types}${mv}`;
+    },
     exile_opponent_creature: () => 'wygnij stwora przeciwnika',
     // Batch 59 (Scavenging Harpy): wygnanie KARTY z grobu celu (dowolny typ).
     exile_graveyard_card: () => 'wygnij kartę z grobu',
@@ -1611,7 +1629,15 @@ function describeEffect(e, ctx = {}) {
     set_base_pt_creatures_you_control: () => 'twoje stwory mają bazowe X/X do końca tury (X = liczba kart w twojej ręce)',
   };
   const fn = generic[e.type];
-  if (fn) return `${e.condition?.wasKicked ? 'jeśli opłacono kicker: ' : ''}${fn()}`;
+  if (fn) {
+    const condParts = [];
+    if (e.condition?.wasKicked) condParts.push('jeśli opłacono kicker');
+    if (e.condition?.wasGifted) condParts.push('jeśli obiecano dar (Gift)');
+    if (e.condition?.manaSpentAtLeast != null) condParts.push(`jeśli wydano ${e.condition.manaSpentAtLeast}+ many`);
+    if (e.condition?.manaSpentBelow != null) condParts.push(`jeśli wydano mniej niż ${e.condition.manaSpentBelow} many`);
+    const prefix = condParts.length > 0 ? `${condParts.join(', ')}: ` : '';
+    return `${prefix}${fn()}`;
+  }
   return `efekt (${e.type})`;
 }
 
@@ -1692,9 +1718,7 @@ function describeStatic(ability) {
   const scope = ability?.scope?.affects;
   const pump = ability?.pump;
   if (pump && (pump.power != null || pump.toughness != null)) {
-    const pt = ptAmount(pump.power ?? 0) === ptAmount(pump.toughness ?? 0)
-      ? ptAmount(pump.power ?? 0)
-      : `${ptAmount(pump.power ?? 0)}/${ptAmount(pump.toughness ?? 0)}`;
+    const pt = ptPair(pump.power ?? 0, pump.toughness ?? 0);
     if (scope === 'other_creatures_you_control') parts.push(`inne twoje stwory: ${pt}`);
     else if (scope === 'all_creatures_you_control') parts.push(`twoje stwory: ${pt}`);
     else parts.push(pt);
@@ -5188,7 +5212,9 @@ export function buildStateOverlay(visual, info) {
     // spójna z frazą logu "(za Warp)" — L41 jedno źródło brzmienia.
     if (info.enteredViaWarp) flags.push(['kw', 'Warp · wygnanie na EOT']);
     {
-      const sign = (n) => (n > 0 ? `+${n}` : `${n}`);
+      // Pętla jakości LT-4 + M188/A: zero też z jawnym znakiem („+2/+0", nie „+2/0"),
+      // spójnie z ciągłym bonusem grantedPower/grantedToughness poniżej.
+      const sign = (n) => (n < 0 ? `${n}` : `+${n}`);
       const pMod = Number(info.powerMod ?? 0);
       const tMod = Number(info.toughMod ?? 0);
       if (pMod !== 0 || tMod !== 0) {
