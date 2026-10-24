@@ -81,10 +81,10 @@ RED→GREEN (L13/L34/L159: mutacja z gita, nie z kopii po edycji).
 
 ## Etapy i planowane commity (ADR 0020 C — każdy zielony i od razu wypchnięty)
 
-- [ ] **Etap 0 — Plan i otwarcie PR:** niniejsza roadmapa, walidacja strażników
+- [x] **Etap 0 — Plan i otwarcie PR:** (commit `b52c971`, PR #173 otwarty przed kodowaniem) niniejsza roadmapa, walidacja strażników
       dokumentacji, commit + push na `arena/1e1d0ca7-mtg`, otwarcie PR do `main`
       przed jakimkolwiek kodowaniem (ADR 0020 A).
-- [ ] **Etap 1 — Audyt PR #172 (32/32 plików):** przegląd linia po linii diffu
+- [x] **Etap 1 — Audyt PR #172 (32/32 plików):** (raport `docs/audits/AUDYT_PR172_2026-10-24.md`; znaleziska F-1..F-3 + obserwacje O-1..O-3; wszystkie cytaty CR zweryfikowane w `cr-raw.txt` 2026-09-25, SHA zgodny; mutacje A/C2/D czerwienią, B ujawniła F-1) przegląd linia po linii diffu
       `11fb4d1..3ad2f6b` warstwami (silnik → bot → UI → testy → dokumentacja),
       weryfikacja twierdzeń CR u źródła (ADR 0030), sondy graniczne przez pełną
       komendę `execute` (L111/L68), mutacje kluczowych pinów z wersji git
