@@ -4769,6 +4769,13 @@ export function cardInfo(session, object, combat = null) {
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
+    // L (zgłoszenie właściciela 2026-10-24, Manor Gate): kolor wybrany przy
+    // wejściu („as this enters, choose a color”, CR 614.12) — widok niesie
+    // go od A2 (2026-09-16), badge „Wybrany kolor: …” i linia zdolności
+    // (A3) czytają go z `info`, ale cardInfo pola NIE kopiowało, więc na
+    // stole nie było ani badge'a, ani drugiego koloru w opisie many.
+    // Zakryty permanent tożsamości nie ujawnia (jak wyżej).
+    chosenColor: faceDown ? null : (object.chosenColor ?? null),
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
     // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — osobne pole
