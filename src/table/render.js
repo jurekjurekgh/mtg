@@ -4709,8 +4709,15 @@ export function cardInfo(session, object, combat = null) {
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     // M188/A: nadane P/T z efektów ciągłych (statyka warunkowa, aura, anthem,
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
-    grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
-    grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // G (zgłoszenie właściciela 2026-10-24, Trostani Discordant): zakryty
+    // permanent TEŻ nosi bonus — anthem działa na zakrytego 2/2 (silnik liczy
+    // statystyki poprawnie, kafel drukuje efektywne 3/3), a zerowanie tutaj
+    // gasiło badge „+1/+1" do chwili obrotu twarzą do góry. Wielkość bonusu
+    // nie ujawnia tożsamości (baza zakrycia to definicyjne 2/2, wynikowe
+    // P/T i tak jest na kaflu), więc nie ma powodu FoW do ukrywania badge'a;
+    // co wolno pokazać przeciwnikowi, rozstrzyga bramka w playerView.
+    grantedPower: Number(object.grantedPower ?? 0),
+    grantedToughness: Number(object.grantedToughness ?? 0),
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
     // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
     // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast

@@ -7014,7 +7014,16 @@ export function playerView(state, playerId) {
         // buff do końca tury) jawnie w widoku — kafel liczył badge z
         // `powerModifier`, którego statyka read-time nie ustawia, więc
         // „+1/+0 i menace" pokazywało tylko menace. Klasa M175/A3 dla P/T.
-        if (object.power !== null && object.kind === 'creature' && !hiddenFromViewer) {
+        // G (zgłoszenie właściciela 2026-10-24, Trostani): dla zakrytego
+        // permanentu na polu bitwy nadane P/T jest informacją publiczną
+        // mimo ukrytej tożsamości — `entry.power` wyżej to EFEKTYWNE P/T
+        // (z anthemem), a baza zakrycia to definicyjne 2/2, więc kwota
+        // bonusu niczego nie zdradza; bez niej przeciwnik też nie widział
+        // badge'a „+1/+1", choć statystyki kafla były poprawne. Nazwy
+        // mechanik (grantedStatMechanics niżej) zostają za bramką tożsamości.
+        const statBonusPublic = !hiddenFromViewer
+          || (object.faceDown && object.zone === 'battlefield');
+        if (object.power !== null && object.kind === 'creature' && statBonusPublic) {
           const granted = grantedStatBonus(object, state);
           if (granted.power !== 0) entry.grantedPower = granted.power;
           if (granted.toughness !== 0) entry.grantedToughness = granted.toughness;
@@ -7024,7 +7033,7 @@ export function playerView(state, playerId) {
           // ją na badge („Storied: +1/+0”) zamiast pokazywać gołe „+1/0”.
           // Widok zostaje opisem stanu (deskryptor), słownik prezentacji
           // mieszka w render.js (wzorzec grantedKeywords/grantedPower).
-          if (granted.mechanics?.length) {
+          if (!hiddenFromViewer && granted.mechanics?.length) {
             entry.grantedStatMechanics = granted.mechanics.map((m) => ({ ...m }));
           }
         }
