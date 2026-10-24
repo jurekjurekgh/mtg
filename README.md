@@ -46,13 +46,13 @@ bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapł
 pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
 (poświęcenie Sciona przez kreator many); *Manor Gate* pokazuje na kaflu
 badge wybranego przy wejściu koloru many; dochodzenie zgłoszenia
-*Revealing Wind* wykazało poprawny instant (oferty tylko w fazach main
-odtwarza wyciszona ptaszkiem oferta — ma teraz na przycisku dopisek
-„wyciszone — auto-pass nie przerywa”); auto-pass zatrzymuje się także
-wtedy, gdy zagranie odblokowuje ręczna zdolność many (poświęcenie
-Sciona, CR 605.3a). Bramki:
-`npm test` **8796/8796**, `npm run test:slow` **268/268** (`test:all` **9064/9064**),
-build **75 modułów / 5404,2 kB**.
+*Revealing Wind* wykazało wszędzie poprawny instant, ale incydentu
+właściciela nie odtworzono (bez zmian produkcji); czar osiągalny maną
+z ręcznej aktywacji zdolności many (poświęcenie Eldrazi Sciona,
+CR 605.3a) wchodzi do oferty jak każdy inny, a klik otwiera kreator
+many ze wszystkimi sposobami pozyskania many. Bramki:
+`npm test` **8797/8797**, `npm run test:slow` **268/268**,
+build **76 modułów / 5411,4 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

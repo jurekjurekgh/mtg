@@ -2229,3 +2229,28 @@ nie może wejść w zakres `slice` — `slice(before, -1)` albo jawny push
 (rekreacja: `slice(before, -1)` → `slice(before)` czerwieni oba testy).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L187)
+
+## L188 (2026-10-25) — Legalność oferty ≠ wykonalność wprost: osiągalność many jest DWUFAZOWA
+
+**Przypadek:** K (Abstruse Interference) i N (cast przez poświęcenie
+Eldrzi Scion) udowodniły ten sam kształt: komenda zapłaty/rzutu może być
+legalną OFERTĄ (CR 608.2g/605.3a: graczowi wolno produkować manę przed
+płatnością), choć w tej chwili silnik jej nie wykona — many jeszcze nie
+ma. Boty wybierające komendy wprost z legalCommands (heuristic/aggro/
+random) oraz kierowcy testów stołu pierwszą ofertą (`first('cast_permanent')`)
+dostawali odrzucenia „Brak kolorowego źródła many / Niewystarczająca mana”,
+a ich kwotowa miara automatu dodatkowo przycinała casty, które silnik
+opłacał wolnymi źródłami many (Seer's Lantern/Druid/konwertery/Skarby —
+M179/D/E) i myliła koszt `colors` kosztu aktywacji z drugą jednostką.
+**Reguła:** konsument komendy (bot, kierowca testowy, runner) musi znać
+dwufazowość: najpierw legalna aktywacja czystej many, potem komenda
+(jeśli koszt pozywa się na manie ręcznej — wspólna miara automatu
+`src/controllers/mana-offer-guards.js`: jednostki z kolorami+pipami);
+kreator many wykonuje fazę pierwszą zamiast zgasić ofertę. Sygnał „w
+ofercie jest aktywacja many” decyduje, czy filtr w ogóle działa (stołowe
+widoki testowe bez pól many nie udają niedoboru — K).
+**Strażnik:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js`,
+`test/zgloszenie-n-cast-z-scion-kreator.test.js` (cast poza automatem:
+bot produkuje, potem rzuca; bot losowy nie losuje odrzuconego w runSimulation).
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L188)

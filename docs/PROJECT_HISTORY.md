@@ -127,24 +127,27 @@
   koloru produkcji. Jedna linia w `cardInfo` + okaz w strażniku M277;
   test domyka łańcuch realnym przepływem
   (`test/zgloszenie-l-manor-gate-badge.test.js`).
-- **Zgłoszenie właściciela M (`40b6e92`, korekta `769a55c`, po domknięciu
-  sesji):** *Revealing Wind* miała oferty rzutu tylko we własnych fazach
-  main, jak gdyby była sorcery. Karta jest wszędzie poprawnym instantem
-  (CR 117.1a — piny okna/materializacji), a po doprecyzowaniu właściciela
-  (6 wolnych lądów, w tym 3 Foresty) i obaleniu hipotezy zakrytych kart
-  obserwację w pełni odtwarza mechanizm ptaszka wyciszenia: wyciszona
-  oferta nie przerywa auto-passu w cudzej turze, ale zostaje widoczna na
-  stopach z innych powodów. Jedyna zmiana produkcji to ŚLAD: dopisek
-  „wyciszone — auto-pass nie przerywa” przy wyciszonej akcji (panel i menu
-  kafla). Kontrakt: `test/zgloszenie-m-revealing-wind-okna.test.js` (6 pinów).
-- **Dyrektywa właściciela N (`b1f8479`, po domknięciu sesji):** instant
-  osiągalny tylko przez poświęcenie Eldrazi Sciona zatrzymuje teraz
-  auto-pass w turze przeciwnika (CR 605.3a). Sesja pyta silnik symulacyjnie
-  (`manualManaUnlocksPlayOf`, klon+porównanie ofert); stop tylko, gdy
-  zagranie realnie się odblokowuje, a ptaszek aktywacji (menu kafla) go
-  wyłącza. Test: `test/zgloszenie-n-scion-stop.test.js` (5 pinów).
-- **Bramka końcowa:** `npm test` **8796/8796**, `npm run test:slow` **268/268**
-  (`test:all` **9064/9064**), `npm run build` **75 modułów / 5404,2 kB**.
+- **Zgłoszenie właściciela M (`40b6e92`; odrzucona przez właściciela
+  diagnoza i ślad wycofane `751dfe8`, po domknięciu sesji):** *Revealing
+  Wind* miała oferty rzutu tylko we własnych fazach main, jak gdyby była
+  sorcery. Karta jest wszędzie poprawnym instantem (CR 117.1a — piny
+  okna/materializacji), ale incydentu właściciela NIE odtworzono:
+  po jego doprecyzowaniu (6 wolnych lądów, w tym 3 Foresty) hipotezę
+  zakrytych kart obalono, a właściciel wprost odrzucił dystrybucyjne
+  przypisanie przyczyny ptaszkowi wyciszenia (rzutu nie wyciszył) —
+  podobieństwo objawów nie było dowodem. Żadnych zmian produkcji;
+  kontrakt `test/zgloszenie-m-revealing-wind-okna.test.js` (4 piny)
+  zawęża przyszłą diagnostykę do nowego materiału (seed/replay).
+- **Zgłoszenie właściciela N (`9d199eb`, kształt po jego korekcie):** czar
+  osiągalny maną z ręcznej aktywacji zdolności many (poświęcenie Eldrazi
+  Scion; CR 605.3a) wchodzi do oferty jak każdy inny, a klik otwiera
+  KREATOR MANY ze wszystkimi źródłami (silnik: `manualManaOfferUnits`
+  + `canPayColoredCostForOffer`; zapłata bez zmian — tylko mana
+  wyprodukowana, bez auto-poświęceń; panel bez akcji poświęcenia).
+  Kontrolery botów mają wspólną miarę automatu i najpierw produkują.
+  Test: `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8 pinów).
+- **Bramka końcowa:** `npm test` **8797/8797**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5411,4 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

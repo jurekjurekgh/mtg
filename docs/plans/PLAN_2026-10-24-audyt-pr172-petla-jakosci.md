@@ -270,47 +270,65 @@ w próbce strażnika kontraktu M277. Bramka po L: `npm test` **8785/8785**,
 `test:slow` **268/268** (`test:all` **9053/9053**), build **75 modułów /
 5398,4 kB**.
 
-## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: karta poprawna; obserwację odtwarza ptaszek wyciszenia
+## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: nie odtworzono
 
 **M — *Revealing Wind*:** właściciel miał oferty rzutu tylko we własnych
 fazach main, jak gdyby instant był zakodowany jako sorcery. Dochodzenie
 warstwa po warstwie (definicja → materializacja → oferty silnika →
 auto-pass sesji z `pauseOnBotMoves` → prawdziwy artefakt Żywym Testerem,
-talia `tarkir-bg`) wykazało poprawny instant we wszystkich oknach
+talia `tarkir-bg`) wykazało wszędzie poprawny instant w oknach
 priorytetu tury przeciwnika (CR 117.1a, cytat verbatim z przypiętego
-lustra). Pierwsza diagnoza (bramka many) była NIEPEŁNA — właściciel
+lustra). Pierwsza diagnoza (bramka many) była niepełna — właściciel
 doprecyzował: „Miałem z 6 nietapniętych lądów, w tym ze 3 foresty” +
-hipoteza o zakrytych kartach. Dochodzenie wznowione: hipoteza
-face-down obalona wszędzie (oferta bezcelowego czaru nie zna tego
-warunku; sceny z zakrytym atakującym/blokującym, cała walka komenda po
-komendzie, okno po blokach — czyste). Jedyny mechanizm odtwarzający
-raport słowo w słowo przy pełnej manie: **ptaszek wyciszenia oferty**
-(feature 2026-08-11): wyciszony rzut nie przerywa auto-passu w turze
-przeciwnika, ale na stopach z innych powodów (własne mainy, bloki)
-przycisk jest widoczny i działa — „oferty tylko w mainach”. Bramka many
-z pierwszej diagnozy istnieje równolegle i jest regułą ofert.
-Kod produkcji: wyłącznie ŚLAD (`769a55c`) — wyciszona akcja nosi teraz
-dopisek „wyciszone — auto-pass nie przerywa” i przygaszoną etykietę
-(sam checkbox na telefonie był bez śladu — klasa L24). Kontrakt:
-`test/zgloszenie-m-revealing-wind-okna.test.js` (6 pinów: timing, okna,
-bramka many, stop+rzut w declare_attackers bota, kontrakt ptaszka,
-ślad); mutacja timingu gasi piny okna/materializacji.
-Bramka po M (z korektą): `npm test` **8796/8796**, `test:slow`
-**268/268** (`test:all` **9064/9064**), build **75 modułów / 5404,2 kB**.
+hipoteza o zakrytych kartach. Dochodzenie wznowiono: hipoteza
+face-down obalona (oferta bezcelowego czaru nie zna tego warunku;
+sceny z zakrytym atakującym/blokującym, cała walka komenda po komendzie,
+okno po blokach — czyste). Próba przypisania przyczyny ptaszkowi
+wyciszenia oferty była TEŻ błędna — właściciel odrzucił ją wprost
+(nie wyciszył rzutu), a obserwacja podobieństwa objawów nie jest
+dowodem na stan jego partii. Uczciwy status: incydentu NIE odtworzono,
+przyczyna nieznana — dalsza praca wyłącznie na nowym materiale
+(powtórka meczu/seed/export replaya). Kontrakt windows/bramki many
+zostaje: `test/zgloszenie-m-revealing-wind-okna.test.js` (4 piny:
+timing, okna, przy wystarczającej manie oferta, bez many milczenie);
+mutacja timingu gasi piny okna/materializacji. Żadnych zmian
+produkcyjnych — porównanie z bazą w 751dfe8.
+Bramka po M: `npm test` **8789/8789** (cztery piny po rewerterze),
+build **75 modułów / 5398,4 kB**.
 
-## Zgłoszenie właściciela N (po M, 2026-10-24) — dyrektywa: osiągalność przez ręczną manę stopuje
+## Zgłoszenie właściciela N (po M, korektor 2026-10-25) — oferta + kreator, bez wyjątku
 
-**N — Scion a auto-pass:** ze śladu pobocznego M właściciel uczynił
-dyrektywę: instant osiągalny tylko przez czystą zdolność many o koszcie
-ręcznym (poświęcenie Eldrazi Sciona) ma zatrzymywać grę w turze
-przeciwnika — CR 605.3a „A player may activate an activated mana
-ability whenever they have priority…” (verbatim). Wdrożenie `b1f8479`:
-`manualManaUnlocksPlayOf` w sesji — gdy szybka decyzja pusta, symulacja
-aktywacji na klonie (`makeSimulate`) i porównanie ofert; ilość/kolory
-liczy silnik. Stop wyłącznie, gdy zagranie się realnie odblokowuje;
-ptaszek aktywacji (menu kontekstowe kafla — bo panel czystej many nie
-pokazuje, `769a55c`) stop wyłącza. Sam Scion bez osiągalnego zagrania
-nadal nie przerywa (J). Test `test/zgloszenie-n-scion-stop.test.js`
-(5 pinów; mutacja filtra kosztu ręcznego gasi N/1 i N/5). Bramka po N:
-`npm test` **8794/8794** (po M/5–M/6: 8796), `test:slow` **268/268**,
-build **75 modułów / 5401,9 kB** (finalnie 5404,2 kB).
+**N — Scion w ofercie:** właściciel uogólnił i skorygował kształt:
+czar osiągalny many po legalnej ręcznej aktywacji zdolności many
+(poświęcenie Eldrazi Scion i krewni bez {T}-only) ma się pojawiać
+w OFERCIE jak każdy inny, a kliknięcie ma otwierać KREATOR MANY
+z wszystkimi sposobami pozyskania many (nie stop sesji + kafel —
+ten kształt `b1f8479` właściciel odrzucił, wycofany w `751dfe8`).
+Podstawa: CR 605.3a verbatim „A player may activate an activated mana
+ability whenever they have priority, whenever they are casting a spell
+or activating an ability that requires a mana payment…". Wdrożenie
+`9d199eb`: jednotorowe liczenie jednostek osiągalnych
+(`manualManaOfferUnits`, abilities — netto amount − koszt many zdolności,
+Skarb wyłączony, bo producible liczy go jawnie) i bramki ofertowe
+`manaAvailableForOffer`/`canPayColoredCostForOffer` w legalSpellCasts,
+legalCleaveCasts i cast_permanent (wraz z phyrexian/surge/kicker/
+offspring/buyback/X/fireball budgetami z tych samych bramek lokalnych).
+Płatność niezmieniona: executor wymaga many wyprodukowanej, bez
+auto-poświęceń (kontrakt K); człowiek produkuje w kreatorze many —
+Scion jest na liście jego źródeł (manaSourcesOf czyta komendy activate
+z widoku; bramka `shouldOpenManaWizard` przy autoPayableMana < koszt
+kreator otwiera mimo jednego wariantu). Poświęcanie Sciona dla many
+nadal nie trafia do „Twoje działania" (życzenie właściciela z K).
+Kontrolery: wspólna miara automatu `mana-offer-guards` (ilość jednostek
+z kolorami + pipy z obiektu widoku) — heuristic/aggro/random pomijają
+cast poza automatem i najpierw produkują (dwufazowość K); kierowcy
+testów stołu aktywują źródło przed castem jak kreator. Znaleziska:
+legalManaAbilities nie pada już na ofertach bez deskryptora (ninjutsu);
+koszt osiągalności liczony raz (amount − cost.mana); jeden nowy traf
+grzechotki remisów (Wrap in Flames na tapniętego) przejrzany
+z allowlistą. Test `test/zgloszenie-n-cast-z-scion-kreator.test.js`
+(8 pinów: osiągalność, oferta permanent+czar, kolor {C}≠pip, lista
+źródeł kreatora, bramka otwarcia, panel bez poświęcenia, obaj botowce
+bez odrzucanych komend). Bramka po N: `npm test` **8797/8797**,
+`test:slow` **268/268**, benchmark quick OK (heuristic 87,8%),
+build **76 modułów / 5411,4 kB**.

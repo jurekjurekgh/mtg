@@ -3714,3 +3714,27 @@ ETB było płaskie 3 (L50/L131 + L48).
   (`slice(before)` z powrotem → 2/2 RED), pełne `npm test` 8665/8665,
   build 75 modułów; tabela CR +`702.15b` (SHA niezmienny: mirror
   nwgarne/mtg-data, wydanie 2026-09-25). Commit sesji PR #170.
+
+## L188 — legalność oferty ≠ wykonalność wprost (K: Abstruse, N: cast przez Scion)
+
+- **K (2026-10-24):** przy kontrze *Abstruse Interference* gracz widział
+  tylko „Nie płać”, choć mógł poświęcić Eldrazi Scion za {C}. Brakowało
+  trzech ogniw: oferta `pay:true` liczona osiągalnie, bramka kreatora
+  przy jednym kształcie płatności spoza automatu i bot-płatnik produkujący
+  manę przed płatnością.
+- **N (2026-10-25, kształt po korekcie właściciela):** ta sama osiągalność
+  w OFERTACH RZUTÓW — permanent {1}{R} przy Górze + Scionie. Executor
+  bez produkcji odrzuca (zero auto-poświęceń), klik kreatora produkuje.
+  Mięśnie: `manualManaOfferUnits` z legalnej enumeracji aktywacji
+  (parametr przez playerView — ADR 0011 bez cykli), bramki ofertowe
+  w `legalSpellCasts`/`legalCleaveCasts`/`cast_permanent`, wspólna miara
+  automatu botów w `mana-offer-guards.js`.
+- **Przeboje na trasie:** botowa miara auto-tapu ograniczała się do puli
+  i lądów — przycinała casty opłacane Seer's Lanternem; kicker/phrexia/X
+  wymagały kosztu komendy z pipami, nie tylko kwoty (Dragonbroods' Relic
+  {B} przez tapCreature); koszt aktywacji liczony dwukrotnie
+  (`cost.mana` + `cost.colors.length` — ta sama jednostka); kierowcy
+  testów stołu brali pierwszą ofertę jak człowiek ustawiony bez kreatora.
+- **Weryfikacja:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6),
+  `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8), bramki sesji PR #173:
+  `npm test` 8797/8797, `test:slow` 268/268, benchmark quick heuristic 87,8%.
