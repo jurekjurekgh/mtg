@@ -91,12 +91,12 @@ RED→GREEN (L13/L34/L159: mutacja z gita, nie z kopii po edycji).
       (L34). Raport: `docs/audits/AUDYT_PR172_2026-10-24.md`; znaleziska numerowane
       `F-1…` (kontynuacja konwencji), obszary sprawdzone i poprawne wypisane
       wprost (L11).
-- [ ] **Etap 2 — Naprawy znalezisk audytu:** każdy potwierdzony błąd naprawiony
+- [x] **Etap 2 — Naprawy znalezisk audytu:** (F-1: `3f05912` — okaz Skarbu o katalogowym kształcie + piny bazy, mutacja B czerwieni po naprawie; pin CR 708.9 ze stosu: `6223ffe`; F-2/F-3: `f28be64` — prawdziwe symbole LKI w dokumentacji i jedna numeracja CR-2/CR-3) każdy potwierdzony błąd naprawiony
       u root cause (nie maskowanie — AGENTS) OSOBNYM zielonym commitem
       z testem RED→GREEN i cytatem CR w komentarzu testu (ADR 0030 pkt 4).
       Znalezione przy okazji drobiazgi (literówka, martwy kod, kłamiący opis)
       naprawiane od razu, bez pytania właściciela (AGENTS § zasady pracy).
-- [ ] **Etap 3 — Pętla jakości (ADR 0021 pkt 4):**
+- [x] **Etap 3 — Pętla jakości (ADR 0021 pkt 4):** (4 partie Żywego Testera: ixalan↔kaladesh/explorer, srodziemie↔worek-legend/defensive, zendikar-wu↔the-edge/random, warhammer-ubr↔lorwyn/impatient — wszystkie ukończone, 0 zgłoszeń detektorów, ręczna lektura po 3 osiach bez znalezisk; analizator ADR 0027 czysty; sonda reguły legend CR 704.5j wobec kopii enter_as_copy poprawna)
       (a) Żywy Tester: partie na ZBUDOWANYM `dist/mtg-table.html` (L76),
       kombinacje talii/seedów INNE niż 9 partii sesji PR #172, ręczna lektura
       transkryptów po trzech osiach `docs/setup/TESTER_STOLU.md` (zero zgłoszeń
@@ -106,7 +106,7 @@ RED→GREEN (L13/L34/L159: mutacja z gita, nie z kopii po edycji).
       wybierany na starcie etapu spośród obszarów nietkniętych w ostatnich
       audytach (np. pary wymóg×zakaz ataku/bloku — L108, albo choke pointy
       liczników/tapu — L107 przez analizator ADR 0027), z repro przed naprawą.
-- [ ] **Etap 4 — Domknięcie i pełna brama:** `npm test`, `npm run test:slow`
+- [x] **Etap 4 — Domknięcie i pełna brama:** `npm test`, `npm run test:slow`
       (łącznie `test:all` — wyłącznie do logu w `.arena/`, ENVIRONMENT §5a),
       `npm run build`, strażniki dokumentacji i budżetu lektury; uzupełnienie
       `docs/PROJECT_HISTORY.md`, liczb w `README.md` (na KONIEC — L92),
@@ -137,3 +137,19 @@ RED→GREEN (L13/L34/L159: mutacja z gita, nie z kopii po edycji).
   + `git status` + `git fetch origin arena/1e1d0ca7-mtg` i porównanie
   `HEAD..FETCH_HEAD` z `FETCH_HEAD..HEAD` (gałąź zdalna powstaje z pierwszym
   pushem tej sesji).
+
+## Podsumowanie wykonania (2026-10-24)
+
+Wykonano wszystkie etapy. Audyt PR #172 nie wykazał żadnego błędu regułowego
+w kodzie produkcyjnym — jedyne usterki to pusty pin testowy zatrzymanego
+Skarbu (F-1, naprawiony z dowodem mutacyjnym) i dwie niespójności
+dokumentacyjne po poprzedniej sesji (F-2 nieistniejące symbole mechanizmu
+LKI, F-3 odwrócona numeracja CR-2/CR-3), obie poprawione. Pętla jakości
+(4 partie Żywego Testera na zbudowanym artefakcie, analizator kontraktów
+zdarzeń, sonda SBA/reguły legend wobec kopii) nie dała nowych znalezisk —
+stan faktyczny odnotowany bez dopisywania usterek na siłę (ADR 0027).
+Bramka końcowa: `npm test` **8758/8758** (+1 nowy pin CR 708.9),
+`npm run test:slow` **268/268** (łącznie `test:all` **9026/9026**),
+`npm run build` **75 modułów / 5383,3 kB**, próbka bota 20/20.
+Commity: `b52c971` (plan), `acf9290` (audyt), `3f05912` (F-1), `6223ffe`
+(pin 708.9), `f28be64` (F-2/F-3), domknięcie dokumentacji sesji.

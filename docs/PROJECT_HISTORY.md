@@ -20,6 +20,46 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-24 — audyt scalonego PR #172 (32/32 plików, F-1..F-3) oraz pętla jakości (PR #173)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/1e1d0ca7-mtg` od `main` @ `67dbd0f`
+  (squash-merge PR #172). Plan: `docs/plans/PLAN_2026-10-24-audyt-pr172-petla-jakosci.md`,
+  raport audytu: `docs/audits/AUDYT_PR172_2026-10-24.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-24b.md`.
+- **Audyt PR #172 (32/32 plików, diff `3fe3638..3ad2f6b`):** wszystkie cytaty CR
+  poprzedniej sesji zweryfikowane dosłownie w wydaniu 2026-09-25
+  (`cr-raw.txt`, SHA zgodny z pinem projektu; 701.35a, 605.3, 708.9, 603.10a,
+  707.2, 400.7, 702.33a, 509.1b, 702.10b, 107.3a, 601.2f). Kod produkcyjny bez
+  usterek regułowych; mutacje A/C2/D czerwienią odpowiednie piny, próbka bota
+  20/20. Znaleziska i naprawy:
+  - **F-1 (`3f05912`, tylko test):** okaz Skarbu w `F-2/2` miał kształt spoza
+    kontraktu `treasureManaAbilityOf` (`sacrifice` zamiast `sacrificeSelf`,
+    brak `fromTreasure`), więc pin zatrzymanego Skarbu był pusty (mutacja
+    bramki `detained` zielona). Okaz o kształcie katalogowym + asercje bazy
+    sprzed detainu; mutacja po naprawie czerwieni (klasa L65/L61).
+  - **Pin ze sondy audytu (`6223ffe`):** druga połowa CR 708.9 — zakryty czar
+    morpha skontrzony ze stosu odzyskuje pełne cechy druku w grobie (FoW na
+    stosie przypięte przy okazji).
+  - **F-2/F-3 (`f28be64`, tylko dokumentacja i tytuły testów):** handoff PR #172
+    i wpis o CR-2 nazywały nieistniejące symbole (`lkiSnapshot`,
+    `resetZoneChangeAttributes`, `detainedUntilTurnOf`,
+    `collectTriggeredAbilities`) — zastąpione rzeczywistymi
+    (`formerEffectiveAbilities` w `moveObjectDirectly`, `detainUntilYourNextTurn`,
+    `abilitiesOnDeath`); numeracja CR-2/CR-3 w `test/petla-jakosci-cr-lki-i-zakryte.test.js`
+    ujednolicona z opisem PR #172, handoffem i niniejszą historią.
+- **Pętla jakości:** 4 partie Żywego Testera na zbudowanym artefakcie (talie
+  spoza próbki benchmarku wg priorytetu z `TESTER_STOLU.md`; profile explorer/
+  defensive/random/impatient) — wszystkie ukończone naturalnie, 0 zgłoszeń
+  detektorów; ręczna lektura transkryptów po trzech osiach bez znalezisk
+  (etykiety kompletne, zagranie *Pain for All* na własnym stworze zgodne
+  z Oracle). Analizator `tools/event-contract-audit.mjs` czysty. Sonda reguły
+  legend (CR 704.5j) wobec kopii `enter_as_copy` na syntetycznym legendarnym
+  Ally: wybór kolejkowany poprawnie, kopia po zejściu do grobu wraca do druku
+  *Jwari Shapeshifter* — obszar zweryfikowany jako poprawny (brak nośnika
+  w katalogu: żaden legendarny Ally).
+- **Bramka końcowa:** `npm test` **8758/8758**, `npm run test:slow` **268/268**
+  (`test:all` **9026/9026**), `npm run build` **75 modułów / 5383,3 kB**.
+
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/6f1bfb96-mtg` od `main` @ `3fe3638`
