@@ -5966,6 +5966,12 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
       // natywnie; stopPropagation chroni przycisk (nie gra opcji).
       // M292: układ buduje `src/table/picker.js` w wariancie `inline` — ta sama
       // obsługa co w modalu wyboru (`choice-request.js`), ten sam wygląd rodzinny.
+      // M (2026-10-24, Revealing Wind): wyciszenie MUSI mieć ślad na
+      // przycisku — sam zaznaczony checkbox na telefonie jest niewidoczny,
+      // a skutek („gra nie zatrzymuje się przy tej karcie”) właściciel
+      // interpretował jako błąd timingu karty (klasa L24: skutek bez śladu
+      // nie istnieje dla gracza).
+      const akcjaWyciszona = Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k)));
       renderPickerRow(button, {
         kind: 'checkbox',
         variant: 'inline',
@@ -5974,7 +5980,7 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
         label: null,
         title: 'Zaznacz: ta opcja nie przerywa auto-passu',
         // Grupa jest „wyciszona", gdy wyciszone są wszystkie jej warianty.
-        checked: Boolean(ignoredOptionKeys && keys.every((k) => ignoredOptionKeys.has(k))),
+        checked: akcjaWyciszona,
         stopRowPropagation: true,
         onToggle: () => {
           // Przełączamy CAŁĄ grupę w jedną stronę (stan brany z pierwszego
@@ -5986,6 +5992,13 @@ export function renderTableView({ els, session, play, onCardClick, onChoiceReque
           }
         },
       });
+      if (akcjaWyciszona) {
+        const notka = document.createElement('span');
+        notka.className = 'action-ignored-note';
+        notka.textContent = 'wyciszone — auto-pass nie przerywa';
+        button.appendChild(notka);
+        button.className += ' action-is-ignored';
+      }
     }
     els.actions.appendChild(button);
   }

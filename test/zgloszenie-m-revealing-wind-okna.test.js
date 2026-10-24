@@ -14,21 +14,30 @@
  * prawdziwym artefakcie (Żywy Tester, talia tarkir-bg) pokazał klikanie
  * „Rzuć: Revealing Wind” poza fazą main.
  *
- * Mechanizm obserwacji właściciela pina M/3: oferta rzutu powstaje tylko,
+ * Jedna bramka jest prawdziwa i pina ją M/3: oferta rzutu powstaje tylko,
  * gdy koszt {2}{G} pokrywa mana osiągalna auto-tapem z NIETAPNIĘTYCH
- * źródeł. W turach przeciwnika lądy zwykle stoją tapnięte po zagraniach
- * własnej tury (talia morphów płaci {3} co turę), więc oferty nie ma —
- * wraca po odtapowaniu i zagraniu lądu we własnej fazie main. To bramka
- * many (zasada ofert silnika), nie bramka timingu: z trzema wolnymi
- * źródłami (w tym zielonym) gra zatrzymuje się w walce przeciwnika.
+ * źródeł (zasada ofert silnika).
  *
- * Osobny ślad z dochodzenia (poza zakresem M, wpis w backloga): gdy koszt
- * domyka dopiero CZYSTA zdolność many o koszcie ręcznym bez wyboru (np.
- * poświęcenie Eldrazi Sciona), auto-pass nie zatrzymuje się na niej
- * (decyzja J: czyste zdolności many nie przerywają auto-passu) — instant
- * osiągalny tylko tą drogą nie da się rzucić w turze przeciwnika.
- * Rozszerzenie miary osiągalności (jak `paymentReachableMana` z K) na
- * zatrzymania sesji to decyzja UX właściciela, nie korekta timingu.
+ * UZUPEŁNIENIE właściciela (tego samego dnia): „Miałem z 6 nietapniętych
+ * lądów, w tym ze 3 foresty. Z jakiegoś powodu nie zatrzymywało się przy
+ * Revealing Wind.” + hipoteza o zakrytych (face-down) kartach. Dochodzenie
+ * wznowione: hipotezę face-down odrzucono na każdej warstwie (generowanie
+ * oferty cast_spell w silniku nie zna tego warunku — oferta bezcelowej
+ * karty powstaje niezależnie od zakrytych kombatantów; sceny z morphem
+ * atakującym i blokującym ofertę dawały), walkę przejdzioną komenda po
+ * komendzie także jest czysta (okno po blokach istnieje). Mechanizmem,
+ * który reprodukuje raport SŁOWO W SŁOWO przy pełnej manie, jest PTASZEK
+ * WYCISZENIA (feature 2026-08-11): wyciszona oferta rzutu przestaje
+ * przerywać auto-pass — w turze przeciwnika gra jedzie bez stopu — ale
+ * na stopach, które powstają z innych powodów (własne mainy, bloki),
+ * przycisk rzutu nadal jest widoczny i działa. Wrażenie: „oferta tylko
+ * w fazach main” mimo wolnej many. Pin M/5 zamyka ten kontrakt; panel
+ * oznacza wyciszoną akcję dopiskiem „(wyciszone)” (ślad, nie cisza).
+ *
+ * Ślad poboczny M → zgłoszenie N (WDROŻONE, osobny test
+ * `test/zgloszenie-n-scion-stop.test.js`): instant osiągalny tylko przez
+ * czystą zdolność many o koszcie ręcznym (poświęcenie Sciona, CR 605.3a)
+ * zatrzymuje auto-pass, gdy odblokowuje zagranie (dyrektywa właściciela).
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -36,7 +45,11 @@ import { addObject, createGameState, playerView } from '../src/engine/game-state
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
-import { createSession, HUMAN_ID, BOT_ID } from '../src/table/session.js';
+import {
+  createSession, HUMAN_ID, BOT_ID, commandOptionKey, hasMeaningfulDecisionOf,
+} from '../src/table/session.js';
+import { isPureManaAbilityCommand } from '../src/engine/mana-sources.js';
+import { renderTableView } from '../src/table/render.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
 const REGISTRY = createCardRegistry();
@@ -167,4 +180,152 @@ test('M/4: sesja zatrzymuje się w turze bota (też w walce) z ofertą Revealing
   assert.ok(stopyPozaWalka.size > 0,
     `stop poza walką tury bota z ofertą (zebrane: ${[...stopyPozaWalka].join(', ') || 'brak'})`);
   assert.ok(rzuconyWTurzeBota, 'rzut wykonany z declare_attackers w turze bota');
+});
+
+test('M/5: ptaszek wyciszenia oferty instanta = raport właściciela słowo w słowo', () => {
+  // Talia jak u właściciela: JEDNA kopia Revealing Wind (tarkir-bg 1×).
+  const talie = new Map([
+    [HUMAN_ID, parseDeckText('# A\n27x Forest\n1x Revealing Wind\n12x Colossodon Yearling', REGISTRY).cardIds],
+    [BOT_ID, parseDeckText('# B\n20x Mountain\n20x Goblin Piker', REGISTRY).cardIds],
+  ]);
+  const ignorowane = new Set();
+  const sesja = createSession({
+    seed: 21, registry: REGISTRY, decks: talie, pauseOnBotMoves: true,
+    ignoredOptionKeys: ignorowane,
+  });
+  const state = sesja.state;
+  // Predykaty jak w sesji (do wykrycia, czy RW byłaby JEDYNĄ decyzją stopu).
+  const hookiCzyste = {
+    isManaOnly: (cmd) => {
+      const object = state.objects.get(cmd.objectId);
+      const fallback = object?.cardId ? REGISTRY.get(object.cardId)?.abilities ?? null : null;
+      return isPureManaAbilityCommand(cmd, object, fallback, state);
+    },
+  };
+  let wyciszonyKlucz = null;
+  let stopyPrzedWyciszeniem = 0;
+  let stopyPoPrzezSamRW = 0;
+  let ofertaWidocznaPo = 0;
+
+  for (let i = 0; i < 2500 && state.status === 'active' && state.turn.number <= 22; i++) {
+    if (sesja.botPausePending) { sesja.clearBotMoves(); sesja.continueBotPlay(); continue; }
+    const view = sesja.view();
+    const reka = view.zones.hand ?? [];
+    const wind = reka.find((o) => o.cardId === 'revealing-wind');
+    const oferta = wind
+      ? view.legalCommands.find((c) => c.type.startsWith('cast') && c.objectId === wind.id)
+      : undefined;
+    const turaBota = state.turn.activePlayerId === BOT_ID
+      && state.turn.priorityPlayerId === HUMAN_ID;
+
+    if (turaBota && oferta) {
+      if (!wyciszonyKlucz) stopyPrzedWyciszeniem += 1;
+      else {
+        // Stop po wyciszeniu: policz, czy bez ptaszka przyczyną byłby SAM RW,
+        // a z ptaszkiem już nie (czyli dlaczego sesja mimo to stoi — inna
+        // decyzja; samo RW przestało przerywać auto-pass).
+        const bezPtasza = hasMeaningfulDecisionOf(view, hookiCzyste);
+        const zPtaszkiem = hasMeaningfulDecisionOf(view, {
+          ...hookiCzyste,
+          isIgnored: (c) => commandOptionKey(c) === wyciszonyKlucz,
+        });
+        if (bezPtasza && zPtaszkiem) ofertaWidocznaPo += 1;
+        if (bezPtasza && !zPtaszkiem) stopyPoPrzezSamRW += 1;
+      }
+    }
+    // „Klik” ptaszka dopiero po zaobserwowanych stopach w turze bota
+    // (klucz per instancja, jak na stole).
+    if (oferta && !wyciszonyKlucz && stopyPrzedWyciszeniem >= 2) {
+      wyciszonyKlucz = commandOptionKey(oferta);
+      ignorowane.add(wyciszonyKlucz);
+    }
+    if (oferta && wyciszonyKlucz && state.turn.activePlayerId === HUMAN_ID
+      && ['main1', 'main2'].includes(state.turn.step)) ofertaWidocznaPo += 1;
+
+    const keep = view.legalCommands.find((c) => c.type === 'resolve_mulligan_choice' && c.keep);
+    const land = view.legalCommands.find((c) => c.type === 'play_land');
+    const pass = view.legalCommands.find((c) => c.type === 'pass_priority');
+    const stwor = view.legalCommands.find((c) => c.type.startsWith('cast')
+      && reka.find((o) => o.id === c.objectId)?.cardId === 'colossodon-yearling');
+    const inny = view.legalCommands.find((c) => c.type !== 'concede' && !c.type.startsWith('cast'));
+    const cmd = keep ?? land ?? pass ?? stwor ?? inny ?? view.legalCommands[0];
+    assert.ok(cmd, 'zawsze jest komenda');
+    sesja.apply(cmd);
+  }
+
+  assert.ok(stopyPrzedWyciszeniem > 0, 'przed wyciszeniem gra stawała w turze bota na ofercie RW');
+  assert.ok(wyciszonyKlucz, 'ptaszek trafił na instancję Revealing Wind');
+  assert.equal(stopyPoPrzezSamRW, 0,
+    'po wyciszeniu żaden stop nie ma RW jako jedynej realnej decyzji — auto-pass jedzie');
+  assert.ok(ofertaWidocznaPo > 0,
+    'oferta jest dalej widoczna na stopach z innych powodów (main/bloki) — wrażenie „tylko w mainach”');
+});
+
+// --- M/6: wyciszenie ma ślad na przycisku (MiniEl jak w testach rendera) ---
+
+class MiniEl {
+  constructor(tag) {
+    this.tagName = tag;
+    this.children = [];
+    this.listeners = {};
+    this.style = {};
+    this.dataset = {};
+    this.className = '';
+    this.text = '';
+    this.html = '';
+    this.type = '';
+  }
+  set textContent(v) { this.text = String(v); this.children = []; }
+  get textContent() { return this.text + this.children.map((c) => c.textContent).join(''); }
+  set innerHTML(v) { this.html = String(v); this.text = String(v).replace(/<[^>]*>/g, ''); this.children = []; }
+  get innerHTML() { return (this.html ? this.html : this.text) + this.children.map((c) => c.innerHTML).join(''); }
+  appendChild(c) { this.children.push(c); return c; }
+  addEventListener(t, fn) { (this.listeners[t] ??= []).push(fn); }
+}
+globalThis.document ??= { createElement: (tag) => new MiniEl(tag) };
+globalThis.window ??= { confirm: () => false, innerWidth: 1024, innerHeight: 768, matchMedia: () => ({ matches: false }) };
+
+function panelPoRenderze(ignorowane) {
+  const els = {};
+  for (const key of ['banner', 'status', 'stackZone', 'bfEnemy', 'bfOwn', 'graveEnemy', 'graveOwn', 'exileZone', 'hand', 'actions', 'log']) {
+    els[key] = new MiniEl(`#${key}`);
+  }
+  const cmdRzut = { type: 'cast_spell', playerId: 'p1', objectId: 'wind', targets: [] };
+  const view = {
+    status: 'active', winnerId: null, playerId: 'p1',
+    players: [{ id: 'p1', name: 'Ty', life: 20 }, { id: 'p2', name: 'Nieprzyjaciel', life: 20 }],
+    turn: { number: 4, activePlayerId: 'p2', priorityPlayerId: 'p1', phase: 'beginning', step: 'upkeep' },
+    zones: {
+      hand: [{ id: 'wind', cardId: 'revealing-wind', controllerId: 'p1', zone: 'hand', kind: 'spell' }],
+      battlefield: [], stack: [], graveyard: [], library: [], exile: [],
+    },
+    legalCommands: [cmdRzut, { type: 'pass_priority', playerId: 'p1' }],
+  };
+  const fakeSession = {
+    view: () => view,
+    log: [], reasoning: [], state: { objects: new Map(), registry: REGISTRY },
+    nameOf: (cardId) => REGISTRY.get(cardId)?.name ?? cardId,
+    nameOfObject: (id) => id,
+    cardDetails: (cardId) => REGISTRY.get(cardId) ?? null,
+    colorsOf: (cardId) => REGISTRY.get(cardId)?.colors ?? [],
+    abilitiesOf: (cardId) => REGISTRY.get(cardId)?.abilities ?? [],
+  };
+  renderTableView({
+    els, session: fakeSession, play: () => {}, onCardClick: () => {},
+    onChoiceRequest: () => {}, ignoredOptionKeys: ignorowane, onToggleIgnoredOption: () => {},
+  });
+  return els.actions.children;
+}
+
+test('M/6: wyciszony rzut ma ślad na przycisku („wyciszone — auto-pass nie przerywa”)', () => {
+  const klucz = commandOptionKey({ type: 'cast_spell', playerId: 'p1', objectId: 'wind', targets: [] });
+  const dzieci = panelPoRenderze(new Set([klucz]));
+  const przyciskRzutu = dzieci.find((b) => (b.className ?? '').includes('action-is-ignored'));
+  assert.ok(przyciskRzutu, 'przycisk wyciszonej akcji ma klasę action-is-ignored');
+  const notka = przyciskRzutu.children.find((c) => (c.className ?? '').includes('action-ignored-note'));
+  assert.ok(notka?.textContent.includes('wyciszone'), 'notka mówi o wyciszeniu');
+  // A bez wyciszenia śladu nie ma.
+  const dzieci2 = panelPoRenderze(new Set());
+  assert.ok(!dzieci2.some((b) => (b.className ?? '').includes('action-is-ignored')),
+    'bez ptaszka przycisku bez notki');
 });

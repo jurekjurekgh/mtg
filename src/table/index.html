@@ -562,6 +562,13 @@
   .action .action-ignore .action-ignore-input {
     width: 16px; height: 16px; accent-color: var(--gold, #e6c36a); cursor: pointer; margin: 0;
   }
+  /* M (2026-10-24): ślad wyciszenia na przycisku — sama etykieta akcji
+     przygasa, a notka mówi wprost, że wyciszenie dotyczy auto-passu
+     (goły zaznaczony checkbox właściciel odczytał jako błąd karty). */
+  .action.action-is-ignored .action-label { opacity: 0.55; }
+  .action .action-ignored-note {
+    flex-shrink: 0; font-size: 10px; color: var(--muted-2); white-space: nowrap;
+  }
   button.action.primary { background: var(--gold); color: #fff; border-color: var(--gold); }
   button.action.primary::before { content: "▶"; color: #fff; }
   button.action.danger { border-color: var(--red); background: #fee2e2; color: #b91c1c; }
