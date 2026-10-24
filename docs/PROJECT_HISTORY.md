@@ -20,6 +20,94 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-24 — audyt scalonego PR #172 (32/32 plików, F-1..F-3) oraz pętla jakości (PR #173)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/1e1d0ca7-mtg` od `main` @ `67dbd0f`
+  (squash-merge PR #172). Plan: `docs/plans/PLAN_2026-10-24-audyt-pr172-petla-jakosci.md`,
+  raport audytu: `docs/audits/AUDYT_PR172_2026-10-24.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-24b.md`.
+- **Audyt PR #172 (32/32 plików, diff `3fe3638..3ad2f6b`):** wszystkie cytaty CR
+  poprzedniej sesji zweryfikowane dosłownie w wydaniu 2026-09-25
+  (`cr-raw.txt`, SHA zgodny z pinem projektu; 701.35a, 605.3, 708.9, 603.10a,
+  707.2, 400.7, 702.33a, 509.1b, 702.10b, 107.3a, 601.2f). Kod produkcyjny bez
+  usterek regułowych; mutacje A/C2/D czerwienią odpowiednie piny, próbka bota
+  20/20. Znaleziska i naprawy:
+  - **F-1 (`3f05912`, tylko test):** okaz Skarbu w `F-2/2` miał kształt spoza
+    kontraktu `treasureManaAbilityOf` (`sacrifice` zamiast `sacrificeSelf`,
+    brak `fromTreasure`), więc pin zatrzymanego Skarbu był pusty (mutacja
+    bramki `detained` zielona). Okaz o kształcie katalogowym + asercje bazy
+    sprzed detainu; mutacja po naprawie czerwieni (klasa L65/L61).
+  - **Pin ze sondy audytu (`6223ffe`):** druga połowa CR 708.9 — zakryty czar
+    morpha skontrzony ze stosu odzyskuje pełne cechy druku w grobie (FoW na
+    stosie przypięte przy okazji).
+  - **F-2/F-3 (`f28be64`, tylko dokumentacja i tytuły testów):** handoff PR #172
+    i wpis o CR-2 nazywały nieistniejące symbole (`lkiSnapshot`,
+    `resetZoneChangeAttributes`, `detainedUntilTurnOf`,
+    `collectTriggeredAbilities`) — zastąpione rzeczywistymi
+    (`formerEffectiveAbilities` w `moveObjectDirectly`, `detainUntilYourNextTurn`,
+    `abilitiesOnDeath`); numeracja CR-2/CR-3 w `test/petla-jakosci-cr-lki-i-zakryte.test.js`
+    ujednolicona z opisem PR #172, handoffem i niniejszą historią.
+- **Pętla jakości:** 4 partie Żywego Testera na zbudowanym artefakcie (talie
+  spoza próbki benchmarku wg priorytetu z `TESTER_STOLU.md`; profile explorer/
+  defensive/random/impatient) — wszystkie ukończone naturalnie, 0 zgłoszeń
+  detektorów; ręczna lektura transkryptów po trzech osiach bez znalezisk
+  (etykiety kompletne, zagranie *Pain for All* na własnym stworze zgodne
+  z Oracle). Analizator `tools/event-contract-audit.mjs` czysty. Sonda reguły
+  legend (CR 704.5j) wobec kopii `enter_as_copy` na syntetycznym legendarnym
+  Ally: wybór kolejkowany poprawnie, kopia po zejściu do grobu wraca do druku
+  *Jwari Shapeshifter* — obszar zweryfikowany jako poprawny (brak nośnika
+  w katalogu: żaden legendarny Ally).
+- **Zgłoszenie właściciela E (`9676041`, po domknięciu sesji):** modal
+  „Rozgrywka” nie nazywał, kogo kopiuje *Jwari Shapeshifter* (w logu linia
+  była). Typ `enter_as_copy_resolved` nie należał do żadnego zbioru bramki
+  `isMainLogEvent` — poza oknem `botActing` nigdy nie trafiał do `botMoves`.
+  Fix: `COPY_DIGEST_EVENTS` (tożsamość kopii na polu bitwy jest publiczna,
+  CR 400.2/707.2) + test `test/zgloszenie-e-jwari-rozgrywka.test.js`.
+- **Zgłoszenie właściciela F (`eb133e5`, po domknięciu sesji):** karty z Disguise
+  (z definicji Ward {2}, CR 702.168a) — (a) brak badge'a „Ward {2}” na kaflu
+  zakrytego *Riftburst Helliona*: chipy nakładki brały się tylko
+  z `grantedKeywords`, a ward zakrycia nie jest grantem (dla zakrytego
+  `granted=[]`) — jawny flag w `buildStateOverlay`; (b) bot celował Detainem
+  *Azorius Justiciara* w zakrytego z ward bez many na dopłatę: podatek ward
+  czytał cele z `targets`/`targetId`, a warianty wielocelowe
+  `resolve_trigger_target` niosą `targetIds` (podatek 0). Po naprawie bot bez
+  zapasu wybiera sam legalny cel, z zapasem dopłaca. Drugi cel (Knight)
+  niezagrożony po kontrze ward to **poprawne** zachowanie silnika — CR 702.21a
+  kontruje całą zdolność, w odróżnieniu od nielegalnego celu (CR 608.2b);
+  przypięte testem F/4 w `test/zgloszenie-f-disguise-ward.test.js`.
+- **Zgłoszenie właściciela G (`7c60e61`, po domknięciu sesji):** badge „+1/+1”
+  z anthemu *Trostani Discordant* nie pojawiał się na zakrytym stworze
+  (statystyki 3/3 poprawne). Dwa punkty zrzutu prezentacji: `cardInfo`
+  zerował `grantedPower/Toughness` dla zakrytych, a `playerView` liczył je
+  tylko dla widza znającego tożsamość — mimo że efektywne P/T widok drukuje
+  publicznie, a baza zakrycia to definicyjne 2/2. Po naprawie badge wraca po
+  obu stronach stołu (FoW bez zmian; nazwy mechanik bonusu dalej za bramką).
+- **Zgłoszenia właściciela H/I (po domknięciu sesji):** H (`295f4a5`) — token
+  *First Mate Ragavan* z auto-rezygnacji *Barala and Kari Zev* powstawał bez
+  żadnej informacji w logu i „Rozgrywce”: `pruneDeadPendingDecisions` zwracał
+  ręcznie zbieraną listę zdarzeń, a zdarzeń dopisanych przez `applyEffect`
+  (m.in. `token_created`) nie niósł żaden wynik komendy. Po naprawie prune
+  zwraca cały dopisany plaster `state.events`. I (`1846318`) — bot w oknie
+  Epic Experiment rzucał *Selesnya Charm* trybem +2/+2 we własnego defendera
+  w głównej fazie zamiast stworzyć tokena 2/2: trójka okien flat
+  (suspend/epic/rebound) remisowała tryby na bazie 70. Wspólny
+  `freeCastEffectsScore` wycenia teraz token ciałem, pump oknami walki
+  (`temporaryPumpPayoff` — defender 0), a destroy/exile dodatkowo materiałem
+  celu. Regresja bota: benchmark szybki 672 mecze, heuristic 87,8%.
+- **Zgłoszenie właściciela J (`aabce9a`, po domknięciu sesji):** bot wybierał
+  tryb lootu *Izzet Charm* („Draw two, then discard two”) i odrzucał grywalne
+  karty; przy 3 kartach w bibliotece lootował wprost w CR 704.5b. Wybór
+  samych odrzucanych kart okazał się zdrowy (`discardCostPreference`) —
+  brakowało bramki decyzji, a podatek biblioteczny jej nie zastępował.
+  Twarde `lootCastVeto` (typ efektu `draw_then_discard` wariantu rzutu,
+  ADR 0002): loot tylko przy co najmniej tylu kartach utkniętych na pipach
+  (brak koloru u nietapniętych landów), ile wynosi discard, oraz bibliotece
+  ≥10 i nie mniejszej od przeciwnika w paśmie 11–20. Test:
+  `test/zgloszenie-j-izzet-charm-loot.test.js` (5 pinów; mutacja bez weta
+  4/5 RED).
+- **Bramka końcowa:** `npm test` **8776/8776**, `npm run test:slow` **268/268**
+  (`test:all` **9044/9044**), `npm run build` **75 modułów / 5391,9 kB**.
+
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/6f1bfb96-mtg` od `main` @ `3fe3638`
@@ -66,8 +154,9 @@
 - **Pętla jakości — Polowanie CR (`d6ff380`, `CR-1..CR-4`):**
   - **CR-1 (`CR 708.9`):** odkrycie i przywrócenie cech zakrytych kart/czarów przy
     opuszczeniu `battlefield` lub `stack` (`moveObject`).
-  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** snapshot LKI (`lkiSnapshot`)
-    przed `resetZoneChangeAttributes` zachowuje kopiowane/nadane zdolności odejścia
+  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** migawka LKI
+    `formerEffectiveAbilities` liczona w `moveObjectDirectly` (objects.js)
+    z obiektu PRZED zmianą strefy zachowuje kopiowane/nadane zdolności odejścia
     i blokuje fałszywy wyzwalacz `dies` z tylnej strony zakrytej karty.
   - **CR-3 (`CR 113.6` / `CR 603.10a`):** wyzwalacze odejścia skanują wyłącznie
     `battlefield` oraz opuszczający permanent (LKI), bez kart w `graveyard`/`exile`.

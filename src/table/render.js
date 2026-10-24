@@ -6,7 +6,8 @@ import {
 import { choiceRequest } from '../protocol/types.js';
 import { UNDERCITY_ROOMS } from '../engine/effects.js';
 import { castsWithoutPayingMana, hasFreeCastStamp, impulseWindowOf } from '../engine/impulse-window.js';
-import { isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { isManualManaAbilityCommand, isPureManaAbilityCommand } from '../engine/mana-sources.js';
+import { PAYMENT_DECISION_TYPES } from './mana-wizard.js';
 import { activatableAbilities, CARD_TYPES } from '../engine/permanents.js';
 import { coloredPipsOf } from '../engine/mana-cost.js';
 import { DAY_NIGHT_TOKEN, UNDERCITY_DUNGEON } from '../cards/card-data.js';
@@ -949,6 +950,13 @@ export function appendLogLineWithCardLinks(line, text, cardIdByName) {
  * komendy — jedno źródło prawdy o tym, co jest zdolnością many (L41).
  * Warianty z dodatkowym wyborem (cele, X, crew, koszty) zostają w panelu.
  */
+/** Argumenty silnikowych predykatów komend many z sesji stołu (jeden odczyt). */
+function manaCommandLookup(command, session) {
+  const object = session?.state?.objects?.get(command?.objectId);
+  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
+  return [object, fallback, session?.state ?? null];
+}
+
 export function isManaAbilityCommand(command, session) {
   // J (zgłoszenie właściciela 2026-09-19b): predykat przeniesiony do SILNIKA
   // (`isPureManaAbilityCommand` + `MANA_ABILITY_PAYLOAD_KEYS`) — tę samą
@@ -957,13 +965,22 @@ export function isManaAbilityCommand(command, session) {
   // Panel zostaje przy swoim wejściu (testy i main.js wołają po `session`),
   // ale decyzję podejmuje silnik; `session.abilitiesOf` to fallback dla
   // obiektów, których nie ma w stanie (deskryptory z rejestru).
-  const object = session?.state?.objects?.get(command?.objectId);
-  const fallback = object?.cardId ? session.abilitiesOf?.(object.cardId) : null;
-  return isPureManaAbilityCommand(command, object, fallback, session?.state ?? null);
+  return isPureManaAbilityCommand(command, ...manaCommandLookup(command, session));
 }
 
 export function buildActionEntries(commands, session, view) {
-  const entries = buildChoiceRequestEntries(commands.filter((cmd) => !isManaAbilityCommand(cmd, session)), view);
+  // K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): filtr
+  // M369/G chowa czyste zdolności many, bo płaci za nie auto-tap/kreator —
+  // ale przy OTWARTEJ decyzji płatniczej źródła o ręcznym koszcie
+  // (poświęcenie Eldrazi Sciona) auto-płatność sama nie odpali, a CR 608.2g
+  // pozwala je aktywować przed zapłatą. Bez wyjątku gracz bez wolnej many
+  // widział tylko „Nie płać”, choć silnik aktywację oferował w ofercie.
+  const paymentDecisionOpen = commands.some((cmd) => PAYMENT_DECISION_TYPES.has(cmd.type));
+  const entries = buildChoiceRequestEntries(commands.filter((cmd) => {
+    if (!isManaAbilityCommand(cmd, session)) return true;
+    return paymentDecisionOpen
+      && isManualManaAbilityCommand(cmd, ...manaCommandLookup(cmd, session));
+  }), view);
   const byKey = new Map();
   const out = [];
   for (const entry of entries) {
@@ -4709,8 +4726,15 @@ export function cardInfo(session, object, combat = null) {
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     // M188/A: nadane P/T z efektów ciągłych (statyka warunkowa, aura, anthem,
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
-    grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
-    grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // G (zgłoszenie właściciela 2026-10-24, Trostani Discordant): zakryty
+    // permanent TEŻ nosi bonus — anthem działa na zakrytego 2/2 (silnik liczy
+    // statystyki poprawnie, kafel drukuje efektywne 3/3), a zerowanie tutaj
+    // gasiło badge „+1/+1" do chwili obrotu twarzą do góry. Wielkość bonusu
+    // nie ujawnia tożsamości (baza zakrycia to definicyjne 2/2, wynikowe
+    // P/T i tak jest na kaflu), więc nie ma powodu FoW do ukrywania badge'a;
+    // co wolno pokazać przeciwnikowi, rozstrzyga bramka w playerView.
+    grantedPower: Number(object.grantedPower ?? 0),
+    grantedToughness: Number(object.grantedToughness ?? 0),
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
     // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
     // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast
@@ -5141,6 +5165,12 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
     if (info.morphBadge) flags.push(['morph', info.morphBadge]);
+    // F (zgłoszenie właściciela 2026-10-24, Riftburst Hellion): zakryte
+    // disguise/cloak to z definicji „2/2 z ward {2}" (CR 702.168a / 701.58a),
+    // ale ten ward nie jest GRANTEM — pętla `grantedKeywords` niżej go nie
+    // łapała, a cardInfo dla zakrytego zwraca granted=[]. Kwota ward była
+    // więc wyłącznie w linii reguł, bez badge'a na kaflu stołu.
+    if (info.faceDown && info.ward != null) flags.push(['kw', `Ward {${info.ward}}`]);
     if (info.goaded) flags.push(['goad', 'goad']);
     // M177/E (CR 701.35): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);

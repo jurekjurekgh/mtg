@@ -4150,6 +4150,68 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * J (zgłoszenie właściciela 2026-10-24, Izzet Charm — tryb „Draw two, then
+   * discard two"): bot wybierał tryb lootu i odrzucał grywalne karty, a przy
+   * 3 kartach w bibliotece lootował prosto w śmierć z braku kart (CR 704.5b).
+   * Podatek biblioteczny tego nie zatrzymywał, więc regułę właściciela
+   * wdrażamy jako TWARDE weto wariantu RZUTU (jak `symmetricDrainVeto`):
+   * wariant czaru z `draw_then_discard` wolno wybrać tylko, gdy
+   * (a) w ręce — poza rzucanym czarem — jest co najmniej tyle kart
+   * „utkniętych na pipach”, ile trzeba odrzucić; karta jest utknięta, gdy
+   * ma pip, którego koloru nie daje żaden NIETAPNIĘTY land bota (landy
+   * w ręce nie są materiałem — nie rzuca się ich za pipy), oraz
+   * (b) biblioteka bota ma co najmniej 10 kart i nie jest mniejsza od
+   * biblioteki przeciwnika w paśmie 11–20 (dokładnie 10 kart przechodzi —
+   * właściciel mówił o „<10” i paśmie 11–20, konwencja jak
+   * `SYMMETRIC_DRAIN_MIN_LIBRARY`).
+   * Wybór SAMYCH odrzucanych kart już jest zdrowy (`discardCostPreference`:
+   * najpierw utknięte kolorowo, potem najgorsze z grywalnych) — zgłoszenie
+   * dotyczyło decyzji o loocie, nie kolejności odrzuceń. Klasa po typie
+   * efektu wybranego wariantu (ADR 0002), nie po nazwie karty; aktywowani
+   * looterzy („{T}: draw, then discard”) to inna, powtarzalna decyzja
+   * z własną wyceną i zostają poza zakresem weta. Zwraca true = weto.
+   */
+  const LOOT_MIN_LIBRARY = 10;
+  const LOOT_BEHIND_BAND_MAX = 20;
+  function lootCastVeto(view, cmd) {
+    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!card) return false;
+    // Efekty WYBRANEGO wariantu (tryb modalny niesie własne) — ta sama
+    // rozdzielczość, co okna free-cast; `spell` dobieramy z rejestru, gdyby
+    // wpis widoku go nie niósł (jak przy `libraryDrainTax`).
+    const withSpell = { ...card, spell: card.spell ?? (card.cardId ? cardDef(card.cardId)?.spell : undefined) };
+    const lootEffects = freeCastVariantEffects(withSpell, cmd)
+      .filter((eff) => eff?.type === 'draw_then_discard');
+    if (lootEffects.length === 0) return false;
+    // Domyślna liczba odrzuceń jak w silniku: discardCount ?? amount ?? 1.
+    const discardTotal = lootEffects.reduce(
+      (sum, eff) => sum + (eff.discardCount ?? eff.amount ?? 1), 0);
+    const untappedLandColors = new Set();
+    for (const permanent of view.zones.battlefield ?? []) {
+      if (permanent?.controllerId !== view.playerId || permanent.tapped) continue;
+      if (!(permanent.types ?? []).includes('Land')) continue;
+      for (const color of koloryZrodlaWidoku(permanent)) untappedLandColors.add(color);
+    }
+    const strandedCount = (view.zones.hand ?? []).filter((handEntry) => {
+      if (!handEntry?.cardId || handEntry.id === cmd.objectId) return false;
+      const def = cardDef(handEntry.cardId);
+      if ((def?.types ?? handEntry.types ?? []).includes('Land')) return false;
+      return coloredPipsOf(handEntry.cardId)
+        .some((unit) => !unit.some((color) => untappedLandColors.has(color)));
+    }).length;
+    if (strandedCount < discardTotal) return true;
+    const myLibrary = myLibraryCount(view);
+    if (myLibrary < LOOT_MIN_LIBRARY) return true;
+    if (myLibrary > LOOT_MIN_LIBRARY && myLibrary <= LOOT_BEHIND_BAND_MAX) {
+      const enemyLibrary = (view.zones.library ?? [])
+        .filter((o) => o.controllerId !== view.playerId).length;
+      if (myLibrary < enemyLibrary) return true;
+    }
+    return false;
+  }
+
+  /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
@@ -7611,6 +7673,42 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return score + freeCastAdditionalCostScore(view, cmd);
   }
 
+  /**
+   * I (zgłoszenie właściciela 2026-10-24, Selesnya Charm w Epic Experiment):
+   * wycena EFEKTÓW wariantu w oknach darmowego rzutu o bazie flat
+   * (suspend/epic/rebound). Dotąd jedyne premie to +15/+5 za kilka typów,
+   * więc tryby czaru modalnego REMISOWAŁY i wygrywał pierwszy wariant z
+   * listy: „Wzmocnienie" (+2/+2 i zadeptywanie do końca tury) na WŁASNYM
+   * DEFENDERZE w głównej fazie zamiast tokena 2/2, który zostaje na stole.
+   * Składowe klasy liczą te same helpery co reszta bota (L41):
+   *  - create_token: `tokenBodyValue` (stałe ciało na stole);
+   *  - pump czasowy: `temporaryPumpPayoff` (okna walki — defender i gra
+   *    poza walką dają 0; właściciel: wzmocnienie+trample ma sens tylko
+   *    jako combat trick);
+   *  - bezwarunkowe usunięcie (destroy/exile): dotychczasowe +15 oraz
+   *    materiał wrogiego celu (`permanentMaterialValue`), żeby zdjęcie
+   *    dużego zagrożenia nie przegrywało z małym tokenem.
+   */
+  function freeCastEffectsScore(view, effects, cmd) {
+    let score = 70;
+    for (const effect of effects ?? []) {
+      const type = effect?.type;
+      if (['damage', 'discard_cards', 'destroy_permanent', 'exile_permanent', 'mill_cards'].includes(type)) score += 15;
+      if (['draw_cards', 'gain_life'].includes(type)) score += 5;
+      if (type === 'destroy_permanent' || type === 'exile_permanent') {
+        const target = objectOnBoard(view, (cmd.targets ?? [])[effect.targetIndex ?? 0]);
+        if (target && target.controllerId !== view.playerId) score += permanentMaterialValue(target);
+      }
+      if (type === 'create_token') score += tokenBodyValue(view, effect);
+      else if (temporaryPumpOf(effect, view)) {
+        const host = objectOnBoard(view, (cmd.targets ?? [])[effect.targetIndex ?? 0]);
+        if (host && host.controllerId === view.playerId) score += temporaryPumpPayoff(view, host, effect);
+      }
+      score += fogWindowValue(view, effect);
+    }
+    return score;
+  }
+
   function freeCastAdditionalCostScore(view, cmd) {
     let score = 0;
     if (cmd.sacrificeTargetId != null) {
@@ -10222,8 +10320,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // celem", nie nazwa komendy. Zmierzone sondą w oknie madness: bot rzucał w
     // ward {2} bez rezerwy i oddawał czar do kontrowania (ten sam objaw, który
     // zgłosił właściciel w cz. 5 / NA2).
+    // F (zgłoszenie właściciela 2026-10-24, Azorius Justiciar): warianty
+    // WIELOCZELOWE resolve_trigger_target niosą cele w `targetIds`
+    // (game-state.js — „up to two target creatures"), nie w `targets` ani
+    // `targetId` — podatek liczył się od pustej listy i bot celował
+    // Detainem w zakrytego Helliona z ward {2} bez many na dopłatę:
+    // ward kontrował CAŁĄ zdolność (CR 702.21a), więc nawet drugi,
+    // legalny cel (Knight) nie został zatrzymany.
     const wardTax = WARD_TAXED_TYPES.has(cmd.type)
-      ? wardTargetTax(view, cmd.targets ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
+      ? wardTargetTax(view, cmd.targets ?? cmd.targetIds ?? (cmd.targetId != null ? [cmd.targetId] : []), reservedManaOf(view, cmd))
       : 0;
     if (wardTax >= 200) return weightedScore(cmd.type, -200);
     // Ten sam efekt za surge zużywa mniej many — istniejąca waga kosztu,
@@ -10243,6 +10348,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // D (PR #171): odmowa rzutu permanentu z niekorzystnym triggerem
     // symetrycznego revealu na upkeepie (Duskmantle Seer i ta sama semantyka).
     if (symmetricUpkeepRevealCastVeto(view, cmd)) return finish(NEVER);
+    // J (zgłoszenie właściciela 2026-10-24): weto wariantu lootu bez
+    // „utkniętego na pipach” materiału do odrzucenia albo przy cienkiej
+    // bibliotece (Izzet Charm — patrz `lootCastVeto`).
+    if (lootCastVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
@@ -10354,14 +10463,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
@@ -10623,14 +10727,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);
@@ -10646,14 +10745,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
         if (effects.length > 0 && allEffectsInertNow(view, effects, { ...cmd, xValue: 0 })) return finish(-40);
-        let score = 70;
-        for (const effect of effects) {
-          if (['damage', 'discard_cards', 'destroy_permanent', 'mill_cards'].includes(effect?.type)) score += 15;
-          if (['draw_cards', 'gain_life'].includes(effect?.type)) score += 5;
-          // PMSSB-15: okno taktyczne fog w darmowych rzutach (L41 — ten sam
-          // helper co w cast_spell; flat 70 nie znał okien M91/M236).
-          score += fogWindowValue(view, effect);
-        }
+        // PMSSB-15 (fog) + I (Selesnya Charm): rodzina flat okien liczy
+        // efekty wspólnym helperem freeCastEffectsScore (L41).
+        let score = freeCastEffectsScore(view, effects, cmd);
         score -= freeCastTargetPenalty(view, effects, cmd);
         score += freeCastAdditionalCostScore(view, cmd);
         return finish(score);

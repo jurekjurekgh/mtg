@@ -12,25 +12,42 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-24):** [handoff](docs/setup/HANDOFF_2026-10-24.md),
-[plan sesji](docs/plans/PLAN_2026-10-23-audyt-pr171-petla-jakosci.md) oraz
-[audyt PR #171](docs/audits/AUDYT_PR171_2026-10-23.md) w otwartym
-[PR #172](https://github.com/jurekjurekgh/mtg/pull/172). Sesja 2026-10-23..24:
-pełny audyt scalonego PR #171 (71/71 plików zweryfikowanych względem CR `2026-09-25`)
-wraz z naprawami wszystkich znalezisk **F-1..F-8** (drenaż triggerów lądowych w
-`finishWizardPayment` bez podszywania pod bota i z obsługą Delve/Crew, blokada
-zdolności many przy Detain wg CR 701.35a/605.3, powrót cech karty po `enter_as_copy`
-wg CR 400.7/707.2, deduplikacja i ożywione lądy przy koszcie kickera, `effectiveGeneric`
-i `xCost.black` w kreatorze many, czysty tekst kosztu w `choiceGroupTitle`, filtr
-ewazji w `blokowalne` oraz `haste`/`cantAttackStatic`/`widokBezDefendera` w bocie)
-oraz pętla jakości — 9 partii Żywego Testera (`0` zgłoszeń detektorów) z naprawami
-opisów kart i odznak (**LT-1..LT-4**) i polowanie CR przy opuszczaniu pola bitwy/stosu
-(**CR-1..CR-4**: odkrycie cech zakrytych CR 708.9 oraz snapshot LKI zdolności i
-kontroli przy triggerach odejścia CR 603.10a/707.2/113.6/400.3). Bramki: `npm test`
-**8757/8757**, `npm run test:slow` **268/268** (`test:all` **9025/9025**), build
-**75 modułów / 5383,3 kB**. PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-21e](docs/setup/HANDOFF_2026-10-21e.md)
-(sesja PR #171 — audyt PR #170 + uwagi z gry T, U, A, B, D).
+**Aktualny punkt zaczepienia (2026-10-24):** [handoff](docs/setup/HANDOFF_2026-10-24b.md),
+[plan sesji](docs/plans/PLAN_2026-10-24-audyt-pr172-petla-jakosci.md) oraz
+[audyt PR #172](docs/audits/AUDYT_PR172_2026-10-24.md) w otwartym
+[PR #173](https://github.com/jurekjurekgh/mtg/pull/173). Sesja 2026-10-24:
+pełny audyt scalonego PR #172 (32/32 plików; wszystkie cytaty CR poprzedniej
+sesji zweryfikowane dosłownie w wydaniu `2026-09-25`, mutacje kluczowych pinów,
+sonda zakrytego czaru skontrzonego ze stosu, próbka bota 20/20) — kod produkcyjny
+bez usterek regułowych; naprawione znaleziska: pusty pin zatrzymanego Skarbu
+w teście `F-2/2` (okaz spoza kontraktu `treasureManaAbilityOf`), nieistniejące
+symbole mechanizmu LKI w dokumentacji PR #172 oraz odwrócona numeracja CR-2/CR-3
+między testem a dokumentami; dopisany stały pin drugiej połowy CR 708.9 (zakryty
+czar ze stosu do grobu). Pętla jakości: 4 partie Żywego Testera (talie spoza
+próbki benchmarku, 0 zgłoszeń detektorów, lektura po trzech osiach bez znalezisk),
+analizator kontraktów zdarzeń czysty, sonda reguły legend (CR 704.5j) wobec kopii
+`enter_as_copy` poprawna. Po domknięciu zgłoszenie właściciela **E**: modal
+„Rozgrywka” nazywa teraz, kogo kopiuje wprowadzona *Jwari Shapeshifter*
+(`COPY_DIGEST_EVENTS` w bramce `isMainLogEvent`, CR 400.2/707.2); zgłoszenie
+**F**: badge „Ward {2}” na kaflu zakrytych disguise/cloak oraz podatek Ward
+dla wielocelowych decyzji bota (`targetIds` — *Azorius Justiciar* nie marnuje
+już Detaina w cel z Ward bez many na dopłatę; niezapłacony Ward jednego celu
+nadal słusznie kontruje całą zdolność, CR 702.21a); zgłoszenie **G**: badge
+„+1/+1” z anthemu *Trostani Discordant* wraca na zakrytym permanencie po obu
+stronach stołu (koniec zerowania nadanego P/T dla zakrytych w `cardInfo`
+i jawne kwoty w widoku — efektywne P/T i tak było publiczne); zgłoszenia
+**H/I**: stworzenie *First Mate Ragavana* z auto-rezygnacji *Barala and Kari
+Zev* widać w logu i „Rozgrywce” (`pruneDeadPendingDecisions` zwraca cały
+plaster dopisanych zdarzeń), a bot w darmowych oknach (Epic/Suspend/Rebound)
+wycenia efekty wspólnym `freeCastEffectsScore` — *Selesnya Charm* daje token
+albo wygnanie dużego celu zamiast pumpa we własnego defendera; czarów
+z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
+bibliotece poniżej 10 kart. Bramki:
+`npm test` **8776/8776**, `npm run test:slow` **268/268** (`test:all` **9044/9044**),
+build **75 modułów / 5391,9 kB**.
+PR czeka na decyzję właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
+(sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,

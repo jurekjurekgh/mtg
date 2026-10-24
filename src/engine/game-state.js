@@ -1536,14 +1536,23 @@ function graveyardToTopCandidates(state, playerId, filter = null) {
  * decyzji, delirium bez intervening-if (CR 603.4) nic nie robi.
  * Wywoływana na starcie execute() ORAZ na końcu accepted() — zwraca
  * wyemitowane zdarzenia, żeby accepted() mogło dołączyć je do wyniku.
+ *
+ * H (zgłoszenie właściciela 2026-10-24, Baral and Kari Zev): zwracany jest
+ * CAŁY plaster `state.events` dopisany podczas przycinania, nie lista
+ * zbierana ręcznie przy `push` — gałąź auto-rezygnacji `pendingHandFreeCast`
+ * aplikuje `elseEffect` przez `applyEffect`, który sam dopisuje zdarzenia
+ * (m.in. `token_created` Ragavana). Ręczna lista ich nie niosła, więc token
+ * powstawał tylko w historii stanu: żaden wynik komendy go nie zawierał
+ * i gracz nie dostał informacji o stworzeniu tokena ani w logu, ani
+ * w „Rozgrywka", choć token stał na stole.
  */
 function pruneDeadPendingDecisions(state) {
-  const emitted = [];
+  const mark = state.events.length;
   while (state.pendingRoomTargets.length > 0
     && legalRoomTargetCandidates(state, state.pendingRoomTargets[0]).length === 0) {
     const pending = state.pendingRoomTargets[0];
     const e = { type: 'room_target_resolved', playerId: pending.playerId, room: pending.room, roomName: pending.roomName, targetId: null, noLegalTargets: true };
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
     state.pendingRoomTargets.shift();
     if (state.pendingRoomTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingRoomTargets[0].playerId;
@@ -1559,7 +1568,7 @@ function pruneDeadPendingDecisions(state) {
       cardId: state.objects.get(pending.sourceId)?.cardId ?? null,
       done: true, skipped: true,
     });
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
     if (state.pendingDevours.length > 0) {
       state.turn.priorityPlayerId = state.pendingDevours[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -1590,7 +1599,7 @@ function pruneDeadPendingDecisions(state) {
       ...(pending.elseEffect ? { alternative: elseEffectSummary(pending.elseEffect) } : {}),
       declined: true, noCandidates: true,
     });
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
   }
   while (state.pendingDeliriumTargets.length > 0
     && !deliriumDecisionPending(state, state.pendingDeliriumTargets[0])) {
@@ -1599,7 +1608,7 @@ function pruneDeadPendingDecisions(state) {
       playerId: pending.playerId, sourceId: pending.sourceId,
       cardId: state.objects.get(pending.sourceId)?.cardId ?? null, noEffect: true,
     });
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
     if (state.pendingDeliriumTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingDeliriumTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -1616,7 +1625,7 @@ function pruneDeadPendingDecisions(state) {
       playerId: pending.playerId, sourceId: pending.sourceId,
       cardId: state.objects.get(pending.sourceId)?.cardId ?? null, noEffect: true,
     });
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
     if (state.pendingMentorTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingMentorTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -1633,14 +1642,14 @@ function pruneDeadPendingDecisions(state) {
       playerId: pending.playerId, sourceId: pending.sourceId,
       cardId: pending.cardId, noEffect: true,
     });
-    state.events.push(e); emitted.push(e);
+    state.events.push(e);
     if (state.pendingTriggerTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
   }
-  return emitted;
+  return state.events.slice(mark);
 }
 
 /**
@@ -7014,7 +7023,16 @@ export function playerView(state, playerId) {
         // buff do końca tury) jawnie w widoku — kafel liczył badge z
         // `powerModifier`, którego statyka read-time nie ustawia, więc
         // „+1/+0 i menace" pokazywało tylko menace. Klasa M175/A3 dla P/T.
-        if (object.power !== null && object.kind === 'creature' && !hiddenFromViewer) {
+        // G (zgłoszenie właściciela 2026-10-24, Trostani): dla zakrytego
+        // permanentu na polu bitwy nadane P/T jest informacją publiczną
+        // mimo ukrytej tożsamości — `entry.power` wyżej to EFEKTYWNE P/T
+        // (z anthemem), a baza zakrycia to definicyjne 2/2, więc kwota
+        // bonusu niczego nie zdradza; bez niej przeciwnik też nie widział
+        // badge'a „+1/+1", choć statystyki kafla były poprawne. Nazwy
+        // mechanik (grantedStatMechanics niżej) zostają za bramką tożsamości.
+        const statBonusPublic = !hiddenFromViewer
+          || (object.faceDown && object.zone === 'battlefield');
+        if (object.power !== null && object.kind === 'creature' && statBonusPublic) {
           const granted = grantedStatBonus(object, state);
           if (granted.power !== 0) entry.grantedPower = granted.power;
           if (granted.toughness !== 0) entry.grantedToughness = granted.toughness;
@@ -7024,7 +7042,7 @@ export function playerView(state, playerId) {
           // ją na badge („Storied: +1/+0”) zamiast pokazywać gołe „+1/0”.
           // Widok zostaje opisem stanu (deskryptor), słownik prezentacji
           // mieszka w render.js (wzorzec grantedKeywords/grantedPower).
-          if (granted.mechanics?.length) {
+          if (!hiddenFromViewer && granted.mechanics?.length) {
             entry.grantedStatMechanics = granted.mechanics.map((m) => ({ ...m }));
           }
         }
