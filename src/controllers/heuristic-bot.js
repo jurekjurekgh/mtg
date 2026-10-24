@@ -4150,6 +4150,68 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   };
 
   /**
+   * J (zgłoszenie właściciela 2026-10-24, Izzet Charm — tryb „Draw two, then
+   * discard two"): bot wybierał tryb lootu i odrzucał grywalne karty, a przy
+   * 3 kartach w bibliotece lootował prosto w śmierć z braku kart (CR 704.5b).
+   * Podatek biblioteczny tego nie zatrzymywał, więc regułę właściciela
+   * wdrażamy jako TWARDE weto wariantu RZUTU (jak `symmetricDrainVeto`):
+   * wariant czaru z `draw_then_discard` wolno wybrać tylko, gdy
+   * (a) w ręce — poza rzucanym czarem — jest co najmniej tyle kart
+   * „utkniętych na pipach”, ile trzeba odrzucić; karta jest utknięta, gdy
+   * ma pip, którego koloru nie daje żaden NIETAPNIĘTY land bota (landy
+   * w ręce nie są materiałem — nie rzuca się ich za pipy), oraz
+   * (b) biblioteka bota ma co najmniej 10 kart i nie jest mniejsza od
+   * biblioteki przeciwnika w paśmie 11–20 (dokładnie 10 kart przechodzi —
+   * właściciel mówił o „<10” i paśmie 11–20, konwencja jak
+   * `SYMMETRIC_DRAIN_MIN_LIBRARY`).
+   * Wybór SAMYCH odrzucanych kart już jest zdrowy (`discardCostPreference`:
+   * najpierw utknięte kolorowo, potem najgorsze z grywalnych) — zgłoszenie
+   * dotyczyło decyzji o loocie, nie kolejności odrzuceń. Klasa po typie
+   * efektu wybranego wariantu (ADR 0002), nie po nazwie karty; aktywowani
+   * looterzy („{T}: draw, then discard”) to inna, powtarzalna decyzja
+   * z własną wyceną i zostają poza zakresem weta. Zwraca true = weto.
+   */
+  const LOOT_MIN_LIBRARY = 10;
+  const LOOT_BEHIND_BAND_MAX = 20;
+  function lootCastVeto(view, cmd) {
+    if (!LIBRARY_DRAIN_CAST_TYPES.has(cmd?.type)) return false;
+    const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+    if (!card) return false;
+    // Efekty WYBRANEGO wariantu (tryb modalny niesie własne) — ta sama
+    // rozdzielczość, co okna free-cast; `spell` dobieramy z rejestru, gdyby
+    // wpis widoku go nie niósł (jak przy `libraryDrainTax`).
+    const withSpell = { ...card, spell: card.spell ?? (card.cardId ? cardDef(card.cardId)?.spell : undefined) };
+    const lootEffects = freeCastVariantEffects(withSpell, cmd)
+      .filter((eff) => eff?.type === 'draw_then_discard');
+    if (lootEffects.length === 0) return false;
+    // Domyślna liczba odrzuceń jak w silniku: discardCount ?? amount ?? 1.
+    const discardTotal = lootEffects.reduce(
+      (sum, eff) => sum + (eff.discardCount ?? eff.amount ?? 1), 0);
+    const untappedLandColors = new Set();
+    for (const permanent of view.zones.battlefield ?? []) {
+      if (permanent?.controllerId !== view.playerId || permanent.tapped) continue;
+      if (!(permanent.types ?? []).includes('Land')) continue;
+      for (const color of koloryZrodlaWidoku(permanent)) untappedLandColors.add(color);
+    }
+    const strandedCount = (view.zones.hand ?? []).filter((handEntry) => {
+      if (!handEntry?.cardId || handEntry.id === cmd.objectId) return false;
+      const def = cardDef(handEntry.cardId);
+      if ((def?.types ?? handEntry.types ?? []).includes('Land')) return false;
+      return coloredPipsOf(handEntry.cardId)
+        .some((unit) => !unit.some((color) => untappedLandColors.has(color)));
+    }).length;
+    if (strandedCount < discardTotal) return true;
+    const myLibrary = myLibraryCount(view);
+    if (myLibrary < LOOT_MIN_LIBRARY) return true;
+    if (myLibrary > LOOT_MIN_LIBRARY && myLibrary <= LOOT_BEHIND_BAND_MAX) {
+      const enemyLibrary = (view.zones.library ?? [])
+        .filter((o) => o.controllerId !== view.playerId).length;
+      if (myLibrary < enemyLibrary) return true;
+    }
+    return false;
+  }
+
+  /**
    * Podatek biblioteczny wariantu — liczony RAZ w `scoreCommand` i odejmowany
    * w `finish` (jak wardTax), bo ścieżki wyceny rzutu mają wiele wyjść (aura,
    * bestow, epsilon gęstości), a ryzyko deck-outu dotyczy wariantu jako
@@ -10286,6 +10348,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // D (PR #171): odmowa rzutu permanentu z niekorzystnym triggerem
     // symetrycznego revealu na upkeepie (Duskmantle Seer i ta sama semantyka).
     if (symmetricUpkeepRevealCastVeto(view, cmd)) return finish(NEVER);
+    // J (zgłoszenie właściciela 2026-10-24): weto wariantu lootu bez
+    // „utkniętego na pipach” materiału do odrzucenia albo przy cienkiej
+    // bibliotece (Izzet Charm — patrz `lootCastVeto`).
+    if (lootCastVeto(view, cmd)) return finish(NEVER);
     // M111: TRYB modalnego triggera („At the beginning of your upkeep,
     // choose one —" Etherwrought Page). Widok niesie tylko nazwy trybów,
     // więc treść bierzemy z rejestru po cardId (jak przy czarach) i wyceniamy
