@@ -217,3 +217,22 @@ token wyceniany ciałem (`tokenBodyValue`), pump oknami walki
 bot tworzy Knighta, a przy wrogim 6/6 wybiera wygnanie. Bramka po H+I:
 `npm test` **8771/8771**, `test:slow` **268/268** (`test:all` **9039/9039**),
 build **75 modułów / 5388,1 kB**; benchmark szybki 672 mecze (heuristic 87,8%).
+
+## Zgłoszenie właściciela J (po H+I, 2026-10-24)
+
+**J — *Izzet Charm*, tryb „Draw two, then discard two”:** bot wybierał tryb
+lootu i odrzucał grywalne karty, a przy 3 kartach w bibliotece lootował
+wprost w CR 704.5b. Sondy pokazały, że wybór SAMYCH kart do odrzucenia jest
+zdrowy (`discardCostPreference`: najpierw utknięte kolorowo, keeperów od
+najgorszego) — brakowało bramki DECYZJI o loocie, a podatek biblioteczny
+(kara wagowa) jej nie zastępował. Naprawa `aabce9a`: twarde `lootCastVeto`
+w `scoreCommand` (klasa po typie efektu `draw_then_discard` wybranego
+wariantu rzutu, ADR 0002) — loot wolno tylko, gdy w ręce poza rzucanym
+czarem jest co najmniej tyle kart „utkniętych na pipach” (pip, którego
+koloru nie daje żaden nietapnięty land bota), ile trzeba odrzucić, oraz
+biblioteka bota ma ≥10 kart i w paśmie 11–20 nie jest mniejsza od
+biblioteki przeciwnika (dokładnie 10 przechodzi — słowa właściciela).
+Aktywowani looterzy („{T}: draw, then discard”) poza zakresem — inna,
+powtarzalna decyzja. Bramka po J: `npm test` **8776/8776**, `test:slow`
+**268/268** (`test:all` **9044/9044**), build **75 modułów / 5391,9 kB**;
+benchmark szybki 672 mecze (heuristic 87,8%, bez regresji).

@@ -40,9 +40,11 @@ i jawne kwoty w widoku — efektywne P/T i tak było publiczne); zgłoszenia
 Zev* widać w logu i „Rozgrywce” (`pruneDeadPendingDecisions` zwraca cały
 plaster dopisanych zdarzeń), a bot w darmowych oknach (Epic/Suspend/Rebound)
 wycenia efekty wspólnym `freeCastEffectsScore` — *Selesnya Charm* daje token
-albo wygnanie dużego celu zamiast pumpa we własnego defendera. Bramki:
-`npm test` **8771/8771**, `npm run test:slow` **268/268** (`test:all` **9039/9039**),
-build **75 modułów / 5388,1 kB**.
+albo wygnanie dużego celu zamiast pumpa we własnego defendera; czarów
+z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
+bibliotece poniżej 10 kart. Bramki:
+`npm test` **8776/8776**, `npm run test:slow` **268/268** (`test:all` **9044/9044**),
+build **75 modułów / 5391,9 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

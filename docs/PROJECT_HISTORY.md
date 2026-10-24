@@ -94,8 +94,19 @@
   `freeCastEffectsScore` wycenia teraz token ciałem, pump oknami walki
   (`temporaryPumpPayoff` — defender 0), a destroy/exile dodatkowo materiałem
   celu. Regresja bota: benchmark szybki 672 mecze, heuristic 87,8%.
-- **Bramka końcowa:** `npm test` **8771/8771**, `npm run test:slow` **268/268**
-  (`test:all` **9039/9039**), `npm run build` **75 modułów / 5388,1 kB**.
+- **Zgłoszenie właściciela J (`aabce9a`, po domknięciu sesji):** bot wybierał
+  tryb lootu *Izzet Charm* („Draw two, then discard two”) i odrzucał grywalne
+  karty; przy 3 kartach w bibliotece lootował wprost w CR 704.5b. Wybór
+  samych odrzucanych kart okazał się zdrowy (`discardCostPreference`) —
+  brakowało bramki decyzji, a podatek biblioteczny jej nie zastępował.
+  Twarde `lootCastVeto` (typ efektu `draw_then_discard` wariantu rzutu,
+  ADR 0002): loot tylko przy co najmniej tylu kartach utkniętych na pipach
+  (brak koloru u nietapniętych landów), ile wynosi discard, oraz bibliotece
+  ≥10 i nie mniejszej od przeciwnika w paśmie 11–20. Test:
+  `test/zgloszenie-j-izzet-charm-loot.test.js` (5 pinów; mutacja bez weta
+  4/5 RED).
+- **Bramka końcowa:** `npm test` **8776/8776**, `npm run test:slow` **268/268**
+  (`test:all` **9044/9044**), `npm run build` **75 modułów / 5391,9 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
