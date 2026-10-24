@@ -236,3 +236,18 @@ Aktywowani looterzy („{T}: draw, then discard”) poza zakresem — inna,
 powtarzalna decyzja. Bramka po J: `npm test` **8776/8776**, `test:slow`
 **268/268** (`test:all` **9044/9044**), build **75 modułów / 5391,9 kB**;
 benchmark szybki 672 mecze (heuristic 87,8%, bez regresji).
+
+## Zgłoszenie właściciela K (po J, 2026-10-24)
+
+**K — *Abstruse Interference*:** gdy bot kontrował czar gracza („unless its
+controller pays {1}”), w „Twoje działania” była tylko odmowa, choć gracz
+mógł poświęcić własnego *Eldrazi Sciona* za {C}. Silnik był kompletny
+(oferta i wykonawca przepuszczają aktywacje many przy decyzji — CR 608.2g);
+gubił je filtr M369/G w `buildActionEntries`, chowający z panelu wszystkie
+czyste zdolności many, także o koszcie, którego auto-płatność sama nie
+odpali. Naprawa `f1b015b`: przy otwartej decyzji płatniczej (rodzina
+`PAYMENT_DECISION_TYPES` kreatora) panel pokazuje aktywacje o ręcznym
+koszcie (silnikowy `isManualManaAbilityCommand` — składnik kosztu poza
+{T}/maną); zwykłe {T} dalej kryje auto-tap, poza decyzjami bez zmian.
+Bramka po K: `npm test` **8780/8780**, `test:slow` **268/268** (`test:all`
+**9048/9048**), build **75 modułów / 5394,3 kB**.

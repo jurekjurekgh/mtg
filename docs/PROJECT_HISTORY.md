@@ -105,8 +105,18 @@
   ≥10 i nie mniejszej od przeciwnika w paśmie 11–20. Test:
   `test/zgloszenie-j-izzet-charm-loot.test.js` (5 pinów; mutacja bez weta
   4/5 RED).
-- **Bramka końcowa:** `npm test` **8776/8776**, `npm run test:slow` **268/268**
-  (`test:all` **9044/9044**), `npm run build` **75 modułów / 5391,9 kB**.
+- **Zgłoszenie właściciela K (`f1b015b`, po domknięciu sesji):** przy kontrze
+  *Abstruse Interference* („unless pays {1}”) panel „Twoje działania” dawał
+  tylko „Nie płać”, choć gracz mógł poświęcić własnego *Eldrazi Sciona* za
+  {C}. Silnik aktywację oferował i wykonywał (CR 608.2g); chował ją filtr
+  M369/G panelu (czyste zdolności many poza panelem — także te o koszcie
+  poświęcenia, których auto-płatność nie odpala). Przy otwartej decyzji
+  płatniczej panel pokazuje teraz aktywacje many o ręcznym koszcie
+  (`isManualManaAbilityCommand`); dotyczy całej rodziny płatności (kontr-
+  płatność, ward, zapłać-albo-poświęć, opcjonalna płatność). Test:
+  `test/zgloszenie-k-abstruse-scion-platnosc.test.js`.
+- **Bramka końcowa:** `npm test` **8780/8780**, `npm run test:slow` **268/268**
+  (`test:all` **9048/9048**), `npm run build` **75 modułów / 5394,3 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
