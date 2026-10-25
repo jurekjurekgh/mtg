@@ -88,6 +88,34 @@ test('O: dobranie niesie karę biblioteczną — przy 1 karcie w bibliotece nawe
     'dobranie ostatniej karty (deck-out, CR 704.5b) przebija zwrót dwóch kreatur');
 });
 
+test('O2: stopniowane pasmo biblioteczne — ≤5 kart bez rzutu, 6–10 tylko podwójny zwrot', () => {
+  // Wątpliwość właściciela (2026-10-25): sama drabina drawDeckingPenalty
+  // działa tylko do „pozostałe ≤3”, a dobranie przy 5 kartach odbiera
+  // 1 z 5 rund życia. Tabela oczekiwana ze sceny (pełny zwrot 89 pkt,
+  // jeden zwrot 30 pkt): pasmo graveReturnDrawLibrary* (margines 10,
+  // baza 24, 12/karta) trzyma progową krawędź dokładnie w tych pasmach.
+  const cases = [
+    // [biblioteka, kreatur, rzuca]
+    [2, 2, false], [3, 2, false], [4, 2, false],
+    [5, 1, false], [5, 2, false],
+    [6, 1, false], [6, 2, true],
+    [9, 1, false], [9, 2, true],
+    [10, 1, false], [10, 2, true],
+    [11, 1, true], [11, 2, true],
+  ];
+  for (const [library, graveyardCreatures, casts] of cases) {
+    const choice = botChoice(scena({ graveyardCreatures, library }));
+    assert.equal(choice.objectId === 'uprising', casts,
+      `biblioteka ${library}, kreatur w grobie ${graveyardCreatures}: oczekiwano ${casts ? 'rzutu' : 'passa'}, bot wybrał ${JSON.stringify(choice)}`);
+  }
+});
+
+test('O2: kara dotyczy tylko czaru z dobraniem — Cemetery Recruitment bez doboru obojętne na bibliotekę', () => {
+  const state = scena({ graveyardCreatures: 1, handCardId: 'cemetery-recruitment', handId: 'recruitment', library: 3 });
+  const choice = botChoice(state);
+  assert.equal(choice.objectId, 'recruitment', 'czar zwrotu bez ridera doboru nie płaci pasma bibliotecznego');
+});
+
 test('O: Cemetery Recruitment (cel WYMAGANY) dalej rzucane — reguła nie rusza zrealizowanych slotów', () => {
   const state = scena({ graveyardCreatures: 1, handCardId: 'cemetery-recruitment', handId: 'recruitment' });
   const choice = botChoice(state);

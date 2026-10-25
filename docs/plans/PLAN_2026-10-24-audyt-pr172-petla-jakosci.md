@@ -392,3 +392,26 @@ różnic) — fixture zregenerowane. Bramki końcowe sesji: `npm test`
 8809/8809, `test:slow` 268/268, build 76 modułów / 5417,2 kB,
 benchmark quick 672/672, heuristic 87,8%.
 
+## Korekta O2 (wątpliwość właściciela 2026-10-25): podatek biblioteczny działa od 10 kart w dół
+
+Sonda w scenie testu O (Child of Night, 7 Swampów) wykazała, że kara
+biblioteczna miała urwisko: `drawDeckingPenalty` kończy się na „pozostałe
+≤3 karty”, więc bot rzucał *Urborg Uprising* z 2 zwrotami przy 2–5
+kartach w bibliotece i z 1 zwrotem już od 5 kart. Majstersztyk decyzji
+właściciela: przy 1–5 kartach w bibliotece bot nie powinien tego czaru
+rzucać wcale (dobranie = −1 runda życia), przy 6–10 kartach tylko przy
+dwóch zwrotach.
+
+Plan: dla rzutów rodziny zwrotu z grobu do ręki Z DOBRANIEM
+(`draw_cards`/`draw_then_discard` w tym samym deskryptorze)
+stopniowana kara biblioteczna do `graveReturnDrawLibraryMargin` = 10:
+podstawa 24 + 12 za każdą kartę poniżej pasma (po doborze), osobno
+poruszająca koniec deck-outu (kara jak `libraryDeckOutPenalty`). Karty
+wracające do RĘKI potrzebują kolejnych tur, żeby się zamienić w stół —
+przy cienkiej bibliotece tych tur nie ma, a dobranie jeszcze je skraca
+(inny profil niż reanimacja wprost na stół, stąd silniejsze pasmo niż
+globalnego `drawDeckingPenalty`, którego progów NIE ruszamy: pin
+Denisena 5→4 i drabina A–F/D pozostają). To samo pasmo w ścieżce
+free-cast (L41). Piny: siatka bibliotek 2–12 × 0/1/2 zwroty w suite
+`zgloszenie-o`; bramki jak zwykle + golden-master/benchmark.
+

@@ -138,6 +138,18 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // karty. 40: dwa puste sloty przebijają 50 + 6 (skala właściciela:
   // 0 zwróconych < pass < 1 zwrócona < 2 zwrócone).
   'graveReturnEmptySlotPenalty',
+  // O2 (wątpliwość właściciela 2026-10-25): dobranie z rzutu rodziny zwrotu
+  // z grobu do ręki dostaje STOPNIOWANĄ karę biblioteczną do marginesu
+  // `graveReturnDrawLibraryMargin` (10 kart po doborze) — bazowa
+  // + za każdą kartę brakującą do marginesu. Karta wracająca do RĘKI
+  // potrzebuje kolejnych tur, żeby wejść na stół, a dobranie te tury
+  // skraca („odbiera 1 z 5 rund życia”) — przy 1–5 kartach w bibliotece
+  // rzut schodzi pod pass nawet z dwoma zwrotami, przy 6–10 kasuje
+  // wariant jednokartowy. Globalnego `drawDeckingPenalty` (urwisko ≤3,
+  // pin Denisena) NIE ruszamy — to osobne pasmo profilu rekursji.
+  'graveReturnDrawLibraryMargin',  // zapas kart po doborze, od którego kary nie ma
+  'graveReturnDrawLibraryBase',    // część stała kary w paśmie
+  'graveReturnDrawLibraryPerCard', // dopłata za każdą kartę poniżej marginesu
   'tokenDrawBankWeight',
   'abilityDiscardCostWeight',
   'sacrificePumpTradeWeight',
@@ -740,6 +752,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // O: kara per pusty slot zwrotu z grobu do ręki (rzut „up to N” bez zwrotu
   // schodzi pod pass — detal wyżej przy deklaracji parametru).
   graveReturnEmptySlotPenalty: 40,
+  // O2: pasmo biblioteczne rzutów zwrotu z grobu z dobraniem (pomiar w
+  // scenie zgloszenie-o: pełny zwrot 89 pkt — pasmo (24 + 12/karta do
+  // marginesu 10) kasuje go przy ≤5 kartach, a wariant jednokartowy (30)
+  // przy ≤10; detal przy deklaracji wyżej).
+  graveReturnDrawLibraryMargin: 10,
+  graveReturnDrawLibraryBase: 24,
+  graveReturnDrawLibraryPerCard: 12,
   tokenDrawBankWeight: 0.5,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,

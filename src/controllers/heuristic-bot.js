@@ -3839,6 +3839,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return 0;
   };
 
+  /** Suma kart dobieranych przeze mnie z listy efektów (draw/loot). */
+  const drawTotalOf = (effects) => (effects ?? []).reduce((sum, e) => (
+    e?.type === 'draw_cards' || e?.type === 'draw_then_discard'
+      ? sum + (Number.isInteger(e.amount) ? e.amount : 1) : sum), 0);
+
+  /**
+   * O2 (wątpliwość właściciela 2026-10-25, Urborg Uprising): stopniowane
+   * pasmo biblioteczne rzutów zwrotu z grobu DO RĘKI z dobraniem. Karta
+   * wracająca do ręki potrzebuje kolejnych tur i many, żeby coś dała,
+   * a rider doboru te tury skraca (przy 5 kartach dobranie = −1 z 5 rund
+   * życia) — dlatego dla TEJ rodziny pasmo sięga wyżej niż urwisko
+   * `drawDeckingPenalty` (≤3), którego globalnych progów nie ruszamy
+   * (pin Denisena 5→4). Pomiar w scenie zgloszenie-o (pełny zwrot
+   * Urborg 89 pkt, jeden zwrot 30): margines 10, baza 24, 12/karta →
+   * ≤5 kart w bibliotece: kara ≥96 — rzut pod passem nawet z dwoma
+   * zwrotami; 6–10 kart: 36–84 — trzyma tylko wariant dwukartowy;
+   * ≥11 kart: bez dopłaty (górne pasmo `drawDeckingPenalty` samo).
+   * Zwraca wartość DODATNIĄ (do odjęcia), jak `libraryLossPenalty`.
+   */
+  const graveReturnDrawLibraryPenalty = (view, drawAmount = 1) => {
+    const library = myLibraryCount(view);
+    if (library === 0) return 0; // stan testowy bez talii (zwolnienie jak wyżej)
+    const zapas = library - drawAmount;
+    if (zapas <= 0) return P.libraryDeckOutPenalty + P.drawCardValue * drawAmount;
+    const margin = P.graveReturnDrawLibraryMargin;
+    if (zapas >= margin) return 0;
+    return P.graveReturnDrawLibraryBase + (margin - zapas) * P.graveReturnDrawLibraryPerCard;
+  };
+
   /**
    * B (zgłoszenie właściciela 2026-09-11): wspólna kara za uszczuplanie WŁASNEJ
    * biblioteki. `drawDeckingPenalty` wyżej karze JEDNORAZOWY dobór z czaru albo
@@ -7718,6 +7747,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (host && host.controllerId === view.playerId) score += temporaryPumpPayoff(view, host, effect);
       }
       score += fogWindowValue(view, effect);
+    }
+    // O2 (L41): to samo pasmo biblioteczne co płatny rzut — darmowość nie
+    // zwraca rundy życia więc przy cienkiej bibliotece też nie dobieramy
+    // „za darmo” czarem zwrotu (darmowy rzut bez zwrotu bywa poprawny,
+    // ale nie przy pustej bibliotece).
+    if ((effects ?? []).some(e => ['return_card_from_graveyard_to_hand', 'return_creature_card_to_hand'].includes(e?.type))) {
+      const drawTotal = drawTotalOf(effects);
+      if (drawTotal > 0) score -= graveReturnDrawLibraryPenalty(view, drawTotal);
     }
     return score;
   }
@@ -12825,6 +12862,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           scoredEffects.length && scoredEffects.every(isLandRamp) ? P.rampCastManaWeight : 0,
           scoredEffects.some(e => ['add_counter','add_counter_to_creatures_you_control'].includes(e.type)) ? P.counterCastManaWeight : 0);
         score -= manaPriceWeight * reservedManaOf(view, cmd);
+        // O2: stopniowane pasmo biblioteczne rzutów zwrotu z grobu z
+        // dobraniem (Urborg: „dobranie = −1 runda życia”) — raz na rzut,
+        // tylko gdy czar NAPRAWDĘ dobiera (`drawTotalOf`); czar zwrotu
+        // bez doboru (Cemetery Recruitment) biblioteki nie zjada.
+        if (scoredEffects.some(e => ['return_card_from_graveyard_to_hand','return_creature_card_to_hand'].includes(e.type))) {
+          const drawTotal = drawTotalOf(scoredEffects);
+          if (drawTotal > 0) score -= graveReturnDrawLibraryPenalty(view, drawTotal);
+        }
         // PMSSB-1/C (F1): timing bounce'a (okna instantu, sorcery-precombat)
         // — raz na rzut, tylko gdy czar odbił cel wroga (ratunek własnego
         // nie czeka na okno: fizzle musi nastąpić PRZED rozstrzygnięciem).
