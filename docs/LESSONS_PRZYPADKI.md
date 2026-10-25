@@ -3715,7 +3715,7 @@ ETB było płaskie 3 (L50/L131 + L48).
   build 75 modułów; tabela CR +`702.15b` (SHA niezmienny: mirror
   nwgarne/mtg-data, wydanie 2026-09-25). Commit sesji PR #170.
 
-## L188 — legalność oferty ≠ wykonalność wprost (K: Abstruse, N: cast przez Scion)
+## L188 (2026-10-25) — legalność oferty ≠ wykonalność wprost (K: Abstruse, N: cast przez Scion)
 
 - **K (2026-10-24):** przy kontrze *Abstruse Interference* gracz widział
   tylko „Nie płać”, choć mógł poświęcić Eldrazi Scion za {C}. Brakowało
