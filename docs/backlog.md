@@ -59,6 +59,17 @@ Następna lista właściciela wchodzi tutaj.)_
   Wniosek do właściciela: pierwsza karta z kickerem na czarze domknie rodzinę
   testami na żywym stole; dziś pokrywają ją wyłącznie testy syntetyczne.
 
+- **[fundament gotowy 2026-10-25, PR #173 `1f7920d`]** Converge (ability word,
+  CR 207.2c) ma wsparcie silnikowe bez karty w katalogu: licznik kolorów
+  many wydanej na rzut (`countColorsOfManaSpent` — jednostki wielokolorowe
+  na końcu, każda jako jeden brakujący kolor), ślad `manaColorsSpent` na
+  każdej ścieżce rzutu oraz deskryptor `amount: 'colors_of_mana_spent'`
+  (efekty, kwota obrażeń, `entersWithCounters`). Gdy właściciel dostarczy
+  pierwszą kartę Converge: dodać ją jak każdą inną (Oracle 1:1, ADR 0022)
+  oraz wycenę bota pod JEJ konkretny efekt (bot dziś kwoty
+  `colors_of_mana_spent` nie szacuje — brak nośnika, więc świadomie bez
+  martwego kodu).
+
 - **Z6/Z7 z audytu M119 — do decyzji właściciela:**
   - „Bierzesz mulligan (1)” — liczba bez jednostki (czy zmienić brzmienie na
     „mulligan nr 1 (ręka 7 kart, odłożysz 1)”?);

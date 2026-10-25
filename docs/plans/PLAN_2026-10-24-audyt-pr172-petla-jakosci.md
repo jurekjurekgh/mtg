@@ -421,3 +421,40 @@ dokładną tabelę właściciela (≤5: brak rzutu przy 0/1/2 zwrotach;
 8811/8811, `test:slow` 268/268 (golden-master bez rozbieżności),
 build 76 modułów / 5421,0 kB, benchmark quick heuristic 87,8%.
 
+## Zgłoszenie P — fundament Converge (kolory many wydanej na rzut)
+
+Właściciel: „zbliża się karta z Converge, więc warto to zakodować” —
+z propozycją, by manę ze źródeł wielokolorowych liczyć NA KOŃCU, jako kolor,
+którego jeszcze nie policzono. Rekon: w katalogu nie ma żadnej karty
+Converge/Sunburst ani implementacji; jest tylko ślad `manaColorsSpent`
+budowanego dziś wyłącznie przez `castPermanent` pod Adamant. CR 207.2c:
+Converge to ability word bez własnego znaczenia regułowego i bez osobnego
+wpisu 702 — potrzebna jest generyczna wartość „liczba kolorów many wydanej
+na rzut tego czaru”, nie osobny keyword-handler. Kształt:
+
+1. `countColorsOfManaSpent` w `resources.js`: wpisy jednoznaczne liczy
+   wprost; jednostki wielokolorowe rozwiązuje PO nich — każda daje co
+   najwyżej JEDEN, jeszcze niepoliczony kolor (dopasowanie maksymalne; sama
+   `WUBRG` = 1 kolor, nie 5). Bezbarwna = 0.
+2. `manaColorsSpent` także dla instantów/sorcery i pozostałych ścieżek rzutu:
+   jedno miejsce w `spendMana` dla płatności oznaczonej `spellManaPurpose`
+   (z identyfikatorem rzucanego obiektu); kopie czaru (CR 707.10: kopia nie
+   jest rzucana) i opuszczenie stosu/pola bitwy czyszczą ślad (CR 400.7).
+   Dopłata spoza kosztu czaru w oknie darmowego rzutu (`extraMana`) nie liczy
+   się do kosztu czaru (CR 601.2f — jak istniejące progi many).
+3. Deskryptor kwoty `amount: 'colors_of_mana_spent'` rozwiązywany centralnie
+   w `applyEffect`, w `resolveDamageAmount` oraz w `entersWithCounters`
+   (kształt „wchodzi z licznikiem za każdy kolor”) — bez żadnej realnej karty
+   w katalogu (ADR 0029; karta przyjdzie osobno od właściciela).
+4. Test syntetyczny (ADR 0029): funkcja licząca + rzut instantu i permanenta
+   za manę jedno-/wielokolorową/dowolnego koloru/bezbarwną; Adamant bez regresji.
+
+Bramki: nowy plik, `npm test`, `test:slow`, build, benchmark quick.
+
+**Wykonanie** (`1f7920d`): zgodnie z kształtem wyżej. Bramki:
+`zgloszenie-p-converge-fundament` 5/5, Adamant+convoke 10/10,
+`npm test` 8816/8816, `test:slow` 268/268, build 76 modułów / 5428,5 kB,
+benchmark quick heuristic 87,8%. Karta Converge od właściciela będzie już
+tylko danymi w katalogu (+ ew. wycena bota pod jej konkretny efekt);
+silnikowe liczenie kolorów i deskryptor kwoty są gotowe.
+

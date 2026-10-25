@@ -185,8 +185,23 @@
   10, baza 24, 12/karta): ≤5 kart — bez rzutu, 6–10 — tylko podwójny
   zwrot, ≥11 — normalnie (to samo w free-cast; globalnego
   `drawDeckingPenalty` nie ruszano). Siatka pinów w `zgloszenie-o`.
-- **Bramka końcowa:** `npm test` **8811/8811**, `npm run test:slow` **268/268**,
-  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5421,0 kB**.
+- **Fundament Converge P (`1f7920d`, polecenie właściciela — zbliża się
+  karta z Converge):** CR 207.2c klasyfikuje Converge jako ability word bez
+  własnego paragrafu, więc powstała generyczna wartość „liczba kolorów many
+  wydanej na rzut”: `countColorsOfManaSpent` liczy wpisy jednoznaczne
+  wprost, a jednostki wielokolorowe (`WUBRG`/`UR`) na końcu — każda jako co
+  najwyżej jeden, jeszcze niepoliczony kolor (dopasowanie maksymalne; sama
+  `WUBRG` = 1). Ślad `manaColorsSpent` przestał być przywilejem ścieżki
+  permanentów (Adamant): księguje go samo `spendMana` dla płatności
+  oznaczonej `spellManaPurpose`, więc obejmuje instanty/sorcery i warianty
+  kosztu; kopie czaru startują od zera (CR 707.10), ślad gaśnie poza
+  stosem/polem bitwy (CR 400.7), a dopłata spoza kosztu czaru w oknie
+  darmowego rzutu nie wchodzi do rachunku (CR 601.2f). Deskryptor kwoty
+  `amount: 'colors_of_mana_spent'` działa w efektach, kwocie obrażeń
+  i `entersWithCounters`. Bez realnej karty (ADR 0029) — piny syntetyczne
+  `zgloszenie-p-converge-fundament` 5/5, Adamant bez regresji.
+- **Bramka końcowa:** `npm test` **8816/8816**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5428,5 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
