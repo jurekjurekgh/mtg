@@ -178,8 +178,15 @@
   (dominaria-brg|mirrodin-wu@1001, decyzja 157: wariant bezcelowy
   51 -> −29) — fixture zregenerowane świadomie; benchmark quick bez
   regresji (heuristic 87,8%).
-- **Bramka końcowa:** `npm test` **8809/8809**, `npm run test:slow` **268/268**,
-  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5417,2 kB**.
+- **Korekta O2 (`acd64a0`, wątpliwość właściciela):** podatek biblioteczny
+  doboru urywał się na „pozostałe ≤3” — bot rzucał *Urborg* z 2 zwrotami
+  przy 2–5 kartach i z 1 zwrotem od 5 kart. Rzuty zwrotu z grobu do ręki
+  Z DOBRANIEM mają stopniowane pasmo `graveReturnDrawLibrary*` (margines
+  10, baza 24, 12/karta): ≤5 kart — bez rzutu, 6–10 — tylko podwójny
+  zwrot, ≥11 — normalnie (to samo w free-cast; globalnego
+  `drawDeckingPenalty` nie ruszano). Siatka pinów w `zgloszenie-o`.
+- **Bramka końcowa:** `npm test` **8811/8811**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5421,0 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

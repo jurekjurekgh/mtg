@@ -54,9 +54,11 @@ wskazał właściciel — ptaszek wyciszenia kluczowano dokładnym zestawem
 celów, więc po śmierci nowego stworzenia dawne wyciszenie wracało samo:
 nowa kombinacja celów trwale przerywa wyciszenie akcji. Bot nie rzuca
 już czarów zwrotu z grobu („up to N”) bez żadnego zwrotu tylko dla
-doboru (kara per pusty slot; dobór utrzymuje karę biblioteczną). Bramki:
-`npm test` **8809/8809**, `npm run test:slow` **268/268**,
-build **76 modułów / 5417,2 kB**.
+doboru (kara per pusty slot; w paśmie ≤10 kart w bibliotece dobór z tych
+rzutów kosztuje stopniowaną karę — do 5 kart bot ich nie rzuca wcale).
+Bramki:
+`npm test` **8811/8811**, `npm run test:slow` **268/268**,
+build **76 modułów / 5421,0 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

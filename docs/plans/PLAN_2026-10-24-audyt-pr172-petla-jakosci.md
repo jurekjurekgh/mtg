@@ -415,3 +415,9 @@ Denisena 5→4 i drabina A–F/D pozostają). To samo pasmo w ścieżce
 free-cast (L41). Piny: siatka bibliotek 2–12 × 0/1/2 zwroty w suite
 `zgloszenie-o`; bramki jak zwykle + golden-master/benchmark.
 
+**Wykonanie** (`acd64a0`): zgodnie z planem; sonda po zmianie daje
+dokładną tabelę właściciela (≤5: brak rzutu przy 0/1/2 zwrotach;
+6–10: tylko 2; ≥11: normalnie). Bramki: `zgloszenie-o` 7/7, `npm test`
+8811/8811, `test:slow` 268/268 (golden-master bez rozbieżności),
+build 76 modułów / 5421,0 kB, benchmark quick heuristic 87,8%.
+
