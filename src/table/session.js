@@ -167,6 +167,72 @@ export function commandOptionKey(cmd) {
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
   return JSON.stringify(out);
 }
+
+/**
+ * M2 (zgłoszenie właściciela 2026-10-25, Revealing Wind): klucze wyciszenia
+ * zawierają PEŁNY zestaw celów, więc stara, wyciszona kombinacja „wracała”,
+ * gdy plansza wróciła do dawnego układu (wyciszone X/Y → nowe stworzenie Z
+ * czasowo odznaczające grupę → Z ginie → klucze X/Y znów pasują i auto-pass
+ * bez decyzji gracza znów omija czar). Decyzja właściciela: każda NOWA
+ * kombinacja celów TRWALE przerywa wyciszenie danej akcji — dokładnie jak
+ * wejście nowego stworzenia, a nie tylko „przestaje pasować chwilowo”.
+ *
+ * Grupa wyciszenia = jedna akcja gracza (typ + obiekt źródła + zdolność);
+ * warianty w grupie różnią się kombinacją celów. Bez `objectId` nie ma
+ * stabilnej grupy — takich ofert reguła nie rusza (izolowane klucze
+ * przełącza wyłącznie gracz).
+ */
+export function muteGroupKeyOf(cmd) {
+  if (cmd?.objectId == null || typeof cmd?.type !== 'string') return null;
+  return `${cmd.type}:${cmd.objectId}:${cmd.abilityIndex ?? ''}`;
+}
+
+/**
+ * M2: kombinacja CELÓW wariantu — pola celujące z `commandOptionKey`
+ * (jednostka „nowych celów na stole” z decyzji właściciela). X/tap/mode i
+ * inne wymiarowości wariantu NIE przerywają wyciszenia.
+ */
+export function muteTargetCombinationOf(cmd) {
+  return JSON.stringify({
+    targets: cmd?.targets ?? null,
+    targetId: cmd?.targetId ?? null,
+    targetIds: cmd?.targetIds ?? null,
+    sacrificeTargetId: cmd?.sacrificeTargetId ?? null,
+    stunTargetId: cmd?.stunTargetId ?? null,
+  });
+}
+
+/**
+ * M2: skanuje bieżące oferty człowieka i kasuje klucze wyciszenia grup, w
+ * których pojawiła się kombinacja celów niewidziana od poprzedniego skanu
+ * (`combinationsSeen`: Map klucza grupy → Set kombinacji). Pierwsze
+ * ujrzenie grupy wyłącznie zapamiętuje migawkę (chwila wyciszenia w UI
+ * nigdy nie kasuje samej siebie). Czysta funkcja nad (widok, zbiór, mapa) —
+ * testowana bez budowania sesji (ADR 0011, jak `hasMeaningfulDecisionOf`).
+ */
+export function interruptMutesOnNewTargetCombination(view, ignoredOptionKeys, combinationsSeen) {
+  if (!view || !(ignoredOptionKeys instanceof Set) || !(combinationsSeen instanceof Map)) return;
+  const groups = new Map();
+  for (const cmd of view.legalCommands ?? []) {
+    const groupKey = muteGroupKeyOf(cmd);
+    if (!groupKey) continue;
+    if (!groups.has(groupKey)) groups.set(groupKey, new Set());
+    groups.get(groupKey).add(muteTargetCombinationOf(cmd));
+  }
+  for (const [groupKey, combinations] of groups) {
+    const previous = combinationsSeen.get(groupKey);
+    combinationsSeen.set(groupKey, combinations);
+    if (!previous) continue;
+    const sawNewCombination = [...combinations].some((combination) => !previous.has(combination));
+    if (!sawNewCombination) continue;
+    for (const key of [...ignoredOptionKeys]) {
+      if (typeof key !== 'string' || !key.startsWith('{')) continue;
+      let parsed = null;
+      try { parsed = JSON.parse(key); } catch { continue; }
+      if (muteGroupKeyOf(parsed) === groupKey) ignoredOptionKeys.delete(key);
+    }
+  }
+}
 /**
  * J (zgłoszenie właściciela 2026-09-19b: „auto-pass zatrzymuje się na KAŻDEJ
  * fazie"): czy okno człowieka ma REALNĄ decyzję? Reguła jest CZYSTĄ funkcją
@@ -2818,9 +2884,14 @@ export function manaSourceLogText(e, { nameOfObject = null, who = null } = {}) {
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
-  // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — sesja
-  // tylko czyta, UI mutuje.
+  // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — UI
+  // przełącza klucze ptaszkiem; sesja je czyta i — od M2 — usuwa klucze
+  // grupy, gdy na stole pojawi się nowa kombinacja celów (wyciszenie nie
+  // „wraca” po przywróceniu dawnego układu planszy).
   const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
+  // M2: migawki kombinacji celów per grupa wyciszenia (sesyjna pamięć reguły
+  // `interruptMutesOnNewTargetCombination`).
+  const muteTargetCombinationsSeen = new Map();
   // M232 — tryb wysoko-graficzny: opcjonalny obserwator RZUCENIA czaru /
   // wystawienia non-basic lądu (moment zagrania, nie rozstrzygnięcia). UI
   // (main.js) rejestruje callback i przy włączonym trybie pokazuje pełnoekranową
@@ -3882,6 +3953,11 @@ export function createSession(config) {
    * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
+    // M2 (Revealing Wind): nowa kombinacja celów trwale przerywa wyciszenie
+    // grupy PRZED oceną okna — inaczej powrót planszy do dawnego układu
+    // (nowe stworzenie zdąży wejść i zginąć) przywracałby auto-pass bez
+    // decyzji gracza, bo stare klucze zawierały dokładny zestaw celów.
+    interruptMutesOnNewTargetCombination(view, ignoredOptionKeys, muteTargetCombinationsSeen);
     return hasMeaningfulDecisionOf(view, {
       isIgnored: (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd)),
       // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma

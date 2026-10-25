@@ -270,7 +270,7 @@ w próbce strażnika kontraktu M277. Bramka po L: `npm test` **8785/8785**,
 `test:slow` **268/268** (`test:all` **9053/9053**), build **75 modułów /
 5398,4 kB**.
 
-## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt: nie odtworzono
+## Zgłoszenie właściciela M (po L, 2026-10-24) — werdykt I rundy: nie odtworzono (superseded: M2 niżej)
 
 **M — *Revealing Wind*:** właściciel miał oferty rzutu tylko we własnych
 fazach main, jak gdyby instant był zakodowany jako sorcery. Dochodzenie
@@ -332,3 +332,46 @@ z allowlistą. Test `test/zgloszenie-n-cast-z-scion-kreator.test.js`
 bez odrzucanych komend). Bramka po N: `npm test` **8797/8797**,
 `test:slow` **268/268**, benchmark quick OK (heuristic 87,8%),
 build **76 modułów / 5411,4 kB**.
+
+## Zgłoszenie właściciela M2 (po N, 2026-10-25) — przyczyna M odnaleziona przez właściciela
+
+Mechanizm potwierdzony w kodzie: `commandOptionKey` (session.js) zawiera PEŁNY
+zestaw `targets`, a `ignoredOptionKeys` pamięta klucze wyciszonych wariantów.
+Wyciszenie Revealing Wind przy stole X/Y dopisywało klucze kombinacji [X] i [Y];
+nowe stworzenie Z sprawiało, że grupa nie była w pełni wyciszona (auto-pass
+przestawał omijać czar — zachowanie zamierzone), ale po śmierci Z plansza
+wracała do X/Y i STARE klucze znów pasowały — wyciszenie wracało bez decyzji
+gracza. Stąd „czar nagle przestał być oferowany w połowie gry".
+
+Żądanie właściciela: każda NOWA kombinacja celów TRWALE przerywa wyciszenie
+danej akcji (kasuje jej klucze), nie tylko przestaje pasować chwilowo. Plan:
+sesja przy każdym oknie decyzji człowieka skanuje oferowane warianty i gdy dla
+grupy (typ + objectId + abilityIndex) pojawia się kombinacja celów niewidziana
+od czasu wyciszenia (migawka per grupa), usuwa wszystkie klucze tej grupy ze
+zbioru. Czysta funkcja eksportowana (jak `hasMeaningfulDecisionOf`) + test
+scenariusza X/Y → +Z → Z ginie (auto-pass znów przestaje omijać czar).
+
+## Zgłoszenie właściciela O (po M2, 2026-10-25) — Urborg Uprising bez zwrotu
+
+Bot rzucał *Urborg Uprising* {4}{B} („Return up to two target creature cards
+from your graveyard to your hand. Draw a card.") przy grobie bez kart stworzeń
+— płacił cały koszt wyłącznie za dobranie. Klasa w wycenie `cast_spell`
+(heuristic-bot.js): `graveReturnEffectValue` dla pustego slotu zwraca 0, więc
+rzut trzymały `spellBase` 50 + draw `P.drawCardValue`, a kara biblioteczna
+(`drawDeckingPenalty` + `libraryDrainTax`) przy zdrowej bibliotece = 0.
+
+Żądanie właściciela: 0 zwróconych → wynik ujemny; 1 → minimalnie powyżej 0;
+2 → sensownie dodatni; do tego kara doboru za uszczuplenie biblioteki (ta
+istnieje: `drawDeckingPenalty` + `libraryDrainTax` — kara ma dominować przy
+cienkiej bibliotece, nie zerować każdej karty doboru w repo).
+
+Plan: kara PER niezrealizowany slot zwrotu z grobu do ręki (nowy parametr
+`graveReturnEmptySlotPenalty` = 40; Urborg przy pustym grobie: 50 + 6 − 80 < 0;
+przy jednej karcie: jeden pusty slot odejmuje 40, ale zrealizowany zwrot
+niesie; przy dwóch: bez kary). Deskryptory efektów
+`return_creature_card_to_hand` / `return_card_from_graveyard_to_hand` (ADR
+0002, bez nazwy karty). Katalog: Cemetery Recruitment i Grave Exchange mają
+cele wymagane (brak pustych wariantów — reguła ich nie rusza); ścieżka
+free-cast dostaje premię za zrealizowany zwrot (rozstrzyganie remisów
+wariantów, L41). Testy: 0/1/2 karty stwora w grobie + pin kary bibliotecznej.
+
