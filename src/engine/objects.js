@@ -412,6 +412,12 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
     kind: object.kind === 'aura' ? (object.baseKind ?? 'creature') : (dfcFaceReset?.kind ?? faceDownRevealReset?.kind ?? copyDisplayReset.kind ?? untilEndOfTurnReset.kind ?? object.kind),
     baseKind: null,
   };
+  // Zgłoszenie P (CR 400.7): „kolory many wydanej na rzut TEGO czaru” są
+  // faktem o CZARZE na stosie i permanencie, w który się rozstrzygnął
+  // (Adamant/Converge przy wejściu). Nowy obiekt w ręce/grobie/wygnaniu/
+  // bibliotece nie pamięta poprzedniego rzutu — bez tego powtórny rzut
+  // dokładałby nowe jednostki do starego śladu.
+  if (!['stack', 'battlefield'].includes(toZone)) delete rawMoved.manaColorsSpent;
   if (origCopy) {
     delete rawMoved.originalBeforeCopy;
     if (!object.isToken) delete rawMoved.copyNumber;

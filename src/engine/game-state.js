@@ -1200,7 +1200,13 @@ function castSpellWithoutManaCost(state, playerId, objectId, cmd, { extraMana = 
   const paid = {};
   const costReason = payFreeCastAdditionalCost(state, playerId, card, cmd, paid);
   if (costReason) return { reason: costReason };
-  if (payment > 0) spendMana(state, playerId, payment, [], purpose);
+  // Zgłoszenie P: płatność celowo ROZDZIELONA na koszt czaru i budżet
+  // decyzji — tylko pierwsza część jest „maną wydaną na rzut czaru”
+  // (CR 601.2f; ten sam podział co `manaSpentToCast` wyżej), więc tylko ona
+  // księguje kolory na obiekcie (Converge). Żadna część nie ma wymagań
+  // kolorów, więc podział nie zmienia legalności ani sumy.
+  if (costIncrease > 0) spendMana(state, playerId, costIncrease, [], purpose);
+  if (extraMana > 0) spendMana(state, playerId, extraMana, [], spellManaPurpose(card, { spentToCast: false }));
   const stackId = `spell-${state.objectSequence++}`;
   moveObjectDirectly(state, objectId, 'stack', stackId);
   const stacked = Object.freeze({

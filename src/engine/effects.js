@@ -7,7 +7,7 @@ import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, match
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
-import { spendMana, addMana, producibleMana, faceDownAbilities } from './resources.js';
+import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -483,6 +483,13 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
       [...state.objects.values()].filter((object) => object.zone === 'graveyard'),
       sourceObject?.controllerId,
     );
+  }
+  // Zgłoszenie P (Converge — ability word, CR 207.2c): „deals X damage,
+  // where X is the number of colors of mana spent to cast this spell” —
+  // liczba zamrożona w chwili płatności (obiekty stosu/permanentu noszą
+  // `manaColorsSpent`), więc helper oferty i rozstrzygnięcie widzą to samo.
+  if (amount === 'colors_of_mana_spent') {
+    amount = countColorsOfManaSpent(sourceObject?.manaColorsSpent);
   }
   // Batch 46 (Bring Low): „If that creature has a +1/+1 counter on it,
   // deals 5 damage instead." Warunek sprawdzamy przy ROZSTRZYGNIĘCIU
@@ -1144,9 +1151,14 @@ export function applyEnterCounters(state, objectId) {
     ? creaturesYouControl(state, object.controllerId).filter((o) => o.id !== objectId).length
     : 0;
   for (const [name, amount] of Object.entries(object.entersWithCounters ?? {})) {
+    // Zgłoszenie P (Converge): „enters with a +1/+1 counter for each color
+    // of mana spent to cast it” — liczba z migawki rzutu na obiekcie; wejście
+    // bez rzutu (reanimacja) ma pusty ślad, więc poprawnie daje 0.
     const resolved = amount === 'other_creatures_you_control_plus_one'
       ? 1 + otherCreatures
-      : amount;
+      : amount === 'colors_of_mana_spent'
+        ? countColorsOfManaSpent(object.manaColorsSpent)
+        : amount;
     addCounter(state, objectId, name, resolved);
   }
   // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
@@ -1393,6 +1405,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   }
   if (effect.amountFrom === 'X' && sourceObject && sourceObject.spellX != null) {
     effect = { ...effect, amountFrom: sourceObject.spellX };
+  }
+  // Zgłoszenie P (Converge — CR 207.2c): kwota „tyle, ile kolorów many
+  // wydano na rzut tego czaru” — deskryptor `amount: 'colors_of_mana_spent'`
+  // rozwiązujemy RAZ, przed rozstrzygnięciem, dla każdej rodziny efektów
+  // (obrażenia, dobieranie, życie, liczniki, tokeny…) — jak kwotę X wyżej.
+  // Wartość jest migawką płatności na obiekcie źródła; źródło bez rzutu
+  // (kopia, wejście bez rzucania) ma pusty ślad i kwota wynosi 0.
+  if (effect.amount === 'colors_of_mana_spent') {
+    effect = { ...effect, amount: countColorsOfManaSpent(sourceObject?.manaColorsSpent) };
   }
   // Próg wydanej many na poziomie pojedynczego EFEKTU triggera (Tellah,
   // Great Sage: „if four/eight or more mana was spent to cast that spell") —
