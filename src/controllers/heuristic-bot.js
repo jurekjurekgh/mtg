@@ -7701,6 +7701,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const type = effect?.type;
       if (['damage', 'discard_cards', 'destroy_permanent', 'exile_permanent', 'mill_cards'].includes(type)) score += 15;
       if (['draw_cards', 'gain_life'].includes(type)) score += 5;
+      // O (L41): darmowy rzut „up to N” zwrotu z grobu nie może remisować
+      // między wariantem z celami a jałowym — zrealizowany zwrot to karta
+      // w ręce (przewaga kartowa jak dobranie), więc przechyla remis na
+      // wariant z celami. Kary pustych slotów tu NIE ma: darmowe dobranie
+      // bez zwrotu bywa poprawne (kara dotyczy płacenia za czar).
+      if (['return_card_from_graveyard_to_hand', 'return_creature_card_to_hand'].includes(type)
+        && graveReturnSlotCard(view, effect, cmd)) score += 10;
       if (type === 'destroy_permanent' || type === 'exile_permanent') {
         const target = objectOnBoard(view, (cmd.targets ?? [])[effect.targetIndex ?? 0]);
         if (target && target.controllerId !== view.playerId) score += permanentMaterialValue(target);
@@ -9401,9 +9408,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Dodatnia wartość odzyskania zostaje nawet dla karty dziś niegrywalnej;
    * jej ciało/tempo nie udaje jednak stworzenia już obecnego na planszy.
    */
-  function graveReturnEffectValue(view, effect, cmd) {
+  /** O: karta rzeczywiście wskazana slotem tego efektu zwrotu (null =
+   * wariant „up to N” nie zrealizował tego slotu). Jedno źródło slotu dla
+   * wyceny zwrotu, kary pustego slotu i remisu wariantów free-cast (L41).
+   */
+  function graveReturnSlotCard(view, effect, cmd) {
     const slot = cmd.targets?.[effect.targetIndex ?? 0];
-    const card = slot && (view.zones.graveyard ?? []).find(o => o.id === slot);
+    return slot ? ((view.zones.graveyard ?? []).find(o => o.id === slot) ?? null) : null;
+  }
+
+  function graveReturnEffectValue(view, effect, cmd) {
+    const card = graveReturnSlotCard(view, effect, cmd);
     if (!card) return 0;
     const def = cardDef(card.cardId);
     const body = 2 * (card.power ?? def?.power ?? 0) + (card.toughness ?? def?.toughness ?? 0);
@@ -12517,6 +12532,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // (ADR 0002), zero nazw kart.
           if (effect.type === 'return_card_from_graveyard_to_hand' || effect.type === 'return_creature_card_to_hand') {
             score += graveReturnEffectValue(view, effect, cmd);
+            // O (zgłoszenie właściciela 2026-10-25, Urborg Uprising): slot
+            // zwrotu bez wskazanej karty to zapłacona, a niezrealizowana
+            // część czaru — przy „up to N” wariant bez celów istnieje
+            // legalnie (ruling APC 2022-12-08: rzut tylko po dobranie), ale
+            // kara per pusty slot przebija spellBase + wartość doboru, więc
+            // bot nie płaci {4}{B} wyłącznie za kartę z biblioteki. Dobranie
+            // nadal niesie własną karę biblioteczną (`drawDeckingPenalty`
+            // w gałęzi draw + `libraryDrainTax` w finish — L41).
+            if (!graveReturnSlotCard(view, effect, cmd)) score -= P.graveReturnEmptySlotPenalty;
           }
           // M156/Q1 + B (zgłoszenie właściciela 2026-09-28e, taktyka
           // właściciela): prewencja celowana ma JEDNO źródło prawdy

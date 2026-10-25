@@ -121,9 +121,18 @@ test('58/B13: Urborg 0/1/2 cele mają różne wypłaty, drugi slot nie jest pier
   assert.equal(s.zones.hand.filter(id=>s.objects.get(id)?.controllerId==='p1').length,3,'dwa zwroty + dobór');
 });
 
-test('58/B14: pokrętło aliasu Urborg przywraca stary remis 56, bez usuwania doboru',()=>{
-  const s=uprising();const params={graveReturnAliasWeight:0,graveReturnCastManaWeight:0};
+test('58/B14: pokrętła aliasu i pustych slotów Urborg izolują remis 56; domyślnie kara O za pusty slot',()=>{
+  const s=uprising();
+  const params={graveReturnAliasWeight:0,graveReturnCastManaWeight:0,graveReturnEmptySlotPenalty:0};
   for(const label of [gyLabel(),gyLabel('g1'),gyLabel('g1','g2')])assert.equal(score(s,label,{params}),56);
+  // O (zgłoszenie właściciela 2026-10-25): przy domyślnej karze (40/slot)
+  // alias=0 zostawia SAM szkielet kara-56: 0 celów pod passem, 1 cel
+  // między, 2 cele bez kary — skala „0 < pass < 1 < 2” bez udziału wartości
+  // zwrotów (alias wyzerowany).
+  const aliasZero={graveReturnAliasWeight:0,graveReturnCastManaWeight:0};
+  assert.equal(score(s,gyLabel(),{params:aliasZero}),-24);
+  assert.equal(score(s,gyLabel('g1'),{params:aliasZero}),16);
+  assert.equal(score(s,gyLabel('g1','g2'),{params:aliasZero}),56);
 });
 
 test('58/B15: karta możliwa do zagrania wygrywa z większą, ale całkiem bez koloru; odzyskanie jej nadal jest zasobem',()=>{
@@ -150,7 +159,10 @@ test('58/B17 L41: alias zwrotu ma tę samą miarę co Cemetery Recruitment bez r
       // Wspólny rider draw pozostaje w obu wariantach, żeby brak zwrotu
       // nie włączył kary „cały czar jałowy” i nie udawał przyrostu wartości.
       view.zones.hand.find(o=>o.id==='r').spell.effects=[...effects,{type:'draw_cards',amount:1}];
-      return score(s,label,{view,params:{graveReturnCastManaWeight:0}});
+      // O (2026-10-25): pomiar izoluje WKŁAD aliasu zwrotu — karę pustych
+      // slotów „up to N” zerujemy jak pozostałe pokrętła (osobno spięta
+      // liczbowo w B14 i behawioralnie w suite zgloszenie-o).
+      return score(s,label,{view,params:{graveReturnCastManaWeight:0,graveReturnEmptySlotPenalty:0}});
     };
     return value(returns)-value([]);
   };

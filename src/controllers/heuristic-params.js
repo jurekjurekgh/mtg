@@ -131,6 +131,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'graveReturnAliasWeight',
   'graveReturnAvailabilityWeight',
   'graveReturnCastManaWeight',
+  // O (zgłoszenie właściciela 2026-10-25, Urborg Uprising): kara za KAŻDY
+  // niezrealizowany slot zwrotu z grobu do ręki w rzucie („up to N”). Bez niej
+  // wariant bez celów trzymała sama baza czaru (spellBase) + dobranie jako
+  // rider i bot płacił pełny koszt czarów „wróć do ręki” wyłącznie za dobranie
+  // karty. 40: dwa puste sloty przebijają 50 + 6 (skala właściciela:
+  // 0 zwróconych < pass < 1 zwrócona < 2 zwrócone).
+  'graveReturnEmptySlotPenalty',
   'tokenDrawBankWeight',
   'abilityDiscardCostWeight',
   'sacrificePumpTradeWeight',
@@ -730,6 +737,9 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   graveReturnAliasWeight: 1,
   graveReturnAvailabilityWeight: 1,
   graveReturnCastManaWeight: 1, // ta sama jednostka many co aktywacja/ciało, raz na czar
+  // O: kara per pusty slot zwrotu z grobu do ręki (rzut „up to N” bez zwrotu
+  // schodzi pod pass — detal wyżej przy deklaracji parametru).
+  graveReturnEmptySlotPenalty: 40,
   tokenDrawBankWeight: 0.5,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,
