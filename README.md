@@ -45,14 +45,18 @@ z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
 bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapłaty
 pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
 (poświęcenie Sciona przez kreator many); *Manor Gate* pokazuje na kaflu
-badge wybranego przy wejściu koloru many; dochodzenie zgłoszenia
-*Revealing Wind* wykazało wszędzie poprawny instant, ale incydentu
-właściciela nie odtworzono (bez zmian produkcji); czar osiągalny maną
+badge wybranego przy wejściu koloru many; zgłoszenie *Revealing Wind*
+było prawdziwym błędem auto-passu (szczegóły niżej — M2); czar osiągalny maną
 z ręcznej aktywacji zdolności many (poświęcenie Eldrazi Sciona,
 CR 605.3a) wchodzi do oferty jak każdy inny, a klik otwiera kreator
-many ze wszystkimi sposobami pozyskania many. Bramki:
-`npm test` **8797/8797**, `npm run test:slow` **268/268**,
-build **76 modułów / 5411,4 kB**.
+many ze wszystkimi sposobami pozyskania many. Domknięcie M: przyczynę
+wskazał właściciel — ptaszek wyciszenia kluczowano dokładnym zestawem
+celów, więc po śmierci nowego stworzenia dawne wyciszenie wracało samo:
+nowa kombinacja celów trwale przerywa wyciszenie akcji. Bot nie rzuca
+już czarów zwrotu z grobu („up to N”) bez żadnego zwrotu tylko dla
+doboru (kara per pusty slot; dobór utrzymuje karę biblioteczną). Bramki:
+`npm test` **8809/8809**, `npm run test:slow` **268/268**,
+build **76 modułów / 5417,2 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

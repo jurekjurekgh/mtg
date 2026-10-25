@@ -351,6 +351,12 @@ od czasu wyciszenia (migawka per grupa), usuwa wszystkie klucze tej grupy ze
 zbioru. Czysta funkcja eksportowana (jak `hasMeaningfulDecisionOf`) + test
 scenariusza X/Y → +Z → Z ginie (auto-pass znów przestaje omijać czar).
 
+**Wykonanie:** `interruptMutesOnNewTargetCombination` + migawki per grupa
+w sesji (`110091b`); test 7 pinów. Z okazji nagłówek L188 zgodny z
+docs-decisions (`1a990e8` — test archiwum złapał błąd formatu przy pełnej
+bramce po N). Bramki: targeted M+M2 11/11, `npm test` 8804/8804, build
+5415,0 kB.
+
 ## Zgłoszenie właściciela O (po M2, 2026-10-25) — Urborg Uprising bez zwrotu
 
 Bot rzucał *Urborg Uprising* {4}{B} („Return up to two target creature cards
@@ -374,4 +380,15 @@ niesie; przy dwóch: bez kary). Deskryptory efektów
 cele wymagane (brak pustych wariantów — reguła ich nie rusza); ścieżka
 free-cast dostaje premię za zrealizowany zwrot (rozstrzyganie remisów
 wariantów, L41). Testy: 0/1/2 karty stwora w grobie + pin kary bibliotecznej.
+
+**Wykonanie** (`d11f8ac`): kara `graveReturnEmptySlotPenalty` 40 w gałęzi
+`cast_spell` przy każdym pustym slocie `graveReturnSlotCard` (jedno źródło
+slotu dla wyceny/kary/free-cast, L41); free-cast +10 per zrealizowany
+zwrot. Piny: `zgloszenie-o` (0/1/2/biblioteka/Cemetery), PMSSB-58 B14/B17
+(knoby: szkielet −24/16/56; alias izolowany przy karze 0). Golden-master:
+jedna ręcznie zweryfikowana rozbieżność (dominaria-brg|mirrodin-wu@1001,
+decyzja 157, wariant bezcelowy 51 → −29; pozostałe 5 partii bez
+różnic) — fixture zregenerowane. Bramki końcowe sesji: `npm test`
+8809/8809, `test:slow` 268/268, build 76 modułów / 5417,2 kB,
+benchmark quick 672/672, heuristic 87,8%.
 

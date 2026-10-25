@@ -158,9 +158,11 @@ Następna lista właściciela wchodzi tutaj.)_
 _(Punkt o osiągalności many ze zgłoszenia M zrealizowano jako N
 (2026-10-25, kształt po korekcie właściciela): oferta rzutu liczy manę
 osiągalną legalną aktywacją o koszcie ręcznym, a produkcję przejmuje
-kreator many — opis w `docs/PROJECT_HISTORY.md`. Sam incydent M
-(Revealing Wind) pozostaje nie odtworzony; dalszy ślad tylko za nowym
-materiałem (seed/replay partii właściciela).)_
+kreator many — opis w `docs/PROJECT_HISTORY.md`. Incydent M (Revealing
+Wind) DOMKNIĘTY jako M2: klucze wyciszenia pamiętały kombinacje celów,
+więc wyciszenie wracało po przywróceniu układu planszy; nowa kombinacja
+celów trwale przerywa wyciszenie (`test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`).
+Zgłoszenie O (Urborg Uprising) domknięte karą per pusty slot zwrotu.)_
 
 ## 3. Bot
 

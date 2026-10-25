@@ -146,8 +146,40 @@
   wyprodukowana, bez auto-poświęceń; panel bez akcji poświęcenia).
   Kontrolery botów mają wspólną miarę automatu i najpierw produkują.
   Test: `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8 pinów).
-- **Bramka końcowa:** `npm test` **8797/8797**, `npm run test:slow` **268/268**,
-  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5411,4 kB**.
+- **Zgłoszenie właściciela M2 (`110091b`, 2026-10-25; otwarcie M):**
+  właściciel wyartykułował mechanizm incydentu *Revealing Wind*, który
+  w I rundzie nie odtworzono. Klucze ptaszka wyciszenia
+  (`commandOptionKey`) zawierają DOKŁADNY zestaw celów: wyciszenie przy
+  stole X/Y pamiętało kombinacje [X]/[Y]; nowe stworzenie Z czasowo
+  odznaczało grupę (nowa kombinacja — czar znów zatrzymywał auto-pass,
+  zamierzone), ale po śmierci Z stare klucze znów pasowały i wyciszenie
+  wracało bez decyzji gracza („czar przestał być oferowany w połowie
+  gry”). Decyzja właściciela: każda nowa kombinacja celów TRWALE
+  przerywa wyciszenie akcji. Sesja (`hasMeaningfulDecision`) kasuje
+  klucze grupy (typ + `objectId` + `abilityIndex`), gdy oferta przyniesie
+  kombinację celów niewidzianą od poprzedniego okna
+  (`interruptMutesOnNewTargetCombination` + migawka per grupa; świeże
+  wyciszenie przy obecnym układzie trwa, powrót do dawnego nie wznawia
+  auto-passu). Osobno nagłówek L188 w archiwum zgodny ze strażnikiem
+  docs-decisions (`1a990e8`). Test:
+  `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js` (7 pinów,
+  scenariusz X/Y -> +Z -> Z ginie).
+- **Zgłoszenie właściciela O (`d11f8ac`, 2026-10-25):** bot rzucał
+  *Urborg Uprising* {4}{B} przy grobie bez kart stworzeń — płacił całość
+  za samo dobranie. W wariantach „up to N” pusty slot zwrotu z grobu do
+  ręki (`return_creature_card_to_hand`/`return_card_from_graveyard_to_hand`,
+  ADR 0002) kosztuje `graveReturnEmptySlotPenalty` = 40/slot (dobranie
+  utrzymuje karę biblioteczną: `drawDeckingPenalty` + `libraryDrainTax`),
+  więc 0 zwrotów < pass < 1 zwrot < 2 zwroty; w ścieżce free-cast
+  zrealizowany zwrot przechyla remis wariantów (+10/slot). Piny:
+  `test/zgloszenie-o-urborg-uprising-wycena.test.js` (0/1/2, biblioteka,
+  Cemetery anti-overfix) + liczby PMSSB-58/B14/B17 (knoby izolują wkład
+  aliasu). Golden-master: ręcznie zweryfikowana jedna rozbieżność
+  (dominaria-brg|mirrodin-wu@1001, decyzja 157: wariant bezcelowy
+  51 -> −29) — fixture zregenerowane świadomie; benchmark quick bez
+  regresji (heuristic 87,8%).
+- **Bramka końcowa:** `npm test` **8809/8809**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5417,2 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

@@ -3738,3 +3738,42 @@ ETB było płaskie 3 (L50/L131 + L48).
 - **Weryfikacja:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6),
   `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8), bramki sesji PR #173:
   `npm test` 8797/8797, `test:slow` 268/268, benchmark quick heuristic 87,8%.
+
+## L189 (2026-10-25) — wyciszenie pamiętało kombinację celów: *Revealing Wind*
+
+- **Objaw (zgłoszenie właściciela M):** instant *Revealing Wind* w połowie
+  partii „nagle przestał być oferowany” poza oknami głównych faz — zachowywał
+  się jak sorcery, mimo że chwilę wcześniej działał normalnie.
+- **Runda I (ślepy zaułek):** sondy oferty CR 117.1a na każdej warstwie
+  (rejestr/materializacja/sesja/artefakt/log) wykazały poprawny instant;
+  hipotezę zakrytych kart obalił właściciel (6 lądów, 3 Foresty). Agent
+  skoczył do „gracz sam wyciszył ptaszkiem” i dorobił Notę UI — właściciel
+  odrzucił jedno i drugie (nie wyciszył; komputer, nie telefon). Werdykt
+  sesji: „incydentu nie odtworzono”; odrzucony ślad wycofano (`751dfe8`).
+- **Diagnoza właściciela (M2) była hipotezą o MECHANIZMIE, nie o ofercie:**
+  „wyciszenie zapamiętywane dla każdej kombinacji celów”. W kodzie:
+  `commandOptionKey` zawiera dokładny `targets`, a `ignoredOptionKeys`
+  pamięta klucze na czas strony. Scenariusz odtwarza incydent w całości:
+  stół X (ja)/Y (wróg) — gracz wycisza grupę, klucze [X]/[Y]; nowe
+  stworzenie Z odznacza grupę (checkbox jest „checked” tylko, gdy
+  wyciszone WSZYSTKIE warianty) — gracz słusznie to zostawia; Z ginie —
+  kombinacje wracają i auto-pass bez jego decyzji znów omija czar.
+  Sondy I rundy budowały świeże, puste zbiory wyciszeń — tym samym drogą
+  poszła skarga „kart na ręce nie miałem zaptaszkowanych” (mógł sprawdzić
+  dopiero po restarcie).
+- **Poprawka zgodna z decyzją właściciela** (`110091b`): sesja przy każdym
+  oknie człowieka trzyma migawkę kombinacji celów grup (typ + objectId
+  + abilityIndex); pojawienie się nowej kombinacji KASUJE klucze grupy
+  trwale (`interruptMutesOnNewTargetCombination`). Świeże wyciszenie
+  w układzie z Z przeżywa śmierć Z (podzbiór), kolejny nowy stwór
+  przerywa znów; wymiary nie-celowe (X) nie przerywają; oferty bez
+  `objectId` reguły nie dotyczą.
+- **Nauka dla następnych debugów „nagłe znikanie”:** gdy objaw pojawia się
+  i znika bez zmiany danych karty, szukaj stanu TRWAŁEGO spoza silnika
+  (pamięć sesji/strony) kluczowanego tożsamością wariantu. Pytanie
+  właściciela „co pamiętamy o tej komendzie?” wartościowsze niż kolejna
+  sonda, w której ta pamięć startuje pusta.
+- **Weryfikacja:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`
+  (7 pinów), bramki sesji po M2+O: `npm test` 8809/8809,
+  `test:slow` 268/268, build 76 modułów / 5417,2 kB, benchmark quick
+  heuristic 87,8%.
