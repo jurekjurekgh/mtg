@@ -2249,8 +2249,14 @@ function paymentReachableMana(state, playerId) {
   for (const { ability } of legalManaAbilities(state, playerId)) {
     if (!manaAbilityHasManualCost(ability)) continue;
     const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    // F-1 (audyt PR #173): efekt `fromTreasure` (Skarb) jest już w liczbie
+    // bazowej — `producibleMana` dokłada nietapnięte tokeny Skarbów jawnie
+    // (M179/E), a auto-tap `spendMana` je wydaje. Drugie zliczenie w tej
+    // pętli zawyżało osiągalność o liczbę Skarbów i oferowało „Zapłać",
+    // którego executor nie zapłacił (`counter_pay_insufficient_mana`) —
+    // to samo wyłączenie, świadomie, ma `manualManaOfferUnits` (abilities).
     const produkcja = effects.reduce(
-      (suma, e) => suma + (e?.type === 'add_mana' ? (e.amount ?? 1) : 0), 0);
+      (suma, e) => suma + (e?.type === 'add_mana' && !e.fromTreasure ? (e.amount ?? 1) : 0), 0);
     const kosztMany = (ability.cost?.mana ?? 0) + (ability.cost?.colors?.length ?? 0);
     razem += Math.max(0, produkcja - kosztMany);
   }
@@ -6628,10 +6634,14 @@ export function execute(state, input) {
       if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
       // Pierwszy krok zrobiony — krok się NIE zmienia, gra wraca do priorytetu (CR 510.3).
       if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
-      state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
-      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
-      state.events.push(step);
-      e.push(step);
+      // CR 104.1 (patrz processTriggers): obrażenia mogły przed chwilą
+      // zakończyć grę — wtedy krok nie posuwa się dalej.
+      if (state.status === 'active') {
+        state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
+        const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
+        state.events.push(step);
+        e.push(step);
+      }
       return accepted(state, cmd, { ok: true, events: e });
     } catch (error) {
       return reject(`illegal_combat:${error.message}`);
