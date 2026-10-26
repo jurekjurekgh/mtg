@@ -4709,8 +4709,15 @@ export function cardInfo(session, object, combat = null) {
     grantedKeywords: faceDown ? [] : [...(object.grantedKeywords ?? [])],
     // M188/A: nadane P/T z efektów ciągłych (statyka warunkowa, aura, anthem,
     // buff do EOT) — widok liczy je jawnie, bo `powerModifier` ich nie niesie.
-    grantedPower: faceDown ? 0 : Number(object.grantedPower ?? 0),
-    grantedToughness: faceDown ? 0 : Number(object.grantedToughness ?? 0),
+    // G (zgłoszenie właściciela 2026-10-24, Trostani Discordant): zakryty
+    // permanent TEŻ nosi bonus — anthem działa na zakrytego 2/2 (silnik liczy
+    // statystyki poprawnie, kafel drukuje efektywne 3/3), a zerowanie tutaj
+    // gasiło badge „+1/+1" do chwili obrotu twarzą do góry. Wielkość bonusu
+    // nie ujawnia tożsamości (baza zakrycia to definicyjne 2/2, wynikowe
+    // P/T i tak jest na kaflu), więc nie ma powodu FoW do ukrywania badge'a;
+    // co wolno pokazać przeciwnikowi, rozstrzyga bramka w playerView.
+    grantedPower: Number(object.grantedPower ?? 0),
+    grantedToughness: Number(object.grantedToughness ?? 0),
     // L (zgłoszenie właściciela 2026-09-19b, Óin the Brave): SKĄD jest nadany
     // bonus — klucze warunków zdolności statycznych (deskryptor z danych, nie
     // nazwa karty). Badge nazywa wtedy mechanikę („Storied: +1/+0”), zamiast
@@ -4762,6 +4769,13 @@ export function cardInfo(session, object, combat = null) {
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
+    // L (zgłoszenie właściciela 2026-10-24, Manor Gate): kolor wybrany przy
+    // wejściu („as this enters, choose a color”, CR 614.12) — widok niesie
+    // go od A2 (2026-09-16), badge „Wybrany kolor: …” i linia zdolności
+    // (A3) czytają go z `info`, ale cardInfo pola NIE kopiowało, więc na
+    // stole nie było ani badge'a, ani drugiego koloru w opisie many.
+    // Zakryty permanent tożsamości nie ujawnia (jak wyżej).
+    chosenColor: faceDown ? null : (object.chosenColor ?? null),
     // M173/C: czasowe stany z widoku (saddle/untap-lock/kontrola/regeneracja).
     saddledNow: Boolean(object.saddled),
     // A4 (Balamb Garden): rozstrzygnięte crew (CR 702.122e) — osobne pole
@@ -5141,6 +5155,12 @@ export function buildStateOverlay(visual, info) {
     // z nazwą, wrogi jako „morph") — na stole żywy stan jest na nakładce.
     // M333: j.w. — null oznacza „żadnego znacznika" (zakryte wygnanie, M260/B1).
     if (info.morphBadge) flags.push(['morph', info.morphBadge]);
+    // F (zgłoszenie właściciela 2026-10-24, Riftburst Hellion): zakryte
+    // disguise/cloak to z definicji „2/2 z ward {2}" (CR 702.168a / 701.58a),
+    // ale ten ward nie jest GRANTEM — pętla `grantedKeywords` niżej go nie
+    // łapała, a cardInfo dla zakrytego zwraca granted=[]. Kwota ward była
+    // więc wyłącznie w linii reguł, bez badge'a na kaflu stołu.
+    if (info.faceDown && info.ward != null) flags.push(['kw', `Ward {${info.ward}}`]);
     if (info.goaded) flags.push(['goad', 'goad']);
     // M177/E (CR 701.35): detain — nie atakuje, nie blokuje, bez aktywacji.
     if (info.detained) flags.push(['kw', 'zatrzymany (detain)']);

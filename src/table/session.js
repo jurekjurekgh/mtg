@@ -167,6 +167,72 @@ export function commandOptionKey(cmd) {
   for (const k of fields) if (cmd[k] !== undefined) out[k] = cmd[k];
   return JSON.stringify(out);
 }
+
+/**
+ * M2 (zgłoszenie właściciela 2026-10-25, Revealing Wind): klucze wyciszenia
+ * zawierają PEŁNY zestaw celów, więc stara, wyciszona kombinacja „wracała”,
+ * gdy plansza wróciła do dawnego układu (wyciszone X/Y → nowe stworzenie Z
+ * czasowo odznaczające grupę → Z ginie → klucze X/Y znów pasują i auto-pass
+ * bez decyzji gracza znów omija czar). Decyzja właściciela: każda NOWA
+ * kombinacja celów TRWALE przerywa wyciszenie danej akcji — dokładnie jak
+ * wejście nowego stworzenia, a nie tylko „przestaje pasować chwilowo”.
+ *
+ * Grupa wyciszenia = jedna akcja gracza (typ + obiekt źródła + zdolność);
+ * warianty w grupie różnią się kombinacją celów. Bez `objectId` nie ma
+ * stabilnej grupy — takich ofert reguła nie rusza (izolowane klucze
+ * przełącza wyłącznie gracz).
+ */
+export function muteGroupKeyOf(cmd) {
+  if (cmd?.objectId == null || typeof cmd?.type !== 'string') return null;
+  return `${cmd.type}:${cmd.objectId}:${cmd.abilityIndex ?? ''}`;
+}
+
+/**
+ * M2: kombinacja CELÓW wariantu — pola celujące z `commandOptionKey`
+ * (jednostka „nowych celów na stole” z decyzji właściciela). X/tap/mode i
+ * inne wymiarowości wariantu NIE przerywają wyciszenia.
+ */
+export function muteTargetCombinationOf(cmd) {
+  return JSON.stringify({
+    targets: cmd?.targets ?? null,
+    targetId: cmd?.targetId ?? null,
+    targetIds: cmd?.targetIds ?? null,
+    sacrificeTargetId: cmd?.sacrificeTargetId ?? null,
+    stunTargetId: cmd?.stunTargetId ?? null,
+  });
+}
+
+/**
+ * M2: skanuje bieżące oferty człowieka i kasuje klucze wyciszenia grup, w
+ * których pojawiła się kombinacja celów niewidziana od poprzedniego skanu
+ * (`combinationsSeen`: Map klucza grupy → Set kombinacji). Pierwsze
+ * ujrzenie grupy wyłącznie zapamiętuje migawkę (chwila wyciszenia w UI
+ * nigdy nie kasuje samej siebie). Czysta funkcja nad (widok, zbiór, mapa) —
+ * testowana bez budowania sesji (ADR 0011, jak `hasMeaningfulDecisionOf`).
+ */
+export function interruptMutesOnNewTargetCombination(view, ignoredOptionKeys, combinationsSeen) {
+  if (!view || !(ignoredOptionKeys instanceof Set) || !(combinationsSeen instanceof Map)) return;
+  const groups = new Map();
+  for (const cmd of view.legalCommands ?? []) {
+    const groupKey = muteGroupKeyOf(cmd);
+    if (!groupKey) continue;
+    if (!groups.has(groupKey)) groups.set(groupKey, new Set());
+    groups.get(groupKey).add(muteTargetCombinationOf(cmd));
+  }
+  for (const [groupKey, combinations] of groups) {
+    const previous = combinationsSeen.get(groupKey);
+    combinationsSeen.set(groupKey, combinations);
+    if (!previous) continue;
+    const sawNewCombination = [...combinations].some((combination) => !previous.has(combination));
+    if (!sawNewCombination) continue;
+    for (const key of [...ignoredOptionKeys]) {
+      if (typeof key !== 'string' || !key.startsWith('{')) continue;
+      let parsed = null;
+      try { parsed = JSON.parse(key); } catch { continue; }
+      if (muteGroupKeyOf(parsed) === groupKey) ignoredOptionKeys.delete(key);
+    }
+  }
+}
 /**
  * J (zgłoszenie właściciela 2026-09-19b: „auto-pass zatrzymuje się na KAŻDEJ
  * fazie"): czy okno człowieka ma REALNĄ decyzję? Reguła jest CZYSTĄ funkcją
@@ -2580,6 +2646,19 @@ export const MAIN_LOG_NOISE = new Set(['mana_produced', 'step_advanced']);
 // — gracz widział skutek, nie widział transformacji.
 export const TRANSFORM_DIGEST_EVENTS = new Set(['object_transformed']);
 
+// E (zgłoszenie właściciela 2026-10-24, Jwari Shapeshifter): „W boksie
+// Rozgrywka nie ma informacji, kogo kopiuje wprowadzona Jwari. Jest w logu,
+// brakuje w Rozgrywka." Wynik wyboru kopii przy wejściu
+// (`enter_as_copy_resolved`) jest TOŻSAMOŚCIĄ permanentu na polu bitwy —
+// strefie publicznej (CR 400.2; wartości kopiowane CR 707.2) — i zmienia
+// ocenę pozycji tak samo jak transformacja (E6/A2 wyżej), więc jest treścią
+// panelu NIEZALEŻNIE od okna botActing/stosu. Dotąd typ nie należał do
+// żadnego zbioru bramki, więc przy `botActing === false` (własna Jwari
+// człowieka) nigdy nie trafiał do `botMoves`: modal pokazywał wyłącznie
+// generyczne „kopiuje cechy celu" (stats_modified z flagą `copy`), a nazwę
+// kopiowanego stwora niósł tylko opis tego zdarzenia w głównym logu.
+export const COPY_DIGEST_EVENTS = new Set(['enter_as_copy_resolved']);
+
 // UWAGA D (zgłoszenie właściciela 2026-09-25b): „Gdy tę kartę [Geological
 // Appraiser] wystawia bot, w Rozgrywce i w Logu powinny być widoczne karty,
 // które w ten sposób są odsłaniane zdolnością Discover. A nie są." Odsłonięcie
@@ -2730,7 +2809,11 @@ export function isHumanControllerEvent(e, humanId = HUMAN_ID) {
  *   jest treścią panelu NIEZALEŻNIE od okna botActing/stosu;
  * - jawne odsłonięcia i bieg discover (UWAGA D, zgłoszenie właściciela
  *   2026-09-25b): `PUBLIC_INFO_EVENTS` — ten sam tryb „niezależnie od okna",
- *   bo CR 701.20 robi z odsłoniętych kart informację publiczną.
+ *   bo CR 701.20 robi z odsłoniętych kart informację publiczną;
+ * - tożsamość kopii przy wejściu (E, zgłoszenie właściciela 2026-10-24,
+ *   Jwari Shapeshifter): `COPY_DIGEST_EVENTS` — ten sam tryb „niezależnie
+ *   od okna", bo pole bitwy jest strefą publiczną (CR 400.2), a to, CZYM
+ *   jest permanent-kopia (CR 707.2), widzi każdy gracz.
  */
 export function isMainLogEvent(e, ctx = {}) {
   const {
@@ -2751,7 +2834,7 @@ export function isMainLogEvent(e, ctx = {}) {
   if (PUBLIC_INFO_EVENTS.has(e?.type)) return true;
   if (HUMAN_DIGEST_EVENTS.has(e?.type) && isHumanControllerEvent(e, humanId)) return true;
   if (e?.type === 'card_drawn' && e?.playerId === humanId) return true;
-  return TRANSFORM_DIGEST_EVENTS.has(e?.type);
+  return TRANSFORM_DIGEST_EVENTS.has(e?.type) || COPY_DIGEST_EVENTS.has(e?.type);
 }
 
 /**
@@ -2801,9 +2884,27 @@ export function manaSourceLogText(e, { nameOfObject = null, who = null } = {}) {
 export function createSession(config) {
   const { seed, registry, decks } = config;
   // Feature 2026-08-11: opcje wyciszone przez gracza (ptaszek w panelu akcji)
-  // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — sesja
-  // tylko czyta, UI mutuje.
+  // nie przerywają auto-passu. Zbiór współdzielony z UI (main.js) — UI
+  // przełącza klucze ptaszkiem; sesja je czyta i — od M2 — usuwa klucze
+  // grupy, gdy na stole pojawi się nowa kombinacja celów (wyciszenie nie
+  // „wraca” po przywróceniu dawnego układu planszy).
   const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
+  // U (zgłoszenie właściciela 2026-10-26, Crumbling Vestige → Xu-Ifit):
+  // klucze wyciszeń osadzają `objectId` (`commandOptionKey`), a identyfikatory
+  // obiektów rodzą się od nowa w KAŻDEJ partii (sekwencja stanu: `hand-N`,
+  // `p1-opening-K` — te same wartości wracają co grę). Zbiór żyje w pamięci
+  // strony i jest przekazywany kolejnym sesjom, więc wyciszenie z POPRZEDNIEJ
+  // partii potrafiło po cichu wyciszyć zupełnie inną kartę o tym samym
+  // `objectId` — legalna oferta istniała w `legalCommands`, ale auto-pass
+  // jej „nie widział” i partia jechała dalej (objaw: brak oferty rzutu mimo
+  // many w puli, przejście wprost do walki). Wyciszenie jest więc decyzją
+  // NA PARTIĘ: nowa sesja zaczyna z pustym zbiorem (UI nadal mutuje TEN SAM
+  // zbiór w trakcie gry). Ta sama reguła przy podmianie stanu w
+  // `resumeReplayText`.
+  ignoredOptionKeys.clear();
+  // M2: migawki kombinacji celów per grupa wyciszenia (sesyjna pamięć reguły
+  // `interruptMutesOnNewTargetCombination`).
+  const muteTargetCombinationsSeen = new Map();
   // M232 — tryb wysoko-graficzny: opcjonalny obserwator RZUCENIA czaru /
   // wystawienia non-basic lądu (moment zagrania, nie rozstrzygnięcia). UI
   // (main.js) rejestruje callback i przy włączonym trybie pokazuje pełnoekranową
@@ -3865,6 +3966,11 @@ export function createSession(config) {
    * pozytywy: gracz klikał „Dalej" w każdej sekcji tury.
    */
   function hasMeaningfulDecision(view) {
+    // M2 (Revealing Wind): nowa kombinacja celów trwale przerywa wyciszenie
+    // grupy PRZED oceną okna — inaczej powrót planszy do dawnego układu
+    // (nowe stworzenie zdąży wejść i zginąć) przywracałby auto-pass bez
+    // decyzji gracza, bo stare klucze zawierały dokładny zestaw celów.
+    interruptMutesOnNewTargetCombination(view, ignoredOptionKeys, muteTargetCombinationsSeen);
     return hasMeaningfulDecisionOf(view, {
       isIgnored: (cmd) => ignoredOptionKeys.has(commandOptionKey(cmd)),
       // J: czysta zdolność many (CR 605.1a) to ta sama oferta, której NIE ma
@@ -4179,6 +4285,11 @@ export function createSession(config) {
       state = played.state;
       bot = botFactory(seed + 1 + replay.commands.length, botCtx);
       reasoning.length = 0; // świeży bot = świeży ślad decyzji
+      // U: stan został podmieniony — klucze wyciszeń niosą `objectId` martwego
+      // stanu; identyfikatory w odtworzonym stanie rodzą się od nowa i mogłyby
+      // trafić w cudze klucze (jak wyciek między partiami w createSession).
+      ignoredOptionKeys.clear();
+      muteTargetCombinationsSeen.clear();
       // Świeży przebieg tur: historia przed wznowieniem nie dotyczy nowej gry.
       turnHistory.length = 0;
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };

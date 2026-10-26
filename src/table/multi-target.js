@@ -595,10 +595,23 @@ const SINGLE_TARGET_CAST_TYPES = ['cast_spell', 'cast_permanent', 'activate_abil
  * Typy WYKLUCZONE z ogólnej rodziny jednowyborowej: OKNA RZUTU, w których
  * każda opcja to OSOBNY rzut z własnymi celami/X/stun (etykiety K1/K2),
  * a nie wybór jednego kandydata z listy — tam `cardId` oznacza kartę rzutu.
+ *
+ * S (zgłoszenie właściciela 2026-10-26, Clone Shell/Impulse):
+ * `resolve_look_top_choice` przy `restTo: 'library_bottom'` niesie DRUGI
+ * wymiar decyzji — kolejność reszty na spodzie (`bottomOrder`) — którego
+ * oferty silnika świadomie NIE enumerują (przyjmuje go komenda wykonawcza,
+ * `effects.js`). Detektor oparty wyłącznie na komendach nie widzi tego
+ * wymiaru, więc przejęcie grupy po samym `cardId` kończyło gołą komendą
+ * i gracz nigdy nie widział sortownika spodu (`renderPickOneRestBottomWizard`
+ * w kaskadzie `openChoiceRequest` biegnie za single-pick — sonda S).
+ * Rodzina look-top ma własny wyspecjalizowany kreator (`lookWizardKindOf`);
+ * przy `restTo: 'graveyard'` kolejność reszty nie istnieje i zwykła lista
+ * opcji wystarcza, więc wykluczenie całej rodziny jest bezpieczne.
  */
 const SINGLE_PICK_EXCLUDED_TYPES = new Set([
   'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_madness_cast',
   'resolve_rebound_cast', 'resolve_suspend_cast',
+  'resolve_look_top_choice',
 ]);
 
 /** Czy komenda jest wariantem ODMOWY rodziny jednowyborowej. */

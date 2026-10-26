@@ -2229,3 +2229,39 @@ nie może wejść w zakres `slice` — `slice(before, -1)` albo jawny push
 (rekreacja: `slice(before, -1)` → `slice(before)` czerwieni oba testy).
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L187)
+
+## L188 (2026-10-25) — Legalność oferty ≠ wykonalność wprost: osiągalność many jest DWUFAZOWA
+
+**Przypadek:** K (Abstruse) i N (cast przez Eldrazi Scion): komenda może
+być legalną OFERTĄ (CR 605.3a/608.2g — mana powstaje przed płatnością),
+choć silnik jej w tej chwili nie wykona. Boty i kierowcy testów grający
+wprost z `legalCommands` dostawali odrzucenia; kwotowa miara automatu
+(botów) dodatkowo ignorowała czyste źródła many poza lądami i liczyła
+koszt `colors` jako drugą jednostkę.
+**Reguła:** konsument komendy zna dwufazowość: najpierw legalna aktywacja
+czystej many, potem komenda (wspólna miara automatu
+`src/controllers/mana-offer-guards.js` — jednostki+kolory+pipy); kreator
+many wykonuje fazę pierwszą zamiast zgasić ofertę.
+**Strażnik:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js`,
+`test/zgloszenie-n-cast-z-scion-kreator.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L188)
+
+## L189 (2026-10-25) — „Przestaje pasować” ≠ „anulowane”: stan kluczowany tożsamością wariantu wraca ze stanem planszy
+
+**Przypadek:** M/M2 (*Revealing Wind*): ptaszek wyciszenia trzymał
+`commandOptionKey` (z dokładnym zestawem celów), więc wyciszenie X/Y
+wracało samo, gdy po śmierci nowego stworzenia Z plansza wróciła do
+układu X/Y. Sondy I rundy miały pusty zbiór wyciszeń — diagnozę
+(hipotezę o pamięci kombinacji) podał właściciel.
+**Reguła:** trwały stan UI/sesji kluczowany pełną tożsamością wariantu
+komendy to pamięć okoliczności, nie ustawienie gracza. Konsument musi
+rozróżniać „klucz nie pasuje teraz” od „obowiązuje”: przy nowej
+kombinacji celów klucze kasuje się TRWALE
+(`interruptMutesOnNewTargetCombination` + migawka per grupa), inaczej
+powrót stanu wskrzesza ustawienie bez decyzji gracza. Przy objawach
+„pojawia się i znika” szukaj trwałego stanu poza silnikiem, nie sondy
+startującej z pustą pamięcią.
+**Strażnik:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L189)

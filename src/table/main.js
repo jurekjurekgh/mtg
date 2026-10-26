@@ -37,7 +37,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWi
   wizardSourceName, finishWizardPayment,
 } from './mana-wizard.js';
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
-import { expandManaPool } from '../engine/resources.js';
+import { expandManaPool, producibleMana } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
@@ -589,7 +589,10 @@ function bootstrapTable() {
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj
   // auto-passu"). Zbiór kluczy commandOptionKey; sesja czyta go w
   // hasMeaningfulDecision, UI mutuje przez toggleIgnoredOption. Trwałość:
-  // pamięć strony (jak inne preferencje UI), reset przy odświeżeniu.
+  // JEDNA PARTIA — klucze osadzają `objectId`, a identyfikatory obiektów
+  // powtarzają się między partiami, więc `createSession` czyści zbiór na
+  // starcie (U, 2026-10-26: wyciek wyciszenia między partiami potrafił
+  // ukryć legalną ofertę przed auto-passem).
   const ignoredOptionKeys = new Set();
   // Sygnatura ostatniego okna decyzyjnego — szuflada akcji otwiera się sama
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
@@ -2903,11 +2906,17 @@ function bootstrapTable() {
     // jej rozmiar — pula jest częścią płatności (kolory z puli vs dotapowane).
     // Widok niesie tylko liczbę many; jednostki czyta się z pełnego stanu sesji
     // (jak refreshManaWizard poniżej).
+    // K: ile pokryje sam auto-tap silnika (bez ręcznych źródeł, np.
+    // poświęcenia Sciona) — poniżej kosztu kreator musi się otworzyć
+    // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
+    const autoPayableMana = session.state
+      ? producibleMana(session.state, HUMAN_ID, null, {}, []) : null;
     if (!shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
       delveCandidates: descriptor.delveCandidates,
       maxDelve: descriptor.maxDelve,
+      autoPayableMana,
     })) return null;
     return { ...descriptor, cmd, _restrictedBlocked: restrictedBlocked };
   }

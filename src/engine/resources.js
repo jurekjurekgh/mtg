@@ -322,6 +322,56 @@ export function consumeManaPool(player, amount, requirements, restricted = false
 }
 
 /**
+ * Zgłoszenie P (fundament Converge): LICZBA KOLORÓW many wydanej na rzut.
+ * Converge to ability word (CR 207.2c — bez własnego znaczenia regułowego),
+ * więc silnik potrzebuje wartości „number of colors of mana spent to cast
+ * this spell”, a nie osobnego handlera. Wpisy `manaColorsSpent` są profilami
+ * JEDNOSTEK many: jednokolorowy jest jednoznaczny, wielokolorowy (np. `UR`,
+ * `WUBRG`) oznacza kolor jeszcze niewybrany przez gracza przy produkcji —
+ * silnik świadomie odracza ten wybór do płatności (jak przy Adamant).
+ * Zasada właściciela: jednostki wielokolorowe liczymy NA KOŃCU, jako kolor,
+ * którego jeszcze nie policzono. Formalnie jest to maksymalne dopasowanie
+ * jednostek do kolorów po wstępnym zaliczeniu wpisów jednoznacznych — jedna
+ * jednostka daje co najwyżej JEDEN kolor (sama `WUBRG` = 1, nigdy 5),
+ * a kolejność wpisów nie może zaniżyć wyniku osiągalnego legalnym wyborem
+ * kolorów produkcji. Bezbarwna mana ({C}, pusty profil) nie jest kolorem
+ * (CR 106.1a: kolorów jest pięć).
+ */
+export function countColorsOfManaSpent(manaColorsSpent) {
+  const COLORS = ['W', 'U', 'B', 'R', 'G'];
+  const entries = typeof manaColorsSpent === 'string' ? [manaColorsSpent] : (manaColorsSpent ?? []);
+  const units = [];
+  for (const entry of entries) {
+    const raw = Array.isArray(entry) ? entry : String(entry ?? '').split('');
+    const colors = [...new Set(raw.filter((color) => COLORS.includes(color)))];
+    if (colors.length > 0) units.push(colors);
+  }
+  // Kolor zajęty przez wpis jednoznaczny jest zablokowany dla wildcardów
+  // (właściciel -1); wildcard może przejąć wyłącznie kolor jeszcze wolny
+  // albo zwolnić sobie miejsce przesuwając inny wildcard (ścieżka
+  // powiększająca maksymalnego dopasowania).
+  const colorOwner = new Map();
+  for (const unit of units) if (unit.length === 1) colorOwner.set(unit[0], -1);
+  const flexible = units
+    .filter((unit) => unit.length > 1)
+    .sort((a, b) => a.length - b.length);
+  const assign = (unitIndex, seen) => {
+    for (const color of flexible[unitIndex]) {
+      if (seen.has(color)) continue;
+      seen.add(color);
+      const owner = colorOwner.get(color);
+      if (owner === undefined || (owner >= 0 && assign(owner, seen))) {
+        colorOwner.set(color, unitIndex);
+        return true;
+      }
+    }
+    return false;
+  };
+  for (let i = 0; i < flexible.length; i += 1) assign(i, new Set());
+  return colorOwner.size;
+}
+
+/**
  * M202/N1 (audyt PR #73): cel wydania many dla RZUTU CZARU. Druk many
  * ograniczonej (Powerstone: "This mana can't be spent to cast a nonartifact
  * spell") zabrania WYŁĄCZNIE płacenia za czar nie-artefaktowy. Zdolności
@@ -330,8 +380,22 @@ export function consumeManaPool(player, amount, requirements, restricted = false
  * rozlewało się na każdą płatność i odbierało graczowi legalne aktywacje
  * (klasa L44).
  */
-export function spellManaPurpose(object) {
-  return { castingSpell: true, artifactSpell: (object?.types ?? []).includes('Artifact') };
+export function spellManaPurpose(object, { spentToCast = true } = {}) {
+  return {
+    castingSpell: true,
+    artifactSpell: (object?.types ?? []).includes('Artifact'),
+    // Zgłoszenie P: identyfikacja rzucanego obiektu pozwala `spendMana`
+    // zapisać profile wydanych jednostek NA tym obiekcie — jedno miejsce dla
+    // wszystkich ścieżek rzutu, zamiast osobnego przepisywania w każdej.
+    // `instanceId` przeżywa zmianę id przy wejściu na stos, więc dopłata po
+    // umieszczeniu czaru na stosie (buyback) trafia na ten sam czar.
+    castObjectId: object?.id ?? null,
+    castInstanceId: object?.instanceId ?? null,
+    // Płatność wykonana PRZY okazji rzutu, ale niebędąca jego kosztem
+    // (np. {X} zdolności zlecającej darmowy rzut), nie jest „maną wydaną na
+    // rzut czaru” (CR 601.2f) — wołający oznacza ją jawnie.
+    spentToCast: spentToCast !== false,
+  };
 }
 
 /** Czy dla tego celu wydania mana ograniczona drukiem jest niedostępna. */
@@ -374,6 +438,34 @@ function untappedCostedTotal(state, playerId, purpose = {}, netPositiveOnly = fa
     total += entry.costGeneric + entry.costPips.length;
   }
   return total;
+}
+
+/**
+ * Zgłoszenie P: dopisuje profile jednostek many wydanej NA RZUT do pola
+ * `manaColorsSpent` rzucanego obiektu. To JEDNO miejsce księgowania dla
+ * permanentów, instantów/sorcery oraz wariantów kosztu (modal, flashback,
+ * escape, adventure, darmowy rzut z dopłatami): każda z tych ścieżek płaci
+ * przez `spendMana` z `spellManaPurpose`, a obiekt zabiera pole na stos
+ * i dalej na pole bitwy. Kolejne dopłaty TEGO rzutu dopisują się do listy;
+ * ślad poprzedniego istnienia kasuje zmiana strefy poza stos/pole bitwy
+ * (`moveObjectDirectly`, CR 400.7), więc ponowny rzut startuje czysto.
+ * Płatności niebędące kosztem czaru (`spentToCast: false`) i cele spoza
+ * rzutu (obiekt na polu bitwy — np. obrót zakrytej karty) nie księgują nic.
+ */
+function recordManaColorsSpentOnCast(state, purpose, spentColors) {
+  if (purpose?.castingSpell !== true || purpose?.spentToCast === false) return;
+  if (!Array.isArray(spentColors) || spentColors.length === 0) return;
+  let target = purpose.castObjectId ? state.objects.get(purpose.castObjectId) : null;
+  if (!target || (purpose.castInstanceId && target.instanceId !== purpose.castInstanceId)) {
+    if (!purpose.castInstanceId) return;
+    target = [...state.objects.values()].find((object) => object.instanceId === purpose.castInstanceId) ?? null;
+  }
+  if (!target || !['hand', 'library', 'graveyard', 'exile', 'stack'].includes(target.zone)) return;
+  const previous = Array.isArray(target.manaColorsSpent) ? target.manaColorsSpent : [];
+  state.objects.set(target.id, Object.freeze({
+    ...target,
+    manaColorsSpent: Object.freeze([...previous, ...spentColors]),
+  }));
 }
 
 /**
@@ -701,6 +793,7 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // czaru spadała do 0 mimo zwykłej many w puli).
   player.artifactOnlyMana = Object.values(player.restrictedPool ?? {}).reduce((a, b) => a + b, 0);
   state.lastManaSpend = { playerId, amount, treasure, colors: spentColors };
+  recordManaColorsSpentOnCast(state, purpose, spentColors);
   const e = event('mana_changed', { playerId, amount: -amount, total: player.mana, treasureSpent: treasure });
   state.events.push(e);
   return e;
@@ -1457,12 +1550,17 @@ export function producibleMana(state, playerId, excludeSourceId = null, purpose 
  * pipa" — wtedy oferta (backtracking) mówi TAK, a płatność pada
  * (Island + Plains+Embrace vs {U}{G}).
  */
-export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}) {
+export function planGrantManaColors(state, playerId, requirements, excludeSourceId = null, purpose = {}, extraUnits = []) {
   const player = state.players.find((entry) => entry.id === playerId);
   if (!player) return null;
   // A: plan kosztowych Z GÓRY (granty zużyte finansowaniem wypadają z grantLands).
   const costedPlan = fundableCostedPlan(state, playerId, requirements, excludeSourceId, costedPurposeOf(purpose));
-  const units = expandManaPool(player.manaPool);
+  // N: `extraUnits` = jednostki many osiągalne legalną aktywacją zdolności
+  // many o koszcie ręcznym (manualManaOfferUnits w abilities.js, CR 605.3a)
+  // — TYLKO dla ofert (canPayColoredCostForOffer); płatność liczy je, gdy
+  // realnie trafią do puli. Traktowane jak jednostki puli (aktywacja
+  // poprzedza płatność).
+  const units = [...expandManaPool(player.manaPool), ...(extraUnits ?? []).map((u) => [...u])];
   // Wykluczenia (M174/B + once-per-turn): id własne + klucze id:indeks
   // (te drugie nie matchują lądów — celowo, tylko lister kosztowych).
   const excludedGrant = excludeSourceId == null
@@ -1535,6 +1633,18 @@ export function canPayColoredCost(state, playerId, requirements, excludeSourceId
   // generic, więc nie liczymy go tu). excludeSourceId — patrz producibleMana
   // (koszt z {T} własnego źródła many, M174/B).
   return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose) !== null;
+}
+
+/**
+ * N: wariant OFERTOWY canPayColoredCost — czy pip(y) da się dopasować do many
+ * osiągalnej przy dopuszczaniu legalnych aktywacji many o koszcie ręcznym
+ * (`extraUnits` z manualManaOfferUnits). Dla ofert rzutów wyłącznie; walidacja
+ * i płatność zostają przy canPayColoredCost (granica jak przy płatnościach K:
+ * executor płaci wyłącznie z many wyprodukowanej; kreator many aktywuje źródło
+ * na żądanie człowieka przed samą płatnością).
+ */
+export function canPayColoredCostForOffer(state, playerId, requirements, extraUnits, excludeSourceId = null, purpose = {}) {
+  return planGrantManaColors(state, playerId, requirements, excludeSourceId, purpose, extraUnits) !== null;
 }
 
 /** Batch 69 (Convoke): odejmuje jeden pip za każdy kolor opłacony stworem. */
@@ -2133,10 +2243,15 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     : 0;
   // M166/C (Adamant): breakdown kolorów many wydanej na TEN rzut — idzie
   // z obiektem stosu do permanentu (entersWithCountersIf.adamant czyta go
-  // przy wejściu, jak manaFromTreasureSpent dla Maruta).
-  const manaColorsSpent = manaSpent > 0 && state.lastManaSpend?.playerId === playerId
-    ? Object.freeze([...(state.lastManaSpend.colors ?? [])])
-    : Object.freeze([]);
+  // przy wejściu, jak manaFromTreasureSpent dla Maruta). Zgłoszenie P:
+  // `spendMana` księguje profile wprost na rzucanym obiekcie (suma dopłat
+  // tego rzutu), więc `moved` niesie już pełny ślad; `lastManaSpend`
+  // zostaje rezerwą dla obiektów bez identyfikatora instancji.
+  const manaColorsSpent = (moved.manaColorsSpent?.length ?? 0) > 0
+    ? Object.freeze([...moved.manaColorsSpent])
+    : (manaSpent > 0 && state.lastManaSpend?.playerId === playerId
+      ? Object.freeze([...(state.lastManaSpend.colors ?? [])])
+      : Object.freeze([]));
   consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
     ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent, manaColorsSpent,

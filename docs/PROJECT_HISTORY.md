@@ -20,6 +20,245 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-24 — audyt scalonego PR #172 (32/32 plików, F-1..F-3) oraz pętla jakości (PR #173)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/1e1d0ca7-mtg` od `main` @ `67dbd0f`
+  (squash-merge PR #172). Plan: `docs/plans/PLAN_2026-10-24-audyt-pr172-petla-jakosci.md`,
+  raport audytu: `docs/audits/AUDYT_PR172_2026-10-24.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-24b.md`.
+- **Audyt PR #172 (32/32 plików, diff `3fe3638..3ad2f6b`):** wszystkie cytaty CR
+  poprzedniej sesji zweryfikowane dosłownie w wydaniu 2026-09-25
+  (`cr-raw.txt`, SHA zgodny z pinem projektu; 701.35a, 605.3, 708.9, 603.10a,
+  707.2, 400.7, 702.33a, 509.1b, 702.10b, 107.3a, 601.2f). Kod produkcyjny bez
+  usterek regułowych; mutacje A/C2/D czerwienią odpowiednie piny, próbka bota
+  20/20. Znaleziska i naprawy:
+  - **F-1 (`3f05912`, tylko test):** okaz Skarbu w `F-2/2` miał kształt spoza
+    kontraktu `treasureManaAbilityOf` (`sacrifice` zamiast `sacrificeSelf`,
+    brak `fromTreasure`), więc pin zatrzymanego Skarbu był pusty (mutacja
+    bramki `detained` zielona). Okaz o kształcie katalogowym + asercje bazy
+    sprzed detainu; mutacja po naprawie czerwieni (klasa L65/L61).
+  - **Pin ze sondy audytu (`6223ffe`):** druga połowa CR 708.9 — zakryty czar
+    morpha skontrzony ze stosu odzyskuje pełne cechy druku w grobie (FoW na
+    stosie przypięte przy okazji).
+  - **F-2/F-3 (`f28be64`, tylko dokumentacja i tytuły testów):** handoff PR #172
+    i wpis o CR-2 nazywały nieistniejące symbole (`lkiSnapshot`,
+    `resetZoneChangeAttributes`, `detainedUntilTurnOf`,
+    `collectTriggeredAbilities`) — zastąpione rzeczywistymi
+    (`formerEffectiveAbilities` w `moveObjectDirectly`, `detainUntilYourNextTurn`,
+    `abilitiesOnDeath`); numeracja CR-2/CR-3 w `test/petla-jakosci-cr-lki-i-zakryte.test.js`
+    ujednolicona z opisem PR #172, handoffem i niniejszą historią.
+- **Pętla jakości:** 4 partie Żywego Testera na zbudowanym artefakcie (talie
+  spoza próbki benchmarku wg priorytetu z `TESTER_STOLU.md`; profile explorer/
+  defensive/random/impatient) — wszystkie ukończone naturalnie, 0 zgłoszeń
+  detektorów; ręczna lektura transkryptów po trzech osiach bez znalezisk
+  (etykiety kompletne, zagranie *Pain for All* na własnym stworze zgodne
+  z Oracle). Analizator `tools/event-contract-audit.mjs` czysty. Sonda reguły
+  legend (CR 704.5j) wobec kopii `enter_as_copy` na syntetycznym legendarnym
+  Ally: wybór kolejkowany poprawnie, kopia po zejściu do grobu wraca do druku
+  *Jwari Shapeshifter* — obszar zweryfikowany jako poprawny (brak nośnika
+  w katalogu: żaden legendarny Ally).
+- **Zgłoszenie właściciela E (`9676041`, po domknięciu sesji):** modal
+  „Rozgrywka” nie nazywał, kogo kopiuje *Jwari Shapeshifter* (w logu linia
+  była). Typ `enter_as_copy_resolved` nie należał do żadnego zbioru bramki
+  `isMainLogEvent` — poza oknem `botActing` nigdy nie trafiał do `botMoves`.
+  Fix: `COPY_DIGEST_EVENTS` (tożsamość kopii na polu bitwy jest publiczna,
+  CR 400.2/707.2) + test `test/zgloszenie-e-jwari-rozgrywka.test.js`.
+- **Zgłoszenie właściciela F (`eb133e5`, po domknięciu sesji):** karty z Disguise
+  (z definicji Ward {2}, CR 702.168a) — (a) brak badge'a „Ward {2}” na kaflu
+  zakrytego *Riftburst Helliona*: chipy nakładki brały się tylko
+  z `grantedKeywords`, a ward zakrycia nie jest grantem (dla zakrytego
+  `granted=[]`) — jawny flag w `buildStateOverlay`; (b) bot celował Detainem
+  *Azorius Justiciara* w zakrytego z ward bez many na dopłatę: podatek ward
+  czytał cele z `targets`/`targetId`, a warianty wielocelowe
+  `resolve_trigger_target` niosą `targetIds` (podatek 0). Po naprawie bot bez
+  zapasu wybiera sam legalny cel, z zapasem dopłaca. Drugi cel (Knight)
+  niezagrożony po kontrze ward to **poprawne** zachowanie silnika — CR 702.21a
+  kontruje całą zdolność, w odróżnieniu od nielegalnego celu (CR 608.2b);
+  przypięte testem F/4 w `test/zgloszenie-f-disguise-ward.test.js`.
+- **Zgłoszenie właściciela G (`7c60e61`, po domknięciu sesji):** badge „+1/+1”
+  z anthemu *Trostani Discordant* nie pojawiał się na zakrytym stworze
+  (statystyki 3/3 poprawne). Dwa punkty zrzutu prezentacji: `cardInfo`
+  zerował `grantedPower/Toughness` dla zakrytych, a `playerView` liczył je
+  tylko dla widza znającego tożsamość — mimo że efektywne P/T widok drukuje
+  publicznie, a baza zakrycia to definicyjne 2/2. Po naprawie badge wraca po
+  obu stronach stołu (FoW bez zmian; nazwy mechanik bonusu dalej za bramką).
+- **Zgłoszenia właściciela H/I (po domknięciu sesji):** H (`295f4a5`) — token
+  *First Mate Ragavan* z auto-rezygnacji *Barala and Kari Zev* powstawał bez
+  żadnej informacji w logu i „Rozgrywce”: `pruneDeadPendingDecisions` zwracał
+  ręcznie zbieraną listę zdarzeń, a zdarzeń dopisanych przez `applyEffect`
+  (m.in. `token_created`) nie niósł żaden wynik komendy. Po naprawie prune
+  zwraca cały dopisany plaster `state.events`. I (`1846318`) — bot w oknie
+  Epic Experiment rzucał *Selesnya Charm* trybem +2/+2 we własnego defendera
+  w głównej fazie zamiast stworzyć tokena 2/2: trójka okien flat
+  (suspend/epic/rebound) remisowała tryby na bazie 70. Wspólny
+  `freeCastEffectsScore` wycenia teraz token ciałem, pump oknami walki
+  (`temporaryPumpPayoff` — defender 0), a destroy/exile dodatkowo materiałem
+  celu. Regresja bota: benchmark szybki 672 mecze, heuristic 87,8%.
+- **Zgłoszenie właściciela J (`aabce9a`, po domknięciu sesji):** bot wybierał
+  tryb lootu *Izzet Charm* („Draw two, then discard two”) i odrzucał grywalne
+  karty; przy 3 kartach w bibliotece lootował wprost w CR 704.5b. Wybór
+  samych odrzucanych kart okazał się zdrowy (`discardCostPreference`) —
+  brakowało bramki decyzji, a podatek biblioteczny jej nie zastępował.
+  Twarde `lootCastVeto` (typ efektu `draw_then_discard` wariantu rzutu,
+  ADR 0002): loot tylko przy co najmniej tylu kartach utkniętych na pipach
+  (brak koloru u nietapniętych landów), ile wynosi discard, oraz bibliotece
+  ≥10 i nie mniejszej od przeciwnika w paśmie 11–20. Test:
+  `test/zgloszenie-j-izzet-charm-loot.test.js` (5 pinów; mutacja bez weta
+  4/5 RED).
+- **Zgłoszenie właściciela K (`f1b015b` + korekta UX `f767aaa`, po
+  domknięciu sesji):** przy kontrze *Abstruse Interference* („unless pays
+  {1}”) decyzja dawała tylko „Nie płać”, choć gracz mógł poświęcić własnego
+  *Eldrazi Sciona* za {C}. Właściciel odrzucił pierwszą drogę (aktywacja
+  w panelu akcji) — ma być „Zapłać {1}” → kreator many ze wszystkimi
+  źródłami. Brakowało trzech ogniw: oferta `pay:true` liczyła tylko manę
+  auto-tapu (bramka decyzji zna ręczne źródła od Batcha 54, CR 608.2g) —
+  teraz wspólna miara `paymentReachableMana` dla kontr-płatności i wardu,
+  a wszystkie decyzje płatnicze niosą w ofercie aktywacje many; kreator
+  nie otwierał się przy jednym kształcie płatności (teraz otwiera, gdy
+  auto-tap nie pokrywa kosztu); bot-płatnik mógł wybrać odrzucaną płatność
+  (teraz najpierw produkuje manę; bot losowy losuje z wykonywalnych).
+  Panel akcji bez zmian względem stanu sprzed K. Test:
+  `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6 pinów).
+- **Zgłoszenie właściciela L (`08752b2`, po domknięciu sesji):** *Manor Gate*
+  po wyborze koloru przy wejściu nie pokazywał badge'a z tym kolorem.
+  Łańcuch z A2 (widok → etykieta → nakładka) był przerwany pośrodku:
+  `cardInfo` nie kopiowało `chosenColor` do `info`, więc badge „Wybrany
+  kolor: …” nie powstawał, a linia zdolności kafla nie nazywała drugiego
+  koloru produkcji. Jedna linia w `cardInfo` + okaz w strażniku M277;
+  test domyka łańcuch realnym przepływem
+  (`test/zgloszenie-l-manor-gate-badge.test.js`).
+- **Zgłoszenie właściciela M (`40b6e92`; odrzucona przez właściciela
+  diagnoza i ślad wycofane `751dfe8`, po domknięciu sesji):** *Revealing
+  Wind* miała oferty rzutu tylko we własnych fazach main, jak gdyby była
+  sorcery. Karta jest wszędzie poprawnym instantem (CR 117.1a — piny
+  okna/materializacji), ale incydentu właściciela NIE odtworzono:
+  po jego doprecyzowaniu (6 wolnych lądów, w tym 3 Foresty) hipotezę
+  zakrytych kart obalono, a właściciel wprost odrzucił dystrybucyjne
+  przypisanie przyczyny ptaszkowi wyciszenia (rzutu nie wyciszył) —
+  podobieństwo objawów nie było dowodem. Żadnych zmian produkcji;
+  kontrakt `test/zgloszenie-m-revealing-wind-okna.test.js` (4 piny)
+  zawęża przyszłą diagnostykę do nowego materiału (seed/replay).
+- **Zgłoszenie właściciela N (`9d199eb`, kształt po jego korekcie):** czar
+  osiągalny maną z ręcznej aktywacji zdolności many (poświęcenie Eldrazi
+  Scion; CR 605.3a) wchodzi do oferty jak każdy inny, a klik otwiera
+  KREATOR MANY ze wszystkimi źródłami (silnik: `manualManaOfferUnits`
+  + `canPayColoredCostForOffer`; zapłata bez zmian — tylko mana
+  wyprodukowana, bez auto-poświęceń; panel bez akcji poświęcenia).
+  Kontrolery botów mają wspólną miarę automatu i najpierw produkują.
+  Test: `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8 pinów).
+- **Zgłoszenie właściciela M2 (`110091b`, 2026-10-25; otwarcie M):**
+  właściciel wyartykułował mechanizm incydentu *Revealing Wind*, który
+  w I rundzie nie odtworzono. Klucze ptaszka wyciszenia
+  (`commandOptionKey`) zawierają DOKŁADNY zestaw celów: wyciszenie przy
+  stole X/Y pamiętało kombinacje [X]/[Y]; nowe stworzenie Z czasowo
+  odznaczało grupę (nowa kombinacja — czar znów zatrzymywał auto-pass,
+  zamierzone), ale po śmierci Z stare klucze znów pasowały i wyciszenie
+  wracało bez decyzji gracza („czar przestał być oferowany w połowie
+  gry”). Decyzja właściciela: każda nowa kombinacja celów TRWALE
+  przerywa wyciszenie akcji. Sesja (`hasMeaningfulDecision`) kasuje
+  klucze grupy (typ + `objectId` + `abilityIndex`), gdy oferta przyniesie
+  kombinację celów niewidzianą od poprzedniego okna
+  (`interruptMutesOnNewTargetCombination` + migawka per grupa; świeże
+  wyciszenie przy obecnym układzie trwa, powrót do dawnego nie wznawia
+  auto-passu). Osobno nagłówek L188 w archiwum zgodny ze strażnikiem
+  docs-decisions (`1a990e8`). Test:
+  `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js` (7 pinów,
+  scenariusz X/Y -> +Z -> Z ginie).
+- **Zgłoszenie właściciela O (`d11f8ac`, 2026-10-25):** bot rzucał
+  *Urborg Uprising* {4}{B} przy grobie bez kart stworzeń — płacił całość
+  za samo dobranie. W wariantach „up to N” pusty slot zwrotu z grobu do
+  ręki (`return_creature_card_to_hand`/`return_card_from_graveyard_to_hand`,
+  ADR 0002) kosztuje `graveReturnEmptySlotPenalty` = 40/slot (dobranie
+  utrzymuje karę biblioteczną: `drawDeckingPenalty` + `libraryDrainTax`),
+  więc 0 zwrotów < pass < 1 zwrot < 2 zwroty; w ścieżce free-cast
+  zrealizowany zwrot przechyla remis wariantów (+10/slot). Piny:
+  `test/zgloszenie-o-urborg-uprising-wycena.test.js` (0/1/2, biblioteka,
+  Cemetery anti-overfix) + liczby PMSSB-58/B14/B17 (knoby izolują wkład
+  aliasu). Golden-master: ręcznie zweryfikowana jedna rozbieżność
+  (dominaria-brg|mirrodin-wu@1001, decyzja 157: wariant bezcelowy
+  51 -> −29) — fixture zregenerowane świadomie; benchmark quick bez
+  regresji (heuristic 87,8%).
+- **Korekta O2 (`acd64a0`, wątpliwość właściciela):** podatek biblioteczny
+  doboru urywał się na „pozostałe ≤3” — bot rzucał *Urborg* z 2 zwrotami
+  przy 2–5 kartach i z 1 zwrotem od 5 kart. Rzuty zwrotu z grobu do ręki
+  Z DOBRANIEM mają stopniowane pasmo `graveReturnDrawLibrary*` (margines
+  10, baza 24, 12/karta): ≤5 kart — bez rzutu, 6–10 — tylko podwójny
+  zwrot, ≥11 — normalnie (to samo w free-cast; globalnego
+  `drawDeckingPenalty` nie ruszano). Siatka pinów w `zgloszenie-o`.
+- **Fundament Converge P (`1f7920d`, polecenie właściciela — zbliża się
+  karta z Converge):** CR 207.2c klasyfikuje Converge jako ability word bez
+  własnego paragrafu, więc powstała generyczna wartość „liczba kolorów many
+  wydanej na rzut”: `countColorsOfManaSpent` liczy wpisy jednoznaczne
+  wprost, a jednostki wielokolorowe (`WUBRG`/`UR`) na końcu — każda jako co
+  najwyżej jeden, jeszcze niepoliczony kolor (dopasowanie maksymalne; sama
+  `WUBRG` = 1). Ślad `manaColorsSpent` przestał być przywilejem ścieżki
+  permanentów (Adamant): księguje go samo `spendMana` dla płatności
+  oznaczonej `spellManaPurpose`, więc obejmuje instanty/sorcery i warianty
+  kosztu; kopie czaru startują od zera (CR 707.10), ślad gaśnie poza
+  stosem/polem bitwy (CR 400.7), a dopłata spoza kosztu czaru w oknie
+  darmowego rzutu nie wchodzi do rachunku (CR 601.2f). Deskryptor kwoty
+  `amount: 'colors_of_mana_spent'` działa w efektach, kwocie obrażeń
+  i `entersWithCounters`. Bez realnej karty (ADR 0029) — piny syntetyczne
+  `zgloszenie-p-converge-fundament` 5/5, Adamant bez regresji.
+- **Zgłoszenie właściciela R (`bd0f0ae`, log 2026-10-26):** bot poświęcał
+  Eldrazi Sciona przy triggerze *Fertile Thicket*, choć *Kozilek's Predator*
+  był płatny z czterech nietapniętych lądów. Przyczyna nie leżała w płatności
+  (`spendMana` Sciona nie poświęca), lecz w bramce odblokowania many:
+  `castScoreForUnlock` (PMSSB-32/F6) wyceniał czary z celem syntetykami dla
+  każdego obiektu i każdego gracza, więc *Boulder Salvo* („target creature”)
+  udawał dodatnio wyceniony burn w przeciwnika i jednorazowe źródło many
+  dostawało premię za fikcyjne odblokowanie mimo braku stwora przeciwnika.
+  Naprawa generyczna po deskryptorze: `syntheticTargetCandidatesOf` czerpie
+  cele wyłącznie ze specu czaru, wariant bez celu nie bierze udziału
+  w wycenie, a brak kandydata kategorii to −60, nie fallback +1. Piny
+  `zgloszenie-r-scion-falszywe-odblokowanie` 4/4: scena z logu 1:1 (pass →
+  Predator z samych lądów, Scion żyje), pusty stos bez celu, anty-over-fix
+  legalnego celu (PMSSB-32/F6) i realnego braku many (zgłoszenie N).
+- **Zgłoszenia właściciela S–V (2026-10-26, cztery osobne commity):**
+  - **S (`6ca0724`, Clone Shell/Imprint):** po wygnaniu zakrytej karty reszta
+    miała trafiać na spód „in any order” (tekst Oracle; Imprint to dziś
+    ability word bez znaczenia regułowego), ale kreator sortowania spodu nie
+    otwierał się: generyczny `singleTargetPlanOf` przejmował komendy
+    `resolve_look_top_choice` po polu `cardId` PRZED `lookWizardKindOf`
+    i kończył gołą komendą bez `bottomOrder` (ta sama kradzież dotyczyła
+    *Impulse*; *Fertile Thicket* działało, bo ma osobny typ komendy).
+    Rodzina look-top wykluczona z generycznego single-pick — jej oferty nie
+    enumerują wymiaru kolejności, więc detektor na samych komendach nie może
+    jej reprezentować. Piny `zgloszenie-s-clone-shell-sortowanie-spodu`
+    4/4 na produkcyjnym `buildActionEntries`.
+  - **T (`c18e364`, samobójczy 0/1):** samotny 0/1 atakował w 4/3 przy
+    3 życia obrońcy (sonda: +8 ponad passa). Gałąź M155 (−12 za 0 obrażeń
+    bojowych) jako jedyna z gałęzi pewnej straty nie liczyła ataku jako
+    jałowego, więc premia wyścigu (+20, mimo łącznej mocy 0) ją wskrzeszała
+    (klasa L3); premie za nieblokowalność/odporność biegły przed M155.
+    Teraz: atak jałowy (`futileAttackers`), premie przebicia wymagają
+    `!dealsNoCombatDamage`, a predykat liczy efektywne obrażenia
+    (`faceDamageOf(combatObject)` — pompa/przydział wytrzymałością nadal
+    biją; wyjątki: drenaż z ataku, stwór pożyczony). Piny
+    `zgloszenie-t-atak-zero-mocy` 5/5.
+  - **U (`3e70ce6`, Crumbling Vestige → Xu-Ifit):** dokładna scena silnikowa
+    i przez prawdziwą sesję działa (trigger ETB nie jest zdolnością many,
+    CR 605.1b; pula {WUBRG:1}, CR 106.4; priorytet wraca do aktywnego,
+    CR 117.3b) — legalną ofertę mogło ukryć przed auto-passem wyłącznie
+    wyciszenie. Klucze wyciszeń osadzają `objectId`, które rodzi się od
+    nowa co partię (`hand-N`), a zbiór żył w pamięci strony między
+    partiami: wyciszenie z poprzedniej gry potrafiło po cichu wyciszyć
+    inną kartę o tym samym identyfikatorze. Fix: wyciszenia są na partię —
+    `createSession` i `resumeReplayText` czyszczą zbiór (świadome
+    wyciszenie w trakcie gry działa jak dotąd). Piny
+    `zgloszenie-u-vestige-mana-oferta` 3/3; test M314/6 stawia pinezkę
+    po utworzeniu sesji (jak panel).
+  - **V (`2d46a6f`, Molten Nursery):** 1 obrażenie z triggera leciało
+    w wrogie 4/3 (41 pkt = 30 + 2P + T) zamiast w przeciwnika (25) —
+    gałąź `resolve_trigger_target` premiowała lethal (zgłoszenie F), ale
+    nieletalny chip wyceniała rozmiarem celu. Jednocelowe triggery obrażeń
+    oceniają teraz cele wspólną `damageTargetValue` (L41, jak czary):
+    lethal = wartość usunięcia, twarz wg życia (dobicie 1000), chip poza
+    walką −80. Piny `zgloszenie-v-molten-nursery-cel-obrazen` 4/4; piny F
+    przeliczone na wspólną skalę (lethal 1/1 = 30, chip = −80).
+- **Bramka końcowa:** `npm test` **8836/8836**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5438,3 kB**.
+
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/6f1bfb96-mtg` od `main` @ `3fe3638`
@@ -66,8 +305,9 @@
 - **Pętla jakości — Polowanie CR (`d6ff380`, `CR-1..CR-4`):**
   - **CR-1 (`CR 708.9`):** odkrycie i przywrócenie cech zakrytych kart/czarów przy
     opuszczeniu `battlefield` lub `stack` (`moveObject`).
-  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** snapshot LKI (`lkiSnapshot`)
-    przed `resetZoneChangeAttributes` zachowuje kopiowane/nadane zdolności odejścia
+  - **CR-2 (`CR 603.10a` / `CR 707.2` / `CR 400.7`):** migawka LKI
+    `formerEffectiveAbilities` liczona w `moveObjectDirectly` (objects.js)
+    z obiektu PRZED zmianą strefy zachowuje kopiowane/nadane zdolności odejścia
     i blokuje fałszywy wyzwalacz `dies` z tylnej strony zakrytej karty.
   - **CR-3 (`CR 113.6` / `CR 603.10a`):** wyzwalacze odejścia skanują wyłącznie
     `battlefield` oraz opuszczający permanent (LKI), bez kart w `graveyard`/`exile`.

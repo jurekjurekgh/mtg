@@ -3714,3 +3714,66 @@ ETB było płaskie 3 (L50/L131 + L48).
   (`slice(before)` z powrotem → 2/2 RED), pełne `npm test` 8665/8665,
   build 75 modułów; tabela CR +`702.15b` (SHA niezmienny: mirror
   nwgarne/mtg-data, wydanie 2026-09-25). Commit sesji PR #170.
+
+## L188 (2026-10-25) — legalność oferty ≠ wykonalność wprost (K: Abstruse, N: cast przez Scion)
+
+- **K (2026-10-24):** przy kontrze *Abstruse Interference* gracz widział
+  tylko „Nie płać”, choć mógł poświęcić Eldrazi Scion za {C}. Brakowało
+  trzech ogniw: oferta `pay:true` liczona osiągalnie, bramka kreatora
+  przy jednym kształcie płatności spoza automatu i bot-płatnik produkujący
+  manę przed płatnością.
+- **N (2026-10-25, kształt po korekcie właściciela):** ta sama osiągalność
+  w OFERTACH RZUTÓW — permanent {1}{R} przy Górze + Scionie. Executor
+  bez produkcji odrzuca (zero auto-poświęceń), klik kreatora produkuje.
+  Mięśnie: `manualManaOfferUnits` z legalnej enumeracji aktywacji
+  (parametr przez playerView — ADR 0011 bez cykli), bramki ofertowe
+  w `legalSpellCasts`/`legalCleaveCasts`/`cast_permanent`, wspólna miara
+  automatu botów w `mana-offer-guards.js`.
+- **Przeboje na trasie:** botowa miara auto-tapu ograniczała się do puli
+  i lądów — przycinała casty opłacane Seer's Lanternem; kicker/phrexia/X
+  wymagały kosztu komendy z pipami, nie tylko kwoty (Dragonbroods' Relic
+  {B} przez tapCreature); koszt aktywacji liczony dwukrotnie
+  (`cost.mana` + `cost.colors.length` — ta sama jednostka); kierowcy
+  testów stołu brali pierwszą ofertę jak człowiek ustawiony bez kreatora.
+- **Weryfikacja:** `test/zgloszenie-k-abstruse-scion-platnosc.test.js` (6),
+  `test/zgloszenie-n-cast-z-scion-kreator.test.js` (8), bramki sesji PR #173:
+  `npm test` 8797/8797, `test:slow` 268/268, benchmark quick heuristic 87,8%.
+
+## L189 (2026-10-25) — wyciszenie pamiętało kombinację celów: *Revealing Wind*
+
+- **Objaw (zgłoszenie właściciela M):** instant *Revealing Wind* w połowie
+  partii „nagle przestał być oferowany” poza oknami głównych faz — zachowywał
+  się jak sorcery, mimo że chwilę wcześniej działał normalnie.
+- **Runda I (ślepy zaułek):** sondy oferty CR 117.1a na każdej warstwie
+  (rejestr/materializacja/sesja/artefakt/log) wykazały poprawny instant;
+  hipotezę zakrytych kart obalił właściciel (6 lądów, 3 Foresty). Agent
+  skoczył do „gracz sam wyciszył ptaszkiem” i dorobił Notę UI — właściciel
+  odrzucił jedno i drugie (nie wyciszył; komputer, nie telefon). Werdykt
+  sesji: „incydentu nie odtworzono”; odrzucony ślad wycofano (`751dfe8`).
+- **Diagnoza właściciela (M2) była hipotezą o MECHANIZMIE, nie o ofercie:**
+  „wyciszenie zapamiętywane dla każdej kombinacji celów”. W kodzie:
+  `commandOptionKey` zawiera dokładny `targets`, a `ignoredOptionKeys`
+  pamięta klucze na czas strony. Scenariusz odtwarza incydent w całości:
+  stół X (ja)/Y (wróg) — gracz wycisza grupę, klucze [X]/[Y]; nowe
+  stworzenie Z odznacza grupę (checkbox jest „checked” tylko, gdy
+  wyciszone WSZYSTKIE warianty) — gracz słusznie to zostawia; Z ginie —
+  kombinacje wracają i auto-pass bez jego decyzji znów omija czar.
+  Sondy I rundy budowały świeże, puste zbiory wyciszeń — tym samym drogą
+  poszła skarga „kart na ręce nie miałem zaptaszkowanych” (mógł sprawdzić
+  dopiero po restarcie).
+- **Poprawka zgodna z decyzją właściciela** (`110091b`): sesja przy każdym
+  oknie człowieka trzyma migawkę kombinacji celów grup (typ + objectId
+  + abilityIndex); pojawienie się nowej kombinacji KASUJE klucze grupy
+  trwale (`interruptMutesOnNewTargetCombination`). Świeże wyciszenie
+  w układzie z Z przeżywa śmierć Z (podzbiór), kolejny nowy stwór
+  przerywa znów; wymiary nie-celowe (X) nie przerywają; oferty bez
+  `objectId` reguły nie dotyczą.
+- **Nauka dla następnych debugów „nagłe znikanie”:** gdy objaw pojawia się
+  i znika bez zmiany danych karty, szukaj stanu TRWAŁEGO spoza silnika
+  (pamięć sesji/strony) kluczowanego tożsamością wariantu. Pytanie
+  właściciela „co pamiętamy o tej komendzie?” wartościowsze niż kolejna
+  sonda, w której ta pamięć startuje pusta.
+- **Weryfikacja:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`
+  (7 pinów), bramki sesji po M2+O: `npm test` 8809/8809,
+  `test:slow` 268/268, build 76 modułów / 5417,2 kB, benchmark quick
+  heuristic 87,8%.

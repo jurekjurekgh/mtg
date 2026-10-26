@@ -10,6 +10,8 @@ import { addMana } from '../src/engine/resources.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { describeGameEvent } from '../src/table/session.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { autoManaUnits, castBeyondAutoMana } from '../src/controllers/mana-offer-guards.js';
+import { isActivatedManaAbility } from '../src/engine/mana-sources.js';
 
 /**
  * Warstwa sesji stołu (M5): człowiek gra z botem heurystycznym wyłącznie
@@ -31,18 +33,34 @@ function buildDecks(humanFile = 'tarkir-bg.txt', botFile = 'warhammer-ubr.txt') 
 function chooseHumanCommand(view) {
   const ofType = (type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const first = (type) => ofType(type)[0] ?? null;
+  // N: oferta stołu pokazuje także cast osiągalny dopiero po ręcznej
+  // produkcji many (człowiek klika KREATOR MANY). Kierowca testowy gra
+  // bez niego, więc przed castem spoza automatu wykonuje aktywację źródła
+  // many (pierwsza aktywacja czystej many z ofert WPAC) — dokładnie tak,
+  // jak kreator, tylko deterministycznie.
+  const produkujPrzedCastem = (candidates) => {
+    if (!candidates || !castBeyondAutoMana(view, candidates, autoManaUnits(view))) return null;
+    const plansza = new Map((view.zones?.battlefield ?? []).map((o) => [o.id, o]));
+    return view.legalCommands.find((cmd) => {
+      if (cmd.type !== 'activate_ability') return false;
+      const ability = plansza.get(cmd.objectId)?.activatableAbilities?.[cmd.abilityIndex];
+      return ability != null && isActivatedManaAbility(ability);
+    }) ?? null;
+  };
+  const permanent = first('cast_permanent');
+  const hostile = (() => {
+    const casts = ofType('cast_spell');
+    return casts.find((cmd) => {
+      const target = view.zones.battlefield.find((o) => o.id === cmd.targets?.[0]);
+      return target && target.controllerId !== view.playerId;
+    }) ?? null;
+  })();
   return first('draw_card')
     ?? first('play_land')
     ?? first('tap_for_mana')
-    ?? first('cast_permanent')
-    ?? (() => {
-      const casts = ofType('cast_spell');
-      const hostile = casts.find((cmd) => {
-        const target = view.zones.battlefield.find((o) => o.id === cmd.targets?.[0]);
-        return target && target.controllerId !== view.playerId;
-      });
-      return hostile ?? null;
-    })()
+    ?? produkujPrzedCastem(permanent ?? hostile)
+    ?? permanent
+    ?? hostile
     ?? (() => {
       const attacks = ofType('declare_attackers');
       if (!attacks.length) return null;

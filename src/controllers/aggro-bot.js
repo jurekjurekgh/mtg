@@ -10,9 +10,20 @@
  * (jako `createAggroController`), żeby benchmark i przyszłe konfiguracje
  * przeciwników mogły importować go z katalogu produkcyjnych kontrolerów.
  */
+import { autoManaUnits, castBeyondAutoMana, hasManaActivationOffer } from './mana-offer-guards.js';
+
 export function createAggroBot() {
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
   const powerOf = (view, objectId) => view.zones.battlefield.find((o) => o.id === objectId)?.power ?? 0;
+  // N: cast osiągalny tylko po manualnej produkcji many (np. Dragonbroods'
+  // Relic — mana kosztem tapnięcia innego stwora) aggro POMIJA — bez
+  // uprzedniej aktywacji silnik go odrzuci (wspólna miara automatu, jak
+  // przy płatnościach K). Jednostki liczymy leniwie, raz na decyzję.
+  const filterBeyondAuto = (view, cmds) => {
+    if (!hasManaActivationOffer(view)) return cmds;
+    const units = autoManaUnits(view);
+    return cmds.filter((cmd) => !castBeyondAutoMana(view, cmd, units));
+  };
   return Object.freeze({
     chooseCommand(view) {
       if (!view?.legalCommands?.length) throw new Error('Widok nie zawiera legalnych komend');
@@ -54,8 +65,11 @@ export function createAggroBot() {
       // bierze pierwszy wariant z legalCommands (deterministycznie: skry na
       // spód, surveil do grobu, clash na wierzch).
       const simple = ['draw_card', 'play_land', 'tap_for_mana', 'warp_card', 'cast_permanent', 'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'resolve_scry', 'resolve_surveil', 'resolve_clash_choice', 'resolve_backup', 'resolve_room_target', 'resolve_undercity_route', 'resolve_fabricate', 'resolve_sacrifice_choice', 'resolve_food_choice', 'resolve_discover_choice', 'resolve_explore_choice', 'resolve_craft_exile', 'resolve_hand_creature', 'resolve_devour_choice', 'resolve_endure_choice', 'resolve_delirium_target', 'resolve_mentor_target', 'resolve_graveyard_top_choice', 'resolve_legend_choice', 'resolve_reveal_order', 'resolve_proliferate', 'resolve_damage_target', 'resolve_modal_choice', 'resolve_redirect_choice', 'resolve_discard_choice', 'resolve_hand_top_choice', 'resolve_land_type_choice', 'resolve_search_choice', 'resolve_fertile_thicket', 'resolve_springbloom', 'resolve_pay_or_sacrifice', 'resolve_optional_pay_choice', 'resolve_counter_pay_choice', 'resolve_ward_pay_choice', 'resolve_trigger_target', 'resolve_optional_trigger_choice', 'resolve_moonlit_choice', 'resolve_damage_assignment', 'resolve_optional_draw', 'resolve_exploit_choice', 'resolve_reveal_exile_hand', 'resolve_reveal_exile_grave', 'resolve_look_top_choice', 'resolve_satyr_look_choice', 'resolve_epic_choice', 'resolve_suspend_cast', 'resolve_rebound_cast', 'resolve_enter_as_copy', 'resolve_destroy_equipment_choice', 'resolve_replacement_choice', 'resolve_copy_targets', 'resolve_opponent_target', 'resolve_color_choice', 'resolve_index_choice', 'resolve_reveal_choice', 'resolve_madness_cast', 'resolve_damage_division', 'resolve_grave_free_cast', 'resolve_hand_free_cast', 'resolve_aura_host', 'resolve_exile_cast', 'resolve_untap_choice'];
+      const CASTY_AGGRO = new Set(['cast_permanent', 'cast_adventure', 'cast_adventure_creature']);
       for (const type of simple) {
-        const found = byType(view, type)[0];
+        const found = (CASTY_AGGRO.has(type)
+          ? filterBeyondAuto(view, byType(view, type))
+          : byType(view, type))[0];
         if (!found) continue;
         if (type === 'resolve_suspend_cast') {
           // Suspend (CR 702.62): darmowy rzut jest zawsze dobry dla aggro —
@@ -248,7 +262,7 @@ export function createAggroBot() {
       }
       // Od czarów: obrażenia w najsilniejszego wroga, wzmocnienie własnego
       // najsilniejszego w fazie combat.
-      const casts = byType(view, 'cast_spell');
+      const casts = filterBeyondAuto(view, byType(view, 'cast_spell'));
       if (casts.length) {
         const enemyCasts = casts.filter((cmd) => cmd.targets?.some((id) => {
           const target = view.zones.battlefield.find((o) => o.id === id);

@@ -217,6 +217,20 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
       && (x.opcje ?? []).some((o) => o.cmd.startsWith('play_land'))
       && (x.tie ?? []).some((t) => t.cmd.startsWith('play_land')));
     if (nazwa === 'cast_spell' && r.rozroznialne === 1 && crossKind) continue;
+    // N (2026-10-25; ta sama procedura przejrzanej pozycji): nowy traf po tym,
+    // jak oferty botów filtrowane są miarą automatu (mana-offer-guards) —
+    // Wrap in Flames, s4009 p2 t24: wariant z jednym celem (Kheru Dreadmaw
+    // 4/4) ex aequo z wariantem, który dokłada DRUGI OPCJONALNY cel
+    // tapniętego Vulturous Aven 2/3. Dodatkowy cel jest funkcjonalnie
+    // pusty: 1 obrażenie nie zabija, a „can't block" na tapniętym stworze
+    // nic nie zmienia — model poprawnie widzi oba warianty jako równoważne
+    // (parametr `cele` w projekcji różni się, nie ich treść taktyczna).
+    // Ścisła allowlista: maks. 1 i przykład musi być DOKŁADNIE tą pozycją.
+    const wrapInFlamesPustyCel = nazwa === 'cast_spell' && r.rozroznialne === 1
+      && r.przyklady.some((x) => typeof x === 'object' && x.para === 'tarkir-bg|warhammer-ubr'
+        && x.seed === 4009 && x.turn === 24
+        && (x.chosen ?? '').startsWith('cast_spell('));
+    if (wrapInFlamesPustyCel) continue;
     assert.equal(r.rozroznialne, 0,
       `${nazwa}: remis przy różnych danych wyceny (przeoczenie):\n`
       + `${r.przyklady.filter((x) => typeof x === 'string').join('\n')}`);

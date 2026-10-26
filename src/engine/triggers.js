@@ -1443,6 +1443,10 @@ export function resolveTriggerEntry(state, entry) {
         // więc nie dostaje bonusu — flaga z oryginału NIE dziedziczy
         // (odwrotnie niż wasKicked, który kopia zachowuje — CR 707.10).
         castDuringMainPhase: false,
+        // Zgłoszenie P (CR 707.10: „a copy of a spell isn't cast”): na rzut
+        // kopii nie wydano żadnej many, więc ślad kolorów oryginału NIE
+        // przechodzi — Converge/Adamant kopii liczą 0 kolorów.
+        manaColorsSpent: Object.freeze([]),
       }));
       state.zones.stack.push(copyId);
       created.push(copyId);

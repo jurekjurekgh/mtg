@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { createGameState, addObject, playerView } from '../src/engine/game-state.js';
+import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { gameObjectDataOf } from '../src/cards/materialize.js';
+import { jumpToStep } from '../src/engine/turn.js';
 import { addCounter } from '../src/engine/counters.js';
 
 /**
@@ -133,6 +134,27 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
   const battleView = playerView(battleState, 'p1').zones.battlefield.find(o => o.id === 'battle');
   assert.equal(battleView.protectorId, 'p2', 'protektor nie jest kontrolerem');
   for (const key of Object.keys(battleView)) wysylane.add(key);
+  // L (Manor Gate, 2026-10-24): `chosenColor` widok dokłada dopiero po
+  // rozstrzygniętym wyborze koloru przy wejściu — próbka idzie realnym
+  // przepływem (play_land → resolve_color_choice), jak pin A2/widok;
+  // cardInfo czyta pole od naprawy badge'a (test/zgloszenie-l…).
+  const gateState = createGameState({ seed: 278, players: [{ id: 'p1' }, { id: 'p2' }] });
+  gateState.turn = jumpToStep(gateState.turn, 'main', 'p1');
+  gateState.turn.activePlayerId = gateState.turn.priorityPlayerId = 'p1';
+  const gateDef = registry.get('manor-gate');
+  addObject(gateState, {
+    id: 'gate', instanceId: 'i-gate', cardId: 'manor-gate',
+    controllerId: 'p1', ownerId: 'p1', zone: 'hand', ...gameObjectDataOf(gateDef),
+    types: gateDef.types, keywords: [], subtypes: gateDef.subtypes, spell: gateDef.spell,
+  });
+  assert.ok(execute(gateState, playerView(gateState, 'p1').legalCommands
+    .find((c) => c.type === 'play_land' && c.objectId === 'gate')).ok);
+  assert.ok(execute(gateState, playerView(gateState, 'p1').legalCommands
+    .find((c) => c.type === 'resolve_color_choice' && c.color === 'B')).ok);
+  const gateView = playerView(gateState, 'p1').zones.battlefield
+    .find((o) => o.cardId === 'manor-gate');
+  assert.equal(gateView.chosenColor, 'B', 'widok niesie wybrany kolor (A2)');
+  for (const key of Object.keys(gateView)) wysylane.add(key);
   // Pola dokładane wyłącznie przez mechaniki spoza tej próbki (aura/equipment,
   // saga, kopie, efekty tymczasowe) — widok ustawia je warunkowo tam, gdzie
   // występują. Trzymamy je na jawnej liście, żeby skan nie milczał o pomyłce

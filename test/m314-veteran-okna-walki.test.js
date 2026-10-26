@@ -226,10 +226,15 @@ function sessionScenario({ pinned }) {
   const activationKeys = ['vet', 'gw'].map((target) => commandOptionKey({
     type: 'activate_ability', objectId: 'gw', abilityIndex: 0, targets: [target],
   }));
+  // U (2026-10-26): wyciszenia są na partię — createSession czyści zbiór na
+  // starcie (klucze niosą objectId, a te powtarzają się między partiami).
+  // Pinezkę stawiamy więc jak panel w żywej grze: PO utworzeniu sesji.
+  const ignored = new Set();
   const session = createSession({
     seed: 7, registry: REGISTRY, decks,
-    ignoredOptionKeys: pinned ? new Set(activationKeys) : new Set(),
+    ignoredOptionKeys: ignored,
   });
+  if (pinned) for (const k of activationKeys) ignored.add(k);
   // mulligan: zatrzymaj rękę (same równiny)
   assert.ok(session.apply(session.view().legalCommands.find((c) => c.type === 'resolve_mulligan_choice')).ok);
   // wstrzyknij stwory (sesja stoi w main1 człowieka)

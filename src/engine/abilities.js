@@ -1,4 +1,4 @@
-import { isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
+import { isActivatedManaAbility, colorsProducibleBySubtype, manaAbilityHasManualCost } from './mana-sources.js';
 import { graveyardCardTypeCount } from './triggers.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
@@ -2017,7 +2017,45 @@ export function performActivation(state, ctx) {
 // Ręczne źródła (np. poświęcenie Sciona) nie są częścią producibleMana:
 // wolno je zaoferować, ale nie wolno poświęcać automatycznie.
 export function legalManaAbilities(state, playerId) {
-  return legalActivatedAbilities(state, playerId).filter(({ ability }) => isActivatedManaAbility(ability));
+  // Oferty aktywacji nie zawsze niosą deskryptor (ninjutsu: { attackerId } —
+  // legalActivatedAbilities emituje je bez `ability`); filtr bez deskryptora
+  // zwracał TypeError w isActivatedManaAbility (ujawnione przez N:
+  // manualManaOfferUnits woła tę funkcję przy każdej ofercie).
+  return legalActivatedAbilities(state, playerId)
+    .filter(({ ability }) => ability != null && isActivatedManaAbility(ability));
+}
+
+/**
+ * N (zgłoszenie właściciela — kształt z jego korekty): jednostki many osiągalne
+ * jedynie po ręcznej aktywacji zdolności many o koszcie ręcznym (poświęcenie
+ * Eldrazi Scion „Sacrifice this creature: Add {C}”, życie, liczniki) — oferta
+ * rzutu musi ją widzieć, bo gracz może aktywować źródło w oknie ogłoszenia
+ * rzutu (CR 605.3a: „A player may activate an activated mana ability whenever
+ * (…) they are casting a spell or activating an ability that requires a mana
+ * payment”), a płatnością zajmie się kreator many (decyzja należy do gracza,
+ * nigdy auto-poświęcenie). Kwoty netto liczą jak paymentReachableMana (K):
+ * produkcja minus cały koszt many zdolności, nie mniej niż zero na zdolność.
+ * Efekty `fromTreasure` pomijamy — tokeny Skarbów producibleMana i
+ * planGrantManaColors liczą jawnie (M179/E), policzylibyśmy je podwójnie.
+ * Zwrot: { amount, units } — jednostki jako listy kolorów (jak w planie
+ * płatności; pusta lista = bezbarwna, nie pokrywa pipa kolorowego, CR 106.1a).
+ */
+export function manualManaOfferUnits(state, playerId) {
+  const units = [];
+  for (const { ability } of legalManaAbilities(state, playerId)) {
+    if (!manaAbilityHasManualCost(ability)) continue;
+    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    let kosztMany = ability.cost?.mana ?? 0;
+    for (const effect of effects) {
+      if (effect?.type !== 'add_mana' || effect.fromTreasure) continue;
+      const amount = Math.max(0, effect.amount ?? 1);
+      const netto = Math.max(0, amount - kosztMany);
+      kosztMany = Math.max(0, kosztMany - amount);
+      const colors = Array.isArray(effect.colors) ? effect.colors : [];
+      for (let i = 0; i < netto; i += 1) units.push([...colors]);
+    }
+  }
+  return { amount: units.length, units };
 }
 
 

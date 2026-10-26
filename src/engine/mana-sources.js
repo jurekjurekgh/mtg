@@ -528,6 +528,14 @@ export const MANA_ABILITY_PAYLOAD_KEYS = Object.freeze([
   'grantedFromEquipment', 'xValue',
 ]);
 
+/** Zdolność wskazana komendą aktywacji — jeden odczyt dla predykatów many. */
+function abilityOfManaCommand(command, object, fallbackAbilities = null, state = null) {
+  return (object ? activatableAbilities(state, object)?.[command.abilityIndex] : null)
+    ?? object?.abilities?.[command.abilityIndex]
+    ?? fallbackAbilities?.[command.abilityIndex]
+    ?? null;
+}
+
 /**
  * Czy komenda `activate_ability` to CZYSTA zdolność many (CR 605.1a) bez
  * dodatkowego wyboru? JEDNO ŹRÓDŁO PRAWDY (L41) dla dwóch odbiorców:
@@ -542,12 +550,30 @@ export function isPureManaAbilityCommand(command, object, fallbackAbilities = nu
     const value = command[key];
     if (Array.isArray(value) ? value.length > 0 : value != null) return false;
   }
-  const ability = (object ? activatableAbilities(state, object)?.[command.abilityIndex] : null)
-    ?? object?.abilities?.[command.abilityIndex]
-    ?? fallbackAbilities?.[command.abilityIndex]
-    ?? null;
+  const ability = abilityOfManaCommand(command, object, fallbackAbilities, state);
   // F (2026-09-22): wyciszamy wyłącznie zdolności BEZ skutku ubocznego —
   // patrz `isSilentManaAbility` (Pristine Talisman „{T}: Add {C}. You gain
   // 1 life.” zostaje w panelu i przerywa auto-pass).
   return Boolean(ability && isSilentManaAbility(ability));
+}
+
+/**
+ * K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): czy zdolność
+ * many ma RĘCZNY koszt — taki, którego automatyczna płatność
+ * (`spendMana`/`producibleMana`) nigdy nie odpali sama, bo poza tapnięciem
+ * źródła i dopłatą many kosztuje zasób: poświęcenie (Eldrazi Scion/Spawn),
+ * odrzut karty, życie itd. Przy decyzji płatniczej CR 608.2g pozwala takie
+ * zdolności aktywować PRZED zapłatą („If an effect gives a player the
+ * option to pay mana, they may activate mana abilities before taking that
+ * action”), więc oferta „zapłać” musi je znać jako osiągalną manę
+ * (`paymentReachableMana` w game-state) — inaczej gracz bez wolnej many
+ * widzi tylko odmowę, choć zapłacić może. Klasa po deskryptorze kosztu
+ * (ADR 0002), nie po nazwie karty.
+ */
+const AUTO_MANA_COST_KEYS = new Set(['tap', 'mana', 'colors']);
+export function manaAbilityHasManualCost(ability) {
+  return Object.entries(ability?.cost ?? {}).some(([klucz, wartosc]) =>
+    !AUTO_MANA_COST_KEYS.has(klucz)
+    && wartosc != null && wartosc !== false && wartosc !== 0
+    && !(Array.isArray(wartosc) && wartosc.length === 0));
 }

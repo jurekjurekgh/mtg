@@ -59,6 +59,17 @@ Następna lista właściciela wchodzi tutaj.)_
   Wniosek do właściciela: pierwsza karta z kickerem na czarze domknie rodzinę
   testami na żywym stole; dziś pokrywają ją wyłącznie testy syntetyczne.
 
+- **[fundament gotowy 2026-10-25, PR #173 `1f7920d`]** Converge (ability word,
+  CR 207.2c) ma wsparcie silnikowe bez karty w katalogu: licznik kolorów
+  many wydanej na rzut (`countColorsOfManaSpent` — jednostki wielokolorowe
+  na końcu, każda jako jeden brakujący kolor), ślad `manaColorsSpent` na
+  każdej ścieżce rzutu oraz deskryptor `amount: 'colors_of_mana_spent'`
+  (efekty, kwota obrażeń, `entersWithCounters`). Gdy właściciel dostarczy
+  pierwszą kartę Converge: dodać ją jak każdą inną (Oracle 1:1, ADR 0022)
+  oraz wycenę bota pod JEJ konkretny efekt (bot dziś kwoty
+  `colors_of_mana_spent` nie szacuje — brak nośnika, więc świadomie bez
+  martwego kodu).
+
 - **Z6/Z7 z audytu M119 — do decyzji właściciela:**
   - „Bierzesz mulligan (1)” — liczba bez jednostki (czy zmienić brzmienie na
     „mulligan nr 1 (ręka 7 kart, odłożysz 1)”?);
@@ -155,12 +166,36 @@ Następna lista właściciela wchodzi tutaj.)_
   batcha realną kontrę zdolności, `test/audyt-kontrzenie-zdolnosci.test.js`
   wystarczy przepiąć z `SONDA` na wpis rejestru.
 
+_(Punkt o osiągalności many ze zgłoszenia M zrealizowano jako N
+(2026-10-25, kształt po korekcie właściciela): oferta rzutu liczy manę
+osiągalną legalną aktywacją o koszcie ręcznym, a produkcję przejmuje
+kreator many — opis w `docs/PROJECT_HISTORY.md`. Incydent M (Revealing
+Wind) DOMKNIĘTY jako M2: klucze wyciszenia pamiętały kombinacje celów,
+więc wyciszenie wracało po przywróceniu układu planszy; nowa kombinacja
+celów trwale przerywa wyciszenie (`test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`).
+Uzupełnienie z U (2026-10-26): ten sam zbiór kluczy wyciekał MIĘDZY
+partiami (pamięć strony), a `objectId` powtarza się co grę — wyciszenie
+z poprzedniej partii ukrywało legalną ofertę przed auto-passem;
+`createSession` czyści zbiór na starcie
+(`test/zgloszenie-u-vestige-mana-oferta.test.js`).
+Zgłoszenie O (Urborg Uprising) domknięte karą per pusty slot zwrotu.)_
+
 ## 3. Bot
 
 - **B4/B5 z `docs/BOT_ROADMAP.md`** (kolejne progi jakości gry).
 - **Wycena decyzji blokujących** poza trybami modalnymi: scry/surveil,
   wybór celu triggera, rozdzielanie obrażeń — dziś w większości „pierwsza
   oferta".
+- **Sekwencjonowanie aktywacji many pod „odblokowanie” (rozpoznane przy
+  zgłoszeniu R, 2026-10-26):** bramka `add_mana` pyta, czy JAKIKOLWIEK wart
+  rzutu czar staje się płatny po aktywacji — nie porównuje go z zagraniem
+  już płatnym, które bot wybierze w następnej decyzji. Po naprawie R
+  (cele syntetyków zgodne ze specem) scena właściciela jest zamknięta,
+  ale przy legalnym celu drogiego removalu i jednocześnie płatnym z lądów
+  permanencie bot wciąż może aktywować źródło wcześniej, niż to konieczne
+  (np. przy obcym triggerze na stosie). Ewentualna zmiana wymaga sceny
+  dyskryminującej od właściciela i osobnej pętli wyceny — nie ruszać
+  przy okazji innych poprawek.
 - **Inne gałęzie z własnym modelem świata** (pokłosie M288/C, L28): equip miał
   dwa modele — rzut pytał „co sprzęt daje", przeniesienie tylko „kto większy".
   Przejrzeć gałęzie, które liczą premię lokalnie, mając obok wywołanie wspólnej

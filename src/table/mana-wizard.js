@@ -657,7 +657,7 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  */
 export function shouldOpenManaWizard({
   sources, poolMana, totalNeeded, requirements, poolUnits = [],
-  delveCandidates = [], maxDelve = 0,
+  delveCandidates = [], maxDelve = 0, autoPayableMana = null,
 }) {
   // C/C2 (uwaga z gry 2026-10-11): karta grobu jest RÓWNIEŻ wyborem płatności,
   // ale nie źródłem many — pokrywa wyłącznie {1} części generycznej (CR
@@ -674,7 +674,14 @@ export function shouldOpenManaWizard({
   // zostawia wybór Plains/Swamp graczowi (znalezisko B) — bez nich solver
   // nie widziałby, że kolory trzeba dopiero dotapować.
   const variants = countPaymentVariants(sources, poolMana, totalNeeded, requirements, 2, poolUnits);
-  return variants >= 2;
+  if (variants >= 2) return true;
+  // K (zgłoszenie właściciela 2026-10-24, Abstruse Interference): jeden
+  // kształt płatności, którego auto-tap silnika NIE pokrywa (jedyne źródło
+  // to np. poświęcenie Eldrazi Sciona) — bezpośrednie wykonanie komendy
+  // silnik odrzuci, bo many jeszcze nie wyprodukowano. Kreator jest wtedy
+  // jedyną drogą zapłaty, a poświęcenie zasobu jest decyzją gracza, nie
+  // automatu — otwieramy mimo jednego wariantu.
+  return variants >= 1 && autoPayableMana != null && autoPayableMana < totalNeeded;
 }
 
 /**

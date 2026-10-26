@@ -83,11 +83,23 @@ test('F-2/2 (CR 701.35a + CR 605.3): zatrzymane źródło kosztowe i zatrzymany 
   const s = makeState();
   putCard(s, 'f1', 'basic-forest', 'battlefield');
   putCard(s, 'cylix', 'mana-cylix', 'battlefield');
+  // Okaz Skarbu MUSI mieć kształt kontraktu `treasureManaAbilityOf`
+  // (mana-sources.js): koszt { tap, sacrificeSelf } i `fromTreasure: true`
+  // — dokładnie jak `token_treasure` w katalogu. Audyt PR #172 F-1: okaz
+  // `{ sacrifice: true }` bez `fromTreasure` nie był dla silnika Skarbem,
+  // więc asercje po detainie przechodziły także bez bramki `detained`
+  // (mutacja B audytu; klasa L65). Asercje bazowe PRZED detainem poniżej
+  // dowodzą, że okaz realnie produkuje manę i kolor {U}.
   const treasure = createBattlefieldToken(s, 'p2', {
     cardId: 'token_treasure', name: 'Treasure', kind: 'artifact',
     types: ['Artifact'], subtypes: ['Treasure'],
-    abilities: [{ type: 'activated', cost: { tap: true, sacrifice: true }, effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'] } }],
+    abilities: [{ type: 'activated', cost: { tap: true, sacrificeSelf: true }, effect: { type: 'add_mana', amount: 1, colors: ['W', 'U', 'B', 'R', 'G'], fromTreasure: true } }],
   });
+
+  assert.equal(treasureManaAvailable(s, 'p2'), 1, 'BAZA: Skarb o katalogowym kształcie daje manę przed detainem');
+  assert.equal(producibleMana(s, 'p2'), 2, 'BAZA: Forest + Skarb produkują 2 przed detainem');
+  assert.equal(canPayColoredCost(s, 'p2', [['U']]), true,
+    'BAZA: Mana Cylix i Skarb pokrywają kolor {U} przed detainem');
 
   detainUntilYourNextTurn(s, 'cylix', 'p1');
   detainUntilYourNextTurn(s, treasure.id, 'p1');

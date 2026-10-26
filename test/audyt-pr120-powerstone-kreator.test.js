@@ -57,6 +57,9 @@ function manaWizardForZwykany({ cmd, cardTypes, restrictedPoolUnits, registry, n
     effectiveSpellManaCost: () => { throw new Error('nie powinno być wołane'); },
     reduceAlternativeCost: () => { throw new Error('nie powinno być wołane'); },
     paymentDescriptorOf: () => ({ cardId: 'karta', totalNeeded: 4, requirements: [] }),
+    // K: manaWizardFor liczy autoPayableMana z silnika — stub zwraca pulę
+    // gracza ze stanu powyżej (4 = koszt, więc bramka neutralna).
+    producibleMana: () => 4,
     expandManaPool,
     manaSourcesForPlayer: () => ([
       { id: 'pw', cardId: 'token_powerstone', spendOnly: 'artifact' },
