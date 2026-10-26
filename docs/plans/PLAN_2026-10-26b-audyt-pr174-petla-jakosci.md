@@ -21,29 +21,24 @@ Jeden PR sesji, kumulatywny opis.
 
 ### Etap 0 — rozpoznanie i plan
 
-- [ ] Kryterium: powyższy stan bazowy + ten plik. Brak zmian w `src/`.
+- [x] Kryterium: powyższy stan bazowy + ten plik. Brak zmian w `src/`.
+      (commit `bae1788`)
 
 ### Etap 1 — PR na starcie (ADR 0020 A)
 
-- [ ] Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
-      z szablonu opisu **przed** pierwszą zmianą kodu.
+- [x] Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
+      z szablonu opisu **przed** pierwszą zmianą kodu — PR
+      [#175](https://github.com/jurekjurekgh/mtg/pull/175) (commit `bae1788`).
 
 ### Etap 2 — techniczny audyt scalonego PR #174 (ADR 0020 B / 0016 / 0030)
 
-- [ ] Zakres audytu: **wszystkie pliki** zmienione w PR #174 (squash `697d49b`,
-      poprzedni commit na `main` to `60a516c` = squash PR #173).
-- [ ] CR u źródła (ADR 0030): dosłowne cytaty z `cr-raw.txt` (wydanie
-      2026-09-25, SHA-256 zgodny z pinem).
-- [ ] Przegląd każdego zmienionego pliku produkcyjnego (`src/engine/*`,
-      `src/controllers/*`, `src/table/*`, `tools/*`) pod kątem: logiki i
-      maskowania objawu (root cause), ADR 0002 (zero rozgałęzień po nazwie/ID
-      karty), ADR 0003/0017 (FoW i kompletność `PlayerView`), ADR 0005
-      (determinizm), kontraktu zdarzeń (L107/L112/L130/L187).
-- [ ] Przegląd testów: czy pin mierzy REGUŁĘ, nie implementację (L5/L160),
-      czy okaz ma kształt kontraktu (L65). Co najmniej 4 piny do weryfikacji
-      mutacyjnej.
-- [ ] Wynik: `docs/audits/AUDYT_PR174_2026-10-26.md`, odhaczenie w tym
-      planie, wpis w `docs/PROJECT_HISTORY.md`.
+- [x] **WYKONANE** — raport `docs/audits/AUDYT_PR174_2026-10-26.md`
+      (16/16 plików, cytaty CR zweryfikowane w tabeli z pinem SHA-256,
+      mutacje M1–M4 wszystkie RED).
+      Znaleziska z poprzedniego audytu (PR #173): **F-1** podwójne liczenie
+      Skarbu, **F-2** mana ograniczona w automacie, **F-3** brak pinu
+      ścieżki M2, **F-4** aliasy importu w artefakcie, **CR 104.1** trigger
+      po końcu gry — wszystkie 5 napraw APPROVE (root cause, zero maskowania).
 
 Kryterium: raport audytu w repo + co najmniej 4 mutacje RED/GREEN + każdy
 zmieniony plik wymieniony w raporcie jako sprawdzony. Bramka: `npm test` +
