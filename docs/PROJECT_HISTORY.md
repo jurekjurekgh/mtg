@@ -20,6 +20,62 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-26 — audyt scalonego PR #173 (58/58, F-1..F-4) oraz pętla jakości (PR #174)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/b47146a6-mtg` od `main` @
+  `60a516c` (squash-merge PR #173). Plan:
+  `docs/plans/PLAN_2026-10-26-audyt-pr173-petla-jakosci.md`, raport audytu:
+  `docs/audits/AUDYT_PR173_2026-10-26.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-26.md`, PR:
+  [#174](https://github.com/jurekjurekgh/mtg/pull/174).
+- **Audyt PR #173 (58/58 plików, 47 commitów `b52c971..3657762`):** agregat
+  diffu z GitHuba (squash nie daje lokalnego roota), cytaty CR zweryfikowane
+  dosłownie w `cr-raw.txt` (wydanie 2026-09-25, SHA zgodny z pinem), mutacje
+  M1–M4 (M3 = pin przeżywający pełny pakiet na zmutowanym kodzie → F-3).
+  Znaleziska i naprawy (osobne zielone commity):
+  - **F-1 (`d033956`):** `paymentReachableMana` liczył manę z efektów
+    `fromTreasure` w obu przedziałach — fantomowe „Zapłać {2}" przy realnym
+    braku many. Pula osiągalna bez skarbowych efektów + pin 4/4.
+  - **F-2 (`5e29ec4`):** `autoManaUnits` dokładał manę ograniczoną
+    (`spendOnly`) niezależnie od celu wydania — filtr przepuszczał
+    nieopłacalny cast nie-artefaktu. Jednostki zależne od celu
+    (`restrictedManaUnits`, `castCostOf` z artefaktem,
+    `castBeyondAutoMana`), pin 6/6 + sondy F-1/F-2.
+  - **F-3 (`d3d9ba1`):** `interruptMutesOnNewTargetCombination` wywoływane
+    bez pinu ścieżki — mutacja M3 przechodziła przez pełne 8836/8836. Pin
+    sesyjny na poziomie wykonania sesji.
+  - **F-4 (`479b4f6`, znalezisko pętli jakości):** bundler pomijał aliasowe
+    deklaracje importu (`import { hasManaActivationOffer as
+    castFiltersApplicable }` z PR #173) — `dist/mtg-table.html` padał na
+    „castFiltersApplicable is not defined" przed partią (Node-testy na ESM
+    blind). `stripModuleSyntax` emituje `const y = x;`, `module-graph`
+    wykrywa kolizje przez aliasy, strażnik
+    `test/artefakt-aliasy-importow.test.js` (A1–A3; mutacja emisji RED).
+  - Obserwacje O-1..O-3 (miara heuristic-pay, loot veto, alt-costy
+    `castCostOf`) świadomie bez naprawy — w raporcie.
+- **Pętla jakości (Etap 4):** Żywy Tester — 4 partie (theros↔ravnica-rg
+  explorer 7001, mirrodin-brg↔wiedzmin-bg defensive 7002,
+  innistrad-brg↔tarkir-wur random 7003, wiedzmin-wur↔zendikar-rg impatient
+  7004) na naprawionym buildzie: wszystkie do końca, **0 zgłoszeń
+  detektorów**, 0 niewycenionych, pokrycie 9–19 akcji/partię. Lektura
+  ręczna dwie ścieżki oczyszcza (Cuombajj „opponent's choice" wg Oracle —
+  pin B/1–B/3; mulligan londyński — enumeracja podzbiorów deduplikowana po
+  nazwach CR 400.1, pełna przestrzeń wyboru). Analizatory: event-contract i
+  family czyste; scoring-unvalued 12 partii/5615 komend bez wycenionych;
+  choice-space bez obserwacji >1-wariantowych; pay-census brak zapłat w
+  próbce (zapisane jako brak danych). **Polowanie CR (510/704/104):** po
+  cytatach (510.2, 510.3a, 704.5a, 104.1 „A game ends immediately…") sonda
+  `.arena/probe-cr510-loss.mjs` potwierdziła: trigger Relic Robber trafiał
+  na stos PO `player_lost` (objaw z transkryptu tt-4). Naprawa (`f8662c4`):
+  `processTriggers` → `[]` przy `status !== 'active'`, `resolve_combat`
+  bez kroku po `finished`; test z cytatem CR, mutacje M5/M6 RED, tabela
+  numerów CR +104.1/+510.3a (546 numerów, guard ADR 0030).
+- **Bramki końcowe (zmierzone):** `npm test` **8852/8852** (bazowe 8836),
+  `npm run test:slow` **268/268**, `npm run build` **76 modułów /
+  5442,8 kB** (bazowe 5438,3), benchmark quick **672 mecze — heuristic
+  87,8% (590/672)**, aggro 21,4%, random 3,0%; `--full` nieuruchamiany
+  (ADR 0018). Merge: decyzja właściciela.
+
 ## 2026-10-24 — audyt scalonego PR #172 (32/32 plików, F-1..F-3) oraz pętla jakości (PR #173)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/1e1d0ca7-mtg` od `main` @ `67dbd0f`

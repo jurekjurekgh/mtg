@@ -86,6 +86,16 @@ Każde znalezisko: test odtwarzający (jeśli brak) → naprawa u root cause →
 Kolejność: waga błędu (reguły/legalność → wycena bota → UI/log → dokumentacja).
 Zakaz maskowania: bez `try/catch`/`return` ukrywającego przyczynę.
 
+- [x] **WYKONANE** — **F-1** `paymentReachableMana` bez podwójnego liczenia
+      Skarba (test `audyt-pr173-skarb-podwojny-osiagalnosc` 4/4, commit
+      `d033956`), **F-2** jednostki many ograniczonej purpose-aware w
+      `mana-offer-guards` (test `audyt-pr173-jednostki-ograniczone-w-filtrze`
+      6/6, `5e29ec4`), **F-3** pin ścieżki
+      `interruptMutesOnNewTargetCombination` na poziomie sesji
+      (test `audyt-pr173-m2-pin-sciezki`, czerwony pod mutacją M3,
+      `d3d9ba1`). Bramka po Etapie 3: 8847/8847, build 76 / 5441,9 kB.
+      Dodatkowo w Etapie 4 naprawiony **F-4** (patrz niżej).
+
 ### Etap 4 — pętla domyślna (ADR 0021 pkt 4)
 
 Bez nowego batcha kart (ADR 0029: katalog rośnie wyłącznie z kolekcji
@@ -114,6 +124,43 @@ właściciela). Kolejność:
 Kryterium: co najmniej 4 partie testera + raport z osi + co najmniej jedno
 udokumentowane polowanie CR (z cytatem i sondą, także gdy wynik = „poprawne”).
 
+- [x] **WYKONANE** — **Żywy Tester (4/4 partie, wszystkie ukończone
+      naturalnie):** theros↔ravnica-rg (explorer, tick 0,2, seed 7001),
+      mirrodin-brg↔wiedzmin-bg (defensive, 7002), innistrad-brg↔tarkir-wur
+      (random, 7003), wiedzmin-wur↔zendikar-rg (impatient, 7004);
+      `--steps 400 --quiet`, transkrypty `tools/table-tester/.arena/tt-{1..4}.txt`.
+      **Oś 1 (detektory):** 0 zgłoszeń we wszystkich4. **Oś 2 (niewycenione):**
+      0 — każdy wybrany ruch bota miał dedykowaną wycenę. **Oś 3 (pokrycie UI):**
+      9–19 akcji widzianych partię, kliknięte 9–17, modale0–2, sondy noop 23–40.
+      Ręczna lektura: Cuombajj „cel wskazuje przeciwnik” = tekst Oracle
+      („1 damage to any target of an opponent's choice”, pin B/1–B/3);
+      mulligan londyński7/6/5→4 kart z enumeracją podzbiorów deduplikowaną
+      po nazwach (CR 400.1, `commandForMulliganSelection` po nazwie — pełna
+      przestrzeń wyboru); Descendant of Storms „nie można opłacić kosztu”
+      zgodne z maną po opłaceniu Artful Maneuver. **F-4 (znalezisko testera):**
+      bundler pomijał aliasowe importy (`import { x as y }` z PR #173) —
+      artefakt padał na `castFiltersApplicable is not defined`; fix
+      (`const y = x;` w `stripModuleSyntax` + świadomość kolizji w
+      `module-graph`) ze strażnikiem `test/artefakt-aliasy-importow.test.js`
+      (A1–A3, mutacja usunięcia emisji czerwieni A1), commit `479b4f6`;
+      po fixie te same4 partii czyste.
+- [x] **Analizatory** (wszystkie zielone): `event-contract-audit` — brak
+      naruszeń; `family-audit` — brak naruszeń; `scoring-unvalued-audit`
+      12 partii / 5615 komend — BRAK decyzji bez wyceny; `scoring-choice-space-audit`
+      6 partii — brak obserwacji >1-wariantowych (0 obserwacji = brak danych,
+      nie dowód); `scoring-pay-census` 12 partii — BRAK zapłat w próbce talii
+      (zapisane jako brak danych, nie wynik).
+- [x] **Polowanie CR (ścieżka 510/704/104 — inna niż LKI/708.9/603.10):**
+      cytaty dosłowne z `.arena/cr-raw.txt` (SHA zgodny z pinem): 510.2,
+      510.3a, 704.5a, 104.1 „A game ends immediately when a player wins…".
+      Sonda `.arena/probe-cr510-loss.mjs` (A śmiertelny + B kontrolny):
+      trigger Relic Robber trafiał na stos PO `player_lost` (objaw z
+      transkryptu tt-4). Naprawa: `processTriggers` zwraca `[]` przy
+      `status !== 'active'`, `resolve_combat` nie posuwa kroku po `finished`;
+      test `test/cr-104-1-trigger-po-koncu-gry.test.js` (2, z cytatem CR),
+      mutacje M5 (usunięcie gate'a triggerów) i M6 (gate kroku) obie RED,
+      tabela numerów CR +104.1/+510.3a (guard ADR 0030), commit `f8662c4`.
+
 ### Etap 5 — domknięcie sesji
 
 - pełna brama: `npm test`, `npm run test:slow`, `npm run build`,
@@ -123,6 +170,13 @@ udokumentowane polowanie CR (z cytatem i sondą, także gdy wynik = „poprawne�
   podsumowanie wykonania w tym planie, kumulatywny opis PR;
 - `git status` czysty, `git log origin/<gałąź>..HEAD` pusty;
 - **bez merge** — decyzja właściciela (ADR 0007/0020).
+
+- [x] **WYKONANE** — bramy: `npm test` **8852/8852**, `test:slow`
+      **268/268**, build **76 modułów / 5442,8 kB**, benchmark quick
+      **672 mecze, heuristic 87,8%** (590/672; bez regresji, `--full`
+      nie uruchamiano). Dokumentacja: README (liczby + punkt zaczepienia),
+      `docs/PROJECT_HISTORY.md`, `docs/setup/HANDOFF_2026-10-26.md`,
+      ten plan, kumulatywny opis PR #174; stan czysty; merge niewykonywany.
 
 ## Planowana kolejność commitów (każdy samodzielnie zielony)
 
@@ -149,4 +203,33 @@ osobnych commitów na kod (ADR 0020 C).
 
 ## Podsumowanie wykonania
 
-(uzupełniane na końcu sesji — po ostatnim commicie funkcjonalnym).
+**Sesja 2026-10-26 (PR #174, gałąź `arena/b47146a6-mtg` od `60a516c` = squash
+PR #173).** Kolejność commitów: `79503c3` plan → `76403a7` raport audytu
+(58/58 plików, cytaty CR zweryfikowane, mutacje M1–M4) → `d033956` F-1 →
+`5e29ec4` F-2 → `d3d9ba1` F-3 → `479b4f6` F-4 (aliasy importu w artefakcie,
+znalezisko Żywego Testera) → `f8662c4` CR 104.1 (koniec gry bez triggera na
+stosie) → commit domknięcia.
+
+Znaleziska: **F-1** `paymentReachableMana` liczył manę Skarbu dwukrotnie
+(fantomowe „Zapłać”) — fix bez efektów `fromTreasure` w pule osiągalnej;
+**F-2** `autoManaUnits` dokładał manę ograniczoną niezależnie od celu
+(fantomowy cast nie-artefaktu) — jednostki purpose-aware + `restrictedManaUnits`
+i `castCostOf` z artefaktem; **F-3** wywołanie
+`interruptMutesOnNewTargetCombination` bez pinu ścieżki (mutacja M3 przechodziła
+przez pełne8836/8836) — pin sesyjny; **F-4** bundler pomijał aliasowe deklaracje
+importu, więc `dist/mtg-table.html` padał na `castFiltersApplicable is not
+defined` jeszcze przed partią (Node-testy na ESM tego nie widzą) — emitowane
+`const y = x;` + kolizje nazw przez aliasy + strażnik artefaktu. Obserwacje
+O-1..O-3 z audytu świadomie bez naprawy (dokumentacja w raporcie).
+
+Pętla jakości (Etap 4): 4 partie testera0 zgłoszeń na trzech osiach; 5
+analyzerów zielonych; polowanie CR na ścieżce 510/704/104 z cytatem, sondą,
+fixem i dwoma mutacjami (patrz wyżej). Obie „podejrzane” ścieżki z ręcznej
+lektury transkryptów (Cuombajj — cel wskazywany przez przeciwnika wg Oracle;
+mulligan — enumeracja podzbiorów deduplikowana po nazwach, CR 400.1)
+okazały się poprawne i mają piny.
+
+Bramki KOŃCOWE (zmierzone): `npm test` **8852/8852** (było 8836),
+`npm run test:slow` **268/268**, `npm run build` **76 modułów / 5442,8 kB**
+(było 5438,3), benchmark quick **heuristic 87,8%** (590/672, bez regresji;
+`--full` nieuruchamiany zgodnie z ADR 0018).

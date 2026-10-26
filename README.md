@@ -12,71 +12,30 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-24):** [handoff](docs/setup/HANDOFF_2026-10-24b.md),
-[plan sesji](docs/plans/PLAN_2026-10-24-audyt-pr172-petla-jakosci.md) oraz
-[audyt PR #172](docs/audits/AUDYT_PR172_2026-10-24.md) w otwartym
-[PR #173](https://github.com/jurekjurekgh/mtg/pull/173). Sesja 2026-10-24:
-pełny audyt scalonego PR #172 (32/32 plików; wszystkie cytaty CR poprzedniej
-sesji zweryfikowane dosłownie w wydaniu `2026-09-25`, mutacje kluczowych pinów,
-sonda zakrytego czaru skontrzonego ze stosu, próbka bota 20/20) — kod produkcyjny
-bez usterek regułowych; naprawione znaleziska: pusty pin zatrzymanego Skarbu
-w teście `F-2/2` (okaz spoza kontraktu `treasureManaAbilityOf`), nieistniejące
-symbole mechanizmu LKI w dokumentacji PR #172 oraz odwrócona numeracja CR-2/CR-3
-między testem a dokumentami; dopisany stały pin drugiej połowy CR 708.9 (zakryty
-czar ze stosu do grobu). Pętla jakości: 4 partie Żywego Testera (talie spoza
-próbki benchmarku, 0 zgłoszeń detektorów, lektura po trzech osiach bez znalezisk),
-analizator kontraktów zdarzeń czysty, sonda reguły legend (CR 704.5j) wobec kopii
-`enter_as_copy` poprawna. Po domknięciu zgłoszenie właściciela **E**: modal
-„Rozgrywka” nazywa teraz, kogo kopiuje wprowadzona *Jwari Shapeshifter*
-(`COPY_DIGEST_EVENTS` w bramce `isMainLogEvent`, CR 400.2/707.2); zgłoszenie
-**F**: badge „Ward {2}” na kaflu zakrytych disguise/cloak oraz podatek Ward
-dla wielocelowych decyzji bota (`targetIds` — *Azorius Justiciar* nie marnuje
-już Detaina w cel z Ward bez many na dopłatę; niezapłacony Ward jednego celu
-nadal słusznie kontruje całą zdolność, CR 702.21a); zgłoszenie **G**: badge
-„+1/+1” z anthemu *Trostani Discordant* wraca na zakrytym permanencie po obu
-stronach stołu (koniec zerowania nadanego P/T dla zakrytych w `cardInfo`
-i jawne kwoty w widoku — efektywne P/T i tak było publiczne); zgłoszenia
-**H/I**: stworzenie *First Mate Ragavana* z auto-rezygnacji *Barala and Kari
-Zev* widać w logu i „Rozgrywce” (`pruneDeadPendingDecisions` zwraca cały
-plaster dopisanych zdarzeń), a bot w darmowych oknach (Epic/Suspend/Rebound)
-wycenia efekty wspólnym `freeCastEffectsScore` — *Selesnya Charm* daje token
-albo wygnanie dużego celu zamiast pumpa we własnego defendera; czarów
-z lootem (*Izzet Charm*) nie rzuca bez kart utkniętych na pipach ani przy
-bibliotece poniżej 10 kart; przy płatności „zapłać albo…” opcja zapłaty
-pojawia się także wtedy, gdy manę da się pozyskać tylko ręcznie
-(poświęcenie Sciona przez kreator many); *Manor Gate* pokazuje na kaflu
-badge wybranego przy wejściu koloru many; zgłoszenie *Revealing Wind*
-było prawdziwym błędem auto-passu (szczegóły niżej — M2); czar osiągalny maną
-z ręcznej aktywacji zdolności many (poświęcenie Eldrazi Sciona,
-CR 605.3a) wchodzi do oferty jak każdy inny, a klik otwiera kreator
-many ze wszystkimi sposobami pozyskania many. Domknięcie M: przyczynę
-wskazał właściciel — ptaszek wyciszenia kluczowano dokładnym zestawem
-celów, więc po śmierci nowego stworzenia dawne wyciszenie wracało samo:
-nowa kombinacja celów trwale przerywa wyciszenie akcji. Bot nie rzuca
-już czarów zwrotu z grobu („up to N”) bez żadnego zwrotu tylko dla
-doboru (kara per pusty slot; w paśmie ≤10 kart w bibliotece dobór z tych
-rzutów kosztuje stopniowaną karę — do 5 kart bot ich nie rzuca wcale).
-Silnik ma fundament pod Converge (ability word, CR 207.2c): liczy kolory
-many wydanej na rzut — jednostki wielokolorowe rozliczane na końcu, każda
-jako co najwyżej jeden brakujący kolor. Bot nie poświęca już Eldrazi
-Sciona (ani innego jednorazowego źródła many) z powodu „odblokowania”,
-o którym wyceniał na celu spoza deskryptora czaru (*Boulder Salvo* jako
-burn w gracza) — syntetyczna wycena respektuje teraz specyfikację celu.
-Decyzje „obejrzyj wierzch, wygnij/wybierz jedną, reszta na spód”
-(*Clone Shell*, *Impulse*) odzyskały kreator kolejności spodu (generyczny
-wybór jednej karty przejmował je i gubił wymiar kolejności). Bot nie
-atakuje już samotnym stworem o zerowych obrażeniach bojowych (premia
-wyścigu wskrzeszała taki atak ponad passa) i celuje triggerami obrażeń
-wspólną polityką z czarami (nieletalny chip nie bije już twarzy
-przeciwnika). Wyciszenia opcji panelu są decyzją na partię — klucze
-z poprzedniej gry nie wyciszają po cichu kart o tym samym
-identyfikatorze obiektu.
+**Aktualny punkt zaczepienia (2026-10-26):** [handoff](docs/setup/HANDOFF_2026-10-26.md),
+[plan sesji](docs/plans/PLAN_2026-10-26-audyt-pr173-petla-jakosci.md) oraz
+[audyt PR #173](docs/audits/AUDYT_PR173_2026-10-26.md) w otwartym
+[PR #174](https://github.com/jurekjurekgh/mtg/pull/174). Sesja 2026-10-26:
+pełny audyt scalonego PR #173 (58/58 plików, 47 commitów; cytaty CR
+zweryfikowane dosłownie w wydaniu `2026-09-25`, mutacje kluczowych pinów
+M1–M4) — naprawione znaleziska: podwójne liczenie many Skarbu w
+`paymentReachableMana` (fantomowe „Zapłać”), purpose-blind jednostki many
+ograniczonej w filtrze bota (fantomowy cast nie-artefaktu), brak pinu ścieżki
+`interruptMutesOnNewTargetCombination` (mutacja przeżywała pełny pakiet) oraz
+znalezisko pętli — bundler pomijał aliasowe importy i artefakt padał na
+„castFiltersApplicable is not defined” (emitowane wiązania `const y = x;` +
+strażnik aliasów). Pętla jakości: 4 partie Żywego Testera na naprawionym
+buildzie — 0 zgłoszeń detektorów, 0 niewycenionych, ręczna lektura bez
+znalezisk (Cuombajj i mulligan londyński potwierdzone poprawne); analizatory
+zdarzeń, rodzin i scoringu czyste; polowanie CR na ścieżce 510/704/104 —
+trigger z obrażeń trafiał na stos po `player_lost`, naprawione zgodnie z
+CR 104.1 „A game ends immediately…” (test z cytatem, mutacje czerwieniące).
 Bramki:
-`npm test` **8836/8836**, `npm run test:slow` **268/268**,
-build **76 modułów / 5438,3 kB**.
+`npm test` **8852/8852**, `npm run test:slow` **268/268**,
+build **76 modułów / 5442,8 kB**, benchmark quick 672 mecze (heuristic 87,8%).
 PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
-(sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).
+Poprzedni punkt zaczepienia: [handoff 2026-10-24b](docs/setup/HANDOFF_2026-10-24b.md)
+(sesja PR #173 — audyt PR #172 F-1..F-3, pętla jakości i zgłoszenia E–I).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
