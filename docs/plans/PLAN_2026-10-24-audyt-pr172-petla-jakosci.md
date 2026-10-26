@@ -495,3 +495,63 @@ brak many wg zgłoszenia N nadal aktywuje). Bramki: `npm test`
 8820/8820, `test:slow` 268/268, build 76 modułów / 5434,2 kB, benchmark
 quick heuristic 87,8% (bez zmian).
 
+## Zgłoszenia S–V — Clone Shell, atak 0/1, mana z Vestige, cel Nursery
+
+Reguły zweryfikowane wobec przypiętego CR (`.arena/cr-raw.txt`, ADR 0030):
+Imprint to dziś wyłącznie ability word bez znaczenia regułowego — o S
+decyduje tekst Oracle *Clone Shell* („put the rest on the bottom of your
+library in any order"); CR 106.4 (mana trafia do puli i znika na końcu
+kroku/fazy), CR 117.3b (po rozstrzygnięciu zdolności priorytet wraca do
+aktywnego gracza) i CR 605.1b (ETB-trigger *Crumbling Vestige* nie jest
+zdolnością many — idzie na stos) wyznaczają U. T i V to wyceny bota, nie
+legalność, więc reguł nie dotykają.
+
+**S — Clone Shell bez sortowania spodu.** Sonda na produkcyjnej ścieżce:
+silnik, `playerView.pendingLookTopN` i `renderPickOneRestBottomWizard`
+poprawnie niosą `bottomOrder`, ale `openChoiceRequest` liczy
+`singleTargetPlanOf` PRZED `lookWizardKindOf`, a generyczny detektor
+przejmuje komendy `resolve_look_top_choice` po samym polu `cardId` i
+kończy gołą komendą bez `bottomOrder` (silnik układa resztę w kolejności
+biblioteki). Ta sama kradzież dotyczy *Impulse*; *Fertile Thicket* ma
+osobny typ komendy, którego detektor nie zna, więc działa. Naprawa:
+`resolve_look_top_choice` wychodzi z rodziny generycznego single-pick
+(jego komendy nie niosą wymiaru kolejności — detektor oparty wyłącznie
+na komendach nie może jej reprezentować), a kaskada wraca do
+wyspecjalizowanego wizarda. Piny: produkcyjne oferty Clone Shell
+i Impulse (`singleTargetPlanOf` = null, `lookWizardKindOf` =
+„pick-one-rest-bottom", wykonanie z odwróconym `bottomOrder`),
+anty-overfix dla reszty single-pick.
+
+**T — samobójczy atak 0/1.** Sonda odtwarza scenę właściciela (życie
+3/23, biblioteki 7/6, samotny 0/1 w 4/3): atak dostaje +8 i wygrywa
+z brakiem ataku. Gałąź M155 (`dealsNoCombatDamage` = −12) jako jedyna
+z gałęzi „bezsensownych" NIE inkrementuje `futileAttackers`, więc
+premia wyścigu (+20 przy życiu przeciwnika ≤10, mimo łącznej siły 0)
+„wskrzesza" atak ponad passa (klasa L3). Dodatkowo gałęzie
+„nieblokowalny/odporny" biegną przed M155 i dają premię przebicia
+atakującemu o sile 0. Naprawa: 0 obrażeń bojowych bez wypłaty
+z ataku = atakujący daremny (bez premii wyścigu), a sprawdzenie M155
+przed premiami za nieblokowalność/odporność/ewazję. Piny: scena
+właściciela, warianty ewazyjne 0/x, anty-overfix dla drenażu z ataku.
+
+**U — mana z Crumbling Vestige a oferta Xu-Ifita.** Dokładna scena
+silnikowa (Vestige + Swamp + 6 Mountainów, obiekty z `createCardDeck`)
+i ta sama scena przez prawdziwą sesję stołu DZIAŁAJĄ: po rozstrzygnięciu
+triggera pula = `{WUBRG:1}`, `canPayColoredCost(BB)` = true, oferta
+`cast_permanent` jest, auto-pass staje. Szukamy więc różnicy stanu
+z żywej partii (odpowiedź bota na trigger, pauzy stołu, tapnięte źródła,
+inne oczekujące decyzje) — bez zgadywania poprawki (L57/lekcja M).
+
+**V — Molten Nursery w 4/3.** Sonda: 1 obrażenie w wrogie 4/3 = 41 pkt
+(`30 + 2P + T`), w przeciwnika = 25. Gałąź `resolve_trigger_target`
+premiuje lethal (+60, zgłoszenie F), ale obrażenia NIEletalne wycenia
+jak ogólny efekt wrogi — rozmiarem celu — zamiast wspólną polityką
+celów obrażeń (chip poza walką = strata). Naprawa: triggery obrażeń
+oceniają cele wspólną wyceną `damageTargetValue` (jak czary): lethal
+> twarz > nieletalny chip; zachowane zachowanie przy celach
+wymuszonych i `allowNone`. Piny: scena właściciela (4/3 kontra twarz),
+lethal nadal wygrywa, chip „dokładający" w walce nadal sensowny.
+
+Każde zgłoszenie osobny, niezależnie zielony commit; bramki jak zwykle
+(`npm test`, `test:slow`, build, benchmark quick — B0 tylko na rozkaz).
+
