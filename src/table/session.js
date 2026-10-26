@@ -1219,6 +1219,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.additionalCost) {
           return `${nameOf(e.object?.cardId)} zostaje wygnane (dodatkowy koszt rzucenia)`;
         }
+        // Uwaga W (zgłoszenie właściciela, Sultai Scavenger): wygnanie kart
+        // za Delve (CR 702.66) to PŁATNOŚĆ KOSZTU jak mana (precedens M103/D,
+        // E7/E) — log musi nazywać wygnaną kartę, inaczej gracz nie wie, ile
+        // kart bot wybrał (0, 1 czy 2). Dotąd gałąź zwracała null: informacja
+        // była tylko w modalu „Rozgrywka" (pytanie o wybór), nie w wyniku.
+        if (e.delve) {
+          return `${nameOf(e.object?.cardId)} zostaje wygnane (koszt Delve)`;
+        }
         return null;
       }
       // M202/odznaka #3 (CR 616.1): wybór efektu zastępczego — gracz musi
