@@ -12,6 +12,42 @@ import path from 'node:path';
 
 export const IMPORT_RE = /^[ \t]*import\s+(?:[\s\S]*?\s+from\s+)?['"](\.[^'"]+)['"];?[ \t]*$/gm;
 export const REEXPORT_RE = /^[ \t]*export\s+\{[^}]*\}\s+from\s+['"](\.[^'"]+)['"];?[ \t]*$/gm;
+/** Pełne instrukcje importu względnego — z klauzulą po lewej stronie `from`. */
+const IMPORT_FULL_RE = /^[ \t]*import\s+([\s\S]*?)\s+from\s+['"](\.[^'"]+)['"];?[ \t]*$/gm;
+
+/**
+ * Wiązania aliasów z importów względnych (`import { a as b } from './x'`).
+ *
+ * Płaski zasięg artefaktu (ADR 0011) zna nazwy ORYGINALNE modułu
+ * importowanego — instrukcja `import` znika przy sklejaniu (`stripModuleSyntax`),
+ * więc `b` nigdy nie powstaje i przeglądarka dostaje `ReferenceError`
+ * przy pierwszym wywołaniu (F-4 audytu PR #173: pierwszy alias w `src/`
+ * wprowadził `heuristic-bot.js`, a Żywy Tester mierzy `dist/`, nie `src/`).
+ * Zwraca `[{ local, original }]` — tylko aliasy; nazwy bez `as` już
+ * istnieją w płaskim zakresie. Kształty default/namespace odrzucamy jawnie
+ * (build musiałby wygenerować inne wiązanie — L52: sygnał, nie cisza).
+ */
+export function importAliasBindings(source) {
+  const out = [];
+  for (const m of source.matchAll(IMPORT_FULL_RE)) {
+    const clause = m[1].trim();
+    if (clause.startsWith('.')) continue; // import './x.js' — bez wiązań
+    if (!clause.startsWith('{')) {
+      throw new Error(
+        `Nierozwiązany kształt importu względnego: import ${clause} … — `
+        + 'płaski zasięg artefaktu potrafi rozwiązać tylko klauzurę {…} z aliasami (F-4).',
+      );
+    }
+    const end = clause.lastIndexOf('}');
+    for (const part of clause.slice(1, end === -1 ? clause.length : end).split(',')) {
+      const trimmed = part.trim();
+      if (!trimmed) continue;
+      const as = trimmed.match(/^([\s\S]+?)\s+as\s+([\s\S]+)$/);
+      if (as) out.push({ local: as[2].trim(), original: as[1].trim() });
+    }
+  }
+  return out;
+}
 
 function dependenciesOf(source) {
   return [...source.matchAll(IMPORT_RE), ...source.matchAll(REEXPORT_RE)].map((m) => m[1]);
@@ -65,6 +101,16 @@ export function assertNoNameCollisions(modules, { rootDir = '.' } = {}) {
         problems.push(`  "${name}" — ${declared.get(name)} oraz ${rel}`);
       } else {
         declared.set(name, rel);
+      }
+    }
+    // F-4: alias importu też tworzy symbol najwyższego poziomu po sklejeniu
+    // (`const <local> = <original>;`) — kolizja z deklaracją jakiegokolwiek
+    // modułu nadpisałaby go w płaskim zakresie.
+    for (const { local } of importAliasBindings(source)) {
+      if (declared.has(local)) {
+        problems.push(`  "${local}" — ${declared.get(local)} oraz alias importu w ${rel}`);
+      } else {
+        declared.set(local, `alias importu w ${rel}`);
       }
     }
   }

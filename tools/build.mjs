@@ -17,18 +17,27 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { IMPORT_RE, REEXPORT_RE, assertNoNameCollisions, collectModules } from './module-graph.mjs';
+import { IMPORT_RE, REEXPORT_RE, assertNoNameCollisions, collectModules, importAliasBindings } from './module-graph.mjs';
 
 const ENTRY = 'src/table/main.js';
 
 /** Usuwa składnię modułów — po sklejeniu wszystko dzieli jeden zasięg. */
 function stripModuleSyntax(source) {
-  return source
+  // F-4 (audyt PR #173): skasowana instrukcja `import { a as b }` musi
+  // zostawić wiązanie `b` — płaski zasięg zna tylko oryginalną nazwę `a`
+  // modułu importowanego (graf gwarantuje, że jego ciało jest WYŻEJ:
+  // zależności pierwsze), a bez tej linii artefakt pada z
+  // `ReferenceError: b is not defined` przy pierwszym wywołaniu (L76: tester
+  // mierzy dist/). Kolizje wiązań pilnuje `assertNoNameCollisions`.
+  const aliasLines = importAliasBindings(source)
+    .map(({ local, original }) => `const ${local} = ${original};`);
+  const body = source
     .replace(REEXPORT_RE, '')
     .replace(IMPORT_RE, '')
     .replace(/^[ \t]*export\s+default\s+/gm, 'const __default__ = ')
     .replace(/^[ \t]*export\s+(async\s+function|function|const|let|var|class)\s/gm, '$1 ')
     .replace(/^[ \t]*export\s*\{[^}]*\};?[ \t]*$/gm, '');
+  return aliasLines.length > 0 ? `${aliasLines.join('\n')}\n${body}` : body;
 }
 
 /** Talie z repozytorium wstrzyknięte do artefaktu — file:// nie może ich fetchować. */
