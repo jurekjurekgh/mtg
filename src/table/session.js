@@ -2889,6 +2889,19 @@ export function createSession(config) {
   // grupy, gdy na stole pojawi się nowa kombinacja celów (wyciszenie nie
   // „wraca” po przywróceniu dawnego układu planszy).
   const ignoredOptionKeys = config.ignoredOptionKeys ?? new Set();
+  // U (zgłoszenie właściciela 2026-10-26, Crumbling Vestige → Xu-Ifit):
+  // klucze wyciszeń osadzają `objectId` (`commandOptionKey`), a identyfikatory
+  // obiektów rodzą się od nowa w KAŻDEJ partii (sekwencja stanu: `hand-N`,
+  // `p1-opening-K` — te same wartości wracają co grę). Zbiór żyje w pamięci
+  // strony i jest przekazywany kolejnym sesjom, więc wyciszenie z POPRZEDNIEJ
+  // partii potrafiło po cichu wyciszyć zupełnie inną kartę o tym samym
+  // `objectId` — legalna oferta istniała w `legalCommands`, ale auto-pass
+  // jej „nie widział” i partia jechała dalej (objaw: brak oferty rzutu mimo
+  // many w puli, przejście wprost do walki). Wyciszenie jest więc decyzją
+  // NA PARTIĘ: nowa sesja zaczyna z pustym zbiorem (UI nadal mutuje TEN SAM
+  // zbiór w trakcie gry). Ta sama reguła przy podmianie stanu w
+  // `resumeReplayText`.
+  ignoredOptionKeys.clear();
   // M2: migawki kombinacji celów per grupa wyciszenia (sesyjna pamięć reguły
   // `interruptMutesOnNewTargetCombination`).
   const muteTargetCombinationsSeen = new Map();
@@ -4272,6 +4285,11 @@ export function createSession(config) {
       state = played.state;
       bot = botFactory(seed + 1 + replay.commands.length, botCtx);
       reasoning.length = 0; // świeży bot = świeży ślad decyzji
+      // U: stan został podmieniony — klucze wyciszeń niosą `objectId` martwego
+      // stanu; identyfikatory w odtworzonym stanie rodzą się od nowa i mogłyby
+      // trafić w cudze klucze (jak wyciek między partiami w createSession).
+      ignoredOptionKeys.clear();
+      muteTargetCombinationsSeen.clear();
       // Świeży przebieg tur: historia przed wznowieniem nie dotyczy nowej gry.
       turnHistory.length = 0;
       currentTurn = { number: state.turn.number, activePlayerId: state.turn.activePlayerId, lines: [] };

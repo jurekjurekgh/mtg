@@ -589,7 +589,10 @@ function bootstrapTable() {
   // Feature 2026-08-11: wyciszone opcje akcji (ptaszek „nie przerywaj
   // auto-passu"). Zbiór kluczy commandOptionKey; sesja czyta go w
   // hasMeaningfulDecision, UI mutuje przez toggleIgnoredOption. Trwałość:
-  // pamięć strony (jak inne preferencje UI), reset przy odświeżeniu.
+  // JEDNA PARTIA — klucze osadzają `objectId`, a identyfikatory obiektów
+  // powtarzają się między partiami, więc `createSession` czyści zbiór na
+  // starcie (U, 2026-10-26: wyciek wyciszenia między partiami potrafił
+  // ukryć legalną ofertę przed auto-passem).
   const ignoredOptionKeys = new Set();
   // Sygnatura ostatniego okna decyzyjnego — szuflada akcji otwiera się sama
   // przy NOWYM oknie, ale nie walczy z ręcznym zamknięciem w tym samym oknie.
