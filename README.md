@@ -58,10 +58,13 @@ doboru (kara per pusty slot; w paśmie ≤10 kart w bibliotece dobór z tych
 rzutów kosztuje stopniowaną karę — do 5 kart bot ich nie rzuca wcale).
 Silnik ma fundament pod Converge (ability word, CR 207.2c): liczy kolory
 many wydanej na rzut — jednostki wielokolorowe rozliczane na końcu, każda
-jako co najwyżej jeden brakujący kolor.
+jako co najwyżej jeden brakujący kolor. Bot nie poświęca już Eldrazi
+Sciona (ani innego jednorazowego źródła many) z powodu „odblokowania”,
+o którym wyceniał na celu spoza deskryptora czaru (*Boulder Salvo* jako
+burn w gracza) — syntetyczna wycena respektuje teraz specyfikację celu.
 Bramki:
-`npm test` **8816/8816**, `npm run test:slow` **268/268**,
-build **76 modułów / 5428,5 kB**.
+`npm test` **8820/8820**, `npm run test:slow` **268/268**,
+build **76 modułów / 5434,2 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).

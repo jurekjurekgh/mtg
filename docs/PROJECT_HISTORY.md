@@ -200,8 +200,22 @@
   `amount: 'colors_of_mana_spent'` działa w efektach, kwocie obrażeń
   i `entersWithCounters`. Bez realnej karty (ADR 0029) — piny syntetyczne
   `zgloszenie-p-converge-fundament` 5/5, Adamant bez regresji.
-- **Bramka końcowa:** `npm test` **8816/8816**, `npm run test:slow` **268/268**,
-  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5428,5 kB**.
+- **Zgłoszenie właściciela R (`bd0f0ae`, log 2026-10-26):** bot poświęcał
+  Eldrazi Sciona przy triggerze *Fertile Thicket*, choć *Kozilek's Predator*
+  był płatny z czterech nietapniętych lądów. Przyczyna nie leżała w płatności
+  (`spendMana` Sciona nie poświęca), lecz w bramce odblokowania many:
+  `castScoreForUnlock` (PMSSB-32/F6) wyceniał czary z celem syntetykami dla
+  każdego obiektu i każdego gracza, więc *Boulder Salvo* („target creature”)
+  udawał dodatnio wyceniony burn w przeciwnika i jednorazowe źródło many
+  dostawało premię za fikcyjne odblokowanie mimo braku stwora przeciwnika.
+  Naprawa generyczna po deskryptorze: `syntheticTargetCandidatesOf` czerpie
+  cele wyłącznie ze specu czaru, wariant bez celu nie bierze udziału
+  w wycenie, a brak kandydata kategorii to −60, nie fallback +1. Piny
+  `zgloszenie-r-scion-falszywe-odblokowanie` 4/4: scena z logu 1:1 (pass →
+  Predator z samych lądów, Scion żyje), pusty stos bez celu, anty-over-fix
+  legalnego celu (PMSSB-32/F6) i realnego braku many (zgłoszenie N).
+- **Bramka końcowa:** `npm test` **8820/8820**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5434,2 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

@@ -181,6 +181,16 @@ Zgłoszenie O (Urborg Uprising) domknięte karą per pusty slot zwrotu.)_
 - **Wycena decyzji blokujących** poza trybami modalnymi: scry/surveil,
   wybór celu triggera, rozdzielanie obrażeń — dziś w większości „pierwsza
   oferta".
+- **Sekwencjonowanie aktywacji many pod „odblokowanie” (rozpoznane przy
+  zgłoszeniu R, 2026-10-26):** bramka `add_mana` pyta, czy JAKIKOLWIEK wart
+  rzutu czar staje się płatny po aktywacji — nie porównuje go z zagraniem
+  już płatnym, które bot wybierze w następnej decyzji. Po naprawie R
+  (cele syntetyków zgodne ze specem) scena właściciela jest zamknięta,
+  ale przy legalnym celu drogiego removalu i jednocześnie płatnym z lądów
+  permanencie bot wciąż może aktywować źródło wcześniej, niż to konieczne
+  (np. przy obcym triggerze na stosie). Ewentualna zmiana wymaga sceny
+  dyskryminującej od właściciela i osobnej pętli wyceny — nie ruszać
+  przy okazji innych poprawek.
 - **Inne gałęzie z własnym modelem świata** (pokłosie M288/C, L28): equip miał
   dwa modele — rzut pytał „co sprzęt daje", przeniesienie tylko „kto większy".
   Przejrzeć gałęzie, które liczą premię lokalnie, mając obok wywołanie wspólnej

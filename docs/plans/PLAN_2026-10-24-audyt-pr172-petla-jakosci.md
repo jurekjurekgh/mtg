@@ -458,3 +458,40 @@ benchmark quick heuristic 87,8%. Karta Converge od właściciela będzie już
 tylko danymi w katalogu (+ ew. wycena bota pod jej konkretny efekt);
 silnikowe liczenie kolorów i deskryptor kwoty są gotowe.
 
+## Zgłoszenie R — bot poświęca Sciona, choć lądy wystarczają na Predatora
+
+Log właściciela: bot ma 4 nietapnięte lądy (w tym Forest) i Eldrazi Sciona.
+Zagrywa *Fertile Thicket* (piąty ląd, tapnięty), po czym — jeszcze przy
+triggerze Thicket na stosie — poświęca Sciona i dopiero potem rzuca
+*Kozilek's Predator* za {3}{G} z trzech lądów + {C}. Sonda na żywym
+silniku odtwarza sekwencję 1:1 po dołożeniu do ręki *Boulder Salvo*
+({4}{R}, „deals 4 damage to target creature”): aktywacja Sciona dostaje
++6 i wygrywa z passem. Przyczyna: bramka `castScoreForUnlock`
+(PMSSB-32/F6) pyta o wartość czaru z celem komendami SYNTEtycznymi dla
+każdego obiektu pola bitwy ORAZ każdego gracza, bez sprawdzenia specu
+celu — *Boulder Salvo* „w gracza” wycenia się dodatnio jako burn, choć
+taki cel jest nielegalny (na stole nie ma żadnego stwora przeciwnika),
+więc jednorazowe źródło many dostaje premię za fikcyjne odblokowanie.
+Po rozstrzygnięciu triggera bot wybiera legalny, wyżej wyceniony rzut
+Predatora i płaci pływającą maną ze Sciona zamiast czwartym lądem.
+
+Naprawa u źródła (bot, bez nazw kart — ADR 0002): syntetyczne warianty
+w `castScoreForUnlock` budujemy wyłącznie dla celów zgodnych ze specem
+czaru (kategoria celu z deskryptora), a wariant bez celu dla czaru
+z celem nie bierze udziału w wycenie. Piny: scena z logu (Thicket na
+stosie → pass, potem Predator z samych lądów), anty-overfix (Skarb/
+Scion nadal finansuje czar z legalnym celem, PMSSB-32/A5b) oraz bramki
+jak zwykle.
+
+**Wykonanie** (`bd0f0ae`): zgodnie z rozpoznaniem wyżej —
+`syntheticTargetCandidatesOf` w `heuristic-bot.js` buduje syntetyczne cele
+wyłącznie z kategorii specu deskryptora (stwór/permanent/gracz/stos/grób,
+kontrola, specy złożone `_or_`, ograniczenia szczegółowe przez wspólny
+`publicEtbTargets`), wariant bez celu nie uczestniczy w wycenie czaru
+z celem, a brak kandydata właściwej kategorii zwraca −60 zamiast
+fallbacku +1. Piny `zgloszenie-r-scion-falszywe-odblokowanie` 4/4 (scena
+z logu 1:1, pusty stos bez celu, legalny cel nadal odblokowuje, realny
+brak many wg zgłoszenia N nadal aktywuje). Bramki: `npm test`
+8820/8820, `test:slow` 268/268, build 76 modułów / 5434,2 kB, benchmark
+quick heuristic 87,8% (bez zmian).
+
