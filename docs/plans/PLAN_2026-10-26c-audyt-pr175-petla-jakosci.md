@@ -26,12 +26,12 @@ Jeden PR sesji, kumulatywny opis.
 
 ### Etap 0 — rozpoznanie i plan
 
-- [ ] Kryterium: powyższy stan bazowy (zmierzony, nie przepisany z handoffu)
+- [x] Kryterium: powyższy stan bazowy (zmierzony, nie przepisany z handoffu)
       + ten plik. Brak zmian w `src/`.
 
 ### Etap 1 — PR na starcie (ADR 0020 A)
 
-- [ ] Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
+- [x] Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
       z szablonu opisu **przed** pierwszą zmianą kodu.
 
 ### Etap 2 — techniczny audyt scalonego PR #175 (ADR 0020 B / 0016 / 0030)
@@ -63,6 +63,14 @@ Pytania audytowe (każde z odpowiedzią w raporcie):
 Kryterium: raport `docs/audits/AUDYT_PR175_2026-10-26.md` w repo + co najmniej
 3 mutacje RED/GREEN + każdy zmieniony plik oceniony. Bramka: `npm test` +
 `npm run build` zielone.
+
+- [x] **WYKONANE** — `docs/audits/AUDYT_PR175_2026-10-26.md`: 5/5 plików
+      ocenionych; mutacje M1 (gałąź `e.delve`) i M2 (flaga `delve: true` w
+      emisji) — obie RED (W/1, W/2, W/4). Znaleziska: **F-1** (oś „modal"
+      niedomknięta dla płatności człowieka — `isMainLogEvent` zna tylko
+      `additionalCost`), **F-2** (piny przepuszczają surowy `cardId`, L29),
+      **F-3** (liczby README/handoffu sprzed ostatniego commita PR, L92).
+      Werdykt: APPROVE z zastrzeżeniem.
 
 ### Etap 3 — naprawy znalezisk audytu (osobne zielone commity)
 
