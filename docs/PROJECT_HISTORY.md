@@ -20,6 +20,92 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-26c — audyt scalonego PR #175 (5/5, F-1..F-3) oraz pętla jakości (PR #176)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/3e188a7c-mtg` od `main` @
+  `d7150b1` (squash-merge PR #175). Plan:
+  `docs/plans/PLAN_2026-10-26c-audyt-pr175-petla-jakosci.md`, raport audytu:
+  `docs/audits/AUDYT_PR175_2026-10-26.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-26c.md`, PR:
+  [#176](https://github.com/jurekjurekgh/mtg/pull/176).
+- **Audyt PR #175** (5/5 zmienionych plików): mutacje M1 (gałąź `e.delve`
+  w opisie) i M2 (flaga `delve: true` w emisji) RED. Znaleziska i naprawy
+  (osobne zielone commity):
+  - **F-1 (`cc5d49e`):** `isMainLogEvent` znał tylko `additionalCost`, więc
+    wygnanie kart za **Delve u człowieka** wypadało z logu gry (modal
+    „Rozgrywka” je pokazywał, `botMoves` maskowały usterkę dla bota —
+    oś „modal” z audytu PR #175 była niedomknięta dla jednej z trzech klas
+    kosztu). Jedno źródło klasy — nowy `isCostPaymentZoneMove(e)` =
+    `object_moved && (additionalCost || escape || delve)` — karmi OPIS
+    i BRAMKĘ; zwykłe zmiany stref dalej są szumem (anty-over-fix).
+    Pin `test/audyt-pr175-koszt-wygnania-w-panelu.test.js` P/1–P/3;
+    mutacje M3 (bramka `additionalCost`-only) → P/1, P/2 RED;
+    M4 (predykat bez `delve`) → P/1, P/2 RED; M5 (bez `escape`) → P/2 RED.
+  - **F-2 (`34b1b9e`):** piny W/1–W/2 przepuszczały surowy `cardId`
+    w opisie (L29) — teraz nazywają kartę (`/Goblin Piker/`)
+    i `doesNotMatch /goblin-piker/`; mutacja M6 czerwieni W/1, W/2, W/4
+    (stary regex przy tej samej mutacji był zielony — pin niedomiarowy).
+  - **F-3:** liczby README/handoffu po ostatnim commicie PR #175
+    (8852→8856 testów, 5442,8→5443,3 kB) — odświeżone na końcu sesji.
+- **Pętla jakości:** Żywy Tester 4/4 partie ukończone naturalnie
+  (8101–8104, `--steps 400 --quiet`), 0 zgłoszeń detektorów, 0 ruchów bez
+  wyceny; analizatory `event-contract`, `family`, `scoring-unvalued`
+  (12 partii), `scoring-pay-census` (brak danych), `scoring-choice-space`
+  czyste. **`scoring-mulligan-audit` EXIT 1 → F-M1/F-M2** (`f91ef4a`):
+  metryka liczyła CUDZĄ (ukrytą) rękę jako własne czary
+  (`playerView.zones.hand` jest strefą złożoną — kontrakt FoW) i karała
+  rękę „2 lądy + czar 3 many” (`najtańszy > lądy`), choć po jednym lądzie
+  czar jest grywalny — wada POMIARU, nie bota (L118/L119). Reguła
+  w `tools/mulligan-keep-criterion.mjs`, pin M/1–M/4; mutacje M7/M8 RED.
+  Po naprawie: 26 partii / 65 decyzji / 0 naruszeń (EXIT 0). Polityka bota
+  BEZ zmian.
+- `bot-tie-audit`: 24 partie / 12 621 decyzji — `tie_top` 621 (4,9%),
+  `tie_all` 0; z remisów 436 to pary „brak akcji” silnika, 185 remisów
+  między realnymi wariantami (9,8% decyzji akcyjnych).
+- **Polowanie CR (ścieżka 614/616 + 106/601.2, cytaty dosłowne z pinem
+  SHA-256):** źródło `nwgarne/mtg-data` `rules/cr-raw.txt`, blob
+  `4dc4fead…`, wydanie 2026-09-25, SHA-256 `8d860e45…70ca` zgodny
+  z `rules/manifest.json`. Sprawdzone i poprawne: 616.1 (kontroler
+  decyduje, APNAP), 616.1e (>1 opcja = jawna decyzja), 616.1f (łańcuch
+  przez `expandArmor`), 614.5 (jedno zastosowanie na zdarzenie), 614.6
+  (brak zdarzenia bazowego), 614.7a (0 obrażeń nie istnieje — log
+  `session.js:1540` i wszystkie triggery filtrują `amount > 0`),
+  106.4/500.4 (pula czyszczona na końcu każdego kroku i fazy).
+  **Brak nowych znalezisk kodu;** poza zakresem kolekcji: 616.1b/c/d
+  i 614.15/616.1a (brak kart, które ich wymagają) — granica, nie usterka.
+- Weryfikacja `escape`: gałąź opisu istnieje (`session.js:1233`,
+  „zostaje wygnane (koszt Escape)”), predykat bramki obejmuje `escape`
+  (`session.js:362`) — potwierdzone mutacją M5.
+- Bramy końcowe: `npm test` **8863/8863**, `npm run test:slow` **268/268**,
+  build **76 modułów / 5444,4 kB**, benchmark quick 672 mecze — heuristic
+  **87,8% (590/672)**, aggro 21,4%, random 3,0% (bez zmian względem bazy).
+
+## 2026-10-26b — audyt scalonego PR #174 (16/16) oraz pętla jakości (PR #175)
+
+> Sekcja uzupełniona w sesji 2026-10-26c: sesja 2026-10-26b zostawiła handoff
+> (`docs/setup/HANDOFF_2026-10-26b.md`) i plan
+> (`docs/plans/PLAN_2026-10-26b-audyt-pr174-petla-jakosci.md`), ale nie
+> dopisała wpisu tutaj (ADR 0013; ta sama klasa dryfu dokumentacji co L92).
+
+- Gałąź `arena/30278238-mtg` od `697d49b` (squash PR #174), PR
+  [#175](https://github.com/jurekjurekgh/mtg/pull/175).
+- **Audyt PR #174** (`docs/audits/AUDYT_PR174_2026-10-26.md`, 16/16 plików,
+  werdykt APPROVE): wszystkie 5 napraw produkcyjnych u root cause
+  (`paymentReachableMana` bez podwójnego liczenia Skarbu, mana ograniczona
+  `spendOnly` w automacie, pin `interruptMutesOnNewTargetCombination` na
+  poziomie sesji, aliasy importu w artefakcie, gate `state.status` przy
+  CR 104.1). Mutacje M1–M4 wszystkie RED.
+- **Pętla jakości:** Żywy Tester 4/4 (8001–8004) bez zgłoszeń detektorów
+  i bez ruchów bez wyceny; analizatory zdarzeń/rodzin/scoringu czyste;
+  polowanie CR na ścieżce 613/603/704 — bez znalezisk.
+- **Znalezisko po handoffie** (`50c1243`): wygnanie kart za Delve nie było
+  widoczne w logu ani w modalu (tylko pytanie o wybór) — dodany opis
+  `object_moved` z `delve: true`, piny W/1–W/4. Ten commit powstał PO
+  pomiarze bramek, dlatego handoff podaje 8852/5442,8 kB, a drzewo ma
+  8856/5443,3 kB (F-3 następnej sesji).
+- Bramy (handoff): `npm test` 8852/8852, build 76 modułów / 5442,8 kB,
+  benchmark quick 672 mecze — heuristic 87,8%.
+
 ## 2026-10-26 — audyt scalonego PR #173 (58/58, F-1..F-4) oraz pętla jakości (PR #174)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/b47146a6-mtg` od `main` @
