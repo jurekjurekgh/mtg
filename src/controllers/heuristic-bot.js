@@ -4819,10 +4819,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const LASTING_MANA_EFFECTS = new Set(['create_token', 'add_counter']);
   const COMBAT_STEPS = new Set(['declare_attackers', 'declare_blockers', 'combat_damage', 'end_of_combat']);
+  // Z (zgłoszenie właściciela 2026-10-26, Cenn's Tactician): koszt TAPNIĘCIA nie
+  // wyklucza odroczenia — wręcz przeciwnie, to DRUGI powód, żeby poczekać.
+  // Zgłoszenie: bot w swojej Głównej 1 tapował jedynego stwora (2/2), dokładał
+  // mu licznik i nie atakował, choć przeciwnik nie miał blokerów (bezkarne 2
+  // obrażenia). Zdolność „{W}, {T}: dołóż licznik +1/+1” ma trwały skutek, więc
+  // obowiązuje ją ta sama zasada co PMSSB-66 (ta sama mana/ciało zastane w end
+  // step przeciwnika), ale dochodzi wymiar TEMPA: tapowanie ciała przed własną
+  // walką zabiera mu atak (w cudzej turze — blok). W oknie end step ciało i tak
+  // nic nie zrobi, a licznik zostaje do następnej tury; w krokach walki
+  // odroczenia nie ma (combat trick: licznik zmienia wynik toczącej się walki —
+  // pin PMSSB-66/W9), a linia wygrywająca od razu jest wyłączona przez
+  // `lethalNow` (M429/PMSSB-23 „licznik domyka grę”).
+  // Zakres: zdolności, które PŁACĄ MANĘ (koszt many > 0). Zdolność za samo {T}
+  // (Rustvine Cultivator) zostaje poza tą regułą — mierzone zachowanie jest już
+  // poprawne (M173/D: licznik bez potrzeby konsumenta → −6 w naszej Głównej 1,
+  // czyli pass), więc nie ma czego odraczać.
   const isLastingManaAbility = (ability, manaCost) => {
-    if (!(manaCost > 0) || ability?.cost?.tap || ability?.timing === 'sorcery') return false;
+    if (!(manaCost > 0) || ability?.timing === 'sorcery') return false;
     const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
-    return effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type));
+    if (!(effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type)))) return false;
+    // Z (uwaga Z): licznik WROGI (−1/−1, stun) na zdolności Z TAPEM to
+    // USUNIĘCIE, nie „rozwój planszy” — jego wartość zależy od momentu
+    // (CR 704.5f: zabity stwór nie zaatakuje), więc nie wolno go odkładać do
+    // okna. Dotąd chroniło to wykluczenie `cost.tap` w całości; teraz tap jest
+    // dopuszczony, więc granicę stawiamy po rodzaju licznika. Wyłącznie dla
+    // zdolności z tapem — zachowanie zdolności za SAMĄ manę zostaje bez zmian
+    // (piny PMSSB-66 K1/K2 mierzą właśnie odroczenie „−1/−1, które nie zabija”).
+    if (ability?.cost?.tap
+      && effs.some((e) => e?.type === 'add_counter' && counterIsHostile(e?.counter))) return false;
+    return true;
   };
   // Rezerwa many pod instant/flash, który ZAGRAMY w tym oknie: najdroższy z tych, które mieszczą się
   // w dostępnej manie (instant, którego nie stać, i tak nie zostanie zagrany — nie blokuje okna).
