@@ -2249,8 +2249,14 @@ function paymentReachableMana(state, playerId) {
   for (const { ability } of legalManaAbilities(state, playerId)) {
     if (!manaAbilityHasManualCost(ability)) continue;
     const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+    // F-1 (audyt PR #173): efekt `fromTreasure` (Skarb) jest już w liczbie
+    // bazowej — `producibleMana` dokłada nietapnięte tokeny Skarbów jawnie
+    // (M179/E), a auto-tap `spendMana` je wydaje. Drugie zliczenie w tej
+    // pętli zawyżało osiągalność o liczbę Skarbów i oferowało „Zapłać",
+    // którego executor nie zapłacił (`counter_pay_insufficient_mana`) —
+    // to samo wyłączenie, świadomie, ma `manualManaOfferUnits` (abilities).
     const produkcja = effects.reduce(
-      (suma, e) => suma + (e?.type === 'add_mana' ? (e.amount ?? 1) : 0), 0);
+      (suma, e) => suma + (e?.type === 'add_mana' && !e.fromTreasure ? (e.amount ?? 1) : 0), 0);
     const kosztMany = (ability.cost?.mana ?? 0) + (ability.cost?.colors?.length ?? 0);
     razem += Math.max(0, produkcja - kosztMany);
   }
