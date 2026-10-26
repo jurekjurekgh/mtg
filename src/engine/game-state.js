@@ -6634,10 +6634,14 @@ export function execute(state, input) {
       if (state.pendingReplacementChoice || state.pendingDamageAssignment) return accepted(state, cmd, {ok:true,events:e});
       // Pierwszy krok zrobiony — krok się NIE zmienia, gra wraca do priorytetu (CR 510.3).
       if (state.pendingCombatSecondPass) return accepted(state, cmd, { ok: true, events: e });
-      state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
-      const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
-      state.events.push(step);
-      e.push(step);
+      // CR 104.1 (patrz processTriggers): obrażenia mogły przed chwilą
+      // zakończyć grę — wtedy krok nie posuwa się dalej.
+      if (state.status === 'active') {
+        state.turn = jumpToStep(state.turn, 'end_of_combat', state.turn.activePlayerId);
+        const step = event('step_advanced', { number: state.turn.number, phase: state.turn.phase, step: state.turn.step });
+        state.events.push(step);
+        e.push(step);
+      }
       return accepted(state, cmd, { ok: true, events: e });
     } catch (error) {
       return reject(`illegal_combat:${error.message}`);

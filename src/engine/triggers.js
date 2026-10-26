@@ -2578,6 +2578,14 @@ function placeTriggerBatchInApnapOrder(state, stackStart) {
 }
 
 export function processTriggers(state, recentEvents) {
+  // CR 104.1 (polowanie CR 510/704/104 — Etap 4, 2026-10-26): „A game ends
+  // immediately when a player wins, when the game is a draw, or when the game
+  // is restarted." Po `player_lost` (704.5a → 104.1) gra już nie istnieje —
+  // dalsze skanowanie zdarzeń i odkładanie triggerów na stos (510.3a) nie
+  // następuje. Objaw przed naprawą: transkrypt testera tt-4 pokazywał
+  // „STOS: Zdolność: Relic Robber" po „Przegrywasz". Test:
+  // test/cr-104-1-trigger-po-koncu-gry.test.js (scenariusz A + kontrola B).
+  if (state.status !== 'active') return [];
   const stateEventsStart = state.events.length;
   const produced = processTriggersScan(state, recentEvents);
   const fromState = state.events.slice(stateEventsStart);
