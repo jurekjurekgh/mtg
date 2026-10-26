@@ -2,7 +2,7 @@ import { isActivatedManaAbility, colorsProducibleBySubtype, manaAbilityHasManual
 import { graveyardCardTypeCount } from './triggers.js';
 import { event } from '../protocol/types.js';
 import { activatableAbilities, deathZoneFor, hasCreatureType, effectiveKeywords, effectivePower, effectiveToughness, tapObject } from './permanents.js';
-import { producibleMana, spendMana, canPayColoredCost } from './resources.js';
+import { producibleMana, spendMana, canPayColoredCost, grantManaOnLand, landCanProduceMana, untappedFreeManaSources } from './resources.js';
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife, payEnergyCounters } from './players.js';
@@ -2041,21 +2041,85 @@ export function legalManaAbilities(state, playerId) {
  * płatności; pusta lista = bezbarwna, nie pokrywa pipa kolorowego, CR 106.1a).
  */
 export function manualManaOfferUnits(state, playerId) {
+  // Uwaga X (zgłoszenie właściciela 2026-10-26, Holdout Settlement + Warden of
+  // Geometries): oferta rzutu obiecywała manę, której PŁATNOŚĆ nie znajdzie —
+  // klik w czar kończył się `illegal_spell: Niewystarczająca mana` i nic się
+  // nie działo (L48: oferta = płatność). Trzy przyczyny, trzy reguły:
+  //
+  //  1. **Jedno użycie na PERMANENT, nie na zdolność.** `legalManaAbilities`
+  //     zwraca osobny wpis na KAŻDEGO kandydata do kosztu „tapnij stwora”
+  //     (Holdout #1), a pętla liczyła każdy wpis — dwóch kandydatów dawało
+  //     dwa razy po 1 many. Wybieramy wariant najlepszy (najmniejsza utrata
+  //     produkcji), deterministycznie (ADR 0005 — kolejność pola bitwy).
+  //  2. **Koszt tapnięcia innego permanentu zjada JEGO produkcję**: Holdout
+  //     tapuje Wardena, który sam daje {C} → netto pary to 0, nie 1.
+  //  3. **Ten sam permanent nie może dać many dwa razy.** `producibleMana`
+  //     liczy każdy nietapnięty ląd jako 1 (Holdout JEST lądem), więc ręczna
+  //     zdolność tego samego obiektu to tylko RÓŻNICA względem tej bazy —
+  //     inaczej Holdout liczył się podwójnie (klasa F-1 audytu PR #173).
+  //
+  // Efekt: jednostki = Σ_permanent max(0, najlepsze netto zdolności − produkcja
+  // własna już policzona przez `producibleMana`).
+  const best = new Map();
+  for (const entry of legalManaAbilities(state, playerId)) {
+    if (!entry.ability || !manaAbilityHasManualCost(entry.ability)) continue;
+    const units = netManualManaUnits(state, playerId, entry);
+    const current = best.get(entry.objectId);
+    if (!current || units.length > current.length) best.set(entry.objectId, units);
+  }
   const units = [];
-  for (const { ability } of legalManaAbilities(state, playerId)) {
-    if (!manaAbilityHasManualCost(ability)) continue;
-    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-    let kosztMany = ability.cost?.mana ?? 0;
-    for (const effect of effects) {
-      if (effect?.type !== 'add_mana' || effect.fromTreasure) continue;
-      const amount = Math.max(0, effect.amount ?? 1);
-      const netto = Math.max(0, amount - kosztMany);
-      kosztMany = Math.max(0, kosztMany - amount);
-      const colors = Array.isArray(effect.colors) ? effect.colors : [];
-      for (let i = 0; i < netto; i += 1) units.push([...colors]);
-    }
+  for (const [objectId, produced] of best) {
+    const already = ownManaProductionOf(state, playerId, objectId);
+    const extra = Math.max(0, produced.length - already);
+    for (let i = 0; i < extra; i += 1) units.push(produced[i]);
   }
   return { amount: units.length, units };
+}
+
+/**
+ * Ile many daje permanent SAM (bez zdolności o ręcznym koszcie), gdy jest
+ * nietapnięty — używane do policzenia straty, gdy inna zdolność tapuje go
+ * jako koszt (uwaga X, Holdout Settlement). Ląd: jak w `producibleMana`
+ * (grant z aury albo 1); permanent nielandowy: tylko zdolność czystej many
+ * ({T}: Add …), czyli dokładnie to, co auto-płatność umie wykorzystać.
+ */
+export function ownManaProductionOf(state, playerId, objectId) {
+  const object = state.objects.get(objectId);
+  if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId || object.tapped) return 0;
+  const isLandSource = object.kind === 'land' || (object.types ?? []).includes('Land');
+  if (isLandSource) {
+    if (!landCanProduceMana(state, object)) return 0;
+    const grant = grantManaOnLand(state, object.id);
+    return grant > 0 ? grant : 1;
+  }
+  return untappedFreeManaSources(state, playerId, null, {})
+    .filter((entry) => entry.object?.id === object.id)
+    .reduce((suma, entry) => suma + entry.amount, 0);
+}
+
+/** Jednostki netto jednej zdolności many o ręcznym koszcie (uwaga X). */
+function netManualManaUnits(state, playerId, entry) {
+  const { ability } = entry;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  // Koszt „tapnij innego permanentu”: jego produkcja przepada (płatność
+  // tapuje go PRZED spendMana — ta sama ewidencja co `tapPermanentCostId`
+  // w fundableCostedSources).
+  const tappedOtherId = entry.tapCreatureId ?? entry.tapPermanentCostId ?? null;
+  const lost = tappedOtherId == null ? 0 : ownManaProductionOf(state, playerId, tappedOtherId);
+  const units = [];
+  let kosztMany = ability.cost?.mana ?? 0;
+  for (const effect of effects) {
+    if (effect?.type !== 'add_mana' || effect.fromTreasure) continue;
+    const amount = Math.max(0, effect.amount ?? 1);
+    const netto = Math.max(0, amount - kosztMany);
+    kosztMany = Math.max(0, kosztMany - amount);
+    const colors = Array.isArray(effect.colors) ? effect.colors : [];
+    for (let i = 0; i < netto; i += 1) units.push([...colors]);
+  }
+  // Strata zdejmowana z KOŃCA (deterministycznie); przy zdolności jednokolorowej
+  // kolejność nie ma znaczenia, a przy „any color” — żadnego.
+  for (let i = 0; i < lost && units.length > 0; i += 1) units.pop();
+  return units;
 }
 
 

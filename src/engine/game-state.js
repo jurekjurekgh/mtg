@@ -11,7 +11,7 @@ import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePa
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, isActivatedManaAbility, manaAbilityHasManualCost } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}, offerUnits = null) {
   const costStr = MANA_COSTS[cardId];
@@ -2245,22 +2245,24 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
  * płatności — `manaGeneratingCommandFor`); silnik nigdy nie poświęca sam.
  */
 function paymentReachableMana(state, playerId) {
-  let razem = producibleMana(state, playerId, null, {}, []);
-  for (const { ability } of legalManaAbilities(state, playerId)) {
-    if (!manaAbilityHasManualCost(ability)) continue;
-    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-    // F-1 (audyt PR #173): efekt `fromTreasure` (Skarb) jest już w liczbie
-    // bazowej — `producibleMana` dokłada nietapnięte tokeny Skarbów jawnie
-    // (M179/E), a auto-tap `spendMana` je wydaje. Drugie zliczenie w tej
-    // pętli zawyżało osiągalność o liczbę Skarbów i oferowało „Zapłać",
-    // którego executor nie zapłacił (`counter_pay_insufficient_mana`) —
-    // to samo wyłączenie, świadomie, ma `manualManaOfferUnits` (abilities).
-    const produkcja = effects.reduce(
-      (suma, e) => suma + (e?.type === 'add_mana' && !e.fromTreasure ? (e.amount ?? 1) : 0), 0);
-    const kosztMany = (ability.cost?.mana ?? 0) + (ability.cost?.colors?.length ?? 0);
-    razem += Math.max(0, produkcja - kosztMany);
-  }
-  return razem;
+  // Uwaga X (2026-10-26c, Holdout Settlement + Warden of Geometries): miara
+  // NIE ma własnej arytmetyki — bierze jednostki netto z `manualManaOfferUnits`
+  // (jedno źródło prawdy, L41). Przyczyny:
+  //  1. Koszt „tapnij innego permanentu” zjada JEGO produkcję — lokalna pętla
+  //     liczyła pełną produkcję zdolności, więc oferowała „Zapłać”, którego
+  //     wykonawca nie pokryje (ta sama klasa co F-1 z audytu PR #173).
+  //  2. `legalManaAbilities` zwraca wpis na KAŻDEGO kandydata do tapnięcia —
+  //     lokalna pętla mnożyła jednostki przez liczbę stworów.
+  //  3. `cost.mana` jest kosztem CAŁKOWITYM (pipy wliczone — patrz
+  //     `mana-wizard` `generic = manaCost - colors.length` oraz
+  //     `effectiveAbilityManaCost`), więc dawne `mana + colors.length`
+  //     zaniżało netto o liczbę pipów (dziś w katalogu nie ma zdolności
+  //     z kosztem kolorowym i ręcznym zarazem, ale miara ma być spójna,
+  //     nie przypadkowo poprawna).
+  // F-1 audytu PR #173 (bez zmian): efekty `fromTreasure` są już w
+  // `producibleMana` — `manualManaOfferUnits` je pomija.
+  return producibleMana(state, playerId, null, {}, [])
+    + manualManaOfferUnits(state, playerId).amount;
 }
 
 // Audyt PR #156 (O1, klasa L48): JEDEN odczyt eligibilnych X dla OFERTY
