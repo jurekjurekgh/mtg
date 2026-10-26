@@ -96,7 +96,11 @@ Kryterium: raport `docs/audits/AUDYT_PR175_2026-10-26.md` w repo + co najmniej
       („… zostaje wygnane (koszt Escape)"), nazywa kartę przez `nameOf(...)`;
       predykat bramki (session.js:362) obejmuje `escape === true`. Sprawdzone
       mutacją M5 (patrz F-1) — bez `escape` w predykacie P/2 czerwienieje.
-- [ ] **F-3** (liczby README/handoff) — domknięcie w Etapie 5.
+- [x] **F-3** (liczby README/handoff) — domknięte w Etapie 5: README
+      i `HANDOFF_2026-10-26c.md` niosą stan PO ostatnim commicie
+      funkcjonalnym (`8863/8863`, `268/268`, `76 modułów / 5444,4 kB`,
+      benchmark quick 672 / 87,8%), a ręczny grep potwierdził brak
+      historycznych liczb w bloku „Status”.
 
 ### Etap 4 — pętla domyślna (ADR 0021 pkt 4)
 
