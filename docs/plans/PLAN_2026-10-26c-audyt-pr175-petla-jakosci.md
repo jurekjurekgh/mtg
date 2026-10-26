@@ -182,6 +182,40 @@ kart z kolekcji właściciela, które ich wymagają.
       `docs/setup/HANDOFF_2026-10-26c.md`, plan odhaczony, opis PR
       zaktualizowany kumulatywnie.
 
+### Etap 6 — uwagi z gry właściciela (X, Y) po domknięciu Etapu 5
+
+Właściciel zgłosił dwie uwagi z rozgrywki już po zamknięciu sesji. Obowiązuje
+ADR 0021 pkt 4: znalezisko naprawiane od razu, u root cause, z pinem i mutacją
+RED — bez pytania o pozwolenie (pytanie tylko przy decyzji blokującej).
+
+- [x] **X — „fantomowa mana” Holdout Settlement** (`b8c40e0`).
+      Zgłoszenie: Island + Holdout Settlement + Warden of Geometries (3 realne
+      many) → oferta Mysteries of the Deep (5) istniała, a klik nic nie robił;
+      po tapnięciu Holdoutu oferta znikała. **To nie błąd karty** — Holdout
+      i jego dwie zdolności są poprawne. Wada MIARY oferty (L48): zdolność
+      „{T}, Tap an untapped creature you control: Add one mana of any color”
+      liczyła się RAZ NA KANDYDATA do tapnięcia i nie odejmowała produkcji
+      tapowanego stwora, więc 3 many realne + 2 fantomy ≥ koszt czaru.
+      Naprawa: `manualManaOfferUnits` liczy jednostki netto per PERMANENT
+      (jeden wariant, koszt tapnięcia odejmuje produkcję tapowanego,
+      wynik to różnica względem tego, co już policzyło `producibleMana`);
+      `paymentReachableMana` bierze tę samą miarę (koniec duplikatu L41).
+      Piny `test/uwaga-x-holdout-fantomowa-mana.test.js` X/1–X/5;
+      mutacje M9 (stara pętla) → X/1, X/2, X/4; M10 (bez odejmowania utraty)
+      → X/5; M11 (bez klamry względem bazy) → X/1, X/2, X/4.
+- [x] **Y — pump po mgle** (`234e984`).
+      Zgłoszenie: bot rzucił Revealing Wind, potem Awaken the Bear i dopakował
+      stwory. Zmierzone: wycena pumpu stoi na symulacji walki, a symulacja nie
+      zna efektów zastępczych — przy mgle Awaken the Bear dostawał 61 pkt,
+      tyle samo co bez mgły. Naprawa: `combatDamageRelevantNow(view)` jako
+      jedno źródło prawdy + bramka w `pumpChangesOutcome` (tylko delty
+      dodatnie — debuff nadal zabija przez SBA), `pumpImprovesOutcome`
+      i oknie „przed atakiem”. Piny `test/uwaga-y-mgla-pump-bez-wartosci.test.js`
+      Y/1–Y/7; mutacje M12 → Y/1, Y/3, Y/6; M17 → Y/1; M14 → Y/3; M15 → Y/6.
+- [x] Bramy po obu naprawach: `npm test` **8875/8875**,
+      `npm run test:slow` **268/268**, build **76 modułów / 5449,8 kB**;
+      golden-master bez zmiany hasha (fixture NIE regenerowany).
+
 ## Planowana kolejność commitów
 
 1. `docs(plan)` — ten plan + otwarcie PR.

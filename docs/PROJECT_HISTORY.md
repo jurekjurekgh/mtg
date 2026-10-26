@@ -80,6 +80,32 @@
   build **76 modułów / 5444,4 kB**, benchmark quick 672 mecze — heuristic
   **87,8% (590/672)**, aggro 21,4%, random 3,0% (bez zmian względem bazy).
 
+### Uwagi z gry właściciela (X, Y) — dopisane po zamknięciu sesji
+
+- **X (`b8c40e0`) — „fantomowa mana” Holdout Settlement.** Zgłoszenie: Island
+  + Holdout Settlement + Warden of Geometries (3 realne many) pokazywały
+  ofertę Mysteries of the Deep (5 many), a klik nic nie robił; po tapnięciu
+  Holdoutu oferta znikała. Diagnoza: **karta jest poprawna**, wadliwa była
+  miara oferty (L48) — `manualManaOfferUnits` liczyła zdolność „{T}, Tap an
+  untapped creature you control: Add one mana of any color” raz na KAŻDEGO
+  kandydata do tapnięcia i nie odejmowała produkcji tapowanego stwora (3 + 2
+  fantomy ≥ 5), a wykonawca płatności fantomów nie znał. Naprawa: jednostki
+  netto per permanent (koszt tapnięcia odejmuje produkcję tapowanego; wynik
+  jako różnica względem `producibleMana`, bo ląd jest tam już policzony),
+  `paymentReachableMana` na tej samej funkcji (L41). Piny X/1–X/5, mutacje
+  M9/M10/M11.
+- **Y (`234e984`) — pump po mgle.** Bot rzucił Revealing Wind, po czym
+  Awaken the Bear i dopakował stwory. Wycena pumpu opiera się na symulacji
+  walki, która nie zna efektów zastępczych — przy `preventAllCombatDamage`
+  czar dostawał 61 pkt, tyle samo co bez mgły. Naprawa:
+  `combatDamageRelevantNow(view)` + bramka w `pumpChangesOutcome` (tylko
+  delty dodatnie — debuff nadal zabija przez SBA), `pumpImprovesOutcome`
+  i oknie „przed atakiem”. Piny Y/1–Y/7 (w tym cztery anty-over-fix), mutacje
+  M12/M14/M15/M17.
+- Bramy po X/Y: `npm test` **8875/8875**, `npm run test:slow` **268/268**,
+  build **76 modułów / 5449,8 kB**; golden-master bez zmiany hasha
+  (fixture nie regenerowany).
+
 ## 2026-10-26b — audyt scalonego PR #174 (16/16) oraz pętla jakości (PR #175)
 
 > Sekcja uzupełniona w sesji 2026-10-26c: sesja 2026-10-26b zostawiła handoff

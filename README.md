@@ -29,8 +29,14 @@ własnej metryce** (cudza, ukryta ręka liczona jako własne czary + kryterium
 surowsze od polityki bota) — naprawione w `tools/mulligan-keep-criterion.mjs`,
 polityka bota bez zmian. Polowanie CR na ścieżce 614/616 + 106/601.2 (cytat
 dosłowny, pin SHA-256 `8d860e45…70ca`): bez nowych znalezisk kodu. Bramki:
-`npm test` **8863/8863**, `npm run test:slow` **268/268**, build **76 modułów / 5444,4 kB**, benchmark
-quick 672 mecze (heuristic 87,8%). PR czeka na decyzję właściciela.
+`npm test` **8875/8875**, `npm run test:slow` **268/268**, build **76 modułów /
+5449,8 kB**, benchmark quick 672 mecze (heuristic 87,8%). Po domknięciu sesji
+właściciel zgłosił dwie uwagi z gry — obie naprawione u root cause: **fantomowa
+mana** Holdout Settlement (miara oferty liczyła zdolność „tapnij stwora” raz na
+kandydata i nie odejmowała produkcji tapowanego stwora → martwy przycisk
+czaru) oraz **pump po mgle** (bot dopakowywał stwory po Revealing Wind, bo
+symulacja walki nie zna efektów zastępczych → „+3/+3” wart tyle samo przy
+zerowych obrażeniach). PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-26b](docs/setup/HANDOFF_2026-10-26b.md)
 (sesja PR #175 — audyt PR #174 i pętla jakości).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
