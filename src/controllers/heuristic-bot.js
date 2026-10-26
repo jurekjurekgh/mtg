@@ -14900,10 +14900,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // M155 (audyt żywym testerem): stwór o MOCY 0 (np. token Wizard 0/1
           // z Mysidian Elder) zadaje 0 obrażeń, a mimo to dostawał +3 za
           // „otwartą presję" — bot atakował bezsensownym 0/1. Wyjątek: atak
-          // ma sens, gdy stwór ma drenaż z triggera ataku (Delta Bloodflies)
-          // albo ewazję, która realnie coś zmienia. Reguła generyczna (ADR
+          // ma sens, gdy stwór ma drenaż z triggera ataku (Delta Bloodflies).
+          // Ewazja przy 0 obrażeń niczego nie zmienia (T). Reguła generyczna (ADR
           // 0002): 0 mocy = 0 obrażeń bojowych.
-          const dealsNoCombatDamage = (power ?? 0) <= 0 && drainOnAttack(id) === 0;
           const canBeBlocked = attackerCanBeBlocked(object, effectiveBlockers);
           // C-R4: staty EFEKTYWNE w bloku — pump „becomes blocked" jest aktywny
           // tylko, gdy atakujący realnie zostanie zablokowany (są blokerzy i
@@ -14914,6 +14913,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             : { power, toughness };
           const combatObject = blockedStats.power === power && blockedStats.toughness === toughness
             ? pumpedObject : { ...pumpedObject, power: blockedStats.power, toughness: blockedStats.toughness };
+          // T (zgłoszenie właściciela 2026-10-26): „0 obrażeń bojowych" liczymy
+          // po EFEKTYWNYCH statach walki (`combatObject`: pompa z drużyny,
+          // pump „becomes blocked", przydział wytrzymałością przez
+          // `faceDamageOf`) — drukowana moc 0 z pompą realnie bije, a moc 0
+          // bez pompy nie zadaje obrażeń niezależnie od ewazji/odporności.
+          // Wyjątki: drenaż z triggera ataku (wypłata bez obrażeń) i stwór
+          // pożyczony (`tempControlUntilEOT` — jego śmierć kosztuje
+          // właściciela, nie bota; własna gałąź niżej).
+          const dealsNoCombatDamage = faceDamageOf(combatObject) <= 0
+            && drainOnAttack(id) === 0 && !object.tempControlUntilEOT;
           // M221/E (zgłoszenie właściciela): przeciwnik ma nietapniętego blokera
           // z ochroną od koloru atakującego (np. token 1/1 z protection from
           // black blokujący 7/7 czarnego). Taki bloker zablokuje bez strat —
@@ -14942,18 +14951,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (neutralizedByProtection) {
             perAttacker = -2;
             futileAttackers += 1;
-          } else if (!canBeBlocked && effectiveBlockers.length > 0) {
+          } else if (!dealsNoCombatDamage && !canBeBlocked && effectiveBlockers.length > 0) {
             // M202/H: nie może zostać zablokowany (flying bez odpowiedzi,
             // menace przy jednym blokerze, cantBeBlocked) — atak jest warty
             // tyle co atak w otwartego, a nie „chump”.
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
-          } else if (attackerImmuneThisTurn) {
+          } else if (!dealsNoCombatDamage && attackerImmuneThisTurn) {
             perAttacker = faceDamageOf(combatObject) + P.attackThroughBonus;
           } else if (dealsNoCombatDamage) {
             // 0/1 w otwartego: 0 obrażeń bojowych, a stwór tapnięty i wystawiony
             // na bloki — wartość NIE może zostać podratowana premią „otwartej
             // presji" (+8), dlatego tak nisko (poniżej passu).
             perAttacker = -12;
+            // T: atak JAŁOWY — odcina premię wyścigu (klasa L3: przy życiu
+            // wroga 3 premia +20 wskrzeszała -12 do +8 i bot atakował
+            // samotnym 0/1 w 4/3; ewazja/odporność wycięte warunkami wyżej).
+            futileAttackers += 1;
           } else if (object.tempControlUntilEOT) {
             // M257-r5b/C (zgłoszenie właściciela, Awaken the Sleeper):
             // stwór POŻYCZONY — czasowa kontrola (generyczna flaga widoku z
