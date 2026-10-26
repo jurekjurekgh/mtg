@@ -5,8 +5,12 @@
 // Audyt liczy trzy klasy naruszeń:
 //   • KEEP bez polityki — keep przy <2 lądach i <2 mulliganach,
 //   • MULLIGAN mimo 2+ lądów,
-//   • KEEP bez grywalnego czaru (najtańszy czar droższy niż liczba lądów)
-//     albo w ogóle bez czarów — ręka, w której bot nic nie robi przez ≥2 tury.
+//   • KEEP bez grywalnego czaru (brak czaru grywalnego nawet po JEDNYM
+//     dodatkowym lądzie) albo w ogóle bez czarów — ręka, w której bot nic nie
+//     robi przez ≥2 tury. Reguła i jej uzasadnienie: `mulligan-keep-criterion.mjs`
+//     (audyt PR #175: poprzednia wersja `najtańszy > lądy` dawała fałszywy
+//     alarm dla ręki 2 lądy + czar 3 many i liczyła CUDZĄ (ukrytą) rękę jako
+//     własne czary — strefa `hand` jest złożona, kontrakt FoW).
 //
 // Wynik na katalogu 2026-10-04 (23 partie, 53 decyzje): rozkład 0 lądów:
 // 0 keep / 1 mulligan; 1: 0/6; 2: 21/0; 3: 12/0; 4: 12/0; 5: 1/0 —
@@ -16,6 +20,7 @@
 // Exit code: 1, gdy audyt znajdzie naruszenia (bramka ręczna).
 //
 import { parseAuditArgs, assertAuditCommand, assertAuditFinished } from './scoring-audit-utils.mjs';
+import { ownHandSummary, classifyMulliganDecision } from './mulligan-keep-criterion.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { execute, playerView } from '../src/engine/game-state.js';
@@ -53,25 +58,18 @@ function match(deckA, deckB, seed) {
     const view = playerView(state, p);
     const cmd = bots.get(p).chooseCommand(view, {});
     if (cmd.type === 'resolve_mulligan_choice') {
-      const reka = view.zones.hand ?? [];
-      const landy = reka.filter((o) => (o.kind ?? '') === 'land').length;
-      const czary = reka.filter((o) => (o.kind ?? '') !== 'land');
-      const najtanszy = czary.length ? Math.min(...czary.map((c) => c.manaCost ?? 99)) : null;
+      // Ręka to strefa ZŁOŻONA (własne karty + cudze jako `hidden`) — czytamy
+      // wyłącznie własne; jedno źródło reguły w `mulligan-keep-criterion.mjs`.
+      const { lands: landy, spells: czary, cheapestSpell: najtanszy } = ownHandSummary(view.zones.hand, p);
       const rekord = {
         player: p, deck: p === 'p1' ? deckA : deckB, keep: cmd.keep, mulligans: cmd.mulligans ?? 0,
-        landy, czary: czary.length, najtanszy,
+        landy, czary, najtanszy,
       };
       decyzje.push(rekord);
-      // (a) polityka trzymana? keep przy <2 lądach wymaga ≥2 mulliganów
-      if (cmd.keep && landy < 2 && (cmd.mulligans ?? 0) < 2) naruszenia.push({ ...rekord, rodzaj: 'KEEP bez polityki' });
-      if (!cmd.keep && landy >= 2 && (cmd.mulligans ?? 0) < 2) naruszenia.push({ ...rekord, rodzaj: 'MULLIGAN mimo 2+ lądów' });
-      // (b) keep bez grywalnego czaru (najtańszy czar droższy niż liczba lądów)
-      if (cmd.keep && landy >= 2 && najtanszy != null && najtanszy > landy) {
-        naruszenia.push({ ...rekord, rodzaj: 'KEEP bez grywalnego czaru' });
-      }
-      if (cmd.keep && landy >= 2 && najtanszy == null) {
-        naruszenia.push({ ...rekord, rodzaj: 'KEEP bez czarów (same lądy)' });
-      }
+      const rodzaj = classifyMulliganDecision({
+        keep: cmd.keep, mulligans: cmd.mulligans ?? 0, lands: landy, spells: czary, cheapestSpell: najtanszy,
+      });
+      if (rodzaj) naruszenia.push({ ...rekord, rodzaj });
     }
     const r = execute(state, cmd);
     assertAuditCommand(r, cmd);
