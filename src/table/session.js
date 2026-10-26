@@ -340,6 +340,28 @@ export function isRulesZoneMove(e) {
   return e.type === 'object_moved' && (e.bounced === true || e.sba === 'zero_loyalty');
 }
 
+/**
+ * Czy zdarzenie to PŁATNOŚĆ KOSZTU przez wygnanie karty (CR 601.2h)?
+ *
+ * Trzy rodzaje tej samej klasy: `escape` (CR 702.138, M103/D), dodatkowy
+ * koszt rzucenia (E7/E, Makeshift Mauler) i `delve` (CR 702.66, uwaga W —
+ * Sultai Scavenger). Koszt wygnania jest płatnością jak mana: gracz musi
+ * widzieć, CO zapłacił, niezależnie od tego, kto rzuca czar (L24/L100).
+ *
+ * Jedno miejsce prawdy dla bramki panelu „Rozgrywka" (`isMainLogEvent`).
+ * Wcześniej bramka znała tylko `additionalCost`, więc płatność Delve i Escape
+ * CZŁOWIEKA nie trafiała do `botMoves` (audyt PR #175, znalezisko F-1 —
+ * klasa L99: naprawa dopisana w warstwie opisu, pominięta w warstwie bramki).
+ *
+ * Rodzaj niesie POLE ZDARZENIA, nie nazwa karty (ADR 0002). Zwykłe zmiany
+ * stref zostają szumem — inaczej każda karta wchodząca do grobu zaśmiecałaby
+ * modal (antyp-over-fix pinu P/2).
+ */
+export function isCostPaymentZoneMove(e) {
+  return e?.type === 'object_moved'
+    && (e.additionalCost === true || e.escape === true || e.delve === true);
+}
+
 export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = HUMAN_ID } = {}) {
   if (isRulesZoneMove(e)) return false;
   if (e?.type === 'card_drawn') return e.source !== 'effect' && e.playerId !== humanId;
@@ -2834,7 +2856,9 @@ export function isMainLogEvent(e, ctx = {}) {
   if (e?.type === 'turn_started' || e?.type === 'game_started' || e?.type === 'step_advanced') return true;
   if (phase === 'combat') return true;
   if (isRulesZoneMove(e)) return true;
-  if (e?.type === 'object_moved' && e?.additionalCost === true) return true;
+  // Płatność kosztu przez wygnanie (escape / dodatkowy koszt / delve) — jedna
+  // reguła klasy, nie flaga po fladze (F-1 z audytu PR #175, CR 601.2h).
+  if (isCostPaymentZoneMove(e)) return true;
   if (isBotDecisionPrompt(e, { humanId })) return true;
   if (stackSize > 0 && BOT_RESOLUTION_EVENTS.has(e?.type)) return true;
   // UWAGA D (2026-09-25b): jawne odsłonięcia i wynik discover — zawsze, dla
