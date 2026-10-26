@@ -20,18 +20,30 @@ scalonego 2026-10-26 15:16 UTC). Jeden PR sesji, kumulatywny opis.
 
 ## Etapy i kryteria ukończenia
 
-### Etap 0 — rozpoznanie i plan (WYKONANE)
+### Etap 0 — rozpoznanie i plan
 
-Kryterium: powyższy stan bazowy + ten plik. Brak zmian w `src/`.
+- [x] Kryterium: powyższy stan bazowy + ten plik. Brak zmian w `src/`.
+      (commit `79503c3`)
 
-### Etap 1 — PR na starcie (ADR 0020 A) (WYKONANE)
+### Etap 1 — PR na starcie (ADR 0020 A)
 
-Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
-z szablonu opisu. PR istnieje na GitHubie **przed** pierwszą zmianą kodu.
+- [x] Osobny commit z tą roadmapą, push na gałąź sesji, otwarcie PR do `main`
+      z szablonu opisu **przed** pierwszą zmianą kodu — PR
+      [#174](https://github.com/jurekjurekgh/mtg/pull/174) (commit `79503c3`).
 
 ### Etap 2 — techniczny audyt scalonego PR #173 (ADR 0020 B / 0016 / 0030)
 
-Zakres: **58 plików, 47 commitów** (`b52c971..3657762`, squash `60a516c`),
+- [x] **WYKONANE** — raport `docs/audits/AUDYT_PR173_2026-10-26.md`
+      (58/58 plików, cytaty CR zweryfikowane w `.arena/cr-raw.txt`
+      SHA zgodny z pinem, mutacje M1–M4 z pełnym pakietem dla M3).
+      Znaleziska: **F-1** `paymentReachableMana` liczy manę Skarbu
+      dwukrotnie (fantomowe „Zapłać”), **F-2** `autoManaUnits` dokłada
+      manę ograniczoną bez celu wydania (filtr przepuszcza nieopłacalny
+      cast), **F-3** brak pinu ścieżki dla wywołania
+      `interruptMutesOnNewTargetCombination` (M3 + pełne 8836/8836
+      na zielono). Obserwacje O-1..O-3 bez naprawy. Naprawy w Etapie 3.
+
+Zakres audytu: **58 plików, 47 commitów** (`b52c971..3657762`, squash `60a516c`),
 +511 tys. linii w repozytorium to skutek squasha — audytujemy **agregat diffu**
 z GitHuba (`pulls/173/files`), nie pojedynczy root commit lokalny.
 
