@@ -763,8 +763,29 @@ function pumpRemovesCreature(view, target, delta) {
     && !(target.keywords ?? []).includes('indestructible') && !shield;
 }
 
+/**
+ * Uwaga Y (zgłoszenie właściciela 2026-10-26): czy OBRAŻENIA combat tej tury
+ * w ogóle powstaną. Przy aktywnym „Prevent all combat damage that would be
+ * dealt this turn” (Revealing Wind, Inspire Awe — `view.preventAllCombatDamage`)
+ * silnik zeruje KAŻDĄ kwotę obrażeń bojowych (`combat.js`, CR 615.6:
+ * „zapobiegnięte obrażenia nie są zadane”), a nasze symulacje walki
+ * (`simulateCombat`, CR 510) efektów zastępczych nie znają — liczyły więc
+ * pełną wartość triku, którego skutek jest zerowy. Jedno źródło prawdy dla
+ * wszystkich wycen opartych na obrażeniach walki (L41): pump, grant keywordów
+ * bojowych, trample.
+ */
+function combatDamageRelevantNow(view) {
+  return view?.preventAllCombatDamage !== true;
+}
+
 function pumpChangesOutcome(view, recipient, delta = {}) {
   if (!recipient) return false;
+  // Uwaga Y: DODATNI pump przy mgle nie zmienia nic — obrażenia walki są
+  // zapobiegnięte (CR 615.6), a symulacja walki efektów zastępczych nie zna.
+  // Debuff (−X/−X) nadal może ZABIĆ przez SBA (CR 704.5f), więc bramka
+  // dotyczy wyłącznie delt dodatnich.
+  if (!combatDamageRelevantNow(view)
+    && ((delta.power ?? 0) > 0 || (delta.toughness ?? 0) > 0)) return false;
   // CR 704.5f/g: sprawdź realne toughness i osobno śmiertelne obrażenia.
   if (pumpRemovesCreature(view, recipient, delta)) return true;
   const before = combatOutcome(view, recipient, {});
@@ -980,6 +1001,10 @@ function pendingPumpDelta(view, cmd, source) {
  */
 function pumpImprovesOutcome(view, recipient, pending, delta) {
   if (recipient?.controllerId !== view.playerId) return false;
+  // Uwaga Y (jak w `pumpChangesOutcome`): przy mgle poprawa wyniku walki jest
+  // pozorna — żadne obrażenia nie powstaną (CR 615.6). Pump jest wtedy
+  // wyrzucaniem many, więc aktywacja nie może wygrać z passem.
+  if (!combatDamageRelevantNow(view)) return false;
   const before = combatOutcome(view, recipient, pending);
   const after = combatOutcome(view, recipient, {
     power: (pending.power ?? 0) + (delta.power ?? 0),
@@ -8998,6 +9023,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-43/A: pompy SKIEROWANE (targetIndex inny niż host) wciąż poza
     // modelem — nie ma wspieranej karty tego kształtu, bez kodu na zapas.
     if (leg.targetIndex != null) return 0;
+    // Uwaga Y (zgłoszenie właściciela: bot dopakował stwory PO Revealing
+    // Wind): cała wartość tej wyceny bierze się z obrażeń walki, a te są przy
+    // mgle zapobiegnięte (CR 615.6). Osobnej bramki tu nie ma — pilnują jej
+    // `pumpChangesOutcome` (zero dla dodatnich delt przy mgle) oraz
+    // `attackIntendsCreature` (atak przy mgle jest wart −100, więc okno
+    // „przed atakiem” jest jałowe).
     // PMSSB-43/A: `buff_attacking_creatures` (np. Thunderstaff) działa na
     // ATAKUJĄCYCH (zbiór), a nie na pojedynczego hosta. Odbiorcą symulacji
     // jest nasz atakujący (jeśli jakikolwiek istnieje w tej chwili oceny) —
@@ -12837,7 +12868,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               })();
               trick = hypotheticalSaves ? 14 : -75;
             } else trick = -75;
-            if (inCombat && !pumpChangesOutcome(view, target, delta)) trick = -75;
+            if (!combatDamageRelevantNow(view)
+              || (inCombat && !pumpChangesOutcome(view, target, delta))) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
