@@ -173,6 +173,11 @@ kreator many — opis w `docs/PROJECT_HISTORY.md`. Incydent M (Revealing
 Wind) DOMKNIĘTY jako M2: klucze wyciszenia pamiętały kombinacje celów,
 więc wyciszenie wracało po przywróceniu układu planszy; nowa kombinacja
 celów trwale przerywa wyciszenie (`test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`).
+Uzupełnienie z U (2026-10-26): ten sam zbiór kluczy wyciekał MIĘDZY
+partiami (pamięć strony), a `objectId` powtarza się co grę — wyciszenie
+z poprzedniej partii ukrywało legalną ofertę przed auto-passem;
+`createSession` czyści zbiór na starcie
+(`test/zgloszenie-u-vestige-mana-oferta.test.js`).
 Zgłoszenie O (Urborg Uprising) domknięte karą per pusty slot zwrotu.)_
 
 ## 3. Bot

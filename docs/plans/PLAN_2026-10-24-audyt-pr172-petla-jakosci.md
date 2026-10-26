@@ -555,3 +555,40 @@ lethal nadal wygrywa, chip „dokładający" w walce nadal sensowny.
 Każde zgłoszenie osobny, niezależnie zielony commit; bramki jak zwykle
 (`npm test`, `test:slow`, build, benchmark quick — B0 tylko na rozkaz).
 
+**Wykonanie:**
+- **S (`6ca0724`):** zgodnie z rozpoznaniem — `resolve_look_top_choice`
+  w `SINGLE_PICK_EXCLUDED_TYPES` (multi-target.js); piny
+  `zgloszenie-s-clone-shell-sortowanie-spodu` 4/4 przez produkcyjne
+  `buildActionEntries` (Clone Shell i Impulse: single-pick = null,
+  `lookWizardKindOf` = „pick-one-rest-bottom", wykonanie z odwróconym
+  `bottomOrder`); pokrewne modale 31/31, `npm test` 8824/8824.
+- **T (`c18e364`):** gałąź 0 obrażeń liczy `futileAttackers`, premie za
+  nieblokowalność/odporność wymagają `!dealsNoCombatDamage`, predykat
+  przeniesiony na `faceDamageOf(combatObject)` (efektywne staty: pompa
+  drużyny/becomes-blocked/przydział wytrzymałością; wyjątki: drenaż
+  z ataku i stwór pożyczony). Sonda po fixie: solo 0/1 = −12 (brak
+  ataku wygrywa), flying 0/1 = −9; piny `zgloszenie-t-atak-zero-mocy`
+  5/5, `npm test` 8829/8829.
+- **U (`3e70ce6`):** scena silnikowa i sesyjna działały od początku —
+  przyczyna klasy M: klucze wyciszeń (`commandOptionKey`) osadzają
+  `objectId`, które powtarza się między partiami (`hand-N`), a zbiór
+  żył w pamięci strony, więc wyciszenie z poprzedniej partii potrafiło
+  ukryć legalną ofertę przed auto-passem. Fix: `createSession` oraz
+  podmiana stanu w `resumeReplayText` czyszczą zbiór (wyciszenie =
+  decyzja na partię); test M314/6 stawia pinezkę po utworzeniu sesji.
+  Piny `zgloszenie-u-vestige-mana-oferta` 3/3 (scena właściciela przez
+  prawdziwą sesję + regresja wycieku + anty-overfix świadomego
+  wyciszenia), `npm test` 8836/8836.
+- **V (`2d46a6f`):** jednocelowe triggery obrażeń (`cmd.damage > 0`,
+  nieprzyjazne) wyceniane wspólną `damageTargetValue` w gałęzi
+  `resolve_trigger_target` (przed gałęzią braku celu na stole, więc
+  cele-gracze też w tej skali; `targetId: null` i gałąź wielocelowa
+  `damage_divided` bez zmian). Sonda po fixie: 4/3 = −80, przeciwnik
+  = 8, lethal 1/1 = 30, dobicie gracza = 1000. Piny
+  `zgloszenie-v-molten-nursery-cel-obrazen` 4/4; piny F (Warmaker)
+  przeliczone na wspólną skalę; `npm test` 8833/8833.
+
+**Bramki końcowe S–V:** `npm test` 8836/8836, `test:slow` 268/268,
+build 76 modułów / 5438,3 kB, benchmark quick heuristic 87,8% (590/672,
+bez zmian).
+

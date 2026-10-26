@@ -214,8 +214,50 @@
   `zgloszenie-r-scion-falszywe-odblokowanie` 4/4: scena z logu 1:1 (pass →
   Predator z samych lądów, Scion żyje), pusty stos bez celu, anty-over-fix
   legalnego celu (PMSSB-32/F6) i realnego braku many (zgłoszenie N).
-- **Bramka końcowa:** `npm test` **8820/8820**, `npm run test:slow` **268/268**,
-  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5434,2 kB**.
+- **Zgłoszenia właściciela S–V (2026-10-26, cztery osobne commity):**
+  - **S (`6ca0724`, Clone Shell/Imprint):** po wygnaniu zakrytej karty reszta
+    miała trafiać na spód „in any order” (tekst Oracle; Imprint to dziś
+    ability word bez znaczenia regułowego), ale kreator sortowania spodu nie
+    otwierał się: generyczny `singleTargetPlanOf` przejmował komendy
+    `resolve_look_top_choice` po polu `cardId` PRZED `lookWizardKindOf`
+    i kończył gołą komendą bez `bottomOrder` (ta sama kradzież dotyczyła
+    *Impulse*; *Fertile Thicket* działało, bo ma osobny typ komendy).
+    Rodzina look-top wykluczona z generycznego single-pick — jej oferty nie
+    enumerują wymiaru kolejności, więc detektor na samych komendach nie może
+    jej reprezentować. Piny `zgloszenie-s-clone-shell-sortowanie-spodu`
+    4/4 na produkcyjnym `buildActionEntries`.
+  - **T (`c18e364`, samobójczy 0/1):** samotny 0/1 atakował w 4/3 przy
+    3 życia obrońcy (sonda: +8 ponad passa). Gałąź M155 (−12 za 0 obrażeń
+    bojowych) jako jedyna z gałęzi pewnej straty nie liczyła ataku jako
+    jałowego, więc premia wyścigu (+20, mimo łącznej mocy 0) ją wskrzeszała
+    (klasa L3); premie za nieblokowalność/odporność biegły przed M155.
+    Teraz: atak jałowy (`futileAttackers`), premie przebicia wymagają
+    `!dealsNoCombatDamage`, a predykat liczy efektywne obrażenia
+    (`faceDamageOf(combatObject)` — pompa/przydział wytrzymałością nadal
+    biją; wyjątki: drenaż z ataku, stwór pożyczony). Piny
+    `zgloszenie-t-atak-zero-mocy` 5/5.
+  - **U (`3e70ce6`, Crumbling Vestige → Xu-Ifit):** dokładna scena silnikowa
+    i przez prawdziwą sesję działa (trigger ETB nie jest zdolnością many,
+    CR 605.1b; pula {WUBRG:1}, CR 106.4; priorytet wraca do aktywnego,
+    CR 117.3b) — legalną ofertę mogło ukryć przed auto-passem wyłącznie
+    wyciszenie. Klucze wyciszeń osadzają `objectId`, które rodzi się od
+    nowa co partię (`hand-N`), a zbiór żył w pamięci strony między
+    partiami: wyciszenie z poprzedniej gry potrafiło po cichu wyciszyć
+    inną kartę o tym samym identyfikatorze. Fix: wyciszenia są na partię —
+    `createSession` i `resumeReplayText` czyszczą zbiór (świadome
+    wyciszenie w trakcie gry działa jak dotąd). Piny
+    `zgloszenie-u-vestige-mana-oferta` 3/3; test M314/6 stawia pinezkę
+    po utworzeniu sesji (jak panel).
+  - **V (`2d46a6f`, Molten Nursery):** 1 obrażenie z triggera leciało
+    w wrogie 4/3 (41 pkt = 30 + 2P + T) zamiast w przeciwnika (25) —
+    gałąź `resolve_trigger_target` premiowała lethal (zgłoszenie F), ale
+    nieletalny chip wyceniała rozmiarem celu. Jednocelowe triggery obrażeń
+    oceniają teraz cele wspólną `damageTargetValue` (L41, jak czary):
+    lethal = wartość usunięcia, twarz wg życia (dobicie 1000), chip poza
+    walką −80. Piny `zgloszenie-v-molten-nursery-cel-obrazen` 4/4; piny F
+    przeliczone na wspólną skalę (lethal 1/1 = 30, chip = −80).
+- **Bramka końcowa:** `npm test` **8836/8836**, `npm run test:slow` **268/268**,
+  benchmark quick OK (heuristic 87,8%), `npm run build` **76 modułów / 5438,3 kB**.
 
 ## 2026-10-23..24 — audyt scalonego PR #171 (71/71 plików, F-1..F-8) oraz pętla jakości (LT-1..LT-4 i CR-1..CR-4, PR #172)
 

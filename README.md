@@ -62,9 +62,18 @@ jako co najwyżej jeden brakujący kolor. Bot nie poświęca już Eldrazi
 Sciona (ani innego jednorazowego źródła many) z powodu „odblokowania”,
 o którym wyceniał na celu spoza deskryptora czaru (*Boulder Salvo* jako
 burn w gracza) — syntetyczna wycena respektuje teraz specyfikację celu.
+Decyzje „obejrzyj wierzch, wygnij/wybierz jedną, reszta na spód”
+(*Clone Shell*, *Impulse*) odzyskały kreator kolejności spodu (generyczny
+wybór jednej karty przejmował je i gubił wymiar kolejności). Bot nie
+atakuje już samotnym stworem o zerowych obrażeniach bojowych (premia
+wyścigu wskrzeszała taki atak ponad passa) i celuje triggerami obrażeń
+wspólną polityką z czarami (nieletalny chip nie bije już twarzy
+przeciwnika). Wyciszenia opcji panelu są decyzją na partię — klucze
+z poprzedniej gry nie wyciszają po cichu kart o tym samym
+identyfikatorze obiektu.
 Bramki:
-`npm test` **8820/8820**, `npm run test:slow` **268/268**,
-build **76 modułów / 5434,2 kB**.
+`npm test` **8836/8836**, `npm run test:slow` **268/268**,
+build **76 modułów / 5438,3 kB**.
 PR czeka na decyzję właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-24](docs/setup/HANDOFF_2026-10-24.md)
 (sesja PR #172 — audyt PR #171 F-1..F-8 + pętla jakości LT-1..LT-4 / CR-1..CR-4).
