@@ -6003,6 +6003,99 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ...(view.players ?? []).map((p) => p.id),
   ];
 
+  /**
+   * R (log właściciela 2026-10-26): syntetyczni kandydaci na cel dla bramki
+   * odblokowania muszą respektować SPEC celu z deskryptora. Wcześniej
+   * `castScoreForUnlock` brał każdy obiekt pola bitwy ORAZ każdego gracza,
+   * więc czar „target creature” (*Boulder Salvo*) wyceniał się dodatnio
+   * jako burn w przeciwnika — cel nielegalny — i jednorazowe źródło many
+   * (Eldrazi Scion) dostawało premię za fikcyjne odblokowanie, choć na
+   * stole nie było żadnego stwora przeciwnika. Tu kategoria celu pochodzi
+   * z deskryptora (ADR 0002), a gracze wchodzą wyłącznie dla speców, które
+   * ich dopuszczają (`player`/`opponent`/`any_target`/`player_or_*`).
+   * Legalność szczegółowa (protekcja, hexproof…) zostaje przy silniku —
+   * bramka potrzebuje jedynie kandydatów właściwej kategorii.
+   */
+  const syntheticTargetCandidatesOf = (view, card) => {
+    const spell = card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : null);
+    const spec = spell?.targets?.[0];
+    if (!spec?.type) return targetCandidatesOf(view);
+    const type = spec.type;
+    const board = view.zones?.battlefield ?? [];
+    const players = (view.players ?? []).map((p) => p.id);
+    const me = view.playerId;
+    const ids = (list) => list.map((o) => o.id);
+    const hasType = (o, name) => o.kind === name.toLowerCase()
+      || (o.types ?? []).includes(name) || (o.subtypes ?? []).includes(name);
+    const byController = (list) => {
+      if (type.includes('opponent')) return list.filter((o) => o.controllerId !== me);
+      if (type.includes('you_control')) return list.filter((o) => o.controllerId === me);
+      return list;
+    };
+    if (type === 'opponent') return players.filter((id) => id !== me);
+    if (type === 'player') return players;
+    if (type === 'any_target') return targetCandidatesOf(view);
+    if (type.includes('on_stack')) return ids(view.zones?.stack ?? []);
+    if (type.includes('in_graveyard')) {
+      let cards = view.zones?.graveyard ?? [];
+      if (type.includes('creature')) cards = cards.filter((o) => hasType(o, 'Creature'));
+      if (type.includes('instant_or_sorcery')) {
+        cards = cards.filter((o) => (o.types ?? []).some((t) => t === 'Instant' || t === 'Sorcery'));
+      }
+      return ids(cards);
+    }
+    const categories = [
+      ['creature', 'Creature'], ['artifact', 'Artifact'], ['enchantment', 'Enchantment'],
+      ['land', 'Land'], ['planeswalker', 'Planeswalker'], ['equipment', 'Equipment'],
+      ['vehicle', 'Vehicle'], ['battle', 'Battle'],
+    ];
+    const inCategory = (o, token, name) => (token === 'battle' ? isBattle(o) : hasType(o, name));
+    // Specy złożone („artifact or enchantment”, „creature or planeswalker”,
+    // „player or planeswalker”) — suma kategorii wymienionych w typie.
+    if (type.includes('_or_')) {
+      const matched = [];
+      for (const [token, name] of categories) {
+        if (type.includes(token)) matched.push(...board.filter((o) => inCategory(o, token, name)));
+      }
+      const out = [...new Set(ids(byController(matched)))];
+      if (type.includes('player')) out.push(...players);
+      return out;
+    }
+    if (type.includes('creature')) {
+      let creatures = byController(board.filter((o) => hasType(o, 'Creature')));
+      if (type.includes('tapped_creature')) creatures = creatures.filter((o) => o.tapped);
+      if (type.includes('untapped_creature')) creatures = creatures.filter((o) => !o.tapped);
+      if (type.includes('attacking_creature')) {
+        const attackers = new Set(view.combat?.attackers ?? []);
+        creatures = creatures.filter((o) => attackers.has(o.id) || o.attacking);
+      }
+      // Ograniczenia szczegółowe (podtyp / słowo kluczowe / siła) zna ten sam
+      // helper widoku, którego używa wycena ETB — jedno źródło (L41).
+      const creatureIds = new Set(ids(creatures));
+      const precise = publicEtbTargets(view, spec, card).filter((id) => creatureIds.has(id));
+      const restrictive = /with_|without/.test(type) || spec.subtypes || spec.subtype
+        || spec.keywords || spec.keyword || spec.powerAtLeast != null || spec.powerAtMost != null;
+      if (restrictive) return precise;
+      return precise.length > 0 ? precise : ids(creatures);
+    }
+    // „nonland permanent” PRZED pętlą kategorii — typ zawiera token „land”,
+    // więc kategoria złapałaby same lądy, czyli dokładne przeciwieństwo specu.
+    if (type === 'nonland_permanent') return ids(byController(board.filter((o) => !hasType(o, 'Land'))));
+    if (type === 'permanent') return ids(byController(board));
+    const matched = [];
+    let anyCategory = false;
+    for (const [token, name] of categories) {
+      if (!type.includes(token)) continue;
+      anyCategory = true;
+      matched.push(...board.filter((o) => inCategory(o, token, name)));
+    }
+    if (anyCategory) return [...new Set(ids(byController(matched)))];
+    if (type.includes('permanent')) return ids(byController(board));
+    // Nieznana kategoria: bezpieczny fallback to same permanenty — gracz
+    // nigdy nie jest domniemanym celem (to on był fikcyjnym burnem z R).
+    return ids(board);
+  };
+
   const castScoreForUnlock = (view, card) => {
     const offered = botCommandCandidates(view)
       .filter((c) => UNLOCK_CAST_TYPES.has(c.type) && c.objectId === card.id);
@@ -6027,8 +6120,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // silnika (koszt nieopłacalny — i tylko wtedy), bierzemy NAJLEPSZY cel
       // z widoku, dokładnie tak, jak zrobiłaby to oferta z celem (L41: ta sama
       // funkcja wyceny, ten sam kształt komendy).
+      // R: dla czaru z celem wariant BEZ celu nie jest legalnym rzutem, więc
+      // nie bierze udziału w wycenie (wcześniej komendy zaczynały od gołych
+      // syntetyków), a cele pochodzą wyłącznie ze specu deskryptora
+      // (`syntheticTargetCandidatesOf`) — inaczej „target creature” mogło
+      // udawać burn w gracza i fikcyjnie odblokowywać poświęcenie Sciona.
       if (offered.length === 0 && spellNeedsTarget(card)) {
-        for (const targetId of targetCandidatesOf(view)) {
+        commands.length = 0;
+        const candidates = syntheticTargetCandidatesOf(view, card);
+        // Brak choćby kandydata właściwej kategorii = czar teraz nie do
+        // rzucenia, niezależnie od many: to NIE jest „nieznany kształt”
+        // z fallbackiem +1, tylko jednoznaczne „nie chcę/nie mogę rzucić”.
+        if (candidates.length === 0) return -60;
+        for (const targetId of candidates) {
           for (const variant of syntheticVariants) commands.push({ ...variant, targets: [targetId] });
         }
       }
