@@ -182,7 +182,7 @@ kart z kolekcji właściciela, które ich wymagają.
       `docs/setup/HANDOFF_2026-10-26c.md`, plan odhaczony, opis PR
       zaktualizowany kumulatywnie.
 
-### Etap 6 — uwagi z gry właściciela (X, Y) po domknięciu Etapu 5
+### Etap 6 — uwagi z gry właściciela (X, Y, Z) po domknięciu Etapu 5
 
 Właściciel zgłosił dwie uwagi z rozgrywki już po zamknięciu sesji. Obowiązuje
 ADR 0021 pkt 4: znalezisko naprawiane od razu, u root cause, z pinem i mutacją
@@ -212,8 +212,21 @@ RED — bez pytania o pozwolenie (pytanie tylko przy decyzji blokującej).
       dodatnie — debuff nadal zabija przez SBA), `pumpImprovesOutcome`
       i oknie „przed atakiem”. Piny `test/uwaga-y-mgla-pump-bez-wartosci.test.js`
       Y/1–Y/7; mutacje M12 → Y/1, Y/3, Y/6; M17 → Y/1; M14 → Y/3; M15 → Y/6.
-- [x] Bramy po obu naprawach: `npm test` **8875/8875**,
-      `npm run test:slow` **268/268**, build **76 modułów / 5449,8 kB**;
+- [x] **Z — Cenn's Tactician: tapowanie ciała w Głównej 1**
+      (zgłoszenie: bot tapował jedynego 2/2 zamiast atakować za 2).
+      Root cause: reguła „okna darmowej many” (PMSSB-66) jawnie wykluczała
+      koszt tapnięcia (`ability?.cost?.tap`), więc zdolność „{W}, {T}:
+      licznik +1/+1” nie była odraczana do end stepu przeciwnika — w Głównej 1
+      dostawała 13/19 pkt. Naprawa: tap wchodzi do tej samej reguły (jeden
+      model okna, L41) + granica po rodzaju licznika (licznik WROGI to
+      usunięcie — nie odkładamy). Piny `test/uwaga-z-aktywacja-tap-licznik-okno.test.js`
+      Z/1–Z/10; mutacje: M18 (tap znów wykluczony) → Z/1, Z/2, Z/5, Z/6;
+      M19 (licznik wrogi odraczany) → Z/10 + PMSSB-23/A6, B4;
+      M20 (odroczenie także w walce) → Z/7, Z/8 + PMSSB-66/W9;
+      M21 (odroczenie także ratunku) → Z/9.
+- [x] Bramy po trzech naprawach: `npm test` **8885/8885**,
+      `npm run test:slow` **268/268**, build **76 modułów / 5451,6 kB**,
+      benchmark quick 672 mecze — heuristic **87,8% (590/672)** bez zmian;
       golden-master bez zmiany hasha (fixture NIE regenerowany).
 
 ## Planowana kolejność commitów

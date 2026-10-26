@@ -102,9 +102,21 @@
   delty dodatnie — debuff nadal zabija przez SBA), `pumpImprovesOutcome`
   i oknie „przed atakiem”. Piny Y/1–Y/7 (w tym cztery anty-over-fix), mutacje
   M12/M14/M15/M17.
-- Bramy po X/Y: `npm test` **8875/8875**, `npm run test:slow` **268/268**,
-  build **76 modułów / 5449,8 kB**; golden-master bez zmiany hasha
-  (fixture nie regenerowany).
+- **Z (`51d6045`) — Cenn's Tactician: tapowanie ciała
+  w Głównej 1.** Zgłoszenie: bot miał jednego Tacticiana (2/2) przy pustym
+  stole wroga, mógł uderzyć za 2 bezkarnie, a zamiast tego tapował go
+  w Głównej 1 po kolejny licznik. Root cause: reguła „okna darmowej many”
+  (PMSSB-66) jawnie WYKLUCZAŁA koszt tapnięcia, więc zdolność „{W}, {T}:
+  licznik +1/+1 na Żołnierzu” nie była odraczana do end stepu przeciwnika
+  (pomiar PRZED: 13 pkt dla 1/1, 19 dla 2/2). Naprawa: tap wchodzi do tej
+  samej reguły okna (L41) — Główna 1/Główna 2/cudza Główna 1 → pass, end step
+  przeciwnika i okna walki (combat trick, ratunek licznikiem) bez zmian —
+  plus granica po rodzaju licznika: −1/−1 na wrogu to USUNIĘCIE (CR 704.5f),
+  nie odkładamy go do okna. Piny Z/1–Z/10, mutacje M18/M19/M20/M21.
+- Bramy po X/Y/Z: `npm test` **8885/8885**, `npm run test:slow` **268/268**,
+  build **76 modułów / 5451,6 kB**, benchmark quick 672 mecze (heuristic
+  **87,8%**, bez zmian); golden-master bez zmiany hasha (fixture nie
+  regenerowany).
 
 ## 2026-10-26b — audyt scalonego PR #174 (16/16) oraz pętla jakości (PR #175)
 
