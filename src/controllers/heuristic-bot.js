@@ -16096,6 +16096,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (view.pendingTriggerTarget?.effectType === 'untap_permanent') {
           return finish(untapTargetValue(view, target));
         }
+        // V (zgłoszenie właściciela 2026-10-26, Molten Nursery): trigger
+        // ZADAJĄCY obrażenia ocenia cele WSPÓLNĄ polityką obrażeń
+        // (`damageTargetValue` — ta sama co czary, L41), nie rozmiarem
+        // celu. Dawniej gałąź niżej widziała tylko premie lethal (F,
+        // +60), a obrażenia NIEletalne wyceniała jak każdy efekt wrogi:
+        // 1 obrażenie w 4/3 = 30 + 2P + T = 41 — wyżej niż przeciwnik
+        // (25) — choć nie robi NIC. Teraz: lethal w stwora = wartość
+        // usunięcia, twarz wg życia, nieletalny chip poza walką = −80,
+        // w walce chip liczony tylko gdy dobija z blokiem; własny cel
+        // pod wszystkim. Przy celach wymuszonych (brak twarzy na liście)
+        // kolejność względna zostaje: lethal > nieletalny wróg > własny.
+        if (cmd.targetId != null && !cmd.friendly && Number.isInteger(cmd.damage) && cmd.damage > 0) {
+          return finish(damageTargetValue(view, cmd.targetId, cmd.damage));
+        }
         if (!target) {
           // C-R2: karta z grobu/wygnania — wybieramy NAJLEPSZĄ, nie pierwszą.
           const openCard = openZoneCard(view, cmd.targetId);

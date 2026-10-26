@@ -138,12 +138,15 @@ test('F/2: bot wybiera 1/1 (lethal), nie 2/4 — scenariusz właściciela', () =
 
 test('F/3: nota zależy od ŚMIERTELNOŚCI, nie od rozmiaru (pin formuły)', () => {
   const { scores } = decyzja(scenaWarmaker());
-  // 30 + wartość(2P+T) + 60 za zabójstwo = 30 + 3 + 60 = 93; bez zabójstwa:
-  // 2/4 → 30 + 8 = 38, 3/3 → 30 + 9 = 39.
-  assert.equal(scores['resolve_trigger_target(c11a)'], 93);
-  assert.equal(scores['resolve_trigger_target(c11b)'], 93);
-  assert.equal(scores['resolve_trigger_target(c24)'], 38);
-  assert.equal(scores['resolve_trigger_target(c33)'], 39);
+  // V (2026-10-26): triggery obrażeń przeszły na wspólną `damageTargetValue`
+  // (ta sama skala co czary) — lethal = wartość usunięcia ciała
+  // (removalEnemyBase 22 + 2×(P+T) + premia celu = 30 dla 1/1), a obrażenia
+  // nieletalne poza walką to czysty chip = −80 niezależnie od rozmiaru celu
+  // (dawniej 30+2P+T premiowało większe ciało: 2/4 → 38, 3/3 → 39).
+  assert.equal(scores['resolve_trigger_target(c11a)'], 30);
+  assert.equal(scores['resolve_trigger_target(c11b)'], 30);
+  assert.equal(scores['resolve_trigger_target(c24)'], -80);
+  assert.equal(scores['resolve_trigger_target(c33)'], -80);
 });
 
 // =============================================================================
@@ -163,8 +166,9 @@ test('F/4: Reclusive Artificer bije WROGĄ 1/1, nie własną (lethal na własnym
   assert.equal(cmd.targetId, 'foe11', `ma bić wrogą 1/1: ${JSON.stringify(cmd)}`);
   assert.ok(scores['resolve_trigger_target(my11)'] < scores['resolve_trigger_target(foe24)'],
     `własna 1/1 (${scores['resolve_trigger_target(my11)']}) gorzej niż nieletalny wrogi 2/4 (${scores['resolve_trigger_target(foe24)']})`);
-  // Własny cel z obrażeniami śmiertelnymi: −20 − wartość(3) − 40 kary za lethal = −63.
-  assert.equal(scores['resolve_trigger_target(my11)'], -63);
+  // V: własny stwór jako cel obrażeń = wspólny zakaz `damageTargetValue` (−90),
+  // poniżej nawet nieletalnego chipu we wroga (−80).
+  assert.equal(scores['resolve_trigger_target(my11)'], -90);
 });
 
 // =============================================================================
@@ -225,8 +229,8 @@ test('F/6: indestructible 1/1 NIE dostaje premii za lethal (obrażenia go nie za
   const view = castToTriggerWindow(s, 'wg');
   const { cmd, scores } = decyzja(view);
   assert.equal(cmd.targetId, 'trup', `ma bić zwykłą 1/1: ${JSON.stringify(cmd)}`);
-  assert.equal(scores['resolve_trigger_target(trup)'], 93, 'lethal na zwykłym 1/1');
-  assert.equal(scores['resolve_trigger_target(trup2)'], 33,
-    'indestructible 1/1 = zwykła wartość ciała, BEZ premii za zabójstwo (CR 702.12b)');
-  assert.equal(scores['resolve_trigger_target(c24)'], 38, '2/4 bez premii');
+  assert.equal(scores['resolve_trigger_target(trup)'], 30, 'lethal na zwykłym 1/1 (wartość usunięcia)');
+  assert.equal(scores['resolve_trigger_target(trup2)'], -80,
+    'indestructible 1/1 = nieletalny chip, BEZ wartości zabójstwa (CR 702.12b; skala V)');
+  assert.equal(scores['resolve_trigger_target(c24)'], -80, '2/4 = nieletalny chip (skala V)');
 });
