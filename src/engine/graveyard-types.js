@@ -31,6 +31,24 @@ export function countGraveyardCardTypes(state, playerId, cardTypes) {
 }
 
 /**
+ * Batch 70 (Moldgraf Millipede): liczba KART jednego typu w grobie gracza
+ * („for each creature card in your graveyard"). Ten sam liść co delirium —
+ * `permanents.js`/`effects.js` nie mogą brać tej reguły z `triggers.js`
+ * (cykl importów, ADR 0011). Liczą się wyłącznie KARTY (CR 108.2b).
+ * Ruling VOW 2021-11-19: kwota bierze CAŁY cmentarz w chwili rozstrzygania,
+ * więc karty zmielone wcześniej w tym samym efekcie też się liczą.
+ */
+export function countGraveyardCardsOfType(state, playerId, cardType) {
+  let count = 0;
+  for (const objectId of state.zones.graveyard) {
+    const object = state.objects.get(objectId);
+    if (!isCardObject(object) || object.controllerId !== playerId) continue;
+    if ((object.types ?? []).includes(cardType)) count += 1;
+  }
+  return count;
+}
+
+/**
  * Czy obiekt to KARTA instant albo sorcery we własnym grobie gracza `playerId`
  * („an instant or sorcery card from your graveyard", np. Spellkeeper Weird).
  * JEDNO źródło frazy dla dwóch konsumentów (L41/L48):

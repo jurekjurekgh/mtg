@@ -124,6 +124,24 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
       }
     }
   }
+  // Batch 70 (Fen Hauler): ewazja „can't be blocked by artifact creatures" to
+  // deskryptor WARUNKOWY (żadna karta próbki go nie ma przed E3), więc — jak
+  // Battle niżej i jak F-11 wyżej — rozszerzamy PRÓBKĘ runtime permanentem z
+  // tą zdolnością, zamiast wyłączać pole z guardu (ADR 0017: to fakt publiczny).
+  {
+    const evasiveState = stanZPermanentem('skyscythe-engulfer');
+    const base = evasiveState.objects.get('b1');
+    evasiveState.objects.set('b1', Object.freeze({
+      ...base,
+      abilities: Object.freeze([
+        Object.freeze({ type: 'static', cantBeBlockedByTypes: Object.freeze(['Artifact']) }),
+      ]),
+    }));
+    const evasiveView = playerView(evasiveState, 'p1').zones.battlefield.find((o) => o.id === 'b1');
+    assert.deepEqual(evasiveView?.cantBeBlockedByTypes, ['Artifact'],
+      'próbka: widok niesie typy zakazanych blokerów');
+    for (const key of Object.keys(evasiveView)) wysylane.add(key);
+  }
   // Batch 63: role Battle są publiczne, lecz katalog nie zawiera jeszcze
   // karty Battle. Rozszerzamy PRÓBKĘ runtime zamiast wyłączać pole z guardu.
   const battleState = createGameState({ seed: 277, players: [{ id: 'p1' }, { id: 'p2' }] });

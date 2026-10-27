@@ -3,11 +3,12 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, graveyardCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
+import { countGraveyardCardsOfType } from './graveyard-types.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -3591,7 +3592,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     const counterAmount = effect.amountFromContext
       ? (context?.[effect.amountFromContext] ?? effect.amount ?? 1)
       : effect.amountFromGraveyardCardType
-        ? graveyardCardTypeCount(state, sourceObject.controllerId, effect.amountFromGraveyardCardType)
+        ? countGraveyardCardsOfType(state, sourceObject.controllerId, effect.amountFromGraveyardCardType)
         : (effect.amount ?? 1);
     addCounter(state, targetId, effect.counter, counterAmount);
     return;
