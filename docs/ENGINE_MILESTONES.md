@@ -8650,3 +8650,26 @@ karta syntetyczna — w katalogu nie ma nośnika (ADR 0022/0030).
 
 Bramy po naprawie: `npm test` **8974/8974**, `test:slow` **268/268**, build
 **76 modułów / 5513,3 kB**, benchmark quick 672 mecze — heuristic **88,1%**.
+
+## M450 — O-1/O-2 z audytu PR #176: opis powtórnej aktywacji i płatność Converge (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md).
+
+**O-1** (komunikacja, nie reguła): ponowne osiodłanie/obsadzenie jest legalne
+(CR 702.171a / CR 702.122e) i zostaje w ofercie — pin M219 broni jej istnienia
+wobec bota — ale etykieta oferty i intro kreatora załogi mówią teraz wprost, że
+koszt tapnięcia przepadnie. Wspólny predykat czyta deskryptor efektu
+(`set_saddled`, `animate_permanent_until_end_of_turn`) i flagę STANU z
+PlayerView (`saddled`/`animatedUntilEOT`), więc reguła nie zna żadnej karty
+(ADR 0002/0017).
+
+**O-2** (reguła płatności): czar liczący KOLORY wydanej many (Converge,
+CR 207.2c) płaci tak, by wnosić kolor jeszcze nieużyty (CR 601.2h — wybór
+jednostek należy do płacącego). Marker `colors_of_mana_spent` (także w trybach
+modalnych) ustawia flagę celu płatności `maximizeManaColors`; komparator puli
+preferuje kolor spoza pipów, potem kolor już zapłacony, na końcu bezbarwną
+(CR 106.1a). Adamant i zwykłe rzuty zachowują dotychczasową kolejność.
+
+Bramy: `npm test` **8982/8982**, `test:slow` **268/268**, build **76 modułów /
+5519,9 kB**, benchmark quick 672 mecze — heuristic **88,1%**.

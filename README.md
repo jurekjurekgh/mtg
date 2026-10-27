@@ -21,18 +21,22 @@ pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący
 `preventDamageByRemovingCounter` (Magma Pummeler, CR 615.1a) czytał zdolność
 tylko z warstwy własnej, więc zdolność **nadana sprzętem** była martwa
 (klasa L99; wspólny helper + pin `audyt-pr176-f1-…` RED→GREEN + mutacja).
-Obserwacje bez zmiany kodu: ponowna oferta osiodłania po `saddled`
-(CR 702.171a legalna; pin M219 broni oferty — decyzja ergonomiczna dla
-właściciela), auto-płatność Converge nie maksymalizuje kolorów (CR 601.2h:
-legalna, bot wycenia górną granicę), generyczny trigger `counter_removed`
-bez „this way” nie odpala (dziś bezkosztowe), rozjazd liczb w handoffie (L92).
+Na polecenie właściciela („O-1 i O-2 trzeba bezwzględnie naprawić”) domknięte
+dwie obserwacje z audytu, obie w warstwie, w której leżał problem: **O-1** —
+etykieta oferty i kreator załogi ostrzegają, że powtórne osiodłanie/obsadzenie
+wytapuje stwory za nic (aktywacja zostaje legalna, CR 702.171a; pin M219 broni
+istnienia oferty), oraz **O-2** — czar Converge płaci różnymi kolorami many,
+więc X jest maksymalny legalnym wyborem (CR 601.2h + 207.2c; flaga celu
+płatności wąska, Adamant bez zmian). Pozostałe obserwacje: generyczny trigger
+`counter_removed` bez „this way” nie odpala (dziś bezkosztowe), log testera
+ucina etykiety do 110 znaków (O-5), rozjazd liczb w poprzednim handoffie (L92).
 Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bez
 wyceny; transkrypty czytane ręcznie — L27), analizatory
 zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
 decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
 207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Bramki:
-`npm test` **8974/8974**, `npm run test:slow` **268/268**, build **76 modułów /
-5513,3 kB**, benchmark quick 672 mecze (heuristic 88,1%). PR czeka na decyzję
+`npm test` **8982/8982**, `npm run test:slow` **268/268**, build **76 modułów /
+5519,9 kB**, benchmark quick 672 mecze (heuristic 88,1%). PR czeka na decyzję
 właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
 (sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);

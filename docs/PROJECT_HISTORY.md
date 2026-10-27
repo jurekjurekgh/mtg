@@ -18297,3 +18297,21 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   benchmark quick 672 mecze — heuristic **88,1%**. Higiena: odhaczone etapy
   P0–P7 w `PLAN_2026-10-27b` (status WYKONANY, checkboxy puste).
   Szczegóły: `docs/setup/HANDOFF_2026-10-27c.md`.
+
+- **Sesja 2026-10-27c (PR #177) — naprawy O-1/O-2 na polecenie właściciela**
+  („O-1 i O-2 trzeba bezwzględnie naprawić”): **O-1** — ponowne osiodłanie
+  (saddle, CR 702.171a) i ponowne obsadzenie (crew, CR 702.122e) są regułowo
+  LEGALNE, więc oferta zostaje (pin M219 broni jej istnienia wobec bota),
+  a brakowało warstwy OPISU: wspólny predykat
+  `activationAlreadyAppliedWarning` (deskryptor efektu + flaga stanu z
+  PlayerView `saddled`/`animatedUntilEOT`, ADR 0017, zero nazw kart) dokłada do
+  etykiety oferty i do intro kreatora załogi „UWAGA: … już osiodłany do końca
+  tury — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie”
+  (potwierdzone na żywym stole, `out/o1b.txt:393,400`); **O-2** — czar Converge
+  (CR 207.2c) płaci różnymi kolorami many: marker `colors_of_mana_spent`
+  ustawia flagę celu płatności `maximizeManaColors`, a komparator puli wnosi
+  kolor jeszcze nieużyty (CR 601.2h), więc Kaleidoscorch z puli {R}{R}{G} za
+  {1}{R} zadaje 2, nie 1; flaga wąska — Adamant i zwykłe rzuty bez zmian.
+  Piny: `audyt-pr176-o1-…` (5, mutacja 2 RED) i `audyt-pr176-o2-…` (3, mutacja
+  RED); bramy po naprawach: `npm test` 8982/8982, `test:slow` 268/268, build
+  76 modułów / 5519,9 kB, benchmark quick 88,1% (672 mecze).

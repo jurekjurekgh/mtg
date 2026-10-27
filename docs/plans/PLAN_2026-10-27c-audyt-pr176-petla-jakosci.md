@@ -36,8 +36,9 @@ Trigon of Rage, Vault of Whispers.
       walidacja (L48). Sprawdzenie testów RED→GREEN (L13) i tego, czy pin
       mierzy regułę (L5). Raport: `docs/audits/AUDYT_PR176_2026-10-27.md`.
 - [x] **A2** Naprawy findingów u root cause, każdy z pinem i mutacją RED,
-      osobnym commitem (ADR 0020 C) — zrobione: F-1 (commit `721aec2`), reszta znalezisk
-ozdarta do obserwacji O-1…O-5 z uzasadnieniem.
+      osobnym commitem (ADR 0020 C) — zrobione: F-1 (`721aec2`) oraz na polecenie
+właściciela z 2026-10-27c O-1 (`a023d35`) i O-2 (`bca14ac`). O-3/O-5 zostają
+otwarte świadomie (opisał je raport audytu).
 - [x] **A3** Higiena planów: `PLAN_2026-10-27b` ma status „WYKONANY", ale
       niezaznaczone etapy P0–P7 (dryf dokumentacji) — odhaczyć z odsyłaczem do
       commitów, bez zmiany treści kryteriów.
