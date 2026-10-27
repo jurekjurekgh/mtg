@@ -8599,8 +8599,22 @@ Arlinn's Wolf (WAR 151) — wszystkie `supported` (100% Oracle, ADR 0022).
     (ADR 0024) — README, tester i testy czytające pliki talii zaktualizowane,
     golden-master wycen zregenerowany (świadoma zmiana zestawu talii).
 
+11. **Dowiązania gracza (E5, audyt L84)** — deskryptory działały, ale kafel
+    i log milczały (klasa M138/#11/L24): log prewencji licznikowej nazywa
+    powód i liczbę zdjętych liczników (zdarzenie niesie `counterName`), kafel
+    dostaje badge „zamiast obrażeń zdejmij licznik …" i kwotę triggera
+    z kontekstu, cel warunkowany kickerem jest opisany („jeśli kopnięty:
+    stwór (inny)"), Converge ma brzmienie PL zamiast sluga, licznik
+    z cmentarza mówi, skąd bierze się liczba, koszt „poświęć to", symbole
+    many jako jeden ciąg („{R}{R}"), a Improvise/Convoke mają linie
+    mechanik płacenia kosztu. Strażnik klasowy: każda karta z
+    `improvise`/`convoke` ma linię na kaflu.
+
 Testy: `test/batch70-mechaniki.test.js` (34 piny na kartach syntetycznych,
 ADR 0029), `test/real-cards-batch70.test.js` (19: sanity danych + legalny
-i nielegalny scenariusz na każdą kartę). Mutacje potwierdzone dla X w koszcie
-(3 mutanty → 4 czerwone piny). Bramy: `npm test` 8938/8938, `test:slow`
-268/268, build 76 modułów / 5496,7 kB, benchmark quick 88,1% (było 87,8%).
+i nielegalny scenariusz na każdą kartę), `test/batch70-e5-dowiazania.test.js`
+(10 pinów: log, kafel w ręce i na polu bitwy, strażnik klasowy, `xCost`
+przez `gameObjectDataOf` i `installDeck`). Mutacje potwierdzone dla X w koszcie
+(3 mutanty → 4 czerwone piny) i dla dowiązań E5 (3 mutanty → 1/2/1 czerwone
+piny). Bramy: `npm test` 8948/8948, `test:slow` 268/268, build 76 modułów /
+5502,4 kB, benchmark quick 88,1% (było 87,8%).

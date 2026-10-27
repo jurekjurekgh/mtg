@@ -18191,5 +18191,15 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   weryfikacja, że nowe mechaniki realnie pojawiają się w `legalCommands`.
 - Mutacje (ADR 0029): bez `+ X` w koszcie → 1 pin czerwony; bez sprawdzenia `cap`
   → 1; bez gałęzi `'X'` w `entersWithCounters` → 2. Po przywróceniu 34/34.
-- Bramy: `npm test` 8938/8938, `test:slow` 268/268, build 76 modułów / 5496,7 kB,
-  benchmark quick 88,1% (baseline 87,8%).
+- E5 (audyt czterech dowiązań, L84): mechaniki silnika były zielone, ale
+  część z nich była NIEMA dla gracza — log prewencji licznikowej mówił tylko
+  „zapobiegnięte", a kafle: Magma Pummeler „? obrażeń", Jilt „cel: stwór ×2"
+  (dwa obowiązkowe cele, których bez kickera nie ma), Kaleidoscorch surowy slug
+  `colors_of_mana_spent`, Trigon of Rage „{R}, {R}" (jak dwa osobne koszty),
+  Orazca Puzzle-Door „poświęć:" bez dopełnienia, Moldgraf Millipede bez
+  informacji, skąd liczba liczników, Fen Hauler/Kavu Primarch bez linii
+  Improvise/Convoke. Naprawy u źródła + `test/batch70-e5-dowiazania.test.js`
+  (10 pinów, w tym strażnik klasowy improvise/convoke i droga `xCost` przez
+  `gameObjectDataOf` **i** `installDeck`). Mutacje: 3 mutanty → 1/2/1 RED.
+- Bramy (końcowe, po E5): `npm test` 8948/8948, `test:slow` 268/268, build
+  76 modułów / 5502,4 kB, benchmark quick 88,1% (baseline 87,8%).
