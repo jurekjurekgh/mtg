@@ -30,7 +30,7 @@ import { attackerCanBeBlocked } from '../src/controllers/heuristic-bot.js';
 import { coloredPipsOf } from '../src/engine/mana-cost.js';
 import { addCounter, removeCounter } from '../src/engine/counters.js';
 import { processTriggers } from '../src/engine/triggers.js';
-import { applyEffect } from '../src/engine/effects.js';
+import { applyEffect, applyEnterCounters } from '../src/engine/effects.js';
 import { runStateBasedActions } from '../src/engine/state-based.js';
 
 const REGISTRY = createCardRegistry();
@@ -577,4 +577,115 @@ test('B70/M5 zwykłe zdjęcie licznika NIE odpala triggera (tylko „this way”
   processTriggers(state, state.events.slice(-1));
   assert.equal(state.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'test-pummel').length, 0,
     'trigger czyta znacznik przyczyny `damagePrevention`, nie samo zdarzenie counter_removed');
+});
+
+// =========================================================================
+// M6 — Magma Pummeler (VOW): „{X}{R}{R} … This creature enters with X +1/+1
+// counters on it.” Nowe elementy silnika (batch 70, E3):
+//   (a) deskryptor `xCost` na poziomie KARTY PERMANENTU (dla czarów nie-
+//       permanentnych X żyje w `spell.xCost`) — CR 2026-09-25, 107.3a
+//       (dosłownie): „If a card in any zone other than the stack has an {X}
+//       in its mana cost, the value of {X} is treated as 0…”. Wartość wybiera
+//       gracz przy rzucie (107.3b/c).
+//   (b) `castPermanent(..., { xValue })`: X wchodzi w KOSZT CAŁKOWITY
+//       (CR 601.2f) i jest stemplowane na obiekcie jako `spellX`; wejście bez
+//       rzucania (reanimacja) ma X = 0.
+//   (c) `entersWithCounters: { '+1/+1': 'X' }` czyta `spellX` przy wejściu
+//       (CR 614.1c — efekt zastępujący „enters with”).
+const X_HOST = REGISTRY.get('fake-your-own-death');
+
+/** Permanent z {X} w koszcie — obiekt karty w ręce (jak w talii). */
+function xPermanent(state, { id = 'xp', manaCost = 2, xCost = { cap: 5 }, mana = 0, colors = ['R'] } = {}) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: X_HOST.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'creature', types: ['Creature'], subtypes: ['Elemental'],
+    colors: ['R'], keywords: [], power: 0, toughness: 0,
+    manaCost, abilities: [], xCost, entersWithCounters: { '+1/+1': 'X' },
+  });
+  if (mana > 0) addMana(state, 'p1', mana, { colors });
+  return state.objects.get(id);
+}
+
+const permanentOffers = (state, id) => playerView(state, 'p1').legalCommands
+  .filter((c) => c.type === 'cast_permanent' && c.objectId === id);
+
+test('B70/M6 oferta: X jest enumerowane 0..cap i tylko w granicach opłacalnej many (L48)', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  xPermanent(state, { id: 'xp', manaCost: 2, mana: 4, colors: ['B'] });
+  assert.deepEqual(permanentOffers(state, 'xp').map((c) => c.xValue), [0, 1, 2],
+    'koszt bazowy {1}{B} = 2, pula {B}{B}+2 → X = 0, 1, 2 (CR 601.2f: X jest częścią kosztu całkowitego)');
+});
+
+test('B70/M6 oferta: cap deskryptora obcina X nawet przy dużej puli many', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  xPermanent(state, { id: 'xp', manaCost: 2, xCost: { cap: 2 }, mana: 10, colors: ['B'] });
+  assert.deepEqual(permanentOffers(state, 'xp').map((c) => c.xValue), [0, 1, 2],
+    'cap = 2 mimo puli 10 many (deskryptor ogranicza enumerację)');
+});
+
+test('B70/M6 rzut: wybrane X wchodzi w koszt many i liczniki wejścia (spellX + entersWithCounters)', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  xPermanent(state, { id: 'xp', manaCost: 2, mana: 4, colors: ['B'] });
+  const oferta = permanentOffers(state, 'xp').find((c) => c.xValue === 2);
+  assert.ok(oferta, 'oferta X = 2');
+  const przed = state.players.find((p) => p.id === 'p1').mana;
+  assert.equal(execute(state, oferta).ok, true, 'rzut przyjęty');
+  const gracz = state.players.find((p) => p.id === 'p1');
+  assert.equal(gracz.mana, przed - 4, 'wydano koszt bazowy 2 + X = 2 (CR 601.2f)');
+  resolveStack(state);
+  const permanent = [...state.zones.battlefield].map((id) => state.objects.get(id)).find((o) => o.cardId === X_HOST.id);
+  assert.ok(permanent, 'permanent na polu bitwy');
+  assert.equal(permanent.spellX, 2, 'wartość X z rzutu jest stemplowana na obiekcie (CR 107.3a)');
+  assert.equal(permanent.counters?.['+1/+1'], 2, '„enters with X +1/+1 counters” (CR 614.1c)');
+});
+
+test('B70/M6 walidacja: ujemny i niecałkowity X oraz X ponad cap są odrzucane', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  xPermanent(state, { id: 'xp', manaCost: 2, xCost: { cap: 2 }, mana: 10, colors: ['B'] });
+  const bazowa = { type: 'cast_permanent', playerId: 'p1', objectId: 'xp' };
+  for (const zly of [-1, 1.5, 3]) {
+    assert.equal(execute(state, { ...bazowa, xValue: zly }).ok, false,
+      `X = ${zly} musi być odrzucone (całkowite, 0 ≤ X ≤ cap)`);
+  }
+  assert.equal(execute(state, { ...bazowa, xValue: 1 }).ok, true, 'poprawny X = 1 przechodzi');
+});
+
+test('B70/M6 wejście BEZ rzutu: X = 0, więc zero liczników (CR 107.3a na innych strefach)', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  addObject(state, {
+    id: 'bez-rzutu', instanceId: 'i-bez-rzutu', cardId: X_HOST.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'creature', types: ['Creature'], colors: ['R'], keywords: [],
+    power: 0, toughness: 0, abilities: [], xCost: { cap: 5 },
+    entersWithCounters: { '+1/+1': 'X' },
+  });
+  applyEffect(state, { type: 'add_counter', counter: '+1/+1', amount: 0 }, state.objects.get('bez-rzutu'));
+  // Wejście „z ręki bez rzutu” odwzorowuje applyEnterCounters na obiekcie bez spellX.
+  applyEnterCounters(state, 'bez-rzutu');
+  assert.equal(state.objects.get('bez-rzutu').counters?.['+1/+1'] ?? 0, 0,
+    'brak rzutu = brak spellX = 0 liczników (reanimacja nie wskrzesza X)');
+});
+
+test('B70/M6 walidacja: xValue na karcie BEZ deskryptora xCost jest odrzucane', () => {
+  const state = createGameState({ seed: 70, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  addObject(state, {
+    id: 'bez-x', instanceId: 'i-bez-x', cardId: X_HOST.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', kind: 'creature', types: ['Creature'], colors: ['B'], keywords: [],
+    power: 2, toughness: 2, manaCost: 1, abilities: [],
+  });
+  addMana(state, 'p1', 5, { colors: ['B'] });
+  const zla = execute(state, { type: 'cast_permanent', playerId: 'p1', objectId: 'bez-x', xValue: 1 });
+  assert.equal(zla.ok, false, 'karta bez {X} w koszcie nie przyjmuje xValue (jawne odrzucenie)');
+  assert.match(String(zla.reason ?? ''), /kosztu X/, 'komunikat mówi wprost, że karta nie ma kosztu {X}');
 });
