@@ -85,11 +85,30 @@ export function preventDamageWithShieldCounter(state, objectId, amount) {
  * się zmieści”). Stwór bez licznika nie ma efektu zastępującego — obrażenia
  * idą normalnie („while it has a +1/+1 counter on it”).
  */
+function preventionRemovalAbility(state, object) {
+  // F-1 audytu PR #176 (klasa L99): zdolność CZYTA SIĘ z obu warstw — własnej
+  // (`effectiveAbilities`, z grantami statyk) i nadanej PRZYPIĘTYM SPRZĘTEM
+  // (`equipment.grantedAbilities`, ten sam kształt co progi ewazji w
+  // `combat.js:attackerBlockTypeRestriction`). Wcześniej komentarz obiecywał
+  // sprzęt, a kod czytał tylko warstwę własną — deskryptor nadany sprzętem był
+  // martwy (CR 615.1a/604.1: efekt zastępujący działa niezależnie od źródła
+  // zdolności; deskryptor jest generyczny, ADR 0002).
+  const own = effectiveAbilities(object).find((entry) => entry?.type === 'static'
+    && entry.preventDamageByRemovingCounter);
+  if (own) return own;
+  if (object?.zone !== 'battlefield') return null;
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    for (const granted of attachment.equipment?.grantedAbilities ?? []) {
+      if (granted?.type === 'static' && granted.preventDamageByRemovingCounter) return granted;
+    }
+  }
+  return null;
+}
+
 export function preventDamageByRemovingCounters(state, objectId, amount) {
   const object = state.objects.get(objectId);
   if (!(amount > 0) || !object || object.zone !== 'battlefield') return 0;
-  const ability = effectiveAbilities(object).find((entry) => entry?.type === 'static'
-    && entry.preventDamageByRemovingCounter);
+  const ability = preventionRemovalAbility(state, object);
   if (!ability) return 0;
   const counterName = ability.preventDamageByRemovingCounter;
   const available = object.counters?.[counterName] ?? 0;
