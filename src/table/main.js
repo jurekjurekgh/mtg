@@ -2775,7 +2775,18 @@ function bootstrapTable() {
     });
     if (!plan) return null;
     const verb = saddle ? 'Osiodłaj' : 'Obsadź';
-    return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)} — zaznacz załogę do tapnięcia:` };
+    // O-1 audytu PR #176 (Żywy Tester a4): gracz osiodłał ten sam Mount dwa
+    // razy, a drugie osiodłanie wytapowało kolejne stwory za nic. Etykieta
+    // oferty niesie ostrzeżenie (render.js:activationAlreadyAppliedWarning);
+    // kreator mówi to samo językiem stanu, bo intro jest ostatnim ekranem
+    // przed nieodwracalnym tapnięciem załogi.
+    const alreadyApplied = saddle
+      ? source?.saddled === true
+      : source?.originalBeforeAnimation != null;
+    const warn = alreadyApplied
+      ? ` — UWAGA: ${saddle ? 'już osiodłany' : 'już obsadzony'} do końca tury, ponowna aktywacja nic nie zmieni`
+      : '';
+    return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)}${warn} — zaznacz załogę do tapnięcia:` };
   }
 
   /** A2: modal kreatora załogi; Zatwierdź wraca do play() z pominięciem re-wejścia. */
