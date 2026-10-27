@@ -152,6 +152,8 @@ export function commandOptionKey(cmd) {
     // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
     'delveExileIds',
     'convokePayments',
+    // Batch 70 (Improvise): warianty tapnięcia artefaktów różnią się wyborem.
+    'improvisePayments',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,

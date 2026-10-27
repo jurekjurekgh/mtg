@@ -514,6 +514,10 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'cast_permanent' && command.convokePayments) {
     return `permanent-convoke:${command.objectId}:${Boolean(command.kicked)}`;
   }
+  // Batch 70 (Improvise): warianty tapnięcia artefaktów grupują się po karcie.
+  if (command.type === 'cast_permanent' && command.improvisePayments) {
+    return `permanent-improvise:${command.objectId}:${Boolean(command.kicked)}`;
+  }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
   }
@@ -3507,6 +3511,12 @@ function commandLabelBase(cmd, session, view) {
           return payment.color && payment.color !== 'generic' ? `${name} (${payment.color})` : `${name} (1)`;
         }).join(', ');
         return `Zagraj tapując na convoke: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
+      }
+      // Batch 70 (Improvise, CR 702.126a): etykieta pokazuje, KTÓRE artefakty
+      // się tapuje — to decyzja gracza (tapnięty artefakt nie zapłaci już many).
+      if (cmd.improvisePayments?.length) {
+        const tapped = cmd.improvisePayments.map((payment) => `${nameOfObjectId(payment.artifactId)} (1)`).join(', ');
+        return `Zagraj tapując na improvise: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
       }
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);

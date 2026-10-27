@@ -2007,6 +2007,7 @@ function bootstrapTable() {
       if (cmd.type === 'cast_cleave' && cmd.targets?.length) return `cleave:${cmd.objectId}`;
       if (cmd.type === 'cast_permanent' && cmd.targets?.length) return `perm:${cmd.objectId}:${Boolean(cmd.bestow)}`;
       if (cmd.type === 'cast_permanent' && cmd.convokePayments) return `perm-convoke:${cmd.objectId}:${Boolean(cmd.kicked)}`;
+      if (cmd.type === 'cast_permanent' && cmd.improvisePayments) return `perm-improvise:${cmd.objectId}:${Boolean(cmd.kicked)}`;
       if (cmd.type === 'cast_permanent' && cmd.phyrexianPayWithLife != null) return `perm-x:${cmd.objectId}`;
       // C (Makeshift Mauler): warianty kosztu „wygnaj stwora" grupują się po
       // karcie — spójnie z choiceRequestGroupKey w render.js (menu kontekstowe
