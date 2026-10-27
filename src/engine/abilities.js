@@ -202,7 +202,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, cantBeBlockedByPowerAtLeast = null, storied = false, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -275,7 +275,6 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // Rampager, CR 702.x?): statyczny próg MOCY blokera — canBlock odrzuca
     // blokerów o efektywnej mocy <= wartość. Sprawdzane przed wykonaniem bloku.
     cantBeBlockedByPower: cantBeBlockedByPower != null ? cantBeBlockedByPower : null,
-    cantBeBlockedByPowerAtLeast: cantBeBlockedByPowerAtLeast != null ? cantBeBlockedByPowerAtLeast : null,
     // Storied (HOB, Óin the Brave): cecha KEYWORDOWA na permanencie — nie
     // modyfikuje sama statystyk, tylko umożliwia nadanie `enduringStory`
     // graczowi (hasEnduringStory w permanents.js), gdy >=3 kwalifikowane

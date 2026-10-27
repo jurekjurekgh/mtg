@@ -175,9 +175,10 @@ test('B70/M1 walidacja: ten sam stwór na obu pozycjach łamie „another target
 
 // =========================================================================
 // M2 — Arlinn's Wolf (WAR): „This creature can't be blocked by creatures with
-// power 3 or greater." Silnik, widok, bot i render MAJĄ deskryptor
-// (`cantBeBlockedByPower`, wzorzec Rust-Shield Rampager) — ten blok pinuje go
-// dopiero pod kartą z batcha 70, na karcie syntetycznej (ADR 0029).
+// power 2 or less." Deskryptor ISTNIEJE (`cantBeBlockedByPower`, rodzina
+// Rust-Shield Rampager) i działa z własnej zdolności stałej stwora — ten blok
+// pinuje go pod kartą z batcha 70, na karcie syntetycznej (ADR 0029).
+// Ruling WAR 2019-05-03: raz wykonany blok zostaje, nawet gdy moc spadnie.
 // =========================================================================
 
 const wolf = (state, id, controllerId = 'p1') => {
@@ -185,53 +186,64 @@ const wolf = (state, id, controllerId = 'p1') => {
     id, instanceId: `i-${id}`, cardId: `test-${id}`, controllerId, ownerId: controllerId,
     zone: 'battlefield', kind: 'creature', types: ['Creature'], colors: ['G'], subtypes: ['Wolf'],
     keywords: [], power: 3, toughness: 2,
-    abilities: [createAbility({ type: ABILITY_TYPE.static, cantBeBlockedByPowerAtLeast: 3 })],
+    abilities: [createAbility({ type: ABILITY_TYPE.static, cantBeBlockedByPower: 2 })],
   });
   return state.objects.get(id);
 };
 
-test('B70/M2 oferta i walidacja bloków: próg mocy 3 — bloker 3/3 odrzucony, 2/2 dozwolony', () => {
+test('B70/M2 walidacja bloków: próg mocy 2 — bloker 2/2 odrzucony, 3/3 dozwolony', () => {
   const state = setup();
   wolf(state, 'wolf');
-  creature(state, 'duzy', 'p2', 3, 3);
   creature(state, 'maly', 'p2', 2, 2);
+  creature(state, 'duzy', 'p2', 3, 3);
   const attacker = state.objects.get('wolf');
-  assert.match(String(blockAssignmentViolation(state, attacker, ['duzy'])),
-    /power 3 or greater|mocy/,
-    'stwór o mocy 3 nie może blokować (próg „power 3 or greater")');
-  assert.equal(blockAssignmentViolation(state, attacker, ['maly']), null,
-    'stwór o mocy 2 blokuje bez przeszkód — próg dotyczy mocy ≥ 3');
+  assert.match(String(blockAssignmentViolation(state, attacker, ['maly'])), /power 2 or less|mocy/,
+    'stwór o mocy 2 nie może blokować („power 2 or less”)');
+  assert.equal(blockAssignmentViolation(state, attacker, ['duzy']), null,
+    'stwór o mocy 3 blokuje bez przeszkód');
 });
 
 test('B70/M2 widok: próg ewazji jest informacją PUBLICZNĄ dla bota (ADR 0017)', () => {
   const state = setup();
   wolf(state, 'wolf');
   const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'wolf');
-  assert.equal(entry?.cantBeBlockedByPowerAtLeast, 3, 'PlayerView musi nieść próg mocy');
+  assert.equal(entry?.cantBeBlockedByPower, 2, 'PlayerView musi nieść próg mocy');
 });
 
-test('B70/M2 oferta bloków: `legalBlockerOptions` nie proponuje blokera za mocnego', () => {
+test('B70/M2 oferta bloków: `legalBlockerOptions` nie proponuje blokera za słabego', () => {
   const state = setup();
   wolf(state, 'wolf');
-  creature(state, 'duzy', 'p2', 4, 4);
   creature(state, 'maly', 'p2', 1, 1);
+  creature(state, 'duzy', 'p2', 4, 4);
   state.combat = { attackingPlayerId: 'p1', attackers: ['wolf'], blockers: new Map(), blockedAttackers: new Set() };
   state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
   const options = legalBlockerOptions(state, 'p2');
-  assert.deepEqual(options.filter((o) => (o.wolf ?? []).includes('duzy')), [],
+  assert.deepEqual(options.filter((o) => (o.wolf ?? []).includes('maly')), [],
     'oferta nie może proponować blokera łamiącego próg (kontrakt L48)');
-  assert.ok(options.some((o) => (o.wolf ?? []).includes('maly')),
-    'oferta proponuje legalnego blokera');
+  assert.ok(options.some((o) => (o.wolf ?? []).includes('duzy')), 'oferta proponuje legalnego blokera');
 });
 
-test('B70/M2 bot: `attackerCanBeBlocked` respektuje próg dolny mocy (ADR 0017)', () => {
-  const wolfView = { id: 'wolf', cantBeBlockedByPowerAtLeast: 3, keywords: [] };
-  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 3 }, { id: 'b2', power: 5 }]), false,
-    'wszyscy blokerzy mają moc ≥ 3 — atakujący jest nieblokowalny');
-  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 3 }, { id: 'b2', power: 2 }]), true,
-    'bloker o mocy 2 łamie próg — atakujący jest blokowalny');
-  assert.equal(attackerCanBeBlocked({ id: 'plain', keywords: [] }, [{ id: 'b1', power: 5 }]), true,
+test('B70/M2 bot: `attackerCanBeBlocked` respektuje próg mocy (ADR 0017)', () => {
+  const wolfView = { id: 'wolf', cantBeBlockedByPower: 2, keywords: [] };
+  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 1 }, { id: 'b2', power: 2 }]), false,
+    'wszyscy blokerzy mają moc ≤ 2 — atakujący jest nieblokowalny');
+  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 2 }, { id: 'b2', power: 3 }]), true,
+    'bloker o mocy 3 łamie próg — atakujący jest blokowalny');
+  assert.equal(attackerCanBeBlocked({ id: 'plain', keywords: [] }, [{ id: 'b1', power: 1 }]), true,
     'kontrola ujemna: bez deskryptora każdy bloker się liczy');
+});
+
+test('B70/M2 ruling WAR: obniżenie mocy blokera nie odblokowuje (blok już wykonany)', () => {
+  const state = setup();
+  wolf(state, 'wolf');
+  creature(state, 'duzy', 'p2', 3, 3);
+  const attacker = state.objects.get('wolf');
+  assert.equal(blockAssignmentViolation(state, attacker, ['duzy']), null, '3/3 może blokować');
+  // Obniżenie mocy blokera do 1 (np. -2/-0) NIE cofa bloku — walidacja dotyczy
+  // tylko PRZYSZŁYCH deklaracji; sprawdzamy, że próg czyta moc efektywną.
+  state.objects.set('duzy', Object.freeze({ ...state.objects.get('duzy'), powerModifier: -2 }));
+  assert.match(String(blockAssignmentViolation(state, attacker, ['duzy'])), /power 2 or less|mocy/,
+    'moc efektywna blokera (1) wpada w próg zakazu');
 });
 
 // =========================================================================
