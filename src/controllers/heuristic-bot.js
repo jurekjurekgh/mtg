@@ -2047,11 +2047,25 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   const enemyNonlandPermanents = (view) => (view.zones.battlefield ?? [])
     .filter((o) => o.controllerId !== view.playerId && o.kind !== 'land' && (o.types ?? []).every((t) => t !== 'Land'));
+  // A (uwaga właściciela 2026-10-27c, Fathom Fleet Cutthroat): „dealt damage
+  // this turn" to STAN Z BIEŻĄCEJ TURY, nie cecha karty — `damage` znika przy
+  // regeneracji/lecz…, a `damagedThisTurn` zostaje jako jawny fakt tury
+  // (playerView, ADR 0017). L41: JEDEN predykat dla oferty celu ETB
+  // (`publicEtbTargets`) i dla bramki wartości ETB (`etbEnemyHasTarget`).
+  const dealtDamageThisTurn = (object) => Boolean(object)
+    && ((object.damage ?? 0) > 0 || object.damagedThisTurn === true);
   const etbEnemyHasTarget = (view, spec) => {
     const raw = typeof spec === 'string' ? spec : spec?.type;
     if (!raw) return true; // bez wymogu celu — efekt bezwarunkowy
     const foes = enemyNonlandPermanents(view);
     if (raw === 'opponent' || raw === 'player') return true;
+    // A (2026-10-27c): cel „obrażony w tej turze" nie jest spełniony przez
+    // samo ISTNIENIE wrogiego permanentu — bez tego ETB dostawał premię
+    // `destroy_permanent` (18) w Głównej 1, gdzie nie ma jeszcze legalnego
+    // celu, więc bot płacił kartę za trigger, który nigdy nie wchodzi na stos.
+    if (raw === 'creature_opponent_damaged_this_turn') {
+      return foes.some((o) => o.kind === 'creature' && dealtDamageThisTurn(o));
+    }
     if (raw === 'artifact_or_enchantment') {
       return foes.some((o) => o.kind === 'artifact' || o.kind === 'enchantment' || (o.types ?? []).some((t) => t === 'Artifact' || t === 'Enchantment'));
     }
@@ -2066,6 +2080,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // pozostałe cele wymagają stwora/permanentu przeciwnia (creature,
     // creature_opponent_controls, artifact_or_creature, nonland_permanent…)
     return foes.length > 0;
+  };
+  // A (uwaga właściciela 2026-10-27c, Fathom Fleet Cutthroat): rodzina specy
+  // celów, których legalność zależy od ZDARZEŃ TEJ TURY — deskryptor jest
+  // zamkniętą rodziną walidowaną w silniku (spells.js/triggers.js), więc lista
+  // typów jest jawna (ADR 0002: reguła po deskryptorze, nie po nazwie karty).
+  const THIS_TURN_STATE_TARGET_SPECS = new Set(['creature_opponent_damaged_this_turn']);
+  const etbTargetSpecType = (spec) => (typeof spec === 'string' ? spec : spec?.type ?? null);
+  /** Czy ETB nosiciela MA CZEKAĆ na Główną 2, bo jego cel wymaga stanu z tej
+   * tury, a takiego celu jeszcze nie ma. Cel istnieje już → false (ETB działa
+   * teraz, czekanie byłoby stratą tempa). */
+  const etbDefersForThisTurnsDamage = (view, def) => {
+    if (!def) return false;
+    let czeka = false;
+    for (const ability of def.abilities ?? []) {
+      if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+      const spec = ability.trigger.requiresTarget;
+      if (!THIS_TURN_STATE_TARGET_SPECS.has(etbTargetSpecType(spec))) continue;
+      czeka = true;
+      if (etbEnemyHasTarget(view, spec)) return false;
+    }
+    return czeka;
   };
   /**
    * PMSSB-36/B: czy ETB „put a +1/+1 counter on target …” ma LEGALNY cel po
@@ -9576,7 +9611,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (spec.type === 'creature_you_control' && object.controllerId !== view.playerId) return false;
       if (['creature_opponent_controls','creature_opponent_damaged_this_turn'].includes(spec.type)
         && object.controllerId === view.playerId) return false;
-      if (spec.type === 'creature_opponent_damaged_this_turn' && !(object.damage > 0 || object.damagedThisTurn)) return false;
+      if (spec.type === 'creature_opponent_damaged_this_turn' && !dealtDamageThisTurn(object)) return false;
       if (spec.type === 'creature_with_power_at_most' && (object.power ?? 0) > (spec.max ?? 0)) return false;
       return (!spec.subtype || (object.subtypes ?? []).includes(spec.subtype))
         && (!spec.notSelf || object.id !== source?.id);
@@ -11687,7 +11722,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // atakować w tej turze — wtedy chce mieć ciało przed deklaracją
         // (intencja z polityki ataku, `intendsToAttackThisTurn`; L41/L48).
         // Tura przeciwnika bez zmian (uwaga mówi o WŁASNEJ Głównej 2).
-        if (def?.entersWithCountersIf?.morbid === true) {
+        // A (uwaga właściciela 2026-10-27c, Fathom Fleet Cutthroat): ta sama
+        // reguła „poczekaj na Główną 2" obowiązuje ETB, którego CEL wymaga
+        // stanu Z TEJ TURY („destroy target creature an opponent controls that
+        // was dealt damage this turn"). W Głównej 1 bot nie miał jeszcze czym
+        // obrazić wroga, więc trigger w ogóle nie wchodził na stos (CR 603.3d —
+        // bez legalnego celu zdolność nie jest kładziona), a karta i mana
+        // przepadały. Rzut czeka więc do Głównej 2, CHYBA że cel już istnieje
+        // (wtedy ETB działa natychmiast) — wiedza o stanie, nie o nazwie karty
+        // (ADR 0002).
+        if (def?.entersWithCountersIf?.morbid === true || etbDefersForThisTurnsDamage(view, def)) {
           const poWalce = view.turn.phase === 'postcombat_main' && view.turn.step === 'main2';
           if (!myTurn(view)) {
             // okno przeciwnika — reguła nie dotyczy
