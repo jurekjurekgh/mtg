@@ -1385,7 +1385,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // Fraza w nawiasie, by nie rozbijać gramatyki zdania, spójnie z
         // formatem innych suffixów (extraCost/phrexian).
         const warpSuffix = e.warped ? ' (za Warp)' : '';
-        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}${warpSuffix}`;
+        // Batch 70 PMSSB-79: X w koszcie PERMANENTU (Magma Pummeler, CR 107.3a)
+        // — ta sama fraza co `spell_cast` i `ability_activated` (L41). Bez niej
+        // relacja milczała o tym, ile many poszło w X i jak duży stwór wszedł.
+        const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}${warpSuffix}${xPart}`;
       }
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"

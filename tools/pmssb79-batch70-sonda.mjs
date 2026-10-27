@@ -82,10 +82,15 @@ export function xTable({ pool = 6 } = {}) {
 export function probeXVariants() {
   const state = xTable();
   const { bot } = trace(state);
-  // Etykieta komendy nie niesie X — warianty rozpoznajemy po `xValue` z trace.
+  // Od PMSSB-79 (parzystość z `activate_ability`) etykieta śladu niesie X:
+  // `cast_permanent(x,X=4)`. Wcześniej warianty były nierozróżnialne w śladzie.
   const opts = bot.trace().at(-1)?.options ?? [];
   return opts.filter((o) => o?.cmd?.startsWith('cast_permanent(x'))
-    .map((o) => ({ xValue: o.xValue ?? o.command?.xValue ?? null, score: o.score }));
+    .map((o) => {
+      const m = /,X=(\d+)\)/.exec(o.cmd);
+      return { xValue: m ? Number(m[1]) : (o.xValue ?? o.command?.xValue ?? null), score: o.score };
+    })
+    .sort((a, b) => b.xValue - a.xValue);
 }
 
 // ── 2. prewencja zdejmująca liczniki ────────────────────────────────────────

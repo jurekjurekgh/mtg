@@ -2409,6 +2409,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Face-down permanent jest bezbarwny (CR 702.37a — brak kosztu many) —
     // nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
+    // Batch 70 PMSSB-79 (parzystość z `spell_cast`, uwaga B1 właściciela
+    // 2026-09-18): gracz musi widzieć, za ile X zagrano permanent z {X} w
+    // koszcie — dotąd zdarzenie niosło wyłącznie `spellX` na obiekcie stosu,
+    // więc log milczał. Jedno źródło dla logu, kafla i panelu „Ruch bota";
+    // pole istnieje tylko dla kart z deskryptorem X (jak `spellX`).
+    ...(xDescriptor ? { xValue: xDeclared } : {}),
   });
   state.events.push(e);
   // entersWithCounters i bloodthirst to cechy WEJŚCIA na pole bitwy — aplikuje

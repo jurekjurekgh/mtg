@@ -97,7 +97,10 @@ test('F-A1: consume-spirit X w twarz skaluje gain (tiers(X))', () => {
   const view = playerView(s, 'p1');
   const bot = createHeuristicBot({ seed: 9 });
   bot.chooseCommand(view);
-  const faces = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(cs->p2)'))
+  // PMSSB-79: etykieta śladu niesie odtąd X (`cast_spell(cs->p2,X=4)`) — warianty
+  // {X} były wcześniej nierozróżnialne (ta sama klasa co `activate_ability`).
+  // Dopasowanie po PREFIKSIE, żeby pin pilnował wyceny, nie brzmienia etykiety.
+  const faces = bot.trace().at(-1).options.filter((o) => o.cmd.startsWith('cast_spell(cs->p2'))
     .map((o) => o.score).sort((a, b) => b - a);
   // X=0: inert-guard -70 (gainLifeValue(0) = 0, wiec bez fantomu +1).
   assert.deepEqual(faces, [-7, -8, -8, -9, -70], `consume w twarz X=4..0 (bylo -10x4,-70): ${JSON.stringify(faces)}`);

@@ -17690,7 +17690,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wariant i tak jest w nim rozstrzygalny — `objectId` jest unikalny w ręce,
     // a od tury 6 różnicę niosą projekcje (`waluta`, `cele`, `kicker`). Zysk
     // czytelności nie był wart przepisania pinsów, które sami pilnują wyceny.
-    if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    // Batch 70 PMSSB-79 (parzystość z `activate_ability`, lekcja Krumar H):
+    // warianty {X} tego samego rzutu różnią się WYŁĄCZNIE `xValue`, więc bez
+    // niego ślad zwijał X=0..13 do jednej etykiety — audyt remisów nie miał
+    // czego parować. Suffix tylko gdy komenda niesie X (piny bez {X} bez zmian).
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') {
+      const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
+      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX})`;
+    }
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
     // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.

@@ -20,6 +20,7 @@ import {
   probeImprovise, probeManifest, probeMillipede, probeXVariants, xTable,
 } from '../tools/pmssb79-batch70-sonda.mjs';
 import { execute, playerView } from '../src/engine/game-state.js';
+import { describeGameEvent } from '../src/table/session.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { DEFAULT_HEURISTIC_PARAMS } from '../src/controllers/heuristic-params.js';
 
@@ -116,13 +117,16 @@ test('PMSSB-79/4b: ewazja po typie — zwykły stwór 6/6 NADAL blokuje (kontrol
 
 // ── 5. Kontrole zamknięte BEZ ZMIANY (pomiar = poprawne zachowanie) ────────
 test('PMSSB-79/5a: X w koszcie permanentu — rosnące X rośnie w wycenie, X=0 karane', () => {
-  const scores = probeXVariants().map((entry) => entry.score);
-  assert.ok(scores.length >= 4, `oczekiwane warianty X=0..4: ${scores.join(', ')}`);
-  // Trace nie niesie X — warianty są sortowane malejąco: najwyższe X wygrywa.
-  assert.ok(scores[0] > scores[1] && scores[1] > scores[2],
-    `wycena nie odróżnia X: ${scores.join(', ')}`);
-  assert.ok(scores[scores.length - 1] < 0,
-    `X = 0 (stwór 0/0 ginie od SBA, CR 704.5f) musi być ujemne: ${scores.join(', ')}`);
+  const warianty = probeXVariants();
+  const mapa = Object.fromEntries(warianty.map((w) => [w.xValue, w.score]));
+  assert.deepEqual(Object.keys(mapa).map(Number).sort((a, b) => a - b), [0, 1, 2, 3, 4],
+    `oferta musi mieć wszystkie X w granicach opłacalnej puli: ${JSON.stringify(mapa)}`);
+  // Ta sama logika co dla czarów z {X} (M237/1): wartość rośnie z X, bo X
+  // przekłada się na ciało (liczniki wejścia), a kara za manę rośnie o 1/X.
+  assert.ok(mapa[4] > mapa[3] && mapa[3] > mapa[2] && mapa[2] > mapa[1],
+    `wycena nie odróżnia X: ${JSON.stringify(mapa)}`);
+  assert.ok(mapa[0] < 0,
+    `X = 0 (stwór 0/0 ginie od SBA, CR 704.5f) musi być ujemne: ${JSON.stringify(mapa)}`);
 });
 
 test('PMSSB-79/5b: Improvise — bot rzuca, gdy tapnięcie artefaktów to JEDYNA droga', () => {
@@ -184,8 +188,40 @@ test('PMSSB-79/6a: silnik — Kaleidoscorch zadaje tyle obrażeń, ile kolorów 
   assert.equal(sprawdz(4), 2, 'cztery kolory w puli, ale koszt {1}{R} = 2 kolory = 2 obrażenia');
 });
 
-// ── 7. Kontrola: pokrętła istnieją i mają domyślne wartości ─────────────────
-test('PMSSB-79/7: nowe pokrętła mają domyślne wartości w heuristic-params', () => {
+// ── 7. Parzystość z czarami {X}: zdarzenie, log i ślad pokazują X ─────────
+test('PMSSB-79/7a: silnik — `permanent_cast` niesie xValue (parzystość ze `spell_cast`)', () => {
+  const state = xTable({ pool: 6 });
+  const r = execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'x', xValue: 3 });
+  assert.equal(r.ok, true, 'rzut z X jest legalny');
+  const e = state.events.find((ev) => ev.type === 'permanent_cast');
+  assert.equal(e?.xValue, 3, 'zdarzenie rzutu permanentu musi nieść X (log i panel czytają to pole)');
+  assert.equal(e?.object?.spellX, 3, 'X zostaje też na obiekcie stosu (deskryptor wejścia)');
+});
+
+test('PMSSB-79/7b: log — „zagrywa Magma Pummeler (X=3)”, to samo brzmienie co czary', () => {
+  const state = xTable({ pool: 6 });
+  execute(state, { type: 'cast_permanent', playerId: 'p2', objectId: 'x', xValue: 3 });
+  const e = state.events.find((ev) => ev.type === 'permanent_cast');
+  const tekst = describeGameEvent(e, {
+    nameOf: (id) => (id === 'magma-pummeler' ? 'Magma Pummeler' : id),
+    nameOfObject: (id) => id,
+    isPlayer: (id) => id === 'p1' || id === 'p2',
+  }, { p1: 'Nieprzyjaciel', p2: 'Ty' }, { drugaOsoba: false });
+  assert.match(tekst, /\(X=3\)$/, `log musi nazwać X (uwaga B1 właściciela): ${tekst}`);
+});
+
+test('PMSSB-79/7c: ślad bota — warianty X są rozróżnialne (audyt remisów)', () => {
+  const etykiety = probeXVariants().map((w) => w.xValue);
+  assert.deepEqual(etykiety, [4, 3, 2, 1, 0], 'X w etykiecie śladu rośnie/maleje wprost');
+  const state = xTable({ pool: 6 });
+  const { options } = decision(state);
+  const nazwy = options.map((o) => o.cmd).filter((c) => c.startsWith('cast_permanent(x'));
+  assert.equal(new Set(nazwy).size, 5,
+    `każdy wariant X musi mieć własną etykietę (klasa Krumar H): ${nazwy.join(' | ')}`);
+});
+
+// ── 8. Kontrola: pokrętła istnieją i mają domyślne wartości ─────────────────
+test('PMSSB-79/8: nowe pokrętła mają domyślne wartości w heuristic-params', () => {
   assert.equal(BASE.convergeDamagePerColor, 1);
   assert.equal(BASE.manifestDreadTriggerValue, 4);
   assert.equal(BASE.graveyardCounterWeight, 1);
