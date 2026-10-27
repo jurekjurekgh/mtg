@@ -71,12 +71,27 @@ const fmt = (v) => (v == null ? 'brak' : v.toFixed(2));
 
 // ── 1. X w koszcie permanentu ────────────────────────────────────────────────
 /** Stół: Magma Pummeler w ręce, X many w puli (X = 0..5). */
-export function xTable({ pool = 6 } = {}) {
-  const state = botTurn({ life: 20 });
+export function xTable({ pool = 6, life = 20, enemyPower = 2, otherBlocker = false } = {}) {
+  const state = botTurn({ life });
   addMana(state, 'p2', pool, { colors: ['R', 'R'] });
   put(state, 'x', 'magma-pummeler', 'p2', 'hand');
-  putSynthCreature(state, 'f1', 'p1', { power: 2, toughness: 2, mv: 2 });
+  putSynthCreature(state, 'f1', 'p1', { power: enemyPower, toughness: Math.max(2, enemyPower), mv: 2 });
+  // Wyjątek ratunkowy PMSSB-79 v2: „brak innego blokera” — kontrola negatywna
+  // dopuszcza własne nietapnięte ciało na stole.
+  if (otherBlocker) putSynthCreature(state, 'b0', 'p2', { power: 1, toughness: 1, mv: 1 });
   return state;
+}
+
+/** Decyzja bota dla scenariusza X (pula, życie, siła wroga, zapasowy bloker). */
+export function probeXGate(scenario = {}) {
+  const state = xTable(scenario);
+  const { bot } = trace(state);
+  const options = (bot.trace().at(-1)?.options ?? []).map((o) => ({ cmd: o.cmd, score: o.score }));
+  const chosen = options.filter((o) => o.cmd.startsWith('cast_permanent(x'))
+    .reduce((best, cur) => (cur.score > (best?.score ?? -Infinity) ? cur : best), null);
+  const xOf = (cmd) => Number(cmd.split(',X=')[1]?.replace(')', '') ?? NaN);
+  const castWins = chosen != null && chosen.score > (options.find((o) => o.cmd === 'pass_priority')?.score ?? 0);
+  return { options, chosen: castWins ? { type: 'cast_permanent', xValue: xOf(chosen.cmd) } : { type: 'pass_priority' } };
 }
 
 export function probeXVariants() {

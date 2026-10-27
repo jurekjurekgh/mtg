@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 import {
   blockTable, convergeTable, evasionTable, improviseTable, jiltTable,
   manifestTable, millipedeTable, probeBlock, probeConverge, probeEvasion,
-  probeImprovise, probeManifest, probeMillipede, probeXVariants, xTable,
+  probeImprovise, probeManifest, probeMillipede, probeXGate, probeXVariants, xTable,
 } from '../tools/pmssb79-batch70-sonda.mjs';
 import { execute, playerView } from '../src/engine/game-state.js';
 import { describeGameEvent } from '../src/table/session.js';
@@ -116,17 +116,59 @@ test('PMSSB-79/4b: ewazja po typie — zwykły stwór 6/6 NADAL blokuje (kontrol
 });
 
 // ── 5. Kontrole zamknięte BEZ ZMIANY (pomiar = poprawne zachowanie) ────────
-test('PMSSB-79/5a: X w koszcie permanentu — rosnące X rośnie w wycenie, X=0 karane', () => {
-  const warianty = probeXVariants();
-  const mapa = Object.fromEntries(warianty.map((w) => [w.xValue, w.score]));
-  assert.deepEqual(Object.keys(mapa).map(Number).sort((a, b) => a - b), [0, 1, 2, 3, 4],
-    `oferta musi mieć wszystkie X w granicach opłacalnej puli: ${JSON.stringify(mapa)}`);
-  // Ta sama logika co dla czarów z {X} (M237/1): wartość rośnie z X, bo X
-  // przekłada się na ciało (liczniki wejścia), a kara za manę rośnie o 1/X.
-  assert.ok(mapa[4] > mapa[3] && mapa[3] > mapa[2] && mapa[2] > mapa[1],
-    `wycena nie odróżnia X: ${JSON.stringify(mapa)}`);
-  assert.ok(mapa[0] < 0,
-    `X = 0 (stwór 0/0 ginie od SBA, CR 704.5f) musi być ujemne: ${JSON.stringify(mapa)}`);
+test('PMSSB-79/5a: X w koszcie permanentu — powyżej progu wartość rośnie z X', () => {
+  const mapa = Object.fromEntries(probeXVariants().map((w) => [w.xValue, w.score]));
+  // PMSSB-79 v2: X < progu (3) jest odrzucane bramką (pin 5f), więc porównujemy
+  // warianty dopuszczone; X = 0 (0/0, CR 704.5f) zawsze przegrywa.
+  assert.ok(mapa[4] > mapa[3], `wycena nie odróżnia X: ${JSON.stringify(mapa)}`);
+  assert.ok(mapa[0] < 0, `X = 0 musi być ujemne: ${JSON.stringify(mapa)}`);
+  assert.ok(mapa[1] === Number.NEGATIVE_INFINITY,
+    `X = 1 poniżej progu musi być wykluczone: ${JSON.stringify(mapa)}`);
+});
+
+test('PMSSB-79/5f: bramka minimalnego X — przy zbyt małej puli bot NIE rzuca karty', () => {
+  // Ta sama polityka, co dla Epic Experimentu (`test/uwagi-z-testow-b-epic-experiment-x`):
+  // rzut za X = 1..2 marnuje potencjał karty, więc bot czeka na manę.
+  const biedny = probeXGate({ pool: 4 }); // koszt X+{R}{R} → dostępne X ≤ 2
+  assert.equal(biedny.chosen.type, 'pass_priority',
+    'z pulą 4 (X ≤ 2 < próg 3) bot nie może rzucać Magma Pummeler');
+  const bogaty = probeXGate({ pool: 5 });
+  assert.equal(bogaty.chosen.type, 'cast_permanent', 'przy X = 3 rzut jest w porządku');
+  assert.equal(bogaty.chosen.xValue, 3);
+  assert.equal(probeXGate({ pool: 6 }).chosen.xValue, 4, 'bot bierze największe opłacalne X');
+});
+
+test('PMSSB-79/5g: wyjątek ratunkowy — przy letalu i braku blokerów X = 1 jest OK', () => {
+  // Życie 2, wrogi 3/3 (siła ≥ życie), brak innego blokera: ciało za X = 1
+  // jest chump-blockiem dla przeżycia — ułaskawienie progu do X ≥ 1.
+  const desperacja = probeXGate({ pool: 3, life: 2, enemyPower: 3 });
+  assert.equal(desperacja.chosen.type, 'cast_permanent',
+    'bez blokerów i z letalem wroga X = 1 musi być dopuszczone');
+  assert.equal(desperacja.chosen.xValue, 1);
+  const wiecejMany = probeXGate({ pool: 4, life: 2, enemyPower: 3 });
+  assert.equal(wiecejMany.chosen.type, 'cast_permanent', 'wyjątek działa też dla X = 2');
+});
+
+test('PMSSB-79/5h: wyjątek ratunkowy tylko WTEDY — kontrole negatywne', () => {
+  // (a) jest inny nietapnięty bloker → próg wraca do 3, bot nie rzuca za X ≤ 2.
+  assert.equal(probeXGate({ pool: 4, life: 2, enemyPower: 3, otherBlocker: true }).chosen.type,
+    'pass_priority', 'zapasowy bloker wyłącza ułaskawienie');
+  // (b) brak presji (życie 20) → próg 3 mimo małej puli.
+  assert.equal(probeXGate({ pool: 4, life: 20, enemyPower: 3 }).chosen.type,
+    'pass_priority', 'bez letalu ułaskawienie nie działa');
+});
+
+test('PMSSB-79/5i: pokrętła bramki (M429) — 0 odtwarza dawne zachowanie', () => {
+  const bezBramki = xTable({ pool: 4 });
+  const { options } = decision(bezBramki, 'p2', { xMinimumValue: 0 });
+  const passWynik = options.find((o) => o.cmd === 'pass_priority')?.score ?? 0;
+  const wybor = options.find((o) => o.cmd.startsWith('cast_permanent(x') && o.score > passWynik);
+  assert.ok(wybor, 'przy xMinimumValue = 0 bot wraca do rzutu za X = 2 (dawne zachowanie)');
+  const bezUlasawienia = xTable({ pool: 3, life: 2, enemyPower: 3 });
+  const decyzja = decision(bezUlasawienia, 'p2', { xMinimumValueLooseAtLethal: 0 });
+  const passDrugi = decyzja.options.find((o) => o.cmd === 'pass_priority')?.score ?? 0;
+  const rzut = decyzja.options.find((o) => o.cmd.startsWith('cast_permanent(x') && o.score > passDrugi);
+  assert.equal(rzut, undefined, 'przy xMinimumValueLooseAtLethal = 0 wyjątek nie działa');
 });
 
 test('PMSSB-79/5b: Improvise — bot rzuca, gdy tapnięcie artefaktów to JEDYNA droga', () => {
@@ -226,6 +268,9 @@ test('PMSSB-79/8: nowe pokrętła mają domyślne wartości w heuristic-params',
   assert.equal(BASE.manifestDreadTriggerValue, 4);
   assert.equal(BASE.graveyardCounterWeight, 1);
   assert.equal(BASE.graveyardCounterCap, 8);
+  // PMSSB-79 v2: próg minimalnego X — ta sama stała co bramka Epic Experimentu.
+  assert.equal(BASE.xMinimumValue, 3);
+  assert.equal(BASE.xMinimumValueLooseAtLethal, 1);
   // Anty-over-fix: zerowanie któregokolwiek = dawne zachowanie (piny 1c/2c/3b).
   void blockTable; void convergeTable; void evasionTable; void manifestTable;
   void millipedeTable; void xTable;

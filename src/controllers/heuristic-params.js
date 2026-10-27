@@ -132,6 +132,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'tokenPressureWeight',
   'convergeDamagePerColor', 'manifestDreadTriggerValue',
   'graveyardCounterWeight', 'graveyardCounterCap',
+  'xMinimumValue', 'xMinimumValueLooseAtLethal',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -628,6 +629,15 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 0 = dokładnie dawna liczba), a sufit chroni przed cmentarzem z 20 kartami.
   graveyardCounterWeight: 1,
   graveyardCounterCap: 8,
+  // PMSSB-79 v2 (zgłoszenie właściciela 2026-10-27): minimalne X, dla którego
+  // rzut kartą z {X} ma sens. Rzut za X = 1 marnuje potencjał karty — ta sama
+  // polityka co bramka Epic Experimentu (X ≥ 3), więc obie ścieżki czytają
+  // JEDNĄ stałą (L41). 0 = brak bramki (dawne zachowanie, anty-over-fix M429).
+  xMinimumValue: 3,
+  // 1 = wyjątek ratunkowy: przy realnym letalu wroga i braku nietapniętego
+  // blokera ciało za X = 1 jest warte swojej many jako chump-block, więc próg
+  // spada do 1. 0 = brak wyjątku (bramka zawsze).
+  xMinimumValueLooseAtLethal: 1,
   // Wejście z 0 wytrzymałości: ciało (creatureBase 70) NIE może tego przebić.
   creatureEntryDiesPenalty: 100,
   // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25

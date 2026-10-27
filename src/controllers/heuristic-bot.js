@@ -3307,6 +3307,31 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return P.convergeDamagePerColor * Math.min(spent, colors.size);
   };
   /**
+   * PMSSB-79 v2 (zgłoszenie właściciela 2026-10-27): czy X jest wystarczająco
+   * duże, żeby rzut miał sens. Rzut permanentem z {X} za X = 1 marnuje
+   * potencjał karty — dokładnie ta sama polityka co bramka Epic Experimentu
+   * (`xMinimumValue`, jedno źródło dla obu ścieżek, L41).
+   *
+   * Wyjątek ratunkowy: chump-block. Gdy wróg ma siłę ≥ nasze życie (realny
+   * letal w następnym ataku) i NIE mamy innego nietapniętego blokera, ciało
+   * wchodzące za X = 1 ma wartość przeżycia — próg spada wtedy do 1 (X = 0
+   * nadal odpada: 0/0 ginie od SBA, CR 704.5f, i nie zablokuje niczego).
+   * Wyjątek jest pokrętłem (`xMinimumValueLooseAtLethal` 0/1), więc M429
+   * odtwarza stan sprzed zmiany.
+   */
+  const xMinimumReached = (view, cmd, x, toughness) => {
+    if (!Number.isInteger(x) || x < 0) return false;
+    if (!(P.xMinimumValue > 0)) return true; // pokrętło 0 = dawne zachowanie
+    if (x >= P.xMinimumValue) return true;
+    if (!(P.xMinimumValueLooseAtLethal >= 1)) return false;
+    if (!(toughness > 0)) return false; // 0/0 nie zablokuje nic
+    const lethalNextSwing = enemyAttackPower(view) >= myLife(view)
+      && enemyCreatures(view).some((o) => combatPower(o) > 0);
+    if (!lethalNextSwing) return false;
+    const otherBlockers = myCreatures(view).filter((o) => !o.tapped && o.id !== cmd.objectId).length;
+    return otherBlockers === 0;
+  };
+  /**
    * PMSSB-67 F2: przyrost P/T od liczników WEJŚCIA (`entersWithCounters`), które pompa statyczna
    * przelicza na P/T. Deskryptor `<nazwa>_counters` (np. Necrosquito: `oil_counters`) = +1/+1 za
    * każdy licznik `<nazwa>`; licznik `+1/+1` z wejścia dodaje się wprost. Zwraca tylko przyrost, więc
@@ -11351,6 +11376,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // jako kopia — karę dostaje osobna bramka niżej, nie ta.
         const cialo = (def?.types ?? []).includes('Creature') && !def?.enterAsCopy?.subtype;
         if (cialo && (card?.toughness ?? 0) + entryStats.dToughness <= 0) score -= P.creatureEntryDiesPenalty;
+        // PMSSB-79 v2 (zgłoszenie właściciela): X poniżej progu = zmarnowany
+        // potencjał karty — wariant schodzi pod pass (jak Epic Experiment przy
+        // X < 3). Wyjątek chump-blocka opisany przy `xMinimumReached`.
+        if (cmd.xValue != null && cialo
+          && !xMinimumReached(view, cmd, spellX, (card?.toughness ?? 0) + entryStats.dToughness)) {
+          return finish(NEVER);
+        }
         // X many faktycznie wydane na rzut (koszt całkowity = baza + X).
         if (cmd.xValue != null) score -= P.creatureManaCostWeight * spellX;
         // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
@@ -12684,7 +12716,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const ownMain2 = myTurn(view)
               && view.turn?.phase === 'postcombat_main'
               && view.turn?.step === 'main2';
-            if (X < 3 || !ownMain2) return finish(NEVER);
+            // PMSSB-79 v2: próg X czytany z jednej stałej (`xMinimumValue`),
+            // wspólnej z permanentami o koszcie {X} — wcześniej twarde 3.
+            if (X < P.xMinimumValue || !ownMain2) return finish(NEVER);
             score += 5 * X + drawDeckingPenalty(view, X);
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
