@@ -14,7 +14,8 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 **Aktualny punkt zaczepienia (2026-10-27c):** [handoff](docs/setup/HANDOFF_2026-10-27c.md),
 [plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
-[audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) w otwartym
+[audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
+[uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) — wszystko w otwartym
 [PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Sesja 2026-10-27c:
 pełny audyt scalonego PR #176 (22 pliki `src/`, +1298/−89; werdykt na każdym
 pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący

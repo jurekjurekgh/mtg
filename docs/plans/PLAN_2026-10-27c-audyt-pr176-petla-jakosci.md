@@ -49,6 +49,14 @@ otwarte świadomie (opisał je raport audytu).
       614/616/106 + 601.2); (c) analizatory: `event-contract-audit`,
       `family-audit`, `bot-tie-audit`, `scoring-mulligan-audit`,
       `scoring-unvalued-audit`.
+- [x] **A6** Cztery uwagi właściciela z gry (A–D) dopisane do PR #177 po
+      audycie — każda rozpoznana sondą na żywym silniku, naprawiona u root
+      cause, z pinem i mutacją RED, osobnym commitem:
+      A `4151064` (ETB „cel obrażony w tej turze" czeka na Główną 2),
+      C `8b2ddeb` (blok bezkosztowy bije pass),
+      D `6d3e1fd` (Cuombajj: ryzyko przeciwnika + zakaz psucia własnego czaru),
+      B `5affe89` (koszt aktywacji zdolności many płaci kreator podrzędny).
+      Raport: `docs/audits/UWAGI_Z_GRY_2026-10-27c.md`.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
@@ -62,6 +70,8 @@ otwarte świadomie (opisał je raport audytu).
 2. Każdy finding: naprawa u root cause + pin czerwieniejący bez naprawy.
 3. Pętla jakości ma zmierzony wynik (partie, zgłoszenia detektorów, analizatory).
 4. Bramy zielone; liczby w README/handoffie zmierzone na końcowym drzewie (L92).
+5. Każda uwaga z gry (A–D) ma pin czerwieniejący bez naprawy i sprawdzoną
+   mutację; brak zmian legalności sprzecznych z Oracle (L57).
 
 ## Ryzyka / pułapki
 

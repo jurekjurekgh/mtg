@@ -18315,3 +18315,20 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   Piny: `audyt-pr176-o1-…` (5, mutacja 2 RED) i `audyt-pr176-o2-…` (3, mutacja
   RED); bramy po naprawach: `npm test` 8982/8982, `test:slow` 268/268, build
   76 modułów / 5519,9 kB, benchmark quick 88,1% (672 mecze).
+
+- **Sesja 2026-10-27c (PR #177) — cztery uwagi właściciela z gry (A–D)**
+  dopisane do PR po audycie, każda z pinem i mutacją RED:
+  **A** — ETB z celem wymagającym stanu z tej tury (Fathom Fleet Cutthroat)
+  czeka na Główną 2, a bramka wartości ETB nie uznaje celu za istniejący bez
+  obrażeń w tej turze; **B** — koszt aktywacji zdolności many (Apprentice
+  Wizard, lądy-konwertery) opłaca DRUGI, niezależny kreator płatności, po czym
+  gra wraca do kreatora pierwotnego czaru (auto-tap silnika nie decyduje już
+  o wyborze źródeł); **C** — blok bezkosztowy bije pass (`blockFreeAbsorbBonus`),
+  więc bot z 1/2 blokuje 1/2 albo 1/3 zamiast przepuszczać cały atak;
+  **D** — Cuombajj Witches: wycena slotu wskazywanego przez przeciwnika
+  (`opponentChosenDamageCost`), zakaz dobijania celu własnego obiektu na
+  stosie (CR 608.2b) i model zasobu ryzykownego (dobicie uszkodzonego stwora
+  albo dociśnięcie gracza przy niskim życiu — nigdy „podstrzelenie").
+  Raport: `docs/audits/UWAGI_Z_GRY_2026-10-27c.md`. Bramy: `npm test`
+  8998/8998, `test:slow` 268/268, build 76 modułów / 5530,4 kB, benchmark
+  quick 88,2% (672 mecze).

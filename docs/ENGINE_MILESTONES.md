@@ -8673,3 +8673,39 @@ preferuje kolor spoza pipów, potem kolor już zapłacony, na końcu bezbarwną
 
 Bramy: `npm test` **8982/8982**, `test:slow` **268/268**, build **76 modułów /
 5519,9 kB**, benchmark quick 672 mecze — heuristic **88,1%**.
+
+## M451 — cztery uwagi właściciela z gry: ETB z celem zależnym od tury, kreator podrzędny, blok bezkosztowy, ryzyko wyboru przeciwnika (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [UWAGI_Z_GRY_2026-10-27c](audits/UWAGI_Z_GRY_2026-10-27c.md).
+
+Cztery uwagi z rozgrywki, każda rozpoznana sondą na żywym silniku i naprawiona
+u root cause z pinem + mutacją RED:
+
+- **A (wycena rzutu)**: Fathom Fleet Cutthroat (ETB „destroy target creature an
+  opponent controls that was dealt damage this turn", CR 603.3d) był rzucany
+  w Głównej 1, gdzie nie ma celu — trigger nie wchodził na stos. Reguła
+  „czekaj na Główną 2" (dotąd tylko `entersWithCountersIf.morbid`) obejmuje
+  teraz całą rodzinę ETB z celem zależnym od zdarzeń tury
+  (`etbDefersForThisTurnsDamage`), a `etbEnemyHasTarget` zna spec
+  `creature_opponent_damaged_this_turn` (wspólny `dealtDamageThisTurn`, L41).
+- **B (UI płatności)**: `onTapSource` wysyłał `activate_ability` prosto do
+  silnika, więc koszt zdolności many (Apprentice Wizard „{U}, {T}: Add
+  {C}{C}{C}", ląd „{1}, {T}: Add {G}") opłacał deterministyczny auto-tap.
+  Teraz źródło z `activationCost` otwiera kreator PODRZĘDNY (stos
+  `manaWizardParents`), a po jego dokończeniu gra wraca do kreatora pierwotnego
+  czaru. Silnik nietknięty.
+- **C (walka)**: blok bezkosztowy (nikt nie ginie) dawał `+1 −1 = 0`, czyli
+  remis z passem — bot przepuszczał cały atak. Nowe pokrętło
+  `blockFreeAbsorbBonus`. Skutki: drabinka progów życia w
+  `audyt-pr149` (+2 w paśmie, progi bez zmian) i świadoma regeneracja
+  golden-mastera (jedna opcja nie-wybrana, wybory identyczne).
+- **D (wycena zdolności)**: Cuombajj Witches („…and 1 damage to ANY TARGET of an
+  opponent's choice") — bot dobijał cel własnego Time to Feed (czar fizzlował,
+  CR 608.2b), a slot przeciwnika nie był wyceniany wcale. Dodane:
+  `isMyPendingStackTarget` (zakaz psucia własnego obiektu na stosie),
+  `opponentChosenDamageCost` (najgorszy realny wybór przeciwnika) i model
+  zasobu ryzykownego (użycie tylko na realny zysk).
+
+Bramy: `npm test` **8998/8998**, `test:slow` **268/268**, build **76 modułów /
+5530,4 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
