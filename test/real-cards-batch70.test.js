@@ -141,3 +141,60 @@ test('pin: amountFromGraveyardCardType liczy TYLKO cmentarz kontrolera źródła
   assert.equal(state.objects.get('millipede-2').counters?.['+1/+1'], 1,
     '„in your graveyard" = cmentarz kontrolera źródła, nie przeciwnika');
 });
+
+// =========================================================================
+// E2e — „Whenever you manifest dread" + zwrot karty położonej tą drogą w grobie
+// (Paranormal Analyst, ruling DSK 2024-09-20)
+// =========================================================================
+
+test('pin: trigger „whenever you manifest dread" zwraca do ręki kartę położoną tą drogą w grobie', () => {
+  const state = game();
+  cardIn(state, { id: 'top1', zone: 'library', types: ['Sorcery'] });
+  cardIn(state, { id: 'top2', zone: 'library', types: ['Sorcery'] });
+  synthetic(state, 'analyst', {
+    types: ['Creature'], subtypes: ['Human', 'Detective'], power: 1, toughness: 3,
+    abilities: [createAbility({
+      type: ABILITY_TYPE.triggered,
+      trigger: { event: 'manifest_dread_resolved' },
+      effect: { type: 'return_context_graveyard_card_to_hand' },
+    })],
+  });
+  const source = state.objects.get('analyst');
+  applyEffect(state, { type: 'manifest_dread' }, source);
+  assert.ok(state.pendingManifestDread, 'manifest dread czeka na wybór karty');
+  // Wybieramy top1 do zmanifestowania — top2 idzie do grobu „this way".
+  const pick = commands(state).find((c) => c.type === 'resolve_manifest_dread' && c.cardId === 'top1');
+  assert.ok(pick, 'oferta wyboru karty do zmanifestowania (kontrakt legalCommands)');
+  assert.ok(execute(state, pick).ok, 'wybór przyjęty');
+  // Trigger poszedł na stos (CR 603.3) — rozstrzygamy rundę priorytetu.
+  for (let i = 0; i < 20 && state.zones.stack.length > 0; i += 1) {
+    const pass = commands(state).find((c) => c.type === 'pass_priority');
+    if (!pass) break;
+    assert.ok(execute(state, pass).ok, 'pass priority przyjęty');
+  }
+  const grave = state.zones.graveyard.map((id) => state.objects.get(id));
+  assert.equal(grave.some((o) => o.zone === 'graveyard'), false,
+    'karta z grobu „this way" wróciła do ręki (trigger rozstrzygnięty)');
+  const hand = state.zones.hand.map((id) => state.objects.get(id));
+  assert.deepEqual(hand.map((o) => o.instanceId), ['i-top2'],
+    'w ręku jest DOKŁADNIE ta karta, którą manifest dread położył w grobie (top2), a nie zmanifestowana (top1)');
+});
+
+test('pin: karta, która opuściła grób przed rozstrzygnięciem triggera, nie wraca do ręki', () => {
+  const state = game();
+  const source = synthetic(state, 'analyst', {
+    types: ['Creature'], power: 1, toughness: 3,
+    abilities: [createAbility({
+      type: ABILITY_TYPE.triggered,
+      trigger: { event: 'manifest_dread_resolved' },
+      effect: { type: 'return_context_graveyard_card_to_hand' },
+    })],
+  });
+  const graveCard = cardIn(state, { id: 'exiled-one', zone: 'graveyard' });
+  state.objects.set('exiled-one', Object.freeze({ ...graveCard, zone: 'exile' }));
+  state.zones.graveyard = state.zones.graveyard.filter((id) => id !== 'exiled-one');
+  state.zones.exile.push('exiled-one');
+  applyEffect(state, { type: 'return_context_graveyard_card_to_hand' }, source,
+    [], { manifestDreadGraveyardIds: ['exiled-one'] });
+  assert.deepEqual(state.zones.hand, [], 'brak karty do wzięcia = brak skutku (CR 608.2b)');
+});

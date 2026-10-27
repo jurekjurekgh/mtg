@@ -2962,6 +2962,24 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Batch 70 (Paranormal Analyst, CR 603.2 + ruling DSK 2024-09-20):
+    // „Whenever you manifest dread" — zdarzenie `manifest_dread_resolved`
+    // emituje KAŻDĄ akcję manifest dread (także taką, która nie mogła wykonać
+    // wszystkich kroków), a deskryptor triggera deklaruje je po nazwie zdarzenia
+    // (ADR 0002 — zero nazw kart). Kontroler źródła musi być graczem, który
+    // manifestował („you"), a kontekst niesie karty położone tą drogą w grobie.
+    if (ev.type === 'manifest_dread_resolved' && ev.playerId != null) {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.type !== 'triggered') continue;
+          if (ability.trigger?.event !== 'manifest_dread_resolved') continue;
+          tryFire(state, ability, source, [], events, {
+            manifestDreadGraveyardIds: Object.freeze([...(ev.graveyardIds ?? [])]),
+          });
+        }
+      }
+    }
     if (ev.type === 'exploited') {
       let exploiter = state.objects.get(ev.exploiterId);
       // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):

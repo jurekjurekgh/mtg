@@ -1484,6 +1484,9 @@ function describeEffect(e, ctx = {}) {
     index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     manifest_dread: () => 'manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu',
+    // Batch 70 (Paranormal Analyst): karta wskazana przez zdarzenie nadrzędne
+    // („a card you put into your graveyard this way") wraca z grobu do ręki.
+    return_context_graveyard_card_to_hand: () => 'weź do ręki kartę, którą ta droga położyła w twoim grobie',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
     // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
@@ -2037,6 +2040,9 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
     return `Gdy ten permanent zostaje tapnięty${once}: ${rew}.`;
   }
+  // Batch 70 (Paranormal Analyst, CR 603.2): „Whenever you manifest dread" —
+  // kafel nazywa zdarzenie po polsku zamiast surowego sluga mechaniki.
+  if (trigger.event === 'manifest_dread_resolved') return `Ilekroć zmanifestujesz dread: ${parts}.`;
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;

@@ -4488,6 +4488,27 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
     return;
   }
+  // Batch 70 (Paranormal Analyst, CR 608.2 + ruling DSK 2024-09-20): „put a
+  // card you put into your graveyard this way into your hand" — karty wskazane
+  // przez ZDARZENIE nadrzędne (kontekst triggera; klucz z deskryptora), a nie
+  // cel Oracle. Karta, która w międzyczasie opuściła grób, nie jest znajdowana
+  // („if a card … leaves your graveyard before … resolves, you won't be able to
+  // put that card in your hand"), więc bierzemy pierwszą, która WCIĄŻ leży
+  // w grobie. Brak trafień = brak skutku (CR 608.2b), bez crasha.
+  if (effect.type === 'return_context_graveyard_card_to_hand') {
+    const ids = context?.[effect.contextKey ?? 'manifestDreadGraveyardIds'] ?? [];
+    for (const objectId of ids) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'graveyard') continue;
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, objectId, 'hand', handId);
+      state.events.push(event('object_moved', {
+        fromId: objectId, object: moved, fromZone: 'graveyard', toZone: 'hand',
+      }));
+      return;
+    }
+    return;
+  }
   // Circle of the Land Druid: „return target land card from your graveyard to
   // your hand". Wariant generyczny return_creature_card_to_hand — filtr typu
   // opisuje deskryptor (`cardKind`), a nie nazwa karty (ADR 0002).
@@ -6779,7 +6800,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const topIds = state.zones.library
       .filter((id) => state.objects.get(id)?.controllerId === controllerId)
       .slice(0, 2);
-    if (topIds.length === 0) return;
+    if (topIds.length === 0) {
+      // Ruling DSK 2024-09-20: „In circumstances where you are instructed to
+      // manifest dread but can't perform some or all of the steps …, these
+      // abilities will still trigger." Manifest dread SAM jest zdarzeniem —
+      // emitujemy je także wtedy, gdy nie ma czego manifestować (żadnej karty
+      // nie ma w grobie „this way", więc lista jest pusta).
+      state.events.push(event('manifest_dread_resolved', {
+        playerId: controllerId, pickId: null, graveyardIds: [],
+      }));
+      return;
+    }
     if (topIds.length === 1) {
       // Tylko jedna karta w bibliotece: manifest dread bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
@@ -6794,6 +6825,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // (detektor [rules] Żywego Testera to złapał). Gałąź zerowa robi to
       // poprawnie (`return;`) — ujednolicone.
       manifestCardFaceDown(state, topIds[0], controllerId);
+      // Jedna karta = brak wyboru i brak karty do grobu, ale samo manifest dread
+      // JEST faktem (ruling DSK 2024-09-20 — patrz gałąź pustej biblioteki).
+      state.events.push(event('manifest_dread_resolved', {
+        playerId: controllerId, pickId: topIds[0], graveyardIds: [],
+      }));
       return;
     }
     state.pendingManifestDread = {

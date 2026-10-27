@@ -3166,16 +3166,24 @@ export function execute(state, input) {
     const before = state.events.length;
     manifestCardFaceDown(state, pickId, pending.playerId);
     // Druga karta do grobu (CR 701.62a).
+    const graveyardIds = [];
     for (const id of pending.objectIds.filter((oid) => oid !== pickId)) {
       const graveId = `grave-${state.objectSequence++}`;
       const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+      graveyardIds.push(graveId);
       state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
     }
     state.pendingManifestDread = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('manifest_dread_resolved', { playerId: pending.playerId, pickId }));
+    // Batch 70 (Paranormal Analyst): zdarzenie niesie karty, które TA droga
+    // położyła w grobie („a card you put into your graveyard this way") — trigger
+    // „whenever you manifest dread" nie musi ich rekonstruować z milled:true
+    // (byłoby to zgadywanie, które karty pochodzą z TEGO manifestu).
+    state.events.push(event('manifest_dread_resolved', {
+      playerId: pending.playerId, pickId, graveyardIds,
+    }));
     // Manifest Dread to CZAR (sorcery): jego efekt zawiesił się na blokującej
     // decyzji, więc po jej rozstrzygnięciu dokańczamy wstrzymany czar — inaczej
     // zostaje na stosie z pendingSpell na zawsze (crash „Pending spell odwołuje
