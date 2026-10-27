@@ -65,6 +65,7 @@ teraz obowiązkowy, a nie zalecany.
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
 | warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
+| **batch 70 — osiem rodzin nowych mechanik**: X w koszcie permanentu, prewencja zdejmująca liczniki, Improvise, `cantBeBlockedByTypes`, `manifest_dread_resolved`, `amountFromGraveyardCardType`, Converge damage, kicked + drugi cel | 10 | **PĘTLA DOMKNIĘTA (2026-10-27)** — 4 DONE (ewazja po typie, trigger manifest dread, licznik z cmentarza, Converge damage), 4 ZAMKNIĘTE BEZ ZMIANY (X, prewencja licznikowa, Improvise, drugi cel kickera) | §PMSSB-79 wyżej; plan `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; sonda `tools/pmssb79-batch70-sonda.mjs`; `test/audyt-pmssb79-batch70.test.js` (17 pinów + 4 mutacje); lustro `tools/pmssb79-mirror.mjs`; pokrętła `convergeDamagePerColor`, `manifestDreadTriggerValue`, `graveyardCounterWeight`, `graveyardCounterCap`; golden bez regeneracji |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3799,3 +3800,100 @@ kara za bite bez zabicia.
 
 **Bramy:** `node --test test/real-cards-batch62.test.js test/audyt-pmssb16-walka.test.js test/audyt-pmssb37-trzy-granice.test.js test/player-view.test.js` — **97/97**;
 `npm run build` — 75 modułów; `git diff --check` — czysto. Pełnego B0 nie uruchamiano.
+
+## PMSSB-79 — osiem rodzin batcha 70 (2026-10-27) — 4 DONE, 4 ZAMKNIĘTE BEZ ZMIANY
+
+Plan: [PLAN_2026-10-27b-pmssb79-batch70](plans/PLAN_2026-10-27b-pmssb79-batch70.md).
+Sonda: `tools/pmssb79-batch70-sonda.mjs`. Piny: `test/audyt-pmssb79-batch70.test.js`
+(17). Lustro: `tools/pmssb79-mirror.mjs`.
+
+POMIAR PRZED (`.arena/pmssb79-pre.txt`) i PO (`.arena/pmssb79-post.txt`) — te
+same scenariusze, ta sama sesja:
+
+| Rodzina | PRZED | PO | Werdykt |
+|---|---|---|---|
+| X w koszcie permanentu (Magma Pummeler, X=4…0) | 70,20 / 68,40 / 66,60 / 64,80 / −27,00 | bez zmian | ZAMKNIĘTE BEZ ZMIANY |
+| prewencja zdejmująca liczniki (blok 0/1/3 liczniki) | 0,00 / 2,00 / 5,00 | bez zmian | ZAMKNIĘTE BEZ ZMIANY (odczyt „anomalii” sprostowany) |
+| Improvise (Fen Hauler: mana 7 vs 5, artefakty 0 i 2) | 72,91 / 72,68 / 72,46 | bez zmian | ZAMKNIĘTE BEZ ZMIANY (bliźniak convoke) |
+| `cantBeBlockedByTypes` (Fen Hauler vs artefakt-bloker 6/6) | 8,00 w OBU wariantach | artefakt **8,00** vs zwykły **−10,00** | **DONE** |
+| trigger `manifest_dread_resolved` (Paranormal Analyst) | 68,40 płasko | aktywator+grób: **72,00**, brak aktywatora: 68,40 | **DONE** |
+| `amountFromGraveyardCardType` (Moldgraf Millipede) | 97,74 płasko | 0 kart: 97,74 → 3 karty: **113,94** | **DONE** |
+| Converge damage (Kaleidoscorch) | −61,00 płasko (kwota string → 0) | 1 kolor: **7,00** → 4 kolory: **9,00** | **DONE** |
+| drugi cel kickera (Jilt) | 146 / 112 / 94 / 14 | bez zmian | ZAMKNIĘTE BEZ ZMIANY |
+
+### Audyt macierzy (L41 / S11 / M429)
+
+- **L41 (jedna reguła, wszystkie ścieżki):** `cantBeBlockedByTypes` był czytany
+  tylko w `canIndividuallyBlockCrackback`; teraz filtr siedzi w
+  `attackerCanBeBlocked` (jedno źródło dla deklaracji bloków, krakbacku i
+  projekcji `attacksAloneCombatProjection`), a duplikat w crackbacku usunięty.
+  Kwota Converge liczona jedną funkcją `convergeDamageAmount` z tego samego
+  `countColorsOfManaSpent`, którego używa silnik (`effects.js`), więc oferta i
+  rozstrzygnięcie nie mogą się rozjechać.
+- **S11 (wymiar kosztu):** Converge — koszt `{1}{R}` przy czterech kolorach w
+  puli daje 2 kolory (CR 601.2f: nie można przepłacić), więc 2 obrażenia to
+  wynik poprawny; bot płaci wariant o największej liczbie kolorów wśród
+  oferowanych, nie „dowolnie dużo”. Improvise — kara `improviseTapPenalty` ×
+  ciało tapowanego artefaktu jest większa niż wartość zaoszczędzonej many,
+  dopóki mana wystarcza (pin 5c).
+- **M429 (anty-over-fix):** wszystkie cztery poprawki to DOPŁATY za pokrętłami
+  (`convergeDamagePerColor`, `manifestDreadTriggerValue`,
+  `graveyardCounterWeight`/`graveyardCounterCap`), a zerowanie każdego wraca do
+  dawnej wartości bit w bit — piny 1c, 2c, 3b. Ewazja po typie nie ma pokrętła,
+  bo jest FILTREM poprawności (bramka legalności), nie heurystyczną dopłatą;
+  jej kontrolą negatywną jest pin 4b (zwykły bloker 6/6 nadal blokuje).
+
+### Wdrożenie (generyczne, bez nazw kart — ADR 0002)
+
+- `attackerCanBeBlocked` (`heuristic-bot.js`): nowy argument `bannedTypes`
+  liczony raz z `cantBeBlockedByTypes` deskryptora; crackback korzysta z tej
+  samej ścieżki.
+- `convergeDamageAmount` + gałąź `effect.amount === 'colors_of_mana_spent'` w
+  wycenie `cast_spell` (wcześniej: **zero** wystąpień w `heuristic-bot.js`,
+  kwota stringowa spadała do 0 i czar dostawał karę „efekt bez skutku”).
+- `graveyardCounterAmount` + użycie w `ETB_EFFECT_BONUS.add_counter`
+  (`amountFromGraveyardCardType`), z sufitem `graveyardCounterCap`.
+- `manifestDreadEvidence` + gałąź `manifest_dread_resolved` w łańcuchu
+  `anticipatedTailValue` i wpis `return_context_graveyard_card_to_hand`:
+  premia tylko przy realnym aktywatorze (karta z manifest dread w ręce/na
+  stosie) I niepustym cmentarzu — bez tego trigger jest niemy (pin 2b).
+- Nowe pokrętła: `convergeDamagePerColor` 1, `manifestDreadTriggerValue` 4,
+  `graveyardCounterWeight` 1, `graveyardCounterCap` 8.
+
+### Pomyłki pomiaru (zapisane, żeby nie wracały)
+
+1. **„Luka silnika w Converge” — fałszywy alarm.** Wczesny `node -e` czytał
+   `t.damage` przed rozstrzygnięciem stosu (i po rzucie bez `pass_priority`),
+   więc wychodziło 0. Poprawny pomiar: `execute(cast_spell …)` + 8 ×
+   `pass_priority` → `damage_dealt {amount: 2}` przy czterech kolorach w puli i
+   koszcie `{1}{R}`. Pin 6a pilnuje tego kontraktu; silnik nie wymagał zmiany.
+2. **„Anomalia 0,00 w bloku”** — Pummeler z X = 0 jest 0/0 i ginie od SBA
+   (CR 704.5f), więc blok takim stworzeniem jest wart tyle samo co
+   przepuszczenie (0,00 vs 0,00). Model poprawny; pin 5e wymaga teraz
+   monotoniczności 0 → 1 → 3 liczników.
+3. **Ewazja mierzona blokerem 2/2** — bloker ginie od 5/5 niezależnie od
+   ewazji, więc scores były równe w OBU wariantach. Wniosek: do pomiaru ewazji
+   trzeba blokera, który przeżyje (tu 6/6).
+
+### Ewaluacja
+
+- Golden `bot-scoring-snapshot --dump`: `overallHash = 5be4528fc67e966f…` bez
+  zmian (0 zmienionych wyborów i wycen) — **regeneracja fixture niepotrzebna**,
+  decyzja właściciela o akceptacji nie była wymagana.
+- Tie-audit PO: `tie_top` 675 / 13688 decyzji, akcyjne 178 (te same wartości co
+  PRZED — poprawki nie tworzą nowych remisów).
+- Lustro (`tools/pmssb79-mirror.mjs`, 40 seedów × 3 talie z kartami rodziny):
+  Converge **163:157** (51,2%), manifest dread 120:120, licznik z cmentarza
+  120:120. Dwa ostatnie remisy to wynik deterministyczny: poprawki zmieniają
+  WYCENĘ, ale w tych taliach nie odwracają żadnego wyboru (identyczne partie).
+  Nawet skrajne pokrętła (×50) nie zmieniają wyniku — potwierdzenie, że brak
+  sygnału to próbka (B6), a dowodem są piny. Brak regresji.
+- Benchmark quick: **88,1%** (592/672), aggro 20,8%, random 3,0% — identycznie
+  jak PRZED poprawkami.
+
+### Bramy
+
+`npm test` **8964/8964**, `npm run test:slow` 268/268, build 76 modułów /
+5508,7 kB. Mutacje (RED potwierdzony): filtr `bannedTypes` off → 1 RED;
+`convergeDamageAmount` → 0 → 2 RED; `manifest_dread_resolved` → 0 → 1 RED;
+`graveyardCounterAmount` off → 1 RED.

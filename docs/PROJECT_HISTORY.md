@@ -20,6 +20,37 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-27d — PMSSB-79: pętla strojenia ośmiu rodzin batcha 70
+
+- Ta sama sesja, gałąź `arena/3e188a7c-mtg`, PR #176. Plan:
+  `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; raport:
+  `docs/PMSSB.md` §PMSSB-79 + wiersz rejestru; sonda
+  `tools/pmssb79-batch70-sonda.mjs`, lustro `tools/pmssb79-mirror.mjs`;
+  piny `test/audyt-pmssb79-batch70.test.js` (17).
+- Procedura PMSSB jest od dziś **obowiązkowym** etapem każdego batcha z nową
+  mechaniką (`docs/PMSSB.md`, `docs/cards/HOW_TO_ADD_CARD.md` Krok 7) — batch 69
+  i 70 szły bez niej i wymagały pętli „po fakcie”.
+- Cztery rodziny naprawione: ewazja `cantBeBlockedByTypes` (filtr w
+  `attackerCanBeBlocked` — jedno źródło dla bloków i krakbacku), trigger
+  `manifest_dread_resolved` (`manifestDreadEvidence` = aktywator + niepusty
+  grób), licznik `amountFromGraveyardCardType` (`graveyardCounterAmount` z
+  sufitem), Converge damage (`convergeDamageAmount`; wcześniej kwota stringowa
+  spadała do 0 i czar dostawał karę za „efekt bez skutku”).
+- Cztery rodziny zamknięte bez zmiany kodu z jawnym pomiarem: X w koszcie
+  permanentu (X=4 → 70,20 vs X=0 → −27,00), prewencja zdejmująca liczniki
+  (0 → 2 → 5 przy 0/1/3 licznikach), Improvise (kara tapowania > wartość many,
+  dopóki mana wystarcza), drugi cel kickera (146 vs 112 vs 94).
+- Cztery nowe pokrętła (`convergeDamagePerColor`, `manifestDreadTriggerValue`,
+  `graveyardCounterWeight`, `graveyardCounterCap`), każde zerowane = dawne
+  zachowanie; cztery mutacje potwierdziły RED.
+- Dwa fałszywe alarmy pomiaru zapisane w raporcie: „luka silnika w Converge”
+  (czytanie obrażeń przed rozstrzygnięciem stosu) i „anomalia 0,00 w bloku”
+  (Pummeler z X=0 to 0/0 ginący od SBA, CR 704.5f).
+- Bramy: `npm test` 8964/8964, `test:slow` 268/268, build 76 modułów /
+  5508,7 kB, benchmark quick 88,1% (592/672) — bez zmian względem PRZED.
+  Golden `5be4528f…` bez regeneracji; tie-audit bez nowych remisów; lustro
+  Converge 163:157, pozostałe 120:120 (brak sygnału w próbce — dowodem piny).
+
 ## 2026-10-26c — audyt scalonego PR #175 (5/5, F-1..F-3) oraz pętla jakości (PR #176)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/3e188a7c-mtg` od `main` @
