@@ -1,5 +1,12 @@
 # PLAN 2026-10-27b — PMSSB-79: nowe mechaniki batcha 70
 
+> **STATUS: WYKONANY (2026-10-27, commity `3a5d93e`/`3c065c3`/`52cd45b`).**
+> Raport: `docs/PMSSB.md` §PMSSB-79. Werdykty: 4 DONE (ewazja po typie
+> blokera, trigger manifest dread, licznik z cmentarza, Converge damage),
+> 4 ZAMKNIĘTE BEZ ZMIANY (X w koszcie permanentu, prewencja zdejmująca
+> liczniki, Improvise, drugi cel kickera). Piny:
+> `test/audyt-pmssb79-batch70.test.js` (17 + 4 mutacje).
+
 Wejście: zgłoszenie właściciela (2026-10-27) — batch 70 domknięty na zielonym
 silniku, ale **bez pętli PMSSB**. Wniosek proceduralny (Krok 7 runbooka,
 `docs/cards/HOW_TO_ADD_CARD.md`) jest już wpisany osobno (`d2b385b`); ten plan
@@ -60,3 +67,8 @@ realizuje samą pętlę dla mechanik batcha.
 
 Każda z 8 mechanik ma w raporcie werdykt (DONE / ZAMKNIĘTE BEZ ZMIANY) wraz
 z liczbami PRZED i PO, a każda zmiana kodu ma pin RED→GREEN i mutację.
+
+**Spełnione (2026-10-27):** tabela PRZED/PO dla ośmiu rodzin w §PMSSB-79,
+17 pinów, 4 mutacje RED, golden bez regeneracji, tie-audit i lustro
+udokumentowane. Dwa fałszywe alarmy pomiaru sprostowane w raporcie
+(obrażenia czytane przed rozstrzygnięciem stosu; 0/0 z X=0 a SBA).
