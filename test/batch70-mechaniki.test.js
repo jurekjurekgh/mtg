@@ -28,6 +28,10 @@ import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
 import { blockAssignmentViolation, legalBlockerOptions } from '../src/engine/combat.js';
 import { attackerCanBeBlocked } from '../src/controllers/heuristic-bot.js';
 import { coloredPipsOf } from '../src/engine/mana-cost.js';
+import { addCounter, removeCounter } from '../src/engine/counters.js';
+import { processTriggers } from '../src/engine/triggers.js';
+import { applyEffect } from '../src/engine/effects.js';
+import { runStateBasedActions } from '../src/engine/state-based.js';
 
 const REGISTRY = createCardRegistry();
 // Karta-gospodarz: dostarcza sam materiał obiektu (Instant, koszt, kolory);
@@ -431,4 +435,134 @@ test('B70/M4 Improvise: karta BEZ mechaniki odrzuca płatność artefaktami', ()
     improvisePayments: [{ artifactId: 'art0' }] });
   assert.equal(r.ok, false, 'bez deskryptora improvise płatność musi być odrzucona');
   assert.match(String(r.events?.at(-1)?.reason ?? ''), /improvise/i);
+});
+
+// =========================================================================
+// M5 — Magma Pummeler (VOW): „Magma Pummeler enters with X +1/+1 counters on
+// it. If damage would be dealt to Magma Pummeler while it has a +1/+1 counter
+// on it, prevent that damage and remove that many +1/+1 counters from it.
+// When one or more counters are removed from Magma Pummeler this way, it deals
+// that damage to any target."
+// CR 2026-09-25: 615.1a (efekt prewencji), 107.3a (X), 603.10 (LKI źródła,
+// które zginęło przed rozstrzygnięciem). Ruling VOW 2021-11-19: obrażenia
+// większe niż liczba liczników → całe zapobiegnięte, zdjęte WSZYSTKIE liczniki
+// (stwór z 0 wytrzymałości ginie), a refleksyjny trigger nadal zadaje tyle
+// obrażeń, ile liczników zdjęto.
+// =========================================================================
+
+const PUMMELER_TRIGGER = createAbility({
+  type: ABILITY_TYPE.triggered,
+  // Refleksyjny trigger: cel „any target" wybiera kontroler przy kładzeniu na stos.
+  trigger: { event: 'counter_removed', damagePreventionOnly: true, requiresTarget: { type: 'any_target' } },
+  effect: [{ type: 'damage', amountFromContext: 'countersRemoved' }],
+});
+
+function pummeler(state, id, { counters = 0, controllerId = 'p1' } = {}) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: `test-${id}`, controllerId, ownerId: controllerId,
+    zone: 'battlefield', kind: 'creature', types: ['Creature'], colors: ['R'], subtypes: ['Elemental'],
+    keywords: [], power: 0, toughness: 0,
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, preventDamageByRemovingCounter: '+1/+1' }),
+      PUMMELER_TRIGGER,
+    ],
+  });
+  if (counters > 0) addCounter(state, id, '+1/+1', counters);
+  return state.objects.get(id);
+}
+
+/** Wykonuje efekt obrażeń i przepuszcza zdarzenia przez skan triggerów. */
+function hit(state, targetId, amount) {
+  const before = state.events.length;
+  applyEffect(state, { type: 'damage', amount, targetIndex: 0 }, state.objects.get('zrodlo'), [targetId]);
+  processTriggers(state, state.events.slice(before));
+}
+
+function chooseTriggerTarget(state, targetId) {
+  let guard = 0;
+  while (guard++ < 20) {
+    const cmds = playerView(state, 'p1').legalCommands;
+    const pick = cmds.find((c) => c.type === 'resolve_trigger_target' && (c.targetIds ?? [c.targetId]).includes(targetId))
+      ?? cmds.find((c) => c.type === 'resolve_trigger_target');
+    if (!pick) return false;
+    const r = execute(state, pick.targetIds ? { ...pick, targetId } : pick);
+    assert.equal(r.ok, true, `wybór celu triggera odrzucony: ${JSON.stringify(r.events?.at(-1))}`);
+    return true;
+  }
+  return false;
+}
+
+function resolveStack(state) {
+  let guard = 0;
+  while (state.zones.stack.length > 0 && guard++ < 60) {
+    const pass = playerView(state, state.turn.priorityPlayerId).legalCommands.find((c) => c.type === 'pass_priority');
+    assert.ok(pass, 'brak pass_priority');
+    assert.equal(execute(state, pass).ok, true);
+  }
+}
+
+function pummelerState({ damage = 0, counters = 3 } = {}) {
+  const state = createGameState({ seed: 771, players: [{ id: 'p1' }, { id: 'p2' }] });
+  state.turn = jumpToStep(state.turn, 'main', 'p1');
+  state.turn.activePlayerId = state.turn.priorityPlayerId = 'p1';
+  addObject(state, {
+    id: 'zrodlo', instanceId: 'i-zrodlo', cardId: 'test-zrodlo', controllerId: 'p2', ownerId: 'p2',
+    zone: 'battlefield', kind: 'creature', types: ['Creature'], colors: ['R'], subtypes: ['Goblin'],
+    keywords: [], power: 3, toughness: 3, abilities: [],
+  });
+  pummeler(state, 'pummel', { counters });
+  return state;
+}
+
+test('B70/M5 prewencja: obrażenia mniejsze niż liczniki — zapobiegnięte, liczniki zdjęte', () => {
+  const state = pummelerState({ counters: 3 });
+  hit(state, 'pummel', 2);
+  const after = state.objects.get('pummel');
+  assert.equal(after.counters?.['+1/+1'] ?? 0, 1, 'zdjęto dokładnie 2 liczniki');
+  assert.equal(after.damage, 0, 'żadnych obrażeń na obiekcie (efekt prewencji, CR 615.1a)');
+  assert.equal(after.zone, 'battlefield', 'stwór przeżywa — został licznik');
+  assert.ok(state.events.some((e) => e.type === 'damage_prevented' && e.counterRemoval === true),
+    'log musi pokazać, że obrażenia zapobiegnięto zdejmując liczniki');
+  const triggered = state.events.find((e) => e.type === 'ability_triggered' && e.cardId === 'test-pummel');
+  assert.ok(triggered, '„when counters are removed this way” — trigger musi wejść na stos');
+});
+
+test('B70/M5 refleksyjny trigger: zadaje tyle obrażeń, ile zdjęto liczników', () => {
+  const state = pummelerState({ counters: 3 });
+  hit(state, 'pummel', 2);
+  assert.equal(chooseTriggerTarget(state, 'p2'), true, 'trigger z celem „any target” musi poprosić o cel');
+  resolveStack(state);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 18, 'przeciwnik traci 2 życia (2 zdjęte liczniki)');
+});
+
+test('B70/M5 ruling VOW: obrażenia ≥ liczniki — całe zapobiegnięte i stwór ginie, trigger nadal działa', () => {
+  const state = pummelerState({ counters: 3 });
+  hit(state, 'pummel', 5);
+  // Kolejność jak w prawdziwej komendzie: wybór celu triggera (CR 603.3d)
+  // należy do tej samej rundy, a dopiero potem reguła stanu (CR 704.5f)
+  // usuwa stwór z 0 wytrzymałości.
+  assert.equal(chooseTriggerTarget(state, 'p2'), true, 'trigger prosi o cel, zanim stwór zginie');
+  runStateBasedActions(state);
+  assert.equal(state.objects.get('pummel')?.zone ?? null, null,
+    'po zdjęciu wszystkich liczników wytrzymałość 0 → reguła stanu usuwa stwór');
+  resolveStack(state);
+  assert.equal(state.players.find((p) => p.id === 'p2').life, 17, 'obrażenia równe LICZNIE zdjętych liczników (3), nie 5');
+});
+
+test('B70/M5 bez licznika: brak efektu zastępującego — obrażenia idą normalnie', () => {
+  const state = pummelerState({ counters: 0 });
+  // 3/3, by stwór przeżył i dało się zmierzyć obrażenia.
+  state.objects.set('pummel', Object.freeze({ ...state.objects.get('pummel'), power: 3, toughness: 3 }));
+  hit(state, 'pummel', 2);
+  assert.equal(state.objects.get('pummel').damage, 2, 'bez licznika prewencja nie działa („while it has a counter”)');
+  assert.equal(state.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'test-pummel').length, 0,
+    'brak zdjętych liczników = brak triggera');
+});
+
+test('B70/M5 zwykłe zdjęcie licznika NIE odpala triggera (tylko „this way”)', () => {
+  const state = pummelerState({ counters: 2 });
+  removeCounter(state, 'pummel', '+1/+1', 1);
+  processTriggers(state, state.events.slice(-1));
+  assert.equal(state.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'test-pummel').length, 0,
+    'trigger czyta znacznik przyczyny `damagePrevention`, nie samo zdarzenie counter_removed');
 });

@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, preventDamageByRemovingCounters, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
@@ -462,7 +462,13 @@ function countArtifactsControlled(state, controllerId) {
  *    kandydata (`targetId`) i dla różnych celów daje różną kwotę,
  *  - `amountIfAddendum` — migawka rzutu (Batch60).
  */
-export function resolveDamageAmount(state, effect, sourceObject, targetId = null) {
+export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
+  // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
+  // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
+  // `amountFromContext` liczników (jedno odczytanie dla oferty i efektu).
+  if (effect?.amountFromContext && context && Number.isFinite(context[effect.amountFromContext])) {
+    return context[effect.amountFromContext];
+  }
   let amount = effect.amount;
   if (amount === 'artifacts_you_control') {
     amount = countArtifactsControlled(state, sourceObject?.controllerId);
@@ -674,7 +680,14 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // Musi zadziałać przed damage_dealt, infect, deathtouch i lifelink.
   const remainder = rawAmount - filterPrevented - shieldPrevented;
   const counterPrevented = targetIsPlayer ? 0 : preventDamageWithShieldCounter(state, targetId, remainder);
-  const dealt = remainder - counterPrevented;
+  // Batch 70 (Magma Pummeler): licznik zamiast obrażeń — kolejny efekt
+  // zastępujący w łańcuchu prewencji (CR 615.1a: efekt prewencji; kolejność
+  // nakładania efektów zastępujących wybiera gracz — CR 616.1;
+  // tarcza licznikowa jest efektem tego samego obiektu, więc stosujemy ją
+  // pierwszą, jak dotąd).
+  const removalPrevented = targetIsPlayer ? 0
+    : preventDamageByRemovingCounters(state, targetId, remainder - counterPrevented);
+  const dealt = remainder - counterPrevented - removalPrevented;
   state.events.push(event('damage_dealt', {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
@@ -1449,7 +1462,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // F (2026-10-08): kwota z WSPÓLNEGO helpera (L41) — ten sam odczyt co w
     // ofercie celu triggera (`resolve_trigger_target` w game-state.js), więc
     // bot wybiera cel widząc liczbę, która faktycznie zostanie rozstrzygnięta.
-    const amount = resolveDamageAmount(state, effect, sourceObject, targetId);
+    const amount = resolveDamageAmount(state, effect, sourceObject, targetId, context);
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }

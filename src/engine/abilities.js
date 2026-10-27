@@ -202,7 +202,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, cantBeBlockedByPowerAtLeast = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, cantBeBlockedByPowerAtLeast = null, storied = false, landwalk = null, onNthResolve = null, preventDamageByRemovingCounter = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -220,6 +220,9 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     }) : null,
     effect: effects,
     trigger: trigger ? Object.freeze(trigger) : null,
+    // Batch 70 (Magma Pummeler, CR 615.1a): efekt prewencji przy obrażeniach
+    // — nazwa licznika, który jest zdejmowany ZAMIAST zaznaczenia obrażeń.
+    preventDamageByRemovingCounter: preventDamageByRemovingCounter ?? null,
     targets: targets ? Object.freeze(targets.map((spec) => Object.freeze({ ...spec }))) : null,
     // Cycling (CR 702.29): deskryptor kwalifikacji poszukiwanej karty
     // ({ types: [...] } albo { subtypes: [...] }); obecność oznacza zdolność

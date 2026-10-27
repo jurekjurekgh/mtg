@@ -82,7 +82,13 @@ export function addCounter(state, objectId, counterName, amount = 1) {
   return syncStationKind(state, objectId);
 }
 
-export function removeCounter(state, objectId, counterName, amount = 1) {
+/**
+ * `extra` (batch 70, Magma Pummeler): dodatkowe pola zdarzenia `counter_removed`
+ * — potrzebne, gdy zdjęcie liczników jest SKUTKIEM innego efektu zastępującego
+ * (prewencja obrażeń) i triggery muszą odróżnić tę przyczynę od zwykłego
+ * zdejmowania liczników. Domyślnie brak — kształt zdarzenia bez zmian.
+ */
+export function removeCounter(state, objectId, counterName, amount = 1, extra = null) {
   const object = state.objects.get(objectId);
   if (!object || object.zone !== 'battlefield') throw new Error('Liczniki można zdejmować tylko z permanentów na polu bitwy');
   if (!counterName || !Number.isInteger(amount) || amount < 1) throw new RangeError('Licznik wymaga nazwy i dodatniej całkowitej ilości');
@@ -97,6 +103,7 @@ export function removeCounter(state, objectId, counterName, amount = 1) {
   // już opuścić pole bitwy, zanim gracz przeczyta wpis.
   const e = event('counter_removed', {
     objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName] ?? 0,
+    ...(extra ?? {}),
   });
   state.events.push(e);
   return syncStationKind(state, objectId);

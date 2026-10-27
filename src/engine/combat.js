@@ -1,7 +1,7 @@
 import { event } from '../protocol/types.js';
 import { addPoisonCounters, changeLife } from './players.js';
 import { addCounter } from './counters.js';
-import { blockingRequirementCount, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, combatDamageAmount, combatDamageByToughness, preventDamageWithShieldCounter, preventDamageByRemovingCounters, removeLoyaltyForDamage, attachmentRestrictions, creatureCantBlock, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveSubtypes, effectiveToughness, isDamagePrevented, isDamagePreventedByProtection, isProtectedFromSource, markDamage, markDealtDamageThisTurn, preventDamageTo, tapObject } from './permanents.js';
 import { attachmentsAttachedTo } from './attachments.js';
 import { effectiveProtectionFromColors } from './attachments.js';
 
@@ -1408,6 +1408,9 @@ function assignDamageToAttackers(state, events, blocker, blockerId, targets, amo
     }
     const counterBefore = state.events.length;
     blockerDealt -= preventDamageWithShieldCounter(state, attackerId, blockerDealt);
+    // Batch 70 (Magma Pummeler): obrażenia bojowe — ten sam łańcuch prewencji
+    // co w efektach (L41: jedna reguła dla obu źródeł obrażeń).
+    blockerDealt -= preventDamageByRemovingCounters(state, attackerId, blockerDealt);
     events.push(...state.events.slice(counterBefore));
     if (hasKeyword(state, blocker, 'infect')) {
       if (blockerDealt > 0) {
@@ -1491,6 +1494,7 @@ function assignDamageToBlockers(state, events, attacker, attackerId, blockers, a
     }
     const counterBefore = state.events.length;
     dealt -= preventDamageWithShieldCounter(state, blockerId, dealt);
+    dealt -= preventDamageByRemovingCounters(state, blockerId, dealt);
     events.push(...state.events.slice(counterBefore));
     if (hasKeyword(state, attacker, 'infect')) {
       if (dealt > 0) {

@@ -4204,6 +4204,28 @@ function processTriggersScan(state, recentEvents) {
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
     // turowej są dokładane WNĘTRZEM tego skanu, więc tam helper wołamy wprost
     // (bez podwójnego odpalenia).
+    // Batch 70 (Magma Pummeler): „When one or more counters are removed from
+    // this creature THIS WAY, it deals that much damage to any target.” —
+    // trigger czyta zdarzenie `counter_removed` ze znacznikiem przyczyny
+    // (`damagePrevention`), bo zwykłe zdejmowanie liczników tej zdolności nie
+    // odpala. Źródło bierzemy z pola bitwy, a gdy stwór już zginął (0
+    // wytrzymałości w regule stanu — typowy przypadek: obrażenia ≥ liczba
+    // liczników, ruling VOW 2021-11-19), z migawki w zdarzeniu (CR 603.10).
+    if (ev.type === 'counter_removed' && ev.damagePrevention === true) {
+      const liveCounterSource = state.objects.get(ev.objectId);
+      const counterSource = liveCounterSource && liveCounterSource.zone === 'battlefield'
+        ? liveCounterSource
+        : Object.freeze({
+          id: ev.objectId, cardId: ev.cardId ?? null, controllerId: ev.controllerId ?? null,
+          zone: 'battlefield', kind: 'creature', power: null, toughness: null,
+          types: [], colors: [], keywords: [], counters: {},
+          abilities: Object.freeze([...(ev.abilities ?? [])]),
+        });
+      for (const ability of effectiveAbilities(counterSource)) {
+        if (ability?.trigger?.event !== 'counter_removed') continue;
+        tryFire(state, ability, counterSource, [], events, { countersRemoved: ev.amount ?? 1 });
+      }
+    }
     if (ev.type === 'counter_added' && ev.counter === 'lore') {
       const loreSaga = state.objects.get(ev.objectId);
       if (loreSaga?.zone === 'battlefield' && loreSaga.saga) {
