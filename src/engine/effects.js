@@ -3,11 +3,12 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, preventDamageByRemovingCounters, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
+import { countGraveyardCardsOfType } from './graveyard-types.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -461,7 +462,13 @@ function countArtifactsControlled(state, controllerId) {
  *    kandydata (`targetId`) i dla różnych celów daje różną kwotę,
  *  - `amountIfAddendum` — migawka rzutu (Batch60).
  */
-export function resolveDamageAmount(state, effect, sourceObject, targetId = null) {
+export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
+  // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
+  // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
+  // `amountFromContext` liczników (jedno odczytanie dla oferty i efektu).
+  if (effect?.amountFromContext && context && Number.isFinite(context[effect.amountFromContext])) {
+    return context[effect.amountFromContext];
+  }
   let amount = effect.amount;
   if (amount === 'artifacts_you_control') {
     amount = countArtifactsControlled(state, sourceObject?.controllerId);
@@ -673,7 +680,14 @@ export function dealNonCombatDamage(state, sourceObject, targetId, rawAmount) {
   // Musi zadziałać przed damage_dealt, infect, deathtouch i lifelink.
   const remainder = rawAmount - filterPrevented - shieldPrevented;
   const counterPrevented = targetIsPlayer ? 0 : preventDamageWithShieldCounter(state, targetId, remainder);
-  const dealt = remainder - counterPrevented;
+  // Batch 70 (Magma Pummeler): licznik zamiast obrażeń — kolejny efekt
+  // zastępujący w łańcuchu prewencji (CR 615.1a: efekt prewencji; kolejność
+  // nakładania efektów zastępujących wybiera gracz — CR 616.1;
+  // tarcza licznikowa jest efektem tego samego obiektu, więc stosujemy ją
+  // pierwszą, jak dotąd).
+  const removalPrevented = targetIsPlayer ? 0
+    : preventDamageByRemovingCounters(state, targetId, remainder - counterPrevented);
+  const dealt = remainder - counterPrevented - removalPrevented;
   state.events.push(event('damage_dealt', {
     source: sourceObject.id, target: targetId, amount: dealt, combat: false,
     sourceCardId: sourceObject.cardId ?? null,
@@ -1158,7 +1172,12 @@ export function applyEnterCounters(state, objectId) {
       ? 1 + otherCreatures
       : amount === 'colors_of_mana_spent'
         ? countColorsOfManaSpent(object.manaColorsSpent)
-        : amount;
+        // Batch 70 (Magma Pummeler, CR 107.3a): „enters with X +1/+1 counters”.
+        // X jest ustalane przy rzucie i niesione na obiekt jako `spellX`;
+        // wejście bez rzucania (reanimacja, żeton-kopia) = 0 liczników.
+        : amount === 'X'
+          ? (Number.isInteger(object.spellX) ? object.spellX : 0)
+          : amount;
     addCounter(state, objectId, name, resolved);
   }
   // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters
@@ -1448,7 +1467,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // F (2026-10-08): kwota z WSPÓLNEGO helpera (L41) — ten sam odczyt co w
     // ofercie celu triggera (`resolve_trigger_target` w game-state.js), więc
     // bot wybiera cel widząc liczbę, która faktycznie zostanie rozstrzygnięta.
-    const amount = resolveDamageAmount(state, effect, sourceObject, targetId);
+    const amount = resolveDamageAmount(state, effect, sourceObject, targetId, context);
     dealNonCombatDamage(state, sourceObject, targetId, amount);
     return;
   }
@@ -3584,9 +3603,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.onlyIfTargetEnteredThisTurn && targetObj.enteredOnTurn !== state.turn?.number) return;
     // M177/B (Rakshasa Vizier): liczba liczników z kontekstu zdarzenia
     // („that many +1/+1 counters” — tyle, ile kart wyszło z grobu).
+    // Batch 70 (Moldgraf Millipede): „put a +1/+1 counter on this creature for
+    // each creature card in your graveyard” — kwota liczona PRZY ROZSTRZYGNIĘCIU
+    // z cmentarza kontrolera ŹRÓDŁA (efekt poprzedzający — mill — już się
+    // wykonał, więc zmielone karty się liczą; ruling VOW 2021-11-19).
     const counterAmount = effect.amountFromContext
       ? (context?.[effect.amountFromContext] ?? effect.amount ?? 1)
-      : (effect.amount ?? 1);
+      : effect.amountFromGraveyardCardType
+        ? countGraveyardCardsOfType(state, sourceObject.controllerId, effect.amountFromGraveyardCardType)
+        : (effect.amount ?? 1);
     addCounter(state, targetId, effect.counter, counterAmount);
     return;
   }
@@ -4479,6 +4504,27 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const handId = `hand-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, targetId, 'hand', handId);
     state.events.push(event('object_moved', { fromId: targetId, object: moved, fromZone: 'graveyard', toZone: 'hand' }));
+    return;
+  }
+  // Batch 70 (Paranormal Analyst, CR 608.2 + ruling DSK 2024-09-20): „put a
+  // card you put into your graveyard this way into your hand" — karty wskazane
+  // przez ZDARZENIE nadrzędne (kontekst triggera; klucz z deskryptora), a nie
+  // cel Oracle. Karta, która w międzyczasie opuściła grób, nie jest znajdowana
+  // („if a card … leaves your graveyard before … resolves, you won't be able to
+  // put that card in your hand"), więc bierzemy pierwszą, która WCIĄŻ leży
+  // w grobie. Brak trafień = brak skutku (CR 608.2b), bez crasha.
+  if (effect.type === 'return_context_graveyard_card_to_hand') {
+    const ids = context?.[effect.contextKey ?? 'manifestDreadGraveyardIds'] ?? [];
+    for (const objectId of ids) {
+      const object = state.objects.get(objectId);
+      if (!object || object.zone !== 'graveyard') continue;
+      const handId = `hand-${state.objectSequence++}`;
+      const moved = moveObjectDirectly(state, objectId, 'hand', handId);
+      state.events.push(event('object_moved', {
+        fromId: objectId, object: moved, fromZone: 'graveyard', toZone: 'hand',
+      }));
+      return;
+    }
     return;
   }
   // Circle of the Land Druid: „return target land card from your graveyard to
@@ -6772,7 +6818,17 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const topIds = state.zones.library
       .filter((id) => state.objects.get(id)?.controllerId === controllerId)
       .slice(0, 2);
-    if (topIds.length === 0) return;
+    if (topIds.length === 0) {
+      // Ruling DSK 2024-09-20: „In circumstances where you are instructed to
+      // manifest dread but can't perform some or all of the steps …, these
+      // abilities will still trigger." Manifest dread SAM jest zdarzeniem —
+      // emitujemy je także wtedy, gdy nie ma czego manifestować (żadnej karty
+      // nie ma w grobie „this way", więc lista jest pusta).
+      state.events.push(event('manifest_dread_resolved', {
+        playerId: controllerId, pickId: null, graveyardIds: [],
+      }));
+      return;
+    }
     if (topIds.length === 1) {
       // Tylko jedna karta w bibliotece: manifest dread bez wyboru (CR 701.62a
       // — „as many as possible"), nic do grobu.
@@ -6787,6 +6843,11 @@ function markTemporaryExile(state, exileId, sourceObject) {
       // (detektor [rules] Żywego Testera to złapał). Gałąź zerowa robi to
       // poprawnie (`return;`) — ujednolicone.
       manifestCardFaceDown(state, topIds[0], controllerId);
+      // Jedna karta = brak wyboru i brak karty do grobu, ale samo manifest dread
+      // JEST faktem (ruling DSK 2024-09-20 — patrz gałąź pustej biblioteki).
+      state.events.push(event('manifest_dread_resolved', {
+        playerId: controllerId, pickId: topIds[0], graveyardIds: [],
+      }));
       return;
     }
     state.pendingManifestDread = {

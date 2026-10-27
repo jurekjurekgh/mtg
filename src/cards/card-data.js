@@ -4808,6 +4808,231 @@ export const REAL_CARDS = Object.freeze([
     support: { status: 'supported', limitations: [] },
   }),
 
+  // ===========================================================================
+  // Batch 70 (kolekcja 426–624, lista właściciela 2026-10-27). Dane Oracle
+  // i rulingi: docs/cards/scryfall-<slug>.json; plan 1:1 z arkusza kolekcji.
+  // ===========================================================================
+
+  // 426. Paranormal Analyst (DSK 69) {1}{U} 1/3 Human Detective — „Whenever you
+  // manifest dread, put a card you put into your graveyard this way into your
+  // hand.” Trigger czyta zdarzenie `manifest_dread_resolved` (kontekst niesie
+  // karty, które TA droga położyła w grobie — bez niego zwracałby dowolną kartę).
+  defineCard({
+    id: 'paranormal-analyst', name: 'Paranormal Analyst', set: 'DSK',
+    types: ['Creature'], subtypes: ['Human', 'Detective'], colors: ['U'],
+    power: 1, toughness: 3, manaCost: 2,
+    oracleText: 'Whenever you manifest dread, put a card you put into your graveyard this way into your hand.',
+    imageUri: 'https://cards.scryfall.io/large/front/6/0/60cf954a-5503-460c-8720-8960842eea47.jpg?1783963031',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'manifest_dread_resolved' },
+        effect: { type: 'return_context_graveyard_card_to_hand' },
+      }),
+    ],
+    artId: 426, plan: 'Duskmourn',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trigger odpala także wtedy, gdy nic nie trafiło do grobu (ruling DSK 2024-09-20) — wtedy nie ma czego zwracać',
+      'zwracana jest karta, którą TA droga położyła w grobie; jeśli opuściła grób przed rozstrzygnięciem, efekt nic nie robi (CR 608.2b)',
+    ],
+  }),
+
+  // 427. Jilt (APC 27) {1}{U} Instant — Kicker {1}{R}; odbicie + po kickerze
+  // 2 obrażenia na INNY cel (deskryptory `onlyIfKicked` i `anotherTarget`).
+  defineCard({
+    id: 'jilt', name: 'Jilt', set: 'APC',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: "Kicker {1}{R} (You may pay an additional {1}{R} as you cast this spell.)\nReturn target creature to its owner's hand. If this spell was kicked, it deals 2 damage to another target creature.",
+    imageUri: 'https://cards.scryfall.io/large/front/a/0/a010d2b1-960d-4032-a47a-61fe0998bee3.jpg?1783949317',
+    kicker: { cost: 2, colors: ['R'] },
+    spell: {
+      timing: 'instant',
+      targets: [
+        { type: 'creature' },
+        { type: 'creature', onlyIfKicked: true, anotherTarget: true },
+      ],
+      effects: [
+        { type: 'bounce_permanent', targetIndex: 0 },
+        { type: 'damage', amount: 2, targetIndex: 1, condition: { wasKicked: true } },
+      ],
+    },
+    artId: 427, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'po opłaceniu kickera cel obrażeń jest OBOWIĄZKOWY („another target creature”), a bez kickera czar ma tylko cel odbicia (CR 601.2c)',
+      '„another” znaczy inny niż cel odbicia — ten sam stwór nie może być wskazany dwa razy (CR 115.4)',
+    ],
+  }),
+
+  // 429. Vault of Whispers (MRD 286) — Artifact Land: {T}: Add {B}.
+  defineCard({
+    id: 'vault-of-whispers', name: 'Vault of Whispers', set: 'MRD',
+    types: ['Artifact', 'Land'], colors: [],
+    oracleText: '{T}: Add {B}.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/3/73866487-33f4-4f64-b100-2c4ddadcd74e.jpg?1783944510',
+    // Zdolność many jak Great Furnace (artefakt-land z tej samej cyklu): produkcja
+    // IMPLIKOWANA z Oracle, obsługiwana wpisem w MANA_SOURCE_MAP — deskryptor
+    // `add_mana` byłby drugą kopią tej samej reguły (M193/M200, L41).
+    artId: 429, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 618. Kaleidoscorch (MH2 133) {1}{R} Sorcery — Converge (X = liczba KOLORÓW
+  // many wydanej) + Flashback {4}{R}.
+  defineCard({
+    id: 'kaleidoscorch', name: 'Kaleidoscorch', set: 'MH2',
+    types: ['Sorcery'], colors: ['R'], manaCost: 2,
+    oracleText: 'Converge — Kaleidoscorch deals X damage to any target, where X is the number of colors of mana spent to cast this spell.\nFlashback {4}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)',
+    imageUri: 'https://cards.scryfall.io/large/front/a/5/a5f07603-fd79-437a-9b12-495fc5a39b68.jpg?1783920987',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'any_target' }],
+      effects: [{ type: 'damage', amount: 'colors_of_mana_spent', targetIndex: 0 }],
+      flashback: { cost: 5, colors: ['R'] },
+    },
+    artId: 618, plan: 'Arcavios',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'Converge jest ability wordem (CR 207.2c) — liczy się liczba KOLORÓW many wydanej na rzut, bezbarwna się nie liczy (ruling MH2 2021-06-18)',
+      'rzut z flashbacka liczy kolory własnej płatności, a karta zawsze idzie do exile (CR 702.34a)',
+    ],
+  }),
+
+  // 619. Orazca Puzzle-Door (LCI 68) {U} Artifact — {1}, {T}, Sacrifice: look
+  // top 2, jedna do ręki, druga do grobu.
+  defineCard({
+    id: 'orazca-puzzle-door', name: 'Orazca Puzzle-Door', set: 'LCI',
+    types: ['Artifact'], colors: ['U'], manaCost: 1,
+    oracleText: '{1}, {T}, Sacrifice this artifact: Look at the top two cards of your library. Put one of those cards into your hand and the other into your graveyard.',
+    imageUri: 'https://cards.scryfall.io/large/front/2/7/27acf726-52f5-493d-8678-c12485f67747.jpg?1783965714',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 1, tap: true, sacrificeSelf: true },
+        effect: { type: 'look_top_put_one_hand_rest_grave', amount: 2 },
+      }),
+    ],
+    artId: 619, plan: 'Ixalan',
+    support: { status: 'supported', limitations: [] },
+    notes: ['przy jednej karcie w bibliotece nie ma wyboru — karta idzie do ręki (ruling LCI 2023-11-10)'],
+  }),
+
+  // 620. Fen Hauler (AER 58) {6}{B} 5/5 Insect — Improvise + „can't be blocked
+  // by artifact creatures”.
+  defineCard({
+    id: 'fen-hauler', name: 'Fen Hauler', set: 'AER',
+    types: ['Creature'], subtypes: ['Insect'], colors: ['B'],
+    power: 5, toughness: 5, manaCost: 7,
+    oracleText: "Improvise (Your artifacts can help cast this spell. Each artifact you tap after you're done activating mana abilities pays for {1}.)\nThis creature can't be blocked by artifact creatures.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/5/b5ef4616-e3c2-4448-83b1-f7d439705eaf.jpg?1783936197',
+    improvise: true,
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, cantBeBlockedByTypes: ['Artifact'] }),
+    ],
+    artId: 620, plan: 'Kamigawa',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'Improvise nie jest kosztem alternatywnym ani dodatkowym — działa po ustaleniu kosztu całkowitego i pokrywa wyłącznie część generyczną (CR 702.126b)',
+      'artefakt tapnięty na improvise nie jest już dostępny jako źródło many (ruling AER 2017-02-09)',
+    ],
+  }),
+
+  // 621. Moldgraf Millipede (VOW 209) {4}{G} 2/2 Insect Horror — ETB: mill 3,
+  // potem +1/+1 za każdą kartę stwora w grobie (także sprzed milla).
+  defineCard({
+    id: 'moldgraf-millipede', name: 'Moldgraf Millipede', set: 'VOW',
+    types: ['Creature'], subtypes: ['Insect', 'Horror'], colors: ['G'],
+    power: 2, toughness: 2, manaCost: 5,
+    oracleText: 'When this creature enters, mill three cards, then put a +1/+1 counter on this creature for each creature card in your graveyard. (To mill three cards, put the top three cards of your library into your graveyard.)',
+    imageUri: 'https://cards.scryfall.io/large/front/5/2/5252ea27-63d1-4b80-beae-8e016373d004.jpg?1783956304',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [
+          { type: 'mill_cards', amount: 3 },
+          { type: 'add_counter', counter: '+1/+1', amountFromGraveyardCardType: 'Creature' },
+        ],
+      }),
+    ],
+    artId: 621, plan: 'Innistrad',
+    support: { status: 'supported', limitations: [] },
+    notes: ['licznik liczy CAŁY cmentarz kontrolera po millu, także karty, które były tam wcześniej (ruling VOW 2021-11-19)'],
+  }),
+
+  // 622. Magma Pummeler (VOW 169) {X}{R}{R} 0/0 Elemental — wchodzi z X
+  // licznikami; prewencja obrażeń zdejmująca liczniki; refleksyjny trigger
+  // „deals that much damage to any target”.
+  defineCard({
+    id: 'magma-pummeler', name: 'Magma Pummeler', set: 'VOW',
+    types: ['Creature'], subtypes: ['Elemental'], colors: ['R'],
+    power: 0, toughness: 0, manaCost: 2,
+    oracleText: 'This creature enters with X +1/+1 counters on it.\nIf damage would be dealt to this creature while it has a +1/+1 counter on it, prevent that damage and remove that many +1/+1 counters from it. When one or more counters are removed from this creature this way, it deals that much damage to any target.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/2/42f133d6-35c3-49b7-85f6-d6cfa6bac3d9.jpg?1783956314',
+    xCost: { cap: 15 },
+    entersWithCounters: { '+1/+1': 'X' },
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, preventDamageByRemovingCounter: '+1/+1' }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: {
+          event: 'counter_removed',
+          damagePreventionOnly: true,
+          requiresTarget: { type: 'any_target' },
+        },
+        effect: [{ type: 'damage', amountFromContext: 'countersRemoved' }],
+      }),
+    ],
+    artId: 622, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'gdy obrażenia są większe niż liczba liczników, zapobiegnięte są CAŁE, a zdjęte wszystkie — stwór z 0 wytrzymałości ginie, a trigger nadal zadaje tyle obrażeń, ile zdjęto (ruling VOW 2021-11-19)',
+      'X jest ustalane przy rzucie (CR 107.3a) i wchodzi w koszt; wejście bez rzucania = 0 liczników',
+    ],
+  }),
+
+  // 623. Trigon of Rage (SOM 216) {2} Artifact — trzy charge counters; {R}{R},{T}:
+  // dołóż; {2},{T}, remove: +3/+0 do końca tury.
+  defineCard({
+    id: 'trigon-of-rage', name: 'Trigon of Rage', set: 'SOM',
+    types: ['Artifact'], colors: [], manaCost: 2,
+    oracleText: 'This artifact enters with three charge counters on it.\n{R}{R}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Target creature gets +3/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/1/1/1135f3b7-8c6b-47ff-b895-b7127836b0bf.jpg?1783941765',
+    entersWithCounters: { charge: 3 },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, colors: ['R', 'R'] },
+        effect: { type: 'add_counter', counter: 'charge', amount: 1 },
+      }),
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 2, tap: true, removeCounter: { name: 'charge', amount: 1 } },
+        targets: [{ type: 'creature' }],
+        effect: { type: 'pump', power: 3, toughness: 0 },
+      }),
+    ],
+    artId: 623, plan: 'Mirrodin',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 624. Arlinn's Wolf (WAR 151) {2}{G} 3/2 Wolf — „can't be blocked by
+  // creatures with power 2 or less” (próg GÓRNY mocy blokera).
+  defineCard({
+    id: 'arlinns-wolf', name: "Arlinn's Wolf", set: 'WAR',
+    types: ['Creature'], subtypes: ['Wolf'], colors: ['G'],
+    power: 3, toughness: 2, manaCost: 3,
+    oracleText: "This creature can't be blocked by creatures with power 2 or less.",
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/747223a5-c669-4d0e-a062-265eb47710cd.jpg?1783935303',
+    abilities: [
+      createAbility({ type: ABILITY_TYPE.static, cantBeBlockedByPower: 2 }),
+    ],
+    artId: 624, plan: 'Ravnica',
+    support: { status: 'supported', limitations: [] },
+    notes: ['raz wykonany blok zostaje, nawet gdy moc blokera spadnie (ruling WAR 2019-05-03)'],
+  }),
+
   // Token Spirit 1/1 z lataniem (Heron-Blessed Geist). Potwierdzony obraz
   // Scryfall tvow jest w `imageUri` poniżej; to nie regularna karta do talii.
   defineCard({

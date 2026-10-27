@@ -6,6 +6,7 @@
 1x Enduring Sliver
 1x Evangel of Synthesis
 1x Impulse
+1x Jilt
 1x Willbender
 1x Wormfang Newt
 1x Alaborn Trooper
@@ -21,5 +22,5 @@
 1x Koilos Roc
 1x Meteorite
 5x Plains
-4x Island
+5x Island
 1x Swamp

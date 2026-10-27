@@ -1,22 +1,23 @@
-# Ravnica (WUB)
+# Ravnica (WUR)
 
-1x Dimir Guildgate
 1x Guildscorn Ward
+1x Boros Challenger
 1x Chronic Flooding
+1x Epic Experiment
 1x Ghost Warden
-1x Liliana's Triumph
+1x Izzet Charm
 1x Piercing Rays
-1x Severed Strands
+1x Skinbrand Goblin
 1x Summary Judgment
+1x Ember Beast
 1x Expose to Daylight
 1x Spellkeeper Weird
 1x Tenth District Veteran
-1x Toll of the Invasion
 1x Withstand
 1x Azorius Justiciar
-1x Duskmantle Seer
+1x Demolish
 1x Veiled Ascension
 1x Secure the Scene
-6x Plains
-1x Island
-2x Swamp
+5x Plains
+2x Island
+2x Mountain

@@ -274,22 +274,32 @@ export const targetTypeLabel = (spec) => {
  * Bez zwijania kafel pokazywał to samo trzy razy i wyglądał na błąd danych.
  */
 function targetLabelsOf(specs) {
-  const labelOf = (spec) => (spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec));
+  // Batch 70 (Jilt, CR 115.4/601.2c): cel OZNACZONY (`anotherTarget`) nie jest
+  // „takim samym celem drugi raz" — ma własną etykietę; cel warunkowany
+  // dodatkowym kosztem (`onlyIfKicked`) istnieje tylko w wariancie kopniętym,
+  // więc kafel musi to powiedzieć (bez tego Jilt drukował „cel: stwór ×2",
+  // czyli dwa OBOWIĄZKOWE cele, których bez kickera nie ma).
+  const labelOf = (spec) => {
+    const base = spec.type === 'any_target' ? 'dowolny cel' : targetTypeLabel(spec);
+    return spec.anotherTarget ? `${base} (inny)` : base;
+  };
+  const flagged = (spec) => Boolean(spec.onlyIfKicked || spec.anotherTarget);
   const groups = [];
   for (const spec of specs) {
     // Opcjonalność opisuje CAŁĄ grupę, nie pojedynczy slot (inaczej kafel
     // powtarzałby „(opcjonalnie)" przy każdej pozycji grupy).
     const base = labelOf({ ...spec, optional: false });
     const last = groups[groups.length - 1];
-    if (last && last.base === base) last.specs.push(spec);
-    else groups.push({ base, specs: [spec] });
+    if (!flagged(spec) && last && !last.flagged && last.base === base) last.specs.push(spec);
+    else groups.push({ base, specs: [spec], flagged: flagged(spec) });
   }
   return groups.map((group) => {
-    if (group.specs.length === 1) return labelOf(group.specs[0]);
-    const count = group.specs.length;
-    return group.specs.every((spec) => spec.optional)
-      ? `${group.base} (do ${count})`
-      : `${group.base} \u00d7${count}`;
+    const text = group.specs.length === 1
+      ? labelOf(group.specs[0])
+      : (group.specs.every((spec) => spec.optional)
+        ? `${group.base} (do ${group.specs.length})`
+        : `${group.base} \u00d7${group.specs.length}`);
+    return group.specs.some((spec) => spec.onlyIfKicked) ? `jeśli kopnięty: ${text}` : text;
   });
 }
 
@@ -314,8 +324,14 @@ export function describeSpellEffects(spell) {
     return `wybierz jedno — ${modeBits.join(' / ')}`;
   }
   const parts = (spell.effects ?? []).map((effect) => {
-    if (effect.type === 'damage') return typeof effect.amount === 'number' || effect.amount === 'X'
-      ? `Obrażenia ${effect.amount}` : describeEffect(effect);
+    // Skrót „Obrażenia N" tylko dla BEZWARUNKOWYCH obrażeń o stałej kwocie;
+    // warunek (kicker) i dynamiczne źródło liczby mają pełny opis z
+    // `describeEffect` (batch 70: Jilt gubił „jeśli opłacono kicker", Converge
+    // drukował surowy slug `colors_of_mana_spent`).
+    if (effect.type === 'damage' && !effect.condition && effect.amountFromContext == null) {
+      return typeof effect.amount === 'number' || effect.amount === 'X'
+        ? `Obrażenia ${effect.amount}` : describeEffect(effect);
+    }
     // M255/D: „+${power}/+${toughness}” drukowało SUROWY SLUG, gdy wartość
     // jest dynamiczna (Tarmogoyf). Ten sam helper co buff_* (`ptPair`).
     if (effect.type === 'pump') return `${ptPair(effect.power ?? 0, effect.toughness ?? 0)} do końca tury`;
@@ -513,6 +529,10 @@ export function choiceRequestGroupKey(command) {
   // PMSSB-72 (Convoke): warianty wyboru stworów jednej karty grupują się w jeden panel.
   if (command.type === 'cast_permanent' && command.convokePayments) {
     return `permanent-convoke:${command.objectId}:${Boolean(command.kicked)}`;
+  }
+  // Batch 70 (Improvise): warianty tapnięcia artefaktów grupują się po karcie.
+  if (command.type === 'cast_permanent' && command.improvisePayments) {
+    return `permanent-improvise:${command.objectId}:${Boolean(command.kicked)}`;
   }
   if (command.type === 'cast_permanent' && command.phyrexianPayWithLife != null) {
     return `permanent-x:${command.objectId}`;
@@ -1079,6 +1099,13 @@ const DYNAMIC_AMOUNT_LABELS = Object.freeze({
   source_power: 'moc źródła',
 });
 /** Rzeczownikowa fraza dla dynamicznej liczby obrażeń („tyle obrażeń, ile ..."). */
+/** Frazy dla kwot branych z KONTEKSTU zdarzenia (`amountFromContext`,
+ * batch 70: Magma Pummeler — „deals that much damage" = tyle, ile zdjęto
+ * liczników). Wartość to dopełnienie „tyle obrażeń, ile …". */
+const CONTEXT_AMOUNT_NOUNS = Object.freeze({
+  countersRemoved: 'zdjęto liczników',
+  exiledCount: 'wygnano kart',
+});
 const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   artifacts_you_control: 'artefaktów kontrolujesz',
   basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (dziedzina)',
@@ -1228,6 +1255,18 @@ function describeEffect(e, ctx = {}) {
       const amt = e.amount;
       if (typeof amt === 'number') return damageCount(amt);
       if (amt === 'X') return 'X obrażeń';
+      // Batch 70 (Kaleidoscorch, Converge): X = liczba KOLORÓW many wydanej na
+      // rzut — bez tej gałęzi kafel drukował surowy slug `colors_of_mana_spent`.
+      if (amt === 'colors_of_mana_spent') return 'zada tyle obrażeń, ile kolorów many wydano na rzut';
+      // Kwota z KONTEKSTU zdarzenia (`amountFromContext`, batch 70: Magma
+      // Pummeler — „tyle, ile zdjęto liczników"); bez gałęzi kafel pokazywał
+      // „? obrażeń", czyli placeholder zamiast treści (M122/#5).
+      if (e.amountFromContext) {
+        const fromContext = CONTEXT_AMOUNT_NOUNS[e.amountFromContext];
+        return fromContext
+          ? `zada tyle obrażeń, ile ${fromContext}`
+          : `zada ${dynamicAmount(amt)} obrażeń (${e.amountFromContext})`;
+      }
       const noun = DYNAMIC_AMOUNT_NOUNS[amt];
       return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
     },
@@ -1260,7 +1299,16 @@ function describeEffect(e, ctx = {}) {
       const qty = typeof n === 'number' && n > 1
         ? `${n} ${polishPluralCount(n, 'licznik', 'liczniki', 'liczników')}`
         : 'licznik';
-      return `połóż ${qty} ${e.counter}${e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : ''}`;
+      const target = e.targetFromContext === 'damageSourceId' ? ' na tym stworze' : '';
+      // Batch 70 (Moldgraf Millipede): kwota liczona z cmentarza kontrolera —
+      // kafel milczał o SKĄD bierze się liczba liczników („połóż licznik +1/+1"
+      // bez „za każdą kartę stwora w grobie").
+      if (e.amountFromGraveyardCardType) {
+        const type = TARGET_TYPE_LABELS[String(e.amountFromGraveyardCardType).toLowerCase()]
+          ?? e.amountFromGraveyardCardType;
+        return `połóż licznik ${counterLabelGen(e.counter)} za każdą kartę typu ${type} w twoim cmentarzu${target}`;
+      }
+      return `połóż ${qty} ${counterLabelGen(e.counter)}${target}`;
     },
     adjust_battle_defense: () => `bitwa: ${signed(e.opponentAmount ?? 0)} liczników obrony, jeśli chroni ją przeciwnik; inaczej ${signed(e.otherwiseAmount ?? 0)}`,
     exile_permanent: () => 'wygnij artefakt/zaklęcie',
@@ -1368,6 +1416,18 @@ function describeEffect(e, ctx = {}) {
       const amt = e.amount;
       if (typeof amt === 'number') return damageCount(amt);
       if (amt === 'X') return 'X obrażeń';
+      // Batch 70 (Kaleidoscorch, Converge): X = liczba KOLORÓW many wydanej na
+      // rzut — bez tej gałęzi kafel drukował surowy slug `colors_of_mana_spent`.
+      if (amt === 'colors_of_mana_spent') return 'zada tyle obrażeń, ile kolorów many wydano na rzut';
+      // Kwota z KONTEKSTU zdarzenia (`amountFromContext`, batch 70: Magma
+      // Pummeler — „tyle, ile zdjęto liczników"); bez gałęzi kafel pokazywał
+      // „? obrażeń", czyli placeholder zamiast treści (M122/#5).
+      if (e.amountFromContext) {
+        const fromContext = CONTEXT_AMOUNT_NOUNS[e.amountFromContext];
+        return fromContext
+          ? `zada tyle obrażeń, ile ${fromContext}`
+          : `zada ${dynamicAmount(amt)} obrażeń (${e.amountFromContext})`;
+      }
       const noun = DYNAMIC_AMOUNT_NOUNS[amt];
       return noun ? `zada tyle obrażeń, ile ${noun}` : `${dynamicAmount(amt)} obrażeń`;
     },
@@ -1484,6 +1544,9 @@ function describeEffect(e, ctx = {}) {
     index_look: () => 'zobacz wierzch biblioteki i ułóż w dowolnej kolejności',
     look_top_put_one_hand_rest_grave: () => 'zobacz wierzch biblioteki, jedną do ręki, resztę do grobu',
     manifest_dread: () => 'manifest dread: zobacz 2 z wierzchu, jedną zmanifestuj (2/2 twarzą w dół), drugą do grobu',
+    // Batch 70 (Paranormal Analyst): karta wskazana przez zdarzenie nadrzędne
+    // („a card you put into your graveyard this way") wraca z grobu do ręki.
+    return_context_graveyard_card_to_hand: () => 'weź do ręki kartę, którą ta droga położyła w twoim grobie',
     // M192/Z3 (petla jakosci): deskryptor NIESIE liczbe (Rediscover the Way:
     // amount 3), a opis pokazywal literalne „X" — placeholder z kodu na
     // kaflu karty. Gdy liczba pochodzi z kosztu ({X} Merchant's Dockhand),
@@ -1655,7 +1718,9 @@ function describeEffect(e, ctx = {}) {
 const NON_MANA_COST_LABELS = Object.freeze([
   ['discardCard', 'odrzuć kartę'],
   ['discardCards', (n) => `odrzuć ${n} ${polishPluralCount(n, 'kartę', 'karty', 'kart')}`],
-  ['sacrificeSelf', 'poświęć'],
+  // Batch 70 (Orazca Puzzle-Door): „Sacrifice this artifact" — bez „to" kafel
+  // drukował „{1}, {T}, poświęć:" (poświęć CO?).
+  ['sacrificeSelf', 'poświęć to'],
   // Batch 69 (Bloodfire Infusion): „Sacrifice enchanted creature" — koszt aury.
   ['sacrificeEnchantedHost', 'poświęć dołączonego stwora'],
   ['sacrificeLand', 'poświęć ląd'],
@@ -1693,11 +1758,16 @@ function costTextOf(ability) {
   // Batch 61/170: pipy hybrydowe ({R/G}) pokazujemy jako parę kolorów —
   // „{4}{R/G}{R/G}" nie może wyglądać na „{4}{R}{G}" (inna cena, CR 107.4e).
   const hybrid = (cost.hybrid ?? []).filter((group) => Array.isArray(group) && group.length > 0);
-  if (cost.manaX) parts.push('{X}');
+  // Batch 70 (Trigon of Rage): symbole many to JEDEN ciąg („{R}{R}"), a nie
+  // lista rozdzielona przecinkami („{R}, {R}") — przecinek w koszcie rozdziela
+  // RÓŻNE rodzaje kosztu (mana, {T}, poświęcenie), nie dwa pipy.
+  const symbols = [];
+  if (cost.manaX) symbols.push('{X}');
   const generic = Math.max(0, (cost.mana ?? 0) - colors.length - hybrid.length);
-  if (generic > 0 || (!cost.manaX && colors.length === 0 && hybrid.length === 0 && cost.mana != null)) parts.push(`{${generic}}`);
-  for (const color of colors) parts.push(`{${color}}`);
-  for (const group of hybrid) parts.push(`{${group.join('/')}}`);
+  if (generic > 0 || (!cost.manaX && colors.length === 0 && hybrid.length === 0 && cost.mana != null)) symbols.push(`{${generic}}`);
+  for (const color of colors) symbols.push(`{${color}}`);
+  for (const group of hybrid) symbols.push(`{${group.join('/')}}`);
+  if (symbols.length > 0) parts.push(symbols.join(''));
   if (cost.tap) parts.push('{T}');
   // M138/Z2: koszty POZAMANOWE na kaflu karty. To ta sama lista co
   // w `abilityCostHtml` (etykieta przycisku akcji) — kafel liczył koszt
@@ -1766,8 +1836,17 @@ function describeStatic(ability) {
   // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
   // creatures with power 2 or less") nie miała reprezentacji na kaflu.
   if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
+  if (Array.isArray(ability.cantBeBlockedByTypes) && ability.cantBeBlockedByTypes.length) {
+    parts.push(`nie może być blokowany przez stwory typu ${ability.cantBeBlockedByTypes.map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? t).join(' / ')}`);
+  }
   if (Array.isArray(ability.cantBeBlockedByKeywords) && ability.cantBeBlockedByKeywords.length) {
     parts.push(`nie może być blokowany przez stwory z ${ability.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`);
+  }
+  // Batch 70 (Magma Pummeler, CR 615.1a): efekt zastępujący „jeśli obrażenia
+  // miałyby być zadane, zapobiegnij im i zdejmij tyle liczników" — bez wpisu
+  // kafel milczał o mechanice, która ratuje stwora (klasa M138/#11).
+  if (ability.preventDamageByRemovingCounter) {
+    parts.push(`zamiast obrażeń zdejmij licznik ${counterLabelGen(ability.preventDamageByRemovingCounter)}`);
   }
   if (ability.faceDownEnterFlyingCounter) parts.push('zakryte stwory wchodzą z licznikiem flying');
   if (ability.costModifier) parts.push('obniża koszt czarów');
@@ -2034,6 +2113,15 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
     const once = trigger.oncePerTurn ? ' (raz na turę)' : '';
     return `Gdy ten permanent zostaje tapnięty${once}: ${rew}.`;
   }
+  // Batch 70 (Paranormal Analyst, CR 603.2): „Whenever you manifest dread" —
+  // kafel nazywa zdarzenie po polsku zamiast surowego sluga mechaniki.
+  if (trigger.event === 'manifest_dread_resolved') return `Ilekroć zmanifestujesz dread: ${parts}.`;
+  // Batch 70 (Magma Pummeler): efekt zastępczy zdejmujący liczniki — trigger
+  // czyta WYŁĄCZNIE tę drogę (`damagePreventionOnly`), więc kafel mówi to
+  // wprost zamiast pokazywać surowy slug zdarzenia (M202/C).
+  if (trigger.event === 'counter_removed' && trigger.damagePreventionOnly) {
+    return `Gdy w ten sposób zostaną zdjęte liczniki: ${parts}.`;
+  }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;
@@ -2181,6 +2269,15 @@ export function rulesText(info) {
   const delveLine = info.delve
     ? 'Delve — każda karta wygnana z twojego grobu podczas rzucania tego czaru płaci za {1}'
     : '';
+  // Batch 70 (Fen Hauler) + Batch 69 (Kavu Primarch): Improvise i Convoke to
+  // mechaniki PŁACENIA kosztu — deskryptor bez linii na kaflu był dla gracza
+  // niewidoczny do chwili rzutu (klasa M138/#11, ta sama co Delve).
+  const improviseLine = info.improvise
+    ? 'Improvise — możesz tapnąć artefakty zamiast płacić {1} za każdy (CR 702.126a)'
+    : '';
+  const convokeLine = info.convoke
+    ? 'Convoke — możesz tapnąć stwory, by zapłacić za {1} lub pip ich koloru (CR 702.51a)'
+    : '';
   const plotLine = info.plot ? `Plot {${equipPips(info.plot.cost, info.plot.colors) || '?'}}: wygnaj z ręki, później rzuć bez kosztu` : '';
   const equipLine = equip
     ? `Equip ${equip.equipFor ? `${equip.equipFor.subtype} {${equipPips(equip.equipFor.equip, equip.equipFor.colors) || '?'}} · ` : ''}{${equipPips(equip.equip, equip.colors) || '?'}}${(equip.keywords ?? []).length ? ` — nosiciel: ${(equip.keywords).map((k) => KEYWORD_LABELS[k] ?? k).join(', ')}` : ''}${equip.pump ? ` ${signed(equip.pump.power ?? 0)}/${signed(equip.pump.toughness ?? 0)}` : ''}${equip.pumpPerAttachedEquipment ? ` — nosiciel: ${signed(equip.pumpPerAttachedEquipment.power ?? 0)}/${signed(equip.pumpPerAttachedEquipment.toughness ?? 0)} za każdy Equipment przyczepiony do niego` : ''}${equip.cantBeBlockedMaxPower != null ? ` — nosiciel o mocy ≤${equip.cantBeBlockedMaxPower} nie może być blokowany` : ''}`
@@ -2303,7 +2400,9 @@ export function rulesText(info) {
       .map(([name, n]) => `z ${n === 1 ? '1 licznikiem' : `${n} licznikami`} ${counterLabelGen(name)}`);
     return parts.length ? `Wchodzi ${parts.join(', ')}` : '';
   })();
-  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, delveLine, plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine].filter(Boolean).join(' · ');
+  return [keywordLine, spellLine, toughnessDamageLine, surgeLine, delveLine, improviseLine, convokeLine,
+    plotLine, equipLine, auraLine, abilityLine, morphLine, sagaLine, entersCountersLine, landLine]
+    .filter(Boolean).join(' · ');
 }
 
 /** Etykieta przycisku akcji — po polsku, z nazwami kart i celów.
@@ -3496,6 +3595,12 @@ function commandLabelBase(cmd, session, view) {
           return payment.color && payment.color !== 'generic' ? `${name} (${payment.color})` : `${name} (1)`;
         }).join(', ');
         return `Zagraj tapując na convoke: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
+      }
+      // Batch 70 (Improvise, CR 702.126a): etykieta pokazuje, KTÓRE artefakty
+      // się tapuje — to decyzja gracza (tapnięty artefakt nie zapłaci już many).
+      if (cmd.improvisePayments?.length) {
+        const tapped = cmd.improvisePayments.map((payment) => `${nameOfObjectId(payment.artifactId)} (1)`).join(', ');
+        return `Zagraj tapując na improvise: ${nameOfObjectId(cmd.objectId)}${cmd.kicked ? ' z kickerem' : ''} → ${tapped}`;
       }
       if (cmd.bestow) {
         const host = nameOfObjectId(cmd.targets?.[0]);
@@ -4766,6 +4871,8 @@ export function cardInfo(session, object, combat = null) {
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera.
     cantBeBlockedByKeywords: faceDown ? null : (object.cantBeBlockedByKeywords ?? null),
+    // Batch 70 (Fen Hauler): ewazja po typach blokera („artifact creatures").
+    cantBeBlockedByTypes: faceDown ? null : (object.cantBeBlockedByTypes ?? null),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
@@ -4841,6 +4948,11 @@ export function cardInfo(session, object, combat = null) {
     // a modal o wygnaniu kart z grobu pojawiał się dopiero przy rzucie
     // (rodzina M138/#11: każdy deskryptor karty ma opis na kaflu).
     delve: details.delve || null,
+    // Batch 70: te same względy co Delve — mechaniki płacenia kosztu; czytamy
+    // z DEFINICJI karty (tak jak delve), bo `playerView` tych pól nie niesie
+    // (strażnik M277 pilnuje, żeby render nie czytał spoza kontraktu widoku).
+    improvise: faceDown ? null : Boolean(details.improvise),
+    convoke: faceDown ? null : Boolean(details.convoke),
     equipment: faceDown ? null : (details.equipment || object.equipment || null),
     aura: faceDown ? null : (details.aura || object.aura || null),
     // M159/Z4: rozdziały Sagi są treścią kafla (rulesText) — bez tego pola
@@ -5195,6 +5307,9 @@ export function buildStateOverlay(visual, info) {
     })) flags.push(['kw', badge]);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    if (Array.isArray(info.cantBeBlockedByTypes) && info.cantBeBlockedByTypes.length) {
+      flags.push(['kw', `nie do zablokowania przez stwory typu ${info.cantBeBlockedByTypes.map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? t).join(' / ')}`]);
+    }
     if (Array.isArray(info.cantBeBlockedByKeywords) && info.cantBeBlockedByKeywords.length) {
       flags.push(['kw', `nie do zablokowania przez stwory z ${info.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`]);
     }
@@ -5633,6 +5748,8 @@ export function renderCardPreview(el, details, { imageMode = IMAGE_MODE.localFir
     // a modal o wygnaniu kart z grobu pojawiał się dopiero przy rzucie
     // (rodzina M138/#11: każdy deskryptor karty ma opis na kaflu).
     delve: details.delve || null,
+    improvise: details.improvise || null,
+    convoke: details.convoke || null,
     saga: details.saga || null, // M159/Z4: rozdziały Sagi w podglądzie karty
     set: details.set ?? null,
     imageUri: details.imageUri ?? null,

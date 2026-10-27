@@ -149,6 +149,11 @@ export function defineCard(data) {
     delve: Boolean(data.delve),
     // Batch 69 (Convoke, CR 702.51): deskryptor płatności stworami.
     convoke: Boolean(data.convoke),
+    // Batch 70 (Improvise, CR 702.126): deskryptor płatności artefaktami.
+    improvise: Boolean(data.improvise),
+    // Batch 70 (Magma Pummeler, CR 107.3a): X w koszcie PERMANENTU — cap
+    // ogranicza enumerację ofert (jak `spell.xCost.cap` dla czarów).
+    xCost: data.xCost ? Object.freeze({ cap: data.xCost.cap ?? 15 }) : null,
     // Kicker (CR 702.33): { cost, colors } — opcjonalny dodatkowy koszt rzutu
     // (Kor Sanctifiers: „Kicker {W}" = { cost: 1, colors: ['W'] }). Wariant
     // `kicked: true` komendy cast_permanent; flaga wasKicked ląduje na

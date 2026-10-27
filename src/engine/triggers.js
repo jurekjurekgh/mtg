@@ -2962,6 +2962,24 @@ function processTriggersScan(state, recentEvents) {
         }
       }
     }
+    // Batch 70 (Paranormal Analyst, CR 603.2 + ruling DSK 2024-09-20):
+    // „Whenever you manifest dread" — zdarzenie `manifest_dread_resolved`
+    // emituje KAŻDĄ akcję manifest dread (także taką, która nie mogła wykonać
+    // wszystkich kroków), a deskryptor triggera deklaruje je po nazwie zdarzenia
+    // (ADR 0002 — zero nazw kart). Kontroler źródła musi być graczem, który
+    // manifestował („you"), a kontekst niesie karty położone tą drogą w grobie.
+    if (ev.type === 'manifest_dread_resolved' && ev.playerId != null) {
+      for (const source of state.objects.values()) {
+        if (source.zone !== 'battlefield' || source.controllerId !== ev.playerId) continue;
+        for (const ability of effectiveAbilities(source)) {
+          if (ability?.type !== 'triggered') continue;
+          if (ability.trigger?.event !== 'manifest_dread_resolved') continue;
+          tryFire(state, ability, source, [], events, {
+            manifestDreadGraveyardIds: Object.freeze([...(ev.graveyardIds ?? [])]),
+          });
+        }
+      }
+    }
     if (ev.type === 'exploited') {
       let exploiter = state.objects.get(ev.exploiterId);
       // M361/B1 (ZŁOTO; VOW Release Notes, mtg.wiki/Exploit 2026-09-16, ADR 0030):
@@ -4186,6 +4204,28 @@ function processTriggersScan(state, recentEvents) {
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
     // turowej są dokładane WNĘTRZEM tego skanu, więc tam helper wołamy wprost
     // (bez podwójnego odpalenia).
+    // Batch 70 (Magma Pummeler): „When one or more counters are removed from
+    // this creature THIS WAY, it deals that much damage to any target.” —
+    // trigger czyta zdarzenie `counter_removed` ze znacznikiem przyczyny
+    // (`damagePrevention`), bo zwykłe zdejmowanie liczników tej zdolności nie
+    // odpala. Źródło bierzemy z pola bitwy, a gdy stwór już zginął (0
+    // wytrzymałości w regule stanu — typowy przypadek: obrażenia ≥ liczba
+    // liczników, ruling VOW 2021-11-19), z migawki w zdarzeniu (CR 603.10).
+    if (ev.type === 'counter_removed' && ev.damagePrevention === true) {
+      const liveCounterSource = state.objects.get(ev.objectId);
+      const counterSource = liveCounterSource && liveCounterSource.zone === 'battlefield'
+        ? liveCounterSource
+        : Object.freeze({
+          id: ev.objectId, cardId: ev.cardId ?? null, controllerId: ev.controllerId ?? null,
+          zone: 'battlefield', kind: 'creature', power: null, toughness: null,
+          types: [], colors: [], keywords: [], counters: {},
+          abilities: Object.freeze([...(ev.abilities ?? [])]),
+        });
+      for (const ability of effectiveAbilities(counterSource)) {
+        if (ability?.trigger?.event !== 'counter_removed') continue;
+        tryFire(state, ability, counterSource, [], events, { countersRemoved: ev.amount ?? 1 });
+      }
+    }
     if (ev.type === 'counter_added' && ev.counter === 'lore') {
       const loreSaga = state.objects.get(ev.objectId);
       if (loreSaga?.zone === 'battlefield' && loreSaga.saga) {

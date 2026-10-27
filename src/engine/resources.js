@@ -1740,6 +1740,56 @@ export function convokePaymentVariants(state, playerId, object, totalMana, requi
   return found;
 }
 
+/**
+ * Batch 70 (Improvise, CR 702.126a): „For each generic mana in this spell's
+ * total cost, you may tap an untapped artifact you control rather than pay that
+ * mana.” CR 702.126b: to NIE jest koszt dodatkowy ani alternatywny — działa po
+ * ustaleniu kosztu całkowitego, więc odejmujemy wyłącznie od części generycznej.
+ * Dlatego tapnięcie artefaktu nie może pokryć pipsa kolorowego ani `{C}`
+ * (ruling AER 2017-02-09 do Fen Hauler: „you can't pay colored or {C} costs
+ * this way”), a artefakt, którym zapłacono, nie jest już dostępny jako źródło
+ * many (wchodzi do `excludeSourceIds` rachunku `producibleMana`).
+ *
+ * Oferta = walidacja (L48): ta sama arytmetyka `improviseRemainingCost` stoi
+ * w `castPermanent`. Zwracamy warianty jako listy `{ artifactId }`; limit
+ * ofert jak przy convoke (PMSSB-72/L19) — duża plansza nie może zalać panelu.
+ */
+export function improvisePaymentVariants(state, playerId, object, totalMana, requirements, purpose = {}) {
+  if (!object?.improvise || !Number.isInteger(totalMana)) return [];
+  const genericSlots = Math.max(0, totalMana - requirements.length);
+  if (genericSlots === 0) return [];
+  const eligible = [...state.objects.values()].filter((entry) => entry.zone === 'battlefield'
+    && entry.controllerId === playerId && !entry.tapped
+    && (entry.types ?? []).includes('Artifact'));
+  if (eligible.length === 0) return [];
+  // Kolejność deterministyczna: najpierw artefakty BEZ zdolności many (nie tracimy
+  // źródła), potem pozostałe po id. Dzięki temu pierwszy wariant jest najtańszy
+  // strategicznie i stabilny między turami.
+  const ordered = [...eligible].sort((a, b) => {
+    const manaA = (a.abilities ?? []).some((ability) => ability?.type === 'activated' && ability?.cost?.mana != null) ? 1 : 0;
+    const manaB = (b.abilities ?? []).some((ability) => ability?.type === 'activated' && ability?.cost?.mana != null) ? 1 : 0;
+    return manaA - manaB || String(a.id).localeCompare(String(b.id));
+  });
+  const found = [];
+  const walk = (index, picked) => {
+    if (found.length >= 32) return;
+    if (picked.length > genericSlots) return;
+    if (index === ordered.length) {
+      if (picked.length > 0) {
+        const excluded = picked.map((entry) => entry.id);
+        if (producibleMana(state, playerId, excluded, purpose, requirements) >= totalMana - picked.length) {
+          found.push(picked.map((entry) => ({ artifactId: entry.id })));
+        }
+      }
+      return;
+    }
+    walk(index + 1, picked);
+    walk(index + 1, [...picked, ordered[index]]);
+  };
+  walk(0, []);
+  return found;
+}
+
 function hasColorRequirements(state, playerId, requirements, purpose = {}, excludeSourceIds = null) {
   if (requirements.length === 0) return true;
   return canPayColoredCost(state, playerId, requirements, excludeSourceIds, purpose);
@@ -1824,7 +1874,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements, spellManaPurpose(object));
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null, convokePayments = null } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null, convokePayments = null, improvisePayments = null, xValue = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -2021,7 +2071,24 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
     delveDeduct = delveIds.length;
   }
-  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct;
+  // Batch 70 (Magma Pummeler, CR 107.3a): „{X}” w koszcie PERMANENTU — X
+  // deklaruje rzucający, a jego wartość dokłada się do kosztu całkowitego
+  // (CR 601.2b: ogłoszenie X należy do procesu rzucania). Do tej pory X
+  // obsługiwały wyłącznie czary nie-permanentne (`castSpell`), więc stwór
+  // z {X} w koszcie nie miał żadnej ścieżki rzutu.
+  // Deskryptor X: czary niosą go w `spell.xCost`, permanenty top-level
+  // (`object.xCost` — batch 70), jedno źródło odczytu dla obu ścieżek.
+  const xDescriptor = object.spell?.xCost ?? object.xCost ?? null;
+  const xDeclared = xDescriptor ? xValue : 0;
+  if (xDescriptor) {
+    const cap = xDescriptor.cap ?? 15;
+    if (!Number.isInteger(xDeclared) || xDeclared < 0 || xDeclared > cap) {
+      throw new Error('Nieprawidłowa wartość X');
+    }
+  } else if (xValue) {
+    throw new Error('Ta karta nie ma kosztu X');
+  }
+  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct + xDeclared;
   // Strażnik sumy PRZED pierwszą mutacją kosztu (audyt PR #130, znalezisko B):
   // wygnanie kart Delve idzie niżej, więc ujemna suma (koszt alternatywny
   // mniejszy niż liczba wygnań) zostawiłaby grób w exile przy odrzuconej
@@ -2070,9 +2137,40 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
       convokeCreatureIds.push(creature.id);
     }
   }
-  const remainingCost = convokeRemainingCost(totalMana, requirements, convokeUnits);
+  let remainingCost = convokeRemainingCost(totalMana, requirements, convokeUnits);
   if (!remainingCost) throw new Error('Convoke: płatność nie pasuje do pipów kosztu całkowitego');
-  if (!treasureAltCost && producibleMana(state, playerId, convokeCreatureIds, manaPurpose, remainingCost.requirements) < remainingCost.amount) {
+  // Batch 70 (Improvise, CR 702.126a/b): tapnięte artefakty płacą za `{1}`
+  // części GENERYCZNEJ — walidacja przed jakąkolwiek mutacją (CR 601.2h).
+  // Kolejność jak przy convoke: najpierw sprawdzamy wybór, potem arytmetykę.
+  const improviseArtifactIds = [];
+  if (improvisePayments != null) {
+    if (!object.improvise) throw new Error('Ta karta nie ma mechaniki improvise');
+    if (!Array.isArray(improvisePayments) || improvisePayments.length === 0) throw new Error('Nieprawidłowy koszt improvise');
+    const seenArtifacts = new Set();
+    for (const payment of improvisePayments) {
+      const artifact = state.objects.get(payment?.artifactId);
+      if (!artifact || seenArtifacts.has(artifact.id) || artifact.zone !== 'battlefield'
+        || !(artifact.types ?? []).includes('Artifact') || artifact.controllerId !== playerId || artifact.tapped) {
+        throw new Error('Nielegalny artefakt do improvise');
+      }
+      seenArtifacts.add(artifact.id);
+      improviseArtifactIds.push(artifact.id);
+    }
+    const genericSlots = Math.max(0, totalMana - requirements.length);
+    if (improviseArtifactIds.length > genericSlots) {
+      throw new Error('Improvise płaci wyłącznie część generyczną kosztu');
+    }
+    remainingCost = {
+      amount: remainingCost.amount - improviseArtifactIds.length,
+      requirements: remainingCost.requirements,
+      // Tapnięte artefakty nie mogą jednocześnie płacić maną (CR 702.126a —
+      // tapnięcie JEST płatnością); rachunek źródeł je wyklucza.
+      excludeSourceIds: [...convokeCreatureIds, ...improviseArtifactIds],
+    };
+    if (remainingCost.amount < 0) throw new Error('Improvise: płatność przekracza koszt');
+  }
+  if (!treasureAltCost && producibleMana(state, playerId,
+    remainingCost.excludeSourceIds ?? convokeCreatureIds, manaPurpose, remainingCost.requirements) < remainingCost.amount) {
     throw new Error('Niewystarczająca mana');
   }
   if (2 * lifePaid > (player.life ?? 0)) throw new Error('Niewystarczające życie');
@@ -2107,7 +2205,8 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
 
   if (!faceDown && !plotted && !freeImpulse && !treasureAltCost
     && (convokePayments != null || (!warpCast && !madnessCast))
-    && !hasColorRequirements(state, playerId, remainingCost.requirements, manaPurpose, convokeCreatureIds)) {
+    && !hasColorRequirements(state, playerId, remainingCost.requirements, manaPurpose,
+      remainingCost.excludeSourceIds ?? convokeCreatureIds)) {
     throw new Error('Brak kolorowego źródła many');
   }
   if (treasureAltCost) {
@@ -2148,6 +2247,10 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   if (convokePayments != null) {
     for (const payment of convokePayments) tapObject(state, payment.creatureId, playerId);
   }
+  // Improvise (CR 702.126a): tapnięcie artefaktu jest płatnością zamiast many —
+  // bez `addMana` (nie produkuje many, nie podnosi `manaSpent`), więc Adamant
+  // i pokrewne „ile many wydano” go nie widzą.
+  for (const artifactId of improviseArtifactIds) tapObject(state, artifactId, playerId);
   spendMana(state, playerId, remainingCost.amount, remainingCost.requirements, manaPurpose);
   if (lifePaid > 0) changeLife(state, playerId, -2 * lifePaid);
   state.spellsCastThisTurn += 1;
@@ -2255,6 +2358,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
     ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent, manaColorsSpent,
+    // CR 107.3a: wartość X jest faktem rzutu — czyta ją wejście z licznikami
+    // („enters with X +1/+1 counters”) i efekty czytające `spellX`.
+    ...(xDescriptor ? { spellX: xDeclared } : {}),
     // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
     // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
     ...(warpCast ? { warped: true } : {}),
@@ -2303,6 +2409,12 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     // Face-down permanent jest bezbarwny (CR 702.37a — brak kosztu many) —
     // nie jest „białym czarem".
     colors: faceDown ? [] : [...(object.colors ?? [])],
+    // Batch 70 PMSSB-79 (parzystość z `spell_cast`, uwaga B1 właściciela
+    // 2026-09-18): gracz musi widzieć, za ile X zagrano permanent z {X} w
+    // koszcie — dotąd zdarzenie niosło wyłącznie `spellX` na obiekcie stosu,
+    // więc log milczał. Jedno źródło dla logu, kafla i panelu „Ruch bota";
+    // pole istnieje tylko dla kart z deskryptorem X (jak `spellX`).
+    ...(xDescriptor ? { xValue: xDeclared } : {}),
   });
   state.events.push(e);
   // entersWithCounters i bloodthirst to cechy WEJŚCIA na pole bitwy — aplikuje

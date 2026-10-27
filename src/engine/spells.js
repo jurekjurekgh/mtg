@@ -85,7 +85,24 @@ export function plottedCastAllowed(state, playerId, object) {
     && plottedTurnReached(object, state);
 }
 
-function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false) {
+/**
+ * Deskryptor celów zawężony do FAKTYCZNEGO sposobu rzutu. Batch 70 (Jilt):
+ * pozycja celu z `onlyIfKicked: true` istnieje wyłącznie wtedy, gdy
+ * zadeklarowano opłacenie kickera. CR 2026-09-25, 601.2c (dosłownie):
+ * „A spell may require some targets only if an alternative or additional cost
+ * (such as a kicker cost) or a particular mode was chosen for it; otherwise,
+ * the spell is cast as though it did not require those targets.” Deklaracja
+ * kosztu dodatkowego pada PRZED celami (CR 601.2b — „the player announces
+ * their intentions to pay any or all of those costs”), a „kicked” to własność
+ * czaru (CR 702.33d). Jedno źródło dla oferty i walidacji (L41/L48) — bez tego
+ * oferta pokazywałaby cel, którego rzut nie przyjmie.
+ */
+export function targetsForCast(object, { cleaved = false, kicked = false } = {}) {
+  const base = cleaved && object?.spell?.cleave ? (object.spell.cleave.targets ?? []) : (object?.spell?.targets ?? []);
+  return base.filter((spec) => !spec?.onlyIfKicked || kicked);
+}
+
+function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindowCast = false, kicked = false) {
   const object = state.objects.get(objectId);
   // Batch 46 (Gila Courser): karta wygnana „impulse" jest grywalna z exile
   // do końca twojej następnej tury — za PEŁNY koszt (w odróżnieniu od plot).
@@ -104,7 +121,7 @@ function requireSpell(state, playerId, objectId, targets, cleaved, abilityWindow
   }
   if (!object.spell || !object.spell.effects?.length) throw new Error('Obiekt nie ma deskryptora czaru');
   const { timing } = object.spell;
-  const targetSpec = cleaved && object.spell.cleave ? (object.spell.cleave.targets ?? []) : (object.spell.targets ?? []);
+  const targetSpec = targetsForCast(object, { cleaved, kicked });
   // M202/odznaka #2 (CR 702.170d): zaplotowana karta — niezależnie od timingu.
   if (!plottedCastAllowed(state, playerId, object)) {
     throw new Error('Zaplotowaną kartę rzuca się w swoją fazę main przy pustym stosie, najwcześniej w turze po zaplonowaniu');
@@ -167,6 +184,24 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
   referenceChosen = chosen) {
   return chosen.map((targetId, index) => {
     const spec = targetSpec[index];
+    // Batch 70 (Jilt): „…deals 2 damage to ANOTHER target creature" — fraza
+    // „another target” (CR 2026-09-25, 115.4) znaczy inny obiekt niż cel
+    // wskazany na innej pozycji TEGO czaru. CR 601.2c zakazuje powtórzenia
+    // celu tylko w obrębie JEDNEGO wystąpienia słowa „target” („The same target
+    // can’t be chosen multiple times for any one instance of the word “target”
+    // on the spell”), a tu słowo „target” pada dwa razy — więc wykluczenie
+    // bierze się z samego słowa „another”, nie z 601.2c. Sprawdzamy po PEŁNYM
+    // wektorze, nie po kolejności.
+    // Kontrola potrzebuje PEŁNEGO wektora celów: `collectLegalTargets`
+    // (CR 608.2b) waliduje po jednej pozycji, przekazując pełny `chosen`
+    // w `referenceChosen` — wtedy długości się różnią i porównanie pomijamy
+    // (pozycja i tak została sprawdzona przy rzucie).
+    if (spec?.anotherTarget && targetId != null && targetSpec.length === referenceChosen.length) {
+      const otherTargets = referenceChosen.filter((id, i) => i !== index && id != null);
+      if (otherTargets.includes(targetId)) {
+        throw new Error(`Nielegalny cel: ${targetId} („another target" musi być innym obiektem)`);
+      }
+    }
     // Batch 45 (Assert Perfection, CR 601.2c): „up to one target" — pozycja
     // opcjonalna może zostać świadomie pusta (null) i to nie jest błąd.
     if (targetId == null && spec?.optional) return null;
@@ -713,7 +748,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
   if (preObject?.spell?.fireball) {
     return castFireball(state, playerId, objectId, targets, xValue, abilityWindowCast);
   }
-  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast);
+  const { object, targetSpec, chosen } = requireSpell(state, playerId, objectId, targets, false, abilityWindowCast, kicked);
   const player = state.players.find((entry) => entry.id === playerId);
   const targetObjects = validateTargets(state, targetSpec, chosen, playerId, object.colors ?? [], object);
   // CR 601.2d: podział obrażeń i cele obrażeń (Fiery Justice) wybiera się przy
@@ -1914,6 +1949,12 @@ export function legalTargetCombos(state, playerId, targetSpec, sourceObject = nu
         if (candidate != null
           && (prefix.some((chosen, j) => chosen === candidate && tags[j] === tag)
             || current.some((chosen) => chosen === candidate))) continue;
+        // Batch 70 (Jilt): pozycja z `anotherTarget` nie może powtórzyć obiektu
+        // wybranego na INNEJ pozycji tego samego czaru (CR 115.4 — fraza
+        // „another target”) — oferta musi być tym samym zbiorem, który
+        // przepuści walidacja (L48).
+        if (candidate != null && spec?.anotherTarget
+          && [...prefix, ...current].some((chosen) => chosen != null && chosen === candidate)) continue;
         step(position + 1, [...current, candidate], candidate == null,
           candidate == null || !poolOfIndex
             ? minIndex
@@ -3459,6 +3500,17 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       || isFreeImpulseCast(object));
     const pushKickerSpellCasts = (cast) => {
       if (!object.kicker) return;
+      // Batch 70 (Jilt): „If this spell was kicked, it deals 2 damage to ANOTHER
+      // target creature" — wariant kickedowany ma POZYCJĘ CELU więcej, więc
+      // cele liczymy od nowa z deskryptora kicked (nie dziedziczymy wektora
+      // rzutu bez kickera). CR 601.2c: czar „requires some targets only if”
+      // wybrano koszt dodatkowy; liczba celów jest ustalana raz (601.2c).
+      const kickedSpec = targetsForCast(object, { kicked: true });
+      const kickedBaseCasts = kickedSpec.length === targetSpec.length
+        ? [cast]
+        : legalTargetCombos(state, playerId, kickedSpec, object, targetOrderPreference)
+          .map((combo) => ({ ...cast, targets: combo }));
+      if (kickedBaseCasts.length === 0) return;
       const kickerCost = object.kicker.cost ?? 0;
       const kickerPips = (object.kicker.colors ?? []).map((color) => [color]);
       const freeCast = freeCastForKicker();
@@ -3504,11 +3556,13 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
         if (base + kickerCost - (k ?? 0) > manaAvailableForOffer(object, [...pips, ...kickerPips])) continue;
         if (pips.length + kickerPips.length > 0
           && !canPayColoredCostForOffer(state, playerId, [...pips, ...kickerPips], ofertaUnits.units)) continue;
-        for (const landId of landChoices) {
-          const kickedCast = { ...cast, kicked: true };
-          if (landId != null) kickedCast.kickerLandId = landId;
-          if (k != null) kickedCast.phyrexianPayWithLife = k;
-          casts.push(kickedCast);
+        for (const kickedBase of kickedBaseCasts) {
+          for (const landId of landChoices) {
+            const kickedCast = { ...kickedBase, kicked: true };
+            if (landId != null) kickedCast.kickerLandId = landId;
+            if (k != null) kickedCast.phyrexianPayWithLife = k;
+            casts.push(kickedCast);
+          }
         }
       }
     };
@@ -3591,7 +3645,10 @@ export function legalSpellCasts(state, playerId, ofertaUnitsPodany = null) {
       }
       continue;
     }
-    const targetSpec = object.spell.targets ?? [];
+    // Batch 70 (Jilt): pozycje celu z `onlyIfKicked` istnieją tylko po opłaceniu
+    // kickera — rzut niekickedowany enumeruje deskryptor BEZ nich, a wariant
+    // kickedowany (pushKickerSpellCasts) enumeruje pełny (L48: oferta = walidacja).
+    const targetSpec = targetsForCast(object);
     // Dodatkowy koszt „As an additional cost to cast this spell, sacrifice a
     // creature" (Village Rites): enumerujemy po stworach kontrolera; brak stwora
     // = czar niedostępny. Cel-poświęcenie niesie komenda (sacrificeTargetId).

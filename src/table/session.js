@@ -152,6 +152,8 @@ export function commandOptionKey(cmd) {
     // Batch 57/B4: ptaszek/klucz sondy dla wyboru kart wygnania w Delve.
     'delveExileIds',
     'convokePayments',
+    // Batch 70 (Improvise): warianty tapnięcia artefaktów różnią się wyborem.
+    'improvisePayments',
     // M112: komendy WALKI budowane przez wizard (declare_attackers /
     // declare_blockers) — bez tych pól wszystkie warianty ataku miały ten sam
     // klucz, więc sonda „oferta bez skutku" mierzyłaby nie tę komendę,
@@ -340,6 +342,28 @@ export function isRulesZoneMove(e) {
   return e.type === 'object_moved' && (e.bounced === true || e.sba === 'zero_loyalty');
 }
 
+/**
+ * Czy zdarzenie to PŁATNOŚĆ KOSZTU przez wygnanie karty (CR 601.2h)?
+ *
+ * Trzy rodzaje tej samej klasy: `escape` (CR 702.138, M103/D), dodatkowy
+ * koszt rzucenia (E7/E, Makeshift Mauler) i `delve` (CR 702.66, uwaga W —
+ * Sultai Scavenger). Koszt wygnania jest płatnością jak mana: gracz musi
+ * widzieć, CO zapłacił, niezależnie od tego, kto rzuca czar (L24/L100).
+ *
+ * Jedno miejsce prawdy dla bramki panelu „Rozgrywka" (`isMainLogEvent`).
+ * Wcześniej bramka znała tylko `additionalCost`, więc płatność Delve i Escape
+ * CZŁOWIEKA nie trafiała do `botMoves` (audyt PR #175, znalezisko F-1 —
+ * klasa L99: naprawa dopisana w warstwie opisu, pominięta w warstwie bramki).
+ *
+ * Rodzaj niesie POLE ZDARZENIA, nie nazwa karty (ADR 0002). Zwykłe zmiany
+ * stref zostają szumem — inaczej każda karta wchodząca do grobu zaśmiecałaby
+ * modal (antyp-over-fix pinu P/2).
+ */
+export function isCostPaymentZoneMove(e) {
+  return e?.type === 'object_moved'
+    && (e.additionalCost === true || e.escape === true || e.delve === true);
+}
+
 export function isBotMoveNoise(e, { botActing = false, stackSize = 0, humanId = HUMAN_ID } = {}) {
   if (isRulesZoneMove(e)) return false;
   if (e?.type === 'card_drawn') return e.source !== 'effect' && e.playerId !== humanId;
@@ -420,6 +444,10 @@ function defaultBotFactory(seed, ctx) {
     // `src/table/` (strażnik M212 pilnuje `src/engine`/`src/cards`).
     lock_untap: 'cel nie odkręca się w kroku odkręcania, dopóki źródło pozostaje tapnięte (odkręci się, gdy źródło wstanie albo je stracisz)',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
+    // Batch 70 (Orazca Puzzle-Door): pierwsza AKTYWOWANA zdolność z tym
+    // efektem w katalogu (dotąd występował wyłącznie w triggerach) — bez
+    // wpisu log aktywacji pokazywał gołą nazwę karty (klasa L84, M255/C1).
+    look_top_put_one_hand_rest_grave: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta do grobu',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
     attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
@@ -818,6 +846,12 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   // Batch65 (Zombie Boa): „becomes blocked by a creature of that color".
   becomes_blocked_by_color: 'zablokowanie przez stwora wybranego koloru',
+  // Batch 70 (Paranormal Analyst): „Whenever you manifest dread" — sam fakt
+  // rozstrzygnięcia manifest dread (CR 701.62a), także bez karty do grobu.
+  manifest_dread_resolved: 'rozstrzygnięcie manifest dread',
+  // Batch 70 (Magma Pummeler): licznik zdjęty prewencją obrażeń (efekt
+  // zastępczy — tylko ta droga odpala refleksyjny trigger).
+  counter_removed: 'zdjęcie licznika',
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
   cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',
@@ -1351,7 +1385,11 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         // Fraza w nawiasie, by nie rozbijać gramatyki zdania, spójnie z
         // formatem innych suffixów (extraCost/phrexian).
         const warpSuffix = e.warped ? ' (za Warp)' : '';
-        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}${warpSuffix}`;
+        // Batch 70 PMSSB-79: X w koszcie PERMANENTU (Magma Pummeler, CR 107.3a)
+        // — ta sama fraza co `spell_cast` i `ability_activated` (L41). Bez niej
+        // relacja milczała o tym, ile many poszło w X i jak duży stwór wszedł.
+        const xPart = e.xValue != null ? ` (X=${e.xValue})` : '';
+        return `${whoN(e.playerId)} zagrywa ${nameOf(e.object?.cardId)}${extraCost}${phyrexian}${warpSuffix}${xPart}`;
       }
       case 'spell_cast': {
         // M73d (C): cel-gracz (Inspiration/Sweet Oblivion) — imię zamiast „?"
@@ -1528,7 +1566,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.protection) reason = ' (ochrona przed kolorem)';
         else if (e.inspireAwe || e.combatFog) reason = ' (prewencja obrażeń bojowych)';
         else if (e.shield) reason = ' (tarcza prewencji)';
-        else reason = ' (prewencja)';
+        // Batch 70 (Magma Pummeler, CR 615.1a): prewencja przez ZDJĘCIE
+        // liczników. Bez tego wariantu log mówił tylko „zapobiegnięto", a gracz
+        // nie wiedział, że stwór stracił liczniki (i że przez to mógł zginąć
+        // w regule stanu) — widoczna zmiana stanu bez wpisu (L24).
+        else if (e.counterRemoval) {
+          reason = ` (prewencja — zdjęto ${e.countersRemoved ?? 0} `
+            + `${polishPluralCount(e.countersRemoved ?? 0, 'licznik', 'liczniki', 'liczników')} ${e.counterName ?? '+1/+1'})`;
+        } else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
       case 'damage_fizzled': {
@@ -2834,7 +2879,9 @@ export function isMainLogEvent(e, ctx = {}) {
   if (e?.type === 'turn_started' || e?.type === 'game_started' || e?.type === 'step_advanced') return true;
   if (phase === 'combat') return true;
   if (isRulesZoneMove(e)) return true;
-  if (e?.type === 'object_moved' && e?.additionalCost === true) return true;
+  // Płatność kosztu przez wygnanie (escape / dodatkowy koszt / delve) — jedna
+  // reguła klasy, nie flaga po fladze (F-1 z audytu PR #175, CR 601.2h).
+  if (isCostPaymentZoneMove(e)) return true;
   if (isBotDecisionPrompt(e, { humanId })) return true;
   if (stackSize > 0 && BOT_RESOLUTION_EVENTS.has(e?.type)) return true;
   // UWAGA D (2026-09-25b): jawne odsłonięcia i wynik discover — zawsze, dla

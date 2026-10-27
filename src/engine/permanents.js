@@ -70,6 +70,52 @@ export function preventDamageWithShieldCounter(state, objectId, amount) {
   return amount;
 }
 
+/**
+ * Batch 70 (Magma Pummeler, CR 615.1a — efekt PREWENCJI: „Effects that use the
+ * word “prevent” are prevention effects…”): efekt zastępujący przy obrażeniach
+ * — „If damage would be dealt to this creature while it has a +1/+1 counter on
+ * it, prevent that damage and remove that many +1/+1 counters from it.”
+ * Deskryptor generyczny `preventDamageByRemovingCounter: '<nazwa licznika>'`
+ * (własna zdolność stała albo nadana sprzętem — jak próg ewazji), więc reguła
+ * nie zna żadnej karty (ADR 0002). Zwraca liczbę obrażeń ZAPOBIEGANYCH, którą
+ * wołający odejmuje od puli (wzorzec `preventDamageWithShieldCounter`).
+ *
+ * Ruling VOW 2021-11-19: gdy obrażenia są większe niż liczba liczników, całe
+ * obrażenia są zapobiegane, a zdjęte są WSZYSTKIE liczniki (nie „tyle, ile
+ * się zmieści”). Stwór bez licznika nie ma efektu zastępującego — obrażenia
+ * idą normalnie („while it has a +1/+1 counter on it”).
+ */
+export function preventDamageByRemovingCounters(state, objectId, amount) {
+  const object = state.objects.get(objectId);
+  if (!(amount > 0) || !object || object.zone !== 'battlefield') return 0;
+  const ability = effectiveAbilities(object).find((entry) => entry?.type === 'static'
+    && entry.preventDamageByRemovingCounter);
+  if (!ability) return 0;
+  const counterName = ability.preventDamageByRemovingCounter;
+  const available = object.counters?.[counterName] ?? 0;
+  if (available <= 0) return 0;
+  const removed = Math.min(amount, available);
+  // CR 603.10: zdolność „when counters are removed this way” jest już na
+  // stosie, gdy stwór ginie za 0 wytrzymałości w regule stanu — zdarzenie
+  // niesie więc kontrolera i migawkę zdolności (obiekt zniknie z pola bitwy,
+  // zanim skan triggerów je przeczyta).
+  removeCounter(state, objectId, counterName, removed, {
+    damagePrevention: true,
+    controllerId: object.controllerId,
+    abilities: Object.freeze([...(effectiveAbilities(object) ?? [])]),
+  });
+  state.events.push(event('damage_prevented', {
+    objectId, cardId: object.cardId, amount,
+    countersRemoved: removed, counterRemoval: true, counterName,
+  }));
+  // Ruling VOW 2021-11-19: „If the damage is greater than the number of
+  // counters, ALL the damage is prevented and all the counters are removed.”
+  // Efekt zastępujący działa raz (warunek „while it has a counter” jest prawdziwy
+  // w chwili zastosowania), więc zapobiegamy CAŁEJ kwocie — liczniki schodzą
+  // tylko tyle, ile jest.
+  return amount;
+}
+
 /** CR120.3c: niezależny skutek obrażeń (także creature/PW), już po prewencji.
  * Nie ma ujemnych liczników — zdejmujemy najwyżej aktualną lojalność. */
 export function removeLoyaltyForDamage(state, object, amount) {

@@ -36,6 +36,7 @@ const MANA_SOURCE_MAP = Object.freeze({
   'secluded-steppe': { colors: ['W'], amount: 1 },
   'raucous-carnival': { colors: ['R', 'W'], amount: 1 },
   'great-furnace': { colors: ['R'], amount: 1 },
+  'vault-of-whispers': { colors: ['B'], amount: 1 }, // batch 70 (artefakt-land MRD)
   'basilisk-gate': { colors: [], amount: 1 }, // {T}: Add {C}
   // Urza's Mine — tron (tekst karty, bez osobnej reguły CR): {T}: Add {C}; jeśli kontrolujesz też
   // Urza's Power-Plant i Urza's Tower → zamiast tego Add {C}{C}.

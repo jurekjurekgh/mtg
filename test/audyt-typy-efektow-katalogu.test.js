@@ -65,7 +65,8 @@ test('AUD-E2: kotwice liczności (L13) — zbiory rosną z batchami kart i mecha
   // Audyt #168/A-2: riot nie jest modalnym TRIGGEREM w katalogu kart;
   // jego +1/+1 / haste to tryby mechaniki statycznej, przed wejściem.
   // Jeden typ opuścił katalog, ale musi pozostać w trybach i w silniku.
-  assert.equal(UZYTE.size, 190, 'katalog bez fałszywego ETB riot: grant_keyword_permanent jest w RIOT_MODES');
+  // Batch 70 (Paranormal Analyst): +return_context_graveyard_card_to_hand → 191.
+  assert.equal(UZYTE.size, 191, 'katalog bez fałszywego ETB riot: grant_keyword_permanent jest w RIOT_MODES');
   assert.ok(RIOT_MODES.some((mode) => mode.effects.some((e) => e.type === 'grant_keyword_permanent')));
   assert.ok(ZNANE.has('grant_keyword_permanent'), 'silnik obsługuje nadal grant z mechanicznym riot');
   assert.ok(ZNANE.size >= 200, `silnik zna co najmniej 200 typów efektów (jest ${ZNANE.size})`);

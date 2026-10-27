@@ -108,7 +108,11 @@ test('M318/D: pula {U} + bramka → {1}{B} oferowany (pula pokrywa {1}, bramka p
 function sessionWithSS({ tappedOthers = false, ownCreature = true, foeCreature = true } = {}) {
   const REG = createCardRegistry();
   const decks = new Map([
-    [HUMAN_ID, parseDeckText(fs.readFileSync('decks/ravnica-wub.txt', 'utf8'), REG).cardIds],
+    // Batch 70: generator podzielił Ravnicę na „wur” i „bg” (ADR 0024), a ten
+    // scenariusz potrzebuje z OBU połówek: bramka + Severed Strands (BG) oraz
+    // Tenth District Veteran (WUR). Sumujemy talie — karty są rozłączne.
+    [HUMAN_ID, [...parseDeckText(fs.readFileSync('decks/ravnica-bg.txt', 'utf8'), REG).cardIds,
+      ...parseDeckText(fs.readFileSync('decks/ravnica-wur.txt', 'utf8'), REG).cardIds]],
     [BOT_ID, parseDeckText(fs.readFileSync('decks/srodziemie.txt', 'utf8'), REG).cardIds],
   ]);
   const session = createSession({ seed: 5, registry: REG, decks });

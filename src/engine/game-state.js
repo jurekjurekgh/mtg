@@ -7,11 +7,11 @@ import { command, event } from '../protocol/types.js';
 import { initialTurn, jumpToStep, nextTurnStep } from './turn.js';
 import { createRng } from './rng.js';
 import { assertStateInvariants } from './invariants.js';
-import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
+import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePaymentVariants, improvisePaymentVariants, legalAuraCasts, playLand, producibleMana, tapLandForMana, canPayColoredCost, canPayColoredCostForOffer, spendMana, spellManaPurpose, legalAuraCastsForObject, treasureManaAvailable, canPayMadnessCost } from './resources.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, isActivatedManaAbility, manaAbilityHasManualCost } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}, offerUnits = null) {
   const costStr = MANA_COSTS[cardId];
@@ -569,7 +569,7 @@ export const ADD_OBJECT_FIELDS = Object.freeze([
   'warp', 'warpReady', 'warpedAtTurn', 'surge', 'manifestReady', 'manifestTurnUpCost',
   'rebound', 'reboundCast', 'reboundReady',
   'subtypesBeforeOverride', 'lostKeywordsUntilEOT', 'madness', 'madnessReady',
-  'delve', 'convoke', 'protectorId', 'cantBlockPrinted',
+  'delve', 'convoke', 'improvise', 'xCost', 'protectorId', 'cantBlockPrinted',
 ]);
 
 const ADD_OBJECT_FIELD_SET = new Set(ADD_OBJECT_FIELDS);
@@ -630,12 +630,12 @@ function assertAddObjectContract(config) {
 
 export function addObject(state, config) {
   assertAddObjectContract(config);
-  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, convoke = false, untapChoice = false, cantBlockPrinted = false } = config;
+  const { id, instanceId, cardId, controllerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId = null, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, echo = null, echoColors = null, chooseColor = null, exploit = null, treasureAltCost = null, cardName = null, name = null, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, plottedAtTurn = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, delve = false, convoke = false, improvise = false, xCost = null, untapChoice = false, cantBlockPrinted = false } = config;
   assertZone(zone);
   if (!state.players.some((p) => p.id === controllerId) || state.objects.has(id)) {
     throw new Error('Nieprawidłowy kontroler albo zajęte id obiektu');
   }
-  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, convoke, cantBlockPrinted });
+  const object = createGameObject({ id, instanceId, cardId, controllerId, ownerId, zone, protectorId, kind, power, toughness, manaCost, spell, abilities, morph, plot, plotted, entersWithCounters, entersWithCountersIf, keywords, subtypes, transformTo, frontFaceId, types, entersTapped, entersTappedCondition, bestow, aura, equipment, backup, colors, phyrexianManaCost, enchantPlayer, untapChoice, saga, station, devour, endure, toxic, echo, echoColors, chooseColor, exploit, treasureAltCost, cardName, name, bloodthirst, renown, additionalCost, kicker, offspring, gift, costReduction, adventure, buyback, protectionFromColors, plottedAtTurn, enterAsCopy, suspend, suspended, timeCounters, suspendReady, warp, warpReady, warpedAtTurn, surge, manifestReady, manifestTurnUpCost, rebound, reboundCast, reboundReady, subtypesBeforeOverride, lostKeywordsUntilEOT, madness, madnessReady, delve, convoke, improvise, xCost, cantBlockPrinted });
   const placed = zone === 'battlefield'
     // Batch 46 (Bone Shredder): permanent z echem wchodzi z nieopłaconym echem
     // — pierwszy WŁASNY upkeep po wejściu zapyta o zapłatę (CR 702.30).
@@ -2245,22 +2245,24 @@ function manaGeneratingCommandFor(state, cmd, playerId) {
  * płatności — `manaGeneratingCommandFor`); silnik nigdy nie poświęca sam.
  */
 function paymentReachableMana(state, playerId) {
-  let razem = producibleMana(state, playerId, null, {}, []);
-  for (const { ability } of legalManaAbilities(state, playerId)) {
-    if (!manaAbilityHasManualCost(ability)) continue;
-    const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
-    // F-1 (audyt PR #173): efekt `fromTreasure` (Skarb) jest już w liczbie
-    // bazowej — `producibleMana` dokłada nietapnięte tokeny Skarbów jawnie
-    // (M179/E), a auto-tap `spendMana` je wydaje. Drugie zliczenie w tej
-    // pętli zawyżało osiągalność o liczbę Skarbów i oferowało „Zapłać",
-    // którego executor nie zapłacił (`counter_pay_insufficient_mana`) —
-    // to samo wyłączenie, świadomie, ma `manualManaOfferUnits` (abilities).
-    const produkcja = effects.reduce(
-      (suma, e) => suma + (e?.type === 'add_mana' && !e.fromTreasure ? (e.amount ?? 1) : 0), 0);
-    const kosztMany = (ability.cost?.mana ?? 0) + (ability.cost?.colors?.length ?? 0);
-    razem += Math.max(0, produkcja - kosztMany);
-  }
-  return razem;
+  // Uwaga X (2026-10-26c, Holdout Settlement + Warden of Geometries): miara
+  // NIE ma własnej arytmetyki — bierze jednostki netto z `manualManaOfferUnits`
+  // (jedno źródło prawdy, L41). Przyczyny:
+  //  1. Koszt „tapnij innego permanentu” zjada JEGO produkcję — lokalna pętla
+  //     liczyła pełną produkcję zdolności, więc oferowała „Zapłać”, którego
+  //     wykonawca nie pokryje (ta sama klasa co F-1 z audytu PR #173).
+  //  2. `legalManaAbilities` zwraca wpis na KAŻDEGO kandydata do tapnięcia —
+  //     lokalna pętla mnożyła jednostki przez liczbę stworów.
+  //  3. `cost.mana` jest kosztem CAŁKOWITYM (pipy wliczone — patrz
+  //     `mana-wizard` `generic = manaCost - colors.length` oraz
+  //     `effectiveAbilityManaCost`), więc dawne `mana + colors.length`
+  //     zaniżało netto o liczbę pipów (dziś w katalogu nie ma zdolności
+  //     z kosztem kolorowym i ręcznym zarazem, ale miara ma być spójna,
+  //     nie przypadkowo poprawna).
+  // F-1 audytu PR #173 (bez zmian): efekty `fromTreasure` są już w
+  // `producibleMana` — `manualManaOfferUnits` je pomija.
+  return producibleMana(state, playerId, null, {}, [])
+    + manualManaOfferUnits(state, playerId).amount;
 }
 
 // Audyt PR #156 (O1, klasa L48): JEDEN odczyt eligibilnych X dla OFERTY
@@ -3164,16 +3166,24 @@ export function execute(state, input) {
     const before = state.events.length;
     manifestCardFaceDown(state, pickId, pending.playerId);
     // Druga karta do grobu (CR 701.62a).
+    const graveyardIds = [];
     for (const id of pending.objectIds.filter((oid) => oid !== pickId)) {
       const graveId = `grave-${state.objectSequence++}`;
       const movedGrave = moveObjectDirectly(state, id, 'graveyard', graveId);
+      graveyardIds.push(graveId);
       state.events.push(event('object_moved', { fromId: id, object: movedGrave, fromZone: 'library', toZone: 'graveyard', milled: true }));
     }
     state.pendingManifestDread = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    state.events.push(event('manifest_dread_resolved', { playerId: pending.playerId, pickId }));
+    // Batch 70 (Paranormal Analyst): zdarzenie niesie karty, które TA droga
+    // położyła w grobie („a card you put into your graveyard this way") — trigger
+    // „whenever you manifest dread" nie musi ich rekonstruować z milled:true
+    // (byłoby to zgadywanie, które karty pochodzą z TEGO manifestu).
+    state.events.push(event('manifest_dread_resolved', {
+      playerId: pending.playerId, pickId, graveyardIds,
+    }));
     // Manifest Dread to CZAR (sorcery): jego efekt zawiesił się na blokującej
     // decyzji, więc po jej rozstrzygnięciu dokańczamy wstrzymany czar — inaczej
     // zostaje na stosie z pendingSpell na zawsze (crash „Pending spell odwołuje
@@ -6443,6 +6453,10 @@ export function execute(state, input) {
         delveExileIds: cmd.delveExileIds ?? null,
         // Batch 69 (Convoke): wybór stworów i kolorów płatności niesie komenda.
         convokePayments: cmd.convokePayments ?? null,
+        // Batch 70 (Improvise, CR 702.126a): wybór tapniętych artefaktów.
+        improvisePayments: cmd.improvisePayments ?? null,
+        // Batch 70 (Magma Pummeler): X permanentu-czaru (CR 107.3a).
+        xValue: cmd.xValue ?? 0,
       });
       // Zdarzenie główne (permanent_cast) pozostaje pierwsze; dokładamy
       // zdarzenia zagnieżdżone (np. counter_added przy wejściu z licznikiem).
@@ -7288,6 +7302,14 @@ export function playerView(state, playerId) {
             // trafić do widoku (np. except-by-color + not-by-flying).
             if (Array.isArray(a.cantBeBlockedByKeywords)) {
               entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
+            }
+            // Batch 70 (Fen Hauler): ewazja po TYPACH blokera („can't be blocked
+            // by artifact creatures") — publiczny deskryptor CR 509.1a; bez niego
+            // bot wyceniałby 5/5 jak zwykłe ciało (klasa L1/ADR 0017).
+            // `types` blokerów niesie widok (game-state.js:7105), więc strona
+            // czytająca ma wszystko, czego potrzebuje walidacja bloku.
+            if (Array.isArray(a.cantBeBlockedByTypes)) {
+              entry.cantBeBlockedByTypes = [...a.cantBeBlockedByTypes];
             }
           }
         }
@@ -9292,6 +9314,22 @@ export function playerView(state, playerId) {
         }
         continue;
       }
+      // Batch 70 (Magma Pummeler, CR 107.3a): permanent-czar z `{X}` w koszcie
+      // — oferta to KAŻDA opłacalna wartość X (od 0 do cap), jak dla czarów
+      // nie-permanentnych (`legalXCostCasts`). Wariant bez `xValue` byłby
+      // rzutem za X = 0, więc nie publikujemy go osobno.
+      if (object.xCost || object.spell?.xCost) {
+        const xDesc = object.xCost ?? object.spell.xCost;
+        const baseCost = effectiveSpellManaCost(state, object);
+        const xReqs = [...coloredPipsOf(object.cardId, 0)];
+        const xCap = xDesc.cap ?? 15;
+        if (!canPayColoredCostForOffer(state, playerId, xReqs, ofertaUnitsUA.units, null, spellManaPurpose(object))) continue;
+        const maxX = Math.max(0, Math.min(xCap, manaAvailableForOffer(object, xReqs) - baseCost));
+        for (let xValue = 0; xValue <= maxX; xValue += 1) {
+          legalCommands.push(command('cast_permanent', playerId, { objectId: id, xValue }));
+        }
+        continue;
+      }
       // M259/B3: bramka licuje się z wariantami phyrexian — najtańszy wariant
       // płaci (manaCost - pipy opłacone życiem) many; porównywanie PEŁNEGO
       // kosztu odcinało wariant życiowy przy puli mniejszej o 1 (regresja
@@ -9307,6 +9345,19 @@ export function playerView(state, playerId) {
           const convokeReqs = [...coloredPipsOf(object.cardId, 0)];
           for (const payments of convokePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object), convokeReqs, spellManaPurpose(object))) {
             legalCommands.push(command('cast_permanent', playerId, { objectId: id, convokePayments: payments }));
+          }
+        }
+        // Batch 70 (Improvise, CR 702.126a): rzut może wytapnąć artefakty
+        // zamiast płacić część generyczną — oferta NIEZALEŻNIE od tego, czy
+        // mana wystarcza (cały sens mechaniki; wariant manowy zostaje osobno).
+        // Improvise pokrywa WYŁĄCZNIE część generyczną (CR 702.126a), więc
+        // oferta musi dodatkowo sprawdzić, czy pipy kolorowe da się opłacić
+        // maną — inaczej obiecywałaby rzut, który walidacja odrzuci (L48).
+        if (object.improvise
+          && canPayColoredCostForOffer(state, playerId, coloredPipsOf(object.cardId, 0), ofertaUnitsUA.units, null, spellManaPurpose(object))) {
+          const improviseReqs = [...coloredPipsOf(object.cardId, 0)];
+          for (const payments of improvisePaymentVariants(state, playerId, object, effectiveSpellManaCost(state, object), improviseReqs, spellManaPurpose(object))) {
+            legalCommands.push(command('cast_permanent', playerId, { objectId: id, improvisePayments: payments }));
           }
         }
         if (effectiveSpellManaCost(state, object) - lifePips > manaAvailableForOffer(object, coloredPipsOf(object.cardId, lifePips))) continue;

@@ -320,6 +320,13 @@ const HANDLED_TRIGGER_EVENTS = new Set([
   // Batch 65 (Zombie Boa): becomes blocked by [color] — gałąź pary bloku
   // w blockers_declared (triggers.js), jak Wooden Stake.
   'becomes_blocked_by_color',
+  // Batch 70 (Paranormal Analyst): fakt rozstrzygnięcia manifest dread —
+  // zdarzenie emitowane także wtedy, gdy nic nie trafiło do grobu (ruling DSK
+  // 2024-09-20); skan w triggers.js.
+  'manifest_dread_resolved',
+  // Batch 70 (Magma Pummeler): licznik zdjęty przez efekt zastępczy prewencji
+  // obrażeń — trigger czyta wyłącznie tę drogę (`damagePreventionOnly`).
+  'counter_removed',
 ]);
 
 test('strażnik: każdy trigger w registry używa zdarzenia obsługiwanego przez engine', () => {

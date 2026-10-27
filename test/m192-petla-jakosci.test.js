@@ -60,7 +60,7 @@ function collectMovesAcrossDecks() {
   const PAIRS = [
     ['worek-dziki.txt', 'tarkir-bg.txt'],
     ['theros.txt', 'worek-mroczny.txt'],
-    ['mirrodin-brg.txt', 'ravnica-wub.txt'],
+    ['mirrodin-brg.txt', 'ravnica-wur.txt'],
     ['innistrad-brg.txt', 'wiedzmin-bg.txt'],
   ];
   const all = [];

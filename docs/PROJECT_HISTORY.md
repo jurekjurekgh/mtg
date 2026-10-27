@@ -20,6 +20,199 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-27f — próg minimalnego X dla rzutów za {X} (korekta intencji właściciela)
+
+- Zgłoszenie: nie chodziło o widoczność X, tylko o opłacalność — rzut za X = 1
+  marnuje potencjał karty. Ta sama reguła co dla Epic Experimentu (X ≥ 3,
+  `test/uwagi-z-testow-b-epic-experiment-x.test.js`), teraz dla Magma Pummeler
+  i kart o tym kształcie.
+- Wdrożenie generyczne: bramka `xMinimumReached` w `cast_permanent` (wariant
+  z X < progu schodzi pod pass), stała `xMinimumValue` = 3 czytana także przez
+  bramkę Epic (wcześniej twarde 3 w kodzie — L41). Wyjątek ratunkowy
+  (`xMinimumValueLooseAtLethal`): przy sicie wroga ≥ nasze życie i braku
+  innego nietapniętego blokera próg spada do X ≥ 1 — chump-block dla
+  przeżycia, dokładnie jak w zgłoszeniu („ale tylko wtedy”).
+- Pomiar (`.arena/pmssb79b-xgate.log`): pula 4 / życie 20 — PRZED rzut za X=2,
+  PO pass; pula 5/6 — bez zmian (X=3/X=4); życie 2 + wrogi 3/3 + brak blokerów
+  — PO rzuca za X=2 (pula 4) i X=1 (pula 3); ten sam stan z zapasowym
+  blokerem albo bez letalu — pass.
+- Piny 5a/5f/5g/5h/5i (razem 24 w pliku), mutacje: bramka off → 4 RED,
+  wyjątek off → 1 RED, pokrętła ×0 = stan sprzed zmiany (M429).
+- Bramy: `npm test` 8972/8972, `test:slow` 268/268, build 76 modułów,
+  benchmark quick 88,1% (592/672) bez zmian, golden `5be4528f…` bez zmian.
+
+## 2026-10-27e — X w koszcie permanentu: parzystość z czarami {X} (zgłoszenie właściciela)
+
+- Zgłoszenie: „PMSSB dla czarów z kosztem X już był (Epic Experiment) — podobna
+  logika powinna działać dla Pummelera i kart podobnych”.
+- Ustalenie źródła precedensu: nie wpis PMSSB, ale **M237/1** (Consume Spirit,
+  audyt Żywym Testerem) + `PLAN_2026-09-18c` (Epic Experiment). Pomiar
+  parzystości: obie ścieżki (czar i permanent) oferują wszystkie opłacalne X
+  i wybierają maksimum (Consume Spirit X=13 przy puli 15, Pummeler X=13);
+  czar nasyca się na letalu (X=4 przy 3 życiach wroga), liczniki permanentu nie
+  — to różnica skutku (S11), nie logiki. Wycena bez zmian.
+- Naprawione trzy dziury prezentacyjne (klasa uwagi B1 z 2026-09-18 i Krumar H):
+  `permanent_cast` niesie `xValue`; log mówi „zagrywa Magma Pummeler (X=3)”;
+  ślad bota rozróżnia warianty (`cast_permanent(x,X=4)`), więc audyt remisów
+  ma co parować.
+- Piny 7a/7b/7c (razem 20 w `test/audyt-pmssb79-batch70.test.js`), 3 nowe
+  mutacje RED. Bramy: `npm test` 8968/8968, golden `5be4528f…` bez zmian.
+
+## 2026-10-27d — PMSSB-79: pętla strojenia ośmiu rodzin batcha 70
+
+- Ta sama sesja, gałąź `arena/3e188a7c-mtg`, PR #176. Plan:
+  `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; raport:
+  `docs/PMSSB.md` §PMSSB-79 + wiersz rejestru; sonda
+  `tools/pmssb79-batch70-sonda.mjs`, lustro `tools/pmssb79-mirror.mjs`;
+  piny `test/audyt-pmssb79-batch70.test.js` (17).
+- Procedura PMSSB jest od dziś **obowiązkowym** etapem każdego batcha z nową
+  mechaniką (`docs/PMSSB.md`, `docs/cards/HOW_TO_ADD_CARD.md` Krok 7) — batch 69
+  i 70 szły bez niej i wymagały pętli „po fakcie”.
+- Cztery rodziny naprawione: ewazja `cantBeBlockedByTypes` (filtr w
+  `attackerCanBeBlocked` — jedno źródło dla bloków i krakbacku), trigger
+  `manifest_dread_resolved` (`manifestDreadEvidence` = aktywator + niepusty
+  grób), licznik `amountFromGraveyardCardType` (`graveyardCounterAmount` z
+  sufitem), Converge damage (`convergeDamageAmount`; wcześniej kwota stringowa
+  spadała do 0 i czar dostawał karę za „efekt bez skutku”).
+- Cztery rodziny zamknięte bez zmiany kodu z jawnym pomiarem: X w koszcie
+  permanentu (X=4 → 70,20 vs X=0 → −27,00), prewencja zdejmująca liczniki
+  (0 → 2 → 5 przy 0/1/3 licznikach), Improvise (kara tapowania > wartość many,
+  dopóki mana wystarcza), drugi cel kickera (146 vs 112 vs 94).
+- Cztery nowe pokrętła (`convergeDamagePerColor`, `manifestDreadTriggerValue`,
+  `graveyardCounterWeight`, `graveyardCounterCap`), każde zerowane = dawne
+  zachowanie; cztery mutacje potwierdziły RED.
+- Dwa fałszywe alarmy pomiaru zapisane w raporcie: „luka silnika w Converge”
+  (czytanie obrażeń przed rozstrzygnięciem stosu) i „anomalia 0,00 w bloku”
+  (Pummeler z X=0 to 0/0 ginący od SBA, CR 704.5f).
+- Bramy: `npm test` 8964/8964, `test:slow` 268/268, build 76 modułów /
+  5508,7 kB, benchmark quick 88,1% (592/672) — bez zmian względem PRZED.
+  Golden `5be4528f…` bez regeneracji; tie-audit bez nowych remisów; lustro
+  Converge 163:157, pozostałe 120:120 (brak sygnału w próbce — dowodem piny).
+
+## 2026-10-26c — audyt scalonego PR #175 (5/5, F-1..F-3) oraz pętla jakości (PR #176)
+
+- Sesja domyślna (ADR 0020/0021), gałąź `arena/3e188a7c-mtg` od `main` @
+  `d7150b1` (squash-merge PR #175). Plan:
+  `docs/plans/PLAN_2026-10-26c-audyt-pr175-petla-jakosci.md`, raport audytu:
+  `docs/audits/AUDYT_PR175_2026-10-26.md`, handoff:
+  `docs/setup/HANDOFF_2026-10-26c.md`, PR:
+  [#176](https://github.com/jurekjurekgh/mtg/pull/176).
+- **Audyt PR #175** (5/5 zmienionych plików): mutacje M1 (gałąź `e.delve`
+  w opisie) i M2 (flaga `delve: true` w emisji) RED. Znaleziska i naprawy
+  (osobne zielone commity):
+  - **F-1 (`cc5d49e`):** `isMainLogEvent` znał tylko `additionalCost`, więc
+    wygnanie kart za **Delve u człowieka** wypadało z logu gry (modal
+    „Rozgrywka” je pokazywał, `botMoves` maskowały usterkę dla bota —
+    oś „modal” z audytu PR #175 była niedomknięta dla jednej z trzech klas
+    kosztu). Jedno źródło klasy — nowy `isCostPaymentZoneMove(e)` =
+    `object_moved && (additionalCost || escape || delve)` — karmi OPIS
+    i BRAMKĘ; zwykłe zmiany stref dalej są szumem (anty-over-fix).
+    Pin `test/audyt-pr175-koszt-wygnania-w-panelu.test.js` P/1–P/3;
+    mutacje M3 (bramka `additionalCost`-only) → P/1, P/2 RED;
+    M4 (predykat bez `delve`) → P/1, P/2 RED; M5 (bez `escape`) → P/2 RED.
+  - **F-2 (`34b1b9e`):** piny W/1–W/2 przepuszczały surowy `cardId`
+    w opisie (L29) — teraz nazywają kartę (`/Goblin Piker/`)
+    i `doesNotMatch /goblin-piker/`; mutacja M6 czerwieni W/1, W/2, W/4
+    (stary regex przy tej samej mutacji był zielony — pin niedomiarowy).
+  - **F-3:** liczby README/handoffu po ostatnim commicie PR #175
+    (8852→8856 testów, 5442,8→5443,3 kB) — odświeżone na końcu sesji.
+- **Pętla jakości:** Żywy Tester 4/4 partie ukończone naturalnie
+  (8101–8104, `--steps 400 --quiet`), 0 zgłoszeń detektorów, 0 ruchów bez
+  wyceny; analizatory `event-contract`, `family`, `scoring-unvalued`
+  (12 partii), `scoring-pay-census` (brak danych), `scoring-choice-space`
+  czyste. **`scoring-mulligan-audit` EXIT 1 → F-M1/F-M2** (`f91ef4a`):
+  metryka liczyła CUDZĄ (ukrytą) rękę jako własne czary
+  (`playerView.zones.hand` jest strefą złożoną — kontrakt FoW) i karała
+  rękę „2 lądy + czar 3 many” (`najtańszy > lądy`), choć po jednym lądzie
+  czar jest grywalny — wada POMIARU, nie bota (L118/L119). Reguła
+  w `tools/mulligan-keep-criterion.mjs`, pin M/1–M/4; mutacje M7/M8 RED.
+  Po naprawie: 26 partii / 65 decyzji / 0 naruszeń (EXIT 0). Polityka bota
+  BEZ zmian.
+- `bot-tie-audit`: 24 partie / 12 621 decyzji — `tie_top` 621 (4,9%),
+  `tie_all` 0; z remisów 436 to pary „brak akcji” silnika, 185 remisów
+  między realnymi wariantami (9,8% decyzji akcyjnych).
+- **Polowanie CR (ścieżka 614/616 + 106/601.2, cytaty dosłowne z pinem
+  SHA-256):** źródło `nwgarne/mtg-data` `rules/cr-raw.txt`, blob
+  `4dc4fead…`, wydanie 2026-09-25, SHA-256 `8d860e45…70ca` zgodny
+  z `rules/manifest.json`. Sprawdzone i poprawne: 616.1 (kontroler
+  decyduje, APNAP), 616.1e (>1 opcja = jawna decyzja), 616.1f (łańcuch
+  przez `expandArmor`), 614.5 (jedno zastosowanie na zdarzenie), 614.6
+  (brak zdarzenia bazowego), 614.7a (0 obrażeń nie istnieje — log
+  `session.js:1540` i wszystkie triggery filtrują `amount > 0`),
+  106.4/500.4 (pula czyszczona na końcu każdego kroku i fazy).
+  **Brak nowych znalezisk kodu;** poza zakresem kolekcji: 616.1b/c/d
+  i 614.15/616.1a (brak kart, które ich wymagają) — granica, nie usterka.
+- Weryfikacja `escape`: gałąź opisu istnieje (`session.js:1233`,
+  „zostaje wygnane (koszt Escape)”), predykat bramki obejmuje `escape`
+  (`session.js:362`) — potwierdzone mutacją M5.
+- Bramy końcowe: `npm test` **8863/8863**, `npm run test:slow` **268/268**,
+  build **76 modułów / 5444,4 kB**, benchmark quick 672 mecze — heuristic
+  **87,8% (590/672)**, aggro 21,4%, random 3,0% (bez zmian względem bazy).
+
+### Uwagi z gry właściciela (X, Y) — dopisane po zamknięciu sesji
+
+- **X (`b8c40e0`) — „fantomowa mana” Holdout Settlement.** Zgłoszenie: Island
+  + Holdout Settlement + Warden of Geometries (3 realne many) pokazywały
+  ofertę Mysteries of the Deep (5 many), a klik nic nie robił; po tapnięciu
+  Holdoutu oferta znikała. Diagnoza: **karta jest poprawna**, wadliwa była
+  miara oferty (L48) — `manualManaOfferUnits` liczyła zdolność „{T}, Tap an
+  untapped creature you control: Add one mana of any color” raz na KAŻDEGO
+  kandydata do tapnięcia i nie odejmowała produkcji tapowanego stwora (3 + 2
+  fantomy ≥ 5), a wykonawca płatności fantomów nie znał. Naprawa: jednostki
+  netto per permanent (koszt tapnięcia odejmuje produkcję tapowanego; wynik
+  jako różnica względem `producibleMana`, bo ląd jest tam już policzony),
+  `paymentReachableMana` na tej samej funkcji (L41). Piny X/1–X/5, mutacje
+  M9/M10/M11.
+- **Y (`234e984`) — pump po mgle.** Bot rzucił Revealing Wind, po czym
+  Awaken the Bear i dopakował stwory. Wycena pumpu opiera się na symulacji
+  walki, która nie zna efektów zastępczych — przy `preventAllCombatDamage`
+  czar dostawał 61 pkt, tyle samo co bez mgły. Naprawa:
+  `combatDamageRelevantNow(view)` + bramka w `pumpChangesOutcome` (tylko
+  delty dodatnie — debuff nadal zabija przez SBA), `pumpImprovesOutcome`
+  i oknie „przed atakiem”. Piny Y/1–Y/7 (w tym cztery anty-over-fix), mutacje
+  M12/M14/M15/M17.
+- **Z (`51d6045`) — Cenn's Tactician: tapowanie ciała
+  w Głównej 1.** Zgłoszenie: bot miał jednego Tacticiana (2/2) przy pustym
+  stole wroga, mógł uderzyć za 2 bezkarnie, a zamiast tego tapował go
+  w Głównej 1 po kolejny licznik. Root cause: reguła „okna darmowej many”
+  (PMSSB-66) jawnie WYKLUCZAŁA koszt tapnięcia, więc zdolność „{W}, {T}:
+  licznik +1/+1 na Żołnierzu” nie była odraczana do end stepu przeciwnika
+  (pomiar PRZED: 13 pkt dla 1/1, 19 dla 2/2). Naprawa: tap wchodzi do tej
+  samej reguły okna (L41) — Główna 1/Główna 2/cudza Główna 1 → pass, end step
+  przeciwnika i okna walki (combat trick, ratunek licznikiem) bez zmian —
+  plus granica po rodzaju licznika: −1/−1 na wrogu to USUNIĘCIE (CR 704.5f),
+  nie odkładamy go do okna. Piny Z/1–Z/10, mutacje M18/M19/M20/M21.
+- Bramy po X/Y/Z: `npm test` **8885/8885**, `npm run test:slow` **268/268**,
+  build **76 modułów / 5451,6 kB**, benchmark quick 672 mecze (heuristic
+  **87,8%**, bez zmian); golden-master bez zmiany hasha (fixture nie
+  regenerowany).
+
+## 2026-10-26b — audyt scalonego PR #174 (16/16) oraz pętla jakości (PR #175)
+
+> Sekcja uzupełniona w sesji 2026-10-26c: sesja 2026-10-26b zostawiła handoff
+> (`docs/setup/HANDOFF_2026-10-26b.md`) i plan
+> (`docs/plans/PLAN_2026-10-26b-audyt-pr174-petla-jakosci.md`), ale nie
+> dopisała wpisu tutaj (ADR 0013; ta sama klasa dryfu dokumentacji co L92).
+
+- Gałąź `arena/30278238-mtg` od `697d49b` (squash PR #174), PR
+  [#175](https://github.com/jurekjurekgh/mtg/pull/175).
+- **Audyt PR #174** (`docs/audits/AUDYT_PR174_2026-10-26.md`, 16/16 plików,
+  werdykt APPROVE): wszystkie 5 napraw produkcyjnych u root cause
+  (`paymentReachableMana` bez podwójnego liczenia Skarbu, mana ograniczona
+  `spendOnly` w automacie, pin `interruptMutesOnNewTargetCombination` na
+  poziomie sesji, aliasy importu w artefakcie, gate `state.status` przy
+  CR 104.1). Mutacje M1–M4 wszystkie RED.
+- **Pętla jakości:** Żywy Tester 4/4 (8001–8004) bez zgłoszeń detektorów
+  i bez ruchów bez wyceny; analizatory zdarzeń/rodzin/scoringu czyste;
+  polowanie CR na ścieżce 613/603/704 — bez znalezisk.
+- **Znalezisko po handoffie** (`50c1243`): wygnanie kart za Delve nie było
+  widoczne w logu ani w modalu (tylko pytanie o wybór) — dodany opis
+  `object_moved` z `delve: true`, piny W/1–W/4. Ten commit powstał PO
+  pomiarze bramek, dlatego handoff podaje 8852/5442,8 kB, a drzewo ma
+  8856/5443,3 kB (F-3 następnej sesji).
+- Bramy (handoff): `npm test` 8852/8852, build 76 modułów / 5442,8 kB,
+  benchmark quick 672 mecze — heuristic 87,8%.
+
 ## 2026-10-26 — audyt scalonego PR #173 (58/58, F-1..F-4) oraz pętla jakości (PR #174)
 
 - Sesja domyślna (ADR 0020/0021), gałąź `arena/b47146a6-mtg` od `main` @
@@ -18035,3 +18228,47 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Domknięcie (2026-10-21): presja działa symetrycznie — token oddany wrogowi (Secure the Scene) też dostaje presję (gałąź `exileSwap` z czynnikiem 3/10). Golden: 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64); właściciel zaakceptował, hash `2f00a7f5…`. Tie-audit bez zmian (674). Mirror 144:144.
 - PMSSB-74 domknięcie: tie-audit bez zmian (700); lustro wersji bota na talii `warhammer-ubr` (Bloodfire), 800 partii: 431:369, win-rate 0,539, p ≈ 0,03 — wynik kierunkowy.
 - Plan: `docs/plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md`. Rejestr: `docs/PMSSB.md` §PMSSB-77.
+
+## 2026-10-27 — Batch 70: kolekcja właściciela 426–624 (10 kart, PR #176)
+
+- Lista od właściciela (10 pozycji), plan przepisany 1:1; katalog 670 → 680 definicji,
+  wszystkie karty `supported` (100% Oracle, ADR 0022), `limitations: []`, zachowanie
+  w `notes` z rulingami Scryfall (ADR 0028): Paranormal Analyst (DSK), Jilt (APC),
+  Vault of Whispers (MRD), Kaleidoscorch (MH2), Orazca Puzzle-Door (LCI), Fen Hauler
+  (AER), Moldgraf Millipede (VOW), Magma Pummeler (VOW), Trigon of Rage (SOM),
+  Arlinn's Wolf (WAR).
+- Silnik (E2, mechaniki generyczne, każda z pinem RED→GREEN na karcie
+  syntetycznej — ADR 0029): ewazja po typie blokera, Converge+Flashback, licznik
+  „za kartę typu w cmentarzu”, trigger „whenever you manifest dread” + zwrot karty
+  z kontekstu, cel warunkowy od kickera + „another target”, Improvise, prewencja
+  obrażeń zdejmująca liczniki + refleksyjny trigger. Arlinn's Wolf („power 2 or
+  less”) używa ISTNIEJĄCEGO progu górnego `cantBeBlockedByPower` — piny M2
+  utrwalają jego semantykę (walidacja bloku, PlayerView, oferta blokerów, bot);
+  pierwotny opis commita E2a mówił o progu dolnym, co było błędem odczytu Oracle
+  (poprawione w E2a/fix, kod nie zawiera martwego deskryptora).
+  Szczegóły: `docs/ENGINE_MILESTONES.md` M448.
+- E3: X w koszcie PERMANENTU (CR 107.3a) — deskryptor `xCost`, walidacja, koszt
+  całkowity, `spellX` i `entersWithCounters: {…: 'X'}`; oferta `cast_permanent`
+  enumeruje X = 0…cap. Vault of Whispers dostaje produkcję many przez
+  `MANA_SOURCE_MAP` (wzorzec Great Furnace, M193/M200), nie deskryptor.
+- E3/fix: generator talii podzielił Ravnicę na `ravnica-wur`/`ravnica-bg` po dodaniu
+  Arlinn's Wolf (ADR 0024) — README (liczności), `docs/setup/TESTER_STOLU.md`,
+  `tools/table-tester` i testy czytające pliki talii zaktualizowane; golden-master
+  wycen zregenerowany (świadoma zmiana zestawu talii: `ravnica-wub` → `ravnica-wur`).
+- E4: `test/real-cards-batch70.test.js` — sanity danych (plan/artId/snapshot/Oracle/
+  jedna talia) + po jednym scenariuszu legalnym i nielegalnym na każdą kartę, w tym
+  weryfikacja, że nowe mechaniki realnie pojawiają się w `legalCommands`.
+- Mutacje (ADR 0029): bez `+ X` w koszcie → 1 pin czerwony; bez sprawdzenia `cap`
+  → 1; bez gałęzi `'X'` w `entersWithCounters` → 2. Po przywróceniu 34/34.
+- E5 (audyt czterech dowiązań, L84): mechaniki silnika były zielone, ale
+  część z nich była NIEMA dla gracza — log prewencji licznikowej mówił tylko
+  „zapobiegnięte", a kafle: Magma Pummeler „? obrażeń", Jilt „cel: stwór ×2"
+  (dwa obowiązkowe cele, których bez kickera nie ma), Kaleidoscorch surowy slug
+  `colors_of_mana_spent`, Trigon of Rage „{R}, {R}" (jak dwa osobne koszty),
+  Orazca Puzzle-Door „poświęć:" bez dopełnienia, Moldgraf Millipede bez
+  informacji, skąd liczba liczników, Fen Hauler/Kavu Primarch bez linii
+  Improvise/Convoke. Naprawy u źródła + `test/batch70-e5-dowiazania.test.js`
+  (10 pinów, w tym strażnik klasowy improvise/convoke i droga `xCost` przez
+  `gameObjectDataOf` **i** `installDeck`). Mutacje: 3 mutanty → 1/2/1 RED.
+- Bramy (końcowe, po E5): `npm test` 8948/8948, `test:slow` 268/268, build
+  76 modułów / 5502,4 kB, benchmark quick 88,1% (baseline 87,8%).

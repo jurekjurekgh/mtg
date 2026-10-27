@@ -97,6 +97,13 @@ export function gameObjectDataOf(card) {
     // pola ręcznie, więc pominięcie = mechanika martwa w prawdziwej talii).
     if (card.delve) data.delve = true;
     if (card.convoke) data.convoke = true;
+    // Improvise (CR 702.126, batch 70 — Fen Hauler): ten sam kształt co convoke
+    // (deskryptor top-level, bo gałęzie kopiują pola ręcznie — L21).
+    if (card.improvise) data.improvise = true;
+    // X w koszcie PERMANENTU (batch 70, Magma Pummeler — CR 107.3a): deskryptor
+    // czasu rzutu, więc top-level jak kicker/improvise; obie gałęzie kopiują
+    // pola ręcznie (L21).
+    if (card.xCost) data.xCost = card.xCost;
     // Gift (CR 702.174, M355): dar jest mechaniką CZARU (instant/sorcery),
     // więc gałąź spell kopiuje pola ręcznie — klasa Z5/L21 (deskryptor ginie
     // po cichu). Gałąź permanentu też go dostaje: gdy katalog dostanie
@@ -182,6 +189,13 @@ export function gameObjectDataOf(card) {
     // karty; dziś jedyną kartą z delve jest stwór).
     if (card.delve) data.delve = true;
     if (card.convoke) data.convoke = true;
+    // Improvise (CR 702.126, batch 70 — Fen Hauler): ten sam kształt co convoke
+    // (deskryptor top-level, bo gałęzie kopiują pola ręcznie — L21).
+    if (card.improvise) data.improvise = true;
+    // X w koszcie PERMANENTU (batch 70, Magma Pummeler — CR 107.3a): deskryptor
+    // czasu rzutu, więc top-level jak kicker/improvise; obie gałęzie kopiują
+    // pola ręcznie (L21).
+    if (card.xCost) data.xCost = card.xCost;
     // Batch 58/B1 (Boulder Salvo): surge na INSTANCIE/SORCERY — gałąź spell
     // kopiuje pola ręcznie (klasa Z5/L21), więc bez tego wpisu oferta kosztu
     // alternatywnego i walidacja komendy nie miałyby czego czytać.

@@ -32,7 +32,7 @@ export function copyManaValueOf(source) {
   return source.manaCost ?? 0;
 }
 
-export function createGameObject({ id, instanceId, cardId, controllerId, zone, protectorId = null, kind = 'card', echo = null, echoColors = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, untapChoice = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, ward = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, delve = false, convoke = false, cantBlockPrinted = false }) {
+export function createGameObject({ id, instanceId, cardId, controllerId, zone, protectorId = null, kind = 'card', echo = null, echoColors = null, chooseColor = null, power = null, toughness = null, manaCost = 0, spell = null, abilities = [], morph = null, plot = null, plotted = false, plottedAtTurn = null, entersWithCounters = null, entersWithCountersIf = null, keywords = [], subtypes = [], transformTo = null, frontFaceId = null, types = [], entersTapped = false, entersTappedCondition = null, untapChoice = false, subtypesBeforeOverride = null, lostKeywordsUntilEOT = null, madness = null, madnessReady = false, bestow = null, aura = null, equipment = null, backup = null, colors = [], phyrexianManaCost = 0, enchantPlayer = false, saga = null, station = null, ownerId = null, devour = null, endure = null, toxic = null, ward = null, exploit = null, treasureAltCost = null, cardName = null, name = null, isToken = false, bloodthirst = null, renown = null, additionalCost = null, kicker = null, offspring = null, gift = null, costReduction = null, adventure = null, buyback = null, protectionFromColors = null, enterAsCopy = null, suspend = null, suspended = false, timeCounters = 0, suspendReady = false, warp = null, warpReady = false, warpedAtTurn = null, surge = null, manifestReady = false, manifestTurnUpCost = null, rebound = null, reboundCast = false, reboundReady = false, delve = false, convoke = false, improvise = false, xCost = null, cantBlockPrinted = false }) {
   if (!id || !instanceId || !cardId || !controllerId || !zone) {
     throw new TypeError('Obiekt gry wymaga id, instanceId, cardId, controllerId i zone');
   }
@@ -63,6 +63,11 @@ export function createGameObject({ id, instanceId, cardId, controllerId, zone, p
     delve: Boolean(delve),
     // Batch 69 (Convoke, CR 702.51): deskryptor płatności stworami.
     convoke: Boolean(convoke),
+    // Improvise (CR 702.126a, batch 70 — Fen Hauler): statyczna zdolność
+    // czaru na stosie; płatność tapniętymi artefaktami zamiast many generycznej.
+    improvise: Boolean(improvise),
+    // Batch 70 (Magma Pummeler, CR 107.3a): „{X}” w koszcie permanentu.
+    xCost: xCost ? Object.freeze({ cap: xCost.cap ?? 15 }) : null,
     kicker: kicker ? Object.freeze({ ...kicker }) : null,
     // Offspring (BLB, Rust-Shield Rampager): jak kicker, ale efektem jest
     // token-kopia 1/1; wasOffspring ląduje na permanencie po opłaceniu.

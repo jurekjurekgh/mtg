@@ -12,30 +12,35 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-26):** [handoff](docs/setup/HANDOFF_2026-10-26.md),
-[plan sesji](docs/plans/PLAN_2026-10-26-audyt-pr173-petla-jakosci.md) oraz
-[audyt PR #173](docs/audits/AUDYT_PR173_2026-10-26.md) w otwartym
-[PR #174](https://github.com/jurekjurekgh/mtg/pull/174). Sesja 2026-10-26:
-pełny audyt scalonego PR #173 (58/58 plików, 47 commitów; cytaty CR
-zweryfikowane dosłownie w wydaniu `2026-09-25`, mutacje kluczowych pinów
-M1–M4) — naprawione znaleziska: podwójne liczenie many Skarbu w
-`paymentReachableMana` (fantomowe „Zapłać”), purpose-blind jednostki many
-ograniczonej w filtrze bota (fantomowy cast nie-artefaktu), brak pinu ścieżki
-`interruptMutesOnNewTargetCombination` (mutacja przeżywała pełny pakiet) oraz
-znalezisko pętli — bundler pomijał aliasowe importy i artefakt padał na
-„castFiltersApplicable is not defined” (emitowane wiązania `const y = x;` +
-strażnik aliasów). Pętla jakości: 4 partie Żywego Testera na naprawionym
-buildzie — 0 zgłoszeń detektorów, 0 niewycenionych, ręczna lektura bez
-znalezisk (Cuombajj i mulligan londyński potwierdzone poprawne); analizatory
-zdarzeń, rodzin i scoringu czyste; polowanie CR na ścieżce 510/704/104 —
-trigger z obrażeń trafiał na stos po `player_lost`, naprawione zgodnie z
-CR 104.1 „A game ends immediately…” (test z cytatem, mutacje czerwieniące).
-Bramki:
-`npm test` **8852/8852**, `npm run test:slow` **268/268**,
-build **76 modułów / 5442,8 kB**, benchmark quick 672 mecze (heuristic 87,8%).
-PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-24b](docs/setup/HANDOFF_2026-10-24b.md)
-(sesja PR #173 — audyt PR #172 F-1..F-3, pętla jakości i zgłoszenia E–I).
+**Aktualny punkt zaczepienia (2026-10-26c):** [handoff](docs/setup/HANDOFF_2026-10-26c.md),
+[plan sesji](docs/plans/PLAN_2026-10-26c-audyt-pr175-petla-jakosci.md) oraz
+[audyt PR #175](docs/audits/AUDYT_PR175_2026-10-26.md) w otwartym
+[PR #176](https://github.com/jurekjurekgh/mtg/pull/176). Sesja 2026-10-26c:
+pełny audyt scalonego PR #175 (5 plików; mutacje M1–M6) — naprawione
+znaleziska: bramka logu gracza znała tylko dodatkowy koszt rzucenia, więc
+wygnanie za **Delve u człowieka** wypadało z modala „Rozgrywka” (klasa
+„wygnanie jako koszt” ma teraz jedno źródło — `isCostPaymentZoneMove`),
+piny W/1–W/2 przepuszczały surowy `cardId` (L29), a liczby bramek
+w README/handoffie były sprzed ostatniego commita PR #175 (L92). Pętla
+jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bota bez
+wyceny), analizatory zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24
+partie (`tie_all` 0), a `scoring-mulligan-audit` wykrył **fałszywy alarm we
+własnej metryce** (cudza, ukryta ręka liczona jako własne czary + kryterium
+surowsze od polityki bota) — naprawione w `tools/mulligan-keep-criterion.mjs`,
+polityka bota bez zmian. Polowanie CR na ścieżce 614/616 + 106/601.2 (cytat
+dosłowny, pin SHA-256 `8d860e45…70ca`): bez nowych znalezisk kodu. Bramki:
+`npm test` **8885/8885**, `npm run test:slow` **268/268**, build **76 modułów /
+5451,6 kB**, benchmark quick 672 mecze (heuristic 87,8%). Po domknięciu sesji
+właściciel zgłosił dwie uwagi z gry — obie naprawione u root cause: **fantomowa
+mana** Holdout Settlement (miara oferty liczyła zdolność „tapnij stwora” raz na
+kandydata i nie odejmowała produkcji tapowanego stwora → martwy przycisk
+czaru) oraz **pump po mgle** (bot dopakowywał stwory po Revealing Wind, bo
+symulacja walki nie zna efektów zastępczych → „+3/+3” wart tyle samo przy
+zerowych obrażeniach) oraz **tapowanie ciała w Głównej 1** (Cenn's Tactician
+tapował się po licznik zamiast atakować — reguła okna darmowej many nie
+obejmowała kosztu tapnięcia). PR czeka na decyzję właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-26b](docs/setup/HANDOFF_2026-10-26b.md)
+(sesja PR #175 — audyt PR #174 i pętla jakości).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
@@ -159,19 +164,19 @@ zgodnie z konwencją generatora i strażnika liczności.
 |---|---|---|---:|---:|---:|
 | `alara` | Alara | WUBRG | 39 | 13 | 26 |
 | `dominaria-brg` | Dominaria (BRG) | BRG | 35 | 12 | 23 |
-| `dominaria-wu` | Dominaria (WU) | WU | 30 | 10 | 20 |
+| `dominaria-wu` | Dominaria (WU) | WU | 32 | 11 | 21 |
 | `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
 | `forgotten-realms` | Forgotten Realms | WUBRG | 44 | 15 | 29 |
 | `innistrad-brg` | Innistrad (BRG) | BRG | 32 | 11 | 21 |
-| `innistrad-wu` | Innistrad (WU) | WU | 32 | 11 | 21 |
-| `ixalan` | Ixalan | UBRG | 26 | 9 | 17 |
+| `innistrad-wu` | Innistrad (WU) | WU | 33 | 11 | 22 |
+| `ixalan` | Ixalan | UBRG | 27 | 9 | 18 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
-| `mirrodin-brg` | Mirrodin (BRG) | BRG | 36 | 12 | 24 |
+| `mirrodin-brg` | Mirrodin (BRG) | BRG | 39 | 13 | 26 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 32 | 11 | 21 |
-| `ravnica-rg` | Ravnica (RG) | RG | 23 | 8 | 15 |
-| `ravnica-wub` | Ravnica (WUB) | WUB | 26 | 9 | 17 |
+| `ravnica-bg` | Ravnica (BG) | BG | 23 | 8 | 15 |
+| `ravnica-wur` | Ravnica (WUR) | WUR | 27 | 9 | 18 |
 | `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
 | `tarkir-wur` | Tarkir (WUR) | WUR | 38 | 13 | 25 |
@@ -188,9 +193,9 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 29 | 10 | 19 |
-| `worek-legend` | Worek: Legendy | WUBRG | 33 | 11 | 22 |
+| `worek-basni` | Worek: Baśni | WUBRG | 32 | 11 | 21 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
+| `worek-legend` | Worek: Legendy | WUBRG | 36 | 12 | 24 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 24 | 8 | 16 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

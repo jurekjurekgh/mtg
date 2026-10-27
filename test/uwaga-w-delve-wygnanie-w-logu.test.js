@@ -107,7 +107,10 @@ test('W/1: object_moved z delve: true ma opis w logu', () => {
   const desc1 = describe(delveMoves[0]);
   assert.ok(desc1, 'object_moved z delve: true ma opis (RED przed naprawą)');
   assert.match(desc1, /Delve/, 'opis nazywa koszt Delve');
-  assert.match(desc1, /goblin-piker|Goblin Piker/i, 'opis nazywa kartę');
+  // F-2 (audyt PR #175, L29): pin nie może przepuszczać surowego `cardId` —
+  // fallback `nameOf` do identyfikatora to cichy wyciek, nie „nazwa karty".
+  assert.match(desc1, /Goblin Piker/, 'opis nazywa kartę nazwą z rejestru');
+  assert.doesNotMatch(desc1, /goblin-piker/, 'opis bez surowego cardId (L29)');
 });
 
 test('W/2: opis nazywa kartę i koszt', () => {
@@ -131,8 +134,9 @@ test('W/2: opis nazywa kartę i koszt', () => {
 
   const desc = describe(delveMove);
   assert.ok(desc, 'opis istnieje');
-  // Opis musi nazywać kartę
-  assert.match(desc, /goblin-piker|Goblin Piker/i, 'opis nazywa kartę');
+  // Opis musi nazywać kartę NAZWĄ Z REJESTRU (bez fallbacku do `cardId`, L29)
+  assert.match(desc, /Goblin Piker/, 'opis nazywa kartę nazwą z rejestru');
+  assert.doesNotMatch(desc, /goblin-piker/, 'opis bez surowego cardId (L29)');
   // Opis musi nazywać koszt
   assert.match(desc, /Delve/, 'opis nazywa koszt Delve');
 });

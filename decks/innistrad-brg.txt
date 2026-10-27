@@ -5,7 +5,6 @@
 1x Forge Devil
 1x Ghoulcaller's Bell
 1x Predator's Gambit
-1x Scroll of Avacyn
 1x Snarling Wolf
 1x Bloodtithe Harvester
 1x Cemetery Recruitment
@@ -16,6 +15,7 @@
 1x Mark of the Vampire
 1x Stensia Innkeeper
 1x Grizzled Outcasts
+1x Moldgraf Millipede
 1x Somberwald Spider
 1x Thornhide Wolves
 1x Tireless Hauler

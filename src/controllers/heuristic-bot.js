@@ -95,10 +95,19 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
   // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
   const powerCap = attacker.cantBeBlockedByPower;
+  // PMSSB-79 (batch 70, Fen Hauler): „can't be blocked by [typ] creatures” —
+  // ten predykat jest JEDNYM źródłem odpowiedzi „czy tego atakującego da się
+  // w ogóle zablokować” dla wyceny deklaracji ataku (`rankedByThreat`),
+  // crackbacku i zdolności celujących. Dotąd typy blokera znała wyłącznie
+  // prywatna kopia w `canIndividuallyBlockCrackback` (L41 — dwie odpowiedzi na
+  // to samo pytanie), więc bot wyceniał Fen Haulera jak zwykłe 5/5 nawet
+  // naprzeciw samych artefaktów-stworów.
+  const bannedTypes = Array.isArray(attacker.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
     if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
     if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
+    if (bannedTypes.length > 0 && (b?.types ?? []).some((type) => bannedTypes.includes(type))) return false;
     return true;
   });
   if (keywords.includes('menace') && able.length < 2) return false;
@@ -763,8 +772,29 @@ function pumpRemovesCreature(view, target, delta) {
     && !(target.keywords ?? []).includes('indestructible') && !shield;
 }
 
+/**
+ * Uwaga Y (zgłoszenie właściciela 2026-10-26): czy OBRAŻENIA combat tej tury
+ * w ogóle powstaną. Przy aktywnym „Prevent all combat damage that would be
+ * dealt this turn” (Revealing Wind, Inspire Awe — `view.preventAllCombatDamage`)
+ * silnik zeruje KAŻDĄ kwotę obrażeń bojowych (`combat.js`, CR 615.6:
+ * „zapobiegnięte obrażenia nie są zadane”), a nasze symulacje walki
+ * (`simulateCombat`, CR 510) efektów zastępczych nie znają — liczyły więc
+ * pełną wartość triku, którego skutek jest zerowy. Jedno źródło prawdy dla
+ * wszystkich wycen opartych na obrażeniach walki (L41): pump, grant keywordów
+ * bojowych, trample.
+ */
+function combatDamageRelevantNow(view) {
+  return view?.preventAllCombatDamage !== true;
+}
+
 function pumpChangesOutcome(view, recipient, delta = {}) {
   if (!recipient) return false;
+  // Uwaga Y: DODATNI pump przy mgle nie zmienia nic — obrażenia walki są
+  // zapobiegnięte (CR 615.6), a symulacja walki efektów zastępczych nie zna.
+  // Debuff (−X/−X) nadal może ZABIĆ przez SBA (CR 704.5f), więc bramka
+  // dotyczy wyłącznie delt dodatnich.
+  if (!combatDamageRelevantNow(view)
+    && ((delta.power ?? 0) > 0 || (delta.toughness ?? 0) > 0)) return false;
   // CR 704.5f/g: sprawdź realne toughness i osobno śmiertelne obrażenia.
   if (pumpRemovesCreature(view, recipient, delta)) return true;
   const before = combatOutcome(view, recipient, {});
@@ -980,6 +1010,10 @@ function pendingPumpDelta(view, cmd, source) {
  */
 function pumpImprovesOutcome(view, recipient, pending, delta) {
   if (recipient?.controllerId !== view.playerId) return false;
+  // Uwaga Y (jak w `pumpChangesOutcome`): przy mgle poprawa wyniku walki jest
+  // pozorna — żadne obrażenia nie powstaną (CR 615.6). Pump jest wtedy
+  // wyrzucaniem many, więc aktywacja nie może wygrać z passem.
+  if (!combatDamageRelevantNow(view)) return false;
   const before = combatOutcome(view, recipient, pending);
   const after = combatOutcome(view, recipient, {
     power: (pending.power ?? 0) + (delta.power ?? 0),
@@ -2416,6 +2450,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return P.linkedAnimationFutilePenalty;
   };
 
+  /**
+   * PMSSB-79 (batch 70, Moldgraf Millipede): kwota licznika brana z CMENTARZA
+   * (`amountFromGraveyardCardType`, ruling VOW 2021-11-19 — cały cmentarz
+   * kontrolera, także karty sprzed wejścia). Wycena ETB czytała deskryptor
+   * jako brak `amount`, czyli płaskie 1: pomiar 97,74 przy 0 i przy 3 kartach
+   * stworów w grobie. Waga mnoży RÓŻNICĘ wobec starej liczby (M429: 0 =
+   * dokładnie dawne zachowanie), sufit chroni przed cmentarzem z 20 kartami.
+   */
+  const graveyardCounterAmount = (view, effect) => {
+    const base = effect?.amount ?? 1;
+    const type = effect?.amountFromGraveyardCardType;
+    if (!type) return base;
+    const count = Math.min(P.graveyardCounterCap,
+      (view?.zones?.graveyard ?? []).filter((o) => o.controllerId === view?.playerId
+        && (o.types ?? []).includes(type)).length);
+    const scaled = counterValue(view, Math.max(1, count));
+    return base + P.graveyardCounterWeight * (scaled - counterValue(view, base));
+  };
+
+  /**
+   * PMSSB-79: czy w tej ręce/na stole JEST aktywator manifest dread (karta
+   * z efektem `manifest_dread`). Trigger „whenever you manifest dread” bez
+   * aktywatora nie odpali ani razu — bez tej bramki wycena dawałaby bonus
+   * każdej karcie z tym triggerem (klasa anty-over-fix M429).
+   */
+  const manifestDreadEvidence = (view, def = null) => {
+    const isEnabler = (candidate) => (candidate?.spell?.effects ?? [])
+      .some((effect) => effect?.type === 'manifest_dread')
+      || (candidate?.abilities ?? []).some((ability) => [].concat(ability?.effect ?? [])
+        .some((effect) => effect?.type === 'manifest_dread'));
+    if (isEnabler(def)) return true;
+    for (const zone of ['hand', 'battlefield']) {
+      for (const object of view?.zones?.[zone] ?? []) {
+        if (object?.controllerId !== view?.playerId) continue;
+        if (isEnabler(cardDef(object.cardId))) return true;
+      }
+    }
+    return false;
+  };
+
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -2541,12 +2615,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // nie stałe 5. Inne liczniki (quest, stun…) zostają przy 5 do osobnej pętli.
     add_counter: (e, view, req, def) => (req
       ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
-      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, e?.amount ?? 1) : 5)),
+      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, graveyardCounterAmount(view, e)) : 5)),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
     search_library_to_hand: (e, view) => searchRiderValue(view, e),
     search_library_to_battlefield: (e, view) => searchRiderValue(view, e),
     return_card_from_graveyard_to_hand: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 7 : 0),
+    // PMSSB-79 (batch 70, Paranormal Analyst): „put a card you put into your
+    // graveyard this way into your hand” — karta wraca z WŁASNEGO grobu, więc
+    // to odzysk, nie nowa karta (dlatego mniej niż draw/7). Bramka dowodu
+    // siedzi w gałęzi zdarzenia (`manifestDreadEvidence`).
+    return_context_graveyard_card_to_hand: (e, view) => ((view.zones.graveyard ?? [])
+      .some((o) => o.controllerId === view.playerId) ? P.manifestDreadTriggerValue : 0),
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
     // Batch60 (Clone Shell, dies): odkrycie wygnanej karty = darmowy stwór
     // na pole bitwy, ale BEZ card advantage (to własna, wcześniej wygnana
@@ -3102,6 +3182,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (ev === 'you_draw_second_card_each_turn') like = secondDrawEvidence(view, def) ? 0.5 : 0;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
+      // PMSSB-79 (batch 70, Paranormal Analyst): „whenever you manifest dread”
+      // — zdarzenie nie było na tej liście, więc trigger wyceniano na 0 i karta
+      // była warta tylko ciało (pomiar: 68,40 niezależnie od stanu grobu).
+      // Bramka M429: trigger ma wartość WYŁĄCZNIE przy dowodzie źródła
+      // manifest dread (karta w ręce/na stole z efektem `manifest_dread`) —
+      // bez aktywatora to martwy tekst, nie „bonus z sufitu”.
+      else if (ev === 'manifest_dread_resolved') like = manifestDreadEvidence(view, def) ? 1 : 0;
       else continue;
       if (like <= 0) continue;
       if (ability.trigger?.payMana != null || (ability.trigger?.payColors?.length ?? 0) > 0) continue;
@@ -3204,12 +3291,53 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return Math.min(1 + Math.floor(x / 2), 3);
   };
   /**
+   * PMSSB-79 (Converge): ile kolorów many REALNIE da się wydać na ten czar.
+   * Silnik płaci kolorami, dopóki pula je ma (parytet z `manaColorsSpent`),
+   * a liczba symboli w koszcie ogranicza górę — nie da się „przepłacić ponad
+   * koszt”. Ta sama liczba karmi wycenę i (pośrednio) decyzję o rzucie, więc
+   * pule jednokolorowa i czterokolorowa przestają remisować (S11).
+   */
+  const convergeDamageAmount = (view, cmd, card) => {
+    const spent = Math.max(0, cmd?.cost ?? card?.manaCost ?? 0);
+    if (spent === 0) return 0;
+    const colors = new Set();
+    for (const unit of manaUnitsOfView(view, { artifactSpell: (card?.types ?? []).includes('Artifact') })) {
+      for (const color of unit ?? []) colors.add(color);
+    }
+    return P.convergeDamagePerColor * Math.min(spent, colors.size);
+  };
+  /**
+   * PMSSB-79 v2 (zgłoszenie właściciela 2026-10-27): czy X jest wystarczająco
+   * duże, żeby rzut miał sens. Rzut permanentem z {X} za X = 1 marnuje
+   * potencjał karty — dokładnie ta sama polityka co bramka Epic Experimentu
+   * (`xMinimumValue`, jedno źródło dla obu ścieżek, L41).
+   *
+   * Wyjątek ratunkowy: chump-block. Gdy wróg ma siłę ≥ nasze życie (realny
+   * letal w następnym ataku) i NIE mamy innego nietapniętego blokera, ciało
+   * wchodzące za X = 1 ma wartość przeżycia — próg spada wtedy do 1 (X = 0
+   * nadal odpada: 0/0 ginie od SBA, CR 704.5f, i nie zablokuje niczego).
+   * Wyjątek jest pokrętłem (`xMinimumValueLooseAtLethal` 0/1), więc M429
+   * odtwarza stan sprzed zmiany.
+   */
+  const xMinimumReached = (view, cmd, x, toughness) => {
+    if (!Number.isInteger(x) || x < 0) return false;
+    if (!(P.xMinimumValue > 0)) return true; // pokrętło 0 = dawne zachowanie
+    if (x >= P.xMinimumValue) return true;
+    if (!(P.xMinimumValueLooseAtLethal >= 1)) return false;
+    if (!(toughness > 0)) return false; // 0/0 nie zablokuje nic
+    const lethalNextSwing = enemyAttackPower(view) >= myLife(view)
+      && enemyCreatures(view).some((o) => combatPower(o) > 0);
+    if (!lethalNextSwing) return false;
+    const otherBlockers = myCreatures(view).filter((o) => !o.tapped && o.id !== cmd.objectId).length;
+    return otherBlockers === 0;
+  };
+  /**
    * PMSSB-67 F2: przyrost P/T od liczników WEJŚCIA (`entersWithCounters`), które pompa statyczna
    * przelicza na P/T. Deskryptor `<nazwa>_counters` (np. Necrosquito: `oil_counters`) = +1/+1 za
    * każdy licznik `<nazwa>`; licznik `+1/+1` z wejścia dodaje się wprost. Zwraca tylko przyrost, więc
    * karta bez takich liczników nie zmienia wyceny. Dawniej rzut czytał 0/0 i wyceniał 2/2 jak 0/0.
    */
-  const entryCounterStats = (view, def) => {
+  const entryCounterStats = (view, def, xValue = 0) => {
     const enters = def?.entersWithCounters ?? null;
     let dPower = 0;
     let dToughness = 0;
@@ -3223,6 +3351,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return 1 + (view?.zones?.battlefield ?? [])
           .filter((o) => o.controllerId === view?.playerId && o.kind === 'creature').length;
       }
+      // Batch 70 (Magma Pummeler, CR 107.3a): „enters with X +1/+1 counters” —
+      // X jest wyborem w komendzie rzutu, więc wycena wariantu musi go znać
+      // (inaczej wszystkie warianty X remisują na ciele 0/0).
+      if (raw === 'X') return Number.isInteger(xValue) ? xValue : 0;
       return 0;
     };
     if (enters['+1/+1']) {
@@ -4734,6 +4866,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const banned = host.cantBeBlockedByKeywords;
       if (blockers.every((b) => banned.some((kw) => hasKeyword(b, kw)))) return true;
     }
+    // Batch 70 (Fen Hauler): „can't be blocked by artifact creatures" — ten sam
+    // kontrakt co wyżej: omija wszystkich dopiero, gdy KAŻDY potencjalny bloker
+    // ma któryś z zakazanych TYPÓW (widok niesie `types`, game-state.js:7105).
+    if (Array.isArray(host.cantBeBlockedByTypes) && host.cantBeBlockedByTypes.length > 0) {
+      const banned = host.cantBeBlockedByTypes;
+      if (blockers.every((b) => banned.some((type) => (b.types ?? []).includes(type)))) return true;
+    }
     return false;
   };
 
@@ -4794,10 +4933,36 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    */
   const LASTING_MANA_EFFECTS = new Set(['create_token', 'add_counter']);
   const COMBAT_STEPS = new Set(['declare_attackers', 'declare_blockers', 'combat_damage', 'end_of_combat']);
+  // Z (zgłoszenie właściciela 2026-10-26, Cenn's Tactician): koszt TAPNIĘCIA nie
+  // wyklucza odroczenia — wręcz przeciwnie, to DRUGI powód, żeby poczekać.
+  // Zgłoszenie: bot w swojej Głównej 1 tapował jedynego stwora (2/2), dokładał
+  // mu licznik i nie atakował, choć przeciwnik nie miał blokerów (bezkarne 2
+  // obrażenia). Zdolność „{W}, {T}: dołóż licznik +1/+1” ma trwały skutek, więc
+  // obowiązuje ją ta sama zasada co PMSSB-66 (ta sama mana/ciało zastane w end
+  // step przeciwnika), ale dochodzi wymiar TEMPA: tapowanie ciała przed własną
+  // walką zabiera mu atak (w cudzej turze — blok). W oknie end step ciało i tak
+  // nic nie zrobi, a licznik zostaje do następnej tury; w krokach walki
+  // odroczenia nie ma (combat trick: licznik zmienia wynik toczącej się walki —
+  // pin PMSSB-66/W9), a linia wygrywająca od razu jest wyłączona przez
+  // `lethalNow` (M429/PMSSB-23 „licznik domyka grę”).
+  // Zakres: zdolności, które PŁACĄ MANĘ (koszt many > 0). Zdolność za samo {T}
+  // (Rustvine Cultivator) zostaje poza tą regułą — mierzone zachowanie jest już
+  // poprawne (M173/D: licznik bez potrzeby konsumenta → −6 w naszej Głównej 1,
+  // czyli pass), więc nie ma czego odraczać.
   const isLastingManaAbility = (ability, manaCost) => {
-    if (!(manaCost > 0) || ability?.cost?.tap || ability?.timing === 'sorcery') return false;
+    if (!(manaCost > 0) || ability?.timing === 'sorcery') return false;
     const effs = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
-    return effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type));
+    if (!(effs.length > 0 && effs.every((e) => LASTING_MANA_EFFECTS.has(e?.type)))) return false;
+    // Z (uwaga Z): licznik WROGI (−1/−1, stun) na zdolności Z TAPEM to
+    // USUNIĘCIE, nie „rozwój planszy” — jego wartość zależy od momentu
+    // (CR 704.5f: zabity stwór nie zaatakuje), więc nie wolno go odkładać do
+    // okna. Dotąd chroniło to wykluczenie `cost.tap` w całości; teraz tap jest
+    // dopuszczony, więc granicę stawiamy po rodzaju licznika. Wyłącznie dla
+    // zdolności z tapem — zachowanie zdolności za SAMĄ manę zostaje bez zmian
+    // (piny PMSSB-66 K1/K2 mierzą właśnie odroczenie „−1/−1, które nie zabija”).
+    if (ability?.cost?.tap
+      && effs.some((e) => e?.type === 'add_counter' && counterIsHostile(e?.counter))) return false;
+    return true;
   };
   // Rezerwa many pod instant/flash, który ZAGRAMY w tym oknie: najdroższy z tych, które mieszczą się
   // w dostępnej manie (instant, którego nie stać, i tak nie zostanie zagrany — nie blokuje okna).
@@ -6468,6 +6633,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && attacker.cantBeBlockedExceptByColors.length > 0
       && !(blocker.colors ?? []).some((color) => attacker.cantBeBlockedExceptByColors.includes(color))) return false;
     if ((attacker.cantBeBlockedByKeywords ?? []).some((kw) => hasKeyword(blocker, kw))) return false;
+    // Typy blokera rozstrzyga już `attackerCanBeBlocked` (PMSSB-79) — tu
+    // zostają wyłącznie restrykcje, których ten predykat nie zna (kolory,
+    // keywordy blokera, ochrona).
     if ((attacker.protection ?? []).some((quality) => sourceHasProtectionQuality(quality, blocker))) return false;
     return true;
   };
@@ -8998,6 +9166,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-43/A: pompy SKIEROWANE (targetIndex inny niż host) wciąż poza
     // modelem — nie ma wspieranej karty tego kształtu, bez kodu na zapas.
     if (leg.targetIndex != null) return 0;
+    // Uwaga Y (zgłoszenie właściciela: bot dopakował stwory PO Revealing
+    // Wind): cała wartość tej wyceny bierze się z obrażeń walki, a te są przy
+    // mgle zapobiegnięte (CR 615.6). Osobnej bramki tu nie ma — pilnują jej
+    // `pumpChangesOutcome` (zero dla dodatnich delt przy mgle) oraz
+    // `attackIntendsCreature` (atak przy mgle jest wart −100, więc okno
+    // „przed atakiem” jest jałowe).
     // PMSSB-43/A: `buff_attacking_creatures` (np. Thunderstaff) działa na
     // ATAKUJĄCYCH (zbiór), a nie na pojedynczego hosta. Odbiorcą symulacji
     // jest nasz atakujący (jeśli jakikolwiek istnieje w tej chwili oceny) —
@@ -11188,10 +11362,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
         const def = card ? cardDef(card.cardId) : undefined;
+        // Batch 70 (X w koszcie permanentu, CR 107.3a): X jest częścią komendy,
+        // więc wchodzi do liczników wejścia I do kosztu many.
+        const spellX = Number.isInteger(cmd.xValue) ? cmd.xValue : 0;
         // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
-        const entryStats = entryCounterStats(view, def);
+        const entryStats = entryCounterStats(view, def, spellX);
         let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
           + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
+        // CR 704.5f: stwór wchodzący z wytrzymałością ≤ 0 ginie od SBA, zanim
+        // cokolwiek zrobi — karta i mana zmarnowane (Magma Pummeler za X = 0).
+        // Tylko CIAŁA: artefakt/ląd nie ma wytrzymałości, a brak pola ≠ 0.
+        // `enterAsCopy` (Jwari Shapeshifter) też ma wydrukowane 0/0, ale wchodzi
+        // jako kopia — karę dostaje osobna bramka niżej, nie ta.
+        const cialo = (def?.types ?? []).includes('Creature') && !def?.enterAsCopy?.subtype;
+        if (cialo && (card?.toughness ?? 0) + entryStats.dToughness <= 0) score -= P.creatureEntryDiesPenalty;
+        // PMSSB-79 v2 (zgłoszenie właściciela): X poniżej progu = zmarnowany
+        // potencjał karty — wariant schodzi pod pass (jak Epic Experiment przy
+        // X < 3). Wyjątek chump-blocka opisany przy `xMinimumReached`.
+        if (cmd.xValue != null && cialo
+          && !xMinimumReached(view, cmd, spellX, (card?.toughness ?? 0) + entryStats.dToughness)) {
+          return finish(NEVER);
+        }
+        // X many faktycznie wydane na rzut (koszt całkowity = baza + X).
+        if (cmd.xValue != null) score -= P.creatureManaCostWeight * spellX;
         // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
         if (!cmd.faceDown) score += creatureKeywordValue(view, card, def);
         // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
@@ -11283,6 +11476,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             convokeTapCost += P.convokeTapPenalty * body / 4;
           }
           score += P.creatureManaCostWeight * convokePayments.length - convokeTapCost;
+          // Batch 70 (Improvise, CR 702.126a): ten sam rachunek co convoke —
+          // każdy tapnięty artefakt pokrywa {1}, ale traci blok i (jeśli ma
+          // zdolność many) produkcję do końca tury.
+          const improvisePayments = cmd.improvisePayments ?? [];
+          if (improvisePayments.length > 0) {
+            let improviseTapCost = 0;
+            for (const payment of improvisePayments) {
+              const artifact = zoneCard(view, payment.artifactId);
+              const body = Math.max(1, (artifact?.power ?? 0) + (artifact?.toughness ?? 0));
+              improviseTapCost += P.improviseTapPenalty * body / 4;
+            }
+            score += P.creatureManaCostWeight * improvisePayments.length - improviseTapCost;
+          }
         }
         // Uwaga z gry B: permanent z głównym ETB `animate_linked` bez godnego
         // artefaktu traci potencjał. Kara znika wyłącznie, gdy samo ciało jako
@@ -11407,6 +11613,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             .filter((b) => bannedKeywords.some((kw) => hasKeyword(b, kw))).length;
           if (withKeyword > 0) {
             score += (withKeyword === enemyBlockers.length) ? 3 : 1.5;
+          }
+        }
+        // Batch 70 (Fen Hauler): ten sam człon dla ewazji po TYPACH blokera
+        // („artifact creatures") — bez niego statyka nie wchodzi do wyceny
+        // rzutu wcale, a to cała wartość karty przy ścianie artefaktów.
+        const bannedTypes = (def?.abilities ?? [])
+          .filter((a) => a?.type === 'static' && Array.isArray(a.cantBeBlockedByTypes))
+          .flatMap((a) => a.cantBeBlockedByTypes);
+        if (bannedTypes.length > 0) {
+          const enemyBlockers = untappedEnemyBlockers(view);
+          const withType = enemyBlockers
+            .filter((b) => bannedTypes.some((type) => (b.types ?? []).includes(type))).length;
+          if (withType > 0) {
+            score += (withType === enemyBlockers.length) ? 3 : 1.5;
           }
         }
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
@@ -12310,7 +12530,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // więc bot nigdy nie rzucał Blitza mimo pełnych obrażeń w silniku.
               : effect.amount === 'instants_and_sorceries_in_your_graveyard'
                 ? instantSorceryGraveyardCount(view.zones.graveyard ?? [], view.playerId)
-                : Number.isInteger(effect.amount) ? effect.amount : 0;
+                // PMSSB-79 (batch 70, Kaleidoscorch — Converge, CR 207.2c):
+                // X = liczba KOLORÓW many wydanej na rzut. Silnik płaci je
+                // kolorami (zmierzone: `{1}{R}` z puli R/G/W/U →
+                // `manaColorsSpent: ['R','G']`), więc wycena liczy tę samą
+                // liczbę z puli: min(dostępne kolory, mana wydana na czar).
+                // Wcześniej string wpadał w `: 0` — bot wyceniał czar na 0
+                // obrażeń (pomiar: -61,00 niezależnie od kolorów) i nigdy go
+                // nie rzucał.
+                : effect.amount === 'colors_of_mana_spent'
+                  ? convergeDamageAmount(view, cmd, card)
+                  : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
@@ -12486,7 +12716,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const ownMain2 = myTurn(view)
               && view.turn?.phase === 'postcombat_main'
               && view.turn?.step === 'main2';
-            if (X < 3 || !ownMain2) return finish(NEVER);
+            // PMSSB-79 v2: próg X czytany z jednej stałej (`xMinimumValue`),
+            // wspólnej z permanentami o koszcie {X} — wcześniej twarde 3.
+            if (X < P.xMinimumValue || !ownMain2) return finish(NEVER);
             score += 5 * X + drawDeckingPenalty(view, X);
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
@@ -12837,7 +13069,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               })();
               trick = hypotheticalSaves ? 14 : -75;
             } else trick = -75;
-            if (inCombat && !pumpChangesOutcome(view, target, delta)) trick = -75;
+            if (!combatDamageRelevantNow(view)
+              || (inCombat && !pumpChangesOutcome(view, target, delta))) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
@@ -17491,7 +17724,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // wariant i tak jest w nim rozstrzygalny — `objectId` jest unikalny w ręce,
     // a od tury 6 różnicę niosą projekcje (`waluta`, `cele`, `kicker`). Zysk
     // czytelności nie był wart przepisania pinsów, które sami pilnują wyceny.
-    if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''})`;
+    // Batch 70 PMSSB-79 (parzystość z `activate_ability`, lekcja Krumar H):
+    // warianty {X} tego samego rzutu różnią się WYŁĄCZNIE `xValue`, więc bez
+    // niego ślad zwijał X=0..13 do jednej etykiety — audyt remisów nie miał
+    // czego parować. Suffix tylko gdy komenda niesie X (piny bez {X} bez zmian).
+    if (cmd.type === 'cast_spell' || cmd.type === 'cast_cleave' || cmd.type === 'cast_permanent' || cmd.type === 'cast_adventure' || cmd.type === 'cast_adventure_creature') {
+      const wariantX = cmd.xValue != null ? `,X=${cmd.xValue}` : '';
+      return `${cmd.type}(${cmd.objectId}${cmd.targets ? '->' + cmd.targets.join('+') : ''}${wariantX})`;
+    }
     // M195/B: aktywacja zdolności bez ŹRÓDŁA i CELU była w śladzie nieczytelna
     // („activate_ability" × N) — nie dało się odróżnić buffu sojusznika od
     // tapnięcia samego siebie ani w diagnostyce, ani w teście wyceny.

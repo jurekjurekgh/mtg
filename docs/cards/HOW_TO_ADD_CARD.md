@@ -259,7 +259,49 @@ Wzorzec: `test/real-cards-batch11.test.js`. Dla każdej karty co najmniej:
 Testy core nie używają DOM-u ani sieci (ADR 0011). Sprawdź też, że nowa talia
 przechodzi walidację (`assertDeckSupported`).
 
-## Krok 7 — bot, benchmark, progi (tylko gdy zmienia się bot)
+## Krok 7 — PMSSB nowych mechanik (OBOWIĄZKOWY, nie „jeśli starczy czasu”)
+
+**Dodanie kart NIE KOŃCZY SIĘ na zielonym silniku.** Każda mechanika, która
+w tym batchu pojawia się po raz pierwszy (nowy deskryptor, nowa rodzina
+efektów, nowa ścieżka płatności, nowy typ zdarzenia), wymaga **pętli
+manualnego strojenia scoringu bota — PMSSB** (`docs/PMSSB.md`, metoda M429).
+Bez niej silnik poprawnie *wykonuje* regułę, a bot nadal wybiera nią źle
+albo traktuje ją jak zero — mechanika jest wtedy dla gracza martwa, choć
+wszystkie piny są zielone.
+
+Procedura jest w `docs/PMSSB.md` („Procedura pętli”, kroki 0–7). Minimum
+dla batcha kart:
+
+0. **Inwentarz:** wypisz mechaniki batcha i zaznacz, które były już strojone
+   (rejestr rodzin w `docs/PMSSB.md` + `docs/ENGINE_MILESTONES.md`). Tylko
+   **nieostrojone** wchodzą do pętli — powtórny audyt zamkniętej rodziny
+   wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
+1. **Plan** `docs/plans/PLAN_<data>-pmssb<N>-<rodzina>.md` — commit PRZED
+   kodowaniem.
+2. **Pomiar PRZED:** sonda `tools/pmssb<N>-<rodzina>-sonda.mjs` — scenariusze
+   (kierunek × cel × timing × stan) z liczbami; zapis wyniku w `.arena/`.
+3. **Audyt i fale:** findingi F1…Fn; obowiązkowe kontrole każdej pętli:
+   (a) **L41** — wszystkie ścieżki (rzut / zdolność aktywowana / tryb
+   modalny / trigger-decyzja) liczą to samo; (b) **wymiar kosztu** (S11);
+   (c) **anty-over-fix M429** — najsłabszy realny wariant = dawna wartość,
+   nowe wymiary to dopłaty/kary.
+4. **Wdrożenie:** pokrętła `<rodzina>*` w `src/controllers/heuristic-params.js`
+   (klucz na liście + default z uzasadnieniem) i wspólne helpery w
+   `heuristic-bot.js`; `0` = dokładnie dawne zachowanie.
+5. **Testy:** `test/audyt-pmssb<N>-<rodzina>.test.js` RED→GREEN + mutacje
+   (wyzerowanie pokrętła / wyłączenie gałęzi).
+6. **Ewaluacja:** `bot-scoring-snapshot` (cel: bez regeneracji; regeneracja
+   tylko po przeglądzie różnic), tie-audit PO, mirror-eval (reguły vs off).
+   Brak sygnału w lustrze przy wąskich stanach to wynik, nie porażka.
+7. **Dokumentacja:** raport w `docs/PMSSB.md` + wiersz w rejestrze rodzin
+   (status DONE / ZAMKNIĘTE BEZ ZMIANY) + `PROJECT_HISTORY.md`.
+
+Jeśli mechanika jest **bliźniakiem** już strojonej rodziny (np. Improvise po
+Convoke, ewazja po typie blokera po ewazji po słowie kluczowym), pętla jest
+krótsza, ale NADAL obowiązkowa: mierzy się, czy domyślna kara/próg przeniesiony
+z bliźniaka pasuje, i pinuje wynik.
+
+## Krok 7b — benchmark i progi (tylko gdy zmienia się bot)
 
 Zmiana bota (kontrolery `src/controllers/`) wymaga obowiązkowego pomiaru B0:
 `node tools/benchmark.mjs` (~9 min, pełna macierz) i aktualizacji progów
@@ -308,6 +350,10 @@ Wynik podaj w opisie PR (liczba testów, liczba modułów i rozmiar artefaktu).
 - [ ] generyczne mechaniki w engine (jeśli nowe), bez warunków na nazwę
 - [ ] nowy deskryptor ma 4 dowiązania: EVENT_TYPES + opis zdarzenia, etykieta
       PL, wycena bota (albo `REVIEWED_UNVALUED`), `gameObjectDataOf` (L84)
+- [ ] **PMSSB nowych mechanik** (Krok 7): inwentarz → sonda PRZED → audyt →
+      pokrętła + piny RED→GREEN → mutacje → wpis w `docs/PMSSB.md` (rejestr
+      rodzin). Batch bez tego kroku jest NIEDOKOŃCZONY, nawet gdy wszystkie
+      testy są zielone — silnik wykonuje mechanikę, ale bot jej nie wycenia.
 - [ ] B0 + progi `test/bot-benchmark.test.js`, jeśli zmieniał się bot
 - [ ] `PROJECT_HISTORY.md` i `ENGINE_MILESTONES.md` zaktualizowane
 - [ ] `npm test` zielone, `npm run build` podaje liczby w opisie PR

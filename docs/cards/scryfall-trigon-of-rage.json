@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Trigon%20of%20Rage&set=som&format=json",
+  "print": "Trigon of Rage (SOM)",
+  "name": "Trigon of Rage",
+  "mana_cost": "{2}",
+  "cmc": 2.0,
+  "type_line": "Artifact",
+  "oracle_text": "This artifact enters with three charge counters on it.\n{R}{R}, {T}: Put a charge counter on this artifact.\n{2}, {T}, Remove a charge counter from this artifact: Target creature gets +3/+0 until end of turn.",
+  "colors": [],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "som",
+  "set_name": "Scars of Mirrodin",
+  "collector_number": "216",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/1/1/1135f3b7-8c6b-47ff-b895-b7127836b0bf.jpg?1783941693",
+    "normal": "https://cards.scryfall.io/normal/front/1/1/1135f3b7-8c6b-47ff-b895-b7127836b0bf.jpg?1783941693",
+    "large": "https://cards.scryfall.io/large/front/1/1/1135f3b7-8c6b-47ff-b895-b7127836b0bf.jpg?1783941693"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/som/216/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}

@@ -175,8 +175,14 @@ test('PMSSB-23/A6: ścieżka zdolności — wymiary bez zmian, koszt {2} wycenio
 
   const rustvine = base();
   putCard(rustvine, 'rc', 'rustvine-cultivator', 'p2', 'battlefield');
-  // M173/D: licznik zasobowy bez konsumenta, który miałby co robić = −6 → pass.
-  assert.equal(scoreOf(rustvine, 'activate_ability(rc#0)'), -6);
+  // M173/D: licznik zasobowy BEZ konsumenta, który miałby co robić → pass.
+  // Z (uwaga właściciela 2026-10-26, Cenn's Tactician): sam WYBÓR (pass) jest
+  // tu kotwicą, a nie wartość liczbowa — aktywacja z kosztem {T} na ciele,
+  // które może atakować, jest teraz karana −40 (ta sama kara co klasa
+  // „outlast”, N) zamiast sumy M173/D (−6). Obie liczby są < 0, więc wynik
+  // polityki jest identyczny; pin PMSSB-23 pilnuje wymiarów M173, nie okna.
+  assert.ok(scoreOf(rustvine, 'activate_ability(rc#0)') <= -1,
+    `aktywacja w naszej głównej musi przegrać z passem (jest ${scoreOf(rustvine, 'activate_ability(rc#0)')})`);
   assert.equal(decide(rustvine).choice.type, 'pass_priority');
 });
 

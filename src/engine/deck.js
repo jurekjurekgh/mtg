@@ -145,6 +145,10 @@ export function installDeck(state, deck, { seed }) {
       delve: card.delve ?? false,
       // Batch 69 (Convoke, CR 702.51): deskryptor — rzut może płacić stworami.
       convoke: card.convoke ?? false,
+      // Batch 70 (Improvise, CR 702.126): rzut może płacić tapniętymi artefaktami.
+      improvise: card.improvise ?? false,
+      // Batch 70 (Magma Pummeler): X w koszcie permanentu (CR 107.3a).
+      xCost: card.xCost ?? null,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
       warp: card.warp ?? null,

@@ -1,0 +1,83 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Kaleidoscorch&set=mh2&format=json",
+  "print": "Kaleidoscorch (MH2)",
+  "name": "Kaleidoscorch",
+  "mana_cost": "{1}{R}",
+  "cmc": 2.0,
+  "type_line": "Sorcery",
+  "oracle_text": "Converge — Kaleidoscorch deals X damage to any target, where X is the number of colors of mana spent to cast this spell.\nFlashback {4}{R} (You may cast this card from your graveyard for its flashback cost. Then exile it.)",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Converge",
+    "Flashback"
+  ],
+  "set": "mh2",
+  "set_name": "Modern Horizons 2",
+  "collector_number": "133",
+  "rarity": "uncommon",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/a/5/a5f07603-fd79-437a-9b12-495fc5a39b68.jpg?1783926842",
+    "normal": "https://cards.scryfall.io/normal/front/a/5/a5f07603-fd79-437a-9b12-495fc5a39b68.jpg?1783926842",
+    "large": "https://cards.scryfall.io/large/front/a/5/a5f07603-fd79-437a-9b12-495fc5a39b68.jpg?1783926842"
+  },
+  "rulings": [
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "The maximum number of colors of mana you can spend to cast a spell is five. Colorless is not a color. Note that the cost of a spell with converge may limit how many colors of mana you can spend."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "Unless a spell or ability allows you to, you can't choose to pay more mana for a spell with a converge ability just to spend more colors of mana. Likewise, if a spell or ability reduces the amount of mana it costs you to cast a spell with converge, you can't ignore that cost reduction in order to spend more colors of mana."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "If there are any alternative or additional costs to cast a spell with a converge ability, the colors of mana spent to pay those costs will count."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "If you cast a spell with converge without spending any mana to cast it (perhaps because an effect allowed you to cast it without paying its mana cost), then the number of colors spent to cast it will be zero."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "If a spell with a converge ability is copied, no mana was spent to cast the copy, so the number of colors of mana spent to cast the spell will be zero. The number of colors spent to cast the original spell is not copied."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "\"Flashback [cost]\" means \"You may cast this card from your graveyard by paying [cost] rather than paying its mana cost\" and \"If the flashback cost was paid, exile this card instead of putting it anywhere else any time it would leave the stack.\""
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "You must still follow any timing restrictions and permissions, including those based on the card's type. For instance, you can cast a sorcery using flashback only when you could normally cast a sorcery."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "To determine the total cost of a spell, start with the mana cost or alternative cost (such as a flashback cost) you're paying, add any cost increases, then apply any cost reductions. The mana value of the spell is determined only by its mana cost, no matter what the total cost to cast the spell was."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "A spell cast using flashback will always be exiled afterward, whether it resolves, is countered, or leaves the stack in some other way."
+    },
+    {
+      "date": "2021-06-18",
+      "source": "wotc",
+      "comment": "You can cast a spell using flashback even if it was somehow put into your graveyard without having been cast."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/mh2/133/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}
