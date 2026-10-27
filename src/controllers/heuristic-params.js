@@ -552,6 +552,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
   'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
   'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
+  // C (uwaga właściciela 2026-10-27c): premia za pkt obrażeń WCHŁONIĘTYCH
+  // blokiem BEZKOSZTOWYM (bloker i atakujący przeżywają) — życie uratowane bez
+  // utraty ciała musi przebić koszt zaangażowania blokera (bez tego remis
+  // z passem rozstrzygała kolejność ofert i bot przepuszczał cały atak).
+  'blockFreeAbsorbBonus',
   // PMSSB-32 — produkcja many (`add_mana`). Audyt okien zdolności many:
   // kiedy mana realnie przesuwa próg opłacalności, a kiedy jest „na zapas”
   // (M128). Dwa nowe wymiary po pomiarze PRZED:
@@ -1100,6 +1105,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 24..60, wciąż daleko nad −5 za rezygnację.
   satyrLookBase: 30,
   blockGoodTradePerPoint: 2,
+  blockFreeAbsorbBonus: 1,
   // PMSSB-32 (wartości przemyślane, pomiar PRZED:
   // /home/user/scratch/pmssb32-mana-przed.mjs): nowe wymiary to DOPŁATY/KARY
   // nad starą arytmetyką (anty-over-fix — realne odblokowanie liczbowe z

@@ -19,6 +19,16 @@ import {
  * benchmark (test/bot-benchmark.test.js). Gdy tuner B6 ŚWIADOMIE zmienia
  * parametry domyślne, fixture regeneruje się razem z przyjęciem nowych wag:
  *   node tools/bot-scoring-snapshot.mjs --write
+ *
+ * REJESTR ŚWIADOMYCH REGENERACJI (sesja 2026-10-27c, PR #177):
+ *   - 5be4528f… → 4902f6a7… (C/uwaga właściciela: premia `blockFreeAbsorbBonus`
+ *     za blok bezkosztowy). Zmierzona różnica — JEDNA opcja nie-wybrana:
+ *     `block[permanent-53<permanent-68]` 1 → 3 na partii
+ *     ravnica-wur|innistrad-wu@1001, tura 18 (declare_blockers): blok, w którym
+ *     nikt nie ginie, dostaje 2 × 1 pkt za wchłonięte obrażenia. Wybrane
+ *     komendy (321 decyzji) i scoreSum wybranej ścieżki (3185.9745) są
+ *     IDENTYCZNE — zmiana nie odwraca żadnej decyzji, tylko uczciwiej wycenia
+ *     odrzucony wariant.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

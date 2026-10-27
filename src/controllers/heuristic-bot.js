@@ -15684,6 +15684,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               }
             }
           }
+          // C (uwaga właściciela 2026-10-27c, 1/2 vs atak 3/2 + 1/2 + 1/3):
+          // blok BEZKOSZTOWY — bloker przeżywa, atakujący przeżywa, nikt nie
+          // traci ciała — jest ZAWSZE lepszy od przepuszczenia obrażeń: życie
+          // uratowane nic nie kosztuje. Dotąd wycena dawała dokładnie 0
+          // (+1 wchłonięte obrażenia −1 zaangażowania), więc remis z passem
+          // rozstrzygała KOLEJNOŚĆ ofert i bot przepuszczał wszystko
+          // („wszystko przepuszczam" nie jest strategią — dyrektywa właściciela).
+          // Premia liczona od WCHŁONIĘTYCH obrażeń, tylko gdy żadne ciało nie
+          // ginie (ginący bloker ma własną, ostrzejszą drabinę wyżej — L41/L3).
+          if (blockerValueLost === 0 && absorbedDamage > 0) {
+            score += P.blockFreeAbsorbBonus * absorbedDamage;
+          }
           // Koszt zaangażowania blokera (tapowany; nie pomoże innemu atakowi).
           score -= blockersUsed;
           // I (doprecyzowanie właściciela 2026-09-22): to NIE jest zakaz

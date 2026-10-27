@@ -160,12 +160,17 @@ function wynikBloku(zycie) {
   return bot.trace().at(-1).options.find((o) => o.cmd === 'block[a<b]').score;
 }
 
-test('Drabinka presji życia przy bloku: pasma ≤2 / ≤5 / ≤8 / wyżej = 43 (z lethalem) / 11 / 9 / 7', () => {
-  assert.equal(wynikBloku(2), 43, 'pasmo ≤2: +6 (43 = 37 + 6; przy życiu 2 atak 2 jest lethalem)');
-  assert.equal(wynikBloku(3), 11);
-  assert.equal(wynikBloku(5), 11, 'granica pasma ≤5 (+4)');
-  assert.equal(wynikBloku(6), 9, 'pasmo ≤8 (+2)');
-  assert.equal(wynikBloku(8), 9);
-  assert.equal(wynikBloku(9), 7, 'powyżej 8 brak premii');
-  assert.equal(wynikBloku(20), 7);
+// PR #177/C (uwaga właściciela 2026-10-27c): cała drabinka przesunięta o +2,
+// bo blok jest BEZKOSZTOWY (atakujący 2/2, bloker 3/3 — nikt nie ginie), a nowa
+// premia `blockFreeAbsorbBonus` płaci 1 pkt za każde wchłonięte obrażenie
+// (w tym stole 2). Same PASMA i ich różnice są bez zmian (43/11/9/7 → 45/13/11/9),
+// więc pin nadal pilnuje progów życia, a nie konkretnej stałej.
+test('Drabinka presji życia przy bloku: pasma ≤2 / ≤5 / ≤8 / wyżej = 45 (z lethalem) / 13 / 11 / 9', () => {
+  assert.equal(wynikBloku(2), 45, 'pasmo ≤2: +6 (45 = 39 + 6; przy życiu 2 atak 2 jest lethalem)');
+  assert.equal(wynikBloku(3), 13);
+  assert.equal(wynikBloku(5), 13, 'granica pasma ≤5 (+4)');
+  assert.equal(wynikBloku(6), 11, 'pasmo ≤8 (+2)');
+  assert.equal(wynikBloku(8), 11);
+  assert.equal(wynikBloku(9), 9, 'powyżej 8 brak premii');
+  assert.equal(wynikBloku(20), 9);
 });
