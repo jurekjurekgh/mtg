@@ -20,6 +20,27 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-27f — próg minimalnego X dla rzutów za {X} (korekta intencji właściciela)
+
+- Zgłoszenie: nie chodziło o widoczność X, tylko o opłacalność — rzut za X = 1
+  marnuje potencjał karty. Ta sama reguła co dla Epic Experimentu (X ≥ 3,
+  `test/uwagi-z-testow-b-epic-experiment-x.test.js`), teraz dla Magma Pummeler
+  i kart o tym kształcie.
+- Wdrożenie generyczne: bramka `xMinimumReached` w `cast_permanent` (wariant
+  z X < progu schodzi pod pass), stała `xMinimumValue` = 3 czytana także przez
+  bramkę Epic (wcześniej twarde 3 w kodzie — L41). Wyjątek ratunkowy
+  (`xMinimumValueLooseAtLethal`): przy sicie wroga ≥ nasze życie i braku
+  innego nietapniętego blokera próg spada do X ≥ 1 — chump-block dla
+  przeżycia, dokładnie jak w zgłoszeniu („ale tylko wtedy”).
+- Pomiar (`.arena/pmssb79b-xgate.log`): pula 4 / życie 20 — PRZED rzut za X=2,
+  PO pass; pula 5/6 — bez zmian (X=3/X=4); życie 2 + wrogi 3/3 + brak blokerów
+  — PO rzuca za X=2 (pula 4) i X=1 (pula 3); ten sam stan z zapasowym
+  blokerem albo bez letalu — pass.
+- Piny 5a/5f/5g/5h/5i (razem 24 w pliku), mutacje: bramka off → 4 RED,
+  wyjątek off → 1 RED, pokrętła ×0 = stan sprzed zmiany (M429).
+- Bramy: `npm test` 8972/8972, `test:slow` 268/268, build 76 modułów,
+  benchmark quick 88,1% (592/672) bez zmian, golden `5be4528f…` bez zmian.
+
 ## 2026-10-27e — X w koszcie permanentu: parzystość z czarami {X} (zgłoszenie właściciela)
 
 - Zgłoszenie: „PMSSB dla czarów z kosztem X już był (Epic Experiment) — podobna
