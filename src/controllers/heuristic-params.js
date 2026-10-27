@@ -42,6 +42,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'unpaidTradeLoss',
   // PMSSB-72 (Convoke): kara za stwór tapnięty na convoke (nie atakuje i nie blokuje w tej turze), rośnie z wartością ciała.
   'convokeTapPenalty',
+  // Batch 70 (Improvise, CR 702.126a): kara za artefakt tapnięty na improvise —
+  // jak convoke, ale artefakt traci też ewentualną produkcję many.
+  'improviseTapPenalty',
+  // Batch 70 (X w koszcie permanentu, CR 107.3a + 704.5f): kara za wejście
+  // z wytrzymałością ≤ 0 (stwór ginie od SBA, zanim cokolwiek zrobi).
+  'creatureEntryDiesPenalty',
   // Zgłoszenie D1 właściciela (2026-10-07, Pain for All): bloker z aurą
   // odbijającą („Whenever enchanted creature is dealt damage, it deals that
   // much damage to each opponent") — zablokowany atakujący zadaje obrażenia
@@ -599,6 +605,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // PMSSB-72 (Convoke, CR 702.51a): każdy stwór płacący convoke ratuje {1} many (creatureManaCostWeight),
   // ale się tapuje: kara = convokeTapPenalty · (moc + wytrzymałość)/4 (utracona tura: atak/blok). 4 = stwór 2/2.
   convokeTapPenalty: 4,
+  // Improvise: ten sam koszt co convoke (utracony blok), + artefakt traci
+  // produkcję many, więc 5 (nieco wyżej niż convoke).
+  improviseTapPenalty: 5,
+  // Wejście z 0 wytrzymałości: ciało (creatureBase 70) NIE może tego przebić.
+  creatureEntryDiesPenalty: 100,
   // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25
   // przebija premię wyścigu i typowe zyski ataku (power+3/+8), a zostaje
   // poniżej samobójstwa 1000 z drabiny PMSSB-36.

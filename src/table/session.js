@@ -444,6 +444,10 @@ function defaultBotFactory(seed, ctx) {
     // `src/table/` (strażnik M212 pilnuje `src/engine`/`src/cards`).
     lock_untap: 'cel nie odkręca się w kroku odkręcania, dopóki źródło pozostaje tapnięte (odkręci się, gdy źródło wstanie albo je stracisz)',
     look_top_put_one_hand_rest_bottom: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta na spód',
+    // Batch 70 (Orazca Puzzle-Door): pierwsza AKTYWOWANA zdolność z tym
+    // efektem w katalogu (dotąd występował wyłącznie w triggerach) — bez
+    // wpisu log aktywacji pokazywał gołą nazwę karty (klasa L84, M255/C1).
+    look_top_put_one_hand_rest_grave: 'spojrzenie na karty z wierzchu — jedna do ręki, reszta do grobu',
     creatures_cant_block_this_turn: 'zakaz blokowania dla stworów w tej turze',
     lose_life_enchanted_permanent_controller: 'utrata życia przez kontrolera zaczarowanego permanentu',
     attacker_gains_control_and_untaps: 'przejęcie kontroli przez atakującego (i odkręcenie)',
@@ -842,6 +846,12 @@ export const TRIGGER_EVENT_LABELS = Object.freeze({
   another_creature_enters: 'wejście innego stworzenia',
   // Batch65 (Zombie Boa): „becomes blocked by a creature of that color".
   becomes_blocked_by_color: 'zablokowanie przez stwora wybranego koloru',
+  // Batch 70 (Paranormal Analyst): „Whenever you manifest dread" — sam fakt
+  // rozstrzygnięcia manifest dread (CR 701.62a), także bez karty do grobu.
+  manifest_dread_resolved: 'rozstrzygnięcie manifest dread',
+  // Batch 70 (Magma Pummeler): licznik zdjęty prewencją obrażeń (efekt
+  // zastępczy — tylko ta droga odpala refleksyjny trigger).
+  counter_removed: 'zdjęcie licznika',
   // M177/B (Rakshasa Vizier): karty wygnane z twojego grobu.
   cards_exiled_from_your_graveyard: 'karty wygnane z twojego grobu',
   creature_you_control_enters: 'wejście stwora pod twoją kontrolą',

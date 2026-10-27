@@ -1172,7 +1172,12 @@ export function applyEnterCounters(state, objectId) {
       ? 1 + otherCreatures
       : amount === 'colors_of_mana_spent'
         ? countColorsOfManaSpent(object.manaColorsSpent)
-        : amount;
+        // Batch 70 (Magma Pummeler, CR 107.3a): „enters with X +1/+1 counters”.
+        // X jest ustalane przy rzucie i niesione na obiekt jako `spellX`;
+        // wejście bez rzucania (reanimacja, żeton-kopia) = 0 liczników.
+        : amount === 'X'
+          ? (Number.isInteger(object.spellX) ? object.spellX : 0)
+          : amount;
     addCounter(state, objectId, name, resolved);
   }
   // Liczniki wejścia WARUNKOWE (CR 614.1c): „enters with two +1/+1 counters

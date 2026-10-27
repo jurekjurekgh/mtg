@@ -2047,6 +2047,12 @@ function describeTriggered(ability, controllerId = HUMAN_ID) {
   // Batch 70 (Paranormal Analyst, CR 603.2): „Whenever you manifest dread" —
   // kafel nazywa zdarzenie po polsku zamiast surowego sluga mechaniki.
   if (trigger.event === 'manifest_dread_resolved') return `Ilekroć zmanifestujesz dread: ${parts}.`;
+  // Batch 70 (Magma Pummeler): efekt zastępczy zdejmujący liczniki — trigger
+  // czyta WYŁĄCZNIE tę drogę (`damagePreventionOnly`), więc kafel mówi to
+  // wprost zamiast pokazywać surowy slug zdarzenia (M202/C).
+  if (trigger.event === 'counter_removed' && trigger.damagePreventionOnly) {
+    return `Gdy w ten sposób zostaną zdjęte liczniki: ${parts}.`;
+  }
   if (trigger.event === 'exploits') return `Gdy ten stwór exploituje: ${parts}.`;
   if (trigger.event === 'equipped_creature_attacks') return `Gdy wyposażony stwór atakuje: ${parts}.`;
   if (trigger.event === 'aura_host_targeted_by_spell') return `Gdy zaczarowany stwór staje się celem czaru: ${parts}.`;

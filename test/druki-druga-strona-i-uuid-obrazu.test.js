@@ -191,23 +191,10 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
 // pierwszy; plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md).
 // Do czasu implementacji fal E1–E6 te nazwy są sierotami; lista schodzi do
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
-// Batch 70 (2026-10-27): snapshoty 10 kart nowego batcha są w repo PRZED
-// definicjami (procedura `HOW_TO_ADD_CARD.md` krok 1 — pobór ze Scryfall jest
-// pierwszy; plan: docs/plans/PLAN_2026-10-27-batch70-kolekcja-426-624.md).
-// Do czasu implementacji E3 te nazwy są sierotami; lista schodzi do zera razem
-// z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
-const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([
-  'arlinns-wolf',
-  'fen-hauler',
-  'jilt',
-  'kaleidoscorch',
-  'magma-pummeler',
-  'moldgraf-millipede',
-  'orazca-puzzle-door',
-  'paranormal-analyst',
-  'trigon-of-rage',
-  'vault-of-whispers',
-]);
+// Batch 70 (2026-10-27): snapshoty 10 kart weszły PRZED definicjami
+// (HOW_TO_ADD_CARD.md krok 1), a E3 domknął katalog — lista w toku jest PUSTA
+// i zostaje jako jawny punkt zaczepienia dla następnego batcha.
+const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([]);
 
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {
   const pliki = fs.readdirSync('docs/cards')

@@ -3234,7 +3234,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * każdy licznik `<nazwa>`; licznik `+1/+1` z wejścia dodaje się wprost. Zwraca tylko przyrost, więc
    * karta bez takich liczników nie zmienia wyceny. Dawniej rzut czytał 0/0 i wyceniał 2/2 jak 0/0.
    */
-  const entryCounterStats = (view, def) => {
+  const entryCounterStats = (view, def, xValue = 0) => {
     const enters = def?.entersWithCounters ?? null;
     let dPower = 0;
     let dToughness = 0;
@@ -3248,6 +3248,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         return 1 + (view?.zones?.battlefield ?? [])
           .filter((o) => o.controllerId === view?.playerId && o.kind === 'creature').length;
       }
+      // Batch 70 (Magma Pummeler, CR 107.3a): „enters with X +1/+1 counters” —
+      // X jest wyborem w komendzie rzutu, więc wycena wariantu musi go znać
+      // (inaczej wszystkie warianty X remisują na ciele 0/0).
+      if (raw === 'X') return Number.isInteger(xValue) ? xValue : 0;
       return 0;
     };
     if (enters['+1/+1']) {
@@ -11253,10 +11257,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             + anticipatedTailValue(view, cardDef(card?.cardId), cmd));
         }
         const def = card ? cardDef(card.cardId) : undefined;
+        // Batch 70 (X w koszcie permanentu, CR 107.3a): X jest częścią komendy,
+        // więc wchodzi do liczników wejścia I do kosztu many.
+        const spellX = Number.isInteger(cmd.xValue) ? cmd.xValue : 0;
         // PMSSB-67 F2: liczniki wejścia (Necrosquito: 2 oil = +2/+2) wchodzą do P/T wyceny rzutu (L41: oba warianty).
-        const entryStats = entryCounterStats(view, def);
+        const entryStats = entryCounterStats(view, def, spellX);
         let score = P.creatureBase + ((card?.power ?? 0) + entryStats.dPower) * P.creaturePowerWeight
           + ((card?.toughness ?? 0) + entryStats.dToughness) * P.creatureToughnessWeight;
+        // CR 704.5f: stwór wchodzący z wytrzymałością ≤ 0 ginie od SBA, zanim
+        // cokolwiek zrobi — karta i mana zmarnowane (Magma Pummeler za X = 0).
+        // Tylko CIAŁA: artefakt/ląd nie ma wytrzymałości, a brak pola ≠ 0.
+        // `enterAsCopy` (Jwari Shapeshifter) też ma wydrukowane 0/0, ale wchodzi
+        // jako kopia — karę dostaje osobna bramka niżej, nie ta.
+        const cialo = (def?.types ?? []).includes('Creature') && !def?.enterAsCopy?.subtype;
+        if (cialo && (card?.toughness ?? 0) + entryStats.dToughness <= 0) score -= P.creatureEntryDiesPenalty;
+        // X many faktycznie wydane na rzut (koszt całkowity = baza + X).
+        if (cmd.xValue != null) score -= P.creatureManaCostWeight * spellX;
         // PMSSB-64: słowa kluczowe ciała (rzut zakryty nie niesie słów — CR 708.2a).
         if (!cmd.faceDown) score += creatureKeywordValue(view, card, def);
         // Zgłoszenie G (2026-10-14, Willbender): rzut twarzą w dół to INNA karta
@@ -11348,6 +11364,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             convokeTapCost += P.convokeTapPenalty * body / 4;
           }
           score += P.creatureManaCostWeight * convokePayments.length - convokeTapCost;
+          // Batch 70 (Improvise, CR 702.126a): ten sam rachunek co convoke —
+          // każdy tapnięty artefakt pokrywa {1}, ale traci blok i (jeśli ma
+          // zdolność many) produkcję do końca tury.
+          const improvisePayments = cmd.improvisePayments ?? [];
+          if (improvisePayments.length > 0) {
+            let improviseTapCost = 0;
+            for (const payment of improvisePayments) {
+              const artifact = zoneCard(view, payment.artifactId);
+              const body = Math.max(1, (artifact?.power ?? 0) + (artifact?.toughness ?? 0));
+              improviseTapCost += P.improviseTapPenalty * body / 4;
+            }
+            score += P.creatureManaCostWeight * improvisePayments.length - improviseTapCost;
+          }
         }
         // Uwaga z gry B: permanent z głównym ETB `animate_linked` bez godnego
         // artefaktu traci potencjał. Kara znika wyłącznie, gdy samo ciało jako

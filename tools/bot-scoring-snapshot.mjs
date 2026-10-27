@@ -45,8 +45,11 @@ import { setupCardMatch } from '../src/cards/materialize.js';
  * (ADR 0019). Rozszerzenie zbioru = regeneracja fixture (świadoma).
  */
 export const SNAPSHOT_CONFIG = Object.freeze({
+  // Batch 70 (2026-10-27): generator talii przeszedł na podział Ravnicy
+  // „wur/bg” (doszła Arlinn's Wolf, ADR 0024) — stara nazwa `ravnica-wub`
+  // już nie istnieje, więc partia golden-mastera czytałaby pustą talię.
   pairs: Object.freeze([
-    Object.freeze(['ravnica-wub', 'innistrad-wu']),
+    Object.freeze(['ravnica-wur', 'innistrad-wu']),
     Object.freeze(['dominaria-brg', 'mirrodin-wu']),
     Object.freeze(['tarkir-bg', 'warhammer-ubr']),
   ]),

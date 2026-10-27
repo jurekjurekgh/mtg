@@ -1,6 +1,7 @@
 # Mirrodin (BRG)
 
 1x Great Furnace
+1x Vault of Whispers
 1x Horizon Spellbomb
 1x Panic Spellbomb
 1x Rustvine Cultivator
@@ -8,6 +9,7 @@
 1x Consume Spirit
 1x Death-Hood Cobra
 1x Shatter
+1x Trigon of Rage
 1x Ambulatory Edifice
 1x Bone Shredder
 1x Phyrexian Rager (APC)
@@ -24,6 +26,6 @@
 1x Merciless Repurposing
 1x Skyscythe Engulfer
 1x Gloomfang Mauler
-7x Swamp
+8x Swamp
 2x Mountain
 3x Forest

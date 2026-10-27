@@ -660,4 +660,15 @@ export const MANA_COSTS = {
   "gnoll-war-band": "{5}{R}",
   "gruul-beastmaster": "{3}{G}",
   "myr-scrapling": "{1}",
+  // Batch 70 (kolekcja 426–624)
+  "paranormal-analyst": "{1}{U}",
+  "jilt": "{1}{U}",
+  "vault-of-whispers": "",
+  "kaleidoscorch": "{1}{R}",
+  "orazca-puzzle-door": "{U}",
+  "fen-hauler": "{6}{B}",
+  "moldgraf-millipede": "{4}{G}",
+  "magma-pummeler": "{X}{R}{R}",
+  "trigon-of-rage": "{2}",
+  "arlinns-wolf": "{2}{G}",
 };

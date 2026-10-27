@@ -106,7 +106,8 @@ test('lokalny słownik zawiera wszystkie karty z ID setu, bez ucieczek i z duble
   // 363, 364, 365, 368) → 583; Batch 67 fala A (371, 380, 394, 397, 398) → 588;
   // fala B (369 Improbable Alliance) → 589.
   // Batch 68 (400–411) → 603; Batch 69 (412–425, 10 pozycji) → 613.
-  assert.equal(data.length, 613, 'pełna lista kolekcji po Batchu 69 (613 pozycji, bez STO)');
+  // Batch 70 (2026-10-27, kolekcja 426–624, 10 pozycji) → 623.
+  assert.equal(data.length, 623, 'pełna lista kolekcji po Batchu 70 (623 pozycje, bez STO)');
   for (const [art, name] of data) {
     assert.match(art, /^\d+[A-Za-z0-9_]*$/, `ID ilustracji bez znaków specjalnych: ${art}`);
     assert.ok(name.trim(), `nazwa nie może być pusta (ID ${art})`);
@@ -178,7 +179,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 66 (2026-10-13): +10 nowych nazw → 580.
   // Batch 67 fala A (2026-10-14): +5 nazw → 585; fala B (369) → 586.
   // Batch 69: +10 nazw (412OGW…425MH2) → 610.
-  assert.equal(dict.size, 610, 'słownik kolekcji po Batchu 69: 610 unikalnych nazw');
+  // Batch 70: +10 nowych nazw (426DSK…624WAR) → 620.
+  assert.equal(dict.size, 620, 'słownik kolekcji po Batchu 70: 620 unikalnych nazw');
 
   // Każda karta z artId w katalogu ma zgodny wpis w słowniku — gdy nowy batch
   // doda kartę bez odświeżenia słownika, ten test od razu to wskaże.
@@ -225,7 +227,8 @@ test('lokalny słownik (tools/collection-art-ids.csv) pokrywa karty z artId', ()
   // Batch 64 +10 → 563; Batch 65 +10 → 573; Batch 66 +10 → 583;
   // Batch 67 fala A +5 (371, 380, 394, 397, 398) → 588; fala B +1 (369) → 589.
   // Batch 69 (412–425): +10 → 613.
-  assert.equal(withArt.length, 613, 'wszystkie realne karty i tyły DFC mają artId (Batch 69)');
+  // Batch 70 (426–624): +10 → 623.
+  assert.equal(withArt.length, 623, 'wszystkie realne karty i tyły DFC mają artId (Batch 70)');
   const byName = artIdsBySetFromRows(parseCSV(fs.readFileSync('tools/collection-art-ids.csv', 'utf8')));
   for (const card of withArt) {
     const entries = byName.get(card.name.toLowerCase()) ?? [];

@@ -147,6 +147,8 @@ export function installDeck(state, deck, { seed }) {
       convoke: card.convoke ?? false,
       // Batch 70 (Improvise, CR 702.126): rzut może płacić tapniętymi artefaktami.
       improvise: card.improvise ?? false,
+      // Batch 70 (Magma Pummeler): X w koszcie permanentu (CR 107.3a).
+      xCost: card.xCost ?? null,
       surge: card.surge ?? null,
       toxic: card.toxic ?? null,
       warp: card.warp ?? null,

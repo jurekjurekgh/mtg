@@ -9,6 +9,8 @@
 1x Curate (STX)
 1x Infectious Bloodlust
 1x Invasion of the Giants
+1x Kaleidoscorch
+1x Magma Pummeler
 1x Naturalize
 1x Stymied Hopes
 1x Fiery Justice
@@ -24,6 +26,6 @@
 1x Austere Command
 3x Plains
 2x Island
-2x Swamp
-2x Mountain
+1x Swamp
+4x Mountain
 2x Forest

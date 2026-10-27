@@ -3,6 +3,7 @@
 1x Hunter's Blowgun
 1x Jade Bearer
 1x Malamet Battle Glyph
+1x Orazca Puzzle-Door
 1x Canonized in Blood
 1x Kraken's Eye
 1x Lodestone Needle
@@ -17,7 +18,7 @@
 1x Spreading Insurrection
 1x Unbreakable Bond
 1x Seismic Monstrosaur
-2x Island
+1x Island
 3x Swamp
-2x Mountain
+3x Mountain
 2x Forest

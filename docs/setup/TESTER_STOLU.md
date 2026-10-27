@@ -28,7 +28,7 @@ telefonie (jsdom nie renderuje layoutu/obrazów — patrz „Ograniczenia").
 ```bash
 npm run build                      # 1. zbuduj artefakt (wymagany)
 cd tools/table-tester && npm i     # 2. zainstaluj jsdom (jedyna zależność)
-node run-game.mjs --human dominaria-brg --bot ravnica-wub --seed 42 --steps 300 --out g1.txt
+node run-game.mjs --human dominaria-brg --bot ravnica-wur --seed 42 --steps 300 --out g1.txt
 ```
 
 Opcje:
@@ -36,7 +36,7 @@ Opcje:
 | Opcja | Znaczenie | Domyślnie |
 |---|---|---|
 | `--human <talia>` | talia gracza (nazwa z `decks/*.txt` bez `.txt`) | `dominaria-brg` |
-| `--bot <talia>` | talia bota | `ravnica-wub` |
+| `--bot <talia>` | talia bota | `ravnica-wur` |
 | `--seed <n>` | seed partii | `42` |
 | `--steps <n>` | limit kroków gry | `300` |
 | `--out <plik>` | plik transkryptu | `transcript.txt` |
@@ -53,7 +53,7 @@ generator `tools/generate-plan-decks.mjs`, ADR 0023, więc skład zmienia się
 przy każdym batchu kart). Nieistniejąca nazwa to jawny błąd z listą
 dostępnych — tester nie gra już „czymkolwiek" (M203).
 
-Przykłady kombinacji do audytu: `dominaria vs ravnica-wub`, `innistrad vs
+Przykłady kombinacji do audytu: `dominaria vs ravnica-wur`, `innistrad vs
 wiedzmin` (wilkołaki i transformy), `tarkir vs mirrodin`, `worek-dziki vs
 worek-mroczny`.
 
@@ -81,7 +81,7 @@ bo generator (ADR 0023) zmienia skład przy każdym batchu.
 ### Partia celowana pod mechanikę (chwilowa talia — M331, 2026-09-07)
 
 Mechanika z JEDNĄ kopią w jednej talii (cloak: 1× Veiled Ascension w
-`decks/ravnica-wub.txt`) nie zostanie odwiedzona w partiach „losowych": 4 ukończone
+`decks/ravnica-wur.txt`) nie zostanie odwiedzona w partiach „losowych": 4 ukończone
 gry audytowe PR #103 nie pokazały w logu ani jednego `Cloak`. Żeby audyt UI
 w ogóle miał co oglądać, zrób talię CELOWANĄ:
 

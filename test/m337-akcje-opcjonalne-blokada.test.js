@@ -175,7 +175,7 @@ test('M337/D: mecz z macierzy, który przerywał przebieg, dochodzi do końca', 
   const state = setupCardMatch({
     seed: 1001,
     players: [{ id: 'p1' }, { id: 'p2' }],
-    decks: new Map([['p1', list('mirrodin-wu')], ['p2', list('ravnica-wub')]]),
+    decks: new Map([['p1', list('mirrodin-wu')], ['p2', list('ravnica-wur')]]),
     registry: REGISTRY,
   });
   const { results } = runSimulation({

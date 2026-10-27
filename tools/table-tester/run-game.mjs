@@ -50,7 +50,7 @@ export function parseArgs(argv) {
     // nagłówkując transkrypt podaną nazwą (cichy fałsz). Domyślne = pierwsza
     // i czwarta talia stałej próbki benchmarku (tools/benchmark.mjs).
     human: 'dominaria-brg',
-    bot: 'ravnica-wub',
+    bot: 'ravnica-wur',
     seed: 42,
     steps: 300,
     out: 'transcript.txt',

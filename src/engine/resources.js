@@ -1874,7 +1874,7 @@ export function canPayMadnessCost(state, playerId, object) {
   return hasColorRequirements(state, playerId, requirements, spellManaPurpose(object));
 }
 
-export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null, convokePayments = null, improvisePayments = null } = {}) {
+export function castPermanent(state, playerId, objectId, { faceDown = false, phyrexianPayWithLife = 0, exileTargetId = null, kicked = false, offspring = false, treasureAlt = false, warpCast = false, madnessCast = false, surgeCast = false, abilityWindowCast = false, delveExileIds = null, convokePayments = null, improvisePayments = null, xValue = 0 } = {}) {
   const player = state.players.find((entry) => entry.id === playerId);
   const object = state.objects.get(objectId);
   // Zaplotowana karta leży w exile (plotted: true) i rzuca się BEZ kosztu many
@@ -2071,7 +2071,24 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
     if (!delveIds.every((exId) => ownGrave.has(exId))) throw new Error('Nieprawidłowy koszt Delve (exile)');
     delveDeduct = delveIds.length;
   }
-  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct;
+  // Batch 70 (Magma Pummeler, CR 107.3a): „{X}” w koszcie PERMANENTU — X
+  // deklaruje rzucający, a jego wartość dokłada się do kosztu całkowitego
+  // (CR 601.2b: ogłoszenie X należy do procesu rzucania). Do tej pory X
+  // obsługiwały wyłącznie czary nie-permanentne (`castSpell`), więc stwór
+  // z {X} w koszcie nie miał żadnej ścieżki rzutu.
+  // Deskryptor X: czary niosą go w `spell.xCost`, permanenty top-level
+  // (`object.xCost` — batch 70), jedno źródło odczytu dla obu ścieżek.
+  const xDescriptor = object.spell?.xCost ?? object.xCost ?? null;
+  const xDeclared = xDescriptor ? xValue : 0;
+  if (xDescriptor) {
+    const cap = xDescriptor.cap ?? 15;
+    if (!Number.isInteger(xDeclared) || xDeclared < 0 || xDeclared > cap) {
+      throw new Error('Nieprawidłowa wartość X');
+    }
+  } else if (xValue) {
+    throw new Error('Ta karta nie ma kosztu X');
+  }
+  const totalMana = cost - lifePaid + (kicker?.cost ?? 0) + (offspringPaid?.cost ?? 0) - delveDeduct + xDeclared;
   // Strażnik sumy PRZED pierwszą mutacją kosztu (audyt PR #130, znalezisko B):
   // wygnanie kart Delve idzie niżej, więc ujemna suma (koszt alternatywny
   // mniejszy niż liczba wygnań) zostawiłaby grób w exile przy odrzuconej
@@ -2341,6 +2358,9 @@ export function castPermanent(state, playerId, objectId, { faceDown = false, phy
   consumePendingSpellDiscount(state, object);
   const stacked = Object.freeze({
     ...moved, ...patch, wasCast: true, manaFromTreasureSpent: treasureSpent, manaColorsSpent,
+    // CR 107.3a: wartość X jest faktem rzutu — czyta ją wejście z licznikami
+    // („enters with X +1/+1 counters”) i efekty czytające `spellX`.
+    ...(xDescriptor ? { spellX: xDeclared } : {}),
     // M154 (Warp): permanent rzucony za koszt warp — przy wejściu zbroimy
     // opóźniony trigger wygnania w końcowym kroku (resolvePermanentSpell).
     ...(warpCast ? { warped: true } : {}),
