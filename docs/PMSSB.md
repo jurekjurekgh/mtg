@@ -65,7 +65,7 @@ teraz obowiązkowy, a nie zalecany.
 | `damage_each_creature_sacrificed_power` (Bloodfire Infusion): obrażenia = moc poświęconego stwora każdemu stworowi; bot wyceniał płasko 2 i poświęcał własnego stwora bez zysku | 1 | DONE (2026-10-20) | §PMSSB-74 niżej; `test/audyt-pmssb74-bloodfire.test.js` (6; 3–4 RED na HEAD); wspólna miara `sweepHitsValue` z zniszczeniem masowym |
 | `controlsType` (Heron-Blessed Geist, CR 602.5b: „activate only if you control an enchantment”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-75 niżej; `test/audyt-pmssb75-controls-type.test.js` (3); bramka spójna (oferta i walidacja). OTWARTE poza zakresem: wycena tokenów nie zna presji życia (wspólna miara tokenów, osobna pętla) |
 | warunkowa redukcja kosztu (Gnoll War Band, CR 601.2f: „za każdego przeciwnika, któremu zadano obrażenia w tej turze”) | 1 | ZAMKNIĘTE BEZ ZMIANY KODU (2026-10-20) | §PMSSB-76 niżej; `test/audyt-pmssb76-warunkowa-redukcja.test.js` (3 piny, nie RED); silnik i bot czytają ten sam stan |
-| **batch 70 — osiem rodzin nowych mechanik**: X w koszcie permanentu, prewencja zdejmująca liczniki, Improvise, `cantBeBlockedByTypes`, `manifest_dread_resolved`, `amountFromGraveyardCardType`, Converge damage, kicked + drugi cel | 10 | **PĘTLA DOMKNIĘTA (2026-10-27)** — 4 DONE (ewazja po typie, trigger manifest dread, licznik z cmentarza, Converge damage), 4 ZAMKNIĘTE BEZ ZMIANY (X, prewencja licznikowa, Improvise, drugi cel kickera) | §PMSSB-79 wyżej; plan `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; sonda `tools/pmssb79-batch70-sonda.mjs`; `test/audyt-pmssb79-batch70.test.js` (17 pinów + 4 mutacje); lustro `tools/pmssb79-mirror.mjs`; pokrętła `convergeDamagePerColor`, `manifestDreadTriggerValue`, `graveyardCounterWeight`, `graveyardCounterCap`; golden bez regeneracji |
+| **batch 70 — osiem rodzin nowych mechanik**: X w koszcie permanentu, prewencja zdejmująca liczniki, Improvise, `cantBeBlockedByTypes`, `manifest_dread_resolved`, `amountFromGraveyardCardType`, Converge damage, kicked + drugi cel | 10 | **PĘTLA DOMKNIĘTA (2026-10-27)** — 4 DONE (ewazja po typie, trigger manifest dread, licznik z cmentarza, Converge damage), 4 ZAMKNIĘTE BEZ ZMIANY (X — wycena; prezentacja X dowiązana po zgłoszeniu właściciela, patrz §PMSSB-79, prewencja licznikowa, Improvise, drugi cel kickera) | §PMSSB-79 wyżej; plan `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md`; sonda `tools/pmssb79-batch70-sonda.mjs`; `test/audyt-pmssb79-batch70.test.js` (20 pinów + 7 mutacji); lustro `tools/pmssb79-mirror.mjs`; pokrętła `convergeDamagePerColor`, `manifestDreadTriggerValue`, `graveyardCounterWeight`, `graveyardCounterCap`; golden bez regeneracji |
 | convoke (`convoke`, Kavu Primarch z batcha 69) | 1 | **DONE (2026-10-20)** | §PMSSB-72 niżej; `test/audyt-pmssb72-convoke.test.js` (9). Warianty convoke w `legalCommands` (od A-12 także dobrowolne przy dostępnej manie, limit 64; także kicked), kreator płaci tylko resztę many, wycena bota: kara `convokeTapPenalty` × wartość ciała tapowanego stwora, UI grupuje warianty. Golden: hash `7510…` → `9017…` (regeneracja fixture po przeglądzie: 1437 decyzji, 0 zmienionych wyborów/wyników). |
 | bounce (`bounce_*`, `owner_library_top_or_bottom`) | 8+3 trig | DONE (2026-09-25) | §PMSSB-1 niżej; `test/audyt-pmssb1-bounce.test.js` (29); `bounce*` (10) |
 | tokeny (`create_token`) | 46 | DONE (2026-09-26) | §PMSSB-2 niżej; `test/audyt-pmssb2-tokeny.test.js` (28); `token*` (3) |
@@ -3805,14 +3805,14 @@ kara za bite bez zabicia.
 
 Plan: [PLAN_2026-10-27b-pmssb79-batch70](plans/PLAN_2026-10-27b-pmssb79-batch70.md).
 Sonda: `tools/pmssb79-batch70-sonda.mjs`. Piny: `test/audyt-pmssb79-batch70.test.js`
-(17). Lustro: `tools/pmssb79-mirror.mjs`.
+(20). Lustro: `tools/pmssb79-mirror.mjs`.
 
 POMIAR PRZED (`.arena/pmssb79-pre.txt`) i PO (`.arena/pmssb79-post.txt`) — te
 same scenariusze, ta sama sesja:
 
 | Rodzina | PRZED | PO | Werdykt |
 |---|---|---|---|
-| X w koszcie permanentu (Magma Pummeler, X=4…0) | 70,20 / 68,40 / 66,60 / 64,80 / −27,00 | bez zmian | ZAMKNIĘTE BEZ ZMIANY |
+| X w koszcie permanentu (Magma Pummeler, X=4…0) | 70,20 / 68,40 / 66,60 / 64,80 / −27,00 | bez zmian w wycenie; **X dowiązany do zdarzenia, logu i śladu** (uzupełnienie niżej) | ZAMKNIĘTE BEZ ZMIANY (wycena) + **DONE (prezentacja)** |
 | prewencja zdejmująca liczniki (blok 0/1/3 liczniki) | 0,00 / 2,00 / 5,00 | bez zmian | ZAMKNIĘTE BEZ ZMIANY (odczyt „anomalii” sprostowany) |
 | Improvise (Fen Hauler: mana 7 vs 5, artefakty 0 i 2) | 72,91 / 72,68 / 72,46 | bez zmian | ZAMKNIĘTE BEZ ZMIANY (bliźniak convoke) |
 | `cantBeBlockedByTypes` (Fen Hauler vs artefakt-bloker 6/6) | 8,00 w OBU wariantach | artefakt **8,00** vs zwykły **−10,00** | **DONE** |
@@ -3859,6 +3859,40 @@ same scenariusze, ta sama sesja:
   stosie) I niepustym cmentarzu — bez tego trigger jest niemy (pin 2b).
 - Nowe pokrętła: `convergeDamagePerColor` 1, `manifestDreadTriggerValue` 4,
   `graveyardCounterWeight` 1, `graveyardCounterCap` 8.
+
+### Uzupełnienie po zgłoszeniu właściciela: „X czarów już robione — zastosuj do Pummelera”
+
+Zgłoszenie właściciela (2026-10-27, po zamknięciu pętli): logika dla czarów
+z {X} była już robiona (skojarzenie z Epic Experiment) i powinna obowiązywać
+Pummelera oraz karty o tym kształcie. Ustalenia:
+
+- **Precedens to nie wpis PMSSB, tylko M237/1** (audyt Żywym Testerem —
+  Consume Spirit) plus plan `PLAN_2026-09-18c-uwagi-z-testow-detain-atak-i-epic-experiment`
+  (Epic Experiment: jedna oferta z X, X w logu, polityka `5X` w Main 2).
+  Reguła z M237/1: `amount: 'X'` rozwiązywane do `cmd.xValue` PRZED wyceną
+  efektów, X = 0 karane jako aktywacja jałowa.
+- **Pomiar parzystości (sonda + `node -e`, ta sesja):** obie ścieżki oferują
+  wyłącznie X opłacalne z puli (`pula 2 → [0]`, `3 → [0,1]`, `6 → [0..4]`,
+  `15 → [0..13]`) i wybierają MAKSYMALNE opłacalne X — czar Consume Spirit:
+  X=7 przy puli 9 i X=13 przy puli 15; permanent Pummeler: X=4 przy puli 6
+  i X=13 przy puli 15. Różnica jest w nasyceniu: czar nasyca się na letalu
+  (wróg 3 życia → X=4, nie 13), bo obrażenia ponad zabicie są warte 0
+  (`damageTargetValue`); liczniki permanentu nie nasycają się, bo każdy punkt
+  to realne ciało — to różnica SKUTKU, nie logiki (S11 świadomie inaczej).
+- **Czego faktycznie brakowało — trzy dziury prezentacyjne** (ta sama klasa
+  co uwaga B1 z 2026-09-18, naprawiona wtedy tylko dla czarów i zdolności):
+  1. `permanent_cast` nie niósł `xValue` w zdarzeniu (tylko `spellX` na
+     obiekcie stosu), więc log/panel nie miały z czego czytać;
+  2. log mówił „zagrywa Magma Pummeler” bez X — teraz „(X=3)”, to samo
+     brzmienie co `spell_cast` i `ability_activated` (L41);
+  3. ślad bota zwijał warianty X=0…13 do jednej etykiety `cast_permanent(x)`
+     — audyt remisów nie miał czego parować (klasa Krumar H, naprawiona
+     w `activate_ability`); teraz `cast_permanent(x,X=4)`.
+- Piny 7a/7b/7c w `test/audyt-pmssb79-batch70.test.js` (razem **20**),
+  mutacje: zdarzenie bez `xValue` → 2 RED, log bez `(X=n)` → 1 RED,
+  etykieta bez X → 2 RED. Werdykt całości: **X w koszcie permanentu — DONE
+  (prezentacja) + wycena potwierdzona pomiarem**, bez zmian w silniku
+  płatności i w wycenie.
 
 ### Pomyłki pomiaru (zapisane, żeby nie wracały)
 

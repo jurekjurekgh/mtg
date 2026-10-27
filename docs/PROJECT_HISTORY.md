@@ -20,6 +20,23 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-10-27e — X w koszcie permanentu: parzystość z czarami {X} (zgłoszenie właściciela)
+
+- Zgłoszenie: „PMSSB dla czarów z kosztem X już był (Epic Experiment) — podobna
+  logika powinna działać dla Pummelera i kart podobnych”.
+- Ustalenie źródła precedensu: nie wpis PMSSB, ale **M237/1** (Consume Spirit,
+  audyt Żywym Testerem) + `PLAN_2026-09-18c` (Epic Experiment). Pomiar
+  parzystości: obie ścieżki (czar i permanent) oferują wszystkie opłacalne X
+  i wybierają maksimum (Consume Spirit X=13 przy puli 15, Pummeler X=13);
+  czar nasyca się na letalu (X=4 przy 3 życiach wroga), liczniki permanentu nie
+  — to różnica skutku (S11), nie logiki. Wycena bez zmian.
+- Naprawione trzy dziury prezentacyjne (klasa uwagi B1 z 2026-09-18 i Krumar H):
+  `permanent_cast` niesie `xValue`; log mówi „zagrywa Magma Pummeler (X=3)”;
+  ślad bota rozróżnia warianty (`cast_permanent(x,X=4)`), więc audyt remisów
+  ma co parować.
+- Piny 7a/7b/7c (razem 20 w `test/audyt-pmssb79-batch70.test.js`), 3 nowe
+  mutacje RED. Bramy: `npm test` 8968/8968, golden `5be4528f…` bez zmian.
+
 ## 2026-10-27d — PMSSB-79: pętla strojenia ośmiu rodzin batcha 70
 
 - Ta sama sesja, gałąź `arena/3e188a7c-mtg`, PR #176. Plan:

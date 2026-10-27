@@ -8618,3 +8618,14 @@ przez `gameObjectDataOf` i `installDeck`). Mutacje potwierdzone dla X w koszcie
 (3 mutanty → 4 czerwone piny) i dla dowiązań E5 (3 mutanty → 1/2/1 czerwone
 piny). Bramy: `npm test` 8948/8948, `test:slow` 268/268, build 76 modułów /
 5502,4 kB, benchmark quick 88,1% (było 87,8%).
+
+12. **Parzystość X dla permanentów (PMSSB-79, 2026-10-27)** — uzupełnienie
+    punktu 9: gracz nie widział, za ile X zagrano permanent (klasa uwagi B1
+    właściciela z 2026-09-18, naprawionej wtedy tylko dla `spell_cast`
+    i `ability_activated`). Zdarzenie `permanent_cast` niesie teraz `xValue`
+    (tylko dla kart z deskryptorem X, jak `spellX` na obiekcie stosu), log
+    mówi „zagrywa Magma Pummeler (X=3)”, a ślad bota rozróżnia warianty
+    (`cast_permanent(x,X=4)` — bez tego X=0…13 zwijało się do jednej etykiety
+    i audyt remisów nie miał czego parować). Silnik płatności i wycena bota
+    bez zmian: obie ścieżki (czar i permanent) oferują wszystkie opłacalne X,
+    karzą X=0 i wybierają maksymalne opłacalne X.
