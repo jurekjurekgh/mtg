@@ -1,0 +1,27 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Vault%20of%20Whispers&set=mrd&format=json",
+  "print": "Vault of Whispers (MRD)",
+  "name": "Vault of Whispers",
+  "mana_cost": "",
+  "cmc": 0.0,
+  "type_line": "Artifact Land",
+  "oracle_text": "{T}: Add {B}.",
+  "colors": [],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "mrd",
+  "set_name": "Mirrodin",
+  "collector_number": "286",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/3/73866487-33f4-4f64-b100-2c4ddadcd74e.jpg?1783944493",
+    "normal": "https://cards.scryfall.io/normal/front/7/3/73866487-33f4-4f64-b100-2c4ddadcd74e.jpg?1783944493",
+    "large": "https://cards.scryfall.io/large/front/7/3/73866487-33f4-4f64-b100-2c4ddadcd74e.jpg?1783944493"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/mrd/286/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}

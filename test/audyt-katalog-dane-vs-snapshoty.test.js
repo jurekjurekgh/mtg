@@ -92,7 +92,20 @@ const BEZ_SNAPSHOTU = Object.freeze([
 // plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md). Wpisy schodzą
 // z tej listy wraz z implementacją kolejnych fal; do tego czasu są OSIEROCONE.
 const OSIEROCONE_SNAPSHOTY = Object.freeze([
+  // Batch 70 (2026-10-27): 10 snapshotów leży w repo PRZED definicjami
+  // (HOW_TO_ADD_CARD.md krok 1; plan: docs/plans/PLAN_2026-10-27-batch70-kolekcja-426-624.md).
+  // Wpisy schodzą z tej listy w E3, razem z definicjami katalogu.
+  'arlinns-wolf',
+  'fen-hauler',
+  'jilt',
+  'kaleidoscorch',
+  'magma-pummeler',
+  'moldgraf-millipede',
+  'orazca-puzzle-door',
+  'paranormal-analyst',
+  'trigon-of-rage',
   'undercity',
+  'vault-of-whispers',
 ]);
 
 // Słowa-umowne (ability words, CR 207.2c) — same nie są zdolnościami.
@@ -229,11 +242,13 @@ test('pokrycie snapshotów katalogu jest jawne i dokładne', () => {
   // Batch 67: 582 + 10 snapshotów nowego batcha (definicje wchodzą falami, E1–E6).
   // Batch 68: +10 snapshotów (docs/cards/scryfall-*.json) → 602.
   // Batch 69: +10 snapshotów (412–425) → 612.
-  assert.equal(idsSnapshotow.length, 612, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
+  // Batch 70: +10 snapshotów (426–624) → 622; definicje wchodzą w E3.
+  assert.equal(idsSnapshotow.length, 622, 'liczba snapshotów wymaga przeglądu po zmianie dokumentów');
   assert.deepEqual(brakujace, [...BEZ_SNAPSHOTU], 'zmieniła się jawna lista kart bez snapshotu');
   assert.deepEqual(osierocone, [...OSIEROCONE_SNAPSHOTY], 'zmieniły się snapshoty bez definicji katalogowej');
   // Batch 67: 581 + 5 snapshotów fali A (pary snapshot↔definicja już istnieją).
   // Batch 69: +10 par snapshot↔definicja (412–425) → 611.
+  // Batch 70: 611 + 10 nowych par snapshot↔definicja po E3 (tu: 621 - 10 osieroconych).
   assert.equal(idsSnapshotow.length - osierocone.length, 611,
     'liczba dopasowanych snapshotów wymaga aktualizacji wraz z allowlistą');
 });

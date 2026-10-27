@@ -1,0 +1,37 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Arlinn%27s%20Wolf&set=war&format=json",
+  "print": "Arlinn's Wolf (WAR)",
+  "name": "Arlinn's Wolf",
+  "mana_cost": "{2}{G}",
+  "cmc": 3.0,
+  "type_line": "Creature — Wolf",
+  "oracle_text": "This creature can't be blocked by creatures with power 2 or less.",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "power": "3",
+  "toughness": "2",
+  "set": "war",
+  "set_name": "War of the Spark",
+  "collector_number": "151",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/7/4/747223a5-c669-4d0e-a062-265eb47710cd.jpg?1783933416",
+    "normal": "https://cards.scryfall.io/normal/front/7/4/747223a5-c669-4d0e-a062-265eb47710cd.jpg?1783933416",
+    "large": "https://cards.scryfall.io/large/front/7/4/747223a5-c669-4d0e-a062-265eb47710cd.jpg?1783933416"
+  },
+  "rulings": [
+    {
+      "date": "2019-05-03",
+      "source": "wotc",
+      "comment": "Once a creature with power 3 or greater has blocked this creature, changing the power of the blocking creature won’t cause this creature to become unblocked."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/war/151/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}

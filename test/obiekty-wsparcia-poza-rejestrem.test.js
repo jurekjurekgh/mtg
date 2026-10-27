@@ -138,7 +138,22 @@ test('OW/5 brak snapshotu dla Day // Night jest ODNOTOWANY, nie cichy', () => {
 // pierwszy; plan: docs/plans/PLAN_2026-10-14-batch67-kolekcja-369-398.md).
 // Do czasu implementacji fal E1–E6 te nazwy są sierotami; lista schodzi do
 // zera razem z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
-const SNAPSHOTY_BATCH67_W_TOKU = Object.freeze([
+// Batch 70 (2026-10-27): snapshoty 10 kart nowego batcha są w repo PRZED
+// definicjami (procedura `HOW_TO_ADD_CARD.md` krok 1 — pobór ze Scryfall jest
+// pierwszy; plan: docs/plans/PLAN_2026-10-27-batch70-kolekcja-426-624.md).
+// Do czasu implementacji E3 te nazwy są sierotami; lista schodzi do zera razem
+// z katalogiem i jest JAWNA — nowy sierota nadal czerwieni test.
+const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([
+  'arlinns-wolf',
+  'fen-hauler',
+  'jilt',
+  'kaleidoscorch',
+  'magma-pummeler',
+  'moldgraf-millipede',
+  'orazca-puzzle-door',
+  'paranormal-analyst',
+  'trigon-of-rage',
+  'vault-of-whispers',
 ]);
 
 test('OW/6 w docs/cards NIE ma sierot: każdy snapshot to karta rejestru albo obiekt wsparcia', () => {
@@ -146,8 +161,8 @@ test('OW/6 w docs/cards NIE ma sierot: każdy snapshot to karta rejestru albo ob
     .filter((f) => f.startsWith('scryfall-') && f.endsWith('.json'))
     .map((f) => f.slice('scryfall-'.length, -'.json'.length));
   const dozwolone = new Set([...REGISTRY.all().map((d) => d.id), ...obiektyWsparcia().map((o) => o.id)]);
-  assert.deepEqual(pliki.filter((id) => !dozwolone.has(id)).sort(), [...SNAPSHOTY_BATCH67_W_TOKU].sort(),
-    'każda nazwa pliku odpowiada id karty z rejestru, id obiektu wsparcia albo snapshotowi batcha 67 w toku — inaczej narzędzie jej nie czyta');
+  assert.deepEqual(pliki.filter((id) => !dozwolone.has(id)).sort(), [...SNAPSHOTY_BATCH70_W_TOKU].sort(),
+    'każda nazwa pliku odpowiada id karty z rejestru, id obiektu wsparcia albo snapshotowi batcha 70 w toku — inaczej narzędzie jej nie czyta');
   assert.deepEqual(pliki.filter((id) => id === 'undercity' || id === 'day-night'), ['undercity'],
     'dokładnie jeden snapshot obiektu wsparcia (pomiar 2026-09-12e)');
   assert.equal(snapshot('undercity-dungeon'), null, 'stara nazwa pliku (niezgodna z id) już nie istnieje');

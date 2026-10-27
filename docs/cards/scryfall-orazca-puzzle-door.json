@@ -1,0 +1,35 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Orazca%20Puzzle-Door&set=lci&format=json",
+  "print": "Orazca Puzzle-Door (LCI)",
+  "name": "Orazca Puzzle-Door",
+  "mana_cost": "{U}",
+  "cmc": 1.0,
+  "type_line": "Artifact",
+  "oracle_text": "{1}, {T}, Sacrifice this artifact: Look at the top two cards of your library. Put one of those cards into your hand and the other into your graveyard.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "68",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/2/7/27acf726-52f5-493d-8678-c12485f67747.jpg?1783913791",
+    "normal": "https://cards.scryfall.io/normal/front/2/7/27acf726-52f5-493d-8678-c12485f67747.jpg?1783913791",
+    "large": "https://cards.scryfall.io/large/front/2/7/27acf726-52f5-493d-8678-c12485f67747.jpg?1783913791"
+  },
+  "rulings": [
+    {
+      "date": "2023-11-10",
+      "source": "wotc",
+      "comment": "If there is only one card in your library, you put it into your hand."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/lci/68/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}

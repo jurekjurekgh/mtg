@@ -1,0 +1,63 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Jilt&set=apc&format=json",
+  "print": "Jilt (APC)",
+  "name": "Jilt",
+  "mana_cost": "{1}{U}",
+  "cmc": 2.0,
+  "type_line": "Instant",
+  "oracle_text": "Kicker {1}{R} (You may pay an additional {1}{R} as you cast this spell.)\nReturn target creature to its owner's hand. If this spell was kicked, it deals 2 damage to another target creature.",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "R",
+    "U"
+  ],
+  "keywords": [
+    "Kicker"
+  ],
+  "set": "apc",
+  "set_name": "Apocalypse",
+  "collector_number": "27",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/a/0/a010d2b1-960d-4032-a47a-61fe0998bee3.jpg?1783945352",
+    "normal": "https://cards.scryfall.io/normal/front/a/0/a010d2b1-960d-4032-a47a-61fe0998bee3.jpg?1783945352",
+    "large": "https://cards.scryfall.io/large/front/a/0/a010d2b1-960d-4032-a47a-61fe0998bee3.jpg?1783945352"
+  },
+  "rulings": [
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a spell's kicker cost was paid, the spell is \"kicked.\""
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "The kicker ability doesn't let you pay a kicker cost more than once."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you put a permanent with a kicker ability onto the battlefield without casting it, you can't kick it."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If you copy a kicked spell on the stack, the copy is also kicked. If the copied spell is a permanent spell, the token the copy of that spell becomes when it enters is also kicked."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "If a card or token enters as a copy of a permanent, the new permanent isn't kicked, even if the original was."
+    },
+    {
+      "date": "2024-11-08",
+      "source": "wotc",
+      "comment": "To determine a spell's total cost, start with the mana cost (or an alternative cost if another card's effect allows you to pay one instead), add any cost increases (such as kicker), then apply any cost reductions. The spell's mana value remains unchanged, no matter what the total cost to cast it was."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/apc/27/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}

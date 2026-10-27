@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/named?exact=Moldgraf%20Millipede&set=vow&format=json",
+  "print": "Moldgraf Millipede (VOW)",
+  "name": "Moldgraf Millipede",
+  "mana_cost": "{4}{G}",
+  "cmc": 5.0,
+  "type_line": "Creature — Insect Horror",
+  "oracle_text": "When this creature enters, mill three cards, then put a +1/+1 counter on this creature for each creature card in your graveyard. (To mill three cards, put the top three cards of your library into your graveyard.)",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [
+    "Mill"
+  ],
+  "power": "2",
+  "toughness": "2",
+  "set": "vow",
+  "set_name": "Innistrad: Crimson Vow",
+  "collector_number": "209",
+  "rarity": "common",
+  "image_uris": {
+    "small": "https://cards.scryfall.io/small/front/5/2/5252ea27-63d1-4b80-beae-8e016373d004.jpg?1783924806",
+    "normal": "https://cards.scryfall.io/normal/front/5/2/5252ea27-63d1-4b80-beae-8e016373d004.jpg?1783924806",
+    "large": "https://cards.scryfall.io/large/front/5/2/5252ea27-63d1-4b80-beae-8e016373d004.jpg?1783924806"
+  },
+  "rulings": [
+    {
+      "date": "2021-11-19",
+      "source": "wotc",
+      "comment": "Moldgraf Millipede gets a +1/+1 counter for every creature card in your graveyard, including any creature cards that were already there before you milled three cards."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/vow/209/rulings",
+  "rulingsPobrano": "2026-10-27",
+  "pobrano": "2026-10-27"
+}
