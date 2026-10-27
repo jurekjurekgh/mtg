@@ -6774,6 +6774,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return false;
   };
   // Suma tarcz „prevent the next N damage" dla celu (Withstand).
+  // D (uwaga właściciela 2026-10-27c, Time to Feed + Cuombajj Witches): cele
+  // obiektów MOJEGO stosu są publiczne (playerView, ADR 0017). Usunięcie takiego
+  // celu przed rozstrzygnięciem to zmarnowanie WŁASNEJ karty — przy jedynym
+  // celu czar w ogóle nie rozstrzyga się (CR 608.2b), a przy wielu traci
+  // wszystkie efekty. Predykat czyta STOS, nie nazwę karty ani efektu.
+  const isMyPendingStackTarget = (view, targetId) => (view.zones.stack ?? []).some((entry) =>
+    entry.controllerId === view.playerId && (entry.targets ?? []).includes(targetId));
   const shieldedAmount = (view, targetId) => (view.damageShields ?? [])
     .filter((shield) => shield.targetId === targetId)
     .reduce((sum, shield) => sum + (shield.remaining ?? 0), 0);
@@ -6847,6 +6854,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!t) return 0;
     if (t.controllerId === view.playerId) return -90;       // WŁASNY stwór — zakaz
     if (damageFullyPrevented(view, t) || (amt > 0 && shieldedAmount(view, t.id) >= amt)) return -70;
+    // D (2026-10-27c): dobicie celu, który WŁAŚNIE ma rozstrzygnąć mój czar/
+    // zdolność ze stosu (Time to Feed: „target creature ... fights that
+    // creature") — efekt mojego własnego obiektu przepada (CR 608.2b), więc
+    // obrażenia są wyrzuceniem karty. Zakaz jak dla własnego stwora.
+    if (damageIsLethal(view, targetId, amt) && isMyPendingStackTarget(view, targetId)) return -90;
     if (damageIsLethal(view, targetId, amt)) {
       if (scaling) {
         // Skalujący zasób (Fireball, Consume Spirit) marnujemy tylko na TANIEGO
@@ -6879,6 +6891,28 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       return damageChipEnablesKill(view, t, amt) ? lethalEnemyCreatureValue(view, t) : 0;
     }
     return -80;
+  };
+
+  /**
+   * D (uwaga właściciela 2026-10-27c, Cuombajj Witches „{T}: deals 1 damage to
+   * any target and 1 damage to any target of an opponent's choice"): cel
+   * wskazywany przez PRZECIWNIKA jest KOSZTEM, nie zyskiem — przeciwnik wskaże
+   * to, co boli mnie najbardziej. Miara = najgorszy realny skutek `amount`
+   * obrażeń: dobicie mojego stwora w tej samej skali co removal
+   * (`lethalEnemyCreatureValue`, L41 — ta sama drabina po drugiej stronie
+   * stołu), inaczej chip/utrata życia. Dotąd slot przeciwnika nie był wyceniany
+   * w ogóle, więc zdolność wyglądała na darmowy zysk.
+   */
+  const opponentChosenDamageCost = (view, amount) => {
+    const amt = Number.isInteger(amount) ? amount : 0;
+    if (amt <= 0) return 0;
+    let worst = selfLifeLossPenalty(view, amt);
+    for (const own of myCreatures(view)) {
+      if (damageFullyPrevented(view, own) || shieldedAmount(view, own.id) >= amt) continue;
+      const cost = damageIsLethal(view, own.id, amt) ? lethalEnemyCreatureValue(view, own) : amt;
+      if (cost > worst) worst = cost;
+    }
+    return worst;
   };
 
   // Batch60-followup/1 (2026-09-27, ograniczenie 1): czy TRZYMANIE czaru do
@@ -14132,13 +14166,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (effect.type === 'damage' || effect.type === 'lose_life') {
             const slot = cmd.targets?.[effect.targetIndex ?? 0];
             const amount = Number.isInteger(effect.amount) ? effect.amount : 0;
-            // Zdolność, która POŚWIĘCA źródło/permanent, by zadać obrażenia
-            // (Blazing Torch: {T},poświęć: 2 dmg), to zasób LIMITOWANY — traktuj
-            // jak skalujący (dobij wartościowy cel albo ≥25% życia gracza, nie
-            // marnuj na chip w zdrową twarz). Zwykła zdolność bez poświęcenia
-            // (np. wielorazowy ping) używa prostszego modelu.
-            const scaling = Boolean(ability?.cost?.sacrificeSelf || ability?.cost?.sacrifice);
-            if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+            // D (uwaga właściciela 2026-10-27c, Cuombajj Witches): slot
+            // wskazywany przez PRZECIWNIKA (deskryptor `opponentChoosesTarget`;
+            // silnik dokłada go na końcu listy celów, CR 601.2c) nie jest
+            // wyborem bota — przeciwnik wskaże cel NAJGORSZY dla mnie.
+            // Dotąd ten efekt nie był wyceniany w ogóle (slot poza
+            // `cmd.targets`), więc bot widział sam zysk i aktywował zdolność
+            // „za darmo" — a jego własne ciało/twarz brały obrażenia.
+            if (ability?.opponentChoosesTarget && (effect.targetIndex ?? 0) === (ability.targets ?? []).length) {
+              score -= opponentChosenDamageCost(view, amount);
+            } else {
+              // Zdolność, która POŚWIĘCA źródło/permanent, by zadać obrażenia
+              // (Blazing Torch: {T},poświęć: 2 dmg), to zasób LIMITOWANY — traktuj
+              // jak skalujący (dobij wartościowy cel albo ≥25% życia gracza, nie
+              // marnuj na chip w zdrową twarz). Zwykła zdolność bez poświęcenia
+              // (np. wielorazowy ping) używa prostszego modelu. Ten sam model
+              // dostaje zdolność, w której DRUGI cel wskazuje przeciwnik (wyżej):
+              // płacę tapnięciem i biorę jego najgorszy wybór, więc wolno jej
+              // użyć wyłącznie na realny zysk — dobicie uszkodzonego stwora
+              // albo dociśnięcie gracza przy niskim życiu.
+              const scaling = Boolean(ability?.cost?.sacrificeSelf || ability?.cost?.sacrifice
+                || ability?.opponentChoosesTarget);
+              if (slot != null) score += damageTargetValue(view, slot, amount, scaling);
+            }
           }
           // Batch60 (Xu-Ifit, Osteoharmonist — {T}: reanimuj stwora z własnego
           // grobu): BLIŹNIAK gałęzi cast_spell M157 (L41) — bez niego warianty
