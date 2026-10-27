@@ -1668,6 +1668,29 @@ function attackerBlockSubtypeRestriction(state, attacker) {
   return null;
 }
 
+/** Typy, którymi dany stwór NIE MOŻE być blokowany (Fen Hauler: „This
+ * creature can't be blocked by artifact creatures") — ze zdolności statycznych
+ * (własnych lub nadanych przypiętym sprzętem). Typy blokera czytamy z pola
+ * `types` permanentu: warstwy animacji (`mergedAnimationLayer`) dopisują tam
+ * nadane typy, więc np. obudzony ląd-artefakt jest łapany tak samo jak
+ * wydrukowany artifact creature (CR 205.2a — Artifact to TYP, nie podtyp).
+ * Zwraca listę typów albo null. */
+function attackerBlockTypeRestriction(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedByTypes)) {
+      return ability.cantBeBlockedByTypes;
+    }
+  }
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    for (const ability of attachment.equipment?.grantedAbilities ?? []) {
+      if (ability?.type === 'static' && Array.isArray(ability.cantBeBlockedByTypes)) {
+        return ability.cantBeBlockedByTypes;
+      }
+    }
+  }
+  return null;
+}
+
 /** Keywordy, którymi dany stwór NIE MOŻE być blokowany (Skyscythe Engulfer:
  * „This creature can't be blocked by creatures with flying") — ze zdolności
  * statycznych (własnych lub nadanych przypiętym sprzętem), po keywordach
@@ -1742,6 +1765,12 @@ function blockRestrictionError(state, attacker, blocker) {
   const blockSubtypes = attackerBlockSubtypeRestriction(state, attacker);
   if (blockSubtypes && blockSubtypes.some((sub) => hasCreatureType(blocker, sub, state))) {
     return 'Stwora z „can\'t be blocked by [podtyp]" nie może blokować stwór tego podtypu';
+  }
+  // Batch 70 (Fen Hauler, CR 509.1b): „can't be blocked by artifact creatures"
+  // — restrykcja po TYPACH blokera (nie podtypach: Artifact to typ).
+  const blockTypes = attackerBlockTypeRestriction(state, attacker);
+  if (blockTypes && blockTypes.some((type) => (blocker.types ?? []).includes(type))) {
+    return 'Stwora z „can\'t be blocked by [typ] creatures" nie może blokować stwór tego typu';
   }
   // Skyscythe Engulfer (ONE): „can't be blocked by creatures with flying" —
   // bloker z zakazanym KEYWORDEM (efektywnym) nie może blokować. Nowe

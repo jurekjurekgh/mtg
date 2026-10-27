@@ -202,7 +202,7 @@ export function effectiveAbilityManaCost(state, playerId, ability, sourceObject)
   return base;
 }
 
-export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
+export function createAbility({ type, cost = null, effect, trigger, keyword = null, targets = null, cycling = null, channel = null, reinforce = null, bloodrush = null, forecast = false, grantsExtraBlockWithCounter = null, condition = null, pump = null, keywords = null, timing = 'instant', oncePerTurn = false, mustAttack = false, cantBeBlocked = false, scope = null, costModifier = null, costReduction = null, fromHand = false, fromGraveyard = false, cantAttackAlone = false, cantBlockAlone = false, cantAttackUnlessDefenderHasFlying = false, cantAttackUnlessDefenderPoisoned = false, opponentChoosesTarget = null, faceDownEnterFlyingCounter = false, cantBeBlockedExceptByColors = null, cantBeBlockedBySubtypes = null, cantBeBlockedByKeywords = null, cantBeBlockedByTypes = null, cantBeBlockedByPower = null, storied = false, landwalk = null, onNthResolve = null, preventCombatDamageToController = null, entersUntapped = null, characteristicDefining = false }) {
   if (!Object.values(ABILITY_TYPE).includes(type)) throw new TypeError('Nieprawidłowy typ zdolności');
   if (!['instant', 'sorcery'].includes(timing)) throw new RangeError('Nieprawidłowa szybkość zdolności');
   const effects = Array.isArray(effect)
@@ -262,6 +262,12 @@ export function createAbility({ type, cost = null, effect, trigger, keyword = nu
     // odrzuca blokerów z którymś z tych keywordów (bliźniak podtypowego
     // cantBeBlockedBySubtypes, Blazing Torch). CR 509.1b.
     cantBeBlockedByKeywords: cantBeBlockedByKeywords ? Object.freeze([...cantBeBlockedByKeywords]) : null,
+    // Batch 70 (Fen Hauler): „This creature can't be blocked by artifact
+    // creatures" — ten sam kształt co podtypowy/keywordowy bliźniak, ale po
+    // TYPACH blokera (CR 205.2a: Artifact to typ, nie podtyp). Odrzuca
+    // blokerów, których typy efektywne zawierają któryś z wpisanych typów
+    // (CR 509.1b — restrykcja blokowania).
+    cantBeBlockedByTypes: cantBeBlockedByTypes ? Object.freeze([...cantBeBlockedByTypes]) : null,
     // „can't be blocked by creatures with power 2 or less" (Rust-Shield
     // Rampager, CR 702.x?): statyczny próg MOCY blokera — canBlock odrzuca
     // blokerów o efektywnej mocy <= wartość. Sprawdzane przed wykonaniem bloku.

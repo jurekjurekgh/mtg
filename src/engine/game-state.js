@@ -7291,6 +7291,14 @@ export function playerView(state, playerId) {
             if (Array.isArray(a.cantBeBlockedByKeywords)) {
               entry.cantBeBlockedByKeywords = [...a.cantBeBlockedByKeywords];
             }
+            // Batch 70 (Fen Hauler): ewazja po TYPACH blokera („can't be blocked
+            // by artifact creatures") — publiczny deskryptor CR 509.1a; bez niego
+            // bot wyceniałby 5/5 jak zwykłe ciało (klasa L1/ADR 0017).
+            // `types` blokerów niesie widok (game-state.js:7105), więc strona
+            // czytająca ma wszystko, czego potrzebuje walidacja bloku.
+            if (Array.isArray(a.cantBeBlockedByTypes)) {
+              entry.cantBeBlockedByTypes = [...a.cantBeBlockedByTypes];
+            }
           }
         }
         // M243/E (zgłoszenie właściciela, Treasure): treść AKTYWOWALNYCH

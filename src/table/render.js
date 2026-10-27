@@ -1766,6 +1766,9 @@ function describeStatic(ability) {
   // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
   // creatures with power 2 or less") nie miała reprezentacji na kaflu.
   if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
+  if (Array.isArray(ability.cantBeBlockedByTypes) && ability.cantBeBlockedByTypes.length) {
+    parts.push(`nie może być blokowany przez stwory typu ${ability.cantBeBlockedByTypes.map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? t).join(' / ')}`);
+  }
   if (Array.isArray(ability.cantBeBlockedByKeywords) && ability.cantBeBlockedByKeywords.length) {
     parts.push(`nie może być blokowany przez stwory z ${ability.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`);
   }
@@ -4766,6 +4769,8 @@ export function cardInfo(session, object, combat = null) {
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
     // Batch65 (Skyscythe Engulfer): ewazja po keywordzie blokera.
     cantBeBlockedByKeywords: faceDown ? null : (object.cantBeBlockedByKeywords ?? null),
+    // Batch 70 (Fen Hauler): ewazja po typach blokera („artifact creatures").
+    cantBeBlockedByTypes: faceDown ? null : (object.cantBeBlockedByTypes ?? null),
     // M221/C (zgłoszenie właściciela, Benevolent Blessing): ochrona (CR 702.16)
     // jako osobny badge — kolor/jakość widoczne wprost, nie schowane w nazwie aury.
     protection: faceDown ? [] : [...(object.protection ?? [])],
@@ -5195,6 +5200,9 @@ export function buildStateOverlay(visual, info) {
     })) flags.push(['kw', badge]);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
+    if (Array.isArray(info.cantBeBlockedByTypes) && info.cantBeBlockedByTypes.length) {
+      flags.push(['kw', `nie do zablokowania przez stwory typu ${info.cantBeBlockedByTypes.map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? t).join(' / ')}`]);
+    }
     if (Array.isArray(info.cantBeBlockedByKeywords) && info.cantBeBlockedByKeywords.length) {
       flags.push(['kw', `nie do zablokowania przez stwory z ${info.cantBeBlockedByKeywords.map((k) => KEYWORD_LABELS[k] ?? k).join(' / ')}`]);
     }

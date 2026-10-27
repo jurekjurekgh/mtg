@@ -4759,6 +4759,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const banned = host.cantBeBlockedByKeywords;
       if (blockers.every((b) => banned.some((kw) => hasKeyword(b, kw)))) return true;
     }
+    // Batch 70 (Fen Hauler): „can't be blocked by artifact creatures" — ten sam
+    // kontrakt co wyżej: omija wszystkich dopiero, gdy KAŻDY potencjalny bloker
+    // ma któryś z zakazanych TYPÓW (widok niesie `types`, game-state.js:7105).
+    if (Array.isArray(host.cantBeBlockedByTypes) && host.cantBeBlockedByTypes.length > 0) {
+      const banned = host.cantBeBlockedByTypes;
+      if (blockers.every((b) => banned.some((type) => (b.types ?? []).includes(type)))) return true;
+    }
     return false;
   };
 
@@ -6519,6 +6526,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && attacker.cantBeBlockedExceptByColors.length > 0
       && !(blocker.colors ?? []).some((color) => attacker.cantBeBlockedExceptByColors.includes(color))) return false;
     if ((attacker.cantBeBlockedByKeywords ?? []).some((kw) => hasKeyword(blocker, kw))) return false;
+    if ((attacker.cantBeBlockedByTypes ?? []).some((type) => (blocker.types ?? []).includes(type))) return false;
     if ((attacker.protection ?? []).some((quality) => sourceHasProtectionQuality(quality, blocker))) return false;
     return true;
   };
@@ -11464,6 +11472,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             .filter((b) => bannedKeywords.some((kw) => hasKeyword(b, kw))).length;
           if (withKeyword > 0) {
             score += (withKeyword === enemyBlockers.length) ? 3 : 1.5;
+          }
+        }
+        // Batch 70 (Fen Hauler): ten sam człon dla ewazji po TYPACH blokera
+        // („artifact creatures") — bez niego statyka nie wchodzi do wyceny
+        // rzutu wcale, a to cała wartość karty przy ścianie artefaktów.
+        const bannedTypes = (def?.abilities ?? [])
+          .filter((a) => a?.type === 'static' && Array.isArray(a.cantBeBlockedByTypes))
+          .flatMap((a) => a.cantBeBlockedByTypes);
+        if (bannedTypes.length > 0) {
+          const enemyBlockers = untappedEnemyBlockers(view);
+          const withType = enemyBlockers
+            .filter((b) => bannedTypes.some((type) => (b.types ?? []).includes(type))).length;
+          if (withType > 0) {
+            score += (withType === enemyBlockers.length) ? 3 : 1.5;
           }
         }
         // Rozwój do parytetu liczby stworów — obrona przed aggro.
