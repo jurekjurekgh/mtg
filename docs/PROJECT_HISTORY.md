@@ -18272,3 +18272,28 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   `gameObjectDataOf` **i** `installDeck`). Mutacje: 3 mutanty → 1/2/1 RED.
 - Bramy (końcowe, po E5): `npm test` 8948/8948, `test:slow` 268/268, build
   76 modułów / 5502,4 kB, benchmark quick 88,1% (baseline 87,8%).
+
+- **Sesja 2026-10-27c (PR #177) — audyt scalonego PR #176 + pętla jakości**:
+  pełny audyt 22 plików `src/` (diff `d7150b1 59815d5`, +1298/−89) z werdyktem
+  na każdym pliku i sondami wykonawczymi na żywym silniku zamiast lektury
+  (M1–M6: Millipede ETB, prewencja Pummelera + ruling VOW, blok Fen Haulera
+  przez artefakt, Converge, Jilt kicked z nowym obiektem w ręce CR 400.7,
+  Improvise tylko na części generycznej CR 702.126a; dodatkowo warianty
+  `{X}{R}{R}` = 0…3 z X=0 legalnym i typy blokera po animacji).
+  Naprawione znalezisko **F-1** (klasa L99): efekt zastępujący
+  `preventDamageByRemovingCounter` (CR 615.1a) czytał zdolność tylko z warstwy
+  własnej, więc deskryptor nadany sprzętem był martwy — wspólny helper
+  `preventionRemovalAbility` + pin RED→GREEN i mutacja. Obserwacje bez zmiany
+  kodu: ponowna oferta osiodłania po `saddled` (legalna per CR 702.171a; pin
+  M219 broni oferty — decyzja ergonomiczna dla właściciela), auto-płatność
+  Converge nie maksymalizuje kolorów (CR 601.2h; komparator puli współdzielony
+  z bramką oferty → osobna sesja), generyczny trigger `counter_removed` bez
+  „this way” nie odpala (bezkosztowe dziś), rozjazd liczb w handoffie (L92).
+  Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, transkrypty
+  czytane ręcznie — L27), `event-contract-audit`/`family-audit`/
+  `scoring-mulligan-audit`/`scoring-unvalued-audit` czyste, `bot-tie-audit`
+  24 partie (remisy realne 9,0% decyzji akcyjnych). Bramy: `npm test`
+  **8974/8974**, `test:slow` **268/268**, build **76 modułów / 5513,3 kB**,
+  benchmark quick 672 mecze — heuristic **88,1%**. Higiena: odhaczone etapy
+  P0–P7 w `PLAN_2026-10-27b` (status WYKONANY, checkboxy puste).
+  Szczegóły: `docs/setup/HANDOFF_2026-10-27c.md`.

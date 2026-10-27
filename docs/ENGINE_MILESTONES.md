@@ -8629,3 +8629,24 @@ piny). Bramy: `npm test` 8948/8948, `test:slow` 268/268, build 76 modułów /
     i audyt remisów nie miał czego parować). Silnik płatności i wycena bota
     bez zmian: obie ścieżki (czar i permanent) oferują wszystkie opłacalne X,
     karzą X=0 i wybierają maksymalne opłacalne X.
+
+## M449 — audyt PR #176: prewencja licznikowa czytana z grantów sprzętu (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md).
+
+Znalezisko F-1 audytu: `preventDamageByRemovingCounters` (deskryptor
+`preventDamageByRemovingCounter`, CR 615.1a, batch 70 — Magma Pummeler) szukał
+zdolności wyłącznie w `effectiveAbilities(object)`, więc **zdolność nadana
+sprzętem nie działała** (obrażenia wchodziły, liczniki zostawały) — mimo że
+komentarz funkcji obiecywał tę warstwę, a bliźniacze deskryptory ewazji
+(`cantBeBlockedByTypes`/`cantBeBlockedByKeywords`) mają ją w `combat.js`
+(klasa L99). Naprawa u root cause: wspólny helper
+`preventionRemovalAbility(state, object)` (warstwa własna → granty
+przypiętego sprzętu), jedno źródło dla trzech wołających miejsc
+(`effects.js:dealNonCombatDamage`, `combat.js` ×2). Pin
+`test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` (RED→GREEN + mutacja),
+karta syntetyczna — w katalogu nie ma nośnika (ADR 0022/0030).
+
+Bramy po naprawie: `npm test` **8974/8974**, `test:slow` **268/268**, build
+**76 modułów / 5513,3 kB**, benchmark quick 672 mecze — heuristic **88,1%**.

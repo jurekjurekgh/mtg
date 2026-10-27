@@ -41,14 +41,14 @@ ozdarta do obserwacji O-1…O-5 z uzasadnieniem.
 - [x] **A3** Higiena planów: `PLAN_2026-10-27b` ma status „WYKONANY", ale
       niezaznaczone etapy P0–P7 (dryf dokumentacji) — odhaczyć z odsyłaczem do
       commitów, bez zmiany treści kryteriów.
-- [~] **A4** Pętla jakości (ADR 0021 pkt 4): (a) Żywy Tester z perspektywy
+- [x] **A4** Pętla jakości (ADR 0021 pkt 4): (a) Żywy Tester z perspektywy
       gracza — partie po `npm run build`, ręczna lektura transkryptów wg osi
       `docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń ≠ brak błędów);
       (b) polowanie CR inną ścieżką niż poprzednia sesja (poprzednio
       614/616/106 + 601.2); (c) analizatory: `event-contract-audit`,
       `family-audit`, `bot-tie-audit`, `scoring-mulligan-audit`,
       `scoring-unvalued-audit`.
-- [ ] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
+- [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
       `HANDOFF_2026-10-27c.md`, opis PR kumulatywnie, blok przekazania
