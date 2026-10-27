@@ -17,6 +17,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
 import { blockAssignmentViolation, legalBlockerOptions } from '../src/engine/combat.js';
+import { applyEffect } from '../src/engine/effects.js';
 
 const registry = createCardRegistry();
 
@@ -96,4 +97,47 @@ test('pin: can\'t be blocked by [typ] — deskryptor jest faktem publicznym w Pl
   const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'evasive');
   assert.deepEqual(entry?.cantBeBlockedByTypes, ['Artifact'],
     'widok niesie typy zakazanych blokerów (bot musi je widzieć — ADR 0017)');
+});
+
+// =========================================================================
+// E2d — licznik „za każdą kartę stworzenia w twoim cmentarzu" (Moldgraf Millipede)
+// =========================================================================
+
+function cardIn(state, { id, controllerId = 'p1', zone = 'graveyard', types = ['Creature'] }) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: types.includes('Creature') ? 'elite-vanguard' : 'basic-swamp',
+    controllerId, ownerId: controllerId, zone,
+    kind: types.includes('Creature') ? 'creature' : 'land',
+    types, subtypes: [], colors: [], keywords: [],
+    ...(types.includes('Creature') ? { power: 2, toughness: 1, manaCost: 1 } : {}),
+  });
+  return state.objects.get(id);
+}
+
+test('pin: add_counter z amountFromGraveyardCardType liczy CAŁY cmentarz (także karty zmielone wcześniej)', () => {
+  const state = game();
+  // Dwa stwory JUŻ w grobie + biblioteka: 2 stwory i 1 ląd (mill bierze 3).
+  cardIn(state, { id: 'g1' });
+  cardIn(state, { id: 'g2' });
+  cardIn(state, { id: 'l1', zone: 'library' });
+  cardIn(state, { id: 'l2', zone: 'library' });
+  cardIn(state, { id: 'l3', zone: 'library', types: ['Land'] });
+  const source = synthetic(state, 'millipede', {
+    controllerId: 'p1', types: ['Creature'], subtypes: ['Insect'], power: 2, toughness: 2,
+  });
+  applyEffect(state, { type: 'mill_cards', amount: 3 }, source);
+  applyEffect(state, { type: 'add_counter', counter: '+1/+1', amountFromGraveyardCardType: 'Creature' }, source);
+  // Ruling VOW 2021-11-19: liczą się TAKŻE karty, które były w grobie przed mieleniem.
+  assert.equal(state.objects.get('millipede').counters?.['+1/+1'], 4,
+    '2 stare + 2 zmielone stwory = 4 liczniki (ląd zmielony nie liczy się)');
+});
+
+test('pin: amountFromGraveyardCardType liczy TYLKO cmentarz kontrolera źródła', () => {
+  const state = game();
+  cardIn(state, { id: 'moj' });
+  cardIn(state, { id: 'cudzy', controllerId: 'p2' });
+  const source = synthetic(state, 'millipede-2', { controllerId: 'p1', types: ['Creature'] });
+  applyEffect(state, { type: 'add_counter', counter: '+1/+1', amountFromGraveyardCardType: 'Creature' }, source);
+  assert.equal(state.objects.get('millipede-2').counters?.['+1/+1'], 1,
+    '„in your graveyard" = cmentarz kontrolera źródła, nie przeciwnika');
 });

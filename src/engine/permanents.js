@@ -483,6 +483,24 @@ export const CARD_TYPES = Object.freeze([
  * gracza). Tokeny nie są kartami (jawna flaga `isToken`, CR 108.2b) i się nie
  * liczą — nazwana kopia z `enterAsCopy` (CR 707.2) JEST kartą i liczy się.
  */
+/**
+ * Batch 70 (Moldgraf Millipede): liczba KART danego typu w cmentarzu JEDNEGO
+ * gracza („for each creature card in your graveyard", CR 111/404.1 — liczą się
+ * karty, nie tokeny). Ruling VOW 2021-11-19: liczba bierze CAŁY cmentarz
+ * w chwili rozstrzygania, więc karty zmielone wcześniej w tym samym efekcie
+ * też się liczą (efekty rozstrzygają się po kolei, CR 608.2c).
+ */
+export function graveyardCardTypeCount(state, playerId, type) {
+  let count = 0;
+  for (const objectId of state.zones.graveyard) {
+    const object = state.objects.get(objectId);
+    if (!isCardObject(object)) continue;
+    if ((object.ownerId ?? object.controllerId) !== playerId) continue;
+    if ((object.types ?? []).includes(type)) count += 1;
+  }
+  return count;
+}
+
 export function allGraveyardsCardTypeCount(state) {
   const present = new Set();
   for (const objectId of state.zones.graveyard) {

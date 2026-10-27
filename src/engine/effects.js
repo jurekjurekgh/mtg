@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, graveyardCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
@@ -3584,9 +3584,15 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.onlyIfTargetEnteredThisTurn && targetObj.enteredOnTurn !== state.turn?.number) return;
     // M177/B (Rakshasa Vizier): liczba liczników z kontekstu zdarzenia
     // („that many +1/+1 counters” — tyle, ile kart wyszło z grobu).
+    // Batch 70 (Moldgraf Millipede): „put a +1/+1 counter on this creature for
+    // each creature card in your graveyard” — kwota liczona PRZY ROZSTRZYGNIĘCIU
+    // z cmentarza kontrolera ŹRÓDŁA (efekt poprzedzający — mill — już się
+    // wykonał, więc zmielone karty się liczą; ruling VOW 2021-11-19).
     const counterAmount = effect.amountFromContext
       ? (context?.[effect.amountFromContext] ?? effect.amount ?? 1)
-      : (effect.amount ?? 1);
+      : effect.amountFromGraveyardCardType
+        ? graveyardCardTypeCount(state, sourceObject.controllerId, effect.amountFromGraveyardCardType)
+        : (effect.amount ?? 1);
     addCounter(state, targetId, effect.counter, counterAmount);
     return;
   }
