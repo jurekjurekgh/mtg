@@ -7,6 +7,21 @@ poniżej (PMSSB-1, PMSSB-2, …). Po zakończeniu pętli rodzina jest ZAMKNIĘTA
 kolejny agent czyta raport i piny zamiast badać od nowa — ponowny audyt
 tej samej rodziny wymaga nowego dowodu (sonda/Żywy Tester), nie przeczucia.
 
+## Kiedy pętla jest OBOWIĄZKOWA
+
+Pętla nie jest opcjonalnym „dopieściem": **każdy batch kart z nową mechaniką**
+musi ją przejść, zanim uzna się za domknięty (`docs/cards/HOW_TO_ADD_CARD.md`,
+Krok 7). Nowa mechanika = nowy deskryptor, nowa rodzina efektów, nowa ścieżka
+płatności, nowy typ zdarzenia albo nowy wymiar decyzji. Zielone piny silnika
+dowodzą, że reguła się *wykonuje* — nie że bot *wybiera* nią dobrze; bez pętli
+mechanika bywa dla gracza martwa (bot nie wystawia oferty, wystawia ją zawsze
+albo traktuje skutek jak zero).
+
+Historia: batch 69 (convoke) i batch 70 (X w koszcie permanentu, Improvise,
+prewencja licznikowa, ewazja po typie blokera, trigger manifest dread) szły
+bez tego kroku i wymagały pętli „po fakcie" — dlatego krok 7 runbooka jest
+teraz obowiązkowy, a nie zalecany.
+
 ## Procedura pętli (checklist dla agenta)
 
 0. Plan `docs/plans/PLAN_<data>-pmssb<N>-<rodzina>.md` (wzór: PMSSB-1) — commit.
