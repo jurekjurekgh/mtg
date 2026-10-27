@@ -8527,3 +8527,80 @@ Silnik, nie bot. Crash symulacji `Brak kolorowej many` (`worek-mroczny`, seed 30
 Testy: `test/audyt-pmssb66-brak-kolorowej-many.test.js` (2; oba padały przed zmianą). Lustro: 960 partii
 (3000, 5000, 9000), 0 crashów. Commit `d4241da`. Dowód: [raport PMSSB-66](audits/PMSSB66_BATCH68_2026-10-17.md).
 
+## M447 — batch 69: kolekcja właściciela 412–425, 10 kart (2026-10-20–26, PR #168/#176)
+
+Wpis uzupełniony w batchu 70 (brakował w numeracji — M446 był ostatni, a batch 69
+domknięto bez własnego milestonu).
+
+1. **Riot jako wybór gracza** (Gruul Beastmaster, CR 702.136a): tryb haste albo
+   licznik +1/+1 wybierany przy wejściu (`pendingRiotChoice` → `resolve_riot_choice`),
+   oferta w `legalCommands`; wycena bota kontekstowa (PMSSB-71 v2/v3).
+2. **Kicker warunkujący liczniki wejścia** (Kavu Primarch, CR 702.33d):
+   `entersWithCountersIf: { kicked: true, counters: { '+1/+1': 4 } }` czytane
+   z `wasKicked` permanentu.
+3. **Convoke — brakująca oferta rzutu** (lekcja L48): `legalCommands` publikuje
+   warianty `convokePayments` (także kickedowane), UI grupuje wybór stworów,
+   bot wycenia koszt tapnięcia ciałem (`convokeTapPenalty`). Szczegóły: PMSSB-72
+   w `docs/PROJECT_HISTORY.md` i `docs/PMSSB.md`.
+4. **Koszt „poświęć zaczarowanego stwora”** (Bloodfire Infusion) — obrażenia równe
+   mocy poświęconego z LKI; wycena bota wspólną miarą zamiatania (PMSSB-74).
+
+Karty: Makindi Aeronaut, Bloodfire Infusion, Tuskguard Captain, Kavu Primarch,
+Fleeting Flight, Heron-Blessed Geist, Ior Ruin Expedition, Gnoll War Band,
+Gruul Beastmaster, Myr Scrapling. Plan:
+[PLAN_2026-10-20c](plans/PLAN_2026-10-20c-batch69-kolekcja-412-425.md).
+
+## M448 — batch 70: kolekcja właściciela 426–624, 10 kart (2026-10-27, PR #176)
+
+Plan: [PLAN_2026-10-27](plans/PLAN_2026-10-27-batch70-kolekcja-426-624.md).
+Karty: Paranormal Analyst (DSK 69), Jilt (APC 27), Vault of Whispers (MRD 286),
+Kaleidoscorch (MH2 133), Orazca Puzzle-Door (LCI 68), Fen Hauler (AER 58),
+Moldgraf Millipede (VOW 209), Magma Pummeler (VOW 169), Trigon of Rage (SOM 216),
+Arlinn's Wolf (WAR 151) — wszystkie `supported` (100% Oracle, ADR 0022).
+
+1. **X w koszcie PERMANENTU** (CR 107.3a, Magma Pummeler): deskryptor `xCost` na
+   poziomie karty (`materialize`/`registry`/`deck`/`identity`), `castPermanent(…,
+   { xValue })` waliduje `0 ≤ X ≤ cap`, dolicza X do kosztu całkowitego
+   (CR 601.2f) i stempluje `spellX` na obiekcie; `entersWithCounters: {…: 'X'}`
+   czyta `spellX` przy wejściu (CR 614.1c). Oferty `cast_permanent` enumerują
+   X = 0…cap jak `legalXCostCasts` dla czarów (L48).
+2. **Efekt zastępczy prewencji zdejmujący liczniki** (CR 615.1a, Magma Pummeler):
+   `preventDamageByRemovingCounter: '+1/+1'` w łańcuchu prewencji obrażeń
+   (`permanents.js`), zdarzenia `damage_prevented {counterRemoval: true}` +
+   `counter_removed {damagePrevention: true}` z migawką zdolności (LKI), oraz
+   trigger `counter_removed` z `damagePreventionOnly` i celem „any target”
+   zadający `amountFromContext: 'countersRemoved'`. Ruling VOW 2021-11-19:
+   obrażenia > liczniki → całe zapobiegnięte, wszystkie liczniki zdjęte, trigger
+   nadal zadaje tyle, ile zdjęto (także gdy stwór ginie z 0 wytrzymałości).
+3. **Improvise** (CR 702.126a/b/c, Fen Hauler): płatność po ustaleniu kosztu
+   całkowitego, wyłącznie część generyczna; `improvisePaymentVariants` (≤ 32
+   wariantów) + oferta `cast_permanent { improvisePayments }`; tapnięte artefakty
+   są wykluczone z produkcji many, a bot płaci karą `improviseTapPenalty`.
+4. **Converge** (Kaleidoscorch, CR 207.2c + ruling MH2): `amount:
+   'colors_of_mana_spent'` liczy KOLORY (bezbarwna nie liczy się, CR 106.1a);
+   flashback zawsze wygania kartę (CR 702.34a) i liczy własną płatność.
+5. **Ewazja „can't be blocked by [typ] creatures”** (Fen Hauler): deskryptor
+   `cantBeBlockedByTypes` współdzielony przez walidację bloku, ofertę blokerów,
+   PlayerView i bota.
+6. **Cel warunkowy od kickera + „another target”** (Jilt, CR 601.2c/115.4):
+   `targetsForCast(object, { kicked })`, pozycja z `onlyIfKicked` i `anotherTarget`
+   w ofercie i walidacji.
+7. **Trigger „whenever you manifest dread”** (Paranormal Analyst, ruling DSK
+   2024-09-20): zdarzenie `manifest_dread_resolved` z listą kart położonych w grobie
+   TĄ drogą; trigger odpala także przy pustej liście, a zwrot czyta wyłącznie
+   kartę z kontekstu.
+8. **Licznik „za każdą kartę typu w cmentarzu”** (Moldgraf Millipede, ruling VOW
+   2021-11-19): `add_counter { amountFromGraveyardCardType: 'Creature' }` liczy
+   CAŁY cmentarz kontrolera źródła przy rozstrzygnięciu.
+9. **Bot**: `entryCounterStats` czyta wybrane X, kara `creatureEntryDiesPenalty`
+   za wejście z wytrzymałością ≤ 0 (CR 704.5f; `enterAsCopy` poza regułą),
+   koszt X many i wycena Improvise symetryczna do convoke.
+10. **Talie**: generator podzielił Ravnicę na `ravnica-wur`/`ravnica-bg`
+    (ADR 0024) — README, tester i testy czytające pliki talii zaktualizowane,
+    golden-master wycen zregenerowany (świadoma zmiana zestawu talii).
+
+Testy: `test/batch70-mechaniki.test.js` (34 piny na kartach syntetycznych,
+ADR 0029), `test/real-cards-batch70.test.js` (19: sanity danych + legalny
+i nielegalny scenariusz na każdą kartę). Mutacje potwierdzone dla X w koszcie
+(3 mutanty → 4 czerwone piny). Bramy: `npm test` 8938/8938, `test:slow`
+268/268, build 76 modułów / 5496,7 kB, benchmark quick 88,1% (było 87,8%).

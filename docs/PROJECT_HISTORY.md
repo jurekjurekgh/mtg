@@ -18159,3 +18159,37 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
 - Domknięcie (2026-10-21): presja działa symetrycznie — token oddany wrogowi (Secure the Scene) też dostaje presję (gałąź `exileSwap` z czynnikiem 3/10). Golden: 0 zmienionych wyborów, 6 wycen (maks. Δ 0,64); właściciel zaakceptował, hash `2f00a7f5…`. Tie-audit bez zmian (674). Mirror 144:144.
 - PMSSB-74 domknięcie: tie-audit bez zmian (700); lustro wersji bota na talii `warhammer-ubr` (Bloodfire), 800 partii: 431:369, win-rate 0,539, p ≈ 0,03 — wynik kierunkowy.
 - Plan: `docs/plans/PLAN_2026-10-20l-pmssb77-tokeny-presja.md`. Rejestr: `docs/PMSSB.md` §PMSSB-77.
+
+## 2026-10-27 — Batch 70: kolekcja właściciela 426–624 (10 kart, PR #176)
+
+- Lista od właściciela (10 pozycji), plan przepisany 1:1; katalog 670 → 680 definicji,
+  wszystkie karty `supported` (100% Oracle, ADR 0022), `limitations: []`, zachowanie
+  w `notes` z rulingami Scryfall (ADR 0028): Paranormal Analyst (DSK), Jilt (APC),
+  Vault of Whispers (MRD), Kaleidoscorch (MH2), Orazca Puzzle-Door (LCI), Fen Hauler
+  (AER), Moldgraf Millipede (VOW), Magma Pummeler (VOW), Trigon of Rage (SOM),
+  Arlinn's Wolf (WAR).
+- Silnik (E2, mechaniki generyczne, każda z pinem RED→GREEN na karcie
+  syntetycznej — ADR 0029): ewazja po typie blokera, Converge+Flashback, licznik
+  „za kartę typu w cmentarzu”, trigger „whenever you manifest dread” + zwrot karty
+  z kontekstu, cel warunkowy od kickera + „another target”, Improvise, prewencja
+  obrażeń zdejmująca liczniki + refleksyjny trigger. Arlinn's Wolf („power 2 or
+  less”) używa ISTNIEJĄCEGO progu górnego `cantBeBlockedByPower` — piny M2
+  utrwalają jego semantykę (walidacja bloku, PlayerView, oferta blokerów, bot);
+  pierwotny opis commita E2a mówił o progu dolnym, co było błędem odczytu Oracle
+  (poprawione w E2a/fix, kod nie zawiera martwego deskryptora).
+  Szczegóły: `docs/ENGINE_MILESTONES.md` M448.
+- E3: X w koszcie PERMANENTU (CR 107.3a) — deskryptor `xCost`, walidacja, koszt
+  całkowity, `spellX` i `entersWithCounters: {…: 'X'}`; oferta `cast_permanent`
+  enumeruje X = 0…cap. Vault of Whispers dostaje produkcję many przez
+  `MANA_SOURCE_MAP` (wzorzec Great Furnace, M193/M200), nie deskryptor.
+- E3/fix: generator talii podzielił Ravnicę na `ravnica-wur`/`ravnica-bg` po dodaniu
+  Arlinn's Wolf (ADR 0024) — README (liczności), `docs/setup/TESTER_STOLU.md`,
+  `tools/table-tester` i testy czytające pliki talii zaktualizowane; golden-master
+  wycen zregenerowany (świadoma zmiana zestawu talii: `ravnica-wub` → `ravnica-wur`).
+- E4: `test/real-cards-batch70.test.js` — sanity danych (plan/artId/snapshot/Oracle/
+  jedna talia) + po jednym scenariuszu legalnym i nielegalnym na każdą kartę, w tym
+  weryfikacja, że nowe mechaniki realnie pojawiają się w `legalCommands`.
+- Mutacje (ADR 0029): bez `+ X` w koszcie → 1 pin czerwony; bez sprawdzenia `cap`
+  → 1; bez gałęzi `'X'` w `entersWithCounters` → 2. Po przywróceniu 34/34.
+- Bramy: `npm test` 8938/8938, `test:slow` 268/268, build 76 modułów / 5496,7 kB,
+  benchmark quick 88,1% (baseline 87,8%).
