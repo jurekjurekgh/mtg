@@ -3823,6 +3823,14 @@ same scenariusze, ta sama sesja:
 
 ### Audyt macierzy (L41 / S11 / M429)
 
+- **Zakres pomiaru §4 (granica świadoma):** wycena ataku karze/ premiuje
+  ewazję przez wymiar RYZYKA (czy bloker zabije atakującego). Bloker, który
+  przeżyje atak (np. 2/2 przeciw 5/5), nie różnicuje wyniku, nawet gdy nie
+  może blokować — ten sam model dotyczy ewazji po słowach kluczowych, a sam
+  `flying` ma osobną premię `creatureKeywordValue`. Przepływ 5 obrażeń w twarz
+  przy nieblokowalnym atakującym nie jest więc wyceniany wyżej niż przy
+  chump-blocku. To luka POZA zakresem batcha 70 (dotyczy każdej ewazji) —
+  materiał na osobną pętlę, nie na over-fix tutaj.
 - **L41 (jedna reguła, wszystkie ścieżki):** `cantBeBlockedByTypes` był czytany
   tylko w `canIndividuallyBlockCrackback`; teraz filtr siedzi w
   `attackerCanBeBlocked` (jedno źródło dla deklaracji bloków, krakbacku i
