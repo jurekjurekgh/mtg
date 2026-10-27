@@ -95,10 +95,14 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
   // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
   const powerCap = attacker.cantBeBlockedByPower;
+  // Batch 70 (Arlinn's Wolf): próg DOLNY („power N or greater") — blokerzy
+  // o mocy ≥ progu nie liczą się do obrony; lustro `powerCap` wyżej.
+  const powerFloor = attacker.cantBeBlockedByPowerAtLeast;
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
     if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
     if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
+    if (powerFloor != null && (b?.power ?? 0) >= powerFloor) return false;
     return true;
   });
   if (keywords.includes('menace') && able.length < 2) return false;
@@ -4747,6 +4751,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (Number.isFinite(host.cantBeBlockedByPower)) {
       const threshold = host.cantBeBlockedByPower;
       if (blockers.every((b) => (b.power ?? 0) <= threshold)) return true;
+    }
+    // Batch 70 (Arlinn's Wolf): „can't be blocked by creatures with power N or
+    // greater" — próg dolny; omija wszystkich dopiero, gdy KAŻDY potencjalny
+    // bloker ma moc ≥ progu (lustro reguły w combat.js, L41/L48).
+    if (Number.isFinite(host.cantBeBlockedByPowerAtLeast)) {
+      const floor = host.cantBeBlockedByPowerAtLeast;
+      if (blockers.every((b) => (b.power ?? 0) >= floor)) return true;
     }
     // PMSSB-60/F7 (Skyscythe Engulfer, batch 65): „can't be blocked by
     // creatures with [keyword]". Reguła lustrzana do combat.js

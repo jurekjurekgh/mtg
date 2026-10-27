@@ -1769,6 +1769,8 @@ function describeStatic(ability) {
   // Audyt Batch53/B5: ewazja Rust-Shield Rampagera („can't be blocked by
   // creatures with power 2 or less") nie miała reprezentacji na kaflu.
   if (ability.cantBeBlockedByPower != null) parts.push(`nie może być blokowany przez stwory o mocy ≤${ability.cantBeBlockedByPower}`);
+  // Batch 70 (Arlinn's Wolf): próg dolny — „power 3 or greater" (moc efektywna).
+  if (ability.cantBeBlockedByPowerAtLeast != null) parts.push(`nie może być blokowany przez stwory o mocy ≥${ability.cantBeBlockedByPowerAtLeast}`);
   if (Array.isArray(ability.cantBeBlockedByTypes) && ability.cantBeBlockedByTypes.length) {
     parts.push(`nie może być blokowany przez stwory typu ${ability.cantBeBlockedByTypes.map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? t).join(' / ')}`);
   }

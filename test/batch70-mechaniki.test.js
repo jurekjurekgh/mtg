@@ -24,6 +24,9 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { legalSpellCasts, effectiveSpellManaCost } from '../src/engine/spells.js';
+import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
+import { blockAssignmentViolation, legalBlockerOptions } from '../src/engine/combat.js';
+import { attackerCanBeBlocked } from '../src/controllers/heuristic-bot.js';
 
 const REGISTRY = createCardRegistry();
 // Karta-gospodarz: dostarcza sam materiał obiektu (Instant, koszt, kolory);
@@ -163,4 +166,65 @@ test('B70/M1 walidacja: ten sam stwór na obu pozycjach łamie „another target
   assert.equal(r.ok, false, '„another target" nie może wskazać tego samego obiektu');
   assert.match(String(r.events?.at(-1)?.reason ?? ''), /another/);
   assert.equal(state.objects.get('a').damage, 0, 'odrzucony rzut nie może mutować stanu (CR 601.2h)');
+});
+
+// =========================================================================
+// M2 — Arlinn's Wolf (WAR): „This creature can't be blocked by creatures with
+// power 3 or greater." Silnik, widok, bot i render MAJĄ deskryptor
+// (`cantBeBlockedByPower`, wzorzec Rust-Shield Rampager) — ten blok pinuje go
+// dopiero pod kartą z batcha 70, na karcie syntetycznej (ADR 0029).
+// =========================================================================
+
+const wolf = (state, id, controllerId = 'p1') => {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: `test-${id}`, controllerId, ownerId: controllerId,
+    zone: 'battlefield', kind: 'creature', types: ['Creature'], colors: ['G'], subtypes: ['Wolf'],
+    keywords: [], power: 3, toughness: 2,
+    abilities: [createAbility({ type: ABILITY_TYPE.static, cantBeBlockedByPowerAtLeast: 3 })],
+  });
+  return state.objects.get(id);
+};
+
+test('B70/M2 oferta i walidacja bloków: próg mocy 3 — bloker 3/3 odrzucony, 2/2 dozwolony', () => {
+  const state = setup();
+  wolf(state, 'wolf');
+  creature(state, 'duzy', 'p2', 3, 3);
+  creature(state, 'maly', 'p2', 2, 2);
+  const attacker = state.objects.get('wolf');
+  assert.match(String(blockAssignmentViolation(state, attacker, ['duzy'])),
+    /power 3 or greater|mocy/,
+    'stwór o mocy 3 nie może blokować (próg „power 3 or greater")');
+  assert.equal(blockAssignmentViolation(state, attacker, ['maly']), null,
+    'stwór o mocy 2 blokuje bez przeszkód — próg dotyczy mocy ≥ 3');
+});
+
+test('B70/M2 widok: próg ewazji jest informacją PUBLICZNĄ dla bota (ADR 0017)', () => {
+  const state = setup();
+  wolf(state, 'wolf');
+  const entry = playerView(state, 'p2').zones.battlefield.find((o) => o.id === 'wolf');
+  assert.equal(entry?.cantBeBlockedByPowerAtLeast, 3, 'PlayerView musi nieść próg mocy');
+});
+
+test('B70/M2 oferta bloków: `legalBlockerOptions` nie proponuje blokera za mocnego', () => {
+  const state = setup();
+  wolf(state, 'wolf');
+  creature(state, 'duzy', 'p2', 4, 4);
+  creature(state, 'maly', 'p2', 1, 1);
+  state.combat = { attackingPlayerId: 'p1', attackers: ['wolf'], blockers: new Map(), blockedAttackers: new Set() };
+  state.turn = jumpToStep(state.turn, 'declare_blockers', 'p1');
+  const options = legalBlockerOptions(state, 'p2');
+  assert.deepEqual(options.filter((o) => (o.wolf ?? []).includes('duzy')), [],
+    'oferta nie może proponować blokera łamiącego próg (kontrakt L48)');
+  assert.ok(options.some((o) => (o.wolf ?? []).includes('maly')),
+    'oferta proponuje legalnego blokera');
+});
+
+test('B70/M2 bot: `attackerCanBeBlocked` respektuje próg dolny mocy (ADR 0017)', () => {
+  const wolfView = { id: 'wolf', cantBeBlockedByPowerAtLeast: 3, keywords: [] };
+  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 3 }, { id: 'b2', power: 5 }]), false,
+    'wszyscy blokerzy mają moc ≥ 3 — atakujący jest nieblokowalny');
+  assert.equal(attackerCanBeBlocked(wolfView, [{ id: 'b1', power: 3 }, { id: 'b2', power: 2 }]), true,
+    'bloker o mocy 2 łamie próg — atakujący jest blokowalny');
+  assert.equal(attackerCanBeBlocked({ id: 'plain', keywords: [] }, [{ id: 'b1', power: 5 }]), true,
+    'kontrola ujemna: bez deskryptora każdy bloker się liczy');
 });

@@ -1731,6 +1731,30 @@ export function attackerBlockPowerRestriction(state, attacker) {
 }
 
 /**
+ * Minimalna moc blokera („can't be blocked by creatures with power N or
+ * greater" — Arlinn's Wolf, batch 70), z własnej zdolności lub nadanej
+ * sprzętem. Lustro `attackerBlockPowerRestriction` w drugą stronę: tam próg
+ * jest GÓRNY (moc ≤ N nie blokuje), tu DOLNY (moc ≥ N nie blokuje).
+ * Eksportowane dla PlayerView i bota (ADR 0017 — bot czyta deskryptor
+ * publiczny z widoku, nie zgaduje z rejestru kart).
+ */
+export function attackerBlockPowerFloor(state, attacker) {
+  for (const ability of effectiveAbilities(attacker)) {
+    if (ability?.type === 'static' && ability.cantBeBlockedByPowerAtLeast != null) {
+      return ability.cantBeBlockedByPowerAtLeast;
+    }
+  }
+  for (const attachment of attachmentsAttachedTo(state, attacker.id)) {
+    for (const ability of attachment.equipment?.grantedAbilities ?? []) {
+      if (ability?.type === 'static' && ability.cantBeBlockedByPowerAtLeast != null) {
+        return ability.cantBeBlockedByPowerAtLeast;
+      }
+    }
+  }
+  return null;
+}
+
+/**
  * M380 (ODZNAKA, CR 509.1a + L41): JEDNO ŹRÓDŁO PRAWDY o PAROWEJ legalności
  * bloku — „czy ten bloker może blokować tego atakującego". Zwraca komunikat
  * naruszenia albo `null`. Korzystają z niej OBIE strony kontraktu L48:
@@ -1785,6 +1809,14 @@ function blockRestrictionError(state, attacker, blocker) {
   const maxBlockPower = attackerBlockPowerRestriction(state, attacker);
   if (maxBlockPower != null && effectivePower(blocker, state) <= maxBlockPower) {
     return `Stwora z „can\'t be blocked by creatures with power ${maxBlockPower} or less" nie może blokować stwór o takiej mocy`;
+  }
+  // Arlinn's Wolf (batch 70): „can't be blocked by creatures with power N or
+  // greater" — próg DOLNY, lustro gałęzi wyżej (M380: jedno źródło prawdy).
+  // Moc efektywna (CR 509.1b); raz wykonany blok zostaje (ruling WAR
+  // 2019-05-03 do Arlinn's Wolf: obniżenie mocy nie odblokowuje).
+  const minBlockPower = attackerBlockPowerFloor(state, attacker);
+  if (minBlockPower != null && effectivePower(blocker, state) >= minBlockPower) {
+    return `Stwora z „can\'t be blocked by creatures with power ${minBlockPower} or greater" nie może blokować stwór o takiej mocy`;
   }
   // Landwalk (CR 702.14, forestwalk): atakujący nie może być blokowany, gdy
   // OBRONCA kontroluje ląd o podtypie landwalka (defender = kontroler blokera).
