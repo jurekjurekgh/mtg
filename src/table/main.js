@@ -662,6 +662,14 @@ function bootstrapTable() {
   // wstrzymanej do zebrania sumy; null = kreator zamknięty. Pokrycie kolorów
   // kreator liczy z KOLOROWEJ PULI many sesji (cz. 8) — nie śledzi committed.
   let manaWizardDescriptor = null;
+  // B (uwaga właściciela 2026-10-27c, Apprentice Wizard „{U}, {T}: Add {C}{C}{C}"):
+  // kreator PODRZĘDNY. Gdy gracz płaci czar i sięga po zdolność many, która
+  // SAMA kosztuje manę (dork/land „{1},{T}: Add {G}"), nie wolno oddać tej
+  // płatności auto-tapowi silnika („tapnie pierwszy ląd z brzegu") — otwieramy
+  // DRUGI, niezależny kreator na koszt aktywacji i po jego dokończeniu wracamy
+  // do nadrzędnego, żeby dokończyć płatność pierwotnego czaru. Stos trzyma
+  // deskryptory nadrzędne (puste = brak zagnieżdżenia).
+  const manaWizardParents = [];
   function showModal(id) { modalOpenedAt[id] = Date.now(); el(id).className = 'modal active'; }
   function hideModal(id) { el(id).className = 'modal'; }
 
@@ -2743,6 +2751,22 @@ function bootstrapTable() {
    * (CR 602.2a). Dotyczy wyłącznie zdolności z `cost.tap` — zdolność bez
    * tapnięcia (Heap Gate {1}: …) może być finansowana z własnej many.
    */
+  /**
+   * B (uwaga właściciela 2026-10-27c): co zrobić z tapnięciem źródła many
+   * w kreatorze. Źródło z KOSZTEM AKTYWACJI (dork typu Apprentice Wizard
+   * „{U}, {T}: Add {C}{C}{C}", ląd „{1}, {T}: Add {G}") wymaga drugiego,
+   * niezależnego kreatora na ten koszt — `nested: true`. Ląd bez kosztu
+   * (tap_for_mana) płaci się jedną komendą. Funkcja jest czysta, żeby pin
+   * (test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js) mógł ją wyjąć
+   * przez vm i sprawdzić bez DOM (konwencja M348).
+   */
+  function manaSourceTapPlan(source) {
+    if (!source) return null;
+    const command = source.command ?? null;
+    if (!command) return null;
+    return { command, nested: Boolean(source.activationCost) };
+  }
+
   function selfTapExclusionFor(cmd) {
     if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
     const source = session.state?.objects?.get(cmd.objectId);
@@ -2934,6 +2958,22 @@ function bootstrapTable() {
   }
 
   /** Otwiera modal kreatora many dla wstrzymanej komendy. */
+  /** B: otwiera kreator PODRZĘDNY (koszt aktywacji zdolności many) nad bieżącym. */
+  function openNestedManaWizard(descriptor) {
+    if (!els.manaWizardBody) return;
+    if (manaWizardDescriptor) manaWizardParents.push(manaWizardDescriptor);
+    manaWizardDescriptor = descriptor;
+    refreshManaWizard();
+    showModal('mana-wizard');
+  }
+  /** B: powrót do kreatora nadrzędnego (po opłaceniu zdolności albo Anuluj
+   * w kreatorze podrzędnym). Mana zostaje w puli — spójnie z M106/Z10. */
+  function returnToParentManaWizard() {
+    if (manaWizardParents.length === 0) { closeManaWizard(); return; }
+    manaWizardDescriptor = manaWizardParents.pop();
+    refreshManaWizard();
+    showModal('mana-wizard');
+  }
   /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
   function describeAbandonedCast(cmd) {
     const view = session?.view?.();
@@ -2949,9 +2989,11 @@ function bootstrapTable() {
     showModal('mana-wizard');
   }
 
-  /** Zamyka modal i zapomina wstrzymaną komendę (Anuluj / poza kontekstem). */
+  /** Zamyka modal i zapomina wstrzymane komendy (Anuluj / poza kontekstem).
+   * Zamyka CAŁY stos — także kreatory nadrzędne (B, 2026-10-27c). */
   function closeManaWizard() {
     manaWizardDescriptor = null;
+    manaWizardParents.length = 0;
     hideModal('mana-wizard');
   }
 
@@ -2998,9 +3040,14 @@ function bootstrapTable() {
     const finishPayment = () => {
       const pending = manaWizardDescriptor;
       if (!pending) return;
-      finishWizardPayment(session, pending, {
+      // B (2026-10-27c): kreator PODRZĘDNY (koszt aktywacji zdolności many)
+      // najpierw wykonuje aktywację (pula rośnie o produkcję), a DOPIERO potem
+      // wraca do nadrzędnego — kolejność odwrotna niż przy zwykłej płatności,
+      // bo `finishWizardPayment` woła onCloseWizard PRZED komendą.
+      const nested = manaWizardParents.length > 0;
+      const result = finishWizardPayment(session, pending, {
         runCommand: (cmd, options) => playDirect(cmd, options),
-        onCloseWizard: () => closeManaWizard(),
+        onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
           rerender();
@@ -3008,6 +3055,8 @@ function bootstrapTable() {
         },
         onNotice: (msg) => showNotice(msg),
       });
+      if (nested) returnToParentManaWizard();
+      return result;
     };
     // Zwykła płatność zachowuje dotychczasowe auto-domknięcie. Delve MUSI
     // zostać na ekranie do jawnego zatwierdzenia: nawet gdy pula już płaci
@@ -3044,10 +3093,23 @@ function bootstrapTable() {
       // tapnięty, pool wzrósł o net zysk).
       onTapSource: (objectId) => {
         const src = sources.find((s) => s.id === objectId);
-        const command = src?.command ?? { type: 'tap_for_mana', playerId: HUMAN_ID, objectId };
+        const plan = manaSourceTapPlan(src) ?? {
+          command: { type: 'tap_for_mana', playerId: HUMAN_ID, objectId }, nested: false,
+        };
+        // B (uwaga właściciela 2026-10-27c, Apprentice Wizard / land
+        // „{1},{T}: Add {G}"): zdolność many, która SAMA kosztuje manę, nie
+        // może być opłacona deterministycznym auto-tapem silnika. Otwieramy
+        // drugi, niezależny kreator płatności na koszt aktywacji; po jego
+        // dokończeniu wracamy tutaj i kończymy płatność pierwotnego czaru.
+        // `manaWizardFor` sam zamyka się, gdy wyboru nie ma (pula pokrywa koszt
+        // albo jest jeden kształt płatności) — oferta = walidacja (L48).
+        if (plan.nested) {
+          const nested = manaWizardFor(plan.command);
+          if (nested) { openNestedManaWizard(nested); return; }
+        }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
-        playDirect(command, { holdPriority: true });
+        playDirect(plan.command, { holdPriority: true });
         refreshManaWizard();
       },
       onToggleDelve: (objectId, on) => {
@@ -3065,7 +3127,9 @@ function bootstrapTable() {
       onOpenCard: typeof openCardFullscreenByCardId === 'function'
         ? openCardFullscreenByCardId : null,
       session,
-      onCancel: () => closeManaWizard(),
+      // B: Anuluj w kreatorze PODRZĘDNYM wraca do nadrzędnego (pierwotny czar
+      // nadal czeka); Anuluj w nadrzędnym zamyka całą płatność (M106/Z10).
+      onCancel: () => returnToParentManaWizard(),
     });
   }
 
@@ -3226,7 +3290,9 @@ function bootstrapTable() {
     el('card-preview-close').addEventListener('click', () => hideModal('card-preview'));
     el('context-menu-close').addEventListener('click', () => hideModal('context-menu'));
     el('choice-request-close').addEventListener('click', () => hideModal('choice-request'));
-    el('mana-wizard-close').addEventListener('click', () => closeManaWizard());
+    // B (2026-10-27c): ✕ w kreatorze PODRZĘDNYM wraca do nadrzędnego — gracz
+    // nie traci wstrzymanego czaru, tylko rezygnuje z tego źródła many.
+    el('mana-wizard-close').addEventListener('click', () => returnToParentManaWizard());
     // Pełny ekran karty (M18 + poprawka dotyku 2026-08-03): zamyka ten sam
     // gest, który otworzył — tapnięcie/dwuklik w DOWOLNYM miejscu warstwy
     // (także na samej karcie), nie tylko ✕ czy tło. Dotyk przechodzi przez
@@ -3313,7 +3379,7 @@ function bootstrapTable() {
         // Odprysk gestu otwierajacego (iOS double-tap) — patrz showModal.
         if (Date.now() - (modalOpenedAt[modalId] ?? 0) < MODAL_OPEN_GUARD_MS) return;
         if (modalId === 'bot-move') closeBotMoveModalPause();
-        else if (modalId === 'mana-wizard') closeManaWizard();
+        else if (modalId === 'mana-wizard') returnToParentManaWizard();
         else hideModal(modalId);
       });
     }
