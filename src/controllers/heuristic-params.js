@@ -130,6 +130,8 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'counterPressureWeight', 'counterBoardWeight',
   // PMSSB-77: presja na ciało tokenu-stwora po obu stronach (znak roli dla wroga).
   'tokenPressureWeight',
+  'convergeDamagePerColor', 'manifestDreadTriggerValue',
+  'graveyardCounterWeight', 'graveyardCounterCap',
   'creatureKwTrample', 'creatureKwReach', 'creatureKwIndestructible', 'creatureKwHexproof',
   'modalEffectModelWeight',
   'battleDefensePerCounter',
@@ -608,6 +610,24 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // Improvise: ten sam koszt co convoke (utracony blok), + artefakt traci
   // produkcję many, więc 5 (nieco wyżej niż convoke).
   improviseTapPenalty: 5,
+  // PMSSB-79 (Converge, batch 70 — Kaleidoscorch): obrażenia = liczba KOLORÓW
+  // many wydanej na rzut. Silnik płaci kolorami (zmierzone: `{1}{R}` z puli
+  // R/G/W/U → `manaColorsSpent: ['R','G']`), a wycena rzutu czytała kwotę
+  // stringową jako 0 (bot nie rzucał czaru wcale). Waga na kolor; 0 = dawne
+  // zachowanie (obrażenia 0).
+  convergeDamagePerColor: 1,
+  // PMSSB-79 (manifest dread, batch 70 — Paranormal Analyst): trigger
+  // „whenever you manifest dread” zwraca kartę położoną tą drogą. Zdarzenie nie
+  // było na liście wycenianych, więc karta była warta tylko ciało. Wartość
+  // liczona RAZ na trigger i bramkowana dowodem źródła manifest dread
+  // (`manifestDreadEvidence`, M429); 0 = dawne zachowanie.
+  manifestDreadTriggerValue: 4,
+  // PMSSB-79 (licznik „za kartę typu w cmentarzu”, batch 70 — Moldgraf
+  // Millipede): wycena ETB czytała kwotę `amountFromGraveyardCardType` jako
+  // płaskie 1. Waga mnoży RÓŻNICĘ wobec dawnej wartości (anty-over-fix M429:
+  // 0 = dokładnie dawna liczba), a sufit chroni przed cmentarzem z 20 kartami.
+  graveyardCounterWeight: 1,
+  graveyardCounterCap: 8,
   // Wejście z 0 wytrzymałości: ciało (creatureBase 70) NIE może tego przebić.
   creatureEntryDiesPenalty: 100,
   // D1 (2026-10-07): próg 25% życia wprost od właściciela; odstraszacz 25

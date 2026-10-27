@@ -95,10 +95,19 @@ export function attackerCanBeBlocked(attacker, blockers) {
   // Próg dotyczy MOCY, nie obrażeń bojowych, więc celowo NIE `combatPower`
   // (ten zwraca wytrzymałość przy `combatDamageByToughness`).
   const powerCap = attacker.cantBeBlockedByPower;
+  // PMSSB-79 (batch 70, Fen Hauler): „can't be blocked by [typ] creatures” —
+  // ten predykat jest JEDNYM źródłem odpowiedzi „czy tego atakującego da się
+  // w ogóle zablokować” dla wyceny deklaracji ataku (`rankedByThreat`),
+  // crackbacku i zdolności celujących. Dotąd typy blokera znała wyłącznie
+  // prywatna kopia w `canIndividuallyBlockCrackback` (L41 — dwie odpowiedzi na
+  // to samo pytanie), więc bot wyceniał Fen Haulera jak zwykłe 5/5 nawet
+  // naprzeciw samych artefaktów-stworów.
+  const bannedTypes = Array.isArray(attacker.cantBeBlockedByTypes) ? attacker.cantBeBlockedByTypes : [];
   const able = (blockers ?? []).filter((b) => {
     const kw = b?.keywords ?? [];
     if (flying && !kw.includes('flying') && !kw.includes('reach')) return false;
     if (powerCap != null && (b?.power ?? 0) <= powerCap) return false;
+    if (bannedTypes.length > 0 && (b?.types ?? []).some((type) => bannedTypes.includes(type))) return false;
     return true;
   });
   if (keywords.includes('menace') && able.length < 2) return false;
@@ -2441,6 +2450,46 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return P.linkedAnimationFutilePenalty;
   };
 
+  /**
+   * PMSSB-79 (batch 70, Moldgraf Millipede): kwota licznika brana z CMENTARZA
+   * (`amountFromGraveyardCardType`, ruling VOW 2021-11-19 — cały cmentarz
+   * kontrolera, także karty sprzed wejścia). Wycena ETB czytała deskryptor
+   * jako brak `amount`, czyli płaskie 1: pomiar 97,74 przy 0 i przy 3 kartach
+   * stworów w grobie. Waga mnoży RÓŻNICĘ wobec starej liczby (M429: 0 =
+   * dokładnie dawne zachowanie), sufit chroni przed cmentarzem z 20 kartami.
+   */
+  const graveyardCounterAmount = (view, effect) => {
+    const base = effect?.amount ?? 1;
+    const type = effect?.amountFromGraveyardCardType;
+    if (!type) return base;
+    const count = Math.min(P.graveyardCounterCap,
+      (view?.zones?.graveyard ?? []).filter((o) => o.controllerId === view?.playerId
+        && (o.types ?? []).includes(type)).length);
+    const scaled = counterValue(view, Math.max(1, count));
+    return base + P.graveyardCounterWeight * (scaled - counterValue(view, base));
+  };
+
+  /**
+   * PMSSB-79: czy w tej ręce/na stole JEST aktywator manifest dread (karta
+   * z efektem `manifest_dread`). Trigger „whenever you manifest dread” bez
+   * aktywatora nie odpali ani razu — bez tej bramki wycena dawałaby bonus
+   * każdej karcie z tym triggerem (klasa anty-over-fix M429).
+   */
+  const manifestDreadEvidence = (view, def = null) => {
+    const isEnabler = (candidate) => (candidate?.spell?.effects ?? [])
+      .some((effect) => effect?.type === 'manifest_dread')
+      || (candidate?.abilities ?? []).some((ability) => [].concat(ability?.effect ?? [])
+        .some((effect) => effect?.type === 'manifest_dread'));
+    if (isEnabler(def)) return true;
+    for (const zone of ['hand', 'battlefield']) {
+      for (const object of view?.zones?.[zone] ?? []) {
+        if (object?.controllerId !== view?.playerId) continue;
+        if (isEnabler(cardDef(object.cardId))) return true;
+      }
+    }
+    return false;
+  };
+
   const ETB_EFFECT_BONUS = Object.freeze({
     // PMSSB-3/F10: ETB-draw BEZ guardu deck-outu (cast/ability mają
     // drawDeckingPenalty — L41; Rager przy pustej bibliotece dostawał +9
@@ -2566,12 +2615,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // nie stałe 5. Inne liczniki (quest, stun…) zostają przy 5 do osobnej pętli.
     add_counter: (e, view, req, def) => (req
       ? ((isFriendlyCounterSpec(req) ? etbFriendlyCounterTargetAvailable(view, req, def) : etbEnemyHasTarget(view, req)) ? 6 : 0)
-      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, e?.amount ?? 1) : 5)),
+      : ((e?.counter ?? '+1/+1') === '+1/+1' ? counterValue(view, graveyardCounterAmount(view, e)) : 5)),
     // PMSSB-19 (L41): szukanie w trzech ścieżkach przez `searchRiderValue`
     // — bazy 9/10 jak dawniej (bez dryfu ETB).
     search_library_to_hand: (e, view) => searchRiderValue(view, e),
     search_library_to_battlefield: (e, view) => searchRiderValue(view, e),
     return_card_from_graveyard_to_hand: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 7 : 0),
+    // PMSSB-79 (batch 70, Paranormal Analyst): „put a card you put into your
+    // graveyard this way into your hand” — karta wraca z WŁASNEGO grobu, więc
+    // to odzysk, nie nowa karta (dlatego mniej niż draw/7). Bramka dowodu
+    // siedzi w gałęzi zdarzenia (`manifestDreadEvidence`).
+    return_context_graveyard_card_to_hand: (e, view) => ((view.zones.graveyard ?? [])
+      .some((o) => o.controllerId === view.playerId) ? P.manifestDreadTriggerValue : 0),
     return_permanent_from_graveyard: (e, view) => ((view.zones.graveyard ?? []).some((o) => o.controllerId === view.playerId) ? 10 : 0),
     // Batch60 (Clone Shell, dies): odkrycie wygnanej karty = darmowy stwór
     // na pole bitwy, ale BEZ card advantage (to własna, wcześniej wygnana
@@ -3127,6 +3182,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       else if (ev === 'you_draw_second_card_each_turn') like = secondDrawEvidence(view, def) ? 0.5 : 0;
       else if (ev === 'another_creature_enters') like = 0.5;
       else if (ev === 'land_entered_under_opponent_control') like = 0.7;
+      // PMSSB-79 (batch 70, Paranormal Analyst): „whenever you manifest dread”
+      // — zdarzenie nie było na tej liście, więc trigger wyceniano na 0 i karta
+      // była warta tylko ciało (pomiar: 68,40 niezależnie od stanu grobu).
+      // Bramka M429: trigger ma wartość WYŁĄCZNIE przy dowodzie źródła
+      // manifest dread (karta w ręce/na stole z efektem `manifest_dread`) —
+      // bez aktywatora to martwy tekst, nie „bonus z sufitu”.
+      else if (ev === 'manifest_dread_resolved') like = manifestDreadEvidence(view, def) ? 1 : 0;
       else continue;
       if (like <= 0) continue;
       if (ability.trigger?.payMana != null || (ability.trigger?.payColors?.length ?? 0) > 0) continue;
@@ -3227,6 +3289,22 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (life <= 5) return 2 + x;
     if (life <= 10 || pressure >= life - 5) return 1 + Math.min(x, 3);
     return Math.min(1 + Math.floor(x / 2), 3);
+  };
+  /**
+   * PMSSB-79 (Converge): ile kolorów many REALNIE da się wydać na ten czar.
+   * Silnik płaci kolorami, dopóki pula je ma (parytet z `manaColorsSpent`),
+   * a liczba symboli w koszcie ogranicza górę — nie da się „przepłacić ponad
+   * koszt”. Ta sama liczba karmi wycenę i (pośrednio) decyzję o rzucie, więc
+   * pule jednokolorowa i czterokolorowa przestają remisować (S11).
+   */
+  const convergeDamageAmount = (view, cmd, card) => {
+    const spent = Math.max(0, cmd?.cost ?? card?.manaCost ?? 0);
+    if (spent === 0) return 0;
+    const colors = new Set();
+    for (const unit of manaUnitsOfView(view, { artifactSpell: (card?.types ?? []).includes('Artifact') })) {
+      for (const color of unit ?? []) colors.add(color);
+    }
+    return P.convergeDamagePerColor * Math.min(spent, colors.size);
   };
   /**
    * PMSSB-67 F2: przyrost P/T od liczników WEJŚCIA (`entersWithCounters`), które pompa statyczna
@@ -6530,7 +6608,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && attacker.cantBeBlockedExceptByColors.length > 0
       && !(blocker.colors ?? []).some((color) => attacker.cantBeBlockedExceptByColors.includes(color))) return false;
     if ((attacker.cantBeBlockedByKeywords ?? []).some((kw) => hasKeyword(blocker, kw))) return false;
-    if ((attacker.cantBeBlockedByTypes ?? []).some((type) => (blocker.types ?? []).includes(type))) return false;
+    // Typy blokera rozstrzyga już `attackerCanBeBlocked` (PMSSB-79) — tu
+    // zostają wyłącznie restrykcje, których ten predykat nie zna (kolory,
+    // keywordy blokera, ochrona).
     if ((attacker.protection ?? []).some((quality) => sourceHasProtectionQuality(quality, blocker))) return false;
     return true;
   };
@@ -12418,7 +12498,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               // więc bot nigdy nie rzucał Blitza mimo pełnych obrażeń w silniku.
               : effect.amount === 'instants_and_sorceries_in_your_graveyard'
                 ? instantSorceryGraveyardCount(view.zones.graveyard ?? [], view.playerId)
-                : Number.isInteger(effect.amount) ? effect.amount : 0;
+                // PMSSB-79 (batch 70, Kaleidoscorch — Converge, CR 207.2c):
+                // X = liczba KOLORÓW many wydanej na rzut. Silnik płaci je
+                // kolorami (zmierzone: `{1}{R}` z puli R/G/W/U →
+                // `manaColorsSpent: ['R','G']`), więc wycena liczy tę samą
+                // liczbę z puli: min(dostępne kolory, mana wydana na czar).
+                // Wcześniej string wpadał w `: 0` — bot wyceniał czar na 0
+                // obrażeń (pomiar: -61,00 niezależnie od kolorów) i nigdy go
+                // nie rzucał.
+                : effect.amount === 'colors_of_mana_spent'
+                  ? convergeDamageAmount(view, cmd, card)
+                  : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
