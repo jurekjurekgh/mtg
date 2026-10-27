@@ -28,19 +28,20 @@ Trigon of Rage, Vault of Whispers.
 
 ## Etapy
 
-- [ ] **A0** Plan + PR sesji (ten plik) — commit przed kodowaniem.
-- [ ] **A1** Audyt PR #176 wg ADR 0020 B / ADR 0016 — każdy zmieniony plik
+- [x] **A0** Plan + PR sesji (ten plik) — commit przed kodowaniem.
+- [x] **A1** Audyt PR #176 wg ADR 0020 B / ADR 0016 — każdy zmieniony plik
       `src/` pod kątem: zgodności z CR (cytat dosłowny, ADR 0030) i z Oracle
       kart, generyczności (ADR 0002 — zero przypadków po nazwie/ID karty),
       FoW/PlayerView (ADR 0003/0017), determinizmu (ADR 0005), oferta =
       walidacja (L48). Sprawdzenie testów RED→GREEN (L13) i tego, czy pin
       mierzy regułę (L5). Raport: `docs/audits/AUDYT_PR176_2026-10-27.md`.
-- [ ] **A2** Naprawy findingów u root cause, każdy z pinem i mutacją RED,
-      osobnym commitem (ADR 0020 C).
-- [ ] **A3** Higiena planów: `PLAN_2026-10-27b` ma status „WYKONANY", ale
+- [x] **A2** Naprawy findingów u root cause, każdy z pinem i mutacją RED,
+      osobnym commitem (ADR 0020 C) — zrobione: F-1 (commit `721aec2`), reszta znalezisk
+ozdarta do obserwacji O-1…O-5 z uzasadnieniem.
+- [x] **A3** Higiena planów: `PLAN_2026-10-27b` ma status „WYKONANY", ale
       niezaznaczone etapy P0–P7 (dryf dokumentacji) — odhaczyć z odsyłaczem do
       commitów, bez zmiany treści kryteriów.
-- [ ] **A4** Pętla jakości (ADR 0021 pkt 4): (a) Żywy Tester z perspektywy
+- [~] **A4** Pętla jakości (ADR 0021 pkt 4): (a) Żywy Tester z perspektywy
       gracza — partie po `npm run build`, ręczna lektura transkryptów wg osi
       `docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń ≠ brak błędów);
       (b) polowanie CR inną ścieżką niż poprzednia sesja (poprzednio
