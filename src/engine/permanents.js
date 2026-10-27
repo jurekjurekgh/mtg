@@ -106,7 +106,7 @@ export function preventDamageByRemovingCounters(state, objectId, amount) {
   });
   state.events.push(event('damage_prevented', {
     objectId, cardId: object.cardId, amount,
-    countersRemoved: removed, counterRemoval: true,
+    countersRemoved: removed, counterRemoval: true, counterName,
   }));
   // Ruling VOW 2021-11-19: „If the damage is greater than the number of
   // counters, ALL the damage is prevented and all the counters are removed.”

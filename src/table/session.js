@@ -1562,7 +1562,14 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
         if (e.protection) reason = ' (ochrona przed kolorem)';
         else if (e.inspireAwe || e.combatFog) reason = ' (prewencja obrażeń bojowych)';
         else if (e.shield) reason = ' (tarcza prewencji)';
-        else reason = ' (prewencja)';
+        // Batch 70 (Magma Pummeler, CR 615.1a): prewencja przez ZDJĘCIE
+        // liczników. Bez tego wariantu log mówił tylko „zapobiegnięto", a gracz
+        // nie wiedział, że stwór stracił liczniki (i że przez to mógł zginąć
+        // w regule stanu) — widoczna zmiana stanu bez wpisu (L24).
+        else if (e.counterRemoval) {
+          reason = ` (prewencja — zdjęto ${e.countersRemoved ?? 0} `
+            + `${polishPluralCount(e.countersRemoved ?? 0, 'licznik', 'liczniki', 'liczników')} ${e.counterName ?? '+1/+1'})`;
+        } else reason = ' (prewencja)';
         return `Obrażenia (${e.amount}) do ${targetName} zapobiegnięte${reason}`;
       }
       case 'damage_fizzled': {
