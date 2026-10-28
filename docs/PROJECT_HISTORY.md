@@ -18332,3 +18332,19 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   Raport: `docs/audits/UWAGI_Z_GRY_2026-10-27c.md`. Bramy: `npm test`
   8998/8998, `test:slow` 268/268, build 76 modułów / 5530,4 kB, benchmark
   quick 88,2% (672 mecze).
+
+- **Sesja 2026-10-27c (PR #177) — otwarte tematy z audytu PR #176 domknięte**
+  (polecenie właściciela: „zajmij się otwartymi tematami”, bez dopisywania
+  kart): **O-3** — generyczny trigger „whenever a counter is removed” odpala
+  na KAŻDEJ drodze zdejmowania liczników (efekt, koszt zdolności, anihilacja
+  +1/+1 vs −1/−1 w regule stanu), a „this way” deklaruje karta deskryptorem
+  `trigger.damagePreventionOnly`; zdarzenie niesie kontrolera i migawkę
+  zdolności, więc trigger przeżywa śmierć własnego źródła (CR 704.5f + 400.7);
+  **O-5** — log transkryptu testera nie ucina już etykiet cicho (jawne
+  ucięcie wielokropkiem, limit 320 znaków), więc ostrzeżenia o powtórnej
+  aktywacji docierają do audytu. Wariant O-3 z rodzajem licznika i etykieta
+  kafla dla tego triggera czekają na nośnik mechaniki w katalogu (ADR
+  0022/0029). Piny: `o3-trigger-counter-removed` (6), `o5-tester-etykiety-logu`
+  (4); mutacje RED. Bramy: `npm test` 9008/9008, `test:slow` 268/268, build
+  76 modułów / 5532,1 kB, benchmark quick 88,2% (672 mecze).
+

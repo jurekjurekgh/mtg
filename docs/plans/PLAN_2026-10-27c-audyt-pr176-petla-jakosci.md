@@ -57,6 +57,14 @@ otwarte świadomie (opisał je raport audytu).
       D `6d3e1fd` (Cuombajj: ryzyko przeciwnika + zakaz psucia własnego czaru),
       B `5affe89` (koszt aktywacji zdolności many płaci kreator podrzędny).
       Raport: `docs/audits/UWAGI_Z_GRY_2026-10-27c.md`.
+- [x] **A7** Otwarte tematy z audytu (polecenie właściciela 2026-10-27c:
+      „zajmij się otwartymi tematami”, bez dopisywania kart):
+      **O-3** `8a90fd7` (generyczny trigger `counter_removed` odpala na każdej
+      drodze zdejmowania liczników; „this way” deklaruje karta deskryptorem),
+      **O-5** `5da5294` (log testera: cała etykieta do jawnego limitu, ucięcie
+      zawsze z wielokropkiem). Wariant O-3 z rodzajem licznika i etykietą kafla
+      **czeka na nośnik mechaniki** w katalogu (ADR 0022/0029) — bez nowych
+      kart w tej sesji.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

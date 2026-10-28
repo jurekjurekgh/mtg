@@ -28,16 +28,25 @@ etykieta oferty i kreator załogi ostrzegają, że powtórne osiodłanie/obsadze
 wytapuje stwory za nic (aktywacja zostaje legalna, CR 702.171a; pin M219 broni
 istnienia oferty), oraz **O-2** — czar Converge płaci różnymi kolorami many,
 więc X jest maksymalny legalnym wyborem (CR 601.2h + 207.2c; flaga celu
-płatności wąska, Adamant bez zmian). Pozostałe obserwacje: generyczny trigger
-`counter_removed` bez „this way” nie odpala (dziś bezkosztowe), log testera
-ucina etykiety do 110 znaków (O-5), rozjazd liczb w poprzednim handoffie (L92).
+płatności wąska, Adamant bez zmian). Pozostałe obserwacje domknięte w tej
+samej sesji: generyczny trigger
+`counter_removed` odpala teraz na każdej drodze zdejmowania liczników, a „this
+way” deklaruje karta (O-3), log testera nie ucina etykiet cicho (O-5), liczby
+w poprzednim handoffie odświeżone (O-4/L92).
+Na polecenie właściciela domknięte też **cztery uwagi z gry** (A–D), każda
+z pinem i mutacją RED ([raport](docs/audits/UWAGI_Z_GRY_2026-10-27c.md)):
+ETB z celem „obrażony w tej turze” czeka na Główną 2 (Fathom Fleet Cutthroat),
+koszt aktywacji zdolności many (Apprentice Wizard, lądy-konwertery) opłaca
+osobny kreator podrzędny (auto-tap silnika nie wybiera już źródeł), blok
+bezkosztowy bije pass (`blockFreeAbsorbBonus`), a Cuombajj Witches dostaje
+wycenę wyboru przeciwnika i zakaz psucia własnego czaru na stosie.
 Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bez
 wyceny; transkrypty czytane ręcznie — L27), analizatory
 zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
 decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
 207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Bramki:
-`npm test` **8982/8982**, `npm run test:slow` **268/268**, build **76 modułów /
-5519,9 kB**, benchmark quick 672 mecze (heuristic 88,1%). PR czeka na decyzję
+`npm test` **9008/9008**, `npm run test:slow` **268/268**, build **76 modułów /
+5532,1 kB**, benchmark quick 672 mecze (heuristic 88,2%). PR czeka na decyzję
 właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
 (sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);

@@ -8709,3 +8709,34 @@ u root cause z pinem + mutacją RED:
 
 Bramy: `npm test` **8998/8998**, `test:slow` **268/268**, build **76 modułów /
 5530,4 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
+## M452 — O-3/O-5 z audytu PR #176 domknięte: generyczny trigger `counter_removed` i log testera bez cichych ucięć (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md) (§5).
+
+**O-3** (reguła): skan triggerów dla `counter_removed` był bramkowany
+`ev.damagePrevention === true` (wprowadzone dla Magma Pummeler: „…removed from
+this creature THIS WAY”), więc zdolność BEZ „this way” nie odpalała nigdy —
+ani przy zdjęciu licznika efektem, ani kosztem zdolności, ani przy anihilacji
++1/+1 vs −1/−1 (CR 122.3). Zgodnie z CR 603.2 zdarzenie licznika triggeruje
+niezależnie od drogi; to, czy zdolność widzi wyłącznie prewencję, deklaruje
+KARTA deskryptorem `trigger.damagePreventionOnly` (ADR 0002) — rdzeń nie zna
+pojęcia „this way”. Zdarzenie `counter_removed` niesie teraz kontrolera
+i migawkę zdolności (ten sam kontrakt co ścieżka prewencji): bez tego trigger
+ginął, gdy zdjęcie licznika kończyło się śmiercią własnego źródła (CR 704.5f —
+obiekt zmienia strefę i tożsamość, CR 400.7). Pin
+`test/o3-trigger-counter-removed.test.js` (6 testów, karta syntetyczna —
+w katalogu nie ma nośnika; mutacja RED). Wariant z RODZAJEM licznika czeka na
+nośnik mechaniki (ADR 0022/0029).
+
+**O-5** (narzędzie): log transkryptu Żywego Testera ucinał klikniętą etykietę
+cicho (`slice(0, 110)`), a od naprawy O-1 ostrzeżenie stanu siedzi na KOŃCU
+etykiety — transkrypt kłamał. `tools/table-tester/labels.mjs`
+(`actionLabelForLog`) zwija białe znaki i tnie zawsze jawnym wielokropkiem
+(limit 320; realne etykiety panelu ≈260). Pin
+`test/o5-tester-etykiety-logu.test.js` (4 testy, 3 mutacje RED).
+
+Bramy: `npm test` **9008/9008**, `test:slow` **268/268**, build **76 modułów /
+5532,1 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
