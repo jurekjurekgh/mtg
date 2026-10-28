@@ -4204,26 +4204,46 @@ function processTriggersScan(state, recentEvents) {
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
     // turowej są dokładane WNĘTRZEM tego skanu, więc tam helper wołamy wprost
     // (bez podwójnego odpalenia).
-    // Batch 70 (Magma Pummeler): „When one or more counters are removed from
-    // this creature THIS WAY, it deals that much damage to any target.” —
-    // trigger czyta zdarzenie `counter_removed` ze znacznikiem przyczyny
-    // (`damagePrevention`), bo zwykłe zdejmowanie liczników tej zdolności nie
-    // odpala. Źródło bierzemy z pola bitwy, a gdy stwór już zginął (0
-    // wytrzymałości w regule stanu — typowy przypadek: obrażenia ≥ liczba
-    // liczników, ruling VOW 2021-11-19), z migawki w zdarzeniu (CR 603.10).
-    if (ev.type === 'counter_removed' && ev.damagePrevention === true) {
-      const liveCounterSource = state.objects.get(ev.objectId);
-      const counterSource = liveCounterSource && liveCounterSource.zone === 'battlefield'
-        ? liveCounterSource
+    // CR 603.2: „Whenever a game event or game state matches a triggered
+    // ability's trigger event, that ability automatically triggers.” Zdarzenie
+    // `counter_removed` odpalają więc WSZYSTKIE drogi zdejmowania liczników
+    // (efekt, koszt zdolności, anihilacja +1/+1 vs -1/-1 w regule stanu,
+    // prewencja obrażeń) — O-3 z audytu PR #176 domknięte.
+    //
+    // Każda karta deklaruje w deskryptorze, którą drogę ma na myśli:
+    //  • `trigger.damagePreventionOnly` (Magma Pummeler: „…removed from this
+    //    creature THIS WAY”) — zdolność odpala WYŁĄCZNIE przy prewencji;
+    //  • brak tego znacznika („Whenever a counter is removed from …”) —
+    //    każda droga.
+    // Wariant z określonym RODZAJEM licznika („a +1/+1 counter”) czeka na
+    // nośnik mechaniki w katalogu — filtr `trigger.counter` dokładamy razem
+    // z pierwszą taką kartą (ADR 0022/0029), żeby nie zgadywać semantyki.
+    //
+    // Źródło bierzemy z pola bitwy; gdy permanent opuścił już pole bitwy
+    // (prewencja kończąca się 0 wytrzymałości — ruling VOW 2021-11-19, albo
+    // zdjęcie licznika, po którym SBA zabiła stwora), składamy migawkę LKI:
+    // z obiektu w `state.objects` (niesie deskryptor zdolności), a gdy i jego
+    // brak — ze zdarzenia (CR 603.10).
+    if (ev.type === 'counter_removed') {
+      const stored = state.objects.get(ev.objectId) ?? null;
+      const counterSource = stored && stored.zone === 'battlefield'
+        ? stored
         : Object.freeze({
-          id: ev.objectId, cardId: ev.cardId ?? null, controllerId: ev.controllerId ?? null,
-          zone: 'battlefield', kind: 'creature', power: null, toughness: null,
-          types: [], colors: [], keywords: [], counters: {},
-          abilities: Object.freeze([...(ev.abilities ?? [])]),
+          id: ev.objectId,
+          cardId: ev.cardId ?? stored?.cardId ?? null,
+          controllerId: ev.controllerId ?? stored?.controllerId ?? null,
+          zone: 'battlefield', kind: stored?.kind ?? 'creature',
+          power: stored?.power ?? null, toughness: stored?.toughness ?? null,
+          types: stored?.types ?? [], colors: stored?.colors ?? [],
+          keywords: stored?.keywords ?? [], counters: {},
+          abilities: Object.freeze([...(ev.abilities ?? stored?.abilities ?? [])]),
         });
       for (const ability of effectiveAbilities(counterSource)) {
         if (ability?.trigger?.event !== 'counter_removed') continue;
-        tryFire(state, ability, counterSource, [], events, { countersRemoved: ev.amount ?? 1 });
+        if (ability.trigger.damagePreventionOnly === true && ev.damagePrevention !== true) continue;
+        tryFire(state, ability, counterSource, [], events, {
+          countersRemoved: ev.amount ?? 1, counterName: ev.counter ?? null,
+        });
       }
     }
     if (ev.type === 'counter_added' && ev.counter === 'lore') {
