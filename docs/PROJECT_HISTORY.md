@@ -18369,3 +18369,24 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   `npm test` 9027/9027, `test:slow` 268/268, build 76 modułów / 5540,8 kB,
   benchmark quick 88,2%.
 
+- **Sesja 2026-10-27c/29 (PR #177) — uwaga z gry I (Spellkeeper Weird)**:
+  „bot bezsensownie poświęca tę kreaturę; poświęcenie własnego stwora ma sens
+  tylko wtedy, gdy stwór już ginie”. Kara za koszt `sacrificeSelf` żyła tylko
+  w wybranych gałęziach wyceny zdolności (płaskie −4 dla stworu / −1 dla
+  artefaktu w gałęziach token/draw/discard), a gałąź pump/debuff liczyła ciało
+  źródła drugi raz, więc np. zwrot karty z grobu nie płacił NIC. Teraz jedna
+  reguła `sacrificeSelfCostLoss` wołana raz w `activate_ability`: nie-stwór →
+  0 (jego cenę liczą dotychczasowe gałęzie), `permanentDoomedThisTurn` → 0
+  (destroy/exile/śmiertelne obrażenia wroga na stosie, bloker z lethal),
+  `add_mana` → 0 (rampa ma własne wymiary, PMSSB-32), pump zabijający cel → 0
+  (PMSSB-58/A11–A12), inaczej `bodyWorth` (2p+t+MV) — czyli poniżej
+  `pass_priority`. Usunięte duplikaty: lokalne −4/−6, drugie `bodyWorth`
+  w gałęzi odrzutu i lokalna skala 4/1 w bramce L3 (L41). Legalność bez zmian
+  (oferta = walidacja = płatność), zero nowych kart (ADR 0029). Rekalibracje
+  wymuszone regułą: PMSSB-19/R1 11 → 3, golden-master `4902f6a7…` →
+  `d5349621…` (dokładnie dwie nie-wybrane już aktywacje poświęcenia),
+  reseed M101/D na `the-edge.txt` seed 1 (L25). Pin:
+  `test/i-poswiecenie-stwora.test.js` (6) + 4 mutacje RED. Bramy:
+  `npm test` 9033/9033, `test:slow` 268/268, build 76 modułów / 5544,2 kB,
+  benchmark quick 88,4%.
+

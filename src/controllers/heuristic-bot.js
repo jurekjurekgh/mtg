@@ -4651,6 +4651,47 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
 
   /** Delta P/T licznika statystyk (CR 122.1) — `null` dla liczników bez modelu
    * P/T (shield, liczniki keywordowe): te nie wchodzą do symulacji walki. */
+  /**
+   * I (zgłoszenie właściciela 2026-10-29, Spellkeeper Weird): koszt „poświęć
+   * TO stworzenie" to UTRATA CIAŁA: CR 701.21a — „To sacrifice a permanent, its
+   * controller moves it from the battlefield directly to its owner’s
+   * graveyard. A player can’t sacrifice something that isn’t a permanent…”
+   * — czyli poświęcenie jest nieodwracalne, a stwór, który i tak zaraz zginie
+   * (destroy/lethal/blok-walce), nie jest już ciałem wartym zachowania — bez zagrożenia aktywacja nie
+   * ma prawa wyjść ponad pass, choćby jej efekt był wart kilka punktów
+   * (zgłoszony objaw: bot poświęcał 1/4, żeby wziąć instanta z grobu).
+   *
+   * Wymiar jest GENERYCZNY i wspólny dla wszystkich aktywowanych zdolności
+   * (L41 — bez listy kart, ADR 0002):
+   *  - stwór, który i tak zginie w tej turze (`permanentDoomedThisTurn`:
+   *    bloker ginący w zadeklarowanej walce, śmiertelne obrażenia czarem lub
+   *    zdolnością wroga na stosie, wrogie destroy/exile celujące w niego) →
+   *    koszt 0: poświęcenie zabiera tylko to, co i tak przepada;
+   *  - stwór BEZ zagrożenia → `bodyWorth` (skala sac-economics 2p+t+MV);
+   *    to schodzi pod `pass_priority`, czyli poświęcenie bez realnego powodu
+   *    jest nieopłacalne (objaw: bot oddawał 1/4 za instanta z grobu);
+   *  - nie-stworzenie (Skarb, Clue, Powerstone, land) → 0: to nie ciało, a
+   *    jednorazowy zasób; jego cenę nadal liczą dotychczasowe gałęzie
+   *    (M243/C, PMSSB-32, PMSSB-3/F-scroll-sac).
+   */
+  const sacrificeSelfCostLoss = (view, source, effects) => {
+    if (!source) return 0;
+    const isCreature = source.kind === 'creature' || (source.types ?? []).includes('Creature');
+    if (!isCreature) return 0;
+    if (permanentDoomedThisTurn(view, source)) return 0;
+    // Zdolność MANY: zamiana ciała na zasób to zamierzona funkcja takiego
+    // stworzenia (Spawn/Blood Pet/ramp) — ma własne, skalibrowane wymiary
+    // (`manaSacrificeLethalPenalty`, PMSSB-32, M243/C). Druga kara załamałaby
+    // rampę, która jest poprawną grą.
+    if ((effects ?? []).some((e) => e?.type === 'add_mana')) return 0;
+    // Pump/debuff celu ma WŁASNY model wymiany ciał (`sacrificePumpTradeWeight`,
+    // PMSSB-58/A11–A12): porównuje ciało ofiary z ciałem zabijanego i sam
+    // liczy `bodyWorth(source)` — druga kara niżej byłaby podwójnym liczeniem
+    // tego samego wymiaru (L41) i załamałaby opłacalne wymiany.
+    if ((effects ?? []).some((e) => isNegativePump(e))) return 0;
+    return bodyWorth(source);
+  };
+
   const counterStatDelta = (counterName, amount = 1) => {
     if (counterName === '+1/+1') return { power: amount, toughness: amount };
     if (counterName === '+1/+0') return { power: amount, toughness: 0 };
@@ -13584,12 +13625,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
         const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;
         score -= discardLoss + reserveLoss;
+        // I: koszt „poświęć TO stworzenie" — jedno miejsce dla KAŻDEGO typu
+        // efektu (wcześniej tylko wybrane gałęzie doliczały płaskie −4/−6,
+        // więc np. zwrot karty z grobu nie płacił niczego).
+        if (ability?.cost?.sacrificeSelf) score -= sacrificeSelfCostLoss(view, source, effects);
         const ownDrawOnly = effects.length > 0 && effects.every(e =>
           e?.type === 'draw_cards' || e?.type === 'draw_then_discard');
         if (ownDrawOnly && ((ability?.cost?.discardCard && P.abilityDiscardCostWeight > 0) || reserveLoss > 0)) {
           const drawValue = effects.reduce((sum, e) => sum + drawResourceValue(e), 0);
+          // I: koszt poświęcenia liczony TĄ SAMĄ regułą co wyżej (L41) — tu nie
+          // chodzi o punktową karę, a o to, czy zysk z dobrania w ogóle płaci
+          // poniesione koszty (bramka L3 wyżej); druga, lokalna skala 4/1
+          // rozjeżdżała się z `sacrificeSelfCostLoss`.
           const paid = discardLoss + reserveLoss + P.abilityManaCostPenalty * abilityManaCost
-            + (ability?.cost?.sacrificeSelf ? (source?.kind === 'creature' ? 4 : 1) : 0);
+            + (ability?.cost?.sacrificeSelf ? sacrificeSelfCostLoss(view, source, effects) : 0);
           // L3: baza +2 i premia EOT nie mogą uczynić straty kart zyskiem.
           if (drawValue <= paid) return finish(-Math.max(1, paid - drawValue));
         }
@@ -14736,7 +14785,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += tokenCastTimingDelta(view, ability?.timing);
               tokenAbilityTimingApplied = true;
             }
-            if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+            // I: dla STWORU koszt liczy wspólne `sacrificeSelfCostLoss` wyżej
+            // (L41); tu zostaje DAWNA cena jednorazowego artefaktu (Skarb/Clue).
+            if (ability?.cost?.sacrificeSelf && source?.kind !== 'creature') score -= 1;
             // M243/C (zgłoszenie właściciela, Heap Gate #3): token będący
             // WYŁĄCZNIE bankiem many (Treasure/Powerstone — token-def albo
             // deskryptor efektu: jedyną funkcją jest add_mana, brak ciała)
@@ -14794,7 +14845,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (ability?.timing === 'instant' && !myTurn(view) && view.turn.step === 'end') score += P.instantDrawFoeEndBonus;
             // PMSSB-3/F-scroll-sac (lustro galezi-token): poswiecenie zrodla
             // jako koszt doboru (scroll, Clue) — nie za darmo.
-            if (ability?.cost?.sacrificeSelf) score -= source?.kind === 'creature' ? 4 : 1;
+            // I: dla STWORU koszt liczy wspólne `sacrificeSelfCostLoss` wyżej
+            // (L41); tu zostaje DAWNA cena jednorazowego artefaktu (Skarb/Clue).
+            if (ability?.cost?.sacrificeSelf && source?.kind !== 'creature') score -= 1;
           }
           // PMSSB-6/F-A3: odrzut WROGA ze zdolności (nietoperz/skullcairn) —
           // dotąd 0-dodane (nietoperz strzelał gołą bazą-2, także w pustkę!).
@@ -14807,9 +14860,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const playerTarget = (cmd.targets ?? []).find((id) => typeof id === 'string'
               && (id === view.playerId || id === enemy(view)?.id)) ?? null;
             score += foeRipValue(view, effect, playerTarget);
-            if (ability?.cost?.sacrificeSelf && source) {
-              score -= (source.power ?? 0) * 2 + (source.toughness ?? 0) + (source.manaCost ?? 0);
-            }
+            // I: koszt poświęcenia STWORA liczy wspólne `sacrificeSelfCostLoss`
+            // (ta sama skala `bodyWorth`, L41) — tu nie dublujemy. Zostaje
+            // cena jednorazowego artefaktu (Skarb/Clue).
+            if (ability?.cost?.sacrificeSelf && source?.kind !== 'creature') score -= bodyWorth(source);
           }
           // M354 (Brightwood Tracker): „zobacz N z wierzchu, weź kartę z filtra
           // do ręki” z AKTYWOWANEJ zdolności — ta rodzina miała wycenę tylko

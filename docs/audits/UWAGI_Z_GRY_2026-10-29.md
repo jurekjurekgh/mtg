@@ -151,12 +151,94 @@ celowania pyta `session.nameOfObject`, a nie `playerView`. Weryfikacja RED:
 odwrócenie patcha `src/` (`git apply -R`) → 6/7 testów czerwonych (H/4
 przechodzi, bo log nazywa strony po `cardId`); po przywróceniu 7/7 zielone.
 
+## I — Spellkeeper Weird: bot poświęcał stwora, który wcale nie ginął
+
+**Zgłoszenie.** „Karta Spellkeeper Weird. Bot bezsensownie poświęca tę
+kreaturę. Zdolności wymagające poświęcenia powinny być możliwe do zagrania
+przez bota tylko wtedy, gdy dana kreatura już ginie — np. celuje w nią lethal
+damage albo destroy albo exile i wtedy można ją poświęcić. Także jeśli kreatura
+już blokuje i dostanie w blokowaniu lethal damage to można ją poświęcić.
+W innych wypadkach poświęcenie powinno mieć ujemny scoring.”
+
+**Reprodukcja (5 sond).** Spellkeeper Weird (`{2}, Sacrifice this creature:
+Return target card from your graveyard to your hand`) w Głównej 1:
+
+| stan stołu | bot przed naprawą | oczekiwane |
+|---|---|---|
+| brak zagrożenia | `activate_ability` (poświęca ciało za zwrot karty) | `pass_priority` |
+| wrogi `destroy` (Expunge) celuje w niego, na stosie | aktywacja | aktywacja |
+| Shock 2 obrażeń przy 4 tough | aktywacja | `pass_priority` — 2 < 4, jeszcze nie ginie |
+| Fiery Fall 5 obrażeń (lethal) na stosie | aktywacja | aktywacja |
+| blokuje i w walce dostaje lethal | aktywacja | aktywacja |
+
+**Root cause (klasa L41).** Kara za koszt `sacrificeSelf` istniała tylko
+w WYBRANYCH gałęziach wyceny zdolności (płaskie `−4` dla stworu / `−1` dla
+artefaktu w gałęziach token/draw/discard), więc zdolność zwrotu karty z grobu
+nie płaciła niczego, a gałąź pump/debuff liczyła ciało źródła DRUGI raz
+(`sacrificePumpTradeWeight` + `bodyWorth`). Nie było też pojęcia „ten stwór i
+tak zginie” — czyli jedynego przypadku, w którym poświęcenie ciała nie jest
+stratą.
+
+**Naprawa.** Jedna reguła `sacrificeSelfCostLoss(view, source, effects)`
+w `src/controllers/heuristic-bot.js`, wołana raz w `activate_ability` przy
+`ability.cost.sacrificeSelf`:
+
+- nie-stwór (Skarb/Clue/land) → 0 — cena jednorazowego artefaktu zostaje
+  w dawnym miejscu (`−1`), bo kara za ciało nie ma tu zastosowania;
+- `permanentDoomedThisTurn` → 0 — stwór ginie w tej turze (destroy/exile na
+  stosie, śmiertelne obrażenia, bloker z lethal w zadeklarowanej walce), więc
+  poświęcenie nic nie kosztuje;
+- efekt `add_mana` → 0 — rampa (Spawn/Blood Pet) to zamierzona funkcja
+  stworzenia, ma własne wymiary (PMSSB-32, M243/C);
+- efekt będący pumpem zabijającym cel → 0 — ten model liczy ciało źródła sam
+  (`sacrificePumpTradeWeight`, PMSSB-58/A11–A12), druga kara byłaby podwójnym
+  liczeniem;
+- inaczej → `bodyWorth(source)` (2×power + toughness + MV) — wynik schodzi
+  pod `pass_priority`, czyli poświęcenie jest nieopłacalne.
+
+Płatność i oferta idą tą samą komendą (`activate_ability`), więc „oferta =
+walidacja = płatność” (L48/L57) zostaje bez zmian — zmienia się wyłącznie
+WYCENA, nie legalność. Zero zmian w katalogu kart (ADR 0029).
+
+**Pin.** `test/i-poswiecenie-stwora.test.js` — 6 testów (I/1 brak zagrożenia →
+`pass_priority`; I/2 destroy na stosie; I/3 Shock nieśmiertelny → `pass`; I/4
+lethal na stosie; I/5 bloker z lethal; I/6 guard: ta sama zdolność na
+NIE-stworzeniu nie dostaje nowej kary). Weryfikacja RED:
+
+| mutacja | czerwone testy |
+|---|---|
+| odwrócenie patcha `src/` (`git apply -R`) | I/1, I/3 (I/6 jest guardem — zielony w obie strony, czerwienieje dopiero od mutacji `isCreature`) |
+| usunięcie `permanentDoomedThisTurn` z reguły | I/2, I/4, I/5 |
+| guard nie-stworów → `const isCreature = true` | I/6 |
+| usunięcie guardu `add_mana` | PMSSB-58/A16 |
+| usunięcie guardu `isNegativePump` | PMSSB-58/A11, A12 |
+
+**Skutki uboczne (świadome, przeglądnięte).**
+
+- `test/audyt-pmssb19-search.test.js` (PMSSB-19/R1): oczekiwane pole „wynik
+  zwrotu karty z grobu za ciało” 11 → **3** — teraz to ciało płaci za siebie
+  (ta sama reguła dla wszystkich efektów, wcześniej zero).
+- Golden-master (`tools/bot-scoring-snapshot.mjs --write`): `4902f6a7…` →
+  `d5349621…`. Różnica to DOKŁADNIE dwie nie-wybrane już aktywacje poświęcające
+  własne stworzenie bez zagrożenia (`@1000` tura 15 declare_attackers:
+  `permanent-28#0→graveyard-59`; `@1001` tura 19 main1:
+  `permanent-68#0→graveyard-35`); partia tarkir-bg|warhammer-ubr bez zmian.
+- `test/panel-rozgrywka-tura-przeciwnika.test.js`: po zmianie wycen partia
+  innistrad vs alara nie ma już opóźnionych triggerów (hunter 1..90 — zero
+  trafień), więc nośnikiem został `the-edge.txt` seed 1 (konwencja L25;
+  hunter 1..15: 3, 4, 6, 7, 12, 14).
+
+**Uwaga do cytatu CR.** Komentarz reguły cytuje CR **701.21a** (dosłowny tekst
+weryfikowany wobec CR 2026-09-25, sha256 `8d860e45…` — ten sam plik, z którego
+generowana jest `test/helpers/cr-numery-tabela.js`); numer jest w tabeli
+strażnika, więc `cr-numery:istnienie` zostaje zielony.
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9027/9027**, EXIT 0 |
+| `npm test` | **9033/9033**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5540,8 kB** |
-| benchmark quick | 672 mecze — heuristic **88,2%** (593/672) |
+| `npm run build` | **76 modułów / 5544,2 kB** |
+| benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

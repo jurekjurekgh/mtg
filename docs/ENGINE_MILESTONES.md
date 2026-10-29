@@ -8796,3 +8796,36 @@ generyczność, brak regresji dla kart, żywa sesja stołu); odwrócenie patcha
 Bramy: `npm test` **9027/9027**, `test:slow` **268/268**, build **76 modułów /
 5540,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
 
+## M455 — uwaga z gry I: poświęcenie własnego stwora tylko wtedy, gdy już ginie (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** „Karta Spellkeeper Weird. Bot bezsensownie poświęca tę
+kreaturę; zdolności z kosztem poświęcenia powinny być grane tylko wtedy, gdy
+stwór już ginie (lethal/destroy/exile, blok z lethal), a w innych wypadkach
+poświęcenie ma mieć ujemny scoring.”
+
+**Root cause (L41).** Kara za koszt `sacrificeSelf` żyła tylko w wybranych
+gałęziach wyceny (`−4` dla stworu / `−1` dla artefaktu w gałęziach
+token/draw/discard), więc zdolność zwrotu karty z grobu nie płaciła niczego,
+a gałąź pump/debuff liczyła ciało źródła drugi raz. Nie istniało pojęcie
+„ten stwór i tak ginie”, czyli jedyny przypadek, gdy poświęcenie ciała nie
+jest stratą.
+
+**Naprawa.** Jedna reguła `sacrificeSelfCostLoss(view, source, effects)` wołana
+raz w `activate_ability`: nie-stwór → 0 (jego cenę liczą dotychczasowe
+gałęzie), `permanentDoomedThisTurn` → 0, efekt `add_mana` → 0 (rampa ma
+własne wymiary, PMSSB-32/M243-C), pump zabijający cel → 0 (własny model
+wymiany ciał, PMSSB-58/A11–A12), inaczej `bodyWorth(source)` (2p+t+MV), czyli
+poniżej passu. Lokalne duplikaty `−4/−6`, drugie `bodyWorth` i lokalna skala
+`4/1` w bramce L3 zastąpione wspólną regułą. Legalność bez zmian (oferta =
+walidacja = płatność), zero nowych kart (ADR 0029). Pin: 6 testów; mutacje:
+odwrócenie patcha → 2 RED, brak `permanentDoomedThisTurn` → 3 RED, guard
+nie-stworów → 1 RED, guard many → PMSSB-58/A16, guard pumpa → 58/A11+A12.
+Rekalibracje: PMSSB-19/R1 11 → 3, golden-master `4902f6a7…` → `d5349621…`
+(dwie aktywacje poświęcenia mniej), reseed M101/D (L25) na `the-edge.txt`
+seed 1.
+
+Bramy: `npm test` **9033/9033**, `test:slow` **268/268**, build **76 modułów /
+5544,2 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+

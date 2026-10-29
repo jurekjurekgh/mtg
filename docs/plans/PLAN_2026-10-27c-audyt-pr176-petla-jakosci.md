@@ -80,6 +80,17 @@ otwarte świadomie (opisał je raport audytu).
       mówiły „Incubator”. Fix generyczny: `transformedDisplayName`
       (permanents.js) + `name` w payloadach powrotnych; pin
       `test/h-incubator-nazwa-po-transformacji.test.js` (7). Bez nowych kart.
+- [x] **A10** Uwaga **I** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Karta Spellkeeper Weird. Bot bezsensownie poświęca tę kreaturę. Zdolności
+      wymagające poświęcenia powinny być możliwe do zagrania przez bota tylko
+      wtedy, gdy dana kreatura już ginie (…). W innych wypadkach poświęcenie
+      powinno mieć ujemny scoring.” Fix generyczny: `sacrificeSelfCostLoss`
+      w `heuristic-bot.js` — jedno miejsce dla KAŻDEGO efektu (koszt = wartość
+      ciała, zero gdy stwór `permanentDoomedThisTurn`, gdy zdolność daje manę
+      albo gdy efekt to pump zabijający cel); lokalne duplikaty `−4/−6` i drugie
+      `bodyWorth` w gałęziach usunięte (L41). Pin
+      `test/i-poswiecenie-stwora.test.js` (6) + 4 mutacje RED; rekalibracja
+      PMSSB-19/R1 (11 → 3) i goldena; reseed M101/D (L25). Bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
