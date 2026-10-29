@@ -61,17 +61,19 @@ describe('PMSSB-8 Wave-A: loot-net-unification', () => {
     const s = mk(); fillLib(s); put(s, 'ev', 'evangel-of-synthesis');
     assert.equal(disp(decide(s).opts, 'cast_permanent(ev'), 67.5);
   });
-  it('F-L1b: force-away-ferocious = 84 (rider 5→2, było 87)', () => {
+  // G (2026-10-29): +12 — cel 2/2 za 2 many dostaje wymiar inwestycji
+  // (TMC 2 × waga 6). Różnica ferocious/bez ferocious (−2 rider) bez zmian.
+  it('F-L1b: force-away-ferocious = 96 (rider 5→2, było 87)', () => {
     const s = mk(); fillLib(s); put(s, 'fa', 'force-away');
     addObject(s, { id: 'big', instanceId: 'i-big', cardId: 'x', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 4, toughness: 4, manaCost: 4, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'big' });
     addObject(s, { id: 'foe', instanceId: 'i-foe', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
-    assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 84);
+    assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 96);
   });
-  it('F-L1b-guard: force-away-bez-ferocious = 82 (bez zmian)', () => {
+  it('F-L1b-guard: force-away-bez-ferocious = 94 (G: +12 inwestycji celu)', () => {
     const s = mk(); fillLib(s); put(s, 'fa', 'force-away');
     addObject(s, { id: 'mid', instanceId: 'i-mid', cardId: 'x', controllerId: 'p1', ownerId: 'p1', zone: 'battlefield', kind: 'creature', power: 3, toughness: 3, manaCost: 3, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'mid' });
     addObject(s, { id: 'foe', instanceId: 'i-foe', cardId: 'x', controllerId: 'p2', ownerId: 'p2', zone: 'battlefield', kind: 'creature', power: 2, toughness: 2, manaCost: 2, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: [], cardName: 'foe' });
-    assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 82);
+    assert.equal(scoreOf(decide(s).opts, 'cast_spell(fa->foe)'), 94);
   });
   it('guard: crows-lib30 = 78.4 (PMSSB-64 latanie 4-mocy +6.9; PMSSB-10-B2: any_dies-loot +1.3!)', () => {
     const s = mk(); fillLib(s); put(s, 'cr', 'murder-of-crows');

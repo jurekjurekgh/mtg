@@ -108,6 +108,16 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceTimingSwing',       // wahnięcie wartości między oknami rzutu
   'bounceLethalDodgeBonus',  // premia: bounce zdejmuje lethal z atakujących
   'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
+  // G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): „RYNEK INWESTYCJI”
+  // celu bounce — który permanent wroga wybrać. Model właściciela: TMC
+  // permanentu + TMC aur/załączników + premia za każdy pozytywny licznik;
+  // wcześniej liczyło się wyłącznie ciało (P+T) i TMC w wadze 2, a aura
+  // dostawała płaskie +30 bez różnicowania po koszcie — bot oddawał tanie
+  // stwory z drogimi załącznikami, a zostawiał drogie bez (zgłoszenie).
+  'bounceTmcWeight',         // waga TMC samego celu (odbudowa po zwrocie)
+  'bounceAuraTmcWeight',     // waga TMC aur na celu (giną z hostem, CR 704.5m)
+  'bounceEquipmentTmcWeight',// waga TMC equipmentu (zostaje na stole, ale equip płatny)
+  'bounceCounterBonus',      // premia za każdy POZYTYWNY licznik (CR 122.2: nie wracają)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
@@ -672,7 +682,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // MV3 (50+22+18=90) bije bounce drobiazgu, ale przegrywa z bounce
   // realnej groźby ze stołu (przeżycie przede wszystkim). Podłoga 5:
   // poniżej wraca błąd L (kontra MV3 ≤ bounce 2/2).
-  counterspellTmcWeight: 6,
+  // G (2026-10-29): 6 → 10. Składnia z komentarza: 2 parytetu z M234
+  // („jakby usunąć permanent”) + 4 za trwałość (grób zamiast ręki, brak
+  // triggerów cast/ETB). Bounce dostał w tej samej sesji wagę TMC 6, więc
+  // parytet przesunął się razem z nim — inaczej kontra MV3 (90) przegrywała
+  // z odbiciem drobiazgu (98): pin `bot-modal-modes` „sabotaż KONTRUJE”.
+  counterspellTmcWeight: 10,
   // PMSSB-1 (wartości przemyślane, pomiar PRZED: /tmp/pmssb1-bounce-przed.mjs):
   // top 8 (~1 dobór wroga mniej), bottom 18 (jak destroy-ETB — prawie
   // removal), token 12 (symetria z create_token 12), ETB waga 1 (pełna
@@ -680,7 +695,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceLibraryTopBonus: 8,
   bounceLibraryBottomBonus: 18,
   bounceTokenBonus: 12,
-  bounceFoeEtbWeight: 1,
+  bounceFoeEtbWeight: 2,
   // PMSSB-1/B (wartości przemyślane): mana przerzucenia droższa od
   // power (3 vs 2 — many nie wracają), tempo 10 (połowa „karty" —
   // mniej niż strata permanenta, więcej niż nic).
@@ -693,6 +708,18 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceTimingSwing: 8,
   bounceLethalDodgeBonus: 100,
   bounceOverflowBonus: 12,
+  // G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): ranking celu
+  // bounce wg ZAINWESTOWANIA, nie tylko ciała. Jednostka = punkt wyceny
+  // (removalEnemyBase 22 to „jedna karta”). TMC celu 6 → 6 many × 6 = 36,
+  // czyli drogi permanent bije tanie ciało nawet z większym P/T; aura 3
+  // many × 4 = 12 na wierzchu płaskich +30 (karta ginie z hostem, CR
+  // 704.5m); equipment 2 many × 2 = 4 (karta ZOSTAJE na stole, CR 704.5n —
+  // koszt to przełożenie, nie utrata karty, stąd waga najniższa); licznik
+  // +1/+1 = 10 (znika na stałe, CR 122.2 — połowa „karty”, jak token 12).
+  bounceTmcWeight: 6,
+  bounceAuraTmcWeight: 4,
+  bounceEquipmentTmcWeight: 2,
+  bounceCounterBonus: 10,
   // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
   // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
   // PMSSB-58/A: opcja doboru z tokena jest odroczona (1/2 wartości netto),

@@ -5254,12 +5254,63 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return attachedAurasOf(view, victim)
       .reduce((sum, o) => sum + (o.controllerId === view.playerId ? -30 : 30), 0);
   };
+  /**
+   * G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): LICZNIKI na celu
+   * (CR 122.2 — „jeśli permanent opuszcza pole bitwy, jego liczniki przestają
+   * istnieć”; nie wracają z kartą do ręki). Liczy się KAŻDY pozytywny rodzaj:
+   * „+1/+1”, liczniki-keywordy (flying/first strike) i „oil”/„charge”;
+   * minusowe (-1/-1) to nie walor, tylko obciążenie — pomijamy.
+   */
+  const positiveCounterCount = (object) => Object.entries(object?.counters ?? {})
+    .filter(([kind, n]) => Number(n) > 0 && !String(kind).startsWith('-'))
+    .reduce((sum, [, n]) => sum + Number(n), 0);
+  /**
+   * Załączniki celu podzielone po TYPIE, bo ich utrata po zwrocie do ręki jest
+   * RÓŻNA (CR 704.5m vs 704.5n):
+   *  - aura ginie razem z hostem → pełna strata karty,
+   *  - equipment zostaje na polu bitwy (można przełożyć) → strata tylko tempa.
+   * Bestow wykluczony jak w `attachedAurasOf` (to stwór, nie aura).
+   */
+  const attachedManaValuesOf = (view, victim) => {
+    const out = { auras: 0, equipment: 0 };
+    if (!victim) return out;
+    for (const object of view.zones?.battlefield ?? []) {
+      if (object?.attachedTo !== victim.id) continue;
+      const cost = object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0;
+      if (object.kind === 'aura' || object.aura) {
+        if (!object.bestow) out.auras += cost;
+      } else if (object.equipment || (object.subtypes ?? []).includes('Equipment')) {
+        out.equipment += cost;
+      }
+    }
+    return out;
+  };
+  /**
+   * G: „rynek inwestycji” celu bounce. Model właściciela (2026-10-29):
+   * ranking permanentów wroga do zwrotu = TMC permanentu + TMC aur +
+   * TMC equipmentów + premia za każdy pozytywny licznik. Wcześniej bounce
+   * wyceniał wyłącznie CIAŁO (2 × (P+T) w `wrapTargetsValue`) i TMC w wadze 2,
+   * więc oddawał tanie stwory z drogimi załącznikami, a zostawiał drogie.
+   * Wymiary są bounce'owe (nie ruszają destroy/exile — tam karta ginie i
+   * liczy się ciało, nie inwestycja).
+   */
+  const bounceInvestmentDelta = (view, victim) => {
+    if (!victim) return 0;
+    const attached = attachedManaValuesOf(view, victim);
+    return P.bounceTmcWeight * (victim.manaCost ?? 0)
+      + P.bounceAuraTmcWeight * attached.auras
+      + P.bounceEquipmentTmcWeight * attached.equipment
+      + P.bounceCounterBonus * positiveCounterCount(victim);
+  };
   const bounceTargetAdjustments = (view, victim) => {
     if (!victim) return 0;
     let delta = 0;
     const mine = victim.controllerId === view.playerId;
     if (!mine && victim.isToken === true) delta += P.bounceTokenBonus;
     delta += bounceAuraDelta(view, victim);
+    // G: inwestycja w cel (TMC + załączniki + liczniki) — tylko cel WROGA,
+    // bo to argument „co realnie zabieram przeciwnikowi”.
+    if (!mine) delta += bounceInvestmentDelta(view, victim);
     if (!mine && victim.cardId) {
       delta -= P.bounceFoeEtbWeight * etbEnterBonusValue(view, cardDef(victim.cardId));
     }
