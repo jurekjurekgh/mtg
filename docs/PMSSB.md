@@ -82,7 +82,7 @@ teraz obowiązkowy, a nie zalecany.
 | triggery non-ETB (dies/attacks) | ~20 | DONE (2026-09-26) | §PMSSB-9 niżej; `test/pmssb9-triggery-wave-{a,b}.test.js` (19); `anticipatedDies/AttacksValue` (0 pokręteł) |
 | triggery-ogon (tail/end/leaves) | ~40 | DONE (2026-09-26) | §PMSSB-10 niżej; `test/pmssb10-ogon-wave-{a,b1,b2}.test.js` (30); `anticipatedTailValue` + O-ring-sign + LIVE-gates (0 pokręteł) |
 | sac-economics (exploit/devour) | 3 | DONE (2026-09-26) | §PMSSB-11 niżej; `test/pmssb11-sac-wave-a.test.js` (5); `anticipatedSacValue` = max(0,benefit-sac) (0 pokręteł) |
-| pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
+| pay-trigger-net (payMana) | 5 | DONE (2026-09-26); rozszerzone 2026-10-29 (uwaga z gry **K**) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł); K: ląd z ETB „zapłać {N} albo poświęć” tylko gdy stać — `landEtbPayOrSacrifice` + pokrętło `landEtbUpkeepUnplayablePenalty` (20), `test/k-rupture-spire-etb-oplata.test.js` (6) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
 | fog/prewencja | 4 | DONE (2026-09-28; korekta Withstand 2026-10-11) | §PMSSB-15 niżej; `test/audyt-pmssb15-prewencja.test.js` (19) + `test/zgloszenie-b-withstand-cel-bota.test.js` (7); `fogWindowValue`, `preventDamageThisTurnValue`, `preventShieldValue` (6 pokręteł `fogWindow*`/`preventEtb*`, bez nowego dla korekty) |
@@ -1217,6 +1217,14 @@ sonda: `tools/pmssb12-pay-sonda.mjs` (P01–P05).
   (benefit − pay)) (bot płaci ZAWSZE!): spellbomby +2.25
   (color-gated!), descendant +0.45/+0.9, endure_x-entry (+4!).
   Spire: −1-pay / 76-sac-clamp. Forebear grave-SKIP. 5 pinów.
+- **K (2026-10-29, uwaga z gry):** „76-sac-clamp” okazał się defektem —
+  klamp delty lądu (±14/25) przykrywał karę za nieopłacalny ETB, więc bot
+  zagrywał Rupture Spire bez many na `{1}` i natychmiast ją poświęcał
+  (CR 701.21a). Reguła przeniesiona do `landEtbPayOrSacrifice` (deskryptor:
+  `payMana` + `sacrificeIfUnpaid`; „stać” = `ownOpenMana`, nie sama pula),
+  a kara wyszła POZA klamrę: `play_land` = `−landEtbUpkeepUnplayablePenalty`
+  (20) < pass. Pin KRUP: `test/k-rupture-spire-etb-oplata.test.js` (6),
+  pin `PMSSB12-A` zaktualizowany (76 → −20). Pokrętło `× 0` = stan sprzed K.
 
 ### Pomiar końcowy
 - Suit 6838/6838 GREEN (5 pinów); golden CZYSTY (0!).

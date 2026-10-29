@@ -18408,3 +18408,18 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   + mutacje RED (odwrócenie patcha → 4 RED). Bramy: `npm test` 9040/9040,
   `test:slow` 268/268, build 76 modułów / 5548,3 kB, benchmark quick 88,4%.
 
+- **Sesja 2026-10-27c/29 (PR #177) — uwaga z gry K (Rupture Spire)**: „bot
+  zagrywa ją, mimo że nie ma many na opłacenie kosztu (1) i musi ją poświęcić.
+  Ta karta powinna być zagrywana tylko wtedy, gdy bot ma manę na opłacenie
+  (1)”. Kara za ETB „zapłać {N} albo poświęć ten permanent” siedziała w klamrze
+  delty lądu `[−14, 25]` razem z premiami za pokrycie kolorów, więc przy braku
+  many `play_land` (76) wygrywał z passem, a bot oddawał land drop i kartę
+  (CR 701.21a). Doszło do tego, że „stać” liczyło tylko pulę, ignorując
+  nietapnięte lądy. Teraz jedna reguła `landEtbPayOrSacrifice` (deskryptor
+  triggera, ADR 0002): stać (`ownOpenMana` = pula + nietapnięte źródła) →
+  koszt obniża deltę; nie stać → kara POZA klamrą
+  (`landEtbUpkeepUnplayablePenalty` 20), czyli zagranie przegrywa z passem.
+  Sonda: 76 → −20 / −20 / 81 / 84. Pin
+  `test/k-rupture-spire-etb-oplata.test.js` (6) + mutacje RED; aktualizacja
+  pinu PMSSB12-A. Bramy: `npm test` 9046/9046, `test:slow` 268/268, build
+  76 modułów / 5550,5 kB, benchmark quick 88,4%.

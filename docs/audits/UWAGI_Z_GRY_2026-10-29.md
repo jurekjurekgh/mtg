@@ -1,4 +1,4 @@
-# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G i H
+# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G, H, I, J i K
 
 Trzy uwagi właściciela z Żywego Testera. Wszystkie naprawione u root cause,
 z pinami i mutacjami; bez dopisywania kart do katalogu (ADR 0029).
@@ -294,12 +294,68 @@ ATAKUJE” → J/3; mutacja „bez zliczania zatrzymanych obrażeń” → 4 RED
 **Zakres.** Bez rekalibracji pinów: żadna talia golden-mastera ani pin
 scenariuszowy nie dotyka tej decyzji (fast 9040/9040 bez zmian oczekiwań).
 
+## K — Rupture Spire: bot zagrywał ląd, którego nie było stać na opłatę ETB
+
+**Zgłoszenie.** „Karta Rupture Spire. Bot zagrywa ją, mimo, że nie ma many na
+opłacenie kosztu (1) i musi ją poświęcić. Kompletnie bez sensu. Ta karta
+powinna być zagrywana tylko wtedy gdy bot ma manę na opłacenie (1).”
+
+**Reprodukcja (sonda `probe-k-spire.mjs`, żywy silnik + `bot.trace()`).**
+
+| scenariusz | przed naprawą | po naprawie |
+|---|---|---|
+| 0 many, brak lądów na stole | `play_land` = **76** | **−20** → `pass_priority` |
+| 0 many, 2 TAPNIĘTE lasy | `play_land` = **76** | **−20** → `pass_priority` |
+| 0 many, 1 nietapnięty las | `play_land` = **76** | **81** → `play_land` + płatność `pay:true` |
+| 1 mana w puli | `play_land` = 84 | 84 (bez zmian) |
+
+**Root cause (klasa L41).** Kara za ETB „zapłać {N} albo poświęć ten
+permanent” siedziała WEWNĄTRZ `landPlayDelta`, czyli w klamrze delty lądu
+`[−14, 25]` — razem z premiami za pokrycie kolorów (+10…+16). Przy braku
+many delta spadała do −12, klamra dobijała do −14 i `play_land` dostawał
+`90 − 14 = 76`, czyli komfortowo więcej niż pass (0). Efekt: bot oddawał land
+drop i kartę, żeby natychmiast ją poświęcić (CR 701.21a: poświęcenie przenosi
+permanent z pola bitwy prosto do cmentarza, bez okna na odpowiedź). Drugi błąd
+był w definicji „stać”: liczyła się wyłącznie PULA (`players[].mana`),
+a nie własne nietapnięte lądy, z których da się zapłacić w odpowiedzi na
+trigger.
+
+**Naprawa.** Nowy `landEtbPayOrSacrifice(view, objectId)` — jedno źródło
+reguły (L41), deskryptorowe (ADR 0002): szuka triggera `enter_battlefield`
+z `payMana > 0` i `sacrificeIfUnpaid`, bez nazw i ID kart. „Stać” =
+`ownOpenMana(view) >= amount` (pula + własne nietapnięte źródła many; tapnięte
+nic nie da, a Spire wchodzi tapnięta, więc sama siebie nie opłaci). Wycena:
+
+* stać na {N} — realny koszt `{N} × creatureManaCostWeight` obniża deltę lądu
+  (dotychczasowa ścieżka, bez zmian);
+* nie stać — gałąź `play_land` zwraca **karę poza klamrą**:
+  `−landEtbUpkeepUnplayablePenalty` (20), więc zagranie przegrywa z passem
+  niezależnie od premii kolorystycznych.
+
+Nowe pokrętło `landEtbUpkeepUnplayablePenalty` 20 (`× 0` przywraca stan sprzed
+K — używane w pinie jako dowód, że to parametr, nie stała w kodzie). Zero zmian
+legalności (oferta = walidacja = płatność, L48/L57), zero nowych kart
+(ADR 0029).
+
+**Pin.** `test/k-rupture-spire-etb-oplata.test.js` — 6 testów: K/1 sedno
+zgłoszenia (brak many → nie zagrywa), K/2 same tapnięte lądy, K/3 jeden
+nietapnięty ląd → zagrywa i w pełnej ścieżce **płaci** `{1}` zamiast
+poświęcać, K/4 pula 1 → 84 (bez zmian), K/5 kotwica anty-over-fix (zwykły ląd
+bez many dalej zagrywany), K/6 kara jest pokrętłem (−130 przy wartości 130).
+Weryfikacja RED: odwrócenie patcha `src/` → **3 RED** (K/1, K/2, K/6);
+mutacja „stać = tylko pula” → K/3; mutacja „bez wczesnego zwrotu w
+`play_land`” → 3 RED. Pin `PMSSB12-A` zaktualizowany: 76 → **−20** (scenariusz
+„sonda” 81 bez zmian).
+
+**Zakres.** Bez rekalibracji talii golden-mastera i pinów scenariuszowych —
+pozostałe piny na `rupture-spire` (m184, m195, m200, etap-f, kafel-cena) zielone.
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9040/9040**, EXIT 0 |
+| `npm test` | **9046/9046**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5548,3 kB** |
+| `npm run build` | **76 modułów / 5550,5 kB** |
 | benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

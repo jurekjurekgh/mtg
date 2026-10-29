@@ -8857,3 +8857,42 @@ rekalibracji istniejących pinów.
 Bramy: `npm test` **9040/9040**, `test:slow` **268/268**, build **76 modułów /
 5548,3 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
 
+## M457 — uwaga z gry K: ląd z ETB „zapłać {N} albo poświęć” tylko wtedy, gdy stać (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Rupture Spire — „bot zagrywa ją, mimo że nie ma many na
+opłacenie kosztu (1) i musi ją poświęcić. Kompletnie bez sensu. Ta karta
+powinna być zagrywana tylko wtedy gdy bot ma manę na opłacenie (1).”
+
+**Root cause (L41).** Kara za ETB „zapłać {N} albo poświęć ten permanent”
+siedziała WEWNĄTRZ `landPlayDelta`, czyli w klamrze delty lądu `[−14, 25]`
+razem z premiami za pokrycie kolorów (+10…+16). Przy braku many delta spadała
+do −12, klamra dobijała do −14 i `play_land` dostawał 90 − 14 = 76 — więcej niż
+pass (0). Efekt: land drop i karta przepadały (CR 701.21a: poświęcenie przenosi
+permanent z pola bitwy prosto do cmentarza). Drugi defekt: „stać” liczyło
+wyłącznie PULĘ, ignorując własne nietapnięte lądy, z których da się zapłacić
+w odpowiedzi na trigger.
+
+**Naprawa.** `landEtbPayOrSacrifice(view, objectId)` (heuristic-bot.js) — jedno
+źródło reguły (L41), deskryptorowe (ADR 0002): trigger `enter_battlefield`
+z `payMana > 0` i `sacrificeIfUnpaid`, zero nazw i ID kart. „Stać” =
+`ownOpenMana` (pula + własne nietapnięte źródła; Spire wchodzi tapnięta, więc
+sama siebie nie opłaci). Stać → realny koszt `{N}` obniża deltę lądu (ścieżka
+bez zmian); nie stać → `play_land` zwraca karę POZA klamrą
+`−landEtbUpkeepUnplayablePenalty` (20), czyli przegrywa z passem niezależnie
+od premii kolorystycznych. Sonda `probe-k-spire.mjs` PRZED → PO:
+76 → −20 (0 many, brak lądów), 76 → −20 (2 tapnięte lasy), 76 → 81 (jeden
+nietapnięty las — bot płaci `pay:true`), 84 → 84 (pula 1). Zero zmian
+legalności (L48/L57), zero nowych kart (ADR 0029).
+
+**Pin.** `test/k-rupture-spire-etb-oplata.test.js` — 6 testów (brak many,
+tapnięte lądy, nietapnięty ląd + pełna ścieżka płatności, pula 1, kotwica
+anty-over-fix dla zwykłego lądu, pokrętło). Odwrócenie patcha `src/` → 3 RED;
+mutacje: „stać = tylko pula” → K/3, „bez wczesnego zwrotu w `play_land`” →
+3 RED. Pin `PMSSB12-A` zaktualizowany (76 → −20); reszta pinów na
+`rupture-spire` (m184, m195, m200, etap-f, kafel-cena) zielona bez zmian.
+
+Bramy: `npm test` **9046/9046**, `test:slow` **268/268**, build **76 modułów /
+5550,5 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+

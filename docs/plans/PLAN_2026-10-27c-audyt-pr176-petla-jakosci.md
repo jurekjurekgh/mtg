@@ -102,6 +102,20 @@ otwarte świadomie (opisał je raport audytu).
       (`colorProtectionCombatBonus`, `colorProtectionCombatDamageWeight`). Pin
       `test/j-benevolent-blessing-kolor.test.js` (7) + 3 mutacje RED. Bez
       rekalibracji istniejących pinów, bez nowych kart.
+- [x] **A12** Uwaga **K** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Rupture Spire — bot zagrywa ją, mimo że nie ma many na opłacenie kosztu
+      (1) i musi ją poświęcić. Ta karta powinna być zagrywana tylko wtedy, gdy
+      bot ma manę na opłacenie (1).”
+      Fix generyczny: `landEtbPayOrSacrifice` w `heuristic-bot.js` — jedno
+      źródło reguły (L41), deskryptor triggera (`enter_battlefield` +
+      `payMana` + `sacrificeIfUnpaid`), bez nazw i ID kart (ADR 0002).
+      „Stać” = `ownOpenMana` (pula + własne NIETAPNIĘTE źródła many), nie sama
+      pula. Kara za nieopłacalne zagranie wychodzi z klamry delty lądu do
+      gałęzi `play_land`: `−landEtbUpkeepUnplayablePenalty` (20). Pokrętło
+      `× 0` przywraca stan sprzed K. Pin
+      `test/k-rupture-spire-etb-oplata.test.js` (6) + 3 mutacje RED;
+      aktualizacja pinu `PMSSB12-A` (76 → −20). Bez zmian legalności, bez
+      rekalibracji talii golden-mastera, bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
