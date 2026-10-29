@@ -18423,3 +18423,18 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   `test/k-rupture-spire-etb-oplata.test.js` (6) + mutacje RED; aktualizacja
   pinu PMSSB12-A. Bramy: `npm test` 9046/9046, `test:slow` 268/268, build
   76 modułów / 5550,5 kB, benchmark quick 88,4%.
+
+- **Sesja 2026-10-27c/29 (PR #177) — uwaga z gry L (Ambulatory Edifice)**:
+  „bot płaci 2 life praktycznie za nic, nadaje −1/−1 kreaturze 2/2; ma to sens
+  tylko przy lethal damage i tylko w super ważny stwór (TMC z aurami
+  i equipment ≥ 5, albo jedyny z lataniem / menac / protection / landwalkiem
+  działającym przeciw botowi)”. Decyzja o opcjonalnej zapłacie dawała bazę
+  75 pkt za sam fakt istnienia wrogiego celu, a koszt 2 życia to 4 pkt — bot
+  płacił zawsze; tabela ETB liczyła ujemną pompę płasko, bez sprawdzenia, czy
+  ktoś ginie (debuff znika w cleanupie, CR 514.2). Teraz jedno źródło
+  `debuffPayoffValue`: wartość istnieje tylko przy zabiciu (CR 704.5f)
+  ważnego celu (TMC + aury + equipment ≥ 5 albo unikalna zdolność), a wypłata
+  musi przebić koszt życia. Pin `test/l-ambulatory-edifice-debuff.test.js`
+  (15) + 6 mutacji RED; przeliczone PMSSB-60/F1+F5 i `real-cards-batch65` BOT.
+  Bramy: `npm test` 9062/9062, `test:slow` 268/268, build 76 modułów /
+  5557,8 kB, benchmark quick 88,4%.

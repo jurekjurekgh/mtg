@@ -51,7 +51,7 @@ teraz obowiązkowy, a nie zalecany.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
-| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); L (2026-10-29): `debuffPayoffValue` + 3 pokrętła `debuffPayoff*`, `test/l-ambulatory-edifice-debuff.test.js` (15) — fala F przeliczona (F1/F5); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
 | batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
@@ -3278,6 +3278,20 @@ kosztu F1/F5/F6 czerwone, F2/F3/F4 zielone (izolowane od płatności).
 **Bramki końcowe:** pełne B0 `run-tests.mjs all` **8291/8291**, `npm test`
 8030/8030, build 73 moduły / 5010,6 kB, `cr-numery --cr` OK.
 0 nowych pokręteł.
+
+**Addendum — L (2026-10-29, uwaga z gry, PR #177).** Zgłoszenie właściciela do
+Ambulatory Edifice (fala F): „bot płaci 2 życia za −1/−1, które nic nie robi”.
+Decyzja `resolve_optional_pay_choice` dawała bazę 75 pkt za sam FAKT istnienia
+wrogiego celu (koszt życia 4 pkt), a tabela ETB liczyła ujemną pompę jako
+min(3 × (|P|+|T|), 15) = 6 pkt bez sprawdzania, czy cokolwiek ginie. Teraz
+JEDEN czytnik `debuffPayoffValue` (L41): debuff jest wart czegokolwiek tylko
+przy ZABICIu (CR 704.5f) WAŻNEGO celu — inwestycja (TMC permanentu + TMC aur
++ TMC equipmentów) ≥ `debuffPayoffMinInvestment` (5) albo unikalna zdolność
+(jedyny stwór na stole z lataniem/menace/ochroną, landwalk działający przeciw
+botowi, CR 702.14); płatność musi dodatkowo przebić koszt życia (L48).
+Pomiar: wrogi 2/2 → `pay=false` (było `pay=true`), 5/1 TMC 5 → `pay=true`.
+3 nowe pokrętła (`debuffPayoff*`), 2 piny PMSSB-60 przeliczone (F1/F5),
+6 pinów `test/l-ambulatory-edifice-debuff.test.js` + 15 pozycji tabeli.
 
 **Addendum — audyt PR #162.** Pin C1–C3 mierzył wartość samej aktywacji, ale
 nie sprawdzał późniejszej komendy `resolve_color_choice`: bot wybierał pierwszy

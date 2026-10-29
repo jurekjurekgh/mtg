@@ -8896,3 +8896,42 @@ mutacje: „stać = tylko pula” → K/3, „bez wczesnego zwrotu w `play_land`
 Bramy: `npm test` **9046/9046**, `test:slow` **268/268**, build **76 modułów /
 5550,5 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
 
+## M458 — uwaga z gry L: opcjonalny debuff tylko przy zabiciu ważnego celu (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+(Uwaga oznaczona przez właściciela literą K; w raporcie L, bo K zajęła
+Rupture Spire.)
+
+**Zgłoszenie.** Ambulatory Edifice — „bot korzysta z ETB i płaci 2 life
+praktycznie za nic. Nadaje do końca tury −1/−1 mojej kreaturze, która ma 2/2.
+Ta zdolność ma sens TYLKO wtedy, gdy zadaje lethal damage… to musiałby być
+super ważny stwór: TMC (z aurami i equipment) ≥ 5, albo jedyny z lataniem /
+manace / protection, albo landwalkiem wykorzystanym przeciw botowi”.
+
+**Root cause (L41).** Dwie wyceny tej samej zdolności. `resolve_optional_pay_
+choice` dawała bazę 75 pkt za sam fakt istnienia wrogiego celu (kierunek +1),
+a koszt 2 życia to 4 pkt — 72 > 15, więc bot płacił ZAWSZE. Tabela ETB liczyła
+ujemną pompę jako min(3 × (|P|+|T|), 15) = 6 pkt, nie sprawdzając, czy ktoś
+ginie (debuff „do końca tury” znika w cleanupie, CR 514.2).
+
+**Naprawa.** `debuffPayoffValue(view, target, delta)` — jedno źródło dla obu
+ścieżek: 0 dla celu własnego, delty nieujemnej i — co najważniejsze — gdy
+debuff NIE zabija (wspólny `pumpRemovesCreature`, CR 704.5f). Przy zabiciu
+wymaga WAŻNEGO celu: inwestycja (TMC permanentu + TMC aur + TMC equipmentów)
+≥ `debuffPayoffMinInvestment` (5) ALBO unikalna zdolność z deskryptorów widoku
+(jedyny stwór na stole z flying/menace/protection; landwalk tylko gdy
+kontroluję ląd o tym podtypie, CR 702.14). Decyzja o zapłacie wymaga
+dodatkowo wypłaty > kosztu życia/energii (L48). Pokrętła
+`debuffPayoffMinInvestment`, `debuffPayoffPerPoint`, `debuffPayoffCap`.
+
+**Pin.** `test/l-ambulatory-edifice-debuff.test.js` (15). Odwrócenie patcha
+`src/` → 9 RED; mutacje: bez bramki lethal → L/15, bez bramki ważności → 4 RED,
+„jedyny” → ≥ 1 → L/6, koszt życia zignorowany → L/13, landwalk bez
+sprawdzenia lądu → L/9, tabela ETB z powrotem płaska → PMSSB-60/F1.
+Przeliczone piny: PMSSB-60/F1 (5/1 zamiast 3/3), F5, `real-cards-batch65` BOT
+(2/3 → odmowa, zgodnie ze zgłoszeniem). Zero zmian legalności, zero nowych
+kart, golden-master bez regeneracji.
+
+Bramy: `npm test` **9062/9062**, `test:slow` **268/268**, build **76 modułów /
+5557,8 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+

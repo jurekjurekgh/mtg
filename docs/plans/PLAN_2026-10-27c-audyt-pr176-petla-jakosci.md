@@ -116,6 +116,19 @@ otwarte świadomie (opisał je raport audytu).
       `test/k-rupture-spire-etb-oplata.test.js` (6) + 3 mutacje RED;
       aktualizacja pinu `PMSSB12-A` (76 → −20). Bez zmian legalności, bez
       rekalibracji talii golden-mastera, bez nowych kart.
+- [x] **A13** Uwaga z gry 2026-10-29 (**L**; właściciel oznaczył ją literą K —
+      K zajęła Rupture Spire): „Ambulatory Edifice — bot płaci 2 life
+      praktycznie za nic; zdolność ma sens tylko przy lethal damage i tylko
+      w super ważny stwór (TMC z aurami/equipment ≥ 5 albo jedyny z lataniem /
+      menace / protection / landwalkiem działającym przeciw botowi)”.
+      Fix generyczny: `debuffPayoffValue` w `heuristic-bot.js` (jedno źródło
+      dla tabeli ETB i decyzji `resolve_optional_pay_choice`): debuff „−X/−X
+      do końca tury” jest wart czegokolwiek tylko przy zabiciu (CR 704.5f)
+      ważnego celu; płatność musi przebić koszt życia (L48). Pokrętła
+      `debuffPayoffMinInvestment` (5), `debuffPayoffPerPoint` (3),
+      `debuffPayoffCap` (15). Pin `test/l-ambulatory-edifice-debuff.test.js`
+      (15) + 6 mutacji RED; przeliczone PMSSB-60/F1, F5 i `real-cards-batch65`
+      BOT. Bez zmian legalności i bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

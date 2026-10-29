@@ -1,4 +1,4 @@
-# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G, H, I, J i K
+# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G, H, I, J, K i L
 
 Trzy uwagi właściciela z Żywego Testera. Wszystkie naprawione u root cause,
 z pinami i mutacjami; bez dopisywania kart do katalogu (ADR 0029).
@@ -350,12 +350,97 @@ mutacja „stać = tylko pula” → K/3; mutacja „bez wczesnego zwrotu w
 **Zakres.** Bez rekalibracji talii golden-mastera i pinów scenariuszowych —
 pozostałe piny na `rupture-spire` (m184, m195, m200, etap-f, kafel-cena) zielone.
 
+## L — Ambulatory Edifice: bot płacił 2 życia za −1/−1, które nic nie robiło
+
+> Uwaga: właściciel oznaczył to zgłoszenie literą **K**; w raporcie dostaje
+> **L**, bo K zajęła Rupture Spire (poprzednie zgłoszenie tej samej sesji).
+> Opis PR używa tej samej numeracji.
+
+**Zgłoszenie.** „Karta Ambulatory Edifice. Bot korzysta z ETB i płaci 2 life
+praktycznie za nic. Nadaje do końca tury −1/−1 mojej kreaturze, która ma 2/2.
+Kompletnie bezsensowne zagranie. Ta zdolność ma w ogóle jakikolwiek sens TYLKO
+wtedy gdy zadaje lethal damage. Ale nawet wtedy płacenie 2 życia ma wątpliwy
+sens. To musiałby być jakiś super ważny stwór do zabicia u mnie — np. taki,
+którego TMC (z aurami i equipment) wynosi przynajmniej 5, albo taki, który ma
+jakieś super unikalne zdolności (jedyny z lataniem na stole, jedyny z manace,
+jedyny z protection albo landwalkiem który może być wykorzystany przeciwko
+botowi).”
+
+**Reprodukcja (sonda `probe-l-edifice.mjs`, żywy silnik).** Bot rzuca Edifice
+i staje przed `resolve_optional_pay_choice`. Pomiar PRZED → PO:
+
+| scenariusz | przed | po |
+|---|---|---|
+| wrogi 2/2 (−1/−1 go nie zabija) — sedno zgłoszenia | `pay=true` (72 vs 15) | **`pay=false`** |
+| wrogi 2/3 (także żyje) | `pay=true` | `pay=false` |
+| wrogi 1/1, ginie, ale TMC 1 | `pay=true` (82) | `pay=false` |
+| wrogi 5/5 (nie ginie) | `pay=true` | `pay=false` |
+| wrogi 2/2 + 2 aury (nie ginie) | `pay=true` | `pay=false` |
+| wrogi 2/2 z lataniem, ale nie ginie | `pay=true` | `pay=false` |
+| wrogi 5/1, TMC 5 (ginie) | `pay=true` | `pay=true` (17) |
+| wrogi 1/1 jedyny z lataniem (ginie) | `pay=true` | `pay=true` |
+| wrogi 1/1 z lataniem, ale mój stwór też lata | `pay=true` | `pay=false` |
+| wrogi 1/1 + aura TMC 3 (razem 5, ginie) | `pay=true` | `pay=true` |
+| wrogi 1/1 forestwalk, mam Forest (ginie) | `pay=true` | `pay=true` |
+| wrogi 1/1 forestwalk, BEZ mojego Forestu | `pay=true` | `pay=false` |
+| wrogi 1/1 + Guildscorn Ward (ochrona, ginie) | `pay=true` | `pay=true` |
+| wrogi 1/1 menace, jedyny (ginie) | `pay=true` | `pay=true` |
+
+**Root cause (klasa L41).** Dwie niezależne wyceny tej samej zdolności:
+1) decyzja `resolve_optional_pay_choice` dawała bazę **75** pkt za sam fakt, że
+po zapłacie istnieje wrogi cel (kierunek „−1/−1 na wrogu” = +1), a koszt
+2 życia to `selfLifeLossPenalty` = 4 → **72 > 15** (odmowa), więc bot płacił
+ZAWSZE, niezależnie od tego, czy debuff cokolwiek zmienia;
+2) tabela ETB (`ETB_EFFECT_BONUS.pump`) liczyła ujemną pompę jako
+`min(3 × (|P|+|T|), 15)` = 6 pkt bez sprawdzenia, czy ktokolwiek ginie —
+a debuff „do końca tury” znika w cleanupie (CR 514.2), więc chip −1/−1 nie
+zmienia niczego trwałego.
+
+**Naprawa.** Jeden czytnik `debuffPayoffValue(view, target, delta)`
+(heuristic-bot.js), wołany z OBU miejsc (L41):
+* cel własny / brak celu → 0 (osłabianie siebie nie ma ceny),
+* delta nieujemna → 0 (dodatni pump to inna rodzina — kotwica F3),
+* **nie zabija** (CR 704.5f, wspólny `pumpRemovesCreature`: toughness ≤ 0 albo
+  obrażenia ≥ wytrzymałość, z pominięciem indestructible/regeneracji) → 0,
+* zabija, ale cel **nieważny** → 0; „ważny” = inwestycja (TMC permanentu + TMC
+  aur + TMC equipmentów, czytane z `attachedTo`/`manaCost` w widoku) ≥
+  `debuffPayoffMinInvestment` **albo** unikalna zdolność,
+* zabija ważny cel → `debuffPayoffPerPoint` × punkty P/T, sufit
+  `debuffPayoffCap`.
+
+„Unikalna zdolność” (model właściciela, wszystko z deskryptorów widoku —
+ADR 0002/0017): jedyny stwór NA STOLE z `flying` / `menace` / niepustą listą
+`protection`, albo `landwalk` o podtypie lądu, który FAKTYCZNIE kontroluję
+(CR 702.14 — inaczej nic nie daje). Decyzja o zapłacie wymaga dodatkowo, by
+wypłata przebiła koszt życia/energii (drabina `selfLifeLossPenalty`, L48),
+więc przy 5 życiach bot odmawia nawet przy dobrym killu.
+
+Trzy nowe pokrętła: `debuffPayoffMinInvestment` (5), `debuffPayoffPerPoint`
+(3 — ta sama skala co dawna tabela), `debuffPayoffCap` (15). Zero zmian
+legalności (oferta, walidacja celu i sama płatność nietknięte, L48/L57), zero
+nowych kart (ADR 0029), zero branchowania po nazwie/ID karty (ADR 0002).
+
+**Pin.** `test/l-ambulatory-edifice-debuff.test.js` — 15 testów (L/1–L/15),
+w tym kontry unikalności (mój stwór też lata → nie „jedyny”), landwalk bez
+lasu u mnie, próg inwestycji z aurą, pokrętła (`MinInvestment: 0`,
+`PerPoint: 0`), kotwica anty-over-fix (karta dalej rzucana), niskie życie oraz
+kotwica L48/L57 (ręczna płatność działa dokładnie jak przed L). Weryfikacja
+RED: odwrócenie patcha `src/` → **9 RED**; mutacje: bez bramki lethal → L/15,
+bez bramki ważności → 4 RED, „jedyny” → ≥1 → L/6, koszt życia zignorowany →
+L/13, landwalk bez sprawdzenia lądu → L/9, tabela ETB z powrotem płaska →
+PMSSB-60/F1. Piny przeliczone: PMSSB-60/F1 (5/1 zamiast 3/3 — 3/3 teraz
+słusznie 0) i F5 (koszt życia mierzony na 5/1), `real-cards-batch65` BOT
+(2/3 → odmowa, zgodnie ze zgłoszeniem).
+
+**Zakres.** Bez rekalibracji talii golden-mastera (snapshot bez zmian):
+żadna talia wzorcowa nie ma tej karty w decyzji o zapłacie.
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9046/9046**, EXIT 0 |
+| `npm test` | **9062/9062**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5550,5 kB** |
+| `npm run build` | **76 modułów / 5557,8 kB** |
 | benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |
