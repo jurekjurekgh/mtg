@@ -2732,12 +2732,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // PMSSB-71/F0: deskryptor P/T `source_power` (trigger ataku Beastmastera) to TEKST, nie liczba.
     // Dawniej `'source_power' * 2` = NaN, a NaN zrywał całą wycenę rzutu (karta nigdy nie była rzucana).
     // Rozwiązujemy go względem źródła (`def`, jak `resolveDynamic`); nierozpoznany deskryptor = 0.
+    // L (2026-10-29, Ambulatory Edifice): ujemna pompa „do końca tury” to nie
+    // „obrażenia”, tylko debuff, który znika w cleanupie (CR 514.2). Wartość
+    // ma WYŁĄCZNIE zabicie WAŻNEGO celu — ten sam czytnik co decyzja
+    // o zapłacie (`debuffPayoffValue`, L41). Dawniej każde ujemne P/T dawało
+    // min(3 × (|P|+|T|), 15) = 6 bez sprawdzenia, czy cokolwiek ginie.
     pump: (e, view, req, def) => {
       const dyn = (v) => (typeof v === 'number' ? v : (v === 'source_power' ? (def?.power ?? 0) : 0));
       const p = dyn(e.power ?? 0);
       const t = dyn(e.toughness ?? 0);
       if ((p < 0 || t < 0) && req) {
-        return etbEnemyHasTarget(view, req) ? Math.min(3 * (-p - t), 15) : 0;
+        const delta = { power: p, toughness: t };
+        let best = 0;
+        for (const object of view.zones?.battlefield ?? []) {
+          if (object?.kind !== 'creature' || object.controllerId === view.playerId) continue;
+          best = Math.max(best, debuffPayoffValue(view, object, delta));
+        }
+        return best;
       }
       return p * 2 + t;
     },
@@ -8603,6 +8614,84 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   /** Wartość ciała stwora (skala M149/A3/sac-economics: 2p+t+mv) — R4. */
   function bodyWorth(object) {
     return permanentMaterialValue(object);
+  }
+
+  /**
+   * L (zgłoszenie właściciela 2026-10-29, Ambulatory Edifice): „bot korzysta
+   * z ETB i płaci 2 życia praktycznie za nic — nadaje −1/−1 kreaturze 2/2.
+   * Ta zdolność ma sens TYLKO wtedy, gdy zadaje lethal damage. Ale nawet
+   * wtedy… to musiałby być super ważny stwór: TMC (z aurami i equipment)
+   * przynajmniej 5, albo taki, który ma super unikalne zdolności (jedyny
+   * z lataniem na stole, jedyny z menace, jedyny z protection albo landwalkiem
+   * wykorzystywanym przeciwko botowi).”
+   *
+   * Decyzja jest tu, a nie w karcie (ADR 0002): czytamy wyłącznie deskryptor
+   * efektu (pump o UJEMNEJ delcie) i publiczny stan celu.
+   *
+   * WARTOŚĆ PŁATNOŚCI (jedno źródło dla tabeli ETB i decyzji o zapłacie, L41):
+   *  - cel własny / brak celu → 0 (osłabianie siebie nie ma ceny),
+   *  - delta nie jest ujemna → 0 (dodatni pump to inna rodzina efektów),
+   *  - debuff NIE ZABIJA (CR 704.5f: same obrażenia z −T to nie śmierć) → 0.
+   *    Chip −1/−1 „do końca tury” znika w cleanupie (CR 514.2) i nie zmienia
+   *    niczego trwałego — dokładnie to zobaczył właściciel na stworze 2/2,
+   *  - zabija, ale cel jest NIEWAŻNY (inwestycja < `debuffPayoffMinInvestment`
+   *    i brak unikalnej zdolności) → 0: wymiana karty 1/1 za 2 życia to strata,
+   *  - zabija ważny cel → `debuffPayoffPerPoint` za punkt P/T (sufit
+   *    `debuffPayoffCap`), czyli ta sama skala co dotychczasowa tabela ETB.
+   */
+  function debuffPayoffValue(view, target, delta) {
+    if (!target || target.controllerId === view.playerId) return 0;
+    const d = { power: delta?.power ?? 0, toughness: delta?.toughness ?? 0 };
+    if (d.power >= 0 && d.toughness >= 0) return 0;
+    // Jedyny test „lethal” w repo (toughness ≤ 0 albo obrażenia ≥ P/T) —
+    // respektuje indestructible i tarcze regeneracji (CR 704.5f/g).
+    if (!pumpRemovesCreature(view, target, d)) return 0;
+    const investment = (target.manaCost ?? 0)
+      + debuffVictimAttachmentsMana(view, target);
+    if (investment < P.debuffPayoffMinInvestment && !debuffVictimHasUniqueAbility(view, target)) return 0;
+    return Math.min(P.debuffPayoffPerPoint * (-d.power - d.toughness), P.debuffPayoffCap);
+  }
+
+  /** TMC aur + equipmentów na celu — publiczne (ADR 0017). Osobny czytnik od
+   * `attachedManaValuesOf`, bo tam aury i equipment są rozdzielone wagami
+   * bounce'owymi; tutaj liczy się SUMA zainwestowanej many (model właściciela).
+   */
+  function debuffVictimAttachmentsMana(view, target) {
+    let sum = 0;
+    for (const object of view.zones?.battlefield ?? []) {
+      if (object?.attachedTo !== target.id) continue;
+      const isAura = object.kind === 'aura' || object.aura
+        || (object.subtypes ?? []).includes('Aura');
+      const isEquipment = object.equipment || (object.subtypes ?? []).includes('Equipment');
+      if (!isAura && !isEquipment) continue;
+      if (object.bestow) continue; // bestow to stwór, nie aura (CR 702.103)
+      sum += object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0;
+    }
+    return sum;
+  }
+
+  /**
+   * „Super unikalna zdolność” celu (model właściciela): jedyny stwór NA STOLE
+   * z lataniem / menace / ochroną, albo landwalk, który REALNIE działa
+   * przeciwko botowi (kontroluję ląd o tym podtypie, CR 702.14). Wszystko
+   * z publicznych deskryptorów widoku (`keywords`, `protection`, `landwalk`),
+   * zero nazw kart (ADR 0002/0017).
+   */
+  function debuffVictimHasUniqueAbility(view, target) {
+    const creatures = (view.zones?.battlefield ?? []).filter((o) => o?.kind === 'creature');
+    const jedyny = (pred) => creatures.filter(pred).length === 1;
+    const kw = target.keywords ?? [];
+    for (const keyword of ['flying', 'menace']) {
+      if (kw.includes(keyword) && jedyny((o) => (o.keywords ?? []).includes(keyword))) return true;
+    }
+    if ((target.protection ?? []).length > 0
+      && jedyny((o) => (o.protection ?? []).length > 0)) return true;
+    if (typeof target.landwalk === 'string' && jedyny((o) => o.landwalk === target.landwalk)) {
+      const myLands = (view.zones?.battlefield ?? []).filter((o) => o?.controllerId === view.playerId
+        && (o.types ?? []).includes('Land') && (o.subtypes ?? []).includes(target.landwalk));
+      if (myLands.length > 0) return true;
+    }
+    return false;
   }
 
   /**
@@ -16293,6 +16382,30 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // Dla refleksyjnej pompy/debuffu liczymy legalnych kandydatów ze
           // stanu: ujemna pompa jest użyteczna na wrogu, dodatnia na swoim.
           // Reguła jest po deskryptorze efektu, bez wiedzy o nazwie karty.
+          // L (zgłoszenie właściciela 2026-10-29, Ambulatory Edifice): gdy
+          // CAŁY refleks to UJEMNA pompa („target creature gets −1/−1 until end
+          // of turn”), wartość liczy wyłącznie `debuffPayoffValue` — ten sam
+          // czytnik co tabela ETB (L41). Wcześniej wystarczało, że istnieje
+          // JAKIKOLWIEK wrogi cel (kierunek +1), więc płatność 2 życia dawała
+          // 75 + 1 − 4 = 72 wobec 15 za odmowę: bot płacił ZAWSZE, także za
+          // −1/−1 na stworze 2/2, który tego nie odczuwał (zgłoszenie).
+          const tylkoDebuff = pumpEffects.every(({ delta }) => delta != null)
+            && pumpEffects.every(({ delta }) => (delta.power ?? 0) <= 0 && (delta.toughness ?? 0) <= 0);
+          if (tylkoDebuff) {
+            const delta = pumpEffects.reduce((sum, { delta }) => ({
+              power: sum.power + (delta.power ?? 0), toughness: sum.toughness + (delta.toughness ?? 0),
+            }), { power: 0, toughness: 0 });
+            const payoff = Math.max(0, ...(cmd.reflexiveTargetIds ?? [])
+              .map((id) => objectOnBoard(view, id))
+              .filter(Boolean)
+              .map((target) => debuffPayoffValue(view, target, delta)));
+            if (payoff <= 0) return finish(-10);
+            // Zapłata musi się OPŁACAĆ: zysk ponad cenę życia (ta sama drabina
+            // `selfLifeLossPenalty`, L48) i ponad energię (PMSSB-62/F4).
+            const koszt = selfLifeLossPenalty(view, cmd.lifeCost ?? 0)
+              + P.energyCounterValue * (cmd.energyCost ?? 0);
+            return finish(payoff > koszt ? 15 + (payoff - koszt) : -10);
+          }
           if (pumpEffects.every(({ delta }) => delta != null)) {
             const targetValues = (cmd.reflexiveTargetIds ?? [])
               .map((id) => objectOnBoard(view, id))

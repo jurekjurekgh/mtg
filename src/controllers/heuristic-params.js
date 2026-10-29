@@ -562,6 +562,9 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Wartość bezwzględna wyniku (minus), nie delta: musi przegrać z passem
   // niezależnie od premii pokrycia kolorów.
   'landEtbUpkeepUnplayablePenalty',
+  'debuffPayoffMinInvestment',   // próg „ważnego" celu debuffu (TMC + aury + equipment)
+  'debuffPayoffPerPoint',        // punkty za punkt P/T zabijającego debuffu
+  'debuffPayoffCap',             // sufit wypłaty debuffu (efekt jednorazowy)
   // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
   // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
   // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
@@ -1146,6 +1149,17 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // ma tu znaczenia: ląd ginie natychmiast, więc żadna premia pokrycia nie
   // może tego przebić. Pokrętło ×0 przywraca stan sprzed K (delta −12).
   landEtbUpkeepUnplayablePenalty: 20,
+  // L (zgłoszenie właściciela 2026-10-29, Ambulatory Edifice): opcjonalny
+  // debuff „−X/−X do końca tury" na wrogu wart jest ZAPŁATY tylko wtedy, gdy
+  // ZABIJA (SBA, CR 704.5f) i trafia w cel WAŻNY. Właściciel: „to musiałby być
+  // jakiś super ważny stwór — TMC (z aurami i equipment) przynajmniej 5, albo
+  // taki, który ma super unikalne zdolności (jedyny z lataniem / menace /
+  // protection / landwalkiem działającym przeciwko botowi)".
+  debuffPayoffMinInvestment: 5,
+  // 3 za punkt P/T — TA SAMA skala co dotychczasowa tabela ETB (3 × (|P|+|T|),
+  // sufit 15 = skala `damage`); sufit niżej, bo efekt jest jednorazowy.
+  debuffPayoffPerPoint: 3,
+  debuffPayoffCap: 15,
   // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
   // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
   // daleko od progu rezygnacji.
