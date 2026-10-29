@@ -65,6 +65,13 @@ otwarte świadomie (opisał je raport audytu).
       zawsze z wielokropkiem). Wariant O-3 z rodzajem licznika i etykietą kafla
       **czeka na nośnik mechaniki** w katalogu (ADR 0022/0029) — bez nowych
       kart w tej sesji.
+- [x] **A8** Uwagi z gry 2026-10-29 (`docs/audits/UWAGI_Z_GRY_2026-10-29.md`):
+      **F** `236533c` — Morbid widzi każdą śmierć stworu (`eventIsCreatureDeath`,
+      CR 700.4 + 603.10a; wcześniej tracker znał tylko `object_moved`, więc
+      śmierć od obrażeń i od czaru była dla Morbida niewidzialna),
+      **G** `45aefea` — wycena celu bounce wg zainwestowania (TMC + aury +
+      equipment + liczniki; rekalibracja `bounceFoeEtbWeight` 2 i
+      `counterspellTmcWeight` 10). Bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

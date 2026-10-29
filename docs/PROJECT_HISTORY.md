@@ -18348,3 +18348,17 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   (4); mutacje RED. Bramy: `npm test` 9008/9008, `test:slow` 268/268, build
   76 modułów / 5532,1 kB, benchmark quick 88,2% (672 mecze).
 
+- **Sesja 2026-10-27c/29 (PR #177) — uwagi z gry F i G**: **F** — Morbid
+  (Caravan Vigil) widzi KAŻDĄ śmierć stworu: tracker czyta wspólny predykat
+  `eventIsCreatureDeath` (obrażenia/`creature_destroyed`, zniszczenie efektem,
+  poświęcenie, przeniesienie do grobu), świadomie poza nim finality/exile
+  (CR 700.4, 122.1h) i nie-stwory; deklaracja Morbida zostaje wyborem gracza
+  („you may”). **G** — bot wycenia cel bounce (Sea God's Scorn i cała rodzina)
+  po ZAINWESTOWANIU: TMC permanentu + TMC aur (giną z hostem, CR 704.5m) + TMC
+  equipmentów (zostają, CR 704.5n) + wartość pozytywnych liczników (CR 122.2),
+  zamiast wyłącznie ciała i płaskiej premii za aurę; w ślad za tym
+  `bounceFoeEtbWeight` 2 i `counterspellTmcWeight` 10 (parytet z nową wagą).
+  Piny: 6 + 6 testów, mutacje RED; piny starej skali zaktualizowane z
+  uzasadnieniem. Bramy: `npm test` 9020/9020, `test:slow` 268/268, build
+  76 modułów / 5538,8 kB, benchmark quick 88,2%.
+

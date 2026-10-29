@@ -8740,3 +8740,31 @@ etykiety — transkrypt kłamał. `tools/table-tester/labels.mjs`
 Bramy: `npm test` **9008/9008**, `test:slow` **268/268**, build **76 modułów /
 5532,1 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
 
+## M453 — uwagi z gry F/G: Morbid widzi każdą śmierć, bounce wyceniany po zainwestowaniu (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**F (reguła: Morbid, CR 700.4 + 603.10a).** Tracker `creatureDiedThisTurn`
+patrzył wyłącznie na `object_moved` (pole bitwy → grób). Śmierć od obrażeń
+emituje `creature_destroyed` (SBA), zniszczenie efektem — `permanent_destroyed`,
+poświęcenie — `permanent_sacrificed`, więc w typowej grze flaga zostawała
+`false`: Caravan Vigil nie oferował pola bitwy, a warunki `rule.morbid`
+(„enters with … if a creature died this turn”) były martwe. Naprawa: JEDEN
+predykat `eventIsCreatureDeath` w triggers.js (L41), czytany przez tracker;
+śmierć = docelowa strefa `graveyard` (finality/exile NIE, CR 122.1h), rodzaj
+z LKI (CR 400.7 — nowy obiekt po zmianie strefy). Deklaracja Morbida zostaje
+wyborem gracza („you may”). Pin: 6 testów, mutacja → 5 RED.
+
+**G (wycena bota: bounce).** Ranking celu bounce wg zainwestowania przeciwnika:
+TMC celu (6/mana) + TMC aur (4/mana — aura ginie z hostem, CR 704.5m) + TMC
+equipmentów (2/mana — zostają na stole, CR 704.5n) + 10 za każdy pozytywny
+licznik (CR 122.2 — liczniki nie wracają z kartą do ręki). Wcześniej liczyło się
+tylko ciało (2 × (P+T)) + TMC w wadze 2 i płaskie +30 za aurę, więc bot oddawał
+tanie stwory z drogimi załącznikami, a zostawiał drogie. Rekalibracje wymuszone
+nową wagą: `bounceFoeEtbWeight` 1 → 2 (inaczej znikał zakaz PMSSB-1/A/F6)
+i `counterspellTmcWeight` 6 → 10 (parytet — inaczej sabotaż kontrował drogi czar
+przegrywając z odbiciem drobiazgu). Pin: 6 testów + mutacje każdej wagi → RED.
+
+Bramy: `npm test` **9020/9020**, `test:slow` **268/268**, build **76 modułów /
+5538,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+

@@ -15,7 +15,8 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 **Aktualny punkt zaczepienia (2026-10-27c):** [handoff](docs/setup/HANDOFF_2026-10-27c.md),
 [plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
 [audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
-[uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) — wszystko w otwartym
+[uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) i
+[uwagi z gry F–G (2026-10-29)](docs/audits/UWAGI_Z_GRY_2026-10-29.md) — wszystko w otwartym
 [PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Sesja 2026-10-27c:
 pełny audyt scalonego PR #176 (22 pliki `src/`, +1298/−89; werdykt na każdym
 pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący
@@ -45,8 +46,8 @@ wyceny; transkrypty czytane ręcznie — L27), analizatory
 zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
 decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
 207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Bramki:
-`npm test` **9008/9008**, `npm run test:slow` **268/268**, build **76 modułów /
-5532,1 kB**, benchmark quick 672 mecze (heuristic 88,2%). PR czeka na decyzję
+`npm test` **9020/9020**, `npm run test:slow` **268/268**, build **76 modułów /
+5538,8 kB**, benchmark quick 672 mecze (heuristic 88,2%). PR czeka na decyzję
 właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
 (sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);
