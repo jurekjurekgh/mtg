@@ -1306,6 +1306,7 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
       transformTo: {
         cardId: moved.cardId,
         cardName: moved.cardName ?? null,
+        name: moved.name ?? null,
         kind: previousSide.kind ?? moved.kind,
         power: previousSide.power ?? null,
         toughness: previousSide.toughness ?? null,
@@ -3927,6 +3928,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
+        // Nazwa jawnego `name` (token/kopia) opuszczanej strony — powrót musi
+        // ją odzyskać (payload `cardName` bywa pusty dla tokenu).
+        name: leavingFace.name ?? null,
         power: leavingFace.power,
         toughness: leavingFace.toughness,
         abilities: sourceObject.abilities,
@@ -5805,6 +5809,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const frontFace = {
       cardId: object.cardId,
       cardName: object.cardName,
+      name: object.name ?? null,
       power: object.power,
       toughness: object.toughness,
       abilities: object.abilities,

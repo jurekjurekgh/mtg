@@ -1961,11 +1961,36 @@ export function kindFromTypes(types, fallback = null) {
   return fallback;
 }
 
+/**
+ * Nazwa WIDOCZNA nowej strony po zmianie twarzy (zgłoszenie właściciela
+ * 2026-10-29: dwustronny token po przemianie dalej podpisywał się nazwą
+ * strony opuszczanej w modalach celowania).
+ *
+ * Źródło nazwy zależy od rodzaju obiektu (L41 — jedno miejsce dla obu ścieżek
+ * zmiany twarzy): KARTA bierze nazwę z rejestru po `cardId`, więc jej pole
+ * `name` jest puste i puste ma zostać; TOKEN i kopia niosą nazwę JAWNIE
+ * w `name` (`object.name` — M155), bo `cardId` tokenu jest poza rejestrem.
+ * Dla nich nowa strona musi przepisać pole z deskryptora `transformTo`:
+ * `name` (nazwa nośnika), a gdy payload jej nie niesie — `cardName` (nazwa
+ * twarzy z materialize/rejestru).
+ *
+ * `null` = obiekt nie niesie jawnej nazwy albo payload nie zna nowej —
+ * wywołujący zostawia dotychczasowe pole (zachowanie sprzed poprawki).
+ */
+export function transformedDisplayName(back, previous = null) {
+  if (!previous || previous.name == null) return null;
+  return back?.name ?? back?.cardName ?? null;
+}
+
 export function transformedCharacteristics(back, previous = null) {
   const kind = back.kind ?? kindFromTypes(back.types, previous?.kind);
+  const displayName = transformedDisplayName(back, previous);
   return {
     cardId: back.cardId,
     cardName: back.cardName ?? previous?.cardName ?? null,
+    // Token/kopia: nazwa w `name` musi iść za twarzą, inaczej UI (modale
+    // celowania, etykiety ofert, kafel) pokazuje nazwę strony sprzed zmiany.
+    ...(displayName ? { name: displayName } : {}),
     power: back.power ?? null,
     toughness: back.toughness ?? null,
     abilities: back.abilities ?? [],
@@ -2144,6 +2169,9 @@ export function transformInPlaceFields(object, back) {
     subtypes: [...((object.subtypesBeforeOverride ?? (original ? original.subtypes : object.subtypes)) ?? [])],
     power: original ? original.power : object.power,
     toughness: original ? original.toughness : object.toughness,
+    // Nazwa jawnego `name` (token/kopia) — powrotny `transformTo` musi ją
+    // nieść, inaczej druga przemiana wróciłaby z nazwą poprzedniej strony.
+    name: object.name ?? null,
   };
   const printedBack = {
     kind: back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : leavingFace.kind),
@@ -2153,8 +2181,12 @@ export function transformInPlaceFields(object, back) {
     toughness: back.toughness ?? null,
   };
   const visible = layer ? withAnimationLayer(printedBack, layer) : printedBack;
+  const displayName = transformedDisplayName(back, object);
   const fields = {
     ...visible,
+    // Ta sama reguła nazwy, co przy nowym obiekcie (transformedCharacteristics):
+    // token/kopia przepisuje `name` na nazwę strony, na którą się obraca.
+    ...(displayName ? { name: displayName } : {}),
     originalBeforeAnimation: layer ? Object.freeze({ ...printedBack, layer }) : null,
   };
   if (object.subtypesBeforeOverride) {
