@@ -18365,7 +18365,7 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   celowania i etykiety ofert dalej mówiły „Incubator”. Reguła nazwy nowej
   strony w jednym miejscu (`transformedDisplayName`, permanents.js) dla OBU
   ścieżek zmiany twarzy + `name` w payloadach powrotnych; karty nietknięte
-  (nazwa z rejestru). Piny: 6 + 6 + 6 testów, mutacje RED. Bramy:
-  `npm test` 9026/9026, `test:slow` 268/268, build 76 modułów / 5540,8 kB,
+  (nazwa z rejestru). Piny: 7 + 6 + 6 testów, mutacje RED. Bramy:
+  `npm test` 9027/9027, `test:slow` 268/268, build 76 modułów / 5540,8 kB,
   benchmark quick 88,2%.
 

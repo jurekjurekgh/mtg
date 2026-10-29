@@ -139,22 +139,23 @@ craft, `exile_return_transformed`, wejście nocną stroną) niosą odtąd także
 Zero zmian legalności i zero zmian w katalogu kart (ADR 0029; zgłoszenie nie
 wymagało nowej karty — nośnik mechaniki był).
 
-**Pin.** `test/h-incubator-nazwa-po-transformacji.test.js` — 6 testów:
+**Pin.** `test/h-incubator-nazwa-po-transformacji.test.js` — 7 testów:
 stan silnika po `{2}: Transform` (`name`/`cardName`/`kind`/liczniki), widok
 gracza (`name` kafla i celów), etykieta oferty/celu (`commandLabel` przed =
 „Incubator”, po = „Phyrexian”, bez śladu starej nazwy), linia logu
 („Incubator przemienia się w Phyrexian”), generyczność (syntetyczny token
 `Probe A → Probe B`) oraz brak regresji dla KART (`name` nie pojawia się w
 cechach twarzy — numeracja kopii i porównania nazw zostają nietknięte).
-Weryfikacja RED: odwrócenie patcha `src/` (`git apply -R`) → 5/6 testów
-czerwonych (H/4 przechodzi, bo log nazywa strony po `cardId`); po przywróceniu
-6/6 zielone.
+H/7 idzie przez ŻYWĄ sesję stołu (`createSession` po mulliganach), bo modal
+celowania pyta `session.nameOfObject`, a nie `playerView`. Weryfikacja RED:
+odwrócenie patcha `src/` (`git apply -R`) → 6/7 testów czerwonych (H/4
+przechodzi, bo log nazywa strony po `cardId`); po przywróceniu 7/7 zielone.
 
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9026/9026**, EXIT 0 |
+| `npm test` | **9027/9027**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
 | `npm run build` | **76 modułów / 5540,8 kB** |
 | benchmark quick | 672 mecze — heuristic **88,2%** (593/672) |

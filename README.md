@@ -46,7 +46,7 @@ wyceny; transkrypty czytane ręcznie — L27), analizatory
 zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
 decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
 207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Bramki:
-`npm test` **9026/9026**, `npm run test:slow` **268/268**, build **76 modułów /
+`npm test` **9027/9027**, `npm run test:slow` **268/268**, build **76 modułów /
 5540,8 kB**, benchmark quick 672 mecze (heuristic 88,2%). PR czeka na decyzję
 właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)

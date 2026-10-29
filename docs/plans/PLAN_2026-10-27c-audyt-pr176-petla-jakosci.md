@@ -79,7 +79,7 @@ otwarte świadomie (opisał je raport audytu).
       → po `{2}: Transform` kafel, modal celowania i etykiety ofert dalej
       mówiły „Incubator”. Fix generyczny: `transformedDisplayName`
       (permanents.js) + `name` w payloadach powrotnych; pin
-      `test/h-incubator-nazwa-po-transformacji.test.js` (6). Bez nowych kart.
+      `test/h-incubator-nazwa-po-transformacji.test.js` (7). Bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

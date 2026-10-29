@@ -8789,9 +8789,10 @@ JEDNO miejsce reguły: karta (brak `previous.name`) → pole zostaje puste;
 token/kopia → `back.name ?? back.cardName` z deskryptora `transformTo` (bez
 listy nazw w kodzie — ADR 0002). Payloady powrotne niosą też `name` opuszczanej
 strony, więc kolejna przemiana wraca z poprawną nazwą. Zero zmian legalności,
-zero nowych kart (ADR 0029). Pin: 6 testów (stan, widok, etykieta celu, log,
-generyczność, brak regresji dla kart); odwrócenie patcha `src/` → 5 RED.
+zero nowych kart (ADR 0029). Pin: 7 testów (stan, widok, etykieta celu, log,
+generyczność, brak regresji dla kart, żywa sesja stołu); odwrócenie patcha
+`src/` → 6 RED.
 
-Bramy: `npm test` **9026/9026**, `test:slow` **268/268**, build **76 modułów /
+Bramy: `npm test` **9027/9027**, `test:slow` **268/268**, build **76 modułów /
 5540,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
 

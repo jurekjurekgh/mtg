@@ -25,7 +25,8 @@ import { applyEffect } from '../src/engine/effects.js';
 import { createBattlefieldToken, tokenNameFromCardId } from '../src/engine/tokens.js';
 import { transformedCharacteristics, transformInPlaceFields } from '../src/engine/permanents.js';
 import { commandLabel } from '../src/table/render.js';
-import { describeGameEvent } from '../src/table/session.js';
+import { createSession, describeGameEvent, HUMAN_ID, BOT_ID } from '../src/table/session.js';
+import { parseDeckText } from '../src/cards/deck-text.js';
 
 const REGISTRY = createCardRegistry();
 
@@ -163,4 +164,37 @@ test('H/6: karty (bez jawnej nazwy) nie dostają pola `name` — brak regresji',
   // Token-kopia niesie nazwę jawnie → nowa strona ją przepisuje.
   const copied = transformedCharacteristics(backSide, { ...cardSide, name: 'Skopiowana' });
   assert.equal(copied.name, 'Shiva, Warden of Ice', 'kopia: nazwa nowej twarzy z payloadu');
+});
+
+test('H/7: prawdziwa sesja stołu — modal celowania czyta nową nazwę (nameOfObject)', () => {
+  // Modal celowania (choice-request) i log pytają `session.nameOfObject`,
+  // a nie `playerView` — pin domyka tę ścieżkę na ŻYWEJ sesji, nie na stubie.
+  const decks = new Map([
+    [HUMAN_ID, parseDeckText('# A\n20x Forest\n20x Island', REGISTRY).cardIds],
+    [BOT_ID, parseDeckText('# B\n20x Mountain\n20x Swamp', REGISTRY).cardIds],
+  ]);
+  const session = createSession({ registry: REGISTRY, decks, seed: 429 });
+  const state = session.state;
+  while ((state.pendingMulligans ?? []).length > 0) {
+    execute(state, { type: 'resolve_mulligan_choice', playerId: state.pendingMulligans[0], keep: true, mulligans: 0 });
+  }
+  const def = REGISTRY.get('tiller-of-flesh');
+  addObject(state, {
+    id: 'tiller', instanceId: 'i-t', cardId: 'tiller-of-flesh',
+    controllerId: 'p1', ownerId: 'p1', zone: 'battlefield',
+    ...gameObjectDataOf(def), types: def.types, keywords: def.keywords ?? [], subtypes: def.subtypes,
+  });
+  applyEffect(state, { type: 'incubate', amount: 2 }, state.objects.get('tiller'), []);
+  const token = [...state.objects.values()].find((o) => o.cardId === 'token_incubator');
+  assert.equal(session.nameOfObject(token.id), 'Incubator', 'przed przemianą modal mówi „Incubator"');
+  addMana(state, token.controllerId, 2, { colors: ['W'] });
+  const result = execute(state, { type: 'activate_ability', playerId: token.controllerId, objectId: token.id, abilityIndex: 0 });
+  assert.ok(result.ok, `aktywacja przyjęta: ${JSON.stringify(result.events?.[0] ?? {})}`);
+  for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
+    execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId });
+  }
+  assert.equal(state.objects.get(token.id).cardId, 'token_phyrexian');
+  assert.equal(session.nameOfObject(token.id), 'Phyrexian', 'RED bez poprawki: modal celowania mówi „Incubator"');
+  // Nazwa strony opuszczanej zostaje czytelna po cardId (linie logu/historii).
+  assert.equal(session.nameOf('token_incubator'), 'Incubator', 'stara twarz nadal nazwana po cardId');
 });
