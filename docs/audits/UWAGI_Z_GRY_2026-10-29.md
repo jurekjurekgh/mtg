@@ -1,7 +1,7 @@
-# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F i G
+# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G i H
 
-Dwie uwagi właściciela z Żywego Testera. Obie naprawione u root cause, z pinami
-i mutacjami; bez dopisywania kart do katalogu (ADR 0029).
+Trzy uwagi właściciela z Żywego Testera. Wszystkie naprawione u root cause,
+z pinami i mutacjami; bez dopisywania kart do katalogu (ADR 0029).
 
 ## F — Caravan Vigil: Morbid nie widział śmierci stworu
 
@@ -103,12 +103,59 @@ każda waga → 0, liczenie liczników ujemnych, brak całego wymiaru → RED.
 abstruse 91.97), PMSSB-6 (86), PMSSB-8 (96/94), PMSSB-18 (109).
 Golden-master bez zmian (scenariusze bounce poza snapshotem).
 
+## H — nazwa dwustronnego tokenu nie szła za twarzą (Incubator → Phyrexian)
+
+**Zgłoszenie.** „Karta Tiller of Flesh tworzy token Incubator. Po zapłaceniu
+Incubator zmienia się w token Phyrexian. Mimo to w grze w modalach do celowania
+ten permanent dalej nazywa się Incubator.”
+
+**Reprodukcja (sonda).** Tiller of Flesh na stole, czar z celem w stwora →
+trigger `incubate 2` → token `token_incubator` (`name: 'Incubator'`). Po
+aktywacji `{2}: Transform` stan silnika miał już `cardId: 'token_phyrexian'`,
+`cardName: 'Phyrexian'`, `kind: 'creature'`, `types: [Artifact, Creature,
+Token]`, 0/0 + 2 liczniki +1/+1 (CR 701.53/707.9/712.8) — ale
+`object.name` **nadal `'Incubator'`**, a `playerView` niesie dla tokenu
+właśnie `name` (M155). Kafel, modal celowania (`choice-request` →
+`session.nameOfObject`) i etykiety ofert czytały więc starą nazwę.
+
+**Root cause (klasa L41).** Nazwa WIDOCZNA ma jedno źródło zależne od rodzaju
+obiektu: KARTA — z rejestru po `cardId` (`session.nameOf`), TOKEN i kopia —
+jawnie z `object.name` (bo `cardId` tokenu jest poza rejestrem). Obie ścieżki
+zmiany twarzy przepisywały `cardId`/`cardName`, ale **nie pole `name`**:
+
+| ścieżka | builder cech twarzy | objaw |
+|---|---|---|
+| `transform` w miejscu (CR 712.18 — ten sam obiekt) | `transformInPlaceFields` | token zostawał z nazwą strony opuszczanej |
+| craft / powrót z wygnania przemienioną stroną / wejście nocną stroną | `transformedCharacteristics` | to samo, gdy token-kopia obracała się na nowy obiekt |
+
+**Naprawa.** Nowy `transformedDisplayName(back, previous)` w
+`src/engine/permanents.js` — jedno miejsce, z którego oba buildery biorą nazwę
+nowej strony: puste dla KARTY (`previous.name == null` → pole zostaje puste,
+nazwa dalej z rejestru), a dla tokenu/kopii `back.name ?? back.cardName`
+(deskryptor `transformTo` już niesie `cardName`, więc **żadnej nowej listy
+nazw w kodzie** — ADR 0002). Payloady powrotne (`transform` → `transformTo`,
+craft, `exile_return_transformed`, wejście nocną stroną) niosą odtąd także
+`name` opuszczanej strony, żeby druga przemiana wróciła z poprawną nazwą.
+Zero zmian legalności i zero zmian w katalogu kart (ADR 0029; zgłoszenie nie
+wymagało nowej karty — nośnik mechaniki był).
+
+**Pin.** `test/h-incubator-nazwa-po-transformacji.test.js` — 6 testów:
+stan silnika po `{2}: Transform` (`name`/`cardName`/`kind`/liczniki), widok
+gracza (`name` kafla i celów), etykieta oferty/celu (`commandLabel` przed =
+„Incubator”, po = „Phyrexian”, bez śladu starej nazwy), linia logu
+(„Incubator przemienia się w Phyrexian”), generyczność (syntetyczny token
+`Probe A → Probe B`) oraz brak regresji dla KART (`name` nie pojawia się w
+cechach twarzy — numeracja kopii i porównania nazw zostają nietknięte).
+Weryfikacja RED: odwrócenie patcha `src/` (`git apply -R`) → 5/6 testów
+czerwonych (H/4 przechodzi, bo log nazywa strony po `cardId`); po przywróceniu
+6/6 zielone.
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9020/9020**, EXIT 0 |
+| `npm test` | **9026/9026**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5538,8 kB** |
+| `npm run build` | **76 modułów / 5540,8 kB** |
 | benchmark quick | 672 mecze — heuristic **88,2%** (593/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

@@ -18348,7 +18348,7 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   (4); mutacje RED. Bramy: `npm test` 9008/9008, `test:slow` 268/268, build
   76 modułów / 5532,1 kB, benchmark quick 88,2% (672 mecze).
 
-- **Sesja 2026-10-27c/29 (PR #177) — uwagi z gry F i G**: **F** — Morbid
+- **Sesja 2026-10-27c/29 (PR #177) — uwagi z gry F, G i H**: **F** — Morbid
   (Caravan Vigil) widzi KAŻDĄ śmierć stworu: tracker czyta wspólny predykat
   `eventIsCreatureDeath` (obrażenia/`creature_destroyed`, zniszczenie efektem,
   poświęcenie, przeniesienie do grobu), świadomie poza nim finality/exile
@@ -18359,6 +18359,13 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   zamiast wyłącznie ciała i płaskiej premii za aurę; w ślad za tym
   `bounceFoeEtbWeight` 2 i `counterspellTmcWeight` 10 (parytet z nową wagą).
   Piny: 6 + 6 testów, mutacje RED; piny starej skali zaktualizowane z
-  uzasadnieniem. Bramy: `npm test` 9020/9020, `test:slow` 268/268, build
-  76 modułów / 5538,8 kB, benchmark quick 88,2%.
+  uzasadnieniem. **H** — nazwa dwustronnego tokenu idzie za twarzą: token
+  Incubator po `{2}: Transform` zmieniał `cardId`/`cardName`/rodzaj, ale nie
+  pole `name`, z którego nazwę czyta token/kopia (M155) — kafel, modal
+  celowania i etykiety ofert dalej mówiły „Incubator”. Reguła nazwy nowej
+  strony w jednym miejscu (`transformedDisplayName`, permanents.js) dla OBU
+  ścieżek zmiany twarzy + `name` w payloadach powrotnych; karty nietknięte
+  (nazwa z rejestru). Piny: 6 + 6 + 6 testów, mutacje RED. Bramy:
+  `npm test` 9026/9026, `test:slow` 268/268, build 76 modułów / 5540,8 kB,
+  benchmark quick 88,2%.
 

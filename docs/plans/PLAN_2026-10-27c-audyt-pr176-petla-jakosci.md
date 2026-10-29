@@ -72,6 +72,14 @@ otwarte świadomie (opisał je raport audytu).
       **G** `45aefea` — wycena celu bounce wg zainwestowania (TMC + aury +
       equipment + liczniki; rekalibracja `bounceFoeEtbWeight` 2 i
       `counterspellTmcWeight` 10). Bez nowych kart.
+- [x] **A9** Uwaga **H** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      nazwa dwustronnego tokenu nie szła za twarzą — `transform` w miejscu
+      i `transformedCharacteristics` przepisywały `cardId`/`cardName`, ale nie
+      `object.name`, z którego czyta nazwę token/kopia (`session.nameOfObject`)
+      → po `{2}: Transform` kafel, modal celowania i etykiety ofert dalej
+      mówiły „Incubator”. Fix generyczny: `transformedDisplayName`
+      (permanents.js) + `name` w payloadach powrotnych; pin
+      `test/h-incubator-nazwa-po-transformacji.test.js` (6). Bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

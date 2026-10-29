@@ -8768,3 +8768,30 @@ przegrywając z odbiciem drobiazgu). Pin: 6 testów + mutacje każdej wagi → R
 Bramy: `npm test` **9020/9020**, `test:slow` **268/268**, build **76 modułów /
 5538,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
 
+## M454 — uwaga z gry H: nazwa dwustronnego tokenu idzie za twarzą (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Token Incubator po zapłaceniu `{2}: Transform` staje się
+tokenem Phyrexian, ale w modalach celowania dalej nazywa się „Incubator”.
+
+**Root cause (L41).** Nazwa WIDOCZNA ma jedno źródło zależne od rodzaju
+obiektu: karta — z rejestru po `cardId`, token/kopia — jawnie z `object.name`
+(M155, bo `cardId` tokenu jest poza rejestrem). Obie ścieżki zmiany twarzy
+(`transform` w miejscu przez `transformInPlaceFields` i nowy obiekt przez
+`transformedCharacteristics`: craft, powrót z wygnania przemienioną stroną,
+wejście nocną stroną) przepisywały `cardId`/`cardName`/rodzaj, ale nie pole
+`name` — więc UI (kafel, `session.nameOfObject`, etykiety ofert) czytało nazwę
+strony opuszczanej.
+
+**Naprawa.** `transformedDisplayName(back, previous)` w permanents.js jako
+JEDNO miejsce reguły: karta (brak `previous.name`) → pole zostaje puste;
+token/kopia → `back.name ?? back.cardName` z deskryptora `transformTo` (bez
+listy nazw w kodzie — ADR 0002). Payloady powrotne niosą też `name` opuszczanej
+strony, więc kolejna przemiana wraca z poprawną nazwą. Zero zmian legalności,
+zero nowych kart (ADR 0029). Pin: 6 testów (stan, widok, etykieta celu, log,
+generyczność, brak regresji dla kart); odwrócenie patcha `src/` → 5 RED.
+
+Bramy: `npm test` **9026/9026**, `test:slow` **268/268**, build **76 modułów /
+5540,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
