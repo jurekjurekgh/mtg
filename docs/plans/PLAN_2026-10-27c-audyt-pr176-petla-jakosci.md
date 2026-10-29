@@ -91,6 +91,17 @@ otwarte świadomie (opisał je raport audytu).
       `bodyWorth` w gałęziach usunięte (L41). Pin
       `test/i-poswiecenie-stwora.test.js` (6) + 4 mutacje RED; rekalibracja
       PMSSB-19/R1 (11 → 3) i goldena; reseed M101/D (L25). Bez nowych kart.
+- [x] **A11** Uwaga **J** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Benevolent Blessing — bot nadaje flash protection swojej blokującej
+      kreaturze, ale wybiera kolor inny niż kolor kreatury, którą ta blokuje.”
+      Fix generyczny: `protectionCombatThreatByColor` w `heuristic-bot.js` —
+      kolor partnera walki (blokowany atakujący / blokerzy hosta / legalne
+      bloki przed deklaracją) bije „najliczniejszy kolor wroga”, a wartość
+      rośnie z zatrzymanymi obrażeniami; próg ratujący życie bez zmian, brak
+      walki → dawna heurystyka (kotwica). Dwa pokrętła
+      (`colorProtectionCombatBonus`, `colorProtectionCombatDamageWeight`). Pin
+      `test/j-benevolent-blessing-kolor.test.js` (7) + 3 mutacje RED. Bez
+      rekalibracji istniejących pinów, bez nowych kart.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff

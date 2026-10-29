@@ -98,7 +98,7 @@ teraz obowiązkowy, a nie zalecany.
 | koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
 | wartość landu (drabina per pip) | 1 | DONE (2026-09-30c) | §PMSSB-26 niżej; plan `PLAN_2026-09-30c-pmssb26-land-drabina.md`; `test/audyt-pmssb26-land-drabina.test.js` (13); `landKeepValue` wg specyfikacji właściciela (CR 305.6 dla kolorów); 10 pokręteł `landKeep*`/`landColored*Max`/`landTotal*Max` |
 | licznik źródeł landu bez karty rozważanej | 1 | DONE (2026-09-30d) | §PMSSB-27 niżej; doprecyzowanie właściciela do PMSSB-26 — „3 na stole albo 2 na stole i 1 dodatkowy w ręku (poza tym rozważanym)"; przywraca pierwotny pin `audyt-pr105` B; 0 nowych pokręteł |
-| wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` |
+| wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` + 2 z rozszerzenia J (`colorProtectionCombat*`) |
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
@@ -380,6 +380,18 @@ Przy pustym stole wroga ochrona remisuje po 5 i nie wymyśla koloru z potrzeby m
 pustym stole. **Mutacja M1** → RED `{A1, A2, A3, A4, B2, B3}`, B1 zielony.
 
 **Pokrętła (2):** `colorProtectionPerCreature` 6 · `colorManaNeedPerCard` 6.
+
+**Rozszerzenie J (2026-10-29, uwaga właściciela z gry — Benevolent Blessing):**
+`protectionCombatThreatByColor` dopina trzeci próg, bo „najliczniejszy kolor
+wroga” nie widział związku w walce — bot brał `{R}` przy trzech czerwonych
+stworach poza walką, blokując zielonego atakującego. Kolejność progów:
+`lethalColors` (ratowanie życia, `100 + liczba kolorów`) → kolor PARTNERA walki
+hosta (`40 + 2 × zatrzymane obrażenia`; blokowany atakujący, blokerzy hosta,
+a w kroku `declare_blockers` — atakujący, których host może blokować) → kolor
+spoza walki (`5`) → brak walki = dawna suma. Dwa dodatkowe pokrętła:
+`colorProtectionCombatBonus` 40 · `colorProtectionCombatDamageWeight` 2, więc
+motyw `protection` ma ich teraz trzy (`colorProtectionPerCreature` zostaje dla
+sytuacji bez walki). Pin `test/j-benevolent-blessing-kolor.test.js` (7).
 
 **Trop porzucony po pomiarze:** rodzina „wygnaj karty z grobu" (`resolve_delve_exile` /
 `resolve_escape_exile` / `resolve_reveal_exile_grave`) ma wspólną miarę `escapeExileCostOf`

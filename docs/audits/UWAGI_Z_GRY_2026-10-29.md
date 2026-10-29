@@ -233,12 +233,73 @@ weryfikowany wobec CR 2026-09-25, sha256 `8d860e45…` — ten sam plik, z któr
 generowana jest `test/helpers/cr-numery-tabela.js`); numer jest w tabeli
 strażnika, więc `cr-numery:istnienie` zostaje zielony.
 
+## J — Benevolent Blessing: kolor ochrony nie szedł za blokowanym stworzeniem
+
+**Zgłoszenie.** „Karta Benevolent Blessing. Bot poprawnie nadaje flash
+protection tą kartą swojej blokującej kreaturze, ale wybiera kolor inny niż
+kolor kreatury, którą ta jego kreatura blokuje. Bez sensu. Kreatura bota
+ginie, aura idzie do piachu.”
+
+**Reprodukcja (sonda `probe-j-blessing.mjs`, żywy silnik).** Stół: atakujący
+2/2 zielony, bloker bota 1/4 niebieski, obok trzy CZERWONE stwory wroga poza
+walką — czyli dokładnie ten „bias”, który widział właściciel:
+
+| scenariusz | przed naprawą | oczekiwane |
+|---|---|---|
+| bloker przeżywa (atak 2/2) | `{R}` | `{G}` — kolor blokowanego atakującego |
+| bloker ginie (atak 5/5) | `{G}` | `{G}` (gałąź ratująca życie działała) |
+| host ATAKUJE i jest blokowany przez czerwonego | `{R}`/`{U}` losowo | kolor blokera |
+| krok declare_blockers, blok jeszcze niezadeklarowany | `{R}` | kolor atakującego, którego host może blokować |
+
+**Root cause (klasa L41).** Kolor ochrony liczyła jedna heurystyka
+„najliczniejszy kolor wroga” (`5 + enemyInColor × colorProtectionPerCreature`),
+a gałąź ratująca życie (`lethalProtectionThreatColors`) obejmowała WYŁĄCZNIE
+przypadki, w których host i tak ginie. Gdy host przeżywał — a ochrona i tak
+zerwałaby obrażenia od blokowanego atakującego (CR 702.16e: „Any damage that
+would be dealt by sources that have the stated quality to a permanent or
+player with protection is prevented.”) — wybór był
+przypadkowy: przy trzech czerwonych stworach poza walką bot brał `{R}`, choć
+blokował zielonego atakującego.
+
+**Naprawa.** Nowy `protectionCombatThreatByColor(view, host)` w
+`heuristic-bot.js` — jedno miejsce, trzy źródła „partnerów” hosta:
+blokowani atakujący (host jest blokerem), blokerzy hosta (host atakuje) oraz —
+w kroku `declare_blockers`, przed deklaracją — atakujący, których host legalnie
+może blokować (`view.blockCandidates`). Wycena została rozszerzona o próg
+między „ratuje życie” a „najliczniejszy kolor”:
+
+| próg (od najwyższego) | wartość |
+|---|---|
+| kolor należy do `lethalColors` (host ginie bez ochrony) | `100 + liczbaKolorów` |
+| kolor partnera walki | `colorProtectionCombatBonus` + `colorProtectionCombatDamageWeight` × zatrzymane obrażenia (moc źródła; trample +1, CR 702.19) |
+| kolor spoza walki (gdy partner istnieje) | `5` |
+| host nie walczy / atakujący bez koloru | dawna heurystyka `5 + enemyInColor × 6` (kotwica anty-over-fix) |
+
+Dwa nowe pokrętła (`colorProtectionCombatBonus` 40, `colorProtectionCombatDamageWeight`
+2) — 40 leży nad sufitem dawnej heuristicie przy realnych stołach i pod progiem
+ratującym życie, więc kolejność progów jest nienaruszalna. Zero zmian
+legalności (oferta i walidacja kolorów nietknięte), zero nowych kart (ADR
+0029), zero branchowania po nazwie karty (ADR 0002).
+
+**Pin.** `test/j-benevolent-blessing-kolor.test.js` — 7 testów: J/1 sedno
+zgłoszenia (bloker przeżywa, `{G}` mimo przewagi czerwonych), J/2 regresja
+ratowania życia (`{G}` przy 5/5), J/3 symetria „host atakuje, blokuje go
+czerwony”, J/4 krok `declare_blockers` bez deklaracji, J/5 atakujący bez
+koloru → dawna heurystyka, J/6 kotwica anty-over-fix (aura w fazie głównej
+nietknięta: `{R}` = 23, `{U}` = 11), J/7 pokrętła + brak wpływu na cel `mana`
+(Manor Gate: `{B}` = 11). Weryfikacja RED: odwrócenie patcha `src/`
+(`git apply -R`) → **4 RED** (J/1, J/3, J/4, J/7); mutacja „bez gałęzi host
+ATAKUJE” → J/3; mutacja „bez zliczania zatrzymanych obrażeń” → 4 RED.
+
+**Zakres.** Bez rekalibracji pinów: żadna talia golden-mastera ani pin
+scenariuszowy nie dotyka tej decyzji (fast 9040/9040 bez zmian oczekiwań).
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9033/9033**, EXIT 0 |
+| `npm test` | **9040/9040**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5544,2 kB** |
+| `npm run build` | **76 modułów / 5548,3 kB** |
 | benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

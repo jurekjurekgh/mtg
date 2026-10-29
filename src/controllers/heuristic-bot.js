@@ -7279,6 +7279,60 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     ]);
     return [...colors];
   }
+  /**
+   * J (zgłoszenie właściciela 2026-10-29, Benevolent Blessing): ile obrażeń
+   * OCHRONA przed danym kolorem realnie zatrzyma w tej walce.
+   *
+   * Host aury jest w walce, więc jedyne źródła, które mogą mu teraz zrobić
+   * krzywdę, to stwory, z którymi się bije: blokowani przezeń atakujący (host
+   * jest blokerem) albo blokujący go blokerzy (host atakuje). Ochrona przed
+   * ICH kolorem (CR 702.16) zeruje ich obrażenia — także gdy host przeżyje
+   * walkę, bo zostaje nietknięty i nie da się go dobić czarem tego koloru.
+   * Wybór „najliczniejszego koloru wroga” ignorował ten związek: przy trzech
+   * czerwonych stworach poza walką bot brał {R}, choć blokował zielonego
+   * atakującego — i ginął od niego z ochroną przed niczym.
+   *
+   * Zwraca Mapę kolor → zatrzymane obrażenia. Pusta Mapa = host nie bierze
+   * udziału w walce (wywołujący zostaje przy dawnej heuristicie).
+   */
+  function protectionCombatThreatByColor(view, host) {
+    const combat = view.combat;
+    const byColor = new Map();
+    if (!combat || !host) return byColor;
+    const blockers = combat.blockers ?? {};
+    const partnerIds = new Set();
+    // Host jest BLOKEREM: źródła to atakujący, których blokuje.
+    for (const [attackerId, ids] of Object.entries(blockers)) {
+      if ((ids ?? []).includes(host.id)) partnerIds.add(attackerId);
+    }
+    // Host jest ATAKUJĄCYM: źródła to jego blokerzy.
+    if ((combat.attackers ?? []).includes(host.id)) {
+      for (const id of blockers[host.id] ?? []) partnerIds.add(id);
+    }
+    // Bloki jeszcze niezadeklarowane (krok declare_blockers): host może
+    // zablokować te ataki, więc ochrona przed ich kolorem wciąż jest lepsza
+    // niż zgadywanie po liczbie stworów wroga.
+    if (partnerIds.size === 0 && view.turn?.step === 'declare_blockers') {
+      for (const [attackerId, legal] of Object.entries(view.blockCandidates ?? {})) {
+        if ((legal ?? []).includes(host.id) && (combat.attackers ?? []).includes(attackerId)) {
+          partnerIds.add(attackerId);
+        }
+      }
+    }
+    for (const id of partnerIds) {
+      const source = objectOnBoard(view, id);
+      if (!source || source.controllerId === host.controllerId) continue;
+      // Zatrzymane obrażenia = moc źródła (CR 510.1a: walka dzieli się mocą);
+      // trample dopłaca, bo nadwyżka i tak przechodzi na gracza (CR 702.19).
+      const power = Math.max(0, source.power ?? 0);
+      const prevented = power + (hasKeyword(source, 'trample') ? 1 : 0);
+      for (const color of publicSourceColors(source)) {
+        byColor.set(color, (byColor.get(color) ?? 0) + Math.max(1, prevented));
+      }
+    }
+    return byColor;
+  }
+
   function pendingProtectionAuraHost(view) {
     const pending = view.pendingColorChoice;
     if (pending?.purpose !== 'protection') return null;
@@ -17216,6 +17270,18 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const lethalColors = host ? lethalProtectionThreatColors(view, host) : [];
           if (lethalColors.length > 0) {
             return finish(lethalColors.includes(color) ? 100 + lethalColors.length : 0);
+          }
+          // J: host bije się z konkretnym stworzeniem — ochrona przed JEGO
+          // kolorem jest warta więcej niż przed kolorem, którego na stole jest
+          // najwięcej. Wartość rośnie z obrażeniami, które ten kolor zadałby
+          // hostowi w tej walce; kolory spoza walki dostają gołą bazę 5, więc
+          // nigdy nie wyprzedzą koloru blokowanego atakującego.
+          const combatThreat = protectionCombatThreatByColor(view, host);
+          if (combatThreat.size > 0) {
+            const prevented = combatThreat.get(color);
+            if (prevented == null) return finish(5);
+            return finish(P.colorProtectionCombatBonus
+              + prevented * P.colorProtectionCombatDamageWeight);
           }
           return finish(5 + enemyInColor * P.colorProtectionPerCreature);
         }

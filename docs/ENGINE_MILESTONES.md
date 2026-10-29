@@ -8829,3 +8829,31 @@ seed 1.
 Bramy: `npm test` **9033/9033**, `test:slow` **268/268**, build **76 modułów /
 5544,2 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
 
+## M456 — uwaga z gry J: kolor ochrony aury idzie za blokowanym stworzeniem (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Benevolent Blessing (flash, „as this Aura enters, choose a
+color”) — bot nadawał ochronę swojej blokującej kreaturze, ale wybierał kolor
+inny niż kolor blokowanego atakującego; kreatura ginęła, aura szła do grobu.
+
+**Root cause (L41).** Kolor ochrony liczyła heurystyka „najliczniejszy kolor
+wroga” (`5 + enemyInColor × 6`), a `lethalProtectionThreatColors` pokrywało
+wyłącznie przypadki, w których host ginie. Gdy host przeżywał — a ochrona i
+tak zerwałaby obrażenia od blokowanego atakującego (CR 702.16e) — wybór był
+przypadkowy.
+
+**Naprawa.** `protectionCombatThreatByColor` (heuristic-bot.js): partnerzy
+walki hosta (blokowani atakujący, blokerzy hosta, a przed deklaracją —
+atakujący legalni do zablokowania) dają kolor, którego ochrona zatrzymuje
+realne obrażenia; wartość rośnie z mocą źródła (trample +1, CR 702.19). Progi:
+`lethalColors` (100 + liczba) > partner (`colorProtectionCombatBonus` 40 +
+`colorProtectionCombatDamageWeight` 2 × obrażenia) > kolor spoza walki 5 >
+brak walki / atakujący bez koloru = dawna heurystyka. Zero zmian legalności,
+zero nowych kart (ADR 0029). Pin: 7 testów; odwrócenie patcha `src/` → 4 RED,
+mutacje (bez gałęzi „host atakuje”, bez zliczania obrażeń) → RED. Bez
+rekalibracji istniejących pinów.
+
+Bramy: `npm test` **9040/9040**, `test:slow` **268/268**, build **76 modułów /
+5548,3 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+

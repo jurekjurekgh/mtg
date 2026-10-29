@@ -18390,3 +18390,21 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   `npm test` 9033/9033, `test:slow` 268/268, build 76 modułów / 5544,2 kB,
   benchmark quick 88,4%.
 
+- **Sesja 2026-10-27c/29 (PR #177) — uwaga z gry J (Benevolent Blessing)**:
+  „bot nadaje flash protection swojej blokującej kreaturze, ale wybiera kolor
+  inny niż kolor kreatury, którą ta blokuje”. Kolor ochrony liczyła heurystyka
+  „najliczniejszy kolor wroga”, a gałąź ratująca życie działała tylko wtedy,
+  gdy host ginął — przy trzech czerwonych stworach poza walką bot brał `{R}`,
+  blokując zielonego atakującego. Teraz `protectionCombatThreatByColor`
+  (jedno miejsce, L41) liczy kolor PARTNERA walki hosta (blokowany atakujący,
+  blokerzy hosta, a w kroku `declare_blockers` — atakujący, których host może
+  blokować) i wycenia go wyżej niż jakikolwiek inny kolor, z wartością rosnącą
+  z zatrzymanych obrażeń (moc źródła; trample dopłaca, CR 702.19). Progi:
+  ratowanie życia (100 + liczba kolorów) > partner (`colorProtectionCombatBonus`
+  40 + `colorProtectionCombatDamageWeight` 2 × obrażenia) > kolor spoza walki
+  (5) > brak walki = dotychczasowa heurystyka (kotwica anty-over-fix).
+  Dwa nowe pokrętła w `heuristic-params.js`; zero zmian legalności i zero
+  nowych kart (ADR 0029). Pin: `test/j-benevolent-blessing-kolor.test.js` (7)
+  + mutacje RED (odwrócenie patcha → 4 RED). Bramy: `npm test` 9040/9040,
+  `test:slow` 268/268, build 76 modułów / 5548,3 kB, benchmark quick 88,4%.
+

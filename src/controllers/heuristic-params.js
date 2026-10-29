@@ -550,6 +550,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // przeciwstawne, więc każdy cel ma własną wagę; nieznany cel zostaje przy
   // dawnej sumie `5 + needScore*6 + enemyInColor`.
   'colorProtectionPerCreature',  // waga wrogiego stwora w kolorze ochrony
+  // J (Benevolent Blessing): ochrona przed kolorem stwora, z którym host
+  // aury REALNIE się bije w tej walce — baza za sam związek + waga za każde
+  // zatrzymane obrażenie (moc źródła; trample dopłaca, CR 702.19).
+  'colorProtectionCombatBonus',
+  'colorProtectionCombatDamageWeight',
   'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
   // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
   // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
@@ -1123,6 +1128,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // zmienia; wystarcza, żeby JEDEN wróg w kolorze (5+6=11) wygrał z kolorem
   // pustym (5) i żeby trzy (5+18=23) nie zostawiły wątpliwości.
   colorProtectionPerCreature: 6,
+  // J: 40 — powyżej sufitu dawnej heuristicie przy realnych stołach
+  // (5 + 6×N; N=3 to 23), a poniżej progu DOBICIA (100 + liczba kolorów),
+  // więc ochrona ratująca życie nadal wygrywa z każdym innym wyborem.
+  colorProtectionCombatBonus: 40,
+  // J: 2 — każde zatrzymane obrażenie warte 2 pkt: bloker 1/4 pod 5/5 bierze
+  // 40 + 10 = 50, a kolor spoza walki dostaje 5 (nigdy nie wyprzedzi).
+  colorProtectionCombatDamageWeight: 2,
   colorManaNeedPerCard: 6,
   // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
   // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
