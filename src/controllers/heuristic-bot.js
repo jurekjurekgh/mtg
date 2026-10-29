@@ -7687,6 +7687,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return (target.manaCost ?? 0) * 2;
   }
 
+  /**
+   * K (zgłoszenie właściciela 2026-10-29, Rupture Spire): ląd z ETB „zapłać {N}
+   * albo poświęć ten permanent" jest wart COKOLWIEK tylko wtedy, gdy {N} da
+   * się zapłacić. Inaczej land drop przepada razem z kartą (CR 701.21a:
+   * poświęcenie przenosi permanent z pola bitwy prosto do cmentarza) — czyli
+   * zagranie jest GORSZE od niezagrania, a dotychczasowa kara mieściła się
+   * w klamrze delty lądu (−14), więc bot i tak wybierał `play_land`.
+   *
+   * Reguła jest deskryptorowa (ADR 0002): nie zna nazwy karty, tylko trigger
+   * `enter_battlefield` z `payMana` + `sacrificeIfUnpaid`. „Stać" liczone jak
+   * przy każdej innej płatności z ręki: pula + własne NIETAPNIĘTE źródła many
+   * (`ownOpenMana` — tapnięte nic nie da, a Spire wchodzi tapnięty, więc sam
+   * siebie nie opłaci). Jeden czytnik dla obu miejsc wyceny (L41): delty lądu
+   * i gałęzi `play_land` (kara poza klamrą).
+   *
+   * Zwraca `null`, gdy ląd nie ma takiego triggera; inaczej `{ amount,
+   * affordable }`.
+   */
+  function landEtbPayOrSacrifice(view, objectId) {
+    const karta = (view.zones?.hand ?? []).find((o) => o?.id === objectId);
+    if (!karta) return null;
+    const def = cardDef(karta.cardId);
+    const trig = (def?.abilities ?? []).find((ab) => ab?.type === 'triggered'
+      && (ab.trigger?.payMana ?? 0) > 0 && ab.trigger?.sacrificeIfUnpaid);
+    if (!trig) return null;
+    const amount = trig.trigger.payMana;
+    return { amount, affordable: ownOpenMana(view) >= amount };
+  }
+
   function landPlayDelta(view, objectId) {
     const a = landAnaliza(view, objectId);
     let delta = 0;
@@ -7713,14 +7742,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (etbManaUnlocksCast(view, objectId, a.etbMana)) delta += 14;
       } else delta -= 8;                                            // mana dopiero w nastepnej turze
     }
-    // PMSSB-12/F-P2 (spire!): ETB-pay-or-sac — stać (pool≥pay) → −koszt;
-    // nie-stać → −12 (ląd ginie — strata many-przyszłej!).
-    const landDef = objectId ? cardDef(((view.zones?.hand ?? []).find((o) => o.id === objectId) ?? {}).cardId) : undefined;
-    const payTrig = (landDef?.abilities ?? []).find((ab) => ab?.type === 'triggered' && (ab.trigger?.payMana ?? 0) > 0 && ab.trigger?.sacrificeIfUnpaid);
-    if (payTrig) {
-      const pool = view.players.find((p) => p.id === view.playerId)?.mana ?? 0;
-      delta -= pool >= payTrig.trigger.payMana ? payTrig.trigger.payMana * P.creatureManaCostWeight : 12;
-    }
+    // PMSSB-12/F-P2 (spire!) + K: ETB-pay-or-sac. Stać na {N} → realny koszt
+    // zmniejsza deltę; NIE stać → kara idzie POZA klamrę (gałąź `play_land`),
+    // bo w klamrze ±14/25 ginęła i bot zagrywał ląd, który zaraz ginął.
+    const upkeep = landEtbPayOrSacrifice(view, objectId);
+    if (upkeep?.affordable) delta -= upkeep.amount * P.creatureManaCostWeight;
     // Ląd z zdolnościa poza manową (cykl, token, tarcza) zyskuje, gdy manabaza
     // jest juz wystarczajaca — wtedy liczy sie uzytecznosc, nie kolor.
     if (a.pola.length >= 2 && a.dodatkowaZdolnosc) delta += 2;
@@ -10992,6 +11018,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // C (Gladehart): land marnuje landfall triggera gdy w ręce jest
         // rzucalny nosiciel — kara odwraca kolejność na stwór→ląd.
         const analiza = landAnaliza(view, cmd.objectId);
+        // K: ląd z ETB „zapłać {N} albo poświęć", na którego {N} bota NIE STAĆ,
+        // to stracony land drop i stracona karta — zagranie musi przegrać
+        // z passem, więc kara jest POZA klamrą delty (L41: ten sam czytnik co
+        // w `landPlayDelta`).
+        const upkeep = landEtbPayOrSacrifice(view, cmd.objectId);
+        if (upkeep && !upkeep.affordable) return finish(-P.landEtbUpkeepUnplayablePenalty);
         const futile = futileFriendlyCounterEtbPenalty(view, analiza.def, { entersTapped: analiza.entersTapped });
         const wastesLandfall = landDropWastesLandfallPenalty(view);
         return finish(90 + landPlayDelta(view, cmd.objectId) - futile - wastesLandfall);

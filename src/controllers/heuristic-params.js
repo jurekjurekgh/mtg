@@ -556,6 +556,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'colorProtectionCombatBonus',
   'colorProtectionCombatDamageWeight',
   'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
+  // K (Rupture Spire): kara za ZAGRANIE lądu z ETB „zapłać {N} albo poświęć",
+  // gdy {N} jest nieopłacalne — land drop i karta przepadają, bo Sacrifice
+  // (CR 701.21a) przenosi permanent z pola bitwy prosto do cmentarza.
+  // Wartość bezwzględna wyniku (minus), nie delta: musi przegrać z passem
+  // niezależnie od premii pokrycia kolorów.
+  'landEtbUpkeepUnplayablePenalty',
   // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
   // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
   // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
@@ -1136,6 +1142,10 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 40 + 10 = 50, a kolor spoza walki dostaje 5 (nigdy nie wyprzedzi).
   colorProtectionCombatDamageWeight: 2,
   colorManaNeedPerCard: 6,
+  // K: 20 — zagranie jest gorsze od niezagrania (pass = 0), a nic innego nie
+  // ma tu znaczenia: ląd ginie natychmiast, więc żadna premia pokrycia nie
+  // może tego przebić. Pokrętło ×0 przywraca stan sprzed K (delta −12).
+  landEtbUpkeepUnplayablePenalty: 20,
   // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
   // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
   // daleko od progu rezygnacji.
