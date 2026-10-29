@@ -840,6 +840,53 @@ function abilitiesOnDeath(object) {
   return [...effectiveAbilities(object), ...(object.formerAbilityGrants ?? [])];
 }
 
+/**
+ * F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): JEDNO miejsce
+ * odpowiadające na pytanie „czy TO zdarzenie jest śmiercią stworu” („a
+ * creature died this turn” — Morbid, CR 700.4).
+ *
+ * Wcześniej odpowiedź istniała w DWÓCH kopiach, które się rozjechały (L41):
+ *  - skan triggerów (`processTriggers`) znał `creature_destroyed`
+ *    (śmierć z SBA: obrażenia, -X/-X), `permanent_destroyed` (zniszczenie
+ *    efektem), `permanent_sacrificed` i `object_moved` pole bitwy → grób;
+ *  - tracker `creatureDiedThisTurn` (game-state.js) patrzył WYŁĄCZNIE na
+ *    `object_moved`, którego ścieżka SBA/zniszczenia NIE emituje.
+ * Skutek: w typowej grze (stwór ginie od obrażeń albo od czaru) flaga
+ * Morbida zostawała `false` — Caravan Vigil nie oferował pola bitwy, a
+ * warunki `rule.morbid` („enters with … if a creature died this turn”)
+ * były martwe.
+ *
+ * Reguła (CR 700.4): „The term dies means 'is put into a graveyard from the
+ * battlefield'". Stąd:
+ *  - śmierć = docelowa strefa `graveyard` (finality/exile to NIE śmierć,
+ *    CR 122.1h — obiekt opuszcza pole bitwy, ale nie umiera);
+ *  - rodzaj czytamy z LKI (CR 603.10a): obiekt po zmianie strefy jest NOWY
+ *    (CR 400.7), więc `formerKind`/`formerTypes`.
+ * Token ginący w grobie: `creature_destroyed` niesie LKI zdarzenia — stąd
+ * fallback na `ev.object`.
+ */
+export function eventIsCreatureDeath(state, ev) {
+  if (!ev) return false;
+  const toZone = ev.toZone ?? null;
+  const dead = state?.objects?.get?.(ev.toId)
+    ?? state?.objects?.get?.(ev.objectId)
+    ?? ev.object ?? null;
+  switch (ev.type) {
+    case 'creature_destroyed':
+      // Emitowane wyłącznie dla `kind === 'creature'`; finality (exile)
+      // celowo wykluczone — to nie śmierć.
+      return toZone == null || toZone === 'graveyard';
+    case 'permanent_destroyed':
+    case 'permanent_sacrificed':
+      return toZone === 'graveyard' && diedAs(dead, 'creature', 'Creature');
+    case 'object_moved':
+      return ev.fromZone === 'battlefield' && toZone === 'graveyard'
+        && diedAs(dead, 'creature', 'Creature');
+    default:
+      return false;
+  }
+}
+
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
 /**
  * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
