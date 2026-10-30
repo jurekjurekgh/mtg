@@ -18452,3 +18452,29 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   (dopisane 108.1). Zero zmian w silniku i w wycenach. Bramy: `npm test`
   9069/9069, `test:slow` 268/268, build 76 modułów / 5558,9 kB, benchmark
   quick 88,4%.
+
+- **Sesja 2026-10-27c/30 (PR #177) — uwaga z gry N (Wretched Banquet)**: „bot
+  rzuca ją na moją największą kreaturę, a nie na taką, która ma najmniejszy
+  power — czar nie działa i jest zmarnowany”. `destroy_if_least_power` był
+  wyceniany jak zwykły `destroy_permanent`, więc premia rosła z P/T ofiary
+  (5/5 → 102 vs 1/1 → 78), choć warunek efektu (CR 608.2b) dopuszcza tylko cel
+  o najmniejszej mocy; silnik był poprawny, a `execute` zwraca `ok: true`
+  również przy fizzlu. Teraz wspólna bramka `leastPowerRemovalFizzles` (moc
+  efektywna ze stołu) + kara `leastPowerRemoveFizzlePenalty` (120) w obu
+  gałęziach (czar i zdolność). Pin
+  `test/n-wretched-banquet-least-power.test.js` (5). Bramy: `npm test`
+  9081/9081, `test:slow` 268/268, build 76 modułów / 5566,5 kB, benchmark
+  quick 88,7%.
+
+- **Sesja 2026-10-27c/30 (PR #177) — uwaga z gry O (Plague Reaver)**: „bot
+  rzuca ją, po czym natychmiast mi ją przekazuje, tracąc dwie karty z ręki;
+  rzut ma sens tylko bez innych własnych kreatur, a przekazywanie zakazałbym
+  poniżej ~12 poweru wroga”. Trzy root causes: trigger „sacrifice each other
+  creature you control” liczony jak symetryczny wrath (wróg nie traci nic —
+  pomiar: rzut 74,71 identyczny przy 0 i 2 własnych stworach), koszt
+  `discardCards: 2` w ogóle niewyceniany oraz brak wyceny kierunku przy
+  darowaniu stworu przeciwnikowi. Naprawa: karna wycena triggera + twarda kara
+  przy niepustej własnej planszy, obsługa `discardCards` w
+  `abilityDiscardLoss`, próg `giftedSelfSacrificeMinEnemyPower` = 12. Pin
+  `test/o-plague-reaver-darowanie.test.js` (7) + re-pin PMSSB10-B2
+  (91,81 → 78,31). Bramy jak wyżej.

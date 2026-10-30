@@ -8967,3 +8967,67 @@ Bramy: `npm test` **9069/9069**, `test:slow` **268/268**, build **76 modułów /
 5558,9 kB**, benchmark quick 672 mecze — heuristic **88,4%** (bez zmian: M nie
 dotyka wycen).
 
+## M460 — uwaga z gry N: Wretched Banquet celuje w stwora o najmniejszej mocy (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja N).
+
+**Zgłoszenie.** „Bot nie umie jej rzucać. Rzuca ją na moją największą kreaturę,
+a nie na taką, która ma najmniejszy power wśród kreatur na stole. Więc czar nie
+działa i jest zmarnowany.”
+
+**Root cause.** `destroy_if_least_power` w `REMOVAL_EFFECTS` wyceniany jak
+`destroy_permanent` (`removalEnemyBase + waga × P/T + bonus TMC`) — premia
+rosła z P/T ofiary, choć warunek efektu (CR 608.2b, sprawdzany przy
+rozstrzyganiu) dopuszcza tylko cel o najmniejszej mocy. Pomiar sondy:
+5/5 → 102 vs 1/1 → 78, bot brał 5/5 i czar fizzlował (`execute` zwraca
+`ok: true`, więc brak sygnału zwrotnego). Silnik był poprawny.
+
+**Naprawa (ADR 0002 — deskryptor).** `leastPowerOnBoard` +
+`leastPowerRemovalFizzles` czytają najmniejszą moc ze stołu (moc efektywna,
+ADR 0017, ta sama, którą porównuje silnik); ofiara bez minimalnej mocy nie
+dostaje premii removalu i płaci `leastPowerRemoveFizzlePenalty` (120), co
+przebija bazę czaru razem z premią. Jedna bramka dla obu gałęzi (L41:
+`cast_spell` i `activate_ability`). Po naprawie: A → 1/1 (78) wygrywa z 5/5
+(−70); sceny, w których najmniejszy jest WŁASNY stwór, kończą się passem.
+
+**Piny.** `test/n-wretched-banquet-least-power.test.js` (5 pinów + parametr jako
+pokrętło); odwrócenie bramek → 2 RED.
+
+## M461 — uwaga z gry O: Plague Reaver rzucany tylko na pustą planszę, darowany tylko przy mega armii (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja O).
+
+**Zgłoszenie.** „Bot rzuca ją, po czym natychmiast mi ją przekazuje jej
+zdolnością, tracąc dodatkowo dwie karty z ręki… Rzucenie tej karty ma sens tylko
+wtedy, gdy bot nie ma na stole innych kreatur… zakazałbym przekazywania, chyba
+że przeciwnik ma naprawdę mega armię, powiedzmy >12 poweru kreatur w sumie.”
+
+**Pomiar.** Rzut `plague-reaver` = 74,7117 w każdej scenie (także z 2 własnymi
+stwórami — 38 rzutów w 10 pełnych partiach, w większości przy niepustej
+planszy). Aktywacja „przekaż”: main −18, end −5, `pass_priority` 0; zero
+aktywacji w 10 partiach.
+
+**Trzy root causes.** (1) trigger `sacrifice_each_other_creature` liczony jak
+SYMETRYCZNY wrath (`edge = enemy − mine`, +10 za wroga) — Oracle i silnik mówią
+„sacrifice each other creature **you control**”, wróg nie traci nic;
+(2) `abilityDiscardLoss` znała tylko `discardCard`, więc koszt
+`discardCards: 2` był darmowy; (3) darowanie własnego stworu przeciwnikowi nie
+miało wyceny kierunku (premia zwrotu dotyczy karty w grobie, a poświęconej
+karty tam nie ma).
+
+**Naprawa.** Trigger karny: `−like × Σ bodyWorth(własne)` + twarda kara
+`selfSacrificeWrathOwnBoardPenalty` (200) przy niepustej własnej planszy;
+`abilityDiscardLoss` obsługuje `discardCards: N` (suma strat N kart wg
+preferencji pickera); darowanie: próg `giftedSelfSacrificeMinEnemyPower` = 12
+pkt mocy wroga (wartość właściciela) — poniżej kara, powyżej
+`giftedSelfSacrificeEnemyLossWeight × Σ bodyWorth(wrogie)`.
+
+**Pomiar po naprawie.** Rzut: pusta plansza 74,71; 2 własne stwory → −112,49
+(pass); wroga armia nie daje premii (91,81 → 78,31). Aktywacja: wróg 5 mocy →
+−218 (pass); wróg 16 mocy → +38 (dar ma sens). Re-pin PMSSB10-B2.
+
+**Piny.** `test/o-plague-reaver-darowanie.test.js` (7).
+
+Bramy (N + O): `npm test` **9081/9081**, `test:slow` **268/268**, build **76
+modułów / 5566,5 kB**, benchmark quick 672 mecze — heuristic **88,7%**
+(596/672).

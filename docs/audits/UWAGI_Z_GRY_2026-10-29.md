@@ -483,12 +483,116 @@ Zero zmian w silniku i w wycenach — bramy bez ruchu (benchmark 88,4% jak
 przed M). Gdyby właściciel chciał jednak grać wg DRUKU (a nie Oracle), to
 osobna, świadoma decyzja o odejściu od ADR 0022 — wymaga jego polecenia.
 
+## N — Wretched Banquet: cel o NAJMNIEJSZEJ mocy (2026-10-30)
+
+**Zgłoszenie.** „Bot nie umie jej rzucać. Rzuca ją na moją największą kreaturę,
+a nie na taką, która ma najmniejszy power wśród kreatur na stole. Więc czar nie
+działa i jest zmarnowany.”
+
+**Reprodukcja (sonda `probe-n-banquet.mjs`, 5 stołów, p2 = bot, main, 10 many).**
+
+| stół | oferta | wynik |
+|---|---|---|
+| A: wrogi 5/5 + wrogi 1/1 | `5/5 => 102`, `1/1 => 78` | bot brał **5/5**, czar fizzlował |
+| B: wrogi 5/5 + 2/2 + mój 1/1 | `5/5 => 102`, `2/2 => 84`, `mój => −132` | brał 5/5 |
+| C: tylko wrogi 5/5 | `102` | poprawnie (jedyny stwór = najmniejsza moc) |
+| D: dwa wrogie 2/2 | `84 / 84` | remis mocy jest legalny |
+| E: wrogi 5/5 + mój 3/3 | `5/5 => 102`, `mój => −136` | brał 5/5 |
+
+**Root cause (jedno miejsce, dwie bliźniacze gałęzie).** `destroy_if_least_power`
+był w `REMOVAL_EFFECTS` wyceniany DOKŁADNIE jak `destroy_permanent`:
+`removalEnemyBase + removalWorthWeight × (power + toughness) + bonus TMC`.
+Premia rosła więc z P/T ofiary — bot wybierał największego stwora, choć warunek
+efektu (CR 608.2b — sprawdzany przy ROZSTRZYGANIU) pozwala zniszczyć tylko cel
+o najmniejszej mocy. Silnik jest poprawny (`effects.js`), a `execute` zwraca
+`ok: true` także przy fizzlu, więc bot nie dostawał żadnego sygnału zwrotnego —
+naprawa musiała być w scoringu. Ten sam błąd w `cast_spell` i w
+`activate_ability` (L41).
+
+**Naprawa (ADR 0002 — deskryptor, nie nazwa karty).**
+`leastPowerOnBoard` + `leastPowerRemovalFizzles` (heuristic-bot.js) liczą
+najmniejszą moc na stole z WIDOKU (moc efektywna — ta sama, którą porównuje
+silnik, ADR 0017); ofiara bez minimalnej mocy dostaje
+`leastPowerRemoveFizzlePenalty` (120 — musi przebić bazę czaru 50 RAZEM
+z premią removalu) i **nie dostaje premii removalu**. Obie gałęzie korzystają
+z tego samego helpera.
+
+**Pomiar po naprawie.** A: `5/5 => −70`, `1/1 => 78` → bot bierze **1/1**;
+B/E: bot **pasuje** (żaden wrogi cel nie ma najmniejszej mocy — własny stwór
+jest najmniejszy); C/D bez zmian (legalne cele).
+
+**Piny.** `test/n-wretched-banquet-least-power.test.js` (5): wybór najmniejszego,
+remis, jedyny stwór, „pass zamiast fizzla” oraz parametr jako pokrętło.
+Odwrócenie obu bramek → N/1, N/4 RED.
+
+## O — Plague Reaver: rzut tylko na pustą planszę, darowanie tylko przy mega armii (2026-10-30)
+
+**Zgłoszenie.** „Bot rzuca ją, po czym natychmiast mi ją przekazuje jej
+zdolnością, tracąc dodatkowo dwie karty z ręki… Rzucenie tej karty ma sens tylko
+wtedy, gdy bot nie ma na stole innych kreatur i planuje atakować nią
+przeciwnika… Ja bym w ogóle zakazał botowi przekazywania tej kreatury, chyba że
+przeciwnik ma naprawdę mega armię, powiedzmy >12 poweru kreatur w sumie.”
+
+**Reprodukcja (sonda `probe-o-reaver.mjs`; przed naprawą).** Rzut
+`cast_permanent(reaver)` = **74,7117** w KAŻDEJ scenie — także przy 2 własnych
+stworach (end-step wrath zjada własną planszę). Aktywacja „przekaż
+przeciwnikowi”: main **−18**, end step **−5**, ręka 2 karty **−18**, ręka 0 →
+brak oferty; `pass_priority` = **0** zawsze. Wróg 16 mocy nie zmieniał oceny
+(−5). Druga sonda (pełne partie, 10 seedów, `probe-o-reaver-game.mjs`):
+**38 rzutów**, z czego większość przy niepustej własnej planszy; **0 aktywacji**
+— czyli realny błąd z gry to RZUT, nie darowanie (darowanie wygrywa tylko w
+scenach, gdzie każda inna komenda ma score ≤ 0).
+
+**Trzy root causes (wszystkie generyczne).**
+
+1. **Wrath liczony jak symetryczny.** Trigger `sacrifice_each_other_creature`
+   wyceniano `edge = enemyCreatures − myCreatures`, `+10` za każdą przewagę
+   wroga. Oracle (i silnik: `otherCreaturesYouControl`) mówi „sacrifice each
+   other creature **you control**” — wróg nie traci NICZEGO. Efekt jest czysto
+   karny, a wycena dawała premię za wielkość wrogiej planszy.
+2. **Koszt `discardCards: N` niewyceniany.** `abilityDiscardLoss` znała tylko
+   `discardCard` (1 karta). „Odrzuć DWIE karty, poświęć to stworzenie” płaciło
+   wyłącznie ciałem — utrata ręki była darmowa (pomiar: ręka z 2 potrzebnych
+   lądów −218 → **−254** po naprawie; 2 × 18 pkt straty).
+3. **Darowanie bez wyceny kierunku.** Wariant „koszt `sacrificeSelf` + cel-gracz
+   przeciwnik” wpadał tylko w `friendlyMisaimPenalty`; premia
+   `return_to_battlefield_under_control_at_upkeep` dotyczy karty w GROBIE
+   (a poświęconej karty tam nie ma), więc zostawała goła kara za ciało.
+
+**Naprawa.**
+
+- trigger `sacrifice_each_other_creature`: `−like × Σ bodyWorth(własne stwory)`
+  i twarda kara `selfSacrificeWrathOwnBoardPenalty` (200 — powyżej pełnej ceny
+  ciała 6/5), gdy własna plansza nie jest pusta. Pusta własna plansza = brak
+  kary (rzut 74,71 jak dotąd). Wroga armia nie daje już premii.
+- `abilityDiscardLoss`: obsługa `discardCards: N` — suma strat N kart, które
+  picker faktycznie by oddał (najpierw śmieci; ta sama preferencja co
+  PMSSB-25/26).
+- darowanie: przy `sacrificeSelf` + cel-gracz przeciwnik + nosiciel z trigerem
+  `sacrifice_each_other_creature` — poniżej progu
+  `giftedSelfSacrificeMinEnemyPower` (**12** pkt mocy wroga, wartość wskazana
+  przez właściciela) dar jest karany jak strata ciała; powyżej progu wartość =
+  `giftedSelfSacrificeEnemyLossWeight × Σ bodyWorth(wrogie stwory)`, bo
+  przeciwnik poświęci własną planszę w swoim end stepie.
+
+**Pomiar po naprawie.** Rzut: pusta własna plansza 74,71 (bez zmian), 2 własne
+stwory → **−112,49** (bot pasuje), wroga armia 4×3/3: 74,71 → 78,31 (zniknęła
+dawna premia wrath: +17,1). Aktywacja: wróg 5 mocy → **−218** (pass), wróg
+16 mocy → **+38** (bot oddaje Reavera). End step: aktywacja i tak wchodzi
+w bramkę `wastefulStep` (−5 < pass).
+
+**Piny.** `test/o-plague-reaver-darowanie.test.js` (7): rzut tylko na pustą
+planszę, brak premii za wrogą armię, darowanie poniżej progu (pass) i powyżej
+(+38), koszt `discardCards: 2` (piny −218 / −254), progi jako pokrętła.
+Re-pin PMSSB10-B2: `91,81 → 78,31` (stara wartość kodowała błąd — premia za
+wrogi stół, którego karta nie dotyka).
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9069/9069**, EXIT 0 |
+| `npm test` | **9081/9081**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5558,9 kB** |
-| benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
+| `npm run build` | **76 modułów / 5566,5 kB** |
+| benchmark quick | 672 mecze — heuristic **88,7%** (596/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

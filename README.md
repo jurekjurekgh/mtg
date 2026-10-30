@@ -45,9 +45,15 @@ Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów b
 wyceny; transkrypty czytane ręcznie — L27), analizatory
 zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
 decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
-207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Bramki:
-`npm test` **9069/9069**, `npm run test:slow` **268/268**, build **76 modułów /
-5558,9 kB**, benchmark quick 672 mecze (heuristic 88,4%). PR czeka na decyzję
+207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Ostatnia partia uwag z gry (N, O — [raport](docs/audits/UWAGI_Z_GRY_2026-10-29.md)):
+Wretched Banquet celuje teraz w stwora o **najmniejszej** mocy (warunek efektu
+CR 608.2b sprawdzany w scoringu, nie tylko w silniku), a Plague Reaver jest
+rzucany **tylko na pustą własną planszę** i darowany przeciwnikowi dopiero
+powyżej progu 12 pkt mocy jego stworów; trigger „sacrifice each other creature
+you control” nie jest już liczony jak symetryczny wrath, a koszt „odrzuć dwie
+karty” jest wyceniany. Bramki:
+`npm test` **9081/9081**, `npm run test:slow` **268/268**, build **76 modułów /
+5566,5 kB**, benchmark quick 672 mecze (heuristic 88,7%). PR czeka na decyzję
 właściciela.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
 (sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);

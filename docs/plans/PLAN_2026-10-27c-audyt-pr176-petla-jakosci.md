@@ -142,6 +142,29 @@ otwarte świadomie (opisał je raport audytu).
       1 i 2 dobraniach, kontra z prawdziwym „you may”, mutacja `mayFire`),
       regeneracja tabeli CR (dopisane **108.1**, 550 numerów). Zero zmian
       w silniku i w wycenach.
+- [x] **A15** Uwaga z gry 2026-10-30 (**N**, Wretched Banquet): „bot rzuca ją
+      na moją największą kreaturę, a nie na taką, która ma najmniejszy power —
+      czar nie działa i jest zmarnowany”. `destroy_if_least_power` był w
+      `REMOVAL_EFFECTS` wyceniany jak `destroy_permanent` (premia z P/T
+      ofiary), choć warunek efektu (CR 608.2b) dopuszcza tylko cel
+      o najmniejszej mocy; silnik jest poprawny, a `execute` zwraca
+      `ok: true` także przy fizzlu. Naprawa: `leastPowerOnBoard` +
+      `leastPowerRemovalFizzles` (moc efektywna ze stołu) i kara
+      `leastPowerRemoveFizzlePenalty` (120) w OBU gałęziach (czar i zdolność,
+      L41). Pin `test/n-wretched-banquet-least-power.test.js` (5).
+- [x] **A16** Uwaga z gry 2026-10-30 (**O**, Plague Reaver): „bot rzuca ją,
+      po czym natychmiast mi ją przekazuje, tracąc dwie karty z ręki; rzut ma
+      sens tylko bez innych własnych kreatur, przekazywanie zakazałbym poniżej
+      ~12 poweru wroga”. Trzy root causes: trigger
+      `sacrifice_each_other_creature` liczony jak symetryczny wrath (Oracle:
+      „each other creature YOU control” — wróg nic nie traci; pomiar: rzut
+      74,71 identyczny przy 0 i 2 własnych stworach), koszt `discardCards: 2`
+      niewyceniany w `abilityDiscardLoss`, brak wyceny kierunku przy
+      darowaniu własnego stworu przeciwnikowi. Naprawa: karna wycena triggera
+      + `selfSacrificeWrathOwnBoardPenalty` (200), obsługa `discardCards: N`,
+      próg `giftedSelfSacrificeMinEnemyPower` = 12 (wartość właściciela) +
+      `giftedSelfSacrificeEnemyLossWeight`. Pin
+      `test/o-plague-reaver-darowanie.test.js` (7) + re-pin PMSSB10-B2.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
@@ -155,7 +178,7 @@ otwarte świadomie (opisał je raport audytu).
 2. Każdy finding: naprawa u root cause + pin czerwieniejący bez naprawy.
 3. Pętla jakości ma zmierzony wynik (partie, zgłoszenia detektorów, analizatory).
 4. Bramy zielone; liczby w README/handoffie zmierzone na końcowym drzewie (L92).
-5. Każda uwaga z gry (A–D) ma pin czerwieniejący bez naprawy i sprawdzoną
+5. Każda uwaga z gry (A–O) ma pin czerwieniejący bez naprawy i sprawdzoną
    mutację; brak zmian legalności sprzecznych z Oracle (L57).
 
 ## Ryzyka / pułapki
