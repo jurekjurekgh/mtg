@@ -8935,3 +8935,35 @@ kart, golden-master bez regeneracji.
 Bramy: `npm test` **9062/9062**, `test:slow` **268/268**, build **76 modułów /
 5557,8 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
 
+## M459 — uwaga z gry M: „you may” na druku vs obowiązkowy licznik w Oracle (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja M).
+
+**Zgłoszenie.** „Lorescale Coatl — zdolność dodawania counterów +1/+1 przy draw
+ma dopisek «you may», a silnik nie dał mi wyboru, tylko dodał counter bez
+pytania.” Właściciel dołączył zdjęcie fizycznej karty (MM2 #179), na którym
+druk rzeczywiście ma „you may”.
+
+**Weryfikacja (ADR 0030).** Druk MM2/ARB/A25: „Whenever you draw a card, **you
+may** put a +1/+1 counter…”. Bieżący Oracle (Scryfall `oracle_text` dla m21/221
+i mm2/179; snapshot `docs/cards/scryfall-lorescale-coatl.json`): „Whenever you
+draw a card, put a +1/+1 counter on this creature.” Opcjonalność skasowano przy
+Core Set 2021 (2020-07-03) — ta sama zmiana polityki Oracle 2020, która objęła
+Ajani’s Pridemate. Uwaga na dane: Scryfall nie publikuje `printed_text` dla
+mm2/179, więc snapshot w repo nie pokazuje druku (luka źródła, nie dowód).
+
+**Werdykt (L57).** Obowiązuje Oracle — CR 108.1 („Use the Oracle card reference
+when determining a card’s wording”) + ADR 0022 („supported = 100% Oracle”).
+Po erracie licznik jest obowiązkowy (CR 603.5: decyzję daje wyłącznie „you
+may”), więc silnik jest poprawny, a `mayFire` byłby złamaniem Oracle. Naprawa
+NIE zmienia zachowania gry: (1) `notes` karty z opisem rozjazdu i podstawą
+regułową, (2) `test/m-lorescale-coatl-obowiazkowy.test.js` — 7 pinów (Oracle
+vs druk, notatka, brak pól opcjonalności, brak okna decyzji przy 1 i 2
+dobraniach, kontra z prawdziwym „you may”, mutacja `mayFire`), (3) regeneracja
+tabeli numerów CR (`--zapisz`, ten sam sha256) dopisująca **108.1** — 550
+numerów, kod 548 w 6385 cytatach.
+
+Bramy: `npm test` **9069/9069**, `test:slow` **268/268**, build **76 modułów /
+5558,9 kB**, benchmark quick 672 mecze — heuristic **88,4%** (bez zmian: M nie
+dotyka wycen).
+

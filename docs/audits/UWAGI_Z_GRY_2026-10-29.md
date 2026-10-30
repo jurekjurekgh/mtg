@@ -1,4 +1,4 @@
-# Uwagi z gry 2026-10-29 (sesja 2026-10-27c, PR #177) — F, G, H, I, J, K i L
+# Uwagi z gry (sesja 2026-10-27c, PR #177) — F, G, H, I, J, K, L i M
 
 Trzy uwagi właściciela z Żywego Testera. Wszystkie naprawione u root cause,
 z pinami i mutacjami; bez dopisywania kart do katalogu (ADR 0029).
@@ -435,12 +435,60 @@ słusznie 0) i F5 (koszt życia mierzony na 5/1), `real-cards-batch65` BOT
 **Zakres.** Bez rekalibracji talii golden-mastera (snapshot bez zmian):
 żadna talia wzorcowa nie ma tej karty w decyzji o zapłacie.
 
+## M — Lorescale Coatl: „you may” na druku vs obowiązkowy licznik w Oracle (2026-10-30)
+
+**Zgłoszenie.** „Karta Lorescale Coatl. Zdolność dodawania counterów +1/+1 przy
+draw ma dopisek «you may», a silnik nie dał mi wyboru tylko dodał counter bez
+pytania. To błąd.” Do zgłoszenia właściciel dołączył zdjęcie fizycznej karty
+(MM2 #179) — **druk rzeczywiście mówi** „you may put a +1/+1 counter on
+Lorescale Coatl”.
+
+**Weryfikacja źródeł (ADR 0030).**
+
+| źródło | tekst |
+|---|---|
+| druk MM2 #179 (foto właściciela; to samo ARB #101, A25 #207) | „Whenever you draw a card, **you may** put a +1/+1 counter on Lorescale Coatl.” |
+| bieżący Oracle — Scryfall `oracle_text` dla m21/221 **i** mm2/179, snapshot `docs/cards/scryfall-lorescale-coatl.json` | „Whenever you draw a card, put a +1/+1 counter on this creature.” |
+| CR 2026-09-25, 108.1 (mirror `nwgarne/mtg-data`, sha256 `8d860e45…`) | „Use the Oracle card reference when determining a card’s wording.” |
+| spoiler M21 (2020-06-08) + dyskusja społeczności | „They errata’d all these effects … Now it’s mandatory to make arena easier”, „it got the Ajani’s Pridemate treatment and the ‘may’ got errata’d out” |
+
+Opcjonalność skasowano przy Core Set 2021 (2020-07-03) — to ta sama zmiana
+polityki Oracle z 2020 r., która objęła Ajani’s Pridemate. **Uwaga na dane:**
+Scryfall NIE publikuje pola `printed_text` dla mm2/179 (klucza nie ma
+w odpowiedzi API), więc snapshot w repo nie pokazuje tekstu druku — to luka
+źródła, nie dowód, że druk był bez „may”.
+
+**Werdykt (L57: zgłoszenie ≠ reguła).** Karta idzie za Oracle: CR 108.1 +
+ADR 0022 („supported = 100% Oracle”). Po erracie licznik jest **obowiązkowy**
+(CR 603.5 — decyzję daje wyłącznie „you may”), więc silnik zachowuje się
+poprawnie, a dopisanie `mayFire` byłoby złamaniem Oracle. **Naprawa nie
+zmienia zachowania gry** — domyka brak komunikacji i zabezpiecza ustalenie:
+
+1. `notes` karty (`src/cards/card-data.js`, `lorescale-coatl`) — zapisany
+   rozjazd: druk „you may”, Oracle bez „may”, data/era (M21/2020), podstawa
+   (CR 108.1) i skutek (licznik obowiązkowy, brak okna decyzji);
+2. `test/m-lorescale-coatl-obowiazkowy.test.js` — 7 pinów: M/1 katalog =
+   bieżący Oracle, ale druk PRZYTOCZONY jako różny; M/2 notatka o erracie
+   istnieje i zawiera „you may” + Oracle + datę + CR; M/3 deskryptor bez pól
+   opcjonalności; M/4/M/5 silnik nie otwiera okna decyzji i nie gubi
+   liczników (1 i 2 dobrania); M/6 **kontra** — karta z prawdziwym „you may”
+   (Angel’s Feather) okno otwiera, więc to nie luka silnika; M/7 **mutacja**
+   lokalna — samo `mayFire: true` natychmiast czerwieni pin (i blokuje licznik,
+   czyli gdyby Oracle kiedyś wrócił do „may”, pin to pokaże);
+3. `test/helpers/cr-numery-tabela.js` — regeneracja (`--zapisz` na świeżo
+   pobranym CR, ten sam sha256) dopisuje **108.1** do tabeli zweryfikowanych
+   numerów: 550 numerów, kod 548 w 6385 cytatach.
+
+Zero zmian w silniku i w wycenach — bramy bez ruchu (benchmark 88,4% jak
+przed M). Gdyby właściciel chciał jednak grać wg DRUKU (a nie Oracle), to
+osobna, świadoma decyzja o odejściu od ADR 0022 — wymaga jego polecenia.
+
 ## Bramy (końcowe drzewo)
 
 | Brama | Wynik |
 |---|---|
-| `npm test` | **9062/9062**, EXIT 0 |
+| `npm test` | **9069/9069**, EXIT 0 |
 | `npm run test:slow` | **268/268**, EXIT 0 |
-| `npm run build` | **76 modułów / 5557,8 kB** |
+| `npm run build` | **76 modułów / 5558,9 kB** |
 | benchmark quick | 672 mecze — heuristic **88,4%** (594/672) |
 | `event-contract-audit`, `family-audit` | brak naruszeń |

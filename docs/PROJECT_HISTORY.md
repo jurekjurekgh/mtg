@@ -18438,3 +18438,17 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   (15) + 6 mutacji RED; przeliczone PMSSB-60/F1+F5 i `real-cards-batch65` BOT.
   Bramy: `npm test` 9062/9062, `test:slow` 268/268, build 76 modułów /
   5557,8 kB, benchmark quick 88,4%.
+
+- **Sesja 2026-10-27c/30 (PR #177) — uwaga z gry M (Lorescale Coatl)**: „zdolność
+  ma «you may», a silnik dodał licznik bez pytania”. Właściciel pokazał
+  fizyczną kartę (MM2 #179) — druk RZECZYWIŚCIE ma „you may”. Weryfikacja
+  wykazała jednak erratę: od Core Set 2021 (2020-07-03) Oracle brzmi „put a
+  +1/+1 counter on this creature” (zmiana polityki Oracle 2020, jak u Ajani’s
+  Pridemate), a obowiązuje Oracle (CR 108.1) i ADR 0022 — więc licznik jest
+  obowiązkowy i silnik jest poprawny; `mayFire` byłby złamaniem Oracle.
+  Domknięcie informacyjne: notatka o rozjeździe w `notes` karty, pin
+  `test/m-lorescale-coatl-obowiazkowy.test.js` (7; m.in. kontra z prawdziwym
+  „you may” u Angel’s Feather i mutacja `mayFire`) oraz regeneracja tabeli CR
+  (dopisane 108.1). Zero zmian w silniku i w wycenach. Bramy: `npm test`
+  9069/9069, `test:slow` 268/268, build 76 modułów / 5558,9 kB, benchmark
+  quick 88,4%.

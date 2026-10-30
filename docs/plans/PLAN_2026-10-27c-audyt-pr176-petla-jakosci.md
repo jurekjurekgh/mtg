@@ -129,6 +129,19 @@ otwarte świadomie (opisał je raport audytu).
       `debuffPayoffCap` (15). Pin `test/l-ambulatory-edifice-debuff.test.js`
       (15) + 6 mutacji RED; przeliczone PMSSB-60/F1, F5 i `real-cards-batch65`
       BOT. Bez zmian legalności i bez nowych kart.
+- [x] **A14** Uwaga z gry 2026-10-30 (**M**): „Lorescale Coatl — zdolność ma
+      dopisek «you may», a silnik dodał counter bez pytania”. Weryfikacja
+      źródeł: druk MM2/ARB/A25 ma „you may”, ale bieżący Oracle (od M21,
+      2020-07-03) brzmi „put a +1/+1 counter on this creature” — WotC
+      skasowało opcjonalność w polityce Oracle 2020 (jak Ajani’s Pridemate).
+      Obowiązuje Oracle (CR 108.1) + ADR 0022, więc licznik jest obowiązkowy
+      i silnik jest poprawny; zmiana zachowania byłaby złamaniem Oracle.
+      Domknięcie: notatka o erracie w `notes` karty, pin
+      `test/m-lorescale-coatl-obowiazkowy.test.js` (7: Oracle≠druk,
+      dokumentacja rozjazdu, brak pól opcjonalności, brak okna decyzji przy
+      1 i 2 dobraniach, kontra z prawdziwym „you may”, mutacja `mayFire`),
+      regeneracja tabeli CR (dopisane **108.1**, 550 numerów). Zero zmian
+      w silniku i w wycenach.
 - [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
       `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
       polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
