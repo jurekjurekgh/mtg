@@ -85,11 +85,30 @@ export function preventDamageWithShieldCounter(state, objectId, amount) {
  * się zmieści”). Stwór bez licznika nie ma efektu zastępującego — obrażenia
  * idą normalnie („while it has a +1/+1 counter on it”).
  */
+function preventionRemovalAbility(state, object) {
+  // F-1 audytu PR #176 (klasa L99): zdolność CZYTA SIĘ z obu warstw — własnej
+  // (`effectiveAbilities`, z grantami statyk) i nadanej PRZYPIĘTYM SPRZĘTEM
+  // (`equipment.grantedAbilities`, ten sam kształt co progi ewazji w
+  // `combat.js:attackerBlockTypeRestriction`). Wcześniej komentarz obiecywał
+  // sprzęt, a kod czytał tylko warstwę własną — deskryptor nadany sprzętem był
+  // martwy (CR 615.1a/604.1: efekt zastępujący działa niezależnie od źródła
+  // zdolności; deskryptor jest generyczny, ADR 0002).
+  const own = effectiveAbilities(object).find((entry) => entry?.type === 'static'
+    && entry.preventDamageByRemovingCounter);
+  if (own) return own;
+  if (object?.zone !== 'battlefield') return null;
+  for (const attachment of attachmentsAttachedTo(state, object.id)) {
+    for (const granted of attachment.equipment?.grantedAbilities ?? []) {
+      if (granted?.type === 'static' && granted.preventDamageByRemovingCounter) return granted;
+    }
+  }
+  return null;
+}
+
 export function preventDamageByRemovingCounters(state, objectId, amount) {
   const object = state.objects.get(objectId);
   if (!(amount > 0) || !object || object.zone !== 'battlefield') return 0;
-  const ability = effectiveAbilities(object).find((entry) => entry?.type === 'static'
-    && entry.preventDamageByRemovingCounter);
+  const ability = preventionRemovalAbility(state, object);
   if (!ability) return 0;
   const counterName = ability.preventDamageByRemovingCounter;
   const available = object.counters?.[counterName] ?? 0;
@@ -1942,11 +1961,36 @@ export function kindFromTypes(types, fallback = null) {
   return fallback;
 }
 
+/**
+ * Nazwa WIDOCZNA nowej strony po zmianie twarzy (zgłoszenie właściciela
+ * 2026-10-29: dwustronny token po przemianie dalej podpisywał się nazwą
+ * strony opuszczanej w modalach celowania).
+ *
+ * Źródło nazwy zależy od rodzaju obiektu (L41 — jedno miejsce dla obu ścieżek
+ * zmiany twarzy): KARTA bierze nazwę z rejestru po `cardId`, więc jej pole
+ * `name` jest puste i puste ma zostać; TOKEN i kopia niosą nazwę JAWNIE
+ * w `name` (`object.name` — M155), bo `cardId` tokenu jest poza rejestrem.
+ * Dla nich nowa strona musi przepisać pole z deskryptora `transformTo`:
+ * `name` (nazwa nośnika), a gdy payload jej nie niesie — `cardName` (nazwa
+ * twarzy z materialize/rejestru).
+ *
+ * `null` = obiekt nie niesie jawnej nazwy albo payload nie zna nowej —
+ * wywołujący zostawia dotychczasowe pole (zachowanie sprzed poprawki).
+ */
+export function transformedDisplayName(back, previous = null) {
+  if (!previous || previous.name == null) return null;
+  return back?.name ?? back?.cardName ?? null;
+}
+
 export function transformedCharacteristics(back, previous = null) {
   const kind = back.kind ?? kindFromTypes(back.types, previous?.kind);
+  const displayName = transformedDisplayName(back, previous);
   return {
     cardId: back.cardId,
     cardName: back.cardName ?? previous?.cardName ?? null,
+    // Token/kopia: nazwa w `name` musi iść za twarzą, inaczej UI (modale
+    // celowania, etykiety ofert, kafel) pokazuje nazwę strony sprzed zmiany.
+    ...(displayName ? { name: displayName } : {}),
     power: back.power ?? null,
     toughness: back.toughness ?? null,
     abilities: back.abilities ?? [],
@@ -2125,6 +2169,9 @@ export function transformInPlaceFields(object, back) {
     subtypes: [...((object.subtypesBeforeOverride ?? (original ? original.subtypes : object.subtypes)) ?? [])],
     power: original ? original.power : object.power,
     toughness: original ? original.toughness : object.toughness,
+    // Nazwa jawnego `name` (token/kopia) — powrotny `transformTo` musi ją
+    // nieść, inaczej druga przemiana wróciłaby z nazwą poprzedniej strony.
+    name: object.name ?? null,
   };
   const printedBack = {
     kind: back.kind ?? (((back.types ?? []).includes('Creature')) ? 'creature' : leavingFace.kind),
@@ -2134,8 +2181,12 @@ export function transformInPlaceFields(object, back) {
     toughness: back.toughness ?? null,
   };
   const visible = layer ? withAnimationLayer(printedBack, layer) : printedBack;
+  const displayName = transformedDisplayName(back, object);
   const fields = {
     ...visible,
+    // Ta sama reguła nazwy, co przy nowym obiekcie (transformedCharacteristics):
+    // token/kopia przepisuje `name` na nazwę strony, na którą się obraca.
+    ...(displayName ? { name: displayName } : {}),
     originalBeforeAnimation: layer ? Object.freeze({ ...printedBack, layer }) : null,
   };
   if (object.subtypesBeforeOverride) {

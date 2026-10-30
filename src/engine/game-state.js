@@ -32,7 +32,7 @@ import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, acti
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -2079,9 +2079,14 @@ function accepted(state, cmd, result) {
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
   // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
+  // F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): warunek stał na
+  // JEDNYM typie zdarzenia (`object_moved`), którego ścieżka śmierci od
+  // obrażeń (SBA → `creature_destroyed`) ani od zniszczenia czarem
+  // (`permanent_destroyed`) nie emituje — flaga Morbida zostawała `false`
+  // w typowej grze. Teraz czyta wspólny predykat triggerów (L41: jedno
+  // miejsce odpowiada na „czy stwór umarł”, CR 700.4 + 603.10a).
   for (const e of result.events) {
-    if (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone === 'graveyard'
-      && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
+    if (eventIsCreatureDeath(state, e)) state.creatureDiedThisTurn = true;
     // Landfall: land wszedł pod kontrolę gracza w tej turze (zdarzenie
     // wejścia na pole bitwy z kind land — jak creatureDiedThisTurn).
     // M167/G (uwaga właściciela, Mysteries of the Deep): ścieżka play_land

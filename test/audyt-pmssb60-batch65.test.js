@@ -317,16 +317,22 @@ const PUMP_DODATNI = (d) => ({ ...d, abilities: d.abilities.map((a) => ({
 const BEZ_PAYLIFE = (d) => ({ ...d, abilities: d.abilities.map((a) => ({
   ...a, trigger: { ...a.trigger, payLife: undefined } })) });
 
-/** Zmierzono na `6a62018`+pay-trigger-net-model (harness tego pliku). */
-const EDIFICE_WROG = 72.0036;      // −1/−1 we wroga, NETTO po 2 życiu
+/**
+ * Zmierzono na `6a62018`+pay-trigger-net-model (harness tego pliku), a po L
+ * (2026-10-29) przeliczono ponownie: wartość debuffu „−1/−1 do końca tury”
+ * istnieje tylko przy ZABICIU WAŻNEGO celu (patrz `debuffPayoffValue`).
+ * `foe()` w tym pliku ustawia `manaCost = power`, więc 5/1 = TMC 5 (ważny),
+ * a 3/3 = TMC 3 i −1/−1 go nie zabija (bezwartościowy).
+ */
+const EDIFICE_WROG = 72.0036;      // −1/−1 ZABIJA wroga 5/1, NETTO po 2 życiu
 const EDIFICE_WROG_BRUTTO = 75.6036; // to samo bez płatności
 const EDIFICE_BAZA = 70.2036;      // kontrfaktyk bez triggera
 const EDIFICE_PUSTY = 66.6036;     // pusty stół wroga = kontrfaktyk
 const EDIFICE_PLUS = 72.9036;      // pump +1/+1 bez płatności — wzór P×2+T×1
 
-test('PMSSB-60/F1: −1/−1 wymierzone we wroga jest zyskiem, nie stratą ciała', () => {
-  const pelny = edifice([3, 3]);
-  const kontra = edifice([3, 3], BEZ_ZDOLNOSCI);
+test('PMSSB-60/F1: −1/−1 zabijające WAŻNY cel to zysk, nie strata ciała', () => {
+  const pelny = edifice([5, 1]);
+  const kontra = edifice([5, 1], BEZ_ZDOLNOSCI);
   assert.ok(blisko(pelny, EDIFICE_WROG), `oczekiwano ${EDIFICE_WROG}, jest ${pelny}`);
   assert.ok(blisko(kontra, EDIFICE_BAZA), `oczekiwano ${EDIFICE_BAZA}, jest ${kontra}`);
   // POMIAR PRZED: płaskie 67,5 dla wroga 1/1, 5/5 i pustego stołu — trigger
@@ -334,8 +340,13 @@ test('PMSSB-60/F1: −1/−1 wymierzone we wroga jest zyskiem, nie stratą ciał
   assert.ok(pelny - kontra > 1.5, `oczekiwano delty > 1,5, jest ${pelny - kontra}`);
   // Rozkład: brutto 75,6036 (sama naprawa kierunku) − 3,6 kosztu życia
   // (= selfLifeLossPenalty(view, 2) = 4 po skalowaniu ×0,9).
-  assert.ok(blisko(edifice([3, 3], BEZ_PAYLIFE), EDIFICE_WROG_BRUTTO),
-    `brutto bez płatności: ${edifice([3, 3], BEZ_PAYLIFE)}`);
+  assert.ok(blisko(edifice([5, 1], BEZ_PAYLIFE), EDIFICE_WROG_BRUTTO),
+    `brutto bez płatności: ${edifice([5, 1], BEZ_PAYLIFE)}`);
+  // L (2026-10-29): ten sam trigger na celu, którego −1/−1 NIE zabija (3/3),
+  // jest wart DOKŁADNIE 0 — debuff znika w cleanupie (CR 514.2) i nic nie
+  // zmienia. Pin L/1 pilnuje decyzji o zapłacie; tu tylko wycena rzutu.
+  assert.ok(blisko(edifice([3, 3]), EDIFICE_BAZA),
+    `nie zabija → trigger bez wartości: ${edifice([3, 3])}`);
 });
 
 test('PMSSB-60/F2: anty-over-fix — bez legalnego celu u wroga trigger nic nie daje', () => {
@@ -363,8 +374,10 @@ test('PMSSB-60/F5: opcjonalna płatność życiem jest kosztem, a nieopłacalna 
   const nieoplacalny = edifice([3, 3], PUMP_DODATNI);
   assert.ok(blisko(nieoplacalny, EDIFICE_BAZA),
     `nieopłacalna płatność odrzucona (delta 0): ${nieoplacalny} vs ${EDIFICE_BAZA}`);
-  assert.ok(blisko(edifice([3, 3], BEZ_PAYLIFE) - edifice([3, 3]), 3.6),
-    `koszt życia = 3,6: ${edifice([3, 3], BEZ_PAYLIFE)} − ${edifice([3, 3])}`);
+  // L: koszt życia mierzymy na wariancie, w którym trigger COŚ daje (5/1 —
+  // −1/−1 zabija TMC 5); na 3/3 różnica 0, bo efekt jest bezwartościowy.
+  assert.ok(blisko(edifice([5, 1], BEZ_PAYLIFE) - edifice([5, 1]), 3.6),
+    `koszt życia = 3,6: ${edifice([5, 1], BEZ_PAYLIFE)} − ${edifice([5, 1])}`);
 });
 
 // ============================================================ FALA C — F2

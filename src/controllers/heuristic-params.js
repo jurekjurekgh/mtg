@@ -108,6 +108,16 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceTimingSwing',       // wahnięcie wartości między oknami rzutu
   'bounceLethalDodgeBonus',  // premia: bounce zdejmuje lethal z atakujących
   'bounceOverflowBonus',     // premia/kara: pełna ręka (wróg odrzuci / ja odrzucę)
+  // G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): „RYNEK INWESTYCJI”
+  // celu bounce — który permanent wroga wybrać. Model właściciela: TMC
+  // permanentu + TMC aur/załączników + premia za każdy pozytywny licznik;
+  // wcześniej liczyło się wyłącznie ciało (P+T) i TMC w wadze 2, a aura
+  // dostawała płaskie +30 bez różnicowania po koszcie — bot oddawał tanie
+  // stwory z drogimi załącznikami, a zostawiał drogie bez (zgłoszenie).
+  'bounceTmcWeight',         // waga TMC samego celu (odbudowa po zwrocie)
+  'bounceAuraTmcWeight',     // waga TMC aur na celu (giną z hostem, CR 704.5m)
+  'bounceEquipmentTmcWeight',// waga TMC equipmentu (zostaje na stole, ale equip płatny)
+  'bounceCounterBonus',      // premia za każdy POZYTYWNY licznik (CR 122.2: nie wracają)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
@@ -253,6 +263,26 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Kara musi PRZEBIĆ bazę czaru (+50) i premię removalu, żeby wariant
   // zszedł poniżej passu (wzec M237/2 — trywialny cel kontry).
   'removalPureLandPenalty',  // kara za removal/odbicie kierowane w czysty ląd przeciwnika
+  // N (zgłoszenie właściciela 2026-10-29, Wretched Banquet): kara za rzut
+  // `destroy_if_least_power` w cel, który NIE ma najmniejszej mocy na stole —
+  // warunek efektu (CR 608.2b) nie zajdzie, czar fizzluje (silnik zwraca
+  // `ok: true`, więc bot nie dostaje sygnału zwrotnego). Musi przebić bazę
+  // czaru (50) RAZEM z premią removalu (22 + 2×P/T + bonus TMC), dlatego 120.
+  'leastPowerRemoveFizzlePenalty',
+  // O (zgłoszenie właściciela 2026-10-29, Plague Reaver): kara za RZUT
+  // stworu, którego trigger to „sacrifice each other creature you control”
+  // (powtarzalny, co end step) przy niepustej własnej planszy. Właściciel:
+  // „rzucenie tej karty ma sens tylko wtedy, gdy bot nie ma na stole innych
+  // kreatur”. Wartość musi przebić całe ciało karty (6/5 ≈ 75), stąd 200.
+  'selfSacrificeWrathOwnBoardPenalty',
+  // O2 (zgłoszenie właściciela 2026-10-29): próg „mega armia” przeciwnika —
+  // dopiero powyżej tylu punktów MOCY wrogich stworów oddanie własnego
+  // stworu z trigerem „sacrifice each other creature you control” ma sens
+  // (przeciwnik poświęci własną planszę). Właściciel wskazał 12.
+  'giftedSelfSacrificeMinEnemyPower',
+  // O2: waga straty wroga przy oddaniu takiego stworu (Σ cena ciał wrogich
+  // stworów, które padną w jego end stepie).
+  'giftedSelfSacrificeEnemyLossWeight',
   // M235: Benevolent Blessing uses this as a hold score when no lethal-damage
   // threat exists; a Main 1 or combat step alone does not open its window.
   // Static-quality protection Auras retain the existing timing-penalty path.
@@ -540,7 +570,21 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // przeciwstawne, więc każdy cel ma własną wagę; nieznany cel zostaje przy
   // dawnej sumie `5 + needScore*6 + enemyInColor`.
   'colorProtectionPerCreature',  // waga wrogiego stwora w kolorze ochrony
+  // J (Benevolent Blessing): ochrona przed kolorem stwora, z którym host
+  // aury REALNIE się bije w tej walce — baza za sam związek + waga za każde
+  // zatrzymane obrażenie (moc źródła; trample dopłaca, CR 702.19).
+  'colorProtectionCombatBonus',
+  'colorProtectionCombatDamageWeight',
   'colorManaNeedPerCard',        // waga karty w ręce wymagającej tego koloru
+  // K (Rupture Spire): kara za ZAGRANIE lądu z ETB „zapłać {N} albo poświęć",
+  // gdy {N} jest nieopłacalne — land drop i karta przepadają, bo Sacrifice
+  // (CR 701.21a) przenosi permanent z pola bitwy prosto do cmentarza.
+  // Wartość bezwzględna wyniku (minus), nie delta: musi przegrać z passem
+  // niezależnie od premii pokrycia kolorów.
+  'landEtbUpkeepUnplayablePenalty',
+  'debuffPayoffMinInvestment',   // próg „ważnego" celu debuffu (TMC + aury + equipment)
+  'debuffPayoffPerPoint',        // punkty za punkt P/T zabijającego debuffu
+  'debuffPayoffCap',             // sufit wypłaty debuffu (efekt jednorazowy)
   // PMSSB-29 — szukanie w bibliotece korzysta ze WSPÓLNEJ miary karty
   // (`cardKeepValue`), nie z własnej kopii `25 + (land ? 30 : 0) + 2P+T`.
   // Baza musi zostać wyraźnie nad `-40` za „nie znajdź karty", żeby szukanie
@@ -552,6 +596,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // za rezygnację, bo reszta odsłoniętych kart i tak idzie do grobu.
   'satyrLookBase',               // baza za wzięcie odsłoniętej karty do ręki
   'blockGoodTradePerPoint',      // premia za pkt obrażeń ponad wartość ginącego blokera
+  // C (uwaga właściciela 2026-10-27c): premia za pkt obrażeń WCHŁONIĘTYCH
+  // blokiem BEZKOSZTOWYM (bloker i atakujący przeżywają) — życie uratowane bez
+  // utraty ciała musi przebić koszt zaangażowania blokera (bez tego remis
+  // z passem rozstrzygała kolejność ofert i bot przepuszczał cały atak).
+  'blockFreeAbsorbBonus',
   // PMSSB-32 — produkcja many (`add_mana`). Audyt okien zdolności many:
   // kiedy mana realnie przesuwa próg opłacalności, a kiedy jest „na zapas”
   // (M128). Dwa nowe wymiary po pomiarze PRZED:
@@ -667,7 +716,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // MV3 (50+22+18=90) bije bounce drobiazgu, ale przegrywa z bounce
   // realnej groźby ze stołu (przeżycie przede wszystkim). Podłoga 5:
   // poniżej wraca błąd L (kontra MV3 ≤ bounce 2/2).
-  counterspellTmcWeight: 6,
+  // G (2026-10-29): 6 → 10. Składnia z komentarza: 2 parytetu z M234
+  // („jakby usunąć permanent”) + 4 za trwałość (grób zamiast ręki, brak
+  // triggerów cast/ETB). Bounce dostał w tej samej sesji wagę TMC 6, więc
+  // parytet przesunął się razem z nim — inaczej kontra MV3 (90) przegrywała
+  // z odbiciem drobiazgu (98): pin `bot-modal-modes` „sabotaż KONTRUJE”.
+  counterspellTmcWeight: 10,
   // PMSSB-1 (wartości przemyślane, pomiar PRZED: /tmp/pmssb1-bounce-przed.mjs):
   // top 8 (~1 dobór wroga mniej), bottom 18 (jak destroy-ETB — prawie
   // removal), token 12 (symetria z create_token 12), ETB waga 1 (pełna
@@ -675,7 +729,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceLibraryTopBonus: 8,
   bounceLibraryBottomBonus: 18,
   bounceTokenBonus: 12,
-  bounceFoeEtbWeight: 1,
+  bounceFoeEtbWeight: 2,
   // PMSSB-1/B (wartości przemyślane): mana przerzucenia droższa od
   // power (3 vs 2 — many nie wracają), tempo 10 (połowa „karty" —
   // mniej niż strata permanenta, więcej niż nic).
@@ -688,6 +742,18 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   bounceTimingSwing: 8,
   bounceLethalDodgeBonus: 100,
   bounceOverflowBonus: 12,
+  // G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): ranking celu
+  // bounce wg ZAINWESTOWANIA, nie tylko ciała. Jednostka = punkt wyceny
+  // (removalEnemyBase 22 to „jedna karta”). TMC celu 6 → 6 many × 6 = 36,
+  // czyli drogi permanent bije tanie ciało nawet z większym P/T; aura 3
+  // many × 4 = 12 na wierzchu płaskich +30 (karta ginie z hostem, CR
+  // 704.5m); equipment 2 many × 2 = 4 (karta ZOSTAJE na stole, CR 704.5n —
+  // koszt to przełożenie, nie utrata karty, stąd waga najniższa); licznik
+  // +1/+1 = 10 (znika na stałe, CR 122.2 — połowa „karty”, jak token 12).
+  bounceTmcWeight: 6,
+  bounceAuraTmcWeight: 4,
+  bounceEquipmentTmcWeight: 2,
+  bounceCounterBonus: 10,
   // PMSSB-2/A (F4): 1 mana z tokena ≈ 3 (jak koszt recastu —
   // mana zdatna do wydania, ale dopiero po aktywacji/poświęceniu).
   // PMSSB-58/A: opcja doboru z tokena jest odroczona (1/2 wartości netto),
@@ -903,6 +969,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
   removalCombatHandledPenalty: 12,
   removalPureLandPenalty: 60,
+  // N: patrz deklaracja wyżej — 120 przebija bazę czaru + maks. premię removalu.
+  leastPowerRemoveFizzlePenalty: 120,
+  // O: 200 = powyżej pełnej ceny ciała 6/5 (2·6+5+3 = 20 w skali `bodyWorth`,
+  // ale rzut wyceniany jest z ciałem ~75) — każda własna kreatura na stole
+  // czyni rzut gorszym od passu; pusta własna plansza = brak kary.
+  selfSacrificeWrathOwnBoardPenalty: 200,
+  giftedSelfSacrificeMinEnemyPower: 12,
+  giftedSelfSacrificeEnemyLossWeight: 1,
   // M235: this also pushes Benevolent Blessing below pass without a lethal
   // source. Other flash protection Auras retain the legacy off-window penalty;
   // it must exceed their base value so the bot holds them until that window.
@@ -1091,7 +1165,29 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // zmienia; wystarcza, żeby JEDEN wróg w kolorze (5+6=11) wygrał z kolorem
   // pustym (5) i żeby trzy (5+18=23) nie zostawiły wątpliwości.
   colorProtectionPerCreature: 6,
+  // J: 40 — powyżej sufitu dawnej heuristicie przy realnych stołach
+  // (5 + 6×N; N=3 to 23), a poniżej progu DOBICIA (100 + liczba kolorów),
+  // więc ochrona ratująca życie nadal wygrywa z każdym innym wyborem.
+  colorProtectionCombatBonus: 40,
+  // J: 2 — każde zatrzymane obrażenie warte 2 pkt: bloker 1/4 pod 5/5 bierze
+  // 40 + 10 = 50, a kolor spoza walki dostaje 5 (nigdy nie wyprzedzi).
+  colorProtectionCombatDamageWeight: 2,
   colorManaNeedPerCard: 6,
+  // K: 20 — zagranie jest gorsze od niezagrania (pass = 0), a nic innego nie
+  // ma tu znaczenia: ląd ginie natychmiast, więc żadna premia pokrycia nie
+  // może tego przebić. Pokrętło ×0 przywraca stan sprzed K (delta −12).
+  landEtbUpkeepUnplayablePenalty: 20,
+  // L (zgłoszenie właściciela 2026-10-29, Ambulatory Edifice): opcjonalny
+  // debuff „−X/−X do końca tury" na wrogu wart jest ZAPŁATY tylko wtedy, gdy
+  // ZABIJA (SBA, CR 704.5f) i trafia w cel WAŻNY. Właściciel: „to musiałby być
+  // jakiś super ważny stwór — TMC (z aurami i equipment) przynajmniej 5, albo
+  // taki, który ma super unikalne zdolności (jedyny z lataniem / menace /
+  // protection / landwalkiem działającym przeciwko botowi)".
+  debuffPayoffMinInvestment: 5,
+  // 3 za punkt P/T — TA SAMA skala co dotychczasowa tabela ETB (3 × (|P|+|T|),
+  // sufit 15 = skala `damage`); sufit niżej, bo efekt jest jednorazowy.
+  debuffPayoffPerPoint: 3,
+  debuffPayoffCap: 15,
   // PMSSB-29: 25 — dawna baza, więc relacja do `-40` za rezygnację zostaje;
   // przy wspólnej mierze (−6..30) rozstrzał wariantów to 19..55, czyli wciąż
   // daleko od progu rezygnacji.
@@ -1100,6 +1196,7 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // 24..60, wciąż daleko nad −5 za rezygnację.
   satyrLookBase: 30,
   blockGoodTradePerPoint: 2,
+  blockFreeAbsorbBonus: 1,
   // PMSSB-32 (wartości przemyślane, pomiar PRZED:
   // /home/user/scratch/pmssb32-mana-przed.mjs): nowe wymiary to DOPŁATY/KARY
   // nad starą arytmetyką (anty-over-fix — realne odblokowanie liczbowe z

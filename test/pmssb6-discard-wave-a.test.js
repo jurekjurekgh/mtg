@@ -141,7 +141,7 @@ test('F-A1 guard: loot (PMSSB-8/F-L1: scholar 4, fisher 78.0036 po PMSSB-64)', (
   // PMSSB-64: latanie 4-mocy = (8·4/3 − 3)·0.9 = +6.9 nad dawną wartością 71.1036.
   assert.ok(Math.abs(scores(b, 'cast_permanent(fi').options[0].score - 78.0036) < 1e-9);
 });
-test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 82)', () => {
+test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 86)', () => {
   const s = createGameState({ seed: 42, players: [{ id: 'p1' }, { id: 'p2' }] });
   s.turn = jumpToStep(s.turn, 'main', 'p2');
   s.turn.activePlayerId = 'p2';
@@ -154,6 +154,7 @@ test('F-A4: rider-delusion zyje (tapped-out + reka-3 = 82)', () => {
   foeHand(s, ['shock', 'twiddle', 'fireball']);
   const { chosen, options } = scores(s, 'cast_spell(dl');
   // L: 54 → 82 (+28 premii za zatrzymany fireball MV1: 50+22+6+4 rider).
-  assert.equal(options[0].score, 82);
+  // G (2026-10-29): waga kontry 6→10, więc +4 → 86.
+  assert.equal(options[0].score, 86);
   assert.equal(chosen.type, 'cast_spell');
 });

@@ -8629,3 +8629,405 @@ piny). Bramy: `npm test` 8948/8948, `test:slow` 268/268, build 76 modułów /
     i audyt remisów nie miał czego parować). Silnik płatności i wycena bota
     bez zmian: obie ścieżki (czar i permanent) oferują wszystkie opłacalne X,
     karzą X=0 i wybierają maksymalne opłacalne X.
+
+## M449 — audyt PR #176: prewencja licznikowa czytana z grantów sprzętu (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md).
+
+Znalezisko F-1 audytu: `preventDamageByRemovingCounters` (deskryptor
+`preventDamageByRemovingCounter`, CR 615.1a, batch 70 — Magma Pummeler) szukał
+zdolności wyłącznie w `effectiveAbilities(object)`, więc **zdolność nadana
+sprzętem nie działała** (obrażenia wchodziły, liczniki zostawały) — mimo że
+komentarz funkcji obiecywał tę warstwę, a bliźniacze deskryptory ewazji
+(`cantBeBlockedByTypes`/`cantBeBlockedByKeywords`) mają ją w `combat.js`
+(klasa L99). Naprawa u root cause: wspólny helper
+`preventionRemovalAbility(state, object)` (warstwa własna → granty
+przypiętego sprzętu), jedno źródło dla trzech wołających miejsc
+(`effects.js:dealNonCombatDamage`, `combat.js` ×2). Pin
+`test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` (RED→GREEN + mutacja),
+karta syntetyczna — w katalogu nie ma nośnika (ADR 0022/0030).
+
+Bramy po naprawie: `npm test` **8974/8974**, `test:slow` **268/268**, build
+**76 modułów / 5513,3 kB**, benchmark quick 672 mecze — heuristic **88,1%**.
+
+## M450 — O-1/O-2 z audytu PR #176: opis powtórnej aktywacji i płatność Converge (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md).
+
+**O-1** (komunikacja, nie reguła): ponowne osiodłanie/obsadzenie jest legalne
+(CR 702.171a / CR 702.122e) i zostaje w ofercie — pin M219 broni jej istnienia
+wobec bota — ale etykieta oferty i intro kreatora załogi mówią teraz wprost, że
+koszt tapnięcia przepadnie. Wspólny predykat czyta deskryptor efektu
+(`set_saddled`, `animate_permanent_until_end_of_turn`) i flagę STANU z
+PlayerView (`saddled`/`animatedUntilEOT`), więc reguła nie zna żadnej karty
+(ADR 0002/0017).
+
+**O-2** (reguła płatności): czar liczący KOLORY wydanej many (Converge,
+CR 207.2c) płaci tak, by wnosić kolor jeszcze nieużyty (CR 601.2h — wybór
+jednostek należy do płacącego). Marker `colors_of_mana_spent` (także w trybach
+modalnych) ustawia flagę celu płatności `maximizeManaColors`; komparator puli
+preferuje kolor spoza pipów, potem kolor już zapłacony, na końcu bezbarwną
+(CR 106.1a). Adamant i zwykłe rzuty zachowują dotychczasową kolejność.
+
+Bramy: `npm test` **8982/8982**, `test:slow` **268/268**, build **76 modułów /
+5519,9 kB**, benchmark quick 672 mecze — heuristic **88,1%**.
+
+## M451 — cztery uwagi właściciela z gry: ETB z celem zależnym od tury, kreator podrzędny, blok bezkosztowy, ryzyko wyboru przeciwnika (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [UWAGI_Z_GRY_2026-10-27c](audits/UWAGI_Z_GRY_2026-10-27c.md).
+
+Cztery uwagi z rozgrywki, każda rozpoznana sondą na żywym silniku i naprawiona
+u root cause z pinem + mutacją RED:
+
+- **A (wycena rzutu)**: Fathom Fleet Cutthroat (ETB „destroy target creature an
+  opponent controls that was dealt damage this turn", CR 603.3d) był rzucany
+  w Głównej 1, gdzie nie ma celu — trigger nie wchodził na stos. Reguła
+  „czekaj na Główną 2" (dotąd tylko `entersWithCountersIf.morbid`) obejmuje
+  teraz całą rodzinę ETB z celem zależnym od zdarzeń tury
+  (`etbDefersForThisTurnsDamage`), a `etbEnemyHasTarget` zna spec
+  `creature_opponent_damaged_this_turn` (wspólny `dealtDamageThisTurn`, L41).
+- **B (UI płatności)**: `onTapSource` wysyłał `activate_ability` prosto do
+  silnika, więc koszt zdolności many (Apprentice Wizard „{U}, {T}: Add
+  {C}{C}{C}", ląd „{1}, {T}: Add {G}") opłacał deterministyczny auto-tap.
+  Teraz źródło z `activationCost` otwiera kreator PODRZĘDNY (stos
+  `manaWizardParents`), a po jego dokończeniu gra wraca do kreatora pierwotnego
+  czaru. Silnik nietknięty.
+- **C (walka)**: blok bezkosztowy (nikt nie ginie) dawał `+1 −1 = 0`, czyli
+  remis z passem — bot przepuszczał cały atak. Nowe pokrętło
+  `blockFreeAbsorbBonus`. Skutki: drabinka progów życia w
+  `audyt-pr149` (+2 w paśmie, progi bez zmian) i świadoma regeneracja
+  golden-mastera (jedna opcja nie-wybrana, wybory identyczne).
+- **D (wycena zdolności)**: Cuombajj Witches („…and 1 damage to ANY TARGET of an
+  opponent's choice") — bot dobijał cel własnego Time to Feed (czar fizzlował,
+  CR 608.2b), a slot przeciwnika nie był wyceniany wcale. Dodane:
+  `isMyPendingStackTarget` (zakaz psucia własnego obiektu na stosie),
+  `opponentChosenDamageCost` (najgorszy realny wybór przeciwnika) i model
+  zasobu ryzykownego (użycie tylko na realny zysk).
+
+Bramy: `npm test` **8998/8998**, `test:slow` **268/268**, build **76 modułów /
+5530,4 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
+## M452 — O-3/O-5 z audytu PR #176 domknięte: generyczny trigger `counter_removed` i log testera bez cichych ucięć (2026-10-27c, PR #177)
+
+Plan: [PLAN_2026-10-27c](plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md).
+Raport: [AUDYT_PR176_2026-10-27](audits/AUDYT_PR176_2026-10-27.md) (§5).
+
+**O-3** (reguła): skan triggerów dla `counter_removed` był bramkowany
+`ev.damagePrevention === true` (wprowadzone dla Magma Pummeler: „…removed from
+this creature THIS WAY”), więc zdolność BEZ „this way” nie odpalała nigdy —
+ani przy zdjęciu licznika efektem, ani kosztem zdolności, ani przy anihilacji
++1/+1 vs −1/−1 (CR 122.3). Zgodnie z CR 603.2 zdarzenie licznika triggeruje
+niezależnie od drogi; to, czy zdolność widzi wyłącznie prewencję, deklaruje
+KARTA deskryptorem `trigger.damagePreventionOnly` (ADR 0002) — rdzeń nie zna
+pojęcia „this way”. Zdarzenie `counter_removed` niesie teraz kontrolera
+i migawkę zdolności (ten sam kontrakt co ścieżka prewencji): bez tego trigger
+ginął, gdy zdjęcie licznika kończyło się śmiercią własnego źródła (CR 704.5f —
+obiekt zmienia strefę i tożsamość, CR 400.7). Pin
+`test/o3-trigger-counter-removed.test.js` (6 testów, karta syntetyczna —
+w katalogu nie ma nośnika; mutacja RED). Wariant z RODZAJEM licznika czeka na
+nośnik mechaniki (ADR 0022/0029).
+
+**O-5** (narzędzie): log transkryptu Żywego Testera ucinał klikniętą etykietę
+cicho (`slice(0, 110)`), a od naprawy O-1 ostrzeżenie stanu siedzi na KOŃCU
+etykiety — transkrypt kłamał. `tools/table-tester/labels.mjs`
+(`actionLabelForLog`) zwija białe znaki i tnie zawsze jawnym wielokropkiem
+(limit 320; realne etykiety panelu ≈260). Pin
+`test/o5-tester-etykiety-logu.test.js` (4 testy, 3 mutacje RED).
+
+Bramy: `npm test` **9008/9008**, `test:slow` **268/268**, build **76 modułów /
+5532,1 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
+## M453 — uwagi z gry F/G: Morbid widzi każdą śmierć, bounce wyceniany po zainwestowaniu (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**F (reguła: Morbid, CR 700.4 + 603.10a).** Tracker `creatureDiedThisTurn`
+patrzył wyłącznie na `object_moved` (pole bitwy → grób). Śmierć od obrażeń
+emituje `creature_destroyed` (SBA), zniszczenie efektem — `permanent_destroyed`,
+poświęcenie — `permanent_sacrificed`, więc w typowej grze flaga zostawała
+`false`: Caravan Vigil nie oferował pola bitwy, a warunki `rule.morbid`
+(„enters with … if a creature died this turn”) były martwe. Naprawa: JEDEN
+predykat `eventIsCreatureDeath` w triggers.js (L41), czytany przez tracker;
+śmierć = docelowa strefa `graveyard` (finality/exile NIE, CR 122.1h), rodzaj
+z LKI (CR 400.7 — nowy obiekt po zmianie strefy). Deklaracja Morbida zostaje
+wyborem gracza („you may”). Pin: 6 testów, mutacja → 5 RED.
+
+**G (wycena bota: bounce).** Ranking celu bounce wg zainwestowania przeciwnika:
+TMC celu (6/mana) + TMC aur (4/mana — aura ginie z hostem, CR 704.5m) + TMC
+equipmentów (2/mana — zostają na stole, CR 704.5n) + 10 za każdy pozytywny
+licznik (CR 122.2 — liczniki nie wracają z kartą do ręki). Wcześniej liczyło się
+tylko ciało (2 × (P+T)) + TMC w wadze 2 i płaskie +30 za aurę, więc bot oddawał
+tanie stwory z drogimi załącznikami, a zostawiał drogie. Rekalibracje wymuszone
+nową wagą: `bounceFoeEtbWeight` 1 → 2 (inaczej znikał zakaz PMSSB-1/A/F6)
+i `counterspellTmcWeight` 6 → 10 (parytet — inaczej sabotaż kontrował drogi czar
+przegrywając z odbiciem drobiazgu). Pin: 6 testów + mutacje każdej wagi → RED.
+
+Bramy: `npm test` **9020/9020**, `test:slow` **268/268**, build **76 modułów /
+5538,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
+## M454 — uwaga z gry H: nazwa dwustronnego tokenu idzie za twarzą (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Token Incubator po zapłaceniu `{2}: Transform` staje się
+tokenem Phyrexian, ale w modalach celowania dalej nazywa się „Incubator”.
+
+**Root cause (L41).** Nazwa WIDOCZNA ma jedno źródło zależne od rodzaju
+obiektu: karta — z rejestru po `cardId`, token/kopia — jawnie z `object.name`
+(M155, bo `cardId` tokenu jest poza rejestrem). Obie ścieżki zmiany twarzy
+(`transform` w miejscu przez `transformInPlaceFields` i nowy obiekt przez
+`transformedCharacteristics`: craft, powrót z wygnania przemienioną stroną,
+wejście nocną stroną) przepisywały `cardId`/`cardName`/rodzaj, ale nie pole
+`name` — więc UI (kafel, `session.nameOfObject`, etykiety ofert) czytało nazwę
+strony opuszczanej.
+
+**Naprawa.** `transformedDisplayName(back, previous)` w permanents.js jako
+JEDNO miejsce reguły: karta (brak `previous.name`) → pole zostaje puste;
+token/kopia → `back.name ?? back.cardName` z deskryptora `transformTo` (bez
+listy nazw w kodzie — ADR 0002). Payloady powrotne niosą też `name` opuszczanej
+strony, więc kolejna przemiana wraca z poprawną nazwą. Zero zmian legalności,
+zero nowych kart (ADR 0029). Pin: 7 testów (stan, widok, etykieta celu, log,
+generyczność, brak regresji dla kart, żywa sesja stołu); odwrócenie patcha
+`src/` → 6 RED.
+
+Bramy: `npm test` **9027/9027**, `test:slow` **268/268**, build **76 modułów /
+5540,8 kB**, benchmark quick 672 mecze — heuristic **88,2%**.
+
+## M455 — uwaga z gry I: poświęcenie własnego stwora tylko wtedy, gdy już ginie (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** „Karta Spellkeeper Weird. Bot bezsensownie poświęca tę
+kreaturę; zdolności z kosztem poświęcenia powinny być grane tylko wtedy, gdy
+stwór już ginie (lethal/destroy/exile, blok z lethal), a w innych wypadkach
+poświęcenie ma mieć ujemny scoring.”
+
+**Root cause (L41).** Kara za koszt `sacrificeSelf` żyła tylko w wybranych
+gałęziach wyceny (`−4` dla stworu / `−1` dla artefaktu w gałęziach
+token/draw/discard), więc zdolność zwrotu karty z grobu nie płaciła niczego,
+a gałąź pump/debuff liczyła ciało źródła drugi raz. Nie istniało pojęcie
+„ten stwór i tak ginie”, czyli jedyny przypadek, gdy poświęcenie ciała nie
+jest stratą.
+
+**Naprawa.** Jedna reguła `sacrificeSelfCostLoss(view, source, effects)` wołana
+raz w `activate_ability`: nie-stwór → 0 (jego cenę liczą dotychczasowe
+gałęzie), `permanentDoomedThisTurn` → 0, efekt `add_mana` → 0 (rampa ma
+własne wymiary, PMSSB-32/M243-C), pump zabijający cel → 0 (własny model
+wymiany ciał, PMSSB-58/A11–A12), inaczej `bodyWorth(source)` (2p+t+MV), czyli
+poniżej passu. Lokalne duplikaty `−4/−6`, drugie `bodyWorth` i lokalna skala
+`4/1` w bramce L3 zastąpione wspólną regułą. Legalność bez zmian (oferta =
+walidacja = płatność), zero nowych kart (ADR 0029). Pin: 6 testów; mutacje:
+odwrócenie patcha → 2 RED, brak `permanentDoomedThisTurn` → 3 RED, guard
+nie-stworów → 1 RED, guard many → PMSSB-58/A16, guard pumpa → 58/A11+A12.
+Rekalibracje: PMSSB-19/R1 11 → 3, golden-master `4902f6a7…` → `d5349621…`
+(dwie aktywacje poświęcenia mniej), reseed M101/D (L25) na `the-edge.txt`
+seed 1.
+
+Bramy: `npm test` **9033/9033**, `test:slow` **268/268**, build **76 modułów /
+5544,2 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+
+## M456 — uwaga z gry J: kolor ochrony aury idzie za blokowanym stworzeniem (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Benevolent Blessing (flash, „as this Aura enters, choose a
+color”) — bot nadawał ochronę swojej blokującej kreaturze, ale wybierał kolor
+inny niż kolor blokowanego atakującego; kreatura ginęła, aura szła do grobu.
+
+**Root cause (L41).** Kolor ochrony liczyła heurystyka „najliczniejszy kolor
+wroga” (`5 + enemyInColor × 6`), a `lethalProtectionThreatColors` pokrywało
+wyłącznie przypadki, w których host ginie. Gdy host przeżywał — a ochrona i
+tak zerwałaby obrażenia od blokowanego atakującego (CR 702.16e) — wybór był
+przypadkowy.
+
+**Naprawa.** `protectionCombatThreatByColor` (heuristic-bot.js): partnerzy
+walki hosta (blokowani atakujący, blokerzy hosta, a przed deklaracją —
+atakujący legalni do zablokowania) dają kolor, którego ochrona zatrzymuje
+realne obrażenia; wartość rośnie z mocą źródła (trample +1, CR 702.19). Progi:
+`lethalColors` (100 + liczba) > partner (`colorProtectionCombatBonus` 40 +
+`colorProtectionCombatDamageWeight` 2 × obrażenia) > kolor spoza walki 5 >
+brak walki / atakujący bez koloru = dawna heurystyka. Zero zmian legalności,
+zero nowych kart (ADR 0029). Pin: 7 testów; odwrócenie patcha `src/` → 4 RED,
+mutacje (bez gałęzi „host atakuje”, bez zliczania obrażeń) → RED. Bez
+rekalibracji istniejących pinów.
+
+Bramy: `npm test` **9040/9040**, `test:slow` **268/268**, build **76 modułów /
+5548,3 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+
+## M457 — uwaga z gry K: ląd z ETB „zapłać {N} albo poświęć” tylko wtedy, gdy stać (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+
+**Zgłoszenie.** Rupture Spire — „bot zagrywa ją, mimo że nie ma many na
+opłacenie kosztu (1) i musi ją poświęcić. Kompletnie bez sensu. Ta karta
+powinna być zagrywana tylko wtedy gdy bot ma manę na opłacenie (1).”
+
+**Root cause (L41).** Kara za ETB „zapłać {N} albo poświęć ten permanent”
+siedziała WEWNĄTRZ `landPlayDelta`, czyli w klamrze delty lądu `[−14, 25]`
+razem z premiami za pokrycie kolorów (+10…+16). Przy braku many delta spadała
+do −12, klamra dobijała do −14 i `play_land` dostawał 90 − 14 = 76 — więcej niż
+pass (0). Efekt: land drop i karta przepadały (CR 701.21a: poświęcenie przenosi
+permanent z pola bitwy prosto do cmentarza). Drugi defekt: „stać” liczyło
+wyłącznie PULĘ, ignorując własne nietapnięte lądy, z których da się zapłacić
+w odpowiedzi na trigger.
+
+**Naprawa.** `landEtbPayOrSacrifice(view, objectId)` (heuristic-bot.js) — jedno
+źródło reguły (L41), deskryptorowe (ADR 0002): trigger `enter_battlefield`
+z `payMana > 0` i `sacrificeIfUnpaid`, zero nazw i ID kart. „Stać” =
+`ownOpenMana` (pula + własne nietapnięte źródła; Spire wchodzi tapnięta, więc
+sama siebie nie opłaci). Stać → realny koszt `{N}` obniża deltę lądu (ścieżka
+bez zmian); nie stać → `play_land` zwraca karę POZA klamrą
+`−landEtbUpkeepUnplayablePenalty` (20), czyli przegrywa z passem niezależnie
+od premii kolorystycznych. Sonda `probe-k-spire.mjs` PRZED → PO:
+76 → −20 (0 many, brak lądów), 76 → −20 (2 tapnięte lasy), 76 → 81 (jeden
+nietapnięty las — bot płaci `pay:true`), 84 → 84 (pula 1). Zero zmian
+legalności (L48/L57), zero nowych kart (ADR 0029).
+
+**Pin.** `test/k-rupture-spire-etb-oplata.test.js` — 6 testów (brak many,
+tapnięte lądy, nietapnięty ląd + pełna ścieżka płatności, pula 1, kotwica
+anty-over-fix dla zwykłego lądu, pokrętło). Odwrócenie patcha `src/` → 3 RED;
+mutacje: „stać = tylko pula” → K/3, „bez wczesnego zwrotu w `play_land`” →
+3 RED. Pin `PMSSB12-A` zaktualizowany (76 → −20); reszta pinów na
+`rupture-spire` (m184, m195, m200, etap-f, kafel-cena) zielona bez zmian.
+
+Bramy: `npm test` **9046/9046**, `test:slow` **268/268**, build **76 modułów /
+5550,5 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+
+## M458 — uwaga z gry L: opcjonalny debuff tylko przy zabiciu ważnego celu (2026-10-29, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md).
+(Uwaga oznaczona przez właściciela literą K; w raporcie L, bo K zajęła
+Rupture Spire.)
+
+**Zgłoszenie.** Ambulatory Edifice — „bot korzysta z ETB i płaci 2 life
+praktycznie za nic. Nadaje do końca tury −1/−1 mojej kreaturze, która ma 2/2.
+Ta zdolność ma sens TYLKO wtedy, gdy zadaje lethal damage… to musiałby być
+super ważny stwór: TMC (z aurami i equipment) ≥ 5, albo jedyny z lataniem /
+manace / protection, albo landwalkiem wykorzystanym przeciw botowi”.
+
+**Root cause (L41).** Dwie wyceny tej samej zdolności. `resolve_optional_pay_
+choice` dawała bazę 75 pkt za sam fakt istnienia wrogiego celu (kierunek +1),
+a koszt 2 życia to 4 pkt — 72 > 15, więc bot płacił ZAWSZE. Tabela ETB liczyła
+ujemną pompę jako min(3 × (|P|+|T|), 15) = 6 pkt, nie sprawdzając, czy ktoś
+ginie (debuff „do końca tury” znika w cleanupie, CR 514.2).
+
+**Naprawa.** `debuffPayoffValue(view, target, delta)` — jedno źródło dla obu
+ścieżek: 0 dla celu własnego, delty nieujemnej i — co najważniejsze — gdy
+debuff NIE zabija (wspólny `pumpRemovesCreature`, CR 704.5f). Przy zabiciu
+wymaga WAŻNEGO celu: inwestycja (TMC permanentu + TMC aur + TMC equipmentów)
+≥ `debuffPayoffMinInvestment` (5) ALBO unikalna zdolność z deskryptorów widoku
+(jedyny stwór na stole z flying/menace/protection; landwalk tylko gdy
+kontroluję ląd o tym podtypie, CR 702.14). Decyzja o zapłacie wymaga
+dodatkowo wypłaty > kosztu życia/energii (L48). Pokrętła
+`debuffPayoffMinInvestment`, `debuffPayoffPerPoint`, `debuffPayoffCap`.
+
+**Pin.** `test/l-ambulatory-edifice-debuff.test.js` (15). Odwrócenie patcha
+`src/` → 9 RED; mutacje: bez bramki lethal → L/15, bez bramki ważności → 4 RED,
+„jedyny” → ≥ 1 → L/6, koszt życia zignorowany → L/13, landwalk bez
+sprawdzenia lądu → L/9, tabela ETB z powrotem płaska → PMSSB-60/F1.
+Przeliczone piny: PMSSB-60/F1 (5/1 zamiast 3/3), F5, `real-cards-batch65` BOT
+(2/3 → odmowa, zgodnie ze zgłoszeniem). Zero zmian legalności, zero nowych
+kart, golden-master bez regeneracji.
+
+Bramy: `npm test` **9062/9062**, `test:slow` **268/268**, build **76 modułów /
+5557,8 kB**, benchmark quick 672 mecze — heuristic **88,4%**.
+
+## M459 — uwaga z gry M: „you may” na druku vs obowiązkowy licznik w Oracle (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja M).
+
+**Zgłoszenie.** „Lorescale Coatl — zdolność dodawania counterów +1/+1 przy draw
+ma dopisek «you may», a silnik nie dał mi wyboru, tylko dodał counter bez
+pytania.” Właściciel dołączył zdjęcie fizycznej karty (MM2 #179), na którym
+druk rzeczywiście ma „you may”.
+
+**Weryfikacja (ADR 0030).** Druk MM2/ARB/A25: „Whenever you draw a card, **you
+may** put a +1/+1 counter…”. Bieżący Oracle (Scryfall `oracle_text` dla m21/221
+i mm2/179; snapshot `docs/cards/scryfall-lorescale-coatl.json`): „Whenever you
+draw a card, put a +1/+1 counter on this creature.” Opcjonalność skasowano przy
+Core Set 2021 (2020-07-03) — ta sama zmiana polityki Oracle 2020, która objęła
+Ajani’s Pridemate. Uwaga na dane: Scryfall nie publikuje `printed_text` dla
+mm2/179, więc snapshot w repo nie pokazuje druku (luka źródła, nie dowód).
+
+**Werdykt (L57).** Obowiązuje Oracle — CR 108.1 („Use the Oracle card reference
+when determining a card’s wording”) + ADR 0022 („supported = 100% Oracle”).
+Po erracie licznik jest obowiązkowy (CR 603.5: decyzję daje wyłącznie „you
+may”), więc silnik jest poprawny, a `mayFire` byłby złamaniem Oracle. Naprawa
+NIE zmienia zachowania gry: (1) `notes` karty z opisem rozjazdu i podstawą
+regułową, (2) `test/m-lorescale-coatl-obowiazkowy.test.js` — 7 pinów (Oracle
+vs druk, notatka, brak pól opcjonalności, brak okna decyzji przy 1 i 2
+dobraniach, kontra z prawdziwym „you may”, mutacja `mayFire`), (3) regeneracja
+tabeli numerów CR (`--zapisz`, ten sam sha256) dopisująca **108.1** — 550
+numerów, kod 548 w 6385 cytatach.
+
+Bramy: `npm test` **9069/9069**, `test:slow` **268/268**, build **76 modułów /
+5558,9 kB**, benchmark quick 672 mecze — heuristic **88,4%** (bez zmian: M nie
+dotyka wycen).
+
+## M460 — uwaga z gry N: Wretched Banquet celuje w stwora o najmniejszej mocy (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja N).
+
+**Zgłoszenie.** „Bot nie umie jej rzucać. Rzuca ją na moją największą kreaturę,
+a nie na taką, która ma najmniejszy power wśród kreatur na stole. Więc czar nie
+działa i jest zmarnowany.”
+
+**Root cause.** `destroy_if_least_power` w `REMOVAL_EFFECTS` wyceniany jak
+`destroy_permanent` (`removalEnemyBase + waga × P/T + bonus TMC`) — premia
+rosła z P/T ofiary, choć warunek efektu (CR 608.2b, sprawdzany przy
+rozstrzyganiu) dopuszcza tylko cel o najmniejszej mocy. Pomiar sondy:
+5/5 → 102 vs 1/1 → 78, bot brał 5/5 i czar fizzlował (`execute` zwraca
+`ok: true`, więc brak sygnału zwrotnego). Silnik był poprawny.
+
+**Naprawa (ADR 0002 — deskryptor).** `leastPowerOnBoard` +
+`leastPowerRemovalFizzles` czytają najmniejszą moc ze stołu (moc efektywna,
+ADR 0017, ta sama, którą porównuje silnik); ofiara bez minimalnej mocy nie
+dostaje premii removalu i płaci `leastPowerRemoveFizzlePenalty` (120), co
+przebija bazę czaru razem z premią. Jedna bramka dla obu gałęzi (L41:
+`cast_spell` i `activate_ability`). Po naprawie: A → 1/1 (78) wygrywa z 5/5
+(−70); sceny, w których najmniejszy jest WŁASNY stwór, kończą się passem.
+
+**Piny.** `test/n-wretched-banquet-least-power.test.js` (5 pinów + parametr jako
+pokrętło); odwrócenie bramek → 2 RED.
+
+## M461 — uwaga z gry O: Plague Reaver rzucany tylko na pustą planszę, darowany tylko przy mega armii (2026-10-30, PR #177)
+
+Raport: [UWAGI_Z_GRY_2026-10-29](audits/UWAGI_Z_GRY_2026-10-29.md) (sekcja O).
+
+**Zgłoszenie.** „Bot rzuca ją, po czym natychmiast mi ją przekazuje jej
+zdolnością, tracąc dodatkowo dwie karty z ręki… Rzucenie tej karty ma sens tylko
+wtedy, gdy bot nie ma na stole innych kreatur… zakazałbym przekazywania, chyba
+że przeciwnik ma naprawdę mega armię, powiedzmy >12 poweru kreatur w sumie.”
+
+**Pomiar.** Rzut `plague-reaver` = 74,7117 w każdej scenie (także z 2 własnymi
+stwórami — 38 rzutów w 10 pełnych partiach, w większości przy niepustej
+planszy). Aktywacja „przekaż”: main −18, end −5, `pass_priority` 0; zero
+aktywacji w 10 partiach.
+
+**Trzy root causes.** (1) trigger `sacrifice_each_other_creature` liczony jak
+SYMETRYCZNY wrath (`edge = enemy − mine`, +10 za wroga) — Oracle i silnik mówią
+„sacrifice each other creature **you control**”, wróg nie traci nic;
+(2) `abilityDiscardLoss` znała tylko `discardCard`, więc koszt
+`discardCards: 2` był darmowy; (3) darowanie własnego stworu przeciwnikowi nie
+miało wyceny kierunku (premia zwrotu dotyczy karty w grobie, a poświęconej
+karty tam nie ma).
+
+**Naprawa.** Trigger karny: `−like × Σ bodyWorth(własne)` + twarda kara
+`selfSacrificeWrathOwnBoardPenalty` (200) przy niepustej własnej planszy;
+`abilityDiscardLoss` obsługuje `discardCards: N` (suma strat N kart wg
+preferencji pickera); darowanie: próg `giftedSelfSacrificeMinEnemyPower` = 12
+pkt mocy wroga (wartość właściciela) — poniżej kara, powyżej
+`giftedSelfSacrificeEnemyLossWeight × Σ bodyWorth(wrogie)`.
+
+**Pomiar po naprawie.** Rzut: pusta plansza 74,71; 2 własne stwory → −112,49
+(pass); wroga armia nie daje premii (91,81 → 78,31). Aktywacja: wróg 5 mocy →
+−218 (pass); wróg 16 mocy → +38 (dar ma sens). Re-pin PMSSB10-B2.
+
+**Piny.** `test/o-plague-reaver-darowanie.test.js` (7).
+
+Bramy (N + O): `npm test` **9081/9081**, `test:slow` **268/268**, build **76
+modułów / 5566,5 kB**, benchmark quick 672 mecze — heuristic **88,7%**
+(596/672).

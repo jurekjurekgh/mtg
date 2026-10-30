@@ -19,6 +19,27 @@ import {
  * benchmark (test/bot-benchmark.test.js). Gdy tuner B6 ŚWIADOMIE zmienia
  * parametry domyślne, fixture regeneruje się razem z przyjęciem nowych wag:
  *   node tools/bot-scoring-snapshot.mjs --write
+ *
+ * REJESTR ŚWIADOMYCH REGENERACJI (sesja 2026-10-27c, PR #177):
+ *   - 5be4528f… → 4902f6a7… (C/uwaga właściciela: premia `blockFreeAbsorbBonus`
+ *     za blok bezkosztowy). Zmierzona różnica — JEDNA opcja nie-wybrana:
+ *     `block[permanent-53<permanent-68]` 1 → 3 na partii
+ *     ravnica-wur|innistrad-wu@1001, tura 18 (declare_blockers): blok, w którym
+ *     nikt nie ginie, dostaje 2 × 1 pkt za wchłonięte obrażenia. Wybrane
+ *     komendy (321 decyzji) i scoreSum wybranej ścieżki (3185.9745) są
+ *     IDENTYCZNE — zmiana nie odwraca żadnej decyzji, tylko uczciwiej wycenia
+ *     odrzucony wariant.
+ *   - 4902f6a7… → d5349621… (I/uwaga właściciela 2026-10-29: poświęcenie
+ *     WŁASNEGO stwora ma sens wyłącznie wtedy, gdy stwór już ginie —
+ *     `sacrificeSelfCostLoss` w `heuristic-bot.js`). Zmierzona różnica to
+ *     DOKŁADNIE dwie nie-wybrane już aktywacje poświęcające własne stworzenie
+ *     bez zagrożenia: ravnica-wur|innistrad-wu@1000, tura 15 declare_attackers
+ *     (`permanent-28#0→graveyard-59`, aktywacja 1 → 0; partia 268 → 262
+ *     decyzji, scoreSum 2900.65 → 2970.65) oraz …@1001, tura 19 main1
+ *     (`permanent-68#0→graveyard-35`, 1 → 0; 321 → 298 decyzji, scoreSum
+ *     3185.9745 → 3186.9495). Partia tarkir-bg|warhammer-ubr jest bez zmian,
+ *     a wybory niezwiązane z poświęceniem (np. `permanent-18#0→permanent-45`
+ *     w @1000, tura 14) zachowują IDENTYCZNY zestaw opcji i wynik.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

@@ -12,35 +12,52 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-26c):** [handoff](docs/setup/HANDOFF_2026-10-26c.md),
-[plan sesji](docs/plans/PLAN_2026-10-26c-audyt-pr175-petla-jakosci.md) oraz
-[audyt PR #175](docs/audits/AUDYT_PR175_2026-10-26.md) w otwartym
-[PR #176](https://github.com/jurekjurekgh/mtg/pull/176). Sesja 2026-10-26c:
-pełny audyt scalonego PR #175 (5 plików; mutacje M1–M6) — naprawione
-znaleziska: bramka logu gracza znała tylko dodatkowy koszt rzucenia, więc
-wygnanie za **Delve u człowieka** wypadało z modala „Rozgrywka” (klasa
-„wygnanie jako koszt” ma teraz jedno źródło — `isCostPaymentZoneMove`),
-piny W/1–W/2 przepuszczały surowy `cardId` (L29), a liczby bramek
-w README/handoffie były sprzed ostatniego commita PR #175 (L92). Pętla
-jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bota bez
-wyceny), analizatory zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24
-partie (`tie_all` 0), a `scoring-mulligan-audit` wykrył **fałszywy alarm we
-własnej metryce** (cudza, ukryta ręka liczona jako własne czary + kryterium
-surowsze od polityki bota) — naprawione w `tools/mulligan-keep-criterion.mjs`,
-polityka bota bez zmian. Polowanie CR na ścieżce 614/616 + 106/601.2 (cytat
-dosłowny, pin SHA-256 `8d860e45…70ca`): bez nowych znalezisk kodu. Bramki:
-`npm test` **8885/8885**, `npm run test:slow` **268/268**, build **76 modułów /
-5451,6 kB**, benchmark quick 672 mecze (heuristic 87,8%). Po domknięciu sesji
-właściciel zgłosił dwie uwagi z gry — obie naprawione u root cause: **fantomowa
-mana** Holdout Settlement (miara oferty liczyła zdolność „tapnij stwora” raz na
-kandydata i nie odejmowała produkcji tapowanego stwora → martwy przycisk
-czaru) oraz **pump po mgle** (bot dopakowywał stwory po Revealing Wind, bo
-symulacja walki nie zna efektów zastępczych → „+3/+3” wart tyle samo przy
-zerowych obrażeniach) oraz **tapowanie ciała w Głównej 1** (Cenn's Tactician
-tapował się po licznik zamiast atakować — reguła okna darmowej many nie
-obejmowała kosztu tapnięcia). PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-26b](docs/setup/HANDOFF_2026-10-26b.md)
-(sesja PR #175 — audyt PR #174 i pętla jakości).
+**Aktualny punkt zaczepienia (2026-10-27c):** [handoff](docs/setup/HANDOFF_2026-10-27c.md),
+[plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
+[audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
+[uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) i
+[uwagi z gry F–G (2026-10-29)](docs/audits/UWAGI_Z_GRY_2026-10-29.md) — wszystko w otwartym
+[PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Sesja 2026-10-27c:
+pełny audyt scalonego PR #176 (22 pliki `src/`, +1298/−89; werdykt na każdym
+pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący
+`preventDamageByRemovingCounter` (Magma Pummeler, CR 615.1a) czytał zdolność
+tylko z warstwy własnej, więc zdolność **nadana sprzętem** była martwa
+(klasa L99; wspólny helper + pin `audyt-pr176-f1-…` RED→GREEN + mutacja).
+Na polecenie właściciela („O-1 i O-2 trzeba bezwzględnie naprawić”) domknięte
+dwie obserwacje z audytu, obie w warstwie, w której leżał problem: **O-1** —
+etykieta oferty i kreator załogi ostrzegają, że powtórne osiodłanie/obsadzenie
+wytapuje stwory za nic (aktywacja zostaje legalna, CR 702.171a; pin M219 broni
+istnienia oferty), oraz **O-2** — czar Converge płaci różnymi kolorami many,
+więc X jest maksymalny legalnym wyborem (CR 601.2h + 207.2c; flaga celu
+płatności wąska, Adamant bez zmian). Pozostałe obserwacje domknięte w tej
+samej sesji: generyczny trigger
+`counter_removed` odpala teraz na każdej drodze zdejmowania liczników, a „this
+way” deklaruje karta (O-3), log testera nie ucina etykiet cicho (O-5), liczby
+w poprzednim handoffie odświeżone (O-4/L92).
+Na polecenie właściciela domknięte też **cztery uwagi z gry** (A–D), każda
+z pinem i mutacją RED ([raport](docs/audits/UWAGI_Z_GRY_2026-10-27c.md)):
+ETB z celem „obrażony w tej turze” czeka na Główną 2 (Fathom Fleet Cutthroat),
+koszt aktywacji zdolności many (Apprentice Wizard, lądy-konwertery) opłaca
+osobny kreator podrzędny (auto-tap silnika nie wybiera już źródeł), blok
+bezkosztowy bije pass (`blockFreeAbsorbBonus`), a Cuombajj Witches dostaje
+wycenę wyboru przeciwnika i zakaz psucia własnego czaru na stosie.
+Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bez
+wyceny; transkrypty czytane ręcznie — L27), analizatory
+zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
+decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
+207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Ostatnia partia uwag z gry (N, O — [raport](docs/audits/UWAGI_Z_GRY_2026-10-29.md)):
+Wretched Banquet celuje teraz w stwora o **najmniejszej** mocy (warunek efektu
+CR 608.2b sprawdzany w scoringu, nie tylko w silniku), a Plague Reaver jest
+rzucany **tylko na pustą własną planszę** i darowany przeciwnikowi dopiero
+powyżej progu 12 pkt mocy jego stworów; trigger „sacrifice each other creature
+you control” nie jest już liczony jak symetryczny wrath, a koszt „odrzuć dwie
+karty” jest wyceniany. Bramki:
+`npm test` **9081/9081**, `npm run test:slow` **268/268**, build **76 modułów /
+5566,5 kB**, benchmark quick 672 mecze (heuristic 88,7%). PR czeka na decyzję
+właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
+(sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);
+poprzedni: [handoff 2026-10-26c](docs/setup/HANDOFF_2026-10-26c.md).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,

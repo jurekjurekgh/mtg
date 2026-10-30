@@ -33,15 +33,19 @@ test('params: wartości domyślne są dokładnie dawnymi stałymi', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalEnemyBase, 22);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.removalWorthWeight, 2);
   // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): waga TMC
-  // zatrzymywanego czaru przy kontrze (2 parytet + 4 trwałość).
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.counterspellTmcWeight, 6);
+  // zatrzymywanego czaru przy kontrze (parytet z wagą removalu + 4 trwałość).
+  // G (2026-10-29): 6 → 10, bo bounce dostał wagę TMC 6 — parytet idzie za
+  // nią (6 + 4 trwałości), inaczej kontra MV3 przegrywała z odbiciem drobiazgu.
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.counterspellTmcWeight, 10);
   // PMSSB-1/A (M239/2): bounceEnemyBase/Weight usunięte (typ
   // return_to_hand nie istnieje); rodzina „bounce” (wartości przemyślane —
   // test/audyt-pmssb1-bounce.test.js).
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryTopBonus, 8);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryBottomBonus, 18);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTokenBonus, 12);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 1);
+  // G (2026-10-29): 1 → 2 — pojedyncza kara ETB przestawała rozstrzygać przy
+  // wadze TMC 6 (drogi stwór z ETB wracał jako cel bounce, pin PMSSB-1/A/F6).
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 2);
   // PMSSB-1/B: kierunek własny (ratunek F5 + reuse F4).
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceRecastManaWeight, 3);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTempoPenalty, 10);
@@ -181,8 +185,8 @@ test('params: removalEnemyBase realnie przepływa do wyceny czaru usuwającego',
 
 test('params: counterspellTmcWeight realnie przepływa do wyceny kontry', () => {
   // L (zgłoszenie właściciela 2026-10-09, Steel Sabotage): negate w ręce +
-  // wrogi fireball (MV1) na stosie. Podbicie wagi 6→60 musi podnieść wycenę
-  // DOKŁADNIE o (60−6)×1 = 54 — dowód, że pokrętło działa (nie atrapa).
+  // wrogi fireball (MV1) na stosie. Podbicie wagi 10→60 musi podnieść wycenę
+  // DOKŁADNIE o (60−10)×1 = 50 — dowód, że pokrętło działa (nie atrapa).
   const build = () => {
     const state = createGameState({ seed: 11, players: [{ id: 'p1' }, { id: 'p2' }] });
     initializeResources(state);
@@ -211,7 +215,7 @@ test('params: counterspellTmcWeight realnie przepływa do wyceny kontry', () => 
   };
   const base = scoreOf(createHeuristicBot({ seed: 1, registry }));
   const bumped = scoreOf(createHeuristicBot({ seed: 1, params: { counterspellTmcWeight: 60 }, registry }));
-  assert.equal(base, 78);
+  assert.equal(base, 82);
   assert.equal(bumped, 132);
 });
 

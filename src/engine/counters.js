@@ -101,8 +101,16 @@ export function removeCounter(state, objectId, counterName, amount = 1, extra = 
   state.objects.set(objectId, updated);
   // M126/#6 (ta sama rodzina co counter_added): LKI dla obiektu, który mógł
   // już opuścić pole bitwy, zanim gracz przeczyta wpis.
+  // O-3 (sesja 2026-10-27c): zdarzenie niesie też KONTROLERA i migawkę
+  // zdolności, bo trigger „whenever a counter is removed” odpala także wtedy,
+  // gdy zdjęcie licznika kończy się śmiercią źródła (0 wytrzymałości, CR
+  // 704.5f) — obiekt zmienia wtedy strefę i tożsamość (CR 400.7), więc skan
+  // triggerów nie ma już czego przeczytać. Ten sam kontrakt co ścieżka
+  // prewencji (permanents.js, CR 603.10).
   const e = event('counter_removed', {
     objectId, cardId: object.cardId, counter: counterName, amount, total: counters[counterName] ?? 0,
+    controllerId: object.controllerId,
+    abilities: Object.freeze([...(object.abilities ?? [])]),
     ...(extra ?? {}),
   });
   state.events.push(e);

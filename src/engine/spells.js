@@ -3115,6 +3115,7 @@ function resolvePermanentSpell(state, stackId, object, before, riotChoices = nul
       transformTo: {
         cardId: permanent.cardId,
         cardName: permanent.cardName,
+        name: permanent.name ?? null,
         kind: permanent.kind,
         power: permanent.power,
         toughness: permanent.toughness,

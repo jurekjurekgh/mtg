@@ -174,11 +174,17 @@ test('M101/D: trigger jako JEDYNY obiekt na stosie też raportuje swój skutek',
   // Seed 7 po Batchu 58 B4 (innistrad-brg +Scroll of Avacyn) — hunter 1..90
   // (5 opóźnionych; kolejne trafienia: 14, 17, 19, 21, 25, 26, 28, 29, 32, 35,
   // 37, 39, 47, 52, 65, 69, 72, 73, 76, 77, 81).
-  // Konwencja L25: zmiana składu talii przelosowuje seedy scenariuszowe.
-  const { shown, log } = playCollectingPanel(makeSession(7, 'alara.txt'));
+  // I (2026-10-29, koszt poświęcenia własnego stwora — `sacrificeSelfCostLoss`):
+  // bot przestał poświęcać stwory bez zagrożenia, więc partia innistrad vs alara
+  // zmieniła przebieg i seed 7 NIE MA już opóźnionych triggerów — hunter 1..90
+  // daje w tej parze ZERO trafień. Nowa para: bot gra `the-edge.txt`, seed 1
+  // (1 opóźniony trigger, panel kompletny; hunter 1..15 — kolejne trafienia
+  // w tej parze: 3, 4, 6, 7, 12, 14; drugi nośnik to `lorwyn.txt` seed 2 i 6).
+  // Konwencja L25: zmiana wycen bota przelosowuje seedy scenariuszowe.
+  const { shown, log } = playCollectingPanel(makeSession(1, 'the-edge.txt'));
   const panel = shown.join('\n');
   const opoznione = log.filter((l) => /trigger się rozstrzyga \(opóźniony\)/.test(l));
-  assert.ok(opoznione.length > 0, 'seed 7 miał zawierać opóźnione triggery — zmienił się przebieg partii');
+  assert.ok(opoznione.length > 0, 'seed 1 (the-edge) miał zawierać opóźnione triggery — zmienił się przebieg partii');
   for (const line of opoznione) {
     assert.ok(panel.includes(line), `opóźniony trigger poza panelem: „${line}"`);
   }

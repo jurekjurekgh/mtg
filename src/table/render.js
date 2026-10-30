@@ -3290,6 +3290,54 @@ function abilityFizzlesOnHand(ability, view) {
   });
 }
 
+/**
+ * O-1 audytu PR #176 (Żywy Tester `out/a4.txt:440-455`): aktywacja, której
+ * TRWAŁY, idempotentny skutek już siedzi na obiekcie.
+ *
+ * Gracz ośiodłał ten sam wierzchowiec DWA razy pod rząd — druga aktywacja jest
+ * regułowo LEGALNE (CR 702.171a: „Saddle only as a sorcery” — brak zakazu ponownej aktywacji,
+ * a stan „saddled” i tak trwa do końca tury),
+ * więc oferta zostaje (pin M219 resaddle wprost broni istnienia tej
+ * oferty — chowanie byłoby over-fixem wobec CR 602.2b). Ale koszt jest realny:
+ * drugie osiodłanie TAPUJE kolejne stwory, a nie zmienia niczego. To ta sama
+ * klasa co ostrzeżenia M126 (pusta biblioteka / brak karty w ręce): nie
+ * blokujemy, mówimy wprost, że skutku nie będzie.
+ *
+ * Reguła po DESKRYPTORZE efektu i fladze STANU z PlayerView (ADR 0017), nie po
+ * nazwie karty ani mechaniki (ADR 0002). Flagi: `saddled` (CR 702.171a) oraz
+ * `animatedUntilEOT` (crew/animacja — CR 702.122e; widok niesie ją, gdy
+ * permanent ma `originalBeforeAnimation`, `game-state.js:7352`).
+ */
+const IDEMPOTENT_EOT_STATE_EFFECTS = new Map([
+  ['set_saddled', { flag: 'saddled', text: 'jest już osiodłany do końca tury' }],
+  ['animate_permanent_until_end_of_turn', { flag: 'animatedUntilEOT', text: 'jest już obsadzony do końca tury' }],
+]);
+
+/**
+ * Ostrzeżenie do etykiety oferty aktywacji (albo '' gdy nie ma czego ostrzegać).
+ * `subjectId` to obiekt, który efekt realnie zmienia: dla celowanych animacji
+ * (Skilled Animator) jest nim CEL, nie źródło — bez tego etykieta karałaby
+ * źródło za stan celu albo odwrotnie.
+ */
+export function activationAlreadyAppliedWarning(ability, view, subjectId) {
+  const effects = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
+  if (effects.length === 0) return '';
+  const battlefield = view?.zones?.battlefield ?? [];
+  const lookup = (id) => (id == null ? null : battlefield.find((entry) => entry?.id === id) ?? null);
+  for (const effect of effects) {
+    const rule = effect?.type ? IDEMPOTENT_EOT_STATE_EFFECTS.get(effect.type) : null;
+    if (!rule) continue;
+    // Efekt czytający INNY cel (targetIndex ≠ 0) nie jest oceniany — jak w
+    // `effectIsNoOpOnTarget` w silniku.
+    if (effect.targetIndex != null && effect.targetIndex !== 0) continue;
+    const subject = lookup(subjectId);
+    if (subject?.[rule.flag] === true) {
+      return `${rule.text} — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie`;
+    }
+  }
+  return '';
+}
+
 /** Polskie nazwy kolorów many (do badge'y ochrony). */
 const PROTECTION_COLOR_NAMES = { W: 'Biały', U: 'Niebieski', B: 'Czarny', R: 'Czerwony', G: 'Zielony' };
 
@@ -3963,7 +4011,15 @@ function commandLabelBase(cmd, session, view) {
         ? ` — ${crewTail}${crewNeeded > 0 ? ` (moc ≥ ${crewNeeded})` : ''}`
         : '';
       // M126/#1: zdolność czytająca pustą bibliotekę zabierze koszt i nic nie da.
-      const emptyLibWarn = abilityDrawsFromEmptyLibrary(ability, view)
+      // O-1 (audyt PR #176): aktywacja legalna, ale jej trwały skutek już jest
+      // (drugie osiodłanie / ponowne obsadzenie) — koszt tapnięcia przepada.
+      // Kolejność: najpierw stan celu (dotyczy TEJ aktywacji), potem zasoby.
+      const alreadyWarn = activationAlreadyAppliedWarning(
+        ability, view, ability?.targets?.length ? cmd.targets?.[0] : cmd.objectId,
+      );
+      const emptyLibWarn = alreadyWarn
+        ? ` — UWAGA: ${nameOfObjectId(ability?.targets?.length ? cmd.targets?.[0] : cmd.objectId)} ${alreadyWarn}`
+        : abilityDrawsFromEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, dobranie z niej przegrywa grę (CR 704.5b)'
         : abilityFizzlesOnEmptyLibrary(ability, view)
         ? ' — UWAGA: twoja biblioteka jest pusta, zdolność nie zadziała'
