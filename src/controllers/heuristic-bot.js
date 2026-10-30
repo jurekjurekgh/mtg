@@ -3269,10 +3269,24 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (ev === 'end_step' && ability.trigger?.condition?.didntAttackThisTurn) continue;
         // trostani-symmetric = net-0 (kontrola wraca do właścicieli OBU stron!).
         if (e.type === 'control_to_owners_all_creatures') continue;
-        // reaver-wrath: TYLKO gdy wróg prowadzi (asymetria planszy!).
+        // O (zgłoszenie właściciela 2026-10-29, Plague Reaver): „At the
+        // beginning of each end step, sacrifice each other creature you
+        // control.” — ofiarami są WYŁĄCZNIE własne stwory (silnik:
+        // effects.js `otherCreaturesYouControl`, ten sam deskryptor). Wycena
+        // liczyła to jak SYMETRYCZNY wrath („edge = enemy − mine” × 10), więc
+        // przy przewadze wroga rzut dostawał PREMIĘ za oddanie całej własnej
+        // planszy (pomiar: cast 74,71 identyczny przy 0 i 2 własnych stworach
+        // — premia za wrogi stół maskowała stratę). Poprawny model: efekt
+        // jest czysto karny — value = −Σ cena własnych stworów; przy dowolnej
+        // własnej kreaturze rzut ma przegrać z passem (właściciel: „rzucenie
+        // ma sens tylko wtedy, gdy bot nie ma na stole innych kreatur”).
+        // ADR 0002: po deskryptorze efektu, nie po nazwie karty.
         if (e.type === 'sacrifice_each_other_creature') {
-          const edge = enemyCreatures(view).length - myCreatures(view).length;
-          if (edge > 0) total += like * edge * 10;
+          const mine = myCreatures(view);
+          if (mine.length > 0) {
+            total -= like * mine.reduce((sum, o) => sum + bodyWorth(o), 0);
+            total -= P.selfSacrificeWrathOwnBoardPenalty;
+          }
           continue;
         }
         // ascension-cloak: 0.5 × ciało-2/2-ward-10 (konserwatywnie!).
@@ -5298,6 +5312,37 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     'owner_library_top_or_bottom',
   ]);
   const bounceEffectStrengthBonus = (effectType) => BOUNCE_STRENGTH.get(effectType) ?? 0;
+  /**
+   * N (zgłoszenie właściciela 2026-10-29, Wretched Banquet): „bot rzuca ją na
+   * moją największą kreaturę, a nie na taką, która ma najmniejszy power —
+   * więc czar nie działa i jest zmarnowany”.
+   *
+   * Warunek efektu `destroy_if_least_power` (CR 608.2b — sprawdzany PRZY
+   * ROZSTRZYGANIU): cel zostaje zniszczony TYLKO wtedy, gdy ma najmniejszą
+   * moc (albo remis) spośród stworów NA POLU BITWY obu graczy. Silnik robi to
+   * poprawnie (effects.js `destroy_if_least_power`), ale wycena traktowała
+   * ten deskryptor jak zwykły `destroy_permanent` — premia rosła z P/T
+   * ofiary, więc bot wybierał NAJWIĘKSZEGO stwora i czar fizzlował
+   * (`execute` zwraca `ok: true`, więc nie ma sygnału zwrotnego).
+   *
+   * Reguła generyczna po deskryptorze (ADR 0002), nie po nazwie karty:
+   * ofiara bez minimalnej mocy = brak efektu = kara, która musi przebić bazę
+   * czaru i każdą premię removalu (inaczej „rzucę, bo jest dowolny cel”
+   * wygrywa z passem).
+   */
+  const leastPowerOnBoard = (view) => {
+    const powers = (view.zones.battlefield ?? [])
+      .filter((o) => o.kind === 'creature')
+      .map((o) => o.power ?? 0);
+    return powers.length > 0 ? Math.min(...powers) : null;
+  };
+  const leastPowerRemovalFizzles = (view, victim) => {
+    if (!victim || victim.kind !== 'creature') return true;
+    const minPower = leastPowerOnBoard(view);
+    // Widok niesie moc EFEKTYWNĄ (`effectivePower`, ADR 0017) — ta sama,
+    // którą porównuje silnik przy rozstrzyganiu.
+    return minPower == null || (victim.power ?? 0) !== minPower;
+  };
   // PMSSB-1/B: aura-delta wyjęta ze wspólnego mianownika (L41) — ten sam
   // wymiar liczy cel wroga (fala A) i cel własny (fala B: własne aury na
   // własnym celu spadają do grobu, CR 704.5m — strata).
@@ -10739,10 +10784,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * a nie z dowolną/pierwszą kartą. Preferencja dodatnia oznacza śmieć.
    */
   function abilityDiscardLoss(view, cost, source) {
-    if (!cost?.discardCard) return 0;
+    // O (zgłoszenie właściciela 2026-10-29, Plague Reaver): koszt
+    // `discardCards: N` (odrzuć N kart) nie był wyceniany w OGÓLE — funkcja
+    // znała tylko `discardCard` (1 karta, koszt innych zdolności). Przez to
+    // aktywacja „odrzuć DWIE karty, poświęć to stworzenie” płaciła wyłącznie
+    // ciałem, a utrata ręki była darmowa. Generycznie po deskryptorze kosztu
+    // (ADR 0002), ta sama preferencja co picker (PMSSB-25/26): suma strat
+    // N kart, które bot faktycznie by oddał (najpierw śmieci).
+    const count = cost?.discardCard ? 1 : (cost?.discardCards ?? 0);
+    if (!count) return 0;
     const hand = (view.zones.hand ?? []).filter(card => card.id !== source?.id);
-    if (!hand.length) return P.drawCardValue + 1;
-    return Math.max(0, -Math.max(...hand.map(card => discardCostPreference(view, card))));
+    if (!hand.length) return P.drawCardValue + count;
+    const prefs = hand.map(card => discardCostPreference(view, card)).sort((a, b) => b - a);
+    return prefs.slice(0, count).reduce((sum, pref) => sum + Math.max(0, -pref), 0);
   }
 
   /** PMSSB-58/F4: zjedzenie tokena może odebrać innej zdolności opłacalny
@@ -12544,6 +12598,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // POMIJAMY premię za „usunięcie permanentu wroga" — inaczej
                 // premia przebijała karę i bot i tak rzucał czar.
                 score -= 70;
+                continue;
+              }
+              // N: `destroy_if_least_power` niszczy cel TYLKO przy minimalnej
+              // mocy na stole (wyżej: `leastPowerRemovalFizzles`) — bez tego
+              // premia rosła z P/T ofiary i bot celował w największego stwora.
+              if (effect.type === 'destroy_if_least_power' && leastPowerRemovalFizzles(view, victim)) {
+                score -= P.leastPowerRemoveFizzlePenalty;
                 continue;
               }
               if (victim.controllerId === view.playerId) {
@@ -14410,6 +14471,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               score += 10 + ((gyCard.power ?? gyDef?.power ?? 0) * 2)
                 + (gyCard.toughness ?? gyDef?.toughness ?? 0);
             }
+            // O2 (zgłoszenie właściciela 2026-10-29, Plague Reaver): DAROWANIE
+            // własnego stworu przeciwnikowi (koszt `sacrificeSelf` + cel-gracz
+            // przeciwnik + powrót pod JEGO kontrolę w upkeepie). Dotąd ten
+            // wariant nie miał żadnej wyceny kierunku: cel-gracz wpadał w
+            // gałąź `friendlyMisaimPenalty` (−30 − życie), więc „oddaję 6/5”
+            // wychodziło z wartością dodatnią TYLKO dlatego, że wyżej w tej
+            // samej zdolności `return_to_battlefield_under_control_at_upkeep`
+            // premiowało kartę z grobu — a poświęconej karty w grobie nie ma
+            // (koszt `sacrificeSelf` płacony PRZED rozstrzygnięciem), więc
+            // zostawała goła kara za poświęcenie ciała.
+            // Model po deskryptorze (ADR 0002): dar ma sens wyłącznie wtedy,
+            // gdy nosiciel w end stepie ofiary zabije JEJ stwory („sacrifice
+            // each other creature you control”) — czyli wtedy, gdy wróg ma
+            // realną armię. Próg mocy wroga jest pokrętłem (właściciel: 12).
+            const ownTrigger = (def?.abilities ?? []).some((a) => a?.type === 'triggered'
+              && (Array.isArray(a.effect) ? a.effect : [a.effect])
+                .some((fx) => fx?.type === 'sacrifice_each_other_creature'));
+            const giftToOpponent = source?.kind === 'creature'
+              && ability?.cost?.sacrificeSelf && slot != null && slot !== view.playerId;
+            if (ownTrigger && giftToOpponent) {
+              const enemyPower = enemyCreatures(view).reduce((sum, o) => sum + Math.max(0, o.power ?? 0), 0);
+              if (enemyPower <= P.giftedSelfSacrificeMinEnemyPower) {
+                // Wróg bez „mega armii”: dar oddaje ciało i dwie karty za nic.
+                score -= P.selfSacrificeWrathOwnBoardPenalty;
+              } else {
+                score += P.giftedSelfSacrificeEnemyLossWeight
+                  * enemyCreatures(view).reduce((sum, o) => sum + bodyWorth(o), 0);
+              }
+            }
           }
           // M96 (audyt Żywym Testerem): zdolności celujące w GRACZA nie były
           // w ogóle wyceniane — każdy cel dostawał to samo `score = 2`, więc
@@ -14533,6 +14623,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               if (!victim) continue;
               if (effect.type === 'destroy_permanent' && willRegenerate(view, victim.id)) {
                 score -= 70;
+                continue;
+              }
+              // N (L41 — bliźniak gałęzi cast_spell): `destroy_if_least_power`
+              // niszczy cel tylko przy minimalnej mocy na stole; inaczej kara
+              // przebijająca bazę zdolności i premię za wrogi cel.
+              if (effect.type === 'destroy_if_least_power' && leastPowerRemovalFizzles(view, victim)) {
+                score -= P.leastPowerRemoveFizzlePenalty;
                 continue;
               }
               if (victim.controllerId === view.playerId) {

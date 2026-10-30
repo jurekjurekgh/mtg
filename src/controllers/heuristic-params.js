@@ -263,6 +263,26 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // Kara musi PRZEBIĆ bazę czaru (+50) i premię removalu, żeby wariant
   // zszedł poniżej passu (wzec M237/2 — trywialny cel kontry).
   'removalPureLandPenalty',  // kara za removal/odbicie kierowane w czysty ląd przeciwnika
+  // N (zgłoszenie właściciela 2026-10-29, Wretched Banquet): kara za rzut
+  // `destroy_if_least_power` w cel, który NIE ma najmniejszej mocy na stole —
+  // warunek efektu (CR 608.2b) nie zajdzie, czar fizzluje (silnik zwraca
+  // `ok: true`, więc bot nie dostaje sygnału zwrotnego). Musi przebić bazę
+  // czaru (50) RAZEM z premią removalu (22 + 2×P/T + bonus TMC), dlatego 120.
+  'leastPowerRemoveFizzlePenalty',
+  // O (zgłoszenie właściciela 2026-10-29, Plague Reaver): kara za RZUT
+  // stworu, którego trigger to „sacrifice each other creature you control”
+  // (powtarzalny, co end step) przy niepustej własnej planszy. Właściciel:
+  // „rzucenie tej karty ma sens tylko wtedy, gdy bot nie ma na stole innych
+  // kreatur”. Wartość musi przebić całe ciało karty (6/5 ≈ 75), stąd 200.
+  'selfSacrificeWrathOwnBoardPenalty',
+  // O2 (zgłoszenie właściciela 2026-10-29): próg „mega armia” przeciwnika —
+  // dopiero powyżej tylu punktów MOCY wrogich stworów oddanie własnego
+  // stworu z trigerem „sacrifice each other creature you control” ma sens
+  // (przeciwnik poświęci własną planszę). Właściciel wskazał 12.
+  'giftedSelfSacrificeMinEnemyPower',
+  // O2: waga straty wroga przy oddaniu takiego stworu (Σ cena ciał wrogich
+  // stworów, które padną w jego end stepie).
+  'giftedSelfSacrificeEnemyLossWeight',
   // M235: Benevolent Blessing uses this as a hold score when no lethal-damage
   // threat exists; a Main 1 or combat step alone does not open its window.
   // Static-quality protection Auras retain the existing timing-penalty path.
@@ -949,6 +969,14 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // cele bez deathtouch/protekcji, gdy mam blokera zabijającego bez straty.
   removalCombatHandledPenalty: 12,
   removalPureLandPenalty: 60,
+  // N: patrz deklaracja wyżej — 120 przebija bazę czaru + maks. premię removalu.
+  leastPowerRemoveFizzlePenalty: 120,
+  // O: 200 = powyżej pełnej ceny ciała 6/5 (2·6+5+3 = 20 w skali `bodyWorth`,
+  // ale rzut wyceniany jest z ciałem ~75) — każda własna kreatura na stole
+  // czyni rzut gorszym od passu; pusta własna plansza = brak kary.
+  selfSacrificeWrathOwnBoardPenalty: 200,
+  giftedSelfSacrificeMinEnemyPower: 12,
+  giftedSelfSacrificeEnemyLossWeight: 1,
   // M235: this also pushes Benevolent Blessing below pass without a lethal
   // source. Other flash protection Auras retain the legacy off-window penalty;
   // it must exceed their base value so the bot holds them until that window.
