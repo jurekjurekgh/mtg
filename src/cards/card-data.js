@@ -14330,6 +14330,18 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
 
   // 357 MM2 — każde prawdziwe zdarzenie draw ma osobny trigger. Techniczne
   // dobieranie mulliganu ma drawNumberThisTurn=null i nie spełnia zdarzenia.
+  //
+  // M (zgłoszenie właściciela 2026-10-29): „zdolność ma dopisek «you may»,
+  // a silnik nie dał wyboru”. DRUK tej karty (MM2 #179, ARB #101, A25 #207)
+  // rzeczywiście brzmi „you may put a +1/+1 counter on Lorescale Coatl”,
+  // ale BIEŻĄCY Oracle — od dodatku Core Set 2021 (2020-07-03) — brzmi
+  // „put a +1/+1 counter on this creature”: WotC skasowało opcjonalność
+  // w ramach zmiany polityki Oracle z 2020 r. (ten sam zabieg co Ajani's
+  // Pridemate; spoiler M21 z 2020-06-08 wywołał dokładnie tę dyskusję).
+  // Obowiązuje Oracle (CR 108.1: „Oracle card reference … use the Oracle
+  // text”), a ADR 0022 wymaga 100% Oracle — dlatego deskryptor NIE ma
+  // `mayFire`, a licznik jest obowiązkowy. Pin:
+  // `test/m-lorescale-coatl-obowiazkowy.test.js`.
   defineCard({
     id: 'lorescale-coatl', name: 'Lorescale Coatl', set: 'MM2',
     types: ['Creature'], subtypes: ['Snake'], colors: ['G', 'U'],
@@ -14345,6 +14357,9 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
     ],
     artId: 357, plan: 'Alara',
     support: { status: 'supported', limitations: [] },
+    notes: [
+      'ERRATA (2020-06-30, Oracle M21): druk MM2/ARB/A25 mówi „you may put a +1/+1 counter”, ale bieżący Oracle — „put a +1/+1 counter on this creature” (WotC skasowało „may” w polityce Oracle 2020, jak u Ajani\'s Pridemate). Karta idzie za Oracle (CR 108.1), więc licznik jest OBOWIĄZKOWY i nie ma okna decyzji.',
+    ],
   }),
 
   // 359 M19 — tapped dual. Profil ['B','G'] oznacza jedną jednostkę many,
