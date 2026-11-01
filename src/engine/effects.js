@@ -1062,6 +1062,12 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
     const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
     return host?.controllerId ?? null;
   }
+  // Batch 71 (Curse of the Bloody Tome): „Enchant player / At the beginning of
+  // enchanted player's upkeep, that player mills two cards" — mieli ZACZAROWANY
+  // GRACZ (CR 303.4b: aura na gracza niesie `enchantedPlayerId`), nie kontroler
+  // aury (CR 109.5). Deskryptor generyczny — to samo miejsce prawdy dla oferty
+  // i rozstrzygnięcia (L41).
+  if (effect.applyTo === 'enchanted_player') return sourceObject?.enchantedPlayerId ?? null;
   return (targets[0] && state.players.some((player) => player.id === targets[0]))
     ? targets[0]
     : sourceObject?.controllerId ?? null;
@@ -3072,6 +3078,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
+    // Aura na gracza bez zaczarowanego gracza (odpięta/nielegalna) — brak
+    // skutku, tak samo jak wyżej (CR 608.2b).
+    if (effect.applyTo === 'enchanted_player' && !sourceObject?.enchantedPlayerId) return;
     const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);

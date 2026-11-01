@@ -16,6 +16,7 @@ import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
 import { effectivePower, effectiveKeywords } from '../src/engine/permanents.js';
+import { processTriggers } from '../src/engine/triggers.js';
 
 const registry = createCardRegistry();
 
@@ -248,6 +249,78 @@ test('pin B2c: delirium na EFEKCIE — 3 typy w grobie = brak double strike (res
   const keywords = effectiveKeywords(cel, state);
   assert.ok(keywords.includes('first_strike'));
   assert.ok(!keywords.includes('double_strike'), '3 typy (token się nie liczy) → bez double strike');
+});
+
+// =========================================================================
+// B2d — mill ZACZAROWANEGO GRACZA (Curse of the Bloody Tome: „Enchant player /
+//       At the beginning of enchanted player's upkeep, that player mills two
+//       cards"). CR 303.4b (aura na gracza), 109.5 (kontroler aury ≠ gracz).
+// =========================================================================
+
+const tomeAura = () => createAbility({
+  type: ABILITY_TYPE.triggered,
+  trigger: { event: 'upkeep', condition: { enchantedPlayerUpkeep: true } },
+  effect: [{ type: 'mill_cards', amount: 2, applyTo: 'enchanted_player' }],
+});
+
+/** Aura na GRACZA: `enchantedPlayerId` (nie `attachedTo`).
+ *  Pole nie należy do kontraktu `addObject` (dodaje je rzut aury, `spells.js`),
+ *  więc ustawiamy je tak jak robi to produkcja — zamrożoną kopią obiektu. */
+function auraOnPlayer(state, id, playerId, abilities) {
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: `syn-${id}`, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', kind: 'enchantment', power: null, toughness: null, manaCost: 2,
+    types: ['Enchantment'], subtypes: ['Aura'], keywords: [], abilities,
+    enchantPlayer: true,
+  });
+  state.objects.set(id, Object.freeze({ ...state.objects.get(id), enchantedPlayerId: playerId }));
+}
+
+/** Biblioteka z N kartami gracza (karty bez znaczenia dla mechaniki). */
+function library(state, playerId, count) {
+  const ids = [];
+  for (let i = 0; i < count; i += 1) {
+    const id = `lib-${playerId}-${i}`;
+    synthetic(state, id, { controllerId: playerId, types: ['Creature'], zone: 'library', power: null, toughness: null });
+    ids.push(id);
+  }
+  return ids;
+}
+
+test('pin B2d: upkeep ZACZAROWANEGO gracza — mieli go, nie kontrolera aury', () => {
+  const state = game();
+  library(state, 'p1', 3);
+  library(state, 'p2', 3);
+  auraOnPlayer(state, 'tome', 'p2', [tomeAura()]);
+  state.turn.activePlayerId = 'p2';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+  resolveStack(state);
+  assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2').length, 2,
+    'zaczarowany gracz mieli dwie karty');
+  assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p1').length, 0,
+    'kontroler aury nie mieli nic');
+});
+
+test('pin B2d: upkeep INNEGO gracza — trigger nie odpala (warp: to nie jego upkeep)', () => {
+  const state = game();
+  library(state, 'p1', 3);
+  library(state, 'p2', 3);
+  auraOnPlayer(state, 'tome', 'p2', [tomeAura()]);
+  state.turn.activePlayerId = 'p1';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+  resolveStack(state);
+  assert.equal(state.zones.graveyard.length, 0, 'brak mila poza upkeeppem zaczarowanego gracza');
+});
+
+test('pin B2d: biblioteka krótsza niż mill (1 karta) — mieli tyle, ile jest (ruling ISD)', () => {
+  const state = game();
+  library(state, 'p2', 1);
+  auraOnPlayer(state, 'tome', 'p2', [tomeAura()]);
+  state.turn.activePlayerId = 'p2';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+  resolveStack(state);
+  assert.equal(state.zones.graveyard.length, 1, 'jedna karta w bibliotece → do grobu');
+  assert.equal(state.zones.library.length, 0);
 });
 
 // =========================================================================
