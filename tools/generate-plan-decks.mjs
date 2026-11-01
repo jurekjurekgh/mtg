@@ -197,8 +197,17 @@ export const WOREK_DECKS = Object.freeze({
   // kraina umarłych), dzikie 15 (Thunder Junction 7, Kaldheim 6, TMNT 2:
   // pogranicze, Północ i ulice poza prawem). Wpisy Eldraine/Kaladesh/Ixalan/
   // Theros/Śródziemie/Final Fantasy/The Edge są martwe po awansach.
-  Lorwyn: 'worek-legend', Arcavios: 'worek-legend',
-  Duskmourn: 'worek-dziki', Amonkhet: 'worek-mroczny',
+  // Batch 71 (2026-11-01): karty 628 (Śródziemie) i 630 (Kaldheim) dobiły
+  // swoje plany do progu 15 → AUTO-AWANS (M181), a worek-legend został
+  // z samym Arcavios (10 kart nielandowych) — poniżej minimum walidatora.
+  // Przetasowanie (ADR 0023 §4: motyw + najmniejsza talia), NIELANDOWYCH po
+  // komplecie kart B71 (suma 64 bez zmian): legendy 16 (Arcavios 7 —
+  // uczelnia magii, Amonkhet 7 — mitologia krainy umarłych jak Theros,
+  // Star Wars 2 — legendarna saga rodu), mroczny 15 (New Capenna 8 — noir,
+  // Duskmourn 7 — dom grozy), dzikie 15 (Thunder Junction 10, Marvel 2,
+  // TMNT 3), baśnie 18 (Kamigawa 10, Bloomburrow 8).
+  Lorwyn: 'worek-legend', Arcavios: 'worek-legend', Amonkhet: 'worek-legend',
+  Duskmourn: 'worek-mroczny',
   'Teenage Mutant Ninja Turtles': 'worek-dziki',
   // Batch 63/T2 (2026-10-04): nowy plan właściciela „Marvel” (karta 241 News
   // Helicopter, set SPM) — miejskie ulice i superbohaterowie, motyw spójny
@@ -210,7 +219,9 @@ export const WOREK_DECKS = Object.freeze({
   // spójny z cyberpunkową Kamigawą („Neon Dynasty”) w worku-baśni, który
   // jest też NAJMNIEJSZYM workiem (19 kart nie-basic; ADR 0023 §4: motyw
   // + najmniejsza talia). Jedna karta — próg awansu (15) daleko.
-  'Star Wars': 'worek-basni',
+  // Batch 71: Star Wars przenosi się z worka-baśni do legend (legendarna saga
+  // rodu) — baśnie bez tej zmiany spadłyby z progu, a legenda go nie miała.
+  'Star Wars': 'worek-legend',
 });
 
 export const WOREK_NAMES = Object.freeze({

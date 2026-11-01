@@ -1,31 +1,27 @@
 # Worek: Legendy
 
+1x Blossoming Sands
 1x Foul Orchard
-1x Immersturm Skullcairn
 1x Prismari Campus
 1x Quandrix Campus
 1x Dig Site Inventory
-1x Golem-Skin Gauntlets
+1x Supernatural Stamina
+1x Anticipate
 1x Curate (STX)
-1x Infectious Bloodlust
-1x Invasion of the Giants
 1x Kaleidoscorch
-1x Magma Pummeler
-1x Naturalize
-1x Stymied Hopes
-1x Fiery Justice
-1x Savage Hunger
-1x Scouting Hawk
-1x Tuskguard Captain
+1x Tah-Crop Skirmisher
+1x Cancel
+1x Lotusguard Disciple
 1x Ulna Alley Shopkeep
 1x Capture Sphere
 1x Render Speechless
 1x Tackle Artist
-1x Etched Host Doombringer
-1x Volcanic Submersion
-1x Austere Command
-3x Plains
-2x Island
+1x Sentry Bot
+1x Zombie Boa
+1x Captivating Gyre
+1x Sifter Wurm
+2x Plains
+4x Island
 1x Swamp
-4x Mountain
+1x Mountain
 2x Forest

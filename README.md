@@ -179,8 +179,8 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `alara` | Alara | WUBRG | 39 | 13 | 26 |
-| `dominaria-brg` | Dominaria (BRG) | BRG | 35 | 12 | 23 |
+| `alara` | Alara | WUBRG | 41 | 14 | 27 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 36 | 12 | 24 |
 | `dominaria-wu` | Dominaria (WU) | WU | 32 | 11 | 21 |
 | `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
@@ -188,18 +188,19 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `innistrad-brg` | Innistrad (BRG) | BRG | 32 | 11 | 21 |
 | `innistrad-wu` | Innistrad (WU) | WU | 33 | 11 | 22 |
 | `ixalan` | Ixalan | UBRG | 27 | 9 | 18 |
+| `kaldheim` | Kaldheim | WUBRG | 23 | 8 | 15 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 39 | 13 | 26 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 32 | 11 | 21 |
 | `ravnica-bg` | Ravnica (BG) | BG | 23 | 8 | 15 |
 | `ravnica-wur` | Ravnica (WUR) | WUR | 27 | 9 | 18 |
-| `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
+| `srodziemie` | Śródziemie | WUBRG | 33 | 11 | 22 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 38 | 13 | 25 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 39 | 13 | 26 |
 | `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 39 | 13 | 26 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 41 | 14 | 27 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
@@ -210,9 +211,9 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 32 | 11 | 21 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
-| `worek-legend` | Worek: Legendy | WUBRG | 36 | 12 | 24 |
+| `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 23 | 8 | 15 |
+| `worek-legend` | Worek: Legendy | WUBRG | 30 | 10 | 20 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 24 | 8 | 16 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).

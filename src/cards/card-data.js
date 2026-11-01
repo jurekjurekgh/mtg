@@ -857,6 +857,16 @@ export const REAL_CARDS = Object.freeze([
     imageUri: 'https://cards.scryfall.io/large/front/5/a/5a6ec62e-0e9b-4312-bfe8-cc85d76fd9e0.jpg?1783909765',  // tblb
     support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Chatter of the Squirrel'] },
   }),
+  // Token Ambassador Oak (JMP): 1/1 zielony Elf Warrior. Obraz: Scryfall
+  // token „Elf Warrior" (tmdd/11, id 72ac66e9-4b4b-4540-b310-e7b3dc04c305) —
+  // dokładnie ten token tworzy Ambassador Oak (all_parts druku JMP).
+  defineCard({
+    id: 'token_elf_warrior', name: 'Elf Warrior', set: null,
+    types: ['Creature', 'Token'], subtypes: ['Elf', 'Warrior'], colors: ['G'],
+    power: 1, toughness: 1, manaCost: 0,
+    imageUri: 'https://cards.scryfall.io/large/front/7/2/72ac66e9-4b4b-4540-b310-e7b3dc04c305.jpg?1791637257',
+    support: { status: 'token', limitations: ['token — nie można umieścić w talii; tworzony przez Ambassador Oak'] },
+  }),
   defineCard({
     id: 'token_cat', name: 'Cat', set: null,
     types: ['Creature', 'Token'], subtypes: ['Cat'], colors: ['G'],
@@ -14802,6 +14812,219 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
       'płatność {E}{E}{E} jest opcjonalna i nie da się jej „nadpłacić" (jedna decyzja = jeden zestaw liczników)',
     ],
   }),
+  // =========================================================================
+  // Batch 71 (2026-11-01) — kolekcja artId 625–634. Plan:
+  // docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md. Dane Oracle i
+  // rulingi: docs/cards/scryfall-<slug>.json (pobrane 2026-10-30 przez
+  // fetch_page — egress bash do api.scryfall.com jest zablokowany).
+  // =========================================================================
+
+  // 625. Vampire Hounds (EXO) {2}{B} 2/2 — koszt „Discard a creature card"
+  //      z kwalifikatorem (B2b) + pump +2/+2 do końca tury.
+  defineCard({
+    id: 'vampire-hounds', name: 'Vampire Hounds', set: 'EXO',
+    types: ['Creature'], subtypes: ['Vampire', 'Dog'], colors: ['B'],
+    power: 2, toughness: 2, manaCost: 3,
+    oracleText: 'Discard a creature card: This creature gets +2/+2 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/4/746bc301-9f08-4d9b-819e-690f6fce6bc8.jpg?1783946514',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        // Koszt: odrzucenie karty STWORA (CR 701.9b) — kwalifikator czyta ten
+        // sam predykat jakości co wyszukiwanie (cardMatchesQualifier, L41).
+        cost: { discardCard: { qualifier: { types: ['Creature'] } } },
+        effect: { type: 'pump', power: 2, toughness: 2 },
+      }),
+    ],
+    artId: 625, plan: 'Warhammer Fantasy',
+    support: { status: 'supported', limitations: [] },
+    notes: ['koszt „Discard a creature card" płaci się kartą z ręki (kontroller wybiera, CR 701.9b); bez stwora w ręce zdolności nie można aktywować (CR 118.3)'],
+  }),
+
+  // 626. Curse of the Bloody Tome (ISD) {2}{U} — aura „Enchant player",
+  //      w upkeepu zaczarowanego gracza mieli on dwie karty (B2d).
+  defineCard({
+    id: 'curse-of-the-bloody-tome', name: 'Curse of the Bloody Tome', set: 'ISD',
+    types: ['Enchantment'], subtypes: ['Aura', 'Curse'], colors: ['U'], manaCost: 3,
+    oracleText: "Enchant player\nAt the beginning of enchanted player's upkeep, that player mills two cards.",
+    imageUri: 'https://cards.scryfall.io/large/front/c/7/c7865e11-263b-4d61-af54-907c1acbb54f.jpg?1783940977',
+    aura: { enchant: 'player' },
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'upkeep', condition: { enchantedPlayerUpkeep: true } },
+        effect: [{ type: 'mill_cards', amount: 2, applyTo: 'enchanted_player' }],
+      }),
+    ],
+    artId: 626, plan: 'Marvel',
+    support: { status: 'supported', limitations: [] },
+    notes: ['mieli ZACZAROWANY gracz (CR 303.4b), nie kontroler aury (CR 109.5); biblioteka krótsza niż 2 karty — mieli tyle, ile jest (ruling ISD)'],
+  }),
+
+  // 627. Rumbling Rockslide (LCI) {3}{R} — obrażenia równe liczbie landów
+  //      kontrolowanych przez rzucającego (B2a, CR 107.3a: kwota przy rzucie).
+  defineCard({
+    id: 'rumbling-rockslide', name: 'Rumbling Rockslide', set: 'LCI',
+    types: ['Sorcery'], colors: ['R'], manaCost: 4,
+    oracleText: 'Rumbling Rockslide deals damage to target creature equal to the number of lands you control.',
+    imageUri: 'https://cards.scryfall.io/large/front/4/f/4f06b53f-ec82-4d7f-bee3-6ca04583f023.jpg?1783913757',
+    spell: {
+      timing: 'sorcery',
+      targets: [{ type: 'creature' }],
+      effects: [{ type: 'damage', amount: 'lands_you_control' }],
+    },
+    artId: 627, plan: 'Thunder Junction',
+    support: { status: 'supported', limitations: [] },
+    notes: ['kwota = liczba landów KONTROLERA czaru; „the number of lands you control" to nie X, więc nie da się jej zwiększyć dodatkową maną'],
+  }),
+
+  // 628. Ambassador Oak (JMP) {3}{G} 3/3 — ETB: token 1/1 zielony Elf Warrior.
+  defineCard({
+    id: 'ambassador-oak', name: 'Ambassador Oak', set: 'JMP',
+    types: ['Creature'], subtypes: ['Treefolk', 'Warrior'], colors: ['G'],
+    power: 3, toughness: 3, manaCost: 4,
+    oracleText: 'When this creature enters, create a 1/1 green Elf Warrior creature token.',
+    imageUri: 'https://cards.scryfall.io/large/front/b/8/b8664d29-dacc-49cb-949f-e00ceeb75ff6.jpg?1783930373',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{
+          type: 'create_token', cardId: 'token_elf_warrior', name: 'Elf Warrior',
+          kind: 'creature', power: 1, toughness: 1, colors: ['G'],
+          types: ['Creature'], subtypes: ['Elf', 'Warrior'], amount: 1,
+        }],
+      }),
+    ],
+    artId: 628, plan: 'Śródziemie',
+    support: { status: 'supported', limitations: [] },
+  }),
+
+  // 629. Tail Slash (DTK) {2}{R} — twój stwór zadaje obrażenia równe swojej
+  //      mocy stworowi, którego nie kontrolujesz (ruling: nielegalny cel →
+  //      brak obrażeń, CR 608.2b).
+  defineCard({
+    id: 'tail-slash', name: 'Tail Slash', set: 'DTK',
+    types: ['Instant'], colors: ['R'], manaCost: 3,
+    oracleText: "Target creature you control deals damage equal to its power to target creature you don't control.",
+    imageUri: 'https://cards.scryfall.io/large/front/9/1/91a59f12-8d1b-4378-abb8-e266d9b6cdba.jpg?1783938585',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature_you_control' }, { type: 'creature_opponent_controls' }],
+      effects: [{ type: 'damage_from_target_power', sourceTargetIndex: 0, targetIndex: 1 }],
+    },
+    artId: 629, plan: 'Tarkir',
+    support: { status: 'supported', limitations: [] },
+    notes: ['oba cele wybierane przy rzucie (CR 601.2c); źródłem obrażeń jest STWÓR (deathtouch/lifelink/protection liczą jego cechy), moc efektywna z chwili rozstrzygnięcia (CR 608.2)'],
+  }),
+
+  // 630. Changeling Berserker (LRW) {3}{R} 5/3 — changeling, haste, champion
+  //      a creature (B2e, CR 702.72a).
+  defineCard({
+    id: 'changeling-berserker', name: 'Changeling Berserker', set: 'LRW',
+    types: ['Creature'], subtypes: ['Shapeshifter'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 4, keywords: ['changeling', 'haste'],
+    oracleText: 'Changeling (This card is every creature type.)\nHaste\nChampion a creature (When this enters, sacrifice it unless you exile another creature you control. When this leaves the battlefield, that card returns to the battlefield.)',
+    imageUri: 'https://cards.scryfall.io/large/front/9/f/9f2e8f24-2ee1-4516-bf60-7fe6a0c4baec.jpg?1783942877',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'enter_battlefield' },
+        effect: [{ type: 'champion', qualifier: { types: ['Creature'] } }],
+      }),
+      createAbility({
+        type: ABILITY_TYPE.triggered,
+        trigger: { event: 'leaves_battlefield' },
+        effect: [{ type: 'return_exiled_to_battlefield' }],
+      }),
+    ],
+    artId: 630, plan: 'Kaldheim',
+    support: { status: 'supported', limitations: [] },
+    notes: ['champion (CR 702.72a): wygnany stwór wraca pod kontrolą WŁAŚCICIELA; bez innego stwora champion poświęca się sam'],
+  }),
+
+  // 631. Sphinx's Herald (ALA) {U} 1/1 artefakt-stwór — koszt: {2}{U}, {T},
+  //      poświęć białego, niebieskiego i czarnego stwora; tutor po nazwie.
+  //      Ten sam nośnik co Angel's Herald (Batch 44) — zero nowych mechanik.
+  defineCard({
+    id: 'sphinxs-herald', name: "Sphinx's Herald", set: 'ALA',
+    types: ['Artifact', 'Creature'], subtypes: ['Vedalken', 'Wizard'], colors: ['U'],
+    power: 1, toughness: 1, manaCost: 1,
+    oracleText: "{2}{U}, {T}, Sacrifice a white creature, a blue creature, and a black creature: Search your library for a card named Sphinx Sovereign, put it onto the battlefield, then shuffle.",
+    imageUri: 'https://cards.scryfall.io/large/front/b/d/bd7e2501-2d36-41eb-a77a-747b62affc09.jpg?1783942571',
+    abilities: [
+      createAbility({
+        type: ABILITY_TYPE.activated,
+        cost: { mana: 3, colors: ['U'], tap: true, sacrificeCreaturesByColors: ['W', 'U', 'B'] },
+        effect: { type: 'search_library_to_battlefield', qualifier: { name: 'Sphinx Sovereign' } },
+      }),
+    ],
+    artId: 631, plan: 'Alara',
+    support: { status: 'supported', limitations: [] },
+    notes: [
+      'trzy RÓŻNE stwory, każdy w kolorze ze swojej pozycji kosztu; stwór wielokolorowy pokrywa jedną pozycję (ruling ALA)',
+      'Herald jest niebieski, więc może poświęcić SAM SIEBIE jako część kosztu (ruling ALA) — oferta obejmuje źródło',
+      'Sphinx Sovereign nie jest w katalogu — search legalnie „fails to find" (CR 701.23b: kryterium nazwy)',
+    ],
+  }),
+
+  // 632. Anticipate (DTK) {1}{U} — look top 3, jedna do ręki, reszta na spód.
+  defineCard({
+    id: 'anticipate', name: 'Anticipate', set: 'DTK',
+    types: ['Instant'], colors: ['U'], manaCost: 2,
+    oracleText: 'Look at the top three cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/0/7028d9e8-002f-43a1-bdce-0db0b6a642b0.jpg?1783938610',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{ type: 'look_top_put_one_hand_rest_bottom', amount: 3 }],
+    },
+    artId: 632, plan: 'Star Wars',
+    support: { status: 'supported', limitations: [] },
+    notes: ['„in any order" na spodzie: kolejność ustala decydent (opcjonalna bottomOrder na komendzie, jak scry)'],
+  }),
+
+  // 633. Trumpet Blast (M10) {2}{R} — atakujące stwory +2/+0 do końca tury.
+  defineCard({
+    id: 'trumpet-blast', name: 'Trumpet Blast', set: 'M10',
+    types: ['Instant'], colors: ['R'], manaCost: 3,
+    oracleText: 'Attacking creatures get +2/+0 until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/7/6/769ca754-7da8-49ad-a26c-8e20b37e411e.jpg?1783942368',
+    spell: {
+      timing: 'instant',
+      targets: [],
+      effects: [{ type: 'buff_attacking_creatures', power: 2, toughness: 0 }],
+    },
+    artId: 633, plan: 'Dominaria',
+    support: { status: 'supported', limitations: [] },
+    notes: ['bonus dostają TYLKO stwory atakujące w chwili rozstrzygnięcia (ruling M10, CR 611.2c); stwór dołączający do ataku później nic nie dostaje, ale nadany bonus zostaje do końca tury'],
+  }),
+
+  // 634. Violent Urge (DSK) {R} — +1/+0 i first strike; delirium (4+ typy
+  //      kart w grobie) dokłada double strike (B2c, CR 207.2c).
+  defineCard({
+    id: 'violent-urge', name: 'Violent Urge', set: 'DSK',
+    types: ['Instant'], colors: ['R'], manaCost: 1,
+    oracleText: 'Target creature gets +1/+0 and gains first strike until end of turn.\nDelirium — If there are four or more card types among cards in your graveyard, that creature gains double strike until end of turn.',
+    imageUri: 'https://cards.scryfall.io/large/front/a/4/a47c968b-1edd-45ac-a67c-311647e7e2fc.jpg?1783909460',
+    spell: {
+      timing: 'instant',
+      targets: [{ type: 'creature' }],
+      effects: [
+        { type: 'pump', power: 1, toughness: 0 },
+        { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'] },
+        {
+          type: 'grant_keywords_until_end_of_turn',
+          keywords: ['double_strike'],
+          condition: { delirium: true },
+        },
+      ],
+    },
+    artId: 634, plan: 'Teenage Mutant Ninja Turtles',
+    support: { status: 'supported', limitations: [] },
+    notes: ['delirium to słowo zdolności (CR 207.2c): warunek bramkuje WYŁĄCZNIE drugie zdanie, pierwsze działa zawsze; próg liczony przy rozstrzygnięciu (CR 608.2)'],
+  }),
+
 ]);
 
 /**

@@ -1589,6 +1589,15 @@ function describeEffect(e, ctx = {}) {
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
+    // Batch 71 (Changeling Berserker): champion (CR 702.72a) — etykieta musi
+    // mówić o WYGNANIU (nie poświęceniu) innego obiektu i o powrocie po
+    // odejściu źródła; inaczej kafelek kłamie o połowie mechaniki.
+    champion: () => {
+      const types = (e.qualifier?.types ?? ['Creature'])
+        .map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? String(t).toLowerCase());
+      return `champion: poświęć tę kartę, chyba że wygnasz innego ${types.join('/')} pod twoją kontrolą; `
+        + 'gdy ta karta opuści pole bitwy, wygnana karta wraca na pole bitwy pod kontrolą właściciela';
+    },
     sacrifice_source_unless_sacrifice: () => {
       const types = (e.qualifier?.types ?? ['permanent'])
         .map((t) => TARGET_TYPE_LABELS[String(t).toLowerCase()] ?? String(t).toLowerCase());

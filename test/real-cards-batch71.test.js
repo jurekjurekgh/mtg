@@ -435,9 +435,7 @@ const BATCH_71 = [
   ['Violent Urge', 'DSK', 634],
 ];
 
-// B3 (definicje kart): pin zapala się razem z katalogiem — do tego czasu `skip`,
-// bo czerwony test na PR nie opisuje defektu silnika, tylko brakującą treść.
-test('katalog: 10 kart batcha 71 jest `supported` bez ograniczeń (ADR 0022)', { skip: 'B3: definicje kart w card-data.js' }, () => {
+test('katalog: 10 kart batcha 71 jest `supported` bez ograniczeń (ADR 0022)', () => {
   const byName = new Map(registry.all().map((card) => [card.name, card]));
   for (const [name, set, artId] of BATCH_71) {
     const card = byName.get(name);
