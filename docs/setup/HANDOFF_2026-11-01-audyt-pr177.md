@@ -67,3 +67,7 @@ Potwierdzono odrzucenie rzeczywistego Kavu: Druid wybrany do convoke został uż
 ## A15 — rezerwacja źródeł w kreatorze many
 
 Kreator nie oferuje źródeł wskazanych do tapnięcia w kosztach bieżącej i nadrzędnych komend; filtr uwzględnia convoke, improvise, crew i tapnięcie źródła zdolności. Rzeczywista sesja Kavu/Druid z działającym rzutem, test podrzędnych rezerwacji i kontrola niezarezerwowanego źródła; dwa RED→GREEN. Pokrewne 53/53, fast 9268/9268, build 5627,5 kB. Audyt trwa.
+
+## A16 — płatność improvise w kreatorze
+
+Kreator Fen Haulera odejmuje artefakty improvise od części generycznej zamiast żądać pełnego kosztu. Rzeczywista oferta, model i wykonana ręczna płatność 5 many + 2 artefaktów, 4 testy (1 RED→GREEN), pokrewne 77/77, fast 9272/9272, build 5628,2 kB. Audyt trwa.

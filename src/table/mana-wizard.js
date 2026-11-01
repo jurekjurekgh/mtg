@@ -403,6 +403,18 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
   }
+  if (cmd.type === 'cast_permanent' && cmd.improvisePayments?.length) {
+    // Improvise pokrywa wyłącznie część generyczną kosztu całkowitego;
+    // kolorowe i bezbarwne pipy nadal wymagają many. Podobnie jak convoke,
+    // najpierw policz właściwy koszt wariantu (np. z kickerem i obniżkami).
+    const rest = paymentDescriptorOf({ ...cmd, improvisePayments: undefined }, view, opts);
+    if (!rest || cmd.improvisePayments.length > rest.effectiveGeneric) return null;
+    const generic = rest.effectiveGeneric - cmd.improvisePayments.length;
+    return buildDescriptor(
+      { id: rest.objectId, cardId: rest.cardId }, generic + rest.requirements.length,
+      rest.requirements, `${rest.costStr} − improvise (${cmd.improvisePayments.length})`, generic,
+    );
+  }
   if (cmd.type === 'cast_permanent' && cmd.convokePayments?.length) {
     // PMSSB-72 (Convoke, CR 702.51a): każdy stwór płaci jednostkę kosztu — kolorową
     // (pip zdejmuje wymóg koloru) albo generyczną. Kreator pyta tylko o resztę many.
