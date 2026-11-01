@@ -85,8 +85,22 @@ function giftDimensionOf(list) {
  *  - `giftMode` / `giftRecipientIds` — obietnica daru (tak/nie) i, gdy
  *    potrzeba, odbiorca; obie decyzje są oddzielone od wyboru celów.
  */
+// Permanent z samym X nie ma `targets`. Tylko znany, prosty kształt:
+// nie wolno ukryć innych decyzji (kicker, koszt alternatywny, cel itd.).
+export function isPlainPermanentXCommand(cmd) {
+  return cmd?.type === 'cast_permanent' && Number.isInteger(cmd.xValue) && cmd.xValue >= 0
+    && Object.keys(cmd).every((key) => ['type', 'playerId', 'objectId', 'xValue'].includes(key));
+}
+
 export function multiTargetPlanOf(commands) {
   const all = commands ?? [];
+  if (all.length > 0 && all.every(isPlainPermanentXCommand)
+    && all.every((cmd) => cmd.objectId === all[0].objectId && cmd.playerId === all[0].playerId)) {
+    const values = all.map((cmd) => cmd.xValue);
+    return { targets: [], minTargets: 0, maxTargets: 0, hasX: true, xOnly: true,
+      xMin: Math.min(...values), xMax: Math.max(...values), slots: null,
+      objectId: all[0].objectId, type: all[0].type, modeIndex: null };
+  }
   const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
   // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
@@ -283,8 +297,8 @@ export function commandForSelection(commands, {
 } = {}) {
   const key = targetKey(targets);
   return (commands ?? []).find((cmd) => {
-    if (!cmd || !Array.isArray(cmd.targets)) return false;
-    if (targetKey(cmd.targets) !== key) return false;
+    if (!cmd || (!Array.isArray(cmd.targets) && !isPlainPermanentXCommand(cmd))) return false;
+    if (targetKey(cmd.targets ?? []) !== key) return false;
     // H: `stunTargetId` podany = wybór stuna z kreatora (null = brak legalnego
     // stuna dla zbioru → brak komendy). Nie podany = dawne zachowanie.
     if (stunTargetId !== undefined && (cmd.stunTargetId ?? null) !== stunTargetId) return false;

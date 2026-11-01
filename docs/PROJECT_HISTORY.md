@@ -18516,3 +18516,7 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   5608,7 kB, benchmark quick heuristic **87,5%**; golden-master zregenerowany
   świadomie z wpisem pomiarowym per partia.
 
+
+### 2026-11-01 — zgłoszenie N, wybór X permanentu
+
+Magma Pummeler z trzema Górami ma jedną ofertę rzutu i stepper X=0–1, a nie dwa nierozróżnialne wiersze; także X=0 jako jedyny wariant otwiera zatwierdzenie. Plan działa wyłącznie dla prostych komend X, zachowuje źródło legalnych komend i nie ukrywa dodatkowych decyzji. 5 testów (RED→GREEN), `npm test` 9185/9185, build 76 modułów / 5618,4 kB, próba żywym testerem X=0 i X=1 bez zgłoszeń detektorów. Limit X=15 w silniku nie zmieniony. Audyt #177 w toku.

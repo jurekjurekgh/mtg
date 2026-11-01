@@ -1119,7 +1119,9 @@ function bootstrapTable() {
         plan: multiPlan,
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
-        intro: giftIntro,
+        intro: multiPlan.xOnly && multiPlan.type === 'cast_permanent'
+          ? `${choiceGroupTitle(request, session, choiceView)} — wybierz X (${multiPlan.xMin}–${multiPlan.xMax}):`
+          : giftIntro,
         // M207: nazwy POZYCJI celu prosto z Oracle karty („twój stwór”,
         // „stwór przeciwnika”, „karta-stwór w grobie”, „gracz”). Kreator sam
         // ich nie wymyśla — bierze deskryptor `spell.targets` (ADR 0002).

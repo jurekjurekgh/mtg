@@ -22,6 +22,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installPressActivation, installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
 import { polishPluralCount } from './polish-plural.js';
+import { isPlainPermanentXCommand } from './multi-target.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -805,7 +806,7 @@ function buildChoiceRequestEntries(commands, view) {
   return entries.map((entry) => {
     // Wpisy-wizardy (walka M66, Index M65) mają request — przepuścić wprost.
     if (entry.request) return entry;
-    if (!entry.group || entry.group.commands.length < 2) {
+    if (!entry.group || (entry.group.commands.length < 2 && !isPlainPermanentXCommand(entry.group.commands[0]))) {
       return { command: entry.group?.commands[0] ?? entry.command };
     }
     // =====================================================================
@@ -3127,7 +3128,8 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
   if (options.length > 0
     && options.every((o) => (o?.type === 'cast_spell' || o?.type === 'cast_permanent')
       && o.xValue != null && o.objectId === options[0].objectId)
-    && new Set(options.map((o) => o.xValue)).size > 1) {
+    && (new Set(options.map((o) => o.xValue)).size > 1
+      || (options.length === 1 && isPlainPermanentXCommand(options[0])))) {
     const xObject = findViewObject(options[0].objectId, view);
     if (xObject?.cardId) {
       const rawX = xCostSymbols(MANA_COSTS[xObject.cardId]);
