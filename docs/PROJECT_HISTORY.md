@@ -18532,3 +18532,7 @@ Poprawiono ostrzeżenia crew/animacji (A7), zachowanie priorytetu i zamykanie mo
 ### 2026-11-01 — audyt #177, kwalifikowany koszt odrzucenia
 
 Wycena aktywacji używa kwalifikatora kosztu i wyłącznie własnej ręki: niegrywalny czar nie może pozornie potanić odrzucenia stwora przez Vampire Hounds, a ukryta ręka przeciwnika nie płaci naszego kosztu. 4 testy (2 RED→GREEN, z rzeczywistym wyborem i płatnością), pokrewne 47/47, fast 9257/9257, build 76 modułów / 5626,1 kB; audyt trwa.
+
+### 2026-11-01 — audyt #177, obrażony cel ETB
+
+Bramka Fathom Fleet Cutthroat nie pomija ożywionego lądu-stwora i nie uznaje hexproof/ochrony przed czarnym źródłem za legalny cel. 5 testów (3 RED→GREEN), rzeczywiste zniszczenie, pokrewne 49/49, fast 9262/9262, build 76 modułów / 5626,3 kB. Audyt trwa.

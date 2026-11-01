@@ -2097,7 +2097,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
   // (`publicEtbTargets`) i dla bramki wartości ETB (`etbEnemyHasTarget`).
   const dealtDamageThisTurn = (object) => Boolean(object)
     && ((object.damage ?? 0) > 0 || object.damagedThisTurn === true);
-  const etbEnemyHasTarget = (view, spec) => {
+  const etbEnemyHasTarget = (view, spec, source = null) => {
     const raw = typeof spec === 'string' ? spec : spec?.type;
     if (!raw) return true; // bez wymogu celu — efekt bezwarunkowy
     const foes = enemyNonlandPermanents(view);
@@ -2107,7 +2107,10 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // `destroy_permanent` (18) w Głównej 1, gdzie nie ma jeszcze legalnego
     // celu, więc bot płacił kartę za trigger, który nigdy nie wchodzi na stos.
     if (raw === 'creature_opponent_damaged_this_turn') {
-      return foes.some((o) => o.kind === 'creature' && dealtDamageThisTurn(o));
+      // To stworzenie może być również lądem. Nie stosujemy filtra
+      // enemyNonlandPermanents; ten sam publiczny predykat co wycena
+      // celów uwzględnia również hexproof, shroud i ochronę od źródła.
+      return publicEtbTargets(view, typeof spec === 'string' ? { type: spec } : spec, source).length > 0;
     }
     if (raw === 'artifact_or_enchantment') {
       return foes.some((o) => o.kind === 'artifact' || o.kind === 'enchantment' || (o.types ?? []).some((t) => t === 'Artifact' || t === 'Enchantment'));
@@ -2141,7 +2144,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       const spec = ability.trigger.requiresTarget;
       if (!THIS_TURN_STATE_TARGET_SPECS.has(etbTargetSpecType(spec))) continue;
       czeka = true;
-      if (etbEnemyHasTarget(view, spec)) return false;
+      if (etbEnemyHasTarget(view, spec, def)) return false;
     }
     return czeka;
   };
@@ -2665,7 +2668,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         .map(o => cantBeBlockedTargetValue(view, o)));
       return P.evasionEtbValueWeight * best;
     },
-    destroy_permanent: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),
+    destroy_permanent: (e, view, req, def) => (etbEnemyHasTarget(view, req, def) ? 18 : 0),
     exile_opponent_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_target_creature: (e, view, req) => (etbEnemyHasTarget(view, req) ? 20 : 0),
     exile_nonland_permanent_linked: (e, view, req) => (etbEnemyHasTarget(view, req) ? 18 : 0),

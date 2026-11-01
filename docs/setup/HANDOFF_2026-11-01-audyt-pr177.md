@@ -55,3 +55,7 @@ Po automatycznym zakończeniu nadrzędnej płatności powrót z podrzędnego kre
 ## A12 — wycena kwalifikowanego discardu
 
 Wycena kosztu aktywacji liczy teraz wyłącznie własne karty spełniające kwalifikator, wspólnym predykatem silnika. Wcześniej niegrywalny nie-stwór zawyżał wycenę Vampire Hounds; przy koszcie dowolnej karty mogła też zostać policzona ukryta ręka przeciwnika. Cztery testy z wykonaniem wyboru, dwa RED→GREEN. Pokrewne 47/47, fast 9257/9257, build 5626,1 kB; audyt trwa.
+
+## A13 — obrażony ląd-stwór w bramce ETB
+
+Cutthroat uwzględnia teraz rzeczywiste publiczne cele obrażonego stwora, także ożywiony ląd, i nie traktuje hexproof ani ochrony przed źródłem jak legalnego celu. 5 testów (3 RED→GREEN), rzeczywiste wykonanie zniszczenia, pokrewne 49/49, fast 9262/9262, build 5626,3 kB. Audyt trwa.
