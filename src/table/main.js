@@ -2751,8 +2751,9 @@ function bootstrapTable() {
   /**
    * M190/D (zgłoszenie właściciela, Basilisk Gate): id źródła, którego NIE
    * wolno użyć do zapłaty, bo aktywacja i tak je tapuje jako koszt
-   * (CR 602.2a). Dotyczy wyłącznie zdolności z `cost.tap` — zdolność bez
-   * tapnięcia (Heap Gate {1}: …) może być finansowana z własnej many.
+   * (CR 602.2a). Zdolność bez tapnięcia może finansować się z własnej many;
+   * rezerwujemy również obiekty wskazane do tapnięcia w innych kosztach i
+   * wszystkie takie koszty w nadrzędnych kreatorach.
    */
   /**
    * B (uwaga właściciela 2026-10-27c): co zrobić z tapnięciem źródła many
@@ -2771,11 +2772,24 @@ function bootstrapTable() {
   }
 
   function selfTapExclusionFor(cmd) {
-    if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
-    const source = session.state?.objects?.get(cmd.objectId);
-    const ability = (source ? activatableAbilities(session.state, source)?.[cmd.abilityIndex] : null)
-      ?? source?.abilities?.[cmd.abilityIndex];
-    return ability?.cost?.tap ? cmd.objectId : null;
+    // Każda wstrzymana komenda rezerwuje permanenty, które później sama
+    // tapnie jako koszt. Dotyczy to także płatności rodzicielskich, gdy
+    // zbieramy manę w zagnieżdżonym kreatorze zdolności źródła.
+    const commands = [...manaWizardParents.map((parent) => parent?.cmd), manaWizardDescriptor?.cmd, cmd];
+    const excluded = new Set();
+    for (const pending of commands) {
+      if (!pending) continue;
+      if (pending.type === 'activate_ability' && Number.isInteger(pending.abilityIndex)) {
+        const source = session.state?.objects?.get(pending.objectId);
+        const ability = (source ? activatableAbilities(session.state, source)?.[pending.abilityIndex] : null)
+          ?? source?.abilities?.[pending.abilityIndex];
+        if (ability?.cost?.tap) excluded.add(pending.objectId);
+      }
+      for (const payment of pending.convokePayments ?? []) if (payment?.creatureId) excluded.add(payment.creatureId);
+      for (const payment of pending.improvisePayments ?? []) if (payment?.artifactId) excluded.add(payment.artifactId);
+      for (const id of pending.crewCreatureIds ?? []) if (id) excluded.add(id);
+    }
+    return excluded.size ? [...excluded] : null;
   }
 
   /**
@@ -2926,7 +2940,8 @@ function bootstrapTable() {
       ? poolUnitsUnrestricted
       : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
     const pool = restrictedBlocked ? poolUnitsUnrestricted.length : (humanPlayer?.mana ?? 0);
-    const allSources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
+    const excludedSources = selfTapExclusionFor(cmd);
+    const allSources = manaSourcesForPlayer(excludedSources);
     const sources = restrictedBlocked
       ? allSources.filter((s) => s.spendOnly !== 'artifact')
       : allSources;
@@ -2942,7 +2957,7 @@ function bootstrapTable() {
     // poświęcenia Sciona) — poniżej kosztu kreator musi się otworzyć
     // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
     const autoPayableMana = session.state
-      ? producibleMana(session.state, HUMAN_ID, null, {}, []) : null;
+      ? producibleMana(session.state, HUMAN_ID, excludedSources, {}, []) : null;
     if (!shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,

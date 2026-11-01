@@ -63,3 +63,7 @@ Cutthroat uwzględnia teraz rzeczywiste publiczne cele obrażonego stwora, takż
 ## A14 — wynik sesji przy kończeniu kreatora
 
 Potwierdzono odrzucenie rzeczywistego Kavu: Druid wybrany do convoke został użyty do many, a kreator zgłaszał sukces mimo odrzucenia. `playDirect` zwraca wynik/wyjątek, helper nie maskuje błędu. Dwa RED→GREEN, kontrola ważnego convoke; pokrewne 41/41, fast 9265/9265, build 5626,6 kB. Osobno zbadać i naprawić oferowanie źródeł zarezerwowanych do convoke. Audyt trwa.
+
+## A15 — rezerwacja źródeł w kreatorze many
+
+Kreator nie oferuje źródeł wskazanych do tapnięcia w kosztach bieżącej i nadrzędnych komend; filtr uwzględnia convoke, improvise, crew i tapnięcie źródła zdolności. Rzeczywista sesja Kavu/Druid z działającym rzutem, test podrzędnych rezerwacji i kontrola niezarezerwowanego źródła; dwa RED→GREEN. Pokrewne 53/53, fast 9268/9268, build 5627,5 kB. Audyt trwa.

@@ -18540,3 +18540,7 @@ Bramka Fathom Fleet Cutthroat nie pomija ożywionego lądu-stwora i nie uznaje h
 ### 2026-11-01 — audyt #177, wynik płatności kreatora
 
 Odrzucenie rzeczywistego Kavu z nieaktualnym wyborem convoke oraz wyjątek nie są już traktowane jako udana płatność: `playDirect` przekazuje wynik do `finishWizardPayment`. 3 testy (2 RED→GREEN), pokrewne 41/41, fast 9265/9265, build 76 modułów / 5626,6 kB. Oferowanie zarezerwowanych źródeł wymaga osobnej poprawki; audyt trwa.
+
+### 2026-11-01 — audyt #177, zarezerwowane źródła kreatora
+
+Źródła wybrane do tapnięcia jako koszt nie są oferowane jako mana w bieżącym ani podrzędnym kreatorze; wspólna lista trafia także do obliczenia auto-płatności. Rzeczywista sesja Kavu z convoke Druid, 3 testy (2 RED→GREEN), pokrewne 53/53, fast 9268/9268, build 76 modułów / 5627,5 kB. Audyt trwa.
