@@ -135,7 +135,7 @@ function scena({ step = 'main1', mana = 8, hand = ['brute-force'], foe = [] } = 
   const s = game(step);
   put(s, 'imp', 'fledgling-imp', 'p1');
   lands(s);
-  addMana(s, 'p1', mana);
+  addMana(s, 'p1', mana, { colors: ['B'] });
   hand.forEach((cardId, i) => put(s, `h${i}`, cardId, 'p1', 'hand'));
   foe.forEach(([id, power, toughness, patch]) => creature(s, id, 'p2', power, toughness, patch ?? {}));
   return s;
@@ -259,7 +259,7 @@ test('J/5: tura wroga, atakujący 2/2 z flying → activate (blok z powietrza)',
   const s = game('declare_attackers', 'p2');
   put(s, 'imp', 'fledgling-imp', 'p1');
   lands(s);
-  addMana(s, 'p1', 8);
+  addMana(s, 'p1', 8, { colors: ['B'] });
   put(s, 'h0', 'enter-the-enigma', 'p1', 'hand');
   creature(s, 'atk', 'p2', 2, 2, { keywords: ['flying'], summoningSickness: false });
   // Wróg deklaruje atakującego z flying; po pasach obu graczy priorytet wraca

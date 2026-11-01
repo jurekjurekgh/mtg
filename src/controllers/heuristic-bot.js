@@ -10851,6 +10851,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (card.kind === 'land' || (def?.types ?? card.types ?? []).includes('Land')) return false;
     const cost = card.manaCost ?? def?.manaCost;
     if (!Number.isInteger(cost) || cost <= 0) return false;
+    // Również już wytworzona mana w puli może umożliwiać rzut tu i teraz.
+    // Nie wolno jej pomijać tylko dlatego, że na stole nie ma danego koloru.
+    if (canCastWithUnits(manaUnitsOfView(view, { artifactSpell: (def?.types ?? []).includes('Artifact') }), card)) return false;
     const units = [];
     for (const o of view.zones?.battlefield ?? []) {
       if (o.controllerId !== view.playerId || (o.kind !== 'land' && !(o.types ?? []).includes('Land'))) continue;
@@ -13922,13 +13925,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             useful = (view.zones?.battlefield ?? []).some((foe) => foe.controllerId !== view.playerId
               && foe.kind === 'creature' && !foe.tapped && !foe.cantBlock
               && (foe.toughness ?? 0) > 2 && (foe.toughness ?? 0) > (source.power ?? 0)
-              && attackerCanBeBlocked(source, [foe]) && !isMyPendingStackTarget(view, foe.id));
+              && attackerCanBeBlocked(source, [foe]) && canIndividuallyBlockCrackback(view, source, foe)
+              && !isMyPendingStackTarget(view, foe.id));
           } else if (!myTurn(view) && view.turn.step === 'declare_blockers' && !source.tapped && !source.cantBlock) {
             const flyingBlocker = { ...source, keywords: [...(source.keywords ?? []), 'flying'] };
             useful = (view.combat?.attackers ?? []).some((id) => {
               const foe = objectOnBoard(view, id);
               if (!foe || !hasKeyword(foe, 'flying') || isMyPendingStackTarget(view, id)) return false;
-              if (!attackerCanBeBlocked(foe, [flyingBlocker])) return false;
+              if (!attackerCanBeBlocked(foe, [flyingBlocker])
+                || !canIndividuallyBlockCrackback(view, foe, flyingBlocker)) return false;
               if (!damageIsLethal(view, id, source.power ?? 0)) return false;
               return simulateCombat(duelStats(foe), [duelStats(flyingBlocker)]).attackerDies;
             });

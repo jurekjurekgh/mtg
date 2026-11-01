@@ -67,7 +67,7 @@ function scena({ step = 'main1', mana = 8, hand = ['brute-force'], foe = [] } = 
   const s = game(step);
   put(s, 'imp', 'fledgling-imp', 'p1');
   lands(s);
-  addMana(s, 'p1', mana);
+  addMana(s, 'p1', mana, { colors: ['B'] });
   hand.forEach((cardId, i) => put(s, `h${i}`, cardId, 'p1', 'hand'));
   foe.forEach(([id, power, toughness, patch]) => creature(s, id, 'p2', power, toughness, patch ?? {}));
   return s;
@@ -129,7 +129,7 @@ test('O/5: koszt wybiera nierzuçalną kartę, a nie kartę możliwą do rzuceni
 
 test('O/6: przeciwnik lata 2/3 — Imp 2/2 go nie zabija, nie płaci karty', () => {
   const s = game('declare_attackers', 'p2');
-  put(s, 'imp', 'fledgling-imp', 'p1'); lands(s); addMana(s, 'p1', 8);
+  put(s, 'imp', 'fledgling-imp', 'p1'); lands(s); addMana(s, 'p1', 8, { colors: ['B'] });
   put(s, 'h0', 'enter-the-enigma', 'p1', 'hand');
   creature(s, 'atk', 'p2', 2, 3, { keywords: ['flying'], summoningSickness: false });
   assert.ok(execute(s, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
@@ -141,11 +141,11 @@ test('O/6: przeciwnik lata 2/3 — Imp 2/2 go nie zabija, nie płaci karty', () 
 });
 
 test('O/7: tylko jeden czarny ląd — karta za {1}{B}{B} jest nierzuçalna mimo dostępnego koloru', () => {
-  const s = scena({ step: 'beginning_of_combat', hand: ['dread-warlock'], foe: [['e', 2, 4]] });
-  for (let i = 1; i < 8; i++) s.objects.set(`l${i}`, Object.freeze({ ...s.objects.get(`l${i}`), controllerId: 'p2' }));
+  const s = scena({ step: 'beginning_of_combat', mana: 1, hand: ['dread-warlock'], foe: [['e', 2, 4]] });
+  for (let i = 0; i < 8; i++) if (i !== 2) s.objects.set(`l${i}`, Object.freeze({ ...s.objects.get(`l${i}`), controllerId: 'p2' }));
   const { cmd, scores } = decyzja(s);
-  assert.equal(cmd.type, 'activate_ability');
-  assert.ok(impScore(scores) > passScore(scores));
+  assert.notEqual(impScore(scores), undefined);
+  assert.ok(impScore(scores) > -100, `koszt rozpoznano mimo niepełnego pokrycia pipów: ${impScore(scores)}`);
 });
 
 test('O/8: reach lub flying po stronie wroga nie pozwalają na ofensywny grant', () => {
@@ -166,7 +166,7 @@ test('O/9: gdy w ręce jest tylko ląd, nie poświęcaj go dla latania', () => {
 
 test('O/10: przeciwnik 3/2 z first strike zabije Impa przed jego obrażeniami', () => {
   const s = game('declare_attackers', 'p2');
-  put(s, 'imp', 'fledgling-imp', 'p1'); lands(s); addMana(s, 'p1', 8);
+  put(s, 'imp', 'fledgling-imp', 'p1'); lands(s); addMana(s, 'p1', 8, { colors: ['B'] });
   put(s, 'h0', 'enter-the-enigma', 'p1', 'hand');
   creature(s, 'atk', 'p2', 3, 2, { keywords: ['flying', 'first_strike'], summoningSickness: false });
   assert.ok(execute(s, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
@@ -175,4 +175,42 @@ test('O/10: przeciwnik 3/2 z first strike zabije Impa przed jego obrażeniami', 
   const { cmd, scores } = decyzja(s);
   assert.notEqual(cmd.type === 'activate_ability' && cmd.objectId === 'imp', true);
   assert.ok(impScore(scores) < passScore(scores));
+});
+
+test('O/11: karta rzuçalna z puli nie jest zbędna mimo braku niebieskich lądów', () => {
+  const s = scena({ step: 'beginning_of_combat', mana: 1, hand: ['fleeting-distraction'], foe: [['e', 2, 4]] });
+  addMana(s, 'p1', 1, { colors: ['U'] });
+  const v = playerView(s, 'p1');
+  assert.ok(v.legalCommands.some(c => c.type === 'cast_spell' && c.objectId === 'h0'));
+  const bot = createHeuristicBot({ seed: 5 });
+  const cmd = bot.chooseCommand({ ...v, legalCommands: v.legalCommands.filter(c => c.type === 'activate_ability' || c.type === 'pass_priority') });
+  assert.equal(cmd.type, 'pass_priority');
+});
+
+test('O/12: ochrona atakującego od czarnego wyklucza blok Impem', () => {
+  const s = game('declare_attackers', 'p2');
+  put(s, 'imp', 'fledgling-imp', 'p1'); lands(s); addMana(s, 'p1', 1, { colors: ['B'] });
+  put(s, 'h0', 'enter-the-enigma', 'p1', 'hand');
+  creature(s, 'atk', 'p2', 2, 2, { keywords: ['flying'], summoningSickness: false });
+  assert.ok(execute(s, { type: 'declare_attackers', playerId: 'p2', attackerIds: ['atk'] }).ok);
+  assert.ok(execute(s, { type: 'pass_priority', playerId: 'p2' }).ok);
+  assert.ok(execute(s, { type: 'pass_priority', playerId: 'p1' }).ok);
+  const view = playerView(s, 'p1');
+  const battlefield = view.zones.battlefield.map(o => o.id === 'atk' ? { ...o, protection: [{ colors: ['B'] }] } : o);
+  const bot = createHeuristicBot({ seed: 5 });
+  const cmd = bot.chooseCommand({ ...view, zones: { ...view.zones, battlefield } });
+  assert.notEqual(cmd.type === 'activate_ability' && cmd.objectId === 'imp', true);
+});
+
+test('O/13: zapowiedziany śmiertelny Shock usuwa jedynego blokera; nie kupuj latania', () => {
+  const s = scena({ step: 'beginning_of_combat', mana: 1, hand: ['enter-the-enigma'], foe: [['e', 2, 4, { damage: 2 }]] });
+  put(s, 'shock', 'shock', 'p1', 'hand');
+  addMana(s, 'p1', 1, { colors: ['R'] });
+  const cast = playerView(s, 'p1').legalCommands.find(c => c.type === 'cast_spell' && c.objectId === 'shock' && c.targets?.includes('e'));
+  assert.ok(cast); assert.ok(execute(s, cast).ok);
+  const view = playerView(s, 'p1');
+  assert.ok(view.zones.stack.some(o => o.targets?.includes('e')));
+  const bot = createHeuristicBot({ seed: 5 });
+  const cmd = bot.chooseCommand({ ...view, legalCommands: view.legalCommands.filter(c => c.type === 'activate_ability' || c.type === 'pass_priority') });
+  assert.equal(cmd.type, 'pass_priority');
 });

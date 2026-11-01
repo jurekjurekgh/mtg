@@ -32,3 +32,5 @@ RED: 4/6 nowych testów padały; po poprawce 10/10 nowych oraz pokrewne 42/42. S
 ## Przyrost P — Fireball
 
 Ograniczenie wyłącznie dla opisanej przez `spell.fireball` rodziny: X poniżej istniejącego progu 3 nie jest atrakcyjny, chyba że wygrywa natychmiast lub przy presji życia faktycznie zabija wrogiego stwora. Wartość na cel uwzględnia równy podział X. Reguły i oferty dla człowieka bez zmian; próg i wyjątek wykorzystują istniejące parametry. RED 3/6 nowych przypadków, po poprawce GREEN 6/6 oraz 51 testów pokrewnych; szybkie testy 9203/9203, build 76 modułów / 5622,3 kB. R i audyt #177 pozostają otwarte.
+
+Doprecyzowanie O: początkowe sceny testowe dawały testową manę dowolnego koloru, co maskowało ważny przypadek: czar opłacalny z aktualnej puli nie może zostać uznany za nierzucalny tylko dlatego, że na lądach brakuje koloru. Poprawiono sceny na faktyczną manę czarną, dodano RED→GREEN dla niebieskiego instantu opłacalnego z puli oraz sprawdzenie ochrony atakującego i śmiertelnego Shocka już na stosie. Legalność bloku korzysta także z istniejącego predykatu ograniczeń blokowania. Szybkie testy 9206/9206 i build 76 modułów / 5622,7 kB.
