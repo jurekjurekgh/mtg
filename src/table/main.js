@@ -31,7 +31,7 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
-import { cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { activationAlreadyAppliedWarning, cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
   wizardSourceName, finishWizardPayment,
@@ -2801,17 +2801,10 @@ function bootstrapTable() {
     });
     if (!plan) return null;
     const verb = saddle ? 'Osiodłaj' : 'Obsadź';
-    // O-1 audytu PR #176 (Żywy Tester a4): gracz osiodłał ten sam Mount dwa
-    // razy, a drugie osiodłanie wytapowało kolejne stwory za nic. Etykieta
-    // oferty niesie ostrzeżenie (render.js:activationAlreadyAppliedWarning);
-    // kreator mówi to samo językiem stanu, bo intro jest ostatnim ekranem
-    // przed nieodwracalnym tapnięciem załogi.
-    const alreadyApplied = saddle
-      ? source?.saddled === true
-      : source?.originalBeforeAnimation != null;
-    const warn = alreadyApplied
-      ? ` — UWAGA: ${saddle ? 'już osiodłany' : 'już obsadzony'} do końca tury, ponowna aktywacja nic nie zmieni`
-      : '';
+    // Ta sama ocena co etykieta akcji: sama animacja nie oznacza crew,
+    // a zdolność wieloefektowa może mieć inne, nadal użyteczne skutki.
+    const alreadyWarning = activationAlreadyAppliedWarning(ability, session.view(), cmd.objectId);
+    const warn = alreadyWarning ? ` — UWAGA: ${alreadyWarning}` : '';
     return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)}${warn} — zaznacz załogę do tapnięcia:` };
   }
 

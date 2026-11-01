@@ -66,7 +66,7 @@ test('O-1 anty-over-fix: pierwsze osiodłanie zostaje BEZ ostrzeżenia (akcja le
 });
 
 test('O-1: to samo dla crew (pojazd już animowany do końca tury — CR 702.122e)', () => {
-  const label = commandLabel(crewCmd, SESSION, viewWith({}, { animatedUntilEOT: true }));
+  const label = commandLabel(crewCmd, SESSION, viewWith({}, { animatedUntilEOT: true, crewed: true }));
   assert.match(label, /UWAGA/, `brak ostrzeżenia przy powtórnym obsadzeniu: ${label}`);
   assert.match(label, /już obsadzony/i, `ostrzeżenie nie nazywa stanu: ${label}`);
 });
