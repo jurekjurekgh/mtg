@@ -26,7 +26,7 @@
 - A2: upkeep klątwy pamięta gracza ze zdarzenia, także po odejściu lub przesunięciu aury (`5998bde`).
 - A3: dobór many Converge optymalizuje jednocześnie pipy i generic, z zachowaniem istniejących profili (`06587ad`). Strategia automatyczna, nie pełny wybór gracza.
 - A4: zniszczenie aury bestow nie ustawia Morbid i nie wyzwala obserwatorów śmierci stwora; klasyfikacja oparta o LKI. 5 testów, `npm test` 9175/9175, build 76 modułów / 5615,6 kB; slow po A4 nie powtarzano.
-- A5: linia typów aury bestow na polu bitwy, test Austere Command i przywrócenia postaci; 5 testów, `npm test` 9180/9180, build 76 modułów / 5617,3 kB. Slow po A5 nie powtarzano; odrębnie do audytu typy na stosie i warstwy.
+- A5: linia typów aury bestow na polu bitwy, test Austere Command i przywrócenia postaci; 5 testów, `npm test` 9180/9180, build 76 modułów / 5617,3 kB. `npm run test:slow` po A5 268/268; odrębnie do audytu typy na stosie i warstwy.
 - Piny RED→GREEN, źródła CR i ograniczenia: `docs/audits/AUDYT_PR177_2026-11-01.md`; plan i aktualny handoff w `docs/plans/PLAN_2026-11-01-audyt-pr177.md` i `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md`.
 - Po A3: `npm test` 9170/9170, `npm run test:slow` 268/268, build 76 modułów / 5615,2 kB. Osobnego quick benchmarku ani pełnego B0 nie uruchamiano. Audyt PR #177 nieukończony.
 
