@@ -1235,7 +1235,7 @@ function duelStatsWithExtraKeywords(object, extraKeywords = [], delta = {}) {
   return duelStats(copy, delta);
 }
 
-function combatOutcomeWithKeywords(view, recipient, extraKeywords = []) {
+function combatOutcomeWithKeywords(view, recipient, extraKeywords = [], delta = {}) {
   const combat = view.combat ?? null;
   const id = recipient?.id;
   if (!combat || !id) return null;
@@ -1249,8 +1249,8 @@ function combatOutcomeWithKeywords(view, recipient, extraKeywords = []) {
     const blockers = blockersOf(attackerId)
       .map((oid) => viewObject(oid))
       .filter(Boolean)
-      .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, {}) : duelStats(b)));
-    const stats = duelStatsWithExtraKeywords(attacker, extraKeywords, {});
+      .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, delta) : duelStats(b)));
+    const stats = duelStatsWithExtraKeywords(attacker, extraKeywords, delta);
     return simulateCombat(stats, blockers);
   }
   const blockedFor = Object.keys(combat.blockers ?? {}).find((aid) => (blockersOf(aid) ?? []).includes(id));
@@ -1260,8 +1260,39 @@ function combatOutcomeWithKeywords(view, recipient, extraKeywords = []) {
   const blockers = blockersOf(blockedFor)
     .map((oid) => viewObject(oid))
     .filter(Boolean)
-    .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, {}) : duelStats(b)));
+    .map((b) => (b.id === id ? duelStatsWithExtraKeywords(b, extraKeywords, delta) : duelStats(b)));
   return simulateCombat(duelStats(foe), blockers);
+}
+
+/**
+ * Batch 71 (Violent Urge, PMSSB-82): „+1/+0 i first strike; przy delirium
+ * jeszcze double strike" to JEDEN trik bojowy. Wycena per efekt pytała
+ * „czy SAM ten efekt zmienia wynik walki?" — a +1/+0 sam z siebie nie zmienia
+ * (2/2 i 3/2 giną od blokera 2/2), więc pump dostawał karę −75 i cały czar
+ * spadał pod pass (pomiar: `pump+first_strike` −17 vs sam `first_strike` +56).
+ * Ta funkcja pyta o wynik CAŁEJ kombinacji: delta P/T + keywordy nadawane
+ * TEMU SAMEMU celowi przez rodzeństwo z jednego czaru (efekt i jego cel).
+ * L41: jedno źródło symulacji walki (`simulateCombat` + `duelStats`).
+ */
+function combinedOutcomeChanges(view, recipient, { delta = {}, keywords = [] } = {}) {
+  if (!recipient) return false;
+  if (!combatDamageRelevantNow(view)) return false;
+  const before = combatOutcome(view, recipient, {});
+  const after = combatOutcomeWithKeywords(view, recipient, keywords, delta);
+  if (!before || !after) return false;
+  return JSON.stringify(before) !== JSON.stringify(after);
+}
+
+/** Keywordy nadawane TEMU SAMEMU slotowi celu przez rodzeństwo efektu. */
+function siblingGrantedKeywords(effects, effect) {
+  const slot = effect?.targetIndex ?? 0;
+  const out = [];
+  for (const sib of effects ?? []) {
+    if (sib === effect) continue;
+    if ((sib?.targetIndex ?? 0) !== slot) continue;
+    if (sib?.type === 'grant_keywords_until_end_of_turn') out.push(...(sib.keywords ?? []));
+  }
+  return out;
 }
 
 function keywordChangesOutcome(view, recipient, extraKeywords = []) {
@@ -7964,6 +7995,32 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (effect.condition === 'landEnteredThisTurn') return view.landEnteredThisTurn === true;
     return null;
   }
+  /**
+   * Batch 71 (Violent Urge, PMSSB-82): warunek zapisany na POJEDYNCZYM efekcie
+   * (`effect.condition.delirium`, CR 207.2c) — silnik sprawdza go przy
+   * rozstrzyganiu (effects.js, ten sam liść `countGraveyardCardTypes`).
+   * Wycena czytała efekt bezwarunkowo, więc double strike liczył się także
+   * przy pustym cmentarzu (pomiar: 82 pkt w obu stanach).
+   * Zwraca: true = warunek zachodzi, false = NIE zachodzi (efekt odpada),
+   * null = nieznany/nieobsługiwany tu (zostaw bez zmian).
+   */
+  const effectConditionHolds = (view, effect) => {
+    const cond = effect?.condition;
+    if (!cond || typeof cond !== 'object') return null;
+    if (cond.delirium === true) {
+      // L41: ten sam zbiór typów co silnik (`CARD_TYPES`) i ten sam liść
+      // liczenia — czytany z widoku, bo decydent nie ma stanu gry.
+      const present = new Set();
+      for (const o of view.zones.graveyard ?? []) {
+        if (o.controllerId !== view.playerId) continue;
+        for (const t of o.types ?? cardDef(o.cardId)?.types ?? []) {
+          if (CARD_TYPES.includes(t)) present.add(t);
+        }
+      }
+      return present.size >= 4;
+    }
+    return null;
+  };
   // Efekty po rozwinięciu wrapperów `conditional` (gałąź wg warunku).
   function unwrapConditionals(view, effects) {
     const flat = [];
@@ -12582,9 +12639,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const xResolved = cmd.xValue ?? 0;
         // PMSSB-3/F-mysteries: rozwijanie conditional w cast (lustro
         // selfDamageOfEffects, L41; mysteries braly 0 zamiast then/else).
-        const scoredEffects = unwrapConditionals(view, effects ?? []).map((e) => (
-          e && e.amount === 'X' ? { ...e, amount: xResolved } : e
-        ));
+        const scoredEffects = unwrapConditionals(view, effects ?? [])
+          // Batch 71 (PMSSB-82): efekt z warunkiem, który NIE zachodzi, nie
+          // zdarzy się przy rozstrzyganiu — nie może wnosić punktów.
+          .filter((e) => effectConditionHolds(view, e) !== false)
+          .map((e) => (
+            e && e.amount === 'X' ? { ...e, amount: xResolved } : e
+          ));
         // PMSSB-1/C (F1): timing liczy się RAZ na rzut (nie na cel) —
         // flaga mówi, czy ten czar odbił ≥1 cel wroga.
         let bounceCastHadFoeTarget = false;
@@ -13559,7 +13620,16 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             // walką" (−75), bo karta i mana idą na nic. Inne efekty tego
             // czaru (dober, keywordy) wyceniają się w swoich gałęziach —
             // kara dotyczy tylko samego pumpu.
-            if (inCombat && !pumpChangesOutcome(view, target, pumpDelta(view, effect))) trick = -75;
+            // Batch 71 (Violent Urge, PMSSB-82): „sam pump nie zmienia wyniku”
+            // to za mało, gdy RODZEŃSTWO tego samego czaru nadaje celowi
+            // keyword, który zmienia — +1/+0 z first strike to JEDNA wymiana,
+            // nie dwie. Pytamy o wynik kombinacji (delta + keywordy rodzeństwa);
+            // kara zostaje tylko wtedy, gdy CAŁOŚĆ jest jałowa.
+            // Pomiar PRZED: sam `first_strike` +56, `pump` + `first_strike`
+            // −17 (bot nigdy nie rzucał Violent Urge).
+            const siblingKw = siblingGrantedKeywords(scoredEffects, effect);
+            if (inCombat && !combinedOutcomeChanges(view, target,
+              { delta: pumpDelta(view, effect), keywords: siblingKw })) trick = -75;
             score += trick + (target.power ?? 0);
           } else if (isPumpEffect && !isNegativePump(effect)) {
             // Batch60: ujemny pump NIE wpada w tę klamrę — w całości posiada
