@@ -15,7 +15,7 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
-import { effectivePower } from '../src/engine/permanents.js';
+import { effectivePower, effectiveKeywords } from '../src/engine/permanents.js';
 
 const registry = createCardRegistry();
 
@@ -31,7 +31,8 @@ function game() {
 
 /** Karta SYNTERETYCZNA (ADR 0029) — pin mechaniki bez zależności od katalogu. */
 function synthetic(state, id, { controllerId = 'p1', types = ['Creature'], subtypes = [],
-  power = 2, toughness = 2, keywords = [], abilities = [], zone = 'battlefield', manaCost = 1 } = {}) {
+  power = 2, toughness = 2, keywords = [], abilities = [], zone = 'battlefield', manaCost = 1,
+  extra = {} } = {}) {
   const def = {
     id: `syn-${id}`, name: `Syn ${id}`, set: 'TST', types, subtypes, colors: [],
     power, toughness, manaCost, keywords, oracleText: '', abilities,
@@ -39,7 +40,7 @@ function synthetic(state, id, { controllerId = 'p1', types = ['Creature'], subty
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: def.id, controllerId, ownerId: controllerId,
     zone, ...gameObjectDataOf(def),
-    types: def.types, subtypes: def.subtypes, keywords: def.keywords,
+    types: def.types, subtypes: def.subtypes, keywords: def.keywords, ...extra,
   });
   return state.objects.get(id);
 }
@@ -173,6 +174,80 @@ test('pin B2b: „Discard a card” bez kwalifikatora nadal przyjmuje dowolną k
   synthetic(state, 'any-land', { types: ['Land'], subtypes: ['Plains'], zone: 'hand' });
   const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'picker');
   assert.ok(offer, 'land w ręce wystarcza przy koszcie bez kwalifikatora');
+});
+
+// =========================================================================
+// B2c — delirium na pojedynczym EFEKCIE czaru (Violent Urge: „Delirium — If
+//       there are four or more card types among cards in your graveyard, that
+//       creature gains double strike"). CR 207.2c — słowo zdolności; próg
+//       czytany przy ROZSTRZYGNIĘCIU (CR 608.2), nie przy rzucie.
+// =========================================================================
+
+const urgeSpell = () => ({
+  id: 'syn-urge', name: 'Syn Urge', set: 'TST', types: ['Instant'], colors: ['R'], manaCost: 1,
+  oracleText: '', spell: {
+    timing: 'instant',
+    targets: [{ type: 'creature' }],
+    effects: [
+      { type: 'pump', power: 1, toughness: 0 },
+      { type: 'grant_keywords_until_end_of_turn', keywords: ['first_strike'] },
+      {
+        type: 'grant_keywords_until_end_of_turn',
+        keywords: ['double_strike'],
+        condition: { delirium: true },
+      },
+    ],
+  },
+});
+
+function castUrge(state) {
+  const def = urgeSpell();
+  addObject(state, {
+    id: 'urge', instanceId: 'i-urge', cardId: def.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'hand', ...gameObjectDataOf(def), types: def.types, spell: def.spell, kind: 'spell',
+  });
+  addMana(state, 'p1', 2, { colors: ['R'] });
+  const offer = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urge'
+    && c.targets?.[0] === 'cel');
+  assert.ok(offer, 'oferta rzutu z celem');
+  assert.equal(execute(state, offer).ok, true);
+  resolveStack(state);
+}
+
+/** Karta w grobie gracza — typy liczone do delirium (CR 205.2a). */
+function inGrave(state, id, types, controllerId = 'p1') {
+  synthetic(state, id, { types, zone: 'graveyard', power: null, toughness: null, controllerId });
+}
+
+test('pin B2c: delirium na EFEKCIE — 4 typy w grobie dają double strike (obok first strike)', () => {
+  const state = game();
+  synthetic(state, 'cel', { power: 2, toughness: 2 });
+  inGrave(state, 'g1', ['Creature']);
+  inGrave(state, 'g2', ['Instant']);
+  inGrave(state, 'g3', ['Sorcery']);
+  inGrave(state, 'g4', ['Enchantment']);
+  castUrge(state);
+  const cel = state.objects.get('cel');
+  const keywords = effectiveKeywords(cel, state);
+  assert.ok(keywords.includes('first_strike'), 'first strike zawsze');
+  assert.ok(keywords.includes('double_strike'), 'delirium 4 typy → double strike');
+  assert.equal(effectivePower(cel, state), 3, '+1/+0 do końca tury');
+});
+
+test('pin B2c: delirium na EFEKCIE — 3 typy w grobie = brak double strike (reszta efektu działa)', () => {
+  const state = game();
+  synthetic(state, 'cel', { power: 2, toughness: 2 });
+  inGrave(state, 'g1', ['Creature']);
+  inGrave(state, 'g2', ['Instant']);
+  inGrave(state, 'g3', ['Sorcery']);
+  // Czwarty typ leży w grobie PRZECIWNIKA — delirium liczy grób KONTROLERA
+  // źródła, więc ten typ nie może się wliczyć.
+  inGrave(state, 'g4', ['Land'], 'p2');
+  castUrge(state);
+  const cel = state.objects.get('cel');
+  const keywords = effectiveKeywords(cel, state);
+  assert.ok(keywords.includes('first_strike'));
+  assert.ok(!keywords.includes('double_strike'), '3 typy (token się nie liczy) → bez double strike');
 });
 
 // =========================================================================
