@@ -25,7 +25,9 @@ import { gameObjectDataOf } from '../src/cards/materialize.js';
 import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 
 const REG = createCardRegistry();
-const MOUNTAIN = VIRTUAL_BASIC_LANDS.find((c) => c.id === 'mountain') ?? VIRTUAL_BASIC_LANDS[0];
+// Uwaga: identyfikatory wirtualnych basic landów mają prefiks `basic-`
+// (`basic-mountain`); `mountain` NIE istnieje i fallback po cichu brał Plains.
+const MOUNTAIN = VIRTUAL_BASIC_LANDS.find((c) => c.id === 'basic-mountain') ?? VIRTUAL_BASIC_LANDS[0];
 
 function land(state, id, controllerId = 'p1') {
   addObject(state, {

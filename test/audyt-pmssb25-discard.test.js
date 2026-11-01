@@ -89,9 +89,14 @@ test('PMSSB-25/A2: zbędny land jest odrzucany z POWODU przesycenia danego pipa'
 test('PMSSB-25/A3 (kotwica M408): reguła braku KOLORU many zostaje nietknięta', () => {
   // Właściciel (2026-09-22): „Powinien odrzucać tylko takie karty, których nie
   // może rzucić z powodu braku many danego koloru". Illusory Demon przy samych
-  // lasach jest bez koloru ⇒ 40 pkt i to on idzie pierwszy — tak jak PRZED.
+  // lasach jest bez koloru ⇒ idzie pierwszy — tak jak PRZED.
+  // PMSSB-81 (batch 71) przesunął WARTOŚĆ tej gałęzi, nie jej regułę: clamp
+  // `min(10, wartość)` dawał identyczne 20 pkt preferencji każdej karcie
+  // o wartości ≥10, więc picker remisował (pomiar: 3/2 i 5/3 = 40 i 40).
+  // Teraz `25 − min(20, wartość) × 0,25`: Illusory Demon (wartość 14) = 41,5,
+  // a grywalny 2/1 dalej 14 — inwariant „bez koloru idzie pierwszy” trzyma.
   const state = base({ hand: ['highland-game', 'highland-game', 'highland-game', 'illusory-demon'], lands: 3 });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h3)'), 40);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h3)'), 41.5);
   assert.equal(scoreOf(state, 'resolve_discard_choice(h0)'), 14);
   assert.equal(wybrana(state), 'h3', 'karta bez koloru idzie na pierwszy ogień');
 });

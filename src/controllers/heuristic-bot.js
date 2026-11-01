@@ -10780,7 +10780,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     if (!karta) return 0;
     const bezKoloru = !colorCastable(view, karta);
     const wartosc = handCardKeepValue(view, karta);
-    if (bezKoloru) return 25 - Math.min(10, wartosc) / 2;
+    // PMSSB-81 (batch 71): clamp 10 sprawiał, że KAŻDA niegrywalna karta o
+    // wartości ≥10 dostawała tę samą preferencję (pomiar: 3/2 → 20, 5/3 → 20,
+    // remis przy odrzucaniu kosztu z kwalifikatorem „stwór"). Suwak parametryczny
+    // rozciąga różnicowanie na całe pasmo, a baza 25 zostaje (anty-over-fix:
+    // karta niegrywalna zawsze bije grywalną, której wspólna miara jest ≥ 0).
+    if (bezKoloru) return 25 - Math.min(P.discardUncastableClamp, wartosc) * P.discardUncastableScale;
     // PMSSB-25/F1 (L41 — druga miara jakości karty): reguła ciała powyżej nie
     // zna ZASIĘGU many, nasycenia lądów ani duplikatów, bo to druga, równoległa
     // miara (`handCardKeepValue`) obok wspólnej `cardKeepValue` używanej przez

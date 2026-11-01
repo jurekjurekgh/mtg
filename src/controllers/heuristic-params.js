@@ -556,6 +556,14 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // NIE chce, oddajemy chętnie; `discardUnwantedBonus` to płaska dopłata za
   // samo pozbycie się karty niechcianej (×0 = sama wartość wspólnej miary).
   'discardUnwantedBonus',        // dopłata za odrzucenie karty, której wspólna miara nie chce
+  // PMSSB-81 (batch 71, Vampire Hounds): koszt „odrzuć kartę o kwalifikatorze"
+  // (tylko STWÓR) potrafi zmusić bota do wyboru spośród kart, których i tak
+  // nie zagra (brak koloru). Gałąź „bez koloru" miała CLAMP `min(10, wartość)`,
+  // więc każda karta o wartości ≥10 dostawała tę samą preferencję (pomiar:
+  // 3/2 za 2 i 5/3 za 4 many = 20 i 20 → remis → „pierwsza oferta z listy").
+  // Suwak rozciąga różnicowanie na całe pasmo wartości; baza zostaje 25.
+  'discardUncastableClamp',      // pułap wartości karty wliczanej w różnicowanie
+  'discardUncastableScale',      // ile preferencji odejmuje punkt wartości
   // PMSSB-26 — drabina wartości landu (specyfikacja właściciela 2026-09-30).
   // Land KOLOROWY: licznik = ile lądów danego pipa na stole + w ręce.
   // Land BEZBARWNY/utylitarny: licznik = suma lądów na stole + w ręce.
@@ -1157,6 +1165,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // o ciele do ~10 (2×moc+wytrz), ale nie z regułą koloru właściciela (M408),
   // która jest liczona osobną gałęzią i zostaje nietknięta.
   discardUnwantedBonus: 5,
+  // PMSSB-81: pomiar PRZED — karty 3/2 (wartość 10) i 5/3 (19) dostawały
+  // IDENTYCZNE 20 pkt preferencji (clamp 10), więc picker remisował. Po:
+  // 23,7 vs 21,4 — tańszy/gorszy stwór wychodzi wyżej, a najlepsza karta
+  // „bez koloru" (wartość ≥ clamp) nie schodzi poniżej 21, czyli powyżej
+  // sufitu gałęzi grywalnej (20). Anty-over-fix: baza 25 nietknięta.
+  discardUncastableClamp: 20,
+  discardUncastableScale: 0.25,
   // PMSSB-26: stopnie dobrane do istniejącej skali `cardKeepValue` — karta
   // niegruntowa dostaje 4..12, więc „neutralna" (8) trzyma land nad zwykłym
   // stworem, a „niska" (-6) oddaje go chętniej niż cokolwiek grywalnego.
