@@ -7218,6 +7218,10 @@ export function playerView(state, playerId) {
         // zostaje przy `cantAttackStatic` (bot go czyta), bez badge'a, bo
         // słowo kluczowe już to mówi. To fakt publiczny (ADR 0017).
         if (object.kind === 'creature') {
+          // Uwaga R: wymóg z załącznika jest skutkiem ciągłym, widocznym
+          // niezależnie od tego, czy stwór może zaatakować w tej chwili.
+          // To ten sam predykat, z którego korzysta deklaracja atakujących.
+          if (attachmentRestrictions(state, object).mustAttack) entry.mustAttackFromAttachment = true;
           const prevention = staticAttackPreventionOf(state, object, object.controllerId);
           if (prevention.prevented) entry.cantAttackStatic = true;
           if (prevention.external) entry.cantAttackExternal = true;

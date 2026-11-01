@@ -4954,6 +4954,8 @@ export function cardInfo(session, object, combat = null) {
     // więc czytamy bez dodatkowego OR — anty-regressa O1/4 (stwór z samym
     // detainer badge "nie może atakować" — z pustym effector `cantBlockNow`).
     cantAttackNow: Boolean(object.cantAttackExternal),
+    // Wymóg z Aury/ekwipunku jest jawny także na zakrytym gospodarzu.
+    mustAttackFromAttachment: Boolean(object.mustAttackFromAttachment),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
@@ -5393,6 +5395,7 @@ export function buildStateOverlay(visual, info) {
     for (const badge of combatRestrictionBadges({
       cantAttack: info.cantAttackNow, cantBlock: info.cantBlockNow,
     })) flags.push(['kw', badge]);
+    if (info.mustAttackFromAttachment) flags.push(['kw', 'Atakuje w każdej turze jeśli może']);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     if (Array.isArray(info.cantBeBlockedByTypes) && info.cantBeBlockedByTypes.length) {

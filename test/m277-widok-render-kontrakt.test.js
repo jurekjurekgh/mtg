@@ -142,6 +142,18 @@ test('SKAN ŹRÓDEŁ: cardInfo nie czyta pola spoza kontraktu widoku', () => {
       'próbka: widok niesie typy zakazanych blokerów');
     for (const key of Object.keys(evasiveView)) wysylane.add(key);
   }
+  // Uwaga R: warunkowy wymóg ataku z prawdziwej aury też należy do kontraktu.
+  {
+    const state = stanZPermanentem('gorehorn-minotaurs');
+    const aura = registry.get('infectious-bloodlust');
+    addObject(state, { id: 'r-aura', instanceId: 'i-r-aura', cardId: aura.id,
+      controllerId: 'p1', ownerId: 'p1', zone: 'battlefield',
+      ...gameObjectDataOf(aura), types: aura.types });
+    state.objects.set('r-aura', Object.freeze({ ...state.objects.get('r-aura'), kind: 'aura', attachedTo: 'b1' }));
+    const entry = playerView(state, 'p1').zones.battlefield.find(o => o.id === 'b1');
+    assert.equal(entry.mustAttackFromAttachment, true);
+    for (const key of Object.keys(entry)) wysylane.add(key);
+  }
   // Batch 63: role Battle są publiczne, lecz katalog nie zawiera jeszcze
   // karty Battle. Rozszerzamy PRÓBKĘ runtime zamiast wyłączać pole z guardu.
   const battleState = createGameState({ seed: 277, players: [{ id: 'p1' }, { id: 'p2' }] });
