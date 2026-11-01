@@ -328,6 +328,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // klątwy na wroga, a bot w ogóle klątw nie rzucał.
   'curseEnemyBase',              // zysk z klątwy rzuconej na PRZECIWNIKA
   'curseSelfTargetPenalty',      // kara za klątwę na WŁASNEGO gracza (właściciel: -1000)
+  // PMSSB-83 (batch 71, Curse of the Bloody Tome): klątwa to efekt POWTARZALNY
+  // (mill zaczarowanego gracza w każdym podtrzymaniu), a wycena była płaska —
+  // pomiar: 36 pkt niezależnie od tego, czy wrogowi zostało 25 kart, czy 1
+  // (przy 1 karcie i millu 2 kolejne podtrzymanie to WYGRANA). Waga mówi, ile
+  // „jednego podtrzymania” millu wchodzi w cenę rzutu (skala `foeMillValue`,
+  // czyli ta sama, co presja deck-outu przy zwykłym millu).
+  'curseMillUpkeepWeight',
   // Zgłoszenie właściciela C (2026-09-10, Gurmag Drowner): Exploit przy 5
   // kartach w bibliotece — trigger miele 3 (`look_top_put_one_hand_rest_grave`,
   // amount 4), a ofiara była liczona tylko z P/T, więc użyteczny latający stwór
@@ -1039,6 +1046,12 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   auraProtectionThreatWeight: 12,
   curseEnemyBase: 40,
   curseSelfTargetPenalty: 1000,
+  // PMSSB-83: pół „podtrzymania” presji — klątwa nie wchodzi natychmiast
+  // (wróg może ją usunąć, a my możemy przegrać wcześniej), a mimo to mill 2
+  // przy cienkiej bibliotece wroga MUSI przebić zwykłą klątwę. Pomiar PO:
+  // biblioteka wroga 25 → 47,7; 10 → 54,9; 4 → 65,7; 2 i 1 → 227,7
+  // (deck-out wg `foeMillValue`). PRZED: 36 w każdym z tych stanów.
+  curseMillUpkeepWeight: 0.5,
   exploitSkipBase: 20,
   exploitBase: 40,
   exploitDeckOutPenalty: 120,

@@ -9308,6 +9308,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * N (2026-09-22): przy aurze WARUNKOWEJ wrogość liczy się względem
    * `host` (gospodarza), bo ta sama karta bywa prezentem albo kajdanami.
    */
+  /**
+   * PMSSB-83 (batch 71): wartość POWTARZALNEGO millu wroga z aury na graczu
+   * (`applyTo: 'enchanted_player'`, CR 303.4). Jedno źródło skali — ta sama
+   * `foeMillValue`, której używa zwykły mill (L41); waga mówi, ile jednego
+   * podtrzymania wchodzi w cenę rzutu (liczba podtrzymań nieznana).
+   * Generycznie po deskryptorze (ADR 0002): dowolna klątwa mieląca dostanie
+   * swoją wartość, nie tylko ta z batcha 71.
+   */
+  const auraRecurringFoeMillValue = (view, card) => {
+    const def = card ? cardDef(card.cardId) : undefined;
+    let total = 0;
+    for (const ability of def?.abilities ?? []) {
+      if (ability?.type !== 'triggered') continue;
+      const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+      for (const e of effs) {
+        if (e?.type !== 'mill_cards' || e.applyTo !== 'enchanted_player') continue;
+        total += foeMillValue(view, e.amount ?? 1);
+      }
+    }
+    return total * P.curseMillUpkeepWeight;
+  };
   function auraIsHostile(descriptor, def, host = null) {
     if (descriptor) {
       const cantAttackHolds = hostileConditionHolds(descriptor.cantAttack, host);
@@ -11701,7 +11722,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             const wroga = auraIsHostile(descriptor, card ? cardDef(card.cardId) : undefined);
             if (wroga) {
               if (celKlatwy === view.playerId) return finish(-P.curseSelfTargetPenalty);
-              if (celKlatwy === enemy(view)?.id) return finish(P.curseEnemyBase);
+              if (celKlatwy === enemy(view)?.id) {
+                // PMSSB-83 (batch 71, Curse of the Bloody Tome): klątwa
+                // mieląca w każdym podtrzymaniu wroga. Płaska baza (40) nie
+                // odróżniała millu 2 od millu 0 ani nie widziała, że przy
+                // cienkiej bibliotece kolejne podtrzymanie = WYGRANA.
+                // Wartość powtarzalna liczona TĄ SAMĄ skalą co zwykły mill
+                // wroga (`foeMillValue` — presja deck-outu, L41) i zdyskontowana
+                // wagą `curseMillUpkeepWeight` (nie znamy liczby podtrzymań).
+                const recurring = auraRecurringFoeMillValue(view, card);
+                return finish(P.curseEnemyBase + recurring);
+              }
               return finish(-P.auraNoTargetPenalty);
             }
             // Aura na graczu, która NIE szkodzi (w katalogu dziś takiej nie
