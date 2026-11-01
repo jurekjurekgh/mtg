@@ -35,3 +35,7 @@ Testy ujawniły, że PR #177 ignorował koszt trzech ofiar, gdy jedynym niebiesk
 ## A7 — błędne ostrzeżenia animacji i załogi
 
 Silvanus’s Invoker faktycznie odtapowuje już animowany ląd; stare ostrzeżenie mówiło, że nic się nie zmieni i przepadnie tapnięcie. Uściślono ostrzeżenie do czystych zdolności crew/saddle i ich stanu; kreator używa tego samego helpera. 5 testów RED→GREEN, pokrewne 38/38, `npm test` 9243/9243, build 76 modułów / 5624,6 kB. Audyt nadal nieukończony, pozostałe kierunki w raporcie.
+
+## A8 — priorytet podczas podrzędnej płatności many
+
+Zagnieżdżony Mana Wizard aktywuje źródło z `holdPriority`, inaczej auto-pass mógł zmienić krok i wyczyścić nową manę przed powrotem do nadrzędnego kreatora. Test rzeczywistej sesji i wiring funkcji UI, RED→GREEN. Pokrewne 44/44, `npm test` 9244/9244, build 76 modułów / 5624,8 kB. Slow 268/268 uruchomiony przed A8. Audyt nadal trwa.

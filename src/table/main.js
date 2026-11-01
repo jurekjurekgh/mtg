@@ -3041,7 +3041,10 @@ function bootstrapTable() {
       // bo `finishWizardPayment` woła onCloseWizard PRZED komendą.
       const nested = manaWizardParents.length > 0;
       const result = finishWizardPayment(session, pending, {
-        runCommand: (cmd, options) => playDirect(cmd, options),
+        // Zdolność many jest tylko kolejnym krokiem wstrzymanej płatności.
+        // Auto-pass sesji mógłby opuścić krok i wyczyścić pulę, zanim
+        // nadrzędny kreator zdąży ją wykorzystać (także dla wyciszonej oferty).
+        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true } : options),
         onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
