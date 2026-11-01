@@ -120,3 +120,45 @@ efektu.
 - Każda nowa mechanika: pin RED→GREEN + mutacja, bez warunków po nazwie karty.
 - PMSSB każdej nowej mechaniki: sonda PRZED, pokrętła, raport w `docs/PMSSB.md`.
 - Bramy zielone; brak zmian zachowania istniejących kart poza zamierzonymi.
+
+## Status realizacji — DOMKNIĘTE 2026-11-01
+
+| Krok | Commit | Stan |
+|---|---|---|
+| B0 plan | `b14bd08` | DONE |
+| B1 snapshoty + rulings | `86f9a29`, `a2c58a2` (allowlista strażników) | DONE |
+| B2a+B2b kwota z landów, koszt kwalifikowany | `abc07cd` | DONE |
+| B2c delirium na efekcie | `66c9389` | DONE |
+| B2d mill zaczarowanego gracza | `8d9acb1` | DONE |
+| B2e champion (CR 702.72a) | `9e1c820` | DONE |
+| B3 definicje 10 kart + token Elf Warrior + talie | `f0c500a` | DONE |
+| B4 scenariusze na kartach realnych | `f1dbade` | DONE |
+| B5 dowiązania deskryptorów | `957b96f` | DONE |
+| B6 PMSSB-80 kwota z landów | `58d7b2e` | DONE |
+| B7 PMSSB-81 koszt kwalifikowany | `73b4837` | DONE |
+| B8 PMSSB-82 delirium-trik | `21163eb` | DONE |
+| B9 PMSSB-83 mill klątwy | `c4c2046` | DONE |
+| B10 PMSSB-84 champion | `67ea061` | DONE |
+| B10a PMSSB-85 pump atakujących | `96343c7` | DONE |
+| B10b PMSSB-86 pozostałe karty | `9ab8cf6` | DONE |
+| B11 bramy | `86b25b9` | DONE |
+| B12 dokumentacja | ten commit | DONE |
+
+**Wynik:** 10 kart `supported` (100% Oracle, `limitations: []`), rejestr **691**
+kart, `MANA_COSTS` **620**, talie **31** (generowane `tools/generate-plan-decks.mjs`),
+benchmark **27**. Nowe mechaniki generyczne: źródło kwoty `lands_you_control`,
+koszt `discardCard` z kwalifikatorem, `condition.delirium` na pojedynczym
+efekcie, `mill_enchanted_player`, champion (CR 702.72a) + powrót wygnanej karty,
+kontekst klątwy na graczu w `PlayerView`/wycenie.
+
+**Bramy:** `npm test` **9156/9156**, `npm run test:slow` **268/268**, build
+**76 modułów / 5608,7 kB**, benchmark quick heuristic **87,5%** (672 mecze,
+vs random 96,7%, vs aggro 78,3%). Golden-master zregenerowany świadomie
+(d5349621… → 0e1c042c…) z wpisem pomiarowym; grzechotka remisów: allowlista
+pozycji Wrap in Flames przepisana z numeru tury na klasę (warianty różnią się
+wyłącznie liczbą celów, dodatkowy cel funkcjonalnie pusty).
+
+**Raporty PMSSB:** `docs/PMSSB.md` PMSSB-80…86. Piny:
+`test/real-cards-batch71.test.js` (28), `test/audyt-batch71-b5-dowiazania.test.js`
+(7), `test/audyt-pmssb80-*` (6), `-81-*` (6), `-82-*` (5), `-83-*` (4),
+`-84-*` (5), `-85-*` (5), `-86-*` (8).

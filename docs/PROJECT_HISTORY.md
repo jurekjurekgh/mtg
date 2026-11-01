@@ -18478,3 +18478,30 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   `abilityDiscardLoss`, próg `giftedSelfSacrificeMinEnemyPower` = 12. Pin
   `test/o-plague-reaver-darowanie.test.js` (7) + re-pin PMSSB10-B2
   (91,81 → 78,31). Bramy jak wyżej.
+
+- **Sesja 2026-11-01 (PR #177) — batch 71, kolekcja 625–634 (10 kart)**:
+  Vampire Hounds (EXO, Warhammer Fantasy), Curse of the Bloody Tome (ISD,
+  Marvel), Rumbling Rockslide (LCI, Thunder Junction), Ambassador Oak (JMP,
+  Śródziemie), Tail Slash (DTK, Tarkir), Changeling Berserker (LRW, Kaldheim),
+  Sphinx's Herald (ALA, Alara), Anticipate (DTK, Star Wars), Trumpet Blast
+  (M10, Dominaria), Violent Urge (DSK, TMNT) — plany 1:1 z tabeli właściciela
+  (DTK dwa razy, artId rozstrzygane po nazwie karty). Pięć nowych mechanik
+  generycznych (ADR 0002): źródło kwoty `lands_you_control`, koszt
+  `discardCard` z kwalifikatorem, `condition.delirium` na pojedynczym efekcie
+  czaru, `mill_enchanted_player` i **champion** (CR 702.72a — poświęcenie
+  WARUNKOWE, wygnanie ODWRACALNE, powrót pod kontrolą właściciela). Pełna
+  pętla PMSSB-80…86 (raporty w `docs/PMSSB.md`) z sondami PRZED→PO: kwota
+  z landów wchodzi w próg dobicia (5 landów na 6/6 → −81, 6 landów → +45),
+  koszt kwalifikowany przestał remisować karty niegrywalne (42,5 vs 40,25
+  zamiast 20 vs 20), delirium triku czyta warunek z widoku (pump+first strike
+  −17 → 76, z delirium 82), klątwa mieląca dostała wartość zależną od presji
+  deck-outu (36 płasko → 47,7/54,9/65,7/227,7 dla biblioteki 25/10/4/2),
+  champion nie idzie już na pusty stół (73,8 → −34,19) i wybiera wygnanie
+  sąsiada (33) zamiast oddawania siebie (27), Trumpet Blast ma wreszcie
+  odbiorcę w ścieżce czaru (−10 wszędzie → −20/46/66 zależnie od liczby
+  atakujących), a Anticipate przy pustej bibliotece oraz koszt ofiar
+  z kolorów Sphinx's Herald są wyceniane (−58 oraz −6/−24 zamiast +32/+9).
+  Bramy: `npm test` **9156/9156**, `test:slow` **268/268**, build 76 modułów /
+  5608,7 kB, benchmark quick heuristic **87,5%**; golden-master zregenerowany
+  świadomie z wpisem pomiarowym per partia.
+

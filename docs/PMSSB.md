@@ -4013,3 +4013,170 @@ odtwarzają stan sprzed zmiany (M429). Epic Experiment pozostaje zielony
 5508,7 kB. Mutacje (RED potwierdzony): filtr `bannedTypes` off → 1 RED;
 `convergeDamageAmount` → 0 → 2 RED; `manifest_dread_resolved` → 0 → 1 RED;
 `graveyardCounterAmount` off → 1 RED.
+
+## PMSSB-80 — kwota „liczba kontrolowanych landów” w obrażeniach (Rumbling Rockslide) (2026-10-31) — DONE
+
+Plan: [PLAN_2026-10-30-batch71-kolekcja-625-634](plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
+(B6). Pin: `test/audyt-pmssb80-kwota-z-landow.test.js`.
+
+Efekt `damage` z `amount 'lands_you_control'` istniał w silniku, ale wycena
+czytała kwotę z pola `amount` (string → 0), więc czar dostawał ocenę „obrażenia
+bez skutku”. Naprawa u źródła (L41): jedna funkcja licząca kwotę z tego samego
+źródła co silnik, użyta w `damageTargetValue`.
+
+| Stan (hit = liczba moich landów) | PRZED | PO | Werdykt |
+|---|---|---|---|
+| 5 landów vs 6/6 | −81 | −81 | zakaz chipu poza walką (poprawnie) |
+| 6 landów vs 6/6 (dobija) | −81 | **+45** | DONE |
+| 6 landów vs 7/7 | −81 | −81 | poniżej progu — trzymaj |
+| 7 landów vs 7/7 (dobija) | −81 | **+47** | DONE |
+
+Audyt: czar jest SORCERY, więc nie ma okna instant — nie dokładamy premii za
+okno walki (anty-over-fix, M429). Powyżej progu ocena rośnie z nadwyżką
+obrażeń, nie z samą liczbą landów (model „chip zabroniony”). Zero nowych wag —
+mechanika wchodzi w istniejący model obrażeń per cel.
+
+## PMSSB-81 — koszt „odrzuć kartę o KWALIFIKATORZE” (Vampire Hounds) (2026-10-31) — DONE
+
+Plan: jak wyżej (B7). Pin: `test/audyt-pmssb81-koszt-kwalifikowany.test.js`.
+Pokrętła: `discardUncastableClamp` = 20, `discardUncastableScale` = 0,25.
+
+Sonda PRZED (blok 3/3, `declare_blockers`): +2/+2 zmieniający wynik walki → +9;
+pump bez zmiany wyniku → −19; brak walki → −21. Koszt karty jest realny, więc
+aktywacja nigdy nie jest „darmowym pompowaniem” — to trzymają piny.
+
+**Drugi błąd znaleziony w pętli:** picker odrzucenia remisował dla kart
+NIE GRYWALNYCH (gałąź „bez koloru” miała clamp `min(10, wartość)`): 3/2 za 2 many
+i 5/3 za 4 many dostawały po 20 pkt, wygrywała „pierwsza oferta z listy”
+(klasa L50 — ten sam wzorzec, który właściciel zgłaszał przy M408). Po:
+
+| Para kandydatów do odrzucenia | PRZED | PO |
+|---|---|---|
+| `garruks-companion` (3/2, 2 many) vs `changeling-berserker` (5/3, 4 many) | 20 vs 20 (remis) | 42,5 vs 40,25 |
+
+Odwrócenie kotwicy M408 (41,5) sprawdzone: próg nie rusza istniejącej
+preferencji, tylko rozdziela remis. Anty-over-fix: `discardUncastableScale = 0`
+przywraca dawne zachowanie (pin).
+
+## PMSSB-82 — DELIRIUM na pojedynczym efekcie jako trik bojowy (Violent Urge) (2026-10-31) — DONE
+
+Plan: jak wyżej (B8). Pin: `test/audyt-pmssb82-delirium-trik.test.js`.
+
+Sonda PRZED (atakujący 2/2 blokowany przez 2/2):
+
+| Wariant | PRZED | PO |
+|---|---|---|
+| sam pump (+1/+0) | −23 | — |
+| sam first strike | +56 | — |
+| pump + first strike (kombinacja) | −17 | **76** |
+| pełna karta, bez delirium | −11 (pass) | 76 (bez double strike) |
+| pełna karta, z delirium | −11 | **82** |
+
+Dwa błędy u źródła: (1) kara „pump sam nie zmienia wyniku walki” (−75)
+ignorowała RODZEŃSTWO efektów z tego samego czaru — +1/+0 i first strike to
+JEDNA wymiana; kombinacja liczona teraz `combinedOutcomeChanges` (ta sama
+funkcja co w PMSSB-8/85, L41). (2) `effect.condition.delirium` nie było czytane
+w wycenie, więc double strike liczył się przy pustym cmentarzu; warunek czytany
+z widoku tym samym zbiorem typów co silnik (`CARD_TYPES`).
+
+## PMSSB-83 — MILL ZACZAROWANEGO GRACZA (Curse of the Bloody Tome) (2026-10-31) — DONE
+
+Plan: jak wyżej (B9). Pin: `test/audyt-pmssb83-klatwa-mill.test.js`.
+Pokrętło: `curseMillUpkeepWeight` = 0,5 (liczby podtrzymań nie znamy — dyskontem).
+
+Sonda PRZED (biblioteka wroga 25/10/4/2/1): rzut = **36 pkt w każdym stanie** —
+klątwa była płaską bazą `curseEnemyBase` (40), więc mill 2 nie różnił się od
+klątwy bez millu, a przy bibliotece wroga 1 karta (kolejne podtrzymanie =
+wygrana) wyceniano jak mill na 25 kart.
+
+PO: baza + `foeMillValue` (ta sama skala presji deck-outu, której używa zwykły
+mill — L41) × `curseMillUpkeepWeight`: 25 → **47,7**; 10 → **54,9**;
+4 → **65,7**; 2/1 → **227,7**.
+
+Audyt kosztu: rzut na SIEBIE zostaje karą klasy −900
+(`curseSelfTargetPenalty`), aury-wrogi na permanentach nietknięte (osobna
+gałąź `auraHostileEnemyBase`). Waga nie mnoży premii za cel, tylko powtarzalny
+skutek — kolejna klątwa mieląca dostanie to samo z deskryptora (ADR 0002).
+
+## PMSSB-84 — CHAMPION: okno rzutu i wybór wygnania (Changeling Berserker) (2026-10-31) — DONE
+
+Plan: jak wyżej (B10). Pin: `test/audyt-pmssb84-champion-okno.test.js`.
+Pokrętła: `championNoHostPenalty` = 120, `championExileLossFactor` = 0,25.
+
+Sonda PRZED (rzut 5/3 za {3}{R}):
+
+| Plansza | PRZED | PO |
+|---|---|---|
+| pusty stół | 73,8 | **−34,19** (pass — czekaj na kandydata) |
+| sojusznik 1/1 (token) | 73,8 | 73,81 |
+| sojusznik 10/10 | 73,8 | 73,81 |
+
+Wybór wygnania to TA SAMA komenda co poświęcenie (`resolve_sacrifice_choice`,
+L48), rozróżniona strefą docelową (`pendingSacrifice.moveTo === 'exile'` vs
+`'graveyard'`); wygnanie jest ODWRACALNE, więc jego koszt to ułamek wartości
+(`championExileLossFactor`): przy sojuszniku 10/10 wygnanie **33** bije
+poświęcenie własnego 5/3 **27** (PRZED: 10 vs 27 — bot oddawał championa,
+żeby nie tykać tłustego sąsiada).
+
+## PMSSB-85 — PUMP ZBIORU ATAKUJĄCYCH w ścieżce CZARU (Trumpet Blast) (2026-11-01) — DONE
+
+Plan: jak wyżej (B10a). Pin: `test/audyt-pmssb85-pump-atakujacych.test.js`.
+Pokrętła: `setPumpNoAttackersPenalty` = 70, `setPumpTrickValue` = 12,
+`setPumpUnblockedPowerWeight` = 2 (te same skale co trik bojowy).
+
+Sonda PRZED: rzut = **−10 pkt w każdym stanie** — z dwoma atakującymi, w kroku
+blokujących i bez atakujących. Przyczyna u źródła: `buff_attacking_creatures`
+nie niesie `target` w komendzie (CR 611.2c — efekt działa na ZBIÓR), więc
+ścieżka czaru nie miała odbiorcy i wpadała w karę „wzmacnianie przeciwnika”
+(−60); ta sama rodzina miała wycenę tylko w ścieżce AKTYWACJI (Thunderstaff).
+
+PO: odbiorcami są MOI atakujący z `view.combat.attackers` (ADR 0017):
+zablokowany — przez `combinedOutcomeChanges` (czy pump poprawia wymianę),
+nieblokowany — przyrost mocy jako obrażenia w twarz.
+
+| Stan | PRZED | PO |
+|---|---|---|
+| 0 atakujących | −10 | **−20** (pass) |
+| 1 atakujący | −10 | **+46** |
+| 2 atakujących | −10 | **+66** |
+
+Kara „brak atakujących” musiała przebić bazę czaru (~50) — 40 dawało remis
+z passem, więc 70. Mutacja (usunięcie gałęzi) → piny 85/2–85/4 RED.
+
+## PMSSB-86 — pozostałe karty batcha: logika zagrania (2026-11-01) — DONE
+
+Plan: jak wyżej (B10b). Pin: `test/audyt-pmssb86-pozostale-karty-batcha.test.js` (8).
+Pokrętła: `impulseEmptyLibraryPenalty` = 90, `coloredSacrificeCostWeight` = 1,
+`coloredSacrificeCardLoss` = 3.
+
+Sonda PRZED dla kart, które nie miały własnej mechaniki (Ambassador Oak,
+Tail Slash, Anticipate, Sphinx's Herald):
+
+| Karta / stan | PRZED | PO | Werdykt |
+|---|---|---|---|
+| Ambassador Oak: rzut vs kontrfaktyk bez ETB | 75,6 vs 66,6 | bez zmian | ZAMKNIĘTE (token wnosi +9) |
+| Tail Slash: moc dawcy 1 / 3 / 5 | −20 / 79 / 83 | bez zmian | ZAMKNIĘTE (próg dobicia) |
+| Anticipate: biblioteka 20 / 2 | 58 / 58 | 58 / 58 | OK |
+| Anticipate: biblioteka PUSTA | **+32 (nad passem!)** | **−58** | DONE |
+| Herald: karta w bibliotece, trzy 1/1 / trzy 3/3 | +9 / +9 | **−6 / −24** | DONE |
+| Herald: brak karty w bibliotece | −57 | −57 | OK (jałowy tutor) |
+
+Dwa błędy u źródła: (1) `look_top_*` przy pustej własnej bibliotece dostawał
+tylko −18 z `impulseLookValue` przy bazie czaru ~50 — karta i mana za
+„oglądanie niczego”; kara liczona raz na rzut, tylko w ścieżce CZARU (ścieżki
+zdolności/sagi mają własne bramki). (2) koszt `sacrificeCreaturesByColors`
+(ten sam kształt co Angel's Herald z batcha 66) nie był wyceniany w ŻADNEJ
+gałęzi aktywacji — ofiary wybierane zachłannie najtańsze na kolor tą samą
+miarą co `resolve_sacrifice_choice` (L41) + card disadvantage za każdą ponad
+jedną. Mutacja: usunięcie obu napraw → 86/4 i 86/6 RED.
+
+### Bramy (PMSSB-80…86)
+
+`npm test` **9156/9156**, `npm run test:slow` **268/268**, build 76 modułów /
+5608,7 kB. Golden-master zregenerowany ŚWIADOMIE (wpis w
+`test/bot-scoring-snapshot.test.js`: d5349621… → 0e1c042c…, pomiar per partia).
+Benchmark quick: heuristic 87,5% ogółem (vs random 96,7%, vs aggro 78,3%);
+`test/bot-benchmark.test.js` bez regresji. Grzechotka remisów: nowa pozycja
+Wrap in Flames s4009 p2 t20 (ta sama klasa co przejrzana t24 — warianty różnią
+się WYŁĄCZNIE liczbą celów, dodatkowy cel funkcjonalnie pusty) — allowlista
+przepisana z numeru tury (krucha) na KLASĘ.

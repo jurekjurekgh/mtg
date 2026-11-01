@@ -12,7 +12,28 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-27c):** [handoff](docs/setup/HANDOFF_2026-10-27c.md),
+**Aktualny punkt zaczepienia (2026-11-01):** [handoff](docs/setup/HANDOFF_2026-11-01.md),
+[plan batcha 71](docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
+(kolekcja 625–634, 10 kart) — wszystko w otwartym
+[PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Batch 71 domknięty:
+Vampire Hounds (EXO), Curse of the Bloody Tome (ISD), Rumbling Rockslide (LCI),
+Ambassador Oak (JMP), Tail Slash (DTK), Changeling Berserker (LRW),
+Sphinx's Herald (ALA), Anticipate (DTK), Trumpet Blast (M10), Violent Urge
+(DSK) — plany 1:1 z tabelą właściciela. Pięć nowych mechanik generycznych:
+kwota `lands_you_control`, koszt `discardCard` z kwalifikatorem,
+`condition.delirium` na pojedynczym efekcie, `mill_enchanted_player` oraz
+**champion** (CR 702.72a — poświęcenie warunkowe, wygnanie odwracalne, powrót
+pod kontrolą właściciela). Pełna pętla PMSSB-80…86 ([raporty](docs/PMSSB.md)):
+wycena championa (pusty stół 73,8 → −34,19; wygnanie sąsiada 33 vs poświęcenie
+siebie 27), klątwy mielącej (36 płasko → 47,7…227,7 zależnie od presji
+deck-outu), delirium-trika (pump+first strike −17 → 76/82), pumpu atakujących
+(−10 wszędzie → −20/46/66), Anticipate przy pustej bibliotece (+32 → −58)
+i kosztu ofiar z kolorów Sphinx's Herald (+9 → −6/−24). Bramy:
+`npm test` **9156/9156**, `npm run test:slow` **268/268**, build **76 modułów /
+5608,7 kB**, benchmark quick heuristic **87,5%** (672 mecze). Golden-master
+zregenerowany świadomie (wpis pomiarowy per partia). PR czeka na decyzję
+właściciela.
+Poprzedni punkt zaczepienia (2026-10-27c): [handoff](docs/setup/HANDOFF_2026-10-27c.md),
 [plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
 [audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
 [uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) i

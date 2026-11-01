@@ -9031,3 +9031,60 @@ pkt mocy wroga (wartość właściciela) — poniżej kara, powyżej
 Bramy (N + O): `npm test` **9081/9081**, `test:slow` **268/268**, build **76
 modułów / 5566,5 kB**, benchmark quick 672 mecze — heuristic **88,7%**
 (596/672).
+
+## M462 — batch 71 (2026-11-01, PR #177): champion, kwota z landów, delirium na efekcie, mill klątwy i dwie luki wyceny kart bez nowej mechaniki
+
+**Kontekst.** Dziesięć kart właściciela (kolekcja 625–634) wymagało pięciu
+nowych deskryptorów i — co ważniejsze — pełnej pętli wyceny dla każdego
+z nich. Plan: `docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md`,
+raporty: `docs/PMSSB.md` PMSSB-80…86.
+
+**Nowe mechaniki techniczne.**
+
+- **Champion (CR 702.72a)** — trigger wchodzi na stos, poświęcenie jest
+  WARUNKOWE („unless you exile another creature you control”), wygnana karta
+  wraca, gdy źródło opuści pole bitwy, pod kontrolą WŁAŚCICIELA. Decyzja używa
+  WSPÓLNEJ komendy `resolve_sacrifice_choice` (L48), rozróżnionej strefą
+  docelową (`pendingSacrifice.moveTo`); fingerprint obejmuje `moveTo`/`champion`.
+  Oferta wygnania jest osobna od poświęcenia, więc bot widzi różnicę.
+- **Kwota `lands_you_control`** — jedno źródło liczby (ta sama funkcja co
+  w silniku), czytane w `damageTargetValue`.
+- **Koszt `discardCard` z kwalifikatorem** — oferta legalna tylko z kartą
+  spełniającą kwalifikator; picker pokazuje wyłącznie kwalifikujące się karty.
+- **`condition.delirium` na pojedynczym efekcie** — warunek czytany przy
+  ROZSTRZYGANIU (CR 608.2b) i w wycenie, tym samym zbiorem typów co silnik
+  (`CARD_TYPES`).
+- **`mill_enchanted_player`** — mill gracza zaczarowanego (nie „both players”);
+  w `PlayerView` doszedł kontekst klątwy (`enchantedPlayerId`).
+
+**Wycena (pomiar PRZED→PO, wszystkie pokrętła parametryczne).**
+
+| Rodzina | PRZED | PO | Pokrętła |
+|---|---|---|---|
+| obrażenia z landów | −81 niezależnie od liczby landów | 6 landów na 6/6 **+45**, 7 na 7/7 **+47**, poniżej progu −81 | brak nowych wag (wspólny model obrażeń) |
+| odrzucenie karty o kwalifikatorze | 20 vs 20 (remis → „pierwsza oferta”) | 42,5 vs 40,25 | `discardUncastableClamp` 20, `discardUncastableScale` 0,25 |
+| delirium-trik (Violent Urge) | pump+first strike **−17**, delirium nieczytane | kombinacja **76**, z delirium **82** | — (L41: `combinedOutcomeChanges` + warunek) |
+| klątwa mieląca | 36 płasko | 47,7 / 54,9 / 65,7 / 227,7 (biblioteka 25/10/4/2) | `curseMillUpkeepWeight` 0,5 |
+| champion — okno rzutu | 73,8 także na pustym stole | **−34,19** (pass), z sojusznikiem 73,81 | `championNoHostPenalty` 120 |
+| champion — wybór wygnania | poświęcenie siebie 27 vs wygnanie 10/10 10 | wygnanie **33** vs poświęcenie **27** | `championExileLossFactor` 0,25 |
+| pump zbioru atakujących (czar) | −10 w każdym stanie | −20 / +46 / +66 (0 / 1 / 2 atakujących) | `setPumpNoAttackersPenalty` 70, `setPumpTrickValue` 12, `setPumpUnblockedPowerWeight` 2 |
+| pusta biblioteka w impulsie (Anticipate) | **+32 (nad passem)** | **−58** | `impulseEmptyLibraryPenalty` 90 |
+| koszt ofiar z kolorów (Sphinx's Herald) | +9 (koszt niewidziany) | −6 (trzy 1/1) / −24 (trzy 3/3) | `coloredSacrificeCostWeight` 1, `coloredSacrificeCardLoss` 3 |
+
+**Piny i mutacje.** `test/real-cards-batch71.test.js` (28),
+`test/audyt-batch71-b5-dowiazania.test.js` (7), `test/audyt-pmssb80…86-*.test.js`
+(6, 6, 5, 4, 5, 5, 8). Mutacje potwierdzone eksperymentalnie (każda
+przywrócona po pomiarze): kwota z landów → 0 w ścieżce CZARU → 80/1 RED;
+clamp pickera odrzucenia wrócony do `min(10, wartość)` → 81/5 RED; warunek
+`cond.delirium` nieczytany → 82/3, 82/4 i 82/5 RED; waga klątwy 0 →
+83/2–83/4 RED; kara championa 0 → 84/1 RED; usunięcie gałęzi
+pump-atakujących → 85/2–85/4 RED; obie naprawy PMSSB-86 → 86/4 i 86/6 RED.
+
+**Bramy.** `npm test` **9156/9156**, `npm run test:slow` **268/268**, build
+**76 modułów / 5608,7 kB**, benchmark quick heuristic **87,5%** (672 mecze).
+Golden-master zregenerowany ŚWIADOMIE z wpisem pomiarowym per partia
+(d5349621… → 0e1c042c…) — źródła: nowe karty w taliach planowych + siedem
+nowych gałęzi wyceny. Grzechotka remisów: allowlista Wrap in Flames przepisana
+z numeru tury (kruche) na KLASĘ — warianty różnią się wyłącznie liczbą celów,
+a dodatkowy cel jest funkcjonalnie pusty (1 obrażenie na tapniętym 5/5).
+
