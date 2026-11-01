@@ -462,6 +462,23 @@ function countArtifactsControlled(state, controllerId) {
  *    kandydata (`targetId`) i dla różnych celów daje różną kwotę,
  *  - `amountIfAddendum` — migawka rzutu (Batch60).
  */
+/**
+ * Batch 71 (Rumbling Rockslide): liczba LANDÓW pod kontrolą gracza — jedno
+ * źródło (L41) dla rozstrzygania efektu (`resolveDamageAmount`) i dla wyceny
+ * bota. Land-creature liczy się jako land (typ z linii typów, jak w
+ * `basicLandTypeCount`).
+ */
+export function landsControlledBy(state, playerId) {
+  if (!state || playerId == null) return 0;
+  let count = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (object.kind === 'land' || (object.types ?? []).includes('Land')) count += 1;
+  }
+  return count;
+}
+
 export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
   // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
   // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
@@ -478,6 +495,14 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
       state.zones.battlefield.map((id) => state.objects.get(id)),
       sourceObject?.controllerId,
     );
+  }
+  // Batch 71 (Rumbling Rockslide): „deals damage to target creature equal to
+  // the number of lands you control." Liczba z chwili ROZSTRZYGANIA
+  // (CR 608.2h — lądy wchodzące w oknie odpowiedzi się liczą), liczona tą
+  // samą funkcją, którą czyta oferta/wycena bota (L41:
+  // `landsControlledBy`, eksportowany niżej).
+  if (amount === 'lands_you_control') {
+    amount = landsControlledBy(state, sourceObject?.controllerId);
   }
   // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — kwota liczona
@@ -749,16 +774,20 @@ export function revealTopGainLife(state, playerId, sourceCardId = null) {
   if (gained > 0) changeLife(state, playerId, gained);
 }
 
-/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
-export function librarySearchMatches(object, qualifier, ownerId) {
-  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+/** Czy karta pasuje do kwalifikatora jakości (types/subtypes/kind/minMV/name).
+ *  Batch 71 (Vampire Hounds): ten sam predykat czyta teraz także KOSZT
+ *  „Discard a creature card" — jedna reguła jakości karty, dwie strony
+ *  (L41: wyszukiwanie w bibliotece i picker kosztu nie mogą się rozjechać).
+ */
+export function cardMatchesQualifier(object, qualifier) {
+  if (!object || !qualifier) return true;
   // Batch 58/B6 (Prishe's Wanderings): „a basic land card or Town card" —
   // ALTERNATYWY kwalifikatora. Karta pasuje, gdy spełnia KTÓRĄKOLWIEK
   // z gałęzi (każda gałąź to pełny kwalifikator tej samej postaci, a ALBO
   // łączy się z pozostałymi polami jak dotąd — AND). Jedno miejsce prawdy dla
   // kandydatów (`queueSearchChoice`) i re-walidacji wyboru (resolve_search_choice).
   if ((qualifier.anyOf ?? []).length > 0
-    && !qualifier.anyOf.some((branch) => librarySearchMatches(object, branch, ownerId))) return false;
+    && !qualifier.anyOf.some((branch) => cardMatchesQualifier(object, branch))) return false;
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   // M385: podtypy kwalifikatora czytamy z linii typów; changeling rozszerza
@@ -772,6 +801,12 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   // kryterium jakości, więc fail to find pozostaje legalny).
   const nameOk = !qualifier.name || (object.cardName ?? object.name) === qualifier.name;
   return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
+}
+
+/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+export function librarySearchMatches(object, qualifier, ownerId) {
+  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  return cardMatchesQualifier(object, qualifier);
 }
 
 /**

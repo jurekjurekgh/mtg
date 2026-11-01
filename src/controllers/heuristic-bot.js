@@ -755,6 +755,17 @@ function combatOutcome(view, recipient, delta = {}, protection = {}) {
  * niezależnie od walki); false = okno jest, ale skutek będzie zerowy.
  */
 /** PMSSB-58: ta sama miara co sac-economics/fight (2p+t+MV). */
+/**
+ * Batch 71 (Rumbling Rockslide): liczba landów gracza widziana z PlayerView —
+ * ten sam odczyt, który robi silnik przy rozstrzyganiu
+ * (`landsControlledBy`, effects.js; L41: jedna reguła, dwie strony).
+ * Land-creature liczy się jako land (typ z linii typów), jak w silniku.
+ */
+function landsControlledInView(view, controllerId) {
+  return (view.zones?.battlefield ?? []).filter((object) => object.controllerId === controllerId
+    && (object.kind === 'land' || (object.types ?? []).includes('Land'))).length;
+}
+
 function permanentMaterialValue(object) {
   return 2 * (object?.power ?? 0) + (object?.toughness ?? 0) + (object?.manaCost ?? 0);
 }
@@ -7136,6 +7147,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     } else if (amount === 'artifacts_you_control') {
       amount = (view.zones?.battlefield ?? []).filter((object) => object.controllerId === entry?.controllerId
         && (object.types ?? cardDef(object.cardId)?.types ?? []).includes('Artifact')).length;
+    } else if (amount === 'lands_you_control') {
+      // Batch 71 (Rumbling Rockslide): kwota z lądów — wspólny odczyt z silnikiem.
+      amount = landsControlledInView(view, entry?.controllerId);
     }
     const counterBonus = effect?.amountIfTargetHasCounter;
     if (counterBonus && (target?.counters?.[counterBonus.counter] ?? 0) > 0) amount = counterBonus.amount;
@@ -12946,7 +12960,13 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
                 // nie rzucał.
                 : effect.amount === 'colors_of_mana_spent'
                   ? convergeDamageAmount(view, cmd, card)
-                  : Number.isInteger(effect.amount) ? effect.amount : 0;
+                  // Batch 71 (Rumbling Rockslide): „equal to the number of
+                  // lands you control" — kwota liczona z tego samego stanu co
+                  // w silniku (L41), inaczej string wpadał w 0 i bot widział
+                  // czar bez obrażeń.
+                  : effect.amount === 'lands_you_control'
+                    ? landsControlledInView(view, view.playerId)
+                    : Number.isInteger(effect.amount) ? effect.amount : 0;
             // Batch60 (Addendum, CR 207.2c — lustro migawki castSpell,
             // spells.js:871): rzut we WŁASNEJ fazie głównej (stan stosu bez
             // znaczenia) podbija obrażenia do amountIfAddendum. Bez tego bot
