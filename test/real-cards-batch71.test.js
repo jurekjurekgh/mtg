@@ -34,14 +34,14 @@ function game() {
 /** Karta SYNTERETYCZNA (ADR 0029) — pin mechaniki bez zależności od katalogu. */
 function synthetic(state, id, { controllerId = 'p1', types = ['Creature'], subtypes = [],
   power = 2, toughness = 2, keywords = [], abilities = [], zone = 'battlefield', manaCost = 1,
-  extra = {} } = {}) {
+  colors = [], extra = {} } = {}) {
   const def = {
-    id: `syn-${id}`, name: `Syn ${id}`, set: 'TST', types, subtypes, colors: [],
+    id: `syn-${id}`, name: `Syn ${id}`, set: 'TST', types, subtypes, colors,
     power, toughness, manaCost, keywords, oracleText: '', abilities,
   };
   addObject(state, {
     id, instanceId: `i-${id}`, cardId: def.id, controllerId, ownerId: controllerId,
-    zone, ...gameObjectDataOf(def),
+    zone, ...gameObjectDataOf(def), colors,
     types: def.types, subtypes: def.subtypes, keywords: def.keywords, ...extra,
   });
   return state.objects.get(id);
@@ -445,6 +445,246 @@ test('katalog: 10 kart batcha 71 jest `supported` bez ograniczeń (ADR 0022)', (
     assert.equal(card.support.status, 'supported', `${name} supported`);
     assert.deepEqual(card.support.limitations, [], `${name} bez ograniczeń`);
   }
+});
+
+// =========================================================================
+// B4 — karty REALNE z katalogu: sanity danych + scenariusz legalny
+//      i nielegalny dla każdej karty batcha, przez wspólny silnik.
+// =========================================================================
+
+const real = (state, cardId, { id = cardId, zone = 'battlefield', controllerId = 'p1' } = {}) => {
+  const def = registry.get(cardId);
+  assert.ok(def, `karta ${cardId} jest w katalogu`);
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId, controllerId, ownerId: controllerId, zone,
+    ...gameObjectDataOf(def), types: def.types, subtypes: def.subtypes, keywords: def.keywords ?? [],
+  });
+  return state.objects.get(id);
+};
+const mana = (state, colors, playerId = 'p1') => {
+  for (const c of colors) addMana(state, playerId, 1, { colors: c === 'C' ? [] : [c] });
+};
+const ofCard = (state, cardId) => [...state.objects.values()].filter((o) => o.cardId === cardId);
+
+test('B4/Vampire Hounds: zdolność realnie w ofercie i podnosi 2/2 → 4/4', () => {
+  const state = game();
+  real(state, 'vampire-hounds', { id: 'hounds' });
+  real(state, 'vampire-hounds', { id: 'fodder', zone: 'hand' });
+  const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'hounds');
+  assert.ok(offer, 'oferta aktywacji w legalCommands');
+  execute(state, offer);
+  const choice = commands(state).find((c) => c.type === 'resolve_discard_choice');
+  if (choice) execute(state, choice);
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('hounds'), state), 4);
+});
+
+test('B4/Curse of the Bloody Tome: rzut aury na GRACZA wymaga celu-gracza i mieli go', () => {
+  const state = game();
+  real(state, 'curse-of-the-bloody-tome', { id: 'tome', zone: 'hand' });
+  library(state, 'p2', 3);
+  mana(state, ['U', 'U', 'U']);
+  const casts = commands(state).filter((c) => c.type === 'cast_permanent' && c.objectId === 'tome');
+  assert.ok(casts.length > 0, 'oferta rzutu aury „Enchant player"');
+  const onPlayer = casts.find((c) => (c.targets ?? []).includes('p2'));
+  assert.ok(onPlayer, 'celem może być GRACZ (CR 303.4f)');
+  assert.equal(execute(state, onPlayer).ok, true);
+  resolveStack(state);
+  const aura = ofCard(state, 'curse-of-the-bloody-tome')[0];
+  assert.equal(aura.enchantedPlayerId, 'p2', 'aura wisi na graczu');
+  state.turn.activePlayerId = 'p2';
+  processTriggers(state, [{ type: 'step_advanced', step: 'upkeep', phase: 'beginning' }]);
+  resolveStack(state);
+  assert.equal(state.zones.graveyard.filter((id) => state.objects.get(id)?.controllerId === 'p2').length, 2);
+});
+
+test('B4/Rumbling Rockslide: kwota z landów w realnym czarze; bez celu oferty brak', () => {
+  const state = game();
+  for (let i = 0; i < 3; i += 1) land(state, `l${i}`);
+  synthetic(state, 'victim', { controllerId: 'p2', power: 1, toughness: 6 });
+  real(state, 'rumbling-rockslide', { id: 'slide', zone: 'hand' });
+  mana(state, ['R', 'R', 'R', 'R']);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'slide'
+    && c.targets?.[0] === 'victim');
+  assert.ok(cast, 'oferta rzutu z celem-stworem');
+  execute(state, cast);
+  resolveStack(state);
+  assert.equal(state.objects.get('victim').damage, 3, 'obrażenia = liczba kontrolowanych landów');
+  // Nielegalny cel: brak stworów przeciwnika → brak oferty.
+  const st2 = game();
+  for (let i = 0; i < 3; i += 1) land(st2, `l${i}`);
+  real(st2, 'rumbling-rockslide', { id: 'slide', zone: 'hand' });
+  mana(st2, ['R', 'R', 'R', 'R']);
+  assert.equal(commands(st2).filter((c) => c.type === 'cast_spell' && c.objectId === 'slide').length, 0,
+    'bez legalnego celu czar nie ma oferty (CR 601.2c)');
+});
+
+test('B4/Ambassador Oak: ETB tworzy token 1/1 Elf Warrior z katalogu', () => {
+  const state = game();
+  real(state, 'ambassador-oak', { id: 'oak', zone: 'hand' });
+  mana(state, ['G', 'G', 'G', 'G']);
+  const cast = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'oak');
+  assert.ok(cast);
+  execute(state, cast);
+  resolveStack(state);
+  const tokens = ofCard(state, 'token_elf_warrior');
+  assert.equal(tokens.length, 1, 'jeden token Elf Warrior');
+  assert.equal(tokens[0].power, 1);
+  assert.equal(tokens[0].toughness, 1);
+  assert.deepEqual(tokens[0].colors, ['G']);
+  assert.deepEqual(tokens[0].subtypes, ['Elf', 'Warrior']);
+});
+
+test('B4/Tail Slash: mój stwór zadaje obrażenia równe mocy; bez własnego stwora brak oferty', () => {
+  const state = game();
+  synthetic(state, 'moj', { power: 4, toughness: 4 });
+  synthetic(state, 'wrog', { controllerId: 'p2', power: 2, toughness: 5 });
+  real(state, 'tail-slash', { id: 'slash', zone: 'hand' });
+  mana(state, ['R', 'R', 'R']);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'slash'
+    && c.targets?.includes('moj') && c.targets?.includes('wrog'));
+  assert.ok(cast, 'oferta z dwoma celami (mój stwór + cudzy)');
+  execute(state, cast);
+  resolveStack(state);
+  assert.equal(state.objects.get('wrog').damage, 4, 'obrażenia = moc mojego stwora');
+  const st2 = game();
+  synthetic(st2, 'wrog', { controllerId: 'p2', power: 2, toughness: 5 });
+  real(st2, 'tail-slash', { id: 'slash', zone: 'hand' });
+  mana(st2, ['R', 'R', 'R']);
+  assert.equal(commands(st2).filter((c) => c.type === 'cast_spell' && c.objectId === 'slash').length, 0,
+    'bez własnego stwora nie ma legalnego celu');
+});
+
+test('B4/Changeling Berserker: changeling + haste, ETB champion decyduje o wygnaniu', () => {
+  const state = game();
+  const fodder = synthetic(state, 'fodder', { power: 1, toughness: 1 });
+  real(state, 'changeling-berserker', { id: 'champ', zone: 'hand' });
+  mana(state, ['R', 'R', 'R', 'R']);
+  const cast = commands(state).find((c) => c.type === 'cast_permanent' && c.objectId === 'champ');
+  assert.ok(cast);
+  execute(state, cast);
+  resolveStack(state);
+  const champ = ofCard(state, 'changeling-berserker')[0];
+  assert.equal(champ.zone, 'battlefield');
+  assert.ok(effectiveKeywords(champ, state).includes('haste'), 'haste z katalogu');
+  const picks = commands(state).filter((c) => c.type === 'resolve_sacrifice_choice');
+  assert.deepEqual(picks.map((c) => c.targetId).sort(), [champ.id, fodder.id].sort(),
+    'decyzja championa: wygnaj innego stwora albo poświęć berserkera');
+  execute(state, picks.find((c) => c.targetId === fodder.id));
+  assert.equal([...state.objects.values()].find((o) => o.cardId === 'syn-fodder').zone, 'exile');
+});
+
+test("B4/Sphinx's Herald: koszt trzech KOLOROWYCH stworów; bez kompletu brak oferty", () => {
+  const state = game();
+  real(state, 'sphinxs-herald', { id: 'herald' });
+  synthetic(state, 'bialy', { types: ['Creature'], colors: ['W'], power: 1, toughness: 1 });
+  synthetic(state, 'niebieski', { types: ['Creature'], colors: ['U'], power: 1, toughness: 1 });
+  synthetic(state, 'czarny', { types: ['Creature'], colors: ['B'], power: 1, toughness: 1 });
+  mana(state, ['U', 'U', 'U']);
+  const offer = commands(state).find((c) => c.type === 'activate_ability' && c.objectId === 'herald');
+  assert.ok(offer, 'oferta aktywacji przy komplecie trzech kolorów');
+  assert.equal(execute(state, offer).ok, true);
+  // Trzy RÓŻNE stwory w grobie — którymi mogą być też same heraldy
+  // (Herald jest niebieski, więc pokrywa slot U — ruling ALA).
+  const graveCreatures = state.zones.graveyard
+    .map((id) => state.objects.get(id))
+    .filter((o) => o && (o.types ?? []).includes('Creature') && o.controllerId === 'p1')
+    .length;
+  assert.equal(graveCreatures, 3, 'koszt poświęcił trzy różne stwory');
+});
+
+test("B4/Sphinx's Herald: brak jednego koloru = brak oferty (CR 118.3)", () => {
+  const state = game();
+  real(state, 'sphinxs-herald', { id: 'herald' });
+  // Brak CZARNEGO stwora — Herald (niebieski) nie pokryje tego slotu.
+  synthetic(state, 'bialy', { types: ['Creature'], colors: ['W'], power: 1, toughness: 1 });
+  synthetic(state, 'niebieski', { types: ['Creature'], colors: ['U'], power: 1, toughness: 1 });
+  synthetic(state, 'zielony', { types: ['Creature'], colors: ['G'], power: 1, toughness: 1 });
+  mana(state, ['U', 'U', 'U']);
+  assert.equal(commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'herald').length, 0,
+    'bez czarnego stwora kosztu nie da się zapłacić');
+});
+
+test("B4/Sphinx's Herald: TEN sam stwór nie pokrywa dwóch kolorów", () => {
+  const state = game();
+  real(state, 'sphinxs-herald', { id: 'herald' });
+  // Jeden stwór dwukolorowy (W/B) + Herald (U): razem tylko DWA stwory.
+  synthetic(state, 'wielokolor', { types: ['Creature'], colors: ['W', 'B'], power: 1, toughness: 1 });
+  mana(state, ['U', 'U', 'U']);
+  assert.equal(commands(state).filter((c) => c.type === 'activate_ability' && c.objectId === 'herald').length, 0,
+    'koszt wymaga TRZECH RÓŻNYCH stworów (ruling ALA)');
+});
+
+test('B4/Anticipate: look top 3 — jedna do ręki, reszta na spód (decyzja gracza)', () => {
+  const state = game();
+  const lib = library(state, 'p1', 4);
+  // Identyfikatory instancji czytamy PRZED rzutem: karta zmienia id obiektu
+  // przy każdej zmianie strefy (CR 400.7 — nowy obiekt), więc po ruchu
+  // `state.objects.get(<stare id>)` nic nie zwraca.
+  const libInst = lib.map((id) => state.objects.get(id).instanceId);
+  real(state, 'anticipate', { id: 'ant', zone: 'hand' });
+  mana(state, ['U', 'U']);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'ant');
+  assert.ok(cast, 'oferta rzutu (czar bez celu)');
+  execute(state, cast);
+  resolveStack(state);
+  const picks = commands(state).filter((c) => c.type === 'resolve_look_top_choice');
+  assert.equal(picks.length, 3, 'trzy karty do wyboru');
+  assert.equal(execute(state, picks[0]).ok, true);
+  // Wybrana karta (dowolna z trójki) jest w ręce, a pozostałe dwie na SPODZIE
+  // biblioteki — czyli za kartą, której nie odsłaniano (czwarta z kolei).
+  const topThree = new Set(libInst.slice(0, 3));
+  const inHand = state.zones.hand
+    .map((id) => state.objects.get(id)).filter((o) => o && topThree.has(o.instanceId));
+  assert.equal(inHand.length, 1, 'dokładnie jedna karta z odsłoniętych trafiła do ręki');
+  const bottomTwo = state.zones.library.slice(-2).map((id) => state.objects.get(id)?.instanceId);
+  assert.ok(bottomTwo.every((inst) => topThree.has(inst)), 'reszta leży na SPODZIE biblioteki');
+});
+
+test('B4/Trumpet Blast: bonus tylko dla atakujących w chwili rozstrzygnięcia', () => {
+  const state = game();
+  const atak = synthetic(state, 'atak', { power: 2, toughness: 2 });
+  const dom = synthetic(state, 'dom', { power: 2, toughness: 2 });
+  state.combat = { attackingPlayerId: 'p1', attackers: ['atak'], blockers: new Map(), blockedAttackers: new Set() };
+  real(state, 'trumpet-blast', { id: 'blast', zone: 'hand' });
+  mana(state, ['R', 'R', 'R']);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'blast');
+  assert.ok(cast, 'oferta rzutu bez celów');
+  execute(state, cast);
+  resolveStack(state);
+  assert.equal(effectivePower(state.objects.get('atak'), state), 4, 'atakujący +2/+0');
+  assert.equal(effectivePower(state.objects.get('dom'), state), 2, 'nieatakujący bez bonusu (ruling M10)');
+  assert.equal(effectivePower(atak, state) + effectivePower(dom, state), 6);
+});
+
+test('B4/Violent Urge: bez delirium tylko first strike; z delirium dodatkowo double strike', () => {
+  const state = game();
+  synthetic(state, 'cel', { power: 2, toughness: 2 });
+  real(state, 'violent-urge', { id: 'urge', zone: 'hand' });
+  mana(state, ['R']);
+  const cast = commands(state).find((c) => c.type === 'cast_spell' && c.objectId === 'urge'
+    && c.targets?.[0] === 'cel');
+  assert.ok(cast);
+  execute(state, cast);
+  resolveStack(state);
+  const kw = effectiveKeywords(state.objects.get('cel'), state);
+  assert.ok(kw.includes('first_strike'));
+  assert.ok(!kw.includes('double_strike'), 'bez delirium brak double strike');
+  assert.equal(effectivePower(state.objects.get('cel'), state), 3);
+
+  const st2 = game();
+  synthetic(st2, 'cel', { power: 2, toughness: 2 });
+  inGrave(st2, 'g1', ['Creature']);
+  inGrave(st2, 'g2', ['Instant']);
+  inGrave(st2, 'g3', ['Sorcery']);
+  inGrave(st2, 'g4', ['Enchantment']);
+  real(st2, 'violent-urge', { id: 'urge', zone: 'hand' });
+  mana(st2, ['R']);
+  const cast2 = commands(st2).find((c) => c.type === 'cast_spell' && c.objectId === 'urge'
+    && c.targets?.[0] === 'cel');
+  execute(st2, cast2);
+  resolveStack(st2);
+  assert.ok(effectiveKeywords(st2.objects.get('cel'), st2).includes('double_strike'), 'delirium włącza drugie zdanie');
 });
 
 test('snapshoty: 10 plików docs/cards/scryfall-*.json z rulingami dla batcha 71', () => {
