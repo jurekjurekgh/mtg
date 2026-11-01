@@ -206,6 +206,9 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // Heart): trigger odpala się tylko w upkeep gracza zaczarowanego przez
   // źródło — nie kontrolera (karta „Enchant player").
   if (condition.enchantedPlayerUpkeep) {
+    // To filtr zdarzenia, nie intervening-if: po wyzwoleniu nie zależy
+    // już od bieżącego zaczarowania. Id gracza pochodzi z chwili zdarzenia.
+    if (eventData.enchantedUpkeepPlayerId != null) return true;
     return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
   }
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
@@ -1868,7 +1871,7 @@ export function resolveTriggerEntry(state, entry) {
   // do efektu" to dwa RÓŻNE komunikaty dla gracza — pierwszy sugeruje usterkę,
   // drugi mówi, że karta nie miała na kim działać.
   const emptyReceiverReason = producedNothing && !noOpByState
-    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [])
+    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {})
     : null;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
@@ -1947,8 +1950,8 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
       ? 'no_targets' : null),
   // Mill to wyjątek w rodzinie: cel (gracz) ISTNIEJE, brakuje kart
   // w bibliotece — „brak legalnych celów" byłoby kłamstwem.
-  mill_cards: (state, effect, source, targets) => (
-    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
+  mill_cards: (state, effect, source, targets, context) => (
+    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets, context)).length === 0
       ? 'empty_library' : null),
   // M356 (613 Duskmantle Seer): odbiorcą jest KAŻDY gracz (zawsze istnieje),
   // więc zero zdarzeń może pochodzić wyłącznie z pustych bibliotek — powód to
@@ -1968,12 +1971,12 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
  * Zgodę wymagamy od KAŻDEGO znanego efektu triggera: mieszanka (jeden ma
  * odbiorców, drugi nie) nie ma jednego powodu, więc zostaje `no_result`.
  */
-function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets) {
+function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets, context = {}) {
   const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
     .filter(Boolean)
     .filter((effect) => EMPTY_RECEIVER_EFFECTS[effect.type]);
   if (effects.length === 0) return null;
-  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets));
+  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets, context));
   const first = reasons[0];
   return reasons.every((reason) => reason === first) ? first : null;
 }
@@ -2215,6 +2218,9 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   if (ability?.type !== 'triggered') return false;
   // eventData (extra) dla warunków z danymi zdarzenia (spellColorsInclude).
   if (!conditionHolds(trigger, state, source, extra)) return false;
+  if (trigger.condition?.enchantedPlayerUpkeep) {
+    extra = { ...extra, enchantedUpkeepPlayerId: state.turn.activePlayerId };
+  }
   // Etap F (CR 603.5 + 603.12): „you may pay [koszt]. When you do, [efekt
   // z celem]" (Zoraline) — pierwsza zdolność NIE ma celu: idzie na stos
   // zawsze, płatność to wybór przy JEJ rozstrzyganiu, a dopiero opłacenie

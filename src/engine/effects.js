@@ -1057,7 +1057,7 @@ export function libraryCardsOf(state, playerId) {
  * Gracz, którego bibliotekę mieli `mill_cards` (Chronic Flooding: kontroler
  * ZACZAROWANEGO permanentu — CR 109.5; „target player mills N": cel).
  */
-export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
+export function millTargetPlayerId(state, effect, sourceObject, targets = [], context = {}) {
   if (effect.applyTo === 'enchanted_controller') {
     const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
     return host?.controllerId ?? null;
@@ -1067,7 +1067,7 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
   // GRACZ (CR 303.4b: aura na gracza niesie `enchantedPlayerId`), nie kontroler
   // aury (CR 109.5). Deskryptor generyczny — to samo miejsce prawdy dla oferty
   // i rozstrzygnięcia (L41).
-  if (effect.applyTo === 'enchanted_player') return sourceObject?.enchantedPlayerId ?? null;
+  if (effect.applyTo === 'enchanted_player') return context?.enchantedUpkeepPlayerId ?? sourceObject?.enchantedPlayerId ?? null;
   return (targets[0] && state.players.some((player) => player.id === targets[0]))
     ? targets[0]
     : sourceObject?.controllerId ?? null;
@@ -3078,10 +3078,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
-    // Aura na gracza bez zaczarowanego gracza (odpięta/nielegalna) — brak
-    // skutku, tak samo jak wyżej (CR 608.2b).
-    if (effect.applyTo === 'enchanted_player' && !sourceObject?.enchantedPlayerId) return;
-    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
+    // „That player” może być zapisany przez zdarzenie upkeepu — zdjęcie
+    // aury po wyzwoleniu nie zmienia odbiorcy (CR 113.7a).
+    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets, context);
+    if (effect.applyTo === 'enchanted_player' && !targetPlayerId) return;
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
@@ -4765,7 +4765,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // or a planeswalker that player controls." Engine nie ma planeswalkerów,
     // więc obrażenia zawsze trafiają zaczarowanego gracza. Wspólny pipeline
     // non-combat: prewencja (tarcze/filtr), event z kwotą zadaną, lifelink.
-    const playerId = sourceObject.enchantedPlayerId;
+    const playerId = context?.enchantedUpkeepPlayerId ?? sourceObject.enchantedPlayerId;
     if (!playerId) return;
     dealNonCombatDamage(state, sourceObject, playerId, effect.amount ?? 0);
     return;
