@@ -20,6 +20,15 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-01 — kontynuacja audytu PR #177 (PR #178, w toku)
+
+- A1: champion po odejściu źródła zachowuje wybór, a zmiana kontroli nie zmienia kontrolera triggera (`2812aa6`).
+- A2: upkeep klątwy pamięta gracza ze zdarzenia, także po odejściu lub przesunięciu aury (`5998bde`).
+- A3: dobór many Converge optymalizuje jednocześnie pipy i generic, z zachowaniem istniejących profili (`06587ad`). Strategia automatyczna, nie pełny wybór gracza.
+- Piny RED→GREEN, źródła CR i ograniczenia: `docs/audits/AUDYT_PR177_2026-11-01.md`; plan i aktualny handoff w `docs/plans/PLAN_2026-11-01-audyt-pr177.md` i `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md`.
+- Po A3: `npm test` 9170/9170, `npm run test:slow` 268/268, build 76 modułów / 5615,2 kB. Osobnego quick benchmarku ani pełnego B0 nie uruchamiano. Audyt PR #177 nieukończony.
+
+
 ## 2026-10-27f — próg minimalnego X dla rzutów za {X} (korekta intencji właściciela)
 
 - Zgłoszenie: nie chodziło o widoczność X, tylko o opłacalność — rzut za X = 1
