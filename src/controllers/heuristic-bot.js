@@ -12057,6 +12057,27 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // jak w M103/A.
           score -= etbForcedOwnPingPenalty(view, def, etbPingSpec, etbPingAmount);
         }
+        // PMSSB-84 (batch 71, Changeling Berserker): CHAMPION (CR 702.72a) —
+        // „You may exile another [typ] you control. If you don't, sacrifice
+        // this permanent.” Gdy nie ma kandydata, wejście jest samobójstwem:
+        // karta i mana idą do grobu, zanim stwór cokolwiek zrobi. Pomiar
+        // PRZED: rzut 73,8 także przy pustym stole (bot płacił 4 many za nic).
+        // Kara po DESKRYPTORZE (ADR 0002), nie po nazwie karty — każdy
+        // przyszły champion dostanie tę samą regułę.
+        for (const ability of def?.abilities ?? []) {
+          if (ability?.type !== 'triggered' || ability.trigger?.event !== 'enter_battlefield') continue;
+          const effs = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+          const championSpec = effs.find((e) => e?.type === 'champion');
+          if (!championSpec) continue;
+          const wantedTypes = championSpec.qualifier?.types ?? ['Creature'];
+          const host = (view.zones.battlefield ?? []).some((o) => o.controllerId === view.playerId
+            && o.id !== cmd.objectId
+            && (o.kind === 'creature' || (o.types ?? []).includes('Creature'))
+            && wantedTypes.every((t) => (o.types ?? []).includes(t)
+              || (o.subtypes ?? []).includes(t)
+              || (o.keywords ?? []).includes('changeling')));
+          if (!host) score -= P.championNoHostPenalty;
+        }
         // M169/K (uwaga właściciela, Phyrexian Rager): ETB „you lose N life"
         // poniżej progu życia to samookaleczenie — przy 2 życia bot schodził
         // do 1 „przy okazji". Generycznie: skan triggerów wejścia pod kątem

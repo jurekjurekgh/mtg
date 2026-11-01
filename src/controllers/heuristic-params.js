@@ -181,6 +181,11 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // liczymy jako realną stratę przy wygnaniu (0 = wygnanie darmowe,
   // 1 = wygnanie tak drogie jak poświęcenie).
   'championExileLossFactor',
+  // PMSSB-84 (batch 71, Changeling Berserker): champion (CR 702.72a) BEZ
+  // drugiego obiektu do wygnania = obowiązkowe poświęcenie samego źródła
+  // zaraz po wejściu. Pomiar PRZED: rzut wyceniany na 73,8 w każdym stanie —
+  // także przy pustym stole, gdzie karta i mana przepadały.
+  'championNoHostPenalty',
   'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
@@ -893,6 +898,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // wybrać tańszego wygnańca, ale nigdy dość, by poświęcić samo źródło
   // championa opłacało się bardziej niż odroczenie dużego stwora.
   championExileLossFactor: 0.25,
+  // PMSSB-84: kara musi przebić wartość ciała 5/3 i zejść pod pass.
+  // Pomiar PO: pusty stół 73,8 → −34,19 (pass = 0, więc bot NIE rzuca);
+  // z tokenem 1/1 i z sojusznikiem 10/10 bez zmian (73,8) — kara dotyczy
+  // wyłącznie braku celu championa.
+  championNoHostPenalty: 120,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,
   countedPumpReserveWeight: 1,
