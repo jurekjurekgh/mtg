@@ -19,6 +19,49 @@ import {
  * benchmark (test/bot-benchmark.test.js). Gdy tuner B6 ŚWIADOMIE zmienia
  * parametry domyślne, fixture regeneruje się razem z przyjęciem nowych wag:
  *   node tools/bot-scoring-snapshot.mjs --write
+ *
+ * REJESTR ŚWIADOMYCH REGENERACJI (sesja 2026-10-27c, PR #177):
+ *   - 5be4528f… → 4902f6a7… (C/uwaga właściciela: premia `blockFreeAbsorbBonus`
+ *     za blok bezkosztowy). Zmierzona różnica — JEDNA opcja nie-wybrana:
+ *     `block[permanent-53<permanent-68]` 1 → 3 na partii
+ *     ravnica-wur|innistrad-wu@1001, tura 18 (declare_blockers): blok, w którym
+ *     nikt nie ginie, dostaje 2 × 1 pkt za wchłonięte obrażenia. Wybrane
+ *     komendy (321 decyzji) i scoreSum wybranej ścieżki (3185.9745) są
+ *     IDENTYCZNE — zmiana nie odwraca żadnej decyzji, tylko uczciwiej wycenia
+ *     odrzucony wariant.
+ *   - 4902f6a7… → d5349621… (I/uwaga właściciela 2026-10-29: poświęcenie
+ *     WŁASNEGO stwora ma sens wyłącznie wtedy, gdy stwór już ginie —
+ *     `sacrificeSelfCostLoss` w `heuristic-bot.js`). Zmierzona różnica to
+ *     DOKŁADNIE dwie nie-wybrane już aktywacje poświęcające własne stworzenie
+ *     bez zagrożenia: ravnica-wur|innistrad-wu@1000, tura 15 declare_attackers
+ *     (`permanent-28#0→graveyard-59`, aktywacja 1 → 0; partia 268 → 262
+ *     decyzji, scoreSum 2900.65 → 2970.65) oraz …@1001, tura 19 main1
+ *     (`permanent-68#0→graveyard-35`, 1 → 0; 321 → 298 decyzji, scoreSum
+ *     3185.9745 → 3186.9495). Partia tarkir-bg|warhammer-ubr jest bez zmian,
+ *     a wybory niezwiązane z poświęceniem (np. `permanent-18#0→permanent-45`
+ *     w @1000, tura 14) zachowują IDENTYCZNY zestaw opcji i wynik.
+ *   - d5349621… → 0e1c042c… (BATCH 71, 2026-11-01, PMSSB-80…86): zmiana jest
+ *     ŚWIADOMA i dwuczęściowa — (a) dziesięć nowych kart batcha weszło do
+ *     talii planowych (B2, `tools/generate-plan-decks.mjs`), co sama z siebie
+ *     przesuwa trajektorie wszystkich par, (b) siedem nowych gałęzi wyceny:
+ *     próg `lands>=toughness` (Rumbling Rockslide), okno walki trika
+ *     (Violent Urge), mill klątwy (Curse of the Bloody Tome), wybór okna
+ *     championa (Changeling Berserker), pump atakujących (Trumpet Blast),
+ *     pusta biblioteka w impulsie (Anticipate) i koszt ofiar z kolorów
+ *     (Sphinx's Herald). Pomiar per partia (decisions, scoreSum):
+ *       ravnica-wur|innistrad-wu@1000: 262→262, 2970.65→2971.65 (jedna opcja
+ *         nie-wybrana, +1 pkt: ten sam charakter co wpis C wyżej),
+ *       ravnica-wur|innistrad-wu@1001: BEZ ZMIAN (298, 3186.9495),
+ *       dominaria-brg|mirrodin-wu@1000: 205→203, 3030.4126→3048.1072,
+ *       dominaria-brg|mirrodin-wu@1001: 300→313, 3580.9562→3591.2971,
+ *       tarkir-bg|warhammer-ubr@1000: 179→174, 1576.1099→2531.0099,
+ *       tarkir-bg|warhammer-ubr@1001: 126→164, 2279.7081→2503.0099.
+ *     Skok scoreSum na tarkir-bg|warhammer-ubr jest oczekiwany: ta para ma
+ *     w taliach najwięcej kart batcha (Wrap in Flames/trick bojowy, pump
+ *     atakujących), a nie-wybrane warianty dostały realną wycenę zamiast
+ *     płaskiej bazy. Zachowanie bota NIE jest mierzone tym plikiem — bramką
+ *     jakości pozostaje `test/bot-benchmark.test.js` (bez regresji) i pomiar
+ *     quick (heuristic 87.5% ogółem, vs random 96.7%, vs aggro 78.3%).
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

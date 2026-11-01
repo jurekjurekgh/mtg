@@ -162,10 +162,14 @@ test('PMSSB-26/B4: suma 6 → neutralna, suma 7 poza rozważanym → niska', () 
 // ---------------------------------------------------------------------------
 
 test('PMSSB-26/C1 (kotwica M408): reguła braku KOLORU many zostaje nietknięta', () => {
-  // Illusory Demon przy samych lasach jest bez koloru ⇒ 40 pkt i to on idzie
-  // pierwszy — drabina landów nie zmienia drugiej gałęzi `discardCostPreference`.
+  // Illusory Demon przy samych lasach jest bez koloru ⇒ idzie pierwszy —
+  // drabina landów nie zmienia drugiej gałęzi `discardCostPreference`.
+  // PMSSB-81 (batch 71) zmienił WARTOŚĆ tej gałęzi (clamp 10 → suwak
+  // `discardUncastableClamp/Scale`): karta bez koloru ma 41,5 pkt zamiast 40,
+  // bo różnicowanie wewnątrz gałęzi zastąpiło remis wszystkich kart ≥10.
+  // Reguła i wybór (h1) bez zmian.
   const state = base({ hand: ['highland-game', 'illusory-demon'], board: [FOREST, FOREST, FOREST] });
-  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 40);
+  assert.equal(scoreOf(state, 'resolve_discard_choice(h1)'), 41.5);
   assert.equal(wybrana(state), 'h1');
 });
 

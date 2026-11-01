@@ -96,15 +96,18 @@ test('F3-flat: reunion main1 = main2 = 17 (sorcery-draw nie czeka)', () => {
   assert.equal(scoreOf(mk('main2'), 'cast_spell(reu'), 17);
 });
 
-test('F5: force-away z ferocious = 90 (+2-rider PMSSB-8/F-L1b), bez = 100 (0-rider)', () => {
+// G (2026-10-29): wartości +18 — cel 3/3 za 3 many dostaje wymiar inwestycji
+// (TMC 3 × waga 6). RÓŻNICA ferocious/bez ferocious bez zmian (−10 = rider +2
+// wg PMSSB-8/F-L1b); pin pilnuje relacji, nie samej skali.
+test('F5: force-away z ferocious = 108 (+2-rider PMSSB-8/F-L1b), bez = 118 (0-rider)', () => {
   const mk = (fero) => {
     const s = newState(); fillLibrary(s, 10); addBasics(s, ['U'], 4); handCard(s, 'fa', 'force-away');
     fieldCreature(s, 'cel', 'p2', 3, 3);
     if (fero) fieldCreature(s, 'big', 'p1', 4, 4);
     return s;
   };
-  assert.equal(scoreOf(mk(true), 'cast_spell(fa->cel)'), 90);
-  assert.equal(scoreOf(mk(false), 'cast_spell(fa->cel)'), 100);
+  assert.equal(scoreOf(mk(true), 'cast_spell(fa->cel)'), 108);
+  assert.equal(scoreOf(mk(false), 'cast_spell(fa->cel)'), 118);
 });
 
 test('F-temple: pakt = -1 (flip 62 -> trzymaj; noga-foe -12 + ramka -1)', () => {

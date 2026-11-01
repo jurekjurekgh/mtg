@@ -194,6 +194,8 @@ test('D/12 karty dwustronne: UUID obrazu z card_faces, a gdy twarzy bez obrazów
 // Batch 70 (2026-10-27): snapshoty 10 kart weszły PRZED definicjami
 // (HOW_TO_ADD_CARD.md krok 1), a E3 domknął katalog — lista w toku jest PUSTA
 // i zostaje jako jawny punkt zaczepienia dla następnego batcha.
+// Batch 71 (2026-11-01): snapshoty 10 kart weszły PRZED definicjami
+// (HOW_TO_ADD_CARD.md krok 1) — B3 domyka katalog i lista wraca do zera.
 const SNAPSHOTY_BATCH70_W_TOKU = Object.freeze([]);
 
 test('D/14 nazwy snapshotów: konwencja scryfall-<id>.json — sierot BRAK', () => {

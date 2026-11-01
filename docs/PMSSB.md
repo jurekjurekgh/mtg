@@ -51,7 +51,7 @@ teraz obowiązkowy, a nie zalecany.
 |---|---|---|---|
 | batch 63 — ekonomia zasobów, modale/zwroty, regeneracja/ewazja/rampa/koszty | 10 | DONE (2026-10-05) | §PMSSB-58; `audyt-pmssb58-{zasoby,tryby-grob,kombinacje}` (98 pinów), ewaluacja i jawne granice w raporcie |
 | batch 64 — removale w zdolnościach, pompka sorcery-speed, clash/delirium/Keen Sight/ląd z mapą many | 10 | DONE (2026-10-08) | §PMSSB-59 niżej; `test/audyt-pmssb59-batch64.test.js` (13 pinów: 4 fala A + 5 fala B + 4 kontrole); werdykty „by design" (mana ze stwora, skrut, drabinka ETB-tutora) w raporcie |
-| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
+| batch 65 — damage z kwotą z grobu, look-top jako czar, affinity, warunkowe zniszczenie blokera, selektywna ewazja, aura cantAttack/cantBlock, trigger optionalPay, mana `{T}: {R} lub {G}` | 10 | **DONE (2026-10-10)** — fale A/B/C/D/E/F zamknięte | §PMSSB-60 niżej; plan `docs/plans/PLAN_2026-10-10c-pmssb60-batch65.md`; sonda `tools/pmssb60-batch65-sonda.mjs`; `test/audyt-pmssb60-batch65.test.js` (26 pinów: 7 fala A + 3 fala B + 4 fala C + 3 fala D + 3 fala E + 6 fala F); L (2026-10-29): `debuffPayoffValue` + 3 pokrętła `debuffPayoff*`, `test/l-ambulatory-edifice-debuff.test.js` (15) — fala F przeliczona (F1/F5); `instantSorceryGraveyardCount` (L41 silnik+bot), `impulseLookValue` w cast_spell (L41 czwarta ścieżka), `cardCostReductionForView` (S11), `blockDestroyColorValue` (fala C), kierunek `pump` w tabeli ETB (fala F), `cantBeBlockedByKeywords` w `hostEvadesBlockers` (fala E), model kosztu `trigger.payLife` (pay-trigger-net-model); 0 nowych pokręteł |
 | batch 66 — vigilance/garda, Partner with, combat counters, boardowy draw payoff, aktywowana prewencja, grant many z ręki, koszt ofiary landu | 10 | **DONE (2026-10-13)** — fale A/B/C/D/E/F zamknięte | §PMSSB-61 niżej; raport `docs/audits/PMSSB61_BATCH66_2026-10-13.md`; plan `docs/plans/PLAN_2026-10-13-pmssb61-batch66.md`; sonda `tools/pmssb61-batch66-sonda.mjs`; `test/audyt-pmssb61-batch66.test.js` (11 pinów); `drawTriggeredCounterValue` (5 ścieżek L41), `linkedManaGrantValue` (S11/M429), `sacrificePermanentLoss` (cast + wybór), tie-projection ofiary i relacyjny koszt exact-tie czarów; 0 nowych pokręteł |
 | batch 67 — energia (koszt/zysk/opłata) na wszystkich ścieżkach, obniżki kosztu czaru i zdolności, trigger drugiej karty, rider śmierci tokena, battle cry w decyzji ataku | 10 | **DONE (2026-10-15)** — fale A/B/C/D zamknięte | §PMSSB-62 niżej; plan `docs/plans/PLAN_2026-10-15-pmssb62-batch67.md`; sonda `tools/pmssb62-batch67-sonda.mjs`; `test/audyt-pmssb62-batch67.test.js` (12 pinów); `energyCounterValue` (jedna wartość licznika {E}), `energyAmountFromView`, `abilityManaCostForView`, `secondDrawEvidence` (bramka M429), `tokenLifeBankValue`, `teamAttackPump`; 1 nowy klucz params |
 | batch 68 — kolekcja 400–411 (Kulrath, Bloodfire, Meteorite, Raze, Stymied, Secure, Halo Scarab, Child of Night, Austere, Neurok) | 10 | **PĘTLA DOMKNIĘTA (2026-10-17), jedna decyzja właściciela (Halo Scarab, M243/C)** — PMSSB-64 (lifelink/latanie/deathtouch w rzucie) **DONE** §PMSSB-64; PMSSB-65 (prowess Bloodfire) **DONE** §PMSSB-65; PMSSB-66 (okno many, Halo/countery/oil) **DONE z luką planera płatności** §PMSSB-66; pętla przeszła 8 rodzin: zamknięte z poprawką Austere, Raze, Secure, Kulrath (landcykling); zamknięte bez zmiany Stymied, Neurok, Meteorite, Halo; OTWARTE Child of Night (lifelink, PMSSB-64) i Bloodfire (prowess, PMSSB-65); §PMSSB-63 niżej; plan `docs/plans/PLAN_2026-10-17d-pmssb63-batch68.md` |
@@ -82,7 +82,7 @@ teraz obowiązkowy, a nie zalecany.
 | triggery non-ETB (dies/attacks) | ~20 | DONE (2026-09-26) | §PMSSB-9 niżej; `test/pmssb9-triggery-wave-{a,b}.test.js` (19); `anticipatedDies/AttacksValue` (0 pokręteł) |
 | triggery-ogon (tail/end/leaves) | ~40 | DONE (2026-09-26) | §PMSSB-10 niżej; `test/pmssb10-ogon-wave-{a,b1,b2}.test.js` (30); `anticipatedTailValue` + O-ring-sign + LIVE-gates (0 pokręteł) |
 | sac-economics (exploit/devour) | 3 | DONE (2026-09-26) | §PMSSB-11 niżej; `test/pmssb11-sac-wave-a.test.js` (5); `anticipatedSacValue` = max(0,benefit-sac) (0 pokręteł) |
-| pay-trigger-net (payMana) | 5 | DONE (2026-09-26) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł) |
+| pay-trigger-net (payMana) | 5 | DONE (2026-09-26); rozszerzone 2026-10-29 (uwaga z gry **K**) | §PMSSB-12 niżej; `test/pmssb12-pay-wave-a.test.js` (5); `anticipatedPayValue` = max(0,like×(benefit-pay)) (0 pokręteł); K: ląd z ETB „zapłać {N} albo poświęć” tylko gdy stać — `landEtbPayOrSacrifice` + pokrętło `landEtbUpkeepUnplayablePenalty` (20), `test/k-rupture-spire-etb-oplata.test.js` (6) |
 | persist-unification + stance | 1 | DONE (2026-09-26) | §PMSSB-13 niżej; `test/pmssb13-persist-wave-a.test.js` (2); persist = 0.5×return-body (0 pokręteł) |
 | impulse-unification + saga | 3 | DONE (2026-09-26) | §PMSSB-14 niżej; `test/pmssb14-impulse-wave-a.test.js` (2); `impulseLookValue` + `anticipatedSagaValue` (0 pokręteł) |
 | fog/prewencja | 4 | DONE (2026-09-28; korekta Withstand 2026-10-11) | §PMSSB-15 niżej; `test/audyt-pmssb15-prewencja.test.js` (19) + `test/zgloszenie-b-withstand-cel-bota.test.js` (7); `fogWindowValue`, `preventDamageThisTurnValue`, `preventShieldValue` (6 pokręteł `fogWindow*`/`preventEtb*`, bez nowego dla korekty) |
@@ -98,7 +98,7 @@ teraz obowiązkowy, a nie zalecany.
 | koszt „odrzuć kartę” (`resolve_discard_choice`) | 1 | DONE (mikro-pętla, 2026-09-30b) | §PMSSB-25 niżej; plan `PLAN_2026-09-30b-pmssb25-discard.md`; `test/audyt-pmssb25-discard.test.js` (5); druga miara jakości karty (L41) domknięta wspólną `cardKeepValue`; reguła koloru właściciela (M408) nietknięta; 1 pokrętło `discardUnwantedBonus` |
 | wartość landu (drabina per pip) | 1 | DONE (2026-09-30c) | §PMSSB-26 niżej; plan `PLAN_2026-09-30c-pmssb26-land-drabina.md`; `test/audyt-pmssb26-land-drabina.test.js` (13); `landKeepValue` wg specyfikacji właściciela (CR 305.6 dla kolorów); 10 pokręteł `landKeep*`/`landColored*Max`/`landTotal*Max` |
 | licznik źródeł landu bez karty rozważanej | 1 | DONE (2026-09-30d) | §PMSSB-27 niżej; doprecyzowanie właściciela do PMSSB-26 — „3 na stole albo 2 na stole i 1 dodatkowy w ręku (poza tym rozważanym)"; przywraca pierwotny pin `audyt-pr105` B; 0 nowych pokręteł |
-| wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` |
+| wybór koloru (`resolve_color_choice`) | 1 | DONE (2026-09-30e) | §PMSSB-28 niżej; plan `PLAN_2026-09-30e-pmssb28-color-choice.md`; `test/audyt-pmssb28-color-choice.test.js` (7); wycena czyta `purpose` z pending (`mana` lądu / `protection` aury); 2 pokrętła `color*Per*` + 2 z rozszerzenia J (`colorProtectionCombat*`) |
 | szukanie w bibliotece (`resolve_search_choice`) | 1 | DONE (2026-09-30f) | §PMSSB-29 niżej; plan `PLAN_2026-09-30f-pmssb29-search.md`; `test/audyt-pmssb29-search.test.js` (8); trzecia równoległa miara (L41) domknięta wspólną `cardKeepValue`; 1 pokrętło `searchFoundBase` |
 | podgląd satyra (`resolve_satyr_look_choice`) | 1 | DONE (2026-09-30g) | §PMSSB-30 niżej; plan `PLAN_2026-09-30g-pmssb30-satyr.md`; `test/audyt-pmssb30-satyr.test.js` (8); **czwarta** równoległa miara (L41) domknięta; 1 pokrętło `satyrLookBase`; **podłoga z ciała** `max(ciało, wspólna)` w search+satyr — sprostowanie tezy PMSSB-29 |
 | chump-block tokenami (`declare_blockers`) | 1 | DONE (2026-09-30h) | §PMSSB-31 niżej; plan `PLAN_2026-09-30h-pmssb31-chump-block.md`; `test/audyt-pmssb31-blok-chump.test.js` (8); **zgłoszenie właściciela z gry**; premia od nadwyżki obrażeń ponad ciało ginącego blokera; 1 pokrętło `blockGoodTradePerPoint`; forward: niemonotoniczna drabinka `lifeAfter` przy lethal |
@@ -380,6 +380,18 @@ Przy pustym stole wroga ochrona remisuje po 5 i nie wymyśla koloru z potrzeby m
 pustym stole. **Mutacja M1** → RED `{A1, A2, A3, A4, B2, B3}`, B1 zielony.
 
 **Pokrętła (2):** `colorProtectionPerCreature` 6 · `colorManaNeedPerCard` 6.
+
+**Rozszerzenie J (2026-10-29, uwaga właściciela z gry — Benevolent Blessing):**
+`protectionCombatThreatByColor` dopina trzeci próg, bo „najliczniejszy kolor
+wroga” nie widział związku w walce — bot brał `{R}` przy trzech czerwonych
+stworach poza walką, blokując zielonego atakującego. Kolejność progów:
+`lethalColors` (ratowanie życia, `100 + liczba kolorów`) → kolor PARTNERA walki
+hosta (`40 + 2 × zatrzymane obrażenia`; blokowany atakujący, blokerzy hosta,
+a w kroku `declare_blockers` — atakujący, których host może blokować) → kolor
+spoza walki (`5`) → brak walki = dawna suma. Dwa dodatkowe pokrętła:
+`colorProtectionCombatBonus` 40 · `colorProtectionCombatDamageWeight` 2, więc
+motyw `protection` ma ich teraz trzy (`colorProtectionPerCreature` zostaje dla
+sytuacji bez walki). Pin `test/j-benevolent-blessing-kolor.test.js` (7).
 
 **Trop porzucony po pomiarze:** rodzina „wygnaj karty z grobu" (`resolve_delve_exile` /
 `resolve_escape_exile` / `resolve_reveal_exile_grave`) ma wspólną miarę `escapeExileCostOf`
@@ -1205,6 +1217,14 @@ sonda: `tools/pmssb12-pay-sonda.mjs` (P01–P05).
   (benefit − pay)) (bot płaci ZAWSZE!): spellbomby +2.25
   (color-gated!), descendant +0.45/+0.9, endure_x-entry (+4!).
   Spire: −1-pay / 76-sac-clamp. Forebear grave-SKIP. 5 pinów.
+- **K (2026-10-29, uwaga z gry):** „76-sac-clamp” okazał się defektem —
+  klamp delty lądu (±14/25) przykrywał karę za nieopłacalny ETB, więc bot
+  zagrywał Rupture Spire bez many na `{1}` i natychmiast ją poświęcał
+  (CR 701.21a). Reguła przeniesiona do `landEtbPayOrSacrifice` (deskryptor:
+  `payMana` + `sacrificeIfUnpaid`; „stać” = `ownOpenMana`, nie sama pula),
+  a kara wyszła POZA klamrę: `play_land` = `−landEtbUpkeepUnplayablePenalty`
+  (20) < pass. Pin KRUP: `test/k-rupture-spire-etb-oplata.test.js` (6),
+  pin `PMSSB12-A` zaktualizowany (76 → −20). Pokrętło `× 0` = stan sprzed K.
 
 ### Pomiar końcowy
 - Suit 6838/6838 GREEN (5 pinów); golden CZYSTY (0!).
@@ -3259,6 +3279,20 @@ kosztu F1/F5/F6 czerwone, F2/F3/F4 zielone (izolowane od płatności).
 8030/8030, build 73 moduły / 5010,6 kB, `cr-numery --cr` OK.
 0 nowych pokręteł.
 
+**Addendum — L (2026-10-29, uwaga z gry, PR #177).** Zgłoszenie właściciela do
+Ambulatory Edifice (fala F): „bot płaci 2 życia za −1/−1, które nic nie robi”.
+Decyzja `resolve_optional_pay_choice` dawała bazę 75 pkt za sam FAKT istnienia
+wrogiego celu (koszt życia 4 pkt), a tabela ETB liczyła ujemną pompę jako
+min(3 × (|P|+|T|), 15) = 6 pkt bez sprawdzania, czy cokolwiek ginie. Teraz
+JEDEN czytnik `debuffPayoffValue` (L41): debuff jest wart czegokolwiek tylko
+przy ZABICIu (CR 704.5f) WAŻNEGO celu — inwestycja (TMC permanentu + TMC aur
++ TMC equipmentów) ≥ `debuffPayoffMinInvestment` (5) albo unikalna zdolność
+(jedyny stwór na stole z lataniem/menace/ochroną, landwalk działający przeciw
+botowi, CR 702.14); płatność musi dodatkowo przebić koszt życia (L48).
+Pomiar: wrogi 2/2 → `pay=false` (było `pay=true`), 5/1 TMC 5 → `pay=true`.
+3 nowe pokrętła (`debuffPayoff*`), 2 piny PMSSB-60 przeliczone (F1/F5),
+6 pinów `test/l-ambulatory-edifice-debuff.test.js` + 15 pozycji tabeli.
+
 **Addendum — audyt PR #162.** Pin C1–C3 mierzył wartość samej aktywacji, ale
 nie sprawdzał późniejszej komendy `resolve_color_choice`: bot wybierał pierwszy
 kolor z listy zamiast koloru najcenniejszego blokera. Naprawa F-1 audytu
@@ -3979,3 +4013,170 @@ odtwarzają stan sprzed zmiany (M429). Epic Experiment pozostaje zielony
 5508,7 kB. Mutacje (RED potwierdzony): filtr `bannedTypes` off → 1 RED;
 `convergeDamageAmount` → 0 → 2 RED; `manifest_dread_resolved` → 0 → 1 RED;
 `graveyardCounterAmount` off → 1 RED.
+
+## PMSSB-80 — kwota „liczba kontrolowanych landów” w obrażeniach (Rumbling Rockslide) (2026-10-31) — DONE
+
+Plan: [PLAN_2026-10-30-batch71-kolekcja-625-634](plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
+(B6). Pin: `test/audyt-pmssb80-kwota-z-landow.test.js`.
+
+Efekt `damage` z `amount 'lands_you_control'` istniał w silniku, ale wycena
+czytała kwotę z pola `amount` (string → 0), więc czar dostawał ocenę „obrażenia
+bez skutku”. Naprawa u źródła (L41): jedna funkcja licząca kwotę z tego samego
+źródła co silnik, użyta w `damageTargetValue`.
+
+| Stan (hit = liczba moich landów) | PRZED | PO | Werdykt |
+|---|---|---|---|
+| 5 landów vs 6/6 | −81 | −81 | zakaz chipu poza walką (poprawnie) |
+| 6 landów vs 6/6 (dobija) | −81 | **+45** | DONE |
+| 6 landów vs 7/7 | −81 | −81 | poniżej progu — trzymaj |
+| 7 landów vs 7/7 (dobija) | −81 | **+47** | DONE |
+
+Audyt: czar jest SORCERY, więc nie ma okna instant — nie dokładamy premii za
+okno walki (anty-over-fix, M429). Powyżej progu ocena rośnie z nadwyżką
+obrażeń, nie z samą liczbą landów (model „chip zabroniony”). Zero nowych wag —
+mechanika wchodzi w istniejący model obrażeń per cel.
+
+## PMSSB-81 — koszt „odrzuć kartę o KWALIFIKATORZE” (Vampire Hounds) (2026-10-31) — DONE
+
+Plan: jak wyżej (B7). Pin: `test/audyt-pmssb81-koszt-kwalifikowany.test.js`.
+Pokrętła: `discardUncastableClamp` = 20, `discardUncastableScale` = 0,25.
+
+Sonda PRZED (blok 3/3, `declare_blockers`): +2/+2 zmieniający wynik walki → +9;
+pump bez zmiany wyniku → −19; brak walki → −21. Koszt karty jest realny, więc
+aktywacja nigdy nie jest „darmowym pompowaniem” — to trzymają piny.
+
+**Drugi błąd znaleziony w pętli:** picker odrzucenia remisował dla kart
+NIE GRYWALNYCH (gałąź „bez koloru” miała clamp `min(10, wartość)`): 3/2 za 2 many
+i 5/3 za 4 many dostawały po 20 pkt, wygrywała „pierwsza oferta z listy”
+(klasa L50 — ten sam wzorzec, który właściciel zgłaszał przy M408). Po:
+
+| Para kandydatów do odrzucenia | PRZED | PO |
+|---|---|---|
+| `garruks-companion` (3/2, 2 many) vs `changeling-berserker` (5/3, 4 many) | 20 vs 20 (remis) | 42,5 vs 40,25 |
+
+Odwrócenie kotwicy M408 (41,5) sprawdzone: próg nie rusza istniejącej
+preferencji, tylko rozdziela remis. Anty-over-fix: `discardUncastableScale = 0`
+przywraca dawne zachowanie (pin).
+
+## PMSSB-82 — DELIRIUM na pojedynczym efekcie jako trik bojowy (Violent Urge) (2026-10-31) — DONE
+
+Plan: jak wyżej (B8). Pin: `test/audyt-pmssb82-delirium-trik.test.js`.
+
+Sonda PRZED (atakujący 2/2 blokowany przez 2/2):
+
+| Wariant | PRZED | PO |
+|---|---|---|
+| sam pump (+1/+0) | −23 | — |
+| sam first strike | +56 | — |
+| pump + first strike (kombinacja) | −17 | **76** |
+| pełna karta, bez delirium | −11 (pass) | 76 (bez double strike) |
+| pełna karta, z delirium | −11 | **82** |
+
+Dwa błędy u źródła: (1) kara „pump sam nie zmienia wyniku walki” (−75)
+ignorowała RODZEŃSTWO efektów z tego samego czaru — +1/+0 i first strike to
+JEDNA wymiana; kombinacja liczona teraz `combinedOutcomeChanges` (ta sama
+funkcja co w PMSSB-8/85, L41). (2) `effect.condition.delirium` nie było czytane
+w wycenie, więc double strike liczył się przy pustym cmentarzu; warunek czytany
+z widoku tym samym zbiorem typów co silnik (`CARD_TYPES`).
+
+## PMSSB-83 — MILL ZACZAROWANEGO GRACZA (Curse of the Bloody Tome) (2026-10-31) — DONE
+
+Plan: jak wyżej (B9). Pin: `test/audyt-pmssb83-klatwa-mill.test.js`.
+Pokrętło: `curseMillUpkeepWeight` = 0,5 (liczby podtrzymań nie znamy — dyskontem).
+
+Sonda PRZED (biblioteka wroga 25/10/4/2/1): rzut = **36 pkt w każdym stanie** —
+klątwa była płaską bazą `curseEnemyBase` (40), więc mill 2 nie różnił się od
+klątwy bez millu, a przy bibliotece wroga 1 karta (kolejne podtrzymanie =
+wygrana) wyceniano jak mill na 25 kart.
+
+PO: baza + `foeMillValue` (ta sama skala presji deck-outu, której używa zwykły
+mill — L41) × `curseMillUpkeepWeight`: 25 → **47,7**; 10 → **54,9**;
+4 → **65,7**; 2/1 → **227,7**.
+
+Audyt kosztu: rzut na SIEBIE zostaje karą klasy −900
+(`curseSelfTargetPenalty`), aury-wrogi na permanentach nietknięte (osobna
+gałąź `auraHostileEnemyBase`). Waga nie mnoży premii za cel, tylko powtarzalny
+skutek — kolejna klątwa mieląca dostanie to samo z deskryptora (ADR 0002).
+
+## PMSSB-84 — CHAMPION: okno rzutu i wybór wygnania (Changeling Berserker) (2026-10-31) — DONE
+
+Plan: jak wyżej (B10). Pin: `test/audyt-pmssb84-champion-okno.test.js`.
+Pokrętła: `championNoHostPenalty` = 120, `championExileLossFactor` = 0,25.
+
+Sonda PRZED (rzut 5/3 za {3}{R}):
+
+| Plansza | PRZED | PO |
+|---|---|---|
+| pusty stół | 73,8 | **−34,19** (pass — czekaj na kandydata) |
+| sojusznik 1/1 (token) | 73,8 | 73,81 |
+| sojusznik 10/10 | 73,8 | 73,81 |
+
+Wybór wygnania to TA SAMA komenda co poświęcenie (`resolve_sacrifice_choice`,
+L48), rozróżniona strefą docelową (`pendingSacrifice.moveTo === 'exile'` vs
+`'graveyard'`); wygnanie jest ODWRACALNE, więc jego koszt to ułamek wartości
+(`championExileLossFactor`): przy sojuszniku 10/10 wygnanie **33** bije
+poświęcenie własnego 5/3 **27** (PRZED: 10 vs 27 — bot oddawał championa,
+żeby nie tykać tłustego sąsiada).
+
+## PMSSB-85 — PUMP ZBIORU ATAKUJĄCYCH w ścieżce CZARU (Trumpet Blast) (2026-11-01) — DONE
+
+Plan: jak wyżej (B10a). Pin: `test/audyt-pmssb85-pump-atakujacych.test.js`.
+Pokrętła: `setPumpNoAttackersPenalty` = 70, `setPumpTrickValue` = 12,
+`setPumpUnblockedPowerWeight` = 2 (te same skale co trik bojowy).
+
+Sonda PRZED: rzut = **−10 pkt w każdym stanie** — z dwoma atakującymi, w kroku
+blokujących i bez atakujących. Przyczyna u źródła: `buff_attacking_creatures`
+nie niesie `target` w komendzie (CR 611.2c — efekt działa na ZBIÓR), więc
+ścieżka czaru nie miała odbiorcy i wpadała w karę „wzmacnianie przeciwnika”
+(−60); ta sama rodzina miała wycenę tylko w ścieżce AKTYWACJI (Thunderstaff).
+
+PO: odbiorcami są MOI atakujący z `view.combat.attackers` (ADR 0017):
+zablokowany — przez `combinedOutcomeChanges` (czy pump poprawia wymianę),
+nieblokowany — przyrost mocy jako obrażenia w twarz.
+
+| Stan | PRZED | PO |
+|---|---|---|
+| 0 atakujących | −10 | **−20** (pass) |
+| 1 atakujący | −10 | **+46** |
+| 2 atakujących | −10 | **+66** |
+
+Kara „brak atakujących” musiała przebić bazę czaru (~50) — 40 dawało remis
+z passem, więc 70. Mutacja (usunięcie gałęzi) → piny 85/2–85/4 RED.
+
+## PMSSB-86 — pozostałe karty batcha: logika zagrania (2026-11-01) — DONE
+
+Plan: jak wyżej (B10b). Pin: `test/audyt-pmssb86-pozostale-karty-batcha.test.js` (8).
+Pokrętła: `impulseEmptyLibraryPenalty` = 90, `coloredSacrificeCostWeight` = 1,
+`coloredSacrificeCardLoss` = 3.
+
+Sonda PRZED dla kart, które nie miały własnej mechaniki (Ambassador Oak,
+Tail Slash, Anticipate, Sphinx's Herald):
+
+| Karta / stan | PRZED | PO | Werdykt |
+|---|---|---|---|
+| Ambassador Oak: rzut vs kontrfaktyk bez ETB | 75,6 vs 66,6 | bez zmian | ZAMKNIĘTE (token wnosi +9) |
+| Tail Slash: moc dawcy 1 / 3 / 5 | −20 / 79 / 83 | bez zmian | ZAMKNIĘTE (próg dobicia) |
+| Anticipate: biblioteka 20 / 2 | 58 / 58 | 58 / 58 | OK |
+| Anticipate: biblioteka PUSTA | **+32 (nad passem!)** | **−58** | DONE |
+| Herald: karta w bibliotece, trzy 1/1 / trzy 3/3 | +9 / +9 | **−6 / −24** | DONE |
+| Herald: brak karty w bibliotece | −57 | −57 | OK (jałowy tutor) |
+
+Dwa błędy u źródła: (1) `look_top_*` przy pustej własnej bibliotece dostawał
+tylko −18 z `impulseLookValue` przy bazie czaru ~50 — karta i mana za
+„oglądanie niczego”; kara liczona raz na rzut, tylko w ścieżce CZARU (ścieżki
+zdolności/sagi mają własne bramki). (2) koszt `sacrificeCreaturesByColors`
+(ten sam kształt co Angel's Herald z batcha 66) nie był wyceniany w ŻADNEJ
+gałęzi aktywacji — ofiary wybierane zachłannie najtańsze na kolor tą samą
+miarą co `resolve_sacrifice_choice` (L41) + card disadvantage za każdą ponad
+jedną. Mutacja: usunięcie obu napraw → 86/4 i 86/6 RED.
+
+### Bramy (PMSSB-80…86)
+
+`npm test` **9156/9156**, `npm run test:slow` **268/268**, build 76 modułów /
+5608,7 kB. Golden-master zregenerowany ŚWIADOMIE (wpis w
+`test/bot-scoring-snapshot.test.js`: d5349621… → 0e1c042c…, pomiar per partia).
+Benchmark quick: heuristic 87,5% ogółem (vs random 96,7%, vs aggro 78,3%);
+`test/bot-benchmark.test.js` bez regresji. Grzechotka remisów: nowa pozycja
+Wrap in Flames s4009 p2 t20 (ta sama klasa co przejrzana t24 — warianty różnią
+się WYŁĄCZNIE liczbą celów, dodatkowy cel funkcjonalnie pusty) — allowlista
+przepisana z numeru tury (krucha) na KLASĘ.

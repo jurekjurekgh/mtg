@@ -1,0 +1,39 @@
+{
+  "source": "https://api.scryfall.com/cards/c7865e11-263b-4d61-af54-907c1acbb54f",
+  "print": "isd",
+  "name": "Curse of the Bloody Tome",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Enchantment — Aura Curse",
+  "oracle_text": "Enchant player\nAt the beginning of enchanted player's upkeep, that player mills two cards.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [
+    "Enchant",
+    "Mill"
+  ],
+  "set": "isd",
+  "set_name": "Innistrad",
+  "collector_number": "50",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/c/7/c7865e11-263b-4d61-af54-907c1acbb54f.jpg?1783940977",
+    "normal": "https://cards.scryfall.io/normal/front/c/7/c7865e11-263b-4d61-af54-907c1acbb54f.jpg?1783940977"
+  },
+  "rulings": [
+    {
+      "date": "2011-09-22",
+      "source": "wotc",
+      "comment": "If the enchanted player has only one card in their library, they put that card into their graveyard."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/isd/50/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

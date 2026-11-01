@@ -32,7 +32,7 @@ import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, acti
 import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -2079,9 +2079,14 @@ function accepted(state, cmd, result) {
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
   // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
+  // F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): warunek stał na
+  // JEDNYM typie zdarzenia (`object_moved`), którego ścieżka śmierci od
+  // obrażeń (SBA → `creature_destroyed`) ani od zniszczenia czarem
+  // (`permanent_destroyed`) nie emituje — flaga Morbida zostawała `false`
+  // w typowej grze. Teraz czyta wspólny predykat triggerów (L41: jedno
+  // miejsce odpowiada na „czy stwór umarł”, CR 700.4 + 603.10a).
   for (const e of result.events) {
-    if (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone === 'graveyard'
-      && e.object?.kind === 'creature') state.creatureDiedThisTurn = true;
+    if (eventIsCreatureDeath(state, e)) state.creatureDiedThisTurn = true;
     // Landfall: land wszedł pod kontrolę gracza w tej turze (zdarzenie
     // wejścia na pole bitwy z kind land — jak creatureDiedThisTurn).
     // M167/G (uwaga właściciela, Mysteries of the Deep): ścieżka play_land
@@ -5410,6 +5415,23 @@ export function execute(state, input) {
       return reject('illegal_sacrifice_target');
     }
     const target = state.objects.get(cmd.targetId);
+    // Batch 71 (Changeling Berserker): decyzja CHAMPIONA (CR 702.72a) — wybór
+    // to WYGNANIE innego obiektu, nie poświęcenie. Wspólna komenda, wspólna
+    // walidacja (L48); różni się wyłącznie strefa docelowa i link powrotu:
+    // wygnaniec dostaje `exiledCardIds` na źródle, więc LTB źródła wraca go
+    // przez `return_exiled_to_battlefield` pod kontrolą WŁAŚCICIELA (CR 702.72a).
+    // Wybór źródła (= „nie wygnaję") zostaje w zwykłej ścieżce poświęcenia.
+    if (pending.moveTo === 'exile' && target.id !== pending.alternativeSourceId) {
+      const championSource = state.objects.get(pending.sourceId);
+      applyEffect(state, { type: 'exile_target_creature' },
+        championSource ?? { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId },
+        [target.id]);
+      state.pendingSacrifice = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
     // śmiercią (CR 700.4 + 701.21a) — ta sama wspólna strefa docelowa.
     // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery
@@ -9794,6 +9816,22 @@ export function playerView(state, playerId) {
       },
     }
     : null;
+  // Batch 71 (Changeling Berserker, champion CR 702.72a): ta sama komenda
+  // `resolve_sacrifice_choice` obsługuje DWIE różne oferty — poświęcenie
+  // (Grave Exchange, trwała strata) i wygnanie championa (odroczenie: karta
+  // wraca, gdy źródło opuści pole bitwy). Decydent nie może tego zgadnąć z
+  // listy kandydatów (ADR 0017: kompletność kontraktu widoku), więc strefa
+  // docelowa i id źródła jadą w widoku — tylko do właściciela decyzji.
+  const pendingSacrificeView = state.pendingSacrifice
+    && state.pendingSacrifice.playerId === playerId
+    ? {
+      sourceId: state.pendingSacrifice.sourceId ?? null,
+      cardId: state.pendingSacrifice.cardId ?? null,
+      moveTo: state.pendingSacrifice.moveTo ?? 'graveyard',
+      alternativeSourceId: state.pendingSacrifice.alternativeSourceId ?? null,
+      optional: Boolean(state.pendingSacrifice.optional),
+    }
+    : null;
   const pendingHandFreeCastView = state.pendingHandFreeCast
     && state.pendingHandFreeCast.playerId === playerId
     ? {
@@ -9809,6 +9847,7 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingHandFreeCast: pendingHandFreeCastView,
     pendingFoodChoice: pendingFoodChoiceView,
+    pendingSacrifice: pendingSacrificeView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,

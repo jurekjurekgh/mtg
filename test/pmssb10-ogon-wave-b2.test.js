@@ -76,9 +76,17 @@ test('PMSSB10-B2: frontline-war-rager tapped-gate: empty-SAME, 2tap +2.25', () =
   // PMSSB-71 v3: licznik na sobie w end_step bez celu = wartość kontekstowa (neutralnie 3): +2.25 → +1.35.
   assert.equal(castScore('frontline-war-rager', (s) => { tapAlly(s, 't1'); tapAlly(s, 't2'); }), '67.05');
 });
-test('PMSSB10-B2: plague-reaver wrath: empty-SAME, foe3 +13.5', () => {
+// O (zgłoszenie właściciela 2026-10-30, Plague Reaver): re-pin 91.81 → 78.31.
+// Stara wartość kodowała BŁĄD: trigger „sacrifice each other creature you
+// control” liczono jak symetryczny wrath („edge = enemy − mine” × 10), więc
+// trzech wrogich stworów dawało +17,1 premii, choć karta nie zabiera wrogowi
+// ANI JEDNEGO stworu (silnik: effects.js `otherCreaturesYouControl`). Teraz
+// stół bez własnych stworów = brak premii i brak kary (SAME na 74,71 — sama
+// wartość ciała), a każda WŁASNA kreatura schodzi pod pass
+// (`selfSacrificeWrathOwnBoardPenalty`).
+test('PMSSB10-B2: plague-reaver wrath: empty-SAME, foe3 SAME (wróg nic nie traci)', () => {
   assert.equal(castScore('plague-reaver'), '74.71');
-  assert.equal(castScore('plague-reaver', (s) => { foeVanilla(s, 'f1'); foeVanilla(s, 'f2'); foeVanilla(s, 'f3'); }), '91.81');
+  assert.equal(castScore('plague-reaver', (s) => { foeVanilla(s, 'f1'); foeVanilla(s, 'f2'); foeVanilla(s, 'f3'); }), '78.31');
 });
 // SAME (SKIP-proofs):
 test('PMSSB10-B2: SKIP-proofs SAME (canonized/trostani/silumgar/fear/jyoti/sword/challenger/disa/brute)', () => {

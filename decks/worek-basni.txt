@@ -18,11 +18,10 @@
 1x Cautious Survivor
 1x Downwind Ambusher
 1x Rust-Shield Rampager
-1x Sentry Bot
 1x Greater Tanuki
 1x Fen Hauler
 3x Plains
 1x Island
 2x Swamp
-2x Mountain
+1x Mountain
 3x Forest

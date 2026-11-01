@@ -6,7 +6,7 @@ import { producibleMana, spendMana, canPayColoredCost, grantManaOnLand, landCanP
 import { moveObjectDirectly } from './objects.js';
 import { addCounter, removeCounter } from './counters.js';
 import { changeLife, payEnergyCounters } from './players.js';
-import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced } from './effects.js';
+import { applyEffect, queueSearchChoice, shouldAutoDiscard, discardCardsForced, cardMatchesQualifier } from './effects.js';
 import { validateTargets, hasHexproofAgainst, legalTargetCandidates, legalTargetCombos } from './spells.js';
 import { attachEquipmentToCreature } from './attachments.js';
 import { shuffle } from './shuffle.js';
@@ -547,6 +547,27 @@ function effectIsNoOpOnTarget(state, effect, target, source = null) {
  * (anty-over-fix: Panic Spellbomb „{T}, poświęć: cel nie może blokować"
  * z triggerem „gdy trafi do grobu, możesz zapłacić {R}: dobierz kartę").
  */
+/**
+ * Kwalifikator kosztu „Discard a [qualifier] card" (Batch 71, Vampire Hounds:
+ * „Discard a creature card: Vampire Hounds gets +2/+2 until end of turn.").
+ * `discardCard: true` zostaje kosztem dowolnej karty; obiekt
+ * `{ qualifier: {...} }` zawęża wybór do kart spełniających TEN SAM predykat
+ * jakości co wyszukiwanie w bibliotece (`cardMatchesQualifier`, L41) — jedna
+ * reguła, dwie strony (koszt i tutor nie mogą się rozjechać).
+ */
+export function discardCostQualifier(cost) {
+  const spec = cost?.discardCard;
+  return spec && typeof spec === 'object' ? (spec.qualifier ?? {}) : null;
+}
+
+/** Karty w ręce gracza legalne do zapłaty kosztu odrzucenia (z kwalifikatorem). */
+export function discardCostCandidates(state, playerId, cost) {
+  const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+  const qualifier = discardCostQualifier(cost);
+  if (!qualifier) return handIds;
+  return handIds.filter((handId) => cardMatchesQualifier(state.objects.get(handId), qualifier));
+}
+
 function costHasOwnValue(cost) {
   if (!cost) return false;
   return Boolean(cost.sacrificeSelf || cost.sacrificeLand || cost.discardCard
@@ -976,9 +997,11 @@ export function legalActivatedAbilities(state, playerId) {
         continue;
       }
       // Dodatkowy koszt „Discard a card" (Goblin Picker): wymaga karty w ręce.
+      // Batch 71 (Vampire Hounds): przy kwalifikatorze („a creature card")
+      // wymaga karty SPEŁNIAJĄCEJ kwalifikator — inaczej kosztu nie da się
+      // zapłacić (CR 118.3) i oferty nie ma.
       if (ability.cost?.discardCard) {
-        const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
-        if (!hasHandCard) continue;
+        if (discardCostCandidates(state, playerId, ability.cost).length === 0) continue;
       }
       // Dodatkowy koszt „Discard N cards" (Plague Reaver: „Discard two
       // cards"): wymaga co najmniej N kart w ręce.
@@ -1501,8 +1524,9 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   // zostawiła źródła tapniętego/bez licznika. Koszty tap-other/crew są
   // walidowane i wykonywane w performActivation (wspólna ścieżka aktywacji).
   if (cost.discardCard) {
-    const hasHandCard = state.zones.hand.some((handId) => state.objects.get(handId)?.controllerId === playerId);
-    if (!hasHandCard) throw new Error('Brak karty do odrzucenia (koszt)');
+    if (discardCostCandidates(state, playerId, cost).length === 0) {
+      throw new Error('Brak karty do odrzucenia (koszt)');
+    }
   }
   if (cost.discardCards) {
     const handCount = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId).length;
@@ -1548,7 +1572,10 @@ export function activateAbility(state, playerId, objectId, abilityIndex, attacke
   }
   const discardCount = cost.discardCard ? 1 : (cost.discardCards ?? 0);
   if (discardCount > 0) {
-    const handIds = state.zones.hand.filter((handId) => state.objects.get(handId)?.controllerId === playerId);
+    // Batch 71 (Vampire Hounds): koszt z kwalifikatorem — wybierać wolno
+    // WYŁĄCZNIE karty spełniające kwalifikator (lista trafia też do zdarzenia
+    // `discard_choice_required`, więc UI/bot widzą ten sam zbiór).
+    const handIds = discardCostCandidates(state, playerId, cost);
     // Znalezisko A: koszt „odrzuć N" przy dokładnie N kartach płaci się sam
     // i aktywacja idzie dalej TĄ SAMĄ ścieżką co brak kosztu (jeden
     // performActivation na dole — bez wstrzymanej aktywacji).

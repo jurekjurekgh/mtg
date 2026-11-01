@@ -281,14 +281,17 @@ export function runStateBasedActions(state) {
       if (next['+1/+1'] === 0) delete next['+1/+1'];
       if (next['-1/-1'] === 0) delete next['-1/-1'];
       state.objects.set(object.id, Object.freeze({ ...object, counters: Object.freeze(next) }));
-      state.events.push(event('counter_removed', {
+      // O-3: ten sam kontrakt co `removeCounter` — kontroler i migawka
+      // zdolności w zdarzeniu, żeby trigger „whenever a counter is removed”
+      // miał źródło także po zmianie strefy (CR 603.10).
+      const annihilated = {
         objectId: object.id, cardId: object.cardId,
         counter: 'mixed', amount: removed, annihilated: true, total: 0,
-      }));
-      events.push(event('counter_removed', {
-        objectId: object.id, cardId: object.cardId,
-        counter: 'mixed', amount: removed, annihilated: true, total: 0,
-      }));
+        controllerId: object.controllerId,
+        abilities: Object.freeze([...(object.abilities ?? [])]),
+      };
+      state.events.push(event('counter_removed', annihilated));
+      events.push(event('counter_removed', annihilated));
     }
   }
   // Załączniki bez legalnego gospodarza rozłączają się zgodnie z polityką

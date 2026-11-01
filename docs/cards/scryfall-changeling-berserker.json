@@ -1,0 +1,34 @@
+{
+  "source": "https://api.scryfall.com/cards/9f2e8f24-2ee1-4516-bf60-7fe6a0c4baec",
+  "print": "lrw",
+  "name": "Changeling Berserker",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Creature — Shapeshifter",
+  "oracle_text": "Changeling (This card is every creature type.)\nHaste\nChampion a creature (When this enters, sacrifice it unless you exile another creature you control. When this leaves the battlefield, that card returns to the battlefield.)",
+  "power": "5",
+  "toughness": "3",
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Haste",
+    "Champion",
+    "Changeling"
+  ],
+  "set": "lrw",
+  "set_name": "Lorwyn",
+  "collector_number": "160",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/f/9f2e8f24-2ee1-4516-bf60-7fe6a0c4baec.jpg?1783942877",
+    "normal": "https://cards.scryfall.io/normal/front/9/f/9f2e8f24-2ee1-4516-bf60-7fe6a0c4baec.jpg?1783942877"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/lrw/160/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

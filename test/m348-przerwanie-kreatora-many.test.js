@@ -99,7 +99,9 @@ test('Batch54 B5 UI: klik źródła w kreatorze przekazuje holdPriority aż do s
   expandManaPool:()=>[],wizardProgress:()=>({done:false,remainingTotal:4,requirements:[['G']],untappedSources:[]}),
   renderManaWizard:(_el,_data,h)=>{handlers=h;},autosave:()=>{},rerender:()=>{},showBotMoves:()=>{},
  });
- runInContext(`${localFunction('playDirect')}\n${localFunction('restrictedSpellBlockedFor')}\n${localFunction('refreshManaWizard')}\nrefreshManaWizard();`,ctx);
+ // PR #177/B: `onTapSource` pyta teraz `manaSourceTapPlan` (źródło z kosztem
+ // aktywacji otwiera kreator podrzędny) — dokładamy tę czystą funkcję do vm.
+ runInContext(`${localFunction('playDirect')}\n${localFunction('restrictedSpellBlockedFor')}\n${localFunction('manaSourceTapPlan')}\n${localFunction('refreshManaWizard')}\nrefreshManaWizard();`,ctx);
  handlers.onTapSource('forest');
  assert.equal(calls.length,1);assert.equal(calls[0].cmd.type,'tap_for_mana');assert.equal(calls[0].options.holdPriority,true);
 });

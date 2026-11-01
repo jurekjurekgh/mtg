@@ -136,13 +136,33 @@ function matchPipAssignment(units, requirements) {
  * pod pip bezbarwny była zjadana jako pierwsza (audyt PR #146, U1/F1 — ta sama
  * klasa co F6 z PR #145; CR 107.4c).
  */
-function compareGenericConsume(units, freeLen, preserveReqs, a, b) {
+function compareGenericConsume(units, freeLen, preserveReqs, a, b, colorPlan = null) {
   const ra = a >= freeLen ? 0 : 1;
   const rb = b >= freeLen ? 0 : 1;
   if (ra !== rb) return ra - rb;
   const pa = unitCoversAnyRequirement(units[a], preserveReqs) ? 1 : 0;
   const pb = unitCoversAnyRequirement(units[b], preserveReqs) ? 1 : 0;
   if (pa !== pb) return pa - pb;
+  // O-2 audytu PR #176 (Converge, CR 207.2c): gdy czar liczy KOLORY wydanej
+  // many, kolejność schodzenia z puli jest częścią strategii płatności
+  // (CR 601.2h — gracz wybiera, którą manę wydaje): najpierw kolor JESZCZE
+  // niepoliczony, potem kolor już zużyty na pip, na końcu bezbarwna
+  // (bezbarwna nie daje koloru — CR 106.1a). Bez planu kolorów zachowanie
+  // sprzed zmiany (bezb. najpierw), żeby Adamant i zwykłe rzuty nie drgnęły.
+  if (colorPlan) {
+    const rank = (unit, other) => {
+      const key = manaUnitKey(unit);
+      const colors = Array.from(String(key)).filter((c) => !other.has(c));
+      if (colors.length > 0 && unit.length === 1) return 0;
+      if (unit.length >= 2) return 1;
+      if (unit.length === 1) return 2;
+      return 3;
+    };
+    const sa = rank(units[a], colorPlan.spent);
+    const sb = rank(units[b], colorPlan.spent);
+    if (sa !== sb) return sa - sb;
+    return units[a].length - units[b].length;
+  }
   return units[a].length - units[b].length;
 }
 
@@ -249,7 +269,7 @@ function matchPipsWithGrantFlex(units, grants, requirements) {
  * (deterministycznie, jak mana ze Skarbów — ADR 0005), żeby nie zalegały
  * w puli i nie blokowały kolejnych płatności.
  */
-export function consumeManaPool(player, amount, requirements, restricted = false, preserveColors = []) {
+export function consumeManaPool(player, amount, requirements, restricted = false, preserveColors = [], options = {}) {
   const freeUnits = expandManaPool(player.manaPool);
   const restrictedUnits = restricted ? expandManaPool(player.restrictedPool ?? {}) : [];
   const units = [...freeUnits, ...restrictedUnits];
@@ -287,7 +307,13 @@ export function consumeManaPool(player, amount, requirements, restricted = false
   // innego nie ma (sort, nie filtr — fallback zjada chronione)).
   // Komparator współdzielony z bramką-symulacją (ten sam wynik).
   const preserveReqs = singleColorRequirements(preserved);
-  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b));
+  // O-2: przy czarze liczącym kolory (Converge) zbiór kolorów JUŻ wydanych na
+  // pipy jest znany z dopasowania powyżej — nowa jednostka ma wnieść kolor,
+  // którego jeszcze nie ma (maksymalizacja X legalnym wyborem, CR 601.2h).
+  const colorPlan = options?.maximizeColors
+    ? { spent: new Set(pipAssignment.flatMap((pos) => (pos >= 0 ? (requirements[pos] ?? []) : []))) }
+    : null;
+  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b, colorPlan));
   for (const i of genericOrder) {
     if (toConsume <= 0) break;
     consume[i] = true;
@@ -372,6 +398,35 @@ export function countColorsOfManaSpent(manaColorsSpent) {
 }
 
 /**
+ * O-2 audytu PR #176: czy rzucany obiekt LICZY KOLORY wydanej na niego many
+ * (Converge — ability word, CR 207.2c; kwota `colors_of_mana_spent`)?
+ *
+ * Deskryptor idzie po TREŚCI efektów (także w trybach modalnych i zagnieżdżonych
+ * listach), nie po nazwie karty (ADR 0002). Marker jest jedynym sygnałem, że
+ * KOLEJNOŚĆ schodzenia z puli ma znaczenie: przy takim czarze gracz wydaje
+ * różnokolorową manę zamiast dwóch jednostek tego samego koloru (CR 601.2h —
+ * wybór należy do płacącego), a silnik dotąd brał pierwszą z brzegu, więc
+ * Kaleidoscorch z puli {R}{R}{G} dostawał X = 1 zamiast 2.
+ */
+const MANA_COLOR_COUNT_AMOUNTS = new Set(['colors_of_mana_spent']);
+
+function effectCountsManaColors(effect) {
+  if (!effect || typeof effect !== 'object') return false;
+  if (MANA_COLOR_COUNT_AMOUNTS.has(effect.amount)) return true;
+  const nested = Array.isArray(effect.effect) ? effect.effect : [];
+  return nested.some((entry) => effectCountsManaColors(entry));
+}
+
+export function spellCountsManaColors(object) {
+  const spell = object?.spell;
+  if (!spell) return false;
+  const own = (Array.isArray(spell.effects) ? spell.effects : []).some((e) => effectCountsManaColors(e));
+  if (own) return true;
+  return (Array.isArray(spell.modes) ? spell.modes : [])
+    .some((mode) => (Array.isArray(mode?.effects) ? mode.effects : []).some((e) => effectCountsManaColors(e)));
+}
+
+/**
  * M202/N1 (audyt PR #73): cel wydania many dla RZUTU CZARU. Druk many
  * ograniczonej (Powerstone: "This mana can't be spent to cast a nonartifact
  * spell") zabrania WYŁĄCZNIE płacenia za czar nie-artefaktowy. Zdolności
@@ -395,6 +450,10 @@ export function spellManaPurpose(object, { spentToCast = true } = {}) {
     // (np. {X} zdolności zlecającej darmowy rzut), nie jest „maną wydaną na
     // rzut czaru” (CR 601.2f) — wołający oznacza ją jawnie.
     spentToCast: spentToCast !== false,
+    // O-2: kolejność schodzenia z puli ma znaczenie tylko dla czarów, które
+    // liczą KOLORY wydanej many (Converge) — dlatego jest flagą CELU płatności,
+    // a nie globalną zmianą komparatora (Adamant i zwykłe rzuty bez zmian).
+    maximizeManaColors: spellCountsManaColors(object),
   };
 }
 
@@ -773,7 +832,10 @@ export function spendMana(state, playerId, amount, requirements = [], purpose = 
   // M214: `restricted` = czy cel wydania dozWALA many ograniczonej drukiem.
   // Przy czarze nie-artefaktowym konsumpcja widzi wyłącznie wolną pulę —
   // manę Powerstone da się wtedy wydać tylko na dozwolony cel.
-  const consumedColors = payNothing ? [] : consumeManaPool(player, amount, requirements, !restrictedManaBlocked(purpose));
+  const consumedColors = payNothing ? [] : consumeManaPool(
+    player, amount, requirements, !restrictedManaBlocked(purpose), [],
+    { maximizeColors: purpose?.maximizeManaColors === true },
+  );
   player.mana -= amount;
   // M166/C: kolory wydanej many (Adamant — „at least three <color> mana was
   // spent to cast this spell"). Czytane przez castPermanent/castSpell

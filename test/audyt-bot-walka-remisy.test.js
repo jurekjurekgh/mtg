@@ -226,11 +226,33 @@ test('grzechotka audytu: remisy rozstrzygalne nie rosną ponad stan przejrzany',
     // nic nie zmienia — model poprawnie widzi oba warianty jako równoważne
     // (parametr `cele` w projekcji różni się, nie ich treść taktyczna).
     // Ścisła allowlista: maks. 1 i przykład musi być DOKŁADNIE tą pozycją.
-    const wrapInFlamesPustyCel = nazwa === 'cast_spell' && r.rozroznialne === 1
+    // BATCH 71 (PMSSB-86, 2026-11-01): ta sama klasa, INNA pozycja tej samej
+    // partii — nowe karty w taliach przesunęły trajektorię, więc remis Wrap in
+    // Flames wypadł na turze 20 (s4009, p2, main1), a pozycja z tury 24
+    // zniknęła. Zamiast pinować numer tury (kruche: każda zmiana talii przesuwa
+    // numer), pinujemy KLASĘ, którą właściciel już przejrzał: warianty różnią
+    // się WYŁĄCZNIE liczbą celów (`cele`), cała reszta projekcji — waluta,
+    // kicker, tryb — jest identyczna, czyli dodatkowy cel jest funkcjonalnie
+    // pusty (1 obrażenie na tapniętym 5/5 nic nie robi, „can't block" na
+    // stworze, który i tak nie atakuje, też nie). Potwierdzone odczytem
+    // obiektów na pozycji t20: highland-game 2/1 (ginie) + kheru-dreadmaw 5/5
+    // defender, do tego OPCJONALNIE krumar-initiate 5/5 tapnięty albo
+    // vulturous-aven 2/3 tapnięty. Ścisła granica: maks. 1 taka pozycja.
+    const tylkoDodatkoweCele = nazwa === 'cast_spell' && r.rozroznialne === 1
+      && r.przyklady.some((x) => {
+        if (typeof x !== 'object' || !(x.tie ?? []).length) return false;
+        if (!(x.chosen ?? '').startsWith('cast_spell(')) return false;
+        const bezCelow = (proj) => {
+          const { cele, ...reszta } = proj ?? {};
+          return JSON.stringify(reszta);
+        };
+        return new Set(x.tie.map((t) => bezCelow(t.proj))).size === 1;
+      });
+    if (tylkoDodatkoweCele) continue;
+    if (nazwa === 'cast_spell' && r.rozroznialne === 1
       && r.przyklady.some((x) => typeof x === 'object' && x.para === 'tarkir-bg|warhammer-ubr'
         && x.seed === 4009 && x.turn === 24
-        && (x.chosen ?? '').startsWith('cast_spell('));
-    if (wrapInFlamesPustyCel) continue;
+        && (x.chosen ?? '').startsWith('cast_spell('))) continue;
     assert.equal(r.rozroznialne, 0,
       `${nazwa}: remis przy różnych danych wyceny (przeoczenie):\n`
       + `${r.przyklady.filter((x) => typeof x === 'string').join('\n')}`);

@@ -150,8 +150,9 @@ test('bot wycenia tryby MODALNEGO TRIGGERA (Etherwrought Page), nie bierze ślep
 
 test('L: sabotaż KONTRUJE groźny czar artefaktu zamiast odbijać drobiazg', () => {
   // Raport właściciela: przeciwnik rzuca artefakt MV3 (seers-lantern), na
-  // stole artefakt 0/0. Kontra (90 = 50+22+6×3) bije bounce (80) — czar
-  // idzie do grobu, nie wraca do ręki. PRZED fixem: 50 vs 80 → bounce.
+  // stole artefakt 0/0. Kontra (102 = 50+22+10×3) bije bounce (98 = 80 +
+  // 3×6 wymiarów inwestycji, G 2026-10-29) — czar idzie do grobu, nie wraca
+  // do ręki. PRZED fixem L: 50 vs 80 → bounce.
   const state = foeTurn(newState());
   putCard(state, 'sb', 'steel-sabotage', 'p1', 'hand');
   stackSpell(state, 'foe', 'seers-lantern', 'p2');
@@ -167,8 +168,8 @@ test('L: sabotaż KONTRUJE groźny czar artefaktu zamiast odbijać drobiazg', ()
   assert.equal(opts.length, 2);
   const counter = opts.find((o) => o.cmd.endsWith('->foe)'));
   const bounce = opts.find((o) => o.cmd.endsWith('->art)'));
-  assert.equal(counter.score, 90);
-  assert.ok(bounce.score < counter.score, `bounce (${bounce.score}) ma przegrywać z kontrą (90)`);
+  assert.equal(counter.score, 102);
+  assert.ok(bounce.score < counter.score, `bounce (${bounce.score}) ma przegrywać z kontrą (102)`);
 });
 
 test('L anti-over-fix: bounce REALNEJ groźby ze stołu bije kontrę małego czaru', () => {
@@ -191,7 +192,8 @@ test('L anti-over-fix: bounce REALNEJ groźby ze stołu bije kontrę małego cza
 test('L: modalna kontra drugiego czaru też skaluje (izzet-charm vs howl MV7)', () => {
   // Ten sam fix, zero nazw kart (ADR 0002): tryb kontry Izzet Charm
   // (counter-unless-pays, płatnik bez many) bije burn 2 i loot, gdy na
-  // stosie leży groźny czar (howl-of-the-night-pack MV7: 114 = 50+22+6×7).
+  // stosie leży groźny czar (howl-of-the-night-pack MV7: 142 = 50+22+10×7;
+  // waga 10 od G 2026-10-29 — parytet z wagą TMC bounce 6 + 4 za trwałość).
   const state = foeTurn(newState());
   putCard(state, 'iz', 'izzet-charm', 'p1', 'hand');
   stackSpell(state, 'howl', 'howl-of-the-night-pack', 'p2');
@@ -205,16 +207,16 @@ test('L: modalna kontra drugiego czaru też skaluje (izzet-charm vs howl MV7)', 
   assert.deepEqual(chosen.targets, ['howl']);
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(iz'));
   const counter = opts.find((o) => o.cmd.endsWith('->howl)'));
-  assert.equal(counter.score, 114);
+  assert.equal(counter.score, 142);
   for (const other of opts.filter((o) => o !== counter)) {
-    assert.ok(other.score < counter.score, `tryb ${other.cmd} (${other.score}) ma przegrywać z kontrą (114)`);
+    assert.ok(other.score < counter.score, `tryb ${other.cmd} (${other.score}) ma przegrywać z kontrą (142)`);
   }
 });
 
 test('L: kontra celuje w groźniejszy czar — stwór 7/7 bije stwora 2/2', () => {
   // Waga ciała zatrzymywanego stwora (P/T z definicji — widok nie niesie
-  // P/T wpisów stosu): wantons 7/7 MV5 (130 = 50+22+28+30) vs rager 2/2
-  // MV3 (98 = 50+22+8+18). Stoic Rebuttal kontruje dowolny czar.
+  // P/T wpisów stosu): wantons 7/7 MV5 (150 = 50+22+28+50) vs rager 2/2
+  // MV3 (110 = 50+22+8+30). Stoic Rebuttal kontruje dowolny czar.
   const state = foeTurn(newState());
   putCard(state, 'st', 'stoic-rebuttal', 'p1', 'hand');
   stackSpell(state, 'big', 'krallenhorde-wantons', 'p2');
@@ -227,6 +229,6 @@ test('L: kontra celuje w groźniejszy czar — stwór 7/7 bije stwora 2/2', () =
   assert.deepEqual(chosen.targets, ['big'], `bot ma kontrować grubasa: ${JSON.stringify(chosen)}`);
   const opts = bot.trace().at(-1).options.filter((o) => o.cmd.includes('cast_spell(st'));
   const byTarget = Object.fromEntries(opts.map((o) => [o.cmd, o.score]));
-  assert.equal(byTarget['cast_spell(st->big)'], 130);
-  assert.equal(byTarget['cast_spell(st->sml)'], 98);
+  assert.equal(byTarget['cast_spell(st->big)'], 150);
+  assert.equal(byTarget['cast_spell(st->sml)'], 110);
 });

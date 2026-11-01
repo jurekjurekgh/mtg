@@ -35,6 +35,9 @@ import { runDetectors, formatFindings, harmfulCardNames } from './detectors.mjs'
 import { observeRuntimeErrors } from './runtime-errors.mjs';
 import { PLAY_REGEX, SAFE_REGEX, GREEDY_PRIORITY } from './actions.mjs';
 import { chooseXWizard } from './x-wizard.mjs';
+// O-5 (sesja 2026-10-27c): etykiety akcji w logu transkryptu — cała treść
+// w jawnym limicie, ucięcie ZAWSZE z wielokropkiem (patrz labels.mjs).
+import { actionLabelForLog } from './labels.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ARTIFACT = path.resolve(__dirname, '../../dist/mtg-table.html');
@@ -368,7 +371,7 @@ export async function runTableGame({
         tick.click();
         tickedThisWindow = true;
         await sleep(30);
-        logL(`  [ptaszek] wyciszam: ${t.slice(0, 70)}`);
+        logL(`  [ptaszek] wyciszam: ${actionLabelForLog(t)}`);
       }
     }
   };
@@ -1300,7 +1303,9 @@ export async function runTableGame({
     const pick = pickAction();
     if (!pick) return 'none';
     clickedActions.add(normalize(pick.t));
-    logL(`  >> ${pick.t.slice(0, 110)}`);
+    // O-5: etykieta w CAŁOŚCI do jawnego limitu (wcześniej ciche `slice(0, 110)`
+    // ucinało doklejone ostrzeżenia o powtórnej aktywacji — transkrypt kłamał).
+    logL(`  >> ${actionLabelForLog(pick.t)}`);
     // M103 (L15): sonda „oferta bez skutku" — PRZED kliknięciem mierzymy
     // skutek komendy na KLONIE stanu z pasywnym przeciwnikiem (nie dotyka
     // prawdziwej partii), a PO kliknięciu sprawdzamy, czy partia w ogóle

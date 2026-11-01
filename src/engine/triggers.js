@@ -840,6 +840,53 @@ function abilitiesOnDeath(object) {
   return [...effectiveAbilities(object), ...(object.formerAbilityGrants ?? [])];
 }
 
+/**
+ * F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): JEDNO miejsce
+ * odpowiadające na pytanie „czy TO zdarzenie jest śmiercią stworu” („a
+ * creature died this turn” — Morbid, CR 700.4).
+ *
+ * Wcześniej odpowiedź istniała w DWÓCH kopiach, które się rozjechały (L41):
+ *  - skan triggerów (`processTriggers`) znał `creature_destroyed`
+ *    (śmierć z SBA: obrażenia, -X/-X), `permanent_destroyed` (zniszczenie
+ *    efektem), `permanent_sacrificed` i `object_moved` pole bitwy → grób;
+ *  - tracker `creatureDiedThisTurn` (game-state.js) patrzył WYŁĄCZNIE na
+ *    `object_moved`, którego ścieżka SBA/zniszczenia NIE emituje.
+ * Skutek: w typowej grze (stwór ginie od obrażeń albo od czaru) flaga
+ * Morbida zostawała `false` — Caravan Vigil nie oferował pola bitwy, a
+ * warunki `rule.morbid` („enters with … if a creature died this turn”)
+ * były martwe.
+ *
+ * Reguła (CR 700.4): „The term dies means 'is put into a graveyard from the
+ * battlefield'". Stąd:
+ *  - śmierć = docelowa strefa `graveyard` (finality/exile to NIE śmierć,
+ *    CR 122.1h — obiekt opuszcza pole bitwy, ale nie umiera);
+ *  - rodzaj czytamy z LKI (CR 603.10a): obiekt po zmianie strefy jest NOWY
+ *    (CR 400.7), więc `formerKind`/`formerTypes`.
+ * Token ginący w grobie: `creature_destroyed` niesie LKI zdarzenia — stąd
+ * fallback na `ev.object`.
+ */
+export function eventIsCreatureDeath(state, ev) {
+  if (!ev) return false;
+  const toZone = ev.toZone ?? null;
+  const dead = state?.objects?.get?.(ev.toId)
+    ?? state?.objects?.get?.(ev.objectId)
+    ?? ev.object ?? null;
+  switch (ev.type) {
+    case 'creature_destroyed':
+      // Emitowane wyłącznie dla `kind === 'creature'`; finality (exile)
+      // celowo wykluczone — to nie śmierć.
+      return toZone == null || toZone === 'graveyard';
+    case 'permanent_destroyed':
+    case 'permanent_sacrificed':
+      return toZone === 'graveyard' && diedAs(dead, 'creature', 'Creature');
+    case 'object_moved':
+      return ev.fromZone === 'battlefield' && toZone === 'graveyard'
+        && diedAs(dead, 'creature', 'Creature');
+    default:
+      return false;
+  }
+}
+
 /** Czy któryś efekt wymaga zdjęcia licznika ze źródła (warunek odpalenia). */
 /**
  * CR 714.2b — „{rN}—[Effect]" znaczy „When one or more lore counters are put
@@ -4204,26 +4251,46 @@ function processTriggersScan(state, recentEvents) {
     // (`state.events.slice(before)` w execute); liczniki z wejścia i z akcji
     // turowej są dokładane WNĘTRZEM tego skanu, więc tam helper wołamy wprost
     // (bez podwójnego odpalenia).
-    // Batch 70 (Magma Pummeler): „When one or more counters are removed from
-    // this creature THIS WAY, it deals that much damage to any target.” —
-    // trigger czyta zdarzenie `counter_removed` ze znacznikiem przyczyny
-    // (`damagePrevention`), bo zwykłe zdejmowanie liczników tej zdolności nie
-    // odpala. Źródło bierzemy z pola bitwy, a gdy stwór już zginął (0
-    // wytrzymałości w regule stanu — typowy przypadek: obrażenia ≥ liczba
-    // liczników, ruling VOW 2021-11-19), z migawki w zdarzeniu (CR 603.10).
-    if (ev.type === 'counter_removed' && ev.damagePrevention === true) {
-      const liveCounterSource = state.objects.get(ev.objectId);
-      const counterSource = liveCounterSource && liveCounterSource.zone === 'battlefield'
-        ? liveCounterSource
+    // CR 603.2: „Whenever a game event or game state matches a triggered
+    // ability's trigger event, that ability automatically triggers.” Zdarzenie
+    // `counter_removed` odpalają więc WSZYSTKIE drogi zdejmowania liczników
+    // (efekt, koszt zdolności, anihilacja +1/+1 vs -1/-1 w regule stanu,
+    // prewencja obrażeń) — O-3 z audytu PR #176 domknięte.
+    //
+    // Każda karta deklaruje w deskryptorze, którą drogę ma na myśli:
+    //  • `trigger.damagePreventionOnly` (Magma Pummeler: „…removed from this
+    //    creature THIS WAY”) — zdolność odpala WYŁĄCZNIE przy prewencji;
+    //  • brak tego znacznika („Whenever a counter is removed from …”) —
+    //    każda droga.
+    // Wariant z określonym RODZAJEM licznika („a +1/+1 counter”) czeka na
+    // nośnik mechaniki w katalogu — filtr `trigger.counter` dokładamy razem
+    // z pierwszą taką kartą (ADR 0022/0029), żeby nie zgadywać semantyki.
+    //
+    // Źródło bierzemy z pola bitwy; gdy permanent opuścił już pole bitwy
+    // (prewencja kończąca się 0 wytrzymałości — ruling VOW 2021-11-19, albo
+    // zdjęcie licznika, po którym SBA zabiła stwora), składamy migawkę LKI:
+    // z obiektu w `state.objects` (niesie deskryptor zdolności), a gdy i jego
+    // brak — ze zdarzenia (CR 603.10).
+    if (ev.type === 'counter_removed') {
+      const stored = state.objects.get(ev.objectId) ?? null;
+      const counterSource = stored && stored.zone === 'battlefield'
+        ? stored
         : Object.freeze({
-          id: ev.objectId, cardId: ev.cardId ?? null, controllerId: ev.controllerId ?? null,
-          zone: 'battlefield', kind: 'creature', power: null, toughness: null,
-          types: [], colors: [], keywords: [], counters: {},
-          abilities: Object.freeze([...(ev.abilities ?? [])]),
+          id: ev.objectId,
+          cardId: ev.cardId ?? stored?.cardId ?? null,
+          controllerId: ev.controllerId ?? stored?.controllerId ?? null,
+          zone: 'battlefield', kind: stored?.kind ?? 'creature',
+          power: stored?.power ?? null, toughness: stored?.toughness ?? null,
+          types: stored?.types ?? [], colors: stored?.colors ?? [],
+          keywords: stored?.keywords ?? [], counters: {},
+          abilities: Object.freeze([...(ev.abilities ?? stored?.abilities ?? [])]),
         });
       for (const ability of effectiveAbilities(counterSource)) {
         if (ability?.trigger?.event !== 'counter_removed') continue;
-        tryFire(state, ability, counterSource, [], events, { countersRemoved: ev.amount ?? 1 });
+        if (ability.trigger.damagePreventionOnly === true && ev.damagePrevention !== true) continue;
+        tryFire(state, ability, counterSource, [], events, {
+          countersRemoved: ev.amount ?? 1, counterName: ev.counter ?? null,
+        });
       }
     }
     if (ev.type === 'counter_added' && ev.counter === 'lore') {

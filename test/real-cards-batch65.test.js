@@ -731,10 +731,19 @@ test('B65/340 BOT: nie płaci śmiertelnych 2 życia; przy zdrowiu i wrogim celu
   const lethal = decyzjaBotaEdifice({ life: 2, enemyTarget: true });
   assert.equal(lethal.choice.pay, false,
     `zapłata sprowadzi życie do 0 — odmów: ${JSON.stringify(lethal.choice)}`);
+});
 
+// L (zgłoszenie właściciela 2026-10-29): „bot korzysta z ETB i płaci 2 life
+// praktycznie za nic. Nadaje do końca tury −1/−1 mojej kreaturze, która ma
+// 2/2. Ta zdolność ma sens TYLKO wtedy, gdy zadaje lethal damage… i to
+// w super ważny stwór”. Ten pin (wcześniej „przy zdrowiu i wrogim celu
+// płaci” na 2/3) odwracał dokładnie tę regułę — dlatego 2/3 (żyje po −1/−1)
+// musi teraz kończyć się ODMOWĄ, a zapłata ma sens dopiero przy zabiciu
+// ważnego celu. Szczegóły i pełna tabela: `test/l-ambulatory-edifice-debuff.test.js`.
+test('B65/340 BOT (L): przy zdrowiu NIE płaci za −1/−1, które nie zabija', () => {
   const healthy = decyzjaBotaEdifice({ life: 20, enemyTarget: true });
-  assert.equal(healthy.choice.pay, true,
-    `zdrowe życie + wrogi cel −1/−1 — zapłać: ${JSON.stringify(healthy.choice)}`);
+  assert.equal(healthy.choice.pay, false,
+    `wrogi 2/3 żyje po −1/−1 — odmów: ${JSON.stringify(healthy.choice)}`);
 });
 
 // ---- B65/341: Pacifism (DTK #29, plan Tarkir) -------------------------------

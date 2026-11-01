@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/746bc301-9f08-4d9b-819e-690f6fce6bc8",
+  "print": "exo",
+  "name": "Vampire Hounds",
+  "mana_cost": "{2}{B}",
+  "cmc": 3,
+  "type_line": "Creature — Vampire Dog",
+  "oracle_text": "Discard a creature card: This creature gets +2/+2 until end of turn.",
+  "power": "2",
+  "toughness": "2",
+  "colors": [
+    "B"
+  ],
+  "color_identity": [
+    "B"
+  ],
+  "keywords": [],
+  "set": "exo",
+  "set_name": "Exodus",
+  "collector_number": "77",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/4/746bc301-9f08-4d9b-819e-690f6fce6bc8.jpg?1783946514",
+    "normal": "https://cards.scryfall.io/normal/front/7/4/746bc301-9f08-4d9b-819e-690f6fce6bc8.jpg?1783946514"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/exo/77/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

@@ -6,6 +6,9 @@
 > 4 ZAMKNIĘTE BEZ ZMIANY (X w koszcie permanentu, prewencja zdejmująca
 > liczniki, Improvise, drugi cel kickera). Piny:
 > `test/audyt-pmssb79-batch70.test.js` (17 + 4 mutacje).
+> Etapy P0–P7 odhaczone 2026-10-27c (higiena: plan był WYKONANY, ale
+> checkboxy zostały puste — dryf dokumentacji, ADR 0021 pkt 3); treść
+> kryteriów bez zmian, odsyłacze do commitów w nagłówku statusu.
 
 Wejście: zgłoszenie właściciela (2026-10-27) — batch 70 domknięty na zielonym
 silniku, ale **bez pętli PMSSB**. Wniosek proceduralny (Krok 7 runbooka,
@@ -31,22 +34,22 @@ realizuje samą pętlę dla mechanik batcha.
 
 ## Etapy
 
-- [ ] **P0** (ten plik) — plan + inwentarz, commit przed kodowaniem.
-- [ ] **P1** Pomiar PRZED: `tools/pmssb79-batch70-sonda.mjs` — tabele
+- [x] **P0** (ten plik) — plan + inwentarz, commit przed kodowaniem.
+- [x] **P1** Pomiar PRZED: `tools/pmssb79-batch70-sonda.mjs` — tabele
       score per scenariusz (kierunek × cel × timing × stan) dla 8 mechanik
       z pętli. Wynik w `.arena/pmssb79-pre.txt`.
-- [ ] **P2** Audyt findingów F1…Fn + fale; kontrole obowiązkowe: L41 (rzut /
+- [x] **P2** Audyt findingów F1…Fn + fale; kontrole obowiązkowe: L41 (rzut /
       zdolność / trigger-decyzja liczą to samo), koszt (S11), anty-over-fix
       (M429 — najsłabszy realny wariant = dawna wartość).
-- [ ] **P3** Wdrożenie: pokrętła `<rodzina>*` w `heuristic-params.js`
+- [x] **P3** Wdrożenie: pokrętła `<rodzina>*` w `heuristic-params.js`
       (0 = dawne zachowanie) + wspólne helpery w `heuristic-bot.js`.
-- [ ] **P4** Testy `test/audyt-pmssb79-batch70.test.js` RED→GREEN + mutacje
+- [x] **P4** Testy `test/audyt-pmssb79-batch70.test.js` RED→GREEN + mutacje
       (wyzerowanie pokrętła / wyłączenie gałęzi).
-- [ ] **P5** Ewaluacja: `bot-scoring-snapshot` (bez regeneracji, chyba że
+- [x] **P5** Ewaluacja: `bot-scoring-snapshot` (bez regeneracji, chyba że
       różnice są zamierzone), tie-audit PO, mirror-eval reguły vs off.
-- [ ] **P6** Dokumentacja: raport PMSSB-79 + wiersz w rejestrze
+- [x] **P6** Dokumentacja: raport PMSSB-79 + wiersz w rejestrze
       `docs/PMSSB.md`, wpis w `PROJECT_HISTORY.md`, handoff.
-- [ ] **P7** Bramy: `npm test`, `npm run build`, `npm run test:slow`,
+- [x] **P7** Bramy: `npm test`, `npm run build`, `npm run test:slow`,
       benchmark quick; push po każdym kroku.
 
 ## Ryzyka / pułapki

@@ -68,6 +68,12 @@ export const DESCRIPTOR_PARAMS = Object.freeze({
     'bounceTokenBonus', 'bounceFoeEtbWeight',
     // PMSSB-1/B: kierunek własny (ratunek F5 + reuse F4).
     'bounceRecastManaWeight', 'bounceTempoPenalty',
+    // G (zgłoszenie właściciela 2026-10-29, Sea God's Scorn): „rynek
+    // inwestycji” celu bounce — TMC permanentu, TMC aur/equipmentów na nim
+    // i wartość pozytywnych liczników. Ta sama rodzina wymiarów co reszta
+    // `bounce` (tuner widzi je razem z kartami odbijającymi).
+    'bounceTmcWeight', 'bounceAuraTmcWeight', 'bounceEquipmentTmcWeight',
+    'bounceCounterBonus',
   ]),
   // M257 r4/B6 T1: rodzina „aura” wpięta — ekstrakcja stałych bloku aury
   // scoreCommand (buff/hostile/losesKeywords/protection) pod nazwy.

@@ -4,11 +4,12 @@ import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
 import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, preventDamageByRemovingCounters, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { CARD_TYPES } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
 import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEnergyCounters } from './players.js';
 import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
-import { countGraveyardCardsOfType } from './graveyard-types.js';
+import { countGraveyardCardsOfType, countGraveyardCardTypes } from './graveyard-types.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
 import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
@@ -462,6 +463,23 @@ function countArtifactsControlled(state, controllerId) {
  *    kandydata (`targetId`) i dla różnych celów daje różną kwotę,
  *  - `amountIfAddendum` — migawka rzutu (Batch60).
  */
+/**
+ * Batch 71 (Rumbling Rockslide): liczba LANDÓW pod kontrolą gracza — jedno
+ * źródło (L41) dla rozstrzygania efektu (`resolveDamageAmount`) i dla wyceny
+ * bota. Land-creature liczy się jako land (typ z linii typów, jak w
+ * `basicLandTypeCount`).
+ */
+export function landsControlledBy(state, playerId) {
+  if (!state || playerId == null) return 0;
+  let count = 0;
+  for (const id of state.zones.battlefield) {
+    const object = state.objects.get(id);
+    if (!object || object.zone !== 'battlefield' || object.controllerId !== playerId) continue;
+    if (object.kind === 'land' || (object.types ?? []).includes('Land')) count += 1;
+  }
+  return count;
+}
+
 export function resolveDamageAmount(state, effect, sourceObject, targetId = null, context = null) {
   // Batch 70 (Magma Pummeler): „it deals that much damage” — kwota z KONTEKSTU
   // zdarzenia (ile liczników zdjęto), nie z pola karty. Ten sam mechanizm co
@@ -478,6 +496,14 @@ export function resolveDamageAmount(state, effect, sourceObject, targetId = null
       state.zones.battlefield.map((id) => state.objects.get(id)),
       sourceObject?.controllerId,
     );
+  }
+  // Batch 71 (Rumbling Rockslide): „deals damage to target creature equal to
+  // the number of lands you control." Liczba z chwili ROZSTRZYGANIA
+  // (CR 608.2h — lądy wchodzące w oknie odpowiedzi się liczą), liczona tą
+  // samą funkcją, którą czyta oferta/wycena bota (L41:
+  // `landsControlledBy`, eksportowany niżej).
+  if (amount === 'lands_you_control') {
+    amount = landsControlledBy(state, sourceObject?.controllerId);
   }
   // Batch65 (Blitz of the Thunder-Raptor): „deals damage ... equal to the
   // number of instant and sorcery cards in your graveyard" — kwota liczona
@@ -749,16 +775,20 @@ export function revealTopGainLife(state, playerId, sourceCardId = null) {
   if (gained > 0) changeLife(state, playerId, gained);
 }
 
-/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
-export function librarySearchMatches(object, qualifier, ownerId) {
-  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+/** Czy karta pasuje do kwalifikatora jakości (types/subtypes/kind/minMV/name).
+ *  Batch 71 (Vampire Hounds): ten sam predykat czyta teraz także KOSZT
+ *  „Discard a creature card" — jedna reguła jakości karty, dwie strony
+ *  (L41: wyszukiwanie w bibliotece i picker kosztu nie mogą się rozjechać).
+ */
+export function cardMatchesQualifier(object, qualifier) {
+  if (!object || !qualifier) return true;
   // Batch 58/B6 (Prishe's Wanderings): „a basic land card or Town card" —
   // ALTERNATYWY kwalifikatora. Karta pasuje, gdy spełnia KTÓRĄKOLWIEK
   // z gałęzi (każda gałąź to pełny kwalifikator tej samej postaci, a ALBO
   // łączy się z pozostałymi polami jak dotąd — AND). Jedno miejsce prawdy dla
   // kandydatów (`queueSearchChoice`) i re-walidacji wyboru (resolve_search_choice).
   if ((qualifier.anyOf ?? []).length > 0
-    && !qualifier.anyOf.some((branch) => librarySearchMatches(object, branch, ownerId))) return false;
+    && !qualifier.anyOf.some((branch) => cardMatchesQualifier(object, branch))) return false;
   const typeMatch = (qualifier.types ?? []).length === 0
     || (qualifier.types ?? []).every((type) => (object.types ?? []).includes(type));
   // M385: podtypy kwalifikatora czytamy z linii typów; changeling rozszerza
@@ -772,6 +802,12 @@ export function librarySearchMatches(object, qualifier, ownerId) {
   // kryterium jakości, więc fail to find pozostaje legalny).
   const nameOk = !qualifier.name || (object.cardName ?? object.name) === qualifier.name;
   return typeMatch && subtypeMatch && kindMatch && mvOk && nameOk;
+}
+
+/** Czy karta z biblioteki pasuje do kwalifikatora szukania (types/subtypes/kind/minMV). */
+export function librarySearchMatches(object, qualifier, ownerId) {
+  if (!object || object.controllerId !== ownerId || object.zone !== 'library') return false;
+  return cardMatchesQualifier(object, qualifier);
 }
 
 /**
@@ -1026,6 +1062,12 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
     const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
     return host?.controllerId ?? null;
   }
+  // Batch 71 (Curse of the Bloody Tome): „Enchant player / At the beginning of
+  // enchanted player's upkeep, that player mills two cards" — mieli ZACZAROWANY
+  // GRACZ (CR 303.4b: aura na gracza niesie `enchantedPlayerId`), nie kontroler
+  // aury (CR 109.5). Deskryptor generyczny — to samo miejsce prawdy dla oferty
+  // i rozstrzygnięcia (L41).
+  if (effect.applyTo === 'enchanted_player') return sourceObject?.enchantedPlayerId ?? null;
   return (targets[0] && state.players.some((player) => player.id === targets[0]))
     ? targets[0]
     : sourceObject?.controllerId ?? null;
@@ -1306,6 +1348,7 @@ export function resolveCraftExileOutcome(state, { sourceId, candidates = [], tra
       transformTo: {
         cardId: moved.cardId,
         cardName: moved.cardName ?? null,
+        name: moved.name ?? null,
         kind: previousSide.kind ?? moved.kind,
         power: previousSide.power ?? null,
         toughness: previousSide.toughness ?? null,
@@ -1453,6 +1496,14 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
   // Opus (SOS): „If five or more mana was spent … put two counters INSTEAD" —
   // wariant podstawowy działa tylko poniżej progu (para z manaSpentAtLeast).
   if (effect.condition?.manaSpentBelow != null && (context?.manaSpent ?? 0) >= effect.condition.manaSpentBelow) return;
+  // Delirium na pojedynczym EFEKCIE (Batch 71, Violent Urge: „Delirium — If
+  // there are four or more card types among cards in your graveyard, that
+  // creature gains double strike until end of turn."). CR 207.2c — słowo
+  // zdolności nadaje EFEKTOWI warunek; licznik typów czytamy przy
+  // rozstrzygnięciu (CR 608.2), tym samym liściem co bramka aktywacji i
+  // warunek statyczny (L41 — jedna reguła, trzej konsumenci).
+  if (effect.condition?.delirium === true
+    && countGraveyardCardTypes(state, sourceObject?.controllerId, CARD_TYPES) < 4) return;
   if (effect.type === 'damage') {
     // M111: `targetIndex` wskazuje slot celu (konwencja reszty efektów) —
     // czar o kilku celach zadaje obrażenia właściwemu z nich, zamiast lać
@@ -3027,6 +3078,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
+    // Aura na gracza bez zaczarowanego gracza (odpięta/nielegalna) — brak
+    // skutku, tak samo jak wyżej (CR 608.2b).
+    if (effect.applyTo === 'enchanted_player' && !sourceObject?.enchantedPlayerId) return;
     const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
@@ -3927,6 +3981,9 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       transformTo: {
         cardId: sourceObject.cardId,
         cardName: sourceObject.cardName,
+        // Nazwa jawnego `name` (token/kopia) opuszczanej strony — powrót musi
+        // ją odzyskać (payload `cardName` bywa pusty dla tokenu).
+        name: leavingFace.name ?? null,
         power: leavingFace.power,
         toughness: leavingFace.toughness,
         abilities: sourceObject.abilities,
@@ -5259,10 +5316,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
       playerId: targetId,
       candidateIds: [...candidates],
       candidateTypes: ['Creature'],
+      // Kontrakt zdarzenia (audyt M273): `sacrifice_choice_required` niesie
+      // źródło decyzji — log stołu musi umieć je nazwać, a trigger/bot
+      // odróżnić, CO wymusiło poświęcenie (Batch 71: champion dokłada trzeci
+      // emiter, więc brak pól przestał być „mniejszością").
+      sourceId: sourceObject?.id ?? null,
+      cardId: sourceObject?.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = targetId;
-    state.events.push(event('sacrifice_choice_required', { playerId: targetId, candidates: [...candidates] }));
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: targetId, candidates: [...candidates],
+      sourceId: sourceObject?.id ?? null, cardId: sourceObject?.cardId ?? null,
+    }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
     return true;
   }
@@ -5805,6 +5871,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const frontFace = {
       cardId: object.cardId,
       cardName: object.cardName,
+      name: object.name ?? null,
       power: object.power,
       toughness: object.toughness,
       abilities: object.abilities,
@@ -6565,6 +6632,71 @@ function markTemporaryExile(state, exileId, sourceObject) {
       candidates: [...state.pendingSacrifice.candidateIds],
       sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
       sacrificeUnless: true,
+    }));
+    return true;
+  }
+  // Batch 71 (Changeling Berserker): CHAMPION (CR 702.72a, dosłownie):
+  // „Champion an [object]" means „When this permanent enters, sacrifice it
+  // unless you exile another [object] you control" and „When this permanent
+  // leaves the battlefield, return the exiled card to the battlefield under
+  // its owner's control." Pierwsza połowa jest TU (druga to istniejący
+  // `return_exiled_to_battlefield`, bo wygnanie z linkiem zapisuje
+  // `exiledCardIds` na źródle).
+  // Kwalifikator jest deskryptorem (ADR 0002 — żadnej nazwy karty): brak
+  // `qualifier` = „a creature".
+  if (effect.type === 'champion') {
+    // Ruling (champion): jeśli stwór z championem opuści pole bitwy PRZED
+    // rozstrzygnięciem własnego ETB, nie ma kogo poświęcić — efekt nic nie
+    // robi (CR 608.2b).
+    const liveSource = state.objects.get(sourceObject.id);
+    if (!liveSource || liveSource.zone !== 'battlefield') return;
+    const controllerId = liveSource.controllerId;
+    const qualifier = effect.qualifier ?? { types: ['Creature'] };
+    const wantedTypes = qualifier.types ?? [];
+    // „ANOTHER [object] you control" — źródło nigdy nie jest własną ofiarą
+    // (ruling: „A creature's own champion ability won't allow you to exile
+    // that creature.").
+    const candidates = state.zones.battlefield
+      .map((objectId) => state.objects.get(objectId))
+      .filter((object) => object && object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.id !== liveSource.id
+        && wantedTypes.every((type) => object.kind === type.toLowerCase()
+          || (object.types ?? []).includes(type)))
+      .map((object) => object.id);
+    if (candidates.length === 0) {
+      // Brak obiektu do wygnania — „sacrifice it" jest wtedy bezwarunkowe
+      // (CR 702.72a, ten sam wzorzec co Scythe Tiger).
+      const toZone = deathZoneFor(state, liveSource);
+      const moved = moveObjectDirectly(state, liveSource.id, toZone,
+        `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
+        cardId: moved.cardId, champion: true, toZone,
+      }));
+      return;
+    }
+    // Decyzja: wygnaj inny obiekt (kandydaci) ALBO poświęć źródło (wybór
+    // „nie wygnaję"). Wspólny `pendingSacrifice`, ale z `moveTo: 'exile'` —
+    // rozstrzygnięcie wygnańca robi ta sama komenda co poświęcenie.
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateTypes: [...wantedTypes],
+      alternativeSourceId: liveSource.id,
+      sourceId: liveSource.id,
+      cardId: liveSource.cardId ?? null,
+      optional: false,
+      moveTo: 'exile',
+      champion: true,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: controllerId,
+      candidates: [...state.pendingSacrifice.candidateIds],
+      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      champion: true, moveTo: 'exile',
     }));
     return true;
   }

@@ -75,7 +75,11 @@ test('PMSSB-1/A params: rodzina bounce* jest WŁĄCZONA (wartości przemyślane)
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryTopBonus, 8);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceLibraryBottomBonus, 18);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceTokenBonus, 12);
-  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 1);
+  // G (2026-10-29): 1 → 2. Ten wymiar kalibrowano w modelu BEZ wagi TMC;
+  // gdy TMC celu waży 6/punkt (model właściciela), pojedyncza kara ETB
+  // przestawała cokolwiek rozstrzygać — drogi stwór z ETB wygrywał z tanim
+  // gołym ciałem, czyli wracał dokładnie zakaz z PMSSB-1/A/F6.
+  assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceFoeEtbWeight, 2);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyBase, undefined);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceEnemyPowerWeight, undefined);
 });
@@ -85,11 +89,15 @@ test('PMSSB-1/A/T1: karta z efektem bounce dostaje deskryptor `bounce` (tuner)',
   assert.ok(cardDescriptors(REGISTRY.get('force-away')).includes('bounce'), 'Force Away ma deskryptor bounce');
   assert.ok(cardDescriptors(REGISTRY.get('vanish-from-sight')).includes('bounce'), 'Vanish też (top/bottom)');
   const { keys } = paramsForDescriptors(['bounce']);
+  // G (2026-10-29): „rynek inwestycji” celu bounce (TMC celu, TMC aur, TMC
+  // equipmentów, wartość pozytywnych liczników) — ta sama rodzina deskryptora.
   assert.deepEqual(keys.sort(), [
+    'bounceAuraTmcWeight', 'bounceCounterBonus', 'bounceEquipmentTmcWeight',
     'bounceFoeEtbWeight', 'bounceLibraryBottomBonus', 'bounceLibraryTopBonus',
     // PMSSB-1/B: kierunek własny dopisuje recast + tempo (sort: Recast <
-    // Tempo < Token — 'e' < 'o').
-    'bounceRecastManaWeight', 'bounceTempoPenalty', 'bounceTokenBonus',
+    // Tempo < Tmc < Token — 'e' < 'm' < 'o').
+    'bounceRecastManaWeight', 'bounceTempoPenalty', 'bounceTmcWeight',
+    'bounceTokenBonus',
   ]);
 });
 
@@ -168,14 +176,18 @@ test('PMSSB-1/A/F6: cel wroga z ETB dostaje karę powtórki (koniec remisu 92/92
   assert.equal(cmd.targets?.[0], 'plain');
 });
 
-test('PMSSB-1/A anty-over-fix: goły 1/1 wroga bez kontekstu wart DOKŁADNIE 80 (jak PRZED)', () => {
+// G (2026-10-29): 80 → 86. Wzorzec „bez kontekstu” to nadal sama baza fali A
+// (50 + 22 + 2 + 2 + M234 4 = 80) PLUS nowy wymiar inwestycji: 1 mana TMC ×
+// waga 6. Reszta wymiarów (aura, liczniki, załączniki) nieaktywna — pin pilnuje,
+// że bounce nie zbiera premii znikąd.
+test('PMSSB-1/A anty-over-fix: goły 1/1 wroga bez kontekstu wart DOKŁADNIE 86 (80 + TMC)', () => {
   const state = game();
   put(state, 'fa', 'force-away', 'p1', 'hand');
   put(state, 'g', 'goldmeadow-nomad', 'p2');
   neutralFoeMana(state);
   addMana(state, 'p1', 4);
   const { scores } = decide(state);
-  assert.equal(scores['cast_spell(fa->g)'], 80, `wzorzec = dawna wartość: ${JSON.stringify(scores)}`);
+  assert.equal(scores['cast_spell(fa->g)'], 86, `wzorzec = baza 80 + TMC 1×6: ${JSON.stringify(scores)}`);
 });
 
 test('PMSSB-1/A pokrętła: bonusy realnie sterują wyceną (nie są atrapami)', () => {
@@ -342,7 +354,7 @@ test('PMSSB-1/C params: timing + lethal + overflow WŁĄCZONE (wartości przemy�
   assert.equal(DEFAULT_HEURISTIC_PARAMS.bounceOverflowBonus, 12);
 });
 
-test('PMSSB-1/C/F1: okna instantu — EOT-wroga (88) > main-własna (80) > main-wroga (72)', () => {
+test('PMSSB-1/C/F1: okna instantu — EOT-wroga (94) > main-własna (86) > main-wroga (78)', () => {
   const setup = (state) => {
     put(state, 'fa', 'force-away', 'p1', 'hand');
     put(state, 'g', 'goldmeadow-nomad', 'p2');
@@ -351,9 +363,11 @@ test('PMSSB-1/C/F1: okna instantu — EOT-wroga (88) > main-własna (80) > main-
   const eot = bounceScoreAt('end', 'p2', 'p1', setup)['cast_spell(fa->g)'];
   const own = bounceScoreAt('main1', 'p1', 'p1', setup)['cast_spell(fa->g)'];
   const foe = bounceScoreAt('main1', 'p2', 'p1', setup)['cast_spell(fa->g)'];
-  assert.equal(eot, 88, `EOT wroga = max-tempo: ${eot}`);
-  assert.equal(own, 80, `main własna = neutralna (pin fali A trzyma): ${own}`);
-  assert.equal(foe, 72, `main wroga = natychmiastowy recast: ${foe}`);
+  // G (2026-10-29): wszystkie trzy okna +6 (waga TMC 6 × 1 mana celu);
+  // RÓŻNICE między oknami bez zmian (swing ±8) — to jest treść tego pinu.
+  assert.equal(eot, 94, `EOT wroga = max-tempo: ${eot}`);
+  assert.equal(own, 86, `main własna = neutralna (pin fali A trzyma): ${own}`);
+  assert.equal(foe, 78, `main wroga = natychmiastowy recast: ${foe}`);
 });
 
 test('PMSSB-1/C/fizzle-off: pump wroga na stosie — bounce pompowanego WYGRYWA (2-za-1)', () => {
@@ -373,7 +387,7 @@ test('PMSSB-1/C/fizzle-off: pump wroga na stosie — bounce pompowanego WYGRYWA 
   assert.equal(cmd.targets?.[0], 'pumped');
 });
 
-test('PMSSB-1/C/overflow-foe: ręka wroga pełna (7) — bounce z premią odrzutu (92)', () => {
+test('PMSSB-1/C/overflow-foe: ręka wroga pełna (7) — bounce z premią odrzutu (98)', () => {
   const state = game();
   put(state, 'fa', 'force-away', 'p1', 'hand');
   put(state, 'g', 'goldmeadow-nomad', 'p2');
@@ -381,7 +395,7 @@ test('PMSSB-1/C/overflow-foe: ręka wroga pełna (7) — bounce z premią odrzut
   for (let i = 0; i < 7; i += 1) put(state, `fh${i}`, 'goldmeadow-nomad', 'p2', 'hand');
   addMana(state, 'p1', 4);
   const { scores } = decide(state);
-  assert.equal(scores['cast_spell(fa->g)'], 92, `80 + 12 za wymuszony odrzut: ${JSON.stringify(scores)}`);
+  assert.equal(scores['cast_spell(fa->g)'], 98, `86 + 12 za wymuszony odrzut: ${JSON.stringify(scores)}`);
 });
 
 test('PMSSB-1/C/overflow-own: MOJA ręka pełna (7) — bounce własnego gorszy (−126)', () => {
@@ -446,7 +460,7 @@ test('PMSSB-1/C/lethal-dodge: nieblokowany lethal-atakujący — bounce ratuje �
   assert.equal(cmd.targets?.[0], 'kill');
 });
 
-test('PMSSB-1/C/lockout: wróg bez odtapowanych landów, cel TMC5 — premia tempa (112)', () => {
+test('PMSSB-1/C/lockout: wróg bez odtapowanych landów, cel TMC5 — premia tempa (142)', () => {
   const state = game();
   put(state, 'fa', 'force-away', 'p1', 'hand');
   put(state, 'big', 'highland-game', 'p2');
@@ -455,8 +469,9 @@ test('PMSSB-1/C/lockout: wróg bez odtapowanych landów, cel TMC5 — premia tem
   put(state, 'ti2', 'basic-island', 'p2', 'battlefield', { tapped: true });
   addMana(state, 'p1', 4);
   const { scores } = decide(state);
-  // 50 + 22 + 20 + M234 (2×5) + lockout (tempo 10) = 112.
-  assert.equal(scores['cast_spell(fa->big)'], 112, `lockout +10: ${JSON.stringify(scores)}`);
+  // 50 + 22 + 20 + M234 (2×5) + lockout (tempo 10) + inwestycja (TMC 5 × 6
+  // = 30, G 2026-10-29) = 142.
+  assert.equal(scores['cast_spell(fa->big)'], 142, `lockout +10: ${JSON.stringify(scores)}`);
 });
 
 test('PMSSB-1/C/screw: Invasive przy 2 landach — ŚMIEĆ bije land (land-drop to życie)', () => {

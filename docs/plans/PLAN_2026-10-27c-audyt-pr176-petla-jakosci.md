@@ -1,0 +1,194 @@
+# PLAN 2026-10-27c — audyt PR #176 (batch 70) i pętla jakości
+
+> Sesja: gałąź `arena/d5e963c4-mtg`, PR tej sesji (ADR 0020 A).
+> Wejście: prompt właściciela „Kontynuujemy projekt." (temat nienazwany →
+> ADR 0021: PR → audyt poprzedniego PR → niedokończony plan → pętla jakości).
+> Poprzedni scalony PR: **#176** (`59815d5`, sesja 2026-10-26c/27 — audyt PR
+> #175, pętla jakości, batch 70 = 10 kart).
+
+## Rozpoznanie (zmierzone, nie z handoffu)
+
+| Pozycja | Wartość |
+|---|---|
+| `npm test` (szybki rdzeń) na bazie `59815d5` | **8972/8972**, exit 0, ~162 s |
+| `npm run build` | **76 modułów / 5512,3 kB**, exit 0 |
+| Handoff 2026-10-27 deklaruje | 8948/8948, 76 / 5502,4 kB |
+| Rozjazd | +24 piny i +9,9 kB po pomiarze w handoffie → liczby handoffu są sprzed ostatnich commitów (L92) — bez znaczenia dla bram, do odświeżenia w handoffie tej sesji |
+
+Zakres PR #176 do audytu: **95 plików**, w tym 43 w `src/` i `docs/`
+(+3291/−95 linii). Kluczowe pliki silnika: `resources.js` (Improvise, Converge),
+`permanents.js` (X w koszcie permanentu), `effects.js` (prewencja zdejmująca
+liczniki, licznik z cmentarza), `combat.js` (ewazja po typie blokera),
+`abilities.js` (cel `onlyIfKicked` / `anotherTarget`, prewencja licznikowa),
+`triggers.js` (`manifest_dread_resolved`, `counter_removed`),
+`heuristic-bot.js` + `heuristic-params.js` (wyceny nowych rodzin).
+Nowe karty batcha 70: Arlinn's Wolf, Fen Hauler, Jilt, Kaleidoscorch,
+Magma Pummeler, Moldgraf Millipede, Orazca Puzzle-Door, Paranormal Analyst,
+Trigon of Rage, Vault of Whispers.
+
+## Etapy
+
+- [x] **A0** Plan + PR sesji (ten plik) — commit przed kodowaniem.
+- [x] **A1** Audyt PR #176 wg ADR 0020 B / ADR 0016 — każdy zmieniony plik
+      `src/` pod kątem: zgodności z CR (cytat dosłowny, ADR 0030) i z Oracle
+      kart, generyczności (ADR 0002 — zero przypadków po nazwie/ID karty),
+      FoW/PlayerView (ADR 0003/0017), determinizmu (ADR 0005), oferta =
+      walidacja (L48). Sprawdzenie testów RED→GREEN (L13) i tego, czy pin
+      mierzy regułę (L5). Raport: `docs/audits/AUDYT_PR176_2026-10-27.md`.
+- [x] **A2** Naprawy findingów u root cause, każdy z pinem i mutacją RED,
+      osobnym commitem (ADR 0020 C) — zrobione: F-1 (`721aec2`) oraz na polecenie
+właściciela z 2026-10-27c O-1 (`a023d35`) i O-2 (`bca14ac`). O-3/O-5 zostają
+otwarte świadomie (opisał je raport audytu).
+- [x] **A3** Higiena planów: `PLAN_2026-10-27b` ma status „WYKONANY", ale
+      niezaznaczone etapy P0–P7 (dryf dokumentacji) — odhaczyć z odsyłaczem do
+      commitów, bez zmiany treści kryteriów.
+- [x] **A4** Pętla jakości (ADR 0021 pkt 4): (a) Żywy Tester z perspektywy
+      gracza — partie po `npm run build`, ręczna lektura transkryptów wg osi
+      `docs/setup/TESTER_STOLU.md` (L27: zero zgłoszeń ≠ brak błędów);
+      (b) polowanie CR inną ścieżką niż poprzednia sesja (poprzednio
+      614/616/106 + 601.2); (c) analizatory: `event-contract-audit`,
+      `family-audit`, `bot-tie-audit`, `scoring-mulligan-audit`,
+      `scoring-unvalued-audit`.
+- [x] **A6** Cztery uwagi właściciela z gry (A–D) dopisane do PR #177 po
+      audycie — każda rozpoznana sondą na żywym silniku, naprawiona u root
+      cause, z pinem i mutacją RED, osobnym commitem:
+      A `4151064` (ETB „cel obrażony w tej turze" czeka na Główną 2),
+      C `8b2ddeb` (blok bezkosztowy bije pass),
+      D `6d3e1fd` (Cuombajj: ryzyko przeciwnika + zakaz psucia własnego czaru),
+      B `5affe89` (koszt aktywacji zdolności many płaci kreator podrzędny).
+      Raport: `docs/audits/UWAGI_Z_GRY_2026-10-27c.md`.
+- [x] **A7** Otwarte tematy z audytu (polecenie właściciela 2026-10-27c:
+      „zajmij się otwartymi tematami”, bez dopisywania kart):
+      **O-3** `8a90fd7` (generyczny trigger `counter_removed` odpala na każdej
+      drodze zdejmowania liczników; „this way” deklaruje karta deskryptorem),
+      **O-5** `5da5294` (log testera: cała etykieta do jawnego limitu, ucięcie
+      zawsze z wielokropkiem). Wariant O-3 z rodzajem licznika i etykietą kafla
+      **czeka na nośnik mechaniki** w katalogu (ADR 0022/0029) — bez nowych
+      kart w tej sesji.
+- [x] **A8** Uwagi z gry 2026-10-29 (`docs/audits/UWAGI_Z_GRY_2026-10-29.md`):
+      **F** `236533c` — Morbid widzi każdą śmierć stworu (`eventIsCreatureDeath`,
+      CR 700.4 + 603.10a; wcześniej tracker znał tylko `object_moved`, więc
+      śmierć od obrażeń i od czaru była dla Morbida niewidzialna),
+      **G** `45aefea` — wycena celu bounce wg zainwestowania (TMC + aury +
+      equipment + liczniki; rekalibracja `bounceFoeEtbWeight` 2 i
+      `counterspellTmcWeight` 10). Bez nowych kart.
+- [x] **A9** Uwaga **H** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      nazwa dwustronnego tokenu nie szła za twarzą — `transform` w miejscu
+      i `transformedCharacteristics` przepisywały `cardId`/`cardName`, ale nie
+      `object.name`, z którego czyta nazwę token/kopia (`session.nameOfObject`)
+      → po `{2}: Transform` kafel, modal celowania i etykiety ofert dalej
+      mówiły „Incubator”. Fix generyczny: `transformedDisplayName`
+      (permanents.js) + `name` w payloadach powrotnych; pin
+      `test/h-incubator-nazwa-po-transformacji.test.js` (7). Bez nowych kart.
+- [x] **A10** Uwaga **I** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Karta Spellkeeper Weird. Bot bezsensownie poświęca tę kreaturę. Zdolności
+      wymagające poświęcenia powinny być możliwe do zagrania przez bota tylko
+      wtedy, gdy dana kreatura już ginie (…). W innych wypadkach poświęcenie
+      powinno mieć ujemny scoring.” Fix generyczny: `sacrificeSelfCostLoss`
+      w `heuristic-bot.js` — jedno miejsce dla KAŻDEGO efektu (koszt = wartość
+      ciała, zero gdy stwór `permanentDoomedThisTurn`, gdy zdolność daje manę
+      albo gdy efekt to pump zabijający cel); lokalne duplikaty `−4/−6` i drugie
+      `bodyWorth` w gałęziach usunięte (L41). Pin
+      `test/i-poswiecenie-stwora.test.js` (6) + 4 mutacje RED; rekalibracja
+      PMSSB-19/R1 (11 → 3) i goldena; reseed M101/D (L25). Bez nowych kart.
+- [x] **A11** Uwaga **J** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Benevolent Blessing — bot nadaje flash protection swojej blokującej
+      kreaturze, ale wybiera kolor inny niż kolor kreatury, którą ta blokuje.”
+      Fix generyczny: `protectionCombatThreatByColor` w `heuristic-bot.js` —
+      kolor partnera walki (blokowany atakujący / blokerzy hosta / legalne
+      bloki przed deklaracją) bije „najliczniejszy kolor wroga”, a wartość
+      rośnie z zatrzymanymi obrażeniami; próg ratujący życie bez zmian, brak
+      walki → dawna heurystyka (kotwica). Dwa pokrętła
+      (`colorProtectionCombatBonus`, `colorProtectionCombatDamageWeight`). Pin
+      `test/j-benevolent-blessing-kolor.test.js` (7) + 3 mutacje RED. Bez
+      rekalibracji istniejących pinów, bez nowych kart.
+- [x] **A12** Uwaga **K** z gry 2026-10-29 (ta sama sesja, ten sam raport):
+      „Rupture Spire — bot zagrywa ją, mimo że nie ma many na opłacenie kosztu
+      (1) i musi ją poświęcić. Ta karta powinna być zagrywana tylko wtedy, gdy
+      bot ma manę na opłacenie (1).”
+      Fix generyczny: `landEtbPayOrSacrifice` w `heuristic-bot.js` — jedno
+      źródło reguły (L41), deskryptor triggera (`enter_battlefield` +
+      `payMana` + `sacrificeIfUnpaid`), bez nazw i ID kart (ADR 0002).
+      „Stać” = `ownOpenMana` (pula + własne NIETAPNIĘTE źródła many), nie sama
+      pula. Kara za nieopłacalne zagranie wychodzi z klamry delty lądu do
+      gałęzi `play_land`: `−landEtbUpkeepUnplayablePenalty` (20). Pokrętło
+      `× 0` przywraca stan sprzed K. Pin
+      `test/k-rupture-spire-etb-oplata.test.js` (6) + 3 mutacje RED;
+      aktualizacja pinu `PMSSB12-A` (76 → −20). Bez zmian legalności, bez
+      rekalibracji talii golden-mastera, bez nowych kart.
+- [x] **A13** Uwaga z gry 2026-10-29 (**L**; właściciel oznaczył ją literą K —
+      K zajęła Rupture Spire): „Ambulatory Edifice — bot płaci 2 life
+      praktycznie za nic; zdolność ma sens tylko przy lethal damage i tylko
+      w super ważny stwór (TMC z aurami/equipment ≥ 5 albo jedyny z lataniem /
+      menace / protection / landwalkiem działającym przeciw botowi)”.
+      Fix generyczny: `debuffPayoffValue` w `heuristic-bot.js` (jedno źródło
+      dla tabeli ETB i decyzji `resolve_optional_pay_choice`): debuff „−X/−X
+      do końca tury” jest wart czegokolwiek tylko przy zabiciu (CR 704.5f)
+      ważnego celu; płatność musi przebić koszt życia (L48). Pokrętła
+      `debuffPayoffMinInvestment` (5), `debuffPayoffPerPoint` (3),
+      `debuffPayoffCap` (15). Pin `test/l-ambulatory-edifice-debuff.test.js`
+      (15) + 6 mutacji RED; przeliczone PMSSB-60/F1, F5 i `real-cards-batch65`
+      BOT. Bez zmian legalności i bez nowych kart.
+- [x] **A14** Uwaga z gry 2026-10-30 (**M**): „Lorescale Coatl — zdolność ma
+      dopisek «you may», a silnik dodał counter bez pytania”. Weryfikacja
+      źródeł: druk MM2/ARB/A25 ma „you may”, ale bieżący Oracle (od M21,
+      2020-07-03) brzmi „put a +1/+1 counter on this creature” — WotC
+      skasowało opcjonalność w polityce Oracle 2020 (jak Ajani’s Pridemate).
+      Obowiązuje Oracle (CR 108.1) + ADR 0022, więc licznik jest obowiązkowy
+      i silnik jest poprawny; zmiana zachowania byłaby złamaniem Oracle.
+      Domknięcie: notatka o erracie w `notes` karty, pin
+      `test/m-lorescale-coatl-obowiazkowy.test.js` (7: Oracle≠druk,
+      dokumentacja rozjazdu, brak pól opcjonalności, brak okna decyzji przy
+      1 i 2 dobraniach, kontra z prawdziwym „you may”, mutacja `mayFire`),
+      regeneracja tabeli CR (dopisane **108.1**, 550 numerów). Zero zmian
+      w silniku i w wycenach.
+- [x] **A15** Uwaga z gry 2026-10-30 (**N**, Wretched Banquet): „bot rzuca ją
+      na moją największą kreaturę, a nie na taką, która ma najmniejszy power —
+      czar nie działa i jest zmarnowany”. `destroy_if_least_power` był w
+      `REMOVAL_EFFECTS` wyceniany jak `destroy_permanent` (premia z P/T
+      ofiary), choć warunek efektu (CR 608.2b) dopuszcza tylko cel
+      o najmniejszej mocy; silnik jest poprawny, a `execute` zwraca
+      `ok: true` także przy fizzlu. Naprawa: `leastPowerOnBoard` +
+      `leastPowerRemovalFizzles` (moc efektywna ze stołu) i kara
+      `leastPowerRemoveFizzlePenalty` (120) w OBU gałęziach (czar i zdolność,
+      L41). Pin `test/n-wretched-banquet-least-power.test.js` (5).
+- [x] **A16** Uwaga z gry 2026-10-30 (**O**, Plague Reaver): „bot rzuca ją,
+      po czym natychmiast mi ją przekazuje, tracąc dwie karty z ręki; rzut ma
+      sens tylko bez innych własnych kreatur, przekazywanie zakazałbym poniżej
+      ~12 poweru wroga”. Trzy root causes: trigger
+      `sacrifice_each_other_creature` liczony jak symetryczny wrath (Oracle:
+      „each other creature YOU control” — wróg nic nie traci; pomiar: rzut
+      74,71 identyczny przy 0 i 2 własnych stworach), koszt `discardCards: 2`
+      niewyceniany w `abilityDiscardLoss`, brak wyceny kierunku przy
+      darowaniu własnego stworu przeciwnikowi. Naprawa: karna wycena triggera
+      + `selfSacrificeWrathOwnBoardPenalty` (200), obsługa `discardCards: N`,
+      próg `giftedSelfSacrificeMinEnemyPower` = 12 (wartość właściciela) +
+      `giftedSelfSacrificeEnemyLossWeight`. Pin
+      `test/o-plague-reaver-darowanie.test.js` (7) + re-pin PMSSB10-B2.
+- [x] **A5** Bramy i domknięcie: `npm test`, `npm run test:slow`,
+      `npm run build`, benchmark quick (ADR 0018 — pełna macierz tylko na
+      polecenie), `PROJECT_HISTORY.md`, `ENGINE_MILESTONES.md`, handoff
+      `HANDOFF_2026-10-27c.md`, opis PR kumulatywnie, blok przekazania
+      w czacie (ADR 0013 §2).
+
+## Kryteria ukończenia
+
+1. Każdy plik `src/` zmieniony w PR #176 ma werdykt w raporcie audytu
+   (OK / finding z numerem).
+2. Każdy finding: naprawa u root cause + pin czerwieniejący bez naprawy.
+3. Pętla jakości ma zmierzony wynik (partie, zgłoszenia detektorów, analizatory).
+4. Bramy zielone; liczby w README/handoffie zmierzone na końcowym drzewie (L92).
+5. Każda uwaga z gry (A–O) ma pin czerwieniejący bez naprawy i sprawdzoną
+   mutację; brak zmian legalności sprzecznych z Oracle (L57).
+
+## Ryzyka / pułapki
+
+- **Squash bez historii lokalnej**: `git log` na klonie ma 1 commit; diff PR
+  #176 wymaga `git fetch --deepen` (zrobione) — porównuj z `HEAD^`, nie z
+  `origin/main` (ten sam commit).
+- **Golden-master** (`test/bot-scoring-snapshot.test.js`) czerwienieje od
+  każdej zmiany wyceny — regeneracja tylko po przeglądzie różnic (L124/L176).
+- **Testy pełnych partii na zamrożonych seedach** (L53) — przy zmianie talii
+  przelosowanie hunterem; nie luzować asercji.
+- **Przed każdym commitem** cały `npm test`, nie tylko dopisany plik.
+- **Nie scalać PR** (ADR 0007/0020) — scalenie to decyzja właściciela.

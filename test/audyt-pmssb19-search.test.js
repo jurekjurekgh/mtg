@@ -134,7 +134,12 @@ test('PMSSB-19/R1: aktywacja Elka = 11 (12 − koszt {1}, PMSSB-34/B; było 2 �
   state2.objects.set('elk', Object.freeze({ ...state2.objects.get('elk'), summoningSickness: false }));
   const { options } = decide(state2);
   // PMSSB-34/B: koszt {1} zdolności jest teraz wyceniany (−1); payoff szukania bez zmian.
-  assert.equal(optionScore(options, 'activate_ability(elk#0)'), 11);
+  // I (2026-10-29): koszt poświęcenia STWORA jest liczony wspólnym
+  // `sacrificeSelfCostLoss` (wartość ciała 2p+t+MV = 8 dla 2/2/MV2, L41 —
+  // ta sama skala co sac-economics/PMSSB-58), więc 11 → 3. Wynik nadal
+  // DODATNI: oddanie rampowego stwora za land wciąż jest opłacalne, ale
+  // przestaje być darmowe (silnik nie płacił za ciało ani punktu).
+  assert.equal(optionScore(options, 'activate_ability(elk#0)'), 3);
 });
 
 // ---------------------------------------------------------------------------

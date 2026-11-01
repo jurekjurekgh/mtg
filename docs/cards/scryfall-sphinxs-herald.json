@@ -1,0 +1,51 @@
+{
+  "source": "https://api.scryfall.com/cards/bd7e2501-2d36-41eb-a77a-747b62affc09",
+  "print": "ala",
+  "name": "Sphinx's Herald",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Artifact Creature — Vedalken Wizard",
+  "oracle_text": "{2}{U}, {T}, Sacrifice a white creature, a blue creature, and a black creature: Search your library for a card named Sphinx Sovereign, put it onto the battlefield, then shuffle.",
+  "power": "1",
+  "toughness": "1",
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "ala",
+  "set_name": "Shards of Alara",
+  "collector_number": "58",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/d/bd7e2501-2d36-41eb-a77a-747b62affc09.jpg?1783942571",
+    "normal": "https://cards.scryfall.io/normal/front/b/d/bd7e2501-2d36-41eb-a77a-747b62affc09.jpg?1783942571"
+  },
+  "rulings": [
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "The only difference between a colored artifact and a colorless artifact is, obviously, its color. Unlike most artifacts, a colored artifact requires colored mana to cast. Also unlike most artifacts, a colored artifact has a color in all zones. It will interact with cards that care about color. Other than that, a colored artifact behaves just like any other artifact. It will interact as normal with any card that cares about artifacts, such as Shatter or Arcbound Ravager."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "To activate the ability, you must sacrifice three different creatures. You can’t sacrifice just one three-colored creature, for example."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "You may sacrifice multicolored creatures as part of the cost of the search ability. If you sacrifice a multicolored creature this way, specify which part of the cost that creature is satisfying."
+    },
+    {
+      "date": "2008-10-01",
+      "source": "wotc",
+      "comment": "You may sacrifice the Herald itself to help pay for the cost of its ability."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/ala/58/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

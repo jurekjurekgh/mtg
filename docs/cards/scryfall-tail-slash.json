@@ -1,0 +1,36 @@
+{
+  "source": "https://api.scryfall.com/cards/91a59f12-8d1b-4378-abb8-e266d9b6cdba",
+  "print": "dtk",
+  "name": "Tail Slash",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Target creature you control deals damage equal to its power to target creature you don't control.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "161",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/9/1/91a59f12-8d1b-4378-abb8-e266d9b6cdba.jpg?1783938585",
+    "normal": "https://cards.scryfall.io/normal/front/9/1/91a59f12-8d1b-4378-abb8-e266d9b6cdba.jpg?1783938585"
+  },
+  "rulings": [
+    {
+      "date": "2015-02-25",
+      "source": "wotc",
+      "comment": "If either creature is an illegal target as Tail Slash tries to resolve, the creature you control won’t deal damage."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/dtk/161/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

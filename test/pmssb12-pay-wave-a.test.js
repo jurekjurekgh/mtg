@@ -50,9 +50,16 @@ test('PMSSB12-A: descendant FIRES +0.45-blocked / +0.9-open', () => {
   assert.deepEqual(score('descendant-of-storms', 'cast_permanent', 14, (s) => { land(s, 'w1', 'basic-plains'); foe(s); }), ['69.75']);
   assert.deepEqual(score('descendant-of-storms', 'cast_permanent', 14, (s) => { land(s, 'w1', 'basic-plains'); }), ['66.60']);
 });
-test('PMSSB12-A: spire pay-or-sac (84-pay / 76-sac-clamp / 81-sonda)', () => {
+// K (2026-10-29, zgłoszenie właściciela): ląd z ETB „zapłać {N} albo poświęć"
+// przy NIEDOSTĘPNEJ manie nie może być zagrany — poprzednio kara −12 siedziała
+// w klamrze delty lądu (±14/25), więc wynik 76 (90 − 14) wygrywał z passem
+// i bot zagrywał Rupture Spire, żeby natychmiast ją poświęcić. Teraz gałąź
+// `play_land` zwraca karę POZA klamrą (`landEtbUpkeepUnplayablePenalty` 20).
+// Uwaga: `mana` to pula; przy 0 w puli i choć jednym NIETAPNIĘTYM lądzie
+// (albo źródle many) koszt jest opłacalny — `ownOpenMana` (L41).
+test('PMSSB12-A: spire pay-or-sac (84-pay / −20-sac / 81-sonda)', () => {
   assert.deepEqual(score('rupture-spire', 'play_land', 14), ['84.00']);
-  assert.deepEqual(score('rupture-spire', 'play_land', 0), ['76.00']);
+  assert.deepEqual(score('rupture-spire', 'play_land', 0), ['-20.00']);
   assert.deepEqual(score('rupture-spire', 'play_land', 14, (s) => { land(s, 'm1', 'basic-mountain'); land(s, 'w1', 'basic-plains'); foe(s); }), ['81.00']);
 });
 test('PMSSB12-A: forebear grave-SKIP SAME (70.20)', () => {

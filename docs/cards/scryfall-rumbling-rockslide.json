@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/4f06b53f-ec82-4d7f-bee3-6ca04583f023",
+  "print": "lci",
+  "name": "Rumbling Rockslide",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Rumbling Rockslide deals damage to target creature equal to the number of lands you control.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "lci",
+  "set_name": "The Lost Caverns of Ixalan",
+  "collector_number": "163",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/4/f/4f06b53f-ec82-4d7f-bee3-6ca04583f023.jpg?1783913757",
+    "normal": "https://cards.scryfall.io/normal/front/4/f/4f06b53f-ec82-4d7f-bee3-6ca04583f023.jpg?1783913757"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/lci/163/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

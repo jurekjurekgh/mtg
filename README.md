@@ -12,35 +12,73 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-10-26c):** [handoff](docs/setup/HANDOFF_2026-10-26c.md),
-[plan sesji](docs/plans/PLAN_2026-10-26c-audyt-pr175-petla-jakosci.md) oraz
-[audyt PR #175](docs/audits/AUDYT_PR175_2026-10-26.md) w otwartym
-[PR #176](https://github.com/jurekjurekgh/mtg/pull/176). Sesja 2026-10-26c:
-pełny audyt scalonego PR #175 (5 plików; mutacje M1–M6) — naprawione
-znaleziska: bramka logu gracza znała tylko dodatkowy koszt rzucenia, więc
-wygnanie za **Delve u człowieka** wypadało z modala „Rozgrywka” (klasa
-„wygnanie jako koszt” ma teraz jedno źródło — `isCostPaymentZoneMove`),
-piny W/1–W/2 przepuszczały surowy `cardId` (L29), a liczby bramek
-w README/handoffie były sprzed ostatniego commita PR #175 (L92). Pętla
-jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bota bez
-wyceny), analizatory zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24
-partie (`tie_all` 0), a `scoring-mulligan-audit` wykrył **fałszywy alarm we
-własnej metryce** (cudza, ukryta ręka liczona jako własne czary + kryterium
-surowsze od polityki bota) — naprawione w `tools/mulligan-keep-criterion.mjs`,
-polityka bota bez zmian. Polowanie CR na ścieżce 614/616 + 106/601.2 (cytat
-dosłowny, pin SHA-256 `8d860e45…70ca`): bez nowych znalezisk kodu. Bramki:
-`npm test` **8885/8885**, `npm run test:slow` **268/268**, build **76 modułów /
-5451,6 kB**, benchmark quick 672 mecze (heuristic 87,8%). Po domknięciu sesji
-właściciel zgłosił dwie uwagi z gry — obie naprawione u root cause: **fantomowa
-mana** Holdout Settlement (miara oferty liczyła zdolność „tapnij stwora” raz na
-kandydata i nie odejmowała produkcji tapowanego stwora → martwy przycisk
-czaru) oraz **pump po mgle** (bot dopakowywał stwory po Revealing Wind, bo
-symulacja walki nie zna efektów zastępczych → „+3/+3” wart tyle samo przy
-zerowych obrażeniach) oraz **tapowanie ciała w Głównej 1** (Cenn's Tactician
-tapował się po licznik zamiast atakować — reguła okna darmowej many nie
-obejmowała kosztu tapnięcia). PR czeka na decyzję właściciela.
-Poprzedni punkt zaczepienia: [handoff 2026-10-26b](docs/setup/HANDOFF_2026-10-26b.md)
-(sesja PR #175 — audyt PR #174 i pętla jakości).
+**Aktualny punkt zaczepienia (2026-11-01):** [handoff](docs/setup/HANDOFF_2026-11-01.md),
+[plan batcha 71](docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
+(kolekcja 625–634, 10 kart) — wszystko w otwartym
+[PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Batch 71 domknięty:
+Vampire Hounds (EXO), Curse of the Bloody Tome (ISD), Rumbling Rockslide (LCI),
+Ambassador Oak (JMP), Tail Slash (DTK), Changeling Berserker (LRW),
+Sphinx's Herald (ALA), Anticipate (DTK), Trumpet Blast (M10), Violent Urge
+(DSK) — plany 1:1 z tabelą właściciela. Pięć nowych mechanik generycznych:
+kwota `lands_you_control`, koszt `discardCard` z kwalifikatorem,
+`condition.delirium` na pojedynczym efekcie, `mill_enchanted_player` oraz
+**champion** (CR 702.72a — poświęcenie warunkowe, wygnanie odwracalne, powrót
+pod kontrolą właściciela). Pełna pętla PMSSB-80…86 ([raporty](docs/PMSSB.md)):
+wycena championa (pusty stół 73,8 → −34,19; wygnanie sąsiada 33 vs poświęcenie
+siebie 27), klątwy mielącej (36 płasko → 47,7…227,7 zależnie od presji
+deck-outu), delirium-trika (pump+first strike −17 → 76/82), pumpu atakujących
+(−10 wszędzie → −20/46/66), Anticipate przy pustej bibliotece (+32 → −58)
+i kosztu ofiar z kolorów Sphinx's Herald (+9 → −6/−24). Bramy:
+`npm test` **9156/9156**, `npm run test:slow` **268/268**, build **76 modułów /
+5608,7 kB**, benchmark quick heuristic **87,5%** (672 mecze). Golden-master
+zregenerowany świadomie (wpis pomiarowy per partia). PR czeka na decyzję
+właściciela.
+Poprzedni punkt zaczepienia (2026-10-27c): [handoff](docs/setup/HANDOFF_2026-10-27c.md),
+[plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
+[audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
+[uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) i
+[uwagi z gry F–G (2026-10-29)](docs/audits/UWAGI_Z_GRY_2026-10-29.md) — wszystko w otwartym
+[PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Sesja 2026-10-27c:
+pełny audyt scalonego PR #176 (22 pliki `src/`, +1298/−89; werdykt na każdym
+pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący
+`preventDamageByRemovingCounter` (Magma Pummeler, CR 615.1a) czytał zdolność
+tylko z warstwy własnej, więc zdolność **nadana sprzętem** była martwa
+(klasa L99; wspólny helper + pin `audyt-pr176-f1-…` RED→GREEN + mutacja).
+Na polecenie właściciela („O-1 i O-2 trzeba bezwzględnie naprawić”) domknięte
+dwie obserwacje z audytu, obie w warstwie, w której leżał problem: **O-1** —
+etykieta oferty i kreator załogi ostrzegają, że powtórne osiodłanie/obsadzenie
+wytapuje stwory za nic (aktywacja zostaje legalna, CR 702.171a; pin M219 broni
+istnienia oferty), oraz **O-2** — czar Converge płaci różnymi kolorami many,
+więc X jest maksymalny legalnym wyborem (CR 601.2h + 207.2c; flaga celu
+płatności wąska, Adamant bez zmian). Pozostałe obserwacje domknięte w tej
+samej sesji: generyczny trigger
+`counter_removed` odpala teraz na każdej drodze zdejmowania liczników, a „this
+way” deklaruje karta (O-3), log testera nie ucina etykiet cicho (O-5), liczby
+w poprzednim handoffie odświeżone (O-4/L92).
+Na polecenie właściciela domknięte też **cztery uwagi z gry** (A–D), każda
+z pinem i mutacją RED ([raport](docs/audits/UWAGI_Z_GRY_2026-10-27c.md)):
+ETB z celem „obrażony w tej turze” czeka na Główną 2 (Fathom Fleet Cutthroat),
+koszt aktywacji zdolności many (Apprentice Wizard, lądy-konwertery) opłaca
+osobny kreator podrzędny (auto-tap silnika nie wybiera już źródeł), blok
+bezkosztowy bije pass (`blockFreeAbsorbBonus`), a Cuombajj Witches dostaje
+wycenę wyboru przeciwnika i zakaz psucia własnego czaru na stosie.
+Pętla jakości: 4 partie Żywego Testera (0 zgłoszeń detektorów, 0 ruchów bez
+wyceny; transkrypty czytane ręcznie — L27), analizatory
+zdarzeń/rodzin/scoringu czyste, `bot-tie-audit` 24 partie (remisy realne 9,0%
+decyzji akcyjnych), polowanie CR inną ścieżką (615.1a, 107.3a, 702.126a,
+207.2c, 603.10, 704.5f, 702.171) — sondy wykonawcze zamiast lektury. Ostatnia partia uwag z gry (N, O — [raport](docs/audits/UWAGI_Z_GRY_2026-10-29.md)):
+Wretched Banquet celuje teraz w stwora o **najmniejszej** mocy (warunek efektu
+CR 608.2b sprawdzany w scoringu, nie tylko w silniku), a Plague Reaver jest
+rzucany **tylko na pustą własną planszę** i darowany przeciwnikowi dopiero
+powyżej progu 12 pkt mocy jego stworów; trigger „sacrifice each other creature
+you control” nie jest już liczony jak symetryczny wrath, a koszt „odrzuć dwie
+karty” jest wyceniany. Bramki:
+`npm test` **9081/9081**, `npm run test:slow` **268/268**, build **76 modułów /
+5566,5 kB**, benchmark quick 672 mecze (heuristic 88,7%). PR czeka na decyzję
+właściciela.
+Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
+(sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);
+poprzedni: [handoff 2026-10-26c](docs/setup/HANDOFF_2026-10-26c.md).
 Poniższe datowane statystyki i podsumowania to historia, nie stan HEAD.
 
 Headless engine działa: zamknięte milestone'y **M1–M5** (odtwarzalny sandbox, zasoby,
@@ -162,8 +200,8 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `alara` | Alara | WUBRG | 39 | 13 | 26 |
-| `dominaria-brg` | Dominaria (BRG) | BRG | 35 | 12 | 23 |
+| `alara` | Alara | WUBRG | 41 | 14 | 27 |
+| `dominaria-brg` | Dominaria (BRG) | BRG | 36 | 12 | 24 |
 | `dominaria-wu` | Dominaria (WU) | WU | 32 | 11 | 21 |
 | `eldraine` | Eldraine | WUBRG | 27 | 9 | 18 |
 | `final-fantasy` | Final Fantasy | WUBRG | 29 | 10 | 19 |
@@ -171,18 +209,19 @@ zgodnie z konwencją generatora i strażnika liczności.
 | `innistrad-brg` | Innistrad (BRG) | BRG | 32 | 11 | 21 |
 | `innistrad-wu` | Innistrad (WU) | WU | 33 | 11 | 22 |
 | `ixalan` | Ixalan | UBRG | 27 | 9 | 18 |
+| `kaldheim` | Kaldheim | WUBRG | 23 | 8 | 15 |
 | `kaladesh` | Kaladesh | WUBRG | 32 | 11 | 21 |
 | `lorwyn` | Lorwyn | WUBRG | 23 | 8 | 15 |
 | `mirrodin-brg` | Mirrodin (BRG) | BRG | 39 | 13 | 26 |
 | `mirrodin-wu` | Mirrodin (WU) | WU | 32 | 11 | 21 |
 | `ravnica-bg` | Ravnica (BG) | BG | 23 | 8 | 15 |
 | `ravnica-wur` | Ravnica (WUR) | WUR | 27 | 9 | 18 |
-| `srodziemie` | Śródziemie | WUBRG | 32 | 11 | 21 |
+| `srodziemie` | Śródziemie | WUBRG | 33 | 11 | 22 |
 | `tarkir-bg` | Tarkir (BG) | UBG | 41 | 14 | 27 |
-| `tarkir-wur` | Tarkir (WUR) | WUR | 38 | 13 | 25 |
+| `tarkir-wur` | Tarkir (WUR) | WUR | 39 | 13 | 26 |
 | `the-edge` | The Edge | WUBRG | 24 | 8 | 16 |
 | `theros` | Theros | WUBRG | 29 | 10 | 19 |
-| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 39 | 13 | 26 |
+| `warhammer-ubr` | Warhammer Fantasy (UBR) | UBR | 41 | 14 | 27 |
 | `warhammer-wg` | Warhammer Fantasy (WG) | WUBRG | 27 | 9 | 18 |
 | `wiedzmin-bg` | Wiedźmin (BG) | BG | 32 | 11 | 21 |
 | `wiedzmin-wur` | Wiedźmin (WUR) | WUR | 26 | 9 | 17 |
@@ -193,9 +232,9 @@ zgodnie z konwencją generatora i strażnika liczności.
 
 | Plik | Nazwa | Kolory | Kart łącznie | w tym basic-lądy | pozostałych (nie-basic) |
 |---|---|---|---:|---:|---:|
-| `worek-basni` | Worek: Baśni | WUBRG | 32 | 11 | 21 |
-| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 30 | 10 | 20 |
-| `worek-legend` | Worek: Legendy | WUBRG | 36 | 12 | 24 |
+| `worek-basni` | Worek: Baśni | WUBRG | 30 | 10 | 20 |
+| `worek-dziki` | Worek: Dzikie Światy | WUBRG | 23 | 8 | 15 |
+| `worek-legend` | Worek: Legendy | WUBRG | 30 | 10 | 20 |
 | `worek-mroczny` | Worek: Mroczne Światy | WUBRG | 24 | 8 | 16 |
 
 Szczegóły formatu i manabazy: [`decks/README.md`](decks/README.md).
