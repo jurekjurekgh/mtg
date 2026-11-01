@@ -29,7 +29,7 @@ function koloryZrodlaWidoku(object) {
 import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '../engine/mana-cost.js';
 // N: wspólna miara automatu płatności dla kontrolerów (cast osiągalny tylko
 // po manualnej produkcji many bot pomija, jak przy płatnościach K).
-import { autoManaUnits as autoManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable } from './mana-offer-guards.js';
+import { autoManaUnits as autoManaJednostki, restrictedManaUnits as ograniczoneManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable } from './mana-offer-guards.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
 import { TURN_STEPS } from '../engine/turn.js';
@@ -7847,7 +7847,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * Reguła jest deskryptorowa (ADR 0002): nie zna nazwy karty, tylko trigger
    * `enter_battlefield` z `payMana` + `sacrificeIfUnpaid`. „Stać" liczone jak
    * przy każdej innej płatności z ręki: pula + własne NIETAPNIĘTE źródła many
-   * (`ownOpenMana` — tapnięte nic nie da, a Spire wchodzi tapnięty, więc sam
+   * (pula i legalne źródła automatu; Spire wchodzi tapnięty, więc sam
    * siebie nie opłaci). Jeden czytnik dla obu miejsc wyceny (L41): delty lądu
    * i gałęzi `play_land` (kara poza klamrą).
    *
@@ -7862,7 +7862,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       && (ab.trigger?.payMana ?? 0) > 0 && ab.trigger?.sacrificeIfUnpaid);
     if (!trig) return null;
     const amount = trig.trigger.payMana;
-    return { amount, affordable: ownOpenMana(view) >= amount };
+    // To opłata ZDOLNOŚCI, nie rzut nieartefaktowego czaru: Powerstone jest
+    // dozwolony, a automat silnika korzysta również z dostępnych manodorków
+    // i artefaktów. Samo liczenie lądów gubiło np. jedyne źródło {G}.
+    const automatic = autoManaJednostki(view).length + ograniczoneManaJednostki(view).length;
+    return { amount, affordable: automatic >= amount };
   }
 
   function landPlayDelta(view, objectId) {

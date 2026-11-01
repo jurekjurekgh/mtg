@@ -39,3 +39,7 @@ Silvanus’s Invoker faktycznie odtapowuje już animowany ląd; stare ostrzeżen
 ## A8 — priorytet podczas podrzędnej płatności many
 
 Zagnieżdżony Mana Wizard aktywuje źródło z `holdPriority`, inaczej auto-pass mógł zmienić krok i wyczyścić nową manę przed powrotem do nadrzędnego kreatora. Test rzeczywistej sesji i wiring funkcji UI, RED→GREEN. Pokrewne 44/44, `npm test` 9244/9244, build 76 modułów / 5624,8 kB. Slow 268/268 uruchomiony przed A8. Audyt nadal trwa.
+
+## A9 — Rupture Spire i manodorki/Powerstone
+
+Bramka z PR #177 liczyła tylko pulę i nietapnięte lądy; ignorowała inne automatyczne źródła opłaty zdolności. Bot korzysta teraz z istniejących miar automatycznej i ograniczonej many. Druid, choroba przywołania, Powerstone i ograniczona pula: 4 testy, rzeczywiste wykonanie opłaty, 2 RED→GREEN. Pokrewne 18/18, `npm test` 9248/9248, build 76 modułów / 5625,2 kB. Taliom/katalogowi poświęcono pakiet 96/96. Audyt PR #177 nadal trwa.
