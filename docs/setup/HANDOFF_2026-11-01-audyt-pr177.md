@@ -47,3 +47,7 @@ Bramka z PR #177 liczyła tylko pulę i nietapnięte lądy; ignorowała inne aut
 ## A10 — bestow w progu inwestycji Edifice
 
 Załączona aura bestow była niesłusznie pomijana w literalnym progu TMC stwora z aurami/equipmentem ≥5. Test pokazuje decyzję i jej wykonanie, z odłączeniem bestow jako stwora; kontrole braku aury i braku śmiertelności. Innych heurystyk wyceny faktycznej straty karty nie zmieniono. Pokrewne 23/23, `npm test` 9251/9251, build 76 modułów / 5625,3 kB. Audyt trwa.
+
+## A11 — ponowne otwieranie zakończonego kreatora
+
+Po automatycznym zakończeniu nadrzędnej płatności powrót z podrzędnego kreatora ponownie otwierał już zamkniętą, pustą nakładkę. Warunek ponownego otwarcia sprawdza żywy deskryptor. Test rzeczywistej sesji i funkcji UI (postęp/render stubowane), RED→GREEN oraz kontrola niedokończonej płatności. Pokrewne 53/53, `npm test` 9253/9253, build 76 modułów / 5625,4 kB. `playDirect` nie zwraca wyniku sesji — nadal wymaga konkretnej osiągalnej reprodukcji przed poprawką. Audyt #177 trwa.

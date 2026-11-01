@@ -18524,3 +18524,7 @@ Magma Pummeler z trzema Górami ma jedną ofertę rzutu i stepper X=0–1, a nie
 ### 2026-11-01 — audyt #177, koszt Heraldów
 
 Wycena bota liczy rzeczywiste ofiary `sacrificeCreatureIds` z legalnej komendy, również aktywującego Heralda; wcześniejsze zachłanne szukanie pomijało źródło i nie rozróżniało różnych kombinacji. 2 testy RED→GREEN, `npm test` 9187/9187, build 76 modułów / 5617,6 kB. Audyt trwa.
+
+### 2026-11-01 — kontynuacja audytu #177, A7–A11
+
+Poprawiono ostrzeżenia crew/animacji (A7), zachowanie priorytetu i zamykanie modala przy zagnieżdżonym kreatorze many (A8, A11), ocenę źródeł opłaty Rupture Spire (A9) oraz uwzględnienie aury bestow w zadanym progu inwestycji Ambulatory Edifice (A10). Testy przypadków pozytywnych i kontrolnych, rzeczywiste sesje/opłaty: raport `docs/audits/AUDYT_PR177_2026-11-01.md`. Po A11 `npm test` 9253/9253, build 76 modułów / 5625,4 kB; slow 268/268 uruchomiono przed A8. Audyt #177 pozostaje w toku.

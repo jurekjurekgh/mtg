@@ -2967,7 +2967,9 @@ function bootstrapTable() {
     if (manaWizardParents.length === 0) { closeManaWizard(); return; }
     manaWizardDescriptor = manaWizardParents.pop();
     refreshManaWizard();
-    showModal('mana-wizard');
+    // Odświeżenie może automatycznie zakończyć także nadrzędną płatność.
+    // Wtedy modal jest już zamknięty i nie wolno otwierać pustej nakładki.
+    if (manaWizardDescriptor) showModal('mana-wizard');
   }
   /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
   function describeAbandonedCast(cmd) {
