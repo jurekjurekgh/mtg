@@ -315,6 +315,13 @@ export function stateFingerprint(state) {
       optional: Boolean(state.pendingSacrifice.optional),
       sourceId: state.pendingSacrifice.sourceId ?? null,
       reflexiveEvent: state.pendingSacrifice.reflexiveEvent ?? null,
+      // Batch 71 (Changeling Berserker): decyzja championa różni się od
+      // zwykłego poświęcenia TYM, że wybrany permanent idzie do WYGNANIA.
+      // Bez pola w odcisku dwa różne stany (poświęcenie vs champion) miały
+      // ten sam fingerprint — a od niego zależy deduplikacja replay i
+      // wykrywanie zapętleń (L16/M323-F3).
+      moveTo: state.pendingSacrifice.moveTo ?? null,
+      champion: Boolean(state.pendingSacrifice.champion),
     } : null,
     initiativePlayerId: state.initiativePlayerId ?? null,
     undercityProgress: { ...(state.undercityProgress ?? {}) },

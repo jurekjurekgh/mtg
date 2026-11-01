@@ -9308,7 +9308,17 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // G: efekt wprost w zaczarowanego gracza (klątwy) nie potrzebuje
         // `applyTo` — sam typ mówi, w kogo uderza.
         if (HOSTILE_ENCHANTED_PLAYER_EFFECTS.has(e.type)) return true;
-        return e.applyTo === 'enchanted_controller' && HOSTILE_PLAYER_EFFECTS.has(e.type);
+        // Batch 71 (Curse of the Bloody Tome): `applyTo: 'enchanted_player'`
+        // to adresat GRACZ (CR 303.4 „Enchant player"), a nie kontroler
+        // gospodarza-permanentu. Wcześniej znaliśmy tylko
+        // `'enchanted_controller'`, więc mieląca klątwa (mill_cards,
+        // HOSTILE_PLAYER_EFFECTS) wyglądała dla bota jak aura NEUTRALNA i
+        // ścieżka `enchant: 'player'` kończyła się rzutem na SIEBIE
+        // (self-mill 2 przy każdym podtrzymaniu) — klasa L50. Lista efektów
+        // szkodzących graczowi jest wspólna; różni się wyłącznie adresat.
+        if ((e.applyTo === 'enchanted_controller' || e.applyTo === 'enchanted_player')
+          && HOSTILE_PLAYER_EFFECTS.has(e.type)) return true;
+        return false;
       });
     });
   }
@@ -16389,6 +16399,20 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ciele, a landy po trwałej wartości + niedoborze + utracie koloru.
         // To ta sama funkcja, której używa antycypacja kastru (L41).
         const value = sacrificePermanentLoss(view, target);
+        // Batch 71 (Changeling Berserker, champion CR 702.72a): wygnanie przez
+        // championa jest ODWRACALNE — karta wraca, gdy źródło opuści pole
+        // bitwy — więc jego koszt to ułamek wartości (P.championExileLossFactor),
+        // a nie pełna strata. Wybór źródła (= „nie wygnaję”) to zwykłe
+        // poświęcenie championa: pełna cena, liczona tym samym wzorem.
+        // Bez tego rozróżnienia bot porównywał jabłka z jabłkami wycenionymi
+        // jak gruszki: przy tłustym sąsiedzie (10/10) „poświęć własne 5/3”
+        // wychodziło taniej niż „wygnaj 10/10 na chwilę”.
+        const pending = view.pendingSacrifice;
+        if (pending?.moveTo === 'exile'
+          && cmd.targetId !== pending.alternativeSourceId) {
+          const offset = cmd.reflexReady === false ? 5 : 40;
+          return finish(offset - P.championExileLossFactor * value);
+        }
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }
       case 'resolve_food_choice': {

@@ -175,6 +175,12 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'countedPumpReserveWeight',
   'manaSacrificeLethalPenalty',
   'tokenManaBankWeight',     // wartość 1 many z tokena-bank (Treasure ≈ 3)
+  // Batch 71 (Changeling Berserker, champion CR 702.72a): ofiara championa to
+  // WYGNANIE, które wraca, gdy źródło opuści pole bitwy — strata jest
+  // ODROCZONA, nie trwała. Pokrętło mówi, jaką część pełnej wartości stwora
+  // liczymy jako realną stratę przy wygnaniu (0 = wygnanie darmowe,
+  // 1 = wygnanie tak drogie jak poświęcenie).
+  'championExileLossFactor',
   'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
@@ -867,6 +873,11 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   graveReturnDrawLibraryBase: 24,
   graveReturnDrawLibraryPerCard: 12,
   tokenDrawBankWeight: 0.5,
+  // Batch 71: wygnanie przez championa jest odwracalne (karta wraca po LTB
+  // źródła), więc liczymy tylko 1/4 jej wartości — dość, by przy remisie
+  // wybrać tańszego wygnańca, ale nigdy dość, by poświęcić samo źródło
+  // championa opłacało się bardziej niż odroczenie dużego stwora.
+  championExileLossFactor: 0.25,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,
   countedPumpReserveWeight: 1,

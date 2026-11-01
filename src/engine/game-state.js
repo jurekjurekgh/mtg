@@ -9816,6 +9816,22 @@ export function playerView(state, playerId) {
       },
     }
     : null;
+  // Batch 71 (Changeling Berserker, champion CR 702.72a): ta sama komenda
+  // `resolve_sacrifice_choice` obsługuje DWIE różne oferty — poświęcenie
+  // (Grave Exchange, trwała strata) i wygnanie championa (odroczenie: karta
+  // wraca, gdy źródło opuści pole bitwy). Decydent nie może tego zgadnąć z
+  // listy kandydatów (ADR 0017: kompletność kontraktu widoku), więc strefa
+  // docelowa i id źródła jadą w widoku — tylko do właściciela decyzji.
+  const pendingSacrificeView = state.pendingSacrifice
+    && state.pendingSacrifice.playerId === playerId
+    ? {
+      sourceId: state.pendingSacrifice.sourceId ?? null,
+      cardId: state.pendingSacrifice.cardId ?? null,
+      moveTo: state.pendingSacrifice.moveTo ?? 'graveyard',
+      alternativeSourceId: state.pendingSacrifice.alternativeSourceId ?? null,
+      optional: Boolean(state.pendingSacrifice.optional),
+    }
+    : null;
   const pendingHandFreeCastView = state.pendingHandFreeCast
     && state.pendingHandFreeCast.playerId === playerId
     ? {
@@ -9831,6 +9847,7 @@ export function playerView(state, playerId) {
     zones, legalCommands, pendingScry, pendingSurveil, pendingFertileThicket: pendingFertileThicketView, pendingBackup: pendingBackupView,
     pendingHandFreeCast: pendingHandFreeCastView,
     pendingFoodChoice: pendingFoodChoiceView,
+    pendingSacrifice: pendingSacrificeView,
     pendingClash, pendingRoomTarget, pendingLegendChoice: pendingLegendChoiceView,
     pendingOpponentTarget: pendingOpponentTargetView,
     pendingLookTopN: pendingLookTopNView,

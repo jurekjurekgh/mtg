@@ -1109,6 +1109,10 @@ const CONTEXT_AMOUNT_NOUNS = Object.freeze({
 const DYNAMIC_AMOUNT_NOUNS = Object.freeze({
   artifacts_you_control: 'artefaktów kontrolujesz',
   basic_land_types_you_control: 'różnych podstawowych typów mają kontrolowane przez ciebie lądy (dziedzina)',
+  // Batch 71 (Rumbling Rockslide): „deals damage ... equal to the number of
+  // lands you control" — bez tego wpisu kafel drukował surowy slug
+  // `lands_you_control` zamiast treści (klasa M122/#5).
+  lands_you_control: 'kontrolujesz lądów',
 });
 
 /** Czytelna wartość P/T tokena, także dynamiczna (greatest_power_you_control). */
@@ -1585,7 +1589,16 @@ function describeEffect(e, ctx = {}) {
     turn_up_imprinted_card: () => 'odkryj wdrukowaną kartę; jeśli to stwór, wchodzi na pole bitwy pod twoją kontrolą',
     epic_experiment: () => 'wygnaj wierzch biblioteki i rzuć czary bez kosztu',
     mill_both_players: () => `mieli po ${e.amount ?? 1} karcie z biblioteki każdy gracz`,
-    mill_cards: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)`,
+    // Batch 71 (Curse of the Bloody Tome): adresat mielenia bywa GRACZ
+    // (`applyTo: 'enchanted_player'`, CR 303.4 „Enchant player"). Bez tego
+    // kafelek mówił „mieli 2 karty”, nie mówiąc KTO — a klątwa mieli
+    // zaczarowanego gracza, nie kontrolera karty.
+    mill_cards: () => {
+      const kto = e.applyTo === 'enchanted_player' ? ' zaczarowanemu graczowi'
+        : e.applyTo === 'enchanted_controller' ? ' kontrolerowi zaczarowanego permanentu'
+          : '';
+      return `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} (do grobu)${kto}`;
+    },
     mill_from_bottom: () => `mieli ${e.amount ?? 1} ${polishPluralCount(e.amount ?? 1, 'kartę', 'karty', 'kart')} od spodu biblioteki`,
     opponent_hand_card_to_top: () => 'karta z ręki przeciwnika na wierzch biblioteki',
     player_sacrifices_creature: () => 'cel poświęca stwora',
