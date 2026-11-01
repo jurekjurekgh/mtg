@@ -190,6 +190,19 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // (`buff_attacking_creatures`) nie miał w ścieżce CZARU żadnego odbiorcy —
   // bez celu w komendzie wpadał w karę „wzmacnianie przeciwnika” (−60).
   // Pomiar PRZED: −10 pkt w każdym stanie (także z dwoma atakującymi).
+  // PMSSB-86 (batch 71, Anticipate): „look at the top N" przy PUSTEJ własnej
+  // bibliotece to karta i mana za nic — pomiar PRZED: 32 pkt, czyli POWYŻEJ
+  // passu (`impulseLookValue` daje −18, a baza czaru to ~50). Kara musi
+  // przebić bazę; dotyczy wyłącznie ścieżki RZUTU (ścieżki zdolności/sagi
+  // mają własne, działające bramki — nie ruszamy ich).
+  'impulseEmptyLibraryPenalty',
+  // PMSSB-86 (batch 71, Sphinx's Herald): koszt „poświęć po jednym stworze
+  // każdego z kolorów" (Angel's Herald, batch 66; `sacrificeCreaturesByColors`)
+  // nie był wyceniany W OGÓLE w ścieżce aktywacji — pomiar PRZED: aktywacja
+  // +9 pkt, jakby trzy stwory były darmowe. Waga × suma strat wybranych ofiar
+  // (ta sama miara co `resolve_sacrifice_choice`, L41).
+  'coloredSacrificeCostWeight',
+  'coloredSacrificeCardLoss',
   'setPumpNoAttackersPenalty',   // brak atakujących = efekt jałowy
   'setPumpTrickValue',           // atakujący ZABLOKOWANY, któremu pump poprawia wymianę
   'setPumpUnblockedPowerWeight', // punkt mocy ponad blokujących = obrażenia w twarz
@@ -914,6 +927,16 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // i jak w obrażeniach w twarz (2/pkt mocy, skala `drain` z tabeli ETB).
   // Kara za brak atakujących musi zejść POD pass mimo bazy czaru (~50):
   // pomiar PO — bez atakujących −20, z dwoma atakującymi +66.
+  // PMSSB-86: 90 = więcej niż baza czaru (50) + wartość selekcji (≤3);
+  // pomiar PO: biblioteka 20 kart → 58, 2 karty → 58, pusta → −58.
+  impulseEmptyLibraryPenalty: 90,
+  // PMSSB-86: waga 1 (strata liczona tą samą miarą co zwykłe poświęcenie)
+  // + stała strata KARTY za każdą ofiarę ponad jedną (3 karty → 1 karta to
+  // card disadvantage, CR 700.4 — poświęcenie to nie egzyl). Pomiar PO:
+  // trzy 1/1 + Sphinx Sovereign w bibliotece → −6 (było +9), trzy 3/3 → −24,
+  // brak karty w bibliotece → −57 (bez zmian: jałowy tutor).
+  coloredSacrificeCostWeight: 1,
+  coloredSacrificeCardLoss: 3,
   setPumpNoAttackersPenalty: 70,
   setPumpTrickValue: 12,
   setPumpUnblockedPowerWeight: 2,

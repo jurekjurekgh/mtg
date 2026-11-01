@@ -13374,6 +13374,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             || effect.type === 'look_top_put_one_hand_rest_grave') {
             const lookX = Number.isInteger(effect.amount) ? effect.amount : 0;
             score += impulseLookValue(view, lookX);
+            // PMSSB-86 (batch 71, Anticipate): przy PUSTEJ własnej
+            // bibliotece nie ma czego oglądać — rzut to karta i mana za nic,
+            // a `impulseLookValue` daje tylko −18 przy bazie czaru ~50
+            // (pomiar PRZED: 32 pkt, POWYŻEJ passu). Kara liczona raz na
+            // rzut, nie na efekt.
+            const ownLibraryNow = (view.zones.library ?? [])
+              .filter((o) => o.controllerId === view.playerId).length;
+            if (lookX > 0 && ownLibraryNow === 0) score -= P.impulseEmptyLibraryPenalty;
           }
           // PMSSB-3/F5 (Force Away): rider ferocious-loot — oczekiwana wartosc
           // decyzji-loot (lustro M67) gdy ferocious spelnione (P>=4, lustro
@@ -14044,7 +14052,38 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (enemySingleTargetSpellOnStack(view)) score += P.morphFlipPayoffBonus;
           else score -= P.morphFlipNoPayoffPenalty;
         }
+        // PMSSB-86 (batch 71, Sphinx's Herald — ten sam kształt co Angel's
+        // Herald z batcha 66): koszt „poświęć po jednym stworze z kolorów
+        // W/U/B" nie był wyceniany w ŻADNEJ gałęzi aktywacji. Pomiar PRZED:
+        // aktywacja +9 pkt, jakby trzy stwory były darmowe. Wybieramy ofiary
+        // zachłannie (najtańsza na każdy wymagany kolor — dokładnie to robi
+        // decydent ofiar, L41: ta sama miara `sacrificePermanentLoss`) i
+        // doliczamy card disadvantage za każdą ofiarę ponad jedną.
+        const coloredSacrificeLoss = (view, cost, sourceObj) => {
+          const need = cost?.sacrificeCreaturesByColors ?? [];
+          if (!need.length) return 0;
+          const pool = myCreatures(view).filter((o) => o.id !== sourceObj?.id);
+          const used = new Set();
+          let loss = 0;
+          for (const color of need) {
+            let best = null;
+            for (const candidate of pool) {
+              if (used.has(candidate.id)) continue;
+              if (!(candidate.colors ?? []).includes(color)) continue;
+              const value = sacrificePermanentLoss(view, candidate);
+              if (!best || value < best.value) best = { candidate, value };
+            }
+            if (!best) return 0; // brak kandydata — aktywacja i tak nielegalna
+            used.add(best.candidate.id);
+            loss += best.value;
+          }
+          return loss + Math.max(0, need.length - 1) * P.coloredSacrificeCardLoss;
+        };
         const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
+        if (ability?.cost?.sacrificeCreaturesByColors) {
+          score -= P.coloredSacrificeCostWeight
+            * coloredSacrificeLoss(view, ability.cost, abilityObject);
+        }
         const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;
         score -= discardLoss + reserveLoss;
         // I: koszt „poświęć TO stworzenie" — jedno miejsce dla KAŻDEGO typu
