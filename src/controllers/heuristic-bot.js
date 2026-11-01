@@ -12669,7 +12669,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           // życia, gracz proporcjonalnie do %, SIEBIE/własny = zakaz). Jedno
           // źródło prawdy z czarami/zdolnościami (L41).
           const ids = cmd.targets ?? [];
-          const perTarget = Math.floor((cmd.xValue ?? 0) / Math.max(1, ids.length));
+          const x = cmd.xValue ?? 0;
+          const perTarget = Math.floor(x / Math.max(1, ids.length));
+          // P: nie zużywaj skalującego Fireballa na małe X. Wygrana od razu
+          // zawsze ma pierwszeństwo; w obronie wyjątek tylko przy presji życia
+          // i rzeczywistym zabiciu wrogiego stwora, nie za nietrafiający chip.
+          const opponent = enemy(view);
+          const winningShot = opponent && ids.includes(opponent.id) && perTarget >= (opponent.life ?? 20);
+          const survivalPressure = P.xMinimumValueLooseAtLethal >= 1
+            && (myLife(view) <= 5 || enemyAttackPower(view) >= myLife(view));
+          const removesThreat = ids.some((id) => {
+            const target = objectOnBoard(view, id);
+            return target?.kind === 'creature' && target.controllerId !== view.playerId
+              && damageIsLethal(view, id, perTarget);
+          });
+          if (x < P.xMinimumValue && !winningShot && !(survivalPressure && removesThreat)) return finish(NEVER);
           for (const tid of ids) score += damageTargetValue(view, tid, perTarget, true);
         }
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY

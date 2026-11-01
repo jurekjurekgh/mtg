@@ -28,3 +28,7 @@ Każde niezależne zgłoszenie: test RED→GREEN, pokrewne regresje, `npm test` 
 Wycena kosztownego grantu latania na źródło blokuje Main 1 i inne jałowe okna. Przed własną walką wymaga istotnego blokera naziemnego i braku latających, przed blokami wrogiego latającego sprawdza lethal i pierwsze uderzenie. Wybór kosztu preferuje wyłącznie nierzucalne karty; brak takiej karty blokuje aktywację bota. Mana bazy liczona jest zachowawczo także z tapniętych lądów (żeby nie odrzucać czaru, który będzie można opłacić po ich odkręceniu); lądy i karty za 0 nie są traktowane jako zbędne czary. Reguły człowieka bez zmian.
 
 RED: 4/6 nowych testów padały; po poprawce 10/10 nowych oraz pokrewne 42/42. Stare pozytywne oczekiwania z Main 1/rzucalnym Brute Force zmieniono zgodnie z nowym poleceniem. Pełne szybkie testy 9197/9197, build 76 modułów / 5621,4 kB. Pełnej symulacji wszystkich ograniczeń walki nie twierdzimy; niedokończone P, R i audyt #177 pozostają otwarte.
+
+## Przyrost P — Fireball
+
+Ograniczenie wyłącznie dla opisanej przez `spell.fireball` rodziny: X poniżej istniejącego progu 3 nie jest atrakcyjny, chyba że wygrywa natychmiast lub przy presji życia faktycznie zabija wrogiego stwora. Wartość na cel uwzględnia równy podział X. Reguły i oferty dla człowieka bez zmian; próg i wyjątek wykorzystują istniejące parametry. RED 3/6 nowych przypadków, po poprawce GREEN 6/6 oraz 51 testów pokrewnych; szybkie testy 9203/9203, build 76 modułów / 5622,3 kB. R i audyt #177 pozostają otwarte.
