@@ -255,6 +255,107 @@ function matchPipsWithGrantFlex(units, grants, requirements) {
 }
 
 /**
+ * Dobór many do czaru liczącego kolory: minimalny koszt przepływu przez
+ * jednostki → kolory → pipy/część generyczną. Pierwsza jednostka danego
+ * koloru ma premię większą niż wszystkie preferencje zachowania many razem;
+ * kolejne już jej nie mają. Dzięki temu dobór pipów i generic jest wspólny:
+ * nie zużywamy elastycznej jednostki na pip, jeśli można ją wydać w nowym
+ * kolorze na generic. Bezbarwna jest osobnym węzłem, bez premii.
+ *
+ * Przepływ zwrotny pozwala przestawić wcześniejsze decyzje. Węzły pipów mają
+ * pojemność 1, a generic dokładnie amount - requirements.length, więc pełny
+ * przepływ jest zarazem legalną płatnością, nigdy nadpłatą. Tie-break zachowuje
+ * preferencję zużycia many ograniczonej i oszczędzania chronionych kolorów.
+ */
+function maximizeColorPayment(units, requirements, amount, freeLen, preserveReqs) {
+  if (amount < requirements.length || amount > units.length) return null;
+  const colorKeys = ['W', 'U', 'B', 'R', 'G', 'C'];
+  const source = 0;
+  const firstUnit = 1;
+  const firstColorIn = firstUnit + units.length;
+  const firstColorOut = firstColorIn + colorKeys.length;
+  const firstPip = firstColorOut + colorKeys.length;
+  const generic = firstPip + requirements.length;
+  const sink = generic + 1;
+  const graph = Array.from({ length: sink + 1 }, () => []);
+  const addEdge = (from, to, capacity, cost) => {
+    const forward = { to, rev: graph[to].length, capacity, cost };
+    const reverse = { to: from, rev: graph[from].length, capacity: 0, cost: -cost };
+    graph[from].push(forward);
+    graph[to].push(reverse);
+    return forward;
+  };
+  const unitEdges = [];
+  const pipEdges = [];
+  const reward = amount * (amount + 2) + 1;
+  for (let i = 0; i < units.length; i += 1) {
+    const preserve = unitCoversAnyRequirement(units[i], preserveReqs) ? 1 : 0;
+    const free = i < freeLen ? amount + 1 : 0;
+    const selected = addEdge(source, firstUnit + i, 1, free + preserve);
+    const colors = units[i].length ? units[i] : ['C'];
+    const choices = colors.map((color) => ({
+      color, edge: addEdge(firstUnit + i, firstColorIn + colorKeys.indexOf(color), 1, 0),
+    }));
+    unitEdges.push({ selected, choices });
+  }
+  colorKeys.forEach((color, index) => {
+    if (color !== 'C') addEdge(firstColorIn + index, firstColorOut + index, 1, -reward);
+    addEdge(firstColorIn + index, firstColorOut + index, amount, 0);
+    requirements.forEach((requirement, pip) => {
+      if (unitCoversRequirement(color === 'C' ? [] : [color], requirement)) {
+        pipEdges.push({ color, pip, edge: addEdge(firstColorOut + index, firstPip + pip, 1, 0) });
+      }
+    });
+    addEdge(firstColorOut + index, generic, amount, 0);
+  });
+  requirements.forEach((_, pip) => addEdge(firstPip + pip, sink, 1, 0));
+  addEdge(generic, sink, amount - requirements.length, 0);
+  for (let flow = 0; flow < amount; flow += 1) {
+    // Bellman-Ford obsługuje ujemną premię i krawędzie zwrotne; liczba kolorów
+    // jest stała (5), a rozmiar sieci ogranicza rozmiar bieżącej puli many.
+    const distance = new Array(graph.length).fill(Infinity);
+    const previous = new Array(graph.length).fill(null);
+    distance[source] = 0;
+    for (let pass = 0; pass < graph.length - 1; pass += 1) {
+      let changed = false;
+      for (let from = 0; from < graph.length; from += 1) {
+        if (!Number.isFinite(distance[from])) continue;
+        for (let e = 0; e < graph[from].length; e += 1) {
+          const edge = graph[from][e];
+          if (edge.capacity <= 0 || distance[edge.to] <= distance[from] + edge.cost) continue;
+          distance[edge.to] = distance[from] + edge.cost;
+          previous[edge.to] = [from, e];
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+    if (!previous[sink]) return null;
+    for (let node = sink; node !== source;) {
+      const [from, e] = previous[node];
+      const edge = graph[from][e];
+      edge.capacity -= 1;
+      graph[node][edge.rev].capacity += 1;
+      node = from;
+    }
+  }
+  // Po przejściu przez wspólny węzeł koloru dowolna jednostka tego samego
+  // koloru może płacić jego pip. Odtwarzamy role, by zachować dotychczasowy
+  // kontrakt profili WUBRG dla generic i przecięcia profilu z pipem.
+  const assignments = unitEdges.map(({ selected, choices }) => ({
+    color: selected.capacity === 0 ? choices.find(({ edge }) => edge.capacity === 0)?.color ?? null : null,
+    pip: -1,
+  }));
+  for (const { color, pip, edge } of pipEdges) {
+    if (edge.capacity !== 0) continue;
+    const unit = assignments.find((entry) => entry.color === color && entry.pip === -1);
+    if (!unit) throw new Error('Błędna rekonstrukcja płatności many');
+    unit.pip = pip;
+  }
+  return assignments;
+}
+
+/**
  * Konsumpcja z kolorowej puli: pipy kolorowe (`requirements`) dopasowuje do
  * jednostek o przecinającym się zbiorze kolorów (backtracking — hasColor
  * gwarantuje pokrycie), resztę (`amount` − pipy) konsumuje od jednostek o
@@ -307,17 +408,28 @@ export function consumeManaPool(player, amount, requirements, restricted = false
   // innego nie ma (sort, nie filtr — fallback zjada chronione)).
   // Komparator współdzielony z bramką-symulacją (ten sam wynik).
   const preserveReqs = singleColorRequirements(preserved);
-  // O-2: przy czarze liczącym kolory (Converge) zbiór kolorów JUŻ wydanych na
-  // pipy jest znany z dopasowania powyżej — nowa jednostka ma wnieść kolor,
-  // którego jeszcze nie ma (maksymalizacja X legalnym wyborem, CR 601.2h).
+  // Kolory pipów dla zapasowej ścieżki dotychczasowego komparatora. Właściwy
+  // dobór Converge rozważa pipy i generic razem (CR 601.2h).
   const colorPlan = options?.maximizeColors
     ? { spent: new Set(pipAssignment.flatMap((pos) => (pos >= 0 ? (requirements[pos] ?? []) : []))) }
     : null;
-  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b, colorPlan));
-  for (const i of genericOrder) {
-    if (toConsume <= 0) break;
-    consume[i] = true;
-    toConsume -= 1;
+  const optimizedPayment = options?.maximizeColors
+    ? maximizeColorPayment(units, requirements, amount, freeUnits.length, preserveReqs) : null;
+  if (options?.maximizeColors && amount >= requirements.length && amount <= units.length && !optimizedPayment) {
+    throw new Error('Nie znaleziono poprawnego doboru kolorów many');
+  }
+  if (optimizedPayment) {
+    for (let i = 0; i < n; i += 1) {
+      consume[i] = optimizedPayment[i].color != null;
+      pipAssignment[i] = optimizedPayment[i].pip;
+    }
+  } else {
+    genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b, colorPlan));
+    for (const i of genericOrder) {
+      if (toConsume <= 0) break;
+      consume[i] = true;
+      toConsume -= 1;
+    }
   }
   const newPool = {};
   const newRestrictedPool = {};

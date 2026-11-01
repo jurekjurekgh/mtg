@@ -11,3 +11,7 @@ A1 naprawiony; testy stosu i zmiany kontroli `test/audyt-pr177-champion-na-stosi
 ## Kontynuacja — klątwy upkeepu
 
 A2: zapamiętany gracz zdarzenia upkeepu (mill i obrażenia); trzy testy RED→GREEN w `test/audyt-pr177-klatwa-gracz-upkeep.test.js`. `npm test` 9164/9164, `npm run test:slow` 268/268, build 76 modułów / 5610,1 kB. Audyt PR #177 nadal nieukończony; kontynuować od raportu i planu. Pełnego B0 nie uruchamiano.
+
+## Kontynuacja — dobór many Converge
+
+A3: globalny dobór jednostek do pipów i generic maksymalizuje liczbę kolorów, przy tie-breaku dla many ograniczonej i ochrony kolorów. `test/audyt-pr177-converge-dobor-many.test.js` (6, w tym 3 RED→GREEN i enumeracja małych pul). `npm test` 9170/9170, build 76 modułów / 5615,2 kB; slow 268/268 było przed A3, nie powtarzano. Strategia maksymalizuje automatycznie, swoboda wyboru konkretnych jednostek przez gracza wymaga osobnego zbadania. Audyt PR #177 nadal nieukończony.
