@@ -830,9 +830,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
  */
 function diedAs(object, kind, type) {
   if (!object) return false;
-  if (object.kind === kind || (object.types ?? []).includes(type)) return true;
-  if (object.formerZone !== 'battlefield') return false;
-  return object.formerKind === kind || (object.formerTypes ?? []).includes(type);
+  // Po zmianie strefy liczą się wyłącznie cechy z pola bitwy, nie typ
+  // nowego obiektu w grobie (CR 400.7/603.10a). Bestowed Aura w modelu
+  // ma kind='aura', lecz zachowuje drukowane types karty do odłączenia;
+  // nie wolno z tej listy wywnioskować, że na polu była stworem (702.103b).
+  const wasOnBattlefield = object.formerZone === 'battlefield';
+  const formerKind = wasOnBattlefield ? object.formerKind : object.kind;
+  const formerTypes = wasOnBattlefield ? object.formerTypes : object.types;
+  if (kind === 'creature' && formerKind === 'aura') return false;
+  return formerKind === kind || (formerTypes ?? []).includes(type);
 }
 
 function abilitiesOnDeath(object) {
@@ -2834,7 +2840,7 @@ function processTriggersScan(state, recentEvents) {
       // w GROBIE (karta), odpala się na śmierć kontrolowanego stwora.
       for (const source of state.objects.values()) {
         if (source.zone !== 'graveyard') continue;
-        if (died?.kind !== 'creature' || diedControllerId !== source.controllerId) continue;
+        if (!diedIsCreature || diedControllerId !== source.controllerId) continue;
         // Zgłoszenie właściciela E1 (2026-09-10), CR 603.6c + ruling WotC
         // 2025-04-04 („If Furious Forebear dies at the same time as one or
         // more creatures you control, its ability won't trigger"): warunkiem
