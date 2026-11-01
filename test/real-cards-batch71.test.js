@@ -17,6 +17,7 @@ import { addMana } from '../src/engine/resources.js';
 import { createAbility, ABILITY_TYPE } from '../src/engine/abilities.js';
 import { effectivePower, effectiveKeywords } from '../src/engine/permanents.js';
 import { processTriggers } from '../src/engine/triggers.js';
+import { applyEffect } from '../src/engine/effects.js';
 
 const registry = createCardRegistry();
 
@@ -321,6 +322,100 @@ test('pin B2d: biblioteka krótsza niż mill (1 karta) — mieli tyle, ile jest 
   resolveStack(state);
   assert.equal(state.zones.graveyard.length, 1, 'jedna karta w bibliotece → do grobu');
   assert.equal(state.zones.library.length, 0);
+});
+
+// =========================================================================
+// B2e — CHAMPION (Changeling Berserker: „Champion a creature", CR 702.72a).
+//       Dosłownie: „Champion an [object]" means „When this permanent enters,
+//       sacrifice it unless you exile another [object] you control" and
+//       „When this permanent leaves the battlefield, return the exiled card
+//       to the battlefield under its owner's control."
+// =========================================================================
+
+const championAbilities = () => [
+  createAbility({
+    type: ABILITY_TYPE.triggered,
+    trigger: { event: 'enter_battlefield' },
+    effect: [{ type: 'champion', qualifier: { types: ['Creature'] } }],
+  }),
+  createAbility({
+    type: ABILITY_TYPE.triggered,
+    trigger: { event: 'leaves_battlefield' },
+    effect: [{ type: 'return_exiled_to_battlefield' }],
+  }),
+];
+
+/** Permanent-stwór z championem na polu bitwy (bez rzutu — pin mechaniki). */
+function championOnBoard(state, id = 'champ') {
+  const def = {
+    id: `syn-${id}`, name: `Syn ${id}`, set: 'TST', types: ['Creature'], colors: ['R'],
+    power: 5, toughness: 3, manaCost: 3, oracleText: '', keywords: ['haste'],
+    abilities: championAbilities(),
+  };
+  addObject(state, {
+    id, instanceId: `i-${id}`, cardId: def.id, controllerId: 'p1', ownerId: 'p1',
+    zone: 'battlefield', ...gameObjectDataOf(def),
+    types: def.types, keywords: def.keywords, abilities: def.abilities,
+  });
+  return state.objects.get(id);
+}
+
+test('pin B2e: champion — wygnanie innego stwora, potem powrót po odejściu źródła', () => {
+  const state = game();
+  championOnBoard(state);
+  const fodder = synthetic(state, 'fodder', { power: 2, toughness: 2 });
+  applyEffect(state, { type: 'champion', qualifier: { types: ['Creature'] } }, state.objects.get('champ'), []);
+  const picks = commands(state).filter((c) => c.type === 'resolve_sacrifice_choice');
+  assert.deepEqual(picks.map((c) => c.targetId).sort(), ['champ', 'fodder'],
+    'decyzja: wygnaj innego stwora ALBO poświęć źródło');
+  const exile = picks.find((c) => c.targetId === fodder.id);
+  assert.equal(execute(state, exile).ok, true);
+  assert.equal(state.objects.get('champ').zone, 'battlefield', 'champion zostaje na polu bitwy');
+  assert.equal([...state.objects.values()].find((o) => o.cardId === 'syn-fodder')?.zone, 'exile',
+    'championowany stwór jest WYGNANY (nie poświęcony)');
+  // Odejście źródła → wygnaniec wraca na pole bitwy pod kontrolą WŁAŚCICIELA.
+  const before = state.events.length;
+  applyEffect(state, { type: 'destroy_permanent' }, { id: 'x', controllerId: 'p1', cardId: 'x' }, ['champ']);
+  processTriggers(state, state.events.slice(before));
+  resolveStack(state);
+  const back = [...state.objects.values()].find((o) => o.cardId === 'syn-fodder');
+  assert.equal(back.zone, 'battlefield', 'LTB źródła przywraca wygnańca');
+  assert.equal(back.controllerId, 'p1', 'pod kontrolą właściciela (CR 702.72a)');
+});
+
+test('pin B2e: champion — brak innego stwora = natychmiastowe poświęcenie', () => {
+  const state = game();
+  championOnBoard(state);
+  applyEffect(state, { type: 'champion', qualifier: { types: ['Creature'] } }, state.objects.get('champ'), []);
+  assert.equal(state.objects.get('champ'), undefined, 'źródło opuściło pole bitwy');
+  const grave = state.zones.graveyard.map((id) => state.objects.get(id)?.cardId);
+  assert.deepEqual(grave, ['syn-champ'], 'poświęcone (CR 701.21a)');
+  assert.equal(state.pendingSacrifice, null, 'brak decyzji do podjęcia');
+});
+
+test('pin B2e: champion — wybór „nie wygnaję” poświęca źródło i nic nie wraca', () => {
+  const state = game();
+  championOnBoard(state);
+  const fodder = synthetic(state, 'fodder');
+  applyEffect(state, { type: 'champion', qualifier: { types: ['Creature'] } }, state.objects.get('champ'), []);
+  const decline = commands(state).find((c) => c.type === 'resolve_sacrifice_choice' && c.targetId === 'champ');
+  assert.equal(execute(state, decline).ok, true);
+  assert.equal(state.objects.get(fodder.id).zone, 'battlefield', 'niewybrany stwór zostaje');
+  assert.equal(state.objects.get('champ'), undefined, 'źródło poświęcone');
+});
+
+test('pin B2e: champion — źródło odeszło przed rozstrzygnięciem ETB (ruling: nic się nie dzieje)', () => {
+  const state = game();
+  championOnBoard(state);
+  const fodder = synthetic(state, 'fodder');
+  // Symulacja: ETB na stosie, źródło ginie w odpowiedzi.
+  const champion = state.objects.get('champ');
+  state.objects.delete('champ');
+  state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'champ');
+  state.zones.graveyard.push('champ');
+  applyEffect(state, { type: 'champion', qualifier: { types: ['Creature'] } }, champion, []);
+  assert.equal(state.pendingSacrifice, null, 'nie ma kogo poświęcić → brak decyzji');
+  assert.equal(state.objects.get(fodder.id).zone, 'battlefield', 'nic nie wygnano');
 });
 
 // =========================================================================

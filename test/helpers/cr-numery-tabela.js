@@ -150,6 +150,9 @@ export const NUMERY = [
   '302.6',
   '303.4',
   '303.4a',
+  // Batch 71 (Curse of the Bloody Tome): „enchanted player" — dosłownie
+  // „303.4b The object or player an Aura is attached to is called enchanted."
+  '303.4b',
   '303.4f',
   '305.1',
   '305.2',
@@ -443,6 +446,12 @@ export const NUMERY = [
   '702.62c',
   '702.66',
   '702.66a',
+  // Batch 71 (Changeling Berserker): champion — dosłownie 702.72a („Champion
+  // represents two triggered abilities. „Champion an [object]" means „When
+  // this permanent enters, sacrifice it unless you exile another [object] you
+  // control" and „When this permanent leaves the battlefield, return the
+  // exiled card to the battlefield under its owner's control."").
+  '702.72a',
   '702.73a',
   '702.77a',
   '702.79',

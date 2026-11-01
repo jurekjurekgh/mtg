@@ -5415,6 +5415,23 @@ export function execute(state, input) {
       return reject('illegal_sacrifice_target');
     }
     const target = state.objects.get(cmd.targetId);
+    // Batch 71 (Changeling Berserker): decyzja CHAMPIONA (CR 702.72a) — wybór
+    // to WYGNANIE innego obiektu, nie poświęcenie. Wspólna komenda, wspólna
+    // walidacja (L48); różni się wyłącznie strefa docelowa i link powrotu:
+    // wygnaniec dostaje `exiledCardIds` na źródle, więc LTB źródła wraca go
+    // przez `return_exiled_to_battlefield` pod kontrolą WŁAŚCICIELA (CR 702.72a).
+    // Wybór źródła (= „nie wygnaję") zostaje w zwykłej ścieżce poświęcenia.
+    if (pending.moveTo === 'exile' && target.id !== pending.alternativeSourceId) {
+      const championSource = state.objects.get(pending.sourceId);
+      applyEffect(state, { type: 'exile_target_creature' },
+        championSource ?? { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId },
+        [target.id]);
+      state.pendingSacrifice = null;
+      if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+      return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    }
     // M269 (błąd #5): wybór ofiary nie zmienia tego, że poświęcenie jest
     // śmiercią (CR 700.4 + 701.21a) — ta sama wspólna strefa docelowa.
     // M272 (błąd #20): strefa musi trafić do ZDARZENIA, bo po niej triggery

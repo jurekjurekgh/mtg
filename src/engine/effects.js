@@ -5316,10 +5316,19 @@ function markTemporaryExile(state, exileId, sourceObject) {
       playerId: targetId,
       candidateIds: [...candidates],
       candidateTypes: ['Creature'],
+      // Kontrakt zdarzenia (audyt M273): `sacrifice_choice_required` niesie
+      // źródło decyzji — log stołu musi umieć je nazwać, a trigger/bot
+      // odróżnić, CO wymusiło poświęcenie (Batch 71: champion dokłada trzeci
+      // emiter, więc brak pól przestał być „mniejszością").
+      sourceId: sourceObject?.id ?? null,
+      cardId: sourceObject?.cardId ?? null,
       restorePriorityTo: state.turn.priorityPlayerId,
     };
     state.turn.priorityPlayerId = targetId;
-    state.events.push(event('sacrifice_choice_required', { playerId: targetId, candidates: [...candidates] }));
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: targetId, candidates: [...candidates],
+      sourceId: sourceObject?.id ?? null, cardId: sourceObject?.cardId ?? null,
+    }));
     // Blokująca decyzja — rozstrzyganie czaru czeka (state.pendingSpell).
     return true;
   }
@@ -6623,6 +6632,71 @@ function markTemporaryExile(state, exileId, sourceObject) {
       candidates: [...state.pendingSacrifice.candidateIds],
       sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
       sacrificeUnless: true,
+    }));
+    return true;
+  }
+  // Batch 71 (Changeling Berserker): CHAMPION (CR 702.72a, dosłownie):
+  // „Champion an [object]" means „When this permanent enters, sacrifice it
+  // unless you exile another [object] you control" and „When this permanent
+  // leaves the battlefield, return the exiled card to the battlefield under
+  // its owner's control." Pierwsza połowa jest TU (druga to istniejący
+  // `return_exiled_to_battlefield`, bo wygnanie z linkiem zapisuje
+  // `exiledCardIds` na źródle).
+  // Kwalifikator jest deskryptorem (ADR 0002 — żadnej nazwy karty): brak
+  // `qualifier` = „a creature".
+  if (effect.type === 'champion') {
+    // Ruling (champion): jeśli stwór z championem opuści pole bitwy PRZED
+    // rozstrzygnięciem własnego ETB, nie ma kogo poświęcić — efekt nic nie
+    // robi (CR 608.2b).
+    const liveSource = state.objects.get(sourceObject.id);
+    if (!liveSource || liveSource.zone !== 'battlefield') return;
+    const controllerId = liveSource.controllerId;
+    const qualifier = effect.qualifier ?? { types: ['Creature'] };
+    const wantedTypes = qualifier.types ?? [];
+    // „ANOTHER [object] you control" — źródło nigdy nie jest własną ofiarą
+    // (ruling: „A creature's own champion ability won't allow you to exile
+    // that creature.").
+    const candidates = state.zones.battlefield
+      .map((objectId) => state.objects.get(objectId))
+      .filter((object) => object && object.zone === 'battlefield'
+        && object.controllerId === controllerId
+        && object.id !== liveSource.id
+        && wantedTypes.every((type) => object.kind === type.toLowerCase()
+          || (object.types ?? []).includes(type)))
+      .map((object) => object.id);
+    if (candidates.length === 0) {
+      // Brak obiektu do wygnania — „sacrifice it" jest wtedy bezwarunkowe
+      // (CR 702.72a, ten sam wzorzec co Scythe Tiger).
+      const toZone = deathZoneFor(state, liveSource);
+      const moved = moveObjectDirectly(state, liveSource.id, toZone,
+        `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
+      state.events.push(event('permanent_sacrificed', {
+        fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
+        cardId: moved.cardId, champion: true, toZone,
+      }));
+      return;
+    }
+    // Decyzja: wygnaj inny obiekt (kandydaci) ALBO poświęć źródło (wybór
+    // „nie wygnaję"). Wspólny `pendingSacrifice`, ale z `moveTo: 'exile'` —
+    // rozstrzygnięcie wygnańca robi ta sama komenda co poświęcenie.
+    state.pendingSacrifice = {
+      playerId: controllerId,
+      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateTypes: [...wantedTypes],
+      alternativeSourceId: liveSource.id,
+      sourceId: liveSource.id,
+      cardId: liveSource.cardId ?? null,
+      optional: false,
+      moveTo: 'exile',
+      champion: true,
+      restorePriorityTo: state.turn.priorityPlayerId,
+    };
+    state.turn.priorityPlayerId = controllerId;
+    state.events.push(event('sacrifice_choice_required', {
+      playerId: controllerId,
+      candidates: [...state.pendingSacrifice.candidateIds],
+      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      champion: true, moveTo: 'exile',
     }));
     return true;
   }
