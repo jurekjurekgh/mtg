@@ -5402,7 +5402,7 @@ export function execute(state, input) {
     if (cmd.skip === true) {
       if (!pending.optional) return reject('sacrifice_mandatory');
       state.pendingSacrifice = null;
-      state.events.push(event('reflexive_sacrifice_resolved', {
+      if (!pending.champion) state.events.push(event('reflexive_sacrifice_resolved', {
         playerId: pending.playerId, sourceId: pending.sourceId ?? null,
         cardId: pending.cardId ?? null, sacrificed: false,
       }));
@@ -5423,7 +5423,7 @@ export function execute(state, input) {
     // Wybór źródła (= „nie wygnaję") zostaje w zwykłej ścieżce poświęcenia.
     if (pending.moveTo === 'exile' && target.id !== pending.alternativeSourceId) {
       const championSource = state.objects.get(pending.sourceId);
-      applyEffect(state, { type: 'exile_target_creature' },
+      applyEffect(state, { type: 'exile_target_creature', permanentExile: championSource?.zone !== 'battlefield' },
         championSource ?? { id: pending.sourceId, controllerId: pending.playerId, cardId: pending.cardId },
         [target.id]);
       state.pendingSacrifice = null;

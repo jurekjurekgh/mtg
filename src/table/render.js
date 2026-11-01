@@ -3084,6 +3084,10 @@ function abilityXDescription(session, object, command) {
  */
 export function choiceGroupTitle(request, session, view, { manaHtml = false } = {}) {
   const options = request?.options ?? [];
+  if (options[0]?.type === 'resolve_sacrifice_choice' && view?.pendingSacrifice?.moveTo === 'exile') {
+    const source = view.pendingSacrifice.cardId ? `${session.nameOf(view.pendingSacrifice.cardId)} — ` : '';
+    return `${source}champion: wybierz wygnanie albo rezygnację`;
+  }
   const discard = view?.pendingDiscardChoice;
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
     const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
@@ -4121,6 +4125,10 @@ function commandLabelBase(cmd, session, view) {
     case 'resolve_sacrifice_choice': {
       // Grave Exchange: cel poświęca stwora własnego wyboru.
       // Batch 53 (Glorifier of Suffering): opcjonalna ofiara — `skip`.
+      if (view.pendingSacrifice?.moveTo === 'exile') {
+        if (cmd.skip) return 'Champion: nie wyganiaj';
+        if (cmd.targetId !== view.pendingSacrifice.alternativeSourceId) return `Champion — wygnaj: ${nameOfObjectId(cmd.targetId)}`;
+      }
       if (cmd.skip) return 'Poświęcenie: nie rób (bez refleksu „when you do")';
       return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
     }

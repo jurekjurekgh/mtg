@@ -16587,7 +16587,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // kandydata dla „When you do") → poświęcenie kupuje NIC, rezygnacja
         // wygrywa. Flaga tylko przy decyzjach refleksowych (Grave Exchange
         // bez flagi = stara polityka).
-        if (cmd.skip === true) return finish(cmd.reflexReady === false ? 40 : 0);
+        if (cmd.skip === true) return finish(view.pendingSacrifice?.moveTo === 'exile' || cmd.reflexReady === false ? 40 : 0);
         const target = cmd.targetId ? objectOnBoard(view, cmd.targetId) : null;
         if (!target) return finish(0);
         // C-R3b + PMSSB-61/F10: artefakty/nie-stwory po koszcie, stwory po

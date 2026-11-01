@@ -4247,7 +4247,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
     // „wygnania tymczasowego" obok Suspend/Plot).
-    markTemporaryExile(state, exileId, sourceObject);
+    if (effect.permanentExile !== true) markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'destroy_if_least_power') {
@@ -6645,12 +6645,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // Kwalifikator jest deskryptorem (ADR 0002 — żadnej nazwy karty): brak
   // `qualifier` = „a creature".
   if (effect.type === 'champion') {
-    // Ruling (champion): jeśli stwór z championem opuści pole bitwy PRZED
-    // rozstrzygnięciem własnego ETB, nie ma kogo poświęcić — efekt nic nie
-    // robi (CR 608.2b).
+    // CR 113.7a/109.5: kontroler zdolności pozostaje ten sam, nawet gdy
+    // permanent odszedł albo zmienił kontrolera. W obu przypadkach może
+    // odmówić wygnania: nie jest w stanie poświęcić źródła.
     const liveSource = state.objects.get(sourceObject.id);
-    if (!liveSource || liveSource.zone !== 'battlefield') return;
-    const controllerId = liveSource.controllerId;
+    const controllerId = sourceObject.controllerId;
+    const canSacrificeSource = liveSource?.zone === 'battlefield'
+      && liveSource.controllerId === controllerId;
     const qualifier = effect.qualifier ?? { types: ['Creature'] };
     const wantedTypes = qualifier.types ?? [];
     // „ANOTHER [object] you control" — źródło nigdy nie jest własną ofiarą
@@ -6660,13 +6661,14 @@ function markTemporaryExile(state, exileId, sourceObject) {
       .map((objectId) => state.objects.get(objectId))
       .filter((object) => object && object.zone === 'battlefield'
         && object.controllerId === controllerId
-        && object.id !== liveSource.id
+        && object.id !== sourceObject.id
         && wantedTypes.every((type) => object.kind === type.toLowerCase()
           || (object.types ?? []).includes(type)))
       .map((object) => object.id);
     if (candidates.length === 0) {
       // Brak obiektu do wygnania — „sacrifice it" jest wtedy bezwarunkowe
       // (CR 702.72a, ten sam wzorzec co Scythe Tiger).
+      if (!canSacrificeSource) return;
       const toZone = deathZoneFor(state, liveSource);
       const moved = moveObjectDirectly(state, liveSource.id, toZone,
         `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
@@ -6681,12 +6683,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // rozstrzygnięcie wygnańca robi ta sama komenda co poświęcenie.
     state.pendingSacrifice = {
       playerId: controllerId,
-      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateIds: [...new Set([...candidates, ...(canSacrificeSource ? [liveSource.id] : [])])],
       candidateTypes: [...wantedTypes],
-      alternativeSourceId: liveSource.id,
-      sourceId: liveSource.id,
-      cardId: liveSource.cardId ?? null,
-      optional: false,
+      alternativeSourceId: canSacrificeSource ? liveSource.id : null,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      optional: !canSacrificeSource,
       moveTo: 'exile',
       champion: true,
       restorePriorityTo: state.turn.priorityPlayerId,
@@ -6695,7 +6697,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('sacrifice_choice_required', {
       playerId: controllerId,
       candidates: [...state.pendingSacrifice.candidateIds],
-      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      sourceId: sourceObject.id, cardId: sourceObject.cardId ?? null,
       champion: true, moveTo: 'exile',
     }));
     return true;
