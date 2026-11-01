@@ -210,24 +210,22 @@ test('J/2c: wróg TAPNIĘTY, w ręce karta BEZ koloru many (zbędna) → pass', 
     `aktywacja (${impScore(scores)}) < pass (${passScore(scores)})`);
 });
 
-test('J/3: wróg 2/4 NIETAPNIĘTY → activate (latanie omija blokera)', () => {
-  const s = scena({ foe: [['e24', 2, 4]] });
+test('J/3: Main 1 z 2/4 — poczekaj na początek walki (uwaga O)', () => {
+  const s = scena({ foe: [['e24', 2, 4]], hand: ['enter-the-enigma'] });
   const { cmd, scores } = decyzja(s);
-  assert.equal(cmd.type, 'activate_ability', `bot kupuje ewazję: ${cmd.type}`);
-  assert.equal(cmd.objectId, 'imp', 'źródłem jest imp');
-  assert.ok(impScore(scores) > passScore(scores),
-    `aktywacja (${impScore(scores)}) > pass (${passScore(scores)})`);
+  assert.notEqual(cmd.type, 'activate_ability');
+  assert.ok(impScore(scores) < passScore(scores));
 });
 
 test('J/3b: beginning_of_combat z nietapniętym blokerem → activate', () => {
-  const s = scena({ step: 'beginning_of_combat', foe: [['e24', 2, 4]] });
+  const s = scena({ step: 'beginning_of_combat', foe: [['e24', 2, 4]], hand: ['enter-the-enigma'] });
   const { cmd, scores } = decyzja(s);
   assert.equal(cmd.type, 'activate_ability', `okno realne: ${cmd.type}`);
   assert.ok(impScore(scores) > passScore(scores), 'powyżej passu');
 });
 
 test('J/3c: imp z MENACE i jednym blokerem → pass (i tak nieblokowalny, CR 509.1b)', () => {
-  const s = scena({ foe: [['e24', 2, 4]] });
+  const s = scena({ step: 'beginning_of_combat', foe: [['e24', 2, 4]], hand: ['enter-the-enigma'] });
   s.objects.set('imp', Object.freeze({ ...s.objects.get('imp'), keywords: ['menace'] }));
   const { cmd, scores } = decyzja(s);
   assert.notEqual(cmd.type, 'activate_ability',
@@ -262,7 +260,7 @@ test('J/5: tura wroga, atakujący 2/2 z flying → activate (blok z powietrza)',
   put(s, 'imp', 'fledgling-imp', 'p1');
   lands(s);
   addMana(s, 'p1', 8);
-  put(s, 'h0', 'brute-force', 'p1', 'hand');
+  put(s, 'h0', 'enter-the-enigma', 'p1', 'hand');
   creature(s, 'atk', 'p2', 2, 2, { keywords: ['flying'], summoningSickness: false });
   // Wróg deklaruje atakującego z flying; po pasach obu graczy priorytet wraca
   // do bota w kroku deklaracji blokerów (wzorzec testu D).
@@ -293,7 +291,7 @@ test('J/6: postcombat main2 → pass (efekt wygasa w cleanup, CR 514.2)', () => 
 // =============================================================================
 
 test('J/7: E2E — aktywacja płaci {B}, wyrzuca kartę do grobu i daje flying', () => {
-  const s = scena({ foe: [['e24', 2, 4]] });
+  const s = scena({ step: 'beginning_of_combat', foe: [['e24', 2, 4]], hand: ['enter-the-enigma'] });
   const bot = createHeuristicBot({ seed: 5 });
   const cmd = bot.chooseCommand(playerView(s, 'p1'));
   assert.equal(cmd.type, 'activate_ability', 'bot aktywuje zdolność impa');
@@ -306,7 +304,7 @@ test('J/7: E2E — aktywacja płaci {B}, wyrzuca kartę do grobu i daje flying',
   // `zones.graveyard` to lista ID — obiekty są w `state.objects`.
   const gy = (s.zones.graveyard ?? []).map((id) => s.objects.get(id))
     .filter((o) => o && o.controllerId === 'p1');
-  assert.ok(gy.some((o) => o.cardId === 'brute-force'),
+  assert.ok(gy.some((o) => o.cardId === 'enter-the-enigma'),
     'karta z kosztu-discard jest w grobie (CR 701.9a)');
   assert.equal(s.players.find((p) => p.id === 'p1').mana, manaBefore - 1,
     'zapłacono {B} z puli');

@@ -10833,6 +10833,34 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return true;
   }
 
+  // Uwaga O: kosztowny jednorazowy trik — tylko grant latania dla samego
+  // źródła z kosztem odrzucenia. Nie nakładamy polityki na looting ani inne
+  // zdolności; brak nazw kart (ADR 0002).
+  const discardForSelfFlying = (ability) => {
+    const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+    return Boolean(ability?.cost?.discardCard && !ability?.targets?.length
+      && effects.length === 1 && effects[0]?.type === 'grant_keywords_until_end_of_turn'
+      && (effects[0].keywords ?? []).length === 1 && effects[0].keywords[0] === 'flying');
+  };
+  // Stan manabazy, a nie tymczasowo pustej puli: również tapnięty ląd wróci
+  // w następnej turze. Chronimy lądy i karty zerowego kosztu; do kosztu
+  // trzeba pokryć zarówno liczbę jednostek jak i wszystkie kolorowe pipy.
+  const strandedByLands = (view, card) => {
+    if (!card?.cardId) return false;
+    const def = cardDef(card.cardId);
+    if (card.kind === 'land' || (def?.types ?? card.types ?? []).includes('Land')) return false;
+    const cost = card.manaCost ?? def?.manaCost;
+    if (!Number.isInteger(cost) || cost <= 0) return false;
+    const units = [];
+    for (const o of view.zones?.battlefield ?? []) {
+      if (o.controllerId !== view.playerId || (o.kind !== 'land' && !(o.types ?? []).includes('Land'))) continue;
+      const source = manaSourceOfView(o);
+      if (!source) continue;
+      for (let n = 0; n < (source.amount ?? 1); n++) units.push([...(source.colors ?? [])]);
+    }
+    return units.length < cost || !matchColorRequirements(units, coloredPipsOf(card.cardId));
+  };
+
   /**
    * M408/D: ile warta jest karta, którą mam ODDAĆ jako koszt. Stwory wyceniamy
    * ciałem (moc ×2 + wytrzymałość) plus keywordy i zdolności z rejestru — tak
@@ -13870,6 +13898,29 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const tapsCreature = Boolean(ability?.cost?.tapCreature);
         const effects = Array.isArray(ability?.effect) ? ability.effect : ability?.effect ? [ability.effect] : [];
         const abilityEffectTypes = effects.map((e) => e?.type).filter(Boolean);
+        if (source && discardForSelfFlying(ability)) {
+          const candidates = (view.zones?.hand ?? []).filter((card) => strandedByLands(view, card));
+          if (candidates.length === 0 || !combatDamageRelevantNow(view) || permanentDoomedThisTurn(view, source)) return finish(-100 - P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject));
+          let useful = false;
+          if (myTurn(view) && view.turn.step === 'beginning_of_combat' && canAttackNow(source)
+            && !enemyHasUntappedFlyingOrReachBlocker(view)
+            && !(view.zones?.battlefield ?? []).some((o) => o.controllerId !== view.playerId && o.kind === 'creature' && hasKeyword(o, 'flying'))) {
+            useful = (view.zones?.battlefield ?? []).some((foe) => foe.controllerId !== view.playerId
+              && foe.kind === 'creature' && !foe.tapped && !foe.cantBlock
+              && (foe.toughness ?? 0) > 2 && (foe.toughness ?? 0) > (source.power ?? 0)
+              && attackerCanBeBlocked(source, [foe]) && !isMyPendingStackTarget(view, foe.id));
+          } else if (!myTurn(view) && view.turn.step === 'declare_blockers' && !source.tapped && !source.cantBlock) {
+            const flyingBlocker = { ...source, keywords: [...(source.keywords ?? []), 'flying'] };
+            useful = (view.combat?.attackers ?? []).some((id) => {
+              const foe = objectOnBoard(view, id);
+              if (!foe || !hasKeyword(foe, 'flying') || isMyPendingStackTarget(view, id)) return false;
+              if (!attackerCanBeBlocked(foe, [flyingBlocker])) return false;
+              if (!damageIsLethal(view, id, source.power ?? 0)) return false;
+              return simulateCombat(duelStats(foe), [duelStats(flyingBlocker)]).attackerDies;
+            });
+          }
+          if (!useful) return finish(-100 - P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject));
+        }
         // M218/4 — regenerate: wartość tylko gdy stwór ZAGROŻONY w tej turze.
         // Bez zagrożenia — kara (przedwczesny wydatek, jak M146).
         // Obsługuje zarówno keyword `regenerate` (Drudge Skeletons), jak i efekt
@@ -17457,7 +17508,14 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // tylko takie karty, których nie może rzucić z powodu braku many
         // danego koloru." Sam koszt many nie odróżniał 1-manowego chwastu od
         // 2-manowej bomby, więc wybór był de facto losowy.
-        if (mine) return finish(20 + discardCostPreference(view, karta));
+        if (mine) {
+          const pending = view.pendingDiscardChoice;
+          const abilities = cardDef(pending?.sourceCardId)?.abilities ?? [];
+          if (pending?.purpose === 'cost' && abilities.some(discardForSelfFlying)) {
+            return finish((strandedByLands(view, karta) ? 1000 : -1000) + discardCostPreference(view, karta));
+          }
+          return finish(20 + discardCostPreference(view, karta));
+        }
         // Ręka przeciwnika: wybranie drogiej karty ma wartość, ale dwie karty
         // odrzucone bez wyboru są warte więcej — stąd poniżej progu rezygnacji.
         return finish(10 + 3 * value);
