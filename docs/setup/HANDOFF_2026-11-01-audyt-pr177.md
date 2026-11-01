@@ -43,3 +43,7 @@ Zagnieżdżony Mana Wizard aktywuje źródło z `holdPriority`, inaczej auto-pas
 ## A9 — Rupture Spire i manodorki/Powerstone
 
 Bramka z PR #177 liczyła tylko pulę i nietapnięte lądy; ignorowała inne automatyczne źródła opłaty zdolności. Bot korzysta teraz z istniejących miar automatycznej i ograniczonej many. Druid, choroba przywołania, Powerstone i ograniczona pula: 4 testy, rzeczywiste wykonanie opłaty, 2 RED→GREEN. Pokrewne 18/18, `npm test` 9248/9248, build 76 modułów / 5625,2 kB. Taliom/katalogowi poświęcono pakiet 96/96. Audyt PR #177 nadal trwa.
+
+## A10 — bestow w progu inwestycji Edifice
+
+Załączona aura bestow była niesłusznie pomijana w literalnym progu TMC stwora z aurami/equipmentem ≥5. Test pokazuje decyzję i jej wykonanie, z odłączeniem bestow jako stwora; kontrole braku aury i braku śmiertelności. Innych heurystyk wyceny faktycznej straty karty nie zmieniono. Pokrewne 23/23, `npm test` 9251/9251, build 76 modułów / 5625,3 kB. Audyt trwa.

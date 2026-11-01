@@ -8832,7 +8832,8 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         || (object.subtypes ?? []).includes('Aura');
       const isEquipment = object.equipment || (object.subtypes ?? []).includes('Equipment');
       if (!isAura && !isEquipment) continue;
-      if (object.bestow) continue; // bestow to stwór, nie aura (CR 702.103)
+      // Bestow załączony do celu jest aurą; ten próg mierzy TMC inwestycji,
+      // niezależnie od tego, czy aura zginie czy odłączy się jako stwór.
       sum += object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0;
     }
     return sum;
