@@ -831,9 +831,9 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
 function diedAs(object, kind, type) {
   if (!object) return false;
   // Po zmianie strefy liczą się wyłącznie cechy z pola bitwy, nie typ
-  // nowego obiektu w grobie (CR 400.7/603.10a). Bestowed Aura w modelu
-  // ma kind='aura', lecz zachowuje drukowane types karty do odłączenia;
-  // nie wolno z tej listy wywnioskować, że na polu była stworem (702.103b).
+  // nowego obiektu w grobie (CR 400.7/603.10a). Starsze zapisy bestowed
+  // Aura mogły zachować drukowane types karty: kind='aura' rozstrzyga, że
+  // nie była stworem na polu (702.103b). Nowe zapisy mają poprawne types.
   const wasOnBattlefield = object.formerZone === 'battlefield';
   const formerKind = wasOnBattlefield ? object.formerKind : object.kind;
   const formerTypes = wasOnBattlefield ? object.formerTypes : object.types;

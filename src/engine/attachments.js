@@ -237,6 +237,15 @@ function emitAttached(state, attachment, hostId, via) {
  * bycia stworem zerujemy jako higienę stanu (SBA 704.5f/g dotyczą wyłącznie
  * stworów, a cleanup 514.2 i tak by je zdjął).
  */
+// CR 205.3h: only enchantment subtypes remain when bestow makes the
+// permanent an Aura enchantment (CR 205.1a). The saved base type line is
+// restored when bestow ends; it is not itself a live characteristic.
+const BESTOW_ENCHANTMENT_SUBTYPES = new Set([
+  'Aura', 'Background', 'Cartouche', 'Case', 'Class', 'Curse', 'Plan',
+  'Role', 'Room', 'Rune', 'Saga', 'Shard', 'Shrine',
+]);
+const BESTOW_SUPERTYPES = new Set(['Basic', 'Legendary', 'Ongoing', 'Snow', 'World', 'Token']);
+
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
   const host = state.objects.get(hostId);
@@ -245,10 +254,17 @@ export function attachAuraToCreature(state, auraId, hostId) {
   }
   if (auraId === hostId) throw new Error('Aura nie może zaczarować samej siebie');
   if (!isLegalAuraHost(aura, host)) throw new Error(`Aura nie ma legalnego gospodarza na polu bitwy (${aura.aura?.enchant ?? aura.aura?.enchantType ?? 'creature'})`);
+  const bestowTypeLine = aura.bestow ? {
+    bestowOriginalTypes: Object.freeze([...(aura.bestowOriginalTypes ?? aura.types ?? [])]),
+    bestowOriginalSubtypes: Object.freeze([...(aura.bestowOriginalSubtypes ?? aura.subtypes ?? [])]),
+    types: [...(aura.types ?? []).filter((type) => BESTOW_SUPERTYPES.has(type)), 'Enchantment'],
+    subtypes: [...new Set([...(aura.subtypes ?? []).filter((type) => BESTOW_ENCHANTMENT_SUBTYPES.has(type)), 'Aura'])],
+  } : {};
   const updated = patchAttachmentObject(state, aura, {
     attachedTo: hostId,
     baseKind: aura.baseKind ?? aura.kind,
     kind: 'aura',
+    ...bestowTypeLine,
     powerModifier: 0, toughnessModifier: 0, damage: 0,
     counters: {},
     summoningSickness: true, // po odłączeniu (bestow) jako stwór obowiązuje choroba atakowa
@@ -325,6 +341,10 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
       attachedTo: null,
       kind: attachment.baseKind ?? 'creature',
       baseKind: null,
+      ...(attachment.bestowOriginalTypes ? { types: [...attachment.bestowOriginalTypes] } : {}),
+      ...(attachment.bestowOriginalSubtypes ? { subtypes: [...attachment.bestowOriginalSubtypes] } : {}),
+      bestowOriginalTypes: null,
+      bestowOriginalSubtypes: null,
     });
     const e = event('object_detached', {
       objectId: attachment.id, fromHostId: hostId, cardId: updated.cardId,

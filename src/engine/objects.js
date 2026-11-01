@@ -328,8 +328,17 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       cloakTurnUpCost: null,
     }
     : null;
+  // Bestow changes the battlefield type line; it ends on leaving the
+  // battlefield. Restore the saved type line before the other zone resets
+  // (copy/DFC/face-down can supersede it) while formerTypes below stays LKI.
+  const bestowReset = leavingBattlefield && object.bestowOriginalTypes ? {
+    types: [...object.bestowOriginalTypes],
+    subtypes: [...(object.bestowOriginalSubtypes ?? [])],
+    bestowOriginalTypes: null,
+    bestowOriginalSubtypes: null,
+  } : {};
   const rawMoved = {
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
+    ...object, ...untilEndOfTurnReset, ...bestowReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
     id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).

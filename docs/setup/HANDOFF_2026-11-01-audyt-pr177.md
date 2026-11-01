@@ -19,3 +19,7 @@ A3: globalny dobór jednostek do pipów i generic maksymalizuje liczbę kolorów
 ## Kontynuacja — Morbid i bestow
 
 A4: naprawiono błędną klasyfikację śmierci przy zniszczeniu aury bestow, także u Furious Forebear; 5 testów, przypadki Morbid i Forebear RED→GREEN. `npm test` 9175/9175, build 76 modułów / 5615,6 kB; slow po A4 nie uruchamiano. Pozostałe konsumenty typów bestow oraz semantyka syntetycznego triggera „a counter” wymagają dalszej analizy (`docs/audits/AUDYT_PR177_2026-11-01.md`). Audyt PR #177 nadal nieukończony.
+
+## Kontynuacja — typy aury bestow
+
+A5: aura bestow ma prawidłową linię typów na polu bitwy; przy odłączeniu lub opuszczeniu pola przywraca pierwotną. Pin Austere Command i 4 inne testy, 2 RED→GREEN. `npm test` 9180/9180, build 76 modułów / 5617,3 kB; slow po A5 nie uruchamiano. Sprawdzić czar bestow na stosie (dotychczas drukowane typy i `kind=creature`), interakcje zmian typów/kopii i resztę diffu PR #177; zob. raport.
