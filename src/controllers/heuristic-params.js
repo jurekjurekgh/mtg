@@ -186,6 +186,13 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // zaraz po wejściu. Pomiar PRZED: rzut wyceniany na 73,8 w każdym stanie —
   // także przy pustym stole, gdzie karta i mana przepadały.
   'championNoHostPenalty',
+  // PMSSB-85 (batch 71, Trumpet Blast): pump zbioru ATAKUJĄCYCH
+  // (`buff_attacking_creatures`) nie miał w ścieżce CZARU żadnego odbiorcy —
+  // bez celu w komendzie wpadał w karę „wzmacnianie przeciwnika” (−60).
+  // Pomiar PRZED: −10 pkt w każdym stanie (także z dwoma atakującymi).
+  'setPumpNoAttackersPenalty',   // brak atakujących = efekt jałowy
+  'setPumpTrickValue',           // atakujący ZABLOKOWANY, któremu pump poprawia wymianę
+  'setPumpUnblockedPowerWeight', // punkt mocy ponad blokujących = obrażenia w twarz
   'tokenTimingSwing',          // wahnięcie okien instantu tokenowego (EOT-own/reakcja vs po-blokach)
   'tokenManaCostTieBreak',     // dogrywka kosztem czaru tokenowego (ten sam efekt → tańszy wygrywa)
   // M239/2 (audyt PR #83, znalezisko Z3): rodzina „damage w stwora" (baza,
@@ -903,6 +910,13 @@ export const DEFAULT_HEURISTIC_PARAMS = Object.freeze({
   // z tokenem 1/1 i z sojusznikiem 10/10 bez zmian (73,8) — kara dotyczy
   // wyłącznie braku celu championa.
   championNoHostPenalty: 120,
+  // PMSSB-85: skale jak w triku bojowym (12 — tyle co `tempPumpTrickValue`)
+  // i jak w obrażeniach w twarz (2/pkt mocy, skala `drain` z tabeli ETB).
+  // Kara za brak atakujących musi zejść POD pass mimo bazy czaru (~50):
+  // pomiar PO — bez atakujących −20, z dwoma atakującymi +66.
+  setPumpNoAttackersPenalty: 70,
+  setPumpTrickValue: 12,
+  setPumpUnblockedPowerWeight: 2,
   abilityDiscardCostWeight: 1,
   sacrificePumpTradeWeight: 1,
   countedPumpReserveWeight: 1,

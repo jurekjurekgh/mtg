@@ -13626,6 +13626,35 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             if (!combatDamageRelevantNow(view)
               || (inCombat && !pumpChangesOutcome(view, target, delta))) trick = -75;
             score += trick + (target.power ?? 0);
+          } else if (isPumpEffect && !isNegativePump(effect)
+            && effect.type === 'buff_attacking_creatures') {
+            // PMSSB-85 (batch 71, Trumpet Blast): pump zbioru ATAKUJĄCYCH
+            // (CR 611.2c) nie ma CELU w komendzie, więc ścieżka czaru nie
+            // miała odbiorcy i wpadała w karę „wzmacnianie przeciwnika”
+            // (−60): pomiar PRZED = −10 pkt zawsze, także przy dwóch
+            // atakujących. Odbiorcami są MOI atakujący (ADR 0017), a wartość
+            // to suma po nich: zablokowany — czy pump poprawia wymianę
+            // (wspólna symulacja `combinedOutcomeChanges`), nieblokowany —
+            // przyrost mocy jako obrażenia w twarz. Bez atakujących efekt
+            // jest jałowy (kara, L3).
+            const myAttackers = (view.combat?.attackers ?? [])
+              .map((id) => objectOnBoard(view, id))
+              .filter((o) => o && o.controllerId === view.playerId);
+            if (myAttackers.length === 0) {
+              score -= P.setPumpNoAttackersPenalty;
+            } else {
+              const setDelta = pumpDelta(view, effect);
+              let gain = 0;
+              for (const atk of myAttackers) {
+                const blocked = ((view.combat?.blockers ?? {})[atk.id] ?? []).length > 0;
+                if (blocked) {
+                  if (combinedOutcomeChanges(view, atk, { delta: setDelta })) gain += P.setPumpTrickValue;
+                } else {
+                  gain += Math.max(0, setDelta.power ?? 0) * P.setPumpUnblockedPowerWeight;
+                }
+              }
+              score += gain;
+            }
           } else if (isPumpEffect && !isNegativePump(effect) && target && target.controllerId === view.playerId) {
             // M146 (uwaga właściciela): pump „do końca tury" ma wartość tylko
             // w oknie, w którym zdąży pomóc. Bot rzucał Fake Your Own Death
