@@ -51,3 +51,7 @@ Załączona aura bestow była niesłusznie pomijana w literalnym progu TMC stwor
 ## A11 — ponowne otwieranie zakończonego kreatora
 
 Po automatycznym zakończeniu nadrzędnej płatności powrót z podrzędnego kreatora ponownie otwierał już zamkniętą, pustą nakładkę. Warunek ponownego otwarcia sprawdza żywy deskryptor. Test rzeczywistej sesji i funkcji UI (postęp/render stubowane), RED→GREEN oraz kontrola niedokończonej płatności. Pokrewne 53/53, `npm test` 9253/9253, build 76 modułów / 5625,4 kB. `playDirect` nie zwraca wyniku sesji — nadal wymaga konkretnej osiągalnej reprodukcji przed poprawką. Audyt #177 trwa.
+
+## A12 — wycena kwalifikowanego discardu
+
+Wycena kosztu aktywacji liczy teraz wyłącznie własne karty spełniające kwalifikator, wspólnym predykatem silnika. Wcześniej niegrywalny nie-stwór zawyżał wycenę Vampire Hounds; przy koszcie dowolnej karty mogła też zostać policzona ukryta ręka przeciwnika. Cztery testy z wykonaniem wyboru, dwa RED→GREEN. Pokrewne 47/47, fast 9257/9257, build 5626,1 kB; audyt trwa.

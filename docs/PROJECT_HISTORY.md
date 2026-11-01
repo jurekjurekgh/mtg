@@ -18528,3 +18528,7 @@ Wycena bota liczy rzeczywiste ofiary `sacrificeCreatureIds` z legalnej komendy, 
 ### 2026-11-01 — kontynuacja audytu #177, A7–A11
 
 Poprawiono ostrzeżenia crew/animacji (A7), zachowanie priorytetu i zamykanie modala przy zagnieżdżonym kreatorze many (A8, A11), ocenę źródeł opłaty Rupture Spire (A9) oraz uwzględnienie aury bestow w zadanym progu inwestycji Ambulatory Edifice (A10). Testy przypadków pozytywnych i kontrolnych, rzeczywiste sesje/opłaty: raport `docs/audits/AUDYT_PR177_2026-11-01.md`. Po A11 `npm test` 9253/9253, build 76 modułów / 5625,4 kB; slow 268/268 uruchomiono przed A8. Audyt #177 pozostaje w toku.
+
+### 2026-11-01 — audyt #177, kwalifikowany koszt odrzucenia
+
+Wycena aktywacji używa kwalifikatora kosztu i wyłącznie własnej ręki: niegrywalny czar nie może pozornie potanić odrzucenia stwora przez Vampire Hounds, a ukryta ręka przeciwnika nie płaci naszego kosztu. 4 testy (2 RED→GREEN, z rzeczywistym wyborem i płatnością), pokrewne 47/47, fast 9257/9257, build 76 modułów / 5626,1 kB; audyt trwa.

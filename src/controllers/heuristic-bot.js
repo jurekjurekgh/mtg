@@ -1,3 +1,4 @@
+import { cardMatchesQualifier } from '../engine/effects.js';
 import { countedEffectValue, countedEffectSign, isCountedEffectValue } from '../engine/effect-values.js';
 import { battleDefenseDelta, isBattle } from '../engine/battles.js';
 import { optionalEffectVariants, counterIsHostile } from '../engine/effect-intent.js';
@@ -10984,7 +10985,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // N kart, które bot faktycznie by oddał (najpierw śmieci).
     const count = cost?.discardCard ? 1 : (cost?.discardCards ?? 0);
     if (!count) return 0;
-    const hand = (view.zones.hand ?? []).filter(card => card.id !== source?.id);
+    const qualifier = typeof cost.discardCard === 'object' ? cost.discardCard?.qualifier : null;
+    const hand = (view.zones.hand ?? []).filter((card) => {
+      if (card.controllerId !== view.playerId || card.id === source?.id) return false;
+      if (!qualifier) return true;
+      // Widok ręki niesie typy, ale nie podtypy, keywordy ani nazwę. Są one
+      // znane właścicielowi z rejestru; użyj tego samego predykatu co silnik.
+      const def = cardDef(card.cardId);
+      return cardMatchesQualifier({
+        ...card, subtypes: card.subtypes ?? def?.subtypes ?? [],
+        keywords: card.keywords ?? def?.keywords ?? [],
+        cardName: card.cardName ?? def?.name ?? card.name,
+      }, qualifier);
+    });
     if (!hand.length) return P.drawCardValue + count;
     const prefs = hand.map(card => discardCostPreference(view, card)).sort((a, b) => b - a);
     return prefs.slice(0, count).reduce((sum, pref) => sum + Math.max(0, -pref), 0);
