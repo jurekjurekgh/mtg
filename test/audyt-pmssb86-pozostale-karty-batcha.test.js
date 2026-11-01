@@ -21,7 +21,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  createGameState, addObject, playerView,
+  createGameState, addObject, playerView, execute,
 } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
@@ -210,4 +210,44 @@ test('PMSSB-86/7: Sphinx\'s Herald — bez karty w bibliotece aktywacja jest ja�
 test('PMSSB-86/8: pokrętła kosztu kolorowego są jawne', () => {
   assert.equal(DEFAULT_HEURISTIC_PARAMS.coloredSacrificeCostWeight, 1);
   assert.equal(DEFAULT_HEURISTIC_PARAMS.coloredSacrificeCardLoss, 3);
+});
+
+test('Audyt #177: Herald wlicza siebie jako niebieską ofiarę i koszt białego/czarnego', () => {
+  const trial = power => {
+    const state = scene({ lands: ['basic-island', 'basic-plains', 'basic-swamp'], mana: 4, color: 'U' });
+    real(state, 'her', 'sphinxs-herald');
+    creature(state, 'w', 'p1', power, power, ['W']);
+    creature(state, 'b', 'p1', power, power, ['B']);
+    addObject(state, { id: 'sovereign', instanceId: 'i-sovereign', cardId: 'synthetic-sovereign',
+      controllerId: 'p1', ownerId: 'p1', zone: 'library', kind: 'creature', power: 4, toughness: 4,
+      manaCost: 6, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['W', 'U', 'B'],
+      cardName: 'Sphinx Sovereign' });
+    assert.ok(playerView(state, 'p1').legalCommands.some(c => c.type === 'activate_ability' && c.objectId === 'her'));
+    return [...scores(state)].find(([label]) => String(label).startsWith('activate_ability(her#0)'))?.[1];
+  };
+  const cheap = trial(1), expensive = trial(5);
+  assert.ok(cheap > expensive, `koszt białego i czarnego stwora nie może być zerowy (${cheap} vs ${expensive})`);
+});
+
+test('Audyt #177: bot rozróżnia konkretne legalne kombinacje ofiar', () => {
+  const state = scene({ lands: ['basic-island', 'basic-plains', 'basic-swamp'], mana: 4, color: 'U' });
+  real(state, 'her', 'sphinxs-herald');
+  creature(state, 'drogie', 'p1', 6, 6, ['W']);
+  creature(state, 'tanie', 'p1', 1, 1, ['W']);
+  creature(state, 'b', 'p1', 1, 1, ['B']);
+  addObject(state, { id: 'sovereign', instanceId: 'i-sovereign', cardId: 'synthetic-sovereign',
+    controllerId: 'p1', ownerId: 'p1', zone: 'library', kind: 'creature', power: 4, toughness: 4,
+    manaCost: 6, abilities: [], keywords: [], subtypes: [], types: ['Creature'], colors: ['W', 'U', 'B'],
+    cardName: 'Sphinx Sovereign' });
+  const fullView = playerView(state, 'p1');
+  const view = { ...fullView, legalCommands: fullView.legalCommands.filter(c => c.type === 'activate_ability' && c.objectId === 'her') };
+  assert.equal(view.legalCommands.length, 2);
+  const bot = createHeuristicBot({ seed: 87, randomness: 0, lookahead: 0, registry: REG });
+  const chosen = bot.chooseCommand(view);
+  assert.ok(chosen.sacrificeCreatureIds.includes('tanie'), JSON.stringify(chosen));
+  assert.ok(!chosen.sacrificeCreatureIds.includes('drogie'));
+  const result = execute(state, chosen);
+  assert.equal(result.ok, true, 'bot wysyła legalny wariant silnika');
+  assert.equal(state.objects.get('drogie')?.zone, 'battlefield');
+  assert.ok(!state.objects.has('her') && !state.objects.has('tanie') && !state.objects.has('b'));
 });

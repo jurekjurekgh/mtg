@@ -27,3 +27,7 @@ A5: aura bestow ma prawidłową linię typów na polu bitwy; przy odłączeniu l
 ## Zgłoszenie N (2026-11-01)
 
 Naprawiono modal X dla Magma Pummeler: `test/zgloszenie-n-magma-wybor-x.test.js`, `npm test` 9185/9185, build 76 modułów / 5618,4 kB. Żywy tester faktycznie rzucił X=0 przy dwóch Górach i X=1 przy trzech, bez zgłoszeń detektorów. Talia tymczasowa usunięta, artefakt przebudowany. Limit X=15 istnieje w danych/silniku i nie był zmieniany. Audyt #177 nadal w toku — kontynuować, nie przerywać po tym przyroście.
+
+## A6 — wycena kosztu Heralda
+
+Testy ujawniły, że PR #177 ignorował koszt trzech ofiar, gdy jedynym niebieskim stworem był sam Sphinx’s Herald, oraz nie rozróżniał konkretnych kombinacji. Wycena sumuje teraz ofiary z rzeczywistej legalnej komendy, w tym źródło. 2 RED→GREEN, pełny fast 9187/9187, build 76 modułów / 5617,6 kB. Wolny pakiet uruchomiony przed tą zmianą nie jest dowodem stanu po A6. Audyt #177 nadal nieukończony.

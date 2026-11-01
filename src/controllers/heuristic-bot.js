@@ -14052,37 +14052,19 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           if (enemySingleTargetSpellOnStack(view)) score += P.morphFlipPayoffBonus;
           else score -= P.morphFlipNoPayoffPenalty;
         }
-        // PMSSB-86 (batch 71, Sphinx's Herald — ten sam kształt co Angel's
-        // Herald z batcha 66): koszt „poświęć po jednym stworze z kolorów
-        // W/U/B" nie był wyceniany w ŻADNEJ gałęzi aktywacji. Pomiar PRZED:
-        // aktywacja +9 pkt, jakby trzy stwory były darmowe. Wybieramy ofiary
-        // zachłannie (najtańsza na każdy wymagany kolor — dokładnie to robi
-        // decydent ofiar, L41: ta sama miara `sacrificePermanentLoss`) i
-        // doliczamy card disadvantage za każdą ofiarę ponad jedną.
-        const coloredSacrificeLoss = (view, cost, sourceObj) => {
-          const need = cost?.sacrificeCreaturesByColors ?? [];
-          if (!need.length) return 0;
-          const pool = myCreatures(view).filter((o) => o.id !== sourceObj?.id);
-          const used = new Set();
-          let loss = 0;
-          for (const color of need) {
-            let best = null;
-            for (const candidate of pool) {
-              if (used.has(candidate.id)) continue;
-              if (!(candidate.colors ?? []).includes(color)) continue;
-              const value = sacrificePermanentLoss(view, candidate);
-              if (!best || value < best.value) best = { candidate, value };
-            }
-            if (!best) return 0; // brak kandydata — aktywacja i tak nielegalna
-            used.add(best.candidate.id);
-            loss += best.value;
-          }
-          return loss + Math.max(0, need.length - 1) * P.coloredSacrificeCardLoss;
-        };
+        // Audyt PR #177: ofiary są już wybrane W KONKRETNEJ legalnej
+        // komendzie. Wycena musi użyć właśnie ich, także źródła zdolności
+        // (ruling Herald), zamiast zgadywać zachłannie inny zestaw kolorów.
+        // Inaczej przy jedynym niebieskim Heraldzie koszt znikał, a różne
+        // kombinacje miały tę samą wycenę i bot oddawał pierwszą z brzegu.
+        const coloredSacrificeIds = cmd.sacrificeCreatureIds ?? [];
+        const coloredSacrificeLoss = coloredSacrificeIds.reduce((sum, id) => {
+          const victim = objectOnBoard(view, id);
+          return sum + (victim ? sacrificePermanentLoss(view, victim) : 0);
+        }, 0) + Math.max(0, coloredSacrificeIds.length - 1) * P.coloredSacrificeCardLoss;
         const discardLoss = P.abilityDiscardCostWeight * abilityDiscardLoss(view, ability?.cost, abilityObject);
         if (ability?.cost?.sacrificeCreaturesByColors) {
-          score -= P.coloredSacrificeCostWeight
-            * coloredSacrificeLoss(view, ability.cost, abilityObject);
+          score -= P.coloredSacrificeCostWeight * coloredSacrificeLoss;
         }
         const reserveLoss = ability?.cost?.sacrificeSelf ? countedPumpReserveLoss(view, source) : 0;
         score -= discardLoss + reserveLoss;
