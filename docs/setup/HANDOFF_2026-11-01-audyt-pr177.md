@@ -59,3 +59,7 @@ Wycena kosztu aktywacji liczy teraz wyłącznie własne karty spełniające kwal
 ## A13 — obrażony ląd-stwór w bramce ETB
 
 Cutthroat uwzględnia teraz rzeczywiste publiczne cele obrażonego stwora, także ożywiony ląd, i nie traktuje hexproof ani ochrony przed źródłem jak legalnego celu. 5 testów (3 RED→GREEN), rzeczywiste wykonanie zniszczenia, pokrewne 49/49, fast 9262/9262, build 5626,3 kB. Audyt trwa.
+
+## A14 — wynik sesji przy kończeniu kreatora
+
+Potwierdzono odrzucenie rzeczywistego Kavu: Druid wybrany do convoke został użyty do many, a kreator zgłaszał sukces mimo odrzucenia. `playDirect` zwraca wynik/wyjątek, helper nie maskuje błędu. Dwa RED→GREEN, kontrola ważnego convoke; pokrewne 41/41, fast 9265/9265, build 5626,6 kB. Osobno zbadać i naprawić oferowanie źródeł zarezerwowanych do convoke. Audyt trwa.

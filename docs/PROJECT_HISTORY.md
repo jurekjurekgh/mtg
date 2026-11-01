@@ -18536,3 +18536,7 @@ Wycena aktywacji używa kwalifikatora kosztu i wyłącznie własnej ręki: niegr
 ### 2026-11-01 — audyt #177, obrażony cel ETB
 
 Bramka Fathom Fleet Cutthroat nie pomija ożywionego lądu-stwora i nie uznaje hexproof/ochrony przed czarnym źródłem za legalny cel. 5 testów (3 RED→GREEN), rzeczywiste zniszczenie, pokrewne 49/49, fast 9262/9262, build 76 modułów / 5626,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, wynik płatności kreatora
+
+Odrzucenie rzeczywistego Kavu z nieaktualnym wyborem convoke oraz wyjątek nie są już traktowane jako udana płatność: `playDirect` przekazuje wynik do `finishWizardPayment`. 3 testy (2 RED→GREEN), pokrewne 41/41, fast 9265/9265, build 76 modułów / 5626,6 kB. Oferowanie zarezerwowanych źródeł wymaga osobnej poprawki; audyt trwa.

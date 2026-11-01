@@ -2609,17 +2609,18 @@ function bootstrapTable() {
       autosave();
       rerender();
       showNotice(`Błąd wewnętrzny stołu: ${error?.message ?? error}. Wyeksportuj zapis partii i zgłoś problem.`);
-      return;
+      return { ok: false, reason: 'internal_error', internalError: error?.message ?? String(error) };
     }
     autosave();
     rerender();
     if (result?.internalError) {
       showNotice(`Błąd wewnętrzny stołu: ${result.internalError}. Wyeksportuj zapis partii i zgłoś problem.`);
-      return;
+      return result;
     }
     // M254/C: przy wstrzymanej warstwie grafik nie otwieramy modala „Ruch
     // bota" — gracz ogląda ilustrację rzutu; gra ruszy po zamknięciu.
     if (result?.ok !== false && !result?.artPause) showBotMoves();
+    return result;
   }
 
   /**

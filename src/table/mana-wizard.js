@@ -1015,7 +1015,9 @@ export function finishWizardPayment(session, pending, {
       onCloseWizard();
       const res = runCommand(paidCommand);
       if (res?.ok === false) {
-        onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+        // playDirect już pokazuje szczegóły wyjątku — nie zastępuj ich
+        // ogólnym komunikatem o odrzuceniu komendy.
+        if (!res.internalError) onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
         return { committed: false, reason: res.reason ?? 'rejected' };
       }
       return { committed: true };
