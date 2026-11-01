@@ -1,0 +1,32 @@
+{
+  "source": "https://api.scryfall.com/cards/a47c968b-1edd-45ac-a67c-311647e7e2fc",
+  "print": "dsk",
+  "name": "Violent Urge",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +1/+0 and gains first strike until end of turn.\nDelirium — If there are four or more card types among cards in your graveyard, that creature gains double strike until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [
+    "Delirium"
+  ],
+  "set": "dsk",
+  "set_name": "Duskmourn: House of Horror",
+  "collector_number": "164",
+  "rarity": "uncommon",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/a/4/a47c968b-1edd-45ac-a67c-311647e7e2fc.jpg?1783909460",
+    "normal": "https://cards.scryfall.io/normal/front/a/4/a47c968b-1edd-45ac-a67c-311647e7e2fc.jpg?1783909460"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/dsk/164/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

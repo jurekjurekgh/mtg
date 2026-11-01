@@ -1,0 +1,46 @@
+{
+  "source": "https://api.scryfall.com/cards/769ca754-7da8-49ad-a26c-8e20b37e411e",
+  "print": "m10",
+  "name": "Trumpet Blast",
+  "mana_cost": "{2}{R}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Attacking creatures get +2/+0 until end of turn.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "R"
+  ],
+  "color_identity": [
+    "R"
+  ],
+  "keywords": [],
+  "set": "m10",
+  "set_name": "Magic 2010",
+  "collector_number": "160",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/6/769ca754-7da8-49ad-a26c-8e20b37e411e.jpg?1783942368",
+    "normal": "https://cards.scryfall.io/normal/front/7/6/769ca754-7da8-49ad-a26c-8e20b37e411e.jpg?1783942368"
+  },
+  "rulings": [
+    {
+      "date": "2014-09-20",
+      "source": "wotc",
+      "comment": "Only creatures that are attacking as Trumpet Blast resolves will receive the bonus. In other words, casting it before you've declared attackers usually won't do anything."
+    },
+    {
+      "date": "2009-10-01",
+      "source": "wotc",
+      "comment": "An \"attacking creature\" is one that has been declared as an attacker this combat, or one that was put onto the battlefield attacking this combat. Unless that creature leaves combat, it continues to be an attacking creature through the end of combat step, even if the player it was attacking has left the game, or the planeswalker it was attacking has left combat."
+    },
+    {
+      "date": "2009-10-01",
+      "source": "wotc",
+      "comment": "Even though Trumpet Blast affects only attacking creatures, the bonus will remain for the rest of the turn."
+    }
+  ],
+  "rulingsSource": "https://api.scryfall.com/cards/m10/160/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

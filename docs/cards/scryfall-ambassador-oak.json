@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/b8664d29-dacc-49cb-949f-e00ceeb75ff6",
+  "print": "jmp",
+  "name": "Ambassador Oak",
+  "mana_cost": "{3}{G}",
+  "cmc": 4,
+  "type_line": "Creature — Treefolk Warrior",
+  "oracle_text": "When this creature enters, create a 1/1 green Elf Warrior creature token.",
+  "power": "3",
+  "toughness": "3",
+  "colors": [
+    "G"
+  ],
+  "color_identity": [
+    "G"
+  ],
+  "keywords": [],
+  "set": "jmp",
+  "set_name": "Jumpstart",
+  "collector_number": "375",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/b/8/b8664d29-dacc-49cb-949f-e00ceeb75ff6.jpg?1783930373",
+    "normal": "https://cards.scryfall.io/normal/front/b/8/b8664d29-dacc-49cb-949f-e00ceeb75ff6.jpg?1783930373"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/jmp/375/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}

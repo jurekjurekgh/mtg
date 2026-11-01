@@ -1,0 +1,30 @@
+{
+  "source": "https://api.scryfall.com/cards/7028d9e8-002f-43a1-bdce-0db0b6a642b0",
+  "print": "dtk",
+  "name": "Anticipate",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Look at the top three cards of your library. Put one of them into your hand and the rest on the bottom of your library in any order.",
+  "power": null,
+  "toughness": null,
+  "colors": [
+    "U"
+  ],
+  "color_identity": [
+    "U"
+  ],
+  "keywords": [],
+  "set": "dtk",
+  "set_name": "Dragons of Tarkir",
+  "collector_number": "45",
+  "rarity": "common",
+  "image_uris": {
+    "large": "https://cards.scryfall.io/large/front/7/0/7028d9e8-002f-43a1-bdce-0db0b6a642b0.jpg?1783938610",
+    "normal": "https://cards.scryfall.io/normal/front/7/0/7028d9e8-002f-43a1-bdce-0db0b6a642b0.jpg?1783938610"
+  },
+  "rulings": [],
+  "rulingsSource": "https://api.scryfall.com/cards/dtk/45/rulings",
+  "rulingsPobrano": "2026-10-30",
+  "pobrano": "2026-10-30"
+}
