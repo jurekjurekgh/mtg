@@ -95,7 +95,8 @@ test('F-A1: consume-spirit X w twarz skaluje gain (tiers(X))', () => {
   const s = newState(); fillLibrary(s); setLife(s, 20); addBasics(s, ['B'], 6);
   handCard(s, 'cs', 'consume-spirit');
   const view = playerView(s, 'p1');
-  const bot = createHeuristicBot({ seed: 9 });
+  // Pomiar skali życia, nie polityki wyboru X: wyłącz próg w tej sondzie.
+  const bot = createHeuristicBot({ seed: 9, params: { xMinimumValue: 0 } });
   bot.chooseCommand(view);
   // PMSSB-79: etykieta śladu niesie odtąd X (`cast_spell(cs->p2,X=4)`) — warianty
   // {X} były wcześniej nierozróżnialne (ta sama klasa co `activate_ability`).

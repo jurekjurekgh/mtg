@@ -7015,6 +7015,54 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return amt >= remaining && remaining > 0;
   };
 
+  // Minimalne X (korekta właściciela 2026-11-01) — polityka bota,
+  // nie ograniczenie legalności. Wyjątek wymaga realnego oszacowania lethal
+  // z jawnej planszy oraz wariantu, który może ratować życie. Sama liczba
+  // życia ≤5 ani możliwość dobicia przeciwnika nie obchodzi progu.
+  const xSpellWorthEmergency = (view, spell, cmd) => {
+    if (!(spell?.xCost || spell?.fireball)) return true;
+    const x = Number.isInteger(cmd.xValue) ? cmd.xValue : 0;
+    if (!(P.xMinimumValue > 0) || x >= P.xMinimumValue) return true;
+    if (x <= 0 || !(P.xMinimumValueLooseAtLethal >= 1)) return false;
+    const life = myLife(view);
+    const threat = enemyAttackPower(view);
+    if (threat <= 0 || threat < life) return false;
+    const effects = spell.effects ?? [];
+    // Eksperyment w desperacji może znaleźć odpowiedź, ale nie przy pustej
+    // bibliotece. To prognoza, nie obietnica wylosowania ratunku.
+    if (effects.some(e => e?.type === 'epic_experiment')) {
+      return (view.zones.library ?? []).some(o => o.controllerId === view.playerId);
+    }
+    const amount = spell.fireball ? Math.floor(x / Math.max(1, (cmd.targets ?? []).length)) : x;
+    const dealsDamage = spell.fireball || effects.some(e => e?.type === 'damage' && e.amount === 'X');
+    const opponent = enemy(view);
+    // Pod presją wygrana natychmiast także jest ratunkiem.
+    if (dealsDamage && opponent && (cmd.targets ?? []).includes(opponent.id)
+      && amount >= (opponent.life ?? 20)) return true;
+    const removed = dealsDamage ? (cmd.targets ?? []).reduce((sum, id) => {
+      const victim = objectOnBoard(view, id);
+      return victim?.controllerId !== view.playerId && victim?.kind === 'creature'
+        && damageIsLethal(view, id, amount) ? sum + combatPower(victim) : sum;
+    }, 0) : 0;
+    const gained = effects.some(e => e?.type === 'gain_life' && e.amount === 'X') ? x : 0;
+    return (removed > 0 || gained > 0) && threat - removed < life + gained;
+  };
+
+  // W oknach darmowego rzutu X czaru = 0 niezależnie od X innej
+  // zdolności w komendzie (w szczególności Halo Forager).
+  const xCardCastAllowed = (view, card, cmd, free = false) => {
+    const def = card?.cardId ? cardDef(card.cardId) : null;
+    const xCmd = free ? { ...cmd, xValue: 0 } : cmd;
+    if (card?.xCost || def?.xCost) {
+      const x = Number.isInteger(xCmd.xValue) ? xCmd.xValue : 0;
+      const creature = (def?.types ?? card?.types ?? []).includes('Creature');
+      if (!creature) return !(P.xMinimumValue > 0) || x >= P.xMinimumValue;
+      const stats = entryCounterStats(view, def, x);
+      return xMinimumReached(view, xCmd, x, (card?.toughness ?? def?.toughness ?? 0) + stats.dToughness);
+    }
+    return xSpellWorthEmergency(view, card?.spell ?? def?.spell, xCmd);
+  };
+
   // I (zgłoszenie właściciela 2026-10-08, Wrap in Flames): wartość
   // ŚMIERTELNYCH obrażeń w wrogiego stwora = usunięcie ciała ze stołu. JEDNA
   // formuła dla czarów/zdolności (`damageTargetValue`) i dla wrappera
@@ -11323,6 +11371,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // w exile na stałe — chyba że czar nie ma sensownego celu.
         if (!cmd.cast) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        if (!xCardCastAllowed(view, exiled, cmd, true)) return finish(NEVER);
         const effects = exiled?.spell?.effects ?? [];
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
@@ -11587,6 +11636,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // ma sensownego celu (freeCastTargetPenalty).
         if (cmd.done) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        if (!xCardCastAllowed(view, exiled, cmd, true)) return finish(NEVER);
         const effects = freeCastVariantEffects(exiled, cmd);
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
@@ -11605,6 +11655,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // karty — chyba że czar nie ma sensownego celu.
         if (!cmd.cast) return finish(0);
         const exiled = cmd.cardId ? view.zones.exile.find((o) => o.id === cmd.cardId) : null;
+        if (!xCardCastAllowed(view, exiled, cmd, true)) return finish(NEVER);
         const effects = exiled?.spell?.effects ?? [];
         // Etap F/4: rzut bez kosztu many — X czaru = 0 (CR 107.3b); czar,
         // którego cała treść jest teraz jałowa, przegrywa z rezygnacją.
@@ -11733,6 +11784,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // pomiar PRZED: 4 różne karty = 63,000, ciało 20/20 = dalej 63,000.
         // Wzorzec jak w `cast_spell` (M103/D) — jedna arytmetyka dla obu stref.
         const card = handCard(view, cmd.objectId) ?? zoneCard(view, cmd.objectId);
+        if (!xCardCastAllowed(view, card, cmd)) return finish(NEVER);
         if (cmd.bestow || cmd.targets?.length) {
           // Czar aury (bestow albo czysta aura): +N/+N i keywordy na stworze.
           // Opłaca się tym bardziej, im większy gospodarz; stwór PRZECIWNIKA
@@ -12337,6 +12389,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           ? (card?.adventure?.spell ?? (card?.cardId ? cardDef(card.cardId)?.adventure?.spell : undefined))
           : (card?.spell ?? (card?.cardId ? cardDef(card.cardId)?.spell : undefined));
         if (!spell) return finish(60);
+        if (!xSpellWorthEmergency(view, spell, cmd)) return finish(NEVER);
         const target = cmd.targets?.[0] ? objectOnBoard(view, cmd.targets[0]) : null;
         // M111: czar MODALNY trzyma treść w `spell.modes[i].effects`, a górne
         // `spell.effects` jest puste — bez tego każdy wariant trybu dostawał
@@ -12674,19 +12727,6 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const ids = cmd.targets ?? [];
           const x = cmd.xValue ?? 0;
           const perTarget = Math.floor(x / Math.max(1, ids.length));
-          // P: nie zużywaj skalującego Fireballa na małe X. Wygrana od razu
-          // zawsze ma pierwszeństwo; w obronie wyjątek tylko przy presji życia
-          // i rzeczywistym zabiciu wrogiego stwora, nie za nietrafiający chip.
-          const opponent = enemy(view);
-          const winningShot = opponent && ids.includes(opponent.id) && perTarget >= (opponent.life ?? 20);
-          const survivalPressure = P.xMinimumValueLooseAtLethal >= 1
-            && (myLife(view) <= 5 || enemyAttackPower(view) >= myLife(view));
-          const removesThreat = ids.some((id) => {
-            const target = objectOnBoard(view, id);
-            return target?.kind === 'creature' && target.controllerId !== view.playerId
-              && damageIsLethal(view, id, perTarget);
-          });
-          if (x < P.xMinimumValue && !winningShot && !(survivalPressure && removesThreat)) return finish(NEVER);
           for (const tid of ids) score += damageTargetValue(view, tid, perTarget, true);
         }
         // M121: generyczna bramka „nie strzelaj do siebie" — obejmuje KAŻDY
@@ -13317,7 +13357,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
               && view.turn?.step === 'main2';
             // PMSSB-79 v2: próg X czytany z jednej stałej (`xMinimumValue`),
             // wspólnej z permanentami o koszcie {X} — wcześniej twarde 3.
-            if (X < P.xMinimumValue || !ownMain2) return finish(NEVER);
+            if (!ownMain2) return finish(NEVER);
             score += 5 * X + drawDeckingPenalty(view, X);
           }
           // M174/B (Toll of the Invasion — strażnik L51): amass buduje WŁASNĄ
@@ -16852,6 +16892,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         if (!cmd.castFree) return finish(20);
         const found = cmd.objectId ? (view.zones.exile ?? []).find((o) => o.id === cmd.objectId) : null;
         const foundDef = cardDef(found?.cardId ?? cmd.cardId);
+        if (!xCardCastAllowed(view, found ?? foundDef, cmd, true)) return finish(NEVER);
         if (found?.spell ?? (foundDef?.spell && !foundDef?.aura)) {
           const spellCard = found?.spell ? found : foundDef;
           return finish(freeCastVariantScore(view, freeCastVariantEffects(spellCard, cmd), cmd, 60));
@@ -17441,6 +17482,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const handCard = cmd.objectId
           ? (view.zones.hand ?? []).find((o) => o.id === cmd.objectId)
           : null;
+        if (!xCardCastAllowed(view, handCard, cmd, true)) return finish(NEVER);
         const effects = freeCastVariantEffects(handCard, cmd);
         // Darmowy rzut nie pobiera kosztu many — koszt dodatkowy (ofiara)
         // nadal jest realny, więc kara za niego siedzi w gałęzi kosztu
@@ -17458,6 +17500,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // Etap card: wybrana karta, brak celów — wycena per karta (best variant proxy)
         if (cmd.objectId != null && !hasTargetPayload) {
           const graveCardPick = (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId) ?? null;
+          if (!xCardCastAllowed(view, graveCardPick, cmd, true)) return finish(NEVER);
           const effPick = freeCastVariantEffects(graveCardPick, cmd);
           // Jeśli karta bez celów — użyj tej wyceny; jeśli wymaga celów — lekka kara, bo wybór celu dopiero nastąpi
           const isTargeted = (graveCardPick?.spell?.targets?.length ?? 0) > 0 || (graveCardPick?.spell?.modes?.some((m) => (m.targets ?? []).length > 0 || m.variableTargets)) || graveCardPick?.spell?.fireball || graveCardPick?.spell?.divided;
@@ -17469,6 +17512,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const graveCard = cmd.objectId
           ? (view.zones.graveyard ?? []).find((o) => o.id === cmd.objectId)
           : null;
+        if (!xCardCastAllowed(view, graveCard, cmd, true)) return finish(NEVER);
         const effects = freeCastVariantEffects(graveCard, cmd);
         return finish(freeCastVariantScore(view, effects, cmd, Math.max(6, 40 - 3 * (cmd.xValue ?? 0))));
       }
@@ -17484,6 +17528,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const madnessCard = cmd.objectId
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
+        if (!xCardCastAllowed(view, madnessCard, cmd)) return finish(NEVER);
         // Audyt PR #93 (znalezisko F): ta sama wycena co w oknie grobu.
         return finish(freeCastVariantScore(view, freeCastVariantEffects(madnessCard, cmd), cmd, 60, { withoutManaCost: false }));
       }
@@ -17497,6 +17542,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         const exiledCard = cmd.objectId
           ? view.zones.exile.find((o) => o.id === cmd.objectId)
           : null;
+        if (!xCardCastAllowed(view, exiledCard, cmd)) return finish(NEVER);
         // Audyt PR #93 (znalezisko F): jw. — Vaan wycenia wybrany tryb i cele.
         return finish(freeCastVariantScore(view, freeCastVariantEffects(exiledCard, cmd), cmd, 52, { withoutManaCost: false }));
       }

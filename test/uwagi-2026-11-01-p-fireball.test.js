@@ -63,9 +63,9 @@ test('P/3: X=3 zabija cennego stwora', () => {
   assert.equal(cmd.xValue, 3); assert.deepEqual(cmd.targets, ['enemy0']);
 });
 
-test('P/4: lethal w przeciwnika wygrywa pomimo X=2', () => {
+test('P/4: nawet lethal za X=2 bez presji przegranej nie omija progu (korekta właściciela)', () => {
   const { cmd } = choose(scene({ mana: 3, foeLife: 2, enemyCount: 0 }));
-  assert.equal(cmd.type, 'cast_spell'); assert.equal(cmd.xValue, 2); assert.deepEqual(cmd.targets, ['p2']);
+  assert.notEqual(cmd.type === 'cast_spell' && cmd.objectId === 'fb', true);
 });
 
 test('P/5: pod presją lethal własnego życia X=2 usuwa zagrożenie', () => {
