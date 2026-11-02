@@ -202,3 +202,6 @@ A51: bezpośredni diff #177 L, 5 realnych testów Ambulatory Edifice, dwie mutac
 
 
 A52: bezpośredni diff #177 G — 5 rzeczywistych kontr i interakcji, mutacja 10→6 wykryta, pokrewne 31/31, fast 9466/9466, build 5639,0 kB; slow po A50 268/268, zachowanie produkcji bez zmian. Kontynuować bezpośredni diff #177.
+
+
+A53: bezpośredni diff #177 PMSSB-80, 6 realnych scenariuszy Rockslide, dwie mutacje, pokrewne 22/22, fast 9472/9472, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Kontynuować bezpośredni diff #177.

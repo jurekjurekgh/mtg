@@ -64,7 +64,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb25-discard.test.js` | otwarte |
 | `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
 | `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |
-| `test/audyt-pmssb80-kwota-z-landow.test.js` | otwarte |
+| `test/audyt-pmssb80-kwota-z-landow.test.js` | częściowo — realne cele, progi i ląd-stwór A53; inne scenariusze otwarte |
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | częściowo — realne biblioteki, wybór, mill, draw i Naturalize A42 |
@@ -155,3 +155,5 @@ A50: rzeczywiste Final Parting, prywatność i jedno tasowanie naprawione (błę
 A51: bezpośredni diff #177 L, rzeczywisty Edifice i decyzja bota; inne przypadki otwarte.
 
 A52: bezpośredni diff #177 G, waga kontry i realny stos — pięć przypadków, mutacja wagi wykryta.
+
+A53: bezpośredni diff #177 PMSSB-80, sześć realnych scenariuszy Rockslide; dwie mutacje wykryte.
