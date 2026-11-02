@@ -187,3 +187,6 @@ Uzupełnienie: slow po A45 268/268 na tym samym kodzie produkcyjnym A46; test A4
 
 
 A47: sprawdzono tabelę 10 zmienionych talii i zaktualizowano status README, zachowano historię; pokrewne 40/40, fast 9444/9444, build 5638,0 kB, slow po A45 268/268 na tym samym kodzie produkcyjnym. Audyt #177 otwarty.
+
+
+A48: 4 rzeczywiste testy Rupture Spire/Druid/Fiery Fall, odpowiedź i mana w puli; pokrewne 18/18, fast 9448/9448, build 5638,0 kB. Slow po A45 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.

@@ -18660,3 +18660,6 @@ Slow po A45: 268/268, po zmianie produkcyjnej wyceny bite.
 
 
 Audyt #177 A47: sprawdzono tabelę talii i status README, fast 9444/9444, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A48: rzeczywista płatność Rupture Spire po odpowiedzi na trigger; fast 9448/9448, build 5638,0 kB. Audyt trwa.

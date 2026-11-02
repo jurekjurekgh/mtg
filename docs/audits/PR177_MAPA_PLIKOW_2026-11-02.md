@@ -91,7 +91,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/helpers/cr-numery-tabela.js` | otwarte |
 | `test/i-poswiecenie-stwora.test.js` | częściowo — rzeczywiste Spellkeeper Weird, hexproof, protekcja, niezniszczalność i wygnanie A34; inne zagrożenia otwarte |
 | `test/j-benevolent-blessing-kolor.test.js` | częściowo — realne ataki/bloki, kolor, obrażenia i Tail Slash A46 |
-| `test/k-rupture-spire-etb-oplata.test.js` | otwarte |
+| `test/k-rupture-spire-etb-oplata.test.js` | częściowo — realny Druid, opłata i odpowiedź Fiery Fall A48 |
 | `test/katalog-pole-plan.test.js` | otwarte |
 | `test/l-ambulatory-edifice-debuff.test.js` | otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
@@ -145,3 +145,5 @@ A45: Tail Slash na rzeczywistych kartach, RED→GREEN braku uwzględnienia ochro
 A46: flash Benevolent Blessing, prawdziwy blok i atak, kolor względem źródła Tail Slash; pozostałe stany walki otwarte.
 
 A47: tabela dziesięciu zmienionych talii i aktualizacja nieaktualnego punktu zaczepienia README, z zachowaniem historycznych wyników #177.
+
+A48: Rupture Spire z rzeczywistą odpowiedzią na trigger i produkcją many, bez pełnego audytu wszystkich źródeł.
