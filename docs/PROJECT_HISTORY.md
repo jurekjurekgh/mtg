@@ -18669,3 +18669,6 @@ Audyt #177 A49: prawdziwe obrażenia infect i proliferate; fast 9451/9451, build
 
 
 Audyt #177 A50: naprawa prywatności i liczby tasowań Final Parting, fast 9456/9456, build 5639,0 kB; slow 268/268. Audyt trwa.
+
+
+Audyt #177 A51: rzeczywiste cele i decyzja Ambulatory Edifice, fast 9461/9461, build 5639,0 kB. Audyt trwa.

@@ -63,7 +63,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb19-search.test.js` | otwarte |
 | `test/audyt-pmssb25-discard.test.js` | otwarte |
 | `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
-| `test/audyt-pmssb60-batch65.test.js` | otwarte |
+| `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |
 | `test/audyt-pmssb80-kwota-z-landow.test.js` | otwarte |
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
@@ -93,7 +93,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/j-benevolent-blessing-kolor.test.js` | częściowo — realne ataki/bloki, kolor, obrażenia i Tail Slash A46 |
 | `test/k-rupture-spire-etb-oplata.test.js` | częściowo — realny Druid, opłata i odpowiedź Fiery Fall A48 |
 | `test/katalog-pole-plan.test.js` | otwarte |
-| `test/l-ambulatory-edifice-debuff.test.js` | otwarte |
+| `test/l-ambulatory-edifice-debuff.test.js` | częściowo — realne cele, decyzja płatności/refleks, shield i odpowiedź A51; wycena rzutu i inne przypadki otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
@@ -151,3 +151,5 @@ A48: Rupture Spire z rzeczywistą odpowiedzią na trigger i produkcją many, bez
 A49: rzeczywisty infect, dwa rodzaje liczników i wybór proliferate bota; inne warianty otwarte.
 
 A50: rzeczywiste Final Parting, prywatność i jedno tasowanie naprawione (błędy już w bazie #177); pozostałe wyszukiwania i wyceny otwarte.
+
+A51: bezpośredni diff #177 L, rzeczywisty Edifice i decyzja bota; inne przypadki otwarte.

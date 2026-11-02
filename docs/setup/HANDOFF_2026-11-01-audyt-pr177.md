@@ -196,3 +196,6 @@ A49: 3 realne testy infect, liczników i wyboru proliferate, pokrewne 20/20, fas
 
 
 A50: Final Parting rzeczywisty RED prywatność/tasowanie (błędy już w bazie #177), fix GREEN, pokrewne 82/82, fast 9456/9456, build 5639,0 kB; slow na A50 268/268. Surowe eventy nie są filtrowanym API. Otwarte: dobór karty do grobu, możliwe warianty przy 1 karcie i inne search.
+
+
+A51: bezpośredni diff #177 L, 5 realnych testów Ambulatory Edifice, dwie mutacje, pokrewne 24/24, fast 9461/9461, build 5639,0 kB. Slow po A50 268/268 na tym samym kodzie produkcyjnym. Kontynuować bezpośredni diff #177.
