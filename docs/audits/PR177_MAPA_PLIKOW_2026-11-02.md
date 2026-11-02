@@ -99,7 +99,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
 | `test/o-plague-reaver-darowanie.test.js` | częściowo — rzeczywisty próg 12/13, Zoraline/finality, odpowiedzi i przekazanie A36; inne przypadki bota otwarte |
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
-| `test/o5-tester-etykiety-logu.test.js` | otwarte |
+| `test/o5-tester-etykiety-logu.test.js` | częściowo — helper granice i rzeczywista etykieta Gila Courser A55 |
 | `test/obiekty-wsparcia-poza-rejestrem.test.js` | otwarte |
 | `test/panel-rozgrywka-tura-przeciwnika.test.js` | otwarte |
 | `test/pmssb10-ogon-wave-b2.test.js` | otwarte |
@@ -111,11 +111,11 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/real-cards-batch65.test.js` | otwarte |
 | `test/real-cards-batch71.test.js` | częściowo — wybrane testy kart i mechanik, bez oceny całości |
 | `test/statusy-wpisow-katalogu.test.js` | otwarte |
-| `tools/benchmark.mjs` | otwarte |
+| `tools/benchmark.mjs` | częściowo — cały diff #177 to tekst help; liczba 27 i 4 seedy sprawdzone bez uruchomienia benchmarku A55 |
 | `tools/collection-art-ids.csv` | częściowo — 625–634 zgodne z katalogiem/snapshotami A30 |
 | `tools/generate-plan-decks.mjs` | częściowo — wynik 31 talii identyczny z plikami A30, semantyka i strategia nie wyczerpane |
-| `tools/table-tester/labels.mjs` | otwarte |
-| `tools/table-tester/run-game.mjs` | otwarte |
+| `tools/table-tester/labels.mjs` | częściowo — cała nowa funkcja i rzeczywista etykieta A55; bez partii przeglądarkowej |
+| `tools/table-tester/run-game.mjs` | częściowo — obie zmienione linie #177 przekazują etykiety do helpera; bez partii przeglądarkowej A55 |
 | `tools/tune-card.mjs` | częściowo — rejestr parametrów bounce z #177, A33; działanie tunera otwarte |
 
 A34: rzeczywiste komendy Spellkeeper Weird + Magic Damper/Benevolent Blessing/Crumb and Get It wobec Fiery Fall, Expunge i Merciless Repurposing; poprawiono fałszywą „pewną śmierć” w heurystyce (szczegóły i granice w raporcie). Plik heurystyki nadal tylko częściowo sprawdzony.

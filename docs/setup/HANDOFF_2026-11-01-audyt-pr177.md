@@ -208,3 +208,6 @@ A53: bezpośredni diff #177 PMSSB-80, 6 realnych scenariuszy Rockslide, dwie mut
 
 
 A54: bezpośredni diff #177 PMSSB-81, sprostowany błędny cytat Hounds, dwa realne testy i dwie mutacje, pokrewne 49/49, fast 9474/9474, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Kontynuować bezpośredni diff #177.
+
+
+A55: bezpośredni diff #177 helpera testera, miejsc logu i help benchmarku; realna etykieta po saddle, pokrewne 29/29, fast 9477/9477, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Żadnego B0 ani gry przeglądarkowej. Kontynuować bezpośredni diff #177.
