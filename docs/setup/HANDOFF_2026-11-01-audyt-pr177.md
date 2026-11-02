@@ -97,3 +97,9 @@ Leafcrown Dryad rzucona za bestow była na stosie niepoprawnie stworem. Wspólna
 ## A22 — ochrona celu bestow
 
 Rzeczywisty Spare from Evil uniemożliwiał zagranie Dryady za bestow, mimo że czar nie jest stworem. Odwrotna sonda ochrony przed Aurami oferowała niedozwolony cel. Oferta i walidacja korzystają z cech wybranego wariantu. 6 testów, pakiet 81/81, fast 9308/9308, build 5630,6 kB; slow sprzed A21/A22. Syntetyczny artefakt-bestow z maną Powerstone nadal ujawnia osobną rozbieżność celu wydania many (sonda `.arena/a23-red.log`); brak wspieranej realnej karty artefakt-bestow. Audyt trwa.
+
+## A23 — płatność bestow / A24 do dalszego badania
+
+Syntetyczny artifact-bestow nie może korzystać z Powerstone ani rabatu Etherium Sculptor: cechy Aura na stosie stosowane do oferty, wykonawcy i kreatora. Zwykły artefakt i realny bestow nadal działają. 6 testów, zaktualizowana błędna przesłanka syntetycznego B54, 65/65 i 33/33 pokrewne, pełny fast 9314/9314, build 5631,3 kB. Pierwszy pełny bieg ujawnił B54 (9313/9314); po poprawie powtórzono. Slow nadal z A20.
+
+A24 otwarty: realny Heap Gate + Forest + Mountain i Goblin Deathraiders, brak oferty przed ręczną aktywacją, po aktywacji czar działa (`.arena/a24-heap-probe.test.js`, `.arena/a24-red.log`). Automatyczny kreator mierzy też sumę, a nie pokrycie kolorów; oba elementy wymagają rozwiązania z ochroną przed wielokrotnym użyciem źródeł i z testami. Audyt trwa.

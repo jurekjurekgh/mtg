@@ -256,6 +256,11 @@ export function bestowedTypeLine(object) {
   };
 }
 
+/** Cechy czaru wybranego wariantu, także przed właściwym położeniem na stos. */
+export function bestowedSpellCharacteristics(object) {
+  return { ...object, ...bestowedTypeLine(object), kind: 'aura' };
+}
+
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
   const host = state.objects.get(hostId);

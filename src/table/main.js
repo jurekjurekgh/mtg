@@ -41,6 +41,7 @@ import { expandManaPool, producibleMana } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
+import { bestowedSpellCharacteristics } from '../engine/attachments.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createCardSoundPlayer } from './card-sound-player.js';
 import { createTopbarToggles } from './topbar-toggles.js';
@@ -2670,6 +2671,8 @@ function bootstrapTable() {
   // wyjmowana w testach razem z konsumentem.
   function restrictedSpellBlockedFor(cmd, descriptor) {
     if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+    // Bestow zawsze tworzy nieartefaktowy czar Aury (CR 702.103b).
+    if (cmd.bestow) return true;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
     const reg = typeof registry !== 'undefined' ? registry : null;
     // O1 (audyt PR #121, domknięcie 2026-09-16): fail-CLOSED — nieznany
@@ -2866,7 +2869,8 @@ function bootstrapTable() {
     if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
       const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
       if (alternative) opts.alternativeCost = reduceAlternativeCost(
-        session.state, stateObject, alternative.cost, alternative.colors ?? []);
+        session.state, cmd.bestow ? bestowedSpellCharacteristics(stateObject) : stateObject,
+        alternative.cost, alternative.colors ?? []);
     }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
@@ -2957,7 +2961,8 @@ function bootstrapTable() {
     // poświęcenia Sciona) — poniżej kosztu kreator musi się otworzyć
     // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
     const autoPayableMana = session.state
-      ? producibleMana(session.state, HUMAN_ID, excludedSources, {}, []) : null;
+      ? producibleMana(session.state, HUMAN_ID, excludedSources,
+        cmd.bestow ? { castingSpell: true, artifactSpell: false } : {}, []) : null;
     const normallyOpens = shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,

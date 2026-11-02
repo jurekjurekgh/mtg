@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor } from './zones.js';
 import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant, tapObject } from './permanents.js';
-import { bestowedTypeLine, effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
+import { bestowedTypeLine, bestowedSpellCharacteristics, effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -2628,7 +2628,7 @@ function auraTargetProtected(state, host, sourceObject, { bestow = false } = {})
   // Celowanie odbywa się już czarem na stosie, a nie kartą w ręce. Ochrona
   // patrzy na cechy wybranego wariantu (bestow jest Aurą, nie stworem).
   const spellSource = bestow
-    ? { ...sourceObject, ...bestowedTypeLine(sourceObject), kind: 'aura' }
+    ? bestowedSpellCharacteristics(sourceObject)
     : sourceObject;
   if (!host || host.zone !== 'battlefield') return false;
   // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ (np. „protection from
@@ -2642,8 +2642,9 @@ function auraTargetProtected(state, host, sourceObject, { bestow = false } = {})
 /** Koszt i pipy aury: jedno źródło dla oferty oraz walidacji/płatności. */
 function auraPaymentCost(state, object, { bestow = false, surgeCast = false } = {}) {
   const alternative = surgeCast ? object.surge : bestow ? object.bestow : null;
+  const spellObject = bestow ? bestowedSpellCharacteristics(object) : object;
   const cost = alternative
-    ? reduceAlternativeCost(state, object, alternative.cost ?? 0, alternative.colors ?? [])
+    ? reduceAlternativeCost(state, spellObject, alternative.cost ?? 0, alternative.colors ?? [])
     : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
   const requirements = alternative ? (alternative.colors ?? []).map(c => [c]) : coloredPipsOf(object.cardId);
   return { cost, requirements };
@@ -2678,10 +2679,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const { cost, requirements } = withoutManaCost
     ? { cost: 0, requirements: [] }
     : auraPaymentCost(state, object, { bestow, surgeCast });
-  // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
-  const manaPurpose = spellManaPurpose(object);
+  // Mana i obniżki patrzą na czar na stosie, nie na kartę przed bestow.
+  const manaPurpose = spellManaPurpose(bestow ? bestowedSpellCharacteristics(object) : object);
   if (producibleMana(state, playerId, null, manaPurpose, requirements) < cost) throw new Error('Niewystarczająca mana');
-  if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowego źródła many');
+  if (!canPayColoredCost(state, playerId, requirements, null, manaPurpose)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
   // może zostawić karty na stosie ani utraconej many.
   let spellTargets;
@@ -2824,8 +2825,9 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
     // A: budżet PER OPCJA (pip(y) bestow ≠ pip(y) aury) — joint (iv) bramki
     // źródeł kosztowych liczy się na pipach tej opcji (L48 z castAuraSpell).
-    if (cost <= producibleMana(state, playerId, null, spellManaPurpose(object), requirements)
-      && canPayColoredCost(state, playerId, requirements)) options.push(bestow);
+    const manaPurpose = spellManaPurpose(bestow ? bestowedSpellCharacteristics(object) : object);
+    if (cost <= producibleMana(state, playerId, null, manaPurpose, requirements)
+      && canPayColoredCost(state, playerId, requirements, null, manaPurpose)) options.push(bestow);
   }
   if (options.length === 0) return out;
   // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
