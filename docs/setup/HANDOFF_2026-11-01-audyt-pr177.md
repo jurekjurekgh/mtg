@@ -116,3 +116,5 @@ A27: w granicach realnych interakcji #177 znaleziono istniejącą rozbieżność
 
 
 A27 częściowo naprawione: madness to osobny trigger stosu, decyzja po passach; 5 realnych testów Hounds/Revolutionist/Shock oraz Cathartic Reunion/Terminal Agony, migracja testów wielokrotnych odrzuceń i cleanup. Fast 9325/9325, slow 268/268, build 5630,7 kB (ten sam kod/testy); bez B0. **Otwarta realna kolejność:** dla jednoczesnych Revolutionist + Terminal Agony w Cathartic Reunion kontroler nie wybiera kolejności triggerów; osobne dodawanie innych triggerów nie gwarantuje wspólnego APNAP (Talion's Messenger). CR 603.3b i plan w raporcie. Kontynuować naprawę tej realnej interakcji oraz mapę #177; nie uznawać A27 ani całego audytu za skończone.
+
+A28 potwierdzony RED na rzeczywistych Cathartic Reunion + Revolutionist + Terminal Agony: oba triggery na stosie, ale bez wyboru kolejności przed `pass_priority`; `.arena/a28-madness-order-red.test.js` i log 0/1, opis reprodukcji również w audycie. Naprawa w toku, bez commitu kodu A28.
