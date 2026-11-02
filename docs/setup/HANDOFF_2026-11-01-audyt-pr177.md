@@ -232,3 +232,6 @@ A61: bezpośredni diff #177 batch 71, realny Ambassador Oak i token z Ivy Lane D
 
 
 A62: 10 kart #177, zgodność cech/tekstu ze snapshotami i rzeczywista instalacja; przegląd strażników, CSV i trzech dodanych numerów CR. Mutacja instalacji wykryta; related 92/92, fast 9518/9518, build 5639,2 kB. Slow po A57 268/268 na tym samym kodzie produkcyjnym; A62 poza slow. Audyt diffu trwa.
+
+
+A63: realne Edifice i Benevolent Blessing — wycena nielegalnego celu, RED→GREEN i wybór bota; defekt sprzed #177. Related 97/97, fast 9523/9523, build 5639,5 kB; slow uruchomiony, wynik jeszcze oczekiwany.

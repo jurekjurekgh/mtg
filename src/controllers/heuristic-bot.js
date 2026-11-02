@@ -2790,8 +2790,12 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if ((p < 0 || t < 0) && req) {
         const delta = { power: p, toughness: t };
         let best = 0;
-        for (const object of view.zones?.battlefield ?? []) {
-          if (object?.kind !== 'creature' || object.controllerId === view.playerId) continue;
+        // Wartość przewidywanego refleksu może pochodzić tylko z legalnego
+        // celu tej zdolności: shroud, hexproof i ochrona przed źródłem mają
+        // znaczenie już przy wycenie rzutu, nie dopiero przy zapłacie życia.
+        for (const id of publicEtbTargets(view, typeof req === 'string' ? { type: req } : req, def)) {
+          const object = objectOnBoard(view, id);
+          if (!object || object.controllerId === view.playerId) continue;
           best = Math.max(best, debuffPayoffValue(view, object, delta));
         }
         return best;

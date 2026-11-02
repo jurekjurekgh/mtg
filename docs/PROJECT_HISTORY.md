@@ -18705,3 +18705,6 @@ Audyt #177 A61: realny Ambassador Oak, zielony token i Ivy Lane Denizen; fast 95
 
 
 Audyt #177 A62: statyczne cechy, tekst i instalacja talii dziesięciu kart względem snapshotów; fast 9518/9518, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A63: poprawa wyceny celu ETB Edifice z ochroną (błąd sprzed #177); fast 9523/9523, build 5639,5 kB; slow w toku.

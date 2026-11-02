@@ -93,7 +93,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/j-benevolent-blessing-kolor.test.js` | częściowo — realne ataki/bloki, kolor, obrażenia i Tail Slash A46 |
 | `test/k-rupture-spire-etb-oplata.test.js` | częściowo — realny Druid, opłata i odpowiedź Fiery Fall A48 |
 | `test/katalog-pole-plan.test.js` | przejrzany diff — wzrost liczby tokenów bez planu o Elf Warrior, A61/A62 |
-| `test/l-ambulatory-edifice-debuff.test.js` | częściowo — realne cele, decyzja płatności/refleks, shield i odpowiedź A51; wycena rzutu i inne przypadki otwarte |
+| `test/l-ambulatory-edifice-debuff.test.js` | częściowo — realne cele, decyzja płatności/refleks, shield i odpowiedź A51; A63: wycena rzutu z rzeczywistą ochroną poprawiona (brak sprzed #177); inne przypadki otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
@@ -175,3 +175,5 @@ A60: Frightful Delusion, realny stos, płatność i odrzut, bot oraz mutacja wag
 A61: Ambassador Oak z Ivy Lane Denizen, prawdziwy token i dwa wyzwolenia oraz niezależność ETB od źródła; nie pełny audyt batch 71.
 
 A62: dziesięć kart — porównanie ze snapshotami i instalacja rzeczywistej talii; zmienione strażniki katalogu, tokena, CSV i trzy nowe numery CR z #177. Zgodność ze snapshotem nie jest osobną weryfikacją aktualności źródła ani kompletnym dowodem mechanik.
+
+A63: realna ochrona Benevolent Blessing blokuje czarną zdolność Edifice; naprawiono przewidywanie wartości i rzeczywisty wybór bota, z porównaniem bazy #177.

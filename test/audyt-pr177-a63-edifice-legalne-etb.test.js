@@ -35,3 +35,17 @@ for(const [color,expectTarget] of [['B',false],['W',true]]) test(`A63: rzeczywis
  if(expectTarget){until(s,()=>s.pendingTriggerTargets.length>0);const target=bot(s).c;assert.equal(target.targetId,'target');act(s,target);until(s,()=>s.zones.stack.length===0);assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-target').zone,'graveyard');}
  else assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-target').zone,'battlefield');
 });
+
+test('A63: ochrona celu zmienia rzeczywisty wybór bota między Edifice i Delta Bloodflies',()=>{
+ const black=scene('B'),white=scene('W');put(black,'other','delta-bloodflies','hand');put(white,'other','delta-bloodflies','hand');
+ const cb=bot(black),cw=bot(white);assert.equal(cb.c.objectId,'other',JSON.stringify(cb));assert.equal(cw.c.objectId,'edifice',JSON.stringify(cw));act(black,cb.c);until(black,()=>black.zones.stack.length===0);assert.equal([...black.objects.values()].find(o=>o.instanceId==='i-other').zone,'battlefield');assert.equal([...black.objects.values()].find(o=>o.instanceId==='i-edifice').zone,'hand');
+});
+
+test('A63: nietykalny Bog nie ukrywa innego rzeczywistego legalnego celu refleksu',()=>{
+ const s=scene('B');put(s,'imp','nefarious-imp','battlefield','p2');
+ const bonus=score(s),onlyProtected=score(scene('B'));assert.ok(bonus>onlyProtected,`${bonus} > ${onlyProtected}`);
+ const cast=bot(s).c;assert.equal(cast.objectId,'edifice');act(s,cast);until(s,()=>!!s.pendingOptionalPay);
+ const decision=bot(s).c;assert.equal(decision.pay,true);assert.ok(decision.reflexiveTargetIds.includes('imp'));assert.ok(!decision.reflexiveTargetIds.includes('target'));act(s,decision);
+ until(s,()=>s.pendingTriggerTargets.length>0);const choice=bot(s).c;assert.equal(choice.targetId,'imp');act(s,choice);until(s,()=>s.zones.stack.length===0);
+ assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-imp').zone,'graveyard');assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-target').zone,'battlefield');
+});
