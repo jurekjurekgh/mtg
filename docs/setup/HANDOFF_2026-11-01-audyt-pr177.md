@@ -217,3 +217,6 @@ A56: bezpośredni diff #177 PMSSB-82, rzeczywista walka, wybór bota i delirium,
 
 
 A57: niepełne podłączenie nowych danych #177 do logu, zastany objaw, RED dwóch rzeczywistych czarów → GREEN; 7 testów, pokrewne 28/28, fast 9488/9488, build 5639,2 kB. Slow A57 268/268, log `.arena/a57-slow.log`. Kontynuować audyt diffu #177.
+
+
+A58: bezpośredni diff #177 wyceny Dawntreader Elk, pięć testów realnego kosztu i search, mutacja wykryta; pokrewne 35/35, fast 9493/9493, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A58 poza slow. Kontynuować diff #177.

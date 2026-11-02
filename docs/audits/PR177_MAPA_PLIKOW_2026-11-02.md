@@ -60,7 +60,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
 | `test/audyt-pmssb18-proliferate.test.js` | częściowo — rzeczywisty infect, poison, −1/−1 i wybór Courage/proliferate A49 |
-| `test/audyt-pmssb19-search.test.js` | otwarte |
+| `test/audyt-pmssb19-search.test.js` | częściowo — zmiana wyceny Elka z #177 sprawdzona w realnej aktywacji i cienkiej bibliotece A58; inne tutory otwarte |
 | `test/audyt-pmssb25-discard.test.js` | otwarte |
 | `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
 | `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |

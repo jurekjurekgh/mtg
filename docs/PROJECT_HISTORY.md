@@ -18690,3 +18690,6 @@ Audyt #177 A56: rzeczywista walka i decyzja bota Violent Urge, delirium i obie m
 
 
 Audyt #177 A57: podłączono źródło decyzji poświęcenia do logu (brak istniał przed #177); fast 9488/9488, build 5639,2 kB, slow 268/268. Audyt trwa.
+
+
+Audyt #177 A58: realny Dawntreader Elk, koszt i tutor po zmianie #177; fast 9493/9493, build 5639,2 kB. Audyt trwa.
