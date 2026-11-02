@@ -47,9 +47,9 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte |
-| `src/engine/permanents.js` | otwarte |
+| `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
 | `src/engine/resources.js` | częściowo — Converge (A3) |
-| `src/engine/spells.js` | otwarte |
+| `src/engine/spells.js` | częściowo — nazwy transformu w scenariuszach realnych kart/tokena A32; inne ścieżki otwarte |
 | `src/engine/state-based.js` | częściowo — token wygnany przez championa, anihilacja Magmy A29/A31; inne ścieżki otwarte |
 | `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
@@ -87,7 +87,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/f-morbid-kreatura-zginela.test.js` | otwarte |
 | `test/fixtures/bot-scoring-snapshot.json` | otwarte |
 | `test/g-sea-gods-scorn-ranking.test.js` | otwarte |
-| `test/h-incubator-nazwa-po-transformacji.test.js` | otwarte |
+| `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | otwarte |
 | `test/i-poswiecenie-stwora.test.js` | otwarte |
 | `test/j-benevolent-blessing-kolor.test.js` | otwarte |

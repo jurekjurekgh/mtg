@@ -130,3 +130,6 @@ A30: sprawdzono dane batcha 71 (wybrane pola zgodne z CSV i snapshotami) oraz ge
 
 
 A31: champion nietargetowany działa z rzeczywistym Scythe Tiger (jego własne ETB po powrocie wymaga lądu) i z tokenem rzeczywistego Ambassador Oak (token znika). Oba wybory odtworzone w replay, pola decyzji w fingerprint; cztery testy, pokrewne 53/53, fast 9349/9349, slow 268/268 przed korektą komentarza testu, build 5635,2 kB. Audyt #177 pozostaje otwarty.
+
+
+A32: trzy testy rzeczywistych nazw po transformie (Merciless Repurposing/Incubator, Civilized Scholar, Jill/Shiva), materializacja talii i sesja stołu; pokrewne 126/126, fast 9352/9352, build 5635,2 kB. Slow 268/268 A31 przed testami A32, ten sam kod. Pozostały audyt otwarty.
