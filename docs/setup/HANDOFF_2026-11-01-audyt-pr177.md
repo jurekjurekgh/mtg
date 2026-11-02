@@ -205,3 +205,6 @@ A52: bezpośredni diff #177 G — 5 rzeczywistych kontr i interakcji, mutacja 10
 
 
 A53: bezpośredni diff #177 PMSSB-80, 6 realnych scenariuszy Rockslide, dwie mutacje, pokrewne 22/22, fast 9472/9472, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Kontynuować bezpośredni diff #177.
+
+
+A54: bezpośredni diff #177 PMSSB-81, sprostowany błędny cytat Hounds, dwa realne testy i dwie mutacje, pokrewne 49/49, fast 9474/9474, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Kontynuować bezpośredni diff #177.

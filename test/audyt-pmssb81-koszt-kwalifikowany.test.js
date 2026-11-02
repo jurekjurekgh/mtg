@@ -1,6 +1,6 @@
 // PMSSB-81 (batch 71) — koszt „odrzuć kartę o KWALIFIKATORZE” (Vampire Hounds,
-// EXO: „{B}: Vampire Hounds gets +2/+2 until end of turn. Discard a creature
-// card: Activate only once each turn.”). Pełna pętla: sonda PRZED → audyt
+// EXO: „Discard a creature card: This creature gets +2/+2 until end of turn.”
+// Bez kosztu many i bez ograniczenia raz na turę. Pełna pętla: sonda PRZED → audyt
 // kosztu i L41 → pokrętła + piny RED→GREEN.
 //
 // SONDA PRZED (blok 3/3, tura przeciwnika, `declare_blockers`):

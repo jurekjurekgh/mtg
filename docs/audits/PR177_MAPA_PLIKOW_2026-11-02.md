@@ -65,7 +65,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
 | `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |
 | `test/audyt-pmssb80-kwota-z-landow.test.js` | częściowo — realne cele, progi i ląd-stwór A53; inne scenariusze otwarte |
-| `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
+| `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | częściowo — sprostowany błędny cytat Oracle #177; rzeczywista legalność i dwie aktywacje A54, selekcja bota częściowo A12/A27 |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | częściowo — realne biblioteki, wybór, mill, draw i Naturalize A42 |
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
@@ -157,3 +157,5 @@ A51: bezpośredni diff #177 L, rzeczywisty Edifice i decyzja bota; inne przypadk
 A52: bezpośredni diff #177 G, waga kontry i realny stos — pięć przypadków, mutacja wagi wykryta.
 
 A53: bezpośredni diff #177 PMSSB-80, sześć realnych scenariuszy Rockslide; dwie mutacje wykryte.
+
+A54: sprostowany błędny cytat Oracle Vampire Hounds w teście #177; rzeczywista legalność dwóch aktywacji, dwie mutacje wykryte.

@@ -18678,3 +18678,6 @@ Audyt #177 A52: rzeczywiste kontry, waga i Steel Sabotage, fast 9466/9466, build
 
 
 Audyt #177 A53: rzeczywisty Rockslide, ląd-stwór i zmiana landów na stosie; fast 9472/9472, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A54: Oracle i wielokrotna aktywacja Vampire Hounds; fast 9474/9474, build 5639,0 kB. Audyt trwa.
