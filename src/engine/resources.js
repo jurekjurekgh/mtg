@@ -2624,14 +2624,19 @@ function auraTargetHexproof(state, host, casterId) {
  * (legalAuraCasts), walidacji (castAuraSpell) i przy rozstrzyganiu
  * (resolveAuraSpell — gospodarz mógł zyskać protection na stosie).
  */
-function auraTargetProtected(state, host, sourceObject) {
+function auraTargetProtected(state, host, sourceObject, { bestow = false } = {}) {
+  // Celowanie odbywa się już czarem na stosie, a nie kartą w ręce. Ochrona
+  // patrzy na cechy wybranego wariantu (bestow jest Aurą, nie stworem).
+  const spellSource = bestow
+    ? { ...sourceObject, ...bestowedTypeLine(sourceObject), kind: 'aura' }
+    : sourceObject;
   if (!host || host.zone !== 'battlefield') return false;
   // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ (np. „protection from
   // Auras"/„from non-Human creatures" dla aur-stworów z bestow).
-  if (isProtectedFromSource(state, host, sourceObject)) return true;
+  if (isProtectedFromSource(state, host, spellSource)) return true;
   const protColors = effectiveProtectionFromColors(state, host);
   if (protColors.length === 0) return false;
-  return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
+  return (spellSource.colors ?? []).some((c) => protColors.includes(c));
 }
 
 /** Koszt i pipy aury: jedno źródło dla oferty oraz walidacji/płatności. */
@@ -2738,7 +2743,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     // Audyt PR #41 (B6, CR 702.16b): permanent z protection od koloru czaru
     // nie może być celem czaru aury tego koloru (np. Curiosity {U} vs stwór
     // z protection od blue). Wcześniej sprawdzany był tylko hexproof.
-    if (auraTargetProtected(state, host, object)) {
+    if (auraTargetProtected(state, host, object, { bestow })) {
       throw new Error('Celem czaru aury nie może być permanent z protection od koloru czaru');
     }
     const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
@@ -2842,7 +2847,13 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
   }
   // Protection (CR 702.16b) — spójnie z castAuraSpell: cel z protection od
   // koloru aury nie jest oferowany (oferta = walidacja).
-  const protectedTarget = (target) => auraTargetProtected(state, target, object);
+  const pushTarget = (target, variants) => {
+    for (const bestow of variants) {
+      if (!auraTargetProtected(state, target, object, { bestow })) {
+        out.push({ objectId: object.id, targetId: target.id, bestow });
+      }
+    }
+  };
   if (object.aura?.enchantType === 'artifact_or_creature') {
     // Batch 48 (Clawing Torment, NEO): Oracle bywa DWOJAKI — „Enchant
     // artifact or creature YOU CONTROL" (Moonlit Meditation) albo bez tego
@@ -2852,8 +2863,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
       const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-      if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+      if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
@@ -2861,8 +2872,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
       const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-      if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
@@ -2872,8 +2883,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-      if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+      if (isLand && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchantType === 'creature_or_land') {
@@ -2881,8 +2892,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-      if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else if (object.aura?.enchantType === 'creature_you_control') {
@@ -2892,8 +2903,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (target && target.zone === 'battlefield' && target.kind === 'creature'
         && target.controllerId === playerId
-        && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+        && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchantType === 'creature_or_vehicle') {
@@ -2902,15 +2913,15 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isVehicle = (target.subtypes ?? []).includes('Vehicle');
-      if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else {
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
-      if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   }

@@ -93,3 +93,7 @@ Weryfikacja po A20: `npm run test:slow` na niezmienianym kodzie `1587c15` 268/26
 ## A21 — czar bestow na stosie
 
 Leafcrown Dryad rzucona za bestow była na stosie niepoprawnie stworem. Wspólna linia aury działa teraz od stosu, a oryginał wraca po zmianie strefy/odłączeniu. Siedem testów obejmuje realny czar, Negate, nielegalny cel i syntetyczny artefakt-bestow, z walidacją Steel Sabotage; pokrewne 37/37 i 96/96, fast 9302/9302, build 5630,7 kB. Slow 268/268 sprzed A21. Audyt trwa; następna sonda: ochrona przed non-Human creatures przy wyborze celu bestow (realna Dryada + efekt Spare from Evil, brak oferty RED).
+
+## A22 — ochrona celu bestow
+
+Rzeczywisty Spare from Evil uniemożliwiał zagranie Dryady za bestow, mimo że czar nie jest stworem. Odwrotna sonda ochrony przed Aurami oferowała niedozwolony cel. Oferta i walidacja korzystają z cech wybranego wariantu. 6 testów, pakiet 81/81, fast 9308/9308, build 5630,6 kB; slow sprzed A21/A22. Syntetyczny artefakt-bestow z maną Powerstone nadal ujawnia osobną rozbieżność celu wydania many (sonda `.arena/a23-red.log`); brak wspieranej realnej karty artefakt-bestow. Audyt trwa.

@@ -18570,3 +18570,7 @@ Po A20: wolny pakiet na niezmienianym kodzie `1587c15` 268/268. Audyt trwa; B0 n
 ### 2026-11-02 — audyt #177, typ bestow na stosie
 
 Czar bestow staje się Aurą na stosie, nie dopiero na polu bitwy; oryginalne cechy wracają po zmianie strefy. Siedem testów m.in. Negate, nielegalny cel i syntetyczny artefakt-bestow; pokrewne 37/37 i 96/96, fast 9302/9302, build 76 modułów / 5630,7 kB. Audyt trwa.
+
+### 2026-11-02 — audyt #177, ochrona przy bestow
+
+Spare from Evil nie blokuje rzucenia Dryady jako Aury; ochrona przed Aurami ją blokuje. Oferta i walidacja stosują cechy wariantu czaru. Sześć testów, pokrewne 81/81, fast 9308/9308, build 76 modułów / 5630,6 kB. Audyt trwa.
