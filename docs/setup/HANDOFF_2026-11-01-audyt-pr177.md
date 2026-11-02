@@ -226,3 +226,6 @@ A59: bezpośredni diff #177 G, Force Away, rzeczywiste odbicia i ferocious, 6 te
 
 
 A60: bezpośredni diff #177 PMSSB-6, Frightful Delusion na rzeczywistym stosie, 6 testów i mutacja wagi; pokrewne 63/63, fast 9505/9505, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A60 poza slow. Kontynuować diff #177.
+
+
+A61: bezpośredni diff #177 batch 71, realny Ambassador Oak i token z Ivy Lane Denizen; 3 testy, mutacja koloru, related 52/52, fast 9508/9508, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A61 poza slow. Kontynuować diff #177.

@@ -159,3 +159,17 @@ A52: bezpośredni diff #177 G, waga kontry i realny stos — pięć przypadków,
 A53: bezpośredni diff #177 PMSSB-80, sześć realnych scenariuszy Rockslide; dwie mutacje wykryte.
 
 A54: sprostowany błędny cytat Oracle Vampire Hounds w teście #177; rzeczywista legalność dwóch aktywacji, dwie mutacje wykryte.
+
+A55: Gila label, rzeczywiste karty i mutacja; bez dowodu działania przeglądarki.
+
+A56: Violent Urge, prawdziwe komendy walki i bota, dwie mutacje; pozostałe stany otwarte.
+
+A57: źródło decyzji o ofierze naprawione dla Liliana’s Triumph i Grave Exchange; defekt sprzed #177.
+
+A58: Dawntreader Elk, rzeczywista ofiara/wyszukiwanie, wybór bota i mutacja kosztu.
+
+A59: Force Away, realny wybór celu bota i ferocious także przy odpowiedzi, mutacja wagi.
+
+A60: Frightful Delusion, realny stos, płatność i odrzut, bot oraz mutacja wagi; pozostałe przypadki otwarte.
+
+A61: Ambassador Oak z Ivy Lane Denizen, prawdziwy token i dwa wyzwolenia oraz niezależność ETB od źródła; nie pełny audyt batch 71.
