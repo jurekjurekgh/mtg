@@ -18591,3 +18591,6 @@ Audyt #177 A27: realne Vampire Hounds + Revolutionist ujawniły brak okna odpowi
 
 
 Audyt #177 A27: naprawiono brak okna odpowiedzi madness w Vampire Hounds + Revolutionist: trigger na stosie, decyzja przy rozstrzygnięciu. Pięć testów realnych kart, migracja testów, fast 9325/9325, slow 268/268, build 5630,7 kB. Nadal otwarty wybór kolejności jednoczesnych triggerów madness i wspólne APNAP z innymi triggerami; szczegóły/CR 603.3b w raporcie. Audyt trwa.
+
+
+Audyt #177 A28: naprawiono wybór kolejności jednoczesnych triggerów w badanym oknie madness, w tym Talion + wcześniejsze dobranie Lorescale Coatl. Trzynaście testów realnych interakcji, UI, botów i replay; fast 9338/9338, slow 268/268, build 5635,2 kB. Ogólny APNAP i pełny audyt #177 wciąż otwarte.

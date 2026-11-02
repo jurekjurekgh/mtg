@@ -136,7 +136,7 @@ export function faceDownLabel(object, nameOf) {
  */
 export function commandOptionKey(cmd) {
   const fields = [
-    'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
+    'type', 'objectId', 'stackEntryId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
     // Batch 62: wariant kicked i ląd zwracany jako koszt kickera (Chocobo Kick).
     'kicked', 'kickerLandId',
     // Batch 62: podział obrażeń wybrany przy rzucie (Fiery Justice) różnicuje warianty.

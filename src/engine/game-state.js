@@ -211,9 +211,10 @@ export function createGameState({ seed, players }) {
     // koszt madness po odrzuceniu karty z madness do exile.
     // Wpis: { playerId, objectId, cardId, restorePriorityTo }.
     pendingMadnessCast: null,
-    // M258: kolejka decyzji madness — patrz promoteNextMadness (karty z
-    // madness odrzucone w JEDNEJ sekwencji odrzuceń rozstrzygają się po
-    // kolei, po zakończeniu sekwencji).
+    madnessBatchTriggerIds: [],
+    pendingTriggerOrder: null,
+    // CR 702.35a/603.3: oczekujące triggery madness po odrzuceniu;
+    // na stos trafiają po dokończeniu sekwencji, a decyzja przy ich rozstrzyganiu.
     madnessQueue: [],
     // M166/D (Inferno Titan): kwoty podziału obrażeń między wybrane cele.
     pendingDamageDivision: null,
@@ -1776,6 +1777,7 @@ function firstPendingDecision(state) {
   // `execute` siedzi przed resztą, więc oferta, priorytet i walidacja muszą
   // wskazywać ten sam wpis (klasa L48, zmierzona w Batch 47).
   if (state.pendingUntapChoice) return { playerId: state.pendingUntapChoice.playerId, kind: 'untapChoice' };
+  if (state.pendingTriggerOrder) return { playerId: state.pendingTriggerOrder.groups[state.pendingTriggerOrder.index].playerId, kind: 'triggerOrder' };
   if (state.pendingRiotChoice) return { playerId: state.pendingRiotChoice.playerId, kind: 'riotChoice' };
   if (state.pendingMulligans.length > 0) return { playerId: state.pendingMulligans[0], kind: 'mulligan' };
   if (state.pendingMulliganBottom) return { playerId: state.pendingMulliganBottom.playerId, kind: 'mulliganBottom' };
@@ -1918,9 +1920,8 @@ function exploitDecisionPendingFor(state, playerId) {
 const CLEANUP_ACTIVITY_EVENT_TYPES = new Set([
   'spell_cast', 'aura_spell_cast', 'ability_activated', 'ability_triggered',
   'modal_trigger_required', 'optional_trigger_required', 'exploit_choice_required',
-  // Madness (CR 702.35a): trigger „when you do” nigdy nie trafia na stos
-  // (kolejka + decyzja), więc jego istnienie znaczy otwarcie decyzji —
-  // odmowa też zostawia priorytet otwarty i wymaga kolejnego cleanupu.
+  // Madness (CR 702.35a): decyzja po rozstrzygnięciu triggera jest
+  // dodatkowym dowodem aktywności cleanupu.
   'madness_ready_required',
 ]);
 
@@ -2018,10 +2019,31 @@ function queueMadnessTriggers(state, events) {
     for (const pending of queue.filter(item => item.playerId === playerId)) {
       const card = state.objects.get(pending.objectId);
       const source = card ?? { id: pending.objectId, cardId: pending.cardId, controllerId: playerId };
-      queueTriggerToStack(state, { trigger: { event: 'madness' }, effect: [] },
+      const entry = queueTriggerToStack(state, { trigger: { event: 'madness' }, effect: [] },
         { ...source, controllerId: playerId }, [], events, { madness: pending });
+      state.madnessBatchTriggerIds.push(entry.id);
     }
   }
+}
+
+// Porządkujemy tylko wpisy wyzwolone od tego samego okna priorytetu co
+// madness. Wybór kolejnego triggera oznacza: ten rozstrzygnie się pierwszy.
+function startMadnessTriggerOrder(state) {
+  const ids = [...new Set(state.madnessBatchTriggerIds)]
+    .filter(id => state.zones.stack.includes(id) && state.objects.get(id)?.triggerEntry);
+  state.madnessBatchTriggerIds = [];
+  const players = state.players.map(p => p.id);
+  const active = players.indexOf(state.turn.activePlayerId);
+  const ordered = active < 0 ? players : [...players.slice(active), ...players.slice(0, active)];
+  const groups = ordered.map(playerId => ({ playerId,
+    remaining: ids.filter(id => state.objects.get(id).controllerId === playerId), topFirst: [] }))
+    .filter(group => group.remaining.length);
+  const first = groups.findIndex(group => group.remaining.length > 1);
+  // Nawet bez wyboru układamy różne kontrolery APNAP.
+  const batch = new Set(ids);
+  state.zones.stack = [...state.zones.stack.filter(id => !batch.has(id)), ...groups.flatMap(g => g.remaining)];
+  if (first < 0) return;
+  state.pendingTriggerOrder = { groups, index: first, restorePriorityTo: state.turn.priorityPlayerId };
 }
 
 function accepted(state, cmd, result) {
@@ -2064,8 +2086,21 @@ function accepted(state, cmd, result) {
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
   // Rozstrzyganie czaru/wybór odrzuceń musi się skończyć, zanim pojawią
   // się na stosie wyzwolone w jego trakcie zdolności (CR 117.5, 603.3).
-  if (!firstPendingDecision(state) && !state.pendingSpell && state.madnessQueue?.length) {
+  if (state.pendingDiscardChoice || state.madnessQueue?.length) {
+    // Draw może odpalić Lorescale Coatl jeszcze PRZED wyborem karty do
+    // odrzucenia (Talion's Messenger). Zapisujemy wszystkie powstałe w tym
+    // samym nierozstrzygniętym oknie wpisy, a także refleks, którego cel
+    // wybrano w kolejnej komendzie.
+    for (const e of result.events ?? []) {
+      if (e.type === 'ability_triggered' && e.stackEntryId) state.madnessBatchTriggerIds.push(e.stackEntryId);
+    }
+  }
+  if (state.madnessQueue?.length && !firstPendingDecision(state) && !state.pendingSpell) {
     queueMadnessTriggers(state, result.events);
+    startMadnessTriggerOrder(state);
+  } else if (!state.pendingDiscardChoice && !state.madnessQueue?.length) {
+    // Zakończony discard bez madness nie pozostawia danych dla kolejnej akcji.
+    state.madnessBatchTriggerIds = [];
   }
   // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
   // F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): warunek stał na
@@ -2378,6 +2413,29 @@ export function execute(state, input) {
     const e = event('player_conceded', { playerId: cmd.playerId, winnerId: winner.id });
     state.events.push(e);
     return accepted(state, cmd, { ok: true, events: [e] });
+  }
+  if (state.pendingTriggerOrder) {
+    const pending = state.pendingTriggerOrder;
+    const group = pending.groups[pending.index];
+    if (cmd.type !== 'resolve_trigger_order') return reject('trigger_order_unresolved');
+    if (cmd.playerId !== group.playerId) return reject('trigger_order_not_your_decision');
+    if (!group.remaining.includes(cmd.stackEntryId)) return reject('illegal_trigger_order');
+    group.topFirst.push(cmd.stackEntryId);
+    group.remaining = group.remaining.filter(id => id !== cmd.stackEntryId);
+    if (group.remaining.length === 1) group.topFirst.push(group.remaining.pop());
+    if (group.remaining.length === 0) {
+      const next = pending.groups.findIndex((g, i) => i > pending.index && g.remaining.length > 1);
+      if (next >= 0) pending.index = next;
+      else {
+        const all = pending.groups.flatMap(g => [...g.topFirst, ...g.remaining]);
+        const set = new Set(all);
+        const inOrder = pending.groups.flatMap(g => g.topFirst.length ? [...g.topFirst].reverse() : g.remaining);
+        state.zones.stack = [...state.zones.stack.filter(id => !set.has(id)), ...inOrder];
+        state.pendingTriggerOrder = null;
+        state.turn.priorityPlayerId = pending.restorePriorityTo;
+      }
+    }
+    return accepted(state, cmd, { ok: true, events: [] });
   }
   // Audyt PR #168/A-2 (CR 702.136a): wybór zastępuje wejście. Wykonujemy
   // go w TEJ SAMEJ rozdzielanej akcji, bez nowego passu/okna odpowiedzi.
@@ -7797,7 +7855,16 @@ export function playerView(state, playerId) {
   // M431 (CR 502.3): oferta wyboru w kroku odkręcania. PIERWSZA opcja =
   // „odtapuj wszystkie" (pusty zbiór), potem podzbiory pozostawiane w tapie —
   // prezentacja = enumeracja (M203/2), więc sugestia domyślna to standard CR.
-  if (state.status === 'active' && state.pendingUntapChoice
+  if (state.status === 'active' && state.pendingTriggerOrder
+    && !blockedByOthersDecision && state.pendingTriggerOrder.groups[state.pendingTriggerOrder.index].playerId === playerId) {
+    const group = state.pendingTriggerOrder.groups[state.pendingTriggerOrder.index];
+    for (const stackEntryId of group.remaining) {
+      const entry = state.objects.get(stackEntryId);
+      legalCommands.push(command('resolve_trigger_order', playerId, { stackEntryId,
+        cardId: entry?.cardId, trigger: entry?.triggerEntry?.ability?.trigger?.event,
+        targets: [...(entry?.triggerEntry?.targets ?? [])] }));
+    }
+  } else if (state.status === 'active' && state.pendingUntapChoice
     && state.pendingUntapChoice.playerId === playerId) {
     for (const variant of untapChoiceOffers(state, playerId)) {
       legalCommands.push(command('resolve_untap_choice', playerId, variant));

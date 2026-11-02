@@ -42,11 +42,11 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/cards/mana-costs-data.js` | otwarte |
 | `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire (A6/A9/A10/A12/A13) |
 | `src/controllers/heuristic-params.js` | otwarte |
-| `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27: okno odpowiedzi naprawione; kolejność jednoczesnych triggerów otwarta |
+| `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | otwarte |
 | `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
 | `src/engine/fingerprint.js` | otwarte |
-| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27: okno odpowiedzi naprawione; wybór kolejności i wspólne APNAP otwarte |
+| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte |
 | `src/engine/permanents.js` | otwarte |
 | `src/engine/resources.js` | częściowo — Converge (A3) |
 | `src/engine/spells.js` | otwarte |

@@ -106,6 +106,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
+  resolve_trigger_order: 'Kolejność zdolności',
   resolve_discard_choice: 'Odrzucenie karty',
   resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
@@ -613,6 +614,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_ward_pay_choice') return 'resolve_ward_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
+  if (command.type === 'resolve_trigger_order') return 'resolve_trigger_order';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
   if (command.type === 'resolve_mulligan_choice') return 'resolve_mulligan_choice';
   if (command.type === 'resolve_mulligan_bottom_choice') return 'resolve_mulligan_bottom_choice';
@@ -2475,6 +2477,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
   // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
+  resolve_trigger_order: 'Która zdolność ma rozstrzygnąć się jako następna?',
   resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
   resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
@@ -4482,6 +4485,10 @@ function commandLabelBase(cmd, session, view) {
       const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';
       const gfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}${freeCastChoiceSuffix(cmd, gfcCard, { mode: false })}`;
+    }
+    case 'resolve_trigger_order': {
+      const targets = (cmd.targets ?? []).map(id => nameOfObjectId(id)).join(', ');
+      return `Najpierw: ${escapeHtml(session.nameOf(cmd.cardId))} — ${TRIGGER_EVENT_LABELS[cmd.trigger] ?? cmd.trigger ?? 'zdolność'}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
