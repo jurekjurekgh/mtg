@@ -246,4 +246,4 @@ A66: Morbid/token Ambassador Oak poświęcony Village Rites i Liliana’s Triump
 
 A67: Somberwald Spider, drugi rzeczywisty odbiorca Morbid — rzut i Unbreakable Bond po śmierci tokena, wygnaniu unearth i bez śmierci. Regresję #177 odtworzono w archiwum względem bazy (2/2 vs 0/2), mutacja trackera wykryta na licznikach. 6/6, related 34/34, fast 9545/9545, build 5640,2 kB; slow po A66 268/268, ten sam kod. Audyt trwa.
 
-A68: realny Scorn, Curiosity i Feedback — wspólne odbicie hosta i wybranych aur; błąd występuje także w bazie #177. Naprawa kolejności przetwarzania wybranych załączników, 10/10, mutacja 5 RED, related 69/69, fast 9555/9555, build 5641,2 kB; slow w toku. Nie deklarować ogólnej jednoczesności/LKI. Audyt trwa.
+A68: realny Scorn, Curiosity i Feedback — wspólne odbicie hosta i wybranych aur; błąd występuje także w bazie #177. Naprawa kolejności przetwarzania wybranych załączników, 10/10, mutacja 5 RED, related 69/69, fast 9555/9555, build 5641,2 kB; slow 268/268. Nie deklarować ogólnej jednoczesności/LKI. Audyt trwa.
