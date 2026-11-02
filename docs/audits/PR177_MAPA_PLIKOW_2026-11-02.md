@@ -80,7 +80,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pr177-d-cuombajj-wycena.test.js` | częściowo — rzeczywiste obrażenia, aktywacja i wybór drugiego celu, częściowa nielegalność A44 |
 | `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | otwarte |
 | `test/audyt-typy-efektow-katalogu.test.js` | otwarte |
-| `test/bot-modal-modes.test.js` | otwarte |
+| `test/bot-modal-modes.test.js` | częściowo — porównanie kontr i odbicia Steel Sabotage na realnych kartach A52; inne tryby otwarte |
 | `test/bot-params.test.js` | otwarte |
 | `test/bot-scoring-snapshot.test.js` | otwarte |
 | `test/druki-druga-strona-i-uuid-obrazu.test.js` | otwarte |
@@ -105,7 +105,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/pmssb10-ogon-wave-b2.test.js` | otwarte |
 | `test/pmssb12-pay-wave-a.test.js` | otwarte |
 | `test/pmssb3-draw-wave-b.test.js` | otwarte |
-| `test/pmssb5-kontry-wave-a.test.js` | otwarte |
+| `test/pmssb5-kontry-wave-a.test.js` | częściowo — Negate, Steel Sabotage, prawdziwy stos i wybory bota A52; inne warianty otwarte |
 | `test/pmssb6-discard-wave-a.test.js` | otwarte |
 | `test/pmssb8-loot-wave-a.test.js` | otwarte |
 | `test/real-cards-batch65.test.js` | otwarte |
@@ -153,3 +153,5 @@ A49: rzeczywisty infect, dwa rodzaje liczników i wybór proliferate bota; inne 
 A50: rzeczywiste Final Parting, prywatność i jedno tasowanie naprawione (błędy już w bazie #177); pozostałe wyszukiwania i wyceny otwarte.
 
 A51: bezpośredni diff #177 L, rzeczywisty Edifice i decyzja bota; inne przypadki otwarte.
+
+A52: bezpośredni diff #177 G, waga kontry i realny stos — pięć przypadków, mutacja wagi wykryta.

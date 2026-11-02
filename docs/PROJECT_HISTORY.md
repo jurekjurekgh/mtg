@@ -18672,3 +18672,6 @@ Audyt #177 A50: naprawa prywatności i liczby tasowań Final Parting, fast 9456/
 
 
 Audyt #177 A51: rzeczywiste cele i decyzja Ambulatory Edifice, fast 9461/9461, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A52: rzeczywiste kontry, waga i Steel Sabotage, fast 9466/9466, build 5639,0 kB. Audyt trwa.
