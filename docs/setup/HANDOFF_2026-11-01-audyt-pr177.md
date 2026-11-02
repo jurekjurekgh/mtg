@@ -148,3 +148,6 @@ A36: Zoraline + Plague Reaver/finality wraca z exile, a po Awaken the Sleeper ko
 
 
 A37: 9 testów rzeczywistego Anticipate 0–4 kart, prywatności, kolejności, Coatl oraz Inspiration; bez błędu w badanym zakresie. Pokrewne 65/65, fast 9393/9393, build 5637,4 kB. Slow 268/268 tylko A34; audyt #177 otwarty.
+
+
+A38: 6 testów rzeczywistego Trumpet Blast z Kappą/ninjutsu, Trostani i Act of Treason, decyzje bota w obu turach, cleanup; GREEN w badanym zakresie. Pokrewne 58/58, fast 9399/9399, build 5637,4 kB; slow 268/268 tylko A34. Audyt #177 otwarty.

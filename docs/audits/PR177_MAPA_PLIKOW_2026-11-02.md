@@ -30,7 +30,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-tail-slash.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-trumpet-blast.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-trumpet-blast.json` | częściowo — dane A30 i wybrane realne zachowania A38 |
 | `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md` | otwarte |
@@ -69,7 +69,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | otwarte |
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; wycena bota otwarta |
-| `test/audyt-pmssb85-pump-atakujacych.test.js` | otwarte |
+| `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | otwarte |
 | `test/audyt-pr149-stempel-wygnania.test.js` | otwarte |
 | `test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` | otwarte |
@@ -125,3 +125,5 @@ A35: rzeczywiste Wretched Banquet, Spellkeeper Weird, Fleeting Distraction, Flee
 A36: rzeczywista Zoraline i Plague Reaver — poprawki powrotu po finality i kontrolera opóźnionej zdolności, odsłonięte przez testowanie wyboru z #177 O. Nie są uznane za nowe regresje #177 bez dowodu; dalsze ścieżki silnika pozostają otwarte.
 
 A37: Anticipate 0–4 kart biblioteki z rzeczywistym Lorescale Coatl, prawdziwy dobór przez Inspiration, kolejność spodu, atomowość i prywatność widoku/logu. Inne interakcje kart batcha 71 nadal otwarte.
+
+A38: rzeczywisty Trumpet Blast i Kappa/ninjutsu, kontrola Trostani, bot w obu turach oraz cleanup; zakres testowany, pozostałe scenariusze otwarte.

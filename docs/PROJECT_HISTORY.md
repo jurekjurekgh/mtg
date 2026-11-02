@@ -18621,3 +18621,6 @@ Audyt #177 A36: zbadano realne progi Plague Reaver i naprawiono powrót z exile 
 
 
 Audyt #177 A37: rzeczywiste Anticipate, 0–4 kart, kolejność i FoW/log oraz Lorescale Coatl i prawdziwe dobranie. Pokrewne 65/65, fast 9393/9393, build 5637,4 kB; audyt nadal otwarty.
+
+
+Audyt #177 A38: rzeczywisty Trumpet Blast, ninjutsu, powrót kontroli, bot i cleanup; pokrewne 58/58, fast 9399/9399, build 5637,4 kB; audyt trwa.
