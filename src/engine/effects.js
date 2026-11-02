@@ -2344,7 +2344,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // wielokrotne z variableTargets czaru). Cele nielegalne pomijają efekty
     // same (CR 608.2b — każdy wewnętrzny efekt sprawdza strefę).
     const inner = Array.isArray(effect.effects) ? effect.effects : [];
-    for (const targetId of targets) {
+    let orderedTargets = targets;
+    if (inner.length === 1 && inner[0]?.type === 'bounce_permanent') {
+      // Czyste aury osierocone przez moveObjectDirectly są obecnie sprzątane
+      // od razu. W zbiorowym odbiciu (Sea God's Scorn) również wybrane aury
+      // muszą wrócić, zamiast zginąć tylko dlatego, że host jest pierwszy.
+      // Głębsze załączniki najpierw, także gdy pośrednia aura nie jest celem
+      // (Feedback → Curiosity → stwór). To zabezpiecza ruch, nie stanowi
+      // ogólnego modelu jednoczesnych zdarzeń i LKI dla wszystkich efektów.
+      const depth = (id) => {
+        let object = state.objects.get(id);
+        let n = 0;
+        const seen = new Set([id]);
+        while (object?.attachedTo && !seen.has(object.attachedTo)) {
+          seen.add(object.attachedTo);
+          n += 1;
+          object = state.objects.get(object.attachedTo);
+        }
+        return n;
+      };
+      const depths = new Map(targets.map((id) => [id, depth(id)]));
+      orderedTargets = [...targets].sort((a, b) => depths.get(b) - depths.get(a));
+    }
+    for (const targetId of orderedTargets) {
       for (const innerEffect of inner) {
         applyEffect(state, innerEffect, sourceObject, [targetId], context);
       }
