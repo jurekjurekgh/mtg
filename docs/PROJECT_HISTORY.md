@@ -18612,3 +18612,6 @@ Audyt #177 A33: RED→GREEN ranking bounce z realnym stun, finality oraz własn�
 
 
 Audyt #177 A34: bot nie poświęca Weird, jeśli rzeczywisty cel jest nielegalny lub niezniszczalny; wygnanie nadal uzasadnia ofiarę. Pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow 268/268. Audyt pozostaje otwarty.
+
+
+Audyt #177 A35: realny Wretched Banquet i warunek najmniejszej mocy przy Spellkeeper Weird; 7 testów, mutacja, pokrewne 29/29, fast 9376/9376, build 5636,7 kB. Slow 268/268 na wcześniejszym A34; audyt trwa.

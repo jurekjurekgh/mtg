@@ -4682,7 +4682,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // Wygnanie omija indestructible; zniszczenie i śmiertelne obrażenia nie
       // (CR 702.12). Nie traktujemy wszystkich rodzajów usunięcia jednakowo.
       const indestructible = hasKeyword(obj, 'indestructible');
+      // A35: warunek efektu na aktualnej mocy, a nie samo wskazanie celu.
       if (effs.some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type)
+        && (e.type !== 'destroy_if_least_power' || !leastPowerRemovalFizzles(view, obj))
         && (!indestructible || e.type === 'exile_permanent' || e.type === 'exile_target_creature'))) return true;
       const dmg = effs.find((e) => e?.type === 'damage');
       if (!indestructible && dmg && Number.isInteger(dmg.amount)

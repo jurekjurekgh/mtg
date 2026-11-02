@@ -96,7 +96,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/l-ambulatory-edifice-debuff.test.js` | otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | otwarte |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
-| `test/n-wretched-banquet-least-power.test.js` | otwarte |
+| `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
 | `test/o-plague-reaver-darowanie.test.js` | otwarte |
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | otwarte |
@@ -119,3 +119,5 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `tools/tune-card.mjs` | częściowo — rejestr parametrów bounce z #177, A33; działanie tunera otwarte |
 
 A34: rzeczywiste komendy Spellkeeper Weird + Magic Damper/Benevolent Blessing/Crumb and Get It wobec Fiery Fall, Expunge i Merciless Repurposing; poprawiono fałszywą „pewną śmierć” w heurystyce (szczegóły i granice w raporcie). Plik heurystyki nadal tylko częściowo sprawdzony.
+
+A35: rzeczywiste Wretched Banquet, Spellkeeper Weird, Fleeting Distraction, Fleeting Flight i Crumb and Get It; naprawiono dodatkowy błąd oceny warunkowego zniszczenia. Semantyka pozostałych wariantów nadal otwarta.

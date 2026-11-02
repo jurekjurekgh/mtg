@@ -139,3 +139,6 @@ A33: naprawiono fałszywą premię bounce dla stun/finality oraz dodawanie TMC w
 
 
 A34: RED→GREEN rzeczywisty Spellkeeper Weird wobec hexproof, protekcji i niezniszczalności, z kontrolą wygnania. 11 testów, 3 mutacje, pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow 268/268. Pozostały audyt #177 otwarty.
+
+
+A35: Wretched Banquet na rzeczywistych stworach, remis, liczniki, odpowiedź; RED→GREEN warunkowego usunięcia przy poświęceniu Spellkeeper Weird. 7 testów, mutacja wykryta, pokrewne 29/29, fast 9376/9376, build 5636,7 kB; slow 268/268 tylko A34. Audyt #177 nadal otwarty.
