@@ -42,16 +42,16 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
 | `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34/A35/A36/A40) |
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
-| `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
+| `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); migawka poświęcenia A66; interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
-| `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57 |
+| `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57, migawka ofiar Plague Reaver A66 |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
-| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte; Final Parting privacy/tasowanie A50 |
+| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); Morbid i unearth/token A66; madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte; Final Parting privacy/tasowanie A50 |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
-| `src/engine/resources.js` | częściowo — Converge (A3) |
-| `src/engine/spells.js` | częściowo — nazwy transformu w scenariuszach realnych kart/tokena A32; inne ścieżki otwarte |
-| `src/engine/state-based.js` | częściowo — token wygnany przez championa, anihilacja Magmy A29/A31; inne ścieżki otwarte |
-| `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
+| `src/engine/resources.js` | częściowo — Converge (A3); zdarzenie ofiary tokena many zaopatrzono w migawkę A66, bez osobnego realnego scenariusza tej ścieżki |
+| `src/engine/spells.js` | częściowo — nazwy transformu w scenariuszach realnych kart/tokena A32; koszt Village Rites i migawka tokena A66; inne ścieżki otwarte |
+| `src/engine/state-based.js` | częściowo — token wygnany przez championa, anihilacja Magmy A29/A31; migawka ofiary Sagi A66 bez osobnego realnego testu tej ścieżki; inne ścieżki otwarte |
+| `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); zdarzenia śmierci/token/unearth A66; counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
 | `test/art-ids-tool.test.js` | przejrzany diff — wzrost liczby wpisów i zgodność CSV/ID A30/A62 |
