@@ -1471,6 +1471,22 @@ export function resolveTriggerEntry(state, entry) {
   // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
   // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
   const extra = payload.extra ?? {};
+  // Madness (CR 702.35a): dopiero TERAZ, po rundzie priorytetu, właściciel
+  // może rzucić kartę z exile albo odmówić. Jeśli zmieniła strefę, jest już
+  // nowym obiektem i trigger nie daje prawa do rzutu ani przeniesienia.
+  if (extra.madness) {
+    const pending = extra.madness;
+    const card = state.objects.get(pending.objectId);
+    if (card?.zone === 'exile' && card.madnessReady) {
+      state.pendingMadnessCast = { ...pending, restorePriorityTo: state.turn.activePlayerId };
+      state.turn.priorityPlayerId = pending.playerId;
+      state.events.push(event('madness_ready_required', {
+        playerId: pending.playerId, objectId: pending.objectId, cardId: pending.cardId,
+        cost: card.madness?.cost ?? null, costColors: card.madness?.colors ?? null,
+      }));
+    }
+    return state.events.slice(before);
+  }
   // Storm (CR 702.40a): przy rozstrzygnięciu tej zdolności powstają KOPIE
   // czaru — tyle, ile czarów rzucono przed nim w tej turze (liczba zamrożona
   // przy rzucie). Kopie nie są rzucane (nie odpalają triggerów „whenever you

@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // Batch 39 (lista właściciela 2026-08-20) — testy NOWYCH mechanik i zachowań
 // (ADR 0019: karty reuse pokrywa generycznie catalog-coverage + strażniki;
 // ręczne testy dotyczą nowych mechanik i interakcji).
@@ -327,6 +328,7 @@ test('E1: odrzucenie Revolutionista — exile + decyzja; rzut za {3}{R} wystawia
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'revolutionist' && o.zone === 'exile');
   assert.ok(exiled, 'karta w exile (nie w grobie) — CR 702.35a');
   assert.equal(exiled.madnessReady, true);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
 
   addMana(state, 'p1', 4, { colors: ['R'] });
@@ -349,6 +351,7 @@ test('E2: odmowa madness — karta trafia do cmentarza', () => {
     sourceCardId: null, restorePriorityTo: 'p1',
   };
   execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev2' });
+  resolveMadnessTrigger(state);
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(decline, 'oferta rezygnacji');
   assert.ok(execute(state, decline).ok);

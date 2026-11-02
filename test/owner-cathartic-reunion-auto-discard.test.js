@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // Znalezisko właściciela A (2026-09-15):
 //
 //   „Karta Cathartic Reunion. Gdy rzucam ten czar muszę discard 2 karty.
@@ -93,7 +94,7 @@ test('A: anty-over-fix — przy 3 kartach modal ZOSTAJE (realny wybór 2 z 3)', 
   assert.equal(state.pendingDiscardChoice, null);
 });
 
-test('A: madness przy auto-discarcie — decyzja rzutu otwiera się w tej samej komendzie', () => {
+test('A: madness przy auto-discarcie — trigger trafia na stos po auto-discarcie', () => {
   const state = game('p1');
   putCard(state, 'spell', 'cathartic-reunion', 'p1', 'hand');
   putCard(state, 'rev', 'revolutionist', 'p1', 'hand');
@@ -105,10 +106,13 @@ test('A: madness przy auto-discarcie — decyzja rzutu otwiera się w tej samej 
   const r = execute(state, cast);
   assert.ok(r.ok);
   assert.equal(state.pendingDiscardChoice, null, 'discard całości bez decyzji');
-  assert.ok(state.pendingMadnessCast, 'madness otwarty w tej samej komendzie (CR 702.35a)');
+  assert.equal(state.pendingMadnessCast, null);
+  assert.ok(r.events.some((e) => e.type === 'ability_triggered' && e.trigger === 'madness'));
+  resolveMadnessTrigger(state);
+  assert.ok(state.pendingMadnessCast, 'madness po rundzie priorytetu (CR 702.35a)');
   assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
   assert.ok(r.events.findLastIndex((e) => e.type === 'card_discarded')
-    < r.events.findIndex((e) => e.type === 'madness_ready_required'),
+    < r.events.findIndex((e) => e.type === 'ability_triggered' && e.trigger === 'madness'),
     'najpierw odrzucenia, potem decyzja madness');
   const decline = playerView(state, 'p1').legalCommands
     .find((c) => c.type === 'resolve_madness_cast' && !c.cast);

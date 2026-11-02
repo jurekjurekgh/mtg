@@ -875,13 +875,13 @@ export function discardCardsForced(state, { playerId, cardIds, purpose, sourceCa
         cardId: moved.cardId, choice: true, purpose, toZone: 'exile', madness: true,
         sourceCardId: sourceCardId ?? null,
       }));
-      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-      // (promoteNextMadness w accepted() / gałęziach kończących resolvera).
+      // CR 702.35a/603.3: odrzucona karta tworzy trigger, który trafi
+      // na stos po zakończeniu efektu/kosztu; decyzja dopiero przy jego
+      // rozstrzygnięciu (queueMadnessTriggers w accepted).
       state.madnessQueue.push({
         playerId, objectId: exileId, cardId: moved.cardId,
-        // A4-1 (handoff 09-08k): priorytet po decyzji madness wraca do
-        // posiadacza Z PRZED odrzuceniem, NIE do odrzucającego.
+        // Zachowujemy kontekst odrzucenia; po rozstrzygnięciu triggera
+        // priorytet wraca do aktywnego gracza (CR 117.3b).
         restorePriorityTo: restorePriorityTo ?? state.turn.priorityPlayerId,
       });
     } else {

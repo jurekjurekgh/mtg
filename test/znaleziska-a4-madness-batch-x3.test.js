@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // A4-1 (handoff 2026-09-08k, kolejność ryzyka #1): madness + batch-discard ×3.
 //
 // Pokrycie dotychczasowe: M258 = odrzucenia SEKWENCYJNE (jedna komenda
@@ -10,11 +11,9 @@
 //
 // Sonda ×3 (CR 702.35a + ruling DMR: opcja rzutu po dokończeniu efektu odrzucania;
 // CR 702.35a: madness trafia do exile):
-//  1. batch 3, jeden madness — decyzja otwiera się po batchu, nie w środku;
-//  2. batch 3, dwa madness — kolejka: decyzje sekwencyjnie w kolejności
-//     odrzuceń, żadna nie ginie;
-//  3. batch 3, trzy madness — rzut w ŚRODKU kolejki (stać = cast,
-//     nie stać = rezygnacja), potem reszta kolejki;
+//  1. batch 3, jeden madness — trigger po batchu, decyzja po rundzie passów;
+//  2. batch 3, dwa madness — osobne triggery, żadna karta nie ginie;
+//  3. batch 3, trzy madness — rzut nad pozostałymi triggerami, potem reszta;
 //  4. pełna droga: cast_spell Mindstab → batch p2 z madness → rezygnacja
 //     → rozstrzygnięcie kończy się bez pendingów.
 //
@@ -66,7 +65,7 @@ function batch3(state, handIds, playerId = 'p1') {
 }
 
 const zonesOf = (state, cardId) =>
-  [...state.objects.values()].filter((o) => o.cardId === cardId)
+  [...state.objects.values()].filter((o) => o.cardId === cardId && o.kind !== 'trigger')
     .map((o) => o.zone).sort();
 
 test('A4-1/1: batch 3 z jednym madness — decyzja po batchu, pętla nie ginie karty', () => {
@@ -82,11 +81,14 @@ test('A4-1/1: batch 3 z jednym madness — decyzja po batchu, pętla nie ginie k
   assert.equal(state.pendingDiscardChoice, null, 'sekwencja zamknięta');
   assert.deepEqual(zonesOf(state, 'revolutionist'), ['exile'], 'madness → exile (702.35a)');
   assert.equal(state.objects.get('v3')?.zone, 'hand', 'nieodrzucona karta zostaje w ręce');
-  assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta PO batchu (702.35a)');
-  assert.equal(state.madnessQueue.length, 0, 'kolejka pusta po promocji pierwszej');
-  // Żadnego podwójnego modala: discard_choice_resolved wcześniej niż madness_ready_required.
+  assert.equal(state.pendingMadnessCast, null);
+  assert.ok(r.events.some(e => e.type === 'ability_triggered' && e.trigger === 'madness'));
+  resolveMadnessTrigger(state);
+  assert.ok(state.pendingMadnessCast, 'decyzja madness po rundzie priorytetu');
+  assert.equal(state.madnessQueue.length, 0, 'kolejka opróżniona na stos');
+  // Żadnego podwójnego modala: discard_choice_resolved wcześniej niż ability_triggered.
   assert.ok(r.events.findIndex((e) => e.type === 'discard_choice_resolved')
-    < r.events.findIndex((e) => e.type === 'madness_ready_required'));
+    < r.events.findIndex((e) => e.type === 'ability_triggered' && e.trigger === 'madness'));
 
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(decline, 'oferta rezygnacji');
@@ -104,14 +106,18 @@ test('A4-1/2: batch 3 z dwoma madness — kolejka: dwie decyzje sekwencyjnie', (
 
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['rev', 'ta', 'v1'] }).ok);
   assert.equal(state.zones.exile.length, 2, 'obie karty z madness w exile');
+  assert.equal(state.pendingMadnessCast, null);
+  assert.equal(state.zones.stack.length, 2);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'pierwsza decyzja otwarta');
-  assert.equal(state.madnessQueue.length, 1, 'druga czeka w kolejce');
+  assert.equal(state.madnessQueue.length, 0, 'oba triggery na stosie');
 
-  // Kolejność decyzji = kolejność odrzuceń: najpierw rev, potem ta.
-  assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
+  // Stos jest LIFO: drugi trigger rozstrzyga się pierwszy.
+  assert.equal(state.pendingMadnessCast.cardId, 'terminal-agony');
   const d1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(d1 && execute(state, d1).ok);
-  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony', 'druga decyzja po pierwszej');
+  resolveMadnessTrigger(state);
+  assert.equal(state.pendingMadnessCast?.cardId, 'revolutionist', 'druga decyzja po rundzie priorytetu');
 
   const d2 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(d2 && execute(state, d2).ok);
@@ -127,17 +133,22 @@ test('A4-1/3: batch 3 z trzema madness — rzut w środku kolejki, reszta dalej'
   putCard(state, 'ta2', 'terminal-agony', 'p1', 'hand', { cost: 2, colors: ['B', 'R'] });
   batch3(state, ['rev', 'ta', 'ta2']);
 
-  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['rev', 'ta', 'ta2'] }).ok);
+  assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardIds: ['ta', 'ta2', 'rev'] }).ok);
 
   // Decyzja 1 (revolutionist, permanent): stać → RZUT (castPermanent z exile)
   // — permanent idzie na STOS (ścieżka czaro-podobna, jak rebound) i
   // wchodzi na pole po rundzie passów.
+  resolveMadnessTrigger(state);
   addMana(state, 'p1', 4, { colors: ['R'] });
   const cast1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && c.cast);
   assert.ok(cast1, 'oferta rzutu (stać na {4}R)');
   assert.ok(execute(state, cast1).ok);
-  assert.equal(state.zones.stack.length, 1, 'rzut z madness na stosie');
-  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony', 'kolejka idzie dalej po rzucie');
+  assert.equal(state.zones.stack.length, 3, 'rzut ponad dwoma triggerami');
+  assert.equal(state.pendingMadnessCast, null);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  resolveMadnessTrigger(state);
+  assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony');
   assert.equal(state.turn.priorityPlayerId, 'p1', 'priorytet do posiadacza przed odrzuceniem (fix A4-1)');
 
   // Decyzja 2 (terminal agony, czar z celem): bez many → TYLKO rezygnacja
@@ -148,15 +159,14 @@ test('A4-1/3: batch 3 z trzema madness — rzut w środku kolejki, reszta dalej'
   assert.ok(execute(state, offers2.find((c) => !c.cast)).ok);
 
   // Decyzja 3 (drugie terminal agony): rezygnacja.
+  resolveMadnessTrigger(state);
   assert.equal(state.pendingMadnessCast?.cardId, 'terminal-agony');
   const d3 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(d3 && execute(state, d3).ok);
   assert.equal(state.pendingMadnessCast, null);
   assert.equal(state.madnessQueue.length, 0);
 
-  // Runda passów: revolutionist zamyka stos i wchodzi na pole bitwy.
-  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
-  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p2' }).ok);
+  // Revolutionist rozstrzygnął się nad pozostałymi triggerami.
   assert.ok([...state.objects.values()].some((o) => o.cardId === 'revolutionist' && o.zone === 'battlefield'),
     'revolutionist po rundzie passów na polu bitwy');
   assert.equal(state.zones.stack.length, 0);

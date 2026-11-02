@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // M161 — gotowość madness na czary (zasada właściciela 2026-08-20).
 //
 // Zasada: nie zostawiamy nieobsłużonych sytuacji zależnych od przyszłych kart
@@ -64,6 +65,7 @@ function discard(state, objectId, purpose = 'effect', restoreTo = 'p1') {
     sourceCardId: null, restorePriorityTo: restoreTo,
   };
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: objectId }).ok);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
   assert.equal(state.pendingMadnessCast.objectId !== objectId, true, 'karta w exile pod nowym id');
 }

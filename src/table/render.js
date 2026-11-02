@@ -6792,7 +6792,7 @@ export function waitingExileStatus(object) {
     parts.push('Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
-  if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  if (object.madnessReady) parts.push('Wygnana przez madness');
   if (object.linkedExileCastPermission) {
     parts.push('Zagrywalna z wygnania · za pełny koszt');
   }

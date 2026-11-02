@@ -843,6 +843,7 @@ export function rejectionReasonLabel(reason) {
 }
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
+  madness: 'wygnanie karty z madness',
   another_creature_enters: 'wejście innego stworzenia',
   // Batch65 (Zombie Boa): „becomes blocked by a creature of that color".
   becomes_blocked_by_color: 'zablokowanie przez stwora wybranego koloru',

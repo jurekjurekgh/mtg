@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // M159 — audyt PR #66: naprawy F1–F4 (RED→GREEN).
 //
 // F1: Madness (CR 702.35a) — rzut za koszt madness następuje przy
@@ -46,6 +47,7 @@ function discardRevolutionist(state, objectId, purpose = 'effect', restoreTo = '
     sourceCardId: null, restorePriorityTo: restoreTo,
   };
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: objectId }).ok);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
 }
 
@@ -117,6 +119,7 @@ test('F2c: strażnik oferta=walidacja — KAŻDA oferowana komenda madness przec
     s.turn.phase = 'ending';
     s.pendingDiscardChoice = { playerId: 'p1', count: 1, handIds: ['rev'], purpose: 'cleanup', sourceCardId: null, restorePriorityTo: 'p1' };
     execute(s, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' });
+    resolveMadnessTrigger(s);
     addMana(s, 'p1', 4, { colors: ['R'] });
     const offer = playerView(s, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && Boolean(c.cast) === wantCast);
     assert.ok(offer, `oferta cast:${wantCast} istnieje`);

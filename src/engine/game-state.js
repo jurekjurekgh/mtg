@@ -1972,8 +1972,7 @@ function cleanupHadActivity(state) {
 
 /**
  * Czy w cleanupie priorytet jest OTWARTY (CR 514.3a): stos niepusty, decyzja
- * madness (trigger „when you do”, CR 702.35a — kolejka nigdy nie trafia na
- * stos, więc skan zdarzeń by jej nie znalazł) albo aktywność od wejścia.
+ * madness w rozstrzyganiu (CR 702.35a) albo aktywność od wejścia.
  * Poza cleanupem zawsze true. JEDEN predykat dla oferty (playerView) i
  * walidacji (execute) — wzorzec M255/G, L48.
  */
@@ -2004,30 +2003,25 @@ const CLEANUP_LOCKED_COMMANDS = new Set([
  * state-based actions (idempotentne), waliduje inwarianty i dopiero wtedy
  * dopisuje komendę do logu replayu.
  */
-// M258 (Żywy Tester → regresja z pełnej partii bota): promocja następnej
-// decyzji madness z kolejki. Odrzucenie karty z madness w SEKWENCJI
-// odrzuceń (cleanup z kilkoma kartami, Cathartic Reunion) nie otwiera
-// decyzji natychmiast — w przeciwnym razie bramka madness (wyżej w
-// execute) odrzucała resolve_discard_choice kolejnej karty
-// ('madness_unresolved'), choć legalCommands oferowały odrzucanie — bot
-// kończył partię wyjątkiem. Karty kolejkują się; promocja następuje po
-// zakończeniu sekwencji odrzuceń, a potem po każdej rozstrzygniętej
-// decyzji (kolejność odrzuceń = kolejność decyzji).
-// Znalezisko A: poziom modułu (wcześniej zagnieżdżona w execute) — wołają ją
-// bramki resolvera (jak dotąd) ORAZ hook w accepted() dla ścieżek auto.
-function promoteNextMadness(state) {
-  const next = (state.madnessQueue ?? []).shift();
-  if (!next) return null;
-  state.pendingMadnessCast = next;
-  const ev = event('madness_ready_required', {
-    playerId: next.playerId, objectId: next.objectId, cardId: next.cardId,
-    cost: state.objects.get(next.objectId)?.madness?.cost ?? null,
-    // M266/E (L100 pkt 1): zdarzenie opisujące decyzję o koszcie musi nieść
-    // WSZYSTKIE składniki ceny — inaczej opis nie da się złożyć bez stanu.
-    costColors: state.objects.get(next.objectId)?.madness?.colors ?? null,
-  });
-  state.events.push(ev);
-  return ev;
+// CR 702.35a/603.3: każde odrzucenie tworzy OSOBNY trigger na stosie,
+// po dokończeniu bieżącego odrzucania i pozostałych decyzji. Kolejka nie
+// jest decyzją o rzucie; ta pojawi się dopiero przy rozstrzygnięciu triggera.
+function queueMadnessTriggers(state, events) {
+  const queue = state.madnessQueue ?? [];
+  if (queue.length === 0) return;
+  state.madnessQueue = [];
+  // APNAP: najpierw kontroler aktywny, potem pozostali; ostatni jest na górze.
+  const playerOrder = state.players.map(p => p.id);
+  const active = playerOrder.indexOf(state.turn.activePlayerId);
+  const ordered = active < 0 ? playerOrder : [...playerOrder.slice(active), ...playerOrder.slice(0, active)];
+  for (const playerId of ordered) {
+    for (const pending of queue.filter(item => item.playerId === playerId)) {
+      const card = state.objects.get(pending.objectId);
+      const source = card ?? { id: pending.objectId, cardId: pending.cardId, controllerId: playerId };
+      queueTriggerToStack(state, { trigger: { event: 'madness' }, effect: [] },
+        { ...source, controllerId: playerId }, [], events, { madness: pending });
+    }
+  }
 }
 
 function accepted(state, cmd, result) {
@@ -2054,16 +2048,6 @@ function accepted(state, cmd, result) {
     // wtedy złapie go accepted() następnej komendy (i firstPendingDecision).
     result.events = [...(result.events ?? []), ...resumeSuspendedSpell(state, stuckSpell)];
   }
-  // Znalezisko A: auto-discard całości (bez decyzji) zostawia madness
-  // w KOLEJCE — promocja następuje tu, po domknięciu komendy, o ile nic nie
-  // czeka (lustro synchronicznej promocji w resolverze; kolejność „najpierw
-  // dokończ sekwencję/efekt, potem madness" zachowana, bo hook widzi stan po
-  // całej komendzie). Na ścieżce ręcznej no-op: decyzja madness jest już
-  // otwarta synchronicznie, więc firstPendingDecision nie jest puste.
-  if ((state.madnessQueue?.length ?? 0) > 0 && !firstPendingDecision(state)) {
-    const madnessEv = promoteNextMadness(state);
-    if (madnessEv) result.events = [...result.events, madnessEv];
-  }
   // CR 117.3c/117.4 (M90, bug C1): passy muszą następować po sobie BEZ akcji
   // pomiędzy — dopiero wtedy rozstrzyga się wierzch stosu. Każda zaakceptowana
   // komenda inna niż pass (rzut czaru, zdolność, ląd, deklaracja, decyzja
@@ -2078,6 +2062,11 @@ function accepted(state, cmd, result) {
   // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
   const triggerEvents = processTriggers(state, result.events);
   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
+  // Rozstrzyganie czaru/wybór odrzuceń musi się skończyć, zanim pojawią
+  // się na stosie wyzwolone w jego trakcie zdolności (CR 117.5, 603.3).
+  if (!firstPendingDecision(state) && !state.pendingSpell && state.madnessQueue?.length) {
+    queueMadnessTriggers(state, result.events);
+  }
   // Trackery Bloodthirst/Morbid: skan zdarzeń bieżącej komendy.
   // F (zgłoszenie właściciela 2026-10-29, Caravan Vigil): warunek stał na
   // JEDNYM typie zdarzenia (`object_moved`), którego ścieżka śmierci od
@@ -3664,8 +3653,6 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
-      // M258: następna zakolejkowana karta z madness przejmuje decyzję.
-      promoteNextMadness(state);
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     if (!card || card.zone !== 'exile' || !card.madnessReady) return reject('illegal_madness_cast');
@@ -3687,8 +3674,6 @@ export function execute(state, input) {
       if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
         state.turn.priorityPlayerId = pending.restorePriorityTo;
       }
-      // M258: następna zakolejkowana karta z madness przejmuje decyzję.
-      promoteNextMadness(state);
       // M266/C2 (zgłoszenie właściciela, Terminal Agony): `castMadnessSpell`
       // i `castPermanent` SAME wpychają zdarzenie rzutu do `state.events`,
       // więc doklejanie `e` do `slice(before)` duplikowało je w wyniku
@@ -5222,10 +5207,7 @@ export function execute(state, input) {
         if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
           state.turn.priorityPlayerId = pending.restorePriorityTo;
         }
-        // M258: rezygnacja też zamyka sekwencję — promocja zakolejkowanego
-        // madness (karty odrzucone przed rezygnacją z reszty).
-        const promotedDecline = promoteNextMadness(state);
-        if (promotedDecline) events.push(promotedDecline);
+        // Madness trafi na stos w accepted, po zakończeniu sekwencji.
         return accepted(state, cmd, { ok: true, events });
       }
       // Znalezisko A: po rezygnacji właściciel z dokładnie tyloma kartami
@@ -5352,12 +5334,6 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    // M258: sekwencja odrzuceń zakończona — jeśli w jej trakcie odrzucono
-    // kartę/karty z madness, PIERWSZA decyzja otwiera się teraz (CR 702.35a:
-    // opcja rzutu powstaje po dokończeniu efektu odrzucania); kolejne po
-    // rozstrzygnięciu tej (promoteNextMadness w bramce madness).
-    const promoted = promoteNextMadness(state);
-    if (promoted) resolvedEvents.push(promoted);
     return accepted(state, cmd, { ok: true, events: resolvedEvents });
   }
   // Oczekująca decyzja „karta z ręki na wierzch biblioteki\" (Chittering Rats).

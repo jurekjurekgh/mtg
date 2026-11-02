@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -79,6 +80,7 @@ test('M359/1 (CR 514.3a): trigger w cleanupie → KOLEJNY cleanup z limitem ręk
   assert.equal(state.pendingDiscardChoice.count, 1);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
   assert.equal(handSize(state), 7);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'madness otwarty w cleanupie (CR 702.35a)');
   // Rzut za madness {3}{R} → ETB zwraca Curate do ręki (ręka znów 8).
   addMana(state, 'p1', 4, { colors: ['R'] });
@@ -146,6 +148,7 @@ test('M359/2b (CR 514.3a): cleanup Z triggerem — priorytet OTWARTY, cast insta
   assert.equal(state.pendingDiscardChoice.count, 2);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'f1' }).ok);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'madness czeka (trigger w cleanupie)');
   // Rezygnacja z madness (stos pusty), ale trigger JUŻ był → priorytet otwarty.
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
@@ -165,6 +168,7 @@ test('M359/1c (CR 514.2): obrażenia zadane W cleanupie schodzą w kolejnym clea
   assert.equal(state.pendingDiscardChoice.count, 2);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'f1' }).ok);
+  resolveMadnessTrigger(state);
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(execute(state, decline).ok);
   // Priorytet otwarty (trigger madness) → Shock w misia (2/2, przeżyje).
