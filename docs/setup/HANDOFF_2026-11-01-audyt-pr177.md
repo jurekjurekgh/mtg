@@ -223,3 +223,6 @@ A58: bezpośredni diff #177 wyceny Dawntreader Elk, pięć testów realnego kosz
 
 
 A59: bezpośredni diff #177 G, Force Away, rzeczywiste odbicia i ferocious, 6 testów, mutacja wykryta; pokrewne 75/75, fast 9499/9499, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A59 poza slow. Kontynuować diff #177.
+
+
+A60: bezpośredni diff #177 PMSSB-6, Frightful Delusion na rzeczywistym stosie, 6 testów i mutacja wagi; pokrewne 63/63, fast 9505/9505, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A60 poza slow. Kontynuować diff #177.

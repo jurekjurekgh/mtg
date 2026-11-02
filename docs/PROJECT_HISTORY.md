@@ -18696,3 +18696,6 @@ Audyt #177 A58: realny Dawntreader Elk, koszt i tutor po zmianie #177; fast 9493
 
 
 Audyt #177 A59: realne Force Away, ferocious i inwestycja celu; fast 9499/9499, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A60: Frightful Delusion, rzeczywista kontra i odrzut również po dopłacie; fast 9505/9505, build 5639,2 kB. Audyt trwa.

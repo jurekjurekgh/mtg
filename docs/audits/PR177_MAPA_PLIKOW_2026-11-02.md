@@ -106,7 +106,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/pmssb12-pay-wave-a.test.js` | otwarte |
 | `test/pmssb3-draw-wave-b.test.js` | częściowo — rzeczywista decyzja Force Away i ferocious po zmianie inwestycji A59; inne draw otwarte |
 | `test/pmssb5-kontry-wave-a.test.js` | częściowo — Negate, Steel Sabotage, prawdziwy stos i wybory bota A52; inne warianty otwarte |
-| `test/pmssb6-discard-wave-a.test.js` | otwarte |
+| `test/pmssb6-discard-wave-a.test.js` | częściowo — realna kontra Frightful Delusion, wycena #177 i rider odrzutu A60; pozostałe discard otwarte |
 | `test/pmssb8-loot-wave-a.test.js` | częściowo — Force Away: dobór/odrzut i warunek z realnymi kartami A59; inne loot otwarte |
 | `test/real-cards-batch65.test.js` | otwarte |
 | `test/real-cards-batch71.test.js` | częściowo — wybrane testy kart i mechanik, bez oceny całości |
