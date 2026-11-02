@@ -142,3 +142,6 @@ A34: RED→GREEN rzeczywisty Spellkeeper Weird wobec hexproof, protekcji i niezn
 
 
 A35: Wretched Banquet na rzeczywistych stworach, remis, liczniki, odpowiedź; RED→GREEN warunkowego usunięcia przy poświęceniu Spellkeeper Weird. 7 testów, mutacja wykryta, pokrewne 29/29, fast 9376/9376, build 5636,7 kB; slow 268/268 tylko A34. Audyt #177 nadal otwarty.
+
+
+A36: Zoraline + Plague Reaver/finality wraca z exile, a po Awaken the Sleeper kontroler triggera nie jest mylony z właścicielem. Osiem rzeczywistych testów, 3 mutacje, pokrewne 85/85, fast 9384/9384, build 5637,4 kB; slow 268/268 tylko na A34. Audyt #177 pozostaje otwarty.

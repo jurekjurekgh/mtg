@@ -40,7 +40,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
-| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34) |
+| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34/A35/A36) |
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
@@ -97,7 +97,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | otwarte |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
-| `test/o-plague-reaver-darowanie.test.js` | otwarte |
+| `test/o-plague-reaver-darowanie.test.js` | częściowo — rzeczywisty próg 12/13, Zoraline/finality, odpowiedzi i przekazanie A36; inne przypadki bota otwarte |
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | otwarte |
 | `test/obiekty-wsparcia-poza-rejestrem.test.js` | otwarte |
@@ -121,3 +121,5 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 A34: rzeczywiste komendy Spellkeeper Weird + Magic Damper/Benevolent Blessing/Crumb and Get It wobec Fiery Fall, Expunge i Merciless Repurposing; poprawiono fałszywą „pewną śmierć” w heurystyce (szczegóły i granice w raporcie). Plik heurystyki nadal tylko częściowo sprawdzony.
 
 A35: rzeczywiste Wretched Banquet, Spellkeeper Weird, Fleeting Distraction, Fleeting Flight i Crumb and Get It; naprawiono dodatkowy błąd oceny warunkowego zniszczenia. Semantyka pozostałych wariantów nadal otwarta.
+
+A36: rzeczywista Zoraline i Plague Reaver — poprawki powrotu po finality i kontrolera opóźnionej zdolności, odsłonięte przez testowanie wyboru z #177 O. Nie są uznane za nowe regresje #177 bez dowodu; dalsze ścieżki silnika pozostają otwarte.

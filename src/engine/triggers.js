@@ -1230,10 +1230,11 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
 /** Wspólne wejście z opóźnionej reanimacji, także po wyborze riot. */
 export function resolveDelayedReanimate(state, pending, riotChoices = null, events = []) {
   const object = state.objects.get(pending?.objectId);
-  if (!object || object.zone !== 'graveyard') return false;
+  const expectedZone = pending?.expectedZone ?? 'graveyard';
+  if (!object || object.zone !== expectedZone || !['graveyard', 'exile'].includes(expectedZone)) return false;
   if (riotCountOf(object) > 0 && riotChoices === null) {
     queueRiotEntry(state, object, {
-      entryKind: 'delayed_reanimate', fromZone: 'graveyard', playerId: pending.playerId,
+      entryKind: 'delayed_reanimate', fromZone: expectedZone, playerId: pending.playerId,
       delayedPending: pending,
     });
     return true;
@@ -1248,7 +1249,7 @@ export function resolveDelayedReanimate(state, pending, riotChoices = null, even
   applyRiotOnEntry(state, newId, riotChoices, pending.objectId);
   applyEnterCounters(state, newId);
   const movedEvent = event('object_moved', {
-    fromId: pending.objectId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+    fromId: pending.objectId, object: state.objects.get(newId), fromZone: expectedZone, toZone: 'battlefield', delayed: true,
   });
   state.events.push(movedEvent); events.push(movedEvent);
   const controlEvent = event('control_changed', {
@@ -4176,13 +4177,16 @@ function processTriggersScan(state, recentEvents) {
         // T6: trigger opóźniony idzie na STOS (jak każdy trigger) — rozstrzyga
         // się po rundzie passów; aplikacja w resolveDelayedTrigger.
         const object = state.objects.get(pending.objectId);
-        // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
-        if (!object || object.zone !== 'graveyard') continue;
+        // CR 603.7 (litera c): nie szukamy po nazwie, tylko tej samej karty w strefie,
+        // do której faktycznie przeszedł koszt (grób lub exile przez finality).
+        const expectedZone = pending.expectedZone ?? 'graveyard';
+        if (!object || object.zone !== expectedZone || !['graveyard', 'exile'].includes(expectedZone)) continue;
         queueTriggerToStack(state, {
           type: 'triggered',
           trigger: { event: 'delayed' },
           effect: [],
-        }, object, [], events, { delayedType: 'reanimate_under_target_control', delayed: pending });
+        }, { ...object, controllerId: pending.controllerId ?? object.controllerId }, [], events,
+        { delayedType: 'reanimate_under_target_control', delayed: pending });
       }
       state.delayedTriggers = remainingUpkeepDelayed;
       for (const object of state.objects.values()) {

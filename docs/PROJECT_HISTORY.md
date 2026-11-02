@@ -18615,3 +18615,6 @@ Audyt #177 A34: bot nie poświęca Weird, jeśli rzeczywisty cel jest nielegalny
 
 
 Audyt #177 A35: realny Wretched Banquet i warunek najmniejszej mocy przy Spellkeeper Weird; 7 testów, mutacja, pokrewne 29/29, fast 9376/9376, build 5636,7 kB. Slow 268/268 na wcześniejszym A34; audyt trwa.
+
+
+Audyt #177 A36: zbadano realne progi Plague Reaver i naprawiono powrót z exile po finality oraz kontrolera odroczonej zdolności. 8 testów, 3 mutacje, pokrewne 85/85, fast 9384/9384, build 5637,4 kB. Slow tylko A34; audyt trwa.

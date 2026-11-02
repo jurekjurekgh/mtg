@@ -6094,9 +6094,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
     // Plague Reaver: „Return this creature to the battlefield under that
     // player's control at the beginning of their next upkeep.” Opóźniony
-    // trigger (CR 603.7): wpis wskazuje obiekt ŹRÓDŁA W GROBIE (zdolność
-    // kosztuje sacrifice — abilities.js przekazuje obiekt z grobu) i gracza-
-    // cel; rozstrzyga go blok upkeep w triggers.js. „Next upkeep” — gdy cel
+    // trigger (CR 603.7): koszt poświęcenia może umieścić źródło w grobie
+    // ALBO w exile (finality). CR 400.7 (litera j) pozwala efektowi odnaleźć obiekt
+    // po koszcie w publicznej strefie; zapisujemy tę konkretną strefę, nie
+    // wyszukujemy karty po nazwie. „Next upkeep” — gdy cel
     // aktywowałby we WŁASNEJ turze, najbliższy upkeep się nie liczy (wpis
     // armedAt to odnotowuje).
     const targetPlayerId = targets[0];
@@ -6106,6 +6107,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.delayedTriggers.push({
       type: 'reanimate_under_target_control',
       objectId: sourceObject.id,
+      expectedZone: sourceObject.zone,
+      // CR 603.7 (litera e): kontrolerem triggera zostaje kontroler zdolności,
+      // nawet jeśli karta wróciła do grobu/exile innego właściciela.
+      controllerId: sourceObject.controllerId,
       playerId: targetPlayerId,
       armedAt: { turn: state.turn.number, active: state.turn.activePlayerId },
       cardId: sourceObject.cardId,
