@@ -18636,3 +18636,6 @@ Audyt #177 A40: naprawa wyceny przez bota trwałego wygnania tokena przy champio
 
 
 Audyt #177 A41: blok i obrażenia w realnym combacie, cztery testy; fast 9413/9413, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A42: rzeczywisty Curse, mill i draw, odpowiedź Naturalize, bot; fast 9420/9420, build 5637,7 kB. Audyt trwa.

@@ -163,3 +163,6 @@ A40: RED→GREEN rzeczywistej wyceny wygnania tokena przez Berserkera, który ni
 
 
 A41: 4 realne testy bloku i obrażeń (bezpieczny blok, nieopłacalna strata, flying, deathtouch), pokrewne 13/13, fast 9413/9413, build 5637,7 kB. Slow 268/268 po A38 przed A40. Audyt #177 otwarty.
+
+
+A42: siedem testów Curse na prawdziwych kartach, biblioteki 0–3, deck-out przy draw, Naturalize przed/po upkeep i skala wyceny. Pokrewne 25/25, fast 9420/9420, build 5637,7 kB; slow po A41 w toku. Audyt #177 otwarty.

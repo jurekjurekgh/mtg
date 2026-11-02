@@ -26,7 +26,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set, koszt A30; rzeczywisty Oracle i wybrane zachowania A37 |
 | `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — dane A30, Oracle i rzeczywisty upkeep/mill/draw A42 |
 | `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-tail-slash.json` | częściowo — dane A30, Oracle/ruling i wybrane rzeczywiste przypadki A39 |
@@ -67,7 +67,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb80-kwota-z-landow.test.js` | otwarte |
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
-| `test/audyt-pmssb83-klatwa-mill.test.js` | otwarte |
+| `test/audyt-pmssb83-klatwa-mill.test.js` | częściowo — realne biblioteki, wybór, mill, draw i Naturalize A42 |
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | otwarte |
@@ -133,3 +133,5 @@ A39: Tail Slash na rzeczywistych Child of Night, Deadly Recluse, Brute Force, Sp
 A40: rzeczywisty wybór hosta championa, token Elf Warrior nie wraca, poprawka rabatu wygnania tokena; pozostałe stany i wiązania otwarte.
 
 A41: realne ataki, blok bezkosztowy, latanie i deathtouch, wybór bota i obrażenia; inne warianty walki otwarte.
+
+A42: realny Curse i biblioteki, wybór/wycena bota, deck-out na draw, Naturalize przed/po wyzwoleniu; pozostałe przypadki otwarte.
