@@ -18648,3 +18648,6 @@ Audyt #177 A43: prawdziwa walka, Shock i ETB Cutthroata; fast 9424/9424, build 5
 
 
 Audyt #177 A44: rzeczywista aktywacja Cuombajj Witches, wybór dwóch celów i odpowiedzi; fast 9429/9429, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A45: poprawiono wycenę bite przeciw ochronie przed faktycznym źródłem, RED→GREEN i dwie mutacje; fast 9437/9437, build 5638,0 kB. Audyt trwa.

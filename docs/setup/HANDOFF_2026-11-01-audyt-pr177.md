@@ -175,3 +175,6 @@ A43: cztery realne testy Cutthroata, obrażenia w walce, Shock, Magic Damper i w
 
 
 A44: 5 rzeczywistych testów wiedźm i wyboru przeciwnika, nielegalności jednego z dwóch celów; pokrewne 54/54, fast 9429/9429, build 5637,7 kB. Slow po A41 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.
+
+
+A45: RED→GREEN wyceny Tail Slash przeciw ochronie źródła, osiem rzeczywistych testów, dwie mutacje wykryte; pokrewne 49/49, fast 9437/9437, build 5638,0 kB. Slow po A45 w toku; audyt #177 otwarty.

@@ -70,7 +70,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb83-klatwa-mill.test.js` | częściowo — realne biblioteki, wybór, mill, draw i Naturalize A42 |
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |
-| `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | otwarte |
+| `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | częściowo — realna wycena Tail Slash, deathtouch i ochrona źródła A45; pozostałe testy otwarte |
 | `test/audyt-pr149-stempel-wygnania.test.js` | otwarte |
 | `test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` | otwarte |
 | `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | otwarte |
@@ -139,3 +139,5 @@ A42: realny Curse i biblioteki, wybór/wycena bota, deck-out na draw, Naturalize
 A43: realny Cutthroat, walka i Shock, własny przeciwny cel oraz hexproof, wybór i rzeczywisty trigger; inne scenariusze otwarte.
 
 A44: Cuombajj Witches, prawdziwe obrażenia, wybór przeciwnika, dwukrotne wskazanie celu i utrata legalności; inne scenariusze otwarte.
+
+A45: Tail Slash na rzeczywistych kartach, RED→GREEN braku uwzględnienia ochrony przed źródłem w wycenie bite; pozostałe warianty otwarte.

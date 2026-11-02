@@ -8941,7 +8941,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     const dealerKw = [...(dealer.keywords ?? []), ...b.keywords];
     // Batch 62 (Chocobo Kick): „twice that much damage" — mnożnik dotyczy
     // obrażeń (nie mocy), a wytrzymałość dealera zostaje bez zmian.
-    const baseDPow = Math.max(0, (dealer.power ?? 0) + b.power);
+    // Przy bite obrażenia pochodzą od stwora, nie od rzucanego czaru.
+    // Ochrona ofiary przed jakością źródła zapobiega całemu ciosowi (CR 702.16),
+    // nawet gdy celowanie samym czarem jest legalne.
+    const protectionStopsBite = oneSided && targetProtectionBlocksSource(victim, dealer);
+    const baseDPow = protectionStopsBite ? 0 : Math.max(0, (dealer.power ?? 0) + b.power);
     const dPow = baseDPow * damageMultiplier;
     const dToughLeft = Math.max(0, (dealer.toughness ?? 0) + b.toughness - (dealer.damage ?? 0));
     const vPow = Math.max(0, victim.power ?? 0);
@@ -8985,7 +8989,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       // 9 wytrzymałości −30/−80), a bite dostawał dodatni „chip" i Chocobo
       // Kick szedł w cel, którego nie zabije (64 > pass). Ta sama reguła,
       // to samo okno (`combatTrickWindow`); pokrętło ×0 przywraca stary chip.
-      if (!kills && !combatTrickWindow(view, victim)) value -= P.fightBiteMissPenalty;
+      if (!kills && (protectionStopsBite || !combatTrickWindow(view, victim))) value -= P.fightBiteMissPenalty;
     } else if (kills && !dies) {
       value = P.fightKillBase + P.fightKillPowerWeight * vPow;
     } else if (dies) {
