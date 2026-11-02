@@ -1999,6 +1999,12 @@ const CLEANUP_LOCKED_COMMANDS = new Set([
   'cast_adventure', 'cast_adventure_creature', 'activate_ability', 'tap_for_mana',
 ]);
 
+// Oferta i walidacja szukania korzystają z tej samej listy stref (L48).
+// Brak jawnego wyboru zachowuje domyślną strefę dla starszych replayów.
+function searchDestinations(pending) {
+  return pending.destinations ?? [pending.destination];
+}
+
 /**
  * Punkt zapisu każdej zaakceptowanej komendy. Centralnie uruchamia
  * state-based actions (idempotentne), waliduje inwarianty i dopiero wtedy
@@ -4172,6 +4178,7 @@ export function execute(state, input) {
       if (!chosen || !matches(chosen)) return reject('illegal_search_choice');
       foundCardId = chosen.cardId;
       const chosenDest = cmd.destination ?? pending.destination;
+      if (!searchDestinations(pending).includes(chosenDest)) return reject('illegal_search_destination');
       // M177/C (Final Parting): destination 'graveyard' — druga karta idzie
       // do grobu (chain po karcie do ręki).
       const destZone = chosenDest === 'battlefield' ? 'battlefield' : chosenDest === 'graveyard' ? 'graveyard' : 'hand';
@@ -8140,7 +8147,7 @@ export function playerView(state, playerId) {
     const candidateIds = state.zones.library.filter((id) => {
       return librarySearchMatches(state.objects.get(id), pending.qualifier ?? {}, pending.playerId);
     });
-    const searchDests = pending.destinations ?? [pending.destination];
+    const searchDests = searchDestinations(pending);
     // M122/#2 (audyt Żywym Testerem): biblioteka jest strefą UKRYTĄ i jej
     // egzemplarze są dla gracza nierozróżnialne — 17 Forestów dawało 17
     // identycznych opcji „Szukanie: Forest", a numerek „(3 z 17)" niczego
