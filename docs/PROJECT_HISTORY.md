@@ -18693,3 +18693,6 @@ Audyt #177 A57: podłączono źródło decyzji poświęcenia do logu (brak istni
 
 
 Audyt #177 A58: realny Dawntreader Elk, koszt i tutor po zmianie #177; fast 9493/9493, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A59: realne Force Away, ferocious i inwestycja celu; fast 9499/9499, build 5639,2 kB. Audyt trwa.

@@ -220,3 +220,6 @@ A57: niepełne podłączenie nowych danych #177 do logu, zastany objaw, RED dwó
 
 
 A58: bezpośredni diff #177 wyceny Dawntreader Elk, pięć testów realnego kosztu i search, mutacja wykryta; pokrewne 35/35, fast 9493/9493, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A58 poza slow. Kontynuować diff #177.
+
+
+A59: bezpośredni diff #177 G, Force Away, rzeczywiste odbicia i ferocious, 6 testów, mutacja wykryta; pokrewne 75/75, fast 9499/9499, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A59 poza slow. Kontynuować diff #177.
