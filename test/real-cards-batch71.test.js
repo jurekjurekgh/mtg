@@ -67,7 +67,8 @@ function resolveStack(state) {
 // =========================================================================
 // B2a — kwota „X, gdzie X to liczba kontrolowanych przez ciebie landów”
 //       (Rumbling Rockslide: „deals damage equal to the number of lands you
-//       control to target creature”). CR 107.3a — X ustalane przy rzucie.
+//       control to target creature”). Liczbę landów sprawdza się przy rozstrzygnięciu;
+//       nie jest to wybierane przy rzucie X.
 // =========================================================================
 
 test('pin B2a: damage z amount "lands_you_control" skaluje się z liczbą landów rzucającego', () => {

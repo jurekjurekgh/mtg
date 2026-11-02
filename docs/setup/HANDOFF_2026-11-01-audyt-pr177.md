@@ -71,3 +71,7 @@ Kreator nie oferuje źródeł wskazanych do tapnięcia w kosztach bieżącej i n
 ## A16 — płatność improvise w kreatorze
 
 Kreator Fen Haulera odejmuje artefakty improvise od części generycznej zamiast żądać pełnego kosztu. Rzeczywista oferta, model i wykonana ręczna płatność 5 many + 2 artefaktów, 4 testy (1 RED→GREEN), pokrewne 77/77, fast 9272/9272, build 5628,2 kB. Audyt trwa.
+
+## A17 — kontrola rozstrzygnięcia czarów batcha
+
+Sześć zielonych testów prawdziwych Tail Slash i Rumbling Rockslide przy zmianach między rzuceniem a rozstrzygnięciem; skorygowano mylące komentarze o liczbie landów (to nie wybierane X). Pokrewne 34/34, fast 9278/9278, build 5628,3 kB; audyt trwa.

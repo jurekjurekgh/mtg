@@ -18548,3 +18548,7 @@ Odrzucenie rzeczywistego Kavu z nieaktualnym wyborem convoke oraz wyjątek nie s
 ### 2026-11-01 — audyt #177, improvise w kreatorze
 
 Kreator odejmuje artefakty improvise od generycznego kosztu wariantu, nie od kolorowych pipów. Rzeczywista sesja Fen Haulera i płatność pięciu many plus dwóch artefaktów; 4 testy, pokrewne 77/77, fast 9272/9272, build 76 modułów / 5628,2 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, weryfikacja czarów batcha
+
+Sześć nowych testów rzeczywistego Tail Slash i Rumbling Rockslide z nielegalnymi celami, zmianą mocy i landów, lifelink oraz ochroną. Korekta komentarzy o momencie liczenia landów; brak potwierdzonego błędu silnika w tych przypadkach. Pokrewne 34/34, fast 9278/9278, build 76 modułów / 5628,3 kB. Audyt trwa.
