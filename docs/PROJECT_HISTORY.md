@@ -18584,3 +18584,5 @@ Wolny pakiet po A23 na snapshot `b8a7690`: 268/268. Osobna sonda potwierdziła b
 ### 2026-11-02 — audyt #177 po doprecyzowaniu zakresu
 
 Dodana mapa 111 plików diffu z częściowym/otwartym statusem; tylko realny katalog i interakcje ze zmianami PR. Violent Urge: cztery testy zmiany typów grobu na stosie (Halo Scarab, Shock), pokrewne 37/37, fast 9318/9318, build 76 modułów / 5631,3 kB. Audyt pozostaje otwarty.
+
+Audyt #177 A26: realny Changeling Berserker wygnuje Highland Game przejęte przez Awaken the Sleeper i po śmierci oddaje go właścicielowi; kontrola odmowy wygnania włącza Morbid. Dwa testy, pokrewne 42/42, fast 9320/9320, build 5631,3 kB; audyt trwa.
