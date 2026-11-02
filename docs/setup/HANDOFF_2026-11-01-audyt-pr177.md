@@ -154,3 +154,6 @@ A38: 6 testów rzeczywistego Trumpet Blast z Kappą/ninjutsu, Trostani i Act of 
 
 
 A39: sześć testów Tail Slash na realnych kartach; pokrewne 44/44, fast 9405/9405, build 5637,4 kB. Slow po A38 w toku; audyt #177 otwarty.
+
+
+Uzupełnienie: slow po A38 268/268; kod produkcyjny A39 bez zmian, test A39 poza zestawem slow.

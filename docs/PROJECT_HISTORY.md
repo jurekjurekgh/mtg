@@ -18627,3 +18627,6 @@ Audyt #177 A38: rzeczywisty Trumpet Blast, ninjutsu, powrót kontroli, bot i cle
 
 
 Audyt #177 A39: Tail Slash na rzeczywistych celach i odpowiedziach; pokrewne 44/44, fast 9405/9405, build 5637,4 kB; audyt trwa.
+
+
+Slow po A38: 268/268, na niezmienionym kodzie produkcyjnym A39.
