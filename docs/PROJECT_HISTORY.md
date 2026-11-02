@@ -18552,3 +18552,7 @@ Kreator odejmuje artefakty improvise od generycznego kosztu wariantu, nie od kol
 ### 2026-11-01 — audyt #177, weryfikacja czarów batcha
 
 Sześć nowych testów rzeczywistego Tail Slash i Rumbling Rockslide z nielegalnymi celami, zmianą mocy i landów, lifelink oraz ochroną. Korekta komentarzy o momencie liczenia landów; brak potwierdzonego błędu silnika w tych przypadkach. Pokrewne 34/34, fast 9278/9278, build 76 modułów / 5628,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, zagnieżdżony auto-tap a convoke
+
+Jednoznaczny auto-tap kosztu Apprentice Wizarda mógł zużyć ożywioną Wyspę zarezerwowaną do convoke Kavu. Podrzędny kreator zapobiega naruszeniu rezerwacji, z kontrolami puli, przodka i anulowania. 5 testów, pokrewne 63/63, fast 9283/9283, build 76 modułów / 5629,1 kB. Audyt trwa.

@@ -75,3 +75,7 @@ Kreator Fen Haulera odejmuje artefakty improvise od części generycznej zamiast
 ## A17 — kontrola rozstrzygnięcia czarów batcha
 
 Sześć zielonych testów prawdziwych Tail Slash i Rumbling Rockslide przy zmianach między rzuceniem a rozstrzygnięciem; skorygowano mylące komentarze o liczbie landów (to nie wybierane X). Pokrewne 34/34, fast 9278/9278, build 5628,3 kB; audyt trwa.
+
+## A18 — rezerwacje a auto-tap PODRZĘDNEGO kosztu
+
+Ożywiona Wyspa wybrana do convoke Kavu była mimo A15 tapowana auto-tapem kosztu `{U}` Apprentice Wizarda, gdy dostępne Wyspy miały jeden profil. Rzeczywisty callback RED→GREEN: warunkowo wymuszony kreator potomny prowadzi do udanej aktywacji i rzutu; kontrole puli, braku rodzica, przodka i braku alternatyw. Ochrona może zachowawczo pokazać dodatkowy wybór. 5 testów, pokrewne 63/63, fast 9283/9283, build 5629,1 kB. Wolne 268/268 rozpoczęto na A16 i zakończono podczas prac A18, więc nie certyfikuje jednorodnego końcowego stanu. Audyt trwa.

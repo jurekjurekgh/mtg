@@ -2838,7 +2838,7 @@ function bootstrapTable() {
     showModal('choice-request');
   }
 
-  function manaWizardFor(cmd) {
+  function manaWizardFor(cmd, { guardParentReservations = false } = {}) {
     const view = session.view();
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
@@ -2958,13 +2958,23 @@ function bootstrapTable() {
     // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
     const autoPayableMana = session.state
       ? producibleMana(session.state, HUMAN_ID, excludedSources, {}, []) : null;
-    if (!shouldOpenManaWizard({
+    const normallyOpens = shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
       delveCandidates: descriptor.delveCandidates,
       maxDelve: descriptor.maxDelve,
       autoPayableMana,
-    })) return null;
+    });
+    // Auto-tap silnika nie zna rezerwacji wyższych kreatorów. Nawet jeden
+    // profil (np. kilka identycznych ożywionych Wysp) może wybrać Wyspę
+    // zarezerwowaną do convoke. Jeśli koszt nie leży już w puli, a taka
+    // rezerwacja jest dostępnym źródłem, wymuszamy ręczny wybór WYŁĄCZNIE
+    // w płatności podrzędnej. Własny koszt {T} nie jest rezerwacją rodzica.
+    const reservedIds = new Set((excludedSources ?? []).filter((id) => id !== cmd.objectId));
+    const guardsParent = guardParentReservations && reservedIds.size > 0
+      && !wizardProgress(view, HUMAN_ID, descriptor, sources, poolUnits).done
+      && manaSourcesForPlayer(null).some((source) => reservedIds.has(source.id));
+    if (!normallyOpens && !guardsParent) return null;
     return { ...descriptor, cmd, _restrictedBlocked: restrictedBlocked };
   }
 
@@ -3120,7 +3130,7 @@ function bootstrapTable() {
         // `manaWizardFor` sam zamyka się, gdy wyboru nie ma (pula pokrywa koszt
         // albo jest jeden kształt płatności) — oferta = walidacja (L48).
         if (plan.nested) {
-          const nested = manaWizardFor(plan.command);
+          const nested = manaWizardFor(plan.command, { guardParentReservations: true });
           if (nested) { openNestedManaWizard(nested); return; }
         }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
