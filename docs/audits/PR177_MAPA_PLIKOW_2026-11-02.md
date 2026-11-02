@@ -59,7 +59,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-bot-walka-remisy.test.js` | częściowo — pokrewny zestaw i realne scenariusze A41, pozostałe remisy otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
-| `test/audyt-pmssb18-proliferate.test.js` | otwarte |
+| `test/audyt-pmssb18-proliferate.test.js` | częściowo — rzeczywisty infect, poison, −1/−1 i wybór Courage/proliferate A49 |
 | `test/audyt-pmssb19-search.test.js` | otwarte |
 | `test/audyt-pmssb25-discard.test.js` | otwarte |
 | `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
@@ -147,3 +147,5 @@ A46: flash Benevolent Blessing, prawdziwy blok i atak, kolor względem źródła
 A47: tabela dziesięciu zmienionych talii i aktualizacja nieaktualnego punktu zaczepienia README, z zachowaniem historycznych wyników #177.
 
 A48: Rupture Spire z rzeczywistą odpowiedzią na trigger i produkcją many, bez pełnego audytu wszystkich źródeł.
+
+A49: rzeczywisty infect, dwa rodzaje liczników i wybór proliferate bota; inne warianty otwarte.

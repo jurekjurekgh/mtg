@@ -190,3 +190,6 @@ A47: sprawdzono tabelę 10 zmienionych talii i zaktualizowano status README, zac
 
 
 A48: 4 rzeczywiste testy Rupture Spire/Druid/Fiery Fall, odpowiedź i mana w puli; pokrewne 18/18, fast 9448/9448, build 5638,0 kB. Slow po A45 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.
+
+
+A49: 3 realne testy infect, liczników i wyboru proliferate, pokrewne 20/20, fast 9451/9451, build 5638,0 kB. Slow po A45 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.
