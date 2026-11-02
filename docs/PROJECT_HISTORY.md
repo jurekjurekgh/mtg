@@ -18724,3 +18724,5 @@ Audyt #177 A68: naprawiony starszy błąd Scorn na hoście i wybranej aurze; fas
 Audyt #177 A69: rzeczywisty Converge w pięciu ścieżkach płatności, w tym trzy darmowe rzuty; fast 9560/9560. Audyt trwa.
 
 Audyt #177 A70: realne inwestycje Scorn na bestow, sprzęcie living weapon i wyborze trzech celów; fast 9563/9563. Audyt trwa.
+
+Audyt #177 A71: realnie odtworzono wcześniejszy defekt APNAP z Crows/Selhoff obu graczy, konsekwencję draw/mill; 4 jawne TODO, 2 kontrole, żadna naprawa nie zadeklarowana. Audyt trwa.

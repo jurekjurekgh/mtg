@@ -251,3 +251,5 @@ A68: realny Scorn, Curiosity i Feedback — wspólne odbicie hosta i wybranych a
 A69: Converge Kaleidoscorch realnie płatny i flashback oraz 3 darmowe ścieżki (Appraiser, Halo Forager, Epic Experiment), dwa niezależne RED mutacji; 5/5, related 80/80, fast 9560/9560, build 5641,2 kB, slow po A68 268/268 na tym samym kodzie. Audyt trwa.
 
 A70: Scorn na czterech prawdziwych stworach i Curiosity, realne bestow Dryad oraz Germ ze Strandwalker; decyzja bota i faktyczne strefy, mutacja liczenia bestow RED. 3/3, related 60/60, fast 9563/9563, build 5641,2 kB; slow po A68 268/268 na tym samym kodzie. Audyt trwa.
+
+A71 OTWARTE: realny Shock/Goblin Picker, Crows i Selhoff u obu graczy ujawnia przeplot APNAP i inny draw/mill. Ten sam defekt w bazie `59815d5` i #177, nie regresja; 4 wykonujące się TODO czerwone, 2 kontrole zielone. Samo końcowe sortowanie nie daje poprawnej kolejności wyborów. Potrzebna spójna kolejka triggerów i celów (CR 603.3b/d), uwzględnić A28 madness, inne decyzje i replay. Related 64 pass + 4 TODO, fast 9565 pass + 4 TODO, build 5641,2 kB. Audyt nieukończony.
