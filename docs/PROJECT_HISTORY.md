@@ -18651,3 +18651,6 @@ Audyt #177 A44: rzeczywista aktywacja Cuombajj Witches, wybór dwóch celów i o
 
 
 Audyt #177 A45: poprawiono wycenę bite przeciw ochronie przed faktycznym źródłem, RED→GREEN i dwie mutacje; fast 9437/9437, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A46: prawdziwe deklaracje walki, kolor ochrony Benevolent Blessing i Tail Slash; fast 9442/9442, build 5638,0 kB. Audyt trwa.

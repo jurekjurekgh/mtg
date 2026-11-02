@@ -90,7 +90,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | otwarte |
 | `test/i-poswiecenie-stwora.test.js` | częściowo — rzeczywiste Spellkeeper Weird, hexproof, protekcja, niezniszczalność i wygnanie A34; inne zagrożenia otwarte |
-| `test/j-benevolent-blessing-kolor.test.js` | otwarte |
+| `test/j-benevolent-blessing-kolor.test.js` | częściowo — realne ataki/bloki, kolor, obrażenia i Tail Slash A46 |
 | `test/k-rupture-spire-etb-oplata.test.js` | otwarte |
 | `test/katalog-pole-plan.test.js` | otwarte |
 | `test/l-ambulatory-edifice-debuff.test.js` | otwarte |
@@ -141,3 +141,5 @@ A43: realny Cutthroat, walka i Shock, własny przeciwny cel oraz hexproof, wybó
 A44: Cuombajj Witches, prawdziwe obrażenia, wybór przeciwnika, dwukrotne wskazanie celu i utrata legalności; inne scenariusze otwarte.
 
 A45: Tail Slash na rzeczywistych kartach, RED→GREEN braku uwzględnienia ochrony przed źródłem w wycenie bite; pozostałe warianty otwarte.
+
+A46: flash Benevolent Blessing, prawdziwy blok i atak, kolor względem źródła Tail Slash; pozostałe stany walki otwarte.

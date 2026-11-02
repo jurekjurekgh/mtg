@@ -178,3 +178,6 @@ A44: 5 rzeczywistych testów wiedźm i wyboru przeciwnika, nielegalności jedneg
 
 
 A45: RED→GREEN wyceny Tail Slash przeciw ochronie źródła, osiem rzeczywistych testów, dwie mutacje wykryte; pokrewne 49/49, fast 9437/9437, build 5638,0 kB. Slow po A45 w toku; audyt #177 otwarty.
+
+
+A46: 5 rzeczywistych testów Benevolent Blessing, walka i Tail Slash; pokrewne 24/24, fast 9442/9442, build 5638,0 kB. Slow po A45 w toku; audyt #177 otwarty.
