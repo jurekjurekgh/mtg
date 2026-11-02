@@ -45,12 +45,12 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
 | `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
-| `src/engine/fingerprint.js` | otwarte |
+| `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte |
 | `src/engine/permanents.js` | otwarte |
 | `src/engine/resources.js` | częściowo — Converge (A3) |
 | `src/engine/spells.js` | otwarte |
-| `src/engine/state-based.js` | otwarte |
+| `src/engine/state-based.js` | częściowo — token wygnany przez championa, anihilacja Magmy A29/A31; inne ścieżki otwarte |
 | `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
@@ -68,7 +68,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | otwarte |
-| `test/audyt-pmssb84-champion-okno.test.js` | otwarte |
+| `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; wycena bota otwarta |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | otwarte |
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | otwarte |
 | `test/audyt-pr149-stempel-wygnania.test.js` | otwarte |

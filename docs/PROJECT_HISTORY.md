@@ -18600,3 +18600,6 @@ Audyt #177 A29: pięć rzeczywistych testów Magma Pummeler + Shock/Rumbling Roc
 
 
 Audyt #177 A30: 10 pozycji batcha 71 zgodnych w badanych polach z CSV/snapshotami, 31 talii zgodnych z generatorem; pokrewne 106/106, fast 9345/9345. Pozostały audyt otwarty.
+
+
+Audyt #177 A31: realny Scythe Tiger/shroud, token Ambassador Oak oraz wybory championa w replay/fingerprint; pokrewne 53/53, fast 9349/9349, slow 268/268 przed korektą komentarza testu, build 5635,2 kB. Semantyka nadal częściowa.

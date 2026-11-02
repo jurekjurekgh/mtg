@@ -127,3 +127,6 @@ A29: rzeczywiste Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin O
 
 
 A30: sprawdzono dane batcha 71 (wybrane pola zgodne z CSV i snapshotami) oraz generator bez zapisu (31/31 talii identycznych z plikami). Pokrewne 106/106, fast 9345/9345; build A29, slow A28. Nie oceniono strategii talii ani kompletnej semantyki. Audyt #177 trwa.
+
+
+A31: champion nietargetowany działa z rzeczywistym Scythe Tiger (jego własne ETB po powrocie wymaga lądu) i z tokenem rzeczywistego Ambassador Oak (token znika). Oba wybory odtworzone w replay, pola decyzji w fingerprint; cztery testy, pokrewne 53/53, fast 9349/9349, slow 268/268 przed korektą komentarza testu, build 5635,2 kB. Audyt #177 pozostaje otwarty.
