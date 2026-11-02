@@ -18642,3 +18642,6 @@ Audyt #177 A42: rzeczywisty Curse, mill i draw, odpowiedź Naturalize, bot; fast
 
 
 Slow po A41: 268/268, po zmianie produkcyjnej A40.
+
+
+Audyt #177 A43: prawdziwa walka, Shock i ETB Cutthroata; fast 9424/9424, build 5637,7 kB. Audyt trwa.

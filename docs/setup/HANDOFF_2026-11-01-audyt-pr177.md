@@ -169,3 +169,6 @@ A42: siedem testów Curse na prawdziwych kartach, biblioteki 0–3, deck-out prz
 
 
 Uzupełnienie: slow po A41 268/268, po zmianie produkcyjnej A40; nowy test A42 poza slow.
+
+
+A43: cztery realne testy Cutthroata, obrażenia w walce, Shock, Magic Damper i własny stwór. Pokrewne 16/16, fast 9424/9424, build 5637,7 kB; slow po A41 268/268 na tym samym kodzie produkcyjnym. Audyt #177 otwarty.
