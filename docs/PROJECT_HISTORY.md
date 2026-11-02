@@ -18668,4 +18668,4 @@ Audyt #177 A48: rzeczywista płatność Rupture Spire po odpowiedzi na trigger; 
 Audyt #177 A49: prawdziwe obrażenia infect i proliferate; fast 9451/9451, build 5638,0 kB. Audyt trwa.
 
 
-Audyt #177 A50: naprawa prywatności i liczby tasowań Final Parting, fast 9456/9456, build 5639,0 kB; slow w toku. Audyt trwa.
+Audyt #177 A50: naprawa prywatności i liczby tasowań Final Parting, fast 9456/9456, build 5639,0 kB; slow 268/268. Audyt trwa.
