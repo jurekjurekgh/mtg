@@ -103,3 +103,5 @@ Rzeczywisty Spare from Evil uniemożliwiał zagranie Dryady za bestow, mimo że 
 Syntetyczny artifact-bestow nie może korzystać z Powerstone ani rabatu Etherium Sculptor: cechy Aura na stosie stosowane do oferty, wykonawcy i kreatora. Zwykły artefakt i realny bestow nadal działają. 6 testów, zaktualizowana błędna przesłanka syntetycznego B54, 65/65 i 33/33 pokrewne, pełny fast 9314/9314, build 5631,3 kB. Pierwszy pełny bieg ujawnił B54 (9313/9314); po poprawie powtórzono. Slow nadal z A20.
 
 A24 otwarty: realny Heap Gate + Forest + Mountain i Goblin Deathraiders, brak oferty przed ręczną aktywacją, po aktywacji czar działa (`.arena/a24-heap-probe.test.js`, `.arena/a24-red.log`). Automatyczny kreator mierzy też sumę, a nie pokrycie kolorów; oba elementy wymagają rozwiązania z ochroną przed wielokrotnym użyciem źródeł i z testami. Audyt trwa.
+
+Wolny pakiet po A23 na niezmienionym `b8a7690`: 268/268 (`.arena/a23-slow.log`). Dodatkowy RED `.arena/a24-wizard-red.log` potwierdza, że po wymuszeniu jeszcze nieoferowanej komendy kreator nie otwiera się, gdy auto-tap ma dostateczną liczbę, ale nie kolor; A24 nadal otwarty.
