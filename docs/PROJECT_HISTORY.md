@@ -18718,3 +18718,5 @@ Audyt #177 A65: odtworzone ślady golden mastera i sprostowania historycznych op
 Audyt #177 A66: utrwalono LKI poświęconych tokenów i naprawiono regresję Morbid po wygnaniu unearth; fast 9539/9539, related 101/101. Audyt trwa.
 
 Audyt #177 A67: rzeczywisty Somberwald Spider i powrót przez Unbreakable Bond potwierdzają drugi skutek regresji Morbid; fast 9545/9545. Audyt trwa.
+
+Audyt #177 A68: naprawiony starszy błąd Scorn na hoście i wybranej aurze; fast 9555/9555. Audyt trwa.

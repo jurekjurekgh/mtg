@@ -44,7 +44,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); migawka poświęcenia A66; interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
-| `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57, migawka ofiar Plague Reaver A66 |
+| `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57, migawka ofiar Plague Reaver A66, cele Scorn/Curiosity/Feedback A68 |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); Morbid i unearth/token A66 oraz faktyczne wejście Spider A67; madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte; Final Parting privacy/tasowanie A50 |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
@@ -58,7 +58,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-batch71-b5-dowiazania.test.js` | częściowo — wycena championa i tokena na realnych kartach A40; inne wiązania otwarte |
 | `test/audyt-bot-walka-remisy.test.js` | częściowo — pokrewny zestaw i realne scenariusze A41, pozostałe remisy otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | przejrzany diff — przyrost pokrycia o 10 snapshotów i token, A30/A62; wynik łącznie 631 par i jawne wyjątki |
-| `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
+| `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33; Scorn na hoście i aurach A68 |
 | `test/audyt-pmssb18-proliferate.test.js` | częściowo — rzeczywisty infect, poison, −1/−1 i wybór Courage/proliferate A49 |
 | `test/audyt-pmssb19-search.test.js` | częściowo — zmiana wyceny Elka z #177 sprawdzona w realnej aktywacji i cienkiej bibliotece A58; inne tutory otwarte |
 | `test/audyt-pmssb25-discard.test.js` | przejrzany diff — zmiana wagi niegrywalnej karty, sprawdzona na rzeczywistym koszcie Hounds A64 |
@@ -183,3 +183,5 @@ A64: kwalifikowany odrzut Hounds w rzeczywistej walce i różnicowanie kart bez 
 A65: odtworzone wszystkie 6 śladów golden-master przed i po batchu, sprostowana przyczyna zmiany scoreSum i nadmierne uogólnienie Reavera; przegląd historycznych raportów/planów bez udawania pomiaru bieżącej jakości.
 
 A66–A67: token, finality i unearth — sprawdzono obie istniejące karty Morbid, Caravan Vigil i Somberwald Spider, zarówno rzut Spider, jak i Unbreakable Bond; wykryto regresję #177 i starszy defekt tokena. Pozostałe ścieżki poza opisanym zakresem są otwarte.
+
+A68: realny Sea God’s Scorn i Curiosity/Feedback: odbicie wybranych aur i hosta niezależnie od kolejności, rzeczywisty wybór bota i kontrola po Magic Damper; wada sprzed #177. Generyczna jednoczesność/LKI dla wszystkich efektów pozostaje otwarta.

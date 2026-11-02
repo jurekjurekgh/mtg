@@ -245,3 +245,5 @@ A65: odtworzono 6+6 historycznych śladów golden mastera, wykryto i sprostowano
 A66: Morbid/token Ambassador Oak poświęcony Village Rites i Liliana’s Triumph (pre-existing brak LKI); oraz potwierdzona regresja #177: unearth Etherium Abomination wygnane przez Rites, Spin Out i Fiery Fall fałszywie ustawia Morbid. RED porównany z archiwami bazowym i po #177; dwa generyczne fixy, 12/12, related 101/101, fast 9539/9539, build 5640,0 kB. Slow aktualnego kodu 268/268. Audyt nadal trwa.
 
 A67: Somberwald Spider, drugi rzeczywisty odbiorca Morbid — rzut i Unbreakable Bond po śmierci tokena, wygnaniu unearth i bez śmierci. Regresję #177 odtworzono w archiwum względem bazy (2/2 vs 0/2), mutacja trackera wykryta na licznikach. 6/6, related 34/34, fast 9545/9545, build 5640,2 kB; slow po A66 268/268, ten sam kod. Audyt trwa.
+
+A68: realny Scorn, Curiosity i Feedback — wspólne odbicie hosta i wybranych aur; błąd występuje także w bazie #177. Naprawa kolejności przetwarzania wybranych załączników, 10/10, mutacja 5 RED, related 69/69, fast 9555/9555, build 5641,2 kB; slow w toku. Nie deklarować ogólnej jednoczesności/LKI. Audyt trwa.
