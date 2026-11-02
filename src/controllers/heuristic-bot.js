@@ -12162,6 +12162,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
           const targets = view.zones.battlefield.filter((o) => (o.subtypes ?? []).includes(def.enterAsCopy.subtype));
           if (targets.length === 0) return finish(-60);
         }
+        // Obowiązkowe odbicie dowolnego stwora na wejściu nie jest darmowym
+        // ciałem: bez legalnego obcego celu trzeba cofnąć własny permanent,
+        // także dopiero co rzucony. Nie blokujemy legalnego rzutu człowieka.
+        for (const ability of def?.abilities ?? []) {
+          const trigger = ability?.trigger;
+          const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
+          if (ability?.type !== 'triggered' || trigger?.event !== 'enter_battlefield'
+            || trigger.mayFire || (trigger.condition && Object.keys(trigger.condition).length > 0)
+            || trigger.requiresTarget?.type !== 'creature'
+            || !effects.some(e => e?.type === 'bounce_permanent')) continue;
+          const source = { ...def, cardId: def.id, controllerId: view.playerId };
+          const enemyTarget = publicEtbTargets(view, trigger.requiresTarget, source)
+            .some(id => objectOnBoard(view, id)?.controllerId !== view.playerId);
+          if (!enemyTarget) return finish(-10000);
+        }
         // M103/A (zgłoszenie właściciela): obowiązkowy ETB trigger „obrażenia
         // celowemu stworowi (+ obrażenia kontrolerowi)" (Forge Devil) — dotąd
         // bronił tylko PUSTEGO stołu, gdzie jedynym legalnym celem jest sam
