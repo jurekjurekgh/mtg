@@ -83,3 +83,7 @@ Ożywiona Wyspa wybrana do convoke Kavu była mimo A15 tapowana auto-tapem koszt
 ## A19 — prowadzenie kreatora `{C}`
 
 Kozilek's Shrieker: kreator mimo dwóch legalnych bezbarwnych źródeł pokazywał pustą listę; filtr i etykieta używają tego samego predykatu co silnik/solver. 6 testów (rzeczywista aktywacja oboma źródłami, kolor i render), pakiet 59/59, fast 9289/9289, build 5629,3 kB. Audyt trwa.
+
+## A20 — kosztowy tryb Heap Gate
+
+Rzeczywista legalna oferta Goblin Deathraiders: kreator pomijał `{1},{T}: kolor` Heap Gate. Dodany wiersz z własną komendą oraz zagnieżdżona płatność, solver nie może liczyć obu trybów jednego permanentu. 6 testów, pokrewne 85/85, fast 9295/9295, build 5630,1 kB. Odrębne ograniczenie: silnik nie uwzględnia kosztowego trybu lądu w auto-ofercie, gdy jest on jedynym źródłem koloru; A20 tego nie rozwiązuje. Audyt trwa.

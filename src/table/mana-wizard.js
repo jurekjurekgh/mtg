@@ -145,9 +145,11 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     if (cmd.objectId == null || cmd.abilityIndex == null) continue;
     if (excluded?.has(cmd.objectId)) continue;
     if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
-    if (seen.has(cmd.objectId)) continue;
     const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
-    if (!info || info.isLand) continue; // lądy pokryte tap_for_mana
+    if (!info) continue;
+    // Ląd ma już wiersz darmowego {T}; dodatkowa kosztowa zdolność many
+    // (np. konwerter) jest osobnym wyborem TEGO SAMEGO permanentu.
+    if (info.isLand ? (info.manaCost ?? 0) <= 0 : seen.has(cmd.objectId)) continue;
     // M311 (zgłoszenie właściciela, Apprentice Wizard „{U}, {T}: Add
     // {C}{C}{C}"): koszt aktywacji NIE jest netowany z produkcją TEGO źródła —
     // różne waluty (produkcja bezbarwna {C}, pip kosztu kolorowy {U}; CR
@@ -575,12 +577,13 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   const usable = sources.filter((s) => (s.amount ?? 1) > 0);
   const poolObjs = poolUnits.map((colors) => ({ colors }));
   const variants = new Set();
-  // Memo pokrycia po kanonicznym kluczu (sortowane id) — te same podzbiory
+  const sourceIndexes = new Map(usable.map((source, index) => [source, index]));
+  // Memo pokrycia po kanonicznym kluczu (indeksy trybów) — te same podzbiory
   // wracają w teście minimalności i w różnych gałęziach DFS (ADR 0005:
   // kolejność wejściowa źródeł, determinizm zachowany).
   const coverMemo = new Map();
   const sufficient = (subset) => {
-    const key = subset.map((s) => s.id).sort().join(',');
+    const key = subset.map((s) => sourceIndexes.get(s)).sort((a, b) => a - b).join(',');
     let hit = coverMemo.get(key);
     if (hit === undefined) {
       // M311: źródła-zdolności z kosztem aktywacji doliczają go do
@@ -632,6 +635,8 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   const walk = (start) => {
     for (let i = start; i < usable.length; i += 1) {
       if (variants.size >= cap) return;
+      // Dwa tryby tej samej bramy to jeden permanent, nie dwa tapnięcia.
+      if (usable[i].id != null && subset.some((source) => source.id === usable[i].id)) continue;
       subset.push(usable[i]);
       if (sufficient(subset)) {
         // Pokrywający zbiór odcina gałąź: każdy nadzbiór zawiera pokrywający
@@ -897,7 +902,7 @@ export function renderManaWizard(host, model, {
       id: source.id,
       html: `Tapnij: ${escapeHtml(wizardSourceName(source, session))} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
-      onActivate: (sourceId) => onTapSource?.(sourceId),
+      onActivate: (sourceId) => onTapSource?.(sourceId, source.command),
     });
   }
   if (model.untappedSources.length === 0) {

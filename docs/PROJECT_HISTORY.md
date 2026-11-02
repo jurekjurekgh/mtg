@@ -18560,3 +18560,7 @@ Jednoznaczny auto-tap kosztu Apprentice Wizarda mógł zużyć ożywioną Wyspę
 ### 2026-11-01 — audyt #177, bezbarwne źródła w kreatorze
 
 Kreator aktywacji Kozilek's Shriekera ukrywał źródła `{C}` mimo legalnej płatności. Filtr i etykieta używają predykatu silnika; 6 testów, pokrewne 59/59, fast 9289/9289, build 76 modułów / 5629,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, kosztowe zdolności lądów
+
+Kreator istniejącego legalnego rzutu pokazuje również kosztowy tryb many Heap Gate, z zagnieżdżoną płatnością. Solver nie liczy dwóch trybów tego samego lądu jako dwóch źródeł; 6 testów, pokrewne 85/85, fast 9295/9295, build 76 modułów / 5630,1 kB. Osobna bramka automatycznej oferty dla kosztowych lądów pozostaje ograniczeniem. Audyt trwa.

@@ -3117,8 +3117,14 @@ function bootstrapTable() {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
       // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
       // tapnięty, pool wzrósł o net zysk).
-      onTapSource: (objectId) => {
-        const src = sources.find((s) => s.id === objectId);
+      onTapSource: (objectId, selectedCommand = null) => {
+        // Wiele zdolności jednego lądu ma wspólne id. Wiersz niesie komendę
+        // wybranego trybu; dodatkowy argument pozostaje opcjonalny dla starych
+        // wywołań (źródło z jednym trybem).
+        const src = sources.find((s) => s.id === objectId && (!selectedCommand
+          || (s.command?.type === selectedCommand.type
+            && s.command?.abilityIndex === selectedCommand.abilityIndex)));
+        if (!src) return; // stary wiersz nie może wykonać innego trybu
         const plan = manaSourceTapPlan(src) ?? {
           command: { type: 'tap_for_mana', playerId: HUMAN_ID, objectId }, nested: false,
         };
