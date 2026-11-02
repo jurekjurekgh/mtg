@@ -18730,3 +18730,9 @@ Audyt #177 A71: realnie odtworzono wcześniejszy defekt APNAP z Crows/Selhoff ob
 Audyt #177 A72: wspólny kwalifikator rzeczywistego wyszukiwania i kosztu Hounds, dwie mutacje; fast 9569 pass + 4 TODO A71. Audyt trwa.
 
 Audyt #177 A73: naprawiono wcześniejsze przyjmowanie niedozwolonej strefy wyszukanej karty (Morbid/Final Parting); fast 9574 pass + 4 TODO A71, slow 268/268. Audyt trwa.
+
+Audyt #177 A74: ograniczony batch APNAP dla triggerów śmierci; oryginalne 4 TODO A71 zielone, inne rodzaje celów nadal otwarte — rzeczywisty Polluted Dead pozostaje jawnym TODO.
+
+Uwagi właściciela 2026-11-02: Man-o'-War nie jest bezmyślnie rzucany bez legalnego stwora przeciwnika; Austere Command wybiera 2 z 4 checkboxami; wspólna blokada strukturalnych list kombinacji, testy i mutacje. Bez twierdzenia o wykryciu dowolnego nieoznaczonego kodowania skalarnego.
+
+Doprecyzowanie: Austere przy Epic Experiment i Vaan także korzysta z czterech składników; fast 9611 pass + 1 TODO A74, testy powiązane 248/248, slow 268/268, build 77/5656,3 kB. Audyt #177 pozostaje otwarty.

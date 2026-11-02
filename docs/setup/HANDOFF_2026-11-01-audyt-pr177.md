@@ -257,3 +257,13 @@ A71 OTWARTE: realny Shock/Goblin Picker, Crows i Selhoff u obu graczy ujawnia pr
 A72: Prishe’s Wanderings (basic/Town/fail-to-find) i Hounds w jednym stanie, ograniczenie stref/kwalifikatorów i atomowe odrzucenie niedozwolonych komend; dwa RED mutacji, 4/4, related 59/59, fast 9569 pass + 4 TODO A71, build 5641,2 kB. A71 wciąż otwarte, audyt trwa.
 
 A73: spreparowane `destination` search omijało Morbid Caravan Vigil i mogło wyłożyć stwora przez Final Parting; odtworzone na bazie #177 i #177, wcześniejszy defekt. Walidacja korzysta ze wspólnej listy destynacji z ofertą; nielegalne komendy atomowo odrzucane, oba legalne warianty Morbid i default starszych komend zachowane. 5/5, mutacja 5 RED, related 119/119, fast 9574 pass + 4 TODO A71, slow 268/268, build 5641,5 kB. A71 nadal otwarte; audyt trwa.
+
+## Zgłoszenia właściciela 2026-11-02 i A74
+
+Plan `docs/plans/PLAN_2026-11-02-uwagi-manowar-austere.md`: bot nie rzuca nosiciela obowiązkowego ETB bounce na dowolnego stwora, jeśli brak legalnego stwora przeciwnika; legalność ludzkiego rzutu pozostaje bez zmian. Austere Command: cztery checkboxy, wybór dokładnie dwóch, sześć par rozstrzygniętych w testach. Wspólna bramka odrzuca niewyspecjalizowane listy kombinacji o tablicowych polach i metadanych złożonych trybów; testy mutacyjne i inwentarz `choose two`. To strukturalny strażnik, nie dowód na wykrycie dowolnego przyszłego niestandardowego kodowania semantyki w polu skalarnym — nowe deskryptory muszą deklarować składniki i przejść przez kreator. Fast 9606 pass + 1 TODO, build 77/5656,3 kB; slow 268/268.
+
+A74 utrwalono: ograniczone APNAP naprawia oryginalny przypadek A71, ale `Polluted Dead`/cel ląd nadal RED na bazie, #177 i teraz (wykonywane TODO). Pozostałe checkpointy, Ward i mieszane decyzje również otwarte; dalszy audyt #177 nieukończony, bez B0. Szczegóły i golden-master w raporcie.
+
+Uzupełnienie testów: rzeczywiste Magic Damper z hexproof i produkcyjny router+DOM Austere, skorelowane pola tablic wyboru; fast 9611 pass + 1 TODO, pokrewne ze slow UI/session 246/246, build 77/5656,3 kB. Slow 268/268 przed zaostrzeniem strażnika, pełny slow po tym zaostrzeniu 268/268.
+
+Austere także przez Epic Experiment oraz okno Vaan: testy routingu RED→GREEN, bez list par, legalna odmowa osobno; fast 9611 pass + 1 TODO, related 248/248, build 77/5656,3 kB. Pełny slow ostatniego kodu 268/268.
