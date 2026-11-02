@@ -43,7 +43,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire (A6/A9/A10/A12/A13) |
 | `src/controllers/heuristic-params.js` | otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
-| `src/engine/counters.js` | otwarte |
+| `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
 | `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
 | `src/engine/fingerprint.js` | otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte |
@@ -51,7 +51,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/resources.js` | częściowo — Converge (A3) |
 | `src/engine/spells.js` | otwarte |
 | `src/engine/state-based.js` | otwarte |
-| `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal otwarty |
+| `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
 | `test/art-ids-tool.test.js` | otwarte |
@@ -98,7 +98,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
 | `test/n-wretched-banquet-least-power.test.js` | otwarte |
 | `test/o-plague-reaver-darowanie.test.js` | otwarte |
-| `test/o3-trigger-counter-removed.test.js` | otwarte |
+| `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | otwarte |
 | `test/obiekty-wsparcia-poza-rejestrem.test.js` | otwarte |
 | `test/panel-rozgrywka-tura-przeciwnika.test.js` | otwarte |

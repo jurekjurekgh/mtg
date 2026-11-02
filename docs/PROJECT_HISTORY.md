@@ -18594,3 +18594,6 @@ Audyt #177 A27: naprawiono brak okna odpowiedzi madness w Vampire Hounds + Revol
 
 
 Audyt #177 A28: naprawiono wybór kolejności jednoczesnych triggerów w badanym oknie madness, w tym Talion + wcześniejsze dobranie Lorescale Coatl. Trzynaście testów realnych interakcji, UI, botów i replay; fast 9338/9338, slow 268/268, build 5635,2 kB. Ogólny APNAP i pełny audyt #177 wciąż otwarte.
+
+
+Audyt #177 A29: pięć rzeczywistych testów Magma Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin Out; pokrewne 72/72, fast 9343/9343, build 5635,2 kB. Brak błędu w sprawdzonych przypadkach, przegląd nadal otwarty.

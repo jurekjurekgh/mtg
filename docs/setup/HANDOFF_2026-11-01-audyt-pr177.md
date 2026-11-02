@@ -121,3 +121,6 @@ A28 potwierdzony RED na rzeczywistych Cathartic Reunion + Revolutionist + Termin
 
 
 A28 po poprawce: wybór kolejności przy madness przez właściciela przed priorytetem; 13 testów, w tym wszystkie kolejności Cathartic Reunion, Talion's Messenger/refleks, wczesny trigger dobierania Lorescale Coatl, Mindstab, cleanup, UI, boty i replay. Pokrewne 157/157 i 38/38, fast 9338/9338, slow 268/268, build 5635,2 kB na tym samym kodzie. Zakres nie obejmuje dowodu wszystkich możliwych ścieżek ogólnego APNAP; mapa #177 wciąż otwarta. Dalsza kolejka: kontynuować konkretne zmiany `counters.js`/`triggers.js` #177 w kontekście prawdziwego Magma Pummeler i kart katalogu.
+
+
+A29: rzeczywiste Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin Out — pięć testów na prewencję, śmierć źródła, rozstrzygnięcie triggera i zwykłą anihilację bez fałszywego „this way”. Pakiet 72/72, fast 9343/9343, build 5635,2 kB. Slow 268/268 kod A28; audyt #177 pozostaje otwarty.
