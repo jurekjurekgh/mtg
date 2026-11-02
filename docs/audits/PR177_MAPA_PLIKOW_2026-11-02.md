@@ -40,8 +40,8 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
-| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire (A6/A9/A10/A12/A13) |
-| `src/controllers/heuristic-params.js` | otwarte |
+| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire oraz bounce (A6/A9/A10/A12/A13/A33) |
+| `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
 | `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
@@ -58,7 +58,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-batch71-b5-dowiazania.test.js` | otwarte |
 | `test/audyt-bot-walka-remisy.test.js` | otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
-| `test/audyt-pmssb1-bounce.test.js` | otwarte |
+| `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
 | `test/audyt-pmssb18-proliferate.test.js` | otwarte |
 | `test/audyt-pmssb19-search.test.js` | otwarte |
 | `test/audyt-pmssb25-discard.test.js` | otwarte |
@@ -86,7 +86,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/druki-druga-strona-i-uuid-obrazu.test.js` | otwarte |
 | `test/f-morbid-kreatura-zginela.test.js` | otwarte |
 | `test/fixtures/bot-scoring-snapshot.json` | otwarte |
-| `test/g-sea-gods-scorn-ranking.test.js` | otwarte |
+| `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | otwarte |
 | `test/i-poswiecenie-stwora.test.js` | otwarte |
@@ -116,4 +116,4 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `tools/generate-plan-decks.mjs` | częściowo — wynik 31 talii identyczny z plikami A30, semantyka i strategia nie wyczerpane |
 | `tools/table-tester/labels.mjs` | otwarte |
 | `tools/table-tester/run-game.mjs` | otwarte |
-| `tools/tune-card.mjs` | otwarte |
+| `tools/tune-card.mjs` | częściowo — rejestr parametrów bounce z #177, A33; działanie tunera otwarte |

@@ -5402,10 +5402,11 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
    * (CR 122.2 — „jeśli permanent opuszcza pole bitwy, jego liczniki przestają
    * istnieć”; nie wracają z kartą do ręki). Liczy się KAŻDY pozytywny rodzaj:
    * „+1/+1”, liczniki-keywordy (flying/first strike) i „oil”/„charge”;
-   * minusowe (-1/-1) to nie walor, tylko obciążenie — pomijamy.
+   * minusowe (-1/-1) to nie walor, tylko obciążenie — pomijamy. Stun i
+   * finality są niekorzystne dla kontrolera: ich utrata pomaga przeciwnikowi.
    */
   const positiveCounterCount = (object) => Object.entries(object?.counters ?? {})
-    .filter(([kind, n]) => Number(n) > 0 && !String(kind).startsWith('-'))
+    .filter(([kind, n]) => Number(n) > 0 && kind !== 'stun' && kind !== 'finality' && !String(kind).startsWith('-'))
     .reduce((sum, [, n]) => sum + Number(n), 0);
   /**
    * Załączniki celu podzielone po TYPIE, bo ich utrata po zwrocie do ręki jest
@@ -5421,7 +5422,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (object?.attachedTo !== victim.id) continue;
       const cost = object.manaCost ?? cardDef(object.cardId)?.manaCost ?? 0;
       if (object.kind === 'aura' || object.aura) {
-        if (!object.bestow) out.auras += cost;
+        // Aura kontrolowana przez nas to nasza strata po odbiciu wroga,
+        // nie inwestycja przeciwnika (np. Capture Sphere).
+        if (!object.bestow) out.auras += (object.controllerId === view.playerId ? -cost : cost);
       } else if (object.equipment || (object.subtypes ?? []).includes('Equipment')) {
         out.equipment += cost;
       }
@@ -5443,7 +5446,9 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     return P.bounceTmcWeight * (victim.manaCost ?? 0)
       + P.bounceAuraTmcWeight * attached.auras
       + P.bounceEquipmentTmcWeight * attached.equipment
-      + P.bounceCounterBonus * positiveCounterCount(victim);
+      + P.bounceCounterBonus * (positiveCounterCount(victim)
+        - Math.max(0, Number(victim.counters?.stun) || 0)
+        - (Number(victim.counters?.finality) > 0 ? 1 : 0));
   };
   const bounceTargetAdjustments = (view, victim) => {
     if (!victim) return 0;

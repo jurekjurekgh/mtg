@@ -117,7 +117,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceTmcWeight',         // waga TMC samego celu (odbudowa po zwrocie)
   'bounceAuraTmcWeight',     // waga TMC aur na celu (giną z hostem, CR 704.5m)
   'bounceEquipmentTmcWeight',// waga TMC equipmentu (zostaje na stole, ale equip płatny)
-  'bounceCounterBonus',      // premia za każdy POZYTYWNY licznik (CR 122.2: nie wracają)
+  'bounceCounterBonus',      // premia za dodatni / kara za stun i finality na wrogu (liczniki nie wracają)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.
