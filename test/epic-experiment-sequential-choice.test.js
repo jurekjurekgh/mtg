@@ -386,7 +386,7 @@ test('Epic Experiment does not enumerate additional discard-cost combinations ei
   }
 });
 
-function productionPlanFor(options) {
+function productionPlanFor(options, objects = new Map()) {
   const view = {
     playerId: 'p1',
     players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
@@ -394,7 +394,7 @@ function productionPlanFor(options) {
     pendingTriggerTarget: null,
   };
   const session = {
-    state: { objects: new Map() },
+    state: { objects },
     view: () => view,
     nameOf: (id) => id,
     nameOfObject: (id) => id,
@@ -442,6 +442,7 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
     'epicChoiceModePlanOf',
     'epicChoiceTargetPlanOf',
     'epicChoiceDiscardPlanOf',
+    'chooseModesPlanOf',
     'upToTargetsPlanOf',
     'multiTargetPlanOf',
     'singleTargetPlanOf',
@@ -494,6 +495,13 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
   })));
   assert.equal(singlePlan?.singleMode, 'targets', 'ordinary one-target requests route to the target picker');
   assert.equal(singlePlan.targets.length, 4);
+
+  const austere = REGISTRY.get('austere-command');
+  const modeCommands = austere.spell.modes.map((_, modeIndex) => ({ type: 'cast_spell',
+    objectId: 'austere', playerId: 'p1', modeIndex, targets: [] }));
+  const chooseModes = productionPlanFor(modeCommands, new Map([['austere', { spell: austere.spell }]]));
+  assert.ok(chooseModes?.chooseModesMode, 'choose-two is routed before generic mode rows');
+  assert.equal(chooseModes.rows.length, 4, 'four original choices, not six combinations');
 
   const modalOptions = [
     { type: 'cast_spell', objectId: 'modal-spell', playerId: 'p1', modeIndex: 0, targets: [] },

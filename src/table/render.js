@@ -311,6 +311,12 @@ export function describeSpellEffects(spell) {
   // Modal „Choose one" (Steel Sabotage, Selesnya Charm): kafle nie miały
   // spell.effects — puste pole reguł. Opisujemy tryby z nazwami.
   if (Array.isArray(spell.modes) && spell.modes.length > 0) {
+    const components = spell.modes.flatMap(mode => mode.choiceComponents ?? []);
+    if (components.length && spell.modes.every(mode => Array.isArray(mode.choiceComponents))) {
+      const names = new Map(components.map(component => [component.index, component.name]));
+      const choices = [...names].sort((a, b) => a[0] - b[0]).map(([, name]) => name);
+      return `wybierz ${spell.modes[0].choiceComponents.length} — ${choices.join(' / ')}`;
+    }
     const modeBits = spell.modes.map((mode) => {
       const inner = describeSpellEffects({
         effects: mode.effects ?? [],

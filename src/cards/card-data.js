@@ -96,6 +96,8 @@ export const chooseTwoModes = (modes) => {
       }
       pairs.push({
         name: `${first.name} + ${second.name}`,
+        // Składniki wyboru są jawne dla UI; tryb silnika pozostaje parą.
+        choiceComponents: [{ index: i, name: first.name }, { index: j, name: second.name }],
         effects: [...(first.effects ?? []), ...(second.effects ?? [])],
       });
     }

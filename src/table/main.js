@@ -53,7 +53,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -872,6 +872,26 @@ function bootstrapTable() {
         onOpenCard: openCardFullscreen,
         onOpenCardByCardId: openCardFullscreenByCardId,
         onComplete: (cmd) => { hideModal('choice-request'); play(cmd); },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    // Wybór wielu trybów pokazuje składniki, nie wszystkie ich kombinacje.
+    const modeOptionsForSet = request.options ?? [];
+    const modeSource = session.state?.objects?.get(modeOptionsForSet[0]?.objectId);
+    const chooseModesPlan = chooseModesPlanOf(modeOptionsForSet, modeSource?.spell);
+    if (chooseModesPlan) {
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, plan: chooseModesPlan, commands: modeOptionsForSet,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz ${chooseModesPlan.count} tryby:`,
+        onOpenCard: openCardFullscreen, onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (representative) => {
+          const subset = modeOptionsForSet.filter(cmd => cmd.modeIndex === representative.modeIndex);
+          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          openChoiceRequest(choiceRequest({ id: `${request.id ?? 'mode'}-tryb-${representative.modeIndex}`,
+            type: request.type ?? 'command', options: subset }));
+        },
         onCancel: () => hideModal('choice-request'),
       });
       showModal('choice-request');

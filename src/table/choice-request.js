@@ -1,10 +1,11 @@
+import { assertNoCombinationRows } from './no-combination-rows.js';
 import { blockingRequirementCount } from '../engine/permanents.js';
 import { choiceResponse } from '../protocol/types.js';
 import { installPressActivation } from './gestures.js';
 import { renderPickerCancel, renderPickerChipList, renderPickerRow, renderPickerSection } from './picker.js';
 import { OPTION_IGNORABLE_TYPES, polishPluralCount } from './render.js';
 import { commandOptionKey, faceDownLabel } from './session.js';
-import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, stunCandidatesFor } from './multi-target.js';
+import { commandForCrewSelection, crewSelectionPower, commandForDiscardSelection, commandForEpicDiscardSelection, commandForSelection, commandForMulliganSelection, commandForSacrificeSelection, commandForTargetIdsSelection, commandForSingleTargetSelection, commandForCastWindowSelection, commandForButtonsSelection, commandForTapXSelection, commandForChooseOneOrBoth, commandForChooseModes, stunCandidatesFor } from './multi-target.js';
 
 function clearChoiceElement(element) {
   if (element) element.textContent = '';
@@ -148,6 +149,7 @@ export function renderPeekButton(parent, { cardId, onOpen, label = null }) {
  * wszystko, co przyszłe typy zgłoszeń przyniosą, zanim dostaną własny tryb.
  */
 export function renderChoiceRequest(host, request, { labelForOption, onResponse, introLabel, ignoredOptionKeys = null, onToggleIgnoredOption = null, onOpenCard = null, cardIdOfOption = null, cardNameOfOption = null }) {
+  assertNoCombinationRows(request.options);
   clearChoiceElement(host);
   // introLabel (choiceGroupTitle) — opis wyboru jak w panelu akcji (uwaga A);
   // bez niego fallback na mapę typów.
@@ -1216,6 +1218,7 @@ function labelLooksLikeHtml(label) {
 }
 
 export function renderMultiTargetWizard(host, { view, session, plan, commands, sourceName = null, intro = null, introCard = null, slotLabels: slotLabels_ = null, onComplete, onCancel, onOpenCard = null, onOpenCardByCardId = null }) {
+  if (plan.buttonsMode || plan.castWindowMode) assertNoCombinationRows(commands, session);
   clearChoiceElement(host);
   // M257-r5/C: druga sekcja kreatora — stwór do poświęcenia (koszt dodatkowy).
   // Wybór JEDNOKROTNY (jeden stwór = jedna płatność), niezależny od celu czaru.
@@ -1400,7 +1403,9 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
   // konkretnymi instancjami), więc wybór „drugiej kopii" musi mapować się
   // na reprezentanta klasy — inaczej Zatwierdź milczy (klin z żywca).
   const defOfMulliganCard = (id) => session?.state?.objects?.get(id)?.cardId ?? null;
-  const currentCommand = () => (plan.tapXMode
+  const currentCommand = () => (plan.chooseModesMode
+    ? commandForChooseModes(plan, [...chosen])
+    : plan.tapXMode
     ? commandForTapXSelection(plan, [...chosen], xValue)
     : plan.crewMode
     ? commandForCrewSelection(plan, [...chosen])
@@ -1714,6 +1719,8 @@ export function renderMultiTargetWizard(host, { view, session, plan, commands, s
       renderPickerSection(list, `${slotIndex + 1}. ${label}:`, { className: 'multi-target-slot-label' });
       for (const id of ids) addRow(id, slotIndex);
     });
+  } else if (plan.chooseModesMode) {
+    for (const row of plan.rows ?? []) addRow(row.id, null, { labelOverride: row.label });
   } else if (buttonsMode) {
     // A1/A2 cd.: tryb przyciskowy (wszystkie ogólne enumeracje: kolory, tryby,
     // you-may, warianty efektu, itp.) używa TEGO SAMEGO komponentu co okna

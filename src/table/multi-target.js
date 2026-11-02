@@ -1255,6 +1255,40 @@ export function commandForChooseOneOrBoth(plan, slotChoice) {
   return plan.bySelection.get(key) ?? null;
 }
 
+/** Niezależne składniki trybów złożonych; komenda nadal pochodzi z oferty. */
+export function chooseModesPlanOf(commands, spell) {
+  const options = commands ?? [];
+  if (options.length < 2 || !options.every(c => c?.type === 'cast_spell'
+    && c.objectId === options[0].objectId && Number.isInteger(c.modeIndex))) return null;
+  const modes = spell?.modes ?? [];
+  const bySelection = new Map(), labels = new Map();
+  let count = null;
+  for (const cmd of options) {
+    const components = modes[cmd.modeIndex]?.choiceComponents;
+    if (!Array.isArray(components) || components.length < 2
+      || components.some(c => !Number.isInteger(c?.index) || typeof c.name !== 'string')) return null;
+    count ??= components.length;
+    if (components.length !== count || new Set(components.map(c => c.index)).size !== count) return null;
+    for (const c of components) {
+      if (labels.has(c.index) && labels.get(c.index) !== c.name) return null;
+      labels.set(c.index, c.name);
+    }
+    const key = components.map(c => c.index).sort((a,b) => a-b).join(',');
+    // Dodatkowe warianty tego samego trybu rozwiązuje kolejny krok kaskady.
+    if (!bySelection.has(key)) bySelection.set(key, cmd);
+  }
+  const rows = [...labels].sort((a,b) => a[0]-b[0]).map(([id,label]) => ({ id: String(id), label }));
+  return { chooseModesMode: true, rows, count, bySelection, itemLabel: 'tryby',
+    minTargets: count, maxTargets: count, targets: rows.map(r => r.id), hasX: false };
+}
+
+export function commandForChooseModes(plan, chosen) {
+  if (!plan?.chooseModesMode || chosen?.length !== plan.count || new Set(chosen).size !== plan.count) return null;
+  const ids = chosen.map(Number);
+  if (ids.some(id => !Number.isInteger(id))) return null;
+  return plan.bySelection.get(ids.sort((a,b) => a-b).join(',')) ?? null;
+}
+
 export function castModePlanOf(commands) {
   const options = commands ?? [];
   if (options.length < 2) return null;
