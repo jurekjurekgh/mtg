@@ -513,3 +513,22 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
   assert.ok(modePlan?.castModeMode, 'mode×target requests split into a mode step before target choices');
   assert.equal(modePlan.rows.length, 2, 'the first modal has two modes, not five mode-target variants');
 });
+
+test('Austere: produkcyjny router pokazuje checkboxy i wysyła wybraną legalną parę', () => withDocument(() => {
+  const { state, session } = scene({ exile: [], cardIds: [], creatures: false, hand: [['aus', 'austere-command']] });
+  state.pendingEpicExperiment = null;
+  const player = state.players.find(p => p.id === 'p1');
+  player.mana = 6; player.manaPool = { W: 6 };
+  const options = session.view().legalCommands.filter(c => c.type === 'cast_spell' && c.objectId === 'aus');
+  assert.equal(options.length, 6);
+  const host = new MiniEl('div'), submitted = [], previews = { objects: [], cards: [] }, modals = { shown: 0, hidden: 0 };
+  const open = openProductionChoice({ session, host, previews, submitted, modals });
+  open(choiceRequest({ id: 'austere-choice', type: 'command', options }));
+  const toggles = host.byClass('multi-target-toggle');
+  assert.equal(toggles.length, 4);
+  assert.ok(toggles.every(t => t.type === 'checkbox'));
+  toggleChoice(host, 0); toggleChoice(host, 3);
+  const confirm = host.byClass('multi-target-confirm')[0]; assert.equal(confirm.disabled, false); confirm.click();
+  assert.strictEqual(submitted[0], options.find(c => c.modeIndex === 2));
+  assert.ok(execute(state, submitted[0]).ok);
+}));

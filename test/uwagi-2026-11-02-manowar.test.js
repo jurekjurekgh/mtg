@@ -29,3 +29,12 @@ test("Man-o'-War: bot rzuca, gdy istnieje legalny stwór przeciwnika",()=>{
 test("Man-o'-War: artefakt przeciwnika nie jest stworem",()=>{
  const s=scene();put(s,'foe','meteorite','p1','battlefield');assert.notEqual(choose(s).objectId,'jelly');
 });
+
+test("Man-o'-War: hexproof z rzeczywistego Magic Damper nie jest legalnym celem",()=>{
+ const s=scene();put(s,'friend','child-of-night','p1','battlefield');put(s,'damper','magic-damper','p1','hand');
+ s.turn.priorityPlayerId='p1';addMana(s,'p1',1,{colors:['U']});
+ const protect=playerView(s,'p1').legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='damper'&&c.targets?.includes('friend'));assert.ok(protect);assert.ok(execute(s,protect).ok);
+ for(let i=0;i<2;i++)assert.ok(execute(s,{type:'pass_priority',playerId:s.turn.priorityPlayerId}).ok);
+ assert.equal(s.turn.priorityPlayerId,'p2');
+ assert.notEqual(choose(s).objectId,'jelly','hexproof nie jest legalnym celem dla przeciwnika');
+});

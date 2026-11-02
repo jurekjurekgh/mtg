@@ -25,6 +25,7 @@ test('Strażnik wspólnego modala blokuje listy permutacji i podzbiorów dla wie
      assert.throws(()=>renderMultiTargetWizard(el(),{view:{},session:{},plan:{buttonsMode:true},commands:opts}),/Zakazany modal/,`fallback ${key}`);
    }
  }
+ assert.throws(()=>assertNoCombinationRows([{type:'future',bottomIds:['a'],topOrder:['b','c']},{type:'future',bottomIds:['b'],topOrder:['a','c']}]),/Zakazany modal/,'skorelowane tablice');
  assert.doesNotThrow(()=>assertNoCombinationRows([{type:'color',value:'W'},{type:'color',value:'U'}]));
  assert.doesNotThrow(()=>assertNoCombinationRows([{type:'cast',targets:['a']},{type:'cast',targets:['b']}]));
 });
