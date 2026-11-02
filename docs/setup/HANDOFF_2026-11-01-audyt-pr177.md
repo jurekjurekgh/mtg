@@ -249,3 +249,5 @@ A67: Somberwald Spider, drugi rzeczywisty odbiorca Morbid — rzut i Unbreakable
 A68: realny Scorn, Curiosity i Feedback — wspólne odbicie hosta i wybranych aur; błąd występuje także w bazie #177. Naprawa kolejności przetwarzania wybranych załączników, 10/10, mutacja 5 RED, related 69/69, fast 9555/9555, build 5641,2 kB; slow 268/268. Nie deklarować ogólnej jednoczesności/LKI. Audyt trwa.
 
 A69: Converge Kaleidoscorch realnie płatny i flashback oraz 3 darmowe ścieżki (Appraiser, Halo Forager, Epic Experiment), dwa niezależne RED mutacji; 5/5, related 80/80, fast 9560/9560, build 5641,2 kB, slow po A68 268/268 na tym samym kodzie. Audyt trwa.
+
+A70: Scorn na czterech prawdziwych stworach i Curiosity, realne bestow Dryad oraz Germ ze Strandwalker; decyzja bota i faktyczne strefy, mutacja liczenia bestow RED. 3/3, related 60/60, fast 9563/9563, build 5641,2 kB; slow po A68 268/268 na tym samym kodzie. Audyt trwa.

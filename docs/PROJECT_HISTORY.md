@@ -18722,3 +18722,5 @@ Audyt #177 A67: rzeczywisty Somberwald Spider i powrót przez Unbreakable Bond p
 Audyt #177 A68: naprawiony starszy błąd Scorn na hoście i wybranej aurze; fast 9555/9555. Audyt trwa.
 
 Audyt #177 A69: rzeczywisty Converge w pięciu ścieżkach płatności, w tym trzy darmowe rzuty; fast 9560/9560. Audyt trwa.
+
+Audyt #177 A70: realne inwestycje Scorn na bestow, sprzęcie living weapon i wyborze trzech celów; fast 9563/9563. Audyt trwa.

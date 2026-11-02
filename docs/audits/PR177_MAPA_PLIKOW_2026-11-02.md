@@ -86,7 +86,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/druki-druga-strona-i-uuid-obrazu.test.js` | przejrzany diff — wyłącznie komentarz o pustej liście snapshotów w toku |
 | `test/f-morbid-kreatura-zginela.test.js` | częściowo — źródłowy tracker #177 oraz realne bestow/death/Morbid A4/A5 |
 | `test/fixtures/bot-scoring-snapshot.json` | przejrzany diff; pełne ślady 6 partii odtworzone z commitów a55693c/86b25b9 i hashe zgodne A65, nie dowód optymalności bota |
-| `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
+| `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury A33, rzeczywista selekcja, bestow i living weapon A70 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | przejrzany diff — data i 108.1, 303.4b, 702.72a porównane z plikiem CR o wskazanym SHA A62 |
 | `test/i-poswiecenie-stwora.test.js` | częściowo — rzeczywiste Spellkeeper Weird, hexproof, protekcja, niezniszczalność i wygnanie A34; inne zagrożenia otwarte |
@@ -187,3 +187,5 @@ A66–A67: token, finality i unearth — sprawdzono obie istniejące karty Morbi
 A68: realny Sea God’s Scorn i Curiosity/Feedback: odbicie wybranych aur i hosta niezależnie od kolejności, rzeczywisty wybór bota i kontrola po Magic Damper; wada sprzed #177. Generyczna jednoczesność/LKI dla wszystkich efektów pozostaje otwarta.
 
 A69: Converge Kaleidoscorch — rzut płatny, flashback oraz darmowe rzuty Appraiser/Halo Forager/Epic Experiment; dwie mutacje wykryte. Nie badano wszystkich możliwych mechanik darmowego rzutu.
+
+A70: Sea God’s Scorn, realny ranking czterech stworów i Curiosity; bestow Dryad i living weapon Strandwalker po odbiciu, porównane wagi. To wybrane scenariusze, nie pełna optymalność bota.
