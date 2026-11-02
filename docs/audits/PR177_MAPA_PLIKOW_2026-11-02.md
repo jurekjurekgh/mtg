@@ -66,7 +66,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |
 | `test/audyt-pmssb80-kwota-z-landow.test.js` | częściowo — realne cele, progi i ląd-stwór A53; inne scenariusze otwarte |
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | częściowo — sprostowany błędny cytat Oracle #177; rzeczywista legalność i dwie aktywacje A54, selekcja bota częściowo A12/A27 |
-| `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
+| `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — A25 czas delirium, A56 rzeczywista walka i wybór bota z łącznym first/double strike; inne warianty otwarte |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | częściowo — realne biblioteki, wybór, mill, draw i Naturalize A42 |
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |

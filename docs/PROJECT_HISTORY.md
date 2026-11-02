@@ -18684,3 +18684,6 @@ Audyt #177 A54: Oracle i wielokrotna aktywacja Vampire Hounds; fast 9474/9474, b
 
 
 Audyt #177 A55: rzeczywista etykieta Gila Courser w helperze testera i statyczna weryfikacja help benchmarku; fast 9477/9477, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A56: rzeczywista walka i decyzja bota Violent Urge, delirium i obie mutacje; fast 9481/9481, build 5639,0 kB. Audyt trwa.

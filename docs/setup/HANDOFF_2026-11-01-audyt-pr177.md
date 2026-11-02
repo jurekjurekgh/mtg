@@ -211,3 +211,6 @@ A54: bezpośredni diff #177 PMSSB-81, sprostowany błędny cytat Hounds, dwa rea
 
 
 A55: bezpośredni diff #177 helpera testera, miejsc logu i help benchmarku; realna etykieta po saddle, pokrewne 29/29, fast 9477/9477, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym. Żadnego B0 ani gry przeglądarkowej. Kontynuować bezpośredni diff #177.
+
+
+A56: bezpośredni diff #177 PMSSB-82, rzeczywista walka, wybór bota i delirium, dwie mutacje wykryte; pokrewne 45/45, fast 9481/9481, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym; A56 poza slow. Kontynuować diff #177.
