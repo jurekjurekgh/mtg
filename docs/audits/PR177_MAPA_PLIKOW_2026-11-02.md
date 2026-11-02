@@ -191,3 +191,5 @@ A69: Converge Kaleidoscorch — rzut płatny, flashback oraz darmowe rzuty Appra
 A70: Sea God’s Scorn, realny ranking czterech stworów i Curiosity; bestow Dryad i living weapon Strandwalker po odbiciu, porównane wagi. To wybrane scenariusze, nie pełna optymalność bota.
 
 A71 OTWARTE: mieszane celowane i niecelowane triggery śmierci obu graczy nie spełniają APNAP; reprodukcja także w bazie. Cztery jawne testy TODO czerwone, dwie kontrole zielone.
+
+A72: wspólny kwalifikator #177 sprawdzony realnie na Prishe’s Wanderings (basic ALBO Town, fail-to-find) i Vampire Hounds (koszt karta stwora), wraz z obcymi strefami, atomowością i mutacjami.

@@ -253,3 +253,5 @@ A69: Converge Kaleidoscorch realnie płatny i flashback oraz 3 darmowe ścieżki
 A70: Scorn na czterech prawdziwych stworach i Curiosity, realne bestow Dryad oraz Germ ze Strandwalker; decyzja bota i faktyczne strefy, mutacja liczenia bestow RED. 3/3, related 60/60, fast 9563/9563, build 5641,2 kB; slow po A68 268/268 na tym samym kodzie. Audyt trwa.
 
 A71 OTWARTE: realny Shock/Goblin Picker, Crows i Selhoff u obu graczy ujawnia przeplot APNAP i inny draw/mill. Ten sam defekt w bazie `59815d5` i #177, nie regresja; 4 wykonujące się TODO czerwone, 2 kontrole zielone. Samo końcowe sortowanie nie daje poprawnej kolejności wyborów. Potrzebna spójna kolejka triggerów i celów (CR 603.3b/d), uwzględnić A28 madness, inne decyzje i replay. Related 64 pass + 4 TODO, fast 9565 pass + 4 TODO, build 5641,2 kB. Audyt nieukończony.
+
+A72: Prishe’s Wanderings (basic/Town/fail-to-find) i Hounds w jednym stanie, ograniczenie stref/kwalifikatorów i atomowe odrzucenie niedozwolonych komend; dwa RED mutacji, 4/4, related 59/59, fast 9569 pass + 4 TODO A71, build 5641,2 kB. A71 wciąż otwarte, audyt trwa.

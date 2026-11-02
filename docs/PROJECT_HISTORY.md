@@ -18726,3 +18726,5 @@ Audyt #177 A69: rzeczywisty Converge w pięciu ścieżkach płatności, w tym tr
 Audyt #177 A70: realne inwestycje Scorn na bestow, sprzęcie living weapon i wyborze trzech celów; fast 9563/9563. Audyt trwa.
 
 Audyt #177 A71: realnie odtworzono wcześniejszy defekt APNAP z Crows/Selhoff obu graczy, konsekwencję draw/mill; 4 jawne TODO, 2 kontrole, żadna naprawa nie zadeklarowana. Audyt trwa.
+
+Audyt #177 A72: wspólny kwalifikator rzeczywistego wyszukiwania i kosztu Hounds, dwie mutacje; fast 9569 pass + 4 TODO A71. Audyt trwa.
