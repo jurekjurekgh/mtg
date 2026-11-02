@@ -181,3 +181,6 @@ A45: RED→GREEN wyceny Tail Slash przeciw ochronie źródła, osiem rzeczywisty
 
 
 A46: 5 rzeczywistych testów Benevolent Blessing, walka i Tail Slash; pokrewne 24/24, fast 9442/9442, build 5638,0 kB. Slow po A45 w toku; audyt #177 otwarty.
+
+
+Uzupełnienie: slow po A45 268/268 na tym samym kodzie produkcyjnym A46; test A46 poza slow.

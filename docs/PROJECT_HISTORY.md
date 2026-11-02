@@ -18654,3 +18654,6 @@ Audyt #177 A45: poprawiono wycenę bite przeciw ochronie przed faktycznym źród
 
 
 Audyt #177 A46: prawdziwe deklaracje walki, kolor ochrony Benevolent Blessing i Tail Slash; fast 9442/9442, build 5638,0 kB. Audyt trwa.
+
+
+Slow po A45: 268/268, po zmianie produkcyjnej wyceny bite.
