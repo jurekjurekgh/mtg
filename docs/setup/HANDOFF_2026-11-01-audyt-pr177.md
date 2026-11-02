@@ -193,3 +193,6 @@ A48: 4 rzeczywiste testy Rupture Spire/Druid/Fiery Fall, odpowiedź i mana w pul
 
 
 A49: 3 realne testy infect, liczników i wyboru proliferate, pokrewne 20/20, fast 9451/9451, build 5638,0 kB. Slow po A45 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.
+
+
+A50: Final Parting rzeczywisty RED prywatność/tasowanie (błędy już w bazie #177), fix GREEN, pokrewne 82/82, fast 9456/9456, build 5639,0 kB; slow na A50 trwa. Surowe eventy nie są filtrowanym API. Otwarte: dobór karty do grobu, możliwe warianty przy 1 karcie i inne search.

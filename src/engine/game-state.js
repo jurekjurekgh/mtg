@@ -4202,7 +4202,9 @@ export function execute(state, input) {
           })
         : moved;
       if (placed !== moved) state.objects.set(newId, placed);
-      state.events.push(event('card_revealed', { playerId: pending.playerId, objectId: newId, cardId: placed.cardId, searched: true }));
+      if (pending.revealFound !== false) {
+        state.events.push(event('card_revealed', { playerId: pending.playerId, objectId: newId, cardId: placed.cardId, searched: true }));
+      }
       state.events.push(event('object_moved', {
         fromId: cmd.found, object: placed, fromZone: 'library', toZone: destZone, searched: true,
       }));
@@ -4213,24 +4215,27 @@ export function execute(state, input) {
         }));
       }
     }
-    // Po przeszukaniu biblioteka jest tasowana (CR 701.24a) — także przy
-    // rezygnacji („search... then shuffle" — samo szukanie tasuje).
-    const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
-    const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
-    let cursor = 0;
-    state.zones.library = state.zones.library.map((id) => {
-      if (state.objects.get(id)?.controllerId !== pending.playerId) return id;
-      const replacement = shuffled[cursor];
-      cursor += 1;
-      return replacement;
-    });
+    // Jeden search może mieć dwie decyzje (Final Parting). CR 701.23 i
+    // 701.24: tasujemy tylko po ostatnim wyborze, nie pomiędzy nimi. Jeśli
+    // więcej kart nie ma, zamykamy search teraz (także 0/1 kart w bibliotece).
+    const deferShuffle = Boolean(pending.singleSearchChain && pending.chain?.remaining > 0
+      && foundCardId != null && state.zones.library.some((id) => matches(state.objects.get(id))));
+    if (!deferShuffle) {
+      const ownLibrary = state.zones.library.filter((id) => state.objects.get(id)?.controllerId === pending.playerId);
+      const shuffled = shuffle(ownLibrary, state.seed + state.objectSequence);
+      let cursor = 0;
+      state.zones.library = state.zones.library.map((id) => {
+        if (state.objects.get(id)?.controllerId !== pending.playerId) return id;
+        return shuffled[cursor++];
+      });
+    }
     state.pendingSearchChoice = null;
+    const hiddenFound = pending.revealFound === false && pending.destination === 'hand';
     state.events.push(event('search_choice_resolved', {
-      // M100/E4: trafienie w szukaniu wg kryterium = jawny reveal (CR 701.20)
-      // — foundCardId pozwala opisowi nazwać kartę (publiczne).
-      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId, foundCardId,
+      playerId: pending.playerId, found: cmd.found != null, sourceCardId: pending.sourceCardId,
+      foundCardId, hiddenFound, shuffled: !deferShuffle,
     }));
-    state.events.push(event('library_searched', {
+    if (!deferShuffle) state.events.push(event('library_searched', {
       playerId: pending.playerId, foundCardId,
       destination: pending.destination, shuffled: true, qualifier: pending.qualifier,
     }));
@@ -4248,12 +4253,14 @@ export function execute(state, input) {
     // „Up to N" (Springbloom Druid — chain): po UDANYM znalezieniu gracz może
     // wziąć kolejną kartę — kolejkujemy następną decyzję przed domknięciem
     // (rezygnacja z którejkolwiek decyzji kończy łańcuch; CR 701.23b).
-    if (pending.chain && pending.chain.remaining > 0 && foundCardId != null) {
+    if (pending.chain && pending.chain.remaining > 0 && foundCardId != null
+      && (!pending.singleSearchChain || deferShuffle)) {
       const queued = queueSearchChoice(state, { controllerId: pending.playerId, cardId: pending.sourceCardId }, {
         qualifier: pending.chain.qualifier ?? pending.qualifier,
         destination: pending.chain.destination ?? pending.destination,
         entersTapped: Boolean(pending.chain.entersTapped),
         mandatory: Boolean(pending.chain.mandatory),
+        revealFound: pending.revealFound, singleSearchChain: pending.singleSearchChain,
         chain: pending.chain.remaining > 1 ? { ...pending.chain, remaining: pending.chain.remaining - 1 } : null,
         // Batch 58/B6: linka refleksyjna jedzie z łańcuchem decyzji — emisja
         // dopiero po OSTATNIM przeszukaniu (jedno zdarzenie na efekt).
@@ -4261,6 +4268,7 @@ export function execute(state, input) {
         reflexiveAbility: pending.reflexiveAbility ?? null,
       });
       if (queued) {
+        if (pending.singleSearchChain) state.pendingSearchChoice.restorePriorityTo = pending.restorePriorityTo;
         // Nowa decyzja przejęła priorytet (queueSearchChoice) — nie
         // przywracamy starego posiadacza w tym przebiegu.
         return accepted(state, cmd, { ok: true, events: resolvedEvents });

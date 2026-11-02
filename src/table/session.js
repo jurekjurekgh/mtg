@@ -2288,15 +2288,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'search_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const dest = e.destination === 'battlefield' ? 'na pole bitwy' : 'do ręki';
-        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
+        const dest = e.destination === 'battlefield' ? 'na pole bitwy' : e.destination === 'graveyard' ? 'do grobu' : 'do ręki';
+        const skip = e.mandatory ? '' : ' albo rezygnuje';
+        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest}${skip}`;
       }
       case 'search_choice_resolved': {
-        // M100/E4: szukanie wg kryterium = jawny reveal (CR 701.20) — nazwa
-        // znalezionej karty jest publiczna (obaj gracze).
+        // CR 701.23: nie każdy search odsłania kartę. Nazwę prywatnej
+        // karty do ręki widzi tylko jej właściciel, nie przeciwnik ani FoW.
         if (e.found) {
-          const what = e.foundCardId ? nameOf(e.foundCardId) : 'kartę';
-          return `${whoN(e.playerId)} znajduje ${what} i tasuje bibliotekę`;
+          const visible = !e.hiddenFound || seesHiddenOf(e.playerId);
+          const what = e.foundCardId && visible ? nameOf(e.foundCardId) : 'kartę';
+          const shuffle = e.shuffled === false ? '' : ' i tasuje bibliotekę';
+          return `${whoN(e.playerId)} znajduje ${what}${shuffle}`;
         }
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
@@ -3449,7 +3452,7 @@ export function createSession(config) {
       return null;
     }
     if (e.type === 'search_choice_resolved') {
-      suppressNextLibrarySearched = true;
+      suppressNextLibrarySearched = e.shuffled !== false;
     }
     return describeGameEvent(e, {
       nameOf,
@@ -3632,7 +3635,7 @@ export function createSession(config) {
       lastBotMoveWasSearchResolved = false;
       return;
     }
-    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = true;
+    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = e.shuffled !== false;
     else lastBotMoveWasSearchResolved = false;
     if (e.type === 'step_advanced') {
       const key = `${e.number}:${e.phase}:${e.step}`;

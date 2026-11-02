@@ -938,7 +938,7 @@ export function emitReflexiveSearch(state, pending, { found }) {
 export function queueSearchChoice(state, sourceObject, {
   qualifier, destination, entersTapped, destinations = null, chain = null,
   emitter = null, mandatory = false, reflexiveEvent = null,
-  reflexiveAbility = null, playerId = null,
+  reflexiveAbility = null, playerId = null, revealFound = true, singleSearchChain = false,
 }) {
   // Batch 66 (Cazur / Partner with): efektem może przeszukiwać TARGET PLAYER,
   // nie kontroler źródła. Jawny playerId jest generycznym właścicielem strefy
@@ -982,6 +982,7 @@ export function queueSearchChoice(state, sourceObject, {
     // your hand"). destinations = dopuszczalne strefy; null = jedna.
     destinations: destinations ? [...destinations] : null,
     entersTapped, sourceCardId: sourceObject.cardId ?? null,
+    revealFound, singleSearchChain,
     restorePriorityTo: state.turn.priorityPlayerId,
     // „Up to N" (Springbloom Druid): po udanym znalezieniu kolejkowana jest
     // kolejna decyzja (chain.remaining) — pełne 0/1/2 jako wybory gracza.
@@ -1001,7 +1002,7 @@ export function queueSearchChoice(state, sourceObject, {
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
     playerId: ownerId, candidateIds: [...candidateIds],
-    destination, sourceCardId: sourceObject.cardId ?? null,
+    destination, mandatory: Boolean(mandatory), sourceCardId: sourceObject.cardId ?? null,
   }));
   return true;
 }
@@ -3155,7 +3156,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       qualifier: {},
       destination: 'hand',
       entersTapped: false,
-      mandatory: true,
+      mandatory: true, revealFound: false, singleSearchChain: true,
       chain: { remaining: 1, destination: 'graveyard', qualifier: {}, mandatory: true },
     });
   }

@@ -13,12 +13,12 @@ const reg=createCardRegistry();
 function put(s,id,cardId,zone='library'){
  const [{objectId,...data}]=createCardDeck({cardIds:[cardId],ownerId:'p2',registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:'p2'});
 }
-function scene(card='final-parting'){
+function scene(card='final-parting',count=3){
  const s=createGameState({seed:17750,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p2');s.turn.activePlayerId=s.turn.priorityPlayerId='p2';
- put(s,'spell',card,'hand');put(s,'one','woolly-loxodon');put(s,'two','highland-game');put(s,'three','basic-forest');addMana(s,'p2',5,{colors:['B','G']});
+ put(s,'spell',card,'hand');if(count>0)put(s,'one','woolly-loxodon');if(count>1)put(s,'two','highland-game');if(count>2)put(s,'three','basic-forest');addMana(s,'p2',5,{colors:['B','G']});
  act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spell'));
- for(let i=0;i<8&&!s.pendingSearchChoice;i++)act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));
- assert.ok(s.pendingSearchChoice);return s;
+ for(let i=0;i<8&&s.zones.stack.length&&!s.pendingSearchChoice;i++)act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));
+ return s;
 }
 const view=s=>playerView(s,s.turn.priorityPlayerId);
 function act(s,c){assert.ok(c,'komenda');const r=execute(s,c);assert.ok(r.ok,JSON.stringify(r));return r;}
@@ -39,4 +39,14 @@ test('A50: jedno szukanie i jedno tasowanie dopiero po obu wyborach Final Partin
 });
 test('A50: Caravan Vigil naprawdę odsłania wybraną kartę',()=>{
  const s=scene('caravan-vigil');const r=choose(s);assert.ok(r.events.some(e=>e.type==='card_revealed'&&e.cardId==='basic-forest'));assert.ok(r.events.some(e=>String(desc(e)).includes('Forest')));
+});
+
+test('A50: jedna karta biblioteki — jeden wybór i jedno tasowanie',()=>{
+ const s=scene('final-parting',1);assert.ok(s.pendingSearchChoice);const r=choose(s);
+ assert.equal(s.pendingSearchChoice,null);assert.equal(r.events.filter(e=>e.type==='library_searched'&&e.shuffled).length,1);
+ assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-one').zone,'hand');
+});
+test('A50: pusta biblioteka — brak decyzji i jedno tasowanie',()=>{
+ const s=scene('final-parting',0);assert.equal(s.pendingSearchChoice,null);assert.equal(s.zones.stack.length,0);
+ assert.equal(s.events.filter(e=>e.type==='library_searched'&&e.shuffled).length,1);
 });
