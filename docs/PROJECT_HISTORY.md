@@ -18611,4 +18611,4 @@ Audyt #177 A32: nazwy po rzeczywistych transformacjach Merciless Repurposing/Inc
 Audyt #177 A33: RED→GREEN ranking bounce z realnym stun, finality oraz własną aurą; cztery mutacje wykryte, pokrewne 122/122, fast 9358/9358, build 5635,7 kB. Pozostały audyt otwarty; slow 268/268.
 
 
-Audyt #177 A34: bot nie poświęca Weird, jeśli rzeczywisty cel jest nielegalny lub niezniszczalny; wygnanie nadal uzasadnia ofiarę. Pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow w toku. Audyt pozostaje otwarty.
+Audyt #177 A34: bot nie poświęca Weird, jeśli rzeczywisty cel jest nielegalny lub niezniszczalny; wygnanie nadal uzasadnia ofiarę. Pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow 268/268. Audyt pozostaje otwarty.
