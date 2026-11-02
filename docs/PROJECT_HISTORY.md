@@ -18708,3 +18708,6 @@ Audyt #177 A62: statyczne cechy, tekst i instalacja talii dziesięciu kart wzgl�
 
 
 Audyt #177 A63: poprawa wyceny celu ETB Edifice z ochroną (błąd sprzed #177); fast 9523/9523, build 5639,5 kB; slow 268/268.
+
+
+Audyt #177 A64: rzeczywisty koszt Hounds i walka, dawna waga remisowała bezbarwne dla zasobów karty; fast 9527/9527. Audyt trwa.

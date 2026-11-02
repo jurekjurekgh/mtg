@@ -61,8 +61,8 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
 | `test/audyt-pmssb18-proliferate.test.js` | częściowo — rzeczywisty infect, poison, −1/−1 i wybór Courage/proliferate A49 |
 | `test/audyt-pmssb19-search.test.js` | częściowo — zmiana wyceny Elka z #177 sprawdzona w realnej aktywacji i cienkiej bibliotece A58; inne tutory otwarte |
-| `test/audyt-pmssb25-discard.test.js` | otwarte |
-| `test/audyt-pmssb26-land-drabina.test.js` | otwarte |
+| `test/audyt-pmssb25-discard.test.js` | przejrzany diff — zmiana wagi niegrywalnej karty, sprawdzona na rzeczywistym koszcie Hounds A64 |
+| `test/audyt-pmssb26-land-drabina.test.js` | przejrzany diff — zmiana wagi niegrywalnej karty, kontrola z dostępem i bez dostępu do koloru A64 |
 | `test/audyt-pmssb60-batch65.test.js` | częściowo — część Edifice skonfrontowana z rzeczywistymi celami A51; pozostałe ścieżki otwarte |
 | `test/audyt-pmssb80-kwota-z-landow.test.js` | częściowo — realne cele, progi i ląd-stwór A53; inne scenariusze otwarte |
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | częściowo — sprostowany błędny cytat Oracle #177; rzeczywista legalność i dwie aktywacje A54, selekcja bota częściowo A12/A27 |
@@ -71,20 +71,20 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | częściowo — realna wycena Tail Slash, deathtouch i ochrona źródła A45; pozostałe testy otwarte |
-| `test/audyt-pr149-stempel-wygnania.test.js` | otwarte |
-| `test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` | otwarte |
-| `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | otwarte |
-| `test/audyt-pr176-o2-converge-platnosc-kolorow.test.js` | otwarte |
+| `test/audyt-pr149-stempel-wygnania.test.js` | przejrzany diff — zmiana pinu kosztu bloku o +2, realna walka A41; nie cały plik |
+| `test/audyt-pr176-f1-prewencja-licznikow-sprzet.test.js` | przejrzany diff — wyłącznie syntetyczny nośnik grantu, brak realnego sprzętu; własny Magma Pummeler A29 |
+| `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | przejrzany diff — prawdziwa etykieta karty i helper transkryptu A55, bez pełnej przeglądarki |
+| `test/audyt-pr176-o2-converge-platnosc-kolorow.test.js` | przejrzany diff — rzeczywisty Kaleidoscorch i poprawka wyboru płatności A3 |
 | `test/audyt-pr177-a-etb-uszkodzenie-w-turze.test.js` | częściowo — rzeczywiste obrażenia bojowe, Shock i Magic Damper A43 |
 | `test/audyt-pr177-c-blok-bezkosztowy.test.js` | częściowo — realny bezkosztowy blok i antykontrole A41 |
 | `test/audyt-pr177-d-cuombajj-wycena.test.js` | częściowo — rzeczywiste obrażenia, aktywacja i wybór drugiego celu, częściowa nielegalność A44 |
-| `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | otwarte |
+| `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | częściowo — rzeczywisty kreator i regresje kosztów / powrotu A8/A11/A14–A20; nie pełna przeglądarkowa macierz |
 | `test/audyt-typy-efektow-katalogu.test.js` | przejrzany diff — wzrost liczby rodzajów efektów o champion, realne przypadki A1/A26/A31/A40 |
 | `test/bot-modal-modes.test.js` | częściowo — porównanie kontr i odbicia Steel Sabotage na realnych kartach A52; inne tryby otwarte |
 | `test/bot-params.test.js` | otwarte |
 | `test/bot-scoring-snapshot.test.js` | otwarte |
 | `test/druki-druga-strona-i-uuid-obrazu.test.js` | przejrzany diff — wyłącznie komentarz o pustej liście snapshotów w toku |
-| `test/f-morbid-kreatura-zginela.test.js` | otwarte |
+| `test/f-morbid-kreatura-zginela.test.js` | częściowo — źródłowy tracker #177 oraz realne bestow/death/Morbid A4/A5 |
 | `test/fixtures/bot-scoring-snapshot.json` | otwarte |
 | `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
@@ -95,20 +95,20 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/katalog-pole-plan.test.js` | przejrzany diff — wzrost liczby tokenów bez planu o Elf Warrior, A61/A62 |
 | `test/l-ambulatory-edifice-debuff.test.js` | częściowo — realne cele, decyzja płatności/refleks, shield i odpowiedź A51; A63: wycena rzutu z rzeczywistą ochroną poprawiona (brak sprzed #177); inne przypadki otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
-| `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
+| `test/m348-przerwanie-kreatora-many.test.js` | przejrzany diff — wstrzymanie priorytetu i kreator z kosztową aktywacją A8/A11 |
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
 | `test/o-plague-reaver-darowanie.test.js` | częściowo — rzeczywisty próg 12/13, Zoraline/finality, odpowiedzi i przekazanie A36; inne przypadki bota otwarte |
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | częściowo — helper granice i rzeczywista etykieta Gila Courser A55 |
 | `test/obiekty-wsparcia-poza-rejestrem.test.js` | przejrzany diff — wyłącznie komentarz o zakończeniu batcha 71, strażnik bez zmian |
 | `test/panel-rozgrywka-tura-przeciwnika.test.js` | otwarte |
-| `test/pmssb10-ogon-wave-b2.test.js` | otwarte |
-| `test/pmssb12-pay-wave-a.test.js` | otwarte |
+| `test/pmssb10-ogon-wave-b2.test.js` | częściowo — zmieniony pin Reaver i realne karty A36; uwaga o niejednakowej sumie 74,71/78,31 w przeglądzie dokumentacji |
+| `test/pmssb12-pay-wave-a.test.js` | przejrzany diff — brak many i prawdziwe inne źródła Rupture Spire A9/A48 |
 | `test/pmssb3-draw-wave-b.test.js` | częściowo — rzeczywista decyzja Force Away i ferocious po zmianie inwestycji A59; inne draw otwarte |
 | `test/pmssb5-kontry-wave-a.test.js` | częściowo — Negate, Steel Sabotage, prawdziwy stos i wybory bota A52; inne warianty otwarte |
 | `test/pmssb6-discard-wave-a.test.js` | częściowo — realna kontra Frightful Delusion, wycena #177 i rider odrzutu A60; pozostałe discard otwarte |
 | `test/pmssb8-loot-wave-a.test.js` | częściowo — Force Away: dobór/odrzut i warunek z realnymi kartami A59; inne loot otwarte |
-| `test/real-cards-batch65.test.js` | otwarte |
+| `test/real-cards-batch65.test.js` | przejrzany diff — płatność Edifice na realnych celach i ochrona A51/A63 |
 | `test/real-cards-batch71.test.js` | częściowo — wybrane testy kart i mechanik, bez oceny całości |
 | `test/statusy-wpisow-katalogu.test.js` | przejrzany diff — wzrost liczby tokenów o Elf Warrior A61/A62 |
 | `tools/benchmark.mjs` | częściowo — cały diff #177 to tekst help; liczba 27 i 4 seedy sprawdzone bez uruchomienia benchmarku A55 |
@@ -177,3 +177,5 @@ A61: Ambassador Oak z Ivy Lane Denizen, prawdziwy token i dwa wyzwolenia oraz ni
 A62: dziesięć kart — porównanie ze snapshotami i instalacja rzeczywistej talii; zmienione strażniki katalogu, tokena, CSV i trzy nowe numery CR z #177. Zgodność ze snapshotem nie jest osobną weryfikacją aktualności źródła ani kompletnym dowodem mechanik.
 
 A63: realna ochrona Benevolent Blessing blokuje czarną zdolność Edifice; naprawiono przewidywanie wartości i rzeczywisty wybór bota, z porównaniem bazy #177.
+
+A64: kwalifikowany odrzut Hounds w rzeczywistej walce i różnicowanie kart bez koloru, obie kolejności oraz kontrola z Forest.

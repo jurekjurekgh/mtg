@@ -235,3 +235,6 @@ A62: 10 kart #177, zgodność cech/tekstu ze snapshotami i rzeczywista instalacj
 
 
 A63: realne Edifice i Benevolent Blessing — wycena nielegalnego celu, RED→GREEN i wybór bota; defekt sprzed #177. Related 97/97, fast 9523/9523, build 5639,5 kB; slow 268/268 na kodzie po A63.
+
+
+A64: PMSSB-81/25/26, rzeczywista walka Hounds i koszt dwóch kart bez koloru, 4 testy; mutacja parametrów RED, related 39/39, fast 9527/9527, build 5639,5 kB. Slow po A63 268/268, A64 poza slow. Audyt trwa.
