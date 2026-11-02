@@ -14,14 +14,14 @@ function act(s,c){assert.ok(c,JSON.stringify({turn:s.turn,legal:view(s).legalCom
 function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function until(s,p){for(let i=0;i<30&&!p();i++)pass(s);assert.ok(p(),JSON.stringify({turn:s.turn,stack:s.zones.stack,legal:view(s).legalCommands}));}
 function setup(){const s=createGameState({seed:17766,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
- for(let i=0;i<3;i++)put(s,`forest${i}`,'basic-forest','library');put(s,'rites','village-rites');put(s,'vigil','caravan-vigil');addMana(s,'p1',9,{colors:['W','B','G']});return s;}
+ for(let i=0;i<3;i++)put(s,`forest${i}`,'basic-forest','library');put(s,'rites','village-rites');put(s,'vigil','caravan-vigil');addMana(s,'p1',9,{colors:['W','B','G','U']});return s;}
 function oakToken(s){put(s,'oak','ambassador-oak');act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='oak'));until(s,()=>s.zones.stack.length===0);const t=[...s.objects.values()].find(o=>o.cardId==='token_elf_warrior'&&o.zone==='battlefield');assert.ok(t?.isToken);return t;}
 function sacrifice(s,id){const opts=view(s).legalCommands.filter(c=>c.type==='cast_spell'&&c.objectId==='rites');act(s,opts.find(c=>c.sacrificeTargetId===id));until(s,()=>s.zones.stack.length===0);}
 function vigil(s){act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='vigil'));until(s,()=>s.pendingSearchChoice!=null);return view(s).legalCommands.filter(c=>c.type==='resolve_search_choice');}
 for(const dest of ['hand','battlefield'])test(`A66: umierający token pozwala Caravan Vigil wybrać ${dest}`,()=>{
  const s=setup();const t=oakToken(s);sacrifice(s,t.id);assert.equal(s.creatureDiedThisTurn,true);assert.ok(![...s.objects.values()].some(o=>o.instanceId===t.instanceId));
- const opts=vigil(s);assert.ok(opts.some(c=>c.destination==='hand'));assert.ok(opts.some(c=>c.destination==='battlefield'));act(s,opts.find(c=>c.destination===dest&&c.found!=null));
- assert.ok([...s.objects.values()].some(o=>o.cardId==='basic-forest'&&o.zone===dest));
+ const opts=vigil(s);assert.ok(opts.some(c=>c.destination==='hand'));assert.ok(opts.some(c=>c.destination==='battlefield'));const choice=opts.find(c=>c.destination===dest&&c.found!=null);const instance=s.objects.get(choice.found).instanceId;act(s,choice);
+ assert.equal([...s.objects.values()].find(o=>o.instanceId===instance).zone,dest);
 });
 
 test('A66: Selhoff Occultist widzi śmierć tokena poświęconego Village Rites',()=>{
@@ -46,4 +46,28 @@ test('A66: stwór z finality od Zoraline poświęcony Village Rites nie umiera',
  const s=setup();put(s,'zora','zoraline');put(s,'victim','highland-game','graveyard');act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='zora'));until(s,()=>s.pendingOptionalPay!=null);
  act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay===true));const target=view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&(c.targetId==='victim'||c.targetIds?.includes('victim')));act(s,target?.targetIds?{...target,targetId:'victim'}:target);until(s,()=>s.zones.stack.length===0);
  const creature=[...s.objects.values()].find(o=>o.instanceId==='i-victim'&&o.zone==='battlefield');assert.equal(creature?.counters?.finality,1);sacrifice(s,creature.id);assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-victim').zone,'exile');assert.equal(s.creatureDiedThisTurn,false);assert.ok(!vigil(s).some(c=>c.destination==='battlefield'));
+});
+
+test('A66: Nefarious Imp widzi opuszczenie pola przez poświęcony token',()=>{
+ const s=setup();const t=oakToken(s);put(s,'imp','nefarious-imp','battlefield');
+ act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='rites'&&c.sacrificeTargetId===t.id));
+ const event=s.events.findLast(e=>e.type==='permanent_sacrificed');assert.equal(event.object.instanceId,t.instanceId);assert.equal(event.object.formerZone,'battlefield');
+ assert.equal(s.events.filter(e=>e.type==='ability_triggered'&&e.cardId==='nefarious-imp').length,1);
+ until(s,()=>s.pendingScry!=null);act(s,view(s).legalCommands.find(c=>c.type==='resolve_scry'));until(s,()=>s.zones.stack.length===0);
+});
+
+test('A66: śmierć tokena przestaje spełniać Morbid w następnej turze',()=>{
+ const s=setup();const t=oakToken(s);sacrifice(s,t.id);assert.equal(s.creatureDiedThisTurn,true);
+ s.turn={...s.turn,number:10,activePlayerId:'p1',priorityPlayerId:'p1',phase:'ending',step:'end',stepIndex:9,passes:0};
+ until(s,()=>s.turn.activePlayerId==='p2'&&s.turn.step==='upkeep');assert.equal(s.creatureDiedThisTurn,false);
+});
+
+for(const method of ['rites','spin'])test(`A66: Etherium Abomination po unearth i ${method} jest wygnana bez śmierci`,()=>{
+ const s=setup();put(s,'abomination','etherium-abomination','graveyard');
+ act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='abomination'));until(s,()=>s.zones.stack.length===0);
+ const a=[...s.objects.values()].find(o=>o.instanceId==='i-abomination');assert.equal(a.zone,'battlefield');assert.equal(a.unearthExile,true);
+ if(method==='rites')sacrifice(s,a.id);else {put(s,'spin','spin-out');act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spin'&&c.targets?.includes(a.id)));until(s,()=>s.zones.stack.length===0);}
+ assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-abomination').zone,'exile');
+ assert.equal(s.creatureDiedThisTurn,false);const deathEvent=s.events.findLast(e=>(e.type==='permanent_sacrificed'||e.type==='permanent_destroyed')&&e.cardId==='etherium-abomination');assert.equal(deathEvent.toZone,'exile');
+ assert.ok(!vigil(s).some(c=>c.destination==='battlefield'));
 });
