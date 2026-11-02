@@ -18597,3 +18597,6 @@ Audyt #177 A28: naprawiono wybór kolejności jednoczesnych triggerów w badanym
 
 
 Audyt #177 A29: pięć rzeczywistych testów Magma Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin Out; pokrewne 72/72, fast 9343/9343, build 5635,2 kB. Brak błędu w sprawdzonych przypadkach, przegląd nadal otwarty.
+
+
+Audyt #177 A30: 10 pozycji batcha 71 zgodnych w badanych polach z CSV/snapshotami, 31 talii zgodnych z generatorem; pokrewne 106/106, fast 9345/9345. Pozostały audyt otwarty.

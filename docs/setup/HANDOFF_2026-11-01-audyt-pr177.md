@@ -124,3 +124,6 @@ A28 po poprawce: wybór kolejności przy madness przez właściciela przed prior
 
 
 A29: rzeczywiste Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin Out — pięć testów na prewencję, śmierć źródła, rozstrzygnięcie triggera i zwykłą anihilację bez fałszywego „this way”. Pakiet 72/72, fast 9343/9343, build 5635,2 kB. Slow 268/268 kod A28; audyt #177 pozostaje otwarty.
+
+
+A30: sprawdzono dane batcha 71 (wybrane pola zgodne z CSV i snapshotami) oraz generator bez zapisu (31/31 talii identycznych z plikami). Pokrewne 106/106, fast 9345/9345; build A29, slow A28. Nie oceniono strategii talii ani kompletnej semantyki. Audyt #177 trwa.

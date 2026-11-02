@@ -7,39 +7,39 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | Plik z diffu #177 | Stan audytu |
 |---|---|
 | `README.md` | otwarte |
-| `decks/alara.txt` | otwarte |
-| `decks/dominaria-brg.txt` | otwarte |
-| `decks/kaldheim.txt` | otwarte |
-| `decks/srodziemie.txt` | otwarte |
-| `decks/tarkir-wur.txt` | otwarte |
-| `decks/warhammer-ubr.txt` | otwarte |
-| `decks/worek-basni.txt` | otwarte |
-| `decks/worek-dziki.txt` | otwarte |
-| `decks/worek-legend.txt` | otwarte |
-| `decks/worek-mroczny.txt` | otwarte |
+| `decks/alara.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/dominaria-brg.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/kaldheim.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/srodziemie.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/tarkir-wur.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/warhammer-ubr.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/worek-basni.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/worek-dziki.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/worek-legend.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
+| `decks/worek-mroczny.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
 | `docs/ENGINE_MILESTONES.md` | otwarte |
 | `docs/PMSSB.md` | otwarte |
 | `docs/PROJECT_HISTORY.md` | otwarte |
 | `docs/audits/AUDYT_PR176_2026-10-27.md` | otwarte |
 | `docs/audits/UWAGI_Z_GRY_2026-10-27c.md` | otwarte |
 | `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | otwarte |
-| `docs/cards/scryfall-ambassador-oak.json` | otwarte |
-| `docs/cards/scryfall-anticipate.json` | otwarte |
-| `docs/cards/scryfall-changeling-berserker.json` | otwarte |
-| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | otwarte |
-| `docs/cards/scryfall-rumbling-rockslide.json` | otwarte |
-| `docs/cards/scryfall-sphinxs-herald.json` | otwarte |
-| `docs/cards/scryfall-tail-slash.json` | otwarte |
-| `docs/cards/scryfall-trumpet-blast.json` | otwarte |
-| `docs/cards/scryfall-vampire-hounds.json` | otwarte |
-| `docs/cards/scryfall-violent-urge.json` | otwarte |
+| `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-tail-slash.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-trumpet-blast.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md` | otwarte |
 | `docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md` | otwarte |
 | `docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md` | otwarte |
 | `docs/setup/HANDOFF_2026-10-27c.md` | otwarte |
 | `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
-| `src/cards/mana-costs-data.js` | otwarte |
+| `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
 | `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire (A6/A9/A10/A12/A13) |
 | `src/controllers/heuristic-params.js` | otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
@@ -54,7 +54,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
-| `test/art-ids-tool.test.js` | otwarte |
+| `test/art-ids-tool.test.js` | częściowo — pokrewne testy i 625–634 A30 |
 | `test/audyt-batch71-b5-dowiazania.test.js` | otwarte |
 | `test/audyt-bot-walka-remisy.test.js` | otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
@@ -112,8 +112,8 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/real-cards-batch71.test.js` | częściowo — wybrane testy kart i mechanik, bez oceny całości |
 | `test/statusy-wpisow-katalogu.test.js` | otwarte |
 | `tools/benchmark.mjs` | otwarte |
-| `tools/collection-art-ids.csv` | otwarte |
-| `tools/generate-plan-decks.mjs` | otwarte |
+| `tools/collection-art-ids.csv` | częściowo — 625–634 zgodne z katalogiem/snapshotami A30 |
+| `tools/generate-plan-decks.mjs` | częściowo — wynik 31 talii identyczny z plikami A30, semantyka i strategia nie wyczerpane |
 | `tools/table-tester/labels.mjs` | otwarte |
 | `tools/table-tester/run-game.mjs` | otwarte |
 | `tools/tune-card.mjs` | otwarte |
