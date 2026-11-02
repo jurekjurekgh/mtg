@@ -246,6 +246,16 @@ const BESTOW_ENCHANTMENT_SUBTYPES = new Set([
 ]);
 const BESTOW_SUPERTYPES = new Set(['Basic', 'Legendary', 'Ongoing', 'Snow', 'World', 'Token']);
 
+/** Linia bestowed jest taka sama na stosie i na polu; oryginał służy do resetu. */
+export function bestowedTypeLine(object) {
+  return {
+    bestowOriginalTypes: Object.freeze([...(object.bestowOriginalTypes ?? object.types ?? [])]),
+    bestowOriginalSubtypes: Object.freeze([...(object.bestowOriginalSubtypes ?? object.subtypes ?? [])]),
+    types: [...(object.types ?? []).filter((type) => BESTOW_SUPERTYPES.has(type)), 'Enchantment'],
+    subtypes: [...new Set([...(object.subtypes ?? []).filter((type) => BESTOW_ENCHANTMENT_SUBTYPES.has(type)), 'Aura'])],
+  };
+}
+
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
   const host = state.objects.get(hostId);
@@ -254,12 +264,7 @@ export function attachAuraToCreature(state, auraId, hostId) {
   }
   if (auraId === hostId) throw new Error('Aura nie może zaczarować samej siebie');
   if (!isLegalAuraHost(aura, host)) throw new Error(`Aura nie ma legalnego gospodarza na polu bitwy (${aura.aura?.enchant ?? aura.aura?.enchantType ?? 'creature'})`);
-  const bestowTypeLine = aura.bestow ? {
-    bestowOriginalTypes: Object.freeze([...(aura.bestowOriginalTypes ?? aura.types ?? [])]),
-    bestowOriginalSubtypes: Object.freeze([...(aura.bestowOriginalSubtypes ?? aura.subtypes ?? [])]),
-    types: [...(aura.types ?? []).filter((type) => BESTOW_SUPERTYPES.has(type)), 'Enchantment'],
-    subtypes: [...new Set([...(aura.subtypes ?? []).filter((type) => BESTOW_ENCHANTMENT_SUBTYPES.has(type)), 'Aura'])],
-  } : {};
+  const bestowTypeLine = aura.bestow ? bestowedTypeLine(aura) : {};
   const updated = patchAttachmentObject(state, aura, {
     attachedTo: hostId,
     baseKind: aura.baseKind ?? aura.kind,

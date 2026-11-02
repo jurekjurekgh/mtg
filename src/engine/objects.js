@@ -328,10 +328,11 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       cloakTurnUpCost: null,
     }
     : null;
-  // Bestow changes the battlefield type line; it ends on leaving the
-  // battlefield. Restore the saved type line before the other zone resets
-  // (copy/DFC/face-down can supersede it) while formerTypes below stays LKI.
-  const bestowReset = leavingBattlefield && object.bestowOriginalTypes ? {
+  // The bestow type line applies on the stack and while attached. On a zone
+  // change restore the base line; successful Aura resolution attaches the
+  // entering permanent immediately and reapplies the same bestowed line.
+  // Other resets (copy/DFC/face-down) can supersede it; formerTypes stays LKI.
+  const bestowReset = (leavingBattlefield || object.zone === 'stack') && object.bestowOriginalTypes ? {
     types: [...object.bestowOriginalTypes],
     subtypes: [...(object.bestowOriginalSubtypes ?? [])],
     bestowOriginalTypes: null,

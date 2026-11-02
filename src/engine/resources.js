@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor } from './zones.js';
 import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant, tapObject } from './permanents.js';
-import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
+import { bestowedTypeLine, effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -2754,6 +2754,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   // załączone (albo — dla curse — z enchantedPlayerId).
   const stacked = Object.freeze({
     ...moved,
+    // CR 702.103b: od chwili położenia na stosie bestow to czar Aury,
+    // nie czar stwora. Bazowe cechy wrócą przy zmianie strefy lub odłączeniu.
+    ...(bestow ? { ...bestowedTypeLine(moved), kind: 'aura', baseKind: moved.kind } : {}),
     surgeCast: Boolean(surgeCast),
     tapped: false,
     enchantPlayer,

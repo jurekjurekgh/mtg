@@ -18566,3 +18566,7 @@ Kreator aktywacji Kozilek's Shriekera ukrywał źródła `{C}` mimo legalnej pł
 Kreator istniejącego legalnego rzutu pokazuje również kosztowy tryb many Heap Gate, z zagnieżdżoną płatnością. Solver nie liczy dwóch trybów tego samego lądu jako dwóch źródeł; 6 testów, pokrewne 85/85, fast 9295/9295, build 76 modułów / 5630,1 kB. Osobna bramka automatycznej oferty dla kosztowych lądów pozostaje ograniczeniem. Audyt trwa.
 
 Po A20: wolny pakiet na niezmienianym kodzie `1587c15` 268/268. Audyt trwa; B0 nie uruchamiano.
+
+### 2026-11-02 — audyt #177, typ bestow na stosie
+
+Czar bestow staje się Aurą na stosie, nie dopiero na polu bitwy; oryginalne cechy wracają po zmianie strefy. Siedem testów m.in. Negate, nielegalny cel i syntetyczny artefakt-bestow; pokrewne 37/37 i 96/96, fast 9302/9302, build 76 modułów / 5630,7 kB. Audyt trwa.
