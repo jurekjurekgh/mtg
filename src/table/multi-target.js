@@ -1258,8 +1258,12 @@ export function commandForChooseOneOrBoth(plan, slotChoice) {
 /** Niezależne składniki trybów złożonych; komenda nadal pochodzi z oferty. */
 export function chooseModesPlanOf(commands, spell) {
   const options = commands ?? [];
-  if (options.length < 2 || !options.every(c => c?.type === 'cast_spell'
-    && c.objectId === options[0].objectId && Number.isInteger(c.modeIndex))) return null;
+  const type = options[0]?.type;
+  const idOf = c => type === 'resolve_epic_choice' ? c.cardId : c.objectId;
+  if (options.length < 2 || !['cast_spell', 'resolve_epic_choice', 'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_hand_free_cast', 'resolve_madness_cast', 'resolve_rebound_cast', 'resolve_suspend_cast'].includes(type)
+    || !idOf(options[0]) || !options.every(c => c?.type === type
+      && idOf(c) === idOf(options[0]) && Number.isInteger(c.modeIndex))) return null;
+  if (new Set(options.map(c => c.modeIndex)).size < 2) return null;
   const modes = spell?.modes ?? [];
   const bySelection = new Map(), labels = new Map();
   let count = null;

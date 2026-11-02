@@ -5,12 +5,17 @@
 export function assertNoCombinationRows(commands, session = null) {
   const options = commands ?? [];
   if (options.length < 2) return;
+  const modeGroups = new Map();
   for (const cmd of options) {
     if (!Number.isInteger(cmd?.modeIndex)) continue;
-    const spell = session?.state?.objects?.get?.(cmd.objectId)?.spell;
-    if ((spell?.modes?.[cmd.modeIndex]?.choiceComponents?.length ?? 0) >= 2) {
-      throw new Error('Zakazany modal kombinacji trybów: użyj kreatora wyboru wielu');
-    }
+    const id = cmd.objectId ?? cmd.cardId;
+    const spell = session?.state?.objects?.get?.(id)?.spell;
+    if ((spell?.modes?.[cmd.modeIndex]?.choiceComponents?.length ?? 0) < 2) continue;
+    const modes = modeGroups.get(id) ?? new Set();
+    modes.add(cmd.modeIndex); modeGroups.set(id, modes);
+  }
+  if ([...modeGroups.values()].some(modes => modes.size >= 2)) {
+    throw new Error('Zakazany modal kombinacji trybów: użyj kreatora wyboru wielu');
   }
   // Kilka pól tablicowych może zmieniać się jednocześnie (np. wybrane karty
   // i kolejność reszty); porównanie jednego pola nie wykryłoby takiej listy.

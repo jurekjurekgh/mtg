@@ -879,9 +879,30 @@ function bootstrapTable() {
     }
     // Wybór wielu trybów pokazuje składniki, nie wszystkie ich kombinacje.
     const modeOptionsForSet = request.options ?? [];
-    const modeSource = session.state?.objects?.get(modeOptionsForSet[0]?.objectId);
-    const chooseModesPlan = chooseModesPlanOf(modeOptionsForSet, modeSource?.spell);
-    if (chooseModesPlan) {
+    const componentOptions = modeOptionsForSet.filter(cmd => Number.isInteger(cmd.modeIndex));
+    const modeFirst = componentOptions[0];
+    const modeSource = session.state?.objects?.get(modeFirst?.objectId ?? modeFirst?.cardId);
+    const chooseModesPlan = chooseModesPlanOf(componentOptions, modeSource?.spell);
+    const otherModeOptions = modeOptionsForSet.filter(cmd => !Number.isInteger(cmd.modeIndex));
+    if (chooseModesPlan && otherModeOptions.length === 1
+      && (otherModeOptions[0].decline === true || otherModeOptions[0].cast === false)) {
+      // Okna opcjonalnego rzutu: odmowa jest osobną decyzją, nie jednym z
+      // sześciu wariantów trybów. Po „Rzuć” wracamy do tego samego kreatora.
+      const first = [otherModeOptions[0], componentOptions[0]];
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, commands: first,
+        plan: { buttonsMode: true, rows: [{ id: 'opt-0', label: 'Nie rzucaj' }, { id: 'opt-1', label: 'Rzuć — wybierz tryby' }] },
+        intro: `${choiceGroupTitle(request, session, choiceView)} — rzuć albo odmów:`,
+        onComplete: (cmd) => {
+          if (cmd === first[0]) { hideModal('choice-request'); play(cmd); return; }
+          openChoiceRequest(choiceRequest({ id: `${request.id ?? 'mode'}-wybor`, type: request.type ?? 'command', options: componentOptions }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    if (chooseModesPlan && otherModeOptions.length === 0) {
       renderMultiTargetWizard(els.choiceRequestBody, {
         view: choiceView, session, plan: chooseModesPlan, commands: modeOptionsForSet,
         intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz ${chooseModesPlan.count} tryby:`,
