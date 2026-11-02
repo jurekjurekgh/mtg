@@ -243,3 +243,5 @@ A64: PMSSB-81/25/26, rzeczywista walka Hounds i koszt dwóch kart bez koloru, 4 
 A65: odtworzono 6+6 historycznych śladów golden mastera, wykryto i sprostowano mylną interpretację wybranego scoreSum oraz opisy Reavera/kwoty Rockslide. Related 32/32, golden 4/4, fast 9527/9527, build 5639,5 kB; slow po A63 268/268 na tym samym kodzie, A65 poza slow. Nie B0. Kontynuować przegląd zmian produkcyjnych.
 
 A66: Morbid/token Ambassador Oak poświęcony Village Rites i Liliana’s Triumph (pre-existing brak LKI); oraz potwierdzona regresja #177: unearth Etherium Abomination wygnane przez Rites, Spin Out i Fiery Fall fałszywie ustawia Morbid. RED porównany z archiwami bazowym i po #177; dwa generyczne fixy, 12/12, related 101/101, fast 9539/9539, build 5640,0 kB. Slow aktualnego kodu 268/268. Audyt nadal trwa.
+
+A67: Somberwald Spider, drugi rzeczywisty odbiorca Morbid — rzut i Unbreakable Bond po śmierci tokena, wygnaniu unearth i bez śmierci. Regresję #177 odtworzono w archiwum względem bazy (2/2 vs 0/2), mutacja trackera wykryta na licznikach. 6/6, related 34/34, fast 9545/9545, build 5640,2 kB; slow po A66 268/268, ten sam kod. Audyt trwa.
