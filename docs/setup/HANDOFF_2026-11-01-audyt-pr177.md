@@ -216,4 +216,4 @@ A55: bezpośredni diff #177 helpera testera, miejsc logu i help benchmarku; real
 A56: bezpośredni diff #177 PMSSB-82, rzeczywista walka, wybór bota i delirium, dwie mutacje wykryte; pokrewne 45/45, fast 9481/9481, build 5639,0 kB. Slow po A50 268/268 na tym samym zachowaniu produkcyjnym; A56 poza slow. Kontynuować diff #177.
 
 
-A57: niepełne podłączenie nowych danych #177 do logu, zastany objaw, RED dwóch rzeczywistych czarów → GREEN; 7 testów, pokrewne 28/28, fast 9488/9488, build 5639,2 kB. Slow A57 trwa jako `testy-wolne-a57-18a4e7e7`, log `.arena/a57-slow.log`; wynik nieznany. Kontynuować audyt diffu #177.
+A57: niepełne podłączenie nowych danych #177 do logu, zastany objaw, RED dwóch rzeczywistych czarów → GREEN; 7 testów, pokrewne 28/28, fast 9488/9488, build 5639,2 kB. Slow A57 268/268, log `.arena/a57-slow.log`. Kontynuować audyt diffu #177.
