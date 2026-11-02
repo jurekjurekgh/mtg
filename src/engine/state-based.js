@@ -110,7 +110,7 @@ export function sacrificeFinishedSagas(state) {
     const moved = moveObjectDirectly(state, object.id, toZone, graveId);
     const sacrificed = event('permanent_sacrificed', {
       fromId: object.id, objectId: graveId, playerId: object.controllerId,
-      cardId: moved.cardId, saga: true, toZone,
+      object: moved, cardId: moved.cardId, saga: true, toZone,
     });
     state.events.push(sacrificed); events.push(sacrificed);
   }

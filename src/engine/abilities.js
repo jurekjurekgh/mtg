@@ -1894,7 +1894,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, victim.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: victim.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: victim.id, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Batch 69 (Bloodfire Infusion, CR 602.1a/608.2h): koszt „Sacrifice enchanted
@@ -1908,7 +1908,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, host.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: host.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: host.id, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Koszt „Sacrifice a land" (Seismic Monstrosaur): poświęcenie własnego
@@ -1924,7 +1924,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeLandId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeLandId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeLandId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
@@ -1948,7 +1948,7 @@ export function performActivation(state, ctx) {
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, sacId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
-        fromId: sacId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+        fromId: sacId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
       }));
     }
   }

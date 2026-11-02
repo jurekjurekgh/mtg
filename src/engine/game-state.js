@@ -1110,7 +1110,7 @@ function payFreeCastAdditionalCost(state, playerId, obj, cmd, paid = {}) {
   const moved = moveObjectDirectly(state, cmd.sacrificeTargetId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {
     fromId: cmd.sacrificeTargetId, objectId: destId, playerId,
-    cardId: moved.cardId, additionalCost: true, toZone,
+    object: moved, cardId: moved.cardId, additionalCost: true, toZone,
   }));
   return null;
 }
@@ -3057,7 +3057,7 @@ export function execute(state, input) {
       // M272 (błąd #20): `toZone` w zdarzeniu — po nim triggery śmierci
       // rozpoznają wygnanie przez licznik finality (CR 122.1h).
       fromId: landId, objectId: destId, playerId: pending.controllerId,
-      cardId: moved.cardId, reason: 'springbloom_druid', toZone,
+      object: moved, cardId: moved.cardId, reason: 'springbloom_druid', toZone,
     }));
     state.pendingSpringbloom = null;
     state.events.push(event('springbloom_resolved', {
@@ -4551,7 +4551,7 @@ export function execute(state, input) {
     const exploitZone = deathZoneFor(state, target);
     const moved = moveObjectDirectly(state, cmd.targetId, exploitZone, `${exploitZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, object: moved, cardId: moved.cardId,
       exploit: true, toZone: exploitZone,
     }));
     // P4 (audyt PR106 — Żywy Tester, 2026-09-08): nazwa ofiary jedzie
@@ -5482,7 +5482,7 @@ export function execute(state, input) {
     const graveId = `${sacZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, target.id, sacZone, graveId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: target.id, objectId: graveId, playerId: target.controllerId, cardId: moved.cardId,
+      fromId: target.id, objectId: graveId, playerId: target.controllerId, object: moved, cardId: moved.cardId,
       sacrificeChoice: true, toZone: sacZone,
     }));
     // Reflexive „When you do" (Glorifier): po poświęceniu emitujemy zdarzenie
@@ -5554,9 +5554,9 @@ export function execute(state, input) {
         // M269 (błąd #5): poświęcenie Jedzenia również respektuje deathZoneFor.
         // M272 (błąd #20): i przekazuje strefę dalej w zdarzeniu (CR 122.1b).
         const foodZone = deathZoneFor(state, foodObj);
-        moveObjectDirectly(state, foodId, foodZone, graveId);
+        const movedFood = moveObjectDirectly(state, foodId, foodZone, graveId);
         state.events.push(event('permanent_sacrificed', {
-          fromId: foodId, objectId: graveId, playerId: food.playerId, cardId: foodObj.cardId,
+          fromId: foodId, objectId: graveId, playerId: food.playerId, object: movedFood, cardId: foodObj.cardId,
           sacrificeFood: true, toZone: foodZone,
         }));
         sacrificed = true;
@@ -5832,7 +5832,7 @@ export function execute(state, input) {
     const devourZone = deathZoneFor(state, state.objects.get(cmd.targetId));
     const moved = moveObjectDirectly(state, cmd.targetId, devourZone, `${devourZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
     state.events.push(event('permanent_sacrificed', {
-      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, cardId: moved.cardId,
+      fromId: cmd.targetId, objectId: moved.id, playerId: pending.playerId, object: moved, cardId: moved.cardId,
       devour: true, toZone: devourZone,
     }));
     // Liczniki lądują na źródle — o ile nie opuściło pola bitwy (np. triggerem

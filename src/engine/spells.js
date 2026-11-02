@@ -981,7 +981,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeTargetId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;
@@ -1398,7 +1398,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeTargetId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;

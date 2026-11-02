@@ -4341,7 +4341,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, object.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: object.id, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
+      fromId: object.id, objectId: destId, playerId: object.controllerId, object: moved, cardId: moved.cardId, toZone,
     }));
     return;
   }
@@ -6087,7 +6087,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
-        fromId: victimId, objectId: destId, playerId: controllerId, cardId: moved.cardId, toZone,
+        fromId: victimId, objectId: destId, playerId: controllerId, object: moved, cardId: moved.cardId, toZone,
       }));
     }
     return;
@@ -6615,7 +6615,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
       state.events.push(event('permanent_sacrificed', {
         fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
-        cardId: moved.cardId, sacrificeUnless: true, toZone,
+        object: moved, cardId: moved.cardId, sacrificeUnless: true, toZone,
       }));
       return;
     }
@@ -6680,7 +6680,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
       state.events.push(event('permanent_sacrificed', {
         fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
-        cardId: moved.cardId, champion: true, toZone,
+        object: moved, cardId: moved.cardId, champion: true, toZone,
       }));
       return;
     }

@@ -871,8 +871,9 @@ function abilitiesOnDeath(object) {
  *    CR 122.1h — obiekt opuszcza pole bitwy, ale nie umiera);
  *  - rodzaj czytamy z LKI (CR 603.10a): obiekt po zmianie strefy jest NOWY
  *    (CR 400.7), więc `formerKind`/`formerTypes`.
- * Token ginący w grobie: `creature_destroyed` niesie LKI zdarzenia — stąd
- * fallback na `ev.object`.
+ * Token po przejściu do grobu znika podczas SBA. Zdarzenia zniszczenia
+ * i poświęcenia muszą więc nieść migawkę `object` (w tym formerKind/types),
+ * po którą sięgamy, gdy nowego obiektu nie ma już w `state.objects`.
  */
 export function eventIsCreatureDeath(state, ev) {
   if (!ev) return false;

@@ -14,7 +14,7 @@ function act(s,c){assert.ok(c,JSON.stringify({turn:s.turn,legal:view(s).legalCom
 function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function until(s,p){for(let i=0;i<30&&!p();i++)pass(s);assert.ok(p(),JSON.stringify({turn:s.turn,stack:s.zones.stack,legal:view(s).legalCommands}));}
 function setup(){const s=createGameState({seed:17766,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
- for(let i=0;i<3;i++)put(s,`forest${i}`,'basic-forest','library');put(s,'rites','village-rites');put(s,'vigil','caravan-vigil');addMana(s,'p1',9,{colors:['W','B','G','U']});return s;}
+ for(let i=0;i<3;i++)put(s,`forest${i}`,'basic-forest','library');put(s,'rites','village-rites');put(s,'vigil','caravan-vigil');addMana(s,'p1',11,{colors:['W','B','G','U','R']});return s;}
 function oakToken(s){put(s,'oak','ambassador-oak');act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='oak'));until(s,()=>s.zones.stack.length===0);const t=[...s.objects.values()].find(o=>o.cardId==='token_elf_warrior'&&o.zone==='battlefield');assert.ok(t?.isToken);return t;}
 function sacrifice(s,id){const opts=view(s).legalCommands.filter(c=>c.type==='cast_spell'&&c.objectId==='rites');act(s,opts.find(c=>c.sacrificeTargetId===id));until(s,()=>s.zones.stack.length===0);}
 function vigil(s){act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='vigil'));until(s,()=>s.pendingSearchChoice!=null);return view(s).legalCommands.filter(c=>c.type==='resolve_search_choice');}
@@ -62,12 +62,19 @@ test('A66: śmierć tokena przestaje spełniać Morbid w następnej turze',()=>{
  until(s,()=>s.turn.activePlayerId==='p2'&&s.turn.step==='upkeep');assert.equal(s.creatureDiedThisTurn,false);
 });
 
-for(const method of ['rites','spin'])test(`A66: Etherium Abomination po unearth i ${method} jest wygnana bez śmierci`,()=>{
- const s=setup();put(s,'abomination','etherium-abomination','graveyard');
+for(const method of ['rites','spin','fiery-fall'])test(`A66: Etherium Abomination po unearth i ${method} jest wygnana bez śmierci`,()=>{
+ const s=setup();put(s,'abomination','etherium-abomination','graveyard');put(s,'occ','selhoff-occultist','battlefield','p2');
  act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='abomination'));until(s,()=>s.zones.stack.length===0);
  const a=[...s.objects.values()].find(o=>o.instanceId==='i-abomination');assert.equal(a.zone,'battlefield');assert.equal(a.unearthExile,true);
- if(method==='rites')sacrifice(s,a.id);else {put(s,'spin','spin-out');act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spin'&&c.targets?.includes(a.id)));until(s,()=>s.zones.stack.length===0);}
+ if(method==='rites')sacrifice(s,a.id);else {put(s,'kill',method==='spin'?'spin-out':'fiery-fall');act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='kill'&&c.targets?.includes(a.id)));until(s,()=>s.zones.stack.length===0);}
  assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-abomination').zone,'exile');
- assert.equal(s.creatureDiedThisTurn,false);const deathEvent=s.events.findLast(e=>(e.type==='permanent_sacrificed'||e.type==='permanent_destroyed')&&e.cardId==='etherium-abomination');assert.equal(deathEvent.toZone,'exile');
+ assert.equal(s.creatureDiedThisTurn,false);const deathEvent=s.events.findLast(e=>(['permanent_sacrificed','permanent_destroyed','creature_destroyed'].includes(e.type))&&e.cardId==='etherium-abomination');assert.equal(deathEvent.toZone,'exile');assert.ok(!s.events.some(e=>e.type==='ability_triggered'&&e.cardId==='selhoff-occultist'));
  assert.ok(!vigil(s).some(c=>c.destination==='battlefield'));
+});
+
+test('A66: Plague Reaver poświęca token w end step, z LKI w zdarzeniu',()=>{
+ const s=setup();const t=oakToken(s);put(s,'reaver','plague-reaver','battlefield');
+ s.turn=jumpToStep(s.turn,'main2','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
+ until(s,()=>s.events.some(e=>e.type==='permanent_sacrificed'&&e.fromId===t.id));
+ const ev=s.events.find(e=>e.type==='permanent_sacrificed'&&e.fromId===t.id);assert.equal(ev.object.instanceId,t.instanceId);assert.equal(ev.object.formerZone,'battlefield');assert.equal(ev.toZone,'graveyard');assert.ok(!s.objects.has(ev.objectId));assert.equal(s.creatureDiedThisTurn,true);
 });

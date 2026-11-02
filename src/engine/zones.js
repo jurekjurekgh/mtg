@@ -36,6 +36,10 @@ export function moveToZone(object, zone, newObjectId) {
  * (bundler składa moduły w jeden zasięg, więc cykl łamie build).
  */
 export function deathZoneFor(state, object) {
+  // Unearth zastępuje opuszczenie pola wygnaniem (CR 702.84a). Sam mover
+  // też respektuje tę flagę, ale tu decydujemy o strefie ZDARZENIA zanim
+  // nastąpi ruch; inaczej triggery śmierci i Morbid widzą nieistniejący grób.
+  if (object?.zone === 'battlefield' && object.unearthExile) return 'exile';
   if (((object?.counters ?? {}).finality ?? 0) > 0) return 'exile';
   // M262: wpisy {id, byCardId} — sprawdzamy id obiektu w naznaczonych.
   if ((state.exileIfDiesThisTurn ?? []).some((entry) => entry.id === object?.id)) return 'exile';
