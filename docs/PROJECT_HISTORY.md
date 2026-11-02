@@ -18586,3 +18586,5 @@ Wolny pakiet po A23 na snapshot `b8a7690`: 268/268. Osobna sonda potwierdziła b
 Dodana mapa 111 plików diffu z częściowym/otwartym statusem; tylko realny katalog i interakcje ze zmianami PR. Violent Urge: cztery testy zmiany typów grobu na stosie (Halo Scarab, Shock), pokrewne 37/37, fast 9318/9318, build 76 modułów / 5631,3 kB. Audyt pozostaje otwarty.
 
 Audyt #177 A26: realny Changeling Berserker wygnuje Highland Game przejęte przez Awaken the Sleeper i po śmierci oddaje go właścicielowi; kontrola odmowy wygnania włącza Morbid. Dwa testy, pokrewne 42/42, fast 9320/9320, build 5631,3 kB; audyt trwa.
+
+Audyt #177 A27: realne Vampire Hounds + Revolutionist ujawniły brak okna odpowiedzi na trigger madness (wcześniejsza architektura kolejki decyzji, nie nowy trigger w #177); RED zapisany w raporcie, bez naprawy.
