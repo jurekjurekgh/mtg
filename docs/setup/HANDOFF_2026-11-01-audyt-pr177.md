@@ -238,3 +238,6 @@ A63: realne Edifice i Benevolent Blessing — wycena nielegalnego celu, RED→GR
 
 
 A64: PMSSB-81/25/26, rzeczywista walka Hounds i koszt dwóch kart bez koloru, 4 testy; mutacja parametrów RED, related 39/39, fast 9527/9527, build 5639,5 kB. Slow po A63 268/268, A64 poza slow. Audyt trwa.
+
+
+A65: odtworzono 6+6 historycznych śladów golden mastera, wykryto i sprostowano mylną interpretację wybranego scoreSum oraz opisy Reavera/kwoty Rockslide. Related 32/32, golden 4/4, fast 9527/9527, build 5639,5 kB; slow po A63 268/268 na tym samym kodzie, A65 poza slow. Nie B0. Kontynuować przegląd zmian produkcyjnych.

@@ -49,19 +49,21 @@ import {
  *     championa (Changeling Berserker), pump atakujących (Trumpet Blast),
  *     pusta biblioteka w impulsie (Anticipate) i koszt ofiar z kolorów
  *     (Sphinx's Herald). Pomiar per partia (decisions, scoreSum):
- *       ravnica-wur|innistrad-wu@1000: 262→262, 2970.65→2971.65 (jedna opcja
- *         nie-wybrana, +1 pkt: ten sam charakter co wpis C wyżej),
+ *       ravnica-wur|innistrad-wu@1000: 262→262, 2970.65→2971.65.
+ *         Audyt #177 A65: odtworzone ślady commitów a55693c i 86b25b9
+ *         różnią się w decyzji nr 224 (main1 tury 18): wybrana karta
+ *         drawn-15 pozostaje ta sama, ale jej wycena rośnie 43→44; zmieniają
+ *         się też wyceny czterech niewybranych kart. To NIE jest hash-only.
  *       ravnica-wur|innistrad-wu@1001: BEZ ZMIAN (298, 3186.9495),
  *       dominaria-brg|mirrodin-wu@1000: 205→203, 3030.4126→3048.1072,
  *       dominaria-brg|mirrodin-wu@1001: 300→313, 3580.9562→3591.2971,
  *       tarkir-bg|warhammer-ubr@1000: 179→174, 1576.1099→2531.0099,
  *       tarkir-bg|warhammer-ubr@1001: 126→164, 2279.7081→2503.0099.
- *     Skok scoreSum na tarkir-bg|warhammer-ubr jest oczekiwany: ta para ma
- *     w taliach najwięcej kart batcha (Wrap in Flames/trick bojowy, pump
- *     atakujących), a nie-wybrane warianty dostały realną wycenę zamiast
- *     płaskiej bazy. Zachowanie bota NIE jest mierzone tym plikiem — bramką
- *     jakości pozostaje `test/bot-benchmark.test.js` (bez regresji) i pomiar
- *     quick (heuristic 87.5% ogółem, vs random 96.7%, vs aggro 78.3%).
+ *     Skok scoreSum na tarkir-bg|warhammer-ubr wymagałby osobnego porównania
+ *     pełnych śladów: same wyceny niewybranych wariantów nie zmieniają sumy
+ *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
+ *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
+ *     vs random 96.7%, vs aggro 78.3%; nie jest to pomiar obecnego drzewa.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

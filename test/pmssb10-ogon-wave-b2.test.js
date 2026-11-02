@@ -81,10 +81,11 @@ test('PMSSB10-B2: frontline-war-rager tapped-gate: empty-SAME, 2tap +2.25', () =
 // control” liczono jak symetryczny wrath („edge = enemy − mine” × 10), więc
 // trzech wrogich stworów dawało +17,1 premii, choć karta nie zabiera wrogowi
 // ANI JEDNEGO stworu (silnik: effects.js `otherCreaturesYouControl`). Teraz
-// stół bez własnych stworów = brak premii i brak kary (SAME na 74,71 — sama
-// wartość ciała), a każda WŁASNA kreatura schodzi pod pass
-// (`selfSacrificeWrathOwnBoardPenalty`).
-test('PMSSB10-B2: plague-reaver wrath: empty-SAME, foe3 SAME (wróg nic nie traci)', () => {
+// brak własnych stworów = brak kary za własną planszę. Test obejmuje też inne
+// wymiary oceny rzutu: wartości 74,71 i 78,31 NIE są równe, więc ten pin sam
+// w sobie nie dowodzi zerowego wpływu obecności przeciwników na całą wycenę.
+// Kara za własną planszę: `selfSacrificeWrathOwnBoardPenalty`.
+test('PMSSB10-B2: plague-reaver — rzut bez własnych stworów, pusty stół i 3 wrogów', () => {
   assert.equal(castScore('plague-reaver'), '74.71');
   assert.equal(castScore('plague-reaver', (s) => { foeVanilla(s, 'f1'); foeVanilla(s, 'f2'); foeVanilla(s, 'f3'); }), '78.31');
 });

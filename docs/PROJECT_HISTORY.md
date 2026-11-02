@@ -18711,3 +18711,6 @@ Audyt #177 A63: poprawa wyceny celu ETB Edifice z ochroną (błąd sprzed #177);
 
 
 Audyt #177 A64: rzeczywisty koszt Hounds i walka, dawna waga remisowała bezbarwne dla zasobów karty; fast 9527/9527. Audyt trwa.
+
+
+Audyt #177 A65: odtworzone ślady golden mastera i sprostowania historycznych opisů; fast 9527/9527, golden 4/4. Audyt trwa.

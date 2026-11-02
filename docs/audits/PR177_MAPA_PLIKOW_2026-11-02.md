@@ -17,12 +17,12 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `decks/worek-dziki.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
 | `decks/worek-legend.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
 | `decks/worek-mroczny.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
-| `docs/ENGINE_MILESTONES.md` | otwarte |
-| `docs/PMSSB.md` | otwarte |
-| `docs/PROJECT_HISTORY.md` | otwarte |
-| `docs/audits/AUDYT_PR176_2026-10-27.md` | otwarte |
-| `docs/audits/UWAGI_Z_GRY_2026-10-27c.md` | otwarte |
-| `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | otwarte |
+| `docs/ENGINE_MILESTONES.md` | przejrzany diff M449–M462 jako zapis historyczny; rzeczywiste interakcje i poprawki A1–A64; sprostowano uogólnienie Reavera A65 |
+| `docs/PMSSB.md` | przejrzany diff PMSSB-80–86 i rebaseline wcześniejszych; piny realnych kart A33/A36/A38/A49/A53/A54/A56/A64; sprecyzowany moment dodania Rockslide A65 |
+| `docs/PROJECT_HISTORY.md` | przejrzany dodany zapis #177, nazwy kart i zakres funkcji porównane z diffem; wyniki historyczne nie są wynikami obecnego drzewa |
+| `docs/audits/AUDYT_PR176_2026-10-27.md` | przejrzany dodany historyczny raport F1/O1–O3, realne nosiciele i granice A3/A29/A55; nie jest powtórnym audytem wszystkich plików PR #176 |
+| `docs/audits/UWAGI_Z_GRY_2026-10-27c.md` | przejrzany historyczny zakres A–D, powiązane realne interakcje A8–A20/A41/A43/A44; dane pomiarów są historyczne |
+| `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | przejrzany historyczny zakres F–O i powiązane testy A4/A32–A37/A46/A48/A51/A63; sprostowany opis wyceny Reavera A65 |
 | `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
 | `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set, koszt A30; rzeczywisty Oracle i wybrane zachowania A37 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
 | `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
@@ -33,11 +33,11 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/cards/scryfall-trumpet-blast.json` | częściowo — dane A30 i wybrane realne zachowania A38 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
 | `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
 | `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
-| `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md` | otwarte |
-| `docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md` | otwarte |
-| `docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md` | otwarte |
-| `docs/setup/HANDOFF_2026-10-27c.md` | otwarte |
-| `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
+| `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md` | przejrzany diff — status i historyczne piny B70, rzeczywisty Pummeler A29; bez ponownego uruchamiania historycznych pomiarów |
+| `docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md` | przejrzany dodany plan historyczny, skorelowany z diffem #177 i raportem; nie uznaje hipotetycznych nośników za realne karty |
+| `docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md` | przejrzany plan i status historyczny, realne karty, koszty, generator oraz przykłady zachowania A30/A37–A40/A42/A53/A54/A56/A61/A62; deklaracja 100% nie dowodzi wszystkich interakcji |
+| `docs/setup/HANDOFF_2026-10-27c.md` | przejrzany historyczny handoff, odniesienia do A–D/F–O i obszarów bez nośnika; stare liczby są pomiarem ówczesnego drzewa |
+| `docs/setup/HANDOFF_2026-11-01.md` | przejrzany historyczny handoff batcha 71, zestaw kart A30/A62 i zmiany zachowania w A25–A64; stare wyniki nie oznaczają wyników obecnej wersji |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
 | `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34/A35/A36/A40) |
@@ -81,11 +81,11 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | częściowo — rzeczywisty kreator i regresje kosztów / powrotu A8/A11/A14–A20; nie pełna przeglądarkowa macierz |
 | `test/audyt-typy-efektow-katalogu.test.js` | przejrzany diff — wzrost liczby rodzajów efektów o champion, realne przypadki A1/A26/A31/A40 |
 | `test/bot-modal-modes.test.js` | częściowo — porównanie kontr i odbicia Steel Sabotage na realnych kartach A52; inne tryby otwarte |
-| `test/bot-params.test.js` | otwarte |
-| `test/bot-scoring-snapshot.test.js` | otwarte |
+| `test/bot-params.test.js` | przejrzany diff: wagi kontry i bounce, rzeczywiste kontry A52/A60, Force Away A59; reszta testu poza diffem |
+| `test/bot-scoring-snapshot.test.js` | przejrzany diff i sprostowana interpretacja wybranej decyzji; pełne ślady 6 partii przed i po batch 71 A65, bieżąca jakość poza golden masterem |
 | `test/druki-druga-strona-i-uuid-obrazu.test.js` | przejrzany diff — wyłącznie komentarz o pustej liście snapshotów w toku |
 | `test/f-morbid-kreatura-zginela.test.js` | częściowo — źródłowy tracker #177 oraz realne bestow/death/Morbid A4/A5 |
-| `test/fixtures/bot-scoring-snapshot.json` | otwarte |
+| `test/fixtures/bot-scoring-snapshot.json` | przejrzany diff; pełne ślady 6 partii odtworzone z commitów a55693c/86b25b9 i hashe zgodne A65, nie dowód optymalności bota |
 | `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | przejrzany diff — data i 108.1, 303.4b, 702.72a porównane z plikiem CR o wskazanym SHA A62 |
@@ -101,7 +101,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | częściowo — helper granice i rzeczywista etykieta Gila Courser A55 |
 | `test/obiekty-wsparcia-poza-rejestrem.test.js` | przejrzany diff — wyłącznie komentarz o zakończeniu batcha 71, strażnik bez zmian |
-| `test/panel-rozgrywka-tura-przeciwnika.test.js` | otwarte |
+| `test/panel-rozgrywka-tura-przeciwnika.test.js` | przejrzany diff reseedu do realnej talii; test slow po A63 i ponownie related A65; nie pełny test interfejsu przeglądarki |
 | `test/pmssb10-ogon-wave-b2.test.js` | częściowo — zmieniony pin Reaver i realne karty A36; uwaga o niejednakowej sumie 74,71/78,31 w przeglądzie dokumentacji |
 | `test/pmssb12-pay-wave-a.test.js` | przejrzany diff — brak many i prawdziwe inne źródła Rupture Spire A9/A48 |
 | `test/pmssb3-draw-wave-b.test.js` | częściowo — rzeczywista decyzja Force Away i ferocious po zmianie inwestycji A59; inne draw otwarte |
@@ -179,3 +179,5 @@ A62: dziesięć kart — porównanie ze snapshotami i instalacja rzeczywistej ta
 A63: realna ochrona Benevolent Blessing blokuje czarną zdolność Edifice; naprawiono przewidywanie wartości i rzeczywisty wybór bota, z porównaniem bazy #177.
 
 A64: kwalifikowany odrzut Hounds w rzeczywistej walce i różnicowanie kart bez koloru, obie kolejności oraz kontrola z Forest.
+
+A65: odtworzone wszystkie 6 śladów golden-master przed i po batchu, sprostowana przyczyna zmiany scoreSum i nadmierne uogólnienie Reavera; przegląd historycznych raportów/planów bez udawania pomiaru bieżącej jakości.
