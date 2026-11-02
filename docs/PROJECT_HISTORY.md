@@ -18687,3 +18687,6 @@ Audyt #177 A55: rzeczywista etykieta Gila Courser w helperze testera i statyczna
 
 
 Audyt #177 A56: rzeczywista walka i decyzja bota Violent Urge, delirium i obie mutacje; fast 9481/9481, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A57: podłączono źródło decyzji poświęcenia do logu (brak istniał przed #177); fast 9488/9488, build 5639,2 kB, slow w toku. Audyt trwa.

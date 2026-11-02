@@ -1290,11 +1290,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'Wszystkie stwory nie mogą blokować do końca tury';
       }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
-      case 'sacrifice_choice_required': return e.champion
+      // Źródło jest publiczne (czar na stosie lub permanent); starsze zdarzenia
+      // bez cardId zachowują dotychczasowy opis. Champion to wygnanie, nie ofiara.
+      case 'sacrifice_choice_required': return `${srcName(e)}${e.champion
         ? `${whoN(e.playerId)} wybiera wygnanie innego permanenta albo rezygnację (champion)`
         : e.sacrificeUnless
         ? `${whoN(e.playerId)} wskazuje permanent do poświęcenia albo poświęca źródło`
-        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`}`;
       // Batch 53 (Glorifier of Suffering): opcjonalne poświęcenie innego
       // stwora/artefaktu + refleks „when you do".
       case 'reflexive_sacrifice_required':

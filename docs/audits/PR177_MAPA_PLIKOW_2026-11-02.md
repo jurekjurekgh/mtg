@@ -44,7 +44,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
-| `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge, Tail Slash na rzeczywistych kartach (A1/A2/A17/A25/A26/A39), Final Parting A50 |
+| `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57 |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte; Final Parting privacy/tasowanie A50 |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
