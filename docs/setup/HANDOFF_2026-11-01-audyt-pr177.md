@@ -136,3 +136,6 @@ A32: trzy testy rzeczywistych nazw po transformie (Merciless Repurposing/Incubat
 
 
 A33: naprawiono fałszywą premię bounce dla stun/finality oraz dodawanie TMC własnej aury na wrogim celu; 6 rzeczywistych testów, 4 mutacje wykryte, pokrewne 122/122, fast 9358/9358, build 5635,7 kB; slow 268/268 na kodzie i testach A33. Audyt #177 nadal otwarty.
+
+
+A34: RED→GREEN rzeczywisty Spellkeeper Weird wobec hexproof, protekcji i niezniszczalności, z kontrolą wygnania. 11 testów, 3 mutacje, pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow w toku. Pozostały audyt #177 otwarty.

@@ -4669,11 +4669,23 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
       if (entry.controllerId === view.playerId) continue;
       const targets = entry.targets ?? [];
       if (!targets.includes(obj.id)) continue;
+      // A34 (CR 608.2b, 702.11, 702.18): przeciwnik mógł wybrać cel
+      // zanim zyskał hexproof/shroud. Taki cel jest teraz nielegalny, więc
+      // nie jest dowodem na nieuchronną utratę ciała.
+      if (hasKeyword(obj, 'shroud')
+        || (obj.controllerId !== entry.controllerId && hasKeyword(obj, 'hexproof'))) continue;
+      // Źródło czaru widać na stosie; źródło zdolności tylko wtedy, gdy
+      // nadal jest widoczne. Nie zgadujemy LKI nieobecnego źródła.
+      const source = entry.kind === 'spell' ? entry : objectOnBoard(view, entry.sourceId);
+      if (source && targetProtectionBlocksSource(obj, source)) continue;
       const effs = stackEntryEffects(entry);
-      if (effs.some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type))) return true;
-      // obrażenia śmiertelne z czaru na stosie
+      // Wygnanie omija indestructible; zniszczenie i śmiertelne obrażenia nie
+      // (CR 702.12). Nie traktujemy wszystkich rodzajów usunięcia jednakowo.
+      const indestructible = hasKeyword(obj, 'indestructible');
+      if (effs.some((e) => REMOVE_ON_STACK_EFFECTS.has(e?.type)
+        && (!indestructible || e.type === 'exile_permanent' || e.type === 'exile_target_creature'))) return true;
       const dmg = effs.find((e) => e?.type === 'damage');
-      if (dmg && Number.isInteger(dmg.amount)
+      if (!indestructible && dmg && Number.isInteger(dmg.amount)
         && dmg.amount >= ((obj.toughness ?? 0) - (obj.damage ?? 0))) return true;
     }
     return false;

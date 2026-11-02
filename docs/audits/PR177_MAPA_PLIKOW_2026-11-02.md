@@ -40,7 +40,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
-| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire oraz bounce (A6/A9/A10/A12/A13/A33) |
+| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34) |
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
@@ -89,7 +89,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
 | `test/helpers/cr-numery-tabela.js` | otwarte |
-| `test/i-poswiecenie-stwora.test.js` | otwarte |
+| `test/i-poswiecenie-stwora.test.js` | częściowo — rzeczywiste Spellkeeper Weird, hexproof, protekcja, niezniszczalność i wygnanie A34; inne zagrożenia otwarte |
 | `test/j-benevolent-blessing-kolor.test.js` | otwarte |
 | `test/k-rupture-spire-etb-oplata.test.js` | otwarte |
 | `test/katalog-pole-plan.test.js` | otwarte |
@@ -117,3 +117,5 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `tools/table-tester/labels.mjs` | otwarte |
 | `tools/table-tester/run-game.mjs` | otwarte |
 | `tools/tune-card.mjs` | częściowo — rejestr parametrów bounce z #177, A33; działanie tunera otwarte |
+
+A34: rzeczywiste komendy Spellkeeper Weird + Magic Damper/Benevolent Blessing/Crumb and Get It wobec Fiery Fall, Expunge i Merciless Repurposing; poprawiono fałszywą „pewną śmierć” w heurystyce (szczegóły i granice w raporcie). Plik heurystyki nadal tylko częściowo sprawdzony.
