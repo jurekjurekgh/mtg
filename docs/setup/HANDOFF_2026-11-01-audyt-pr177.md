@@ -135,4 +135,4 @@ A31: champion nietargetowany działa z rzeczywistym Scythe Tiger (jego własne E
 A32: trzy testy rzeczywistych nazw po transformie (Merciless Repurposing/Incubator, Civilized Scholar, Jill/Shiva), materializacja talii i sesja stołu; pokrewne 126/126, fast 9352/9352, build 5635,2 kB. Slow 268/268 A31 przed testami A32, ten sam kod. Pozostały audyt otwarty.
 
 
-A33: naprawiono fałszywą premię bounce dla stun/finality oraz dodawanie TMC własnej aury na wrogim celu; 6 rzeczywistych testów, 4 mutacje wykryte, pokrewne 122/122, fast 9358/9358, build 5635,7 kB; slow uruchomiony, wynik do wpisania. Audyt #177 nadal otwarty.
+A33: naprawiono fałszywą premię bounce dla stun/finality oraz dodawanie TMC własnej aury na wrogim celu; 6 rzeczywistych testów, 4 mutacje wykryte, pokrewne 122/122, fast 9358/9358, build 5635,7 kB; slow 268/268 na kodzie i testach A33. Audyt #177 nadal otwarty.
