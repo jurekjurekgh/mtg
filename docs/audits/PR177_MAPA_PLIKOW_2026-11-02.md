@@ -44,7 +44,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
-| `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge (A1/A2/A17/A25/A26) |
+| `src/engine/effects.js` | częściowo — champion, Curse, Rumbling Rockslide, Violent Urge, Tail Slash na rzeczywistych kartach (A1/A2/A17/A25/A26/A39) |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
@@ -127,3 +127,5 @@ A36: rzeczywista Zoraline i Plague Reaver — poprawki powrotu po finality i kon
 A37: Anticipate 0–4 kart biblioteki z rzeczywistym Lorescale Coatl, prawdziwy dobór przez Inspiration, kolejność spodu, atomowość i prywatność widoku/logu. Inne interakcje kart batcha 71 nadal otwarte.
 
 A38: rzeczywisty Trumpet Blast i Kappa/ninjutsu, kontrola Trostani, bot w obu turach oraz cleanup; zakres testowany, pozostałe scenariusze otwarte.
+
+A39: Tail Slash na rzeczywistych Child of Night, Deadly Recluse, Brute Force, Spare from Evil, Shock i Magic Damper; legalność celów i cechy źródła w wybranych przypadkach, nie cała macierz.

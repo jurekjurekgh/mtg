@@ -151,3 +151,6 @@ A37: 9 testów rzeczywistego Anticipate 0–4 kart, prywatności, kolejności, C
 
 
 A38: 6 testów rzeczywistego Trumpet Blast z Kappą/ninjutsu, Trostani i Act of Treason, decyzje bota w obu turach, cleanup; GREEN w badanym zakresie. Pokrewne 58/58, fast 9399/9399, build 5637,4 kB; slow 268/268 tylko A34. Audyt #177 otwarty.
+
+
+A39: sześć testów Tail Slash na realnych kartach; pokrewne 44/44, fast 9405/9405, build 5637,4 kB. Slow po A38 w toku; audyt #177 otwarty.

@@ -18624,3 +18624,6 @@ Audyt #177 A37: rzeczywiste Anticipate, 0–4 kart, kolejność i FoW/log oraz L
 
 
 Audyt #177 A38: rzeczywisty Trumpet Blast, ninjutsu, powrót kontroli, bot i cleanup; pokrewne 58/58, fast 9399/9399, build 5637,4 kB; audyt trwa.
+
+
+Audyt #177 A39: Tail Slash na rzeczywistych celach i odpowiedziach; pokrewne 44/44, fast 9405/9405, build 5637,4 kB; audyt trwa.
