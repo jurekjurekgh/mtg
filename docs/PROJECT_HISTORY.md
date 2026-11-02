@@ -18564,3 +18564,5 @@ Kreator aktywacji Kozilek's Shriekera ukrywał źródła `{C}` mimo legalnej pł
 ### 2026-11-01 — audyt #177, kosztowe zdolności lądów
 
 Kreator istniejącego legalnego rzutu pokazuje również kosztowy tryb many Heap Gate, z zagnieżdżoną płatnością. Solver nie liczy dwóch trybów tego samego lądu jako dwóch źródeł; 6 testów, pokrewne 85/85, fast 9295/9295, build 76 modułów / 5630,1 kB. Osobna bramka automatycznej oferty dla kosztowych lądów pozostaje ograniczeniem. Audyt trwa.
+
+Po A20: wolny pakiet na niezmienianym kodzie `1587c15` 268/268. Audyt trwa; B0 nie uruchamiano.

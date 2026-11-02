@@ -87,3 +87,5 @@ Kozilek's Shrieker: kreator mimo dwóch legalnych bezbarwnych źródeł pokazywa
 ## A20 — kosztowy tryb Heap Gate
 
 Rzeczywista legalna oferta Goblin Deathraiders: kreator pomijał `{1},{T}: kolor` Heap Gate. Dodany wiersz z własną komendą oraz zagnieżdżona płatność, solver nie może liczyć obu trybów jednego permanentu. 6 testów, pokrewne 85/85, fast 9295/9295, build 5630,1 kB. Odrębne ograniczenie: silnik nie uwzględnia kosztowego trybu lądu w auto-ofercie, gdy jest on jedynym źródłem koloru; A20 tego nie rozwiązuje. Audyt trwa.
+
+Weryfikacja po A20: `npm run test:slow` na niezmienianym kodzie `1587c15` 268/268 (425 s). Audyt nadal nieukończony; bez B0.
