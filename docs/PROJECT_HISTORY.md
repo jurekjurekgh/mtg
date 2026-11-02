@@ -18728,3 +18728,5 @@ Audyt #177 A70: realne inwestycje Scorn na bestow, sprzęcie living weapon i wyb
 Audyt #177 A71: realnie odtworzono wcześniejszy defekt APNAP z Crows/Selhoff obu graczy, konsekwencję draw/mill; 4 jawne TODO, 2 kontrole, żadna naprawa nie zadeklarowana. Audyt trwa.
 
 Audyt #177 A72: wspólny kwalifikator rzeczywistego wyszukiwania i kosztu Hounds, dwie mutacje; fast 9569 pass + 4 TODO A71. Audyt trwa.
+
+Audyt #177 A73: naprawiono wcześniejsze przyjmowanie niedozwolonej strefy wyszukanej karty (Morbid/Final Parting); fast 9574 pass + 4 TODO A71, slow 268/268. Audyt trwa.

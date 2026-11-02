@@ -46,7 +46,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
 | `src/engine/effects.js` | częściowo — champion, Curse, Rockslide, Violent Urge, Tail Slash (A1/A2/A17/A25/A26/A39), Final Parting A50; kontrakt wyboru poświęcenia A57, migawka ofiar Plague Reaver A66, cele Scorn/Curiosity/Feedback A68 |
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
-| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); Morbid i unearth/token A66 oraz faktyczne wejście Spider A67; madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte: rzeczywiste RED z Murder of Crows/Selhoff A71, również w bazie; Final Parting privacy/tasowanie A50 |
+| `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); Morbid i unearth/token A66 oraz faktyczne wejście Spider A67; madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte: rzeczywiste RED z Murder of Crows/Selhoff A71, również w bazie; Final Parting privacy/tasowanie A50; walidacja stref search A73 (defekt sprzed #177) |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
 | `src/engine/resources.js` | częściowo — Converge (A3), rzut płatny/darmowy i flashback na rzeczywistych kartach A69; zdarzenie ofiary tokena many zaopatrzono w migawkę A66, bez osobnego realnego scenariusza tej ścieżki |
 | `src/engine/spells.js` | częściowo — nazwy transformu w scenariuszach realnych kart/tokena A32; koszt Village Rites i migawka tokena A66; inne ścieżki otwarte |
@@ -193,3 +193,5 @@ A70: Sea God’s Scorn, realny ranking czterech stworów i Curiosity; bestow Dry
 A71 OTWARTE: mieszane celowane i niecelowane triggery śmierci obu graczy nie spełniają APNAP; reprodukcja także w bazie. Cztery jawne testy TODO czerwone, dwie kontrole zielone.
 
 A72: wspólny kwalifikator #177 sprawdzony realnie na Prishe’s Wanderings (basic ALBO Town, fail-to-find) i Vampire Hounds (koszt karta stwora), wraz z obcymi strefami, atomowością i mutacjami.
+
+A73: niedozwolona destynacja w ręcznej komendzie search pozwalała obejść Morbid i wyłożyć kartę Final Parting; problem także na bazie, naprawiono przez wspólne źródło legalnych stref oferty i walidacji.
