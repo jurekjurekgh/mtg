@@ -172,3 +172,6 @@ Uzupełnienie: slow po A41 268/268, po zmianie produkcyjnej A40; nowy test A42 p
 
 
 A43: cztery realne testy Cutthroata, obrażenia w walce, Shock, Magic Damper i własny stwór. Pokrewne 16/16, fast 9424/9424, build 5637,7 kB; slow po A41 268/268 na tym samym kodzie produkcyjnym. Audyt #177 otwarty.
+
+
+A44: 5 rzeczywistych testów wiedźm i wyboru przeciwnika, nielegalności jednego z dwóch celów; pokrewne 54/54, fast 9429/9429, build 5637,7 kB. Slow po A41 268/268 na tym samym kodzie produkcyjnym; audyt #177 otwarty.

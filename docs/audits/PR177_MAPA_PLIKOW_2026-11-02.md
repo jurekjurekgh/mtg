@@ -77,7 +77,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pr176-o2-converge-platnosc-kolorow.test.js` | otwarte |
 | `test/audyt-pr177-a-etb-uszkodzenie-w-turze.test.js` | częściowo — rzeczywiste obrażenia bojowe, Shock i Magic Damper A43 |
 | `test/audyt-pr177-c-blok-bezkosztowy.test.js` | częściowo — realny bezkosztowy blok i antykontrole A41 |
-| `test/audyt-pr177-d-cuombajj-wycena.test.js` | otwarte |
+| `test/audyt-pr177-d-cuombajj-wycena.test.js` | częściowo — rzeczywiste obrażenia, aktywacja i wybór drugiego celu, częściowa nielegalność A44 |
 | `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | otwarte |
 | `test/audyt-typy-efektow-katalogu.test.js` | otwarte |
 | `test/bot-modal-modes.test.js` | otwarte |
@@ -137,3 +137,5 @@ A41: realne ataki, blok bezkosztowy, latanie i deathtouch, wybór bota i obraże
 A42: realny Curse i biblioteki, wybór/wycena bota, deck-out na draw, Naturalize przed/po wyzwoleniu; pozostałe przypadki otwarte.
 
 A43: realny Cutthroat, walka i Shock, własny przeciwny cel oraz hexproof, wybór i rzeczywisty trigger; inne scenariusze otwarte.
+
+A44: Cuombajj Witches, prawdziwe obrażenia, wybór przeciwnika, dwukrotne wskazanie celu i utrata legalności; inne scenariusze otwarte.

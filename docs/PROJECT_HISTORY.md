@@ -18645,3 +18645,6 @@ Slow po A41: 268/268, po zmianie produkcyjnej A40.
 
 
 Audyt #177 A43: prawdziwa walka, Shock i ETB Cutthroata; fast 9424/9424, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A44: rzeczywista aktywacja Cuombajj Witches, wybór dwóch celów i odpowiedzi; fast 9429/9429, build 5637,7 kB. Audyt trwa.
