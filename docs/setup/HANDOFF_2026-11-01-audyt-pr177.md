@@ -160,3 +160,6 @@ Uzupełnienie: slow po A38 268/268; kod produkcyjny A39 bez zmian, test A39 poza
 
 
 A40: RED→GREEN rzeczywistej wyceny wygnania tokena przez Berserkera, który nie wraca; cztery testy, mutacja wykryta, pokrewne 24/24, fast 9409/9409, build 5637,7 kB. Slow 268/268 po A38 przed zmianą A40. Audyt #177 otwarty.
+
+
+A41: 4 realne testy bloku i obrażeń (bezpieczny blok, nieopłacalna strata, flying, deathtouch), pokrewne 13/13, fast 9413/9413, build 5637,7 kB. Slow 268/268 po A38 przed A40. Audyt #177 otwarty.

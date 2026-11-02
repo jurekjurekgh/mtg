@@ -18633,3 +18633,6 @@ Slow po A38: 268/268, na niezmienionym kodzie produkcyjnym A39.
 
 
 Audyt #177 A40: naprawa wyceny przez bota trwałego wygnania tokena przy championie, RED→GREEN, mutacja wykryta; fast 9409/9409, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A41: blok i obrażenia w realnym combacie, cztery testy; fast 9413/9413, build 5637,7 kB. Audyt trwa.

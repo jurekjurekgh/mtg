@@ -56,7 +56,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
 | `test/art-ids-tool.test.js` | częściowo — pokrewne testy i 625–634 A30 |
 | `test/audyt-batch71-b5-dowiazania.test.js` | częściowo — wycena championa i tokena na realnych kartach A40; inne wiązania otwarte |
-| `test/audyt-bot-walka-remisy.test.js` | otwarte |
+| `test/audyt-bot-walka-remisy.test.js` | częściowo — pokrewny zestaw i realne scenariusze A41, pozostałe remisy otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
 | `test/audyt-pmssb18-proliferate.test.js` | otwarte |
@@ -76,7 +76,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | otwarte |
 | `test/audyt-pr176-o2-converge-platnosc-kolorow.test.js` | otwarte |
 | `test/audyt-pr177-a-etb-uszkodzenie-w-turze.test.js` | otwarte |
-| `test/audyt-pr177-c-blok-bezkosztowy.test.js` | otwarte |
+| `test/audyt-pr177-c-blok-bezkosztowy.test.js` | częściowo — realny bezkosztowy blok i antykontrole A41 |
 | `test/audyt-pr177-d-cuombajj-wycena.test.js` | otwarte |
 | `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | otwarte |
 | `test/audyt-typy-efektow-katalogu.test.js` | otwarte |
@@ -131,3 +131,5 @@ A38: rzeczywisty Trumpet Blast i Kappa/ninjutsu, kontrola Trostani, bot w obu tu
 A39: Tail Slash na rzeczywistych Child of Night, Deadly Recluse, Brute Force, Spare from Evil, Shock i Magic Damper; legalność celów i cechy źródła w wybranych przypadkach, nie cała macierz.
 
 A40: rzeczywisty wybór hosta championa, token Elf Warrior nie wraca, poprawka rabatu wygnania tokena; pozostałe stany i wiązania otwarte.
+
+A41: realne ataki, blok bezkosztowy, latanie i deathtouch, wybór bota i obrażenia; inne warianty walki otwarte.
