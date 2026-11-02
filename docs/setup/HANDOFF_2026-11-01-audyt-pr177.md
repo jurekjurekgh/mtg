@@ -166,3 +166,6 @@ A41: 4 realne testy bloku i obrażeń (bezpieczny blok, nieopłacalna strata, fl
 
 
 A42: siedem testów Curse na prawdziwych kartach, biblioteki 0–3, deck-out przy draw, Naturalize przed/po upkeep i skala wyceny. Pokrewne 25/25, fast 9420/9420, build 5637,7 kB; slow po A41 w toku. Audyt #177 otwarty.
+
+
+Uzupełnienie: slow po A41 268/268, po zmianie produkcyjnej A40; nowy test A42 poza slow.

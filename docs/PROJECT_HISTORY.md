@@ -18639,3 +18639,6 @@ Audyt #177 A41: blok i obrażenia w realnym combacie, cztery testy; fast 9413/94
 
 
 Audyt #177 A42: rzeczywisty Curse, mill i draw, odpowiedź Naturalize, bot; fast 9420/9420, build 5637,7 kB. Audyt trwa.
+
+
+Slow po A41: 268/268, po zmianie produkcyjnej A40.
