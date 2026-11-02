@@ -18580,3 +18580,7 @@ Spare from Evil nie blokuje rzucenia Dryady jako Aury; ochrona przed Aurami ją 
 Ujednolicono cechy czaru dla kalkulacji ograniczonej many, obniżki i kreatora. Reprodukcja syntetycznego artifact-bestow; nie dodano karty. Korekta wcześniejszej przesłanki testu B54; 6 nowych testów, full fast 9314/9314, build 76 modułów / 5631,3 kB. Otwarta obserwacja Heap Gate: ręczna konwersja pozwala na czar, lecz oferta przed konwersją go nie pokazuje. Audyt trwa.
 
 Wolny pakiet po A23 na snapshot `b8a7690`: 268/268. Osobna sonda potwierdziła brak otwarcia kreatora Heap Gate przy dostatecznej ilości many bez potrzebnego koloru; A24 pozostaje otwarte.
+
+### 2026-11-02 — audyt #177 po doprecyzowaniu zakresu
+
+Dodana mapa 111 plików diffu z częściowym/otwartym statusem; tylko realny katalog i interakcje ze zmianami PR. Violent Urge: cztery testy zmiany typów grobu na stosie (Halo Scarab, Shock), pokrewne 37/37, fast 9318/9318, build 76 modułów / 5631,3 kB. Audyt pozostaje otwarty.

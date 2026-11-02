@@ -105,3 +105,7 @@ Syntetyczny artifact-bestow nie może korzystać z Powerstone ani rabatu Etheriu
 A24 otwarty: realny Heap Gate + Forest + Mountain i Goblin Deathraiders, brak oferty przed ręczną aktywacją, po aktywacji czar działa (`.arena/a24-heap-probe.test.js`, `.arena/a24-red.log`). Automatyczny kreator mierzy też sumę, a nie pokrycie kolorów; oba elementy wymagają rozwiązania z ochroną przed wielokrotnym użyciem źródeł i z testami. Audyt trwa.
 
 Wolny pakiet po A23 na niezmienionym `b8a7690`: 268/268 (`.arena/a23-slow.log`). Dodatkowy RED `.arena/a24-wizard-red.log` potwierdza, że po wymuszeniu jeszcze nieoferowanej komendy kreator nie otwiera się, gdy auto-tap ma dostateczną liczbę, ale nie kolor; A24 nadal otwarty.
+
+## Powrót do diffu PR #177 — zakres właściciela
+
+Właściciel poleca skupić się na #177 i realnych interakcjach z katalogiem; nie implementować hipotetycznych przyszłych kart/konfiguracji, najwyżej komentarz w kodzie. Wcześniejsze A24 Heap Gate nie jest bieżącą kolejką. Mapa 111 plików `docs/audits/PR177_MAPA_PLIKOW_2026-11-02.md` jawnie rozróżnia częściowe i otwarte. A25 cztery testy Violent Urge + Halo Scarab + Shock w prawdziwym oknie stosu: 37/37 pokrewne, fast 9318/9318, build 5631,3 kB; bez nowego błędu w tych przypadkach. Sonda `.arena/a26-champion.test.js`: Awaken the Sleeper → Changeling Berserker → Terminal Agony zwraca Highland Game do właściciela (zielona); nie jest włączona do pakietu. Slow 268/268 na b8a7690, nie na A25. Kontynuować systematycznie otwarte fragmenty #177.
