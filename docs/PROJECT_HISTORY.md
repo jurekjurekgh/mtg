@@ -18618,3 +18618,6 @@ Audyt #177 A35: realny Wretched Banquet i warunek najmniejszej mocy przy Spellke
 
 
 Audyt #177 A36: zbadano realne progi Plague Reaver i naprawiono powrót z exile po finality oraz kontrolera odroczonej zdolności. 8 testów, 3 mutacje, pokrewne 85/85, fast 9384/9384, build 5637,4 kB. Slow tylko A34; audyt trwa.
+
+
+Audyt #177 A37: rzeczywiste Anticipate, 0–4 kart, kolejność i FoW/log oraz Lorescale Coatl i prawdziwe dobranie. Pokrewne 65/65, fast 9393/9393, build 5637,4 kB; audyt nadal otwarty.

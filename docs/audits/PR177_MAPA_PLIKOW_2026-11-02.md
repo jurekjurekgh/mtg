@@ -24,7 +24,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/audits/UWAGI_Z_GRY_2026-10-27c.md` | otwarte |
 | `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | otwarte |
 | `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set, koszt A30; rzeczywisty Oracle i wybrane zachowania A37 |
 | `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
@@ -94,7 +94,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/k-rupture-spire-etb-oplata.test.js` | otwarte |
 | `test/katalog-pole-plan.test.js` | otwarte |
 | `test/l-ambulatory-edifice-debuff.test.js` | otwarte |
-| `test/m-lorescale-coatl-obowiazkowy.test.js` | otwarte |
+| `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
 | `test/n-wretched-banquet-least-power.test.js` | częściowo — rzeczywiste cele, remis, liczniki i odpowiedzi oraz koszt poświęcenia A35 |
 | `test/o-plague-reaver-darowanie.test.js` | częściowo — rzeczywisty próg 12/13, Zoraline/finality, odpowiedzi i przekazanie A36; inne przypadki bota otwarte |
@@ -123,3 +123,5 @@ A34: rzeczywiste komendy Spellkeeper Weird + Magic Damper/Benevolent Blessing/Cr
 A35: rzeczywiste Wretched Banquet, Spellkeeper Weird, Fleeting Distraction, Fleeting Flight i Crumb and Get It; naprawiono dodatkowy błąd oceny warunkowego zniszczenia. Semantyka pozostałych wariantów nadal otwarta.
 
 A36: rzeczywista Zoraline i Plague Reaver — poprawki powrotu po finality i kontrolera opóźnionej zdolności, odsłonięte przez testowanie wyboru z #177 O. Nie są uznane za nowe regresje #177 bez dowodu; dalsze ścieżki silnika pozostają otwarte.
+
+A37: Anticipate 0–4 kart biblioteki z rzeczywistym Lorescale Coatl, prawdziwy dobór przez Inspiration, kolejność spodu, atomowość i prywatność widoku/logu. Inne interakcje kart batcha 71 nadal otwarte.

@@ -145,3 +145,6 @@ A35: Wretched Banquet na rzeczywistych stworach, remis, liczniki, odpowiedź; RE
 
 
 A36: Zoraline + Plague Reaver/finality wraca z exile, a po Awaken the Sleeper kontroler triggera nie jest mylony z właścicielem. Osiem rzeczywistych testów, 3 mutacje, pokrewne 85/85, fast 9384/9384, build 5637,4 kB; slow 268/268 tylko na A34. Audyt #177 pozostaje otwarty.
+
+
+A37: 9 testów rzeczywistego Anticipate 0–4 kart, prywatności, kolejności, Coatl oraz Inspiration; bez błędu w badanym zakresie. Pokrewne 65/65, fast 9393/9393, build 5637,4 kB. Slow 268/268 tylko A34; audyt #177 otwarty.
