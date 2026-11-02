@@ -157,3 +157,6 @@ A39: sześć testów Tail Slash na realnych kartach; pokrewne 44/44, fast 9405/9
 
 
 Uzupełnienie: slow po A38 268/268; kod produkcyjny A39 bez zmian, test A39 poza zestawem slow.
+
+
+A40: RED→GREEN rzeczywistej wyceny wygnania tokena przez Berserkera, który nie wraca; cztery testy, mutacja wykryta, pokrewne 24/24, fast 9409/9409, build 5637,7 kB. Slow 268/268 po A38 przed zmianą A40. Audyt #177 otwarty.

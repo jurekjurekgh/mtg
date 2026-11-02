@@ -16733,12 +16733,15 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
         // poświęcenie championa: pełna cena, liczona tym samym wzorem.
         // Bez tego rozróżnienia bot porównywał jabłka z jabłkami wycenionymi
         // jak gruszki: przy tłustym sąsiedzie (10/10) „poświęć własne 5/3”
-        // wychodziło taniej niż „wygnaj 10/10 na chwilę”.
+        // wychodziło taniej niż „wygnaj 10/10 na chwilę”. Token jest wyjątkiem:
+        // po opuszczeniu pola przestaje istnieć i nie wróci (CR 704.5d; reguła 111.8), więc
+        // jego wygnanie jest pełną stratą, nie odwracalnym ukryciem karty.
         const pending = view.pendingSacrifice;
         if (pending?.moveTo === 'exile'
           && cmd.targetId !== pending.alternativeSourceId) {
           const offset = cmd.reflexReady === false ? 5 : 40;
-          return finish(offset - P.championExileLossFactor * value);
+          const lossFactor = target.isToken ? 1 : P.championExileLossFactor;
+          return finish(offset - lossFactor * value);
         }
         return finish(cmd.reflexReady === false ? 5 - value : 40 - value);
       }

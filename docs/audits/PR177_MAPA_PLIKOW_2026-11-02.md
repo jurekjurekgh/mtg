@@ -29,7 +29,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-tail-slash.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-tail-slash.json` | częściowo — dane A30, Oracle/ruling i wybrane rzeczywiste przypadki A39 |
 | `docs/cards/scryfall-trumpet-blast.json` | częściowo — dane A30 i wybrane realne zachowania A38 |
 | `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
 | `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
@@ -40,7 +40,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/setup/HANDOFF_2026-11-01.md` | otwarte |
 | `src/cards/card-data.js` | częściowo — batch 71, wybrane karty i Oracle; A17/A25 |
 | `src/cards/mana-costs-data.js` | częściowo — 10 kosztów batcha 71 zgodnych ze snapshotami A30 |
-| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34/A35/A36) |
+| `src/controllers/heuristic-bot.js` | częściowo — Herald, discard, ETB, Edifice, Rupture Spire bounce oraz ochrona przed poświęceniem (A6/A9/A10/A12/A13/A33/A34/A35/A36/A40) |
 | `src/controllers/heuristic-params.js` | częściowo — parametry bounce i znak stun/finality A33; inne otwarte |
 | `src/engine/abilities.js` | częściowo — kwalifikowany discard (A12); interakcja madness A27/A28: okno i kolejność w opisanych przypadkach naprawione; inne ścieżki otwarte |
 | `src/engine/counters.js` | częściowo — snapshot przy zdjęciu licznika i realny Pummeler/Trigon (A29); reszta otwarta |
@@ -55,7 +55,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
 | `test/art-ids-tool.test.js` | częściowo — pokrewne testy i 625–634 A30 |
-| `test/audyt-batch71-b5-dowiazania.test.js` | otwarte |
+| `test/audyt-batch71-b5-dowiazania.test.js` | częściowo — wycena championa i tokena na realnych kartach A40; inne wiązania otwarte |
 | `test/audyt-bot-walka-remisy.test.js` | otwarte |
 | `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
@@ -68,7 +68,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | otwarte |
 | `test/audyt-pmssb82-delirium-trik.test.js` | częściowo — warunek delirium wyceny; A25 sprawdza czas na prawdziwych kartach |
 | `test/audyt-pmssb83-klatwa-mill.test.js` | otwarte |
-| `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; wycena bota otwarta |
+| `test/audyt-pmssb84-champion-okno.test.js` | częściowo — realne shroud, token i replay A31; rzeczywiste wybory bota i poprawka tokena A40 |
 | `test/audyt-pmssb85-pump-atakujacych.test.js` | częściowo — realni atakujący, bot, ninjutsu, zmiana kontroli i cleanup A38 |
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | otwarte |
 | `test/audyt-pr149-stempel-wygnania.test.js` | otwarte |
@@ -129,3 +129,5 @@ A37: Anticipate 0–4 kart biblioteki z rzeczywistym Lorescale Coatl, prawdziwy 
 A38: rzeczywisty Trumpet Blast i Kappa/ninjutsu, kontrola Trostani, bot w obu turach oraz cleanup; zakres testowany, pozostałe scenariusze otwarte.
 
 A39: Tail Slash na rzeczywistych Child of Night, Deadly Recluse, Brute Force, Spare from Evil, Shock i Magic Damper; legalność celów i cechy źródła w wybranych przypadkach, nie cała macierz.
+
+A40: rzeczywisty wybór hosta championa, token Elf Warrior nie wraca, poprawka rabatu wygnania tokena; pozostałe stany i wiązania otwarte.
