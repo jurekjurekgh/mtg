@@ -23,16 +23,16 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `docs/audits/AUDYT_PR176_2026-10-27.md` | otwarte |
 | `docs/audits/UWAGI_Z_GRY_2026-10-27c.md` | otwarte |
 | `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | otwarte |
-| `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set, koszt A30; rzeczywisty Oracle i wybrane zachowania A37 |
-| `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — dane A30, Oracle i rzeczywisty upkeep/mill/draw A42 |
-| `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-tail-slash.json` | częściowo — dane A30, Oracle/ruling i wybrane rzeczywiste przypadki A39 |
-| `docs/cards/scryfall-trumpet-blast.json` | częściowo — dane A30 i wybrane realne zachowania A38 |
-| `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
-| `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle |
+| `docs/cards/scryfall-ambassador-oak.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-anticipate.json` | częściowo — nazwa, set, koszt A30; rzeczywisty Oracle i wybrane zachowania A37 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-changeling-berserker.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-curse-of-the-bloody-tome.json` | częściowo — dane A30, Oracle i rzeczywisty upkeep/mill/draw A42 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-rumbling-rockslide.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-sphinxs-herald.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-tail-slash.json` | częściowo — dane A30, Oracle/ruling i wybrane rzeczywiste przypadki A39 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-trumpet-blast.json` | częściowo — dane A30 i wybrane realne zachowania A38 ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-vampire-hounds.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
+| `docs/cards/scryfall-violent-urge.json` | częściowo — nazwa, set i koszt względem katalogu A30; nie pełne Oracle ; A62: tekst i cechy zgodne z katalogiem i materializacją — zgodność ze snapshotem, nie dowód wszystkich interakcji |
 | `docs/plans/PLAN_2026-10-27b-pmssb79-batch70.md` | otwarte |
 | `docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md` | otwarte |
 | `docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md` | otwarte |
@@ -54,10 +54,10 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
 | `src/table/main.js` | częściowo — kreator podrzędny i rezerwacje (A8/A11/A14–A20) |
 | `src/table/render.js` | częściowo — ostrzeżenia animacji (A7) |
-| `test/art-ids-tool.test.js` | częściowo — pokrewne testy i 625–634 A30 |
+| `test/art-ids-tool.test.js` | przejrzany diff — wzrost liczby wpisów i zgodność CSV/ID A30/A62 |
 | `test/audyt-batch71-b5-dowiazania.test.js` | częściowo — wycena championa i tokena na realnych kartach A40; inne wiązania otwarte |
 | `test/audyt-bot-walka-remisy.test.js` | częściowo — pokrewny zestaw i realne scenariusze A41, pozostałe remisy otwarte |
-| `test/audyt-katalog-dane-vs-snapshoty.test.js` | otwarte |
+| `test/audyt-katalog-dane-vs-snapshoty.test.js` | przejrzany diff — przyrost pokrycia o 10 snapshotów i token, A30/A62; wynik łącznie 631 par i jawne wyjątki |
 | `test/audyt-pmssb1-bounce.test.js` | częściowo — pokrewne i rzeczywiste scenariusze bounce A33 |
 | `test/audyt-pmssb18-proliferate.test.js` | częściowo — rzeczywisty infect, poison, −1/−1 i wybór Courage/proliferate A49 |
 | `test/audyt-pmssb19-search.test.js` | częściowo — zmiana wyceny Elka z #177 sprawdzona w realnej aktywacji i cienkiej bibliotece A58; inne tutory otwarte |
@@ -79,20 +79,20 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/audyt-pr177-c-blok-bezkosztowy.test.js` | częściowo — realny bezkosztowy blok i antykontrole A41 |
 | `test/audyt-pr177-d-cuombajj-wycena.test.js` | częściowo — rzeczywiste obrażenia, aktywacja i wybór drugiego celu, częściowa nielegalność A44 |
 | `test/audyt-pr177-mana-wizard-koszt-aktywacji.test.js` | otwarte |
-| `test/audyt-typy-efektow-katalogu.test.js` | otwarte |
+| `test/audyt-typy-efektow-katalogu.test.js` | przejrzany diff — wzrost liczby rodzajów efektów o champion, realne przypadki A1/A26/A31/A40 |
 | `test/bot-modal-modes.test.js` | częściowo — porównanie kontr i odbicia Steel Sabotage na realnych kartach A52; inne tryby otwarte |
 | `test/bot-params.test.js` | otwarte |
 | `test/bot-scoring-snapshot.test.js` | otwarte |
-| `test/druki-druga-strona-i-uuid-obrazu.test.js` | otwarte |
+| `test/druki-druga-strona-i-uuid-obrazu.test.js` | przejrzany diff — wyłącznie komentarz o pustej liście snapshotów w toku |
 | `test/f-morbid-kreatura-zginela.test.js` | otwarte |
 | `test/fixtures/bot-scoring-snapshot.json` | otwarte |
 | `test/g-sea-gods-scorn-ranking.test.js` | częściowo — realne stun/finality/aury, wybór i rozstrzygnięcie A33 |
 | `test/h-incubator-nazwa-po-transformacji.test.js` | częściowo — porównany z realnymi Merciless Repurposing, Scholar, Jill i sesją stołu A32 |
-| `test/helpers/cr-numery-tabela.js` | otwarte |
+| `test/helpers/cr-numery-tabela.js` | przejrzany diff — data i 108.1, 303.4b, 702.72a porównane z plikiem CR o wskazanym SHA A62 |
 | `test/i-poswiecenie-stwora.test.js` | częściowo — rzeczywiste Spellkeeper Weird, hexproof, protekcja, niezniszczalność i wygnanie A34; inne zagrożenia otwarte |
 | `test/j-benevolent-blessing-kolor.test.js` | częściowo — realne ataki/bloki, kolor, obrażenia i Tail Slash A46 |
 | `test/k-rupture-spire-etb-oplata.test.js` | częściowo — realny Druid, opłata i odpowiedź Fiery Fall A48 |
-| `test/katalog-pole-plan.test.js` | otwarte |
+| `test/katalog-pole-plan.test.js` | przejrzany diff — wzrost liczby tokenów bez planu o Elf Warrior, A61/A62 |
 | `test/l-ambulatory-edifice-debuff.test.js` | częściowo — realne cele, decyzja płatności/refleks, shield i odpowiedź A51; wycena rzutu i inne przypadki otwarte |
 | `test/m-lorescale-coatl-obowiazkowy.test.js` | częściowo — Oracle, rzeczywisty Anticipate nie dobiera, Inspiration daje dwa obowiązkowe triggery A37 |
 | `test/m348-przerwanie-kreatora-many.test.js` | otwarte |
@@ -100,7 +100,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/o-plague-reaver-darowanie.test.js` | częściowo — rzeczywisty próg 12/13, Zoraline/finality, odpowiedzi i przekazanie A36; inne przypadki bota otwarte |
 | `test/o3-trigger-counter-removed.test.js` | częściowo — porównany z rzeczywistym Pummelerem i Trigonem w A29; syntetyczny nosiciel ogólny nie jest dowodem realnej karty |
 | `test/o5-tester-etykiety-logu.test.js` | częściowo — helper granice i rzeczywista etykieta Gila Courser A55 |
-| `test/obiekty-wsparcia-poza-rejestrem.test.js` | otwarte |
+| `test/obiekty-wsparcia-poza-rejestrem.test.js` | przejrzany diff — wyłącznie komentarz o zakończeniu batcha 71, strażnik bez zmian |
 | `test/panel-rozgrywka-tura-przeciwnika.test.js` | otwarte |
 | `test/pmssb10-ogon-wave-b2.test.js` | otwarte |
 | `test/pmssb12-pay-wave-a.test.js` | otwarte |
@@ -110,7 +110,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `test/pmssb8-loot-wave-a.test.js` | częściowo — Force Away: dobór/odrzut i warunek z realnymi kartami A59; inne loot otwarte |
 | `test/real-cards-batch65.test.js` | otwarte |
 | `test/real-cards-batch71.test.js` | częściowo — wybrane testy kart i mechanik, bez oceny całości |
-| `test/statusy-wpisow-katalogu.test.js` | otwarte |
+| `test/statusy-wpisow-katalogu.test.js` | przejrzany diff — wzrost liczby tokenów o Elf Warrior A61/A62 |
 | `tools/benchmark.mjs` | częściowo — cały diff #177 to tekst help; liczba 27 i 4 seedy sprawdzone bez uruchomienia benchmarku A55 |
 | `tools/collection-art-ids.csv` | częściowo — 625–634 zgodne z katalogiem/snapshotami A30 |
 | `tools/generate-plan-decks.mjs` | częściowo — wynik 31 talii identyczny z plikami A30, semantyka i strategia nie wyczerpane |
@@ -173,3 +173,5 @@ A59: Force Away, realny wybór celu bota i ferocious także przy odpowiedzi, mut
 A60: Frightful Delusion, realny stos, płatność i odrzut, bot oraz mutacja wagi; pozostałe przypadki otwarte.
 
 A61: Ambassador Oak z Ivy Lane Denizen, prawdziwy token i dwa wyzwolenia oraz niezależność ETB od źródła; nie pełny audyt batch 71.
+
+A62: dziesięć kart — porównanie ze snapshotami i instalacja rzeczywistej talii; zmienione strażniki katalogu, tokena, CSV i trzy nowe numery CR z #177. Zgodność ze snapshotem nie jest osobną weryfikacją aktualności źródła ani kompletnym dowodem mechanik.

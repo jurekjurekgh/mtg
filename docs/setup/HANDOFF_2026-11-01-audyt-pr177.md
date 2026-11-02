@@ -229,3 +229,6 @@ A60: bezpośredni diff #177 PMSSB-6, Frightful Delusion na rzeczywistym stosie, 
 
 
 A61: bezpośredni diff #177 batch 71, realny Ambassador Oak i token z Ivy Lane Denizen; 3 testy, mutacja koloru, related 52/52, fast 9508/9508, build 5639,2 kB. Slow po A57 268/268 na tym samym zachowaniu produkcyjnym; A61 poza slow. Kontynuować diff #177.
+
+
+A62: 10 kart #177, zgodność cech/tekstu ze snapshotami i rzeczywista instalacja; przegląd strażników, CSV i trzech dodanych numerów CR. Mutacja instalacji wykryta; related 92/92, fast 9518/9518, build 5639,2 kB. Slow po A57 268/268 na tym samym kodzie produkcyjnym; A62 poza slow. Audyt diffu trwa.
