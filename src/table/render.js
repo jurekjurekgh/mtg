@@ -4488,7 +4488,10 @@ function commandLabelBase(cmd, session, view) {
     }
     case 'resolve_trigger_order': {
       const targets = (cmd.targets ?? []).map(id => nameOfObjectId(id)).join(', ');
-      return `Najpierw: ${escapeHtml(session.nameOf(cmd.cardId))} — ${TRIGGER_EVENT_LABELS[cmd.trigger] ?? cmd.trigger ?? 'zdolność'}${targets ? ` → cel: ${targets}` : ''}`;
+      // Różne zdolności tego samego źródła (np. persist i nadany dies) muszą
+      // dać się rozpoznać, zanim kontroler wybierze ich kolejność.
+      const effects = (cmd.effectTypes ?? []).map(type => describeEffect({ type })).filter(Boolean).join(' + ');
+      return `Najpierw: ${escapeHtml(session.nameOf(cmd.cardId))} — ${TRIGGER_EVENT_LABELS[cmd.trigger] ?? cmd.trigger ?? 'zdolność'}${effects ? ` — ${escapeHtml(effects)}` : ''}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —

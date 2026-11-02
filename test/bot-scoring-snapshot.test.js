@@ -64,6 +64,13 @@ import {
  *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
  *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
  *     vs random 96.7%, vs aggro 78.3%; nie jest to pomiar obecnego drzewa.
+ *   - 0e1c042c… → abc34db7… (audyt #177 A74, APNAP): w @1000 po
+ *     Summary Judgment w turze 15 gracz random dostał nowy wybór kolejności
+ *     Elgaud Inquisitor / Selhoff Occultist. Wybrał Occultist jako pierwszy,
+ *     jak w poprzednim śladzie, lecz zużył losowanie; w turze 16 w bloku
+ *     zamiast declare_blockers wybrał pass_priority. Heurystyczny p1 wykonał
+ *     jeden dodatkowy pass (262→263 decyzje), scoreSum bez zmian: 2971.65.
+ *     Pozostałe pięć śladów bitowo identyczne; nie dowodzi to jakości bota.
  */
 
 test('golden-master: ślad bota == zamrożony fixture (bit w bit)', () => {

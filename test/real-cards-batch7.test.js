@@ -11,6 +11,7 @@ import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
 import { createAggroBot } from '../src/controllers/aggro-bot.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { gameObjectDataOf, setupCardMatch } from '../src/cards/materialize.js';
+import { commandLabel } from '../src/table/render.js';
 import { parseDeckText } from '../src/cards/deck-text.js';
 
 /**
@@ -512,6 +513,12 @@ test('interakcja: Fake Your Own Death na Puppeteer Clique — persist i grant ni
   state.objects.set('pc', Object.freeze({ ...state.objects.get('pc'), damage: 99 }));
   const result = execute(state, { type: 'pass_priority', playerId: 'p1' });
   assert.ok(result.ok);
+  const choices = playerView(state, 'p1').legalCommands.filter(c => c.type === 'resolve_trigger_order');
+  assert.equal(choices.length, 2);
+  const session = { nameOf: id => REGISTRY.get(id)?.name ?? id };
+  assert.notEqual(commandLabel(choices[0], session, playerView(state, 'p1')), commandLabel(choices[1], session, playerView(state, 'p1')), 'dwie zdolności tego samego stwora mają różne etykiety');
+  const fakeFirst = choices.find(c => c.effectTypes?.includes('return_to_battlefield_tapped'));
+  assert.ok(fakeFirst && execute(state, fakeFirst).ok);
   passBoth(state, 'p1'); // T6: dies triggery (persist + FYOD) ze stosu
   const copies = state.zones.battlefield.filter((id) => state.objects.get(id).cardId === 'puppeteer-clique');
   assert.equal(copies.length, 1, 'stwór wraca dokładnie raz (drugi efekt widzi już inną strefę)');
@@ -535,3 +542,21 @@ test('determinizm: ta sama sekwencja daje identyczny fingerprint', () => {
 
 // --- Talia i probe botów ----------------------------------------------------
 
+
+test('A74: przy persist i Fake Your Own Death można wybrać persist jako pierwszy', () => {
+  const state = mainPhase(game());
+  const clique = addRealCard(state, 'pc', 'puppeteer-clique', 'p1', 'battlefield');
+  addRealCard(state, 'fake', 'fake-your-own-death', 'p1', 'hand');
+  addMana(state, 'p1', 2);
+  assert.ok(execute(state, { type: 'cast_spell', playerId: 'p1', objectId: 'fake', targets: [clique.id] }).ok);
+  passBoth(state, 'p1');
+  state.objects.set('pc', Object.freeze({ ...state.objects.get('pc'), damage: 99 }));
+  assert.ok(execute(state, { type: 'pass_priority', playerId: 'p1' }).ok);
+  const choice = playerView(state, 'p1').legalCommands.find(c => c.type === 'resolve_trigger_order' && c.effectTypes?.includes('return_with_counter'));
+  assert.ok(choice && execute(state, choice).ok);
+  passBoth(state, 'p1');
+  const copies = [...state.objects.values()].filter(o => o.cardId === 'puppeteer-clique' && o.zone === 'battlefield');
+  assert.equal(copies.length, 1);
+  assert.equal(copies[0].counters['-1/-1'], 1, 'persist wrócił jako pierwszy');
+  assert.ok(state.zones.battlefield.some(id => state.objects.get(id).cardId === 'token_treasure'));
+});
