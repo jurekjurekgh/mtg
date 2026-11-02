@@ -6,7 +6,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 
 | Plik z diffu #177 | Stan audytu |
 |---|---|
-| `README.md` | otwarte |
+| `README.md` | częściowo — aktualny status oraz liczności dziesięciu zmienionych talii A47; pozostała treść otwarta |
 | `decks/alara.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
 | `decks/dominaria-brg.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
 | `decks/kaldheim.txt` | częściowo — identyczna z bieżącym generatorem A30, bez oceny strategii |
@@ -143,3 +143,5 @@ A44: Cuombajj Witches, prawdziwe obrażenia, wybór przeciwnika, dwukrotne wskaz
 A45: Tail Slash na rzeczywistych kartach, RED→GREEN braku uwzględnienia ochrony przed źródłem w wycenie bite; pozostałe warianty otwarte.
 
 A46: flash Benevolent Blessing, prawdziwy blok i atak, kolor względem źródła Tail Slash; pozostałe stany walki otwarte.
+
+A47: tabela dziesięciu zmienionych talii i aktualizacja nieaktualnego punktu zaczepienia README, z zachowaniem historycznych wyników #177.

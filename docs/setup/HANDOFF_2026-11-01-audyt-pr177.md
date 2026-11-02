@@ -184,3 +184,6 @@ A46: 5 rzeczywistych testów Benevolent Blessing, walka i Tail Slash; pokrewne 2
 
 
 Uzupełnienie: slow po A45 268/268 na tym samym kodzie produkcyjnym A46; test A46 poza slow.
+
+
+A47: sprawdzono tabelę 10 zmienionych talii i zaktualizowano status README, zachowano historię; pokrewne 40/40, fast 9444/9444, build 5638,0 kB, slow po A45 268/268 na tym samym kodzie produkcyjnym. Audyt #177 otwarty.

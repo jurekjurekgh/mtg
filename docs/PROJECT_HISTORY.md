@@ -18657,3 +18657,6 @@ Audyt #177 A46: prawdziwe deklaracje walki, kolor ochrony Benevolent Blessing i 
 
 
 Slow po A45: 268/268, po zmianie produkcyjnej wyceny bite.
+
+
+Audyt #177 A47: sprawdzono tabelę talii i status README, fast 9444/9444, build 5638,0 kB. Audyt trwa.
