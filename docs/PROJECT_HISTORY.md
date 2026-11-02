@@ -18720,3 +18720,5 @@ Audyt #177 A66: utrwalono LKI poświęconych tokenów i naprawiono regresję Mor
 Audyt #177 A67: rzeczywisty Somberwald Spider i powrót przez Unbreakable Bond potwierdzają drugi skutek regresji Morbid; fast 9545/9545. Audyt trwa.
 
 Audyt #177 A68: naprawiony starszy błąd Scorn na hoście i wybranej aurze; fast 9555/9555. Audyt trwa.
+
+Audyt #177 A69: rzeczywisty Converge w pięciu ścieżkach płatności, w tym trzy darmowe rzuty; fast 9560/9560. Audyt trwa.

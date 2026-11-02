@@ -48,7 +48,7 @@ Zakres: zmiany PR #177 i ich realne interakcje z kartami z katalogu. Bez nowych 
 | `src/engine/fingerprint.js` | częściowo — rzeczywista decyzja championa oraz oba wybory w replay A31; inne pola otwarte |
 | `src/engine/game-state.js` | częściowo — Morbid, champion (A1/A4/A26); Morbid i unearth/token A66 oraz faktyczne wejście Spider A67; madness A27/A28: priorytet i wybór kolejności w badanych przypadkach naprawione; pełne APNAP otwarte; Final Parting privacy/tasowanie A50 |
 | `src/engine/permanents.js` | częściowo — nazwy rzeczywistego tokena i DFC A32; prewencja i reszta otwarte |
-| `src/engine/resources.js` | częściowo — Converge (A3); zdarzenie ofiary tokena many zaopatrzono w migawkę A66, bez osobnego realnego scenariusza tej ścieżki |
+| `src/engine/resources.js` | częściowo — Converge (A3), rzut płatny/darmowy i flashback na rzeczywistych kartach A69; zdarzenie ofiary tokena many zaopatrzono w migawkę A66, bez osobnego realnego scenariusza tej ścieżki |
 | `src/engine/spells.js` | częściowo — nazwy transformu w scenariuszach realnych kart/tokena A32; koszt Village Rites i migawka tokena A66; inne ścieżki otwarte |
 | `src/engine/state-based.js` | częściowo — token wygnany przez championa, anihilacja Magmy A29/A31; migawka ofiary Sagi A66 bez osobnego realnego testu tej ścieżki; inne ścieżki otwarte |
 | `src/engine/triggers.js` | częściowo — Morbid, upkeep Curse (A2/A4); zdarzenia śmierci/token/unearth A66; counter removal częściowo: realny Pummeler/Trigon/Rockslide (A29); inne ścieżki otwarte |
@@ -185,3 +185,5 @@ A65: odtworzone wszystkie 6 śladów golden-master przed i po batchu, sprostowan
 A66–A67: token, finality i unearth — sprawdzono obie istniejące karty Morbid, Caravan Vigil i Somberwald Spider, zarówno rzut Spider, jak i Unbreakable Bond; wykryto regresję #177 i starszy defekt tokena. Pozostałe ścieżki poza opisanym zakresem są otwarte.
 
 A68: realny Sea God’s Scorn i Curiosity/Feedback: odbicie wybranych aur i hosta niezależnie od kolejności, rzeczywisty wybór bota i kontrola po Magic Damper; wada sprzed #177. Generyczna jednoczesność/LKI dla wszystkich efektów pozostaje otwarta.
+
+A69: Converge Kaleidoscorch — rzut płatny, flashback oraz darmowe rzuty Appraiser/Halo Forager/Epic Experiment; dwie mutacje wykryte. Nie badano wszystkich możliwych mechanik darmowego rzutu.
