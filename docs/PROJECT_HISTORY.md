@@ -18556,3 +18556,7 @@ Sześć nowych testów rzeczywistego Tail Slash i Rumbling Rockslide z nielegaln
 ### 2026-11-01 — audyt #177, zagnieżdżony auto-tap a convoke
 
 Jednoznaczny auto-tap kosztu Apprentice Wizarda mógł zużyć ożywioną Wyspę zarezerwowaną do convoke Kavu. Podrzędny kreator zapobiega naruszeniu rezerwacji, z kontrolami puli, przodka i anulowania. 5 testów, pokrewne 63/63, fast 9283/9283, build 76 modułów / 5629,1 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, bezbarwne źródła w kreatorze
+
+Kreator aktywacji Kozilek's Shriekera ukrywał źródła `{C}` mimo legalnej płatności. Filtr i etykieta używają predykatu silnika; 6 testów, pokrewne 59/59, fast 9289/9289, build 76 modułów / 5629,3 kB. Audyt trwa.

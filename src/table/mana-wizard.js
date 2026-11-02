@@ -739,7 +739,9 @@ export function shouldOpenManaWizard({
  */
 export function guideManaSources(sources, missingColors, genericMet) {
   const missing = Array.isArray(missingColors) ? missingColors : [];
-  const covers = (src) => (src.colors ?? []).some((c) => missing.includes(c));
+  // Ta sama reguła co solver i silnik: [] to bezbarwna jednostka {C},
+  // a nie pusta lista, której `includes` nigdy nie dopasuje do symbolu C.
+  const covers = (src) => missing.some((color) => unitCoversRequirement(src.colors ?? [], [color]));
   // Sortowanie jest STABILNE (JS sort), więc w obrębie grupy zostaje porządek
   // stołu — kreator nie przestawia źródeł bez powodu.
   const ordered = [...(sources ?? [])].sort((a, b) => Number(covers(b)) - Number(covers(a)));
@@ -807,7 +809,7 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   const genericAfterDelve = Math.max(0, genericNeeded - selectedDelveCount);
   const genericMet = (pool - covered) >= genericAfterDelve;
   const offered = guideManaSources(offeredRaw, missingColors, genericMet)
-    .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
+    .map((src) => ({ ...src, coversMissing: missingColors.some((color) => unitCoversRequirement(src.colors ?? [], [color])) }));
   return {
     pool,
     manaNeeded,
@@ -884,7 +886,7 @@ export function renderManaWizard(host, model, {
     const cost = source.activationCost
       ? ` — koszt aktywacji ${manaSymbolsHtml(activationCostSymbols(source.activationCost))}`
       : '';
-    const covers = source.coversMissing ? ` — pokrywa ${missingLabel((source.colors ?? []).filter((c) => (model.missingColors ?? []).includes(c)))}` : '';
+    const covers = source.coversMissing ? ` — pokrywa ${missingLabel((model.missingColors ?? []).filter((color) => unitCoversRequirement(source.colors ?? [], [color])))}` : '';
     // M292: wiersz rysuje TEN SAM komponent co kreatory wyboru i steppery
     // (`src/table/picker.js`, `kind: 'button'`) — wspólne 44 px celu dotyku i
     // wspólna etykieta, zero osobnej funkcji wizualizującej dla tego ekranu.
