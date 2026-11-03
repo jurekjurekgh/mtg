@@ -359,3 +359,5 @@ A97 — doprecyzowanie setupu: karta i aktywacje/Sciony są prawdziwe, wejście 
 ### A98 — kwarantanna otwartego APNAP także w Spellbomb
 
 `4ef585c`: 8 dodatkowych flagowanych RED w dopłacie Panic Spellbomb + realne Holdout i Scion, Crows/Selhoff u obu graczy, orientacje aktywnego i płacącego. Cztery pokazują przedwczesne umieszczanie triggerów, cztery błędne wybory/kolejność po płatności. Wymuszenie `AUDIT_A98_ENFORCE=1 node --test test/audyt-pr177-a98-spellbomb-apnap.test.js`. Baza/#177 nie otwiera okna A88, więc nie dowiedziono identycznego historycznego objawu. Pule setupu przez `addMana`, turę i priorytet ustawiono pomocniczo przez `jumpToStep`/stan. Domyślnie A84 + A98 = 16 skip, nie GREEN; A97 fast 9801/8 skip pochodzi sprzed A98, nowy fast/related w toku. Produkcja bez nowej zmiany, A84 nadal otwarte.
+
+A98 powiązane 630 pass + 16 skip, 0 fail; build bez zmian 77/5673,2 kB, A97 slow 268/268 przed dodaniem samego testu kwarantanny, nowy fast w toku.
