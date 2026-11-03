@@ -226,3 +226,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A89** `controllers/{mana-offer-guards,heuristic-bot,random-bot,aggro-bot}.js`, `audyt-pr177-a89-bot-payment.test.js`: regresja dopłat po A80/A81, bot musi najpierw aktywować źródło albo odmówić.
 
 - **A88 częściowo GREEN** `engine/{mana-sources,triggers,game-state}.js`, `audyt-pr177-a88-single-manual-color.test.js`: wąska dopłata jednym kolorem poprzez legalną zdolność {T} i koszt stwora; kreator A85 nadal otwarty.
+
+- **A90** `table/{main,mana-wizard}.js`, `audyt-pr177-a90-wizard-tap-cost.test.js`, `audyt-pr177-a85-holdout-pay.test.js`: źródło, potem osobny stwór (bez kombinacyjnych wierszy), legalność sprawdzana ponownie, podłączenie modelu A87. Ograniczone do kształtu A88.
