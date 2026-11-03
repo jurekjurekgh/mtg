@@ -18774,3 +18774,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A94 fast 9779 + 8 skip, slow 268, powiązane 608 + 8 skip, build 5673,1 kB; A95/A96 `41c4591` ograniczona poprawka Ward i Izzet Charm, podzbiór 131/131.
 
 - 2026-11-03 — A95/A96 fast 9795 + 8 skip, slow 268, powiązane 624 + 8 skip/build 5673,2; A97 `cfe9dae` dopuszcza drugi Scion do echo, podzbiór 137/137.
+
+- 2026-11-03 — A97 powiązane 630 pass + 8 skip i build 77/5673,2 kB; fast/slow w toku.
