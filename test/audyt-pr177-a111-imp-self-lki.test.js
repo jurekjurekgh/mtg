@@ -129,3 +129,18 @@ for (const controller of ['p1', 'p2']) {
     assert.ok(fired.every((e) => e.playerId === controller));
   });
 }
+
+// Syntetycznie pozbawiony zdolności Imp zostaje wygnany z finality;
+// żywy drugi Imp obserwuje odejście, mimo że „dies” nie zachodzi.
+for (const controller of ['p1', 'p2'])
+  test(`A111: żywy Imp widzi wygnanie innego permanentu z finality (${controller})`, () => {
+    const state = scene(controller, { second: true, stripped: true, finality: true });
+    castAndResolve(state);
+    const fired = impEvents(state);
+    assert.equal(fired.length, 1);
+    assert.equal(fired[0].objectId, 'second');
+    assert.equal(fired[0].playerId, controller);
+    assert.ok(
+      [...state.objects.values()].some((o) => o.cardId === 'nefarious-imp' && o.zone === 'exile'),
+    );
+  });
