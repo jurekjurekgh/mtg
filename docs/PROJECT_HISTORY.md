@@ -18756,3 +18756,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A85 OTWARTE: Panic Spellbomb i Holdout, 3 reprodukcje RED pod flagą i 1 GREEN; brak poprawki przed zaprojektowaniem bezpiecznej oferty i wyboru kosztu.
 
 - 2026-11-03 — A86: kreator sprawdza kolory automatu; 4 GREEN, mutacje 2/1 RED, pełne paczki w toku; A85 nadal otwarte.
+
+- 2026-11-03 — A86 9701 pass + 11 skip, slow 268/268, build 77/5662,1 kB; A87 solver: 5 GREEN (syntetyczny kontrakt), A88 w RED.
