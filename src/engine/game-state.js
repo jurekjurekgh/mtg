@@ -11,7 +11,7 @@ import { initializeResources, beginTurn, castAuraSpell, castPermanent, convokePa
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { RIOT_MODES, riotCountOf, queueRiotEntry, applyRiotOnEntry } from './riot.js';
 import { parseManaCost, coloredPipsOf, matchColorRequirements } from './mana-cost.js';
-import { allControlledManaSources, getSourceForObject, isActivatedManaAbility } from './mana-sources.js';
+import { allControlledManaSources, getSourceForObject, isActivatedManaAbility, isSingleManualTapColorAbility } from './mana-sources.js';
 
 function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = {}, offerUnits = null) {
   const costStr = MANA_COSTS[cardId];
@@ -2403,6 +2403,17 @@ function paymentReachableMana(state, playerId) {
   // `producibleMana` — `manualManaOfferUnits` je pomija.
   return producibleMana(state, playerId, null, {}, [])
     + manualManaOfferUnits(state, playerId).amount;
+}
+
+// A88: ograniczony dowód osiągalności pojedynczego kolorowego pipa.
+// Nie dodajemy jednostki do automatu: ta aktywacja zastępuje użycie źródła
+// i tapuje jawnie wybranego stwora. Pozostałe/łączone koszty wymagają
+// osobnego planowania; nie mogą korzystać z tego skrótu.
+function singleManualTapColorPayable(state, playerId, amount, pips) {
+  if (amount !== 1 || pips.length !== 1 || pips[0].length !== 1) return false;
+  const color = pips[0][0];
+  return legalManaAbilities(state, playerId).some(({ ability, objectId, tapCreatureId }) =>
+    tapCreatureId && tapCreatureId !== objectId && isSingleManualTapColorAbility(ability, color));
 }
 
 // Audyt PR #156 (O1, klasa L48): JEDEN odczyt eligibilnych X dla OFERTY
@@ -8443,8 +8454,9 @@ export function playerView(state, playerId) {
     if ((optionalPayTrigger.payEnergy ?? 0) <= energyForPayer
       && (optionalPayTrigger.payLife ?? 0) <= payerLife
       && (!counterCost || (counterSource?.zone === 'battlefield' && hasCounter(counterSource, counterCost.counter, counterCost.amount ?? 1)))
-      && (optionalPayTrigger.payMana ?? 0) <= producibleMana(state, playerId, null, {}, optionalPips) + manualUnits.amount
-      && (!optionalPips.length || canPayColoredCostForOffer(state, playerId, optionalPips, manualUnits.units))) {
+      && (((optionalPayTrigger.payMana ?? 0) <= producibleMana(state, playerId, null, {}, optionalPips) + manualUnits.amount
+        && (!optionalPips.length || canPayColoredCostForOffer(state, playerId, optionalPips, manualUnits.units)))
+        || singleManualTapColorPayable(state, playerId, optionalPayTrigger.payMana ?? 0, optionalPips))) {
       legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
     }
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));

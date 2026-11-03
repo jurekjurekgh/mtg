@@ -501,6 +501,29 @@ export function hasPotentialManaAbility(state, playerId) {
   });
 }
 
+/** Wąski kształt A88: dokładnie {T} + tapnięcie stwora i jeden kolorowy
+ * add_mana. Sprawdzanie legalnego obiektu kosztu odbywa się w ofercie. */
+export function isSingleManualTapColorAbility(ability, color) {
+  const cost = ability?.cost ?? {};
+  if (!ability || !isActivatedManaAbility(ability) || cost.tap !== true || cost.tapCreature !== true
+    || Object.keys(cost).some((key) => !['tap', 'tapCreature'].includes(key) && cost[key])) return false;
+  const effects = Array.isArray(ability.effect) ? ability.effect : [ability.effect];
+  if (effects.length !== 1) return false;
+  const effect = effects[0];
+  return effect?.type === 'add_mana' && (effect.amount ?? 1) === 1
+    && Array.isArray(effect.colors) && effect.colors.includes(color)
+    && Object.keys(effect).every((key) => ['type', 'amount', 'colors'].includes(key));
+}
+
+/** Konserwatywna bramka okna, celowo nie rozstrzyga legalności kosztu. */
+export function hasPotentialSingleManualTapColor(state, playerId, color) {
+  return state.zones.battlefield.some((id) => {
+    const source = state.objects.get(id);
+    return source?.controllerId === playerId
+      && activatableAbilities(state, source).some((ability) => isSingleManualTapColorAbility(ability, color));
+  });
+}
+
 /**
  * F (zgłoszenie z gry 2026-09-22 — Pristine Talisman): „Ten artefakt produkuje
  * manę, ale także dodaje 1 life. Nie powinien być traktowany jak zwykły

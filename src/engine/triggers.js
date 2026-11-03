@@ -19,7 +19,7 @@ import { changeLife, setPlayerSpeed } from './players.js';
 import { CARD_TYPES, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
-import { hasPotentialManaAbility } from './mana-sources.js';
+import { hasPotentialManaAbility, hasPotentialSingleManualTapColor } from './mana-sources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -345,7 +345,9 @@ function canPayTrigger(state, controllerId, trigger, source = null, allowManualM
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
   if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)
     && !(allowManualMana && hasPotentialManaAbility(state, controllerId))) return false;
-  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
+  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)
+    && !(allowManualMana && (trigger?.payMana ?? 0) === 1 && payReqs.length === 1
+      && hasPotentialSingleManualTapColor(state, controllerId, payReqs[0][0]))) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
   // Batch 67 (Sentry Bot, CR 122.1): „you may pay {E}{E}{E}" — opcjonalna
