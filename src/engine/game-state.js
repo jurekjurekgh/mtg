@@ -2056,7 +2056,8 @@ function startMadnessTriggerOrder(state) {
 // Ograniczony batch: triggery śmierci bez celu albo z jednym obowiązkowym
 // celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
 // innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
-// również koszt rzutu i niezawieszone obrażenia w `resolve_combat`.
+// również koszt rzutu, niezawieszone obrażenia `resolve_combat` i koszt
+// niemanowej aktywacji bez odrzucania.
 // Wybory kontrolerów są APNAP:
 // najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
 function advanceDeathTriggerBatch(state) {
@@ -2093,8 +2094,16 @@ function advanceDeathTriggerBatch(state) {
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies'].includes(name);
 
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo) {
-  if (!['pass_priority', 'cast_spell', 'resolve_combat'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
+  if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
+  if (cmd.type === 'activate_ability') {
+    // Nie wchodzimy w płacenie maną ani koszt odrzucenia: tylko faktycznie
+    // zakolejkowana niemanowa zdolność po zakończeniu jej kosztów.
+    const activation = events.find(e => e.type === 'ability_activated' && e.onStack && e.stackEntryId);
+    const entry = activation && state.objects.get(activation.stackEntryId);
+    const cost = entry?.activatedEntry?.ability?.cost;
+    if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
+  }
   const targets = state.pendingTriggerTargets;
   if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
     || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
