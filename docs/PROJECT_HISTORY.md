@@ -18736,3 +18736,5 @@ Audyt #177 A74: ograniczony batch APNAP dla triggerów śmierci; oryginalne 4 TO
 Uwagi właściciela 2026-11-02: Man-o'-War nie jest bezmyślnie rzucany bez legalnego stwora przeciwnika; Austere Command wybiera 2 z 4 checkboxami; wspólna blokada strukturalnych list kombinacji, testy i mutacje. Bez twierdzenia o wykryciu dowolnego nieoznaczonego kodowania skalarnego.
 
 Doprecyzowanie: Austere przy Epic Experiment i Vaan także korzysta z czterech składników; fast 9611 pass + 1 TODO A74, testy powiązane 248/248, slow 268/268, build 77/5656,3 kB. Audyt #177 pozostaje otwarty.
+
+Audyt #177 A75: Polluted Dead i Circle of the Land Druid — starszy błąd APNAP celów lądowych; ograniczona naprawa z jawną granicą Ward. Fast 9619/9619, pokrewne 189/189; audyt trwa.

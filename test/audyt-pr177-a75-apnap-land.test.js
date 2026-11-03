@@ -6,6 +6,8 @@ import { createCardRegistry } from '../src/cards/card-data.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
+import { createHeuristicBot } from '../src/controllers/heuristic-bot.js';
+import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 const reg=createCardRegistry();
 function put(s,id,card,zone,player){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:player,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:player});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
@@ -49,4 +51,13 @@ test('A75 kontrola: jeden ląd w grobie został automatycznie wybrany, reszta AP
  let orders=view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order');act(s,orders.find(c=>c.cardId==='murder-of-crows'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId===other));
  orders=view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order');assert.equal(orders.length,3);act(s,orders.find(c=>c.cardId==='circle-of-the-land-druid'));orders=view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order');act(s,orders.find(c=>c.cardId==='murder-of-crows'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId===active));
  const stack=s.zones.stack.map(id=>s.objects.get(id));assert.deepEqual(stack.at(-1).triggerEntry.targets,['grave-0']);assert.equal(s.turn.priorityPlayerId,active);pass(s);pass(s);assert.ok([...s.objects.values()].some(o=>o.cardId==='basic-forest'&&o.zone==='hand'&&o.ownerId===other));
+});
+
+for(const victim of ['polluted-dead','circle-of-the-land-druid'])test(`A75: bot i replay wyborów lądowych (${victim})`,()=>{
+ const {s}=scene('p1',victim);const bot=createHeuristicBot({seed:177,randomness:0,lookahead:0,registry:reg});let count=0;
+ while(count<12){const v=view(s);if(!v.legalCommands.some(c=>c.type==='resolve_trigger_order'||c.type==='resolve_trigger_target'))break;
+  const cmd=bot.chooseCommand(v);assert.ok(['resolve_trigger_order','resolve_trigger_target'].includes(cmd.type),JSON.stringify(cmd));act(s,cmd);count++;
+ }
+ assert.equal(count,6);const replay=replayFromState(s),verified=verifyReplay({...replay,commands:replay.commands.slice(-count)},()=>scene('p1',victim).s,execute);
+ assert.ok(verified.deterministic);assert.ok(verified.results.every(r=>r.ok));assert.equal(stateFingerprint(verified.state),stateFingerprint(s));
 });

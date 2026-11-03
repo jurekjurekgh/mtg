@@ -267,3 +267,5 @@ A74 utrwalono: ograniczone APNAP naprawia oryginalny przypadek A71, ale `Pollute
 Uzupełnienie testów: rzeczywiste Magic Damper z hexproof i produkcyjny router+DOM Austere, skorelowane pola tablic wyboru; fast 9611 pass + 1 TODO, pokrewne ze slow UI/session 246/246, build 77/5656,3 kB. Slow 268/268 przed zaostrzeniem strażnika, pełny slow po tym zaostrzeniu 268/268.
 
 Austere także przez Epic Experiment oraz okno Vaan: testy routingu RED→GREEN, bez list par, legalna odmowa osobno; fast 9611 pass + 1 TODO, related 248/248, build 77/5656,3 kB. Pełny slow ostatniego kodu 268/268.
+
+A75: Polluted Dead / Circle of the Land Druid — cele lądów w APNAP; cztery RED na bazie #177, #177 i przed fixem, ograniczone GREEN w obu orientacjach, pojedynczy auto-cel, obce/nielegalne cele, dwa testy Ward granicy, bot i replay dla obu kart. Mutacje wykryte 5+1. Fast 9619/9619 bez TODO, pokrewne 189/189, build 77/5656,8 kB; slow i ponowny fast po dodaniu replay w toku. APNAP z Ward, mieszanymi decyzjami i innymi checkpointami nadal otwarte; audyt trwa.
