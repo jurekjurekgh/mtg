@@ -124,6 +124,12 @@ Checkpoint nie zastępuje pełnej bramy — jej wynik zapisz kolejnym commitem.
   GitHub w Arenie i ponów push. **Nigdy nie proś o token w czacie.**
 - **`gh pr edit` bywa odrzucane** błędem GraphQL o *Projects (classic)*.
   Obejście: `gh api -X PATCH repos/<owner>/<repo>/pulls/<nr> -f title=… -F body=@plik`.
+- **Listy GitHuba bywają capped, a diff może zawierać zagnieżdżone patche.**
+  `gh pr view --json files,commits` ucina do 100; REST `pulls/<nr>/commits`
+  zwraca maks. 250 pierwszych — pełną liczbę commitów bierz z obiektu PR,
+  pliki z paginacji `pulls/<nr>/files`. Dzieląc `gh pr diff`, kotwicz
+  `^diff --git ` i porównaj z listą REST: wewnętrzne `+diff --git` w plikach
+  `.patch` nie są plikami PR (L190).
 - **Komunikaty commitów pisz do pliku poza repozytorium** (np. `/home/user/msg.txt`),
   nigdy w katalogu repo — inaczej wpadną do commita.
 - Pracuj wyłącznie na gałęzi sesji; nigdy nie pushuj do `main` (ADR 0007).

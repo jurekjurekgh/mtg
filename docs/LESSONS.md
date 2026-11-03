@@ -2265,3 +2265,13 @@ startującej z pustą pamięcią.
 **Strażnik:** `test/zgloszenie-m2-wyciszenie-kombinacje-celow.test.js`.
 
 → narracja: `docs/LESSONS_PRZYPADKI.md` (L189)
+
+## L190 (2026-11-03) — Mapa diffu PR musi kotwiczyć nagłówki i porównać z REST, bo patch może zawierać patch
+
+**Przypadek:** parser diffu #178 dał 197 wpisów z 194 plików, bo łapał
+`+diff --git` wewnątrz patchy; listy commitów/view też mają limity.
+**Reguła:** inwentarz bierz z `pulls/<nr>/files`; dziel diff przez
+`^diff --git ` i porównaj zbiór z REST; pełną liczbę commitów czytaj z obiektu PR.
+**Strażnik:** `docs/setup/ENVIRONMENT.md` §3; mapa #178 ma 194 wiersze.
+
+→ narracja: `docs/LESSONS_PRZYPADKI.md` (L190)
