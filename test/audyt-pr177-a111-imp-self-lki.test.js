@@ -144,3 +144,52 @@ for (const controller of ['p1', 'p2'])
       [...state.objects.values()].some((o) => o.cardId === 'nefarious-imp' && o.zone === 'exile'),
     );
   });
+
+// Rzeczywiste niszczenie efektem oraz poświęcenie jako koszt; obie ścieżki
+// z finality to odejście, lecz nie „dies”. Selhoff jest dodatkową kontrolą.
+for (const controller of ['p1', 'p2'])
+  for (const method of ['destroy', 'sacrifice'])
+    test(`A111: ${method} z finality wyzwala odejście, nie dies (${controller})`, () => {
+      const state = scene(controller, { second: true, stripped: true, finality: true });
+      put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
+      if (method === 'destroy') {
+        const shooter = other(controller);
+        put(state, 'terminal', 'terminal-agony', shooter, 'hand');
+        addMana(state, shooter, 4, { colors: ['B', 'R'] });
+        act(
+          state,
+          view(state).legalCommands.find(
+            (c) =>
+              c.type === 'cast_spell' && c.objectId === 'terminal' && c.targets?.includes('imp'),
+          ),
+        );
+        pass(state);
+        pass(state);
+      } else {
+        state.turn = jumpToStep(state.turn, 'main1', controller);
+        state.turn.activePlayerId = state.turn.priorityPlayerId = controller;
+        put(state, 'rites', 'village-rites', controller, 'hand');
+        addMana(state, controller, 1, { colors: ['B'] });
+        act(
+          state,
+          view(state).legalCommands.find(
+            (c) =>
+              c.type === 'cast_spell' && c.objectId === 'rites' && c.sacrificeTargetId === 'imp',
+          ),
+        );
+      }
+      const fired = impEvents(state);
+      assert.equal(fired.length, 1);
+      assert.equal(fired[0].objectId, 'second');
+      assert.equal(fired[0].playerId, controller);
+      assert.equal(
+        state.events.filter(
+          (e) => e.type === 'ability_triggered' && e.cardId === 'selhoff-occultist',
+        ).length,
+        0,
+        'wygnanie nie jest śmiercią',
+      );
+      assert.ok(
+        [...state.objects.values()].some((o) => o.cardId === 'nefarious-imp' && o.zone === 'exile'),
+      );
+    });
