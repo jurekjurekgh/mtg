@@ -222,3 +222,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 
 - **A87 przygotowanie** `table/mana-wizard.js`, `audyt-pr177-a87-wizard-cost-objects.test.js`: dopasowanie kosztów do wolnych obiektów na syntetycznym modelu z rzeczywistych ofert, nie podłączono do źródeł A85.
 - **A88 RED** `audyt-pr177-a88-single-manual-color.test.js`: ograniczona silnikowa dopłata z Holdouta; UI A85 osobno.
+
+- **A89** `controllers/{mana-offer-guards,heuristic-bot,random-bot,aggro-bot}.js`, `audyt-pr177-a89-bot-payment.test.js`: regresja dopłat po A80/A81, bot musi najpierw aktywować źródło albo odmówić.

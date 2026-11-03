@@ -18758,3 +18758,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A86: kreator sprawdza kolory automatu; 4 GREEN, mutacje 2/1 RED, pełne paczki w toku; A85 nadal otwarte.
 
 - 2026-11-03 — A86 9701 pass + 11 skip, slow 268/268, build 77/5662,1 kB; A87 solver: 5 GREEN (syntetyczny kontrakt), A88 w RED.
+
+- 2026-11-03 — A87: 5 GREEN na syntetycznym kontrakcie, fast 9706 + 11 skip, slow 268/268; A89: poprawa regresji botów po A80/A81, fast 9717 + 14 skip, slow w toku.
