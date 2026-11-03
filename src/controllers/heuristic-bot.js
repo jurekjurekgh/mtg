@@ -30,7 +30,7 @@ function koloryZrodlaWidoku(object) {
 import { coloredPipsOf, matchColorRequirements, unitCoversRequirement } from '../engine/mana-cost.js';
 // N: wspólna miara automatu płatności dla kontrolerów (cast osiągalny tylko
 // po manualnej produkcji many bot pomija, jak przy płatnościach K).
-import { autoManaUnits as autoManaJednostki, restrictedManaUnits as ograniczoneManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable } from './mana-offer-guards.js';
+import { autoManaUnits as autoManaJednostki, restrictedManaUnits as ograniczoneManaJednostki, castBeyondAutoMana as castNieopłacalnyAuto, hasManaActivationOffer as castFiltersApplicable, triggerPaymentBeyondAuto } from './mana-offer-guards.js';
 import { POISON_LOSS_LIMIT } from '../engine/state-based.js';
 import { expandManaPool } from '../engine/resources.js';
 import { TURN_STEPS } from '../engine/turn.js';
@@ -1992,7 +1992,7 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
     // N: jednostki automatu liczymy raz per decyzja (filtr castów poniżej).
     const unitsAuto = castFiltersApplicable(view) ? autoManaJednostki(view) : null;
     const candidates = legal.filter((cmd) => botMayPayCreatureSacrificeCost(view, cmd)
-      && !(unitsAuto != null && castNieopłacalnyAuto(view, cmd, unitsAuto)));
+      && !(unitsAuto != null && (castNieopłacalnyAuto(view, cmd, unitsAuto) || triggerPaymentBeyondAuto(view, cmd, unitsAuto))));
     // Aktywny protokół zawsze wystawia bezpieczne wyjście (pass/decline/done,
     // a co najmniej concede). Gdyby ten inwariant kiedyś pękł, jawny błąd jest
     // bezpieczniejszy niż ciche złamanie twardego zakazu właściciela.
@@ -14149,6 +14149,21 @@ export function createHeuristicBot({ seed, randomness = 0, lookahead = 0, oppone
             (c.type === 'resolve_counter_pay_choice' || c.type === 'resolve_ward_pay_choice')
             && c.pay === true && (c.cost ?? 0) > manaUnitsOfView(view).length);
           if (pendingPay && !redundantSpellCopyPayment(view, pendingPay)) return finish(84);
+          // Dopłaty A80/A81: w przeciwieństwie do filtra castów oferta
+          // pay:true może wymagać ręcznej many. Zachowaj decyzję odmowy, gdy
+          // payoff jest niekorzystny; przy niedoborze generycznym użyj jawnej
+          // aktywacji przed komendą płatności. Kolory muszą już być pokryte.
+          const triggerPay = (view.legalCommands ?? []).find((c) =>
+            triggerPaymentBeyondAuto(view, c));
+          if (triggerPay) {
+            const units = [...autoManaJednostki(view), ...ograniczoneManaJednostki(view)];
+            const pips = (triggerPay.costColors ?? []).map((color) => [color]);
+            const decline = (view.legalCommands ?? []).find((c) => c.type === triggerPay.type && c.pay === false);
+            if ((!pips.length || matchColorRequirements(units, pips)) && decline
+              && scoreCommand(view, triggerPay) > scoreCommand(view, decline)) {
+              return finish(scoreCommand(view, triggerPay));
+            }
+          }
           // E6/A1: „zagrawalne" liczone po TIMINGU (manaUnlockCandidates) —
           // sorcery w ręce nie jest zagrawalne w cudzym upkeepie, więc tu
           // działa ta sama kara co przy pustej ręce.

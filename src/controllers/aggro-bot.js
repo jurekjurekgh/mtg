@@ -10,7 +10,7 @@
  * (jako `createAggroController`), żeby benchmark i przyszłe konfiguracje
  * przeciwników mogły importować go z katalogu produkcyjnych kontrolerów.
  */
-import { autoManaUnits, castBeyondAutoMana, hasManaActivationOffer } from './mana-offer-guards.js';
+import { autoManaUnits, castBeyondAutoMana, hasManaActivationOffer, triggerPaymentBeyondAuto } from './mana-offer-guards.js';
 
 export function createAggroBot() {
   const byType = (view, type) => view.legalCommands.filter((cmd) => cmd.type === type);
@@ -69,7 +69,7 @@ export function createAggroBot() {
       for (const type of simple) {
         const found = (CASTY_AGGRO.has(type)
           ? filterBeyondAuto(view, byType(view, type))
-          : byType(view, type))[0];
+          : byType(view, type)).filter((cmd) => !hasManaActivationOffer(view) || !triggerPaymentBeyondAuto(view, cmd))[0];
         if (!found) continue;
         if (type === 'resolve_suspend_cast') {
           // Suspend (CR 702.62): darmowy rzut jest zawsze dobry dla aggro —
