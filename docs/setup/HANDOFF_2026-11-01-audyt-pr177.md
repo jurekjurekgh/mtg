@@ -400,4 +400,4 @@ A111 **20 RED / 4 GREEN**: samotny Nefarious Imp po rzeczywistym Shock/SBA nie o
 
 Izolowana próba po poprawce batcha daje A111–A112 **34/34**, ale A113 **4 RED**: rzeczywisty trigger Thief nie należy do wąskiego batcha śmierci i Imp ląduje pod celowanym Selhoff aktywnego. Poprzednia próba bez poprawki batcha miała 8 RED w A112; mutacje i dodatkowa pułapka fałszywego `descended` po wygnaniu w `docs/audits/experiments/README_A111_A112.md`, a sama łatka tylko do odtworzenia **NIE WDRAŻAĆ**. Produkcja bez zmian od A97. Wymuszone A84/A98/A100–A113 **114 RED / 18 GREEN**, powiązane produkcyjne **405 pass / 98 skip / 0 fail**; końcowy prototyp w tym podzbiorze **435 pass / 4 fail / 64 skip**. Skip nie jest GREEN, B0 nie uruchamiano.
 
-Aktualny fast produkcji po kwarantannie A111–A113: **9819 pass / 114 skip / 0 fail**. Slow uruchomiony osobno; wynik zostanie odnotowany po zakończeniu.
+Aktualny fast produkcji po kwarantannie A111–A113: **9819 pass / 114 skip / 0 fail**. Slow **268 pass / 0 skip / 0 fail**.
