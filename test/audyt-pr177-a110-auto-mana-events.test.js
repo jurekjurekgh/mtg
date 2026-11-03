@@ -179,3 +179,38 @@ for (const payer of ['p1', 'p2'])
     assert.equal(impEvents(state, payer).length, 1);
     assert.equal(impEvents(state, other(payer)).length, 0);
   });
+
+// Imp zostaje poświęcony dopiero po produkcji many jako koszt rzeczywistego czaru.
+for (const payer of ['p1', 'p2'])
+  test(`A110: Imp zachowuje LKI, gdy potem sam jest kosztem Severed Strands (${payer})`, () => {
+    const state = createGameState({ seed: 177112, players: [{ id: 'p1' }, { id: 'p2' }] });
+    turn(state, payer);
+    addObserversAndTreasures(state, payer);
+    put(state, 'victim', 'alaborn-trooper', other(payer));
+    put(state, 'strands', 'severed-strands', payer, 'hand');
+    const treasures = [...state.objects.values()]
+      .filter((o) => o.cardId === 'token_treasure')
+      .map((o) => o.id);
+    const command = view(state).legalCommands.find(
+      (c) =>
+        c.type === 'cast_spell' &&
+        c.objectId === 'strands' &&
+        c.sacrificeTargetId === `imp-${payer}` &&
+        c.targets?.includes('victim'),
+    );
+    act(state, command);
+    const sacrifices = state.events
+      .filter((e) => e.type === 'permanent_sacrificed')
+      .map((e) => e.fromId);
+    assert.deepEqual(
+      sacrifices,
+      [...treasures, `imp-${payer}`],
+      'mana aktywowana przed dodatkowym kosztem',
+    );
+    assert.equal(
+      impEvents(state, payer).length,
+      3,
+      'dwie produkcje many i własna śmierć widziane przed opuszczeniem pola',
+    );
+    assert.equal(impEvents(state, other(payer)).length, 0);
+  });
