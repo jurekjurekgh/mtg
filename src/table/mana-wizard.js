@@ -296,9 +296,9 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // kiedy płatność many jest niejednoznaczna (więcej niż 1 kombinacja
   // rodzajów źródeł) powinien być wizard".
   //
-  // Koszt bierzemy z KOMENDY (`cost`), nie z MANA_COSTS — to koszt decyzji,
-  // nie karty. Wymagania kolorów są puste: te decyzje mówią „zapłać {N}"
-  // (mana dowolnego rodzaju), więc o wyborze źródeł decyduje gracz.
+  // Koszt bierzemy z KOMENDY (`cost` i `costColors`), nie z MANA_COSTS:
+  // kolorowa dopłata Zoraline czy echo mają pipy wewnątrz sumy, a nie
+  // generyczne {N}. Ward i inne dopłaty bez pipów pozostają generyczne.
   if (PAYMENT_DECISION_TYPES.has(cmd.type)) {
     if (cmd.pay !== true) return null;          // wariant bez płacenia
     const cost = cmd.cost ?? cmd.amount ?? 0;
@@ -306,7 +306,12 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const allDecisionCards = Object.values(view?.zones ?? {}).flat();
     const source = allDecisionCards.find((o) => o.id === (cmd.sourceId ?? cmd.targetId))
       ?? { id: cmd.sourceId ?? cmd.targetId ?? null, cardId: null };
-    return buildDescriptor(source, cost, [], `{${cost}}`, cost);
+    const colors = Array.isArray(cmd.costColors) ? cmd.costColors : [];
+    const requirements = colors.map(color => [color]);
+    if (requirements.length > cost) return null;
+    const generic = cost - requirements.length;
+    const costStr = `${generic > 0 ? `{${generic}}` : ''}${colors.map(color => `{${color}}`).join('')}`;
+    return buildDescriptor(source, cost, requirements, costStr || '{0}', generic);
   }
   if (FACE_UP_TURN_TYPES.has(cmd.type)) {
     const allTurnCards = Object.values(view?.zones ?? {}).flat();
