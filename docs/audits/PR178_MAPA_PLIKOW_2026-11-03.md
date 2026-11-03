@@ -69,7 +69,7 @@
 | `test/audyt-pr177-a106-ward-target-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a107-two-ward-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a108-ward-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a109-ward-aura-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a109-ward-aura-sba.test.js` | test/fixture | przejrzany pełny test; otwarte RED SBA/Ward/LKI, bez lokalnej naprawy |
 | `test/audyt-pr177-a11-powrot-kreatora.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a110-auto-mana-events.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
 | `test/audyt-pr177-a111-imp-self-lki.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
@@ -84,9 +84,9 @@
 | `test/audyt-pr177-a18-auto-platnosc-rodzic.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a19-bezbarwne-zrodla.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a20-platny-tryb-ladu.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a21-bestow-na-stosie.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a22-bestow-ochrona-celu.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a23-koszt-bestow.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a21-bestow-na-stosie.test.js` | test/fixture | przejrzany pełny test; bestow na stosie i powrót linii typów, zgodne z B1 |
+| `test/audyt-pr177-a22-bestow-ochrona-celu.test.js` | test/fixture | przejrzany pełny test; ochrona celu bestow, bez nowego błędu |
+| `test/audyt-pr177-a23-koszt-bestow.test.js` | test/fixture | przejrzany pełny test; Powerstone/rabaty bestow, bez nowego błędu |
 | `test/audyt-pr177-a25-violent-urge-delirium.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a26-champion-kontrola.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a27-madness-priorytet.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
