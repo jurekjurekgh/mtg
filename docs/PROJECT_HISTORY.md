@@ -18760,3 +18760,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A86 9701 pass + 11 skip, slow 268/268, build 77/5662,1 kB; A87 solver: 5 GREEN (syntetyczny kontrakt), A88 w RED.
 
 - 2026-11-03 — A87: 5 GREEN na syntetycznym kontrakcie, fast 9706 + 11 skip, slow 268/268; A89: poprawa regresji botów po A80/A81, fast 9717 + 14 skip, slow w toku.
+
+- 2026-11-03 — A89 slow 268/268; A88 pojedynczy kolor z legalnego tapnięcia stwora: 10 GREEN, A85 nadal 1 RED (UI), pakiety A88 w toku.
