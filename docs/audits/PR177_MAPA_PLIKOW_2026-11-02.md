@@ -234,3 +234,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A92–A93 naprawione** `engine/abilities.js`: przedwalidacja bramy/kosztu many, rozdzielenie kosztu własnego `{T}` i `tapCreature`; testy `audyt-pr177-a9{2,3}*.test.js`, ograniczone kontrole replay i mutacyjne.
 
 - **A94** `engine/game-state.js`, `audyt-pr177-a94-optional-apnap.test.js`: zdolności many podczas opcjonalnej dopłaty mimo oczekującego celu triggera; APNAP A84 nadal otwarte.
+
+- **A95–A96** `engine/game-state.js` oraz `audyt-pr177-a9{5,6}*.test.js`: dopuszczenie drugiego Sciona mimo oczekującego celu w Ward/Izzet Charm; APNAP poza zakresem.
