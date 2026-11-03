@@ -18788,3 +18788,7 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A103 Jolrael: 2 RED również w eksperymencie A99, bo bezpośredni `queueTriggerToStack` omija odroczenie; łącznie 28 pominięć w produkcji.
 
 - 2026-11-03 — A103 fast 9801 pass/28 skip, slow 268/268; powiązane 684 pass/26 skip przed A103; 28 wymuszonych RED.
+
+- 2026-11-03 — A104–A107 utrwalają 14 dalszych RED i 8 kontroli GREEN dla tap/Flooding, Sentinel oraz jedno-/wielokrotnego Ward; A108 wykazuje 2 RED z przedwczesnym opuszczeniem pola przez Griffin Guide. Prototyp A107 izolowany, A108 nadal RED, brak zmian produkcji.
+
+- 2026-11-03 — A108 fast 9809 pass/44 skip, powiązane 745 pass/44 skip, wymuszone 44 RED/8 GREEN; slow 268/268 przed nowymi testami. A107 replay i fingerprint potwierdzone w izolacji, szersza próba 800 pass/4 fail/2 skip.

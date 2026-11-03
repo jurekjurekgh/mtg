@@ -371,3 +371,11 @@ Izolowany eksperyment przechodzi powyższe 26 i szerszy wybrany podzbiór 87, al
 A103: Jolrael przy drugim dobraniu z rzeczywistego Spellbomb obok triggerów śmierci Sciona daje 2 RED w produkcji **i w zachowanym A99**: bezpośrednie `queueTriggerToStack` pomija `tryFire`. Licznik pierwszego dobrania ustawiony syntetycznie, jak pula/tura/priorytet; baza/#177 nie otwierały okna. Obecnie 28 pominięć, nie 26; uruchom także `AUDIT_A103_ENFORCE=1 node --test test/audyt-pr177-a103-second-draw-apnap.test.js`. Wcześniejsze liczby 26/26 dla prototypu obejmują tylko A84/A98/A100/A101/A102, nie A103.
 
 Stan po A103: wymuszone wszystkie 28 RED; fast 9801 pass + 28 skip / 0 fail, slow 268/268; powiązane 684 pass + 26 skip przed A103. Bez nowych zmian produkcji.
+
+### A104–A108: wciąż otwarte
+
+14 kolejnych RED A104–A107 (Flooding tap; Nanoform/once-per-turn/wybór celu; Ward z wyboru celu po całym APNAP; dwa Ward z wyborem kolejności, która naprawdę wpływa na wynik), plus 8 kontroli GREEN pay/decline i rzeczywistego efektu. A108 2 RED: realny Griffin Guide trafia do grobu podczas dopłaty Ward, chociaż akcje stanowe czekają do następnego checkpointu. Wszystkie karty/akcje są rzeczywiste; pula/tura/priorytet pomocnicze. Baza/#177 nie otwierały odpowiednich okien. Łącznie A84/A98/A100–A108 44 flagowane skip.
+
+Prototyp A107 przechodzi 50/50 wymuszonych A84/A98/A100–A107, ale A108 nadal 2 RED. Samo rozszerzenie `stateBasedActionsOpen` nie wystarcza, bo `moveObjectDirectly` bezpośrednio przenosi odłączoną aurę; trzeba rozważyć zachowanie LKI, inwariantów, SBA i całej partii w jednym projekcie. Szczegóły i nieprodukcyjna łatka w `docs/audits/experiments/README_A107.md`; bez B0, nie zamykać A84/A98. Nie stosować łatki do produkcji.
+
+Po A108 produkcja: wymuszone 44 RED / 8 GREEN; fast 9809 pass + 44 skip, powiązane 745 pass + 44 skip, 0 fail; slow 268/268 w poprzedniej kontynuacji (bez zmian produkcji). Szersza izolowana próba A107 800 pass / 4 fail / 2 skip: 1 A75 oraz 3 A83, A108 pominięte. A107 sprawdza replay podczas batcha i po Ward; sonda fingerprint kolejki wykrywa mutację 1 RED. Kontynuować projekt, nie maskować niepowodzeń.
