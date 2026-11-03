@@ -1,0 +1,149 @@
+diff --git a/src/engine/game-state.js b/src/engine/game-state.js
+index eabbf56..19b92e0 100644
+--- a/src/engine/game-state.js
++++ b/src/engine/game-state.js
+@@ -4541,7 +4541,6 @@ export function execute(state, input) {
+     // Odrzucona płatność musi zostawić oczekującą decyzję i cały stan nietknięte.
+     if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
+     const before = state.events.length;
+-    state.pendingWardPay = null;
+     const targeting = state.objects.get(pending.targetingStackId);
+     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
+     if (cmd.pay) {
+@@ -4553,6 +4552,7 @@ export function execute(state, input) {
+         byWard: true,
+       });
+     }
++    state.pendingWardPay = null;
+     state.events.push(event('ward_pay_resolved', {
+       playerId: pending.playerId, paid: Boolean(cmd.pay), amount: pending.amount ?? null,
+       targetingStackId: pending.targetingStackId, cardId: targeting?.cardId ?? null,
+diff --git a/src/engine/state-based.js b/src/engine/state-based.js
+index 2c0ccf1..154a212 100644
+--- a/src/engine/state-based.js
++++ b/src/engine/state-based.js
+@@ -43,10 +43,12 @@ export function addRegenerationShield(state, objectId) {
+ /**
+  * M343/F5, CR 704.4: decyzja wewnątrz czaru nie otwiera okna na SBA.
+  * pendingSpell z pustym ogonem też oznacza trwające rozstrzyganie.
++ * Dopłata Ward jest decyzją W TRAKCIE rozstrzygania triggera (CR 704.4);
++ * w tej wąskiej ścieżce produkcja many nie otwiera akcji stanowych.
+  * Wspólna bramka dla tej funkcji i końcowego usuwania tokenów w accepted.
+  */
+ export function stateBasedActionsOpen(state) {
+-  return !state.pendingSpell && !state.pendingReplacementChoice;
++  return !state.pendingSpell && !state.pendingReplacementChoice && !state.pendingWardPay;
+ }
+
+ /**
+diff --git a/src/engine/attachments.js b/src/engine/attachments.js
+index 6bd3c7e..067c02b 100644
+--- a/src/engine/attachments.js
++++ b/src/engine/attachments.js
+@@ -39,7 +39,11 @@ function patchAttachmentObject(state, object, patch) {
+   const moved = nextTarget !== (object.attachedTo ?? null) || nextPlayer !== (object.enchantedPlayerId ?? null);
+   const stamp = !moved ? {}
+     : { attachedTs: (nextTarget != null || nextPlayer != null) ? nextTimestamp(state) : null };
+-  const updated = Object.freeze({ ...object, ...patch, ...stamp });
++  const next = { ...object, ...patch, ...stamp };
++  // Ponowne przypięcie (np. efektem w tym samym rozstrzyganiu) kończy
++  // stan oczekiwania na SBA dla osieroconej aury.
++  if (nextTarget != null || nextPlayer != null) delete next.orphanedDuringWard;
++  const updated = Object.freeze(next);
+   state.objects.set(object.id, updated);
+   return updated;
+ }
+@@ -394,7 +398,11 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
+   const moved = moveObject(state, attachment.id, toZone, newId);
+   const e = event('permanent_put_into_graveyard', {
+     fromId: attachment.id, toId: newId, cardId: moved.cardId,
+-    controllerId: moved.controllerId, reason: 'aura_without_legal_host',
++    // W wąskim przypadku odroczonego SBA zachowujemy kontrolera sprzed
++    // ruchu (nowy obiekt w grobie/wygnaniu należy już do właściciela).
++    controllerId: attachment.orphanedDuringWard ? attachment.controllerId : moved.controllerId,
++    reason: 'aura_without_legal_host',
++    ...(attachment.orphanedDuringWard ? { orphanedDuringWard: true } : {}),
+     toZone,
+     // Griffin Guide (DMR #8, Batch 61/162): trigger „When enchanted creature
+     // dies" musi widzieć aurę, która odeszła RAZEM z gospodarzem (ruling
+@@ -424,14 +432,26 @@ export function detachAttachmentsFromHost(state, hostId) {
+   // wskazywał już skasowanego gospodarza — i wywracało partię wyjątkiem
+   // „Załącznik X wskazuje nieistniejącego gospodarza Y".
+   // Zerwanie wiązań z góry sprawia, że stan pośredni jest spójny.
++  // Przy rozstrzyganiu Ward nie ma jeszcze checkpointu SBA. Odłączamy
++  // wskaźnik dla niezmienników, ale czysta aura zostaje na polu do 704.5m.
++  // Bestow i equipment nadal korzystają z dotychczasowych osobnych polityk.
++  const deferAura = object => Boolean(state.pendingWardPay && object.aura && !object.bestow && !object.equipment);
+   for (const object of osierocone) {
+     const aktualny = state.objects.get(object.id);
+     if (!aktualny) continue;
+-    state.objects.set(object.id, Object.freeze({ ...aktualny, attachedTo: null }));
++    state.objects.set(object.id, Object.freeze({ ...aktualny, attachedTo: null,
++      ...(deferAura(aktualny) ? { orphanedDuringWard: true } : {}) }));
+   }
+   for (const object of osierocone) {
+     const aktualny = state.objects.get(object.id);
+     if (!aktualny) continue;
++    if (deferAura(aktualny)) {
++      // Migawka sprzed odłączenia jest potrzebna triggerom „enchanted
++      // creature dies" już przy zdarzeniu śmierci, zanim aura opuści pole.
++      const e = event('aura_orphaned_during_ward', { object, attachedTo: hostId });
++      state.events.push(e); events.push(e);
++      continue;
++    }
+     detachOrphanedAttachment(state, aktualny, hostId, events);
+   }
+   return events;
+diff --git a/src/engine/objects.js b/src/engine/objects.js
+index ec5feaa..20711e9 100644
+--- a/src/engine/objects.js
++++ b/src/engine/objects.js
+@@ -428,6 +428,8 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts =
+   // bibliotece nie pamięta poprzedniego rzutu — bez tego powtórny rzut
+   // dokładałby nowe jednostki do starego śladu.
+   if (!['stack', 'battlefield'].includes(toZone)) delete rawMoved.manaColorsSpent;
++  // Znacznik dotyczy tylko bieżącej instancji aury na polu bitwy.
++  if (toZone !== 'battlefield') delete rawMoved.orphanedDuringWard;
+   if (origCopy) {
+     delete rawMoved.originalBeforeCopy;
+     if (!object.isToken) delete rawMoved.copyNumber;
+diff --git a/src/engine/triggers.js b/src/engine/triggers.js
+index 49d572f..7a3cbb8 100644
+--- a/src/engine/triggers.js
++++ b/src/engine/triggers.js
+@@ -2900,7 +2900,9 @@ function processTriggersScan(state, recentEvents) {
+     // zdarzeniu śmierci, który widziałby cudze zgony tej samej partii SBA).
+     // ODBICIE gospodarza nie jest śmiercią (zdarzenie nie istnieje) — aura
+     // idzie do grobu, a trigger NIE odpala, zgodnie z Oracle.
+-    if (ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null) {
++    // Gdy Ward nadal się rozstrzyga, aura zostaje na polu i jej migawka
++    // to osobne zdarzenie odłączenia; śmierć gospodarza jest w tej samej kolejce.
++    if ((ev.type === 'permanent_put_into_graveyard' || ev.type === 'aura_orphaned_during_ward') && ev.attachedTo != null) {
+       const hostDeath = queue.find((sibling) => {
+         // CR 122.1h: „exile instead\" to nie śmierć.
+         if (sibling.toZone === 'exile') return false;
+@@ -2976,7 +2978,10 @@ function processTriggersScan(state, recentEvents) {
+     if (ev.type === 'creature_destroyed' || ev.type === 'permanent_destroyed'
+       || ev.type === 'permanent_sacrificed'
+       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
+-      || (ev.type === 'object_exiled' && ev.fromId)) {
++      || (ev.type === 'object_exiled' && ev.fromId)
++      // Osierocona przy Ward aura opuszcza pole dopiero w późniejszym SBA;
++      // to osobne odejście dla triggerów jak Nefarious Imp.
++      || (ev.type === 'permanent_put_into_graveyard' && ev.orphanedDuringWard)) {
+       // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —
+       // SBA CR 704.5e), więc po nieudanym odczycie ze stanu sięgamy po LKI
+       // niesione w samym zdarzeniu. Bez tego trigger „whenever permanents you
+diff --git a/src/protocol/types.js b/src/protocol/types.js
+index b5abd3f..e154521 100644
+--- a/src/protocol/types.js
++++ b/src/protocol/types.js
+@@ -38,7 +38,7 @@ export const EVENT_TYPES = Object.freeze(['game_created', 'object_moved', 'card_
+   // Batch 58/B6 (Prishe's Wanderings): refleks „when you search your library
+   // this way" — zdolność na stosie PO przeszukaniu (ruling FIN 2025-06-06).
+   'reflexive_search',
+-  'aura_spell_cast', 'permanent_entered_battlefield', 'object_attached', 'object_detached', 'card_revealed', 'library_searched',
++  'aura_spell_cast', 'aura_orphaned_during_ward', 'permanent_entered_battlefield', 'object_attached', 'object_detached', 'card_revealed', 'library_searched',
+   // Batch 59 (Memory's Journey): tasowanie biblioteki BEZ przeszukania —
+   // osobne zdarzenie, bo `library_searched` opisuje szukanie („bez trafienia").
+   'library_shuffled', 'backup_resolved', 'keyword_granted', 'permanent_animated', 'poison_counters_added', 'energy_counters_added', 'energy_counters_paid', 'permanent_put_into_graveyard', 'card_discarded', 'card_milled', 'card_plotted', 'card_suspended', 'time_counter_removed', 'land_type_changed', 'control_changed', 'object_exiled', 'spell_countered', 'cant_block_granted', 'turn_cant_block', 'cant_be_blocked_granted', 'food_choice_required', 'food_choice_resolved', 'amass_choice_required', 'amass_choice_resolved', 'discover_started', 'discover_resolved', 'explore_choice_required', 'explore_resolved', 'craft_exile_required', 'permanent_destroyed', 'hand_creature_choice_required', 'hand_creature_choice_resolved', 'damage_prevented', 'damage_fizzled', 'damage_prevention_started', 'damage_shield_created', 'regeneration_shield_added', 'permanent_regenerated', 'permanent_animation_ended', 'permanent_removed_from_combat', 'station_status_changed', 'cant_be_regenerated_set', 'saga_chapter_fired', 'opponents_lands_tapped', 'delayed_trigger_armed', 'devour_choice_required', 'devour_choice_resolved', 'discard_choice_required', 'discard_choice_resolved', 'hand_top_choice_required', 'hand_top_choice_resolved', 'land_type_choice_required', 'land_type_choice_resolved', 'library_placement_required', 'library_placement_resolved', 'search_choice_required', 'search_choice_resolved', 'pay_or_sacrifice_required', 'pay_or_sacrifice_resolved', 'optional_pay_required', 'optional_pay_resolved', 'counter_pay_required', 'ward_choice_required', 'ward_pay_resolved', 'counter_pay_resolved', 'trigger_target_required', 'trigger_target_resolved', 'trigger_resolved', 'optional_trigger_required', 'optional_trigger_resolved', 'mulligan_choice_resolved', 'mulligan_taken', 'mulligan_bottom_required', 'mulligan_bottom_resolved', 'game_started', 'untap_choice_required', 'untap_choice_resolved', 'moonlit_choice_required', 'moonlit_choice_resolved', 'endure_choice_required', 'endure_choice_resolved', 'delirium_target_required', 'delirium_target_resolved', 'mentor_target_required', 'mentor_target_resolved', 'graveyard_top_choice_required', 'graveyard_top_choice_resolved', 'legend_rule_choice_started', 'legend_rule_resolved', 'proliferate_started', 'proliferate_resolved', 'proliferate_target_resolved', 'proliferated', 'reveal_started', 'reveal_order_resolved', 'damage_target_required', 'damage_target_resolved', 'cards_milled', 'modal_trigger_required', 'modal_trigger_resolved', 'riot_choice_required', 'riot_choice_resolved', 'speed_changed', 'turned_face_up', 'redirect_choice_required', 'redirect_choice_resolved', 'players_lost_life_fraction', 'became_subtype', 'reveal_choice_required', 'reveal_choice_resolved', 'spell_discount_armed', 'madness_ready_required', 'madness_declined', 'damage_division_required', 'damage_division_resolved', 'grave_free_cast_required', 'grave_free_cast_resolved', 'escape_exile_required', 'escape_exile_resolved',

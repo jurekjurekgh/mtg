@@ -241,64 +241,67 @@ function scene(
 // Karty i akcje realne; pule/tura/priorytet ustawiono w setupie.
 for (const payer of ['p1', 'p2'])
   for (const pay of [false, true])
-    test(`A109: Griffin i token czekają na SBA po Ward, ${pay ? 'zapłata' : 'odmowa'} (${payer})`, () => {
-      const { s, tokens } = scene(payer, payer, { aura: true }),
-        base = s.commands.length;
-      const aura = () =>
-        [...s.objects.values()].find((o) => o.cardId === 'griffin-guide' && o.kind !== 'trigger');
-      const graveTokens = () =>
-        [...s.objects.values()].filter(
-          (o) => o.cardId === 'token_eldrazi_scion' && o.zone === 'graveyard',
-        );
-      const checkReplay = () => {
-        const replay = replayFromState(s),
-          result = verifyReplay(
-            { ...replay, commands: replay.commands.slice(base) },
-            () => scene(payer, payer, { aura: true }).s,
-            execute,
+    audit(
+      `A109: Griffin i token czekają na SBA po Ward, ${pay ? 'zapłata' : 'odmowa'} (${payer})`,
+      () => {
+        const { s, tokens } = scene(payer, payer, { aura: true }),
+          base = s.commands.length;
+        const aura = () =>
+          [...s.objects.values()].find((o) => o.cardId === 'griffin-guide' && o.kind !== 'trigger');
+        const graveTokens = () =>
+          [...s.objects.values()].filter(
+            (o) => o.cardId === 'token_eldrazi_scion' && o.zone === 'graveyard',
           );
-        assert.ok(result.deterministic);
-        assert.ok(result.results.every((r) => r.ok));
-        assert.equal(stateFingerprint(result.state), stateFingerprint(s));
-      };
-      act(
-        s,
-        view(s).legalCommands.find(
-          (c) => c.type === 'activate_ability' && c.objectId === tokens[0].id,
-        ),
-      );
-      assert.ok(s.pendingWardPay);
-      assert.equal(aura()?.zone, 'battlefield', 'osierocona aura czeka na akcję stanową');
-      assert.equal(graveTokens().length, 1, 'token przestaje istnieć dopiero w SBA');
-      checkReplay();
-      if (pay)
+        const checkReplay = () => {
+          const replay = replayFromState(s),
+            result = verifyReplay(
+              { ...replay, commands: replay.commands.slice(base) },
+              () => scene(payer, payer, { aura: true }).s,
+              execute,
+            );
+          assert.ok(result.deterministic);
+          assert.ok(result.results.every((r) => r.ok));
+          assert.equal(stateFingerprint(result.state), stateFingerprint(s));
+        };
         act(
           s,
           view(s).legalCommands.find(
-            (c) => c.type === 'activate_ability' && c.objectId === tokens[1].id,
+            (c) => c.type === 'activate_ability' && c.objectId === tokens[0].id,
           ),
         );
-      act(
-        s,
-        view(s).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && c.pay === pay),
-      );
-      assert.equal(aura()?.zone, 'graveyard');
-      assert.equal(graveTokens().length, 0);
-      assert.equal(
-        s.events.filter(
-          (e) =>
-            e.type === 'ability_triggered' &&
-            e.cardId === 'griffin-guide' &&
-            e.trigger === 'enchanted_creature_dies',
-        ).length,
-        1,
-      );
-      checkReplay();
-    });
+        assert.ok(s.pendingWardPay);
+        assert.equal(aura()?.zone, 'battlefield', 'osierocona aura czeka na akcję stanową');
+        assert.equal(graveTokens().length, 1, 'token przestaje istnieć dopiero w SBA');
+        checkReplay();
+        if (pay)
+          act(
+            s,
+            view(s).legalCommands.find(
+              (c) => c.type === 'activate_ability' && c.objectId === tokens[1].id,
+            ),
+          );
+        act(
+          s,
+          view(s).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && c.pay === pay),
+        );
+        assert.equal(aura()?.zone, 'graveyard');
+        assert.equal(graveTokens().length, 0);
+        assert.equal(
+          s.events.filter(
+            (e) =>
+              e.type === 'ability_triggered' &&
+              e.cardId === 'griffin-guide' &&
+              e.trigger === 'enchanted_creature_dies',
+          ).length,
+          1,
+        );
+        checkReplay();
+      },
+    );
 
 // Rzeczywiste drugie zaklęcie; oba triggery powstają po jednym, a SBA czeka.
 for (const payer of ['p1', 'p2'])
-  test(`A109: dwie aury na Scionie zachowują LKI i pojedyncze triggery (${payer})`, () => {
+  audit(`A109: dwie aury na Scionie zachowują LKI i pojedyncze triggery (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, blood: true });
     const card = (id) =>
       [...s.objects.values()].find((o) => o.cardId === id && o.kind !== 'trigger');
@@ -330,7 +333,7 @@ for (const payer of ['p1', 'p2'])
 // Liczniki finality są ustawione syntetycznie, obiekty i komendy rzeczywiste.
 for (const payer of ['p1', 'p2'])
   for (const finality of ['host', 'aura'])
-    test(`A109: finality ${finality} nie gubi granicy SBA ani warunku dies (${payer})`, () => {
+    audit(`A109: finality ${finality} nie gubi granicy SBA ani warunku dies (${payer})`, () => {
       const { s, tokens } = scene(payer, payer, { aura: true }),
         guide = [...s.objects.values()].find(
           (o) => o.cardId === 'griffin-guide' && o.zone === 'battlefield',
@@ -363,7 +366,7 @@ for (const payer of ['p1', 'p2'])
     });
 // Realny bestow oraz rzeczywista aktywacja equip (sam Torch umieszczony w setupie).
 for (const payer of ['p1', 'p2'])
-  test(`A109: bestow i equipment nie trafiają do grobu jak czysta aura (${payer})`, () => {
+  audit(`A109: bestow i equipment nie trafiają do grobu jak czysta aura (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, dryad: true, torch: true });
     act(
       s,
@@ -392,7 +395,7 @@ for (const payer of ['p1', 'p2'])
   });
 
 for (const payer of ['p1', 'p2'])
-  test(`A109: trigger aury przeciwnika zachowuje kontrolera z chwili zdarzenia (${payer})`, () => {
+  audit(`A109: trigger aury przeciwnika zachowuje kontrolera z chwili zdarzenia (${payer})`, () => {
     const opponent = payer === 'p1' ? 'p2' : 'p1',
       { s, tokens } = scene(payer, payer, { aura: true, opposingAura: true });
     const aura = [...s.objects.values()].find(
@@ -426,7 +429,7 @@ for (const payer of ['p1', 'p2'])
   });
 // Imp na polu bitwy w setupie: oddzielne zdarzenia Sciona i aury dają dwa triggery.
 for (const payer of ['p1', 'p2'])
-  test(`A109: Imp widzi osobne odejścia Sciona i aury po Ward (${payer})`, () => {
+  audit(`A109: Imp widzi osobne odejścia Sciona i aury po Ward (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, imp: true });
     const fired = () =>
       s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp').length;
@@ -446,40 +449,43 @@ for (const payer of ['p1', 'p2'])
 // Zmiana kontrolera aury jest syntetyczna; Impy, Griffin, Scion i Ward są rzeczywiste.
 for (const payer of ['p1', 'p2'])
   for (const exile of [false, true])
-    test(`A109: Imp kontrolera skradzionej aury widzi jej ${exile ? 'wygnanie' : 'grób'} (${payer})`, () => {
-      const opponent = payer === 'p1' ? 'p2' : 'p1',
-        { s, tokens } = scene(payer, payer, { aura: true, imp: true });
-      put(s, 'opp-imp', 'nefarious-imp', 'battlefield', opponent);
-      const aura = [...s.objects.values()].find(
-        (o) => o.cardId === 'griffin-guide' && o.zone === 'battlefield',
-      );
-      s.objects.set(aura.id, Object.freeze({ ...aura, controllerId: opponent }));
-      if (exile) addCounter(s, aura.id, 'finality', 1);
-      const impEvents = () =>
-        s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp');
-      act(
-        s,
-        view(s).legalCommands.find(
-          (c) => c.type === 'activate_ability' && c.objectId === tokens[0].id,
-        ),
-      );
-      assert.equal(impEvents().filter((e) => e.playerId === payer).length, 1);
-      assert.equal(impEvents().filter((e) => e.playerId === opponent).length, 0);
-      act(
-        s,
-        view(s).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && !c.pay),
-      );
-      assert.equal(impEvents().filter((e) => e.playerId === payer).length, 1);
-      assert.equal(impEvents().filter((e) => e.playerId === opponent).length, 1);
-      const moved = [...s.objects.values()].find(
-        (o) => o.cardId === 'griffin-guide' && o.kind !== 'trigger',
-      );
-      assert.equal(moved.zone, exile ? 'exile' : 'graveyard');
-      assert.equal(moved.controllerId, payer);
-    });
+    audit(
+      `A109: Imp kontrolera skradzionej aury widzi jej ${exile ? 'wygnanie' : 'grób'} (${payer})`,
+      () => {
+        const opponent = payer === 'p1' ? 'p2' : 'p1',
+          { s, tokens } = scene(payer, payer, { aura: true, imp: true });
+        put(s, 'opp-imp', 'nefarious-imp', 'battlefield', opponent);
+        const aura = [...s.objects.values()].find(
+          (o) => o.cardId === 'griffin-guide' && o.zone === 'battlefield',
+        );
+        s.objects.set(aura.id, Object.freeze({ ...aura, controllerId: opponent }));
+        if (exile) addCounter(s, aura.id, 'finality', 1);
+        const impEvents = () =>
+          s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp');
+        act(
+          s,
+          view(s).legalCommands.find(
+            (c) => c.type === 'activate_ability' && c.objectId === tokens[0].id,
+          ),
+        );
+        assert.equal(impEvents().filter((e) => e.playerId === payer).length, 1);
+        assert.equal(impEvents().filter((e) => e.playerId === opponent).length, 0);
+        act(
+          s,
+          view(s).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && !c.pay),
+        );
+        assert.equal(impEvents().filter((e) => e.playerId === payer).length, 1);
+        assert.equal(impEvents().filter((e) => e.playerId === opponent).length, 1);
+        const moved = [...s.objects.values()].find(
+          (o) => o.cardId === 'griffin-guide' && o.kind !== 'trigger',
+        );
+        assert.equal(moved.zone, exile ? 'exile' : 'graveyard');
+        assert.equal(moved.controllerId, payer);
+      },
+    );
 // Syntetyczne obniżenie życia po otwarciu Ward symuluje koszt/efekt w toku.
 for (const payer of ['p1', 'p2'])
-  test(`A109: przegrana z 0 życia sprawdzana po zakończeniu Ward (${payer})`, () => {
+  audit(`A109: przegrana z 0 życia sprawdzana po zakończeniu Ward (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true });
     s.players.find((p) => p.id === payer).life = 0;
     act(
@@ -501,13 +507,14 @@ for (const payer of ['p1', 'p2'])
 // Auto-zapłata {2} poświęca po kolei dwa prawdziwe Treasure'y; Imp powinien
 // osobno zobaczyć oba koszty i późniejsze SBA aury, nie jedną grupę komendy.
 for (const payer of ['p1', 'p2'])
-  test(`A109: auto-Ward, dwa Treasure i oddzielne SBA aury (${payer})`, () => {
+  audit(`A109: auto-Ward, dwa Treasure i oddzielne SBA aury (${payer})`, () => {
     const { s } = scene(payer, payer, { imp: true, treasureAura: true });
     const fired = () =>
       s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp').length;
     const aura = [...s.objects.values()].find(
       (o) => o.cardId === 'clawing-torment' && o.zone === 'battlefield',
     );
+    assert.ok(aura);
     assert.equal(fired(), 0);
     act(
       s,
@@ -528,8 +535,9 @@ for (const payer of ['p1', 'p2'])
   });
 // Przy automatycznej zapłacie aura nie może opuścić pola PRZED końcem Ward.
 for (const payer of ['p1', 'p2'])
-  test(`A109: auto-Ward odkłada odejście aury do SBA (${payer})`, () => {
+  audit(`A109: auto-Ward odkłada odejście aury do SBA (${payer})`, () => {
     const { s } = scene(payer, payer, { imp: true, treasureAura: true });
+    const base = s.commands.length;
     act(
       s,
       view(s).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && c.pay),
@@ -542,4 +550,13 @@ for (const payer of ['p1', 'p2'])
       resolution >= 0 && departure > resolution,
       'aura opuszcza pole dopiero w SBA po rozstrzygnięciu Ward',
     );
+    const replay = replayFromState(s);
+    const result = verifyReplay(
+      { ...replay, commands: replay.commands.slice(base) },
+      () => scene(payer, payer, { imp: true, treasureAura: true }).s,
+      execute,
+    );
+    assert.ok(result.deterministic);
+    assert.ok(result.results.every((r) => r.ok));
+    assert.equal(stateFingerprint(result.state), stateFingerprint(s));
   });

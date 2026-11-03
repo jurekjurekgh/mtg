@@ -18792,3 +18792,7 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A104–A107 utrwalają 14 dalszych RED i 8 kontroli GREEN dla tap/Flooding, Sentinel oraz jedno-/wielokrotnego Ward; A108 wykazuje 2 RED z przedwczesnym opuszczeniem pola przez Griffin Guide. Prototyp A107 izolowany, A108 nadal RED, brak zmian produkcji.
 
 - 2026-11-03 — A108 fast 9809 pass/44 skip, powiązane 745 pass/44 skip, wymuszone 44 RED/8 GREEN; slow 268/268 przed nowymi testami. A107 replay i fingerprint potwierdzone w izolacji, szersza próba 800 pass/4 fail/2 skip.
+
+- 2026-11-03 — A109: 26 kwarantannowych RED, w tym historyczny przypadek auto-Ward (dwa Treasure, Clawing Torment i Imp 1 zamiast 3). Izolowany eksperyment A108 2 GREEN/A109 24 GREEN i 2 RED, plus brak opisu zdarzenia; zachowany z zakazem wdrażania. Produkcja niezmieniona.
+
+- 2026-11-03 — po A109 fast produkcji 9809 pass/70 skip, wybrany podzbiór załączników/płatności 383 pass/62 skip, wymuszone 70 RED/8 kontroli GREEN. Produkcja bez zmian; slow 268/268 z wcześniejszej kontynuacji.
