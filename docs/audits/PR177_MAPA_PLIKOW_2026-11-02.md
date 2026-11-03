@@ -205,3 +205,5 @@ A76: starszy błąd APNAP po `resolve_combat` (w tym first strike), cztery RED h
 A77: koszty poświęcenia aktywowanych niemanowych Elk/Dreadmaw, 8 historycznych RED → GREEN, wyłączenia Scion/Plague Reaver, APNAP poza zakresem nadal otwarte.
 
 A78: realny Scion i APNAP samodzielnej zdolności many, historyczny RED → ograniczony GREEN; wewnątrz płatności nadal poza zakresem. Osobne podejrzenie przedwczesnej kontry Ward z ręczną maną do weryfikacji.
+
+A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność — starsze błędy; wspólna konserwatywna bramka, RED→GREEN. APNAP wewnątrz płatności pozostaje otwarte.

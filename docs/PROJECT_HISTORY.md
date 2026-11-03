@@ -18744,3 +18744,5 @@ Audyt #177 A76: ograniczony APNAP niezawieszonej walki, także first strike; fas
 Audyt #177 A77: ograniczony APNAP po kosztach niemanowej aktywacji Elk/Dreadmaw, fast 9643/9643, pokrewne 110/110, slow 268/268; audyt trwa.
 
 Audyt #177 A78: ograniczony APNAP samodzielnej zdolności many Sciona, fast 9650/9650, pokrewne 95/95, slow 268/268. Płatność Ward i pozostałe APNAP otwarte.
+
+Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; historyczne defekty; fast 9660/9660 przed dodatkowym testem Justiciara, slow w toku.

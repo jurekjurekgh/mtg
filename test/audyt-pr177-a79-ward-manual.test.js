@@ -55,3 +55,12 @@ test('A79: aktywacja Sciona i opłata Ward są deterministyczne w replay',()=>{
  const {s,tokenId}=scene('p1');act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===tokenId));act(s,view(s).legalCommands.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay===true));
  const replay=replayFromState(s),verified=verifyReplay({...replay,commands:replay.commands.slice(-2)},()=>scene('p1').s,execute);assert.ok(verified.deterministic);assert.ok(verified.results.every(r=>r.ok));assert.equal(stateFingerprint(verified.state),stateFingerprint(s));
 });
+
+test('A79: Ward chroni także celowaną zdolność Azorius Justiciara, można zapłacić Scionem',()=>{
+ const s=createGameState({seed:17779,players:[{id:'p1'},{id:'p2'}]});turn(s,'p1');put(s,'summoner','scion-summoner','hand','p1');addMana(s,'p1',3,{colors:['G']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='summoner'));pass(s);pass(s);pass(s);pass(s);
+ const token=[...s.objects.values()].find(o=>o.cardId==='token_eldrazi_scion'&&o.zone==='battlefield');assert.ok(token);
+ turn(s,'p2');put(s,'hellion','riftburst-hellion','hand','p2');addMana(s,'p2',3,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.objectId==='hellion'&&c.faceDown));pass(s);pass(s);const target=[...s.objects.values()].find(o=>o.cardId==='riftburst-hellion'&&o.faceDown);assert.ok(target);
+ turn(s,'p1');put(s,'justiciar','azorius-justiciar','hand','p1');addMana(s,'p1',5,{colors:['W']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='justiciar'));pass(s);pass(s);
+ act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetIds?.length===1&&c.targetIds.includes(target.id)));pass(s);pass(s);assert.ok(s.pendingWardPay);assert.equal(s.players.find(p=>p.id==='p1').mana,1);
+ act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));act(s,view(s).legalCommands.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay===true));pass(s);pass(s);assert.equal(s.objects.get(target.id)?.detained,true);
+});
