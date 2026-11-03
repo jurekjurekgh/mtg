@@ -201,3 +201,5 @@ A74: fingerprint kolejki, wybory APNAP, label różnych triggerów źródła, ko
 A75: Polluted Dead i Circle of the Land Druid, lądy na polu / karty w grobie, cztery historyczne RED i ograniczony GREEN; Ward przeciwnika wyłącza nową ścieżkę.
 
 A76: starszy błąd APNAP po `resolve_combat` (w tym first strike), cztery RED historycznie; ograniczony GREEN, pozostałe ścieżki obrażeń i mixed triggery otwarte.
+
+A77: koszty poświęcenia aktywowanych niemanowych Elk/Dreadmaw, 8 historycznych RED → GREEN, wyłączenia Scion/Plague Reaver, APNAP poza zakresem nadal otwarte.

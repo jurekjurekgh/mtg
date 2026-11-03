@@ -271,3 +271,5 @@ Austere także przez Epic Experiment oraz okno Vaan: testy routingu RED→GREEN,
 A75: Polluted Dead / Circle of the Land Druid — cele lądów w APNAP; cztery RED na bazie #177, #177 i przed fixem, ograniczone GREEN w obu orientacjach, pojedynczy auto-cel, obce/nielegalne cele, dwa testy Ward granicy, bot i replay dla obu kart. Mutacje wykryte 5+1. Fast 9621/9621 bez TODO, slow 268/268, pokrewne 189/189 przed testami replay, build 77/5656,8 kB. APNAP z Ward, mieszanymi decyzjami i innymi checkpointami nadal otwarte; audyt trwa.
 
 A76: APNAP po `resolve_combat` bez zawieszenia, także first strike; 4 historyczne RED → 8 GREEN, mutacja 8 RED, fast 9629/9629, slow 268/268, build 77/5656,9 kB. Otwarte: inne checkpointy (np. aktywacja z kosztem ofiary), przypisanie obrażeń/replacement, Ward, mixed triggers. Audyt trwa.
+
+A77: APNAP kosztów poświęcenia niemanowych Elk/Dreadmaw, 8 historycznych RED i 14 testów GREEN, obie mutacje wykryte; fast 9643/9643, related 110/110, build 77/5657,5 kB, slow w toku. Mana i odrzucenie wyłączone bez twierdzenia poprawności; pozostałe checkpointy i ogólny APNAP otwarte.
