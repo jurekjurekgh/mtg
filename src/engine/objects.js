@@ -335,8 +335,14 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
   const bestowReset = (leavingBattlefield || object.zone === 'stack') && object.bestowOriginalTypes ? {
     types: [...object.bestowOriginalTypes],
     subtypes: [...(object.bestowOriginalSubtypes ?? [])],
+    // CR 400.7 / 702.103b: the Aura-spell descriptor belongs to the bestowed
+    // spell, not to the printed permanent card. Restore the pre-cast spell
+    // descriptor (normally null for a bestow creature) so a later normal cast
+    // does not resolve through the Aura path or look like a noncreature spell.
+    spell: object.bestowOriginalSpell ?? null,
     bestowOriginalTypes: null,
     bestowOriginalSubtypes: null,
+    bestowOriginalSpell: null,
   } : {};
   const rawMoved = {
     ...object, ...untilEndOfTurnReset, ...bestowReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,

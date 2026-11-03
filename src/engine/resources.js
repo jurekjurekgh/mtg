@@ -2762,7 +2762,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     ...moved,
     // CR 702.103b: od chwili położenia na stosie bestow to czar Aury,
     // nie czar stwora. Bazowe cechy wrócą przy zmianie strefy lub odłączeniu.
-    ...(bestow ? { ...bestowedTypeLine(moved), kind: 'aura', baseKind: moved.kind } : {}),
+    // Zachowujemy wydrukowany deskryptor czaru karty (zwykle null), żeby
+    // moveObjectDirectly mógł go przywrócić po zakończeniu bestow (CR 400.7).
+    ...(bestow ? { ...bestowedTypeLine(moved), kind: 'aura', baseKind: moved.kind, bestowOriginalSpell: moved.spell ?? null } : {}),
     surgeCast: Boolean(surgeCast),
     tapped: false,
     enchantPlayer,

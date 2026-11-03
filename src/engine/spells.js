@@ -164,21 +164,19 @@ export function hasHexproofAgainst(state, object, casterId) {
 /** Waliduje cele zgodnie ze specyfikacją deskryptora; zwraca obiekty celów. */
 
 /**
- * M360/B1 (CR 702.103b): czy obiekt na stosie jest czarem NIE-będącym stworem
- * (cel Negate — „Counter target noncreature spell”). Czar aury rzucony za
- * bestow ma kind 'aura' na stosie; historyczne stany mogły zachować
- * kind 'creature', mimo że jest czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
- * „either a creature spell or an Aura spell. It's never both”) — deskryptor
- * `spell.aura` rozstrzyga (mtg.wiki/Bestow + Scryfall THS/161, 2026-09-16).
- * Jeden helper dla oferty i walidacji (L48).
+ * M360/B1 + audyt PR #178 B1 (CR 702.103b): czy obiekt na stosie jest czarem
+ * NIE-będącym stworem (cel Negate — „Counter target noncreature spell”).
+ * Rozstrzygają AKTUALNE cechy obiektu na stosie: bestow jest Aurą (kind 'aura',
+ * bez typu Creature), zwykły rzut karty z bestow pozostaje czarem stwora.
+ * Nie wolno ufać samemu `spell.aura`: po odbiciu bestowed Aury stary
+ * deskryptor mógł przetrwać w ręce i skleić się ze zwykłym rzutem stwora
+ * (CR 400.7). Jeden helper dla oferty i walidacji (L48).
  */
 export function isNoncreatureSpellOnStack(object) {
   if (!object || object.zone !== 'stack') return false;
   // Zdolności (kind 'trigger'/'activated') to nie czary (CR 113.9).
   if (object.kind === 'trigger' || object.kind === 'activated') return false;
-  // Zgodność ze starszymi stanami: spell.aura jest nie-stworowy nawet,
-  // jeśli historyczny zapis zachował pierwotne kind 'creature'.
-  if (object.kind === 'creature' && object.spell?.aura !== true) return false;
+  if (object.kind === 'creature' || (object.types ?? []).includes('Creature')) return false;
   return true;
 }
 export function validateTargets(state, targetSpec, chosen, casterId, sourceColors = null, sourceObject = null,
