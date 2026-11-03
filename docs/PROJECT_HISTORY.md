@@ -18754,3 +18754,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A83: Scion pokrywa generyczną część kolorowych dopłat, 7 GREEN, fast 9696/9696 przed A84, related 78/78, slow 268/268. A84: 8 jawnie pomijanych reprodukcji otwartego APNAP Ward; z flagą 8 RED.
 
 - 2026-11-03 — A85 OTWARTE: Panic Spellbomb i Holdout, 3 reprodukcje RED pod flagą i 1 GREEN; brak poprawki przed zaprojektowaniem bezpiecznej oferty i wyboru kosztu.
+
+- 2026-11-03 — A86: kreator sprawdza kolory automatu; 4 GREEN, mutacje 2/1 RED, pełne paczki w toku; A85 nadal otwarte.

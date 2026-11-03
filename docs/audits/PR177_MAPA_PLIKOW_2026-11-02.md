@@ -217,3 +217,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A84 OTWARTE** `audyt-pr177-a84-ward-apnap.test.js`: osiem testów pomijanych domyślnie, `AUDIT_A84_ENFORCE=1` wymusza 8 RED; Ward, mana i APNAP potrzebują odroczenia triggerów z LKI.
 
 - **A85 OTWARTE** `audyt-pr177-a85-holdout-pay.test.js`: Panic Spellbomb + Holdout z innym stworem, brak okna i brak wariantu źródła w kreatorze; 3 RED pod flagą, 1 kontrola GREEN.
+
+- **A86** `table/main.js`, `table/mana-wizard.js`, `audyt-pr177-a86-wizard-auto-colors.test.js`: kolor automatu w bramce kreatora; A85 pozostaje osobno otwarte.
