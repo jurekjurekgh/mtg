@@ -55,11 +55,11 @@ test('A77 granica: Plague Reaver z kosztem odrzucenia nie uruchamia batcha',()=>
  const c=view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='source'&&c.targets?.includes('p2'));act(s,c);
  assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-source')?.zone,'graveyard');assert.ok(s.zones.stack.some(id=>s.objects.get(id)?.cardId==='plague-reaver'));assert.equal(s.pendingDeathTriggerBatch,null);assert.equal(s.turn.priorityPlayerId,'p2');
 });
-test('A77 granica: prawdziwa zdolność many Sciona nie trafia do batcha aktywacji stosowej',()=>{
+test('A78: prawdziwa zdolność many Sciona przy priorytecie otwiera batch',()=>{
  const s=createGameState({seed:17777,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
  put(s,'summoner','scion-summoner','hand','p1');addMana(s,'p1',3,{colors:['G']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='summoner'));pass(s);pass(s);pass(s);pass(s);
  const token=[...s.objects.values()].find(o=>o.cardId==='token_eldrazi_scion'&&o.zone==='battlefield');assert.ok(token);
  for(const p of ['p2','p1']){put(s,`${p}-crow`,'murder-of-crows','battlefield',p);put(s,`${p}-occult`,'selhoff-occultist','battlefield',p);}
- act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));assert.equal(s.pendingDeathTriggerBatch,null);assert.equal(s.players.find(p=>p.id==='p1').mana,1);
- assert.equal(s.turn.priorityPlayerId,'p2');assert.ok(!s.zones.stack.some(id=>s.objects.get(id)?.activatedEntry));
+ act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));assert.ok(s.pendingDeathTriggerBatch);assert.equal(s.players.find(p=>p.id==='p1').mana,1);
+ assert.equal(s.turn.priorityPlayerId,'p1');assert.ok(!s.zones.stack.some(id=>s.objects.get(id)?.activatedEntry));
 });

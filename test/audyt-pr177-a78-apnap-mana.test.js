@@ -31,3 +31,19 @@ function choose(x){
  assert.equal([...s.objects.values()].find(o=>o.instanceId===`i-${active}-lib0`)?.zone,'graveyard');
 }
 for(const active of ['p1','p2'])for(const ownTurn of [true,false])test(`A78: otwarty priorytet, aktywny ${active}, Scion ${ownTurn?'aktywny':'nieaktywny'}`,()=>{const x=scene(active,ownTurn?active:active==='p1'?'p2':'p1');activate(x);choose(x);});
+
+test('A78 granica: Scion podczas rzeczywistej dopłaty Ward nie przestawia decyzji',()=>{
+ const x=scene('p1','p1'),{s,tokenId}=x;s.turn=jumpToStep(s.turn,'main1','p2');s.turn.activePlayerId=s.turn.priorityPlayerId='p2';
+ put(s,'hellion','riftburst-hellion','hand','p2');addMana(s,'p2',3,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.objectId==='hellion'&&c.faceDown));pass(s);pass(s);
+ const hidden=[...s.objects.values()].find(o=>o.cardId==='riftburst-hellion'&&o.zone==='battlefield');assert.ok(hidden?.faceDown);
+ s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';put(s,'shock','shock','hand','p1');addMana(s,'p1',3,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='shock'&&c.targets?.includes(hidden.id)));pass(s);pass(s);
+ assert.ok(s.pendingWardPay);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===tokenId));assert.equal(s.pendingDeathTriggerBatch,null);assert.ok(s.pendingWardPay);assert.equal(s.turn.priorityPlayerId,'p1');
+ act(s,view(s).legalCommands.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay===true));assert.equal(s.pendingWardPay,null);assert.ok(s.zones.stack.some(id=>s.objects.get(id)?.cardId==='shock'));
+});
+for(const actor of ['p1','p2'])test(`A78: bot i replay wyborów po manie Sciona (${actor})`,()=>{
+ const x=scene('p1',actor);activate(x);const {s,active,other}=x,bot=createHeuristicBot({seed:177,randomness:0,lookahead:0,registry:reg});let count=0;
+ while(count<12){const v=view(s);if(!v.legalCommands.some(c=>c.type==='resolve_trigger_order'||c.type==='resolve_trigger_target'))break;const cmd=bot.chooseCommand(v);assert.ok(['resolve_trigger_order','resolve_trigger_target'].includes(cmd.type));act(s,cmd);count++;}
+ assert.equal(count,4);assert.deepEqual(s.zones.stack.map(id=>s.objects.get(id).controllerId),[active,active,other,other]);assert.equal(s.turn.priorityPlayerId,actor);
+ const replay=replayFromState(s),verified=verifyReplay({...replay,commands:replay.commands.slice(-count)},()=>{const y=scene('p1',actor);activate(y);return y.s;},execute);
+ assert.ok(verified.deterministic);assert.ok(verified.results.every(r=>r.ok));assert.equal(stateFingerprint(verified.state),stateFingerprint(s));
+});

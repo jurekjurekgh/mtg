@@ -2057,7 +2057,7 @@ function startMadnessTriggerOrder(state) {
 // celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
 // innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
 // również koszt rzutu, niezawieszone obrażenia `resolve_combat` i koszt
-// niemanowej aktywacji bez odrzucania.
+// niemanowej aktywacji oraz samodzielnej zdolności many bez odrzucania.
 // Wybory kontrolerów są APNAP:
 // najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
 function advanceDeathTriggerBatch(state) {
@@ -2093,10 +2093,10 @@ function advanceDeathTriggerBatch(state) {
 
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies'].includes(name);
 
-function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo) {
+function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false) {
   if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
-  if (cmd.type === 'activate_ability') {
+  if (cmd.type === 'activate_ability' && !standaloneManaActivation) {
     // Nie wchodzimy w płacenie maną ani koszt odrzucenia: tylko faktycznie
     // zakolejkowana niemanowa zdolność po zakończeniu jej kosztów.
     const activation = events.find(e => e.type === 'ability_activated' && e.onStack && e.stackEntryId);
@@ -2152,7 +2152,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   advanceDeathTriggerBatch(state);
 }
 
-function accepted(state, cmd, result) {
+function accepted(state, cmd, result, standaloneManaActivation = false) {
   // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
   // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
   // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
@@ -2295,7 +2295,7 @@ function accepted(state, cmd, result) {
   }
   // Także triggery ofiary Sagi należą do tego checkpointu; najpierw zbierz
   // pełną partię, dopiero potem rozpocznij kontrolowane ogłaszanie celów.
-  startDeathTriggerBatch(state, cmd, result.events, triggerTargetsBefore, triggerPriorityBefore);
+  startDeathTriggerBatch(state, cmd, result.events, triggerTargetsBefore, triggerPriorityBefore, standaloneManaActivation);
   // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
   // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
   // („If a target can’t be changed to another legal target, the original
@@ -6770,10 +6770,17 @@ export function execute(state, input) {
 
   if (cmd.type === 'activate_ability') {
     try {
+      // Ustalamy PRZED kosztem, bo Scion może zniknąć w jego trakcie.
+      // Mana płacona wewnątrz innej decyzji nie jest osobnym checkpointem.
+      const source = state.objects.get(cmd.objectId);
+      const ability = source && activatableAbilities(state, source)[cmd.abilityIndex];
+      const standaloneManaActivation = manaGeneratingCommandFor(state, cmd, cmd.playerId)
+        && !firstPendingDecision(state) && !state.pendingSpell && !state.pendingAbilityActivation
+        && !ability?.cost?.discardCard && !ability?.cost?.discardCards;
       const before = state.events.length;
       const e = activateAbility(state, cmd.playerId, cmd.objectId, cmd.abilityIndex, cmd.attackerId, cmd.targets, cmd.xValue, cmd.crewCreatureIds, cmd.tapCreatureId, cmd.tapOtherCreatureId, cmd.sacrificeLandId, undefined, cmd.grantedFromEquipment, cmd.tapArtifactIds, { tapPermanentCostId: cmd.tapPermanentCostId, sacrificeCreatureIds: cmd.sacrificeCreatureIds, sacrificeCreatureId: cmd.sacrificeCreatureId });
       const events = [e, ...state.events.slice(before).filter((entry) => entry !== e)];
-      return accepted(state, cmd, { ok: true, events });
+      return accepted(state, cmd, { ok: true, events }, standaloneManaActivation);
     } catch (error) {
       return reject(`illegal_ability:${error.message}`);
     }
