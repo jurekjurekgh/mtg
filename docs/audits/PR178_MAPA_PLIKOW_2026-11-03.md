@@ -71,10 +71,10 @@
 | `test/audyt-pr177-a108-ward-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a109-ward-aura-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a11-powrot-kreatora.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a110-auto-mana-events.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a111-imp-self-lki.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a112-imp-selhoff-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a113-mixed-combat-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a110-auto-mana-events.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
+| `test/audyt-pr177-a111-imp-self-lki.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
+| `test/audyt-pr177-a112-imp-selhoff-apnap.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
+| `test/audyt-pr177-a113-mixed-combat-apnap.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
 | `test/audyt-pr177-a12-koszt-kwalifikowany.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a13-cel-lad-stwor.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a14-wynik-kreatora.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
