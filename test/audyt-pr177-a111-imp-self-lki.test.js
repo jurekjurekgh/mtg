@@ -10,15 +10,17 @@ import { addCounter } from '../src/engine/counters.js';
 import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 
-// Otwarte: wyłącznie wymuszenie włącza mierzone RED; kontrole pozostają aktywne.
-const audit = (name, fn) =>
-  test(
-    name,
-    {
-      skip: process.env.AUDIT_A111_ENFORCE === '1' ? false : 'otwarte A111 (AUDIT_A111_ENFORCE=1)',
-    },
-    fn,
-  );
+// A111 zamknięte w PR #179: własne odejście źródła grupowego triggera czyta
+// stan sprzed ruchu, a wygnanie zamiast śmierci nie wyłącza skanu odejścia.
+// Wszystkie przypadki są aktywne; nie wymagają już flagi wymuszenia.
+//
+// CR 603.6c: „Leaves-the-battlefield abilities trigger when a permanent moves
+// from the battlefield to another zone”. CR 603.10a: „Some zone-change
+// triggers look back in time. These are leaves-the-battlefield abilities”.
+// CR 122.1h: finality „If this permanent would be put into a graveyard from
+// the battlefield, exile it instead.” Tekst CR: nwgarne/mtg-data, SHA-256
+// 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
+const audit = (name, fn) => test(name, fn);
 const registry = createCardRegistry();
 const other = (p) => (p === 'p1' ? 'p2' : 'p1');
 function put(state, id, cardId, ownerId, zone) {

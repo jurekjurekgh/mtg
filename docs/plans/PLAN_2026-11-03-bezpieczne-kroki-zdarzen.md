@@ -38,13 +38,15 @@ Słownik używany niżej:
 
 Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdolnością „ilekroć jeden lub więcej permanentów, które kontrolujesz, opuszcza pole bitwy” powinien uwzględnić także własne odejście. Obecny skan zbiorczy ogląda tylko permanenty pozostałe na polu bitwy.
 
-- [ ] Najpierw odtworzyć błąd rzeczywistymi komendami i sprawdzić warianty: zwykła śmierć, wygnanie, odbicie, poświęcenie jako koszt, przejęta kontrola, utrata zdolności, zdolność nadana, token oraz powrót karty na pole bitwy przed rozstrzygnięciem.
-- [ ] Porównać kontroler i zdolności **sprzed ruchu**, nie cechy nowego obiektu po zmianie strefy. Podstawa: CR 603.2, 603.6c, 603.10/603.10a, 608.2h i 113.7a. Cytaty i ślad źródła w teście oraz opisie commitu.
-- [ ] Sprawdzić całą ścieżkę aż do rozstrzygnięcia efektu, nie samo pojawienie się wpisu na stosie. Nie dodawać warunku po nazwie ani identyfikatorze karty.
-- [ ] Wybrać najmniejszą naprawę korzystającą z istniejącego ostatniego znanego stanu, jeśli wystarcza. Nie zmieniać przy okazji grupowania wielu zdarzeń, kolejności wielu graczy ani momentu wykonywania automatycznych sprawdzeń.
-- [ ] Mutacja polega na usunięciu dokładnej naprawy i musi przywrócić właściwy RED; dodatkowa mutacja nie może wzmacniać przypadkowego warunku.
+- [x] Najpierw odtworzyć błąd rzeczywistymi komendami i sprawdzić warianty: zwykła śmierć, wygnanie, odbicie, poświęcenie jako koszt, przejęta kontrola, utrata zdolności, zdolność nadana, token oraz powrót karty na pole bitwy przed rozstrzygnięciem.
+- [x] Porównać kontroler i zdolności **sprzed ruchu**, nie cechy nowego obiektu po zmianie strefy. Podstawa: CR 603.2, 603.6c, 603.10/603.10a, 608.2h i 113.7a. Cytaty i ślad źródła w teście oraz opisie commitu.
+- [x] Sprawdzić całą ścieżkę aż do rozstrzygnięcia efektu, nie samo pojawienie się wpisu na stosie. Nie dodawać warunku po nazwie ani identyfikatorze karty.
+- [x] Wybrać najmniejszą naprawę korzystającą z istniejącego ostatniego znanego stanu, jeśli wystarcza. Nie zmieniać przy okazji grupowania wielu zdarzeń, kolejności wielu graczy ani momentu wykonywania automatycznych sprawdzeń.
+- [x] Mutacja polega na usunięciu dokładnej naprawy i musi przywrócić właściwy RED; dodatkowa mutacja nie może wzmacniać przypadkowego warunku.
 
 **Ukończenie:** udokumentowany RED→GREEN, mutacja złapana, pełny `npm test` + `npm run build`, osobny commit i push. Nie usuwać skipów z pokrewnych przypadków A110–A113 tylko dlatego, że jeden wariant przeszedł.
+
+**Wynik etapu 2:** A111 przed poprawką 4 pass / 20 fail; po poprawce 24/24. Usunięcie całej naprawy przywraca 4 pass / 20 fail. Naprawa dotyczy tylko `processTriggersScan`: (1) wygnanie zamiast śmierci pomija trigger „dies”, ale nie kończy skanu odejścia; (2) odchodzący obserwator jest skanowany z LKI sprzed ruchu; (3) poświęcenie z finality nie ustawia „descended”. A111 usunięte z kwarantanny. Pozostałe wymuszone RED: **92** (było 114; część pokrewnych przypadków też zaczęła przechodzić, ale nie zamykano ich plików). Fast **9856 pass / 94 skip / 0 fail**, build **77 modułów / 5675,9 kB**.
 
 **Warunek zatrzymania:** jeżeli poprawny lokalny fix wymaga nowego trwałego modelu zdarzeń, zmiany kolejności całej partii lub nowego sposobu zapisu stanu, najpierw powstać ma osobna decyzja architektoniczna z opisem kosztów i migracji. Nie wdrażać takiej zmiany jako „drobnej poprawki”.
 

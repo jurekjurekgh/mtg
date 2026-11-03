@@ -26,6 +26,7 @@
 - Roadmapa `docs/plans/PLAN_2026-11-03-bezpieczne-kroki-zdarzen.md` rozdziela testy chroniące, lokalny potwierdzony fix, granice zdarzeń i wspólną kolejność. Każdy krok wymaga RED→GREEN tam, gdzie naprawia błąd, mutacji, pełnego fast + build oraz osobnego push. Zmiana trwałego modelu stanu wymaga ADR przed kodowaniem.
 - Audyt pozostaje częściowy: 114 otwartych wierszy mapy i osobno 114 otwartych wymuszonych RED. Nie wdrożono eksperymentów `NIE_WDRAZAC`, nie dodano kart, nie uruchomiono B0.
 - Etap 1: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js` dodaje 7 aktywnych testów chroniących (jednoczesne odejścia, przeciwnik, tokeny, dwie kopie, przejęta kontrola, priorytet, replay). Bez zmiany produkcji; fast **9836 pass / 114 skip / 0 fail**, build 77 modułów / 5673,7 kB.
+- Etap 2 / A111: `processTriggersScan` czyta odchodzącego obserwatora z LKI, nie kończy skanu przy wygnaniu zamiast śmierci i nie ustawia descended dla poświęcenia z finality. A111 RED 4/24 → GREEN 24/24, mutacja usunięcia naprawy złapana; A111 usunięte z kwarantanny. Fast **9856 pass / 94 skip / 0 fail**, build 77 modułów / 5675,9 kB; pozostałe wymuszone RED **92**.
 
 
 ## 2026-11-03 — audyt PR #178, B1 bestow i jawny tryb RED (PR #179)

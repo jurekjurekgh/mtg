@@ -12,10 +12,10 @@
 
 - Przed kontynuacją architektury, zamrożone `ad4bf3b`, `npm run test:all`: **10 097 pass / 114 skip / 0 fail**, 10 211 testów, 489,2 s.
 - Po etapie 1 (7 nowych testów chroniących, bez zmiany produkcji): fast **9836 pass / 114 skip / 0 fail**, build **77 modułów / 5673,7 kB**.
-- `npm run build`: **77 modułów / 5673,7 kB**.
-- Ostatni wcześniejszy szybki pomiar: 9829 pass / 114 skip / 0 fail; slow: 268 pass / 0 fail / 0 skip.
-- `npm run test:audit`: **148 testów / 34 pass / 114 fail / 0 skip** — oczekiwane RED, nie zielona brama.
-- Mapa #178: **80 przejrzanych / 114 otwartych wierszy**. Liczba otwartych wierszy jest niezależna od 114 wymuszonych RED.
+- Po etapie 2 / A111: fast **9856 pass / 94 skip / 0 fail**, build **77 modułów / 5675,9 kB**.
+- Ostatni wcześniejszy pełny pomiar przed kontynuacją: 10 097 pass / 114 skip / 0 fail; slow: 268 pass / 0 fail / 0 skip. Po A111 pełny `test:all` do powtórzenia przed końcem pracy.
+- `npm run test:audit` po A111: **124 testy / 32 pass / 92 fail / 0 skip** — oczekiwane RED pozostałych, nie zielona brama.
+- Mapa #178: **80 przejrzanych / 114 otwartych wierszy**. Liczba otwartych wierszy jest niezależna od wymuszonych RED; po zamknięciu A111 zostało **92 wymuszone RED**.
 - CI poprzedniego HEAD: run `41725555322`, job `test`, success 7m19s; PR był draft/mergeable/clean.
 
 ## Pliki i źródła
@@ -31,14 +31,14 @@
 
 1. Roadmapa wypchnięta jako `3fe0720` przed kodowaniem.
 2. Etap 1 wykonany: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js`, 7/7 GREEN bez zmiany produkcji; commit/push po pełnym fast + build.
-3. Zbadać jeden kandydat: własne odejście źródła zbiorowego wyzwalacza i ostatni znany stan sprzed ruchu. Najpierw rzeczywisty RED, potem najmniejsza naprawa, mutacja i pełna brama.
+3. Etap 2 / A111 wykonany: własne odejście źródła zbiorowego wyzwalacza, wygnanie zamiast śmierci i descended przy poświęceniu z finality. RED→GREEN, mutacja, pełny fast + build; A111 usunięte z kwarantanny.
 4. Granice zdarzeń, wspólną kolejność wielu graczy i automatyczne sprawdzenia wdrażać dopiero po osobnych dowodach. Jeżeli potrzeba nowego trwałego modelu stanu, przygotować ADR przed kodowaniem.
-5. Nie zamykać pokrewnych A110–A113 na podstawie jednego wariantu. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
+5. Nie zamykać pokrewnych A110/A112/A113 na podstawie jednego wariantu. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
 
 ## Zasady nie do obejścia
 
 - Tylko przypisana gałąź; fetch i porównanie przed każdym push; żadnych force push ani merge.
 - Każdy samodzielnie zielony krok: pełny `npm test` + build, osobny commit, natychmiast push.
 - Logi testów wyłącznie do `.arena/`, w narzędziu krótkie podsumowanie; nie edytować drzewa podczas bramy.
-- 114 skip nie jest dowodem naprawy; `test:audit` ma pozostać czerwony do czasu właściwych fixów.
+- Skip nie jest dowodem naprawy; `test:audit` ma pozostać czerwony do czasu właściwych fixów (obecnie 92 RED).
 - Wyjaśnienia dla właściciela prostym językiem; każdy potrzebny skrót natychmiast rozwinąć.
