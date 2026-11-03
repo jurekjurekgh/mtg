@@ -24,10 +24,10 @@
 | `docs/audits/experiments/README_A111_A112.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
 | `docs/audits/experiments/README_A99.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
 | `docs/plans/PLAN_2026-11-01-audyt-pr177.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/plans/PLAN_2026-11-01-minimalne-x-bota.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/plans/PLAN_2026-11-01-uwagi-o-p-r.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/plans/PLAN_2026-11-01-zgloszenie-magma-x.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/plans/PLAN_2026-11-02-uwagi-manowar-austere.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/plans/PLAN_2026-11-01-minimalne-x-bota.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
+| `docs/plans/PLAN_2026-11-01-uwagi-o-p-r.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
+| `docs/plans/PLAN_2026-11-01-zgloszenie-magma-x.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
+| `docs/plans/PLAN_2026-11-02-uwagi-manowar-austere.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
 | `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `src/cards/card-data.js` | produkcja | przejrzany diff; choiceComponents dla trybów złożonych |
 | `src/controllers/aggro-bot.js` | produkcja | przejrzany diff; filtr dopłat i resolve_trigger_order |
@@ -55,10 +55,10 @@
 | `src/table/no-combination-rows.js` | produkcja | przejrzany diff; fail-closed dla kombinacji |
 | `src/table/render.js` | produkcja | przejrzany diff; etykiety trigger order/champion/search i ostrzeżenia crew/saddle |
 | `src/table/session.js` | produkcja | przejrzany diff; klucze opcji, FoW search i log champion |
-| `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr146-predykat-pipow-jeden.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pmssb81-koszt-kwalifikowany.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/audyt-pr146-predykat-pipow-jeden.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/audyt-pr177-a10-bestow-inwestycja.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a100-ward-triggers.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a101-reflexive-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
@@ -168,14 +168,14 @@
 | `test/audyt-pr177-klatwa-gracz-upkeep.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-morbid-bestow.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/batch39-kart.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/batch40-kart.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/batch40-kart.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/batch41-kart.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/bot-scoring-snapshot.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/epic-experiment-sequential-choice.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/fixtures/bot-scoring-snapshot.json` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/helpers/cr-numery-tabela.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/bot-scoring-snapshot.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/epic-experiment-sequential-choice.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/fixtures/bot-scoring-snapshot.json` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/helpers/cr-numery-tabela.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/helpers/madness-priority.js` | test/fixture | przejrzany helper; wybór kolejności i rundy priorytetu madness |
-| `test/m160-uwagi-wlasciciela.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/m160-uwagi-wlasciciela.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/m161-madness-spell-path.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/m200-uwagi-wlasciciela.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/m258-madness-kolejka.test.js` | test/fixture | przejrzany diff i ścieżka produkcji; kolejność madness zgodna z CR 603.3b/702.35 |
@@ -184,19 +184,19 @@
 | `test/m382-apnap-kolejnosc-triggerow.test.js` | test/fixture | przejrzany pełny test; APNAP/LIFO i wybór kolejności, bez nowego błędu |
 | `test/owner-cathartic-reunion-auto-discard.test.js` | test/fixture | przejrzany diff; trigger madness po auto-discarcie, bez nowego błędu |
 | `test/owner-discard-selection.test.js` | test/fixture | przejrzany diff; osobne triggery madness i wybór kolejności |
-| `test/pmssb10-ogon-wave-b2.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/pmssb4-zycie-wave-a.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/pmssb5-kontry-wave-a.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/pmssb10-ogon-wave-b2.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/pmssb4-zycie-wave-a.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
+| `test/pmssb5-kontry-wave-a.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/pr66-audit-fixes.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/real-cards-batch54-auras.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/real-cards-batch54-auras.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/real-cards-batch7.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/real-cards-batch71.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/real-cards-batch71.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/uwaga-2026-11-01-minimum-x.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/uwagi-2026-11-01-o-imp.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/uwagi-2026-11-01-p-fireball.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/uwagi-2026-11-01-r-bloodlust.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/uwagi-2026-11-02-austere-modal.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/uwagi-2026-11-02-manowar.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/zgloszenie-j-fledgling-imp-latanie.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/zgloszenie-j-fledgling-imp-latanie.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/zgloszenie-n-magma-wybor-x.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/znaleziska-a4-madness-batch-x3.test.js` | test/fixture | przejrzany diff; batch discard → triggery → decyzje, bez nowego błędu |
