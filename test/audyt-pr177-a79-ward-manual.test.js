@@ -14,11 +14,11 @@ const view=s=>playerView(s,s.turn.priorityPlayerId);
 function act(s,c){assert.ok(c,JSON.stringify(view(s).legalCommands));const r=execute(s,c);assert.ok(r.ok,JSON.stringify(r));}
 function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function turn(s,p){s.turn=jumpToStep(s.turn,'main1',p);s.turn.activePlayerId=s.turn.priorityPlayerId=p;}
-function scene(payer,{reserve=1,scionOwner=payer}={}){
+function scene(payer,{reserve=1,scionOwner=payer,tappedSource=false}={}){
  const opponent=payer==='p1'?'p2':'p1',s=createGameState({seed:17779,players:[{id:'p1'},{id:'p2'}]});let tokenId=null;
  if(scionOwner){turn(s,scionOwner);put(s,'summoner','scion-summoner','hand',scionOwner);addMana(s,scionOwner,3,{colors:['G']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='summoner'));pass(s);pass(s);pass(s);pass(s);tokenId=[...s.objects.values()].find(o=>o.cardId==='token_eldrazi_scion'&&o.zone==='battlefield')?.id;assert.ok(tokenId);}
  turn(s,opponent);put(s,'hellion','riftburst-hellion','hand',opponent);addMana(s,opponent,3,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.objectId==='hellion'&&c.faceDown));pass(s);pass(s);
- const hidden=[...s.objects.values()].find(o=>o.cardId==='riftburst-hellion'&&o.zone==='battlefield');assert.ok(hidden?.faceDown);turn(s,payer);put(s,'shock','shock','hand',payer);addMana(s,payer,reserve+1,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='shock'&&c.targets?.includes(hidden.id)));pass(s);pass(s);
+ const hidden=[...s.objects.values()].find(o=>o.cardId==='riftburst-hellion'&&o.zone==='battlefield');assert.ok(hidden?.faceDown);turn(s,payer);if(tappedSource){put(s,'druid','druid-of-the-cowl','battlefield',payer);s.objects.set('druid',Object.freeze({...s.objects.get('druid'),tapped:true}));}put(s,'shock','shock','hand',payer);addMana(s,payer,reserve+1,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='shock'&&c.targets?.includes(hidden.id)));pass(s);pass(s);
  return {s,payer,opponent,tokenId,hiddenId:hidden.id};
 }
 for(const payer of ['p1','p2'])test(`A79: Shock przeciw Ward {2}, pula 1 + realny Scion, płacący ${payer}`,()=>{
@@ -45,4 +45,13 @@ test('A79: wyprodukowana mana opłaca Ward bez poświęcenia Sciona',()=>{
 test('A79: niewystarczająca zapłata Ward nie usuwa decyzji ani nie zmienia stanu',()=>{
  const {s}=scene('p1',{reserve:2});assert.ok(s.pendingWardPay);spendMana(s,'p1',1,[]);const before=stateFingerprint(s);
  const r=execute(s,{type:'resolve_ward_pay_choice',playerId:'p1',pay:true});assert.equal(r.ok,false);assert.equal(stateFingerprint(s),before);assert.ok(s.pendingWardPay);
+});
+
+test('A79: konserwatywne okno przy nietrafnym źródle nadal umożliwia odmowę',()=>{
+ const {s}=scene('p1',{reserve:0,scionOwner:null,tappedSource:true});assert.ok(s.pendingWardPay);const cmds=view(s).legalCommands;
+ assert.ok(!cmds.some(c=>c.type==='resolve_ward_pay_choice'&&c.pay===true));act(s,cmds.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay===false));assert.ok([...s.objects.values()].some(o=>o.cardId==='shock'&&o.zone==='graveyard'));
+});
+test('A79: aktywacja Sciona i opłata Ward są deterministyczne w replay',()=>{
+ const {s,tokenId}=scene('p1');act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===tokenId));act(s,view(s).legalCommands.find(c=>c.type==='resolve_ward_pay_choice'&&c.pay===true));
+ const replay=replayFromState(s),verified=verifyReplay({...replay,commands:replay.commands.slice(-2)},()=>scene('p1').s,execute);assert.ok(verified.deterministic);assert.ok(verified.results.every(r=>r.ok));assert.equal(stateFingerprint(verified.state),stateFingerprint(s));
 });

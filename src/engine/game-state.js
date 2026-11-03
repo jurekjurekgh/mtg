@@ -4523,12 +4523,13 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_ward_pay_choice') return reject('ward_pay_unresolved');
     if (cmd.playerId !== state.pendingWardPay.playerId) return reject('ward_pay_not_your_decision');
     const pending = state.pendingWardPay;
+    // Odrzucona płatność musi zostawić oczekującą decyzję i cały stan nietknięte.
+    if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
     const before = state.events.length;
     state.pendingWardPay = null;
     const targeting = state.objects.get(pending.targetingStackId);
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (cmd.pay) {
-      if ((pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetingOnStack) {
       counterStackObject(state, pending.targetingStackId, {

@@ -490,6 +490,17 @@ export function isActivatedManaAbility(ability) {
     && effects.every((e) => e?.type === 'add_mana' || e?.type === 'gain_life');
 }
 
+// Tylko zachowanie okna płatności: samo istnienie potencjalnej zdolności
+// many nie obiecuje, że gracz może zapłacić, ani nie ponosi jej kosztów.
+// Faktyczne oferty aktywacji i sama płatność mają własną legalną walidację.
+export function hasPotentialManaAbility(state, playerId) {
+  return state.zones.battlefield.some(id => {
+    const source = state.objects.get(id);
+    return source?.controllerId === playerId
+      && activatableAbilities(state, source).some(isActivatedManaAbility);
+  });
+}
+
 /**
  * F (zgłoszenie z gry 2026-09-22 — Pristine Talisman): „Ten artefakt produkuje
  * manę, ale także dodaje 1 life. Nie powinien być traktowany jak zwykły

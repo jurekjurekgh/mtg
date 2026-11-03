@@ -19,6 +19,7 @@ import { changeLife, setPlayerSpeed } from './players.js';
 import { CARD_TYPES, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
+import { hasPotentialManaAbility } from './mana-sources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -1577,7 +1578,8 @@ export function resolveTriggerEntry(state, entry) {
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (targetingOnStack) {
       const payer = targeting.controllerId;
-      if (producibleMana(state, payer, null, {}, []) >= extra.wardPay.amount) {
+      if (producibleMana(state, payer, null, {}, []) >= extra.wardPay.amount
+        || hasPotentialManaAbility(state, payer)) {
         state.pendingWardPay = {
           playerId: payer,
           amount: extra.wardPay.amount,
