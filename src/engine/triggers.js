@@ -325,7 +325,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
 /** Czy kontroler triggera może opłacić opcjonalny koszt (mana / życie /
  *  znacznik ze źródła — `payCounter`, Kappa Tech-Wrecker „you may remove
  *  a deathtouch counter from it"). */
-function canPayTrigger(state, controllerId, trigger, source = null) {
+function canPayTrigger(state, controllerId, trigger, source = null, allowManualMana = false) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
   if (trigger?.payCounter) {
@@ -343,7 +343,8 @@ function canPayTrigger(state, controllerId, trigger, source = null) {
   // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
   // (A: przed strażnikiem (czyste) — joint (iv) bramki źródeł kosztowych.)
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
-  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)) return false;
+  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)
+    && !(allowManualMana && payReqs.length === 0 && hasPotentialManaAbility(state, controllerId))) return false;
   if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
@@ -1325,7 +1326,7 @@ function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
   }
   if (choice.kind === 'optionalPay') {
     const trigger = payload.ability?.trigger ?? {};
-    if (!canPayTrigger(state, controllerId, trigger, state.objects.get(payload.sourceId) ?? null)) {
+    if (!canPayTrigger(state, controllerId, trigger, state.objects.get(payload.sourceId) ?? null, true)) {
       // Nie da się zapłacić — „If/When you do" nie zachodzi.
       state.events.push(resolvedEvent({ noEffect: true, reason: 'cannot_pay' }));
       return;

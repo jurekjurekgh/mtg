@@ -30,7 +30,7 @@ import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, b
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
-import { addCounter, removeCounter } from './counters.js';
+import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
@@ -4563,6 +4563,21 @@ export function execute(state, input) {
     const energyDue = pending.ability?.trigger?.payEnergy ?? 0;
     const energyHeld = state.players.find((player) => player.id === pending.playerId)?.energy ?? 0;
     if (cmd.pay && energyDue > energyHeld) return reject('energy_insufficient');
+    // Waliduj cały koszt przed mutacją (również kolor, życie i znacznik):
+    // spreparowana lub przestarzała komenda nie może utracić decyzji ani
+    // zapłacić tylko części kosztu. Ręczna mana musi już być wyprodukowana.
+    if (cmd.pay) {
+      const trigger = pending.ability?.trigger ?? {};
+      const pips = (trigger.payColors ?? []).map(color => [color]);
+      const payer = state.players.find(player => player.id === pending.playerId);
+      const costCounter = trigger.payCounter;
+      const counterSource = state.objects.get(pending.sourceId);
+      if ((trigger.payMana ?? 0) > producibleMana(state, pending.playerId, null, {}, pips)
+        || (pips.length && !canPayColoredCost(state, pending.playerId, pips))) return reject('optional_pay_insufficient_mana');
+      if ((trigger.payLife ?? 0) > (payer?.life ?? 0)) return reject('optional_pay_insufficient_life');
+      if (costCounter && (!counterSource || counterSource.zone !== 'battlefield'
+        || !hasCounter(counterSource, costCounter.counter, costCounter.amount ?? 1))) return reject('optional_pay_insufficient_counter');
+    }
     const before = state.events.length;
     state.pendingOptionalPay = null;
     if (cmd.pay) {
@@ -8420,7 +8435,16 @@ export function playerView(state, playerId) {
     // Audyt PR #165 (A-2): „zapłać” tylko przy pokryciu energią (jak oferta
     // kontr-płatności `producibleMana`); „nie płać” zawsze dostępne.
     const energyForPayer = state.players.find((player) => player.id === state.pendingOptionalPay.playerId)?.energy ?? 0;
-    if ((optionalPayTrigger.payEnergy ?? 0) <= energyForPayer) {
+    const optionalPips = (optionalPayTrigger.payColors ?? []).map(color => [color]);
+    const manualUnits = manualManaOfferUnits(state, playerId);
+    const payerLife = state.players.find(player => player.id === playerId)?.life ?? 0;
+    const counterCost = optionalPayTrigger.payCounter;
+    const counterSource = state.objects.get(state.pendingOptionalPay.sourceId);
+    if ((optionalPayTrigger.payEnergy ?? 0) <= energyForPayer
+      && (optionalPayTrigger.payLife ?? 0) <= payerLife
+      && (!counterCost || (counterSource?.zone === 'battlefield' && hasCounter(counterSource, counterCost.counter, counterCost.amount ?? 1)))
+      && (optionalPayTrigger.payMana ?? 0) <= producibleMana(state, playerId, null, {}, optionalPips) + manualUnits.amount
+      && (!optionalPips.length || canPayColoredCostForOffer(state, playerId, optionalPips, manualUnits.units))) {
       legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: true, ...optionalPayInfo }));
     }
     legalCommands.push(command('resolve_optional_pay_choice', playerId, { pay: false, ...optionalPayInfo }));
