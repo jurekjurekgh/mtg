@@ -173,9 +173,8 @@ test('A74: Servant of the Scale rzeczywiście umiera — własny cel stwora wybi
  const stack=s.zones.stack.map(id=>s.objects.get(id));assert.deepEqual(stack.map(o=>o.controllerId),['p1','p1','p2','p2','p2']);assert.equal(stack.at(-1).cardId,'servant-of-the-scale');assert.equal(s.turn.priorityPlayerId,'p1');pass(s);pass(s);assert.equal(s.objects.get('p2-crow').counters['+1/+1'],1);
 });
 
-// Pozostała luka APNAP: cel inny niż gracz / własny stwór. Ten niezależny
-// scenariusz jest RED również na bazie #177 i na samym #177 (A74 go nie łata).
-test.todo('OTWARTE: Polluted Dead celuje w ląd; APNAP powinien zacząć aktywny gracz',()=>{
+// A75: wcześniejszy RED także na bazie i #177, obecnie zwykły test.
+test('A75: Polluted Dead celuje w ląd; APNAP zaczyna aktywny gracz',()=>{
  const s=createGameState({seed:17779,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
  for(const p of ['p1','p2']){put(s,`${p}-crow`,'murder-of-crows','battlefield',p);put(s,`${p}-occult`,'selhoff-occultist','battlefield',p);put(s,`${p}-land`,'basic-mountain','battlefield',p);}
  put(s,'dead','polluted-dead','battlefield','p2');put(s,'fiery','fiery-fall','hand','p1');addMana(s,'p1',6,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='fiery'&&c.targets?.includes('dead')));pass(s);pass(s);

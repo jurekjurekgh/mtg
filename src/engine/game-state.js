@@ -29,7 +29,7 @@ function hasColorForCardId(state, playerId, cardId, phyrexianPay = 0, purpose = 
 import { COMBAT_OPTION_CAP, attackerBlockPowerRestriction, blockCandidatePool, blockSlotsFor, cantBeBlockedFromEquipment, declareAttackers, declareBlockers, legalAttackerOptions, legalBlockerOptions, mandatoryAttackerIds, mandatoryBlockerIds, minimalMandatoryBlocks, rememberClosedCombat, resolveCombatDamage, buildDamageAssignmentView, buildDefaultDamageAssignments, validateDamageAssignment, validateBlockerDamageAssignment, staticAttackPreventionOf } from './combat.js';
 import { optionalSpellEffectChoices, castSpell, castCleave, legalSpellCasts, legalCleaveCasts, plotCard, suspendCard, warpCard, resolveTopOfStack, resolveRiotEntry, finishPendingSpell, resumeSuspendedSpell, castEscape, resolveEscapeExile, legalEscapeCasts, ESCAPE_OPTION_CAP, DELVE_OPTION_CAP, declareDelveCast, resolveDelveExile, delveExileLimit, affordableDelveCounts, castFlashback, legalFlashbackCasts, castAdventure, legalAdventureCasts, castAdventureCreature, legalAdventureCreatureCasts, effectiveSpellManaCost, legalTargetCandidates, validateTargets, castMadnessSpell, legalModeCasts, legalXCostCasts, legalFireballCasts, validateVariableTargets, validateFireballTargets, legalTargetCombos, validateDamageDivision, dividedDamageDivisions } from './spells.js';
 import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, activateAbility, performActivation } from './abilities.js';
-import { attachmentRestrictions, deathZoneFor, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
+import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
 import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
@@ -2054,8 +2054,9 @@ function startMadnessTriggerOrder(state) {
 }
 
 // Ograniczony batch: triggery śmierci bez celu albo z jednym obowiązkowym
-// celem gracza lub własnego stwora. Nie obejmuje innych decyzji w efekcie,
-// celów przeciwnika z Ward ani madness; obejmuje również koszt rzutu.
+// celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
+// innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
+// również koszt rzutu.
 // Wybory kontrolerów są APNAP:
 // najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
 function advanceDeathTriggerBatch(state) {
@@ -2096,9 +2097,17 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   const targets = state.pendingTriggerTargets;
   if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
-    || !['player', 'creature_you_control'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
+    || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
     || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
     || p.fixedTargetIds?.length || p.specOverride || !triggerTargetDecisionPending(state, p))) return;
+  // Ward wyzwala się przy ogłoszeniu celu i wymaga osobnej partii ponad całą
+  // partią APNAP. Ten węższy batch nie zajmuje się Wardem: jeśli dowolny
+  // przeciwny kandydat ma Ward, pozostajemy na starej ścieżce zamiast go
+  // przypadkowo umieścić pod późniejszymi triggerami.
+  if (targets.some(p => p.candidates?.some(id => {
+    const target = state.objects.get(id);
+    return target?.zone === 'battlefield' && target.controllerId !== p.playerId && wardAmountOf(target, state) != null;
+  }))) return;
   // Żadna inna zaległa decyzja nie może być przestawiona przed końcem efektu.
   state.pendingTriggerTargets = [];
   const otherDecision = firstPendingDecision(state);
