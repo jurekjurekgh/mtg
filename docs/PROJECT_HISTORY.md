@@ -26,6 +26,7 @@
 - Baza `04ca8e9`: `npm test` 9819 pass / 114 skip / 0 fail; build 77 modułów / 5673,2 kB. Wymuszone A84–A113: 114 RED / 18 kontroli GREEN.
 - B1 (`aba111e`): odbita karta z bestow nie przenosi deskryptora aury do ponownego zwykłego rzutu; Negate czyta aktualne cechy stosu. RED→GREEN, mutacje A/B złapane; po fixie fast 9824/114 skip/0 fail, build 5673,7 kB.
 - `f934bef`: `npm run test:audit` uruchamia wszystkie pliki z flagami `AUDIT_A*_ENFORCE`; obecnie 148 testów / 34 pass / 114 fail. To reproduktor, nie bramka na zielono. Po dodaniu fast 9826/114 skip/0 fail, build 5673,7 kB.
+- B2: dodatkowa regresja B1 na ścieżce odłączenia bestow (śmierć gospodarza → Man-o'-War → ponowny zwykły rzut / bestow). Test-only, RED na bazie przed B1, GREEN obecnie; po dodaniu fast 9829/114 skip/0 fail, build 5673,7 kB.
 - Nie dodano kart, nie uruchamiano B0, nie wdrożono eksperymentów `NIE_WDRAZAC`. Otwarte 114 RED APNAP/SBA/LKI czeka na decyzję architektoniczną checkpointów.
 
 
