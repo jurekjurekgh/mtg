@@ -2046,8 +2046,11 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
   // M259/B7 (CR 702.30 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
   // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
   // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
-  const canPay = producibleMana(state, controllerId, null, {}, [colors]) >= amount
-    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors]));
+  const canPay = (producibleMana(state, controllerId, null, {}, [colors]) >= amount
+    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors])))
+    // Koszt wyłącznie generyczny: tak jak Ward i counter-unless-pay, zachowaj
+    // okno przed ręczną aktywacją źródła. Kolorowe echo nie jest rozszerzone.
+    || (colors.length === 0 && hasPotentialManaAbility(state, controllerId));
   if (!canPay) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);

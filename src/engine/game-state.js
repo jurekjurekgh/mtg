@@ -4419,8 +4419,12 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_pay_or_sacrifice') return reject('pay_or_sacrifice_unresolved');
     if (cmd.playerId !== state.pendingPayOrSacrifice.playerId) return reject('pay_or_sacrifice_not_your_decision');
     const pending = state.pendingPayOrSacrifice;
-    const before = state.events.length;
     const source = state.objects.get(pending.sourceId);
+    const pips = (pending.colors ?? []).map(color => [color]);
+    if (cmd.pay && source?.zone === 'battlefield'
+      && ((pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, pips)
+        || (pips.length && !canPayColoredCost(state, pending.playerId, pips)))) return reject('pay_or_sacrifice_insufficient_mana');
+    const before = state.events.length;
     state.pendingPayOrSacrifice = null;
     if (cmd.pay && source && source.zone === 'battlefield') {
       // M259/B7: pipy kolorowe kosztu (echo {2}{B}) — pay_mana rozlicza je
@@ -8318,7 +8322,12 @@ export function playerView(state, playerId) {
       // do komendy — przycisk nie miał z czego złożyć pipów (L100 pkt 4).
       costColors: state.pendingPayOrSacrifice.colors ?? null,
     };
-    legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
+    const payPips = (state.pendingPayOrSacrifice.colors ?? []).map(color => [color]);
+    const manualUnits = manualManaOfferUnits(state, playerId);
+    if ((state.pendingPayOrSacrifice.amount ?? 0) <= producibleMana(state, playerId, null, {}, payPips) + manualUnits.amount
+      && (payPips.length === 0 || canPayColoredCostForOffer(state, playerId, payPips, manualUnits.units))) {
+      legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: true, ...payOrSacInfo }));
+    }
     legalCommands.push(command('resolve_pay_or_sacrifice', playerId, { pay: false, ...payOrSacInfo }));
     // K/CR 608.2g: zdolności many wolno aktywować przed płatnością — jak
     // przy kontr-płatności (Batch 54); dotąd oferta ich tu nie niosła, choć
