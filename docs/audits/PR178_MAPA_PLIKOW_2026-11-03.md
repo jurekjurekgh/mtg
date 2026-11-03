@@ -6,23 +6,23 @@
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
-| `README.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/ENGINE_MILESTONES.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/PMSSB.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `README.md` | dokumentacja | przejrzany diff; aktualizacja statusu PR/handoff, bez wpływu na runtime |
+| `docs/ENGINE_MILESTONES.md` | dokumentacja | przejrzany diff; korekta opisu pomiaru wrath, bez wpływu na runtime |
+| `docs/PMSSB.md` | dokumentacja | przejrzany diff; doprecyzowanie historii PMSSB-80, bez wpływu na runtime |
 | `docs/PROJECT_HISTORY.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/AUDYT_PR177_2026-11-01.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/PR177_MAPA_PLIKOW_2026-11-02.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | dokumentacja | przejrzany diff; korekta opisu premii wrath, bez wpływu na runtime |
 | `docs/audits/experiments/A107_NIE_WDRAZAC.patch` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/experiments/A109_NIE_WDRAZAC.patch` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/experiments/A110_NIE_WDRAZAC.patch` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/experiments/A111_A112_NIE_WDRAZAC.patch` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/audits/experiments/A99_NIE_WDRAZAC.patch` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/experiments/README_A107.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/experiments/README_A109.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/experiments/README_A110.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/experiments/README_A111_A112.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/experiments/README_A99.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/audits/experiments/README_A107.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
+| `docs/audits/experiments/README_A109.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
+| `docs/audits/experiments/README_A110.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
+| `docs/audits/experiments/README_A111_A112.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
+| `docs/audits/experiments/README_A99.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
 | `docs/plans/PLAN_2026-11-01-audyt-pr177.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/plans/PLAN_2026-11-01-minimalne-x-bota.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
 | `docs/plans/PLAN_2026-11-01-uwagi-o-p-r.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |

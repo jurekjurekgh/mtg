@@ -3,12 +3,13 @@
 ## Stan
 
 - Gałąź `arena/5d931b5a-mtg`, PR **#179** (draft): https://github.com/jurekjurekgh/mtg/pull/179
-- Commity sesji: `737d8ac` plan/mapa, `aba111e` B1 bestow, `f934bef` tryb audytu, `3d53f53` dokumentacja cząstkowa; kolejny commit dodaje regresję B2 (test-only) i aktualizuje dokumentację.
+- Commity sesji: `737d8ac` plan/mapa, `aba111e` B1 bestow, `f934bef` tryb audytu, `3d53f53` dokumentacja cząstkowa, `5d782b1` regresja B2 + dokumentacja.
 - Baza scalenia #178: `04ca8e9`. Nie ma nowych kart, nie uruchamiano B0, nie wdrożono eksperymentów `NIE_WDRAZAC`.
 
 ## Wyniki
 
 - `npm test`: **9829 pass / 114 skip / 0 fail**.
+- `npm run test:slow`: **268 pass / 0 fail / 0 skip**.
 - `npm run build`: **77 modułów / 5673,7 kB**.
 - `npm run test:audit`: **148 testów / 34 pass / 114 fail / 0 skip** — oczekiwane RED otwartych przypadków.
 - Wymuszone 16 plików A84–A113: 132 testy / 18 pass / 114 fail.
@@ -28,4 +29,4 @@
 1. Nie traktować 114 skip jako zielonego. `test:audit` ma pozostać czerwony do czasu napraw.
 2. Dokończyć przegląd semantyczny testów/docs #178 i konsumentów helperów produkcyjnych.
 3. Podjąć decyzję architektoniczną dla checkpointów APNAP/SBA/LKI. Nie wdrażać prototypów hurtowo; wymagany projekt granic zdarzeń, LKI, osobnych aktywacji many, SBA i kolejności celów.
-4. Po każdej naprawie: RED→GREEN, mutacja, pełny fast + build, commit i push. Przed końcem `test:all`/slow.
+4. Po każdej naprawie: RED→GREEN, mutacja, pełny fast + build, commit i push. Przed końcem kolejnej sesji `test:all`/slow.
