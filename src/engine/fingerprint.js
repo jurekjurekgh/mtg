@@ -15,7 +15,7 @@ export const PENDING_DECISION_FIELDS = Object.freeze([
   // i kart wygnania — zamrożony stan jest częścią stanu gry (ADR 0005),
   // a `affordableCounts` decyduje o ofercie (L48).
   'pendingDelveExile',
-  'madnessQueue',
+  'madnessQueue', 'madnessBatchTriggerIds', 'pendingTriggerOrder', 'pendingDeathTriggerBatch',
   // B2 (audyt PR #113, F1): `madnessQueue` to KOLEJKA odroczonych decyzji
   // madness (M258 — wpis zamiast natychmiastowego `pendingMadnessCast`, bo
   // decyzja otwiera się po całej sekwencji odrzuceń). Wpis kolejki zmienia

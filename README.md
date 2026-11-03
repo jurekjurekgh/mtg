@@ -12,9 +12,16 @@ Headless, rozwijalny silnik do rozgrywania partii **Magic: The Gathering** dla k
 
 ## Status
 
-**Aktualny punkt zaczepienia (2026-11-01):** [handoff](docs/setup/HANDOFF_2026-11-01.md),
+**Aktualny punkt zaczepienia (2026-11-02):** [handoff audytu](docs/setup/HANDOFF_2026-11-01-audyt-pr177.md),
+[plan](docs/plans/PLAN_2026-11-01-audyt-pr177.md), [raport](docs/audits/AUDYT_PR177_2026-11-01.md)
+i [mapa plików](docs/audits/PR177_MAPA_PLIKOW_2026-11-02.md). Audyt PR #177
+pozostaje otwarty; prace są w [PR #178](https://github.com/jurekjurekgh/mtg/pull/178).
+Dokładny zbadany zakres, wyniki testów i pozostałe zadania są w raporcie i mapie;
+nie uruchamiano pełnego B0.
+
+**Poprzedni punkt zaczepienia (2026-11-01):** [handoff](docs/setup/HANDOFF_2026-11-01.md),
 [plan batcha 71](docs/plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
-(kolekcja 625–634, 10 kart) — wszystko w otwartym
+(kolekcja 625–634, 10 kart) — w scalonym
 [PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Batch 71 domknięty:
 Vampire Hounds (EXO), Curse of the Bloody Tome (ISD), Rumbling Rockslide (LCI),
 Ambassador Oak (JMP), Tail Slash (DTK), Changeling Berserker (LRW),
@@ -31,13 +38,12 @@ deck-outu), delirium-trika (pump+first strike −17 → 76/82), pumpu atakujący
 i kosztu ofiar z kolorów Sphinx's Herald (+9 → −6/−24). Bramy:
 `npm test` **9156/9156**, `npm run test:slow` **268/268**, build **76 modułów /
 5608,7 kB**, benchmark quick heuristic **87,5%** (672 mecze). Golden-master
-zregenerowany świadomie (wpis pomiarowy per partia). PR czeka na decyzję
-właściciela.
+zregenerowany świadomie (wpis pomiarowy per partia). PR #177 został scalony.
 Poprzedni punkt zaczepienia (2026-10-27c): [handoff](docs/setup/HANDOFF_2026-10-27c.md),
 [plan sesji](docs/plans/PLAN_2026-10-27c-audyt-pr176-petla-jakosci.md) oraz
 [audyt PR #176](docs/audits/AUDYT_PR176_2026-10-27.md) oraz
 [uwagi z gry A–D](docs/audits/UWAGI_Z_GRY_2026-10-27c.md) i
-[uwagi z gry F–G (2026-10-29)](docs/audits/UWAGI_Z_GRY_2026-10-29.md) — wszystko w otwartym
+[uwagi z gry F–G (2026-10-29)](docs/audits/UWAGI_Z_GRY_2026-10-29.md) — wszystko w scalonym
 [PR #177](https://github.com/jurekjurekgh/mtg/pull/177). Sesja 2026-10-27c:
 pełny audyt scalonego PR #176 (22 pliki `src/`, +1298/−89; werdykt na każdym
 pliku) — znalezisko **F-1** naprawione u root cause: efekt zastępujący
@@ -74,8 +80,7 @@ powyżej progu 12 pkt mocy jego stworów; trigger „sacrifice each other creatu
 you control” nie jest już liczony jak symetryczny wrath, a koszt „odrzuć dwie
 karty” jest wyceniany. Bramki:
 `npm test` **9081/9081**, `npm run test:slow` **268/268**, build **76 modułów /
-5566,5 kB**, benchmark quick 672 mecze (heuristic 88,7%). PR czeka na decyzję
-właściciela.
+5566,5 kB**, benchmark quick 672 mecze (heuristic 88,7%). PR #177 został scalony.
 Poprzedni punkt zaczepienia: [handoff 2026-10-27](docs/setup/HANDOFF_2026-10-27.md)
 (sesja PR #176 — audyt PR #175, batch 70 = 10 kart, pętla PMSSB-79);
 poprzedni: [handoff 2026-10-26c](docs/setup/HANDOFF_2026-10-26c.md).

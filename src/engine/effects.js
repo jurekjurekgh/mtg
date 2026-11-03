@@ -3,7 +3,7 @@ import { isBattle, battleDefenseDelta } from './battles.js';
 import { destroyPermanents } from './destruction.js';
 import { event } from '../protocol/types.js';
 import { spellExitZone, isCardObject } from './zones.js';
-import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, preventDamageByRemovingCounters, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, activatableAbilities, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
+import { blockingRequirementCount, hasCreatureType, hasTemporaryCantBlock, matchesSubtypeQualifier, preventDamageWithShieldCounter, preventDamageByRemovingCounters, basicLandTypeCount, instantSorceryGraveyardCount, isPlaneswalker, removeLoyaltyForDamage, untapByEffect, allGraveyardsCardTypeCount, animatePermanentUntilEndOfTurn, deathZoneFor, detainUntilYourNextTurn, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, effectiveToughness, effectiveSubtypes, goadUntilNextTurn, grantAbilitiesUntilEndOfTurn, grantAbilitiesUntilSourceCastFromExile, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, isDamagePrevented, isProtectedFromSource, markDamage, modifyStats, preventDamageTo, replaceObject, turnFaceUp , markDealtDamageThisTurn, transformedCharacteristics, transformInPlaceFields, mergedAnimationLayer, untapObject, tapObject, entersUntappedOverride, entersTappedNow } from './permanents.js';
 import { CARD_TYPES } from './permanents.js';
 import { addCounter, hasCounter, removeCounter } from './counters.js';
 import { riotCountOf, queueRiotEntry, validRiotChoices, applyRiotOnEntry, riotForEffectEntry } from './riot.js';
@@ -11,7 +11,7 @@ import { addPoisonCounters, changeLife, recordCardDrawn, startEnginesFor, addEne
 import { spendMana, addMana, producibleMana, faceDownAbilities, countColorsOfManaSpent } from './resources.js';
 import { countGraveyardCardsOfType, countGraveyardCardTypes } from './graveyard-types.js';
 import { impulseWindowFields, stampImpulseWindow } from './impulse-window.js';
-import { getSourceForObject, isActivatedManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
+import { getSourceForObject, hasPotentialManaAbility, colorsProducibleBySubtype } from './mana-sources.js';
 import { moveObjectDirectly, removeFromCombat, singleTargetOfStackEntry } from './objects.js';
 import { tryRegenerate } from './state-based.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, nextFaceDownCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -875,13 +875,13 @@ export function discardCardsForced(state, { playerId, cardIds, purpose, sourceCa
         cardId: moved.cardId, choice: true, purpose, toZone: 'exile', madness: true,
         sourceCardId: sourceCardId ?? null,
       }));
-      // M258: wpis do KOLEJKI, nie bezpośrednio do pendingMadnessCast —
-      // decyzja otwiera się po zakończeniu całej sekwencji odrzuceń
-      // (promoteNextMadness w accepted() / gałęziach kończących resolvera).
+      // CR 702.35a/603.3: odrzucona karta tworzy trigger, który trafi
+      // na stos po zakończeniu efektu/kosztu; decyzja dopiero przy jego
+      // rozstrzygnięciu (queueMadnessTriggers w accepted).
       state.madnessQueue.push({
         playerId, objectId: exileId, cardId: moved.cardId,
-        // A4-1 (handoff 09-08k): priorytet po decyzji madness wraca do
-        // posiadacza Z PRZED odrzuceniem, NIE do odrzucającego.
+        // Zachowujemy kontekst odrzucenia; po rozstrzygnięciu triggera
+        // priorytet wraca do aktywnego gracza (CR 117.3b).
         restorePriorityTo: restorePriorityTo ?? state.turn.priorityPlayerId,
       });
     } else {
@@ -938,7 +938,7 @@ export function emitReflexiveSearch(state, pending, { found }) {
 export function queueSearchChoice(state, sourceObject, {
   qualifier, destination, entersTapped, destinations = null, chain = null,
   emitter = null, mandatory = false, reflexiveEvent = null,
-  reflexiveAbility = null, playerId = null,
+  reflexiveAbility = null, playerId = null, revealFound = true, singleSearchChain = false,
 }) {
   // Batch 66 (Cazur / Partner with): efektem może przeszukiwać TARGET PLAYER,
   // nie kontroler źródła. Jawny playerId jest generycznym właścicielem strefy
@@ -982,6 +982,7 @@ export function queueSearchChoice(state, sourceObject, {
     // your hand"). destinations = dopuszczalne strefy; null = jedna.
     destinations: destinations ? [...destinations] : null,
     entersTapped, sourceCardId: sourceObject.cardId ?? null,
+    revealFound, singleSearchChain,
     restorePriorityTo: state.turn.priorityPlayerId,
     // „Up to N" (Springbloom Druid): po udanym znalezieniu kolejkowana jest
     // kolejna decyzja (chain.remaining) — pełne 0/1/2 jako wybory gracza.
@@ -1001,7 +1002,7 @@ export function queueSearchChoice(state, sourceObject, {
   state.turn.priorityPlayerId = ownerId;
   state.events.push(event('search_choice_required', {
     playerId: ownerId, candidateIds: [...candidateIds],
-    destination, sourceCardId: sourceObject.cardId ?? null,
+    destination, mandatory: Boolean(mandatory), sourceCardId: sourceObject.cardId ?? null,
   }));
   return true;
 }
@@ -1057,7 +1058,7 @@ export function libraryCardsOf(state, playerId) {
  * Gracz, którego bibliotekę mieli `mill_cards` (Chronic Flooding: kontroler
  * ZACZAROWANEGO permanentu — CR 109.5; „target player mills N": cel).
  */
-export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
+export function millTargetPlayerId(state, effect, sourceObject, targets = [], context = {}) {
   if (effect.applyTo === 'enchanted_controller') {
     const host = sourceObject?.attachedTo ? state.objects.get(sourceObject.attachedTo) : null;
     return host?.controllerId ?? null;
@@ -1067,7 +1068,7 @@ export function millTargetPlayerId(state, effect, sourceObject, targets = []) {
   // GRACZ (CR 303.4b: aura na gracza niesie `enchantedPlayerId`), nie kontroler
   // aury (CR 109.5). Deskryptor generyczny — to samo miejsce prawdy dla oferty
   // i rozstrzygnięcia (L41).
-  if (effect.applyTo === 'enchanted_player') return sourceObject?.enchantedPlayerId ?? null;
+  if (effect.applyTo === 'enchanted_player') return context?.enchantedUpkeepPlayerId ?? sourceObject?.enchantedPlayerId ?? null;
   return (targets[0] && state.players.some((player) => player.id === targets[0]))
     ? targets[0]
     : sourceObject?.controllerId ?? null;
@@ -2343,7 +2344,29 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     // wielokrotne z variableTargets czaru). Cele nielegalne pomijają efekty
     // same (CR 608.2b — każdy wewnętrzny efekt sprawdza strefę).
     const inner = Array.isArray(effect.effects) ? effect.effects : [];
-    for (const targetId of targets) {
+    let orderedTargets = targets;
+    if (inner.length === 1 && inner[0]?.type === 'bounce_permanent') {
+      // Czyste aury osierocone przez moveObjectDirectly są obecnie sprzątane
+      // od razu. W zbiorowym odbiciu (Sea God's Scorn) również wybrane aury
+      // muszą wrócić, zamiast zginąć tylko dlatego, że host jest pierwszy.
+      // Głębsze załączniki najpierw, także gdy pośrednia aura nie jest celem
+      // (Feedback → Curiosity → stwór). To zabezpiecza ruch, nie stanowi
+      // ogólnego modelu jednoczesnych zdarzeń i LKI dla wszystkich efektów.
+      const depth = (id) => {
+        let object = state.objects.get(id);
+        let n = 0;
+        const seen = new Set([id]);
+        while (object?.attachedTo && !seen.has(object.attachedTo)) {
+          seen.add(object.attachedTo);
+          n += 1;
+          object = state.objects.get(object.attachedTo);
+        }
+        return n;
+      };
+      const depths = new Map(targets.map((id) => [id, depth(id)]));
+      orderedTargets = [...targets].sort((a, b) => depths.get(b) - depths.get(a));
+    }
+    for (const targetId of orderedTargets) {
       for (const innerEffect of inner) {
         applyEffect(state, innerEffect, sourceObject, [targetId], context);
       }
@@ -3078,10 +3101,10 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
     if (effect.applyTo === 'enchanted_controller' && (!enchantedHost || enchantedHost.zone !== 'battlefield')) {
       return; // aura odpięta w oknie odpowiedzi — brak skutku (CR 608.2b)
     }
-    // Aura na gracza bez zaczarowanego gracza (odpięta/nielegalna) — brak
-    // skutku, tak samo jak wyżej (CR 608.2b).
-    if (effect.applyTo === 'enchanted_player' && !sourceObject?.enchantedPlayerId) return;
-    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets);
+    // „That player” może być zapisany przez zdarzenie upkeepu — zdjęcie
+    // aury po wyzwoleniu nie zmienia odbiorcy (CR 113.7a).
+    const targetPlayerId = millTargetPlayerId(state, effect, sourceObject, targets, context);
+    if (effect.applyTo === 'enchanted_player' && !targetPlayerId) return;
     const protectedIds = new Set();
     if (state.pendingScry?.playerId === targetPlayerId) for (const id of state.pendingScry.objectIds) protectedIds.add(id);
     if (state.pendingSurveil?.playerId === targetPlayerId) for (const id of state.pendingSurveil.objectIds) protectedIds.add(id);
@@ -3155,7 +3178,7 @@ export function applyEffect(state, effect, sourceObject, targets = [], context =
       qualifier: {},
       destination: 'hand',
       entersTapped: false,
-      mandatory: true,
+      mandatory: true, revealFound: false, singleSearchChain: true,
       chain: { remaining: 1, destination: 'graveyard', qualifier: {}, mandatory: true },
     });
   }
@@ -4247,7 +4270,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     }
     // M254/D: znacznik na WYGNANEJ karcie (stół pokazuje ją w strefie
     // „wygnania tymczasowego" obok Suspend/Plot).
-    markTemporaryExile(state, exileId, sourceObject);
+    if (effect.permanentExile !== true) markTemporaryExile(state, exileId, sourceObject);
     return;
   }
   if (effect.type === 'destroy_if_least_power') {
@@ -4340,7 +4363,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, object.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: object.id, objectId: destId, playerId: object.controllerId, cardId: moved.cardId, toZone,
+      fromId: object.id, objectId: destId, playerId: object.controllerId, object: moved, cardId: moved.cardId, toZone,
     }));
     return;
   }
@@ -4765,7 +4788,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // or a planeswalker that player controls." Engine nie ma planeswalkerów,
     // więc obrażenia zawsze trafiają zaczarowanego gracza. Wspólny pipeline
     // non-combat: prewencja (tarcze/filtr), event z kwotą zadaną, lifelink.
-    const playerId = sourceObject.enchantedPlayerId;
+    const playerId = context?.enchantedUpkeepPlayerId ?? sourceObject.enchantedPlayerId;
     if (!playerId) return;
     dealNonCombatDamage(state, sourceObject, playerId, effect.amount ?? 0);
     return;
@@ -5243,15 +5266,8 @@ function markTemporaryExile(state, exileId, sourceObject) {
     const amount = effect.amount ?? 1;
     // CR 608.2g: nie pomijaj okna aktywacji ręcznego źródła many tylko
     // dlatego, że nie jest auto-tapowane (np. sacrificeSelf).
-    const canPay = producibleMana(state, payerId, null, {}, []) >= amount || state.zones.battlefield.some(id => {
-      const source = state.objects.get(id);
-      // Konserwatywna bramka: obecność źródła zachowuje OKNO płatności.
-      // Nie obiecuje ani nie wykonuje aktywacji — legalManaAbilities w ofercie
-      // waliduje wszystkie koszty, chorobę itd. Bez legalnej aktywacji/puli
-      // zostaje tylko odmowa. effects nie importuje wykonawcy abilities.
-      return source?.controllerId === payerId
-        && activatableAbilities(state, source).some(isActivatedManaAbility);
-    });
+    const canPay = producibleMana(state, payerId, null, {}, []) >= amount
+      || hasPotentialManaAbility(state, payerId);
     const discardCount = effect.discardCount ?? 0;
     if (!canPay) {
       // M271 (błąd #15): jak wyżej — wspólny helper, nie kopia.
@@ -6086,7 +6102,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, victimId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
-        fromId: victimId, objectId: destId, playerId: controllerId, cardId: moved.cardId, toZone,
+        fromId: victimId, objectId: destId, playerId: controllerId, object: moved, cardId: moved.cardId, toZone,
       }));
     }
     return;
@@ -6094,9 +6110,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
   if (effect.type === 'return_to_battlefield_under_control_at_upkeep') {
     // Plague Reaver: „Return this creature to the battlefield under that
     // player's control at the beginning of their next upkeep.” Opóźniony
-    // trigger (CR 603.7): wpis wskazuje obiekt ŹRÓDŁA W GROBIE (zdolność
-    // kosztuje sacrifice — abilities.js przekazuje obiekt z grobu) i gracza-
-    // cel; rozstrzyga go blok upkeep w triggers.js. „Next upkeep” — gdy cel
+    // trigger (CR 603.7): koszt poświęcenia może umieścić źródło w grobie
+    // ALBO w exile (finality). CR 400.7 (litera j) pozwala efektowi odnaleźć obiekt
+    // po koszcie w publicznej strefie; zapisujemy tę konkretną strefę, nie
+    // wyszukujemy karty po nazwie. „Next upkeep” — gdy cel
     // aktywowałby we WŁASNEJ turze, najbliższy upkeep się nie liczy (wpis
     // armedAt to odnotowuje).
     const targetPlayerId = targets[0];
@@ -6106,6 +6123,10 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.delayedTriggers.push({
       type: 'reanimate_under_target_control',
       objectId: sourceObject.id,
+      expectedZone: sourceObject.zone,
+      // CR 603.7 (litera e): kontrolerem triggera zostaje kontroler zdolności,
+      // nawet jeśli karta wróciła do grobu/exile innego właściciela.
+      controllerId: sourceObject.controllerId,
       playerId: targetPlayerId,
       armedAt: { turn: state.turn.number, active: state.turn.activePlayerId },
       cardId: sourceObject.cardId,
@@ -6609,7 +6630,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
         `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
       state.events.push(event('permanent_sacrificed', {
         fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
-        cardId: moved.cardId, sacrificeUnless: true, toZone,
+        object: moved, cardId: moved.cardId, sacrificeUnless: true, toZone,
       }));
       return;
     }
@@ -6645,12 +6666,13 @@ function markTemporaryExile(state, exileId, sourceObject) {
   // Kwalifikator jest deskryptorem (ADR 0002 — żadnej nazwy karty): brak
   // `qualifier` = „a creature".
   if (effect.type === 'champion') {
-    // Ruling (champion): jeśli stwór z championem opuści pole bitwy PRZED
-    // rozstrzygnięciem własnego ETB, nie ma kogo poświęcić — efekt nic nie
-    // robi (CR 608.2b).
+    // CR 113.7a/109.5: kontroler zdolności pozostaje ten sam, nawet gdy
+    // permanent odszedł albo zmienił kontrolera. W obu przypadkach może
+    // odmówić wygnania: nie jest w stanie poświęcić źródła.
     const liveSource = state.objects.get(sourceObject.id);
-    if (!liveSource || liveSource.zone !== 'battlefield') return;
-    const controllerId = liveSource.controllerId;
+    const controllerId = sourceObject.controllerId;
+    const canSacrificeSource = liveSource?.zone === 'battlefield'
+      && liveSource.controllerId === controllerId;
     const qualifier = effect.qualifier ?? { types: ['Creature'] };
     const wantedTypes = qualifier.types ?? [];
     // „ANOTHER [object] you control" — źródło nigdy nie jest własną ofiarą
@@ -6660,19 +6682,20 @@ function markTemporaryExile(state, exileId, sourceObject) {
       .map((objectId) => state.objects.get(objectId))
       .filter((object) => object && object.zone === 'battlefield'
         && object.controllerId === controllerId
-        && object.id !== liveSource.id
+        && object.id !== sourceObject.id
         && wantedTypes.every((type) => object.kind === type.toLowerCase()
           || (object.types ?? []).includes(type)))
       .map((object) => object.id);
     if (candidates.length === 0) {
       // Brak obiektu do wygnania — „sacrifice it" jest wtedy bezwarunkowe
       // (CR 702.72a, ten sam wzorzec co Scythe Tiger).
+      if (!canSacrificeSource) return;
       const toZone = deathZoneFor(state, liveSource);
       const moved = moveObjectDirectly(state, liveSource.id, toZone,
         `${toZone === 'exile' ? 'exile' : 'grave'}-${state.objectSequence++}`);
       state.events.push(event('permanent_sacrificed', {
         fromId: liveSource.id, objectId: moved.id, playerId: controllerId,
-        cardId: moved.cardId, champion: true, toZone,
+        object: moved, cardId: moved.cardId, champion: true, toZone,
       }));
       return;
     }
@@ -6681,12 +6704,12 @@ function markTemporaryExile(state, exileId, sourceObject) {
     // rozstrzygnięcie wygnańca robi ta sama komenda co poświęcenie.
     state.pendingSacrifice = {
       playerId: controllerId,
-      candidateIds: [...new Set([...candidates, liveSource.id])],
+      candidateIds: [...new Set([...candidates, ...(canSacrificeSource ? [liveSource.id] : [])])],
       candidateTypes: [...wantedTypes],
-      alternativeSourceId: liveSource.id,
-      sourceId: liveSource.id,
-      cardId: liveSource.cardId ?? null,
-      optional: false,
+      alternativeSourceId: canSacrificeSource ? liveSource.id : null,
+      sourceId: sourceObject.id,
+      cardId: sourceObject.cardId ?? null,
+      optional: !canSacrificeSource,
       moveTo: 'exile',
       champion: true,
       restorePriorityTo: state.turn.priorityPlayerId,
@@ -6695,7 +6718,7 @@ function markTemporaryExile(state, exileId, sourceObject) {
     state.events.push(event('sacrifice_choice_required', {
       playerId: controllerId,
       candidates: [...state.pendingSacrifice.candidateIds],
-      sourceId: liveSource.id, cardId: liveSource.cardId ?? null,
+      sourceId: sourceObject.id, cardId: sourceObject.cardId ?? null,
       champion: true, moveTo: 'exile',
     }));
     return true;

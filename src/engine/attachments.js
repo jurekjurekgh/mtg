@@ -237,6 +237,30 @@ function emitAttached(state, attachment, hostId, via) {
  * bycia stworem zerujemy jako higienę stanu (SBA 704.5f/g dotyczą wyłącznie
  * stworów, a cleanup 514.2 i tak by je zdjął).
  */
+// CR 205.3h: only enchantment subtypes remain when bestow makes the
+// permanent an Aura enchantment (CR 205.1a). The saved base type line is
+// restored when bestow ends; it is not itself a live characteristic.
+const BESTOW_ENCHANTMENT_SUBTYPES = new Set([
+  'Aura', 'Background', 'Cartouche', 'Case', 'Class', 'Curse', 'Plan',
+  'Role', 'Room', 'Rune', 'Saga', 'Shard', 'Shrine',
+]);
+const BESTOW_SUPERTYPES = new Set(['Basic', 'Legendary', 'Ongoing', 'Snow', 'World', 'Token']);
+
+/** Linia bestowed jest taka sama na stosie i na polu; oryginał służy do resetu. */
+export function bestowedTypeLine(object) {
+  return {
+    bestowOriginalTypes: Object.freeze([...(object.bestowOriginalTypes ?? object.types ?? [])]),
+    bestowOriginalSubtypes: Object.freeze([...(object.bestowOriginalSubtypes ?? object.subtypes ?? [])]),
+    types: [...(object.types ?? []).filter((type) => BESTOW_SUPERTYPES.has(type)), 'Enchantment'],
+    subtypes: [...new Set([...(object.subtypes ?? []).filter((type) => BESTOW_ENCHANTMENT_SUBTYPES.has(type)), 'Aura'])],
+  };
+}
+
+/** Cechy czaru wybranego wariantu, także przed właściwym położeniem na stos. */
+export function bestowedSpellCharacteristics(object) {
+  return { ...object, ...bestowedTypeLine(object), kind: 'aura' };
+}
+
 export function attachAuraToCreature(state, auraId, hostId) {
   const aura = state.objects.get(auraId);
   const host = state.objects.get(hostId);
@@ -245,10 +269,12 @@ export function attachAuraToCreature(state, auraId, hostId) {
   }
   if (auraId === hostId) throw new Error('Aura nie może zaczarować samej siebie');
   if (!isLegalAuraHost(aura, host)) throw new Error(`Aura nie ma legalnego gospodarza na polu bitwy (${aura.aura?.enchant ?? aura.aura?.enchantType ?? 'creature'})`);
+  const bestowTypeLine = aura.bestow ? bestowedTypeLine(aura) : {};
   const updated = patchAttachmentObject(state, aura, {
     attachedTo: hostId,
     baseKind: aura.baseKind ?? aura.kind,
     kind: 'aura',
+    ...bestowTypeLine,
     powerModifier: 0, toughnessModifier: 0, damage: 0,
     counters: {},
     summoningSickness: true, // po odłączeniu (bestow) jako stwór obowiązuje choroba atakowa
@@ -325,6 +351,10 @@ function detachOrphanedAttachment(state, attachment, hostId, events) {
       attachedTo: null,
       kind: attachment.baseKind ?? 'creature',
       baseKind: null,
+      ...(attachment.bestowOriginalTypes ? { types: [...attachment.bestowOriginalTypes] } : {}),
+      ...(attachment.bestowOriginalSubtypes ? { subtypes: [...attachment.bestowOriginalSubtypes] } : {}),
+      bestowOriginalTypes: null,
+      bestowOriginalSubtypes: null,
     });
     const e = event('object_detached', {
       objectId: attachment.id, fromHostId: hostId, cardId: updated.cardId,

@@ -67,7 +67,8 @@ function resolveStack(state) {
 // =========================================================================
 // B2a — kwota „X, gdzie X to liczba kontrolowanych przez ciebie landów”
 //       (Rumbling Rockslide: „deals damage equal to the number of lands you
-//       control to target creature”). CR 107.3a — X ustalane przy rzucie.
+//       control to target creature”). Liczbę landów sprawdza się przy rozstrzygnięciu;
+//       nie jest to wybierane przy rzucie X.
 // =========================================================================
 
 test('pin B2a: damage z amount "lands_you_control" skaluje się z liczbą landów rzucającego', () => {
@@ -404,7 +405,7 @@ test('pin B2e: champion — wybór „nie wygnaję” poświęca źródło i nic
   assert.equal(state.objects.get('champ'), undefined, 'źródło poświęcone');
 });
 
-test('pin B2e: champion — źródło odeszło przed rozstrzygnięciem ETB (ruling: nic się nie dzieje)', () => {
+test('pin B2e: champion — źródło odeszło przed rozstrzygnięciem ETB, decyzja pozostaje', () => {
   const state = game();
   championOnBoard(state);
   const fodder = synthetic(state, 'fodder');
@@ -412,10 +413,10 @@ test('pin B2e: champion — źródło odeszło przed rozstrzygnięciem ETB (ruli
   const champion = state.objects.get('champ');
   state.objects.delete('champ');
   state.zones.battlefield = state.zones.battlefield.filter((id) => id !== 'champ');
-  state.zones.graveyard.push('champ');
   applyEffect(state, { type: 'champion', qualifier: { types: ['Creature'] } }, champion, []);
-  assert.equal(state.pendingSacrifice, null, 'nie ma kogo poświęcić → brak decyzji');
-  assert.equal(state.objects.get(fodder.id).zone, 'battlefield', 'nic nie wygnano');
+  const picks = commands(state, 'p1').filter((c) => c.type === 'resolve_sacrifice_choice');
+  assert.ok(picks.some((c) => c.skip), 'można nie wygnąć');
+  assert.ok(picks.some((c) => c.targetId === fodder.id), 'można wygnać innego stwora');
 });
 
 // =========================================================================

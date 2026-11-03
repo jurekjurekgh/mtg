@@ -22,6 +22,7 @@ import { MANA_COSTS } from '../cards/mana-costs-data.js';
 import { installPressActivation, installTapGesture } from './gestures.js';
 import { renderPickerRow } from './picker.js';
 import { polishPluralCount } from './polish-plural.js';
+import { isPlainPermanentXCommand } from './multi-target.js';
 
 /**
  * Renderowanie stołu: PlayerView + log sesji → DOM (M7).
@@ -105,6 +106,7 @@ const REASONING_ACTION_LABELS = Object.freeze({
   resolve_moonlit_choice: 'Moonlit (wybór efektu)',
   resolve_damage_target: 'Cel obrażeń',
   resolve_reveal_order: 'Kolejność kart na wierzchu',
+  resolve_trigger_order: 'Kolejność zdolności',
   resolve_discard_choice: 'Odrzucenie karty',
   resolve_sacrifice_choice: 'Poświęcenie permanenta',
   // M151 (audyt żywym testerem): brakująca etykieta wyciekała jako surowy
@@ -309,6 +311,12 @@ export function describeSpellEffects(spell) {
   // Modal „Choose one" (Steel Sabotage, Selesnya Charm): kafle nie miały
   // spell.effects — puste pole reguł. Opisujemy tryby z nazwami.
   if (Array.isArray(spell.modes) && spell.modes.length > 0) {
+    const components = spell.modes.flatMap(mode => mode.choiceComponents ?? []);
+    if (components.length && spell.modes.every(mode => Array.isArray(mode.choiceComponents))) {
+      const names = new Map(components.map(component => [component.index, component.name]));
+      const choices = [...names].sort((a, b) => a[0] - b[0]).map(([, name]) => name);
+      return `wybierz ${spell.modes[0].choiceComponents.length} — ${choices.join(' / ')}`;
+    }
     const modeBits = spell.modes.map((mode) => {
       const inner = describeSpellEffects({
         effects: mode.effects ?? [],
@@ -612,6 +620,7 @@ export function choiceRequestGroupKey(command) {
   if (command.type === 'resolve_ward_pay_choice') return 'resolve_ward_pay_choice';
   if (command.type === 'resolve_moonlit_choice') return 'resolve_moonlit_choice';
   if (command.type === 'resolve_damage_target') return 'resolve_damage_target';
+  if (command.type === 'resolve_trigger_order') return 'resolve_trigger_order';
   if (command.type === 'resolve_reveal_order') return 'resolve_reveal_order';
   if (command.type === 'resolve_mulligan_choice') return 'resolve_mulligan_choice';
   if (command.type === 'resolve_mulligan_bottom_choice') return 'resolve_mulligan_bottom_choice';
@@ -805,7 +814,7 @@ function buildChoiceRequestEntries(commands, view) {
   return entries.map((entry) => {
     // Wpisy-wizardy (walka M66, Index M65) mają request — przepuścić wprost.
     if (entry.request) return entry;
-    if (!entry.group || entry.group.commands.length < 2) {
+    if (!entry.group || (entry.group.commands.length < 2 && !isPlainPermanentXCommand(entry.group.commands[0]))) {
       return { command: entry.group?.commands[0] ?? entry.command };
     }
     // =====================================================================
@@ -2474,6 +2483,7 @@ const CHOICE_GROUP_COMMAND_DESCRIPTORS = Object.freeze({
   // pokazywała generyczne „Wybierz: Wariant (5 opcji)". Rodzina jednorazowych
   // decyzji „rzuć wygnany czar albo odpuść" dostaje deskryptory KOMPLETEM
   // (klasa L102: nowy członek rodziny bez wpisu dziedziczy stary objaw).
+  resolve_trigger_order: 'Która zdolność ma rozstrzygnąć się jako następna?',
   resolve_madness_cast: 'Madness — rzucić czar czy przełożyć do cmentarza?',
   resolve_exile_cast: 'Vaan — rzucić wygnaną kartę czy stworzyć Skarb?',
   resolve_suspend_cast: 'Suspend — rzucić zawieszony czar?',
@@ -3084,6 +3094,10 @@ function abilityXDescription(session, object, command) {
  */
 export function choiceGroupTitle(request, session, view, { manaHtml = false } = {}) {
   const options = request?.options ?? [];
+  if (options[0]?.type === 'resolve_sacrifice_choice' && view?.pendingSacrifice?.moveTo === 'exile') {
+    const source = view.pendingSacrifice.cardId ? `${session.nameOf(view.pendingSacrifice.cardId)} — ` : '';
+    return `${source}champion: wybierz wygnanie albo rezygnację`;
+  }
   const discard = view?.pendingDiscardChoice;
   if (options[0]?.type === 'resolve_discard_choice' && discard?.count > 1 && !discard.allowDecline) {
     const source = discard.sourceCardId ? `${session.nameOf(discard.sourceCardId)} — ` : '';
@@ -3123,7 +3137,8 @@ export function choiceGroupTitle(request, session, view, { manaHtml = false } = 
   if (options.length > 0
     && options.every((o) => (o?.type === 'cast_spell' || o?.type === 'cast_permanent')
       && o.xValue != null && o.objectId === options[0].objectId)
-    && new Set(options.map((o) => o.xValue)).size > 1) {
+    && (new Set(options.map((o) => o.xValue)).size > 1
+      || (options.length === 1 && isPlainPermanentXCommand(options[0])))) {
     const xObject = findViewObject(options[0].objectId, view);
     if (xObject?.cardId) {
       const rawX = xCostSymbols(MANA_COSTS[xObject.cardId]);
@@ -3313,49 +3328,25 @@ function abilityFizzlesOnHand(ability, view) {
 }
 
 /**
- * O-1 audytu PR #176 (Żywy Tester `out/a4.txt:440-455`): aktywacja, której
- * TRWAŁY, idempotentny skutek już siedzi na obiekcie.
- *
- * Gracz ośiodłał ten sam wierzchowiec DWA razy pod rząd — druga aktywacja jest
- * regułowo LEGALNE (CR 702.171a: „Saddle only as a sorcery” — brak zakazu ponownej aktywacji,
- * a stan „saddled” i tak trwa do końca tury),
- * więc oferta zostaje (pin M219 resaddle wprost broni istnienia tej
- * oferty — chowanie byłoby over-fixem wobec CR 602.2b). Ale koszt jest realny:
- * drugie osiodłanie TAPUJE kolejne stwory, a nie zmienia niczego. To ta sama
- * klasa co ostrzeżenia M126 (pusta biblioteka / brak karty w ręce): nie
- * blokujemy, mówimy wprost, że skutku nie będzie.
- *
- * Reguła po DESKRYPTORZE efektu i fladze STANU z PlayerView (ADR 0017), nie po
- * nazwie karty ani mechaniki (ADR 0002). Flagi: `saddled` (CR 702.171a) oraz
- * `animatedUntilEOT` (crew/animacja — CR 702.122e; widok niesie ją, gdy
- * permanent ma `originalBeforeAnimation`, `game-state.js:7352`).
- */
-const IDEMPOTENT_EOT_STATE_EFFECTS = new Map([
-  ['set_saddled', { flag: 'saddled', text: 'jest już osiodłany do końca tury' }],
-  ['animate_permanent_until_end_of_turn', { flag: 'animatedUntilEOT', text: 'jest już obsadzony do końca tury' }],
-]);
-
-/**
- * Ostrzeżenie do etykiety oferty aktywacji (albo '' gdy nie ma czego ostrzegać).
- * `subjectId` to obiekt, który efekt realnie zmienia: dla celowanych animacji
- * (Skilled Animator) jest nim CEL, nie źródło — bez tego etykieta karałaby
- * źródło za stan celu albo odwrotnie.
+ * Ostrzegamy tylko o czystym, powtórzonym crew/saddle, nie o dowolnej
+ * animacji: inne animacje mogą zmieniać P/T i słowa kluczowe, a zdolność
+ * wieloefektowa może np. odtapować cel nawet wtedy, gdy jest już animowany.
+ * `animatedUntilEOT` samo w sobie nie oznacza „obsadzony”.
  */
 export function activationAlreadyAppliedWarning(ability, view, subjectId) {
   const effects = Array.isArray(ability?.effect) ? ability.effect : (ability?.effect ? [ability.effect] : []);
-  if (effects.length === 0) return '';
-  const battlefield = view?.zones?.battlefield ?? [];
-  const lookup = (id) => (id == null ? null : battlefield.find((entry) => entry?.id === id) ?? null);
-  for (const effect of effects) {
-    const rule = effect?.type ? IDEMPOTENT_EOT_STATE_EFFECTS.get(effect.type) : null;
-    if (!rule) continue;
-    // Efekt czytający INNY cel (targetIndex ≠ 0) nie jest oceniany — jak w
-    // `effectIsNoOpOnTarget` w silniku.
-    if (effect.targetIndex != null && effect.targetIndex !== 0) continue;
-    const subject = lookup(subjectId);
-    if (subject?.[rule.flag] === true) {
-      return `${rule.text} — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie`;
-    }
+  if (effects.length !== 1) return '';
+  const effect = effects[0];
+  if (effect.targetIndex != null && effect.targetIndex !== 0) return '';
+  const subject = (view?.zones?.battlefield ?? []).find((entry) => entry?.id === subjectId);
+  if (ability?.cost?.saddlePower > 0 && effect.type === 'set_saddled' && subject?.saddled === true) {
+    return 'jest już osiodłany do końca tury — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie';
+  }
+  if (ability?.cost?.crewPower > 0 && effect.type === 'animate_permanent_until_end_of_turn'
+    && subject?.crewed === true && subject?.animatedUntilEOT === true
+    && Object.keys(effect).every((key) => ['type', 'typesAdd'].includes(key))
+    && (effect.typesAdd ?? []).length === 1 && effect.typesAdd[0] === 'Creature') {
+    return 'jest już obsadzony do końca tury — ponowna aktywacja nic nie zmieni, a koszt (tapnięcie) przepadnie';
   }
   return '';
 }
@@ -4121,6 +4112,10 @@ function commandLabelBase(cmd, session, view) {
     case 'resolve_sacrifice_choice': {
       // Grave Exchange: cel poświęca stwora własnego wyboru.
       // Batch 53 (Glorifier of Suffering): opcjonalna ofiara — `skip`.
+      if (view.pendingSacrifice?.moveTo === 'exile') {
+        if (cmd.skip) return 'Champion: nie wyganiaj';
+        if (cmd.targetId !== view.pendingSacrifice.alternativeSourceId) return `Champion — wygnaj: ${nameOfObjectId(cmd.targetId)}`;
+      }
       if (cmd.skip) return 'Poświęcenie: nie rób (bez refleksu „when you do")';
       return `Poświęć: ${nameOfObjectId(cmd.targetId)}`;
     }
@@ -4496,6 +4491,13 @@ function commandLabelBase(cmd, session, view) {
       const gfcModeName = gfcMode?.name ? ` — ${gfcMode.name}` : '';
       const gfcStun = cmd.stunTargetId != null ? ` · stun: ${nameOfObjectId(cmd.stunTargetId)}` : '';
       return `Rzuć z grobu za {${cmd.xValue ?? '?'}}: ${cmd.cardId ? escapeHtml(session.nameOf(cmd.cardId)) : nameOfObjectId(cmd.objectId)}${gfcModeName}${gfcTargets ? ` → cel: ${gfcTargets}` : ''}${gfcStun}${freeCastChoiceSuffix(cmd, gfcCard, { mode: false })}`;
+    }
+    case 'resolve_trigger_order': {
+      const targets = (cmd.targets ?? []).map(id => nameOfObjectId(id)).join(', ');
+      // Różne zdolności tego samego źródła (np. persist i nadany dies) muszą
+      // dać się rozpoznać, zanim kontroler wybierze ich kolejność.
+      const effects = (cmd.effectTypes ?? []).map(type => describeEffect({ type })).filter(Boolean).join(' + ');
+      return `Najpierw: ${escapeHtml(session.nameOf(cmd.cardId))} — ${TRIGGER_EVENT_LABELS[cmd.trigger] ?? cmd.trigger ?? 'zdolność'}${effects ? ` — ${escapeHtml(effects)}` : ''}${targets ? ` → cel: ${targets}` : ''}`;
     }
     case 'resolve_madness_cast': {
       // M159/F4 (audyt PR #66): oferta niesie objectId (karta w exile —
@@ -4944,6 +4946,8 @@ export function cardInfo(session, object, combat = null) {
     // więc czytamy bez dodatkowego OR — anty-regressa O1/4 (stwór z samym
     // detainer badge "nie może atakować" — z pustym effector `cantBlockNow`).
     cantAttackNow: Boolean(object.cantAttackExternal),
+    // Wymóg z Aury/ekwipunku jest jawny także na zakrytym gospodarzu.
+    mustAttackFromAttachment: Boolean(object.mustAttackFromAttachment),
     // Batch60 („blocks if able" — Timely Interference): wymóg bloku „this turn".
     blocksIfAbleNow: faceDown ? false : Boolean(object.blocksIfAble),
     cantBeBlockedNow: Boolean(object.cantBeBlocked),
@@ -5383,6 +5387,7 @@ export function buildStateOverlay(visual, info) {
     for (const badge of combatRestrictionBadges({
       cantAttack: info.cantAttackNow, cantBlock: info.cantBlockNow,
     })) flags.push(['kw', badge]);
+    if (info.mustAttackFromAttachment) flags.push(['kw', 'Atakuje w każdej turze jeśli może']);
     if (info.blocksIfAbleNow) flags.push(['kw', 'musi blokować (jeśli może)']);
     if (info.cantBeBlockedNow) flags.push(['kw', 'nie do zablokowania']);
     if (Array.isArray(info.cantBeBlockedByTypes) && info.cantBeBlockedByTypes.length) {
@@ -6803,7 +6808,7 @@ export function waitingExileStatus(object) {
     parts.push('Impuls · zagrywalna bez płacenia');
   }
   if (object.reboundReady) parts.push('Rebound · rzut w Twoim podtrzymaniu');
-  if (object.madnessReady) parts.push('Madness · czeka na decyzję rzutu');
+  if (object.madnessReady) parts.push('Wygnana przez madness');
   if (object.linkedExileCastPermission) {
     parts.push('Zagrywalna z wygnania · za pełny koszt');
   }

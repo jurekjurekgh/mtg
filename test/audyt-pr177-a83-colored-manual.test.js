@@ -1,0 +1,26 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createGameState,addObject,execute,playerView} from '../src/engine/game-state.js';
+import {createCardRegistry} from '../src/cards/card-data.js';
+import {createCardDeck} from '../src/cards/materialize.js';
+import {jumpToStep} from '../src/engine/turn.js';
+import {addMana} from '../src/engine/resources.js';
+import {stateFingerprint} from '../src/engine/fingerprint.js';
+import {replayFromState,verifyReplay} from '../src/engine/replay.js';
+import {processTriggers} from '../src/engine/triggers.js';
+const reg=createCardRegistry();
+function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
+const view=s=>playerView(s,s.turn.priorityPlayerId);
+function act(s,c){assert.ok(c,JSON.stringify(view(s).legalCommands));const r=execute(s,c);assert.ok(r.ok,JSON.stringify(r));}
+function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
+function turn(s,p,step='main1'){s.turn=jumpToStep(s.turn,step,p);s.turn.activePlayerId=s.turn.priorityPlayerId=p;}
+function base(p){const s=createGameState({seed:17783,players:[{id:'p1'},{id:'p2'}]});turn(s,p);put(s,'summoner','scion-summoner','hand',p);addMana(s,p,3,{colors:['G']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='summoner'));pass(s);pass(s);pass(s);pass(s);const token=[...s.objects.values()].find(o=>o.cardId==='token_eldrazi_scion'&&o.zone==='battlefield')?.id;assert.ok(token);return {s,token};}
+// Wejście upkeep emulowane zdarzeniem tak jak w testach echo M259.
+function echo(p,{black=true}={}){const {s,token}=base(p);put(s,'shredder','bone-shredder','hand',p);addMana(s,p,3,{colors:['B']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='shredder'));pass(s);pass(s);const summoner=[...s.objects.values()].find(o=>o.cardId==='scion-summoner'&&o.zone==='battlefield');act(s,view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&c.targetId===summoner.id));pass(s);pass(s);const sh=[...s.objects.values()].find(o=>o.cardId==='bone-shredder'&&o.zone==='battlefield');assert.ok(sh.echoUnpaid);turn(s,p,'upkeep');addMana(s,p,1,{colors:black?['B']:[]});addMana(s,p,1,{colors:[]});processTriggers(s,[{type:'step_advanced',step:'upkeep',playerId:p}]);pass(s);pass(s);return {s,token,sh};}
+function forebear(p,{white=true}={}){const {s,token}=base(p),opp=p==='p1'?'p2':'p1';put(s,'forebear','furious-forebear','graveyard',p);put(s,'victim','highland-game','battlefield',p);put(s,'shock','shock','hand',opp);addMana(s,p,1,{colors:white?['W']:[]});turn(s,opp);addMana(s,opp,1,{colors:['R']});act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='shock'&&c.targets?.includes('victim')));pass(s);pass(s);pass(s);pass(s);return {s,token};}
+for(const payer of ['p1','p2'])test(`A83: echo {2}{B} opłacane {B}{C} oraz Scionem (${payer})`,()=>{const {s,token,sh}=echo(payer);assert.ok(s.pendingPayOrSacrifice,'echo nie powinno być automatycznie poświęcone');assert.ok(view(s).legalCommands.some(c=>c.type==='resolve_pay_or_sacrifice'&&c.pay));act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token));act(s,view(s).legalCommands.find(c=>c.type==='resolve_pay_or_sacrifice'&&c.pay));assert.ok(s.objects.has(sh.id));assert.equal(s.players.find(x=>x.id===payer).mana,0);});
+for(const payer of ['p1','p2'])test(`A83: Forebear {1}{W} opłacany białą maną i Scionem (${payer})`,()=>{const {s,token}=forebear(payer);assert.ok(s.pendingOptionalPay,'trigger Forebeara nie powinien pomijać dopłaty');act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token));act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay));for(let i=0;i<6&&!([...s.objects.values()].some(o=>o.cardId==='furious-forebear'&&o.zone==='hand'));i++)pass(s);assert.ok([...s.objects.values()].some(o=>o.cardId==='furious-forebear'&&o.zone==='hand'));});
+test('A83: Scion nie zastępuje brakującego czarnego pipa echa',()=>{const {s,token,sh}=echo('p1',{black:false});if(s.pendingPayOrSacrifice){assert.ok(!view(s).legalCommands.some(c=>c.type==='resolve_pay_or_sacrifice'&&c.pay));act(s,view(s).legalCommands.find(c=>c.type==='resolve_pay_or_sacrifice'&&!c.pay));}assert.ok(s.objects.has(token));assert.ok(!s.objects.has(sh.id));});
+
+test('A83: Scion nie może zastąpić białego pipa Forebeara',()=>{const {s,token}=forebear('p1',{white:false});assert.equal(s.pendingOptionalPay,null);assert.ok(s.objects.has(token));assert.ok([...s.objects.values()].some(o=>o.cardId==='furious-forebear'&&o.zone==='graveyard'));});
+test('A83: replay kolorowego echa z aktywacją Sciona',()=>{const {s,token}=echo('p1');act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token));act(s,view(s).legalCommands.find(c=>c.type==='resolve_pay_or_sacrifice'&&c.pay));const replay=replayFromState(s);const r=verifyReplay({...replay,commands:replay.commands.slice(-2)},()=>echo('p1').s,execute);assert.ok(r.deterministic);assert.ok(r.results.every(x=>x.ok));assert.equal(stateFingerprint(r.state),stateFingerprint(s));});

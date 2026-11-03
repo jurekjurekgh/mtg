@@ -31,16 +31,17 @@ import { formatLocalTimestamp } from './clock.js';
 import { createCardRegistry, UNDERCITY_DUNGEON, DAY_NIGHT_TOKEN } from '../cards/card-data.js';
 import { parseDeckText } from '../cards/deck-text.js';
 import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TURN_NAMES, gameOverNotice, botMovesPaintedUpdate } from './session.js';
-import { cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
+import { activationAlreadyAppliedWarning, cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
-  wizardSourceName, finishWizardPayment,
+  wizardSourceName, finishWizardPayment, resolveManaSourceTapCost,
 } from './mana-wizard.js';
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
-import { expandManaPool, producibleMana } from '../engine/resources.js';
-import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
+import { expandManaPool, producibleMana, canPayColoredCost } from '../engine/resources.js';
+import { getSourceForObject, manaAbilityProductionOf, isSingleManualTapColorAbility } from '../engine/mana-sources.js';
 import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
+import { bestowedSpellCharacteristics } from '../engine/attachments.js';
 import { createSpellSoundPlayer, playCastSound } from './spell-sounds.js';
 import { createCardSoundPlayer } from './card-sound-player.js';
 import { createTopbarToggles } from './topbar-toggles.js';
@@ -52,7 +53,7 @@ import { detectImageMode } from './card-images.js';
 // import { mountDeckBuilder } from './deck-builder.js';
 import { createArtShowcaseQueue, isCastHiddenFromViewer } from './art-showcase.js';
 import { clashSourceCardIdOf, lookWizardKindOf, previewCardIdOfOption, renderChoiceRequest, renderLookWizard, renderCombatWizard, renderDamageWizard, renderDamageDivisionWizard, renderMultiTargetWizard, renderEscapeExileWizard, renderDelveExileWizard, renderPeekPickOrderWizard, renderPickOneRestBottomWizard, renderSearchBatchWizard } from './choice-request.js';
-import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
+import { crewWizardPlanFor, discardPlanOf, multiTargetPlanOf, upToTargetsPlanOf, mulliganBottomPlanOf, sacrificeCastPlanOf, dividedCastPlanOf, commandForDivisionSelection, proliferatePlanOf, singleTargetPlanOf, mulliganKeepPlanOf, castWindowPlanOf, buttonsPlanOf, searchBatchPlanOf, searchBatchStepOf, tapXArtifactsPlanOf, castModePlanOf, chooseOneOrBothPlanOf, chooseModesPlanOf, epicChoiceCardPlanOf, epicChoiceModePlanOf, epicChoiceTargetPlanOf, epicChoiceDiscardPlanOf } from './multi-target.js';
 import { choiceRequestGroupKey, choiceGroupLabel, choiceGroupTitle, groupCombatDecisions, polishPluralCount, targetTypeLabel } from './render.js';
 import { choiceRequest } from '../protocol/types.js';
 
@@ -876,6 +877,47 @@ function bootstrapTable() {
       showModal('choice-request');
       return;
     }
+    // Wybór wielu trybów pokazuje składniki, nie wszystkie ich kombinacje.
+    const modeOptionsForSet = request.options ?? [];
+    const componentOptions = modeOptionsForSet.filter(cmd => Number.isInteger(cmd.modeIndex));
+    const modeFirst = componentOptions[0];
+    const modeSource = session.state?.objects?.get(modeFirst?.objectId ?? modeFirst?.cardId);
+    const chooseModesPlan = chooseModesPlanOf(componentOptions, modeSource?.spell);
+    const otherModeOptions = modeOptionsForSet.filter(cmd => !Number.isInteger(cmd.modeIndex));
+    if (chooseModesPlan && otherModeOptions.length === 1
+      && (otherModeOptions[0].decline === true || otherModeOptions[0].cast === false)) {
+      // Okna opcjonalnego rzutu: odmowa jest osobną decyzją, nie jednym z
+      // sześciu wariantów trybów. Po „Rzuć” wracamy do tego samego kreatora.
+      const first = [otherModeOptions[0], componentOptions[0]];
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, commands: first,
+        plan: { buttonsMode: true, rows: [{ id: 'opt-0', label: 'Nie rzucaj' }, { id: 'opt-1', label: 'Rzuć — wybierz tryby' }] },
+        intro: `${choiceGroupTitle(request, session, choiceView)} — rzuć albo odmów:`,
+        onComplete: (cmd) => {
+          if (cmd === first[0]) { hideModal('choice-request'); play(cmd); return; }
+          openChoiceRequest(choiceRequest({ id: `${request.id ?? 'mode'}-wybor`, type: request.type ?? 'command', options: componentOptions }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
+    if (chooseModesPlan && otherModeOptions.length === 0) {
+      renderMultiTargetWizard(els.choiceRequestBody, {
+        view: choiceView, session, plan: chooseModesPlan, commands: modeOptionsForSet,
+        intro: `${choiceGroupTitle(request, session, choiceView)} — wybierz ${chooseModesPlan.count} tryby:`,
+        onOpenCard: openCardFullscreen, onOpenCardByCardId: openCardFullscreenByCardId,
+        onComplete: (representative) => {
+          const subset = modeOptionsForSet.filter(cmd => cmd.modeIndex === representative.modeIndex);
+          if (subset.length === 1) { hideModal('choice-request'); play(subset[0]); return; }
+          openChoiceRequest(choiceRequest({ id: `${request.id ?? 'mode'}-tryb-${representative.modeIndex}`,
+            type: request.type ?? 'command', options: subset }));
+        },
+        onCancel: () => hideModal('choice-request'),
+      });
+      showModal('choice-request');
+      return;
+    }
     const castModePlan = castModePlanOf(request.options ?? [])
       ?? epicChoiceModePlanOf(request.options ?? []);
     if (castModePlan) {
@@ -1119,7 +1161,9 @@ function bootstrapTable() {
         plan: multiPlan,
         commands: request.options,
         sourceName: sourceObject?.cardId ? session.nameOf(sourceObject.cardId) : null,
-        intro: giftIntro,
+        intro: multiPlan.xOnly && multiPlan.type === 'cast_permanent'
+          ? `${choiceGroupTitle(request, session, choiceView)} — wybierz X (${multiPlan.xMin}–${multiPlan.xMax}):`
+          : giftIntro,
         // M207: nazwy POZYCJI celu prosto z Oracle karty („twój stwór”,
         // „stwór przeciwnika”, „karta-stwór w grobie”, „gracz”). Kreator sam
         // ich nie wymyśla — bierze deskryptor `spell.targets` (ADR 0002).
@@ -2607,17 +2651,18 @@ function bootstrapTable() {
       autosave();
       rerender();
       showNotice(`Błąd wewnętrzny stołu: ${error?.message ?? error}. Wyeksportuj zapis partii i zgłoś problem.`);
-      return;
+      return { ok: false, reason: 'internal_error', internalError: error?.message ?? String(error) };
     }
     autosave();
     rerender();
     if (result?.internalError) {
       showNotice(`Błąd wewnętrzny stołu: ${result.internalError}. Wyeksportuj zapis partii i zgłoś problem.`);
-      return;
+      return result;
     }
     // M254/C: przy wstrzymanej warstwie grafik nie otwieramy modala „Ruch
     // bota" — gracz ogląda ilustrację rzutu; gra ruszy po zamknięciu.
     if (result?.ok !== false && !result?.artPause) showBotMoves();
+    return result;
   }
 
   /**
@@ -2667,6 +2712,8 @@ function bootstrapTable() {
   // wyjmowana w testach razem z konsumentem.
   function restrictedSpellBlockedFor(cmd, descriptor) {
     if (!cmd || !String(cmd.type ?? '').startsWith('cast_')) return false;
+    // Bestow zawsze tworzy nieartefaktowy czar Aury (CR 702.103b).
+    if (cmd.bestow) return true;
     const cardId = descriptor?.cardId ?? session.state?.objects?.get(cmd.objectId)?.cardId ?? null;
     const reg = typeof registry !== 'undefined' ? registry : null;
     // O1 (audyt PR #121, domknięcie 2026-09-16): fail-CLOSED — nieznany
@@ -2736,6 +2783,7 @@ function bootstrapTable() {
         costColors: ability?.cost?.colors ?? [],
         isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
         spendOnly,
+        manualTapCreatureOnly: ['W', 'U', 'B', 'R', 'G'].some(color => isSingleManualTapColorAbility(ability, color)),
       };
     };
     return manaSourcesOf(view, HUMAN_ID, abilityInfo, { excludeSourceId });
@@ -2748,8 +2796,9 @@ function bootstrapTable() {
   /**
    * M190/D (zgłoszenie właściciela, Basilisk Gate): id źródła, którego NIE
    * wolno użyć do zapłaty, bo aktywacja i tak je tapuje jako koszt
-   * (CR 602.2a). Dotyczy wyłącznie zdolności z `cost.tap` — zdolność bez
-   * tapnięcia (Heap Gate {1}: …) może być finansowana z własnej many.
+   * (CR 602.2a). Zdolność bez tapnięcia może finansować się z własnej many;
+   * rezerwujemy również obiekty wskazane do tapnięcia w innych kosztach i
+   * wszystkie takie koszty w nadrzędnych kreatorach.
    */
   /**
    * B (uwaga właściciela 2026-10-27c): co zrobić z tapnięciem źródła many
@@ -2768,11 +2817,30 @@ function bootstrapTable() {
   }
 
   function selfTapExclusionFor(cmd) {
-    if (cmd?.type !== 'activate_ability' || !Number.isInteger(cmd.abilityIndex)) return null;
-    const source = session.state?.objects?.get(cmd.objectId);
-    const ability = (source ? activatableAbilities(session.state, source)?.[cmd.abilityIndex] : null)
-      ?? source?.abilities?.[cmd.abilityIndex];
-    return ability?.cost?.tap ? cmd.objectId : null;
+    // Każda wstrzymana komenda rezerwuje permanenty, które później sama
+    // tapnie jako koszt. Dotyczy to także płatności rodzicielskich, gdy
+    // zbieramy manę w zagnieżdżonym kreatorze zdolności źródła.
+    const commands = [...manaWizardParents.map((parent) => parent?.cmd), manaWizardDescriptor?.cmd, cmd];
+    const excluded = new Set();
+    for (const pending of commands) {
+      if (!pending) continue;
+      if (pending.type === 'activate_ability' && Number.isInteger(pending.abilityIndex)) {
+        const source = session.state?.objects?.get(pending.objectId);
+        const ability = (source ? activatableAbilities(session.state, source)?.[pending.abilityIndex] : null)
+          ?? source?.abilities?.[pending.abilityIndex];
+        if (ability?.cost?.tap) excluded.add(pending.objectId);
+        // Wskazane obiekty są kosztami tapnięcia, nie celami efektu. Muszą
+        // pozostać nietapnięte aż do wykonania aktywacji, także w rodzicu
+        // zagnieżdżonego kreatora (Heap Gate / Holdout / Station).
+        if (ability?.cost?.tapUntappedSubtype && pending.tapPermanentCostId) excluded.add(pending.tapPermanentCostId);
+        if (ability?.cost?.tapCreature && pending.tapCreatureId) excluded.add(pending.tapCreatureId);
+        if (ability?.cost?.tapOtherCreature && pending.tapOtherCreatureId) excluded.add(pending.tapOtherCreatureId);
+      }
+      for (const payment of pending.convokePayments ?? []) if (payment?.creatureId) excluded.add(payment.creatureId);
+      for (const payment of pending.improvisePayments ?? []) if (payment?.artifactId) excluded.add(payment.artifactId);
+      for (const id of pending.crewCreatureIds ?? []) if (id) excluded.add(id);
+    }
+    return excluded.size ? [...excluded] : null;
   }
 
   /**
@@ -2799,17 +2867,10 @@ function bootstrapTable() {
     });
     if (!plan) return null;
     const verb = saddle ? 'Osiodłaj' : 'Obsadź';
-    // O-1 audytu PR #176 (Żywy Tester a4): gracz osiodłał ten sam Mount dwa
-    // razy, a drugie osiodłanie wytapowało kolejne stwory za nic. Etykieta
-    // oferty niesie ostrzeżenie (render.js:activationAlreadyAppliedWarning);
-    // kreator mówi to samo językiem stanu, bo intro jest ostatnim ekranem
-    // przed nieodwracalnym tapnięciem załogi.
-    const alreadyApplied = saddle
-      ? source?.saddled === true
-      : source?.originalBeforeAnimation != null;
-    const warn = alreadyApplied
-      ? ` — UWAGA: ${saddle ? 'już osiodłany' : 'już obsadzony'} do końca tury, ponowna aktywacja nic nie zmieni`
-      : '';
+    // Ta sama ocena co etykieta akcji: sama animacja nie oznacza crew,
+    // a zdolność wieloefektowa może mieć inne, nadal użyteczne skutki.
+    const alreadyWarning = activationAlreadyAppliedWarning(ability, session.view(), cmd.objectId);
+    const warn = alreadyWarning ? ` — UWAGA: ${alreadyWarning}` : '';
     return { plan, intro: `${verb}: ${session.nameOf(source?.cardId)}${warn} — zaznacz załogę do tapnięcia:` };
   }
 
@@ -2828,7 +2889,7 @@ function bootstrapTable() {
     showModal('choice-request');
   }
 
-  function manaWizardFor(cmd) {
+  function manaWizardFor(cmd, { guardParentReservations = false } = {}) {
     const view = session.view();
     // Kreator płaci koszt EFEKTYWNY (CR 601.2f): obniżki z permanentów
     // (Etherium Sculptor) i warunkowe z karty (Metalcraft) liczy silnik na
@@ -2856,7 +2917,8 @@ function bootstrapTable() {
     if ((cmd.type === 'cast_permanent' || cmd.type === 'cast_spell') && (cmd.surgeCast || cmd.bestow)) {
       const alternative = cmd.surgeCast ? stateObject?.surge : stateObject?.bestow;
       if (alternative) opts.alternativeCost = reduceAlternativeCost(
-        session.state, stateObject, alternative.cost, alternative.colors ?? []);
+        session.state, cmd.bestow ? bestowedSpellCharacteristics(stateObject) : stateObject,
+        alternative.cost, alternative.colors ?? []);
     }
     // Escape (E.3a cz. B): widok GROBÓW nie niesie spell.escape, więc koszt
     // czytamy z pełnego stanu i podajemy deskryptorowi (jak effectiveGeneric).
@@ -2930,7 +2992,8 @@ function bootstrapTable() {
       ? poolUnitsUnrestricted
       : [...poolUnitsUnrestricted, ...expandManaPool(humanPlayer?.restrictedPool ?? {})];
     const pool = restrictedBlocked ? poolUnitsUnrestricted.length : (humanPlayer?.mana ?? 0);
-    const allSources = manaSourcesForPlayer(selfTapExclusionFor(cmd));
+    const excludedSources = selfTapExclusionFor(cmd);
+    const allSources = manaSourcesForPlayer(excludedSources);
     const sources = restrictedBlocked
       ? allSources.filter((s) => s.spendOnly !== 'artifact')
       : allSources;
@@ -2946,14 +3009,29 @@ function bootstrapTable() {
     // poświęcenia Sciona) — poniżej kosztu kreator musi się otworzyć
     // nawet przy jednym kształcie płatności (patrz shouldOpenManaWizard).
     const autoPayableMana = session.state
-      ? producibleMana(session.state, HUMAN_ID, null, {}, []) : null;
-    if (!shouldOpenManaWizard({
+      ? producibleMana(session.state, HUMAN_ID, excludedSources,
+        cmd.bestow ? { castingSpell: true, artifactSpell: false } : {}, []) : null;
+    const autoPayableColors = session.state && descriptor.requirements.length
+      ? canPayColoredCost(session.state, HUMAN_ID, descriptor.requirements, excludedSources,
+        restrictedBlocked ? { castingSpell: true, artifactSpell: false } : {})
+      : null;
+    const normallyOpens = shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
       delveCandidates: descriptor.delveCandidates,
       maxDelve: descriptor.maxDelve,
-      autoPayableMana,
-    })) return null;
+      autoPayableMana, autoPayableColors,
+    });
+    // Auto-tap silnika nie zna rezerwacji wyższych kreatorów. Nawet jeden
+    // profil (np. kilka identycznych ożywionych Wysp) może wybrać Wyspę
+    // zarezerwowaną do convoke. Jeśli koszt nie leży już w puli, a taka
+    // rezerwacja jest dostępnym źródłem, wymuszamy ręczny wybór WYŁĄCZNIE
+    // w płatności podrzędnej. Własny koszt {T} nie jest rezerwacją rodzica.
+    const reservedIds = new Set((excludedSources ?? []).filter((id) => id !== cmd.objectId));
+    const guardsParent = guardParentReservations && reservedIds.size > 0
+      && !wizardProgress(view, HUMAN_ID, descriptor, sources, poolUnits).done
+      && manaSourcesForPlayer(null).some((source) => reservedIds.has(source.id));
+    if (!normallyOpens && !guardsParent) return null;
     return { ...descriptor, cmd, _restrictedBlocked: restrictedBlocked };
   }
 
@@ -2972,7 +3050,9 @@ function bootstrapTable() {
     if (manaWizardParents.length === 0) { closeManaWizard(); return; }
     manaWizardDescriptor = manaWizardParents.pop();
     refreshManaWizard();
-    showModal('mana-wizard');
+    // Odświeżenie może automatycznie zakończyć także nadrzędną płatność.
+    // Wtedy modal jest już zamknięty i nie wolno otwierać pustej nakładki.
+    if (manaWizardDescriptor) showModal('mana-wizard');
   }
   /** Krótki opis rzutu porzuconego przy zamknięciu kreatora many (M106/Z10). */
   function describeAbandonedCast(cmd) {
@@ -3046,7 +3126,10 @@ function bootstrapTable() {
       // bo `finishWizardPayment` woła onCloseWizard PRZED komendą.
       const nested = manaWizardParents.length > 0;
       const result = finishWizardPayment(session, pending, {
-        runCommand: (cmd, options) => playDirect(cmd, options),
+        // Zdolność many jest tylko kolejnym krokiem wstrzymanej płatności.
+        // Auto-pass sesji mógłby opuścić krok i wyczyścić pulę, zanim
+        // nadrzędny kreator zdąży ją wykorzystać (także dla wyciszonej oferty).
+        runCommand: (cmd, options) => playDirect(cmd, nested ? { ...options, holdPriority: true } : options),
         onCloseWizard: () => { if (!nested) closeManaWizard(); },
         onSyncUi: () => {
           autosave();
@@ -3065,8 +3148,15 @@ function bootstrapTable() {
       finishPayment();
       return;
     }
+    const selectedCost = manaWizardDescriptor._tapCostSelection;
+    const selectedSource = selectedCost && sources.find((source) => source.id === selectedCost.objectId
+      && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selectedCost.abilityIndex
+      && source.tapCostChoices?.length);
+    if (selectedCost && !selectedSource) delete manaWizardDescriptor._tapCostSelection;
     renderManaWizard(els.manaWizardBody, {
       costStr: manaWizardDescriptor.costStr,
+      tapCostSelection: selectedSource
+        ? { source: selectedSource, choices: selectedSource.tapCostChoices.map(id => ({ id })) } : null,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
       // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
@@ -3091,8 +3181,19 @@ function bootstrapTable() {
       // Tapnięcie źródła: ląd → tap_for_mana, zdolność many → activate_ability
       // (E.3a cz. A). Po komendzie czytamy znowu pulę/widok (Skarb znika, dork
       // tapnięty, pool wzrósł o net zysk).
-      onTapSource: (objectId) => {
-        const src = sources.find((s) => s.id === objectId);
+      onTapSource: (objectId, selectedCommand = null) => {
+        // Wiele zdolności jednego lądu ma wspólne id. Wiersz niesie komendę
+        // wybranego trybu; dodatkowy argument pozostaje opcjonalny dla starych
+        // wywołań (źródło z jednym trybem).
+        const src = sources.find((s) => s.id === objectId && (!selectedCommand
+          || (s.command?.type === selectedCommand.type
+            && s.command?.abilityIndex === selectedCommand.abilityIndex)));
+        if (!src) return; // stary wiersz nie może wykonać innego trybu
+        if (src.tapCostChoices?.length) {
+          manaWizardDescriptor._tapCostSelection = { objectId: src.id, abilityIndex: src.command.abilityIndex };
+          refreshManaWizard();
+          return;
+        }
         const plan = manaSourceTapPlan(src) ?? {
           command: { type: 'tap_for_mana', playerId: HUMAN_ID, objectId }, nested: false,
         };
@@ -3104,12 +3205,29 @@ function bootstrapTable() {
         // `manaWizardFor` sam zamyka się, gdy wyboru nie ma (pula pokrywa koszt
         // albo jest jeden kształt płatności) — oferta = walidacja (L48).
         if (plan.nested) {
-          const nested = manaWizardFor(plan.command);
+          const nested = manaWizardFor(plan.command, { guardParentReservations: true });
           if (nested) { openNestedManaWizard(nested); return; }
         }
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
         playDirect(plan.command, { holdPriority: true });
+        refreshManaWizard();
+      },
+      onSelectTapCost: (creatureId) => {
+        // Po wyborze źródła stan mógł się zmienić. Nie uruchamiaj komendy ze
+        // starego DOM: pobierz aktualną listę i legalną komendę z widoku.
+        const selection = manaWizardDescriptor?._tapCostSelection;
+        if (!selection) return;
+        const latestSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+        const latestSource = latestSources.find((source) => source.id === selection.objectId
+          && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selection.abilityIndex);
+        const cmd = resolveManaSourceTapCost(latestSource, creatureId, session.view());
+        delete manaWizardDescriptor._tapCostSelection;
+        if (cmd) playDirect(cmd, { holdPriority: true });
+        refreshManaWizard();
+      },
+      onCancelTapCost: () => {
+        if (manaWizardDescriptor) delete manaWizardDescriptor._tapCostSelection;
         refreshManaWizard();
       },
       onToggleDelve: (objectId, on) => {

@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 import {describeGameEvent} from '../src/table/session.js';
 import {readFileSync} from 'node:fs';
 import {createContext,runInContext} from 'node:vm';
@@ -38,9 +39,10 @@ for(const ids of [[],['a'],['a','a'],['a','b','c'],['a','unknown'],['a','foe'],[
 test('B: inny gracz nie płaci cudzą ręką',()=>{const s=setup(),fp=stateFingerprint(s);assert.equal(batch(s,['a','b'],'p2').ok,false);assert.equal(stateFingerprint(s),fp);});
 test('B: obie karty madness odrzucone zanim pojawi się pierwszy wybór rzutu',()=>{
  const s=setup(true),r=batch(s,['a','b']);assert.ok(r.ok);assert.equal(s.pendingDiscardChoice,null);
- assert.equal(s.zones.exile.length,2);assert.ok(s.pendingMadnessCast);assert.equal(s.madnessQueue.length,1);
- assert.ok(r.events.findLastIndex(e=>e.type==='card_discarded')<r.events.findIndex(e=>e.type==='madness_ready_required'));
- for(let i=0;i<2;i++){const c=playerView(s,'p1').legalCommands.find(c=>c.type==='resolve_madness_cast'&&!c.cast);assert.ok(c);assert.ok(execute(s,c).ok);}
+ assert.equal(s.zones.exile.length,2);assert.equal(s.pendingMadnessCast,null);assert.equal(s.madnessQueue.length,0);
+ assert.equal(s.zones.stack.length,3);
+ assert.ok(r.events.findLastIndex(e=>e.type==='card_discarded')<r.events.findIndex(e=>e.type==='ability_triggered'&&e.trigger==='madness'));
+ for(let i=0;i<2;i++){resolveMadnessTrigger(s);const c=playerView(s,'p1').legalCommands.find(c=>c.type==='resolve_madness_cast'&&!c.cast);assert.ok(c);assert.ok(execute(s,c).ok);}
  assert.equal(s.pendingMadnessCast,null);resolve(s);
 });
 test('B: legacy pojedynczej karty/replay nadal działa, ale UI zna pozostałą liczbę',()=>{

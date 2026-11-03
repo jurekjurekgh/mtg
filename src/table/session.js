@@ -136,7 +136,7 @@ export function faceDownLabel(object, nameOf) {
  */
 export function commandOptionKey(cmd) {
   const fields = [
-    'type', 'objectId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
+    'type', 'objectId', 'stackEntryId', 'abilityIndex', 'targets', 'xValue', 'modeIndex',
     // Batch 62: wariant kicked i ląd zwracany jako koszt kickera (Chocobo Kick).
     'kicked', 'kickerLandId',
     // Batch 62: podział obrażeń wybrany przy rzucie (Fiery Justice) różnicuje warianty.
@@ -843,6 +843,7 @@ export function rejectionReasonLabel(reason) {
 }
 
 export const TRIGGER_EVENT_LABELS = Object.freeze({
+  madness: 'wygnanie karty z madness',
   another_creature_enters: 'wejście innego stworzenia',
   // Batch65 (Zombie Boa): „becomes blocked by a creature of that color".
   becomes_blocked_by_color: 'zablokowanie przez stwora wybranego koloru',
@@ -1289,9 +1290,13 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
           : 'Wszystkie stwory nie mogą blokować do końca tury';
       }
       case 'spell_countered': return `${nameOf(e.cardId)} zostaje skontrowany${e.counteredByCardId ? ` (${nameOf(e.counteredByCardId)})` : (e.counteredBy ? ` (${nameOfObject(e.counteredBy)})` : '')}`;
-      case 'sacrifice_choice_required': return e.sacrificeUnless
+      // Źródło jest publiczne (czar na stosie lub permanent); starsze zdarzenia
+      // bez cardId zachowują dotychczasowy opis. Champion to wygnanie, nie ofiara.
+      case 'sacrifice_choice_required': return `${srcName(e)}${e.champion
+        ? `${whoN(e.playerId)} wybiera wygnanie innego permanenta albo rezygnację (champion)`
+        : e.sacrificeUnless
         ? `${whoN(e.playerId)} wskazuje permanent do poświęcenia albo poświęca źródło`
-        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`;
+        : `${whoN(e.playerId)} wskazuje stwora do poświęcenia`}`;
       // Batch 53 (Glorifier of Suffering): opcjonalne poświęcenie innego
       // stwora/artefaktu + refleks „when you do".
       case 'reflexive_sacrifice_required':
@@ -2285,15 +2290,18 @@ function describeGameEventRaw(e, helpers, names = PLAYER_NAMES, { fogOfWar = fal
       }
       case 'search_choice_required': {
         const source = e.sourceCardId ? ` (${nameOf(e.sourceCardId)})` : '';
-        const dest = e.destination === 'battlefield' ? 'na pole bitwy' : 'do ręki';
-        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest} albo rezygnuje`;
+        const dest = e.destination === 'battlefield' ? 'na pole bitwy' : e.destination === 'graveyard' ? 'do grobu' : 'do ręki';
+        const skip = e.mandatory ? '' : ' albo rezygnuje';
+        return `${whoN(e.playerId)} szuka karty w bibliotece${source} — wybiera, którą wziąć ${dest}${skip}`;
       }
       case 'search_choice_resolved': {
-        // M100/E4: szukanie wg kryterium = jawny reveal (CR 701.20) — nazwa
-        // znalezionej karty jest publiczna (obaj gracze).
+        // CR 701.23: nie każdy search odsłania kartę. Nazwę prywatnej
+        // karty do ręki widzi tylko jej właściciel, nie przeciwnik ani FoW.
         if (e.found) {
-          const what = e.foundCardId ? nameOf(e.foundCardId) : 'kartę';
-          return `${whoN(e.playerId)} znajduje ${what} i tasuje bibliotekę`;
+          const visible = !e.hiddenFound || seesHiddenOf(e.playerId);
+          const what = e.foundCardId && visible ? nameOf(e.foundCardId) : 'kartę';
+          const shuffle = e.shuffled === false ? '' : ' i tasuje bibliotekę';
+          return `${whoN(e.playerId)} znajduje ${what}${shuffle}`;
         }
         return `${whoN(e.playerId)} rezygnuje z szukania i tasuje bibliotekę`;
       }
@@ -3446,7 +3454,7 @@ export function createSession(config) {
       return null;
     }
     if (e.type === 'search_choice_resolved') {
-      suppressNextLibrarySearched = true;
+      suppressNextLibrarySearched = e.shuffled !== false;
     }
     return describeGameEvent(e, {
       nameOf,
@@ -3629,7 +3637,7 @@ export function createSession(config) {
       lastBotMoveWasSearchResolved = false;
       return;
     }
-    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = true;
+    if (e.type === 'search_choice_resolved') lastBotMoveWasSearchResolved = e.shuffled !== false;
     else lastBotMoveWasSearchResolved = false;
     if (e.type === 'step_advanced') {
       const key = `${e.number}:${e.phase}:${e.step}`;

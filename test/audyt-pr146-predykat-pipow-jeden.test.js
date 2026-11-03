@@ -52,8 +52,9 @@ test('F1/2: reguła jest wołana przez wspólną funkcję (kotwica, nie pusty sk
   // kotwica mówi, ile wywołań wspólnej funkcji jest w pliku.
   // M179/E: +2 wywołania dla Treasure auto-tap (pip i obrona w głąb, L48).
   const wywolania = [...kod().matchAll(/unitCoversAnyRequirement\(/g)].length;
-  assert.equal(wywolania, 19,
-    `oczekiwane 19 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146 + M179/E); `
+  // Audyt PR #177: +1 w doborze kolorów Converge (ochrona kolorów).
+  assert.equal(wywolania, 20,
+    `oczekiwane 20 wywołań unitCoversAnyRequirement w ${PLIK} (pomiar audytu PR #146 + M179/E + audyt PR #177); `
     + 'nowe miejsce = świadoma aktualizacja kotwicy');
 });
 

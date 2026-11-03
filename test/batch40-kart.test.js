@@ -398,7 +398,10 @@ test('D4: trigger przy ATAKU — dzieli obrażenia (scenariusz walki)', () => {
   const done = execute(state, { type: 'resolve_damage_division', playerId: 'p1', amounts: [2, 1] });
   assert.ok(done.ok, 'podział po ataku zaakceptowany');
   for (let i = 0; i < 12 && state.zones.stack.length > 0; i += 1) {
-    assert.ok(execute(state, { type: 'pass_priority', playerId: state.turn.priorityPlayerId }).ok);
+    const choices = playerView(state, state.turn.priorityPlayerId).legalCommands;
+    const next = choices.find(c => c.type === 'resolve_trigger_order')
+      ?? choices.find(c => c.type === 'pass_priority');
+    assert.ok(next && execute(state, next).ok);
   }
   const dead = [...state.objects.values()].filter((o) => o.cardId === 'highland-game' && o.zone === 'graveyard');
   assert.ok(dead.length >= 1, 'jeden 2/1 zabity (2 obrażenia z podziału)');

@@ -4019,10 +4019,11 @@ odtwarzają stan sprzed zmiany (M429). Epic Experiment pozostaje zielony
 Plan: [PLAN_2026-10-30-batch71-kolekcja-625-634](plans/PLAN_2026-10-30-batch71-kolekcja-625-634.md)
 (B6). Pin: `test/audyt-pmssb80-kwota-z-landow.test.js`.
 
-Efekt `damage` z `amount 'lands_you_control'` istniał w silniku, ale wycena
-czytała kwotę z pola `amount` (string → 0), więc czar dostawał ocenę „obrażenia
-bez skutku”. Naprawa u źródła (L41): jedna funkcja licząca kwotę z tego samego
-źródła co silnik, użyta w `damageTargetValue`.
+Na etapie PMSSB-80 efekt `damage` z `amount 'lands_you_control'` istniał już
+w silniku, dodany we wcześniejszym kroku B2a tego samego PR #177; nie istniał
+jeszcze w jego bazie `59815d5`. Wycena czytała kwotę z pola `amount` (string → 0),
+więc czar dostawał ocenę „obrażenia bez skutku”. Naprawa u źródła (L41): jedna
+funkcja licząca kwotę z tego samego źródła co silnik, użyta w `damageTargetValue`.
 
 | Stan (hit = liczba moich landów) | PRZED | PO | Werdykt |
 |---|---|---|---|

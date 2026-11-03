@@ -96,6 +96,8 @@ export const chooseTwoModes = (modes) => {
       }
       pairs.push({
         name: `${first.name} + ${second.name}`,
+        // Składniki wyboru są jawne dla UI; tryb silnika pozostaje parą.
+        choiceComponents: [{ index: i, name: first.name }, { index: j, name: second.name }],
         effects: [...(first.effects ?? []), ...(second.effects ?? [])],
       });
     }
@@ -14862,7 +14864,7 @@ export const VIRTUAL_BASIC_LANDS = Object.freeze([
   }),
 
   // 627. Rumbling Rockslide (LCI) {3}{R} — obrażenia równe liczbie landów
-  //      kontrolowanych przez rzucającego (B2a, CR 107.3a: kwota przy rzucie).
+  //      kontrolowanych przez rzucającego (B2a, liczba w chwili rozstrzygnięcia).
   defineCard({
     id: 'rumbling-rockslide', name: 'Rumbling Rockslide', set: 'LCI',
     types: ['Sorcery'], colors: ['R'], manaCost: 4,

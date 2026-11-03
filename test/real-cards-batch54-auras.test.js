@@ -232,20 +232,32 @@ test('B54 aura: obniżki alternatywnego kosztu w ofercie, płatności i wizardzi
   const { replaceObject } = await import('../src/engine/permanents.js');
   const { reduceAlternativeCost } = await import('../src/engine/mana-cost.js');
   const { paymentDescriptorOf } = await import('../src/table/mana-wizard.js');
+  const { bestowedSpellCharacteristics } = await import('../src/engine/attachments.js');
   for (const mode of ['surge', 'bestow']) for (const reducers of [1, 4]) {
     const s = membraneBoard(); await priorCast(s);
     let id = 'membrane';
     if (mode === 'bestow') { id = 'dryad'; put(s, id, 'leafcrown-dryad'); }
     const object = s.objects.get(id);
-    // Kontrolowany wariant artifact: używa prawdziwego Etherium Sculptor.
+    // Syntetyczny artifact-surge zachowuje Artifact; bestow traci ten typ.
+    // Dla bestow syntetyczna obniżka enchantment sprawdza, że legalna
+    // obniżka nadal działa na alternatywny koszt (CR 702.103b, 601.2f).
     const alt = { ...object[mode], cost: 3, colors: ['U'] };
     replaceObject(s, object, { types: [...object.types, 'Artifact'], [mode]: alt });
-    for (let i = 0; i < reducers; i++) put(s, `sculptor-${i}`, 'etherium-sculptor', 'p1', 'battlefield');
+    for (let i = 0; i < reducers; i++) {
+      const reducerId = `sculptor-${i}`;
+      put(s, reducerId, 'etherium-sculptor', 'p1', 'battlefield');
+      if (mode === 'bestow') {
+        const reducer = s.objects.get(reducerId);
+        replaceObject(s, reducer, { abilities: reducer.abilities.map(a => a.costModifier
+          ? { ...a, costModifier: { ...a.costModifier, spellTypes: ['Enchantment'] } } : a) });
+      }
+    }
     const cost = Math.max(1, 3 - reducers); addMana(s, 'p1', cost, { colors: ['U'] });
     const view = playerView(s, 'p1');
     const cmd = view.legalCommands.find(c => c.objectId === id && c.targets?.[0] === 'host' && (mode === 'surge' ? c.surgeCast : c.bestow));
     assert.ok(cmd, 'opłacalny koszt po obniżce jest oferowany');
-    const alternativeCost = reduceAlternativeCost(s, s.objects.get(id), alt.cost, alt.colors);
+    const spellObject = mode === 'bestow' ? bestowedSpellCharacteristics(s.objects.get(id)) : s.objects.get(id);
+    const alternativeCost = reduceAlternativeCost(s, spellObject, alt.cost, alt.colors);
     assert.equal(alternativeCost, cost);
     const desc = paymentDescriptorOf(cmd, view, { alternativeCost });
     assert.equal(desc.totalNeeded, cost); assert.deepEqual(desc.requirements, [['U']]);

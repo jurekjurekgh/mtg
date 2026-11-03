@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 // M174 — Batch 41 (lista właściciela 2026-08-21). Transza A: reuse.
 // Dane wg docs/cards/scryfall-*.json (ADR 0010 §2a); pełne Oracle (ADR 0022).
 import { test } from 'node:test';
@@ -241,6 +242,7 @@ function discardAgony(state) {
   const exiled = [...state.objects.values()].find((o) => o.cardId === 'terminal-agony' && o.zone === 'exile');
   assert.ok(exiled, 'karta w exile (CR 702.35a)');
   assert.equal(exiled.madnessReady, true, 'gotowość madness');
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta');
   return exiled;
 }

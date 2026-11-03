@@ -2,7 +2,7 @@ import { event } from '../protocol/types.js';
 import { moveObjectDirectly } from './objects.js';
 import { deathZoneFor } from './zones.js';
 import { effectiveAbilities, effectiveKeywords, untapControlled, hasFlashPermission, grantedFlashGrant, tapObject } from './permanents.js';
-import { effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
+import { bestowedTypeLine, bestowedSpellCharacteristics, effectiveProtectionFromColors, isProtectedFromSource } from './attachments.js';
 import { addCounter } from './counters.js';
 import { changeLife } from './players.js';
 import { MANA_COSTS } from '../cards/mana-costs-data.js';
@@ -255,6 +255,107 @@ function matchPipsWithGrantFlex(units, grants, requirements) {
 }
 
 /**
+ * Dobór many do czaru liczącego kolory: minimalny koszt przepływu przez
+ * jednostki → kolory → pipy/część generyczną. Pierwsza jednostka danego
+ * koloru ma premię większą niż wszystkie preferencje zachowania many razem;
+ * kolejne już jej nie mają. Dzięki temu dobór pipów i generic jest wspólny:
+ * nie zużywamy elastycznej jednostki na pip, jeśli można ją wydać w nowym
+ * kolorze na generic. Bezbarwna jest osobnym węzłem, bez premii.
+ *
+ * Przepływ zwrotny pozwala przestawić wcześniejsze decyzje. Węzły pipów mają
+ * pojemność 1, a generic dokładnie amount - requirements.length, więc pełny
+ * przepływ jest zarazem legalną płatnością, nigdy nadpłatą. Tie-break zachowuje
+ * preferencję zużycia many ograniczonej i oszczędzania chronionych kolorów.
+ */
+function maximizeColorPayment(units, requirements, amount, freeLen, preserveReqs) {
+  if (amount < requirements.length || amount > units.length) return null;
+  const colorKeys = ['W', 'U', 'B', 'R', 'G', 'C'];
+  const source = 0;
+  const firstUnit = 1;
+  const firstColorIn = firstUnit + units.length;
+  const firstColorOut = firstColorIn + colorKeys.length;
+  const firstPip = firstColorOut + colorKeys.length;
+  const generic = firstPip + requirements.length;
+  const sink = generic + 1;
+  const graph = Array.from({ length: sink + 1 }, () => []);
+  const addEdge = (from, to, capacity, cost) => {
+    const forward = { to, rev: graph[to].length, capacity, cost };
+    const reverse = { to: from, rev: graph[from].length, capacity: 0, cost: -cost };
+    graph[from].push(forward);
+    graph[to].push(reverse);
+    return forward;
+  };
+  const unitEdges = [];
+  const pipEdges = [];
+  const reward = amount * (amount + 2) + 1;
+  for (let i = 0; i < units.length; i += 1) {
+    const preserve = unitCoversAnyRequirement(units[i], preserveReqs) ? 1 : 0;
+    const free = i < freeLen ? amount + 1 : 0;
+    const selected = addEdge(source, firstUnit + i, 1, free + preserve);
+    const colors = units[i].length ? units[i] : ['C'];
+    const choices = colors.map((color) => ({
+      color, edge: addEdge(firstUnit + i, firstColorIn + colorKeys.indexOf(color), 1, 0),
+    }));
+    unitEdges.push({ selected, choices });
+  }
+  colorKeys.forEach((color, index) => {
+    if (color !== 'C') addEdge(firstColorIn + index, firstColorOut + index, 1, -reward);
+    addEdge(firstColorIn + index, firstColorOut + index, amount, 0);
+    requirements.forEach((requirement, pip) => {
+      if (unitCoversRequirement(color === 'C' ? [] : [color], requirement)) {
+        pipEdges.push({ color, pip, edge: addEdge(firstColorOut + index, firstPip + pip, 1, 0) });
+      }
+    });
+    addEdge(firstColorOut + index, generic, amount, 0);
+  });
+  requirements.forEach((_, pip) => addEdge(firstPip + pip, sink, 1, 0));
+  addEdge(generic, sink, amount - requirements.length, 0);
+  for (let flow = 0; flow < amount; flow += 1) {
+    // Bellman-Ford obsługuje ujemną premię i krawędzie zwrotne; liczba kolorów
+    // jest stała (5), a rozmiar sieci ogranicza rozmiar bieżącej puli many.
+    const distance = new Array(graph.length).fill(Infinity);
+    const previous = new Array(graph.length).fill(null);
+    distance[source] = 0;
+    for (let pass = 0; pass < graph.length - 1; pass += 1) {
+      let changed = false;
+      for (let from = 0; from < graph.length; from += 1) {
+        if (!Number.isFinite(distance[from])) continue;
+        for (let e = 0; e < graph[from].length; e += 1) {
+          const edge = graph[from][e];
+          if (edge.capacity <= 0 || distance[edge.to] <= distance[from] + edge.cost) continue;
+          distance[edge.to] = distance[from] + edge.cost;
+          previous[edge.to] = [from, e];
+          changed = true;
+        }
+      }
+      if (!changed) break;
+    }
+    if (!previous[sink]) return null;
+    for (let node = sink; node !== source;) {
+      const [from, e] = previous[node];
+      const edge = graph[from][e];
+      edge.capacity -= 1;
+      graph[node][edge.rev].capacity += 1;
+      node = from;
+    }
+  }
+  // Po przejściu przez wspólny węzeł koloru dowolna jednostka tego samego
+  // koloru może płacić jego pip. Odtwarzamy role, by zachować dotychczasowy
+  // kontrakt profili WUBRG dla generic i przecięcia profilu z pipem.
+  const assignments = unitEdges.map(({ selected, choices }) => ({
+    color: selected.capacity === 0 ? choices.find(({ edge }) => edge.capacity === 0)?.color ?? null : null,
+    pip: -1,
+  }));
+  for (const { color, pip, edge } of pipEdges) {
+    if (edge.capacity !== 0) continue;
+    const unit = assignments.find((entry) => entry.color === color && entry.pip === -1);
+    if (!unit) throw new Error('Błędna rekonstrukcja płatności many');
+    unit.pip = pip;
+  }
+  return assignments;
+}
+
+/**
  * Konsumpcja z kolorowej puli: pipy kolorowe (`requirements`) dopasowuje do
  * jednostek o przecinającym się zbiorze kolorów (backtracking — hasColor
  * gwarantuje pokrycie), resztę (`amount` − pipy) konsumuje od jednostek o
@@ -307,17 +408,28 @@ export function consumeManaPool(player, amount, requirements, restricted = false
   // innego nie ma (sort, nie filtr — fallback zjada chronione)).
   // Komparator współdzielony z bramką-symulacją (ten sam wynik).
   const preserveReqs = singleColorRequirements(preserved);
-  // O-2: przy czarze liczącym kolory (Converge) zbiór kolorów JUŻ wydanych na
-  // pipy jest znany z dopasowania powyżej — nowa jednostka ma wnieść kolor,
-  // którego jeszcze nie ma (maksymalizacja X legalnym wyborem, CR 601.2h).
+  // Kolory pipów dla zapasowej ścieżki dotychczasowego komparatora. Właściwy
+  // dobór Converge rozważa pipy i generic razem (CR 601.2h).
   const colorPlan = options?.maximizeColors
     ? { spent: new Set(pipAssignment.flatMap((pos) => (pos >= 0 ? (requirements[pos] ?? []) : []))) }
     : null;
-  genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b, colorPlan));
-  for (const i of genericOrder) {
-    if (toConsume <= 0) break;
-    consume[i] = true;
-    toConsume -= 1;
+  const optimizedPayment = options?.maximizeColors
+    ? maximizeColorPayment(units, requirements, amount, freeUnits.length, preserveReqs) : null;
+  if (options?.maximizeColors && amount >= requirements.length && amount <= units.length && !optimizedPayment) {
+    throw new Error('Nie znaleziono poprawnego doboru kolorów many');
+  }
+  if (optimizedPayment) {
+    for (let i = 0; i < n; i += 1) {
+      consume[i] = optimizedPayment[i].color != null;
+      pipAssignment[i] = optimizedPayment[i].pip;
+    }
+  } else {
+    genericOrder.sort((a, b) => compareGenericConsume(units, freeUnits.length, preserveReqs, a, b, colorPlan));
+    for (const i of genericOrder) {
+      if (toConsume <= 0) break;
+      consume[i] = true;
+      toConsume -= 1;
+    }
   }
   const newPool = {};
   const newRestrictedPool = {};
@@ -1420,7 +1532,7 @@ export function tapTreasureForMana(state, playerId, objectId, { grantColor = nul
   const destId = `${toZone}-${state.objectSequence++}`;
   const moved = moveObjectDirectly(state, objectId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {
-    fromId: objectId, objectId: destId, playerId, cardId: moved.cardId, toZone,
+    fromId: objectId, objectId: destId, playerId, object: moved, cardId: moved.cardId, toZone,
   }));
   const colors = grantColor ? [grantColor] : ability.colors;
   const mana = addMana(state, playerId, ability.amount, { colors, fromTreasure: true });
@@ -2512,21 +2624,27 @@ function auraTargetHexproof(state, host, casterId) {
  * (legalAuraCasts), walidacji (castAuraSpell) i przy rozstrzyganiu
  * (resolveAuraSpell — gospodarz mógł zyskać protection na stosie).
  */
-function auraTargetProtected(state, host, sourceObject) {
+function auraTargetProtected(state, host, sourceObject, { bestow = false } = {}) {
+  // Celowanie odbywa się już czarem na stosie, a nie kartą w ręce. Ochrona
+  // patrzy na cechy wybranego wariantu (bestow jest Aurą, nie stworem).
+  const spellSource = bestow
+    ? bestowedSpellCharacteristics(sourceObject)
+    : sourceObject;
   if (!host || host.zone !== 'battlefield') return false;
   // M110 (CR 702.16c): ochrona przed JAKOŚCIĄ (np. „protection from
   // Auras"/„from non-Human creatures" dla aur-stworów z bestow).
-  if (isProtectedFromSource(state, host, sourceObject)) return true;
+  if (isProtectedFromSource(state, host, spellSource)) return true;
   const protColors = effectiveProtectionFromColors(state, host);
   if (protColors.length === 0) return false;
-  return (sourceObject.colors ?? []).some((c) => protColors.includes(c));
+  return (spellSource.colors ?? []).some((c) => protColors.includes(c));
 }
 
 /** Koszt i pipy aury: jedno źródło dla oferty oraz walidacji/płatności. */
 function auraPaymentCost(state, object, { bestow = false, surgeCast = false } = {}) {
   const alternative = surgeCast ? object.surge : bestow ? object.bestow : null;
+  const spellObject = bestow ? bestowedSpellCharacteristics(object) : object;
   const cost = alternative
-    ? reduceAlternativeCost(state, object, alternative.cost ?? 0, alternative.colors ?? [])
+    ? reduceAlternativeCost(state, spellObject, alternative.cost ?? 0, alternative.colors ?? [])
     : reduceGenericCost(object.cardId, object.manaCost ?? 0, costReductionForSpell(state, object));
   const requirements = alternative ? (alternative.colors ?? []).map(c => [c]) : coloredPipsOf(object.cardId);
   return { cost, requirements };
@@ -2561,10 +2679,10 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   const { cost, requirements } = withoutManaCost
     ? { cost: 0, requirements: [] }
     : auraPaymentCost(state, object, { bestow, surgeCast });
-  // M202/N1: czar aury to rzut czaru — cel wydania liczony z danych karty.
-  const manaPurpose = spellManaPurpose(object);
+  // Mana i obniżki patrzą na czar na stosie, nie na kartę przed bestow.
+  const manaPurpose = spellManaPurpose(bestow ? bestowedSpellCharacteristics(object) : object);
   if (producibleMana(state, playerId, null, manaPurpose, requirements) < cost) throw new Error('Niewystarczająca mana');
-  if (!canPayColoredCost(state, playerId, requirements)) throw new Error('Brak kolorowego źródła many');
+  if (!canPayColoredCost(state, playerId, requirements, null, manaPurpose)) throw new Error('Brak kolorowego źródła many');
   // Walidacja CELU PRZED jakąkolwiek mutacją (CR 601.2h): nieudany rzut nie
   // może zostawić karty na stosie ani utraconej many.
   let spellTargets;
@@ -2626,7 +2744,7 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
     // Audyt PR #41 (B6, CR 702.16b): permanent z protection od koloru czaru
     // nie może być celem czaru aury tego koloru (np. Curiosity {U} vs stwór
     // z protection od blue). Wcześniej sprawdzany był tylko hexproof.
-    if (auraTargetProtected(state, host, object)) {
+    if (auraTargetProtected(state, host, object, { bestow })) {
       throw new Error('Celem czaru aury nie może być permanent z protection od koloru czaru');
     }
     const auraHostType = (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment')
@@ -2642,6 +2760,9 @@ export function castAuraSpell(state, playerId, objectId, { targetId, bestow = fa
   // załączone (albo — dla curse — z enchantedPlayerId).
   const stacked = Object.freeze({
     ...moved,
+    // CR 702.103b: od chwili położenia na stosie bestow to czar Aury,
+    // nie czar stwora. Bazowe cechy wrócą przy zmianie strefy lub odłączeniu.
+    ...(bestow ? { ...bestowedTypeLine(moved), kind: 'aura', baseKind: moved.kind } : {}),
     surgeCast: Boolean(surgeCast),
     tapped: false,
     enchantPlayer,
@@ -2704,8 +2825,9 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     const { cost, requirements } = auraPaymentCost(state, object, { bestow, surgeCast });
     // A: budżet PER OPCJA (pip(y) bestow ≠ pip(y) aury) — joint (iv) bramki
     // źródeł kosztowych liczy się na pipach tej opcji (L48 z castAuraSpell).
-    if (cost <= producibleMana(state, playerId, null, spellManaPurpose(object), requirements)
-      && canPayColoredCost(state, playerId, requirements)) options.push(bestow);
+    const manaPurpose = spellManaPurpose(bestow ? bestowedSpellCharacteristics(object) : object);
+    if (cost <= producibleMana(state, playerId, null, manaPurpose, requirements)
+      && canPayColoredCost(state, playerId, requirements, null, manaPurpose)) options.push(bestow);
   }
   if (options.length === 0) return out;
   // Aura „Enchant player" (Curse): celem jest GRACZ, nie stwór — wybór celu
@@ -2727,7 +2849,13 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
   }
   // Protection (CR 702.16b) — spójnie z castAuraSpell: cel z protection od
   // koloru aury nie jest oferowany (oferta = walidacja).
-  const protectedTarget = (target) => auraTargetProtected(state, target, object);
+  const pushTarget = (target, variants) => {
+    for (const bestow of variants) {
+      if (!auraTargetProtected(state, target, object, { bestow })) {
+        out.push({ objectId: object.id, targetId: target.id, bestow });
+      }
+    }
+  };
   if (object.aura?.enchantType === 'artifact_or_creature') {
     // Batch 48 (Clawing Torment, NEO): Oracle bywa DWOJAKI — „Enchant
     // artifact or creature YOU CONTROL" (Moonlit Meditation) albo bez tego
@@ -2737,8 +2865,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
       const isArtOrCreature = target && (target.kind === 'creature' || target.kind === 'artifact' || (target.types ?? []).includes('Artifact'));
-      if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+      if (isArtOrCreature && (!ownOnly || target.controllerId === playerId) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchant === 'enchantment' || object.aura?.enchantType === 'enchantment') {
@@ -2746,8 +2874,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
       const isEnchantment = target && (target.kind === 'enchantment' || (target.types ?? []).includes('Enchantment'));
-      if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if (isEnchantment && target.zone === 'battlefield' && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else if (object.aura?.enchant === 'land' || object.aura?.enchantType === 'land') {
@@ -2757,8 +2885,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-      if (isLand && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+      if (isLand && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchantType === 'creature_or_land') {
@@ -2766,8 +2894,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isLand = target.kind === 'land' || (target.types ?? []).includes('Land');
-      if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if ((target.kind === 'creature' || isLand) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else if (object.aura?.enchantType === 'creature_you_control') {
@@ -2777,8 +2905,8 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (target && target.zone === 'battlefield' && target.kind === 'creature'
         && target.controllerId === playerId
-        && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        out.push({ objectId: object.id, targetId, bestow: false });
+        && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, [false]);
       }
     }
   } else if (object.aura?.enchantType === 'creature_or_vehicle') {
@@ -2787,15 +2915,15 @@ function auraCastsForPayment(state, playerId, object, surgeCast = false, without
       const target = state.objects.get(targetId);
       if (!target || target.zone !== 'battlefield') continue;
       const isVehicle = (target.subtypes ?? []).includes('Vehicle');
-      if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if ((target.kind === 'creature' || isVehicle) && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   } else {
     for (const targetId of state.zones.battlefield) {
       const target = state.objects.get(targetId);
-      if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId) && !protectedTarget(target)) {
-        for (const bestow of options) out.push({ objectId: object.id, targetId, bestow });
+      if (target && target.zone === 'battlefield' && target.kind === 'creature' && !auraTargetHexproof(state, target, playerId)) {
+        pushTarget(target, options);
       }
     }
   }

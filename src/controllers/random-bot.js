@@ -1,5 +1,5 @@
 import { createRng } from '../engine/rng.js';
-import { autoManaUnits, castBeyondAutoMana } from './mana-offer-guards.js';
+import { autoManaUnits, castBeyondAutoMana, triggerPaymentBeyondAuto } from './mana-offer-guards.js';
 
 /**
  * Prosty kontroler testowy: wybiera wyłącznie spośród legalnych komend widoku.
@@ -38,6 +38,7 @@ export function createRandomBot({ seed, allowConcede = true }) {
         if ((cmd.type === 'resolve_counter_pay_choice' || cmd.type === 'resolve_ward_pay_choice')
           && cmd.pay === true && (cmd.cost ?? 0) > autoMana) return false;
         if (CASTY.has(cmd.type) && castBeyondAutoMana(view, cmd, autoUnits)) return false;
+        if (triggerPaymentBeyondAuto(view, cmd, autoUnits)) return false;
         return true;
       });
       const pool = allowConcede

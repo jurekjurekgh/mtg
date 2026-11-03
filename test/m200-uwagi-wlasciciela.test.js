@@ -269,6 +269,10 @@ function milledBy(state, playerId) {
 /** Rozstrzyga stos i decyzje celu Selhoffa (cel: p2). */
 function drainTriggersAndStack(state) {
   for (let i = 0; i < 30; i += 1) {
+    if (state.pendingTriggerOrder) {
+      const choice = playerView(state, state.turn.priorityPlayerId).legalCommands.find(c => c.type === 'resolve_trigger_order');
+      assert.ok(choice); assert.ok(execute(state, choice).ok); continue;
+    }
     if (state.pendingTriggerTargets.length > 0) {
       const pending = state.pendingTriggerTargets[0];
       const done = execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'p2' });

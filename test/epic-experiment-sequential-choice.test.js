@@ -119,6 +119,7 @@ function openProductionChoice({ session, host, previews, submitted, modals }) {
     choiceGroupTitle: () => 'Wygnane czary — który rzucić bez kosztu many?',
     commandLabel: (cmd) => (cmd.done ? 'Zakończ darmowe rzuty' : `Rzuć bez kosztu — ${session.nameOfObject(cmd.cardId)}`),
     labelChoiceOptions: (options) => options.map((cmd) => cmd.done ? 'Zakończ' : session.nameOfObject(cmd.cardId)),
+    cardIdForChoiceOption: () => null,
     renderChoiceRequest: () => { throw new Error('permutation fallback should never render Epic choices'); },
     openCardFullscreen: (objectId) => previews.objects.push(objectId),
     openCardFullscreenByCardId: (cardId) => previews.cards.push(cardId),
@@ -386,7 +387,7 @@ test('Epic Experiment does not enumerate additional discard-cost combinations ei
   }
 });
 
-function productionPlanFor(options) {
+function productionPlanFor(options, objects = new Map()) {
   const view = {
     playerId: 'p1',
     players: [{ id: 'p1', name: 'Ty' }, { id: 'p2', name: 'Nieprzyjaciel' }],
@@ -394,7 +395,7 @@ function productionPlanFor(options) {
     pendingTriggerTarget: null,
   };
   const session = {
-    state: { objects: new Map() },
+    state: { objects },
     view: () => view,
     nameOf: (id) => id,
     nameOfObject: (id) => id,
@@ -442,6 +443,7 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
     'epicChoiceModePlanOf',
     'epicChoiceTargetPlanOf',
     'epicChoiceDiscardPlanOf',
+    'chooseModesPlanOf',
     'upToTargetsPlanOf',
     'multiTargetPlanOf',
     'singleTargetPlanOf',
@@ -495,6 +497,13 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
   assert.equal(singlePlan?.singleMode, 'targets', 'ordinary one-target requests route to the target picker');
   assert.equal(singlePlan.targets.length, 4);
 
+  const austere = REGISTRY.get('austere-command');
+  const modeCommands = austere.spell.modes.map((_, modeIndex) => ({ type: 'cast_spell',
+    objectId: 'austere', playerId: 'p1', modeIndex, targets: [] }));
+  const chooseModes = productionPlanFor(modeCommands, new Map([['austere', { spell: austere.spell }]]));
+  assert.ok(chooseModes?.chooseModesMode, 'choose-two is routed before generic mode rows');
+  assert.equal(chooseModes.rows.length, 4, 'four original choices, not six combinations');
+
   const modalOptions = [
     { type: 'cast_spell', objectId: 'modal-spell', playerId: 'p1', modeIndex: 0, targets: [] },
     ...candidates.map((targetId) => ({
@@ -505,3 +514,48 @@ test('modal anti-permutation sentinel covers the shared router, not just Epic Ex
   assert.ok(modePlan?.castModeMode, 'mode×target requests split into a mode step before target choices');
   assert.equal(modePlan.rows.length, 2, 'the first modal has two modes, not five mode-target variants');
 });
+
+test('Austere: produkcyjny router pokazuje checkboxy i wysyła wybraną legalną parę', () => withDocument(() => {
+  const { state, session } = scene({ exile: [], cardIds: [], creatures: false, hand: [['aus', 'austere-command']] });
+  state.pendingEpicExperiment = null;
+  const player = state.players.find(p => p.id === 'p1');
+  player.mana = 6; player.manaPool = { W: 6 };
+  const options = session.view().legalCommands.filter(c => c.type === 'cast_spell' && c.objectId === 'aus');
+  assert.equal(options.length, 6);
+  const host = new MiniEl('div'), submitted = [], previews = { objects: [], cards: [] }, modals = { shown: 0, hidden: 0 };
+  const open = openProductionChoice({ session, host, previews, submitted, modals });
+  open(choiceRequest({ id: 'austere-choice', type: 'command', options }));
+  const toggles = host.byClass('multi-target-toggle');
+  assert.equal(toggles.length, 4);
+  assert.ok(toggles.every(t => t.type === 'checkbox'));
+  toggleChoice(host, 0); toggleChoice(host, 3);
+  const confirm = host.byClass('multi-target-confirm')[0]; assert.equal(confirm.disabled, false); confirm.click();
+  assert.strictEqual(submitted[0], options.find(c => c.modeIndex === 2));
+  assert.ok(execute(state, submitted[0]).ok);
+}));
+
+test('Austere z Epic Experiment: najpierw karta, potem cztery składniki zamiast sześciu par', () => withDocument(() => {
+  const { state, session } = scene({ exile: ['aus-exile'], cardIds: ['austere-command'], creatures: false });
+  state.pendingEpicExperiment.maxMV = 6;
+  const options = session.view().legalCommands.filter(c => c.type === 'resolve_epic_choice');
+  assert.equal(options.filter(c=>c.cardId==='aus-exile').length,6);
+  const host = new MiniEl('div'), submitted = [], previews = { objects: [], cards: [] }, modals = { shown: 0, hidden: 0 };
+  const open = openProductionChoice({ session, host, previews, submitted, modals });
+  open(choiceRequest({ id: 'epic-austere', type: 'command', options }));
+  toggleChoice(host,0);host.byClass('multi-target-confirm')[0].click();
+  const toggles=host.byClass('multi-target-toggle');assert.equal(toggles.length,4,'cztery tryby, nie sześć kombinacji');assert.ok(toggles.every(t=>t.type==='checkbox'));
+  toggleChoice(host,1);toggleChoice(host,3);host.byClass('multi-target-confirm')[0].click();
+  const selected=submitted[0];assert.equal(selected.modeIndex,4);assert.ok(execute(state,selected).ok);
+}));
+
+test('Austere z okna Vaan: decyzja rzutu/odmowy, potem cztery składniki', () => withDocument(() => {
+  const { state, session } = scene({ exile:['aus-exile'],cardIds:['austere-command'],creatures:false });
+  state.pendingEpicExperiment = null;state.pendingExileCast={playerId:'p1',objectId:'aus-exile',cardId:'austere-command',restorePriorityTo:'p1'};
+  const player=state.players.find(p=>p.id==='p1');player.mana=6;player.manaPool={W:6};
+  const options=session.view().legalCommands.filter(c=>c.type==='resolve_exile_cast');assert.equal(options.length,7);
+  const host=new MiniEl('div'),submitted=[],previews={objects:[],cards:[]},modals={shown:0,hidden:0};
+  const open=openProductionChoice({session,host,previews,submitted,modals});open(choiceRequest({id:'vaan-austere',type:'command',options}));
+  assert.equal(host.byClass('multi-target-toggle').length,2,'najpierw rzuć albo odmów');toggleChoice(host,1);host.byClass('multi-target-confirm')[0].click();
+  const toggles=host.byClass('multi-target-toggle');assert.equal(toggles.length,4);assert.ok(toggles.every(t=>t.type==='checkbox'));
+  toggleChoice(host,0);toggleChoice(host,3);host.byClass('multi-target-confirm')[0].click();assert.equal(submitted[0].modeIndex,2);assert.ok(execute(state,submitted[0]).ok);
+}));

@@ -65,20 +65,20 @@ test('F-H3 guard: mill (tome-scour) dalej trzymany (-10)', () => {
   const { options } = scores(s, 'cast_spell(ng');
   assert.equal(options[0].score, -10);
 });
-test('F-H3 guard: modal z groznym trybem strzela (selesnya-charm 84)', () => {
+test('F-H3 guard: modal z groznym trybem strzela (selesnya-charm 92)', () => {
   const s = newState(); handCard(s, 'ng', 'negate'); stackSpell(s, 'ch', 'selesnya-charm', 'p2');
   const { options } = scores(s, 'cast_spell(ng');
   assert.equal(options[0].score, 92); // L: MV2 → 50+22+20 (G: waga 10)
 });
-test('F-H3 guard: fireball 78, shock-MV1 78, wlasny -90', () => {
+test('F-H3 guard: fireball 82, shock-MV1 82, wlasny -90', () => {
   for (const [id, ctl, want] of [['fireball', 'p2', 82], ['shock', 'p2', 82], ['shock', 'p1', -90]]) {
     const s = newState(); handCard(s, 'ng', 'negate'); stackSpell(s, 'x', id, ctl);
     const { options } = scores(s, 'cast_spell(ng');
     assert.equal(options[0].score, want, `${id}/${ctl}`);
   }
 });
-test('F-H3 guard: delusion -40 (placi) / 78 (tapped-out)', () => {
-  // L: tapped-out 50→78 (fireball MV1: 50+22+6); płacący BEZ premii (-40 —
+test('F-H3 guard: delusion -40 (placi) / 82 (tapped-out)', () => {
+  // L/G: tapped-out 50→82 (fireball MV1: 50+22+10); płacący BEZ premii (-40 —
   // wykupiona kontra wygasa, flaga counterUnlessPaidOff).
   for (const [tapped, want] of [[false, -40], [true, 82]]) {
     const s = newState(); handCard(s, 'dl', 'frightful-delusion'); stackSpell(s, 'fb', 'fireball', 'p2');
@@ -95,7 +95,7 @@ test('F-H3 guard: platnik dalej flat 85/10 (1-drop i 7-drop rowno)', () => {
     assert.deepEqual(options.map((o) => o.score).sort((a, b) => b - a), [85, 10]);
   }
 });
-test('F-H3 guard: wojna kontr 84, sabo-bounce 80, fuel 78', () => {
+test('F-H3 guard: wojna kontr 92, sabo-bounce 98, fuel 82', () => {
   const w = newState(); handCard(w, 'ng', 'negate'); stackSpell(w, 'mine', 'shock', 'p1'); stackSpell(w, 'fn', 'negate', 'p2');
   assert.equal(scores(w, 'cast_spell(ng->fn').options[0].score, 92); // L: foe negate MV2 → 50+22+20
   const b = newState(); handCard(b, 'sb', 'steel-sabotage');
@@ -105,7 +105,7 @@ test('F-H3 guard: wojna kontr 84, sabo-bounce 80, fuel 78', () => {
   const f = newState(); handCard(f, 'ff', 'fuel-for-the-cause'); stackSpell(f, 'fb', 'fireball', 'p2');
   assert.equal(scores(f, 'cast_spell(ff').options[0].score, 82); // L: fireball MV1 → 50+22+10 (+0 proliferate)
 });
-test('F-H3 guard: abstruse 87.97 / -30.03 (token +10, tie-break F7)', () => {
+test('F-H3 guard: abstruse 91.97 / -30.03 (token +10, tie-break F7)', () => {
   // L: tapped-out 59.97→87.97 (+28 premii za zatrzymany fireball MV1);
   // untapped BEZ premii (-30.03 — płatnik się wykupi, flaga counterUnlessPaidOff).
   // G (2026-10-29): premia bazy kontry rośnie o +4 (waga 6→10), więc 91.97.
@@ -116,7 +116,7 @@ test('F-H3 guard: abstruse 87.97 / -30.03 (token +10, tie-break F7)', () => {
     assert.ok(Math.abs(options[0].score - want) < 1e-9, `${want}: ${options[0].score}`);
   }
 });
-test('F-H3 guard: wybor celu 78 vs -10 (fireball bije twiddle)', () => {
+test('F-H3 guard: wybor celu 82 vs -10 (fireball bije twiddle)', () => {
   const s = newState(); handCard(s, 'ng', 'negate'); stackSpell(s, 'fb', 'fireball', 'p2'); stackSpell(s, 'tw', 'twiddle', 'p2');
   const { chosen, options } = scores(s, 'cast_spell(ng');
   assert.deepEqual(options.map((o) => o.score).sort((a, b) => b - a), [82, -10]);

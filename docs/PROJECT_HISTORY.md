@@ -20,6 +20,17 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-01 — kontynuacja audytu PR #177 (PR #178, w toku)
+
+- A1: champion po odejściu źródła zachowuje wybór, a zmiana kontroli nie zmienia kontrolera triggera (`2812aa6`).
+- A2: upkeep klątwy pamięta gracza ze zdarzenia, także po odejściu lub przesunięciu aury (`5998bde`).
+- A3: dobór many Converge optymalizuje jednocześnie pipy i generic, z zachowaniem istniejących profili (`06587ad`). Strategia automatyczna, nie pełny wybór gracza.
+- A4: zniszczenie aury bestow nie ustawia Morbid i nie wyzwala obserwatorów śmierci stwora; klasyfikacja oparta o LKI. 5 testów, `npm test` 9175/9175, build 76 modułów / 5615,6 kB; slow po A4 nie powtarzano.
+- A5: linia typów aury bestow na polu bitwy, test Austere Command i przywrócenia postaci; 5 testów, `npm test` 9180/9180, build 76 modułów / 5617,3 kB. `npm run test:slow` po A5 268/268; odrębnie do audytu typy na stosie i warstwy.
+- Piny RED→GREEN, źródła CR i ograniczenia: `docs/audits/AUDYT_PR177_2026-11-01.md`; plan i aktualny handoff w `docs/plans/PLAN_2026-11-01-audyt-pr177.md` i `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md`.
+- Po A3: `npm test` 9170/9170, `npm run test:slow` 268/268, build 76 modułów / 5615,2 kB. Osobnego quick benchmarku ani pełnego B0 nie uruchamiano. Audyt PR #177 nieukończony.
+
+
 ## 2026-10-27f — próg minimalnego X dla rzutów za {X} (korekta intencji właściciela)
 
 - Zgłoszenie: nie chodziło o widoczność X, tylko o opłacalność — rzut za X = 1
@@ -18505,3 +18516,291 @@ Weird — ten ostatni zmierzony, przyjęty jako PMSSB-36: 0,0000 i wybrana akcja
   5608,7 kB, benchmark quick heuristic **87,5%**; golden-master zregenerowany
   świadomie z wpisem pomiarowym per partia.
 
+
+### 2026-11-01 — zgłoszenie N, wybór X permanentu
+
+Magma Pummeler z trzema Górami ma jedną ofertę rzutu i stepper X=0–1, a nie dwa nierozróżnialne wiersze; także X=0 jako jedyny wariant otwiera zatwierdzenie. Plan działa wyłącznie dla prostych komend X, zachowuje źródło legalnych komend i nie ukrywa dodatkowych decyzji. 5 testów (RED→GREEN), `npm test` 9185/9185, build 76 modułów / 5618,4 kB, próba żywym testerem X=0 i X=1 bez zgłoszeń detektorów. Limit X=15 w silniku nie zmieniony. Audyt #177 w toku.
+
+### 2026-11-01 — audyt #177, koszt Heraldów
+
+Wycena bota liczy rzeczywiste ofiary `sacrificeCreatureIds` z legalnej komendy, również aktywującego Heralda; wcześniejsze zachłanne szukanie pomijało źródło i nie rozróżniało różnych kombinacji. 2 testy RED→GREEN, `npm test` 9187/9187, build 76 modułów / 5617,6 kB. Audyt trwa.
+
+### 2026-11-01 — kontynuacja audytu #177, A7–A11
+
+Poprawiono ostrzeżenia crew/animacji (A7), zachowanie priorytetu i zamykanie modala przy zagnieżdżonym kreatorze many (A8, A11), ocenę źródeł opłaty Rupture Spire (A9) oraz uwzględnienie aury bestow w zadanym progu inwestycji Ambulatory Edifice (A10). Testy przypadków pozytywnych i kontrolnych, rzeczywiste sesje/opłaty: raport `docs/audits/AUDYT_PR177_2026-11-01.md`. Po A11 `npm test` 9253/9253, build 76 modułów / 5625,4 kB; slow 268/268 uruchomiono przed A8. Audyt #177 pozostaje w toku.
+
+### 2026-11-01 — audyt #177, kwalifikowany koszt odrzucenia
+
+Wycena aktywacji używa kwalifikatora kosztu i wyłącznie własnej ręki: niegrywalny czar nie może pozornie potanić odrzucenia stwora przez Vampire Hounds, a ukryta ręka przeciwnika nie płaci naszego kosztu. 4 testy (2 RED→GREEN, z rzeczywistym wyborem i płatnością), pokrewne 47/47, fast 9257/9257, build 76 modułów / 5626,1 kB; audyt trwa.
+
+### 2026-11-01 — audyt #177, obrażony cel ETB
+
+Bramka Fathom Fleet Cutthroat nie pomija ożywionego lądu-stwora i nie uznaje hexproof/ochrony przed czarnym źródłem za legalny cel. 5 testów (3 RED→GREEN), rzeczywiste zniszczenie, pokrewne 49/49, fast 9262/9262, build 76 modułów / 5626,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, wynik płatności kreatora
+
+Odrzucenie rzeczywistego Kavu z nieaktualnym wyborem convoke oraz wyjątek nie są już traktowane jako udana płatność: `playDirect` przekazuje wynik do `finishWizardPayment`. 3 testy (2 RED→GREEN), pokrewne 41/41, fast 9265/9265, build 76 modułów / 5626,6 kB. Oferowanie zarezerwowanych źródeł wymaga osobnej poprawki; audyt trwa.
+
+### 2026-11-01 — audyt #177, zarezerwowane źródła kreatora
+
+Źródła wybrane do tapnięcia jako koszt nie są oferowane jako mana w bieżącym ani podrzędnym kreatorze; wspólna lista trafia także do obliczenia auto-płatności. Rzeczywista sesja Kavu z convoke Druid, 3 testy (2 RED→GREEN), pokrewne 53/53, fast 9268/9268, build 76 modułów / 5627,5 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, improvise w kreatorze
+
+Kreator odejmuje artefakty improvise od generycznego kosztu wariantu, nie od kolorowych pipów. Rzeczywista sesja Fen Haulera i płatność pięciu many plus dwóch artefaktów; 4 testy, pokrewne 77/77, fast 9272/9272, build 76 modułów / 5628,2 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, weryfikacja czarów batcha
+
+Sześć nowych testów rzeczywistego Tail Slash i Rumbling Rockslide z nielegalnymi celami, zmianą mocy i landów, lifelink oraz ochroną. Korekta komentarzy o momencie liczenia landów; brak potwierdzonego błędu silnika w tych przypadkach. Pokrewne 34/34, fast 9278/9278, build 76 modułów / 5628,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, zagnieżdżony auto-tap a convoke
+
+Jednoznaczny auto-tap kosztu Apprentice Wizarda mógł zużyć ożywioną Wyspę zarezerwowaną do convoke Kavu. Podrzędny kreator zapobiega naruszeniu rezerwacji, z kontrolami puli, przodka i anulowania. 5 testów, pokrewne 63/63, fast 9283/9283, build 76 modułów / 5629,1 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, bezbarwne źródła w kreatorze
+
+Kreator aktywacji Kozilek's Shriekera ukrywał źródła `{C}` mimo legalnej płatności. Filtr i etykieta używają predykatu silnika; 6 testów, pokrewne 59/59, fast 9289/9289, build 76 modułów / 5629,3 kB. Audyt trwa.
+
+### 2026-11-01 — audyt #177, kosztowe zdolności lądów
+
+Kreator istniejącego legalnego rzutu pokazuje również kosztowy tryb many Heap Gate, z zagnieżdżoną płatnością. Solver nie liczy dwóch trybów tego samego lądu jako dwóch źródeł; 6 testów, pokrewne 85/85, fast 9295/9295, build 76 modułów / 5630,1 kB. Osobna bramka automatycznej oferty dla kosztowych lądów pozostaje ograniczeniem. Audyt trwa.
+
+Po A20: wolny pakiet na niezmienianym kodzie `1587c15` 268/268. Audyt trwa; B0 nie uruchamiano.
+
+### 2026-11-02 — audyt #177, typ bestow na stosie
+
+Czar bestow staje się Aurą na stosie, nie dopiero na polu bitwy; oryginalne cechy wracają po zmianie strefy. Siedem testów m.in. Negate, nielegalny cel i syntetyczny artefakt-bestow; pokrewne 37/37 i 96/96, fast 9302/9302, build 76 modułów / 5630,7 kB. Audyt trwa.
+
+### 2026-11-02 — audyt #177, ochrona przy bestow
+
+Spare from Evil nie blokuje rzucenia Dryady jako Aury; ochrona przed Aurami ją blokuje. Oferta i walidacja stosują cechy wariantu czaru. Sześć testów, pokrewne 81/81, fast 9308/9308, build 76 modułów / 5630,6 kB. Audyt trwa.
+
+### 2026-11-02 — audyt #177, koszt syntetycznego bestow
+
+Ujednolicono cechy czaru dla kalkulacji ograniczonej many, obniżki i kreatora. Reprodukcja syntetycznego artifact-bestow; nie dodano karty. Korekta wcześniejszej przesłanki testu B54; 6 nowych testów, full fast 9314/9314, build 76 modułów / 5631,3 kB. Otwarta obserwacja Heap Gate: ręczna konwersja pozwala na czar, lecz oferta przed konwersją go nie pokazuje. Audyt trwa.
+
+Wolny pakiet po A23 na snapshot `b8a7690`: 268/268. Osobna sonda potwierdziła brak otwarcia kreatora Heap Gate przy dostatecznej ilości many bez potrzebnego koloru; A24 pozostaje otwarte.
+
+### 2026-11-02 — audyt #177 po doprecyzowaniu zakresu
+
+Dodana mapa 111 plików diffu z częściowym/otwartym statusem; tylko realny katalog i interakcje ze zmianami PR. Violent Urge: cztery testy zmiany typów grobu na stosie (Halo Scarab, Shock), pokrewne 37/37, fast 9318/9318, build 76 modułów / 5631,3 kB. Audyt pozostaje otwarty.
+
+Audyt #177 A26: realny Changeling Berserker wygnuje Highland Game przejęte przez Awaken the Sleeper i po śmierci oddaje go właścicielowi; kontrola odmowy wygnania włącza Morbid. Dwa testy, pokrewne 42/42, fast 9320/9320, build 5631,3 kB; audyt trwa.
+
+Audyt #177 A27: realne Vampire Hounds + Revolutionist ujawniły brak okna odpowiedzi na trigger madness (wcześniejsza architektura kolejki decyzji, nie nowy trigger w #177); RED zapisany w raporcie, bez naprawy.
+
+
+Audyt #177 A27: naprawiono brak okna odpowiedzi madness w Vampire Hounds + Revolutionist: trigger na stosie, decyzja przy rozstrzygnięciu. Pięć testów realnych kart, migracja testów, fast 9325/9325, slow 268/268, build 5630,7 kB. Nadal otwarty wybór kolejności jednoczesnych triggerów madness i wspólne APNAP z innymi triggerami; szczegóły/CR 603.3b w raporcie. Audyt trwa.
+
+
+Audyt #177 A28: naprawiono wybór kolejności jednoczesnych triggerów w badanym oknie madness, w tym Talion + wcześniejsze dobranie Lorescale Coatl. Trzynaście testów realnych interakcji, UI, botów i replay; fast 9338/9338, slow 268/268, build 5635,2 kB. Ogólny APNAP i pełny audyt #177 wciąż otwarte.
+
+
+Audyt #177 A29: pięć rzeczywistych testów Magma Pummeler + Shock/Rumbling Rockslide/Trigon of Corruption/Spin Out; pokrewne 72/72, fast 9343/9343, build 5635,2 kB. Brak błędu w sprawdzonych przypadkach, przegląd nadal otwarty.
+
+
+Audyt #177 A30: 10 pozycji batcha 71 zgodnych w badanych polach z CSV/snapshotami, 31 talii zgodnych z generatorem; pokrewne 106/106, fast 9345/9345. Pozostały audyt otwarty.
+
+
+Audyt #177 A31: realny Scythe Tiger/shroud, token Ambassador Oak oraz wybory championa w replay/fingerprint; pokrewne 53/53, fast 9349/9349, slow 268/268 przed korektą komentarza testu, build 5635,2 kB. Semantyka nadal częściowa.
+
+
+Audyt #177 A32: nazwy po rzeczywistych transformacjach Merciless Repurposing/Incubator, Scholar i Jill; pokrewne 126/126, fast 9352/9352, build 5635,2 kB. Pozostały audyt otwarty.
+
+
+Audyt #177 A33: RED→GREEN ranking bounce z realnym stun, finality oraz własną aurą; cztery mutacje wykryte, pokrewne 122/122, fast 9358/9358, build 5635,7 kB. Pozostały audyt otwarty; slow 268/268.
+
+
+Audyt #177 A34: bot nie poświęca Weird, jeśli rzeczywisty cel jest nielegalny lub niezniszczalny; wygnanie nadal uzasadnia ofiarę. Pokrewne 41/41, fast 9369/9369, build 5636,6 kB; slow 268/268. Audyt pozostaje otwarty.
+
+
+Audyt #177 A35: realny Wretched Banquet i warunek najmniejszej mocy przy Spellkeeper Weird; 7 testów, mutacja, pokrewne 29/29, fast 9376/9376, build 5636,7 kB. Slow 268/268 na wcześniejszym A34; audyt trwa.
+
+
+Audyt #177 A36: zbadano realne progi Plague Reaver i naprawiono powrót z exile po finality oraz kontrolera odroczonej zdolności. 8 testów, 3 mutacje, pokrewne 85/85, fast 9384/9384, build 5637,4 kB. Slow tylko A34; audyt trwa.
+
+
+Audyt #177 A37: rzeczywiste Anticipate, 0–4 kart, kolejność i FoW/log oraz Lorescale Coatl i prawdziwe dobranie. Pokrewne 65/65, fast 9393/9393, build 5637,4 kB; audyt nadal otwarty.
+
+
+Audyt #177 A38: rzeczywisty Trumpet Blast, ninjutsu, powrót kontroli, bot i cleanup; pokrewne 58/58, fast 9399/9399, build 5637,4 kB; audyt trwa.
+
+
+Audyt #177 A39: Tail Slash na rzeczywistych celach i odpowiedziach; pokrewne 44/44, fast 9405/9405, build 5637,4 kB; audyt trwa.
+
+
+Slow po A38: 268/268, na niezmienionym kodzie produkcyjnym A39.
+
+
+Audyt #177 A40: naprawa wyceny przez bota trwałego wygnania tokena przy championie, RED→GREEN, mutacja wykryta; fast 9409/9409, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A41: blok i obrażenia w realnym combacie, cztery testy; fast 9413/9413, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A42: rzeczywisty Curse, mill i draw, odpowiedź Naturalize, bot; fast 9420/9420, build 5637,7 kB. Audyt trwa.
+
+
+Slow po A41: 268/268, po zmianie produkcyjnej A40.
+
+
+Audyt #177 A43: prawdziwa walka, Shock i ETB Cutthroata; fast 9424/9424, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A44: rzeczywista aktywacja Cuombajj Witches, wybór dwóch celów i odpowiedzi; fast 9429/9429, build 5637,7 kB. Audyt trwa.
+
+
+Audyt #177 A45: poprawiono wycenę bite przeciw ochronie przed faktycznym źródłem, RED→GREEN i dwie mutacje; fast 9437/9437, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A46: prawdziwe deklaracje walki, kolor ochrony Benevolent Blessing i Tail Slash; fast 9442/9442, build 5638,0 kB. Audyt trwa.
+
+
+Slow po A45: 268/268, po zmianie produkcyjnej wyceny bite.
+
+
+Audyt #177 A47: sprawdzono tabelę talii i status README, fast 9444/9444, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A48: rzeczywista płatność Rupture Spire po odpowiedzi na trigger; fast 9448/9448, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A49: prawdziwe obrażenia infect i proliferate; fast 9451/9451, build 5638,0 kB. Audyt trwa.
+
+
+Audyt #177 A50: naprawa prywatności i liczby tasowań Final Parting, fast 9456/9456, build 5639,0 kB; slow 268/268. Audyt trwa.
+
+
+Audyt #177 A51: rzeczywiste cele i decyzja Ambulatory Edifice, fast 9461/9461, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A52: rzeczywiste kontry, waga i Steel Sabotage, fast 9466/9466, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A53: rzeczywisty Rockslide, ląd-stwór i zmiana landów na stosie; fast 9472/9472, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A54: Oracle i wielokrotna aktywacja Vampire Hounds; fast 9474/9474, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A55: rzeczywista etykieta Gila Courser w helperze testera i statyczna weryfikacja help benchmarku; fast 9477/9477, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A56: rzeczywista walka i decyzja bota Violent Urge, delirium i obie mutacje; fast 9481/9481, build 5639,0 kB. Audyt trwa.
+
+
+Audyt #177 A57: podłączono źródło decyzji poświęcenia do logu (brak istniał przed #177); fast 9488/9488, build 5639,2 kB, slow 268/268. Audyt trwa.
+
+
+Audyt #177 A58: realny Dawntreader Elk, koszt i tutor po zmianie #177; fast 9493/9493, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A59: realne Force Away, ferocious i inwestycja celu; fast 9499/9499, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A60: Frightful Delusion, rzeczywista kontra i odrzut również po dopłacie; fast 9505/9505, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A61: realny Ambassador Oak, zielony token i Ivy Lane Denizen; fast 9508/9508, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A62: statyczne cechy, tekst i instalacja talii dziesięciu kart względem snapshotów; fast 9518/9518, build 5639,2 kB. Audyt trwa.
+
+
+Audyt #177 A63: poprawa wyceny celu ETB Edifice z ochroną (błąd sprzed #177); fast 9523/9523, build 5639,5 kB; slow 268/268.
+
+
+Audyt #177 A64: rzeczywisty koszt Hounds i walka, dawna waga remisowała bezbarwne dla zasobów karty; fast 9527/9527. Audyt trwa.
+
+
+Audyt #177 A65: odtworzone ślady golden mastera i sprostowania historycznych opisów; fast 9527/9527, golden 4/4. Audyt trwa.
+
+Audyt #177 A66: utrwalono LKI poświęconych tokenów i naprawiono regresję Morbid po wygnaniu unearth; fast 9539/9539, related 101/101. Audyt trwa.
+
+Audyt #177 A67: rzeczywisty Somberwald Spider i powrót przez Unbreakable Bond potwierdzają drugi skutek regresji Morbid; fast 9545/9545. Audyt trwa.
+
+Audyt #177 A68: naprawiony starszy błąd Scorn na hoście i wybranej aurze; fast 9555/9555. Audyt trwa.
+
+Audyt #177 A69: rzeczywisty Converge w pięciu ścieżkach płatności, w tym trzy darmowe rzuty; fast 9560/9560. Audyt trwa.
+
+Audyt #177 A70: realne inwestycje Scorn na bestow, sprzęcie living weapon i wyborze trzech celów; fast 9563/9563. Audyt trwa.
+
+Audyt #177 A71: realnie odtworzono wcześniejszy defekt APNAP z Crows/Selhoff obu graczy, konsekwencję draw/mill; 4 jawne TODO, 2 kontrole, żadna naprawa nie zadeklarowana. Audyt trwa.
+
+Audyt #177 A72: wspólny kwalifikator rzeczywistego wyszukiwania i kosztu Hounds, dwie mutacje; fast 9569 pass + 4 TODO A71. Audyt trwa.
+
+Audyt #177 A73: naprawiono wcześniejsze przyjmowanie niedozwolonej strefy wyszukanej karty (Morbid/Final Parting); fast 9574 pass + 4 TODO A71, slow 268/268. Audyt trwa.
+
+Audyt #177 A74: ograniczony batch APNAP dla triggerów śmierci; oryginalne 4 TODO A71 zielone, inne rodzaje celów nadal otwarte — rzeczywisty Polluted Dead pozostaje jawnym TODO.
+
+Uwagi właściciela 2026-11-02: Man-o'-War nie jest bezmyślnie rzucany bez legalnego stwora przeciwnika; Austere Command wybiera 2 z 4 checkboxami; wspólna blokada strukturalnych list kombinacji, testy i mutacje. Bez twierdzenia o wykryciu dowolnego nieoznaczonego kodowania skalarnego.
+
+Doprecyzowanie: Austere przy Epic Experiment i Vaan także korzysta z czterech składników; fast 9611 pass + 1 TODO A74, testy powiązane 248/248, slow 268/268, build 77/5656,3 kB. Audyt #177 pozostaje otwarty.
+
+Audyt #177 A75: Polluted Dead i Circle of the Land Druid — starszy błąd APNAP celów lądowych; ograniczona naprawa z jawną granicą Ward. Fast 9621/9621, slow 268/268, pokrewne 189/189 przed testami replay; audyt trwa.
+
+Audyt #177 A76: ograniczony APNAP niezawieszonej walki, także first strike; fast 9629/9629, slow 268/268, build 77/5656,9 kB. Pełne APNAP i audyt nadal otwarte.
+
+Audyt #177 A77: ograniczony APNAP po kosztach niemanowej aktywacji Elk/Dreadmaw, fast 9643/9643, pokrewne 110/110, slow 268/268; audyt trwa.
+
+Audyt #177 A78: ograniczony APNAP samodzielnej zdolności many Sciona, fast 9650/9650, pokrewne 95/95, slow 268/268. Płatność Ward i pozostałe APNAP otwarte.
+
+Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; historyczne defekty; fast 9660/9660 przed dodatkowym testem Justiciara, slow 268/268.
+
+- 2026-11-03 — A80: ręczna mana przy Rupture Spire i atomowa walidacja pay-or-sacrifice; 11 testów, 4 RED baza/#177, fast 9671/9671 przed ostatnim testem, slow 268/268.
+
+- 2026-11-03 — A81/A82: generyczne opcjonalne dopłaty i atomowość pełnego kosztu; kolorowe pipy w kreatorze. 12+5 GREEN, 128 pokrewnych, fast 9689/9689, slow 268/268.
+
+- 2026-11-03 — A83: Scion pokrywa generyczną część kolorowych dopłat, 7 GREEN, fast 9696/9696 przed A84, related 78/78, slow 268/268. A84: 8 jawnie pomijanych reprodukcji otwartego APNAP Ward; z flagą 8 RED.
+
+- 2026-11-03 — A85 OTWARTE: Panic Spellbomb i Holdout, 3 reprodukcje RED pod flagą i 1 GREEN; brak poprawki przed zaprojektowaniem bezpiecznej oferty i wyboru kosztu.
+
+- 2026-11-03 — A86: kreator sprawdza kolory automatu; 4 GREEN, mutacje 2/1 RED, pełne paczki w toku; A85 nadal otwarte.
+
+- 2026-11-03 — A86 9701 pass + 11 skip, slow 268/268, build 77/5662,1 kB; A87 solver: 5 GREEN (syntetyczny kontrakt), A88 w RED.
+
+- 2026-11-03 — A87: 5 GREEN na syntetycznym kontrakcie, fast 9706 + 11 skip, slow 268/268; A89: poprawa regresji botów po A80/A81, fast 9717 + 14 skip, slow w toku.
+
+- 2026-11-03 — A89 slow 268/268; A88 pojedynczy kolor z legalnego tapnięcia stwora: 10 GREEN, A85 nadal 1 RED (UI), pakiety A88 w toku.
+
+- 2026-11-03 — A88 fast 9726 + 9 skip, slow 268/268; A90 wąska poprawka sekwencyjnego kosztu Holdouta: 11 GREEN i A85 4 GREEN, pakiety A90 w toku.
+
+- 2026-11-03 — A90 fast 9738 + 8 skip (A84), slow 268/268; A91 rezerwacja kosztu Heap Gate, 8 GREEN; A92 atomowość odrzuconej komendy w RED.
+
+- 2026-11-03 — A91 fast 9746 + 8 skip, slow 268; A92 `d7637e6`, A93 `56f0a74` ograniczone poprawki walidacji kosztów Heap Gate i ożywionego Holdouta, powiązane 403 pass + 8 skip, build 77/5672,7 kB, fast/slow w toku.
+
+- 2026-11-03 — A92/A93 fast 9769 + 8 skip, slow 268/268; A94 `5154403` dopuszcza manę po triggerze w dopłacie Spellbomb, A84 nadal otwarte.
+
+- 2026-11-03 — A94 fast 9779 + 8 skip, slow 268, powiązane 608 + 8 skip, build 5673,1 kB; A95/A96 `41c4591` ograniczona poprawka Ward i Izzet Charm, podzbiór 131/131.
+
+- 2026-11-03 — A95/A96 fast 9795 + 8 skip, slow 268, powiązane 624 + 8 skip/build 5673,2; A97 `cfe9dae` dopuszcza drugi Scion do echo, podzbiór 137/137.
+
+- 2026-11-03 — A97 powiązane 630 pass + 8 skip i build 77/5673,2 kB; fast/slow w toku.
+
+- 2026-11-03 — A98 utrwala 8 dodatkowych RED otwartego APNAP przy Spellbomb w flagowanej kwarantannie; bez zmian produkcji.
+
+- 2026-11-03 — A97 slow 268/268 i fast 9801 + 8 skip (przed testem A98).
+
+- 2026-11-03 — A98 fast 9801 pass + 16 skip, powiązane 630 pass + 16 skip; A84/A98 pozostają wymuszonym RED.
+
+- 2026-11-03 — A99 prototyp odroczenia wyłącznie w izolacji, A100/A101/A102 utrwalają 10 dodatkowych RED (Imp/Forebear/Guide, refleks Zoraline, dobranie + Coatl); 26 flagowanych skip łącznie. Eksperymentalna łata zachowana z zakazem wdrożenia; brak zmian produkcji i brak ogólnego fixu APNAP.
+
+- 2026-11-03 — A103 Jolrael: 2 RED również w eksperymencie A99, bo bezpośredni `queueTriggerToStack` omija odroczenie; łącznie 28 pominięć w produkcji.
+
+- 2026-11-03 — A103 fast 9801 pass/28 skip, slow 268/268; powiązane 684 pass/26 skip przed A103; 28 wymuszonych RED.
+
+- 2026-11-03 — A104–A107 utrwalają 14 dalszych RED i 8 kontroli GREEN dla tap/Flooding, Sentinel oraz jedno-/wielokrotnego Ward; A108 wykazuje 2 RED z przedwczesnym opuszczeniem pola przez Griffin Guide. Prototyp A107 izolowany, A108 nadal RED, brak zmian produkcji.
+
+- 2026-11-03 — A108 fast 9809 pass/44 skip, powiązane 745 pass/44 skip, wymuszone 44 RED/8 GREEN; slow 268/268 przed nowymi testami. A107 replay i fingerprint potwierdzone w izolacji, szersza próba 800 pass/4 fail/2 skip.
+
+- 2026-11-03 — A109: 26 kwarantannowych RED, w tym historyczny przypadek auto-Ward (dwa Treasure, Clawing Torment i Imp 1 zamiast 3). Izolowany eksperyment A108 2 GREEN/A109 24 GREEN i 2 RED, plus brak opisu zdarzenia; zachowany z zakazem wdrażania. Produkcja niezmieniona.
+
+- 2026-11-03 — po A109 fast produkcji 9809 pass/70 skip, wybrany podzbiór załączników/płatności 383 pass/62 skip, wymuszone 70 RED/8 kontroli GREEN. Produkcja bez zmian; slow 268/268 z wcześniejszej kontynuacji.
+
+- 2026-11-03 — A110: 10 RED/6 kontroli (także baza/#177); dwa auto-Treasure vs jednoczesne zniszczenie, utrata LKI Imp w Severed Strands i po kolejnych trybach Austere. Eksperyment A110 12/16, z A109 38/42; oba niewdrożone. Korekta A109: `addObject` ignorował `isToken`, zastąpiony rzeczywistymi tokenami; pomiary powtórzone bez zmiany wyniku.
+
+- 2026-11-03 — A110 fast produkcji 9815 pass/80 skip, powiązane mana/triggery 408 pass/72 skip; wymuszone A84/A98/A100–A110 80 RED/14 GREEN kontroli. Slow 268/268 z wcześniejszej kontynuacji; brak zmian produkcji.
+
+- 2026-11-03 — A111–A113: 34 kwarantannowe RED / 4 kontrole, utrata LKI Imp/finality i mieszane APNAP po Shock oraz realnej walce. Baza/#177 identyczny wynik; izolowana próba 34/38, 4 RED w A113, NIE WDRAŻAĆ. Produkcja bez zmian; B0 nie uruchamiano.
+
+- 2026-11-03 — po A111–A113 fast produkcji **9819 pass / 114 skip / 0 fail**; powiązane **405 pass / 98 skip**, wymuszone **114 RED / 18 GREEN**. Slow **268 pass / 0 skip / 0 fail**.

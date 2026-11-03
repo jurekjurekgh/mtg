@@ -328,8 +328,18 @@ export function moveObjectDirectly(state, objectId, toZone, newObjectId, opts = 
       cloakTurnUpCost: null,
     }
     : null;
+  // The bestow type line applies on the stack and while attached. On a zone
+  // change restore the base line; successful Aura resolution attaches the
+  // entering permanent immediately and reapplies the same bestowed line.
+  // Other resets (copy/DFC/face-down) can supersede it; formerTypes stays LKI.
+  const bestowReset = (leavingBattlefield || object.zone === 'stack') && object.bestowOriginalTypes ? {
+    types: [...object.bestowOriginalTypes],
+    subtypes: [...(object.bestowOriginalSubtypes ?? [])],
+    bestowOriginalTypes: null,
+    bestowOriginalSubtypes: null,
+  } : {};
   const rawMoved = {
-    ...object, ...untilEndOfTurnReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
+    ...object, ...untilEndOfTurnReset, ...bestowReset, ...dfcFaceReset, ...exilePermissionReset, ...copyDisplayReset, ...faceDownRevealReset,
     id: newObjectId, zone: toZone, controllerId: controllerAfterMove,
     // Crew Captain / enteredThisTurn: numer tury WEJŚCIA na pole bitwy.
     // Opuszczenie pola bitwy czyści flagę (nowy obiekt, CR 400.7).

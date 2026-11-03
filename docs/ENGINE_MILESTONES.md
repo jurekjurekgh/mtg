@@ -9023,7 +9023,9 @@ pkt mocy wroga (wartość właściciela) — poniżej kara, powyżej
 `giftedSelfSacrificeEnemyLossWeight × Σ bodyWorth(wrogie)`.
 
 **Pomiar po naprawie.** Rzut: pusta plansza 74,71; 2 własne stwory → −112,49
-(pass); wroga armia nie daje premii (91,81 → 78,31). Aktywacja: wróg 5 mocy →
+(pass); sama gałąź wrath nie daje już premii za wrogą armię (91,81 → 78,31;
+cała wycena pustej planszy 74,71 i wrogiej armii 78,31 nie jest równa —
+por. audyt #177 A65). Aktywacja: wróg 5 mocy →
 −218 (pass); wróg 16 mocy → +38 (dar ma sens). Re-pin PMSSB10-B2.
 
 **Piny.** `test/o-plague-reaver-darowanie.test.js` (7).

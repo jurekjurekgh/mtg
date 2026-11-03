@@ -105,9 +105,9 @@ const stackSources = (state) => state.zones.stack
 function resolveStack(state) {
   for (let i = 0; i < 40 && state.zones.stack.length > 0; i += 1) {
     const commands = playerView(state, state.turn.priorityPlayerId).legalCommands;
-    const pass = commands.find((c) => c.type === 'pass_priority');
-    if (!pass) break;
-    execute(state, pass);
+    const next = commands.find((c) => c.type === 'resolve_trigger_order') ?? commands.find((c) => c.type === 'pass_priority');
+    if (!next) break;
+    assert.ok(execute(state, next).ok);
   }
 }
 

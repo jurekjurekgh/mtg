@@ -564,7 +564,9 @@ scenach, gdzie każda inna komenda ma score ≤ 0).
 - trigger `sacrifice_each_other_creature`: `−like × Σ bodyWorth(własne stwory)`
   i twarda kara `selfSacrificeWrathOwnBoardPenalty` (200 — powyżej pełnej ceny
   ciała 6/5), gdy własna plansza nie jest pusta. Pusta własna plansza = brak
-  kary (rzut 74,71 jak dotąd). Wroga armia nie daje już premii.
+  kary (rzut 74,71 jak dotąd). Sama gałąź wrath nie daje już premii za
+  wrogą armię; pozostałe wymiary rzutu mogą się zmienić (74,71 ≠ 78,31,
+  por. audyt #177 A65).
 - `abilityDiscardLoss`: obsługa `discardCards: N` — suma strat N kart, które
   picker faktycznie by oddał (najpierw śmieci; ta sama preferencja co
   PMSSB-25/26).
@@ -582,7 +584,7 @@ dawna premia wrath: +17,1). Aktywacja: wróg 5 mocy → **−218** (pass), wróg
 w bramkę `wastefulStep` (−5 < pass).
 
 **Piny.** `test/o-plague-reaver-darowanie.test.js` (7): rzut tylko na pustą
-planszę, brak premii za wrogą armię, darowanie poniżej progu (pass) i powyżej
+planszę, brak premii wrath za wrogą armię, darowanie poniżej progu (pass) i powyżej
 (+38), koszt `discardCards: 2` (piny −218 / −254), progi jako pokrętła.
 Re-pin PMSSB10-B2: `91,81 → 78,31` (stara wartość kodowała błąd — premia za
 wrogi stół, którego karta nie dotyka).

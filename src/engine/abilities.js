@@ -854,7 +854,8 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.cost?.tapCreature) {
         const candidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
-          return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+          return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped
+            && (!ability.cost?.tap || candidate.id !== id);
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
@@ -1686,15 +1687,19 @@ export function performActivation(state, ctx) {
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła tapniętego.
   const creatureToTap = cost.tapCreature
-    ? (ctx.tapCreatureId ?? state.zones.battlefield.find((objectId) => {
-      const candidate = state.objects.get(objectId);
-      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+    ? (ctx.tapCreatureId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped
+        && (!cost.tap || candidate.id !== objectId);
     }))
     : null;
   if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
   if (cost.tapCreature && ctx.tapCreatureId) {
     const chosen = state.objects.get(ctx.tapCreatureId);
-    if (!chosen || chosen.controllerId !== playerId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny stwór do tapnięcia (koszt)');
+    if (!chosen || chosen.zone !== 'battlefield' || chosen.controllerId !== playerId
+      || chosen.kind !== 'creature' || chosen.tapped || (cost.tap && chosen.id === objectId)) {
+      throw new Error('Nielegalny stwór do tapnięcia (koszt)');
+    }
   }
   // Koszt „Tap ANOTHER creature you control" (Station): tapowany stwór nie
   // może być źródłem; jego id trafia do efektu station_counters jako cel.
@@ -1709,6 +1714,33 @@ export function performActivation(state, ctx) {
   if (cost.tapOtherCreature && ctx.tapOtherCreatureId) {
     const chosen = state.objects.get(ctx.tapOtherCreatureId);
     if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny inny stwór do tapnięcia (koszt)');
+  }
+  // Dodatkowy permanent typu (Heap Gate): wybór i walidacja PRZED
+  // tapnięciem źródła lub zapłatą innych kosztów. Przestarzały wybór nie
+  // może częściowo wykonać odrzuconej aktywacji (CR 601.2h).
+  let subtypePermanentToTap = null;
+  if (cost.tapUntappedSubtype) {
+    const sub = cost.tapUntappedSubtype;
+    subtypePermanentToTap = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.id !== objectId
+        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+    });
+    const chosen = subtypePermanentToTap ? state.objects.get(subtypePermanentToTap) : null;
+    if (!chosen || chosen.zone !== 'battlefield' || chosen.controllerId !== playerId || chosen.id === objectId
+      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
+      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
+    }
+    // Ten permanent i źródło płacą już tapem — nie mogą zarazem
+    // finansować many. Używamy tych samych jednostek co spendMana, zanim
+    // którykolwiek koszt zostanie zapłacony.
+    const exclude = cost.tap ? [objectId, subtypePermanentToTap] : [subtypePermanentToTap];
+    const due = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0)
+      : effectiveAbilityManaCost(state, playerId, ability, object);
+    if (due > producibleMana(state, playerId, exclude, {}, colorReqs)
+      || (colorReqs.length && !canPayColoredCost(state, playerId, colorReqs, exclude))) {
+      throw new Error('Niewystarczająca mana na koszt po tapnięciu permanenta');
+    }
   }
   // Crew/Saddle (CR 702.122a/702.171a): koszt „Tap any number of OTHER
   // untapped creatures you control with total power N or greater" —
@@ -1815,24 +1847,8 @@ export function performActivation(state, ctx) {
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
-  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
-  // tapnięcie INNEGO nietapniętego permanentu z podtypem. Płacimy PRZED
-  // spendMana: auto-tap many nie może zjeść permanentu wskazanego do kosztu
-  // (tapnięty Gate nie zostanie użyty jako źródło many — klasa Z1/M180).
-  if (cost.tapUntappedSubtype) {
-    const sub = cost.tapUntappedSubtype;
-    const chosenId = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
-      const candidate = state.objects.get(candidateId);
-      return candidate?.controllerId === playerId && candidate.id !== objectId
-        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
-    });
-    const chosen = chosenId ? state.objects.get(chosenId) : null;
-    if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId
-      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
-      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
-    }
-    tapObject(state, chosenId, playerId);
-  }
+  // Id uzgodnione przed mutacjami — nie szukamy ponownie po tapnięciu źródła.
+  if (subtypePermanentToTap) tapObject(state, subtypePermanentToTap, playerId);
   const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
   // M115: {X}{B} — X PLUS stała część kosztu (Entrancing Lyre ma samo {X},
   // więc `cost.mana` jest tam zerowe i zachowanie się nie zmienia).
@@ -1894,7 +1910,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, victim.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: victim.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: victim.id, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Batch 69 (Bloodfire Infusion, CR 602.1a/608.2h): koszt „Sacrifice enchanted
@@ -1908,7 +1924,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, host.id, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: host.id, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: host.id, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Koszt „Sacrifice a land" (Seismic Monstrosaur): poświęcenie własnego
@@ -1924,7 +1940,7 @@ export function performActivation(state, ctx) {
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeLandId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeLandId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeLandId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   // Batch 44 (Angel's Herald): koszt „Sacrifice a green creature, a white
@@ -1948,7 +1964,7 @@ export function performActivation(state, ctx) {
       const destId = `${toZone}-${state.objectSequence++}`;
       const moved = moveObjectDirectly(state, sacId, toZone, destId);
       state.events.push(event('permanent_sacrificed', {
-        fromId: sacId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+        fromId: sacId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
       }));
     }
   }

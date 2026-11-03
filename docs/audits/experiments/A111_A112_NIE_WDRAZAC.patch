@@ -1,0 +1,130 @@
+diff --git a/src/engine/game-state.js b/src/engine/game-state.js
+index eabbf56..36e9810 100644
+--- a/src/engine/game-state.js
++++ b/src/engine/game-state.js
+@@ -2124,8 +2124,20 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
+   if (otherDecision) return;
+   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
+     .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id));
++  // Sonda A112: tylko pojedyncze opuszczenie przez SBA, z tym samym
++  // kontrolerem źródła grupowego. NIE jest ogólnym batchem odejść.
++  const departures = events.filter(e => e.type === 'creature_destroyed'
++    || e.type === 'permanent_destroyed' || e.type === 'permanent_sacrificed'
++    || (e.type === 'object_moved' && e.fromZone === 'battlefield' && e.toZone !== 'battlefield')
++    || (e.type === 'object_exiled' && e.fromId));
++  const solo = departures.length === 1 && departures[0].type === 'creature_destroyed'
++    && !(departures[0].simultaneousIds?.length > 1) ? departures[0] : null;
++  const isSoloGroup = (entry) => solo?.object?.zone === 'battlefield'
++    && solo.object.id === solo.fromId && entry?.controllerId === solo.object.controllerId
++    && entry?.triggerEntry?.ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
++    && entry.triggerEntry.ability.trigger.groupPer === 'controller';
+   if (ids.length + targets.length < 2
+-    || ids.some(id => !isDeathBatchTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event))) return;
++    || ids.some(id => { const entry = state.objects.get(id); return !isDeathBatchTrigger(entry?.triggerEntry?.ability?.trigger?.event) && !isSoloGroup(entry); })) return;
+   const players = state.players.map(p => p.id);
+   const activeIndex = players.indexOf(state.turn.activePlayerId);
+   const ordered = activeIndex < 0 ? players : [...players.slice(activeIndex), ...players.slice(0, activeIndex)];
+@@ -2190,7 +2202,9 @@ function accepted(state, cmd, result, standaloneManaActivation = false) {
+   // skanując zdarzenia bieżącej komendy (łącznie ze śmiercią z SBA).
+   const triggerTargetsBefore = state.pendingTriggerTargets.length;
+   const triggerPriorityBefore = state.turn.priorityPlayerId;
+-  const triggerEvents = processTriggers(state, result.events);
++  const allowSoloSbaLeaveLki = !firstPendingDecision(state) && !state.pendingSpell
++    && !state.pendingAbilityActivation && !state.pendingDeathTriggerBatch;
++  const triggerEvents = processTriggers(state, result.events, { allowSoloSbaLeaveLki });
+   if (triggerEvents.length > 0) result.events = [...result.events, ...triggerEvents];
+   // Rozstrzyganie czaru/wybór odrzuceń musi się skończyć, zanim pojawią
+   // się na stosie wyzwolone w jego trakcie zdolności (CR 117.5, 603.3).
+diff --git a/src/engine/triggers.js b/src/engine/triggers.js
+index 49d572f..1e637da 100644
+--- a/src/engine/triggers.js
++++ b/src/engine/triggers.js
+@@ -2664,7 +2664,7 @@ function placeTriggerBatchInApnapOrder(state, stackStart) {
+   for (let i = 0; i < sorted.length; i += 1) stack[stackStart + i] = sorted[i];
+ }
+
+-export function processTriggers(state, recentEvents) {
++export function processTriggers(state, recentEvents, { allowSoloSbaLeaveLki = false } = {}) {
+   // CR 104.1 (polowanie CR 510/704/104 — Etap 4, 2026-10-26): „A game ends
+   // immediately when a player wins, when the game is a draw, or when the game
+   // is restarted." Po `player_lost` (704.5a → 104.1) gra już nie istnieje —
+@@ -2674,13 +2674,13 @@ export function processTriggers(state, recentEvents) {
+   // test/cr-104-1-trigger-po-koncu-gry.test.js (scenariusz A + kontrola B).
+   if (state.status !== 'active') return [];
+   const stateEventsStart = state.events.length;
+-  const produced = processTriggersScan(state, recentEvents);
++  const produced = processTriggersScan(state, recentEvents, { allowSoloSbaLeaveLki });
+   const fromState = state.events.slice(stateEventsStart);
+   const seen = new Set(fromState);
+   return [...fromState, ...produced.filter((e) => !seen.has(e))];
+ }
+
+-function processTriggersScan(state, recentEvents) {
++function processTriggersScan(state, recentEvents, { allowSoloSbaLeaveLki }) {
+   const events = [];
+   // M382 (CR 603.3b): wpisy stosu dodane przez TEN skan tworzą jedną partię
+   // zdolności wyzwolonych od ostatniego priorytetu — na końcu skanu
+@@ -2926,10 +2926,9 @@ function processTriggersScan(state, recentEvents) {
+         }
+       }
+     }
+-    if (ev.type === 'creature_destroyed') {
++    if (ev.type === 'creature_destroyed' && ev.toZone !== 'exile') {
+       // Finality (exile) NIE uruchamia triggera „dies\" (CR 122.1h — obiekt
+       // nie umiera, jest wygnany).
+-      if (ev.toZone === 'exile') return;
+       // M160/A: współzgony tej samej partii SBA (simultaneousIds) — LKI
+       // poległych źródeł z ich zdarzeń śmierci w bieżącej kolejce skanu.
+       const fellows = (ev.simultaneousIds ?? []).length > 1
+@@ -2952,13 +2951,11 @@ function processTriggersScan(state, recentEvents) {
+       fireDeathTriggers(state.objects.get(ev.toId) ?? ev.object, fellows, ev.fromId,
+         eventControllerAtDeath(ev, state.objects.get(ev.toId) ?? ev.object));
+     }
+-    if (ev.type === 'permanent_sacrificed') {
+-      if (ev.toZone === 'exile') return; // finality
++    if (ev.type === 'permanent_sacrificed' && ev.toZone !== 'exile') {
+       fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
+         eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
+     }
+-    if (ev.type === 'permanent_destroyed') {
+-      if (ev.toZone === 'exile') return; // finality
++    if (ev.type === 'permanent_destroyed' && ev.toZone !== 'exile') {
+       fireDeathTriggers(state.objects.get(ev.objectId) ?? ev.object, [], ev.objectId,
+         eventControllerAtDeath(ev, state.objects.get(ev.objectId) ?? ev.object));
+     }
+@@ -3013,7 +3010,7 @@ function processTriggersScan(state, recentEvents) {
+     }
+     // Descended: permanent card wpada do grobu z ręki (odrzucenie), milla
+     // albo poświęcenia — liczymy po kontrolerze docelowego obiektu.
+-    if (ev.type === 'permanent_sacrificed') markDescended(state.objects.get(ev.objectId));
++    if (ev.type === 'permanent_sacrificed' && ev.toZone !== 'exile') markDescended(state.objects.get(ev.objectId));
+     if (ev.type === 'card_discarded' || ev.type === 'card_milled') {
+       const enteredGrave = state.objects.get(ev.objectId);
+       markDescended(enteredGrave);
+@@ -4455,6 +4452,26 @@ function processTriggersScan(state, recentEvents) {
+           }
+         }
+       }
++      // Wąska sonda: jedno opuszczenie pola przez stwora z SBA, poza
++      // nierozstrzygniętymi płatnościami. Migawka w zdarzeniu to permanent
++      // sprzed ruchu, a nie nowy obiekt w grobie/wygnaniu.
++      const departures = queue.filter((item) => item.type === 'creature_destroyed'
++        || item.type === 'permanent_destroyed' || item.type === 'permanent_sacrificed'
++        || (item.type === 'object_moved' && item.fromZone === 'battlefield' && item.toZone !== 'battlefield')
++        || (item.type === 'object_exiled' && item.fromId));
++      if (allowSoloSbaLeaveLki && departures.length === 1) {
++        const departure = departures[0];
++        const source = departure.object;
++        if (departure.type === 'creature_destroyed' && !(departure.simultaneousIds?.length > 1)
++          && source?.id === departure.fromId && source.zone === 'battlefield'
++          && source.controllerId === controllerId) {
++          for (const ability of effectiveAbilities(source)) {
++            if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
++              && ability.trigger.groupPer === 'controller' && !ability.trigger.condition
++              && !ability.trigger.requiresTarget) tryFire(state, ability, source, [], events);
++          }
++        }
++      }
+       for (let j = beforeAggregate; j < events.length; j += 1) queue.push(events[j]);
+     }
+   }

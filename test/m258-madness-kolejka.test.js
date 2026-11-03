@@ -1,3 +1,4 @@
+import { resolveMadnessTrigger } from './helpers/madness-priority.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createCardRegistry } from '../src/cards/card-data.js';
@@ -16,9 +17,8 @@ import { jumpToStep } from '../src/engine/turn.js';
  * dominaria-brg vs warhammer-ubr — Revolutionist odrzucony w cleanupie).
  *
  * Kontrakt po fixie (CR 702.35a: opcja rzutu powstaje PO dokończeniu efektu
- * odrzucania): karty z madness kolejkują się; pierwsza decyzja otwiera się
- * po zakończeniu sekwencji odrzuceń; kolejne — po rozstrzygnięciu
- * poprzedniej.
+ * odrzucania): karty z madness kolejkują triggery po zakończeniu sekwencji;
+ * każda decyzja pojawia się po rozstrzygnięciu odpowiedniego triggera.
  */
 
 const REGISTRY = createCardRegistry();
@@ -72,6 +72,7 @@ test('M258/M1: odrzucenie 2 kart (pierwsza z madness) nie zakleszcza decyzji —
   const r2 = execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'other' });
   assert.ok(r2.ok, 'drugie odrzucenie przyjęte — sekwencja nie zakleszczona (RED przed fixem: madness_unresolved)');
 
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'po zakończeniu odrzuceń decyzja madness otwarta');
   assert.equal(state.pendingMadnessCast.cardId, 'revolutionist', 'decyzja dotyczy karty z madness');
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
@@ -97,14 +98,16 @@ test('M258/M2: dwie karty z madness w jednym efekcie — decyzje SEKWENCYJNIE, �
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev1' }).ok);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev2' }).ok);
 
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'pierwsza decyzja madness otwarta');
   assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
   const exiled = [...state.objects.values()].filter((o) => o.cardId === 'revolutionist' && o.zone === 'exile');
   assert.equal(exiled.length, 2, 'obie karty w exile (CR 702.35a)');
 
-  // Rezygnacja z pierwszej → druga decyzja otwiera się automatycznie.
+  // Rezygnacja z pierwszej, następnie runda priorytetu dla drugiego triggera.
   const d1 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(d1 && execute(state, d1).ok);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'druga decyzja madness otwarta (kolejka)');
   assert.equal(state.pendingMadnessCast.cardId, 'revolutionist');
   const d2 = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
@@ -115,11 +118,12 @@ test('M258/M2: dwie karty z madness w jednym efekcie — decyzje SEKWENCYJNIE, �
   assert.equal(state.pendingMadnessCast, null, 'kolejka pusta');
 });
 
-test('M258/M3: pojedyncze odrzucenie z madness — decyzja dalej otwiera się od razu (anty-regresja E1)', () => {
+test('M258/M3: pojedyncze odrzucenie z madness — decyzja po rundzie priorytetu', () => {
   const state = game();
   putCard(state, 'rev', 'revolutionist', 'p1');
   discardChoice(state, ['rev']);
   assert.ok(execute(state, { type: 'resolve_discard_choice', playerId: 'p1', cardId: 'rev' }).ok);
+  resolveMadnessTrigger(state);
   assert.ok(state.pendingMadnessCast, 'decyzja madness otwarta po jednym odrzuceniu');
   const decline = playerView(state, 'p1').legalCommands.find((c) => c.type === 'resolve_madness_cast' && !c.cast);
   assert.ok(decline && execute(state, decline).ok);

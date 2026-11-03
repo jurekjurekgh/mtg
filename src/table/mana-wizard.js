@@ -140,14 +140,37 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
   });
   if (typeof abilityInfo !== 'function') return sources;
   const seen = new Set(land.map((s) => s.id));
+  const tapCostGroups = new Map();
   for (const cmd of view?.legalCommands ?? []) {
     if (cmd.type !== 'activate_ability') continue;
     if (cmd.objectId == null || cmd.abilityIndex == null) continue;
     if (excluded?.has(cmd.objectId)) continue;
     if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
-    if (seen.has(cmd.objectId)) continue;
     const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
-    if (!info || info.isLand) continue; // lądy pokryte tap_for_mana
+    if (!info) continue;
+    // Legalne komendy różniące się tylko kosztem stwora opisują JEDEN tryb
+    // źródła. Stwór jest odrębnym krokiem, nie wierszem źródło × stwór.
+    // Wyjątek ograniczony do sprawdzonego kształtu deskryptora A88.
+    if (info.manualTapCreatureOnly && cmd.tapCreatureId != null) {
+      if (excluded?.has(cmd.tapCreatureId)) continue;
+      const key = `${cmd.objectId}:${cmd.abilityIndex}`;
+      let group = tapCostGroups.get(key);
+      if (!group) {
+        group = { id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [],
+          amount: info.amount ?? 1, kind: 'ability', spendOnly: info.spendOnly ?? null,
+          command: cmd, tapCostChoices: [], tapCostCommands: [] };
+        tapCostGroups.set(key, group);
+        sources.push(group);
+      }
+      if (!group.tapCostChoices.includes(cmd.tapCreatureId)) {
+        group.tapCostChoices.push(cmd.tapCreatureId);
+        group.tapCostCommands.push(cmd);
+      }
+      continue;
+    }
+    // Ląd ma już wiersz darmowego {T}; dodatkowa kosztowa zdolność many
+    // (np. konwerter) jest osobnym wyborem TEGO SAMEGO permanentu.
+    if (info.isLand ? (info.manaCost ?? 0) <= 0 : seen.has(cmd.objectId)) continue;
     // M311 (zgłoszenie właściciela, Apprentice Wizard „{U}, {T}: Add
     // {C}{C}{C}"): koszt aktywacji NIE jest netowany z produkcją TEGO źródła —
     // różne waluty (produkcja bezbarwna {C}, pip kosztu kolorowy {U}; CR
@@ -179,6 +202,16 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     });
   }
   return sources;
+}
+
+/** Ponowna walidacja wybranego stwora wobec bieżących legalnych komend. */
+export function resolveManaSourceTapCost(source, creatureId, view) {
+  if (!(source?.tapCostChoices ?? []).includes(creatureId)) return null;
+  const selected = (source.tapCostCommands ?? []).find(cmd => cmd.tapCreatureId === creatureId);
+  if (!selected) return null;
+  return (view?.legalCommands ?? []).find(cmd => cmd.type === selected.type
+    && cmd.playerId === selected.playerId && cmd.objectId === selected.objectId
+    && cmd.abilityIndex === selected.abilityIndex && cmd.tapCreatureId === creatureId) ?? null;
 }
 
 /**
@@ -294,9 +327,9 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
   // kiedy płatność many jest niejednoznaczna (więcej niż 1 kombinacja
   // rodzajów źródeł) powinien być wizard".
   //
-  // Koszt bierzemy z KOMENDY (`cost`), nie z MANA_COSTS — to koszt decyzji,
-  // nie karty. Wymagania kolorów są puste: te decyzje mówią „zapłać {N}"
-  // (mana dowolnego rodzaju), więc o wyborze źródeł decyduje gracz.
+  // Koszt bierzemy z KOMENDY (`cost` i `costColors`), nie z MANA_COSTS:
+  // kolorowa dopłata Zoraline czy echo mają pipy wewnątrz sumy, a nie
+  // generyczne {N}. Ward i inne dopłaty bez pipów pozostają generyczne.
   if (PAYMENT_DECISION_TYPES.has(cmd.type)) {
     if (cmd.pay !== true) return null;          // wariant bez płacenia
     const cost = cmd.cost ?? cmd.amount ?? 0;
@@ -304,7 +337,12 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     const allDecisionCards = Object.values(view?.zones ?? {}).flat();
     const source = allDecisionCards.find((o) => o.id === (cmd.sourceId ?? cmd.targetId))
       ?? { id: cmd.sourceId ?? cmd.targetId ?? null, cardId: null };
-    return buildDescriptor(source, cost, [], `{${cost}}`, cost);
+    const colors = Array.isArray(cmd.costColors) ? cmd.costColors : [];
+    const requirements = colors.map(color => [color]);
+    if (requirements.length > cost) return null;
+    const generic = cost - requirements.length;
+    const costStr = `${generic > 0 ? `{${generic}}` : ''}${colors.map(color => `{${color}}`).join('')}`;
+    return buildDescriptor(source, cost, requirements, costStr || '{0}', generic);
   }
   if (FACE_UP_TURN_TYPES.has(cmd.type)) {
     const allTurnCards = Object.values(view?.zones ?? {}).flat();
@@ -402,6 +440,18 @@ export function paymentDescriptorOf(cmd, view, opts = {}) {
     if (totalNeeded == null) return null;
     const requirements = baseColorRequirements(parsed);
     return buildDescriptor(object, totalNeeded, requirements, costStr, totalNeeded - requirements.length);
+  }
+  if (cmd.type === 'cast_permanent' && cmd.improvisePayments?.length) {
+    // Improvise pokrywa wyłącznie część generyczną kosztu całkowitego;
+    // kolorowe i bezbarwne pipy nadal wymagają many. Podobnie jak convoke,
+    // najpierw policz właściwy koszt wariantu (np. z kickerem i obniżkami).
+    const rest = paymentDescriptorOf({ ...cmd, improvisePayments: undefined }, view, opts);
+    if (!rest || cmd.improvisePayments.length > rest.effectiveGeneric) return null;
+    const generic = rest.effectiveGeneric - cmd.improvisePayments.length;
+    return buildDescriptor(
+      { id: rest.objectId, cardId: rest.cardId }, generic + rest.requirements.length,
+      rest.requirements, `${rest.costStr} − improvise (${cmd.improvisePayments.length})`, generic,
+    );
   }
   if (cmd.type === 'cast_permanent' && cmd.convokePayments?.length) {
     // PMSSB-72 (Convoke, CR 702.51a): każdy stwór płaci jednostkę kosztu — kolorową
@@ -563,22 +613,43 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   const usable = sources.filter((s) => (s.amount ?? 1) > 0);
   const poolObjs = poolUnits.map((colors) => ({ colors }));
   const variants = new Set();
-  // Memo pokrycia po kanonicznym kluczu (sortowane id) — te same podzbiory
+  const sourceIndexes = new Map(usable.map((source, index) => [source, index]));
+  // Memo pokrycia po kanonicznym kluczu (indeksy trybów) — te same podzbiory
   // wracają w teście minimalności i w różnych gałęziach DFS (ADR 0005:
   // kolejność wejściowa źródeł, determinizm zachowany).
   const coverMemo = new Map();
   const sufficient = (subset) => {
-    const key = subset.map((s) => s.id).sort().join(',');
+    const key = subset.map((s) => sourceIndexes.get(s)).sort((a, b) => a - b).join(',');
     let hit = coverMemo.get(key);
     if (hit === undefined) {
       // M311: źródła-zdolności z kosztem aktywacji doliczają go do
       // zapotrzebowania (CR 601.2h — koszt płaci pula/inne źródła PRZED
       // produkcją): generic do sumy, pipy kolorowe jako DODATKOWE wymagania.
+      // Każde źródło może wymagać tapnięcia JEDNEGO innego obiektu. Szukamy
+      // rozłącznego przypisania spośród jego kandydatów; źródło wybrane do
+      // produkcji nie może być też tapnięte jako koszt innego źródła. To nie
+      // enumeruje ani nie pokazuje kombinacji graczowi — jedynie sprawdza,
+      // czy istnieje przydział (sam wybór musi pozostać jawny w UI).
+      const sourceIds = new Set(subset.map(s => s.id).filter(id => id != null));
+      const costs = subset.filter(s => Array.isArray(s.tapCostChoices));
+      const matched = new Map();
+      function assign(index, visited) {
+        for (const id of costs[index].tapCostChoices) {
+          if (id == null || sourceIds.has(id) || visited.has(id)) continue;
+          visited.add(id);
+          if (!matched.has(id) || assign(matched.get(id), visited)) {
+            matched.set(id, index);
+            return true;
+          }
+        }
+        return false;
+      }
+      const costsPayable = costs.every((_, index) => assign(index, new Set()));
       const costGeneric = subset.reduce((acc, s) => acc + (s.activationCost?.generic ?? 0), 0);
       const costPips = subset.flatMap((s) => s.activationCost?.colors ?? []);
       const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
       const net = subset.reduce((acc, s) => acc + (s.amount ?? 1), 0) - costGeneric;
-      hit = (poolMana + net >= totalNeeded)
+      hit = costsPayable && (poolMana + net >= totalNeeded)
         && coveredRequirementCount(poolObjs.concat(subset), allReqs) >= allReqs.length;
       coverMemo.set(key, hit);
     }
@@ -620,6 +691,8 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
   const walk = (start) => {
     for (let i = start; i < usable.length; i += 1) {
       if (variants.size >= cap) return;
+      // Dwa tryby tej samej bramy to jeden permanent, nie dwa tapnięcia.
+      if (usable[i].id != null && subset.some((source) => source.id === usable[i].id)) continue;
       subset.push(usable[i]);
       if (sufficient(subset)) {
         // Pokrywający zbiór odcina gałąź: każdy nadzbiór zawiera pokrywający
@@ -657,7 +730,7 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  */
 export function shouldOpenManaWizard({
   sources, poolMana, totalNeeded, requirements, poolUnits = [],
-  delveCandidates = [], maxDelve = 0, autoPayableMana = null,
+  delveCandidates = [], maxDelve = 0, autoPayableMana = null, autoPayableColors = null,
 }) {
   // C/C2 (uwaga z gry 2026-10-11): karta grobu jest RÓWNIEŻ wyborem płatności,
   // ale nie źródłem many — pokrywa wyłącznie {1} części generycznej (CR
@@ -681,7 +754,8 @@ export function shouldOpenManaWizard({
   // silnik odrzuci, bo many jeszcze nie wyprodukowano. Kreator jest wtedy
   // jedyną drogą zapłaty, a poświęcenie zasobu jest decyzją gracza, nie
   // automatu — otwieramy mimo jednego wariantu.
-  return variants >= 1 && autoPayableMana != null && autoPayableMana < totalNeeded;
+  return variants >= 1 && ((autoPayableMana != null && autoPayableMana < totalNeeded)
+    || autoPayableColors === false);
 }
 
 /**
@@ -727,7 +801,9 @@ export function shouldOpenManaWizard({
  */
 export function guideManaSources(sources, missingColors, genericMet) {
   const missing = Array.isArray(missingColors) ? missingColors : [];
-  const covers = (src) => (src.colors ?? []).some((c) => missing.includes(c));
+  // Ta sama reguła co solver i silnik: [] to bezbarwna jednostka {C},
+  // a nie pusta lista, której `includes` nigdy nie dopasuje do symbolu C.
+  const covers = (src) => missing.some((color) => unitCoversRequirement(src.colors ?? [], [color]));
   // Sortowanie jest STABILNE (JS sort), więc w obrębie grupy zostaje porządek
   // stołu — kreator nie przestawia źródeł bez powodu.
   const ordered = [...(sources ?? [])].sort((a, b) => Number(covers(b)) - Number(covers(a)));
@@ -795,7 +871,7 @@ export function wizardProgress(view, playerId, descriptor, sources, poolUnits = 
   const genericAfterDelve = Math.max(0, genericNeeded - selectedDelveCount);
   const genericMet = (pool - covered) >= genericAfterDelve;
   const offered = guideManaSources(offeredRaw, missingColors, genericMet)
-    .map((src) => ({ ...src, coversMissing: missingColors.some((c) => (src.colors ?? []).includes(c)) }));
+    .map((src) => ({ ...src, coversMissing: missingColors.some((color) => unitCoversRequirement(src.colors ?? [], [color])) }));
   return {
     pool,
     manaNeeded,
@@ -837,9 +913,29 @@ export function wizardSourceName(source, session) {
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
 export function renderManaWizard(host, model, {
-  onTapSource, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
+  onTapSource, onSelectTapCost, onCancelTapCost, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
 }) {
   host.textContent = '';
+  if (model.tapCostSelection) {
+    const intro = document.createElement('div');
+    intro.className = 'choice-request-intro';
+    intro.textContent = `Wybierz stwora do tapnięcia — ${wizardSourceName(model.tapCostSelection.source, session)}`;
+    host.appendChild(intro);
+    const list = document.createElement('div');
+    list.className = 'mana-wizard-sources choice-request-options';
+    for (const choice of model.tapCostSelection.choices ?? []) {
+      renderPickerRow(list, { kind: 'button', id: choice.id,
+        label: wizardSourceName(choice, session), rowClassName: 'action choice-request-option mana-wizard-tap-cost',
+        onActivate: (id) => onSelectTapCost?.(id) });
+    }
+    host.appendChild(list);
+    const back = document.createElement('button');
+    back.className = 'ghost-btn mana-wizard-tap-cost-back';
+    back.textContent = 'Wróć do źródeł';
+    back.addEventListener('click', () => onCancelTapCost?.());
+    host.appendChild(back);
+    return;
+  }
   const hasDelve = Array.isArray(model.delveCandidates) && model.delveCandidates.length > 0;
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';
@@ -872,7 +968,7 @@ export function renderManaWizard(host, model, {
     const cost = source.activationCost
       ? ` — koszt aktywacji ${manaSymbolsHtml(activationCostSymbols(source.activationCost))}`
       : '';
-    const covers = source.coversMissing ? ` — pokrywa ${missingLabel((source.colors ?? []).filter((c) => (model.missingColors ?? []).includes(c)))}` : '';
+    const covers = source.coversMissing ? ` — pokrywa ${missingLabel((model.missingColors ?? []).filter((color) => unitCoversRequirement(source.colors ?? [], [color])))}` : '';
     // M292: wiersz rysuje TEN SAM komponent co kreatory wyboru i steppery
     // (`src/table/picker.js`, `kind: 'button'`) — wspólne 44 px celu dotyku i
     // wspólna etykieta, zero osobnej funkcji wizualizującej dla tego ekranu.
@@ -883,7 +979,7 @@ export function renderManaWizard(host, model, {
       id: source.id,
       html: `Tapnij: ${escapeHtml(wizardSourceName(source, session))} (${sourceColorsLabel(source.colors)}${gain})${cost}${covers}`,
       rowClassName: 'action choice-request-option mana-wizard-source',
-      onActivate: (sourceId) => onTapSource?.(sourceId),
+      onActivate: (sourceId) => onTapSource?.(sourceId, source.command),
     });
   }
   if (model.untappedSources.length === 0) {
@@ -1015,7 +1111,9 @@ export function finishWizardPayment(session, pending, {
       onCloseWizard();
       const res = runCommand(paidCommand);
       if (res?.ok === false) {
-        onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
+        // playDirect już pokazuje szczegóły wyjątku — nie zastępuj ich
+        // ogólnym komunikatem o odrzuceniu komendy.
+        if (!res.internalError) onNotice('Płatność zebrana, ale zagranie nie jest już dostępne — mana została w puli.');
         return { committed: false, reason: res.reason ?? 'rejected' };
       }
       return { committed: true };

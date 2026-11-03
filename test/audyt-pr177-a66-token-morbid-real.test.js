@@ -1,0 +1,80 @@
+// CR 700.4: dies means put into a graveyard from the battlefield. Tokeny
+// umierają zanim SBA je usunie; finality przenosi do exile zamiast do grobu.
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {createGameState,addObject,execute,playerView} from '../src/engine/game-state.js';
+import {createCardRegistry} from '../src/cards/card-data.js';
+import {createCardDeck} from '../src/cards/materialize.js';
+import {jumpToStep} from '../src/engine/turn.js';
+import {addMana} from '../src/engine/resources.js';
+const reg=createCardRegistry();
+function put(s,id,card,zone='hand',player='p1') {const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:player,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:player});}
+const view=s=>playerView(s,s.turn.priorityPlayerId);
+function act(s,c){assert.ok(c,JSON.stringify({turn:s.turn,legal:view(s).legalCommands}));const r=execute(s,c);assert.ok(r.ok,JSON.stringify(r));return r;}
+function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
+function until(s,p){for(let i=0;i<30&&!p();i++)pass(s);assert.ok(p(),JSON.stringify({turn:s.turn,stack:s.zones.stack,legal:view(s).legalCommands}));}
+function setup(){const s=createGameState({seed:17766,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
+ for(let i=0;i<3;i++)put(s,`forest${i}`,'basic-forest','library');put(s,'rites','village-rites');put(s,'vigil','caravan-vigil');addMana(s,'p1',11,{colors:['W','B','G','U','R']});return s;}
+function oakToken(s){put(s,'oak','ambassador-oak');act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='oak'));until(s,()=>s.zones.stack.length===0);const t=[...s.objects.values()].find(o=>o.cardId==='token_elf_warrior'&&o.zone==='battlefield');assert.ok(t?.isToken);return t;}
+function sacrifice(s,id){const opts=view(s).legalCommands.filter(c=>c.type==='cast_spell'&&c.objectId==='rites');act(s,opts.find(c=>c.sacrificeTargetId===id));until(s,()=>s.zones.stack.length===0);}
+function vigil(s){act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='vigil'));until(s,()=>s.pendingSearchChoice!=null);return view(s).legalCommands.filter(c=>c.type==='resolve_search_choice');}
+for(const dest of ['hand','battlefield'])test(`A66: umierający token pozwala Caravan Vigil wybrać ${dest}`,()=>{
+ const s=setup();const t=oakToken(s);sacrifice(s,t.id);assert.equal(s.creatureDiedThisTurn,true);assert.ok(![...s.objects.values()].some(o=>o.instanceId===t.instanceId));
+ const opts=vigil(s);assert.ok(opts.some(c=>c.destination==='hand'));assert.ok(opts.some(c=>c.destination==='battlefield'));const choice=opts.find(c=>c.destination===dest&&c.found!=null);const instance=s.objects.get(choice.found).instanceId;act(s,choice);
+ assert.equal([...s.objects.values()].find(o=>o.instanceId===instance).zone,dest);
+});
+
+test('A66: Selhoff Occultist widzi śmierć tokena poświęconego Village Rites',()=>{
+ const s=setup();const t=oakToken(s);put(s,'occ','selhoff-occultist','battlefield');put(s,'enemy-lib','basic-island','library','p2');
+ const cmd=view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='rites'&&c.sacrificeTargetId===t.id);act(s,cmd);
+ assert.ok(s.events.some(e=>e.type==='ability_triggered'&&e.cardId==='selhoff-occultist'));
+ until(s,()=>s.pendingTriggerTargets?.length>0);const opt=view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&(c.targetId==='p2'||c.candidateIds?.includes('p2')));act(s,opt.targetId?opt:{...opt,targetId:'p2'});until(s,()=>s.zones.stack.length===0);assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-enemy-lib').zone,'graveyard');
+});
+
+test('A66: Liliana’s Triumph wymusza poświęcenie tokena, który liczy się dla Morbid',()=>{
+ const s=setup();const t=oakToken(s);put(s,'triumph','lilianas-triumph','hand','p2');addMana(s,'p2',2,{colors:['B']});pass(s);
+ act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='triumph'));until(s,()=>s.pendingSacrifice!=null);
+ act(s,view(s).legalCommands.find(c=>c.type==='resolve_sacrifice_choice'&&c.targetId===t.id));until(s,()=>s.zones.stack.length===0);
+ assert.equal(s.creatureDiedThisTurn,true);const opts=vigil(s);assert.ok(opts.some(c=>c.destination==='battlefield'));
+});
+
+test('A66: token zniszczony Spin Out także umiera',()=>{
+ const s=setup();const t=oakToken(s);put(s,'spin','spin-out');act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spin'&&c.targets?.includes(t.id)));until(s,()=>s.zones.stack.length===0);assert.equal(s.creatureDiedThisTurn,true);assert.ok(vigil(s).some(c=>c.destination==='battlefield'));
+});
+
+test('A66: stwór z finality od Zoraline poświęcony Village Rites nie umiera',()=>{
+ const s=setup();put(s,'zora','zoraline');put(s,'victim','highland-game','graveyard');act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='zora'));until(s,()=>s.pendingOptionalPay!=null);
+ act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay===true));const target=view(s).legalCommands.find(c=>c.type==='resolve_trigger_target'&&(c.targetId==='victim'||c.targetIds?.includes('victim')));act(s,target?.targetIds?{...target,targetId:'victim'}:target);until(s,()=>s.zones.stack.length===0);
+ const creature=[...s.objects.values()].find(o=>o.instanceId==='i-victim'&&o.zone==='battlefield');assert.equal(creature?.counters?.finality,1);sacrifice(s,creature.id);assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-victim').zone,'exile');assert.equal(s.creatureDiedThisTurn,false);assert.ok(!vigil(s).some(c=>c.destination==='battlefield'));
+});
+
+test('A66: Nefarious Imp widzi opuszczenie pola przez poświęcony token',()=>{
+ const s=setup();const t=oakToken(s);put(s,'imp','nefarious-imp','battlefield');
+ act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='rites'&&c.sacrificeTargetId===t.id));
+ const event=s.events.findLast(e=>e.type==='permanent_sacrificed');assert.equal(event.object.instanceId,t.instanceId);assert.equal(event.object.formerZone,'battlefield');
+ assert.equal(s.events.filter(e=>e.type==='ability_triggered'&&e.cardId==='nefarious-imp').length,1);
+ until(s,()=>s.pendingScry!=null);act(s,view(s).legalCommands.find(c=>c.type==='resolve_scry'));until(s,()=>s.zones.stack.length===0);
+});
+
+test('A66: śmierć tokena przestaje spełniać Morbid w następnej turze',()=>{
+ const s=setup();const t=oakToken(s);sacrifice(s,t.id);assert.equal(s.creatureDiedThisTurn,true);
+ s.turn={...s.turn,number:10,activePlayerId:'p1',priorityPlayerId:'p1',phase:'ending',step:'end',stepIndex:9,passes:0};
+ until(s,()=>s.turn.activePlayerId==='p2'&&s.turn.step==='upkeep');assert.equal(s.creatureDiedThisTurn,false);
+});
+
+for(const method of ['rites','spin','fiery-fall'])test(`A66: Etherium Abomination po unearth i ${method} jest wygnana bez śmierci`,()=>{
+ const s=setup();put(s,'abomination','etherium-abomination','graveyard');put(s,'occ','selhoff-occultist','battlefield','p2');
+ act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='abomination'));until(s,()=>s.zones.stack.length===0);
+ const a=[...s.objects.values()].find(o=>o.instanceId==='i-abomination');assert.equal(a.zone,'battlefield');assert.equal(a.unearthExile,true);
+ if(method==='rites')sacrifice(s,a.id);else {put(s,'kill',method==='spin'?'spin-out':'fiery-fall');act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='kill'&&c.targets?.includes(a.id)));until(s,()=>s.zones.stack.length===0);}
+ assert.equal([...s.objects.values()].find(o=>o.instanceId==='i-abomination').zone,'exile');
+ assert.equal(s.creatureDiedThisTurn,false);const deathEvent=s.events.findLast(e=>(['permanent_sacrificed','permanent_destroyed','creature_destroyed'].includes(e.type))&&e.cardId==='etherium-abomination');assert.equal(deathEvent.toZone,'exile');assert.ok(!s.events.some(e=>e.type==='ability_triggered'&&e.cardId==='selhoff-occultist'));
+ assert.ok(!vigil(s).some(c=>c.destination==='battlefield'));
+});
+
+test('A66: Plague Reaver poświęca token w end step, z LKI w zdarzeniu',()=>{
+ const s=setup();const t=oakToken(s);put(s,'reaver','plague-reaver','battlefield');
+ s.turn=jumpToStep(s.turn,'main2','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';
+ until(s,()=>s.events.some(e=>e.type==='permanent_sacrificed'&&e.fromId===t.id));
+ const ev=s.events.find(e=>e.type==='permanent_sacrificed'&&e.fromId===t.id);assert.equal(ev.object.instanceId,t.instanceId);assert.equal(ev.object.formerZone,'battlefield');assert.equal(ev.toZone,'graveyard');assert.ok(!s.objects.has(ev.objectId));assert.equal(s.creatureDiedThisTurn,true);
+});

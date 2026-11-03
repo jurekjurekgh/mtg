@@ -90,7 +90,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   // ZATRZYMYWANEGO wpisu przy kontrze groźnego czaru/zdolności wroga.
   // Kontra dostawała płaskie spellBase bez premii za CO zatrzymuje, więc
   // w modalu kontra-vs-bounce bounce bił kontrę strukturalnie.
-  'counterspellTmcWeight',   // waga many zatrzymywanego czaru (6 = 2 parytet + 4 trwalość)
+  'counterspellTmcWeight',   // waga many zatrzymywanego czaru (10 = 6 parytet + 4 trwałość)
   // PMSSB-1 (M239/2: bounceEnemyBase/Weight usunięte — martwe; typ
   // return_to_hand nie występuje w kartach ani silniku). Rodzina „bounce":
   // siła efektu (hand < top < bottom) + wymiary celu (token-trwałość
@@ -117,7 +117,7 @@ export const HEURISTIC_PARAM_KEYS = Object.freeze([
   'bounceTmcWeight',         // waga TMC samego celu (odbudowa po zwrocie)
   'bounceAuraTmcWeight',     // waga TMC aur na celu (giną z hostem, CR 704.5m)
   'bounceEquipmentTmcWeight',// waga TMC equipmentu (zostaje na stole, ale equip płatny)
-  'bounceCounterBonus',      // premia za każdy POZYTYWNY licznik (CR 122.2: nie wracają)
+  'bounceCounterBonus',      // premia za dodatni / kara za stun i finality na wrogu (liczniki nie wracają)
   // PMSSB-2/A (F4): token-bank many (Treasure/Powerstone/Scion) —
   // 1 mana ≈ 3 (symetria z bounceRecastManaWeight: many nie wracają).
   // PMSSB-58: role opcji doboru, rzeczywiste koszty i zamiana zasobów.

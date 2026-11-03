@@ -166,8 +166,8 @@ export function hasHexproofAgainst(state, object, casterId) {
 /**
  * M360/B1 (CR 702.103b): czy obiekt na stosie jest czarem NIE-będącym stworem
  * (cel Negate — „Counter target noncreature spell”). Czar aury rzucony za
- * bestow niesie kind 'creature' (dziedziczy po karcie), ale na stosie jest
- * czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
+ * bestow ma kind 'aura' na stosie; historyczne stany mogły zachować
+ * kind 'creature', mimo że jest czarem AURY (CR 702.103b: „it becomes an Aura enchantment”; ruling THS:
  * „either a creature spell or an Aura spell. It's never both”) — deskryptor
  * `spell.aura` rozstrzyga (mtg.wiki/Bestow + Scryfall THS/161, 2026-09-16).
  * Jeden helper dla oferty i walidacji (L48).
@@ -176,7 +176,8 @@ export function isNoncreatureSpellOnStack(object) {
   if (!object || object.zone !== 'stack') return false;
   // Zdolności (kind 'trigger'/'activated') to nie czary (CR 113.9).
   if (object.kind === 'trigger' || object.kind === 'activated') return false;
-  // Czar aury z bestow: kind 'creature', ale spell.aura — nie-stworowy.
+  // Zgodność ze starszymi stanami: spell.aura jest nie-stworowy nawet,
+  // jeśli historyczny zapis zachował pierwotne kind 'creature'.
   if (object.kind === 'creature' && object.spell?.aura !== true) return false;
   return true;
 }
@@ -466,8 +467,7 @@ export function validateTargets(state, targetSpec, chosen, casterId, sourceColor
       throw new Error(`Nielegalny cel: ${targetId}`);
     }
     // Cel „spell on the stack" (Stoic Rebuttal — „Counter target spell\"):
-    // DOWOLNY czar na stosie — także czar będący stworem (aura z bestow ma
-    // na stosie kind 'creature') i czar aury. Czar nigdy nie jest legalnym
+    // DOWOLNY czar na stosie — także czar będący stworem i czar aury. Czar nigdy nie jest legalnym
     // celem samego siebie: w chwili walidacji rzucający obiekt wciąż jest
     // w ręce (przenosi się na stos dopiero po walidacji).
     if (spec?.type === 'spell_on_stack') {
@@ -981,7 +981,7 @@ export function castSpell(state, playerId, objectId, targets, sacrificeTargetId,
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeTargetId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;
@@ -1398,7 +1398,7 @@ export function castCleave(state, playerId, objectId, targets, sacrificeTargetId
     const destId = `${toZone}-${state.objectSequence++}`;
     const moved = moveObjectDirectly(state, sacrificeTargetId, toZone, destId);
     state.events.push(event('permanent_sacrificed', {
-      fromId: sacrificeTargetId, objectId: destId, playerId, cardId: moved.cardId, additionalCost: true, toZone,
+      fromId: sacrificeTargetId, objectId: destId, playerId, object: moved, cardId: moved.cardId, additionalCost: true, toZone,
     }));
   }
   const stackId = `spell-${state.objectSequence++}`;

@@ -85,8 +85,22 @@ function giftDimensionOf(list) {
  *  - `giftMode` / `giftRecipientIds` — obietnica daru (tak/nie) i, gdy
  *    potrzeba, odbiorca; obie decyzje są oddzielone od wyboru celów.
  */
+// Permanent z samym X nie ma `targets`. Tylko znany, prosty kształt:
+// nie wolno ukryć innych decyzji (kicker, koszt alternatywny, cel itd.).
+export function isPlainPermanentXCommand(cmd) {
+  return cmd?.type === 'cast_permanent' && Number.isInteger(cmd.xValue) && cmd.xValue >= 0
+    && Object.keys(cmd).every((key) => ['type', 'playerId', 'objectId', 'xValue'].includes(key));
+}
+
 export function multiTargetPlanOf(commands) {
   const all = commands ?? [];
+  if (all.length > 0 && all.every(isPlainPermanentXCommand)
+    && all.every((cmd) => cmd.objectId === all[0].objectId && cmd.playerId === all[0].playerId)) {
+    const values = all.map((cmd) => cmd.xValue);
+    return { targets: [], minTargets: 0, maxTargets: 0, hasX: true, xOnly: true,
+      xMin: Math.min(...values), xMax: Math.max(...values), slots: null,
+      objectId: all[0].objectId, type: all[0].type, modeIndex: null };
+  }
   const list = all.filter((cmd) => cmd && Array.isArray(cmd.targets));
   if (list.length < 2) return null;
   // M300 (audyt okien rzutu): plan nie może POWSTAĆ z podzbioru opcji —
@@ -283,8 +297,8 @@ export function commandForSelection(commands, {
 } = {}) {
   const key = targetKey(targets);
   return (commands ?? []).find((cmd) => {
-    if (!cmd || !Array.isArray(cmd.targets)) return false;
-    if (targetKey(cmd.targets) !== key) return false;
+    if (!cmd || (!Array.isArray(cmd.targets) && !isPlainPermanentXCommand(cmd))) return false;
+    if (targetKey(cmd.targets ?? []) !== key) return false;
     // H: `stunTargetId` podany = wybór stuna z kreatora (null = brak legalnego
     // stuna dla zbioru → brak komendy). Nie podany = dawne zachowanie.
     if (stunTargetId !== undefined && (cmd.stunTargetId ?? null) !== stunTargetId) return false;
@@ -1239,6 +1253,44 @@ export function commandForChooseOneOrBoth(plan, slotChoice) {
   const key = (slotChoice ?? plan.slots.map(() => null))
     .map((id) => (id == null ? '' : String(id))).join('|');
   return plan.bySelection.get(key) ?? null;
+}
+
+/** Niezależne składniki trybów złożonych; komenda nadal pochodzi z oferty. */
+export function chooseModesPlanOf(commands, spell) {
+  const options = commands ?? [];
+  const type = options[0]?.type;
+  const idOf = c => type === 'resolve_epic_choice' ? c.cardId : c.objectId;
+  if (options.length < 2 || !['cast_spell', 'resolve_epic_choice', 'resolve_exile_cast', 'resolve_grave_free_cast', 'resolve_hand_free_cast', 'resolve_madness_cast', 'resolve_rebound_cast', 'resolve_suspend_cast'].includes(type)
+    || !idOf(options[0]) || !options.every(c => c?.type === type
+      && idOf(c) === idOf(options[0]) && Number.isInteger(c.modeIndex))) return null;
+  if (new Set(options.map(c => c.modeIndex)).size < 2) return null;
+  const modes = spell?.modes ?? [];
+  const bySelection = new Map(), labels = new Map();
+  let count = null;
+  for (const cmd of options) {
+    const components = modes[cmd.modeIndex]?.choiceComponents;
+    if (!Array.isArray(components) || components.length < 2
+      || components.some(c => !Number.isInteger(c?.index) || typeof c.name !== 'string')) return null;
+    count ??= components.length;
+    if (components.length !== count || new Set(components.map(c => c.index)).size !== count) return null;
+    for (const c of components) {
+      if (labels.has(c.index) && labels.get(c.index) !== c.name) return null;
+      labels.set(c.index, c.name);
+    }
+    const key = components.map(c => c.index).sort((a,b) => a-b).join(',');
+    // Dodatkowe warianty tego samego trybu rozwiązuje kolejny krok kaskady.
+    if (!bySelection.has(key)) bySelection.set(key, cmd);
+  }
+  const rows = [...labels].sort((a,b) => a[0]-b[0]).map(([id,label]) => ({ id: String(id), label }));
+  return { chooseModesMode: true, rows, count, bySelection, itemLabel: 'tryby',
+    minTargets: count, maxTargets: count, targets: rows.map(r => r.id), hasX: false };
+}
+
+export function commandForChooseModes(plan, chosen) {
+  if (!plan?.chooseModesMode || chosen?.length !== plan.count || new Set(chosen).size !== plan.count) return null;
+  const ids = chosen.map(Number);
+  if (ids.some(id => !Number.isInteger(id))) return null;
+  return plan.bySelection.get(ids.sort((a,b) => a-b).join(',')) ?? null;
 }
 
 export function castModePlanOf(commands) {

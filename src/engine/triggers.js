@@ -19,6 +19,7 @@ import { changeLife, setPlayerSpeed } from './players.js';
 import { CARD_TYPES, effectiveAbilities, effectiveColors, effectiveKeywords, effectivePower, wardAmountOf, grantKeywordsUntilEndOfTurn } from './permanents.js';
 import { moveObjectDirectly } from './objects.js';
 import { tapLandForMana, canPayColoredCost, spendMana, producibleMana } from './resources.js';
+import { hasPotentialManaAbility, hasPotentialSingleManualTapColor } from './mana-sources.js';
 
 /**
  * Minimalny framework zdolności triggerowanych (CR 603).
@@ -206,6 +207,9 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
   // Heart): trigger odpala się tylko w upkeep gracza zaczarowanego przez
   // źródło — nie kontrolera (karta „Enchant player").
   if (condition.enchantedPlayerUpkeep) {
+    // To filtr zdarzenia, nie intervening-if: po wyzwoleniu nie zależy
+    // już od bieżącego zaczarowania. Id gracza pochodzi z chwili zdarzenia.
+    if (eventData.enchantedUpkeepPlayerId != null) return true;
     return Boolean(sourceObject && sourceObject.enchantedPlayerId === state.turn.activePlayerId);
   }
   // Batch 23: Feedback — „At the beginning of the upkeep of enchanted
@@ -321,7 +325,7 @@ function conditionHolds(trigger, state, sourceObject = null, eventData = {}) {
 /** Czy kontroler triggera może opłacić opcjonalny koszt (mana / życie /
  *  znacznik ze źródła — `payCounter`, Kappa Tech-Wrecker „you may remove
  *  a deathtouch counter from it"). */
-function canPayTrigger(state, controllerId, trigger, source = null) {
+function canPayTrigger(state, controllerId, trigger, source = null, allowManualMana = false) {
   const player = state.players.find((p) => p.id === controllerId);
   if (!player) return false;
   if (trigger?.payCounter) {
@@ -339,8 +343,11 @@ function canPayTrigger(state, controllerId, trigger, source = null) {
   // muszą być pokryte kolorową pulą/nietapniętymi źródłami, jak koszty czarów.
   // (A: przed strażnikiem (czyste) — joint (iv) bramki źródeł kosztowych.)
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
-  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)) return false;
-  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
+  if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)
+    && !(allowManualMana && hasPotentialManaAbility(state, controllerId))) return false;
+  if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)
+    && !(allowManualMana && (trigger?.payMana ?? 0) === 1 && payReqs.length === 1
+      && hasPotentialSingleManualTapColor(state, controllerId, payReqs[0][0]))) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
   // Batch 67 (Sentry Bot, CR 122.1): „you may pay {E}{E}{E}" — opcjonalna
@@ -827,9 +834,15 @@ export function triggerTargetCandidates(state, spec, sourceObject, extra = {}) {
  */
 function diedAs(object, kind, type) {
   if (!object) return false;
-  if (object.kind === kind || (object.types ?? []).includes(type)) return true;
-  if (object.formerZone !== 'battlefield') return false;
-  return object.formerKind === kind || (object.formerTypes ?? []).includes(type);
+  // Po zmianie strefy liczą się wyłącznie cechy z pola bitwy, nie typ
+  // nowego obiektu w grobie (CR 400.7/603.10a). Starsze zapisy bestowed
+  // Aura mogły zachować drukowane types karty: kind='aura' rozstrzyga, że
+  // nie była stworem na polu (702.103b). Nowe zapisy mają poprawne types.
+  const wasOnBattlefield = object.formerZone === 'battlefield';
+  const formerKind = wasOnBattlefield ? object.formerKind : object.kind;
+  const formerTypes = wasOnBattlefield ? object.formerTypes : object.types;
+  if (kind === 'creature' && formerKind === 'aura') return false;
+  return formerKind === kind || (formerTypes ?? []).includes(type);
 }
 
 function abilitiesOnDeath(object) {
@@ -862,8 +875,9 @@ function abilitiesOnDeath(object) {
  *    CR 122.1h — obiekt opuszcza pole bitwy, ale nie umiera);
  *  - rodzaj czytamy z LKI (CR 603.10a): obiekt po zmianie strefy jest NOWY
  *    (CR 400.7), więc `formerKind`/`formerTypes`.
- * Token ginący w grobie: `creature_destroyed` niesie LKI zdarzenia — stąd
- * fallback na `ev.object`.
+ * Token po przejściu do grobu znika podczas SBA. Zdarzenia zniszczenia
+ * i poświęcenia muszą więc nieść migawkę `object` (w tym formerKind/types),
+ * po którą sięgamy, gdy nowego obiektu nie ma już w `state.objects`.
  */
 export function eventIsCreatureDeath(state, ev) {
   if (!ev) return false;
@@ -1221,10 +1235,11 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
 /** Wspólne wejście z opóźnionej reanimacji, także po wyborze riot. */
 export function resolveDelayedReanimate(state, pending, riotChoices = null, events = []) {
   const object = state.objects.get(pending?.objectId);
-  if (!object || object.zone !== 'graveyard') return false;
+  const expectedZone = pending?.expectedZone ?? 'graveyard';
+  if (!object || object.zone !== expectedZone || !['graveyard', 'exile'].includes(expectedZone)) return false;
   if (riotCountOf(object) > 0 && riotChoices === null) {
     queueRiotEntry(state, object, {
-      entryKind: 'delayed_reanimate', fromZone: 'graveyard', playerId: pending.playerId,
+      entryKind: 'delayed_reanimate', fromZone: expectedZone, playerId: pending.playerId,
       delayedPending: pending,
     });
     return true;
@@ -1239,7 +1254,7 @@ export function resolveDelayedReanimate(state, pending, riotChoices = null, even
   applyRiotOnEntry(state, newId, riotChoices, pending.objectId);
   applyEnterCounters(state, newId);
   const movedEvent = event('object_moved', {
-    fromId: pending.objectId, object: state.objects.get(newId), fromZone: 'graveyard', toZone: 'battlefield', delayed: true,
+    fromId: pending.objectId, object: state.objects.get(newId), fromZone: expectedZone, toZone: 'battlefield', delayed: true,
   });
   state.events.push(movedEvent); events.push(movedEvent);
   const controlEvent = event('control_changed', {
@@ -1313,7 +1328,7 @@ function resolveDeferredChoice(state, entry, payload, source, extra, choice) {
   }
   if (choice.kind === 'optionalPay') {
     const trigger = payload.ability?.trigger ?? {};
-    if (!canPayTrigger(state, controllerId, trigger, state.objects.get(payload.sourceId) ?? null)) {
+    if (!canPayTrigger(state, controllerId, trigger, state.objects.get(payload.sourceId) ?? null, true)) {
       // Nie da się zapłacić — „If/When you do" nie zachodzi.
       state.events.push(resolvedEvent({ noEffect: true, reason: 'cannot_pay' }));
       return;
@@ -1462,6 +1477,22 @@ export function resolveTriggerEntry(state, entry) {
   // powrót w upkeep celu): aplikacja niestandardowa (nie efekt generyczny).
   // Markery (delayedType/delayed/sagaChapter) niosie extra wpisu.
   const extra = payload.extra ?? {};
+  // Madness (CR 702.35a): dopiero TERAZ, po rundzie priorytetu, właściciel
+  // może rzucić kartę z exile albo odmówić. Jeśli zmieniła strefę, jest już
+  // nowym obiektem i trigger nie daje prawa do rzutu ani przeniesienia.
+  if (extra.madness) {
+    const pending = extra.madness;
+    const card = state.objects.get(pending.objectId);
+    if (card?.zone === 'exile' && card.madnessReady) {
+      state.pendingMadnessCast = { ...pending, restorePriorityTo: state.turn.activePlayerId };
+      state.turn.priorityPlayerId = pending.playerId;
+      state.events.push(event('madness_ready_required', {
+        playerId: pending.playerId, objectId: pending.objectId, cardId: pending.cardId,
+        cost: card.madness?.cost ?? null, costColors: card.madness?.colors ?? null,
+      }));
+    }
+    return state.events.slice(before);
+  }
   // Storm (CR 702.40a): przy rozstrzygnięciu tej zdolności powstają KOPIE
   // czaru — tyle, ile czarów rzucono przed nim w tej turze (liczba zamrożona
   // przy rzucie). Kopie nie są rzucane (nie odpalają triggerów „whenever you
@@ -1550,7 +1581,8 @@ export function resolveTriggerEntry(state, entry) {
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
     if (targetingOnStack) {
       const payer = targeting.controllerId;
-      if (producibleMana(state, payer, null, {}, []) >= extra.wardPay.amount) {
+      if (producibleMana(state, payer, null, {}, []) >= extra.wardPay.amount
+        || hasPotentialManaAbility(state, payer)) {
         state.pendingWardPay = {
           playerId: payer,
           amount: extra.wardPay.amount,
@@ -1868,7 +1900,7 @@ export function resolveTriggerEntry(state, entry) {
   // do efektu" to dwa RÓŻNE komunikaty dla gracza — pierwszy sugeruje usterkę,
   // drugi mówi, że karta nie miała na kim działać.
   const emptyReceiverReason = producedNothing && !noOpByState
-    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [])
+    ? triggerEffectsReasonForEmptyReceivers(state, payload.ability, source, payload.targets ?? [], payload.extra ?? {})
     : null;
   const resolved = event('trigger_resolved', {
     objectId: entry.id, sourceId: payload.sourceId, cardId: entry.cardId,
@@ -1947,8 +1979,8 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
       ? 'no_targets' : null),
   // Mill to wyjątek w rodzinie: cel (gracz) ISTNIEJE, brakuje kart
   // w bibliotece — „brak legalnych celów" byłoby kłamstwem.
-  mill_cards: (state, effect, source, targets) => (
-    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets)).length === 0
+  mill_cards: (state, effect, source, targets, context) => (
+    libraryCardsOf(state, millTargetPlayerId(state, effect, source, targets, context)).length === 0
       ? 'empty_library' : null),
   // M356 (613 Duskmantle Seer): odbiorcą jest KAŻDY gracz (zawsze istnieje),
   // więc zero zdarzeń może pochodzić wyłącznie z pustych bibliotek — powód to
@@ -1968,12 +2000,12 @@ export const EMPTY_RECEIVER_EFFECTS = Object.freeze({
  * Zgodę wymagamy od KAŻDEGO znanego efektu triggera: mieszanka (jeden ma
  * odbiorców, drugi nie) nie ma jednego powodu, więc zostaje `no_result`.
  */
-function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets) {
+function triggerEffectsReasonForEmptyReceivers(state, ability, source, targets, context = {}) {
   const effects = (Array.isArray(ability?.effect) ? ability.effect : [ability?.effect])
     .filter(Boolean)
     .filter((effect) => EMPTY_RECEIVER_EFFECTS[effect.type]);
   if (effects.length === 0) return null;
-  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets));
+  const reasons = effects.map((effect) => EMPTY_RECEIVER_EFFECTS[effect.type](state, effect, source, targets, context));
   const first = reasons[0];
   return reasons.every((reason) => reason === first) ? first : null;
 }
@@ -2017,8 +2049,13 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
   // M259/B7 (CR 702.30 + 118.2): koszt echa {2}{B} wymaga pipa {B} —
   // bramka opłacalności obejmuje KOLORY (pula + nietapnięte źródła), a sama
   // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
-  const canPay = producibleMana(state, controllerId, null, {}, [colors]) >= amount
-    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors]));
+  const canPay = (producibleMana(state, controllerId, null, {}, [colors]) >= amount
+    && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors])))
+    // Ręczne źródło może uzupełnić także generyczną część kolorowego echa.
+    // Pipy muszą już być osiągalne przez zwykłe źródła; nie zakładamy, że
+    // bezbarwny Scion może pokryć kolor. Nie aktywujemy źródła automatycznie.
+    || (hasPotentialManaAbility(state, controllerId)
+      && (colors.length === 0 || canPayColoredCost(state, controllerId, colors.map(color => [color]))));
   if (!canPay) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
@@ -2215,6 +2252,9 @@ function tryFire(state, ability, source, targets, events, extra = {}) {
   if (ability?.type !== 'triggered') return false;
   // eventData (extra) dla warunków z danymi zdarzenia (spellColorsInclude).
   if (!conditionHolds(trigger, state, source, extra)) return false;
+  if (trigger.condition?.enchantedPlayerUpkeep) {
+    extra = { ...extra, enchantedUpkeepPlayerId: state.turn.activePlayerId };
+  }
   // Etap F (CR 603.5 + 603.12): „you may pay [koszt]. When you do, [efekt
   // z celem]" (Zoraline) — pierwsza zdolność NIE ma celu: idzie na stos
   // zawsze, płatność to wybór przy JEJ rozstrzyganiu, a dopiero opłacenie
@@ -2828,7 +2868,7 @@ function processTriggersScan(state, recentEvents) {
       // w GROBIE (karta), odpala się na śmierć kontrolowanego stwora.
       for (const source of state.objects.values()) {
         if (source.zone !== 'graveyard') continue;
-        if (died?.kind !== 'creature' || diedControllerId !== source.controllerId) continue;
+        if (!diedIsCreature || diedControllerId !== source.controllerId) continue;
         // Zgłoszenie właściciela E1 (2026-09-10), CR 603.6c + ruling WotC
         // 2025-04-04 („If Furious Forebear dies at the same time as one or
         // more creatures you control, its ability won't trigger"): warunkiem
@@ -4148,13 +4188,16 @@ function processTriggersScan(state, recentEvents) {
         // T6: trigger opóźniony idzie na STOS (jak każdy trigger) — rozstrzyga
         // się po rundzie passów; aplikacja w resolveDelayedTrigger.
         const object = state.objects.get(pending.objectId);
-        // Obiekt zniknął z grobu (np. wygnany w międzyczasie) — trigger wygasa.
-        if (!object || object.zone !== 'graveyard') continue;
+        // CR 603.7 (litera c): nie szukamy po nazwie, tylko tej samej karty w strefie,
+        // do której faktycznie przeszedł koszt (grób lub exile przez finality).
+        const expectedZone = pending.expectedZone ?? 'graveyard';
+        if (!object || object.zone !== expectedZone || !['graveyard', 'exile'].includes(expectedZone)) continue;
         queueTriggerToStack(state, {
           type: 'triggered',
           trigger: { event: 'delayed' },
           effect: [],
-        }, object, [], events, { delayedType: 'reanimate_under_target_control', delayed: pending });
+        }, { ...object, controllerId: pending.controllerId ?? object.controllerId }, [], events,
+        { delayedType: 'reanimate_under_target_control', delayed: pending });
       }
       state.delayedTriggers = remainingUpkeepDelayed;
       for (const object of state.objects.values()) {
