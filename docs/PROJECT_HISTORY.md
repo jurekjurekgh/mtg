@@ -18738,3 +18738,5 @@ Uwagi właściciela 2026-11-02: Man-o'-War nie jest bezmyślnie rzucany bez lega
 Doprecyzowanie: Austere przy Epic Experiment i Vaan także korzysta z czterech składników; fast 9611 pass + 1 TODO A74, testy powiązane 248/248, slow 268/268, build 77/5656,3 kB. Audyt #177 pozostaje otwarty.
 
 Audyt #177 A75: Polluted Dead i Circle of the Land Druid — starszy błąd APNAP celów lądowych; ograniczona naprawa z jawną granicą Ward. Fast 9621/9621, slow 268/268, pokrewne 189/189 przed testami replay; audyt trwa.
+
+Audyt #177 A76: ograniczony APNAP niezawieszonej walki, także first strike; fast 9629/9629, slow 268/268, build 77/5656,9 kB. Pełne APNAP i audyt nadal otwarte.

@@ -199,3 +199,5 @@ A73: niedozwolona destynacja w ręcznej komendzie search pozwalała obejść Mor
 A74: fingerprint kolejki, wybory APNAP, label różnych triggerów źródła, kontrole bot/replay/madness; tylko wymienione checkpointy i typy celów.
 
 A75: Polluted Dead i Circle of the Land Druid, lądy na polu / karty w grobie, cztery historyczne RED i ograniczony GREEN; Ward przeciwnika wyłącza nową ścieżkę.
+
+A76: starszy błąd APNAP po `resolve_combat` (w tym first strike), cztery RED historycznie; ograniczony GREEN, pozostałe ścieżki obrażeń i mixed triggery otwarte.
