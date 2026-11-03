@@ -594,11 +594,31 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
       // M311: źródła-zdolności z kosztem aktywacji doliczają go do
       // zapotrzebowania (CR 601.2h — koszt płaci pula/inne źródła PRZED
       // produkcją): generic do sumy, pipy kolorowe jako DODATKOWE wymagania.
+      // Każde źródło może wymagać tapnięcia JEDNEGO innego obiektu. Szukamy
+      // rozłącznego przypisania spośród jego kandydatów; źródło wybrane do
+      // produkcji nie może być też tapnięte jako koszt innego źródła. To nie
+      // enumeruje ani nie pokazuje kombinacji graczowi — jedynie sprawdza,
+      // czy istnieje przydział (sam wybór musi pozostać jawny w UI).
+      const sourceIds = new Set(subset.map(s => s.id).filter(id => id != null));
+      const costs = subset.filter(s => Array.isArray(s.tapCostChoices));
+      const matched = new Map();
+      function assign(index, visited) {
+        for (const id of costs[index].tapCostChoices) {
+          if (id == null || sourceIds.has(id) || visited.has(id)) continue;
+          visited.add(id);
+          if (!matched.has(id) || assign(matched.get(id), visited)) {
+            matched.set(id, index);
+            return true;
+          }
+        }
+        return false;
+      }
+      const costsPayable = costs.every((_, index) => assign(index, new Set()));
       const costGeneric = subset.reduce((acc, s) => acc + (s.activationCost?.generic ?? 0), 0);
       const costPips = subset.flatMap((s) => s.activationCost?.colors ?? []);
       const allReqs = costPips.length > 0 ? [...requirements, ...costPips.map((c) => [c])] : requirements;
       const net = subset.reduce((acc, s) => acc + (s.amount ?? 1), 0) - costGeneric;
-      hit = (poolMana + net >= totalNeeded)
+      hit = costsPayable && (poolMana + net >= totalNeeded)
         && coveredRequirementCount(poolObjs.concat(subset), allReqs) >= allReqs.length;
       coverMemo.set(key, hit);
     }
