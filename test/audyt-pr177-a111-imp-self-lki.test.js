@@ -189,7 +189,53 @@ for (const controller of ['p1', 'p2'])
         0,
         'wygnanie nie jest śmiercią',
       );
+      assert.equal(
+        Boolean(state.descendedThisTurn[controller]),
+        false,
+        'wygnana karta nie powoduje descended',
+      );
       assert.ok(
         [...state.objects.values()].some((o) => o.cardId === 'nefarious-imp' && o.zone === 'exile'),
       );
     });
+
+// Kontrola: zwykłe poświęcenie karty naprawdę powoduje descended i dies.
+for (const controller of ['p1', 'p2'])
+  test(`A111: poświęcenie do grobu nadal powoduje descended i dies (${controller})`, () => {
+    const state = scene(controller, { second: true, stripped: true });
+    state.turn = jumpToStep(state.turn, 'main1', controller);
+    state.turn.activePlayerId = state.turn.priorityPlayerId = controller;
+    put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
+    put(state, 'rites', 'village-rites', controller, 'hand');
+    addMana(state, controller, 1, { colors: ['B'] });
+    act(
+      state,
+      view(state).legalCommands.find(
+        (c) => c.type === 'cast_spell' && c.objectId === 'rites' && c.sacrificeTargetId === 'imp',
+      ),
+    );
+    assert.equal(Boolean(state.descendedThisTurn[controller]), true);
+    assert.equal(
+      state.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'selhoff-occultist')
+        .length,
+      1,
+    );
+    assert.equal(impEvents(state).filter((e) => e.objectId === 'second').length, 1);
+  });
+
+// Syntetycznie nadany prawdziwy deskryptor triggera przeżywa utratę druku.
+for (const controller of ['p1', 'p2'])
+  test(`A111: LKI widzi nadaną zdolność mimo utraty druku (${controller})`, () => {
+    const state = scene(controller, { stripped: true });
+    const imp = state.objects.get('imp'),
+      granted = registry.get('nefarious-imp').abilities[0];
+    state.objects.set('imp', Object.freeze({ ...imp, abilityGrants: Object.freeze([granted]) }));
+    castAndResolve(state);
+    const fired = impEvents(state);
+    assert.equal(fired.length, 1);
+    assert.equal(fired[0].objectId, 'imp');
+    assert.equal(fired[0].playerId, controller);
+    pass(state);
+    pass(state);
+    assert.equal(state.pendingScry?.playerId, controller);
+  });
