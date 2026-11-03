@@ -1710,6 +1710,33 @@ export function performActivation(state, ctx) {
     const chosen = state.objects.get(ctx.tapOtherCreatureId);
     if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny inny stwór do tapnięcia (koszt)');
   }
+  // Dodatkowy permanent typu (Heap Gate): wybór i walidacja PRZED
+  // tapnięciem źródła lub zapłatą innych kosztów. Przestarzały wybór nie
+  // może częściowo wykonać odrzuconej aktywacji (CR 601.2h).
+  let subtypePermanentToTap = null;
+  if (cost.tapUntappedSubtype) {
+    const sub = cost.tapUntappedSubtype;
+    subtypePermanentToTap = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.id !== objectId
+        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
+    });
+    const chosen = subtypePermanentToTap ? state.objects.get(subtypePermanentToTap) : null;
+    if (!chosen || chosen.zone !== 'battlefield' || chosen.controllerId !== playerId || chosen.id === objectId
+      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
+      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
+    }
+    // Ten permanent i źródło płacą już tapem — nie mogą zarazem
+    // finansować many. Używamy tych samych jednostek co spendMana, zanim
+    // którykolwiek koszt zostanie zapłacony.
+    const exclude = cost.tap ? [objectId, subtypePermanentToTap] : [subtypePermanentToTap];
+    const due = cost.manaX ? (xValue ?? 0) + (cost.mana ?? 0)
+      : effectiveAbilityManaCost(state, playerId, ability, object);
+    if (due > producibleMana(state, playerId, exclude, {}, colorReqs)
+      || (colorReqs.length && !canPayColoredCost(state, playerId, colorReqs, exclude))) {
+      throw new Error('Niewystarczająca mana na koszt po tapnięciu permanenta');
+    }
+  }
   // Crew/Saddle (CR 702.122a/702.171a): koszt „Tap any number of OTHER
   // untapped creatures you control with total power N or greater" —
   // walidacja wyboru PRZED jakąkolwiek mutacją (kreator załogi / bot
@@ -1815,24 +1842,8 @@ export function performActivation(state, ctx) {
   if (crewCreaturesToTap) {
     for (const crewId of crewCreaturesToTap) tapObject(state, crewId, playerId);
   }
-  // Batch 44 (Heap Gate): koszt „Tap an untapped Gate you control" —
-  // tapnięcie INNEGO nietapniętego permanentu z podtypem. Płacimy PRZED
-  // spendMana: auto-tap many nie może zjeść permanentu wskazanego do kosztu
-  // (tapnięty Gate nie zostanie użyty jako źródło many — klasa Z1/M180).
-  if (cost.tapUntappedSubtype) {
-    const sub = cost.tapUntappedSubtype;
-    const chosenId = ctx.tapPermanentCostId ?? state.zones.battlefield.find((candidateId) => {
-      const candidate = state.objects.get(candidateId);
-      return candidate?.controllerId === playerId && candidate.id !== objectId
-        && !candidate.tapped && (candidate.subtypes ?? []).includes(sub);
-    });
-    const chosen = chosenId ? state.objects.get(chosenId) : null;
-    if (!chosen || chosen.controllerId !== playerId || chosen.id === objectId
-      || chosen.tapped || !(chosen.subtypes ?? []).includes(sub)) {
-      throw new Error(`Brak nietapniętego permanentu ${sub} do kosztu tap`);
-    }
-    tapObject(state, chosenId, playerId);
-  }
+  // Id uzgodnione przed mutacjami — nie szukamy ponownie po tapnięciu źródła.
+  if (subtypePermanentToTap) tapObject(state, subtypePermanentToTap, playerId);
   const effManaSpend = effectiveAbilityManaCost(state, playerId, ability, object);
   // M115: {X}{B} — X PLUS stała część kosztu (Entrancing Lyre ma samo {X},
   // więc `cost.mana` jest tam zerowe i zachowanie się nie zmienia).
