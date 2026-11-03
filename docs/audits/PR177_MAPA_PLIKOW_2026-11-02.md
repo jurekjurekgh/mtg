@@ -209,3 +209,6 @@ A78: realny Scion i APNAP samodzielnej zdolności many, historyczny RED → ogra
 A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność — starsze błędy; wspólna konserwatywna bramka, RED→GREEN. APNAP wewnątrz płatności pozostaje otwarte.
 
 - **A80** `triggers.js` / `game-state.js` / `audyt-pr177-a80-rupture-manual.test.js`: generyczne pay-or-sacrifice zachowuje okno ręcznej many; niewystarczająca dopłata odrzucona atomowo. Scion + rzeczywisty Spire, replay/kreator; kolorowe echo ręczną maną nadal poza zakresem.
+
+- **A81** `triggers.js`, `game-state.js`, `audyt-pr177-a81-optional-manual.test.js`: okno generycznej opcjonalnej płatności ręcznej i atomowa walidacja wszystkich kosztów; A83 RED dla generycznej części kosztu kolorowego.
+- **A82** `table/mana-wizard.js`, `audyt-pr177-a82-wizard-colors.test.js`: wymagania kolorowych dopłat w kreatorze, prawdziwe Zoraline i echo.
