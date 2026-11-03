@@ -7,6 +7,8 @@ import {createGameState,addObject,execute,playerView} from '../src/engine/game-s
 import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
+import {replayFromState,verifyReplay} from '../src/engine/replay.js';
+import {stateFingerprint} from '../src/engine/fingerprint.js';
 import {activatableAbilities} from '../src/engine/permanents.js';
 import {getSourceForObject,manaAbilityProductionOf} from '../src/engine/mana-sources.js';
 import * as manaSources from '../src/engine/mana-sources.js';
@@ -29,3 +31,5 @@ test('A91: rzeczywisty router nie oferuje Gate kosztu do tapnięcia na manę',()
 
 test('A91: rzeczywisty Holdout rezerwuje tapniętego stwora',()=>{const {s}=scene('p1');put(s,'hold','holdout-settlement','p1');put(s,'ward','warden-of-geometries','p1');s.objects.set('ward',Object.freeze({...s.objects.get('ward'),summoningSickness:false}));const cmd=playerView(s,'p1').legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='hold'&&c.abilityIndex===1&&c.tapCreatureId==='ward');assert.ok(cmd);const excluded=asIds(ctxFor(s,'p1').selfTapExclusionFor(cmd));assert.ok(excluded.includes('hold'));assert.ok(excluded.includes('ward'));});
 test('A91: rzeczywista Station rezerwuje wybranego innego stwora',()=>{const {s}=scene('p1');put(s,'ship','warmaker-gunship','p1');put(s,'ward','warden-of-geometries','p1');s.objects.set('ward',Object.freeze({...s.objects.get('ward'),summoningSickness:false}));const cmd=playerView(s,'p1').legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='ship'&&c.tapOtherCreatureId==='ward');assert.ok(cmd);const excluded=asIds(ctxFor(s,'p1').selfTapExclusionFor(cmd));assert.ok(excluded.includes('ward'));assert.ok(!excluded.includes('ship'));});
+
+test('A91: replay tapnięcia lasu i kosztu Heap Gate',()=>{const {s,cmd}=scene('p1');assert.ok(execute(s,{type:'tap_for_mana',playerId:'p1',objectId:'forest'}).ok);assert.ok(execute(s,cmd).ok);for(let i=0;i<2;i++)assert.ok(execute(s,{type:'pass_priority',playerId:s.turn.priorityPlayerId}).ok);const record=replayFromState(s),r=verifyReplay({...record,commands:record.commands.slice(-4)},()=>scene('p1').s,execute);assert.ok(r.deterministic);assert.ok(r.results.every(x=>x.ok));assert.equal(stateFingerprint(r.state),stateFingerprint(s));});

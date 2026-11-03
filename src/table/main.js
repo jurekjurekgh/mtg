@@ -2829,6 +2829,12 @@ function bootstrapTable() {
         const ability = (source ? activatableAbilities(session.state, source)?.[pending.abilityIndex] : null)
           ?? source?.abilities?.[pending.abilityIndex];
         if (ability?.cost?.tap) excluded.add(pending.objectId);
+        // Wskazane obiekty są kosztami tapnięcia, nie celami efektu. Muszą
+        // pozostać nietapnięte aż do wykonania aktywacji, także w rodzicu
+        // zagnieżdżonego kreatora (Heap Gate / Holdout / Station).
+        if (ability?.cost?.tapUntappedSubtype && pending.tapPermanentCostId) excluded.add(pending.tapPermanentCostId);
+        if (ability?.cost?.tapCreature && pending.tapCreatureId) excluded.add(pending.tapCreatureId);
+        if (ability?.cost?.tapOtherCreature && pending.tapOtherCreatureId) excluded.add(pending.tapOtherCreatureId);
       }
       for (const payment of pending.convokePayments ?? []) if (payment?.creatureId) excluded.add(payment.creatureId);
       for (const payment of pending.improvisePayments ?? []) if (payment?.artifactId) excluded.add(payment.artifactId);
