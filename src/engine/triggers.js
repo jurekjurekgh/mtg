@@ -344,7 +344,7 @@ function canPayTrigger(state, controllerId, trigger, source = null, allowManualM
   // (A: przed strażnikiem (czyste) — joint (iv) bramki źródeł kosztowych.)
   const payReqs = (trigger?.payColors ?? []).map((color) => [color]);
   if ((trigger?.payMana ?? 0) > producibleMana(state, controllerId, null, {}, payReqs)
-    && !(allowManualMana && payReqs.length === 0 && hasPotentialManaAbility(state, controllerId))) return false;
+    && !(allowManualMana && hasPotentialManaAbility(state, controllerId))) return false;
   if (payReqs.length > 0 && !canPayColoredCost(state, controllerId, payReqs)) return false;
   // Płatność życia może zejść do 0, ale nie poniżej (CR 118.4).
   if ((trigger?.payLife ?? 0) > player.life) return false;
@@ -2049,9 +2049,11 @@ function queuePayOrSacrifice(state, source, amount, events, triggerEvent = 'echo
   // płatność pobiera pipy (patrz resolve_pay_or_sacrifice → pay_mana).
   const canPay = (producibleMana(state, controllerId, null, {}, [colors]) >= amount
     && (colors.length === 0 || canPayColoredCost(state, controllerId, [colors])))
-    // Koszt wyłącznie generyczny: tak jak Ward i counter-unless-pay, zachowaj
-    // okno przed ręczną aktywacją źródła. Kolorowe echo nie jest rozszerzone.
-    || (colors.length === 0 && hasPotentialManaAbility(state, controllerId));
+    // Ręczne źródło może uzupełnić także generyczną część kolorowego echa.
+    // Pipy muszą już być osiągalne przez zwykłe źródła; nie zakładamy, że
+    // bezbarwny Scion może pokryć kolor. Nie aktywujemy źródła automatycznie.
+    || (hasPotentialManaAbility(state, controllerId)
+      && (colors.length === 0 || canPayColoredCost(state, controllerId, colors.map(color => [color]))));
   if (!canPay) {
     const before = state.events.length;
     applyEffect(state, { type: 'sacrifice_permanent' }, source, []);
