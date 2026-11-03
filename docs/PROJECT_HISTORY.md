@@ -18746,3 +18746,5 @@ Audyt #177 A77: ograniczony APNAP po kosztach niemanowej aktywacji Elk/Dreadmaw,
 Audyt #177 A78: ograniczony APNAP samodzielnej zdolności many Sciona, fast 9650/9650, pokrewne 95/95, slow 268/268. Płatność Ward i pozostałe APNAP otwarte.
 
 Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; historyczne defekty; fast 9660/9660 przed dodatkowym testem Justiciara, slow 268/268.
+
+- 2026-11-03 — A80: ręczna mana przy Rupture Spire i atomowa walidacja pay-or-sacrifice; 11 testów, 4 RED baza/#177, fast 9671/9671 przed ostatnim testem, slow w toku.

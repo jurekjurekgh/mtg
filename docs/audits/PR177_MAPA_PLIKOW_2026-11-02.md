@@ -207,3 +207,5 @@ A77: koszty poświęcenia aktywowanych niemanowych Elk/Dreadmaw, 8 historycznych
 A78: realny Scion i APNAP samodzielnej zdolności many, historyczny RED → ograniczony GREEN; wewnątrz płatności nadal poza zakresem. Osobne podejrzenie przedwczesnej kontry Ward z ręczną maną do weryfikacji.
 
 A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność — starsze błędy; wspólna konserwatywna bramka, RED→GREEN. APNAP wewnątrz płatności pozostaje otwarte.
+
+- **A80** `triggers.js` / `game-state.js` / `audyt-pr177-a80-rupture-manual.test.js`: generyczne pay-or-sacrifice zachowuje okno ręcznej many; niewystarczająca dopłata odrzucona atomowo. Scion + rzeczywisty Spire, replay/kreator; kolorowe echo ręczną maną nadal poza zakresem.
