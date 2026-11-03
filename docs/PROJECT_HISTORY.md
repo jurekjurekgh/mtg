@@ -18778,3 +18778,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A97 powiązane 630 pass + 8 skip i build 77/5673,2 kB; fast/slow w toku.
 
 - 2026-11-03 — A98 utrwala 8 dodatkowych RED otwartego APNAP przy Spellbomb w flagowanej kwarantannie; bez zmian produkcji.
+
+- 2026-11-03 — A97 slow 268/268 i fast 9801 + 8 skip (przed testem A98).
