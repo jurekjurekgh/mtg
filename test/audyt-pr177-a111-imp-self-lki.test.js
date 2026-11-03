@@ -239,3 +239,18 @@ for (const controller of ['p1', 'p2'])
     pass(state);
     assert.equal(state.pendingScry?.playerId, controller);
   });
+
+// Obrażenia + SBA z finality: odejście tak, dies i descended nie.
+for (const controller of ['p1', 'p2'])
+  test(`A111: finality po Shock wyzwala odejście, nie dies (${controller})`, () => {
+    const state = scene(controller, { second: true, stripped: true, finality: true });
+    put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
+    castAndResolve(state);
+    assert.equal(impEvents(state).filter((e) => e.objectId === 'second').length, 1);
+    assert.equal(
+      state.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'selhoff-occultist')
+        .length,
+      0,
+    );
+    assert.equal(Boolean(state.descendedThisTurn[controller]), false);
+  });
