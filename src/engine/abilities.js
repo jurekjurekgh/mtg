@@ -854,7 +854,8 @@ export function legalActivatedAbilities(state, playerId) {
       if (ability.cost?.tapCreature) {
         const candidates = state.zones.battlefield.filter((objectId) => {
           const candidate = state.objects.get(objectId);
-          return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+          return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped
+            && (!ability.cost?.tap || candidate.id !== id);
         });
         if (candidates.length === 0) continue;
         if ((ability.cost?.mana ?? 0) > mana) continue;
@@ -1686,15 +1687,19 @@ export function performActivation(state, ctx) {
   // Sprawdzamy dodatkowy koszt przed jakąkolwiek mutacją (CR 601.2h):
   // nieudana aktywacja nie może zostawić źródła tapniętego.
   const creatureToTap = cost.tapCreature
-    ? (ctx.tapCreatureId ?? state.zones.battlefield.find((objectId) => {
-      const candidate = state.objects.get(objectId);
-      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped;
+    ? (ctx.tapCreatureId ?? state.zones.battlefield.find((candidateId) => {
+      const candidate = state.objects.get(candidateId);
+      return candidate?.controllerId === playerId && candidate.kind === 'creature' && !candidate.tapped
+        && (!cost.tap || candidate.id !== objectId);
     }))
     : null;
   if (cost.tapCreature && !creatureToTap) throw new Error('Brak nietapniętego stwora do kosztu tap');
   if (cost.tapCreature && ctx.tapCreatureId) {
     const chosen = state.objects.get(ctx.tapCreatureId);
-    if (!chosen || chosen.controllerId !== playerId || chosen.kind !== 'creature' || chosen.tapped) throw new Error('Nielegalny stwór do tapnięcia (koszt)');
+    if (!chosen || chosen.zone !== 'battlefield' || chosen.controllerId !== playerId
+      || chosen.kind !== 'creature' || chosen.tapped || (cost.tap && chosen.id === objectId)) {
+      throw new Error('Nielegalny stwór do tapnięcia (koszt)');
+    }
   }
   // Koszt „Tap ANOTHER creature you control" (Station): tapowany stwór nie
   // może być źródłem; jego id trafia do efektu station_counters jako cel.
