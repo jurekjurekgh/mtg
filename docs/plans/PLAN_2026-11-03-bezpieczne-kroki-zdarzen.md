@@ -25,12 +25,14 @@ Słownik używany niżej:
 
 ## Etap 1 — zabezpieczyć zachowania, które już działają
 
-- [ ] Dodać aktywne testy regresji bez zmiany produkcji: kilka własnych permanentów opuszczających pole bitwy razem daje jeden wyzwalacz na obserwatora; same permanenty przeciwnika nie dają żadnego; tokeny są liczone; dwie kopie obserwatora wyzwalają się osobno.
-- [ ] Uzupełnić kontrolę priorytetu, decyzji gracza i odtworzenia przebiegu (replay) tam, gdzie obecne testy mierzą tylko skutek końcowy.
-- [ ] Zachować i uruchomić istniejące testy `real-cards-batch8`, grupowania zdolności, bestow, madness i kreatora many. Nie przepisywać ich asercji pod planowaną zmianę.
-- [ ] Każdy nowy test ma wykonywać rzeczywiste komendy silnika; syntetyczne ustawienie planszy musi być jawne i ograniczone do przygotowania scenariusza.
+- [x] Dodać aktywne testy regresji bez zmiany produkcji: kilka własnych permanentów opuszczających pole bitwy razem daje jeden wyzwalacz na obserwatora; same permanenty przeciwnika nie dają żadnego; tokeny są liczone; dwie kopie obserwatora wyzwalają się osobno.
+- [x] Uzupełnić kontrolę priorytetu, decyzji gracza i odtworzenia przebiegu (replay) tam, gdzie obecne testy mierzą tylko skutek końcowy.
+- [x] Zachować i uruchomić istniejące testy `real-cards-batch8`, grupowania zdolności, bestow, madness i kreatora many. Nie przepisywać ich asercji pod planowaną zmianę.
+- [x] Każdy nowy test ma wykonywać rzeczywiste komendy silnika; syntetyczne ustawienie planszy musi być jawne i ograniczone do przygotowania scenariusza.
 
 **Ukończenie:** nowe testy GREEN na niezmienionej produkcji; pełny `npm test` + `npm run build`; osobny commit i natychmiast push. Jeśli test ujawni błąd, nie oznaczać go jako poprawnego zachowania — wydzielić reprodukcję do etapu 2.
+
+**Wynik etapu 1:** `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js`, 7/7 GREEN bez zmiany produkcji. Pełny fast **9836 pass / 114 skip / 0 fail**, build **77 modułów / 5673,7 kB**. Dwa początkowe błędy były błędami przygotowania testu (zbyt mała pula many i mutacja tokenów poza zapisem replay), nie silnika; poprawiono setup, nie asercje regułowe.
 
 ## Etap 2 — jeden potwierdzony błąd własnego odejścia
 

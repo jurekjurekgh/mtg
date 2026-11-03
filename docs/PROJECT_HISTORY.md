@@ -25,6 +25,7 @@
 - Po wyjaśnieniu właścicielowi kolejności automatycznych kroków przyjęto zlecenie dalszej pracy bez regresji działających kart. Przed zmianami zamrożono `ad4bf3b`: `npm run test:all` **10 097 pass / 114 skip / 0 fail** (489,2 s), build **77 modułów / 5673,7 kB**.
 - Roadmapa `docs/plans/PLAN_2026-11-03-bezpieczne-kroki-zdarzen.md` rozdziela testy chroniące, lokalny potwierdzony fix, granice zdarzeń i wspólną kolejność. Każdy krok wymaga RED→GREEN tam, gdzie naprawia błąd, mutacji, pełnego fast + build oraz osobnego push. Zmiana trwałego modelu stanu wymaga ADR przed kodowaniem.
 - Audyt pozostaje częściowy: 114 otwartych wierszy mapy i osobno 114 otwartych wymuszonych RED. Nie wdrożono eksperymentów `NIE_WDRAZAC`, nie dodano kart, nie uruchomiono B0.
+- Etap 1: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js` dodaje 7 aktywnych testów chroniących (jednoczesne odejścia, przeciwnik, tokeny, dwie kopie, przejęta kontrola, priorytet, replay). Bez zmiany produkcji; fast **9836 pass / 114 skip / 0 fail**, build 77 modułów / 5673,7 kB.
 
 
 ## 2026-11-03 — audyt PR #178, B1 bestow i jawny tryb RED (PR #179)

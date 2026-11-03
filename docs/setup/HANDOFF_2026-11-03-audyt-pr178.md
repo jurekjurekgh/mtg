@@ -11,6 +11,7 @@
 ## Wyniki
 
 - Przed kontynuacją architektury, zamrożone `ad4bf3b`, `npm run test:all`: **10 097 pass / 114 skip / 0 fail**, 10 211 testów, 489,2 s.
+- Po etapie 1 (7 nowych testów chroniących, bez zmiany produkcji): fast **9836 pass / 114 skip / 0 fail**, build **77 modułów / 5673,7 kB**.
 - `npm run build`: **77 modułów / 5673,7 kB**.
 - Ostatni wcześniejszy szybki pomiar: 9829 pass / 114 skip / 0 fail; slow: 268 pass / 0 fail / 0 skip.
 - `npm run test:audit`: **148 testów / 34 pass / 114 fail / 0 skip** — oczekiwane RED, nie zielona brama.
@@ -28,8 +29,8 @@
 
 ## Następne kroki
 
-1. Wypchnąć roadmapę jako osobny commit przed kodowaniem, po pełnym fast + build.
-2. Dodać aktywne testy chroniące już poprawne grupowanie: własne jednoczesne odejścia, brak reakcji na przeciwnika, tokeny, dwie kopie obserwatora, priorytet i replay. Bez zmiany produkcji.
+1. Roadmapa wypchnięta jako `3fe0720` przed kodowaniem.
+2. Etap 1 wykonany: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js`, 7/7 GREEN bez zmiany produkcji; commit/push po pełnym fast + build.
 3. Zbadać jeden kandydat: własne odejście źródła zbiorowego wyzwalacza i ostatni znany stan sprzed ruchu. Najpierw rzeczywisty RED, potem najmniejsza naprawa, mutacja i pełna brama.
 4. Granice zdarzeń, wspólną kolejność wielu graczy i automatyczne sprawdzenia wdrażać dopiero po osobnych dowodach. Jeżeli potrzeba nowego trwałego modelu stanu, przygotować ADR przed kodowaniem.
 5. Nie zamykać pokrewnych A110–A113 na podstawie jednego wariantu. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
