@@ -18782,3 +18782,9 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A97 slow 268/268 i fast 9801 + 8 skip (przed testem A98).
 
 - 2026-11-03 — A98 fast 9801 pass + 16 skip, powiązane 630 pass + 16 skip; A84/A98 pozostają wymuszonym RED.
+
+- 2026-11-03 — A99 prototyp odroczenia wyłącznie w izolacji, A100/A101/A102 utrwalają 10 dodatkowych RED (Imp/Forebear/Guide, refleks Zoraline, dobranie + Coatl); 26 flagowanych skip łącznie. Eksperymentalna łata zachowana z zakazem wdrożenia; brak zmian produkcji i brak ogólnego fixu APNAP.
+
+- 2026-11-03 — A103 Jolrael: 2 RED również w eksperymencie A99, bo bezpośredni `queueTriggerToStack` omija odroczenie; łącznie 28 pominięć w produkcji.
+
+- 2026-11-03 — A103 fast 9801 pass/28 skip, slow 268/268; powiązane 684 pass/26 skip przed A103; 28 wymuszonych RED.

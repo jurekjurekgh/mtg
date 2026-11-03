@@ -240,3 +240,7 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A97** `engine/game-state.js` + `audyt-pr177-a97-echo-two-scions.test.js`: opłacenie echo po triggerze z pierwszego Sciona; syntetyczne wejście do upkeep, brak poprawki A84.
 
 - **A98 kwarantanna** `test/audyt-pr177-a98-spellbomb-apnap.test.js`: jawny dowód A84 w dopłacie Spellbomb, 8 wymuszonych RED/8 domyślnych skip.
+
+- **A99 eksperyment nieprodukcyjny** `audits/experiments/README_A99.md` i `A99_NIE_WDRAZAC.patch`; **A100–A102 RED/skip** `test/audyt-pr177-a10{0,1,2}-*.test.js`: inne triggery śmierci, refleks po dopłacie, dobranie po dopłacie. Dotyczy architektury checkpointów `engine/game-state.js`, `engine/triggers.js`, `engine/fingerprint.js`, nie gotowa poprawka.
+
+- **A103 RED/skip** `test/audyt-pr177-a103-second-draw-apnap.test.js`: Jolrael, bezpośrednia ścieżka `you_draw_second_card_each_turn` w `engine/triggers.js` omija eksperyment `tryFire`.
