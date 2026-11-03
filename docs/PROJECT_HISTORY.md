@@ -18796,3 +18796,7 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A109: 26 kwarantannowych RED, w tym historyczny przypadek auto-Ward (dwa Treasure, Clawing Torment i Imp 1 zamiast 3). Izolowany eksperyment A108 2 GREEN/A109 24 GREEN i 2 RED, plus brak opisu zdarzenia; zachowany z zakazem wdrażania. Produkcja niezmieniona.
 
 - 2026-11-03 — po A109 fast produkcji 9809 pass/70 skip, wybrany podzbiór załączników/płatności 383 pass/62 skip, wymuszone 70 RED/8 kontroli GREEN. Produkcja bez zmian; slow 268/268 z wcześniejszej kontynuacji.
+
+- 2026-11-03 — A110: 10 RED/6 kontroli (także baza/#177); dwa auto-Treasure vs jednoczesne zniszczenie, utrata LKI Imp w Severed Strands i po kolejnych trybach Austere. Eksperyment A110 12/16, z A109 38/42; oba niewdrożone. Korekta A109: `addObject` ignorował `isToken`, zastąpiony rzeczywistymi tokenami; pomiary powtórzone bez zmiany wyniku.
+
+- 2026-11-03 — A110 fast produkcji 9815 pass/80 skip, powiązane mana/triggery 408 pass/72 skip; wymuszone A84/A98/A100–A110 80 RED/14 GREEN kontroli. Slow 268/268 z wcześniejszej kontynuacji; brak zmian produkcji.

@@ -1,0 +1,54 @@
+diff --git a/src/engine/resources.js b/src/engine/resources.js
+index d7b104b..48bfbe5 100644
+--- a/src/engine/resources.js
++++ b/src/engine/resources.js
+@@ -1533,6 +1533,7 @@ export function tapTreasureForMana(state, playerId, objectId, { grantColor = nul
+   const moved = moveObjectDirectly(state, objectId, toZone, destId);
+   state.events.push(event('permanent_sacrificed', {
+     fromId: objectId, objectId: destId, playerId, object: moved, cardId: moved.cardId, toZone,
++    separateAutoManaActivation: true,
+   }));
+   const colors = grantColor ? [grantColor] : ability.colors;
+   const mana = addMana(state, playerId, ability.amount, { colors, fromTreasure: true });
+diff --git a/src/engine/triggers.js b/src/engine/triggers.js
+index 49d572f..1b9c36e 100644
+--- a/src/engine/triggers.js
++++ b/src/engine/triggers.js
+@@ -2690,6 +2690,7 @@ function processTriggersScan(state, recentEvents) {
+   // trigger „one or more permanents you control leave the battlefield"
+   // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
+   const leftBattlefield = new Set();
++  const separateManaDepartures = [];
+   // GRUPOWANIE zbiorczych wyzwalaczy („Whenever one or more …") — patrz
+   // `mayFireGrouped` poniżej. Zestaw kluczy jest JEDEN dla wszystkich ścieżek,
+   // bo dawniej każda miała własny (osobny dedup obrażeń i osobny dedup
+@@ -2988,7 +2989,10 @@ function processTriggersScan(state, recentEvents) {
+       // przejęty permanent, który opuszcza pole bitwy, liczy się kontrolerowi
+       // z chwili odejścia (przed poprawką trafiał do właściciela).
+       const goneControllerId = eventControllerAtDeath(ev, gone);
+-      if (goneControllerId) leftBattlefield.add(goneControllerId);
++      if (goneControllerId) {
++        if (ev.separateAutoManaActivation) separateManaDepartures.push(goneControllerId);
++        else leftBattlefield.add(goneControllerId);
++      }
+       // „When this creature leaves the battlefield" (Fear of Abduction —
+       // powrót wygnanych kart): trigger własny obiektu na ODEJŚCIE z pola bitwy
+       // (dowolna strefa docelowa: ręka, exile, grób — CR 603.6c). Uwaga:
+@@ -4436,13 +4440,14 @@ function processTriggersScan(state, recentEvents) {
+     }
+     if (scanned >= MAX_TRIGGER_EVENTS_SCANNED) break;
+     const freshControllers = [...leftBattlefield].filter((controllerId) => !aggregatedControllers.has(controllerId));
+-    if (freshControllers.length === 0 && idx >= queue.length) break;
++    const separateControllers = separateManaDepartures.splice(0);
++    if (freshControllers.length === 0 && separateControllers.length === 0 && idx >= queue.length) break;
+     // „Whenever one or more permanents you control leave the battlefield"
+     // (Nefarious Imp, CR 603.2): RAZ na kontrolera na komendę, także po
+     // odejściach spowodowanych przez same triggery; zdarzenia agregatu
+     // wracają do kolejki i też są skanowane.
+-    for (const controllerId of freshControllers) {
+-      aggregatedControllers.add(controllerId);
++    for (const controllerId of [...freshControllers, ...separateControllers]) {
++      if (freshControllers.includes(controllerId)) aggregatedControllers.add(controllerId);
+       const beforeAggregate = events.length;
+       for (const source of state.objects.values()) {
+         if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
