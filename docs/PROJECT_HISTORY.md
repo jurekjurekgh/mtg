@@ -18741,4 +18741,4 @@ Audyt #177 A75: Polluted Dead i Circle of the Land Druid — starszy błąd APNA
 
 Audyt #177 A76: ograniczony APNAP niezawieszonej walki, także first strike; fast 9629/9629, slow 268/268, build 77/5656,9 kB. Pełne APNAP i audyt nadal otwarte.
 
-Audyt #177 A77: ograniczony APNAP po kosztach niemanowej aktywacji Elk/Dreadmaw, fast 9643/9643, pokrewne 110/110; slow w toku, audyt trwa.
+Audyt #177 A77: ograniczony APNAP po kosztach niemanowej aktywacji Elk/Dreadmaw, fast 9643/9643, pokrewne 110/110, slow 268/268; audyt trwa.
