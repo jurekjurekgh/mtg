@@ -679,7 +679,7 @@ export function countPaymentVariants(sources, poolMana, totalNeeded, requirement
  */
 export function shouldOpenManaWizard({
   sources, poolMana, totalNeeded, requirements, poolUnits = [],
-  delveCandidates = [], maxDelve = 0, autoPayableMana = null,
+  delveCandidates = [], maxDelve = 0, autoPayableMana = null, autoPayableColors = null,
 }) {
   // C/C2 (uwaga z gry 2026-10-11): karta grobu jest RÓWNIEŻ wyborem płatności,
   // ale nie źródłem many — pokrywa wyłącznie {1} części generycznej (CR
@@ -703,7 +703,8 @@ export function shouldOpenManaWizard({
   // silnik odrzuci, bo many jeszcze nie wyprodukowano. Kreator jest wtedy
   // jedyną drogą zapłaty, a poświęcenie zasobu jest decyzją gracza, nie
   // automatu — otwieramy mimo jednego wariantu.
-  return variants >= 1 && autoPayableMana != null && autoPayableMana < totalNeeded;
+  return variants >= 1 && ((autoPayableMana != null && autoPayableMana < totalNeeded)
+    || autoPayableColors === false);
 }
 
 /**

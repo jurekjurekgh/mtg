@@ -37,7 +37,7 @@ import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWi
   wizardSourceName, finishWizardPayment,
 } from './mana-wizard.js';
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
-import { expandManaPool, producibleMana } from '../engine/resources.js';
+import { expandManaPool, producibleMana, canPayColoredCost } from '../engine/resources.js';
 import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
 import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
@@ -3004,12 +3004,16 @@ function bootstrapTable() {
     const autoPayableMana = session.state
       ? producibleMana(session.state, HUMAN_ID, excludedSources,
         cmd.bestow ? { castingSpell: true, artifactSpell: false } : {}, []) : null;
+    const autoPayableColors = session.state && descriptor.requirements.length
+      ? canPayColoredCost(session.state, HUMAN_ID, descriptor.requirements, excludedSources,
+        restrictedBlocked ? { castingSpell: true, artifactSpell: false } : {})
+      : null;
     const normallyOpens = shouldOpenManaWizard({
       sources, poolMana: pool, totalNeeded: descriptor.totalNeeded,
       requirements: descriptor.requirements, poolUnits,
       delveCandidates: descriptor.delveCandidates,
       maxDelve: descriptor.maxDelve,
-      autoPayableMana,
+      autoPayableMana, autoPayableColors,
     });
     // Auto-tap silnika nie zna rezerwacji wyższych kreatorów. Nawet jeden
     // profil (np. kilka identycznych ożywionych Wysp) może wybrać Wyspę

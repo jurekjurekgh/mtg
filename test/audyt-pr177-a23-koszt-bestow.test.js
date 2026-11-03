@@ -115,6 +115,7 @@ test('A23: kreator kosztu bestow nie pokazuje Powerstone i nie stosuje rabatu ar
     MANA_COSTS: {}, parseManaCost: () => null, reduceAlternativeCost, bestowedSpellCharacteristics,
     paymentDescriptorOf: (_c, _v, opts) => { capture.cost = opts.alternativeCost; return { cardId: 'dryad', totalNeeded: opts.alternativeCost, requirements: [['G']] }; },
     producibleMana: (_s, _p, _e, purpose) => { capture.purpose = purpose; return 1; },
+    canPayColoredCost: (_s, _p, _r, _e, purpose) => { capture.colorPurpose = purpose; return true; },
     expandManaPool, manaSourcesForPlayer: () => [{ id: 'pw', spendOnly: 'artifact' }, { id: 'forest' }],
     selfTapExclusionFor: () => null,
     shouldOpenManaWizard: (args) => { capture.args = args; return true; },
@@ -126,4 +127,5 @@ test('A23: kreator kosztu bestow nie pokazuje Powerstone i nie stosuje rabatu ar
   assert.equal(capture.args.sources.some(src => src.id === 'pw'), false);
   assert.equal(capture.args.poolUnits.length, 1);
   assert.equal(capture.purpose.castingSpell, true); assert.equal(capture.purpose.artifactSpell, false);
+  assert.equal(capture.colorPurpose.castingSpell, true); assert.equal(capture.colorPurpose.artifactSpell, false);
 });
