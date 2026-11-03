@@ -232,3 +232,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A91** `table/main.js`, `audyt-pr177-a91-gate-cost-reservation.test.js`: rezerwacja obiektów tapnięcia dla kosztów aktywacji, Heap Gate/Station/Holdout. **A92 RED** `engine/abilities.js`, `audyt-pr177-a92-stale-gate-atomicity.test.js`: przestarzały wybrany Gate powoduje częściową mutację.
 
 - **A92–A93 naprawione** `engine/abilities.js`: przedwalidacja bramy/kosztu many, rozdzielenie kosztu własnego `{T}` i `tapCreature`; testy `audyt-pr177-a9{2,3}*.test.js`, ograniczone kontrole replay i mutacyjne.
+
+- **A94** `engine/game-state.js`, `audyt-pr177-a94-optional-apnap.test.js`: zdolności many podczas opcjonalnej dopłaty mimo oczekującego celu triggera; APNAP A84 nadal otwarte.

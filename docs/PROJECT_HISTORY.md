@@ -18768,3 +18768,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A90 fast 9738 + 8 skip (A84), slow 268/268; A91 rezerwacja kosztu Heap Gate, 8 GREEN; A92 atomowość odrzuconej komendy w RED.
 
 - 2026-11-03 — A91 fast 9746 + 8 skip, slow 268; A92 `d7637e6`, A93 `56f0a74` ograniczone poprawki walidacji kosztów Heap Gate i ożywionego Holdouta, powiązane 403 pass + 8 skip, build 77/5672,7 kB, fast/slow w toku.
+
+- 2026-11-03 — A92/A93 fast 9769 + 8 skip, slow 268/268; A94 `5154403` dopuszcza manę po triggerze w dopłacie Spellbomb, A84 nadal otwarte.
