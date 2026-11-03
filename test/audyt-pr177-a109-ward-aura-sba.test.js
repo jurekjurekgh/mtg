@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createGameState, addObject, execute, playerView } from '../src/engine/game-state.js';
 import { createCardRegistry } from '../src/cards/card-data.js';
-import { createCardDeck, gameObjectDataOf } from '../src/cards/materialize.js';
+import { createCardDeck } from '../src/cards/materialize.js';
+import { createBattlefieldToken } from '../src/engine/tokens.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { addMana } from '../src/engine/resources.js';
 import { replayFromState, verifyReplay } from '../src/engine/replay.js';
@@ -148,19 +149,23 @@ function scene(
     pass(s);
     assert.equal(s.objects.get('torch').attachedTo, tokens[0].id);
   }
+  const treasures = [];
   if (treasureAura) {
-    // Treasure'y umieszczone w setupie; Clawing Torment rzucono i rozstrzygnięto.
-    for (const id of ['treasure1', 'treasure2'])
-      addObject(s, {
-        ...gameObjectDataOf(reg.get('token_treasure')),
-        id,
-        instanceId: `i-${id}`,
-        cardId: 'token_treasure',
-        ownerId: payer,
-        controllerId: payer,
-        zone: 'battlefield',
-        isToken: true,
-      });
+    // Rzeczywiste tokeny utworzone helperem w setupie; Clawing Torment rzucono.
+    const def = reg.get('token_treasure');
+    for (let i = 0; i < 2; i++) {
+      treasures.push(
+        createBattlefieldToken(s, payer, {
+          cardId: def.id,
+          name: def.name,
+          kind: 'artifact',
+          types: def.types,
+          subtypes: def.subtypes,
+          abilities: def.abilities,
+          colors: def.colors,
+        }),
+      );
+    }
     put(s, 'torment', 'clawing-torment', 'hand', payer);
     addMana(s, payer, 1, { colors: ['B'] });
     act(
@@ -169,14 +174,14 @@ function scene(
         (c) =>
           c.type === 'cast_permanent' &&
           c.objectId === 'torment' &&
-          c.targets?.includes('treasure1'),
+          c.targets?.includes(treasures[0].id),
       ),
     );
     pass(s);
     pass(s);
     assert.ok(
       [...s.objects.values()].some(
-        (o) => o.cardId === 'clawing-torment' && o.attachedTo === 'treasure1',
+        (o) => o.cardId === 'clawing-torment' && o.attachedTo === treasures[0].id,
       ),
     );
   }
@@ -235,7 +240,7 @@ function scene(
   pass(s);
   pass(s);
   assert.ok(s.pendingWardPay);
-  return { s, tokens, payer, active };
+  return { s, tokens, treasures, payer, active };
 }
 
 // Karty i akcje realne; pule/tura/priorytet ustawiono w setupie.
@@ -508,7 +513,7 @@ for (const payer of ['p1', 'p2'])
 // osobno zobaczyć oba koszty i późniejsze SBA aury, nie jedną grupę komendy.
 for (const payer of ['p1', 'p2'])
   audit(`A109: auto-Ward, dwa Treasure i oddzielne SBA aury (${payer})`, () => {
-    const { s } = scene(payer, payer, { imp: true, treasureAura: true });
+    const { s, treasures } = scene(payer, payer, { imp: true, treasureAura: true });
     const fired = () =>
       s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp').length;
     const aura = [...s.objects.values()].find(
@@ -524,7 +529,7 @@ for (const payer of ['p1', 'p2'])
       s.events
         .filter((e) => e.type === 'permanent_sacrificed' && e.cardId === 'token_treasure')
         .map((e) => e.fromId),
-      ['treasure1', 'treasure2'],
+      treasures.map((t) => t.id),
     );
     assert.equal(
       [...s.objects.values()].find((o) => o.cardId === 'clawing-torment' && o.kind !== 'trigger')
