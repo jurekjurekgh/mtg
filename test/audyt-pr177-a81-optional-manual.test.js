@@ -25,3 +25,14 @@ for(const payer of ['p1','p2'])test(`A81: niezapłacalna spreparowana komenda ni
 });
 test('A81: brak źródła pomija opcjonalną dopłatę',()=>{const {s}=scene('p1',{withScion:false});assert.equal(s.pendingOptionalPay,null);assert.equal(s.objects.get('pangolin')?.counters?.['+1/+1']??0,0);});
 test('A81: odmowa nie poświęca Sciona ani nie daje licznika',()=>{const {s,tokenId}=scene('p1',{reserve:1});assert.ok(s.pendingOptionalPay);act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&!c.pay));assert.ok(s.objects.has(tokenId));assert.equal(s.objects.get('pangolin')?.counters?.['+1/+1']??0,0);});
+// Źródłem jest realna rzucona Zoraline; wyłącznie późniejszy ubytek zasobów
+// symuluje przestarzałe/złośliwe żądanie po otwarciu decyzji.
+function zora(){
+ const s=createGameState({seed:17782,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';put(s,'grave','highland-game','graveyard','p1');put(s,'zora','zoraline','hand','p1');addMana(s,'p1',5,{colors:['W','B','U']});act(s,view(s).legalCommands.find(c=>c.type==='cast_permanent'&&c.objectId==='zora'));pass(s);pass(s);pass(s);pass(s);assert.ok(s.pendingOptionalPay);return s;
+}
+test('A81: Zoraline bez jednego koloru nie pobiera many ani 2 życia',()=>{
+ const s=zora();spendMana(s,'p1',2,[]);addMana(s,'p1',1,{colors:['W']});addMana(s,'p1',1,{colors:[]});const before=stateFingerprint(s);let r;assert.doesNotThrow(()=>{r=execute(s,{type:'resolve_optional_pay_choice',playerId:'p1',pay:true});});assert.equal(r.ok,false);assert.equal(stateFingerprint(s),before);assert.equal(s.players[0].life,20);
+});
+test('A81: Zoraline bez życia nie pobiera many ani nie usuwa decyzji',()=>{
+ const s=zora();s.players[0].life=1;const before=stateFingerprint(s);let r;assert.doesNotThrow(()=>{r=execute(s,{type:'resolve_optional_pay_choice',playerId:'p1',pay:true});});assert.equal(r.ok,false);assert.equal(stateFingerprint(s),before);
+});
