@@ -6,6 +6,8 @@ import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
 import {addMana,spendMana} from '../src/engine/resources.js';
+import {processTriggers} from '../src/engine/triggers.js';
+import {removeCounter} from '../src/engine/counters.js';
 import {stateFingerprint} from '../src/engine/fingerprint.js';
 const reg=createCardRegistry();
 function put(s,id,card,zone,player){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:player,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:player});}
@@ -35,4 +37,10 @@ test('A81: Zoraline bez jednego koloru nie pobiera many ani 2 życia',()=>{
 });
 test('A81: Zoraline bez życia nie pobiera many ani nie usuwa decyzji',()=>{
  const s=zora();s.players[0].life=1;const before=stateFingerprint(s);let r;assert.doesNotThrow(()=>{r=execute(s,{type:'resolve_optional_pay_choice',playerId:'p1',pay:true});});assert.equal(r.ok,false);assert.equal(stateFingerprint(s),before);
+});
+
+// Rzeczywista karta, zdarzenie walki zainicjowane syntetycznie; znacznik
+// usuwamy po otwarciu decyzji, symulując przestarzałą komendę.
+test('A81: Kappa bez wymaganego znacznika odrzuca zapłatę atomowo',()=>{
+ const s=createGameState({seed:17783,players:[{id:'p1'},{id:'p2'}]});s.turn=jumpToStep(s.turn,'main1','p1');s.turn.activePlayerId=s.turn.priorityPlayerId='p1';put(s,'kappa','kappa-tech-wrecker','battlefield','p1');s.objects.set('kappa',Object.freeze({...s.objects.get('kappa'),counters:{deathtouch:1}}));put(s,'relic','angels-feather','battlefield','p2');processTriggers(s,[{type:'damage_dealt',source:'kappa',target:'p2',amount:1,combat:true}]);pass(s);pass(s);assert.ok(s.pendingOptionalPay);removeCounter(s,'kappa','deathtouch',1);const before=stateFingerprint(s);let r;assert.doesNotThrow(()=>{r=execute(s,{type:'resolve_optional_pay_choice',playerId:'p1',pay:true});});assert.equal(r.ok,false);assert.equal(stateFingerprint(s),before);
 });
