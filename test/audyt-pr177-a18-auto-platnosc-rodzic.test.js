@@ -9,7 +9,7 @@ import { addObject } from '../src/engine/game-state.js';
 import { jumpToStep } from '../src/engine/turn.js';
 import { finishWizardPayment, paymentDescriptorOf, shouldOpenManaWizard, manaSourcesOf, wizardProgress } from '../src/table/mana-wizard.js';
 import { addMana, expandManaPool, producibleMana, canPayColoredCost } from '../src/engine/resources.js';
-import { getSourceForObject, manaAbilityProductionOf } from '../src/engine/mana-sources.js';
+import { getSourceForObject, manaAbilityProductionOf, isSingleManualTapColorAbility } from '../src/engine/mana-sources.js';
 import { activatableAbilities } from '../src/engine/permanents.js';
 import { effectiveSpellManaCost } from '../src/engine/spells.js';
 import { parseManaCost } from '../src/engine/mana-cost.js';
@@ -54,7 +54,7 @@ function context(session) {
   const ctx = createContext({ session, HUMAN_ID, manaWizardParents: [], manaWizardDescriptor: null,
     els: { manaWizardBody: {} }, registry: createCardRegistry(), MANA_COSTS, parseManaCost,
     effectiveSpellManaCost, paymentDescriptorOf, shouldOpenManaWizard, manaSourcesOf, wizardProgress,
-    getSourceForObject, manaAbilityProductionOf, activatableAbilities, expandManaPool, producibleMana, canPayColoredCost,
+    getSourceForObject, manaAbilityProductionOf, isSingleManualTapColorAbility, activatableAbilities, expandManaPool, producibleMana, canPayColoredCost,
     renderManaWizard: (_host, model, h) => { rendered = model; handlers = h; }, wizardSourceName: source => source.id,
     finishWizardPayment, autosave: () => {}, rerender: () => {}, showBotMoves: () => {},
     showNotice: () => {}, showModal: () => {}, hideModal: () => {},

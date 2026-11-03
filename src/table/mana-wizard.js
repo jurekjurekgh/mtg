@@ -140,6 +140,7 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
   });
   if (typeof abilityInfo !== 'function') return sources;
   const seen = new Set(land.map((s) => s.id));
+  const tapCostGroups = new Map();
   for (const cmd of view?.legalCommands ?? []) {
     if (cmd.type !== 'activate_ability') continue;
     if (cmd.objectId == null || cmd.abilityIndex == null) continue;
@@ -147,6 +148,26 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     if ((cmd.targets ?? []).length > 0) continue; // zdolności many nie mają celu
     const info = abilityInfo(cmd.objectId, cmd.abilityIndex);
     if (!info) continue;
+    // Legalne komendy różniące się tylko kosztem stwora opisują JEDEN tryb
+    // źródła. Stwór jest odrębnym krokiem, nie wierszem źródło × stwór.
+    // Wyjątek ograniczony do sprawdzonego kształtu deskryptora A88.
+    if (info.manualTapCreatureOnly && cmd.tapCreatureId != null) {
+      if (excluded?.has(cmd.tapCreatureId)) continue;
+      const key = `${cmd.objectId}:${cmd.abilityIndex}`;
+      let group = tapCostGroups.get(key);
+      if (!group) {
+        group = { id: cmd.objectId, cardId: info.cardId, colors: info.colors ?? [],
+          amount: info.amount ?? 1, kind: 'ability', spendOnly: info.spendOnly ?? null,
+          command: cmd, tapCostChoices: [], tapCostCommands: [] };
+        tapCostGroups.set(key, group);
+        sources.push(group);
+      }
+      if (!group.tapCostChoices.includes(cmd.tapCreatureId)) {
+        group.tapCostChoices.push(cmd.tapCreatureId);
+        group.tapCostCommands.push(cmd);
+      }
+      continue;
+    }
     // Ląd ma już wiersz darmowego {T}; dodatkowa kosztowa zdolność many
     // (np. konwerter) jest osobnym wyborem TEGO SAMEGO permanentu.
     if (info.isLand ? (info.manaCost ?? 0) <= 0 : seen.has(cmd.objectId)) continue;
@@ -181,6 +202,16 @@ export function manaSourcesOf(view, playerId, abilityInfo, { excludeSourceId = n
     });
   }
   return sources;
+}
+
+/** Ponowna walidacja wybranego stwora wobec bieżących legalnych komend. */
+export function resolveManaSourceTapCost(source, creatureId, view) {
+  if (!(source?.tapCostChoices ?? []).includes(creatureId)) return null;
+  const selected = (source.tapCostCommands ?? []).find(cmd => cmd.tapCreatureId === creatureId);
+  if (!selected) return null;
+  return (view?.legalCommands ?? []).find(cmd => cmd.type === selected.type
+    && cmd.playerId === selected.playerId && cmd.objectId === selected.objectId
+    && cmd.abilityIndex === selected.abilityIndex && cmd.tapCreatureId === creatureId) ?? null;
 }
 
 /**
@@ -882,9 +913,29 @@ export function wizardSourceName(source, session) {
  * Anuluj. Teksty wędrują przez textContent (kontrakt render.js).
  */
 export function renderManaWizard(host, model, {
-  onTapSource, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
+  onTapSource, onSelectTapCost, onCancelTapCost, onToggleDelve, onConfirm, onCancel, onOpenCard, session = null,
 }) {
   host.textContent = '';
+  if (model.tapCostSelection) {
+    const intro = document.createElement('div');
+    intro.className = 'choice-request-intro';
+    intro.textContent = `Wybierz stwora do tapnięcia — ${wizardSourceName(model.tapCostSelection.source, session)}`;
+    host.appendChild(intro);
+    const list = document.createElement('div');
+    list.className = 'mana-wizard-sources choice-request-options';
+    for (const choice of model.tapCostSelection.choices ?? []) {
+      renderPickerRow(list, { kind: 'button', id: choice.id,
+        label: wizardSourceName(choice, session), rowClassName: 'action choice-request-option mana-wizard-tap-cost',
+        onActivate: (id) => onSelectTapCost?.(id) });
+    }
+    host.appendChild(list);
+    const back = document.createElement('button');
+    back.className = 'ghost-btn mana-wizard-tap-cost-back';
+    back.textContent = 'Wróć do źródeł';
+    back.addEventListener('click', () => onCancelTapCost?.());
+    host.appendChild(back);
+    return;
+  }
   const hasDelve = Array.isArray(model.delveCandidates) && model.delveCandidates.length > 0;
   const intro = document.createElement('div');
   intro.className = 'choice-request-intro';

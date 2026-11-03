@@ -34,11 +34,11 @@ import { BOT_ID, HUMAN_ID, createSession, commandOptionKey, faceDownCauseTag, TU
 import { activationAlreadyAppliedWarning, cardInfo, renderBotMoves, renderCardFullscreen, renderCardPreview, renderTableView, commandLabel, labelChoiceOptions, renderMiniFace, selectedTurnHistory, selectedLogTurn, renderPlayerMeta, renderCardArtShowcase, cardHasShowcaseArt, createScryfallHover } from './render.js';
 import { installPressActivation, installSwipeGesture, installTapGesture } from './gestures.js';
 import { paymentDescriptorOf, shouldOpenManaWizard, wizardProgress, renderManaWizard, manaSourcesOf,
-  wizardSourceName, finishWizardPayment,
+  wizardSourceName, finishWizardPayment, resolveManaSourceTapCost,
 } from './mana-wizard.js';
 import { delveExileLimit, effectiveSpellManaCost } from '../engine/spells.js';
 import { expandManaPool, producibleMana, canPayColoredCost } from '../engine/resources.js';
-import { getSourceForObject, manaAbilityProductionOf } from '../engine/mana-sources.js';
+import { getSourceForObject, manaAbilityProductionOf, isSingleManualTapColorAbility } from '../engine/mana-sources.js';
 import { activatableAbilities } from '../engine/permanents.js';
 import { parseManaCost, reduceAlternativeCost } from '../engine/mana-cost.js';
 import { bestowedSpellCharacteristics } from '../engine/attachments.js';
@@ -2783,6 +2783,7 @@ function bootstrapTable() {
         costColors: ability?.cost?.colors ?? [],
         isLand: obj.kind === 'land' || (obj.types ?? []).includes('Land'),
         spendOnly,
+        manualTapCreatureOnly: ['W', 'U', 'B', 'R', 'G'].some(color => isSingleManualTapColorAbility(ability, color)),
       };
     };
     return manaSourcesOf(view, HUMAN_ID, abilityInfo, { excludeSourceId });
@@ -3141,8 +3142,15 @@ function bootstrapTable() {
       finishPayment();
       return;
     }
+    const selectedCost = manaWizardDescriptor._tapCostSelection;
+    const selectedSource = selectedCost && sources.find((source) => source.id === selectedCost.objectId
+      && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selectedCost.abilityIndex
+      && source.tapCostChoices?.length);
+    if (selectedCost && !selectedSource) delete manaWizardDescriptor._tapCostSelection;
     renderManaWizard(els.manaWizardBody, {
       costStr: manaWizardDescriptor.costStr,
+      tapCostSelection: selectedSource
+        ? { source: selectedSource, choices: selectedSource.tapCostChoices.map(id => ({ id })) } : null,
       remainingTotal: progress.remainingTotal,
       requirements: progress.requirements,
       // G (zgłoszenie właściciela): brakujące KOLORY jadą do renderu — wiersz
@@ -3175,6 +3183,11 @@ function bootstrapTable() {
           || (s.command?.type === selectedCommand.type
             && s.command?.abilityIndex === selectedCommand.abilityIndex)));
         if (!src) return; // stary wiersz nie może wykonać innego trybu
+        if (src.tapCostChoices?.length) {
+          manaWizardDescriptor._tapCostSelection = { objectId: src.id, abilityIndex: src.command.abilityIndex };
+          refreshManaWizard();
+          return;
+        }
         const plan = manaSourceTapPlan(src) ?? {
           command: { type: 'tap_for_mana', playerId: HUMAN_ID, objectId }, nested: false,
         };
@@ -3192,6 +3205,23 @@ function bootstrapTable() {
         // Kolor tapniętego źródła trafia do KOLOROWEJ PULI (engine), więc pokrycie
         // kolorów liczy się samo z puli — bez śledzenia committed (cz. 8).
         playDirect(plan.command, { holdPriority: true });
+        refreshManaWizard();
+      },
+      onSelectTapCost: (creatureId) => {
+        // Po wyborze źródła stan mógł się zmienić. Nie uruchamiaj komendy ze
+        // starego DOM: pobierz aktualną listę i legalną komendę z widoku.
+        const selection = manaWizardDescriptor?._tapCostSelection;
+        if (!selection) return;
+        const latestSources = manaSourcesForPlayer(selfTapExclusionFor(manaWizardDescriptor.cmd));
+        const latestSource = latestSources.find((source) => source.id === selection.objectId
+          && source.command?.type === 'activate_ability' && source.command?.abilityIndex === selection.abilityIndex);
+        const cmd = resolveManaSourceTapCost(latestSource, creatureId, session.view());
+        delete manaWizardDescriptor._tapCostSelection;
+        if (cmd) playDirect(cmd, { holdPriority: true });
+        refreshManaWizard();
+      },
+      onCancelTapCost: () => {
+        if (manaWizardDescriptor) delete manaWizardDescriptor._tapCostSelection;
         refreshManaWizard();
       },
       onToggleDelve: (objectId, on) => {
