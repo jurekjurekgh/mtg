@@ -63,7 +63,7 @@ function addObserversAndTreasures(state, payer) {
 }
 // Tury, pule i bezpośrednie umieszczenie Impów/Treasure to syntetyczny setup.
 // Hellion jest rzeczywiście rzucony zakryty, Shock i Ward są rzeczywiste.
-function wardScene(active, payer) {
+function wardScene(active, payer, { extraImp = false } = {}) {
   const state = createGameState({ seed: 177110, players: [{ id: 'p1' }, { id: 'p2' }] });
   const opponent = other(payer);
   turn(state, opponent);
@@ -80,6 +80,7 @@ function wardScene(active, payer) {
   );
   assert.ok(hidden);
   addObserversAndTreasures(state, payer);
+  if (extraImp) put(state, 'extra-imp', 'nefarious-imp', payer);
   turn(state, active);
   state.turn.priorityPlayerId = payer;
   put(state, 'shock', 'shock', payer, 'hand');
@@ -213,4 +214,22 @@ for (const payer of ['p1', 'p2'])
       'dwie produkcje many i własna śmierć widziane przed opuszczeniem pola',
     );
     assert.equal(impEvents(state, other(payer)).length, 0);
+  });
+
+// Dwie rzeczywiste instancje Imp tego samego gracza, umieszczone w setupie.
+for (const payer of ['p1', 'p2'])
+  test(`A110: dwie instancje Imp widzą dwa oddzielne auto-Treasure (${payer})`, () => {
+    const state = wardScene(payer, payer, { extraImp: true }),
+      base = state.commands.length;
+    act(
+      state,
+      view(state).legalCommands.find((c) => c.type === 'resolve_ward_pay_choice' && c.pay),
+    );
+    const triggers = impEvents(state, payer);
+    assert.equal(triggers.length, 4);
+    assert.deepEqual(
+      [...new Set(triggers.map((e) => e.objectId))].sort(),
+      ['extra-imp', `imp-${payer}`].sort(),
+    );
+    assertReplay(state, base, () => wardScene(payer, payer, { extraImp: true }));
   });
