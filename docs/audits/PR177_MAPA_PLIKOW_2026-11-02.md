@@ -230,3 +230,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A90** `table/{main,mana-wizard}.js`, `audyt-pr177-a90-wizard-tap-cost.test.js`, `audyt-pr177-a85-holdout-pay.test.js`: źródło, potem osobny stwór (bez kombinacyjnych wierszy), legalność sprawdzana ponownie, podłączenie modelu A87. Ograniczone do kształtu A88.
 
 - **A91** `table/main.js`, `audyt-pr177-a91-gate-cost-reservation.test.js`: rezerwacja obiektów tapnięcia dla kosztów aktywacji, Heap Gate/Station/Holdout. **A92 RED** `engine/abilities.js`, `audyt-pr177-a92-stale-gate-atomicity.test.js`: przestarzały wybrany Gate powoduje częściową mutację.
+
+- **A92–A93 naprawione** `engine/abilities.js`: przedwalidacja bramy/kosztu many, rozdzielenie kosztu własnego `{T}` i `tapCreature`; testy `audyt-pr177-a9{2,3}*.test.js`, ograniczone kontrole replay i mutacyjne.
