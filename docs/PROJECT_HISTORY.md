@@ -18750,3 +18750,5 @@ Audyt #177 A79: Ward i ręczna mana Sciona, atomowość błędnej płatności; h
 - 2026-11-03 — A80: ręczna mana przy Rupture Spire i atomowa walidacja pay-or-sacrifice; 11 testów, 4 RED baza/#177, fast 9671/9671 przed ostatnim testem, slow 268/268.
 
 - 2026-11-03 — A81/A82: generyczne opcjonalne dopłaty i atomowość pełnego kosztu; kolorowe pipy w kreatorze. 12+5 GREEN, 128 pokrewnych, fast 9689/9689, slow 268/268.
+
+- 2026-11-03 — A83: Scion pokrywa generyczną część kolorowych dopłat, 7 GREEN, fast 9696/9696 przed A84, related 78/78, slow w toku. A84: 8 jawnie pomijanych reprodukcji otwartego APNAP Ward; z flagą 8 RED.

@@ -212,3 +212,6 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 
 - **A81** `triggers.js`, `game-state.js`, `audyt-pr177-a81-optional-manual.test.js`: okno generycznej opcjonalnej płatności ręcznej i atomowa walidacja wszystkich kosztów; A83 RED dla generycznej części kosztu kolorowego.
 - **A82** `table/mana-wizard.js`, `audyt-pr177-a82-wizard-colors.test.js`: wymagania kolorowych dopłat w kreatorze, prawdziwe Zoraline i echo.
+
+- **A83** `triggers.js`, `audyt-pr177-a83-colored-manual.test.js`: Scion finansuje część generyczną kolorowych dopłat, jeśli pipy dają zwykłe źródła; manualny kolor poza zakresem.
+- **A84 OTWARTE** `audyt-pr177-a84-ward-apnap.test.js`: osiem testów pomijanych domyślnie, `AUDIT_A84_ENFORCE=1` wymusza 8 RED; Ward, mana i APNAP potrzebują odroczenia triggerów z LKI.
