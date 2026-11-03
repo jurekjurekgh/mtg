@@ -20,6 +20,15 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-03 — audyt PR #178, B1 bestow i jawny tryb RED (PR #179)
+
+- Rozpoczęto audyt scalonego #178: 194 pliki / 308 commitów; mapa `docs/audits/PR178_MAPA_PLIKOW_2026-11-03.md`, raport `docs/audits/AUDYT_PR178_2026-11-03.md`, plan `docs/plans/PLAN_2026-11-03-audyt-pr178.md`. Przejrzano diff 26 plików produkcyjnych; testy/docs zinwentaryzowane, pełny przegląd semantyczny otwarty.
+- Baza `04ca8e9`: `npm test` 9819 pass / 114 skip / 0 fail; build 77 modułów / 5673,2 kB. Wymuszone A84–A113: 114 RED / 18 kontroli GREEN.
+- B1 (`aba111e`): odbita karta z bestow nie przenosi deskryptora aury do ponownego zwykłego rzutu; Negate czyta aktualne cechy stosu. RED→GREEN, mutacje A/B złapane; po fixie fast 9824/114 skip/0 fail, build 5673,7 kB.
+- `f934bef`: `npm run test:audit` uruchamia wszystkie pliki z flagami `AUDIT_A*_ENFORCE`; obecnie 148 testów / 34 pass / 114 fail. To reproduktor, nie bramka na zielono. Po dodaniu fast 9826/114 skip/0 fail, build 5673,7 kB.
+- Nie dodano kart, nie uruchamiano B0, nie wdrożono eksperymentów `NIE_WDRAZAC`. Otwarte 114 RED APNAP/SBA/LKI czeka na decyzję architektoniczną checkpointów.
+
+
 ## 2026-11-01 — kontynuacja audytu PR #177 (PR #178, w toku)
 
 - A1: champion po odejściu źródła zachowuje wybór, a zmiana kontroli nie zmienia kontrolera triggera (`2812aa6`).
