@@ -228,3 +228,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A88 częściowo GREEN** `engine/{mana-sources,triggers,game-state}.js`, `audyt-pr177-a88-single-manual-color.test.js`: wąska dopłata jednym kolorem poprzez legalną zdolność {T} i koszt stwora; kreator A85 nadal otwarty.
 
 - **A90** `table/{main,mana-wizard}.js`, `audyt-pr177-a90-wizard-tap-cost.test.js`, `audyt-pr177-a85-holdout-pay.test.js`: źródło, potem osobny stwór (bez kombinacyjnych wierszy), legalność sprawdzana ponownie, podłączenie modelu A87. Ograniczone do kształtu A88.
+
+- **A91** `table/main.js`, `audyt-pr177-a91-gate-cost-reservation.test.js`: rezerwacja obiektów tapnięcia dla kosztów aktywacji, Heap Gate/Station/Holdout. **A92 RED** `engine/abilities.js`, `audyt-pr177-a92-stale-gate-atomicity.test.js`: przestarzały wybrany Gate powoduje częściową mutację.
