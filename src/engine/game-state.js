@@ -5096,11 +5096,11 @@ export function execute(state, input) {
   // Oczekująca decyzja CELU triggera (Temat 2): kontroler wskazuje cel —
   // kandydaci liczeni dynamicznie w chwili wyboru (jak delirium/mentor);
   // allowNone pozwala odmówić („up to one"/„you may").
-  // Podczas rozstrzyganej dopłaty opcjonalnej, Ward lub kontry zdolność many
+  // Podczas rozstrzyganej dopłaty lub echo legalna zdolność many
   // płacącego musi nadal działać, nawet gdy jej wcześniejsza aktywacja
   // wyzwoliła oczekujący wybór celu. Sam cel pozostaje zablokowany wyżej
   // przez decyzję dopłaty; to nie rozwiązuje kolejności APNAP triggerów.
-  const pendingManaPayment = state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay;
+  const pendingManaPayment = state.pendingPayOrSacrifice ?? state.pendingCounterPay ?? state.pendingWardPay ?? state.pendingOptionalPay;
   if (state.pendingTriggerTargets.length > 0
     && !(pendingManaPayment && manaGeneratingCommandFor(state, cmd, pendingManaPayment.playerId))) {
     const pending = state.pendingTriggerTargets[0];
