@@ -68,6 +68,16 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Ukończenie:** właściwy otwarty test przechodzi bez osłabiania asercji, pełny fast + build; przed końcem pracy dodatkowo pełny `npm run test:all`. Pozostałe RED jawnie wymienione.
 
+## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
+
+Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
+
+- **A110 (10 RED):** dwie osobne aktywacje many Skarbu w jednej płatności Ward są łączone w jedno zdarzenie odejścia, bo obecny klucz grupowania to kontroler w całym skanie/komendzie. Jednoczesne zniszczenie wielu permanentów nadal musi dawać jeden wyzwalacz. Potrzebna jest tożsamość **pojedynczego zdarzenia/grupy równoczesnej**, nie samej komendy.
+- **A112 (8 RED):** grupowy wyzwalacz odejścia i celowany wyzwalacz śmierci nie trafiają do jednej partii izboru kolejności; obecny wąski batch obejmuje tylko wybrane triggery śmierci. Dodatkowo gracz nie otrzymuje jawnego wyboru kolejności własnych zdolności, jeśli partia nie mieści się w tym wąskim batchu.
+- **A113 (4 RED):** mieszany checkpoint obrażeń bojowych i śmierci wymaga tej samej granicy partii oraz jawnej kolejności całej partii, nie tylko końcowego sortowania fragmentu stosu.
+
+Wniosek: następny krok nie powinien polegać na dodaniu kolejnego wyjątku do obecnego sortowania. Trzeba najpierw zdefiniować granicę zdarzenia i partii oczekujących zdolności oraz sposób zapisu wyborów kolejności w replay. Jeżeli wymaga to nowego trwałego pola stanu lub zmiany protokołu decyzji, powstaje ADR **przed** kodowaniem. Małe poprawki lokalne nadal mogą być wdrażane osobno, jeśli nie zmieniają tej granicy.
+
 ## Kolejność commitów i procedura bezpieczeństwa
 
 1. Niniejsza roadmapa + aktualizacja aktywnego planu, raportu, historii i handoffu; brama dokumentów, pełny fast + build, commit/push **przed kodowaniem**.
