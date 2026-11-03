@@ -238,3 +238,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 - **A95–A96** `engine/game-state.js` oraz `audyt-pr177-a9{5,6}*.test.js`: dopuszczenie drugiego Sciona mimo oczekującego celu w Ward/Izzet Charm; APNAP poza zakresem.
 
 - **A97** `engine/game-state.js` + `audyt-pr177-a97-echo-two-scions.test.js`: opłacenie echo po triggerze z pierwszego Sciona; syntetyczne wejście do upkeep, brak poprawki A84.
+
+- **A98 kwarantanna** `test/audyt-pr177-a98-spellbomb-apnap.test.js`: jawny dowód A84 w dopłacie Spellbomb, 8 wymuszonych RED/8 domyślnych skip.
