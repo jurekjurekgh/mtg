@@ -345,3 +345,5 @@ A96 `2bcfa3b` RED: Izzet Charm kontra `{2}`, Shock i dwa realne Sciony; drugi od
 ### A95–A96: Ward i kontr-dopłata, nadal bez APNAP
 
 `41c4591`: podczas Ward i kontry ta sama bramka oczekującego celu dopuszcza legalną manę płacącego co A94. Dwa prawdziwe Sciony z Summonerów finansują Ward {2} lub Izzet Charm {2}; Selhoff wyzwala cel po pierwszym. A95 przed zmianą 5 RED/3 GREEN (baza/#177 nie otwierają Ward), A96 5 RED/3 GREEN także w bazie/#177 z tym samym objawem. Po poprawce 8+8 GREEN z replay, obie orientacje, odmowa i blokady; mutacje wyłączenia counter/Ward/optional 5/5/6 RED. Powiązany podzbiór 131/131; pełne pakiety w toku. A84 wymuszony nadal 8 RED: nie naprawiono umieszczania triggerów, APNAP ani pozostałych decyzji.
+
+A97 RED: realny Bone Shredder echo `{2}{B}` z czarnym pipem i dwoma Scionami, wejście upkeep syntetycznym zdarzeniem jak A80. Pierwszy Scion wyzwala cel Selhoff i blokuje drugiego; 3 RED/3 GREEN, historycznie brakuje okna A83. Izolowane poszerzenie na pay-or-sacrifice 32 GREEN łącznie A94–A97, cztery mutacje 3/5/5/6 RED; główne drzewo jeszcze bez poprawki, A84 nadal otwarte.
