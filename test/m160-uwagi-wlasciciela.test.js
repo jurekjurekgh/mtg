@@ -75,6 +75,10 @@ function combatKillBlockers(state, blockers) {
 /** Rozstrzyga wszystkie decyzje celu Selhoffa (zawsze p2) i stos. */
 function resolveAllMillTriggers(state) {
   for (let i = 0; i < 30; i += 1) {
+    if (state.pendingTriggerOrder) {
+      const choice = playerView(state, state.turn.priorityPlayerId).legalCommands.find(c => c.type === 'resolve_trigger_order');
+      assert.ok(choice); assert.ok(execute(state, choice).ok); continue;
+    }
     if (state.pendingTriggerTargets.length > 0) {
       const pending = state.pendingTriggerTargets[0];
       const done = execute(state, { type: 'resolve_trigger_target', playerId: pending.playerId, targetId: 'p2' });
@@ -103,8 +107,8 @@ test('A1: trzy jednoczesne zgony (Selhoff + stwór + token) = TRZY mille (CR 603
   for (let i = 0; i < 5; i += 1) addLib(state, `p2lib${i}`, 'p2');
   combatKillBlockers(state, ['occ', 'vic', 'tok']);
   assert.equal(state.objects.get('occ'), undefined, 'Selhoff zginął');
-  assert.equal(state.pendingTriggerTargets.length, 3,
-    'trzy zgony = trzy decyzje celu triggera (własny + dwa współzgony)');
+  assert.equal(Object.keys(state.pendingDeathTriggerBatch.slots).length, 3,
+    'trzy zgony = trzy odrębne triggery oczekujące na kolejność i cel');
   resolveAllMillTriggers(state);
   assert.equal(milledCount(state), 3, 'p2 zmielił 3 karty (po jednej za każdy zgon)');
 });

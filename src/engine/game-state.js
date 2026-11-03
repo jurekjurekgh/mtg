@@ -2056,7 +2056,7 @@ function startMadnessTriggerOrder(state) {
 // Ograniczony batch: triggery śmierci bez celu albo z jednym obowiązkowym
 // celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
 // innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
-// również koszt rzutu.
+// również koszt rzutu i niezawieszone obrażenia w `resolve_combat`.
 // Wybory kontrolerów są APNAP:
 // najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
 function advanceDeathTriggerBatch(state) {
@@ -2093,7 +2093,7 @@ function advanceDeathTriggerBatch(state) {
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies'].includes(name);
 
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo) {
-  if (!['pass_priority', 'cast_spell'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
+  if (!['pass_priority', 'cast_spell', 'resolve_combat'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   const targets = state.pendingTriggerTargets;
   if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
