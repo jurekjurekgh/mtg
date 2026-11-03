@@ -215,3 +215,5 @@ A79: przedwczesna kontra Ward przy Scionie i nieatomowa błędna płatność —
 
 - **A83** `triggers.js`, `audyt-pr177-a83-colored-manual.test.js`: Scion finansuje część generyczną kolorowych dopłat, jeśli pipy dają zwykłe źródła; manualny kolor poza zakresem.
 - **A84 OTWARTE** `audyt-pr177-a84-ward-apnap.test.js`: osiem testów pomijanych domyślnie, `AUDIT_A84_ENFORCE=1` wymusza 8 RED; Ward, mana i APNAP potrzebują odroczenia triggerów z LKI.
+
+- **A85 OTWARTE** `audyt-pr177-a85-holdout-pay.test.js`: Panic Spellbomb + Holdout z innym stworem, brak okna i brak wariantu źródła w kreatorze; 3 RED pod flagą, 1 kontrola GREEN.
