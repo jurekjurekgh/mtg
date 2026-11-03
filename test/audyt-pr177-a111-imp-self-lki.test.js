@@ -10,6 +10,15 @@ import { addCounter } from '../src/engine/counters.js';
 import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 
+// Otwarte: wyłącznie wymuszenie włącza mierzone RED; kontrole pozostają aktywne.
+const audit = (name, fn) =>
+  test(
+    name,
+    {
+      skip: process.env.AUDIT_A111_ENFORCE === '1' ? false : 'otwarte A111 (AUDIT_A111_ENFORCE=1)',
+    },
+    fn,
+  );
 const registry = createCardRegistry();
 const other = (p) => (p === 'p1' ? 'p2' : 'p1');
 function put(state, id, cardId, ownerId, zone) {
@@ -84,35 +93,38 @@ function replayCheck(state, base, factory) {
 for (const controller of ['p1', 'p2'])
   for (const stolen of [false, true])
     for (const finality of [false, true]) {
-      test(`A111: Imp wyzwala własne odejście i scry (${controller}, ${stolen ? 'przejęty' : 'własny'}, ${finality ? 'finality' : 'grób'})`, () => {
-        const opts = { stolen, finality },
-          state = scene(controller, opts),
-          base = state.commands.length;
-        castAndResolve(state);
-        const moved = [...state.objects.values()].find(
-          (o) => o.cardId === 'nefarious-imp' && o.kind !== 'trigger' && o.zone !== 'battlefield',
-        );
-        assert.ok(moved);
-        assert.equal(moved.zone, finality ? 'exile' : 'graveyard');
-        assert.equal(
-          moved.controllerId,
-          stolen ? other(controller) : controller,
-          'nowy obiekt należy do właściciela',
-        );
-        const fired = impEvents(state);
-        assert.equal(fired.length, 1);
-        assert.equal(fired[0].objectId, 'imp');
-        assert.equal(fired[0].playerId, controller);
-        replayCheck(state, base, () => scene(controller, opts));
-        pass(state);
-        pass(state);
-        assert.equal(
-          state.pendingScry?.playerId,
-          controller,
-          'zachowana zdolność faktycznie rozstrzyga scry',
-        );
-        replayCheck(state, base, () => scene(controller, opts));
-      });
+      audit(
+        `A111: Imp wyzwala własne odejście i scry (${controller}, ${stolen ? 'przejęty' : 'własny'}, ${finality ? 'finality' : 'grób'})`,
+        () => {
+          const opts = { stolen, finality },
+            state = scene(controller, opts),
+            base = state.commands.length;
+          castAndResolve(state);
+          const moved = [...state.objects.values()].find(
+            (o) => o.cardId === 'nefarious-imp' && o.kind !== 'trigger' && o.zone !== 'battlefield',
+          );
+          assert.ok(moved);
+          assert.equal(moved.zone, finality ? 'exile' : 'graveyard');
+          assert.equal(
+            moved.controllerId,
+            stolen ? other(controller) : controller,
+            'nowy obiekt należy do właściciela',
+          );
+          const fired = impEvents(state);
+          assert.equal(fired.length, 1);
+          assert.equal(fired[0].objectId, 'imp');
+          assert.equal(fired[0].playerId, controller);
+          replayCheck(state, base, () => scene(controller, opts));
+          pass(state);
+          pass(state);
+          assert.equal(
+            state.pendingScry?.playerId,
+            controller,
+            'zachowana zdolność faktycznie rozstrzyga scry',
+          );
+          replayCheck(state, base, () => scene(controller, opts));
+        },
+      );
     }
 for (const controller of ['p1', 'p2']) {
   test(`A111: utrata zdolności wyłącza własny trigger Imp (${controller})`, () => {
@@ -120,7 +132,7 @@ for (const controller of ['p1', 'p2']) {
     castAndResolve(state);
     assert.equal(impEvents(state).length, 0);
   });
-  test(`A111: żywy drugi Imp i odchodzący Imp wyzwalają się po razie (${controller})`, () => {
+  audit(`A111: żywy drugi Imp i odchodzący Imp wyzwalają się po razie (${controller})`, () => {
     const state = scene(controller, { second: true });
     castAndResolve(state);
     const fired = impEvents(state);
@@ -133,7 +145,7 @@ for (const controller of ['p1', 'p2']) {
 // Syntetycznie pozbawiony zdolności Imp zostaje wygnany z finality;
 // żywy drugi Imp obserwuje odejście, mimo że „dies” nie zachodzi.
 for (const controller of ['p1', 'p2'])
-  test(`A111: żywy Imp widzi wygnanie innego permanentu z finality (${controller})`, () => {
+  audit(`A111: żywy Imp widzi wygnanie innego permanentu z finality (${controller})`, () => {
     const state = scene(controller, { second: true, stripped: true, finality: true });
     castAndResolve(state);
     const fired = impEvents(state);
@@ -149,7 +161,7 @@ for (const controller of ['p1', 'p2'])
 // z finality to odejście, lecz nie „dies”. Selhoff jest dodatkową kontrolą.
 for (const controller of ['p1', 'p2'])
   for (const method of ['destroy', 'sacrifice'])
-    test(`A111: ${method} z finality wyzwala odejście, nie dies (${controller})`, () => {
+    audit(`A111: ${method} z finality wyzwala odejście, nie dies (${controller})`, () => {
       const state = scene(controller, { second: true, stripped: true, finality: true });
       put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
       if (method === 'destroy') {
@@ -225,7 +237,7 @@ for (const controller of ['p1', 'p2'])
 
 // Syntetycznie nadany prawdziwy deskryptor triggera przeżywa utratę druku.
 for (const controller of ['p1', 'p2'])
-  test(`A111: LKI widzi nadaną zdolność mimo utraty druku (${controller})`, () => {
+  audit(`A111: LKI widzi nadaną zdolność mimo utraty druku (${controller})`, () => {
     const state = scene(controller, { stripped: true });
     const imp = state.objects.get('imp'),
       granted = registry.get('nefarious-imp').abilities[0];
@@ -242,7 +254,7 @@ for (const controller of ['p1', 'p2'])
 
 // Obrażenia + SBA z finality: odejście tak, dies i descended nie.
 for (const controller of ['p1', 'p2'])
-  test(`A111: finality po Shock wyzwala odejście, nie dies (${controller})`, () => {
+  audit(`A111: finality po Shock wyzwala odejście, nie dies (${controller})`, () => {
     const state = scene(controller, { second: true, stripped: true, finality: true });
     put(state, 'selhoff', 'selhoff-occultist', other(controller), 'battlefield');
     castAndResolve(state);

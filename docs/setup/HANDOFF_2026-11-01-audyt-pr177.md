@@ -393,3 +393,11 @@ Aktualne wyniki produkcji: wymuszone A84/A98/A100–A109 **70 RED / 8 GREEN kont
 A109 poprawiony setup: `addObject` wcześniej ignorowało `isToken`; obecnie dwa realne tokeny tworzone są przez `createBattlefieldToken` z definicji Treasure. Produkcja, baza/#177, prototyp i wszystkie sześć mutacji powtórzone: wyniki A109 bez zmian.
 
 Po A110: wymuszone A84/A98/A100–A110 **80 RED / 14 GREEN kontroli**, fast **9815 pass / 80 skip / 0 fail**, podzbiór mana/triggery **408 pass / 72 skip / 0 fail**. Slow produkcji 268/268 pochodzi z wcześniejszej kontynuacji, przed A104–A110. Produkcja bez zmian; skip nie jest GREEN.
+
+### A111–A113 — pojedyncze LKI i ograniczenia APNAP (OTWARTE)
+
+A111 **20 RED / 4 GREEN**: samotny Nefarious Imp po rzeczywistym Shock/SBA nie obserwuje własnego odejścia; żywy Imp nie obserwuje wygnania innego permanentu z finality po Shock, Terminal Agony lub Village Rites. Oboje graczy, przejęcie, utrata/nadanie zdolności, scry/replay oraz kontrole dies i descended. A112 **10 RED**: własny Imp musi współdzielić APNAP z celowanym Selhoff, a wraz z Crows lub drugim Impem pozwolić kontrolerowi wybrać kolejność. A113 **4 RED**: realny atak Scroll Thief + Hill Giant, blok Impem i Selhoff aktywnego ujawniają mieszany checkpoint obrażeń i śmierci. Pola, tura/priorytet/pule i niektóre cechy są ustawione pomocniczo; akcje i karty rzeczywiste. Produkcja, baza `7aff9b6` i #177 `59815d5` łącznie **34 RED / 4 GREEN**, domyślnie **34 skip / 4 kontrole**.
+
+Izolowana próba po poprawce batcha daje A111–A112 **34/34**, ale A113 **4 RED**: rzeczywisty trigger Thief nie należy do wąskiego batcha śmierci i Imp ląduje pod celowanym Selhoff aktywnego. Poprzednia próba bez poprawki batcha miała 8 RED w A112; mutacje i dodatkowa pułapka fałszywego `descended` po wygnaniu w `docs/audits/experiments/README_A111_A112.md`, a sama łatka tylko do odtworzenia **NIE WDRAŻAĆ**. Produkcja bez zmian od A97. Wymuszone A84/A98/A100–A113 **114 RED / 18 GREEN**, powiązane produkcyjne **405 pass / 98 skip / 0 fail**; końcowy prototyp w tym podzbiorze **435 pass / 4 fail / 64 skip**. Skip nie jest GREEN, B0 nie uruchamiano.
+
+Aktualny fast produkcji po kwarantannie A111–A113: **9819 pass / 114 skip / 0 fail**. Slow uruchomiony osobno; wynik zostanie odnotowany po zakończeniu.
