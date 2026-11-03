@@ -13,7 +13,7 @@
 - Przed kontynuacją architektury, zamrożone `ad4bf3b`, `npm run test:all`: **10 097 pass / 114 skip / 0 fail**, 10 211 testów, 489,2 s.
 - Po etapie 1 (7 nowych testów chroniących, bez zmiany produkcji): fast **9836 pass / 114 skip / 0 fail**, build **77 modułów / 5673,7 kB**.
 - Po etapie 2 / A111: fast **9856 pass / 94 skip / 0 fail**, build **77 modułów / 5675,9 kB**.
-- Ostatni wcześniejszy pełny pomiar przed kontynuacją: 10 097 pass / 114 skip / 0 fail; slow: 268 pass / 0 fail / 0 skip. Po A111 pełny `test:all` do powtórzenia przed końcem pracy.
+- Pełny `npm run test:all` po A111 (`2de4715`): **10 124 pass / 94 skip / 0 fail**, 10 218 testów, 486,4 s; build **77 modułów / 5675,9 kB**. CI run `41740013563` success.
 - `npm run test:audit` po A111: **124 testy / 32 pass / 92 fail / 0 skip** — oczekiwane RED pozostałych, nie zielona brama.
 - Mapa #178: **80 przejrzanych / 114 otwartych wierszy**. Liczba otwartych wierszy jest niezależna od wymuszonych RED; po zamknięciu A111 zostało **92 wymuszone RED**.
 - CI poprzedniego HEAD: run `41725555322`, job `test`, success 7m19s; PR był draft/mergeable/clean.
