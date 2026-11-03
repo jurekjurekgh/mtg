@@ -273,3 +273,5 @@ A75: Polluted Dead / Circle of the Land Druid — cele lądów w APNAP; cztery R
 A76: APNAP po `resolve_combat` bez zawieszenia, także first strike; 4 historyczne RED → 8 GREEN, mutacja 8 RED, fast 9629/9629, slow 268/268, build 77/5656,9 kB. Otwarte: inne checkpointy (np. aktywacja z kosztem ofiary), przypisanie obrażeń/replacement, Ward, mixed triggers. Audyt trwa.
 
 A77: APNAP kosztów poświęcenia niemanowych Elk/Dreadmaw, 8 historycznych RED i 14 testów GREEN, obie mutacje wykryte; fast 9643/9643, related 110/110, build 77/5657,5 kB, slow 268/268. Mana i odrzucenie wyłączone bez twierdzenia poprawności; pozostałe checkpointy i ogólny APNAP otwarte.
+
+A78: 4 historyczne RED / 7 GREEN Scion z prawdziwego Scion Summoner, samodzielna mana; płatność Ward nie zostaje przerwana nowym batch, ale jej APNAP nie poprawiony. Mutacja 6 RED, pokrewne 95/95, fast 9650/9650, build 77/5658,2 kB, slow w toku. Sonda: Ward auto-kontruje Shock przy puli 1 + Scion mimo możliwości dopłaty; dodatkowo zeruje pending przed walidacją. Formalny RED i osobny plan A79 przed zmianą.

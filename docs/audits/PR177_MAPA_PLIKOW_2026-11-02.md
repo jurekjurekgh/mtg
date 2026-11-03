@@ -203,3 +203,5 @@ A75: Polluted Dead i Circle of the Land Druid, lądy na polu / karty w grobie, c
 A76: starszy błąd APNAP po `resolve_combat` (w tym first strike), cztery RED historycznie; ograniczony GREEN, pozostałe ścieżki obrażeń i mixed triggery otwarte.
 
 A77: koszty poświęcenia aktywowanych niemanowych Elk/Dreadmaw, 8 historycznych RED → GREEN, wyłączenia Scion/Plague Reaver, APNAP poza zakresem nadal otwarte.
+
+A78: realny Scion i APNAP samodzielnej zdolności many, historyczny RED → ograniczony GREEN; wewnątrz płatności nadal poza zakresem. Osobne podejrzenie przedwczesnej kontry Ward z ręczną maną do weryfikacji.
