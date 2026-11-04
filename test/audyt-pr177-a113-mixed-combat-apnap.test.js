@@ -5,16 +5,13 @@ import { createGameState, addObject, execute, playerView } from '../src/engine/g
 import { createCardRegistry } from '../src/cards/card-data.js';
 import { createCardDeck } from '../src/cards/materialize.js';
 import { jumpToStep } from '../src/engine/turn.js';
+import { replayFromState, verifyReplay } from '../src/engine/replay.js';
+import { stateFingerprint } from '../src/engine/fingerprint.js';
 
-// Otwarty reproduktor: wymuszaj AUDIT_A113_ENFORCE=1.
-const audit = (name, fn) =>
-  test(
-    name,
-    {
-      skip: process.env.AUDIT_A113_ENFORCE === '1' ? false : 'otwarte A113 (AUDIT_A113_ENFORCE=1)',
-    },
-    fn,
-  );
+// A113 zamknięte w PR #179 (ADR 0031): wszystkie przypadki są aktywne.
+// Podstawa: CR 510.2 (obrażenia bojowe są jednoczesne), 603.3b (APNAP i wybór
+// kolejności przed priorytetem), 603.10a (odejście patrzy wstecz).
+// CR SHA-256: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
 const registry = createCardRegistry();
 const other = (p) => (p === 'p1' ? 'p2' : 'p1');
 function put(state, id, cardId, ownerId, zone) {
@@ -66,15 +63,29 @@ function combatScene(active) {
   assert.equal([...state.objects.values()].find((o) => o.instanceId === 'i-imp').zone, 'graveyard');
   return { state, defending };
 }
+function assertReplay(state, base, factory) {
+  const replay = replayFromState(state);
+  const result = verifyReplay(
+    { ...replay, commands: replay.commands.slice(base) },
+    factory,
+    execute,
+  );
+  assert.ok(result.deterministic);
+  assert.ok(result.results.every((r) => r.ok));
+  assert.equal(stateFingerprint(result.state), stateFingerprint(state));
+}
 for (const active of ['p1', 'p2']) {
-  audit(`A113: aktywny wybiera kolejność Thief i Selhoff (${active})`, () => {
+  test(`A113: aktywny wybiera kolejność Thief i Selhoff (${active})`, () => {
     const { state } = combatScene(active);
+    const base = state.commands.length;
     assert.equal(state.turn.priorityPlayerId, active);
     const choices = view(state).legalCommands.filter((c) => c.type === 'resolve_trigger_order');
     assert.deepEqual(choices.map((c) => c.cardId).sort(), ['scroll-thief', 'selhoff-occultist']);
+    assertReplay(state, base, () => combatScene(active).state);
   });
-  audit(`A113: Imp nie wyprzedza Selhoff aktywnego w walce (${active})`, () => {
+  test(`A113: Imp nie wyprzedza Selhoff aktywnego w walce (${active})`, () => {
     const { state, defending } = combatScene(active);
+    const base = state.commands.length;
     const choices = view(state).legalCommands.filter((c) => c.type === 'resolve_trigger_order');
     if (choices.length)
       act(
@@ -94,5 +105,6 @@ for (const active of ['p1', 'p2']) {
         .map((o) => o.cardId),
       ['selhoff-occultist', 'scroll-thief', 'nefarious-imp'],
     );
+    assertReplay(state, base, () => combatScene(active).state);
   });
 }

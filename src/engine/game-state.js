@@ -2091,10 +2091,11 @@ function advanceDeathTriggerBatch(state) {
   state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
-// A112 / ADR 0031: partia obejmuje też grupowe „one or more permanents you
-// control leave the battlefield”, bo należy do tego samego okna co śmierć.
+// A112/A113 / ADR 0031: partia obejmuje też grupowe „one or more permanents
+// you control leave the battlefield” oraz obrażenia bojowe zadane graczowi,
+// bo w jednym checkpoincie walki współistnieją ze śmiercią (CR 510.2/603.3b).
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies',
-  'permanents_you_control_leave_battlefield'].includes(name);
+  'permanents_you_control_leave_battlefield', 'combat_damage_to_player'].includes(name);
 
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false) {
   if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
