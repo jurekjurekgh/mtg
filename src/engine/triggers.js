@@ -2686,15 +2686,20 @@ function processTriggersScan(state, recentEvents) {
   // zdolności wyzwolonych od ostatniego priorytetu — na końcu skanu
   // przestawiamy je w kolejność APNAP (patrz helper niżej).
   const stackStart = state.zones.stack.length;
-  // Kontrolerzy, których permanenty opuściły pole bitwy w tej komendzie —
-  // trigger „one or more permanents you control leave the battlefield"
-  // odpala się RAZ na komendę, nie raz na permanent (CR 603.2).
-  const leftBattlefield = new Set();
+  // A110 / ADR 0031: „one or more permanents you control leave the battlefield"
+  // odpala się RAZ na grupę równoczesnych odejść, nie raz na permanent i nie
+  // automatycznie raz na całą komendę (CR 603.2). Emiter może przynieść
+  // `departureGroupId`; brak identyfikatora zachowuje dawną grupę komendy jako
+  // bezpieczny fallback dla ścieżek jeszcze niezinwentaryzowanych.
+  const departureGroups = new Map();
+  const processedDepartureGroups = new Set();
+  let departureGroupOrder = 0;
   // CR 603.10a: obserwator, który sam opuszcza pole bitwy w tym zdarzeniu,
   // też może mieć zdolność „one or more permanents you control leave…”.
   // Zapamiętujemy stan sprzed ruchu (stary identyfikator, kontroler i efektywne
   // zdolności), bo po zmianie strefy powstaje nowy obiekt (CR 400.7).
   const departureSources = new Map();
+  const departureSourceOrder = new Map();
   const departedInstanceIds = new Set();
   // GRUPOWANIE zbiorczych wyzwalaczy („Whenever one or more …") — patrz
   // `mayFireGrouped` poniżej. Zestaw kluczy jest JEDEN dla wszystkich ścieżek,
@@ -2772,7 +2777,6 @@ function processTriggersScan(state, recentEvents) {
   // silnika, nie reguła MtG).
   const MAX_TRIGGER_EVENTS_SCANNED = 512;
   const queue = [...recentEvents];
-  const aggregatedControllers = new Set();
   // E9/F5: obiekty, których wejście na pole bitwy już obsłużono w tym
   // przebiegu (podwójna emisja object_moved + permanent_entered_battlefield).
   const etbEnterFired = new Set();
@@ -2995,7 +2999,12 @@ function processTriggersScan(state, recentEvents) {
       // z chwili odejścia (przed poprawką trafiał do właściciela).
       const goneControllerId = eventControllerAtDeath(ev, gone);
       if (goneControllerId) {
-        leftBattlefield.add(goneControllerId);
+        const groupTag = ev.departureGroupId ?? `legacy:${goneControllerId}`;
+        const groupKey = `${goneControllerId}|${groupTag}`;
+        if (!departureGroups.has(groupKey)) {
+          departureGroups.set(groupKey, { controllerId: goneControllerId, order: departureGroupOrder++ });
+        }
+        const groupOrder = departureGroups.get(groupKey).order;
         const fromId = ev.fromId ?? ev.object?.id ?? gone?.id;
         if (fromId != null && !departureSources.has(fromId)) {
           // Zdarzenia zniszczenia niosą obiekt sprzed ruchu; pozostałe ścieżki
@@ -3008,6 +3017,7 @@ function processTriggersScan(state, recentEvents) {
             departureSources.set(fromId, Object.freeze({
               ...base, id: fromId, zone: 'battlefield', controllerId: goneControllerId, abilities,
             }));
+            departureSourceOrder.set(fromId, groupOrder);
             if (base.instanceId != null) departedInstanceIds.add(base.instanceId);
           }
         }
@@ -4461,14 +4471,17 @@ function processTriggersScan(state, recentEvents) {
       for (let j = beforeEvent; j < events.length; j += 1) queue.push(events[j]);
     }
     if (scanned >= MAX_TRIGGER_EVENTS_SCANNED) break;
-    const freshControllers = [...leftBattlefield].filter((controllerId) => !aggregatedControllers.has(controllerId));
-    if (freshControllers.length === 0 && idx >= queue.length) break;
+    const freshGroups = [...departureGroups.entries()]
+      .filter(([key]) => !processedDepartureGroups.has(key))
+      .sort((a, b) => a[1].order - b[1].order);
+    if (freshGroups.length === 0 && idx >= queue.length) break;
     // „Whenever one or more permanents you control leave the battlefield"
-    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na komendę, także po
-    // odejściach spowodowanych przez same triggery; zdarzenia agregatu
-    // wracają do kolejki i też są skanowane.
-    for (const controllerId of freshControllers) {
-      aggregatedControllers.add(controllerId);
+    // (Nefarious Imp, CR 603.2): RAZ na kontrolera na grupę równoczesnych
+    // odejść. Grupy bez jawnego identyfikatora nadal tworzą jedną grupę
+    // komendy; zdarzenia agregatu wracają do kolejki i też są skanowane.
+    for (const [groupKey, group] of freshGroups) {
+      processedDepartureGroups.add(groupKey);
+      const controllerId = group.controllerId;
       const beforeAggregate = events.length;
       for (const source of state.objects.values()) {
         if (source.zone !== 'battlefield' || source.controllerId !== controllerId) continue;
@@ -4486,8 +4499,11 @@ function processTriggersScan(state, recentEvents) {
       }
       // Własne odejście źródła: zdolność czytamy z LKI sprzed ruchu, nie z
       // nowego obiektu w grobie/wygnaniu/ręce (CR 603.10a/400.7).
-      for (const source of departureSources.values()) {
+      for (const [fromId, source] of departureSources.entries()) {
         if (source.controllerId !== controllerId) continue;
+        // Źródło, które odeszło wcześniej, nie obserwuje późniejszej grupy.
+        const sourceOrder = departureSourceOrder.get(fromId);
+        if (sourceOrder == null || sourceOrder < group.order) continue;
         for (const ability of source.abilities) {
           if (ability?.trigger?.event === 'permanents_you_control_leave_battlefield'
             && ability?.trigger?.groupPer === 'controller') {

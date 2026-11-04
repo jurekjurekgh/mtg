@@ -52,6 +52,7 @@ export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], f
   }
   const victims=work.ids.filter(id=>work.choices[id]==='destroy').map(id=>state.objects.get(id)).filter(o=>o?.zone==='battlefield');
   const simultaneousIds=victims.filter(o=>o.kind==='creature' && deathZoneFor(state,o)==='graveyard').map(o=>o.id);
+  const departureGroupId = victims.length > 1 ? `destroy-${victims.map(o=>o.id).sort().join('|')}` : null;
   // Nie uruchamiaj orphan cleanup ofiary grupy przy wcześniejszym ruchu
   // jej gospodarza: ta aura też jest niszczona, a nie przenoszona dwa razy.
   const victimIds=new Set(victims.map(o=>o.id));
@@ -65,6 +66,7 @@ export function destroyPermanents(state, ids, { cause = 'effect', putIds = [], f
       playerId:object.controllerId,controllerId:object.controllerId,
       ...(work.cause==='sba' && object.kind!=='creature'?{fromZone:'battlefield',sba:work.putIds.includes(object.id)?'zero_loyalty':'destroy'}:{}),
       ...(simultaneousIds.length>1?{simultaneousIds}:{}),
+      ...(departureGroupId?{departureGroupId}:{}),
     }));
   }
   return true;

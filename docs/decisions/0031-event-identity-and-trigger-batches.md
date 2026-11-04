@@ -1,6 +1,6 @@
 # ADR 0031: Tożsamość zdarzenia i partia wyzwalaczy
 
-- **Status:** Proponowana
+- **Status:** Zaakceptowana
 - **Data:** 2026-11-04
 - **Decydenci:** właściciel, agent audytowy
 
@@ -10,7 +10,7 @@ A110/A112/A113: grupowanie „na komendę” i osobne kolejki nie wystarczą. In
 
 ## Decyzja
 
-Kierunek do przyjęcia przed zmianą modelu stanu:
+Przyjęty kierunek (właściciel: najpierw A110):
 1. jednoczesna grupa zdarzeń ma deterministyczny identyfikator; osobne aktywacje/koszty różne;
 2. wyzwalacze z grupy trafiają do jednej partii zamykanej przed priorytetem;
 3. między graczami aktywny→nieaktywny, wewnątrz gracza jawny wybór przy wielu zdolnościach;

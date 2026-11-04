@@ -10,15 +10,10 @@ import { addMana } from '../src/engine/resources.js';
 import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 
-// Otwarte przypadki pod flagą; kontrole pozostają aktywne domyślnie.
-const audit = (name, fn) =>
-  test(
-    name,
-    {
-      skip: process.env.AUDIT_A110_ENFORCE === '1' ? false : 'otwarte A110 (AUDIT_A110_ENFORCE=1)',
-    },
-    fn,
-  );
+// A110 zamknięte w PR #179 (ADR 0031): wszystkie przypadki są aktywne.
+// Podstawa: CR 603.2 (jedno zdarzenie / jedna grupa równoczesna), 603.10a
+// (odejście patrzy wstecz), 603.3b (partia przed priorytetem).
+// CR SHA-256: 8d860e451f20f38865b725b42d82feb714c725373dd8f3b32b8652b3eeb070ca.
 const registry = createCardRegistry();
 const other = (p) => (p === 'p1' ? 'p2' : 'p1');
 function put(state, id, cardId, controllerId, zone = 'battlefield') {
@@ -118,7 +113,7 @@ function assertReplay(state, base, factory) {
 }
 for (const payer of ['p1', 'p2'])
   for (const active of ['p1', 'p2']) {
-    audit(`A110: dwa osobne auto-Treasure dają dwa triggery Imp (${active}, ${payer})`, () => {
+    test(`A110: dwa osobne auto-Treasure dają dwa triggery Imp (${active}, ${payer})`, () => {
       const state = wardScene(active, payer),
         base = state.commands.length;
       const treasures = [...state.objects.values()]
@@ -192,7 +187,7 @@ for (const payer of ['p1', 'p2'])
 
 // Imp zostaje poświęcony dopiero po produkcji many jako koszt rzeczywistego czaru.
 for (const payer of ['p1', 'p2'])
-  audit(`A110: Imp zachowuje LKI, gdy potem sam jest kosztem Severed Strands (${payer})`, () => {
+  test(`A110: Imp zachowuje LKI, gdy potem sam jest kosztem Severed Strands (${payer})`, () => {
     const state = createGameState({ seed: 177112, players: [{ id: 'p1' }, { id: 'p2' }] });
     turn(state, payer);
     addObserversAndTreasures(state, payer);
@@ -227,7 +222,7 @@ for (const payer of ['p1', 'p2'])
 
 // Dwie rzeczywiste instancje Imp tego samego gracza, umieszczone w setupie.
 for (const payer of ['p1', 'p2'])
-  audit(`A110: dwie instancje Imp widzą dwa oddzielne auto-Treasure (${payer})`, () => {
+  test(`A110: dwie instancje Imp widzą dwa oddzielne auto-Treasure (${payer})`, () => {
     const state = wardScene(payer, payer, { extraImp: true }),
       base = state.commands.length;
     act(
@@ -245,7 +240,7 @@ for (const payer of ['p1', 'p2'])
 
 // Dwa kolejne tryby jednego realnego czaru: artefakty, potem stwory MV ≤3.
 for (const payer of ['p1', 'p2'])
-  audit(`A110: Imp widzi kolejno odejście artefaktów i własną śmierć po Austere (${payer})`, () => {
+  test(`A110: Imp widzi kolejno odejście artefaktów i własną śmierć po Austere (${payer})`, () => {
     const state = createGameState({ seed: 177113, players: [{ id: 'p1' }, { id: 'p2' }] });
     turn(state, payer);
     addObserversAndTreasures(state, payer);

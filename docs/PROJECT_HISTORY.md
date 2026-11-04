@@ -22,6 +22,8 @@
 
 ## 2026-11-03 — bezpieczna kontynuacja automatycznych kroków (PR #179)
 
+- 2026-11-04 — inwentarz emiterów/kolejkowania: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. ADR 0031 (tożsamość zdarzenia i partia wyzwalaczy) przyjęty jako kierunek; właściciel wybrał najpierw A110.
+- 2026-11-04 — A110: `departureGroupId` rozdziela osobne aktywacje many Skarbu i scala partię jednoczesnego zniszczenia; skan grupuje po kontrolerze i zdarzeniu, z fallbackiem komendy. RED 6/16 → GREEN 16/16, mutacja ignorująca identyfikator przywraca 6/16. A110 usunięte z kwarantanny; fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; pozostałe wymuszone RED **82**.
 - Po wyjaśnieniu właścicielowi kolejności automatycznych kroków przyjęto zlecenie dalszej pracy bez regresji działających kart. Przed zmianami zamrożono `ad4bf3b`: `npm run test:all` **10 097 pass / 114 skip / 0 fail** (489,2 s), build **77 modułów / 5673,7 kB**.
 - Roadmapa `docs/plans/PLAN_2026-11-03-bezpieczne-kroki-zdarzen.md` rozdziela testy chroniące, lokalny potwierdzony fix, granice zdarzeń i wspólną kolejność. Każdy krok wymaga RED→GREEN tam, gdzie naprawia błąd, mutacji, pełnego fast + build oraz osobnego push. Zmiana trwałego modelu stanu wymaga ADR przed kodowaniem.
 - Audyt pozostaje częściowy: 114 otwartych wierszy mapy i osobno 114 otwartych wymuszonych RED. Nie wdrożono eksperymentów `NIE_WDRAZAC`, nie dodano kart, nie uruchomiono B0.

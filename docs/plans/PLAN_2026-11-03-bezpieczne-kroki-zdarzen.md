@@ -54,10 +54,12 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 - [x] Zbudować inwentarz emiterów odchodzących obiektów i miejsc kolejkowania wyzwalaczy; rozróżnić jedną jednoczesną grupę od osobnych instrukcji oraz osobnych aktywacji zdolności many. Wynik: `../audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`.
 - [x] Na rzeczywistych komendach wykazać różnicę między obecnym grupowaniem „na komendę” a grupowaniem właściwego zdarzenia. Nie uznawać samego istnienia wielu ruchów w jednej komendzie za błąd. Dowód: wymuszone A110 (osobne auto-Treasure) przy zielonej kontroli jednoczesnego zniszczenia; A112/A113 dla partii kolejności.
-- [ ] Zachować kolejność i tożsamość zdarzeń w replay oraz nie podwajać wpisów stosu po wznowieniu decyzji.
-- [ ] Dopiero po reprodukcji zaprojektować najmniejszą zmianę granicy zdarzenia. Jeśli zmienia model stanu, przygotować ADR przed kodowaniem.
+- [x] Zachować kolejność i tożsamość zdarzeń w replay oraz nie podwajać wpisów stosu po wznowieniu decyzji. A110 ma aktywne assertions replay i fingerprint.
+- [x] Dopiero po reprodukcji zaprojektować najmniejszą zmianę granicy zdarzenia. Jeśli zmienia model stanu, przygotować ADR przed kodowaniem. ADR 0031 zaakceptowany; pierwszy krok objął tylko A110.
 
 **Ukończenie:** osobny dowód błędu, projekt granicy, testy obu stron granicy i pełna brama. Bez tego etapu nie zamykać A110 ani nie deklarować naprawy całej rodziny.
+
+**Wynik etapu 3 / A110:** przed poprawką 6 pass / 10 fail; po poprawce 16/16. Mutacja ignorująca `departureGroupId` przywraca 6 pass / 10 fail. Grupowanie używa jawnej grupy zdarzenia, a brak identyfikatora zachowuje dawną grupę komendy jako fallback. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; `test:audit` **108 testów / 26 pass / 82 fail**. NIE zamknięto A112/A113.
 
 ## Etap 4 — wspólna kolejność i automatyczne sprawdzenia
 
@@ -72,11 +74,11 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
 
-- **A110 (10 RED):** dwie osobne aktywacje many Skarbu w jednej płatności Ward są łączone w jedno zdarzenie odejścia, bo obecny klucz grupowania to kontroler w całym skanie/komendzie. Jednoczesne zniszczenie wielu permanentów nadal musi dawać jeden wyzwalacz. Potrzebna jest tożsamość **pojedynczego zdarzenia/grupy równoczesnej**, nie samej komendy.
+- **A110 (zamknięte):** dwie osobne aktywacje many Skarbu w jednej płatności Ward były łączone w jedno zdarzenie odejścia, bo klucz grupowania obejmował kontrolera w całym skanie/komendzie. Naprawa wprowadza `departureGroupId` dla osobnej aktywacji many i dla partii zniszczenia; jednoczesne zniszczenie nadal daje jeden wyzwalacz.
 - **A112 (8 RED):** grupowy wyzwalacz odejścia i celowany wyzwalacz śmierci nie trafiają do jednej partii wyboru kolejności; obecny wąski batch obejmuje tylko wybrane triggery śmierci. Dodatkowo gracz nie otrzymuje jawnego wyboru kolejności własnych zdolności, jeśli partia nie mieści się w tym wąskim batchu.
 - **A113 (4 RED):** mieszany checkpoint obrażeń bojowych i śmierci wymaga tej samej granicy partii oraz jawnej kolejności całej partii, nie tylko końcowego sortowania fragmentu stosu.
 
-Wniosek: następny krok nie powinien polegać na dodaniu kolejnego wyjątku do obecnego sortowania. Trzeba najpierw zdefiniować granicę zdarzenia i partii oczekujących zdolności oraz sposób zapisu wyborów kolejności w replay. Jeżeli wymaga to nowego trwałego pola stanu lub zmiany protokołu decyzji, powstaje ADR **przed** kodowaniem. Przygotowano propozycję: `../decisions/0031-event-identity-and-trigger-batches.md` (status Proponowana). Małe poprawki lokalne nadal mogą być wdrażane osobno, jeśli nie zmieniają tej granicy.
+Wniosek: następny krok nie powinien polegać na dodaniu kolejnego wyjątku do obecnego sortowania. Trzeba najpierw zdefiniować granicę zdarzenia i partii oczekujących zdolności oraz sposób zapisu wyborów kolejności w replay. Jeżeli wymaga to nowego trwałego pola stanu lub zmiany protokołu decyzji, powstaje ADR **przed** kodowaniem. ADR: `../decisions/0031-event-identity-and-trigger-batches.md` (status Zaakceptowana; właściciel wybrał najpierw A110). Małe poprawki lokalne nadal mogą być wdrażane osobno, jeśli nie zmieniają tej granicy.
 
 ## Kolejność commitów i procedura bezpieczeństwa
 

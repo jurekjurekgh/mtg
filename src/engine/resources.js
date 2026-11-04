@@ -1533,6 +1533,7 @@ export function tapTreasureForMana(state, playerId, objectId, { grantColor = nul
   const moved = moveObjectDirectly(state, objectId, toZone, destId);
   state.events.push(event('permanent_sacrificed', {
     fromId: objectId, objectId: destId, playerId, object: moved, cardId: moved.cardId, toZone,
+    departureGroupId: `mana-${objectId}-${destId}`,
   }));
   const colors = grantColor ? [grantColor] : ability.colors;
   const mana = addMana(state, playerId, ability.amount, { colors, fromTreasure: true });

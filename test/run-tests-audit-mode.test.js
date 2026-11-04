@@ -17,9 +17,10 @@ test('run-tests: audit --list wykrywa pliki i flagi kwarantanny', () => {
   assert.equal(plan.mode, 'audit');
   assert.ok(plan.files.includes('audyt-pr177-a84-ward-apnap.test.js'));
   assert.ok(plan.files.includes('audyt-pr177-a113-mixed-combat-apnap.test.js'));
-  // A111 zostało zamknięte w PR #179 i nie jest już plikiem kwarantanny.
+  // A111 i A110 zostały zamknięte w PR #179 i nie są już plikami kwarantanny.
   assert.ok(!plan.files.includes('audyt-pr177-a111-imp-self-lki.test.js'));
-  assert.ok(plan.files.length >= 15);
+  assert.ok(!plan.files.includes('audyt-pr177-a110-auto-mana-events.test.js'));
+  assert.ok(plan.files.length >= 14);
   for (const file of plan.files) {
     assert.ok(fs.existsSync(path.join(root, 'test', file)), file);
   }
@@ -27,7 +28,8 @@ test('run-tests: audit --list wykrywa pliki i flagi kwarantanny', () => {
   assert.ok(flags.includes('AUDIT_A84_ENFORCE'));
   assert.ok(flags.includes('AUDIT_A113_ENFORCE'));
   assert.ok(!flags.includes('AUDIT_A111_ENFORCE'));
-  assert.equal(flags.length, 15);
+  assert.ok(!flags.includes('AUDIT_A110_ENFORCE'));
+  assert.equal(flags.length, 14);
   for (const flag of flags) assert.equal(plan.env[flag], '1');
 });
 
