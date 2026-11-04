@@ -35,7 +35,7 @@
 4. Inwentarz emiterów/kolejkowania wykonany: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. ADR 0031 zaakceptowany; właściciel wybrał najpierw A110.
 5. A110 wykonane: `departureGroupId` dla osobnych aktywacji many i partii zniszczenia, grupowanie po zdarzeniu z fallbackiem komendy. RED 6/16 → GREEN 16/16, mutacja złapana, A110 usunięte z kwarantanny. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; pełny `test:all` **10 134 pass / 84 skip / 0 fail**.
 6. A112 wykonane: istniejąca partia śmierci obejmuje grupowe odejście permanentów, cele i jawny wybór kolejności. RED 2/10 → GREEN 10/10, mutacja złapana, replay/fingerprint aktywne. Fast **9876 pass / 74 skip / 0 fail**, build **77 modułów / 5677,3 kB**; pełny `test:all` **10 144 pass / 74 skip / 0 fail**.
-7. A113 wykonane: partia obejmuje `combat_damage_to_player`, dzięki czemu mieszany checkpoint walki ma wspólną kolejność i cele. RED 0/4 → GREEN 4/4, mutacja złapana, replay/fingerprint aktywne. Fast **9880 pass / 70 skip / 0 fail**, build **77 modułów / 5677,4 kB**.
+7. A113 wykonane: partia obejmuje `combat_damage_to_player`, dzięki czemu mieszany checkpoint walki ma wspólną kolejność i cele. RED 0/4 → GREEN 4/4, mutacja złapana, replay/fingerprint aktywne. Fast **9880 pass / 70 skip / 0 fail**, build **77 modułów / 5677,4 kB**; pełny `test:all` **10 148 pass / 70 skip / 0 fail**.
 8. Pozostałe otwarte przypadki (A84/A98/A100–A109) wymagają osobnych dowodów. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
 
 ## Zasady nie do obejścia

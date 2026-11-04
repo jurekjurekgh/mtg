@@ -72,7 +72,7 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A112:** fast **9876 pass / 74 skip / 0 fail**, build **77 modułów / 5677,3 kB**; `test:audit` **98 testów / 24 pass / 74 fail**. Pełny `test:all` po A112: **10 144 pass / 74 skip / 0 fail**. A113 pozostaje otwarte (4 RED). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
-**Wynik podetapu A113:** fast **9880 pass / 70 skip / 0 fail**, build **77 modułów / 5677,4 kB**; `test:audit` **94 testy / 24 pass / 70 fail**. Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
+**Wynik podetapu A113:** fast **9880 pass / 70 skip / 0 fail**, build **77 modułów / 5677,4 kB**; `test:audit` **94 testy / 24 pass / 70 fail**. Pełny `test:all` po A113: **10 148 pass / 70 skip / 0 fail**. Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
