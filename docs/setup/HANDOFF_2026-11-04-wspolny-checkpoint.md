@@ -2,17 +2,18 @@
 
 ## Stan
 
-- Gałąź `arena/5d931b5a-mtg`, PR #179 (draft). Kod HEAD przed tym dokumentem: `3fcf1b6` („feat: checkpoint modalny i kontynuacja SBA”). Dokumentacja domyka etap 3.
+- Gałąź `arena/5d931b5a-mtg`, PR #179 (draft). Kod HEAD: `5d0f343` („test: kontrole SBA checkpointu i komentarz APNAP”). Dokumentacja domyka etap 3c.
 - Wdrożony zakres ADR 0032: partia checkpointu obejmuje wszystkie zwykłe wyzwalacze okna (nie tylko śmierć), cele pojedyncze/wielokrotne, `allowNone`, cele stałe, `specOverride`, modalne triggery i podział obrażeń. APNAP + jawny wybór kontrolera; cele/tryby/podziały ogłaszane pojedynczo w kolejności umieszczania na stosie.
 - Ward z celów czeka w `pendingWardAnnouncements` na drugi przebieg. Kontynuacja po SBA tworzy nową partię wyłącznie z wpisów spoza stosu sprzed SBA. Płatności Ward/optional pozostają odroczone; mana dozwolona przy żądaniu zapłaty.
-- Madness zachowuje istniejące domknięcie `madnessQueue`/`madnessBatchTriggerIds` i wspólny wybór kolejności A28; exploit/devour/Saga przechodzą kontrole bez podwójnych wpisów. Historyczne pole `pendingDeathTriggerBatch` i flaga `deathBatch` pozostają nośnikiem partii do osobnej migracji nazw.
+- Madness i refleksy odrzucenia należą do wspólnej partii: usunięto równoległy `startMadnessTriggerOrder`, a kolejka madness nie jest blokowana przez oczekujący cel/tryb tej samej partii. `madnessBatchTriggerIds` zasila wspólny checkpoint; cel refleksu jest ogłaszany dopiero po wyborze kolejności.
+- Historyczne pole `pendingDeathTriggerBatch` i flaga `deathBatch` pozostają nośnikiem partii do osobnej migracji nazw. `placeTriggerBatchInApnapOrder` stabilizuje już tylko APNAP; wybór wewnątrz kontrolera oferuje checkpoint.
 
 ## Dowody
 
-- Nowe testy: `test/checkpoint-etb-kolejnosc.test.js` (Impact Tremors/Loporrit Scout, Weftblade Enhancer, Inferno Titan), `test/checkpoint-modal-kolejnosc.test.js` (Etched Host Doombringer). Mutacje: wąski filtr zdarzeń oblewa 3 testy; ignorowanie modali oblewa test modalny.
-- Skorygowane oczekiwania: M382/D (wybór kontrolera zamiast kolejności wykrycia), A75 (Ward czeka, nie wyklucza partii), A77 (koszt odrzucenia uruchamia checkpoint), B63 (dwa modalne ETB), helpery exploit/drain.
-- Bramy końcowe: strażnicy dokumentów **25/25**, `test:audit` **724/724**, fast **9960/9960**, pełny `test:all` **10228/10228** (593,2 s), build **77 modułów / 5691,2 kB**; 0 fail / 0 skip.
-- Golden-master bota zregenerowany świadomie: tylko `ravnica-wur|innistrad-wu@1001` (298→299 decyzji, scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
+- Nowe testy: `test/checkpoint-etb-kolejnosc.test.js`, `test/checkpoint-modal-kolejnosc.test.js`, `test/checkpoint-madness-kolejnosc.test.js`, `test/checkpoint-sba-kontrole.test.js`. Mutacje: wąski filtr zdarzeń oblewa 3 testy ETB; ignorowanie modali oblewa test modalny; przywrócenie blokady kolejki madness oblewa 2 testy.
+- Skorygowane oczekiwania: M382/D, A75, A77, B63, A28 (kolejność przed celem), helpery exploit/drain.
+- Bramy końcowe: strażnicy dokumentów **25/25**, `test:audit` **724/724**, fast **9964/9964**, pełny `test:all` **10232/10232** (563,0 s), build **77 modułów / 5691,2 kB**; 0 fail / 0 skip.
+- Golden-master bota zregenerowany świadomie w etapie 2: tylko `ravnica-wur|innistrad-wu@1001` (298→299 decyzji, scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
 
 ## Granice i następne kroki
 
