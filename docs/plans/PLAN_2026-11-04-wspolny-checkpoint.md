@@ -35,10 +35,12 @@ Wcześniejsze oznaczenie tego etapu jako wykonanego było przedwczesne. Zielone 
 - [x] Przekazać identyfikatory z `madnessBatchTriggerIds` do wspólnego checkpointu razem z oczekującymi celami/trybami. Usunąć równoległe uruchamianie kolejności madness; zachować bufor, gdy rozstrzyganie jeszcze trwa. Nie emitować ponownie zdarzeń ani wpisów stosu.
 - [x] Mutacja przywracająca blokadę kolejki przez decyzję celu oblewa oba nowe testy (`.arena/checkpoint/madness-mutation.log`); kontrole: A28 + nowy test **15/15**, `test:audit` **724/724**, fast **9962/9962**, build **77/5691,1 kB**; osobny commit i push. Usunięto równoległy `startMadnessTriggerOrder`; kolejka madness nie jest już blokowana przez oczekujący cel/tryb tej samej partii.
 
-### 3b. Domknięcie pętli i nazw
+### 3b. Domknięcie pętli i nazw (wykonana)
 
-- [ ] Sprawdzić na prawdziwych kartach powtórne SBA po ogłoszeniu wyzwalaczy (Saga/token/aura), bez pomijania decyzji gracza i bez przesuwania istniejących wpisów. Naprawić tylko potwierdzoną lukę RED→GREEN.
-- [ ] Poprawić komentarz `placeTriggerBatchInApnapOrder`: APNAP zachowuje kolejność wewnątrz kontrolera; właściwy wybór oferuje checkpoint. Historyczne `pendingDeathTriggerBatch`/`deathBatch` pozostają nośnikiem do osobnej migracji nazw, chyba że bezpieczne przemianowanie jest częścią tego etapu.
+- [x] Sprawdzić na prawdziwych kartach powtórne SBA po ogłoszeniu wyzwalaczy (Saga/token/aura), bez pomijania decyzji gracza i bez przesuwania istniejących wpisów. Naprawić tylko potwierdzoną lukę RED→GREEN.
+- [x] Poprawić komentarz `placeTriggerBatchInApnapOrder`: APNAP zachowuje kolejność wewnątrz kontrolera; właściwy wybór oferuje checkpoint. Historyczne `pendingDeathTriggerBatch`/`deathBatch` pozostają nośnikiem do osobnej migracji nazw, chyba że bezpieczne przemianowanie jest częścią tego etapu.
+
+**Wynik 3b:** kontrole `test/checkpoint-sba-kontrole.test.js` (Man-o'-War + token + Serra's Embrace; Rediscover the Way + Feedback + Courage in Crisis) przechodzą bez dodatkowej zmiany produkcji — istniejące SBA/choke point stref domykają aurę przed priorytetem. Nie potwierdzono luki wymagającej RED→GREEN w tym podetapie; dodano straży. Komentarz APNAP poprawiony, literówka B63 usunięta. Fast **9964/9964**, build **77/5691,1 kB**.
 
 ### 3c. Dowody i dokumentacja końcowa
 

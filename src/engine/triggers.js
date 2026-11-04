@@ -2691,8 +2691,9 @@ function fireEnterBattlefieldTriggers(state, entered, events, context = {}) {
  * they choose." APNAP = gracz aktywny, potem każdy inny gracz w kolejności tur
  * (CR 101.4) — w tym silniku kolejność tur to `state.players` cyklicznie od
  * gracza aktywnego (tak samo liczy ją `nextTurnStep`, turn.js). Kolejność
- * wewnątrz jednego kontrolera zostaje bez zmian (deterministyczna kolejność
- * wykrycia — silnik nie pyta gracza o kolejność własnych zdolności).
+ * wewnątrz jednego kontrolera ten helper tylko stabilizuje kolejność wykrycia;
+ * właściwy wybór kolejności oferuje wspólny checkpoint (ADR 0032,
+ * `pendingDeathTriggerBatch` / `resolve_trigger_order`).
  *
  * `stackStart` = długość stosu przed skanem, więc regulujemy WYŁĄCZNIE wpisy
  * dodane przez ten skan (starsze wpisy stosu są nietykalne). Gdy w segmencie

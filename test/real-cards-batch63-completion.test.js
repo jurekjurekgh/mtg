@@ -325,7 +325,7 @@ function tokenMaker(s, cardId, amount = 1) {
     } })] });
 }
 
-test('B63/modal: dwa ETB w jednej komendie nie nadpisują pierwszego wyboru (ADR 0032)', () => {
+test('B63/modal: dwa ETB w jednej komendzie nie nadpisują pierwszego wyboru (ADR 0032)', () => {
   const s = game(); tokenMaker(s, 'etched-host-doombringer', 2);
   run(s, offers(s).find(c => c.type === 'activate_ability' && c.objectId === 'maker'));
   for (let i = 0; i < 10 && !s.pendingModalTrigger && !offers(s).some(c => c.type === 'resolve_trigger_order'); i++) pass(s);

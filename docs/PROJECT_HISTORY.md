@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — wspólny checkpoint, etap 3b: kontrole SBA i komentarz APNAP
+
+- Dodano kontrole na realnych kartach: token wrócony Man-o'-War znika, a Serra's Embrace trafia do grobu przed priorytetem; poświęcona Rediscover the Way nie zostawia Feedbacku na polu bitwy. Istniejący choke point stref/SBA domyka te przypadki — bez dodatkowej zmiany produkcji, dodano straży.
+- Poprawiono komentarz `placeTriggerBatchInApnapOrder` (helper stabilizuje APNAP, wybór wewnątrz kontrolera oferuje checkpoint) i literówkę w tytule B63. Fast **9964/9964**, build **77 modułów / 5691,1 kB**; 0 fail / 0 skip.
+
+
 ## 2026-11-04 — wspólny checkpoint, etap 3a: madness w jednej partii
 
 - Audyt kodu wykazał przedwczesne zamknięcie etapu 3: kolejka madness była blokowana przez oczekujący cel refleksu, a osobny `startMadnessTriggerOrder` nie obejmował celów. Plan skorygowano przed kodowaniem (`c2e02c4`).
