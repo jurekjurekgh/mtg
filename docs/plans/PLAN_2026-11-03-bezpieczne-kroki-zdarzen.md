@@ -52,8 +52,8 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 ## Etap 3 — granice pojedynczych zdarzeń, dopiero po dowodzie
 
-- [ ] Zbudować inwentarz emiterów odchodzących obiektów i miejsc kolejkowania wyzwalaczy; rozróżnić jedną jednoczesną grupę od osobnych instrukcji oraz osobnych aktywacji zdolności many.
-- [ ] Na rzeczywistych komendach wykazać różnicę między obecnym grupowaniem „na komendę” a grupowaniem właściwego zdarzenia. Nie uznawać samego istnienia wielu ruchów w jednej komendzie za błąd.
+- [x] Zbudować inwentarz emiterów odchodzących obiektów i miejsc kolejkowania wyzwalaczy; rozróżnić jedną jednoczesną grupę od osobnych instrukcji oraz osobnych aktywacji zdolności many. Wynik: `../audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`.
+- [x] Na rzeczywistych komendach wykazać różnicę między obecnym grupowaniem „na komendę” a grupowaniem właściwego zdarzenia. Nie uznawać samego istnienia wielu ruchów w jednej komendzie za błąd. Dowód: wymuszone A110 (osobne auto-Treasure) przy zielonej kontroli jednoczesnego zniszczenia; A112/A113 dla partii kolejności.
 - [ ] Zachować kolejność i tożsamość zdarzeń w replay oraz nie podwajać wpisów stosu po wznowieniu decyzji.
 - [ ] Dopiero po reprodukcji zaprojektować najmniejszą zmianę granicy zdarzenia. Jeśli zmienia model stanu, przygotować ADR przed kodowaniem.
 
