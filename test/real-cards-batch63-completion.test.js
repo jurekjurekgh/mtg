@@ -325,12 +325,17 @@ function tokenMaker(s, cardId, amount = 1) {
     } })] });
 }
 
-test('B63/modal: dwa ETB w jednej komendzie nie nadpisują pierwszego wyboru', () => {
+test('B63/modal: dwa ETB w jednej komendie nie nadpisują pierwszego wyboru (ADR 0032)', () => {
   const s = game(); tokenMaker(s, 'etched-host-doombringer', 2);
   run(s, offers(s).find(c => c.type === 'activate_ability' && c.objectId === 'maker'));
-  for (let i = 0; i < 10 && !s.pendingModalTrigger; i++) pass(s);
-  assert.ok(s.pendingModalTrigger?.next, 'obie decyzje zachowane');
+  for (let i = 0; i < 10 && !s.pendingModalTrigger && !offers(s).some(c => c.type === 'resolve_trigger_order'); i++) pass(s);
+  const orders = offers(s).filter(c => c.type === 'resolve_trigger_order');
+  assert.equal(orders.length, 2, 'dwie modalne zdolności w partii checkpointu');
+  const modalSlots = Object.values(s.pendingDeathTriggerBatch?.slots ?? {}).filter(slot => slot.modal);
+  assert.equal(modalSlots.length, 2, 'obie decyzje zachowane w partii');
+  run(s, orders[0]);
   for (let i = 0; i < 2; i++) {
+    assert.ok(s.pendingModalTrigger, 'czeka modalna decyzja');
     run(s, offers(s).find(c => c.type === 'resolve_modal_choice' && c.modeIndex === 0));
     assert.equal(life(s, 'p2'), 20, 'brak skutku w czasie ogłaszania trybów');
   }

@@ -18,12 +18,12 @@ Wdrożyć pełny wspólny checkpoint wszystkich typów zdarzeń zgodnie z ADR 00
 - [x] Dodać wybór kolejności wewnątrz kontrolera dla ETB/innych zdarzeń; skorygować M382/D, który pinował kolejność wykrycia zamiast wyboru (CR 603.3b).
 - [x] Mutacja usuwa poprawkę (3/7 fail w `.arena/checkpoint/etb-mutation.log`); kontrole: `test:audit` 724/724, fast **9959/9959**, build; osobny commit i push. Poprawiono M382/D i A75 (Ward czeka, nie wyklucza partii) oraz helpery drenujące nowe oferty kolejności.
 
-## Etap 2 — modalność, podziały i pętla SBA
+## Etap 2 — modalność, podziały i pętla SBA (wykonany)
 
-- [ ] Włączyć modalne triggery i podział obrażeń do tej samej partii; decyzje w kolejności ogłoszenia, bez priorytetu pomiędzy.
-- [ ] Dodać powtórne SBA po ogłoszeniu partii/Ward i nową partię, jeśli powstały nowe wyzwalacze; zachować bramki rozstrzygania/płatności.
-- [ ] Zintegrować madness/devour/Saga bez podwójnych wpisów i bez ukrywania istniejących wpisów.
-- [ ] Mutacje i kontrole; pełny fast + build; osobny commit i push.
+- [x] Włączyć modalne triggery i podział obrażeń do tej samej partii; decyzje w kolejności ogłoszenia, bez priorytetu pomiędzy.
+- [x] Dodać powtórne SBA po ogłoszeniu partii/Ward i nową partię, jeśli powstały nowe wyzwalacze; zachować bramki rozstrzygania/płatności.
+- [x] Zachować madness/devour/Saga bez podwójnych wpisów: istniejące domknięcie madness (`madnessBatchTriggerIds`) i kolejność A28 pozostały, exploit/Saga przechodzą kontrole; checkpoint nie dubluje wpisów. bez podwójnych wpisów i bez ukrywania istniejących wpisów.
+- [x] Mutacja modalna oblewa nowy test (`.arena/checkpoint/modal-mutation.log`); kontrole: `test:audit` 724/724, fast **9960/9960**, build; osobny commit i push. Świadoma regeneracja golden-mastera bota (tylko ravnica-wur|innistrad-wu@1001: 298→299 decyzji).
 
 ## Etap 3 — domknięcie i dokumentacja
 

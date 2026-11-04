@@ -64,6 +64,11 @@ import {
  *     wyników WYBRANYCH komend. Hash i agregaty nie dowodzą jakości gry ani
  *     przyczyny dryfu. Historyczny pomiar quick: heuristic 87.5% ogółem,
  *     vs random 96.7%, vs aggro 78.3%; nie jest to pomiar obecnego drzewa.
+ *   - abc34db7… → bf7acd6a… (ADR 0032, wspólny checkpoint, etap 2): jawne
+ *     wybory kolejności/modalne checkpointu zmieniają trajektorię bota.
+ *     Zmierzona różnica: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji,
+ *     scoreSum 3186.9495→3166.2283); pozostałe pięć śladów bitowo identycznych.
+ *     To nie jest pomiar jakości gry ani tuning parametrów.
  *   - 0e1c042c… → abc34db7… (audyt #177 A74, APNAP): w @1000 po
  *     Summary Judgment w turze 15 gracz random dostał nowy wybór kolejności
  *     Elgaud Inquisitor / Selhoff Occultist. Wybrał Occultist jako pierwszy,

@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — wspólny checkpoint, etap 2: modalność i kontynuacja SBA
+
+- Partia checkpointu obejmuje modalne triggery; cele/tryby/podziały są ogłaszane pojedynczo w kolejności umieszczania na stosie, bez priorytetu pomiędzy. Kontynuacja po SBA łapie wyłącznie nowe wpisy spoza stosu sprzed SBA.
+- RED/mutacja na Etched Host Doombringer + Impact Tremors; poprawiono B63 (dwa modalne ETB), A77 (koszt odrzucenia uruchamia checkpoint) i helpery exploit. Madness/devour/Saga zachowane bez dubli; istniejąca kolejność madness A28 pozostała.
+- Bramy: `test:audit` **724/724**, fast **9960/9960**, build; 0 fail / 0 skip. Golden-master bota zregenerowany świadomie: tylko ravnica-wur|innistrad-wu@1001 (298→299 decyzji, scoreSum 3186.9495→3166.2283), pozostałe pięć śladów bez zmian.
+
+
 ## 2026-11-04 — wspólny checkpoint, etap 1: zwykłe wyzwalacze wszystkich typów
 
 - ADR 0032 i plan wdrożenia; partia checkpointu nie jest już ograniczona do śmierci/odejścia/obrażeń ani wąskich celów. Obejmuje zwykłe wyzwalacze okna, cele wielokrotne i podział obrażeń; Ward czeka na drugi przebieg.

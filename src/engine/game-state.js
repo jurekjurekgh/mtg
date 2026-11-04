@@ -2057,13 +2057,53 @@ function startMadnessTriggerOrder(state) {
 
 // ADR 0032: wspólny checkpoint ogłoszeń. Historyczna nazwa pola i funkcji
 // (`pendingDeathTriggerBatch`) zostaje na czas migracji, ale partia obejmuje
-// WSZYSTKIE zwykłe wyzwalacze okna, nie tylko śmierć/odejście/obrażenia.
-// Wybory kontrolerów są APNAP: najpierw porządek aktywnego i jego cele,
-// potem decyzje pozostałych graczy. Ward czeka na drugi przebieg.
+// WSZYSTKIE zwykłe wyzwalacze okna, także modalne. Wybory kontrolerów są
+// APNAP; cele/tryby/podziały ogłaszamy pojedynczo w kolejności umieszczania
+// na stosie (od najniższego do najwyższego), bez priorytetu pomiędzy.
+const isOrdinaryCheckpointTrigger = name => name !== 'ward';
+const CHECKPOINT_BATCH_COMMANDS = new Set([
+  'pass_priority', 'play_land', 'cast_spell', 'cast_permanent', 'cast_cleave',
+  'cast_escape', 'cast_flashback', 'cast_adventure', 'cast_adventure_creature',
+  'activate_ability', 'declare_attackers', 'declare_blockers', 'resolve_combat',
+]);
+
+function announceNextTriggerBatchSlot(state, batch, group) {
+  group.announcements ??= [...(group.topFirst ?? group.keys)].reverse();
+  group.announcementIndex ??= 0;
+  while (group.announcementIndex < group.announcements.length) {
+    const key = group.announcements[group.announcementIndex];
+    const slot = batch.slots[key];
+    if (slot.target) {
+      state.pendingTriggerTargets = [{ ...slot.target, deathBatchSlotId: key }];
+      state.turn.priorityPlayerId = group.playerId;
+      return;
+    }
+    if (slot.modal) {
+      state.pendingModalTrigger = { ...slot.modal, deathBatchSlotId: key, next: null };
+      state.turn.priorityPlayerId = group.playerId;
+      return;
+    }
+    // Wpis już jest na stosie (trigger bez celu) — nie ma publicznej decyzji.
+    group.announcementIndex += 1;
+  }
+  batch.index += 1;
+  advanceDeathTriggerBatch(state);
+}
+
+function continueTriggerBatchAnnouncement(state, slotKey) {
+  const batch = state.pendingDeathTriggerBatch;
+  if (!batch) return;
+  const group = batch.groups.find(g => g.keys.includes(slotKey));
+  if (!group) return;
+  group.announcementIndex = (group.announcementIndex ?? 0) + 1;
+  announceNextTriggerBatchSlot(state, batch, group);
+}
+
 function advanceDeathTriggerBatch(state) {
   const batch = state.pendingDeathTriggerBatch;
-  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length || state.pendingDamageDivision) return;
-  while (batch.index < batch.groups.length) {
+  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length
+    || state.pendingDamageDivision || state.pendingModalTrigger) return;
+  if (batch.index < batch.groups.length) {
     const group = batch.groups[batch.index];
     if (!group.topFirst && group.keys.length > 1) {
       state.pendingTriggerOrder = { deathBatch: true, groups: [{ playerId: group.playerId,
@@ -2072,16 +2112,8 @@ function advanceDeathTriggerBatch(state) {
       return;
     }
     group.topFirst ??= [...group.keys];
-    if (!group.targetsStarted) {
-      group.targetsStarted = true;
-      const targets = [...group.topFirst].reverse().map(key => batch.slots[key].target).filter(Boolean);
-      if (targets.length) {
-        state.pendingTriggerTargets = targets;
-        state.turn.priorityPlayerId = group.playerId;
-        return;
-      }
-    }
-    batch.index += 1;
+    announceNextTriggerBatchSlot(state, batch, group);
+    return;
   }
   const inOrder = batch.groups.flatMap(group => [...group.topFirst].reverse()
     .map(key => batch.slots[key].stackId).filter(id => id && state.zones.stack.includes(id)));
@@ -2091,45 +2123,35 @@ function advanceDeathTriggerBatch(state) {
   state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
-// ADR 0032 / CR 603.3b: checkpoint obejmuje wszystkie zwykłe wyzwalacze okna.
-// Nie filtrujemy już po typie zdarzenia ani po wąskiej liście celów; cele,
-// tryby i podziały ogłaszamy w partii, a Ward powstaje dopiero z celów.
-const isOrdinaryCheckpointTrigger = name => name !== 'ward';
-const CHECKPOINT_BATCH_COMMANDS = new Set([
-  'pass_priority', 'play_land', 'cast_spell', 'cast_permanent', 'cast_cleave',
-  'cast_escape', 'cast_flashback', 'cast_adventure', 'cast_adventure_creature',
-  'activate_ability', 'declare_attackers', 'declare_blockers', 'resolve_combat',
-]);
-
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, resolutionClosure = false) {
   const allowedCommand = CHECKPOINT_BATCH_COMMANDS.has(cmd.type)
     || (resolutionClosure && ['resolve_ward_pay_choice', 'resolve_optional_pay_choice'].includes(cmd.type));
   if (!allowedCommand || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   if (cmd.type === 'activate_ability' && !standaloneManaActivation) {
-    // Nie wchodzimy w płacenie maną ani koszt odrzucenia: tylko faktycznie
-    // zakolejkowana niemanowa zdolność po zakończeniu jej kosztów.
     const activation = events.find(e => e.type === 'ability_activated' && e.onStack && e.stackEntryId);
     const entry = activation && state.objects.get(activation.stackEntryId);
     const cost = entry?.activatedEntry?.ability?.cost;
     if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
   }
-  // A101 / CR 603.12 + 603.3b: refleks „When you do…” reaguje na zapłatę,
-  // nie na wyzwolenie innej zdolności. Należy do pierwszej, wspólnej partii.
-  // Ward powstaje dopiero z celów i czeka na kolejny przebieg ogłoszenia.
   const allTargets = state.pendingTriggerTargets;
-  const targets = allTargets;
-  if (targets.some(p => !isOrdinaryCheckpointTrigger(p.ability?.trigger?.event)
+  if (allTargets.some(p => !isOrdinaryCheckpointTrigger(p.ability?.trigger?.event)
     || !triggerTargetDecisionPending(state, p))) return;
+  const modalHead = state.pendingModalTrigger;
+  const modals = [];
+  for (let m = modalHead; m; m = m.next) modals.push(m);
+  if (modals.some(m => !isOrdinaryCheckpointTrigger(m.ability?.trigger?.event))) return;
   // Żadna inna zaległa decyzja nie może być przestawiona przed końcem efektu.
   state.pendingTriggerTargets = [];
+  state.pendingModalTrigger = null;
   const otherDecision = firstPendingDecision(state);
   state.pendingTriggerTargets = allTargets;
+  state.pendingModalTrigger = modalHead;
   if (otherDecision) return;
   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
     .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id)
       && isOrdinaryCheckpointTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event));
-  if (ids.length + targets.length < 2) return;
+  if (ids.length + allTargets.length + modals.length < 2) return;
   const players = state.players.map(p => p.id);
   const activeIndex = players.indexOf(state.turn.activePlayerId);
   const ordered = activeIndex < 0 ? players : [...players.slice(activeIndex), ...players.slice(0, activeIndex)];
@@ -2137,22 +2159,28 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   for (const id of ids) {
     const entry = state.objects.get(id);
     slots[id] = { playerId: entry.controllerId, cardId: entry.cardId,
-      trigger: entry.triggerEntry.ability.trigger.event, stackId: id, target: null };
+      trigger: entry.triggerEntry.ability.trigger.event, stackId: id, target: null, modal: null };
   }
-  for (const [index, target] of targets.entries()) {
-    // Wirtualny identyfikator żyje tylko w tej partii, nie jest obiektem gry.
-    // Prefiks pozostaje historyczny (`death-target-`) dla zgodności migracji.
+  for (const [index, target] of allTargets.entries()) {
     const key = `death-target-${index}`;
     slots[key] = { playerId: target.playerId, cardId: target.cardId,
-      trigger: target.ability.trigger.event, stackId: null,
+      trigger: target.ability.trigger.event, stackId: null, modal: null,
       target: { ...target, deathBatchSlotId: key, restorePriorityTo } };
+  }
+  for (const [index, modal] of modals.entries()) {
+    const key = `death-modal-${index}`;
+    const { next: _next, ...rest } = modal;
+    slots[key] = { playerId: modal.playerId, cardId: modal.cardId,
+      trigger: modal.ability?.trigger?.event ?? null, stackId: null, target: null,
+      modal: { ...rest, restorePriorityTo } };
   }
   const keys = Object.keys(slots);
   const groups = ordered.map(playerId => ({ playerId,
-    keys: keys.filter(key => slots[key].playerId === playerId), topFirst: null, targetsStarted: false }))
+    keys: keys.filter(key => slots[key].playerId === playerId), topFirst: null }))
     .filter(group => group.keys.length);
   if (groups.flatMap(group => group.keys).length !== keys.length) return;
   state.pendingTriggerTargets = [];
+  state.pendingModalTrigger = null;
   state.pendingWardAnnouncements ??= [];
   state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo };
   advanceDeathTriggerBatch(state);
@@ -2218,6 +2246,9 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
   if (state.pendingWardAnnouncements == null && !state.pendingWardPay && !state.pendingOptionalPay) {
     state.pendingWardAnnouncements = [];
   }
+  // ADR 0032 / CR 117.5: wpisy istniejące przed SBA nie mogą wejść do nowej
+  // partii kontynuacji po SBA (np. właśnie ogłoszone cele/tryby).
+  const stackBeforeSba = new Set(state.zones.stack);
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
   // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
@@ -2337,6 +2368,17 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
   if (resolutionTriggerIds.length && !state.pendingDeathTriggerBatch) {
     const batchEvents = [...result.events, ...resolutionTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
     startDeathTriggerBatch(state, cmd, batchEvents, 0, triggerPriorityBefore, false, true);
+  }
+  // ADR 0032 / CR 117.5: po SBA mogą powstać NOWE wyzwalacze (np. śmierć
+  // od SBA). Dla komend ogłoszenia nie startujemy partii z ich własnych
+  // zdarzeń, ale kontynuacja łapie wyłącznie wpisy spoza stackBeforeSba.
+  if (!state.pendingDeathTriggerBatch) {
+    const continuationEvents = result.events.filter(e => e.type === 'ability_triggered'
+      && e.stackEntryId && !stackBeforeSba.has(e.stackEntryId));
+    if (continuationEvents.length || state.pendingTriggerTargets.length > triggerTargetsBefore) {
+      startDeathTriggerBatch(state, { type: 'pass_priority' }, continuationEvents,
+        triggerTargetsBefore, triggerPriorityBefore);
+    }
   }
   // A106/A107: dopiero gdy zwykła partia i jej cele są ogłoszone, Ward z
   // tych celów trafia na stos nad partią i dostaje własną kolejność.
@@ -3041,6 +3083,10 @@ export function execute(state, input) {
         playerId: cmd.playerId, sourceId: pending.sourceId,
         cardId: pending.cardId ?? null, skipped: true,
       }));
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = null;
+        continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
+      }
       return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
     }
     const modeIndex = cmd.modeIndex;
@@ -3068,8 +3114,12 @@ export function execute(state, input) {
         trigger: Object.freeze({ ...pending.ability?.trigger, modes: null, requiresTarget: spec ?? null }),
         effect: Object.freeze([...(mode.effects ?? [])]),
       });
-      queueTriggerToStack(state, selectedAbility, { ...source, controllerId: pending.playerId },
+      const modalEntry = queueTriggerToStack(state, selectedAbility, { ...source, controllerId: pending.playerId },
         spec ? [cmd.targetId] : [], [], { ...pending.extra, modeIndex, modeName: mode.name });
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = modalEntry?.id ?? null;
+        continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
+      }
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
   }
@@ -3566,12 +3616,7 @@ export function execute(state, input) {
       amounts: [...amounts],
     }));
     if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
-      if (state.pendingTriggerTargets.length === 0) {
-        state.pendingDeathTriggerBatch.index += 1;
-        advanceDeathTriggerBatch(state);
-      } else {
-        state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
-      }
+      continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
     } else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
@@ -5256,10 +5301,7 @@ export function execute(state, input) {
       }
       if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
         state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = stackEntryM?.id ?? null;
-        if (!state.pendingDamageDivision && state.pendingTriggerTargets.length === 0) {
-          state.pendingDeathTriggerBatch.index += 1;
-          advanceDeathTriggerBatch(state);
-        }
+        if (!state.pendingDamageDivision) continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
       }
       state.events.push(event('trigger_target_resolved', {
         playerId: pending.playerId, sourceId: pending.sourceId, cardId: pending.cardId,
@@ -5318,9 +5360,8 @@ export function execute(state, input) {
       targetId: chosen, noEffect: !sourceLegal || chosen === null,
       remaining: state.pendingTriggerTargets.length,
     }));
-    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch && state.pendingTriggerTargets.length === 0) {
-      state.pendingDeathTriggerBatch.index += 1;
-      advanceDeathTriggerBatch(state);
+    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+      continueTriggerBatchAnnouncement(state, pending.deathBatchSlotId);
     } else if (state.pendingTriggerTargets.length > 0) {
       state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
     } else if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
@@ -8140,7 +8181,7 @@ export function playerView(state, playerId) {
     for (const stackEntryId of group.remaining) {
       const entry = state.objects.get(stackEntryId);
       const slot = state.pendingDeathTriggerBatch?.slots[stackEntryId];
-      const ability = entry?.triggerEntry?.ability ?? slot?.target?.ability;
+      const ability = entry?.triggerEntry?.ability ?? slot?.target?.ability ?? slot?.modal?.ability;
       const effects = Array.isArray(ability?.effect) ? ability.effect : [ability?.effect];
       legalCommands.push(command('resolve_trigger_order', playerId, { stackEntryId,
         cardId: entry?.cardId ?? slot?.cardId, trigger: ability?.trigger?.event ?? slot?.trigger,
