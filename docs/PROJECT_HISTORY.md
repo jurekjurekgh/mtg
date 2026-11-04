@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, partia A10–A17
+
+- Kontynuacja po zamknięciu wymuszonych RED: semantyczny przegląd ośmiu otwartych wierszy mapy (A10–A17), pełne pliki i diff z #178, Oracle/CR. Łącznie **30/30 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **114 → 106 otwartych wierszy**. Zielony przebieg nie był jedynym dowodem; każdy wiersz dostał notę zakresu (bestow, kreator many, koszt kwalifikowany, cel, convoke, rezerwacje, improvise, rozstrzyganie celów).
+- Plan kontynuacji: `docs/plans/PLAN_2026-11-04-przeglad-mapy-pr178.md`. Następne partie: A75–A93 oraz dokumentacja historyczna.
+
+
 ## 2026-11-04 — A104–A107 bez kwarantanny i końcowa korekta A101 (PR #179)
 
 - Polecenie właściciela: rozstrzygnąć A104/A105 oraz konflikt z A94 samodzielnie, usunąć wszystkie „wymuszone RED” i doprowadzić zakres do zgodności z Comprehensive Rules (CR). Nie chodziło o zielony wynik przez pominięcia.

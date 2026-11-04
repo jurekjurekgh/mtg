@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje otwarty. Zielony pakiet z pominięciami nie zamyka kwarantanny.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30 testów); liczba otwartych wierszy spadła ze 114 do 106. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -59,7 +59,7 @@
 | `test/audyt-pmssb86-pozostale-karty-batcha.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/audyt-pr146-predykat-pipow-jeden.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
-| `test/audyt-pr177-a10-bestow-inwestycja.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a10-bestow-inwestycja.test.js` | test/fixture | przejrzany pełny test; bestow/inwestycja Edifice na rzeczywistych kartach, 3 warianty bot/payment, CR 702.103f, bez nowego błędu |
 | `test/audyt-pr177-a100-ward-triggers.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a101-reflexive-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a102-draw-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
@@ -70,17 +70,17 @@
 | `test/audyt-pr177-a107-two-ward-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a108-ward-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a109-ward-aura-sba.test.js` | test/fixture | przejrzany pełny test; otwarte RED SBA/Ward/LKI, bez lokalnej naprawy |
-| `test/audyt-pr177-a11-powrot-kreatora.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a11-powrot-kreatora.test.js` | test/fixture | przejrzany pełny test; powrót z zagnieżdżonego kreatora many, sesja + funkcje main.js, modal zamknięty/nadal widoczny, bez nowego błędu |
 | `test/audyt-pr177-a110-auto-mana-events.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
 | `test/audyt-pr177-a111-imp-self-lki.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
 | `test/audyt-pr177-a112-imp-selhoff-apnap.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
 | `test/audyt-pr177-a113-mixed-combat-apnap.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
-| `test/audyt-pr177-a12-koszt-kwalifikowany.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a13-cel-lad-stwor.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a14-wynik-kreatora.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a15-zarezerwowane-zrodla.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a16-improvise-kreator.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a17-rozstrzygniecie-celow.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a12-koszt-kwalifikowany.test.js` | test/fixture | przejrzany pełny test; kwalifikowany discard Vampire Hounds, wycena bota, ukryta ręka przeciwnika, jawny wariant dowolnej karty, bez nowego błędu |
+| `test/audyt-pr177-a13-cel-lad-stwor.test.js` | test/fixture | przejrzany pełny test; cel Cutthroata po obrażeniach, animowany ląd, hexproof i ochrona, oferta bot vs legalność celu, bez nowego błędu |
+| `test/audyt-pr177-a14-wynik-kreatora.test.js` | test/fixture | przejrzany pełny test; nieaktualny wariant convoke odrzucony bez fałszywego sukcesu, ważny wariant finalizuje, wyjątek sesji, bez nowego błędu |
+| `test/audyt-pr177-a15-zarezerwowane-zrodla.test.js` | test/fixture | przejrzany pełny test; rezerwacja źródła convoke w kreatorze nadrzędnym i podrzędnym, źródło nie płaci samo za siebie, bez nowego błędu |
+| `test/audyt-pr177-a16-improvise-kreator.test.js` | test/fixture | przejrzany pełny test; improvise płaci tylko generyczną część po ustaleniu kosztu, kicker/obniżka i nadmiar artefaktów, CR 702.126, bez nowego błędu |
+| `test/audyt-pr177-a17-rozstrzygniecie-celow.test.js` | test/fixture | przejrzany pełny test; Tail Slash przy nielegalnych celach/ochronie/lifelink i Rockslide liczony przy rozstrzyganiu, CR 608.2b, bez nowego błędu |
 | `test/audyt-pr177-a18-auto-platnosc-rodzic.test.js` | test/fixture | przejrzany pełny test; rezerwacje convoke w kreatorze many, bez nowego błędu |
 | `test/audyt-pr177-a19-bezbarwne-zrodla.test.js` | test/fixture | przejrzany pełny test; koszt {C} i źródła bezbarwne, bez nowego błędu |
 | `test/audyt-pr177-a20-platny-tryb-ladu.test.js` | test/fixture | przejrzany pełny test; płatny tryb bramy i wspólna rezerwacja, bez nowego błędu |
