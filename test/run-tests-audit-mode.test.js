@@ -1,5 +1,5 @@
-// Tryb `audit` runnera ma jawnie wylistować wszystkie pliki kwarantanny i flagi,
-// żeby otwarte RED nie zależały od ręcznie odtwarzanej komendy env.
+// Tryb `audit` runnera ma jawnie wylistować pełny zestaw regresji PR #177
+// i nie wstrzykiwać flag kwarantanny. Strażnik blokuje powrót wymuszonych RED.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';

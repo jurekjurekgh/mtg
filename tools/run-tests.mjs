@@ -45,8 +45,9 @@ const allFiles = fs.readdirSync(path.join(root, 'test'))
   .sort();
 const slowSet = new Set(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).slow);
 
-// Audyt PR #177 jest zamknięty: uruchamiamy pełny zestaw plików audytu bez
-// flag env i bez skipów. Nie ma trybu „wymuszonych RED”.
+// Zestaw regresji audytu PR #177 działa bez kwarantanny: wszystkie jego pliki,
+// bez flag env i bez skipów. Nie ma trybu „wymuszonych RED”. To nie zamyka
+// semantycznego przeglądu całego audytu #178 (osobna mapa otwartych wierszy).
 const auditEnv = {};
 const auditFiles = mode === 'audit'
   ? allFiles.filter((name) => name.startsWith('audyt-pr177-') && name.endsWith('.test.js'))

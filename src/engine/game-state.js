@@ -2090,15 +2090,7 @@ function advanceDeathTriggerBatch(state) {
   const batchIds = new Set(inOrder);
   state.zones.stack = [...state.zones.stack.filter(id => !batchIds.has(id)), ...inOrder];
   state.pendingDeathTriggerBatch = null;
-  // A101 / CR 603.3b: refleks „When you do…” jest drugą częścią ogłoszenia.
-  // Nie wybiera kolejności razem ze zwykłymi triggerami; czeka, aż cała
-  // zwykła partia APNAP zostanie ułożona, i dopiero wtedy wybiera cel.
-  if (batch.followupTargets?.length) {
-    state.pendingTriggerTargets = [...batch.followupTargets];
-    state.turn.priorityPlayerId = batch.followupTargets[0].playerId;
-  } else {
-    state.turn.priorityPlayerId = batch.restorePriorityTo;
-  }
+  state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
 // A112/A113 / ADR 0031: partia obejmuje też grupowe „one or more permanents
@@ -2126,16 +2118,14 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   const optionalClosure = resolutionClosure && cmd.type === 'resolve_optional_pay_choice';
   // A104/A105 / CR 603.3b: po zamknięciu płatności partia obejmuje WSZYSTKIE
   // zwykłe wyzwalacze tego okna (śmierć, dobór, tapnięcie), nie tylko śmierć.
-  // Refleks jest drugą częścią ogłoszenia; Ward powstaje dopiero z celów.
+  // A101 / CR 603.12 + 603.3b: refleks „When you do…” reaguje na zapłatę,
+  // nie na wyzwolenie innej zdolności. Należy do pierwszej, wspólnej partii.
+  // Ward powstaje dopiero z celów i czeka na kolejny przebieg ogłoszenia.
   const isBatchTrigger = name => optionalClosure
-    ? (name !== 'reflexive_pay' && name !== 'ward')
+    ? name !== 'ward'
     : isDeathBatchTrigger(name);
   const allTargets = state.pendingTriggerTargets;
-  // A101: po opcjonalnej płatności refleks jest osobną, późniejszą częścią
-  // checkpointu (CR 603.3b). Zwykła partia obejmuje tylko triggery śmierci.
-  const followupTargets = resolutionClosure && cmd.type === 'resolve_optional_pay_choice'
-    ? allTargets.filter(p => p.ability?.trigger?.event === 'reflexive_pay') : [];
-  const targets = followupTargets.length ? allTargets.filter(p => !followupTargets.includes(p)) : allTargets;
+  const targets = allTargets;
   if (targets.some(p => !isBatchTrigger(p.ability?.trigger?.event)
     || (!optionalClosure && (!['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone))
     || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
@@ -2179,8 +2169,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     .filter(group => group.keys.length);
   if (groups.flatMap(group => group.keys).length !== keys.length) return;
   state.pendingTriggerTargets = [];
-  const orderedFollowups = ordered.flatMap(playerId => followupTargets.filter(p => p.playerId === playerId));
-  state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo, followupTargets: orderedFollowups };
+  state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo };
   advanceDeathTriggerBatch(state);
 }
 

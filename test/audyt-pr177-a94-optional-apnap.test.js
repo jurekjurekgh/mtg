@@ -8,7 +8,7 @@ import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
 import {stateFingerprint} from '../src/engine/fingerprint.js';
 import {replayFromState,verifyReplay} from '../src/engine/replay.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
+// Aktywna regresja płatności opcjonalnej; cele czekają w buforze do checkpointu.
 const audit=test;
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
@@ -22,9 +22,10 @@ function scene(active,payer){
  put(s,'hold','holdout-settlement','battlefield',payer);put(s,'ally','goblin-piker','battlefield',payer);put(s,'enemy','highland-game','battlefield',opp);put(s,'bomb','panic-spellbomb','battlefield',payer);
  turn(s,active);s.turn.priorityPlayerId=payer;act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='bomb'&&c.targets?.includes('enemy')));pass(s);pass(s);assert.ok(s.pendingOptionalPay);return {s,token,payer,active,other:active==='p1'?'p2':'p1'};
 }
-// Po Scionie bieżące view pokazuje legalny Holdout, ale executor przechodzi
-// przez bramkę starego celu triggera i go odrzuca. Ta regresja jest odrębna
-// od nadal otwartej kolejności A84; nie asercjonujemy kolejności triggerów.
+// Po Scionie bieżące view pokazuje legalny Holdout. Decyzja celu Selhoffa
+// czeka w pendingOptionalPay.deferredTargets, więc nie blokuje zdolności many
+// podczas żądania zapłaty (CR 605.3a/608.2g). Kolejność po zamknięciu badają
+// osobne testy A84/A104–A107; tutaj chronimy dostępność płatności i odmowę.
 for(const active of ['p1','p2'])for(const payer of ['p1','p2'])test(`A94: po Scionie można użyć Holdouta i opłacić Spellbomb (aktywny ${active}, płaci ${payer})`,()=>{
  const {s,token}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));assert.ok(s.pendingOptionalPay);assert.equal(s.pendingTriggerTargets.length,0);assert.ok((s.pendingOptionalPay.deferredTargets?.length??0)>0);const cmd=view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='hold'&&c.abilityIndex===1&&c.tapCreatureId==='ally');assert.ok(cmd,'legalna oferta Holdout');const r=execute(s,cmd);assert.ok(r.ok,JSON.stringify(r));assert.equal(s.objects.get('hold').tapped,true);assert.equal(s.objects.get('ally').tapped,true);const before=s.zones.hand.length;act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay));assert.equal(s.pendingOptionalPay,null);assert.equal(s.zones.hand.length,before+1);
 });
