@@ -1,6 +1,7 @@
-// Test kontraktu planowanego solvera: źródła są zbudowane z rzeczywistych
-// legalnych aktywacji Holdouta i Wardena, natomiast pole tapCostChoices jest
-// syntetycznym opisem wyborów, którego produkcyjna lista A85 jeszcze nie niesie.
+// Test kontraktu solvera: źródła są zbudowane z rzeczywistych legalnych
+// aktywacji Holdouta i Wardena. Pole tapCostChoices opisuje wybory kosztu;
+// produkcyjna lista źródeł (A90) niesie je z legalnych komend, a tutaj
+// sprawdzamy samą arytmietikę wariantów bez pełnego routera UI.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createGameState,addObject,playerView} from '../src/engine/game-state.js';

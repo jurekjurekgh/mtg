@@ -18,10 +18,12 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Pełny przegląd ośmiu plików, diff PR #178, Oracle/CR, przebieg łączny **30/30 pass / 0 fail / 0 skip**.
 - [x] Bez zmiany produkcji; mapa aktualizowana o noty zakresu. Nie zamyka to rodzin A84–A113 ponownie ani całego audytu.
 
-## Partia 2 — kolejność/manualna płatność (kandydaci)
+## Partia 2 — kolejność/manualna płatność (wykonana)
 
-- [ ] A75–A93: APNAP ląd/walka/aktywacja/mana, Ward/manual, rupture/manual, optional/manual, kolory kreatora, Holdout, rezerwacje/atomiczność bramki, animowany koszt własny.
-- Kryterium: ten sam przegląd pełnego pliku i diffu; szczególne ryzyko mylenia polityki bota z regułą CR oraz setupu syntetycznego z osiągalnym stanem.
+- [x] A75–A93: APNAP ląd/walka/aktywacja/mana, Ward/manual, rupture/manual, optional/manual, kolory kreatora, Holdout, rezerwacje/atomiczność bramki, animowany koszt własny.
+- [x] Pełny przegląd 19 plików, diff PR #178, Oracle/CR, przebieg łączny **165/165 pass / 0 fail / 0 skip**.
+- [x] Bez zmiany produkcji; odświeżono dwa nieaktualne komentarze w A86/A87. A84 ma już osobną poprawkę i mutację z wcześniejszego kroku.
+- Kryterium utrzymane: polityka bota nie jest regułą CR, a setup syntetyczny jest opisany jako granica/kontrola.
 
 ## Partia 3 — dokumentacja historyczna
 
