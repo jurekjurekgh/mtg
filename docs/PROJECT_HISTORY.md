@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, A35–A46
+
+- Semantyczny przegląd 12 otwartych wierszy: Banquet, Reaver/finality, Anticipate, Trumpet Blast, Tail Slash, champion-bot, blok, klątwa, Cutthroat, Cuombajj, Tail-bot, Benevolent Blessing. **73/73 pass / 0 fail / 0 skip**; bez zmiany produkcji, literówka URL w A37 poprawiona.
+- Mapa #178: **57 → 45 otwartych wierszy**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, A7–A9 i A25–A34
 
 - Semantyczny przegląd 11 otwartych wierszy: ostrzeżenia animacji, zagnieżdżona mana, opłata nielądowa, delirium, champion, Magma Pummeler, dane/talie, transformacje, wycena bounce i poświęcenia. **47/47 pass / 0 fail / 0 skip**; bez zmiany produkcji.

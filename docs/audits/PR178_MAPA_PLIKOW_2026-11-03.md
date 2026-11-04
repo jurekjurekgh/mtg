@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 57. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 45. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -97,18 +97,18 @@
 | `test/audyt-pr177-a32-transform-real.test.js` | test/fixture | przejrzany pełny test; nazwy po transformacji Incubator/Scholar/Jill w sesji i etykietach |
 | `test/audyt-pr177-a33-bounce-stun.test.js` | test/fixture | przejrzany pełny test; wycena Scorn nie premiuje wrogich stun/finality, własna aura i +1/+1 podnoszą wartość |
 | `test/audyt-pr177-a34-sac-ochrona.test.js` | test/fixture | przejrzany pełny test; bot nie poświęca Weird przy hexproof/indestructible przeciw obrażeniom, poświęca przy wygnaniu/braku ochrony |
-| `test/audyt-pr177-a35-banquet-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a36-reaver-finality.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a37-anticipate-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a38-trumpet-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a39-tail-slash-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a40-champion-bot.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a41-blok-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a42-curse-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a43-cutthroat-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a44-cuombajj-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a45-tail-bot-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a46-blessing-combat-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a35-banquet-real.test.js` | test/fixture | przejrzany pełny test; Wretched Banquet warunek przy rozstrzyganiu, odpowiedzi zmieniające moc i wycena Weird |
+| `test/audyt-pr177-a36-reaver-finality.test.js` | test/fixture | przejrzany pełny test; Reaver finality/exile/grave, expectedZone opóźnionego triggera, Memory’s Journey i kontroler aktywacji |
+| `test/audyt-pr177-a37-anticipate-real.test.js` | test/fixture | przejrzany pełny test; Anticipate nie dobiera, prywatność look-top, atomowa kolejność spodu, Inspiration dobiera; URL CR poprawiony |
+| `test/audyt-pr177-a38-trumpet-real.test.js` | test/fixture | przejrzany pełny test; Trumpet Blast ustala zbiór atakujących, ninjutsu po efekcie bez bonusu, zmiana kontrolera i cleanup |
+| `test/audyt-pr177-a39-tail-slash-real.test.js` | test/fixture | przejrzany pełny test; Tail Slash z lifelink/deathtouch/ochroną i odpowiedziami, nielegalne źródło/cel |
+| `test/audyt-pr177-a40-champion-bot.test.js` | test/fixture | przejrzany pełny test; bot champion nie wygania tokena bez potrzeby, trwała strata tokena vs czasowa karty |
+| `test/audyt-pr177-a41-blok-real.test.js` | test/fixture | przejrzany pełny test; realne bloki, flying/deathtouch, bot nie blokuje bez presji |
+| `test/audyt-pr177-a42-curse-real.test.js` | test/fixture | przejrzany pełny test; klątwa mill nie przegrywa bez draw, Naturalize przed/po wyzwoleniu, presja deck-out |
+| `test/audyt-pr177-a43-cutthroat-real.test.js` | test/fixture | przejrzany pełny test; Cutthroat po prawdziwym combacie/Shock, hexproof i własny stwór nie są celem |
+| `test/audyt-pr177-a44-cuombajj-real.test.js` | test/fixture | przejrzany pełny test; Cuombajj dwa wystąpienia target, wybór przeciwnika, częściowa nielegalność celu |
+| `test/audyt-pr177-a45-tail-bot-real.test.js` | test/fixture | przejrzany pełny test; bot Tail Slash wybiera źródło i nie marnuje czaru przy ochronie przed non-Human |
+| `test/audyt-pr177-a46-blessing-combat-real.test.js` | test/fixture | przejrzany pełny test; Benevolent Blessing wybór koloru przez bota zależny od realnego źródła obrażeń |
 | `test/audyt-pr177-a47-readme-decks.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a48-spire-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a49-proliferate-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |

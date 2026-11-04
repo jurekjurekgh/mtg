@@ -31,6 +31,11 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
 - [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
 
+## Partia 6 — A35–A46 (wykonana)
+
+- [x] Banquet, Reaver/finality, Anticipate, Trumpet Blast, Tail Slash, champion-bot, blok, klątwa, Cutthroat, Cuombajj, Tail-bot, Benevolent Blessing.
+- [x] Pełny przegląd 12 plików, diff PR #178, Oracle/CR, przebieg **73/73 pass / 0 fail / 0 skip**. Bez zmiany produkcji; poprawiono literówkę URL w komentarzu A37.
+
 ## Partia 5 — A7–A9 i A25–A34 (wykonana)
 
 - [x] A7 ostrzeżenia animacji, A8 priorytet zagnieżdżonej many, A9 opłata nielądowa; A25 delirium, A26 champion/kontrola, A29 Magma, A30 dane/talie, A31 champion/shroud/token, A32 transformacje, A33 bounce/stun, A34 poświęcenie/ochrona.
