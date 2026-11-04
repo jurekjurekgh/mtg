@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — wspólny checkpoint, etap 3a: madness w jednej partii
+
+- Audyt kodu wykazał przedwczesne zamknięcie etapu 3: kolejka madness była blokowana przez oczekujący cel refleksu, a osobny `startMadnessTriggerOrder` nie obejmował celów. Plan skorygowano przed kodowaniem (`c2e02c4`).
+- RED na Talion's Messenger + Revolutionist: cel refleksu wyprzedzał wybór kolejności (0/2). Po migracji: kolejka madness domyka się przy decyzjach celu/trybu, identyfikatory `madnessBatchTriggerIds` trafiają do wspólnego checkpointu, a cel jest ogłaszany dopiero po wyborze kolejności. Usunięto równoległy start kolejności madness.
+- Mutacja przywracająca dawną blokadę oblewa 0/2; A28 + nowy test **15/15**, `test:audit` **724/724**, fast **9962/9962**, build **77 modułów / 5691,1 kB**; 0 fail / 0 skip. Skorygowano A28 do CR 603.3b–d (kolejność przed celem).
+
+
 ## 2026-11-04 — wspólny checkpoint, etap 3: domknięcie dokumentacji i bram
 
 - Plan/ADR/handoff opisują wdrożony zakres: wszystkie zwykłe wyzwalacze okna, modalność, cele/podziały, Ward jako drugi przebieg i kontynuacja SBA. Historyczne pole partii pozostaje do osobnej migracji nazw; madness/devour/Saga zachowane bez dubli.

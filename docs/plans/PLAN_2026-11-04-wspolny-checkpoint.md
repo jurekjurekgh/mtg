@@ -29,11 +29,11 @@ Wdrożyć pełny wspólny checkpoint wszystkich typów zdarzeń zgodnie z ADR 00
 
 Wcześniejsze oznaczenie tego etapu jako wykonanego było przedwczesne. Zielone bramy na `3fcf1b6` potwierdziły zgodność istniejących testów, ale nie zamknięcie architektury: `accepted()` nadal uruchamia osobny `startMadnessTriggerOrder`, a test A28 wymaga celu refleksu przed wyborem kolejności. To nie dowodzi wspólnej kolejności ogłoszeń z CR 603.3b–d. Pomiar przed korektą: `test:all` **10228/10228** (593,2 s), build **77/5691,2 kB**, dokumenty **25/25**; CI `a0f1616` **41904813668 success**, PR bez konfliktów. Nie jest to dowód ukończenia migracji.
 
-### 3a. Madness i refleksy w jednej partii
+### 3a. Madness i refleksy w jednej partii (wykonana)
 
-- [ ] Nowy RED na prawdziwych kartach i komendach: Talion's Messenger + Revolutionist, dwa legalne cele refleksu. Po odrzuceniu najpierw wspólny wybór kolejności, dopiero potem cel wybranej zdolności; obie kolejności, brak dubli, replay/fingerprint. Oracle: lokalne definicje `talions-messenger`, `revolutionist`; CR 603.3b–d/603.12 (ponownie pobrany CR, SHA-256 `8d860e45…b070ca`).
-- [ ] Przekazać identyfikatory z `madnessBatchTriggerIds` do wspólnego checkpointu razem z oczekującymi celami/trybami. Usunąć równoległe uruchamianie kolejności madness; zachować bufor, gdy rozstrzyganie jeszcze trwa. Nie emitować ponownie zdarzeń ani wpisów stosu.
-- [ ] Mutacja usuwająca migrację, kontrole A28/payment/ward, pełny fast + build; osobny commit i natychmiastowy push.
+- [x] Nowy RED na prawdziwych kartach i komendach: Talion's Messenger + Revolutionist, dwa legalne cele refleksu. Po odrzuceniu najpierw wspólny wybór kolejności, dopiero potem cel wybranej zdolności; obie kolejności, brak dubli, replay/fingerprint. Oracle: lokalne definicje `talions-messenger`, `revolutionist`; CR 603.3b–d/603.12 (ponownie pobrany CR, SHA-256 `8d860e45…b070ca`).
+- [x] Przekazać identyfikatory z `madnessBatchTriggerIds` do wspólnego checkpointu razem z oczekującymi celami/trybami. Usunąć równoległe uruchamianie kolejności madness; zachować bufor, gdy rozstrzyganie jeszcze trwa. Nie emitować ponownie zdarzeń ani wpisów stosu.
+- [x] Mutacja przywracająca blokadę kolejki przez decyzję celu oblewa oba nowe testy (`.arena/checkpoint/madness-mutation.log`); kontrole: A28 + nowy test **15/15**, `test:audit` **724/724**, fast **9962/9962**, build **77/5691,1 kB**; osobny commit i push. Usunięto równoległy `startMadnessTriggerOrder`; kolejka madness nie jest już blokowana przez oczekujący cel/tryb tej samej partii.
 
 ### 3b. Domknięcie pętli i nazw
 

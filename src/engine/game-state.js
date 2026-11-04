@@ -2035,26 +2035,6 @@ function queueMadnessTriggers(state, events) {
   }
 }
 
-// Porządkujemy tylko wpisy wyzwolone od tego samego okna priorytetu co
-// madness. Wybór kolejnego triggera oznacza: ten rozstrzygnie się pierwszy.
-function startMadnessTriggerOrder(state) {
-  const ids = [...new Set(state.madnessBatchTriggerIds)]
-    .filter(id => state.zones.stack.includes(id) && state.objects.get(id)?.triggerEntry);
-  state.madnessBatchTriggerIds = [];
-  const players = state.players.map(p => p.id);
-  const active = players.indexOf(state.turn.activePlayerId);
-  const ordered = active < 0 ? players : [...players.slice(active), ...players.slice(0, active)];
-  const groups = ordered.map(playerId => ({ playerId,
-    remaining: ids.filter(id => state.objects.get(id).controllerId === playerId), topFirst: [] }))
-    .filter(group => group.remaining.length);
-  const first = groups.findIndex(group => group.remaining.length > 1);
-  // Nawet bez wyboru układamy różne kontrolery APNAP.
-  const batch = new Set(ids);
-  state.zones.stack = [...state.zones.stack.filter(id => !batch.has(id)), ...groups.flatMap(g => g.remaining)];
-  if (first < 0) return;
-  state.pendingTriggerOrder = { groups, index: first, restorePriorityTo: state.turn.priorityPlayerId };
-}
-
 // ADR 0032: wspólny checkpoint ogłoszeń. Historyczna nazwa pola i funkcji
 // (`pendingDeathTriggerBatch`) zostaje na czas migracji, ale partia obejmuje
 // WSZYSTKIE zwykłe wyzwalacze okna, także modalne. Wybory kontrolerów są
@@ -2268,9 +2248,26 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
       if (e.type === 'ability_triggered' && e.stackEntryId) state.madnessBatchTriggerIds.push(e.stackEntryId);
     }
   }
-  if (state.madnessQueue?.length && !firstPendingDecision(state) && !state.pendingSpell) {
+  // ADR 0032: oczekujący cel/tryb jest częścią ogłaszania tej samej partii,
+  // a nie osobną instrukcją blokującą utworzenie wpisów madness. Inne decyzje
+  // (np. scry w środku czaru) nadal wstrzymują domknięcie okna.
+  const madnessDecision = firstPendingDecision(state);
+  const madnessAnnouncement = madnessDecision
+    && ['triggerTarget', 'modalTrigger', 'damageDivision'].includes(madnessDecision.kind);
+  if (state.madnessQueue?.length && (!madnessDecision || madnessAnnouncement) && !state.pendingSpell) {
     queueMadnessTriggers(state, result.events);
-    startMadnessTriggerOrder(state);
+  }
+  if (!state.pendingDiscardChoice && !state.madnessQueue?.length && state.madnessBatchTriggerIds.length) {
+    // Jedno wejście do checkpointu: identyfikatory madness z całego okna
+    // (także z wcześniejszych komend odrzucania) plus bieżące zdarzenia.
+    // Nie dopisujemy syntetycznych zdarzeń do logu — służą tylko zebraniu partii.
+    const madnessIds = [...new Set(state.madnessBatchTriggerIds)];
+    const madnessEvents = madnessIds.map((stackEntryId) => ({ type: 'ability_triggered', stackEntryId }));
+    startDeathTriggerBatch(state, { type: 'pass_priority' }, [...result.events, ...madnessEvents],
+      0, triggerPriorityBefore);
+    if (state.pendingDeathTriggerBatch || !firstPendingDecision(state)) {
+      state.madnessBatchTriggerIds = [];
+    }
   } else if (!state.pendingDiscardChoice && !state.madnessQueue?.length) {
     // Zakończony discard bez madness nie pozostawia danych dla kolejnej akcji.
     state.madnessBatchTriggerIds = [];
