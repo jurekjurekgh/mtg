@@ -31,6 +31,12 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
 - [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
 
+## Partia 13 — M200/real-cards-batch7 (wykonana, mapa zamknięta)
+
+- [x] Dwa ostatnie otwarte pliki: M200 uwagi właściciela i real-cards-batch7.
+- [x] Pełny przegląd, diff PR #178, Oracle/CR; bez zmiany produkcji i asercji. Przebieg w łącznej bramie 20 pozostałych wtedy plików: **197/197 pass / 0 fail / 0 skip**.
+- [x] Mapa #178: **0 otwartych wierszy**.
+
 ## Partia 12 — M161/M277 (wykonana)
 
 - [x] Dwa otwarte pliki: syntetyczna ścieżka madness czarów M161 i kontrakt widok/render M277.

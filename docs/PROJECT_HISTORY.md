@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — zamknięcie mapy PR #178: M200/real-cards-batch7
+
+- Semantyczny przegląd dwóch ostatnich otwartych plików: M200 uwagi właściciela i real-cards-batch7. Bez zmiany produkcji.
+- **Mapa #178: 2 → 0 otwartych wierszy.** Przegląd semantyczny mapy zakończony; pełny wspólny checkpoint wszystkich typów zdarzeń pozostaje osobnym, niewdrożonym zakresem.
+
+
 ## 2026-11-04 — przegląd mapy PR #178: M161/M277
 
 - Semantyczny przegląd dwóch otwartych plików: ścieżka madness czarów M161 i kontrakt widok/render M277. Bez zmiany produkcji.
