@@ -10,15 +10,6 @@ import { addMana } from '../src/engine/resources.js';
 import { replayFromState, verifyReplay } from '../src/engine/replay.js';
 import { stateFingerprint } from '../src/engine/fingerprint.js';
 import { addCounter } from '../src/engine/counters.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit = (name, fn) =>
-  test(
-    name,
-    {
-      skip: process.env.AUDIT_A109_ENFORCE === '1' ? false : 'otwarte A109 (AUDIT_A109_ENFORCE=1)',
-    },
-    fn,
-  );
 const reg = createCardRegistry();
 function put(s, id, card, zone, p) {
   const [{ objectId, ...data }] = createCardDeck({ cardIds: [card], ownerId: p, registry: reg });
@@ -246,7 +237,7 @@ function scene(
 // Karty i akcje realne; pule/tura/priorytet ustawiono w setupie.
 for (const payer of ['p1', 'p2'])
   for (const pay of [false, true])
-    audit(
+    test(
       `A109: Griffin i token czekają na SBA po Ward, ${pay ? 'zapłata' : 'odmowa'} (${payer})`,
       () => {
         const { s, tokens } = scene(payer, payer, { aura: true }),
@@ -306,7 +297,7 @@ for (const payer of ['p1', 'p2'])
 
 // Rzeczywiste drugie zaklęcie; oba triggery powstają po jednym, a SBA czeka.
 for (const payer of ['p1', 'p2'])
-  audit(`A109: dwie aury na Scionie zachowują LKI i pojedyncze triggery (${payer})`, () => {
+  test(`A109: dwie aury na Scionie zachowują LKI i pojedyncze triggery (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, blood: true });
     const card = (id) =>
       [...s.objects.values()].find((o) => o.cardId === id && o.kind !== 'trigger');
@@ -338,7 +329,7 @@ for (const payer of ['p1', 'p2'])
 // Liczniki finality są ustawione syntetycznie, obiekty i komendy rzeczywiste.
 for (const payer of ['p1', 'p2'])
   for (const finality of ['host', 'aura'])
-    audit(`A109: finality ${finality} nie gubi granicy SBA ani warunku dies (${payer})`, () => {
+    test(`A109: finality ${finality} nie gubi granicy SBA ani warunku dies (${payer})`, () => {
       const { s, tokens } = scene(payer, payer, { aura: true }),
         guide = [...s.objects.values()].find(
           (o) => o.cardId === 'griffin-guide' && o.zone === 'battlefield',
@@ -371,7 +362,7 @@ for (const payer of ['p1', 'p2'])
     });
 // Realny bestow oraz rzeczywista aktywacja equip (sam Torch umieszczony w setupie).
 for (const payer of ['p1', 'p2'])
-  audit(`A109: bestow i equipment nie trafiają do grobu jak czysta aura (${payer})`, () => {
+  test(`A109: bestow i equipment nie trafiają do grobu jak czysta aura (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, dryad: true, torch: true });
     act(
       s,
@@ -400,7 +391,7 @@ for (const payer of ['p1', 'p2'])
   });
 
 for (const payer of ['p1', 'p2'])
-  audit(`A109: trigger aury przeciwnika zachowuje kontrolera z chwili zdarzenia (${payer})`, () => {
+  test(`A109: trigger aury przeciwnika zachowuje kontrolera z chwili zdarzenia (${payer})`, () => {
     const opponent = payer === 'p1' ? 'p2' : 'p1',
       { s, tokens } = scene(payer, payer, { aura: true, opposingAura: true });
     const aura = [...s.objects.values()].find(
@@ -434,7 +425,7 @@ for (const payer of ['p1', 'p2'])
   });
 // Imp na polu bitwy w setupie: oddzielne zdarzenia Sciona i aury dają dwa triggery.
 for (const payer of ['p1', 'p2'])
-  audit(`A109: Imp widzi osobne odejścia Sciona i aury po Ward (${payer})`, () => {
+  test(`A109: Imp widzi osobne odejścia Sciona i aury po Ward (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true, imp: true });
     const fired = () =>
       s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp').length;
@@ -454,7 +445,7 @@ for (const payer of ['p1', 'p2'])
 // Zmiana kontrolera aury jest syntetyczna; Impy, Griffin, Scion i Ward są rzeczywiste.
 for (const payer of ['p1', 'p2'])
   for (const exile of [false, true])
-    audit(
+    test(
       `A109: Imp kontrolera skradzionej aury widzi jej ${exile ? 'wygnanie' : 'grób'} (${payer})`,
       () => {
         const opponent = payer === 'p1' ? 'p2' : 'p1',
@@ -490,7 +481,7 @@ for (const payer of ['p1', 'p2'])
     );
 // Syntetyczne obniżenie życia po otwarciu Ward symuluje koszt/efekt w toku.
 for (const payer of ['p1', 'p2'])
-  audit(`A109: przegrana z 0 życia sprawdzana po zakończeniu Ward (${payer})`, () => {
+  test(`A109: przegrana z 0 życia sprawdzana po zakończeniu Ward (${payer})`, () => {
     const { s, tokens } = scene(payer, payer, { aura: true });
     s.players.find((p) => p.id === payer).life = 0;
     act(
@@ -512,7 +503,7 @@ for (const payer of ['p1', 'p2'])
 // Auto-zapłata {2} poświęca po kolei dwa prawdziwe Treasure'y; Imp powinien
 // osobno zobaczyć oba koszty i późniejsze SBA aury, nie jedną grupę komendy.
 for (const payer of ['p1', 'p2'])
-  audit(`A109: auto-Ward, dwa Treasure i oddzielne SBA aury (${payer})`, () => {
+  test(`A109: auto-Ward, dwa Treasure i oddzielne SBA aury (${payer})`, () => {
     const { s, treasures } = scene(payer, payer, { imp: true, treasureAura: true });
     const fired = () =>
       s.events.filter((e) => e.type === 'ability_triggered' && e.cardId === 'nefarious-imp').length;
@@ -540,7 +531,7 @@ for (const payer of ['p1', 'p2'])
   });
 // Przy automatycznej zapłacie aura nie może opuścić pola PRZED końcem Ward.
 for (const payer of ['p1', 'p2'])
-  audit(`A109: auto-Ward odkłada odejście aury do SBA (${payer})`, () => {
+  test(`A109: auto-Ward odkłada odejście aury do SBA (${payer})`, () => {
     const { s } = scene(payer, payer, { imp: true, treasureAura: true });
     const base = s.commands.length;
     act(

@@ -4545,9 +4545,13 @@ export function execute(state, input) {
     // Odrzucona płatność musi zostawić oczekującą decyzję i cały stan nietknięte.
     if (cmd.pay && (pending.amount ?? 0) > producibleMana(state, pending.playerId, null, {}, [])) return reject('ward_pay_insufficient_mana');
     const before = state.events.length;
-    state.pendingWardPay = null;
     const targeting = state.objects.get(pending.targetingStackId);
     const targetingOnStack = Boolean(targeting && targeting.zone === 'stack');
+    // A109 / CR 704.4: okno rozstrzygania Ward obejmuje także automatyczną
+    // zapłatę (spendMana może poświęcić Treasure i osierocić aurę) oraz kontrę
+    // przy odmowie. pendingWardPay musi zostać do końca tych efektów, inaczej
+    // choke point odłączania aur otworzyłby SBA w środku płatności. Zamykamy
+    // dopiero po zdarzeniu ward_pay_resolved, przed accepted() (checkpoint SBA).
     if (cmd.pay) {
       if ((pending.amount ?? 0) > 0) spendMana(state, pending.playerId, pending.amount, []);
     } else if (targetingOnStack) {
@@ -4562,6 +4566,7 @@ export function execute(state, input) {
       targetingStackId: pending.targetingStackId, cardId: targeting?.cardId ?? null,
       wardSourceId: pending.wardSourceId ?? null,
     }));
+    state.pendingWardPay = null;
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }

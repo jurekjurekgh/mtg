@@ -2910,17 +2910,28 @@ function processTriggersScan(state, recentEvents) {
     // zdarzeniu śmierci, który widziałby cudze zgony tej samej partii SBA).
     // ODBICIE gospodarza nie jest śmiercią (zdarzenie nie istnieje) — aura
     // idzie do grobu, a trigger NIE odpala, zgodnie z Oracle.
-    if (ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null) {
+    // Griffin Guide / A108/A109 (CR 603.10a, 704.4): „enchanted creature dies"
+    // patrzy na ŚMIERĆ gospodarza w tej samej partii zdarzeń. Są dwa kształty:
+    //  - aura odchodzi razem z gospodarzem: permanent_put_into_graveyard niesie
+    //    attachedTo (LKI), bo po ruchu obiekt nie ma już pola attachedTo;
+    //  - aura czeka na SBA po Ward: object_detached.deferredAuraSba niesie
+    //    fromHostId, a aura wciąż jest na polu bitwy (attachedTo=null).
+    // Obie ścieżki odpalają trigger RAZ, w chwili śmierci gospodarza; późniejsze
+    // SBA aury nie szukają śmierci ponownie (attachedTo=null w jej zdarzeniu).
+    const auraDeparture = ev.type === 'permanent_put_into_graveyard' && ev.attachedTo != null;
+    const auraDeferred = ev.type === 'object_detached' && ev.deferredAuraSba && ev.fromHostId != null;
+    if (auraDeparture || auraDeferred) {
+      const formerHostId = auraDeparture ? ev.attachedTo : ev.fromHostId;
       const hostDeath = queue.find((sibling) => {
         // CR 122.1h: „exile instead\" to nie śmierć.
         if (sibling.toZone === 'exile') return false;
         if (sibling.type === 'creature_destroyed' || sibling.type === 'permanent_destroyed'
           || sibling.type === 'permanent_sacrificed') {
-          return sibling.fromId === ev.attachedTo;
+          return sibling.fromId === formerHostId;
         }
         if (sibling.type === 'object_moved') {
           return sibling.fromZone === 'battlefield' && sibling.toZone === 'graveyard'
-            && (sibling.object?.id ?? sibling.fromId) === ev.attachedTo;
+            && (sibling.object?.id ?? sibling.fromId) === formerHostId;
         }
         return false;
       });
@@ -2928,10 +2939,14 @@ function processTriggersScan(state, recentEvents) {
         ? (hostDeath.object ?? state.objects.get(hostDeath.objectId ?? hostDeath.toId))
         : null;
       if (hostDeath && diedAs(hostLki, 'creature', 'Creature')) {
-        const aura = ev.object ?? state.objects.get(ev.toId);
-        for (const ability of abilitiesOnDeath(aura)) {
-          if (ability?.trigger?.event === 'enchanted_creature_dies') {
-            tryFire(state, ability, aura, [], events);
+        const aura = auraDeparture
+          ? (ev.object ?? state.objects.get(ev.toId))
+          : state.objects.get(ev.objectId);
+        if (aura) {
+          for (const ability of abilitiesOnDeath(aura)) {
+            if (ability?.trigger?.event === 'enchanted_creature_dies') {
+              tryFire(state, ability, aura, [], events);
+            }
           }
         }
       }
@@ -2985,6 +3000,10 @@ function processTriggersScan(state, recentEvents) {
     // control leave the battlefield" (Nefarious Imp) — licznik odejść wyżej.
     if (ev.type === 'creature_destroyed' || ev.type === 'permanent_destroyed'
       || ev.type === 'permanent_sacrificed'
+      // A109: czysta aura osierocona przez gospodarza opuszcza pole przez
+      // SBA (704.5m) i emituje ten agregat zamiast gołego object_moved.
+      // Bez tego Nefarious Imp nie widział drugiego, późniejszego odejścia.
+      || ev.type === 'permanent_put_into_graveyard'
       || (ev.type === 'object_moved' && ev.fromZone === 'battlefield' && ev.toZone !== 'battlefield')
       || (ev.type === 'object_exiled' && ev.fromId)) {
       // CR 603.10: obiekt mógł już przestać istnieć (token poza polem bitwy —
