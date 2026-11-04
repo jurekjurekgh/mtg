@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 68. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 57. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -87,16 +87,16 @@
 | `test/audyt-pr177-a21-bestow-na-stosie.test.js` | test/fixture | przejrzany pełny test; bestow na stosie i powrót linii typów, zgodne z B1 |
 | `test/audyt-pr177-a22-bestow-ochrona-celu.test.js` | test/fixture | przejrzany pełny test; ochrona celu bestow, bez nowego błędu |
 | `test/audyt-pr177-a23-koszt-bestow.test.js` | test/fixture | przejrzany pełny test; Powerstone/rabaty bestow, bez nowego błędu |
-| `test/audyt-pr177-a25-violent-urge-delirium.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a26-champion-kontrola.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a25-violent-urge-delirium.test.js` | test/fixture | przejrzany pełny test; delirium Violent Urge liczone przy rozstrzyganiu, Halo Scarab/Shock w odpowiedzi, CR 608.2h |
+| `test/audyt-pr177-a26-champion-kontrola.test.js` | test/fixture | przejrzany pełny test; champion przejmuje i wygania, powrót do właściciela, odmowa i Morbid |
 | `test/audyt-pr177-a27-madness-priorytet.test.js` | test/fixture | przejrzany pełny test; madness/priorytet i okna odpowiedzi, bez nowego błędu |
 | `test/audyt-pr177-a28-kolejnosc-madness.test.js` | test/fixture | przejrzany pełny test; wybór kolejności madness/APNAP, bot/replay/UI, bez nowego błędu |
-| `test/audyt-pr177-a29-magma-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a30-dane-talie.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a31-champion-niecelujacy.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a32-transform-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a33-bounce-stun.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a34-sac-ochrona.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a29-magma-real.test.js` | test/fixture | przejrzany pełny test; prewencja i refleks Magma Pummeler, Trigon/anihilacja to nie prewencja, Rockslide i Spin Out/LKI |
+| `test/audyt-pr177-a30-dane-talie.test.js` | test/fixture | przejrzany pełny test; statyczne dane 10 kart względem CSV/snapshotów i talie względem generatora, bez runtime |
+| `test/audyt-pr177-a31-champion-niecelujacy.test.js` | test/fixture | przejrzany pełny test; champion nie celuje (shroud), token nie wraca z exile, decyzja w replay/fingerprint |
+| `test/audyt-pr177-a32-transform-real.test.js` | test/fixture | przejrzany pełny test; nazwy po transformacji Incubator/Scholar/Jill w sesji i etykietach |
+| `test/audyt-pr177-a33-bounce-stun.test.js` | test/fixture | przejrzany pełny test; wycena Scorn nie premiuje wrogich stun/finality, własna aura i +1/+1 podnoszą wartość |
+| `test/audyt-pr177-a34-sac-ochrona.test.js` | test/fixture | przejrzany pełny test; bot nie poświęca Weird przy hexproof/indestructible przeciw obrażeniom, poświęca przy wygnaniu/braku ochrony |
 | `test/audyt-pr177-a35-banquet-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a36-reaver-finality.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a37-anticipate-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
@@ -131,7 +131,7 @@
 | `test/audyt-pr177-a67-spider-morbid.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a68-scorn-aura-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a69-converge-free-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a7-ostrzezenie-animacji.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a7-ostrzezenie-animacji.test.js` | test/fixture | przejrzany pełny test; ostrzeżenia animacji/crew nie mylą ponownego odtapowania z obsadzeniem, realny Invoker i kreator crew |
 | `test/audyt-pr177-a70-bounce-investment-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a71-apnap-real.test.js` | test/fixture | przejrzany pełny test; realne karty, wybory/replay/bot, bez nowego błędu |
 | `test/audyt-pr177-a72-shared-qualifier-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
@@ -141,7 +141,7 @@
 | `test/audyt-pr177-a77-apnap-activation.test.js` | test/fixture | przejrzany pełny test; APNAP po poświęceniu w koszcie Elk/Dreadmaw, Plague Reaver bez batcha śmierci, zdolność many Sciona |
 | `test/audyt-pr177-a78-apnap-mana.test.js` | test/fixture | przejrzany pełny test; mana Sciona przy otwartym priorytecie w APNAP, granica podczas dopłaty Ward, replay |
 | `test/audyt-pr177-a79-ward-manual.test.js` | test/fixture | przejrzany pełny test; ręczna dopłata Ward Scionem, atomowość niewystarczającej zapłaty, odmowa, celowana zdolność Justiciara, replay |
-| `test/audyt-pr177-a8-priorytet-zagniezdzonej-many.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a8-priorytet-zagniezdzonej-many.test.js` | test/fixture | przejrzany pełny test; podrzędny kreator many nie auto-passuje nadrzędnego, priorytet/krok/pula zachowane |
 | `test/audyt-pr177-a80-rupture-manual.test.js` | test/fixture | przejrzany pełny test; Rupture Spire i echo Bone Shreddera, ręczna mana, atomowość, kolorowy pip, kreator, replay |
 | `test/audyt-pr177-a81-optional-manual.test.js` | test/fixture | przejrzany pełny test; opcjonalna dopłata Pangolin/Zoraline/Kappa, atomowość starej komendy, replay |
 | `test/audyt-pr177-a82-wizard-colors.test.js` | test/fixture | przejrzany pełny test; kreator opisuje kolory Zoraline {W}{B} i echo {2}{B}, nie kończy się błędnymi wyspami, finalizacja z refleksem |
@@ -152,7 +152,7 @@
 | `test/audyt-pr177-a87-wizard-cost-objects.test.js` | test/fixture | przejrzany pełny test; countPaymentVariants nie używa tego samego stwora jako koszt i źródło, dwa Holdouty; komentarz odświeżony |
 | `test/audyt-pr177-a88-single-manual-color.test.js` | test/fixture | przejrzany pełny test; pojedynczy ręczny kolor osiągalny dopiero po aktywacji, atomowość zapłaty, boty, dwa pipy nie mnożą stworów |
 | `test/audyt-pr177-a89-bot-payment.test.js` | test/fixture | przejrzany pełny test; bot najpierw aktywuje ręczne źródło, potem dopłaca; mana ograniczona i polityka refleksu bez celów |
-| `test/audyt-pr177-a9-oplata-nieladowa.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a9-oplata-nieladowa.test.js` | test/fixture | przejrzany pełny test; Rupture Spire opłacany z Druida/Powerstone/many ograniczonej, choroba przywołania i bot |
 | `test/audyt-pr177-a90-wizard-tap-cost.test.js` | test/fixture | przejrzany pełny test; router/DOM kreatora wybiera osobny koszt tapnięcia, odrzuca stare wybory, rezerwacje i replay |
 | `test/audyt-pr177-a91-gate-cost-reservation.test.js` | test/fixture | przejrzany pełny test; Heap Gate rezerwuje Gate kosztu w kreatorze i potomku, target efektu nie jest kosztem, Holdout/Station, replay |
 | `test/audyt-pr177-a92-stale-gate-atomicity.test.js` | test/fixture | przejrzany pełny test; przestarzała/nielegalna brama kosztu odrzucana atomowo, wydana mana i zmiana strefy, replay |

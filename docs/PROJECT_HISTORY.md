@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, A7–A9 i A25–A34
+
+- Semantyczny przegląd 11 otwartych wierszy: ostrzeżenia animacji, zagnieżdżona mana, opłata nielądowa, delirium, champion, Magma Pummeler, dane/talie, transformacje, wycena bounce i poświęcenia. **47/47 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **68 → 57 otwartych wierszy**. Sandbox wcześniej cofnął lokalny wskaźnik gałęzi; przed pracą odtworzono zgodność z `origin/arena/5d931b5a-mtg` (5447296) i przywrócono `.arena/cr-raw.txt` z przypiętym SHA-256.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, dokumentacja historyczna
 
 - Przejrzano pięć otwartych wierszy dokumentacji z diffu #178: PROJECT_HISTORY oraz raport/mapa/plan/handoff PR #177. Cztery dokumenty #177 otrzymały banner stanu historycznego i odesłanie do bieżącego audytu #178/#179; bez zmian runtime.
