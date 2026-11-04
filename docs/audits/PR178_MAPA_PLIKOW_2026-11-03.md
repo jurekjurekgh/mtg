@@ -2,16 +2,16 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165) oraz A94–A108 (82/82); liczba otwartych wierszy spadła ze 114 do 73. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 68. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
 | `README.md` | dokumentacja | przejrzany diff; aktualizacja statusu PR/handoff, bez wpływu na runtime |
 | `docs/ENGINE_MILESTONES.md` | dokumentacja | przejrzany diff; korekta opisu pomiaru wrath, bez wpływu na runtime |
 | `docs/PMSSB.md` | dokumentacja | przejrzany diff; doprecyzowanie historii PMSSB-80, bez wpływu na runtime |
-| `docs/PROJECT_HISTORY.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/AUDYT_PR177_2026-11-01.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
-| `docs/audits/PR177_MAPA_PLIKOW_2026-11-02.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/PROJECT_HISTORY.md` | dokumentacja | przejrzany diff PR #178 i bieżące wpisy; zapisy historyczne A1–A113 oznaczone jako stan przeszły, aktualne sekcje PR #179 na górze |
+| `docs/audits/AUDYT_PR177_2026-11-01.md` | dokumentacja | przejrzany diff PR #178; historyczny raport A1–A81 z jawnymi granicami, dodany banner stanu historycznego i odesłanie do PR #179 |
+| `docs/audits/PR177_MAPA_PLIKOW_2026-11-02.md` | dokumentacja | przejrzany diff PR #178; historyczna mapa 111 plików #177, statusy cząstkowe nie są werdyktem obecnego drzewa, banner |
 | `docs/audits/UWAGI_Z_GRY_2026-10-29.md` | dokumentacja | przejrzany diff; korekta opisu premii wrath, bez wpływu na runtime |
 | `docs/audits/experiments/A107_NIE_WDRAZAC.patch` | dokumentacja | przejrzany pełny patch; izolowany eksperyment Ward/fingerprint, nie wdrożony |
 | `docs/audits/experiments/A109_NIE_WDRAZAC.patch` | dokumentacja | przejrzany patch; izolowany eksperyment SBA/Ward, nie wdrożony |
@@ -23,12 +23,12 @@
 | `docs/audits/experiments/README_A110.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
 | `docs/audits/experiments/README_A111_A112.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
 | `docs/audits/experiments/README_A99.md` | dokumentacja | przejrzany diff; opis izolowanego prototypu, NIE_WDRAŻAĆ |
-| `docs/plans/PLAN_2026-11-01-audyt-pr177.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/plans/PLAN_2026-11-01-audyt-pr177.md` | dokumentacja | przejrzany diff PR #178; historyczny plan/postęp A1–A81, checkboxy nie są bieżącym backlogiem, banner i odesłanie do planu #178 |
 | `docs/plans/PLAN_2026-11-01-minimalne-x-bota.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
 | `docs/plans/PLAN_2026-11-01-uwagi-o-p-r.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
 | `docs/plans/PLAN_2026-11-01-zgloszenie-magma-x.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
 | `docs/plans/PLAN_2026-11-02-uwagi-manowar-austere.md` | dokumentacja | przejrzany pełny nowy dokument; historyczny plan/wynik |
-| `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md` | dokumentacja | otwarty — inwentarz diffu; przegląd treści niedokończony |
+| `docs/setup/HANDOFF_2026-11-01-audyt-pr177.md` | dokumentacja | przejrzany diff PR #178; historyczny handoff sesji #177/#178, pomiary nieaktualne, banner i odesłanie do bieżącego handoffu |
 | `src/cards/card-data.js` | produkcja | przejrzany diff; choiceComponents dla trybów złożonych |
 | `src/controllers/aggro-bot.js` | produkcja | przejrzany diff; filtr dopłat i resolve_trigger_order |
 | `src/controllers/heuristic-bot.js` | produkcja | przejrzany diff; filtry many, X, cele, discard, champion; otwarte ryzyka regresji botów |

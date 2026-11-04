@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, dokumentacja historyczna
+
+- Przejrzano pięć otwartych wierszy dokumentacji z diffu #178: PROJECT_HISTORY oraz raport/mapa/plan/handoff PR #177. Cztery dokumenty #177 otrzymały banner stanu historycznego i odesłanie do bieżącego audytu #178/#179; bez zmian runtime.
+- Mapa #178: **73 → 68 otwartych wierszy**. Pozostałe wiersze dotyczą testów/helperów; dokumentacja historyczna nie jest dowodem obecnego stanu silnika.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, rodziny A94–A108
 
 - Pełny przegląd 14 wierszy mapy dla rodzin naprawionych/skorygowanych w #179: **82/82 pass / 0 fail / 0 skip**. Bez zmiany produkcji; komentarze A96/A97 odświeżone, nieużywany alias w A94 usunięty.

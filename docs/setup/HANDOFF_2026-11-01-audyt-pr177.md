@@ -1,5 +1,8 @@
 # Handoff 2026-11-01 — audyt PR #177 rozpoczęty
 
+> **Stan historyczny.** Dokument opisuje audyt PR #177 prowadzony w PR #178. Bieżący przegląd diffu PR #178 i poprawki są w `docs/audits/AUDYT_PR178_2026-11-03.md`, mapie `PR178_MAPA_PLIKOW_2026-11-03.md` i PR #179; poniższe pomiary nie są pomiarami obecnego drzewa.
+
+
 PR sesji: https://github.com/jurekjurekgh/mtg/pull/178. Plan: `docs/plans/PLAN_2026-11-01-audyt-pr177.md`. Raport cząstkowy: `docs/audits/AUDYT_PR177_2026-11-01.md`.
 
 Baza na `7aff9b6`: `npm test` 9156/9156, `npm run build` 76 modułów / 5608,7 kB. Pełny B0 nieuruchomiony. PR #177 obejmuje 111 plików; audyt **nieukończony**. Pierwsze ustalenie A1 dotyczy braku opcji wygnania przy champion po odejściu źródła; sprawdzono wskazaną gałąź i istniejący test syntetyczny, nie pełną sekwencję na stosie. Wpis historyczny: wtedy kod gry nie był jeszcze zmieniony; aktualny stan napraw opisano poniżej. Należy dokończyć audyt, a następnie wykonać pętlę jakości wg ADR 0021. Nie dodawać kart z własnej inicjatywy; pełny B0 tylko na komendę właściciela. Merge to decyzja właściciela.

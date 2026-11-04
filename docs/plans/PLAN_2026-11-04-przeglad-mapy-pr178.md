@@ -31,10 +31,11 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
 - [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
 
-## Partia 4 — dokumentacja historyczna
+## Partia 4 — dokumentacja historyczna (wykonana)
 
-- [ ] `docs/PROJECT_HISTORY.md`, `AUDYT_PR177_2026-11-01.md`, `PR177_MAPA_PLIKOW_2026-11-02.md`, `PLAN_2026-11-01-audyt-pr177.md`, `HANDOFF_2026-11-01-audyt-pr177.md`.
-- Kryterium: przegląd zmienionych fragmentów, spójność z obecnym stanem i jawne oznaczenie wpisów historycznych; brak zmian runtime.
+- [x] `docs/PROJECT_HISTORY.md`, `AUDYT_PR177_2026-11-01.md`, `PR177_MAPA_PLIKOW_2026-11-02.md`, `PLAN_2026-11-01-audyt-pr177.md`, `HANDOFF_2026-11-01-audyt-pr177.md`.
+- [x] Przegląd zmienionych fragmentów diffu PR #178; cztery dokumenty #177 dostały banner stanu historycznego i odesłanie do bieżącego audytu #178/#179. PROJECT_HISTORY ma aktualne sekcje PR #179 na górze.
+- Kryterium utrzymane: wpisy historyczne nie są pomiarami obecnego drzewa; brak zmian runtime.
 
 ## Bramy i przekazanie
 
