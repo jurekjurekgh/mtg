@@ -82,6 +82,9 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A101:** przed poprawką wymuszone 2 testy / 0 pass / 2 fail; po fixie **2/2**. Mutacja wyłączająca przekazanie partii po zapłacie przywraca 0/2. Kontrole A84/A94/A100/A108/A109/A110/A112/A113 i Zoraline **129/129**. Fast **9924 pass / 26 skip / 0 fail**, build **77 modułów / 5685,1 kB**; `test:audit` **34 testy / 12 pass / 22 fail**. Pełny `test:all` po A101: **10 192 pass / 26 skip / 0 fail**. A101 zdjęte z kwarantanny; A98 zyskało końcówkę APNAP (4/8), środek płatności pozostaje otwarty. Pozostałe wymuszone RED **22** (A98/A102–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
+**Następny podetap A98 (przed kodowaniem):** po A101 pozostaje 4/8 (stos zmienia się w trakcie dopłaty Scionem). Zakres: odroczenie samych wpisów `queueTriggerToStack` w `pendingOptionalPay.deferredTriggers` i flush po `optional_pay_resolved`, analogicznie do A100; nie odkładamy wyborów celów, bo zielone A94 wymaga ich obecności i blokady aktywacji many. Kryteria: A98 8/8 albo jawny wynik częściowy bez regresji A94/A101, mutacja, kontrole, pełny fast+build, commit/push, pełny `test:all`. Ryzyka: nie zmienić ścieżki odmowy ani tap-time markerów A104/A105; nie zamykać A104/A105 bez nowego dowodu.
+
+
 
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
