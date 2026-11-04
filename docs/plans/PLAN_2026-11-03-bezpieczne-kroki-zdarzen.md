@@ -59,7 +59,7 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Ukończenie:** osobny dowód błędu, projekt granicy, testy obu stron granicy i pełna brama. Bez tego etapu nie zamykać A110 ani nie deklarować naprawy całej rodziny.
 
-**Wynik etapu 3 / A110:** przed poprawką 6 pass / 10 fail; po poprawce 16/16. Mutacja ignorująca `departureGroupId` przywraca 6 pass / 10 fail. Grupowanie używa jawnej grupy zdarzenia, a brak identyfikatora zachowuje dawną grupę komendy jako fallback. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; `test:audit` **108 testów / 26 pass / 82 fail**. NIE zamknięto A112/A113.
+**Wynik etapu 3 / A110:** przed poprawką 6 pass / 10 fail; po poprawce 16/16. Mutacja ignorująca `departureGroupId` przywraca 6 pass / 10 fail. Grupowanie używa jawnej grupy zdarzenia, a brak identyfikatora zachowuje dawną grupę komendy jako fallback. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; `test:audit` **108 testów / 26 pass / 82 fail**. Pełny `test:all` po A110: **10 134 pass / 84 skip / 0 fail**. NIE zamknięto A112/A113.
 
 ## Etap 4 — wspólna kolejność i automatyczne sprawdzenia
 

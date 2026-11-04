@@ -33,7 +33,7 @@
 2. Etap 1 wykonany: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js`, 7/7 GREEN bez zmiany produkcji; commit/push po pełnym fast + build.
 3. Etap 2 / A111 wykonany: własne odejście źródła zbiorowego wyzwalacza, wygnanie zamiast śmierci i descended przy poświęceniu z finality. RED→GREEN, mutacja, pełny fast + build; A111 usunięte z kwarantanny.
 4. Inwentarz emiterów/kolejkowania wykonany: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. ADR 0031 zaakceptowany; właściciel wybrał najpierw A110.
-5. A110 wykonane: `departureGroupId` dla osobnych aktywacji many i partii zniszczenia, grupowanie po zdarzeniu z fallbackiem komendy. RED 6/16 → GREEN 16/16, mutacja złapana, A110 usunięte z kwarantanny. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**.
+5. A110 wykonane: `departureGroupId` dla osobnych aktywacji many i partii zniszczenia, grupowanie po zdarzeniu z fallbackiem komendy. RED 6/16 → GREEN 16/16, mutacja złapana, A110 usunięte z kwarantanny. Fast **9866 pass / 84 skip / 0 fail**, build **77 modułów / 5677,1 kB**; pełny `test:all` **10 134 pass / 84 skip / 0 fail**.
 6. Nie zamykać A112/A113 na podstawie A110. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
 
 ## Zasady nie do obejścia
