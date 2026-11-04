@@ -12,20 +12,33 @@ Bot wybiera cel, któremu obrażenia refleksu Magma Pummelera będą śmiertelne
 
 ## Etap 1 — RED i kontrakt kwoty
 
-- [ ] Testy realnego Magma Pummeler + Shock: źródło przeżywa i ginie; oferta niesie liczbę zdjętych liczników, bot wybiera mniejszy cel śmiertelny zamiast największego, a przy braku śmiertelnego celu przeciwnika.
-- [ ] Test prawdziwej walki: Magma blokuje, refleks dobija rannego napastnika z uwzględnieniem oznaczonych obrażeń; większy zdrowy stwór nie wygrywa rozmiarem. Wariant bez śmiertelnego celu kończy się na przeciwniku.
-- [ ] Kontrole: wygrana obrażeniami w gracza, prewencja/niezniszczalność, własne cele, istniejący Warmaker/Molten Nursery i resolver `resolveDamageAmount`.
+- [x] Testy realnego Magma Pummeler + Shock: źródło przeżywa i ginie; oferta niesie liczbę zdjętych liczników, bot wybiera mniejszy cel śmiertelny zamiast największego, a przy braku śmiertelnego celu przeciwnika.
+- [x] Test prawdziwej walki: Magma blokuje, refleks dobija rannego napastnika z uwzględnieniem oznaczonych obrażeń; większy zdrowy stwór nie wygrywa rozmiarem. Wariant bez śmiertelnego celu kończy się na przeciwniku.
+- [x] Kontrole: wygrana obrażeniami w gracza, prewencja/niezniszczalność, własne cele, istniejący Warmaker/Molten Nursery i resolver `resolveDamageAmount`.
 
 ## Etap 2 — naprawa i weryfikacja
 
-- [ ] Przekazać kontekst zdarzenia do wspólnego resolvera kwoty w ofercie (i LKI źródła, jeśli potrzebne). Jedno źródło prawdy dla oferty i rozstrzygnięcia; bez zmiany `damageTargetValue`, jeżeli istniejąca wspólna polityka spełnia kryterium.
-- [ ] Mutacja usuwająca przekazanie kontekstu musi czerwienić nowe testy. Sprawdzić świadomy dryf golden-mastera; regeneracja tylko z opisem różnicy, nie „żeby było zielono”.
-- [ ] Pokrewne testy, pełny `npm test` + `npm run build`, szybki benchmark oraz pomiar ukierunkowany na talię z Magma Pummeler (`kaldheim`), bez pełnego B0. Osobny commit i natychmiastowy push.
+- [x] Przekazać kontekst zdarzenia do wspólnego resolvera kwoty w ofercie (i LKI źródła, jeśli potrzebne). Jedno źródło prawdy dla oferty i rozstrzygnięcia; bez zmiany `damageTargetValue`, jeżeli istniejąca wspólna polityka spełnia kryterium.
+- [x] Mutacja usuwająca przekazanie kontekstu musi czerwienić nowe testy. Sprawdzić świadomy dryf golden-mastera; regeneracja tylko z opisem różnicy, nie „żeby było zielono”.
+- [x] Pokrewne testy (95/95, golden-master bez dryfu), pełny `npm test` 9970/9970 + `npm run build` 77 modułów / 5691.7 kB. Mutacja kontekstu: 0/6. Szybki benchmark i pomiar ukierunkowany (`kaldheim`) — w etapie 3, bez pełnego B0.
 
 ## Etap 3 — domknięcie
 
 - [ ] Pełny `npm run test:all` przed zakończeniem, aktualizacja planu/historii/handoffu i opisu PR #179, fetch/compare przed każdym pushem, CI i mergeability.
 - [ ] Bez scalania, force-push, nowych kart, pełnego B0 i eksperymentów `NIE_WDRAZAC`.
+
+## Pomiar RED → GREEN
+
+Sonda `.arena/checkpoint/c-magma-probe.mjs` (realne karty i komendy):
+
+| Scenariusz | PRZED (wybór / `damage`) | PO (wybór / `damage`) |
+|---|---|---|
+| Shock, Magma 3 liczniki, wrogie 2/1 i 6/7 | big / brak | small / 2 |
+| Shock, Magma 1 licznik (źródło ginie), 1/1 i 6/7 | big / brak | small / 1 |
+| Walka: Magma 3 liczniki blokuje 5/5 (ranny 3), 6/7 | big / brak | att / 3 |
+| Walka: Magma 2 liczniki blokuje 5/5 (ranny 2), 6/7 | big / brak | p2 / 2 |
+
+Testy `test/zgloszenie-c-magma-lethal.test.js`: RED 0/6 → GREEN 6/6; mutacja (usunięcie kontekstu z resolvera oferty) 0/6. Naprawa wyłącznie w ofercie `resolve_trigger_target` (`game-state.js`): kontekst `pending.extra` + LKI źródła, bez zmiany `damageTargetValue` i bez rozpoznawania nazwy karty.
 
 ## Ryzyka
 

@@ -8764,8 +8764,14 @@ export function playerView(state, playerId) {
     const triggerDamageEffect = triggerTargetDamageEffectOf(intentAbility);
     const triggerDamageField = (targetId) => {
       if (!triggerDamageEffect) return {};
-      const source = state.objects.get(triggerTargetHead.sourceId);
-      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId);
+      // C (2026-11-04, Magma Pummeler): ten sam odczyt co rozstrzygnięcie
+      // (effects.js `damage` → resolveDamageAmount z `context`). Bez kontekstu
+      // zdarzenia `amountFromContext:'countersRemoved'` nie miało wartości,
+      // oferta nie niosła `damage`, a bot omijał wspólną politykę obrażeń i
+      // wybierał największe ciało. LKI źródła jak w legalTriggerTargetCandidates
+      // (CR 603.10/608.2h) — refleks działa także po śmierci źródła.
+      const source = state.objects.get(triggerTargetHead.sourceId) ?? triggerTargetHead.sourceLki ?? null;
+      const amount = resolveDamageAmount(state, triggerDamageEffect, source, targetId, triggerTargetHead.extra ?? {});
       return Number.isFinite(amount) ? { damage: amount } : {};
     };
     // M157/F4(a): wielocelowy trigger (count > 1, „each of up to N") —
