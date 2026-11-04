@@ -8,8 +8,6 @@ import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
 import {stateFingerprint} from '../src/engine/fingerprint.js';
 import {replayFromState,verifyReplay} from '../src/engine/replay.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit=(name,fn)=>test(name,{skip:process.env.AUDIT_A84_ENFORCE==='1'?false:'otwarte A84 (AUDIT_A84_ENFORCE=1)'},fn);
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);

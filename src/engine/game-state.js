@@ -2097,8 +2097,10 @@ function advanceDeathTriggerBatch(state) {
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies',
   'permanents_you_control_leave_battlefield', 'combat_damage_to_player'].includes(name);
 
-function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false) {
-  if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
+function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, wardClosure = false) {
+  const allowedCommand = ['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type)
+    || (wardClosure && cmd.type === 'resolve_ward_pay_choice');
+  if (!allowedCommand || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   if (cmd.type === 'activate_ability' && !standaloneManaActivation) {
     // Nie wchodzimy w płacenie maną ani koszt odrzucenia: tylko faktycznie
@@ -2156,7 +2158,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   advanceDeathTriggerBatch(state);
 }
 
-function accepted(state, cmd, result, standaloneManaActivation = false) {
+function accepted(state, cmd, result, standaloneManaActivation = false, wardDeferredTriggerIds = []) {
   // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
   // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
   // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
@@ -2300,6 +2302,13 @@ function accepted(state, cmd, result, standaloneManaActivation = false) {
   // Także triggery ofiary Sagi należą do tego checkpointu; najpierw zbierz
   // pełną partię, dopiero potem rozpocznij kontrolowane ogłaszanie celów.
   startDeathTriggerBatch(state, cmd, result.events, triggerTargetsBefore, triggerPriorityBefore, standaloneManaActivation);
+  // A84: odroczone wpisy Ward wracają na stos po płatności; ich partia APNAP
+  // obejmuje też cele czekające z poprzednich komend (np. Selhoff po Scionie).
+  // Zwykły batch nie startuje, bo pendingTriggerTargets istniały przed komendą.
+  if (wardDeferredTriggerIds.length && !state.pendingDeathTriggerBatch) {
+    const batchEvents = [...result.events, ...wardDeferredTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
+    startDeathTriggerBatch(state, cmd, batchEvents, 0, triggerPriorityBefore, false, true);
+  }
   // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
   // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
   // („If a target can’t be changed to another legal target, the original
@@ -4569,11 +4578,12 @@ export function execute(state, input) {
     state.pendingWardPay = null;
     // A100: zdolności wyzwolone w trakcie płatności wracają na stos dopiero
     // po zamknięciu Ward (CR 603.3/605.4a), przed checkpointem SBA w accepted.
+    const wardDeferredTriggerIds = (pending.deferredTriggers ?? []).map((entry) => entry.id);
     flushDeferredWardTriggers(state, pending.deferredTriggers ?? []);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
+    return accepted(state, cmd, { ok: true, events: state.events.slice(before) }, false, wardDeferredTriggerIds);
   }
   if (state.pendingOptionalPay && !manaGeneratingCommandFor(state, cmd, state.pendingOptionalPay.playerId)) {
     // M200/E: jak przy pay_or_sacrifice — kreator many tapuje źródła wcześniej.
