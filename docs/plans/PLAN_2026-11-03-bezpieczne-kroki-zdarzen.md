@@ -78,6 +78,8 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A100:** przed poprawką wymuszone 6 testów / 0 pass / 6 fail; po fixie **6/6**. Mutacja wyłączająca odroczenie wpisów stosu przywraca 0/6; mutacja usuwająca flush po Ward czerwieni 2/28 w A108/A109. A84 zyskuje pierwsze 4/8 (stos nietknięty w trakcie Ward), ale końcówka APNAP pozostaje otwarta. Kontrole Ward **106/106**. Fast **9914 pass / 36 skip / 0 fail**, build **77 modułów / 5682,6 kB**; `test:audit` **60 testów / 28 pass / 32 fail**. Pełny `test:all` po A100: **10 182 pass / 36 skip / 0 fail**. A100 zdjęte z kwarantanny; pozostałe wymuszone RED **32** (A84/A98/A101–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
+**Wynik podetapu A84:** po A100 pozostawało 4/8 (końcówka APNAP po Ward); po włączeniu odroczonych wpisów do istniejącej partii śmierci **8/8**. Mutacja wyłączająca partię po Ward przywraca 4/8. Kontrole A100/A108/A109/A110/A112/A113 **92/92**. Fast **9922 pass / 28 skip / 0 fail**, build **77 modułów / 5683,4 kB**; `test:audit` **36 testów / 8 pass / 28 fail**. Pełny `test:all` po A84: **10 190 pass / 28 skip / 0 fail**. A84 zdjęte z kwarantanny; A95/A96 tracą nieużywany wrapper A84. Pozostałe wymuszone RED **28** (A98/A101–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
+
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
 Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
