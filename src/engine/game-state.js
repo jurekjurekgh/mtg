@@ -2091,7 +2091,10 @@ function advanceDeathTriggerBatch(state) {
   state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
-const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies'].includes(name);
+// A112 / ADR 0031: partia obejmuje też grupowe „one or more permanents you
+// control leave the battlefield”, bo należy do tego samego okna co śmierć.
+const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies',
+  'permanents_you_control_leave_battlefield'].includes(name);
 
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false) {
   if (!['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type) || state.pendingDeathTriggerBatch || pendingBefore !== 0
