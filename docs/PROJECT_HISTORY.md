@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — zgłoszenie C: Magma Pummeler nie marnuje refleksu
+
+- Bot wybierał największe ciało i zadawał nieśmiertelne obrażenia. Przyczyna: oferta `resolve_trigger_target` nie przekazywała `pending.extra` do `resolveDamageAmount`, więc `amountFromContext:'countersRemoved'` nie trafiało do `cmd.damage` i bot omijał wspólną politykę obrażeń.
+- Naprawa `2964407`: kontekst zdarzenia + LKI źródła w ofercie (CR 603.3d/608.2h/704.5g). Bez zmiany `damageTargetValue` i bez nazw kart. RED 0/6 → GREEN 6/6 (`test/zgloszenie-c-magma-lethal.test.js`), mutacja 0/6; pokrewne 95/95, golden-master bez dryfu.
+- Bramy: fast **9970/9970**, build **77/5691,7 kB**, pełny `test:all` **10238/10238** (585,4 s), 0 fail / 0 skip. Benchmark ukierunkowany `kaldheim` 16 meczów: bez regresji (75,0 % heuristic przed i po). Plan: `docs/plans/PLAN_2026-11-04-c-magma-lethal.md`; handoff: `docs/setup/HANDOFF_2026-11-04-c-magma-lethal.md`. Bez scalania i pełnego B0.
+
+
 ## 2026-11-04 — wspólny checkpoint, etap 3c: pełna brama i dokumentacja końcowa
 
 - Domknięto dokumentację planu/ADR/handoff po korekcie migracji madness. Wspólny checkpoint obejmuje zwykłe wyzwalacze okna, modalność, cele/podziały, Ward jako drugi przebieg, kontynuację SBA oraz madness/refleksy w jednej partii; historyczne pole partii pozostaje do migracji nazw.

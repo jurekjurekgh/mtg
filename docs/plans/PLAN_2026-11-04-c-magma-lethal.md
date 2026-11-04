@@ -24,8 +24,8 @@ Bot wybiera cel, któremu obrażenia refleksu Magma Pummelera będą śmiertelne
 
 ## Etap 3 — domknięcie
 
-- [ ] Pełny `npm run test:all` przed zakończeniem, aktualizacja planu/historii/handoffu i opisu PR #179, fetch/compare przed każdym pushem, CI i mergeability.
-- [ ] Bez scalania, force-push, nowych kart, pełnego B0 i eksperymentów `NIE_WDRAZAC`.
+- [x] Pełny `npm run test:all` **10238/10238** (585,4 s), build **77 modułów / 5691,7 kB**; aktualizacja planu/historii/handoffu i opisu PR #179, fetch/compare przed każdym pushem. CI i `mergeable_state` potwierdzone w opisie PR po pushu.
+- [x] Bez scalania, force-push, nowych kart, pełnego B0 i eksperymentów `NIE_WDRAZAC`.
 
 ## Pomiar RED → GREEN
 
@@ -39,6 +39,8 @@ Sonda `.arena/checkpoint/c-magma-probe.mjs` (realne karty i komendy):
 | Walka: Magma 2 liczniki blokuje 5/5 (ranny 2), 6/7 | big / brak | p2 / 2 |
 
 Testy `test/zgloszenie-c-magma-lethal.test.js`: RED 0/6 → GREEN 6/6; mutacja (usunięcie kontekstu z resolvera oferty) 0/6. Naprawa wyłącznie w ofercie `resolve_trigger_target` (`game-state.js`): kontekst `pending.extra` + LKI źródła, bez zmiany `damageTargetValue` i bez rozpoznawania nazwy karty.
+
+Benchmark ukierunkowany `kaldheim` vs `kaldheim`, heuristic–aggro, 8 seedów (16 meczów, lustrzanie): PRZED 75,0 % heuristic (12/16), PO 75,0 % (12/16) — mała próbka, bez regresji; zmiana zachowania potwierdzona scenariuszami C/1–C/6, nie win-rate. Pełny B0 nieuruchamiany.
 
 ## Ryzyka
 
