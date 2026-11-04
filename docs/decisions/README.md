@@ -38,6 +38,7 @@ ADR zapisują decyzje, których nie powinno się odtwarzać z historii czatu.
 | [0029](0029-catalog-grows-only-from-owner-collection.md) | Katalog kart to kolekcja właściciela: agent nie dodaje kart (też jako „nośników mechaniki") — brak nośnika rozwiązuje karta synteretyczna w teście; strażnik `proweniencja-katalogu.test.js` | Zaakceptowana |
 | [0030](0030-fetch-cr-rulings-before-engine-changes.md) | Zmiany regułowe (fix istniejącego kodu albo nowa mechanika) wymagają pobrania dosłownego tekstu CR i rulingów ze źródeł online; pamięć treningowa nie jest źródłem (po F3 i B4 w PR #105) | Zaakceptowana |
 | [0031](0031-event-identity-and-trigger-batches.md) | Tożsamość zdarzenia i partia wyzwalaczy | Zaakceptowana |
+| [0032](0032-shared-trigger-checkpoint.md) | Wspólny checkpoint ogłoszeń wyzwalaczy | Zaakceptowana |
 
 ## Zasady tworzenia
 
