@@ -25,11 +25,25 @@ Wdrożyć pełny wspólny checkpoint wszystkich typów zdarzeń zgodnie z ADR 00
 - [x] Zachować madness/devour/Saga bez podwójnych wpisów: istniejące domknięcie madness (`madnessBatchTriggerIds`) i kolejność A28 pozostały, exploit/Saga przechodzą kontrole; checkpoint nie dubluje wpisów. bez podwójnych wpisów i bez ukrywania istniejących wpisów.
 - [x] Mutacja modalna oblewa nowy test (`.arena/checkpoint/modal-mutation.log`); kontrole: `test:audit` 724/724, fast **9960/9960**, build; osobny commit i push. Świadoma regeneracja golden-mastera bota (tylko ravnica-wur|innistrad-wu@1001: 298→299 decyzji).
 
-## Etap 3 — domknięcie i dokumentacja (wykonany)
+## Etap 3 — domknięcie migracji (w toku; korekta po audycie kodu)
 
-- [x] Bez ryzykownego przemianowania w tym przyroście: historyczne pole `pendingDeathTriggerBatch` / flaga `deathBatch` pozostają nośnikiem partii, a zakres „wszystkie zwykłe wyzwalacze” jest udokumentowany w ADR 0032, komentarzach i tym planie. Ewentualne przemianowanie wymaga osobnej migracji replay/fingerprint.
-- [x] Pełny `npm run test:all` **10228/10228** (593,2 s), build **77 modułów / 5691,2 kB**, strażnicy dokumentów **25/25**; aktualizacja planu, historii, handoffu i treści PR #179.
-- [x] Fetch/compare przed każdym pushem; bez force-push i bez scalania. CI i mergeability weryfikowane po pushu w PR #179 (wiersz CI w treści PR).
+Wcześniejsze oznaczenie tego etapu jako wykonanego było przedwczesne. Zielone bramy na `3fcf1b6` potwierdziły zgodność istniejących testów, ale nie zamknięcie architektury: `accepted()` nadal uruchamia osobny `startMadnessTriggerOrder`, a test A28 wymaga celu refleksu przed wyborem kolejności. To nie dowodzi wspólnej kolejności ogłoszeń z CR 603.3b–d. Pomiar przed korektą: `test:all` **10228/10228** (593,2 s), build **77/5691,2 kB**, dokumenty **25/25**; CI `a0f1616` **41904813668 success**, PR bez konfliktów. Nie jest to dowód ukończenia migracji.
+
+### 3a. Madness i refleksy w jednej partii
+
+- [ ] Nowy RED na prawdziwych kartach i komendach: Talion's Messenger + Revolutionist, dwa legalne cele refleksu. Po odrzuceniu najpierw wspólny wybór kolejności, dopiero potem cel wybranej zdolności; obie kolejności, brak dubli, replay/fingerprint. Oracle: lokalne definicje `talions-messenger`, `revolutionist`; CR 603.3b–d/603.12 (ponownie pobrany CR, SHA-256 `8d860e45…b070ca`).
+- [ ] Przekazać identyfikatory z `madnessBatchTriggerIds` do wspólnego checkpointu razem z oczekującymi celami/trybami. Usunąć równoległe uruchamianie kolejności madness; zachować bufor, gdy rozstrzyganie jeszcze trwa. Nie emitować ponownie zdarzeń ani wpisów stosu.
+- [ ] Mutacja usuwająca migrację, kontrole A28/payment/ward, pełny fast + build; osobny commit i natychmiastowy push.
+
+### 3b. Domknięcie pętli i nazw
+
+- [ ] Sprawdzić na prawdziwych kartach powtórne SBA po ogłoszeniu wyzwalaczy (Saga/token/aura), bez pomijania decyzji gracza i bez przesuwania istniejących wpisów. Naprawić tylko potwierdzoną lukę RED→GREEN.
+- [ ] Poprawić komentarz `placeTriggerBatchInApnapOrder`: APNAP zachowuje kolejność wewnątrz kontrolera; właściwy wybór oferuje checkpoint. Historyczne `pendingDeathTriggerBatch`/`deathBatch` pozostają nośnikiem do osobnej migracji nazw, chyba że bezpieczne przemianowanie jest częścią tego etapu.
+
+### 3c. Dowody i dokumentacja końcowa
+
+- [ ] Pełny `npm run test:all`, build i strażnicy dokumentacji na zamrożonym drzewie; osobny commit i push.
+- [ ] Zaktualizować plan, historię, handoff i opis PR #179; fetch/compare przed każdym pushem, sprawdzić CI i mergeability. Bez force-push, scalania, nowych kart, pełnego B0 i eksperymentów `NIE_WDRAZAC`.
 
 ## Kryteria zakończenia
 
