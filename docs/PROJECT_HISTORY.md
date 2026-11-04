@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — wspólny checkpoint, etap 3: domknięcie dokumentacji i bram
+
+- Plan/ADR/handoff opisują wdrożony zakres: wszystkie zwykłe wyzwalacze okna, modalność, cele/podziały, Ward jako drugi przebieg i kontynuacja SBA. Historyczne pole partii pozostaje do osobnej migracji nazw; madness/devour/Saga zachowane bez dubli.
+- Pełne bramy na kodzie `3fcf1b6`: dokumenty **25/25**, `test:audit` **724/724**, fast **9960/9960**, `test:all` **10228/10228** (593,2 s), build **77 modułów / 5691,2 kB**; 0 fail / 0 skip.
+
+
 ## 2026-11-04 — wspólny checkpoint, etap 2: modalność i kontynuacja SBA
 
 - Partia checkpointu obejmuje modalne triggery; cele/tryby/podziały są ogłaszane pojedynczo w kolejności umieszczania na stosie, bez priorytetu pomiędzy. Kontynuacja po SBA łapie wyłącznie nowe wpisy spoza stosu sprzed SBA.

@@ -25,11 +25,11 @@ Wdrożyć pełny wspólny checkpoint wszystkich typów zdarzeń zgodnie z ADR 00
 - [x] Zachować madness/devour/Saga bez podwójnych wpisów: istniejące domknięcie madness (`madnessBatchTriggerIds`) i kolejność A28 pozostały, exploit/Saga przechodzą kontrole; checkpoint nie dubluje wpisów. bez podwójnych wpisów i bez ukrywania istniejących wpisów.
 - [x] Mutacja modalna oblewa nowy test (`.arena/checkpoint/modal-mutation.log`); kontrole: `test:audit` 724/724, fast **9960/9960**, build; osobny commit i push. Świadoma regeneracja golden-mastera bota (tylko ravnica-wur|innistrad-wu@1001: 298→299 decyzji).
 
-## Etap 3 — domknięcie i dokumentacja
+## Etap 3 — domknięcie i dokumentacja (wykonany)
 
-- [ ] Mechaniczne przemianowanie historycznego pola partii, jeśli nie zagraża replayowi; w przeciwnym razie udokumentować nazwę historyczną i zakres.
-- [ ] Pełny `npm run test:all`, build, strażnicy dokumentacji; aktualizacja planu, historii, handoffu i treści PR #179.
-- [ ] Fetch/compare przed każdym pushem; CI i mergeability; bez force-push i bez scalania.
+- [x] Bez ryzykownego przemianowania w tym przyroście: historyczne pole `pendingDeathTriggerBatch` / flaga `deathBatch` pozostają nośnikiem partii, a zakres „wszystkie zwykłe wyzwalacze” jest udokumentowany w ADR 0032, komentarzach i tym planie. Ewentualne przemianowanie wymaga osobnej migracji replay/fingerprint.
+- [x] Pełny `npm run test:all` **10228/10228** (593,2 s), build **77 modułów / 5691,2 kB**, strażnicy dokumentów **25/25**; aktualizacja planu, historii, handoffu i treści PR #179.
+- [x] Fetch/compare przed każdym pushem; bez force-push i bez scalania. CI i mergeability weryfikowane po pushu w PR #179 (wiersz CI w treści PR).
 
 ## Kryteria zakończenia
 
