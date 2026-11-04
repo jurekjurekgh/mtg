@@ -7,8 +7,6 @@ import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit=(name,fn)=>test(name,{skip:process.env.AUDIT_A104_ENFORCE==='1'?false:'otwarte A104 (AUDIT_A104_ENFORCE=1)'},fn);
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
@@ -24,10 +22,10 @@ function scene(active,payer){
 }
 
 // Aura naprawdę rzucona na Holdout; pule oraz zmiany tury/priorytetu są setupem.
-for(const payer of ['p1','p2'])audit(`A104: Chronic Flooding nie trafia na stos podczas dopłaty (${payer})`,()=>{
+for(const payer of ['p1','p2'])test(`A104: Chronic Flooding nie trafia na stos podczas dopłaty (${payer})`,()=>{
  const active=payer==='p1'?'p2':'p1',{s,token}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));const before=[...s.zones.stack];act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='hold'&&c.abilityIndex===1&&c.tapCreatureId==='ally'));assert.ok(s.pendingOptionalPay);assert.deepEqual(s.zones.stack,before,'tapnięcie źródła many nie kładzie triggera aury na stos podczas dopłaty');
 });
-for(const payer of ['p1','p2'])audit(`A104: Chronic Flooding i triggery śmierci łączą się w APNAP (${payer})`,()=>{
+for(const payer of ['p1','p2'])test(`A104: Chronic Flooding i triggery śmierci łączą się w APNAP (${payer})`,()=>{
  const active=payer==='p1'?'p2':'p1',{s,token}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='hold'&&c.abilityIndex===1&&c.tapCreatureId==='ally'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay));assert.equal(s.turn.priorityPlayerId,active);assert.equal(view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order').length,3);for(let i=0;i<20;i++){const cmds=view(s).legalCommands,choice=cmds.find(c=>c.type==='resolve_trigger_order')??cmds.find(c=>c.type==='resolve_trigger_target');if(!choice)break;act(s,choice);}const entries=s.zones.stack.map(id=>s.objects.get(id)).filter(o=>o.kind==='trigger');assert.equal(entries.length,5);assert.deepEqual(entries.map(o=>o.controllerId),[active,active,active,payer,payer]);assert.equal(entries.filter(o=>o.cardId==='chronic-flooding').length,1);
 });
 for(const payer of ['p1','p2'])test(`A104 kontrola: dopłata przez Holdout pozwala rozstrzygnąć Chronic Flooding (${payer})`,()=>{

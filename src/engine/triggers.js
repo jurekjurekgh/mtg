@@ -2151,7 +2151,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
   // stos (odpowiedź przeciwnika jak dla celu wybranego z modalu).
   const autoSpec = ability?.trigger?.requiresTarget;
   const autoMulti = Number.isInteger(autoSpec?.count) && autoSpec.count > 1;
-  if (!allowNone && candidates.length === 1 && fixedTargetIds.length === 0 && !autoMulti) {
+  if (!state.pendingOptionalPay && !allowNone && candidates.length === 1 && fixedTargetIds.length === 0 && !autoMulti) {
     // LKI jak w ścieżce resolve (M166/B): źródło mogło umrzeć z SBA tej samej
     // komendy, co odpaliło trigger (Enrage) — bierzemy ostatni znany stan.
     const src = state.objects.get(source.id) ?? source;
@@ -2172,7 +2172,7 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     events.push(resolved);
     return true;
   }
-  state.pendingTriggerTargets.push({
+  const decision = {
     playerId: controllerId,
     sourceId: source.id,
     cardId: source.cardId,
@@ -2195,7 +2195,21 @@ function queueTargetDecision(state, ability, source, candidates, allowNone, fixe
     // w locie); bez override rozstrzyganie nie znałoby kandydatów.
     specOverride: specOverride ? Object.freeze({ ...specOverride }) : null,
     restorePriorityTo: state.turn.priorityPlayerId,
-  });
+  };
+  // A104/A105 / CR 603.3: w trakcie rozstrzygania płatności opcjonalnej
+  // zdolność już wyzwoliła, ale cel wybieramy dopiero przy ogłoszeniu na stos.
+  // Bufor nie jest publiczną decyzją i nie zmienia priorytetu płatności.
+  if (state.pendingOptionalPay) {
+    (state.pendingOptionalPay.deferredTargets ??= []).push(decision);
+    const fired = event('ability_triggered', {
+      objectId: source.id, cardId: source.cardId,
+      trigger: ability?.trigger?.event ?? null, awaitingTarget: true,
+    });
+    state.events.push(fired);
+    events.push(fired);
+    return true;
+  }
+  state.pendingTriggerTargets.push(decision);
   state.turn.priorityPlayerId = controllerId;
   // M172/B: rozdział Sagi ma effect: [] (efekty wykonuje fireSagaChapter) —
   // typ efektu dla etykiet bierzemy wtedy z extra.chapterEffectType.

@@ -2121,9 +2121,13 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   // A102/A103 / CR 603.3b: po domknięciu płatności opcjonalnej dobór karty
   // (Spellbomb) należy do tego samego checkpointu co śmierć Sciona. W innych
   // oknach batch pozostaje ograniczony do triggerów śmierci/obrażeń.
-  const allowDraw = resolutionClosure && cmd.type === 'resolve_optional_pay_choice';
-  const isBatchTrigger = name => isDeathBatchTrigger(name)
-    || (allowDraw && ['you_draw_card', 'you_draw_second_card_each_turn'].includes(name));
+  const optionalClosure = resolutionClosure && cmd.type === 'resolve_optional_pay_choice';
+  // A104/A105 / CR 603.3b: po zamknięciu płatności partia obejmuje WSZYSTKIE
+  // zwykłe wyzwalacze tego okna (śmierć, dobór, tapnięcie), nie tylko śmierć.
+  // Refleks jest drugą częścią ogłoszenia; Ward powstaje dopiero z celów.
+  const isBatchTrigger = name => optionalClosure
+    ? (name !== 'reflexive_pay' && name !== 'ward')
+    : isDeathBatchTrigger(name);
   const allTargets = state.pendingTriggerTargets;
   // A101: po opcjonalnej płatności refleks jest osobną, późniejszą częścią
   // checkpointu (CR 603.3b). Zwykła partia obejmuje tylko triggery śmierci.
@@ -2131,7 +2135,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     ? allTargets.filter(p => p.ability?.trigger?.event === 'reflexive_pay') : [];
   const targets = followupTargets.length ? allTargets.filter(p => !followupTargets.includes(p)) : allTargets;
   if (targets.some(p => !isBatchTrigger(p.ability?.trigger?.event)
-    || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
+    || (!optionalClosure && (!['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone))
     || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
     || p.fixedTargetIds?.length || p.specOverride || !triggerTargetDecisionPending(state, p))) return;
   // Ward wyzwala się przy ogłoszeniu celu i wymaga osobnej partii ponad całą
@@ -4716,11 +4720,21 @@ export function execute(state, input) {
     // odroczone wpisy stosu, przed checkpointem SBA w accepted.
     state.pendingOptionalPay = null;
     flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
+    // A104/A105: cele wyzwalaczy z okna płatności ogłaszamy dopiero teraz.
+    // decision zachowuje LKI/kandydatów z chwili wyzwolenia; legalność celu
+    // jest przeliczana przy wyborze (resolve_trigger_target).
+    for (const decision of pending.deferredTargets ?? []) {
+      state.pendingTriggerTargets.push(decision);
+      state.events.push(event('trigger_target_required', {
+        playerId: decision.playerId, sourceId: decision.sourceId, cardId: decision.cardId,
+        candidateIds: [...decision.candidates], allowNone: decision.allowNone,
+      }));
+    }
     const resolvedEvents = state.events.slice(before);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    return accepted(state, cmd, { ok: true, events: resolvedEvents }, false, cmd.pay ? resolutionTriggerIds : []);
+    return accepted(state, cmd, { ok: true, events: resolvedEvents }, false, resolutionTriggerIds);
   }
   // Oczekująca decyzja „you may" triggera bez celu (Angel's Feather):
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
