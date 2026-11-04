@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 33. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 20. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -121,21 +121,21 @@
 | `test/audyt-pr177-a56-violent-urge-real.test.js` | test/fixture | przejrzany pełny test; Violent Urge w realnej walce, delirium z własnego grobu, bot nie marnuje przed atakiem |
 | `test/audyt-pr177-a57-zrodlo-ofiary-real.test.js` | test/fixture | przejrzany pełny test; źródło decyzji poświęcenia w zdarzeniu/logu, champion vs sacrifice, shroud i brak kandydatów |
 | `test/audyt-pr177-a58-elk-real.test.js` | test/fixture | przejrzany pełny test; Dawntreader Elk koszt/tutor, brak zielonej many, pusta/cienka biblioteka i wycena |
-| `test/audyt-pr177-a59-force-away-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a60-frightful-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a61-oak-token-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a62-batch71-dane.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a63-edifice-legalne-etb.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a64-hounds-discard-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a66-token-morbid-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a67-spider-morbid.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a68-scorn-aura-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a69-converge-free-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a59-force-away-real.test.js` | test/fixture | przejrzany pełny test; Force Away bounce/ferocious przy rozstrzyganiu, odpowiedzi Shock/Brute Force i wycena |
+| `test/audyt-pr177-a60-frightful-real.test.js` | test/fixture | przejrzany pełny test; Frightful Delusion kontra, zapłata 1 nie usuwa discardu, cel nielegalny przed rozstrzygnięciem |
+| `test/audyt-pr177-a61-oak-token-real.test.js` | test/fixture | przejrzany pełny test; Ambassador Oak token i Ivy Lane Denizen, cudzy trigger, śmierć Oak nie cofa ETB |
+| `test/audyt-pr177-a62-batch71-dane.test.js` | test/fixture | przejrzany pełny test; statyczne snapshoty batcha 71 i materializacja do talii, bez runtime Oracle |
+| `test/audyt-pr177-a63-edifice-legalne-etb.test.js` | test/fixture | przejrzany pełny test; Edifice refleks i ochrona od czarnego, wycena oraz inny legalny cel |
+| `test/audyt-pr177-a64-hounds-discard-real.test.js` | test/fixture | przejrzany pełny test; Hounds discard jako koszt w walce, wycena kart i dostępność kolorów |
+| `test/audyt-pr177-a66-token-morbid-real.test.js` | test/fixture | przejrzany pełny test; token/unearth/finality a Morbid i śmierć, LKI zdarzeń, następna tura |
+| `test/audyt-pr177-a67-spider-morbid.test.js` | test/fixture | przejrzany pełny test; Somberwald Spider Morbid przy cast/bond po śmierci tokena/unearth |
+| `test/audyt-pr177-a68-scorn-aura-real.test.js` | test/fixture | przejrzany pełny test; Sea God’s Scorn zwraca host/aurę/łańcuch Feedback, SBA po rozstrzygnięciu |
+| `test/audyt-pr177-a69-converge-free-real.test.js` | test/fixture | przejrzany pełny test; Kaleidoscorch liczy kolory wydane na ten czar, discover/free cast/flashback |
 | `test/audyt-pr177-a7-ostrzezenie-animacji.test.js` | test/fixture | przejrzany pełny test; ostrzeżenia animacji/crew nie mylą ponownego odtapowania z obsadzeniem, realny Invoker i kreator crew |
-| `test/audyt-pr177-a70-bounce-investment-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a70-bounce-investment-real.test.js` | test/fixture | przejrzany pełny test; wycena bounce inwestycji, bestow zostaje stworem, living weapon/Germ |
 | `test/audyt-pr177-a71-apnap-real.test.js` | test/fixture | przejrzany pełny test; realne karty, wybory/replay/bot, bez nowego błędu |
-| `test/audyt-pr177-a72-shared-qualifier-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a73-search-destination-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a72-shared-qualifier-real.test.js` | test/fixture | przejrzany pełny test; wspólny kwalifikator wyszukiwania i discardu, atomowe odrzucenie złej komendy |
+| `test/audyt-pr177-a73-search-destination-real.test.js` | test/fixture | przejrzany pełny test; strefy docelowe wyszukiwania narzucone przez efekt, nie komendę gracza |
 | `test/audyt-pr177-a75-apnap-land.test.js` | test/fixture | przejrzany pełny test; APNAP śmierci i celów lądowych Polluted Dead/Circle, replay, jawna granica syntetycznego Ward na lądzie |
 | `test/audyt-pr177-a76-apnap-combat.test.js` | test/fixture | przejrzany pełny test; APNAP obrażeń bojowych, osobne okno first strike, jednoczesna śmierć, replay |
 | `test/audyt-pr177-a77-apnap-activation.test.js` | test/fixture | przejrzany pełny test; APNAP po poświęceniu w koszcie Elk/Dreadmaw, Plague Reaver bez batcha śmierci, zdolność many Sciona |

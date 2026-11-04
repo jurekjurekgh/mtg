@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, A59–A73
+
+- Semantyczny przegląd 13 otwartych wierszy: Force Away, Delusion, Oak/Ivy, batch 71, Edifice/protection, Hounds, token/Morbid, Spider, Scorn/aury, Kaleidoscorch, inwestycje, kwalifikatory i strefy wyszukiwania. **79/79 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **33 → 20 otwartych wierszy**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, A47–A58
 
 - Semantyczny przegląd 12 otwartych wierszy: README/talie, Spire, proliferate, Final Parting, Edifice, kontry, Rockslide, Hounds, etykieta Gila, Violent Urge, źródło ofiary, Elk. **51/51 pass / 0 fail / 0 skip**; bez zmiany produkcji.
