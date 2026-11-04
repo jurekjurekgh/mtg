@@ -76,6 +76,8 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A108/A109:** przed poprawką wymuszone 28 testów / 0 pass / 28 fail; po fixie **28/28**. Cztery mutacje (brak odroczenia aury, wczesne zamknięcie Ward, brak SBA aury w skanie Imp, brak triggera odroczonej aury) przywracają czerwony wynik odpowiednio 24/28, 2/26, 8/26 i 12/28. Kontrole Ward/aura/SBA + graf modułów **138/138**. Fast **9908 pass / 42 skip / 0 fail**, build **77 modułów / 5680,4 kB**; `test:audit` **66 testów / 24 pass / 42 fail**. Pełny `test:all` po A108/A109: **10 176 pass / 42 skip / 0 fail**. A108/A109 zdjęte z kwarantanny; pozostałe wymuszone RED **42** (A84/A98/A100–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
+**Wynik podetapu A100:** przed poprawką wymuszone 6 testów / 0 pass / 6 fail; po fixie **6/6**. Mutacja wyłączająca odroczenie wpisów stosu przywraca 0/6; mutacja usuwająca flush po Ward czerwieni 2/28 w A108/A109. A84 zyskuje pierwsze 4/8 (stos nietknięty w trakcie Ward), ale końcówka APNAP pozostaje otwarta. Kontrole Ward **106/106**. Fast **9914 pass / 36 skip / 0 fail**, build **77 modułów / 5682,6 kB**; `test:audit` **60 testów / 28 pass / 32 fail**. Pełny `test:all` po A100: **10 182 pass / 36 skip / 0 fail**. A100 zdjęte z kwarantanny; pozostałe wymuszone RED **32** (A84/A98/A101–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
+
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
 Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
