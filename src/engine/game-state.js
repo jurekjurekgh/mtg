@@ -2088,7 +2088,15 @@ function advanceDeathTriggerBatch(state) {
   const batchIds = new Set(inOrder);
   state.zones.stack = [...state.zones.stack.filter(id => !batchIds.has(id)), ...inOrder];
   state.pendingDeathTriggerBatch = null;
-  state.turn.priorityPlayerId = batch.restorePriorityTo;
+  // A101 / CR 603.3b: refleks „When you do…” jest drugą częścią ogłoszenia.
+  // Nie wybiera kolejności razem ze zwykłymi triggerami; czeka, aż cała
+  // zwykła partia APNAP zostanie ułożona, i dopiero wtedy wybiera cel.
+  if (batch.followupTargets?.length) {
+    state.pendingTriggerTargets = [...batch.followupTargets];
+    state.turn.priorityPlayerId = batch.followupTargets[0].playerId;
+  } else {
+    state.turn.priorityPlayerId = batch.restorePriorityTo;
+  }
 }
 
 // A112/A113 / ADR 0031: partia obejmuje też grupowe „one or more permanents
@@ -2097,9 +2105,9 @@ function advanceDeathTriggerBatch(state) {
 const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies',
   'permanents_you_control_leave_battlefield', 'combat_damage_to_player'].includes(name);
 
-function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, wardClosure = false) {
+function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, resolutionClosure = false) {
   const allowedCommand = ['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type)
-    || (wardClosure && cmd.type === 'resolve_ward_pay_choice');
+    || (resolutionClosure && ['resolve_ward_pay_choice', 'resolve_optional_pay_choice'].includes(cmd.type));
   if (!allowedCommand || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
   if (cmd.type === 'activate_ability' && !standaloneManaActivation) {
@@ -2110,7 +2118,12 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     const cost = entry?.activatedEntry?.ability?.cost;
     if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
   }
-  const targets = state.pendingTriggerTargets;
+  const allTargets = state.pendingTriggerTargets;
+  // A101: po opcjonalnej płatności refleks jest osobną, późniejszą częścią
+  // checkpointu (CR 603.3b). Zwykła partia obejmuje tylko triggery śmierci.
+  const followupTargets = resolutionClosure && cmd.type === 'resolve_optional_pay_choice'
+    ? allTargets.filter(p => p.ability?.trigger?.event === 'reflexive_pay') : [];
+  const targets = followupTargets.length ? allTargets.filter(p => !followupTargets.includes(p)) : allTargets;
   if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
     || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
     || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
@@ -2126,7 +2139,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   // Żadna inna zaległa decyzja nie może być przestawiona przed końcem efektu.
   state.pendingTriggerTargets = [];
   const otherDecision = firstPendingDecision(state);
-  state.pendingTriggerTargets = targets;
+  state.pendingTriggerTargets = allTargets;
   if (otherDecision) return;
   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
     .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id));
@@ -2154,11 +2167,12 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     .filter(group => group.keys.length);
   if (groups.flatMap(group => group.keys).length !== keys.length) return;
   state.pendingTriggerTargets = [];
-  state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo };
+  const orderedFollowups = ordered.flatMap(playerId => followupTargets.filter(p => p.playerId === playerId));
+  state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo, followupTargets: orderedFollowups };
   advanceDeathTriggerBatch(state);
 }
 
-function accepted(state, cmd, result, standaloneManaActivation = false, wardDeferredTriggerIds = []) {
+function accepted(state, cmd, result, standaloneManaActivation = false, resolutionTriggerIds = []) {
   // Zgłoszenie właściciela / czerwone CI (2026-10-10, audyt remisów, para
   // dominaria-wu|worek-mroczny seed 4012, karta Impulse): czar, którego
   // OSTATNI (lub jedyny) efekt kolejkuje blokującą decyzję, zostawia
@@ -2302,11 +2316,12 @@ function accepted(state, cmd, result, standaloneManaActivation = false, wardDefe
   // Także triggery ofiary Sagi należą do tego checkpointu; najpierw zbierz
   // pełną partię, dopiero potem rozpocznij kontrolowane ogłaszanie celów.
   startDeathTriggerBatch(state, cmd, result.events, triggerTargetsBefore, triggerPriorityBefore, standaloneManaActivation);
-  // A84: odroczone wpisy Ward wracają na stos po płatności; ich partia APNAP
-  // obejmuje też cele czekające z poprzednich komend (np. Selhoff po Scionie).
-  // Zwykły batch nie startuje, bo pendingTriggerTargets istniały przed komendą.
-  if (wardDeferredTriggerIds.length && !state.pendingDeathTriggerBatch) {
-    const batchEvents = [...result.events, ...wardDeferredTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
+  // A84/A101: wpisy ogłoszone w oknie rozstrzygania (Ward lub płatność
+  // opcjonalna) tworzą partię APNAP także z celami czekającymi z poprzednich
+  // komend. Zwykły batch nie startuje, bo pendingTriggerTargets istniały przed
+  // komendą; domknięcie płatności przekazuje identyfikatory tej partii jawnie.
+  if (resolutionTriggerIds.length && !state.pendingDeathTriggerBatch) {
+    const batchEvents = [...result.events, ...resolutionTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
     startDeathTriggerBatch(state, cmd, batchEvents, 0, triggerPriorityBefore, false, true);
   }
   // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
@@ -4590,6 +4605,14 @@ export function execute(state, input) {
     if (cmd.type !== 'resolve_optional_pay_choice') return reject('optional_pay_unresolved');
     if (cmd.playerId !== state.pendingOptionalPay.playerId) return reject('optional_pay_not_your_decision');
     const pending = state.pendingOptionalPay;
+    // A101: zwykłe triggery ogłoszone od otwarcia tej płatności (np. śmierć
+    // Sciona jako koszt many) należą do checkpointu po jej zamknięciu.
+    // Bierzemy identyfikatory ze zdarzeń okna, nie z całego stosu.
+    const requiredIndex = state.events.findLastIndex(e => e.type === 'optional_pay_required'
+      && e.sourceId === pending.sourceId && e.playerId === pending.playerId);
+    const resolutionTriggerIds = requiredIndex < 0 ? [] : state.events.slice(requiredIndex + 1)
+      .filter(e => e.type === 'ability_triggered' && e.stackEntryId)
+      .map(e => e.stackEntryId);
     // Audyt PR #165 (A-2): płatność energią jest atomowa (CR 601.2h). Brak
     // pokrycia odrzucamy PRZED mutacją — decyzja zostaje u gracza, a ścieżka
     // nie rzuca wyjątkiem (ruling PIP: nie można zapłacić więcej, niż się ma).
@@ -4687,7 +4710,7 @@ export function execute(state, input) {
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
-    return accepted(state, cmd, { ok: true, events: resolvedEvents });
+    return accepted(state, cmd, { ok: true, events: resolvedEvents }, false, cmd.pay ? resolutionTriggerIds : []);
   }
   // Oczekująca decyzja „you may" triggera bez celu (Angel's Feather):
   // tak/nie — jak opcjonalna płatność, ale bez kosztu.
