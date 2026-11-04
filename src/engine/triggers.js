@@ -1212,8 +1212,18 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
       printLki,
     }),
   });
-  state.objects.set(id, entry);
-  state.zones.stack.push(id);
+  // A100 / CR 603.3 + 605.4a: zdolności wyzwolone podczas rozstrzygania
+  // Ward (np. koszt many: Scion, Treasure) NIE trafiają na stos w środku
+  // płatności. Czekają w pendingWardPay.deferredTriggers do checkpointu po
+  // `ward_pay_resolved`. Zdarzenie ability_triggered powstaje od razu (fakt
+  // wyzwolenia), ale wpis stosu jest odroczony; dlatego nie ma go jeszcze w
+  // state.objects/zones.stack i skan Ward/APNAP nie może go ogłosić.
+  if (state.pendingWardPay) {
+    (state.pendingWardPay.deferredTriggers ??= []).push(entry);
+  } else {
+    state.objects.set(id, entry);
+    state.zones.stack.push(id);
+  }
   const fired = event('ability_triggered', {
     objectId: source.id, cardId: source.cardId,
     trigger: ability?.trigger?.event ?? null, onStack: true,
@@ -1225,6 +1235,36 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
   events.push(fired);
   // M171/Z6: wywołujący (announce podziału obrażeń) potrzebuje id wpisu.
   return entry;
+}
+
+/**
+ * A100: domknięcie okna Ward odkłada odroczone wpisy na stos DOPIERO po
+ * zakończeniu płatności. Zachowuje ich identyfikatory i LKI z chwili
+ * wyzwolenia; ogłasza Ward dla celowanych wpisów dopiero w tej chwili
+ * (CR 603.3 — zdolność jest na stosie, gdy zostaje ogłoszona).
+ */
+export function flushDeferredWardTriggers(state, deferredTriggers, events = []) {
+  if (!Array.isArray(deferredTriggers) || deferredTriggers.length === 0) return events;
+  const stackStart = state.zones.stack.length;
+  for (const entry of deferredTriggers) {
+    state.objects.set(entry.id, entry);
+    state.zones.stack.push(entry.id);
+  }
+  placeTriggerBatchInApnapOrder(state, stackStart);
+  const wardStart = state.zones.stack.length;
+  const announcements = new Set();
+  for (const entry of deferredTriggers) {
+    // Ten sam filtr co zdarzenie ability_triggered w queueTriggerToStack:
+    // cele stałe (fixedTargetCount) nie są ogłaszane jako nowe targety Ward.
+    const fixedTargetCount = entry.triggerEntry?.extra?.fixedTargetCount ?? 0;
+    const targets = (entry.triggerEntry?.targets ?? [])
+      .slice(fixedTargetCount).filter((targetId) => targetId != null);
+    if (!targets.length || announcements.has(entry.id)) continue;
+    announcements.add(entry.id);
+    fireWardTriggers(state, entry.controllerId, entry.id, targets, events);
+  }
+  placeTriggerBatchInApnapOrder(state, wardStart);
+  return events;
 }
 
 /**

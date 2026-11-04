@@ -32,7 +32,7 @@ import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, acti
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredWardTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -4567,6 +4567,9 @@ export function execute(state, input) {
       wardSourceId: pending.wardSourceId ?? null,
     }));
     state.pendingWardPay = null;
+    // A100: zdolności wyzwolone w trakcie płatności wracają na stos dopiero
+    // po zamknięciu Ward (CR 603.3/605.4a), przed checkpointem SBA w accepted.
+    flushDeferredWardTriggers(state, pending.deferredTriggers ?? []);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }

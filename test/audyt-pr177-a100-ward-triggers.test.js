@@ -6,8 +6,6 @@ import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit=(name,fn)=>test(name,{skip:process.env.AUDIT_A100_ENFORCE==='1'?false:'otwarte A84/A100 (AUDIT_A100_ENFORCE=1)'},fn);
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
@@ -25,4 +23,4 @@ function scene(active,payer,{aura=false,imp=false,forebear=false}={}){
 
 
 // Rzeczywiste karty i akcje; pule, tura, priorytet i Forebear w grobie są setupem.
-for(const payer of ['p1','p2'])for(const kind of ['imp','forebear','aura'])audit(`A100: ${kind} nie kładzie triggera podczas dopłaty Ward (${payer})`,()=>{const {s,tokens}=scene(payer,payer,{[kind]:true}),before=[...s.zones.stack];act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===tokens[0].id));assert.ok(s.pendingWardPay);assert.deepEqual(s.zones.stack,before,'zdolność nie trafia na stos przed zakończeniem dopłaty');});
+for(const payer of ['p1','p2'])for(const kind of ['imp','forebear','aura'])test(`A100: ${kind} nie kładzie triggera podczas dopłaty Ward (${payer})`,()=>{const {s,tokens}=scene(payer,payer,{[kind]:true}),before=[...s.zones.stack];act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===tokens[0].id));assert.ok(s.pendingWardPay);assert.deepEqual(s.zones.stack,before,'zdolność nie trafia na stos przed zakończeniem dopłaty');});
