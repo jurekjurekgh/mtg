@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — końcowa kontrola spójności mapy PR #178
+
+- Wyłącznie dokumentacja: poprawiono bieżące nagłówki i checkbox zakończonego przeglądu, uporządkowano trzynaście partii oraz oddzielono zamknięte rodziny od niewdrożonego pełnego checkpointu zdarzeń.
+- Pełna paginacja REST, kotwicowany diff i mapa potwierdzają ten sam zbiór **194 unikalnych ścieżek**, bez braków i duplikatów. Skorygowano bilans kategorii: **26 produkcyjnych + 23 dokumenty i zapisane eksperymenty + 145 testów i helperów**; pięć patchy należy do dokumentacji.
+- Doprecyzowano granicę dowodu źródłowego w partiach 5–13: pełne pliki, diff i cytowania w testach, bez nowego odczytu Oracle/CR dla każdego pliku. Historyczne pomiary pozostały przy swoich commitach.
+- Bramy na kodzie identycznym z `6ca064e`: strażnicy **27/27**, `test:audit` **724/724** (23,4 s), fast **9956/9956** (189,7 s), build **77 modułów / 5689,3 kB**, pełny `test:all` **10224/10224** (602,8 s); wszędzie **0 fail / 0 skip**. Bez zmiany produkcji; PR #179 pozostaje draftem.
+
 ## 2026-11-04 — zamknięcie mapy PR #178: M200/real-cards-batch7
 
 - Semantyczny przegląd dwóch ostatnich otwartych plików: M200 uwagi właściciela i real-cards-batch7. Bez zmiany produkcji.

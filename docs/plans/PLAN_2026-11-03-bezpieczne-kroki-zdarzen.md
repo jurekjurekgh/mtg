@@ -2,9 +2,11 @@
 
 ## Cel i granica
 
+**Stan końcowy zadania:** potwierdzone rodziny A84–A113 zamknięte, mapa #178 przejrzana osobno do zera otwartych wierszy. Pomiary etapowe poniżej są historią. Pełny wspólny checkpoint wszystkich typów zdarzeń pozostaje niewdrożonym zakresem architektonicznym.
+
 Naprawiać potwierdzone błędy kolejności automatycznych kroków gry **bez hurtowej wymiany silnika** i bez utraty poprawnych implementacji kart. Właściciel zaakceptował wyjaśnienie problemu i polecił kontynuować, ostrzegając przed regresją dużej, działającej części katalogu.
 
-To jest mini-roadmapa jednego zadania w ramach audytu #178 i draftu PR #179. Nie zastępuje `PLAN_2026-11-03-audyt-pr178.md` i nie zamyka jego otwartych pozycji. Nie dodajemy kart, nie uruchamiamy pełnego benchmarku B0, nie scalamy PR i nie stosujemy łat `NIE_WDRAZAC`.
+To jest mini-roadmapa jednego zadania w ramach audytu #178 i draftu PR #179. Nie zastępuje `PLAN_2026-11-03-audyt-pr178.md` ani nie rozstrzyga jego odłożonego zakresu architektonicznego. Nie dodajemy kart, nie uruchamiamy pełnego benchmarku B0, nie scalamy PR i nie stosujemy łat `NIE_WDRAZAC`.
 
 Słownik używany niżej:
 
@@ -54,7 +56,7 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 - [x] Zbudować inwentarz emiterów odchodzących obiektów i miejsc kolejkowania wyzwalaczy; rozróżnić jedną jednoczesną grupę od osobnych instrukcji oraz osobnych aktywacji zdolności many. Wynik: `../audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`.
 - [x] Na rzeczywistych komendach wykazać różnicę między obecnym grupowaniem „na komendę” a grupowaniem właściwego zdarzenia. Nie uznawać samego istnienia wielu ruchów w jednej komendzie za błąd. Dowód: wymuszone A110 (osobne auto-Treasure) przy zielonej kontroli jednoczesnego zniszczenia; A112/A113 dla partii kolejności.
-- [x] Zachować kolejność i tożsamość zdarzeń w replay oraz nie podwajać wpisów stosu po wznowieniu decyzji. A110 ma aktywne assertions replay i fingerprint.
+- [x] Zachować kolejność i tożsamość zdarzeń w replay oraz nie podwajać wpisów stosu po wznowieniu decyzji. A110 ma aktywne asercje odtworzenia przebiegu i odcisku stanu.
 - [x] Dopiero po reprodukcji zaprojektować najmniejszą zmianę granicy zdarzenia. Jeśli zmienia model stanu, przygotować ADR przed kodowaniem. ADR 0031 zaakceptowany; pierwszy krok objął tylko A110.
 
 **Ukończenie:** osobny dowód błędu, projekt granicy, testy obu stron granicy i pełna brama. Bez tego etapu nie zamykać A110 ani nie deklarować naprawy całej rodziny.
@@ -68,7 +70,7 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 - [x] Nie zmieniać kolejności madness ani działania kreatora many bez nowego, rzeczywistego kontrprzykładu; obecne testy tych obszarów są zielone i zostały semantycznie przejrzane.
 - [x] Każdy potwierdzony przypadek ma własny dowód RED→GREEN, mutację i kontrole; commity dzielono na samodzielne, zielone kroki. Wspólny checkpoint wdrażać tylko jako zatwierdzoną zmianę architektoniczną, nie przez zastosowanie historycznych patchy.
 
-Zamknięcie rodzin A84–A113 nie oznacza wdrożenia pełnego wspólnego checkpointu wszystkich typów zdarzeń ani zamknięcia semantycznego przeglądu mapy #178.
+Zamknięcie rodzin A84–A113 nie oznaczało wdrożenia pełnego wspólnego checkpointu wszystkich typów zdarzeń ani zamknięcia przeglądu mapy #178. Mapa została później zamknięta osobnym przeglądem; checkpoint pozostaje niewdrożony.
 
 **Ukończenie:** właściwy otwarty test przechodzi bez osłabiania asercji, pełny fast + build; przed końcem pracy dodatkowo pełny `npm run test:all`. Pozostałe RED jawnie wymienione.
 

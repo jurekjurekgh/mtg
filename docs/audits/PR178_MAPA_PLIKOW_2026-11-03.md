@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid, M359/PR66/uwagi właściciela, batch39/41, M161/M277, M200/real-cards-batch7 oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 0. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: przegląd mapy zakończony, 0 otwartych wierszy.** Mapa obejmuje dokładnie 194 pliki: **26 plików produkcyjnych, 23 dokumenty i zapisane eksperymenty oraz 145 testów i helperów**. Każdy wiersz ma notę zakresu. Pliki produkcyjne przejrzano na poziomie diffu PR #178 i wskazanych ryzyk; testy i dokumentację domknięto w kolejnych partiach opisanych w planie przeglądu. Nie jest to dowód wszystkich interakcji ani wszystkich konsumentów zmian produkcyjnych. Zielony pakiet nie był samodzielną podstawą zamknięcia wiersza i nie zamyka audytu PR #177.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -39,13 +39,13 @@
 | `src/engine/attachments.js` | produkcja | przejrzany diff; linia typów bestow i odłączanie załączników |
 | `src/engine/effects.js` | produkcja | przejrzany diff; porządek bounce, champion, LKI i search |
 | `src/engine/fingerprint.js` | produkcja | przejrzany diff; nowe pola pending w odcisku |
-| `src/engine/game-state.js` | produkcja | przejrzany diff; otwarte APNAP/SBA/LKI (114 RED), kolejki madness/death-batch i płatności |
+| `src/engine/game-state.js` | produkcja | przejrzany diff; kolejki madness, partii śmierci i płatności; rodziny A84–A113 naprawione w #179, bez pełnego wspólnego checkpointu |
 | `src/engine/mana-sources.js` | produkcja | przejrzany diff; pomocnicze bramki ręcznej many |
 | `src/engine/objects.js` | produkcja | przejrzany diff; B1 naprawiony w #179: reset wydrukowanego spell po bestow |
 | `src/engine/resources.js` | produkcja | przejrzany diff; B1 naprawiony w #179: zapis bestowOriginalSpell; dobór many Converge |
 | `src/engine/spells.js` | produkcja | przejrzany diff; B1 naprawiony w #179: Negate czyta aktualne cechy stosu |
 | `src/engine/state-based.js` | produkcja | przejrzany diff; LKI obiektu w zdarzeniu ofiary Sagi |
-| `src/engine/triggers.js` | produkcja | przejrzany diff; otwarte APNAP/SBA/LKI, LKI i kolejność triggerów |
+| `src/engine/triggers.js` | produkcja | przejrzany diff; ostatni znany stan i kolejność wyzwalaczy; potwierdzone rodziny naprawione w #179, pełny wspólny checkpoint poza zakresem |
 | `src/engine/zones.js` | produkcja | przejrzany diff; deathZoneFor respektuje unearthExile |
 | `src/protocol/types.js` | produkcja | przejrzany diff; dodana komenda resolve_trigger_order |
 | `src/table/choice-request.js` | produkcja | przejrzany diff; kreator trybów i zakaz wierszy kombinacji |
