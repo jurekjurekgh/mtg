@@ -84,6 +84,9 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A98:** przed poprawką po A101 pozostawało 4/8 (stos w trakcie dopłaty); po odroczeniu wpisów **8/8**. Mutacja wyłączająca odroczenie przywraca 4/8. Kontrole A94/A101/A84/A100/A108/A109/A110/A112/A113/Zoraline **129/129**. Fast **9932 pass / 18 skip / 0 fail**, build **77 modułów / 5685,6 kB**; `test:audit` **26 testów / 10 pass / 16 fail**. Pełny `test:all` po A98: **10 200 pass / 18 skip / 0 fail**. A98 zdjęte z kwarantanny; A104 zyskało pierwszą połowę (4/6), A105 bez zmiany. Pozostałe wymuszone RED **16** (A102–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
+**Następny podetap A102/A103 (przed kodowaniem):** RED 0/2 + 0/2 po A98. Zakres: w `startDeathTriggerBatch` dla `resolutionClosure && resolve_optional_pay_choice` dopuścić bezcelowe triggery doboru `you_draw_card` i `you_draw_second_card_each_turn` obok triggerów śmierci; nie zmieniać innych okien ani ścieżki odmowy. Kryteria: A102 2/2 i A103 2/2, mutacja, kontrole A94/A98/A101, pełny fast+build, commit/push, pełny `test:all`. Ryzyka: nie wciągnąć doboru do batchy poza płatnością opcjonalną; nie ruszać A104/A105.
+
+
 
 
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
