@@ -32,7 +32,7 @@ import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, acti
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredResolutionTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredResolutionTriggers, fireWardTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -214,6 +214,8 @@ export function createGameState({ seed, players }) {
     madnessBatchTriggerIds: [],
     pendingTriggerOrder: null,
     pendingDeathTriggerBatch: null,
+    // A106/A107: ogłoszenia Ward zebrane w trakcie umieszczania zwykłej partii.
+    pendingWardAnnouncements: null,
     // CR 702.35a/603.3: oczekujące triggery madness po odrzuceniu;
     // na stos trafiają po dokończeniu sekwencji, a decyzja przy ich rozstrzyganiu.
     madnessQueue: [],
@@ -2142,7 +2144,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   // partią APNAP. Ten węższy batch nie zajmuje się Wardem: jeśli dowolny
   // przeciwny kandydat ma Ward, pozostajemy na starej ścieżce zamiast go
   // przypadkowo umieścić pod późniejszymi triggerami.
-  if (targets.some(p => p.candidates?.some(id => {
+  if (!optionalClosure && targets.some(p => p.candidates?.some(id => {
     const target = state.objects.get(id);
     return target?.zone === 'battlefield' && target.controllerId !== p.playerId && wardAmountOf(target, state) != null;
   }))) return;
@@ -2180,6 +2182,28 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   const orderedFollowups = ordered.flatMap(playerId => followupTargets.filter(p => p.playerId === playerId));
   state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo, followupTargets: orderedFollowups };
   advanceDeathTriggerBatch(state);
+}
+
+// A106/A107 / CR 603.3b + 702.21a: Ward z ogłoszenia celów zwykłej partii
+// wchodzi nad nią jako osobna partia. Kontrolerowie wybierają kolejność APNAP,
+// a przy wielu Ward jednego kontrolera — kolejność własnych zdolności.
+function startWardTriggerOrder(state, ids, restorePriorityTo) {
+  if (!ids.length) return;
+  const players = state.players.map(p => p.id);
+  const active = players.indexOf(state.turn.activePlayerId);
+  const ordered = active < 0 ? players : [...players.slice(active), ...players.slice(0, active)];
+  const groups = ordered.map(playerId => ({ playerId,
+    remaining: ids.filter(id => state.objects.get(id)?.controllerId === playerId), topFirst: [] }))
+    .filter(group => group.remaining.length);
+  const batch = new Set(ids);
+  state.zones.stack = [...state.zones.stack.filter(id => !batch.has(id)), ...groups.flatMap(g => g.remaining)];
+  const first = groups.findIndex(group => group.remaining.length > 1);
+  if (first < 0) {
+    state.turn.priorityPlayerId = restorePriorityTo;
+    return;
+  }
+  state.pendingTriggerOrder = { groups, index: first, restorePriorityTo };
+  state.turn.priorityPlayerId = groups[first].playerId;
 }
 
 function accepted(state, cmd, result, standaloneManaActivation = false, resolutionTriggerIds = []) {
@@ -2333,6 +2357,18 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
   if (resolutionTriggerIds.length && !state.pendingDeathTriggerBatch) {
     const batchEvents = [...result.events, ...resolutionTriggerIds.map((id) => ({ type: 'ability_triggered', stackEntryId: id }))];
     startDeathTriggerBatch(state, cmd, batchEvents, 0, triggerPriorityBefore, false, true);
+  }
+  // A106/A107: dopiero gdy zwykła partia i jej cele są ogłoszone, Ward z
+  // tych celów trafia na stos nad partią i dostaje własną kolejność.
+  if (Array.isArray(state.pendingWardAnnouncements) && !state.pendingDeathTriggerBatch
+    && state.pendingTriggerTargets.length === 0 && !state.pendingTriggerOrder) {
+    const announcements = state.pendingWardAnnouncements;
+    state.pendingWardAnnouncements = null;
+    const wardStart = state.zones.stack.length;
+    for (const a of announcements) fireWardTriggers(state, a.casterId, a.targetingStackId, a.targetIds, result.events);
+    const wardIds = state.zones.stack.slice(wardStart)
+      .filter(id => state.objects.get(id)?.triggerEntry?.ability?.trigger?.event === 'ward');
+    startWardTriggerOrder(state, wardIds, triggerPriorityBefore);
   }
   // Zgłoszenie F (CR 115.7a): „change the target” wolno wskazać WYŁĄCZNIE inny
   // legalny cel — a gdy takiego nie ma, oryginalny cel zostaje bez zmian
@@ -4719,6 +4755,8 @@ export function execute(state, input) {
     // po niej; dopiero po optional_pay_resolved zamykamy decyzję i ogłaszamy
     // odroczone wpisy stosu, przed checkpointem SBA w accepted.
     state.pendingOptionalPay = null;
+    // Ward z celów ogłoszonych po płatności czeka do końca zwykłej partii.
+    state.pendingWardAnnouncements = [];
     flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
     // A104/A105: cele wyzwalaczy z okna płatności ogłaszamy dopiero teraz.
     // decision zachowuje LKI/kandydatów z chwili wyzwolenia; legalność celu

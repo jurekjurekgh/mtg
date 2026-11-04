@@ -7,8 +7,6 @@ import {createCardRegistry} from '../src/cards/card-data.js';
 import {createCardDeck} from '../src/cards/materialize.js';
 import {jumpToStep} from '../src/engine/turn.js';
 import {addMana} from '../src/engine/resources.js';
-// Otwarte: wykonywalny RED na żądanie, bez blokowania całej szybkiej paczki.
-const audit=(name,fn)=>test(name,{skip:process.env.AUDIT_A106_ENFORCE==='1'?false:'otwarte A106 (AUDIT_A106_ENFORCE=1)'},fn);
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
@@ -25,7 +23,7 @@ function scene(active,payer){
 
 
 // Hellion rzeczywiście rzucony z disguise, pozostałe karty/akcje również rzeczywiste; tury, priorytet i pule to setup.
-for(const active of ['p1','p2'])for(const payer of ['p1','p2'])audit(`A106: możliwość wyboru Ward nie usuwa APNAP (aktywny ${active}, płaci ${payer})`,()=>{
+for(const active of ['p1','p2'])for(const payer of ['p1','p2'])test(`A106: możliwość wyboru Ward nie usuwa APNAP (aktywny ${active}, płaci ${payer})`,()=>{
  const {s,token,hidden}=scene(active,payer);act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId===token.id));act(s,view(s).legalCommands.find(c=>c.type==='activate_ability'&&c.objectId==='hold'&&c.abilityIndex===1&&c.tapCreatureId==='ally'));act(s,view(s).legalCommands.find(c=>c.type==='resolve_optional_pay_choice'&&c.pay));assert.equal(s.turn.priorityPlayerId,active);assert.equal(view(s).legalCommands.filter(c=>c.type==='resolve_trigger_order').length,active===payer?3:2);for(let i=0;i<20;i++){const cmds=view(s).legalCommands;const order=cmds.filter(c=>c.type==='resolve_trigger_order');let choice=order.find(c=>c.cardId==='nanoform-sentinel')??order[0];if(!choice){const targets=cmds.filter(c=>c.type==='resolve_trigger_target');choice=s.pendingTriggerTargets[0]?.cardId==='nanoform-sentinel'?targets.find(c=>c.targetId===hidden.id):targets[0];}if(!choice)break;act(s,choice);if(s.pendingDeathTriggerBatch)assert.ok(!s.zones.stack.some(id=>s.objects.get(id)?.triggerEntry?.ability?.trigger?.event==='ward'),'Ward czeka do końca umieszczania partii');}const entries=s.zones.stack.map(id=>s.objects.get(id)).filter(o=>o.kind==='trigger');assert.equal(entries.length,6);assert.equal(entries.at(-1).triggerEntry?.ability?.trigger?.event,'ward','Ward z ogłoszenia celu leży nad całą partią APNAP');assert.deepEqual(entries.slice(0,-1).map(o=>o.controllerId),active===payer?[active,active,active,active==='p1'?'p2':'p1',active==='p1'?'p2':'p1']:[active,active,payer,payer,payer]);assert.ok(entries.find(o=>o.cardId==='nanoform-sentinel')?.triggerEntry.targets.includes(hidden.id));
 });
 for(const payer of ['p1','p2'])for(const pay of [false,true])test(`A106 kontrola: cel Nanoform w Ward, decyzja ${pay?'zapłać':'odmów'} (${payer})`,()=>{

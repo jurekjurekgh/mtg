@@ -1264,7 +1264,11 @@ export function flushDeferredResolutionTriggers(state, deferredTriggers, events 
       .slice(fixedTargetCount).filter((targetId) => targetId != null);
     if (!targets.length || announcements.has(entry.id)) continue;
     announcements.add(entry.id);
-    fireWardTriggers(state, entry.controllerId, entry.id, targets, events);
+    if (Array.isArray(state.pendingWardAnnouncements)) {
+      state.pendingWardAnnouncements.push({ casterId: entry.controllerId, targetingStackId: entry.id, targetIds: [...targets] });
+    } else {
+      fireWardTriggers(state, entry.controllerId, entry.id, targets, events);
+    }
   }
   placeTriggerBatchInApnapOrder(state, wardStart);
   return events;
@@ -4629,7 +4633,13 @@ function processTriggersScan(state, recentEvents) {
     if (ev.type !== 'ability_triggered' || !ev.onStack || !ev.targets?.length
       || announcements.has(ev.stackEntryId) || !state.objects.has(ev.stackEntryId)) continue;
     announcements.add(ev.stackEntryId);
-    fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+    // A106/A107: jeśli trwa umieszczanie zwykłej partii, Ward nie wchodzi
+    // jeszcze na stos. Zbieramy ogłoszenia; game-state flushuje je po partii.
+    if (Array.isArray(state.pendingWardAnnouncements)) {
+      state.pendingWardAnnouncements.push({ casterId: ev.playerId, targetingStackId: ev.stackEntryId, targetIds: [...ev.targets] });
+    } else {
+      fireWardTriggers(state, ev.playerId, ev.stackEntryId, ev.targets, events);
+    }
   }
   placeTriggerBatchInApnapOrder(state, wardStart);
 

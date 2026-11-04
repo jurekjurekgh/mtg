@@ -13,19 +13,17 @@
  *   node tools/run-tests.mjs fast   # szybki rdzeń (npm test)
  *   node tools/run-tests.mjs slow   # wyłącznie pliki z manifestu
  *   node tools/run-tests.mjs all    # pełny pakiet (brama PR)
- *   node tools/run-tests.mjs audit  # wymuszone RED otwartych przypadków audytu
- *   node tools/run-tests.mjs audit --list  # tylko pliki i flagi, bez uruchamiania
+ *   node tools/run-tests.mjs audit  # pełny zestaw regresji audytu PR #177 (bez kwarantanny)
+ *   node tools/run-tests.mjs audit --list  # tylko pliki, bez uruchamiania
  *
  * Manifest wolnych plików: tools/test-manifest.json. Zasada dopisywania:
  * plik trafia tam, gdy jego samodzielny czas (node --test <plik>) przekracza
  * ~5 s — wtedy zysk z równoległości/odseparowania przewyższa koszt.
  *
- * Tryb `audit` NIE jest bramką na zielono: uruchamia pliki, które zawierają
- * flagi `AUDIT_A*_ENFORCE`, z wszystkimi tymi flagami ustawionymi na `1`.
- * Dzięki temu otwarte, celowo pomijane przypadków nie znikają z pola widzenia
- * i nie trzeba ręcznie odtwarzać długiej listy env. Dopóki istnieją otwarte
- * błędy, komenda kończy się niezerowo — to oczekiwany reproduktor, nie regresja
- * szybkiego pakietu. `--list` pozwala sprawdzić zakres bez uruchamiania testów.
+ * Tryb `audit` jest zwykłą bramką regresji: uruchamia wszystkie pliki
+ * `audyt-pr177-*.test.js` bez flag i bez pomijania przypadków. Po zamknięciu
+ * A104–A107 nie ma kwarantanny ani „oczekiwanych RED”; każdy wynik inny niż
+ * zielony jest błędem. `--list` pozwala sprawdzić zakres bez uruchamiania.
  */
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -47,21 +45,12 @@ const allFiles = fs.readdirSync(path.join(root, 'test'))
   .sort();
 const slowSet = new Set(JSON.parse(fs.readFileSync(manifestPath, 'utf8')).slow);
 
-// Wykrywamy flagi w treści plików, żeby nowa kwarantanna nie wymagała ręcznej
-// aktualizacji długiej komendy env. Zbieramy wszystkie flagi i uruchamiamy
-// wyłącznie pliki, które ich używają (także kontrole GREEN w tych plikach).
+// Audyt PR #177 jest zamknięty: uruchamiamy pełny zestaw plików audytu bez
+// flag env i bez skipów. Nie ma trybu „wymuszonych RED”.
 const auditEnv = {};
-const auditFiles = [];
-if (mode === 'audit') {
-  for (const name of allFiles) {
-    const content = fs.readFileSync(path.join(root, 'test', name), 'utf8');
-    const flags = [...content.matchAll(/process\.env\.(AUDIT_A\d+_ENFORCE)\s*===\s*'1'/g)]
-      .map((m) => m[1]);
-    if (flags.length === 0) continue;
-    auditFiles.push(name);
-    for (const flag of flags) auditEnv[flag] = '1';
-  }
-}
+const auditFiles = mode === 'audit'
+  ? allFiles.filter((name) => name.startsWith('audyt-pr177-') && name.endsWith('.test.js'))
+  : [];
 
 const files = mode === 'slow'
   ? allFiles.filter((name) => slowSet.has(name))
@@ -85,10 +74,10 @@ if (listOnly) {
 // lekkich — ciężkie i tak liczą się same (zysk ze zrównoleglenia).
 const concurrency = Math.max(4, Number(process.env.TEST_CONCURRENCY ?? 0) || 4);
 const args = ['--test', `--test-concurrency=${concurrency}`, ...files.map((f) => path.join('test', f))];
-console.error(`[run-tests] tryb=${mode} pliki=${files.length} konkurencja=${concurrency}${mode === 'audit' ? ` flagi=${Object.keys(auditEnv).length} (oczekiwane RED otwartych przypadków)` : ''}`);
+console.error(`[run-tests] tryb=${mode} pliki=${files.length} konkurencja=${concurrency}`);
 const result = spawnSync(process.execPath, args, {
   cwd: root,
   stdio: 'inherit',
-  env: mode === 'audit' ? { ...process.env, ...auditEnv } : process.env,
+  env: process.env,
 });
 process.exit(result.status ?? 1);

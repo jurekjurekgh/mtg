@@ -10,47 +10,25 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const runner = path.join(root, 'tools', 'run-tests.mjs');
 
-test('run-tests: audit --list wykrywa pliki i flagi kwarantanny', () => {
+test('run-tests: audit --list uruchamia pełny zestaw regresji bez kwarantanny', () => {
   const r = spawnSync(process.execPath, [runner, 'audit', '--list'], { cwd: root, encoding: 'utf8' });
   assert.equal(r.status, 0, r.stderr);
   const plan = JSON.parse(r.stdout);
   assert.equal(plan.mode, 'audit');
-  assert.ok(!plan.files.includes('audyt-pr177-a84-ward-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a101-reflexive-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a98-spellbomb-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a102-draw-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a103-second-draw-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a104-flooding-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a105-nanoform-apnap.test.js'));
-  // A111, A110, A112, A113, A108, A109, A100, A84, A101, A98, A102, A103, A104 i A105 zostały zamknięte w PR #179 i nie są już plikami kwarantanny.
-  assert.ok(!plan.files.includes('audyt-pr177-a111-imp-self-lki.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a110-auto-mana-events.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a112-imp-selhoff-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a113-mixed-combat-apnap.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a108-ward-sba.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a109-ward-aura-sba.test.js'));
-  assert.ok(!plan.files.includes('audyt-pr177-a100-ward-triggers.test.js'));
-  assert.ok(plan.files.length >= 2);
+  assert.ok(plan.files.length >= 100);
+  assert.deepEqual(plan.env, {});
   for (const file of plan.files) {
+    assert.match(file, /^audyt-pr177-.*\.test\.js$/);
     assert.ok(fs.existsSync(path.join(root, 'test', file)), file);
+    const content = fs.readFileSync(path.join(root, 'test', file), 'utf8');
+    assert.ok(!/process\.env\.AUDIT_A\d+_ENFORCE/.test(content), `kwarantanna w ${file}`);
+    assert.ok(!/skip:\s*process\.env\.AUDIT_A\d+_ENFORCE/.test(content), `wrapper skip w ${file}`);
   }
-  const flags = Object.keys(plan.env);
-  assert.ok(!flags.includes('AUDIT_A84_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A101_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A98_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A102_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A103_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A104_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A105_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A111_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A110_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A112_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A113_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A108_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A109_ENFORCE'));
-  assert.ok(!flags.includes('AUDIT_A100_ENFORCE'));
-  assert.equal(flags.length, 2);
-  for (const flag of flags) assert.equal(plan.env[flag], '1');
+  for (const closed of ['a94-optional-apnap', 'a98-spellbomb-apnap', 'a100-ward-triggers', 'a101-reflexive-apnap',
+    'a102-draw-apnap', 'a103-second-draw-apnap', 'a104-flooding-apnap', 'a105-nanoform-apnap',
+    'a106-ward-target-apnap', 'a107-two-ward-apnap']) {
+    assert.ok(plan.files.includes(`audyt-pr177-${closed}.test.js`), closed);
+  }
 });
 
 test('run-tests: nieznany tryb kończy się błędem użycia', () => {
