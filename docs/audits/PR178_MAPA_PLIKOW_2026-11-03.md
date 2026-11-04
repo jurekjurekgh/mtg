@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 45. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 33. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -109,18 +109,18 @@
 | `test/audyt-pr177-a44-cuombajj-real.test.js` | test/fixture | przejrzany pełny test; Cuombajj dwa wystąpienia target, wybór przeciwnika, częściowa nielegalność celu |
 | `test/audyt-pr177-a45-tail-bot-real.test.js` | test/fixture | przejrzany pełny test; bot Tail Slash wybiera źródło i nie marnuje czaru przy ochronie przed non-Human |
 | `test/audyt-pr177-a46-blessing-combat-real.test.js` | test/fixture | przejrzany pełny test; Benevolent Blessing wybór koloru przez bota zależny od realnego źródła obrażeń |
-| `test/audyt-pr177-a47-readme-decks.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a48-spire-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a49-proliferate-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a50-final-parting-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a51-edifice-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a52-counter-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a53-rockslide-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a54-hounds-oracle.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a55-etykieta-tester-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a56-violent-urge-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a57-zrodlo-ofiary-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a58-elk-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a47-readme-decks.test.js` | test/fixture | przejrzany pełny test; statyczne wiersze README i odsyłacze audytu względem talii/plików, bez runtime |
+| `test/audyt-pr177-a48-spire-real.test.js` | test/fixture | przejrzany pełny test; Rupture Spire jako trigger, odpowiedzi Fiery Fall i mana przed/po, automatyczne poświęcenie |
+| `test/audyt-pr177-a49-proliferate-real.test.js` | test/fixture | przejrzany pełny test; proliferate po realnym infect, poison/-1/-1 i bot nie wzmacnia własnej szkody |
+| `test/audyt-pr177-a50-final-parting-real.test.js` | test/fixture | przejrzany pełny test; Final Parting prywatność/tasowanie po dwóch wyborach, Caravan Vigil ujawnia, pusta biblioteka |
+| `test/audyt-pr177-a51-edifice-real.test.js` | test/fixture | przejrzany pełny test; Edifice zapłata  życia i refleks, shield nie chroni przed 0 toughness, odpowiedź Crumb |
+| `test/audyt-pr177-a52-counter-real.test.js` | test/fixture | przejrzany pełny test; bot kontruje realne czary, zachowuje Negate przy Twiddle, Steel Sabotage wybiera tryb |
+| `test/audyt-pr177-a53-rockslide-real.test.js` | test/fixture | przejrzany pełny test; Rockslide liczy własne landy w chwili rozstrzygania, animacja/koszty/Regrowth w odpowiedzi |
+| `test/audyt-pr177-a54-hounds-oracle.test.js` | test/fixture | przejrzany pełny test; Vampire Hounds bez many i limitu, discard tylko stwora, kumulacja +2/+2 |
+| `test/audyt-pr177-a55-etykieta-tester-real.test.js` | test/fixture | przejrzany pełny test; etykieta Gila Courser saddle i limit logu, benchmark bez worków |
+| `test/audyt-pr177-a56-violent-urge-real.test.js` | test/fixture | przejrzany pełny test; Violent Urge w realnej walce, delirium z własnego grobu, bot nie marnuje przed atakiem |
+| `test/audyt-pr177-a57-zrodlo-ofiary-real.test.js` | test/fixture | przejrzany pełny test; źródło decyzji poświęcenia w zdarzeniu/logu, champion vs sacrifice, shroud i brak kandydatów |
+| `test/audyt-pr177-a58-elk-real.test.js` | test/fixture | przejrzany pełny test; Dawntreader Elk koszt/tutor, brak zielonej many, pusta/cienka biblioteka i wycena |
 | `test/audyt-pr177-a59-force-away-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a60-frightful-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-a61-oak-token-real.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |

@@ -31,6 +31,11 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
 - [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
 
+## Partia 7 — A47–A58 (wykonana)
+
+- [x] README/talie, Spire, proliferate/infect, Final Parting, Edifice, kontry, Rockslide, Hounds, etykieta Gila, Violent Urge, źródło ofiary, Elk.
+- [x] Pełny przegląd 12 plików, diff PR #178, Oracle/CR, przebieg **51/51 pass / 0 fail / 0 skip**. Bez zmiany produkcji i asercji.
+
 ## Partia 6 — A35–A46 (wykonana)
 
 - [x] Banquet, Reaver/finality, Anticipate, Trumpet Blast, Tail Slash, champion-bot, blok, klątwa, Cutthroat, Cuombajj, Tail-bot, Benevolent Blessing.

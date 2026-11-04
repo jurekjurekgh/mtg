@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, A47–A58
+
+- Semantyczny przegląd 12 otwartych wierszy: README/talie, Spire, proliferate, Final Parting, Edifice, kontry, Rockslide, Hounds, etykieta Gila, Violent Urge, źródło ofiary, Elk. **51/51 pass / 0 fail / 0 skip**; bez zmiany produkcji.
+- Mapa #178: **45 → 33 otwarte wiersze**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, A35–A46
 
 - Semantyczny przegląd 12 otwartych wierszy: Banquet, Reaver/finality, Anticipate, Trumpet Blast, Tail Slash, champion-bot, blok, klątwa, Cutthroat, Cuombajj, Tail-bot, Benevolent Blessing. **73/73 pass / 0 fail / 0 skip**; bez zmiany produkcji, literówka URL w A37 poprawiona.
