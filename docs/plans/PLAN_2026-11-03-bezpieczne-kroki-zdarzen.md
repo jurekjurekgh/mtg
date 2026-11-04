@@ -80,6 +80,9 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A84:** po A100 pozostawało 4/8 (końcówka APNAP po Ward); po włączeniu odroczonych wpisów do istniejącej partii śmierci **8/8**. Mutacja wyłączająca partię po Ward przywraca 4/8. Kontrole A100/A108/A109/A110/A112/A113 **92/92**. Fast **9922 pass / 28 skip / 0 fail**, build **77 modułów / 5683,4 kB**; `test:audit` **36 testów / 8 pass / 28 fail**. Pełny `test:all` po A84: **10 190 pass / 28 skip / 0 fail**. A84 zdjęte z kwarantanny; A95/A96 tracą nieużywany wrapper A84. Pozostałe wymuszone RED **28** (A98/A101–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
+**Następny podetap A101 (przed kodowaniem):** RED 0/2 potwierdzone na HEAD `ebd8604`. Zakres wyłącznie domknięcia partii po `resolve_optional_pay_choice`: zwykłe triggery śmierci ogłoszone od otwarcia płatności tworzą partię APNAP, a refleks Zoraline (`reflexive_pay`, cel `permanent_card_in_graveyard`) czeka jako zdolność wywołana innym triggerem i nie jest mieszany z wyborem kolejności zwykłych triggerów (CR 603.3b, dwuczęściowe ogłoszenie). Kryteria: A101 2/2, mutacja przywraca RED, kontrole A84/A94/A100/A108/A109/A110/A112/A113 i Zoraline zielone, pełny `npm test` + build, osobny commit/push, pełny `test:all`. Ryzyka: nie zmienić kolejności zwykłych triggerów ani nie wciągnąć refleksu do wyboru kolejności; nie ruszać zaparkowanych A104/A105.
+
+
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
 Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
