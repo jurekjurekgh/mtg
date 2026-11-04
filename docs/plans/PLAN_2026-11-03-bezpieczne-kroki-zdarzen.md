@@ -70,7 +70,7 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Ukończenie:** właściwy otwarty test przechodzi bez osłabiania asercji, pełny fast + build; przed końcem pracy dodatkowo pełny `npm run test:all`. Pozostałe RED jawnie wymienione.
 
-**Wynik podetapu A112:** fast **9876 pass / 74 skip / 0 fail**, build **77 modułów / 5677,3 kB**; `test:audit` **98 testów / 24 pass / 74 fail**. A113 pozostaje otwarte (4 RED). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
+**Wynik podetapu A112:** fast **9876 pass / 74 skip / 0 fail**, build **77 modułów / 5677,3 kB**; `test:audit` **98 testów / 24 pass / 74 fail**. Pełny `test:all` po A112: **10 144 pass / 74 skip / 0 fail**. A113 pozostaje otwarte (4 RED). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
 ## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
 
