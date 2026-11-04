@@ -1,4 +1,4 @@
-// Rzeczywisty Scion oraz Ward {2} z disguise Riftburst Helliona.
+// Rzeczywisty Scion oraz Izzet Charm: kontra, chyba że zapłacisz {2}.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createGameState,addObject,execute,playerView} from '../src/engine/game-state.js';

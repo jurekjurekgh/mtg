@@ -25,7 +25,13 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Bez zmiany produkcji; odświeżono dwa nieaktualne komentarze w A86/A87. A84 ma już osobną poprawkę i mutację z wcześniejszego kroku.
 - Kryterium utrzymane: polityka bota nie jest regułą CR, a setup syntetyczny jest opisany jako granica/kontrola.
 
-## Partia 3 — dokumentacja historyczna
+## Partia 3 — rodziny naprawione w #179 (wykonana)
+
+- [x] A94–A98 i A100–A108: pełny przegląd 14 plików, diff PR #178, przebieg **82/82 pass / 0 fail / 0 skip**.
+- [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
+- [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
+
+## Partia 4 — dokumentacja historyczna
 
 - [ ] `docs/PROJECT_HISTORY.md`, `AUDYT_PR177_2026-11-01.md`, `PR177_MAPA_PLIKOW_2026-11-02.md`, `PLAN_2026-11-01-audyt-pr177.md`, `HANDOFF_2026-11-01-audyt-pr177.md`.
 - Kryterium: przegląd zmienionych fragmentów, spójność z obecnym stanem i jawne oznaczenie wpisów historycznych; brak zmian runtime.

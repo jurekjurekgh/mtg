@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178, rodziny A94–A108
+
+- Pełny przegląd 14 wierszy mapy dla rodzin naprawionych/skorygowanych w #179: **82/82 pass / 0 fail / 0 skip**. Bez zmiany produkcji; komentarze A96/A97 odświeżone, nieużywany alias w A94 usunięty.
+- Mapa #178: **87 → 73 otwarte wiersze**. A94/A101 mają korekty asercji do CR, A98/A100–A108 osobne poprawki i mutacje; wiersze mapy domknięte z notą zakresu.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, partia A75–A93
 
 - Semantyczny przegląd 19 otwartych wierszy mapy (A75–A93): APNAP, ręczne płatności Ward/echo/optional, kreatory many, rezerwacje kosztu i atomowość. Łącznie **165/165 pass / 0 fail / 0 skip**; bez zmiany produkcji, odświeżono dwa komentarze w A86/A87.

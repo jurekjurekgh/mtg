@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30 testów) oraz A75–A93 (165/165 testów); liczba otwartych wierszy spadła ze 114 do 87. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165) oraz A94–A108 (82/82); liczba otwartych wierszy spadła ze 114 do 73. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -60,15 +60,15 @@
 | `test/audyt-pr146-predykat-pipow-jeden.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/audyt-pr176-o1-etykieta-saddle-po-aktywacji.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/audyt-pr177-a10-bestow-inwestycja.test.js` | test/fixture | przejrzany pełny test; bestow/inwestycja Edifice na rzeczywistych kartach, 3 warianty bot/payment, CR 702.103f, bez nowego błędu |
-| `test/audyt-pr177-a100-ward-triggers.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a101-reflexive-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a102-draw-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a103-second-draw-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a104-flooding-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a105-nanoform-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a106-ward-target-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a107-two-ward-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a108-ward-sba.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a100-ward-triggers.test.js` | test/fixture | przejrzany i naprawiony w PR #179; Imp/Forebear/aura nie kładą triggera podczas dopłaty Ward |
+| `test/audyt-pr177-a101-reflexive-apnap.test.js` | test/fixture | przejrzany i skorygowany do CR 603.12/603.3b; refleks Zoraline w pierwszej partii APNAP, wybór kontrolera i replay |
+| `test/audyt-pr177-a102-draw-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; dobór Lorescale Coatl i śmierć Sciona w jednej partii APNAP |
+| `test/audyt-pr177-a103-second-draw-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; drugi dobór Jolrael i śmierć Sciona w jednej partii APNAP |
+| `test/audyt-pr177-a104-flooding-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; Chronic Flooding czeka z wpisem, znaczy tapnięcie, APNAP po dopłacie |
+| `test/audyt-pr177-a105-nanoform-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; cel Nanoform Sentinel czeka, limit raz na turę zachowany, APNAP i odtapowanie |
+| `test/audyt-pr177-a106-ward-target-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; Ward z celu Nanoform czeka na koniec partii i leży nad APNAP, zapłata/odmowa |
+| `test/audyt-pr177-a107-two-ward-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; dwa Ward z jednego checkpointu, kolejność kontrolera i replay w trakcie partii |
+| `test/audyt-pr177-a108-ward-sba.test.js` | test/fixture | przejrzany i naprawiony w PR #179; aura nie umiera z SBA w środku Ward, śmierć i token po checkpointcie |
 | `test/audyt-pr177-a109-ward-aura-sba.test.js` | test/fixture | przejrzany pełny test; otwarte RED SBA/Ward/LKI, bez lokalnej naprawy |
 | `test/audyt-pr177-a11-powrot-kreatora.test.js` | test/fixture | przejrzany pełny test; powrót z zagnieżdżonego kreatora many, sesja + funkcje main.js, modal zamknięty/nadal widoczny, bez nowego błędu |
 | `test/audyt-pr177-a110-auto-mana-events.test.js` | test/fixture | przejrzany pełny test; otwarte RED checkpointu/LKI/APNAP, bez lokalnej naprawy |
@@ -157,11 +157,11 @@
 | `test/audyt-pr177-a91-gate-cost-reservation.test.js` | test/fixture | przejrzany pełny test; Heap Gate rezerwuje Gate kosztu w kreatorze i potomku, target efektu nie jest kosztem, Holdout/Station, replay |
 | `test/audyt-pr177-a92-stale-gate-atomicity.test.js` | test/fixture | przejrzany pełny test; przestarzała/nielegalna brama kosztu odrzucana atomowo, wydana mana i zmiana strefy, replay |
 | `test/audyt-pr177-a93-animated-self-cost.test.js` | test/fixture | przejrzany pełny test; ożywiony Holdout nie płaci sobą przy własnym {T}, inny stwór i stare komendy, syntetyczna kontrola bez {T}, replay |
-| `test/audyt-pr177-a94-optional-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a95-ward-two-scions.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a96-counter-two-scions.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a97-echo-two-scions.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-a98-spellbomb-apnap.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-a94-optional-apnap.test.js` | test/fixture | przejrzany i skorygowany do CR; opcjonalna płatność nie blokuje zdolności many, cele czekają, odmowa i replay |
+| `test/audyt-pr177-a95-ward-two-scions.test.js` | test/fixture | przejrzany pełny test; dwa Sciony finansują Ward, wybór celu/pass nie omija decyzji, replay |
+| `test/audyt-pr177-a96-counter-two-scions.test.js` | test/fixture | przejrzany pełny test; dwa Sciony finansują kontrę Izzet Charm, odmowa i replay; komentarz nagłówka odświeżony |
+| `test/audyt-pr177-a97-echo-two-scions.test.js` | test/fixture | przejrzany pełny test; dwa Sciony płacą echo {2}{B}, cel Selhoff nie blokuje many, replay; komentarz odświeżony |
+| `test/audyt-pr177-a98-spellbomb-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; triggery Sciona czekają do końca dopłaty Spellbomb, potem APNAP |
 | `test/audyt-pr177-bestow-typy.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-champion-na-stosie.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/audyt-pr177-converge-dobor-many.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |

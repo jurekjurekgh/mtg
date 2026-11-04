@@ -9,7 +9,6 @@ import {addMana} from '../src/engine/resources.js';
 import {stateFingerprint} from '../src/engine/fingerprint.js';
 import {replayFromState,verifyReplay} from '../src/engine/replay.js';
 // Aktywna regresja płatności opcjonalnej; cele czekają w buforze do checkpointu.
-const audit=test;
 const reg=createCardRegistry();
 function put(s,id,card,zone,p){const [{objectId,...data}]=createCardDeck({cardIds:[card],ownerId:p,registry:reg});addObject(s,{...data,id,instanceId:`i-${id}`,zone,controllerId:p});}
 const view=s=>playerView(s,s.turn.priorityPlayerId);
