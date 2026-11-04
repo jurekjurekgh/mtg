@@ -2055,16 +2055,14 @@ function startMadnessTriggerOrder(state) {
   state.pendingTriggerOrder = { groups, index: first, restorePriorityTo: state.turn.priorityPlayerId };
 }
 
-// Ograniczony batch: triggery śmierci bez celu albo z jednym obowiązkowym
-// celem gracza, własnego stwora, lądu lub karty lądu w grobie. Nie obejmuje
-// innych decyzji w efekcie, celów przeciwnika z Ward ani madness; obejmuje
-// również koszt rzutu, niezawieszone obrażenia `resolve_combat` i koszt
-// niemanowej aktywacji oraz samodzielnej zdolności many bez odrzucania.
-// Wybory kontrolerów są APNAP:
-// najpierw porządek aktywnego i jego cele, potem decyzje pozostałych graczy.
+// ADR 0032: wspólny checkpoint ogłoszeń. Historyczna nazwa pola i funkcji
+// (`pendingDeathTriggerBatch`) zostaje na czas migracji, ale partia obejmuje
+// WSZYSTKIE zwykłe wyzwalacze okna, nie tylko śmierć/odejście/obrażenia.
+// Wybory kontrolerów są APNAP: najpierw porządek aktywnego i jego cele,
+// potem decyzje pozostałych graczy. Ward czeka na drugi przebieg.
 function advanceDeathTriggerBatch(state) {
   const batch = state.pendingDeathTriggerBatch;
-  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length) return;
+  if (!batch || state.pendingTriggerOrder || state.pendingTriggerTargets.length || state.pendingDamageDivision) return;
   while (batch.index < batch.groups.length) {
     const group = batch.groups[batch.index];
     if (!group.topFirst && group.keys.length > 1) {
@@ -2093,14 +2091,18 @@ function advanceDeathTriggerBatch(state) {
   state.turn.priorityPlayerId = batch.restorePriorityTo;
 }
 
-// A112/A113 / ADR 0031: partia obejmuje też grupowe „one or more permanents
-// you control leave the battlefield” oraz obrażenia bojowe zadane graczowi,
-// bo w jednym checkpoincie walki współistnieją ze śmiercią (CR 510.2/603.3b).
-const isDeathBatchTrigger = name => ['dies', 'any_creature_dies', 'other_permanent_you_control_dies',
-  'permanents_you_control_leave_battlefield', 'combat_damage_to_player'].includes(name);
+// ADR 0032 / CR 603.3b: checkpoint obejmuje wszystkie zwykłe wyzwalacze okna.
+// Nie filtrujemy już po typie zdarzenia ani po wąskiej liście celów; cele,
+// tryby i podziały ogłaszamy w partii, a Ward powstaje dopiero z celów.
+const isOrdinaryCheckpointTrigger = name => name !== 'ward';
+const CHECKPOINT_BATCH_COMMANDS = new Set([
+  'pass_priority', 'play_land', 'cast_spell', 'cast_permanent', 'cast_cleave',
+  'cast_escape', 'cast_flashback', 'cast_adventure', 'cast_adventure_creature',
+  'activate_ability', 'declare_attackers', 'declare_blockers', 'resolve_combat',
+]);
 
 function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriorityTo, standaloneManaActivation = false, resolutionClosure = false) {
-  const allowedCommand = ['pass_priority', 'cast_spell', 'resolve_combat', 'activate_ability'].includes(cmd.type)
+  const allowedCommand = CHECKPOINT_BATCH_COMMANDS.has(cmd.type)
     || (resolutionClosure && ['resolve_ward_pay_choice', 'resolve_optional_pay_choice'].includes(cmd.type));
   if (!allowedCommand || state.pendingDeathTriggerBatch || pendingBefore !== 0
     || state.pendingSpell || state.madnessQueue?.length || state.pendingDiscardChoice) return;
@@ -2112,41 +2114,22 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     const cost = entry?.activatedEntry?.ability?.cost;
     if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
   }
-  // A102/A103 / CR 603.3b: po domknięciu płatności opcjonalnej dobór karty
-  // (Spellbomb) należy do tego samego checkpointu co śmierć Sciona. W innych
-  // oknach batch pozostaje ograniczony do triggerów śmierci/obrażeń.
-  const optionalClosure = resolutionClosure && cmd.type === 'resolve_optional_pay_choice';
-  // A104/A105 / CR 603.3b: po zamknięciu płatności partia obejmuje WSZYSTKIE
-  // zwykłe wyzwalacze tego okna (śmierć, dobór, tapnięcie), nie tylko śmierć.
   // A101 / CR 603.12 + 603.3b: refleks „When you do…” reaguje na zapłatę,
   // nie na wyzwolenie innej zdolności. Należy do pierwszej, wspólnej partii.
   // Ward powstaje dopiero z celów i czeka na kolejny przebieg ogłoszenia.
-  const isBatchTrigger = name => optionalClosure
-    ? name !== 'ward'
-    : isDeathBatchTrigger(name);
   const allTargets = state.pendingTriggerTargets;
   const targets = allTargets;
-  if (targets.some(p => !isBatchTrigger(p.ability?.trigger?.event)
-    || (!optionalClosure && (!['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone))
-    || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
-    || p.fixedTargetIds?.length || p.specOverride || !triggerTargetDecisionPending(state, p))) return;
-  // Ward wyzwala się przy ogłoszeniu celu i wymaga osobnej partii ponad całą
-  // partią APNAP. Ten węższy batch nie zajmuje się Wardem: jeśli dowolny
-  // przeciwny kandydat ma Ward, pozostajemy na starej ścieżce zamiast go
-  // przypadkowo umieścić pod późniejszymi triggerami.
-  if (!optionalClosure && targets.some(p => p.candidates?.some(id => {
-    const target = state.objects.get(id);
-    return target?.zone === 'battlefield' && target.controllerId !== p.playerId && wardAmountOf(target, state) != null;
-  }))) return;
+  if (targets.some(p => !isOrdinaryCheckpointTrigger(p.ability?.trigger?.event)
+    || !triggerTargetDecisionPending(state, p))) return;
   // Żadna inna zaległa decyzja nie może być przestawiona przed końcem efektu.
   state.pendingTriggerTargets = [];
   const otherDecision = firstPendingDecision(state);
   state.pendingTriggerTargets = allTargets;
   if (otherDecision) return;
   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
-    .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id));
-  if (ids.length + targets.length < 2
-    || ids.some(id => !isBatchTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event))) return;
+    .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id)
+      && isOrdinaryCheckpointTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event));
+  if (ids.length + targets.length < 2) return;
   const players = state.players.map(p => p.id);
   const activeIndex = players.indexOf(state.turn.activePlayerId);
   const ordered = activeIndex < 0 ? players : [...players.slice(activeIndex), ...players.slice(0, activeIndex)];
@@ -2157,7 +2140,8 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
       trigger: entry.triggerEntry.ability.trigger.event, stackId: id, target: null };
   }
   for (const [index, target] of targets.entries()) {
-    // Wirtualny identyfikator żyje tylko w tym batchu, nie jest obiektem gry.
+    // Wirtualny identyfikator żyje tylko w tej partii, nie jest obiektem gry.
+    // Prefiks pozostaje historyczny (`death-target-`) dla zgodności migracji.
     const key = `death-target-${index}`;
     slots[key] = { playerId: target.playerId, cardId: target.cardId,
       trigger: target.ability.trigger.event, stackId: null,
@@ -2169,6 +2153,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     .filter(group => group.keys.length);
   if (groups.flatMap(group => group.keys).length !== keys.length) return;
   state.pendingTriggerTargets = [];
+  state.pendingWardAnnouncements ??= [];
   state.pendingDeathTriggerBatch = { groups, slots, index: 0, restorePriorityTo };
   advanceDeathTriggerBatch(state);
 }
@@ -2227,6 +2212,12 @@ function accepted(state, cmd, result, standaloneManaActivation = false, resoluti
   // rozstrzygał się BEZ okna na odpowiedź (zgłoszenie właściciela: Carrion
   // Call — „brak okna na instant w odpowiedzi mimo many").
   if (cmd.type !== 'pass_priority') state.turn.passes = 0;
+  // ADR 0032: Ward z celów checkpointu czeka na drugi przebieg ogłoszenia.
+  // W trakcie płatności (Ward/optional) wpisy i tak są odroczone; nie zaczynamy
+  // tam zbierania Ward, żeby nie zmieniać semantyki zamknięcia płatności.
+  if (state.pendingWardAnnouncements == null && !state.pendingWardPay && !state.pendingOptionalPay) {
+    state.pendingWardAnnouncements = [];
+  }
   const sbaEvents = runStateBasedActions(state);
   if (sbaEvents.length > 0) result.events = [...result.events, ...sbaEvents];
   // Zdolności triggerowane (dies, combat damage) rozstrzygają się po SBA,
@@ -3574,7 +3565,14 @@ export function execute(state, input) {
       targetNames: [...(pending.targetNames ?? [])],
       amounts: [...amounts],
     }));
-    if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
+    if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+      if (state.pendingTriggerTargets.length === 0) {
+        state.pendingDeathTriggerBatch.index += 1;
+        advanceDeathTriggerBatch(state);
+      } else {
+        state.turn.priorityPlayerId = state.pendingTriggerTargets[0].playerId;
+      }
+    } else if (pending.restorePriorityTo && state.players.some((pl) => pl.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
     return accepted(state, cmd, { ok: true, events: state.events.slice(before) });
@@ -5223,8 +5221,9 @@ export function execute(state, input) {
       const srcLegalM = Boolean(srcM
         && triggerSourceZoneResolvable(srcM, pending.ability?.trigger?.event)
         && triggerConditionHolds(state, pending.ability, srcM, pending.extra ?? {}));
+      let stackEntryM = null;
       if (srcLegalM && chosenList.length > 0) {
-        const stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
+        stackEntryM = queueTriggerToStack(state, pending.ability, srcM,
           [...pending.fixedTargetIds, ...chosenList], [], pending.extra ?? {});
         // M171/Z6 (CR 603.3d + 601.2d „divided as you choose"): podział
         // obrażeń OGŁASZA SIĘ przy umieszczaniu na stosie — decyzja kwot
@@ -5244,6 +5243,7 @@ export function execute(state, input) {
             targetNames: Object.freeze(chosenList.map((id) => state.objects.get(id)?.name ?? null)),
             total: totalM,
             announceStackId: stackEntryM.id,
+            deathBatchSlotId: pending.deathBatchSlotId ?? null,
             restorePriorityTo: pending.restorePriorityTo ?? state.turn.priorityPlayerId,
           };
           state.events.push(event('damage_division_required', {
@@ -5252,6 +5252,13 @@ export function execute(state, input) {
             targetCardIds: [...state.pendingDamageDivision.targetCardIds],
             targetNames: [...state.pendingDamageDivision.targetNames], total: totalM,
           }));
+        }
+      }
+      if (pending.deathBatchSlotId && state.pendingDeathTriggerBatch) {
+        state.pendingDeathTriggerBatch.slots[pending.deathBatchSlotId].stackId = stackEntryM?.id ?? null;
+        if (!state.pendingDamageDivision && state.pendingTriggerTargets.length === 0) {
+          state.pendingDeathTriggerBatch.index += 1;
+          advanceDeathTriggerBatch(state);
         }
       }
       state.events.push(event('trigger_target_resolved', {

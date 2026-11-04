@@ -20,6 +20,13 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — wspólny checkpoint, etap 1: zwykłe wyzwalacze wszystkich typów
+
+- ADR 0032 i plan wdrożenia; partia checkpointu nie jest już ograniczona do śmierci/odejścia/obrażeń ani wąskich celów. Obejmuje zwykłe wyzwalacze okna, cele wielokrotne i podział obrażeń; Ward czeka na drugi przebieg.
+- RED na realnych kartach: Impact Tremors + Loporrit Scout / Weftblade Enhancer / Inferno Titan. Mutacja przywraca wąski filtr i oblewa 3 nowe testy. Skorygowano M382/D (wybór kontrolera zamiast kolejności wykrycia) i A75 (Ward nie wyklucza partii).
+- Bramy: `test:audit` **724/724**, fast **9959/9959**, build; 0 fail / 0 skip. Budżet lektury utrzymany przez kondensację ADR 0031/0032 (bez podnoszenia progu).
+
+
 ## 2026-11-04 — końcowa kontrola spójności mapy PR #178
 
 - Wyłącznie dokumentacja: poprawiono bieżące nagłówki i checkbox zakończonego przeglądu, uporządkowano trzynaście partii oraz oddzielono zamknięte rodziny od niewdrożonego pełnego checkpointu zdarzeń.

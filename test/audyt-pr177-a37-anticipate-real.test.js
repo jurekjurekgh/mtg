@@ -29,7 +29,7 @@ function scene(n,player='p1',spell='anticipate'){
 }
 const view=s=>playerView(s,s.turn.priorityPlayerId);
 function act(s,cmd){assert.ok(cmd,'legalna komenda');const r=execute(s,cmd);assert.ok(r.ok,JSON.stringify(r));return r;}
-function pass(s){act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
+function pass(s){const order=view(s).legalCommands.find(c=>c.type==='resolve_trigger_order');if(order){act(s,order);return;}act(s,view(s).legalCommands.find(c=>c.type==='pass_priority'));}
 function cast(s,target=null){act(s,view(s).legalCommands.find(c=>c.type==='cast_spell'&&c.objectId==='spell'&&(!target||c.targets?.includes(target))));}
 function resolve(s){for(let i=0;i<12&&s.zones.stack.length&&!s.pendingLookTopN;i++)pass(s);}
 function byInstance(s,id){return [...s.objects.values()].find(o=>o.instanceId===`i-${id}`);}

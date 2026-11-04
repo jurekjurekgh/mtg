@@ -10,13 +10,13 @@ Wdrożyć pełny wspólny checkpoint wszystkich typów zdarzeń zgodnie z ADR 00
 - Oracle lokalne: `docs/cards/scryfall-impact-tremors.json` („Whenever a creature you control enters, this enchantment deals 1 damage to each opponent.”), `docs/cards/scryfall-loporrit-scout.json` („Whenever another creature you control enters, this creature gets +1/+1 until end of turn.”), `docs/cards/scryfall-highland-game.json` (nośnik wejścia).
 - RED: `.arena/checkpoint/etb-order-red.test.js` — po wejściu Highland Game silnik nie oferuje `resolve_trigger_order` dla Impact Tremors/Loporrit Scout; oczekiwane dwie oferty i możliwość odwrócenia kolejności. Log: `.arena/checkpoint/etb-order-red.log`.
 
-## Etap 1 — zwykłe wyzwalacze wszystkich typów (w toku)
+## Etap 1 — zwykłe wyzwalacze wszystkich typów (wykonany)
 
-- [ ] Przenieść reprodukcję ETB do `test/` jako czerwony test na realnych kartach i komendach.
-- [ ] Uogólnić partię poza listę śmierć/odejście/obrażenia: każdy zwykły trigger okna, bez względu na typ celu, `count`, `allowNone`, `fixedTargetIds`, `specOverride`.
-- [ ] Zachować odroczenie płatności i Ward jako drugi przebieg; nie dublować wpisów stosu.
-- [ ] Dodać wybór kolejności wewnątrz kontrolera dla ETB/innych zdarzeń; skorygować M382/D, który pinował kolejność wykrycia zamiast wyboru (CR 603.3b).
-- [ ] Mutacja usuwa poprawkę; kontrole A84–A113, płatności, Ward, madness, Saga, LKI, fingerprint/replay; pełny fast + build; osobny commit i push.
+- [x] Przenieść reprodukcję ETB do `test/` jako czerwony test na realnych kartach i komendach.
+- [x] Uogólnić partię poza listę śmierć/odejście/obrażenia: każdy zwykły trigger okna, bez względu na typ celu, `count`, `allowNone`, `fixedTargetIds`, `specOverride`.
+- [x] Zachować odroczenie płatności i Ward jako drugi przebieg; nie dublować wpisów stosu.
+- [x] Dodać wybór kolejności wewnątrz kontrolera dla ETB/innych zdarzeń; skorygować M382/D, który pinował kolejność wykrycia zamiast wyboru (CR 603.3b).
+- [x] Mutacja usuwa poprawkę (3/7 fail w `.arena/checkpoint/etb-mutation.log`); kontrole: `test:audit` 724/724, fast **9959/9959**, build; osobny commit i push. Poprawiono M382/D i A75 (Ward czeka, nie wyklucza partii) oraz helpery drenujące nowe oferty kolejności.
 
 ## Etap 2 — modalność, podziały i pętla SBA
 

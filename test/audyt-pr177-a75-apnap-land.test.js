@@ -37,11 +37,16 @@ function chooseBatch({s,active,other},victim){
 }
 for(const active of ['p1','p2'])for(const victim of ['polluted-dead','circle-of-the-land-druid'])test(`A75: ${victim} i cel lądowy w APNAP, aktywny ${active}`,()=>chooseBatch(scene(active,victim),victim));
 
-// Syntetyczny strażnik przyszłego nosiciela Ward: obecny katalog nie drukuje
-// takiego lądu. Nie twierdzimy, że fallback spełnia APNAP z Wardem.
-test('A75 granica: przeciwny ląd z Ward wyklucza batch, nie miesza Ward pod triggerami',()=>{
- const {s}=scene('p1','polluted-dead',{wardLand:'p1'});assert.equal(s.pendingDeathTriggerBatch,null);
- assert.equal(s.turn.priorityPlayerId,'p2');assert.ok(view(s).legalCommands.some(c=>c.type==='resolve_trigger_target'&&c.targetId==='p1-land'));
+// ADR 0032: Ward z celu nie wyklucza już zwykłej partii. Partia ogłasza cele,
+// a Ward czeka w pendingWardAnnouncements na drugi przebieg nad partią.
+// Syntetyczny nosiciel Ward na lądzie (katalog nie drukuje takiego lądu).
+test('A75 granica: Ward czeka na drugi przebieg, nie wyklucza zwykłej partii',()=>{
+ const {s}=scene('p1','polluted-dead',{wardLand:'p1'});
+ assert.ok(s.pendingDeathTriggerBatch,'zwykła partia checkpointu działa mimo kandydata z Ward');
+ assert.ok(Array.isArray(s.pendingWardAnnouncements));
+ assert.equal(s.turn.priorityPlayerId,'p1');
+ assert.ok(!s.zones.stack.some(id=>s.objects.get(id)?.triggerEntry?.ability?.trigger?.event==='ward'),'Ward nie jest jeszcze na stosie');
+ assert.ok(view(s).legalCommands.some(c=>c.type==='resolve_trigger_order'));
 });
 test('A75 kontrola: własny Ward nie wyzwala się od własnej zdolności i nie blokuje batcha',()=>{
  const x=scene('p1','polluted-dead',{wardLand:'p2'});assert.ok(x.s.pendingDeathTriggerBatch);chooseBatch(x,'polluted-dead');
