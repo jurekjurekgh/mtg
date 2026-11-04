@@ -32,7 +32,7 @@ import { legalActivatedAbilities, legalManaAbilities, manualManaOfferUnits, acti
 import { attachmentRestrictions, deathZoneFor, wardAmountOf, clearMarkedDamage, clearStatModifiers, creatureCantBlock, effectiveAbilities, effectiveKeywords, effectivePower, effectiveToughness, grantBasicLandTypeUntilEndOfTurn, grantKeywordsUntilEndOfTurn, grantedStatBonus, hasTemporaryCantBlock, markDamage, modifyStats, transformedCharacteristics, turnFaceUp, untapObject, activatableAbilities, entersTappedNow } from './permanents.js';
 import { addCounter, removeCounter, hasCounter } from './counters.js';
 import { runStateBasedActions, sacrificeFinishedSagas, stateBasedActionsOpen, tryRegenerate } from './state-based.js';
-import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredWardTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
+import { applyDayNightAtTurnStart, applyDeferredTriggerEffects, resolveDelayedReanimate, graveyardCardTypeCount, processTriggers, queueTriggerToStack, flushDeferredResolutionTriggers, triggerTargetDecisionPending, legalTriggerTargetCandidates, triggerTargetCandidates, triggerConditionHolds, triggerSourceZoneResolvable, eventIsCreatureDeath } from './triggers.js';
 import { moveObjectDirectly, removeFromCombat } from './objects.js';
 import { detachAttachmentsFromHost, effectiveProtectionFromColors, effectiveProtectionQualities, isLegalAuraHost, isLegalAuraPlayerHost } from './attachments.js';
 import { createBattlefieldToken, elseEffectSummary, nextCopyNumber, TREASURE_TOKEN_EFFECT } from './tokens.js';
@@ -4594,7 +4594,7 @@ export function execute(state, input) {
     // A100: zdolności wyzwolone w trakcie płatności wracają na stos dopiero
     // po zamknięciu Ward (CR 603.3/605.4a), przed checkpointem SBA w accepted.
     const wardDeferredTriggerIds = (pending.deferredTriggers ?? []).map((entry) => entry.id);
-    flushDeferredWardTriggers(state, pending.deferredTriggers ?? []);
+    flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;
     }
@@ -4635,7 +4635,6 @@ export function execute(state, input) {
         || !hasCounter(counterSource, costCounter.counter, costCounter.amount ?? 1))) return reject('optional_pay_insufficient_counter');
     }
     const before = state.events.length;
-    state.pendingOptionalPay = null;
     if (cmd.pay) {
       const payColors = (pending.ability?.trigger?.payColors ?? []).map((color) => [color]);
       const payMana = pending.ability?.trigger?.payMana ?? 0;
@@ -4706,6 +4705,11 @@ export function execute(state, input) {
     } else {
       state.events.push(event('optional_pay_resolved', { playerId: pending.playerId, paid: false }));
     }
+    // A98: okno rozstrzygania obejmuje także automatyczną zapłatę i efekt
+    // po niej; dopiero po optional_pay_resolved zamykamy decyzję i ogłaszamy
+    // odroczone wpisy stosu, przed checkpointem SBA w accepted.
+    state.pendingOptionalPay = null;
+    flushDeferredResolutionTriggers(state, pending.deferredTriggers ?? []);
     const resolvedEvents = state.events.slice(before);
     if (pending.restorePriorityTo && state.players.some((p) => p.id === pending.restorePriorityTo)) {
       state.turn.priorityPlayerId = pending.restorePriorityTo;

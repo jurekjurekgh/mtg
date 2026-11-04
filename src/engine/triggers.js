@@ -1212,14 +1212,17 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
       printLki,
     }),
   });
-  // A100 / CR 603.3 + 605.4a: zdolności wyzwolone podczas rozstrzygania
-  // Ward (np. koszt many: Scion, Treasure) NIE trafiają na stos w środku
-  // płatności. Czekają w pendingWardPay.deferredTriggers do checkpointu po
-  // `ward_pay_resolved`. Zdarzenie ability_triggered powstaje od razu (fakt
-  // wyzwolenia), ale wpis stosu jest odroczony; dlatego nie ma go jeszcze w
-  // state.objects/zones.stack i skan Ward/APNAP nie może go ogłosić.
+  // A100/A98 / CR 603.3 + 605.4a: zdolności wyzwolone podczas rozstrzygania
+  // płatności (Ward albo opcjonalnej, np. koszt many: Scion, Treasure) NIE
+  // trafiają na stos w środku płatności. Czekają w deferredTriggers danej
+  // decyzji do checkpointu po jej zamknięciu. Zdarzenie ability_triggered
+  // powstaje od razu (fakt wyzwolenia), ale wpis stosu jest odroczony; dlatego
+  // nie ma go jeszcze w state.objects/zones.stack i skan Ward/APNAP nie może
+  // go ogłosić. Wybory celów spoza stosu pozostają na dotychczasowej ścieżce.
   if (state.pendingWardPay) {
     (state.pendingWardPay.deferredTriggers ??= []).push(entry);
+  } else if (state.pendingOptionalPay) {
+    (state.pendingOptionalPay.deferredTriggers ??= []).push(entry);
   } else {
     state.objects.set(id, entry);
     state.zones.stack.push(id);
@@ -1238,12 +1241,12 @@ export function queueTriggerToStack(state, ability, source, targets, events, ext
 }
 
 /**
- * A100: domknięcie okna Ward odkłada odroczone wpisy na stos DOPIERO po
- * zakończeniu płatności. Zachowuje ich identyfikatory i LKI z chwili
+ * A100/A98: domknięcie okna płatności odkłada odroczone wpisy na stos DOPIERO
+ * po zakończeniu płatności. Zachowuje ich identyfikatory i LKI z chwili
  * wyzwolenia; ogłasza Ward dla celowanych wpisów dopiero w tej chwili
  * (CR 603.3 — zdolność jest na stosie, gdy zostaje ogłoszona).
  */
-export function flushDeferredWardTriggers(state, deferredTriggers, events = []) {
+export function flushDeferredResolutionTriggers(state, deferredTriggers, events = []) {
   if (!Array.isArray(deferredTriggers) || deferredTriggers.length === 0) return events;
   const stackStart = state.zones.stack.length;
   for (const entry of deferredTriggers) {
