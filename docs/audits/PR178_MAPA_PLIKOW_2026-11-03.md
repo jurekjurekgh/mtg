@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid, M359/PR66/uwagi właściciela, batch39/41 oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 4. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid, M359/PR66/uwagi właściciela, batch39/41, M161/M277 oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 2. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -176,10 +176,10 @@
 | `test/helpers/cr-numery-tabela.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/helpers/madness-priority.js` | test/fixture | przejrzany helper; wybór kolejności i rundy priorytetu madness |
 | `test/m160-uwagi-wlasciciela.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
-| `test/m161-madness-spell-path.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/m161-madness-spell-path.test.js` | test/fixture | przejrzany pełny test; syntetyczna ścieżka madness czarów, kolory kosztu, oferta=walidacja i strażnik katalogu |
 | `test/m200-uwagi-wlasciciela.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/m258-madness-kolejka.test.js` | test/fixture | przejrzany diff i ścieżka produkcji; kolejność madness zgodna z CR 603.3b/702.35 |
-| `test/m277-widok-render-kontrakt.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/m277-widok-render-kontrakt.test.js` | test/fixture | przejrzany pełny test; kontrakt playerView/cardInfo, pola warunkowe i mgła wojny |
 | `test/m359-bronze-cleanup-514.test.js` | test/fixture | przejrzany pełny test; pętla cleanup CR 514.3a, brak priorytetu w pustym cleanupie, obrażenia 514.2 |
 | `test/m382-apnap-kolejnosc-triggerow.test.js` | test/fixture | przejrzany pełny test; APNAP/LIFO i wybór kolejności, bez nowego błędu |
 | `test/owner-cathartic-reunion-auto-discard.test.js` | test/fixture | przejrzany diff; trigger madness po auto-discarcie, bez nowego błędu |

@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178: M161/M277
+
+- Semantyczny przegląd dwóch otwartych plików: ścieżka madness czarów M161 i kontrakt widok/render M277. Bez zmiany produkcji.
+- Mapa #178: **4 → 2 otwarte wiersze**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178: batch39/41
 
 - Semantyczny przegląd dwóch otwartych plików mechanik batchy 39 i 41. **37/37 pass / 0 fail / 0 skip**; poprawiony komentarz regeneracji (tapuje permanent).
