@@ -32,7 +32,7 @@
 1. Roadmapa wypchnięta jako `3fe0720` przed kodowaniem.
 2. Etap 1 wykonany: `test/audyt-pr179-zbiorowe-opuszczenie-regresje.test.js`, 7/7 GREEN bez zmiany produkcji; commit/push po pełnym fast + build.
 3. Etap 2 / A111 wykonany: własne odejście źródła zbiorowego wyzwalacza, wygnanie zamiast śmierci i descended przy poświęceniu z finality. RED→GREEN, mutacja, pełny fast + build; A111 usunięte z kwarantanny.
-4. Inwentarz emiterów/kolejkowania wykonany: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. Granice zdarzeń, wspólną kolejność wielu graczy i automatyczne sprawdzenia wdrażać dopiero po ADR, jeśli zmieniają model stanu.
+4. Inwentarz emiterów/kolejkowania wykonany: `docs/audits/INWENTARZ_ZDARZEN_I_TRIGGEROW_2026-11-04.md`. Propozycja decyzji: `docs/decisions/0031-event-identity-and-trigger-batches.md` (Proponowana). Granice zdarzeń, wspólną kolejność wielu graczy i automatyczne sprawdzenia wdrażać dopiero po zaakceptowaniu ADR, jeśli zmieniają model stanu.
 5. Nie zamykać pokrewnych A110/A112/A113 na podstawie jednego wariantu. Przed końcem pracy pełny `test:all`, build, aktualizacja opisu PR i handoffu.
 
 ## Zasady nie do obejścia
