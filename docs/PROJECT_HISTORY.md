@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178: M359/PR66/uwagi właściciela
+
+- Semantyczny przegląd dziewięciu otwartych plików: cleanup M359, madness PR66, minimalne X, Austere modal, Man-o’-War, Imp, Fireball, Bloodlust, Magma X. Bez zmiany produkcji.
+- Mapa #178: **15 → 6 otwartych wierszy**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178: bestow/champion/converge/klątwa/Morbid
 
 - Semantyczny przegląd pięciu otwartych plików rodzin: typy bestow, champion na stosie, dobór many converge, upkeep klątwy, Morbid a bestow. Bez zmiany produkcji.

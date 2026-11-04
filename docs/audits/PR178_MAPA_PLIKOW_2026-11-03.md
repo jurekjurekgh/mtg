@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 15. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid, M359/PR66/uwagi właściciela oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 6. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -180,23 +180,23 @@
 | `test/m200-uwagi-wlasciciela.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/m258-madness-kolejka.test.js` | test/fixture | przejrzany diff i ścieżka produkcji; kolejność madness zgodna z CR 603.3b/702.35 |
 | `test/m277-widok-render-kontrakt.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/m359-bronze-cleanup-514.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/m359-bronze-cleanup-514.test.js` | test/fixture | przejrzany pełny test; pętla cleanup CR 514.3a, brak priorytetu w pustym cleanupie, obrażenia 514.2 |
 | `test/m382-apnap-kolejnosc-triggerow.test.js` | test/fixture | przejrzany pełny test; APNAP/LIFO i wybór kolejności, bez nowego błędu |
 | `test/owner-cathartic-reunion-auto-discard.test.js` | test/fixture | przejrzany diff; trigger madness po auto-discarcie, bez nowego błędu |
 | `test/owner-discard-selection.test.js` | test/fixture | przejrzany diff; osobne triggery madness i wybór kolejności |
 | `test/pmssb10-ogon-wave-b2.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/pmssb4-zycie-wave-a.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/pmssb5-kontry-wave-a.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
-| `test/pr66-audit-fixes.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/pr66-audit-fixes.test.js` | test/fixture | przejrzany pełny test; madness timing/oferta=walidacja, obowiązkowy cel ETB i etykieta karty |
 | `test/real-cards-batch54-auras.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/real-cards-batch7.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/real-cards-batch71.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
-| `test/uwaga-2026-11-01-minimum-x.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/uwagi-2026-11-01-o-imp.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/uwagi-2026-11-01-p-fireball.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/uwagi-2026-11-01-r-bloodlust.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/uwagi-2026-11-02-austere-modal.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/uwagi-2026-11-02-manowar.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/uwaga-2026-11-01-minimum-x.test.js` | test/fixture | przejrzany pełny test; strategia minimalnego X bota, legalne oferty człowieka, discover/Vaan |
+| `test/uwagi-2026-11-01-o-imp.test.js` | test/fixture | przejrzany pełny test; kosztowny grant latania jako trik bojowy, wycena i wybór kosztu |
+| `test/uwagi-2026-11-01-p-fireball.test.js` | test/fixture | przejrzany pełny test; próg X Fireballa w strategii bota bez zmiany ofert człowieka |
+| `test/uwagi-2026-11-01-r-bloodlust.test.js` | test/fixture | przejrzany pełny test; badge wymogu ataku z aury w playerView/cardInfo/overlay |
+| `test/uwagi-2026-11-02-austere-modal.test.js` | test/fixture | przejrzany pełny test; choose-two jako składniki, DOM i strażnik zakazanych kombinacji |
+| `test/uwagi-2026-11-02-manowar.test.js` | test/fixture | przejrzany pełny test; Man-o’-War bot czeka bez wrogiego stwora, hexproof z Magic Damper |
 | `test/zgloszenie-j-fledgling-imp-latanie.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
-| `test/zgloszenie-n-magma-wybor-x.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/zgloszenie-n-magma-wybor-x.test.js` | test/fixture | przejrzany pełny test; modal X Magma Pummeler wybiera istniejące legalne komendy i kreator many |
 | `test/znaleziska-a4-madness-batch-x3.test.js` | test/fixture | przejrzany diff; batch discard → triggery → decyzje, bez nowego błędu |

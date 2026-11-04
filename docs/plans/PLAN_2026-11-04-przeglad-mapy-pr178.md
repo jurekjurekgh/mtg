@@ -31,6 +31,11 @@ Kontynuować audyt #178 po zamknięciu wymuszonych RED A84–A113. Zmniejszać l
 - [x] Wiersze mapy domknięte jako przejrzane; A98/A100–A108 mają osobne poprawki i mutacje z wcześniejszych kroków, A94/A101 korekty asercji do CR.
 - [x] Odświeżono komentarze A96/A97 i usunięto nieużywany alias w A94; bez zmiany asercji ani produkcji.
 
+## Partia 10 — M359/PR66/uwagi właściciela (wykonana)
+
+- [x] Dziewięć otwartych plików: cleanup M359, madness PR66, minimalne X, Austere modal, Man-o’-War, Imp, Fireball, Bloodlust, Magma X.
+- [x] Pełny przegląd, diff PR #178, Oracle/CR; bez zmiany produkcji i asercji. Przebieg w łącznej bramie 20 pozostałych wtedy plików: **197/197 pass / 0 fail / 0 skip**.
+
 ## Partia 9 — bestow/champion/converge/klątwa/Morbid (wykonana)
 
 - [x] Pięć otwartych plików rodzin: typy bestow, champion na stosie, dobór many converge, upkeep klątwy, Morbid a bestow.
