@@ -2118,13 +2118,19 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
     const cost = entry?.activatedEntry?.ability?.cost;
     if (!entry || !state.zones.stack.includes(entry.id) || cost?.discardCard || cost?.discardCards) return;
   }
+  // A102/A103 / CR 603.3b: po domknięciu płatności opcjonalnej dobór karty
+  // (Spellbomb) należy do tego samego checkpointu co śmierć Sciona. W innych
+  // oknach batch pozostaje ograniczony do triggerów śmierci/obrażeń.
+  const allowDraw = resolutionClosure && cmd.type === 'resolve_optional_pay_choice';
+  const isBatchTrigger = name => isDeathBatchTrigger(name)
+    || (allowDraw && ['you_draw_card', 'you_draw_second_card_each_turn'].includes(name));
   const allTargets = state.pendingTriggerTargets;
   // A101: po opcjonalnej płatności refleks jest osobną, późniejszą częścią
   // checkpointu (CR 603.3b). Zwykła partia obejmuje tylko triggery śmierci.
   const followupTargets = resolutionClosure && cmd.type === 'resolve_optional_pay_choice'
     ? allTargets.filter(p => p.ability?.trigger?.event === 'reflexive_pay') : [];
   const targets = followupTargets.length ? allTargets.filter(p => !followupTargets.includes(p)) : allTargets;
-  if (targets.some(p => !isDeathBatchTrigger(p.ability?.trigger?.event)
+  if (targets.some(p => !isBatchTrigger(p.ability?.trigger?.event)
     || !['player', 'creature_you_control', 'land', 'land_card_in_graveyard'].includes(p.ability?.trigger?.requiresTarget?.type) || p.allowNone
     || (p.ability?.trigger?.requiresTarget?.count ?? 1) !== 1
     || p.fixedTargetIds?.length || p.specOverride || !triggerTargetDecisionPending(state, p))) return;
@@ -2144,7 +2150,7 @@ function startDeathTriggerBatch(state, cmd, events, pendingBefore, restorePriori
   const ids = [...new Set(events.filter(e => e.type === 'ability_triggered' && e.stackEntryId)
     .map(e => e.stackEntryId))].filter(id => state.zones.stack.includes(id));
   if (ids.length + targets.length < 2
-    || ids.some(id => !isDeathBatchTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event))) return;
+    || ids.some(id => !isBatchTrigger(state.objects.get(id)?.triggerEntry?.ability?.trigger?.event))) return;
   const players = state.players.map(p => p.id);
   const activeIndex = players.indexOf(state.turn.activePlayerId);
   const ordered = activeIndex < 0 ? players : [...players.slice(activeIndex), ...players.slice(0, activeIndex)];
