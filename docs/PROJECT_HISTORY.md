@@ -20,6 +20,12 @@
 > nie trafiają do repozytorium".
 
 
+## 2026-11-04 — przegląd mapy PR #178: bestow/champion/converge/klątwa/Morbid
+
+- Semantyczny przegląd pięciu otwartych plików rodzin: typy bestow, champion na stosie, dobór many converge, upkeep klątwy, Morbid a bestow. Bez zmiany produkcji.
+- Mapa #178: **20 → 15 otwartych wierszy**.
+
+
 ## 2026-11-04 — przegląd mapy PR #178, A59–A73
 
 - Semantyczny przegląd 13 otwartych wierszy: Force Away, Delusion, Oak/Ivy, batch 71, Edifice/protection, Hounds, token/Morbid, Spider, Scorn/aury, Kaleidoscorch, inwestycje, kwalifikatory i strefy wyszukiwania. **79/79 pass / 0 fail / 0 skip**; bez zmiany produkcji.

@@ -2,7 +2,7 @@
 
 Źródło: pełna paginacja REST `pulls/178/files`: **194 pliki**, +14073/−523; PR ma 308 commitów. Baza `7aff9b6`, wynik scalenia `04ca8e9`. Diff pobrany przez `gh pr diff 178`.
 
-**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79) oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 20. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
+**Stan: audyt częściowy.** Wszystkie 26 plików produkcyjnych ma przejrzany diff na poziomie zmienionych linii i wskazane ryzyka. Nie jest to dowód wszystkich interakcji. Testy i dokumentacja są zinwentaryzowane i uruchomione w bramie, ale ich pełny przegląd semantyczny pozostaje częściowo otwarty. 2026-11-04 przejrzano pełne pliki A10–A17 (30/30), A75–A93 (165/165), A94–A108 (82/82), A7–A9/A25–A34 (47/47), A35–A46 (73/73), A47–A58 (51/51), A59–A73 (79/79), bestow/champion/converge/klątwa/Morbid oraz pięć dokumentów historycznych; liczba otwartych wierszy spadła ze 114 do 15. Zielony pakiet nie zamyka semantyki pliku ani dawnego audytu.
 
 | Plik | Kategoria | Stan audytu |
 |---|---|---|
@@ -162,11 +162,11 @@
 | `test/audyt-pr177-a96-counter-two-scions.test.js` | test/fixture | przejrzany pełny test; dwa Sciony finansują kontrę Izzet Charm, odmowa i replay; komentarz nagłówka odświeżony |
 | `test/audyt-pr177-a97-echo-two-scions.test.js` | test/fixture | przejrzany pełny test; dwa Sciony płacą echo {2}{B}, cel Selhoff nie blokuje many, replay; komentarz odświeżony |
 | `test/audyt-pr177-a98-spellbomb-apnap.test.js` | test/fixture | przejrzany i naprawiony w PR #179; triggery Sciona czekają do końca dopłaty Spellbomb, potem APNAP |
-| `test/audyt-pr177-bestow-typy.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-champion-na-stosie.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-converge-dobor-many.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-klatwa-gracz-upkeep.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
-| `test/audyt-pr177-morbid-bestow.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
+| `test/audyt-pr177-bestow-typy.test.js` | test/fixture | przejrzany pełny test; bestow jako aura na polu i karta stwora poza nim, typy/LKI/fingerprint |
+| `test/audyt-pr177-champion-na-stosie.test.js` | test/fixture | przejrzany pełny test; champion po śmierci źródła, wygnanie bez powrotu, kontroler zdolności i etykiety |
+| `test/audyt-pr177-converge-dobor-many.test.js` | test/fixture | przejrzany pełny test; maksymalizacja kolorów many, restricted/hybrid/{C}, brute force małych pul |
+| `test/audyt-pr177-klatwa-gracz-upkeep.test.js` | test/fixture | przejrzany pełny test; trigger klątwy niezależny od źródła i gracza upkeepu |
+| `test/audyt-pr177-morbid-bestow.test.js` | test/fixture | przejrzany pełny test; bestow aura nie umiera jako stwór, LKI klasyfikuje śmierć |
 | `test/batch39-kart.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
 | `test/batch40-kart.test.js` | test/fixture | przejrzany diff zmienionych asercji/kotwic; bez nowego błędu |
 | `test/batch41-kart.test.js` | test/fixture | otwarty — uruchomiony w bramie; przegląd asercji niedokończony |
