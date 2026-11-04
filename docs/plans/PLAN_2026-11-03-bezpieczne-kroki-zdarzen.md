@@ -63,10 +63,12 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 ## Etap 4 — wspólna kolejność i automatyczne sprawdzenia
 
-- [ ] Oddzielnie badać kolejność zdolności wielu graczy, wybór celów, późniejsze zdolności zależne od celu oraz ponowne automatyczne sprawdzenie stanu.
-- [ ] Nie sortować ponownie istniejącego, już rozstrzygniętego stosu i nie ukrywać wcześniej utworzonych wpisów.
-- [ ] Nie zmieniać kolejności madness ani działania kreatora many bez nowego, rzeczywistego kontrprzykładu; obecne testy tych obszarów są zielone i zostały semantycznie przejrzane.
-- [ ] Każdy potwierdzony przypadek dostaje własny RED→GREEN i własny commit. Wspólny checkpoint wdrażać tylko jako zatwierdzoną zmianę architektoniczną, nie przez zastosowanie historycznych patchy.
+- [x] Oddzielnie zbadać kolejność zdolności wielu graczy, wybór celów, późniejsze zdolności zależne od celu oraz ponowne automatyczne sprawdzenie stanu w zakresie A84–A113.
+- [x] Nie sortować ponownie istniejącego, już rozstrzygniętego stosu i nie ukrywać wcześniej utworzonych wpisów.
+- [x] Nie zmieniać kolejności madness ani działania kreatora many bez nowego, rzeczywistego kontrprzykładu; obecne testy tych obszarów są zielone i zostały semantycznie przejrzane.
+- [x] Każdy potwierdzony przypadek ma własny dowód RED→GREEN, mutację i kontrole; commity dzielono na samodzielne, zielone kroki. Wspólny checkpoint wdrażać tylko jako zatwierdzoną zmianę architektoniczną, nie przez zastosowanie historycznych patchy.
+
+Zamknięcie rodzin A84–A113 nie oznacza wdrożenia pełnego wspólnego checkpointu wszystkich typów zdarzeń ani zamknięcia semantycznego przeglądu mapy #178.
 
 **Ukończenie:** właściwy otwarty test przechodzi bez osłabiania asercji, pełny fast + build; przed końcem pracy dodatkowo pełny `npm run test:all`. Pozostałe RED jawnie wymienione.
 
@@ -86,19 +88,33 @@ Kandydat, jeszcze nie zatwierdzona łata: odchodzący permanent z własną zdoln
 
 **Wynik podetapu A102/A103:** przed poprawką wymuszone 2+2 testy / 0 pass / 4 fail; po fixie **2/2 + 2/2**. Mutacja wyłączająca dobór w partii przywraca 0/2 w obu rodzinach. Kontrole A94/A98/A101/A84/A100/A108/A109/A110/A112/A113/Zoraline **137/137**. Fast **9936 pass / 14 skip / 0 fail**, build **77 modułów / 5686,0 kB**; `test:audit` **22 testy / 10 pass / 12 fail**. Pełny `test:all` po A102/A103: **10 204 pass / 14 skip / 0 fail**. A102/A103 zdjęte z kwarantanny; pozostałe wymuszone RED **12** (A104–A107). Nie wdrożono pełnego wspólnego checkpointu dla wszystkich typów zdarzeń.
 
-**Rozstrzygnięcie A104/A105 vs A94 (decyzja wykonawcza na polecenie właściciela, przed kodowaniem):** właściciel polecił usunąć wszystkie wymuszone RED i doprowadzić do zgodności z CR. Źródła: CR 117.5, 603.2/603.3/603.3b/603.3d, 605.1a/605.3a/605.4a/605.5a, 608.2g, 702.21a; Oracle Chronic Flooding, Nanoform Sentinel, Holdout Settlement, Panic Spellbomb, Riftburst Hellion z `docs/cards/scryfall-*.json`. W trakcie rozstrzygania płatności opcjonalnej wyzwalacze powstają, ale cele i wpisy stosu czekają do checkpointu; mana abilities są dozwolone, bo trwa żądanie zapłaty. Po zapłacie/odmowie cała partia jest ogłaszana APNAP przed priorytetem; Ward z ogłoszenia celów czeka do końca umieszczania zwykłej partii i tworzy własną partię nad nią. A94 błędnie wymagał `pendingTriggerTargets.length>0` w trakcie płatności — asercja zmienia się na bufor odroczony; blokada mana ability po odmowie pozostaje, bo nie ma priorytetu ani żądania zapłaty. Etapy: (1) odroczenie celów i uogólnienie partii po płatności dla A104/A105, (2) odroczenie Ward do końca partii i kolejność wielu Ward A106/A107, (3) usunięcie kwarantanny/flag i trybu oczekiwanych RED, pełne bramki. Kryteria każdego etapu: RED→GREEN bez skipów, mutacje, kontrole, pełny fast+build, commit/push; na końcu pełny `test:all` i audyt bez RED. Ryzyka: nie zgubić LKI/once-per-turn, nie podwójnić Ward, replay/fingerprint w trakcie partii.
+**Rozstrzygnięcie A104/A105 vs A94 (decyzja wykonawcza na polecenie właściciela):** właściciel polecił usunąć wszystkie wymuszone RED i doprowadzić do zgodności z CR. Źródła: CR 117.5, 603.2/603.2e/603.3/603.3b/603.3d/603.12, 605.1b/605.3a/605.4a/605.5a, 608.2g, 702.21a; Oracle Chronic Flooding, Nanoform Sentinel, Holdout Settlement, Panic Spellbomb, Riftburst Hellion, Zoraline z `docs/cards/scryfall-*.json`.
+
+- W trakcie rozstrzygania płatności opcjonalnej zdarzenia i znaczniki wyzwalaczy powstają od razu (także „raz na turę”), ale cele i wpisy stosu czekają do najbliższego checkpointu. Chronic Flooding i Nanoform Sentinel są zwykłymi wyzwalaczami, nie zdolnościami many: pierwsze nie dodaje many, drugie ma cel.
+- Zdolności many pozostają legalne podczas żądania zapłaty (CR 605.3a/608.2g). A94 błędnie wymagał publicznej decyzji celu (`pendingTriggerTargets.length>0`) w trakcie płatności; poprawna asercja sprawdza bufor `pendingOptionalPay.deferredTargets`. Po odmowie blokada zdolności many pozostaje, bo nie ma już żądania zapłaty ani zwykłego priorytetu — trwa ogłaszanie partii.
+- Po zapłacie lub odmowie wszystkie zwykłe wyzwalacze okna (śmierć, dobór, tapnięcie oraz refleks „When you do…”) tworzą jedną partię aktywny–nieaktywny przed priorytetem. Refleks Zoraline reaguje na zapłatę, więc należy do pierwszej części CR 603.3b, a nie do osobnej późniejszej partii.
+- Ward wyzwolony wyborem celu czeka do końca umieszczania zwykłej partii i dopiero wtedy tworzy własną partię nad nią, z kolejnością kontrolerów i wyborem kolejności wielu Ward jednego kontrolera.
+- Etapy wykonane: (1) odroczenie celów i uogólnienie partii po płatności (`20b6fd5`), (2) odroczenie Ward i kolejność wielu Ward (`1384600`), (3) usunięcie kwarantanny/flag i trybu oczekiwanych RED (`1384600`), (4) końcowa korekta pierwszej partii refleksu A101 (`8e3c759`). Każdy krok miał RED→GREEN bez skipów, mutacje, kontrole, pełny fast+build oraz osobny push.
 
 **Korekta końcowa A101 po ponownym odczytaniu CR (2026-11-04, przed zmianą kodu):** wcześniejsze rozstrzygnięcie błędnie przypisało refleks „When you do…” do drugiej części CR 603.3b. CR 603.12 wiąże ten refleks z wykonaniem czynności podczas rozstrzygania (tu: zapłatą), a nie z wyzwoleniem innej zdolności. Dlatego Zoraline należy do **pierwszej**, wspólnej partii aktywny–nieaktywny; kontroler może wybrać jej miejsce względem własnych pozostałych wyzwalaczy. Nie wolno wymuszać jej pozycji ponad całą partią. Druga część 603.3b dotyczy innego warunku wyzwolenia; Ward wyzwolony wskutek wyboru celu należy do kolejnego przebiegu ogłoszenia, po zakończeniu partii źródłowej.
 
-- [ ] Usunąć wydzielanie `followupTargets` i objąć `reflexive_pay` zwykłą partią po płatności; zachować odroczenie Ward z A106/A107.
-- [ ] Najpierw skorygować asercje A101 według CR 603.3b/603.12 i wykazać RED na obecnym silniku. Sprawdzić oba przypisania gracza aktywnego, wybór kolejności Zoraline wewnątrz jego grupy oraz replay/fingerprint.
-- [ ] Mutacja przywracająca osobną partię refleksu musi czerwienić poprawiony test. Następnie pełny fast + build, kontrole A94/A98/A102–A107, osobny commit i push; na końcu ponowny pełny `test:all` i aktualizacja dokumentacji. Nie ogłaszać całego audytu #178 za zamknięty.
+- [x] Usunąć wydzielanie `followupTargets` i objąć `reflexive_pay` zwykłą partią po płatności; zachować odroczenie Ward z A106/A107.
+- [x] Najpierw skorygować asercje A101 według CR 603.3b/603.12 i wykazać RED na obecnym silniku. Sprawdzić oba przypisania gracza aktywnego, wybór kolejności Zoraline wewnątrz jego grupy oraz replay/fingerprint.
+- [x] Mutacja przywracająca osobną partię refleksu czerwieni poprawiony test. Następnie pełny fast + build, kontrole A94/A98/A102–A107, osobny commit i push; na końcu ponowny pełny `test:all` i aktualizacja dokumentacji. Nie ogłaszać całego audytu #178 za zamknięty.
+
+**Wynik korekty A101:** RED **0/8** → GREEN **8/8**; mutacja przywracająca osobną partię refleksu **0/8**. Kontrole audytu/Ward/fingerprint/graf modułów **708/708**. Fast **9956/9956 pass / 0 skip / 0 fail**, build **77 modułów / 5689,3 kB**. Commit `8e3c759`; plan korekty `408bd19`.
+
+**Wynik A104/A105:** przed poprawką wymuszone A104 **4 pass / 2 fail**, A105 **2 pass / 4 fail**; po poprawce **6/6 + 6/6**. Mutacje: brak odroczenia celu **10 pass / 6 fail** (łącznie 16 testów), brak partii po płatności **8 pass / 4 fail** (łącznie 12). Kontrole **96/96**. Fast **9950 / 9944 pass / 6 skip / 0 fail**, build **77 modułów / 5687,4 kB**. Commit `20b6fd5`.
+
+**Wynik A106/A107:** przed poprawką wymuszone A106 **4 pass / 4 fail**, A107 **0 pass / 2 fail**; po poprawce **8/8 + 2/2**, w tym replay/fingerprint w trakcie partii. Mutacje: brak odroczenia Ward — A106 **6 pass / 2 fail**, A107 **0 pass / 2 fail**; brak kolejności wielu Ward — A107 **0 pass / 2 fail**. Kontrole **127/127**. Po usunięciu wszystkich kwarantann fast **9950/9950 pass / 0 skip / 0 fail**, build **77 modułów / 5690,2 kB**, `test:audit` **112 plików / 718 testów / 718 pass / 0 fail / 0 skip**. Commit `1384600`.
+
+**Bramy końcowe po `8e3c759`:** `test:audit` **112 plików / 724 testy / 724 pass / 0 fail / 0 skip** (20,0 s); pełny `test:all` **10 224 testy / 10 224 pass / 0 fail / 0 skip** (537,8 s). Nie ma wymuszonych RED ani flag `AUDIT_A*_ENFORCE` w testach. To zamyka zakres rodzin A84–A113, nie cały przegląd mapy #178.
 
 
 
 
 
-## Rozpoznanie po A111 — co dokładnie zostało do zrobienia
+## Rozpoznanie po A111 — zapis historyczny
 
 Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To nie są nowe błędy wprowadzone przez A111; to pozostały rdzeń problemu kolejności.
 
@@ -106,7 +122,7 @@ Pomiar wymuszonych A110/A112/A113 po A111: **30 testów / 8 pass / 22 fail**. To
 - **A112 (zamknięte):** grupowy wyzwalacz odejścia i celowany wyzwalacz śmierci trafiają już do jednej partii wyboru kolejności przez rozszerzenie istniejącej partii śmierci o `permanents_you_control_leave_battlefield`. RED 2/10 → GREEN 10/10, mutacja złapana, replay/fingerprint aktywne.
 - **A113 (zamknięte):** mieszany checkpoint obrażeń bojowych i śmierci wszedł do istniejącej partii przez objęcie `combat_damage_to_player` wspólną koleją wyboru. RED 0/4 → GREEN 4/4, mutacja złapana, replay/fingerprint aktywne.
 
-Wniosek: następny krok nie powinien polegać na dodaniu kolejnego wyjątku do obecnego sortowania. Trzeba najpierw zdefiniować granicę zdarzenia i partii oczekujących zdolności oraz sposób zapisu wyborów kolejności w replay. Jeżeli wymaga to nowego trwałego pola stanu lub zmiany protokołu decyzji, powstaje ADR **przed** kodowaniem. ADR: `../decisions/0031-event-identity-and-trigger-batches.md` (status Zaakceptowana; właściciel wybrał najpierw A110). Małe poprawki lokalne nadal mogą być wdrażane osobno, jeśli nie zmieniają tej granicy.
+Wniosek zapisany po A111: następny krok nie powinien polegać na dodaniu kolejnego wyjątku do obecnego sortowania. Trzeba najpierw zdefiniować granicę zdarzenia i partii oczekujących zdolności oraz sposób zapisu wyborów kolejności w replay. Jeżeli wymaga to nowego trwałego pola stanu lub zmiany protokołu decyzji, powstaje ADR **przed** kodowaniem. ADR: `../decisions/0031-event-identity-and-trigger-batches.md` (status Zaakceptowana; właściciel wybrał najpierw A110). Małe poprawki lokalne nadal mogą być wdrażane osobno, jeśli nie zmieniają tej granicy.
 
 ## Kolejność commitów i procedura bezpieczeństwa
 
