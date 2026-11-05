@@ -117,3 +117,28 @@ benchmarku B0.
   `typeof openCardFullscreenByCardId`).
 - Bramy: szybki pakiet **9975/9975**, build **77 modułów / 5702,0 kB**,
   pełny `test:all` **10243/10243** (605,6 s), 0 fail / 0 skip.
+
+## Etap 7 (dopytanie właściciela 2026-11-05): nazwa czaru na szczycie modala wyboru trybu
+
+Pytanie właściciela: czy hover objął też nazwę karty na szczycie modala
+wyboru trybu czaru modalnego („Rzucasz czar X, wybierz jego efekt") oraz listę
+kart na szczycie kreatorów biblioteki (scry i podobne)?
+
+Pomiar:
+- Kreatory biblioteki: TAK — lista na szczycie to chipy wspólnego pickera,
+  hover działa od etapu 2–4 (test HOVER/3).
+- Wybór trybu: NIE w pełni — nagłówek to zwykły tekst z `choiceGroupTitle`;
+  hoverowalna nazwa (`introCard`) działała tylko dla clash i Epic Experiment.
+
+Zakres etapu:
+- [ ] Test RED: nagłówek kreatora wielocelowego z `introCard` osadza
+  hoverowalną nazwę WEWNĄTRZ zdania nagłówka (bez dublowania nazwy),
+  klik nie otwiera; bez `introCard` nagłówek bez zmian.
+- [ ] `renderMultiTargetWizard`: gdy zdanie nagłówka zawiera nazwę
+  `introCard`, nazwa staje się segmentem-podglądem (hover/dotyk jak wiersze);
+  w przeciwnym razie dotychczasowe zachowanie (nazwa na początku).
+- [ ] `main.js`: `introCard` dla ścieżek wyboru trybu (castMode,
+  chooseModes — także krok „rzuć albo odmów", chooseOneOrBoth), z obiektu
+  źródłowego decyzji; pozostałe kreatory bez zmian.
+- [ ] Bramy: `npm test` + `npm run build`, osobny commit i push; pełny
+  `test:all` przed końcem zadania, aktualizacja historii/handoffu/PR.
